@@ -798,11 +798,11 @@ function updateWaves(dt, now){
 // ----------------------------- BOSS -----------------------------
 // Multi-phase, telegraphed bosses — one per stage (P8 differentiates S2-S5).
 const BOSS_DEFS = [
-  { name:'MÃNH NGƯU',  hp:1300, scale:3.0, pal:{hull:0x5a2a22,turret:0x6a3028,barrel:0x7a3a30,tread:0x2a1410,accent:0xff5028} },
-  { name:'PHONG BÃO',  hp:1700, scale:3.0, pal:{hull:0x243a52,turret:0x2c4762,barrel:0x365a7a,tread:0x101c2a,accent:0x4fd1ff} },
-  { name:'CỰ THẦN',    hp:2200, scale:3.6, pal:{hull:0x3a3a44,turret:0x46464f,barrel:0x55555f,tread:0x18181c,accent:0xb0b0c0} },
-  { name:'TỬ THẦN',    hp:2600, scale:3.0, pal:{hull:0x2a1a3a,turret:0x35224a,barrel:0x452e5e,tread:0x140c20,accent:0xa066ff} },
-  { name:'BÁ VƯƠNG',   hp:3400, scale:3.8, pal:{hull:0x3a2410,turret:0x4a3018,barrel:0x5e3e20,tread:0x18100a,accent:0xffae5c} },
+  { id:'bull',     name:'MÃNH NGƯU',  hp:1300, scale:3.0, pal:{hull:0x5a2a22,turret:0x6a3028,barrel:0x7a3a30,tread:0x2a1410,accent:0xff5028} },
+  { id:'tempest',  name:'PHONG BÃO',  hp:1700, scale:3.0, pal:{hull:0x243a52,turret:0x2c4762,barrel:0x365a7a,tread:0x101c2a,accent:0x4fd1ff} },
+  { id:'goliath',  name:'CỰ THẦN',    hp:2400, scale:3.8, pal:{hull:0x3a3a44,turret:0x46464f,barrel:0x55555f,tread:0x18181c,accent:0xb0b0c0} },
+  { id:'reaper',   name:'TỬ THẦN',    hp:2600, scale:3.0, pal:{hull:0x2a1a3a,turret:0x35224a,barrel:0x452e5e,tread:0x140c20,accent:0xa066ff} },
+  { id:'overlord', name:'BÁ VƯƠNG',   hp:3600, scale:3.8, pal:{hull:0x3a2410,turret:0x4a3018,barrel:0x5e3e20,tread:0x18100a,accent:0xffae5c} },
 ];
 function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 let boss=null;
@@ -815,10 +815,11 @@ function startBoss(now){
   const hornR=hornL.clone(); hornR.position.x=0.7; hornR.rotation.z=-0.3; mesh.userData.turret.add(hornR);
   scene.add(mesh);
   boss = {
-    mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle, def,
+    mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle, def, id:def.id,
     pos:new THREE.Vector3(0,0,-ARENA*0.5), vel:new THREE.Vector3(),
     hp:def.hp*(1+(S.stage-1)*0.22), maxHp:0, r:3.2*def.scale/3, alive:true,
     facing:0, aim:0, atkAt:now+2, mode:'idle', telUntil:0, chargeUntil:0, chargeDir:new THREE.Vector3(), ramAt:0,
+    spiralAng:0, spiralAt:0, laserTelUntil:0, laserFireUntil:0, laserAng:0, summonAt:now+5, blinkAt:now+6,
   };
   boss.maxHp = boss.hp;
   const bb=document.getElementById('bossbar'); bb.style.display='block';
@@ -837,44 +838,116 @@ function bossSpread(now, n, spd){
     spawnBullet(_v.x,_v.z,a,{owner:'e',dmg:14,speed:spd,color:0xff6030,r:0.5,life:3.2,scale:1.4}); }
   sfx('enemyShoot');
 }
+// ----- boss attack toolkit (shared) -----
+const mines=[];
+function bossMine(x,z){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.7,12,10), new THREE.MeshStandardMaterial({color:0x802018,emissive:0xff3020,emissiveIntensity:0.6,roughness:0.5}));
+  m.position.set(x,0.7,z); scene.add(m);
+  mines.push({mesh:m,x,z,armAt:performance.now()/1000+0.6, life:9});
+}
+function updateMines(dt, now){
+  const p=S.player;
+  for(let i=mines.length-1;i>=0;i--){ const mn=mines[i]; mn.life-=dt;
+    mn.mesh.material.emissiveIntensity = 0.4 + Math.sin(now*8)*0.3;
+    if(now>mn.armAt && (p.pos.x-mn.x)**2+(p.pos.z-mn.z)**2 < 9){ enemyGroundStrike(mn.x,mn.z,4.5,26,now); scene.remove(mn.mesh); mines.splice(i,1); continue; }
+    if(mn.life<=0){ scene.remove(mn.mesh); mines.splice(i,1); }
+  }
+}
+function clearMines(){ for(const mn of mines){ scene.remove(mn.mesh); } mines.length=0; }
+// laser beam (reaper) — a thin box; telegraph then fire
+let laserMesh=null;
+function getLaser(){ if(!laserMesh){ laserMesh=new THREE.Mesh(new THREE.BoxGeometry(1,0.4,90),
+  new THREE.MeshBasicMaterial({color:0xff4060,transparent:true,opacity:0,depthWrite:false})); laserMesh.position.y=1.2; scene.add(laserMesh);} return laserMesh; }
+function bossSummon(type, n){
+  for(let i=0;i<n;i++){ const a=Math.random()*6.28, r=6;
+    spawnEnemy(type, boss.pos.x+Math.cos(a)*r, boss.pos.z+Math.sin(a)*r); }
+}
+function bossMissiles(now, n){
+  boss.muzzle.getWorldPosition(_v);
+  for(let i=0;i<n;i++){ const a=boss.aim+(i-(n-1)/2)*0.3;
+    spawnBullet(_v.x,_v.z,a,{owner:'e',dmg:12,speed:30,color:0xffae5c,r:0.5,life:3.4,homing:2.2,scale:1.3}); }
+  sfx('enemyShoot');
+}
+
 function updateBoss(dt, now){
   if(!boss || !boss.alive) return;
   const p=S.player;
   const phase = boss.hp/boss.maxHp < 0.5 ? 2 : 1;
   boss.aim = Math.atan2(p.pos.x-boss.pos.x, p.pos.z-boss.pos.z);
-  // telegraph (winding up a charge): hold still, pulse a warning ring
-  if(now < boss.telUntil){
-    if(Math.random()<0.4) ringPulse(boss.pos, 0xff3020, 5);
-    boss.vel.multiplyScalar(0.8);
-  } else if(boss.pendingCharge){
-    boss.pendingCharge=false; boss.chargeDir.set(Math.sin(boss.aim),0,Math.cos(boss.aim));
-    boss.chargeUntil = now + 0.8; sfx('hurt');
-  }
+  const lim=ARENA-4, laser=getLaser();
+  // ---- LASER (reaper / overlord): telegraph then fire a sweeping beam ----
+  if(now < boss.laserTelUntil){
+    boss.laserAng += dt*0.7; laser.visible=true; laser.position.set(boss.pos.x,1.2,boss.pos.z);
+    laser.rotation.y=boss.laserAng; laser.scale.set(0.35,1,1); laser.material.opacity=0.25+Math.sin(now*22)*0.15;
+    boss.vel.multiplyScalar(0.85);
+  } else if(now < boss.laserFireUntil){
+    laser.visible=true; laser.position.set(boss.pos.x,1.2,boss.pos.z); laser.rotation.y=boss.laserAng;
+    laser.scale.set(2.4,1,1); laser.material.opacity=0.92;
+    const dx=p.pos.x-boss.pos.x, dz=p.pos.z-boss.pos.z, fx=Math.sin(boss.laserAng), fz=Math.cos(boss.laserAng);
+    if(dx*fx+dz*fz>0 && Math.abs(-fz*dx+fx*dz)<2.4 && now>boss.ramAt){ damagePlayer(26, now); boss.ramAt=now+0.35; }
+    boss.vel.multiplyScalar(0.9);
+  } else laser.visible=false;
+  const lasering = now < boss.laserFireUntil;
+  // ---- CHARGE (bull / overlord) ----
+  if(now < boss.telUntil){ if(Math.random()<0.4) ringPulse(boss.pos,0xff3020,5); boss.vel.multiplyScalar(0.8); }
+  else if(boss.pendingCharge){ boss.pendingCharge=false; boss.chargeDir.set(Math.sin(boss.aim),0,Math.cos(boss.aim)); boss.chargeUntil=now+0.8; sfx('hurt'); }
   if(now < boss.chargeUntil){
-    const cs = phase===2?52:42;
-    boss.pos.addScaledVector(boss.chargeDir, cs*dt);
-    if(Math.random()<0.6) burst(boss.pos, 0xff5028, 2, 5, {y:1.5});
-    if(p.pos.distanceTo(boss.pos) < boss.r+PLAYER.radius+0.5 && now>boss.ramAt){ damagePlayer(34, now); boss.ramAt=now+0.6; }
-  } else if(now >= boss.telUntil){
-    // normal: approach & strafe; timed attacks
+    const cs=phase===2?52:42; boss.pos.addScaledVector(boss.chargeDir, cs*dt);
+    if(Math.random()<0.6) burst(boss.pos,0xff5028,2,5,{y:1.5});
+    if(p.pos.distanceTo(boss.pos)<boss.r+PLAYER.radius+0.5 && now>boss.ramAt){ damagePlayer(34,now); boss.ramAt=now+0.6; }
+  } else if(!lasering && now>=boss.telUntil){
+    // movement: approach / strafe (goliath is heavier/slower)
+    const slowB = boss.id==='goliath'?0.6:1;
     const to=new THREE.Vector3().subVectors(p.pos,boss.pos); const d=to.length()||1; to.divideScalar(d);
-    const tang = (d>26? to.clone() : new THREE.Vector3(-to.z,0,to.x)).multiplyScalar(d>26?12:9);
-    boss.vel.lerp(tang, Math.min(1,dt*1.5));
-    boss.pos.addScaledVector(boss.vel, dt);
-    if(now > boss.atkAt){
-      const r=Math.random();
-      if(r < (phase===2?0.5:0.6)){ boss.telUntil=now+0.7; boss.pendingCharge=true; }   // charge
-      else { bossSpread(now, phase===2?9:3, 30); }                                      // spread / radial
-      boss.atkAt = now + (phase===2?1.8:2.6);
-    }
+    const tang=(d>26? to.clone(): new THREE.Vector3(-to.z,0,to.x)).multiplyScalar((d>26?12:9)*slowB);
+    boss.vel.lerp(tang, Math.min(1,dt*1.5)); boss.pos.addScaledVector(boss.vel, dt);
+    // tempest: continuous spiral fire
+    if(boss.id==='tempest' && now>boss.spiralAt){ boss.spiralAng+=0.5;
+      spawnBullet(boss.pos.x,boss.pos.z,boss.spiralAng,{owner:'e',dmg:7,speed:20,color:0x9fe0ff,r:0.4,life:4.2}); boss.spiralAt=now+0.1; }
+    if(now>boss.atkAt) bossAttack(now, phase);
   }
-  // clamp + face + apply transforms
-  const lim=ARENA-4; boss.pos.x=Math.max(-lim,Math.min(lim,boss.pos.x)); boss.pos.z=Math.max(-lim,Math.min(lim,boss.pos.z));
+  // clamp + face + transforms
+  boss.pos.x=Math.max(-lim,Math.min(lim,boss.pos.x)); boss.pos.z=Math.max(-lim,Math.min(lim,boss.pos.z));
   const sp=Math.hypot(boss.vel.x,boss.vel.z);
-  const wf = (now<boss.chargeUntil) ? Math.atan2(boss.chargeDir.x,boss.chargeDir.z) : (sp>0.5?Math.atan2(boss.vel.x,boss.vel.z):boss.facing);
+  const wf=(now<boss.chargeUntil)?Math.atan2(boss.chargeDir.x,boss.chargeDir.z):(sp>0.5?Math.atan2(boss.vel.x,boss.vel.z):boss.facing);
   let df=wrapAngle(wf-boss.facing); boss.facing+=df*Math.min(1,dt*5);
   boss.mesh.position.set(boss.pos.x,0,boss.pos.z); boss.mesh.rotation.y=boss.facing;
   boss.turret.rotation.y=wrapAngle(boss.aim-boss.facing);
+}
+function groundPound(now){
+  const x=boss.pos.x, z=boss.pos.z; ringPulse({x,z},0xffffff,8); setTimeout(()=>ringPulse({x,z},0xffffff,8),260);
+  setTimeout(()=>{ if(S.mode!=='playing') return; S.shake=2; ringPulse({x,z},0xff5028,14); bigExplode({x,z},0xb0b0c0,2.2);
+    const p=S.player, n=performance.now()/1000; if(n>=p.invincibleUntil && (p.pos.x-x)**2+(p.pos.z-z)**2 < 121) damagePlayer(30,n); }, 600);
+}
+function bossAttack(now, phase){
+  const id=boss.id;
+  if(id==='bull'){
+    if(Math.random()<(phase===2?0.5:0.6)){ boss.telUntil=now+0.7; boss.pendingCharge=true; } else bossSpread(now, phase===2?9:3, 30);
+    boss.atkAt=now+(phase===2?1.8:2.6);
+  } else if(id==='tempest'){
+    const r=Math.random();
+    if(r<0.5){ bossMissiles(now, phase===2?5:3); boss.atkAt=now+(phase===2?2.0:2.8); }
+    else if(r<0.8){ bossSpread(now, phase===2?12:8, 28); boss.atkAt=now+1.6; }
+    else { bossSummon('scout', phase===2?3:2); boss.atkAt=now+3.5; }
+  } else if(id==='goliath'){
+    const r=Math.random();
+    if(r<0.45){ bossSpread(now, phase===2?16:12, 24); boss.atkAt=now+(phase===2?1.6:2.2); }
+    else if(r<0.75){ groundPound(now); boss.atkAt=now+2.6; }
+    else { for(let i=0;i<(phase===2?5:3);i++){ const a=Math.random()*6.28,rr=4+Math.random()*11; bossMine(boss.pos.x+Math.cos(a)*rr, boss.pos.z+Math.sin(a)*rr); } boss.atkAt=now+3; }
+  } else if(id==='reaper'){
+    const r=Math.random();
+    if(r<0.5){ boss.laserTelUntil=now+0.9; boss.laserFireUntil=now+0.9+0.5; boss.laserAng=boss.aim; boss.atkAt=now+2.6; }
+    else if(r<0.8){ if(now>boss.blinkAt){ const a=Math.random()*6.28,rr=18; boss.pos.set(S.player.pos.x+Math.cos(a)*rr,0,S.player.pos.z+Math.sin(a)*rr); bigExplode(boss.pos,0xa066ff,1.4); boss.blinkAt=now+3.5; } bossSpread(now, phase===2?10:6, 30); boss.atkAt=now+1.8; }
+    else { bossSummon('scout', 3); boss.atkAt=now+3; }
+  } else { // overlord — uses everything; ramps in phase 2
+    const r=Math.random();
+    if(r<0.22){ boss.telUntil=now+0.6; boss.pendingCharge=true; boss.atkAt=now+2; }
+    else if(r<0.42){ bossSpread(now, phase===2?18:14, 26); boss.atkAt=now+(phase===2?1.3:1.8); }
+    else if(r<0.6){ bossMissiles(now, phase===2?6:4); boss.atkAt=now+2.2; }
+    else if(r<0.76){ boss.laserTelUntil=now+0.8; boss.laserFireUntil=now+0.8+0.55; boss.laserAng=boss.aim; boss.atkAt=now+2.4; }
+    else if(r<0.9){ for(let i=0;i<4;i++){ const a=Math.random()*6.28,rr=5+Math.random()*12; bossMine(boss.pos.x+Math.cos(a)*rr, boss.pos.z+Math.sin(a)*rr); } boss.atkAt=now+2.6; }
+    else { bossSummon('bomber', 2); boss.atkAt=now+3; }
+  }
 }
 function killBoss(now){
   if(!boss) return; boss.alive=false;
@@ -885,6 +958,7 @@ function killBoss(now){
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
   showBanner('HẠ GỤC '+boss.def.name+'!', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
+  if(laserMesh) laserMesh.visible=false; clearMines();
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
@@ -1236,8 +1310,9 @@ function startGame(){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
-  enemies.length=0; clearPickups();
+  enemies.length=0; clearPickups(); clearMines();
   if(boss){ scene.remove(boss.mesh); boss=null; }
+  if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
   S.timeScale=1; S.awaitingUpgrade=false;
   core.maxHp=240; core.hp=240;
@@ -1375,6 +1450,7 @@ function loop(nowMs){
     updateBullets(gdt, now);
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
+    updateMines(gdt, now);
     updateCamera(dt);
     updateAbilityUI(now);
     // combo timeout

@@ -28,7 +28,7 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | **P5** | 6 vũ khí (đại bác/liên thanh/súng hoa/railgun/tên lửa dò/flak AoE) đổi bằng 1-6 hoặc cuộn/nút; 6 phép (tăng tốc/khiên/EMP/sửa chữa/không kích/ngưng đọng) cast E/nút + cooldown; power-up rơi (⭐💣⏱🛡❤️🔧) + nam châm hút + comeback-bias; weaponLvl nâng cấp | ✅ | `WEAPONS`, `SPELLS`, `POWERUPS`, `fireWeapon()`, `trySpell()`, `dropPowerup()` |
 | **P6** | Khung boss đa pha + Boss S1 **Mãnh Ngưu** (húc telegraph + quạt/đạn vòng, pha 2 khi <50% HP) + thanh máu boss + wave→boss (sau đợt 5) + slow-mo khi hạ + lên màn | ✅ | `BOSS_DEFS`, `startBoss/updateBoss/killBoss()`, `bossSpread()` |
 | **P7** | 5 biome (sa mạc/đô thị/băng/công xưởng/thành trì — đổi bg/fog/đất/đèn) + **màn nâng cấp roguelite (chọn 1/3 thẻ)** sau mỗi boss + 3 loại địch mới (mortar telegraph/shield chắn trước/bomber tự nổ) + wave theo màn + Victory + NG+ | ✅ | `BIOMES`, `applyBiome()`, `UPGRADES`, `openUpgrade/chooseUpgrade()`, `victory()`, mortar/shield/bomber trong `ENEMY_DEFS`/`updateEnemies` |
-| P8 | Boss S2–S5 + Victory + New Game+ | ⬜ | |
+| **P8** | 5 boss phân hoá: Mãnh Ngưu (húc), Phong Bão (xoáy ốc+tên lửa dò+triệu quân), Cự Thần (đạn vòng+dậm đất+mìn), Tử Thần (laser quét+dịch chuyển+triệu), Bá Vương (tổng hợp+cuồng nộ) + Victory + NG+ | ✅ | `bossAttack()`, `groundPound/bossMine/bossMissiles/bossSummon`, laser trong `updateBoss` |
 | P9 | HUD/menu hoàn chỉnh + mobile polish + cân bằng | ⬜ | |
 
 ### Điều khiển đã chạy (P1)
@@ -122,6 +122,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · P8:** 5 boss phân hoá hành vi (húc / xoáy ốc + tên lửa dò + triệu quân / đạn vòng + dậm đất shockwave + mìn / laser quét + dịch chuyển + triệu / tổng hợp cuồng nộ) + màn CHIẾN THẮNG + New Game+. Verify đủ 5 boss xuất hiện đúng thứ tự + victory.
 - **2026-05-31 · P7:** 5 biome đổi theo màn (đất/nền/fog/đèn) + **màn chọn nâng cấp roguelite (1/3 thẻ)** sau mỗi boss (11 nâng cấp: máu/sát thương/nhịp bắn/tốc độ/dash/hút máu/chí mạng/phép/mạng/căn cứ/vũ khí) + 3 địch mới (mortar lốp đạn telegraph, shield chắn đòn trước, bomber lao tự nổ) + Victory + New Game+. (Terrain gạch/thép/băng: hoãn — sẽ thêm ở polish nếu cần.)
 - **2026-05-31 · P6:** Khung boss đa pha + Boss S1 Mãnh Ngưu (húc có telegraph + bắn quạt/vòng, pha cuồng nộ <50% HP) + thanh máu, wave→boss sau đợt 5, slow-mo khi hạ, lên màn kế (boss scale theo màn; S2–S5 phân hoá ở P8).
 - **2026-05-31 · P5:** 6 vũ khí (cannon/auto/shotgun/railgun/missile-homing/flak-AoE) + đổi súng (1-6/cuộn/nút) + weaponLvl; 6 phép (overdrive/aegis/EMP/repair/airstrike/timewarp) + cooldown; power-up rơi có nam châm hút + ưu tiên hồi máu khi nguy. HUD vũ khí/phép.
