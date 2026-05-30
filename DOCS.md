@@ -2,7 +2,7 @@
 
 > Đọc file này là hiểu toàn bộ game + biết chỗ nào để sửa, **không cần scan lại `index.html`**. Mục tiêu: 1 file duy nhất [`index.html`](index.html), zero-build.
 >
-> ⚠️ **Trạng thái hiện tại: BẢN DỰNG KHỞI TẠO.** Mới có màn title + nền canvas động (placeholder). **Gameplay sẽ được chủ dự án mô tả sau** rồi mới implement. Khi thêm tính năng, cập nhật §0 + §14 bên dưới.
+> ⚠️ **Trạng thái: ĐANG IMPLEMENT theo kịch bản.** Kịch bản gameplay đầy đủ ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)** ("THIẾT GIÁP CHIẾN" — 3D twin-stick + wave + roguelite + boss, 5 màn). File này (`DOCS.md`) theo dõi **đã build tới đâu** (§0) + bản đồ code. Mỗi phase xong → cập nhật §0 + §14.
 
 ---
 
