@@ -243,7 +243,7 @@ const S = {
   player:null,
   keys:{}, aimPoint:new THREE.Vector3(), pointerActive:false, firing:false,
   shake:0, dpr:Math.min(devicePixelRatio||1, 2),
-  weapon:0, spell:0, enemySlowUntil:0, combo:0, comboUntil:0,
+  weapon:0, spell:0, enemySlowUntil:0, combo:0, comboUntil:0, timeScale:1,
 };
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -707,7 +707,11 @@ function edgeSpawnPoint(){
 }
 function updateWaves(dt, now){
   if(!WAVE.active){
-    if(now>WAVE.betweenUntil){ S.wave++; startWave(now); }
+    if(boss) return;                                   // boss fight in progress → no waves
+    if(now>WAVE.betweenUntil){
+      if(S.wave >= WAVE.perStage) startBoss(now);       // final wave done → summon the stage boss
+      else { S.wave++; startWave(now); }
+    }
     return;
   }
   // spawn from queue (stagger), cap concurrent
@@ -724,11 +728,100 @@ function updateWaves(dt, now){
   }
 }
 
-// ----------------------------- BOSS (framework; filled in P6) -----------------------------
+// ----------------------------- BOSS -----------------------------
+// Multi-phase, telegraphed bosses — one per stage (P8 differentiates S2-S5).
+const BOSS_DEFS = [
+  { name:'MÃNH NGƯU',  hp:1300, scale:3.0, pal:{hull:0x5a2a22,turret:0x6a3028,barrel:0x7a3a30,tread:0x2a1410,accent:0xff5028} },
+  { name:'PHONG BÃO',  hp:1700, scale:3.0, pal:{hull:0x243a52,turret:0x2c4762,barrel:0x365a7a,tread:0x101c2a,accent:0x4fd1ff} },
+  { name:'CỰ THẦN',    hp:2200, scale:3.6, pal:{hull:0x3a3a44,turret:0x46464f,barrel:0x55555f,tread:0x18181c,accent:0xb0b0c0} },
+  { name:'TỬ THẦN',    hp:2600, scale:3.0, pal:{hull:0x2a1a3a,turret:0x35224a,barrel:0x452e5e,tread:0x140c20,accent:0xa066ff} },
+  { name:'BÁ VƯƠNG',   hp:3400, scale:3.8, pal:{hull:0x3a2410,turret:0x4a3018,barrel:0x5e3e20,tread:0x18100a,accent:0xffae5c} },
+];
+function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 let boss=null;
-function damageBoss(dmg){ if(!boss||!boss.alive) return; boss.hp-=dmg; hitFlash(boss.mesh);
+function startBoss(now){
+  const def = bossForStage(S.stage);
+  const mesh = buildTank(def.pal); mesh.scale.setScalar(def.scale);
+  // bull horns
+  const hornMat=new THREE.MeshStandardMaterial({color:0xede0c0,roughness:0.5,metalness:0.2});
+  const hornL=new THREE.Mesh(new THREE.ConeGeometry(0.28,1.4,10),hornMat); hornL.position.set(-0.7,0.4,1.0); hornL.rotation.set(1.0,0,0.3); mesh.userData.turret.add(hornL);
+  const hornR=hornL.clone(); hornR.position.x=0.7; hornR.rotation.z=-0.3; mesh.userData.turret.add(hornR);
+  scene.add(mesh);
+  boss = {
+    mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle, def,
+    pos:new THREE.Vector3(0,0,-ARENA*0.5), vel:new THREE.Vector3(),
+    hp:def.hp*(1+(S.stage-1)*0.22), maxHp:0, r:3.2*def.scale/3, alive:true,
+    facing:0, aim:0, atkAt:now+2, mode:'idle', telUntil:0, chargeUntil:0, chargeDir:new THREE.Vector3(), ramAt:0,
+  };
+  boss.maxHp = boss.hp;
+  const bb=document.getElementById('bossbar'); bb.style.display='block';
+  document.getElementById('boss-name').textContent = def.name;
+  document.getElementById('boss-hp').style.width='100%';
+  showBanner('TƯỚNG: '+def.name, '#e0603a'); sfx('levelup');
+}
+function damageBoss(dmg){
+  if(!boss||!boss.alive) return; boss.hp-=dmg; hitFlash(boss.mesh);
   document.getElementById('boss-hp').style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
-  if(boss.hp<=0){ boss.hp=0; boss.alive=false; } }
+  if(boss.hp<=0){ boss.hp=0; killBoss(performance.now()/1000); }
+}
+function bossSpread(now, n, spd){
+  boss.muzzle.getWorldPosition(_v);
+  for(let i=0;i<n;i++){ const a = (n>3 ? (i/n*Math.PI*2) : boss.aim + (i-(n-1)/2)*0.35);
+    spawnBullet(_v.x,_v.z,a,{owner:'e',dmg:14,speed:spd,color:0xff6030,r:0.5,life:3.2,scale:1.4}); }
+  sfx('enemyShoot');
+}
+function updateBoss(dt, now){
+  if(!boss || !boss.alive) return;
+  const p=S.player;
+  const phase = boss.hp/boss.maxHp < 0.5 ? 2 : 1;
+  boss.aim = Math.atan2(p.pos.x-boss.pos.x, p.pos.z-boss.pos.z);
+  // telegraph (winding up a charge): hold still, pulse a warning ring
+  if(now < boss.telUntil){
+    if(Math.random()<0.4) ringPulse(boss.pos, 0xff3020, 5);
+    boss.vel.multiplyScalar(0.8);
+  } else if(boss.pendingCharge){
+    boss.pendingCharge=false; boss.chargeDir.set(Math.sin(boss.aim),0,Math.cos(boss.aim));
+    boss.chargeUntil = now + 0.8; sfx('hurt');
+  }
+  if(now < boss.chargeUntil){
+    const cs = phase===2?52:42;
+    boss.pos.addScaledVector(boss.chargeDir, cs*dt);
+    if(Math.random()<0.6) burst(boss.pos, 0xff5028, 2, 5, {y:1.5});
+    if(p.pos.distanceTo(boss.pos) < boss.r+PLAYER.radius+0.5 && now>boss.ramAt){ damagePlayer(34, now); boss.ramAt=now+0.6; }
+  } else if(now >= boss.telUntil){
+    // normal: approach & strafe; timed attacks
+    const to=new THREE.Vector3().subVectors(p.pos,boss.pos); const d=to.length()||1; to.divideScalar(d);
+    const tang = (d>26? to.clone() : new THREE.Vector3(-to.z,0,to.x)).multiplyScalar(d>26?12:9);
+    boss.vel.lerp(tang, Math.min(1,dt*1.5));
+    boss.pos.addScaledVector(boss.vel, dt);
+    if(now > boss.atkAt){
+      const r=Math.random();
+      if(r < (phase===2?0.5:0.6)){ boss.telUntil=now+0.7; boss.pendingCharge=true; }   // charge
+      else { bossSpread(now, phase===2?9:3, 30); }                                      // spread / radial
+      boss.atkAt = now + (phase===2?1.8:2.6);
+    }
+  }
+  // clamp + face + apply transforms
+  const lim=ARENA-4; boss.pos.x=Math.max(-lim,Math.min(lim,boss.pos.x)); boss.pos.z=Math.max(-lim,Math.min(lim,boss.pos.z));
+  const sp=Math.hypot(boss.vel.x,boss.vel.z);
+  const wf = (now<boss.chargeUntil) ? Math.atan2(boss.chargeDir.x,boss.chargeDir.z) : (sp>0.5?Math.atan2(boss.vel.x,boss.vel.z):boss.facing);
+  let df=wrapAngle(wf-boss.facing); boss.facing+=df*Math.min(1,dt*5);
+  boss.mesh.position.set(boss.pos.x,0,boss.pos.z); boss.mesh.rotation.y=boss.facing;
+  boss.turret.rotation.y=wrapAngle(boss.aim-boss.facing);
+}
+function killBoss(now){
+  if(!boss) return; boss.alive=false;
+  document.getElementById('bossbar').style.display='none';
+  S.timeScale=0.35;                                   // slow-mo
+  const pos=boss.pos.clone();
+  for(let k=0;k<6;k++) setTimeout(()=>{ bigExplode(new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6), 0xff7a3d, 2.2); }, k*130);
+  addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
+  showBanner('HẠ GỤC '+boss.def.name+'!', '#8cbf3f'); sfx('levelup');
+  const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
+  boss=null;
+  S.stage++; updateHUD();
+  WAVE.active=false; WAVE.betweenUntil=now+3.2; S.wave=0;    // → next stage waves
+}
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 function bigExplode(pos, color, scale=1.5){
@@ -1012,6 +1105,9 @@ function startGame(){
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
   enemies.length=0; clearPickups();
+  if(boss){ scene.remove(boss.mesh); boss=null; }
+  document.getElementById('bossbar').style.display='none';
+  S.timeScale=1;
   core.hp=core.maxHp;
   S.score=0; S.stage=1; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
@@ -1136,11 +1232,13 @@ function loop(nowMs){
   dt = Math.min(dt, 0.05);
 
   if(S.mode==='playing'){
-    updatePlayer(dt, now);
-    updateEnemies(dt, now);
-    updateBullets(dt, now);
-    updateWaves(dt, now);
-    updatePickups(dt, now);
+    const gdt = dt * S.timeScale;       // slow-mo on boss kill
+    updatePlayer(gdt, now);
+    updateEnemies(gdt, now);
+    updateBoss(gdt, now);
+    updateBullets(gdt, now);
+    updateWaves(dt, now);               // wave timers run real-time
+    updatePickups(gdt, now);
     updateCamera(dt);
     updateAbilityUI(now);
     // combo timeout
@@ -1148,6 +1246,7 @@ function loop(nowMs){
     if(bannerTimer>0 && now>bannerTimer && S.combo===0){ document.getElementById('combo').style.opacity='0'; bannerTimer=0; }
   }
   // always-on FX + core idle
+  S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now);
   updateRings(dt); updateFlashes(dt); updateParticles(dt);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
@@ -1179,6 +1278,7 @@ window._game = S;
 window._spawn = spawnEnemy;
 window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
 window._drop = dropPowerup;
+window._killBoss = ()=>{ if(boss) damageBoss(999999); };
 
 requestAnimationFrame(loop);
 </script>
