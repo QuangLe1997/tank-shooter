@@ -14,24 +14,26 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | Mục | Trạng thái | Ở đâu |
 |---|---|---|
 | Repo + GitHub Pages | ✅ | `main`/root → https://quangle1997.github.io/tank-shooter/ |
-| Single-file zero-build (canvas placeholder) | ✅ | `index.html` |
-| Màn title + nền canvas động (xe tăng chạy + lưới) | ✅ | IIFE cuối `index.html` (`frame()`, `drawTank()`) |
-| Tài liệu | ✅ | `DOCS.md` (file này) |
+| Single-file zero-build (Three.js CDN) | ✅ | `index.html` (`<script type="module">`) |
+| Kịch bản game đầy đủ | ✅ | `GAME_DESIGN.md` |
+| Tài liệu + luật dự án | ✅ | `DOCS.md`, `CLAUDE.md` |
 
-### Gameplay (chưa thiết kế — sẽ mô tả sau)
-| Tính năng (dự kiến) | Trạng thái | Ghi chú |
-|---|---|---|
-| Điều khiển xe tăng (di chuyển + xoay nòng) | ⬜ | bàn phím + chuột (desktop), joystick/nút (mobile) |
-| Bắn đạn / cơ chế va chạm | ⬜ | |
-| Kẻ địch / AI | ⬜ | |
-| Màn chơi / vật cản / địa hình | ⬜ | |
-| Điểm / mạng / level | ⬜ | |
-| HUD + menu + game-over | ⬜ | |
-| Âm thanh (synth, zero-asset) | ⬜ | tham khảo cách làm ở repo neon-serpent-3d |
-| Mobile controls + responsive | ⬜ | |
-| Lưu localStorage (best score…) | ⬜ | |
+### Tiến độ build (theo phase trong GAME_DESIGN §14)
+| Phase | Nội dung | Trạng thái | Ở đâu |
+|---|---|---|---|
+| **P1** | Engine + player tank (move/aim 360°/dash i-frame) + camera follow + twin-stick mobile + HUD skeleton | ✅ | `CONFIG/STATE/THREE SETUP/ARENA/PLAYER TANK/INPUT/UPDATE/MAIN LOOP` |
+| P2 | Bắn + đạn (pool) + va chạm + hit flash + damage numbers | ⬜ | |
+| P3 | Địch + wave + Core (căn cứ) + score/combo + chết/mạng | ⬜ | |
+| P4 | Juice (nổ/particle/shake/bloom) + audio (sfx + nhạc) | ⬜ | |
+| P5 | 6 vũ khí + 6 phép + power-up | ⬜ | |
+| P6 | Khung boss đa pha + Boss S1 (Mãnh Ngưu) | ⬜ | |
+| P7 | 5 biome + chuyển màn + upgrade pick (roguelite) + đủ loại địch | ⬜ | |
+| P8 | Boss S2–S5 + Victory + New Game+ | ⬜ | |
+| P9 | HUD/menu hoàn chỉnh + mobile polish + cân bằng | ⬜ | |
 
-> 👉 Khi chủ dự án mô tả gameplay, điền chi tiết vào các §4–§8 và đổi ⬜→🚧→✅.
+### Điều khiển đã chạy (P1)
+- Desktop: WASD/mũi tên di chuyển · chuột ngắm (raycast → mặt đất) · Space lướt (dash + i-frame, cooldown) · Esc/P pause.
+- Mobile: nửa trái = joystick di chuyển (origin động nơi chạm) · nửa phải = joystick ngắm twin-stick · nút 💨 Dash / 🪄 Phép · ⏸ pause. `body.touch` tự bật.
 
 ---
 
@@ -120,6 +122,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
-- **2026-05-31:** khởi tạo repo `tank-shooter` (public) + GitHub Pages + bản dựng title/canvas placeholder + tài liệu này. Chờ mô tả gameplay.
+- **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
+- **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-05-31 · nhánh `main` · trạng thái: khởi tạo
+> **Last updated:** 2026-05-31 · nhánh `main` · trạng thái: P1 xong, đang làm P2

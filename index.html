@@ -3,112 +3,523 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<title>TANK SHOOTER — Game Bắn Xe Tăng</title>
+<title>THIẾT GIÁP CHIẾN — Tank Shooter</title>
 <style>
   :root{
-    --bg:#0c1108; --ink:#eaf2dc; --muted:#8fa07a;
-    --green:#7fae3a; --amber:#e7b54a; --steel:#9bb0c0; --danger:#e0603a;
-    --panel:rgba(18,24,12,.82); --line:rgba(255,255,255,.10);
+    --bg:#0c1108; --ink:#eaf2dc; --muted:#93a37e;
+    --green:#8cbf3f; --amber:#e7b54a; --steel:#9bb0c0; --danger:#e0603a; --hp:#5fd06a;
+    --panel:rgba(16,22,12,.86); --line:rgba(255,255,255,.10);
     --font:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
   }
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);}
-  #bg{position:fixed;inset:0;display:block;z-index:0;}
-  .stage{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;gap:18px;padding:24px;
-    background:radial-gradient(120% 90% at 50% 38%,rgba(14,20,8,.30),rgba(6,9,4,.86));}
-  .title{font-size:clamp(34px,9vw,76px);font-weight:900;letter-spacing:5px;line-height:1.02;
-    background:linear-gradient(105deg,var(--green) 0%,var(--ink) 48%,var(--amber) 100%);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    filter:drop-shadow(0 4px 22px rgba(0,0,0,.6));}
-  .subtitle{font-size:clamp(11px,3vw,14px);letter-spacing:6px;color:var(--muted);text-transform:uppercase;}
-  .badge{margin-top:6px;display:inline-flex;align-items:center;gap:9px;font-size:12px;letter-spacing:3px;font-weight:700;
-    color:var(--amber);text-transform:uppercase;padding:9px 18px;border-radius:999px;
-    background:linear-gradient(100deg,rgba(127,174,58,.14),rgba(231,181,74,.14));
-    border:1px solid rgba(231,181,74,.4);box-shadow:0 6px 20px rgba(0,0,0,.4);}
-  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber);
-    animation:blink 1.4s ease-in-out infinite;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);
+    -webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior:none;}
+  #app,canvas{position:fixed;inset:0;touch-action:none;}
+  canvas{display:block;}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;}
+  .chip{position:absolute;background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));
+    border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(12px) saturate(140%);
+    box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);}
+  #topbar{top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;gap:0;padding:5px;}
+  #topbar .cell{padding:5px 16px;text-align:center;position:relative;}
+  #topbar .cell + .cell::after{content:'';position:absolute;left:0;top:9px;bottom:9px;width:1px;background:rgba(255,255,255,.12);}
+  #topbar .lbl{font-size:8px;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;font-weight:700;}
+  #topbar .val{font-size:19px;font-weight:800;line-height:1.1;}
+  #topbar .score .val{color:var(--amber);} #topbar .wave .val{color:var(--steel);} #topbar .stage .val{color:var(--green);}
+
+  /* health cluster bottom-left */
+  #hpwrap{left:max(14px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));padding:10px 13px;width:212px;}
+  #hpwrap .row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  #hpwrap .row:last-child{margin-bottom:0;}
+  .bar{flex:1;height:10px;border-radius:6px;background:rgba(0,0,0,.4);overflow:hidden;border:1px solid rgba(255,255,255,.1);}
+  .bar > i{display:block;height:100%;width:100%;border-radius:5px;transition:width .18s ease;}
+  .bar.hp > i{background:linear-gradient(90deg,#3fa84a,var(--hp));}
+  .bar.core > i{background:linear-gradient(90deg,#b07a2c,var(--amber));}
+  #hpwrap .ic{font-size:13px;width:16px;text-align:center;}
+  #lives{font-size:13px;font-weight:800;color:#ff8a9c;letter-spacing:1px;}
+
+  /* dash + spell indicators bottom-right (desktop) */
+  #abilities{right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:10px;}
+  .ability{width:54px;height:54px;border-radius:13px;background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));
+    border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    backdrop-filter:blur(10px);box-shadow:0 8px 22px rgba(0,0,0,.4);position:relative;overflow:hidden;}
+  .ability .ic{font-size:20px;line-height:1;}
+  .ability .k{font-size:8px;letter-spacing:1px;color:var(--muted);}
+  .ability .cool{position:absolute;inset:0;background:rgba(6,9,4,.74);transform-origin:bottom;transform:scaleY(0);}
+  .ability.ready{border-color:rgba(140,191,63,.5);}
+
+  /* ---------- Overlays ---------- */
+  .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:20px;padding:24px;transition:opacity .4s;
+    background:radial-gradient(120% 90% at 50% 40%,rgba(14,20,8,.42),rgba(5,8,4,.9));backdrop-filter:blur(3px);}
+  .overlay.hidden,.overlay.hidden *{pointer-events:none !important;}
+  .overlay.hidden{opacity:0;}
+  .title{font-size:clamp(36px,9vw,82px);font-weight:900;letter-spacing:5px;line-height:1;
+    background:linear-gradient(105deg,var(--green) 0%,var(--ink) 50%,var(--amber) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 22px rgba(0,0,0,.6));}
+  .subtitle{font-size:clamp(11px,3vw,14px);letter-spacing:6px;color:var(--muted);text-transform:uppercase;margin-top:-6px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px;max-width:440px;
+    box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);position:relative;overflow:hidden;}
+  .panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--green) 30%,var(--amber) 70%,transparent);opacity:.85;}
+  .btn{pointer-events:auto;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);
+    border-radius:13px;padding:15px 22px;font-family:var(--font);font-size:16px;font-weight:800;letter-spacing:2px;
+    transition:all .15s ease;text-align:center;}
+  .btn:hover{background:rgba(140,191,63,.16);border-color:rgba(140,191,63,.55);transform:translateY(-2px);}
+  .btn-primary{background:linear-gradient(100deg,rgba(140,191,63,.22),rgba(231,181,74,.22));border-color:rgba(140,191,63,.5);
+    color:var(--ink);font-size:18px;letter-spacing:3px;padding:17px 30px;animation:breathe 2.6s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 rgba(140,191,63,0);}50%{box-shadow:0 0 26px rgba(140,191,63,.3);}}
+  .help{font-size:12px;line-height:2;color:var(--muted);margin-top:4px;}
+  .help kbd{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:2px 7px;font-size:11px;color:var(--ink);}
+  .tap{margin-top:8px;font-size:12px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;animation:blink 1.6s ease-in-out infinite;}
   @keyframes blink{0%,100%{opacity:.4;}50%{opacity:1;}}
-  .hint{position:fixed;bottom:max(16px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;z-index:1;
-    font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+
+  /* ---------- Mobile twin-stick ---------- */
+  #touch{position:fixed;inset:0;z-index:12;display:none;pointer-events:none;}
+  body.touch #touch{display:block;}
+  .stick{position:absolute;width:120px;height:120px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .12s;
+    border:2px dashed rgba(255,255,255,.18);background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%);}
+  .stick.act{opacity:1;}
+  .stick .knob{position:absolute;left:50%;top:50%;width:54px;height:54px;border-radius:50%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle at 40% 35%,#cfe6a0,var(--green) 60%,#4d6b22 100%);box-shadow:0 4px 14px rgba(0,0,0,.5);}
+  .stick.aim .knob{background:radial-gradient(circle at 40% 35%,#ffe6b0,var(--amber) 60%,#8a5e12 100%);}
+  /* mobile action buttons */
+  #mbtns{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:calc(max(16px,env(safe-area-inset-bottom)) + 86px);
+    display:flex;flex-direction:column;gap:12px;pointer-events:none;}
+  .mbtn{pointer-events:auto;width:60px;height:60px;border-radius:50%;font-size:24px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,rgba(22,30,14,.85),rgba(12,18,8,.92));border:1px solid var(--line);color:var(--ink);
+    backdrop-filter:blur(10px);box-shadow:0 8px 22px rgba(0,0,0,.45);touch-action:none;position:relative;overflow:hidden;}
+  .mbtn:active{transform:scale(.94);}
+  .mbtn .cool{position:absolute;inset:0;background:rgba(6,9,4,.7);transform-origin:bottom;transform:scaleY(0);}
+  #mPause{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));
+    width:42px;height:42px;border-radius:11px;font-size:17px;background:linear-gradient(180deg,rgba(22,30,14,.85),rgba(12,18,8,.92));
+    border:1px solid var(--line);color:var(--ink);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);
+    pointer-events:auto;box-shadow:0 8px 22px rgba(0,0,0,.4);z-index:14;}
+
+  @media (max-width:560px){
+    #topbar .cell{padding:4px 11px;} #topbar .val{font-size:16px;}
+    #hpwrap{width:170px;padding:8px 10px;}
+    #abilities{display:none;}   /* mobile uses on-screen buttons instead */
+  }
 </style>
 </head>
 <body>
-<canvas id="bg"></canvas>
-<div class="stage">
-  <div class="title">TANK SHOOTER</div>
-  <div class="subtitle">Game Bắn Xe Tăng</div>
-  <div class="badge"><span class="dot"></span> Đang phát triển</div>
+<div id="app"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="topbar" class="chip">
+    <div class="cell score"><div class="lbl">Điểm</div><div class="val" id="ui-score">0</div></div>
+    <div class="cell stage"><div class="lbl">Màn</div><div class="val" id="ui-stage">1</div></div>
+    <div class="cell wave"><div class="lbl">Đợt</div><div class="val" id="ui-wave">1</div></div>
+  </div>
+  <div id="hpwrap" class="chip">
+    <div class="row"><span class="ic">❤️</span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
+    <div class="row"><span class="ic">🏛️</span><div class="bar core"><i id="ui-core"></i></div></div>
+  </div>
+  <div id="abilities">
+    <div class="ability ready" id="ab-dash"><span class="ic">💨</span><span class="k">SPACE</span><div class="cool" id="cool-dash"></div></div>
+    <div class="ability ready" id="ab-spell"><span class="ic">🪄</span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
+  </div>
 </div>
-<div class="hint">Bản dựng khởi tạo · sẽ cập nhật gameplay</div>
 
-<script>
+<!-- mobile controls -->
+<div id="touch">
+  <div id="mPause">⏸</div>
+  <div class="stick" id="stickL"><div class="knob"></div></div>
+  <div class="stick aim" id="stickR"><div class="knob"></div></div>
+  <div id="mbtns">
+    <div class="mbtn" id="mDash">💨</div>
+    <div class="mbtn" id="mSpell">🪄<div class="cool" id="cool-mspell"></div></div>
+  </div>
+</div>
+
+<!-- START / TITLE -->
+<div class="overlay" id="start">
+  <div class="title">THIẾT GIÁP CHIẾN</div>
+  <div class="subtitle">Tank Shooter · Steel Siege</div>
+  <div class="panel">
+    <div class="btn btn-primary" id="playBtn">VÀO TRẬN ▶</div>
+    <div class="help">
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> di chuyển · <b>chuột</b> ngắm · <b>giữ chuột</b> bắn<br>
+      <kbd>Space</kbd> lướt né · <kbd>E</kbd> phép · trên điện thoại: 2 cần điều khiển
+    </div>
+  </div>
+  <div class="tap">Chạm để bắt đầu</div>
+</div>
+
+<!-- PAUSE -->
+<div class="overlay hidden" id="pause">
+  <div class="title" style="font-size:clamp(30px,7vw,58px)">TẠM DỪNG</div>
+  <div class="panel">
+    <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">TIẾP TỤC ▶</div>
+    <div class="btn" id="restartBtn">CHƠI LẠI ↻</div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
 /* =========================================================================
-   TANK SHOOTER — bản dựng khởi tạo (placeholder)
-   Single-file, zero-build. Hiện chỉ là màn title + nền canvas động.
-   Gameplay sẽ được mô tả & implement sau (xem DOCS.md).
+   THIẾT GIÁP CHIẾN (Steel Siege) — Tank Shooter
+   PHASE 1: engine + player tank (move / 360° aim / dash) + twin-stick input.
+   Kịch bản: xem GAME_DESIGN.md. Build theo phase, mỗi phase 1 commit.
    ========================================================================= */
-(function(){
-  const cv = document.getElementById('bg');
-  const ctx = cv.getContext('2d');
-  let W, H, DPR;
-  function resize(){
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = cv.clientWidth = innerWidth; H = cv.clientHeight = innerHeight;
-    cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
-  }
-  addEventListener('resize', resize); resize();
 
-  // a little tank silhouette that rolls across the battlefield grid
-  const tank = { x: -80, y: 0, dir: 1, speed: 46 };
-  let last = performance.now();
+// ----------------------------- CONFIG -----------------------------
+const ARENA = 60;                       // half-extent of the square arena (world units)
+const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const PLAYER = {
+  accel: 130, maxSpeed: 26, friction: 9, radius: 1.5,
+  dashSpeed: 70, dashTime: 0.26, dashCd: 1.4, dashIframe: 0.32,
+  turnLerp: 14,
+};
+// biome palette for stage 1 (desert) — expanded in later phases
+const BIOME = { bg:0x1c160c, fog:0x2a2112, ground:0xb89a5e, grid:0x8a6f3c, accent:0xe7b54a, sky:0x3a3320 };
 
-  function drawGrid(t){
-    const cell = 46, off = (t*0.012) % cell;
-    ctx.strokeStyle = 'rgba(127,174,58,0.10)'; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(let x=-off; x<W; x+=cell){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
-    for(let y=-off; y<H; y+=cell){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
-    ctx.stroke();
-  }
-  function drawTank(x, y, dir){
-    ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1);
-    // body
-    ctx.fillStyle = '#5e7a2e';
-    ctx.fillRect(-26, -10, 52, 18);
-    // treads
-    ctx.fillStyle = '#2f3d18';
-    ctx.fillRect(-30, 6, 60, 8);
-    for(let i=-28;i<28;i+=8){ ctx.fillStyle='#1d260f'; ctx.fillRect(i,6,4,8); }
-    // turret
-    ctx.fillStyle = '#75933a';
-    ctx.fillRect(-12, -20, 24, 12);
-    // barrel
-    ctx.fillStyle = '#8aa64a';
-    ctx.fillRect(8, -16, 30, 5);
-    // glow muzzle
-    ctx.fillStyle = 'rgba(231,181,74,0.9)';
-    ctx.beginPath(); ctx.arc(40, -13.5, 3, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
+// ----------------------------- STATE -----------------------------
+const S = {
+  mode:'start',                 // start | playing | paused | gameover
+  score:0, stage:1, wave:1,
+  player:null,
+  keys:{}, aimPoint:new THREE.Vector3(), pointerActive:false, firing:false,
+  shake:0, dpr:Math.min(devicePixelRatio||1, 2),
+};
 
-  function frame(now){
-    const dt = Math.min(0.05, (now-last)/1000); last = now;
-    ctx.clearRect(0,0,W,H);
-    // vignette base
-    const g = ctx.createRadialGradient(W/2,H*0.45,0,W/2,H*0.45,Math.max(W,H)*0.7);
-    g.addColorStop(0,'rgba(20,28,12,0.0)'); g.addColorStop(1,'rgba(4,6,3,0.55)');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    drawGrid(now);
-    // roll the tank along the lower third
-    tank.y = H*0.74;
-    tank.x += tank.dir * tank.speed * dt;
-    if(tank.x > W+80){ tank.x = -80; tank.dir = 1; }
-    drawTank(tank.x, tank.y, tank.dir);
-    requestAnimationFrame(frame);
+// ----------------------------- THREE SETUP -----------------------------
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(S.dpr);
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(BIOME.bg);
+scene.fog = new THREE.FogExp2(BIOME.fog, 0.0075);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.4;
+
+const camera = new THREE.PerspectiveCamera(54, innerWidth/innerHeight, 0.1, 600);
+camera.position.set(0, 46, 34);
+camera.lookAt(0,0,0);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.7, 0.8);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// lights
+scene.add(new THREE.AmbientLight(0x4a4636, 0.7));
+const sun = new THREE.DirectionalLight(0xfff0d0, 1.5);
+sun.position.set(20, 40, 12); scene.add(sun);
+const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.55); scene.add(hemi);
+const muzzleLight = new THREE.PointLight(0xffd27a, 0, 18, 2); scene.add(muzzleLight);
+
+// ----------------------------- ARENA -----------------------------
+function gridTexture(){
+  const S2=1024, c=document.createElement('canvas'); c.width=c.height=S2; const x=c.getContext('2d');
+  x.fillStyle = '#'+BIOME.ground.toString(16).padStart(6,'0'); x.fillRect(0,0,S2,S2);
+  // subtle sand mottling
+  for(let i=0;i<2600;i++){ x.globalAlpha=0.03+Math.random()*0.05;
+    x.fillStyle = Math.random()<0.5 ? '#8a6f3c' : '#d8c089';
+    const r=2+Math.random()*6; x.beginPath(); x.arc(Math.random()*S2,Math.random()*S2,r,0,7); x.fill(); }
+  x.globalAlpha=1; x.strokeStyle='rgba(60,48,22,0.5)'; x.lineWidth=2;
+  const step=S2/12; for(let i=0;i<=12;i++){ x.beginPath(); x.moveTo(i*step,0); x.lineTo(i*step,S2); x.moveTo(0,i*step); x.lineTo(S2,i*step); x.stroke(); }
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,4); return t;
+}
+const arena = new THREE.Group(); scene.add(arena);
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(ARENA*2, ARENA*2),
+  new THREE.MeshStandardMaterial({ map:gridTexture(), roughness:0.96, metalness:0.0 })
+);
+ground.rotation.x = -Math.PI/2; arena.add(ground);
+// perimeter walls (sandbag-ish blocks)
+const wallMat = new THREE.MeshStandardMaterial({ color:0x6b5a36, roughness:0.9, metalness:0.05 });
+function wall(w,d,x,z){ const m=new THREE.Mesh(new RoundedBoxGeometry(w,3,d,2,0.4), wallMat); m.position.set(x,1.5,z); arena.add(m); }
+wall(ARENA*2+4, 3, 0, -ARENA); wall(ARENA*2+4, 3, 0, ARENA);
+wall(3, ARENA*2+4, -ARENA, 0); wall(3, ARENA*2+4, ARENA, 0);
+// a faint glowing boundary ring to read the play space
+const ring = new THREE.Mesh(new THREE.RingGeometry(ARENA*1.38, ARENA*1.42, 96),
+  new THREE.MeshBasicMaterial({ color:BIOME.accent, transparent:true, opacity:0.12, side:THREE.DoubleSide }));
+ring.rotation.x=-Math.PI/2; ring.position.y=0.05; arena.add(ring);
+
+// ----------------------------- PLAYER TANK -----------------------------
+function buildTank(opts={}){
+  const { hull=0x5e7a2e, turret=0x75933a, barrel=0x9bb04a, tread=0x2a3514, accent=0xe7b54a } = opts;
+  const g = new THREE.Group();
+  const matte = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.6, metalness:0.35 });
+  // treads
+  const treadMat = new THREE.MeshStandardMaterial({ color:tread, roughness:0.95, metalness:0.1 });
+  const tl = new THREE.Mesh(new RoundedBoxGeometry(0.8,0.8,3.4,2,0.25), treadMat); tl.position.set(-1.15,0.4,0);
+  const tr = tl.clone(); tr.position.x=1.15; g.add(tl,tr);
+  // hull
+  const hullM = new THREE.Mesh(new RoundedBoxGeometry(2.6,0.9,3.1,3,0.3), matte(hull)); hullM.position.y=0.95; g.add(hullM);
+  // turret group (rotates to aim)
+  const turretG = new THREE.Group(); turretG.position.y=1.45; g.add(turretG);
+  const turM = new THREE.Mesh(new RoundedBoxGeometry(1.7,0.7,1.9,3,0.3), matte(turret)); turretG.add(turM);
+  const cupola = new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.5,0.4,16), matte(accent)); cupola.position.set(0,0.5,-0.2); turretG.add(cupola);
+  const barrelM = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.2,2.6,14), matte(barrel));
+  barrelM.rotation.x=Math.PI/2; barrelM.position.set(0,0.05,1.5); turretG.add(barrelM);
+  const muzzle = new THREE.Object3D(); muzzle.position.set(0,0.05,2.9); turretG.add(muzzle);  // world muzzle anchor
+  g.userData.turret = turretG; g.userData.muzzle = muzzle; g.userData.hull = hullM;
+  return g;
+}
+function makePlayer(){
+  const mesh = buildTank();
+  scene.add(mesh);
+  return {
+    mesh, turret: mesh.userData.turret, muzzle: mesh.userData.muzzle,
+    pos: new THREE.Vector3(0, 0, ARENA*0.55), vel: new THREE.Vector3(),
+    facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI,
+    hp:100, maxHp:100, lives:3,
+    dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
+  };
+}
+
+// ----------------------------- INPUT -----------------------------
+addEventListener('keydown', e=>{
+  S.keys[e.key.toLowerCase()] = true;
+  if(e.key === ' ') { e.preventDefault(); tryDash(); }
+  if(e.key.toLowerCase() === 'e') trySpell();
+  if(e.key === 'Escape' || e.key.toLowerCase()==='p') togglePause();
+});
+addEventListener('keyup', e=>{ S.keys[e.key.toLowerCase()] = false; });
+
+// desktop aim: raycast mouse → ground plane
+const raycaster = new THREE.Raycaster();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+const ndc = new THREE.Vector2();
+function updateAimFromMouse(cx, cy){
+  ndc.x = (cx/innerWidth)*2 - 1; ndc.y = -(cy/innerHeight)*2 + 1;
+  raycaster.setFromCamera(ndc, camera);
+  const hit = new THREE.Vector3();
+  if(raycaster.ray.intersectPlane(groundPlane, hit)){ S.aimPoint.copy(hit); S.pointerActive = true; }
+}
+addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
+addEventListener('mousedown', e=>{ if(MOBILE) return; if(e.button===0) S.firing=true; if(e.button===2) trySpell(); });
+addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
+addEventListener('contextmenu', e=>e.preventDefault());
+addEventListener('wheel', ()=>{}, {passive:true});
+
+// mobile twin-stick: left half = move, right half = aim+fire
+if(MOBILE) document.body.classList.add('touch');
+const stickL = document.getElementById('stickL'), stickR = document.getElementById('stickR');
+const move = { id:null, ox:0, oy:0, x:0, y:0 };
+const aimS = { id:null, ox:0, oy:0, x:0, y:0, active:false };
+const STICK_R = 56;
+function setStick(el, ox, oy, dx, dy){
+  el.style.left = ox+'px'; el.style.top = oy+'px'; el.classList.add('act');
+  const mag = Math.hypot(dx,dy)||1, cl = Math.min(mag, STICK_R);
+  const kx = Math.cos(Math.atan2(dy,dx))*cl, ky = Math.sin(Math.atan2(dy,dx))*cl;
+  el.querySelector('.knob').style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+}
+function clearStick(el){ el.classList.remove('act'); el.querySelector('.knob').style.transform='translate(-50%,-50%)'; }
+function onTouchStart(e){
+  for(const t of e.changedTouches){
+    const left = t.clientX < innerWidth*0.5;
+    if(left && move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); }
+    else if(!left && aimS.id===null){ aimS.id=t.identifier; aimS.ox=t.clientX; aimS.oy=t.clientY; aimS.x=aimS.y=0; aimS.active=true; setStick(stickR,t.clientX,t.clientY,0,0); }
   }
-  requestAnimationFrame(frame);
-})();
+  e.preventDefault();
+}
+function onTouchMove(e){
+  for(const t of e.changedTouches){
+    if(t.identifier===move.id){ move.x=t.clientX-move.ox; move.y=t.clientY-move.oy; setStick(stickL,move.ox,move.oy,move.x,move.y); }
+    else if(t.identifier===aimS.id){ aimS.x=t.clientX-aimS.ox; aimS.y=t.clientY-aimS.oy; setStick(stickR,aimS.ox,aimS.oy,aimS.x,aimS.y);
+      if(Math.hypot(aimS.x,aimS.y) > 12){ aimS.active=true; } }
+  }
+  if(e.cancelable) e.preventDefault();
+}
+function onTouchEnd(e){
+  for(const t of e.changedTouches){
+    if(t.identifier===move.id){ move.id=null; move.x=move.y=0; clearStick(stickL); }
+    else if(t.identifier===aimS.id){ aimS.id=null; aimS.x=aimS.y=0; aimS.active=false; clearStick(stickR); }
+  }
+}
+const touchEl = document.getElementById('touch');
+touchEl.addEventListener('touchstart', onTouchStart, {passive:false});
+touchEl.addEventListener('touchmove', onTouchMove, {passive:false});
+touchEl.addEventListener('touchend', onTouchEnd);
+touchEl.addEventListener('touchcancel', onTouchEnd);
+// mobile buttons
+const armBtn=(id,fn)=>{ const el=document.getElementById(id); if(!el) return;
+  el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fn();},{passive:false}); };
+armBtn('mDash', tryDash); armBtn('mSpell', trySpell);
+document.getElementById('mPause').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
+
+// ----------------------------- ABILITIES (stubs filled in later phases) -----------------------------
+function tryDash(){
+  if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
+  if(now < p.dashCdUntil) return;
+  // dash along current move intent, else along facing
+  const dir = getMoveDir();
+  if(dir.lengthSq()<0.01){ dir.set(Math.sin(p.facing),0,Math.cos(p.facing)); }
+  p.dashDir.copy(dir).normalize();
+  p.dashUntil = now + PLAYER.dashTime;
+  p.dashCdUntil = now + PLAYER.dashCd;
+  p.invincibleUntil = now + PLAYER.dashIframe;
+}
+function trySpell(){ /* Phase 5 */ }
+
+// ----------------------------- GAME FLOW -----------------------------
+function startGame(){
+  S.player = S.player || makePlayer();
+  const p=S.player;
+  p.pos.set(0,0,ARENA*0.55); p.vel.set(0,0,0); p.hp=p.maxHp; p.lives=3;
+  p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0;
+  S.score=0; S.stage=1; S.wave=1; S.firing=false;
+  S.mode='playing';
+  hide('start'); hide('pause');
+  updateHUD();
+}
+function togglePause(){
+  if(S.mode==='playing'){ S.mode='paused'; show('pause'); }
+  else if(S.mode==='paused'){ S.mode='playing'; hide('pause'); }
+}
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+
+document.getElementById('playBtn').addEventListener('click', startGame);
+document.getElementById('playBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
+document.getElementById('resumeBtn').onclick = togglePause;
+document.getElementById('restartBtn').onclick = startGame;
+
+// ----------------------------- HELPERS -----------------------------
+function getMoveDir(){
+  const d = new THREE.Vector3();
+  if(MOBILE){
+    if(move.id!==null){ d.set(move.x, 0, move.y); if(d.length()>STICK_R) d.setLength(STICK_R); d.divideScalar(STICK_R); }
+  } else {
+    if(S.keys['w']||S.keys['arrowup']) d.z-=1;
+    if(S.keys['s']||S.keys['arrowdown']) d.z+=1;
+    if(S.keys['a']||S.keys['arrowleft']) d.x-=1;
+    if(S.keys['d']||S.keys['arrowright']) d.x+=1;
+    if(d.lengthSq()>1) d.normalize();
+  }
+  return d;
+}
+function updateHUD(){
+  document.getElementById('ui-score').textContent = S.score.toLocaleString();
+  document.getElementById('ui-stage').textContent = S.stage;
+  document.getElementById('ui-wave').textContent = S.wave;
+  const p=S.player; if(p){
+    document.getElementById('ui-hp').style.width = Math.max(0,p.hp/p.maxHp*100)+'%';
+    document.getElementById('lives').textContent = '×'+p.lives;
+    document.getElementById('ui-core').style.width = '100%';
+  }
+}
+
+// ----------------------------- UPDATE -----------------------------
+function updatePlayer(dt, now){
+  const p = S.player; if(!p) return;
+  // aim
+  if(MOBILE){
+    if(aimS.active && (Math.abs(aimS.x)+Math.abs(aimS.y))>6){ p.aim = Math.atan2(aimS.x, aimS.y); S.firing=true; }
+    else S.firing=false;
+  } else {
+    if(S.pointerActive){ p.aim = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
+  }
+  // smooth the aim angle a touch (avoids jitter); turret yaw applied after hull below
+  const da = wrapAngle(p.aim - p.aimSmoothed);
+  p.aimSmoothed = wrapAngle(p.aimSmoothed + da * Math.min(1, dt*PLAYER.turnLerp));
+
+  // movement
+  const dashing = now < p.dashUntil;
+  if(dashing){
+    p.vel.copy(p.dashDir).multiplyScalar(PLAYER.dashSpeed);
+  } else {
+    const dir = getMoveDir();
+    p.vel.x += dir.x * PLAYER.accel * dt;
+    p.vel.z += dir.z * PLAYER.accel * dt;
+    // friction
+    const fr = Math.max(0, 1 - PLAYER.friction*dt);
+    p.vel.x *= fr; p.vel.z *= fr;
+    const sp = Math.hypot(p.vel.x,p.vel.z);
+    if(sp > PLAYER.maxSpeed){ p.vel.x = p.vel.x/sp*PLAYER.maxSpeed; p.vel.z = p.vel.z/sp*PLAYER.maxSpeed; }
+  }
+  p.pos.addScaledVector(p.vel, dt);
+  // clamp to arena
+  const lim = ARENA - 3;
+  p.pos.x = Math.max(-lim, Math.min(lim, p.pos.x));
+  p.pos.z = Math.max(-lim, Math.min(lim, p.pos.z));
+  // hull faces travel direction (smooth)
+  const sp = Math.hypot(p.vel.x, p.vel.z);
+  if(sp > 1.5){ const want = Math.atan2(p.vel.x, p.vel.z);
+    let df = want - p.facing; df = Math.atan2(Math.sin(df), Math.cos(df));
+    p.facing += df * Math.min(1, dt*8); }
+  // apply transforms: hull faces travel dir; turret is a child so subtract hull yaw to hit world aim
+  p.mesh.position.set(p.pos.x, 0, p.pos.z);
+  p.mesh.rotation.y = p.facing;
+  p.turret.rotation.y = wrapAngle(p.aimSmoothed - p.facing);
+}
+function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
+
+// camera follow with aim lookahead
+const camOff = new THREE.Vector3(0, 39, 25);
+const camTarget = new THREE.Vector3();
+function updateCamera(dt){
+  const p=S.player; if(!p) return;
+  const look = new THREE.Vector3(Math.sin(p.aim), 0, Math.cos(p.aim)).multiplyScalar(7);
+  camTarget.set(p.pos.x + look.x*0.5, 0, p.pos.z + look.z*0.5);
+  const want = camTarget.clone().add(camOff);
+  // shake
+  if(S.shake>0){ want.x += (Math.random()-0.5)*S.shake; want.z += (Math.random()-0.5)*S.shake; S.shake = Math.max(0, S.shake - dt*S.shake*4 - dt*2); }
+  camera.position.lerp(want, Math.min(1, dt*5));
+  camera.lookAt(camTarget.x, 0, camTarget.z);
+}
+
+// ----------------------------- MAIN LOOP -----------------------------
+let last = performance.now();
+function loop(nowMs){
+  requestAnimationFrame(loop);
+  const now = nowMs/1000;
+  let dt = (nowMs - last)/1000; last = nowMs;
+  dt = Math.min(dt, 0.05);
+
+  if(S.mode==='playing'){
+    updatePlayer(dt, now);
+    updateCamera(dt);
+    updateAbilityUI(now);
+  }
+  composer.render();
+}
+function updateAbilityUI(now){
+  const p=S.player; if(!p) return;
+  const dc = Math.max(0, (p.dashCdUntil - now)/PLAYER.dashCd);
+  const el = document.getElementById('cool-dash'); if(el) el.style.transform = `scaleY(${dc})`;
+  document.getElementById('ab-dash')?.classList.toggle('ready', dc<=0);
+}
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+
+// expose a tiny dev hook for headless testing (safe, tiny)
+window._game = S;
+
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
