@@ -22,8 +22,8 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | Phase | Nội dung | Trạng thái | Ở đâu |
 |---|---|---|---|
 | **P1** | Engine + player tank (move/aim 360°/dash i-frame) + camera follow + twin-stick mobile + HUD skeleton | ✅ | `CONFIG/STATE/THREE SETUP/ARENA/PLAYER TANK/INPUT/UPDATE/MAIN LOOP` |
-| P2 | Bắn + đạn (pool) + va chạm + hit flash + damage numbers | ⬜ | |
-| P3 | Địch + wave + Core (căn cứ) + score/combo + chết/mạng | ⬜ | |
+| **P2** | Bắn (Cannon) + đạn pool + va chạm + hit flash + damage/float text + muzzle light + shockwave ring | ✅ | `PROJECTILES`, `fireWeapon()`, `FX` |
+| **P3** | 3 loại địch (grunt/scout/gunner) + AI + wave spawner + Core (căn cứ) bảo vệ + score/combo + chết/mạng/respawn + game-over | ✅ | `ENEMIES`, `WAVES`, `CORE`, `SCORE/COMBO`, `PLAYER DAMAGE` |
 | P4 | Juice (nổ/particle/shake/bloom) + audio (sfx + nhạc) | ⬜ | |
 | P5 | 6 vũ khí + 6 phép + power-up | ⬜ | |
 | P6 | Khung boss đa pha + Boss S1 (Mãnh Ngưu) | ⬜ | |
@@ -122,6 +122,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · P2+P3:** Combat core — Cannon + đạn pool + va chạm; 3 loại địch (grunt/scout/gunner) + AI đuổi/bắn/đâm; wave spawner ramp; **Core (căn cứ)** phải bảo vệ; score + combo (×8); player nhận sát thương/chết/mất mạng/respawn + game-over (HẾT MẠNG / CĂN CỨ BỊ PHÁ). Game đã chơi được.
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
