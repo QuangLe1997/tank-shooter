@@ -24,7 +24,7 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | **P1** | Engine + player tank (move/aim 360°/dash i-frame) + camera follow + twin-stick mobile + HUD skeleton | ✅ | `CONFIG/STATE/THREE SETUP/ARENA/PLAYER TANK/INPUT/UPDATE/MAIN LOOP` |
 | **P2** | Bắn (Cannon) + đạn pool + va chạm + hit flash + damage/float text + muzzle light + shockwave ring | ✅ | `PROJECTILES`, `fireWeapon()`, `FX` |
 | **P3** | 3 loại địch (grunt/scout/gunner) + AI + wave spawner + Core (căn cứ) bảo vệ + score/combo + chết/mạng/respawn + game-over | ✅ | `ENEMIES`, `WAVES`, `CORE`, `SCORE/COMBO`, `PLAYER DAMAGE` |
-| P4 | Juice (nổ/particle/shake/bloom) + audio (sfx + nhạc) | ⬜ | |
+| **P4** | Juice: particle pool (sparks/smoke/debris) cho nổ/muzzle/hit/dash + screen shake + bloom; Audio: synth SFX (bắn/nổ/trúng/đau/core/wave/dash) + nhạc nền procedural 128 BPM (kick+bass+lead+hat), resume trong gesture | ✅ | `PARTICLES`, `AUDIO`, `bigExplode()`, `renderSong()` |
 | P5 | 6 vũ khí + 6 phép + power-up | ⬜ | |
 | P6 | Khung boss đa pha + Boss S1 (Mãnh Ngưu) | ⬜ | |
 | P7 | 5 biome + chuyển màn + upgrade pick (roguelite) + đủ loại địch | ⬜ | |

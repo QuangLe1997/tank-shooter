@@ -375,6 +375,127 @@ function updateFlashes(dt){
     if(o.userData._flash<=0){ o.material.emissive.setHex(0x000000); o.material.emissiveIntensity=0; } } });
 }
 
+// ----------------------------- PARTICLES (juice) -----------------------------
+function glowTex(){
+  const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  const g=x.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.3,'rgba(255,255,255,.6)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=g; x.fillRect(0,0,64,64); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const GLOW = glowTex();
+const parts=[]; const partPool=[];
+for(let i=0;i<460;i++){
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xffffff, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
+  m.visible=false; scene.add(m); partPool.push(m);
+}
+function spawnPart(x,y,z,vx,vy,vz,o={}){
+  const m=partPool.pop(); if(!m) return;
+  m.visible=true; m.material.color.setHex(o.color ?? 0xffd27a);
+  m.material.blending = o.smoke ? THREE.NormalBlending : THREE.AdditiveBlending;
+  m.position.set(x,y,z); const s=o.size||1; m.scale.set(s,s,1);
+  parts.push({m, x,y,z, vx,vy,vz, life:o.life||0.6, max:o.life||0.6, size:s, grow:o.grow||0,
+    grav:o.grav??-9, drag:o.drag??2.5, smoke:!!o.smoke, op:o.op??1});
+}
+function burst(pos, color, count, spread, o={}){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2, el=Math.random()*Math.PI*0.5, sp=spread*(0.4+Math.random()*0.6);
+    spawnPart(pos.x,(o.y??1.2),pos.z, Math.cos(a)*Math.cos(el)*sp, Math.sin(el)*sp+ (o.up||0), Math.sin(a)*Math.cos(el)*sp,
+      {color, size:o.size||1, life:o.life||0.6, grav:o.grav, drag:o.drag, smoke:o.smoke, op:o.op});
+  }
+}
+function updateParticles(dt){
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i]; p.life-=dt;
+    if(p.life<=0){ p.m.visible=false; partPool.push(p.m); parts.splice(i,1); continue; }
+    p.vx*=Math.max(0,1-p.drag*dt); p.vz*=Math.max(0,1-p.drag*dt); p.vy+=p.grav*dt;
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt;
+    if(p.y<0.1){ p.y=0.1; p.vy*=-0.3; p.vx*=0.6; p.vz*=0.6; }
+    const k=p.life/p.max; const s=p.size*(p.smoke ? (1.4-k*0.8) : k) + (p.grow*(1-k));
+    p.m.position.set(p.x,p.y,p.z); p.m.scale.set(s,s,1);
+    p.m.material.opacity = (p.smoke? 0.5 : 1) * p.op * (p.smoke? k : Math.min(1,k*1.8));
+  }
+}
+
+// ----------------------------- AUDIO (Web Audio synth) -----------------------------
+let actx=null, master=null, musicBus=null, musicSrc=null, songBuf=null, muted=false;
+function audio(){
+  if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)();
+    master=actx.createGain(); master.gain.value=muted?0:0.5; master.connect(actx.destination); }catch(e){} }
+  if(actx && actx.state==='suspended'){ try{ actx.resume(); }catch(e){} }
+  return actx;
+}
+function tone(freq, dur, {type='sine', vol=0.2, delay=0, slideTo=null, bus=null}={}){
+  const a=audio(); if(!a) return;
+  const t0=a.currentTime+delay; const o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t0);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1,slideTo), t0+dur);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g).connect(bus||master||a.destination); o.start(t0); o.stop(t0+dur+0.02);
+}
+function noise(dur, {vol=0.2, delay=0, hp=400, lp=8000}={}){
+  const a=audio(); if(!a) return; const t0=a.currentTime+delay;
+  const n=Math.floor(a.sampleRate*dur), buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+  const src=a.createBufferSource(); src.buffer=buf;
+  const f=a.createBiquadFilter(); f.type='bandpass'; f.frequency.value=(hp+lp)/2; f.Q.value=0.7;
+  const g=a.createGain(); g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  src.connect(f).connect(g).connect(master||a.destination); src.start(t0);
+}
+function sfx(name){
+  if(muted) return;
+  switch(name){
+    case 'shoot':   tone(420,0.08,{type:'square',vol:0.12,slideTo:160}); noise(0.06,{vol:0.08,hp:1200,lp:5000}); break;
+    case 'hit':     tone(880,0.05,{type:'triangle',vol:0.08}); break;
+    case 'enemyShoot': tone(240,0.09,{type:'sawtooth',vol:0.06,slideTo:120}); break;
+    case 'explode': noise(0.35,{vol:0.3,hp:120,lp:2200}); tone(90,0.3,{type:'sine',vol:0.25,slideTo:40}); break;
+    case 'bigexplode': noise(0.6,{vol:0.4,hp:80,lp:1800}); tone(70,0.5,{type:'sine',vol:0.32,slideTo:32}); break;
+    case 'hurt':    tone(200,0.18,{type:'square',vol:0.2,slideTo:80}); break;
+    case 'corehit': tone(150,0.14,{type:'sawtooth',vol:0.16,slideTo:70}); break;
+    case 'wave':    [523,659,784].forEach((f,i)=>tone(f,0.2,{type:'triangle',vol:0.14,delay:i*0.07})); break;
+    case 'dash':    tone(300,0.14,{type:'sine',vol:0.1,slideTo:760}); noise(0.1,{vol:0.06,hp:2000,lp:7000}); break;
+    case 'powerup': [659,988,1319].forEach((f,i)=>tone(f,0.18,{type:'triangle',vol:0.14,delay:i*0.05})); break;
+    case 'levelup': [523,659,784,1047,1319].forEach((f,i)=>tone(f,0.24,{type:'triangle',vol:0.15,delay:i*0.08})); break;
+    case 'spell':   tone(440,0.25,{type:'sine',vol:0.14,slideTo:1320}); break;
+    case 'click':   tone(660,0.07,{type:'square',vol:0.12}); break;
+  }
+}
+// procedural driving loop (kick + bass + lead), rendered once into a buffer
+function startMusic(){
+  const a=audio(); if(!a || musicSrc) return;
+  try{
+    if(!songBuf) songBuf = renderSong(a);
+    if(!musicBus){ musicBus=a.createGain(); musicBus.gain.value=0.5; musicBus.connect(master); }
+    musicSrc=a.createBufferSource(); musicSrc.buffer=songBuf; musicSrc.loop=true; musicSrc.connect(musicBus); musicSrc.start();
+  }catch(e){}
+}
+function renderSong(a){
+  const bpm=128, beat=60/bpm, bars=8, len=beat*4*bars, sr=a.sampleRate;
+  const buf=a.createBuffer(2, Math.floor(len*sr), sr);
+  const L=buf.getChannelData(0), R=buf.getChannelData(1);
+  const addOsc=(t0,dur,freq,vol,type)=>{ const n0=Math.floor(t0*sr), n1=Math.floor((t0+dur)*sr);
+    for(let i=n0;i<n1 && i<L.length;i++){ const tt=(i-n0)/sr, env=Math.min(1,tt*60)*Math.exp(-tt*5/dur);
+      let w; const ph=freq*tt*2*Math.PI;
+      w = type==='saw' ? (2*((freq*tt)%1)-1) : type==='sq' ? (Math.sin(ph)>0?1:-1) : Math.sin(ph);
+      const v=w*vol*env; L[i]+=v; R[i]+=v; } };
+  const addKick=(t0)=>{ const n0=Math.floor(t0*sr),dur=0.18,n1=Math.floor((t0+dur)*sr);
+    for(let i=n0;i<n1 && i<L.length;i++){ const tt=(i-n0)/sr, f=120*Math.exp(-tt*18)+45, env=Math.exp(-tt*8);
+      const v=Math.sin(f*tt*2*Math.PI)*0.5*env; L[i]+=v; R[i]+=v; } };
+  const addHat=(t0)=>{ const n0=Math.floor(t0*sr),dur=0.04,n1=Math.floor((t0+dur)*sr);
+    for(let i=n0;i<n1 && i<L.length;i++){ const tt=(i-n0)/sr, env=Math.exp(-tt*60); const v=(Math.random()*2-1)*0.12*env; L[i]+=v; R[i]+=v; } };
+  // A minor-ish driving bassline + lead motif
+  const bass=[55,55,82.4,55, 49,49,73.4,49];   // per bar root
+  const lead=[440,523,659,587, 523,440,392,440];
+  for(let bar=0;bar<bars;bar++){
+    const bt=bar*beat*4;
+    for(let b=0;b<4;b++){ addKick(bt+b*beat); addHat(bt+b*beat+beat*0.5);
+      addOsc(bt+b*beat, beat*0.9, bass[bar]* (b%2?1:1), 0.16, 'saw'); }
+    // lead every 2 bars
+    if(bar%1===0){ for(let s=0;s<4;s++) addOsc(bt+s*beat, beat*0.5, lead[(bar+s)%lead.length], 0.07, 'sq'); }
+  }
+  return buf;
+}
+
 // ----------------------------- PROJECTILES -----------------------------
 const bullets=[]; const bulletPool=[];
 const bulletGeo = new THREE.SphereGeometry(0.28, 10, 8);
@@ -409,7 +530,8 @@ function updateBullets(dt, now){
     let hit=false;
     if(b.owner==='p'){
       for(const e of enemies){ const dx=e.pos.x-b.x, dz=e.pos.z-b.z;
-        if(dx*dx+dz*dz < (b.r+e.r)**2){ damageEnemy(e, b.dmg); ringPulse(b.mesh.position, 0xffd27a, 1.6); hit=true;
+        if(dx*dx+dz*dz < (b.r+e.r)**2){ damageEnemy(e, b.dmg); ringPulse(b.mesh.position, 0xffd27a, 1.6);
+          burst(b.mesh.position, 0xffd27a, 4, 6, {life:0.2, size:0.8, grav:-4, drag:5}); hit=true;
           if(b.pierce>0){ b.pierce--; } else break; } }
       if(!hit && boss && boss.alive){ const dx=boss.pos.x-b.x, dz=boss.pos.z-b.z;
         if(dx*dx+dz*dz < (b.r+boss.r)**2){ damageBoss(b.dmg); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
@@ -441,6 +563,7 @@ function buildCore(){
 function damageCore(dmg){
   if(!core) return; core.hp-=dmg; if(core.flash<=0) core.flash=0.12;
   core.reactor.material.emissive.setHex(0xffffff);
+  sfx('corehit');
   updateHUD();
   if(core.hp<=0){ core.hp=0; bigExplode(core.pos, 0x6fe0ff, 3); gameOver('CĂN CỨ BỊ PHÁ HỦY'); }
 }
@@ -506,6 +629,8 @@ function updateEnemies(dt, now){
     if(def.canShoot && now>e.fireAt && d < def.range){
       e.muzzle.getWorldPosition(_v);
       spawnBullet(_v.x, _v.z, e.aim, {owner:'e', dmg:def.dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:2.4});
+      spawnPart(_v.x,1.4,_v.z, Math.sin(e.aim)*7,1,Math.cos(e.aim)*7, {color:0xff7a4a,size:1,life:0.1,grav:0,drag:7});
+      sfx('enemyShoot');
       if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
       else e.fireAt=now+def.fireCd;
     }
@@ -574,7 +699,7 @@ function updateWaves(dt, now){
   if(WAVE.spawnQueue.length===0 && enemies.length===0){
     WAVE.active=false; WAVE.betweenUntil = now + 2.2;
     addScore(200, new THREE.Vector3(0,2,0));
-    showBanner('DỌN SẠCH ĐỢT! +200', '#8cbf3f');
+    showBanner('DỌN SẠCH ĐỢT! +200', '#8cbf3f'); sfx('wave');
   }
 }
 
@@ -586,9 +711,13 @@ function damageBoss(dmg){ if(!boss||!boss.alive) return; boss.hp-=dmg; hitFlash(
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 function bigExplode(pos, color, scale=1.5){
-  ringPulse(pos, color, scale*3.4);
-  S.shake = Math.min(2.2, S.shake + scale*0.7);
-  muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3;
+  ringPulse(pos, color, scale*3.2);
+  burst(pos, color, Math.floor(14*scale), 11*scale, {life:0.5, size:1.4*scale, up:3});
+  burst(pos, 0xffe6a0, Math.floor(9*scale), 7*scale, {life:0.34, size:0.9*scale, up:4});
+  burst(pos, 0x201c14, Math.floor(5*scale), 4*scale, {life:0.95, size:2.6*scale, smoke:true, grav:-1.2, drag:1.4, up:2, op:0.55});
+  S.shake = Math.min(2.4, S.shake + scale*0.7);
+  muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
+  sfx(scale>=2 ? 'bigexplode' : 'explode');
 }
 
 // ----------------------------- SCORE / COMBO -----------------------------
@@ -609,6 +738,7 @@ function damagePlayer(dmg, now){
   const p=S.player; if(now < p.invincibleUntil) return;
   p.hp -= dmg;
   S.shake = Math.min(2, S.shake + 0.5);
+  sfx('hurt'); burst(p.pos, 0xff5040, 5, 6, {life:0.25, size:0.9});
   const v=document.getElementById('vignette'); v.style.opacity='1'; setTimeout(()=>v.style.opacity='0', 160);
   updateHUD();
   if(p.hp<=0) playerDie(now);
@@ -725,6 +855,8 @@ function tryDash(){
   p.dashUntil = now + PLAYER.dashTime;
   p.dashCdUntil = now + PLAYER.dashCd;
   p.invincibleUntil = now + PLAYER.dashIframe;
+  sfx('dash');
+  for(let i=0;i<6;i++) spawnPart(p.pos.x,0.6,p.pos.z, -p.dashDir.x*8+(Math.random()-0.5)*4, 1, -p.dashDir.z*8+(Math.random()-0.5)*4, {color:0xcfe6a0,size:1.1,life:0.3,grav:-2,drag:3,smoke:true,op:0.5});
 }
 function trySpell(){ /* Phase 5 */ }
 // Cannon (default weapon; more weapons in Phase 5)
@@ -734,7 +866,9 @@ function fireWeapon(now){
   p.muzzle.getWorldPosition(_v);
   spawnBullet(_v.x, _v.z, p.aimSmoothed, { owner:'p', dmg:24, speed:64, color:0xffe08a, r:0.5, life:2.0 });
   muzzleLight.position.set(_v.x, 1.6, _v.z); muzzleLight.color.setHex(0xffd27a); muzzleLight.intensity = 2.2;
+  spawnPart(_v.x,1.4,_v.z, Math.sin(p.aimSmoothed)*9, 1.5, Math.cos(p.aimSmoothed)*9, {color:0xffe08a, size:1.3, life:0.12, grav:0, drag:7});
   S.shake = Math.min(1, S.shake + 0.1);
+  sfx('shoot');
 }
 
 // ----------------------------- GAME FLOW -----------------------------
@@ -754,6 +888,7 @@ function startGame(){
   document.getElementById('combo').style.opacity='0';
   hide('start'); hide('pause'); hide('gameover');
   S.mode='playing';
+  audio(); startMusic(); sfx('click');
   updateHUD();
 }
 function togglePause(){
@@ -877,7 +1012,7 @@ function loop(nowMs){
   }
   // always-on FX + core idle
   updateCore(dt, now);
-  updateRings(dt); updateFlashes(dt);
+  updateRings(dt); updateFlashes(dt); updateParticles(dt);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   composer.render();
 }
