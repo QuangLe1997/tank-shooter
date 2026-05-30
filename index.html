@@ -52,6 +52,10 @@
   /* weapon chip bottom-center */
   #weaponchip{left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);
     padding:7px 16px;font-size:14px;font-weight:800;letter-spacing:1px;color:var(--ink);white-space:nowrap;}
+  /* mute button top-right */
+  #muteBtn{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:18px;
+    pointer-events:auto;cursor:pointer;}
 
   /* ---------- Overlays ---------- */
   .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -158,6 +162,7 @@
     <div class="ability ready" id="ab-spell"><span class="ic">🪄</span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
   </div>
   <div id="combo">COMBO ×2</div>
+  <div id="muteBtn" class="chip">🔊</div>
   <div id="weaponchip" class="chip">🔵 ĐẠI BÁC</div>
   <div id="bossbar"><div class="bn" id="boss-name">BOSS</div><div class="bar core"><i id="boss-hp"></i></div></div>
 </div>
@@ -520,6 +525,7 @@ function sfx(name){
   }
 }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
+function setMuted(m){ muted=m; if(master) master.gain.value = m?0:0.5; const b=document.getElementById('muteBtn'); if(b) b.textContent = m?'🔇':'🔊'; }
 function startMusic(){
   const a=audio(); if(!a || musicSrc) return;
   try{
@@ -1109,6 +1115,11 @@ const armBtn=(id,fn)=>{ const el=document.getElementById(id); if(!el) return;
   el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fn();},{passive:false}); };
 armBtn('mDash', tryDash); armBtn('mSpell', trySpell); armBtn('mWeapon', ()=>cycleWeapon(1));
 document.getElementById('mPause').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
+// mute toggle (desktop + mobile)
+const muteBtnEl=document.getElementById('muteBtn');
+const toggleMute=e=>{ if(e){e.preventDefault();e.stopPropagation();} audio(); setMuted(!muted); };
+muteBtnEl.addEventListener('click', toggleMute);
+muteBtnEl.addEventListener('touchstart', toggleMute, {passive:false});
 
 // ----------------------------- ABILITIES (stubs filled in later phases) -----------------------------
 function tryDash(){
@@ -1374,8 +1385,14 @@ function updatePlayer(dt, now){
   const p = S.player; if(!p) return;
   // aim
   if(MOBILE){
-    if(aimS.active && (Math.abs(aimS.x)+Math.abs(aimS.y))>6){ p.aim = Math.atan2(aimS.x, aimS.y); S.firing=true; }
-    else S.firing=false;
+    if(aimS.active && (Math.abs(aimS.x)+Math.abs(aimS.y))>6){
+      p.aim = Math.atan2(aimS.x, aimS.y); S.firing=true;
+      // auto-aim assist: nudge halfway toward the nearest enemy inside the aim cone
+      let best=null, bd=1e9;
+      for(const e of enemies){ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d=Math.hypot(dx,dz);
+        if(d>44) continue; const a=Math.atan2(dx,dz); if(Math.abs(wrapAngle(a-p.aim))<0.45 && d<bd){ bd=d; best=a; } }
+      if(best!=null) p.aim = wrapAngle(p.aim + wrapAngle(best-p.aim)*0.5);
+    } else S.firing=false;
   } else {
     if(S.pointerActive){ p.aim = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
   }
@@ -1463,7 +1480,12 @@ function loop(nowMs){
   updateRings(dt); updateFlashes(dt); updateParticles(dt);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   composer.render();
+  // adaptive quality: drop internal resolution one-way if frames get heavy
+  _fpsAcc+=dt; _fpsN++;
+  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0;
+    if(fps<45 && S.dpr>1){ S.dpr=Math.max(1,S.dpr-0.25); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); composer.setSize(innerWidth,innerHeight); } }
 }
+let _fpsAcc=0, _fpsN=0;
 function updateAbilityUI(now){
   const p=S.player; if(!p) return;
   const dc = Math.max(0, (p.dashCdUntil - now)/PLAYER.dashCd);
@@ -1485,13 +1507,8 @@ addEventListener('resize', ()=>{
 buildCore();
 S.player = makePlayer();
 
-// expose a tiny dev hook for headless testing (safe, tiny)
+// read-only diagnostics hook (no cheats)
 window._game = S;
-window._spawn = spawnEnemy;
-window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
-window._drop = dropPowerup;
-window._killBoss = ()=>{ if(boss) damageBoss(999999); };
-window._toBoss = ()=>{ WAVE.active=false; WAVE.spawnQueue.length=0; WAVE.betweenUntil=0; S.wave=WAVE.perStage; for(const e of enemies.slice()) removeEnemy(e); };
 
 requestAnimationFrame(loop);
 </script>
