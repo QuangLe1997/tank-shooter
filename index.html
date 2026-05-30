@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>TANK SHOOTER — Game Bắn Xe Tăng</title>
+<style>
+  :root{
+    --bg:#0c1108; --ink:#eaf2dc; --muted:#8fa07a;
+    --green:#7fae3a; --amber:#e7b54a; --steel:#9bb0c0; --danger:#e0603a;
+    --panel:rgba(18,24,12,.82); --line:rgba(255,255,255,.10);
+    --font:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);}
+  #bg{position:fixed;inset:0;display:block;z-index:0;}
+  .stage{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:18px;padding:24px;
+    background:radial-gradient(120% 90% at 50% 38%,rgba(14,20,8,.30),rgba(6,9,4,.86));}
+  .title{font-size:clamp(34px,9vw,76px);font-weight:900;letter-spacing:5px;line-height:1.02;
+    background:linear-gradient(105deg,var(--green) 0%,var(--ink) 48%,var(--amber) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 4px 22px rgba(0,0,0,.6));}
+  .subtitle{font-size:clamp(11px,3vw,14px);letter-spacing:6px;color:var(--muted);text-transform:uppercase;}
+  .badge{margin-top:6px;display:inline-flex;align-items:center;gap:9px;font-size:12px;letter-spacing:3px;font-weight:700;
+    color:var(--amber);text-transform:uppercase;padding:9px 18px;border-radius:999px;
+    background:linear-gradient(100deg,rgba(127,174,58,.14),rgba(231,181,74,.14));
+    border:1px solid rgba(231,181,74,.4);box-shadow:0 6px 20px rgba(0,0,0,.4);}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber);
+    animation:blink 1.4s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:.4;}50%{opacity:1;}}
+  .hint{position:fixed;bottom:max(16px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;z-index:1;
+    font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="stage">
+  <div class="title">TANK SHOOTER</div>
+  <div class="subtitle">Game Bắn Xe Tăng</div>
+  <div class="badge"><span class="dot"></span> Đang phát triển</div>
+</div>
+<div class="hint">Bản dựng khởi tạo · sẽ cập nhật gameplay</div>
+
+<script>
+/* =========================================================================
+   TANK SHOOTER — bản dựng khởi tạo (placeholder)
+   Single-file, zero-build. Hiện chỉ là màn title + nền canvas động.
+   Gameplay sẽ được mô tả & implement sau (xem DOCS.md).
+   ========================================================================= */
+(function(){
+  const cv = document.getElementById('bg');
+  const ctx = cv.getContext('2d');
+  let W, H, DPR;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth = innerWidth; H = cv.clientHeight = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener('resize', resize); resize();
+
+  // a little tank silhouette that rolls across the battlefield grid
+  const tank = { x: -80, y: 0, dir: 1, speed: 46 };
+  let last = performance.now();
+
+  function drawGrid(t){
+    const cell = 46, off = (t*0.012) % cell;
+    ctx.strokeStyle = 'rgba(127,174,58,0.10)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let x=-off; x<W; x+=cell){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+    for(let y=-off; y<H; y+=cell){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+    ctx.stroke();
+  }
+  function drawTank(x, y, dir){
+    ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1);
+    // body
+    ctx.fillStyle = '#5e7a2e';
+    ctx.fillRect(-26, -10, 52, 18);
+    // treads
+    ctx.fillStyle = '#2f3d18';
+    ctx.fillRect(-30, 6, 60, 8);
+    for(let i=-28;i<28;i+=8){ ctx.fillStyle='#1d260f'; ctx.fillRect(i,6,4,8); }
+    // turret
+    ctx.fillStyle = '#75933a';
+    ctx.fillRect(-12, -20, 24, 12);
+    // barrel
+    ctx.fillStyle = '#8aa64a';
+    ctx.fillRect(8, -16, 30, 5);
+    // glow muzzle
+    ctx.fillStyle = 'rgba(231,181,74,0.9)';
+    ctx.beginPath(); ctx.arc(40, -13.5, 3, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function frame(now){
+    const dt = Math.min(0.05, (now-last)/1000); last = now;
+    ctx.clearRect(0,0,W,H);
+    // vignette base
+    const g = ctx.createRadialGradient(W/2,H*0.45,0,W/2,H*0.45,Math.max(W,H)*0.7);
+    g.addColorStop(0,'rgba(20,28,12,0.0)'); g.addColorStop(1,'rgba(4,6,3,0.55)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    drawGrid(now);
+    // roll the tank along the lower third
+    tank.y = H*0.74;
+    tank.x += tank.dir * tank.speed * dt;
+    if(tank.x > W+80){ tank.x = -80; tank.dir = 1; }
+    drawTank(tank.x, tank.y, tank.dir);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

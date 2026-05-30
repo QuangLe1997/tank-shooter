@@ -1,0 +1,9 @@
+node_modules/
+.claude/
+*.log
+.DS_Store
+Thumbs.db
+_*.png
+._*
+.vscode/
+.idea/
