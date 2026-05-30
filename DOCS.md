@@ -25,7 +25,7 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | **P2** | Bắn (Cannon) + đạn pool + va chạm + hit flash + damage/float text + muzzle light + shockwave ring | ✅ | `PROJECTILES`, `fireWeapon()`, `FX` |
 | **P3** | 3 loại địch (grunt/scout/gunner) + AI + wave spawner + Core (căn cứ) bảo vệ + score/combo + chết/mạng/respawn + game-over | ✅ | `ENEMIES`, `WAVES`, `CORE`, `SCORE/COMBO`, `PLAYER DAMAGE` |
 | **P4** | Juice: particle pool (sparks/smoke/debris) cho nổ/muzzle/hit/dash + screen shake + bloom; Audio: synth SFX (bắn/nổ/trúng/đau/core/wave/dash) + nhạc nền procedural 128 BPM (kick+bass+lead+hat), resume trong gesture | ✅ | `PARTICLES`, `AUDIO`, `bigExplode()`, `renderSong()` |
-| P5 | 6 vũ khí + 6 phép + power-up | ⬜ | |
+| **P5** | 6 vũ khí (đại bác/liên thanh/súng hoa/railgun/tên lửa dò/flak AoE) đổi bằng 1-6 hoặc cuộn/nút; 6 phép (tăng tốc/khiên/EMP/sửa chữa/không kích/ngưng đọng) cast E/nút + cooldown; power-up rơi (⭐💣⏱🛡❤️🔧) + nam châm hút + comeback-bias; weaponLvl nâng cấp | ✅ | `WEAPONS`, `SPELLS`, `POWERUPS`, `fireWeapon()`, `trySpell()`, `dropPowerup()` |
 | P6 | Khung boss đa pha + Boss S1 (Mãnh Ngưu) | ⬜ | |
 | P7 | 5 biome + chuyển màn + upgrade pick (roguelite) + đủ loại địch | ⬜ | |
 | P8 | Boss S2–S5 + Victory + New Game+ | ⬜ | |
@@ -122,6 +122,8 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · P5:** 6 vũ khí (cannon/auto/shotgun/railgun/missile-homing/flak-AoE) + đổi súng (1-6/cuộn/nút) + weaponLvl; 6 phép (overdrive/aegis/EMP/repair/airstrike/timewarp) + cooldown; power-up rơi có nam châm hút + ưu tiên hồi máu khi nguy. HUD vũ khí/phép.
+- **2026-05-31 · P4:** Juice (particle nổ/khói/spark + shake + bloom) + audio synth (SFX + nhạc nền 128 BPM).
 - **2026-05-31 · P2+P3:** Combat core — Cannon + đạn pool + va chạm; 3 loại địch (grunt/scout/gunner) + AI đuổi/bắn/đâm; wave spawner ramp; **Core (căn cứ)** phải bảo vệ; score + combo (×8); player nhận sát thương/chết/mất mạng/respawn + game-over (HẾT MẠNG / CĂN CỨ BỊ PHÁ). Game đã chơi được.
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
