@@ -313,8 +313,9 @@ const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high
 renderer.setPixelRatio(S.dpr);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.08;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+if(!MOBILE){ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }  // real shadows on desktop
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -335,11 +336,14 @@ const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
-// lights (refs captured so applyBiome can re-tint them)
-const ambient = new THREE.AmbientLight(0x4a4636, 0.7); scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xfff0d0, 1.5);
-sun.position.set(20, 40, 12); scene.add(sun);
-const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.55); scene.add(hemi);
+// lights (refs captured so applyBiome can re-tint them) — stronger key + softer fill = more depth
+const ambient = new THREE.AmbientLight(0x4a4636, 0.55); scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff0d0, 1.9);
+sun.position.set(26, 48, 18); scene.add(sun);
+if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+  const sc=sun.shadow.camera; sc.left=-70; sc.right=70; sc.top=70; sc.bottom=-70; sc.near=10; sc.far=140;
+  sun.shadow.bias=-0.0004; sun.shadow.normalBias=0.4; }
+const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.5); scene.add(hemi);
 const muzzleLight = new THREE.PointLight(0xffd27a, 0, 18, 2); scene.add(muzzleLight);
 
 // ----------------------------- ARENA -----------------------------
@@ -362,7 +366,7 @@ const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(ARENA*2, ARENA*2),
   new THREE.MeshStandardMaterial({ map:gridTexture(BIOMES[0]), roughness:0.96, metalness:0.0 })
 );
-ground.rotation.x = -Math.PI/2; arena.add(ground);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; arena.add(ground);
 // perimeter walls (sandbag-ish blocks)
 const wallMat = new THREE.MeshStandardMaterial({ color:0x6b5a36, roughness:0.9, metalness:0.05 });
 function wall(w,d,x,z){ const m=new THREE.Mesh(new RoundedBoxGeometry(w,3,d,2,0.4), wallMat); m.position.set(x,1.5,z); arena.add(m); }
@@ -373,8 +377,8 @@ const ring = new THREE.Mesh(new THREE.RingGeometry(ARENA*1.38, ARENA*1.42, 96),
   new THREE.MeshBasicMaterial({ color:BIOME.accent, transparent:true, opacity:0.12, side:THREE.DoubleSide }));
 ring.rotation.x=-Math.PI/2; ring.position.y=0.05; arena.add(ring);
 // faint combat-range ring that follows the player (only fires within this radius)
-const rangeRing = new THREE.Mesh(new THREE.RingGeometry(0.965, 1.0, 72),
-  new THREE.MeshBasicMaterial({ color:0xaef0a0, transparent:true, opacity:0.16, side:THREE.DoubleSide, depthWrite:false }));
+const rangeRing = new THREE.Mesh(new THREE.RingGeometry(0.984, 1.0, 80),
+  new THREE.MeshBasicMaterial({ color:0xaef0a0, transparent:true, opacity:0.1, side:THREE.DoubleSide, depthWrite:false }));
 rangeRing.rotation.x=-Math.PI/2; rangeRing.position.y=0.06; rangeRing.visible=false; scene.add(rangeRing);
 function applyBiome(stage){
   BIOME = BIOMES[Math.min(stage-1, BIOMES.length-1)];
@@ -418,7 +422,7 @@ function buildBlocks(){
       if(Math.abs(bx)>ARENA-4 || Math.abs(bz)>ARENA-4) continue;
       const mat = new THREE.MeshStandardMaterial({ color: steel?0x7d828c:0x9a5a36,
         roughness: steel?0.5:0.92, metalness: steel?0.65:0.08 });
-      const m=new THREE.Mesh(BLOCK_GEO, mat); m.position.set(bx,1.5,bz); m.rotation.y=rot; scene.add(m);
+      const m=new THREE.Mesh(BLOCK_GEO, mat); m.position.set(bx,1.5,bz); m.rotation.y=rot; m.castShadow=true; m.receiveShadow=true; scene.add(m);
       blocks.push({ mesh:m, x:bx, z:bz, r:1.7, hp: steel?Infinity:70, steel });
     }
   }
@@ -473,6 +477,7 @@ function buildTank(opts={}){
   const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.4,6), metal(0x222)); ant.position.set(-0.6,0.8,-0.5); turretG.add(ant);
   const muzzle = new THREE.Object3D(); muzzle.position.set(0,0.05,3.3); turretG.add(muzzle);  // world muzzle anchor
   g.userData.turret = turretG; g.userData.muzzle = muzzle; g.userData.hull = hullM;
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
   return g;
 }
 function makePlayer(){
@@ -727,9 +732,9 @@ let core=null;
 function buildCore(){
   const g=new THREE.Group();
   const base=new THREE.Mesh(new THREE.CylinderGeometry(3.4,4,1.4,8), new THREE.MeshStandardMaterial({color:0x394b5a,roughness:0.7,metalness:0.4}));
-  base.position.y=0.7; g.add(base);
+  base.position.y=0.7; base.castShadow=true; base.receiveShadow=true; g.add(base);
   const reactor=new THREE.Mesh(new THREE.IcosahedronGeometry(1.7,0), new THREE.MeshStandardMaterial({color:0x6fe0ff,emissive:0x2fa8d8,emissiveIntensity:0.9,roughness:0.2,metalness:0.3}));
-  reactor.position.y=2.6; g.add(reactor);
+  reactor.position.y=2.6; reactor.castShadow=true; g.add(reactor);
   const halo=new THREE.Mesh(new THREE.RingGeometry(4.2,4.7,40), new THREE.MeshBasicMaterial({color:0x4fd1ff,transparent:true,opacity:0.5,side:THREE.DoubleSide}));
   halo.rotation.x=-Math.PI/2; halo.position.y=0.1; g.add(halo);
   const light=new THREE.PointLight(0x6fe0ff,1.2,30); light.position.y=3; g.add(light);
@@ -820,7 +825,9 @@ function updateEnemies(dt, now){
     e.mesh.position.set(e.pos.x,0,e.pos.z); e.mesh.rotation.y=e.facing;
     e.turret.rotation.y = wrapAngle(e.aim - e.facing);
     // fire — accuracy, rate, damage all scale up with stage (gentle for newcomers)
-    if(def.canShoot && now>e.fireAt && d < def.range){
+    // combat range scales with tank size (small tank → small range, large → large)
+    const er = def.range * (e.r/1.5);
+    if(def.canShoot && now>e.fireAt && d < er){
       const ds=diffScale();
       e.muzzle.getWorldPosition(_v);
       // late stages lead the target; early stages are inaccurate
@@ -829,14 +836,15 @@ function updateEnemies(dt, now){
       aimA += (Math.random()-0.5) * (1-ds) * 0.45;             // inaccuracy fades by stage 5
       const rateMul = 1.7 - 0.7*ds;                            // slower fire early
       const dmg = def.dmg * (0.65 + 0.35*ds);                  // weaker early
-      spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:2.4});
+      // enemy bullets only reach within the enemy's combat range
+      spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:3.0, maxDist:er+2});
       spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:0xff7a4a,size:1,life:0.1,grav:0,drag:7});
       sfx('enemyShoot');
       if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
       else e.fireAt=now+def.fireCd*rateMul;
     }
-    // mortar: lob a telegraphed shell at the player's position
-    if(def.mortar && now>e.fireAt && d < def.range){ mortarLob(p.pos.x, p.pos.z); e.fireAt = now + def.fireCd; }
+    // mortar: lob a telegraphed shell at the player's position (within its range)
+    if(def.mortar && now>e.fireAt && d < er){ mortarLob(p.pos.x, p.pos.z); e.fireAt = now + def.fireCd; }
     // ram contact damage (separateTanks keeps them from overlapping; this just applies the bump damage)
     if(now>e.ramAt){
       if(dpl < e.r+p.radius+0.6){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }
@@ -1412,17 +1420,18 @@ function airstrike(now){
 }
 
 // ===== POWER-UPS (drops) =====
-// Power-ups: mix of TIMED buffs (≤15s), instant effects, and gun drops.
-// Timed buffs set p.buffUntil[key]; updatePlayer derives the live multipliers + the HUD.
+// Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
+// Picking the same buff group again REPLACES it with the new one's power+duration (no stacking).
 const NOW=()=>performance.now()/1000;
 const POWERUPS = [
-  // timed buffs
-  { id:'rapid',  icon:'⚡', color:0xfff04a, buff:'rapid',  dur:15, label:'BẮN NHANH ×2' },
-  { id:'power',  icon:'💥', color:0xff7a3d, buff:'power',  dur:15, label:'SÁT THƯƠNG ×1.6' },
-  { id:'speed',  icon:'🏃', color:0x6fe0a0, buff:'speed',  dur:15, label:'TỐC ĐỘ ×1.4' },
-  { id:'range',  icon:'🎯', color:0x9af0d4, buff:'range',  dur:15, label:'TẦM BẮN ×1.4' },
-  { id:'ammoup', icon:'📦', color:0xc0a060, buff:'ammoup', dur:15, label:'BĂNG ĐẠN ×1.6', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
-  { id:'inf',    icon:'∞',  color:0xffffff, buff:'infammo',dur:10, label:'ĐẠN VÔ HẠN', onGet(p){ p.reloadUntil=0; } },
+  // timed buffs (longer)
+  { id:'rapid',  icon:'⚡', color:0xfff04a, buff:'rapid',  dur:28, label:'BẮN NHANH ×2' },
+  { id:'power',  icon:'💥', color:0xff7a3d, buff:'power',  dur:28, label:'SÁT THƯƠNG ×1.6' },
+  { id:'speed',  icon:'🏃', color:0x6fe0a0, buff:'speed',  dur:28, label:'TỐC ĐỘ ×1.4' },
+  { id:'inf',    icon:'∞',  color:0xffffff, buff:'infammo',dur:18, label:'ĐẠN VÔ HẠN', onGet(p){ p.reloadUntil=0; } },
+  // PERMANENT buffs (last until death) — rarer feel, lasting progression
+  { id:'range',  icon:'🎯', color:0x9af0d4, buff:'range',  dur:Infinity, label:'TẦM BẮN ×1.4 (∞)' },
+  { id:'ammoup', icon:'📦', color:0xc0a060, buff:'ammoup', dur:Infinity, label:'BĂNG ĐẠN ×1.6 (∞)', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
   // instant
   { id:'heal',   icon:'❤️', color:0xff6b81, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
   { id:'repair', icon:'🔧', color:0xffb060, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
@@ -1486,10 +1495,10 @@ const BUFF_ICON={ rapid:'⚡', power:'💥', speed:'🏃', infammo:'∞', ammoup
 function updateBuffHUD(now){
   const bar=document.getElementById('buffbar'); if(!bar) return;
   const p=S.player; bar.replaceChildren();
-  for(const k in p.buffUntil){ const rem=p.buffUntil[k]-now; if(rem<=0) continue;
+  for(const k in p.buffUntil){ const until=p.buffUntil[k]; const rem=until-now; if(rem<=0) continue;
     const c=document.createElement('div'); c.className='buffchip';
     const ic=document.createElement('span'); ic.textContent=BUFF_ICON[k];
-    const t=document.createElement('span'); t.className='t'; t.textContent=Math.ceil(rem)+'s';
+    const t=document.createElement('span'); t.className='t'; t.textContent = (until===Infinity) ? '∞' : Math.ceil(rem)+'s';
     c.append(ic,t); bar.appendChild(c); }
 }
 
@@ -1698,7 +1707,7 @@ function updatePlayer(dt, now){
   const range = playerRange();
   rangeRing.visible = true; rangeRing.position.set(p.pos.x, 0.06, p.pos.z);
   rangeRing.scale.set(range, range, range);
-  rangeRing.material.opacity = 0.12 + Math.sin(now*2)*0.04;
+  rangeRing.material.opacity = 0.08 + Math.sin(now*2)*0.025;   // thin + faint, just visible
   const tgt = nearestTarget(range);
   if(tgt) fireGun(now, range);     // AUTO-FIRE only when an enemy is within range
 }
