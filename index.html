@@ -1005,7 +1005,7 @@ function glowTex(){
 }
 const GLOW = glowTex();
 const parts=[]; const partPool=[];
-for(let i=0;i<460;i++){
+for(let i=0;i<640;i++){   // larger pool: blazing 16-part wrecks + the blast fireball both need headroom
   const m=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xffffff, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
   m.visible=false; scene.add(m); partPool.push(m);
 }
@@ -1738,38 +1738,45 @@ function spawnDebris(pos, scale, color){
       rx:(Math.random()-0.5)*11, ry:(Math.random()-0.5)*11, rz:(Math.random()-0.5)*11,
       age:0, life:2.0+Math.random()*1.6, settled:false }); }
 }
-// ----- tank WRECKAGE: a dying tank bursts into its actual COMPONENTS (turret, gun barrel, hull plates, track segments, road wheels, cupola) — not generic cubes -----
+// ----- tank WRECKAGE: a dying tank is RIPPED APART into charred, jagged metal — torn armour plates, ripped shards, snapped bars, wheels — mostly scorched black with white-hot edges (NOT coloured cubes) -----
 const WRECK_GEO = {
-  turret: new RoundedBoxGeometry(1.5,0.72,1.9,2,0.2),
-  barrel: new THREE.CylinderGeometry(0.17,0.22,2.7,12),
-  hull:   new RoundedBoxGeometry(2.1,0.78,2.5,2,0.16),
-  plate:  new RoundedBoxGeometry(1.45,0.2,1.05,1,0.07),
-  tread:  new THREE.BoxGeometry(0.82,0.88,3.4),
-  wheel:  new THREE.CylinderGeometry(0.42,0.42,0.5,14),
-  cupola: new THREE.CylinderGeometry(0.38,0.44,0.42,14),
+  plate:  new THREE.BoxGeometry(1.4,0.06,1.0),         // torn armour plate (thin slab)
+  plate2: new THREE.BoxGeometry(0.85,0.05,1.55),       // long thin plate
+  shard:  new THREE.TetrahedronGeometry(0.62),         // jagged ripped-metal shard
+  shard2: new THREE.OctahedronGeometry(0.52),          // angular chunk
+  bar:    new THREE.BoxGeometry(0.13,0.13,1.7),        // snapped rod / structural bar
+  barrel: new THREE.CylinderGeometry(0.15,0.19,2.3,9), // broken gun barrel
+  wheel:  new THREE.CylinderGeometry(0.42,0.42,0.4,14),// road wheel
+  hub:    new THREE.CylinderGeometry(0.14,0.14,0.6,9), // snapped axle/hub
+  turret: new RoundedBoxGeometry(1.25,0.48,1.45,1,0.1),// blown-off turret shell (flattened)
 };
 const wreckPool=[];
-for(let i=0;i<84;i++){ const m=new THREE.Mesh(WRECK_GEO.plate, new THREE.MeshStandardMaterial({color:0x3a3a30,roughness:0.72,metalness:0.6,map:panelTex(),emissive:0xff5a1e,emissiveIntensity:0,transparent:true,opacity:1}));
+for(let i=0;i<128;i++){ const m=new THREE.Mesh(WRECK_GEO.shard, new THREE.MeshStandardMaterial({color:0x18150f,roughness:0.85,metalness:0.6,emissive:0xff4612,emissiveIntensity:0,transparent:true,opacity:1,flatShading:true}));
   m.castShadow=true; m.visible=false; scene.add(m); wreckPool.push(m); }
-// part list: geometry key + palette key + how many + relative size
-const _WRECK_PARTS=[ {g:'turret',k:'turret',sz:1.0}, {g:'barrel',k:'barrel',sz:1.0}, {g:'hull',k:'hull',sz:0.92},
-  {g:'plate',k:'hull',sz:1.0},{g:'plate',k:'hull',sz:0.85}, {g:'tread',k:'tread',sz:0.92},{g:'tread',k:'tread',sz:0.92},
-  {g:'wheel',k:'wheel',sz:1.0},{g:'wheel',k:'wheel',sz:1.0},{g:'wheel',k:'wheel',sz:0.85}, {g:'cupola',k:'accent',sz:1.0} ];
+const _SCORCH=[0x141210,0x1c1813,0x24201a,0x100e0b,0x2a251d];                     // charred-metal tones (most fragments)
+const _burnt=hex=>{ const c=new THREE.Color(hex); c.multiplyScalar(0.45); return c.getHex(); };   // darkened "burnt paint" hint
+// part list: geometry key + relative size + chance to keep (burnt) paint vs scorched black
+const _WRECK_PARTS=[ {g:'turret',sz:1.0,paint:0.6},{g:'barrel',sz:1.0,paint:0.4},{g:'plate',sz:1.0,paint:0.5},
+  {g:'plate2',sz:0.95,paint:0.4},{g:'plate',sz:0.8,paint:0.3},{g:'shard',sz:1.1,paint:0.15},{g:'shard',sz:0.85,paint:0.1},
+  {g:'shard2',sz:1.0,paint:0.12},{g:'shard2',sz:0.8,paint:0.1},{g:'bar',sz:1.0,paint:0.1},{g:'bar',sz:0.85,paint:0.1},
+  {g:'wheel',sz:1.0,paint:0},{g:'wheel',sz:0.9,paint:0},{g:'hub',sz:1.0,paint:0.1},{g:'shard',sz:0.7,paint:0.1},{g:'plate',sz:0.7,paint:0.3} ];
 function spawnTankWreck(pos, ms, pal){
-  const colFor=k=> k==='turret'?pal.turret : k==='barrel'?(pal.barrel||pal.turret) : k==='hull'?pal.hull : k==='tread'?pal.tread : k==='wheel'?0x141410 : (pal.accent||pal.turret);
+  const burntHull=_burnt(pal.hull), burntTur=_burnt(pal.turret||pal.hull);
   const rs=Math.sqrt(ms);
   for(const part of _WRECK_PARTS){
     const m=wreckPool.pop(); if(!m) return;                                  // pool exhausted (huge multi-kill) → stop gracefully
     m.geometry=WRECK_GEO[part.g];
-    m.material.color.setHex(colFor(part.k));
-    const s=ms*part.sz; m.scale.set(s,s,s);
-    const a=Math.random()*6.283, sp=(7+Math.random()*10)*rs, up=(9.5+Math.random()*9)*rs;        // strong explosive ejection — parts blast outward
-    m.position.set(pos.x+(Math.random()-0.5)*ms*0.8, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.8);
+    let col; if(Math.random()<part.paint) col = part.g==='turret'?burntTur:burntHull; else col=_SCORCH[(Math.random()*_SCORCH.length)|0];
+    if(part.g==='wheel') col=0x0e0e0c;                                        // scorched rubber
+    m.material.color.setHex(col);
+    const s=ms*part.sz*(0.85+Math.random()*0.4); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // non-uniform → irregular torn metal
+    const a=Math.random()*6.283, sp=(10+Math.random()*14)*rs, up=(11+Math.random()*11)*rs;       // VIOLENT blast — shrapnel flung far
+    m.position.set(pos.x+(Math.random()-0.5)*ms*0.7, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.7);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    m.material.emissiveIntensity=1.0+Math.random()*0.7; m.material.opacity=1; m.visible=true;       // white-hot, on fire
+    m.material.emissiveIntensity=1.1+Math.random()*0.8; m.material.opacity=1; m.visible=true;     // white-hot, blazing
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
-      rx:(Math.random()-0.5)*15, ry:(Math.random()-0.5)*15, rz:(Math.random()-0.5)*15,
-      age:0, life:1.8+Math.random()*1.5, settled:false, floor:Math.max(0.18, s*0.42), pool:wreckPool, fire:true });   // burn fast then vanish
+      rx:(Math.random()-0.5)*20, ry:(Math.random()-0.5)*20, rz:(Math.random()-0.5)*20,
+      age:0, life:1.9+Math.random()*1.6, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:true });   // burn fast then vanish
   }
 }
 function updateDebris(dt){
@@ -1786,12 +1793,14 @@ function updateDebris(dt){
       }
       m.rotation.x+=d.rx*dt; m.rotation.y+=d.ry*dt; m.rotation.z+=d.rz*dt;
     }
-    if(d.fire && d.age<1.3 && Math.random()<0.5){     // burning wreckage: trail fire + smoke as it tumbles
+    if(d.fire && d.age<1.2){     // blazing wreckage: each shard trails fire + bright embers + smoke as it tumbles
       const mp=m.position;
-      spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*2.5, 1.4+Math.random()*2.4, (Math.random()-0.5)*2.5,
-        {color: Math.random()<0.5?0xff8a2e:0xffd166, size:0.6+Math.random()*0.5, life:0.28+Math.random()*0.22, grav:-4, drag:3.2});
-      if(Math.random()<0.28) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5), 0.6, (Math.random()-0.5),
-        {color:0x171410, size:1.0+Math.random()*0.5, life:0.6, smoke:true, grav:-1.3, drag:1.6, op:0.5});
+      if(Math.random()<0.7) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*3, 1.6+Math.random()*3, (Math.random()-0.5)*3,
+        {color: Math.random()<0.5?0xff7a1e:0xffc24e, size:0.7+Math.random()*0.7, life:0.3+Math.random()*0.25, grav:-5, drag:3});
+      if(Math.random()<0.35) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*6, Math.random()*3, (Math.random()-0.5)*6,
+        {color:0xffe09a, size:0.26+Math.random()*0.2, life:0.4+Math.random()*0.3, grav:-9, drag:1.1});   // bright embers flung outward
+      if(Math.random()<0.3) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5), 0.7, (Math.random()-0.5),
+        {color:0x161310, size:1.1+Math.random()*0.6, life:0.7, smoke:true, grav:-1.3, drag:1.6, op:0.5});
     }
     if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*(d.fire?0.8:1.7));   // burning parts stay glowing longer
     const fadeT=d.fire?1.0:0.7, rem=d.life-d.age; if(rem<fadeT) m.material.opacity=rem/fadeT;                            // fade out (burn up) and vanish
@@ -1799,18 +1808,18 @@ function updateDebris(dt){
 }
 // grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column
 function tankExplode(pos, color, scale=1.5, pal=null, ms=null){
-  burst(pos, 0xffffff, Math.floor(10*scale), 10*scale, {life:0.16, size:2.0*scale, up:5, grav:-2, drag:6});   // core flash
-  burst(pos, 0xffd27a, Math.floor(22*scale), 14*scale, {life:0.6,  size:2.1*scale, up:5});                    // hot fireball
-  burst(pos, 0xff7a2a, Math.floor(18*scale), 11*scale, {life:0.7,  size:1.9*scale, up:4});                    // deep-orange fire
-  burst(pos, color,    Math.floor(14*scale), 10*scale, {life:0.5,  size:1.4*scale, up:3});
-  burst(pos, 0xffd9a0, Math.floor(6*scale),  14*scale, {life:0.32, size:0.7*scale, up:2, drag:4});            // sparks (sparser, less neon)
-  burst(pos, 0x1a1712, Math.floor(7*scale),  5*scale,  {life:0.95, size:2.6*scale, up:5, grav:-2, drag:1.6, smoke:true, op:0.62});  // immediate black smoke (grounds the blast)
+  burst(pos, 0xffffff, Math.floor(14*scale), 12*scale, {life:0.16, size:2.5*scale, up:6, grav:-2, drag:6});   // blinding core flash
+  burst(pos, 0xffe08a, Math.floor(30*scale), 17*scale, {life:0.62, size:2.6*scale, up:6});                    // huge hot fireball
+  burst(pos, 0xff661c, Math.floor(24*scale), 13*scale, {life:0.78, size:2.3*scale, up:5});                    // roiling deep-orange fire
+  burst(pos, color,    Math.floor(16*scale), 11*scale, {life:0.5,  size:1.5*scale, up:4});
+  burst(pos, 0xffe6a0, Math.floor(24*scale), 24*scale, {life:0.5,  size:0.42*scale, up:3, grav:-9, drag:1.0}); // shrapnel sparks blasted far + wide
+  burst(pos, 0x141008, Math.floor(11*scale), 6*scale,  {life:1.1,  size:3.1*scale, up:6, grav:-2, drag:1.5, smoke:true, op:0.62});  // thick black smoke
+  ringPulse(pos, 0xfff0c0, scale*2.8); ringPulse(pos, 0xff7a2e, scale*5.4);                                   // double ground shockwave
   if(pal) spawnTankWreck(pos, ms||scale*0.72, pal); else spawnDebris(pos, scale, color);                       // tanks shatter into real PARTS; walls/blocks → metal fragments
   for(let k=0;k<Math.floor(6*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
     burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.22, life:1.4, size:3.2*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
-  ringPulse(pos, color, scale*3.8); ringPulse(pos, 0xffe6a0, scale*2.2);
-  S.shake = Math.min(3.2, S.shake + scale*1.0);
-  muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity = 5.2;
+  S.shake = Math.min(4.8, S.shake + scale*1.5);                                                                // heavy kick
+  muzzleLight.position.set(pos.x, 2.4, pos.z); muzzleLight.color.setHex(0xffb14c); muzzleLight.intensity = 7.5;  // bright blast flash
   sfx(scale>=2 ? 'bigexplode' : 'explode');
   if(scale>=2.2){   // big tanks/bosses: a delayed secondary blast + extra shards = bigger payoff
     setTimeout(()=>{ if(S.mode==='paused') return;
@@ -2575,7 +2584,7 @@ function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
-const camOff = new THREE.Vector3(0, MOBILE?27:33, MOBILE?23.5:28);   // closer on mobile → tanks read bigger on the small screen
+const camOff = new THREE.Vector3(0, MOBILE?21:33, MOBILE?17.5:28);   // much closer on mobile → tanks read big & imposing on the small screen
 const camTarget = new THREE.Vector3();
 const camLook = new THREE.Vector3();
 function updateCamera(dt, now){
