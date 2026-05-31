@@ -218,22 +218,25 @@
   body.touch .touch-only{display:block;}
   body.touch .desktop-only{display:none;}
   /* declutter + move stats out of the thumb zones */
-  body.touch #gunlist{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 40px);gap:5px;}  /* compact inventory strip — proves guns persist */
-  body.touch .gunicon{width:27px;height:27px;}
-  body.touch .gunicon svg{width:15px;height:15px;}
   body.touch #abilities{display:none;}          /* mobile uses on-screen buttons */
-  body.touch #combo{top:62px;}
-  body.touch .chip{background:linear-gradient(180deg,rgba(18,26,12,.4),rgba(8,14,6,.48));}   /* transparent HUD — see the battlefield through it */
-  body.touch #hpwrap{left:max(58px,calc(env(safe-area-inset-left) + 50px));top:max(8px,env(safe-area-inset-top));bottom:auto;width:138px;padding:5px 9px;}
-  body.touch #hpwrap .row{gap:6px;margin-bottom:4px;}
-  body.touch #hpwrap .ic{width:14px;height:14px;}
-  body.touch #hpwrap .bar{height:7px;}
-  body.touch #lives{font-size:11px;}
-  body.touch #topbar{padding:2px 3px;}
-  body.touch #topbar .cell{padding:2px 9px;}
-  body.touch #topbar .lbl{font-size:7px;letter-spacing:1.5px;}
-  body.touch #topbar .val{font-size:14px;}
-  body.touch #weaponchip{bottom:max(14px,env(safe-area-inset-bottom));padding:6px 14px;}
+  body.touch #combo{top:58px;}
+  body.touch .chip{background:linear-gradient(180deg,rgba(18,26,12,.4),rgba(8,14,6,.5));}   /* transparent HUD */
+  /* === all stats hug the LEFT edge (top→down) + buffs on the RIGHT edge; top-center & bottom-center stay clear for viewing === */
+  body.touch #topbar{left:max(56px,calc(env(safe-area-inset-left) + 48px));top:max(8px,env(safe-area-inset-top));transform:none;padding:2px 3px;}
+  body.touch #topbar .cell{padding:1px 7px;}
+  body.touch #topbar .lbl{font-size:6px;letter-spacing:1px;}
+  body.touch #topbar .val{font-size:13px;}
+  body.touch #hpwrap{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 40px);bottom:auto;width:136px;padding:4px 8px;}
+  body.touch #hpwrap .row{gap:5px;margin-bottom:3px;}
+  body.touch #hpwrap .ic{width:13px;height:13px;}
+  body.touch #hpwrap .bar{height:6px;}
+  body.touch #lives{font-size:10px;}
+  body.touch #weaponchip{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 84px);right:auto;bottom:auto;transform:none;padding:3px 9px;font-size:11px;}
+  body.touch #weaponchip .wc-ic{width:15px;height:15px;}
+  body.touch #gunlist{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 110px);right:auto;bottom:auto;transform:none;justify-content:flex-start;flex-wrap:wrap;max-width:152px;gap:4px;}
+  body.touch .gunicon{width:25px;height:25px;}
+  body.touch .gunicon svg{width:14px;height:14px;}
+  body.touch #buffbar{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 170px);transform:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
   /* bigger, friendlier joystick */
   body.touch .stick{width:150px;height:150px;}
   body.touch .stick .knob{width:62px;height:62px;}
