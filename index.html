@@ -1751,7 +1751,7 @@ const WRECK_GEO = {
   turret: new RoundedBoxGeometry(1.25,0.48,1.45,1,0.1),// blown-off turret shell (flattened)
 };
 const wreckPool=[];
-for(let i=0;i<128;i++){ const m=new THREE.Mesh(WRECK_GEO.shard, new THREE.MeshStandardMaterial({color:0x18150f,roughness:0.85,metalness:0.6,emissive:0xff4612,emissiveIntensity:0,transparent:true,opacity:1,flatShading:true}));
+for(let i=0;i<170;i++){ const m=new THREE.Mesh(WRECK_GEO.shard, new THREE.MeshStandardMaterial({color:0x18150f,roughness:0.85,metalness:0.6,emissive:0xff4612,emissiveIntensity:0,transparent:true,opacity:1,flatShading:true}));
   m.castShadow=true; m.visible=false; scene.add(m); wreckPool.push(m); }
 const _SCORCH=[0x141210,0x1c1813,0x24201a,0x100e0b,0x2a251d];                     // charred-metal tones (most fragments)
 const _burnt=hex=>{ const c=new THREE.Color(hex); c.multiplyScalar(0.45); return c.getHex(); };   // darkened "burnt paint" hint
@@ -1770,14 +1770,14 @@ function spawnTankWreck(pos, ms, pal){
     let col; if(Math.random()<part.paint) col = part.g==='turret'?burntTur:burntHull; else col=_SCORCH[(Math.random()*_SCORCH.length)|0];
     if(part.g==='wheel') col=0x0e0e0c;                                        // scorched rubber
     m.material.color.setHex(col);
-    const s=ms*part.sz*(0.85+Math.random()*0.4); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // non-uniform → irregular torn metal
-    const a=Math.random()*6.283, sp=(8+Math.random()*10)*rs, up=(10+Math.random()*7)*rs;         // brisk scatter (moderate, scales with tank)
+    const s=ms*part.sz*(1.15+Math.random()*0.55); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // BIGGER + non-uniform → clearly-readable torn metal
+    const a=Math.random()*6.283, sp=(7+Math.random()*9)*rs, up=(9+Math.random()*6)*rs;            // arc out then land as visible wreckage (moderate)
     m.position.set(pos.x+(Math.random()-0.5)*ms*0.7, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.7);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    m.material.emissiveIntensity=1.0+Math.random()*0.7; m.material.opacity=1; m.visible=true;     // hot, blazing
+    m.material.emissiveIntensity=1.0+Math.random()*0.7; m.material.opacity=1; m.visible=true;     // hot → cools to dark torn metal
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
-      rx:(Math.random()-0.5)*16, ry:(Math.random()-0.5)*16, rz:(Math.random()-0.5)*16,
-      age:0, life:1.3+Math.random()*1.0, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:true });   // clears fast
+      rx:(Math.random()-0.5)*15, ry:(Math.random()-0.5)*15, rz:(Math.random()-0.5)*15,
+      age:0, life:2.8+Math.random()*1.5, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:true });   // lingers as readable wreckage on the ground, then fades (smoke/fire already gone — no view block)
   }
 }
 function updateDebris(dt){
@@ -1803,7 +1803,7 @@ function updateDebris(dt){
       if(Math.random()<0.16) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5), 0.6, (Math.random()-0.5),
         {color:0x161310, size:0.9+Math.random()*0.4, life:0.45, smoke:true, grav:-1.2, drag:1.8, op:0.4});
     }
-    if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*(d.fire?0.8:1.7));   // burning parts stay glowing longer
+    if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*(d.fire?1.7:1.7));   // brief hot flash → quickly cools to readable DARK TORN METAL
     const fadeT=d.fire?1.0:0.7, rem=d.life-d.age; if(rem<fadeT) m.material.opacity=rem/fadeT;                            // fade out (burn up) and vanish
   }
 }
