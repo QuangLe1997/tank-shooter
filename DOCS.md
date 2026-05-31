@@ -2,7 +2,7 @@
 
 > Đọc file này là hiểu toàn bộ game + biết chỗ nào để sửa, **không cần scan lại `index.html`**. Mục tiêu: 1 file duy nhất [`index.html`](index.html), zero-build.
 >
-> ✅ **Trạng thái: HOÀN THÀNH (P1–P9) + REWORK v2 (R1–R7).** Game chơi trọn vẹn, live tại https://quangle1997.github.io/tank-shooter/. Kịch bản ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)**. File này theo dõi bản đồ code (§0) + lịch sử (§14).
+> ✅ **Trạng thái: HOÀN THÀNH (P1–P9) + REWORK v2 (R1–R7) + TINH CHỈNH v3/v4 + VISUAL OVERHAUL v4 (G1–G5).** Game chơi trọn vẹn, live tại https://quangle1997.github.io/tank-shooter/. Kịch bản ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)**. File này theo dõi bản đồ code (§0) + lịch sử (§14). **Toàn bộ chữ trong game là tiếng Anh; icon là bộ SVG tự vẽ (không emoji).**
 
 ### Rework v2 (R1–R7) — hệ thống hiện hành
 | Mục | Trạng thái | Ở đâu |
@@ -28,6 +28,15 @@
 | **Đánh boss**: player **to bằng boss** (radius động) + tông húc văng nhau, không xuyên qua | `p.scale/p.radius`, `separateTanks` boss |
 | **Khoảng cách min** giữa mọi xe (không dính sát) | `separateTanks` (GAP=0.7) |
 | **Địa hình mê cung** dạng I/L/U/T/Z để ẩn nấp | `MAZE_SHAPES`, `buildBlocks()` |
+
+### Visual overhaul v4 (G1–G5) — đánh bóng giao diện
+| Mục | Ở đâu |
+|---|---|
+| **Toàn bộ chữ → tiếng Anh** (HUD, menu, tên súng/phép/buff/nâng cấp/boss/biome, banner) | `GUNS/SPELLS/POWERUPS/UPGRADES/BOSS_DEFS/BIOMES`, HTML overlay, `showBanner` |
+| **Skin xe tăng chân thực**: texture tôn thép (panel/rivet/xước) + tread; PBR bắt phản chiếu; chạy gầm chi tiết; nòng có ống nhiệt + hút khói + hãm đầu nòng; tier `detail` (player+boss) thêm giỏ sau tháp/ống phóng khói/MG/đinh tán/móc kéo/ống xả | `panelTex()/trackTex()`, `buildTank({detail})` |
+| **Camera mở màn điện ảnh**: hero thấp khoe nòng → vòng quanh kiểu duyệt binh → toàn cảnh → khớp đúng khung gameplay; letterbox + hạ-tiêu-đề + nút bỏ qua; ẩn HUD khi diễn; bỏ qua bằng input | `startIntro/updateIntro/endIntro`, biến `intro`, mode `'intro'` |
+| **Bộ icon SVG tự vẽ (bỏ hết emoji)**: 33 glyph line-art quân sự; HUD/menu/nâng cấp dùng chung; badge tròn cho vật phẩm rơi | `GLYPH`, `iconEl/setIcon/initIcons`, `svgBadgeTex()` |
+| **HUD/menu theme nhất quán + icon chuẩn** cho súng/đạn/máu/căn cứ/tốc/phép; vị trí gọn dễ quan sát; màu HP đỏ · căn cứ hổ phách · sẵn-sàng xanh · nạp-đạn đỏ | CSS `.ic/.gunicon/#weaponchip/.buffchip/.upcard`, `updateGunHUD/updateSpellHUD/updateBuffHUD` |
 
 ---
 
@@ -147,6 +156,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · VISUAL OVERHAUL v4 (G1–G5):** (G1) dịch **toàn bộ** chữ sang tiếng Anh (tên game → STEEL SIEGE; HUD/menu/banner/tên súng-phép-buff-nâng-cấp-boss-biome); (G5) skin xe tăng chân thực hơn — texture tôn thép (panel/rivet/xước) + tread, PBR bắt phản chiếu môi trường, chạy gầm + nòng (ống nhiệt/hút khói/hãm đầu nòng) chi tiết, tier `detail` cho player+boss (giỏ sau tháp, ống phóng khói, MG, đinh tán, móc kéo, ống xả); (G4) **camera mở màn điện ảnh** (hero thấp khoe nòng → vòng quanh kiểu duyệt binh → toàn cảnh → khớp đúng khung gameplay; letterbox + hạ-tiêu-đề + nút skip; ẩn HUD khi diễn; bỏ qua bằng input sau grace); (G2/G3) **bộ icon SVG tự vẽ thay toàn bộ emoji** (33 glyph line-art quân sự) cho HUD/menu/vật phẩm/nâng cấp + theme nhất quán + vị trí tối ưu. Verify desktop 1280×800 + mobile 390×844, 0 lỗi console (trừ favicon 404).
 - **2026-05-31 · Boss locomotion kiểu xe tăng:** boss chỉ tiến/lùi theo hướng thân; muốn tông phải **quay đầu xe về phía user** trước (telegraph để né) rồi mới lao thẳng theo hướng đã khoá (không bẻ lái giữa chừng → né được). State machine `aim → charge` trong `updateBoss`; nòng (turret) vẫn xoay theo user độc lập.
 - **2026-05-31 · TINH CHỈNH v4 (U1–U3):** xe địch cũng có vùng tác chiến theo cỡ xe (er = def.range·r/1.5) — chỉ bắn khi mục tiêu trong vùng + đạn địch giới hạn tầm; vòng tầm player mảnh & nhạt hơn. Đổ bóng thật (PCF soft shadow, desktop) + đèn mạnh hơn → chân thực hơn. Buff lâu hơn (28s); 🎯 tầm bắn + 📦 băng đạn **vĩnh viễn (∞)**; nhặt trùng nhóm thì thay thế (không cộng dồn); HUD hiện ∞.
 - **2026-05-31 · TINH CHỈNH v3 (T1–T5):** phạm vi tác chiến (vòng mờ + chỉ bắn khi địch trong vùng + đạn giới hạn tầm, mở theo màn/buff); nổ xe tăng hoành tráng + impact theo cỡ đạn; vật phẩm nhấp nháy + icon riêng + vòng đếm ngược; đánh boss player to bằng boss + tông húc văng nhau; min-gap giữa các xe; địa hình mê cung I/L/U/T/Z.
@@ -167,4 +177,4 @@ _(chờ mô tả)_
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-05-31 · nhánh `main` · trạng thái: P1 xong, đang làm P2
+> **Last updated:** 2026-05-31 · nhánh `main` · trạng thái: HOÀN THÀNH P1–P9 + R1–R7 + T1–T5 + Visual Overhaul v4 (G1–G5). Toàn bộ chữ tiếng Anh, icon SVG tự vẽ.
