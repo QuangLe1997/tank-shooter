@@ -228,6 +228,7 @@
   .w-chip .ic{width:15px;height:15px;color:var(--amber);}
   .w-chip.dia{border-color:rgba(127,231,255,.4);color:#bff0ff;} .w-chip.dia .ic{color:#7fe7ff;}
   .shop-wallet{margin:-2px 0 2px;}
+  .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
   .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
   /* shop grid */
   #shopgrid{display:flex;flex-direction:column;gap:8px;max-width:min(94vw,720px);max-height:62vh;overflow-y:auto;padding:4px 6px;width:100%;}
@@ -567,6 +568,7 @@
 <div class="overlay hidden" id="shop">
   <div class="title" style="font-size:clamp(22px,5vw,40px)">SHOP</div>
   <div class="shop-wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
+  <div class="shop-hint">Cheap gear costs <b style="color:var(--amber)">coins</b> · VIP gear costs <b style="color:#7fe7ff">diamonds</b> &nbsp;·&nbsp; 1 ◆ ≈ 200 coins of value</div>
   <div id="shopgrid"></div>
   <div class="panel" style="margin-top:4px"><div class="btn btn-primary" id="shopDone">DONE ▶</div></div>
 </div>
@@ -1602,6 +1604,7 @@ function killEnemy(e){
   tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x);   // burst into this tank's own parts (tinted by its palette)
   bumpCombo();
   addScore(e.def.score, new THREE.Vector3(e.pos.x,1.6,e.pos.z));
+  addCoins(Math.max(5, Math.round(e.def.score/10)));     // coin bounty ≈ 1/10 of the enemy's base score (predictable, not combo-inflated)
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
   if(e.loot) dropPowerup(e.pos);                   // beacon-marked tanks always yield their hidden power-up
   // recycle mesh
@@ -1845,14 +1848,14 @@ function killBoss(now){
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
     bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
-  addDiamonds(2);                                   // bosses drop diamonds (VIP currency)
-  showBanner(boss.def.name+' DOWN!  +2 ◆', '#8cbf3f'); sfx('levelup');
+  const bcoin = 150 + 90*S.stage; addCoins(bcoin); addDiamonds(2);   // a boss is a big payout: coins + 2 diamonds (VIP currency)
+  showBanner(boss.def.name+' DOWN!  +'+bcoin+' coins · +2 ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
   if(laserMesh) laserMesh.visible=false; clearMines();
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; updateHUD(); saveProgress();           // advance the resumable campaign checkpoint
+  S.stage++; addCoins(60*S.stage); updateHUD(); saveProgress();   // stage-clear coin bonus + advance the resumable checkpoint
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 1900); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 1800); }
 }
@@ -1995,7 +1998,6 @@ function bumpCombo(){ S.combo++; S.comboUntil = performance.now()/1000 + 3;
 function addScore(base, worldPos){
   const pts = Math.round(base * comboMult());
   S.score += pts;
-  addCoins(pts);                              // coins accrue alongside score (persist across runs)
   floatText('+'+pts, '#e7b54a', worldPos, 18);
   updateHUD();
 }
@@ -2449,8 +2451,8 @@ function dropPowerup(pos){
   const p=S.player; const low = (p.hp/p.maxHp<0.4) || (core&&core.hp/core.maxHp<0.4);
   let def, r=Math.random();
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield'].includes(u.id)); def=pool[(Math.random()*pool.length)|0]; }
-  else if(r<0.07){ def=GEM_DEF; }                                   // 7% → diamond treasure (VIP currency)
-  else if(r<0.46){ def=GUN_DROP_DEF; }                              // ~39% → gun (the headline reward)
+  else if(r<0.06){ def=GEM_DEF; }                                   // 6% → diamond treasure (VIP currency)
+  else if(r<0.45){ def=GUN_DROP_DEF; }                              // ~39% → gun (the headline reward)
   else { def=POWERUPS[(Math.random()*POWERUPS.length)|0]; }
   const g=new THREE.Group(); g.position.set(pos.x,0,pos.z); scene.add(g);
   const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
@@ -3006,24 +3008,28 @@ function refreshWallet(){ document.querySelectorAll('.w-coins').forEach(e=>e.tex
 // ----------------------------- SHOP CATALOG + UPGRADES -----------------------------
 // Leveled stat upgrades: early levels cost coins (cheap, affordable in a run or two), top
 // levels cost diamonds (VIP — a multi-session grind). costs[L] = price to go from level L→L+1.
+// Balanced ladder. Earning ≈ 2,000 coins + ~6 ◆ per stage-3 run (≈5,000 coins + ~14 ◆ for a full clear).
+// Conversion benchmark: 1 ◆ = 200 coins of value. costs[L] = price for level L→L+1; L1-L3 coins (cheap, ~1 run),
+// L4-L5 diamonds (VIP grind, several sessions). Value rises monotonically with power → no contradictions.
 const SHOP_UP = [
-  {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'DAMAGE',       per:'+8% bullet damage', costs:[{c:600},{c:1500},{c:3500},{d:8},{d:18}]},
-  {key:'range',  cat:'FIREPOWER', icon:'target', name:'LONG BARREL',  per:'+10% fire range',   costs:[{c:500},{c:1300},{c:3000},{d:7},{d:16}]},
-  {key:'reload', cat:'AMMO',      icon:'mag',    name:'FAST RELOAD',  per:'-12% reload time',  costs:[{c:600},{c:1500},{c:3500},{d:8},{d:18}]},
-  {key:'mag',    cat:'AMMO',      icon:'mag',    name:'BIG MAGAZINE', per:'+15% magazine',     costs:[{c:500},{c:1300},{c:3000},{d:7},{d:16}]},
-  {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:600},{c:1500},{c:3500},{d:8},{d:18}]},
-  {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:800},{c:2000},{c:4500},{d:10},{d:22}]},
-  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+8% move speed',    costs:[{c:500},{c:1300},{c:3000},{d:7},{d:16}]},
-  {key:'guards', cat:'TROOPS',    icon:'shield', name:'CORE GUARDS',  per:'+1 base guard',     costs:[{c:1500},{c:4000},{d:10}]},
-  {key:'crew',   cat:'TROOPS',    icon:'shield', name:'TANK CREW',    per:'+1 base crew',      costs:[{c:1500},{c:4000},{d:10}]},
-  {key:'troops', cat:'TROOPS',    icon:'up',     name:'TROOP ARMS',   per:'+15% troop damage', costs:[{c:1000},{c:2500},{d:8}]},
+  {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'DAMAGE',       per:'+8% bullet damage', costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
+  {key:'range',  cat:'FIREPOWER', icon:'target', name:'LONG BARREL',  per:'+10% fire range',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
+  {key:'reload', cat:'AMMO',      icon:'mag',    name:'FAST RELOAD',  per:'-12% reload time',  costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
+  {key:'mag',    cat:'AMMO',      icon:'mag',    name:'BIG MAGAZINE', per:'+15% magazine',     costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
+  {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
+  {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
+  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+8% move speed',    costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
+  {key:'guards', cat:'TROOPS',    icon:'shield', name:'CORE GUARDS',  per:'+1 base guard',     costs:[{c:900},{c:2400},{d:16}]},
+  {key:'crew',   cat:'TROOPS',    icon:'shield', name:'TANK CREW',    per:'+1 base crew',      costs:[{c:900},{c:2400},{d:16}]},
+  {key:'troops', cat:'TROOPS',    icon:'up',     name:'TROOP ARMS',   per:'+15% troop damage', costs:[{c:600},{c:1500},{d:12}]},
 ];
 const SHOP_UP_BY={}; SHOP_UP.forEach(u=>SHOP_UP_BY[u.key]=u);
 function upLevel(key){ return PROFILE.upgrades[key]||0; }
 function upMax(key){ return SHOP_UP_BY[key] ? SHOP_UP_BY[key].costs.length : 0; }
-// gun unlocks → permanent arsenal. T1/T2/T3 in coins; the two strongest are VIP (diamonds only, never gifted in battle).
-const GUN_PRICE = { smg:{c:800}, cryo:{c:2600}, shotgun:{c:2500}, flak:{c:2800}, cannon:{c:3400},
-  minigun:{c:6000}, missile:{c:6800}, tesla:{c:7200}, railgun:{d:12}, rocket:{d:14} };
+// gun unlocks → permanent arsenal. T1/T2/T3 in coins; the two strongest are VIP (diamonds only, never gifted in
+// battle). VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,000) — value stays ordered.
+const GUN_PRICE = { smg:{c:500}, shotgun:{c:1400}, cryo:{c:1600}, flak:{c:1700}, cannon:{c:2000},
+  minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, railgun:{d:28}, rocket:{d:34} };
 const VIP_GUNS = ['railgun','rocket'];                        // diamond-only; excluded from in-battle gun drops
 function canAfford(cost){ return !!cost && (!cost.c || PROFILE.coins>=cost.c) && (!cost.d || PROFILE.diamonds>=cost.d); }
 function payCost(cost){ if(!canAfford(cost)) return false; if(cost.c) PROFILE.coins-=cost.c; if(cost.d) PROFILE.diamonds-=cost.d; return true; }
