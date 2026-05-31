@@ -558,6 +558,7 @@ const GLYPH={
   compress:'<path d="M10 4v6H4M14 4v6h6M10 20v-6H4M14 20v-6h6"/>',
   alert:'<path d="M12 3 1.8 20.5h20.4L12 3Z"/><path d="M12 9.5v4.8"/><path d="M12 17.4v.7"/>',
   drone:'<circle cx="12" cy="12" r="2.6"/><circle cx="5.5" cy="6.5" r="2"/><circle cx="18.5" cy="6.5" r="2"/><path d="M7 8l3 2.4M17 8l-3 2.4M12 14.6V18M9.5 18.4h5"/>',
+  rocket:'<path d="M12 2.5c2.3 1.7 3.4 4.6 3.4 8l-1 5h-4.8l-1-5c0-3.4 1.1-6.3 3.4-8Z"/><path d="M9.6 13.5 6.6 16.5l2.2.2M14.4 13.5l3 3-2.2.2"/><path d="M10.6 18.5h2.8l-1.4 3Z"/><circle cx="12" cy="8.5" r="1"/>',
 };
 function svgMarkup(name, sw){
   const g=GLYPH[name]||GLYPH.spark;
@@ -823,7 +824,7 @@ function makePlayer(){
     pos: new THREE.Vector3(0, 0, ARENA*0.55), vel: new THREE.Vector3(),
     facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI, shieldMesh: mesh.userData.shield,
     hp:100, maxHp:100, lives:3, fireAt:0, weaponLvl:0,
-    guns:[{id:'rifle', ammo:24}], gunIdx:0, reloadUntil:0,   // gun inventory (R2)
+    guns:[{id:'rifle', ammo:24, rU:0, rD:0}], gunIdx:0,   // gun inventory (R2; per-gun reload rU/rD)
     infiniteAmmo:false, ammoMul:1,                            // derived from buffs each frame
     buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0 },   // timed power-up buffs
     rangeMul:1, radius:PLAYER.radius, scale:1,                   // combat-range upgrade + boss-parity scale
@@ -968,6 +969,8 @@ function sfx(name){
     case 'reload':  tone(180,0.06,{type:'square',vol:0.12}); noise(0.05,{vol:0.05,hp:1500,lp:6000,delay:0.02}); tone(140,0.07,{type:'square',vol:0.1,delay:0.09}); break;
     case 'reloaded':tone(880,0.08,{type:'triangle',vol:0.13}); tone(1320,0.13,{type:'triangle',vol:0.13,delay:0.07}); break;
     case 'alarm':   tone(440,0.12,{type:'square',vol:0.11}); tone(330,0.17,{type:'square',vol:0.11,delay:0.13}); break;
+    case 'rocketlaunch': noise(0.4,{vol:0.16,hp:500,lp:4200}); tone(150,0.32,{type:'sawtooth',vol:0.14,slideTo:320}); break;
+    case 'beep':    tone(1500,0.05,{type:'square',vol:0.07}); break;
   }
 }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
@@ -1035,7 +1038,7 @@ function spawnBullet(x, z, angle, o={}){
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
-    by:1.2, vy, arc:(vy>0.5) });
+    by:1.2, vy, arc:(vy>0.5), freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0 });
 }
 function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
 function updateBullets(dt, now){
@@ -1070,6 +1073,11 @@ function updateBullets(dt, now){
           damageEnemy(e, dmg);
           const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11, 2.2+b.dmg*0.08)/(e.def.scale||1);   // shove back along the shot; heavy tanks resist
           e.kbx+=(b.vx/_bl)*_imp; e.kbz+=(b.vz/_bl)*_imp; e.hitT=Math.max(e.hitT,0.16);
+          if(b.freeze){ e.stunUntil=Math.max(e.stunUntil, now+b.freeze); ringPulse(b.mesh.position, 0x9fe8ff, 1.5); }   // CRYO: freeze
+          if(b.chain){ let hits=b.chain;                                                                               // TESLA: arc to nearby enemies
+            for(const e2 of enemies.slice()){ if(e2===e||hits<=0) continue; const cx=e2.pos.x-e.pos.x, cz=e2.pos.z-e.pos.z;
+              if(cx*cx+cz*cz < b.chainR*b.chainR){ damageEnemy(e2, b.dmg*0.6); ringPulse(e2.pos, 0x7fd0ff, 1.3);
+                spawnPart(e2.pos.x,1.4,e2.pos.z,(Math.random()-0.5)*6,4,(Math.random()-0.5)*6,{color:0x9fe0ff,size:0.9,life:0.2,grav:0,drag:6}); hits--; } } }
           const k=Math.min(3.2, 1 + b.dmg/26);      // bigger guns → bigger impact
           ringPulse(b.mesh.position, 0xffd27a, 1.4*k);
           burst(b.mesh.position, 0xffe6a0, Math.floor(3*k), 6*k, {life:0.22, size:0.7*k, grav:-4, drag:5}); hit=true;
@@ -1837,15 +1845,24 @@ const GUNS = {
   minigun: { name:'MINIGUN',    svg:'minigun', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xffd27a, r:0.34, life:1.8 },
   missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xffae5c, r:0.5,  life:3.2, homing:5, aoe:3.4 },
   railgun: { name:'RAILGUN',     svg:'rail', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6 },
+  cryo:    { name:'CRYO',  svg:'snow', tier:2, dmg:10, fireCd:0.32, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:1.4 },          // freezes enemies on hit
+  tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x7fd0ff, r:0.4,  life:1.4, chain:3, chainR:9 },    // chain lightning
+  rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xffae5c, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360 },  // lobbed, 2s fuse, wipes a big radius
 };
-const GUN_DROP_POOL = ['smg','shotgun','flak','cannon','minigun','missile','railgun'];  // collectable (starter rifle excluded)
+// gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
+function gunDropPool(stage){
+  const pool=['smg','shotgun','cryo'];
+  if(stage>=2) pool.push('flak','cannon','minigun');
+  if(stage>=3) pool.push('missile','tesla','railgun','rocket');
+  return pool;
+}
 function muzzleFlash(x,z,ang,color){
   muzzleLight.position.set(x,1.6,z); muzzleLight.color.setHex(color); muzzleLight.intensity=2.4;
   spawnPart(x,1.4,z, Math.sin(ang)*9,1.5,Math.cos(ang)*9, {color, size:1.3, life:0.12, grav:0, drag:7});
 }
 function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 function magCap(g){ return Math.round(g.mag * S.player.ammoMul); }
-function startReload(now){ const p=S.player; if(p.infiniteAmmo||p.reloadUntil) return; const r=equippedGun().reload; p.reloadStart=now; p.reloadDur=r; p.reloadUntil=now+r; sfx('reload'); updateGunHUD(); }
+function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload; inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }
 // ----- reload countdown dial: a glowing circular chart billboarded above the tank, flashes ✓ when ready -----
 const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=reloadCanvas.height=160;
 const reloadCtx=reloadCanvas.getContext('2d');
@@ -1867,18 +1884,22 @@ function drawReloadDial(prog, secs, ready){
 }
 function updateReload(now){
   const p=S.player; if(!p||!p.guns.length){ reloadSprite.visible=false; return; }
-  const inst=p.guns[p.gunIdx];
-  if(p.reloadUntil && now>=p.reloadUntil){                                                            // complete on time, even if not firing
-    inst.ammo=magCap(GUNS[inst.id]); p.reloadUntil=0; p.readyUntil=now+0.55;
-    ringPulse(p.pos, 0x9be35a, p.radius*1.9); sfx('reloaded'); updateGunHUD();
+  const eq=p.guns[p.gunIdx];
+  // complete reloads on time for EVERY gun — a reloading gun finishes in the background while you use another
+  for(const gi of p.guns){
+    if(gi.rU && now>=gi.rU){ gi.ammo=magCap(GUNS[gi.id]); gi.rU=0;
+      if(gi===eq){ p.readyUntil=now+0.55; ringPulse(p.pos, 0x9be35a, p.radius*1.9); sfx('reloaded'); }
+      else { floatText(GUNS[gi.id].name+' READY', '#9be35a', p.pos, 14); }
+      updateGunHUD();
+    }
   }
-  const reloading = !p.infiniteAmmo && p.reloadUntil>now && p.reloadDur>0;
+  const reloading = !p.infiniteAmmo && eq.rU>now && eq.rD>0;
   const ready = !reloading && now < (p.readyUntil||0);
   if(reloading || ready){
     reloadSprite.visible=true;
     reloadSprite.position.set(p.pos.x, 3.4*p.scale + 3.4, p.pos.z);
-    const rem = reloading ? p.reloadUntil-now : 0;
-    drawReloadDial(reloading ? 1-rem/p.reloadDur : 1, rem, ready);
+    const rem = reloading ? eq.rU-now : 0;
+    drawReloadDial(reloading ? 1-rem/eq.rD : 1, rem, ready);
   } else reloadSprite.visible=false;
 }
 function nearestTarget(maxR){
@@ -1887,12 +1908,62 @@ function nearestTarget(maxR){
   if(boss&&boss.alive){ const dx=boss.pos.x-p.pos.x, dz=boss.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=boss; } }
   return best;
 }
+// ----- SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius -----
+const rockets=[], fuses=[];
+function makeRocketMesh(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,1.5,10), new THREE.MeshStandardMaterial({color:0x3a4048,metalness:0.7,roughness:0.4})); g.add(body);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.27,0.66,10), new THREE.MeshStandardMaterial({color:0xc23a22,metalness:0.5,roughness:0.5})); nose.position.y=1.08; g.add(nose);
+  for(let k=0;k<3;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.36,0.06), new THREE.MeshStandardMaterial({color:0x2a2e33,metalness:0.6})); fin.position.y=-0.7; fin.rotation.y=k*2.094; g.add(fin); }
+  const ex=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffb050,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); ex.scale.setScalar(1.7); ex.position.y=-1.05; g.add(ex);
+  return g;
+}
+const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
+function fireRocket(now, g){
+  const p=S.player;
+  let tx,tz; const tgt=nearestTarget(playerRange()*1.7);
+  if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; }
+  else if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
+  else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; }
+  const lim=ARENA-2; tx=Math.max(-lim,Math.min(lim,tx)); tz=Math.max(-lim,Math.min(lim,tz));
+  const sx=p.pos.x+Math.sin(p.aimSmoothed)*(p.radius+0.9), sz=p.pos.z+Math.cos(p.aimSmoothed)*(p.radius+0.9);
+  const D=Math.hypot(tx-sx,tz-sz), T=Math.max(0.7, D/34), G=30;
+  const mesh=makeRocketMesh(); mesh.position.set(sx,1.7,sz); scene.add(mesh);
+  rockets.push({ mesh, x:sx,y:1.7,z:sz, vx:(tx-sx)/T, vz:(tz-sz)/T, vy:G*T/2 - 0.9/T, G, tx, tz, aoeR:g.aoeR||15, bossDmg:g.bossDmg||350, tt:0 });
+}
+function updateRockets(dt, now){
+  for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.tt+=dt;
+    r.vy-=r.G*dt; r.x+=r.vx*dt; r.y+=r.vy*dt; r.z+=r.vz*dt; r.mesh.position.set(r.x,r.y,r.z);
+    _rdir.set(r.vx,r.vy,r.vz); if(_rdir.lengthSq()>0.0001){ _rdir.normalize(); r.mesh.quaternion.setFromUnitVectors(_RUP,_rdir); }   // nose follows velocity
+    if(Math.random()<0.7) spawnPart(r.x,r.y,r.z, (Math.random()-0.5)*2, -0.5, (Math.random()-0.5)*2, {color:0x5a4e42, size:1.1, life:0.5, smoke:true, grav:1.2, drag:1.6, op:0.5});  // exhaust trail
+    if(r.y<=0.8 || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1); fuses.push({ x:r.tx, z:r.tz, at:now+2, blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg }); }
+  }
+}
+function updateFuses(dt, now){
+  for(let i=fuses.length-1;i>=0;i--){ const f=fuses[i]; f.blink-=dt;
+    if(f.blink<=0){ f.blink=0.26; ringPulse({x:f.x,z:f.z}, 0xff2a16, f.aoeR); sfx('beep');
+      spawnPart(f.x,0.5,f.z,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff5028,size:1.2,life:0.3,grav:-2}); }
+    if(now>=f.at){
+      const pos=new THREE.Vector3(f.x,1.2,f.z);
+      bigExplode(pos, 0xffae5c, f.aoeR/3);
+      ringPulse({x:f.x,z:f.z}, 0xffd27a, f.aoeR); ringPulse({x:f.x,z:f.z}, 0xff5028, f.aoeR*0.7);
+      for(let k=0;k<10;k++){ const a=Math.random()*6.28, rr=Math.random()*f.aoeR; setTimeout(()=>{ if(S.mode==='paused')return; bigExplode(new THREE.Vector3(f.x+Math.cos(a)*rr,1,f.z+Math.sin(a)*rr), 0xff7a3d, 1.7); }, k*40); }
+      for(const e of enemies.slice()){ const dx=e.pos.x-f.x, dz=e.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageEnemy(e, 99999); }   // wipe every enemy in the radius
+      if(boss&&boss.alive){ const dx=boss.pos.x-f.x, dz=boss.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageBoss(f.bossDmg); }       // big, but capped vs boss
+      spawnDebris(pos, 2.6, 0xff7a3d);
+      S.shake=Math.min(4.5, S.shake+3);
+      muzzleLight.position.set(f.x,3,f.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=7;
+      sfx('bigexplode');
+      fuses.splice(i,1);
+    }
+  }
+}
 // AUTO-FIRE: called every frame while playing. Handles reload + magazine + fragments.
 function fireGun(now, range){
   const p=S.player; if(!p.guns.length) return;
   const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
-  if(p.reloadUntil) return;                              // still reloading → can't fire (completion handled in updateReload)
-  if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now); return; }
+  if(inst.rU) return;                                    // this gun is reloading (its own timer; others reload in the background)
+  if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now, inst); return; }
   if(now < p.fireAt) return;
   const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
   p.fireAt = now + g.fireCd * rapid * p.fireMul;
@@ -1904,26 +1975,30 @@ function fireGun(now, range){
   const crit = Math.random() < p.crit;
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
   const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1);
-  const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
-  const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
-  const aimDist = aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z)
-                : (!MOBILE && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
-  for(let i=0;i<n;i++){
-    const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
-    spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:aimDist,
-      pierce:g.pierce||0, homing:g.homing||0, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0)});
+  if(g.special==='rocket'){ fireRocket(now, g); }
+  else {
+    const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
+    const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
+    const aimDist = aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z)
+                  : (!MOBILE && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
+    for(let i=0;i<n;i++){
+      const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
+      spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:aimDist,
+        pierce:g.pierce||0, homing:g.homing||0, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0),
+        freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0});
+    }
   }
   muzzleFlash(_v.x,_v.z,ang, g.color);   // flash at the real barrel tip
-  S.shake = Math.min(1, S.shake + (g.dmg>40?0.22:0.06));
-  sfx('shoot_'+inst.id);
-  if(!p.infiniteAmmo && inst.ammo<=0) startReload(now);
+  S.shake = Math.min(1.2, S.shake + (g.special==='rocket'?0.4:(g.dmg>40?0.22:0.06)));
+  sfx(g.special==='rocket' ? 'rocketlaunch' : 'shoot_'+inst.id);
+  if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst);
   updateGunHUD();
 }
-function selectGun(i){ const p=S.player; if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.reloadUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }
+function selectGun(i){ const p=S.player; if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.readyUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }   // keep each gun's own reload running
 function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; selectGun((p.gunIdx+d+p.guns.length)%p.guns.length); }
 function giveGun(id){
   const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
-  if(inst){ inst.ammo=magCap(g); } else { p.guns.push({id, ammo:magCap(g)}); p.gunIdx=p.guns.length-1; p.reloadUntil=0; }
+  if(inst){ inst.ammo=magCap(g); inst.rU=0; } else { p.guns.push({id, ammo:magCap(g), rU:0, rD:0}); p.gunIdx=p.guns.length-1; }
   floatText(g.name, '#aef0a0', p.pos, 18); updateGunHUD();
 }
 
@@ -1977,7 +2052,7 @@ const POWERUPS = [
   { id:'rapid',  svg:'bolt', color:0xfff04a, buff:'rapid',  dur:28, label:'RAPID FIRE ×2' },
   { id:'power',  svg:'burst', color:0xff7a3d, buff:'power',  dur:28, label:'DAMAGE ×1.6' },
   { id:'speed',  svg:'dash', color:0x6fe0a0, buff:'speed',  dur:28, label:'SPEED ×1.4' },
-  { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', onGet(p){ p.reloadUntil=0; } },
+  { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', onGet(p){ for(const g of p.guns) g.rU=0; } },
   // PERMANENT buffs (last until death) — rarer feel, lasting progression
   { id:'range',  svg:'target', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)' },
   { id:'ammoup', svg:'mag', color:0xc0a060, buff:'ammoup', dur:Infinity, label:'MAGAZINE ×1.6 (∞)', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
@@ -1989,7 +2064,7 @@ const POWERUPS = [
   { id:'freeze', svg:'snow', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   { id:'drone',  svg:'drone', color:0x6fd0ff, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
   // gun drop — adds a random gun to the inventory
-  { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ giveGun(GUN_DROP_POOL[(Math.random()*GUN_DROP_POOL.length)|0]); } },
+  { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ const pl=gunDropPool(S.stage); giveGun(pl[(Math.random()*pl.length)|0]); } },
 ];
 function applyPowerup(def){
   const p=S.player;
@@ -2104,7 +2179,7 @@ function updateGunHUD(){
   const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
   const chip=document.getElementById('weaponchip');
   if(chip){
-    const reloading = p.reloadUntil>performance.now()/1000;
+    const reloading = inst.rU>performance.now()/1000;
     const ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g));
     const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
     const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name;
@@ -2136,7 +2211,7 @@ function startGame(){
   p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0; p.aimSmoothed=p.aim=-Math.PI;
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → just the starter rifle, full mag
-  p.guns=[{id:'rifle', ammo:GUNS.rifle.mag}]; p.gunIdx=0; p.reloadUntil=0; p.infiniteAmmo=false; p.ammoMul=1;
+  p.guns=[{id:'rifle', ammo:GUNS.rifle.mag, rU:0, rD:0}]; p.gunIdx=0; p.readyUntil=0; p.infiniteAmmo=false; p.ammoMul=1;
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1;
@@ -2412,6 +2487,7 @@ function loop(nowMs){
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
     updateBullets(gdt, now);
+    updateRockets(gdt, now); updateFuses(dt, now);   // siege-rocket flight + landing fuse
     separateTanks(now);                 // resolve overlaps so tanks never merge
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
@@ -2472,7 +2548,7 @@ window._game = S;
 window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
 window._spawn = spawnEnemy;
 window._give = giveGun; window._cycleGun = cycleGun; window._drop = dropPowerup;
-window._dbg.blocks = blocks; window._dbg.debris = debris;
+window._dbg.blocks = blocks; window._dbg.debris = debris; window._dbg.rockets = rockets; window._dbg.fuses = fuses; window._dbg.gunDropPool = gunDropPool;
 window._intro = intro;   // deploy-cinematic state (debug/inspection)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
