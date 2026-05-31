@@ -531,6 +531,7 @@ const PLAYER = {
   turnLerp: 14, rangeBase: 26,           // combat range: only fires + bullets only reach within this
 };
 const TANK_SCALE = 1.2;   // global tank visual+hitbox scale — bigger, more imposing tanks fill the arena better (bosses already huge, excluded)
+const PLAYER_PAL = {hull:0x5e7a2e,turret:0x75933a,barrel:0x9bb04a,tread:0x2a3514,accent:0xe7b54a};   // player's buildTank default palette — used to tint death wreckage
 // effective combat range: grows with stage + permanent upgrade + timed buff
 function playerRange(){ const p=S.player; if(!p) return PLAYER.rangeBase;
   const buff = (S.timeNow||0) < p.buffUntil.range ? 1.4 : 1;
@@ -1432,7 +1433,7 @@ function damageEnemy(e, dmg){
 }
 function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1);
-  tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5);
+  tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x);   // burst into this tank's own parts (tinted by its palette)
   bumpCombo();
   addScore(e.def.score, new THREE.Vector3(e.pos.x,1.6,e.pos.z));
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
@@ -1673,9 +1674,10 @@ function killBoss(now){
   document.getElementById('bossbar').style.display='none';
   S.timeScale=0.35;                                   // slow-mo
   const pos=boss.pos.clone(); const bs=boss.r/1.5;            // boss scale → huge shatter
-  spawnDebris(pos, Math.min(4, bs*1.6), boss.def.pal.accent);
+  const bpal=boss.def.pal, bms=boss.mesh.scale.x;             // capture before boss=null (used in the delayed bursts below)
+  spawnTankWreck(pos, bms, bpal);                             // boss bursts into giant components
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
-    bigExplode(ep, 0xff7a3d, 2.2); spawnDebris(ep, Math.min(3, bs), boss.def.pal.accent); }, k*130);
+    bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
   showBanner(boss.def.name+' DOWN!', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
@@ -1726,14 +1728,48 @@ function spawnDebris(pos, scale, color){
       rx:(Math.random()-0.5)*11, ry:(Math.random()-0.5)*11, rz:(Math.random()-0.5)*11,
       age:0, life:2.0+Math.random()*1.6, settled:false }); }
 }
+// ----- tank WRECKAGE: a dying tank bursts into its actual COMPONENTS (turret, gun barrel, hull plates, track segments, road wheels, cupola) — not generic cubes -----
+const WRECK_GEO = {
+  turret: new RoundedBoxGeometry(1.5,0.72,1.9,2,0.2),
+  barrel: new THREE.CylinderGeometry(0.17,0.22,2.7,12),
+  hull:   new RoundedBoxGeometry(2.1,0.78,2.5,2,0.16),
+  plate:  new RoundedBoxGeometry(1.45,0.2,1.05,1,0.07),
+  tread:  new THREE.BoxGeometry(0.82,0.88,3.4),
+  wheel:  new THREE.CylinderGeometry(0.42,0.42,0.5,14),
+  cupola: new THREE.CylinderGeometry(0.38,0.44,0.42,14),
+};
+const wreckPool=[];
+for(let i=0;i<84;i++){ const m=new THREE.Mesh(WRECK_GEO.plate, new THREE.MeshStandardMaterial({color:0x3a3a30,roughness:0.72,metalness:0.6,map:panelTex(),emissive:0xff5a1e,emissiveIntensity:0,transparent:true,opacity:1}));
+  m.castShadow=true; m.visible=false; scene.add(m); wreckPool.push(m); }
+// part list: geometry key + palette key + how many + relative size
+const _WRECK_PARTS=[ {g:'turret',k:'turret',sz:1.0}, {g:'barrel',k:'barrel',sz:1.0}, {g:'hull',k:'hull',sz:0.92},
+  {g:'plate',k:'hull',sz:1.0},{g:'plate',k:'hull',sz:0.85}, {g:'tread',k:'tread',sz:0.92},{g:'tread',k:'tread',sz:0.92},
+  {g:'wheel',k:'wheel',sz:1.0},{g:'wheel',k:'wheel',sz:1.0},{g:'wheel',k:'wheel',sz:0.85}, {g:'cupola',k:'accent',sz:1.0} ];
+function spawnTankWreck(pos, ms, pal){
+  const colFor=k=> k==='turret'?pal.turret : k==='barrel'?(pal.barrel||pal.turret) : k==='hull'?pal.hull : k==='tread'?pal.tread : k==='wheel'?0x141410 : (pal.accent||pal.turret);
+  const rs=Math.sqrt(ms);
+  for(const part of _WRECK_PARTS){
+    const m=wreckPool.pop(); if(!m) return;                                  // pool exhausted (huge multi-kill) → stop gracefully
+    m.geometry=WRECK_GEO[part.g];
+    m.material.color.setHex(colFor(part.k));
+    const s=ms*part.sz; m.scale.set(s,s,s);
+    const a=Math.random()*6.283, sp=(2.5+Math.random()*6.5)*rs, up=(4.5+Math.random()*7)*rs;
+    m.position.set(pos.x+(Math.random()-0.5)*ms*1.1, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*1.1);
+    m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
+    m.material.emissiveIntensity=0.45+Math.random()*0.6; m.material.opacity=1; m.visible=true;
+    debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
+      rx:(Math.random()-0.5)*8, ry:(Math.random()-0.5)*8, rz:(Math.random()-0.5)*8,
+      age:0, life:3.0+Math.random()*2.4, settled:false, floor:Math.max(0.18, s*0.42), pool:wreckPool });
+  }
+}
 function updateDebris(dt){
   for(let i=debris.length-1;i>=0;i--){ const d=debris[i], m=d.m; d.age+=dt;
-    if(d.age>=d.life){ m.visible=false; m.material.opacity=1; m.material.emissiveIntensity=0; debrisPool.push(m); debris.splice(i,1); continue; }
+    if(d.age>=d.life){ m.visible=false; m.material.opacity=1; m.material.emissiveIntensity=0; (d.pool||debrisPool).push(m); debris.splice(i,1); continue; }
     if(!d.settled){
       d.vy-=30*dt;                                                                   // gravity
       const dg=Math.max(0,1-dt*1.1); d.vx*=dg; d.vz*=dg;                              // air drag
       m.position.x+=d.vx*dt; m.position.y+=d.vy*dt; m.position.z+=d.vz*dt;
-      const floor=Math.max(0.14, m.scale.y*0.5);
+      const floor=d.floor!=null?d.floor:Math.max(0.14, m.scale.y*0.5);
       if(m.position.y<=floor){ m.position.y=floor;
         if(Math.abs(d.vy)<2.4 && Math.hypot(d.vx,d.vz)<2.6){ d.settled=true; d.vy=d.vx=d.vz=0; }   // come to rest on the ground
         else { d.vy*=-0.22; d.vx*=0.5; d.vz*=0.5; d.rx*=0.5; d.ry*=0.5; d.rz*=0.5; }               // low bounce + spin damp
@@ -1745,14 +1781,14 @@ function updateDebris(dt){
   }
 }
 // grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column
-function tankExplode(pos, color, scale=1.5){
+function tankExplode(pos, color, scale=1.5, pal=null, ms=null){
   burst(pos, 0xffffff, Math.floor(10*scale), 10*scale, {life:0.16, size:2.0*scale, up:5, grav:-2, drag:6});   // core flash
   burst(pos, 0xffd27a, Math.floor(22*scale), 14*scale, {life:0.6,  size:2.1*scale, up:5});                    // hot fireball
   burst(pos, 0xff7a2a, Math.floor(18*scale), 11*scale, {life:0.7,  size:1.9*scale, up:4});                    // deep-orange fire
   burst(pos, color,    Math.floor(14*scale), 10*scale, {life:0.5,  size:1.4*scale, up:3});
   burst(pos, 0xffd9a0, Math.floor(6*scale),  14*scale, {life:0.32, size:0.7*scale, up:2, drag:4});            // sparks (sparser, less neon)
   burst(pos, 0x1a1712, Math.floor(7*scale),  5*scale,  {life:0.95, size:2.6*scale, up:5, grav:-2, drag:1.6, smoke:true, op:0.62});  // immediate black smoke (grounds the blast)
-  spawnDebris(pos, scale, color);                                                                              // shatter into metal fragments
+  if(pal) spawnTankWreck(pos, ms||scale*0.72, pal); else spawnDebris(pos, scale, color);                       // tanks shatter into real PARTS; walls/blocks → metal fragments
   for(let k=0;k<Math.floor(6*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
     burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.22, life:1.4, size:3.2*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
   ringPulse(pos, color, scale*3.8); ringPulse(pos, 0xffe6a0, scale*2.2);
@@ -1762,7 +1798,7 @@ function tankExplode(pos, color, scale=1.5){
   if(scale>=2.2){   // big tanks/bosses: a delayed secondary blast + extra shards = bigger payoff
     setTimeout(()=>{ if(S.mode==='paused') return;
       burst(pos, 0xffae5c, Math.floor(16*scale), 16*scale, {life:0.6, size:2.2*scale, up:5});
-      spawnDebris(pos, scale*0.8, color); ringPulse(pos, 0xffd27a, scale*3.0); S.shake=Math.min(3.6,S.shake+1.0); sfx('bigexplode'); }, 160);
+      if(pal) spawnTankWreck(pos,(ms||scale*0.72)*0.7, pal); else spawnDebris(pos, scale*0.8, color); ringPulse(pos, 0xffd27a, scale*3.0); S.shake=Math.min(3.6,S.shake+1.0); sfx('bigexplode'); }, 160);
   }
 }
 
@@ -1791,7 +1827,7 @@ function damagePlayer(dmg, now){
 }
 function playerDie(now){
   const p=S.player;
-  tankExplode(p.pos, 0xffd27a, 2.2);
+  tankExplode(p.pos, 0xffd27a, 2.2, PLAYER_PAL, p.mesh.scale.x);
   p.lives--;
   if(p.lives < 0){ gameOver('OUT OF LIVES'); return; }
   // respawn near core, invincible
@@ -2719,6 +2755,7 @@ window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward scr
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
 window._view = { get camera(){return camera;}, get scene(){return scene;}, get renderer(){return renderer;}, get composer(){return composer;} };   // (debug) inspect/drive the view
+window._tankExplode = tankExplode; window._wreck = spawnTankWreck;   // (debug) trigger the death FX / part-wreck
 
 requestAnimationFrame(loop);
 </script>
