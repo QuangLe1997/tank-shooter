@@ -231,29 +231,36 @@
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
   .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
   /* shop grid */
-  #shopgrid{display:flex;flex-direction:column;gap:8px;max-width:min(94vw,720px);max-height:62vh;overflow-y:auto;padding:4px 6px;width:100%;}
-  .shop-cat{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--green);text-transform:uppercase;text-align:left;margin:6px 2px 1px;opacity:.85;}
+  #shopgrid{display:flex;flex-direction:column;gap:7px;max-width:min(94vw,760px);max-height:62vh;overflow-y:auto;padding:4px 8px;width:100%;}
+  #shopgrid::-webkit-scrollbar{width:6px;} #shopgrid::-webkit-scrollbar-thumb{background:rgba(255,206,110,.3);border-radius:3px;}
+  .shop-cat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:900;letter-spacing:3px;color:var(--amber);text-transform:uppercase;text-align:left;margin:7px 2px 0;opacity:.92;}
+  .shop-cat .cat-ic{width:13px;height:13px;color:var(--amber);opacity:.85;} .shop-cat .cat-ic svg{width:100%;height:100%;}
+  .shop-cat::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,206,110,.35),transparent);}
   .shop-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;}
-  .shopcard{pointer-events:auto;cursor:pointer;position:relative;width:150px;padding:9px 10px 8px;border-radius:12px;text-align:left;
-    background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 16px rgba(0,0,0,.38);transition:transform .12s,border-color .12s;display:flex;flex-direction:column;gap:3px;}
-  .shopcard:hover{transform:translateY(-2px);border-color:rgba(255,206,110,.5);}
-  .shopcard .sc-top{display:flex;align-items:center;gap:7px;}
-  .shopcard .sc-ic{width:20px;height:20px;color:var(--ink);flex:0 0 auto;} .shopcard .sc-ic svg{width:100%;height:100%;}
-  .shopcard .sc-nm{font-size:12.5px;font-weight:800;letter-spacing:.4px;color:var(--ink);line-height:1.1;}
+  /* premium rarity-tinted cards */
+  .shopcard{--rar:#9bd14a;pointer-events:auto;cursor:pointer;position:relative;overflow:hidden;width:152px;padding:10px 11px 9px 13px;border-radius:13px;text-align:left;
+    background:linear-gradient(158deg,rgba(30,36,24,.94),rgba(9,12,7,.96));border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 8px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);transition:transform .13s,border-color .13s,box-shadow .13s;display:flex;flex-direction:column;gap:3px;}
+  .shopcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rar);box-shadow:0 0 10px var(--rar);opacity:.9;}
+  .shopcard.rar-t1{--rar:#9fb07a;} .shopcard.rar-t2{--rar:#5aa9ff;} .shopcard.rar-t3{--rar:#c08bff;} .shopcard.rar-vip{--rar:#7fe7ff;} .shopcard.rar-up{--rar:#9bd14a;}
+  .shopcard:hover{transform:translateY(-3px);border-color:var(--rar);box-shadow:0 13px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);}
+  .sc-badge{position:absolute;top:8px;right:8px;font-size:8px;font-weight:900;letter-spacing:1px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.4);color:var(--rar);border:1px solid var(--rar);}
+  .shopcard .sc-top{display:flex;align-items:center;gap:8px;padding-right:34px;}
+  .shopcard .sc-ic{width:24px;height:24px;color:var(--rar);flex:0 0 auto;filter:drop-shadow(0 0 5px var(--rar));} .shopcard .sc-ic svg{width:100%;height:100%;}
+  .shopcard .sc-nm{font-size:12.5px;font-weight:900;letter-spacing:.4px;color:#f0f3e8;line-height:1.05;}
   .shopcard .sc-eff{font-size:10px;color:var(--muted);line-height:1.3;min-height:13px;}
   .shopcard .sc-dots{display:flex;gap:3px;margin:1px 0;}
-  .shopcard .sc-dots i{width:13px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);}
-  .shopcard .sc-dots i.on{background:var(--green);}
-  .shopcard .sc-dots i.vip.on{background:#7fe7ff;}
-  .shopcard .sc-buy{margin-top:3px;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;border-radius:8px;
-    background:linear-gradient(180deg,rgba(243,196,94,.9),rgba(205,124,32,.9));color:#1c1404;font-weight:900;font-size:12px;letter-spacing:.5px;border:1px solid rgba(255,230,175,.6);}
+  .shopcard .sc-dots i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.12);}
+  .shopcard .sc-dots i.on{background:var(--rar);box-shadow:0 0 5px var(--rar);}
+  .shopcard .sc-buy{margin-top:4px;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;border-radius:9px;
+    background:linear-gradient(180deg,#f4c45e,#cd7c20);color:#1c1404;font-weight:900;font-size:12px;letter-spacing:.5px;border:1px solid rgba(255,230,175,.65);text-shadow:0 1px 0 rgba(255,240,200,.4);}
   .shopcard .sc-buy .ic{width:13px;height:13px;color:#1c1404;}
-  .shopcard.vip .sc-buy{background:linear-gradient(180deg,rgba(127,231,255,.9),rgba(60,150,200,.9));}
-  .shopcard.cant{opacity:.92;} .shopcard.cant .sc-buy{background:rgba(255,255,255,.07);color:var(--muted);border-color:var(--line);cursor:not-allowed;}
-  .shopcard.cant .sc-buy .ic{color:var(--muted);}
-  .shopcard.maxed{opacity:.6;} .shopcard.maxed .sc-buy{background:rgba(140,191,63,.18);color:var(--green);border-color:rgba(140,191,63,.4);}
-  .shopcard.owned{opacity:.6;} .shopcard.owned .sc-buy{background:rgba(140,191,63,.18);color:var(--green);border-color:rgba(140,191,63,.4);}
-  body.touch #shopgrid{max-height:64vh;} body.touch .shopcard{width:31%;min-width:104px;}
+  .shopcard.rar-vip .sc-buy{background:linear-gradient(180deg,#9fefff,#3aa0c8);border-color:rgba(190,245,255,.7);}
+  .shopcard.cant .sc-buy{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line);cursor:not-allowed;text-shadow:none;}
+  .shopcard.cant .sc-buy .ic{color:var(--muted);} .shopcard.cant{opacity:.96;} .shopcard.cant::before{opacity:.4;}
+  .shopcard.maxed .sc-buy,.shopcard.owned .sc-buy{background:rgba(140,191,63,.16);color:#bfe08a;border-color:rgba(140,191,63,.45);text-shadow:none;}
+  .shopcard.owned{filter:grayscale(.55);opacity:.72;} .shopcard.owned:hover{transform:none;}
+  body.touch #shopgrid{max-height:64vh;} body.touch .shopcard{width:31%;min-width:106px;}
   #nickInput{pointer-events:auto;width:min(78vw,300px);text-align:center;font-family:inherit;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;
     padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);outline:none;caret-color:var(--green);}
   #nickInput:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(140,191,63,.18);}
@@ -2724,40 +2731,49 @@ tapBtn('ldDone', closeLoadout);
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 function shopModel(){
   const cats={}; const push=(c,it)=>{ (cats[c]=cats[c]||[]).push(it); };
-  Object.keys(GUN_PRICE).forEach(id=>{ if(!GUNS[id]||PROFILE.ownedGuns.includes(id)) return;
-    push('WEAPONS', {type:'gun', id, name:GUNS[id].name, icon:GUNS[id].svg||'gun', tier:GUNS[id].tier, cost:GUN_PRICE[id], vip:VIP_GUNS.includes(id)}); });
+  Object.keys(GUN_PRICE).forEach(id=>{ if(!GUNS[id]) return;
+    const tier=GUNS[id].tier, vip=VIP_GUNS.includes(id), owned=PROFILE.ownedGuns.includes(id);
+    push('WEAPONS', {type:'gun', id, name:GUNS[id].name, icon:GUNS[id].svg||'gun', tier, cost:GUN_PRICE[id], vip, owned, rar: vip?'vip':('t'+tier)}); });
+  if(cats.WEAPONS) cats.WEAPONS.sort((a,b)=>(a.owned?1:0)-(b.owned?1:0) || a.tier-b.tier);   // buyable first, owned last
   SHOP_UP.forEach(u=>{ const L=upLevel(u.key), max=upMax(u.key), cost=L<max?u.costs[L]:null;
-    push(u.cat, {type:'up', key:u.key, name:u.name, icon:u.icon, per:u.per, level:L, max, cost, vip: !!(cost&&cost.d)}); });
+    push(u.cat, {type:'up', key:u.key, name:u.name, icon:u.icon, per:u.per, level:L, max, cost, vip:!!(cost&&cost.d), rar:(cost&&cost.d)?'vip':'up'}); });
   return ['WEAPONS','FIREPOWER','AMMO','CHASSIS','TROOPS'].filter(c=>cats[c]&&cats[c].length).map(c=>({cat:c, items:cats[c]}));
 }
+const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', TROOPS:'up' };
 function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
 function renderShop(){
   const grid=document.getElementById('shopgrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
   shopModel().forEach(group=>{
-    const h=document.createElement('div'); h.className='shop-cat'; h.textContent=group.cat; grid.appendChild(h);
+    const h=document.createElement('div'); h.className='shop-cat';
+    h.innerHTML='<span class="cat-ic">'+svgMarkup(CAT_ICON[group.cat]||'star')+'</span>'+group.cat;
+    grid.appendChild(h);
     const row=document.createElement('div'); row.className='shop-row';
     group.items.forEach(it=>{
+      const owned = it.type==='gun' && it.owned;
       const maxed = it.type==='up' && it.level>=it.max;
-      const afford = !maxed && it.cost && canAfford(it.cost);
-      let state = maxed ? 'maxed' : (afford ? '' : 'cant');
-      const card=document.createElement('div'); card.className='shopcard'+(state?' '+state:'')+(it.vip?' vip':'');
-      let dots=''; if(it.type==='up'){ const cs=SHOP_UP_BY[it.key].costs; for(let i=0;i<it.max;i++) dots+='<i class="'+(i<it.level?'on':'')+(cs[i]&&cs[i].d?' vip':'')+'"></i>'; }
-      const title = it.name + (it.type==='up'? ' <span style="opacity:.7">'+it.level+'/'+it.max+'</span>' : (it.vip?' <span style="color:#7fe7ff">VIP</span>':''));
-      const eff = it.type==='up' ? it.per : ('TIER '+it.tier+' weapon');
-      const buy = maxed ? 'MAX' : (it.cost ? priceHTML(it.cost) : 'MAX');
-      card.innerHTML = '<div class="sc-top"><span class="sc-ic">'+svgMarkup(it.icon)+'</span><span class="sc-nm">'+title+'</span></div>'+
+      const locked = !owned && !maxed && !(it.cost && canAfford(it.cost));   // can't afford
+      const state = owned?'owned':(maxed?'maxed':(locked?'cant':''));
+      const card=document.createElement('div'); card.className='shopcard rar-'+it.rar+(state?' '+state:'');
+      const badge = it.type==='gun' ? (it.vip?'VIP':('T'+it.tier)) : ('LV '+it.level+'/'+it.max);
+      let dots=''; if(it.type==='up'){ const cs=SHOP_UP_BY[it.key].costs; for(let i=0;i<it.max;i++) dots+='<i class="'+(i<it.level?'on':'')+'"></i>'; }
+      const eff = it.type==='up' ? it.per : ('Tier '+it.tier+' weapon');
+      const buy = owned ? '✓ OWNED' : (maxed ? 'MAXED' : priceHTML(it.cost));
+      card.innerHTML = '<span class="sc-badge">'+badge+'</span>'+
+        '<div class="sc-top"><span class="sc-ic">'+svgMarkup(it.icon)+'</span><span class="sc-nm">'+it.name+'</span></div>'+
         (it.type==='up'?'<div class="sc-dots">'+dots+'</div>':'')+
         '<div class="sc-eff">'+eff+'</div><div class="sc-buy">'+buy+'</div>';
-      if(state!=='maxed') tapEl(card, ()=>buyShop(it));
+      if(!owned && !maxed) tapEl(card, ()=>buyShop(it));   // owned/maxed → not clickable (no duplicate purchase)
       row.appendChild(card);
     });
     grid.appendChild(row);
   });
 }
 function buyShop(it){
-  if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }            // can't afford → ignore
-  if(it.type==='up'){ if(upLevel(it.key)>=upMax(it.key)) return; payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1; }
-  else if(it.type==='gun'){ if(PROFILE.ownedGuns.includes(it.id)) return; payCost(it.cost); ownGun(it.id); }
+  if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // already own it → never re-buy
+  if(it.type==='up' && upLevel(it.key)>=upMax(it.key)){ sfx('click'); return; }        // already maxed
+  if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }                          // can't afford
+  if(it.type==='up'){ payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1; }
+  else if(it.type==='gun'){ payCost(it.cost); ownGun(it.id); }
   saveProfile(); sfx('powerup'); refreshWallet(); renderShop(); refreshStartUI();
 }
 function openShop(){ hide('start'); renderShop(); show('shop'); refreshWallet(); sfx('click'); }
