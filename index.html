@@ -495,6 +495,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 // ----------------------------- CONFIG -----------------------------
 const ARENA = 60;                       // half-extent of the square arena (world units)
 const PLAYER_STANDOFF = 2.0;            // enemies keep this much clearance from the player hull (anti-glue → easy to shoot)
+const ARC_G = 110;                      // gravity for ballistic shells — far shots lob in a clear arc, point-blank stays flat (fast guns arc less)
 const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const PLAYER = {
   accel: 130, maxSpeed: 26, friction: 9, radius: 1.5,
@@ -1018,8 +1019,8 @@ const BVIS = MOBILE ? 1.6 : 1.15;     // bullets render bigger on small screens
 const trailPool=[], trails=[];
 for(let i=0;i<240;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
   s.visible=false; scene.add(s); trailPool.push(s); }
-function addTrail(x,z,color,size){ const s=trailPool.pop(); if(!s) return; s.visible=true; s.material.color.setHex(color); s.material.opacity=0.95;
-  s.position.set(x,1.2,z); s.scale.setScalar(size); trails.push({s,life:0.2,max:0.2}); }
+function addTrail(x,y,z,color,size){ const s=trailPool.pop(); if(!s) return; s.visible=true; s.material.color.setHex(color); s.material.opacity=0.95;
+  s.position.set(x,y,z); s.scale.setScalar(size); trails.push({s,life:0.2,max:0.2}); }
 function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i]; t.life-=dt;
   if(t.life<=0){ t.s.visible=false; t.s.material.opacity=0; trailPool.push(t.s); trails.splice(i,1); continue; }
   t.s.material.opacity=(t.life/t.max)*0.95; } }
@@ -1030,9 +1031,11 @@ function spawnBullet(x, z, angle, o={}){
   m.material.color.setHex(col);
   m.position.set(x, 1.2, z);
   const sp = o.speed||60;
+  const D=o.arcDist||0; let vy=0; if(D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
-    homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col });
+    homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
+    by:1.2, vy, arc:(vy>0.5) });
 }
 function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
 function updateBullets(dt, now){
@@ -1046,8 +1049,9 @@ function updateBullets(dt, now){
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*b.homing)); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp; } }
     b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt;
-    b.mesh.position.set(b.x,1.2,b.z);
-    addTrail(b.x, b.z, b.owner==='p'?0xffb43a:0xff5a24, (b.r||0.45)*BVIS*2.7);   // fiery tracer — yellow-orange (player), red-orange (enemy)
+    if(b.arc){ b.by+=b.vy*dt; b.vy-=ARC_G*dt; if(b.by<0.35) b.by=0.35; }   // ballistic arc (purely visual; collision is 2D x/z)
+    b.mesh.position.set(b.x,b.by,b.z);
+    addTrail(b.x, b.by, b.z, b.owner==='p'?0xffb43a:0xff5a24, (b.r||0.45)*BVIS*2.7);   // fiery tracer — yellow-orange (player), red-orange (enemy)
 
     const overRange = b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
@@ -1064,7 +1068,7 @@ function updateBullets(dt, now){
           if(e.def.shield){ const nx=Math.sin(e.aim),nz=Math.cos(e.aim), bl=Math.hypot(b.vx,b.vz)||1;
             if((b.vx/bl)*nx+(b.vz/bl)*nz < -0.3){ dmg*=0.28; ringPulse(b.mesh.position,0x9fd0ff,1.2); } }  // blocked from the front → flank it
           damageEnemy(e, dmg);
-          const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(8, 1.6+b.dmg*0.07)/(e.def.scale||1);   // shove back along the shot; heavy tanks resist
+          const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11, 2.2+b.dmg*0.08)/(e.def.scale||1);   // shove back along the shot; heavy tanks resist
           e.kbx+=(b.vx/_bl)*_imp; e.kbz+=(b.vz/_bl)*_imp; e.hitT=Math.max(e.hitT,0.16);
           const k=Math.min(3.2, 1 + b.dmg/26);      // bigger guns → bigger impact
           ringPulse(b.mesh.position, 0xffd27a, 1.4*k);
@@ -1076,7 +1080,7 @@ function updateBullets(dt, now){
       const p=S.player;
       const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
       if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now);
-        if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(6,1.3+b.dmg*0.07); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; } hit=true; }
+        if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(7.5,1.8+b.dmg*0.08); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; } hit=true; }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
         if(dcx*dcx+dcz*dcz < (b.r+core.r)**2){ damageCore(b.dmg); ringPulse(b.mesh.position,0xe0603a,2); hit=true; } }
     }
@@ -1241,7 +1245,7 @@ function updateEnemies(dt, now){
       const rateMul = 1.7 - 0.7*ds;                            // slower fire early
       const dmg = def.dmg * (0.65 + 0.35*ds);                  // weaker early
       // enemy bullets only reach within the enemy's combat range
-      spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:3.0, maxDist:er+2});
+      spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:3.0, maxDist:er+2, arcDist:d});
       spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:0xff7a4a,size:1,life:0.1,grav:0,drag:7});
       sfx('enemyShoot');
       if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
@@ -1549,8 +1553,10 @@ function killBoss(now){
   if(!boss) return; boss.alive=false;
   document.getElementById('bossbar').style.display='none';
   S.timeScale=0.35;                                   // slow-mo
-  const pos=boss.pos.clone();
-  for(let k=0;k<6;k++) setTimeout(()=>{ bigExplode(new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6), 0xff7a3d, 2.2); }, k*130);
+  const pos=boss.pos.clone(); const bs=boss.r/1.5;            // boss scale → huge shatter
+  spawnDebris(pos, Math.min(4, bs*1.6), boss.def.pal.accent);
+  for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
+    bigExplode(ep, 0xff7a3d, 2.2); spawnDebris(ep, Math.min(3, bs), boss.def.pal.accent); }, k*130);
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
   showBanner(boss.def.name+' DOWN!', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
@@ -1580,18 +1586,50 @@ function bigExplode(pos, color, scale=1.5){
   muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
   sfx(scale>=2 ? 'bigexplode' : 'explode');
 }
-// grand tank-death blast: white flash → fireball → flying chunks → rising smoke column
+// ----- debris chunks: tanks shatter into flying, tumbling, burning fragments on death -----
+const debrisGeo = new THREE.BoxGeometry(0.5,0.4,0.6);
+const debrisPool=[], debris=[];
+for(let i=0;i<84;i++){ const m=new THREE.Mesh(debrisGeo, new THREE.MeshStandardMaterial({color:0x2a2622,roughness:0.7,metalness:0.6,emissive:0x5a2408,emissiveIntensity:0.6}));
+  m.visible=false; scene.add(m); debrisPool.push(m); }
+function spawnDebris(pos, scale, color){
+  const n=Math.min(32, Math.floor(8*scale));
+  for(let i=0;i<n;i++){ const m=debrisPool.pop(); if(!m) break;
+    const a=Math.random()*6.283, sp=(6+Math.random()*10)*scale, up=(5+Math.random()*8)*scale, s=(0.4+Math.random()*0.7)*scale;
+    m.scale.set(s,s,s);
+    m.material.color.setHex(Math.random()<0.5?color:0x2a2622); m.material.emissiveIntensity=0.4+Math.random()*0.6;
+    m.position.set(pos.x+(Math.random()-0.5)*scale, 1.2+Math.random()*scale, pos.z+(Math.random()-0.5)*scale);
+    m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6); m.visible=true;
+    debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
+      rx:(Math.random()-0.5)*16, ry:(Math.random()-0.5)*16, rz:(Math.random()-0.5)*16, life:1.1+Math.random()*0.9 }); }
+}
+function updateDebris(dt){
+  for(let i=debris.length-1;i>=0;i--){ const d=debris[i]; d.life-=dt;
+    if(d.life<=0){ d.m.visible=false; debrisPool.push(d.m); debris.splice(i,1); continue; }
+    d.vy-=24*dt; d.m.position.x+=d.vx*dt; d.m.position.y+=d.vy*dt; d.m.position.z+=d.vz*dt;
+    if(d.m.position.y<0.25){ d.m.position.y=0.25; d.vy*=-0.42; d.vx*=0.62; d.vz*=0.62; }   // bounce + settle on the ground
+    d.m.rotation.x+=d.rx*dt; d.m.rotation.y+=d.ry*dt; d.m.rotation.z+=d.rz*dt;
+    if(d.life<0.45) d.m.scale.multiplyScalar(0.93);   // burn away
+  }
+}
+// grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column
 function tankExplode(pos, color, scale=1.5){
-  burst(pos, 0xffffff, Math.floor(8*scale),  9*scale,  {life:0.16, size:1.7*scale, up:4, grav:-2, drag:6});  // flash
-  burst(pos, 0xffae5c, Math.floor(18*scale), 13*scale, {life:0.55, size:1.8*scale, up:4});                   // fireball
+  burst(pos, 0xffffff, Math.floor(10*scale), 10*scale, {life:0.16, size:2.0*scale, up:5, grav:-2, drag:6});   // core flash
+  burst(pos, 0xffd27a, Math.floor(22*scale), 14*scale, {life:0.6,  size:2.1*scale, up:5});                    // hot fireball
+  burst(pos, 0xff7a2a, Math.floor(18*scale), 11*scale, {life:0.7,  size:1.9*scale, up:4});                    // deep-orange fire
   burst(pos, color,    Math.floor(14*scale), 10*scale, {life:0.5,  size:1.4*scale, up:3});
-  burst(pos, 0x3a2a18, Math.floor(8*scale),  12*scale, {life:1.0,  size:1.3*scale, up:6, grav:-16, drag:1.0}); // chunks
-  for(let k=0;k<Math.floor(5*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
-    burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.2, life:1.3, size:2.9*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
-  ringPulse(pos, color, scale*3.6); ringPulse(pos, 0xffe6a0, scale*2.1);
-  S.shake = Math.min(2.8, S.shake + scale*0.9);
-  muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity = 4.6;
+  burst(pos, 0xffe6a0, Math.floor(10*scale), 16*scale, {life:0.4,  size:0.9*scale, up:2, drag:3});            // shooting sparks
+  spawnDebris(pos, scale, color);                                                                              // shatter into chunks
+  for(let k=0;k<Math.floor(6*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
+    burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.22, life:1.4, size:3.2*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
+  ringPulse(pos, color, scale*3.8); ringPulse(pos, 0xffe6a0, scale*2.2);
+  S.shake = Math.min(3.2, S.shake + scale*1.0);
+  muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity = 5.2;
   sfx(scale>=2 ? 'bigexplode' : 'explode');
+  if(scale>=2.2){   // big tanks/bosses: a delayed secondary blast + extra shards = bigger payoff
+    setTimeout(()=>{ if(S.mode==='paused') return;
+      burst(pos, 0xffae5c, Math.floor(16*scale), 16*scale, {life:0.6, size:2.2*scale, up:5});
+      spawnDebris(pos, scale*0.8, color); ringPulse(pos, 0xffd27a, scale*3.0); S.shake=Math.min(3.6,S.shake+1.0); sfx('bigexplode'); }, 160);
+  }
 }
 
 // ----------------------------- SCORE / COMBO -----------------------------
@@ -1852,9 +1890,12 @@ function fireGun(now, range){
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
   const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1);
   const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
+  const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
+  const aimDist = aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z)
+                : (!MOBILE && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
   for(let i=0;i<n;i++){
     const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
-    spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist,
+    spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:aimDist,
       pierce:g.pierce||0, homing:g.homing||0, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0)});
   }
   muzzleFlash(_v.x,_v.z,ang, g.color);   // flash at the real barrel tip
@@ -2374,7 +2415,7 @@ function loop(nowMs){
   if(S.mode!=='playing'){ rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now);
-  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt);
+  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
@@ -2416,7 +2457,7 @@ window._game = S;
 window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
 window._spawn = spawnEnemy;
 window._give = giveGun; window._cycleGun = cycleGun; window._drop = dropPowerup;
-window._dbg.blocks = blocks;
+window._dbg.blocks = blocks; window._dbg.debris = debris;
 window._intro = intro;   // deploy-cinematic state (debug/inspection)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
