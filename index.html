@@ -216,9 +216,16 @@
   body.touch .gunicon svg{width:15px;height:15px;}
   body.touch #abilities{display:none;}          /* mobile uses on-screen buttons */
   body.touch #combo{top:62px;}
-  body.touch #hpwrap{left:max(62px,calc(env(safe-area-inset-left) + 56px));top:max(10px,env(safe-area-inset-top));bottom:auto;width:172px;padding:7px 11px;}
-  body.touch #topbar{padding:4px;}
-  body.touch #topbar .cell{padding:4px 12px;} body.touch #topbar .val{font-size:17px;}
+  body.touch .chip{background:linear-gradient(180deg,rgba(18,26,12,.4),rgba(8,14,6,.48));}   /* transparent HUD — see the battlefield through it */
+  body.touch #hpwrap{left:max(58px,calc(env(safe-area-inset-left) + 50px));top:max(8px,env(safe-area-inset-top));bottom:auto;width:138px;padding:5px 9px;}
+  body.touch #hpwrap .row{gap:6px;margin-bottom:4px;}
+  body.touch #hpwrap .ic{width:14px;height:14px;}
+  body.touch #hpwrap .bar{height:7px;}
+  body.touch #lives{font-size:11px;}
+  body.touch #topbar{padding:2px 3px;}
+  body.touch #topbar .cell{padding:2px 9px;}
+  body.touch #topbar .lbl{font-size:7px;letter-spacing:1.5px;}
+  body.touch #topbar .val{font-size:14px;}
   body.touch #weaponchip{bottom:max(14px,env(safe-area-inset-bottom));padding:6px 14px;}
   /* bigger, friendlier joystick */
   body.touch .stick{width:150px;height:150px;}
@@ -291,6 +298,15 @@
   .bestline{font-size:12px;letter-spacing:3px;color:var(--amber);font-weight:800;text-transform:uppercase;opacity:.9;margin-top:2px;min-height:14px;}
   .go-best{font-size:12px;letter-spacing:2px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:12px;min-height:14px;}
   .go-best.newbest{color:var(--amber);text-shadow:0 0 14px rgba(231,181,74,.6);}
+
+  /* ===== title-screen banner (AI key art) ===== */
+  #start{ background:linear-gradient(180deg,rgba(3,5,2,.12) 0%,rgba(3,5,2,0) 34%,rgba(3,5,2,.55) 72%,rgba(3,5,2,.93) 100%), url('assets/banner-desktop.jpg') center/cover no-repeat;
+    backdrop-filter:none; justify-content:flex-end; gap:12px; padding-bottom:clamp(20px,6vh,52px); }
+  #start .title, #start .subtitle{ display:none; }            /* the banner already shows the STEEL SIEGE logo */
+  #start .panel{ background:rgba(8,12,6,.58); backdrop-filter:blur(4px); }
+  #start .bestline{ text-shadow:0 2px 12px rgba(0,0,0,.95); }
+  body.touch #start{ padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+  #rotate{ background:linear-gradient(180deg,rgba(3,5,2,.5),rgba(3,5,2,.8)), url('assets/banner-mobile.jpg') center/cover no-repeat; }
 </style>
 </head>
 <body>
@@ -949,15 +965,26 @@ for(let i=0;i<300;i++){
   const m = new THREE.Mesh(bulletGeo, new THREE.MeshBasicMaterial({color:0xffe08a}));
   m.visible=false; scene.add(m); bulletPool.push(m);
 }
+const BVIS = MOBILE ? 1.6 : 1.15;     // bullets render bigger on small screens
+// glowing additive tracer trails so every shot's path is bright & easy to read
+const trailPool=[], trails=[];
+for(let i=0;i<240;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+  s.visible=false; scene.add(s); trailPool.push(s); }
+function addTrail(x,z,color,size){ const s=trailPool.pop(); if(!s) return; s.visible=true; s.material.color.setHex(color); s.material.opacity=0.95;
+  s.position.set(x,1.2,z); s.scale.setScalar(size); trails.push({s,life:0.2,max:0.2}); }
+function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i]; t.life-=dt;
+  if(t.life<=0){ t.s.visible=false; t.s.material.opacity=0; trailPool.push(t.s); trails.splice(i,1); continue; }
+  t.s.material.opacity=(t.life/t.max)*0.95; } }
 function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
-  m.visible=true; m.scale.setScalar(o.scale||1);
-  m.material.color.setHex(o.color ?? 0xffe08a);
+  m.visible=true; m.scale.setScalar((o.scale||1)*BVIS);
+  const col = o.color ?? 0xffe08a;
+  m.material.color.setHex(col);
   m.position.set(x, 1.2, z);
   const sp = o.speed||60;
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
-    homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0 });
+    homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col });
 }
 function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
 function updateBullets(dt, now){
@@ -972,6 +999,8 @@ function updateBullets(dt, now){
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp; } }
     b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt;
     b.mesh.position.set(b.x,1.2,b.z);
+    addTrail(b.x, b.z, b.color, (b.r||0.45)*BVIS*2.7);   // glowing tracer streak
+
     const overRange = b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
@@ -2080,7 +2109,7 @@ function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
-const camOff = new THREE.Vector3(0, 33, 28);
+const camOff = new THREE.Vector3(0, MOBILE?27:33, MOBILE?23.5:28);   // closer on mobile → tanks read bigger on the small screen
 const camTarget = new THREE.Vector3();
 const camLook = new THREE.Vector3();
 function updateCamera(dt, now){
@@ -2105,7 +2134,7 @@ function startIntro(){
   const p=S.player; if(!p){ S.mode='playing'; return; }
   p.mesh.position.set(p.pos.x,0,p.pos.z); p.mesh.rotation.y=p.facing; p.turret.rotation.y=0;
   const T=new THREE.Vector3(p.pos.x,0,p.pos.z);
-  const offs =[[3,2.0,-13],[-7,2.8,-9],[-14,6.6,3],[-7,13,17],[2,25,27],[0,33,28]]; // last = camOff (seamless handoff)
+  const offs =[[3,2.0,-13],[-7,2.8,-9],[-14,6.6,3],[-7,13,17],[2,25,27],[camOff.x,camOff.y,camOff.z]]; // last = camOff (seamless handoff)
   const looks=[[0,2.2,0],[0,2.2,0],[0,2.0,0],[0,1.8,0],[0,1.2,0],[0,1.0,0]];
   const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))));
   intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true;
@@ -2230,7 +2259,7 @@ function loop(nowMs){
   if(S.mode!=='playing'){ rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now);
-  updateRings(dt); updateFlashes(dt); updateParticles(dt);
+  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
