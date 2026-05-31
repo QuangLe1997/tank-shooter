@@ -319,8 +319,9 @@
   body.touch #autoBtn .ic{width:19px;height:19px;}
   body.touch #autoBtn.on{background:rgba(44,30,6,.4);color:#ffcf5a;border-color:rgba(255,200,90,.6);box-shadow:0 0 9px rgba(255,180,60,.5);}
   /* camera controls (zoom + rotate view) — left edge, vertically centred, see-through */
-  #camCtl{position:absolute;left:max(8px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 143px);display:none;flex-direction:row;gap:7px;pointer-events:none;z-index:14;}   /* below the left HUD column, above the thumb cluster */
+  #camCtl{position:absolute;left:max(8px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 184px);top:auto;display:none;flex-direction:row;gap:7px;pointer-events:none;z-index:14;}   /* bottom-anchored just above DASH → fixed gap on any viewport height (no overlap) */
   body.touch #camCtl{display:flex;}
+  @media (max-height:340px){ body.touch #gunlist{display:none !important;} }   /* tiny landscape (iPhone SE): drop the gun strip so it never meets the bottom-anchored camera buttons (weaponchip still shows the active gun). !important beats updateGunHUD's inline display */
   .camBtn{pointer-events:auto;width:40px;height:40px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
     background:rgba(8,12,6,.32);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.85);backdrop-filter:blur(4px);box-shadow:0 3px 10px rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent;}
   .camBtn:active{transform:scale(.92);}
