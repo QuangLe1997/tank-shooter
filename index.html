@@ -52,6 +52,8 @@
   .wbar.core > i{background:linear-gradient(90deg,#b07a2c,#ffc24e);}
   .wbar .wlabel{position:absolute;left:-3px;top:-13px;width:11px;height:11px;color:var(--amber);filter:drop-shadow(0 1px 2px #000);}
   .wbar .wlabel svg{width:11px;height:11px;display:block;}
+  @keyframes wbarpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,54,36,0);}50%{box-shadow:0 0 8px 2px rgba(255,60,40,.85);}}
+  .wbar.low{animation:wbarpulse .6s ease-in-out infinite;border-color:rgba(255,86,60,.95);}   /* critical-HP danger telegraph */
 
   /* dash + spell indicators bottom-right (desktop) */
   #abilities{right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:10px;}
@@ -2431,13 +2433,13 @@ function updateWorldBars(){
   if(p && p.hp>0){
     const f=p.hp/p.maxHp, sc=p.scale*TANK_SCALE, s=worldToScreen(_wbV.set(p.pos.x, 3.7*sc, p.pos.z));   // float clearly above the turret
     if(s.infront){ _phpBar.style.display='block'; _phpBar.style.left=s.x+'px'; _phpBar.style.top=s.y+'px';
-      _phpFill.style.width=Math.max(0,f*100)+'%'; _phpFill.style.background=_hpGrad(f); _phpLives.textContent='×'+Math.max(0,p.lives); }
+      _phpFill.style.width=Math.max(0,f*100)+'%'; _phpFill.style.background=_hpGrad(f); _phpLives.textContent='×'+Math.max(0,p.lives); _phpBar.classList.toggle('low', f<=0.25); }
     else _phpBar.style.display='none';
   } else _phpBar.style.display='none';
   if(core && core.hp>0){
     const f=core.hp/core.maxHp, s=worldToScreen(_wbV.set(core.pos.x, 7.8, core.pos.z));                 // float above the monument crystal
     if(s.infront){ _chpBar.style.display='block'; _chpBar.style.left=s.x+'px'; _chpBar.style.top=s.y+'px';
-      _chpFill.style.width=Math.max(0,f*100)+'%'; _chpFill.style.background=_coreGrad(f); }
+      _chpFill.style.width=Math.max(0,f*100)+'%'; _chpFill.style.background=_coreGrad(f); _chpBar.classList.toggle('low', f<=0.3); }
     else _chpBar.style.display='none';
   } else _chpBar.style.display='none';
 }
