@@ -147,6 +147,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · Boss locomotion kiểu xe tăng:** boss chỉ tiến/lùi theo hướng thân; muốn tông phải **quay đầu xe về phía user** trước (telegraph để né) rồi mới lao thẳng theo hướng đã khoá (không bẻ lái giữa chừng → né được). State machine `aim → charge` trong `updateBoss`; nòng (turret) vẫn xoay theo user độc lập.
 - **2026-05-31 · TINH CHỈNH v4 (U1–U3):** xe địch cũng có vùng tác chiến theo cỡ xe (er = def.range·r/1.5) — chỉ bắn khi mục tiêu trong vùng + đạn địch giới hạn tầm; vòng tầm player mảnh & nhạt hơn. Đổ bóng thật (PCF soft shadow, desktop) + đèn mạnh hơn → chân thực hơn. Buff lâu hơn (28s); 🎯 tầm bắn + 📦 băng đạn **vĩnh viễn (∞)**; nhặt trùng nhóm thì thay thế (không cộng dồn); HUD hiện ∞.
 - **2026-05-31 · TINH CHỈNH v3 (T1–T5):** phạm vi tác chiến (vòng mờ + chỉ bắn khi địch trong vùng + đạn giới hạn tầm, mở theo màn/buff); nổ xe tăng hoành tráng + impact theo cỡ đạn; vật phẩm nhấp nháy + icon riêng + vòng đếm ngược; đánh boss player to bằng boss + tông húc văng nhau; min-gap giữa các xe; địa hình mê cung I/L/U/T/Z.
 - **2026-05-31 · REWORK v2 (R1–R7):** sửa theo phản hồi sau khi chơi —
