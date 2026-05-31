@@ -472,7 +472,7 @@ function makePlayer(){
     guns:[{id:'rifle', ammo:24}], gunIdx:0, reloadUntil:0,   // gun inventory (R2)
     infiniteAmmo:false, ammoMul:1,                            // derived from buffs each frame
     buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0 },   // timed power-up buffs
-    rangeMul:1, baseScale:1,                                          // combat-range upgrade + boss-parity scale
+    rangeMul:1, radius:PLAYER.radius, scale:1,                   // combat-range upgrade + boss-parity scale
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
     overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     // roguelite upgrade multipliers (P7)
@@ -695,7 +695,7 @@ function updateBullets(dt, now){
     } else { // enemy bullet
       const p=S.player;
       const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
-      if(dpx*dpx+dpz*dpz < (b.r+PLAYER.radius)**2){ damagePlayer(b.dmg, now); hit=true; }
+      if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ damagePlayer(b.dmg, now); hit=true; }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
         if(dcx*dcx+dcz*dcz < (b.r+core.r)**2){ damageCore(b.dmg); ringPulse(b.mesh.position,0xe0603a,2); hit=true; } }
     }
@@ -821,7 +821,7 @@ function updateEnemies(dt, now){
     if(def.mortar && now>e.fireAt && d < def.range){ mortarLob(p.pos.x, p.pos.z); e.fireAt = now + def.fireCd; }
     // ram contact damage (separateTanks keeps them from overlapping; this just applies the bump damage)
     if(now>e.ramAt){
-      if(dpl < e.r+PLAYER.radius+0.6){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }
+      if(dpl < e.r+p.radius+0.6){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }
       else if(core && e.pos.distanceTo(core.pos) < e.r+core.r+0.6){ damageCore(def.ram*0.7); e.ramAt=now+0.8; }
     }
   }
@@ -829,17 +829,17 @@ function updateEnemies(dt, now){
 // ---- HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away ----
 function separateTanks(now){
   const p=S.player; if(!p) return;
-  const arenaLim=ARENA-2;
+  const arenaLim=ARENA-2, GAP=0.7;   // minimum breathing room so tanks never stick flush together
   // enemy ↔ enemy
   for(let i=0;i<enemies.length;i++){ const a=enemies[i]; if(a.def.bomber) continue;
     for(let j=i+1;j<enemies.length;j++){ const b=enemies[j]; if(b.def.bomber) continue;
-      const dx=b.pos.x-a.pos.x, dz=b.pos.z-a.pos.z, min=a.r+b.r, d2=dx*dx+dz*dz;
+      const dx=b.pos.x-a.pos.x, dz=b.pos.z-a.pos.z, min=a.r+b.r+GAP, d2=dx*dx+dz*dz;
       if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=(min-d)/2, nx=dx/d, nz=dz/d;
         a.pos.x-=nx*ov; a.pos.z-=nz*ov; b.pos.x+=nx*ov; b.pos.z+=nz*ov; } }
   }
   // enemy ↔ player (push enemy out, nudge player, bounce the enemy away)
   for(const a of enemies){
-    const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, min=a.r+PLAYER.radius, d2=dx*dx+dz*dz;
+    const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, min=a.r+p.radius+GAP, d2=dx*dx+dz*dz;
     if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=min-d, nx=dx/d, nz=dz/d;
       a.pos.x-=nx*ov*0.8; a.pos.z-=nz*ov*0.8;
       p.pos.x+=nx*ov*0.2; p.pos.z+=nz*ov*0.2;
@@ -851,15 +851,20 @@ function separateTanks(now){
     a.pos.x=Math.max(-arenaLim,Math.min(arenaLim,a.pos.x)); a.pos.z=Math.max(-arenaLim,Math.min(arenaLim,a.pos.z));
     a.mesh.position.set(a.pos.x,0,a.pos.z);
   }
-  // boss ↔ player (only when not charging — charge is its damage window)
-  if(boss && boss.alive && now>=boss.chargeUntil){
-    const dx=p.pos.x-boss.pos.x, dz=p.pos.z-boss.pos.z, min=boss.r+PLAYER.radius, d2=dx*dx+dz*dz;
+  // boss ↔ player — always solid (no pass-through); collision bumps both apart + knockback
+  if(boss && boss.alive){
+    const dx=p.pos.x-boss.pos.x, dz=p.pos.z-boss.pos.z, min=boss.r+p.radius+GAP, d2=dx*dx+dz*dz;
     if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=min-d, nx=dx/d, nz=dz/d;
-      p.pos.x+=nx*ov*0.6; boss.pos.x-=nx*ov*0.4; p.pos.z+=nz*ov*0.6; boss.pos.z-=nz*ov*0.4; }
+      const charging = now < boss.chargeUntil;
+      // when charging the boss bulldozes (pushes player more); otherwise roughly even
+      p.pos.x+=nx*ov*(charging?0.85:0.55); p.pos.z+=nz*ov*(charging?0.85:0.55);
+      boss.pos.x-=nx*ov*(charging?0.15:0.45); boss.pos.z-=nz*ov*(charging?0.15:0.45);
+      p.vel.x+=nx*(charging?22:10); p.vel.z+=nz*(charging?22:10);   // knock the player back
+    }
   }
   // tanks ↔ terrain blocks (solid cover)
   for(const bl of blocks){
-    const dx=p.pos.x-bl.x, dz=p.pos.z-bl.z, min=bl.r+PLAYER.radius, d2=dx*dx+dz*dz;
+    const dx=p.pos.x-bl.x, dz=p.pos.z-bl.z, min=bl.r+p.radius, d2=dx*dx+dz*dz;
     if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2),ov=min-d; p.pos.x+=dx/d*ov; p.pos.z+=dz/d*ov; }
     for(const a of enemies){ const ex=a.pos.x-bl.x, ez=a.pos.z-bl.z, m=bl.r+a.r, e2=ex*ex+ez*ez;
       if(e2<m*m && e2>1e-4){ const d=Math.sqrt(e2),ov=m-d; a.pos.x+=ex/d*ov; a.pos.z+=ez/d*ov; a.mesh.position.set(a.pos.x,0,a.pos.z); } }
@@ -1036,7 +1041,7 @@ function updateBoss(dt, now){
   if(now < boss.chargeUntil){
     const cs=phase===2?52:42; boss.pos.addScaledVector(boss.chargeDir, cs*dt);
     if(Math.random()<0.6) burst(boss.pos,0xff5028,2,5,{y:1.5});
-    if(p.pos.distanceTo(boss.pos)<boss.r+PLAYER.radius+0.5 && now>boss.ramAt){ damagePlayer(34,now); boss.ramAt=now+0.6; }
+    if(p.pos.distanceTo(boss.pos)<boss.r+p.radius+0.5 && now>boss.ramAt){ damagePlayer(34,now); boss.ramAt=now+0.6; }
   } else if(!lasering && now>=boss.telUntil){
     // movement: approach / strafe (goliath is heavier/slower)
     const slowB = boss.id==='goliath'?0.6:1;
@@ -1454,7 +1459,7 @@ function updatePickups(dt, now){
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
     if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }
     u.g.position.set(u.x,0,u.z);
-    if(d2 < (PLAYER.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); disposePickup(u); pickups.splice(i,1); continue; }
+    if(d2 < (p.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); disposePickup(u); pickups.splice(i,1); continue; }
     if(age>PICKUP_LIFE){ disposePickup(u); pickups.splice(i,1); }
   }
 }
@@ -1548,7 +1553,7 @@ function startGame(){
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1;
-  p.buffUntil.range=0;
+  p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius; p.mesh.scale.setScalar(1);
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
@@ -1618,6 +1623,11 @@ function updatePlayer(dt, now){
   const bu=p.buffUntil;
   p.infiniteAmmo = now < bu.infammo;
   p.ammoMul = now < bu.ammoup ? 1.6 : 1;
+  // boss parity: grow to ~boss size during a boss fight so it's an even brawl
+  const targScale = (boss&&boss.alive) ? Math.max(1, boss.r/PLAYER.radius*0.8) : 1;
+  p.scale += (targScale - p.scale)*Math.min(1, dt*3);
+  p.radius = PLAYER.radius * p.scale;
+  p.mesh.scale.setScalar(p.scale);
   // AIM — mobile: turret auto-targets the nearest enemy in range (no manual aim).
   //       desktop: aim with the mouse. Firing is always automatic (handled below).
   if(MOBILE){
