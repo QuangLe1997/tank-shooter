@@ -388,21 +388,39 @@ function applyBiome(stage){
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
 const BLOCK_GEO = new RoundedBoxGeometry(3,3,3,2,0.3);
+const SEG=3;   // segment spacing (= block size) → segments touch into solid walls
+// maze wall shapes (offsets in segments) — I / L / U / T / Z to hide behind
+const MAZE_SHAPES = [
+  [[0,-1],[0,0],[0,1]],                                  // I
+  [[0,-1],[0,0],[0,1],[1,1],[2,1]],                      // L
+  [[-1,-1],[-1,0],[-1,1],[0,1],[1,1],[1,0],[1,-1]],      // U
+  [[-1,0],[0,0],[1,0],[0,1],[0,2]],                      // T
+  [[-1,-1],[0,-1],[0,0],[1,0],[1,1]],                    // Z
+];
 const blocks=[];
 function buildBlocks(){
   for(const b of blocks) scene.remove(b.mesh); blocks.length=0;
-  const n = 7 + S.stage*2;
+  const shapeCount = 4 + Math.floor(S.stage*1.2);
+  const centers=[];
   let tries=0;
-  while(blocks.length<n && tries++<240){
-    const x=(Math.random()*2-1)*(ARENA-8), z=(Math.random()*2-1)*(ARENA-8);
-    if(Math.hypot(x,z) < 13) continue;                       // keep the Core clear
-    if(Math.hypot(x, z-ARENA*0.55) < 11) continue;           // keep player spawn clear
-    if(blocks.some(o=>Math.hypot(o.x-x,o.z-z) < 6)) continue; // spacing
-    const steel = Math.random() < 0.34;
-    const mat = new THREE.MeshStandardMaterial({ color: steel?0x7d828c:0x9a5a36,
-      roughness: steel?0.5:0.92, metalness: steel?0.65:0.08 });
-    const m=new THREE.Mesh(BLOCK_GEO, mat); m.position.set(x,1.5,z); m.rotation.y=Math.random()*0.4; scene.add(m);
-    blocks.push({ mesh:m, x, z, r:2.0, hp: steel?Infinity:70, steel });
+  while(centers.length<shapeCount && tries++<260){
+    const x=(Math.random()*2-1)*(ARENA-12), z=(Math.random()*2-1)*(ARENA-12);
+    if(Math.hypot(x,z) < 16) continue;                   // keep Core area open
+    if(Math.hypot(x, z-ARENA*0.55) < 13) continue;       // keep player spawn open
+    if(centers.some(c=>Math.hypot(c.x-x,c.z-z) < 16)) continue;  // spacing between shapes (navigable corridors)
+    centers.push({x,z});
+    const shape = MAZE_SHAPES[(Math.random()*MAZE_SHAPES.length)|0];
+    const rot = (Math.random()*4|0)*Math.PI/2, ca=Math.cos(rot), sa=Math.sin(rot);
+    const steel = Math.random() < 0.4;                   // whole shape one material
+    for(const [ox,oz] of shape){
+      const rx = ox*ca - oz*sa, rz = ox*sa + oz*ca;
+      const bx = x + rx*SEG, bz = z + rz*SEG;
+      if(Math.abs(bx)>ARENA-4 || Math.abs(bz)>ARENA-4) continue;
+      const mat = new THREE.MeshStandardMaterial({ color: steel?0x7d828c:0x9a5a36,
+        roughness: steel?0.5:0.92, metalness: steel?0.65:0.08 });
+      const m=new THREE.Mesh(BLOCK_GEO, mat); m.position.set(bx,1.5,bz); m.rotation.y=rot; scene.add(m);
+      blocks.push({ mesh:m, x:bx, z:bz, r:1.7, hp: steel?Infinity:70, steel });
+    }
   }
 }
 function damageBlock(b, dmg){
