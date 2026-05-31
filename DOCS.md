@@ -2,7 +2,22 @@
 
 > Đọc file này là hiểu toàn bộ game + biết chỗ nào để sửa, **không cần scan lại `index.html`**. Mục tiêu: 1 file duy nhất [`index.html`](index.html), zero-build.
 >
-> ✅ **Trạng thái: HOÀN THÀNH (P1–P9).** Game chơi trọn vẹn, live tại https://quangle1997.github.io/tank-shooter/. Kịch bản đầy đủ ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)** ("THIẾT GIÁP CHIẾN"). File này theo dõi bản đồ code (§0) + lịch sử (§14). (Terrain gạch/thép/băng kiểu Battle City là phần mở rộng tương lai — chưa làm.)
+> ✅ **Trạng thái: HOÀN THÀNH (P1–P9) + REWORK v2 (R1–R7).** Game chơi trọn vẹn, live tại https://quangle1997.github.io/tank-shooter/. Kịch bản ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)**. File này theo dõi bản đồ code (§0) + lịch sử (§14).
+
+### Rework v2 (R1–R7) — hệ thống hiện hành
+| Mục | Trạng thái | Ở đâu |
+|---|---|---|
+| Xe tăng **không bao giờ chồng nhau** (tách cứng + hất văng) | ✅ | `separateTanks()` |
+| **Súng kiểu mới**: băng đạn + nạp đạn (3-4s) + mảnh vỡ + auto-fire | ✅ | `GUNS`, `fireGun()`, `startReload()` |
+| **Auto-aim** (mobile nòng tự khoá địch gần nhất) · desktop ngắm chuột | ✅ | `nearestTarget()`, `updatePlayer` |
+| **Kho súng**: bắt đầu 1 súng cơ bản, nhặt thêm, đổi liên tục (1-8/cuộn/nút) | ✅ | `p.guns[]`, `giveGun/selectGun/cycleGun`, HUD `#gunlist` |
+| **Buff theo thời gian (≤15s)**: ⚡bắn nhanh 💥sát thương 🏃tốc độ 📦băng đạn ∞vô hạn | ✅ | `POWERUPS`, `applyPowerup()`, `p.buffUntil`, `#buffbar` |
+| Đạn nhiều → di chuyển chậm hơn xíu | ✅ | `updatePlayer` (heavy factor) |
+| **Địa hình**: tường gạch (phá được) + khối thép (chắn) — cản xe & đạn | ✅ | `buildBlocks()`, `damageBlock()`, va chạm trong `updateBullets`+`separateTanks` |
+| Xe tăng đẹp/hoành tráng hơn + camera thấp/chân thực hơn | ✅ | `buildTank()`, `updateCamera()` |
+| Địch dễ hơn cho người mới, khó tăng dần theo màn | ✅ | `diffScale()`, `buildWaveQueue`, fire scaling |
+
+**8 súng** (tier 1→3): rifle · smg · shotgun · flak · cannon · minigun · missile · railgun — mỗi súng = bộ thông số (dmg/fireCd/mag/reload/frags/spread/bspeed). Sửa cân bằng → chỉ chỉnh `GUNS`.
 
 ---
 
@@ -122,6 +137,13 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · REWORK v2 (R1–R7):** sửa theo phản hồi sau khi chơi —
+  (R1) xe tăng không còn dính/chồng vào nhau, va chạm hất văng;
+  (R2) làm lại súng: băng đạn + nạp đạn + mảnh vỡ + **auto-fire**, mobile **auto-aim**, kho súng nhặt/đổi, bắt đầu 1 súng cơ bản;
+  (R3) buff theo thời gian (bắn nhanh/sát thương/tốc độ/băng đạn/vô hạn) + rơi súng ngẫu nhiên;
+  (R4) địa hình tường gạch phá được + khối thép chắn (cản xe & đạn);
+  (R5/R6) mô hình xe tăng chi tiết hơn + camera thấp/chân thực hơn;
+  (R7) địch nhẹ tay với người mới, khó tăng dần theo màn.
 - **2026-05-31 · P9:** Auto-aim assist cho mobile (hút nhẹ về địch trong nón ngắm), nút tắt tiếng, adaptive FPS (tự hạ độ phân giải khi <45fps), cân bằng độ khó, gỡ dev-cheat. → Hoàn thành P1–P9.
 - **2026-05-31 · P8:** 5 boss phân hoá hành vi (húc / xoáy ốc + tên lửa dò + triệu quân / đạn vòng + dậm đất shockwave + mìn / laser quét + dịch chuyển + triệu / tổng hợp cuồng nộ) + màn CHIẾN THẮNG + New Game+. Verify đủ 5 boss xuất hiện đúng thứ tự + victory.
 - **2026-05-31 · P7:** 5 biome đổi theo màn (đất/nền/fog/đèn) + **màn chọn nâng cấp roguelite (1/3 thẻ)** sau mỗi boss (11 nâng cấp: máu/sát thương/nhịp bắn/tốc độ/dash/hút máu/chí mạng/phép/mạng/căn cứ/vũ khí) + 3 địch mới (mortar lốp đạn telegraph, shield chắn đòn trước, bomber lao tự nổ) + Victory + New Game+. (Terrain gạch/thép/băng: hoãn — sẽ thêm ở polish nếu cần.)
