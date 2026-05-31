@@ -512,6 +512,7 @@ const PLAYER = {
   dashSpeed: 70, dashTime: 0.26, dashCd: 1.4, dashIframe: 0.32,
   turnLerp: 14, rangeBase: 26,           // combat range: only fires + bullets only reach within this
 };
+const TANK_SCALE = 1.2;   // global tank visual+hitbox scale — bigger, more imposing tanks fill the arena better (bosses already huge, excluded)
 // effective combat range: grows with stage + permanent upgrade + timed buff
 function playerRange(){ const p=S.player; if(!p) return PLAYER.rangeBase;
   const buff = (S.timeNow||0) < p.buffUntil.range ? 1.4 : 1;
@@ -736,19 +737,58 @@ function clearBlocks(){ for(const b of blocks) scene.remove(b.mesh); blocks.leng
 
 // ----------------------------- PLAYER TANK -----------------------------
 // ---- shared procedural tank textures (built ONCE, referenced by every tank) ----
-function _makePanelTex(){
+const _SEAMH=[38,128,212], _SEAMV=[58,150,228];
+function _makePanelTex(){                                                          // ALBEDO — worn painted armor (tints with material color)
   const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
-  x.fillStyle='#d6d6d6'; x.fillRect(0,0,256,256);                                  // worn-steel base (tints material color)
-  for(let i=0;i<2600;i++){ const v=(195+Math.random()*60)|0; x.fillStyle='rgba('+v+','+v+','+v+','+(Math.random()*0.05).toFixed(3)+')'; x.fillRect(Math.random()*256,Math.random()*256,2,2); } // grain
-  x.strokeStyle='rgba(64,64,64,0.5)'; x.lineWidth=2;                                // panel seams
-  for(const gy of [38,128,212]){ x.beginPath(); x.moveTo(0,gy); x.lineTo(256,gy); x.stroke(); }
-  for(const gx of [58,150,228]){ x.beginPath(); x.moveTo(gx,0); x.lineTo(gx,256); x.stroke(); }
-  x.fillStyle='rgba(54,54,54,0.55)';                                               // rivet rows along seams
-  for(let i=12;i<256;i+=22){ x.beginPath(); x.arc(i,38,1.7,0,7); x.fill(); x.beginPath(); x.arc(i,212,1.7,0,7); x.fill(); }
+  x.fillStyle='#d2d2d2'; x.fillRect(0,0,256,256);
+  for(let i=0;i<3200;i++){ const v=(188+Math.random()*66)|0; x.fillStyle='rgba('+v+','+v+','+v+','+(Math.random()*0.06).toFixed(3)+')'; x.fillRect(Math.random()*256,Math.random()*256,2,2); } // grain
+  for(let i=0;i<26;i++){ const cx=Math.random()*256, cy=Math.random()*256, r=3+Math.random()*9, g=(150+Math.random()*44)|0; // chipped paint → bare primer/metal patches
+    x.fillStyle='rgba('+g+','+g+','+((g-8)|0)+','+(0.22+Math.random()*0.3).toFixed(2)+')'; x.beginPath(); x.ellipse(cx,cy,r,r*0.66,Math.random()*6,0,7); x.fill(); }
+  x.strokeStyle='rgba(58,58,58,0.6)'; x.lineWidth=2;                                // panel seams
+  for(const gy of _SEAMH){ x.beginPath(); x.moveTo(0,gy); x.lineTo(256,gy); x.stroke(); }
+  for(const gx of _SEAMV){ x.beginPath(); x.moveTo(gx,0); x.lineTo(gx,256); x.stroke(); }
+  x.strokeStyle='rgba(214,214,214,0.22)'; x.lineWidth=1.4;                          // weld beads beside seams (slightly wavy, lighter)
+  for(const gy of _SEAMH){ x.beginPath(); for(let xx=0;xx<=256;xx+=8) x.lineTo(xx,gy-2+Math.sin(xx*0.42)*0.9); x.stroke(); }
+  x.fillStyle='rgba(48,48,48,0.6)';                                                // rivet rows along seams
+  for(let i=12;i<256;i+=22){ x.beginPath(); x.arc(i,38,1.8,0,7); x.fill(); x.beginPath(); x.arc(i,212,1.8,0,7); x.fill(); }
+  for(let i=0;i<22;i++){ const sx=Math.random()*256, sy=Math.random()*170, len=14+Math.random()*42; // rust streaks dripping down
+    const grd=x.createLinearGradient(sx,sy,sx,sy+len); grd.addColorStop(0,'rgba(122,68,34,0.34)'); grd.addColorStop(1,'rgba(122,68,34,0)'); x.fillStyle=grd; x.fillRect(sx-1,sy,2.4,len); }
   x.strokeStyle='rgba(255,255,255,0.16)'; x.lineWidth=1;                            // scuff/scratches
-  for(let i=0;i<30;i++){ const sx=Math.random()*256, sy=Math.random()*256; x.beginPath(); x.moveTo(sx,sy); x.lineTo(sx+(Math.random()*44-22),sy+(Math.random()*14-7)); x.stroke(); }
+  for(let i=0;i<32;i++){ const sx=Math.random()*256, sy=Math.random()*256; x.beginPath(); x.moveTo(sx,sy); x.lineTo(sx+(Math.random()*44-22),sy+(Math.random()*14-7)); x.stroke(); }
   for(let i=0;i<20;i++){ x.fillStyle='rgba(86,66,46,'+(Math.random()*0.1).toFixed(3)+')'; x.beginPath(); x.arc(Math.random()*256,Math.random()*256,8+Math.random()*22,0,7); x.fill(); } // dirt/rust smudges
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t;
+  x.strokeStyle='rgba(238,232,206,0.16)'; x.lineWidth=4; x.beginPath(); x.moveTo(176,170); x.lineTo(196,186); x.lineTo(176,202); x.stroke(); // faint painted chevron marking
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; return t;
+}
+function _makePanelHeight(){                                                        // grayscale height: grooves=dark, weld/rivets=bright
+  const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
+  x.fillStyle='#808080'; x.fillRect(0,0,256,256);
+  for(let i=0;i<2200;i++){ const v=(118+Math.random()*22)|0; x.fillStyle='rgb('+v+','+v+','+v+')'; x.fillRect(Math.random()*256,Math.random()*256,2,2); } // grain
+  x.strokeStyle='#3a3a3a'; x.lineWidth=3;                                           // seams sunk in
+  for(const gy of _SEAMH){ x.beginPath(); x.moveTo(0,gy); x.lineTo(256,gy); x.stroke(); }
+  for(const gx of _SEAMV){ x.beginPath(); x.moveTo(gx,0); x.lineTo(gx,256); x.stroke(); }
+  x.strokeStyle='#cccccc'; x.lineWidth=2;                                           // weld beads raised
+  for(const gy of _SEAMH){ x.beginPath(); for(let xx=0;xx<=256;xx+=6) x.lineTo(xx,gy+2+Math.sin(xx*0.5)); x.stroke(); }
+  for(let i=12;i<256;i+=22){ for(const gy of [38,212]){ const g=x.createRadialGradient(i,gy,0,i,gy,3.4);   // rivets pop out
+    g.addColorStop(0,'#f2f2f2'); g.addColorStop(1,'#808080'); x.fillStyle=g; x.beginPath(); x.arc(i,gy,3.4,0,7); x.fill(); } }
+  return c;
+}
+function _heightToNormal(hc, strength){                                             // Sobel-ish height→tangent-space normal map (tileable)
+  const W=hc.width,H=hc.height, src=hc.getContext('2d').getImageData(0,0,W,H).data;
+  const out=document.createElement('canvas'); out.width=W; out.height=H; const ox=out.getContext('2d'); const od=ox.createImageData(W,H), d=od.data;
+  const at=(px,py)=>{ px=(px+W)%W; py=(py+H)%H; return src[(py*W+px)*4]/255; };
+  for(let y=0;y<H;y++) for(let x2=0;x2<W;x2++){
+    const dx=(at(x2-1,y)-at(x2+1,y))*strength, dy=(at(x2,y-1)-at(x2,y+1))*strength, nz=1, inv=1/Math.hypot(dx,dy,nz), i=(y*W+x2)*4;
+    d[i]=(dx*inv*0.5+0.5)*255; d[i+1]=(dy*inv*0.5+0.5)*255; d[i+2]=(nz*inv*0.5+0.5)*255; d[i+3]=255;
+  }
+  ox.putImageData(od,0,0); const t=new THREE.CanvasTexture(out); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t;
+}
+function _makeRoughTex(){                                                           // ROUGHNESS — paint matte, worn metal/scratches shiny
+  const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
+  x.fillStyle='#c6c6c6'; x.fillRect(0,0,256,256);
+  for(let i=0;i<28;i++){ const cx=Math.random()*256, cy=Math.random()*256, r=3+Math.random()*10; x.fillStyle='rgba(64,64,64,'+(0.4+Math.random()*0.4).toFixed(2)+')'; x.beginPath(); x.ellipse(cx,cy,r,r*0.66,Math.random()*6,0,7); x.fill(); } // polished wear
+  x.strokeStyle='rgba(56,56,56,0.5)'; x.lineWidth=1;
+  for(let i=0;i<32;i++){ const sx=Math.random()*256, sy=Math.random()*256; x.beginPath(); x.moveTo(sx,sy); x.lineTo(sx+(Math.random()*44-22),sy+(Math.random()*14-7)); x.stroke(); } // bright scratches
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t;
 }
 function _makeTrackTex(){
   const c=document.createElement('canvas'); c.width=64; c.height=128; const x=c.getContext('2d');
@@ -756,16 +796,18 @@ function _makeTrackTex(){
   for(let i=0;i<128;i+=11){ x.fillStyle='#3a3a35'; x.fillRect(0,i,64,6); x.fillStyle='#121210'; x.fillRect(0,i+6,64,5); x.fillStyle='#0c0c0a'; x.fillRect(25,i+1,14,4); } // track links + guide horns
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,4); return t;
 }
-let _PANEL_TEX=null,_TRACK_TEX=null;
+let _PANEL_TEX=null,_PANEL_NRM=null,_PANEL_RGH=null,_TRACK_TEX=null;
 const panelTex=()=>(_PANEL_TEX||(_PANEL_TEX=_makePanelTex()));
+const panelNrm=()=>(_PANEL_NRM||(_PANEL_NRM=_heightToNormal(_makePanelHeight(),2.4)));
+const panelRgh=()=>(_PANEL_RGH||(_PANEL_RGH=_makeRoughTex()));
 const trackTex=()=>(_TRACK_TEX||(_TRACK_TEX=_makeTrackTex()));
 
 function buildTank(opts={}){
   const { hull=0x5e7a2e, turret=0x75933a, barrel=0x9bb04a, tread=0x2a3514, accent=0xe7b54a, detail=false } = opts;
   const g = new THREE.Group();
-  const PT = panelTex();
-  const skin  = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.64, metalness:0.5, map:PT, envMapIntensity:0.65 }); // armor plate (worn, panel-lined)
-  const metal = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.3,  metalness:0.88, envMapIntensity:1.0 });          // bare/oiled steel — catches reflections
+  const PT = panelTex(), PN = panelNrm(), PR = panelRgh();
+  const skin  = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.72, metalness:0.55, map:PT, normalMap:PN, normalScale:new THREE.Vector2(0.75,0.75), roughnessMap:PR, envMapIntensity:0.72 }); // armor plate: real panel relief (normal) + worn-metal-through-paint (roughness)
+  const metal = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.3,  metalness:0.88, normalMap:PN, normalScale:new THREE.Vector2(0.35,0.35), envMapIntensity:1.0 });          // bare/oiled steel — catches reflections
   const dark  = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.55, metalness:0.5 });
   const rubber= new THREE.MeshStandardMaterial({ color:0x141410, roughness:0.96, metalness:0.05 });
   const treadMat = new THREE.MeshStandardMaterial({ color:tread, roughness:0.9, metalness:0.25, map:trackTex() });
@@ -788,7 +830,7 @@ function buildTank(opts={}){
   const deck = new THREE.Mesh(new RoundedBoxGeometry(2.3,0.34,1.4,2,0.1), skin(hull)); deck.position.set(0,1.46,-0.92); g.add(deck);
   const headL=(hx)=>{ const h=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.08,12), new THREE.MeshStandardMaterial({color:0xfff4d2,emissive:0xfff0c0,emissiveIntensity:0.4,roughness:0.3})); h.rotation.x=Math.PI/2; h.position.set(hx,1.08,2.02); g.add(h); };
   headL(-0.86); headL(0.86);
-  const strip=new THREE.Mesh(new THREE.BoxGeometry(2.62,0.14,1.8), new THREE.MeshStandardMaterial({color:accent,emissive:accent,emissiveIntensity:0.55,roughness:0.4})); // team-color flank glow
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(2.62,0.12,1.78), new THREE.MeshStandardMaterial({color:accent,emissive:accent,emissiveIntensity:0.16,roughness:0.55,metalness:0.2})); // painted team-color ID band (subtle, not neon)
   strip.position.set(0,1.12,0.2); g.add(strip);
   if(detail) for(let i=-1;i<=1;i++){ const lv=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.04,1.16), dark(0x1b1b16)); lv.position.set(i*0.72,1.64,-0.92); g.add(lv); } // engine-deck louvers
   // ---------- turret (rotates to aim) ----------
@@ -816,6 +858,16 @@ function buildTank(opts={}){
     const rv=metal(0x2a2a24); for(let i=0;i<7;i++){ const zz=-1.2+i*0.42; for(const xx of [-1.16,1.16]){ const b=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),rv); b.position.set(xx,1.46,zz); g.add(b); } } // hull rivets
     for(const xx of [-0.7,0.7]){ const sh=new THREE.Mesh(new THREE.TorusGeometry(0.12,0.04,8,14), metal(0x33332c)); sh.position.set(xx,0.74,2.06); sh.rotation.x=Math.PI/2; g.add(sh); } // tow shackles
     const exh=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,0.7,10), dark(0x191915)); exh.rotation.z=Math.PI/2; exh.position.set(-1.12,1.22,-1.5); g.add(exh); // exhaust
+    // ---- field stowage & fittings (battle-worn realism) ----
+    for(let i=-3;i<=3;i++){ const lk=new THREE.Mesh(new RoundedBoxGeometry(0.3,0.1,0.24,1,0.03), metal(0x3c3c32)); lk.position.set(i*0.32,1.2,1.78); lk.rotation.x=-0.62; g.add(lk); } // spare track links draped on glacis
+    const cable=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.045,6,26,Math.PI*1.15), dark(0x24241d)); cable.position.set(-1.3,1.18,0.1); cable.rotation.set(Math.PI/2,0,0.25); g.add(cable); // tow cable coiled along hull side
+    for(const cz of [-0.95,1.2]){ const eye=new THREE.Mesh(new THREE.TorusGeometry(0.07,0.025,6,12), metal(0x33332c)); eye.position.set(-1.3,1.16,cz); eye.rotation.x=Math.PI/2; g.add(eye); }
+    for(let i=0;i<2;i++){ const jc=new THREE.Mesh(new RoundedBoxGeometry(0.26,0.4,0.16,1,0.03), dark(0x37452a)); jc.position.set(1.22,1.32,-0.36-i*0.34); g.add(jc); const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.06,8), metal(0x2a2a22)); cap.position.set(1.22,1.55,-0.36-i*0.34); g.add(cap); } // jerry cans strapped to fender
+    const sw=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.16,18), rubber); sw.position.set(0.66,1.66,-0.42); g.add(sw); const swh=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.18,10), metal(0x3a3a32)); swh.position.copy(sw.position); g.add(swh); // spare road wheel lashed to deck
+    const beam=new THREE.Mesh(new RoundedBoxGeometry(2.2,0.2,0.22,1,0.05), dark(0x46371f)); beam.position.set(0,1.2,-1.72); g.add(beam); // unditching beam across the rear
+    for(const px of [-0.5,0,0.5]){ const ps=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.09,0.13), dark(0x12151a)); ps.position.set(px,0.41,0.42); turretG.add(ps); const pg=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.03,0.15), metal(0x2a2a24)); pg.position.set(px,0.46,0.42); turretG.add(pg); } // commander's periscopes on turret roof
+    for(const hx of [-0.86,0.86]){ const gd=new THREE.Mesh(new THREE.TorusGeometry(0.14,0.022,6,14), metal(0x2a2a24)); gd.position.set(hx,1.08,2.07); g.add(gd); } // headlight guards
+    for(const sx of [-0.9,0.9]) for(const sz of [-0.3,0.5]){ const gh=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.34,8), metal(0x33332c)); gh.rotation.x=Math.PI/2; gh.position.set(sx,0.06,sz); turretG.add(gh); } // welded grab handles on turret sides
   } else {
     const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.2,6), dark(0x101010)); ant.position.set(-0.6,0.8,-0.5); turretG.add(ant);
   }
@@ -854,7 +906,7 @@ function setPlayerBarrel(id){
   const ng=makeGunBarrel(id); ud.turret.add(ng); ud.barrelG=ng; p.muzzle=ng.userData.muzzle;
 }
 function makePlayer(){
-  const mesh = buildTank({detail:true});
+  const mesh = buildTank({detail:true}); mesh.scale.setScalar(TANK_SCALE);
   // shield bubble (shown while Aegis/shield power-up active)
   const shield = new THREE.Mesh(new THREE.SphereGeometry(2.6,20,16),
     new THREE.MeshBasicMaterial({color:0x4fd1ff, transparent:true, opacity:0.25, depthWrite:false}));
@@ -1223,7 +1275,7 @@ const enemies=[]; const enemyPool={};
 function getEnemyMesh(type){
   enemyPool[type] = enemyPool[type]||[];
   let m = enemyPool[type].pop();
-  if(!m){ m = buildTank(ENEMY_DEFS[type].pal); m.scale.setScalar(ENEMY_DEFS[type].scale); scene.add(m); }
+  if(!m){ m = buildTank(ENEMY_DEFS[type].pal); m.scale.setScalar(ENEMY_DEFS[type].scale*TANK_SCALE); scene.add(m); }
   m.visible=true; return m;
 }
 function spawnEnemy(type, x, z){
@@ -1938,7 +1990,7 @@ function updateReload(now){
   const ready = !reloading && now < (p.readyUntil||0);
   if(reloading || ready){
     reloadSprite.visible=true;
-    reloadSprite.position.set(p.pos.x, 3.4*p.scale + 3.4, p.pos.z);
+    reloadSprite.position.set(p.pos.x, 3.4*p.scale*TANK_SCALE + 3.2, p.pos.z);
     const rem = reloading ? eq.rU-now : 0;
     drawReloadDial(reloading ? 1-rem/eq.rD : 1, rem, ready);
   } else reloadSprite.visible=false;
@@ -2285,7 +2337,7 @@ function startGame(){
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1;
-  p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius; p.mesh.scale.setScalar(1);
+  p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE; p.mesh.scale.setScalar(TANK_SCALE);
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
@@ -2362,8 +2414,8 @@ function updatePlayer(dt, now){
   // boss parity: grow to ~boss size during a boss fight so it's an even brawl
   const targScale = (boss&&boss.alive) ? Math.max(1, boss.r/PLAYER.radius*0.8) : 1;
   p.scale += (targScale - p.scale)*Math.min(1, dt*3);
-  p.radius = PLAYER.radius * p.scale;
-  p.mesh.scale.setScalar(p.scale);
+  p.radius = PLAYER.radius * p.scale * TANK_SCALE;
+  p.mesh.scale.setScalar(p.scale * TANK_SCALE);
   // AIM — mobile: turret auto-targets the nearest enemy in range (no manual aim).
   //       desktop: aim with the mouse. Firing is always automatic (handled below).
   if(MOBILE){
@@ -2625,6 +2677,7 @@ window._intro = intro;   // deploy-cinematic state (debug/inspection)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
+window._view = { get camera(){return camera;}, get scene(){return scene;}, get renderer(){return renderer;}, get composer(){return composer;} };   // (debug) inspect/drive the view
 
 requestAnimationFrame(loop);
 </script>
