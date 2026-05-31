@@ -1225,7 +1225,9 @@ function updateBullets(dt, now){
       const p=S.player;
       const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
       if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now);
-        if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(7.5,1.8+b.dmg*0.08); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; } hit=true; }
+        if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(7.5,1.8+b.dmg*0.08); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }
+        if(riders.length && Math.random()<0.45){ const rr=riders[(Math.random()*riders.length)|0]; if(rr&&!rr.dead) damageRider(rr, b.dmg); }   // a shot into the tank can wound an exposed rider
+        hit=true; }
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
         if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
@@ -2280,7 +2282,7 @@ const POWERUPS = [
   { id:'bomb',   svg:'bomb', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
   { id:'freeze', svg:'snow', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   { id:'drone',  svg:'drone', color:0x6fd0ff, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
-  { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(SOLDIER.cap); for(const s of soldiers) s.hp=s.maxHp; if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill the guard squad to 5 + heal
+  { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(SOLDIER.cap); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(RIDER.cap); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, apply(){ soldierLvl++; for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // gun drop — adds a random gun to the inventory
   { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ const pl=gunDropPool(S.stage); giveGun(pl[(Math.random()*pl.length)|0]); } },
@@ -2389,6 +2391,7 @@ function chooseUpgrade(u){
   applyBiome(S.stage); buildBlocks();
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
   clearSoldiers(); deploySoldiers(SOLDIER.base);   // fresh full guard squad each stage (weapon upgrades persist via soldierLvl)
+  if(S.stage>=3 && !ridersUnlocked){ ridersUnlocked=true; deployRiders(3); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // 3 crew mount the tank from Stage 3 (persist; lost crew stays lost)
   playStageTransition(S.stage, BIOME.name, '#'+BIOME.accent.toString(16).padStart(6,'0'));
   S.awaitingUpgrade=false; WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+2.1; S.wave=0;   // first wave lands as the wipe clears
   S.mode='playing';
@@ -2455,7 +2458,7 @@ function startGame(){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
-  enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); soldierLvl=0; deploySoldiers(SOLDIER.base); document.body.classList.remove('corelow'); _alarmAt=0;
+  enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); ridersUnlocked=false; soldierLvl=0; deploySoldiers(SOLDIER.base); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -2808,6 +2811,48 @@ function updateSoldiers(dt, now){
   }
 }
 
+// ----------------------------- TANK CREW / RIDERS (infantry mounted on the player's tank, unlocked at Stage 3) -----------------------------
+// Riders stand on the tank roof and auto-fire at enemies — short range, slow fire, each with its own HP/upgrades.
+// They're exposed: shots that hit the tank can wound them and crowding tanks chew them up. Dead = gone; power-ups reinforce.
+const RIDER = { cap:4, hp:30, dmg:7, fireCd:0.9, range:14, scale:0.82 };
+const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55]];   // roof posts (tank-local, before facing+scale)
+let riders=[], ridersUnlocked=false;
+function spawnRider(){ if(riders.length>=RIDER.cap) return; const g=makeSoldierMesh(); scene.add(g);
+  const mhp=Math.round(RIDER.hp + Math.random()*16 - 6);   // each crew member is an individual
+  const bar=makeSoldierBar(); scene.add(bar.g);
+  riders.push({ g, bar:bar.g, barFill:bar.fill, hp:mhp, maxHp:mhp, fireAt:0, hurtAt:0, hitT:0, dead:false }); }
+function deployRiders(target){ while(riders.length<Math.min(RIDER.cap,target)) spawnRider(); }
+function clearRiders(){ for(const r of riders){ scene.remove(r.g); scene.remove(r.bar); } riders.length=0; }
+function damageRider(r, dmg){ if(r.dead) return; r.hp-=dmg; r.hitT=0.16;
+  const t=r.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
+  if(r.hp<=0) killRider(r); }
+function killRider(r){ if(r.dead) return; r.dead=true; const i=riders.indexOf(r); if(i>=0) riders.splice(i,1);
+  const wp=r.g.position; burst({x:wp.x,z:wp.z}, 0xb04830, 8, 5, {y:wp.y, life:0.45, size:0.6}); floatText('✝','#ff9a7a',{x:wp.x,y:wp.y+1,z:wp.z},16); sfx('explode'); scene.remove(r.g); scene.remove(r.bar); }
+function updateRiders(dt, now){
+  const p=S.player; if(!p || !riders.length) return;
+  const ms=p.scale*TANK_SCALE, cf=Math.cos(p.facing), sf=Math.sin(p.facing);
+  const enemyNear = enemies.some(e=>{ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; return dx*dx+dz*dz < (p.radius+3)*(p.radius+3); });
+  riders.forEach((r,i)=>{
+    const o=_RIDER_SLOTS[i%_RIDER_SLOTS.length];
+    const wx=p.pos.x+(o[0]*cf+o[2]*sf)*ms, wz=p.pos.z+(-o[0]*sf+o[2]*cf)*ms, wy=o[1]*ms;
+    r.g.position.set(wx,wy,wz); r.g.scale.setScalar(RIDER.scale*p.scale);
+    let best=null, bd=RIDER.range*RIDER.range;   // small combat range (smaller than the tank's)
+    for(const e of enemies){ const dx=e.pos.x-wx, dz=e.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
+    if(boss&&boss.alive){ const dx=boss.pos.x-wx, dz=boss.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
+    if(best){ const ang=Math.atan2(best.pos.x-wx, best.pos.z-wz); r.g.rotation.y=ang;
+      if(now>=r.fireAt){ r.fireAt=now + RIDER.fireCd*(1-Math.min(0.3,soldierLvl*0.08));   // slow fire
+        r.g.userData.muzzle.getWorldPosition(_sV);
+        spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:RIDER.dmg*(1+soldierLvl*0.22), speed:80, color:0xe8ef86, r:0.24, life:1.0, maxDist:RIDER.range+2});
+        spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*5,0.4,Math.cos(ang)*5, {color:0xf2f7a0, size:0.4, life:0.06, grav:0, drag:9}); } }
+    else r.g.rotation.y += (p.facing - r.g.rotation.y)*Math.min(1,dt*4);   // ride facing forward
+    if(enemyNear && now>=r.hurtAt){ damageRider(r, 5+S.stage); r.hurtAt=now+0.7; }   // exposed: crowding tanks chip the crew
+    r.bar.visible=true; r.bar.position.set(wx, wy+1.6*RIDER.scale*p.scale, wz); r.bar.quaternion.copy(camera.quaternion); r.bar.scale.setScalar(0.72);
+    const f=Math.max(0,r.hp/r.maxHp); r.barFill.scale.x=Math.max(0.001,f); r.barFill.position.x=-(1-f)*0.5;
+    r.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
+    if(r.hitT>0){ r.hitT-=dt; if(r.hitT<=0){ const t=r.g.userData.torso; if(t){ t.material.emissive.setHex(0x000000); t.material.emissiveIntensity=0; } } }
+  });
+}
+
 // ----------------------------- MAIN LOOP -----------------------------
 let last = performance.now();
 function loop(nowMs){
@@ -2832,6 +2877,7 @@ function loop(nowMs){
     updateMines(gdt, now);
     updateDrone(gdt, now);
     updateSoldiers(gdt, now);            // friendly squad guarding the Core
+    updateRiders(gdt, now);              // crew mounted on the player's tank
     updateBuffHUD(now);
     updateCamera(dt, now);
     updateWorldBars();
@@ -2895,6 +2941,7 @@ window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive t
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
 window._view = { get camera(){return camera;}, get scene(){return scene;}, get renderer(){return renderer;}, get composer(){return composer;} };   // (debug) inspect/drive the view
 window._dbg.soldiers = soldiers; window._deploy = deploySoldiers; window._armory = ()=>{ soldierLvl++; return soldierLvl; };   // (debug) friendly squad
+window._dbg.riders = riders; window._deployRiders = (n)=>{ ridersUnlocked=true; deployRiders(n||3); return riders.length; };   // (debug) tank crew
 window._tankExplode = tankExplode; window._wreck = spawnTankWreck;   // (debug) trigger the death FX / part-wreck
 
 requestAnimationFrame(loop);
