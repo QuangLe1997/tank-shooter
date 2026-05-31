@@ -1314,12 +1314,12 @@ function updateCore(dt, now){
 
 // ----------------------------- ENEMIES -----------------------------
 const ENEMY_DEFS = {
-  grunt:  { hp:32,  speed:7,  keep:17, range:32, fireCd:1.7,  dmg:8,  bspeed:30, score:100, scale:1.0,  ram:6,  canShoot:true,  pal:{hull:0x8a3a2a,turret:0x9b4030,barrel:0xb05040,tread:0x3a1c14,accent:0xe0603a} },
-  scout:  { hp:16,  speed:15, keep:0,  range:0,  fireCd:0,    dmg:0,  bspeed:0,  score:120, scale:0.82, ram:11, canShoot:false, pal:{hull:0xb0552a,turret:0xc06530,barrel:0xd07540,tread:0x44260f,accent:0xffa040} },
-  gunner: { hp:46,  speed:6,  keep:14, range:28, fireCd:0.34, dmg:4,  bspeed:34, score:170, scale:1.08, ram:7,  canShoot:true,  burst:4, reload:1.8, pal:{hull:0x7a2f3a,turret:0x8a3540,barrel:0x9b4050,tread:0x331018,accent:0xe04060} },
-  mortar: { hp:38,  speed:5,  keep:34, range:48, fireCd:2.9,  dmg:0,  bspeed:0,  score:220, scale:1.05, ram:6,  canShoot:false, mortar:true, pal:{hull:0x4a5a2a,turret:0x586a30,barrel:0x6a7a3a,tread:0x202810,accent:0xc0e060} },
-  shield: { hp:64,  speed:6,  keep:16, range:30, fireCd:1.6,  dmg:8,  bspeed:32, score:240, scale:1.12, ram:8,  canShoot:true,  shield:true, pal:{hull:0x2f4a6a,turret:0x365a82,barrel:0x4070a0,tread:0x101c2a,accent:0x6fb0ff} },
-  bomber: { hp:22,  speed:13, keep:0,  range:0,  fireCd:0,    dmg:0,  bspeed:0,  score:180, scale:0.9,  ram:0,  canShoot:false, bomber:true, pal:{hull:0x8a2a2a,turret:0x9a3030,barrel:0xaa3838,tread:0x300f0f,accent:0xff3020} },
+  grunt:  { hp:32,  speed:6,  keep:18, range:32, fireCd:2.0,  dmg:8,  bspeed:24, score:100, scale:1.0,  ram:6,  canShoot:true,  pal:{hull:0x8a3a2a,turret:0x9b4030,barrel:0xb05040,tread:0x3a1c14,accent:0xe0603a} },
+  scout:  { hp:16,  speed:12, keep:0,  range:0,  fireCd:0,    dmg:0,  bspeed:0,  score:120, scale:0.82, ram:9,  canShoot:false, pal:{hull:0xb0552a,turret:0xc06530,barrel:0xd07540,tread:0x44260f,accent:0xffa040} },
+  gunner: { hp:46,  speed:5,  keep:15, range:28, fireCd:0.46, dmg:4,  bspeed:26, score:170, scale:1.08, ram:7,  canShoot:true,  burst:3, reload:2.3, pal:{hull:0x7a2f3a,turret:0x8a3540,barrel:0x9b4050,tread:0x331018,accent:0xe04060} },
+  mortar: { hp:38,  speed:4,  keep:34, range:48, fireCd:2.9,  dmg:0,  bspeed:0,  score:220, scale:1.05, ram:6,  canShoot:false, mortar:true, pal:{hull:0x4a5a2a,turret:0x586a30,barrel:0x6a7a3a,tread:0x202810,accent:0xc0e060} },
+  shield: { hp:64,  speed:5,  keep:16, range:30, fireCd:1.9,  dmg:8,  bspeed:25, score:240, scale:1.12, ram:8,  canShoot:true,  shield:true, pal:{hull:0x2f4a6a,turret:0x365a82,barrel:0x4070a0,tread:0x101c2a,accent:0x6fb0ff} },
+  bomber: { hp:22,  speed:10, keep:0,  range:0,  fireCd:0,    dmg:0,  bspeed:0,  score:180, scale:0.9,  ram:0,  canShoot:false, bomber:true, pal:{hull:0x8a2a2a,turret:0x9a3030,barrel:0xaa3838,tread:0x300f0f,accent:0xff3020} },
 };
 const enemies=[]; const enemyPool={};
 function getEnemyMesh(type){
@@ -1397,9 +1397,9 @@ function updateEnemies(dt, now){
       e.muzzle.getWorldPosition(_v);
       // late stages lead the target; early stages are inaccurate
       let aimA = e.aim;
-      if(ds>0.5){ const lead=Math.min(0.5, d/def.bspeed); aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }
-      aimA += (Math.random()-0.5) * (1-ds) * 0.45;             // inaccuracy fades by stage 5
-      const rateMul = 2.0 - 0.7*ds;                            // slower fire (eased)
+      if(ds>0.6){ const lead=Math.min(0.3, d/def.bspeed)*0.55; aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // partial lead, later & weaker → you can still juke
+      aimA += (Math.random()-0.5) * (1-ds*0.6) * 0.5;          // keep some spread even late-game so shots stay dodgeable
+      const rateMul = 2.2 - 0.7*ds;                            // a touch slower fire (more reaction time)
       const dmg = def.dmg * (0.65 + 0.35*ds);                  // weaker early
       // enemy bullets only reach within the enemy's combat range
       spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:3.0, maxDist:er+2, arcDist:d});
