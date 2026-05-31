@@ -284,8 +284,18 @@
   body.touch #muteBtn .ic,body.touch #fsBtn .ic,body.touch #mPause .ic{width:21px;height:21px;color:rgba(255,255,255,.82);filter:drop-shadow(0 1px 2px rgba(0,0,0,.95));}
   /* === DASH on the LEFT thumb, right above the FIRE trigger; AUTO sits above DASH, both see-through === */
   body.touch #mDash{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 118px);width:58px;height:58px;}
-  body.touch #autoBtn{left:max(22px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 184px);background:rgba(8,12,6,.22);border-color:rgba(255,255,255,.08);box-shadow:none;}
-  body.touch #autoBtn.on{background:rgba(44,30,6,.32);color:#ffcf5a;border-color:rgba(255,200,90,.5);text-shadow:0 0 7px rgba(255,180,60,.7);}
+  body.touch #autoBtn{left:auto;right:calc(max(10px,env(safe-area-inset-right)) + 126px);top:max(8px,env(safe-area-inset-top));bottom:auto;width:38px;height:38px;padding:0;border-radius:10px;gap:0;background:rgba(8,12,6,.3);border-color:rgba(255,255,255,.1);box-shadow:none;}   /* set-once toggle → moved into the top-right utility cluster */
+  body.touch #autoBtn span:not(.ic){display:none;}    /* icon-only in the cluster */
+  body.touch #autoBtn .ic{width:19px;height:19px;}
+  body.touch #autoBtn.on{background:rgba(44,30,6,.4);color:#ffcf5a;border-color:rgba(255,200,90,.6);box-shadow:0 0 9px rgba(255,180,60,.5);}
+  /* camera controls (zoom + rotate view) — left edge, vertically centred, see-through */
+  #camCtl{position:absolute;left:max(8px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 143px);display:none;flex-direction:row;gap:7px;pointer-events:none;z-index:14;}   /* below the left HUD column, above the thumb cluster */
+  body.touch #camCtl{display:flex;}
+  .camBtn{pointer-events:auto;width:40px;height:40px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    background:rgba(8,12,6,.32);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.85);backdrop-filter:blur(4px);box-shadow:0 3px 10px rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent;}
+  .camBtn:active{transform:scale(.92);}
+  .camBtn .ic{width:17px;height:17px;}
+  #zoomLbl{font-size:8px;font-weight:800;letter-spacing:.5px;color:rgba(255,255,255,.72);}
   /* compact menus to fit a short landscape viewport */
   body.touch .overlay{gap:9px;padding:12px;}
   body.touch .title{font-size:clamp(26px,8vw,44px);letter-spacing:3px;}
@@ -426,6 +436,10 @@
   <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
   <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
   <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>AUTO</span></div>
+  <div id="camCtl">
+    <div class="camBtn" id="zoomBtn"><span class="ic" data-icon="expand"></span><span id="zoomLbl">1.5×</span></div>
+    <div class="camBtn" id="rotBtn"><span class="ic" data-icon="rotate"></span></div>
+  </div>
 </div>
 
 <!-- START / TITLE -->
@@ -630,6 +644,7 @@ const S = {
   keys:{}, aimPoint:new THREE.Vector3(), pointerActive:false, firing:false,
   shake:0, dpr:Math.min(devicePixelRatio||1, 2),
   weapon:0, spell:0, enemySlowUntil:0, combo:0, comboUntil:0, timeScale:1, awaitingUpgrade:false, timeNow:0,
+  zoom: (MOBILE?1.5:1), camYaw:0,   // mobile camera: pull back a bit by default + player-adjustable zoom/rotate
 };
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -1993,6 +2008,17 @@ function applyAutoFire(){ document.body.classList.toggle('autofire', autoFire); 
 const autoBtnEl=document.getElementById('autoBtn');
 if(autoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} autoFire=!autoFire; try{localStorage.setItem('steelsiege.auto',autoFire?'1':'0');}catch(_){} applyAutoFire(); sfx('click'); };
   autoBtnEl.addEventListener('click',tog); autoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
+// ----- camera controls: ZOOM (cycle near→far) + ROTATE view (45° steps); input is re-mapped so the joystick stays screen-relative -----
+const ZOOM_LEVELS=[1.0, 1.5, 2.0, 2.6];
+function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } const l=document.getElementById('zoomLbl'); if(l) l.textContent=z.toFixed(1)+'×'; }
+try{ const z=parseFloat(localStorage.getItem('steelsiege.zoom')); if(z>0) S.zoom=z; }catch(_){}
+setZoom(S.zoom);
+const zoomBtnEl=document.getElementById('zoomBtn');
+if(zoomBtnEl){ const cyc=e=>{ if(e){e.preventDefault();e.stopPropagation();} let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); i=(i+1)%ZOOM_LEVELS.length; setZoom(ZOOM_LEVELS[i]); sfx('click'); };
+  zoomBtnEl.addEventListener('click',cyc); zoomBtnEl.addEventListener('touchstart',cyc,{passive:false}); }
+const rotBtnEl=document.getElementById('rotBtn');
+if(rotBtnEl){ const rot=e=>{ if(e){e.preventDefault();e.stopPropagation();} S.camYaw=(S.camYaw + Math.PI/4) % (Math.PI*2); sfx('click'); };
+  rotBtnEl.addEventListener('click',rot); rotBtnEl.addEventListener('touchstart',rot,{passive:false}); }
 const mFireEl=document.getElementById('mFire');
 if(mFireEl){
   mFireEl.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); S.firing=true; mFireEl.classList.add('firing');
@@ -2504,7 +2530,8 @@ ngp.addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive
 function getMoveDir(){
   const d = new THREE.Vector3();
   if(MOBILE){
-    if(move.id!==null){ d.set(move.x, 0, move.y); if(d.length()>STICK_R) d.setLength(STICK_R); d.divideScalar(STICK_R); }
+    if(move.id!==null){ d.set(move.x, 0, move.y); if(d.length()>STICK_R) d.setLength(STICK_R); d.divideScalar(STICK_R);
+      if(S.camYaw) d.applyAxisAngle(_camUP, S.camYaw); }   // keep stick screen-relative when the view is rotated
   } else {
     if(S.keys['w']||S.keys['arrowup']) d.z-=1;
     if(S.keys['s']||S.keys['arrowdown']) d.z+=1;
@@ -2621,7 +2648,8 @@ function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
-const camOff = new THREE.Vector3(0, MOBILE?18:28, MOBILE?14.5:23);   // zoomed in close — tanks read big & detailed (mobile closest)
+const camOff = new THREE.Vector3(0, MOBILE?18:28, MOBILE?14.5:23);   // base offset; S.zoom scales it, S.camYaw rotates it (player camera controls)
+const _camOff = new THREE.Vector3(), _camUP = new THREE.Vector3(0,1,0);
 const camTarget = new THREE.Vector3();
 const camLook = new THREE.Vector3();
 function updateCamera(dt, now){
@@ -2630,8 +2658,10 @@ function updateCamera(dt, now){
   camLook.set(Math.sin(p.aim)*6 + p.vel.x*0.18, 0, Math.cos(p.aim)*6 + p.vel.z*0.18);
   camTarget.set(p.pos.x + camLook.x*0.45, 0, p.pos.z + camLook.z*0.45);
   const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
-  const want = camTarget.clone().add(camOff);
-  want.y += dashPull; want.z += dashPull;
+  _camOff.copy(camOff).multiplyScalar(S.zoom||1);          // player zoom
+  if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
+  const want = camTarget.clone().add(_camOff);
+  want.y += dashPull;
   if(S.shake>0){ want.x += (Math.random()-0.5)*S.shake; want.z += (Math.random()-0.5)*S.shake; S.shake = Math.max(0, S.shake - dt*S.shake*4 - dt*2); }
   camera.position.lerp(want, Math.min(1, dt*4.5));         // a touch smoother
   camera.lookAt(camTarget.x, 1, camTarget.z);
