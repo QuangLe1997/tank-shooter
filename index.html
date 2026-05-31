@@ -14,7 +14,7 @@
   *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
   html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);
     -webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior:none;}
-  #app,canvas{position:fixed;inset:0;touch-action:none;}
+  #app,canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;}   /* canvas always fills the viewport (buffer set via setSize(...,false)) */
   canvas{display:block;}
   /* desktop aiming reticle — custom crosshair cursor over the battlefield */
   body:not(.touch) #app,body:not(.touch) canvas{cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><g fill='none' stroke-linecap='round'><circle cx='16' cy='16' r='10' stroke='%23000' stroke-width='4'/><path d='M16 2v5.5M16 24.5V30M2 16h5.5M24.5 16H30' stroke='%23000' stroke-width='4'/><circle cx='16' cy='16' r='10' stroke='%23ffce4a' stroke-width='2'/><path d='M16 2v5.5M16 24.5V30M2 16h5.5M24.5 16H30' stroke='%23ffce4a' stroke-width='2'/></g><circle cx='16' cy='16' r='1.8' fill='%23fff'/></svg>") 16 16,crosshair;}
@@ -636,7 +636,7 @@ const S = {
 const app = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
 renderer.setPixelRatio(S.dpr);
-renderer.setSize(innerWidth, innerHeight);
+renderer.setSize(innerWidth, innerHeight, false);   // false → leave canvas CSS to fill the viewport (avoids the "render smaller than screen" mobile bug)
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -2476,7 +2476,7 @@ function startGame(){
   document.getElementById('combo').style.opacity='0';
   hide('start'); hide('pause'); hide('gameover'); hide('upgrade'); hide('victory');
   audio(); startMusic(); sfx('click');
-  if(MOBILE) reqFs();             // go immersive on mobile (within the deploy gesture) + lock landscape
+  if(MOBILE){ reqFs(); setTimeout(doResize, 300); setTimeout(doResize, 800); }   // go immersive + refit after fullscreen/orientation settle
   updateHUD();
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
@@ -2659,6 +2659,7 @@ function endIntro(){
   document.getElementById('cine').classList.remove('on'); document.body.classList.remove('cine');
   WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+0.6;
   S.mode='playing';
+  doResize();   // viewport may have changed during the intro (fullscreen/orientation) → refit so play renders full-screen
 }
 function updateIntro(dt, now){
   if(!intro.active) return;
@@ -2932,7 +2933,7 @@ function loop(nowMs){
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
   if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0;
-    if(fps<45 && S.dpr>1){ S.dpr=Math.max(1,S.dpr-0.25); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); composer.setSize(innerWidth,innerHeight); } }
+    if(fps<45 && S.dpr>1){ S.dpr=Math.max(1,S.dpr-0.25); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(); } }
 }
 let _fpsAcc=0, _fpsN=0;
 function updateAbilityUI(now){
@@ -2947,14 +2948,21 @@ function updateAbilityUI(now){
   document.getElementById('ab-spell')?.classList.toggle('ready', sc<=0);
 }
 
-addEventListener('resize', ()=>{
-  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
-});
+function doResize(){
+  const w=innerWidth, h=innerHeight;
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false); composer.setSize(w, h);   // buffer follows the viewport; CSS keeps the canvas full-screen
+  if(bloom && bloom.setSize) bloom.setSize(w, h);
+}
+window._resize = doResize;   // (debug) force a refit
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
-addEventListener('orientationchange', ()=>setTimeout(checkOrientation, 220));
-addEventListener('resize', checkOrientation);
+addEventListener('resize', ()=>{ doResize(); checkOrientation(); });
+// the mobile viewport keeps changing AFTER load (toolbar hide, fullscreen, orientation lock) — refit when it settles
+addEventListener('orientationchange', ()=>{ setTimeout(()=>{ doResize(); checkOrientation(); }, 250); setTimeout(doResize, 650); });
+document.addEventListener('fullscreenchange', ()=>setTimeout(doResize, 150));
+document.addEventListener('webkitfullscreenchange', ()=>setTimeout(doResize, 150));
+if(window.visualViewport) window.visualViewport.addEventListener('resize', doResize);
 
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore(1);
