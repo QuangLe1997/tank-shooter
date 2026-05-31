@@ -214,6 +214,45 @@
   .btn-arsenal .ic{width:19px;height:19px;color:var(--green);flex:0 0 auto;}
   .btn-arsenal b{color:#ffce4a;}
   .btn-arsenal:hover{transform:translateY(-2px);border-color:var(--green);background:rgba(20,32,10,.72);}
+  /* SHOP button (amber/gold accent to read as the economy entry) */
+  .btn-shop{pointer-events:auto;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:12px 26px;border-radius:12px;
+    background:rgba(20,14,4,.62);border:1.5px solid rgba(255,206,110,.6);color:#ffe8b6;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);text-shadow:0 1px 6px rgba(0,0,0,.9);transition:transform .12s,border-color .12s,background .12s;}
+  .btn-shop .ic{width:19px;height:19px;color:var(--amber);flex:0 0 auto;}
+  .btn-shop:hover{transform:translateY(-2px);border-color:var(--amber);background:rgba(40,28,8,.74);}
+  /* wallet chips (coins + diamonds) */
+  .wallet,.shop-wallet{display:flex;gap:10px;justify-content:center;align-items:center;}
+  .w-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:rgba(6,9,4,.55);border:1px solid rgba(255,206,110,.32);
+    font-size:13px;font-weight:800;letter-spacing:1px;color:#ffe8b6;text-shadow:0 2px 8px rgba(0,0,0,.9);}
+  .w-chip .ic{width:15px;height:15px;color:var(--amber);}
+  .w-chip.dia{border-color:rgba(127,231,255,.4);color:#bff0ff;} .w-chip.dia .ic{color:#7fe7ff;}
+  .shop-wallet{margin:-2px 0 2px;}
+  .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
+  /* shop grid */
+  #shopgrid{display:flex;flex-direction:column;gap:8px;max-width:min(94vw,720px);max-height:62vh;overflow-y:auto;padding:4px 6px;width:100%;}
+  .shop-cat{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--green);text-transform:uppercase;text-align:left;margin:6px 2px 1px;opacity:.85;}
+  .shop-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;}
+  .shopcard{pointer-events:auto;cursor:pointer;position:relative;width:150px;padding:9px 10px 8px;border-radius:12px;text-align:left;
+    background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 16px rgba(0,0,0,.38);transition:transform .12s,border-color .12s;display:flex;flex-direction:column;gap:3px;}
+  .shopcard:hover{transform:translateY(-2px);border-color:rgba(255,206,110,.5);}
+  .shopcard .sc-top{display:flex;align-items:center;gap:7px;}
+  .shopcard .sc-ic{width:20px;height:20px;color:var(--ink);flex:0 0 auto;} .shopcard .sc-ic svg{width:100%;height:100%;}
+  .shopcard .sc-nm{font-size:12.5px;font-weight:800;letter-spacing:.4px;color:var(--ink);line-height:1.1;}
+  .shopcard .sc-eff{font-size:10px;color:var(--muted);line-height:1.3;min-height:13px;}
+  .shopcard .sc-dots{display:flex;gap:3px;margin:1px 0;}
+  .shopcard .sc-dots i{width:13px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);}
+  .shopcard .sc-dots i.on{background:var(--green);}
+  .shopcard .sc-dots i.vip.on{background:#7fe7ff;}
+  .shopcard .sc-buy{margin-top:3px;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;border-radius:8px;
+    background:linear-gradient(180deg,rgba(243,196,94,.9),rgba(205,124,32,.9));color:#1c1404;font-weight:900;font-size:12px;letter-spacing:.5px;border:1px solid rgba(255,230,175,.6);}
+  .shopcard .sc-buy .ic{width:13px;height:13px;color:#1c1404;}
+  .shopcard.vip .sc-buy{background:linear-gradient(180deg,rgba(127,231,255,.9),rgba(60,150,200,.9));}
+  .shopcard.cant{opacity:.92;} .shopcard.cant .sc-buy{background:rgba(255,255,255,.07);color:var(--muted);border-color:var(--line);cursor:not-allowed;}
+  .shopcard.cant .sc-buy .ic{color:var(--muted);}
+  .shopcard.maxed{opacity:.6;} .shopcard.maxed .sc-buy{background:rgba(140,191,63,.18);color:var(--green);border-color:rgba(140,191,63,.4);}
+  .shopcard.owned{opacity:.6;} .shopcard.owned .sc-buy{background:rgba(140,191,63,.18);color:var(--green);border-color:rgba(140,191,63,.4);}
+  body.touch #shopgrid{max-height:64vh;} body.touch .shopcard{width:31%;min-width:104px;}
   #nickInput{pointer-events:auto;width:min(78vw,300px);text-align:center;font-family:inherit;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;
     padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);outline:none;caret-color:var(--green);}
   #nickInput:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(140,191,63,.18);}
@@ -488,10 +527,12 @@
   <div class="subtitle">3D Tank Shooter</div>
   <div class="hello" id="hello"></div>
   <div class="bestline" id="bestline"></div>
+  <div class="wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
   <div class="panel">
     <div class="btn btn-primary" id="continueBtn" style="display:none">CONTINUE ▶</div>
     <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
     <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b> WEAPONS</span></div>
+    <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>SHOP — BUY UPGRADES</span></div>
     <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET PROGRESS</span></div>
     <div class="help desktop-only">
       <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
@@ -522,6 +563,14 @@
   <div class="panel" style="margin-top:6px"><div class="btn btn-primary" id="ldDone">CONFIRM ▶</div></div>
 </div>
 
+<!-- SHOP (buy weapons + upgrades with coins / diamonds) -->
+<div class="overlay hidden" id="shop">
+  <div class="title" style="font-size:clamp(22px,5vw,40px)">SHOP</div>
+  <div class="shop-wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
+  <div id="shopgrid"></div>
+  <div class="panel" style="margin-top:4px"><div class="btn btn-primary" id="shopDone">DONE ▶</div></div>
+</div>
+
 <!-- PAUSE -->
 <div class="overlay hidden" id="pause">
   <div class="title" style="font-size:clamp(30px,7vw,58px)">PAUSED</div>
@@ -542,6 +591,7 @@
       <div class="go-stat"><div class="l">WAVE</div><div class="v" id="go-wave" style="color:var(--steel)">1</div></div>
     </div>
     <div class="go-best" id="go-best"></div>
+    <div class="go-wallet" id="go-wallet"></div>
     <div class="btn btn-primary" id="retryBtn">RETRY ↻</div>
   </div>
 </div>
@@ -667,6 +717,8 @@ const GLYPH={
   up:'<path d="M5 13.5l7-7 7 7M5 19l7-7 7 7"/>',
   gun:'<path d="M4 8.6h13l3 1.6v2.6h-5l-1 2.4H9l-1-2.4H4z"/><path d="M7 13.4v3"/>',
   star:'<path d="M12 3l2.5 6.4L21 10l-5 4.4L17.5 21 12 17.4 6.5 21 8 14.4 3 10l6.5-.6L12 3Z"/>',
+  coin:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.4"/><path d="M12 9.2v5.6"/>',
+  diamond:'<path d="M12 3 4 9.6 12 21l8-11.4L12 3Z"/><path d="M4 9.6h16M9 3.6 7 9.6l5 11.4M15 3.6l2 6 -5 11.4"/>',
   spark:'<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l3 3M14.5 14.5l3 3M17.5 6.5l-3 3M9.5 14.5l-3 3"/>',
   rotate:'<rect x="8" y="3" width="8" height="18" rx="2"/><circle cx="12" cy="18" r="0.7"/><path d="M18.6 8.6a8 8 0 0 0-7-4.6M18.6 8.6 19 5.9M18.6 8.6 15.9 8.9"/>',
   swap:'<path d="M4 8h12l-3-3M4 8l3 3M20 16H8l3 3M20 16l-3-3"/>',
@@ -1031,13 +1083,13 @@ function makePlayer(){
     facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI, shieldMesh: mesh.userData.shield,
     hp:100, maxHp:100, lives:3, fireAt:0, weaponLvl:0,
     guns:[{id:'rifle', ammo:24, rU:0, rD:0}], gunIdx:0,   // gun inventory (R2; per-gun reload rU/rD)
-    infiniteAmmo:false, ammoMul:1,                            // derived from buffs each frame
+    infiniteAmmo:false, ammoMul:1, magMul:1,                  // ammoMul derived from buffs each frame; magMul = persistent BIG MAGAZINE upgrade
     buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0 },   // timed power-up buffs
     rangeMul:1, radius:PLAYER.radius, scale:1,                   // combat-range upgrade + boss-parity scale
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
     overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     // roguelite upgrade multipliers (P7)
-    dmgMul:1, fireMul:1, speedMul:1, dashCdMul:1, spellCdMul:1, crit:0, lifesteal:0, kbx:0, kbz:0,
+    dmgMul:1, fireMul:1, speedMul:1, dashCdMul:1, spellCdMul:1, crit:0, lifesteal:0, kbx:0, kbz:0, reloadMul:1, armor:0,
   };
 }
 
@@ -1793,7 +1845,8 @@ function killBoss(now){
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
     bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
-  showBanner(boss.def.name+' DOWN!', '#8cbf3f'); sfx('levelup');
+  addDiamonds(2);                                   // bosses drop diamonds (VIP currency)
+  showBanner(boss.def.name+' DOWN!  +2 ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
   if(laserMesh) laserMesh.visible=false; clearMines();
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
@@ -1942,6 +1995,7 @@ function bumpCombo(){ S.combo++; S.comboUntil = performance.now()/1000 + 3;
 function addScore(base, worldPos){
   const pts = Math.round(base * comboMult());
   S.score += pts;
+  addCoins(pts);                              // coins accrue alongside score (persist across runs)
   floatText('+'+pts, '#e7b54a', worldPos, 18);
   updateHUD();
 }
@@ -1949,6 +2003,7 @@ function addScore(base, worldPos){
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 function damagePlayer(dmg, now){
   const p=S.player; if(now < p.invincibleUntil) return;
+  dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   p.hp -= dmg;
   S.shake = Math.min(2, S.shake + 0.5);
   sfx('hurt'); burst(p.pos, 0xff5040, 5, 6, {life:0.25, size:0.9});
@@ -1976,6 +2031,8 @@ function gameOver(reason){
   document.getElementById('go-wave').textContent=S.wave;
   const beat=recordRun(); const gb=document.getElementById('go-best');
   if(gb){ gb.textContent = beat ? ('★ NEW BEST  '+S.score.toLocaleString()+' ★') : ('BEST  '+(BEST.score||0).toLocaleString()); gb.classList.toggle('newbest', beat); }
+  const gw=document.getElementById('go-wallet'); if(gw) gw.innerHTML='Earned this run is banked · <b class="w-coins">0</b> coins · <b class="w-dia">0</b> ◆';
+  saveProfile(); refreshWallet();              // bank the coins/diamonds earned this run
   document.body.classList.remove('corelow');
   show('gameover');
 }
@@ -2146,7 +2203,7 @@ const GUNS = {
 function gunDropPool(stage){
   const pool=['smg','shotgun','cryo'];
   if(stage>=2) pool.push('flak','cannon','minigun');
-  if(stage>=3) pool.push('missile','tesla','railgun','rocket');
+  if(stage>=3) pool.push('missile','tesla');     // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
   return pool;
 }
 function muzzleFlash(x,z,ang,color){
@@ -2159,8 +2216,8 @@ function muzzleFlash(x,z,ang,color){
   if(Math.random()<0.4) spawnPart(x+fx*0.4,1.6,z+fz*0.4, fx*1.6,0.8,fz*1.6, {color:0x423b30, size:0.9, life:0.4, smoke:true, grav:-0.9, drag:3, op:0.38});  // wisp of barrel smoke
 }
 function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
-function magCap(g){ return Math.round(g.mag * S.player.ammoMul); }
-function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload; inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }
+function magCap(g){ return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
+function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }
 // ----- reload countdown dial: a glowing circular chart billboarded above the tank, flashes ✓ when ready -----
 const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=reloadCanvas.height=160;
 const reloadCtx=reloadCanvas.getContext('2d');
@@ -2375,7 +2432,7 @@ const POWERUPS = [
   { id:'bomb',   svg:'bomb', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
   { id:'freeze', svg:'snow', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   { id:'drone',  svg:'drone', color:0x6fd0ff, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
-  { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(SOLDIER.cap); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(RIDER.cap); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
+  { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(crewTarget()); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, apply(){ soldierLvl++; for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // gun drop — adds a random gun to the inventory
   { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ const pl=gunDropPool(S.stage); giveGun(pl[(Math.random()*pl.length)|0]); } },
@@ -2390,9 +2447,10 @@ const pickups=[];
 const GUN_DROP_DEF = POWERUPS.find(u=>u.id==='gun');
 function dropPowerup(pos){
   const p=S.player; const low = (p.hp/p.maxHp<0.4) || (core&&core.hp/core.maxHp<0.4);
-  let def;
+  let def, r=Math.random();
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield'].includes(u.id)); def=pool[(Math.random()*pool.length)|0]; }
-  else if(Math.random()<0.42){ def=GUN_DROP_DEF; }                  // boosted weapon-drop rate — guns are the headline reward
+  else if(r<0.07){ def=GEM_DEF; }                                   // 7% → diamond treasure (VIP currency)
+  else if(r<0.46){ def=GUN_DROP_DEF; }                              // ~39% → gun (the headline reward)
   else { def=POWERUPS[(Math.random()*POWERUPS.length)|0]; }
   const g=new THREE.Group(); g.position.set(pos.x,0,pos.z); scene.add(g);
   const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
@@ -2485,8 +2543,8 @@ function chooseUpgrade(u){
   hide('upgrade');
   applyBiome(S.stage); buildBlocks();
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
-  clearSoldiers(); deploySoldiers(SOLDIER.base);   // fresh full guard squad each stage (weapon upgrades persist via soldierLvl)
-  if(S.stage>=3 && !ridersUnlocked){ ridersUnlocked=true; deployRiders(3); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // 3 crew mount the tank from Stage 3 (persist; lost crew stays lost)
+  clearSoldiers(); deploySoldiers(guardTarget());   // fresh guard squad each stage (base + CORE GUARDS upgrade)
+  if(S.stage>=3 && !ridersUnlocked){ ridersUnlocked=true; deployRiders(crewTarget()); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)
   playStageTransition(S.stage, BIOME.name, '#'+BIOME.accent.toString(16).padStart(6,'0'));
   S.awaitingUpgrade=false; WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+2.1; S.wave=0;   // first wave lands as the wipe clears
   S.mode='playing';
@@ -2556,12 +2614,14 @@ function startGame(continueRun){
   p.guns=loadoutGuns(); p.gunIdx=0; p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
   // reset roguelite multipliers
-  p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1;
+  p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
+  applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
+  for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]);    // start each gun with its (upgraded) full magazine
   p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE; p.mesh.scale.setScalar(TANK_SCALE);
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
-  enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=0; deploySoldiers(SOLDIER.base); document.body.classList.remove('corelow'); _alarmAt=0;
+  enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -2580,7 +2640,7 @@ function startGame(continueRun){
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
 function togglePause(){
-  if(S.mode==='playing'){ S.mode='paused'; show('pause'); }
+  if(S.mode==='playing'){ S.mode='paused'; show('pause'); saveProfile(); }
   else if(S.mode==='paused'){ S.mode='playing'; hide('pause'); }
 }
 function show(id){ document.getElementById(id).classList.remove('hidden'); }
@@ -2613,6 +2673,7 @@ function refreshStartUI(){
   const cont=document.getElementById('continueBtn'), hasSave=!!(PROFILE.save && PROFILE.save.stage>1);
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; cont.textContent = hasSave ? ('CONTINUE ▶  STAGE '+PROFILE.save.stage) : 'CONTINUE ▶'; }
   const ac=document.getElementById('arsenalCount'); if(ac) ac.textContent=PROFILE.ownedGuns.length;   // show how many guns are collected
+  refreshWallet();
 }
 
 // ---- nickname (first launch / editable) ----
@@ -2658,12 +2719,60 @@ tapBtn('arsenalBtn', openLoadout);
 tapBtn('arsenalBtnP', openLoadout);
 tapBtn('ldDone', closeLoadout);
 
+// ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
+function shopModel(){
+  const cats={}; const push=(c,it)=>{ (cats[c]=cats[c]||[]).push(it); };
+  Object.keys(GUN_PRICE).forEach(id=>{ if(!GUNS[id]||PROFILE.ownedGuns.includes(id)) return;
+    push('WEAPONS', {type:'gun', id, name:GUNS[id].name, icon:GUNS[id].svg||'gun', tier:GUNS[id].tier, cost:GUN_PRICE[id], vip:VIP_GUNS.includes(id)}); });
+  SHOP_UP.forEach(u=>{ const L=upLevel(u.key), max=upMax(u.key), cost=L<max?u.costs[L]:null;
+    push(u.cat, {type:'up', key:u.key, name:u.name, icon:u.icon, per:u.per, level:L, max, cost, vip: !!(cost&&cost.d)}); });
+  return ['WEAPONS','FIREPOWER','AMMO','CHASSIS','TROOPS'].filter(c=>cats[c]&&cats[c].length).map(c=>({cat:c, items:cats[c]}));
+}
+function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
+function renderShop(){
+  const grid=document.getElementById('shopgrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
+  shopModel().forEach(group=>{
+    const h=document.createElement('div'); h.className='shop-cat'; h.textContent=group.cat; grid.appendChild(h);
+    const row=document.createElement('div'); row.className='shop-row';
+    group.items.forEach(it=>{
+      const maxed = it.type==='up' && it.level>=it.max;
+      const afford = !maxed && it.cost && canAfford(it.cost);
+      let state = maxed ? 'maxed' : (afford ? '' : 'cant');
+      const card=document.createElement('div'); card.className='shopcard'+(state?' '+state:'')+(it.vip?' vip':'');
+      let dots=''; if(it.type==='up'){ const cs=SHOP_UP_BY[it.key].costs; for(let i=0;i<it.max;i++) dots+='<i class="'+(i<it.level?'on':'')+(cs[i]&&cs[i].d?' vip':'')+'"></i>'; }
+      const title = it.name + (it.type==='up'? ' <span style="opacity:.7">'+it.level+'/'+it.max+'</span>' : (it.vip?' <span style="color:#7fe7ff">VIP</span>':''));
+      const eff = it.type==='up' ? it.per : ('TIER '+it.tier+' weapon');
+      const buy = maxed ? 'MAX' : (it.cost ? priceHTML(it.cost) : 'MAX');
+      card.innerHTML = '<div class="sc-top"><span class="sc-ic">'+svgMarkup(it.icon)+'</span><span class="sc-nm">'+title+'</span></div>'+
+        (it.type==='up'?'<div class="sc-dots">'+dots+'</div>':'')+
+        '<div class="sc-eff">'+eff+'</div><div class="sc-buy">'+buy+'</div>';
+      if(state!=='maxed') tapEl(card, ()=>buyShop(it));
+      row.appendChild(card);
+    });
+    grid.appendChild(row);
+  });
+}
+function buyShop(it){
+  if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }            // can't afford → ignore
+  if(it.type==='up'){ if(upLevel(it.key)>=upMax(it.key)) return; payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1; }
+  else if(it.type==='gun'){ if(PROFILE.ownedGuns.includes(it.id)) return; payCost(it.cost); ownGun(it.id); }
+  saveProfile(); sfx('powerup'); refreshWallet(); renderShop(); refreshStartUI();
+}
+function openShop(){ hide('start'); renderShop(); show('shop'); refreshWallet(); sfx('click'); }
+function closeShop(){ saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
+tapBtn('shopBtn', openShop);
+tapBtn('shopDone', closeShop);
+addEventListener('pagehide', saveProfile);
+addEventListener('visibilitychange', ()=>{ if(document.hidden) saveProfile(); });
+
 // ---- continue / reset (tap-to-arm, no native dialog) ----
 tapBtn('continueBtn', ()=>startGame(true));
 let _resetArm=0;
 tapBtn('resetBtn', ()=>{
   const lbl=document.querySelector('#resetBtn span:last-child'); const now=performance.now();
-  if(now<_resetArm){ _resetArm=0; clearProgress(); BEST.score=0; BEST.stage=1; saveProfile(); refreshBestLine(); refreshStartUI(); if(lbl) lbl.textContent='RESET ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='RESET'; },1400); }
+  if(now<_resetArm){ _resetArm=0;                       // CLEAR SESSION → wipe the whole account (wallet, upgrades, arsenal, progress); keep nickname
+    PROFILE.save=null; PROFILE.best={score:0,stage:1}; BEST=PROFILE.best; PROFILE.coins=0; PROFILE.diamonds=0; PROFILE.upgrades={}; PROFILE.ownedGuns=['rifle']; PROFILE.loadout=['rifle'];
+    saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='RESET ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='RESET'; },1400); }
   else { _resetArm=now+2600; if(lbl) lbl.textContent='SURE?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='RESET'; },2700); }
 });
 
@@ -2870,7 +2979,7 @@ function drawRadar(){
 const PROFILE_KEY='steelsiege.profile';
 const BEST_KEY='steelsiege.best';        // legacy high-score key (migrated into the profile)
 const LOADOUT_MAX=5;                      // bring at most 5 weapons into a fight (quick-swap rotation)
-function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null }; }
+function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{} }; }
 function loadProfile(){
   let pr=null; try{ pr=JSON.parse(localStorage.getItem(PROFILE_KEY)); }catch(e){}
   if(!pr || typeof pr!=='object'){ pr=defaultProfile(); try{ const old=JSON.parse(localStorage.getItem(BEST_KEY)); if(old&&old.score) pr.best={score:old.score|0, stage:old.stage|0||1}; }catch(e){} }
@@ -2881,11 +2990,56 @@ function loadProfile(){
   if(!pr.loadout.length) pr.loadout=['rifle'];
   if(!pr.best||typeof pr.best!=='object') pr.best={score:0,stage:1};
   if(pr.save && (typeof pr.save!=='object' || !(pr.save.stage>1))) pr.save=null;   // only stage ≥2 is worth resuming
+  pr.coins=Math.max(0, pr.coins|0); pr.diamonds=Math.max(0, pr.diamonds|0);          // persistent wallet (coins · diamonds)
+  if(!pr.upgrades || typeof pr.upgrades!=='object') pr.upgrades={};                  // { key: level } bought stat upgrades
   return pr;
 }
 function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} }
 let PROFILE=loadProfile();
 let BEST=PROFILE.best;                    // alias — existing high-score code keeps working
+// ----- wallet (persists across runs; only a full RESET wipes it) -----
+function addCoins(n){ PROFILE.coins += n; }
+function addDiamonds(n){ PROFILE.diamonds += n; if(n>0){ refreshWallet(); saveProfile(); } }
+function refreshWallet(){ document.querySelectorAll('.w-coins').forEach(e=>e.textContent=PROFILE.coins.toLocaleString());
+  document.querySelectorAll('.w-dia').forEach(e=>e.textContent=PROFILE.diamonds.toLocaleString()); }
+
+// ----------------------------- SHOP CATALOG + UPGRADES -----------------------------
+// Leveled stat upgrades: early levels cost coins (cheap, affordable in a run or two), top
+// levels cost diamonds (VIP — a multi-session grind). costs[L] = price to go from level L→L+1.
+const SHOP_UP = [
+  {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'DAMAGE',       per:'+8% bullet damage', costs:[{c:600},{c:1500},{c:3500},{d:8},{d:18}]},
+  {key:'range',  cat:'FIREPOWER', icon:'target', name:'LONG BARREL',  per:'+10% fire range',   costs:[{c:500},{c:1300},{c:3000},{d:7},{d:16}]},
+  {key:'reload', cat:'AMMO',      icon:'mag',    name:'FAST RELOAD',  per:'-12% reload time',  costs:[{c:600},{c:1500},{c:3500},{d:8},{d:18}]},
+  {key:'mag',    cat:'AMMO',      icon:'mag',    name:'BIG MAGAZINE', per:'+15% magazine',     costs:[{c:500},{c:1300},{c:3000},{d:7},{d:16}]},
+  {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:600},{c:1500},{c:3500},{d:8},{d:18}]},
+  {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:800},{c:2000},{c:4500},{d:10},{d:22}]},
+  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+8% move speed',    costs:[{c:500},{c:1300},{c:3000},{d:7},{d:16}]},
+  {key:'guards', cat:'TROOPS',    icon:'shield', name:'CORE GUARDS',  per:'+1 base guard',     costs:[{c:1500},{c:4000},{d:10}]},
+  {key:'crew',   cat:'TROOPS',    icon:'shield', name:'TANK CREW',    per:'+1 base crew',      costs:[{c:1500},{c:4000},{d:10}]},
+  {key:'troops', cat:'TROOPS',    icon:'up',     name:'TROOP ARMS',   per:'+15% troop damage', costs:[{c:1000},{c:2500},{d:8}]},
+];
+const SHOP_UP_BY={}; SHOP_UP.forEach(u=>SHOP_UP_BY[u.key]=u);
+function upLevel(key){ return PROFILE.upgrades[key]||0; }
+function upMax(key){ return SHOP_UP_BY[key] ? SHOP_UP_BY[key].costs.length : 0; }
+// gun unlocks → permanent arsenal. T1/T2/T3 in coins; the two strongest are VIP (diamonds only, never gifted in battle).
+const GUN_PRICE = { smg:{c:800}, cryo:{c:2600}, shotgun:{c:2500}, flak:{c:2800}, cannon:{c:3400},
+  minigun:{c:6000}, missile:{c:6800}, tesla:{c:7200}, railgun:{d:12}, rocket:{d:14} };
+const VIP_GUNS = ['railgun','rocket'];                        // diamond-only; excluded from in-battle gun drops
+function canAfford(cost){ return !!cost && (!cost.c || PROFILE.coins>=cost.c) && (!cost.d || PROFILE.diamonds>=cost.d); }
+function payCost(cost){ if(!canAfford(cost)) return false; if(cost.c) PROFILE.coins-=cost.c; if(cost.d) PROFILE.diamonds-=cost.d; return true; }
+function applyUpgrades(p){                                     // bake the bought upgrades into a fresh run
+  const U=PROFILE.upgrades||{};
+  p.maxHp     = 100 + (U.hp||0)*20;
+  p.dmgMul   *= 1 + (U.damage||0)*0.08;
+  p.rangeMul *= 1 + (U.range||0)*0.10;
+  p.speedMul *= 1 + (U.engine||0)*0.08;
+  p.magMul    = 1 + (U.mag||0)*0.15;          // separate from the buff-derived ammoMul (which the frame loop overwrites)
+  p.reloadMul = 1/(1 + (U.reload||0)*0.12);
+  p.armor     = Math.min(0.6,(U.armor||0)*0.06);
+}
+function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
+function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0); }
+const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, apply(){ addDiamonds(1); if(S.player) floatText('+1 DIAMOND','#7fe7ff',S.player.pos,22); } };  // rare treasure
 function ownGun(id){ if(!GUNS[id]) return false; let fresh=false;
   if(!PROFILE.ownedGuns.includes(id)){ PROFILE.ownedGuns.push(id); fresh=true; }
   if(!PROFILE.loadout.includes(id) && PROFILE.loadout.length<LOADOUT_MAX) PROFILE.loadout.push(id);   // auto-equip while there's room
@@ -2967,7 +3121,7 @@ function updateLootBeacons(dt){
 // Up to 5 infantry hold a ring around the monument, auto-fire at the nearest enemy, intercept incoming
 // shots (body-block) and brawl. One soldier out-DPSes a tank, but a swarm of tanks will overwhelm them.
 // They fight to the death; power-ups reinforce the squad and upgrade their weapons.
-const SOLDIER = { cap:5, base:3, hp:44, dmg:8, fireCd:0.7, range:17, ringR:7.8, scale:1.9 };   // support defenders, NOT a wall — weak enough that the Core is still at real risk
+const SOLDIER = { cap:8, base:3, hp:44, dmg:8, fireCd:0.7, range:17, ringR:7.8, scale:1.9 };   // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 let soldiers=[], soldierLvl=0;
 function makeSoldierMesh(){
   const g=new THREE.Group();
@@ -3042,7 +3196,7 @@ function updateSoldiers(dt, now){
 // ----------------------------- TANK CREW / RIDERS (infantry mounted on the player's tank, unlocked at Stage 3) -----------------------------
 // Riders stand on the tank roof and auto-fire at enemies — short range, slow fire, each with its own HP/upgrades.
 // They're exposed: shots that hit the tank can wound them and crowding tanks chew them up. Dead = gone; power-ups reinforce.
-const RIDER = { cap:4, hp:30, dmg:7, fireCd:0.9, range:14, scale:0.82 };
+const RIDER = { cap:7, base:3, hp:30, dmg:7, fireCd:0.9, range:14, scale:0.82 };   // base 3 + TANK CREW upgrade (+1..3)
 const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55]];   // roof posts (tank-local, before facing+scale)
 let riders=[], ridersUnlocked=false;
 function spawnRider(){ if(riders.length>=RIDER.cap) return; const g=makeSoldierMesh(); scene.add(g);
@@ -3176,6 +3330,7 @@ window._dbg.blocks = blocks; window._dbg.debris = debris; window._dbg.rockets = 
 window._intro = intro;   // deploy-cinematic state (debug/inspection)
 window._profile = PROFILE; window._ownGun = ownGun; window._openLoadout = openLoadout;   // profile/arsenal hooks
 window._saveProgress = saveProgress; window._clearProgress = clearProgress;              // checkpoint hooks (debug/test)
+window._openShop = openShop; window._buyShop = buyShop; window._shopModel = shopModel; window._applyUpgrades = applyUpgrades;   // economy hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
