@@ -19,6 +19,16 @@
 
 **8 súng** (tier 1→3): rifle · smg · shotgun · flak · cannon · minigun · missile · railgun — mỗi súng = bộ thông số (dmg/fireCd/mag/reload/frags/spread/bspeed). Sửa cân bằng → chỉ chỉnh `GUNS`.
 
+### Tinh chỉnh v3 (T1–T5)
+| Mục | Ở đâu |
+|---|---|
+| **Phạm vi tác chiến**: vòng tròn mờ quanh player; chỉ bắn khi địch vào vùng; đạn chỉ tới trong vùng; mở theo màn + buff 🎯 + nâng cấp | `playerRange()`, `rangeRing`, gate trong `updatePlayer`, `maxDist` đạn |
+| **Nổ xe hoành tráng** (flash+cầu lửa+mảnh văng+cột khói) + impact theo cỡ đạn | `tankExplode()` |
+| **Vật phẩm** nhấp nháy + icon riêng từng loại + vòng đếm ngược (hết → biến mất) | `dropPowerup/updatePickups`, `emojiTex()` |
+| **Đánh boss**: player **to bằng boss** (radius động) + tông húc văng nhau, không xuyên qua | `p.scale/p.radius`, `separateTanks` boss |
+| **Khoảng cách min** giữa mọi xe (không dính sát) | `separateTanks` (GAP=0.7) |
+| **Địa hình mê cung** dạng I/L/U/T/Z để ẩn nấp | `MAZE_SHAPES`, `buildBlocks()` |
+
 ---
 
 ## 0. TRẠNG THÁI TÍNH NĂNG (đọc cái này trước)
@@ -137,6 +147,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · TINH CHỈNH v3 (T1–T5):** phạm vi tác chiến (vòng mờ + chỉ bắn khi địch trong vùng + đạn giới hạn tầm, mở theo màn/buff); nổ xe tăng hoành tráng + impact theo cỡ đạn; vật phẩm nhấp nháy + icon riêng + vòng đếm ngược; đánh boss player to bằng boss + tông húc văng nhau; min-gap giữa các xe; địa hình mê cung I/L/U/T/Z.
 - **2026-05-31 · REWORK v2 (R1–R7):** sửa theo phản hồi sau khi chơi —
   (R1) xe tăng không còn dính/chồng vào nhau, va chạm hất văng;
   (R2) làm lại súng: băng đạn + nạp đạn + mảnh vỡ + **auto-fire**, mobile **auto-aim**, kho súng nhặt/đổi, bắt đầu 1 súng cơ bản;
