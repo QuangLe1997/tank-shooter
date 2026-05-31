@@ -156,6 +156,28 @@
     #abilities{display:none;}   /* mobile uses on-screen buttons instead */
     #combo{top:70px;font-size:22px;}
   }
+
+  /* ===== INTRO CINEMATIC (deploy showcase) ===== */
+  #cine{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;transition:opacity .5s ease;}
+  #cine.on{opacity:1;}
+  #cine .bar{position:absolute;left:0;right:0;height:0;background:#000;transition:height .7s cubic-bezier(.2,.8,.2,1);}
+  #cine .bar.top{top:0;} #cine .bar.bot{bottom:0;}
+  #cine.on .bar{height:11vh;}
+  #cine-title{position:absolute;left:0;right:0;bottom:15vh;text-align:center;transform:translateY(14px);opacity:0;
+    transition:opacity .6s ease .35s,transform .6s ease .35s;}
+  #cine.on #cine-title{opacity:1;transform:translateY(0);}
+  #cine-title .ct-name{font-size:clamp(30px,7vw,64px);font-weight:900;letter-spacing:8px;line-height:1;
+    background:linear-gradient(105deg,var(--green),var(--ink) 55%,var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 4px 20px rgba(0,0,0,.7));}
+  #cine-title .ct-sub{margin-top:8px;font-size:clamp(11px,2.6vw,15px);letter-spacing:7px;color:var(--amber);text-transform:uppercase;
+    text-shadow:0 2px 12px rgba(0,0,0,.8);}
+  #cine-title .ct-sub::before,#cine-title .ct-sub::after{content:'';display:inline-block;width:34px;height:1px;background:var(--amber);
+    vertical-align:middle;margin:0 14px;opacity:.7;}
+  #cine-skip{position:absolute;right:18px;bottom:calc(11vh + 14px);font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.55);
+    text-transform:uppercase;animation:cineBlink 1.6s ease-in-out infinite;}
+  @keyframes cineBlink{0%,100%{opacity:.3;}50%{opacity:.85;}}
+  #hud{transition:opacity .45s ease;}
+  body.cine #hud{opacity:0;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -251,6 +273,14 @@
     </div>
     <div class="btn btn-primary" id="ngplusBtn">NEW GAME+ ▶</div>
   </div>
+</div>
+
+<!-- INTRO CINEMATIC (deploy showcase) -->
+<div id="cine">
+  <div class="bar top"></div>
+  <div class="bar bot"></div>
+  <div id="cine-title"><div class="ct-name">STEEL SIEGE</div><div class="ct-sub" id="cine-sub">STAGE 1 · DESERT</div></div>
+  <div id="cine-skip">tap / any key to skip</div>
 </div>
 
 <script type="importmap">
@@ -1663,9 +1693,9 @@ function startGame(){
   WAVE.active=false; WAVE.betweenUntil=performance.now()/1000 + 0.6; WAVE.spawnQueue.length=0;
   document.getElementById('combo').style.opacity='0';
   hide('start'); hide('pause'); hide('gameover'); hide('upgrade'); hide('victory');
-  S.mode='playing';
   audio(); startMusic(); sfx('click');
   updateHUD();
+  startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
 function togglePause(){
   if(S.mode==='playing'){ S.mode='paused'; show('pause'); }
@@ -1676,6 +1706,9 @@ function hide(id){ document.getElementById(id).classList.add('hidden'); }
 
 document.getElementById('playBtn').addEventListener('click', startGame);
 document.getElementById('playBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
+// skip the deploy cinematic on any input (after a short grace window)
+addEventListener('pointerdown', ()=>skipIntro());
+addEventListener('keydown', ()=>skipIntro());
 document.getElementById('resumeBtn').onclick = togglePause;
 document.getElementById('restartBtn').onclick = startGame;
 document.getElementById('retryBtn').onclick = startGame;
@@ -1797,6 +1830,40 @@ function updateCamera(dt, now){
   camera.lookAt(camTarget.x, 1, camTarget.z);
 }
 
+// ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
+// A Catmull-Rom camera sweep: low hero shot of the tank → orbiting parade rise →
+// wide overview → settles EXACTLY onto the gameplay framing, then play begins. Skippable.
+const intro = { active:false, t:0, dur:5.2, camCurve:null, lookCurve:null };
+const _easeIO = u => u<0.5 ? 2*u*u : 1 - Math.pow(-2*u+2,2)/2;
+function startIntro(){
+  const p=S.player; if(!p){ S.mode='playing'; return; }
+  p.mesh.position.set(p.pos.x,0,p.pos.z); p.mesh.rotation.y=p.facing; p.turret.rotation.y=0;
+  const T=new THREE.Vector3(p.pos.x,0,p.pos.z);
+  const offs =[[3,2.0,-13],[-7,2.8,-9],[-14,6.6,3],[-7,13,17],[2,25,27],[0,33,28]]; // last = camOff (seamless handoff)
+  const looks=[[0,2.2,0],[0,2.2,0],[0,2.0,0],[0,1.8,0],[0,1.2,0],[0,1.0,0]];
+  const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))));
+  intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true;
+  const sub=document.getElementById('cine-sub'); if(sub) sub.textContent='STAGE '+S.stage+' · '+BIOME.name;
+  document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
+  S.mode='intro';
+}
+function endIntro(){
+  if(!intro.active) return; intro.active=false;
+  document.getElementById('cine').classList.remove('on'); document.body.classList.remove('cine');
+  WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+0.6;
+  S.mode='playing';
+}
+function updateIntro(dt, now){
+  if(!intro.active) return;
+  intro.t=Math.min(1, intro.t + dt/intro.dur);
+  const u=_easeIO(intro.t);
+  camera.position.copy(intro.camCurve.getPoint(u));
+  camera.lookAt(intro.lookCurve.getPoint(u));
+  const p=S.player; if(p) p.turret.rotation.y=Math.sin(intro.t*Math.PI*1.5)*0.55;   // slow showcase sweep
+  if(intro.t>=1) endIntro();
+}
+function skipIntro(){ if(intro.active && intro.t>0.05) endIntro(); }   // grace window so the deploy tap doesn't skip
+
 // ----------------------------- MAIN LOOP -----------------------------
 let last = performance.now();
 function loop(nowMs){
@@ -1823,6 +1890,7 @@ function loop(nowMs){
     if(S.combo>0 && now>S.comboUntil && now>bannerTimer){ S.combo=0; document.getElementById('combo').style.opacity='0'; }
     if(bannerTimer>0 && now>bannerTimer && S.combo===0){ document.getElementById('combo').style.opacity='0'; bannerTimer=0; }
   }
+  else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); }
   // always-on FX + core idle
   if(S.mode!=='playing') rangeRing.visible=false;
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
@@ -1863,6 +1931,7 @@ window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){
 window._spawn = spawnEnemy;
 window._give = giveGun; window._cycleGun = cycleGun; window._drop = dropPowerup;
 window._dbg.blocks = blocks;
+window._intro = intro;   // deploy-cinematic state (debug/inspection)
 
 requestAnimationFrame(loop);
 </script>
