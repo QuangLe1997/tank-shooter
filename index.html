@@ -1586,29 +1586,43 @@ function bigExplode(pos, color, scale=1.5){
   muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
   sfx(scale>=2 ? 'bigexplode' : 'explode');
 }
-// ----- debris chunks: tanks shatter into flying, tumbling, burning fragments on death -----
-const debrisGeo = new THREE.BoxGeometry(0.5,0.4,0.6);
+// ----- debris: tanks shatter into irregular metal fragments that fly, tumble, bounce low, settle, cool, and fade -----
+const debrisGeo = new THREE.BoxGeometry(1,1,1);   // unit cube, scaled NON-uniformly per fragment → plates/bars/chunks
 const debrisPool=[], debris=[];
-for(let i=0;i<84;i++){ const m=new THREE.Mesh(debrisGeo, new THREE.MeshStandardMaterial({color:0x2a2622,roughness:0.7,metalness:0.6,emissive:0x5a2408,emissiveIntensity:0.6}));
+for(let i=0;i<90;i++){ const m=new THREE.Mesh(debrisGeo, new THREE.MeshStandardMaterial({color:0x2a2824,roughness:0.88,metalness:0.7,emissive:0xff5a1e,emissiveIntensity:0,transparent:true,opacity:1}));
   m.visible=false; scene.add(m); debrisPool.push(m); }
+const _DEBRIS_DARK=[0x26241f,0x312c25,0x3a342c,0x1d1b18,0x2c2a26];
 function spawnDebris(pos, scale, color){
-  const n=Math.min(32, Math.floor(8*scale));
+  const n=Math.min(26, Math.floor(6*scale)+2);
   for(let i=0;i<n;i++){ const m=debrisPool.pop(); if(!m) break;
-    const a=Math.random()*6.283, sp=(6+Math.random()*10)*scale, up=(5+Math.random()*8)*scale, s=(0.4+Math.random()*0.7)*scale;
-    m.scale.set(s,s,s);
-    m.material.color.setHex(Math.random()<0.5?color:0x2a2622); m.material.emissiveIntensity=0.4+Math.random()*0.6;
-    m.position.set(pos.x+(Math.random()-0.5)*scale, 1.2+Math.random()*scale, pos.z+(Math.random()-0.5)*scale);
+    const a=Math.random()*6.283, ss=Math.sqrt(scale), sp=(3.5+Math.random()*8)*ss, up=(5+Math.random()*8)*ss;
+    const b=(0.3+Math.random()*0.45)*scale;                                          // irregular fragment (non-uniform scale)
+    m.scale.set(b*(0.5+Math.random()*0.9), b*(0.22+Math.random()*0.4), b*(0.6+Math.random()*0.9));
+    m.material.color.setHex(Math.random()<0.28 ? color : _DEBRIS_DARK[(Math.random()*_DEBRIS_DARK.length)|0]);  // mostly dark metal, some painted hull
+    m.material.emissiveIntensity=0.8+Math.random()*0.9;                              // glowing hot from the blast (cools below)
+    m.material.opacity=1;
+    m.position.set(pos.x+(Math.random()-0.5)*scale*0.9, 1.0+Math.random()*scale*0.8, pos.z+(Math.random()-0.5)*scale*0.9);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6); m.visible=true;
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
-      rx:(Math.random()-0.5)*16, ry:(Math.random()-0.5)*16, rz:(Math.random()-0.5)*16, life:1.1+Math.random()*0.9 }); }
+      rx:(Math.random()-0.5)*11, ry:(Math.random()-0.5)*11, rz:(Math.random()-0.5)*11,
+      age:0, life:2.0+Math.random()*1.6, settled:false }); }
 }
 function updateDebris(dt){
-  for(let i=debris.length-1;i>=0;i--){ const d=debris[i]; d.life-=dt;
-    if(d.life<=0){ d.m.visible=false; debrisPool.push(d.m); debris.splice(i,1); continue; }
-    d.vy-=24*dt; d.m.position.x+=d.vx*dt; d.m.position.y+=d.vy*dt; d.m.position.z+=d.vz*dt;
-    if(d.m.position.y<0.25){ d.m.position.y=0.25; d.vy*=-0.42; d.vx*=0.62; d.vz*=0.62; }   // bounce + settle on the ground
-    d.m.rotation.x+=d.rx*dt; d.m.rotation.y+=d.ry*dt; d.m.rotation.z+=d.rz*dt;
-    if(d.life<0.45) d.m.scale.multiplyScalar(0.93);   // burn away
+  for(let i=debris.length-1;i>=0;i--){ const d=debris[i], m=d.m; d.age+=dt;
+    if(d.age>=d.life){ m.visible=false; m.material.opacity=1; m.material.emissiveIntensity=0; debrisPool.push(m); debris.splice(i,1); continue; }
+    if(!d.settled){
+      d.vy-=30*dt;                                                                   // gravity
+      const dg=Math.max(0,1-dt*1.1); d.vx*=dg; d.vz*=dg;                              // air drag
+      m.position.x+=d.vx*dt; m.position.y+=d.vy*dt; m.position.z+=d.vz*dt;
+      const floor=Math.max(0.14, m.scale.y*0.5);
+      if(m.position.y<=floor){ m.position.y=floor;
+        if(Math.abs(d.vy)<2.4 && Math.hypot(d.vx,d.vz)<2.6){ d.settled=true; d.vy=d.vx=d.vz=0; }   // come to rest on the ground
+        else { d.vy*=-0.22; d.vx*=0.5; d.vz*=0.5; d.rx*=0.5; d.ry*=0.5; d.rz*=0.5; }               // low bounce + spin damp
+      }
+      m.rotation.x+=d.rx*dt; m.rotation.y+=d.ry*dt; m.rotation.z+=d.rz*dt;
+    }
+    if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*1.7);   // cool hot → dark metal
+    const rem=d.life-d.age; if(rem<0.7) m.material.opacity=rem/0.7;                                                     // fade out at the end
   }
 }
 // grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column
@@ -1617,8 +1631,9 @@ function tankExplode(pos, color, scale=1.5){
   burst(pos, 0xffd27a, Math.floor(22*scale), 14*scale, {life:0.6,  size:2.1*scale, up:5});                    // hot fireball
   burst(pos, 0xff7a2a, Math.floor(18*scale), 11*scale, {life:0.7,  size:1.9*scale, up:4});                    // deep-orange fire
   burst(pos, color,    Math.floor(14*scale), 10*scale, {life:0.5,  size:1.4*scale, up:3});
-  burst(pos, 0xffe6a0, Math.floor(10*scale), 16*scale, {life:0.4,  size:0.9*scale, up:2, drag:3});            // shooting sparks
-  spawnDebris(pos, scale, color);                                                                              // shatter into chunks
+  burst(pos, 0xffd9a0, Math.floor(6*scale),  14*scale, {life:0.32, size:0.7*scale, up:2, drag:4});            // sparks (sparser, less neon)
+  burst(pos, 0x1a1712, Math.floor(7*scale),  5*scale,  {life:0.95, size:2.6*scale, up:5, grav:-2, drag:1.6, smoke:true, op:0.62});  // immediate black smoke (grounds the blast)
+  spawnDebris(pos, scale, color);                                                                              // shatter into metal fragments
   for(let k=0;k<Math.floor(6*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
     burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.22, life:1.4, size:3.2*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
   ringPulse(pos, color, scale*3.8); ringPulse(pos, 0xffe6a0, scale*2.2);
