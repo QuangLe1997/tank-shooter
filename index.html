@@ -64,6 +64,13 @@
     background:linear-gradient(180deg,rgba(20,28,14,.8),rgba(10,16,8,.86));border:1px solid var(--line);opacity:.5;transition:all .12s;}
   .gunicon.on{opacity:1;border-color:var(--green);box-shadow:0 0 12px rgba(140,191,63,.45);transform:scale(1.14);}
   #stickR{display:none !important;}
+  /* active timed-buff chips (under top bar) */
+  #buffbar{position:absolute;top:max(58px,calc(env(safe-area-inset-top) + 46px));left:50%;transform:translateX(-50%);
+    display:flex;gap:6px;pointer-events:none;z-index:10;}
+  .buffchip{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:var(--ink);
+    background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.88));border:1px solid rgba(140,191,63,.5);
+    border-radius:9px;padding:3px 8px;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  .buffchip .t{font-size:10px;color:var(--green);}
 
   /* ---------- Overlays ---------- */
   .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -172,6 +179,7 @@
   <div id="combo">COMBO ×2</div>
   <div id="muteBtn" class="chip">🔊</div>
   <div id="gunlist"></div>
+  <div id="buffbar"></div>
   <div id="weaponchip" class="chip">🟢 SÚNG TRƯỜNG 24/24</div>
   <div id="bossbar"><div class="bn" id="boss-name">BOSS</div><div class="bar core"><i id="boss-hp"></i></div></div>
 </div>
@@ -403,7 +411,8 @@ function makePlayer(){
     facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI, shieldMesh: mesh.userData.shield,
     hp:100, maxHp:100, lives:3, fireAt:0, weaponLvl:0,
     guns:[{id:'rifle', ammo:24}], gunIdx:0, reloadUntil:0,   // gun inventory (R2)
-    infiniteAmmo:false, ammoMul:1,                            // buffs (R3)
+    infiniteAmmo:false, ammoMul:1,                            // derived from buffs each frame
+    buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0 },   // timed power-up buffs (R3)
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
     overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     // roguelite upgrade multipliers (P7)
@@ -1211,13 +1220,14 @@ function fireGun(now){
   if(p.reloadUntil) return;                              // still reloading → can't fire
   if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now); return; }
   if(now < p.fireAt) return;
-  const rapid = now<p.overUntil ? 0.5 : 1;               // overdrive / rapid-fire buff
+  const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
   p.fireAt = now + g.fireCd * rapid * p.fireMul;
   if(!p.infiniteAmmo) inst.ammo--;
   p.muzzle.getWorldPosition(_v);
   const x=_v.x, z=_v.z, ang=p.aimSmoothed;
   const crit = Math.random() < p.crit;
-  const dmg = g.dmg * p.dmgMul * (1 + p.weaponLvl*0.15) * (crit?2:1);
+  const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
+  const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1);
   const n=g.frags;
   for(let i=0;i<n;i++){
     const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
@@ -1280,14 +1290,30 @@ function airstrike(now){
 }
 
 // ===== POWER-UPS (drops) =====
+// Power-ups: mix of TIMED buffs (≤15s), instant effects, and gun drops.
+// Timed buffs set p.buffUntil[key]; updatePlayer derives the live multipliers + the HUD.
+const NOW=()=>performance.now()/1000;
 const POWERUPS = [
-  { id:'star',   icon:'⭐', color:0xffd24b, apply(){ const p=S.player; p.weaponLvl=Math.min(3,p.weaponLvl+1); floatText('VŨ KHÍ +'+p.weaponLvl,'#ffd24b',p.pos,20); updateWeaponHUD(); } },
-  { id:'bomb',   icon:'💣', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
-  { id:'freeze', icon:'⏱', color:0x6fd0ff, apply(){ const now=performance.now()/1000; for(const e of enemies) e.stunUntil=now+3.5; } },
-  { id:'shield', icon:'🛡', color:0x4fd1ff, apply(){ const now=performance.now()/1000; S.player.invincibleUntil=now+4; S.player.shieldUntil=now+4; } },
-  { id:'heal',   icon:'❤️', color:0xff6b81, apply(){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
+  // timed buffs
+  { id:'rapid',  icon:'⚡', color:0xfff04a, buff:'rapid',  dur:15, label:'BẮN NHANH ×2' },
+  { id:'power',  icon:'💥', color:0xff7a3d, buff:'power',  dur:15, label:'SÁT THƯƠNG ×1.6' },
+  { id:'speed',  icon:'🏃', color:0x6fe0a0, buff:'speed',  dur:15, label:'TỐC ĐỘ ×1.4' },
+  { id:'ammoup', icon:'📦', color:0xc0a060, buff:'ammoup', dur:15, label:'BĂNG ĐẠN ×1.6', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
+  { id:'inf',    icon:'∞',  color:0xffffff, buff:'infammo',dur:10, label:'ĐẠN VÔ HẠN', onGet(p){ p.reloadUntil=0; } },
+  // instant
+  { id:'heal',   icon:'❤️', color:0xff6b81, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
   { id:'repair', icon:'🔧', color:0xffb060, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
+  { id:'shield', icon:'🛡', color:0x4fd1ff, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
+  { id:'bomb',   icon:'💣', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
+  { id:'freeze', icon:'⏱', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
+  // gun drop — adds a random gun to the inventory
+  { id:'gun',    icon:'🔫', color:0xaef0a0, apply(p){ giveGun(GUN_DROP_POOL[(Math.random()*GUN_DROP_POOL.length)|0]); } },
 ];
+function applyPowerup(def){
+  const p=S.player;
+  if(def.buff){ p.buffUntil[def.buff] = NOW() + def.dur; if(def.onGet) def.onGet(p); floatText(def.label||def.icon, '#'+def.color.toString(16).padStart(6,'0'), p.pos, 18); }
+  else if(def.apply) def.apply(p);
+}
 const pickups=[];
 function dropPowerup(pos){
   const p=S.player; const low = (p.hp/p.maxHp<0.4) || (core&&core.hp/core.maxHp<0.4);
@@ -1305,12 +1331,22 @@ function updatePickups(dt, now){
     u.spr.position.y = 1.4 + Math.sin(now*3+i)*0.25; u.spr.material.rotation += dt*1.5;
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
     if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*16*dt; u.z+=dz/d*16*dt; u.spr.position.x=u.x; u.spr.position.z=u.z; }
-    if(d2 < (PLAYER.radius+1.2)**2){ u.def.apply(); floatText(u.def.icon,'#'+u.def.color.toString(16).padStart(6,'0'),p.pos,24); sfx('powerup'); ringPulse(p.pos,u.def.color,3);
+    if(d2 < (PLAYER.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3);
       scene.remove(u.spr); u.spr.material.dispose(); pickups.splice(i,1); continue; }
     if(age>14){ scene.remove(u.spr); u.spr.material.dispose(); pickups.splice(i,1); }
   }
 }
 function clearPickups(){ for(const u of pickups){ scene.remove(u.spr); u.spr.material.dispose(); } pickups.length=0; }
+const BUFF_ICON={ rapid:'⚡', power:'💥', speed:'🏃', infammo:'∞', ammoup:'📦' };
+function updateBuffHUD(now){
+  const bar=document.getElementById('buffbar'); if(!bar) return;
+  const p=S.player; bar.replaceChildren();
+  for(const k in p.buffUntil){ const rem=p.buffUntil[k]-now; if(rem<=0) continue;
+    const c=document.createElement('div'); c.className='buffchip';
+    const ic=document.createElement('span'); ic.textContent=BUFF_ICON[k];
+    const t=document.createElement('span'); t.className='t'; t.textContent=Math.ceil(rem)+'s';
+    c.append(ic,t); bar.appendChild(c); }
+}
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 const UPGRADES = [
@@ -1386,6 +1422,7 @@ function startGame(){
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → just the starter rifle, full mag
   p.guns=[{id:'rifle', ammo:GUNS.rifle.mag}]; p.gunIdx=0; p.reloadUntil=0; p.infiniteAmmo=false; p.ammoMul=1;
+  p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0;
   // clear combat
@@ -1453,6 +1490,10 @@ function updateHUD(){
 // ----------------------------- UPDATE -----------------------------
 function updatePlayer(dt, now){
   const p = S.player; if(!p) return;
+  // derive timed-buff state each frame
+  const bu=p.buffUntil;
+  p.infiniteAmmo = now < bu.infammo;
+  p.ammoMul = now < bu.ammoup ? 1.6 : 1;
   // AIM — mobile: turret auto-targets the nearest enemy in range (no manual aim).
   //       desktop: aim with the mouse. Firing is always automatic (handled below).
   if(MOBILE){
@@ -1472,9 +1513,10 @@ function updatePlayer(dt, now){
     p.vel.copy(p.dashDir).multiplyScalar(PLAYER.dashSpeed);
   } else {
     const over = now < p.overUntil;
+    const spd = now < bu.speed ? 1.4 : 1;     // SPEED buff
     // heavier magazine → a bit slower (ammo↔speed tradeoff)
     const heavy = 1 - Math.min(0.22, magCap(equippedGun())/450);
-    const accel = PLAYER.accel*(over?1.35:1)*p.speedMul*heavy, maxSp = PLAYER.maxSpeed*(over?1.3:1)*p.speedMul*heavy;
+    const accel = PLAYER.accel*(over?1.35:1)*p.speedMul*heavy*spd, maxSp = PLAYER.maxSpeed*(over?1.3:1)*p.speedMul*heavy*spd;
     const dir = getMoveDir();
     p.vel.x += dir.x * accel * dt;
     p.vel.z += dir.z * accel * dt;
@@ -1537,6 +1579,7 @@ function loop(nowMs){
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
     updateMines(gdt, now);
+    updateBuffHUD(now);
     updateCamera(dt);
     updateAbilityUI(now);
     // combo timeout
