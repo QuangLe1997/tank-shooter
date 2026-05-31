@@ -37,6 +37,7 @@
 | **Camera mở màn điện ảnh**: hero thấp khoe nòng → vòng quanh kiểu duyệt binh → toàn cảnh → khớp đúng khung gameplay; letterbox + hạ-tiêu-đề + nút bỏ qua; ẩn HUD khi diễn; bỏ qua bằng input | `startIntro/updateIntro/endIntro`, biến `intro`, mode `'intro'` |
 | **Bộ icon SVG tự vẽ (bỏ hết emoji)**: 33 glyph line-art quân sự; HUD/menu/nâng cấp dùng chung; badge tròn cho vật phẩm rơi | `GLYPH`, `iconEl/setIcon/initIcons`, `svgBadgeTex()` |
 | **HUD/menu theme nhất quán + icon chuẩn** cho súng/đạn/máu/căn cứ/tốc/phép; vị trí gọn dễ quan sát; màu HP đỏ · căn cứ hổ phách · sẵn-sàng xanh · nạp-đạn đỏ | CSS `.ic/.gunicon/#weaponchip/.buffchip/.upcard`, `updateGunHUD/updateSpellHUD/updateBuffHUD` |
+| **Mobile (chỉ ngang)**: 1 joystick lái (nòng tự ngắm + tự bắn → bỏ cần ngắm/nút bắn); nút **SWAP** (hiện súng đang dùng) / **DASH** / **SKILL** có nhãn; ẩn gunlist + chỉ báo phím desktop; HP/căn cứ lên góc trái khỏi vùng ngón cái; menu thu gọn; cổng xoay máy khi cầm dọc + tự pause | `onTouchStart/Move/End` (`move`), `body.touch` CSS, `#rotate`, `checkOrientation()` |
 
 ---
 
@@ -156,6 +157,7 @@ _(chờ mô tả)_
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-05-31 · MOBILE UX (chỉ hỗ trợ ngang):** **1 joystick** lái xe (origin động — chạm đâu hiện đó); nòng **tự ngắm địch gần nhất + tự bắn** nên bỏ cần ngắm phải + nút bắn (gỡ code `aimS`/`stickR` thừa). Nút **SWAP** (hiện icon súng đang dùng, chạm để đổi) / **DASH** / **SKILL** có nhãn rõ; ẩn thanh kho súng (`#gunlist`) + chỉ báo phím desktop (`#abilities`); dời HP/căn cứ lên góc trái khỏi vùng ngón cái; menu thu gọn cho màn ngang; joystick to hơn. **Chỉ landscape** — cổng `#rotate` “ROTATE YOUR DEVICE” khi cầm dọc + `checkOrientation()` tự pause. Help đổi theo nền tảng (`.desktop-only/.touch-only`). Verify portrait gate + landscape HUD, 0 lỗi console.
 - **2026-05-31 · VISUAL OVERHAUL v4 (G1–G5):** (G1) dịch **toàn bộ** chữ sang tiếng Anh (tên game → STEEL SIEGE; HUD/menu/banner/tên súng-phép-buff-nâng-cấp-boss-biome); (G5) skin xe tăng chân thực hơn — texture tôn thép (panel/rivet/xước) + tread, PBR bắt phản chiếu môi trường, chạy gầm + nòng (ống nhiệt/hút khói/hãm đầu nòng) chi tiết, tier `detail` cho player+boss (giỏ sau tháp, ống phóng khói, MG, đinh tán, móc kéo, ống xả); (G4) **camera mở màn điện ảnh** (hero thấp khoe nòng → vòng quanh kiểu duyệt binh → toàn cảnh → khớp đúng khung gameplay; letterbox + hạ-tiêu-đề + nút skip; ẩn HUD khi diễn; bỏ qua bằng input sau grace); (G2/G3) **bộ icon SVG tự vẽ thay toàn bộ emoji** (33 glyph line-art quân sự) cho HUD/menu/vật phẩm/nâng cấp + theme nhất quán + vị trí tối ưu. Verify desktop 1280×800 + mobile 390×844, 0 lỗi console (trừ favicon 404).
 - **2026-05-31 · Boss locomotion kiểu xe tăng:** boss chỉ tiến/lùi theo hướng thân; muốn tông phải **quay đầu xe về phía user** trước (telegraph để né) rồi mới lao thẳng theo hướng đã khoá (không bẻ lái giữa chừng → né được). State machine `aim → charge` trong `updateBoss`; nòng (turret) vẫn xoay theo user độc lập.
 - **2026-05-31 · TINH CHỈNH v4 (U1–U3):** xe địch cũng có vùng tác chiến theo cỡ xe (er = def.range·r/1.5) — chỉ bắn khi mục tiêu trong vùng + đạn địch giới hạn tầm; vòng tầm player mảnh & nhạt hơn. Đổ bóng thật (PCF soft shadow, desktop) + đèn mạnh hơn → chân thực hơn. Buff lâu hơn (28s); 🎯 tầm bắn + 📦 băng đạn **vĩnh viễn (∞)**; nhặt trùng nhóm thì thay thế (không cộng dồn); HUD hiện ∞.
@@ -177,4 +179,4 @@ _(chờ mô tả)_
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-05-31 · nhánh `main` · trạng thái: HOÀN THÀNH P1–P9 + R1–R7 + T1–T5 + Visual Overhaul v4 (G1–G5). Toàn bộ chữ tiếng Anh, icon SVG tự vẽ.
+> **Last updated:** 2026-05-31 · nhánh `main` · trạng thái: HOÀN THÀNH P1–P9 + R1–R7 + T1–T5 + Visual Overhaul v4 (G1–G5) + Mobile UX (1 joystick, landscape-only). Toàn bộ chữ tiếng Anh, icon SVG tự vẽ.

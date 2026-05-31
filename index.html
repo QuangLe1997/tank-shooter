@@ -63,7 +63,7 @@
   .gunicon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;
     background:linear-gradient(180deg,rgba(20,28,14,.8),rgba(10,16,8,.86));border:1px solid var(--line);opacity:.5;transition:all .12s;}
   .gunicon.on{opacity:1;border-color:var(--green);box-shadow:0 0 12px rgba(140,191,63,.45);transform:scale(1.14);}
-  #stickR{display:none !important;}
+  /* aim stick removed — mobile uses a single movement joystick (turret auto-aims) */
   /* active timed-buff chips (under top bar) */
   #buffbar{position:absolute;top:max(58px,calc(env(safe-area-inset-top) + 46px));left:50%;transform:translateX(-50%);
     display:flex;gap:6px;pointer-events:none;z-index:10;}
@@ -200,6 +200,46 @@
   @keyframes cineBlink{0%,100%{opacity:.3;}50%{opacity:.85;}}
   #hud{transition:opacity .45s ease;}
   body.cine #hud{opacity:0;pointer-events:none;}
+
+  /* ===== MOBILE (landscape-only) ===== */
+  .touch-only{display:none;}
+  body.touch .touch-only{display:block;}
+  body.touch .desktop-only{display:none;}
+  /* declutter + move stats out of the thumb zones */
+  body.touch #gunlist{display:none;}            /* equipped gun shown on the SWAP button instead */
+  body.touch #abilities{display:none;}          /* mobile uses on-screen buttons */
+  body.touch #combo{top:62px;}
+  body.touch #hpwrap{left:max(62px,calc(env(safe-area-inset-left) + 56px));top:max(10px,env(safe-area-inset-top));bottom:auto;width:172px;padding:7px 11px;}
+  body.touch #topbar{padding:4px;}
+  body.touch #topbar .cell{padding:4px 12px;} body.touch #topbar .val{font-size:17px;}
+  body.touch #weaponchip{bottom:max(14px,env(safe-area-inset-bottom));padding:6px 14px;}
+  /* bigger, friendlier joystick */
+  body.touch .stick{width:150px;height:150px;}
+  body.touch .stick .knob{width:62px;height:62px;}
+  /* action buttons: clear labelled column on the right */
+  body.touch #mbtns{gap:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 4px);}
+  body.touch .mbtn{width:64px;height:64px;}
+  body.touch .mbtn .ic{margin-bottom:7px;}
+  .mbtn .mbtag{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:1px;color:var(--muted);font-weight:800;pointer-events:none;}
+  /* compact menus to fit a short landscape viewport */
+  body.touch .overlay{gap:9px;padding:12px;}
+  body.touch .title{font-size:clamp(26px,8vw,44px);letter-spacing:3px;}
+  body.touch .subtitle{font-size:11px;letter-spacing:4px;}
+  body.touch .panel{padding:12px 16px;max-width:360px;}
+  body.touch .btn-primary{font-size:16px;padding:12px 22px;}
+  body.touch .help{font-size:11px;line-height:1.7;}
+  body.touch .tap{display:none;}
+  body.touch .go-stats{gap:18px;margin:8px 0 10px;} body.touch .go-stat .v{font-size:24px;}
+  body.touch #upcards{gap:8px;} body.touch .upcard{width:30%;min-width:92px;padding:12px 8px;}
+  body.touch .upcard .ic{width:38px;height:38px;}
+  /* portrait gate */
+  #rotate{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    background:radial-gradient(120% 90% at 50% 45%,rgba(14,20,8,.93),rgba(4,6,3,.99));color:var(--ink);text-align:center;padding:30px;}
+  #rotate .ic{width:78px;height:78px;color:var(--amber);animation:rotPulse 1.8s ease-in-out infinite;}
+  #rotate .rt-t{font-size:21px;font-weight:900;letter-spacing:4px;}
+  #rotate .rt-s{font-size:11px;letter-spacing:5px;color:var(--muted);text-transform:uppercase;}
+  @keyframes rotPulse{0%,100%{transform:rotate(-14deg);}50%{transform:rotate(3deg);}}
+  @media (orientation:portrait){ body.touch #rotate{display:flex;} }
 </style>
 </head>
 <body>
@@ -234,23 +274,26 @@
 <div id="touch">
   <div id="mPause"><span class="ic" data-icon="pause"></span></div>
   <div class="stick" id="stickL"><div class="knob"></div></div>
-  <div class="stick aim" id="stickR"><div class="knob"></div></div>
   <div id="mbtns">
-    <div class="mbtn" id="mWeapon"><span class="ic" data-icon="crosshair"></span></div>
-    <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span></div>
-    <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div></div>
+    <div class="mbtn" id="mWeapon"><span class="ic" data-icon="rifle"></span><span class="mbtag">SWAP</span></div>
+    <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
+    <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div><span class="mbtag">SKILL</span></div>
   </div>
 </div>
 
 <!-- START / TITLE -->
 <div class="overlay" id="start">
   <div class="title">STEEL SIEGE</div>
-  <div class="subtitle">Twin-Stick Tank Shooter</div>
+  <div class="subtitle">3D Tank Shooter</div>
   <div class="panel">
     <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
-    <div class="help">
+    <div class="help desktop-only">
       <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>hold</b> to fire<br>
-      <kbd>Space</kbd> dash · <kbd>E</kbd> ability · mobile: dual sticks
+      <kbd>Space</kbd> dash · <kbd>E</kbd> ability
+    </div>
+    <div class="help touch-only">
+      <b>Joystick</b> to drive · turret auto-aims &amp; auto-fires<br>
+      tap <b>SWAP</b> / <b>DASH</b> / <b>SKILL</b> on the right
     </div>
   </div>
   <div class="tap">Tap to begin</div>
@@ -304,6 +347,9 @@
   <div id="cine-title"><div class="ct-name">STEEL SIEGE</div><div class="ct-sub" id="cine-sub">STAGE 1 · DESERT</div></div>
   <div id="cine-skip">tap / any key to skip</div>
 </div>
+
+<!-- portrait gate — mobile is landscape-only -->
+<div id="rotate"><span class="ic" data-icon="rotate"></span><div class="rt-t">ROTATE YOUR DEVICE</div><div class="rt-s">Landscape mode only</div></div>
 
 <script type="importmap">
 { "imports": {
@@ -385,6 +431,8 @@ const GLYPH={
   gun:'<path d="M4 8.6h13l3 1.6v2.6h-5l-1 2.4H9l-1-2.4H4z"/><path d="M7 13.4v3"/>',
   star:'<path d="M12 3l2.5 6.4L21 10l-5 4.4L17.5 21 12 17.4 6.5 21 8 14.4 3 10l6.5-.6L12 3Z"/>',
   spark:'<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l3 3M14.5 14.5l3 3M17.5 6.5l-3 3M9.5 14.5l-3 3"/>',
+  rotate:'<rect x="8" y="3" width="8" height="18" rx="2"/><circle cx="12" cy="18" r="0.7"/><path d="M18.6 8.6a8 8 0 0 0-7-4.6M18.6 8.6 19 5.9M18.6 8.6 15.9 8.9"/>',
+  swap:'<path d="M4 8h12l-3-3M4 8l3 3M20 16H8l3 3M20 16l-3-3"/>',
 };
 function svgMarkup(name, sw){
   const g=GLYPH[name]||GLYPH.spark;
@@ -1426,22 +1474,20 @@ addEventListener('mousedown', e=>{ if(MOBILE) return; if(e.button===2) trySpell(
 addEventListener('contextmenu', e=>e.preventDefault());
 addEventListener('wheel', e=>{ if(S.mode==='playing') cycleGun(e.deltaY>0?1:-1); }, {passive:true});
 
-// mobile twin-stick: left half = move, right half = aim+fire
+// mobile: ONE movement joystick (dynamic origin — press anywhere on the field). The turret
+// auto-aims the nearest enemy and auto-fires, so there is no aim stick and no fire button.
 if(MOBILE) document.body.classList.add('touch');
-const stickL = document.getElementById('stickL'), stickR = document.getElementById('stickR');
+const stickL = document.getElementById('stickL');
 const move = { id:null, ox:0, oy:0, x:0, y:0 };
-const aimS = { id:null, ox:0, oy:0, x:0, y:0, active:false };
-const STICK_R = 56;
+const STICK_R = 58;
 function setStick(el, ox, oy, dx, dy){
   el.style.left = ox+'px'; el.style.top = oy+'px'; el.classList.add('act');
-  const mag = Math.hypot(dx,dy)||1, cl = Math.min(mag, STICK_R);
-  const kx = Math.cos(Math.atan2(dy,dx))*cl, ky = Math.sin(Math.atan2(dy,dx))*cl;
-  el.querySelector('.knob').style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+  const a = Math.atan2(dy,dx), cl = Math.min(Math.hypot(dx,dy), STICK_R);
+  el.querySelector('.knob').style.transform = `translate(calc(-50% + ${Math.cos(a)*cl}px), calc(-50% + ${Math.sin(a)*cl}px))`;
 }
 function clearStick(el){ el.classList.remove('act'); el.querySelector('.knob').style.transform='translate(-50%,-50%)'; }
 function onTouchStart(e){
   for(const t of e.changedTouches){
-    // left half = move joystick. Right half no longer aims (turret auto-targets); only buttons there.
     if(move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); }
   }
   e.preventDefault();
@@ -1449,15 +1495,12 @@ function onTouchStart(e){
 function onTouchMove(e){
   for(const t of e.changedTouches){
     if(t.identifier===move.id){ move.x=t.clientX-move.ox; move.y=t.clientY-move.oy; setStick(stickL,move.ox,move.oy,move.x,move.y); }
-    else if(t.identifier===aimS.id){ aimS.x=t.clientX-aimS.ox; aimS.y=t.clientY-aimS.oy; setStick(stickR,aimS.ox,aimS.oy,aimS.x,aimS.y);
-      if(Math.hypot(aimS.x,aimS.y) > 12){ aimS.active=true; } }
   }
   if(e.cancelable) e.preventDefault();
 }
 function onTouchEnd(e){
   for(const t of e.changedTouches){
     if(t.identifier===move.id){ move.id=null; move.x=move.y=0; clearStick(stickL); }
-    else if(t.identifier===aimS.id){ aimS.id=null; aimS.x=aimS.y=0; aimS.active=false; clearStick(stickR); }
   }
 }
 const touchEl = document.getElementById('touch');
@@ -1730,6 +1773,7 @@ function updateGunHUD(){
   if(list){ list.replaceChildren();
     p.guns.forEach((gi,idx)=>{ const d=GUNS[gi.id]; const el=document.createElement('div');
       el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(iconEl(d.svg)); list.appendChild(el); }); }
+  const mw=document.querySelector('#mWeapon .ic'); if(mw) setIcon(mw, g.svg);   // mobile weapon button shows the equipped gun
 }
 const updateWeaponHUD = updateGunHUD;   // back-compat alias for older call sites
 function updateSpellHUD(){
@@ -1996,6 +2040,10 @@ addEventListener('resize', ()=>{
   camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
 });
+// mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
+function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
+addEventListener('orientationchange', ()=>setTimeout(checkOrientation, 220));
+addEventListener('resize', checkOrientation);
 
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore();
