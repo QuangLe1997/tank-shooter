@@ -1763,20 +1763,21 @@ const _WRECK_PARTS=[ {g:'turret',sz:1.0,paint:0.6},{g:'barrel',sz:1.0,paint:0.4}
 function spawnTankWreck(pos, ms, pal){
   const burntHull=_burnt(pal.hull), burntTur=_burnt(pal.turret||pal.hull);
   const rs=Math.sqrt(ms);
-  for(const part of _WRECK_PARTS){
+  const count = ms<1.05 ? 8 : ms<1.3 ? 11 : ms<2.2 ? 14 : 16;                // small tank → fewer bits; big tank/boss → full wreck
+  for(let pi=0; pi<count; pi++){ const part=_WRECK_PARTS[pi];
     const m=wreckPool.pop(); if(!m) return;                                  // pool exhausted (huge multi-kill) → stop gracefully
     m.geometry=WRECK_GEO[part.g];
     let col; if(Math.random()<part.paint) col = part.g==='turret'?burntTur:burntHull; else col=_SCORCH[(Math.random()*_SCORCH.length)|0];
     if(part.g==='wheel') col=0x0e0e0c;                                        // scorched rubber
     m.material.color.setHex(col);
     const s=ms*part.sz*(0.85+Math.random()*0.4); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // non-uniform → irregular torn metal
-    const a=Math.random()*6.283, sp=(10+Math.random()*14)*rs, up=(11+Math.random()*11)*rs;       // VIOLENT blast — shrapnel flung far
+    const a=Math.random()*6.283, sp=(8+Math.random()*10)*rs, up=(10+Math.random()*7)*rs;         // brisk scatter (moderate, scales with tank)
     m.position.set(pos.x+(Math.random()-0.5)*ms*0.7, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.7);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    m.material.emissiveIntensity=1.1+Math.random()*0.8; m.material.opacity=1; m.visible=true;     // white-hot, blazing
+    m.material.emissiveIntensity=1.0+Math.random()*0.7; m.material.opacity=1; m.visible=true;     // hot, blazing
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
-      rx:(Math.random()-0.5)*20, ry:(Math.random()-0.5)*20, rz:(Math.random()-0.5)*20,
-      age:0, life:1.9+Math.random()*1.6, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:true });   // burn fast then vanish
+      rx:(Math.random()-0.5)*16, ry:(Math.random()-0.5)*16, rz:(Math.random()-0.5)*16,
+      age:0, life:1.3+Math.random()*1.0, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:true });   // clears fast
   }
 }
 function updateDebris(dt){
@@ -1793,14 +1794,14 @@ function updateDebris(dt){
       }
       m.rotation.x+=d.rx*dt; m.rotation.y+=d.ry*dt; m.rotation.z+=d.rz*dt;
     }
-    if(d.fire && d.age<1.2){     // blazing wreckage: each shard trails fire + bright embers + smoke as it tumbles
+    if(d.fire && d.age<0.85){     // brief flaming trail: quick fire + embers + light smoke that clears fast (won't block the view)
       const mp=m.position;
-      if(Math.random()<0.7) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*3, 1.6+Math.random()*3, (Math.random()-0.5)*3,
-        {color: Math.random()<0.5?0xff7a1e:0xffc24e, size:0.7+Math.random()*0.7, life:0.3+Math.random()*0.25, grav:-5, drag:3});
-      if(Math.random()<0.35) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*6, Math.random()*3, (Math.random()-0.5)*6,
-        {color:0xffe09a, size:0.26+Math.random()*0.2, life:0.4+Math.random()*0.3, grav:-9, drag:1.1});   // bright embers flung outward
-      if(Math.random()<0.3) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5), 0.7, (Math.random()-0.5),
-        {color:0x161310, size:1.1+Math.random()*0.6, life:0.7, smoke:true, grav:-1.3, drag:1.6, op:0.5});
+      if(Math.random()<0.5) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*3, 1.6+Math.random()*3, (Math.random()-0.5)*3,
+        {color: Math.random()<0.5?0xff7a1e:0xffc24e, size:0.6+Math.random()*0.6, life:0.22+Math.random()*0.16, grav:-5, drag:3.5});
+      if(Math.random()<0.22) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*6, Math.random()*3, (Math.random()-0.5)*6,
+        {color:0xffe09a, size:0.24+Math.random()*0.18, life:0.3+Math.random()*0.2, grav:-9, drag:1.3});   // embers flung out, quick
+      if(Math.random()<0.16) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5), 0.6, (Math.random()-0.5),
+        {color:0x161310, size:0.9+Math.random()*0.4, life:0.45, smoke:true, grav:-1.2, drag:1.8, op:0.4});
     }
     if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*(d.fire?0.8:1.7));   // burning parts stay glowing longer
     const fadeT=d.fire?1.0:0.7, rem=d.life-d.age; if(rem<fadeT) m.material.opacity=rem/fadeT;                            // fade out (burn up) and vanish
@@ -1808,18 +1809,18 @@ function updateDebris(dt){
 }
 // grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column
 function tankExplode(pos, color, scale=1.5, pal=null, ms=null){
-  burst(pos, 0xffffff, Math.floor(14*scale), 12*scale, {life:0.16, size:2.5*scale, up:6, grav:-2, drag:6});   // blinding core flash
-  burst(pos, 0xffe08a, Math.floor(30*scale), 17*scale, {life:0.62, size:2.6*scale, up:6});                    // huge hot fireball
-  burst(pos, 0xff661c, Math.floor(24*scale), 13*scale, {life:0.78, size:2.3*scale, up:5});                    // roiling deep-orange fire
-  burst(pos, color,    Math.floor(16*scale), 11*scale, {life:0.5,  size:1.5*scale, up:4});
-  burst(pos, 0xffe6a0, Math.floor(24*scale), 24*scale, {life:0.5,  size:0.42*scale, up:3, grav:-9, drag:1.0}); // shrapnel sparks blasted far + wide
-  burst(pos, 0x141008, Math.floor(11*scale), 6*scale,  {life:1.1,  size:3.1*scale, up:6, grav:-2, drag:1.5, smoke:true, op:0.62});  // thick black smoke
-  ringPulse(pos, 0xfff0c0, scale*2.8); ringPulse(pos, 0xff7a2e, scale*5.4);                                   // double ground shockwave
+  burst(pos, 0xffffff, Math.floor(7*scale),  9*scale,  {life:0.12, size:1.7*scale, up:5, grav:-2, drag:7});   // quick white flash
+  burst(pos, 0xffe08a, Math.floor(15*scale), 12*scale, {life:0.32, size:1.8*scale, up:5, drag:2.2});          // fireball — flares & clears fast
+  burst(pos, 0xff661c, Math.floor(11*scale), 9*scale,  {life:0.38, size:1.6*scale, up:4, drag:2.2});          // deep-orange fire
+  burst(pos, color,    Math.floor(8*scale),  8*scale,  {life:0.32, size:1.2*scale, up:3, drag:2.2});
+  burst(pos, 0xffe6a0, Math.floor(14*scale), 18*scale, {life:0.38, size:0.4*scale, up:3, grav:-9, drag:1.3});  // sparks blast out & clear fast
+  burst(pos, 0x16110a, Math.floor(5*scale),  5*scale,  {life:0.5,  size:2.0*scale, up:4, grav:-1.4, drag:2.2, smoke:true, op:0.42}); // light smoke (dissipates fast, won't block the view)
+  ringPulse(pos, 0xfff0c0, scale*2.2); ringPulse(pos, 0xff7a2e, scale*4.0);                                   // shockwave (scales with tank size)
   if(pal) spawnTankWreck(pos, ms||scale*0.72, pal); else spawnDebris(pos, scale, color);                       // tanks shatter into real PARTS; walls/blocks → metal fragments
-  for(let k=0;k<Math.floor(6*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
-    burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.22, life:1.4, size:3.2*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
-  S.shake = Math.min(4.8, S.shake + scale*1.5);                                                                // heavy kick
-  muzzleLight.position.set(pos.x, 2.4, pos.z); muzzleLight.color.setHex(0xffb14c); muzzleLight.intensity = 7.5;  // bright blast flash
+  for(let k=0;k<Math.floor(3*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
+    burst({x:pos.x,z:pos.z}, 0x20190f, 1, 2.5, {y:1.4+k*0.3, life:0.6, size:1.9*scale, smoke:true, grav:-0.6, drag:1.8, up:3, op:0.4}); }, k*60); // brief smoke puffs — clear quickly, don't linger over the view
+  S.shake = Math.min(3.0, S.shake + scale*0.9);                                                                // moderate kick — scales with tank size
+  muzzleLight.position.set(pos.x, 2.2, pos.z); muzzleLight.color.setHex(0xffb14c); muzzleLight.intensity = 4.0 + scale*0.9;  // brief blast flash, scales with size
   sfx(scale>=2 ? 'bigexplode' : 'explode');
   if(scale>=2.2){   // big tanks/bosses: a delayed secondary blast + extra shards = bigger payoff
     setTimeout(()=>{ if(S.mode==='paused') return;
