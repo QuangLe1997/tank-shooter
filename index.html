@@ -705,10 +705,7 @@ function updateEnemies(dt, now){
     else { desire = -def.speed*0.3; } // back off a touch / hold
     e.vel.x += (to.x*desire - e.vel.x)*Math.min(1,dt*4);
     e.vel.z += (to.z*desire - e.vel.z)*Math.min(1,dt*4);
-    // light separation
-    for(const o of enemies){ if(o===e) continue; const sx=e.pos.x-o.pos.x, sz=e.pos.z-o.pos.z; const sd=sx*sx+sz*sz;
-      if(sd>0 && sd<9){ const f=(3-Math.sqrt(sd))*6*dt; const inv=1/Math.sqrt(sd); e.vel.x+=sx*inv*f; e.vel.z+=sz*inv*f; } }
-    e.pos.addScaledVector(e.vel, edt);
+    e.pos.addScaledVector(e.vel, edt);   // hard separation handled later in separateTanks()
     const lim=ARENA-2; e.pos.x=Math.max(-lim,Math.min(lim,e.pos.x)); e.pos.z=Math.max(-lim,Math.min(lim,e.pos.z));
     // face
     const sp=Math.hypot(e.vel.x,e.vel.z);
@@ -727,14 +724,47 @@ function updateEnemies(dt, now){
     }
     // mortar: lob a telegraphed shell at the player's position
     if(def.mortar && now>e.fireAt && d < def.range){ mortarLob(p.pos.x, p.pos.z); e.fireAt = now + def.fireCd; }
-    // ram contact
+    // ram contact damage (separateTanks keeps them from overlapping; this just applies the bump damage)
     if(now>e.ramAt){
-      if(dpl < e.r+PLAYER.radius+0.3){ damagePlayer(def.ram, now); e.ramAt=now+0.8;
-        // knockback
-        e.vel.addScaledVector(to,-def.speed*0.6); }
-      else if(core && e.pos.distanceTo(core.pos) < e.r+core.r+0.3){ damageCore(def.ram*0.7); e.ramAt=now+0.8; }
+      if(dpl < e.r+PLAYER.radius+0.6){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }
+      else if(core && e.pos.distanceTo(core.pos) < e.r+core.r+0.6){ damageCore(def.ram*0.7); e.ramAt=now+0.8; }
     }
   }
+}
+// ---- HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away ----
+function separateTanks(now){
+  const p=S.player; if(!p) return;
+  const arenaLim=ARENA-2;
+  // enemy ↔ enemy
+  for(let i=0;i<enemies.length;i++){ const a=enemies[i]; if(a.def.bomber) continue;
+    for(let j=i+1;j<enemies.length;j++){ const b=enemies[j]; if(b.def.bomber) continue;
+      const dx=b.pos.x-a.pos.x, dz=b.pos.z-a.pos.z, min=a.r+b.r, d2=dx*dx+dz*dz;
+      if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=(min-d)/2, nx=dx/d, nz=dz/d;
+        a.pos.x-=nx*ov; a.pos.z-=nz*ov; b.pos.x+=nx*ov; b.pos.z+=nz*ov; } }
+  }
+  // enemy ↔ player (push enemy out, nudge player, bounce the enemy away)
+  for(const a of enemies){
+    const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, min=a.r+PLAYER.radius, d2=dx*dx+dz*dz;
+    if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=min-d, nx=dx/d, nz=dz/d;
+      a.pos.x-=nx*ov*0.8; a.pos.z-=nz*ov*0.8;
+      p.pos.x+=nx*ov*0.2; p.pos.z+=nz*ov*0.2;
+      a.vel.x-=nx*16; a.vel.z-=nz*16;                 // knock the enemy back a bit
+    }
+    // enemy ↔ core
+    if(core){ const cx=a.pos.x-core.pos.x, cz=a.pos.z-core.pos.z, m2=a.r+core.r, cd2=cx*cx+cz*cz;
+      if(cd2<m2*m2 && cd2>1e-4){ const cd=Math.sqrt(cd2), ov=m2-cd; a.pos.x+=cx/cd*ov; a.pos.z+=cz/cd*ov; } }
+    a.pos.x=Math.max(-arenaLim,Math.min(arenaLim,a.pos.x)); a.pos.z=Math.max(-arenaLim,Math.min(arenaLim,a.pos.z));
+    a.mesh.position.set(a.pos.x,0,a.pos.z);
+  }
+  // boss ↔ player (only when not charging — charge is its damage window)
+  if(boss && boss.alive && now>=boss.chargeUntil){
+    const dx=p.pos.x-boss.pos.x, dz=p.pos.z-boss.pos.z, min=boss.r+PLAYER.radius, d2=dx*dx+dz*dz;
+    if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=min-d, nx=dx/d, nz=dz/d;
+      p.pos.x+=nx*ov*0.6; boss.pos.x-=nx*ov*0.4; p.pos.z+=nz*ov*0.6; boss.pos.z-=nz*ov*0.4; }
+  }
+  // keep player inside arena
+  const plim=ARENA-3; p.pos.x=Math.max(-plim,Math.min(plim,p.pos.x)); p.pos.z=Math.max(-plim,Math.min(plim,p.pos.z));
+  p.mesh.position.set(p.pos.x,0,p.pos.z);
 }
 function damageEnemy(e, dmg){
   e.hp-=dmg; hitFlash(e.mesh);
@@ -1465,6 +1495,7 @@ function loop(nowMs){
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
     updateBullets(gdt, now);
+    separateTanks(now);                 // resolve overlaps so tanks never merge
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
     updateMines(gdt, now);
@@ -1507,8 +1538,10 @@ addEventListener('resize', ()=>{
 buildCore();
 S.player = makePlayer();
 
-// read-only diagnostics hook (no cheats)
+// diagnostics hooks (used for automated testing)
 window._game = S;
+window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
+window._spawn = spawnEnemy;
 
 requestAnimationFrame(loop);
 </script>
