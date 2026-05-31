@@ -494,6 +494,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // ----------------------------- CONFIG -----------------------------
 const ARENA = 60;                       // half-extent of the square arena (world units)
+const PLAYER_STANDOFF = 2.0;            // enemies keep this much clearance from the player hull (anti-glue → easy to shoot)
 const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const PLAYER = {
   accel: 130, maxSpeed: 26, friction: 9, radius: 1.5,
@@ -1250,7 +1251,7 @@ function updateEnemies(dt, now){
     if(def.mortar && now>e.fireAt && d < er){ mortarLob(p.pos.x, p.pos.z); e.fireAt = now + def.fireCd; }
     // ram contact damage (separateTanks keeps them from overlapping; this just applies the bump damage)
     if(now>e.ramAt){
-      if(dpl < e.r+p.radius+0.6){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }
+      if(dpl < e.r+p.radius+PLAYER_STANDOFF+1.5){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }   // rammers still bump-damage across the standoff band
       else if(core && e.pos.distanceTo(core.pos) < e.r+core.r+0.6){ damageCore(def.ram*0.7); e.ramAt=now+0.8; }
     }
   }
@@ -1268,7 +1269,7 @@ function separateTanks(now){
   }
   // enemy ↔ player (push enemy out, nudge player, bounce the enemy away)
   for(const a of enemies){
-    const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, min=a.r+p.radius+GAP, d2=dx*dx+dz*dz;
+    const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, min=a.r+p.radius+PLAYER_STANDOFF, d2=dx*dx+dz*dz;   // bigger standoff so enemies never glue to the player
     if(d2<min*min && d2>1e-4){ const d=Math.sqrt(d2), ov=min-d, nx=dx/d, nz=dz/d;
       a.pos.x-=nx*ov*0.8; a.pos.z-=nz*ov*0.8;
       p.pos.x+=nx*ov*0.2; p.pos.z+=nz*ov*0.2;
@@ -1843,8 +1844,10 @@ function fireGun(now, range){
   const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
   p.fireAt = now + g.fireCd * rapid * p.fireMul;
   if(!p.infiniteAmmo) inst.ammo--;
-  p.muzzle.getWorldPosition(_v);
-  const x=_v.x, z=_v.z, ang=p.aimSmoothed;
+  p.muzzle.getWorldPosition(_v);                 // real barrel tip (used for the muzzle flash)
+  const ang=p.aimSmoothed;
+  const od=p.radius+0.6;                          // spawn bullets at the hull edge so point-blank shots never overshoot a hugging tank
+  const x=p.pos.x+Math.sin(ang)*od, z=p.pos.z+Math.cos(ang)*od;
   const crit = Math.random() < p.crit;
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
   const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1);
@@ -1854,7 +1857,7 @@ function fireGun(now, range){
     spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist,
       pierce:g.pierce||0, homing:g.homing||0, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0)});
   }
-  muzzleFlash(x,z,ang, g.color);
+  muzzleFlash(_v.x,_v.z,ang, g.color);   // flash at the real barrel tip
   S.shake = Math.min(1, S.shake + (g.dmg>40?0.22:0.06));
   sfx('shoot_'+inst.id);
   if(!p.infiniteAmmo && inst.ammo<=0) startReload(now);
