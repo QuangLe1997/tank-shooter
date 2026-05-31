@@ -235,7 +235,7 @@
   body.touch #combo{top:58px;}
   body.touch .chip{background:linear-gradient(180deg,rgba(16,24,10,.26),rgba(6,12,5,.34));backdrop-filter:blur(5px) saturate(120%);box-shadow:0 3px 12px rgba(0,0,0,.3);border-color:rgba(255,255,255,.07);}   /* barely-there HUD — see the battlefield through it */
   /* === all stats hug the LEFT edge (top→down) + buffs on the RIGHT edge; top-center & bottom-center stay clear for viewing === */
-  body.touch #topbar{left:max(56px,calc(env(safe-area-inset-left) + 48px));top:max(8px,env(safe-area-inset-top));transform:none;padding:2px 3px;}
+  body.touch #topbar{left:max(10px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));transform:none;padding:2px 3px;}   /* pause moved to top-right → topbar takes the full left edge */
   body.touch #topbar .cell{padding:1px 7px;}
   body.touch #topbar .lbl{font-size:6px;letter-spacing:1px;}
   body.touch #topbar .val{font-size:13px;}
@@ -254,8 +254,8 @@
   body.touch .stick{width:150px;height:150px;}
   body.touch .stick .knob{width:62px;height:62px;}
   /* action buttons: clear labelled column on the right */
-  body.touch #mbtns{gap:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 4px);}
-  body.touch .mbtn{width:64px;height:64px;}
+  body.touch #mbtns{gap:12px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 4px);}
+  body.touch .mbtn{width:58px;height:58px;background:linear-gradient(180deg,rgba(22,30,14,.32),rgba(10,16,8,.42));border-color:rgba(255,255,255,.1);box-shadow:0 4px 12px rgba(0,0,0,.28);}  /* see-through — don't block the battlefield */
   body.touch .mbtn .ic{margin-bottom:7px;}
   .mbtn .mbtag{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:1px;color:var(--muted);font-weight:800;pointer-events:none;}
   /* left-thumb FIRE trigger (manual mode) + AUTO toggle */
@@ -276,6 +276,16 @@
   #autoBtn .ic{width:13px;height:13px;}
   #autoBtn.on{color:#1c1404;background:linear-gradient(180deg,#f4c45e,#e29a30);border-color:rgba(255,230,175,.7);}
   body.touch #autoBtn{display:inline-flex;}
+  /* === top-right cluster: PAUSE · FULLSCREEN · SOUND — grouped, tiny, fully transparent (icon only) === */
+  body.touch #muteBtn,body.touch #fsBtn,body.touch #mPause{background:none;border:none;box-shadow:none;backdrop-filter:none;width:38px;height:38px;top:max(8px,env(safe-area-inset-top));}
+  body.touch #muteBtn{right:max(10px,env(safe-area-inset-right));}
+  body.touch #mPause{left:auto;right:calc(max(10px,env(safe-area-inset-right)) + 42px);border-radius:9px;}
+  body.touch #fsBtn{right:calc(max(10px,env(safe-area-inset-right)) + 84px);left:auto;}   /* fullscreen outermost → hiding it on iOS leaves no gap */
+  body.touch #muteBtn .ic,body.touch #fsBtn .ic,body.touch #mPause .ic{width:21px;height:21px;color:rgba(255,255,255,.82);filter:drop-shadow(0 1px 2px rgba(0,0,0,.95));}
+  /* === DASH on the LEFT thumb, right above the FIRE trigger; AUTO sits above DASH, both see-through === */
+  body.touch #mDash{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 118px);width:58px;height:58px;}
+  body.touch #autoBtn{left:max(22px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 184px);background:rgba(8,12,6,.22);border-color:rgba(255,255,255,.08);box-shadow:none;}
+  body.touch #autoBtn.on{background:rgba(44,30,6,.32);color:#ffcf5a;border-color:rgba(255,200,90,.5);text-shadow:0 0 7px rgba(255,180,60,.7);}
   /* compact menus to fit a short landscape viewport */
   body.touch .overlay{gap:9px;padding:12px;}
   body.touch .title{font-size:clamp(26px,8vw,44px);letter-spacing:3px;}
@@ -411,10 +421,10 @@
   <div class="stick" id="stickL"><div class="knob"></div></div>
   <div id="mbtns">
     <div class="mbtn" id="mWeapon"><span class="ic" data-icon="rifle"></span><span class="mbtag">SWAP</span></div>
-    <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
     <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div><span class="mbtag">SKILL</span></div>
   </div>
   <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
+  <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
   <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>AUTO</span></div>
 </div>
 
@@ -431,7 +441,7 @@
     </div>
     <div class="help touch-only">
       <b>Joystick</b> to drive · turret auto-aims &amp; auto-fires<br>
-      tap <b>SWAP</b> / <b>DASH</b> / <b>SKILL</b> on the right
+      <b>FIRE</b> &amp; <b>DASH</b> on the left · <b>SWAP</b> / <b>SKILL</b> on the right
     </div>
   </div>
   <div class="tap">Tap to begin</div>
@@ -1968,9 +1978,13 @@ function toggleFullscreen(){ isFs()?exitFs():reqFs(); }
 function syncFsIcon(){ const b=document.querySelector('#fsBtn .ic'); if(b) setIcon(b, isFs()?'compress':'expand'); }
 document.addEventListener('fullscreenchange', syncFsIcon);
 document.addEventListener('webkitfullscreenchange', syncFsIcon);
+const FS_SUPPORTED = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);   // iOS Safari/Chrome have NO Fullscreen API → button would be dead
 const fsBtnEl=document.getElementById('fsBtn');
-if(fsBtnEl){ fsBtnEl.addEventListener('click', e=>{ e.stopPropagation(); toggleFullscreen(); });
-  fsBtnEl.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); toggleFullscreen(); }, {passive:false}); }
+if(fsBtnEl){
+  if(!FS_SUPPORTED){ fsBtnEl.style.display='none'; }   // hide on iOS instead of showing a button that does nothing
+  else { fsBtnEl.addEventListener('click', e=>{ e.stopPropagation(); toggleFullscreen(); });
+    fsBtnEl.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); toggleFullscreen(); }, {passive:false}); }
+}
 
 // ----------------------------- ABILITIES (stubs filled in later phases) -----------------------------
 function tryDash(){
