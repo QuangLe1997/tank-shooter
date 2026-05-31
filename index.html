@@ -235,6 +235,24 @@
   body.touch .mbtn{width:64px;height:64px;}
   body.touch .mbtn .ic{margin-bottom:7px;}
   .mbtn .mbtag{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:1px;color:var(--muted);font-weight:800;pointer-events:none;}
+  /* left-thumb FIRE trigger (manual mode) + AUTO toggle */
+  #mFire{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:max(20px,env(safe-area-inset-bottom));
+    width:92px;height:92px;border-radius:50%;display:none;align-items:center;justify-content:center;pointer-events:auto;z-index:14;
+    background:radial-gradient(circle at 50% 38%,rgba(243,150,60,.34),rgba(20,12,6,.62));
+    border:2px solid rgba(255,182,92,.72);box-shadow:0 6px 22px rgba(0,0,0,.5),inset 0 0 18px rgba(255,150,60,.22);
+    color:#ffd9a0;-webkit-tap-highlight-color:transparent;transition:transform .07s ease,box-shadow .15s ease;}
+  #mFire .ic{width:44px;height:44px;color:#ffdca6;}
+  #mFire:active,#mFire.firing{transform:scale(.93);background:radial-gradient(circle at 50% 38%,rgba(255,120,40,.62),rgba(40,12,4,.72));
+    border-color:#ffb860;box-shadow:0 2px 10px rgba(0,0,0,.5),inset 0 0 28px rgba(255,140,50,.5);}
+  body.touch #mFire{display:flex;}                 /* visible in MANUAL mode */
+  body.touch.autofire #mFire{display:none;}        /* hidden in AUTO mode (gun fires itself) */
+  #autoBtn{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 104px);
+    display:none;align-items:center;gap:5px;padding:6px 13px;border-radius:999px;pointer-events:auto;z-index:14;cursor:pointer;
+    background:rgba(8,12,6,.55);border:1px solid var(--line);color:var(--muted);font-size:11px;font-weight:800;letter-spacing:1.5px;
+    -webkit-tap-highlight-color:transparent;}
+  #autoBtn .ic{width:13px;height:13px;}
+  #autoBtn.on{color:#1c1404;background:linear-gradient(180deg,#f4c45e,#e29a30);border-color:rgba(255,230,175,.7);}
+  body.touch #autoBtn{display:inline-flex;}
   /* compact menus to fit a short landscape viewport */
   body.touch .overlay{gap:9px;padding:12px;}
   body.touch .title{font-size:clamp(26px,8vw,44px);letter-spacing:3px;}
@@ -299,13 +317,31 @@
   .go-best{font-size:12px;letter-spacing:2px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:12px;min-height:14px;}
   .go-best.newbest{color:var(--amber);text-shadow:0 0 14px rgba(231,181,74,.6);}
 
-  /* ===== title-screen banner (AI key art) ===== */
-  #start{ background:linear-gradient(180deg,rgba(3,5,2,.12) 0%,rgba(3,5,2,0) 34%,rgba(3,5,2,.55) 72%,rgba(3,5,2,.93) 100%), url('assets/banner-desktop.jpg') center/cover no-repeat;
-    backdrop-filter:none; justify-content:flex-end; gap:12px; padding-bottom:clamp(20px,6vh,52px); }
+  /* ===== title-screen banner (AI key art) + clean premium controls ===== */
+  #start{ background:linear-gradient(180deg,rgba(3,5,2,.12) 0%,rgba(3,5,2,0) 30%,rgba(3,5,2,.5) 66%,rgba(3,5,2,.95) 100%), url('assets/banner-desktop.jpg') center/cover no-repeat;
+    backdrop-filter:none; justify-content:flex-end; gap:14px; padding-bottom:clamp(22px,6vh,54px); }
   #start .title, #start .subtitle{ display:none; }            /* the banner already shows the STEEL SIEGE logo */
-  #start .panel{ background:rgba(8,12,6,.58); backdrop-filter:blur(4px); }
-  #start .bestline{ text-shadow:0 2px 12px rgba(0,0,0,.95); }
-  body.touch #start{ padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+  #start .tap{ display:none; }                                /* redundant with the DEPLOY button */
+  #start .bestline{ display:inline-flex; align-items:center; gap:8px; padding:5px 16px; border-radius:999px;
+    background:rgba(6,9,4,.5); border:1px solid rgba(255,206,110,.32); color:var(--amber);
+    font-size:12px; letter-spacing:2px; text-shadow:0 2px 10px rgba(0,0,0,.95); }
+  #start .panel{ display:flex; flex-direction:column; align-items:center; gap:12px;
+    background:none; border:none; box-shadow:none; backdrop-filter:none; padding:0; max-width:none; overflow:visible; }
+  #start .panel::before{ display:none; }
+  #start .btn-primary{ display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    background:linear-gradient(180deg,#f4c45e 0%,#e29a30 52%,#cd7c20 100%); color:#1c1404;
+    border:1px solid rgba(255,230,175,.75); border-radius:13px; padding:15px 50px;
+    font-size:21px; font-weight:900; letter-spacing:4px; text-shadow:0 1px 0 rgba(255,235,190,.45);
+    box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.5);
+    animation:deployPulse 2.4s ease-in-out infinite; }
+  #start .btn-primary:hover{ filter:brightness(1.07); transform:translateY(-2px); }
+  @keyframes deployPulse{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 rgba(243,185,74,0),inset 0 1px 0 rgba(255,255,255,.5);}
+    50%{box-shadow:0 12px 32px rgba(0,0,0,.5),0 0 30px rgba(243,185,74,.5),inset 0 1px 0 rgba(255,255,255,.5);}}
+  #start .help{ font-size:11px; letter-spacing:.4px; color:rgba(255,255,255,.58); line-height:2; text-shadow:0 1px 6px rgba(0,0,0,.95); margin:0; }
+  #start .help b{ color:rgba(255,255,255,.82); font-weight:700; }
+  #start .help kbd{ background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); color:rgba(255,255,255,.82); border-radius:5px; padding:1px 6px; font-size:10px; }
+  body.touch #start{ padding-bottom:max(12px,env(safe-area-inset-bottom)); gap:10px; }
+  body.touch #start .btn-primary{ font-size:18px; padding:13px 42px; }
   #rotate{ background:linear-gradient(180deg,rgba(3,5,2,.5),rgba(3,5,2,.8)), url('assets/banner-mobile.jpg') center/cover no-repeat; }
 </style>
 </head>
@@ -350,6 +386,8 @@
     <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
     <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div><span class="mbtag">SKILL</span></div>
   </div>
+  <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
+  <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>AUTO</span></div>
 </div>
 
 <!-- START / TITLE -->
@@ -999,7 +1037,7 @@ function updateBullets(dt, now){
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp; } }
     b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt;
     b.mesh.position.set(b.x,1.2,b.z);
-    addTrail(b.x, b.z, b.color, (b.r||0.45)*BVIS*2.7);   // glowing tracer streak
+    addTrail(b.x, b.z, b.owner==='p'?0xffb43a:0xff5a24, (b.r||0.45)*BVIS*2.7);   // fiery tracer — yellow-orange (player), red-orange (enemy)
 
     const overRange = b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
@@ -1600,7 +1638,8 @@ function onTouchStart(e){
   if(S.mode!=='playing') return;                       // only drive during gameplay (menus/cinematic ignore)
   let engaged=false;
   for(const t of e.changedTouches){
-    if(move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); engaged=true; }
+    // right side = movement joystick; left ~third is reserved for the fire trigger (left thumb)
+    if(move.id===null && t.clientX > innerWidth*0.34){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); engaged=true; }
   }
   if(engaged && e.cancelable) e.preventDefault();
 }
@@ -1627,6 +1666,19 @@ const armBtn=(id,fn)=>{ const el=document.getElementById(id); if(!el) return;
   el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fn();},{passive:false}); };
 armBtn('mDash', tryDash); armBtn('mSpell', trySpell); armBtn('mWeapon', ()=>cycleGun(1));
 document.getElementById('mPause').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
+// ----- mobile fire mode: MANUAL (left-thumb trigger) vs AUTO (gun fires itself). Turret always auto-aims. -----
+let autoFire = (()=>{ try{ return localStorage.getItem('steelsiege.auto')==='1'; }catch(e){ return false; } })();   // default MANUAL (trigger)
+function applyAutoFire(){ document.body.classList.toggle('autofire', autoFire); const b=document.getElementById('autoBtn'); if(b) b.classList.toggle('on', autoFire); }
+const autoBtnEl=document.getElementById('autoBtn');
+if(autoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} autoFire=!autoFire; try{localStorage.setItem('steelsiege.auto',autoFire?'1':'0');}catch(_){} applyAutoFire(); sfx('click'); };
+  autoBtnEl.addEventListener('click',tog); autoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
+const mFireEl=document.getElementById('mFire');
+if(mFireEl){
+  mFireEl.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); S.firing=true; mFireEl.classList.add('firing');
+    if(S.mode==='playing') fireGun(performance.now()/1000, playerRange()); },{passive:false});   // tap = one shot, hold = full-auto (gun fireCd caps it)
+  const rel=e=>{ if(e&&e.preventDefault)e.preventDefault(); S.firing=false; mFireEl.classList.remove('firing'); };
+  mFireEl.addEventListener('touchend',rel); mFireEl.addEventListener('touchcancel',rel); }
+applyAutoFire();
 // mute toggle (desktop + mobile)
 const muteBtnEl=document.getElementById('muteBtn');
 const toggleMute=e=>{ if(e){e.preventDefault();e.stopPropagation();} audio(); setMuted(!muted); };
@@ -2102,8 +2154,8 @@ function updatePlayer(dt, now){
   rangeRing.visible = true; rangeRing.position.set(p.pos.x, 0.06, p.pos.z);
   rangeRing.scale.set(range, range, range);
   rangeRing.material.opacity = 0.08 + Math.sin(now*2)*0.025;   // thin + faint, just visible
-  if(MOBILE){ if(nearestTarget(range)) fireGun(now, range); }   // mobile: turret auto-aims + auto-fires
-  else if(S.firing) fireGun(now, range);                         // desktop: fire only while LMB held; gun fireCd caps the rate
+  if(MOBILE){ if(autoFire ? !!nearestTarget(range) : S.firing) fireGun(now, range); }   // mobile: AUTO fires when a target is in range; MANUAL fires while the trigger is held
+  else if(S.firing) fireGun(now, range);                                                 // desktop: fire only while LMB held; gun fireCd caps the rate
 }
 function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
