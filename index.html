@@ -206,6 +206,14 @@
   .btn-mini .ic{width:15px;height:15px;flex:0 0 auto;}
   .btn-mini:hover{transform:translateY(-2px);border-color:var(--green);color:var(--ink);}
   #resetBtn:hover{border-color:var(--danger);color:#ff9a86;}
+  /* prominent ARSENAL button (open the weapon-selection table) */
+  .btn-arsenal{pointer-events:auto;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:12px 26px;border-radius:12px;
+    background:rgba(8,14,6,.6);border:1.5px solid rgba(140,191,63,.6);color:#e3eccf;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);text-shadow:0 1px 6px rgba(0,0,0,.9);transition:transform .12s,border-color .12s,background .12s;}
+  .btn-arsenal .ic{width:19px;height:19px;color:var(--green);flex:0 0 auto;}
+  .btn-arsenal b{color:#ffce4a;}
+  .btn-arsenal:hover{transform:translateY(-2px);border-color:var(--green);background:rgba(20,32,10,.72);}
   #nickInput{pointer-events:auto;width:min(78vw,300px);text-align:center;font-family:inherit;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;
     padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);outline:none;caret-color:var(--green);}
   #nickInput:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(140,191,63,.18);}
@@ -483,10 +491,8 @@
   <div class="panel">
     <div class="btn btn-primary" id="continueBtn" style="display:none">CONTINUE ▶</div>
     <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
-    <div class="startrow">
-      <div class="btn btn-mini" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL</span></div>
-      <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET</span></div>
-    </div>
+    <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b> WEAPONS</span></div>
+    <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET PROGRESS</span></div>
     <div class="help desktop-only">
       <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
       <kbd>Space</kbd> dash · <kbd>E</kbd> ability
@@ -521,6 +527,7 @@
   <div class="title" style="font-size:clamp(30px,7vw,58px)">PAUSED</div>
   <div class="panel">
     <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">RESUME ▶</div>
+    <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>ARSENAL</span></div>
     <div class="btn" id="restartBtn">RESTART ↻</div>
   </div>
 </div>
@@ -2605,6 +2612,7 @@ function refreshStartUI(){
   if(hello) hello.innerHTML = PROFILE.nickname ? ('COMMANDER <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
   const cont=document.getElementById('continueBtn'), hasSave=!!(PROFILE.save && PROFILE.save.stage>1);
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; cont.textContent = hasSave ? ('CONTINUE ▶  STAGE '+PROFILE.save.stage) : 'CONTINUE ▶'; }
+  const ac=document.getElementById('arsenalCount'); if(ac) ac.textContent=PROFILE.ownedGuns.length;   // show how many guns are collected
 }
 
 // ---- nickname (first launch / editable) ----
@@ -2635,10 +2643,19 @@ function toggleLd(id){ const i=_ldSel.indexOf(id);
   sfx('click'); renderLoadout(); }
 let _ldFrom='start';
 function openLoadout(){ _ldFrom = (S.mode==='paused')?'pause':'start'; hide(_ldFrom); _ldSel=PROFILE.loadout.filter(k=>PROFILE.ownedGuns.includes(k)).slice(0,LOADOUT_MAX); if(!_ldSel.length)_ldSel=['rifle']; renderLoadout(); show('loadout'); sfx('click'); }
+function applyLoadoutToRun(){                                  // re-pick mid-battle: swap the active guns live (keep ammo of guns you already had)
+  const p=S.player; if(!p) return;
+  let want=PROFILE.loadout.slice(0,LOADOUT_MAX); if(!want.length) want=['rifle'];
+  p.guns = want.map(id=>{ const ex=p.guns.find(g=>g.id===id); return ex || {id, ammo:GUNS[id].mag, rU:0, rD:0}; });
+  if(p.gunIdx>=p.guns.length) p.gunIdx=0;
+  updateGunHUD();
+}
 function closeLoadout(){ PROFILE.loadout=_ldSel.slice(0,LOADOUT_MAX); if(!PROFILE.loadout.length)PROFILE.loadout=['rifle']; saveProfile(); hide('loadout');
-  if(_ldFrom==='start' && S.mode==='start') show('start'); else if(_ldFrom==='pause' && S.mode==='paused') show('pause');
+  if(_ldFrom==='pause'){ applyLoadoutToRun(); if(S.mode==='paused') show('pause'); }   // changes take effect on the current run
+  else if(S.mode==='start') show('start');
   refreshStartUI(); sfx('click'); }
 tapBtn('arsenalBtn', openLoadout);
+tapBtn('arsenalBtnP', openLoadout);
 tapBtn('ldDone', closeLoadout);
 
 // ---- continue / reset (tap-to-arm, no native dialog) ----
