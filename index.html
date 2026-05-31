@@ -1227,7 +1227,7 @@ function updateBullets(dt, now){
       if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(7.5,1.8+b.dmg*0.08); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; } hit=true; }
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
-        if(dx*dx+dz*dz < (b.r+0.95)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
+        if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
         if(dcx*dcx+dcz*dcz < (b.r+core.r)**2){ damageCore(b.dmg); ringPulse(b.mesh.position,0xe0603a,2); hit=true; } }
     }
@@ -2736,7 +2736,7 @@ function updateDrone(dt, now){
 // Up to 5 infantry hold a ring around the monument, auto-fire at the nearest enemy, intercept incoming
 // shots (body-block) and brawl. One soldier out-DPSes a tank, but a swarm of tanks will overwhelm them.
 // They fight to the death; power-ups reinforce the squad and upgrade their weapons.
-const SOLDIER = { cap:5, base:3, hp:60, dmg:15, fireCd:0.5, range:30, ringR:7.4, scale:1.5 };
+const SOLDIER = { cap:5, base:3, hp:60, dmg:15, fireCd:0.5, range:22, ringR:7.8, scale:1.9 };
 let soldiers=[], soldierLvl=0;
 function makeSoldierMesh(){
   const g=new THREE.Group();
@@ -2758,33 +2758,52 @@ function makeSoldierMesh(){
   return g;
 }
 const _sV=new THREE.Vector3();
+function makeSoldierBar(){   // tiny billboarded HP bar above each soldier's head
+  const g=new THREE.Group();
+  const bg=new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.2), new THREE.MeshBasicMaterial({color:0x080b05,transparent:true,opacity:0.72,depthTest:false,depthWrite:false})); bg.renderOrder=20; g.add(bg);
+  const fill=new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.15), new THREE.MeshBasicMaterial({color:0x7fe06a,transparent:true,depthTest:false,depthWrite:false})); fill.position.z=0.01; fill.renderOrder=21; g.add(fill);
+  g.scale.setScalar(0.95); g.visible=false; return {g, fill};
+}
 function _placeSoldiers(){ const c=core?core.pos:{x:0,z:0}; const n=Math.max(1,soldiers.length);
-  soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.pos.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR); }); }
+  soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.home.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR);
+    if(s.pos.lengthSq()===0) s.pos.copy(s.home); }); }
 function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g=makeSoldierMesh(); g.scale.setScalar(SOLDIER.scale); scene.add(g);
-  soldiers.push({ g, pos:new THREE.Vector3(), hp:SOLDIER.hp, maxHp:SOLDIER.hp, fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, dead:false }); _placeSoldiers(); }
+  const mhp=Math.round(SOLDIER.hp + Math.random()*36 - 12);   // each soldier is an individual (varied HP)
+  const bar=makeSoldierBar(); scene.add(bar.g);
+  soldiers.push({ g, bar:bar.g, barFill:bar.fill, pos:new THREE.Vector3(), home:new THREE.Vector3(), hp:mhp, maxHp:mhp,
+    fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, wpx:0, wpz:0, wanderAt:0, dead:false }); _placeSoldiers(); }
 function deploySoldiers(target){ while(soldiers.length<Math.min(SOLDIER.cap,target)) spawnSoldier(); _placeSoldiers(); }
-function clearSoldiers(){ for(const s of soldiers) scene.remove(s.g); soldiers.length=0; }
+function clearSoldiers(){ for(const s of soldiers){ scene.remove(s.g); scene.remove(s.bar); } soldiers.length=0; }
 function damageSoldier(s, dmg){ if(s.dead) return; s.hp-=dmg; s.hitT=0.16;
   const t=s.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
   if(s.hp<=0) killSoldier(s); }
 function killSoldier(s){ if(s.dead) return; s.dead=true; const i=soldiers.indexOf(s); if(i>=0) soldiers.splice(i,1);
-  burst(s.pos, 0xb04830, 9, 6, {y:0.9, life:0.5, size:0.7}); burst(s.pos, 0x2c331c, 5, 4, {y:0.7, life:0.7, size:1.0, smoke:true, op:0.4});
-  floatText('✝', '#ff9a7a', {x:s.pos.x,y:1.3,z:s.pos.z}, 16); sfx('explode'); scene.remove(s.g); _placeSoldiers(); }
+  burst(s.pos, 0xb04830, 10, 6, {y:1.0, life:0.5, size:0.8}); burst(s.pos, 0x2c331c, 5, 4, {y:0.8, life:0.7, size:1.1, smoke:true, op:0.4});
+  floatText('✝', '#ff9a7a', {x:s.pos.x,y:1.7,z:s.pos.z}, 18); sfx('explode'); scene.remove(s.g); scene.remove(s.bar); _placeSoldiers(); }
 function updateSoldiers(dt, now){
   if(!soldiers.length) return;
   for(const s of soldiers){
-    s.bob+=dt; s.g.position.set(s.pos.x, 0.02+Math.sin(s.bob*4)*0.03, s.pos.z);   // hold post + idle bob
+    // amble back & forth around the guard post
+    if(now>=s.wanderAt){ s.wanderAt=now+0.9+Math.random()*1.5; s.wpx=(Math.random()*2-1)*1.9; s.wpz=(Math.random()*2-1)*1.9; }
+    const tx=s.home.x+s.wpx, tz=s.home.z+s.wpz, mk=Math.min(1,dt*1.7);
+    s.pos.x+=(tx-s.pos.x)*mk; s.pos.z+=(tz-s.pos.z)*mk;
+    s.bob+=dt; s.g.position.set(s.pos.x, 0.02+Math.sin(s.bob*4)*0.03, s.pos.z);
+    // target nearest enemy in (moderate) range
     let best=null, bd=SOLDIER.range*SOLDIER.range;
     for(const e of enemies){ const dx=e.pos.x-s.pos.x, dz=e.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
     if(boss&&boss.alive){ const dx=boss.pos.x-s.pos.x, dz=boss.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
     if(best){ const ang=Math.atan2(best.pos.x-s.pos.x, best.pos.z-s.pos.z); s.g.rotation.y=ang;
       if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd*(1-Math.min(0.45,soldierLvl*0.12));
         s.g.userData.muzzle.getWorldPosition(_sV);
-        spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:SOLDIER.dmg*(1+soldierLvl*0.35), speed:84, color:0xe8ef86, r:0.26, life:1.7, maxDist:SOLDIER.range+2});
-        spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {color:0xf2f7a0, size:0.55, life:0.07, grav:0, drag:9}); } }   // light muzzle spark
-    else s.g.rotation.y += (s.postAngle - s.g.rotation.y)*Math.min(1,dt*3);   // face outward when idle
+        spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:SOLDIER.dmg*(1+soldierLvl*0.35), speed:84, color:0xe8ef86, r:0.26, life:1.4, maxDist:SOLDIER.range+2});
+        spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {color:0xf2f7a0, size:0.55, life:0.07, grav:0, drag:9}); } }
+    else { const mvx=tx-s.pos.x, mvz=tz-s.pos.z; if(mvx*mvx+mvz*mvz>0.02){ const wf=Math.atan2(mvx,mvz); let df=((wf-s.g.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI; s.g.rotation.y+=df*Math.min(1,dt*4); } }   // face where they walk
     if(now>=s.hurtAt){ let adj=0; for(const e of enemies){ const dx=e.pos.x-s.pos.x, dz=e.pos.z-s.pos.z; if(dx*dx+dz*dz < (e.r+1.0)*(e.r+1.0)) adj++; }
-      if(adj){ damageSoldier(s, (7+S.stage*1.6)*adj); s.hurtAt=now+0.55; } }   // tanks that reach the guard chew through them — a swarm overwhelms fast
+      if(adj){ damageSoldier(s, (7+S.stage*1.6)*adj); s.hurtAt=now+0.55; } }   // a swarm at the post overwhelms them fast
+    // billboarded HP bar above the head
+    s.bar.visible=true; s.bar.position.set(s.pos.x, 3.05, s.pos.z); s.bar.quaternion.copy(camera.quaternion);
+    const f=Math.max(0,s.hp/s.maxHp); s.barFill.scale.x=Math.max(0.001,f); s.barFill.position.x=-(1-f)*0.5;
+    s.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
     if(s.hitT>0){ s.hitT-=dt; if(s.hitT<=0){ const t=s.g.userData.torso; if(t){ t.material.emissive.setHex(0x000000); t.material.emissiveIntensity=0; } } }
   }
 }
