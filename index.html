@@ -32,7 +32,7 @@
   #topbar .score .val{color:var(--amber);} #topbar .wave .val{color:var(--steel);} #topbar .stage .val{color:var(--green);}
 
   /* health cluster bottom-left */
-  #hpwrap{left:max(14px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));padding:10px 13px;width:212px;}
+  #hpwrap{display:none;}   /* HP + core now ride on the units themselves (#worldbars) — no separate menu */
   #hpwrap .row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
   #hpwrap .row:last-child{margin-bottom:0;}
   .bar{flex:1;height:10px;border-radius:6px;background:rgba(0,0,0,.4);overflow:hidden;border:1px solid rgba(255,255,255,.1);}
@@ -41,6 +41,17 @@
   .bar.core > i{background:linear-gradient(90deg,#b07a2c,var(--amber));}
   #hpwrap .ic{font-size:13px;width:16px;text-align:center;}
   #lives{font-size:13px;font-weight:800;color:#ff8a9c;letter-spacing:1px;}
+
+  /* world-attached HP bars — float right over the tank + core monument (small + see-through) */
+  #worldbars{position:absolute;inset:0;pointer-events:none;z-index:8;}
+  .wbar{position:absolute;width:46px;height:5px;border-radius:4px;transform:translate(-50%,-50%);display:none;
+    background:rgba(6,10,5,.5);border:1px solid rgba(0,0,0,.55);box-shadow:0 1px 3px rgba(0,0,0,.55);}
+  .wbar > i{display:block;height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#3fa84a,#7fe06a);transition:width .12s linear,background .2s;}
+  .wbar > b{position:absolute;right:-2px;top:-12px;font-size:9px;font-weight:800;color:#ffc0cc;letter-spacing:.5px;text-shadow:0 1px 2px #000,0 0 3px #000;}
+  .wbar.core{width:60px;height:6px;}
+  .wbar.core > i{background:linear-gradient(90deg,#b07a2c,#ffc24e);}
+  .wbar .wlabel{position:absolute;left:-3px;top:-13px;width:11px;height:11px;color:var(--amber);filter:drop-shadow(0 1px 2px #000);}
+  .wbar .wlabel svg{width:11px;height:11px;display:block;}
 
   /* dash + spell indicators bottom-right (desktop) */
   #abilities{right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:10px;}
@@ -220,7 +231,7 @@
   /* declutter + move stats out of the thumb zones */
   body.touch #abilities{display:none;}          /* mobile uses on-screen buttons */
   body.touch #combo{top:58px;}
-  body.touch .chip{background:linear-gradient(180deg,rgba(18,26,12,.4),rgba(8,14,6,.5));}   /* transparent HUD */
+  body.touch .chip{background:linear-gradient(180deg,rgba(16,24,10,.26),rgba(6,12,5,.34));backdrop-filter:blur(5px) saturate(120%);box-shadow:0 3px 12px rgba(0,0,0,.3);border-color:rgba(255,255,255,.07);}   /* barely-there HUD — see the battlefield through it */
   /* === all stats hug the LEFT edge (top→down) + buffs on the RIGHT edge; top-center & bottom-center stay clear for viewing === */
   body.touch #topbar{left:max(56px,calc(env(safe-area-inset-left) + 48px));top:max(8px,env(safe-area-inset-top));transform:none;padding:2px 3px;}
   body.touch #topbar .cell{padding:1px 7px;}
@@ -231,9 +242,9 @@
   body.touch #hpwrap .ic{width:13px;height:13px;}
   body.touch #hpwrap .bar{height:6px;}
   body.touch #lives{font-size:10px;}
-  body.touch #weaponchip{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 84px);right:auto;bottom:auto;transform:none;padding:3px 9px;font-size:11px;}
+  body.touch #weaponchip{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 40px);right:auto;bottom:auto;transform:none;padding:3px 9px;font-size:11px;}
   body.touch #weaponchip .wc-ic{width:15px;height:15px;}
-  body.touch #gunlist{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 110px);right:auto;bottom:auto;transform:none;justify-content:flex-start;flex-wrap:wrap;max-width:152px;gap:4px;}
+  body.touch #gunlist{left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 66px);right:auto;bottom:auto;transform:none;justify-content:flex-start;flex-wrap:wrap;max-width:152px;gap:4px;}
   body.touch .gunicon{width:25px;height:25px;}
   body.touch .gunicon svg{width:14px;height:14px;}
   body.touch #buffbar{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 170px);transform:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
@@ -368,6 +379,11 @@
   <div id="hpwrap" class="chip">
     <div class="row"><span class="ic" data-icon="heart"></span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
     <div class="row"><span class="ic" data-icon="bunker"></span><div class="bar core"><i id="ui-core"></i></div></div>
+  </div>
+  <!-- world-attached HP bars: float right over the tank + the core monument (no separate menu needed) -->
+  <div id="worldbars">
+    <div id="phpbar" class="wbar"><i></i><b id="phpLives">×3</b></div>
+    <div id="chpbar" class="wbar core"><span class="wlabel" data-icon="bunker"></span><i></i></div>
   </div>
   <div id="abilities">
     <div class="ability ready" id="ab-dash"><span class="ic" data-icon="dash"></span><span class="k">SPACE</span><div class="cool" id="cool-dash"></div></div>
@@ -2403,6 +2419,28 @@ function updateHUD(){
   }
   if(core) document.getElementById('ui-core').style.width = Math.max(0, core.hp/core.maxHp*100)+'%';
 }
+// world-attached HP bars: project the tank + core monument to screen each frame so a small bar rides right on them
+const _wbV = new THREE.Vector3();
+let _phpBar=null,_phpFill=null,_phpLives=null,_chpBar=null,_chpFill=null;
+const _hpGrad =f=> f>0.5 ? 'linear-gradient(90deg,#3fa84a,#7fe06a)' : f>0.25 ? 'linear-gradient(90deg,#c79434,#ffcf5a)' : 'linear-gradient(90deg,#c0392b,#ff6a52)';
+const _coreGrad=f=> f>0.3 ? 'linear-gradient(90deg,#b07a2c,#ffc24e)' : 'linear-gradient(90deg,#c0392b,#ff7a52)';
+function updateWorldBars(){
+  if(!_phpBar){ _phpBar=document.getElementById('phpbar'); _phpFill=_phpBar.querySelector('i'); _phpLives=document.getElementById('phpLives');
+                _chpBar=document.getElementById('chpbar'); _chpFill=_chpBar.querySelector('i'); }
+  const p=S.player;
+  if(p && p.hp>0){
+    const f=p.hp/p.maxHp, sc=p.scale*TANK_SCALE, s=worldToScreen(_wbV.set(p.pos.x, 3.7*sc, p.pos.z));   // float clearly above the turret
+    if(s.infront){ _phpBar.style.display='block'; _phpBar.style.left=s.x+'px'; _phpBar.style.top=s.y+'px';
+      _phpFill.style.width=Math.max(0,f*100)+'%'; _phpFill.style.background=_hpGrad(f); _phpLives.textContent='×'+Math.max(0,p.lives); }
+    else _phpBar.style.display='none';
+  } else _phpBar.style.display='none';
+  if(core && core.hp>0){
+    const f=core.hp/core.maxHp, s=worldToScreen(_wbV.set(core.pos.x, 7.8, core.pos.z));                 // float above the monument crystal
+    if(s.infront){ _chpBar.style.display='block'; _chpBar.style.left=s.x+'px'; _chpBar.style.top=s.y+'px';
+      _chpFill.style.width=Math.max(0,f*100)+'%'; _chpFill.style.background=_coreGrad(f); }
+    else _chpBar.style.display='none';
+  } else _chpBar.style.display='none';
+}
 
 // ----------------------------- UPDATE -----------------------------
 function updatePlayer(dt, now){
@@ -2619,6 +2657,7 @@ function loop(nowMs){
     updateDrone(gdt, now);
     updateBuffHUD(now);
     updateCamera(dt, now);
+    updateWorldBars();
     updateAbilityUI(now);
     drawRadar();
     // combo timeout
