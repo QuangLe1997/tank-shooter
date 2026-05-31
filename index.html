@@ -685,8 +685,10 @@ function updateBullets(dt, now){
           let dmg=b.dmg;
           if(e.def.shield){ const nx=Math.sin(e.aim),nz=Math.cos(e.aim), bl=Math.hypot(b.vx,b.vz)||1;
             if((b.vx/bl)*nx+(b.vz/bl)*nz < -0.3){ dmg*=0.28; ringPulse(b.mesh.position,0x9fd0ff,1.2); } }  // blocked from the front → flank it
-          damageEnemy(e, dmg); ringPulse(b.mesh.position, 0xffd27a, 1.6);
-          burst(b.mesh.position, 0xffd27a, 4, 6, {life:0.2, size:0.8, grav:-4, drag:5}); hit=true;
+          damageEnemy(e, dmg);
+          const k=Math.min(3.2, 1 + b.dmg/26);      // bigger guns → bigger impact
+          ringPulse(b.mesh.position, 0xffd27a, 1.4*k);
+          burst(b.mesh.position, 0xffe6a0, Math.floor(3*k), 6*k, {life:0.22, size:0.7*k, grav:-4, drag:5}); hit=true;
           if(b.pierce>0){ b.pierce--; } else break; } }
       if(!hit && boss && boss.alive){ const dx=boss.pos.x-b.x, dz=boss.pos.z-b.z;
         if(dx*dx+dz*dz < (b.r+boss.r)**2){ damageBoss(b.dmg); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
@@ -872,7 +874,7 @@ function damageEnemy(e, dmg){
 }
 function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1);
-  bigExplode(e.pos, 0xff7a3d, e.def.scale*1.4);
+  tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5);
   bumpCombo();
   addScore(e.def.score, new THREE.Vector3(e.pos.x,1.6,e.pos.z));
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
@@ -1122,6 +1124,19 @@ function bigExplode(pos, color, scale=1.5){
   muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
   sfx(scale>=2 ? 'bigexplode' : 'explode');
 }
+// grand tank-death blast: white flash → fireball → flying chunks → rising smoke column
+function tankExplode(pos, color, scale=1.5){
+  burst(pos, 0xffffff, Math.floor(8*scale),  9*scale,  {life:0.16, size:1.7*scale, up:4, grav:-2, drag:6});  // flash
+  burst(pos, 0xffae5c, Math.floor(18*scale), 13*scale, {life:0.55, size:1.8*scale, up:4});                   // fireball
+  burst(pos, color,    Math.floor(14*scale), 10*scale, {life:0.5,  size:1.4*scale, up:3});
+  burst(pos, 0x3a2a18, Math.floor(8*scale),  12*scale, {life:1.0,  size:1.3*scale, up:6, grav:-16, drag:1.0}); // chunks
+  for(let k=0;k<Math.floor(5*scale);k++) setTimeout(()=>{ if(S.mode!=='paused')
+    burst({x:pos.x,z:pos.z}, 0x222018, 2, 3, {y:1.4+k*0.2, life:1.3, size:2.9*scale, smoke:true, grav:-1.0, drag:1.2, up:3, op:0.5}); }, k*70); // smoke column
+  ringPulse(pos, color, scale*3.6); ringPulse(pos, 0xffe6a0, scale*2.1);
+  S.shake = Math.min(2.8, S.shake + scale*0.9);
+  muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity = 4.6;
+  sfx(scale>=2 ? 'bigexplode' : 'explode');
+}
 
 // ----------------------------- SCORE / COMBO -----------------------------
 function comboMult(){ return Math.min(8, 1 + Math.floor(S.combo/2)); }
@@ -1148,7 +1163,7 @@ function damagePlayer(dmg, now){
 }
 function playerDie(now){
   const p=S.player;
-  bigExplode(p.pos, 0xffd27a, 2);
+  tankExplode(p.pos, 0xffd27a, 2.2);
   p.lives--;
   if(p.lives < 0){ gameOver('HẾT MẠNG'); return; }
   // respawn near core, invincible
