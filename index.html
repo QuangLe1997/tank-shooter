@@ -56,6 +56,14 @@
   #muteBtn{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));
     width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:18px;
     pointer-events:auto;cursor:pointer;}
+  #weaponchip.reloading{color:var(--danger);border-color:rgba(224,96,58,.5);}
+  /* gun inventory list (above weapon chip) */
+  #gunlist{position:absolute;left:50%;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 36px);transform:translateX(-50%);
+    display:flex;gap:6px;pointer-events:none;z-index:10;}
+  .gunicon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;
+    background:linear-gradient(180deg,rgba(20,28,14,.8),rgba(10,16,8,.86));border:1px solid var(--line);opacity:.5;transition:all .12s;}
+  .gunicon.on{opacity:1;border-color:var(--green);box-shadow:0 0 12px rgba(140,191,63,.45);transform:scale(1.14);}
+  #stickR{display:none !important;}
 
   /* ---------- Overlays ---------- */
   .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -163,7 +171,8 @@
   </div>
   <div id="combo">COMBO ×2</div>
   <div id="muteBtn" class="chip">🔊</div>
-  <div id="weaponchip" class="chip">🔵 ĐẠI BÁC</div>
+  <div id="gunlist"></div>
+  <div id="weaponchip" class="chip">🟢 SÚNG TRƯỜNG 24/24</div>
   <div id="bossbar"><div class="bn" id="boss-name">BOSS</div><div class="bar core"><i id="boss-hp"></i></div></div>
 </div>
 <div id="vignette"></div>
@@ -393,6 +402,8 @@ function makePlayer(){
     pos: new THREE.Vector3(0, 0, ARENA*0.55), vel: new THREE.Vector3(),
     facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI, shieldMesh: mesh.userData.shield,
     hp:100, maxHp:100, lives:3, fireAt:0, weaponLvl:0,
+    guns:[{id:'rifle', ammo:24}], gunIdx:0, reloadUntil:0,   // gun inventory (R2)
+    infiniteAmmo:false, ammoMul:1,                            // buffs (R3)
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
     overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     // roguelite upgrade multipliers (P7)
@@ -1079,7 +1090,7 @@ addEventListener('keydown', e=>{
   const k=e.key.toLowerCase();
   if(k === 'e') trySpell();
   if(k === 'q') cycleSpell();
-  if(k>='1' && k<='6') selectWeapon(parseInt(k)-1);
+  if(k>='1' && k<='8') selectGun(parseInt(k)-1);
   if(e.key === 'Escape' || k==='p') togglePause();
 });
 addEventListener('keyup', e=>{ S.keys[e.key.toLowerCase()] = false; });
@@ -1095,10 +1106,9 @@ function updateAimFromMouse(cx, cy){
   if(raycaster.ray.intersectPlane(groundPlane, hit)){ S.aimPoint.copy(hit); S.pointerActive = true; }
 }
 addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
-addEventListener('mousedown', e=>{ if(MOBILE) return; if(e.button===0) S.firing=true; if(e.button===2) trySpell(); });
-addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
+addEventListener('mousedown', e=>{ if(MOBILE) return; if(e.button===2) trySpell(); });   // auto-fire: no need to hold; RMB = spell
 addEventListener('contextmenu', e=>e.preventDefault());
-addEventListener('wheel', e=>{ if(S.mode==='playing') cycleWeapon(e.deltaY>0?1:-1); }, {passive:true});
+addEventListener('wheel', e=>{ if(S.mode==='playing') cycleGun(e.deltaY>0?1:-1); }, {passive:true});
 
 // mobile twin-stick: left half = move, right half = aim+fire
 if(MOBILE) document.body.classList.add('touch');
@@ -1115,9 +1125,8 @@ function setStick(el, ox, oy, dx, dy){
 function clearStick(el){ el.classList.remove('act'); el.querySelector('.knob').style.transform='translate(-50%,-50%)'; }
 function onTouchStart(e){
   for(const t of e.changedTouches){
-    const left = t.clientX < innerWidth*0.5;
-    if(left && move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); }
-    else if(!left && aimS.id===null){ aimS.id=t.identifier; aimS.ox=t.clientX; aimS.oy=t.clientY; aimS.x=aimS.y=0; aimS.active=true; setStick(stickR,t.clientX,t.clientY,0,0); }
+    // left half = move joystick. Right half no longer aims (turret auto-targets); only buttons there.
+    if(move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); }
   }
   e.preventDefault();
 }
@@ -1143,7 +1152,7 @@ touchEl.addEventListener('touchcancel', onTouchEnd);
 // mobile buttons
 const armBtn=(id,fn)=>{ const el=document.getElementById(id); if(!el) return;
   el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fn();},{passive:false}); };
-armBtn('mDash', tryDash); armBtn('mSpell', trySpell); armBtn('mWeapon', ()=>cycleWeapon(1));
+armBtn('mDash', tryDash); armBtn('mSpell', trySpell); armBtn('mWeapon', ()=>cycleGun(1));
 document.getElementById('mPause').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
 // mute toggle (desktop + mobile)
 const muteBtnEl=document.getElementById('muteBtn');
@@ -1165,50 +1174,69 @@ function tryDash(){
   sfx('dash');
   for(let i=0;i<6;i++) spawnPart(p.pos.x,0.6,p.pos.z, -p.dashDir.x*8+(Math.random()-0.5)*4, 1, -p.dashDir.z*8+(Math.random()-0.5)*4, {color:0xcfe6a0,size:1.1,life:0.3,grav:-2,drag:3,smoke:true,op:0.5});
 }
-// ===== WEAPONS (switch 1-6 / cycle) =====
-const WEAPONS = [
-  { id:'cannon',  name:'ĐẠI BÁC',    icon:'🔵', cd:0.26 },
-  { id:'auto',    name:'LIÊN THANH', icon:'🟡', cd:0.085 },
-  { id:'shotgun', name:'SÚNG HOA',   icon:'🔴', cd:0.58 },
-  { id:'rail',    name:'RAILGUN',    icon:'🟣', cd:0.72 },
-  { id:'missile', name:'TÊN LỬA',    icon:'🟠', cd:0.5 },
-  { id:'flak',    name:'FLAK',       icon:'⚪', cd:0.55 },
-];
+// ===== GUNS =====
+// Stat model: dmg (per fragment) · fireCd (s/shot) · mag (rounds) · reload (s)
+// · frags (pellets/shot, 1 ammo) · spread · bspeed · weight (mag→move penalty).
+// Tiers: 1 dễ kiếm/cân bằng → 3 mạnh/khan hiếm. Player chỉ bắt đầu với 'rifle'.
+const GUNS = {
+  rifle:   { name:'SÚNG TRƯỜNG', icon:'🟢', tier:1, dmg:16, fireCd:0.22, mag:24, reload:1.8, bspeed:66, frags:1, spread:0.03, color:0xaef0a0, r:0.42, life:2.0 },
+  smg:     { name:'TIỂU LIÊN',   icon:'🟡', tier:1, dmg:9,  fireCd:0.075,mag:45, reload:2.2, bspeed:74, frags:1, spread:0.08, color:0xfff0a0, r:0.34, life:1.7 },
+  shotgun: { name:'SÚNG HOA',    icon:'🔴', tier:2, dmg:8,  fireCd:0.55, mag:8,  reload:2.6, bspeed:58, frags:8, spread:0.55, color:0xff9a5a, r:0.36, life:0.7 },
+  flak:    { name:'PHÁO CHÙM',   icon:'⚪', tier:2, dmg:11, fireCd:0.5,  mag:12, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0xcfe6ff, r:0.5,  life:0.9, aoe:3.2 },
+  cannon:  { name:'TRỌNG PHÁO',  icon:'🔵', tier:2, dmg:50, fireCd:0.72, mag:6,  reload:3.0, bspeed:62, frags:1, spread:0.01, color:0xffe08a, r:0.55, life:2.0, aoe:3.2 },
+  minigun: { name:'ĐẠI LIÊN',    icon:'🟠', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xffd27a, r:0.34, life:1.8 },
+  missile: { name:'TÊN LỬA',     icon:'🚀', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xffae5c, r:0.5,  life:3.2, homing:5, aoe:3.4 },
+  railgun: { name:'RAILGUN',     icon:'🟣', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6 },
+};
+const GUN_DROP_POOL = ['smg','shotgun','flak','cannon','minigun','missile','railgun'];  // collectable (starter rifle excluded)
 function muzzleFlash(x,z,ang,color){
   muzzleLight.position.set(x,1.6,z); muzzleLight.color.setHex(color); muzzleLight.intensity=2.4;
   spawnPart(x,1.4,z, Math.sin(ang)*9,1.5,Math.cos(ang)*9, {color, size:1.3, life:0.12, grav:0, drag:7});
 }
-function fireWeapon(now){
-  const p=S.player; const w=WEAPONS[S.weapon];
-  const over = now < p.overUntil;
-  const cd = w.cd * (over?0.5:1) * (1 - p.weaponLvl*0.06) * p.fireMul;
+function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
+function magCap(g){ return Math.round(g.mag * S.player.ammoMul); }
+function startReload(now){ const p=S.player; if(p.infiniteAmmo) return; p.reloadUntil = now + equippedGun().reload; sfx('click'); updateGunHUD(); }
+function nearestTarget(maxR){
+  const p=S.player; let best=null, bd=maxR*maxR;
+  for(const e of enemies){ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=e; } }
+  if(boss&&boss.alive){ const dx=boss.pos.x-p.pos.x, dz=boss.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=boss; } }
+  return best;
+}
+// AUTO-FIRE: called every frame while playing. Handles reload + magazine + fragments.
+function fireGun(now){
+  const p=S.player; if(!p.guns.length) return;
+  const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
+  // finish reload
+  if(p.reloadUntil && now>=p.reloadUntil){ inst.ammo=magCap(g); p.reloadUntil=0; updateGunHUD(); }
+  if(p.reloadUntil) return;                              // still reloading → can't fire
+  if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now); return; }
   if(now < p.fireAt) return;
-  p.fireAt = now + cd;
+  const rapid = now<p.overUntil ? 0.5 : 1;               // overdrive / rapid-fire buff
+  p.fireAt = now + g.fireCd * rapid * p.fireMul;
+  if(!p.infiniteAmmo) inst.ammo--;
   p.muzzle.getWorldPosition(_v);
   const x=_v.x, z=_v.z, ang=p.aimSmoothed;
   const crit = Math.random() < p.crit;
-  const dmgMul = (1 + p.weaponLvl*0.2) * p.dmgMul * (crit?2:1);
-  const extra = p.weaponLvl>=2 ? 1 : 0;
-  if(w.id==='cannon'){
-    spawnBullet(x,z,ang,{owner:'p',dmg:24*dmgMul,speed:64,color:0xffe08a,r:0.5,life:2,pierce:p.weaponLvl>=3?1:0});
-  } else if(w.id==='auto'){
-    const sp=(Math.random()-0.5)*0.12; spawnBullet(x,z,ang+sp,{owner:'p',dmg:9*dmgMul,speed:72,color:0xfff0a0,r:0.34,life:1.6});
-  } else if(w.id==='shotgun'){
-    const n=6+extra*2; for(let i=0;i<n;i++){ const a=ang+(i-(n-1)/2)*0.10; spawnBullet(x,z,a,{owner:'p',dmg:9*dmgMul,speed:58,color:0xff9a5a,r:0.36,life:0.7}); }
-  } else if(w.id==='rail'){
-    spawnBullet(x,z,ang,{owner:'p',dmg:55*dmgMul,speed:120,color:0xd0a0ff,r:0.55,life:1.4,pierce:5+extra*2});
-  } else if(w.id==='missile'){
-    const n=1+extra; for(let i=0;i<n;i++){ const a=ang+(i-(n-1)/2)*0.18; spawnBullet(x,z,a,{owner:'p',dmg:22*dmgMul,speed:46,color:0xffae5c,r:0.5,life:3,homing:5,aoe:3.4,aoeDmg:18*dmgMul}); } }
-  else if(w.id==='flak'){
-    spawnBullet(x,z,ang,{owner:'p',dmg:14*dmgMul,speed:50,color:0xcfe6ff,r:0.5,life:0.85,aoe:4.4,aoeDmg:20*dmgMul});
+  const dmg = g.dmg * p.dmgMul * (1 + p.weaponLvl*0.15) * (crit?2:1);
+  const n=g.frags;
+  for(let i=0;i<n;i++){
+    const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
+    spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life,
+      pierce:g.pierce||0, homing:g.homing||0, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0)});
   }
-  muzzleFlash(x,z,ang,0xffd27a);
-  S.shake=Math.min(1,S.shake+ (w.id==='rail'?0.25:0.08));
+  muzzleFlash(x,z,ang, g.color);
+  S.shake = Math.min(1, S.shake + (g.dmg>40?0.22:0.06));
   sfx('shoot');
-  updateWeaponHUD();
+  if(!p.infiniteAmmo && inst.ammo<=0) startReload(now);
+  updateGunHUD();
 }
-function selectWeapon(i){ if(i<0||i>=WEAPONS.length) return; S.weapon=i; sfx('click'); updateWeaponHUD(); }
-function cycleWeapon(d=1){ selectWeapon((S.weapon + d + WEAPONS.length)%WEAPONS.length); }
+function selectGun(i){ const p=S.player; if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.reloadUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }
+function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; selectGun((p.gunIdx+d+p.guns.length)%p.guns.length); }
+function giveGun(id){
+  const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
+  if(inst){ inst.ammo=magCap(g); } else { p.guns.push({id, ammo:magCap(g)}); p.gunIdx=p.guns.length-1; p.reloadUntil=0; }
+  floatText(g.icon+' '+g.name, '#aef0a0', p.pos, 18); updateGunHUD();
+}
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 const SPELLS = [
@@ -1325,12 +1353,22 @@ function chooseUpgrade(u){
   S.mode='playing';
 }
 
-function updateWeaponHUD(){
-  const w=WEAPONS[S.weapon], el=document.getElementById('weaponchip');
-  if(!el) return;
-  const lvl = S.player&&S.player.weaponLvl ? ' · Lv'+S.player.weaponLvl : '';
-  el.textContent = w.icon + ' ' + w.name + lvl;   // static internal strings only
+function updateGunHUD(){
+  const p=S.player; if(!p||!p.guns.length) return;
+  const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
+  const chip=document.getElementById('weaponchip');
+  if(chip){
+    const reloading = p.reloadUntil>performance.now()/1000;
+    const ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g));
+    chip.textContent = reloading ? (g.icon+' '+g.name+' · NẠP…') : (g.icon+' '+g.name+'  '+ammo);
+    chip.classList.toggle('reloading', reloading);
+  }
+  const list=document.getElementById('gunlist');
+  if(list){ list.replaceChildren();
+    p.guns.forEach((gi,idx)=>{ const d=GUNS[gi.id]; const el=document.createElement('div');
+      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.textContent=d.icon; list.appendChild(el); }); }
 }
+const updateWeaponHUD = updateGunHUD;   // back-compat alias for older call sites
 function updateSpellHUD(){
   const sp=SPELLS[S.spell];
   const ic=document.querySelector('#ab-spell .ic'); if(ic) ic.textContent=sp.icon;
@@ -1346,6 +1384,8 @@ function startGame(){
   p.pos.set(0,0,ARENA*0.55); p.vel.set(0,0,0);
   p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0; p.aimSmoothed=p.aim=-Math.PI;
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
+  // gun inventory → just the starter rifle, full mag
+  p.guns=[{id:'rifle', ammo:GUNS.rifle.mag}]; p.gunIdx=0; p.reloadUntil=0; p.infiniteAmmo=false; p.ammoMul=1;
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0;
   // clear combat
@@ -1413,16 +1453,12 @@ function updateHUD(){
 // ----------------------------- UPDATE -----------------------------
 function updatePlayer(dt, now){
   const p = S.player; if(!p) return;
-  // aim
+  // AIM — mobile: turret auto-targets the nearest enemy in range (no manual aim).
+  //       desktop: aim with the mouse. Firing is always automatic (handled below).
   if(MOBILE){
-    if(aimS.active && (Math.abs(aimS.x)+Math.abs(aimS.y))>6){
-      p.aim = Math.atan2(aimS.x, aimS.y); S.firing=true;
-      // auto-aim assist: nudge halfway toward the nearest enemy inside the aim cone
-      let best=null, bd=1e9;
-      for(const e of enemies){ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d=Math.hypot(dx,dz);
-        if(d>44) continue; const a=Math.atan2(dx,dz); if(Math.abs(wrapAngle(a-p.aim))<0.45 && d<bd){ bd=d; best=a; } }
-      if(best!=null) p.aim = wrapAngle(p.aim + wrapAngle(best-p.aim)*0.5);
-    } else S.firing=false;
+    const t = nearestTarget(56);
+    if(t) p.aim = Math.atan2(t.pos.x - p.pos.x, t.pos.z - p.pos.z);
+    else { const mv=getMoveDir(); if(mv.lengthSq()>0.01) p.aim = Math.atan2(mv.x, mv.z); }
   } else {
     if(S.pointerActive){ p.aim = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
   }
@@ -1436,7 +1472,9 @@ function updatePlayer(dt, now){
     p.vel.copy(p.dashDir).multiplyScalar(PLAYER.dashSpeed);
   } else {
     const over = now < p.overUntil;
-    const accel = PLAYER.accel*(over?1.35:1)*p.speedMul, maxSp = PLAYER.maxSpeed*(over?1.3:1)*p.speedMul;
+    // heavier magazine → a bit slower (ammo↔speed tradeoff)
+    const heavy = 1 - Math.min(0.22, magCap(equippedGun())/450);
+    const accel = PLAYER.accel*(over?1.35:1)*p.speedMul*heavy, maxSp = PLAYER.maxSpeed*(over?1.3:1)*p.speedMul*heavy;
     const dir = getMoveDir();
     p.vel.x += dir.x * accel * dt;
     p.vel.z += dir.z * accel * dt;
@@ -1462,8 +1500,8 @@ function updatePlayer(dt, now){
   // shield bubble
   if(p.shieldMesh){ const on = now < p.shieldUntil; p.shieldMesh.visible = on;
     if(on) p.shieldMesh.material.opacity = 0.18 + Math.sin(now*10)*0.08; }
-  // fire
-  if(S.firing) fireWeapon(now);
+  // AUTO-FIRE every frame (magazine/reload handled inside)
+  fireGun(now);
 }
 function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
@@ -1542,6 +1580,7 @@ S.player = makePlayer();
 window._game = S;
 window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
 window._spawn = spawnEnemy;
+window._give = giveGun; window._cycleGun = cycleGun;
 
 requestAnimationFrame(loop);
 </script>
