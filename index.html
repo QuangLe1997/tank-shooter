@@ -769,7 +769,12 @@ function clearBlocks(){ for(const b of blocks) scene.remove(b.mesh); blocks.leng
 const _SEAMH=[38,128,212], _SEAMV=[58,150,228];
 function _makePanelTex(){                                                          // ALBEDO — worn painted armor (tints with material color)
   const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
-  x.fillStyle='#d2d2d2'; x.fillRect(0,0,256,256);
+  x.fillStyle='#cfcfcf'; x.fillRect(0,0,256,256);
+  // disruptive CAMO (rằn ri) — irregular tonal blotches; tinted by the material colour they read as faction camo
+  const blob=(cx,cy,r,fill)=>{ x.fillStyle=fill; x.beginPath(); const n=7+(Math.random()*4|0);
+    for(let a=0;a<n;a++){ const ang=a/n*6.283, rr=r*(0.55+Math.random()*0.6), px=cx+Math.cos(ang)*rr, py=cy+Math.sin(ang)*rr; a?x.lineTo(px,py):x.moveTo(px,py); } x.closePath(); x.fill(); };
+  for(let t=0;t<2;t++) for(let i=0;i<11;i++){ const cx=Math.random()*256, cy=Math.random()*256, r=22+Math.random()*40;
+    blob(cx,cy,r, i%3===0 ? 'rgba(232,232,232,0.30)' : (i%3===1 ? 'rgba(120,124,116,0.55)' : 'rgba(86,90,80,0.5)')); }   // light highlight + 2 darker camo tones, layered & overlapping
   for(let i=0;i<3200;i++){ const v=(188+Math.random()*66)|0; x.fillStyle='rgba('+v+','+v+','+v+','+(Math.random()*0.06).toFixed(3)+')'; x.fillRect(Math.random()*256,Math.random()*256,2,2); } // grain
   for(let i=0;i<26;i++){ const cx=Math.random()*256, cy=Math.random()*256, r=3+Math.random()*9, g=(150+Math.random()*44)|0; // chipped paint → bare primer/metal patches
     x.fillStyle='rgba('+g+','+g+','+((g-8)|0)+','+(0.22+Math.random()*0.3).toFixed(2)+')'; x.beginPath(); x.ellipse(cx,cy,r,r*0.66,Math.random()*6,0,7); x.fill(); }
@@ -1004,6 +1009,14 @@ function glowTex(){
   x.fillStyle=g; x.fillRect(0,0,64,64); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
 }
 const GLOW = glowTex();
+function smokeTex(){   // soft, billowy cloud puff (overlapping soft blobs) — reads as real smoke, not a hard dot
+  const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  for(let i=0;i<6;i++){ const cx=18+Math.random()*28, cy=18+Math.random()*28, r=12+Math.random()*16;
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,255,255,0.42)'); g.addColorStop(0.6,'rgba(255,255,255,0.16)'); g.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,7); x.fill(); }
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const SMOKE = smokeTex();
 const parts=[]; const partPool=[];
 for(let i=0;i<640;i++){   // larger pool: blazing 16-part wrecks + the blast fireball both need headroom
   const m=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xffffff, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false}));
@@ -1012,7 +1025,9 @@ for(let i=0;i<640;i++){   // larger pool: blazing 16-part wrecks + the blast fir
 function spawnPart(x,y,z,vx,vy,vz,o={}){
   const m=partPool.pop(); if(!m) return;
   m.visible=true; m.material.color.setHex(o.color ?? 0xffd27a);
+  const wantMap = o.smoke ? SMOKE : GLOW; if(m.material.map!==wantMap){ m.material.map=wantMap; m.material.needsUpdate=true; }   // soft cloud for smoke, glow for fire/sparks
   m.material.blending = o.smoke ? THREE.NormalBlending : THREE.AdditiveBlending;
+  m.material.rotation = o.smoke ? Math.random()*6.283 : 0;   // random spin so smoke puffs don't look identical
   m.position.set(x,y,z); const s=o.size||1; m.scale.set(s,s,1);
   parts.push({m, x,y,z, vx,vy,vz, life:o.life||0.6, max:o.life||0.6, size:s, grow:o.grow||0,
     grav:o.grav??-9, drag:o.drag??2.5, smoke:!!o.smoke, op:o.op??1});
@@ -2035,8 +2050,13 @@ function gunDropPool(stage){
   return pool;
 }
 function muzzleFlash(x,z,ang,color){
-  muzzleLight.position.set(x,1.6,z); muzzleLight.color.setHex(color); muzzleLight.intensity=2.4;
-  spawnPart(x,1.4,z, Math.sin(ang)*9,1.5,Math.cos(ang)*9, {color, size:1.3, life:0.12, grav:0, drag:7});
+  const fx=Math.sin(ang), fz=Math.cos(ang);
+  muzzleLight.position.set(x+fx,1.6,z+fz); muzzleLight.color.setHex(color); muzzleLight.intensity=3.4;
+  spawnPart(x,1.45,z, fx*8,1.0,fz*8,  {color, size:2.0, life:0.12, grav:0, drag:7});                         // colored muzzle flare
+  spawnPart(x,1.45,z, fx*10,1.1,fz*10, {color:0xffffff, size:1.1, life:0.07, grav:0, drag:9});               // hot white core
+  for(let i=0;i<3;i++){ const sp=9+Math.random()*11, sa=ang+(Math.random()-0.5)*0.55;                        // forward muzzle sparks
+    spawnPart(x,1.45,z, Math.sin(sa)*sp,0.5+Math.random()*1.7,Math.cos(sa)*sp, {color:0xffe2a0, size:0.38, life:0.16+Math.random()*0.12, grav:-7, drag:2.4}); }
+  if(Math.random()<0.4) spawnPart(x+fx*0.4,1.6,z+fz*0.4, fx*1.6,0.8,fz*1.6, {color:0x423b30, size:0.9, life:0.4, smoke:true, grav:-0.9, drag:3, op:0.38});  // wisp of barrel smoke
 }
 function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 function magCap(g){ return Math.round(g.mag * S.player.ammoMul); }
@@ -2585,7 +2605,7 @@ function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
-const camOff = new THREE.Vector3(0, MOBILE?21:33, MOBILE?17.5:28);   // much closer on mobile → tanks read big & imposing on the small screen
+const camOff = new THREE.Vector3(0, MOBILE?18:28, MOBILE?14.5:23);   // zoomed in close — tanks read big & detailed (mobile closest)
 const camTarget = new THREE.Vector3();
 const camLook = new THREE.Vector3();
 function updateCamera(dt, now){
@@ -2604,14 +2624,14 @@ function updateCamera(dt, now){
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // A Catmull-Rom camera sweep: low hero shot of the tank → orbiting parade rise →
 // wide overview → settles EXACTLY onto the gameplay framing, then play begins. Skippable.
-const intro = { active:false, t:0, dur:5.2, camCurve:null, lookCurve:null };
+const intro = { active:false, t:0, dur:6.0, camCurve:null, lookCurve:null };
 const _easeIO = u => u<0.5 ? 2*u*u : 1 - Math.pow(-2*u+2,2)/2;
 function startIntro(){
   const p=S.player; if(!p){ S.mode='playing'; return; }
   p.mesh.position.set(p.pos.x,0,p.pos.z); p.mesh.rotation.y=p.facing; p.turret.rotation.y=0;
   const T=new THREE.Vector3(p.pos.x,0,p.pos.z);
-  const offs =[[3,2.0,-13],[-7,2.8,-9],[-14,6.6,3],[-7,13,17],[2,25,27],[camOff.x,camOff.y,camOff.z]]; // last = camOff (seamless handoff)
-  const looks=[[0,2.2,0],[0,2.2,0],[0,2.0,0],[0,1.8,0],[0,1.2,0],[0,1.0,0]];
+  const offs =[[0.5,1.1,-8.5],[8,2.2,-5.5],[13,5.5,2],[6,12,15],[-7,20,24],[camOff.x,camOff.y,camOff.z]]; // low hero close-up on the gun → sweep around → rise to a parade view → settle to gameplay
+  const looks=[[0,2.3,1.2],[0,2.1,0.3],[0,1.9,0],[0,1.5,0],[0,1.1,0],[0,1.0,0]];
   const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))));
   intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true;
   const sub=document.getElementById('cine-sub'); if(sub) sub.textContent='STAGE '+S.stage+' · '+BIOME.name;
@@ -2631,6 +2651,8 @@ function updateIntro(dt, now){
   camera.position.copy(intro.camCurve.getPoint(u));
   camera.lookAt(intro.lookCurve.getPoint(u));
   const p=S.player; if(p) p.turret.rotation.y=Math.sin(intro.t*Math.PI*1.5)*0.55;   // slow showcase sweep
+  if(p && Math.random()<0.5) spawnPart(p.pos.x+(Math.random()-0.5)*6, 0.3, p.pos.z+(Math.random()-0.5)*6,   // drifting battlefield dust for atmosphere
+    (Math.random()-0.5)*2, 0.4+Math.random()*0.9, (Math.random()-0.5)*2, {color:0xccbf94, size:1.6+Math.random(), life:1.1, smoke:true, grav:-0.25, drag:1.4, op:0.26});
   if(intro.t>=1) endIntro();
 }
 function skipIntro(){ if(intro.active && intro.t>0.05) endIntro(); }   // grace window so the deploy tap doesn't skip
