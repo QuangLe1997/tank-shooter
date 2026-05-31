@@ -1753,13 +1753,13 @@ function spawnTankWreck(pos, ms, pal){
     m.geometry=WRECK_GEO[part.g];
     m.material.color.setHex(colFor(part.k));
     const s=ms*part.sz; m.scale.set(s,s,s);
-    const a=Math.random()*6.283, sp=(2.5+Math.random()*6.5)*rs, up=(4.5+Math.random()*7)*rs;
-    m.position.set(pos.x+(Math.random()-0.5)*ms*1.1, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*1.1);
+    const a=Math.random()*6.283, sp=(7+Math.random()*10)*rs, up=(9.5+Math.random()*9)*rs;        // strong explosive ejection — parts blast outward
+    m.position.set(pos.x+(Math.random()-0.5)*ms*0.8, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.8);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    m.material.emissiveIntensity=0.45+Math.random()*0.6; m.material.opacity=1; m.visible=true;
+    m.material.emissiveIntensity=1.0+Math.random()*0.7; m.material.opacity=1; m.visible=true;       // white-hot, on fire
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
-      rx:(Math.random()-0.5)*8, ry:(Math.random()-0.5)*8, rz:(Math.random()-0.5)*8,
-      age:0, life:3.0+Math.random()*2.4, settled:false, floor:Math.max(0.18, s*0.42), pool:wreckPool });
+      rx:(Math.random()-0.5)*15, ry:(Math.random()-0.5)*15, rz:(Math.random()-0.5)*15,
+      age:0, life:1.8+Math.random()*1.5, settled:false, floor:Math.max(0.18, s*0.42), pool:wreckPool, fire:true });   // burn fast then vanish
   }
 }
 function updateDebris(dt){
@@ -1776,8 +1776,15 @@ function updateDebris(dt){
       }
       m.rotation.x+=d.rx*dt; m.rotation.y+=d.ry*dt; m.rotation.z+=d.rz*dt;
     }
-    if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*1.7);   // cool hot → dark metal
-    const rem=d.life-d.age; if(rem<0.7) m.material.opacity=rem/0.7;                                                     // fade out at the end
+    if(d.fire && d.age<1.3 && Math.random()<0.5){     // burning wreckage: trail fire + smoke as it tumbles
+      const mp=m.position;
+      spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5)*2.5, 1.4+Math.random()*2.4, (Math.random()-0.5)*2.5,
+        {color: Math.random()<0.5?0xff8a2e:0xffd166, size:0.6+Math.random()*0.5, life:0.28+Math.random()*0.22, grav:-4, drag:3.2});
+      if(Math.random()<0.28) spawnPart(mp.x, mp.y, mp.z, (Math.random()-0.5), 0.6, (Math.random()-0.5),
+        {color:0x171410, size:1.0+Math.random()*0.5, life:0.6, smoke:true, grav:-1.3, drag:1.6, op:0.5});
+    }
+    if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*(d.fire?0.8:1.7));   // burning parts stay glowing longer
+    const fadeT=d.fire?1.0:0.7, rem=d.life-d.age; if(rem<fadeT) m.material.opacity=rem/fadeT;                            // fade out (burn up) and vanish
   }
 }
 // grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column
