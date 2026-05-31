@@ -58,6 +58,9 @@
   #muteBtn{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));
     width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:18px;
     pointer-events:auto;cursor:pointer;}
+  #fsBtn{top:max(12px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 50px);
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;}
+  #fsBtn .ic{width:20px;height:20px;color:var(--ink);}
   #weaponchip.reloading{color:var(--danger);border-color:rgba(224,96,58,.5);}
   /* gun inventory list (above weapon chip) */
   #gunlist{position:absolute;left:50%;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 36px);transform:translateX(-50%);
@@ -287,6 +290,7 @@
     <div class="ability ready" id="ab-spell"><span class="ic" data-icon="spark"></span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
   </div>
   <div id="combo">COMBO ×2</div>
+  <div id="fsBtn" class="chip"><span class="ic" data-icon="expand"></span></div>
   <div id="muteBtn" class="chip"><span class="ic" data-icon="sound"></span></div>
   <div id="gunlist"></div>
   <div id="buffbar"></div>
@@ -314,7 +318,7 @@
   <div class="panel">
     <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
     <div class="help desktop-only">
-      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>hold</b> to fire<br>
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
       <kbd>Space</kbd> dash · <kbd>E</kbd> ability
     </div>
     <div class="help touch-only">
@@ -467,6 +471,8 @@ const GLYPH={
   spark:'<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l3 3M14.5 14.5l3 3M17.5 6.5l-3 3M9.5 14.5l-3 3"/>',
   rotate:'<rect x="8" y="3" width="8" height="18" rx="2"/><circle cx="12" cy="18" r="0.7"/><path d="M18.6 8.6a8 8 0 0 0-7-4.6M18.6 8.6 19 5.9M18.6 8.6 15.9 8.9"/>',
   swap:'<path d="M4 8h12l-3-3M4 8l3 3M20 16H8l3 3M20 16l-3-3"/>',
+  expand:'<path d="M4 10V4h6M20 10V4h-6M4 14v6h6M20 14v6h-6"/>',
+  compress:'<path d="M10 4v6H4M14 4v6h6M10 20v-6H4M14 20v-6h6"/>',
 };
 function svgMarkup(name, sw){
   const g=GLYPH[name]||GLYPH.spark;
@@ -1506,7 +1512,11 @@ function updateAimFromMouse(cx, cy){
   if(raycaster.ray.intersectPlane(groundPlane, hit)){ S.aimPoint.copy(hit); S.pointerActive = true; }
 }
 addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
-addEventListener('mousedown', e=>{ if(MOBILE) return; if(e.button===2) trySpell(); });   // auto-fire: no need to hold; RMB = spell
+addEventListener('mousedown', e=>{ if(MOBILE) return;
+  if(e.button===2){ trySpell(); return; }                                                   // RMB = spell
+  if(e.button===0 && S.mode==='playing'){ S.firing=true; fireGun(performance.now()/1000, playerRange()); } });  // LMB = fire now + hold to repeat
+addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
+addEventListener('blur', ()=>{ S.firing=false; });
 addEventListener('contextmenu', e=>e.preventDefault());
 addEventListener('wheel', e=>{ if(S.mode==='playing') cycleGun(e.deltaY>0?1:-1); }, {passive:true});
 
@@ -1523,12 +1533,15 @@ function setStick(el, ox, oy, dx, dy){
 }
 function clearStick(el){ el.classList.remove('act'); el.querySelector('.knob').style.transform='translate(-50%,-50%)'; }
 function onTouchStart(e){
+  if(S.mode!=='playing') return;                       // only drive during gameplay (menus/cinematic ignore)
+  let engaged=false;
   for(const t of e.changedTouches){
-    if(move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); }
+    if(move.id===null){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); engaged=true; }
   }
-  e.preventDefault();
+  if(engaged && e.cancelable) e.preventDefault();
 }
 function onTouchMove(e){
+  if(move.id===null) return;
   for(const t of e.changedTouches){
     if(t.identifier===move.id){ move.x=t.clientX-move.ox; move.y=t.clientY-move.oy; setStick(stickL,move.ox,move.oy,move.x,move.y); }
   }
@@ -1539,11 +1552,12 @@ function onTouchEnd(e){
     if(t.identifier===move.id){ move.id=null; move.x=move.y=0; clearStick(stickL); }
   }
 }
-const touchEl = document.getElementById('touch');
-touchEl.addEventListener('touchstart', onTouchStart, {passive:false});
-touchEl.addEventListener('touchmove', onTouchMove, {passive:false});
-touchEl.addEventListener('touchend', onTouchEnd);
-touchEl.addEventListener('touchcancel', onTouchEnd);
+// Listen on window: the #touch overlay is pointer-events:none (so its own listener never fired — that was the bug).
+// Buttons inside call stopPropagation, so tapping them won't also start the joystick.
+addEventListener('touchstart', onTouchStart, {passive:false});
+addEventListener('touchmove', onTouchMove, {passive:false});
+addEventListener('touchend', onTouchEnd);
+addEventListener('touchcancel', onTouchEnd);
 // mobile buttons
 const armBtn=(id,fn)=>{ const el=document.getElementById(id); if(!el) return;
   el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fn();},{passive:false}); };
@@ -1554,6 +1568,19 @@ const muteBtnEl=document.getElementById('muteBtn');
 const toggleMute=e=>{ if(e){e.preventDefault();e.stopPropagation();} audio(); setMuted(!muted); };
 muteBtnEl.addEventListener('click', toggleMute);
 muteBtnEl.addEventListener('touchstart', toggleMute, {passive:false});
+// fullscreen (immersive, like a video). iPhone Safari lacks the API → button is a graceful no-op there.
+function isFs(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function reqFs(){ const el=document.documentElement; const r=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(r){ try{ const p=r.call(el); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+  if(MOBILE && screen.orientation && screen.orientation.lock){ try{ const q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(()=>{}); }catch(e){} } }
+function exitFs(){ const x=document.exitFullscreen||document.webkitExitFullscreen; if(x){ try{ x.call(document); }catch(e){} } }
+function toggleFullscreen(){ isFs()?exitFs():reqFs(); }
+function syncFsIcon(){ const b=document.querySelector('#fsBtn .ic'); if(b) setIcon(b, isFs()?'compress':'expand'); }
+document.addEventListener('fullscreenchange', syncFsIcon);
+document.addEventListener('webkitfullscreenchange', syncFsIcon);
+const fsBtnEl=document.getElementById('fsBtn');
+if(fsBtnEl){ fsBtnEl.addEventListener('click', e=>{ e.stopPropagation(); toggleFullscreen(); });
+  fsBtnEl.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); toggleFullscreen(); }, {passive:false}); }
 
 // ----------------------------- ABILITIES (stubs filled in later phases) -----------------------------
 function tryDash(){
@@ -1896,6 +1923,7 @@ function startGame(){
   document.getElementById('combo').style.opacity='0';
   hide('start'); hide('pause'); hide('gameover'); hide('upgrade'); hide('victory');
   audio(); startMusic(); sfx('click');
+  if(MOBILE) reqFs();             // go immersive on mobile (within the deploy gesture) + lock landscape
   updateHUD();
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
@@ -2009,8 +2037,8 @@ function updatePlayer(dt, now){
   rangeRing.visible = true; rangeRing.position.set(p.pos.x, 0.06, p.pos.z);
   rangeRing.scale.set(range, range, range);
   rangeRing.material.opacity = 0.08 + Math.sin(now*2)*0.025;   // thin + faint, just visible
-  const tgt = nearestTarget(range);
-  if(tgt) fireGun(now, range);     // AUTO-FIRE only when an enemy is within range
+  if(MOBILE){ if(nearestTarget(range)) fireGun(now, range); }   // mobile: turret auto-aims + auto-fires
+  else if(S.firing) fireGun(now, range);                         // desktop: fire only while LMB held; gun fireCd caps the rate
 }
 function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 
