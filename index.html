@@ -1414,29 +1414,51 @@ function applyPowerup(def){
   if(def.buff){ p.buffUntil[def.buff] = NOW() + def.dur; if(def.onGet) def.onGet(p); floatText(def.label||def.icon, '#'+def.color.toString(16).padStart(6,'0'), p.pos, 18); }
   else if(def.apply) def.apply(p);
 }
+// emoji billboard texture (cached per icon) so each power-up is recognisable
+const _emojiCache={};
+function emojiTex(ch){
+  if(_emojiCache[ch]) return _emojiCache[ch];
+  const c=document.createElement('canvas'); c.width=c.height=72; const x=c.getContext('2d');
+  x.font='52px serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(ch,36,40);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; _emojiCache[ch]=t; return t;
+}
+const PICKUP_LIFE=11;
 const pickups=[];
 function dropPowerup(pos){
   const p=S.player; const low = (p.hp/p.maxHp<0.4) || (core&&core.hp/core.maxHp<0.4);
   let pool = POWERUPS;
   if(low && Math.random()<0.6) pool = POWERUPS.filter(u=>['heal','repair','shield'].includes(u.id));
   const def = pool[(Math.random()*pool.length)|0];
-  const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
-  spr.scale.set(2.4,2.4,1); spr.position.set(pos.x,1.4,pos.z); scene.add(spr);
-  pickups.push({def, spr, x:pos.x, z:pos.z, born:performance.now()/1000});
+  const g=new THREE.Group(); g.position.set(pos.x,0,pos.z); scene.add(g);
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
+  glow.scale.set(2.8,2.8,1); glow.position.y=1.5; g.add(glow);
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:emojiTex(def.icon),transparent:true,depthWrite:false}));
+  icon.scale.set(1.9,1.9,1); icon.position.y=1.5; g.add(icon);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.35,1.6,40), new THREE.MeshBasicMaterial({color:def.color,transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.08; g.add(ring);
+  pickups.push({def, g, glow, icon, ring, x:pos.x, z:pos.z, born:performance.now()/1000});
 }
+function disposePickup(u){ scene.remove(u.g); u.glow.material.dispose(); u.icon.material.dispose(); u.ring.material.dispose(); u.ring.geometry.dispose(); }
 function updatePickups(dt, now){
   const p=S.player;
   for(let i=pickups.length-1;i>=0;i--){
-    const u=pickups[i]; const age=now-u.born;
-    u.spr.position.y = 1.4 + Math.sin(now*3+i)*0.25; u.spr.material.rotation += dt*1.5;
+    const u=pickups[i]; const age=now-u.born, rem=Math.max(0, 1-age/PICKUP_LIFE);
+    const bob=1.5 + Math.sin(now*3+i)*0.22;
+    u.glow.position.y=bob; u.icon.position.y=bob;
+    // blink + pulse so it stands out
+    const blink = 0.55 + Math.abs(Math.sin(now*5+i))*0.45;
+    u.glow.material.opacity = blink; const ps=2.8*(1+Math.sin(now*5)*0.12); u.glow.scale.set(ps,ps,1);
+    // shrinking countdown ring (disappears when it runs out)
+    u.ring.scale.setScalar(rem); u.ring.material.opacity = 0.7*rem; u.ring.rotation.z += dt*1.2;
+    // magnet toward player when near
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
-    if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*16*dt; u.z+=dz/d*16*dt; u.spr.position.x=u.x; u.spr.position.z=u.z; }
-    if(d2 < (PLAYER.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3);
-      scene.remove(u.spr); u.spr.material.dispose(); pickups.splice(i,1); continue; }
-    if(age>14){ scene.remove(u.spr); u.spr.material.dispose(); pickups.splice(i,1); }
+    if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }
+    u.g.position.set(u.x,0,u.z);
+    if(d2 < (PLAYER.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); disposePickup(u); pickups.splice(i,1); continue; }
+    if(age>PICKUP_LIFE){ disposePickup(u); pickups.splice(i,1); }
   }
 }
-function clearPickups(){ for(const u of pickups){ scene.remove(u.spr); u.spr.material.dispose(); } pickups.length=0; }
+function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }
 const BUFF_ICON={ rapid:'⚡', power:'💥', speed:'🏃', infammo:'∞', ammoup:'📦', range:'🎯' };
 function updateBuffHUD(now){
   const bar=document.getElementById('buffbar'); if(!bar) return;
@@ -1736,7 +1758,7 @@ S.player = makePlayer();
 window._game = S;
 window._dbg = { enemies, bullets, pickups, get core(){return core;}, get boss(){return boss;} };
 window._spawn = spawnEnemy;
-window._give = giveGun; window._cycleGun = cycleGun;
+window._give = giveGun; window._cycleGun = cycleGun; window._drop = dropPowerup;
 window._dbg.blocks = blocks;
 
 requestAnimationFrame(loop);
