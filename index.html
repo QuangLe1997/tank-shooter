@@ -1226,6 +1226,8 @@ function updateBullets(dt, now){
       const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
       if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(7.5,1.8+b.dmg*0.08); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; } hit=true; }
+      if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
+        if(dx*dx+dz*dz < (b.r+0.72)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
         if(dcx*dcx+dcz*dcz < (b.r+core.r)**2){ damageCore(b.dmg); ringPulse(b.mesh.position,0xe0603a,2); hit=true; } }
     }
@@ -1355,10 +1357,14 @@ function updateEnemies(dt, now){
         if(now >= e.detonateAt){ e.mesh.visible=true; enemyGroundStrike(e.pos.x,e.pos.z,4.5,32,now); bigExplode(e.pos,0xff3020,1.6); removeEnemy(e); } }
       continue;
     }
-    // pick target: player if close, else core
+    // pick target: player if close, else the guards defending the Core, else the Core
     const dpl = e.pos.distanceTo(p.pos);
     const targetPlayer = dpl < 34 || !core;
-    const target = targetPlayer ? p.pos : core.pos;
+    let target = targetPlayer ? p.pos : core.pos;
+    if(!targetPlayer && soldiers.length){                         // guards draw fire — engage the nearest soldier in the way
+      let bs=null, bd=36*36; for(const s of soldiers){ const dx=s.pos.x-e.pos.x, dz=s.pos.z-e.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; bs=s; } }
+      if(bs) target = bs.pos;
+    }
     const to = new THREE.Vector3().subVectors(target, e.pos); const d=to.length()||1; to.divideScalar(d);
     // movement
     let desire;
@@ -2274,6 +2280,8 @@ const POWERUPS = [
   { id:'bomb',   svg:'bomb', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
   { id:'freeze', svg:'snow', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   { id:'drone',  svg:'drone', color:0x6fd0ff, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
+  { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(SOLDIER.cap); for(const s of soldiers) s.hp=s.maxHp; if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill the guard squad to 5 + heal
+  { id:'armory', svg:'up',     color:0xffd24a, apply(){ soldierLvl++; for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // gun drop — adds a random gun to the inventory
   { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ const pl=gunDropPool(S.stage); giveGun(pl[(Math.random()*pl.length)|0]); } },
 ];
@@ -2380,6 +2388,7 @@ function chooseUpgrade(u){
   hide('upgrade');
   applyBiome(S.stage); buildBlocks();
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
+  clearSoldiers(); deploySoldiers(SOLDIER.base);   // fresh full guard squad each stage (weapon upgrades persist via soldierLvl)
   playStageTransition(S.stage, BIOME.name, '#'+BIOME.accent.toString(16).padStart(6,'0'));
   S.awaitingUpgrade=false; WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+2.1; S.wave=0;   // first wave lands as the wipe clears
   S.mode='playing';
@@ -2446,7 +2455,7 @@ function startGame(){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
-  enemies.length=0; clearPickups(); clearMines(); clearDrone(); document.body.classList.remove('corelow'); _alarmAt=0;
+  enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); soldierLvl=0; deploySoldiers(SOLDIER.base); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -2723,6 +2732,63 @@ function updateDrone(dt, now){
   else d.g.rotation.y += dt*2;
 }
 
+// ----------------------------- FRIENDLY SOLDIERS (squad that guards the Core) -----------------------------
+// Up to 5 infantry hold a ring around the monument, auto-fire at the nearest enemy, intercept incoming
+// shots (body-block) and brawl. One soldier out-DPSes a tank, but a swarm of tanks will overwhelm them.
+// They fight to the death; power-ups reinforce the squad and upgrade their weapons.
+const SOLDIER = { cap:5, base:3, hp:60, dmg:15, fireCd:0.5, range:30, ringR:6.8 };
+let soldiers=[], soldierLvl=0;
+function makeSoldierMesh(){
+  const g=new THREE.Group();
+  const uni=new THREE.MeshStandardMaterial({color:0x5d6e33,roughness:0.82,metalness:0.1});
+  const drk=new THREE.MeshStandardMaterial({color:0x2c331c,roughness:0.85,metalness:0.15});
+  const skn=new THREE.MeshStandardMaterial({color:0xc8895c,roughness:0.7});
+  const stl=new THREE.MeshStandardMaterial({color:0x20241c,roughness:0.5,metalness:0.7});
+  for(const lx of [-0.13,0.13]){ const leg=new THREE.Mesh(new RoundedBoxGeometry(0.18,0.55,0.2,1,0.05),drk); leg.position.set(lx,0.3,0); g.add(leg); }
+  const torso=new THREE.Mesh(new RoundedBoxGeometry(0.5,0.6,0.32,2,0.08),uni); torso.position.y=0.85; g.add(torso); g.userData.torso=torso;
+  const vest=new THREE.Mesh(new RoundedBoxGeometry(0.46,0.34,0.18,1,0.05),drk); vest.position.set(0,0.9,0.13); g.add(vest);
+  const pack=new THREE.Mesh(new RoundedBoxGeometry(0.32,0.4,0.2,1,0.05),drk); pack.position.set(0,0.92,-0.22); g.add(pack);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,10),skn); head.position.y=1.24; g.add(head);
+  const helm=new THREE.Mesh(new THREE.SphereGeometry(0.2,14,8,0,6.3,0,1.5),drk); helm.position.y=1.27; g.add(helm);
+  const armG=new THREE.Group(); armG.position.set(0,0.96,0); g.add(armG);
+  for(const ax of [-0.28,0.28]){ const arm=new THREE.Mesh(new RoundedBoxGeometry(0.13,0.4,0.15,1,0.05),uni); arm.position.set(ax,-0.05,0.12); arm.rotation.x=-0.75; armG.add(arm); }
+  const rifle=new THREE.Mesh(new RoundedBoxGeometry(0.1,0.12,0.82,1,0.03),stl); rifle.position.set(0.1,-0.06,0.44); armG.add(rifle);
+  const muz=new THREE.Object3D(); muz.position.set(0.1,-0.06,0.88); armG.add(muz); g.userData.muzzle=muz;
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  return g;
+}
+const _sV=new THREE.Vector3();
+function _placeSoldiers(){ const c=core?core.pos:{x:0,z:0}; const n=Math.max(1,soldiers.length);
+  soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.pos.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR); }); }
+function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g=makeSoldierMesh(); scene.add(g);
+  soldiers.push({ g, pos:new THREE.Vector3(), hp:SOLDIER.hp, maxHp:SOLDIER.hp, fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, dead:false }); _placeSoldiers(); }
+function deploySoldiers(target){ while(soldiers.length<Math.min(SOLDIER.cap,target)) spawnSoldier(); _placeSoldiers(); }
+function clearSoldiers(){ for(const s of soldiers) scene.remove(s.g); soldiers.length=0; }
+function damageSoldier(s, dmg){ if(s.dead) return; s.hp-=dmg; s.hitT=0.16;
+  const t=s.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
+  if(s.hp<=0) killSoldier(s); }
+function killSoldier(s){ if(s.dead) return; s.dead=true; const i=soldiers.indexOf(s); if(i>=0) soldiers.splice(i,1);
+  burst(s.pos, 0xb04830, 9, 6, {y:0.9, life:0.5, size:0.7}); burst(s.pos, 0x2c331c, 5, 4, {y:0.7, life:0.7, size:1.0, smoke:true, op:0.4});
+  floatText('✝', '#ff9a7a', {x:s.pos.x,y:1.3,z:s.pos.z}, 16); sfx('explode'); scene.remove(s.g); _placeSoldiers(); }
+function updateSoldiers(dt, now){
+  if(!soldiers.length) return;
+  for(const s of soldiers){
+    s.bob+=dt; s.g.position.set(s.pos.x, 0.02+Math.sin(s.bob*4)*0.03, s.pos.z);   // hold post + idle bob
+    let best=null, bd=SOLDIER.range*SOLDIER.range;
+    for(const e of enemies){ const dx=e.pos.x-s.pos.x, dz=e.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
+    if(boss&&boss.alive){ const dx=boss.pos.x-s.pos.x, dz=boss.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
+    if(best){ const ang=Math.atan2(best.pos.x-s.pos.x, best.pos.z-s.pos.z); s.g.rotation.y=ang;
+      if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd*(1-Math.min(0.45,soldierLvl*0.12));
+        s.g.userData.muzzle.getWorldPosition(_sV);
+        spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:SOLDIER.dmg*(1+soldierLvl*0.35), speed:84, color:0xe8ef86, r:0.26, life:1.7, maxDist:SOLDIER.range+2});
+        spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {color:0xf2f7a0, size:0.55, life:0.07, grav:0, drag:9}); } }   // light muzzle spark
+    else s.g.rotation.y += (s.postAngle - s.g.rotation.y)*Math.min(1,dt*3);   // face outward when idle
+    if(now>=s.hurtAt){ let adj=0; for(const e of enemies){ const dx=e.pos.x-s.pos.x, dz=e.pos.z-s.pos.z; if(dx*dx+dz*dz < (e.r+1.0)*(e.r+1.0)) adj++; }
+      if(adj){ damageSoldier(s, (7+S.stage*1.6)*adj); s.hurtAt=now+0.55; } }   // tanks that reach the guard chew through them — a swarm overwhelms fast
+    if(s.hitT>0){ s.hitT-=dt; if(s.hitT<=0){ const t=s.g.userData.torso; if(t){ t.material.emissive.setHex(0x000000); t.material.emissiveIntensity=0; } } }
+  }
+}
+
 // ----------------------------- MAIN LOOP -----------------------------
 let last = performance.now();
 function loop(nowMs){
@@ -2746,6 +2812,7 @@ function loop(nowMs){
     updatePickups(gdt, now);
     updateMines(gdt, now);
     updateDrone(gdt, now);
+    updateSoldiers(gdt, now);            // friendly squad guarding the Core
     updateBuffHUD(now);
     updateCamera(dt, now);
     updateWorldBars();
@@ -2808,6 +2875,7 @@ window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward scr
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
 window._view = { get camera(){return camera;}, get scene(){return scene;}, get renderer(){return renderer;}, get composer(){return composer;} };   // (debug) inspect/drive the view
+window._dbg.soldiers = soldiers; window._deploy = deploySoldiers; window._armory = ()=>{ soldierLvl++; return soldierLvl; };   // (debug) friendly squad
 window._tankExplode = tankExplode; window._wreck = spawnTankWreck;   // (debug) trigger the death FX / part-wreck
 
 requestAnimationFrame(loop);
