@@ -1227,7 +1227,7 @@ function updateBullets(dt, now){
       if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(7.5,1.8+b.dmg*0.08); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; } hit=true; }
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
-        if(dx*dx+dz*dz < (b.r+0.72)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
+        if(dx*dx+dz*dz < (b.r+0.95)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
         if(dcx*dcx+dcz*dcz < (b.r+core.r)**2){ damageCore(b.dmg); ringPulse(b.mesh.position,0xe0603a,2); hit=true; } }
     }
@@ -2736,7 +2736,7 @@ function updateDrone(dt, now){
 // Up to 5 infantry hold a ring around the monument, auto-fire at the nearest enemy, intercept incoming
 // shots (body-block) and brawl. One soldier out-DPSes a tank, but a swarm of tanks will overwhelm them.
 // They fight to the death; power-ups reinforce the squad and upgrade their weapons.
-const SOLDIER = { cap:5, base:3, hp:60, dmg:15, fireCd:0.5, range:30, ringR:6.8 };
+const SOLDIER = { cap:5, base:3, hp:60, dmg:15, fireCd:0.5, range:30, ringR:7.4, scale:1.5 };
 let soldiers=[], soldierLvl=0;
 function makeSoldierMesh(){
   const g=new THREE.Group();
@@ -2760,7 +2760,7 @@ function makeSoldierMesh(){
 const _sV=new THREE.Vector3();
 function _placeSoldiers(){ const c=core?core.pos:{x:0,z:0}; const n=Math.max(1,soldiers.length);
   soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.pos.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR); }); }
-function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g=makeSoldierMesh(); scene.add(g);
+function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g=makeSoldierMesh(); g.scale.setScalar(SOLDIER.scale); scene.add(g);
   soldiers.push({ g, pos:new THREE.Vector3(), hp:SOLDIER.hp, maxHp:SOLDIER.hp, fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, dead:false }); _placeSoldiers(); }
 function deploySoldiers(target){ while(soldiers.length<Math.min(SOLDIER.cap,target)) spawnSoldier(); _placeSoldiers(); }
 function clearSoldiers(){ for(const s of soldiers) scene.remove(s.g); soldiers.length=0; }
