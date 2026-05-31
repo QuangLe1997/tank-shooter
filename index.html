@@ -65,9 +65,16 @@
   /* gun inventory list (above weapon chip) */
   #gunlist{position:absolute;left:50%;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 36px);transform:translateX(-50%);
     display:flex;gap:6px;pointer-events:none;z-index:10;}
-  .gunicon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;
-    background:linear-gradient(180deg,rgba(20,28,14,.8),rgba(10,16,8,.86));border:1px solid var(--line);opacity:.5;transition:all .12s;}
+  .gunicon{position:relative;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;
+    background:linear-gradient(180deg,rgba(20,28,14,.8),rgba(10,16,8,.86));border:1px solid var(--line);opacity:.55;transition:border-color .12s,box-shadow .12s,transform .12s;}
   .gunicon.on{opacity:1;border-color:var(--green);box-shadow:0 0 12px rgba(140,191,63,.45);transform:scale(1.14);}
+  .gunicon.ready{opacity:.92;}
+  .gcool{position:absolute;inset:0;border-radius:9px;pointer-events:none;}        /* dark conic sweep while reloading */
+  .gchk{position:absolute;right:-3px;bottom:-3px;width:13px;height:13px;border-radius:50%;display:none;align-items:center;justify-content:center;
+    background:var(--green);color:#0a140a;font-size:10px;font-weight:900;line-height:1;box-shadow:0 0 6px rgba(140,191,63,.7);}
+  .gunicon.ready .gchk{display:flex;}
+  .gunicon.ready .gchk::before{content:'✓';}
+  .gunicon.reloading{opacity:.85;border-color:rgba(224,96,58,.5);}
   /* aim stick removed — mobile uses a single movement joystick (turret auto-aims) */
   /* active timed-buff chips (under top bar) */
   #buffbar{position:absolute;top:max(58px,calc(env(safe-area-inset-top) + 46px));left:50%;transform:translateX(-50%);
@@ -788,12 +795,13 @@ function buildTank(opts={}){
   const mantlet = new THREE.Mesh(new RoundedBoxGeometry(0.94,0.68,0.7,2,0.16), metal(turret)); mantlet.position.set(0,0,1.06); turretG.add(mantlet);
   const cupola = new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.47,0.42,18), metal(accent)); cupola.position.set(0.4,0.52,-0.36); turretG.add(cupola);
   const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.33,0.33,0.14,16), skin(turret)); hatch.position.set(-0.32,0.44,-0.16); turretG.add(hatch);
-  // main gun: breech-tapered barrel + thermal sleeve + fume extractor + muzzle brake
-  const barrelM = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.2,2.95,18), metal(barrel)); barrelM.rotation.x=Math.PI/2; barrelM.position.set(0,0.05,1.82); turretG.add(barrelM);
-  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,1.05,16), dark(0x39392f)); sleeve.rotation.x=Math.PI/2; sleeve.position.set(0,0.05,1.3); turretG.add(sleeve);
-  const fume = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.5,16), dark(0x33332b)); fume.rotation.x=Math.PI/2; fume.position.set(0,0.05,2.42); turretG.add(fume);
-  const brake = new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.52,16), metal(0x26262a)); brake.rotation.x=Math.PI/2; brake.position.set(0,0.05,3.18); turretG.add(brake);
-  const muzzle = new THREE.Object3D(); muzzle.position.set(0,0.05,3.46); turretG.add(muzzle);  // world muzzle anchor
+  // main gun — grouped so the PLAYER's barrel can be swapped per equipped weapon (enemies/boss keep this default)
+  const barrelG = new THREE.Group(); turretG.add(barrelG);
+  const barrelM = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.2,2.95,18), metal(barrel)); barrelM.rotation.x=Math.PI/2; barrelM.position.set(0,0.05,1.82); barrelG.add(barrelM);
+  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,1.05,16), dark(0x39392f)); sleeve.rotation.x=Math.PI/2; sleeve.position.set(0,0.05,1.3); barrelG.add(sleeve);
+  const fume = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.5,16), dark(0x33332b)); fume.rotation.x=Math.PI/2; fume.position.set(0,0.05,2.42); barrelG.add(fume);
+  const brake = new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.52,16), metal(0x26262a)); brake.rotation.x=Math.PI/2; brake.position.set(0,0.05,3.18); barrelG.add(brake);
+  const muzzle = new THREE.Object3D(); muzzle.position.set(0,0.05,3.46); barrelG.add(muzzle);  // world muzzle anchor
   if(detail){
     const sight=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.18,0.22), metal(0x1e2228)); sight.position.set(0.34,0.42,0.52); turretG.add(sight);
     const bustle=new THREE.Mesh(new RoundedBoxGeometry(1.55,0.42,0.72,2,0.08), metal(0x2a2a24)); bustle.position.set(0,-0.04,-1.22); turretG.add(bustle); // rear storage rack
@@ -808,9 +816,39 @@ function buildTank(opts={}){
   } else {
     const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.2,6), dark(0x101010)); ant.position.set(-0.6,0.8,-0.5); turretG.add(ant);
   }
-  g.userData.turret = turretG; g.userData.muzzle = muzzle; g.userData.hull = hullM;
+  g.userData.turret = turretG; g.userData.muzzle = muzzle; g.userData.barrelG = barrelG; g.userData.hull = hullM;
   g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
   return g;
+}
+// ----- per-gun barrel assemblies: the player's barrel is swapped to match the equipped weapon (visual ID) -----
+function makeGunBarrel(id){
+  const g=new THREE.Group(), Y=0.05;
+  const steel=(c)=>new THREE.MeshStandardMaterial({color:c==null?0x5a5e52:c,roughness:0.34,metalness:0.85,envMapIntensity:0.9});
+  const dark =(c)=>new THREE.MeshStandardMaterial({color:c==null?0x2a2c26:c,roughness:0.55,metalness:0.5});
+  const glow =(c)=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.9,roughness:0.4,metalness:0.3});
+  const tube=(r1,r2,len,z,mat)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,len,16),mat||steel()); m.rotation.x=Math.PI/2; m.position.set(0,Y,z); g.add(m); return m; };
+  const box =(w,h,d,z,y,mat)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat||steel()); m.position.set(0,y==null?Y:y,z); g.add(m); return m; };
+  let tip=3.4, spin=null;
+  if(id==='smg'){ tube(0.2,0.2,0.5,0.7,dark(0x39392f)); tube(0.15,0.17,1.5,1.1,steel()); box(0.32,0.5,0.5,0.6,-0.18,dark(0x2a2a22)); tip=2.05; }
+  else if(id==='shotgun'){ tube(0.3,0.34,1.5,1.1,steel()); tube(0.4,0.44,0.42,1.95,dark(0x33332b)); tip=2.25; }
+  else if(id==='flak'){ tube(0.22,0.24,1.9,1.3,steel()); tube(0.28,0.48,0.6,2.5,dark(0x2e2e26)); tip=2.9; }
+  else if(id==='cannon'){ tube(0.2,0.2,0.7,1.1,dark(0x39392f)); tube(0.3,0.32,3.0,1.95,steel()); tube(0.43,0.43,0.66,3.4,steel(0x26262a)); tip=3.8; }
+  else if(id==='minigun'){ spin=new THREE.Group(); for(let k=0;k<6;k++){ const a=k*1.0472; const m=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.3,8),steel(0x44463c)); m.rotation.x=Math.PI/2; m.position.set(Math.cos(a)*0.18,Math.sin(a)*0.18,0); spin.add(m); } spin.position.set(0,Y,1.85); g.add(spin); tube(0.3,0.3,0.6,0.7,dark()); tip=3.05; }
+  else if(id==='missile'){ box(0.78,0.78,1.5,1.45,Y+0.05,dark(0x2c3026)); for(const ox of [-0.21,0.21]) for(const oy of [-0.21,0.21]){ const t=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.32,10),dark(0x141414)); t.rotation.x=Math.PI/2; t.position.set(ox,Y+0.05+oy,2.22); g.add(t); } tip=2.45; }
+  else if(id==='railgun'){ for(const ox of [-0.17,0.17]){ const rail=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.13,3.4),steel(0x4a4e58)); rail.position.set(ox,Y,2.0); g.add(rail); } for(const z of [1.0,2.0,3.0]){ const c=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.06,8,18),glow(0xc0a0ff)); c.position.set(0,Y,z); g.add(c); } tube(0.05,0.05,3.4,2.0,glow(0xd0b0ff)); tip=3.85; }
+  else if(id==='cryo'){ tube(0.18,0.2,1.6,1.2,steel(0x5a7a86)); const noz=new THREE.Mesh(new THREE.ConeGeometry(0.34,0.7,12),glow(0x9fe8ff)); noz.rotation.x=Math.PI/2; noz.position.set(0,Y,2.35); g.add(noz); for(const z of [1.3,1.8]){ const ic=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.05,8,16),glow(0xbff2ff)); ic.position.set(0,Y,z); g.add(ic); } tip=2.75; }
+  else if(id==='tesla'){ tube(0.16,0.16,1.0,1.0,dark(0x202833)); for(const z of [1.0,1.4,1.8]){ const c=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.08,8,20),steel(0x3a4450)); c.position.set(0,Y,z); g.add(c); } const orb=new THREE.Mesh(new THREE.IcosahedronGeometry(0.33,0),glow(0x7fd0ff)); orb.position.set(0,Y,2.35); g.add(orb); tip=2.6; }
+  else if(id==='rocket'){ tube(0.42,0.44,2.2,1.5,steel(0x4a4040)); tube(0.5,0.5,0.42,2.5,dark(0x33271f)); const tc=new THREE.Mesh(new THREE.ConeGeometry(0.46,0.5,12),glow(0xff7a3a)); tc.rotation.x=Math.PI/2; tc.position.set(0,Y,2.85); g.add(tc); tip=2.7; }
+  else { tube(0.2,0.2,1.0,1.3,dark(0x39392f)); tube(0.15,0.2,2.9,1.85,steel()); tube(0.26,0.26,0.5,3.15,steel(0x26262a)); tip=3.5; }   // rifle / default
+  const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,tip); g.add(muzzle); g.userData.muzzle=muzzle; g.userData.spin=spin;
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  return g;
+}
+function disposeBarrel(grp){ grp.traverse(o=>{ if(o.isMesh){ o.geometry.dispose(); if(o.material&&o.material.dispose) o.material.dispose(); } }); }
+function setPlayerBarrel(id){
+  const p=S.player; if(!p||!p.mesh) return; const ud=p.mesh.userData;
+  if(ud.barrelG){ ud.turret.remove(ud.barrelG); disposeBarrel(ud.barrelG); }
+  const ng=makeGunBarrel(id); ud.turret.add(ng); ud.barrelG=ng; p.muzzle=ng.userData.muzzle;
 }
 function makePlayer(){
   const mesh = buildTank({detail:true});
@@ -1931,28 +1969,41 @@ function fireRocket(now, g){
   const mesh=makeRocketMesh(); mesh.position.set(sx,1.7,sz); scene.add(mesh);
   rockets.push({ mesh, x:sx,y:1.7,z:sz, vx:(tx-sx)/T, vz:(tz-sz)/T, vy:G*T/2 - 0.9/T, G, tx, tz, aoeR:g.aoeR||15, bossDmg:g.bossDmg||350, tt:0 });
 }
+function makeDangerZone(x,z,r){   // ground decal showing the exact kill radius during the fuse
+  const grp=new THREE.Group(); grp.position.set(x,0.12,z); grp.rotation.x=-Math.PI/2;
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(r,44), new THREE.MeshBasicMaterial({color:0xff3018,transparent:true,opacity:0.12,side:THREE.DoubleSide,depthWrite:false}));
+  const ring=new THREE.Mesh(new THREE.RingGeometry(r-0.5,r,52), new THREE.MeshBasicMaterial({color:0xff5028,transparent:true,opacity:0.85,side:THREE.DoubleSide,depthWrite:false}));
+  grp.add(disc,ring); scene.add(grp); grp.userData={disc,ring}; return grp;
+}
 function updateRockets(dt, now){
   for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.tt+=dt;
     r.vy-=r.G*dt; r.x+=r.vx*dt; r.y+=r.vy*dt; r.z+=r.vz*dt; r.mesh.position.set(r.x,r.y,r.z);
     _rdir.set(r.vx,r.vy,r.vz); if(_rdir.lengthSq()>0.0001){ _rdir.normalize(); r.mesh.quaternion.setFromUnitVectors(_RUP,_rdir); }   // nose follows velocity
     if(Math.random()<0.7) spawnPart(r.x,r.y,r.z, (Math.random()-0.5)*2, -0.5, (Math.random()-0.5)*2, {color:0x5a4e42, size:1.1, life:0.5, smoke:true, grav:1.2, drag:1.6, op:0.5});  // exhaust trail
-    if(r.y<=0.8 || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1); fuses.push({ x:r.tx, z:r.tz, at:now+2, blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg }); }
+    if(r.y<=0.8 || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
+      fuses.push({ x:r.tx, z:r.tz, at:now+2, blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, zone:makeDangerZone(r.tx,r.tz,r.aoeR) });
+      ringPulse({x:r.tx,z:r.tz}, 0x886054, 3); }   // dust puff on impact
   }
 }
 function updateFuses(dt, now){
   for(let i=fuses.length-1;i>=0;i--){ const f=fuses[i]; f.blink-=dt;
-    if(f.blink<=0){ f.blink=0.26; ringPulse({x:f.x,z:f.z}, 0xff2a16, f.aoeR); sfx('beep');
+    const t2d=Math.max(0, f.at-now), k=Math.min(1,Math.max(0,1-t2d/2));   // 0 → 1 as it nears detonation (clamped)
+    if(f.zone){ const pul=0.5+0.5*Math.sin(now*(7+k*18));            // danger circle pulses faster + brighter as the boom nears
+      f.zone.userData.disc.material.opacity=0.1+0.26*k+0.05*pul;
+      f.zone.userData.ring.material.opacity=0.45+0.5*pul; }
+    if(f.blink<=0){ f.blink=0.3-0.18*k; sfx('beep');                 // beeps quicken
       spawnPart(f.x,0.5,f.z,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff5028,size:1.2,life:0.3,grav:-2}); }
     if(now>=f.at){
+      if(f.zone){ scene.remove(f.zone); f.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); }
       const pos=new THREE.Vector3(f.x,1.2,f.z);
       bigExplode(pos, 0xffae5c, f.aoeR/3);
-      ringPulse({x:f.x,z:f.z}, 0xffd27a, f.aoeR); ringPulse({x:f.x,z:f.z}, 0xff5028, f.aoeR*0.7);
-      for(let k=0;k<10;k++){ const a=Math.random()*6.28, rr=Math.random()*f.aoeR; setTimeout(()=>{ if(S.mode==='paused')return; bigExplode(new THREE.Vector3(f.x+Math.cos(a)*rr,1,f.z+Math.sin(a)*rr), 0xff7a3d, 1.7); }, k*40); }
+      ringPulse({x:f.x,z:f.z}, 0xffffff, f.aoeR*1.1); ringPulse({x:f.x,z:f.z}, 0xffd27a, f.aoeR); ringPulse({x:f.x,z:f.z}, 0xff5028, f.aoeR*0.7);   // shockwave rings to the kill edge
+      for(let k2=0;k2<12;k2++){ const a=Math.random()*6.28, rr=Math.random()*f.aoeR; setTimeout(()=>{ if(S.mode==='paused')return; bigExplode(new THREE.Vector3(f.x+Math.cos(a)*rr,1,f.z+Math.sin(a)*rr), 0xff7a3d, 1.7); }, k2*38); }
       for(const e of enemies.slice()){ const dx=e.pos.x-f.x, dz=e.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageEnemy(e, 99999); }   // wipe every enemy in the radius
       if(boss&&boss.alive){ const dx=boss.pos.x-f.x, dz=boss.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageBoss(f.bossDmg); }       // big, but capped vs boss
-      spawnDebris(pos, 2.6, 0xff7a3d);
-      S.shake=Math.min(4.5, S.shake+3);
-      muzzleLight.position.set(f.x,3,f.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=7;
+      spawnDebris(pos, 2.8, 0xff7a3d);
+      S.shake=Math.min(6, S.shake+4.2);                              // heavy ground-quake shake
+      muzzleLight.position.set(f.x,3,f.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=8;
       sfx('bigexplode');
       fuses.splice(i,1);
     }
@@ -2177,6 +2228,7 @@ function chooseUpgrade(u){
 function updateGunHUD(){
   const p=S.player; if(!p||!p.guns.length) return;
   const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
+  if(p._barrelId!==inst.id){ setPlayerBarrel(inst.id); p._barrelId=inst.id; }   // swap the tank's barrel to match the equipped gun
   const chip=document.getElementById('weaponchip');
   if(chip){
     const reloading = inst.rU>performance.now()/1000;
@@ -2191,8 +2243,23 @@ function updateGunHUD(){
   if(list){ list.replaceChildren();
     list.style.display = p.guns.length>1 ? 'flex' : 'none';   // only show the strip once you own >1 gun (declutter + shows persistence)
     p.guns.forEach((gi,idx)=>{ const d=GUNS[gi.id]; const el=document.createElement('div');
-      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(iconEl(d.svg)); list.appendChild(el); }); }
+      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(iconEl(d.svg));
+      const cool=document.createElement('div'); cool.className='gcool'; el.appendChild(cool);
+      const chk=document.createElement('span'); chk.className='gchk'; el.appendChild(chk);
+      el._gi=gi; el._cool=cool;                                // refs for the per-frame reload status
+      list.appendChild(el); }); }
+  updateGunStatus(performance.now()/1000);
   const mw=document.querySelector('#mWeapon .ic'); if(mw) setIcon(mw, g.svg);   // mobile weapon button shows the equipped gun
+}
+// per-frame: paint each inventory gun's status — ✓ when reloaded/ready, dark conic sweep while reloading
+function updateGunStatus(now){
+  const list=document.getElementById('gunlist'); if(!list || !S.player) return;
+  for(const el of list.children){ const gi=el._gi; if(!gi) continue;
+    if(gi.rU>now && gi.rD>0){ const prog=1-(gi.rU-now)/gi.rD;
+      el.classList.add('reloading'); el.classList.remove('ready');
+      if(el._cool) el._cool.style.background='conic-gradient(transparent '+(prog*360).toFixed(0)+'deg, rgba(4,6,3,.8) 0)';
+    } else { el.classList.remove('reloading'); el.classList.add('ready'); if(el._cool) el._cool.style.background='none'; }
+  }
 }
 const updateWeaponHUD = updateGunHUD;   // back-compat alias for older call sites
 function updateSpellHUD(){
@@ -2211,7 +2278,7 @@ function startGame(){
   p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0; p.aimSmoothed=p.aim=-Math.PI;
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → just the starter rifle, full mag
-  p.guns=[{id:'rifle', ammo:GUNS.rifle.mag, rU:0, rD:0}]; p.gunIdx=0; p.readyUntil=0; p.infiniteAmmo=false; p.ammoMul=1;
+  p.guns=[{id:'rifle', ammo:GUNS.rifle.mag, rU:0, rD:0}]; p.gunIdx=0; p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1;
@@ -2340,6 +2407,7 @@ function updatePlayer(dt, now){
   p.mesh.position.set(p.pos.x, 0, p.pos.z);
   p.mesh.rotation.y = p.facing;
   p.turret.rotation.y = wrapAngle(p.aimSmoothed - p.facing);
+  const _bg=p.mesh.userData.barrelG; if(_bg&&_bg.userData.spin) _bg.userData.spin.rotation.z += dt*9;   // spin the minigun barrels
   // shield bubble
   if(p.shieldMesh){ const on = now < p.shieldUntil; p.shieldMesh.visible = on;
     if(on) p.shieldMesh.material.opacity = 0.18 + Math.sin(now*10)*0.08; }
@@ -2483,6 +2551,7 @@ function loop(nowMs){
     S.timeNow = now;
     const gdt = dt * S.timeScale;       // slow-mo on boss kill
     updateReload(now);              // complete reload on time + drive the countdown dial
+    updateGunStatus(now);           // per-frame ✓/reloading badges on the inventory
     updatePlayer(gdt, now);
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
