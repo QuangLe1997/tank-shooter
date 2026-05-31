@@ -16,8 +16,15 @@
     -webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior:none;}
   #app,canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;}   /* canvas always fills the viewport (buffer set via setSize(...,false)) */
   canvas{display:block;}
-  /* desktop aiming reticle — custom crosshair cursor over the battlefield */
-  body:not(.touch) #app,body:not(.touch) canvas{cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><g fill='none' stroke-linecap='round'><circle cx='16' cy='16' r='10' stroke='%23000' stroke-width='4'/><path d='M16 2v5.5M16 24.5V30M2 16h5.5M24.5 16H30' stroke='%23000' stroke-width='4'/><circle cx='16' cy='16' r='10' stroke='%23ffce4a' stroke-width='2'/><path d='M16 2v5.5M16 24.5V30M2 16h5.5M24.5 16H30' stroke='%23ffce4a' stroke-width='2'/></g><circle cx='16' cy='16' r='1.8' fill='%23fff'/></svg>") 16 16,crosshair;}
+  /* desktop aiming reticle — a custom DOM crosshair (big, bold, clamped on-screen) */
+  body:not(.touch).playing #app,body:not(.touch).playing canvas{cursor:none;}   /* hide the OS cursor while playing — the reticle takes over */
+  #reticle{position:fixed;left:0;top:0;width:66px;height:66px;margin:-33px 0 0 -33px;z-index:16;pointer-events:none;display:none;
+    will-change:transform;filter:drop-shadow(0 0 5px rgba(0,0,0,.65));}
+  body:not(.touch).playing #reticle{display:block;}
+  #reticle svg{display:block;width:100%;height:100%;}
+  #reticle .spin{transform-origin:33px 33px;animation:reticleSpin 8s linear infinite;}
+  #reticle.hot{filter:drop-shadow(0 0 8px rgba(255,90,50,.9));}        /* tints red the moment you fire */
+  @keyframes reticleSpin{to{transform:rotate(360deg);}}
 
   /* ---------- HUD ---------- */
   #hud{position:fixed;inset:0;pointer-events:none;z-index:10;}
@@ -455,6 +462,18 @@
 <div id="vignette"></div>
 <div id="corealarm"></div>
 <div id="popups"></div>
+
+<!-- desktop aiming reticle (custom crosshair; big, bold, kept fully on-screen) -->
+<div id="reticle"><svg viewBox="0 0 66 66" fill="none" stroke-linecap="round">
+  <g class="spin">
+    <circle cx="33" cy="33" r="26" stroke="#000" stroke-width="5.5" stroke-dasharray="19 22.1" opacity="0.5"/>
+    <circle cx="33" cy="33" r="26" stroke="#ffce4a" stroke-width="2.6" stroke-dasharray="19 22.1"/>
+  </g>
+  <path d="M33 3v15M33 48v15M3 33h15M48 33h15" stroke="#000" stroke-width="5.5"/>
+  <path d="M33 3v15M33 48v15M3 33h15M48 33h15" stroke="#ffce4a" stroke-width="2.4"/>
+  <circle cx="33" cy="33" r="3" fill="#000" opacity="0.55"/>
+  <circle cx="33" cy="33" r="1.7" fill="#fff"/>
+</svg></div>
 
 <!-- mobile controls -->
 <div id="touch">
@@ -2003,10 +2022,21 @@ function updateAimFromMouse(cx, cy){
   const hit = new THREE.Vector3();
   if(raycaster.ray.intersectPlane(groundPlane, hit)){ S.aimPoint.copy(hit); S.pointerActive = true; }
 }
-addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
+// custom desktop reticle: follows the mouse but stays FULLY on-screen (clamped by its half-size)
+const reticle = document.getElementById('reticle');
+const RET_R = 33;                                  // half the reticle box → keep it inside the viewport
+let _retHotUntil = 0, _playCls = false;
+function placeReticle(cx, cy){
+  const x = Math.max(RET_R, Math.min(innerWidth  - RET_R, cx));
+  const y = Math.max(RET_R, Math.min(innerHeight - RET_R, cy));
+  if(reticle) reticle.style.transform = 'translate('+x+'px,'+y+'px)';
+  updateAimFromMouse(x, y);                         // aim the clamped point so reticle == aim (always visible)
+}
+addEventListener('mousemove', e=>{ if(!MOBILE) placeReticle(e.clientX, e.clientY); });
 addEventListener('mousedown', e=>{ if(MOBILE) return;
   if(e.button===2){ trySpell(); return; }                                                   // RMB = spell
-  if(e.button===0 && S.mode==='playing'){ S.firing=true; fireGun(performance.now()/1000, playerRange()); } });  // LMB = fire now + hold to repeat
+  if(e.button===0 && S.mode==='playing'){ S.firing=true; fireGun(performance.now()/1000, playerRange());
+    if(reticle){ reticle.classList.add('hot'); _retHotUntil=performance.now()+140; } } });   // LMB = fire now + hold to repeat (+reticle flash)
 addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
 addEventListener('blur', ()=>{ S.firing=false; });
 addEventListener('contextmenu', e=>e.preventDefault());
@@ -3070,6 +3100,13 @@ function loop(nowMs){
   const now = nowMs/1000;
   let dt = (nowMs - last)/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
+
+  if(!MOBILE){                                   // desktop reticle: visible only while playing (also hides OS cursor)
+    const playing = S.mode==='playing';
+    if(playing !== _playCls){ _playCls=playing; document.body.classList.toggle('playing', playing);
+      if(playing && reticle && !reticle.style.transform) reticle.style.transform='translate('+(innerWidth/2)+'px,'+(innerHeight/2)+'px)'; }
+    if(reticle && _retHotUntil && nowMs>_retHotUntil){ reticle.classList.remove('hot'); _retHotUntil=0; }
+  }
 
   if(S.mode==='playing'){
     S.timeNow = now;
