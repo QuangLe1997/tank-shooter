@@ -72,6 +72,28 @@
     border-radius:9px;padding:3px 8px;box-shadow:0 4px 14px rgba(0,0,0,.4);}
   .buffchip .t{font-size:10px;color:var(--green);}
 
+  /* ---------- custom SVG icon system (sizing + theme) ---------- */
+  .ic{display:inline-flex;align-items:center;justify-content:center;}
+  .ic svg,.gunicon svg,.buffchip .bic svg,.upcard .ic svg,#weaponchip .wc-ic svg{display:block;width:100%;height:100%;}
+  #hpwrap .ic{width:17px;height:17px;}
+  #hpwrap .row:nth-child(1) .ic{color:#ff7a8c;}        /* HP — heart */
+  #hpwrap .row:nth-child(2) .ic{color:var(--amber);}   /* core — bunker */
+  .ability .ic{width:23px;height:23px;color:var(--ink);}
+  .ability.ready .ic{color:var(--green);}
+  #muteBtn .ic{width:20px;height:20px;color:var(--ink);}
+  .gunicon svg{width:18px;height:18px;}
+  .gunicon{color:var(--ink);}
+  .gunicon.on{color:var(--green);}
+  #weaponchip{display:flex;align-items:center;gap:9px;}
+  #weaponchip .wc-ic{width:21px;height:21px;color:var(--green);display:inline-flex;flex:0 0 auto;}
+  #weaponchip .wc-nm{font-weight:800;letter-spacing:1.5px;}
+  #weaponchip .wc-am{font-weight:800;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+  #weaponchip.reloading .wc-ic,#weaponchip.reloading .wc-am{color:var(--danger);}
+  .buffchip .bic{width:14px;height:14px;display:inline-flex;color:var(--green);}
+  .upcard .ic{width:46px;height:46px;margin:0 auto 2px;color:var(--green);}
+  .mbtn .ic{width:27px;height:27px;color:var(--ink);display:inline-flex;}
+  #mPause .ic{width:20px;height:20px;color:var(--ink);display:inline-flex;}
+
   /* ---------- Overlays ---------- */
   .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;gap:20px;padding:24px;transition:opacity .4s;
@@ -191,15 +213,15 @@
     <div class="cell wave"><div class="lbl">WAVE</div><div class="val" id="ui-wave">1</div></div>
   </div>
   <div id="hpwrap" class="chip">
-    <div class="row"><span class="ic">❤️</span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
-    <div class="row"><span class="ic">🏛️</span><div class="bar core"><i id="ui-core"></i></div></div>
+    <div class="row"><span class="ic" data-icon="heart"></span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
+    <div class="row"><span class="ic" data-icon="bunker"></span><div class="bar core"><i id="ui-core"></i></div></div>
   </div>
   <div id="abilities">
-    <div class="ability ready" id="ab-dash"><span class="ic">💨</span><span class="k">SPACE</span><div class="cool" id="cool-dash"></div></div>
-    <div class="ability ready" id="ab-spell"><span class="ic">🪄</span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
+    <div class="ability ready" id="ab-dash"><span class="ic" data-icon="dash"></span><span class="k">SPACE</span><div class="cool" id="cool-dash"></div></div>
+    <div class="ability ready" id="ab-spell"><span class="ic" data-icon="spark"></span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
   </div>
   <div id="combo">COMBO ×2</div>
-  <div id="muteBtn" class="chip">🔊</div>
+  <div id="muteBtn" class="chip"><span class="ic" data-icon="sound"></span></div>
   <div id="gunlist"></div>
   <div id="buffbar"></div>
   <div id="weaponchip" class="chip">RIFLE 24/24</div>
@@ -210,13 +232,13 @@
 
 <!-- mobile controls -->
 <div id="touch">
-  <div id="mPause">⏸</div>
+  <div id="mPause"><span class="ic" data-icon="pause"></span></div>
   <div class="stick" id="stickL"><div class="knob"></div></div>
   <div class="stick aim" id="stickR"><div class="knob"></div></div>
   <div id="mbtns">
-    <div class="mbtn" id="mWeapon">🔫</div>
-    <div class="mbtn" id="mDash">💨</div>
-    <div class="mbtn" id="mSpell">🪄<div class="cool" id="cool-mspell"></div></div>
+    <div class="mbtn" id="mWeapon"><span class="ic" data-icon="crosshair"></span></div>
+    <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span></div>
+    <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div></div>
   </div>
 </div>
 
@@ -326,6 +348,65 @@ const BIOMES = [
   { name:'CITADEL',      bg:0x140d06, fog:0x231406, ground:0x4e3a1c, grid:0x7a5420, accent:0xffae5c, sky:0x2a1c0a, fogD:0.0120, sun:0xffd9a0 },
 ];
 let BIOME = BIOMES[0];   // current (swapped per stage by applyBiome)
+
+// ===== CUSTOM ICON SET (military line-art; no emoji) =====
+// One coherent stroke style across HUD, menus, drops and cards. currentColor lets CSS theme each.
+const ICON_VB='0 0 24 24';
+const GLYPH={
+  heart:'<path d="M12 20S4 14.6 4 9.4A4.3 4.3 0 0 1 12 6.8 4.3 4.3 0 0 1 20 9.4C20 14.6 12 20 12 20Z"/>',
+  bunker:'<path d="M3.5 20h17M6 20v-8.5l6-3.2 6 3.2V20"/><rect x="10" y="14.5" width="4" height="5.5"/><path d="M12 8V4M12 4l3.5 1.1L12 6.2"/>',
+  tank:'<path d="M3 16.2h2.2L7 13h9l2.4 3.2H21"/><rect x="8.6" y="8.2" width="6" height="3.4" rx="1"/><path d="M14.6 9.3h5"/><circle cx="6.2" cy="17.6" r="1.4"/><circle cx="10" cy="17.6" r="1.4"/><circle cx="13.8" cy="17.6" r="1.4"/>',
+  dash:'<path d="M4 7l5 5-5 5M11 7l5 5-5 5"/>',
+  bolt:'<path d="M13 2 5 13h5l-1 9 9-12h-5l1-8Z"/>',
+  shield:'<path d="M12 3 5 5.8v5.2c0 4.5 3 7.6 7 9 4-1.4 7-4.5 7-9V5.8L12 3Z"/>',
+  burst:'<path d="M12 2l2 5 5-2-2 5 4 2-5 1 1 5-4-3-4 3 1-5-5-1 4-2-2-5 5 2 2-5Z"/>',
+  infinity:'<circle cx="8" cy="12" r="3.6"/><circle cx="16" cy="12" r="3.6"/>',
+  target:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>',
+  crosshair:'<circle cx="12" cy="12" r="6.4"/><path d="M12 1.6v4.4M12 18v4.4M1.6 12h4.4M18 12h4.4"/>',
+  mag:'<rect x="8.4" y="3" width="7.2" height="4.6" rx="1"/><path d="M9 7.6h6V18a3 3 0 0 1-6 0V7.6Z"/><path d="M9 11h6M9 14h6"/>',
+  wrench:'<path d="M20.5 4.2a4.8 4.8 0 0 1-6.2 6.2l-8 8a2 2 0 0 1-2.8-2.8l8-8A4.8 4.8 0 0 1 17.6 1.5l-2.8 2.8 1.9 1.9 2.8-2.8Z"/>',
+  bomb:'<circle cx="11" cy="15" r="5.8"/><path d="M15 9.5l2.2-2.2M17.2 7.3H20M17.2 7.3V4.6"/>',
+  snow:'<path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2L3.8 16.8"/><path d="M12 6l-2.4-1.6M12 6l2.4-1.6M12 18l-2.4 1.6M12 18l2.4 1.6"/>',
+  sound:'<path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4Z"/><path d="M15.5 8.6a4.6 4.6 0 0 1 0 6.8M18 6a8 8 0 0 1 0 12"/>',
+  mute:'<path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4Z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  pause:'<rect x="6.5" y="5" width="3.4" height="14" rx="1"/><rect x="14.1" y="5" width="3.4" height="14" rx="1"/>',
+  hourglass:'<path d="M6 3.2h12M6 20.8h12M7.5 3.2c0 4.6 4.5 5.8 4.5 8.8s-4.5 4.2-4.5 8.8M16.5 3.2c0 4.6-4.5 5.8-4.5 8.8s4.5 4.2 4.5 8.8"/>',
+  emp:'<circle cx="12" cy="12" r="2"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5M12 5.5A6.5 6.5 0 0 0 5.5 12M12 18.5a6.5 6.5 0 0 1-6.5-6.5M12 18.5a6.5 6.5 0 0 0 6.5-6.5"/>',
+  shell:'<path d="M12 2.4c1.9 1.7 2.5 3.4 2.5 5.1V10h-5V7.5c0-1.7.6-3.4 2.5-5.1Z"/><rect x="9.2" y="10" width="5.6" height="9.6" rx="1"/><path d="M9.2 13.4h5.6M9.2 16.4h5.6"/>',
+  rifle:'<path d="M3 9.4h15.5l2.5 1.1v2.2h-4l-1 2h-3l-1-2H3z"/><path d="M6 12.7v3M18.5 10.5V8"/>',
+  smg:'<path d="M4 9.4h10.5v2.6h-2.5l-1 1.8H7.5l-1-1.8H4z"/><path d="M7.5 12v3.4M12.5 9.4V7.6"/>',
+  shotgun:'<path d="M3 9.6h17.5M3 12.4h17.5"/><path d="M3 9.6v2.8M20.5 8.8v4.4"/><path d="M6 12.4v3"/>',
+  flak:'<path d="M5 19l8-8"/><path d="M3 17.2l1.8 1.8 1.8-1.8"/><path d="M11 13l2.4 2.4"/><circle cx="17.5" cy="6.5" r="1.1"/><circle cx="20.5" cy="9.5" r="1.1"/><circle cx="14.6" cy="4.2" r="1.1"/>',
+  minigun:'<circle cx="8" cy="12" r="4.6"/><circle cx="8" cy="12" r="1.2"/><circle cx="8" cy="8.2" r="0.8"/><circle cx="8" cy="15.8" r="0.8"/><circle cx="4.4" cy="12" r="0.8"/><path d="M12.6 10.4H21M12.6 12H21M12.6 13.6H20"/>',
+  missile:'<path d="M12 2.2c2.2 2.3 3 4.9 3 7.6V15H9V9.8c0-2.7.8-5.3 3-7.6Z"/><path d="M9 13l-3 3.6 3-1M15 13l3 3.6-3-1M10.8 19h2.4l-1.2 2.6z"/>',
+  rail:'<path d="M3 7.2h18M3 16.8h18"/><path d="M14 5.4l-4.5 6.6h4.5l-4.5 6.6"/>',
+  drop:'<path d="M12 3.2s5.6 6.8 5.6 10.6a5.6 5.6 0 0 1-11.2 0C6.4 10 12 3.2 12 3.2Z"/>',
+  up:'<path d="M5 13.5l7-7 7 7M5 19l7-7 7 7"/>',
+  gun:'<path d="M4 8.6h13l3 1.6v2.6h-5l-1 2.4H9l-1-2.4H4z"/><path d="M7 13.4v3"/>',
+  star:'<path d="M12 3l2.5 6.4L21 10l-5 4.4L17.5 21 12 17.4 6.5 21 8 14.4 3 10l6.5-.6L12 3Z"/>',
+  spark:'<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l3 3M14.5 14.5l3 3M17.5 6.5l-3 3M9.5 14.5l-3 3"/>',
+};
+function svgMarkup(name, sw){
+  const g=GLYPH[name]||GLYPH.spark;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+ICON_VB+'" fill="none" stroke="currentColor" stroke-width="'+(sw||1.9)+'" stroke-linecap="round" stroke-linejoin="round">'+g+'</svg>';
+}
+function iconEl(name){ const el=new DOMParser().parseFromString(svgMarkup(name),'image/svg+xml').documentElement; el.setAttribute('aria-hidden','true'); return el; }
+function setIcon(el,name){ if(el) el.replaceChildren(iconEl(name)); }
+function initIcons(){ document.querySelectorAll('[data-icon]').forEach(el=>setIcon(el, el.getAttribute('data-icon'))); }
+// power-up world badge: recoloured icon on a dark disc (cached per name+colour)
+const _iconTexCache={};
+function svgBadgeTex(name,color){
+  const key=name+'|'+color; if(_iconTexCache[key]) return _iconTexCache[key];
+  const SZ=128, c=document.createElement('canvas'); c.width=c.height=SZ; const x=c.getContext('2d');
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; _iconTexCache[key]=tex;
+  const img=new Image();
+  img.onload=()=>{ x.clearRect(0,0,SZ,SZ);
+    x.beginPath(); x.arc(SZ/2,SZ/2,SZ*0.45,0,Math.PI*2); x.fillStyle='rgba(8,12,6,0.85)'; x.fill();
+    x.lineWidth=7; x.strokeStyle=color; x.stroke();
+    const isz=SZ*0.58; x.drawImage(img,(SZ-isz)/2,(SZ-isz)/2,isz,isz); tex.needsUpdate=true; };
+  img.src='data:image/svg+xml;base64,'+btoa(svgMarkup(name,2.3).replace('stroke="currentColor"','stroke="'+color+'"'));
+  return tex;
+}
 
 // ----------------------------- STATE -----------------------------
 const S = {
@@ -705,7 +786,7 @@ function sfx(name){
   }
 }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
-function setMuted(m){ muted=m; if(master) master.gain.value = m?0:0.5; const b=document.getElementById('muteBtn'); if(b) b.textContent = m?'🔇':'🔊'; }
+function setMuted(m){ muted=m; if(master) master.gain.value = m?0:0.5; const b=document.querySelector('#muteBtn .ic'); if(b) setIcon(b, m?'mute':'sound'); }
 function startMusic(){
   const a=audio(); if(!a || musicSrc) return;
   try{
@@ -1414,14 +1495,14 @@ function tryDash(){
 // · frags (pellets/shot, 1 ammo) · spread · bspeed · weight (mag→move penalty).
 // Tiers: 1 dễ kiếm/cân bằng → 3 mạnh/khan hiếm. Player chỉ bắt đầu với 'rifle'.
 const GUNS = {
-  rifle:   { name:'RIFLE', icon:'🟢', tier:1, dmg:16, fireCd:0.22, mag:24, reload:1.8, bspeed:66, frags:1, spread:0.03, color:0xaef0a0, r:0.42, life:2.0 },
-  smg:     { name:'SMG',   icon:'🟡', tier:1, dmg:9,  fireCd:0.075,mag:45, reload:2.2, bspeed:74, frags:1, spread:0.08, color:0xfff0a0, r:0.34, life:1.7 },
-  shotgun: { name:'SHOTGUN',    icon:'🔴', tier:2, dmg:8,  fireCd:0.55, mag:8,  reload:2.6, bspeed:58, frags:8, spread:0.55, color:0xff9a5a, r:0.36, life:0.7 },
-  flak:    { name:'FLAK',   icon:'⚪', tier:2, dmg:11, fireCd:0.5,  mag:12, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0xcfe6ff, r:0.5,  life:0.9, aoe:3.2 },
-  cannon:  { name:'CANNON',  icon:'🔵', tier:2, dmg:50, fireCd:0.72, mag:6,  reload:3.0, bspeed:62, frags:1, spread:0.01, color:0xffe08a, r:0.55, life:2.0, aoe:3.2 },
-  minigun: { name:'MINIGUN',    icon:'🟠', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xffd27a, r:0.34, life:1.8 },
-  missile: { name:'MISSILE',     icon:'🚀', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xffae5c, r:0.5,  life:3.2, homing:5, aoe:3.4 },
-  railgun: { name:'RAILGUN',     icon:'🟣', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6 },
+  rifle:   { name:'RIFLE', svg:'rifle', tier:1, dmg:16, fireCd:0.22, mag:24, reload:1.8, bspeed:66, frags:1, spread:0.03, color:0xaef0a0, r:0.42, life:2.0 },
+  smg:     { name:'SMG',   svg:'smg', tier:1, dmg:9,  fireCd:0.075,mag:45, reload:2.2, bspeed:74, frags:1, spread:0.08, color:0xfff0a0, r:0.34, life:1.7 },
+  shotgun: { name:'SHOTGUN',    svg:'shotgun', tier:2, dmg:8,  fireCd:0.55, mag:8,  reload:2.6, bspeed:58, frags:8, spread:0.55, color:0xff9a5a, r:0.36, life:0.7 },
+  flak:    { name:'FLAK',   svg:'flak', tier:2, dmg:11, fireCd:0.5,  mag:12, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0xcfe6ff, r:0.5,  life:0.9, aoe:3.2 },
+  cannon:  { name:'CANNON',  svg:'shell', tier:2, dmg:50, fireCd:0.72, mag:6,  reload:3.0, bspeed:62, frags:1, spread:0.01, color:0xffe08a, r:0.55, life:2.0, aoe:3.2 },
+  minigun: { name:'MINIGUN',    svg:'minigun', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xffd27a, r:0.34, life:1.8 },
+  missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xffae5c, r:0.5,  life:3.2, homing:5, aoe:3.4 },
+  railgun: { name:'RAILGUN',     svg:'rail', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6 },
 };
 const GUN_DROP_POOL = ['smg','shotgun','flak','cannon','minigun','missile','railgun'];  // collectable (starter rifle excluded)
 function muzzleFlash(x,z,ang,color){
@@ -1471,17 +1552,17 @@ function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; selectGun((
 function giveGun(id){
   const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
   if(inst){ inst.ammo=magCap(g); } else { p.guns.push({id, ammo:magCap(g)}); p.gunIdx=p.guns.length-1; p.reloadUntil=0; }
-  floatText(g.icon+' '+g.name, '#aef0a0', p.pos, 18); updateGunHUD();
+  floatText(g.name, '#aef0a0', p.pos, 18); updateGunHUD();
 }
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 const SPELLS = [
-  { id:'overdrive', name:'OVERDRIVE', icon:'⚡', cd:11, cast(now){ const p=S.player; p.overUntil=now+5; ringPulse(p.pos,0x8cbf3f,3); } },
-  { id:'aegis',     name:'AEGIS',    icon:'🛡', cd:13, cast(now){ const p=S.player; p.invincibleUntil=now+3; p.shieldUntil=now+3; } },
-  { id:'emp',       name:'EMP',      icon:'🌀', cd:12, cast(now){ const p=S.player; ringPulse(p.pos,0x6fd0ff,10); aoeDamage(p.pos.x,p.pos.z,16,40,true,now); bigExplode(p.pos,0x6fd0ff,1.6); } },
-  { id:'repair',    name:'REPAIR', icon:'❤️', cd:14, cast(now){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+45); if(core)core.hp=Math.min(core.maxHp,core.hp+45); ringPulse(p.pos,0x5fd06a,3); updateHUD(); } },
-  { id:'airstrike', name:'AIRSTRIKE', icon:'🎯', cd:15, cast(now){ airstrike(now); } },
-  { id:'timewarp',  name:'TIME WARP', icon:'⏳', cd:14, cast(now){ S.enemySlowUntil=now+4; ringPulse(S.player.pos,0xc0a0ff,12); } },
+  { id:'overdrive', name:'OVERDRIVE', svg:'bolt', cd:11, cast(now){ const p=S.player; p.overUntil=now+5; ringPulse(p.pos,0x8cbf3f,3); } },
+  { id:'aegis',     name:'AEGIS',    svg:'shield', cd:13, cast(now){ const p=S.player; p.invincibleUntil=now+3; p.shieldUntil=now+3; } },
+  { id:'emp',       name:'EMP',      svg:'emp', cd:12, cast(now){ const p=S.player; ringPulse(p.pos,0x6fd0ff,10); aoeDamage(p.pos.x,p.pos.z,16,40,true,now); bigExplode(p.pos,0x6fd0ff,1.6); } },
+  { id:'repair',    name:'REPAIR', svg:'heart', cd:14, cast(now){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+45); if(core)core.hp=Math.min(core.maxHp,core.hp+45); ringPulse(p.pos,0x5fd06a,3); updateHUD(); } },
+  { id:'airstrike', name:'AIRSTRIKE', svg:'crosshair', cd:15, cast(now){ airstrike(now); } },
+  { id:'timewarp',  name:'TIME WARP', svg:'hourglass', cd:14, cast(now){ S.enemySlowUntil=now+4; ringPulse(S.player.pos,0xc0a0ff,12); } },
 ];
 function trySpell(){
   if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
@@ -1521,34 +1602,26 @@ function airstrike(now){
 const NOW=()=>performance.now()/1000;
 const POWERUPS = [
   // timed buffs (longer)
-  { id:'rapid',  icon:'⚡', color:0xfff04a, buff:'rapid',  dur:28, label:'RAPID FIRE ×2' },
-  { id:'power',  icon:'💥', color:0xff7a3d, buff:'power',  dur:28, label:'DAMAGE ×1.6' },
-  { id:'speed',  icon:'🏃', color:0x6fe0a0, buff:'speed',  dur:28, label:'SPEED ×1.4' },
-  { id:'inf',    icon:'∞',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', onGet(p){ p.reloadUntil=0; } },
+  { id:'rapid',  svg:'bolt', color:0xfff04a, buff:'rapid',  dur:28, label:'RAPID FIRE ×2' },
+  { id:'power',  svg:'burst', color:0xff7a3d, buff:'power',  dur:28, label:'DAMAGE ×1.6' },
+  { id:'speed',  svg:'dash', color:0x6fe0a0, buff:'speed',  dur:28, label:'SPEED ×1.4' },
+  { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', onGet(p){ p.reloadUntil=0; } },
   // PERMANENT buffs (last until death) — rarer feel, lasting progression
-  { id:'range',  icon:'🎯', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)' },
-  { id:'ammoup', icon:'📦', color:0xc0a060, buff:'ammoup', dur:Infinity, label:'MAGAZINE ×1.6 (∞)', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
+  { id:'range',  svg:'target', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)' },
+  { id:'ammoup', svg:'mag', color:0xc0a060, buff:'ammoup', dur:Infinity, label:'MAGAZINE ×1.6 (∞)', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
   // instant
-  { id:'heal',   icon:'❤️', color:0xff6b81, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
-  { id:'repair', icon:'🔧', color:0xffb060, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
-  { id:'shield', icon:'🛡', color:0x4fd1ff, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
-  { id:'bomb',   icon:'💣', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
-  { id:'freeze', icon:'⏱', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
+  { id:'heal',   svg:'heart', color:0xff6b81, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
+  { id:'repair', svg:'wrench', color:0xffb060, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
+  { id:'shield', svg:'shield', color:0x4fd1ff, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
+  { id:'bomb',   svg:'bomb', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
+  { id:'freeze', svg:'snow', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   // gun drop — adds a random gun to the inventory
-  { id:'gun',    icon:'🔫', color:0xaef0a0, apply(p){ giveGun(GUN_DROP_POOL[(Math.random()*GUN_DROP_POOL.length)|0]); } },
+  { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ giveGun(GUN_DROP_POOL[(Math.random()*GUN_DROP_POOL.length)|0]); } },
 ];
 function applyPowerup(def){
   const p=S.player;
-  if(def.buff){ p.buffUntil[def.buff] = NOW() + def.dur; if(def.onGet) def.onGet(p); floatText(def.label||def.icon, '#'+def.color.toString(16).padStart(6,'0'), p.pos, 18); }
+  if(def.buff){ p.buffUntil[def.buff] = NOW() + def.dur; if(def.onGet) def.onGet(p); floatText(def.label||def.id, '#'+def.color.toString(16).padStart(6,'0'), p.pos, 18); }
   else if(def.apply) def.apply(p);
-}
-// emoji billboard texture (cached per icon) so each power-up is recognisable
-const _emojiCache={};
-function emojiTex(ch){
-  if(_emojiCache[ch]) return _emojiCache[ch];
-  const c=document.createElement('canvas'); c.width=c.height=72; const x=c.getContext('2d');
-  x.font='52px serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(ch,36,40);
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; _emojiCache[ch]=t; return t;
 }
 const PICKUP_LIFE=11;
 const pickups=[];
@@ -1560,8 +1633,8 @@ function dropPowerup(pos){
   const g=new THREE.Group(); g.position.set(pos.x,0,pos.z); scene.add(g);
   const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
   glow.scale.set(2.8,2.8,1); glow.position.y=1.5; g.add(glow);
-  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:emojiTex(def.icon),transparent:true,depthWrite:false}));
-  icon.scale.set(1.9,1.9,1); icon.position.y=1.5; g.add(icon);
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false}));
+  icon.scale.set(2.1,2.1,1); icon.position.y=1.5; g.add(icon);
   const ring=new THREE.Mesh(new THREE.RingGeometry(1.35,1.6,40), new THREE.MeshBasicMaterial({color:def.color,transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false}));
   ring.rotation.x=-Math.PI/2; ring.position.y=0.08; g.add(ring);
   pickups.push({def, g, glow, icon, ring, x:pos.x, z:pos.z, born:performance.now()/1000});
@@ -1587,31 +1660,31 @@ function updatePickups(dt, now){
   }
 }
 function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }
-const BUFF_ICON={ rapid:'⚡', power:'💥', speed:'🏃', infammo:'∞', ammoup:'📦', range:'🎯' };
+const BUFF_ICON={ rapid:'bolt', power:'burst', speed:'dash', infammo:'infinity', ammoup:'mag', range:'target' };
 function updateBuffHUD(now){
   const bar=document.getElementById('buffbar'); if(!bar) return;
   const p=S.player; bar.replaceChildren();
   for(const k in p.buffUntil){ const until=p.buffUntil[k]; const rem=until-now; if(rem<=0) continue;
     const c=document.createElement('div'); c.className='buffchip';
-    const ic=document.createElement('span'); ic.textContent=BUFF_ICON[k];
+    const ic=document.createElement('span'); ic.className='bic'; setIcon(ic, BUFF_ICON[k]);
     const t=document.createElement('span'); t.className='t'; t.textContent = (until===Infinity) ? '∞' : Math.ceil(rem)+'s';
     c.append(ic,t); bar.appendChild(c); }
 }
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 const UPGRADES = [
-  { ic:'❤️', nm:'HEAVY ARMOR',      ds:'+30 max HP',     apply(p){ p.maxHp+=30; p.hp+=30; } },
-  { ic:'💥', nm:'FIREPOWER',       ds:'+20% damage',    apply(p){ p.dmgMul*=1.2; } },
-  { ic:'⚡', nm:'RAPID FIRE',        ds:'+15% fire rate',      apply(p){ p.fireMul*=0.85; } },
-  { ic:'🏃', nm:'MOBILITY',       ds:'+15% speed',        apply(p){ p.speedMul*=1.15; } },
-  { ic:'💨', nm:'FAST DASH',    ds:'-25% dash CD',      apply(p){ p.dashCdMul*=0.75; } },
-  { ic:'🩸', nm:'LIFESTEAL',       ds:'+6 HP per kill', apply(p){ p.lifesteal+=6; } },
-  { ic:'🎯', nm:'CRITICAL',      ds:'+15% crit (×2)', apply(p){ p.crit=Math.min(0.6,p.crit+0.15); } },
-  { ic:'🪄', nm:'FAST CAST',    ds:'-20% spell CD',      apply(p){ p.spellCdMul*=0.8; } },
-  { ic:'🎯', nm:'RANGE',       ds:'+20% range',       apply(p){ p.rangeMul*=1.2; } },
-  { ic:'🛡️', nm:'+1 LIFE',       ds:'Gain 1 life',        apply(p){ p.lives++; } },
-  { ic:'🏛️', nm:'FORTIFY CORE', ds:'+80 core HP',     apply(p){ if(core){core.maxHp+=80; core.hp+=80;} } },
-  { ic:'⭐', nm:'WEAPON UP',   ds:'Weapon +1 lvl',      apply(p){ p.weaponLvl=Math.min(3,p.weaponLvl+1); updateWeaponHUD(); } },
+  { ic:'shield', nm:'HEAVY ARMOR',      ds:'+30 max HP',     apply(p){ p.maxHp+=30; p.hp+=30; } },
+  { ic:'burst', nm:'FIREPOWER',       ds:'+20% damage',    apply(p){ p.dmgMul*=1.2; } },
+  { ic:'bolt', nm:'RAPID FIRE',        ds:'+15% fire rate',      apply(p){ p.fireMul*=0.85; } },
+  { ic:'dash', nm:'MOBILITY',       ds:'+15% speed',        apply(p){ p.speedMul*=1.15; } },
+  { ic:'dash', nm:'FAST DASH',    ds:'-25% dash CD',      apply(p){ p.dashCdMul*=0.75; } },
+  { ic:'drop', nm:'LIFESTEAL',       ds:'+6 HP per kill', apply(p){ p.lifesteal+=6; } },
+  { ic:'crosshair', nm:'CRITICAL',      ds:'+15% crit (×2)', apply(p){ p.crit=Math.min(0.6,p.crit+0.15); } },
+  { ic:'spark', nm:'FAST CAST',    ds:'-20% spell CD',      apply(p){ p.spellCdMul*=0.8; } },
+  { ic:'target', nm:'RANGE',       ds:'+20% range',       apply(p){ p.rangeMul*=1.2; } },
+  { ic:'tank', nm:'+1 LIFE',       ds:'Gain 1 life',        apply(p){ p.lives++; } },
+  { ic:'bunker', nm:'FORTIFY CORE', ds:'+80 core HP',     apply(p){ if(core){core.maxHp+=80; core.hp+=80;} } },
+  { ic:'up', nm:'WEAPON UP',   ds:'Weapon +1 lvl',      apply(p){ p.weaponLvl=Math.min(3,p.weaponLvl+1); updateWeaponHUD(); } },
 ];
 function openUpgrade(){
   S.mode='upgrade';
@@ -1620,7 +1693,7 @@ function openUpgrade(){
   for(let i=0;i<3 && pool.length;i++) pick.push(pool.splice((Math.random()*pool.length)|0,1)[0]);
   for(const u of pick){
     const card=document.createElement('div'); card.className='upcard';
-    const ic=document.createElement('div'); ic.className='ic'; ic.textContent=u.ic;
+    const ic=document.createElement('div'); ic.className='ic'; ic.appendChild(iconEl(u.ic));
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=u.nm;
     const ds=document.createElement('div'); ds.className='ds'; ds.textContent=u.ds;
     card.append(ic,nm,ds);
@@ -1647,19 +1720,22 @@ function updateGunHUD(){
   if(chip){
     const reloading = p.reloadUntil>performance.now()/1000;
     const ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g));
-    chip.textContent = reloading ? (g.icon+' '+g.name+' · RELOAD…') : (g.icon+' '+g.name+'  '+ammo);
+    const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
+    const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name;
+    const am=document.createElement('span'); am.className='wc-am'; am.textContent = reloading ? 'RELOAD…' : ammo;
+    chip.replaceChildren(ic,nm,am);
     chip.classList.toggle('reloading', reloading);
   }
   const list=document.getElementById('gunlist');
   if(list){ list.replaceChildren();
     p.guns.forEach((gi,idx)=>{ const d=GUNS[gi.id]; const el=document.createElement('div');
-      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.textContent=d.icon; list.appendChild(el); }); }
+      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(iconEl(d.svg)); list.appendChild(el); }); }
 }
 const updateWeaponHUD = updateGunHUD;   // back-compat alias for older call sites
 function updateSpellHUD(){
   const sp=SPELLS[S.spell];
-  const ic=document.querySelector('#ab-spell .ic'); if(ic) ic.textContent=sp.icon;
-  const mic=document.getElementById('mSpell'); if(mic && mic.firstChild) mic.firstChild.textContent=sp.icon;
+  setIcon(document.querySelector('#ab-spell .ic'), sp.svg);
+  setIcon(document.querySelector('#mSpell .ic'), sp.svg);
 }
 
 // ----------------------------- GAME FLOW -----------------------------
@@ -1924,6 +2000,8 @@ addEventListener('resize', ()=>{
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore();
 S.player = makePlayer();
+initIcons();          // paint all static HUD/menu glyphs (custom SVG icon set)
+updateSpellHUD();     // show the equipped spell's icon from the start
 
 // diagnostics hooks (used for automated testing)
 window._game = S;
@@ -1932,6 +2010,7 @@ window._spawn = spawnEnemy;
 window._give = giveGun; window._cycleGun = cycleGun; window._drop = dropPowerup;
 window._dbg.blocks = blocks;
 window._intro = intro;   // deploy-cinematic state (debug/inspection)
+window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 
 requestAnimationFrame(loop);
 </script>
