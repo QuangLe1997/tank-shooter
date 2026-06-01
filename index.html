@@ -2207,16 +2207,55 @@ function damagePlayer(dmg, now){
   updateHUD();
   if(p.hp<=0) playerDie(now);
 }
+// ===== DEATH → RESPAWN cinematic: tank flips, burns & smokes; camera swoops in close; then it rights itself,
+// blinks 3× (invincible) and the fight resumes. Makes losing a life land emotionally (not an instant teleport). =====
+const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0 };
+const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 function playerDie(now){
-  const p=S.player;
-  tankExplode(p.pos, 0xffd27a, 2.2, PLAYER_PAL, p.mesh.scale.x);
-  p.lives--;
-  if(p.lives < 0){ gameOver('OUT OF LIVES'); return; }
-  // respawn near core, invincible
-  p.hp=p.maxHp; p.pos.set(0,0,ARENA*0.45); p.vel.set(0,0,0);
-  p.invincibleUntil = now + 2.2;
-  // shove enemies away from spawn
-  for(const e of enemies){ if(e.pos.distanceTo(p.pos)<10){ const aw=new THREE.Vector3().subVectors(e.pos,p.pos).setLength(14); e.pos.add(aw); } }
+  const p=S.player; p.lives--;
+  if(p.lives < 0){ tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); gameOver('OUT OF LIVES'); return; }   // final death → shatter + game over
+  beginDeath(now);
+}
+function beginDeath(now){
+  const p=S.player; S.mode='dying'; S.firing=false;
+  DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos);
+  DEATH.flipDir = Math.random()<0.5?1:-1; DEATH.tilt = 0.4+Math.random()*0.4;
+  // catastrophic hit — big blast, knock a few parts loose, hard shake
+  bigExplode(p.pos, 0xffd27a, 1.9); spawnDebris(p.pos, 1.6, 0x4a3c28);
+  S.shake = Math.min(6, S.shake + 4); sfx('bigexplode');
+  floatText('TANK DOWN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28);
+  const v=document.getElementById('vignette'); if(v){ v.style.opacity='1'; }   // hold the red vignette through the death beat
+  updateHUD();
+}
+const _eoCube = u => 1-Math.pow(1-Math.max(0,Math.min(1,u)),3);
+function updateDeath(dt, now){
+  const p=S.player, m=p.mesh; DEATH.t+=dt;
+  const wx=DEATH.wreck.x, wz=DEATH.wreck.z;
+  // 1) the hull tips over (first ~0.7s) and settles, sinking a touch
+  const f=_eoCube(DEATH.t/0.7);
+  m.position.set(wx, -0.25*f, wz);
+  m.rotation.set(DEATH.tilt*1.7*f*DEATH.flipDir, p.facing, DEATH.tilt*1.3*f);
+  // 2) roiling fire + black smoke pouring off the wreck
+  if(Math.random()<0.92) spawnPart(wx+(Math.random()-0.5)*1.8, 0.9+Math.random()*1.3, wz+(Math.random()-0.5)*1.8, (Math.random()-0.5)*1.8, 1.6+Math.random()*1.8, (Math.random()-0.5)*1.8, {color: Math.random()<0.5?0xff6a1c:0xffb24a, size:1.0+Math.random()*0.9, life:0.5, grav:0.4, drag:2});
+  if(Math.random()<0.85) spawnPart(wx+(Math.random()-0.5)*1.5, 1.5, wz+(Math.random()-0.5)*1.5, (Math.random()-0.5)*1.1, 1.9+Math.random()*1.2, (Math.random()-0.5)*1.1, {color:0x17120c, size:2.0+Math.random()*1.4, life:1.1, smoke:true, grav:-0.6, drag:1.3, op:0.55});
+  if(Math.random()<0.045) bigExplode({x:wx+(Math.random()-0.5)*2.2, z:wz+(Math.random()-0.5)*2.2}, 0xff7a3d, 1.1);   // secondary cook-off pops
+  // 3) camera swoops in CLOSE + low, slowly circling the burning hulk
+  const ang = 2.2 + DEATH.t*0.55, r = 8.5 - 2.0*f;
+  _dcam.set(wx+Math.cos(ang)*r, 4.6, wz+Math.sin(ang)*r);
+  camera.position.lerp(_dcam, Math.min(1, dt*3.2)); camera.lookAt(wx, 1.0, wz);
+  if(DEATH.t >= DEATH.dur) respawnPlayer(now);
+}
+function respawnPlayer(now){
+  const p=S.player, m=p.mesh; DEATH.active=false;
+  // right the hull + reset to the spawn point
+  p.hp=p.maxHp; p.pos.set(0,0,ARENA*0.45); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI;
+  m.position.set(p.pos.x,0,p.pos.z); m.rotation.set(0, p.facing, 0); m.visible=true;
+  p.invincibleUntil = now + 2.6; p.respawnBlinkUntil = now + 1.5;   // brief shield → blink 3× while it holds
+  for(const e of enemies){ if(e.pos.distanceTo(p.pos)<13){ const aw=new THREE.Vector3().subVectors(e.pos,p.pos).setLength(17); e.pos.add(aw); } }   // clear the spawn
+  S.mode='playing';
+  ringPulse(p.pos, 0x8cbf3f, 4); ringPulse(p.pos, 0x8cbf3f, 7);
+  showBanner('BACK IN ACTION', '#8cbf3f'); sfx('levelup');
+  const v=document.getElementById('vignette'); if(v) v.style.opacity='0';
   updateHUD();
 }
 function gameOver(reason){
@@ -2987,7 +3026,8 @@ function startGame(continueRun){
   const p=S.player;
   p.maxHp=100; p.hp=100; p.lives=3; p.fireAt=0; p.weaponLvl=0;
   p.pos.set(0,0,ARENA*0.55); p.vel.set(0,0,0);
-  p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0; p.aimSmoothed=p.aim=-Math.PI;
+  p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0; p.respawnBlinkUntil=0; p.aimSmoothed=p.aim=-Math.PI;
+  p.mesh.visible=true; p.mesh.rotation.set(0,p.aim,0); p.mesh.position.set(p.pos.x,0,p.pos.z);   // ensure upright (clear any death-flip)
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → the player's chosen battle loadout (≤5), each full mag
   p.guns=loadoutGuns(); p.gunIdx=0; p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
@@ -3449,6 +3489,9 @@ function updatePlayer(dt, now){
   p.mesh.position.set(p.pos.x, 0, p.pos.z);
   p.mesh.rotation.y = p.facing;
   p.turret.rotation.y = wrapAngle(p.aimSmoothed - p.facing);
+  // respawn blink — flash the hull 3× during the post-respawn invulnerability
+  if(now < p.respawnBlinkUntil) p.mesh.visible = Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0;
+  else if(!p.mesh.visible) p.mesh.visible = true;
   const _bg=p.mesh.userData.barrelG; if(_bg&&_bg.userData.spin) _bg.userData.spin.rotation.z += dt*9;   // spin the minigun barrels
   // shield bubble
   if(p.shieldMesh){ const on = now < p.shieldUntil; p.shieldMesh.visible = on;
@@ -3831,6 +3874,7 @@ function loop(nowMs){
     if(bannerTimer>0 && now>bannerTimer && S.combo===0){ document.getElementById('combo').style.opacity='0'; bannerTimer=0; }
   }
   else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); }
+  else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   // always-on FX + core idle
   if(S.mode!=='playing'){ rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
@@ -3898,6 +3942,7 @@ window._openBriefing = openBriefing; window._chooseContract = chooseContract; wi
 window._GUNS = GUNS; window._impactFX = impactFX; window._tankExplode = tankExplode; window._fireGun = fireGun;   // FEEL hooks (debug/test): recoil/knock/fx
 window._updateEnemyBar = updateEnemyBar; window._enemyBarPool = enemyBarPool;   // enemy HP-bar hooks (debug/test)
 window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._artImpact = artImpact; window._updateArtillery = updateArtillery; window._updateArtStrikes = updateArtStrikes; Object.defineProperty(window,'_ART',{get:()=>ART});   // ARTILLERY hooks (debug/test)
+window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDeath = updateDeath; window._respawnPlayer = respawnPlayer; Object.defineProperty(window,'_DEATH',{get:()=>DEATH});   // DEATH→respawn hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
