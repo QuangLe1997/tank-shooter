@@ -1567,6 +1567,15 @@ const ENEMY_DEFS = {
   bomber: { hp:22,  speed:10, keep:0,  range:0,  fireCd:0,    dmg:0,  bspeed:0,  score:180, scale:0.9,  ram:0,  canShoot:false, bomber:true, pal:{hull:0x8a2a2a,turret:0x9a3030,barrel:0xaa3838,tread:0x300f0f,accent:0xff3020} },
 };
 const enemies=[]; const enemyPool={};
+// floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
+const enemyBarPool=[];
+function getEnemyBar(){ let b=enemyBarPool.pop(); if(!b){ b=makeSoldierBar(); b.g.scale.setScalar(1.5); scene.add(b.g); } b.g.visible=true; return b; }
+function freeEnemyBar(b){ if(!b) return; b.g.visible=false; enemyBarPool.push(b); }
+function updateEnemyBar(e){ if(!e.bar) return; const f=Math.max(0, e.hp/e.maxHp), ms=e.mesh.scale.x||1;
+  e.bar.g.position.set(e.pos.x, 2.7 + ms*0.95, e.pos.z); e.bar.g.quaternion.copy(camera.quaternion);   // float above the turret, always face camera
+  e.bar.fill.scale.x=Math.max(0.001,f); e.bar.fill.position.x=-(1-f)*0.5;                              // shrink from the right
+  e.bar.fill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));                         // green → amber → red
+}
 function getEnemyMesh(type){
   enemyPool[type] = enemyPool[type]||[];
   let m = enemyPool[type].pop();
@@ -1594,6 +1603,7 @@ function spawnEnemy(type, x, z){
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on the bomber kamikaze)
   const eliteChance = type==='bomber' ? 0 : Math.min(BALANCE.elite.capChance, BALANCE.elite.chancePerStage*(S.stage-1) + BALANCE.elite.chancePerLoop*(S.loop||0));
   if(WAVE.eliteForce>0){ WAVE.eliteForce--; makeElite(e); } else if(Math.random()<eliteChance) makeElite(e);
+  e.bar=getEnemyBar(); updateEnemyBar(e);                       // floating HP bar over the tank
   enemies.push(e);
   if(e.loot) addLootBeacon(e, 'enemy');
   return e;
@@ -1603,6 +1613,7 @@ function updateEnemies(dt, now){
   const slow = now < S.enemySlowUntil ? 0.35 : 1;     // Time Warp spell
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i], def=e.def;
+    updateEnemyBar(e);                                  // keep the floating HP bar pinned + facing camera every frame
     // stunned (EMP / freeze power-up): hold still, no fire
     if(now < e.stunUntil){
       e.mesh.position.set(e.pos.x,0,e.pos.z);
@@ -1735,9 +1746,10 @@ function killEnemy(e){
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
   if(e.elite){ addDiamonds(BALANCE.elite.dia); bigExplode(e.pos, 0xffd24a, 2.0); floatText('ELITE DOWN  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
   if(e.loot || WAVE.treasure) dropPowerup(e.pos);   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
-  // recycle mesh
+  // recycle mesh + HP bar
   const fx=e.mesh.getObjectByName('eliteFX'); if(fx){ e.mesh.remove(fx); if(fx.material) fx.material.dispose(); }
   e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh);
+  freeEnemyBar(e.bar); e.bar=null;
 }
 
 // ----------------------------- WAVES -----------------------------
@@ -2865,7 +2877,7 @@ function startGame(continueRun){
   p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE; p.mesh.scale.setScalar(TANK_SCALE);
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
-  for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
+  for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
@@ -3761,6 +3773,7 @@ window._WAVE = WAVE; window._rollWaveEvent = rollWaveEvent; window._makeElite = 
 window._gunLevel = gunLevel; window._gunXp = gunXp; window._addGunXp = addGunXp; window._giveGun = giveGun;   // MASTERY hooks (debug/test)
 window._openBriefing = openBriefing; window._chooseContract = chooseContract; window._cMod = cMod; Object.defineProperty(window,'_contract',{get:()=>S.contract});   // CONTRACT hooks (debug/test)
 window._GUNS = GUNS; window._impactFX = impactFX; window._tankExplode = tankExplode; window._fireGun = fireGun;   // FEEL hooks (debug/test): recoil/knock/fx
+window._updateEnemyBar = updateEnemyBar; window._enemyBarPool = enemyBarPool;   // enemy HP-bar hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
