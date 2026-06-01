@@ -232,10 +232,10 @@
   .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
   /* ---- 3D ARMORY SHOWROOM ---- */
   .overlay.shop3d{background:radial-gradient(135% 100% at 50% 16%, rgba(0,0,0,0) 46%, rgba(2,4,8,.5) 100%);backdrop-filter:none;justify-content:flex-start;}   /* crisp: no blur + transparent centre so the 3D item shows bright/sharp, only a soft edge vignette */
-  .shop-top{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:9px;padding:max(12px,env(safe-area-inset-top)) 12px 10px;pointer-events:none;z-index:2;}
-  .shop-head{display:flex;align-items:center;gap:18px;pointer-events:none;}
-  .shop-ttl{font-size:clamp(19px,4.4vw,32px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 2px 18px rgba(255,206,110,.5),0 0 2px #000;}
-  .shop3d .shop-wallet{margin:0;pointer-events:auto;}
+  .shop-top{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:11px;padding:calc(max(12px,env(safe-area-inset-top)) + 4px) 12px 8px;pointer-events:none;z-index:2;}
+  .shop-head{display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .shop-ttl{font-size:clamp(18px,4vw,30px);font-weight:900;letter-spacing:7px;color:#fff;text-shadow:0 2px 18px rgba(255,206,110,.5),0 0 2px #000;}
+  .shop3d .shop-wallet{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));margin:0;pointer-events:auto;z-index:4;}
   .shop-tabs{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;pointer-events:auto;max-width:94vw;}
   .shop-tab{cursor:pointer;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 13px;border-radius:999px;
     background:rgba(8,12,8,.5);border:1px solid rgba(255,255,255,.12);color:var(--muted);backdrop-filter:blur(3px);transition:.12s;}
@@ -268,12 +268,26 @@
   .si-buy.cant .ic{color:var(--muted);}
   .si-buy.owned,.si-buy.maxed{background:rgba(140,191,63,.18);color:#bfe08a;border-color:rgba(140,191,63,.45);cursor:default;text-shadow:none;box-shadow:none;}
   .si-pos{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);}
+  /* rich stat panel beside the 3D item */
+  .si-panel{position:absolute;left:max(14px,calc(env(safe-area-inset-left) + 64px));top:50%;transform:translateY(-50%);width:230px;--rar:#ffce4a;
+    display:flex;flex-direction:column;gap:9px;padding:16px 16px 18px;border-radius:16px;pointer-events:auto;
+    background:linear-gradient(180deg,rgba(12,16,22,.55),rgba(5,8,13,.86));border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.5);backdrop-filter:blur(6px);}
+  .si-panel::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--rar);box-shadow:0 0 12px var(--rar);}
+  .sp-tier{font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--rar);text-shadow:0 0 10px var(--rar);}
+  .sp-bar{display:flex;flex-direction:column;gap:3px;}
+  .sp-bl{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+  .sp-bl b{color:#eef3e4;font-variant-numeric:tabular-nums;}
+  .sp-track{height:7px;border-radius:4px;background:rgba(255,255,255,.09);overflow:hidden;}
+  .sp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--rar),#fff8);box-shadow:0 0 8px var(--rar);}
+  .sp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}
+  .sp-tags .st{font-size:9.5px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:6px;background:var(--rar);color:#0a0d0a;}
+  @media(max-width:720px){ .si-panel{display:none;} }   /* small screens: stats stay in the bottom panel */
   .shop-done,.shop-back{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:3;pointer-events:auto;}
   .si-desc{font-size:12px;font-style:italic;letter-spacing:.3px;color:#cdd6c2;line-height:1.3;max-width:440px;text-shadow:0 0 8px var(--rar);}
   .shop-hint2{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.45);text-transform:uppercase;pointer-events:none;}
   /* display-cabinet grid */
-  #caseGrid{position:absolute;left:50%;top:calc(max(12px,env(safe-area-inset-top)) + 76px);transform:translateX(-50%);
-    width:min(94vw,860px);max-height:calc(100% - 130px);overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;padding:6px 10px 18px;}
+  #caseGrid{position:absolute;left:50%;top:calc(max(12px,env(safe-area-inset-top)) + 96px);transform:translateX(-50%);
+    width:min(94vw,860px);max-height:calc(100% - 150px);overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;padding:6px 10px 18px;}
   #caseGrid::-webkit-scrollbar{width:6px;} #caseGrid::-webkit-scrollbar-thumb{background:rgba(255,206,110,.35);border-radius:3px;}
   .case{--rar:#9bd14a;position:relative;cursor:pointer;border-radius:14px;padding:11px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto;
     background:linear-gradient(180deg,rgba(24,30,38,.94),rgba(8,11,16,.97));border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .12s,border-color .12s,box-shadow .12s;}
@@ -621,6 +635,7 @@
   <div id="shopDetailView" class="hidden">
     <div class="shop-arrow prev" id="shopPrev"><span class="ic" data-icon="dash"></span></div>
     <div class="shop-arrow next" id="shopNext"><span class="ic" data-icon="dash"></span></div>
+    <div class="si-panel" id="siPanel"></div>
     <div class="shop-info" id="shopInfo">
       <div class="si-cat" id="si-cat">WEAPONS</div>
       <div class="si-name" id="si-name">—</div>
@@ -2804,13 +2819,15 @@ shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
 (function(){
   shopScene.add(new THREE.AmbientLight(0x5a6478, 1.15));
   const key=new THREE.SpotLight(0xffffff, 130, 30, 0.7, 0.5, 1.1); key.position.set(2.6,9.5,5.4); key.target.position.set(0,1.4,0); shopScene.add(key, key.target);
-  const fill=new THREE.PointLight(0xdfe9ff, 55, 30); fill.position.set(0,2.6,8.5); shopScene.add(fill);   // front fill so the camera-facing side reads clearly
+  const fill=new THREE.PointLight(0xdfe9ff, 40, 30); fill.position.set(0,2.6,8.5); shopScene.add(fill);   // front fill so the camera-facing side reads clearly
   const a=new THREE.PointLight(0x6fb6ff, 50, 22); a.position.set(-5.5,3,-1); shopScene.add(a);
   const b=new THREE.PointLight(0xffc25a, 38, 22); b.position.set(5.5,2.2,-2); shopScene.add(b);
   const disc=new THREE.Mesh(new THREE.CylinderGeometry(2.7,3.0,0.34,56), new THREE.MeshStandardMaterial({color:0x10131b,metalness:.75,roughness:.5}));
   disc.position.y=-0.17; shopScene.add(disc);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(2.72,0.05,12,72), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffce4a,emissiveIntensity:2.4,roughness:.4}));
   ring.rotation.x=Math.PI/2; ring.position.y=0.03; shopScene.add(ring); shopScene._ring=ring;
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(2.55,48), new THREE.MeshBasicMaterial({color:0xffce4a,transparent:true,opacity:0.1,blending:THREE.AdditiveBlending,depthWrite:false}));
+  glow.rotation.x=-Math.PI/2; glow.position.y=0.04; shopScene.add(glow); shopScene._glow=glow;   // rarity-tinted floor glow (set per item)
   const grid=new THREE.GridHelper(48, 48, 0x1a3a52, 0x0c1622); grid.position.y=-0.34; shopScene.add(grid);
 })();
 const RAR_COL={t1:0x9fb07a,t2:0x5aa9ff,t3:0xc08bff,vip:0x7fe7ff,up:0x9bd14a};
@@ -2821,7 +2838,12 @@ function _box(w,h,d,m){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); 
 function _barX(rt,rb,h,m){ const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,18), m); c.rotation.z=Math.PI/2; return c; }   // cylinder lying along X
 function buildGunModel(id){
   const g=GUNS[id]||GUNS.rifle, col=g.color||0xaef0a0, sv=g.svg||'rifle', grp=new THREE.Group();
-  const dark=_shMetal(0x3e443e), steel=_shMetal(0x5c6163), acc=_shGlow(col);   // lighter metals so the weapon reads clearly under the studio lights
+  // tier/VIP-graded skin: higher tier = shinier + brighter accents; VIP = bright chrome. Reads the rank at a glance.
+  const tier=g.tier||1, vip=VIP_GUNS.includes(id), rc=RAR_COL[vip?'vip':('t'+tier)]||0x9fb07a;
+  const rough = vip?0.3 : (tier>=3?0.32 : tier===2?0.38 : 0.46), metal = vip?0.9:0.86;
+  const dark=new THREE.MeshStandardMaterial({color: vip?0x565b5e:(tier>=3?0x4a4f50:0x3e443e), metalness:metal, roughness:rough});
+  const steel=new THREE.MeshStandardMaterial({color: vip?0x787e82:(tier>=3?0x646a6c:0x5c6163), metalness:metal, roughness:rough});
+  const acc=new THREE.MeshStandardMaterial({color:0x0a0a0a, emissive:col, emissiveIntensity: vip?2.2:(tier>=3?1.9:tier===2?1.6:1.3), metalness:.4, roughness:.36});
   grp.add(_box(1.5,0.5,0.42,dark));                                            // receiver
   const grip=_box(0.3,0.72,0.34,steel); grip.position.set(-0.36,-0.52,0); grip.rotation.z=0.24; grp.add(grip);
   const stock=_box(0.72,0.42,0.34,dark); stock.position.set(-0.98,-0.06,0); grp.add(stock);
@@ -2840,7 +2862,12 @@ function buildGunModel(id){
   else if(sv==='bolt'){ bar(1.2,0.1,0,0,steel); for(let i=0;i<3;i++){ const co=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.06,10,22),acc); co.position.set(0.95+i*0.4,0,0); co.rotation.y=Math.PI/2; grp.add(co);} }
   else if(sv==='snow'){ bar(1.4,0.13,0,0,steel); for(let i=0;i<4;i++){ const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.15,0),acc); const an=i/4*6.283; cr.position.set(1.7,Math.sin(an)*0.2,Math.cos(an)*0.2); grp.add(cr);} }
   else { bar(sv==='smg'?1.0:1.6,0.1); const mz=_barX(0.14,0.14,0.18,acc); mz.position.set(sv==='smg'?1.4:1.7,0,0); grp.add(mz); }   // rifle/smg/default
-  grp.scale.setScalar(1.18);
+  const auraN = vip?2:(tier>=3?1:0);   // slim energy rings orbit the higher tiers — a tasteful halo, not a blast
+  if(auraN){ const aura=new THREE.Group();
+    for(let i=0;i<auraN;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(1.25+i*0.22,0.028,8,52), new THREE.MeshStandardMaterial({color:0x000000,emissive:rc,emissiveIntensity:1.5,roughness:.4}));
+      r.rotation.x=Math.PI/2.3 + i*0.55; aura.add(r); }
+    grp.add(aura); grp._aura=aura; }
+  grp.scale.setScalar(vip?1.32:(tier>=3?1.26:tier===2?1.16:1.06));   // bigger = stronger
   return grp;
 }
 function buildUpgradeModel(item){
@@ -2855,11 +2882,16 @@ function buildUpgradeModel(item){
     case 'engine': geo=new THREE.TorusGeometry(0.74,0.3,18,30); break;
     default:       geo=new THREE.OctahedronGeometry(1.05,0);
   }
-  const core=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:1.0,metalness:.6,roughness:.3}));
-  core.position.y=1.55; grp.add(core); grp._spinPart=core;
+  const isVip=item.rar==='vip';
+  const core=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:isVip?1.7:1.1,metalness:.65,roughness:isVip?0.18:0.3}));
+  core.position.y=1.55; core.scale.setScalar(isVip?1.18:1); grp.add(core); grp._spinPart=core;
   const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(item.icon,'#'+rc.toString(16).padStart(6,'0')),transparent:true,depthWrite:false}));
   spr.scale.set(1.25,1.25,1); spr.position.set(0,3.0,0); grp.add(spr);
   const halo=new THREE.Mesh(new THREE.TorusGeometry(1.45,0.045,10,44), _shGlow(rc)); halo.rotation.x=Math.PI/2; halo.position.y=0.28; grp.add(halo);
+  if(isVip){ const aura=new THREE.Group();   // VIP upgrade gets slim orbiting energy rings too
+    for(let i=0;i<2;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(1.3+i*0.22,0.028,8,52), new THREE.MeshStandardMaterial({color:0x000000,emissive:rc,emissiveIntensity:1.5,roughness:.4}));
+      r.rotation.x=Math.PI/2.3+i*0.55; r.position.y=1.55; aura.add(r); }
+    grp.add(aura); grp._aura=aura; }
   grp._floatLock=true;
   return grp;
 }
@@ -2909,6 +2941,22 @@ function shopStats(it){
   const out=[shopStat('', it.per)]; out.push(shopStat('LEVEL', it.level+' / '+it.max));
   if(it.level>=it.max) out.push(shopStat('','MAXED',true)); return out.join('');
 }
+// rich side panel (bars) — the eye-candy stat sheet beside the 3D item
+function spBar(label,val,frac){ frac=Math.max(0.05,Math.min(1,frac));
+  return '<div class="sp-bar"><div class="sp-bl">'+label+'<b>'+val+'</b></div><div class="sp-track"><div class="sp-fill" style="width:'+(frac*100).toFixed(0)+'%"></div></div></div>'; }
+function siPanelHTML(it){
+  if(it.type==='gun'){ const g=GUNS[it.id], rof=1/g.fireCd, dps=Math.round(g.dmg*(g.frags||1)*rof);
+    const T=[]; if(g.frags>1)T.push(g.frags+'× PELLET'); if(g.pierce)T.push('PIERCE'); if(g.aoe||g.aoeR)T.push('AOE'); if(g.homing)T.push('HOMING'); if(g.freeze)T.push('FREEZE'); if(g.chain)T.push('CHAIN');
+    return '<div class="sp-tier">'+(it.vip?'★ VIP WEAPON':'TIER '+g.tier+' WEAPON')+'</div>'+
+      spBar('Damage', g.dmg, g.dmg/90)+ spBar('Fire rate', rof.toFixed(rof<1?2:0)+'/s', rof/20)+
+      spBar('Magazine', g.mag, g.mag/90)+ spBar('DPS', dps, dps/600)+
+      '<div class="sp-bl">Reload<b>'+g.reload.toFixed(1)+'s</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
+  return '<div class="sp-tier">'+(it.level>=it.max?'MAX LEVEL':(it.vip?'★ VIP UPGRADE':'UPGRADE'))+'</div>'+
+    spBar('Level', it.level+' / '+it.max, it.level/it.max)+
+    '<div class="sp-bl">Per level<b>'+it.per+'</b></div>'+
+    '<div class="sp-bl">Owned<b>×'+it.level+'</b></div>'+
+    (it.level<it.max?'<div class="sp-bl">Next<b>LEVEL '+(it.level+1)+'</b></div>':'<div class="sp-tags"><span class="st">FULLY UPGRADED</span></div>');
+}
 function updateShopInfo(){
   const it=shopList[shopIdx]; if(!it) return;
   const hex='#'+(RAR_COL[it.rar]||0xffce4a).toString(16).padStart(6,'0');
@@ -2917,6 +2965,7 @@ function updateShopInfo(){
   document.getElementById('si-name').textContent = it.name;
   document.getElementById('si-desc').textContent = itemBlurb(it);
   document.getElementById('si-stats').innerHTML = shopStats(it);
+  const sp=document.getElementById('siPanel'); if(sp){ sp.style.setProperty('--rar',hex); sp.innerHTML=siPanelHTML(it); }
   const owned = it.type==='gun' && it.owned, maxed = it.type==='up' && it.level>=it.max;
   const cant = !owned && !maxed && !(it.cost && canAfford(it.cost));
   const buy=document.getElementById('si-buy');
@@ -2931,7 +2980,11 @@ function spawnShopHero(){
   shopHero = it.type==='gun' ? buildGunModel(it.id) : buildUpgradeModel(it);
   shopHero.position.y = it.type==='gun' ? 1.55 : 0.15;
   shopHero.rotation.y = -0.55;
-  shopScene.add(shopHero); updateShopInfo();
+  shopScene.add(shopHero);
+  const rc=RAR_COL[it.rar]||0xffce4a;                       // light the whole pedestal in the item's rarity colour
+  if(shopScene._ring){ shopScene._ring.material.emissive.setHex(rc); shopScene._ring.material.emissiveIntensity=2.0; }
+  if(shopScene._glow) shopScene._glow.material.color.setHex(rc);
+  updateShopInfo();
 }
 function showGrid(){ shopDetail3D=false; renderPass.scene=shopScene; renderPass.camera=shopCam;   // clean dark studio behind the cabinet
   if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
@@ -2963,8 +3016,9 @@ function closeShop(){ shopOpen=false; shopDetail3D=false; document.body.classLis
 function shop3dUpdate(dt){
   _shopT += dt;
   if(shopHero){ shopHero.rotation.y += dt*0.65; if(shopHero._spinPart) shopHero._spinPart.rotation.x += dt*3.2;
+    if(shopHero._aura){ shopHero._aura.rotation.x += dt*1.1; shopHero._aura.rotation.z += dt*0.7; }   // tumbling VIP/tier energy field
     shopHero.position.y += Math.sin(_shopT*1.6)*0.0018; }
-  if(shopScene._ring){ shopScene._ring.rotation.z += dt*0.4; const e=shopScene._ring.material; if(e.emissiveIntensity>2.4) e.emissiveIntensity=Math.max(2.4, e.emissiveIntensity-dt*8); }
+  if(shopScene._ring){ shopScene._ring.rotation.z += dt*0.4; const e=shopScene._ring.material; if(e.emissiveIntensity>2.0) e.emissiveIntensity=Math.max(2.0, e.emissiveIntensity-dt*8); }
 }
 tapBtn('shopBtn', openShop);
 tapBtn('shopDone', closeShop);
