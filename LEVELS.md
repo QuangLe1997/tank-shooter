@@ -97,6 +97,8 @@
 - **Stage ≥ 3:** + MISSILE · TESLA
 - **RAILGUN · SIEGE ROCKET (VIP):** không rơi — chỉ mua bằng kim cương ở Shop.
 
+**GUN MASTERY — nhặt trùng = lên cấp súng (Z25):** nhặt 1 khẩu **đã sở hữu** = **+1 xp** cho khẩu đó (không phí). Ngưỡng `xp=[0,12,27,45]` → **cấp 1→2→3→4** (cần 12/15/18 dup mỗi cấp, vĩnh viễn, lưu `PROFILE.gunXp`). Mỗi cấp trên 1: **+10% sát thương · +6% nhịp bắn · −8% thời gian nạp** ⇒ **LV4 = +30% dmg / +22% rate / −24% reload**. Áp live trong trận. Xem cấp ở: chip vũ khí ("SMG ·L4"), lưới shop ("★ LV n/4"), panel detail (★ MASTERY + chỉ số đã buff). VIP (railgun/rocket) không rơi nên không lên cấp qua nhặt.
+
 **Kiếm tiền (tích luỹ vĩnh viễn, xem chi tiết economy):**
 - **Xu (coins):** ≈ `điểm gốc địch / 10` mỗi kill (grunt 10 … shield 24) + boss `150+90×stage` + clear màn `60×stage`. ~2.000 xu / lượt tới màn 3.
 - **Kim cương:** **+2 / boss** + 6% loot rơi gem. ~4–6 viên / lượt tới màn 3, ~14 / clear hết.
@@ -117,4 +119,4 @@
 
 ---
 
-**Last updated:** 2026-06-01 · khớp code Z23/Z24. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-01 · khớp code Z23/Z24/Z25. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

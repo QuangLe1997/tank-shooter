@@ -24,6 +24,9 @@ export const BALANCE = {
             hpMul:2.6, sizeMul:1.32, dmgMul:1.3, coinMul:3, dia:1 },
   // shop upgrade per-level effects (used by applyUpgrades)
   up:     { damage:0.08, boss:0.12, range:0.10, reload:0.12, mag:0.15, hp:20, armor:0.06, engine:0.10 },
+  // gun MASTERY: each duplicate gun pickup = +1 xp; cross a threshold → that gun levels up (1→4, permanent).
+  // Higher level = more damage, faster fire (lower fireCd), faster reload. Long grind: ~12/15/18 dups per level.
+  mastery:{ xp:[0,12,27,45], maxLevel:4, dmgPerLevel:0.10, fireCdPerLevel:0.06, reloadPerLevel:0.08 },
 };
 
 // ----- rarity colours (tier/VIP) -----

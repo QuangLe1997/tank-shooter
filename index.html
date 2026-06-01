@@ -222,11 +222,14 @@
   .btn-shop .ic{width:19px;height:19px;color:var(--amber);flex:0 0 auto;}
   .btn-shop:hover{transform:translateY(-2px);border-color:var(--amber);background:rgba(40,28,8,.74);}
   /* wallet chips (coins + diamonds) */
-  .wallet,.shop-wallet{display:flex;gap:10px;justify-content:center;align-items:center;}
-  .w-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:rgba(6,9,4,.55);border:1px solid rgba(255,206,110,.32);
-    font-size:13px;font-weight:800;letter-spacing:1px;color:#ffe8b6;text-shadow:0 2px 8px rgba(0,0,0,.9);}
-  .w-chip .ic{width:15px;height:15px;color:var(--amber);}
-  .w-chip.dia{border-color:rgba(127,231,255,.4);color:#bff0ff;} .w-chip.dia .ic{color:#7fe7ff;}
+  .wallet,.shop-wallet{display:flex;gap:12px;justify-content:center;align-items:center;}
+  .wallet{margin:6px 0 2px;}                                  /* the START-menu wallet sits right above the buttons — make it pop */
+  .w-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 15px;border-radius:999px;background:rgba(6,9,4,.6);border:1px solid rgba(255,206,110,.45);
+    font-size:15px;font-weight:900;letter-spacing:1px;color:#ffe8b6;text-shadow:0 2px 8px rgba(0,0,0,.9);box-shadow:0 0 14px rgba(255,206,110,.18),inset 0 0 8px rgba(255,206,110,.08);}
+  .w-chip .ic{width:18px;height:18px;color:var(--amber);}
+  .w-chip.dia{border-color:rgba(127,231,255,.55);color:#bff0ff;box-shadow:0 0 16px rgba(127,231,255,.28),inset 0 0 8px rgba(127,231,255,.1);} .w-chip.dia .ic{color:#7fe7ff;}
+  /* the in-shop / game-over wallets stay compact (they're secondary) */
+  .shop-wallet .w-chip,.go-wallet .w-chip{font-size:13px;padding:4px 12px;box-shadow:none;} .shop-wallet .w-chip .ic{width:15px;height:15px;}
   .shop-wallet{margin:-2px 0 2px;}
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
   .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
@@ -281,6 +284,11 @@
   .sp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--rar),#fff8);box-shadow:0 0 8px var(--rar);}
   .sp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;}
   .sp-tags .st{font-size:9.5px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:6px;background:var(--rar);color:#0a0d0a;}
+  /* gun MASTERY readout in the detail panel */
+  .sp-mastery{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:900;letter-spacing:1px;
+    color:#ffd24a;text-transform:uppercase;padding:5px 9px;border-radius:7px;background:rgba(255,210,74,.1);border:1px solid rgba(255,210,74,.32);text-shadow:0 0 8px rgba(255,210,74,.4);}
+  .sp-mastery b{color:#fff3cf;} .sp-xp{font-size:9px;font-weight:800;letter-spacing:.5px;color:#cdb87a;}
+  .sp-mbuff{font-size:9.5px;font-weight:800;letter-spacing:.4px;color:#aef0a0;margin-top:-2px;}
   @media(max-width:720px){ .si-panel{display:none;} }   /* small screens: stats stay in the bottom panel */
   .shop-done,.shop-back{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:3;pointer-events:auto;}
   .si-desc{font-size:12px;font-style:italic;letter-spacing:.3px;color:#cdd6c2;line-height:1.3;max-width:440px;text-shadow:0 0 8px var(--rar);}
@@ -2338,7 +2346,7 @@ function muzzleFlash(x,z,ang,color){
 }
 function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 function magCap(g){ return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
-function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }
+function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1)*gunReloadMul(inst.id); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }   // MASTERY: higher level reloads faster
 // ----- reload countdown dial: a glowing circular chart billboarded above the tank, flashes ✓ when ready -----
 const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=reloadCanvas.height=160;
 const reloadCtx=reloadCanvas.getContext('2d');
@@ -2455,7 +2463,7 @@ function fireGun(now, range){
   if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now, inst); return; }
   if(now < p.fireAt) return;
   const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
-  p.fireAt = now + g.fireCd * rapid * p.fireMul;
+  p.fireAt = now + g.fireCd * rapid * p.fireMul * gunFireMul(inst.id);   // MASTERY: higher level fires faster
   if(!p.infiniteAmmo) inst.ammo--;
   p.muzzle.getWorldPosition(_v);                 // real barrel tip (used for the muzzle flash)
   const ang=p.aimSmoothed;
@@ -2463,7 +2471,7 @@ function fireGun(now, range){
   const x=p.pos.x+Math.sin(ang)*od, z=p.pos.z+Math.cos(ang)*od;
   const crit = Math.random() < p.crit;
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
-  const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1);
+  const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id);   // MASTERY: +dmg per gun level
   if(g.special==='rocket'){ fireRocket(now, g); }
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
@@ -2489,7 +2497,23 @@ function giveGun(id){
   const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
   if(inst){ inst.ammo=magCap(g); inst.rU=0; } else { p.guns.push({id, ammo:magCap(g), rU:0, rD:0}); p.gunIdx=p.guns.length-1; }
   const fresh = ownGun(id);                                  // remember it in the permanent arsenal (persists across runs)
-  floatText(fresh ? (g.name+' — NEW!') : g.name, fresh?'#ffd24a':'#aef0a0', p.pos, fresh?22:18); updateGunHUD();
+  if(fresh){ floatText(g.name+' — NEW!', '#ffd24a', p.pos, 22); }   // first time ever → brand-new weapon
+  else { addGunXp(id); }                                     // already own it → the duplicate feeds MASTERY (level up the gun)
+  updateGunHUD();
+}
+// ----- GUN MASTERY: duplicate pickups level a gun up (permanent, per-gun). Boosts dmg / fire-rate / reload. -----
+function gunXp(id){ return (PROFILE.gunXp&&PROFILE.gunXp[id])||0; }
+function gunLevel(id){ const xp=gunXp(id), T=BALANCE.mastery.xp; let lv=1; for(let i=1;i<T.length;i++){ if(xp>=T[i]) lv=i+1; } return lv; }
+function gunDmgMul(id){ return 1 + (gunLevel(id)-1)*BALANCE.mastery.dmgPerLevel; }       // +10%/lvl
+function gunFireMul(id){ return 1 - (gunLevel(id)-1)*BALANCE.mastery.fireCdPerLevel; }   // ×fireCd → smaller = faster
+function gunReloadMul(id){ return 1 - (gunLevel(id)-1)*BALANCE.mastery.reloadPerLevel; } // ×reload → smaller = faster
+function gunXpToNext(id){ const lv=gunLevel(id), T=BALANCE.mastery.xp; if(lv>=BALANCE.mastery.maxLevel) return null; return { have:gunXp(id)-T[lv-1], need:T[lv]-T[lv-1] }; }
+function addGunXp(id){
+  if(!PROFILE.gunXp) PROFILE.gunXp={};
+  const before=gunLevel(id); PROFILE.gunXp[id]=(PROFILE.gunXp[id]||0)+1; const after=gunLevel(id); saveProfile();
+  const p=S.player, g=GUNS[id]; if(!p) return;
+  if(after>before){ floatText(g.name+'  ⮕  LV '+after+'!', '#ffd24a', p.pos, 26); sfx('levelup'); ringPulse(p.pos, 0xffd24a, 3); }
+  else { const n=gunXpToNext(id); floatText(n? (g.name+'  '+n.have+'/'+n.need+' ▸ LV'+(gunLevel(id)+1)) : (g.name+'  ★ MAX'), '#aef0a0', p.pos, 18); }
 }
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
@@ -2680,7 +2704,7 @@ function updateGunHUD(){
     const reloading = inst.rU>performance.now()/1000;
     const ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g));
     const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
-    const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name;
+    const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ·L'+gunLevel(inst.id):'');   // MASTERY level tag
     const am=document.createElement('span'); am.className='wc-am'; am.textContent = reloading ? 'RELOAD…' : ammo;
     chip.replaceChildren(ic,nm,am);
     chip.classList.toggle('reloading', reloading);
@@ -2956,7 +2980,7 @@ function renderCaseGrid(){
   const grid=document.getElementById('caseGrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
   shopList.forEach((it,i)=>{
     const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP':('T'+it.tier)):('LV '+it.level+'/'+it.max);
-    const price = (it.type==='gun'&&it.owned)?'✓ OWNED' : (it.type==='up'&&it.level>=it.max)?'MAX' : priceHTML(it.cost);
+    const price = (it.type==='gun'&&it.owned)?('★ LV '+gunLevel(it.id)+'/'+BALANCE.mastery.maxLevel) : (it.type==='up'&&it.level>=it.max)?'MAX' : priceHTML(it.cost);
     const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
     c.innerHTML='<span class="case-badge">'+badge+'</span><div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'+
       '<div class="case-nm">'+it.name+'</div><div class="case-price">'+price+'</div>';
@@ -2978,12 +3002,19 @@ function shopStats(it){
 function spBar(label,val,frac){ frac=Math.max(0.05,Math.min(1,frac));
   return '<div class="sp-bar"><div class="sp-bl">'+label+'<b>'+val+'</b></div><div class="sp-track"><div class="sp-fill" style="width:'+(frac*100).toFixed(0)+'%"></div></div></div>'; }
 function siPanelHTML(it){
-  if(it.type==='gun'){ const g=GUNS[it.id], rof=1/g.fireCd, dps=Math.round(g.dmg*(g.frags||1)*rof);
+  if(it.type==='gun'){ const g=GUNS[it.id], lv=gunLevel(it.id);
+    const dMul=gunDmgMul(it.id), fMul=gunFireMul(it.id), rMul=gunReloadMul(it.id);
+    const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(edmg*(g.frags||1)*rof), erel=g.reload*rMul;
     const T=[]; if(g.frags>1)T.push(g.frags+'× PELLET'); if(g.pierce)T.push('PIERCE'); if(g.aoe||g.aoeR)T.push('AOE'); if(g.homing)T.push('HOMING'); if(g.freeze)T.push('FREEZE'); if(g.chain)T.push('CHAIN');
-    return '<div class="sp-tier">'+(it.vip?'★ VIP WEAPON':'TIER '+g.tier+' WEAPON')+'</div>'+
-      spBar('Damage', g.dmg, g.dmg/90)+ spBar('Fire rate', rof.toFixed(rof<1?2:0)+'/s', rof/20)+
+    const nx=gunXpToNext(it.id);
+    const mastery = it.owned ? ('<div class="sp-mastery">★ MASTERY <b>LV '+lv+' / '+BALANCE.mastery.maxLevel+'</b>'+
+        (nx?'<span class="sp-xp">'+nx.have+' / '+nx.need+' ▸ LV'+(lv+1)+'</span>':'<span class="sp-xp">★ MAX</span>')+'</div>'+
+        (lv>1?'<div class="sp-mbuff">+'+Math.round((dMul-1)*100)+'% dmg · +'+Math.round((1/fMul-1)*100)+'% rate · −'+Math.round((1-rMul)*100)+'% reload</div>':''))
+      : '';
+    return '<div class="sp-tier">'+(it.vip?'★ VIP WEAPON':'TIER '+g.tier+' WEAPON')+'</div>'+ mastery+
+      spBar('Damage', edmg+(lv>1?' ▲':''), edmg/90)+ spBar('Fire rate', rof.toFixed(rof<1?2:0)+'/s'+(lv>1?' ▲':''), rof/20)+
       spBar('Magazine', g.mag, g.mag/90)+ spBar('DPS', dps, dps/600)+
-      '<div class="sp-bl">Reload<b>'+g.reload.toFixed(1)+'s</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
+      '<div class="sp-bl">Reload<b>'+erel.toFixed(1)+'s'+(lv>1?' ▼':'')+'</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
   return '<div class="sp-tier">'+(it.level>=it.max?'MAX LEVEL':(it.vip?'★ VIP UPGRADE':'UPGRADE'))+'</div>'+
     spBar('Level', it.level+' / '+it.max, it.level/it.max)+
     '<div class="sp-bl">Per level<b>'+it.per+'</b></div>'+
@@ -3074,7 +3105,7 @@ let _resetArm=0;
 tapBtn('resetBtn', ()=>{
   const lbl=document.querySelector('#resetBtn span:last-child'); const now=performance.now();
   if(now<_resetArm){ _resetArm=0;                       // CLEAR SESSION → wipe the whole account (wallet, upgrades, arsenal, progress); keep nickname
-    PROFILE.save=null; PROFILE.best={score:0,stage:1}; BEST=PROFILE.best; PROFILE.coins=0; PROFILE.diamonds=0; PROFILE.upgrades={}; PROFILE.ownedGuns=['rifle']; PROFILE.loadout=['rifle'];
+    PROFILE.save=null; PROFILE.best={score:0,stage:1}; BEST=PROFILE.best; PROFILE.coins=0; PROFILE.diamonds=0; PROFILE.upgrades={}; PROFILE.gunXp={}; PROFILE.ownedGuns=['rifle']; PROFILE.loadout=['rifle'];
     saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='RESET ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='RESET'; },1400); }
   else { _resetArm=now+2600; if(lbl) lbl.textContent='SURE?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='RESET'; },2700); }
 });
@@ -3282,7 +3313,7 @@ function drawRadar(){
 const PROFILE_KEY='steelsiege.profile';
 const BEST_KEY='steelsiege.best';        // legacy high-score key (migrated into the profile)
 const LOADOUT_MAX=5;                      // bring at most 5 weapons into a fight (quick-swap rotation)
-function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{} }; }
+function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{} }; }
 function loadProfile(){
   let pr=null; try{ pr=JSON.parse(localStorage.getItem(PROFILE_KEY)); }catch(e){}
   if(!pr || typeof pr!=='object'){ pr=defaultProfile(); try{ const old=JSON.parse(localStorage.getItem(BEST_KEY)); if(old&&old.score) pr.best={score:old.score|0, stage:old.stage|0||1}; }catch(e){} }
@@ -3296,6 +3327,7 @@ function loadProfile(){
   if(pr.save) pr.save.loop=pr.save.loop|0;
   pr.coins=Math.max(0, pr.coins|0); pr.diamonds=Math.max(0, pr.diamonds|0);          // persistent wallet (coins · diamonds)
   if(!pr.upgrades || typeof pr.upgrades!=='object') pr.upgrades={};                  // { key: level } bought stat upgrades
+  if(!pr.gunXp || typeof pr.gunXp!=='object') pr.gunXp={};                           // { gunId: dup-pickup count } → MASTERY level
   return pr;
 }
 function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} }
@@ -3627,6 +3659,7 @@ window._profile = PROFILE; window._ownGun = ownGun; window._openLoadout = openLo
 window._saveProgress = saveProgress; window._clearProgress = clearProgress;              // checkpoint hooks (debug/test)
 window._openShop = openShop; window._buyShop = buyShop; window._shopModel = shopModel; window._applyUpgrades = applyUpgrades;   // economy hooks (debug/test)
 window._WAVE = WAVE; window._rollWaveEvent = rollWaveEvent; window._makeElite = makeElite; window._dbg.killEnemy = killEnemy;   // NG+/event hooks (debug/test)
+window._gunLevel = gunLevel; window._gunXp = gunXp; window._addGunXp = addGunXp; window._giveGun = giveGun;   // MASTERY hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
