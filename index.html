@@ -2632,9 +2632,23 @@ function enemyGroundStrike(x,z,r,dmg,now){
 const artStrikes=[];                 // each: {tx,tz, state:'lock'|'fly', t, R, innerR, zone, blink, mesh, mx,my,mz, mvx,mvy,mvz}
 let ART={ phase:'rest', t:5 };
 function _artMortars(){ let n=0; for(const e of enemies) if(e.def.mortar) n++; return n; }
+// RADAR LOCK reticle — thin tech lines on the ground: outer danger ring + inner kill ring + crosshair + a sweeping radar line. Subtle, blinking.
+function makeArtLock(x,z,R,innerR){
+  const grp=new THREE.Group(); grp.position.set(x,0.14,z); grp.rotation.x=-Math.PI/2;
+  const items=[];
+  const add=(geo,c,o,ro)=>{ const m=new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,side:THREE.DoubleSide,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending})); m.renderOrder=ro||18; grp.add(m); items.push({m,base:o}); return m; };
+  add(new THREE.RingGeometry(R-0.13,R,72), 0xff4632, 0.85);                 // thin outer danger ring
+  add(new THREE.RingGeometry(innerR-0.09,innerR,52), 0xff7048, 0.6);        // faint inner "direct hit" ring
+  for(let k=0;k<4;k++){ const t=add(new THREE.PlaneGeometry(0.1,1.0), 0xff5a3c, 0.8); const a=k*Math.PI/2; t.position.set(Math.cos(a)*(R-0.65), Math.sin(a)*(R-0.65), 0); t.rotation.z=a; }  // 4 tick marks at the edge
+  add(new THREE.PlaneGeometry(1.1,0.07), 0xff8050, 0.9); add(new THREE.PlaneGeometry(0.07,1.1), 0xff8050, 0.9);   // small center crosshair (thin)
+  const sweepPivot=new THREE.Group(); const sw=new THREE.Mesh(new THREE.PlaneGeometry(R-0.2,0.13), new THREE.MeshBasicMaterial({color:0xff9a5c,transparent:true,opacity:0.6,side:THREE.DoubleSide,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending})); sw.position.x=(R-0.2)/2; sw.renderOrder=18; sweepPivot.add(sw); grp.add(sweepPivot);   // radar sweep line (rotates)
+  grp.userData={items, sweep:sweepPivot, sweepMat:sw.material};
+  scene.add(grp); return grp;
+}
+function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); }
 function artLockStrike(tx,tz){
   const C=BALANCE.artillery, R=C.radius;
-  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeDangerZone(tx,tz,R), blink:0 });
+  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0 });
   sfx('alarm');
 }
 function updateArtillery(dt, now){
@@ -2654,13 +2668,13 @@ const _artUP=new THREE.Vector3(0,1,0), _artDir=new THREE.Vector3();
 function updateArtStrikes(dt, now){
   const C=BALANCE.artillery;
   for(let i=artStrikes.length-1;i>=0;i--){ const s=artStrikes[i]; s.t-=dt;
-    // pulsing red lock zone (faster/brighter the closer to launch+impact)
-    if(s.zone){ const k = s.state==='lock' ? (1-Math.max(0,s.t)/C.lockTime) : 0.9;
-      const pul=0.5+0.5*Math.sin(now*(8+k*16));
-      s.zone.userData.disc.material.opacity=0.12+0.3*k+0.06*pul;
-      s.zone.userData.ring.material.opacity=0.5+0.5*pul; }
-    s.blink-=dt; if(s.blink<=0){ s.blink=0.32-(s.state==='lock'?0.2:0.26)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep');
-      spawnPart(s.tx,0.5,s.tz,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff4028,size:1.1,life:0.3,grav:-2}); }
+    // RADAR LOCK reticle: blink faster + spin the sweep faster the closer to launch/impact
+    if(s.zone){ const ud=s.zone.userData, k = s.state==='lock' ? (1-Math.max(0,s.t)/C.lockTime) : 1;
+      const pul=0.45+0.55*Math.abs(Math.sin(now*(5+k*10)));         // tasteful blink, quickens near launch
+      for(const it of ud.items) it.m.material.opacity = it.base*pul;
+      if(ud.sweep) ud.sweep.rotation.z += dt*(3.2+k*5);             // radar sweep spins faster as the lock tightens
+      if(ud.sweepMat) ud.sweepMat.opacity = 0.35+0.4*pul; }
+    s.blink-=dt; if(s.blink<=0){ s.blink=0.34-(s.state==='lock'?0.22:0.28)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep'); }
     if(s.state==='lock'){
       if(s.t<=0){   // LAUNCH — arcing missile drops in from a random direction high above
         s.state='fly'; s.t=C.flightTime;
@@ -2679,44 +2693,54 @@ function updateArtStrikes(dt, now){
       spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*3,-0.4,(Math.random()-0.5)*3,{color:0xff7a2e,size:1.5,life:0.4,grav:0.6,drag:2.4,op:0.8});  // fiery wake
       if(Math.random()<0.7) spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,0,(Math.random()-0.5)*2,{color:0x4a4038,size:1.5,life:0.7,smoke:true,grav:1,drag:1.5,op:0.45});
       if(s.my<=0.85 || s.t<=0){ artImpact(s, now); if(s.mesh) scene.remove(s.mesh);
-        if(s.zone){ scene.remove(s.zone); s.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); }
+        disposeArtZone(s.zone);
         artStrikes.splice(i,1); }
     }
   }
 }
 function artImpact(s, now){
   const C=BALANCE.artillery, pos=new THREE.Vector3(s.tx,1.1,s.tz), sc=s.R/3.0, tx=s.tx, tz=s.tz;
-  // ===== GRAND ARTILLERY DETONATION =====
-  burst(pos, 0xffffff, Math.floor(11*sc), 7*sc,  {life:0.13, size:2.7*sc, up:2, grav:-2, drag:8});      // blinding flash core
-  burst(pos, 0xffe8a0, Math.floor(22*sc), 13*sc, {life:0.4,  size:2.5*sc, up:6, drag:2});               // fireball
-  burst(pos, 0xff6a1c, Math.floor(18*sc), 11*sc, {life:0.5,  size:2.3*sc, up:5, drag:2});               // deep fire
-  burst(pos, 0xc4301a, Math.floor(12*sc), 9*sc,  {life:0.55, size:2.0*sc, up:4, drag:2});               // ember red
-  burst(pos, 0xffe6a0, Math.floor(26*sc), s.R*2.3, {life:0.5, size:0.5*sc, up:4, grav:-10, drag:1.2});  // sparks rip out to the edge
-  spawnDebris(pos, 2.6, 0x6a5a3a); spawnDebris(pos, 1.6, 0x33302a);                                     // dirt + metal shards
-  // shockwave rings to the exact kill edge + inner kill ring
-  ringPulse({x:tx,z:tz}, 0xffffff, s.R*1.15); ringPulse({x:tx,z:tz}, 0xffd27a, s.R); ringPulse({x:tx,z:tz}, 0xff5028, s.R*0.72); ringPulse({x:tx,z:tz}, 0xff3018, s.innerR*1.5);
-  // rising MUSHROOM smoke column (staggered puffs climb + spread)
-  for(let k=0;k<6;k++) setTimeout(()=>{ if(S.mode==='paused') return;
-    burst({x:tx,z:tz}, k<2?0x2a221a:0x191510, 2, 3+k*0.7, {y:1.2+k*1.15, life:0.9+k*0.12, size:(2.1+k*0.55)*sc, smoke:true, grav:-0.6, drag:1.5, up:2.4, op:0.5}); }, k*55);
-  setTimeout(()=>{ if(S.mode!=='paused') burst({x:tx,z:tz}, 0x241c14, 7, 5.5*sc, {y:8, life:1.5, size:3.6*sc, smoke:true, grav:-0.3, drag:1.6, up:1, op:0.45}); }, 360);  // mushroom cap
-  // secondary fire-pops ringing around the crater (visual-only — keep the audio to the main rolling boom)
-  for(let k=0;k<7;k++){ const a=Math.random()*6.283, rr=s.R*(0.35+Math.random()*0.6);
-    setTimeout(()=>{ if(S.mode==='paused') return; const ep={x:tx+Math.cos(a)*rr, z:tz+Math.sin(a)*rr};
-      burst(ep, 0xffba5c, 6, 8, {life:0.34, size:1.5, up:4, drag:2.6}); burst(ep, 0xff5a1c, 4, 6, {life:0.42, size:1.3, drag:2.6}); ringPulse(ep, 0xffaa50, 2.3); }, 40+k*42); }
-  S.shake=Math.min(5.5, S.shake+3.4);
-  muzzleLight.position.set(tx,4,tz); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=9.5;
-  sfx('bigexplode'); setTimeout(()=>{ if(S.mode!=='paused') sfx('explode'); }, 130);
-  // distance-graded damage: bullseye = dmgMax, edge = dmgMin, outside = none
-  const grade=(ox,oz)=>{ const d=Math.hypot(ox-s.tx,oz-s.tz); if(d>s.R) return 0;
+  // ---- distance-graded damage FIRST → decide HIT (shrapnel) vs MISS (just fire+smoke) ----
+  const grade=(ox,oz)=>{ const d=Math.hypot(ox-tx,oz-tz); if(d>s.R) return 0;
     return d<=s.innerR ? C.dmgMax : C.dmgMin + (C.dmgMax-C.dmgMin)*(1-(d-s.innerR)/(s.R-s.innerR)); };
-  const p=S.player;
+  let hit=false; const p=S.player;
   if(p && now>=p.invincibleUntil){ const dmg=grade(p.pos.x,p.pos.z);
-    if(dmg>0){ const direct = Math.hypot(p.pos.x-s.tx,p.pos.z-s.tz)<=s.innerR;
+    if(dmg>0){ hit=true; const direct = Math.hypot(p.pos.x-tx,p.pos.z-tz)<=s.innerR;
       damagePlayer(Math.round(dmg), now); floatText(direct?'DIRECT HIT!':'GRAZED', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
-  if(core){ const dc=grade(core.pos.x,core.pos.z); if(dc>0) damageCore(Math.round(dc*C.coreMul)); }
-  for(const sd of soldiers){ const ds=grade(sd.pos.x,sd.pos.z); if(ds>0) damageSoldier(sd, ds*C.coreMul); }
+  if(core){ const dc=grade(core.pos.x,core.pos.z); if(dc>0){ hit=true; damageCore(Math.round(dc*C.coreMul)); } }
+  for(const sd of soldiers){ const ds=grade(sd.pos.x,sd.pos.z); if(ds>0){ hit=true; damageSoldier(sd, ds*C.coreMul); } }
+  // ---- common: flash + impact rings + light ----
+  burst(pos, 0xffffff, Math.floor((hit?11:7)*sc), 7*sc, {life:0.13, size:2.5*sc, up:2, grav:-2, drag:8});   // flash
+  ringPulse({x:tx,z:tz}, 0xffd27a, s.R*(hit?1.0:0.7)); ringPulse({x:tx,z:tz}, 0xff5028, s.R*(hit?0.7:0.45));
+  muzzleLight.position.set(tx,4,tz); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=hit?9.5:5.5;
+  if(hit){
+    // ===== DIRECT HIT → grand devastation + METAL SHRAPNEL =====
+    burst(pos, 0xffe8a0, Math.floor(22*sc), 13*sc, {life:0.4,  size:2.5*sc, up:6, drag:2});
+    burst(pos, 0xff6a1c, Math.floor(18*sc), 11*sc, {life:0.5,  size:2.3*sc, up:5, drag:2});
+    burst(pos, 0xc4301a, Math.floor(12*sc), 9*sc,  {life:0.55, size:2.0*sc, up:4, drag:2});
+    burst(pos, 0xffe6a0, Math.floor(26*sc), s.R*2.3, {life:0.5, size:0.5*sc, up:4, grav:-10, drag:1.2});   // sparks to the edge
+    spawnDebris(pos, 2.6, 0x6a5a3a); spawnDebris(pos, 1.6, 0x33302a);                                       // dirt + metal shards (only on a hit)
+    ringPulse({x:tx,z:tz}, 0xffffff, s.R*1.15); ringPulse({x:tx,z:tz}, 0xff3018, s.innerR*1.5);
+    for(let k=0;k<6;k++) setTimeout(()=>{ if(S.mode==='paused') return;
+      burst({x:tx,z:tz}, k<2?0x2a221a:0x191510, 2, 3+k*0.7, {y:1.2+k*1.15, life:0.9+k*0.12, size:(2.1+k*0.55)*sc, smoke:true, grav:-0.6, drag:1.5, up:2.4, op:0.5}); }, k*55);   // mushroom column
+    setTimeout(()=>{ if(S.mode!=='paused') burst({x:tx,z:tz}, 0x241c14, 7, 5.5*sc, {y:8, life:1.5, size:3.6*sc, smoke:true, grav:-0.3, drag:1.6, up:1, op:0.45}); }, 360);
+    for(let k=0;k<7;k++){ const a=Math.random()*6.283, rr=s.R*(0.35+Math.random()*0.6);
+      setTimeout(()=>{ if(S.mode==='paused') return; const ep={x:tx+Math.cos(a)*rr, z:tz+Math.sin(a)*rr};
+        burst(ep, 0xffba5c, 6, 8, {life:0.34, size:1.5, up:4, drag:2.6}); burst(ep, 0xff5a1c, 4, 6, {life:0.42, size:1.3, drag:2.6}); ringPulse(ep, 0xffaa50, 2.3); }, 40+k*42); }   // secondary pops
+    S.shake=Math.min(5.5, S.shake+3.4);
+    sfx('bigexplode'); setTimeout(()=>{ if(S.mode!=='paused') sfx('explode'); }, 130);
+  } else {
+    // ===== MISS (you dodged) → just fire + smoke "xèo" — no shrapnel =====
+    burst(pos, 0xffd28a, Math.floor(10*sc), 8*sc, {life:0.36, size:1.8*sc, up:4, drag:2.6});               // modest fireball
+    burst(pos, 0xff7a2e, Math.floor(7*sc),  6*sc, {life:0.42, size:1.5*sc, up:3, drag:2.6});
+    burst(pos, 0x8a7355, Math.floor(5*sc),  5*sc, {life:0.5,  size:1.0*sc, up:2, grav:5, drag:2});         // light dirt puff (no metal)
+    for(let k=0;k<3;k++) setTimeout(()=>{ if(S.mode==='paused') return;
+      burst({x:tx,z:tz}, 0x241c14, 2, 3+k, {y:1+k*0.7, life:0.7, size:(1.7+k*0.4)*sc, smoke:true, grav:-0.5, drag:1.6, up:2, op:0.4}); }, k*55);   // small smoke wisp
+    S.shake=Math.min(2.8, S.shake+1.1);
+    sfx('explode');
+  }
 }
-function clearArtillery(){ for(const s of artStrikes){ if(s.mesh) scene.remove(s.mesh); if(s.zone){ scene.remove(s.zone); s.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); } } artStrikes.length=0; ART={phase:'rest', t:BALANCE.artillery.restMin}; }
+function clearArtillery(){ for(const s of artStrikes){ if(s.mesh) scene.remove(s.mesh); disposeArtZone(s.zone); } artStrikes.length=0; ART={phase:'rest', t:BALANCE.artillery.restMin}; }
 function removeEnemy(e){ const i=enemies.indexOf(e); if(i>=0) enemies.splice(i,1); e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
 function airstrike(now){
   const cx=S.aimPoint.x||0, cz=S.aimPoint.z||0;
