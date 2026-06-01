@@ -1,13 +1,16 @@
 # STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
 
-> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (tính tới Z21). Khác với `GAME_DESIGN.md` (mô tả ý tưởng), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
+> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (tính tới Z22). Khác với `GAME_DESIGN.md` (mô tả ý tưởng), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 
 ---
 
 ## 1. Có bao nhiêu màn?
 
 - **5 màn (Stage 1 → 5)**, mỗi màn 1 biome + 1 boss. Hạ boss **OVERLORD (Stage 5)** → **VICTORY**.
-- **NEW GAME+**: sau victory bấm NG+ = **chơi lại từ Stage 1**, **giữ nguyên tài khoản** (kho súng, nâng cấp, ví, kỷ lục). *Hiện NG+ KHÔNG tăng độ khó vô hạn — chỉ là chơi lại; độ khó vẫn theo nấc 1→5.*
+- **NEW GAME+ (leo thang vô hạn)**: hạ Overlord → vào **NG+1, NG+2…** (giữ nguyên tài khoản). Mỗi vòng `loop` **mạnh hơn VÀ thưởng nhiều hơn**:
+  - Địch HP ×`(1 + loop×0.45)` · Địch sát thương ×`(1 + loop×0.22)` · Boss HP ×`(1 + loop×0.55)`.
+  - Xu/điểm ×`(1 + loop×0.6)` · Boss rơi **`2 + loop` 💎**.
+  - ⇒ Có chỗ dùng kho vũ khí/nâng cấp đã cày + cày kim cương VIP có ý nghĩa vô hạn. CONTINUE/checkpoint nhớ cả `loop`.
 - Cấu trúc 1 màn = **5 đợt (wave) + 1 boss**.
 
 | Stage | Biome | Boss | Boss HP |
@@ -59,6 +62,19 @@
 
 ---
 
+## 3b. Sự kiện ngẫu nhiên & Elite (bất ngờ)
+
+**Sự kiện wave** (~34% mỗi wave từ S1-W2 trở đi, có banner báo trước):
+| Sự kiện | Hiệu ứng |
+|---|---|
+| ⚠ ELITE WAVE | spawn `1..4` lính **elite** (số tăng theo stage/loop) |
+| HORDE | +50% số địch trong wave |
+| TREASURE WAVE | **mọi kill đều rơi loot** |
+| RELENTLESS ASSAULT | spawn nhanh gấp đôi + cap +4 (sân đông nghẹt) |
+| BOMBER BLITZ (S≥2) | cả wave là bomber cảm tử — thử thách né |
+
+**Lính Elite (champion):** ngoài ELITE WAVE còn có **xác suất nền** mỗi spawn = `min(25%, 2.5%×(stage−1) + 6%×loop)` (không áp cho bomber). Elite: **HP ×2.6, to hơn 32%, hào quang vàng**, **+1 💎 + xu ×3** khi hạ, luôn rơi loot. → mục tiêu ưu tiên, phần thưởng béo.
+
 ## 4. Tỉ lệ quà tặng / vật phẩm rơi
 
 **Khi nào rơi đồ (loot ẩn, có đèn hiệu báo trước = beacon → chắc chắn rơi khi phá):**
@@ -99,4 +115,4 @@
 
 ---
 
-**Last updated:** 2026-06-01 · khớp code Z21. Số liệu là **tunable** — đổi balance thì cập nhật file này.
+**Last updated:** 2026-06-01 · khớp code Z22. Số liệu là **tunable** — đổi balance thì cập nhật file này.
