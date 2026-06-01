@@ -230,37 +230,46 @@
   .shop-wallet{margin:-2px 0 2px;}
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
   .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
-  /* shop grid */
-  #shopgrid{display:flex;flex-direction:column;gap:7px;max-width:min(94vw,760px);max-height:62vh;overflow-y:auto;padding:4px 8px;width:100%;}
-  #shopgrid::-webkit-scrollbar{width:6px;} #shopgrid::-webkit-scrollbar-thumb{background:rgba(255,206,110,.3);border-radius:3px;}
-  .shop-cat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:900;letter-spacing:3px;color:var(--amber);text-transform:uppercase;text-align:left;margin:7px 2px 0;opacity:.92;}
-  .shop-cat .cat-ic{width:13px;height:13px;color:var(--amber);opacity:.85;} .shop-cat .cat-ic svg{width:100%;height:100%;}
-  .shop-cat::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,206,110,.35),transparent);}
-  .shop-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;}
-  /* premium rarity-tinted cards */
-  .shopcard{--rar:#9bd14a;pointer-events:auto;cursor:pointer;position:relative;overflow:hidden;width:152px;padding:10px 11px 9px 13px;border-radius:13px;text-align:left;
-    background:linear-gradient(158deg,rgba(30,36,24,.94),rgba(9,12,7,.96));border:1px solid rgba(255,255,255,.08);
-    box-shadow:0 8px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);transition:transform .13s,border-color .13s,box-shadow .13s;display:flex;flex-direction:column;gap:3px;}
-  .shopcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rar);box-shadow:0 0 10px var(--rar);opacity:.9;}
-  .shopcard.rar-t1{--rar:#9fb07a;} .shopcard.rar-t2{--rar:#5aa9ff;} .shopcard.rar-t3{--rar:#c08bff;} .shopcard.rar-vip{--rar:#7fe7ff;} .shopcard.rar-up{--rar:#9bd14a;}
-  .shopcard:hover{transform:translateY(-3px);border-color:var(--rar);box-shadow:0 13px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);}
-  .sc-badge{position:absolute;top:8px;right:8px;font-size:8px;font-weight:900;letter-spacing:1px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.4);color:var(--rar);border:1px solid var(--rar);}
-  .shopcard .sc-top{display:flex;align-items:center;gap:8px;padding-right:34px;}
-  .shopcard .sc-ic{width:24px;height:24px;color:var(--rar);flex:0 0 auto;filter:drop-shadow(0 0 5px var(--rar));} .shopcard .sc-ic svg{width:100%;height:100%;}
-  .shopcard .sc-nm{font-size:12.5px;font-weight:900;letter-spacing:.4px;color:#f0f3e8;line-height:1.05;}
-  .shopcard .sc-eff{font-size:10px;color:var(--muted);line-height:1.3;min-height:13px;}
-  .shopcard .sc-dots{display:flex;gap:3px;margin:1px 0;}
-  .shopcard .sc-dots i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.12);}
-  .shopcard .sc-dots i.on{background:var(--rar);box-shadow:0 0 5px var(--rar);}
-  .shopcard .sc-buy{margin-top:4px;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;border-radius:9px;
-    background:linear-gradient(180deg,#f4c45e,#cd7c20);color:#1c1404;font-weight:900;font-size:12px;letter-spacing:.5px;border:1px solid rgba(255,230,175,.65);text-shadow:0 1px 0 rgba(255,240,200,.4);}
-  .shopcard .sc-buy .ic{width:13px;height:13px;color:#1c1404;}
-  .shopcard.rar-vip .sc-buy{background:linear-gradient(180deg,#9fefff,#3aa0c8);border-color:rgba(190,245,255,.7);}
-  .shopcard.cant .sc-buy{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line);cursor:not-allowed;text-shadow:none;}
-  .shopcard.cant .sc-buy .ic{color:var(--muted);} .shopcard.cant{opacity:.96;} .shopcard.cant::before{opacity:.4;}
-  .shopcard.maxed .sc-buy,.shopcard.owned .sc-buy{background:rgba(140,191,63,.16);color:#bfe08a;border-color:rgba(140,191,63,.45);text-shadow:none;}
-  .shopcard.owned{filter:grayscale(.55);opacity:.72;} .shopcard.owned:hover{transform:none;}
-  body.touch #shopgrid{max-height:64vh;} body.touch .shopcard{width:31%;min-width:106px;}
+  /* ---- 3D ARMORY SHOWROOM ---- */
+  .overlay.shop3d{background:radial-gradient(125% 85% at 50% 8%, rgba(10,14,22,.12), rgba(3,5,9,.72) 72%);justify-content:flex-start;}
+  .shop-top{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:9px;padding:max(12px,env(safe-area-inset-top)) 12px 10px;pointer-events:none;z-index:2;}
+  .shop-head{display:flex;align-items:center;gap:18px;pointer-events:none;}
+  .shop-ttl{font-size:clamp(19px,4.4vw,32px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 2px 18px rgba(255,206,110,.5),0 0 2px #000;}
+  .shop3d .shop-wallet{margin:0;pointer-events:auto;}
+  .shop-tabs{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;pointer-events:auto;max-width:94vw;}
+  .shop-tab{cursor:pointer;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 13px;border-radius:999px;
+    background:rgba(8,12,8,.5);border:1px solid rgba(255,255,255,.12);color:var(--muted);backdrop-filter:blur(3px);transition:.12s;}
+  .shop-tab:hover{color:var(--ink);border-color:rgba(255,206,110,.5);}
+  .shop-tab.on{background:linear-gradient(180deg,rgba(243,196,94,.92),rgba(205,124,32,.88));color:#1c1404;border-color:rgba(255,230,175,.8);box-shadow:0 4px 14px rgba(243,185,74,.35);}
+  .shop-arrow{position:absolute;top:48%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(8,12,8,.46);border:1px solid rgba(255,255,255,.14);color:#fff;pointer-events:auto;cursor:pointer;backdrop-filter:blur(4px);z-index:2;transition:.12s;}
+  .shop-arrow:hover{border-color:var(--amber);background:rgba(30,22,8,.6);transform:translateY(-50%) scale(1.06);}
+  .shop-arrow .ic{width:24px;height:24px;}
+  .shop-arrow.prev{left:max(10px,env(safe-area-inset-left));} .shop-arrow.prev .ic{transform:scaleX(-1);}
+  .shop-arrow.next{right:max(10px,env(safe-area-inset-right));}
+  .shop-info{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,520px);--rar:#ffce4a;
+    display:flex;flex-direction:column;align-items:center;gap:5px;padding:13px 18px 15px;border-radius:16px;pointer-events:auto;
+    background:linear-gradient(180deg,rgba(10,13,18,.32),rgba(5,8,13,.82));border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 44px rgba(0,0,0,.55);backdrop-filter:blur(7px);}
+  .shop-info::before{content:'';position:absolute;left:18px;right:18px;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--rar),transparent);opacity:.8;}
+  .si-cat{font-size:10px;font-weight:900;letter-spacing:3px;color:var(--rar);text-transform:uppercase;text-shadow:0 0 10px var(--rar);}
+  .si-name{font-size:clamp(18px,4vw,26px);font-weight:900;letter-spacing:1px;color:#f4f7ee;line-height:1;}
+  .si-stats{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--muted);min-height:15px;}
+  .si-stats .st{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:3px 9px;letter-spacing:.4px;}
+  .si-stats .st b{color:#eef3e4;}
+  .si-stats .st.tag{color:#0a0d0a;background:var(--rar);border-color:transparent;font-weight:900;}
+  .si-buy{cursor:pointer;margin-top:5px;min-width:170px;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px;
+    padding:11px 26px;border-radius:12px;font-size:16px;font-weight:900;letter-spacing:1px;
+    background:linear-gradient(180deg,#f4c45e,#cd7c20);color:#1c1404;border:1px solid rgba(255,230,175,.7);box-shadow:0 8px 22px rgba(243,185,74,.3);text-shadow:0 1px 0 rgba(255,240,200,.4);transition:.12s;}
+  .si-buy .ic{width:16px;height:16px;color:#1c1404;}
+  .si-buy:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .si-buy.vip{background:linear-gradient(180deg,#9fefff,#3aa0c8);border-color:rgba(190,245,255,.75);box-shadow:0 8px 22px rgba(127,231,255,.3);}
+  .si-buy.vip .ic{color:#06222e;}
+  .si-buy.cant{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line);cursor:not-allowed;text-shadow:none;box-shadow:none;}
+  .si-buy.cant .ic{color:var(--muted);}
+  .si-buy.owned,.si-buy.maxed{background:rgba(140,191,63,.18);color:#bfe08a;border-color:rgba(140,191,63,.45);cursor:default;text-shadow:none;box-shadow:none;}
+  .si-pos{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);}
+  .shop-done{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:3;pointer-events:auto;}
+  @media(max-width:560px){ .shop-arrow{width:44px;height:44px;} .shop-arrow .ic{width:20px;height:20px;} .shop-info{padding:10px 14px 12px;} .shop-head{gap:10px;} }
   #nickInput{pointer-events:auto;width:min(78vw,300px);text-align:center;font-family:inherit;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;
     padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);outline:none;caret-color:var(--green);}
   #nickInput:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(140,191,63,.18);}
@@ -571,13 +580,24 @@
   <div class="panel" style="margin-top:6px"><div class="btn btn-primary" id="ldDone">CONFIRM ▶</div></div>
 </div>
 
-<!-- SHOP (buy weapons + upgrades with coins / diamonds) -->
-<div class="overlay hidden" id="shop">
-  <div class="title" style="font-size:clamp(22px,5vw,40px)">SHOP</div>
-  <div class="shop-wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
-  <div class="shop-hint">Cheap gear costs <b style="color:var(--amber)">coins</b> · VIP gear costs <b style="color:#7fe7ff">diamonds</b> &nbsp;·&nbsp; 1 ◆ ≈ 200 coins of value</div>
-  <div id="shopgrid"></div>
-  <div class="panel" style="margin-top:4px"><div class="btn btn-primary" id="shopDone">DONE ▶</div></div>
+<!-- SHOP — 3D armory showroom (rotating item on a pedestal; tap item or BUY to purchase) -->
+<div class="overlay hidden shop3d" id="shop">
+  <div class="shop-top">
+    <div class="shop-head"><span class="shop-ttl">ARMORY</span>
+      <span class="shop-wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></span>
+    </div>
+    <div class="shop-tabs" id="shopTabs"></div>
+  </div>
+  <div class="shop-arrow prev" id="shopPrev"><span class="ic" data-icon="dash"></span></div>
+  <div class="shop-arrow next" id="shopNext"><span class="ic" data-icon="dash"></span></div>
+  <div class="shop-info" id="shopInfo">
+    <div class="si-cat" id="si-cat">WEAPONS</div>
+    <div class="si-name" id="si-name">—</div>
+    <div class="si-stats" id="si-stats"></div>
+    <div class="si-buy" id="si-buy">BUY</div>
+    <div class="si-pos" id="si-pos"></div>
+  </div>
+  <div class="btn btn-mini shop-done" id="shopDone"><span>◀ DONE</span></div>
 </div>
 
 <!-- PAUSE -->
@@ -794,7 +814,8 @@ camera.position.set(0, 46, 34);
 camera.lookAt(0,0,0);
 
 const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
+const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
+composer.addPass(renderPass);
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.7, 0.8);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -2741,45 +2762,151 @@ function shopModel(){
 }
 const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', TROOPS:'up' };
 function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
-function renderShop(){
-  const grid=document.getElementById('shopgrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
-  shopModel().forEach(group=>{
-    const h=document.createElement('div'); h.className='shop-cat';
-    h.innerHTML='<span class="cat-ic">'+svgMarkup(CAT_ICON[group.cat]||'star')+'</span>'+group.cat;
-    grid.appendChild(h);
-    const row=document.createElement('div'); row.className='shop-row';
-    group.items.forEach(it=>{
-      const owned = it.type==='gun' && it.owned;
-      const maxed = it.type==='up' && it.level>=it.max;
-      const locked = !owned && !maxed && !(it.cost && canAfford(it.cost));   // can't afford
-      const state = owned?'owned':(maxed?'maxed':(locked?'cant':''));
-      const card=document.createElement('div'); card.className='shopcard rar-'+it.rar+(state?' '+state:'');
-      const badge = it.type==='gun' ? (it.vip?'VIP':('T'+it.tier)) : ('LV '+it.level+'/'+it.max);
-      let dots=''; if(it.type==='up'){ const cs=SHOP_UP_BY[it.key].costs; for(let i=0;i<it.max;i++) dots+='<i class="'+(i<it.level?'on':'')+'"></i>'; }
-      const eff = it.type==='up' ? it.per : ('Tier '+it.tier+' weapon');
-      const buy = owned ? '✓ OWNED' : (maxed ? 'MAXED' : priceHTML(it.cost));
-      card.innerHTML = '<span class="sc-badge">'+badge+'</span>'+
-        '<div class="sc-top"><span class="sc-ic">'+svgMarkup(it.icon)+'</span><span class="sc-nm">'+it.name+'</span></div>'+
-        (it.type==='up'?'<div class="sc-dots">'+dots+'</div>':'')+
-        '<div class="sc-eff">'+eff+'</div><div class="sc-buy">'+buy+'</div>';
-      if(!owned && !maxed) tapEl(card, ()=>buyShop(it));   // owned/maxed → not clickable (no duplicate purchase)
-      row.appendChild(card);
-    });
-    grid.appendChild(row);
-  });
+// ===== 3D showroom: a dark studio + spotlight + turntable; the focused item rotates on a pedestal =====
+const shopScene = new THREE.Scene();
+shopScene.background = new THREE.Color(0x05070b);
+shopScene.fog = new THREE.Fog(0x05070b, 11, 26);
+const shopCam = new THREE.PerspectiveCamera(40, innerWidth/Math.max(1,innerHeight), 0.1, 80);
+shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
+(function(){
+  shopScene.add(new THREE.AmbientLight(0x3a4456, 0.85));
+  const key=new THREE.SpotLight(0xffffff, 110, 28, 0.66, 0.55, 1.2); key.position.set(2.6,9.5,5.4); key.target.position.set(0,1.4,0); shopScene.add(key, key.target);
+  const a=new THREE.PointLight(0x5aa9ff, 45, 22); a.position.set(-5.5,3,-2); shopScene.add(a);
+  const b=new THREE.PointLight(0xffb43a, 32, 22); b.position.set(5.5,2.2,-3); shopScene.add(b);
+  const disc=new THREE.Mesh(new THREE.CylinderGeometry(2.7,3.0,0.34,56), new THREE.MeshStandardMaterial({color:0x10131b,metalness:.75,roughness:.5}));
+  disc.position.y=-0.17; shopScene.add(disc);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.72,0.05,12,72), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffce4a,emissiveIntensity:2.4,roughness:.4}));
+  ring.rotation.x=Math.PI/2; ring.position.y=0.03; shopScene.add(ring); shopScene._ring=ring;
+  const grid=new THREE.GridHelper(48, 48, 0x1a3a52, 0x0c1622); grid.position.y=-0.34; shopScene.add(grid);
+})();
+const RAR_COL={t1:0x9fb07a,t2:0x5aa9ff,t3:0xc08bff,vip:0x7fe7ff,up:0x9bd14a};
+const _shMetal=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:.36});
+const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:1.5,metalness:.4,roughness:.4});
+const _shopRay=new THREE.Raycaster();
+function _box(w,h,d,m){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); }
+function _barX(rt,rb,h,m){ const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,18), m); c.rotation.z=Math.PI/2; return c; }   // cylinder lying along X
+function buildGunModel(id){
+  const g=GUNS[id]||GUNS.rifle, col=g.color||0xaef0a0, sv=g.svg||'rifle', grp=new THREE.Group();
+  const dark=_shMetal(0x2b2f2b), steel=_shMetal(0x474b4d), acc=_shGlow(col);
+  grp.add(_box(1.5,0.5,0.42,dark));                                            // receiver
+  const grip=_box(0.3,0.72,0.34,steel); grip.position.set(-0.36,-0.52,0); grip.rotation.z=0.24; grp.add(grip);
+  const stock=_box(0.72,0.42,0.34,dark); stock.position.set(-0.98,-0.06,0); grp.add(stock);
+  const mag=_box(0.34,0.62,0.3,acc); mag.position.set(0.16,-0.52,0); grp.add(mag);
+  const sight=_box(0.3,0.16,0.1,steel); sight.position.set(-0.12,0.34,0); grp.add(sight);
+  const bar=(len,rad,y,z,mat)=>{ const c=_barX(rad,rad,len,mat||dark); c.position.set(0.75+len/2, y||0, z||0); grp.add(c); return c; };
+  if(sv==='shotgun'){ bar(1.5,0.1,0.09,0.11); bar(1.5,0.1,0.09,-0.11); }
+  else if(sv==='shell'){ bar(1.4,0.23,0.05,0); const mb=_barX(0.3,0.3,0.3,acc); mb.position.set(2.05,0.05,0); grp.add(mb); }     // cannon
+  else if(sv==='minigun'){ const hub=_barX(0.34,0.34,0.5,steel); hub.position.set(1.05,0,0); grp.add(hub);
+      const cl=new THREE.Group(); for(let i=0;i<6;i++){ const c=_barX(0.07,0.07,1.5,dark); const an=i/6*6.283; c.position.set(1.75,Math.sin(an)*0.22,Math.cos(an)*0.22); cl.add(c);} grp.add(cl); grp._spinPart=cl; }
+  else if(sv==='missile'||sv==='rocket'){ const tubes=sv==='rocket'?1:3, rad=sv==='rocket'?0.3:0.14;
+      for(let i=0;i<tubes;i++){ const o=(i-(tubes-1)/2); const yy=sv==='rocket'?0:o*0.34, zz=sv==='rocket'?0:o*0.0; const tube=_barX(rad,rad,1.4,steel); tube.position.set(1.25,yy,zz); grp.add(tube);
+        const tip=new THREE.Mesh(new THREE.ConeGeometry(rad,0.42,12),acc); tip.rotation.z=-Math.PI/2; tip.position.set(2.05,yy,zz); grp.add(tip); } }
+  else if(sv==='rail'){ const r1=_box(1.9,0.07,0.12,steel); r1.position.set(1.2,0.13,0); const r2=r1.clone(); r2.position.y=-0.13; grp.add(r1,r2);
+      const core=_barX(0.1,0.1,1.7,acc); core.position.set(1.2,0,0); grp.add(core); for(let i=0;i<3;i++){ const rg=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.04,8,18),acc); rg.position.set(0.65+i*0.6,0,0); grp.add(rg);} }
+  else if(sv==='bolt'){ bar(1.2,0.1,0,0,steel); for(let i=0;i<3;i++){ const co=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.06,10,22),acc); co.position.set(0.95+i*0.4,0,0); co.rotation.y=Math.PI/2; grp.add(co);} }
+  else if(sv==='snow'){ bar(1.4,0.13,0,0,steel); for(let i=0;i<4;i++){ const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.15,0),acc); const an=i/4*6.283; cr.position.set(1.7,Math.sin(an)*0.2,Math.cos(an)*0.2); grp.add(cr);} }
+  else { bar(sv==='smg'?1.0:1.6,0.1); const mz=_barX(0.14,0.14,0.18,acc); mz.position.set(sv==='smg'?1.4:1.7,0,0); grp.add(mz); }   // rifle/smg/default
+  grp.scale.setScalar(1.18);
+  return grp;
 }
+function buildUpgradeModel(item){
+  const grp=new THREE.Group(); const rc=RAR_COL[item.rar]||0x9bd14a;
+  let geo;
+  switch(item.key){
+    case 'damage': geo=new THREE.TetrahedronGeometry(1.05,0); break;
+    case 'range':  geo=new THREE.CylinderGeometry(0.22,0.22,2.0,22); break;
+    case 'reload': case 'mag': geo=new THREE.BoxGeometry(0.9,1.3,0.62); break;
+    case 'hp':     geo=new THREE.IcosahedronGeometry(1.05,0); break;
+    case 'armor':  geo=new THREE.CylinderGeometry(1.1,1.1,0.26,8); break;
+    case 'engine': geo=new THREE.TorusGeometry(0.74,0.3,18,30); break;
+    default:       geo=new THREE.OctahedronGeometry(1.05,0);
+  }
+  const core=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:1.0,metalness:.6,roughness:.3}));
+  core.position.y=1.55; grp.add(core); grp._spinPart=core;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(item.icon,'#'+rc.toString(16).padStart(6,'0')),transparent:true,depthWrite:false}));
+  spr.scale.set(1.25,1.25,1); spr.position.set(0,3.0,0); grp.add(spr);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.45,0.045,10,44), _shGlow(rc)); halo.rotation.x=Math.PI/2; halo.position.y=0.28; grp.add(halo);
+  grp._floatLock=true;
+  return grp;
+}
+function disposeObj(o){ o.traverse&&o.traverse(c=>{ if(c.geometry)c.geometry.dispose(); if(c.material){ (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{ if(m.map)m.map.dispose(); m.dispose&&m.dispose(); }); } }); }
+
+let shopOpen3D=false, shopList=[], shopIdx=0, shopHero=null, _shopT=0, _shopCats=[];
+function buildShopList(){ shopList = shopModel().flatMap(g=>g.items.map(it=>({...it, cat:g.cat}))); _shopCats=[...new Set(shopList.map(it=>it.cat))]; }
+function buildShopTabs(){ const tb=document.getElementById('shopTabs'); if(!tb) return; tb.innerHTML='';
+  _shopCats.forEach(cat=>{ const t=document.createElement('div'); t.className='shop-tab'; t.dataset.cat=cat; t.textContent=cat; tapEl(t, ()=>shopJumpCat(cat)); tb.appendChild(t); }); }
+function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
+function shopStats(it){
+  if(it.type==='gun'){ const g=GUNS[it.id], out=[];
+    out.push(shopStat('DMG', g.dmg)); out.push(shopStat('ROF', (1/g.fireCd).toFixed(g.fireCd<0.2?0:1)+'/s')); out.push(shopStat('MAG', g.mag));
+    if(g.frags>1) out.push(shopStat('', g.frags+'× PELLET', true));
+    if(g.pierce) out.push(shopStat('','PIERCE',true)); if(g.aoe||g.aoeR) out.push(shopStat('','AOE',true));
+    if(g.homing) out.push(shopStat('','HOMING',true)); if(g.freeze) out.push(shopStat('','FREEZE',true)); if(g.chain) out.push(shopStat('','CHAIN',true));
+    return out.join(''); }
+  const out=[shopStat('', it.per)]; out.push(shopStat('LEVEL', it.level+' / '+it.max));
+  if(it.level>=it.max) out.push(shopStat('','MAXED',true)); return out.join('');
+}
+function updateShopInfo(){
+  const it=shopList[shopIdx]; if(!it) return;
+  const hex='#'+(RAR_COL[it.rar]||0xffce4a).toString(16).padStart(6,'0');
+  document.getElementById('shopInfo').style.setProperty('--rar',hex);
+  document.getElementById('si-cat').textContent = it.cat + (it.type==='gun'?(it.vip?' · VIP':' · TIER '+it.tier):'');
+  document.getElementById('si-name').textContent = it.name;
+  document.getElementById('si-stats').innerHTML = shopStats(it);
+  const owned = it.type==='gun' && it.owned, maxed = it.type==='up' && it.level>=it.max;
+  const cant = !owned && !maxed && !(it.cost && canAfford(it.cost));
+  const buy=document.getElementById('si-buy');
+  buy.className='si-buy '+(owned?'owned':maxed?'maxed':cant?'cant':(it.vip?'vip':''));
+  buy.innerHTML = owned?'✓ OWNED' : maxed?'MAXED' : (it.cost? ('BUY · '+priceHTML(it.cost)) : 'MAXED');
+  document.getElementById('si-pos').textContent = (shopIdx+1)+' / '+shopList.length;
+  document.querySelectorAll('#shopTabs .shop-tab').forEach(t=>t.classList.toggle('on', t.dataset.cat===it.cat));
+  refreshWallet();
+}
+function spawnShopHero(){
+  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  const it=shopList[shopIdx]; if(!it) return;
+  shopHero = it.type==='gun' ? buildGunModel(it.id) : buildUpgradeModel(it);
+  shopHero.position.y = it.type==='gun' ? 1.55 : 0.15;
+  shopHero.rotation.y = -0.55;
+  shopScene.add(shopHero); updateShopInfo();
+}
+function shopGo(d){ if(!shopList.length) return; shopIdx=(shopIdx+d+shopList.length)%shopList.length; sfx('click'); spawnShopHero(); }
+function shopJumpCat(cat){ const i=shopList.findIndex(it=>it.cat===cat); if(i>=0){ shopIdx=i; sfx('click'); spawnShopHero(); } }
 function buyShop(it){
-  if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // already own it → never re-buy
-  if(it.type==='up' && upLevel(it.key)>=upMax(it.key)){ sfx('click'); return; }        // already maxed
+  it = it || shopList[shopIdx]; if(!it) return;
+  if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // own it → never re-buy
+  if(it.type==='up' && upLevel(it.key)>=upMax(it.key)){ sfx('click'); return; }        // maxed
   if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }                          // can't afford
   if(it.type==='up'){ payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1; }
-  else if(it.type==='gun'){ payCost(it.cost); ownGun(it.id); }
-  saveProfile(); sfx('powerup'); refreshWallet(); renderShop(); refreshStartUI();
+  else { payCost(it.cost); ownGun(it.id); }
+  saveProfile(); sfx('powerup'); refreshStartUI();
+  if(shopScene._ring){ shopScene._ring.material.emissiveIntensity=5; }                  // purchase flash on the pedestal ring
+  const key = it.type==='gun'?('g:'+it.id):('u:'+it.key);
+  buildShopList(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);
+  spawnShopHero();
 }
-function openShop(){ hide('start'); renderShop(); show('shop'); refreshWallet(); sfx('click'); }
-function closeShop(){ saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
+function openShop(){ buildShopList(); buildShopTabs(); shopIdx=0; hide('start'); show('shop');
+  renderPass.scene=shopScene; renderPass.camera=shopCam; shopOpen3D=true; spawnShopHero(); refreshWallet(); sfx('click'); }
+function closeShop(){ shopOpen3D=false; renderPass.scene=scene; renderPass.camera=camera;
+  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
+function shop3dUpdate(dt){
+  _shopT += dt;
+  if(shopHero){ shopHero.rotation.y += dt*0.65; if(shopHero._spinPart) shopHero._spinPart.rotation.x += dt*3.2;
+    shopHero.position.y += Math.sin(_shopT*1.6)*0.0018; }
+  if(shopScene._ring){ shopScene._ring.rotation.z += dt*0.4; const e=shopScene._ring.material; if(e.emissiveIntensity>2.4) e.emissiveIntensity=Math.max(2.4, e.emissiveIntensity-dt*8); }
+}
 tapBtn('shopBtn', openShop);
 tapBtn('shopDone', closeShop);
+tapBtn('shopPrev', ()=>shopGo(-1));
+tapBtn('shopNext', ()=>shopGo(1));
+tapBtn('si-buy', ()=>buyShop());
+addEventListener('pointerdown', e=>{        // click the 3D item itself to buy it
+  if(!shopOpen3D) return;
+  if(e.target.closest && e.target.closest('.shop-info,.shop-tab,.shop-arrow,.shop-done,.w-chip,#shopTabs')) return;
+  _shopRay.setFromCamera({x:(e.clientX/innerWidth)*2-1, y:-(e.clientY/innerHeight)*2+1}, shopCam);
+  if(shopHero && _shopRay.intersectObject(shopHero, true).length) buyShop();
+});
 addEventListener('pagehide', saveProfile);
 addEventListener('visibilitychange', ()=>{ if(document.hidden) saveProfile(); });
 
@@ -3265,6 +3392,8 @@ function loop(nowMs){
   let dt = (nowMs - last)/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
 
+  if(shopOpen3D) shop3dUpdate(dt);        // spin the 3D showroom hero + pedestal while the shop is open
+
   if(S.mode==='playing'){
     S.timeNow = now;
     const gdt = dt * S.timeScale;       // slow-mo on boss kill
@@ -3321,6 +3450,7 @@ function updateAbilityUI(now){
 function doResize(){
   const w=innerWidth, h=innerHeight;
   camera.aspect = w/h; camera.updateProjectionMatrix();
+  if(typeof shopCam!=='undefined'){ shopCam.aspect = w/h; shopCam.updateProjectionMatrix(); }   // keep the 3D shop camera in sync
   renderer.setSize(w, h, false); composer.setSize(w, h);   // buffer follows the viewport; CSS keeps the canvas full-screen
   if(bloom && bloom.setSize) bloom.setSize(w, h);
 }
