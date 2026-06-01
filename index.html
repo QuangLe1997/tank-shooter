@@ -268,7 +268,31 @@
   .si-buy.cant .ic{color:var(--muted);}
   .si-buy.owned,.si-buy.maxed{background:rgba(140,191,63,.18);color:#bfe08a;border-color:rgba(140,191,63,.45);cursor:default;text-shadow:none;box-shadow:none;}
   .si-pos{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);}
-  .shop-done{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:3;pointer-events:auto;}
+  .shop-done,.shop-back{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:3;pointer-events:auto;}
+  .si-desc{font-size:12px;font-style:italic;letter-spacing:.3px;color:#cdd6c2;line-height:1.3;max-width:440px;text-shadow:0 0 8px var(--rar);}
+  .shop-hint2{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.45);text-transform:uppercase;pointer-events:none;}
+  /* display-cabinet grid */
+  #caseGrid{position:absolute;left:50%;top:calc(max(12px,env(safe-area-inset-top)) + 76px);transform:translateX(-50%);
+    width:min(94vw,860px);max-height:calc(100% - 130px);overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;padding:6px 10px 18px;}
+  #caseGrid::-webkit-scrollbar{width:6px;} #caseGrid::-webkit-scrollbar-thumb{background:rgba(255,206,110,.35);border-radius:3px;}
+  .case{--rar:#9bd14a;position:relative;cursor:pointer;border-radius:14px;padding:11px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto;
+    background:linear-gradient(180deg,rgba(24,30,38,.94),rgba(8,11,16,.97));border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .12s,border-color .12s,box-shadow .12s;}
+  .case.rar-t1{--rar:#9fb07a;} .case.rar-t2{--rar:#5aa9ff;} .case.rar-t3{--rar:#c08bff;} .case.rar-vip{--rar:#7fe7ff;} .case.rar-up{--rar:#9bd14a;}
+  .case:hover{transform:translateY(-4px);border-color:var(--rar);box-shadow:0 16px 32px rgba(0,0,0,.6);}
+  .case-disp{position:relative;width:100%;height:78px;display:flex;align-items:center;justify-content:center;border-radius:11px;overflow:hidden;
+    background:radial-gradient(58% 64% at 50% 36%, rgba(255,255,255,.07), rgba(0,0,0,0) 70%);border:1px solid rgba(255,255,255,.05);}
+  .case-disp::after{content:'';position:absolute;bottom:7px;left:24%;right:24%;height:7px;border-radius:50%;background:var(--rar);filter:blur(6px);opacity:.55;}
+  .case-ic{position:relative;width:48px;height:48px;color:var(--rar);filter:drop-shadow(0 0 9px var(--rar));} .case-ic svg{width:100%;height:100%;}
+  .case-badge{position:absolute;top:7px;right:7px;font-size:8px;font-weight:900;letter-spacing:1px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.5);color:var(--rar);border:1px solid var(--rar);z-index:2;}
+  .case-nm{font-size:12.5px;font-weight:900;letter-spacing:.4px;color:#f0f3e8;text-align:center;line-height:1.05;}
+  .case-price{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:900;color:var(--amber);}
+  .case-price .ic{width:13px;height:13px;color:var(--amber);}
+  .case.rar-vip .case-price{color:#7fe7ff;} .case.rar-vip .case-price .ic{color:#7fe7ff;}
+  .case.owned,.case.maxed{filter:grayscale(.5);opacity:.66;} .case.owned .case-price,.case.maxed .case-price{color:#bfe08a;}
+  .case.cant .case-price,.case.cant .case-price .ic{color:var(--muted);}
+  body.touch #caseGrid{grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:9px;}
+  body.touch .case-disp{height:62px;} body.touch .case-ic{width:40px;height:40px;}
+  #caseGrid.hidden,#shopDetailView.hidden,#shopHint.hidden,#shopDone.hidden{display:none !important;}
   @media(max-width:560px){ .shop-arrow{width:44px;height:44px;} .shop-arrow .ic{width:20px;height:20px;} .shop-info{padding:10px 14px 12px;} .shop-head{gap:10px;} }
   #nickInput{pointer-events:auto;width:min(78vw,300px);text-align:center;font-family:inherit;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;
     padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);outline:none;caret-color:var(--green);}
@@ -580,7 +604,7 @@
   <div class="panel" style="margin-top:6px"><div class="btn btn-primary" id="ldDone">CONFIRM ▶</div></div>
 </div>
 
-<!-- SHOP — 3D armory showroom (rotating item on a pedestal; tap item or BUY to purchase) -->
+<!-- SHOP — display-cabinet grid → tap a case for the fullsize 3D detail -->
 <div class="overlay hidden shop3d" id="shop">
   <div class="shop-top">
     <div class="shop-head"><span class="shop-ttl">ARMORY</span>
@@ -588,16 +612,24 @@
     </div>
     <div class="shop-tabs" id="shopTabs"></div>
   </div>
-  <div class="shop-arrow prev" id="shopPrev"><span class="ic" data-icon="dash"></span></div>
-  <div class="shop-arrow next" id="shopNext"><span class="ic" data-icon="dash"></span></div>
-  <div class="shop-info" id="shopInfo">
-    <div class="si-cat" id="si-cat">WEAPONS</div>
-    <div class="si-name" id="si-name">—</div>
-    <div class="si-stats" id="si-stats"></div>
-    <div class="si-buy" id="si-buy">BUY</div>
-    <div class="si-pos" id="si-pos"></div>
-  </div>
+  <!-- GRID (display cases) -->
+  <div id="caseGrid"></div>
+  <div class="shop-hint2" id="shopHint">Tap a case to inspect &amp; buy</div>
   <div class="btn btn-mini shop-done" id="shopDone"><span>◀ DONE</span></div>
+  <!-- DETAIL (fullsize 3D) -->
+  <div id="shopDetailView" class="hidden">
+    <div class="shop-arrow prev" id="shopPrev"><span class="ic" data-icon="dash"></span></div>
+    <div class="shop-arrow next" id="shopNext"><span class="ic" data-icon="dash"></span></div>
+    <div class="shop-info" id="shopInfo">
+      <div class="si-cat" id="si-cat">WEAPONS</div>
+      <div class="si-name" id="si-name">—</div>
+      <div class="si-desc" id="si-desc"></div>
+      <div class="si-stats" id="si-stats"></div>
+      <div class="si-buy" id="si-buy">BUY</div>
+      <div class="si-pos" id="si-pos"></div>
+    </div>
+    <div class="btn btn-mini shop-back" id="shopBack"><span>◀ BACK</span></div>
+  </div>
 </div>
 
 <!-- PAUSE -->
@@ -2831,10 +2863,39 @@ function buildUpgradeModel(item){
 }
 function disposeObj(o){ o.traverse&&o.traverse(c=>{ if(c.geometry)c.geometry.dispose(); if(c.material){ (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{ if(m.map)m.map.dispose(); m.dispose&&m.dispose(); }); } }); }
 
-let shopOpen3D=false, shopList=[], shopIdx=0, shopHero=null, _shopT=0, _shopCats=[];
-function buildShopList(){ shopList = shopModel().flatMap(g=>g.items.map(it=>({...it, cat:g.cat}))); _shopCats=[...new Set(shopList.map(it=>it.cat))]; }
+// punchy marketing blurbs (short — "vừa đủ"): guns + upgrades
+const GUN_BLURB = {
+  rifle:'Trusty all-rounder — never jams, never quits.', smg:'A blistering storm of lead up close.',
+  shotgun:'Point-blank devastation — eight pellets, one trigger.', flak:'Bursts of shrapnel that shred whole packs.',
+  cannon:'One colossal shell. Heavy armour just folds.', cryo:'Freeze them solid — then shatter them.',
+  minigun:'Endless barrels, endless fire. Hold the line.', missile:'Lock on. It hunts. It never misses.',
+  tesla:'Lightning that arcs from foe to foe.', railgun:'A single shot punches clean through a whole column.',
+  rocket:'Lob it in — a whole zone simply vanishes.' };
+const UP_BLURB = {
+  damage:'Every round bites harder.', range:'Strike first, from way out.', reload:'Back in the fight in a blink.',
+  mag:'More rounds, far fewer reloads.', hp:'Soak up serious punishment.', armor:'Shrug off incoming fire.',
+  engine:'Outrun anything on the battlefield.', guards:'More boots standing on the Core.',
+  crew:'More gunners riding into battle.', troops:'Your troops hit a whole lot harder.' };
+function itemBlurb(it){ return it.type==='gun' ? (GUN_BLURB[it.id]||'') : (UP_BLURB[it.key]||''); }
+
+let shopOpen=false, shopDetail3D=false, shopCats=[], activeCat='', shopList=[], shopIdx=0, shopHero=null, _shopT=0;
+function shopRefreshData(){ shopCats=shopModel(); if(!shopCats.find(c=>c.cat===activeCat)) activeCat=shopCats.length?shopCats[0].cat:''; shopList=(shopCats.find(c=>c.cat===activeCat)||{items:[]}).items; }
 function buildShopTabs(){ const tb=document.getElementById('shopTabs'); if(!tb) return; tb.innerHTML='';
-  _shopCats.forEach(cat=>{ const t=document.createElement('div'); t.className='shop-tab'; t.dataset.cat=cat; t.textContent=cat; tapEl(t, ()=>shopJumpCat(cat)); tb.appendChild(t); }); }
+  shopCats.forEach(g=>{ const t=document.createElement('div'); t.className='shop-tab'+(g.cat===activeCat?' on':''); t.dataset.cat=g.cat; t.textContent=g.cat; tapEl(t, ()=>setActiveCat(g.cat)); tb.appendChild(t); }); }
+function setActiveCat(cat){ activeCat=cat; shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); sfx('click'); }
+function caseState(it){ const owned=it.type==='gun'&&it.owned, maxed=it.type==='up'&&it.level>=it.max;
+  return owned?'owned':maxed?'maxed':(!(it.cost&&canAfford(it.cost))?'cant':''); }
+function renderCaseGrid(){
+  const grid=document.getElementById('caseGrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
+  shopList.forEach((it,i)=>{
+    const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP':('T'+it.tier)):('LV '+it.level+'/'+it.max);
+    const price = (it.type==='gun'&&it.owned)?'✓ OWNED' : (it.type==='up'&&it.level>=it.max)?'MAX' : priceHTML(it.cost);
+    const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
+    c.innerHTML='<span class="case-badge">'+badge+'</span><div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'+
+      '<div class="case-nm">'+it.name+'</div><div class="case-price">'+price+'</div>';
+    tapEl(c, ()=>openDetail(i)); grid.appendChild(c);
+  });
+}
 function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
 function shopStats(it){
   if(it.type==='gun'){ const g=GUNS[it.id], out=[];
@@ -2850,16 +2911,16 @@ function updateShopInfo(){
   const it=shopList[shopIdx]; if(!it) return;
   const hex='#'+(RAR_COL[it.rar]||0xffce4a).toString(16).padStart(6,'0');
   document.getElementById('shopInfo').style.setProperty('--rar',hex);
-  document.getElementById('si-cat').textContent = it.cat + (it.type==='gun'?(it.vip?' · VIP':' · TIER '+it.tier):'');
+  document.getElementById('si-cat').textContent = activeCat + (it.type==='gun'?(it.vip?' · VIP':' · TIER '+it.tier):'');
   document.getElementById('si-name').textContent = it.name;
+  document.getElementById('si-desc').textContent = itemBlurb(it);
   document.getElementById('si-stats').innerHTML = shopStats(it);
   const owned = it.type==='gun' && it.owned, maxed = it.type==='up' && it.level>=it.max;
   const cant = !owned && !maxed && !(it.cost && canAfford(it.cost));
   const buy=document.getElementById('si-buy');
   buy.className='si-buy '+(owned?'owned':maxed?'maxed':cant?'cant':(it.vip?'vip':''));
   buy.innerHTML = owned?'✓ OWNED' : maxed?'MAXED' : (it.cost? ('BUY · '+priceHTML(it.cost)) : 'MAXED');
-  document.getElementById('si-pos').textContent = (shopIdx+1)+' / '+shopList.length;
-  document.querySelectorAll('#shopTabs .shop-tab').forEach(t=>t.classList.toggle('on', t.dataset.cat===it.cat));
+  document.getElementById('si-pos').textContent = activeCat+'  ·  '+(shopIdx+1)+' / '+shopList.length;
   refreshWallet();
 }
 function spawnShopHero(){
@@ -2870,8 +2931,16 @@ function spawnShopHero(){
   shopHero.rotation.y = -0.55;
   shopScene.add(shopHero); updateShopInfo();
 }
+function showGrid(){ shopDetail3D=false; renderPass.scene=shopScene; renderPass.camera=shopCam;   // clean dark studio behind the cabinet
+  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  document.getElementById('caseGrid').classList.remove('hidden'); document.getElementById('shopHint').classList.remove('hidden');
+  document.getElementById('shopDone').classList.remove('hidden'); document.getElementById('shopDetailView').classList.add('hidden'); }
+function openDetail(i){ shopIdx=i;
+  document.getElementById('caseGrid').classList.add('hidden'); document.getElementById('shopHint').classList.add('hidden');
+  document.getElementById('shopDone').classList.add('hidden'); document.getElementById('shopDetailView').classList.remove('hidden');
+  renderPass.scene=shopScene; renderPass.camera=shopCam; shopDetail3D=true; spawnShopHero(); sfx('click'); }
+function backToGrid(){ shopRefreshData(); renderCaseGrid(); showGrid(); sfx('click'); }
 function shopGo(d){ if(!shopList.length) return; shopIdx=(shopIdx+d+shopList.length)%shopList.length; sfx('click'); spawnShopHero(); }
-function shopJumpCat(cat){ const i=shopList.findIndex(it=>it.cat===cat); if(i>=0){ shopIdx=i; sfx('click'); spawnShopHero(); } }
 function buyShop(it){
   it = it || shopList[shopIdx]; if(!it) return;
   if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // own it → never re-buy
@@ -2882,12 +2951,11 @@ function buyShop(it){
   saveProfile(); sfx('powerup'); refreshStartUI();
   if(shopScene._ring){ shopScene._ring.material.emissiveIntensity=5; }                  // purchase flash on the pedestal ring
   const key = it.type==='gun'?('g:'+it.id):('u:'+it.key);
-  buildShopList(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);
-  spawnShopHero();
+  shopRefreshData(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);
+  if(shopDetail3D) spawnShopHero(); else renderCaseGrid();
 }
-function openShop(){ buildShopList(); buildShopTabs(); shopIdx=0; hide('start'); show('shop');
-  renderPass.scene=shopScene; renderPass.camera=shopCam; shopOpen3D=true; spawnShopHero(); refreshWallet(); sfx('click'); }
-function closeShop(){ shopOpen3D=false; renderPass.scene=scene; renderPass.camera=camera;
+function openShop(){ shopOpen=true; shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); hide('start'); show('shop'); refreshWallet(); sfx('click'); }
+function closeShop(){ shopOpen=false; shopDetail3D=false; renderPass.scene=scene; renderPass.camera=camera;
   if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
   saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
 function shop3dUpdate(dt){
@@ -2898,12 +2966,13 @@ function shop3dUpdate(dt){
 }
 tapBtn('shopBtn', openShop);
 tapBtn('shopDone', closeShop);
+tapBtn('shopBack', backToGrid);
 tapBtn('shopPrev', ()=>shopGo(-1));
 tapBtn('shopNext', ()=>shopGo(1));
 tapBtn('si-buy', ()=>buyShop());
-addEventListener('pointerdown', e=>{        // click the 3D item itself to buy it
-  if(!shopOpen3D) return;
-  if(e.target.closest && e.target.closest('.shop-info,.shop-tab,.shop-arrow,.shop-done,.w-chip,#shopTabs')) return;
+addEventListener('pointerdown', e=>{        // in the detail view, click the 3D item itself to buy it
+  if(!shopDetail3D) return;
+  if(e.target.closest && e.target.closest('.shop-info,.shop-tab,.shop-arrow,.shop-back,.w-chip,#shopTabs')) return;
   _shopRay.setFromCamera({x:(e.clientX/innerWidth)*2-1, y:-(e.clientY/innerHeight)*2+1}, shopCam);
   if(shopHero && _shopRay.intersectObject(shopHero, true).length) buyShop();
 });
@@ -3392,7 +3461,7 @@ function loop(nowMs){
   let dt = (nowMs - last)/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
 
-  if(shopOpen3D) shop3dUpdate(dt);        // spin the 3D showroom hero + pedestal while the shop is open
+  if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
 
   if(S.mode==='playing'){
     S.timeNow = now;
