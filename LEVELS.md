@@ -55,7 +55,9 @@
 2. **Giới hạn cùng lúc** + **nhịp spawn** nhanh hơn.
 3. **Cơ cấu địch nặng dần**: gunner nhiều hơn, mở mortar/bomber (S2), shield (S3).
 4. **Địch bắn chính xác & mạnh hơn**: sát thương đạn `def.dmg×(0.65 + 0.35×diffScale)`; bắn đón đầu chỉ bật từ giữa game, vẫn giữ độ lệch để né được.
-5. **Boss to & trâu dần** (HP 1.300 → 3.600, scale lớn hơn).
+5. **Boss to & trâu dần** (HP nền 1.300 → 3.600; HP thực = `HP_nền × (1 + (stage−1)×0.18) × 0.9` — **đã giảm ~10-18%** cho dễ thở hơn).
+
+> **Mẹo hạ tướng:** mua **WARHEAD** (Shop·FIREPOWER, +12% sát thương lên boss/cấp, tối đa +60%) + **ENGINE x2** (+10% tốc độ/cấp, tối đa +50% để né) + dùng **DASH** (né + i-frame). Power-up trong trận: BOMB (120 dmg boss), SIEGE ROCKET (360 dmg boss).
 6. Giữa màn có **màn chọn nâng cấp roguelite (3 thẻ)** = nhịp nghỉ + thưởng.
 
 > **Lưu ý:** HP của lính thường **KHÔNG** nhân theo stage (cố định theo loại) — độ khó đến từ *số lượng + cơ cấu + độ chính xác + boss*, không phải bơm máu từng con. Tránh cảm giác "bắn mãi không chết".

@@ -1168,7 +1168,7 @@ function makePlayer(){
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
     overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     // roguelite upgrade multipliers (P7)
-    dmgMul:1, fireMul:1, speedMul:1, dashCdMul:1, spellCdMul:1, crit:0, lifesteal:0, kbx:0, kbz:0, reloadMul:1, armor:0,
+    dmgMul:1, fireMul:1, speedMul:1, dashCdMul:1, spellCdMul:1, crit:0, lifesteal:0, kbx:0, kbz:0, reloadMul:1, armor:0, bossMul:1,
   };
 }
 
@@ -1800,7 +1800,7 @@ function startBoss(now){
   boss = {
     mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle, def, id:def.id,
     pos:new THREE.Vector3(0,0,-ARENA*0.5), vel:new THREE.Vector3(),
-    hp:def.hp*(1+(S.stage-1)*0.22)*loopBossMul(), maxHp:0, r:3.2*def.scale/3, alive:true,
+    hp:def.hp*(1+(S.stage-1)*0.18)*0.9*loopBossMul(), maxHp:0, r:3.2*def.scale/3, alive:true,   // eased ~10-18% (later bosses scale gentler)
     facing:0, aim:0, atkAt:now+2, mode:'idle', telUntil:0, chargeUntil:0, chargeDir:new THREE.Vector3(), ramAt:0,
     spiralAng:0, spiralAt:0, laserTelUntil:0, laserFireUntil:0, laserAng:0, summonAt:now+5, blinkAt:now+6,
     mode:'idle', aimTimeout:0,   // tank-locomotion charge state machine
@@ -1812,7 +1812,7 @@ function startBoss(now){
   showBanner('BOSS: '+def.name, '#e0603a'); sfx('levelup');
 }
 function damageBoss(dmg){
-  if(!boss||!boss.alive) return; boss.hp-=dmg; hitFlash(boss.mesh);
+  if(!boss||!boss.alive) return; boss.hp -= dmg * ((S.player&&S.player.bossMul)||1); hitFlash(boss.mesh);   // WARHEAD upgrade = +% boss damage
   document.getElementById('boss-hp').style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
   if(boss.hp<=0){ boss.hp=0; killBoss(performance.now()/1000); }
 }
@@ -3327,12 +3327,13 @@ function refreshWallet(){ document.querySelectorAll('.w-coins').forEach(e=>e.tex
 // L4-L5 diamonds (VIP grind, several sessions). Value rises monotonically with power → no contradictions.
 const SHOP_UP = [
   {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'DAMAGE',       per:'+8% bullet damage', costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
+  {key:'boss',   cat:'FIREPOWER', icon:'shell',   name:'WARHEAD',      per:'+12% boss damage',  costs:[{c:400},{c:1100},{c:2600},{d:15},{d:28}]},
   {key:'range',  cat:'FIREPOWER', icon:'target', name:'LONG BARREL',  per:'+10% fire range',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
   {key:'reload', cat:'AMMO',      icon:'mag',    name:'FAST RELOAD',  per:'-12% reload time',  costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
   {key:'mag',    cat:'AMMO',      icon:'mag',    name:'BIG MAGAZINE', per:'+15% magazine',     costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
   {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
   {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
-  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+8% move speed',    costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
+  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+10% move speed',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
   {key:'guards', cat:'TROOPS',    icon:'shield', name:'CORE GUARDS',  per:'+1 base guard',     costs:[{c:900},{c:2400},{d:16}]},
   {key:'crew',   cat:'TROOPS',    icon:'shield', name:'TANK CREW',    per:'+1 base crew',      costs:[{c:900},{c:2400},{d:16}]},
   {key:'troops', cat:'TROOPS',    icon:'up',     name:'TROOP ARMS',   per:'+15% troop damage', costs:[{c:600},{c:1500},{d:12}]},
@@ -3352,9 +3353,10 @@ function applyUpgrades(p){                                     // bake the bough
   p.maxHp     = 100 + (U.hp||0)*20;
   p.dmgMul   *= 1 + (U.damage||0)*0.08;
   p.rangeMul *= 1 + (U.range||0)*0.10;
-  p.speedMul *= 1 + (U.engine||0)*0.08;
+  p.speedMul *= 1 + (U.engine||0)*0.10;     // ENGINE: +10%/level → nimbler dodging (max +50%)
   p.magMul    = 1 + (U.mag||0)*0.15;          // separate from the buff-derived ammoMul (which the frame loop overwrites)
   p.reloadMul = 1/(1 + (U.reload||0)*0.12);
+  p.bossMul   = 1 + (U.boss||0)*0.12;         // WARHEAD: bonus damage vs bosses
   p.armor     = Math.min(0.6,(U.armor||0)*0.06);
 }
 function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
