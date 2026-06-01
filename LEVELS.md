@@ -136,7 +136,10 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 - **Stage 1:** SMG · SHOTGUN · CRYO
 - **Stage ≥ 2:** + FLAK · CANNON · MINIGUN
 - **Stage ≥ 3:** + MISSILE · TESLA
+- **Stage ≥ 4:** + HOWITZER (pháo cầu vồng — cũng mua được ở Shop 5.500 xu)
 - **RAILGUN · SIEGE ROCKET (VIP):** không rơi — chỉ mua bằng kim cương ở Shop.
+
+> **HOWITZER (Z35):** súng **bắn gián tiếp** — tự nhắm xe địch xa nhất, **lốp đạn lên trời theo vòng cung cao (~9.6) rồi rơi thẳng xuống** → **xuyên qua tường chắn, đánh mục tiêu núp sau cover**. Nổ AoE bán kính 5.2 sát thương vừa (không xoá sổ như SIEGE ROCKET VIP). Nòng chĩa lên + ống ngắm.
 
 **GUN MASTERY — nhặt trùng = lên cấp súng (Z25):** nhặt 1 khẩu **đã sở hữu** = **+1 xp** cho khẩu đó (không phí). Ngưỡng `xp=[0,12,27,45]` → **cấp 1→2→3→4** (cần 12/15/18 dup mỗi cấp, vĩnh viễn, lưu `PROFILE.gunXp`). Mỗi cấp trên 1: **+10% sát thương · +6% nhịp bắn · −8% thời gian nạp** ⇒ **LV4 = +30% dmg / +22% rate / −24% reload**. Áp live trong trận. Xem cấp ở: chip vũ khí ("SMG ·L4"), lưới shop ("★ LV n/4"), panel detail (★ MASTERY + chỉ số đã buff). VIP (railgun/rocket) không rơi nên không lên cấp qua nhặt.
 

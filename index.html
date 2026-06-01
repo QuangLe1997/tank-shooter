@@ -1178,6 +1178,9 @@ function makeGunBarrel(id){
   else if(id==='cryo'){ tube(0.18,0.2,1.6,1.2,steel(0x5a7a86)); const noz=new THREE.Mesh(new THREE.ConeGeometry(0.34,0.7,12),glow(0x9fe8ff)); noz.rotation.x=Math.PI/2; noz.position.set(0,Y,2.35); g.add(noz); for(const z of [1.3,1.8]){ const ic=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.05,8,16),glow(0xbff2ff)); ic.position.set(0,Y,z); g.add(ic); } tip=2.75; }
   else if(id==='tesla'){ tube(0.16,0.16,1.0,1.0,dark(0x202833)); for(const z of [1.0,1.4,1.8]){ const c=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.08,8,20),steel(0x3a4450)); c.position.set(0,Y,z); g.add(c); } const orb=new THREE.Mesh(new THREE.IcosahedronGeometry(0.33,0),glow(0x7fd0ff)); orb.position.set(0,Y,2.35); g.add(orb); tip=2.6; }
   else if(id==='rocket'){ tube(0.42,0.44,2.2,1.5,steel(0x4a4040)); tube(0.5,0.5,0.42,2.5,dark(0x33271f)); const tc=new THREE.Mesh(new THREE.ConeGeometry(0.46,0.5,12),glow(0xff7a3a)); tc.rotation.x=Math.PI/2; tc.position.set(0,Y,2.85); g.add(tc); tip=2.7; }
+  else if(id==='arty'){ const t=tube(0.3,0.34,1.9,1.2,steel(0x555240)); t.rotation.x=Math.PI/2-0.42; t.position.set(0,Y+0.5,1.0);   // thick barrel ANGLED UP (high-angle howitzer)
+    const brk=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.4,0.55,14),dark(0x33332b)); brk.rotation.x=Math.PI/2-0.42; brk.position.set(0,Y+1.25,1.78); g.add(brk);   // muzzle brake at the raised tip
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,0.5,12),dark(0x2a2a22)); base.position.set(0,Y-0.1,0.5); g.add(base); tip=2.0; }   // recoil base
   else { tube(0.2,0.2,1.0,1.3,dark(0x39392f)); tube(0.15,0.2,2.9,1.85,steel()); tube(0.26,0.26,0.5,3.15,steel(0x26262a)); tip=3.5; }   // rifle / default
   const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,tip); g.add(muzzle); g.userData.muzzle=muzzle; g.userData.spin=spin;
   g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
@@ -2531,12 +2534,14 @@ const GUNS = {
   cryo:    { name:'CRYO',  svg:'snow', tier:2, dmg:10, fireCd:0.32, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:1.4, recoil:0.9, knock:0.8, fx:'ice' },          // freezes enemies on hit
   tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x7fd0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock' },    // chain lightning
   rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xffae5c, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360, recoil:2.0, knock:0, fx:'blast' },  // lobbed, 2s fuse, wipes a big radius
+  arty:    { name:'HOWITZER', svg:'target', tier:3, dmg:36, fireCd:1.7, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'arty', aoeR:5.2, recoil:2.4, knock:0, fx:'blast' },  // INDIRECT: auto-lobs a high arc onto the farthest enemy — drops over walls onto targets in cover
 };
 // gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
 function gunDropPool(stage){
   const pool=['smg','shotgun','cryo'];
   if(stage>=2) pool.push('flak','cannon','minigun');
   if(stage>=3) pool.push('missile','tesla');     // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
+  if(stage>=4) pool.push('arty');                // howitzer: a rare late-stage drop (also buyable in the shop)
   return pool;
 }
 function muzzleFlash(x,z,ang,color,rec){
@@ -2631,7 +2636,24 @@ function fireRocket(now, g){
   const sx=p.pos.x+Math.sin(p.aimSmoothed)*(p.radius+0.9), sz=p.pos.z+Math.cos(p.aimSmoothed)*(p.radius+0.9);
   const D=Math.hypot(tx-sx,tz-sz), T=Math.max(0.7, D/34), G=30;
   const mesh=makeRocketMesh(); mesh.position.set(sx,1.7,sz); scene.add(mesh);
-  rockets.push({ mesh, x:sx,y:1.7,z:sz, vx:(tx-sx)/T, vz:(tz-sz)/T, vy:G*T/2 - 0.9/T, G, tx, tz, aoeR:g.aoeR||15, bossDmg:g.bossDmg||350, tt:0 });
+  rockets.push({ mesh, x:sx,y:1.7,z:sz, vx:(tx-sx)/T, vz:(tz-sz)/T, vy:G*T/2 - 0.9/T, G, tx, tz, aoeR:g.aoeR||15, bossDmg:g.bossDmg||350, wipe:true, fuse:2, tt:0 });   // SIEGE: instakill the whole radius
+}
+// HOWITZER — indirect fire: a STEEP high lob that drops onto the farthest enemy (over walls), moderate AoE (no wipe)
+function fireArty(now, g, dmg){
+  const p=S.player;
+  // long-range auto-target: the nearest enemy in a generous radius, ignoring walls/line-of-sight (it falls from above)
+  let tgt=null, bd=1e18; const RNG=Math.max(40, playerRange()*2.2);
+  for(const e of enemies){ if(e.def.bomber) continue; const q=(e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2; if(q<bd && q<RNG*RNG){ bd=q; tgt=e; } }
+  let tx,tz;
+  if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; }
+  else if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
+  else { tx=p.pos.x+Math.sin(p.aimSmoothed)*30; tz=p.pos.z+Math.cos(p.aimSmoothed)*30; }
+  const lim=ARENA-2; tx=Math.max(-lim,Math.min(lim,tx)); tz=Math.max(-lim,Math.min(lim,tz));
+  const sx=p.pos.x+Math.sin(p.aimSmoothed)*(p.radius+0.4), sz=p.pos.z+Math.cos(p.aimSmoothed)*(p.radius+0.4);
+  const T=1.3, G=40;   // long flight + strong gravity → tall arc that clears walls and drops near-vertically
+  const mesh=makeRocketMesh(); mesh.position.set(sx,2.0,sz); scene.add(mesh);
+  rockets.push({ mesh, x:sx,y:2.0,z:sz, vx:(tx-sx)/T, vz:(tz-sz)/T, vy:G*T/2 + (0.8-2.0)/T, G, tx, tz, aoeR:g.aoeR||5.2, dmg:dmg||36, wipe:false, fuse:0.4, tt:0 });
+  if(tgt) ringPulse(tgt.pos, 0xffd24a, 2.0);   // brief "target acquired" mark
 }
 function makeDangerZone(x,z,r){   // ground decal showing the exact kill radius during the fuse
   const grp=new THREE.Group(); grp.position.set(x,0.12,z); grp.rotation.x=-Math.PI/2;
@@ -2645,7 +2667,7 @@ function updateRockets(dt, now){
     _rdir.set(r.vx,r.vy,r.vz); if(_rdir.lengthSq()>0.0001){ _rdir.normalize(); r.mesh.quaternion.setFromUnitVectors(_RUP,_rdir); }   // nose follows velocity
     if(Math.random()<0.7) spawnPart(r.x,r.y,r.z, (Math.random()-0.5)*2, -0.5, (Math.random()-0.5)*2, {color:0x5a4e42, size:1.1, life:0.5, smoke:true, grav:1.2, drag:1.6, op:0.5});  // exhaust trail
     if(r.y<=0.8 || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
-      fuses.push({ x:r.tx, z:r.tz, at:now+2, blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, zone:makeDangerZone(r.tx,r.tz,r.aoeR) });
+      fuses.push({ x:r.tx, z:r.tz, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.tx,r.tz,r.aoeR) });
       ringPulse({x:r.tx,z:r.tz}, 0x886054, 3); }   // dust puff on impact
   }
 }
@@ -2659,15 +2681,15 @@ function updateFuses(dt, now){
       spawnPart(f.x,0.5,f.z,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff5028,size:1.2,life:0.3,grav:-2}); }
     if(now>=f.at){
       if(f.zone){ scene.remove(f.zone); f.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); }
-      const pos=new THREE.Vector3(f.x,1.2,f.z);
+      const pos=new THREE.Vector3(f.x,1.2,f.z), wipe=f.wipe!==false;
       bigExplode(pos, 0xffae5c, f.aoeR/3);
       ringPulse({x:f.x,z:f.z}, 0xffffff, f.aoeR*1.1); ringPulse({x:f.x,z:f.z}, 0xffd27a, f.aoeR); ringPulse({x:f.x,z:f.z}, 0xff5028, f.aoeR*0.7);   // shockwave rings to the kill edge
-      for(let k2=0;k2<12;k2++){ const a=Math.random()*6.28, rr=Math.random()*f.aoeR; setTimeout(()=>{ if(S.mode==='paused')return; bigExplode(new THREE.Vector3(f.x+Math.cos(a)*rr,1,f.z+Math.sin(a)*rr), 0xff7a3d, 1.7); }, k2*38); }
-      for(const e of enemies.slice()){ const dx=e.pos.x-f.x, dz=e.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageEnemy(e, 99999); }   // wipe every enemy in the radius
-      if(boss&&boss.alive){ const dx=boss.pos.x-f.x, dz=boss.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageBoss(f.bossDmg); }       // big, but capped vs boss
-      spawnDebris(pos, 2.8, 0xff7a3d);
-      S.shake=Math.min(6, S.shake+4.2);                              // heavy ground-quake shake
-      muzzleLight.position.set(f.x,3,f.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=8;
+      for(let k2=0;k2<(wipe?12:5);k2++){ const a=Math.random()*6.28, rr=Math.random()*f.aoeR; setTimeout(()=>{ if(S.mode==='paused')return; bigExplode(new THREE.Vector3(f.x+Math.cos(a)*rr,1,f.z+Math.sin(a)*rr), 0xff7a3d, 1.7); }, k2*38); }
+      for(const e of enemies.slice()){ const dx=e.pos.x-f.x, dz=e.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageEnemy(e, wipe?99999:(f.dmg||36)); }   // SIEGE wipes; HOWITZER deals scaled AoE
+      if(boss&&boss.alive){ const dx=boss.pos.x-f.x, dz=boss.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageBoss(wipe?f.bossDmg:(f.dmg||36)*0.6); }
+      spawnDebris(pos, wipe?2.8:1.6, 0xff7a3d);
+      S.shake=Math.min(6, S.shake+(wipe?4.2:1.9));                   // siege = ground-quake; howitzer = solid thump
+      muzzleLight.position.set(f.x,3,f.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=wipe?8:5;
       sfx('bigexplode');
       fuses.splice(i,1);
     }
@@ -2691,6 +2713,7 @@ function fireGun(now, range){
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
   const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id) * cMod('playerDmgMul');   // MASTERY: +dmg per gun level; CONTRACT may boost
   if(g.special==='rocket'){ fireRocket(now, g); }
+  else if(g.special==='arty'){ fireArty(now, g, dmg); }
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
     const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
@@ -2708,7 +2731,7 @@ function fireGun(now, range){
     const km=Math.hypot(p.kbx,p.kbz), kc=6.5; if(km>kc){ p.kbx*=kc/km; p.kbz*=kc/km; } }   // cap so rapid-fire recoil can't fling the tank
   muzzleFlash(_v.x,_v.z,ang, g.color, rec);   // flash at the real barrel tip (size scales with recoil)
   S.shake = Math.min(1.6, S.shake + (g.special==='rocket'?0.4:Math.min(0.5, 0.04 + rec*0.07)));   // weightier guns shake more per shot
-  sfx(g.special==='rocket' ? 'rocketlaunch' : 'shoot_'+inst.id);
+  sfx(g.special ? 'rocketlaunch' : 'shoot_'+inst.id);   // rocket + howitzer both use the launch thump
   if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst);
   updateGunHUD();
 }
@@ -3315,6 +3338,9 @@ function buildGunModel(id){
       const core=_barX(0.1,0.1,1.7,acc); core.position.set(1.2,0,0); grp.add(core); for(let i=0;i<3;i++){ const rg=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.04,8,18),acc); rg.position.set(0.65+i*0.6,0,0); grp.add(rg);} }
   else if(sv==='bolt'){ bar(1.2,0.1,0,0,steel); for(let i=0;i<3;i++){ const co=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.06,10,22),acc); co.position.set(0.95+i*0.4,0,0); co.rotation.y=Math.PI/2; grp.add(co);} }
   else if(sv==='snow'){ bar(1.4,0.13,0,0,steel); for(let i=0;i<4;i++){ const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.15,0),acc); const an=i/4*6.283; cr.position.set(1.7,Math.sin(an)*0.2,Math.cos(an)*0.2); grp.add(cr);} }
+  else if(id==='arty'){ const b=bar(1.7,0.26,0.12,0,steel); b.rotation.z=0.3;   // thick barrel angled UP (howitzer)
+      const mb=_barX(0.42,0.42,0.5,acc); mb.position.set(2.05,0.62,0); mb.rotation.z=0.3; grp.add(mb);   // big muzzle brake
+      const base=_barX(0.5,0.6,0.55,dark); base.position.set(0.55,-0.18,0); grp.add(base); }   // recoil base
   else { bar(sv==='smg'?1.0:1.6,0.1); const mz=_barX(0.14,0.14,0.18,acc); mz.position.set(sv==='smg'?1.4:1.7,0,0); grp.add(mz); }   // rifle/smg/default
   const auraN = vip?2:(tier>=3?1:0);   // slim energy rings orbit the higher tiers — a tasteful halo, not a blast
   if(auraN){ const aura=new THREE.Group();
@@ -4069,6 +4095,7 @@ window._updateEnemyBar = updateEnemyBar; window._enemyBarPool = enemyBarPool;   
 window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._artImpact = artImpact; window._updateArtillery = updateArtillery; window._updateArtStrikes = updateArtStrikes; Object.defineProperty(window,'_ART',{get:()=>ART});   // ARTILLERY hooks (debug/test)
 window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDeath = updateDeath; window._respawnPlayer = respawnPlayer; Object.defineProperty(window,'_DEATH',{get:()=>DEATH});   // DEATH→respawn hooks (debug/test)
 window._damagePlayer = damagePlayer; window._updateEnemies = updateEnemies;   // hit-reaction + enemy-AI hooks (debug/test)
+window._fireArty = fireArty; window._updateRockets = updateRockets; window._updateFuses = updateFuses; window._dbg.fuses = fuses;   // HOWITZER hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up

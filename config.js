@@ -59,7 +59,7 @@ export const SHOP_UP = [
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,000) — value stays ordered. -----
 export const GUN_PRICE = { smg:{c:500}, shotgun:{c:1400}, cryo:{c:1600}, flak:{c:1700}, cannon:{c:2000},
-  minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, railgun:{d:28}, rocket:{d:34} };
+  minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
 export const VIP_GUNS = ['railgun','rocket'];
 
 // ----- punchy marketing blurbs (kept short) -----
@@ -69,7 +69,8 @@ export const GUN_BLURB = {
   cannon:'One colossal shell. Heavy armour just folds.', cryo:'Freeze them solid — then shatter them.',
   minigun:'Endless barrels, endless fire. Hold the line.', missile:'Lock on. It hunts. It never misses.',
   tesla:'Lightning that arcs from foe to foe.', railgun:'A single shot punches clean through a whole column.',
-  rocket:'Lob it in — a whole zone simply vanishes.' };
+  rocket:'Lob it in — a whole zone simply vanishes.',
+  arty:'Rains shells from the sky — drops right onto cowards hiding behind cover.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [
