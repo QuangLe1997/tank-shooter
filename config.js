@@ -36,6 +36,10 @@ export const BALANCE = {
   // enemy AGGRESSION & ACCURACY — both ramp with stage (diffScale 0→1 over S1→S5) and NG+ loop.
   // fireChance = how proactively they shoot (early = hesitant, late = relentless); spread shrinks → far more accurate late.
   aggro:{ fireChanceBase:0.55, fireChanceRamp:0.55, spreadBase:0.5, spreadDrop:0.82, leadFrom:0.3, rateBase:2.2, rateDrop:0.95, accurateMul:0.22, loopAcc:0.12 },
+  // FLAMETHROWER burn (damage-over-time): DoT = dps × level × dt. Each spray-tick adds `add` to level (caps at lvlMax);
+  // level also creeps up on its own (`grow`/s) so any fire "cháy càng ngày càng lớn". `duration` resets on every tick.
+  // → a light touch burns slowly (~3s to kill a grunt) but eventually finishes weak foes; sustained spray ramps to max → melts fast.
+  flame:{ dps:8, lvlMax:4, add:0.55, grow:0.2, duration:7, range:14, cone:0.78 },
 };
 
 // ----- rarity colours (tier/VIP) -----
@@ -59,7 +63,7 @@ export const SHOP_UP = [
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,000) — value stays ordered. -----
 export const GUN_PRICE = { smg:{c:500}, shotgun:{c:1400}, cryo:{c:1600}, flak:{c:1700}, cannon:{c:2000},
-  minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
+  flamer:{c:2200}, minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
 export const VIP_GUNS = ['railgun','rocket'];
 
 // ----- punchy marketing blurbs (kept short) -----
@@ -70,7 +74,8 @@ export const GUN_BLURB = {
   minigun:'Endless barrels, endless fire. Hold the line.', missile:'Lock on. It hunts. It never misses.',
   tesla:'Lightning that arcs from foe to foe.', railgun:'A single shot punches clean through a whole column.',
   rocket:'Lob it in — a whole zone simply vanishes.',
-  arty:'Rains shells from the sky — drops right onto cowards hiding behind cover.' };
+  arty:'Rains shells from the sky — drops right onto cowards hiding behind cover.',
+  flamer:'Set them ablaze — the fire only spreads, and it never lets go.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [

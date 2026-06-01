@@ -1178,6 +1178,9 @@ function makeGunBarrel(id){
   else if(id==='cryo'){ tube(0.18,0.2,1.6,1.2,steel(0x5a7a86)); const noz=new THREE.Mesh(new THREE.ConeGeometry(0.34,0.7,12),glow(0x9fe8ff)); noz.rotation.x=Math.PI/2; noz.position.set(0,Y,2.35); g.add(noz); for(const z of [1.3,1.8]){ const ic=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.05,8,16),glow(0xbff2ff)); ic.position.set(0,Y,z); g.add(ic); } tip=2.75; }
   else if(id==='tesla'){ tube(0.16,0.16,1.0,1.0,dark(0x202833)); for(const z of [1.0,1.4,1.8]){ const c=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.08,8,20),steel(0x3a4450)); c.position.set(0,Y,z); g.add(c); } const orb=new THREE.Mesh(new THREE.IcosahedronGeometry(0.33,0),glow(0x7fd0ff)); orb.position.set(0,Y,2.35); g.add(orb); tip=2.6; }
   else if(id==='rocket'){ tube(0.42,0.44,2.2,1.5,steel(0x4a4040)); tube(0.5,0.5,0.42,2.5,dark(0x33271f)); const tc=new THREE.Mesh(new THREE.ConeGeometry(0.46,0.5,12),glow(0xff7a3a)); tc.rotation.x=Math.PI/2; tc.position.set(0,Y,2.85); g.add(tc); tip=2.7; }
+  else if(id==='flamer'){ tube(0.2,0.24,1.5,1.1,steel(0x6a4030)); const noz=new THREE.Mesh(new THREE.ConeGeometry(0.34,0.6,12),dark(0x33271f)); noz.rotation.x=Math.PI/2; noz.position.set(0,Y,2.05); g.add(noz);
+    const tank=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,1.0,12),steel(0xb83a1e)); tank.rotation.z=Math.PI/2; tank.position.set(0,Y+0.42,-0.15); g.add(tank);   // fuel tank
+    const pilot=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),glow(0xff6a1c)); pilot.position.set(0,Y,2.35); g.add(pilot); tip=2.35; }   // pilot flame
   else if(id==='arty'){ const t=tube(0.3,0.34,1.9,1.2,steel(0x555240)); t.rotation.x=Math.PI/2-0.42; t.position.set(0,Y+0.5,1.0);   // thick barrel ANGLED UP (high-angle howitzer)
     const brk=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.4,0.55,14),dark(0x33332b)); brk.rotation.x=Math.PI/2-0.42; brk.position.set(0,Y+1.25,1.78); g.add(brk);   // muzzle brake at the raised tip
     const base=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,0.5,12),dark(0x2a2a22)); base.position.set(0,Y-0.1,0.5); g.add(base); tip=2.0; }   // recoil base
@@ -1685,6 +1688,15 @@ function updateEnemies(dt, now){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i], def=e.def;
     updateEnemyBar(e);                                  // keep the floating HP bar pinned + facing camera every frame
+    // ON FIRE (flamethrower DoT) — burns down HP over time; the fire grows; the tank keeps fighting while ablaze
+    if(e.burn){ const F=BALANCE.flame;
+      if(now >= e.burn.until) e.burn=null;
+      else { e.burn.lvl = Math.min(F.lvlMax, e.burn.lvl + F.grow*dt); const n=e.burn.lvl;   // fire creeps bigger over time
+        if(Math.random() < 0.5+0.35*n) spawnPart(e.pos.x+(Math.random()-0.5)*1.3, 1.1+Math.random()*(0.6+n*0.5), e.pos.z+(Math.random()-0.5)*1.3, (Math.random()-0.5)*1.6, 1.7+Math.random()*1.8, (Math.random()-0.5)*1.6, {color:Math.random()<0.5?0xff6a1c:0xffc24a, size:0.5+n*0.22, life:0.4, grav:0.4, drag:2.6});
+        if(Math.random()<0.3) spawnPart(e.pos.x,1.7,e.pos.z, (Math.random()-0.5)*1,1.8,(Math.random()-0.5)*1, {color:0x16110b, size:0.9+n*0.4, life:0.7, smoke:true, grav:-0.5, drag:1.5, op:0.4});
+        e.hp -= F.dps * n * dt; if(e.hp<=0){ killEnemy(e); continue; }   // burned to death → drop it (mesh already pooled)
+      }
+    }
     // stunned (EMP / freeze power-up): hold still, no fire
     if(now < e.stunUntil){
       e.mesh.position.set(e.pos.x,0,e.pos.z);
@@ -2535,12 +2547,13 @@ const GUNS = {
   tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x7fd0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock' },    // chain lightning
   rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xffae5c, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360, recoil:2.0, knock:0, fx:'blast' },  // lobbed, 2s fuse, wipes a big radius
   arty:    { name:'HOWITZER', svg:'target', tier:3, dmg:36, fireCd:1.7, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'arty', aoeR:5.2, recoil:2.4, knock:0, fx:'blast' },  // INDIRECT: auto-lobs a high arc onto the farthest enemy — drops over walls onto targets in cover
+  flamer:  { name:'PYRO', svg:'burst', tier:2, dmg:1, fireCd:0.05, mag:140, reload:3.2, bspeed:0, frags:1, spread:0, color:0xff6a1c, r:0, life:0, special:'flame', range:14, recoil:0.12, knock:0, fx:'spark' },  // short-range flame cone → sets enemies ALIGHT (burn DoT that grows + lingers)
 };
 // gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
 function gunDropPool(stage){
   const pool=['smg','shotgun','cryo'];
   if(stage>=2) pool.push('flak','cannon','minigun');
-  if(stage>=3) pool.push('missile','tesla');     // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
+  if(stage>=3) pool.push('missile','tesla','flamer');   // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
   if(stage>=4) pool.push('arty');                // howitzer: a rare late-stage drop (also buyable in the shop)
   return pool;
 }
@@ -2655,6 +2668,21 @@ function fireArty(now, g, dmg){
   rockets.push({ mesh, x:sx,y:2.0,z:sz, vx:(tx-sx)/T, vz:(tz-sz)/T, vy:G*T/2 + (0.8-2.0)/T, G, tx, tz, aoeR:g.aoeR||5.2, dmg:dmg||36, wipe:false, fuse:0.4, tt:0 });
   if(tgt) ringPulse(tgt.pos, 0xffd24a, 2.0);   // brief "target acquired" mark
 }
+// FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
+function fireFlame(now, g, x, z, ang){
+  const F=BALANCE.flame, range=g.range||F.range, cx=Math.sin(ang), cz=Math.cos(ang);
+  for(let i=0;i<4;i++){ const a=ang+(Math.random()-0.5)*0.55, sp=15+Math.random()*12;   // billowing flame cone
+    spawnPart(x,1.3,z, Math.sin(a)*sp, 0.8+Math.random()*1.4, Math.cos(a)*sp, {color: Math.random()<0.4?0xffe06a:(Math.random()<0.6?0xff7a1c:0xff3010), size:0.8+Math.random()*0.7, life:0.26, grav:0.4, drag:3.6}); }
+  if(Math.random()<0.4) spawnPart(x+cx*4,1.7,z+cz*4, (Math.random()-0.5)*2,1.4,(Math.random()-0.5)*2, {color:0x2a2018, size:1.4, life:0.6, smoke:true, grav:-0.4, drag:1.6, op:0.4});
+  for(const e of enemies){ if(e.def.bomber) continue; const dx=e.pos.x-x, dz=e.pos.z-z, d=Math.hypot(dx,dz);
+    if(d > range + e.r) continue;
+    if(((dx*cx+dz*cz)/(d||1)) < F.cone) continue;                 // only enemies inside the flame cone catch fire
+    if(!e.burn) e.burn={ lvl:0, until:0 };
+    e.burn.lvl = Math.min(F.lvlMax, e.burn.lvl + F.add);          // each spray-tick stokes the fire (sustained → max fast)
+    e.burn.until = now + F.duration;
+    e.hitT = Math.max(e.hitT, 0.08);
+  }
+}
 function makeDangerZone(x,z,r){   // ground decal showing the exact kill radius during the fuse
   const grp=new THREE.Group(); grp.position.set(x,0.12,z); grp.rotation.x=-Math.PI/2;
   const disc=new THREE.Mesh(new THREE.CircleGeometry(r,44), new THREE.MeshBasicMaterial({color:0xff3018,transparent:true,opacity:0.12,side:THREE.DoubleSide,depthWrite:false}));
@@ -2714,6 +2742,8 @@ function fireGun(now, range){
   const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id) * cMod('playerDmgMul');   // MASTERY: +dmg per gun level; CONTRACT may boost
   if(g.special==='rocket'){ fireRocket(now, g); }
   else if(g.special==='arty'){ fireArty(now, g, dmg); }
+  else if(g.special==='flame'){ fireFlame(now, g, x, z, ang); muzzleLight.position.set(x,1.4,z); muzzleLight.color.setHex(0xff6a1c); muzzleLight.intensity=2.2;
+    if(Math.random()<0.12) sfx('shoot_flak'); if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst); updateGunHUD(); return; }   // flame handles its own FX; skip the bullet/muzzle path + throttle sound
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
     const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
@@ -3338,6 +3368,9 @@ function buildGunModel(id){
       const core=_barX(0.1,0.1,1.7,acc); core.position.set(1.2,0,0); grp.add(core); for(let i=0;i<3;i++){ const rg=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.04,8,18),acc); rg.position.set(0.65+i*0.6,0,0); grp.add(rg);} }
   else if(sv==='bolt'){ bar(1.2,0.1,0,0,steel); for(let i=0;i<3;i++){ const co=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.06,10,22),acc); co.position.set(0.95+i*0.4,0,0); co.rotation.y=Math.PI/2; grp.add(co);} }
   else if(sv==='snow'){ bar(1.4,0.13,0,0,steel); for(let i=0;i<4;i++){ const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.15,0),acc); const an=i/4*6.283; cr.position.set(1.7,Math.sin(an)*0.2,Math.cos(an)*0.2); grp.add(cr);} }
+  else if(id==='flamer'){ bar(1.3,0.16,0,0,steel); const noz=_barX(0.3,0.16,0.42,dark); noz.position.set(1.75,0,0); grp.add(noz);
+      const tank=_barX(0.24,0.24,0.95,acc); tank.position.set(0.35,-0.4,0.16); grp.add(tank);   // fuel tank
+      const pilot=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),acc); pilot.position.set(2.05,0,0); grp.add(pilot); }   // pilot flame
   else if(id==='arty'){ const b=bar(1.7,0.26,0.12,0,steel); b.rotation.z=0.3;   // thick barrel angled UP (howitzer)
       const mb=_barX(0.42,0.42,0.5,acc); mb.position.set(2.05,0.62,0); mb.rotation.z=0.3; grp.add(mb);   // big muzzle brake
       const base=_barX(0.5,0.6,0.55,dark); base.position.set(0.55,-0.18,0); grp.add(base); }   // recoil base

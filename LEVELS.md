@@ -135,9 +135,11 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 **Súng rơi mở khoá dần theo màn (chỉ rơi súng thường, KHÔNG bao giờ rơi VIP):**
 - **Stage 1:** SMG · SHOTGUN · CRYO
 - **Stage ≥ 2:** + FLAK · CANNON · MINIGUN
-- **Stage ≥ 3:** + MISSILE · TESLA
+- **Stage ≥ 3:** + MISSILE · TESLA · PYRO (vòi phun lửa — Shop 2.200 xu)
 - **Stage ≥ 4:** + HOWITZER (pháo cầu vồng — cũng mua được ở Shop 5.500 xu)
 - **RAILGUN · SIEGE ROCKET (VIP):** không rơi — chỉ mua bằng kim cương ở Shop.
+
+> **PYRO — vòi phun lửa (Z36):** cone lửa **tầm gần (14)** → đốt xe địch **CHÁY (DoT)**. Cháy **lớn dần theo thời gian** (`lvl` creep), **phun liên tục** thì cháy bùng nhanh (`lvl` cap 4) → chết nhanh (~1s); **dính 1 cái nhẹ** thì cháy rĩ rĩ ~7s tự chết (grunt ~4.4s). Xe **vẫn tấn công bình thường khi cháy** (không choáng). DoT = 8×lvl/s. Trâu (heavy 140) cần phun thêm.
 
 > **HOWITZER (Z35):** súng **bắn gián tiếp** — tự nhắm xe địch xa nhất, **lốp đạn lên trời theo vòng cung cao (~9.6) rồi rơi thẳng xuống** → **xuyên qua tường chắn, đánh mục tiêu núp sau cover**. Nổ AoE bán kính 5.2 sát thương vừa (không xoá sổ như SIEGE ROCKET VIP). Nòng chĩa lên + ống ngắm.
 
