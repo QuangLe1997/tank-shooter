@@ -1,6 +1,9 @@
 # TANK SHOOTER — Kịch bản game chi tiết: "THIẾT GIÁP CHIẾN" (Steel Siege)
 
-> Kịch bản gameplay đầy đủ. `DOCS.md` = tài liệu kỹ thuật/triển khai; file này = thiết kế chơi (game design). Implement bám theo file này; phần nào chưa rõ → tự chọn phương án tối ưu (theo `CLAUDE.md`).
+> ⚠️ **ĐÂY LÀ KỊCH BẢN GỐC v1 (2026-05-31) — TẦM NHÌN BAN ĐẦU, KHÔNG PHẢI TRẠNG THÁI HIỆN TẠI.** Game đã **mở rộng vượt xa** spec này (Z14→Z36): kinh tế xu/💎 + shop 3D + 11 nâng cấp, gun mastery, hợp đồng màn chơi, NG+ vô hạn, pháo kích khoá mục tiêu, **9 loại địch** (thêm heavy/sniper/carrier-chở-lính), **13 súng** (thêm howitzer/pyro…), cinematic chết, phản ứng trúng đòn. Mục §4 (vũ khí)/§7 (địch)/§9 (điểm) ở dưới chỉ phản ánh v1.
+> 👉 **Trạng thái HIỆN HÀNH:** hệ thống & bản đồ code ở **[`DOCS.md`](DOCS.md)** (§0 + bảng "Lớp nội dung Z14→Z36" + §14 lịch sử); số liệu màn/địch/súng/balance ở **[`LEVELS.md`](LEVELS.md)**; con số tunable ở **[`config.js`](config.js)**.
+>
+> Kịch bản gameplay (tầm nhìn). `DOCS.md` = tài liệu kỹ thuật/triển khai; file này = thiết kế chơi gốc. Phần nào chưa rõ → tự chọn phương án tối ưu (theo `CLAUDE.md`).
 
 ## 0. Tóm tắt 1 dòng
 Game bắn xe tăng **3D twin-stick arena** lai DNA *Battle City* (bảo vệ căn cứ, phá tường, power-up) + *twin-stick hiện đại* (né/dash, ngắm 360°) + *roguelite* (chọn nâng cấp giữa màn) + **boss đa pha cuối mỗi màn**. 5 màn (biome riêng), khó tăng dần, kích thích & căng thẳng cân bằng.
@@ -169,4 +172,4 @@ Mang 1 phép; đổi/khoá thêm qua nâng cấp. Cooldown 8–18s tùy phép.
 9. **HUD/Menu hoàn chỉnh + mobile polish + cân bằng số liệu** (playtest qua Playwright cả mobile/desktop).
 10. **Pass cân bằng & tối ưu FPS cuối.**
 
-> **Last updated:** 2026-05-31 · kịch bản v1 (sẵn sàng implement)
+> **Last updated:** 2026-05-31 · kịch bản **v1 gốc** (đã implement xong + mở rộng vượt xa — xem banner đầu file; trạng thái hiện tại ở `DOCS.md`/`LEVELS.md`, tới Z36).

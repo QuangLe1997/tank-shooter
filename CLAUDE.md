@@ -11,8 +11,8 @@
 3. **Commit message** rõ ràng, một dòng tóm tắt + bullet nếu cần. Kết thúc bằng dòng:
    `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
 4. **An toàn git:** chỉ `git add <file cụ thể>` (KHÔNG `git add -A`/`.`); repo dùng remote **HTTPS** (SSH key không chạy trong môi trường agent).
-5. **Verify trước khi push:** chạy thử (HTTP server + Playwright MCP, test cả desktop 1280×800 và mobile 390×844), không lỗi console (favicon 404 bỏ qua), rồi mới commit.
-6. **Cập nhật `DOCS.md`** (§0 bảng trạng thái + §14 lịch sử) mỗi khi thêm/đổi tính năng để phiên sau không phải scan lại code.
+5. **Verify trước khi push:** (a) **`node test.js`** (smoke-test `config.js`) phải PASS; (b) **`node --check`** module inline (trích `<script>` ra `.mjs`); (c) chạy thử HTTP server + Playwright MCP (desktop 1280×800 + mobile 390×844), không lỗi console (favicon 404 bỏ qua). Rồi mới commit. Commit message kết thúc bằng dòng `Co-Authored-By:` ở §1.3.
+6. **Cập nhật tài liệu** mỗi khi thêm/đổi tính năng: **`DOCS.md`** (§14 lịch sử + bảng hệ thống nếu có cơ chế mới) + **`LEVELS.md`** (nếu đổi số liệu màn/địch/súng/balance). Số cân bằng → sửa ở **`config.js` (`BALANCE`)**, không hardcode rải rác.
 
 ---
 
@@ -51,4 +51,4 @@ Game phải **có ý nghĩa & cuốn người chơi**:
 
 **Thể loại:** Game bắn xe tăng (tank shooter). Chi tiết gameplay do chủ dự án mô tả — bám sát mô tả, phần nào chưa nói thì tự chọn phương án hợp lý nhất theo §2–§3.
 
-> **Last updated:** 2026-05-31 · khởi tạo bộ luật dự án
+> **Last updated:** 2026-06-01 · bộ luật + quy trình verify (node test.js / --check / Playwright) & tài liệu (DOCS/LEVELS/config.js).
