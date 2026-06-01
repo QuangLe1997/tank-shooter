@@ -231,7 +231,7 @@
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
   .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
   /* ---- 3D ARMORY SHOWROOM ---- */
-  .overlay.shop3d{background:radial-gradient(125% 85% at 50% 8%, rgba(10,14,22,.12), rgba(3,5,9,.72) 72%);justify-content:flex-start;}
+  .overlay.shop3d{background:radial-gradient(135% 100% at 50% 16%, rgba(0,0,0,0) 46%, rgba(2,4,8,.5) 100%);backdrop-filter:none;justify-content:flex-start;}   /* crisp: no blur + transparent centre so the 3D item shows bright/sharp, only a soft edge vignette */
   .shop-top{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:9px;padding:max(12px,env(safe-area-inset-top)) 12px 10px;pointer-events:none;z-index:2;}
   .shop-head{display:flex;align-items:center;gap:18px;pointer-events:none;}
   .shop-ttl{font-size:clamp(19px,4.4vw,32px);font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 2px 18px rgba(255,206,110,.5),0 0 2px #000;}
@@ -293,6 +293,7 @@
   body.touch #caseGrid{grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:9px;}
   body.touch .case-disp{height:62px;} body.touch .case-ic{width:40px;height:40px;}
   #caseGrid.hidden,#shopDetailView.hidden,#shopHint.hidden,#shopDone.hidden{display:none !important;}
+  body.shopopen #hud{display:none !important;}   /* keep the battle HUD from bleeding through the transparent 3D shop */
   @media(max-width:560px){ .shop-arrow{width:44px;height:44px;} .shop-arrow .ic{width:20px;height:20px;} .shop-info{padding:10px 14px 12px;} .shop-head{gap:10px;} }
   #nickInput{pointer-events:auto;width:min(78vw,300px);text-align:center;font-family:inherit;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;
     padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);outline:none;caret-color:var(--green);}
@@ -2801,10 +2802,11 @@ shopScene.fog = new THREE.Fog(0x05070b, 11, 26);
 const shopCam = new THREE.PerspectiveCamera(40, innerWidth/Math.max(1,innerHeight), 0.1, 80);
 shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
 (function(){
-  shopScene.add(new THREE.AmbientLight(0x3a4456, 0.85));
-  const key=new THREE.SpotLight(0xffffff, 110, 28, 0.66, 0.55, 1.2); key.position.set(2.6,9.5,5.4); key.target.position.set(0,1.4,0); shopScene.add(key, key.target);
-  const a=new THREE.PointLight(0x5aa9ff, 45, 22); a.position.set(-5.5,3,-2); shopScene.add(a);
-  const b=new THREE.PointLight(0xffb43a, 32, 22); b.position.set(5.5,2.2,-3); shopScene.add(b);
+  shopScene.add(new THREE.AmbientLight(0x5a6478, 1.15));
+  const key=new THREE.SpotLight(0xffffff, 130, 30, 0.7, 0.5, 1.1); key.position.set(2.6,9.5,5.4); key.target.position.set(0,1.4,0); shopScene.add(key, key.target);
+  const fill=new THREE.PointLight(0xdfe9ff, 55, 30); fill.position.set(0,2.6,8.5); shopScene.add(fill);   // front fill so the camera-facing side reads clearly
+  const a=new THREE.PointLight(0x6fb6ff, 50, 22); a.position.set(-5.5,3,-1); shopScene.add(a);
+  const b=new THREE.PointLight(0xffc25a, 38, 22); b.position.set(5.5,2.2,-2); shopScene.add(b);
   const disc=new THREE.Mesh(new THREE.CylinderGeometry(2.7,3.0,0.34,56), new THREE.MeshStandardMaterial({color:0x10131b,metalness:.75,roughness:.5}));
   disc.position.y=-0.17; shopScene.add(disc);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(2.72,0.05,12,72), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffce4a,emissiveIntensity:2.4,roughness:.4}));
@@ -2813,13 +2815,13 @@ shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
 })();
 const RAR_COL={t1:0x9fb07a,t2:0x5aa9ff,t3:0xc08bff,vip:0x7fe7ff,up:0x9bd14a};
 const _shMetal=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:.36});
-const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:1.5,metalness:.4,roughness:.4});
+const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:2.1,metalness:.4,roughness:.4});
 const _shopRay=new THREE.Raycaster();
 function _box(w,h,d,m){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); }
 function _barX(rt,rb,h,m){ const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,18), m); c.rotation.z=Math.PI/2; return c; }   // cylinder lying along X
 function buildGunModel(id){
   const g=GUNS[id]||GUNS.rifle, col=g.color||0xaef0a0, sv=g.svg||'rifle', grp=new THREE.Group();
-  const dark=_shMetal(0x2b2f2b), steel=_shMetal(0x474b4d), acc=_shGlow(col);
+  const dark=_shMetal(0x3e443e), steel=_shMetal(0x5c6163), acc=_shGlow(col);   // lighter metals so the weapon reads clearly under the studio lights
   grp.add(_box(1.5,0.5,0.42,dark));                                            // receiver
   const grip=_box(0.3,0.72,0.34,steel); grip.position.set(-0.36,-0.52,0); grip.rotation.z=0.24; grp.add(grip);
   const stock=_box(0.72,0.42,0.34,dark); stock.position.set(-0.98,-0.06,0); grp.add(stock);
@@ -2954,8 +2956,8 @@ function buyShop(it){
   shopRefreshData(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);
   if(shopDetail3D) spawnShopHero(); else renderCaseGrid();
 }
-function openShop(){ shopOpen=true; shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); hide('start'); show('shop'); refreshWallet(); sfx('click'); }
-function closeShop(){ shopOpen=false; shopDetail3D=false; renderPass.scene=scene; renderPass.camera=camera;
+function openShop(){ shopOpen=true; document.body.classList.add('shopopen'); shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); hide('start'); show('shop'); refreshWallet(); sfx('click'); }
+function closeShop(){ shopOpen=false; shopDetail3D=false; document.body.classList.remove('shopopen'); renderPass.scene=scene; renderPass.camera=camera;
   if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
   saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
 function shop3dUpdate(dt){
