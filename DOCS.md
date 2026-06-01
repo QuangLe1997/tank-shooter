@@ -2,7 +2,9 @@
 
 > Đọc file này là hiểu toàn bộ game + biết chỗ nào để sửa, **không cần scan lại `index.html`**. Mục tiêu: 1 file duy nhất [`index.html`](index.html), zero-build.
 >
-> ✅ **Trạng thái: HOÀN THÀNH (P1–P9) + REWORK v2 (R1–R7) + TINH CHỈNH v3/v4 + VISUAL OVERHAUL v4 (G1–G5).** Game chơi trọn vẹn, live tại https://quangle1997.github.io/tank-shooter/. Kịch bản ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)**. File này theo dõi bản đồ code (§0) + lịch sử (§14). **Toàn bộ chữ trong game là tiếng Anh; icon là bộ SVG tự vẽ (không emoji).**
+> ✅ **Trạng thái: HOÀN THÀNH + ĐANG MỞ RỘNG NỘI DUNG.** Nền tảng (P1–P9) + rework (R/T/G/N/O/Q/W/X) đã xong; từ **Z14→Z36** bổ sung cả một lớp **nội dung & chiều sâu**: kinh tế/shop 3D, nâng cấp, gun mastery, hợp đồng màn chơi, NG+ vô hạn, pháo kích khoá mục tiêu, **9 loại địch · 13 súng**, cinematic chết, phản ứng trúng đòn. Game chơi trọn vẹn, live tại https://quangle1997.github.io/tank-shooter/. Kịch bản gốc ở **[`GAME_DESIGN.md`](GAME_DESIGN.md)**; **số liệu cân bằng + danh sách màn/địch/súng ở [`LEVELS.md`](LEVELS.md)**. File này = bản đồ code (§0) + tổng quan hệ thống + lịch sử (§14). **Chữ in-game tiếng Anh; icon là bộ SVG tự vẽ (không emoji).**
+>
+> 🔑 **Sửa cân bằng?** → [`config.js`](config.js) (`BALANCE` + bảng kinh tế). Sửa xong chạy `node test.js` (355 assertion). Súng/địch/boss/biome vẫn ở `index.html` (couple runtime).
 
 ### Rework v2 (R1–R7) — hệ thống hiện hành
 | Mục | Trạng thái | Ở đâu |
@@ -17,7 +19,7 @@
 | Xe tăng đẹp/hoành tráng hơn + camera thấp/chân thực hơn | ✅ | `buildTank()`, `updateCamera()` |
 | Địch dễ hơn cho người mới, khó tăng dần theo màn | ✅ | `diffScale()`, `buildWaveQueue`, fire scaling |
 
-**8 súng** (tier 1→3): rifle · smg · shotgun · flak · cannon · minigun · missile · railgun — mỗi súng = bộ thông số (dmg/fireCd/mag/reload/frags/spread/bspeed). Sửa cân bằng → chỉ chỉnh `GUNS`.
+**13 súng** (tier 1→3 + VIP — xem chi tiết §7): rifle · smg · shotgun · flak · cannon · cryo · minigun · missile · tesla · **howitzer** · **pyro** + railgun · siege-rocket (VIP). Mỗi súng = bộ thông số trong `GUNS` (dmg/fireCd/mag/reload/frags/spread/bspeed + recoil/knock/fx + special). Giá ở `config.js GUN_PRICE`.
 
 ### Tinh chỉnh v3 (T1–T5)
 | Mục | Ở đâu |
@@ -68,6 +70,25 @@
 | **Đạn vòng cung** (mục tiêu xa → cong, trực diện → thẳng; va chạm vẫn 2D) | `arcDist`→`vy`/`by`, `ARC_G=110`, tích phân trọng lực trong `updateBullets`; trail theo `by` |
 | **Xe chết tan tành (chân thực)**: mảnh kim loại **hình dạng lộn xộn**, **nóng→nguội dần**, văng/xoay/**nảy thấp + nằm yên + mờ dần**; khói đen tức thì; xe to → nổ phụ + nhiều mảnh | `debris/spawnDebris/updateDebris`, `tankExplode` |
 
+### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z36) — hệ thống hiện hành
+| Hệ thống | Tóm tắt | Ở đâu (grep) |
+|---|---|---|
+| **Kinh tế** (xu + 💎 kim cương) | Tích luỹ vĩnh viễn qua `PROFILE`; xu ≈ score/10 mỗi kill + boss + clear-màn; 💎 từ boss + loot. 1💎 = 200 xu (chuẩn quy đổi) | `addCoins/addDiamonds`, `BALANCE.coinBountyDiv/stageClearCoin/boss` |
+| **SHOP 3D showroom** | Tủ trưng bày grid → detail 3D xoay (model dựng thủ tục theo tier/VIP) + chỉ số + blurb + giá; mua súng & 11 nâng cấp; chặn mua trùng | `openShop/shopModel/renderCaseGrid/buildGunModel/buildUpgradeModel`, `SHOP_UP/GUN_PRICE` |
+| **Nâng cấp vĩnh viễn** (11 loại) | DAMAGE/WARHEAD/LONG BARREL/FAST RELOAD/BIG MAG/HULL/ARMOR/ENGINE/GUARDS/CREW/TROOPS — L1-3 xu, L4-5 💎; bake vào run | `SHOP_UP`, `applyUpgrades()`, `BALANCE.up` |
+| **GUN MASTERY** (cấp 1→4/súng) | Nhặt trùng súng = +xp; vượt ngưỡng → lên cấp (vĩnh viễn): +dmg, +nhịp bắn, −nạp đạn | `gunLevel/gunXp/addGunXp/gunDmgMul…`, `PROFILE.gunXp`, `BALANCE.mastery` |
+| **STAGE BRIEFING + Hợp đồng** | Trước mỗi màn chọn 1/3 modifier risk-reward (BOUNTY/GLASS CANNON/ELITE HUNT/SCAVENGER/WARLORD…) áp cả màn | `openBriefing/chooseContract/cMod()`, `CONTRACTS`, mode `'briefing'` |
+| **NG+ vô hạn** | Hạ Overlord → NG+1,2… giữ tài khoản; mỗi loop địch mạnh hơn + thưởng nhiều hơn | `S.loop`, `loopHpMul/loopDmgMul/loopBossMul/loopRewardMul`, `BALANCE.loop` |
+| **Sự kiện wave + Elite** | ~34%/wave: ELITE/HORDE/TREASURE/ASSAULT/BLITZ; elite = champion vàng HP×2.6 thưởng béo | `rollWaveEvent/makeElite`, `WAVE`, `BALANCE.elite` |
+| **PHÁO KÍCH khoá mục tiêu** | Mortar (spotter) gọi loạt pháo: khoá vị trí (reticle radar nhấp nháy + sóng) → tên lửa 3D bay vòng cung từ nòng mortar → nổ AoE theo khoảng cách; né được | `updateArtillery/artLockStrike/updateArtStrikes/makeArtLock/fireSpotter`, `BALANCE.artillery` |
+| **9 loại địch** (silhouette riêng) | grunt·scout(húc)·gunner(3 nòng)·mortar(pháo)·shield(khiên)·bomber(cảm tử)·**heavy·sniper·carrier(chở 3 lính, mutual-death)** | `ENEMY_DEFS`, `decorateEnemyMesh`, `updateEnemies/updateCarrierCrew`, `BALANCE.aggro` |
+| **Hung hãn/chính xác theo màn** | Tỉ lệ chủ động bắn + độ chính xác ramp theo `diffScale` + NG+ loop | `updateEnemies` fire block, `BALANCE.aggro` |
+| **13 súng** (xem §7) | + HOWITZER (pháo cầu vồng qua tường) + PYRO (vòi phun lửa, burn DoT) | `GUNS`, `fireArty/fireFlame`, `BALANCE.flame` |
+| **Cinematic chết → hồi sinh** | Xe lật + bốc cháy + cam cận xoay → dựng dậy + chớp 3 lần | `playerDie/beginDeath/updateDeath/respawnPlayer`, mode `'dying'` |
+| **Phản ứng trúng đòn** | Hull rung/giật lùi + shake theo dmg + **lửa khói cháy ngay chỗ trúng** (rides hull) | `damagePlayer/addPlayerBurn`, `p.hitT/p.burns` |
+| **Thanh máu địch + lính đồng minh + spell** | HP bar nổi trên mỗi xe; lính canh Core + lính nóc xe; 6 spell cooldown | `updateEnemyBar`, `SOLDIER/RIDER`, `SPELLS` |
+| **Refactor config + test** | `BALANCE`/kinh tế tách `config.js`; `test.js` 355 assertion | `config.js`, `test.js` |
+
 ---
 
 ## 0. TRẠNG THÁI TÍNH NĂNG (đọc cái này trước)
@@ -95,23 +116,21 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | **P8** | 5 boss phân hoá: Mãnh Ngưu (húc), Phong Bão (xoáy ốc+tên lửa dò+triệu quân), Cự Thần (đạn vòng+dậm đất+mìn), Tử Thần (laser quét+dịch chuyển+triệu), Bá Vương (tổng hợp+cuồng nộ) + Victory + NG+ | ✅ | `bossAttack()`, `groundPound/bossMine/bossMissiles/bossSummon`, laser trong `updateBoss` |
 | **P9** | Auto-aim assist (mobile) + nút tắt tiếng + adaptive FPS (tự giảm độ phân giải khi lag) + cân bằng độ khó + gỡ dev-cheat | ✅ | `updatePlayer` (aim assist), `setMuted()`, `_fpsAcc` trong `loop()` |
 
-### Điều khiển đã chạy (P1)
-- Desktop: WASD/mũi tên di chuyển · chuột ngắm (raycast → mặt đất) · Space lướt (dash + i-frame, cooldown) · Esc/P pause.
-- Mobile: nửa trái = joystick di chuyển (origin động nơi chạm) · nửa phải = joystick ngắm twin-stick · nút 💨 Dash / 🪄 Phép · ⏸ pause. `body.touch` tự bật.
+### Điều khiển → xem **§12** (đã đổi nhiều lần: bỏ cần-ngắm twin-stick cũ → 1 joystick + nòng tự ngắm trên mobile; desktop chuột trái bắn).
 
 ---
 
 ## 1. Tổng quan & Context
 
-- **Thể loại:** Game bắn xe tăng (tank shooter). Góc nhìn / 2D-3D: **chưa chốt** — sẽ quyết theo mô tả.
-- **Mục tiêu (dự kiến):** điều khiển xe tăng, bắn hạ mục tiêu/địch, sống sót & ghi điểm.
+- **Thể loại:** Tank-defense bắn xe tăng 3D twin-stick, tên **STEEL SIEGE**. Thủ tượng đài Core qua 5 màn (biome + boss) rồi **NG+ vô hạn**.
+- **Mục tiêu:** sống sót các đợt địch, hạ boss mỗi màn; cày **xu + kim cương** mua/nâng cấp khí tài; leo NG+.
 - **Triết lý kế thừa từ neon-serpent-3d:** 1 file tự chạy, zero-build, không chói, chữ rõ, mobile-friendly.
 
-### Tech stack (zero build — TBD chi tiết)
-- Hiện tại: **Canvas 2D thuần** (không thư viện) cho nền placeholder.
-- Có thể nâng lên Three.js (qua importmap CDN) nếu chọn hướng 3D — quyết sau.
-- Âm thanh: dự kiến Web Audio API synth (không file ngoài).
-- Lưu trữ: `localStorage`.
+### Tech stack (zero-build)
+- **3D: Three.js r0.169** qua `<script type="importmap">` (CDN jsDelivr) + addons (EffectComposer/UnrealBloomPass/OutputPass/RoundedBoxGeometry). Render `composer` (bloom).
+- **ES module zero-build**: `index.html` `import` từ `./config.js` (dữ liệu thuần); `package.json {"type":"module"}` để `node test.js` chạy.
+- **Âm thanh:** Web Audio API synth (không file ngoài) — SFX + nhạc nền procedural.
+- **Lưu trữ:** `localStorage` (xem §11).
 
 ### Chạy / Deploy
 - **Chạy qua HTTP server** (tránh chặn module ở `file://`):
@@ -125,40 +144,50 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 
 | Vùng | Nội dung |
 |---|---|
-| `<style>` | Theme tông quân sự (xanh olive `--green`, hổ phách `--amber`, thép `--steel`), title card, badge "Đang phát triển", responsive + safe-area |
-| HTML body | `#bg` (canvas nền), `.stage` (title + subtitle + badge), `.hint` |
-| `<script>` IIFE | nền canvas động: `resize()`, `drawGrid()`, `drawTank()`, vòng lặp `frame()` |
+| `<style>` | Theme quân sự (olive `--green`, amber `--amber`, steel); HUD chip, overlay (start/shop/briefing/upgrade/gameover/victory), mobile `body.touch`, safe-area |
+| HTML body | `#app` canvas (Three.js), `#hud` (topbar/HP/radar/gunlist/camCtl…), các overlay, `#touch` (joystick + nút mobile) |
+| `<script type="module">` | Toàn bộ game: CONFIG/STATE/SETUP/ARENA/TANK/INPUT/UPDATE/COMBAT/UI/SHOP/LOOP — điều hướng bằng comment `// ----- TÊN -----` |
 
 > **Cấu trúc file (từ Z24 — multi-file, vẫn zero-build):**
 > - **`index.html`** — toàn bộ game (CSS + HTML + `<script type="module">` inline ~2.9k dòng JS): engine, render, input, combat, UI, shop 3D…
 > - **`config.js`** — ES module dữ liệu thuần (không phụ thuộc Three.js/DOM): `BALANCE` (mọi con số cân bằng) + kinh tế (`RAR_COL`/`SHOP_UP`/`GUN_PRICE`/`VIP_GUNS`/`GUN_BLURB`/`UP_BLURB`). **Chỉnh cân bằng → sửa ở đây.** `index.html` `import` từ file này.
-> - **`test.js`** — smoke-test node ESM (`node test.js`, zero-dep): 238 assertion bảo vệ tính nhất quán của `config.js` (chạy trước khi commit).
+> - **`test.js`** — smoke-test node ESM (`node test.js`, zero-dep): **355 assertion** bảo vệ tính nhất quán của `config.js` (BALANCE finite, drop/economy/mastery/contracts/artillery/aggro/flame hợp lệ, VIP value-ordering…). Chạy trước mỗi commit.
 > - **`package.json`** — chỉ đánh dấu `"type":"module"` để `node test.js` chạy được; không deps, không bundler.
 >
 > Còn lại `POWERUPS/GUNS/ENEMY_DEFS/BOSS_DEFS/BIOMES/PLAYER/SOLDIER/RIDER` vẫn nằm trong `index.html` (couple với hàm runtime). Pass refactor sau có thể tách thêm combat/ui khi cần — giữ comment `// ----- TÊN -----` để dễ điều hướng.
 
 ---
 
-## 3. Vòng đời / State machine (dự kiến)
+## 3. Vòng đời / State machine (`S.mode`)
 
-`menu → playing → (paused) → gameover → menu/playing` — **sẽ chi tiết khi có gameplay.**
+`start` (menu) → **`intro`** (cinematic deploy) → **`briefing`** (chọn hợp đồng) → **`playing`** ⇄ `paused` → (boss chết) **`upgrade`** (thẻ roguelite) → briefing → playing → … → **`dying`** (cinematic chết, còn mạng → respawn về playing) → `gameover` / **`victory`** (hạ Overlord → NG+ về playing). Vòng lặp chính `loop()` chỉ chạy combat khi `mode==='playing'`; `intro`/`dying` có nhánh riêng; mọi mode khác đóng băng thế giới (particles vẫn chạy).
 
 ---
 
 ## 4. Gameplay & quy tắc
-_(chờ mô tả)_
+- **Twin-stick tank-defense:** lái xe, **nòng tự ngắm** địch gần nhất trong **phạm vi tác chiến** (`rangeRing`); chỉ bắn + đạn chỉ tới trong vùng đó. Bảo vệ **Core** (tượng đài giữa sân) — Core/xe hết máu là nguy.
+- **Mỗi màn = 5 wave + 1 boss**, 5 màn (biome khác nhau) → Victory → **NG+ vô hạn** (giữ tài khoản, khó + thưởng tăng mỗi loop).
+- **Mạng (lives ×3):** xe chết → cinematic lật/cháy → hồi sinh bất tử ngắn + chớp 3 lần; hết mạng → game over.
+- **DASH** (lướt + i-frame), **SWAP súng** (kho ≤5 chọn từ ARSENAL), **SPELL** (6 phép, cooldown).
+- **Lính đồng minh:** lính canh quanh Core + lính trên nóc xe (từ màn 3) tự bắn hỗ trợ.
 
 ## 5. Cấp độ / Độ khó
-_(chờ mô tả)_
+- `diffScale = min(1,(stage−1)/4)` (0 ở S1 → 1 ở S5) + NG+ `loop` → điều khiển: số địch/wave, cap cùng lúc, nhịp spawn, **cơ cấu địch** (mở loại nặng dần), **độ chính xác + tỉ lệ chủ động bắn** của địch, HP/dmg boss. Chi tiết số liệu: **`LEVELS.md`** + `BALANCE` (`config.js`).
+- **Sự kiện wave** + **elite** + **pháo kích** thêm bất ngờ; **hợp đồng** cho người chơi tự chọn rủi-ro/phần-thưởng mỗi màn.
 
-## 6. Điểm / Combo / Phần thưởng
-_(chờ mô tả)_
+## 6. Điểm / Combo / Kinh tế
+- **Score + combo** (chuỗi kill); **BEST** lưu localStorage.
+- **Xu (coins)** ≈ score gốc/10 mỗi kill + boss (`150+90·stage`) + clear màn (`60·stage`); **kim cương (💎)** từ boss (`2+loop`) + 6% loot. Cả hai **tích luỹ vĩnh viễn** trong `PROFILE` (chỉ RESET mới xoá).
+- Tiêu ở **SHOP**: mua súng (xu / 💎 cho VIP) + 11 nâng cấp vĩnh viễn. **GUN MASTERY** lên cấp súng bằng nhặt trùng. Chuẩn quy đổi **1💎 = 200 xu**, giá đơn điệu tăng theo sức mạnh (`config.js`).
 
-## 7. Vật phẩm / Power-up
-_(chờ mô tả)_
+## 7. Vũ khí (13) & Vật phẩm
+- **Súng** (`GUNS`): rifle(T1)·smg(T1)·shotgun(T2)·flak(T2 AoE)·cannon(T2)·cryo(T2 đóng băng)·minigun(T3)·missile(T3 dò)·tesla(T3 sét lan)·**howitzer(T3 pháo cầu vồng qua tường, `special:'arty'`)**·**pyro(T2 vòi lửa burn-DoT, `special:'flame'`)** + VIP **railgun**(xuyên) · **siege-rocket**(xoá vùng, `special:'rocket'`). Mỗi súng có recoil/knock/fx riêng (Z27) + mastery 1→4.
+- **Power-up rơi** (`POWERUPS`): rapid/power/speed/∞ammo/range/mag/heal/repair/shield/bomb/freeze/drone/troops/armory + **gem (💎)** + **gun drop** (theo màn). Beacon báo trước loot ẩn trong gạch/xe.
+- **Phép** (`SPELLS`): OVERDRIVE/AEGIS/EMP/REPAIR/AIRSTRIKE/TIME WARP.
 
 ## 8. Hiệu ứng / Âm thanh
-_(chờ mô tả)_
+- **FX:** bloom (UnrealBloomPass), particle pool (lửa/khói/tia/mảnh), `tankExplode` (FX nổ theo `fx` súng: fire/ice/shock/blast…), debris kim loại nguội dần, tracer phát sáng, screen-shake, ring/shockwave, danger zone + radar reticle, vết cháy bám hull.
+- **Âm thanh:** Web Audio synth — SFX riêng từng súng (`shoot_<id>`), nổ/đau/core/wave/levelup/alarm/beep/rocketlaunch; nhạc nền procedural. Nút mute; `actx.resume()` trong user-gesture (iOS).
 
 ---
 
@@ -171,26 +200,28 @@ _(chờ mô tả)_
 
 ---
 
-## 10. State (sẽ định nghĩa object `S` khi có gameplay)
-_(chờ mô tả)_
+## 10. State runtime
+- **`S`** (= `window._game`): `mode`, `score/stage/wave/loop`, `player` (xe), `zoom/camYaw`, `contract` (hợp đồng đang chạy), `awaitingUpgrade`, cờ buff/timer… Mảng thực thể module-scope: `enemies/bullets/rockets/fuses/artStrikes/pickups/blocks/debris/soldiers/riders` + `boss/core`.
+- **`PROFILE`** (= `window._profile`): tài khoản lưu vĩnh viễn (xem §11). Nhiều hook debug `window._*` (xem cuối `index.html`) cho test.
 
 ## 11. localStorage keys
 | key | ý nghĩa |
 |---|---|
-| `steelsiege.profile` | **hồ sơ người chơi** (JSON): `{nickname, ownedGuns[], loadout[≤5], best:{score,stage}, save:{stage,score}\|null, coins, diamonds, upgrades:{key:level}}` — nguồn sự thật cho nickname, kho vũ khí, loadout, kỷ lục, checkpoint CONTINUE, **ví (xu + kim cương)** và **nâng cấp đã mua từ shop** |
+| `steelsiege.profile` | **hồ sơ người chơi** (JSON): `{nickname, ownedGuns[], loadout[≤5], best:{score,stage}, save:{loop,stage,score}\|null, coins, diamonds, upgrades:{key:level}, gunXp:{gunId:count}}` — nguồn sự thật cho nickname, kho vũ khí, loadout, kỷ lục, checkpoint CONTINUE (kèm NG+ `loop`), **ví (xu + 💎)**, **nâng cấp shop** và **xp mastery từng súng**. RESET xoá sạch (giữ nickname) |
 | `steelsiege.best` | (cũ) kỷ lục — **đã migrate** vào `profile.best` khi load lần đầu |
 | `steelsiege.auto` | chế độ bắn mobile AUTO/MANUAL |
 | `steelsiege.zoom` | mức zoom camera người chơi chọn |
 
-## 12. Điều khiển (dự kiến)
-- **Desktop:** WASD/mũi tên di chuyển · chuột ngắm/bắn (hoặc Space) — **chốt sau**.
-- **Mobile:** joystick + nút bắn — **chốt sau**.
+## 12. Điều khiển (hiện hành)
+- **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
+- **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.
 
 ---
 
-## 13. Cách test nhanh
-- `python3 -m http.server 8765` rồi mở Chrome local; test tự động qua **Playwright MCP** (`browser_navigate`/`browser_evaluate`/`browser_take_screenshot`, `browser_resize` giả mobile 390×844 / desktop 1280×800).
-- Kiểm cú pháp: trích `<script>` ra `.mjs` rồi `node --check`.
+## 13. Cách test nhanh (quy trình trước mỗi commit)
+1. **`node test.js`** — 355 smoke-test trên `config.js` (kinh tế/balance nhất quán). Phải PASS.
+2. **`node --check`** cú pháp module inline: trích `<script type="module">` ra `/tmp/*.mjs` rồi `node --check`.
+3. **Playwright MCP** trên HTTP server (`python3 -m http.server 8767`): `browser_navigate?cb=<n>` (cache-bust) → deploy → bỏ qua intro (dispatch pointerdown) → chọn hợp đồng → kiểm 0 lỗi console (favicon 404 bỏ qua). Hook debug `window._game/_profile/_dbg/_spawn/_giveGun/_gunLevel/_openShop/_updateEnemies/_fireArty/_fireGun…` để drive deterministic (rAF bị throttle khi tab nền). Test cả desktop 1280×800 + mobile 390×844.
 
 ---
 
