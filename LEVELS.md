@@ -117,4 +117,4 @@
 
 ---
 
-**Last updated:** 2026-06-01 · khớp code Z22. Số liệu là **tunable** — đổi balance thì cập nhật file này.
+**Last updated:** 2026-06-01 · khớp code Z23/Z24. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

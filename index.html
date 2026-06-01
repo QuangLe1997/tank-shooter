@@ -725,6 +725,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from './config.js';   // tuning + economy data (zero-build ES module)
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* =========================================================================
@@ -956,7 +957,7 @@ function buildBlocks(){
       const mat = new THREE.MeshStandardMaterial({ color: steel?0x7d828c:0x9a5a36,
         roughness: steel?0.5:0.92, metalness: steel?0.65:0.08 });
       const m=new THREE.Mesh(BLOCK_GEO, mat); m.position.set(bx,1.5,bz); m.rotation.y=rot; m.castShadow=true; m.receiveShadow=true; scene.add(m);
-      const loot = !steel && Math.random()<0.18;          // some bricks conceal a power-up (boosted)
+      const loot = !steel && Math.random()<BALANCE.drop.brick;   // some bricks conceal a power-up (boosted)
       const bobj={ mesh:m, x:bx, z:bz, r:1.7, hp: steel?Infinity:70, steel, loot };
       blocks.push(bobj); if(loot) addLootBeacon(bobj, 'block');
     }
@@ -1539,8 +1540,8 @@ function getEnemyMesh(type){
   m.visible=true; return m;
 }
 function makeElite(e){   // champion: tanky, bigger, glowing gold, pays big + always drops loot
-  e.elite=true; e.hp=Math.round(e.hp*2.6); e.maxHp=e.hp; e.r*=1.3; e.loot=true;
-  e.mesh.scale.multiplyScalar(1.32);
+  e.elite=true; e.hp=Math.round(e.hp*BALANCE.elite.hpMul); e.maxHp=e.hp; e.r*=1.3; e.loot=true;
+  e.mesh.scale.multiplyScalar(BALANCE.elite.sizeMul);
   const g=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffd24a,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false}));
   g.name='eliteFX'; g.scale.set(7,7,1); g.position.y=1.6; e.mesh.add(g);
 }
@@ -1553,9 +1554,9 @@ function spawnEnemy(type, x, z){
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
     hp:hp0, maxHp:hp0, r:1.5*def.scale, facing:0, aim:0,
     fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:def.burst||0, ramAt:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
-    loot: Math.random()<0.16, elite:false };          // some tanks carry a power-up — telegraphed by a beacon (boosted)
+    loot: Math.random()<BALANCE.drop.enemy, elite:false };  // some tanks carry a power-up — telegraphed by a beacon (boosted)
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on the bomber kamikaze)
-  const eliteChance = type==='bomber' ? 0 : Math.min(0.25, 0.025*(S.stage-1) + 0.06*(S.loop||0));
+  const eliteChance = type==='bomber' ? 0 : Math.min(BALANCE.elite.capChance, BALANCE.elite.chancePerStage*(S.stage-1) + BALANCE.elite.chancePerLoop*(S.loop||0));
   if(WAVE.eliteForce>0){ WAVE.eliteForce--; makeElite(e); } else if(Math.random()<eliteChance) makeElite(e);
   enemies.push(e);
   if(e.loot) addLootBeacon(e, 'enemy');
@@ -1620,7 +1621,7 @@ function updateEnemies(dt, now){
       if(ds>0.6){ const lead=Math.min(0.3, d/def.bspeed)*0.55; aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // partial lead, later & weaker → you can still juke
       aimA += (Math.random()-0.5) * (1-ds*0.6) * 0.5;          // keep some spread even late-game so shots stay dodgeable
       const rateMul = 2.2 - 0.7*ds;                            // a touch slower fire (more reaction time)
-      const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?1.3:1);   // weaker early; harder each NG+ loop; elites hit harder
+      const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1);   // weaker early; harder each NG+ loop; elites hit harder
       // enemy bullets only reach within the enemy's combat range
       spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:3.0, maxDist:er+2, arcDist:d});
       spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:0xff7a4a,size:1,life:0.1,grav:0,drag:7});
@@ -1692,11 +1693,11 @@ function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1);
   tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x);   // burst into this tank's own parts (tinted by its palette)
   bumpCombo();
-  const mult = (e.elite?3:1) * loopRewardMul();
+  const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul();
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
-  addCoins(Math.max(5, Math.round(e.def.score/10 * mult)));     // coin bounty ≈ 1/10 of base score, ×elite ×loop
+  addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult)));   // coin bounty ≈ 1/10 of base score, ×elite ×loop
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
-  if(e.elite){ addDiamonds(1); bigExplode(e.pos, 0xffd24a, 2.0); floatText('ELITE DOWN  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
+  if(e.elite){ addDiamonds(BALANCE.elite.dia); bigExplode(e.pos, 0xffd24a, 2.0); floatText('ELITE DOWN  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
   if(e.loot || WAVE.treasure) dropPowerup(e.pos);   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
   // recycle mesh
   const fx=e.mesh.getObjectByName('eliteFX'); if(fx){ e.mesh.remove(fx); if(fx.material) fx.material.dispose(); }
@@ -1704,16 +1705,16 @@ function killEnemy(e){
 }
 
 // ----------------------------- WAVES -----------------------------
-const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:5, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
+const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
 // 0 at stage 1 → 1 at stage 5+. Scales enemy aggression so newcomers ease in.
 function diffScale(){ return Math.min(1, (S.stage-1)/4); }
 // NG+ escalation — each loop ramps the threat AND the payout, so a grinded arsenal finally has a place to flex.
-function loopHpMul(){ return 1 + (S.loop||0)*0.45; }      // enemy / structure HP
-function loopDmgMul(){ return 1 + (S.loop||0)*0.22; }     // enemy damage
-function loopBossMul(){ return 1 + (S.loop||0)*0.55; }    // boss HP
-function loopRewardMul(){ return 1 + (S.loop||0)*0.6; }   // coins / score payout
+function loopHpMul(){ return 1 + (S.loop||0)*BALANCE.loop.hp; }      // enemy / structure HP
+function loopDmgMul(){ return 1 + (S.loop||0)*BALANCE.loop.dmg; }    // enemy damage
+function loopBossMul(){ return 1 + (S.loop||0)*BALANCE.loop.boss; }  // boss HP
+function loopRewardMul(){ return 1 + (S.loop||0)*BALANCE.loop.reward; } // coins / score payout
 function buildWaveQueue(stage, wave){
-  const n = Math.floor(3 + wave + (stage-1)*1.5);   // eased: s1w1=4 → s5w5=~15 (was up to 18)
+  const n = Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage);   // eased: s1w1=4 → s5w5=~15 (was up to 18)
   // weighted pool; tougher/new types unlock at later stages
   const pool=[['grunt', 5], ['scout', 2+wave*0.4], ['gunner', 1+wave*0.4+(stage-1)]];
   if(stage>=2){ pool.push(['bomber', 1+(stage-1)*0.5]); pool.push(['mortar', 1+(stage-1)*0.6]); }
@@ -1726,7 +1727,7 @@ function buildWaveQueue(stage, wave){
 function rollWaveEvent(){
   WAVE.event=null; WAVE.eventBanner=null; WAVE.eventColor='#9bb0c0'; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false;
   if(S.stage===1 && S.wave<=1 && (S.loop||0)===0) return;       // ease the very first wave of a fresh run
-  if(Math.random()>=0.34) return;                               // ~1 in 3 waves rolls an event
+  if(Math.random()>=BALANCE.wave.eventChance) return;           // ~1 in 3 waves rolls an event
   const pool=['elite','horde','treasure','assault']; if(S.stage>=2) pool.push('blitz');
   const ev=pool[(Math.random()*pool.length)|0]; WAVE.event=ev;
   if(ev==='elite'){ WAVE.eliteForce=Math.min(4, 1+(S.stage>=4?1:0)+(S.loop||0)); WAVE.eventBanner='⚠ ELITE WAVE'; WAVE.eventColor='#ffd24a'; }
@@ -1739,7 +1740,7 @@ function rollWaveEvent(){
 function startWave(now){
   rollWaveEvent();
   WAVE.spawnQueue = buildWaveQueue(S.stage, S.wave);
-  if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*0.5)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
+  if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*BALANCE.wave.hordeMul)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
   else if(WAVE.event==='blitz'){ WAVE.spawnQueue = WAVE.spawnQueue.map(()=>'bomber'); }                                                // all kamikaze
   WAVE.spawnAt = now + 0.4; WAVE.active = true;
   showBanner(WAVE.eventBanner || ('WAVE '+S.wave), WAVE.eventColor);
@@ -1764,11 +1765,11 @@ function updateWaves(dt, now){
   }
   // spawn from queue (stagger). Concurrent cap + cadence scale with stage so the
   // early game never floods a new player.
-  const cap = Math.floor(5 + S.stage*1.5) + (WAVE.assault?4:0);   // eased: s1=6 … s5=12; ASSAULT crowds the field
+  const cap = Math.floor(BALANCE.wave.capBase + S.stage*BALANCE.wave.capPerStage) + (WAVE.assault?BALANCE.wave.assaultCapBonus:0);   // eased: s1=6 … s5=12; ASSAULT crowds the field
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && enemies.length<cap){
     const t=WAVE.spawnQueue.shift(); const sp=edgeSpawnPoint();
     spawnEnemy(t, sp.x, sp.z); ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);
-    WAVE.spawnAt = now + (1.15 - 0.4*diffScale())*(WAVE.assault?0.5:1);   // ASSAULT = relentless spawn cadence
+    WAVE.spawnAt = now + (BALANCE.wave.cadence - BALANCE.wave.cadenceDiff*diffScale())*(WAVE.assault?BALANCE.wave.assaultCadenceMul:1);   // ASSAULT = relentless spawn cadence
   }
   // wave clear?
   if(WAVE.spawnQueue.length===0 && enemies.length===0){
@@ -1800,7 +1801,7 @@ function startBoss(now){
   boss = {
     mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle, def, id:def.id,
     pos:new THREE.Vector3(0,0,-ARENA*0.5), vel:new THREE.Vector3(),
-    hp:def.hp*(1+(S.stage-1)*0.18)*0.9*loopBossMul(), maxHp:0, r:3.2*def.scale/3, alive:true,   // eased ~10-18% (later bosses scale gentler)
+    hp:def.hp*(1+(S.stage-1)*BALANCE.boss.stageRamp)*BALANCE.boss.flat*loopBossMul(), maxHp:0, r:3.2*def.scale/3, alive:true,   // eased ~10-18% (later bosses scale gentler)
     facing:0, aim:0, atkAt:now+2, mode:'idle', telUntil:0, chargeUntil:0, chargeDir:new THREE.Vector3(), ramAt:0,
     spiralAng:0, spiralAt:0, laserTelUntil:0, laserFireUntil:0, laserAng:0, summonAt:now+5, blinkAt:now+6,
     mode:'idle', aimTimeout:0,   // tank-locomotion charge state machine
@@ -1961,7 +1962,7 @@ function killBoss(now){
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
     bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
-  const bcoin = Math.round((150 + 90*S.stage)*loopRewardMul()), bdia = 2 + (S.loop||0);   // bigger payout each NG+ loop
+  const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia;   // bigger payout each NG+ loop
   addCoins(bcoin); addDiamonds(bdia);
   showBanner(boss.def.name+' DOWN!  +'+bcoin+' coins · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
@@ -1969,7 +1970,7 @@ function killBoss(now){
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; addCoins(60*S.stage); updateHUD(); saveProgress();   // stage-clear coin bonus + advance the resumable checkpoint
+  S.stage++; addCoins(BALANCE.stageClearCoin*S.stage); updateHUD(); saveProgress();   // stage-clear coin bonus + advance the resumable checkpoint
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 1900); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 1800); }
 }
@@ -2569,8 +2570,8 @@ function dropPowerup(pos){
   const p=S.player; const low = (p.hp/p.maxHp<0.4) || (core&&core.hp/core.maxHp<0.4);
   let def, r=Math.random();
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield'].includes(u.id)); def=pool[(Math.random()*pool.length)|0]; }
-  else if(r<0.06){ def=GEM_DEF; }                                   // 6% → diamond treasure (VIP currency)
-  else if(r<0.45){ def=GUN_DROP_DEF; }                              // ~39% → gun (the headline reward)
+  else if(r<BALANCE.drop.gem){ def=GEM_DEF; }                       // 6% → diamond treasure (VIP currency)
+  else if(r<BALANCE.drop.gun){ def=GUN_DROP_DEF; }                  // ~39% → gun (the headline reward)
   else { def=POWERUPS[(Math.random()*POWERUPS.length)|0]; }
   const g=new THREE.Group(); g.position.set(pos.x,0,pos.z); scene.add(g);
   const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
@@ -2875,7 +2876,6 @@ shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
   glow.rotation.x=-Math.PI/2; glow.position.y=0.04; shopScene.add(glow); shopScene._glow=glow;   // rarity-tinted floor glow (set per item)
   const grid=new THREE.GridHelper(48, 48, 0x1a3a52, 0x0c1622); grid.position.y=-0.34; shopScene.add(grid);
 })();
-const RAR_COL={t1:0x9fb07a,t2:0x5aa9ff,t3:0xc08bff,vip:0x7fe7ff,up:0x9bd14a};
 const _shMetal=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:.36});
 const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:2.1,metalness:.4,roughness:.4});
 const _shopRay=new THREE.Raycaster();
@@ -2942,19 +2942,7 @@ function buildUpgradeModel(item){
 }
 function disposeObj(o){ o.traverse&&o.traverse(c=>{ if(c.geometry)c.geometry.dispose(); if(c.material){ (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{ if(m.map)m.map.dispose(); m.dispose&&m.dispose(); }); } }); }
 
-// punchy marketing blurbs (short — "vừa đủ"): guns + upgrades
-const GUN_BLURB = {
-  rifle:'Trusty all-rounder — never jams, never quits.', smg:'A blistering storm of lead up close.',
-  shotgun:'Point-blank devastation — eight pellets, one trigger.', flak:'Bursts of shrapnel that shred whole packs.',
-  cannon:'One colossal shell. Heavy armour just folds.', cryo:'Freeze them solid — then shatter them.',
-  minigun:'Endless barrels, endless fire. Hold the line.', missile:'Lock on. It hunts. It never misses.',
-  tesla:'Lightning that arcs from foe to foe.', railgun:'A single shot punches clean through a whole column.',
-  rocket:'Lob it in — a whole zone simply vanishes.' };
-const UP_BLURB = {
-  damage:'Every round bites harder.', range:'Strike first, from way out.', reload:'Back in the fight in a blink.',
-  mag:'More rounds, far fewer reloads.', hp:'Soak up serious punishment.', armor:'Shrug off incoming fire.',
-  engine:'Outrun anything on the battlefield.', guards:'More boots standing on the Core.',
-  crew:'More gunners riding into battle.', troops:'Your troops hit a whole lot harder.' };
+// GUN_BLURB / UP_BLURB now imported from config.js
 function itemBlurb(it){ return it.type==='gun' ? (GUN_BLURB[it.id]||'') : (UP_BLURB[it.key]||''); }
 
 let shopOpen=false, shopDetail3D=false, shopCats=[], activeCat='', shopList=[], shopIdx=0, shopHero=null, _shopT=0;
@@ -3322,42 +3310,22 @@ function refreshWallet(){ document.querySelectorAll('.w-coins').forEach(e=>e.tex
 // ----------------------------- SHOP CATALOG + UPGRADES -----------------------------
 // Leveled stat upgrades: early levels cost coins (cheap, affordable in a run or two), top
 // levels cost diamonds (VIP — a multi-session grind). costs[L] = price to go from level L→L+1.
-// Balanced ladder. Earning ≈ 2,000 coins + ~6 ◆ per stage-3 run (≈5,000 coins + ~14 ◆ for a full clear).
-// Conversion benchmark: 1 ◆ = 200 coins of value. costs[L] = price for level L→L+1; L1-L3 coins (cheap, ~1 run),
-// L4-L5 diamonds (VIP grind, several sessions). Value rises monotonically with power → no contradictions.
-const SHOP_UP = [
-  {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'DAMAGE',       per:'+8% bullet damage', costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
-  {key:'boss',   cat:'FIREPOWER', icon:'shell',   name:'WARHEAD',      per:'+12% boss damage',  costs:[{c:400},{c:1100},{c:2600},{d:15},{d:28}]},
-  {key:'range',  cat:'FIREPOWER', icon:'target', name:'LONG BARREL',  per:'+10% fire range',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'reload', cat:'AMMO',      icon:'mag',    name:'FAST RELOAD',  per:'-12% reload time',  costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
-  {key:'mag',    cat:'AMMO',      icon:'mag',    name:'BIG MAGAZINE', per:'+15% magazine',     costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
-  {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
-  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+10% move speed',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'guards', cat:'TROOPS',    icon:'shield', name:'CORE GUARDS',  per:'+1 base guard',     costs:[{c:900},{c:2400},{d:16}]},
-  {key:'crew',   cat:'TROOPS',    icon:'shield', name:'TANK CREW',    per:'+1 base crew',      costs:[{c:900},{c:2400},{d:16}]},
-  {key:'troops', cat:'TROOPS',    icon:'up',     name:'TROOP ARMS',   per:'+15% troop damage', costs:[{c:600},{c:1500},{d:12}]},
-];
+// SHOP_UP / GUN_PRICE / VIP_GUNS now imported from config.js (single source of truth for economy data)
 const SHOP_UP_BY={}; SHOP_UP.forEach(u=>SHOP_UP_BY[u.key]=u);
 function upLevel(key){ return PROFILE.upgrades[key]||0; }
 function upMax(key){ return SHOP_UP_BY[key] ? SHOP_UP_BY[key].costs.length : 0; }
-// gun unlocks → permanent arsenal. T1/T2/T3 in coins; the two strongest are VIP (diamonds only, never gifted in
-// battle). VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,000) — value stays ordered.
-const GUN_PRICE = { smg:{c:500}, shotgun:{c:1400}, cryo:{c:1600}, flak:{c:1700}, cannon:{c:2000},
-  minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, railgun:{d:28}, rocket:{d:34} };
-const VIP_GUNS = ['railgun','rocket'];                        // diamond-only; excluded from in-battle gun drops
 function canAfford(cost){ return !!cost && (!cost.c || PROFILE.coins>=cost.c) && (!cost.d || PROFILE.diamonds>=cost.d); }
 function payCost(cost){ if(!canAfford(cost)) return false; if(cost.c) PROFILE.coins-=cost.c; if(cost.d) PROFILE.diamonds-=cost.d; return true; }
 function applyUpgrades(p){                                     // bake the bought upgrades into a fresh run
-  const U=PROFILE.upgrades||{};
-  p.maxHp     = 100 + (U.hp||0)*20;
-  p.dmgMul   *= 1 + (U.damage||0)*0.08;
-  p.rangeMul *= 1 + (U.range||0)*0.10;
-  p.speedMul *= 1 + (U.engine||0)*0.10;     // ENGINE: +10%/level → nimbler dodging (max +50%)
-  p.magMul    = 1 + (U.mag||0)*0.15;          // separate from the buff-derived ammoMul (which the frame loop overwrites)
-  p.reloadMul = 1/(1 + (U.reload||0)*0.12);
-  p.bossMul   = 1 + (U.boss||0)*0.12;         // WARHEAD: bonus damage vs bosses
-  p.armor     = Math.min(0.6,(U.armor||0)*0.06);
+  const U=PROFILE.upgrades||{}, B=BALANCE.up;
+  p.maxHp     = 100 + (U.hp||0)*B.hp;
+  p.dmgMul   *= 1 + (U.damage||0)*B.damage;
+  p.rangeMul *= 1 + (U.range||0)*B.range;
+  p.speedMul *= 1 + (U.engine||0)*B.engine;   // ENGINE: +10%/level → nimbler dodging (max +50%)
+  p.magMul    = 1 + (U.mag||0)*B.mag;          // separate from the buff-derived ammoMul (which the frame loop overwrites)
+  p.reloadMul = 1/(1 + (U.reload||0)*B.reload);
+  p.bossMul   = 1 + (U.boss||0)*B.boss;        // WARHEAD: bonus damage vs bosses
+  p.armor     = Math.min(0.6,(U.armor||0)*B.armor);
 }
 function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
 function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0); }

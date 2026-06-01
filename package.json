@@ -1,0 +1,6 @@
+{
+  "name": "steel-siege",
+  "private": true,
+  "type": "module",
+  "description": "Zero-build: this file only marks config.js/test.js as ES modules so `node test.js` runs. No dependencies, no bundler."
+}
