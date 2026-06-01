@@ -56,6 +56,9 @@
 | **MORTAR** | **xanh lá** | 38 | ❌ (spotter) | Pháo binh: KHÔNG bắn thẳng — giữ xa (34) & **GỌI PHÁO KÍCH** (artillery khoá mục tiêu). Từ Z32 **bắn shell lên trời thấy được**. Diệt hết mortar = tắt pháo kích. |
 | **SHIELD** | xanh dương | 64 | ✅ đạn đơn | Lính khiên (trâu nhất thường) — **giáp trước**: đạn bắn từ phía trước chỉ 0.28× → phải đánh **sườn/sau**. Mở từ màn 3. |
 | **BOMBER** | **đỏ** | 22 | ❌ (cảm tử) | Kamikaze: KHÔNG bắn — **lao thẳng vào xe** rồi **tự nổ** (bán kính 4.5, 32 sát thương). Mở từ màn 2. Từ Z32 có **hào quang đỏ + tia lửa + vòng cảnh báo** quanh nó → né kịp. |
+| **HEAVY** (Z33) | xám sắt | 140 | ✅ đạn nặng | **Bruiser**: máu trâu nhất, chậm, bắn **đạn to chậm sát thương cao (22) + đẩy lùi mạnh**. 2 nòng to + giáp hông. Mở từ màn 3. |
+| **SNIPER** (Z33) | tím-than | 34 | ✅ bắn tỉa | **Marksman**: tầm xa nhất (52), **chính xác cao + đạn nhanh (đỏ)**, bắn chậm. Nòng dài + ống ngắm phát sáng tím. Mở từ màn 4. |
+| **CARRIER** (Z33) | vàng-olive | 96 + 3×26 | ❌ (chở lính) | **APC chở 3 lính** bắn súng trường trên thùng xe. **Hạ vỏ xe HOẶC hạ hết 3 lính → xe gục** (bắn vào vừa bào vỏ vừa tỉa lính). Mở từ màn 3. |
 
 > **Lưu ý:** 3 loại **không nổ súng** (scout/mortar/bomber) vẫn tấn công — bằng **húc / gọi pháo / cảm tử**. Ngoài ra mỗi loại có thể thành **ELITE** (champion: HP×2.6, to hơn, hào quang vàng, thưởng béo) + 5 **BOSS** riêng mỗi màn.
 
@@ -68,8 +71,8 @@
 `diffScale = min(1, (stage−1)/4)` → **0 ở Stage 1, đạt tối đa 1.0 ở Stage 5**. Độ khó tăng từ:
 1. **Số lượng** địch/wave tăng (bảng §2).
 2. **Giới hạn cùng lúc** + **nhịp spawn** nhanh hơn.
-3. **Cơ cấu địch nặng dần**: gunner nhiều hơn, mở mortar/bomber (S2), shield (S3).
-4. **Địch bắn chính xác & mạnh hơn**: sát thương đạn `def.dmg×(0.65 + 0.35×diffScale)`; bắn đón đầu chỉ bật từ giữa game, vẫn giữ độ lệch để né được.
+3. **Cơ cấu địch nặng dần**: gunner nhiều hơn, mở mortar/bomber (S2), shield/heavy/carrier (S3), sniper (S4).
+4. **Địch CHỦ ĐỘNG & CHÍNH XÁC tăng theo màn (Z34, `BALANCE.aggro`):** **tỉ lệ chủ động bắn** ramp `0.55 + 0.55×diffScale` (S1 hay ngập ngừng → S5 bắn dồn dập liên tục); **độ chính xác** siết mạnh `spread×(1 − 0.82×diffScale)` + còn tăng theo **NG+ loop** → late-game bắn rất chuẩn; **bắn đón đầu** từ sớm (diffScale > 0.3) và lead mạnh hơn về sau; sát thương `def.dmg×(0.65 + 0.35×diffScale)`. (Vẫn giữ chút lệch nhỏ để né được.)
 5. **Boss to & trâu dần** (HP nền 1.300 → 3.600; HP thực = `HP_nền × (1 + (stage−1)×0.18) × 0.9` — **đã giảm ~10-18%** cho dễ thở hơn).
 
 > **Mẹo hạ tướng:** mua **WARHEAD** (Shop·FIREPOWER, +12% sát thương lên boss/cấp, tối đa +60%) + **ENGINE x2** (+10% tốc độ/cấp, tối đa +50% để né) + dùng **DASH** (né + i-frame). Power-up trong trận: BOMB (120 dmg boss), SIEGE ROCKET (360 dmg boss).

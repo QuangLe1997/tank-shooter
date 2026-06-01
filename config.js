@@ -33,6 +33,9 @@ export const BALANCE = {
   artillery:{ radius:6.5, innerFrac:0.4, dmgMax:32, dmgMin:8, coreMul:0.5,
     lockTime:0.9, flightTime:1.2, gravity:26,
     warnLead:1.3, restMin:5, restMax:8, shotSpacing:0.65, shotsBase:2, shotsPerMortar:1, shotsMax:6 },
+  // enemy AGGRESSION & ACCURACY — both ramp with stage (diffScale 0→1 over S1→S5) and NG+ loop.
+  // fireChance = how proactively they shoot (early = hesitant, late = relentless); spread shrinks → far more accurate late.
+  aggro:{ fireChanceBase:0.55, fireChanceRamp:0.55, spreadBase:0.5, spreadDrop:0.82, leadFrom:0.3, rateBase:2.2, rateDrop:0.95, accurateMul:0.22, loopAcc:0.12 },
 };
 
 // ----- rarity colours (tier/VIP) -----
