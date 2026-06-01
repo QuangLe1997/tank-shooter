@@ -5,6 +5,8 @@
 // ============================================================================
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS } from './config.js';
 
+const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
+
 let pass = 0, fail = 0;
 const ok  = (c, msg) => { if (c) { pass++; } else { fail++; console.error('  ✗ ' + msg); } };
 const grp = (name) => console.log('• ' + name);
@@ -114,6 +116,20 @@ for (const c of CONTRACTS) {
     ok(harms, `${c.id} has a downside (tougher/deadlier enemies) — risk/reward, not free power`);
   }
 }
+
+grp('ARTILLERY — lock-strike balance + dodgeability');
+const A = BALANCE.artillery;
+for (const k of ['radius','dmgMax','dmgMin','lockTime','flightTime','gravity','warnLead','restMin','restMax','shotSpacing','shotsBase','shotsMax'])
+  ok(typeof A[k] === 'number' && A[k] > 0, `artillery.${k} is a positive number`);
+ok(A.innerFrac > 0 && A.innerFrac < 1, 'artillery.innerFrac (direct-hit zone) is a fraction in (0,1)');
+ok(A.dmgMax > A.dmgMin, 'artillery: bullseye damage exceeds edge (graze) damage');
+ok(A.restMax >= A.restMin, 'artillery rest window is well-ordered (max ≥ min)');
+ok(A.shotsMax >= A.shotsBase && A.shotsBase >= 1, 'artillery barrage size is sane (max ≥ base ≥ 1)');
+// DODGEABLE: the player must be able to clear the blast radius within the lock+flight window at base speed
+const dodgeWindow = A.lockTime + A.flightTime;
+ok(A.radius <= PLAYER_MAXSPEED * dodgeWindow, `artillery blast radius (${A.radius}) is escapable in the ${dodgeWindow.toFixed(2)}s window at base speed`);
+ok(dodgeWindow >= 1.2, 'artillery gives at least ~1.2s to react+move (not impossible)');
+ok(dodgeWindow <= 3.5, 'artillery window is tight enough to matter (not trivially long)');
 
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {

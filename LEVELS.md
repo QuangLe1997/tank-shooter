@@ -64,6 +64,14 @@
 
 ---
 
+## 3a. Pháo kích khoá mục tiêu (ARTILLERY — từ màn 2, Z29)
+
+Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn pháo kích" chạy theo nhịp **nghỉ → cảnh báo → dồn dập**:
+- **Nghỉ** 7-11s → **banner cảnh báo** "⚠ PHÁO KÍCH — DI CHUYỂN!" (1.6s) → **loạt bắn** `2 + số_mortar` phát (cap 6), mỗi phát cách 0.6s.
+- Mỗi phát **khoá vị trí hiện tại của xe** → vòng đỏ nhấp nháy báo trước **~1.05s** → tên lửa **bay vòng cung từ hướng ngẫu nhiên** cắm vào điểm khoá (~0.95s).
+- **Sát thương theo khoảng cách:** trúng tâm (≤40% bán kính) = **32** (nặng nhất) · trong bán kính 6.5 = giảm dần xuống **8** (sượt) · ngoài = **0**.
+- **Né được:** cửa sổ ~2s, xe ra khỏi bán kính chỉ mất ~0.25s ở tốc tối đa → thử thách là **phản xạ + né loạt khoá liên tiếp** (đứng yên/bị dồn góc = ăn đủ). ⇒ Lý do **ưu tiên diệt mortar** (hết mortar = hết pháo kích).
+
 ## 3b. Sự kiện ngẫu nhiên & Elite (bất ngờ)
 
 **Sự kiện wave** (~34% mỗi wave từ S1-W2 trở đi, có banner báo trước):
@@ -134,4 +142,4 @@
 
 ---
 
-**Last updated:** 2026-06-01 · khớp code Z23/Z24/Z25/Z26. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-01 · khớp code tới Z29. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

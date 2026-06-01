@@ -1676,8 +1676,7 @@ function updateEnemies(dt, now){
       if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
       else e.fireAt=now+def.fireCd*rateMul;
     }
-    // mortar: lob a telegraphed shell at the player's position (within its range)
-    if(def.mortar && now>e.fireAt && d < er){ mortarLob(p.pos.x, p.pos.z); e.fireAt = now + def.fireCd; }
+    // mortar enemies are SPOTTERS — they call in the ARTILLERY barrage (see updateArtillery); they don't lob directly
     // ram contact damage (separateTanks keeps them from overlapping; this just applies the bump damage)
     if(now>e.ramAt){
       if(dpl < e.r+p.radius+PLAYER_STANDOFF+1.5){ damagePlayer(def.ram, now); e.ramAt=now+0.8; }   // rammers still bump-damage across the standoff band
@@ -2614,11 +2613,80 @@ function enemyGroundStrike(x,z,r,dmg,now){
   const p=S.player; if(now>=p.invincibleUntil && (p.pos.x-x)**2+(p.pos.z-z)**2 < r*r) damagePlayer(dmg, now);
   if(core && (core.pos.x-x)**2+(core.pos.z-z)**2 < r*r) damageCore(dmg*0.7);
 }
-function mortarLob(tx,tz){
-  const mk=()=>ringPulse(new THREE.Vector3(tx,0,tz), 0xff5028, 4);   // blinking telegraph at the landing spot
-  mk(); setTimeout(mk,320); setTimeout(mk,680);
-  setTimeout(()=>{ if(S.mode==='playing') enemyGroundStrike(tx,tz,5,24,performance.now()/1000); }, 1000);
+// ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
+// Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
+// mortar spotters are alive (stage≥2). dt-countdowns → freezes cleanly on pause.
+const artStrikes=[];                 // each: {tx,tz, state:'lock'|'fly', t, R, innerR, zone, blink, mesh, mx,my,mz, mvx,mvy,mvz}
+let ART={ phase:'rest', t:5 };
+function _artMortars(){ let n=0; for(const e of enemies) if(e.def.mortar) n++; return n; }
+function artLockStrike(tx,tz){
+  const C=BALANCE.artillery, R=C.radius;
+  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeDangerZone(tx,tz,R), blink:0 });
+  sfx('alarm');
 }
+function updateArtillery(dt, now){
+  const C=BALANCE.artillery, mort=_artMortars();
+  if(S.stage<2 || mort===0 || boss){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down
+  ART.t-=dt; if(ART.t>0) return;
+  if(ART.phase==='rest'){ ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
+  else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar); ART.t=0; }
+  else if(ART.phase==='barrage'){
+    const p=S.player; if(p) artLockStrike(p.pos.x, p.pos.z);     // lock the player's CURRENT spot each shot → must keep moving
+    ART.shots--;
+    if(ART.shots<=0){ ART.phase='rest'; ART.t=C.restMin + Math.random()*(C.restMax-C.restMin); }
+    else ART.t=C.shotSpacing;
+  }
+}
+const _artUP=new THREE.Vector3(0,1,0), _artDir=new THREE.Vector3();
+function updateArtStrikes(dt, now){
+  const C=BALANCE.artillery;
+  for(let i=artStrikes.length-1;i>=0;i--){ const s=artStrikes[i]; s.t-=dt;
+    // pulsing red lock zone (faster/brighter the closer to launch+impact)
+    if(s.zone){ const k = s.state==='lock' ? (1-Math.max(0,s.t)/C.lockTime) : 0.9;
+      const pul=0.5+0.5*Math.sin(now*(8+k*16));
+      s.zone.userData.disc.material.opacity=0.12+0.3*k+0.06*pul;
+      s.zone.userData.ring.material.opacity=0.5+0.5*pul; }
+    s.blink-=dt; if(s.blink<=0){ s.blink=0.32-(s.state==='lock'?0.2:0.26)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep');
+      spawnPart(s.tx,0.5,s.tz,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff4028,size:1.1,life:0.3,grav:-2}); }
+    if(s.state==='lock'){
+      if(s.t<=0){   // LAUNCH — arcing missile drops in from a random direction high above
+        s.state='fly'; s.t=C.flightTime;
+        const ang=Math.random()*6.283, dist=20+Math.random()*12, h=28+Math.random()*8;
+        s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=h;
+        const T=C.flightTime, G=C.gravity;
+        s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (0.8-s.my)/T;
+        s.mesh=makeRocketMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh);
+        sfx('rocketlaunch');
+      }
+    } else { // flying
+      s.mvy-=C.gravity*dt; s.mx+=s.mvx*dt; s.my+=s.mvy*dt; s.mz+=s.mvz*dt; s.mesh.position.set(s.mx,s.my,s.mz);
+      _artDir.set(s.mvx,s.mvy,s.mvz); if(_artDir.lengthSq()>1e-4){ _artDir.normalize(); s.mesh.quaternion.setFromUnitVectors(_artUP,_artDir); }
+      spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,-0.5,(Math.random()-0.5)*2,{color:0xffae5c,size:1.1,life:0.4,grav:0.6,drag:1.6,op:0.7});  // fiery trail
+      if(Math.random()<0.5) spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,0,(Math.random()-0.5)*2,{color:0x5a4e42,size:1.2,life:0.6,smoke:true,grav:1,drag:1.5,op:0.4});
+      if(s.my<=0.85 || s.t<=0){ artImpact(s, now); if(s.mesh) scene.remove(s.mesh);
+        if(s.zone){ scene.remove(s.zone); s.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); }
+        artStrikes.splice(i,1); }
+    }
+  }
+}
+function artImpact(s, now){
+  const C=BALANCE.artillery, pos=new THREE.Vector3(s.tx,1.1,s.tz);
+  // BOOM — fire + shockwave rings to the kill edge + ground shards
+  bigExplode(pos, 0xff7a3d, s.R/3.4);
+  ringPulse({x:s.tx,z:s.tz}, 0xffffff, s.R*1.05); ringPulse({x:s.tx,z:s.tz}, 0xff7a2e, s.R); ringPulse({x:s.tx,z:s.tz}, 0xff3018, s.innerR*1.4);
+  spawnDebris(pos, 1.8, 0x6a5a3a); S.shake=Math.min(4.0, S.shake+1.7);
+  muzzleLight.position.set(s.tx,3,s.tz); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=7; sfx('bigexplode');
+  // distance-graded damage: bullseye = dmgMax, edge = dmgMin, outside = none
+  const grade=(ox,oz)=>{ const d=Math.hypot(ox-s.tx,oz-s.tz); if(d>s.R) return 0;
+    return d<=s.innerR ? C.dmgMax : C.dmgMin + (C.dmgMax-C.dmgMin)*(1-(d-s.innerR)/(s.R-s.innerR)); };
+  const p=S.player;
+  if(p && now>=p.invincibleUntil){ const dmg=grade(p.pos.x,p.pos.z);
+    if(dmg>0){ const direct = Math.hypot(p.pos.x-s.tx,p.pos.z-s.tz)<=s.innerR;
+      damagePlayer(Math.round(dmg), now); floatText(direct?'DIRECT HIT!':'GRAZED', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
+  if(core){ const dc=grade(core.pos.x,core.pos.z); if(dc>0) damageCore(Math.round(dc*C.coreMul)); }
+  for(const sd of soldiers){ const ds=grade(sd.pos.x,sd.pos.z); if(ds>0) damageSoldier(sd, ds*C.coreMul); }
+}
+function clearArtillery(){ for(const s of artStrikes){ if(s.mesh) scene.remove(s.mesh); if(s.zone){ scene.remove(s.zone); s.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); } } artStrikes.length=0; ART={phase:'rest', t:BALANCE.artillery.restMin}; }
 function removeEnemy(e){ const i=enemies.indexOf(e); if(i>=0) enemies.splice(i,1); e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }
 function airstrike(now){
   const cx=S.aimPoint.x||0, cz=S.aimPoint.z||0;
@@ -2878,7 +2946,7 @@ function startGame(continueRun){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); document.body.classList.remove('corelow'); _alarmAt=0;
+  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -3690,6 +3758,7 @@ function loop(nowMs){
     updateBoss(gdt, now);
     updateBullets(gdt, now);
     updateRockets(gdt, now); updateFuses(dt, now);   // siege-rocket flight + landing fuse
+    updateArtillery(dt, now); updateArtStrikes(dt, now);   // enemy ARTILLERY: barrage director + locked missile strikes
     separateTanks(now);                 // resolve overlaps so tanks never merge
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
@@ -3774,6 +3843,7 @@ window._gunLevel = gunLevel; window._gunXp = gunXp; window._addGunXp = addGunXp;
 window._openBriefing = openBriefing; window._chooseContract = chooseContract; window._cMod = cMod; Object.defineProperty(window,'_contract',{get:()=>S.contract});   // CONTRACT hooks (debug/test)
 window._GUNS = GUNS; window._impactFX = impactFX; window._tankExplode = tankExplode; window._fireGun = fireGun;   // FEEL hooks (debug/test): recoil/knock/fx
 window._updateEnemyBar = updateEnemyBar; window._enemyBarPool = enemyBarPool;   // enemy HP-bar hooks (debug/test)
+window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._artImpact = artImpact; window._updateArtillery = updateArtillery; window._updateArtStrikes = updateArtStrikes; Object.defineProperty(window,'_ART',{get:()=>ART});   // ARTILLERY hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
