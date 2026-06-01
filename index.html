@@ -197,6 +197,23 @@
   .upcard .nm{font-size:15px;font-weight:800;letter-spacing:1px;margin:9px 0 5px;color:var(--ink);}
   .upcard .ds{font-size:11px;color:var(--muted);line-height:1.5;}
   @media(max-width:560px){ .upcard{width:30%;min-width:96px;padding:14px 8px;} .upcard .ic{font-size:30px;} .upcard .nm{font-size:12px;} .upcard .ds{font-size:9px;} }
+  /* ---- STAGE BRIEFING (contract choice) ---- */
+  #brcards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:720px;}
+  .brcard{pointer-events:auto;cursor:pointer;width:200px;padding:18px 15px 16px;border-radius:16px;text-align:center;position:relative;
+    background:var(--panel);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.5);transition:transform .15s,border-color .15s,box-shadow .15s;}
+  .brcard:hover{transform:translateY(-5px);border-color:var(--amber);box-shadow:0 0 28px rgba(231,181,74,.4);}
+  .brcard .ic{width:42px;height:42px;margin:0 auto 6px;color:var(--amber);}
+  .brcard .br-tag{display:inline-block;font-size:9px;font-weight:900;letter-spacing:1.5px;padding:3px 9px;border-radius:999px;background:rgba(231,181,74,.16);border:1px solid rgba(231,181,74,.4);color:#ffe8b6;margin-bottom:7px;}
+  .brcard .nm{font-size:15px;font-weight:900;letter-spacing:1px;margin:2px 0 6px;color:var(--ink);}
+  .brcard .ds{font-size:11px;color:var(--muted);line-height:1.55;}
+  .br-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin-top:14px;text-align:center;max-width:560px;}
+  @media(max-width:560px){ .brcard{width:31%;min-width:100px;padding:12px 7px;} .brcard .ic{width:30px;height:30px;} .brcard .nm{font-size:11px;} .brcard .ds{font-size:9px;} .brcard .br-tag{font-size:8px;padding:2px 6px;} .br-hint{font-size:9px;} }
+  /* active-contract HUD chip */
+  #contractChip{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;
+    padding:4px 12px;border-radius:999px;background:rgba(231,181,74,.14);border:1px solid rgba(231,181,74,.45);
+    font-size:11px;font-weight:900;letter-spacing:1.2px;color:#ffe8b6;text-shadow:0 1px 6px rgba(0,0,0,.8);box-shadow:0 0 12px rgba(231,181,74,.22);z-index:12;pointer-events:none;white-space:nowrap;}
+  #contractChip .ic{width:13px;height:13px;color:var(--amber);}
+  body.touch #contractChip{top:4px;font-size:9.5px;padding:3px 9px;}
   /* ---- profile / arsenal UI ---- */
   .hello{font-size:13px;letter-spacing:2px;color:var(--green);font-weight:800;text-transform:uppercase;opacity:.95;}
   .hello b{color:var(--amber);}
@@ -541,6 +558,7 @@
     <div class="cell stage"><div class="lbl">STAGE</div><div class="val" id="ui-stage">1</div></div>
     <div class="cell wave"><div class="lbl">WAVE</div><div class="val" id="ui-wave">1</div></div>
   </div>
+  <div id="contractChip" class="hidden"><span class="ic" data-icon="shield"></span><b id="cc-name">—</b></div>
   <div id="hpwrap" class="chip">
     <div class="row"><span class="ic" data-icon="heart"></span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
     <div class="row"><span class="ic" data-icon="bunker"></span><div class="bar core"><i id="ui-core"></i></div></div>
@@ -688,6 +706,14 @@
   <div id="upcards"></div>
 </div>
 
+<!-- STAGE BRIEFING (pre-stage contract choice) -->
+<div class="overlay hidden" id="briefing">
+  <div class="title" style="font-size:clamp(24px,5.5vw,42px)">STAGE BRIEFING</div>
+  <div class="subtitle" id="br-sub">Boss ahead — choose your contract</div>
+  <div id="brcards"></div>
+  <div class="br-hint">Mỗi hợp đồng đổi luật cả màn — chọn theo mục tiêu (xu · kim cương · cày cấp · liều lĩnh)</div>
+</div>
+
 <!-- VICTORY -->
 <div class="overlay hidden" id="victory">
   <div class="title" style="font-size:clamp(34px,8vw,68px)">VICTORY</div>
@@ -733,7 +759,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from './config.js';   // tuning + economy data (zero-build ES module)
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS } from './config.js';   // tuning + economy data (zero-build ES module)
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* =========================================================================
@@ -846,7 +872,10 @@ const S = {
   weapon:0, spell:0, enemySlowUntil:0, combo:0, comboUntil:0, timeScale:1, awaitingUpgrade:false, timeNow:0,
   zoom: (MOBILE?1.5:1), camYaw:0,   // mobile camera: pull back a bit by default + player-adjustable zoom/rotate
   loop:0,                           // NG+ loop (0 = first playthrough); each loop is harder + pays more
+  contract:null,                    // active STAGE CONTRACT (pre-stage modifier choice); null = neutral
 };
+// ----- STAGE CONTRACT: read its modifiers live at use-sites (coin/hp/dmg/loot/elite) -----
+function cMod(key, dflt){ dflt=(dflt===undefined?1:dflt); const m=S.contract&&S.contract.mods; return (m && m[key]!=null) ? m[key] : dflt; }
 
 // ----------------------------- THREE SETUP -----------------------------
 const app = document.getElementById('app');
@@ -1557,12 +1586,12 @@ function spawnEnemy(type, x, z){
   const def=ENEMY_DEFS[type];
   const mesh=getEnemyMesh(type);
   mesh.position.set(x,0,z);
-  const hp0 = Math.round(def.hp*loopHpMul());
+  const hp0 = Math.round(def.hp*loopHpMul()*cMod('enemyHpMul'));   // CONTRACT may toughen enemies
   const e={ type, def, mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle,
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
     hp:hp0, maxHp:hp0, r:1.5*def.scale, facing:0, aim:0,
     fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:def.burst||0, ramAt:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
-    loot: Math.random()<BALANCE.drop.enemy, elite:false };  // some tanks carry a power-up — telegraphed by a beacon (boosted)
+    loot: Math.random()<BALANCE.drop.enemy*cMod('lootChanceMul'), elite:false };  // some tanks carry a power-up (CONTRACT can boost loot)
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on the bomber kamikaze)
   const eliteChance = type==='bomber' ? 0 : Math.min(BALANCE.elite.capChance, BALANCE.elite.chancePerStage*(S.stage-1) + BALANCE.elite.chancePerLoop*(S.loop||0));
   if(WAVE.eliteForce>0){ WAVE.eliteForce--; makeElite(e); } else if(Math.random()<eliteChance) makeElite(e);
@@ -1629,7 +1658,7 @@ function updateEnemies(dt, now){
       if(ds>0.6){ const lead=Math.min(0.3, d/def.bspeed)*0.55; aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // partial lead, later & weaker → you can still juke
       aimA += (Math.random()-0.5) * (1-ds*0.6) * 0.5;          // keep some spread even late-game so shots stay dodgeable
       const rateMul = 2.2 - 0.7*ds;                            // a touch slower fire (more reaction time)
-      const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1);   // weaker early; harder each NG+ loop; elites hit harder
+      const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul');   // weaker early; harder each NG+ loop; elites + CONTRACT hit harder
       // enemy bullets only reach within the enemy's combat range
       spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:0xff7a4a, r:0.4, life:3.0, maxDist:er+2, arcDist:d});
       spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:0xff7a4a,size:1,life:0.1,grav:0,drag:7});
@@ -1703,7 +1732,7 @@ function killEnemy(e){
   bumpCombo();
   const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul();
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
-  addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult)));   // coin bounty ≈ 1/10 of base score, ×elite ×loop
+  addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult * cMod('coinMul'))));   // coin bounty ≈ 1/10 of base score, ×elite ×loop ×CONTRACT
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
   if(e.elite){ addDiamonds(BALANCE.elite.dia); bigExplode(e.pos, 0xffd24a, 2.0); floatText('ELITE DOWN  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
   if(e.loot || WAVE.treasure) dropPowerup(e.pos);   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
@@ -1747,6 +1776,7 @@ function rollWaveEvent(){
 }
 function startWave(now){
   rollWaveEvent();
+  if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
   WAVE.spawnQueue = buildWaveQueue(S.stage, S.wave);
   if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*BALANCE.wave.hordeMul)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
   else if(WAVE.event==='blitz'){ WAVE.spawnQueue = WAVE.spawnQueue.map(()=>'bomber'); }                                                // all kamikaze
@@ -1970,7 +2000,7 @@ function killBoss(now){
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
     bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
-  const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia;   // bigger payout each NG+ loop
+  const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()*cMod('coinMul')), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia + cMod('bossDiaBonus',0);   // bigger payout each NG+ loop + CONTRACT bonus
   addCoins(bcoin); addDiamonds(bdia);
   showBanner(boss.def.name+' DOWN!  +'+bcoin+' coins · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
@@ -1978,7 +2008,7 @@ function killBoss(now){
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; addCoins(BALANCE.stageClearCoin*S.stage); updateHUD(); saveProgress();   // stage-clear coin bonus + advance the resumable checkpoint
+  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul'))); updateHUD(); saveProgress();   // stage-clear coin bonus (×CONTRACT) + advance the resumable checkpoint
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 1900); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 1800); }
 }
@@ -2471,7 +2501,7 @@ function fireGun(now, range){
   const x=p.pos.x+Math.sin(ang)*od, z=p.pos.z+Math.cos(ang)*od;
   const crit = Math.random() < p.crit;
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
-  const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id);   // MASTERY: +dmg per gun level
+  const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id) * cMod('playerDmgMul');   // MASTERY: +dmg per gun level; CONTRACT may boost
   if(g.special==='rocket'){ fireRocket(now, g); }
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
@@ -2690,9 +2720,48 @@ function chooseUpgrade(u){
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
   clearSoldiers(); deploySoldiers(guardTarget());   // fresh guard squad each stage (base + CORE GUARDS upgrade)
   if(S.stage>=3 && !ridersUnlocked){ ridersUnlocked=true; deployRiders(crewTarget()); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)
-  playStageTransition(S.stage, BIOME.name, '#'+BIOME.accent.toString(16).padStart(6,'0'));
-  S.awaitingUpgrade=false; WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+2.1; S.wave=0;   // first wave lands as the wipe clears
-  S.mode='playing';
+  S.awaitingUpgrade=false; WAVE.active=false; S.wave=0;
+  openBriefing({ stage:S.stage, biomeName:BIOME.name, accentHex:'#'+BIOME.accent.toString(16).padStart(6,'0') });   // pick a CONTRACT, then the stage transition + waves fire on confirm
+}
+// ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
+let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
+function openBriefing(opts){
+  _brCtx = opts || {};
+  S.mode='briefing';
+  const bdef = BOSS_DEFS[(S.stage-1) % BOSS_DEFS.length];
+  const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'STAGE '+S.stage+' · '+BIOME.name+'  —  BOSS: '+(bdef?bdef.name:'???');
+  // offer 3: always the STEADY safe baseline + 2 random risk/reward contracts (shuffled)
+  const rest=CONTRACTS.filter(c=>c.id!=='steady').slice(), pick=[CONTRACTS.find(c=>c.id==='steady')];
+  for(let i=0;i<2 && rest.length;i++) pick.push(rest.splice((Math.random()*rest.length)|0,1)[0]);
+  for(let i=pick.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0, t=pick[i]; pick[i]=pick[j]; pick[j]=t; }
+  const wrap=document.getElementById('brcards'); wrap.replaceChildren();
+  for(const c of pick){
+    const card=document.createElement('div'); card.className='brcard';
+    const ic=document.createElement('div'); ic.className='ic'; ic.appendChild(iconEl(c.icon));
+    const tag=document.createElement('div'); tag.className='br-tag'; tag.textContent=c.tag;
+    const nm=document.createElement('div'); nm.className='nm'; nm.textContent=c.name;
+    const ds=document.createElement('div'); ds.className='ds'; ds.textContent=c.desc;
+    card.append(ic,tag,nm,ds); tapEl(card, ()=>chooseContract(c)); wrap.appendChild(card);
+  }
+  show('briefing'); sfx('powerup');
+}
+function chooseContract(c){
+  S.contract=c; applyContractHUD(); hide('briefing'); S.mode='playing';
+  const ctx=_brCtx||{}; _brCtx=null;
+  WAVE.active=false; S.wave=0;
+  const now=performance.now()/1000;
+  if(ctx.first){ WAVE.betweenUntil=now+0.6; }                                  // stage 1: intro already revealed the field
+  else { playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0'))); WAVE.betweenUntil=now+2.1; }
+  if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
+  sfx('click');
+}
+function applyContractHUD(){
+  const chip=document.getElementById('contractChip'); if(!chip) return;
+  const c=S.contract;
+  if(!c || c.id==='none'){ chip.classList.add('hidden'); return; }
+  setIcon(chip.querySelector('.ic'), c.icon);
+  const nm=document.getElementById('cc-name'); if(nm) nm.textContent=c.name;
+  chip.classList.remove('hidden');
 }
 
 function updateGunHUD(){
@@ -2771,7 +2840,7 @@ function startGame(continueRun){
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
-  S.timeScale=1; S.awaitingUpgrade=false;
+  S.timeScale=1; S.awaitingUpgrade=false; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
   core.maxHp=240; core.hp=240;
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
@@ -3271,9 +3340,9 @@ function startIntro(){
 function endIntro(){
   if(!intro.active) return; intro.active=false;
   document.getElementById('cine').classList.remove('on'); document.body.classList.remove('cine');
-  WAVE.active=false; WAVE.betweenUntil=performance.now()/1000+0.6;
-  S.mode='playing';
+  WAVE.active=false; S.wave=0;
   doResize();   // viewport may have changed during the intro (fullscreen/orientation) → refit so play renders full-screen
+  openBriefing({ first:true });   // STAGE 1 briefing: pick a contract → waves begin on confirm
 }
 function updateIntro(dt, now){
   if(!intro.active) return;
@@ -3660,6 +3729,7 @@ window._saveProgress = saveProgress; window._clearProgress = clearProgress;     
 window._openShop = openShop; window._buyShop = buyShop; window._shopModel = shopModel; window._applyUpgrades = applyUpgrades;   // economy hooks (debug/test)
 window._WAVE = WAVE; window._rollWaveEvent = rollWaveEvent; window._makeElite = makeElite; window._dbg.killEnemy = killEnemy;   // NG+/event hooks (debug/test)
 window._gunLevel = gunLevel; window._gunXp = gunXp; window._addGunXp = addGunXp; window._giveGun = giveGun;   // MASTERY hooks (debug/test)
+window._openBriefing = openBriefing; window._chooseContract = chooseContract; window._cMod = cMod; Object.defineProperty(window,'_contract',{get:()=>S.contract});   // CONTRACT hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up

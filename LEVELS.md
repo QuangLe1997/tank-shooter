@@ -77,6 +77,21 @@
 
 **Lính Elite (champion):** ngoài ELITE WAVE còn có **xác suất nền** mỗi spawn = `min(25%, 2.5%×(stage−1) + 6%×loop)` (không áp cho bomber). Elite: **HP ×2.6, to hơn 32%, hào quang vàng**, **+1 💎 + xu ×3** khi hạ, luôn rơi loot. → mục tiêu ưu tiên, phần thưởng béo.
 
+## 3c. Hợp đồng màn chơi (STAGE BRIEFING — Z26)
+
+**Trước mỗi màn** (màn 1 sau intro; màn 2-5 sau thẻ nâng cấp) hiện **briefing**: báo boss/biome + cho **chọn 1 trong 3 hợp đồng** = modifier áp **cả màn đó**. Luôn có **STEADY** (an toàn) + 2 ngẫu nhiên. Mỗi cái là **đánh đổi** (risk/reward), giúp người chơi định hướng farm:
+
+| Hợp đồng | Lợi | Hại | Dùng khi |
+|---|---|---|---|
+| **STEADY ADVANCE** | +10% xu | — | chơi an toàn |
+| **BOUNTY RUN** | +70% xu | địch +20% máu | cày xu mua shop |
+| **GLASS CANNON** | +40% sát thương bạn | địch +30% sát thương | tự tin, qua nhanh |
+| **ELITE HUNT** | mỗi wave 1 elite + 50% rơi đồ | địch +10% máu | cày elite (💎 + loot) |
+| **SCAVENGER** | ×2 rơi đồ | địch +20% sát thương | **cày súng → lên mastery** |
+| **WARLORD'S CUT** | boss +2 💎 | địch +15% máu | cày kim cương VIP |
+
+→ Hợp đồng đổi **chiến thuật mỗi lượt** (không còn auto-tiến giống hệt). Chip góc trên giữa nhắc hợp đồng đang chạy. Số liệu ở `config.js · CONTRACTS`.
+
 ## 4. Tỉ lệ quà tặng / vật phẩm rơi
 
 **Khi nào rơi đồ (loot ẩn, có đèn hiệu báo trước = beacon → chắc chắn rơi khi phá):**
@@ -119,4 +134,4 @@
 
 ---
 
-**Last updated:** 2026-06-01 · khớp code Z23/Z24/Z25. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-01 · khớp code Z23/Z24/Z25/Z26. Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

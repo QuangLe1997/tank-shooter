@@ -61,6 +61,17 @@ export const GUN_BLURB = {
   minigun:'Endless barrels, endless fire. Hold the line.', missile:'Lock on. It hunts. It never misses.',
   tesla:'Lightning that arcs from foe to foe.', railgun:'A single shot punches clean through a whole column.',
   rocket:'Lob it in — a whole zone simply vanishes.' };
+// ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
+// mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
+export const CONTRACTS = [
+  { id:'steady',  name:'STEADY ADVANCE', icon:'shield', tag:'AN TOÀN',     desc:'+10% xu · không rủi ro thêm',                 mods:{ coinMul:1.1 } },
+  { id:'bounty',  name:'BOUNTY RUN',     icon:'coin',   tag:'KIẾM XU',     desc:'+70% xu · nhưng địch +20% máu',               mods:{ coinMul:1.7, enemyHpMul:1.2 } },
+  { id:'glass',   name:'GLASS CANNON',   icon:'burst',  tag:'LIỀU LĨNH',   desc:'+40% sát thương của bạn · địch +30% sát thương', mods:{ playerDmgMul:1.4, enemyDmgMul:1.3 } },
+  { id:'elite',   name:'ELITE HUNT',     icon:'shell',  tag:'SĂN ELITE',   desc:'Mỗi wave có 1 elite · +50% rơi đồ · địch +10% máu', mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
+  { id:'scav',    name:'SCAVENGER',      icon:'mag',    tag:'GOM ĐỒ',      desc:'×2 tỉ lệ rơi đồ (cày súng/cấp) · địch +20% sát thương', mods:{ lootChanceMul:2, enemyDmgMul:1.2 } },
+  { id:'warlord', name:"WARLORD'S CUT",  icon:'target', tag:'KIM CƯƠNG',   desc:'Boss rơi +2 💎 · nhưng địch +15% máu',         mods:{ bossDiaBonus:2, enemyHpMul:1.15 } },
+];
+
 export const UP_BLURB = {
   damage:'Every round bites harder.', range:'Strike first, from way out.', reload:'Back in the fight in a blink.',
   mag:'More rounds, far fewer reloads.', hp:'Soak up serious punishment.', armor:'Shrug off incoming fire.',

@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS } from './config.js';
 
 let pass = 0, fail = 0;
 const ok  = (c, msg) => { if (c) { pass++; } else { fail++; console.error('  ✗ ' + msg); } };
@@ -93,6 +93,27 @@ ok(M.dmgPerLevel > 0 && M.dmgPerLevel < 1, 'mastery.dmgPerLevel is a sane fracti
 ok(M.fireCdPerLevel > 0 && M.fireCdPerLevel * (M.maxLevel - 1) < 1, 'mastery.fireCdPerLevel never zeroes/inverts fireCd at max level');
 ok(M.reloadPerLevel > 0 && M.reloadPerLevel * (M.maxLevel - 1) < 1, 'mastery.reloadPerLevel never zeroes/inverts reload at max level');
 for (let i = 1; i < M.xp.length; i++) { const step = M.xp[i] - M.xp[i - 1]; ok(step >= 8 && step <= 24, `mastery level ${i + 1} needs ${step} dups (within 8-24 design window)`); }
+
+grp('CONTRACTS — stage-modifier integrity');
+ok(Array.isArray(CONTRACTS) && CONTRACTS.length >= 3, 'CONTRACTS has at least 3 options to choose from');
+ok(CONTRACTS.some(c => c.id === 'steady'), 'a neutral/safe "steady" contract exists (always offered)');
+const KNOWN_MODS = new Set(['coinMul','enemyHpMul','enemyDmgMul','playerDmgMul','lootChanceMul','eliteEveryWave','bossDiaBonus']);
+const seenContractIds = new Set();
+for (const c of CONTRACTS) {
+  ok(c.id && c.name && c.icon && c.tag && c.desc && c.mods && typeof c.mods === 'object', `${c.id||'?'} has id/name/icon/tag/desc/mods`);
+  ok(!seenContractIds.has(c.id), `contract id "${c.id}" is unique`);
+  seenContractIds.add(c.id);
+  for (const [k, v] of Object.entries(c.mods)) {
+    ok(KNOWN_MODS.has(k), `${c.id} mod "${k}" is a recognized modifier (must be wired at a use-site)`);
+    if (typeof v === 'number') ok(Number.isFinite(v) && v > 0, `${c.id} mod ${k} is a finite positive number`);
+    else ok(typeof v === 'boolean', `${c.id} mod ${k} is a number or boolean`);
+  }
+  // every non-steady contract should have a real tradeoff (a downside mod), not be pure upside
+  if (c.id !== 'steady') {
+    const harms = (c.mods.enemyHpMul > 1) || (c.mods.enemyDmgMul > 1);
+    ok(harms, `${c.id} has a downside (tougher/deadlier enemies) — risk/reward, not free power`);
+  }
+}
 
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
