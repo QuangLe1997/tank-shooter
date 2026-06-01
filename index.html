@@ -448,8 +448,9 @@
   body.touch #autoBtn .ic{width:19px;height:19px;}
   body.touch #autoBtn.on{background:rgba(44,30,6,.4);color:#ffcf5a;border-color:rgba(255,200,90,.6);box-shadow:0 0 9px rgba(255,180,60,.5);}
   /* camera controls (zoom + rotate view) — left edge, vertically centred, see-through */
-  #camCtl{position:absolute;left:max(8px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 184px);top:auto;display:none;flex-direction:row;gap:7px;pointer-events:none;z-index:14;}   /* bottom-anchored just above DASH → fixed gap on any viewport height (no overlap) */
-  body.touch #camCtl{display:flex;}
+  /* camera controls (zoom + rotate) — desktop: bottom-left corner; mobile: stacked just above DASH */
+  #camCtl{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));top:auto;display:flex;flex-direction:row;gap:8px;pointer-events:none;z-index:14;}
+  body.touch #camCtl{left:max(8px,env(safe-area-inset-left));bottom:calc(max(20px,env(safe-area-inset-bottom)) + 184px);}   /* above the mobile DASH button */
   @media (max-height:340px){ body.touch #gunlist{display:none !important;} }   /* tiny landscape (iPhone SE): drop the gun strip so it never meets the bottom-anchored camera buttons (weaponchip still shows the active gun). !important beats updateGunHUD's inline display */
   .camBtn{pointer-events:auto;width:40px;height:40px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
     background:rgba(8,12,6,.32);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.85);backdrop-filter:blur(4px);box-shadow:0 3px 10px rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent;}
@@ -581,6 +582,11 @@
   <div id="bossbar"><div class="bn" id="boss-name">BOSS</div><div class="bar core"><i id="boss-hp"></i></div></div>
   <canvas id="radar" width="144" height="144"></canvas>
   <div id="corewarn"><span class="ic" data-icon="alert"></span>CORE UNDER ATTACK</div>
+  <!-- camera controls (zoom + rotate) — in #hud so they show on BOTH desktop & mobile (not gated by the mobile #touch layer) -->
+  <div id="camCtl">
+    <div class="camBtn" id="zoomBtn"><span class="ic" data-icon="expand"></span><span id="zoomLbl">1.5×</span></div>
+    <div class="camBtn" id="rotBtn"><span class="ic" data-icon="rotate"></span></div>
+  </div>
 </div>
 <div id="vignette"></div>
 <div id="corealarm"></div>
@@ -597,10 +603,6 @@
   <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
   <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
   <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>AUTO</span></div>
-  <div id="camCtl">
-    <div class="camBtn" id="zoomBtn"><span class="ic" data-icon="expand"></span><span id="zoomLbl">1.5×</span></div>
-    <div class="camBtn" id="rotBtn"><span class="ic" data-icon="rotate"></span></div>
-  </div>
 </div>
 
 <!-- START / TITLE -->
@@ -2690,8 +2692,19 @@ function makeArtLock(x,z,R,innerR){
 function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); }
 function artLockStrike(tx,tz){
   const C=BALANCE.artillery, R=C.radius;
-  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0 });
+  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0, rip:0 });
   sfx('alarm');
+}
+// a green mortar SPOTTER visibly lobs the shell skyward (so the player reads the green tanks AS the artillery source)
+function fireSpotter(){
+  const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); if(!ms.length) return;
+  const e=ms[(Math.random()*ms.length)|0], x=e.pos.x, z=e.pos.z;
+  e.hitT=Math.max(e.hitT,0.14); e.kbx+=(Math.random()-0.5)*2.5; e.kbz+=(Math.random()-0.5)*2.5;   // recoil kick
+  spawnPart(x, 2.1, z, 0, 18, 0, {color:0xffe06a, size:1.5, life:0.3, grav:-8, drag:1});            // launch flash up the barrel
+  for(let i=0;i<6;i++) spawnPart(x, 2.2, z, (Math.random()-0.5)*3, 11+Math.random()*9, (Math.random()-0.5)*3, {color:0xffb24a, size:0.6, life:0.45, grav:9, drag:1});   // rising shell sparks
+  spawnPart(x, 1.6, z, 0, 1, 0, {color:0x4a4038, size:2.0, life:0.6, smoke:true, grav:-0.5, drag:1.6, op:0.5});   // muzzle smoke
+  ringPulse(e.pos, 0xc0e060, 1.8);                                                                   // lime muzzle ring (mortar's colour)
+  muzzleLight.position.set(x,2.2,z); muzzleLight.color.setHex(0xc0e060); muzzleLight.intensity=3.2;
 }
 function updateArtillery(dt, now){
   const C=BALANCE.artillery, mort=_artMortars();
@@ -2701,6 +2714,7 @@ function updateArtillery(dt, now){
   else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar); ART.t=0; }
   else if(ART.phase==='barrage'){
     const p=S.player; if(p) artLockStrike(p.pos.x, p.pos.z);     // lock the player's CURRENT spot each shot → must keep moving
+    fireSpotter();                                               // a mortar visibly lobs the shell skyward (so the green spotters read as the threat)
     ART.shots--;
     if(ART.shots<=0){ ART.phase='rest'; ART.t=C.restMin + Math.random()*(C.restMax-C.restMin); }
     else ART.t=C.shotSpacing;
@@ -2712,10 +2726,12 @@ function updateArtStrikes(dt, now){
   for(let i=artStrikes.length-1;i>=0;i--){ const s=artStrikes[i]; s.t-=dt;
     // RADAR LOCK reticle: blink faster + spin the sweep faster the closer to launch/impact
     if(s.zone){ const ud=s.zone.userData, k = s.state==='lock' ? (1-Math.max(0,s.t)/C.lockTime) : 1;
-      const pul=0.45+0.55*Math.abs(Math.sin(now*(5+k*10)));         // tasteful blink, quickens near launch
+      const pul=0.22+0.78*Math.abs(Math.sin(now*(6+k*18)));         // hard urgent blink, quickens near launch
       for(const it of ud.items) it.m.material.opacity = it.base*pul;
-      if(ud.sweep) ud.sweep.rotation.z += dt*(3.2+k*5);             // radar sweep spins faster as the lock tightens
-      if(ud.sweepMat) ud.sweepMat.opacity = 0.35+0.4*pul; }
+      if(ud.sweep) ud.sweep.rotation.z += dt*(3.4+k*6);             // radar sweep spins faster as the lock tightens
+      if(ud.sweepMat) ud.sweepMat.opacity = 0.3+0.45*pul; }
+    if(s.state==='lock'){ const k=1-Math.max(0,s.t)/C.lockTime; s.rip-=dt;   // expanding danger WAVES — quicken as launch nears
+      if(s.rip<=0){ s.rip=0.55-0.4*k; ringPulse({x:s.tx,z:s.tz}, 0xff4632, s.R*0.95); } }
     s.blink-=dt; if(s.blink<=0){ s.blink=0.34-(s.state==='lock'?0.22:0.28)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep'); }
     if(s.state==='lock'){
       if(s.t<=0){   // LAUNCH — arcing missile drops in from a random direction high above
