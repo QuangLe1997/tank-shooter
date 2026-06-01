@@ -2470,6 +2470,19 @@ function makeRocketMesh(){
   const ex=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffb050,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); ex.scale.setScalar(1.7); ex.position.y=-1.05; g.add(ex);
   return g;
 }
+// dedicated ENEMY ARTILLERY missile — bigger & menacing: dark hull, glowing red warhead, hazard band, swept fins, fierce plume
+function makeArtMissileMesh(){
+  const g=new THREE.Group();
+  const hull=new THREE.MeshStandardMaterial({color:0x23262b,metalness:0.78,roughness:0.34});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.40,2.1,14), hull); g.add(body);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.39,1.05,14), new THREE.MeshStandardMaterial({color:0x180a08,emissive:0xff2a12,emissiveIntensity:1.5,metalness:0.5,roughness:0.4})); nose.position.y=1.55; g.add(nose);
+  const tip=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,10), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xff4020,emissiveIntensity:2.4})); tip.position.y=2.08; g.add(tip);   // glowing seeker tip
+  const band=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.32,14), new THREE.MeshStandardMaterial({color:0xffc24a,emissive:0xffae20,emissiveIntensity:0.55,metalness:0.4,roughness:0.5})); band.position.y=0.55; g.add(band);   // hazard stripe
+  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.66,0.52,0.07), new THREE.MeshStandardMaterial({color:0x15171a,metalness:0.6,roughness:0.5})); fin.position.y=-0.96; fin.rotation.y=k*1.5708; g.add(fin); }
+  const plume=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff7a1c,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); plume.scale.setScalar(2.5); plume.position.y=-1.55; g.add(plume); g._plume=plume;
+  const core=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe06a,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); core.scale.setScalar(1.25); core.position.y=-1.42; g.add(core);
+  g.scale.setScalar(1.15); return g;
+}
 const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
 function fireRocket(now, g){
   const p=S.player;
@@ -2655,14 +2668,16 @@ function updateArtStrikes(dt, now){
         s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=h;
         const T=C.flightTime, G=C.gravity;
         s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (0.8-s.my)/T;
-        s.mesh=makeRocketMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh);
+        s.mesh=makeArtMissileMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh);
         sfx('rocketlaunch');
       }
-    } else { // flying
+    } else { // flying — blazing arc + roiling smoke trail
       s.mvy-=C.gravity*dt; s.mx+=s.mvx*dt; s.my+=s.mvy*dt; s.mz+=s.mvz*dt; s.mesh.position.set(s.mx,s.my,s.mz);
       _artDir.set(s.mvx,s.mvy,s.mvz); if(_artDir.lengthSq()>1e-4){ _artDir.normalize(); s.mesh.quaternion.setFromUnitVectors(_artUP,_artDir); }
-      spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,-0.5,(Math.random()-0.5)*2,{color:0xffae5c,size:1.1,life:0.4,grav:0.6,drag:1.6,op:0.7});  // fiery trail
-      if(Math.random()<0.5) spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,0,(Math.random()-0.5)*2,{color:0x5a4e42,size:1.2,life:0.6,smoke:true,grav:1,drag:1.5,op:0.4});
+      if(s.mesh._plume) s.mesh._plume.scale.setScalar(2.3+Math.sin(now*42)*0.55);   // flickering engine plume
+      spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,-0.4,(Math.random()-0.5)*2,{color:0xffd24a,size:1.0,life:0.22,grav:0,drag:6});            // hot flame core
+      spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*3,-0.4,(Math.random()-0.5)*3,{color:0xff7a2e,size:1.5,life:0.4,grav:0.6,drag:2.4,op:0.8});  // fiery wake
+      if(Math.random()<0.7) spawnPart(s.mx,s.my,s.mz,(Math.random()-0.5)*2,0,(Math.random()-0.5)*2,{color:0x4a4038,size:1.5,life:0.7,smoke:true,grav:1,drag:1.5,op:0.45});
       if(s.my<=0.85 || s.t<=0){ artImpact(s, now); if(s.mesh) scene.remove(s.mesh);
         if(s.zone){ scene.remove(s.zone); s.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); }
         artStrikes.splice(i,1); }
@@ -2670,12 +2685,27 @@ function updateArtStrikes(dt, now){
   }
 }
 function artImpact(s, now){
-  const C=BALANCE.artillery, pos=new THREE.Vector3(s.tx,1.1,s.tz);
-  // BOOM — fire + shockwave rings to the kill edge + ground shards
-  bigExplode(pos, 0xff7a3d, s.R/3.4);
-  ringPulse({x:s.tx,z:s.tz}, 0xffffff, s.R*1.05); ringPulse({x:s.tx,z:s.tz}, 0xff7a2e, s.R); ringPulse({x:s.tx,z:s.tz}, 0xff3018, s.innerR*1.4);
-  spawnDebris(pos, 1.8, 0x6a5a3a); S.shake=Math.min(4.0, S.shake+1.7);
-  muzzleLight.position.set(s.tx,3,s.tz); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=7; sfx('bigexplode');
+  const C=BALANCE.artillery, pos=new THREE.Vector3(s.tx,1.1,s.tz), sc=s.R/3.0, tx=s.tx, tz=s.tz;
+  // ===== GRAND ARTILLERY DETONATION =====
+  burst(pos, 0xffffff, Math.floor(11*sc), 7*sc,  {life:0.13, size:2.7*sc, up:2, grav:-2, drag:8});      // blinding flash core
+  burst(pos, 0xffe8a0, Math.floor(22*sc), 13*sc, {life:0.4,  size:2.5*sc, up:6, drag:2});               // fireball
+  burst(pos, 0xff6a1c, Math.floor(18*sc), 11*sc, {life:0.5,  size:2.3*sc, up:5, drag:2});               // deep fire
+  burst(pos, 0xc4301a, Math.floor(12*sc), 9*sc,  {life:0.55, size:2.0*sc, up:4, drag:2});               // ember red
+  burst(pos, 0xffe6a0, Math.floor(26*sc), s.R*2.3, {life:0.5, size:0.5*sc, up:4, grav:-10, drag:1.2});  // sparks rip out to the edge
+  spawnDebris(pos, 2.6, 0x6a5a3a); spawnDebris(pos, 1.6, 0x33302a);                                     // dirt + metal shards
+  // shockwave rings to the exact kill edge + inner kill ring
+  ringPulse({x:tx,z:tz}, 0xffffff, s.R*1.15); ringPulse({x:tx,z:tz}, 0xffd27a, s.R); ringPulse({x:tx,z:tz}, 0xff5028, s.R*0.72); ringPulse({x:tx,z:tz}, 0xff3018, s.innerR*1.5);
+  // rising MUSHROOM smoke column (staggered puffs climb + spread)
+  for(let k=0;k<6;k++) setTimeout(()=>{ if(S.mode==='paused') return;
+    burst({x:tx,z:tz}, k<2?0x2a221a:0x191510, 2, 3+k*0.7, {y:1.2+k*1.15, life:0.9+k*0.12, size:(2.1+k*0.55)*sc, smoke:true, grav:-0.6, drag:1.5, up:2.4, op:0.5}); }, k*55);
+  setTimeout(()=>{ if(S.mode!=='paused') burst({x:tx,z:tz}, 0x241c14, 7, 5.5*sc, {y:8, life:1.5, size:3.6*sc, smoke:true, grav:-0.3, drag:1.6, up:1, op:0.45}); }, 360);  // mushroom cap
+  // secondary fire-pops ringing around the crater (visual-only — keep the audio to the main rolling boom)
+  for(let k=0;k<7;k++){ const a=Math.random()*6.283, rr=s.R*(0.35+Math.random()*0.6);
+    setTimeout(()=>{ if(S.mode==='paused') return; const ep={x:tx+Math.cos(a)*rr, z:tz+Math.sin(a)*rr};
+      burst(ep, 0xffba5c, 6, 8, {life:0.34, size:1.5, up:4, drag:2.6}); burst(ep, 0xff5a1c, 4, 6, {life:0.42, size:1.3, drag:2.6}); ringPulse(ep, 0xffaa50, 2.3); }, 40+k*42); }
+  S.shake=Math.min(5.5, S.shake+3.4);
+  muzzleLight.position.set(tx,4,tz); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=9.5;
+  sfx('bigexplode'); setTimeout(()=>{ if(S.mode!=='paused') sfx('explode'); }, 130);
   // distance-graded damage: bullseye = dmgMax, edge = dmgMin, outside = none
   const grade=(ox,oz)=>{ const d=Math.hypot(ox-s.tx,oz-s.tz); if(d>s.R) return 0;
     return d<=s.innerR ? C.dmgMax : C.dmgMin + (C.dmgMax-C.dmgMin)*(1-(d-s.innerR)/(s.R-s.innerR)); };
