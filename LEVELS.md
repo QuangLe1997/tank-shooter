@@ -46,6 +46,19 @@
 - **Stage ≥ 2** mở thêm: `bomber` `1+(stage−1)×0.5`, `mortar` `1+(stage−1)×0.6`.
 - **Stage ≥ 3** mở thêm: `shield` `1+(stage−2)×0.7`.
 
+### 6 loại địch — màu sắc, mục đích & tập tính
+
+| Loại | Màu | HP | Bắn? | Mục đích & tập tính |
+|---|---|---|---|---|
+| **GRUNT** | đỏ-nâu | 32 | ✅ đạn đơn | Bộ binh cơ bản (xương sống mọi wave). Tiến tới giữ khoảng cách ~18, bắn 1 viên mỗi ~2s, tầm 32. |
+| **SCOUT** | cam | 16 | ❌ | Trinh sát **nhanh nhất** (tốc 12). Không bắn — **lao vào HÚC** (ram). Áp sát gây rối, dễ chết. |
+| **GUNNER** | đỏ-mận | 46 | ✅ **loạt 3 viên** | Xạ thủ liên thanh: bắn burst 3 viên (0.46s/viên) rồi nạp 2.3s, tầm 28. Sát thương dồn — tăng mạnh theo màn. |
+| **MORTAR** | **xanh lá** | 38 | ❌ (spotter) | Pháo binh: KHÔNG bắn thẳng — giữ xa (34) & **GỌI PHÁO KÍCH** (artillery khoá mục tiêu). Từ Z32 **bắn shell lên trời thấy được**. Diệt hết mortar = tắt pháo kích. |
+| **SHIELD** | xanh dương | 64 | ✅ đạn đơn | Lính khiên (trâu nhất thường) — **giáp trước**: đạn bắn từ phía trước chỉ 0.28× → phải đánh **sườn/sau**. Mở từ màn 3. |
+| **BOMBER** | **đỏ** | 22 | ❌ (cảm tử) | Kamikaze: KHÔNG bắn — **lao thẳng vào xe** rồi **tự nổ** (bán kính 4.5, 32 sát thương). Mở từ màn 2. Từ Z32 có **hào quang đỏ + tia lửa + vòng cảnh báo** quanh nó → né kịp. |
+
+> **Lưu ý:** 3 loại **không nổ súng** (scout/mortar/bomber) vẫn tấn công — bằng **húc / gọi pháo / cảm tử**. Ngoài ra mỗi loại có thể thành **ELITE** (champion: HP×2.6, to hơn, hào quang vàng, thưởng béo) + 5 **BOSS** riêng mỗi màn.
+
 ---
 
 ## 3. Đường cong độ khó

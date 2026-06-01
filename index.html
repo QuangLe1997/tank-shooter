@@ -1623,13 +1623,17 @@ function updateEnemies(dt, now){
       continue;
     }
     const edt = dt * slow;   // movement slow factor (Time Warp); doesn't affect shared dt
-    // BOMBER: charge the player, blink, self-destruct
+    // BOMBER: kamikaze — charges the player and self-destructs (never shoots). Clearly telegraphed so it reads as a THREAT.
     if(e.def.bomber){
       const to=new THREE.Vector3().subVectors(p.pos,e.pos); const d=to.length()||1; to.divideScalar(d);
       e.pos.addScaledVector(to, e.def.speed*edt);
       e.mesh.position.set(e.pos.x,0,e.pos.z); e.facing=Math.atan2(to.x,to.z); e.mesh.rotation.y=e.facing;
-      if(!e.detonateAt && d < 3.4) e.detonateAt = now + 0.5;       // arm
-      if(e.detonateAt){ e.mesh.visible = Math.floor(now*12)%2===0;  // blink telegraph
+      // menacing lit-fuse telegraph: steady red glow + sparks + warning ring that quickens as it closes
+      if(Math.random()<0.7) spawnPart(e.pos.x,1.9,e.pos.z, (Math.random()-0.5)*0.6,0.4,(Math.random()-0.5)*0.6, {color:0xff2a14, size:2.2, life:0.12, grav:0, drag:1});
+      if(Math.random()<0.5) spawnPart(e.pos.x,2.3,e.pos.z, (Math.random()-0.5)*1.6,2.6,(Math.random()-0.5)*1.6, {color:0xffae5c, size:0.55, life:0.3, grav:-3, drag:3});
+      e.warn=(e.warn||0)-dt; if(e.warn<=0){ e.warn=Math.max(0.13, Math.min(0.6,(d-3)/16)); ringPulse(e.pos, 0xff2a14, 2.0); }
+      if(!e.detonateAt && d < 3.4){ e.detonateAt = now + 0.5; sfx('alarm'); ringPulse(e.pos, 0xff2a14, 4.5); }   // armed → flash the blast radius
+      if(e.detonateAt){ e.mesh.visible = Math.floor(now*14)%2===0;  // fast blink telegraph
         if(now >= e.detonateAt){ e.mesh.visible=true; enemyGroundStrike(e.pos.x,e.pos.z,4.5,32,now); bigExplode(e.pos,0xff3020,1.6); removeEnemy(e); } }
       continue;
     }
@@ -3983,7 +3987,7 @@ window._GUNS = GUNS; window._impactFX = impactFX; window._tankExplode = tankExpl
 window._updateEnemyBar = updateEnemyBar; window._enemyBarPool = enemyBarPool;   // enemy HP-bar hooks (debug/test)
 window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._artImpact = artImpact; window._updateArtillery = updateArtillery; window._updateArtStrikes = updateArtStrikes; Object.defineProperty(window,'_ART',{get:()=>ART});   // ARTILLERY hooks (debug/test)
 window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDeath = updateDeath; window._respawnPlayer = respawnPlayer; Object.defineProperty(window,'_DEATH',{get:()=>DEATH});   // DEATH→respawn hooks (debug/test)
-window._damagePlayer = damagePlayer;   // hit-reaction hook (debug/test)
+window._damagePlayer = damagePlayer; window._updateEnemies = updateEnemies;   // hit-reaction + enemy-AI hooks (debug/test)
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
