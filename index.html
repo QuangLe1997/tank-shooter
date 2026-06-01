@@ -1578,10 +1578,40 @@ function updateEnemyBar(e){ if(!e.bar) return; const f=Math.max(0, e.hp/e.maxHp)
   e.bar.fill.scale.x=Math.max(0.001,f); e.bar.fill.position.x=-(1-f)*0.5;                              // shrink from the right
   e.bar.fill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));                         // green → amber → red
 }
+// per-type silhouette: artillery (mortar) gets a high-angle tube, gunner twin barrels, shield a frontal plate,
+// bomber a warhead payload, scout a ram prow → each enemy class reads at a glance (built once per pooled mesh)
+function decorateEnemyMesh(m, type){
+  const pal=ENEMY_DEFS[type].pal, ud=m.userData, T=ud.turret, bg=ud.barrelG;
+  const steel=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:0.4,metalness:0.85});
+  const dk=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:0.6,metalness:0.5});
+  if(type==='mortar'){
+    if(bg) bg.visible=false;                                                  // hide the flat cannon
+    const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.46,2.5,16), steel(0x2b2f25)); tube.position.set(0,0.55,0.15); tube.rotation.x=-0.95; T.add(tube);   // big upward mortar tube
+    const mouth=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.42,0.42,16), dk(0x14160e)); mouth.position.set(0,1.5,1.18); mouth.rotation.x=-0.95; T.add(mouth);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(0.72,0.84,0.32,12), dk(pal.tread)); base.position.set(0,-0.18,-0.25); T.add(base);   // recoil baseplate
+    for(const sx of [-0.75,0.75]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.0,8), steel(0x33342c)); leg.position.set(sx,-0.1,-0.7); leg.rotation.x=0.5; T.add(leg); }   // outrigger legs
+  } else if(type==='gunner'){
+    for(const sx of [-0.36,0.36]){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.16,2.7,14), steel(pal.barrel)); b.rotation.x=Math.PI/2; b.position.set(sx,0.05,1.7); bg.add(b); }   // twin side barrels → triple-barrel burst look
+    const ammo=new THREE.Mesh(new RoundedBoxGeometry(0.7,0.4,0.6,1,0.06), dk(0x2a2a22)); ammo.position.set(0,0.0,-1.0); T.add(ammo);   // ammo box on the back
+  } else if(type==='shield'){
+    const sh=new THREE.Mesh(new RoundedBoxGeometry(2.8,1.7,0.3,3,0.1), steel(pal.turret)); sh.position.set(0,1.3,1.95); sh.rotation.x=-0.3; m.add(sh);   // big frontal blast shield
+    for(const bx of [-0.85,0,0.85]){ const bolt=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.34,10), steel(pal.accent)); bolt.rotation.x=Math.PI/2-0.3; bolt.position.set(bx,1.3,2.12); m.add(bolt); }   // rivets
+  } else if(type==='bomber'){
+    if(bg) bg.visible=false;
+    const wh=new THREE.Mesh(new THREE.SphereGeometry(0.64,16,12), dk(0x3a1410)); wh.position.set(0,0.5,0); T.add(wh);                       // round warhead payload
+    const band=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.09,8,20), steel(0xffae20)); band.position.set(0,0.5,0); band.rotation.x=Math.PI/2; T.add(band);   // hazard stripe
+    const fuse=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.42,8), steel(0x222222)); fuse.position.set(0,1.18,0); T.add(fuse);
+    const tip=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xff3010,emissiveIntensity:2.4})); tip.position.set(0,1.42,0); tip.name='bombTip'; T.add(tip);   // glowing fuse tip
+  } else if(type==='scout'){
+    if(bg) bg.visible=false;
+    const wedge=new THREE.Mesh(new THREE.ConeGeometry(0.78,1.5,4), steel(pal.accent)); wedge.rotation.set(Math.PI/2,0,Math.PI/4); wedge.position.set(0,0.78,2.15); m.add(wedge);   // ramming prow
+  }
+  m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+}
 function getEnemyMesh(type){
   enemyPool[type] = enemyPool[type]||[];
   let m = enemyPool[type].pop();
-  if(!m){ m = buildTank(ENEMY_DEFS[type].pal); scene.add(m); }
+  if(!m){ m = buildTank(ENEMY_DEFS[type].pal); decorateEnemyMesh(m, type); scene.add(m); }
   m.scale.setScalar(ENEMY_DEFS[type].scale*TANK_SCALE);                       // always reset (elites scaled it up)
   const fx=m.getObjectByName('eliteFX'); if(fx){ m.remove(fx); if(fx.material) fx.material.dispose(); }   // strip old elite glow
   m.visible=true; return m;
@@ -2702,21 +2732,22 @@ function makeArtLock(x,z,R,innerR){
   scene.add(grp); return grp;
 }
 function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); }
+function _pickMortar(){ const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); return ms.length ? ms[(Math.random()*ms.length)|0] : null; }
 function artLockStrike(tx,tz){
   const C=BALANCE.artillery, R=C.radius;
-  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0, rip:0 });
+  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0, rip:0, launcher:_pickMortar() });   // remember WHICH mortar fires this shell
   sfx('alarm');
 }
-// a green mortar SPOTTER visibly lobs the shell skyward (so the player reads the green tanks AS the artillery source)
-function fireSpotter(){
-  const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); if(!ms.length) return;
-  const e=ms[(Math.random()*ms.length)|0], x=e.pos.x, z=e.pos.z;
-  e.hitT=Math.max(e.hitT,0.14); e.kbx+=(Math.random()-0.5)*2.5; e.kbz+=(Math.random()-0.5)*2.5;   // recoil kick
-  spawnPart(x, 2.1, z, 0, 18, 0, {color:0xffe06a, size:1.5, life:0.3, grav:-8, drag:1});            // launch flash up the barrel
-  for(let i=0;i<6;i++) spawnPart(x, 2.2, z, (Math.random()-0.5)*3, 11+Math.random()*9, (Math.random()-0.5)*3, {color:0xffb24a, size:0.6, life:0.45, grav:9, drag:1});   // rising shell sparks
-  spawnPart(x, 1.6, z, 0, 1, 0, {color:0x4a4038, size:2.0, life:0.6, smoke:true, grav:-0.5, drag:1.6, op:0.5});   // muzzle smoke
-  ringPulse(e.pos, 0xc0e060, 1.8);                                                                   // lime muzzle ring (mortar's colour)
-  muzzleLight.position.set(x,2.2,z); muzzleLight.color.setHex(0xc0e060); muzzleLight.intensity=3.2;
+// the firing mortar visibly recoils + a shell blasts UP out of its tube (so the green tank reads as the source)
+function fireSpotter(e){
+  if(!e) e=_pickMortar(); if(!e) return;
+  const x=e.pos.x, z=e.pos.z;
+  e.hitT=Math.max(e.hitT,0.16); e.kbx+=(Math.random()-0.5)*3; e.kbz+=(Math.random()-0.5)*3;          // recoil kick
+  spawnPart(x, 2.4, z, 0, 20, 0, {color:0xffe06a, size:1.6, life:0.3, grav:-8, drag:1});              // muzzle flash up the tube
+  for(let i=0;i<7;i++) spawnPart(x, 2.5, z, (Math.random()-0.5)*3, 12+Math.random()*10, (Math.random()-0.5)*3, {color:0xffb24a, size:0.6, life:0.5, grav:9, drag:1});   // launch sparks
+  spawnPart(x, 1.8, z, 0, 1, 0, {color:0x4a4038, size:2.2, life:0.7, smoke:true, grav:-0.5, drag:1.6, op:0.5});   // muzzle smoke
+  ringPulse(e.pos, 0xc0e060, 1.9); sfx('rocketlaunch');
+  muzzleLight.position.set(x,2.4,z); muzzleLight.color.setHex(0xc0e060); muzzleLight.intensity=3.4;
 }
 function updateArtillery(dt, now){
   const C=BALANCE.artillery, mort=_artMortars();
@@ -2725,8 +2756,7 @@ function updateArtillery(dt, now){
   if(ART.phase==='rest'){ ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
   else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar); ART.t=0; }
   else if(ART.phase==='barrage'){
-    const p=S.player; if(p) artLockStrike(p.pos.x, p.pos.z);     // lock the player's CURRENT spot each shot → must keep moving
-    fireSpotter();                                               // a mortar visibly lobs the shell skyward (so the green spotters read as the threat)
+    const p=S.player; if(p) artLockStrike(p.pos.x, p.pos.z);     // lock the player's CURRENT spot each shot → must keep moving (the firing mortar flashes at LAUNCH)
     ART.shots--;
     if(ART.shots<=0){ ART.phase='rest'; ART.t=C.restMin + Math.random()*(C.restMax-C.restMin); }
     else ART.t=C.shotSpacing;
@@ -2746,14 +2776,14 @@ function updateArtStrikes(dt, now){
       if(s.rip<=0){ s.rip=0.55-0.4*k; ringPulse({x:s.tx,z:s.tz}, 0xff4632, s.R*0.95); } }
     s.blink-=dt; if(s.blink<=0){ s.blink=0.34-(s.state==='lock'?0.22:0.28)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep'); }
     if(s.state==='lock'){
-      if(s.t<=0){   // LAUNCH — arcing missile drops in from a random direction high above
+      if(s.t<=0){   // LAUNCH — shell blasts UP out of the firing mortar's tube and arcs to the locked spot
         s.state='fly'; s.t=C.flightTime;
-        const ang=Math.random()*6.283, dist=20+Math.random()*12, h=28+Math.random()*8;
-        s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=h;
+        const L=s.launcher, alive = L && enemies.indexOf(L)>=0;
+        if(alive){ s.mx=L.pos.x; s.mz=L.pos.z; s.my=2.6; fireSpotter(L); }              // origin = the mortar's tube; it recoils + flashes
+        else { const ang=Math.random()*6.283, dist=18+Math.random()*10; s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=26+Math.random()*6; sfx('rocketlaunch'); }   // fallback: from the sky if its mortar died
         const T=C.flightTime, G=C.gravity;
-        s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (0.8-s.my)/T;
+        s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (0.8-s.my)/T;            // lob up then down to impact
         s.mesh=makeArtMissileMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh);
-        sfx('rocketlaunch');
       }
     } else { // flying — blazing arc + roiling smoke trail
       s.mvy-=C.gravity*dt; s.mx+=s.mvx*dt; s.my+=s.mvy*dt; s.mz+=s.mvz*dt; s.mesh.position.set(s.mx,s.my,s.mz);

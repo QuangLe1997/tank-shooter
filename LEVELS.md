@@ -59,6 +59,8 @@
 
 > **Lưu ý:** 3 loại **không nổ súng** (scout/mortar/bomber) vẫn tấn công — bằng **húc / gọi pháo / cảm tử**. Ngoài ra mỗi loại có thể thành **ELITE** (champion: HP×2.6, to hơn, hào quang vàng, thưởng béo) + 5 **BOSS** riêng mỗi màn.
 
+> **Hình thù riêng (Z33):** mỗi loại có **silhouette khác nhau** dễ phân biệt — mortar = **ống pháo chĩa lên** (bắn đạn vọt lên từ nòng), gunner = **3 nòng**, shield = **tấm khiên trước**, bomber = **đầu đạn tròn + ngòi nổ sáng**, scout = **mũi húc nhọn**, grunt = nòng đơn cơ bản.
+
 ---
 
 ## 3. Đường cong độ khó
