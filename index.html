@@ -1495,26 +1495,34 @@ function renderSong(a){
 
 // ----------------------------- PROJECTILES -----------------------------
 const bullets=[]; const bulletPool=[];
-const bulletGeo = new THREE.SphereGeometry(0.28, 10, 8);
+const bulletGeo = new THREE.SphereGeometry(0.24, 10, 8);
 for(let i=0;i<300;i++){
-  const m = new THREE.Mesh(bulletGeo, new THREE.MeshBasicMaterial({color:0xffe08a}));
-  m.visible=false; scene.add(m); bulletPool.push(m);
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(bulletGeo, new THREE.MeshBasicMaterial({color:0xfff4d0}));   // hot, full-bright core
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xffe08a, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false}));
+  halo.scale.setScalar(1.7);   // glowing aura around every round (kept modest so rapid guns don't bloom-wash)
+  g.add(core, halo); g.userData={core, halo};
+  g.visible=false; scene.add(g); bulletPool.push(g);
 }
 const BVIS = MOBILE ? 1.6 : 1.15;     // bullets render bigger on small screens
+const _hot=(hex)=>{ const r=(hex>>16)&255,g=(hex>>8)&255,b=hex&255, m=v=>Math.min(255,Math.round(v+(255-v)*0.55)); return (m(r)<<16)|(m(g)<<8)|m(b); };  // blend toward white for the bright core
 // glowing additive tracer trails so every shot's path is bright & easy to read
 const trailPool=[], trails=[];
-for(let i=0;i<240;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+for(let i=0;i<360;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
   s.visible=false; scene.add(s); trailPool.push(s); }
-function addTrail(x,y,z,color,size){ const s=trailPool.pop(); if(!s) return; s.visible=true; s.material.color.setHex(color); s.material.opacity=0.95;
-  s.position.set(x,y,z); s.scale.setScalar(size); trails.push({s,life:0.2,max:0.2}); }
+function addTrail(x,y,z,color,size,life){ const s=trailPool.pop(); if(!s) return; const L=life||0.2; s.visible=true; s.material.color.setHex(color); s.material.opacity=0.95;
+  s.position.set(x,y,z); s.scale.setScalar(size); trails.push({s,life:L,max:L}); }
 function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i]; t.life-=dt;
   if(t.life<=0){ t.s.visible=false; t.s.material.opacity=0; trailPool.push(t.s); trails.splice(i,1); continue; }
   t.s.material.opacity=(t.life/t.max)*0.95; } }
 function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
-  m.visible=true; m.scale.setScalar((o.scale||1)*BVIS);
+  const r = o.r||0.45;
+  m.visible=true; m.scale.setScalar((o.scale || (0.78 + r*1.1)) * BVIS);   // heavier rounds render fatter (per-gun size)
   const col = o.color ?? 0xffe08a;
-  m.material.color.setHex(col);
+  const tracer = (o.owner==='e') ? 0xff5a24 : col;                          // enemy fire reads as danger-red; player = the gun's colour
+  m.userData.core.material.color.setHex(_hot(tracer));                      // bright white-hot core
+  m.userData.halo.material.color.setHex(tracer);                           // glowing aura matches the tracer
   m.position.set(x, 1.2, z);
   const sp = o.speed||60;
   const D=o.arcDist||0; let vy=0; if(D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close
@@ -1537,7 +1545,7 @@ function updateBullets(dt, now){
     b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt;
     if(b.arc){ b.by+=b.vy*dt; b.vy-=ARC_G*dt; if(b.by<0.35) b.by=0.35; }   // ballistic arc (purely visual; collision is 2D x/z)
     b.mesh.position.set(b.x,b.by,b.z);
-    addTrail(b.x, b.by, b.z, b.owner==='p'?0xffb43a:0xff5a24, (b.r||0.45)*BVIS*2.7);   // fiery tracer — yellow-orange (player), red-orange (enemy)
+    addTrail(b.x, b.by, b.z, b.owner==='e'?0xff5a24:b.color, (b.r||0.45)*BVIS*3.0, 0.14+(b.r||0.45)*0.22);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak
 
     const overRange = b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
@@ -2240,7 +2248,9 @@ function bigExplode(pos, color, scale=1.5){
 }
 // ----- per-gun IMPACT spray (non-lethal hit) — each weapon "reads" differently on contact -----
 function impactFX(pos, fx, k){ k=k||1;
-  if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xffe6a0, Math.floor(6*k), 9*k, {life:0.28, size:1.1*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(4*k), 6*k, {life:0.32, size:1.0*k, drag:3}); }
+  if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xfff1c0, Math.floor(7*k), 9*k, {life:0.26, size:1.2*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(5*k), 6*k, {life:0.34, size:1.05*k, drag:3});
+    burst(pos, 0x281e14, Math.floor(2+k), 4*k, {life:0.55, size:1.3*k, smoke:true, grav:-0.5, drag:2, op:0.4});   // lingering fire-lit smoke
+    muzzleLight.position.set(pos.x,1.6,pos.z); muzzleLight.color.setHex(0xff9a4a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4*k); }
   else if(fx==='frag'){ ringPulse(pos, 0xffc070, 1.5*k); burst(pos, 0xffd27a, Math.floor(9*k), 13*k, {life:0.26, size:0.55*k, grav:-6, drag:4}); }                                  // shrapnel spray
   else if(fx==='pierce'){ ringPulse(pos, 0xd6b8ff, 1.9*k); burst(pos, 0xeaddff, Math.floor(5*k), 15*k, {life:0.2, size:0.5*k, grav:-2, drag:6}); }                                // clean punch-through streak
   else if(fx==='ice'){ ringPulse(pos, 0x9fe8ff, 1.7*k); burst(pos, 0xd8f6ff, Math.floor(7*k), 8*k, {life:0.42, size:0.7*k, grav:7, drag:3}); burst(pos, 0x7fd0ff, Math.floor(3*k), 5*k, {life:0.3, size:0.5*k, drag:5}); }   // frost shards fall
