@@ -1245,6 +1245,29 @@ function buildTank(opts={}){
   } else {
     const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.2,6), dark(0x101010)); ant.position.set(-0.6,0.8,-0.5); turretG.add(ant);
   }
+  if(opts.mighty){   // PLAYER ONLY — heavier, more imposing silhouette (the hero unit)
+    const trimMat=new THREE.MeshStandardMaterial({color:0x0a0a0a, emissive:accent, emissiveIntensity:0.55, roughness:0.45, metalness:0.4});
+    // heavy spaced side-armor wings — widen & bulk the hull
+    for(const sx of [-1,1]){
+      const wing=new THREE.Mesh(new RoundedBoxGeometry(0.32,0.72,3.25,2,0.1), skin(hull)); wing.position.set(sx*1.52,1.02,-0.08); wing.rotation.z=sx*0.13; g.add(wing);
+      const wedge=new THREE.Mesh(new RoundedBoxGeometry(0.4,0.5,0.9,2,0.1), metal(0x3a3e34)); wedge.position.set(sx*1.5,1.0,1.5); wedge.rotation.y=sx*0.4; g.add(wedge);   // angled front fender armor
+    }
+    // reinforced frontal glacis + spaced-armor "tusk" bar (aggressive prow)
+    const appl=new THREE.Mesh(new RoundedBoxGeometry(2.46,0.56,0.46,2,0.1), metal(0x3a3e34)); appl.position.set(0,0.94,1.78); appl.rotation.x=-0.62; g.add(appl);
+    const bar=new THREE.Mesh(new RoundedBoxGeometry(2.2,0.16,0.18,1,0.05), metal(0x2a2a22)); bar.position.set(0,0.62,2.24); g.add(bar);
+    for(const tx of [-0.78,0,0.78]){ const tusk=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.11,0.62,10), metal(0x33332b)); tusk.rotation.x=Math.PI/2; tusk.position.set(tx,0.62,1.98); g.add(tusk); }
+    // bigger commanded turret: roof reinforcement plate + raised armored cupola + heavy .50-cal
+    const tcap=new THREE.Mesh(new RoundedBoxGeometry(1.52,0.22,1.74,2,0.12), skin(turret)); tcap.position.set(0,0.42,-0.08); turretG.add(tcap);
+    const cup2=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.54,0.52,18), metal(turret)); cup2.position.set(0.34,0.74,-0.32); turretG.add(cup2);
+    const hmg=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,1.05,8), metal(0x1e1e18)); hmg.rotation.x=Math.PI/2; hmg.position.set(0.34,1.0,0.28); turretG.add(hmg);
+    // beefier turret face — angular cheek add-on armor
+    for(const cx of [-0.86,0.86]){ const ch=new THREE.Mesh(new RoundedBoxGeometry(0.34,0.52,0.74,2,0.1), skin(turret)); ch.position.set(cx,-0.02,0.66); ch.rotation.y=cx<0?0.32:-0.32; turretG.add(ch); }
+    // hero accent trim (subtle emissive edge strips) → reads premium / commanding
+    for(const tz of [0.92,-0.92]){ const st=new THREE.Mesh(new THREE.BoxGeometry(1.66,0.06,0.12), trimMat); st.position.set(0,0.32,tz); turretG.add(st); }
+    for(const tx2 of [-0.84,0.84]){ const sl=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.06,1.9), trimMat); sl.position.set(tx2,0.32,0); turretG.add(sl); }
+    // warm engine-exhaust glow at the rear
+    const exGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff8a3a,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false})); exGlow.scale.setScalar(0.95); exGlow.position.set(-1.12,1.22,-1.86); g.add(exGlow);
+  }
   g.userData.turret = turretG; g.userData.muzzle = muzzle; g.userData.barrelG = barrelG; g.userData.hull = hullM;
   g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
   return g;
@@ -1286,7 +1309,7 @@ function setPlayerBarrel(id){
   const ng=makeGunBarrel(id); ud.turret.add(ng); ud.barrelG=ng; p.muzzle=ng.userData.muzzle;
 }
 function makePlayer(){
-  const mesh = buildTank({detail:true}); mesh.scale.setScalar(TANK_SCALE);
+  const mesh = buildTank({detail:true, mighty:true}); mesh.scale.setScalar(TANK_SCALE);   // player = the hero unit: heavier, more imposing silhouette
   // shield bubble (shown while Aegis/shield power-up active)
   const shield = new THREE.Mesh(new THREE.SphereGeometry(2.6,20,16),
     new THREE.MeshBasicMaterial({color:0x4fd1ff, transparent:true, opacity:0.25, depthWrite:false}));

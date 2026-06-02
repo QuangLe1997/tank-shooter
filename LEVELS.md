@@ -174,4 +174,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng — *Z42 thuần hình ảnh*). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng, xe tăng player uy lực hơn — *Z42–43 thuần hình ảnh*). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
