@@ -144,7 +144,7 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 **Súng rơi mở khoá dần theo màn (chỉ rơi súng thường, KHÔNG bao giờ rơi VIP):**
 - **Stage 1:** SMG · SHOTGUN · CRYO (súng **khống chế**: dmg thấp 10 nhưng **đóng băng 2.4s/phát** — Z45, địch đứng im hoàn toàn; boss miễn nhiễm)
 - **Stage ≥ 2:** + FLAK · CANNON · MINIGUN
-- **Stage ≥ 3:** + MISSILE · TESLA · PYRO (**luồng cột lửa liền mạch** như vòi phun — tầm **20**, đốt cháy **~10s**; Shop 2.200 xu)
+- **Stage ≥ 3:** + MISSILE · TESLA · PYRO (**luồng lửa chuyển động** — lửa bay ra như đạn, nguội trắng→đỏ; tầm **20**, đốt cháy **~10s**; Shop 2.200 xu)
 - **Stage ≥ 4:** + HOWITZER (pháo cầu vồng — cũng mua được ở Shop 5.500 xu)
 - **RAILGUN · SIEGE ROCKET (VIP):** không rơi — chỉ mua bằng kim cương ở Shop.
 
@@ -174,4 +174,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng, xe tăng player uy lực hơn, khiên năng lượng hex cao cấp — *Z42–44 thuần hình ảnh*; **CRYO đóng băng 1.4→2.4s — Z45**; **PYRO luồng cột lửa liền mạch — Z46**; **bảng màu đạn 12 khẩu khác nhau — Z47**; **dialog chọn địa hình 3D hoành tráng — Z48**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng, xe tăng player uy lực hơn, khiên năng lượng hex cao cấp — *Z42–44 thuần hình ảnh*; **CRYO đóng băng 1.4→2.4s — Z45**; **PYRO luồng cột lửa liền mạch — Z46**; **bảng màu đạn 12 khẩu khác nhau — Z47**; **dialog chọn địa hình 3D hoành tráng — Z48**; **PYRO luồng lửa chuyển động — Z49**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
