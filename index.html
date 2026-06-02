@@ -2814,27 +2814,52 @@ function fireArty(now, g, dmg){
   if(tgt) ringPulse(tgt.pos, 0xffd24a, 2.0);   // brief "target acquired" mark
 }
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
+// ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
+let _flameTex=null;
+function flameTex(){
+  if(_flameTex) return _flameTex;
+  const W=64,H=128, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const grad=x.createLinearGradient(0,H,0,0);   // base (nozzle) white-hot → tip fades out
+  grad.addColorStop(0.0,'rgba(255,250,220,1)'); grad.addColorStop(0.18,'rgba(255,214,110,0.96)');
+  grad.addColorStop(0.45,'rgba(255,135,40,0.82)'); grad.addColorStop(0.75,'rgba(214,60,22,0.42)'); grad.addColorStop(1,'rgba(120,24,10,0)');
+  x.fillStyle=grad; x.fillRect(0,0,W,H);
+  x.globalCompositeOperation='lighter';          // flame tongues / licks for a living surface
+  for(let i=0;i<70;i++){ const px=Math.random()*W, w=2+Math.random()*5, h=18+Math.random()*70, py=Math.random()*H;
+    const gg=x.createLinearGradient(0,py+h,0,py); gg.addColorStop(0,'rgba(255,220,120,0)'); gg.addColorStop(0.5,'rgba(255,186,86,'+(0.1+Math.random()*0.22)+')'); gg.addColorStop(1,'rgba(255,240,190,0)');
+    x.fillStyle=gg; x.fillRect(px,py,w,h); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,2); t.colorSpace=THREE.SRGBColorSpace; _flameTex=t; return t;
+}
+function makeFlameJet(){
+  const g=new THREE.Group();
+  const jmat=(col,op)=>new THREE.MeshBasicMaterial({map:flameTex(), color:col, transparent:true, opacity:op, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(1.7,0.34,1,18,1,true), jmat(0xff7320,0.5));  body.rotation.x=Math.PI/2;   // wide flame envelope (tip→nozzle taper)
+  const core=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.16,1,18,1,true),  jmat(0xffe2a0,0.82)); core.rotation.x=Math.PI/2;   // bright inner stream
+  const tip=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xff8a30, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending, depthWrite:false}));   // billowing fireball at the tip
+  g.add(body,core,tip); g.userData={body,core,tip,bodyMat:body.material,coreMat:core.material}; g.visible=false; scene.add(g);
+  return g;
+}
+const flameJet = makeFlameJet(); let flameJetUntil=0, flameJetLen=14;
+function updateFlameJet(dt){
+  if(!flameJet.visible) return;
+  const now=NOW(), ud=flameJet.userData, fade=(flameJetUntil-now)/0.12;
+  if(fade<=0){ flameJet.visible=false; return; }
+  const f=Math.min(1,fade), L=flameJetLen;
+  ud.body.scale.set(1+Math.sin(now*34)*0.08, L, 1+Math.sin(now*29)*0.08); ud.body.position.z=L/2;   // stretch the column to its reach + flicker its girth
+  ud.core.scale.set(1, L, 1); ud.core.position.z=L/2;
+  ud.tip.position.set(0, -L*0.05, L*0.98); ud.tip.scale.setScalar(2.3+Math.sin(now*22)*0.45);
+  const fl=0.82+Math.sin(now*46)*0.12+Math.random()*0.08;                                            // alive flicker
+  ud.bodyMat.opacity=0.5*f*fl; ud.coreMat.opacity=0.84*f*fl; ud.tip.material.opacity=0.6*f*fl;
+  ud.bodyMat.map.offset.y -= dt*1.7;                                                                  // fire flows nozzle → tip
+}
 function fireFlame(now, g, x, z, ang){
   const F=BALANCE.flame, range=g.range||F.range, cx=Math.sin(ang), cz=Math.cos(ang);
-  // ===== VISUAL: a thick, ARCING tongue of fire (vòi lửa vòng cung) =====
-  // Particles are seeded ALONG the stream (t=0 nozzle → t=1 tip) so it reads as one continuous jet, and each is
-  // lobbed up then dragged down (grav) so the whole tongue curves into an arc. Core = white-gold, tail = deep red.
-  const nx=x+cx*0.9, nz=z+cz*0.9;                                  // emit just ahead of the muzzle
-  for(let i=0;i<8;i++){
-    const t=Math.random();                                         // position along the jet
-    const fan=(Math.random()-0.5)*(0.32+t*0.78);                   // cone fans WIDER toward the tip
-    const a=ang+fan;
-    const dist=t*range*0.6;                                        // seeded down the stream → continuous tongue
-    const px=nx+Math.sin(a)*dist, pz=nz+Math.cos(a)*dist;
-    const py=1.35 + t*1.6 + Math.sin(t*3.14)*0.5;                  // rises along the arc then crests
-    const sp=range*0.95 + Math.random()*7;                         // fast outward → reaches far
-    const col = t<0.22?0xffe9b0 : (t<0.46?0xffc24a : (t<0.74?0xff7a1c:0xff3010));
-    spawnPart(px,py,pz, Math.sin(a)*sp, 2.6 - t*3.6, Math.cos(a)*sp,   // vy: up at nozzle → falling at tip = ARC
-      {color:col, size:0.7+t*1.5, life:0.20+t*0.2, grav:6.0, drag:3.0});
-  }
-  spawnPart(nx,1.5,nz, cx*5,1.0,cz*5, {color:0xfff1c8, size:1.6, life:0.12, grav:0, drag:5});   // bright muzzle flash
-  if(Math.random()<0.55) spawnPart(x+cx*range*0.7, 2.6, z+cz*range*0.7, (Math.random()-0.5)*2.4, 1.7, (Math.random()-0.5)*2.4, {color:0x261d15, size:2.0, life:0.75, smoke:true, grav:-0.5, drag:1.5, op:0.4});  // rolling smoke off the tip
-  if(Math.random()<0.45) spawnPart(x+cx*range*0.45+(Math.random()-0.5)*4, 1.7, z+cz*range*0.45+(Math.random()-0.5)*4, (Math.random()-0.5)*3, 3.4+Math.random()*3, (Math.random()-0.5)*3, {color:0xffb24a, size:0.32, life:0.55, grav:-3, drag:1.2});  // drifting embers
+  // ===== VISUAL: one cohesive COLUMN of fire (vòi phun lửa liền mạch — như vòi nước) =====
+  flameJet.visible=true; flameJet.position.set(x+cx*0.6, 1.35, z+cz*0.6); flameJet.rotation.set(0,ang,0);
+  flameJetUntil = now + 0.12; flameJetLen = range;
+  // sparse extra life on top of the solid jet: muzzle flash + rolling tip smoke + a few embers (NOT the whole flame)
+  if(Math.random()<0.7) spawnPart(x+cx*0.9,1.4,z+cz*0.9, cx*4,1.0,cz*4, {color:0xfff1c8, size:1.3, life:0.1, grav:0, drag:6});
+  if(Math.random()<0.4) spawnPart(x+cx*range*0.85, 2.5, z+cz*range*0.85, (Math.random()-0.5)*2.2, 1.6, (Math.random()-0.5)*2.2, {color:0x241b13, size:1.9, life:0.7, smoke:true, grav:-0.5, drag:1.5, op:0.4});
+  if(Math.random()<0.5){ const d2=range*(0.4+Math.random()*0.5); spawnPart(x+cx*d2+(Math.random()-0.5)*2.5, 1.6, z+cz*d2+(Math.random()-0.5)*2.5, (Math.random()-0.5)*2.5, 2.6+Math.random()*2.5, (Math.random()-0.5)*2.5, {color:0xffb24a, size:0.3, life:0.45, grav:-2.4, drag:1.4}); }
   // ===== DAMAGE: light up every enemy inside the cone (ground-plane) =====
   for(const e of enemies){ if(e.def.bomber) continue; const dx=e.pos.x-x, dz=e.pos.z-z, d=Math.hypot(dx,dz);
     if(d > range + e.r) continue;
@@ -4360,7 +4385,7 @@ function loop(nowMs){
   if(S.mode!=='playing'){ rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now);
-  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt);
+  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateFlameJet(dt);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
@@ -4426,7 +4451,7 @@ window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._
 window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDeath = updateDeath; window._respawnPlayer = respawnPlayer; Object.defineProperty(window,'_DEATH',{get:()=>DEATH});   // DEATH→respawn hooks (debug/test)
 window._damagePlayer = damagePlayer; window._updateEnemies = updateEnemies;   // hit-reaction + enemy-AI hooks (debug/test)
 window._fireArty = fireArty; window._updateRockets = updateRockets; window._updateFuses = updateFuses; window._dbg.fuses = fuses;   // HOWITZER hooks (debug/test)
-window._fireFlame = fireFlame; window._dbg.parts = parts;   // PYRO flame-jet hook (debug/test)
+window._fireFlame = fireFlame; window._dbg.parts = parts; window._updateFlameJet = updateFlameJet; Object.defineProperty(window,'_flameJet',{get:()=>flameJet});   // PYRO flame-jet hook (debug/test)
 window._applyBiome = applyBiome; window._BIOMES = BIOMES; window._buildTerrainDecor = buildTerrainDecor; window._buildTerrainPicker = buildTerrainPicker;   // TERRAIN hooks (debug/test)
 Object.defineProperty(window,'_BIOME',{get:()=>BIOME}); Object.defineProperty(window,'_decorCount',{get:()=>decorGroup.children.length});
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
