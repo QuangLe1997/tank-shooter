@@ -131,6 +131,18 @@ ok(A.radius <= PLAYER_MAXSPEED * dodgeWindow, `artillery blast radius (${A.radiu
 ok(dodgeWindow >= 1.2, 'artillery gives at least ~1.2s to react+move (not impossible)');
 ok(dodgeWindow <= 3.5, 'artillery window is tight enough to matter (not trivially long)');
 
+grp('SUPPORT DRONE — gunship combat tuning');
+const D = BALANCE.drone;
+for (const k of ['dur','orbit','height','detect','hp','dmg','bspeed','mag','fireCd','reload','fireRot','idleRot','hitR'])
+  ok(typeof D[k] === 'number' && isFinite(D[k]) && D[k] > 0, `drone.${k} is a positive finite number`);
+ok(D.detect > D.orbit, 'drone detect radius reaches beyond its orbit (can engage past the player)');
+ok(D.fireRot > D.idleRot, 'gatling spins faster firing than idle (visible spin-up)');
+ok(D.mag >= 1 && D.fireCd < D.reload, 'belt is sane: ≥1 round & per-round gap shorter than the reload');
+// sustained DPS = mag·dmg / (mag·fireCd + reload) — strong support, not a wave-wipe
+const droneDps = D.mag * D.dmg / (D.mag * D.fireCd + D.reload);
+ok(droneDps > 15 && droneDps < 90, `drone sustained DPS (${droneDps.toFixed(1)}) sits in a balanced band (15–90)`);
+ok(D.hp >= 60 && D.hp <= 300, `drone HP (${D.hp}) is killable-but-durable (60–300) so enemy fire matters`);
+
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
   ok(typeof UP_BLURB[u.key] === 'string' && UP_BLURB[u.key].length > 0, `UP_BLURB has copy for upgrade "${u.key}"`);

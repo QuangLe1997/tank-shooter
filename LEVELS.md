@@ -132,6 +132,8 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 | ~39% | **SÚNG** (theo pool mở khoá theo màn, xem dưới) |
 | ~55% còn lại | **Power-up** ngẫu nhiên (rapid/power/speed/∞ammo/range/mag/bomb/freeze/drone/troops/armory…) |
 
+> **SUPPORT DRONE (Z37):** power-up `drone` triệu hồi 1 gunship bay quanh xe **22s**: 4 rotor xoay + **gatling 6 nòng xoáy** tự khoá địch gần nhất trong **bán kính 26** (bay cách xe **4.8**), xả băng **10 viên @ 0.11s** (≈11 dmg/viên) rồi **nạp 1.2s** → DPS bền ≈ **48**. Drone có **120 HP** — đạn địch bay trúng sẽ **bắn rơi được** (hiện thanh máu khi trúng), 0 HP → nổ lớn. Số liệu ở `config.js → BALANCE.drone`.
+
 **Súng rơi mở khoá dần theo màn (chỉ rơi súng thường, KHÔNG bao giờ rơi VIP):**
 - **Stage 1:** SMG · SHOTGUN · CRYO
 - **Stage ≥ 2:** + FLAK · CANNON · MINIGUN
@@ -165,4 +167,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-01 · khớp code tới **Z36** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z37** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, **drone gunship gatling**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

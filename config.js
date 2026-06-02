@@ -40,6 +40,13 @@ export const BALANCE = {
   // level also creeps up on its own (`grow`/s) so any fire "cháy càng ngày càng lớn". `duration` resets on every tick.
   // → a light touch burns slowly (~3s to kill a grunt) but eventually finishes weak foes; sustained spray ramps to max → melts fast.
   flame:{ dps:8, lvlMax:4, add:0.55, grow:0.2, duration:7, range:14, cone:0.78 },
+  // SUPPORT DRONE (power-up): a 22s orbiting gunship with a spinning gatling. Auto-acquires the nearest enemy
+  // inside `detect` (reaches well beyond the player) and hoses it with a fast belt: `mag` rounds @ `fireCd` apart,
+  // then a short `reload` (belt change / barrel cool). It is NOT invincible — enemy fire that crosses its orbit
+  // deals damage to its `hp`; at 0 it detonates. Sustained DPS ≈ mag·dmg / (mag·fireCd + reload) — strong support,
+  // not a wave-wipe. `fireRot`/`idleRot` = gatling barrel spin (rad/s) when firing vs idle (the "nòng xoáy").
+  drone:{ dur:22, orbit:4.8, height:3.0, detect:26, hp:120, dmg:11, bspeed:80,
+          mag:10, fireCd:0.11, reload:1.2, fireRot:34, idleRot:6, hitR:1.0 },
 };
 
 // ----- rarity colours (tier/VIP) -----

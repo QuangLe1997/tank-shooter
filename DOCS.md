@@ -70,7 +70,7 @@
 | **Đạn vòng cung** (mục tiêu xa → cong, trực diện → thẳng; va chạm vẫn 2D) | `arcDist`→`vy`/`by`, `ARC_G=110`, tích phân trọng lực trong `updateBullets`; trail theo `by` |
 | **Xe chết tan tành (chân thực)**: mảnh kim loại **hình dạng lộn xộn**, **nóng→nguội dần**, văng/xoay/**nảy thấp + nằm yên + mờ dần**; khói đen tức thì; xe to → nổ phụ + nhiều mảnh | `debris/spawnDebris/updateDebris`, `tankExplode` |
 
-### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z36) — hệ thống hiện hành
+### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z37) — hệ thống hiện hành
 | Hệ thống | Tóm tắt | Ở đâu (grep) |
 |---|---|---|
 | **Kinh tế** (xu + 💎 kim cương) | Tích luỹ vĩnh viễn qua `PROFILE`; xu ≈ score/10 mỗi kill + boss + clear-màn; 💎 từ boss + loot. 1💎 = 200 xu (chuẩn quy đổi) | `addCoins/addDiamonds`, `BALANCE.coinBountyDiv/stageClearCoin/boss` |
@@ -87,7 +87,8 @@
 | **Cinematic chết → hồi sinh** | Xe lật + bốc cháy + cam cận xoay → dựng dậy + chớp 3 lần | `playerDie/beginDeath/updateDeath/respawnPlayer`, mode `'dying'` |
 | **Phản ứng trúng đòn** | Hull rung/giật lùi + shake theo dmg + **lửa khói cháy ngay chỗ trúng** (rides hull) | `damagePlayer/addPlayerBurn`, `p.hitT/p.burns` |
 | **Thanh máu địch + lính đồng minh + spell** | HP bar nổi trên mỗi xe; lính canh Core + lính nóc xe; 6 spell cooldown | `updateEnemyBar`, `SOLDIER/RIDER`, `SPELLS` |
-| **Refactor config + test** | `BALANCE`/kinh tế tách `config.js`; `test.js` 355 assertion | `config.js`, `test.js` |
+| **SUPPORT DRONE — gunship (Z37)** | Power-up drone 22s: thân gunship + **4 rotor xoay** + mắt cảm biến + **gatling 6 nòng xoáy** (nòng xoáy spin-up khi bắn); tự khoá địch gần nhất trong `detect` (xa hơn người chơi), xả băng `mag` viên @ `fireCd` → nạp `reload`; **bay xa hơn (orbit 4.8)** & **bắn xa hơn (detect 26)**; **có HP — đạn địch bắn rơi được** (HP bar nổi khi trúng), 0 HP → nổ lớn | `makeDroneMesh/updateDrone/damageDrone/destroyDrone/updateDroneBar`, `BALANCE.drone` |
+| **Refactor config + test** | `BALANCE`/kinh tế tách `config.js`; `test.js` 386 assertion | `config.js`, `test.js` |
 
 ---
 
@@ -305,4 +306,4 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, refactor config.js + 355 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
+> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, refactor config.js + 386 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
