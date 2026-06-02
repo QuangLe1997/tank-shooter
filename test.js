@@ -143,6 +143,23 @@ const droneDps = D.mag * D.dmg / (D.mag * D.fireCd + D.reload);
 ok(droneDps > 15 && droneDps < 90, `drone sustained DPS (${droneDps.toFixed(1)}) sits in a balanced band (15–90)`);
 ok(D.hp >= 60 && D.hp <= 300, `drone HP (${D.hp}) is killable-but-durable (60–300) so enemy fire matters`);
 
+grp('SUPPORT UPGRADES — buyable drone + guard tracks');
+const SUP = BALANCE.support;
+for (const k of ['dronePowPerLvl','droneRofPerLvl','droneArmPerLvl','guardRofPerLvl','guardArmPerLvl','mulFloor'])
+  ok(typeof SUP[k] === 'number' && isFinite(SUP[k]) && SUP[k] > 0, `support.${k} is a positive finite number`);
+ok(SUP.mulFloor > 0 && SUP.mulFloor < 1, 'support.mulFloor is a fraction in (0,1) — reload/fire mult never reaches 0');
+for (const k of ['dronePow','droneRof','droneArm','guardRof','guardArm']) {
+  const u = SHOP_UP.find(x => x.key === k);
+  ok(u && u.cat === 'SUPPORT', `SHOP_UP has a SUPPORT-tab entry "${k}"`);
+}
+const dronePow = SHOP_UP.find(x => x.key === 'dronePow');
+ok(dronePow && dronePow.costs[0] && dronePow.costs[0].c > 0, 'STRIKE DRONE L1 is coin-buyable (you can OWN the escort without diamonds)');
+// reload mults stay in a fair band even when fully maxed
+const droneRofLvls = SHOP_UP.find(x => x.key === 'droneRof').costs.length;
+const guardRofLvls = SHOP_UP.find(x => x.key === 'guardRof').costs.length;
+ok(Math.max(SUP.mulFloor, 1 - droneRofLvls*SUP.droneRofPerLvl) >= SUP.mulFloor, 'maxed drone reload mult respects the floor');
+ok(Math.max(SUP.mulFloor, 1 - guardRofLvls*SUP.guardRofPerLvl) >= SUP.mulFloor, 'maxed guard fire mult respects the floor');
+
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
   ok(typeof UP_BLURB[u.key] === 'string' && UP_BLURB[u.key].length > 0, `UP_BLURB has copy for upgrade "${u.key}"`);

@@ -134,6 +134,11 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 > **SUPPORT DRONE (Z37):** power-up `drone` triệu hồi 1 gunship bay quanh xe **22s**: 4 rotor xoay + **gatling 6 nòng xoáy** tự khoá địch gần nhất trong **bán kính 26** (bay cách xe **4.8**), xả băng **10 viên @ 0.11s** (≈11 dmg/viên) rồi **nạp 1.2s** → DPS bền ≈ **48**. Drone có **120 HP** — đạn địch bay trúng sẽ **bắn rơi được** (hiện thanh máu khi trúng), 0 HP → nổ lớn. Số liệu ở `config.js → BALANCE.drone`.
 
+> **MUA & NÂNG CẤP đơn vị hỗ trợ — Shop·SUPPORT (Z38):**
+> - **STRIKE DRONE** (1.500 xu mua cấp 1 = **sở hữu drone hộ tống**, tự triển khai **mỗi màn**, bền cả màn thay vì 22s; +12% sát thương/cấp, tối đa 5 cấp). **DRONE: ROTORS** (−10% hồi đạn/cấp) · **DRONE: PLATING** (+40 HP/cấp).
+> - **CORE GUARDS** (+1 lính/cấp) · **GUARD: STRIKE** (+22% sát thương/cấp) · **GUARD: DRILL** (−10% hồi đạn/cấp) · **GUARD: ARMOR** (+18 HP/cấp) · **TANK CREW** (+1 lính cưỡi xe).
+> - Drone hộ tống bị bắn rơi sẽ **tái triển khai ở màn kế** (hoặc nhặt power-up `drone` để sửa ngay) → cấp ARMOR giúp drone "sống" lâu hơn = nhiều thời gian bắn hơn. Số liệu ở `config.js → BALANCE.support`.
+
 **Súng rơi mở khoá dần theo màn (chỉ rơi súng thường, KHÔNG bao giờ rơi VIP):**
 - **Stage 1:** SMG · SHOTGUN · CRYO
 - **Stage ≥ 2:** + FLAK · CANNON · MINIGUN
@@ -167,4 +172,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z37** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, **drone gunship gatling**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z38** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

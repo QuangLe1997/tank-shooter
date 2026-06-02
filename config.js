@@ -47,6 +47,11 @@ export const BALANCE = {
   // not a wave-wipe. `fireRot`/`idleRot` = gatling barrel spin (rad/s) when firing vs idle (the "nòng xoáy").
   drone:{ dur:22, orbit:4.8, height:3.0, detect:26, hp:120, dmg:11, bspeed:80,
           mag:10, fireCd:0.11, reload:1.2, fireRot:34, idleRot:6, hitR:1.0 },
+  // SUPPORT-UNIT upgrades (shop). DRONE: owning `dronePow` L1 deploys a permanent escort gunship each stage;
+  // each level scales its stats. GUARDS: reload/armor tracks on top of the existing count (`guards`) + power (`troops`).
+  // per-level effect: power = +damage, rof = −reload/fire-cooldown (multiplicative, floored), arm = +flat HP.
+  support:{ dronePowPerLvl:0.12, droneRofPerLvl:0.10, droneArmPerLvl:40,
+            guardRofPerLvl:0.10, guardArmPerLvl:18, mulFloor:0.4 },
 };
 
 // ----- rarity colours (tier/VIP) -----
@@ -62,9 +67,15 @@ export const SHOP_UP = [
   {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
   {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
   {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+10% move speed',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'guards', cat:'TROOPS',    icon:'shield', name:'CORE GUARDS',  per:'+1 base guard',     costs:[{c:900},{c:2400},{d:16}]},
-  {key:'crew',   cat:'TROOPS',    icon:'shield', name:'TANK CREW',    per:'+1 base crew',      costs:[{c:900},{c:2400},{d:16}]},
-  {key:'troops', cat:'TROOPS',    icon:'up',     name:'TROOP ARMS',   per:'+15% troop damage', costs:[{c:600},{c:1500},{d:12}]},
+  // ----- SUPPORT units: buy & upgrade the guard squad and the escort drone -----
+  {key:'guards',   cat:'SUPPORT', icon:'shield', name:'CORE GUARDS',   per:'+1 lính canh Core',     costs:[{c:900},{c:2400},{d:16}]},
+  {key:'troops',   cat:'SUPPORT', icon:'up',     name:'GUARD: STRIKE', per:'+22% sát thương lính',  costs:[{c:600},{c:1500},{d:12}]},
+  {key:'guardRof', cat:'SUPPORT', icon:'dash',   name:'GUARD: DRILL',  per:'-10% hồi đạn lính',     costs:[{c:700},{c:1800},{d:12}]},
+  {key:'guardArm', cat:'SUPPORT', icon:'heart',  name:'GUARD: ARMOR',  per:'+18 HP mỗi lính',       costs:[{c:700},{c:1800},{d:12}]},
+  {key:'crew',     cat:'SUPPORT', icon:'shield', name:'TANK CREW',     per:'+1 lính cưỡi xe',       costs:[{c:900},{c:2400},{d:16}]},
+  {key:'dronePow', cat:'SUPPORT', icon:'drone',  name:'STRIKE DRONE',  per:'Mở khoá drone hộ tống · +12% sát thương/cấp', costs:[{c:1500},{c:3200},{c:5000},{d:28},{d:40}]},
+  {key:'droneRof', cat:'SUPPORT', icon:'dash',   name:'DRONE: ROTORS', per:'-10% hồi đạn drone',    costs:[{c:1200},{c:2800},{d:16}]},
+  {key:'droneArm', cat:'SUPPORT', icon:'heart',  name:'DRONE: PLATING',per:'+40 HP drone',          costs:[{c:1200},{c:2800},{d:16}]},
 ];
 
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
@@ -99,4 +110,7 @@ export const UP_BLURB = {
   mag:'More rounds, far fewer reloads.', hp:'Soak up serious punishment.', armor:'Shrug off incoming fire.',
   engine:'Outrun anything on the battlefield.', guards:'More boots standing on the Core.',
   crew:'More gunners riding into battle.', troops:'Your troops hit a whole lot harder.',
-  boss:'Tear through bosses far faster.' };
+  boss:'Tear through bosses far faster.',
+  guardRof:'Drilled gunners fire far faster.', guardArm:'Hardened guards hold the line longer.',
+  dronePow:'Deploy a gunship escort — and it bites harder.', droneRof:'Spin those barrels — the belt reloads in a blink.',
+  droneArm:'Armoured rotors keep your drone in the sky longer.' };

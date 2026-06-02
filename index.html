@@ -3088,7 +3088,7 @@ function chooseUpgrade(u){
   hide('upgrade');
   applyBiome(S.stage); buildBlocks();
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
-  clearSoldiers(); deploySoldiers(guardTarget());   // fresh guard squad each stage (base + CORE GUARDS upgrade)
+  clearSoldiers(); deploySoldiers(guardTarget()); deployOwnedDrone();   // fresh guard squad + relaunch owned escort drone each stage
   if(S.stage>=3 && !ridersUnlocked){ ridersUnlocked=true; deployRiders(crewTarget()); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)
   S.awaitingUpgrade=false; WAVE.active=false; S.wave=0;
   openBriefing({ stage:S.stage, biomeName:BIOME.name, accentHex:'#'+BIOME.accent.toString(16).padStart(6,'0') });   // pick a CONTRACT, then the stage transition + waves fire on confirm
@@ -3207,7 +3207,7 @@ function startGame(continueRun){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); document.body.classList.remove('corelow'); _alarmAt=0;
+  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -3316,9 +3316,9 @@ function shopModel(){
   if(cats.WEAPONS) cats.WEAPONS.sort((a,b)=>(a.owned?1:0)-(b.owned?1:0) || a.tier-b.tier);   // buyable first, owned last
   SHOP_UP.forEach(u=>{ const L=upLevel(u.key), max=upMax(u.key), cost=L<max?u.costs[L]:null;
     push(u.cat, {type:'up', key:u.key, name:u.name, icon:u.icon, per:u.per, level:L, max, cost, vip:!!(cost&&cost.d), rar:(cost&&cost.d)?'vip':'up'}); });
-  return ['WEAPONS','FIREPOWER','AMMO','CHASSIS','TROOPS'].filter(c=>cats[c]&&cats[c].length).map(c=>({cat:c, items:cats[c]}));
+  return ['WEAPONS','FIREPOWER','AMMO','CHASSIS','SUPPORT'].filter(c=>cats[c]&&cats[c].length).map(c=>({cat:c, items:cats[c]}));
 }
-const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', TROOPS:'up' };
+const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', SUPPORT:'drone' };
 function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
 // ===== 3D showroom: a dark studio + spotlight + turntable; the focused item rotates on a pedestal =====
 const shopScene = new THREE.Scene();
@@ -3387,18 +3387,35 @@ function buildGunModel(id){
 }
 function buildUpgradeModel(item){
   const grp=new THREE.Group(); const rc=RAR_COL[item.rar]||0x9bd14a;
-  let geo;
-  switch(item.key){
-    case 'damage': geo=new THREE.TetrahedronGeometry(1.05,0); break;
-    case 'range':  geo=new THREE.CylinderGeometry(0.22,0.22,2.0,22); break;
-    case 'reload': case 'mag': geo=new THREE.BoxGeometry(0.9,1.3,0.62); break;
-    case 'hp':     geo=new THREE.IcosahedronGeometry(1.05,0); break;
-    case 'armor':  geo=new THREE.CylinderGeometry(1.1,1.1,0.26,8); break;
-    case 'engine': geo=new THREE.TorusGeometry(0.74,0.3,18,30); break;
-    default:       geo=new THREE.OctahedronGeometry(1.05,0);
-  }
   const isVip=item.rar==='vip';
-  const core=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:isVip?1.7:1.1,metalness:.65,roughness:isVip?0.18:0.3}));
+  const mat=new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:isVip?1.7:1.1,metalness:.65,roughness:isVip?0.18:0.3});
+  let core;
+  if(item.key==='dronePow'||item.key==='droneRof'||item.key==='droneArm'){          // mini escort drone (quad-rotor)
+    core=new THREE.Group();
+    core.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.6,0), mat));
+    const rotMat=new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:0.8,transparent:true,opacity:0.5,metalness:.5,roughness:.3});
+    for(const [ax,az] of [[0.78,0.78],[-0.78,0.78],[0.78,-0.78],[-0.78,-0.78]]){
+      const arm=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.08,Math.hypot(ax,az)), mat); arm.position.set(ax/2,0,az/2); arm.rotation.y=Math.atan2(ax,az); core.add(arm);
+      const rotor=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.04,18), rotMat); rotor.position.set(ax,0.12,az); core.add(rotor);
+    }
+  } else if(item.key==='guardRof'||item.key==='guardArm'){                          // mini guard (helmet + torso)
+    core=new THREE.Group();
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,1.0,14), mat); torso.position.y=-0.1; core.add(torso);
+    core.add(new THREE.Mesh(new THREE.SphereGeometry(0.34,16,12), mat).translateY(0.62));
+    const helm=new THREE.Mesh(new THREE.SphereGeometry(0.4,16,8,0,6.3,0,1.45), mat); helm.position.y=0.66; core.add(helm);
+  } else {
+    let geo;
+    switch(item.key){
+      case 'damage': geo=new THREE.TetrahedronGeometry(1.05,0); break;
+      case 'range':  geo=new THREE.CylinderGeometry(0.22,0.22,2.0,22); break;
+      case 'reload': case 'mag': geo=new THREE.BoxGeometry(0.9,1.3,0.62); break;
+      case 'hp':     geo=new THREE.IcosahedronGeometry(1.05,0); break;
+      case 'armor':  geo=new THREE.CylinderGeometry(1.1,1.1,0.26,8); break;
+      case 'engine': geo=new THREE.TorusGeometry(0.74,0.3,18,30); break;
+      default:       geo=new THREE.OctahedronGeometry(1.05,0);
+    }
+    core=new THREE.Mesh(geo, mat);
+  }
   core.position.y=1.55; core.scale.setScalar(isVip?1.18:1); grp.add(core); grp._spinPart=core;
   const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(item.icon,'#'+rc.toString(16).padStart(6,'0')),transparent:true,depthWrite:false}));
   spr.scale.set(1.25,1.25,1); spr.position.set(0,3.0,0); grp.add(spr);
@@ -3511,7 +3528,12 @@ function buyShop(it){
   if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // own it → never re-buy
   if(it.type==='up' && upLevel(it.key)>=upMax(it.key)){ sfx('click'); return; }        // maxed
   if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }                          // can't afford
-  if(it.type==='up'){ payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1; }
+  if(it.type==='up'){ payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1;
+    if(S.mode==='playing'){                                                              // live effect if bought mid-run
+      if(it.key.startsWith('drone')){ if(S.drone) spawnDrone(S.drone.owned); else deployOwnedDrone(); }
+      else if(it.key==='guards'){ deploySoldiers(guardTarget()); }                        // extra guard joins the line now
+      else if(it.key==='troops'){ soldierLvl=Math.max(soldierLvl, PROFILE.upgrades.troops||0); }
+    } }
   else { payCost(it.cost); ownGun(it.id); }
   saveProfile(); sfx('powerup'); refreshStartUI();
   if(shopScene._ring){ shopScene._ring.material.emissiveIntensity=5; }                  // purchase flash on the pedestal ring
@@ -3823,6 +3845,15 @@ function applyUpgrades(p){                                     // bake the bough
 }
 function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
 function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0); }
+// ---- SUPPORT-UNIT upgrades (shop): drone + guards scale by purchased level ----
+const SUP = BALANCE.support;
+function droneDmgMul(){ return 1 + (PROFILE.upgrades.dronePow||0)*SUP.dronePowPerLvl; }       // STRIKE DRONE: +power/lvl
+function droneReloadMul(){ return Math.max(SUP.mulFloor, 1 - (PROFILE.upgrades.droneRof||0)*SUP.droneRofPerLvl); }  // ROTORS: faster reload+fire
+function droneBonusHp(){ return (PROFILE.upgrades.droneArm||0)*SUP.droneArmPerLvl; }          // PLATING: +HP
+function droneOwned(){ return (PROFILE.upgrades.dronePow||0) >= 1; }                          // bought STRIKE DRONE L1 → escort
+function guardFireMul(){ return Math.max(SUP.mulFloor, 1 - (PROFILE.upgrades.guardRof||0)*SUP.guardRofPerLvl); }   // GUARD DRILL: faster fire
+function guardBonusHp(){ return (PROFILE.upgrades.guardArm||0)*SUP.guardArmPerLvl; }          // GUARD ARMOR: +HP
+function deployOwnedDrone(){ if(droneOwned() && !S.drone) spawnDrone(true); }                 // auto-launch the owned escort each stage
 const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, apply(){ addDiamonds(1); if(S.player) floatText('+1 DIAMOND','#7fe7ff',S.player.pos,22); } };  // rare treasure
 function ownGun(id){ if(!GUNS[id]) return false; let fresh=false;
   if(!PROFILE.ownedGuns.includes(id)){ PROFILE.ownedGuns.push(id); fresh=true; }
@@ -3886,14 +3917,21 @@ function makeDroneMesh(){
   g.userData={ props, gat, ring, glowMats };
   return g;
 }
-function spawnDrone(){
+function spawnDrone(owned){
   const now=NOW();
+  owned = !!owned || droneOwned();                                   // own the escort → every (re)spawn is the permanent one
   if(!S.drone){ const g=makeDroneMesh(); scene.add(g);
     const bar=makeSoldierBar(); bar.g.scale.setScalar(1.3); scene.add(bar.g);
-    S.drone={ g, bar, until:0, fireAt:0, ang:Math.random()*6.283, hp:DRONE.hp, maxHp:DRONE.hp, ammo:DRONE.mag, reloadUntil:0, hitT:0, spin:DRONE.idleRot }; }
-  const d=S.drone; d.until=now+DRONE.dur; d.hp=DRONE.hp; d.ammo=DRONE.mag; d.reloadUntil=0;   // re-pickup repairs + reloads the belt
+    S.drone={ g, bar, owned:false, until:0, fireAt:0, ang:Math.random()*6.283, dmg:DRONE.dmg, fireCd:DRONE.fireCd, reloadT:DRONE.reload, hp:DRONE.hp, maxHp:DRONE.hp, ammo:DRONE.mag, reloadUntil:0, hitT:0, spin:DRONE.idleRot }; }
+  const d=S.drone; d.owned = d.owned || owned;
+  d.dmg    = DRONE.dmg   * droneDmgMul();                             // bake purchased upgrades: power
+  d.fireCd = DRONE.fireCd * droneReloadMul();                        // reload/fire-rate (ROTORS)
+  d.reloadT= DRONE.reload * droneReloadMul();
+  d.maxHp  = DRONE.hp + droneBonusHp(); d.hp = d.maxHp;              // armor (PLATING) — (re)pickup repairs to full
+  d.ammo   = DRONE.mag; d.reloadUntil = 0;
+  d.until  = d.owned ? now + 1e9 : now + DRONE.dur;                   // owned = persists the whole stage; power-up = 22s
   updateDroneBar();
-  if(S.player) floatText('DRONE ONLINE', '#6fd0ff', S.player.pos, 18);
+  if(S.player) floatText(d.owned?'ESCORT DRONE':'DRONE ONLINE', '#6fd0ff', S.player.pos, 18);
   sfx('powerup');
 }
 function clearDrone(){ if(S.drone){ scene.remove(S.drone.g); if(S.drone.bar) scene.remove(S.drone.bar.g); S.drone=null; } }
@@ -3937,12 +3975,12 @@ function updateDrone(dt, now){
     const ang=Math.atan2(best.pos.x-ox, best.pos.z-oz);
     const da=wrapAngle(ang-d.g.rotation.y); d.g.rotation.y += da*Math.min(1, dt*10);         // smooth turn-to-target
     if(!reloading && now>=d.fireAt){
-      d.fireAt=now+DRONE.fireCd; d.ammo--;
+      d.fireAt=now+d.fireCd; d.ammo--;
       const a=d.g.rotation.y, mx=ox+Math.sin(a)*0.95, mz=oz+Math.cos(a)*0.95;
-      spawnBullet(mx, mz, a, {owner:'p', dmg:DRONE.dmg, speed:DRONE.bspeed, color:0x8fe0ff, r:0.26, life:1.2, maxDist:DRONE.detect+4});
+      spawnBullet(mx, mz, a, {owner:'p', dmg:d.dmg, speed:DRONE.bspeed, color:0x8fe0ff, r:0.26, life:1.2, maxDist:DRONE.detect+4});
       muzzleFlash(mx, mz, a, 0x8fe0ff);
       if(d.ammo%3===0) sfx('beep');
-      if(d.ammo<=0) d.reloadUntil=now+DRONE.reload;                                          // belt empty → short reload
+      if(d.ammo<=0) d.reloadUntil=now+d.reloadT;                                              // belt empty → short reload
     }
   } else { d.g.rotation.y += dt*1.1; }                                                       // idle scan spin
   if(d.bar){ d.bar.g.position.set(ox, oy+1.05, oz); d.bar.g.quaternion.copy(camera.quaternion); d.bar.g.visible = d.hp < d.maxHp - 0.5; }
@@ -4012,7 +4050,7 @@ function _placeSoldiers(){ const c=core?core.pos:{x:0,z:0}; const n=Math.max(1,s
   soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.home.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR);
     if(s.pos.lengthSq()===0) s.pos.copy(s.home); }); }
 function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g=makeSoldierMesh(); g.scale.setScalar(SOLDIER.scale); scene.add(g);
-  const mhp=Math.round(SOLDIER.hp + Math.random()*22 - 8);   // each soldier is an individual (varied HP)
+  const mhp=Math.round(SOLDIER.hp + guardBonusHp() + Math.random()*22 - 8);   // each soldier is an individual (varied HP) + GUARD ARMOR upgrade
   const bar=makeSoldierBar(); scene.add(bar.g);
   soldiers.push({ g, bar:bar.g, barFill:bar.fill, pos:new THREE.Vector3(), home:new THREE.Vector3(), hp:mhp, maxHp:mhp,
     fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, wpx:0, wpz:0, wanderAt:0, dead:false }); _placeSoldiers(); }
@@ -4037,7 +4075,7 @@ function updateSoldiers(dt, now){
     for(const e of enemies){ const dx=e.pos.x-s.pos.x, dz=e.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
     if(boss&&boss.alive){ const dx=boss.pos.x-s.pos.x, dz=boss.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
     if(best){ const ang=Math.atan2(best.pos.x-s.pos.x, best.pos.z-s.pos.z); s.g.rotation.y=ang;
-      if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd*(1-Math.min(0.3,soldierLvl*0.08));
+      if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd*guardFireMul();   // GUARD: DRILL upgrade → faster fire
         s.g.userData.muzzle.getWorldPosition(_sV);
         spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:SOLDIER.dmg*(1+soldierLvl*0.22), speed:84, color:0xe8ef86, r:0.26, life:1.4, maxDist:SOLDIER.range+2});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {color:0xf2f7a0, size:0.55, life:0.07, grav:0, drag:9}); } }
@@ -4081,7 +4119,7 @@ function updateRiders(dt, now){
     for(const e of enemies){ const dx=e.pos.x-wx, dz=e.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
     if(boss&&boss.alive){ const dx=boss.pos.x-wx, dz=boss.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
     if(best){ const ang=Math.atan2(best.pos.x-wx, best.pos.z-wz); r.g.rotation.y=ang;
-      if(now>=r.fireAt){ r.fireAt=now + RIDER.fireCd*(1-Math.min(0.3,soldierLvl*0.08));   // slow fire
+      if(now>=r.fireAt){ r.fireAt=now + RIDER.fireCd*guardFireMul();   // slow fire — GUARD: DRILL upgrade speeds it up
         r.g.userData.muzzle.getWorldPosition(_sV);
         spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:RIDER.dmg*(1+soldierLvl*0.22), speed:80, color:0xe8ef86, r:0.24, life:1.0, maxDist:RIDER.range+2});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*5,0.4,Math.cos(ang)*5, {color:0xf2f7a0, size:0.4, life:0.06, grav:0, drag:9}); } }
@@ -4212,6 +4250,7 @@ window._dbg.soldiers = soldiers; window._deploy = deploySoldiers; window._armory
 window._dbg.riders = riders; window._deployRiders = (n)=>{ ridersUnlocked=true; deployRiders(n||3); return riders.length; };   // (debug) tank crew
 window._tankExplode = tankExplode; window._wreck = spawnTankWreck;   // (debug) trigger the death FX / part-wreck
 window._spawnDrone = spawnDrone; window._damageDrone = (dmg)=>damageDrone(dmg,null); window._updateDrone = updateDrone; window._DRONE = DRONE; Object.defineProperty(window,'_drone',{get:()=>S.drone});   // (debug) support drone
+window._deployOwnedDrone = deployOwnedDrone; window._droneOwned = droneOwned; window._droneDmgMul = droneDmgMul; window._guardFireMul = guardFireMul; window._droneBonusHp = droneBonusHp;   // (debug) support-unit shop upgrades
 
 requestAnimationFrame(loop);
 </script>

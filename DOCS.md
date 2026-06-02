@@ -70,12 +70,12 @@
 | **Đạn vòng cung** (mục tiêu xa → cong, trực diện → thẳng; va chạm vẫn 2D) | `arcDist`→`vy`/`by`, `ARC_G=110`, tích phân trọng lực trong `updateBullets`; trail theo `by` |
 | **Xe chết tan tành (chân thực)**: mảnh kim loại **hình dạng lộn xộn**, **nóng→nguội dần**, văng/xoay/**nảy thấp + nằm yên + mờ dần**; khói đen tức thì; xe to → nổ phụ + nhiều mảnh | `debris/spawnDebris/updateDebris`, `tankExplode` |
 
-### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z37) — hệ thống hiện hành
+### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z38) — hệ thống hiện hành
 | Hệ thống | Tóm tắt | Ở đâu (grep) |
 |---|---|---|
 | **Kinh tế** (xu + 💎 kim cương) | Tích luỹ vĩnh viễn qua `PROFILE`; xu ≈ score/10 mỗi kill + boss + clear-màn; 💎 từ boss + loot. 1💎 = 200 xu (chuẩn quy đổi) | `addCoins/addDiamonds`, `BALANCE.coinBountyDiv/stageClearCoin/boss` |
 | **SHOP 3D showroom** | Tủ trưng bày grid → detail 3D xoay (model dựng thủ tục theo tier/VIP) + chỉ số + blurb + giá; mua súng & 11 nâng cấp; chặn mua trùng | `openShop/shopModel/renderCaseGrid/buildGunModel/buildUpgradeModel`, `SHOP_UP/GUN_PRICE` |
-| **Nâng cấp vĩnh viễn** (11 loại) | DAMAGE/WARHEAD/LONG BARREL/FAST RELOAD/BIG MAG/HULL/ARMOR/ENGINE/GUARDS/CREW/TROOPS — L1-3 xu, L4-5 💎; bake vào run | `SHOP_UP`, `applyUpgrades()`, `BALANCE.up` |
+| **Nâng cấp vĩnh viễn** (16 loại) | DAMAGE/WARHEAD/LONG BARREL/FAST RELOAD/BIG MAG/HULL/ARMOR/ENGINE + tab **SUPPORT**: CORE GUARDS/GUARD STRIKE/GUARD DRILL/GUARD ARMOR/TANK CREW/STRIKE DRONE/DRONE ROTORS/DRONE PLATING — L1-3 xu, L4-5 💎; bake vào run | `SHOP_UP`, `applyUpgrades()`, `BALANCE.up/support` |
 | **GUN MASTERY** (cấp 1→4/súng) | Nhặt trùng súng = +xp; vượt ngưỡng → lên cấp (vĩnh viễn): +dmg, +nhịp bắn, −nạp đạn | `gunLevel/gunXp/addGunXp/gunDmgMul…`, `PROFILE.gunXp`, `BALANCE.mastery` |
 | **STAGE BRIEFING + Hợp đồng** | Trước mỗi màn chọn 1/3 modifier risk-reward (BOUNTY/GLASS CANNON/ELITE HUNT/SCAVENGER/WARLORD…) áp cả màn | `openBriefing/chooseContract/cMod()`, `CONTRACTS`, mode `'briefing'` |
 | **NG+ vô hạn** | Hạ Overlord → NG+1,2… giữ tài khoản; mỗi loop địch mạnh hơn + thưởng nhiều hơn | `S.loop`, `loopHpMul/loopDmgMul/loopBossMul/loopRewardMul`, `BALANCE.loop` |
@@ -88,7 +88,8 @@
 | **Phản ứng trúng đòn** | Hull rung/giật lùi + shake theo dmg + **lửa khói cháy ngay chỗ trúng** (rides hull) | `damagePlayer/addPlayerBurn`, `p.hitT/p.burns` |
 | **Thanh máu địch + lính đồng minh + spell** | HP bar nổi trên mỗi xe; lính canh Core + lính nóc xe; 6 spell cooldown | `updateEnemyBar`, `SOLDIER/RIDER`, `SPELLS` |
 | **SUPPORT DRONE — gunship (Z37)** | Power-up drone 22s: thân gunship + **4 rotor xoay** + mắt cảm biến + **gatling 6 nòng xoáy** (nòng xoáy spin-up khi bắn); tự khoá địch gần nhất trong `detect` (xa hơn người chơi), xả băng `mag` viên @ `fireCd` → nạp `reload`; **bay xa hơn (orbit 4.8)** & **bắn xa hơn (detect 26)**; **có HP — đạn địch bắn rơi được** (HP bar nổi khi trúng), 0 HP → nổ lớn | `makeDroneMesh/updateDrone/damageDrone/destroyDrone/updateDroneBar`, `BALANCE.drone` |
-| **Refactor config + test** | `BALANCE`/kinh tế tách `config.js`; `test.js` 386 assertion | `config.js`, `test.js` |
+| **Mua & nâng cấp đơn vị hỗ trợ (Z38)** | Tab **SUPPORT** trong Shop: **STRIKE DRONE** (mua L1 = sở hữu drone hộ tống, tự triển khai **mỗi màn**, bền cả màn) + **DRONE ROTORS** (−hồi đạn) + **DRONE PLATING** (+HP); **CORE GUARDS** (số lính) + **GUARD STRIKE** (sát thương) + **GUARD DRILL** (−hồi đạn) + **GUARD ARMOR** (+HP). Mua giữa trận áp dụng ngay | `BALANCE.support`, `droneDmgMul/droneReloadMul/droneBonusHp/droneOwned/guardFireMul/guardBonusHp/deployOwnedDrone`, `spawnDrone(owned)`, `buyShop` |
+| **Refactor config + test** | `BALANCE`/kinh tế tách `config.js`; `test.js` 461 assertion | `config.js`, `test.js` |
 
 ---
 
@@ -306,4 +307,4 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, refactor config.js + 386 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
+> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT (Z38)**, refactor config.js + 461 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
