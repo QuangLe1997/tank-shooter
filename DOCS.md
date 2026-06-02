@@ -70,7 +70,7 @@
 | **Đạn vòng cung** (mục tiêu xa → cong, trực diện → thẳng; va chạm vẫn 2D) | `arcDist`→`vy`/`by`, `ARC_G=110`, tích phân trọng lực trong `updateBullets`; trail theo `by` |
 | **Xe chết tan tành (chân thực)**: mảnh kim loại **hình dạng lộn xộn**, **nóng→nguội dần**, văng/xoay/**nảy thấp + nằm yên + mờ dần**; khói đen tức thì; xe to → nổ phụ + nhiều mảnh | `debris/spawnDebris/updateDebris`, `tankExplode` |
 
-### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z44) — hệ thống hiện hành
+### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z45) — hệ thống hiện hành
 | Hệ thống | Tóm tắt | Ở đâu (grep) |
 |---|---|---|
 | **Kinh tế** (xu + 💎 kim cương) | Tích luỹ vĩnh viễn qua `PROFILE`; xu ≈ score/10 mỗi kill + boss + clear-màn; 💎 từ boss + loot. 1💎 = 200 xu (chuẩn quy đổi) | `addCoins/addDiamonds`, `BALANCE.coinBountyDiv/stageClearCoin/boss` |
@@ -312,4 +312,4 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT (Z38)**, **PYRO vòi lửa vòng cung tầm xa + cháy ~10s (Z39)**, **6 địa hình chọn được + scatter trang trí (Z40)**, **drone hạ về hỗ-trợ (Z41)**, **đạn phát sáng + tracer theo súng (Z42)**, **xe tăng player uy lực hơn (Z43)**, **khiên năng lượng hex cao cấp (Z44)**, refactor config.js + 476 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
+> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT (Z38)**, **PYRO vòi lửa vòng cung tầm xa + cháy ~10s (Z39)**, **6 địa hình chọn được + scatter trang trí (Z40)**, **drone hạ về hỗ-trợ (Z41)**, **đạn phát sáng + tracer theo súng (Z42)**, **xe tăng player uy lực hơn (Z43)**, **khiên năng lượng hex cao cấp (Z44)**, **CRYO đóng băng 1.4→2.4s (Z45)**, refactor config.js + 476 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
