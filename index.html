@@ -245,6 +245,15 @@
     font-size:15px;font-weight:900;letter-spacing:1px;color:#ffe8b6;text-shadow:0 2px 8px rgba(0,0,0,.9);box-shadow:0 0 14px rgba(255,206,110,.18),inset 0 0 8px rgba(255,206,110,.08);}
   .w-chip .ic{width:18px;height:18px;color:var(--amber);}
   .w-chip.dia{border-color:rgba(127,231,255,.55);color:#bff0ff;box-shadow:0 0 16px rgba(127,231,255,.28),inset 0 0 8px rgba(127,231,255,.1);} .w-chip.dia .ic{color:#7fe7ff;}
+  /* terrain picker on the start screen */
+  .terrain-pick{margin:8px auto 4px;max-width:460px;pointer-events:auto;}
+  .tp-label{font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.5);font-weight:800;margin-bottom:7px;}
+  .tp-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+  .tp-chip{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--ink);
+    padding:5px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(20,28,14,.6);transition:border-color .12s,background .12s,transform .1s;}
+  .tp-chip:hover{border-color:rgba(140,191,63,.55);transform:translateY(-1px);}
+  .tp-chip.on{border-color:var(--green);background:rgba(140,191,63,.2);box-shadow:0 0 9px rgba(140,191,63,.4);}
+  .tp-sw{width:13px;height:13px;border-radius:4px;border:1px solid rgba(255,255,255,.35);display:inline-block;}
   /* the in-shop / game-over wallets stay compact (they're secondary) */
   .shop-wallet .w-chip,.go-wallet .w-chip{font-size:13px;padding:4px 12px;box-shadow:none;} .shop-wallet .w-chip .ic{width:15px;height:15px;}
   .shop-wallet{margin:-2px 0 2px;}
@@ -612,6 +621,10 @@
   <div class="hello" id="hello"></div>
   <div class="bestline" id="bestline"></div>
   <div class="wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
+  <div class="terrain-pick" id="terrainPick">
+    <div class="tp-label">CHỌN ĐỊA HÌNH · BATTLEFIELD</div>
+    <div class="tp-row" id="tpRow"></div>
+  </div>
   <div class="panel">
     <div class="btn btn-primary" id="continueBtn" style="display:none">CONTINUE ▶</div>
     <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
@@ -786,15 +799,18 @@ const PLAYER_PAL = {hull:0x5e7a2e,turret:0x75933a,barrel:0x9bb04a,tread:0x2a3514
 function playerRange(){ const p=S.player; if(!p) return PLAYER.rangeBase;
   const buff = (S.timeNow||0) < p.buffUntil.range ? 1.4 : 1;
   return (PLAYER.rangeBase + (S.stage-1)*3) * p.rangeMul * buff; }
-// 5 biomes (one per stage) — bg/fog/ground/grid/accent/sky + fog density + lights
+// Battlefields — bg/fog/ground/grid/accent/sky + fog density + sun + scatter-deco theme + perimeter-wall tint.
+// Indices 0-4 = the campaign (one per stage S1-S5). MEADOW (5) is a bonus terrain only via the picker.
 const BIOMES = [
-  { name:'DESERT',         bg:0x1c160c, fog:0x2a2112, ground:0xb89a5e, grid:0x8a6f3c, accent:0xe7b54a, sky:0x3a3320, fogD:0.0075, sun:0xfff0d0 },
-  { name:'RUINS',  bg:0x14161a, fog:0x20242a, ground:0x6e7178, grid:0x474b52, accent:0xd0d6dc, sky:0x2a2e36, fogD:0.0090, sun:0xdfe6ee },
-  { name:'TUNDRA',       bg:0x121c24, fog:0x1c2e3a, ground:0xaecbe0, grid:0x6f93ad, accent:0x9fe0ff, sky:0x2a4055, fogD:0.0100, sun:0xeaf6ff },
-  { name:'FOUNDRY',     bg:0x18100c, fog:0x241410, ground:0x4a3e38, grid:0x6e4030, accent:0xff6a3a, sky:0x301812, fogD:0.0110, sun:0xffcaa0 },
-  { name:'CITADEL',      bg:0x140d06, fog:0x231406, ground:0x4e3a1c, grid:0x7a5420, accent:0xffae5c, sky:0x2a1c0a, fogD:0.0120, sun:0xffd9a0 },
+  { name:'DESERT',  bg:0x1c160c, fog:0x2a2112, ground:0xb89a5e, grid:0x8a6f3c, accent:0xe7b54a, sky:0x3a3320, fogD:0.0075, sun:0xfff0d0, deco:'rock',   wall:0x6b5a36 },
+  { name:'RUINS',   bg:0x14161a, fog:0x20242a, ground:0x6e7178, grid:0x474b52, accent:0xd0d6dc, sky:0x2a2e36, fogD:0.0090, sun:0xdfe6ee, deco:'rubble', wall:0x55585e },
+  { name:'TUNDRA',  bg:0x121c24, fog:0x1c2e3a, ground:0xaecbe0, grid:0x6f93ad, accent:0x9fe0ff, sky:0x2a4055, fogD:0.0100, sun:0xeaf6ff, deco:'ice',    wall:0x6f8597 },
+  { name:'FOUNDRY', bg:0x18100c, fog:0x241410, ground:0x4a3e38, grid:0x6e4030, accent:0xff6a3a, sky:0x301812, fogD:0.0110, sun:0xffcaa0, deco:'slag',   wall:0x4a3a32 },
+  { name:'CITADEL', bg:0x140d06, fog:0x231406, ground:0x4e3a1c, grid:0x7a5420, accent:0xffae5c, sky:0x2a1c0a, fogD:0.0120, sun:0xffd9a0, deco:'rubble', wall:0x6a5424 },
+  { name:'MEADOW',  bg:0x0e150b, fog:0x1a2613, ground:0x5f7d3a, grid:0x46602a, accent:0x9be25a, sky:0x35451f, fogD:0.0072, sun:0xeaffcf, deco:'grass',  wall:0x4a5a30 },
 ];
-let BIOME = BIOMES[0];   // current (swapped per stage by applyBiome)
+const CAMPAIGN_BIOMES = 5;   // stages auto-rotate through the first 5; MEADOW is picker-only
+let BIOME = BIOMES[0];   // current (set by applyBiome from stage or the player's pick)
 
 // ===== CUSTOM ICON SET (military line-art; no emoji) =====
 // One coherent stroke style across HUD, menus, drops and cards. currentColor lets CSS theme each.
@@ -926,11 +942,37 @@ function gridTexture(b){
   const S2=512, c=document.createElement('canvas'); c.width=c.height=S2; const x=c.getContext('2d');
   const hex=h=>'#'+h.toString(16).padStart(6,'0');
   x.fillStyle=hex(b.ground); x.fillRect(0,0,S2,S2);
-  for(let i=0;i<1600;i++){ x.globalAlpha=0.03+Math.random()*0.05;
+  // big soft patches → uneven, weathered ground (reads as gồ ghề / rough)
+  for(let i=0;i<28;i++){ x.globalAlpha=0.05+Math.random()*0.07;
+    x.fillStyle = Math.random()<0.5 ? hex(b.grid) : '#ffffff';
+    const r=42+Math.random()*95; x.beginPath(); x.arc(Math.random()*S2,Math.random()*S2,r,0,7); x.fill(); }
+  // fine grain speckle
+  for(let i=0;i<1500;i++){ x.globalAlpha=0.03+Math.random()*0.05;
     x.fillStyle = Math.random()<0.5 ? hex(b.grid) : '#ffffff';
     const r=2+Math.random()*5; x.beginPath(); x.arc(Math.random()*S2,Math.random()*S2,r,0,7); x.fill(); }
-  x.globalAlpha=0.5; x.strokeStyle=hex(b.grid); x.lineWidth=1.5;
-  const step=S2/8; for(let i=0;i<=8;i++){ x.beginPath(); x.moveTo(i*step,0); x.lineTo(i*step,S2); x.moveTo(0,i*step); x.lineTo(S2,i*step); x.stroke(); }
+  // biome-specific surface detail
+  if(b.deco==='grass'){                                   // blades of grass everywhere
+    for(let i=0;i<950;i++){ x.globalAlpha=0.12+Math.random()*0.26; x.strokeStyle = Math.random()<0.3?'#bce879':(Math.random()<0.5?'#6f9a3c':hex(b.grid));
+      x.lineWidth=1+Math.random(); const gx=Math.random()*S2, gy=Math.random()*S2, h=4+Math.random()*9, lean=(Math.random()-0.5)*5;
+      x.beginPath(); x.moveTo(gx,gy); x.lineTo(gx+lean,gy-h); x.stroke(); }
+  } else if(b.deco==='ice'){                              // frost fractures
+    x.globalAlpha=0.18; x.strokeStyle='#eaffff'; x.lineWidth=1.2;
+    for(let i=0;i<44;i++){ let px=Math.random()*S2, py=Math.random()*S2; x.beginPath(); x.moveTo(px,py);
+      for(let s=0;s<4;s++){ px+=(Math.random()-0.5)*72; py+=(Math.random()-0.5)*72; x.lineTo(px,py); } x.stroke(); }
+  } else if(b.deco==='slag'){                             // molten cracks glow through
+    x.globalAlpha=0.5; x.strokeStyle='#ff7a30'; x.lineWidth=1.7;
+    for(let i=0;i<26;i++){ let px=Math.random()*S2, py=Math.random()*S2; x.beginPath(); x.moveTo(px,py);
+      for(let s=0;s<3;s++){ px+=(Math.random()-0.5)*64; py+=(Math.random()-0.5)*64; x.lineTo(px,py); } x.stroke(); }
+  } else if(b.deco==='rubble'){                           // broken paving seams
+    x.globalAlpha=0.32; x.strokeStyle=hex(b.grid); x.lineWidth=2;
+    for(let i=0;i<24;i++){ const px=Math.random()*S2, py=Math.random()*S2, w=28+Math.random()*72, h=28+Math.random()*72; x.strokeRect(px,py,w,h); }
+  }
+  // tech survey grid only on engineered grounds — natural terrains (desert dunes / meadow) skip it
+  if(b.deco==='rubble' || b.deco==='slag' || b.deco==='ice'){
+    x.globalAlpha=0.4; x.strokeStyle=hex(b.grid); x.lineWidth=1.5;
+    const step=S2/8; for(let i=0;i<=8;i++){ x.beginPath(); x.moveTo(i*step,0); x.lineTo(i*step,S2); x.moveTo(0,i*step); x.lineTo(S2,i*step); x.stroke(); }
+  }
+  x.globalAlpha=1;
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,4);
   _texCache[b.name]=t; return t;
 }
@@ -953,14 +995,62 @@ ring.rotation.x=-Math.PI/2; ring.position.y=0.05; arena.add(ring);
 const rangeRing = new THREE.Mesh(new THREE.RingGeometry(0.984, 1.0, 80),
   new THREE.MeshBasicMaterial({ color:0xaef0a0, transparent:true, opacity:0.1, side:THREE.DoubleSide, depthWrite:false }));
 rangeRing.rotation.x=-Math.PI/2; rangeRing.position.y=0.06; rangeRing.visible=false; scene.add(rangeRing);
+// ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
+// Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
+// Rebuilt whenever the biome changes; kept clear of the Core + the player's spawn so they never block play.
+const decorGroup = new THREE.Group(); arena.add(decorGroup);
+const _decoMat = (col, emi, rough, metal)=> new THREE.MeshStandardMaterial({ color:col, emissive:emi||0x000000, emissiveIntensity:emi?0.9:0, roughness:rough!=null?rough:0.92, metalness:metal||0.04 });
+function makeDecorProp(type){
+  const g=new THREE.Group();
+  if(type==='grass'){
+    const blades=3+(Math.random()*4|0);
+    for(let i=0;i<blades;i++){ const h=0.6+Math.random()*0.95, m=new THREE.Mesh(new THREE.ConeGeometry(0.11,h,4), _decoMat(Math.random()<0.4?0x7caa44:0x5f8a32,0,0.96));
+      m.position.set((Math.random()-0.5)*0.95,h/2,(Math.random()-0.5)*0.95); m.rotation.set((Math.random()-0.5)*0.4,Math.random()*6.28,(Math.random()-0.5)*0.4); g.add(m); }
+    if(Math.random()<0.45){ const b=new THREE.Mesh(new THREE.IcosahedronGeometry(0.5+Math.random()*0.45,0), _decoMat(0x4a6f2a)); b.position.y=0.4; b.scale.y=0.7; g.add(b); }   // bush
+    if(Math.random()<0.22){ const f=new THREE.Mesh(new THREE.SphereGeometry(0.11,8,6), _decoMat(0x1a1a0a,0xffd24a)); f.position.set((Math.random()-0.5)*0.7,0.7,(Math.random()-0.5)*0.7); g.add(f); }   // flower spark
+  } else if(type==='rock'){
+    const m=new THREE.Mesh(new THREE.IcosahedronGeometry(0.55+Math.random()*0.8,0), _decoMat(0x9a8454)); m.scale.y=0.55+Math.random()*0.4; m.position.y=0.32; m.rotation.set(Math.random(),Math.random()*6.28,Math.random()); g.add(m);
+    if(Math.random()<0.5){ const m2=new THREE.Mesh(new THREE.IcosahedronGeometry(0.28+Math.random()*0.3,0), _decoMat(0x877043)); m2.position.set(0.6,0.18,0.32); g.add(m2); }
+  } else if(type==='ice'){
+    const n=2+(Math.random()*3|0);
+    for(let i=0;i<n;i++){ const h=0.8+Math.random()*1.7, m=new THREE.Mesh(new THREE.ConeGeometry(0.22+Math.random()*0.2,h,5), _decoMat(0xbfe8ff,0x2f5a78,0.28,0.25));
+      m.position.set((Math.random()-0.5)*0.85,h/2,(Math.random()-0.5)*0.85); m.rotation.z=(Math.random()-0.5)*0.5; g.add(m); }
+  } else if(type==='slag'){
+    const m=new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+Math.random()*0.6,0), _decoMat(0x2a2420)); m.scale.y=0.62; m.position.y=0.3; m.rotation.y=Math.random()*6.28; g.add(m);
+    const e=new THREE.Mesh(new THREE.SphereGeometry(0.17,8,6), _decoMat(0x1a1410,0xff5a1c)); e.position.y=0.34; g.add(e);   // glowing ember
+  } else {   // rubble
+    const n=2+(Math.random()*3|0);
+    for(let i=0;i<n;i++){ const m=new THREE.Mesh(new RoundedBoxGeometry(0.4+Math.random()*0.7,0.3+Math.random()*0.5,0.4+Math.random()*0.7,1,0.06), _decoMat(Math.random()<0.5?0x6a6258:0x5a5852));
+      m.position.set((Math.random()-0.5)*1.2,0.2+Math.random()*0.3,(Math.random()-0.5)*1.2); m.rotation.set(0,Math.random()*6.28,(Math.random()-0.5)*0.2); g.add(m); }
+  }
+  return g;
+}
+function clearDecor(){ for(let i=decorGroup.children.length-1;i>=0;i--){ const c=decorGroup.children[i]; disposeObj(c); decorGroup.remove(c); } }
+function buildTerrainDecor(b){
+  clearDecor();
+  const N = MOBILE ? 34 : 60;
+  for(let i=0;i<N;i++){
+    let x=0,z=0,ok=false;
+    for(let t=0;t<10 && !ok;t++){ x=(Math.random()*2-1)*(ARENA-3); z=(Math.random()*2-1)*(ARENA-3);
+      ok = Math.hypot(x,z)>13 && Math.hypot(x, z-ARENA*0.55)>9; }   // stay clear of the Core (0,0) + player spawn
+    if(!ok) continue;
+    const p=makeDecorProp(b.deco||'rock'); p.position.set(x,0,z); p.rotation.y=Math.random()*6.283; p.scale.multiplyScalar(0.7+Math.random()*1.0);
+    decorGroup.add(p);
+  }
+}
 function applyBiome(stage){
-  BIOME = BIOMES[Math.min(stage-1, BIOMES.length-1)];
+  const pick = (typeof PROFILE!=='undefined' && Number.isInteger(PROFILE.terrain) && PROFILE.terrain>=0) ? PROFILE.terrain : -1;
+  const idx = pick>=0 ? Math.min(pick, BIOMES.length-1) : Math.min(stage-1, CAMPAIGN_BIOMES-1);   // player's pick OR campaign rotation
+  BIOME = BIOMES[idx];
   scene.background.setHex(BIOME.bg);
   scene.fog.color.setHex(BIOME.fog); scene.fog.density = BIOME.fogD;
   ground.material.map = gridTexture(BIOME); ground.material.needsUpdate=true;
   sun.color.setHex(BIOME.sun); hemi.color.setHex(BIOME.sky);
   ring.material.color.setHex(BIOME.accent);
+  if(BIOME.wall!=null) wallMat.color.setHex(BIOME.wall);
+  buildTerrainDecor(BIOME);
 }
+buildTerrainDecor(BIOME);   // initial dressing for the menu backdrop
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -3278,7 +3368,17 @@ function refreshStartUI(){
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; const lp=hasSave?(PROFILE.save.loop|0):0;
     cont.textContent = hasSave ? ('CONTINUE ▶  '+(lp>0?'NG+'+lp+' · ':'')+'STAGE '+PROFILE.save.stage) : 'CONTINUE ▶'; }
   const ac=document.getElementById('arsenalCount'); if(ac) ac.textContent=PROFILE.ownedGuns.length;   // show how many guns are collected
-  refreshWallet();
+  refreshWallet(); buildTerrainPicker();
+}
+// terrain picker (start screen): AUTO (campaign rotation) + every battlefield; persists in PROFILE.terrain
+function buildTerrainPicker(){
+  const row=document.getElementById('tpRow'); if(!row) return; row.innerHTML='';
+  const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=0)?PROFILE.terrain:-1;
+  const opts=[{i:-1,name:'AUTO',col:0x8a8a8a}].concat(BIOMES.map((b,i)=>({i,name:b.name,col:b.ground})));
+  for(const o of opts){ const chip=document.createElement('div'); chip.className='tp-chip'+(o.i===cur?' on':'');
+    chip.innerHTML='<span class="tp-sw" style="background:#'+o.col.toString(16).padStart(6,'0')+'"></span>'+o.name;
+    tapEl(chip, ()=>{ PROFILE.terrain=o.i; saveProfile(); buildTerrainPicker(); sfx('click'); });
+    row.appendChild(chip); }
 }
 
 // ---- nickname (first launch / editable) ----
@@ -3814,7 +3914,7 @@ function drawRadar(){
 const PROFILE_KEY='steelsiege.profile';
 const BEST_KEY='steelsiege.best';        // legacy high-score key (migrated into the profile)
 const LOADOUT_MAX=5;                      // bring at most 5 weapons into a fight (quick-swap rotation)
-function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{} }; }
+function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{}, terrain:-1 }; }
 function loadProfile(){
   let pr=null; try{ pr=JSON.parse(localStorage.getItem(PROFILE_KEY)); }catch(e){}
   if(!pr || typeof pr!=='object'){ pr=defaultProfile(); try{ const old=JSON.parse(localStorage.getItem(BEST_KEY)); if(old&&old.score) pr.best={score:old.score|0, stage:old.stage|0||1}; }catch(e){} }
@@ -3829,6 +3929,7 @@ function loadProfile(){
   pr.coins=Math.max(0, pr.coins|0); pr.diamonds=Math.max(0, pr.diamonds|0);          // persistent wallet (coins · diamonds)
   if(!pr.upgrades || typeof pr.upgrades!=='object') pr.upgrades={};                  // { key: level } bought stat upgrades
   if(!pr.gunXp || typeof pr.gunXp!=='object') pr.gunXp={};                           // { gunId: dup-pickup count } → MASTERY level
+  pr.terrain = (Number.isInteger(pr.terrain) && pr.terrain>=-1 && pr.terrain<BIOMES.length) ? pr.terrain : -1;   // chosen battlefield (-1 = AUTO campaign)
   return pr;
 }
 function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} }
@@ -4260,6 +4361,8 @@ window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDe
 window._damagePlayer = damagePlayer; window._updateEnemies = updateEnemies;   // hit-reaction + enemy-AI hooks (debug/test)
 window._fireArty = fireArty; window._updateRockets = updateRockets; window._updateFuses = updateFuses; window._dbg.fuses = fuses;   // HOWITZER hooks (debug/test)
 window._fireFlame = fireFlame; window._dbg.parts = parts;   // PYRO flame-jet hook (debug/test)
+window._applyBiome = applyBiome; window._BIOMES = BIOMES; window._buildTerrainDecor = buildTerrainDecor; window._buildTerrainPicker = buildTerrainPicker;   // TERRAIN hooks (debug/test)
+Object.defineProperty(window,'_BIOME',{get:()=>BIOME}); Object.defineProperty(window,'_decorCount',{get:()=>decorGroup.children.length});
 window._openUpgrade = openUpgrade;   // (debug) preview the post-boss reward screen
 window._startBoss = startBoss; window._killBoss = killBoss;   // (debug) drive the stage-clear flow
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up

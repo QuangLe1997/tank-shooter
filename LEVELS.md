@@ -21,6 +21,8 @@
 | 4 | FOUNDRY | REAPER | 2.600 |
 | 5 | CITADEL | OVERLORD | 3.600 |
 
+> **CHỌN ĐỊA HÌNH (Z40):** ở màn Start có **picker** chọn chiến trường: **AUTO** (xoay 5 biome theo màn như bảng trên) hoặc **khoá 1 loại** cho cả lượt chơi. Có **6 địa hình**: DESERT · RUINS · TUNDRA · FOUNDRY · CITADEL + **MEADOW (đồng cỏ)**. Mỗi địa hình có nền gồ ghề + chi tiết riêng (cỏ / băng nứt / khe nham thạch / đá vỡ), **vật trang trí rải** (đá·bụi cỏ·băng·xỉ·gạch — tránh Core & điểm spawn nên không cản đường), tường viền + sương + ánh sáng đổi màu. Lưu ở `PROFILE.terrain` (-1 = AUTO).
+
 ---
 
 ## 2. Rải quân (wave) — số lượng & loại địch
@@ -172,4 +174,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z39** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, **PYRO vòi lửa vòng cung tầm xa**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z40** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, **6 địa hình chọn được + scatter trang trí**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

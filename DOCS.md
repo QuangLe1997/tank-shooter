@@ -70,7 +70,7 @@
 | **Đạn vòng cung** (mục tiêu xa → cong, trực diện → thẳng; va chạm vẫn 2D) | `arcDist`→`vy`/`by`, `ARC_G=110`, tích phân trọng lực trong `updateBullets`; trail theo `by` |
 | **Xe chết tan tành (chân thực)**: mảnh kim loại **hình dạng lộn xộn**, **nóng→nguội dần**, văng/xoay/**nảy thấp + nằm yên + mờ dần**; khói đen tức thì; xe to → nổ phụ + nhiều mảnh | `debris/spawnDebris/updateDebris`, `tankExplode` |
 
-### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z39) — hệ thống hiện hành
+### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z40) — hệ thống hiện hành
 | Hệ thống | Tóm tắt | Ở đâu (grep) |
 |---|---|---|
 | **Kinh tế** (xu + 💎 kim cương) | Tích luỹ vĩnh viễn qua `PROFILE`; xu ≈ score/10 mỗi kill + boss + clear-màn; 💎 từ boss + loot. 1💎 = 200 xu (chuẩn quy đổi) | `addCoins/addDiamonds`, `BALANCE.coinBountyDiv/stageClearCoin/boss` |
@@ -84,6 +84,7 @@
 | **9 loại địch** (silhouette riêng) | grunt·scout(húc)·gunner(3 nòng)·mortar(pháo)·shield(khiên)·bomber(cảm tử)·**heavy·sniper·carrier(chở 3 lính, mutual-death)** | `ENEMY_DEFS`, `decorateEnemyMesh`, `updateEnemies/updateCarrierCrew`, `BALANCE.aggro` |
 | **Hung hãn/chính xác theo màn** | Tỉ lệ chủ động bắn + độ chính xác ramp theo `diffScale` + NG+ loop | `updateEnemies` fire block, `BALANCE.aggro` |
 | **13 súng** (xem §7) | + HOWITZER (pháo cầu vồng qua tường) + **PYRO (vòi lửa vòng cung — Z39: tia lửa dày, tầm 20, bốc cháy ~10s)** | `GUNS`, `fireArty/fireFlame`, `BALANCE.flame` |
+| **Địa hình chọn được + scatter (Z40)** | 6 chiến trường (DESERT/RUINS/TUNDRA/FOUNDRY/CITADEL + **MEADOW cỏ**), mỗi loại có nền gồ ghề + chi tiết riêng (cỏ/băng nứt/khe nham thạch/đá vỡ) + **vật trang trí rải** (đá·bụi cỏ·băng·xỉ·gạch vỡ, tránh Core & spawn) + tường viền đổi màu. **Picker ở màn Start** chọn địa hình (AUTO = xoay theo màn, hoặc khoá 1 loại) | `BIOMES`, `gridTexture/makeDecorProp/buildTerrainDecor/applyBiome`, `buildTerrainPicker`, `PROFILE.terrain` |
 | **Cinematic chết → hồi sinh** | Xe lật + bốc cháy + cam cận xoay → dựng dậy + chớp 3 lần | `playerDie/beginDeath/updateDeath/respawnPlayer`, mode `'dying'` |
 | **Phản ứng trúng đòn** | Hull rung/giật lùi + shake theo dmg + **lửa khói cháy ngay chỗ trúng** (rides hull) | `damagePlayer/addPlayerBurn`, `p.hitT/p.burns` |
 | **Thanh máu địch + lính đồng minh + spell** | HP bar nổi trên mỗi xe; lính canh Core + lính nóc xe; 6 spell cooldown | `updateEnemyBar`, `SOLDIER/RIDER`, `SPELLS` |
@@ -307,4 +308,4 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 - **2026-05-31 · P1:** Engine 3D (Three.js) + player tank (di chuyển, ngắm 360°, dash i-frame) + camera follow + twin-stick mobile + HUD skeleton + màn Title/Pause. Arena sa mạc.
 - **2026-05-31:** khởi tạo repo + GitHub Pages + kịch bản `GAME_DESIGN.md` + luật `CLAUDE.md`.
 
-> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT (Z38)**, **PYRO vòi lửa vòng cung tầm xa + cháy ~10s (Z39)**, refactor config.js + 473 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
+> **Last updated:** 2026-06-01 · nhánh `main` · **đồng bộ tới Z36** (xem §14 cho toàn bộ lịch sử chi tiết P1→Z36). Tóm tắt: nền tảng P1–P9 + rework R/T/G/N/O/Q/W/X/Y/Z1–13 → **lớp nội dung Z14–Z36** (ARSENAL, kinh tế + shop 3D, nâng cấp, mastery, hợp đồng màn chơi, NG+ vô hạn, sự kiện wave/elite, pháo kích khoá mục tiêu, 9 loại địch, 13 súng, cinematic chết, phản ứng trúng đòn, **drone gunship gatling xoáy bắn rơi được (Z37)**, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT (Z38)**, **PYRO vòi lửa vòng cung tầm xa + cháy ~10s (Z39)**, **6 địa hình chọn được + scatter trang trí (Z40)**, refactor config.js + 473 smoke-test). Chữ in-game tiếng Anh, icon SVG tự vẽ.
