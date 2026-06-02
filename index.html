@@ -2901,12 +2901,10 @@ function rocketArc(sx,sy,sz,tx,tz){
   const v=Math.sqrt(ROCKET_G*D*D/(2*c*c*denom)), T=D/(v*c);
   return { T, vx:v*c*dx/D, vz:v*c*dz/D, vy:v*s };
 }
-// aim preview: a predicted arc of dots + a landing reticle (the wipe radius) shown while the launcher is equipped
-// normal blending + depthTest:false → the guide reads on ANY terrain (additive washes out on bright sand) and always draws over geometry/core
-const aimDots=[]; for(let i=0;i<18;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff3a16,transparent:true,opacity:0,depthTest:false,depthWrite:false})); s.renderOrder=998; s.visible=false; scene.add(s); aimDots.push(s); }
-const aimRing=new THREE.Mesh(new THREE.RingGeometry(0.9,1,64), new THREE.MeshBasicMaterial({color:0xff3416,transparent:true,opacity:0,side:THREE.DoubleSide,depthTest:false,depthWrite:false})); aimRing.rotation.x=-Math.PI/2; aimRing.position.y=0.14; aimRing.renderOrder=999; aimRing.visible=false; scene.add(aimRing);
-const aimPad=new THREE.Mesh(new THREE.CircleGeometry(1,48), new THREE.MeshBasicMaterial({color:0xff2a08,transparent:true,opacity:0,side:THREE.DoubleSide,depthTest:false,depthWrite:false})); aimPad.rotation.x=-Math.PI/2; aimPad.position.y=0.12; aimPad.renderOrder=997; aimPad.visible=false; scene.add(aimPad);
-function hideRocketAim(){ if(aimRing.visible){ aimRing.visible=false; aimPad.visible=false; for(const d of aimDots) d.visible=false; } }
+// aim preview: JUST a slim, faint dotted ARC tracing the rocket's flight path (no landing ring — the danger zone only shows once it's fired)
+// normal blending + depthTest:false → the line reads on ANY terrain and isn't occluded by geometry/core; small + low-opacity = subtle "tech" guide
+const aimDots=[]; for(let i=0;i<26;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff2e16,transparent:true,opacity:0,depthTest:false,depthWrite:false})); s.renderOrder=998; s.visible=false; scene.add(s); aimDots.push(s); }   // saturated red reads on any terrain
+function hideRocketAim(){ for(const d of aimDots) if(d.visible) d.visible=false; }
 function updateRocketAim(now){
   const p=S.player; if(S.mode!=='playing'||!p||!p.guns||!p.guns.length){ hideRocketAim(); return; }
   const g=GUNS[p.guns[p.gunIdx].id];
@@ -2915,11 +2913,8 @@ function updateRocketAim(now){
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube MOUTH (same point the rocket fires from)
   const a=rocketArc(sx,sy,sz,tx,tz);
   for(let i=0;i<aimDots.length;i++){ const f=i/(aimDots.length-1), tt=f*a.T, d=aimDots[i];
-    d.position.set(sx+a.vx*tt, Math.max(0.25, sy+a.vy*tt-0.5*ROCKET_G*tt*tt), sz+a.vz*tt);
-    d.scale.setScalar(0.7+f*0.55); d.material.opacity=0.92*(1-f*0.28); d.visible=true; }
-  const r=g.aoeR||15, pul=0.6+0.4*Math.sin(now*7);
-  aimRing.position.set(tx,0.14,tz); aimRing.scale.set(r,r,r); aimRing.material.opacity=0.6+0.35*pul; aimRing.visible=true;
-  aimPad.position.set(tx,0.12,tz);  aimPad.scale.set(r,r,r);  aimPad.material.opacity=0.14+0.07*pul; aimPad.visible=true;
+    d.position.set(sx+a.vx*tt, Math.max(0.2, sy+a.vy*tt-0.5*ROCKET_G*tt*tt), sz+a.vz*tt);
+    d.scale.setScalar(0.28+f*0.14); d.material.opacity=0.62*(1-f*0.25); d.visible=true; }   // small + faint (just visible), gently fading toward the impact point
 }
 function fireRocket(now, g){
   const p=S.player;
@@ -4700,7 +4695,7 @@ window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._
 window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDeath = updateDeath; window._respawnPlayer = respawnPlayer; Object.defineProperty(window,'_DEATH',{get:()=>DEATH});   // DEATH→respawn hooks (debug/test)
 window._damagePlayer = damagePlayer; window._updateEnemies = updateEnemies;   // hit-reaction + enemy-AI hooks (debug/test)
 window._fireArty = fireArty; window._updateRockets = updateRockets; window._updateFuses = updateFuses; window._dbg.fuses = fuses;   // HOWITZER hooks (debug/test)
-window._dbg.aimRing = aimRing; window._dbg.aimDots = aimDots; window._rocketTarget = rocketTarget;   // SIEGE ROCKET aim-preview hooks (debug/test)
+window._dbg.aimDots = aimDots; window._rocketTarget = rocketTarget;   // SIEGE ROCKET aim-preview hooks (debug/test)
 window._fireFlame = fireFlame; window._dbg.parts = parts; window._updateFlameJet = updateFlameJet; Object.defineProperty(window,'_flameJet',{get:()=>flameJet});   // PYRO flame-jet hook (debug/test)
 window._applyBiome = applyBiome; window._BIOMES = BIOMES; window._buildTerrainDecor = buildTerrainDecor; window._buildTerrainPicker = buildTerrainPicker;   // TERRAIN hooks (debug/test)
 Object.defineProperty(window,'_BIOME',{get:()=>BIOME}); Object.defineProperty(window,'_decorCount',{get:()=>decorGroup.children.length});
