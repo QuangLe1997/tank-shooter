@@ -2875,10 +2875,17 @@ function nearestTarget(maxR){
 const rockets=[], fuses=[];
 function makeRocketMesh(){
   const g=new THREE.Group();
-  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,1.5,10), new THREE.MeshStandardMaterial({color:0x3a4048,metalness:0.7,roughness:0.4})); g.add(body);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.27,0.66,10), new THREE.MeshStandardMaterial({color:0xc23a22,metalness:0.5,roughness:0.5})); nose.position.y=1.08; g.add(nose);
-  for(let k=0;k<3;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.36,0.06), new THREE.MeshStandardMaterial({color:0x2a2e33,metalness:0.6})); fin.position.y=-0.7; fin.rotation.y=k*2.094; g.add(fin); }
-  const ex=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffb050,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); ex.scale.setScalar(1.7); ex.position.y=-1.05; g.add(ex);
+  const hull=new THREE.MeshStandardMaterial({color:0x3c4250,metalness:0.82,roughness:0.32,envMapIntensity:0.9});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.36,2.2,18), hull); g.add(body);                                                   // longer + thicker
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.36,1.0,18), new THREE.MeshStandardMaterial({color:0x1a0d0a,emissive:0xff5a1e,emissiveIntensity:1.9,metalness:0.5,roughness:0.4})); nose.position.y=1.6; g.add(nose);   // glowing warhead
+  const tip=new THREE.Mesh(new THREE.SphereGeometry(0.13,12,10), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffe08a,emissiveIntensity:2.8})); tip.position.y=2.15; g.add(tip);                                  // white-hot tip
+  const band=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,0.34,18), new THREE.MeshStandardMaterial({color:0xffb020,emissive:0xff8a10,emissiveIntensity:0.8,metalness:0.4,roughness:0.5})); band.position.y=0.55; g.add(band);   // glowing hazard band
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.39,0.35,0.22,18), new THREE.MeshStandardMaterial({color:0x24262c,metalness:0.7,roughness:0.5})); collar.position.y=-1.0; g.add(collar);
+  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.46,0.07), new THREE.MeshStandardMaterial({color:0x2a2e33,metalness:0.6})); fin.position.y=-1.02; fin.rotation.y=k*1.5708; g.add(fin); }   // 4 swept fins
+  const eng=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.3,0.28,16), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffcaa0,emissiveIntensity:2.2})); eng.position.y=-1.2; g.add(eng);                       // glowing nozzle
+  const plume =new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe6a0,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); plume.scale.setScalar(2.1);  plume.position.y=-1.7;  g.add(plume);    // bright core flame
+  const plume2=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff6a20,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false})); plume2.scale.setScalar(1.4); plume2.position.y=-2.15; g.add(plume2);   // trailing flame
+  g.userData.plume=plume; g.userData.plume2=plume2;
   return g;
 }
 // dedicated ENEMY ARTILLERY missile — bigger & menacing: dark hull, glowing red warhead, hazard band, swept fins, fierce plume
@@ -3028,7 +3035,10 @@ function updateRockets(dt, now){
   for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.tt+=dt;
     r.vy-=r.G*dt; r.x+=r.vx*dt; r.y+=r.vy*dt; r.z+=r.vz*dt; r.mesh.position.set(r.x,r.y,r.z);
     _rdir.set(r.vx,r.vy,r.vz); if(_rdir.lengthSq()>0.0001){ _rdir.normalize(); r.mesh.quaternion.setFromUnitVectors(_RUP,_rdir); }   // nose follows velocity
-    if(Math.random()<0.7) spawnPart(r.x,r.y,r.z, (Math.random()-0.5)*2, -0.5, (Math.random()-0.5)*2, {color:0x5a4e42, size:1.1, life:0.5, smoke:true, grav:1.2, drag:1.6, op:0.5});  // exhaust trail
+    const tx=r.x-_rdir.x*1.2, ty=r.y-_rdir.y*1.2, tz=r.z-_rdir.z*1.2;   // tail (behind the nozzle)
+    for(let k=0;k<2;k++) spawnPart(tx+(Math.random()-0.5)*0.25, ty+(Math.random()-0.5)*0.25, tz+(Math.random()-0.5)*0.25, -_rdir.x*5+(Math.random()-0.5)*1.6, -_rdir.y*5+(Math.random()-0.5)*1.6, -_rdir.z*5+(Math.random()-0.5)*1.6, {color:0xfff0c0, color2:0xff3a10, size:0.7+Math.random()*0.5, grow:1.5, life:0.3+Math.random()*0.22, grav:0.3, drag:3});   // BURNING fire trail (cools white→red)
+    if(Math.random()<0.85) spawnPart(tx, ty, tz, (Math.random()-0.5)*1.2, 0.2, (Math.random()-0.5)*1.2, {color:0x261f1a, size:1.0, life:0.6, smoke:true, grav:0.5, drag:1.8, op:0.4});   // dark smoke behind the fire
+    const ud=r.mesh.userData; if(ud.plume){ ud.plume.scale.setScalar(1.9+Math.random()*0.5); ud.plume2.scale.setScalar(1.2+Math.random()*0.5); }   // flicker the engine flame
     if(r.y<=0.8 || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
       fuses.push({ x:r.tx, z:r.tz, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.tx,r.tz,r.aoeR) });
       ringPulse({x:r.tx,z:r.tz}, 0x886054, 3); }   // dust puff on impact
