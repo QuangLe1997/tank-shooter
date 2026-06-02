@@ -142,7 +142,7 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 **Súng rơi mở khoá dần theo màn (chỉ rơi súng thường, KHÔNG bao giờ rơi VIP):**
 - **Stage 1:** SMG · SHOTGUN · CRYO
 - **Stage ≥ 2:** + FLAK · CANNON · MINIGUN
-- **Stage ≥ 3:** + MISSILE · TESLA · PYRO (vòi phun lửa — Shop 2.200 xu)
+- **Stage ≥ 3:** + MISSILE · TESLA · PYRO (vòi lửa vòng cung — tia dày, tầm **20**, đốt cháy **~10s**; Shop 2.200 xu)
 - **Stage ≥ 4:** + HOWITZER (pháo cầu vồng — cũng mua được ở Shop 5.500 xu)
 - **RAILGUN · SIEGE ROCKET (VIP):** không rơi — chỉ mua bằng kim cương ở Shop.
 
@@ -172,4 +172,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z38** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling, **mua+nâng cấp drone & lính canh ở Shop·SUPPORT**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z39** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, **PYRO vòi lửa vòng cung tầm xa**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

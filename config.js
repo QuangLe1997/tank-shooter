@@ -39,7 +39,7 @@ export const BALANCE = {
   // FLAMETHROWER burn (damage-over-time): DoT = dps × level × dt. Each spray-tick adds `add` to level (caps at lvlMax);
   // level also creeps up on its own (`grow`/s) so any fire "cháy càng ngày càng lớn". `duration` resets on every tick.
   // → a light touch burns slowly (~3s to kill a grunt) but eventually finishes weak foes; sustained spray ramps to max → melts fast.
-  flame:{ dps:8, lvlMax:4, add:0.55, grow:0.2, duration:7, range:14, cone:0.78 },
+  flame:{ dps:8, lvlMax:4, add:0.55, grow:0.2, duration:10, range:20, cone:0.7 },
   // SUPPORT DRONE (power-up): a 22s orbiting gunship with a spinning gatling. Auto-acquires the nearest enemy
   // inside `detect` (reaches well beyond the player) and hoses it with a fast belt: `mag` rounds @ `fireCd` apart,
   // then a short `reload` (belt change / barrel cool). It is NOT invincible — enemy fire that crosses its orbit
