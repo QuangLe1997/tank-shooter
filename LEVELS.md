@@ -21,7 +21,7 @@
 | 4 | FOUNDRY | REAPER | 2.600 |
 | 5 | CITADEL | OVERLORD | 3.600 |
 
-> **CHỌN ĐỊA HÌNH (Z40):** ở màn Start có **picker** chọn chiến trường: **AUTO** (xoay 5 biome theo màn như bảng trên) hoặc **khoá 1 loại** cho cả lượt chơi. Có **6 địa hình**: DESERT · RUINS · TUNDRA · FOUNDRY · CITADEL + **MEADOW (đồng cỏ)**. Mỗi địa hình có nền gồ ghề + chi tiết riêng (cỏ / băng nứt / khe nham thạch / đá vỡ), **vật trang trí rải** (đá·bụi cỏ·băng·xỉ·gạch — tránh Core & điểm spawn nên không cản đường), tường viền + sương + ánh sáng đổi màu. Lưu ở `PROFILE.terrain` (-1 = AUTO).
+> **CHỌN ĐỊA HÌNH (Z40, dialog 3D Z48):** nút **BATTLEFIELD** ở màn Start mở **dialog gallery 3D** (thẻ nghiêng phối cảnh, thẻ chọn nhô lên + viền sáng "✓ ĐÃ CHỌN", mỗi thẻ có preview biome) — chọn **AUTO** (xoay 5 biome theo màn như bảng trên) hoặc **khoá 1 loại** cho cả lượt chơi; luôn có mặc định chọn sẵn. Có **6 địa hình**: DESERT · RUINS · TUNDRA · FOUNDRY · CITADEL + **MEADOW (đồng cỏ)**. Mỗi địa hình có nền gồ ghề + chi tiết riêng (cỏ / băng nứt / khe nham thạch / đá vỡ), **vật trang trí rải** (đá·bụi cỏ·băng·xỉ·gạch — tránh Core & điểm spawn nên không cản đường), tường viền + sương + ánh sáng đổi màu. Lưu ở `PROFILE.terrain` (-1 = AUTO).
 
 ---
 
@@ -174,4 +174,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng, xe tăng player uy lực hơn, khiên năng lượng hex cao cấp — *Z42–44 thuần hình ảnh*; **CRYO đóng băng 1.4→2.4s — Z45**; **PYRO luồng cột lửa liền mạch — Z46**; **bảng màu đạn 12 khẩu khác nhau — Z47**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng, xe tăng player uy lực hơn, khiên năng lượng hex cao cấp — *Z42–44 thuần hình ảnh*; **CRYO đóng băng 1.4→2.4s — Z45**; **PYRO luồng cột lửa liền mạch — Z46**; **bảng màu đạn 12 khẩu khác nhau — Z47**; **dialog chọn địa hình 3D hoành tráng — Z48**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
