@@ -134,7 +134,7 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 | ~39% | **SÚNG** (theo pool mở khoá theo màn, xem dưới) |
 | ~55% còn lại | **Power-up** ngẫu nhiên (rapid/power/speed/∞ammo/range/mag/bomb/freeze/drone/troops/armory…) |
 
-> **SUPPORT DRONE (Z37):** power-up `drone` triệu hồi 1 gunship bay quanh xe **22s**: 4 rotor xoay + **gatling 6 nòng xoáy** tự khoá địch gần nhất trong **bán kính 26** (bay cách xe **4.8**), xả băng **10 viên @ 0.11s** (≈11 dmg/viên) rồi **nạp 1.2s** → DPS bền ≈ **48**. Drone có **120 HP** — đạn địch bay trúng sẽ **bắn rơi được** (hiện thanh máu khi trúng), 0 HP → nổ lớn. Số liệu ở `config.js → BALANCE.drone`.
+> **SUPPORT DRONE (Z37, cân bằng lại Z41):** power-up `drone` triệu hồi 1 gunship bay quanh xe **22s**: 4 rotor xoay + **gatling 6 nòng xoáy** tự khoá địch gần nhất trong **bán kính 26** (bay cách xe **4.8**). **Đây là công cụ HỖ TRỢ, không phải vũ khí chính:** sát thương thấp (**6/viên** → cần ≥6 phát mới hạ 1 lính thường), **nhả đạn chậm** (0.4s), băng **6 viên**, **nạp cực lâu 5s** → DPS bền ≈ **5** (chỉ bào máu / kết liễu địch yếu). Drone có **120 HP** — đạn địch bay trúng sẽ **bắn rơi được** (hiện thanh máu khi trúng), 0 HP → nổ lớn. Số liệu ở `config.js → BALANCE.drone`.
 
 > **MUA & NÂNG CẤP đơn vị hỗ trợ — Shop·SUPPORT (Z38):**
 > - **STRIKE DRONE** (1.500 xu mua cấp 1 = **sở hữu drone hộ tống**, tự triển khai **mỗi màn**, bền cả màn thay vì 22s; +12% sát thương/cấp, tối đa 5 cấp). **DRONE: ROTORS** (−10% hồi đạn/cấp) · **DRONE: PLATING** (+40 HP/cấp).
@@ -174,4 +174,4 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
-**Last updated:** 2026-06-02 · khớp code tới **Z40** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, **6 địa hình chọn được + scatter trang trí**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+**Last updated:** 2026-06-02 · khớp code tới **Z41** (9 loại địch, 13 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).

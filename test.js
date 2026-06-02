@@ -138,9 +138,13 @@ for (const k of ['dur','orbit','height','detect','hp','dmg','bspeed','mag','fire
 ok(D.detect > D.orbit, 'drone detect radius reaches beyond its orbit (can engage past the player)');
 ok(D.fireRot > D.idleRot, 'gatling spins faster firing than idle (visible spin-up)');
 ok(D.mag >= 1 && D.fireCd < D.reload, 'belt is sane: ≥1 round & per-round gap shorter than the reload');
-// sustained DPS = mag·dmg / (mag·fireCd + reload) — strong support, not a wave-wipe
+ok(D.reload >= 4, `drone reload is deliberately long (${D.reload}s ≥ 4) — can't lean on it to win fights`);
+ok(D.fireCd >= 0.3, `drone cadence is slow (${D.fireCd}s ≥ 0.3) — a helper, not a primary weapon`);
+// sustained DPS = mag·dmg / (mag·fireCd + reload) — SUPPORT tier: low chip damage, far below the tank's own output
 const droneDps = D.mag * D.dmg / (D.mag * D.fireCd + D.reload);
-ok(droneDps > 15 && droneDps < 90, `drone sustained DPS (${droneDps.toFixed(1)}) sits in a balanced band (15–90)`);
+ok(droneDps > 1 && droneDps < 12, `drone sustained DPS (${droneDps.toFixed(1)}) is support-tier (1–12, well under a tank's)`);
+// it must take MANY rounds to down a basic grunt (~32 HP) → clearly a chipper, not a killer
+ok(32 / D.dmg >= 4, `drone needs ≥4 hits to kill a grunt (${Math.ceil(32/D.dmg)} hits) — chips, doesn't delete`);
 ok(D.hp >= 60 && D.hp <= 300, `drone HP (${D.hp}) is killable-but-durable (60–300) so enemy fire matters`);
 
 grp('SUPPORT UPGRADES — buyable drone + guard tracks');
