@@ -100,7 +100,7 @@ export const GUN_BLURB = {
   minigun:'Endless barrels, endless fire. Hold the line.', missile:'Lock on. It hunts. It never misses.',
   tesla:'Lightning that arcs from foe to foe.', railgun:'A single shot punches clean through a whole column.',
   rocket:'Lob it in — a whole zone simply vanishes.',
-  arty:'Rains shells from the sky — drops right onto cowards hiding behind cover.',
+  arty:'Heavy shells lobbed onto your mark — clears walls, bursts the instant they land.',
   mortar:'Lob shells over any wall — rapid indirect fire that bursts on impact.',
   flamer:'Set them ablaze — the fire only spreads, and it never lets go.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).

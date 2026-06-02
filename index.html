@@ -1386,25 +1386,34 @@ function makeGunBarrel(id){
       const spark=new THREE.Mesh(new THREE.SphereGeometry(0.085,10,8), glow(0xffd27a)); spark.position.y=2.93; tube.add(spark);
       const rmz=new THREE.Object3D(); rmz.position.y=2.5; tube.add(rmz); g.userData.muzzle=rmz;   // muzzle anchor = the tube mouth → rockets launch from here, along the tube
       tip=1.7; }
-  else if(id==='mortar'){   // ARC MORTAR: a stubby upward tube on a baseplate — lobs shells the SAME way as the rocket, but rapid + bursts on impact
-      const T=0.52, Z=0.1, SEG=28;
-      const plate=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.72,0.16,SEG), dark(0x2a2a22)); plate.position.set(0,Y+0.02,0.12); g.add(plate);   // baseplate
-      const tube=new THREE.Group(); tube.position.set(0, Y+0.28, 0.26); tube.rotation.set(T,0,Z); g.add(tube);   // ONE rigid tube, tilted to the same elevation as the rocket
-      const wall=new THREE.MeshStandardMaterial({color:0x4a5040,metalness:0.8,roughness:0.42,side:THREE.DoubleSide,envMapIntensity:0.9});
-      const shell=new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.4,1.55,SEG,1,true), wall); shell.position.y=0.66; tube.add(shell);              // round outer tube
-      const bore=new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.29,1.1,SEG,1,true), new THREE.MeshStandardMaterial({color:0x15120e,roughness:0.92,metalness:0.25,side:THREE.DoubleSide})); bore.position.y=0.85; tube.add(bore);   // dark bore (depth)
-      const cap=new THREE.Mesh(new THREE.CircleGeometry(0.36,SEG), dark(0x17150e)); cap.rotation.x=-Math.PI/2; cap.position.y=-0.12; tube.add(cap);   // closed bottom
-      const lip=new THREE.Mesh(new THREE.TorusGeometry(0.38,0.06,12,SEG), steel(0x34322c)); lip.rotation.x=Math.PI/2; lip.position.y=1.42; tube.add(lip);   // muzzle rim
-      for(const by of [0.15,0.95]){ const band=new THREE.Mesh(new THREE.TorusGeometry(0.41,0.045,10,SEG), dark(0x24221d)); band.rotation.x=Math.PI/2; band.position.y=by; tube.add(band); }
-      const brace=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.25,8), steel(0x444a3c)); brace.rotation.x=-0.62; brace.position.set(0,Y+0.55,-0.42); g.add(brace);   // bipod brace
-      const rmz=new THREE.Object3D(); rmz.position.y=1.42; tube.add(rmz); g.userData.muzzle=rmz;   // muzzle anchor = the tube mouth
-      tip=1.4; }
+  else if(id==='mortar'){   // ARC MORTAR: a SLIM, refined tube at a MODERATE elevation (not steep) — lobs a fast, flat shell that bursts on impact
+      const T=0.82, Z=0.07, SEG=26;   // moderate tilt (~43° elevation, matches MORTAR_ELEV) — "nghiêng vừa phải, k quá thẳng đứng"
+      const plate=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.54,0.13,SEG), dark(0x2a2a22)); plate.position.set(0,Y+0.02,0.14); g.add(plate);   // compact baseplate
+      const tube=new THREE.Group(); tube.position.set(0, Y+0.32, 0.2); tube.rotation.set(T,0,Z); g.add(tube);   // ONE rigid slim tube
+      const wall=new THREE.MeshStandardMaterial({color:0x4e5444,metalness:0.84,roughness:0.36,side:THREE.DoubleSide,envMapIntensity:0.95});
+      const shell=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.3,2.0,SEG,1,true), wall); shell.position.y=0.9; tube.add(shell);                 // SLIM + LONG barrel
+      const bore=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,1.4,SEG,1,true), new THREE.MeshStandardMaterial({color:0x15120e,roughness:0.92,metalness:0.25,side:THREE.DoubleSide})); bore.position.y=1.15; tube.add(bore);   // deep bore
+      const cap=new THREE.Mesh(new THREE.CircleGeometry(0.27,SEG), dark(0x17150e)); cap.rotation.x=-Math.PI/2; cap.position.y=-0.1; tube.add(cap);
+      const lip=new THREE.Mesh(new THREE.TorusGeometry(0.29,0.042,12,SEG), steel(0x3a382f)); lip.rotation.x=Math.PI/2; lip.position.y=1.82; tube.add(lip);   // fine muzzle rim
+      for(const by of [0.3,1.1]){ const band=new THREE.Mesh(new THREE.TorusGeometry(0.31,0.03,10,SEG), dark(0x24221d)); band.rotation.x=Math.PI/2; band.position.y=by; tube.add(band); }   // thin reinforcement rings
+      const brace=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.0,8), steel(0x444a3c)); brace.rotation.x=-0.5; brace.position.set(0.1,Y+0.42,-0.28); g.add(brace);   // slim bipod
+      const rmz=new THREE.Object3D(); rmz.position.y=1.9; tube.add(rmz); g.userData.muzzle=rmz;   // muzzle anchor = the tube mouth
+      tip=1.3; }
   else if(id==='flamer'){ tube(0.2,0.24,1.5,1.1,steel(0x6a4030)); const noz=new THREE.Mesh(new THREE.ConeGeometry(0.34,0.6,12),dark(0x33271f)); noz.rotation.x=Math.PI/2; noz.position.set(0,Y,2.05); g.add(noz);
     const tank=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,1.0,12),steel(0xb83a1e)); tank.rotation.z=Math.PI/2; tank.position.set(0,Y+0.42,-0.15); g.add(tank);   // fuel tank
     const pilot=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),glow(0xff6a1c)); pilot.position.set(0,Y,2.35); g.add(pilot); tip=2.35; }   // pilot flame
-  else if(id==='arty'){ const t=tube(0.3,0.34,1.9,1.2,steel(0x555240)); t.rotation.x=Math.PI/2-0.42; t.position.set(0,Y+0.5,1.0);   // thick barrel ANGLED UP (high-angle howitzer)
-    const brk=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.4,0.55,14),dark(0x33332b)); brk.rotation.x=Math.PI/2-0.42; brk.position.set(0,Y+1.25,1.78); g.add(brk);   // muzzle brake at the raised tip
-    const base=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,0.5,12),dark(0x2a2a22)); base.position.set(0,Y-0.1,0.5); g.add(base); tip=2.0; }   // recoil base
+  else if(id==='arty'){   // HOWITZER: a HEAVY angled tube (moderate elevation, bigger than the mortar) — lobs to the cursor + bursts on impact; muzzle at the barrel mouth
+      const T=0.82, Z=0, SEG=28;
+      const base=new THREE.Mesh(new RoundedBoxGeometry(0.82,0.42,0.92,3,0.08), dark(0x2a2a22)); base.position.set(0,Y+0.04,0.16); g.add(base);   // mount
+      const tube=new THREE.Group(); tube.position.set(0, Y+0.42, 0.28); tube.rotation.set(T,0,Z); g.add(tube);
+      const wall=new THREE.MeshStandardMaterial({color:0x57544c,metalness:0.85,roughness:0.34,side:THREE.DoubleSide,envMapIntensity:0.95});
+      const breech=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.46,0.5,SEG), dark(0x33332b)); breech.position.y=-0.02; tube.add(breech);   // chunky breech
+      const shell=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.38,2.05,SEG,1,true), wall); shell.position.y=0.95; tube.add(shell);          // thick barrel
+      const bore=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,1.3,SEG,1,true), new THREE.MeshStandardMaterial({color:0x15120e,roughness:0.92,metalness:0.25,side:THREE.DoubleSide})); bore.position.y=1.25; tube.add(bore);
+      const brk=new THREE.Mesh(new THREE.CylinderGeometry(0.44,0.38,0.4,SEG), dark(0x2e2e26)); brk.position.y=1.86; tube.add(brk);             // muzzle brake at the tip
+      for(const by of [0.45,1.35]){ const band=new THREE.Mesh(new THREE.TorusGeometry(0.4,0.05,10,SEG), dark(0x24221d)); band.rotation.x=Math.PI/2; band.position.y=by; tube.add(band); }
+      const rmz=new THREE.Object3D(); rmz.position.y=2.0; tube.add(rmz); g.userData.muzzle=rmz;   // muzzle at the barrel mouth
+      tip=2.0; }
   else { tube(0.2,0.2,1.0,1.3,dark(0x39392f)); tube(0.15,0.2,2.9,1.85,steel()); tube(0.26,0.26,0.5,3.15,steel(0x26262a)); tip=3.5; }   // rifle / default
   if(!g.userData.muzzle){ const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,tip); g.add(muzzle); g.userData.muzzle=muzzle; }   // rocket sets its own muzzle (tube mouth); others use the flat barrel tip
   g.userData.spin=spin;
@@ -2815,8 +2824,8 @@ const GUNS = {
   cryo:    { name:'CRYO',  svg:'snow', tier:2, dmg:10, fireCd:0.32, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:2.4, recoil:0.9, knock:0.8, fx:'ice' },          // control gun: low dmg, locks enemies solid for 2.4s/hit (boss immune)
   tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x5aa0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock' },    // chain lightning
   rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xff4533, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360, recoil:2.0, knock:0, fx:'blast' },  // lobbed, 2s fuse, wipes a big radius
-  arty:    { name:'HOWITZER', svg:'target', tier:3, dmg:36, fireCd:1.7, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'arty', aoeR:5.2, recoil:2.4, knock:0, fx:'blast' },  // INDIRECT: auto-lobs a high arc onto the farthest enemy — drops over walls onto targets in cover
-  mortar:  { name:'ARC MORTAR', svg:'target', tier:2, dmg:30, fireCd:0.95, mag:6, reload:3.4, bspeed:0, frags:1, spread:0, color:0xffc24a, r:0.5, life:0, special:'mortar', aoeR:5.0, bossDmg:60, recoil:1.1, knock:0, fx:'blast' },  // INDIRECT rapid: lobs EXACTLY like the rocket (cursor/nearest aim, over walls) but bursts ON IMPACT — mag-fed, lower power than SIEGE
+  arty:    { name:'HOWITZER', svg:'target', tier:3, dmg:36, fireCd:1.05, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'mortar', aoeR:6.0, bossDmg:90, recoil:1.6, knock:0, fx:'blast' },  // INDIRECT heavy: lobs to the CURSOR (nearest on mobile) over walls, bursts ON IMPACT — rapid + mag-fed; bigger boom than the mortar
+  mortar:  { name:'ARC MORTAR', svg:'target', tier:2, dmg:30, fireCd:0.85, mag:6, reload:3.4, bspeed:0, frags:1, spread:0, color:0xffc24a, r:0.5, life:0, special:'mortar', aoeR:5.0, bossDmg:60, recoil:1.1, knock:0, fx:'blast' },  // INDIRECT rapid: lobs like the rocket (cursor/nearest aim, over walls) but bursts ON IMPACT — mag-fed, lower power than SIEGE
   flamer:  { name:'PYRO', svg:'burst', tier:2, dmg:1, fireCd:0.05, mag:140, reload:3.2, bspeed:0, frags:1, spread:0, color:0xff6a1c, r:0, life:0, special:'flame', range:20, recoil:0.12, knock:0, fx:'spark' },  // arcing flame jet → sets enemies ALIGHT (burn DoT that grows + lingers ~10s)
 };
 // gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
@@ -2934,13 +2943,15 @@ function rocketTarget(){
   else { const tgt=nearestTarget(playerRange()*1.7); if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; } else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; } }
   const lim=ARENA-2; return { x:Math.max(-lim,Math.min(lim,tx)), z:Math.max(-lim,Math.min(lim,tz)) };
 }
-const ROCKET_G=30, ROCKET_LAND_Y=0.8, ROCKET_ELEV=Math.PI/2-0.52;   // launch elevation = the tube's tilt (~60° up) → a steep siege lob, matching the sky-pointing tube
-// solve the launch SPEED so a fixed-elevation lob from (sx,sy) lands exactly at (tx,tz): 0.8 = sy + D·tanθ − G·D²/(2 v²cos²θ)
-function rocketArc(sx,sy,sz,tx,tz){
-  const dx=tx-sx, dz=tz-sz, D=Math.max(0.001,Math.hypot(dx,dz)), th=ROCKET_ELEV, c=Math.cos(th), s=Math.sin(th);
-  const denom=Math.max(0.5, sy + D*Math.tan(th) - ROCKET_LAND_Y);
-  const v=Math.sqrt(ROCKET_G*D*D/(2*c*c*denom)), T=D/(v*c);
-  return { T, vx:v*c*dx/D, vz:v*c*dz/D, vy:v*s };
+const ROCKET_G=30, ROCKET_LAND_Y=0.8, ROCKET_ELEV=Math.PI/2-0.52;   // SIEGE rocket: steep ~60° lob (matches the tall sky-pointing launcher)
+const MORTAR_ELEV=Math.PI/2-0.82, MORTAR_G=46;                       // mortar/howitzer: MODERATE ~43° lob + stronger gravity → flatter & FAST, low hang-time so moving tanks can't walk out of it
+// solve the launch SPEED so a fixed-elevation lob from (sx,sy) lands exactly at (tx,tz): 0.8 = sy + D·tanθ − G·D²/(2 v²cos²θ). flight time = √(2(sy+D·tanθ−0.8)/G)
+function rocketArc(sx,sy,sz,tx,tz, elev, G){
+  elev = elev||ROCKET_ELEV; G = G||ROCKET_G;
+  const dx=tx-sx, dz=tz-sz, D=Math.max(0.001,Math.hypot(dx,dz)), c=Math.cos(elev), s=Math.sin(elev);
+  const denom=Math.max(0.5, sy + D*Math.tan(elev) - ROCKET_LAND_Y);
+  const v=Math.sqrt(G*D*D/(2*c*c*denom)), T=D/(v*c);
+  return { T, vx:v*c*dx/D, vz:v*c*dz/D, vy:v*s, G };   // return G so the shell carries the matching gravity
 }
 // aim preview: JUST a slim, faint dotted ARC tracing the rocket's flight path (no landing ring — the danger zone only shows once it's fired)
 // normal blending + depthTest:false → the line reads on ANY terrain and isn't occluded by geometry/core; small + low-opacity = subtle "tech" guide
@@ -2951,10 +2962,10 @@ function updateRocketAim(now){
   const g=GUNS[p.guns[p.gunIdx].id];
   if(!(g && (g.special==='rocket'||g.special==='mortar') && (!MOBILE ? S.pointerActive : !!nearestTarget(playerRange()*1.7)))){ hideRocketAim(); return; }
   const t=rocketTarget(), tx=t.x, tz=t.z;
-  p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube MOUTH (same point the rocket fires from)
-  const a=rocketArc(sx,sy,sz,tx,tz);
+  p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube MOUTH (same point the shell fires from)
+  const a = g.special==='mortar' ? rocketArc(sx,sy,sz,tx,tz, MORTAR_ELEV, MORTAR_G) : rocketArc(sx,sy,sz,tx,tz);   // mortar/howitzer use the flatter fast arc; rocket the steep one
   for(let i=0;i<aimDots.length;i++){ const f=i/(aimDots.length-1), tt=f*a.T, d=aimDots[i];
-    d.position.set(sx+a.vx*tt, Math.max(0.2, sy+a.vy*tt-0.5*ROCKET_G*tt*tt), sz+a.vz*tt);
+    d.position.set(sx+a.vx*tt, Math.max(0.2, sy+a.vy*tt-0.5*a.G*tt*tt), sz+a.vz*tt);
     d.scale.setScalar(0.28+f*0.14); d.material.opacity=0.62*(1-f*0.25); d.visible=true; }   // small + faint (just visible), gently fading toward the impact point
 }
 function fireRocket(now, g){
@@ -2963,7 +2974,7 @@ function fireRocket(now, g){
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch EXACTLY from the tube mouth, along the tube's elevation
   const a=rocketArc(sx,sy,sz,tx,tz);
   const mesh=makeRocketMesh(); mesh.position.set(sx,sy,sz); scene.add(mesh);
-  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:ROCKET_G, tx, tz, aoeR:g.aoeR||15, bossDmg:g.bossDmg||350, wipe:true, fuse:2, tt:0 });   // SIEGE: instakill the whole radius
+  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:a.G, tx, tz, aoeR:g.aoeR||15, bossDmg:g.bossDmg||350, wipe:true, fuse:2, tt:0 });   // SIEGE: instakill the whole radius
   // LAUNCH KICK: lurch the tank back (fireGun adds the launch shake + recoil + thump) + a flame burst at the tube mouth + dust/smoke at the cradle
   p.kbx -= Math.sin(p.aimSmoothed)*3.5; p.kbz -= Math.cos(p.aimSmoothed)*3.5;
   for(let i=0;i<10;i++){ const sp=4+Math.random()*9; spawnPart(sx, sy, sz, a.vx*0.12+(Math.random()-0.5)*sp, a.vy*0.12+Math.random()*3, a.vz*0.12+(Math.random()-0.5)*sp, {color:0xfff0c0, color2:0xff3a10, size:0.7+Math.random()*0.6, grow:1.7, life:0.26+Math.random()*0.2, grav:6, drag:3}); }   // muzzle blast at the tube mouth
@@ -2978,9 +2989,9 @@ function fireMortar(now, g, dmg){
   const p=S.player;
   const t=rocketTarget(), tx=t.x, tz=t.z;
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube mouth, same arc as the rocket
-  const a=rocketArc(sx,sy,sz,tx,tz);
+  const a=rocketArc(sx,sy,sz,tx,tz, MORTAR_ELEV, MORTAR_G);   // flatter + faster arc than the SIEGE rocket → lands quickly (low delay)
   const mesh=makeMortarShell(); mesh.position.set(sx,sy,sz); scene.add(mesh);
-  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:ROCKET_G, tx, tz, aoeR:g.aoeR||5, dmg, bossDmg:g.bossDmg||60, wipe:false, impact:true, tt:0 });   // impact:true → detonate on landing, no fuse
+  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:a.G, tx, tz, aoeR:g.aoeR||5, dmg, bossDmg:g.bossDmg||60, wipe:false, impact:true, tt:0 });   // impact:true → detonate on landing, no fuse
   for(let i=0;i<6;i++){ const sp=3+Math.random()*5; spawnPart(sx, sy, sz, a.vx*0.1+(Math.random()-0.5)*sp, a.vy*0.1+Math.random()*2, a.vz*0.1+(Math.random()-0.5)*sp, {color:0xfff0c0, color2:0xff8a20, size:0.4+Math.random()*0.3, grow:1.3, life:0.18+Math.random()*0.12, grav:5, drag:3}); }   // muzzle puff at the tube mouth
   muzzleLight.position.set(sx,sy,sz); muzzleLight.color.setHex(0xffd24a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4);
 }
@@ -3083,7 +3094,7 @@ function updateRockets(dt, now){
         for(let k=0;k<5;k++){ const aa=Math.random()*6.28, rr=Math.random()*aoeR*0.7; spawnPart(x+Math.cos(aa)*rr,1,z+Math.sin(aa)*rr,(Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*4,{color:0xfff0c0,color2:0xff4a14,size:0.8,grow:1.4,life:0.4,grav:3,drag:2}); }
         for(const e of enemies.slice()){ const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageEnemy(e, r.dmg||30); }
         if(boss&&boss.alive){ const dx=boss.pos.x-x, dz=boss.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageBoss(r.bossDmg||(r.dmg||30)*0.6); }
-        spawnDebris(pos, 1.3, 0xff7a3d); S.shake=Math.min(2.4, S.shake+0.9); sfx('bigexplode');
+        spawnDebris(pos, 1.0+aoeR*0.08, 0xff7a3d); S.shake=Math.min(3.0, S.shake + 0.5 + aoeR*0.08); sfx('bigexplode');   // bigger AoE → bigger boom (howitzer > mortar)
       } else {
         fuses.push({ x:r.tx, z:r.tz, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.tx,r.tz,r.aoeR) });
         ringPulse({x:r.tx,z:r.tz}, 0x886054, 3);   // dust puff on impact
@@ -3859,9 +3870,9 @@ function buildGunModel(id){
   const mag=_box(0.34,0.62,0.3,acc); mag.position.set(0.16,-0.52,0); grp.add(mag);
   const sight=_box(0.3,0.16,0.1,steel); sight.position.set(-0.12,0.34,0); grp.add(sight);
   const bar=(len,rad,y,z,mat)=>{ const c=_barX(rad,rad,len,mat||dark); c.position.set(0.75+len/2, y||0, z||0); grp.add(c); return c; };
-  if(id==='mortar'){ const b=bar(1.05,0.3,0.16,0,steel); b.rotation.z=0.42;   // short fat tube angled UP (mortar)
-      const mb=_barX(0.36,0.4,0.3,acc); mb.position.set(1.5,0.62,0); mb.rotation.z=0.42; grp.add(mb);   // muzzle
-      const plate=_box(0.62,0.16,0.72,dark); plate.position.set(0.42,-0.34,0); grp.add(plate); }   // baseplate
+  if(id==='mortar'){ const b=bar(1.5,0.19,0.22,0,steel); b.rotation.z=0.34;   // slim, longer tube at a moderate angle (refined mortar)
+      const mb=_barX(0.22,0.24,0.26,acc); mb.position.set(1.78,0.62,0); mb.rotation.z=0.34; grp.add(mb);   // fine muzzle
+      const plate=_box(0.5,0.14,0.6,dark); plate.position.set(0.38,-0.32,0); grp.add(plate); }   // compact baseplate
   else if(sv==='shotgun'){ bar(1.5,0.1,0.09,0.11); bar(1.5,0.1,0.09,-0.11); }
   else if(sv==='shell'){ bar(1.4,0.23,0.05,0); const mb=_barX(0.3,0.3,0.3,acc); mb.position.set(2.05,0.05,0); grp.add(mb); }     // cannon
   else if(sv==='minigun'){ const hub=_barX(0.34,0.34,0.5,steel); hub.position.set(1.05,0,0); grp.add(hub);
