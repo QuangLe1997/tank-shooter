@@ -70,7 +70,7 @@
 | **Đạn vòng cung** (mục tiêu xa → cong, trực diện → thẳng; va chạm vẫn 2D) | `arcDist`→`vy`/`by`, `ARC_G=110`, tích phân trọng lực trong `updateBullets`; trail theo `by` |
 | **Xe chết tan tành (chân thực)**: mảnh kim loại **hình dạng lộn xộn**, **nóng→nguội dần**, văng/xoay/**nảy thấp + nằm yên + mờ dần**; khói đen tức thì; xe to → nổ phụ + nhiều mảnh | `debris/spawnDebris/updateDebris`, `tankExplode` |
 
-### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z50) — hệ thống hiện hành
+### Lớp NỘI DUNG & CHIỀU SÂU (Z14 → Z51) — hệ thống hiện hành
 | Hệ thống | Tóm tắt | Ở đâu (grep) |
 |---|---|---|
 | **Kinh tế** (xu + 💎 kim cương) | Tích luỹ vĩnh viễn qua `PROFILE`; xu ≈ score/10 mỗi kill + boss + clear-màn; 💎 từ boss + loot. 1💎 = 200 xu (chuẩn quy đổi) | `addCoins/addDiamonds`, `BALANCE.coinBountyDiv/stageClearCoin/boss` |

@@ -273,7 +273,7 @@
   .tcard:hover{transform:rotateX(5deg) translateY(-5px) scale(1.03);border-color:rgba(140,191,63,.5);box-shadow:0 18px 36px rgba(0,0,0,.6);}
   .tcard:hover::before{transform:translateX(130%);}
   .tcard.on{transform:rotateX(0deg) translateZ(46px) scale(1.07);border-color:var(--green);box-shadow:0 0 0 2px var(--green),0 20px 44px rgba(140,191,63,.4),0 0 46px rgba(140,191,63,.28);}
-  .tcard.on::after{content:'✓ ĐÃ CHỌN';position:absolute;top:8px;right:8px;z-index:3;background:var(--green);color:#0a140a;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.5);}
+  .tcard.on::after{content:'✓ SELECTED';position:absolute;top:8px;right:8px;z-index:3;background:var(--green);color:#0a140a;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.5);}
   body.touch .tcard{width:152px;} body.touch .tcard canvas{height:94px;}
   /* the in-shop / game-over wallets stay compact (they're secondary) */
   .shop-wallet .w-chip,.go-wallet .w-chip{font-size:13px;padding:4px 12px;box-shadow:none;} .shop-wallet .w-chip .ic{width:15px;height:15px;}
@@ -682,10 +682,10 @@
 
 <!-- TERRAIN — grand 3D battlefield picker -->
 <div class="overlay hidden" id="terrainDlg">
-  <div class="title" style="font-size:clamp(24px,5.5vw,44px)">CHỌN ĐỊA HÌNH</div>
-  <div class="subtitle">Chọn chiến trường cho lượt chơi · <b>AUTO</b> = xoay theo màn</div>
+  <div class="title" style="font-size:clamp(24px,5.5vw,44px)">SELECT BATTLEFIELD</div>
+  <div class="subtitle">Pick your battlefield for this run · <b>AUTO</b> = rotates per stage</div>
   <div class="terrain-stage"><div class="terrain-gallery" id="terrainGallery"></div></div>
-  <div class="btn btn-primary" id="terrainDone" style="margin-top:8px">XÁC NHẬN ▶</div>
+  <div class="btn btn-primary" id="terrainDone" style="margin-top:8px">CONFIRM ▶</div>
 </div>
 
 <!-- SHOP — display-cabinet grid → tap a case for the fullsize 3D detail -->
@@ -724,7 +724,7 @@
     <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">RESUME ▶</div>
     <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>ARSENAL</span></div>
     <div class="btn" id="restartBtn" style="margin-bottom:12px">RESTART ↻</div>
-    <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MAIN MENU · CHỌN LẠI</span></div>
+    <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MAIN MENU</span></div>
   </div>
 </div>
 
@@ -756,7 +756,7 @@
   <div class="title" style="font-size:clamp(24px,5.5vw,42px)">STAGE BRIEFING</div>
   <div class="subtitle" id="br-sub">Boss ahead — choose your contract</div>
   <div id="brcards"></div>
-  <div class="br-hint">Mỗi hợp đồng đổi luật cả màn — chọn theo mục tiêu (xu · kim cương · cày cấp · liều lĩnh)</div>
+  <div class="br-hint">Each contract changes the rules for the whole stage — pick by your goal (coins · diamonds · farming · risk)</div>
 </div>
 
 <!-- VICTORY -->
@@ -3532,7 +3532,7 @@ function drawTerrainPreview(cv, b, isAuto){
 function buildTerrainDialog(){
   const g=document.getElementById('terrainGallery'); if(!g) return; g.innerHTML='';
   const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=-1)?PROFILE.terrain:-1;
-  const opts=[{i:-1,name:'AUTO',tag:'XOAY THEO MÀN',auto:true}].concat(BIOMES.map((b,i)=>({i,name:b.name,tag:'BIOME',b})));
+  const opts=[{i:-1,name:'AUTO',tag:'ROTATES PER STAGE',auto:true}].concat(BIOMES.map((b,i)=>({i,name:b.name,tag:'BIOME',b})));
   for(const o of opts){
     const card=document.createElement('div'); card.className='tcard'+(o.i===cur?' on':''); card.dataset.i=o.i;
     const cv=document.createElement('canvas'); cv.width=192; cv.height=120; card.appendChild(cv);

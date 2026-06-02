@@ -69,13 +69,13 @@ export const SHOP_UP = [
   {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
   {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+10% move speed',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
   // ----- SUPPORT units: buy & upgrade the guard squad and the escort drone -----
-  {key:'guards',   cat:'SUPPORT', icon:'shield', name:'CORE GUARDS',   per:'+1 lính canh Core',     costs:[{c:900},{c:2400},{d:16}]},
-  {key:'troops',   cat:'SUPPORT', icon:'up',     name:'GUARD: STRIKE', per:'+22% sát thương lính',  costs:[{c:600},{c:1500},{d:12}]},
-  {key:'guardRof', cat:'SUPPORT', icon:'dash',   name:'GUARD: DRILL',  per:'-10% hồi đạn lính',     costs:[{c:700},{c:1800},{d:12}]},
-  {key:'guardArm', cat:'SUPPORT', icon:'heart',  name:'GUARD: ARMOR',  per:'+18 HP mỗi lính',       costs:[{c:700},{c:1800},{d:12}]},
-  {key:'crew',     cat:'SUPPORT', icon:'shield', name:'TANK CREW',     per:'+1 lính cưỡi xe',       costs:[{c:900},{c:2400},{d:16}]},
-  {key:'dronePow', cat:'SUPPORT', icon:'drone',  name:'STRIKE DRONE',  per:'Mở khoá drone hộ tống · +12% sát thương/cấp', costs:[{c:1500},{c:3200},{c:5000},{d:28},{d:40}]},
-  {key:'droneRof', cat:'SUPPORT', icon:'dash',   name:'DRONE: ROTORS', per:'-10% hồi đạn drone',    costs:[{c:1200},{c:2800},{d:16}]},
+  {key:'guards',   cat:'SUPPORT', icon:'shield', name:'CORE GUARDS',   per:'+1 Core guard',          costs:[{c:900},{c:2400},{d:16}]},
+  {key:'troops',   cat:'SUPPORT', icon:'up',     name:'GUARD: STRIKE', per:'+22% guard damage',      costs:[{c:600},{c:1500},{d:12}]},
+  {key:'guardRof', cat:'SUPPORT', icon:'dash',   name:'GUARD: DRILL',  per:'-10% guard reload',      costs:[{c:700},{c:1800},{d:12}]},
+  {key:'guardArm', cat:'SUPPORT', icon:'heart',  name:'GUARD: ARMOR',  per:'+18 HP per guard',       costs:[{c:700},{c:1800},{d:12}]},
+  {key:'crew',     cat:'SUPPORT', icon:'shield', name:'TANK CREW',     per:'+1 tank crew',           costs:[{c:900},{c:2400},{d:16}]},
+  {key:'dronePow', cat:'SUPPORT', icon:'drone',  name:'STRIKE DRONE',  per:'Unlock escort drone · +12% damage/lvl', costs:[{c:1500},{c:3200},{c:5000},{d:28},{d:40}]},
+  {key:'droneRof', cat:'SUPPORT', icon:'dash',   name:'DRONE: ROTORS', per:'-10% drone reload',      costs:[{c:1200},{c:2800},{d:16}]},
   {key:'droneArm', cat:'SUPPORT', icon:'heart',  name:'DRONE: PLATING',per:'+40 HP drone',          costs:[{c:1200},{c:2800},{d:16}]},
 ];
 
@@ -98,12 +98,12 @@ export const GUN_BLURB = {
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [
-  { id:'steady',  name:'STEADY ADVANCE', icon:'shield', tag:'AN TOÀN',     desc:'+10% xu · không rủi ro thêm',                 mods:{ coinMul:1.1 } },
-  { id:'bounty',  name:'BOUNTY RUN',     icon:'coin',   tag:'KIẾM XU',     desc:'+70% xu · nhưng địch +20% máu',               mods:{ coinMul:1.7, enemyHpMul:1.2 } },
-  { id:'glass',   name:'GLASS CANNON',   icon:'burst',  tag:'LIỀU LĨNH',   desc:'+40% sát thương của bạn · địch +30% sát thương', mods:{ playerDmgMul:1.4, enemyDmgMul:1.3 } },
-  { id:'elite',   name:'ELITE HUNT',     icon:'shell',  tag:'SĂN ELITE',   desc:'Mỗi wave có 1 elite · +50% rơi đồ · địch +10% máu', mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
-  { id:'scav',    name:'SCAVENGER',      icon:'mag',    tag:'GOM ĐỒ',      desc:'×2 tỉ lệ rơi đồ (cày súng/cấp) · địch +20% sát thương', mods:{ lootChanceMul:2, enemyDmgMul:1.2 } },
-  { id:'warlord', name:"WARLORD'S CUT",  icon:'target', tag:'KIM CƯƠNG',   desc:'Boss rơi +2 💎 · nhưng địch +15% máu',         mods:{ bossDiaBonus:2, enemyHpMul:1.15 } },
+  { id:'steady',  name:'STEADY ADVANCE', icon:'shield', tag:'SAFE',      desc:'+10% coins · no extra risk',                       mods:{ coinMul:1.1 } },
+  { id:'bounty',  name:'BOUNTY RUN',     icon:'coin',   tag:'COINS',     desc:'+70% coins · but enemies +20% HP',                 mods:{ coinMul:1.7, enemyHpMul:1.2 } },
+  { id:'glass',   name:'GLASS CANNON',   icon:'burst',  tag:'HIGH RISK', desc:'+40% your damage · enemies +30% damage',           mods:{ playerDmgMul:1.4, enemyDmgMul:1.3 } },
+  { id:'elite',   name:'ELITE HUNT',     icon:'shell',  tag:'ELITE',     desc:'1 elite every wave · +50% loot · enemies +10% HP',  mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
+  { id:'scav',    name:'SCAVENGER',      icon:'mag',    tag:'LOOT',      desc:'×2 loot drops (farm guns/levels) · enemies +20% damage', mods:{ lootChanceMul:2, enemyDmgMul:1.2 } },
+  { id:'warlord', name:"WARLORD'S CUT",  icon:'target', tag:'DIAMONDS',  desc:'Boss drops +2 💎 · but enemies +15% HP',           mods:{ bossDiaBonus:2, enemyHpMul:1.15 } },
 ];
 
 export const UP_BLURB = {
