@@ -275,6 +275,22 @@
   .tcard.on{transform:rotateX(0deg) translateZ(46px) scale(1.07);border-color:var(--green);box-shadow:0 0 0 2px var(--green),0 20px 44px rgba(140,191,63,.4),0 0 46px rgba(140,191,63,.28);}
   .tcard.on::after{content:'✓ SELECTED';position:absolute;top:8px;right:8px;z-index:3;background:var(--green);color:#0a140a;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.5);}
   body.touch .tcard{width:152px;} body.touch .tcard canvas{height:94px;}
+  /* HOW TO PLAY field manual */
+  .guide{max-width:660px;width:100%;margin:14px auto 0;display:flex;flex-direction:column;gap:9px;max-height:60vh;overflow-y:auto;text-align:left;pointer-events:auto;padding:2px 8px;}
+  .guide-row{display:flex;gap:13px;align-items:flex-start;background:linear-gradient(180deg,rgba(20,28,14,.6),rgba(10,16,8,.6));border:1px solid var(--line);border-radius:12px;padding:11px 15px;}
+  .guide-row .g-ic{flex:0 0 auto;width:30px;height:30px;color:var(--green);}
+  .guide-row .g-ic svg{width:30px;height:30px;}
+  .guide-row .g-tx{display:flex;flex-direction:column;gap:3px;}
+  .guide-row .g-tx b{font-size:13px;letter-spacing:1.5px;color:#ffe8b6;}
+  .guide-row .g-tx span{font-size:12.5px;line-height:1.42;color:rgba(255,255,255,.84);}
+  body.touch .guide{max-height:66vh;gap:7px;} body.touch .guide-row{padding:8px 12px;}
+  /* first-match coach toast (HUD banner) */
+  #coach{position:fixed;top:96px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:14;pointer-events:none;
+    max-width:80vw;text-align:center;font-weight:800;letter-spacing:.6px;font-size:15px;color:#eafff0;
+    background:linear-gradient(180deg,rgba(18,30,12,.92),rgba(8,14,6,.92));border:1px solid rgba(140,191,63,.55);border-radius:12px;
+    padding:9px 18px;box-shadow:0 6px 24px rgba(0,0,0,.6),0 0 18px rgba(140,191,63,.25);opacity:0;transition:opacity .3s,transform .3s;}
+  #coach.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  body.touch #coach{top:64px;font-size:13px;}
   /* the in-shop / game-over wallets stay compact (they're secondary) */
   .shop-wallet .w-chip,.go-wallet .w-chip{font-size:13px;padding:4px 12px;box-shadow:none;} .shop-wallet .w-chip .ic{width:15px;height:15px;}
   .shop-wallet{margin:-2px 0 2px;}
@@ -621,6 +637,7 @@
 <div id="vignette"></div>
 <div id="corealarm"></div>
 <div id="popups"></div>
+<div id="coach"></div>
 
 <!-- mobile controls -->
 <div id="touch">
@@ -650,6 +667,7 @@
     <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
     <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b> WEAPONS</span></div>
     <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>SHOP — BUY UPGRADES</span></div>
+    <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span>HOW TO PLAY</span></div>
     <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET PROGRESS</span></div>
     <div class="help desktop-only">
       <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
@@ -670,6 +688,14 @@
     <input id="nickInput" type="text" maxlength="16" placeholder="NICKNAME" autocomplete="off" autocapitalize="characters" spellcheck="false" />
     <div class="btn btn-primary" id="nickSave" style="margin-top:14px">CONFIRM ▶</div>
   </div>
+</div>
+
+<!-- HOW TO PLAY — new-player field manual (auto-shown first launch; re-openable from the menu) -->
+<div class="overlay hidden" id="guide">
+  <div class="title" style="font-size:clamp(26px,6vw,46px)">HOW TO PLAY</div>
+  <div class="subtitle">Field manual, Commander — 30 seconds to mastery</div>
+  <div class="guide" id="guideBody"></div>
+  <div class="btn btn-primary" id="guideDone" style="margin-top:10px">GOT IT ▶</div>
 </div>
 
 <!-- ARSENAL / LOADOUT (pick ≤5 weapons for battle) -->
@@ -3336,7 +3362,7 @@ function openBriefing(opts){
   show('briefing'); sfx('powerup');
 }
 function chooseContract(c){
-  S.contract=c; applyContractHUD(); hide('briefing'); S.mode='playing';
+  S.contract=c; applyContractHUD(); hide('briefing'); S.mode='playing'; coachFirstRun();   // first-ever match → show coach toasts (once)
   const ctx=_brCtx||{}; _brCtx=null;
   WAVE.active=false; S.wave=0;
   const now=performance.now()/1000;
@@ -3548,9 +3574,39 @@ function closeTerrainDlg(){ hide('terrainDlg'); show('start'); buildTerrainPicke
 // ---- nickname (first launch / editable) ----
 function openNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.value=PROFILE.nickname||''; hide('start'); show('nick'); setTimeout(()=>{ try{ inp&&inp.focus(); }catch(e){} }, 60); }
 function saveNick(){ const inp=document.getElementById('nickInput'); let v=((inp&&inp.value)||'').trim().slice(0,16) || 'COMMANDER';
-  PROFILE.nickname=v; saveProfile(); hide('nick'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
+  PROFILE.nickname=v; saveProfile(); hide('nick'); if(!PROFILE.onboarded){ openGuide(); } else if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
 tapBtn('nickSave', saveNick);
 { const inp=document.getElementById('nickInput'); if(inp) inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveNick(); } }); }
+
+// ---- HOW TO PLAY: new-player field manual (auto first launch, re-openable) + first-match coach toasts ----
+function buildGuide(){
+  const wrap=document.getElementById('guideBody'); if(!wrap) return; wrap.innerHTML='';
+  const m=MOBILE;
+  const rows=[
+    ['bunker','OBJECTIVE','Defend the CORE. Survive 5 waves, then beat the stage BOSS. Clear all 5 stages to win — New Game+ then escalates forever.'],
+    ['tank', m?'DRIVE':'MOVE & AIM', m?'Left joystick to drive — your turret auto-aims & auto-fires at the nearest enemy in range.':'WASD to move · mouse to aim · click or hold to FIRE.'],
+    ['dash','DASH & ABILITY', m?'DASH = quick dodge with brief invincibility · SKILL = your equipped ability.':'SPACE = dash (brief invincibility) · E = ability.'],
+    ['rifle','ARSENAL & GUNS','Collect guns from drops & the SHOP. Equip up to 5 in ARSENAL and swap mid-fight — each gun has its own feel & tracer colour.'],
+    ['coin','ECONOMY & UPGRADES','Earn coins + 💎 diamonds. Spend in the SHOP on permanent upgrades and support units (drone · guards). Duplicate guns level up (Mastery).'],
+    ['target','CONTRACTS & TERRAIN','Before each stage, pick a CONTRACT (risk vs reward). Choose your BATTLEFIELD from the menu.'],
+    ['alert','STAY ALIVE','Grab power-ups (heal · shield · bomb · drone). Watch for the red ARTILLERY ring — move off it before it lands!'],
+  ];
+  for(const [ic,h,t] of rows){ const r=document.createElement('div'); r.className='guide-row';
+    r.innerHTML='<span class="g-ic"></span><div class="g-tx"><b>'+h+'</b><span>'+t+'</span></div>';
+    r.querySelector('.g-ic').appendChild(iconEl(ic)); wrap.appendChild(r); }
+}
+function openGuide(){ buildGuide(); hide('start'); hide('nick'); show('guide'); sfx('click'); }
+function closeGuide(){ hide('guide'); if(!PROFILE.onboarded){ PROFILE.onboarded=true; saveProfile(); } show('start'); refreshStartUI(); sfx('click'); }
+tapBtn('guideBtn', openGuide); tapBtn('guideDone', closeGuide);
+let _coachT=null;
+function coach(msg){ const el=document.getElementById('coach'); if(!el) return; el.textContent=msg; el.classList.add('on'); clearTimeout(_coachT); _coachT=setTimeout(()=>el.classList.remove('on'), 3200); }
+function coachFirstRun(){
+  if(PROFILE.coached) return; PROFILE.coached=true; saveProfile();
+  const tips = MOBILE
+    ? ['Joystick to drive — your turret auto-fires','Defend the CORE — don’t let it fall','Survive 5 waves → the BOSS appears','Grab power-ups to stay alive']
+    : ['WASD to move · mouse to aim · hold to FIRE','SPACE to dash out of danger','Defend the CORE — don’t let it fall','Survive 5 waves → the BOSS appears'];
+  tips.forEach((t,i)=> setTimeout(()=>{ if(S.mode==='playing') coach(t); }, 1500 + i*3400));
+}
 
 // ---- arsenal / loadout (pick ≤5 from your collection) ----
 let _ldSel=[];
@@ -4092,7 +4148,7 @@ function drawRadar(){
 const PROFILE_KEY='steelsiege.profile';
 const BEST_KEY='steelsiege.best';        // legacy high-score key (migrated into the profile)
 const LOADOUT_MAX=5;                      // bring at most 5 weapons into a fight (quick-swap rotation)
-function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{}, terrain:-1 }; }
+function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{}, terrain:-1, onboarded:false, coached:false }; }
 function loadProfile(){
   let pr=null; try{ pr=JSON.parse(localStorage.getItem(PROFILE_KEY)); }catch(e){}
   if(!pr || typeof pr!=='object'){ pr=defaultProfile(); try{ const old=JSON.parse(localStorage.getItem(BEST_KEY)); if(old&&old.score) pr.best={score:old.score|0, stage:old.stage|0||1}; }catch(e){} }
@@ -4108,6 +4164,7 @@ function loadProfile(){
   if(!pr.upgrades || typeof pr.upgrades!=='object') pr.upgrades={};                  // { key: level } bought stat upgrades
   if(!pr.gunXp || typeof pr.gunXp!=='object') pr.gunXp={};                           // { gunId: dup-pickup count } → MASTERY level
   pr.terrain = (Number.isInteger(pr.terrain) && pr.terrain>=-1 && pr.terrain<BIOMES.length) ? pr.terrain : -1;   // chosen battlefield (-1 = AUTO campaign)
+  pr.onboarded = !!pr.onboarded; pr.coached = !!pr.coached;     // first-launch guide + first-match coach shown?
   return pr;
 }
 function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} }
@@ -4518,6 +4575,7 @@ updateSpellHUD();     // show the equipped spell's icon from the start
 refreshBestLine();    // show the saved high score on the title screen
 refreshStartUI();     // greeting + CONTINUE button from the saved profile
 if(!PROFILE.nickname) openNick();   // first launch → ask for a call sign
+else if(!PROFILE.onboarded) openGuide();   // returning player who hasn't seen the field manual → show it once
 
 // diagnostics hooks (used for automated testing)
 window._game = S;
