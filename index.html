@@ -284,6 +284,15 @@
   .guide-row .g-tx b{font-size:13px;letter-spacing:1.5px;color:#ffe8b6;}
   .guide-row .g-tx span{font-size:12.5px;line-height:1.42;color:rgba(255,255,255,.84);}
   body.touch .guide{max-height:66vh;gap:7px;} body.touch .guide-row{padding:8px 12px;}
+  /* SETTINGS panel */
+  .settings{max-width:540px;width:100%;margin:14px auto 0;display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
+  .set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,rgba(20,28,14,.6),rgba(10,16,8,.6));border:1px solid var(--line);border-radius:12px;padding:11px 16px;}
+  .set-l{font-size:13px;font-weight:800;letter-spacing:1.5px;color:#ffe8b6;}
+  .seg{display:inline-flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
+  .seg-chip{cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--ink);padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:rgba(10,16,8,.6);transition:border-color .12s,background .12s;white-space:nowrap;}
+  .seg-chip:hover{border-color:rgba(140,191,63,.5);}
+  .seg-chip.on{border-color:var(--green);background:rgba(140,191,63,.2);color:#fff;box-shadow:0 0 8px rgba(140,191,63,.35);}
+  .seg-chip small{opacity:.6;font-size:9px;margin-left:4px;font-weight:800;}
   /* first-match coach toast (HUD banner) */
   #coach{position:fixed;top:96px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:14;pointer-events:none;
     max-width:80vw;text-align:center;font-weight:800;letter-spacing:.6px;font-size:15px;color:#eafff0;
@@ -668,6 +677,7 @@
     <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b> WEAPONS</span></div>
     <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>SHOP — BUY UPGRADES</span></div>
     <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span>HOW TO PLAY</span></div>
+    <div class="btn btn-mini" id="settingsBtn"><span class="ic" data-icon="wrench"></span><span>SETTINGS</span></div>
     <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET PROGRESS</span></div>
     <div class="help desktop-only">
       <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
@@ -696,6 +706,20 @@
   <div class="subtitle">Field manual, Commander — 30 seconds to mastery</div>
   <div class="guide" id="guideBody"></div>
   <div class="btn btn-primary" id="guideDone" style="margin-top:10px">GOT IT ▶</div>
+</div>
+
+<!-- SETTINGS — difficulty · audio · quality -->
+<div class="overlay hidden" id="settings">
+  <div class="title" style="font-size:clamp(26px,6vw,46px)">SETTINGS</div>
+  <div class="subtitle">Difficulty · Audio · Quality</div>
+  <div class="settings">
+    <div class="set-row"><span class="set-l">DIFFICULTY</span><div class="seg" id="setDiff"></div></div>
+    <div class="set-row"><span class="set-l">SOUND FX</span><div class="seg" id="setSound"></div></div>
+    <div class="set-row"><span class="set-l">MUSIC</span><div class="seg" id="setMusic"></div></div>
+    <div class="set-row"><span class="set-l">QUALITY</span><div class="seg" id="setQual"></div></div>
+    <div class="set-row"><span class="set-l">FULLSCREEN</span><div class="seg"><div class="seg-chip" id="setFs">TOGGLE ⛶</div></div></div>
+  </div>
+  <div class="btn btn-primary" id="settingsDone" style="margin-top:12px">DONE ▶</div>
 </div>
 
 <!-- ARSENAL / LOADOUT (pick ≤5 weapons for battle) -->
@@ -1557,11 +1581,14 @@ function sfx(name){
 }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
 function setMuted(m){ muted=m; if(master) master.gain.value = m?0:0.5; const b=document.querySelector('#muteBtn .ic'); if(b) setIcon(b, m?'mute':'sound'); }
+function setMusicOn(on){ if(musicBus) musicBus.gain.value = on?0.5:0; }                                  // music track on/off (independent of SFX)
+function setQuality(q){ S.dpr = q==='low' ? 1 : Math.min(2, devicePixelRatio||1);   // explicit Low/High override (adaptive FPS may still lower High later)
+  try{ renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(); }catch(e){} }
 function startMusic(){
   const a=audio(); if(!a || musicSrc) return;
   try{
     if(!songBuf) songBuf = renderSong(a);
-    if(!musicBus){ musicBus=a.createGain(); musicBus.gain.value=0.5; musicBus.connect(master); }
+    if(!musicBus){ musicBus=a.createGain(); musicBus.gain.value=(PROFILE.music===false?0:0.5); musicBus.connect(master); }
     musicSrc=a.createBufferSource(); musicSrc.buffer=songBuf; musicSrc.loop=true; musicSrc.connect(musicBus); musicSrc.start();
   }catch(e){}
 }
@@ -1850,7 +1877,7 @@ function spawnEnemy(type, x, z){
   const def=ENEMY_DEFS[type];
   const mesh=getEnemyMesh(type);
   mesh.position.set(x,0,z);
-  const hp0 = Math.round(def.hp*loopHpMul()*cMod('enemyHpMul'));   // CONTRACT may toughen enemies
+  const hp0 = Math.round(def.hp*loopHpMul()*cMod('enemyHpMul')*diffHpMul());   // ×NG+ loop ×CONTRACT ×DIFFICULTY
   const e={ type, def, mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle,
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
     hp:hp0, maxHp:hp0, r:1.5*def.scale, facing:0, aim:0,
@@ -1959,7 +1986,7 @@ function updateEnemies(dt, now){
         const spread = A.spreadBase * (1 - ds*A.spreadDrop) * (def.accurate?A.accurateMul:1) / (1 + (S.loop||0)*A.loopAcc);   // ACCURACY tightens hard with stage + NG+ loop
         aimA += (Math.random()-0.5) * Math.max(0.02, spread);
         const rateMul = A.rateBase - A.rateDrop*ds;
-        const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul');
+        const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul') * diffDmgMul();
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
         spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1});
         spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:col,size:def.heavy?1.4:1,life:0.1,grav:0,drag:7});
@@ -2041,7 +2068,7 @@ function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1);
   tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x, e._fx||'fire');   // burst into this tank's own parts (death FX styled by the killing gun)
   bumpCombo();
-  const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul();
+  const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul() * diffRewardMul();
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
   addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult * cMod('coinMul'))));   // coin bounty ≈ 1/10 of base score, ×elite ×loop ×CONTRACT
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
@@ -2062,6 +2089,12 @@ function loopHpMul(){ return 1 + (S.loop||0)*BALANCE.loop.hp; }      // enemy / 
 function loopDmgMul(){ return 1 + (S.loop||0)*BALANCE.loop.dmg; }    // enemy damage
 function loopBossMul(){ return 1 + (S.loop||0)*BALANCE.loop.boss; }  // boss HP
 function loopRewardMul(){ return 1 + (S.loop||0)*BALANCE.loop.reward; } // coins / score payout
+// player-chosen DIFFICULTY (RECRUIT/SOLDIER/VETERAN) — scales enemy HP/damage + reward, on top of loop & contract
+const DIFF_META = { recruit:{label:'RECRUIT',tag:'EASY'}, soldier:{label:'SOLDIER',tag:'NORMAL'}, veteran:{label:'VETERAN',tag:'HARD'} };   // UI labels (numbers live in config.js BALANCE.difficulty)
+function diffCfg(){ return BALANCE.difficulty[PROFILE.difficulty] || BALANCE.difficulty.soldier; }
+function diffHpMul(){ return diffCfg().hp; }
+function diffDmgMul(){ return diffCfg().dmg; }
+function diffRewardMul(){ return diffCfg().reward; }
 function buildWaveQueue(stage, wave){
   const n = Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage);   // eased: s1w1=4 → s5w5=~15 (was up to 18)
   // weighted pool; tougher/new types unlock at later stages
@@ -2321,7 +2354,7 @@ function killBoss(now){
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul'))); updateHUD(); saveProgress();   // stage-clear coin bonus (×CONTRACT) + advance the resumable checkpoint
+  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress();   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 1900); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 1800); }
 }
@@ -2698,7 +2731,7 @@ if(mFireEl){
 applyAutoFire();
 // mute toggle (desktop + mobile)
 const muteBtnEl=document.getElementById('muteBtn');
-const toggleMute=e=>{ if(e){e.preventDefault();e.stopPropagation();} audio(); setMuted(!muted); };
+const toggleMute=e=>{ if(e){e.preventDefault();e.stopPropagation();} audio(); setMuted(!muted); PROFILE.sound=!muted; saveProfile(); };
 muteBtnEl.addEventListener('click', toggleMute);
 muteBtnEl.addEventListener('touchstart', toggleMute, {passive:false});
 // fullscreen (immersive, like a video). iPhone Safari lacks the API → button is a graceful no-op there.
@@ -3607,6 +3640,22 @@ function coachFirstRun(){
     : ['WASD to move · mouse to aim · hold to FIRE','SPACE to dash out of danger','Defend the CORE — don’t let it fall','Survive 5 waves → the BOSS appears'];
   tips.forEach((t,i)=> setTimeout(()=>{ if(S.mode==='playing') coach(t); }, 1500 + i*3400));
 }
+// ---- SETTINGS: difficulty · audio · quality · fullscreen ----
+function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
+function buildSettings(){
+  const D=document.getElementById('setDiff'); if(D){ D.innerHTML=''; for(const k of ['recruit','soldier','veteran']){ const meta=DIFF_META[k];
+    D.appendChild(_segChip(meta.label, PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); buildSettings(); sfx('click'); }, meta.tag)); } }
+  const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('ON',PROFILE.sound,()=>_setSnd(true))); So.appendChild(_segChip('OFF',!PROFILE.sound,()=>_setSnd(false))); }
+  const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('ON',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('OFF',!PROFILE.music,()=>_setMus(false))); }
+  const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('HIGH',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('LOW',PROFILE.quality==='low',()=>_setQ('low'))); }
+}
+function _setSnd(on){ PROFILE.sound=on; saveProfile(); audio(); setMuted(!on); buildSettings(); }
+function _setMus(on){ PROFILE.music=on; saveProfile(); audio(); setMusicOn(on); buildSettings(); }
+function _setQ(q){ PROFILE.quality=q; saveProfile(); setQuality(q); buildSettings(); sfx('click'); }
+function openSettings(){ buildSettings(); hide('start'); show('settings'); sfx('click'); }
+function closeSettings(){ hide('settings'); show('start'); refreshStartUI(); sfx('click'); }
+tapBtn('settingsBtn', openSettings); tapBtn('settingsDone', closeSettings);
+{ const fs=document.getElementById('setFs'); if(fs) tapEl(fs, ()=>{ toggleFullscreen(); sfx('click'); }); }
 
 // ---- arsenal / loadout (pick ≤5 from your collection) ----
 let _ldSel=[];
@@ -4148,7 +4197,7 @@ function drawRadar(){
 const PROFILE_KEY='steelsiege.profile';
 const BEST_KEY='steelsiege.best';        // legacy high-score key (migrated into the profile)
 const LOADOUT_MAX=5;                      // bring at most 5 weapons into a fight (quick-swap rotation)
-function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{}, terrain:-1, onboarded:false, coached:false }; }
+function defaultProfile(){ return { nickname:'', ownedGuns:['rifle'], loadout:['rifle'], best:{score:0,stage:1}, save:null, coins:0, diamonds:0, upgrades:{}, gunXp:{}, terrain:-1, onboarded:false, coached:false, difficulty:'soldier', sound:true, music:true, quality:'high' }; }
 function loadProfile(){
   let pr=null; try{ pr=JSON.parse(localStorage.getItem(PROFILE_KEY)); }catch(e){}
   if(!pr || typeof pr!=='object'){ pr=defaultProfile(); try{ const old=JSON.parse(localStorage.getItem(BEST_KEY)); if(old&&old.score) pr.best={score:old.score|0, stage:old.stage|0||1}; }catch(e){} }
@@ -4165,6 +4214,9 @@ function loadProfile(){
   if(!pr.gunXp || typeof pr.gunXp!=='object') pr.gunXp={};                           // { gunId: dup-pickup count } → MASTERY level
   pr.terrain = (Number.isInteger(pr.terrain) && pr.terrain>=-1 && pr.terrain<BIOMES.length) ? pr.terrain : -1;   // chosen battlefield (-1 = AUTO campaign)
   pr.onboarded = !!pr.onboarded; pr.coached = !!pr.coached;     // first-launch guide + first-match coach shown?
+  pr.difficulty = (pr.difficulty && BALANCE.difficulty[pr.difficulty]) ? pr.difficulty : 'soldier';   // RECRUIT/SOLDIER/VETERAN
+  pr.sound = pr.sound!==false; pr.music = pr.music!==false;     // audio prefs (default on)
+  pr.quality = (pr.quality==='low'||pr.quality==='high') ? pr.quality : 'high';
   return pr;
 }
 function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} }
@@ -4574,6 +4626,7 @@ initIcons();          // paint all static HUD/menu glyphs (custom SVG icon set)
 updateSpellHUD();     // show the equipped spell's icon from the start
 refreshBestLine();    // show the saved high score on the title screen
 refreshStartUI();     // greeting + CONTINUE button from the saved profile
+muted = !PROFILE.sound; setMuted(muted); setQuality(PROFILE.quality);   // apply saved audio + quality prefs
 if(!PROFILE.nickname) openNick();   // first launch → ask for a call sign
 else if(!PROFILE.onboarded) openGuide();   // returning player who hasn't seen the field manual → show it once
 

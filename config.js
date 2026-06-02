@@ -40,6 +40,13 @@ export const BALANCE = {
   // level also creeps up on its own (`grow`/s) so any fire "cháy càng ngày càng lớn". `duration` resets on every tick.
   // → a light touch burns slowly (~3s to kill a grunt) but eventually finishes weak foes; sustained spray ramps to max → melts fast.
   flame:{ dps:8, lvlMax:4, add:0.55, grow:0.2, duration:10, range:20, cone:0.7 },
+  // DIFFICULTY presets (player-chosen). Scale enemy HP/damage + reward payout. soldier = baseline (1.0); recruit
+  // eases new players in; veteran ramps the threat AND the rewards. Multiplies on top of NG+ loop & contract mods.
+  difficulty:{
+    recruit:{ hp:0.65, dmg:0.6, reward:0.8 },
+    soldier:{ hp:1.0,  dmg:1.0, reward:1.0 },
+    veteran:{ hp:1.5,  dmg:1.4, reward:1.6 },
+  },
   // SUPPORT DRONE (power-up): a 22s orbiting escort with a gatling. It is a HELPER, NOT a primary weapon —
   // low per-round damage (chips HP / finishes weak foes; it takes MANY rounds to down a tank), a slow cadence,
   // a small belt and a DELIBERATELY long reload so the player can't lean on it to win fights. It auto-acquires the
