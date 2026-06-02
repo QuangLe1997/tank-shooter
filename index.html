@@ -723,7 +723,8 @@
   <div class="panel">
     <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">RESUME ▶</div>
     <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>ARSENAL</span></div>
-    <div class="btn" id="restartBtn">RESTART ↻</div>
+    <div class="btn" id="restartBtn" style="margin-bottom:12px">RESTART ↻</div>
+    <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MAIN MENU · CHỌN LẠI</span></div>
   </div>
 </div>
 
@@ -738,7 +739,8 @@
     </div>
     <div class="go-best" id="go-best"></div>
     <div class="go-wallet" id="go-wallet"></div>
-    <div class="btn btn-primary" id="retryBtn">RETRY ↻</div>
+    <div class="btn btn-primary" id="retryBtn" style="margin-bottom:10px">RETRY ↻</div>
+    <div class="btn btn-mini" id="goHomeBtn"><span class="ic" data-icon="bunker"></span><span>MAIN MENU</span></div>
   </div>
 </div>
 
@@ -3448,6 +3450,19 @@ function togglePause(){
   if(S.mode==='playing'){ S.mode='paused'; show('pause'); saveProfile(); }
   else if(S.mode==='paused'){ S.mode='playing'; hide('pause'); }
 }
+// end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
+function quitToMenu(){
+  S.firing=false;
+  for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
+  for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
+  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons();
+  if(boss){ scene.remove(boss.mesh); boss=null; }
+  if(S.player){ S.player.pos.set(0,0,ARENA*0.55); S.player.vel.set(0,0,0); S.player.mesh.position.set(0,0,ARENA*0.55); S.player.mesh.visible=true; }   // park at spawn for a clean home
+  document.body.classList.remove('corelow','shopopen'); _alarmAt=0;
+  S.mode='start';
+  hide('pause'); hide('gameover'); show('start');
+  refreshStartUI(); refreshWallet(); saveProfile(); sfx('click');
+}
 function show(id){ document.getElementById(id).classList.remove('hidden'); }
 function hide(id){ document.getElementById(id).classList.add('hidden'); }
 
@@ -3458,6 +3473,7 @@ addEventListener('pointerdown', ()=>skipIntro());
 addEventListener('keydown', ()=>skipIntro());
 document.getElementById('resumeBtn').onclick = togglePause;
 document.getElementById('restartBtn').onclick = startGame;
+tapBtn('homeBtn', quitToMenu); tapBtn('goHomeBtn', quitToMenu);   // pause / game-over → back to home menu
 document.getElementById('retryBtn').onclick = startGame;
 document.getElementById('retryBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
 const ngp=document.getElementById('ngplusBtn');
