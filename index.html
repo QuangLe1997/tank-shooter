@@ -1693,6 +1693,41 @@ function addTrail(x,y,z,color,size,life){ const s=trailPool.pop(); if(!s) return
 function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i]; t.life-=dt;
   if(t.life<=0){ t.s.visible=false; t.s.material.opacity=0; trailPool.push(t.s); trails.splice(i,1); continue; }
   t.s.material.opacity=(t.life/t.max)*0.95; } }
+// ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
+const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
+function _lockMat(){ return new THREE.MeshBasicMaterial({color:0xff7a2e, transparent:true, opacity:0.92, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}); }
+for(let i=0;i<8;i++){
+  const grp=new THREE.Group(), bgrp=new THREE.Group(), rgrp=new THREE.Group(), hgrp=new THREE.Group();
+  const R=1.6, arm=0.62, th=0.11;
+  for(let c=0;c<4;c++){ const sx=c&1?-1:1, sz=c<2?1:-1;                              // 4 corner brackets (L-shapes)
+    const h=new THREE.Mesh(new THREE.BoxGeometry(arm,th,th), _lockMat()); h.position.set(sx*(R-arm/2),0,sz*R);
+    const v=new THREE.Mesh(new THREE.BoxGeometry(th,th,arm), _lockMat()); v.position.set(sx*R,0,sz*(R-arm/2));
+    bgrp.add(h,v); }
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.2,0.035,8,44), _lockMat()); ring.rotation.x=Math.PI/2; rgrp.add(ring);
+  const hex=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.05,6,6), _lockMat());     hex.rotation.x=Math.PI/2; hgrp.add(hex);
+  grp.add(bgrp,rgrp,hgrp); grp.visible=false; grp.renderOrder=6; scene.add(grp);
+  lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, life:0, max:0.55, snap:0});
+}
+function targetAlive(t){ return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }   // dead targets splice out of enemies[]
+function acquireLock(b){ let best=null, bd=1e9;                                     // nearest live enemy/boss to the missile itself
+  for(const e of enemies){ const d=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2; if(d<bd){bd=d;best=e;} }
+  if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
+  return best; }
+function requestLock(t){
+  for(const L of lockFX){ if(L.tgt===t && L.life>0){ L.life=L.max; return; } }      // already locked → keep alive while a missile chases it
+  const L=lockFX.find(L=>L.life<=0); if(!L) return;                                 // grab a free reticle (skip if all 8 busy)
+  L.tgt=t; L.life=L.max; L.snap=0; L.bgrp.scale.setScalar(2.5); L.grp.visible=true; L.grp.position.set(t.pos.x,1.4,t.pos.z);
+  ringPulse(t.pos, 0xff7a3a, 1.7); sfx('beep'); }                                    // acquisition: scan-ring pulse + tech blip
+function updateLocks(dt){
+  for(const L of lockFX){ if(L.life<=0) continue;
+    if(!targetAlive(L.tgt)) L.life-=dt*2.4;                                          // target gone → fade fast
+    else { L.life-=dt; L.grp.position.set(L.tgt.pos.x,1.4,L.tgt.pos.z); }            // else track it
+    if(L.life<=0){ L.grp.visible=false; L.tgt=null; continue; }
+    L.snap=Math.min(1, L.snap+dt*7); L.bgrp.scale.setScalar(1 + (1-L.snap)*1.5);     // brackets fly inward & snap shut on acquire
+    L.bgrp.rotation.y += dt*0.8; L.rgrp.rotation.y -= dt*1.7; L.hgrp.rotation.y += dt*3.0;   // counter-spinning tech layers
+    const op=Math.min(1, L.life/L.max*1.4)*0.92; L.grp.traverse(o=>{ if(o.material) o.material.opacity=op; });
+    L.rgrp.scale.setScalar(1 + Math.sin((L.max-L.life)*22)*0.05); }                  // subtle ring pulse
+}
 function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
   const r = o.r||0.45;
@@ -1703,10 +1738,12 @@ function spawnBullet(x, z, angle, o={}){
   m.userData.halo.material.color.setHex(tracer);                           // glowing aura matches the tracer
   m.position.set(x, 1.2, z);
   const sp = o.speed||60;
-  const D=o.arcDist||0; let vy=0; if(D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close
+  const D=o.arcDist||0; let vy=0; if(!o.lockOn && D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close (lock-on missiles arc themselves)
+  const loft = o.lockOn ? (D<14 ? 1.6+Math.random()*2.4 : 4.5+Math.random()*6.5) : 0;   // random arc: shallow/low when the target's close, can vault high when it's far
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
+    lockOn:o.lockOn||false, tgt:null, loft,
     by:1.2, vy, arc:(vy>0.5), freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark' });
 }
 function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
@@ -1714,7 +1751,17 @@ function updateBullets(dt, now){
   const lim = ARENA-1;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];
-    if(b.homing && b.owner==='p'){ // missile homing toward nearest enemy
+    if(b.lockOn && b.owner==='p'){ // MISSILE: lock ONE target, chase that object, loft-then-dive arc
+      if(!b.tgt || !targetAlive(b.tgt)) b.tgt = acquireLock(b);            // sticky lock — re-acquire only if it dies
+      const t=b.tgt;
+      if(t){ requestLock(t);                                              // hi-tech reticle snaps onto the locked target
+        const want=Math.atan2(t.pos.x-b.x,t.pos.z-b.z); let da=wrapAngle(want-b.angle);
+        b.angle=wrapAngle(b.angle+da*Math.min(1,dt*(b.homing||5))); const sp=Math.hypot(b.vx,b.vz);
+        b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp;
+        const dist=Math.hypot(t.pos.x-b.x,t.pos.z-b.z), ty=(t.pos.y||1.2);
+        const desiredY=ty + b.loft*Math.min(1, dist/15);                  // vault high while far, dive to strike height as it closes
+        b.by += (desiredY-b.by)*Math.min(1, dt*3.2); } }                  // smooth climb/dive drives the arc directly
+    else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
       let best=null, bd=1e9; for(const e of enemies){ const d=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2; if(d<bd){bd=d;best=e;} }
       if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
       if(best){ const want=Math.atan2(best.pos.x-b.x,best.pos.z-b.z); let da=wrapAngle(want-b.angle);
@@ -1724,16 +1771,20 @@ function updateBullets(dt, now){
     if(b.arc){ b.by+=b.vy*dt; b.vy-=ARC_G*dt; if(b.by<0.35) b.by=0.35; }   // ballistic arc (purely visual; collision is 2D x/z)
     b.mesh.position.set(b.x,b.by,b.z);
     addTrail(b.x, b.by, b.z, b.owner==='e'?0xff5a24:b.color, (b.r||0.45)*BVIS*3.0, 0.14+(b.r||0.45)*0.22);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak
+    if(b.lockOn){ const bk=Math.hypot(b.vx,b.vz)||1, ex=b.x-(b.vx/bk)*0.6, ez=b.z-(b.vz/bk)*0.6;   // rocket exhaust plume trailing the missile
+      if(Math.random()<0.8) spawnPart(ex,b.by,ez,(Math.random()-0.5)*1.2,0.4,(Math.random()-0.5)*1.2,{color:0x46382e,size:0.72,life:0.34,smoke:true,grav:0.5,drag:3,op:0.34});
+      if(Math.random()<0.55) spawnPart(ex,b.by,ez,(Math.random()-0.5)*2,0.3,(Math.random()-0.5)*2,{color:0xff8a3a,size:0.5,life:0.15,grav:0,drag:4}); }
+    const airborne = b.lockOn && b.by>2.6;   // a lofting missile sails over cover & bystanders — it only strikes on the dive
 
     const overRange = b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
-    for(const bl of blocks){ const dx=bl.x-b.x, dz=bl.z-b.z; if(dx*dx+dz*dz < (bl.r+b.r)**2){
+    if(!airborne) for(const bl of blocks){ const dx=bl.x-b.x, dz=bl.z-b.z; if(dx*dx+dz*dz < (bl.r+b.r)**2){
       damageBlock(bl, b.dmg); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
-    if(b.owner==='p'){
+    if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
       for(const e of enemies){ const dx=e.pos.x-b.x, dz=e.pos.z-b.z;
         if(dx*dx+dz*dz < (b.r+e.r)**2){
           let dmg=b.dmg;
@@ -2833,7 +2884,7 @@ const GUNS = {
   flak:    { name:'FLAK',   svg:'flak', tier:2, dmg:11, fireCd:0.5,  mag:12, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0x8fc8ff, r:0.5,  life:0.9, aoe:3.2, recoil:1.4, knock:1.2, fx:'frag' },
   cannon:  { name:'CANNON',  svg:'shell', tier:2, dmg:50, fireCd:0.72, mag:6,  reload:3.0, bspeed:62, frags:1, spread:0.01, color:0xffb83a, r:0.55, life:2.0, aoe:3.2, recoil:3.6, knock:2.6, fx:'blast' },
   minigun: { name:'MINIGUN',    svg:'minigun', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xfff4e0, r:0.34, life:1.8, recoil:0.25, knock:0.5, fx:'spark' },
-  missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xff6a28, r:0.5,  life:3.2, homing:5, aoe:3.4, recoil:1.4, knock:2.0, fx:'blast' },
+  missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xff6a28, r:0.5,  life:3.2, homing:5, lock:true, aoe:3.4, recoil:1.4, knock:2.0, fx:'blast' },
   railgun: { name:'RAILGUN',     svg:'rail', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6, recoil:3.0, knock:3.2, fx:'pierce' },
   cryo:    { name:'CRYO',  svg:'snow', tier:2, dmg:10, fireCd:0.32, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:2.4, recoil:0.9, knock:0.8, fx:'ice' },          // control gun: low dmg, locks enemies solid for 2.4s/hit (boss immune)
   tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x5aa0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock' },    // chain lightning
@@ -3170,7 +3221,7 @@ function fireGun(now, range){
     for(let i=0;i<n;i++){
       const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
       spawnBullet(x,z,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:aimDist,
-        pierce:g.pierce||0, homing:g.homing||0, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0),
+        pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0),
         freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark'});
     }
   }
@@ -4697,6 +4748,7 @@ function loop(nowMs){
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
     updateBullets(gdt, now);
+    updateLocks(gdt);               // MISSILE lock-on reticles track their locked targets
     updateRockets(gdt, now); updateFuses(dt, now);   // siege-rocket flight + landing fuse
     updateArtillery(dt, now); updateArtStrikes(dt, now);   // enemy ARTILLERY: barrage director + locked missile strikes
     separateTanks(now);                 // resolve overlaps so tanks never merge
