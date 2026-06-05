@@ -1739,7 +1739,7 @@ function spawnBullet(x, z, angle, o={}){
   m.position.set(x, 1.2, z);
   const sp = o.speed||60;
   const D=o.arcDist||0; let vy=0; if(!o.lockOn && D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close (lock-on missiles arc themselves)
-  const loft = o.lockOn ? (D<14 ? 1.6+Math.random()*2.4 : 4.5+Math.random()*6.5) : 0;   // random arc: shallow/low when the target's close, can vault high when it's far
+  const loft = o.lockOn ? (D<14 ? 1.0+Math.random()*1.4 : 2.6+Math.random()*3.0) : 0;   // random arc: low/shallow when the target's close, lofts higher when far (kept snappy — short air time)
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
@@ -1759,8 +1759,8 @@ function updateBullets(dt, now){
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*(b.homing||5))); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp;
         const dist=Math.hypot(t.pos.x-b.x,t.pos.z-b.z), ty=(t.pos.y||1.2);
-        const desiredY=ty + b.loft*Math.min(1, dist/15);                  // vault high while far, dive to strike height as it closes
-        b.by += (desiredY-b.by)*Math.min(1, dt*3.2); } }                  // smooth climb/dive drives the arc directly
+        const desiredY=ty + b.loft*Math.min(1, dist/9);                   // vault while far, dive to strike height as it closes (descends sooner → less loiter)
+        b.by += (desiredY-b.by)*Math.min(1, dt*4.2); } }                  // snappy climb/dive — short air time, no orbiting
     else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
       let best=null, bd=1e9; for(const e of enemies){ const d=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2; if(d<bd){bd=d;best=e;} }
       if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
@@ -2884,7 +2884,7 @@ const GUNS = {
   flak:    { name:'FLAK',   svg:'flak', tier:2, dmg:11, fireCd:0.5,  mag:12, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0x8fc8ff, r:0.5,  life:0.9, aoe:3.2, recoil:1.4, knock:1.2, fx:'frag' },
   cannon:  { name:'CANNON',  svg:'shell', tier:2, dmg:50, fireCd:0.72, mag:6,  reload:3.0, bspeed:62, frags:1, spread:0.01, color:0xffb83a, r:0.55, life:2.0, aoe:3.2, recoil:3.6, knock:2.6, fx:'blast' },
   minigun: { name:'MINIGUN',    svg:'minigun', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xfff4e0, r:0.34, life:1.8, recoil:0.25, knock:0.5, fx:'spark' },
-  missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:46, frags:1, spread:0.05, color:0xff6a28, r:0.5,  life:3.2, homing:5, lock:true, aoe:3.4, recoil:1.4, knock:2.0, fx:'blast' },
+  missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:58, frags:1, spread:0.05, color:0xff6a28, r:0.5,  life:3.2, homing:5, lock:true, aoe:3.4, recoil:1.4, knock:2.0, fx:'blast' },
   railgun: { name:'RAILGUN',     svg:'rail', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6, recoil:3.0, knock:3.2, fx:'pierce' },
   cryo:    { name:'CRYO',  svg:'snow', tier:2, dmg:10, fireCd:0.32, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:2.4, recoil:0.9, knock:0.8, fx:'ice' },          // control gun: low dmg, locks enemies solid for 2.4s/hit (boss immune)
   tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x5aa0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock' },    // chain lightning
