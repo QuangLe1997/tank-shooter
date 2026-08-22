@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0c1108" />
+<!-- installed to the home screen (iOS has no Fullscreen API) → runs chrome-less, landscape, edge-to-edge -->
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="STEEL SIEGE" />
 <title>STEEL SIEGE — Tank Shooter</title>
 <meta name="description" content="STEEL SIEGE — a fast 3D twin-stick tank-defense game. Hold the line, build your arsenal, survive the siege. Play free in your browser." />
 <!-- Open Graph / Facebook + Twitter link preview (shown when the link is shared) -->
@@ -18,6 +24,33 @@
 <meta name="twitter:title" content="STEEL SIEGE — 3D Tank Shooter" />
 <meta name="twitter:description" content="Hold the line against waves of enemy tanks. Play free in your browser." />
 <meta name="twitter:image" content="https://quangle1997.github.io/tank-shooter/assets/banner-desktop.jpg" />
+<script>
+  /* ---------------------------------------------------------------------------------------------
+     Mobile browsers keep a URL bar / toolbars on screen, and a `position:fixed; inset:0` box is sized
+     to the LARGE viewport (bar hidden) — so the bottom of every fullscreen layer (menu buttons, FIRE
+     pad, HUD) ended up *behind* the browser chrome and the layout looked broken/cut off.
+     --appH/--appW = the height/width that is actually VISIBLE right now (visualViewport), published
+     before the first paint and kept live. Every fullscreen layer sizes itself to it.
+     --------------------------------------------------------------------------------------------- */
+  (function(){
+    var d = document.documentElement;
+    function sync(){
+      var vv = window.visualViewport;
+      var h = Math.round(vv ? vv.height : window.innerHeight);
+      var w = Math.round(vv ? vv.width  : window.innerWidth);
+      if(h > 0) d.style.setProperty('--appH', h + 'px');
+      if(w > 0) d.style.setProperty('--appW', w + 'px');
+    }
+    sync();
+    window.__syncAppSize = sync;
+    addEventListener('resize', sync);
+    addEventListener('orientationchange', function(){ sync(); setTimeout(sync, 80); setTimeout(sync, 400); setTimeout(sync, 900); });
+    addEventListener('load', sync);
+    if(window.visualViewport){ visualViewport.addEventListener('resize', sync); visualViewport.addEventListener('scroll', sync); }
+    document.addEventListener('fullscreenchange', function(){ setTimeout(sync, 60); setTimeout(sync, 260); });
+    document.addEventListener('webkitfullscreenchange', function(){ setTimeout(sync, 60); setTimeout(sync, 260); });
+  })();
+</script>
 <style>
   :root{
     --bg:#0c1108; --ink:#eaf2dc; --muted:#93a37e;
@@ -28,6 +61,11 @@
   *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
   html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);
     -webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior:none;}
+  /* Fullscreen layers use the VISIBLE height (--appH), never the layout viewport: on a phone with the
+     URL bar showing those differ by 50–120px, which is exactly what pushed the buttons off-screen. */
+  /* The canvas stays on the (stable) layout viewport on purpose: iOS resizes the visible viewport on every
+     frame of a toolbar slide, and re-allocating the WebGL + bloom render targets that often is the flicker.
+     UI layers below follow --appH so no control ever hides behind the browser chrome. */
   #app,canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;}   /* canvas always fills the viewport (buffer set via setSize(...,false)) */
   canvas{display:block;}
   /* desktop aiming reticle — a NATIVE cursor (hardware-smooth, follows the pointer 1:1; bigger + bolder than default).
@@ -35,7 +73,7 @@
   body:not(.touch) #app,body:not(.touch) canvas{cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><g fill='none' stroke-linecap='round'><circle cx='20' cy='20' r='13' stroke='%23000' stroke-width='5'/><path d='M20 2.5v8M20 29.5v8M2.5 20h8M29.5 20h8' stroke='%23000' stroke-width='5'/><circle cx='20' cy='20' r='13' stroke='%23ffce4a' stroke-width='2.4'/><path d='M20 2.5v8M20 29.5v8M2.5 20h8M29.5 20h8' stroke='%23ffce4a' stroke-width='2.4'/></g><circle cx='20' cy='20' r='2.6' fill='%23000'/><circle cx='20' cy='20' r='1.5' fill='%23fff'/></svg>") 20 20,crosshair;}
 
   /* ---------- HUD ---------- */
-  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;}
+  #hud{position:fixed;inset:0;height:100%;height:var(--appH,100svh);pointer-events:none;z-index:10;}
   .chip{position:absolute;background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));
     border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(12px) saturate(140%);
     box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);}
@@ -135,9 +173,13 @@
   #mPause .ic{width:20px;height:20px;color:var(--ink);display:inline-flex;}
 
   /* ---------- Overlays ---------- */
-  .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  .overlay{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    justify-content:safe center;   /* short landscape: overflow spills DOWN (scrollable) instead of clipping the top buttons away */
     text-align:center;gap:20px;padding:24px;transition:opacity .4s;
     background:radial-gradient(120% 90% at 50% 40%,rgba(14,20,8,.42),rgba(5,8,4,.9));backdrop-filter:blur(3px);}
+  .overlay:not(.shop3d){overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+  .overlay > *{flex:0 0 auto;}                 /* menu rows keep their natural height — never squashed into each other */
+  .sm{display:none;}                           /* short-screen label half (see the short-landscape block) */
   .overlay.hidden,.overlay.hidden *{pointer-events:none !important;}
   .overlay.hidden{opacity:0;}
   .title{font-size:clamp(36px,9vw,82px);font-weight:900;letter-spacing:5px;line-height:1;
@@ -161,7 +203,7 @@
   @keyframes blink{0%,100%{opacity:.4;}50%{opacity:1;}}
 
   /* ---------- Mobile twin-stick ---------- */
-  #touch{position:fixed;inset:0;z-index:12;display:none;pointer-events:none;}
+  #touch{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:12;display:none;pointer-events:none;}
   body.touch #touch{display:block;}
   .stick{position:absolute;width:120px;height:120px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .12s;
     border:2px dashed rgba(255,255,255,.18);background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%);}
@@ -183,9 +225,9 @@
     pointer-events:auto;box-shadow:0 8px 22px rgba(0,0,0,.4);z-index:14;}
 
   /* combat feedback */
-  #vignette{position:fixed;inset:0;pointer-events:none;z-index:11;opacity:0;transition:opacity .2s;
+  #vignette{position:fixed;inset:0;height:100%;height:var(--appH,100svh);pointer-events:none;z-index:11;opacity:0;transition:opacity .2s;
     background:radial-gradient(circle at 50% 50%,transparent 45%,rgba(200,40,30,.55) 100%);}
-  #popups{position:fixed;inset:0;pointer-events:none;z-index:13;overflow:hidden;}
+  #popups{position:fixed;inset:0;height:100%;height:var(--appH,100svh);pointer-events:none;z-index:13;overflow:hidden;}
   .pop{position:absolute;font-weight:800;transform:translate(-50%,-50%);text-shadow:0 2px 8px rgba(0,0,0,.7);
     animation:popUp .9s ease-out forwards;white-space:nowrap;}
   @keyframes popUp{0%{opacity:0;transform:translate(-50%,-10%) scale(.5);}18%{opacity:1;transform:translate(-50%,-60%) scale(1.15);}
@@ -433,7 +475,7 @@
   }
 
   /* ===== INTRO CINEMATIC (deploy showcase) ===== */
-  #cine{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;transition:opacity .5s ease;}
+  #cine{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:30;pointer-events:none;opacity:0;transition:opacity .5s ease;}
   #cine.on{opacity:1;}
   #cine .bar{position:absolute;left:0;right:0;height:0;background:#000;transition:height .7s cubic-bezier(.2,.8,.2,1);}
   #cine .bar.top{top:0;} #cine .bar.bot{bottom:0;}
@@ -538,16 +580,16 @@
   body.touch #upcards{gap:8px;} body.touch .upcard{width:30%;min-width:92px;padding:12px 8px;}
   body.touch .upcard .ic{width:38px;height:38px;}
   /* portrait gate */
-  #rotate{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  #rotate{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
     background:radial-gradient(120% 90% at 50% 45%,rgba(14,20,8,.93),rgba(4,6,3,.99));color:var(--ink);text-align:center;padding:30px;}
   #rotate .ic{width:78px;height:78px;color:var(--amber);animation:rotPulse 1.8s ease-in-out infinite;}
   #rotate .rt-t{font-size:21px;font-weight:900;letter-spacing:4px;}
   #rotate .rt-s{font-size:11px;letter-spacing:5px;color:var(--muted);text-transform:uppercase;}
   @keyframes rotPulse{0%,100%{transform:rotate(-14deg);}50%{transform:rotate(3deg);}}
-  @media (orientation:portrait){ body.touch #rotate{display:flex;} }
+  @media (orientation:portrait){ body.touch.ingame #rotate{display:flex;} }   /* menus work upright; only the battle needs landscape */
 
   /* ===== STAGE TRANSITION WIPE ===== */
-  #stagewipe{position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0;transition:opacity .5s ease;
+  #stagewipe{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:24;pointer-events:none;opacity:0;transition:opacity .5s ease;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     background:radial-gradient(125% 95% at 50% 50%,rgba(4,6,3,.32),rgba(2,3,1,.9));}
   #stagewipe.show{opacity:1;}
@@ -575,7 +617,7 @@
     box-shadow:0 8px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05);}
   body.touch #radar{width:104px;height:104px;top:calc(max(10px,env(safe-area-inset-top)) + 48px);}
   /* ===== core-under-attack alarm ===== */
-  #corealarm{position:fixed;inset:0;pointer-events:none;z-index:11;opacity:0;transition:opacity .3s;
+  #corealarm{position:fixed;inset:0;height:100%;height:var(--appH,100svh);pointer-events:none;z-index:11;opacity:0;transition:opacity .3s;
     background:radial-gradient(circle at 50% 50%,transparent 52%,rgba(224,60,40,.5) 100%);}
   body.corelow #corealarm{opacity:1;animation:alarmPulse 1s ease-in-out infinite;}
   @keyframes alarmPulse{0%,100%{opacity:.35;}50%{opacity:.95;}}
@@ -592,7 +634,8 @@
 
   /* ===== title-screen banner (AI key art) + clean premium controls ===== */
   #start{ background:linear-gradient(180deg,rgba(3,5,2,.12) 0%,rgba(3,5,2,0) 30%,rgba(3,5,2,.5) 66%,rgba(3,5,2,.95) 100%), url('assets/banner-desktop.jpg') center/cover no-repeat;
-    backdrop-filter:none; justify-content:flex-end; gap:14px; padding-bottom:clamp(22px,6vh,54px); }
+    backdrop-filter:none; justify-content:flex-end; justify-content:safe flex-end; gap:14px; padding-bottom:clamp(22px,6vh,54px); }
+  #start .start-id{ display:flex; flex-direction:column; align-items:center; gap:10px; }   /* greeting · best · wallet (one row on short landscape) */
   #start .title, #start .subtitle{ display:none; }            /* the banner already shows the STEEL SIEGE logo */
   #start .tap{ display:none; }                                /* redundant with the DEPLOY button */
   #start .bestline{ display:inline-flex; align-items:center; gap:8px; padding:5px 16px; border-radius:999px;
@@ -616,9 +659,288 @@
   body.touch #start{ padding-bottom:max(12px,env(safe-area-inset-bottom)); gap:10px; }
   body.touch #start .btn-primary{ font-size:18px; padding:13px 42px; }
   #rotate{ background:linear-gradient(180deg,rgba(3,5,2,.5),rgba(3,5,2,.8)), url('assets/banner-mobile.jpg') center/cover no-repeat; }
+
+  /* ==================================================================================
+     Z66 — MOBILE PASS: boot gate (fullscreen from the first tap) · short-landscape menus
+     that always fit · zero live backdrop-blur over the canvas (that was the stutter)
+     ================================================================================== */
+
+  /* ---- BOOT GATE: covers the un-iconed DOM while three.js + the world load. On touch it also
+         doubles as the single user gesture browsers demand before audio + fullscreen are allowed. ---- */
+  #boot{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:999;display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 14px);
+    background:linear-gradient(180deg,rgba(3,5,2,.6),rgba(3,5,2,.93)),url('assets/banner-desktop.jpg') center/cover no-repeat;
+    opacity:1;transition:opacity .4s ease;}
+  #boot.gone{opacity:0;pointer-events:none;}
+  .boot-inner{display:flex;flex-direction:column;align-items:center;gap:9px;max-width:92vw;}
+  .boot-logo{font-size:clamp(26px,7vw,60px);font-weight:900;letter-spacing:6px;line-height:1;
+    background:linear-gradient(105deg,var(--green) 0%,var(--ink) 50%,var(--amber) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 20px rgba(0,0,0,.7));}
+  .boot-sub{font-size:clamp(9px,2.4vw,12px);letter-spacing:6px;color:var(--muted);text-transform:uppercase;}
+  .boot-bar{width:min(56vw,220px);height:4px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:4px;}
+  .boot-bar > i{display:block;width:36%;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--amber));
+    animation:bootSlide 1.05s ease-in-out infinite;}
+  @keyframes bootSlide{0%{transform:translateX(-115%);}100%{transform:translateX(325%);}}
+  .boot-msg{font-size:10.5px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;min-height:13px;}
+  .boot-tap{display:none;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+    font-size:clamp(15px,4.4vw,19px);font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#1c1404;
+    padding:14px 34px;border-radius:13px;background:linear-gradient(180deg,#f4c45e 0%,#e29a30 52%,#cd7c20 100%);
+    border:1px solid rgba(255,230,175,.75);box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5);
+    animation:deployPulse 2.4s ease-in-out infinite;-webkit-tap-highlight-color:transparent;}
+  .boot-note{display:none;font-size:9.5px;letter-spacing:2.5px;color:rgba(255,255,255,.5);text-transform:uppercase;}
+  #boot.ready .boot-bar,#boot.ready .boot-msg{display:none;}
+  #boot.ready .boot-tap{display:inline-flex;}
+  #boot.ready .boot-note{display:block;}
+
+  /* ---- camera zoom/rotate join the top-right utility cluster on touch. Anchored to the bottom-left they
+         drifted up into the gun strip as soon as a browser URL bar shortened the screen (overlapping HUD). ---- */
+  body.touch #camCtl{left:auto;bottom:auto;top:max(8px,env(safe-area-inset-top));
+    right:calc(max(10px,env(safe-area-inset-right)) + 168px);flex-direction:row;gap:4px;}
+  body.touch .camBtn{width:38px;height:38px;border-radius:10px;background:rgba(8,12,6,.3);border:1px solid rgba(255,255,255,.1);box-shadow:none;}
+  body.touch .camBtn .ic{width:16px;height:16px;} body.touch #zoomLbl{font-size:7px;}
+
+  /* ---- a menu is open → no battle HUD and no thumb pads underneath it ---- */
+  body.inmenu #hud,body.inmenu #touch{display:none !important;}
+
+  /* ---- MOBILE PERF: a backdrop-filter over an animating canvas re-blurs the whole backdrop every
+         single frame. Seven of them (HUD chips · radar · pads · cam buttons) = the mobile stutter. ---- */
+  body.touch .chip,body.touch .mbtn,body.touch .camBtn,body.touch #radar,body.touch #autoBtn,body.touch #mPause,
+  body.touch .overlay,body.touch .shop-tab,body.touch .shop-arrow,body.touch .shop-info,body.touch .si-panel{
+    backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
+  body.touch .chip{background:linear-gradient(180deg,rgba(16,24,10,.6),rgba(6,12,5,.7));}    /* readable again without the blur */
+  body.touch #radar{background:linear-gradient(180deg,rgba(14,20,10,.7),rgba(8,13,6,.78));}
+  body.touch .mbtn{background:linear-gradient(180deg,rgba(22,30,14,.6),rgba(10,16,8,.68));}
+  body.touch .camBtn{background:rgba(10,15,8,.6);}
+  body.touch #autoBtn{background:rgba(10,15,8,.55);}
+
+  /* ---- transient banners out of the HUD clusters (buffs used to land on the SWAP/SKILL pads) ---- */
+  body.touch #buffbar{left:50%;right:auto;transform:translateX(-50%);flex-direction:row;align-items:center;
+    top:calc(max(8px,env(safe-area-inset-top)) + 30px);}
+  body.touch #combo{top:calc(max(8px,env(safe-area-inset-top)) + 58px);}
+  /* #coach is fixed to the layout viewport → add back the slice hidden behind the browser toolbar */
+  body.touch #coach{top:auto;bottom:calc(100vh - var(--appH,100svh) + max(14px,env(safe-area-inset-bottom)) + 8px);max-width:52vw;font-size:12px;padding:7px 14px;
+    transform:translateX(-50%) translateY(8px);}
+  body.touch #coach.on{transform:translateX(-50%) translateY(0);}
+
+  /* ---- portrait gate: stop painting the HUD/pads behind it (the gate already covers the screen) ---- */
+  @media (orientation:portrait){ body.touch #hud,body.touch #touch,body.touch #popups{display:none !important;} }
+
+  /* ---- MAIN MENU (all screens): one grid, clear hierarchy — PLAY · CONTINUE · prepare · utility ----
+         box-shadow animations were repainting the whole button every frame on top of the live 3D scene
+         (that is the iPad flicker), so the pulse is now an opacity-only glow layer the GPU composites. */
+  .btn-primary{animation:none;position:relative;}
+  .btn-primary::after{content:'';position:absolute;inset:-2px;border-radius:15px;pointer-events:none;
+    box-shadow:0 0 26px rgba(140,191,63,.45);opacity:0;animation:glowPulse 2.6s ease-in-out infinite;}
+  @keyframes glowPulse{0%,100%{opacity:0;}50%{opacity:1;}}
+  #start .btn-primary{animation:none;}
+  #start .btn-primary::after{box-shadow:0 0 30px rgba(243,185,74,.55);animation:glowPulse 2.4s ease-in-out infinite;}
+  .boot-tap{animation:none;position:relative;}
+  .boot-tap::after{content:'';position:absolute;inset:-2px;border-radius:15px;pointer-events:none;
+    box-shadow:0 0 30px rgba(243,185,74,.55);opacity:0;animation:glowPulse 2.4s ease-in-out infinite;}
+
+  #start .panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+    width:min(94vw,660px);max-width:none;padding:0;align-items:stretch;justify-items:stretch;}
+  #start .panel > *{width:100%;margin:0;}
+  #start #playBtn{grid-column:1/-1;}
+  #start #continueBtn{grid-column:1/-1;}
+  #start .btn-continue{background:rgba(8,14,6,.55);border-color:rgba(140,191,63,.5);color:#dfeccb;
+    font-size:14px;letter-spacing:2px;padding:11px 20px;text-shadow:0 1px 6px rgba(0,0,0,.9);}
+  #start .btn-continue::after{box-shadow:none;animation:none;}
+  #start .btn-continue:hover{background:rgba(20,32,10,.72);border-color:var(--green);filter:none;}
+  #start .btn-arsenal,#start .btn-shop,#start .btn-terrain{font-size:12.5px;letter-spacing:1px;padding:12px 10px;
+    white-space:nowrap;overflow:hidden;}                       /* one line each → the row reads as one clean band */
+  #start .hello{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;   /* legible over the key art */
+    background:rgba(6,9,4,.5);border:1px solid rgba(140,191,63,.3);text-shadow:0 2px 10px rgba(0,0,0,.95);}
+  #start .start-id{align-items:center;}
+  #start .terrain-pick{margin:0;max-width:none;display:flex;}   /* wrapper stretches so BATTLEFIELD lines up with ARSENAL/SHOP */
+  #start .btn-terrain{flex:1;justify-content:center;}
+  #start .btn-mini{justify-content:center;font-size:11px;padding:9px 8px;}
+  #start .help{grid-column:1/-1;margin-top:2px;}
+  /* tablets (iPad & co) get the roomier desktop menu, just with touch-sized hit targets */
+  @media (min-width:760px) and (min-height:560px){
+    body.touch #start .panel{width:min(90vw,700px);gap:12px;}
+    body.touch #start .btn-arsenal,body.touch #start .btn-shop,body.touch #start .btn-terrain{padding:14px 10px;font-size:14px;}
+    body.touch #start .btn-mini{padding:12px 8px;font-size:12px;}
+    body.touch #start .btn-primary{font-size:22px;padding:17px 40px;}
+    body.touch .title{font-size:clamp(30px,7vw,54px);}
+  }
+
+  /* ================= HOME + BOOT JUICE =================
+     Military-HUD dressing: corner brackets, scanlines, a radar sweep and shine passes.
+     Everything animates transform/opacity ONLY, so it is composited on the GPU and never
+     repaints over the live 3D scene (animated box-shadow/filter is what flickered on iPad). */
+  .scanlines{position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.13;
+    background:repeating-linear-gradient(180deg,rgba(220,255,200,.65) 0 1px,transparent 1px 3px);}
+  .sweep{position:absolute;left:0;right:0;top:0;height:150px;pointer-events:none;z-index:1;opacity:0;
+    background:linear-gradient(180deg,transparent,rgba(140,191,63,.14) 55%,rgba(231,181,74,.42) 84%,transparent);
+    animation:sweepDown 6s cubic-bezier(.45,0,.25,1) infinite;}
+  @keyframes sweepDown{0%{transform:translateY(-170px);opacity:0;}6%{opacity:.9;}62%{opacity:.75;}72%{opacity:0;}100%{transform:translateY(1200px);opacity:0;}}
+  .frame{position:absolute;inset:9px;pointer-events:none;z-index:1;}
+  .frame > i{position:absolute;width:24px;height:24px;border:2px solid rgba(231,181,74,.5);opacity:.75;}
+  .frame > i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;}
+  .frame > i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;}
+  .frame > i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;}
+  .frame > i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;}
+  #start .frame,#start .scanlines,#start .sweep{z-index:0;}
+  #start .title,#start .subtitle,#start .start-id,#start .panel,#start .rot-hint{position:relative;z-index:2;}
+
+  /* ---- BOOT: key art push-in, logo assemble + shine, status lines, radar ping on the CTA ---- */
+  #boot{overflow:hidden;align-items:flex-end;padding-bottom:calc(env(safe-area-inset-bottom) + clamp(18px,6vh,54px));}
+  #boot .boot-logo,#boot .boot-sub{display:none;}   /* the key art already carries the logo — don't print it twice */
+  .boot-bg{position:absolute;inset:0;z-index:0;
+    background:linear-gradient(180deg,rgba(3,5,2,.55),rgba(3,5,2,.92)),url('assets/banner-desktop.jpg') center/cover no-repeat;
+    transform:scale(1.12);animation:bootPush 9s cubic-bezier(.18,.7,.25,1) forwards;}
+  @keyframes bootPush{to{transform:scale(1);}}
+  .boot-inner{position:relative;z-index:2;}
+  .boot-kick{font-size:9.5px;font-weight:900;letter-spacing:6px;color:var(--amber);text-transform:uppercase;
+    opacity:0;animation:bootIn .5s ease .05s forwards;text-shadow:0 0 14px rgba(231,181,74,.6);}
+  .boot-logo{position:relative;opacity:0;animation:bootLogo .85s cubic-bezier(.2,.9,.2,1) .1s forwards;}
+  @keyframes bootLogo{0%{opacity:0;letter-spacing:24px;transform:translateY(6px);}
+    55%{opacity:1;}62%{opacity:.45;}68%{opacity:1;}100%{opacity:1;letter-spacing:6px;transform:none;}}
+  .boot-logo::after{content:'';position:absolute;inset:-2% -6%;pointer-events:none;
+    background:linear-gradient(112deg,transparent 42%,rgba(255,255,255,.42) 50%,transparent 58%);
+    transform:translateX(-130%);animation:shineX 3.4s ease-in-out 1s infinite;}
+  @keyframes shineX{0%,58%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}
+  .boot-sub,.boot-lines,.boot-bar,.boot-msg{opacity:0;animation:bootIn .5s ease forwards;}
+  .boot-sub{animation-delay:.55s;} .boot-lines{animation-delay:.8s;} .boot-bar{animation-delay:.95s;} .boot-msg{animation-delay:1.05s;}
+  @keyframes bootIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .boot-lines{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:2px;}
+  .boot-lines span{font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(190,225,150,.75);text-transform:uppercase;
+    opacity:0;animation:bootIn .45s ease forwards;}
+  .boot-lines span::before{content:'▪ ';color:var(--green);}
+  .boot-lines span:nth-child(1){animation-delay:.9s;} .boot-lines span:nth-child(2){animation-delay:1.15s;} .boot-lines span:nth-child(3){animation-delay:1.4s;}
+  .bt-ping{position:absolute;inset:-6px;border-radius:18px;border:2px solid rgba(255,206,110,.7);pointer-events:none;
+    opacity:0;animation:btPing 2.1s ease-out infinite;}
+  @keyframes btPing{0%{transform:scale(1);opacity:.75;}70%{transform:scale(1.16);opacity:0;}100%{opacity:0;}}
+  #boot.ready .boot-lines{display:none;}
+
+  /* ---- MENU BUTTONS: shine pass + real press feedback ---- */
+  #start .panel .btn{position:relative;}   /* no overflow:hidden — it would clip .btn-primary's composited glow (the shine is already rounded-clipped) */
+  #start .panel .btn::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
+    background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);transform:translateX(-130%);}
+  #start .panel .btn:hover::before{transform:translateX(130%);transition:transform .65s ease;}
+  #start #playBtn::before{background:linear-gradient(112deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%);
+    animation:shineX 3.8s ease-in-out 1.2s infinite;}
+  .btn:active,.btn-arsenal:active,.btn-shop:active,.btn-terrain:active,.btn-mini:active{transform:scale(.972);}
+  .boot-tap:active{transform:scale(.97);}
+  /* portrait hint on the title screen (menus work in portrait — the battle itself wants landscape) */
+  .rot-hint{display:none;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:2.5px;color:#ffe8b6;
+    text-transform:uppercase;padding:5px 14px;border-radius:999px;background:rgba(6,9,4,.5);border:1px solid rgba(231,181,74,.35);}
+  .rot-hint .ic{width:14px;height:14px;color:var(--amber);animation:rotPulse 1.8s ease-in-out infinite;}
+  @media (orientation:portrait){ body.touch #start .rot-hint{display:inline-flex;} }
+
+  /* ================= PORTRAIT (phone/tablet held upright) =================
+     The menus are fully usable upright — only the battle itself asks for landscape. */
+  @media (orientation:portrait){
+    #start{background-image:linear-gradient(180deg,rgba(3,5,2,.15) 0%,rgba(3,5,2,0) 26%,rgba(3,5,2,.55) 62%,rgba(3,5,2,.96) 100%),url('assets/banner-mobile.jpg');}
+    .boot-bg{background-image:linear-gradient(180deg,rgba(3,5,2,.55),rgba(3,5,2,.92)),url('assets/banner-mobile.jpg');}
+    #start .panel{grid-template-columns:repeat(6,minmax(0,1fr));width:min(94vw,460px);gap:9px;}
+    #start #playBtn,#start #continueBtn{grid-column:1/-1;}
+    #start .btn-arsenal{grid-column:span 3;} #start .btn-shop{grid-column:span 3;}
+    #start .terrain-pick{grid-column:1/-1;}
+    #start #guideBtn,#start #settingsBtn,#start #resetBtn{grid-column:span 2;}
+    #start .help{grid-column:1/-1;}
+    #start .start-id{flex-direction:column;gap:8px;}
+    .go-stats{gap:18px;} #upcards,#brcards{max-width:94vw;}
+    .upcard{width:46%;min-width:0;} .brcard{width:46%;min-width:0;}
+    .tcard,body.touch .tcard{width:44%;} .tcard canvas,body.touch .tcard canvas{height:96px;}
+    .si-panel{display:none;}
+  }
+  @media (orientation:portrait) and (max-width:520px){
+    .lg{display:none;} .sm{display:inline;}          /* narrow column → short labels, one line each */
+    #start .btn-primary,body.touch #start .btn-primary{font-size:19px;padding:15px 20px;}
+    #start .btn-arsenal,#start .btn-shop,#start .btn-terrain{font-size:12px;padding:11px 8px;}
+    #start .btn-mini{font-size:10.5px;padding:10px 4px;white-space:nowrap;}
+    #start .help{display:none;}
+  }
+
+  /* ================= SHORT LANDSCAPE (phone held sideways: ~300–520px tall) =================
+     Every menu is laid out to FIT: no off-screen buttons, no overlap, no hunting for PLAY. */
+  @media (orientation:landscape) and (max-height:520px){
+    .overlay{gap:7px;padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));}
+    .title{font-size:clamp(17px,4.8vh,30px) !important;letter-spacing:2px;}    /* !important: several titles carry an inline clamp() */
+    .subtitle{font-size:9.5px !important;letter-spacing:3px;margin-top:0;}
+    .panel,body.touch .panel{padding:10px 12px;}
+    .lg{display:none;}                    /* long label half hidden … */
+    .sm{display:inline;}                  /* … short one shown */
+    .btn{padding:10px 16px;font-size:14px;}
+    .btn-primary{padding:11px 22px;font-size:15px;letter-spacing:2px;}
+
+    /* ---- START: identity strip on one line + a fixed 4-column action grid ---- */
+    #start{padding-bottom:max(8px,env(safe-area-inset-bottom));gap:7px;}
+    #start .start-id{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;}
+    #start .hello{font-size:11px;letter-spacing:1px;}
+    #start .bestline{font-size:10px;letter-spacing:1px;padding:3px 10px;margin:0;}
+    #start .wallet{margin:0;gap:8px;}
+    #start .w-chip{font-size:12px;padding:3px 10px;} #start .w-chip .ic{width:14px;height:14px;}
+    #start .panel,body.touch #start .panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
+      width:min(96vw,620px);max-width:none;padding:0;align-items:stretch;}
+    #start .panel > *{width:100%;margin:0 !important;}
+    #start .btn-primary,body.touch #start .btn-primary{grid-area:1/1/2/5;font-size:17px;letter-spacing:3px;padding:11px 8px;}
+    body.hassave #start #playBtn{grid-area:1/1/2/3;}
+    body.hassave #start #continueBtn{grid-area:1/3/2/5;font-size:12px;letter-spacing:1px;padding:11px 6px;}
+    #start .btn-arsenal{grid-area:2/1/3/3;} #start .btn-shop{grid-area:2/3/3/5;}
+    #start .btn-arsenal,#start .btn-shop{font-size:12px;letter-spacing:1px;padding:9px 6px;gap:6px;}
+    #start .btn-arsenal .ic,#start .btn-shop .ic{width:15px;height:15px;}
+    #start .terrain-pick{grid-area:3/1/4/2;margin:0;max-width:none;}
+    #start .btn-terrain{width:100%;font-size:10px;letter-spacing:.5px;padding:7px 5px;gap:5px;}
+    #start .btn-terrain .ic{width:13px;height:13px;} #start .tp-sw{width:10px;height:10px;}
+    #start #guideBtn{grid-area:3/2/4/3;} #start #settingsBtn{grid-area:3/3/4/4;} #start #resetBtn{grid-area:3/4/4/5;}
+    #start .btn-mini{font-size:10px;letter-spacing:.8px;padding:7px 5px;justify-content:center;gap:5px;}
+    #start .btn-mini .ic{width:13px;height:13px;}
+    #start .help{display:none;}
+
+    /* ---- the other menus ---- */
+    .settings{gap:6px;margin-top:4px;} .set-row{padding:7px 11px;} .set-l{font-size:11px;}
+    .seg-chip{font-size:10px;padding:5px 9px;} .seg-chip small{font-size:8px;}
+    .go-stats{gap:16px;margin:6px 0 8px;} .go-stat .v{font-size:22px;} .go-stat .l{font-size:8px;}
+    .go-best,.go-wallet{margin:0 0 4px;font-size:10px;min-height:0;}
+    .guide,body.touch .guide{max-height:48vh;gap:6px;margin-top:6px;} .guide-row{padding:7px 11px;gap:10px;}
+    .guide-row .g-ic,.guide-row .g-ic svg{width:22px;height:22px;}
+    .guide-row .g-tx b{font-size:11px;} .guide-row .g-tx span{font-size:11px;line-height:1.34;}
+    #ldgrid,body.touch #ldgrid{max-height:44vh;gap:6px;} .ldcard,body.touch .ldcard{width:86px;min-width:0;padding:8px 6px 7px;}
+    .ldcard .gi,body.touch .ldcard .gi{width:24px;height:24px;} .ldcard .nm{font-size:10.5px;} .ldcard .tr{font-size:8px;}
+    .tcard,body.touch .tcard{width:128px;} .tcard canvas,body.touch .tcard canvas{height:80px;}
+    .terrain-gallery{gap:10px 10px;padding:8px 4px 10px;}
+    #upcards{gap:8px;} .upcard,body.touch .upcard{width:112px;min-width:0;padding:10px 7px;}
+    .upcard .ic,body.touch .upcard .ic{width:30px;height:30px;} .upcard .nm{font-size:11px;margin:5px 0 3px;} .upcard .ds{font-size:9px;}
+    .brcard{width:120px;min-width:0;padding:10px 7px;} .brcard .ic{width:26px;height:26px;} .brcard .ds{font-size:9px;} .br-hint{font-size:9px;margin-top:6px;}
+    #nickInput{font-size:17px;padding:10px 14px;}
+    /* shop: cabinet grid gets the vertical room back */
+    .shop-top{gap:6px;padding:calc(max(8px,env(safe-area-inset-top))) 10px 4px;}
+    .shop-ttl{font-size:16px;letter-spacing:4px;} .shop-tab{font-size:9px;padding:4px 10px;}
+    #caseGrid{top:calc(max(8px,env(safe-area-inset-top)) + 58px);max-height:calc(100% - 92px);
+      grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;}
+    body.touch #caseGrid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));}
+    .case-disp,body.touch .case-disp{height:52px;} .case-ic,body.touch .case-ic{width:34px;height:34px;} .case-nm{font-size:11px;}
+    .shop-info{padding:8px 14px 10px;gap:3px;} .si-name{font-size:17px;} .si-desc{font-size:10px;} .si-buy{padding:9px 20px;font-size:14px;min-width:140px;}
+    #rotate .ic{width:54px;height:54px;} #rotate .rt-t{font-size:17px;} #rotate .rt-s{font-size:10px;}
+    .boot-logo{font-size:clamp(22px,7vh,40px);} .boot-tap{padding:11px 28px;}
+  }
 </style>
 </head>
 <body>
+<!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
+<div id="boot">
+  <div class="boot-bg"></div>
+  <div class="scanlines"></div><div class="sweep"></div>
+  <div class="frame"><i></i><i></i><i></i><i></i></div>
+  <div class="boot-inner">
+    <div class="boot-kick">◤ COMBAT SYSTEM ◢</div>
+    <div class="boot-logo">STEEL SIEGE</div>
+    <div class="boot-sub">3D Tank Shooter</div>
+    <div class="boot-lines"><span>RENDER CORE · ONLINE</span><span>ARMORY LINK · SECURE</span><span>BATTLEFIELD · READY</span></div>
+    <div class="boot-bar"><i></i></div>
+    <div class="boot-msg" id="bootMsg">DEPLOYING ARMORY…</div>
+    <div class="boot-tap" id="bootTap"><span class="bt-ping"></span>TAP TO DEPLOY</div>
+    <div class="boot-note">Fullscreen · sound on</div>
+  </div>
+</div>
+<script>
+  /* safety net: if the ES module never boots (CDN blocked / very old browser) say so instead of spinning forever */
+  setTimeout(function(){ var b=document.getElementById('boot'), m=document.getElementById('bootMsg');
+    if(b && !b.getAttribute('data-live') && m) m.textContent='STILL LOADING — CHECK YOUR CONNECTION'; }, 12000);
+</script>
 <div id="app"></div>
 
 <!-- HUD -->
@@ -677,22 +999,30 @@
 
 <!-- START / TITLE -->
 <div class="overlay" id="start">
+  <div class="scanlines"></div><div class="sweep"></div>
+  <div class="frame"><i></i><i></i><i></i><i></i></div>
+  <div class="rot-hint"><span class="ic" data-icon="rotate"></span>ROTATE FOR THE BEST VIEW</div>
   <div class="title">STEEL SIEGE</div>
   <div class="subtitle">3D Tank Shooter</div>
-  <div class="hello" id="hello"></div>
-  <div class="bestline" id="bestline"></div>
-  <div class="wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
-  <div class="terrain-pick" id="terrainPick">
-    <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span>BATTLEFIELD · <b id="tBtnName">AUTO</b></span><span class="tp-sw" id="tBtnSw"></span></div>
+  <!-- identity strip: stacked on desktop, one compact row on a short landscape phone -->
+  <div class="start-id">
+    <div class="hello" id="hello"></div>
+    <div class="bestline" id="bestline"></div>
+    <div class="wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
   </div>
+  <!-- every action lives in one grid so a short landscape screen can place them all (see the short-landscape CSS block) -->
   <div class="panel">
-    <div class="btn btn-primary" id="continueBtn" style="display:none">CONTINUE ▶</div>
-    <div class="btn btn-primary" id="playBtn">DEPLOY ▶</div>
-    <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b> WEAPONS</span></div>
-    <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>SHOP — BUY UPGRADES</span></div>
-    <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span>HOW TO PLAY</span></div>
+    <!-- 1 · PLAY (hero) → 2 · CONTINUE → 3 · prepare (ARSENAL/SHOP/BATTLEFIELD) → 4 · utility. Same order on every screen. -->
+    <div class="btn btn-primary" id="playBtn">PLAY ▶</div>
+    <div class="btn btn-primary btn-continue" id="continueBtn" style="display:none">CONTINUE ▶</div>
+    <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b><span class="lg"> WEAPONS</span></span></div>
+    <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>SHOP<span class="lg"> — UPGRADES</span></span></div>
+    <div class="terrain-pick" id="terrainPick">
+      <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span><span class="lg">BATTLEFIELD · </span><span class="sm">MAP · </span><b id="tBtnName">AUTO</b></span><span class="tp-sw" id="tBtnSw"></span></div>
+    </div>
+    <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span><span class="lg">HOW TO PLAY</span><span class="sm">HELP</span></span></div>
     <div class="btn btn-mini" id="settingsBtn"><span class="ic" data-icon="wrench"></span><span>SETTINGS</span></div>
-    <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET PROGRESS</span></div>
+    <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET<span class="lg"> PROGRESS</span></span></div>
     <div class="help desktop-only">
       <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
       <kbd>Space</kbd> dash · <kbd>E</kbd> ability
@@ -980,7 +1310,10 @@ const S = {
   score:0, stage:1, wave:1,
   player:null,
   keys:{}, aimPoint:new THREE.Vector3(), pointerActive:false, firing:false,
-  shake:0, dpr:Math.min(devicePixelRatio||1, 2),
+  shake:0, dpr:(()=>{ const d=devicePixelRatio||1; if(!MOBILE) return Math.min(d,2);
+    // touch devices get a PIXEL BUDGET, not a fixed ratio: a big tablet at dpr 2 asks for ~4× an iPhone's
+    // fill rate and drops frames with the bloom pass on. Budget ≈1.8M drawn pixels, never below 1×.
+    const px=Math.max(1, innerWidth*innerHeight); return Math.max(1, Math.min(d, 1.5, Math.sqrt(1.8e6/px))); })(),
   weapon:0, spell:0, enemySlowUntil:0, combo:0, comboUntil:0, timeScale:1, awaitingUpgrade:false, timeNow:0,
   zoom: (MOBILE?1.5:1), camYaw:0,   // mobile camera: pull back a bit by default + player-adjustable zoom/rotate
   loop:0,                           // NG+ loop (0 = first playthrough); each loop is harder + pays more
@@ -991,9 +1324,13 @@ function cMod(key, dflt){ dflt=(dflt===undefined?1:dflt); const m=S.contract&&S.
 
 // ----------------------------- THREE SETUP -----------------------------
 const app = document.getElementById('app');
-const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias:!MOBILE, powerPreference:'high-performance' });
 renderer.setPixelRatio(S.dpr);
 renderer.setSize(innerWidth, innerHeight, false);   // false → leave canvas CSS to fill the viewport (avoids the "render smaller than screen" mobile bug)
+// VIEW = the size the canvas is actually painted at. On mobile innerWidth/innerHeight disagree with the
+// fixed inset:0 canvas while the URL bar / rotation settle → reading them stretched the frame. doResize() keeps this current.
+const VIEW = { w:innerWidth, h:innerHeight };
+const BLOOM_SCALE = MOBILE ? 0.5 : 1;   // half-res bloom on phones: same glow, ~4× cheaper per frame
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1015,7 +1352,7 @@ camera.lookAt(0,0,0);
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
 composer.addPass(renderPass);
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.7, 0.8);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.55, 0.7, 0.8);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -1485,7 +1822,7 @@ function makePlayer(){
 const _v = new THREE.Vector3();
 function worldToScreen(v){
   _v.copy(v).project(camera);
-  return { x:(_v.x*0.5+0.5)*innerWidth, y:(1-(_v.y*0.5+0.5))*innerHeight, infront:_v.z<1 };
+  return { x:(_v.x*0.5+0.5)*VIEW.w, y:(1-(_v.y*0.5+0.5))*VIEW.h, infront:_v.z<1 };
 }
 function floatText(text, color, worldPos, size=20){
   const s = worldToScreen(worldPos); if(!s.infront) return;
@@ -1634,8 +1971,8 @@ function sfx(name){
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
 function setMuted(m){ muted=m; if(master) master.gain.value = m?0:0.5; const b=document.querySelector('#muteBtn .ic'); if(b) setIcon(b, m?'mute':'sound'); }
 function setMusicOn(on){ if(musicBus) musicBus.gain.value = on?0.5:0; }                                  // music track on/off (independent of SFX)
-function setQuality(q){ S.dpr = q==='low' ? 1 : Math.min(2, devicePixelRatio||1);   // explicit Low/High override (adaptive FPS may still lower High later)
-  try{ renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(); }catch(e){} }
+function setQuality(q){ S.dpr = q==='low' ? (MOBILE?0.8:1) : Math.min(MOBILE?1.5:2, devicePixelRatio||1);   // explicit Low/High override (adaptive FPS may still lower High later)
+  try{ renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }catch(e){} }
 function startMusic(){
   const a=audio(); if(!a || musicSrc) return;
   try{
@@ -2755,7 +3092,7 @@ const raycaster = new THREE.Raycaster();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
 const ndc = new THREE.Vector2();
 function updateAimFromMouse(cx, cy){
-  ndc.x = (cx/innerWidth)*2 - 1; ndc.y = -(cy/innerHeight)*2 + 1;
+  ndc.x = (cx/VIEW.w)*2 - 1; ndc.y = -(cy/VIEW.h)*2 + 1;
   raycaster.setFromCamera(ndc, camera);
   const hit = new THREE.Vector3();
   if(raycaster.ray.intersectPlane(groundPlane, hit)){ S.aimPoint.copy(hit); S.pointerActive = true; }
@@ -2786,7 +3123,7 @@ function onTouchStart(e){
   let engaged=false;
   for(const t of e.changedTouches){
     // right side = movement joystick; left ~third is reserved for the fire trigger (left thumb)
-    if(move.id===null && t.clientX > innerWidth*0.34){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); engaged=true; }
+    if(move.id===null && t.clientX > VIEW.w*0.34){ move.id=t.identifier; move.ox=t.clientX; move.oy=t.clientY; move.x=move.y=0; setStick(stickL,t.clientX,t.clientY,0,0); engaged=true; }
   }
   if(engaged && e.cancelable) e.preventDefault();
 }
@@ -2853,6 +3190,11 @@ function syncFsIcon(){ const b=document.querySelector('#fsBtn .ic'); if(b) setIc
 document.addEventListener('fullscreenchange', syncFsIcon);
 document.addEventListener('webkitfullscreenchange', syncFsIcon);
 const FS_SUPPORTED = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);   // iOS Safari/Chrome have NO Fullscreen API → button would be dead
+// browsers only grant fullscreen/orientation-lock inside a user gesture → take the very first one on mobile
+let _fsAsked=false;
+function fsOnFirstGesture(){ if(_fsAsked||!MOBILE) return; _fsAsked=true; reqFs(); queueResize(); setTimeout(queueResize,350); }
+addEventListener('touchend', fsOnFirstGesture, {capture:true});
+addEventListener('pointerdown', fsOnFirstGesture, {capture:true});
 const fsBtnEl=document.getElementById('fsBtn');
 if(fsBtnEl){
   if(!FS_SUPPORTED){ fsBtnEl.style.display='none'; }   // hide on iOS instead of showing a button that does nothing
@@ -3691,7 +4033,7 @@ function startGame(continueRun){
   document.getElementById('combo').style.opacity='0';
   hide('start'); hide('pause'); hide('gameover'); hide('upgrade'); hide('victory');
   audio(); startMusic(); sfx('click');
-  if(MOBILE){ reqFs(); setTimeout(doResize, 300); setTimeout(doResize, 800); }   // go immersive + refit after fullscreen/orientation settle
+  if(MOBILE){ reqFs(); setTimeout(queueResize, 300); setTimeout(queueResize, 800); }   // go immersive + refit after fullscreen/orientation settle
   updateHUD();
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
@@ -3712,8 +4054,14 @@ function quitToMenu(){
   hide('pause'); hide('gameover'); show('start');
   refreshStartUI(); refreshWallet(); saveProfile(); sfx('click');
 }
-function show(id){ document.getElementById(id).classList.remove('hidden'); }
-function hide(id){ document.getElementById(id).classList.add('hidden'); }
+// any open menu hides the battle HUD + the mobile control pads — on a phone they used to sit right
+// on top of the menu buttons (FIRE/DASH/SWAP behind PLAY), which read as "broken, overlapping UI"
+function syncMenuState(){
+  const open = [...document.querySelectorAll('.overlay')].some(o=>!o.classList.contains('hidden'));
+  document.body.classList.toggle('inmenu', open);
+}
+function show(id){ document.getElementById(id).classList.remove('hidden'); syncMenuState(); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); syncMenuState(); }
 
 document.getElementById('playBtn').addEventListener('click', startGame);
 document.getElementById('playBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
@@ -3741,6 +4089,7 @@ function refreshStartUI(){
   const hello=document.getElementById('hello');
   if(hello) hello.innerHTML = PROFILE.nickname ? ('COMMANDER <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
   const cont=document.getElementById('continueBtn'), hasSave=!!(PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));
+  document.body.classList.toggle('hassave', hasSave);   // short-landscape grid: CONTINUE + PLAY share row 1 only when a save exists
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; const lp=hasSave?(PROFILE.save.loop|0):0;
     cont.textContent = hasSave ? ('CONTINUE ▶  '+(lp>0?'NG+'+lp+' · ':'')+'STAGE '+PROFILE.save.stage) : 'CONTINUE ▶'; }
   const ac=document.getElementById('arsenalCount'); if(ac) ac.textContent=PROFILE.ownedGuns.length;   // show how many guns are collected
@@ -4141,7 +4490,7 @@ tapBtn('si-buy', ()=>buyShop());
 addEventListener('pointerdown', e=>{        // in the detail view, click the 3D item itself to buy it
   if(!shopDetail3D) return;
   if(e.target.closest && e.target.closest('.shop-info,.shop-tab,.shop-arrow,.shop-back,.w-chip,#shopTabs')) return;
-  _shopRay.setFromCamera({x:(e.clientX/innerWidth)*2-1, y:-(e.clientY/innerHeight)*2+1}, shopCam);
+  _shopRay.setFromCamera({x:(e.clientX/VIEW.w)*2-1, y:-(e.clientY/VIEW.h)*2+1}, shopCam);
   if(shopHero && _shopRay.intersectObject(shopHero, true).length) buyShop();
 });
 addEventListener('pagehide', saveProfile);
@@ -4737,6 +5086,8 @@ function loop(nowMs){
   const now = nowMs/1000;
   let dt = (nowMs - last)/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
+  document.body.classList.toggle('ingame', !!PLAY_MODES[S.mode]);   // drives the portrait gate (menus stay usable upright)
+  if(gated()) return;                     // portrait gate up or tab hidden → don't burn a frame behind the curtain
 
   if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
 
@@ -4780,8 +5131,9 @@ function loop(nowMs){
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
-  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0;
-    if(fps<45 && S.dpr>1){ S.dpr=Math.max(1,S.dpr-0.25); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(); } }
+  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?0.75:1;
+    if(fps<45 && S.dpr>dprFloor){ S.dpr=Math.max(dprFloor,S.dpr-0.25); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }
+    else if(fps<34 && bloom.enabled && MOBILE){ bloom.enabled=false; } }   // still heavy at the lowest resolution → drop the glow, keep the frames
 }
 let _fpsAcc=0, _fpsN=0;
 function updateAbilityUI(now){
@@ -4796,22 +5148,30 @@ function updateAbilityUI(now){
   document.getElementById('ab-spell')?.classList.toggle('ready', sc<=0);
 }
 
-function doResize(){
-  const w=innerWidth, h=innerHeight;
+function doResize(force){
+  const c=renderer.domElement;
+  const w=Math.max(1, c.clientWidth||innerWidth), h=Math.max(1, c.clientHeight||innerHeight);   // the canvas box, not innerWidth/innerHeight
+  if(!force && w===VIEW.w && h===VIEW.h) return;   // mobile fires resize continuously while the URL bar slides — reallocating
+  VIEW.w=w; VIEW.h=h;                              // the render targets on every one of those was a guaranteed hitch
   camera.aspect = w/h; camera.updateProjectionMatrix();
   if(typeof shopCam!=='undefined'){ shopCam.aspect = w/h; shopCam.updateProjectionMatrix(); }   // keep the 3D shop camera in sync
   renderer.setSize(w, h, false); composer.setSize(w, h);   // buffer follows the viewport; CSS keeps the canvas full-screen
-  if(bloom && bloom.setSize) bloom.setSize(w, h);
+  if(bloom && bloom.setSize) bloom.setSize(Math.round(w*BLOOM_SCALE), Math.round(h*BLOOM_SCALE));
 }
-window._resize = doResize;   // (debug) force a refit
+let _rsT=0;
+function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
+// resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
+window._resize = ()=>doResize(true);   // (debug) force a refit
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
-addEventListener('resize', ()=>{ doResize(); checkOrientation(); });
+const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not
+function gated(){ return document.hidden || (MOBILE && innerHeight > innerWidth && !!PLAY_MODES[S.mode]); }   // nothing to draw behind the rotate gate
+addEventListener('resize', ()=>{ queueResize(); checkOrientation(); });
 // the mobile viewport keeps changing AFTER load (toolbar hide, fullscreen, orientation lock) — refit when it settles
-addEventListener('orientationchange', ()=>{ setTimeout(()=>{ doResize(); checkOrientation(); }, 250); setTimeout(doResize, 650); });
-document.addEventListener('fullscreenchange', ()=>setTimeout(doResize, 150));
-document.addEventListener('webkitfullscreenchange', ()=>setTimeout(doResize, 150));
-if(window.visualViewport) window.visualViewport.addEventListener('resize', doResize);
+addEventListener('orientationchange', ()=>{ setTimeout(()=>{ queueResize(); checkOrientation(); }, 250); setTimeout(queueResize, 650); });
+document.addEventListener('fullscreenchange', ()=>setTimeout(queueResize, 150));
+document.addEventListener('webkitfullscreenchange', ()=>setTimeout(queueResize, 150));
+if(window.visualViewport) window.visualViewport.addEventListener('resize', queueResize);
 
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore(1);
@@ -4856,6 +5216,27 @@ window._dbg.riders = riders; window._deployRiders = (n)=>{ ridersUnlocked=true; 
 window._tankExplode = tankExplode; window._wreck = spawnTankWreck;   // (debug) trigger the death FX / part-wreck
 window._spawnDrone = spawnDrone; window._damageDrone = (dmg)=>damageDrone(dmg,null); window._updateDrone = updateDrone; window._DRONE = DRONE; Object.defineProperty(window,'_drone',{get:()=>S.drone});   // (debug) support drone
 window._deployOwnedDrone = deployOwnedDrone; window._droneOwned = droneOwned; window._droneDmgMul = droneDmgMul; window._guardFireMul = guardFireMul; window._droneBonusHp = droneBonusHp;   // (debug) support-unit shop upgrades
+
+// ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
+// is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
+function bootHide(){ const b=document.getElementById('boot'); if(!b||b._gone) return; b._gone=true;
+  b.classList.add('gone'); setTimeout(()=>{ b.style.display='none'; }, 450); }
+function bootReady(forceTap){
+  const b=document.getElementById('boot'); if(!b||b._gone) return;
+  if(!(MOBILE||forceTap===true)){ bootHide(); return; }                 // desktop: straight into the menu
+  b.classList.add('ready');
+  const go=e=>{ if(e&&e.cancelable) e.preventDefault();
+    b.removeEventListener('touchstart',go); b.removeEventListener('click',go);
+    try{ audio(); }catch(_){}                                            // iOS: AudioContext only resumes inside a gesture
+    reqFs(); bootHide();
+    queueResize(); setTimeout(queueResize,300); setTimeout(queueResize,900); };   // refit once fullscreen/rotation settle
+  b.addEventListener('touchstart',go,{passive:false}); b.addEventListener('click',go);
+}
+window._bootReady = bootReady; window._bootHide = bootHide;   // (debug/test) drive the boot gate
+syncMenuState();                                               // the title screen is an open menu → HUD stays out of the way
+document.getElementById('boot')?.setAttribute('data-live','1');
+doResize(true);                                                // size the buffer from the real canvas box before frame 1
+requestAnimationFrame(()=>requestAnimationFrame(bootReady));   // two frames in → the battlefield is genuinely on screen
 
 requestAnimationFrame(loop);
 </script>

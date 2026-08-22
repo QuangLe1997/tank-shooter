@@ -7,3 +7,4 @@ _*.png
 ._*
 .vscode/
 .idea/
+.playwright-mcp/
