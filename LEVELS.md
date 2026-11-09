@@ -185,3 +185,65 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 ---
 
 **Last updated:** 2026-06-02 · khớp code tới **Z42** (9 loại địch, 14 súng, hợp đồng, pháo kích, mastery, drone gunship gatling **(đã hạ về hỗ-trợ)**, mua+nâng cấp drone & lính canh ở Shop·SUPPORT, PYRO vòi lửa vòng cung tầm xa, 6 địa hình chọn được + scatter trang trí, đạn phát sáng + tracer theo súng, xe tăng player uy lực hơn, khiên năng lượng hex cao cấp — *Z42–44 thuần hình ảnh*; **CRYO đóng băng 1.4→2.4s — Z45**; **PYRO luồng cột lửa liền mạch — Z46**; **bảng màu đạn 12 khẩu khác nhau — Z47**; **dialog chọn địa hình 3D hoành tráng — Z48**; **PYRO luồng lửa chuyển động — Z49**; **thoát ván về Home từ Pause/Game-over — Z50**; **onboarding HOW TO PLAY — Z52**; **SETTINGS + 3 độ khó — Z53**; **SIEGE ROCKET rơi đúng con trỏ chuột — Z55**; **SIEGE ROCKET xem trước đường đạn + rung xe/giật lùi + lửa phụt ngược — Z56**; **SIEGE ROCKET phóng đúng từ miệng ống + đúng độ nghiêng; BOMBER chạm xe là nổ ngay + 34 dmg — Z57**; **SIEGE ROCKET preview gọn lại còn 1 vòng cung chấm đỏ nhỏ & mờ, bỏ vòng tròn bán kính nổ — Z58**; **ống phóng SIEGE ROCKET dựng lại thành khối tròn 3D đặc, lòng ống có chiều sâu thật — Z59**; **quả tên lửa SIEGE ROCKET to/dài/phát sáng hơn + vệt lửa cháy phía sau — Z60**; **súng mới ARC MORTAR: lốp vòng cung như rocket nhưng nổ-khi-chạm + liên thanh + sức mạnh thấp hơn — Z61**; **HOWITZER làm lại = ngắm con trỏ + nổ-khi-chạm + liên thanh + bay nhanh; cả 2 pháo dùng vòng cung VỪA PHẢI ~43° nhanh hơn (giảm delay); ống ARC MORTAR mảnh-dài-tinh tế — Z62**). Số liệu là **tunable** — từ Z24 mọi con số cân bằng nằm trong **`config.js` (`BALANCE`)**; đổi balance thì sửa ở đó **và** cập nhật file này (chạy `node test.js` để kiểm tra nhất quán).
+
+## 6. HỌC THUYẾT VŨ KHÍ (Z75) — sức mạnh, tầm, nạp đạn, băng đạn có công thức
+
+> Số liệu nằm ở `index.html` (`GUNS`) + `config.js` (`DMG_TYPE`, `ARMOR`, `RAMP`, `ENV`, `GIFT`). `node test.js` kiểm tra các bất biến (AP mạnh nhất vs giáp nặng, KIN yếu vs giáp nặng, HESH phá công trình tốt nhất, đêm giảm tầm nhưng railgun miễn trừ…).
+
+**Sát thương cuối** = `dmg × DMG_TYPE[loại][giáp] × falloff(tầm) × ENV(loại) × (shop · thông thạo · roguelite · buff · hợp đồng)`
+- **falloff**: 100% trong 55% tầm của súng, rồi giảm tuyến tính còn `fall` ở cuối tầm.
+- **tầm (reach)** = `(26 + 3·(màn−1)) × LONG BARREL × buff RANGE × gun.rng × (đêm ? 0.85 : 1) × (đồng trống & súng lớn ? 1.1 : 1)`.
+- **Máu địch** = `def.hp × (1 + 0.14·(màn−1)) × NG+ × độ khó × hợp đồng` → màn 5 dày hơn ×1.56 để sức mạnh súng tăng dần vẫn còn thử thách.
+
+### Bảng loại sát thương × lớp giáp
+| Loại | Nhẹ (scout·bomber·gunner) | Vừa (grunt·mortar·sniper·carrier) | Nặng (shield·heavy·boss) | Công trình | Ghi chú |
+|---|---|---|---|---|---|
+| KIN (động năng) | 1.15 | 1.00 | **0.55** | 0.6 | băm xe nhẹ, dội ra trên giáp dày |
+| AP (xuyên giáp) | 0.85 | 1.10 | **1.45** | 1.2 | sinh ra để diệt tăng |
+| HE (nổ) | 1.20 | 1.00 | 0.85 | 1.5 | đám đông + công trình |
+| FRAG (mảnh) | **1.35** | 0.95 | 0.55 | 0.7 | tầm gần vs mục tiêu mềm |
+| FIRE (lửa) | 1.30 | 1.00 | 0.75 | 0.3 (tháp gỗ ×1.6) | DoT cháy lan |
+| CRYO (băng) | 1.00 | 1.00 | 0.85 | 0.5 | đóng băng (giáp nặng chỉ ½ thời gian) |
+| ELEC (điện) | 1.00 | 1.10 | 1.00 | 0.4 | sét lan 3 mục tiêu |
+| HESH | 1.00 | **1.25** | 1.05 | **3.0** | phá chướng ngại & tháp canh |
+
+### Chỉ số súng sau cân bằng
+DPS duy trì = `dmg·frags·mag / (mag·fireCd + reload)`; cột L/M/H = DPS duy trì nhân hệ số giáp.
+
+| Súng | Loại | Sát thương | Nhịp (s) | Băng | Nạp (s) | DPS bùng | DPS duy trì | vs L / M / H | Tầm | Còn ở cuối tầm | |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| rifle | KIN | 14 | 0.2 | 24 | 1.9 | 70 | 50 | 58 / 50 / 28 | ×1 | 0.7 | |
+| smg | KIN | 8 | 0.07 | 50 | 2.4 | 114 | 68 | 78 / 68 / 37 | ×0.8 | 0.5 | |
+| shotgun | FRAG | 9×8 | 0.6 | 6 | 2.4 | 120 | 72 | 97 / 68 / 40 | ×0.6 | 0.25 | |
+| flak | HE | 10×5 | 0.55 | 10 | 2.8 | 91 | 60 | 72 / 60 / 51 | ×0.9 | 0.75 | |
+| cannon | AP | 60 | 0.9 | 5 | 3.2 | 67 | 39 | 33 / 43 / 56 | ×1.2 | 1 | |
+| hesh | HESH | 44 | 0.8 | 6 | 3 | 55 | 34 | 34 / 42 / 36 | ×1.05 | 0.9 | |
+| minigun | KIN | 9 | 0.05 | 100 | 4.2 | 180 | 98 | 113 / 98 / 54 | ×0.9 | 0.6 | |
+| missile | HE | 34 | 0.55 | 8 | 3.2 | 62 | 36 | 43 / 36 / 30 | ×1.3 | 1 | |
+| railgun | AP | 95 | 0.9 | 5 | 3.4 | 106 | 60 | 51 / 66 / 87 | ×1.5 | 1 | |
+| cryo | CRYO | 11 | 0.3 | 18 | 2.6 | 37 | 25 | 25 / 25 / 21 | ×0.85 | 0.8 | |
+| tesla | ELEC | 22 | 0.38 | 14 | 2.8 | 58 | 38 | 38 / 42 / 38 | ×0.8 | 0.8 | |
+| rocket | HE | 0 | 5 | 10 | 30 | — | — | — | — | — | gián tiếp (rocket) |
+| arty | HE | 40 | 1.05 | 5 | 3.6 | — | — | — | — | — | gián tiếp (mortar) |
+| mortar | HE | 30 | 0.85 | 6 | 3.4 | — | — | — | — | — | gián tiếp (mortar) |
+| flamer | FIRE | 1 | 0.05 | 140 | 3.2 | — | — | — | — | — | gián tiếp (flame) |
+
+Vai trò: **RIFLE** đa năng · **SMG** cận chiến xe nhẹ · **SHOTGUN** canister cực mạnh ≤ 10 m · **FLAK** đám đông · **CANNON** diệt tăng (+xuyên 1) · **HESH (mới)** phá chướng ngại/tháp canh, nứt giáp vừa · **MINIGUN** phải **quay lên tốc** (~0.7 s) rồi xả 180 DPS · **MISSILE** tự dẫn, bất chấp đêm · **RAILGUN** VIP diệt tăng xuyên 6 · **CRYO/TESLA** khống chế · **cối/lựu pháo/SIEGE** gián tiếp vượt tường.
+
+### Điều kiện chiến trường (`ENV`) — báo trên màn chuyển
+| Điều kiện | Khi nào | Hiệu ứng |
+|---|---|---|
+| NIGHT | giờ đêm | tầm −15% (railgun nhờ ống nhiệt, missile nhờ khoá mục tiêu: miễn), địch ngắm kém ×1.3 |
+| HEAT | DESERT/FOUNDRY hoặc trưa | lửa +25%, đóng băng −30% |
+| FROST | TUNDRA | đóng băng +50%, cryo +20%, lửa −25% |
+| URBAN | RUINS/CITADEL | HE +20% |
+| OPEN | MEADOW/DESERT ban ngày | CANNON/RAILGUN/HESH tầm +10% |
+
+### Thuật toán tặng súng (`GIFT`)
+1. Mỗi vật phẩm rơi: 6% kim cương; cơ hội ra súng = `min(0.85, 0.30 + 0.12 × số lần rơi liên tiếp không ra súng)` (**pity timer**).
+2. Súng được chọn theo trọng số: `1 + 1.6 × Σ_lớp (tỉ lệ địch lớp đó trên sân + hàng chờ) × max(0, hệ số−1) × 2`, × **1.6 nếu chưa có trong kho** → đợt nhiều xe nặng thường cho AP/HESH, đợt bầy xe nhẹ cho FRAG/KIN/HE.
+3. Súng trùng vẫn cộng THÔNG THẠO (cấp 1→4: +10% sát thương, −6% nhịp, −8% nạp mỗi cấp).
+
+### Quỹ đạo đạn
+- **Súng bắn thẳng** (mọi súng trừ cối/lựu pháo/SIEGE/PYRO): quỹ đạo **phẳng** như đạn xuyên giáp tốc độ cao, chỉ chúc nhẹ về độ cao thân xe; trúng/không trúng tính theo **hộp thân xe thật** (OBB), không còn vòng tròn nhỏ.
+- **Đạn hạng nặng bắn cầu vồng** (góc nòng cố định θ): `v² = g·D² / (2·cos²θ·(D·tanθ + y_nòng − y_đích))`, thời gian bay `T = D/(v·cosθ)`, với `y_đích` = độ cao mặt đất thật tại điểm ngắm; nổ tại **điểm chạm đất thật** (mô đất chắn giữa đường sẽ hứng đạn). Mobile bắn đón: `đích = vị trí + vận tốc·T` (lặp 2 lần). Đo kiểm: sai số điểm rơi 0.3–1.0 đơn vị (≈ quãng bay 1 khung hình), nằm trong bán kính nổ 5–6.

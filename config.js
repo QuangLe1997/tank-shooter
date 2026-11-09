@@ -62,6 +62,38 @@ export const BALANCE = {
             guardRofPerLvl:0.10, guardArmPerLvl:18, mulFloor:0.4 },
 };
 
+// ============================================================================
+// ARMS DOCTRINE (Z75) — why each gun exists and when it shines.
+//   finalDamage = gun.dmg × DMG_TYPE[type][armor] × rangeFalloff × ENV(type) × (player mults: shop/mastery/roguelite/buffs/contract)
+//   rangeFalloff = 1 inside 55% of the gun's reach, then linear down to gun.fall at full reach.
+//   reach = playerRange() × gun.rng × (night ? ENV.night.range : 1)   (railgun/missile ignore night: thermal sight / lock-on)
+// ============================================================================
+// damage type × armour class (L = light: scout/bomber/gunner · M = medium: grunt/mortar/sniper/carrier · H = heavy: shield/heavy/boss)
+// `struct` = vs cover/towers (HESH is the dedicated bunker-buster; fire torches wooden towers but not sandbags/concrete).
+export const DMG_TYPE = {
+  KIN:  { L:1.15, M:1.00, H:0.55, struct:0.6, label:'KINETIC' },      // autocannons / MGs / rotary — shreds light armour, bounces off heavy
+  AP:   { L:0.85, M:1.10, H:1.45, struct:1.2, label:'ARMOR-PIERCING' },// sabot / rail slug — built to kill tanks; over-penetrates light targets
+  HE:   { L:1.20, M:1.00, H:0.85, struct:1.5, label:'HIGH-EXPLOSIVE' },// blast + splinters — crowds, light vehicles, structures
+  FRAG: { L:1.35, M:0.95, H:0.55, struct:0.7, label:'FRAGMENTATION' }, // canister / pellets — brutal close on soft targets
+  FIRE: { L:1.30, M:1.00, H:0.75, struct:0.3, tower:1.6, label:'INCENDIARY' },
+  CRYO: { L:1.00, M:1.00, H:0.85, struct:0.5, label:'CRYOGENIC' },
+  ELEC: { L:1.00, M:1.10, H:1.00, struct:0.4, label:'ELECTRIC' },
+  HESH: { L:1.00, M:1.25, H:1.05, struct:3.0, label:'HESH' },         // squash-head: spalls medium armour, levels cover & towers
+};
+export const ARMOR = { scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H' };
+// enemy toughness grows with the campaign so later stages stay a fight even as the arsenal grows
+export const RAMP = { hpPerStage:0.14 };
+// battlefield conditions — the same gun performs differently depending on WHERE and WHEN you fight
+export const ENV = {
+  night:  { range:0.85, enemySpread:1.3, exempt:['railgun','missile'] },   // short sight lines; thermal (railgun) & lock-on (missile) unaffected; enemies shoot worse too
+  hot:    { biomes:['DESERT','FOUNDRY'], hours:['noon'], fire:1.25, freeze:0.7 },   // heat: fires rage, ice melts off fast
+  cold:   { biomes:['TUNDRA'], fire:0.75, freeze:1.5, cryo:1.2 },                  // frost: cryo locks targets for longer, flames gutter
+  urban:  { biomes:['RUINS','CITADEL'], he:1.2 },                                  // rubble & walls: blast and splinters wreck more
+  open:   { biomes:['MEADOW','DESERT'], longRange:1.1, guns:['cannon','railgun','hesh'] },   // long sight lines favour the big guns
+};
+// battlefield gun gifts: pity timer + counter-pick + prefer guns you don't hold yet (duplicates still feed MASTERY)
+export const GIFT = { gunBase:0.30, pityStep:0.12, pityCap:0.85, counterW:1.6, newGunW:1.6 };
+
 // ----- rarity colours (tier/VIP) -----
 export const RAR_COL = { t1:0x9fb07a, t2:0x5aa9ff, t3:0xc08bff, vip:0x7fe7ff, up:0x9bd14a };
 
@@ -89,7 +121,7 @@ export const SHOP_UP = [
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,000) — value stays ordered. -----
 export const GUN_PRICE = { smg:{c:500}, shotgun:{c:1400}, cryo:{c:1600}, flak:{c:1700}, cannon:{c:2000},
-  flamer:{c:2200}, mortar:{c:3800}, minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
+  flamer:{c:2200}, hesh:{c:3000}, mortar:{c:3800}, minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
 export const VIP_GUNS = ['railgun','rocket'];
 
 // ----- punchy marketing blurbs (kept short) -----
@@ -102,7 +134,8 @@ export const GUN_BLURB = {
   rocket:'Lob it in — a whole zone simply vanishes.',
   arty:'Heavy shells lobbed onto your mark — clears walls, bursts the instant they land.',
   mortar:'Lob shells over any wall — rapid indirect fire that bursts on impact.',
-  flamer:'Set them ablaze — the fire only spreads, and it never lets go.' };
+  flamer:'Set them ablaze — the fire only spreads, and it never lets go.',
+  hesh:'Squash-head shells — flatten cover, topple towers, crack medium armour.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [

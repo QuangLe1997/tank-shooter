@@ -166,6 +166,7 @@
   #weaponchip .wc-ic{width:21px;height:21px;color:var(--green);display:inline-flex;flex:0 0 auto;}
   #weaponchip .wc-nm{font-weight:800;letter-spacing:1.5px;}
   #weaponchip .wc-am{font-weight:800;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+  #weaponchip .wc-ty{margin-left:7px;font-size:9px;font-weight:800;padding:2px 5px;border-radius:4px;background:rgba(255,184,74,.16);color:#ffcf7a;letter-spacing:1px;vertical-align:2px;}
   #weaponchip.reloading .wc-ic,#weaponchip.reloading .wc-am{color:var(--danger);}
   .buffchip .bic{width:14px;height:14px;display:inline-flex;color:var(--green);}
   .upcard .ic{width:46px;height:46px;margin:0 auto 2px;color:var(--green);}
@@ -1200,7 +1201,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS } from './config.js';   // tuning + economy data (zero-build ES module)
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT } from './config.js';   // tuning + economy data (zero-build ES module)
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* =========================================================================
@@ -1224,7 +1225,8 @@ const PLAYER_PAL = {hull:0x5e7a2e,turret:0x75933a,barrel:0x9bb04a,tread:0x2a3514
 // effective combat range: grows with stage + permanent upgrade + timed buff
 function playerRange(){ const p=S.player; if(!p) return PLAYER.rangeBase;
   const buff = (S.timeNow||0) < p.buffUntil.range ? 1.4 : 1;
-  return (PLAYER.rangeBase + (S.stage-1)*3) * p.rangeMul * buff; }
+  const gid = p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'rifle';
+  return (PLAYER.rangeBase + (S.stage-1)*3) * p.rangeMul * buff * gunReach(gid); }   // ARMS DOCTRINE: each gun has its own reach; night shortens it
 // Battlefields — bg/fog/ground/grid/accent/sky + fog density + sun + scatter-deco theme + perimeter-wall tint.
 // Indices 0-4 = the campaign (one per stage S1-S5). MEADOW (5) is a bonus terrain only via the picker.
 const BIOMES = [
@@ -1982,6 +1984,7 @@ function applyBiome(stage){
   if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.ground); GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield
   ring.material.color.setHex(BIOME.accent);
   buildPerimeter(BIOME);   // jersey barriers + concertina wire
+  computeEnv();            // ARMS DOCTRINE battlefield conditions (night / heat / frost / urban / open)
   buildTerrainDecor(BIOME);
 }
 genTerrain(BIOME); buildTerrainDecor(BIOME);   // initial dressing for the menu backdrop
@@ -2426,6 +2429,10 @@ function makeGunBarrel(id){
     for(const z of [2.1,2.7,3.8]) tube(0.17,0.17,0.07,z,PK);
     box(0.12,0.09,0.16,0,Y+0.17,4.45,PK); tube(0.135,0.135,0.12,4.52,PK);
     tip=4.6; recoilLen=0.6; }
+  else if(id==='hesh'){       // 105 mm L7-pattern HESH gun — shorter, fat rifled tube, mid-barrel bore evacuator, chunky single-baffle brake
+    tube(0.21,0.21,0.45,1.45,PK); tube(0.15,0.17,2.5,2.65,steel(0x51533f)); tube(0.22,0.22,0.6,2.55,steel(0x45473a));
+    for(const z of [1.9,3.3]) tube(0.18,0.18,0.06,z,PK); tube(0.26,0.22,0.36,4.0,PK); for(const sd of [-1,1]) box(0.07,0.3,0.26,sd*0.25,Y,4.0,park(0x121210));
+    tip=4.2; recoilLen=0.55; }
   else if(id==='minigun'){    // 30 mm 7-barrel ROTARY cannon (GAU-8 style) — barrel cluster with mid/front clamps on a spinning rotor
     rbox(0.66,0.52,0.7,0,Y,1.35,PK); tube(0.3,0.3,0.25,1.78,GM);
     spin=new THREE.Group(); spin.position.set(0,Y,2.6); g.add(spin);
@@ -2716,6 +2723,7 @@ function sfx(name){
     case 'shoot_minigun':tone(840,0.03,{type:'square',vol:0.07,slideTo:400}); noise(0.024,{vol:0.045,hp:2400,lp:8200}); break;
     case 'shoot_shotgun':noise(0.16,{vol:0.24,hp:280,lp:3000}); tone(150,0.15,{type:'square',vol:0.15,slideTo:58}); break;
     case 'shoot_flak':   noise(0.12,{vol:0.17,hp:480,lp:3600}); tone(210,0.12,{type:'triangle',vol:0.13,slideTo:88}); break;
+    case 'shoot_hesh':   tone(96,0.28,{type:'sine',vol:0.28,slideTo:38}); noise(0.22,{vol:0.22,hp:90,lp:1600}); tone(240,0.07,{type:'square',vol:0.08,slideTo:90}); break;
     case 'shoot_cannon': tone(118,0.24,{type:'sine',vol:0.27,slideTo:44}); noise(0.18,{vol:0.2,hp:110,lp:2000}); tone(300,0.06,{type:'square',vol:0.09,slideTo:120}); break;
     case 'shoot_missile':noise(0.32,{vol:0.13,hp:600,lp:4200}); tone(300,0.26,{type:'sawtooth',vol:0.1,slideTo:120}); break;
     case 'shoot_railgun':tone(1300,0.16,{type:'sawtooth',vol:0.15,slideTo:300}); noise(0.1,{vol:0.09,hp:3000,lp:9200}); tone(160,0.12,{type:'sine',vol:0.12,slideTo:60,delay:0.02}); break;
@@ -2924,8 +2932,11 @@ function spawnBullet(x, z, angle, o={}){
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
     lockOn:o.lockOn||false, tgt:null, loft,
-    by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && D>0.5 ? (o.dropTo-y0)/(D/sp) : 0), ignore:o.ignore||null, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark' });
+    by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark' });
 }
+// does a round at (x,z) with radius r strike tank t? — tests the REAL hull footprint (oriented box), not a small circle
+function hitsHull(t, x, z, r){ const s=t.mesh?t.mesh.scale.x:1, f=t.facing||0, sf=Math.sin(f), cf=Math.cos(f), dx=x-t.pos.x, dz=z-t.pos.z;
+  const lx=dx*cf-dz*sf, lz=dx*sf+dz*cf; return Math.abs(lx) < HULL_HW*s+r && Math.abs(lz) < HULL_HL*s+r; }
 function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
 function updateBullets(dt, now){
   const lim = ARENA-1;
@@ -2965,20 +2976,20 @@ function updateBullets(dt, now){
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
     if(!airborne) for(const bl of blocks){ if(bl===b.ignore) continue; const dx=bl.x-b.x, dz=bl.z-b.z; if(dx*dx+dz*dz < (bl.r+b.r)**2){
-      damageBlock(bl, b.dmg); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
+      damageBlock(bl, b.dmg*structMul(b.type, bl)); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
       for(const e of enemies){ const dx=e.pos.x-b.x, dz=e.pos.z-b.z;
-        if(dx*dx+dz*dz < (b.r+e.r)**2){
-          let dmg=b.dmg;
+        if(dx*dx+dz*dz < (b.r+e.r*2.2)**2 && hitsHull(e, b.x, b.z, b.r)){
+          const tm = typeMul(b.type, armorOf(e))*envDmg(b.type); let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos);   // damage class × armour × range × conditions
           if(e.def.shield){ const nx=Math.sin(e.aim),nz=Math.cos(e.aim), bl=Math.hypot(b.vx,b.vz)||1;
             if((b.vx/bl)*nx+(b.vz/bl)*nz < -0.3){ dmg*=0.28; ringPulse(b.mesh.position,0x9fd0ff,1.2); } }  // blocked from the front → flank it
           e._fx=b.fx;                               // remember which gun's style killed it → styled death blast
           damageEnemy(e, dmg);
           const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(15, (2.2+b.dmg*0.08)*(b.knock||1))/(e.def.scale||1);   // shove back along the shot; per-gun KNOCK; heavy tanks resist
           e.kbx+=(b.vx/_bl)*_imp; e.kbz+=(b.vz/_bl)*_imp; e.hitT=Math.max(e.hitT,0.16);
-          if(b.freeze){ e.stunUntil=Math.max(e.stunUntil, now+b.freeze); ringPulse(b.mesh.position, 0x9fe8ff, 1.5); }   // CRYO: freeze
+          if(b.freeze){ e.stunUntil=Math.max(e.stunUntil, now+b.freeze*ENVMOD.freeze*(armorOf(e)==='H'?0.5:1)); ringPulse(b.mesh.position, 0x9fe8ff, 1.5); }   // CRYO: freeze
           if(b.chain){ let hits=b.chain;                                                                               // TESLA: arc to nearby enemies
             for(const e2 of enemies.slice()){ if(e2===e||hits<=0) continue; const cx=e2.pos.x-e.pos.x, cz=e2.pos.z-e.pos.z;
               if(cx*cx+cz*cz < b.chainR*b.chainR){ e2._fx='shock'; damageEnemy(e2, b.dmg*0.6); ringPulse(e2.pos, 0x7fd0ff, 1.3);
@@ -2986,11 +2997,11 @@ function updateBullets(dt, now){
           impactFX(b.mesh.position, b.fx, Math.min(3.2, 1 + b.dmg/26)); hit=true;   // per-gun impact spray (spark/frag/blast/pierce/ice/shock)
           if(b.pierce>0){ b.pierce--; } else break; } }
       if(!hit && boss && boss.alive){ const dx=boss.pos.x-b.x, dz=boss.pos.z-b.z;
-        if(dx*dx+dz*dz < (b.r+boss.r)**2){ damageBoss(b.dmg); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
+        if(dx*dx+dz*dz < (b.r+boss.r*2.5)**2 && hitsHull(boss, b.x, b.z, b.r)){ damageBoss(b.dmg*bulletFalloff(b)*typeMul(b.type,'H')*envDmg(b.type)); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
     } else { // enemy bullet
       const p=S.player;
       const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
-      if(dpx*dpx+dpz*dpz < (b.r+p.radius)**2){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now, b.vx, b.vz);
+      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, b.x, b.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now, b.vx, b.vz);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
         else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }
@@ -3194,7 +3205,7 @@ function spawnEnemy(type, x, z){
   const def=ENEMY_DEFS[type];
   const mesh=getEnemyMesh(type);
   mesh.position.set(x,0,z);
-  const hp0 = Math.round(def.hp*loopHpMul()*cMod('enemyHpMul')*diffHpMul());   // ×NG+ loop ×CONTRACT ×DIFFICULTY
+  const hp0 = Math.round(def.hp*loopHpMul()*cMod('enemyHpMul')*diffHpMul()*(1+RAMP.hpPerStage*(S.stage-1)));   // ×NG+ loop ×CONTRACT ×DIFFICULTY ×stage ramp
   const e={ type, def, mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle,
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
     hp:hp0, maxHp:hp0, r:1.5*def.scale, facing:0, aim:0,
@@ -3239,7 +3250,7 @@ function updateEnemies(dt, now){
       else { e.burn.lvl = Math.min(F.lvlMax, e.burn.lvl + F.grow*dt); const n=e.burn.lvl;   // fire creeps bigger over time
         if(Math.random() < 0.5+0.35*n) spawnPart(e.pos.x+(Math.random()-0.5)*1.3, 1.1+Math.random()*(0.6+n*0.5), e.pos.z+(Math.random()-0.5)*1.3, (Math.random()-0.5)*1.6, 1.7+Math.random()*1.8, (Math.random()-0.5)*1.6, {color:Math.random()<0.5?0xff6a1c:0xffc24a, size:0.5+n*0.22, life:0.4, grav:0.4, drag:2.6});
         if(Math.random()<0.3) spawnPart(e.pos.x,1.7,e.pos.z, (Math.random()-0.5)*1,1.8,(Math.random()-0.5)*1, {color:0x16110b, size:0.9+n*0.4, life:0.7, smoke:true, grav:-0.5, drag:1.5, op:0.4});
-        e.hp -= F.dps * n * dt; if(e.hp<=0){ killEnemy(e); continue; }   // burned to death → drop it (mesh already pooled)
+        e.hp -= F.dps * n * dt * typeMul('FIRE', armorOf(e)) * ENVMOD.fire; if(e.hp<=0){ killEnemy(e); continue; }   // burned to death → drop it (mesh already pooled)
       }
     }
     // stunned (EMP / freeze power-up): hold still, no fire
@@ -3306,7 +3317,7 @@ function updateEnemies(dt, now){
         let aimA = e.aim;
         if(ds > A.leadFrom){ const lead=Math.min(0.35, d/def.bspeed)*(0.5+0.45*ds); aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // lead earlier + harder late
         const spread = A.spreadBase * (1 - ds*A.spreadDrop) * (def.accurate?A.accurateMul:1) / (1 + (S.loop||0)*A.loopAcc);   // ACCURACY tightens hard with stage + NG+ loop
-        aimA += (Math.random()-0.5) * Math.max(0.02, spread);
+        aimA += (Math.random()-0.5) * Math.max(0.02, spread) * (ENVMOD.night?ENV.night.enemySpread:1);
         const rateMul = A.rateBase - A.rateDrop*ds;
         const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul') * diffDmgMul();
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
@@ -4037,7 +4048,10 @@ function updateAimFromMouse(cx, cy){
   ndc.x = (cx/VIEW.w)*2 - 1; ndc.y = -(cy/VIEW.h)*2 + 1;
   raycaster.setFromCamera(ndc, camera);
   const hit = new THREE.Vector3();
-  if(raycaster.ray.intersectPlane(groundPlane, hit)){ S.aimPoint.copy(hit); S.pointerActive = true; }
+  groundPlane.constant=0;
+  if(raycaster.ray.intersectPlane(groundPlane, hit)){
+    for(let k=0;k<4;k++){ groundPlane.constant=-heightAt(hit.x,hit.z); if(!raycaster.ray.intersectPlane(groundPlane, hit)) break; }   // walk the ray onto the real (uneven) ground
+    groundPlane.constant=0; S.aimPoint.copy(hit); S.pointerActive = true; }
 }
 addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
 addEventListener('mousedown', e=>{ if(MOBILE) return;
@@ -4162,26 +4176,59 @@ function tryDash(){
 // Stat model: dmg (per fragment) · fireCd (s/shot) · mag (rounds) · reload (s)
 // · frags (pellets/shot, 1 ammo) · spread · bspeed · weight (mag→move penalty).
 // Tiers: 1 dễ kiếm/cân bằng → 3 mạnh/khan hiếm. Player chỉ bắt đầu với 'rifle'.
-const GUNS = {
-  rifle:   { name:'RIFLE', svg:'rifle', tier:1, dmg:16, fireCd:0.22, mag:24, reload:1.8, bspeed:66, frags:1, spread:0.03, color:0xaef0a0, r:0.42, life:2.0, recoil:0.9, knock:1.0, fx:'spark' },
-  smg:     { name:'SMG',   svg:'smg', tier:1, dmg:9,  fireCd:0.075,mag:45, reload:2.2, bspeed:74, frags:1, spread:0.08, color:0xfff0a0, r:0.34, life:1.7, recoil:0.3, knock:0.6, fx:'spark' },
-  shotgun: { name:'SHOTGUN',    svg:'shotgun', tier:2, dmg:8,  fireCd:0.55, mag:8,  reload:2.6, bspeed:58, frags:8, spread:0.55, color:0xff8a38, r:0.36, life:0.7, recoil:2.4, knock:1.9, fx:'frag' },
-  flak:    { name:'FLAK',   svg:'flak', tier:2, dmg:11, fireCd:0.5,  mag:12, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0x8fc8ff, r:0.5,  life:0.9, aoe:3.2, recoil:1.4, knock:1.2, fx:'frag' },
-  cannon:  { name:'CANNON',  svg:'shell', tier:2, dmg:50, fireCd:0.72, mag:6,  reload:3.0, bspeed:62, frags:1, spread:0.01, color:0xffb83a, r:0.55, life:2.0, aoe:3.2, recoil:3.6, knock:2.6, fx:'blast' },
-  minigun: { name:'MINIGUN',    svg:'minigun', tier:3, dmg:7,  fireCd:0.05, mag:90, reload:3.8, bspeed:76, frags:1, spread:0.12, color:0xfff4e0, r:0.34, life:1.8, recoil:0.25, knock:0.5, fx:'spark' },
-  missile: { name:'MISSILE',     svg:'missile', tier:3, dmg:26, fireCd:0.6,  mag:7,  reload:3.0, bspeed:95, frags:1, spread:0.05, color:0xff6a28, r:0.5,  life:3.2, homing:9, lock:true, aoe:3.4, recoil:1.4, knock:2.0, fx:'blast' },
-  railgun: { name:'RAILGUN',     svg:'rail', tier:3, dmg:82, fireCd:0.85, mag:5,  reload:3.4, bspeed:130,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6, recoil:3.0, knock:3.2, fx:'pierce' },
-  cryo:    { name:'CRYO',  svg:'snow', tier:2, dmg:10, fireCd:0.32, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:2.4, recoil:0.9, knock:0.8, fx:'ice' },          // control gun: low dmg, locks enemies solid for 2.4s/hit (boss immune)
-  tesla:   { name:'TESLA', svg:'bolt', tier:3, dmg:18, fireCd:0.4,  mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x5aa0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock' },    // chain lightning
-  rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xff4533, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360, recoil:2.0, knock:0, fx:'blast' },  // lobbed, 2s fuse, wipes a big radius
-  arty:    { name:'HOWITZER', svg:'target', tier:3, dmg:36, fireCd:1.05, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'mortar', aoeR:6.0, bossDmg:90, recoil:1.6, knock:0, fx:'blast' },  // INDIRECT heavy: lobs to the CURSOR (nearest on mobile) over walls, bursts ON IMPACT — rapid + mag-fed; bigger boom than the mortar
-  mortar:  { name:'ARC MORTAR', svg:'target', tier:2, dmg:30, fireCd:0.85, mag:6, reload:3.4, bspeed:0, frags:1, spread:0, color:0xffc24a, r:0.5, life:0, special:'mortar', aoeR:5.0, bossDmg:60, recoil:1.1, knock:0, fx:'blast' },  // INDIRECT rapid: lobs like the rocket (cursor/nearest aim, over walls) but bursts ON IMPACT — mag-fed, lower power than SIEGE
-  flamer:  { name:'PYRO', svg:'burst', tier:2, dmg:1, fireCd:0.05, mag:140, reload:3.2, bspeed:0, frags:1, spread:0, color:0xff6a1c, r:0, life:0, special:'flame', range:20, recoil:0.12, knock:0, fx:'spark' },  // arcing flame jet → sets enemies ALIGHT (burn DoT that grows + lingers ~10s)
+const GUNS = {   // ARMS DOCTRINE (Z75): type = damage class (config DMG_TYPE) · rng = reach × combat range · fall = damage left at full reach
+  rifle:   { name:'RIFLE', svg:'rifle', tier:1, type:'KIN', dmg:14, fireCd:0.2, mag:24, reload:1.9, bspeed:68, frags:1, spread:0.03, color:0xaef0a0, r:0.42, life:2.0, recoil:0.9, knock:1.0, fx:'spark', rng:1.0, fall:0.7 },
+  smg:     { name:'SMG',   svg:'smg', tier:1, type:'KIN', dmg:8,  fireCd:0.07,mag:50, reload:2.4, bspeed:74, frags:1, spread:0.08, color:0xfff0a0, r:0.34, life:1.7, recoil:0.3, knock:0.6, fx:'spark', rng:0.8, fall:0.5 },
+  shotgun: { name:'SHOTGUN',    svg:'shotgun', tier:2, type:'FRAG', dmg:9,  fireCd:0.6, mag:6,  reload:2.4, bspeed:58, frags:8, spread:0.55, color:0xff8a38, r:0.36, life:0.7, recoil:2.4, knock:1.9, fx:'frag', rng:0.6, fall:0.25 },
+  flak:    { name:'FLAK',   svg:'flak', tier:2, type:'HE', dmg:10, fireCd:0.55, mag:10, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0x8fc8ff, r:0.5,  life:0.9, aoe:3.2, recoil:1.4, knock:1.2, fx:'frag', rng:0.9, fall:0.75 },
+  cannon:  { name:'CANNON',  svg:'shell', tier:2, type:'AP', dmg:60, fireCd:0.9,  mag:5,  reload:3.2, bspeed:70, frags:1, spread:0.01, color:0xffb83a, r:0.55, life:2.0, aoe:2.4, pierce:1, recoil:3.6, knock:2.6, fx:'blast', rng:1.2, fall:1 },
+  hesh:    { name:'HESH 105', svg:'shell', tier:2, type:'HESH', dmg:44, fireCd:0.8, mag:6, reload:3.0, bspeed:60, frags:1, spread:0.02, color:0xe0b080, r:0.55, life:2.0, aoe:2.8, recoil:3.0, knock:2.2, fx:'blast', rng:1.05, fall:0.9 },   // NEW: bunker-buster
+  minigun: { name:'MINIGUN',    svg:'minigun', tier:3, type:'KIN', dmg:9,  fireCd:0.05, mag:100, reload:4.2, bspeed:76, frags:1, spread:0.12, color:0xfff4e0, r:0.34, life:1.8, recoil:0.25, knock:0.5, fx:'spark', rng:0.9, fall:0.6, spinUp:0.7 },   // must spin up
+  missile: { name:'MISSILE',     svg:'missile', tier:3, type:'HE', dmg:34, fireCd:0.55, mag:8,  reload:3.2, bspeed:95, frags:1, spread:0.05, color:0xff6a28, r:0.5,  life:3.2, homing:9, lock:true, aoe:3.4, recoil:1.4, knock:2.0, fx:'blast', rng:1.3, fall:1 },
+  railgun: { name:'RAILGUN',     svg:'rail', tier:3, type:'AP', dmg:95, fireCd:0.9,  mag:5,  reload:3.4, bspeed:140,frags:1, spread:0.0,  color:0xd0a0ff, r:0.55, life:1.5, pierce:6, recoil:3.0, knock:3.2, fx:'pierce', rng:1.5, fall:1 },
+  cryo:    { name:'CRYO',  svg:'snow', tier:2, type:'CRYO', dmg:11, fireCd:0.3, mag:18, reload:2.6, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:2.0, recoil:0.9, knock:0.8, fx:'ice', rng:0.85, fall:0.8 },          // control: freezes (half on heavy armour)
+  tesla:   { name:'TESLA', svg:'bolt', tier:3, type:'ELEC', dmg:22, fireCd:0.38, mag:14, reload:2.8, bspeed:92, frags:1, spread:0.04, color:0x5aa0ff, r:0.4,  life:1.4, chain:3, chainR:9, recoil:0.5, knock:0.7, fx:'shock', rng:0.8, fall:0.8 },    // chain lightning
+  rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, type:'HE', dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xff4533, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360, recoil:2.0, knock:0, fx:'blast', rng:1, fall:1 },  // lobbed, 2s fuse, wipes a big radius
+  arty:    { name:'HOWITZER', svg:'target', tier:3, type:'HE', dmg:40, fireCd:1.05, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'mortar', aoeR:6.0, bossDmg:90, recoil:1.6, knock:0, fx:'blast', rng:1, fall:1 },
+  mortar:  { name:'ARC MORTAR', svg:'target', tier:2, type:'HE', dmg:30, fireCd:0.85, mag:6, reload:3.4, bspeed:0, frags:1, spread:0, color:0xffc24a, r:0.5, life:0, special:'mortar', aoeR:5.0, bossDmg:60, recoil:1.1, knock:0, fx:'blast', rng:1, fall:1 },
+  flamer:  { name:'PYRO', svg:'burst', tier:2, type:'FIRE', dmg:1, fireCd:0.05, mag:140, reload:3.2, bspeed:0, frags:1, spread:0, color:0xff6a1c, r:0, life:0, special:'flame', range:20, recoil:0.12, knock:0, fx:'spark', rng:1, fall:1 },
 };
+// ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
+let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
+function computeEnv(){ const b=BIOME.name, t=S.tod; ENVMOD={ night:t==='night', fire:1, freeze:1, cryo:1, he:1, longRange:1 };
+  if(ENV.hot.biomes.includes(b)||ENV.hot.hours.includes(t)){ ENVMOD.fire*=ENV.hot.fire; ENVMOD.freeze*=ENV.hot.freeze; }
+  if(ENV.cold.biomes.includes(b)){ ENVMOD.fire*=ENV.cold.fire; ENVMOD.freeze*=ENV.cold.freeze; ENVMOD.cryo*=ENV.cold.cryo; }
+  if(ENV.urban.biomes.includes(b)) ENVMOD.he*=ENV.urban.he;
+  if(ENV.open.biomes.includes(b) && t!=='night') ENVMOD.longRange=ENV.open.longRange; }
+function conditionsText(){ const c=[];
+  if(ENVMOD.night) c.push('NIGHT — reach −15% (railgun & missile unaffected), enemy aim worse');
+  if(ENVMOD.fire>1) c.push('HEAT — fire +25%, freeze −30%'); if(ENVMOD.freeze>1) c.push('FROST — freeze +50%, cryo +20%, fire −25%');
+  if(ENVMOD.he>1) c.push('URBAN RUBBLE — high-explosive +20%'); if(ENVMOD.longRange>1) c.push('OPEN GROUND — cannon/railgun/HESH reach +10%');
+  return c.join('  ·  '); }
+function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='CRYO'?ENVMOD.cryo : type==='HE'?ENVMOD.he : 1; }
+function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (m[armor]||1) : 1; }
+function armorOf(e){ return e===boss ? 'H' : (ARMOR[e.type]||'M'); }
+function structMul(type, bl){ const m=type&&DMG_TYPE[type]; if(!m) return 1; return (bl.kind==='tower' && m.tower) ? m.tower : m.struct; }
+function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r; }
+function bulletFalloff(b){ if(!b.reach || b.fall>=1) return 1; const d=Math.hypot(b.x-b.ox, b.z-b.oz), f=Math.max(0, Math.min(1, (d/b.reach-0.55)/0.45)); return 1 - f*(1-b.fall); }
+let _effT=0;
+function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<1100) return; if(mul>=1.3){ _effT=n; floatText('EFFECTIVE ×'+mul.toFixed(1), '#ffb84a', new THREE.Vector3(pos.x,3.2,pos.z), 14); } else if(mul<=0.6){ _effT=n; floatText('WEAK vs ARMOR', '#9aa3ad', new THREE.Vector3(pos.x,3.2,pos.z), 13); } }
+
 // gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
+// SMART GIFT: weight each droppable gun by how well its damage class counters what's on the field (alive + queued),
+// and favour guns you don't carry yet (duplicates still level MASTERY). Keeps gifts relevant instead of random noise.
+function smartGunPick(){
+  const pool=gunDropPool(S.stage), cnt={L:0,M:0,H:0}; let tot=0;
+  for(const e of enemies){ cnt[armorOf(e)]++; tot++; } for(const t of (WAVE.spawnQueue||[])){ cnt[ARMOR[t]||'M']++; tot++; } if(boss&&boss.alive){ cnt.H+=4; tot+=4; }
+  const held=new Set((S.player?S.player.guns:[]).map(g=>g.id));
+  const w=pool.map(id=>{ const m=DMG_TYPE[GUNS[id].type]||{L:1,M:1,H:1}; let x=1;
+    if(tot) for(const c of ['L','M','H']) x += GIFT.counterW * (cnt[c]/tot) * Math.max(0, m[c]-1) * 2;
+    if(!held.has(id)) x *= GIFT.newGunW; return x; });
+  let r=Math.random()*w.reduce((a,b)=>a+b,0); for(let i=0;i<pool.length;i++){ if((r-=w[i])<=0) return pool[i]; } return pool[0];
+}
 function gunDropPool(stage){
   const pool=['smg','shotgun','cryo'];
-  if(stage>=2) pool.push('flak','cannon','minigun');
+  if(stage>=2) pool.push('flak','cannon','minigun','hesh');
   if(stage>=3) pool.push('missile','tesla','flamer','mortar');   // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
   if(stage>=4) pool.push('arty');                // howitzer: a rare late-stage drop (also buyable in the shop)
   return pool;
@@ -4199,7 +4246,7 @@ function muzzleFlash(x,z,ang,color,rec,y){
   for(let i=0;i<nS;i++) spawnPart(x+fx*(0.4+i*0.5),y+0.1,z+fz*(0.4+i*0.5), fx*(1.5+i)+(Math.random()-0.5), 0.5+Math.random()*0.5, fz*(1.5+i)+(Math.random()-0.5), {color:0x8a8478, size:(0.8+i*0.3)*s, life:1.1+i*0.3, smoke:true, grav:0.3, drag:2.6, grow:1.2*s, op:0.32});   // propellant smoke
   if(rec>=2.4){ for(let i=0;i<10;i++){ const a=i/10*6.283; spawnPart(x-fx*1.2, 0.3, z-fz*1.2, Math.cos(a)*9+fx*4, 0.4, Math.sin(a)*9+fz*4, {color:BIOME.ground, size:1.1, life:0.7, smoke:true, grav:-0.1, drag:3.4, grow:1.3, op:0.42}); } }   // blast overpressure kicks up the dust
 }
-const CASING = { rifle:{n:1,s:0.16}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
+const CASING = { hesh:{n:1,s:0.4}, rifle:{n:1,s:0.16}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
 function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 function magCap(g){ return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
 function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1)*gunReloadMul(inst.id); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }   // MASTERY: higher level reloads faster
@@ -4294,16 +4341,21 @@ const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
 function rocketTarget(){
   const p=S.player; let tx,tz;
   if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
-  else { const tgt=nearestTarget(playerRange()*1.7); if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; } else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; } }
+  else { const tgt=nearestTarget(playerRange()*1.7); if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z;
+      if(tgt.vel && p.muzzle){ p.muzzle.getWorldPosition(_v); const g=equippedGun(), el=g.special==='rocket'?ROCKET_ELEV:MORTAR_ELEV, G=g.special==='rocket'?ROCKET_G:MORTAR_G;
+        for(let k=0;k<2;k++){ const T=rocketArc(_v.x,_v.y,_v.z,tx,tz,el,G).T; tx=tgt.pos.x+tgt.vel.x*T; tz=tgt.pos.z+tgt.vel.z*T; } } }   // lead: aim where it WILL be after the flight time
+    else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; } }
   const lim=ARENA-2; return { x:Math.max(-lim,Math.min(lim,tx)), z:Math.max(-lim,Math.min(lim,tz)) };
 }
 const ROCKET_G=30, ROCKET_LAND_Y=0.8, ROCKET_ELEV=Math.PI/2-0.52;   // SIEGE rocket: steep ~60° lob (matches the tall sky-pointing launcher)
 const MORTAR_ELEV=Math.PI/2-0.82, MORTAR_G=46;                       // mortar/howitzer: MODERATE ~43° lob + stronger gravity → flatter & FAST, low hang-time so moving tanks can't walk out of it
 // solve the launch SPEED so a fixed-elevation lob from (sx,sy) lands exactly at (tx,tz): 0.8 = sy + D·tanθ − G·D²/(2 v²cos²θ). flight time = √(2(sy+D·tanθ−0.8)/G)
+// BALLISTIC SOLUTION for a fixed tube elevation θ: horizontal range D, height drop Δh = launchY − targetY (real ground at the mark)
+//   y(t) = sy + v·sinθ·t − G·t²/2,  x(t) = v·cosθ·t   →   v² = G·D² / (2·cos²θ·(D·tanθ + sy − ty)),   flight time T = D / (v·cosθ)
 function rocketArc(sx,sy,sz,tx,tz, elev, G){
   elev = elev||ROCKET_ELEV; G = G||ROCKET_G;
-  const dx=tx-sx, dz=tz-sz, D=Math.max(0.001,Math.hypot(dx,dz)), c=Math.cos(elev), s=Math.sin(elev);
-  const denom=Math.max(0.5, sy + D*Math.tan(elev) - ROCKET_LAND_Y);
+  const dx=tx-sx, dz=tz-sz, D=Math.max(0.001,Math.hypot(dx,dz)), c=Math.cos(elev), s=Math.sin(elev), ty=heightAt(tx,tz)+0.35;
+  const denom=Math.max(0.5, sy + D*Math.tan(elev) - ty);
   const v=Math.sqrt(G*D*D/(2*c*c*denom)), T=D/(v*c);
   return { T, vx:v*c*dx/D, vz:v*c*dz/D, vy:v*s, G };   // return G so the shell carries the matching gravity
 }
@@ -4440,9 +4492,9 @@ function updateRockets(dt, now){
     for(let k=0;k<2;k++) spawnPart(tx+(Math.random()-0.5)*0.25, ty+(Math.random()-0.5)*0.25, tz+(Math.random()-0.5)*0.25, -_rdir.x*5+(Math.random()-0.5)*1.6, -_rdir.y*5+(Math.random()-0.5)*1.6, -_rdir.z*5+(Math.random()-0.5)*1.6, {color:0xfff0c0, color2:0xff3a10, size:0.7+Math.random()*0.5, grow:1.5, life:0.3+Math.random()*0.22, grav:0.3, drag:3});   // BURNING fire trail (cools white→red)
     if(Math.random()<0.85) spawnPart(tx, ty, tz, (Math.random()-0.5)*1.2, 0.2, (Math.random()-0.5)*1.2, {color:0x261f1a, size:1.0, life:0.6, smoke:true, grav:0.5, drag:1.8, op:0.4});   // dark smoke behind the fire
     const ud=r.mesh.userData; if(ud.plume){ ud.plume.scale.setScalar(1.9+Math.random()*0.5); ud.plume2.scale.setScalar(1.2+Math.random()*0.5); }   // flicker the engine flame
-    if(r.y<=0.8 || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
-      if(r.impact){   // ARC MORTAR shell — bursts ON IMPACT (no fuse / danger-zone): moderate AoE damage to enemies here
-        const x=r.tx, z=r.tz, aoeR=r.aoeR||5, pos=new THREE.Vector3(x,1.1,z);
+    if((r.vy<0 && r.y<=heightAt(r.x,r.z)+0.35) || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
+      if(r.impact){   // ARC MORTAR shell — bursts ON IMPACT where it really hits the ground (no fuse / danger-zone)
+        const x=r.x, z=r.z, aoeR=r.aoeR||5, pos=new THREE.Vector3(x,1.1,z);
         bigExplode(pos, 0xffae5c, aoeR/3.2); deformCrater(x, z, aoeR*0.5, 0.45+aoeR*0.06);   // mortar / howitzer shell crater
         ringPulse({x,z}, 0xffffff, aoeR*0.9); ringPulse({x,z}, 0xffd27a, aoeR*0.6);
         for(let k=0;k<5;k++){ const aa=Math.random()*6.28, rr=Math.random()*aoeR*0.7; spawnPart(x+Math.cos(aa)*rr,1,z+Math.sin(aa)*rr,(Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*4,{color:0xfff0c0,color2:0xff4a14,size:0.8,grow:1.4,life:0.4,grav:3,drag:2}); }
@@ -4450,7 +4502,7 @@ function updateRockets(dt, now){
         if(boss&&boss.alive){ const dx=boss.pos.x-x, dz=boss.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageBoss(r.bossDmg||(r.dmg||30)*0.6); }
         S.shake=Math.min(3.0, S.shake + 0.5 + aoeR*0.08); sfx('bigexplode');   // ground burst: earth clods come from fireball(), no metal debris   // bigger AoE → bigger boom (howitzer > mortar)
       } else {
-        fuses.push({ x:r.tx, z:r.tz, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.tx,r.tz,r.aoeR) });
+        fuses.push({ x:r.x, z:r.z, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.x,r.z,r.aoeR) });
         ringPulse({x:r.tx,z:r.tz}, 0x886054, 3);   // dust puff on impact
       }
     }
@@ -4488,7 +4540,9 @@ function fireGun(now, range){
   if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now, inst); return; }
   if(now < p.fireAt) return;
   const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
-  p.fireAt = now + g.fireCd * rapid * p.fireMul * gunFireMul(inst.id);   // MASTERY: higher level fires faster
+  if(g.spinUp){ p.spinT=now; }
+  const spinMul = g.spinUp ? 1 + 2.2*(1-(p.spin||0)) : 1;                  // MINIGUN: the barrel cluster must spin up before full rate
+  p.fireAt = now + g.fireCd * rapid * p.fireMul * gunFireMul(inst.id) * spinMul;   // MASTERY: higher level fires faster
   if(!p.infiniteAmmo) inst.ammo--;
   p.muzzle.getWorldPosition(_v);                 // real barrel tip (used for the muzzle flash)
   const ang=p.aimSmoothed;
@@ -4505,15 +4559,15 @@ function fireGun(now, range){
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
     const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
-    const aimDist = aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z)
-                  : (!MOBILE && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
+    const aimDist = (!MOBILE && S.pointerActive) ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z)   // desktop: where YOU point
+                  : (aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z) : 0);                    // mobile: the auto-locked target
     // launch from the BARREL MOUTH (rounds visibly leave the muzzle) — unless an enemy hugs the hull closer than the muzzle reach
     const md=Math.hypot(_v.x-p.pos.x, _v.z-p.pos.z);
-    const sx0=_v.x, sz0=_v.z, sy0=_v.y, arcD=Math.min(Math.max(0, aimDist-md), Math.max(0,maxDist-md));   // realism: rounds leave the MUZZLE — a tank pressed against yours is inside the barrel's reach (riders/drone handle it)
+    const sx0=_v.x, sz0=_v.z, sy0=_v.y, arcD=0, dropD=Math.min(Math.max(4, aimDist-md), Math.max(4,maxDist-md));   // direct fire is FLAT (APFSDS/autocannon) — no lob over the target   // realism: rounds leave the MUZZLE — a tank pressed against yours is inside the barrel's reach (riders/drone handle it)
     if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('TOO CLOSE FOR THE MAIN GUN','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
     for(let i=0;i<n;i++){
       const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
-      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:arcD, y:sy0,
+      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:arcD, y:sy0, dropTo:1.2, dropDist:dropD, type:g.type, reach:maxDist, fall:g.fall??1,
         pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0),
         freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark'});
     }
@@ -4571,12 +4625,12 @@ function trySpell(){
   p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); sfx('spell'); updateSpellHUD();
 }
 function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length; updateSpellHUD(); sfx('click'); }
-function aoeDamage(x,z,r,dmg,stun,now){
-  for(const b of blocks.slice()) if(b.kind==='tower'){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7); }   // blasts bring watchtowers down
-  for(const e of enemies.slice()){ const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e,dmg); } }
+function aoeDamage(x,z,r,dmg,stun,now,type){
+  for(const b of blocks.slice()) if(b.kind==='tower'){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)); }   // blasts bring watchtowers down
+  for(const e of enemies.slice()){ const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, dmg*(type?typeMul(type,armorOf(e))*envDmg(type):1)); } }
   if(boss&&boss.alive){ const dx=boss.pos.x-x,dz=boss.pos.z-z; if(dx*dx+dz*dz<r*r) damageBoss(dmg); }
 }
-function detonate(b){ aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
+function detonate(b){ aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
 // enemy AoE that hits the PLAYER + CORE (mortar shells, bomber self-destruct, boss bombs)
 function enemyGroundStrike(x,z,r,dmg,now){
   bigExplode({x,z}, 0xff7a3d, r/3);
@@ -4653,7 +4707,7 @@ function updateArtStrikes(dt, now){
         if(alive){ s.mx=L.pos.x; s.mz=L.pos.z; s.my=2.6; fireSpotter(L); }              // origin = the mortar's tube; it recoils + flashes
         else { const ang=Math.random()*6.283, dist=18+Math.random()*10; s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=26+Math.random()*6; sfx('rocketlaunch'); }   // fallback: from the sky if its mortar died
         const T=C.flightTime, G=C.gravity;
-        s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (0.8-s.my)/T;            // lob up then down to impact
+        s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (heightAt(s.tx,s.tz)+0.6-s.my)/T;            // lob up then down to impact
         s.mesh=makeArtMissileMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh);
       }
     } else { // flying — blazing arc + roiling smoke trail
@@ -4745,7 +4799,7 @@ const POWERUPS = [
   { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(crewTarget()); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, apply(){ soldierLvl++; for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // gun drop — adds a random gun to the inventory
-  { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ const pl=gunDropPool(S.stage); giveGun(pl[(Math.random()*pl.length)|0]); } },
+  { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ giveGun(smartGunPick()); } },
 ];
 function applyPowerup(def){
   const p=S.player;
@@ -4760,8 +4814,8 @@ function dropPowerup(pos){
   let def, r=Math.random();
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield'].includes(u.id)); def=pool[(Math.random()*pool.length)|0]; }
   else if(r<BALANCE.drop.gem){ def=GEM_DEF; }                       // 6% → diamond treasure (VIP currency)
-  else if(r<BALANCE.drop.gun){ def=GUN_DROP_DEF; }                  // ~39% → gun (the headline reward)
-  else { def=POWERUPS[(Math.random()*POWERUPS.length)|0]; }
+  else if(Math.random() < Math.min(GIFT.pityCap, GIFT.gunBase + (S.giftDry||0)*GIFT.pityStep)){ def=GUN_DROP_DEF; S.giftDry=0; }   // pity timer: dry streaks raise the gun odds
+  else { def=POWERUPS.filter(u=>u.id!=='gun')[(Math.random()*(POWERUPS.length-1))|0]; S.giftDry=(S.giftDry||0)+1; }
   const g=new THREE.Group(); g.position.set(pos.x,heightAt(pos.x,pos.z),pos.z); scene.add(g);
   const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
   glow.scale.set(2.8,2.8,1); glow.position.y=1.5; g.add(glow);
@@ -4847,6 +4901,7 @@ function playStageTransition(stage, biomeName, accentHex){
   w.classList.add('show'); sfx('levelup');
   setTimeout(()=>sfx('wave'), 850);                   // rising tension
   setTimeout(()=>w.classList.remove('show'), 1950);
+  setTimeout(()=>{ const ct=conditionsText(); if(ct) showBanner('CONDITIONS: '+ct, '#9fd8ff'); }, 2150);   // tell the player which guns this battlefield favours
 }
 function chooseUpgrade(u){
   u.apply(S.player); sfx('powerup'); updateHUD();
@@ -4909,6 +4964,7 @@ function updateGunHUD(){
     const ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g));
     const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
     const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ·L'+gunLevel(inst.id):'');   // MASTERY level tag
+    if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=g.type; tg.title=(DMG_TYPE[g.type]||{}).label||''; nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
     const am=document.createElement('span'); am.className='wc-am'; am.textContent = reloading ? 'RELOAD…' : ammo;
     chip.replaceChildren(ic,nm,am);
     chip.classList.toggle('reloading', reloading);
@@ -5587,10 +5643,11 @@ function updatePlayer(dt, now){
   // respawn blink — flash the hull 3× during the post-respawn invulnerability
   if(now < p.respawnBlinkUntil) p.mesh.visible = Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0;
   else if(!p.mesh.visible) p.mesh.visible = true;
-  const _bg=p.mesh.userData.barrelG; if(_bg&&_bg.userData.spin) _bg.userData.spin.rotation.z += dt*(S.firing||autoFire?26:6);   // spin the rotary cannon (spins up while firing)
+  { const g0=equippedGun(); if(g0.spinUp){ const on = now-(p.spinT||0) < 0.2; p.spin = on ? Math.min(1,(p.spin||0)+dt/g0.spinUp) : Math.max(0,(p.spin||0)-dt/0.9); } else p.spin=0; }
+  const _bg=p.mesh.userData.barrelG; if(_bg&&_bg.userData.spin) _bg.userData.spin.rotation.z += dt*(4+26*(p.spin||0));   // rotor speed = spin-up state
   { const rg=p.mesh.userData.rig; if(rg){ const g0=equippedGun(), tg=nearestTarget(playerRange()+2);   // lay the gun: elevate for the ballistic lob to the target / cursor
       const D = tg ? Math.hypot(tg.pos.x-p.pos.x, tg.pos.z-p.pos.z) : (!MOBILE && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
-      rg.elevT = rg.elevates===false ? 0 : aimElevation(Math.min(D, playerRange()+2), g0.bspeed); }
+      rg.elevT = rg.elevates===false ? 0 : Math.min(0.05, D*0.0012); }   // flat-shooting tank gun: just a hair of super-elevation
     const radar=p.mesh.userData.gunMount && p.mesh.userData.gunMount.getObjectByName('radar'); if(radar) radar.rotation.z += dt*2.4; }   // flak search radar sweeps
   // energy shield: hex field + rim glow + orbiting rings; pops in, breathes, blinks near expiry, ripples on a blocked hit
   if(p.shieldMesh){ const sg=p.shieldMesh, on = now < p.shieldUntil;
@@ -6194,7 +6251,7 @@ let _rsT=0;
 function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 window._resize = ()=>doResize(true);   // (debug) force a refit
-if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
+if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
 const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not

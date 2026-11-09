@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT } from './config.js';
 
 const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
 
@@ -185,6 +185,25 @@ ok(DF.soldier.hp===1 && DF.soldier.dmg===1 && DF.soldier.reward===1, 'SOLDIER is
 ok(DF.recruit.hp < DF.soldier.hp && DF.soldier.hp < DF.veteran.hp, 'enemy HP ramps recruit < soldier < veteran');
 ok(DF.recruit.dmg < DF.soldier.dmg && DF.soldier.dmg < DF.veteran.dmg, 'enemy damage ramps recruit < soldier < veteran');
 ok(DF.veteran.reward > DF.soldier.reward && DF.soldier.reward >= DF.recruit.reward, 'reward: veteran > soldier ≥ recruit (harder pays more)');
+
+// ----- ARMS DOCTRINE (Z75): damage types × armour, ramp, environment, gift -----
+grp('ARMS DOCTRINE — damage types, armour classes, ramp, environment, gifts');
+for (const [t, m] of Object.entries(DMG_TYPE)) {
+  for (const k of ['L','M','H','struct']) ok(typeof m[k]==='number' && m[k]>0.2 && m[k]<=3.2, `DMG_TYPE.${t}.${k} in (0.2,3.2]`);
+  ok(typeof m.label==='string' && m.label.length>0, `DMG_TYPE.${t} has a label`);
+}
+ok(DMG_TYPE.AP.H > DMG_TYPE.AP.L, 'AP is best against HEAVY armour');
+ok(DMG_TYPE.KIN.H < DMG_TYPE.KIN.L, 'KINETIC is weak against HEAVY armour');
+ok(DMG_TYPE.FRAG.L >= DMG_TYPE.HE.L, 'FRAG shreds LIGHT targets at least as well as HE');
+ok(DMG_TYPE.HESH.struct === Math.max(...Object.values(DMG_TYPE).map(m=>m.struct)), 'HESH is the best structure-breaker');
+for (const [e, a] of Object.entries(ARMOR)) ok(['L','M','H'].includes(a), `ARMOR.${e} is L/M/H`);
+ok(RAMP.hpPerStage > 0 && RAMP.hpPerStage < 0.4, 'enemy HP ramps gently per stage');
+ok(ENV.night.range > 0.5 && ENV.night.range < 1, 'night shortens reach (but not to nothing)');
+ok(Array.isArray(ENV.night.exempt) && ENV.night.exempt.includes('railgun'), 'railgun keeps its reach at night (thermal)');
+ok(ENV.cold.freeze > 1 && ENV.hot.freeze < 1, 'cold helps cryo, heat hurts it');
+ok(ENV.hot.fire > 1 && ENV.cold.fire < 1, 'heat helps fire, cold hurts it');
+ok(GIFT.gunBase > 0 && GIFT.gunBase < GIFT.pityCap && GIFT.pityCap <= 1, 'gun gift chance: base < pity cap ≤ 1');
+ok(GIFT.pityStep > 0, 'pity timer raises the gun chance after dry loot');
 
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
