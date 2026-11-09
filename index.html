@@ -2711,65 +2711,142 @@ const _pc=new THREE.Color();
 
 // ----------------------------- AUDIO (Web Audio synth) -----------------------------
 let actx=null, master=null, musicBus=null, musicSrc=null, songBuf=null, muted=false;
+// ---- AUDIO ENGINE: compressor master + outdoor convolution reverb send, shared noise buffers, positional voices ----
+let comp=null, verb=null, verbSend=null, NZ=null, BNZ=null, shaper=null, _bus=null;
 function audio(){
   if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)();
-    master=actx.createGain(); master.gain.value=muted?0:0.5; master.connect(actx.destination); }catch(e){} }
+    master=actx.createGain(); master.gain.value=muted?0:0.5;
+    comp=actx.createDynamicsCompressor(); comp.threshold.value=-16; comp.knee.value=12; comp.ratio.value=4; comp.attack.value=0.003; comp.release.value=0.22;
+    master.connect(comp).connect(actx.destination);
+    const sr=actx.sampleRate;
+    NZ=actx.createBuffer(1, sr*2, sr); { const d=NZ.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }                       // white
+    BNZ=actx.createBuffer(1, sr*2, sr); { const d=BNZ.getChannelData(0); let l=0; for(let i=0;i<d.length;i++){ l=(l+0.02*(Math.random()*2-1))/1.02; d[i]=l*3.5; } }   // brown (rumble)
+    const L=Math.floor(sr*2.2), ir=actx.createBuffer(2, L, sr);                                                                          // outdoor IR: sparse early slap-back + soft diffuse tail
+    for(let c=0;c<2;c++){ const d=ir.getChannelData(c); let lp=0; for(let i=0;i<L;i++){ const t=i/sr; lp+= ((Math.random()*2-1) - lp)*0.18; d[i]=lp*Math.pow(1-t/2.2,3.2)*0.9; }
+      for(const [t,a] of [[0.045,0.5],[0.11,0.35],[0.19,0.22],[0.31,0.14]]){ const k=Math.floor((t+c*0.007)*sr); d[k]+=a; } }
+    verb=actx.createConvolver(); verb.buffer=ir; verbSend=actx.createGain(); verbSend.gain.value=0.32; verbSend.connect(verb).connect(master);
+    shaper=actx.createWaveShaper(); { const n=1024, cu=new Float32Array(n); for(let i=0;i<n;i++){ const x=i/n*2-1; cu[i]=Math.tanh(x*2.6); } shaper.curve=cu; }
+  }catch(e){} }
   if(actx && actx.state==='suspended'){ try{ actx.resume(); }catch(e){} }
   return actx;
+}
+// a voice = gain → (pan) → lowpass(distance) → master (+ reverb send); returns its input node
+function voice(pos, wet){
+  const a=audio(); if(!a) return null; const g=a.createGain(); let out=g;
+  if(pos && S.player){ const dx=pos.x-S.player.pos.x, dz=pos.z-S.player.pos.z, d=Math.hypot(dx,dz);
+    g.gain.value = 1/(1+d/24);
+    const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=Math.max(650, 17000*Math.exp(-d/32)); out.connect(lp); out=lp;      // far = muffled
+    if(a.createStereoPanner){ const sp=worldToScreen(new THREE.Vector3(pos.x,1,pos.z)); const pn=a.createStereoPanner(); pn.pan.value=Math.max(-0.85,Math.min(0.85,(sp.x/VIEW.w-0.5)*1.6)); out.connect(pn); out=pn; }
+    wet = (wet||0.3)*(1+Math.min(1.2,d/40)); }                                                                                       // distant shots are mostly echo
+  out.connect(master); if(verbSend){ const s=a.createGain(); s.gain.value=wet==null?0.3:wet; out.connect(s).connect(verbSend); }
+  return g;
 }
 function tone(freq, dur, {type='sine', vol=0.2, delay=0, slideTo=null, bus=null}={}){
   const a=audio(); if(!a) return;
   const t0=a.currentTime+delay; const o=a.createOscillator(), g=a.createGain();
   o.type=type; o.frequency.setValueAtTime(freq,t0);
   if(slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1,slideTo), t0+dur);
-  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.008);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.006);
   g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  o.connect(g).connect(bus||master||a.destination); o.start(t0); o.stop(t0+dur+0.02);
+  o.connect(g).connect(bus||_bus||master||a.destination); o.start(t0); o.stop(t0+dur+0.03);
 }
-function noise(dur, {vol=0.2, delay=0, hp=400, lp=8000}={}){
-  const a=audio(); if(!a) return; const t0=a.currentTime+delay;
-  const n=Math.floor(a.sampleRate*dur), buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
-  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
-  const src=a.createBufferSource(); src.buffer=buf;
-  const f=a.createBiquadFilter(); f.type='bandpass'; f.frequency.value=(hp+lp)/2; f.Q.value=0.7;
-  const g=a.createGain(); g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  src.connect(f).connect(g).connect(master||a.destination); src.start(t0);
+// noise burst through a filter (shared buffer, random offset) — type: 'bp' band, 'lp' low, 'hp' high; brown=true for rumble
+function noise(dur, {vol=0.2, delay=0, hp=400, lp=8000, type='bp', brown=false, bus=null, sweepTo=null, attack=0.004, dist=false}={}){
+  const a=audio(); if(!a||!NZ) return; const t0=a.currentTime+delay;
+  const src=a.createBufferSource(); src.buffer=brown?BNZ:NZ; src.loop=true;
+  const f=a.createBiquadFilter();
+  if(type==='lp'){ f.type='lowpass'; f.frequency.value=lp; } else if(type==='hp'){ f.type='highpass'; f.frequency.value=hp; } else { f.type='bandpass'; f.frequency.value=(hp+lp)/2; f.Q.value=0.7; }
+  if(sweepTo) f.frequency.exponentialRampToValueAtTime(Math.max(40,sweepTo), t0+dur);
+  const g=a.createGain(); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+attack); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  let node=src.connect(f); if(dist && shaper){ const sh=a.createWaveShaper(); sh.curve=shaper.curve; node=node.connect(sh); }
+  node.connect(g).connect(bus||_bus||master||a.destination); src.start(t0, Math.random()*1.5); src.stop(t0+dur+0.05);
 }
-function sfx(name){
+// layered gunshot: supersonic CRACK + muzzle-blast BODY (saturated) + SUB thump + optional mechanism click
+function gunshot(o, bus){
+  const c=o.crack||0, b=o.body||0.2, len=o.len||0.12;
+  if(c) noise(0.012+len*0.04, {vol:c, type:'hp', hp:2600, bus, attack:0.001});
+  noise(len, {vol:b, type:'lp', lp:o.lp||2200, sweepTo:(o.lp||2200)*0.35, bus, attack:0.002, dist:true});
+  if(o.sub) tone(o.subF||90, len*1.8, {type:'sine', vol:o.sub, slideTo:(o.subF||90)*0.42, bus});
+  if(o.click) tone(o.click, 0.03, {type:'square', vol:0.05, slideTo:o.click*0.6, bus, delay:o.clickDelay||0.04});
+  if(o.ring) tone(o.ring, 0.25, {type:'triangle', vol:0.05, slideTo:o.ring*0.9, bus, delay:0.01});
+}
+function explosionSnd(big, bus){
+  const k=big?1:0.65;
+  tone(big?58:72, big?1.3:0.8, {type:'sine', vol:0.42*k, slideTo:20, bus});                                     // sub-bass shock
+  noise(big?1.4:0.9, {vol:0.5*k, type:'lp', lp:1200, sweepTo:160, bus, brown:true, attack:0.003, dist:true});   // rolling rumble
+  noise(0.22, {vol:0.35*k, type:'lp', lp:4200, sweepTo:600, bus, attack:0.001, dist:true});                     // the blast crack
+  for(let i=0;i<(big?14:8);i++) noise(0.02+Math.random()*0.03, {vol:(0.05+Math.random()*0.08)*k, type:'hp', hp:2500+Math.random()*3000, delay:0.05+Math.random()*0.6, bus});   // crackle + debris rain
+  for(let i=0;i<(big?5:3);i++) tone(500+Math.random()*900, 0.06, {type:'triangle', vol:0.03*k, slideTo:300, delay:0.25+Math.random()*0.7, bus});   // metal fragments landing
+}
+function sfx(name, pos){
   if(muted) return;
+  const UI = name==='click'||name==='beep'||name==='wave'||name==='powerup'||name==='levelup'||name==='alarm';
+  const bus = UI ? null : voice(pos||null, pos?0.3:0.22); _bus = bus;
   switch(name){
-    case 'shoot':   tone(420,0.08,{type:'square',vol:0.12,slideTo:160}); noise(0.06,{vol:0.08,hp:1200,lp:5000}); break;
-    // per-gun shot signatures (rapid guns use tiny ticks so full-auto reads as a stream)
-    case 'shoot_rifle':  tone(540,0.07,{type:'square',vol:0.12,slideTo:190}); noise(0.05,{vol:0.07,hp:1400,lp:5200}); break;
-    case 'shoot_smg':    tone(720,0.038,{type:'square',vol:0.08,slideTo:320}); noise(0.03,{vol:0.05,hp:2000,lp:7200}); break;
-    case 'shoot_minigun':tone(840,0.03,{type:'square',vol:0.07,slideTo:400}); noise(0.024,{vol:0.045,hp:2400,lp:8200}); break;
-    case 'shoot_shotgun':noise(0.16,{vol:0.24,hp:280,lp:3000}); tone(150,0.15,{type:'square',vol:0.15,slideTo:58}); break;
-    case 'shoot_flak':   noise(0.12,{vol:0.17,hp:480,lp:3600}); tone(210,0.12,{type:'triangle',vol:0.13,slideTo:88}); break;
-    case 'shoot_hesh':   tone(96,0.28,{type:'sine',vol:0.28,slideTo:38}); noise(0.22,{vol:0.22,hp:90,lp:1600}); tone(240,0.07,{type:'square',vol:0.08,slideTo:90}); break;
-    case 'shoot_cannon': tone(118,0.24,{type:'sine',vol:0.27,slideTo:44}); noise(0.18,{vol:0.2,hp:110,lp:2000}); tone(300,0.06,{type:'square',vol:0.09,slideTo:120}); break;
-    case 'shoot_missile':noise(0.32,{vol:0.13,hp:600,lp:4200}); tone(300,0.26,{type:'sawtooth',vol:0.1,slideTo:120}); break;
-    case 'shoot_railgun':tone(1300,0.16,{type:'sawtooth',vol:0.15,slideTo:300}); noise(0.1,{vol:0.09,hp:3000,lp:9200}); tone(160,0.12,{type:'sine',vol:0.12,slideTo:60,delay:0.02}); break;
-    case 'hit':     tone(880,0.05,{type:'triangle',vol:0.08}); break;
-    case 'enemyShoot': tone(240,0.09,{type:'sawtooth',vol:0.06,slideTo:120}); break;
-    case 'explode': noise(0.4,{vol:0.32,hp:90,lp:2400}); tone(80,0.34,{type:'sine',vol:0.28,slideTo:34}); tone(300,0.08,{type:'square',vol:0.1,slideTo:120}); noise(0.5,{vol:0.12,hp:1500,lp:6000,delay:0.05}); break;   // boom + metal clang + debris hiss
-    case 'bigexplode': noise(0.72,{vol:0.42,hp:60,lp:1800}); tone(58,0.55,{type:'sine',vol:0.34,slideTo:26}); tone(220,0.12,{type:'square',vol:0.13,slideTo:78,delay:0.02}); noise(0.7,{vol:0.15,hp:1200,lp:5000,delay:0.08}); break;
-    case 'hurt':    tone(200,0.18,{type:'square',vol:0.2,slideTo:80}); break;
+    case 'shoot':
+    case 'shoot_rifle':  gunshot({crack:0.16, body:0.28, lp:2600, len:0.11, sub:0.14, subF:120, click:900}); break;            // 30 mm autocannon
+    case 'shoot_smg':    gunshot({crack:0.12, body:0.18, lp:3200, len:0.06, sub:0.06, subF:150}); break;                       // twin 14.5 mm MG
+    case 'shoot_minigun':gunshot({crack:0.09, body:0.13, lp:3600, len:0.045, sub:0.04, subF:170}); break;                      // rotary — a ripping buzz at rate
+    case 'shoot_shotgun':gunshot({crack:0.12, body:0.42, lp:1500, len:0.2, sub:0.26, subF:80}); noise(0.08,{vol:0.1,type:'hp',hp:3000,delay:0.02}); break;   // canister + pellet hiss
+    case 'shoot_flak':   gunshot({crack:0.15, body:0.3, lp:2200, len:0.13, sub:0.16, subF:110, click:700}); break;
+    case 'shoot_hesh':   gunshot({crack:0.2, body:0.5, lp:1300, len:0.32, sub:0.38, subF:70, ring:220}); break;               // 105 mm
+    case 'shoot_cannon': gunshot({crack:0.24, body:0.55, lp:1200, len:0.38, sub:0.45, subF:62, ring:180}); break;             // 120 mm — the big boom + barrel ring
+    case 'shoot_missile':noise(0.5,{vol:0.22,type:'lp',lp:2600,sweepTo:900,attack:0.02,dist:true}); tone(220,0.35,{type:'sawtooth',vol:0.06,slideTo:420}); noise(0.06,{vol:0.1,type:'hp',hp:2000}); break;   // ATGM motor whoosh
+    case 'shoot_railgun':tone(2400,0.18,{type:'sawtooth',vol:0.08,slideTo:300}); noise(0.05,{vol:0.3,type:'hp',hp:3500,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;   // capacitor snap + slug crack
+    case 'shoot_cryo':   noise(0.16,{vol:0.18,type:'hp',hp:2500,sweepTo:6000}); tone(900,0.12,{type:'sine',vol:0.05,slideTo:1600}); break;
+    case 'shoot_tesla':  noise(0.12,{vol:0.2,type:'bp',hp:1500,lp:6000,dist:true}); tone(120,0.15,{type:'sawtooth',vol:0.08,slideTo:60}); break;
+    case 'hit':     noise(0.05,{vol:0.12,type:'bp',hp:1800,lp:5200,bus}); tone(640,0.09,{type:'triangle',vol:0.05,slideTo:420,bus}); break;   // round slapping armour
+    case 'enemyShoot': gunshot({crack:0.1, body:0.24, lp:1700, len:0.15, sub:0.14, subF:95}, bus); break;
+    case 'explode':    explosionSnd(false, bus); break;
+    case 'bigexplode': explosionSnd(true, bus); break;
+    case 'hurt':    noise(0.18,{vol:0.3,type:'lp',lp:1400,dist:true}); tone(150,0.22,{type:'square',vol:0.1,slideTo:70}); tone(820,0.18,{type:'triangle',vol:0.06,slideTo:500,delay:0.02}); break;   // hull hit: thump + clang
     case 'corehit': tone(150,0.14,{type:'sawtooth',vol:0.16,slideTo:70}); break;
     case 'wave':    [523,659,784].forEach((f,i)=>tone(f,0.2,{type:'triangle',vol:0.14,delay:i*0.07})); break;
-    case 'dash':    tone(300,0.14,{type:'sine',vol:0.1,slideTo:760}); noise(0.1,{vol:0.06,hp:2000,lp:7000}); break;
+    case 'dash':    noise(0.3,{vol:0.2,type:'lp',lp:900,sweepTo:2400,brown:true}); tone(60,0.3,{type:'sawtooth',vol:0.08,slideTo:110}); break;   // engine surge
     case 'powerup': [659,988,1319].forEach((f,i)=>tone(f,0.18,{type:'triangle',vol:0.14,delay:i*0.05})); break;
     case 'levelup': [523,659,784,1047,1319].forEach((f,i)=>tone(f,0.24,{type:'triangle',vol:0.15,delay:i*0.08})); break;
     case 'spell':   tone(440,0.25,{type:'sine',vol:0.14,slideTo:1320}); break;
     case 'click':   tone(660,0.07,{type:'square',vol:0.12}); break;
-    case 'reload':  tone(180,0.06,{type:'square',vol:0.12}); noise(0.05,{vol:0.05,hp:1500,lp:6000,delay:0.02}); tone(140,0.07,{type:'square',vol:0.1,delay:0.09}); break;
-    case 'reloaded':tone(880,0.08,{type:'triangle',vol:0.13}); tone(1320,0.13,{type:'triangle',vol:0.13,delay:0.07}); break;
+    case 'reload':  noise(0.05,{vol:0.12,type:'bp',hp:1200,lp:4000}); tone(180,0.06,{type:'square',vol:0.08,delay:0.02}); noise(0.06,{vol:0.14,type:'bp',hp:900,lp:3000,delay:0.16}); tone(120,0.07,{type:'square',vol:0.08,delay:0.17}); break;   // breech open … round seated
+    case 'reloaded':noise(0.04,{vol:0.16,type:'bp',hp:1500,lp:5000}); tone(260,0.08,{type:'square',vol:0.08,slideTo:180}); tone(1320,0.1,{type:'triangle',vol:0.06,delay:0.06}); break;   // breech slams shut
     case 'alarm':   tone(440,0.12,{type:'square',vol:0.11}); tone(330,0.17,{type:'square',vol:0.11,delay:0.13}); break;
-    case 'rocketlaunch': noise(0.4,{vol:0.16,hp:500,lp:4200}); tone(150,0.32,{type:'sawtooth',vol:0.14,slideTo:320}); break;
+    case 'rocketlaunch': noise(0.7,{vol:0.32,type:'lp',lp:2200,sweepTo:500,attack:0.01,dist:true,brown:true}); noise(0.15,{vol:0.2,type:'hp',hp:1800}); tone(70,0.5,{type:'sine',vol:0.3,slideTo:30}); break;
     case 'beep':    tone(1500,0.05,{type:'square',vol:0.07}); break;
-    case 'crunch':  noise(0.09,{vol:0.1,hp:700,lp:3200}); noise(0.05,{vol:0.06,hp:2000,lp:6000,delay:0.03}); break;      // stones grinding under the tracks
-    case 'clang':   tone(190,0.22,{type:'triangle',vol:0.16,slideTo:120}); tone(410,0.12,{type:'square',vol:0.06,slideTo:300}); noise(0.14,{vol:0.14,hp:600,lp:4000}); break;   // hull-on-hull impact
-    case 'thud':    tone(70,0.2,{type:'sine',vol:0.22,slideTo:40}); noise(0.12,{vol:0.12,hp:120,lp:1200}); break;
+    case 'crunch':  noise(0.1,{vol:0.12,type:'bp',hp:600,lp:3200,bus}); noise(0.05,{vol:0.08,type:'hp',hp:2500,delay:0.03,bus}); break;      // stones grinding under the tracks
+    case 'clang':   tone(190,0.3,{type:'triangle',vol:0.18,slideTo:120,bus}); tone(470,0.2,{type:'square',vol:0.05,slideTo:330,bus}); noise(0.16,{vol:0.2,type:'bp',hp:500,lp:4000,bus}); break;   // hull-on-hull impact
+    case 'thud':    tone(70,0.22,{type:'sine',vol:0.24,slideTo:38,bus}); noise(0.14,{vol:0.16,type:'lp',lp:900,brown:true,bus}); break;
   }
+  _bus=null;
+}
+// ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
+const ENG={ on:false, nodes:null, rpm:0 };
+function engineStart(){
+  const a=audio(); if(!a||ENG.nodes) return;
+  const out=a.createGain(); out.gain.value=0; out.connect(master); if(verbSend){ const s=a.createGain(); s.gain.value=0.08; out.connect(s).connect(verbSend); }
+  const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=380; lp.Q.value=1.2;
+  const sh=a.createWaveShaper(); sh.curve=shaper?shaper.curve:null; sh.connect(lp).connect(out);
+  const o1=a.createOscillator(); o1.type='sawtooth'; o1.frequency.value=32; const g1=a.createGain(); g1.gain.value=0.5; o1.connect(g1).connect(sh);
+  const o2=a.createOscillator(); o2.type='square'; o2.frequency.value=16; const g2=a.createGain(); g2.gain.value=0.25; o2.connect(g2).connect(sh);            // firing-order lope
+  const rb=a.createBufferSource(); rb.buffer=BNZ; rb.loop=true; const rbf=a.createBiquadFilter(); rbf.type='bandpass'; rbf.frequency.value=140; rbf.Q.value=0.8; const rbg=a.createGain(); rbg.gain.value=0.6; rb.connect(rbf).connect(rbg).connect(sh);
+  const tk=a.createBufferSource(); tk.buffer=NZ; tk.loop=true; const tkf=a.createBiquadFilter(); tkf.type='bandpass'; tkf.frequency.value=1900; tkf.Q.value=1.1;   // track links clanking
+  const tkg=a.createGain(); tkg.gain.value=0; const lfo=a.createOscillator(); lfo.type='square'; lfo.frequency.value=4; const lfg=a.createGain(); lfg.gain.value=0; lfo.connect(lfg).connect(tkg.gain);
+  tk.connect(tkf).connect(tkg).connect(out);
+  for(const n of [o1,o2,rb,tk,lfo]) n.start();
+  ENG.nodes={ out, lp, o1, o2, tkg, lfo, lfg }; ENG.on=true;
+}
+function engineStop(){ const n=ENG.nodes; if(!n||!actx) return; n.out.gain.setTargetAtTime(0, actx.currentTime, 0.15); }
+function updateEngine(dt){
+  const n=ENG.nodes, p=S.player; if(!n||!actx) return;
+  const t=actx.currentTime, live = S.mode==='playing' && p && !muted;
+  if(!live){ n.out.gain.setTargetAtTime(0, t, 0.2); return; }
+  const sp=Math.hypot(p.vel.x,p.vel.z), thr=Math.min(1, getMoveDir().length()), up=Math.max(0, p.grade||0), down=Math.max(0, -(p.grade||0));
+  const load=Math.min(1.6, thr*(0.65+up*3.2) - down*0.5*thr + (NOW()<p.dashUntil?0.6:0));          // uphill = heavy load, downhill = engine braking
+  ENG.rpm += ((0.18 + Math.max(0,load)*0.75 + sp/60) - ENG.rpm)*Math.min(1, dt*3);
+  const f=26 + ENG.rpm*48;
+  n.o1.frequency.setTargetAtTime(f, t, 0.05); n.o2.frequency.setTargetAtTime(f*0.5, t, 0.05);
+  n.lp.frequency.setTargetAtTime(260 + ENG.rpm*1100, t, 0.08);
+  n.out.gain.setTargetAtTime(0.07 + ENG.rpm*0.11, t, 0.08);
+  n.lfo.frequency.setTargetAtTime(1 + sp*0.55, t, 0.1); n.lfg.gain.setTargetAtTime(Math.min(0.09, sp*0.004), t, 0.1);
 }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
 let _hapT=0;
@@ -3257,7 +3334,7 @@ function updateCarrierCrew(e, now){
     const dmg = 5 * (0.7+0.3*ds) * loopDmgMul() * cMod('enemyDmgMul');
     spawnBullet(_cv.x, _cv.z, a, {owner:'e', dmg, speed:44, color:0xffd06a, r:0.3, life:2.4, maxDist:32, arcDist:d});
     spawnPart(_cv.x, _cv.y, _cv.z, Math.sin(a)*6,1,Math.cos(a)*6, {color:0xffd06a, size:0.6, life:0.1, grav:0, drag:7});
-    sfx('enemyShoot'); c.fireAt = now + 1.4 + Math.random()*0.7;
+    sfx('enemyShoot', e.pos); c.fireAt = now + 1.4 + Math.random()*0.7;
   }
 }
 function updateEnemies(dt, now){
@@ -3346,7 +3423,7 @@ function updateEnemies(dt, now){
         spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y)});
         tankRecoil(e.mesh, aimA, def.heavy?0.95:(def.accurate?0.7:0.45), e.facing);
         spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:col,size:def.heavy?1.4:1,life:0.1,grav:0,drag:7});
-        sfx('enemyShoot');
+        sfx('enemyShoot', e.pos);
         if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
         else e.fireAt=now+def.fireCd*rateMul;
       }
@@ -3454,7 +3531,7 @@ function updateTowers(dt, now){
         gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(p.pos.x-_tw.x, p.pos.z-_tw.z)+(Math.random()-0.5)*0.08;
         const dmg=(TOWER.guardDmg + S.stage*0.7)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
         spawnBullet(_tw.x, _tw.z, ang, {owner:'e', dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
-        spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('enemyShoot'); }
+        spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('enemyShoot', {x:_tw.x, z:_tw.z}); }
       animateSoldier(gd.g, 0, dt, fired); }
   }
   for(let i=fallers.length-1;i>=0;i--){ const f=fallers[i]; f.t+=dt;                                          // guards tumbling off the collapsing tower
@@ -3488,7 +3565,7 @@ function updateDying(dt){
     const nF=1+Math.round(k*3); for(let q=0;q<nF;q++) if(Math.random()<0.8){ const ox=(Math.random()-0.5)*1.6*s, oz=(Math.random()-0.5)*2.2*s;
       spawnPart(x+ox, gy+1.9*s, z+oz, (Math.random()-0.5)*0.8, 2.6+Math.random()*2.4, (Math.random()-0.5)*0.8, {tex:'fire', color:0xffe0a0, color2:0xff3a0a, size:(0.8+k*1.2)*s, life:0.5+Math.random()*0.3, grav:2, drag:1.6, grow:0.7*s}); }
     if(Math.random()<0.7) spawnPart(x+(Math.random()-0.5)*s, gy+2.4*s, z+(Math.random()-0.5)*s, 0.6+(Math.random()-0.5), 2.4+Math.random()*1.5, 0.4+(Math.random()-0.5), {color:0x15120f, size:(1.3+k)*s, life:1.8, smoke:true, grav:0.4, drag:0.8, grow:1.8*s, op:0.6});
-    d.popT-=dt; if(d.popT<=0){ d.popT=0.18+Math.random()*0.3; burst({x:x+(Math.random()-0.5)*s, z:z+(Math.random()-0.5)*s}, 0xffe6a0, 6, 6, {y:gy+1.8*s, life:0.22, size:0.35, grav:-10, drag:2}); m.position.x=x+(Math.random()-0.5)*0.12; sfx('hit'); }   // ammo cooking off
+    d.popT-=dt; if(d.popT<=0){ d.popT=0.18+Math.random()*0.3; burst({x:x+(Math.random()-0.5)*s, z:z+(Math.random()-0.5)*s}, 0xffe6a0, 6, 6, {y:gy+1.8*s, life:0.22, size:0.35, grav:-10, drag:2}); m.position.x=x+(Math.random()-0.5)*0.12; sfx('hit', e.pos); }   // ammo cooking off
     if(d.t>=d.dur){ tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, s, e._fx||'fire'); spawnWreck(e.pos, e.facing, s, e.def.pal, Math.random()<0.65);
       m.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); DYING.splice(i,1); } }
 }
@@ -3618,7 +3695,7 @@ function bossSpread(now, n, spd){
   boss.muzzle.getWorldPosition(_v);
   for(let i=0;i<n;i++){ const a = (n>3 ? (i/n*Math.PI*2) : boss.aim + (i-(n-1)/2)*0.35);
     spawnBullet(_v.x,_v.z,a,{owner:'e',dmg:14,speed:spd,color:0xff6030,r:0.5,life:3.2,scale:1.4}); }
-  sfx('enemyShoot');
+  sfx('enemyShoot', boss&&boss.pos);
 }
 // ----- boss attack toolkit (shared) -----
 const mines=[];
@@ -3648,7 +3725,7 @@ function bossMissiles(now, n){
   boss.muzzle.getWorldPosition(_v);
   for(let i=0;i<n;i++){ const a=boss.aim+(i-(n-1)/2)*0.3;
     spawnBullet(_v.x,_v.z,a,{owner:'e',dmg:12,speed:30,color:0xffae5c,r:0.5,life:3.4,homing:2.2,scale:1.3}); }
-  sfx('enemyShoot');
+  sfx('enemyShoot', boss&&boss.pos);
 }
 
 function updateBoss(dt, now){
@@ -3793,7 +3870,7 @@ function bigExplode(pos, color, scale=1.5){
   burst(pos, 0x201c14, Math.floor(5*scale), 4*scale, {life:0.95, size:2.6*scale, smoke:true, grav:-1.2, drag:1.4, up:2, op:0.55});
   S.shake = Math.min(2.4, S.shake + scale*0.7);
   muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
-  sfx(scale>=2 ? 'bigexplode' : 'explode');
+  sfx(scale>=2 ? 'bigexplode' : 'explode', pos);
 }
 // a round that lands in the dirt: soil spray + dust puff + a scar on the ground
 function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), dc=BIOME.ground;
@@ -3932,7 +4009,7 @@ function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire'){
     burst({x:pos.x,z:pos.z}, 0x20190f, 1, 2.5, {y:1.4+k*0.3, life:0.6, size:1.9*scale, smoke:true, grav:-0.6, drag:1.8, up:3, op:0.4}); }, k*60); // brief smoke puffs — clear quickly
   S.shake = Math.min(3.0, S.shake + scale*0.9);                                                                // moderate kick — scales with tank size
   muzzleLight.position.set(pos.x, 2.2, pos.z); muzzleLight.color.setHex(cf.r1); muzzleLight.intensity = 4.0 + scale*0.9;  // brief blast flash (themed colour)
-  sfx(scale>=2 ? cf.big : cf.sml);
+  sfx(scale>=2 ? cf.big : cf.sml, pos);
   { const p=S.player; if(p && (p.pos.x-pos.x)**2+(p.pos.z-pos.z)**2 < 400) haptic([0,25,30,40]); }
   if(scale>=2.2){   // big tanks/bosses: a delayed secondary blast + extra shards = bigger payoff
     setTimeout(()=>{ if(S.mode==='paused') return;
@@ -5027,6 +5104,7 @@ function loadoutGuns(){
   return ld.map(id=>({ id, ammo:GUNS[id].mag, rU:0, rD:0 }));   // your chosen ≤5 weapons, full mags
 }
 function startGame(continueRun){
+  try{ audio(); engineStart(); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(continueRun===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
   const stStage = resume ? (PROFILE.save.stage|0||1) : 1;
   const stScore = resume ? (PROFILE.save.score|0) : 0;
@@ -6238,6 +6316,7 @@ function loop(nowMs){
   updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateWrecks(dt); updateFlameJet(dt); updateRocketAim(now); flushParticles();
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   if(HF.dirty){ HF.dirty=false; syncTerrainMesh(HF.dj0, HF.dj1); HF.dj0=HF.dj1=undefined; }   // apply this frame's new craters (one rebuild max)
+  updateEngine(dt);
   updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); updateFlags(now); updateDying(dt); gradePass.uniforms.time.value = now%100;
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
