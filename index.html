@@ -1999,7 +1999,7 @@ const MAZE_SHAPES = [
   [[-1,-1],[0,-1],[0,0],[1,0],[1,1]],                    // Z
 ];
 const blocks=[];
-const COVER_HP = { sandbag:85, drums:40, tires:95, crates:55 };
+const COVER_HP = { sandbag:85, drums:22, tires:95, crates:55 };   // fuel drums go up after a hit or two
 function buildBlocks(){
   for(const b of blocks) scene.remove(b.mesh); blocks.length=0; clearLootBeacons('block');
   const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
@@ -2028,6 +2028,7 @@ function buildBlocks(){
       blocks.push(bobj); if(loot) addLootBeacon(bobj, 'block');
     });
   }
+  buildTowers();                                                            // enemy watchtowers with riflemen
   // lone heavy obstacles: boulders + Czech hedgehogs — solid, block shots, deflect tanks
   const rs=rockSet(BIOME.name), nB=MOBILE?4:7;
   for(let i=0;i<nB;i++){ let x=0,z=0,ok=false;
@@ -2042,6 +2043,10 @@ function buildBlocks(){
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 function damageBlock(b, dmg){
+  if(b.kind==='tower'){ if(b.tower.falling) return; b.hp-=dmg; flashMat(b.tower.wm, 0.1, 0.5);
+    burst({x:b.x,z:b.z}, 0x9a7a52, 3, 5, {y:heightAt(b.x,b.z)+1.5+Math.random()*4, life:0.4, size:0.3, grav:-16, drag:1.5, up:2});   // splinters fly
+    b.mesh.position.x = b.x + (Math.random()-0.5)*0.12;                                                                                   // the structure shudders
+    if(b.hp<=0){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); b.mesh.position.x=b.x; collapseTower(b.tower); if(b.loot) dropPowerup({x:b.x,z:b.z}); } return; }
   if(b.steel){ if(Math.random()<0.5) spawnPart(b.x+(Math.random()-0.5)*2, 1.2+Math.random(), b.z+(Math.random()-0.5)*2, (Math.random()-0.5)*6, 3, (Math.random()-0.5)*6, {color:b.kind==='boulder'?0xd8c8a8:0xffe0a0, size:0.22, life:0.25, grav:-12, drag:2}); return; }   // ricochet chips
   b.hp -= dmg; flashMat(b.mesh.material, 0.1, 0.6);
   const f=Math.max(0,b.hp)/(b.maxHp||70);
@@ -2052,10 +2057,15 @@ function damageBlock(b, dmg){
 function destroyCover(b){
   const pos={x:b.x,z:b.z}, now=performance.now()/1000;
   scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
-  if(b.kind==='drums'){                                                     // fuel stockpile cooks off: fireball + shock + AoE on everything nearby
-    bigExplode(pos, 0xff8a3a, 2.3); tankExplode(pos, 0xff6a1c, 2.0, null, null, 'blast');
-    aoeDamage(b.x, b.z, 6, 55, false, now);
-    const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<6) damagePlayer(Math.round(22*(1-d/6))+4, now, p.pos.x-b.x, p.pos.z-b.z); }
+  if(b.kind==='drums'){                                                     // FUEL stockpile: fireball + shock wave + burning fuel splashed over everything nearby
+    const R=7.5;
+    bigExplode(pos, 0xff8a3a, 2.4); fireball(pos, 2.2); decalScorch(b.x, b.z, R*0.9, 1);
+    for(let k=0;k<14;k++){ const a=Math.random()*6.283, sp=4+Math.random()*9; spawnPart(b.x, heightAt(b.x,b.z)+1.4, b.z, Math.cos(a)*sp, 5+Math.random()*7, Math.sin(a)*sp, {tex:'fire', color:0xffd080, color2:0xff3a08, size:1.2, life:0.9+Math.random()*0.5, grav:-12, drag:0.6, grow:0.8}); }   // flaming fuel blobs arc out
+    aoeDamage(b.x, b.z, R, 60, false, now);
+    for(const e of enemies){ const d=Math.hypot(e.pos.x-b.x, e.pos.z-b.z); if(d<R+e.r && !e.def.bomber){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2.5*(1-d/(R+e.r))+1); e.burn.until=now+BALANCE.flame.duration; } }   // tanks behind the drums catch fire
+    const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(30*(1-d/R))+6, now, p.pos.x-b.x, p.pos.z-b.z); for(let k=0;k<2;k++) addPlayerBurn(p.pos.x-b.x+(Math.random()-0.5), p.pos.z-b.z+(Math.random()-0.5)); } }
+    for(const o of blocks.slice()) if(o!==b && o.kind==='drums' && Math.hypot(o.x-b.x,o.z-b.z) < R*0.95) setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, 999); }, 180+Math.random()*260);   // chain reaction through the fuel dump
+    deformCrater(b.x, b.z, 2.4, 0.5);
     for(let k=0;k<4;k++) spawnDebris(pos, 0.9, 0x6a2a1a);
   } else if(b.kind==='tires'){ spawnDebris(pos, 1.2, 0x1e1e1c); burst(pos, 0x0e0d0c, 6, 3, {y:1.2, life:1.6, size:2.6, smoke:true, grav:-1.2, drag:1.2, up:2, op:0.55}); bigExplode(pos, 0xff7a2a, 1.0); }   // burning rubber, thick black smoke
   else if(b.kind==='crates'){ spawnDebris(pos, 1.4, 0x8a6a40); burst(pos, 0xb08a56, 10, 8, {y:1.2, life:0.6, size:0.4, grav:-16, drag:1.4, up:3}); burst(pos, 0xb09a7a, 3, 2.5, {y:1, life:0.9, size:1.6, smoke:true, grav:-0.4, drag:2, up:1, op:0.4}); sfx('explode'); }   // splinters
@@ -2657,7 +2667,8 @@ function flushParticles(){
   for(const p of parts){ const ly=p.smoke?L[0]:(p.tex==='fire'?L[2]:(p.tex==='flash'?L[3]:L[1])); if(ly.n>=PART_MAX) continue; const i=ly.n++;
     const k=p.life/p.max, sz=p.size*(p.smoke ? (1.4-k*0.8) : (p.tex==='fire' ? (0.55+k*0.45) : k)) + (p.grow*(1-k));
     const col = p.c1 ? _pc.copy(p.c1).lerp(p.c0, k) : p.col;
-    ly.iPos.array[i*3]=p.x; ly.iPos.array[i*3+1]=p.y; ly.iPos.array[i*3+2]=p.z;
+    const py = (p.smoke||p.tex==='fire') ? Math.max(p.y, heightAt(p.x,p.z)+sz*0.42) : p.y;   // big billboards sit ON the ground instead of being sliced into half-discs
+    ly.iPos.array[i*3]=p.x; ly.iPos.array[i*3+1]=py; ly.iPos.array[i*3+2]=p.z;
     ly.iCol.array[i*4]=col.r; ly.iCol.array[i*4+1]=col.g; ly.iCol.array[i*4+2]=col.b; ly.iCol.array[i*4+3]=(p.smoke? 0.5 : 1) * p.op * (p.smoke? Math.min(1,k*1.6)*Math.min(1,(1-k)*6+0.15) : Math.min(1,k*1.8));   // smoke fades IN then out
     ly.iSR.array[i*2]=sz; ly.iSR.array[i*2+1]=p.rot; }
   const G=L[1]; for(const t of trails){ if(G.n>=PART_MAX) break; const i=G.n++;
@@ -2857,7 +2868,7 @@ function fireball(pos, scale, y){ y=y||1.2;
     spawnPart(pos.x+Math.cos(a)*sp*0.4, y+0.6*scale, pos.z+Math.sin(a)*sp*0.4, Math.cos(a)*sp, 3.5+Math.random()*3, Math.sin(a)*sp,
       {color:0x1a1510, size:(1.6+Math.random())*scale, life:1.8+Math.random()*1.2, smoke:true, grav:0.2, drag:1.0, grow:2.6*scale, op:0.6}); }
   for(let i=0;i<Math.round(12*scale);i++){ const a=i/(12*scale)*6.283, sp=(9+Math.random()*4)*Math.sqrt(scale);   // ground shock: dust thrown outward in a ring
-    spawnPart(pos.x, 0.35, pos.z, Math.cos(a)*sp, 0.6, Math.sin(a)*sp, {color:BIOME.ground, size:1.2*scale, life:0.8, smoke:true, grav:-0.2, drag:3.2, grow:1.5*scale, op:0.45}); }
+    spawnPart(pos.x, heightAt(pos.x,pos.z)+0.35, pos.z, Math.cos(a)*sp, 0.6, Math.sin(a)*sp, {color:BIOME.ground, size:1.2*scale, life:0.8, smoke:true, grav:-0.2, drag:3.2, grow:1.5*scale, op:0.3}); }
   for(let i=0;i<Math.round(8*scale);i++){ const a=Math.random()*6.283, sp=4+Math.random()*7;                       // dirt clods
     spawnPart(pos.x, 0.5, pos.z, Math.cos(a)*sp, 6+Math.random()*7, Math.sin(a)*sp, {color:0x3a2c1c, size:0.2+Math.random()*0.25, life:0.9, grav:-26, drag:0.6}); }
 }
@@ -2907,13 +2918,13 @@ function spawnBullet(x, z, angle, o={}){
   const y0 = o.y!=null ? Math.max(0.6, o.y - heightAt(x,z)) : 1.2;          // launch height ABOVE THE GROUND at the real muzzle
   m.position.set(x, y0, z);
   const sp = o.speed||60;
-  const D=o.arcDist||0; let vy=0; if(!o.lockOn && D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close (lock-on missiles arc themselves)
+  const D=o.arcDist||0; let vy=0; if(!o.lockOn && !o.noArc && D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close (lock-on missiles arc themselves)
   const loft = o.lockOn ? (D<14 ? 1.0+Math.random()*1.4 : 2.6+Math.random()*3.0) : 0;   // random arc: low/shallow when the target's close, lofts higher when far (kept snappy — short air time)
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
     lockOn:o.lockOn||false, tgt:null, loft,
-    by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && D>0.5 ? (o.dropTo-y0)/(D/sp) : 0), freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark' });
+    by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && D>0.5 ? (o.dropTo-y0)/(D/sp) : 0), ignore:o.ignore||null, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark' });
 }
 function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
 function updateBullets(dt, now){
@@ -2953,7 +2964,7 @@ function updateBullets(dt, now){
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim) groundHit(b.x, b.z, b.r||0.45); recycleBullet(i); continue; }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
-    if(!airborne) for(const bl of blocks){ const dx=bl.x-b.x, dz=bl.z-b.z; if(dx*dx+dz*dz < (bl.r+b.r)**2){
+    if(!airborne) for(const bl of blocks){ if(bl===b.ignore) continue; const dx=bl.x-b.x, dz=bl.z-b.z; if(dx*dx+dz*dz < (bl.r+b.r)**2){
       damageBlock(bl, b.dmg); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
@@ -3346,6 +3357,96 @@ function killEnemy(e){
   if(e.def.bomber){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }   // others are recycled after their death fire (updateDying)
   freeEnemyBar(e.bar); e.bar=null;
 }
+// ----------------------------- WATCHTOWERS: enemy riflemen fire DOWN on your tank — shoot the tower down and they fall with it -----------------------------
+const TOWER = { hp:150, guardDmg:4, range:36, fireCd:1.7, h:6.2 };
+const towers=[], fallers=[];
+let _towerGeo=null;
+function towerGeos(){
+  if(_towerGeo) return _towerGeo; const W=[], R=[], P=[];
+  const nI=(q)=>{ const n=q.index?q.toNonIndexed():q; for(const a of Object.keys(n.attributes)) if(!['position','normal','uv'].includes(a)) n.deleteAttribute(a); n.clearGroups(); return n; };
+  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ const leg=new THREE.BoxGeometry(0.22,6.6,0.22); leg.translate(0,3.3,0); _xf(leg, sx*1.35,0,sz*1.35, -sz*0.06,0,sx*0.06); W.push(nI(leg)); }   // splayed timber legs
+  for(const y of [1.6,3.6]) for(const [ax,az,ry] of [[0,-1.32,0],[0,1.32,0],[-1.32,0,Math.PI/2],[1.32,0,Math.PI/2]]){ const br=new THREE.BoxGeometry(0.12,0.12,3.3); br.rotateX(0.55); _xf(br, ax,y+0.9,az, 0,ry,0); W.push(nI(br)); }   // X-bracing
+  const deck=new THREE.BoxGeometry(3.4,0.22,3.4); deck.translate(0,TOWER.h,0); W.push(nI(deck));
+  for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ const post=new THREE.BoxGeometry(0.14,2.3,0.14); post.translate(sx*1.55,TOWER.h+1.15,sz*1.55); W.push(nI(post)); }
+  for(let k=0;k<9;k++){ const rung=new THREE.BoxGeometry(0.7,0.06,0.08); rung.translate(0,0.55+k*0.65,1.75); W.push(nI(rung)); }   // ladder
+  for(const lx of [-0.34,0.34]){ const rail=new THREE.BoxGeometry(0.08,6.2,0.08); rail.translate(lx,3.1,1.75); W.push(nI(rail)); }
+  const roof=new THREE.BoxGeometry(4.0,0.12,4.0); roof.rotateX(0.12); roof.translate(0,TOWER.h+2.35,0); R.push(nI(roof));                      // corrugated tin roof
+  const tones=[0xc9b48a,0xb8a276,0xa8936a]; const bags=[];
+  for(const [ax,az,ry] of [[0,-1.55,0],[0,1.55,0],[-1.55,0,Math.PI/2],[1.55,0,Math.PI/2]]) for(let k=-1;k<=1;k++){ const b=new RoundedBoxGeometry(1.0,0.34,0.46,2,0.12);
+    _xf(b, ax+(ry?0:k*1.02), TOWER.h+0.3, az+(ry?k*1.02:0), 0, ry+_R(-0.06,0.06), 0); bags.push({geo:b, col:tones[(Math.random()*3)|0]}); }
+  P.push(_mergeColored(bags));
+  _towerGeo={ wood:mergeGeometries(W), roof:mergeGeometries(R), bags:P[0] }; return _towerGeo;
+}
+let _woodMat=null, _tinMat=null;
+function buildTower(x, z){
+  const G=towerGeos();
+  if(!_woodMat){ _woodMat=new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 }); _tinMat=new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') }); }
+  const g=new THREE.Group(); const gy=heightAt(x,z); g.position.set(x,gy,z);                 // outer: topples about world axes
+  const body=new THREE.Group(); body.rotation.y=Math.random()*6.283; g.add(body);             // inner: the tower's own heading
+  const wm=_woodMat.clone(); const add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; body.add(m); return m; };
+  add(G.wood, wm); add(G.roof, _tinMat); add(G.bags, coverMat('sandbag'));
+  // searchlight (sweeps at night)
+  const sl=new THREE.Group(); sl.position.set(1.2,TOWER.h+1.0,-1.2); body.add(sl);
+  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.4,12), _tinMat); lamp.rotation.x=Math.PI/2; sl.add(lamp);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.25,3.2,22,16,1,true), new THREE.MeshBasicMaterial({ color:0xfff0c8, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  beam.rotation.x=-Math.PI/2; beam.position.z=11; const bg=new THREE.Group(); bg.rotation.x=0.55; bg.add(beam); sl.add(bg);
+  const guards=[];
+  for(let k=0;k<2;k++){ const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(1.55); s.position.set(k?0.7:-0.7, TOWER.h+0.11, k?0.4:-0.4); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
+  scene.add(g);
+  const hp=Math.round(TOWER.hp*loopHpMul()*diffHpMul());
+  const t={ g, body, x, z, guards, sl, beam, wm, hp, falling:false };
+  towers.push(t);
+  const bobj={ mesh:g, x, z, r:2.0, hp, maxHp:hp, steel:false, loot:Math.random()<0.5, kind:'tower', tower:t };
+  blocks.push(bobj); t.block=bobj; if(bobj.loot) addLootBeacon(bobj,'block');
+}
+function buildTowers(){
+  for(const t of towers) scene.remove(t.g); towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0;
+  const n=(MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2));
+  for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
+    for(let tr=0;tr<30&&!ok;tr++){ x=(Math.random()*2-1)*(ARENA-9); z=(Math.random()*2-1)*(ARENA-9); ok=Math.hypot(x,z)>22 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7); }
+    if(ok) buildTower(x,z); }
+}
+// guards spot your tank and fire plunging rifle rounds; searchlights sweep at night
+const _tw=new THREE.Vector3();
+function updateTowers(dt, now){
+  const p=S.player; if(!p) return;
+  for(const t of towers){
+    t.beam.material.opacity = NIGHT.k*0.09; t.sl.rotation.y = Math.sin(now*0.5+t.x)*1.2;
+    if(t.falling) continue;
+    for(const gd of t.guards){ if(!gd.alive) continue;
+      gd.g.getWorldPosition(_tw); const dx=p.pos.x-_tw.x, dz=p.pos.z-_tw.z, d=Math.hypot(dx,dz);
+      gd.g.rotation.y = Math.atan2(dx,dz) - t.body.rotation.y;
+      const fired = d<TOWER.range && now>=gd.fireAt && S.mode==='playing';
+      if(fired){ gd.fireAt = now + TOWER.fireCd*(0.8+Math.random()*0.5);
+        gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(p.pos.x-_tw.x, p.pos.z-_tw.z)+(Math.random()-0.5)*0.08;
+        const dmg=(TOWER.guardDmg + S.stage*0.7)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
+        spawnBullet(_tw.x, _tw.z, ang, {owner:'e', dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
+        spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('enemyShoot'); }
+      animateSoldier(gd.g, 0, dt, fired); }
+  }
+  for(let i=fallers.length-1;i>=0;i--){ const f=fallers[i]; f.t+=dt;                                          // guards tumbling off the collapsing tower
+    if(!f.down){ f.vy-=26*dt; f.g.position.x+=f.vx*dt; f.g.position.y+=f.vy*dt; f.g.position.z+=f.vz*dt; f.g.rotation.x+=f.rx*dt; f.g.rotation.z+=f.rz*dt;
+      const gy=heightAt(f.g.position.x,f.g.position.z); if(f.g.position.y<=gy){ f.g.position.y=gy; f.down=true; f.g.rotation.x=Math.PI/2*(f.rx>0?1:-1);
+        burst({x:f.g.position.x,z:f.g.position.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, up:1, op:0.5});
+        addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); addCoins(Math.round(15*loopRewardMul()*diffRewardMul()*cMod('coinMul'))); sfx('thud'); } }
+    else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(1.55*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }
+  for(const t of towers){ if(!t.falling) continue; t.ft+=dt; const k=Math.min(1, t.ft/1.25), e=k*k;          // topple about the base with a hard landing
+    t.g.rotation.x = t.fdx*e*1.45; t.g.rotation.z = t.fdz*e*1.45;
+    if(k>=1 && !t.landed){ t.landed=true; const ex=t.x+t.fdz*-5, ez=t.z+t.fdx*5;
+      bigExplode({x:ex,z:ez}, 0xc8a070, 1.4); burst({x:ex,z:ez}, 0x8a6a40, 14, 9, {y:heightAt(ex,ez)+1, life:0.7, size:0.45, grav:-18, drag:1.2, up:4}); S.shake=Math.min(3,S.shake+1.2); }
+    if(t.ft>7){ const k2=Math.max(0,1-(t.ft-7)/1.5); t.wm.opacity=k2; t.wm.transparent=true; if(k2<=0){ scene.remove(t.g); t.gone=true; } } }
+  for(let i=towers.length-1;i>=0;i--) if(towers[i].gone) towers.splice(i,1);
+}
+function collapseTower(t){
+  t.falling=true; t.ft=0; const p=S.player; const ax=t.x-(p?p.pos.x:0), az=t.z-(p?p.pos.z:0), L=Math.hypot(ax,az)||1;   // falls AWAY from the shooter
+  t.fdx=az/L; t.fdz=-ax/L;
+  floatText('TOWER DOWN', '#ffcf5a', new THREE.Vector3(t.x, 8, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
+  burst({x:t.x,z:t.z}, 0x8a6a40, 18, 8, {y:heightAt(t.x,t.z)+3, life:0.8, size:0.5, grav:-16, drag:1.2, up:3}); burst({x:t.x,z:t.z}, 0xb09a7a, 5, 3, {y:heightAt(t.x,t.z)+1.5, life:1.4, size:2.4, smoke:true, grav:-0.4, drag:1.5, up:1.5, op:0.5});
+  for(const gd of t.guards){ if(!gd.alive) continue; gd.alive=false; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
+    t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
+    fallers.push({ g:gd.g, t:0, vx:ax/L*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:az/L*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false }); }
+}
+function clearTowers(){ for(const t of towers) scene.remove(t.g); towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; }
 // ---- KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then the magazine goes ----
 const DYING=[];
 function startDying(e){ DYING.push({ e, t:0, dur:1.15+Math.random()*0.6, popT:0.25 }); burst(e.pos, 0xffd27a, 8, 7, {y:1.6, life:0.25, size:0.5, grav:-9, drag:2}); sfx('clang'); }
@@ -4471,6 +4572,7 @@ function trySpell(){
 }
 function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length; updateSpellHUD(); sfx('click'); }
 function aoeDamage(x,z,r,dmg,stun,now){
+  for(const b of blocks.slice()) if(b.kind==='tower'){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7); }   // blasts bring watchtowers down
   for(const e of enemies.slice()){ const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e,dmg); } }
   if(boss&&boss.alive){ const dx=boss.pos.x-x,dz=boss.pos.z-z; if(dx*dx+dz*dz<r*r) damageBoss(dmg); }
 }
@@ -5853,8 +5955,16 @@ function _soldierMats(){
   SOLDIER_MAT.gun = new THREE.MeshStandardMaterial({ color:0x1a1b18, roughness:0.45, metalness:0.75 });
   SOLDIER_MAT.ready=true; return SOLDIER_MAT;
 }
-function makeSoldierMesh(){
-  const M=_soldierMats(), g=new THREE.Group(), body=new THREE.Group(); body.scale.setScalar(0.84); g.add(body);   // inner rig keeps the old overall height
+const ENEMY_SOLDIER_MAT = {};
+function _enemySoldierMats(){
+  if(ENEMY_SOLDIER_MAT.ready) return ENEMY_SOLDIER_MAT; const F=_soldierMats();
+  const camo=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#a8905e'; x.fillRect(0,0,W,W); const cs=['#8a7048','#c8b080','#6a5636','#b49a6a'];   // desert-tan pattern → reads as the OTHER side
+    for(let i=0;i<40;i++){ x.fillStyle=cs[i%cs.length]; x.beginPath(); x.ellipse(_R(0,W),_R(0,W),_R(3,9),_R(2,6),_R(0,3),0,7); x.fill(); } });
+  Object.assign(ENEMY_SOLDIER_MAT, F, { uni:new THREE.MeshStandardMaterial({ map:camo, roughness:0.9 }), gear:new THREE.MeshStandardMaterial({ color:0x5a4632, roughness:0.85 }), ready:true });
+  return ENEMY_SOLDIER_MAT;
+}
+function makeSoldierMesh(opts){
+  const M=(opts&&opts.enemy)?_enemySoldierMats():_soldierMats(), g=new THREE.Group(), body=new THREE.Group(); body.scale.setScalar(0.84); g.add(body);   // inner rig keeps the old overall height
   const torsoM=M.uni.clone();                                            // own copy → the hit flash only lights THIS soldier
   const rb=(w,h,d,r)=>new RoundedBoxGeometry(w,h,d,2,r||0.04);
   const put=(par,geo,mat,x,y,z,rx,ry,rz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); if(rx||ry||rz) m.rotation.set(rx||0,ry||0,rz||0); par.add(m); return m; };
@@ -6023,6 +6133,7 @@ function loop(nowMs){
     separateTanks(now);                 // resolve overlaps so tanks never merge
     updateTankRigs(gdt);                // tracks + wheels + suspension + gun lay/recoil on every tank
     updateCrush();                      // tracks grind stones / flatten grass
+    updateTowers(gdt, now);             // watchtower guards fire down; collapsing towers + falling guards
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
     updateLootBeacons(dt);               // glowing markers on bricks/tanks that hide a power-up
@@ -6083,7 +6194,7 @@ let _rsT=0;
 function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 window._resize = ()=>doResize(true);   // (debug) force a refit
-if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
+if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
 const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not
