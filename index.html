@@ -1197,6 +1197,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS } from './config.js';   // tuning + economy data (zero-build ES module)
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -1335,81 +1336,241 @@ if(!MOBILE){ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(BIOME.bg);
+scene.background = new THREE.Color(BIOME.fog);
 scene.fog = new THREE.FogExp2(BIOME.fog, 0.0075);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-scene.environmentIntensity = 0.4;
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;   // replaced per battlefield by a real sky (applyAtmosphere)
+scene.environmentIntensity = 0.55;
 
 const camera = new THREE.PerspectiveCamera(54, innerWidth/innerHeight, 0.1, 600);
 camera.position.set(0, 46, 34);
 camera.lookAt(0,0,0);
 
+// ---- CINEMATIC GRADE (last pass, display-referred): split-tone + contrast/saturation + vignette + film grain + shake-driven chromatic aberration ----
+const GradeShader = {
+  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:0.035}, sat:{value:0.9}, contrast:{value:1.08},
+    lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0} },
+  vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sat,contrast,aberr,flash; uniform vec3 lift,gain; varying vec2 vUv;
+    void main(){
+      vec2 d=vUv-0.5; vec3 c;
+      if(aberr>0.0002){ vec2 o=d*aberr; c=vec3(texture2D(tDiffuse,vUv+o).r, texture2D(tDiffuse,vUv).g, texture2D(tDiffuse,vUv-o).b); }
+      else c=texture2D(tDiffuse,vUv).rgb;
+      float l=dot(c,vec3(0.2126,0.7152,0.0722));
+      c=mix(vec3(l),c,sat);
+      c=(c-0.5)*contrast+0.5;
+      c=c*gain + lift*(1.0-l);
+      c+=flash*vec3(1.0,0.86,0.62);
+      float r=length(d*vec2(1.0,0.82)); c*=1.0-vig*smoothstep(0.32,0.82,r);
+      float n=fract(sin(dot(vUv*vec2(1271.3,3117.1)+time*61.7,vec2(12.9898,78.233)))*43758.5453); c+=(n-0.5)*grain;
+      gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);
+    }` };
+
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
 composer.addPass(renderPass);
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.55, 0.7, 0.8);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.5, 0.65, 0.85);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
+const gradePass = new ShaderPass(GradeShader); composer.addPass(gradePass);
 
-// lights (refs captured so applyBiome can re-tint them) — stronger key + softer fill = more depth
-const ambient = new THREE.AmbientLight(0x4a4636, 0.55); scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xfff0d0, 1.9);
-sun.position.set(26, 48, 18); scene.add(sun);
+// lights (refs captured so applyAtmosphere can re-tint them): hard key sun + sky/ground bounce; little flat ambient = real contrast
+const ambient = new THREE.AmbientLight(0x4a4636, 0.14); scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff0d0, 2.8);
+sun.position.set(26, 48, 18); scene.add(sun); scene.add(sun.target);
+const SHADOW_R = 44;                                                     // tight shadow frustum that FOLLOWS the action → crisp contact shadows
 if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
-  const sc=sun.shadow.camera; sc.left=-70; sc.right=70; sc.top=70; sc.bottom=-70; sc.near=10; sc.far=140;
-  sun.shadow.bias=-0.0004; sun.shadow.normalBias=0.4; }
-const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.5); scene.add(hemi);
+  const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
+  sun.shadow.bias=-0.0003; sun.shadow.normalBias=0.25; sun.shadow.radius=2; }
+const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.62); scene.add(hemi);
 const muzzleLight = new THREE.PointLight(0xffd27a, 0, 18, 2); scene.add(muzzleLight);
+// per-battlefield atmosphere: sky dome (→ environment reflections), sun angle/colour/strength, haze, grade
+const ATMOS = {
+  DESERT: { top:0x5b84b8, hor:0xc9b48c, fog:0xb6a07a, fogD:0.0062, sun:0xfff1d6, sunI:3.1, el:0.98, az:0.62, hemiG:0x8a6c44, lift:[0.0,0.008,0.022], gain:[1.04,1.0,0.92], sat:0.9,  con:1.1  },
+  RUINS:  { top:0x76808a, hor:0x9a9e9f, fog:0x7c8186, fogD:0.0065, sun:0xe8eef4, sunI:2.1, el:0.82, az:0.4,  hemiG:0x4a4c4e, lift:[0.006,0.012,0.022], gain:[0.98,1.0,1.03], sat:0.76, con:1.1  },
+  TUNDRA: { top:0x8fb0cc, hor:0xd0dce4, fog:0xb4c4d0, fogD:0.006, sun:0xf2f6ff, sunI:2.5, el:0.5,  az:0.9,  hemiG:0x9aaab8, lift:[0.0,0.01,0.03],   gain:[0.96,1.0,1.06], sat:0.84, con:1.06 },
+  FOUNDRY:{ top:0x3a302c, hor:0x5a4638, fog:0x3c322c, fogD:0.009,  sun:0xffcaa0, sunI:2.1, el:0.62, az:0.3,  hemiG:0x2e2420, lift:[0.014,0.006,0.0],  gain:[1.03,0.99,0.94], sat:0.86, con:1.12 },
+  CITADEL:{ top:0x3e3348, hor:0xb07a4a, fog:0x6a4a32, fogD:0.0095, sun:0xffa860, sunI:2.4, el:0.36, az:1.15, hemiG:0x4a3020, lift:[0.012,0.0,0.03],  gain:[1.09,0.98,0.86], sat:0.92, con:1.12 },
+  MEADOW: { top:0x6596cc, hor:0xc4d0c0, fog:0xa6b4a0, fogD:0.0062, sun:0xfff6e0, sunI:2.9, el:1.0,  az:0.7,  hemiG:0x4a5a30, lift:[0.0,0.01,0.02],   gain:[1.0,1.02,0.95], sat:0.95, con:1.08 },
+};
+const SUN_DIR = new THREE.Vector3(0.45,0.75,0.35).normalize();
+const _envCache = {};
+function skyEnvTexture(name, A){
+  if(_envCache[name]) return _envCache[name];
+  const sc=new THREE.Scene();
+  const mat=new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false,
+    uniforms:{ top:{value:new THREE.Color(A.top)}, hor:{value:new THREE.Color(A.hor)}, bot:{value:new THREE.Color(A.hemiG)}, sunCol:{value:new THREE.Color(A.sun)}, sunDir:{value:SUN_DIR.clone()} },
+    vertexShader:'varying vec3 vD; void main(){ vD=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader:'uniform vec3 top,hor,bot,sunCol,sunDir; varying vec3 vD; void main(){ float y=vD.y; vec3 c = y>0.0 ? mix(hor, top, pow(y,0.55)) : mix(hor, bot*0.6, pow(-y,0.35)); float s=max(dot(normalize(vD),sunDir),0.0); c += sunCol*(pow(s,900.0)*40.0 + pow(s,10.0)*0.3); gl_FragColor=vec4(c,1.0); }' });
+  sc.add(new THREE.Mesh(new THREE.SphereGeometry(50,40,20), mat));
+  const t=pmrem.fromScene(sc, 0, 0.1, 120).texture; mat.dispose(); _envCache[name]=t; return t;
+}
+function applyAtmosphere(b){
+  const A=ATMOS[b.name]||ATMOS.DESERT;
+  SUN_DIR.set(Math.cos(A.el)*Math.sin(A.az), Math.sin(A.el), Math.cos(A.el)*Math.cos(A.az)).normalize();
+  scene.environment = skyEnvTexture(b.name, A); scene.environmentIntensity = 0.6;
+  scene.background.setHex(A.fog); scene.fog.color.setHex(A.fog); scene.fog.density = A.fogD;
+  sun.color.setHex(A.sun); sun.intensity = A.sunI;
+  hemi.color.setHex(A.top); hemi.groundColor.setHex(A.hemiG); hemi.intensity = 0.7;
+  ambient.color.setHex(A.hor); ambient.intensity = 0.12;
+  const u=gradePass.uniforms; u.lift.value.set(...A.lift); u.gain.value.set(...A.gain); u.sat.value=A.sat; u.contrast.value=A.con;
+}
+// keep the key light (and its tight shadow frustum) centred on the action; snap to shadow texels to stop shimmer
+function updateSunFollow(){
+  const p=S.player, cx = p ? p.pos.x : 0, cz = p ? p.pos.z : 0, tx=(SHADOW_R*2)/2048;
+  const sx=Math.round(cx/tx)*tx, sz=Math.round(cz/tx)*tx;
+  sun.target.position.set(sx,0,sz); sun.position.set(sx+SUN_DIR.x*90, SUN_DIR.y*90, sz+SUN_DIR.z*90); sun.target.updateMatrixWorld();
+}
 
 // ----------------------------- ARENA -----------------------------
-const _texCache={};
-function gridTexture(b){
-  if(_texCache[b.name]) return _texCache[b.name];
-  const S2=512, c=document.createElement('canvas'); c.width=c.height=S2; const x=c.getContext('2d');
-  const hex=h=>'#'+h.toString(16).padStart(6,'0');
-  x.fillStyle=hex(b.ground); x.fillRect(0,0,S2,S2);
-  // big soft patches → uneven, weathered ground (reads as gồ ghề / rough)
-  for(let i=0;i<28;i++){ x.globalAlpha=0.05+Math.random()*0.07;
-    x.fillStyle = Math.random()<0.5 ? hex(b.grid) : '#ffffff';
-    const r=42+Math.random()*95; x.beginPath(); x.arc(Math.random()*S2,Math.random()*S2,r,0,7); x.fill(); }
-  // fine grain speckle
-  for(let i=0;i<1500;i++){ x.globalAlpha=0.03+Math.random()*0.05;
-    x.fillStyle = Math.random()<0.5 ? hex(b.grid) : '#ffffff';
-    const r=2+Math.random()*5; x.beginPath(); x.arc(Math.random()*S2,Math.random()*S2,r,0,7); x.fill(); }
-  // biome-specific surface detail
-  if(b.deco==='grass'){                                   // blades of grass everywhere
-    for(let i=0;i<950;i++){ x.globalAlpha=0.12+Math.random()*0.26; x.strokeStyle = Math.random()<0.3?'#bce879':(Math.random()<0.5?'#6f9a3c':hex(b.grid));
-      x.lineWidth=1+Math.random(); const gx=Math.random()*S2, gy=Math.random()*S2, h=4+Math.random()*9, lean=(Math.random()-0.5)*5;
-      x.beginPath(); x.moveTo(gx,gy); x.lineTo(gx+lean,gy-h); x.stroke(); }
-  } else if(b.deco==='ice'){                              // frost fractures
-    x.globalAlpha=0.18; x.strokeStyle='#eaffff'; x.lineWidth=1.2;
-    for(let i=0;i<44;i++){ let px=Math.random()*S2, py=Math.random()*S2; x.beginPath(); x.moveTo(px,py);
-      for(let s=0;s<4;s++){ px+=(Math.random()-0.5)*72; py+=(Math.random()-0.5)*72; x.lineTo(px,py); } x.stroke(); }
-  } else if(b.deco==='slag'){                             // molten cracks glow through
-    x.globalAlpha=0.5; x.strokeStyle='#ff7a30'; x.lineWidth=1.7;
-    for(let i=0;i<26;i++){ let px=Math.random()*S2, py=Math.random()*S2; x.beginPath(); x.moveTo(px,py);
-      for(let s=0;s<3;s++){ px+=(Math.random()-0.5)*64; py+=(Math.random()-0.5)*64; x.lineTo(px,py); } x.stroke(); }
-  } else if(b.deco==='rubble'){                           // broken paving seams
-    x.globalAlpha=0.32; x.strokeStyle=hex(b.grid); x.lineWidth=2;
-    for(let i=0;i<24;i++){ const px=Math.random()*S2, py=Math.random()*S2, w=28+Math.random()*72, h=28+Math.random()*72; x.strokeRect(px,py,w,h); }
-  }
-  // tech survey grid only on engineered grounds — natural terrains (desert dunes / meadow) skip it
-  if(b.deco==='rubble' || b.deco==='slag' || b.deco==='ice'){
-    x.globalAlpha=0.4; x.strokeStyle=hex(b.grid); x.lineWidth=1.5;
-    const step=S2/8; for(let i=0;i<=8;i++){ x.beginPath(); x.moveTo(i*step,0); x.lineTo(i*step,S2); x.moveTo(0,i*step); x.lineTo(S2,i*step); x.stroke(); }
-  }
-  x.globalAlpha=1;
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,4);
-  _texCache[b.name]=t; return t;
+// ---- procedural PBR battlefield ground: tileable fBm albedo + height→normal, per-biome surface features, macro variation (no visible tiling) ----
+function tileNoise(W, periods, gainK){                           // tileable value-noise fBm in [0,1] (each octave wraps exactly on W)
+  const out=new Float32Array(W*W); let amp=1, tot=0; gainK=gainK||0.5;
+  for(const P of periods){
+    const lat=new Float32Array(P*P); for(let i=0;i<P*P;i++) lat[i]=Math.random();
+    const cell=W/P;
+    for(let y=0;y<W;y++){ const fy=y/cell, iy=fy|0, ty=fy-iy, sy=ty*ty*(3-2*ty), r0=(iy%P)*P, r1=((iy+1)%P)*P;
+      for(let x=0;x<W;x++){ const fx=x/cell, ix=fx|0, tx=fx-ix, sx=tx*tx*(3-2*tx), c0=ix%P, c1=(ix+1)%P;
+        const a=lat[r0+c0], b=lat[r0+c1], c=lat[r1+c0], d=lat[r1+c1];
+        out[y*W+x] += amp*((a+(b-a)*sx)+((c+(d-c)*sx)-(a+(b-a)*sx))*sy); } }
+    tot+=amp; amp*=gainK; }
+  for(let i=0;i<out.length;i++) out[i]/=tot; return out;
+}
+const GROUND_STYLE = {   // c0 dark · c1 mid · c2 light (sRGB), roughness, normal strength, detail tile size (world units)
+  DESERT: { c:[[132,104,66],[188,156,108],[222,196,150]], rough:0.96, nrm:2.6, tile:22 },
+  RUINS:  { c:[[70,70,70],[112,110,104],[150,146,138]],   rough:0.92, nrm:3.0, tile:20 },
+  TUNDRA: { c:[[150,166,182],[206,220,232],[244,248,252]],rough:0.72, nrm:1.8, tile:24 },
+  FOUNDRY:{ c:[[34,30,28],[66,56,50],[96,84,74]],          rough:0.9,  nrm:3.2, tile:18 },
+  CITADEL:{ c:[[46,36,26],[84,66,44],[118,96,66]],         rough:0.95, nrm:2.8, tile:20 },
+  MEADOW: { c:[[58,72,34],[88,112,52],[126,148,74]],       rough:0.95, nrm:2.4, tile:20 },
+};
+const _gCache={};
+function groundMaps(b){
+  if(_gCache[b.name]) return _gCache[b.name];
+  const st=GROUND_STYLE[b.name]||GROUND_STYLE.DESERT, W=MOBILE?512:1024, N=W*W;
+  const n1=tileNoise(W,[4,8,16,32,64,128,256],0.52), n2=tileNoise(W,[3,6,12],0.5), n3=tileNoise(W,[32,64,128],0.55);
+  const H=new Float32Array(N);
+  const col=document.createElement('canvas'); col.width=col.height=W; const cx=col.getContext('2d'); const img=cx.createImageData(W,W), d=img.data;
+  const [c0,c1,c2]=st.c, mix=(a,b,t)=>a+(b-a)*t;
+  for(let y=0;y<W;y++) for(let x=0;x<W;x++){ const i=y*W+x;
+    let h=n1[i], t=h;
+    if(b.name==='DESERT'){ const rip=Math.sin((x*0.82+y*0.57)/W*6.283*38 + n2[i]*14)*0.5+0.5;          // wind ripples bent by large-scale flow
+      h = n1[i]*0.7 + rip*0.18*n2[i] + n3[i]*0.12; t = h + (n2[i]-0.5)*0.35; }
+    else if(b.name==='TUNDRA'){ h = n1[i]*0.7+n3[i]*0.3; t = 0.3+h*0.8; }                                                          // wind-packed drifts
+    else if(b.name==='MEADOW'){ t = n1[i]*0.6+n3[i]*0.4; }
+    else if(b.name==='FOUNDRY'||b.name==='CITADEL'){ h=n1[i]*0.75+n3[i]*0.25; t=h; }
+    else { h=n1[i]*0.6+n3[i]*0.4; t=h*0.9+(n2[i]-0.5)*0.3; }
+    H[i]=h; t=Math.max(0,Math.min(1,t));
+    let r,g,bl; if(t<0.5){ const k=t*2; r=mix(c0[0],c1[0],k); g=mix(c0[1],c1[1],k); bl=mix(c0[2],c1[2],k); } else { const k=(t-0.5)*2; r=mix(c1[0],c2[0],k); g=mix(c1[1],c2[1],k); bl=mix(c1[2],c2[2],k); }
+    const gr=(Math.random()-0.5)*10; d[i*4]=r+gr; d[i*4+1]=g+gr; d[i*4+2]=bl+gr; d[i*4+3]=255; }
+  cx.putImageData(img,0,0);
+  const hc=document.createElement('canvas'); hc.width=hc.height=W; const hx=hc.getContext('2d'); const himg=hx.createImageData(W,W), hd=himg.data;
+  for(let i=0;i<N;i++){ const v=H[i]*255; hd[i*4]=hd[i*4+1]=hd[i*4+2]=v; hd[i*4+3]=255; } hx.putImageData(himg,0,0);
+  // surface features painted on BOTH albedo + height (wrapped so the tile stays seamless)
+  const both=(fn)=>{ for(const [ctx,isH] of [[cx,false],[hx,true]]) for(const ox of [-W,0,W]) for(const oy of [-W,0,W]){ ctx.save(); ctx.translate(ox,oy); fn(ctx,isH); ctx.restore(); } };
+  const R=(a,b)=>a+Math.random()*(b-a);
+  const pebbles=(n,rMin,rMax,cols,hv)=>{ const P=[]; for(let i=0;i<n;i++) P.push([Math.random()*W,Math.random()*W,R(rMin,rMax)*W/1024,cols[(Math.random()*cols.length)|0]]);
+    both((x,isH)=>{ for(const [px,py,r,cc] of P){ x.fillStyle = isH ? hv : cc; x.beginPath(); x.ellipse(px,py,r,r*R(0.6,1),R(0,3),0,7); x.fill(); } }); };
+  const cracks=(n,len,w,colA,hv)=>{ const L=[]; for(let i=0;i<n;i++){ let px=Math.random()*W, py=Math.random()*W, a=R(0,6.28); const pts=[[px,py]]; for(let s=0;s<len;s++){ a+=R(-0.7,0.7); px+=Math.cos(a)*W/90; py+=Math.sin(a)*W/90; pts.push([px,py]); if(Math.random()<0.15){ L.push({pts:pts.slice(-2).concat([[px+Math.cos(a+1.4)*W/60,py+Math.sin(a+1.4)*W/60]]), w:w*0.6}); } } L.push({pts,w}); }
+    both((x,isH)=>{ x.strokeStyle=isH?hv:colA; x.lineCap='round'; x.lineJoin='round'; for(const c of L){ x.lineWidth=c.w*W/1024; x.beginPath(); c.pts.forEach((p,k)=>k?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.stroke(); } }); };
+  if(b.name==='DESERT'){ pebbles(900,1,3.2,['rgba(120,96,64,0.8)','rgba(150,124,86,0.8)','rgba(96,80,58,0.7)'],'rgba(255,255,255,0.55)'); cracks(10,10,1.4,'rgba(110,86,56,0.35)','rgba(0,0,0,0.25)'); }
+  else if(b.name==='RUINS'){ // broken concrete slabs: seams + spalling + oil stains + rubble grit
+    both((x,isH)=>{ x.strokeStyle=isH?'rgba(0,0,0,0.7)':'rgba(40,40,40,0.55)'; x.lineWidth=3*W/1024; const s=W/4; for(let i=0;i<=4;i++){ x.beginPath(); x.moveTo(i*s+R(-3,3),0); x.lineTo(i*s+R(-3,3),W); x.moveTo(0,i*s+R(-3,3)); x.lineTo(W,i*s+R(-3,3)); x.stroke(); } });
+    cracks(40,14,1.8,'rgba(30,30,30,0.6)','rgba(0,0,0,0.6)');
+    for(let i=0;i<3;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(20,60)*W/1024; cx.fillStyle='rgba(20,18,16,'+R(0.08,0.16).toFixed(2)+')'; cx.beginPath(); cx.ellipse(px,py,r,r*R(0.5,1),R(0,3),0,7); cx.fill(); }
+    pebbles(1400,1,3,['rgba(90,88,84,0.9)','rgba(140,136,128,0.9)','rgba(60,58,56,0.9)'],'rgba(255,255,255,0.5)'); }
+  else if(b.name==='TUNDRA'){ cracks(26,12,1.2,'rgba(140,170,200,0.4)','rgba(0,0,0,0.2)'); pebbles(500,1,2.4,['rgba(80,86,92,0.7)','rgba(110,116,124,0.7)'],'rgba(255,255,255,0.4)');
+    for(let i=0;i<1800;i++){ cx.fillStyle='rgba(255,255,255,'+R(0.4,0.9).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,1,1); } }
+  else if(b.name==='FOUNDRY'){ cracks(22,10,2.4,'rgba(255,110,40,0.7)','rgba(0,0,0,0.7)'); cracks(30,10,1.2,'rgba(16,14,12,0.7)','rgba(0,0,0,0.5)'); pebbles(1200,1,3.5,['rgba(30,26,24,0.9)','rgba(80,70,62,0.9)','rgba(60,40,30,0.9)'],'rgba(255,255,255,0.6)');
+    for(let i=0;i<12;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(24,80)*W/1024; const g=cx.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba(10,10,14,0.5)'); g.addColorStop(1,'rgba(10,10,14,0)'); cx.fillStyle=g; cx.fillRect(px-r,py-r,r*2,r*2); } }
+  else if(b.name==='CITADEL'){ cracks(30,12,1.6,'rgba(24,18,12,0.6)','rgba(0,0,0,0.5)'); pebbles(1300,1,3.4,['rgba(60,48,34,0.9)','rgba(100,84,60,0.9)','rgba(30,26,22,0.9)'],'rgba(255,255,255,0.55)');
+    for(let i=0;i<900;i++){ cx.fillStyle='rgba(30,28,26,'+R(0.2,0.5).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,2,2); } }
+  else if(b.name==='MEADOW'){ const Gs=[]; for(let i=0;i<(MOBILE?5000:14000);i++) Gs.push([Math.random()*W,Math.random()*W,R(4,11)*W/1024,R(-3,3)*W/1024, Math.random()<0.3?'rgba(170,200,100,0.55)':(Math.random()<0.5?'rgba(80,110,46,0.55)':'rgba(60,84,34,0.6)')]);
+    both((x,isH)=>{ x.lineWidth=1.2*W/1024; for(const [gx,gy,h,lean,cc] of Gs){ x.strokeStyle=isH?'rgba(255,255,255,0.35)':cc; x.beginPath(); x.moveTo(gx,gy); x.lineTo(gx+lean,gy-h); x.stroke(); } });
+    pebbles(300,1,2.6,['rgba(110,100,84,0.8)'],'rgba(255,255,255,0.5)'); }
+  const map=new THREE.CanvasTexture(col); map.colorSpace=THREE.SRGBColorSpace; map.wrapS=map.wrapT=THREE.RepeatWrapping; map.anisotropy=8;
+  const nrm=_heightToNormal(hc, st.nrm); nrm.anisotropy=8;
+  const rep=(ARENA*2)/st.tile; map.repeat.set(rep,rep); nrm.repeat.set(rep,rep);
+  const out={ map, nrm, rough:st.rough }; _gCache[b.name]=out; return out;
+}
+// macro variation (one stretch across the whole field): kills visible tiling with broad light/dark + warm/cool patches
+function macroTexture(){
+  const W=256, a=tileNoise(W,[2,4,8,16],0.55), b2=tileNoise(W,[3,6],0.5);
+  const c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); const img=x.createImageData(W,W), d=img.data;
+  for(let i=0;i<W*W;i++){ const v=0.5+(a[i]-0.5)*1.3, w=(b2[i]-0.5)*0.12; d[i*4]=Math.max(0,Math.min(255,(v+w)*255)); d[i*4+1]=Math.max(0,Math.min(255,v*255)); d[i*4+2]=Math.max(0,Math.min(255,(v-w)*255)); d[i*4+3]=255; }
+  x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+}
+function patchTexture(){ const W=256, a=tileNoise(W,[3,6,12,24,48],0.55); const c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); const img=x.createImageData(W,W), d=img.data;
+  for(let i=0;i<W*W;i++){ const v=Math.max(0,Math.min(255,(0.5+(a[i]-0.5)*1.6)*255)); d[i*4]=d[i*4+1]=d[i*4+2]=v; d[i*4+3]=255; } x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
+const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85] };
+const MACRO = { tex:{ value:macroTexture() }, amt:{ value:0.3 }, span:{ value:1/(ARENA*2) }, patch:{ value:patchTexture() }, pcol:{ value:new THREE.Color(0x9a7a50) }, pamt:{ value:0.55 } };
+function macroGround(mat){
+  mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;')
+      .replace('#include <map_fragment>','#include <map_fragment>\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }'); };
+  mat.customProgramCacheKey=()=>'macroGround'; return mat;
 }
 const arena = new THREE.Group(); scene.add(arena);
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(ARENA*2, ARENA*2),
-  new THREE.MeshStandardMaterial({ map:gridTexture(BIOMES[0]), roughness:0.96, metalness:0.0 })
-);
+const _g0 = groundMaps(BIOMES[0]);
+const groundMat = macroGround(new THREE.MeshStandardMaterial({ map:_g0.map, normalMap:_g0.nrm, normalScale:new THREE.Vector2(1,1), roughness:_g0.rough, metalness:0.0, envMapIntensity:0.5 }));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2, ARENA*2), groundMat);
 ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; arena.add(ground);
+// outer terrain past the perimeter (same surface, fades into the haze) — no more void beyond the walls
+const outerGeo = new THREE.PlaneGeometry(ARENA*8, ARENA*8); { const uv=outerGeo.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*4, uv.getY(i)*4); }
+const outerGround = new THREE.Mesh(outerGeo, groundMat); outerGround.rotation.x=-Math.PI/2; outerGround.position.y=-0.04; outerGround.receiveShadow=true; arena.add(outerGround);
+
+// ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
+const DECAL = { W: MOBILE?512:1024, dirty:false, t:0, fadeT:0 };
+DECAL.ppu = DECAL.W/(ARENA*2);
+DECAL.stat = document.createElement('canvas'); DECAL.dyn = document.createElement('canvas'); DECAL.out = document.createElement('canvas');
+for(const c of [DECAL.stat, DECAL.dyn, DECAL.out]){ c.width=c.height=DECAL.W; }
+DECAL.sx = DECAL.stat.getContext('2d'); DECAL.dx = DECAL.dyn.getContext('2d'); DECAL.ox = DECAL.out.getContext('2d');
+DECAL.tex = new THREE.CanvasTexture(DECAL.out); DECAL.tex.colorSpace=THREE.SRGBColorSpace; DECAL.tex.anisotropy=4;
+const decalMesh = new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2, ARENA*2), new THREE.MeshStandardMaterial({ map:DECAL.tex, transparent:true, depthWrite:false, roughness:1, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 }));
+decalMesh.rotation.x=-Math.PI/2; decalMesh.position.y=0.02; decalMesh.receiveShadow=true; decalMesh.renderOrder=-2; arena.add(decalMesh);
+const _dpx=(x)=>(x+ARENA)*DECAL.ppu, _dpz=(z)=>(z+ARENA)*DECAL.ppu;
+let _treadCol='rgba(42,30,18,', _treadA=0.16;
+function decalReset(b){
+  DECAL.sx.clearRect(0,0,DECAL.W,DECAL.W); DECAL.dx.clearRect(0,0,DECAL.W,DECAL.W); DECAL.dirty=true;
+  const nm=b&&b.name; _treadCol = nm==='TUNDRA' ? 'rgba(70,84,100,' : nm==='MEADOW' ? 'rgba(48,40,24,' : nm==='FOUNDRY' ? 'rgba(10,8,6,' : 'rgba(42,30,18,';
+  _treadA = nm==='TUNDRA' ? 0.26 : nm==='MEADOW' ? 0.24 : 0.16;
+  for(let i=0;i<(MOBILE?8:14);i++){ let x=0,z=0,ok=false; for(let t=0;t<12&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-6); z=(Math.random()*2-1)*(ARENA-6); ok=Math.hypot(x,z)>14 && Math.hypot(x,z-ARENA*0.55)>8; }   // old shell craters from earlier fighting
+    if(ok) decalCrater(x,z,1.4+Math.random()*2.6, 0.6); }
+}
+function decalTread(x, z, facing, scale){                                       // one pair of track prints (both belts)
+  const c=DECAL.dx, P=DECAL.ppu, s=scale||1, w=0.6*s*P, l=0.6*s*P, off=1.18*s*P;
+  c.save(); c.translate(_dpx(x),_dpz(z)); c.rotate(-facing);
+  c.fillStyle=_treadCol+_treadA+')'; c.fillRect(-off-w/2,-l/2,w,l); c.fillRect(off-w/2,-l/2,w,l);
+  c.fillStyle=_treadCol+(_treadA*1.6).toFixed(3)+')'; for(const sx of [-off,off]) for(let k=0;k<2;k++) c.fillRect(sx-w/2, -l/2+k*l/2, w, Math.max(1,l*0.12));   // cleat bars
+  c.restore(); DECAL.dirty=true;
+}
+function decalScorch(x, z, r, k){                                               // blast scorch: charred core → soot halo
+  const c=DECAL.sx, px=_dpx(x), pz=_dpz(z), R=r*DECAL.ppu; k=k==null?1:k;
+  const g=c.createRadialGradient(px,pz,0,px,pz,R); g.addColorStop(0,'rgba(12,9,6,'+(0.82*k).toFixed(2)+')'); g.addColorStop(0.45,'rgba(22,16,10,'+(0.55*k).toFixed(2)+')'); g.addColorStop(1,'rgba(30,22,14,0)');
+  c.fillStyle=g; c.beginPath(); c.arc(px,pz,R,0,7); c.fill();
+  for(let i=0;i<Math.round(6+r*2);i++){ const a=Math.random()*6.283, rr=R*(0.6+Math.random()*0.7); c.strokeStyle='rgba(14,10,6,'+(0.25*k).toFixed(2)+')'; c.lineWidth=Math.max(1,R*0.06); c.beginPath(); c.moveTo(px+Math.cos(a)*R*0.3,pz+Math.sin(a)*R*0.3); c.lineTo(px+Math.cos(a)*rr,pz+Math.sin(a)*rr); c.stroke(); }   // radial blast streaks
+  DECAL.dirty=true;
+}
+function decalCrater(x, z, r, k){                                               // shell crater: dark pit + lighter thrown-out ejecta rim
+  const c=DECAL.sx, px=_dpx(x), pz=_dpz(z), R=r*DECAL.ppu; k=k==null?1:k;
+  const rim=c.createRadialGradient(px,pz,R*0.55,px,pz,R*1.35); rim.addColorStop(0,'rgba(255,240,210,'+(0.16*k).toFixed(2)+')'); rim.addColorStop(1,'rgba(255,240,210,0)');
+  c.fillStyle=rim; c.beginPath(); c.arc(px,pz,R*1.35,0,7); c.fill();
+  const pit=c.createRadialGradient(px-R*0.15,pz-R*0.15,0,px,pz,R*0.8); pit.addColorStop(0,'rgba(16,12,8,'+(0.7*k).toFixed(2)+')'); pit.addColorStop(1,'rgba(30,22,14,0)');
+  c.fillStyle=pit; c.beginPath(); c.arc(px,pz,R*0.8,0,7); c.fill();
+  for(let i=0;i<10;i++){ const a=Math.random()*6.283, rr=R*(0.9+Math.random()*0.6); c.fillStyle='rgba(30,22,14,'+(0.3*k).toFixed(2)+')'; c.beginPath(); c.arc(px+Math.cos(a)*rr,pz+Math.sin(a)*rr,Math.max(1,R*0.08),0,7); c.fill(); }   // clods
+  DECAL.dirty=true;
+}
+function decalDirt(x, z, r){                                                    // bullet strike / near miss: small dark puff (fades with treads)
+  const c=DECAL.dx, px=_dpx(x), pz=_dpz(z), R=Math.max(1.5,r*DECAL.ppu);
+  c.fillStyle=_treadCol+'0.32)'; c.beginPath(); c.arc(px,pz,R,0,7); c.fill(); DECAL.dirty=true;
+}
+function updateDecals(dt){
+  DECAL.fadeT+=dt; if(DECAL.fadeT>1.5){ DECAL.fadeT=0; const c=DECAL.dx; c.globalCompositeOperation='destination-out'; c.fillStyle='rgba(0,0,0,0.035)'; c.fillRect(0,0,DECAL.W,DECAL.W); c.globalCompositeOperation='source-over'; DECAL.dirty=true; }   // old tracks weather away
+  DECAL.t+=dt; if(!DECAL.dirty || DECAL.t < (MOBILE?0.25:0.12)) return; DECAL.t=0; DECAL.dirty=false;
+  const o=DECAL.ox; o.clearRect(0,0,DECAL.W,DECAL.W); o.drawImage(DECAL.stat,0,0); o.drawImage(DECAL.dyn,0,0); DECAL.tex.needsUpdate=true;
+}
 // perimeter walls (sandbag-ish blocks)
 const wallMat = new THREE.MeshStandardMaterial({ color:0x6b5a36, roughness:0.9, metalness:0.05 });
 function wall(w,d,x,z){ const m=new THREE.Mesh(new RoundedBoxGeometry(w,3,d,2,0.4), wallMat); m.position.set(x,1.5,z); arena.add(m); }
@@ -1470,16 +1631,17 @@ function applyBiome(stage){
   const pick = (typeof PROFILE!=='undefined' && Number.isInteger(PROFILE.terrain) && PROFILE.terrain>=0) ? PROFILE.terrain : -1;
   const idx = pick>=0 ? Math.min(pick, BIOMES.length-1) : Math.min(stage-1, CAMPAIGN_BIOMES-1);   // player's pick OR campaign rotation
   BIOME = BIOMES[idx];
-  scene.background.setHex(BIOME.bg);
-  scene.fog.color.setHex(BIOME.fog); scene.fog.density = BIOME.fogD;
-  ground.material.map = gridTexture(BIOME); ground.material.needsUpdate=true;
-  sun.color.setHex(BIOME.sun); hemi.color.setHex(BIOME.sky);
+  { const pc=PATCH_COL[BIOME.name]||PATCH_COL.DESERT; MACRO.pcol.value.setHex(pc[0]); MACRO.pamt.value=pc[1]; }
+  const gm=groundMaps(BIOME); groundMat.map=gm.map; groundMat.normalMap=gm.nrm; groundMat.roughness=gm.rough; groundMat.needsUpdate=true;
+  decalReset(BIOME);
+  applyAtmosphere(BIOME);   // sky dome reflections · sun angle/colour · haze · grade
   if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.ground); GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield
   ring.material.color.setHex(BIOME.accent);
   if(BIOME.wall!=null) wallMat.color.setHex(BIOME.wall);
   buildTerrainDecor(BIOME);
 }
 buildTerrainDecor(BIOME);   // initial dressing for the menu backdrop
+applyAtmosphere(BIOME); decalReset(BIOME);
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -1791,6 +1953,7 @@ function animateTank(mesh, px, pz, facing, dt){
   const fs=Math.sin(facing), fc=Math.cos(facing), fwd=dx*fs+dz*fc;
   const dyaw=wrapAngle(facing-rig.lf); rig.lf=facing;
   const trav=[fwd+dyaw*1.18, fwd-dyaw*1.18];                                          // -x belt / +x belt (inner track slows in a turn)
+  rig.treadD = (rig.treadD||0) + (Math.abs(fwd)+Math.abs(dyaw)*1.18)*s;                // ground covered → tread prints
   for(let si=0;si<2;si++){ rig.tracks[si].offset.x += trav[si]*3.4; for(const w of rig.wheels[si]) w.rotation.x += trav[si]/w.userData.r; }
   // suspension: squat on acceleration, dive on braking, lean out of turns, idle engine shiver, terrain bumps when moving
   const v=fwd/dt, a=(v-rig.v)/dt; rig.v=v; rig.a += (a-rig.a)*Math.min(1,dt*10);
@@ -2288,7 +2451,7 @@ function updateBullets(dt, now){
     const airborne = b.lockOn && b.by>2.6;   // a lofting missile sails over cover & bystanders — it only strikes on the dive
 
     const overRange = b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);
-    if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
+    if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim) groundHit(b.x, b.z, b.r||0.45); recycleBullet(i); continue; }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
     if(!airborne) for(const bl of blocks){ const dx=bl.x-b.x, dz=bl.z-b.z; if(dx*dx+dz*dz < (bl.r+b.r)**2){
@@ -2992,6 +3155,7 @@ function victory(){
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 function bigExplode(pos, color, scale=1.5){
+  decalScorch(pos.x, pos.z, 1.6+scale*1.5, 0.85); if(scale>=1.2) decalCrater(pos.x, pos.z, 0.6+scale*0.6, 0.8);   // blast leaves its mark on the ground
   ringPulse(pos, color, scale*3.2);
   burst(pos, color, Math.floor(14*scale), 11*scale, {life:0.5, size:1.4*scale, up:3});
   burst(pos, 0xffe6a0, Math.floor(9*scale), 7*scale, {life:0.34, size:0.9*scale, up:4});
@@ -3000,6 +3164,11 @@ function bigExplode(pos, color, scale=1.5){
   muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
   sfx(scale>=2 ? 'bigexplode' : 'explode');
 }
+// a round that lands in the dirt: soil spray + dust puff + a scar on the ground
+function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), dc=BIOME.ground;
+  decalDirt(x, z, 0.25+r*0.5);
+  burst({x,z}, dc, Math.floor(4*k), 5*k, {y:0.3, life:0.45, size:0.32*k, up:4.5, grav:-16, drag:1.5});                          // clods
+  burst({x,z}, dc, Math.max(1,Math.floor(2*k)), 1.6*k, {y:0.4, life:0.7, size:1.1*k, smoke:true, grav:-0.4, drag:2.2, up:1.2, op:0.45}); }   // dust
 // ----- per-gun IMPACT spray (non-lethal hit) — each weapon "reads" differently on contact -----
 function impactFX(pos, fx, k){ k=k||1;
   if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xfff1c0, Math.floor(7*k), 9*k, {life:0.26, size:1.2*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(5*k), 6*k, {life:0.34, size:1.05*k, drag:3});
@@ -3114,6 +3283,7 @@ function updateDebris(dt){
 // fx (per killing gun) restyles the fire/smoke/sound: ice = frozen shatter, shock = electrocuted, blast = heavier, etc.
 function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire'){
   const cf=KILLFX[fx]||KILLFX.fire, fM=cf.fire, sM=cf.smoke;
+  decalScorch(pos.x, pos.z, 2.2+scale*1.6, fx==='ice'?0.35:1); decalCrater(pos.x, pos.z, 0.8+scale*0.55, 0.9);
   burst(pos, 0xffffff, Math.floor(7*scale),  9*scale,  {life:0.12, size:1.7*scale, up:5, grav:-2, drag:7});   // quick white flash (always)
   if(fM>0.05){
     burst(pos, 0xffe08a, Math.floor(15*fM*scale), 12*scale, {life:0.32, size:1.8*scale, up:5, drag:2.2});      // fireball — flares & clears fast
@@ -4838,10 +5008,11 @@ function updatePlayer(dt, now){
   else if(S.firing) fireGun(now, range);                                                 // desktop: fire only while LMB held; gun fireCd caps the rate
 }
 function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
+function _rigTread(m, x, z, f){ const rg=m.userData.rig; if(rg && rg.treadD>0.55){ rg.treadD=0; decalTread(x, z, f, m.scale.x||1); } }
 function updateTankRigs(dt){
-  const p=S.player; if(p&&p.mesh) animateTank(p.mesh, p.pos.x, p.pos.z, p.facing, dt);
-  for(const e of enemies) animateTank(e.mesh, e.pos.x, e.pos.z, e.facing, dt);
-  if(boss&&boss.alive&&boss.mesh) animateTank(boss.mesh, boss.pos.x, boss.pos.z, boss.facing, dt);
+  const p=S.player; if(p&&p.mesh){ animateTank(p.mesh, p.pos.x, p.pos.z, p.facing, dt); _rigTread(p.mesh, p.pos.x, p.pos.z, p.facing); }
+  for(const e of enemies){ animateTank(e.mesh, e.pos.x, e.pos.z, e.facing, dt); _rigTread(e.mesh, e.pos.x, e.pos.z, e.facing); }
+  if(boss&&boss.alive&&boss.mesh){ animateTank(boss.mesh, boss.pos.x, boss.pos.z, boss.facing, dt); _rigTread(boss.mesh, boss.pos.x, boss.pos.z, boss.facing); }
 }
 
 // camera follow with aim lookahead
@@ -5275,7 +5446,7 @@ function loop(nowMs){
   let dt = (nowMs - last)/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
   document.body.classList.toggle('ingame', !!PLAY_MODES[S.mode]);   // drives the portrait gate (menus stay usable upright)
-  if(gated()) return;                     // portrait gate up or tab hidden → don't burn a frame behind the curtain
+  if(gated() && !window.__forceFrame) return;   // portrait gate up or tab hidden → don't burn a frame behind the curtain (QA tick may force)
 
   if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
 
@@ -5317,6 +5488,7 @@ function loop(nowMs){
   updateCore(dt, now); updateCoreAlarm(now);
   updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateFlameJet(dt); updateRocketAim(now);
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
+  updateSunFollow(); updateDecals(dt); gradePass.uniforms.time.value = now%100;
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
@@ -5351,7 +5523,7 @@ let _rsT=0;
 function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 window._resize = ()=>doResize(true);   // (debug) force a refit
-if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); } };   // QA hook (only with #dev in the URL)
+if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
 const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not
