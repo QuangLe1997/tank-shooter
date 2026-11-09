@@ -2555,7 +2555,7 @@ function makePartLayer(map, additive, order){
       '  vUv=uv; vCol=iCol; gl_Position=projectionMatrix*viewMatrix*vec4(iPos + r*p.x + u*p.y, 1.0); }',
     fragmentShader:'uniform sampler2D map; varying vec2 vUv; varying vec4 vCol; void main(){ vec4 t=texture2D(map,vUv); gl_FragColor=vec4(vCol.rgb*t.rgb, t.a*vCol.a); }' });
   const mesh=new THREE.Mesh(g, mat); mesh.frustumCulled=false; mesh.renderOrder=order; scene.add(mesh);
-  return { g, iPos, iCol, iSR, n:0 };
+  return { g, mesh, iPos, iCol, iSR, n:0 };
 }
 const PL_SMOKE = makePartLayer(SMOKE, false, 5), PL_GLOW = makePartLayer(GLOW, true, 6);
 const parts=[];
@@ -2563,7 +2563,7 @@ function spawnPart(x,y,z,vx,vy,vz,o={}){
   if(parts.length >= PART_MAX*1.7) return;                                             // hard budget (oldest keep living; new spawns drop)
   const s=o.size||1, c=new THREE.Color(o.color ?? 0xffd27a);
   parts.push({ x,y,z, vx,vy,vz, life:o.life||0.6, max:o.life||0.6, size:s, grow:o.grow||0,
-    grav:o.grav??-9, drag:o.drag??2.5, smoke:!!o.smoke, op:o.op??1, rot:o.smoke?Math.random()*6.283:0, spin:o.smoke?(Math.random()-0.5)*0.8:0, col:c,
+    grav:o.grav??-9, drag:o.drag??2.5, smoke:!!o.smoke, tex:o.tex||null, op:o.op??1, rot:(o.smoke||o.tex)?Math.random()*6.283:0, spin:o.smoke?(Math.random()-0.5)*0.8:0, col:c,
     c0:(o.color2!=null?c.clone():null), c1:(o.color2!=null?new THREE.Color(o.color2):null) });   // optional colour-over-life (e.g. fire cooling white→red)
 }
 function burst(pos, color, count, spread, o={}){
@@ -2584,12 +2584,12 @@ function updateParticles(dt){
 }
 // write live particles + tracer trails into the two instanced layers (called once per frame, after all spawning/updates)
 function flushParticles(){
-  const L=[PL_SMOKE, PL_GLOW]; L[0].n=0; L[1].n=0;
-  for(const p of parts){ const ly=p.smoke?L[0]:L[1]; if(ly.n>=PART_MAX) continue; const i=ly.n++;
-    const k=p.life/p.max, sz=p.size*(p.smoke ? (1.4-k*0.8) : k) + (p.grow*(1-k));
+  const L=[PL_SMOKE, PL_GLOW, PL_FIRE, PL_FLASH]; for(const l of L) l.n=0;
+  for(const p of parts){ const ly=p.smoke?L[0]:(p.tex==='fire'?L[2]:(p.tex==='flash'?L[3]:L[1])); if(ly.n>=PART_MAX) continue; const i=ly.n++;
+    const k=p.life/p.max, sz=p.size*(p.smoke ? (1.4-k*0.8) : (p.tex==='fire' ? (0.55+k*0.45) : k)) + (p.grow*(1-k));
     const col = p.c1 ? _pc.copy(p.c1).lerp(p.c0, k) : p.col;
     ly.iPos.array[i*3]=p.x; ly.iPos.array[i*3+1]=p.y; ly.iPos.array[i*3+2]=p.z;
-    ly.iCol.array[i*4]=col.r; ly.iCol.array[i*4+1]=col.g; ly.iCol.array[i*4+2]=col.b; ly.iCol.array[i*4+3]=(p.smoke? 0.5 : 1) * p.op * (p.smoke? k : Math.min(1,k*1.8));
+    ly.iCol.array[i*4]=col.r; ly.iCol.array[i*4+1]=col.g; ly.iCol.array[i*4+2]=col.b; ly.iCol.array[i*4+3]=(p.smoke? 0.5 : 1) * p.op * (p.smoke? Math.min(1,k*1.6)*Math.min(1,(1-k)*6+0.15) : Math.min(1,k*1.8));   // smoke fades IN then out
     ly.iSR.array[i*2]=sz; ly.iSR.array[i*2+1]=p.rot; }
   const G=L[1]; for(const t of trails){ if(G.n>=PART_MAX) break; const i=G.n++;
     G.iPos.array[i*3]=t.x; G.iPos.array[i*3+1]=t.y; G.iPos.array[i*3+2]=t.z;
@@ -2724,6 +2724,74 @@ const _hot=(hex)=>{ const r=(hex>>16)&255,g=(hex>>8)&255,b=hex&255, m=v=>Math.mi
 const trails=[];   // glowing additive tracer dots — drawn by the instanced glow layer (flushParticles)
 function addTrail(x,y,z,color,size,life){ if(trails.length>=PART_MAX*0.5) return; const L=life||0.2; trails.push({x,y,z,c:new THREE.Color(color),size,life:L,max:L}); }
 function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i]; t.life-=dt; if(t.life<=0){ trails[i]=trails[trails.length-1]; trails.pop(); } } }
+// ----------------------------- REAL FIRE / FLASH / WRECKS -----------------------------
+function fireTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');   // billowing flame puff: hot core, ragged licks, soft edge
+  for(let i=0;i<14;i++){ const a=Math.random()*6.283, r=Math.random()*26, cx=64+Math.cos(a)*r, cy=64+Math.sin(a)*r, R=18+Math.random()*26;
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.45,'rgba(255,255,255,0.22)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.arc(cx,cy,R,0,7); x.fill(); }
+  const img=x.getImageData(0,0,128,128), d=img.data; for(let i=0;i<d.length;i+=4){ const px=(i/4)%128, py=(i/4)/128|0, rr=Math.hypot(px-64,py-64)/64; d[i+3]=Math.min(255, d[i+3]*Math.max(0,1-rr*rr)*(0.8+Math.random()*0.4)); }
+  x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
+function flashTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.translate(64,64);   // muzzle flash: hot disc + 7 uneven spikes
+  for(let i=0;i<7;i++){ const a=i/7*6.283+Math.random()*0.4, L=34+Math.random()*28, w=5+Math.random()*5; x.save(); x.rotate(a);
+    const g=x.createLinearGradient(0,0,L,0); g.addColorStop(0,'rgba(255,255,255,0.9)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.moveTo(0,-w); x.lineTo(L,0); x.lineTo(0,w); x.closePath(); x.fill(); x.restore(); }
+  const g=x.createRadialGradient(0,0,0,0,0,30); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.4,'rgba(255,255,255,0.6)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.arc(0,0,30,0,7); x.fill();
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
+function smokeTex2(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');                 // dense, lumpy smoke with a soft round silhouette
+  for(let i=0;i<16;i++){ const a=Math.random()*6.283, r=Math.random()*24, cx=64+Math.cos(a)*r, cy=64+Math.sin(a)*r, R=16+Math.random()*22;
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R); g.addColorStop(0,'rgba(255,255,255,0.32)'); g.addColorStop(0.7,'rgba(255,255,255,0.12)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.arc(cx,cy,R,0,7); x.fill(); }
+  const img=x.getImageData(0,0,128,128), d=img.data; for(let i=0;i<d.length;i+=4){ const px=(i/4)%128, py=(i/4)/128|0, rr=Math.hypot(px-64,py-64)/62; d[i+3]=d[i+3]*Math.max(0,1-rr*rr*rr); }
+  x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
+const PL_FIRE = makePartLayer(fireTex(), true, 7), PL_FLASH = makePartLayer(flashTex(), true, 8);
+PL_SMOKE.mesh.material.uniforms.map.value=smokeTex2();   // denser, lumpier smoke
+// ---- burning wreck hulls + blown-off turrets (ammo cook-off) ----
+const WRECKS=[]; let _wreckGeo=null, _turGeo=null, _emberTex=null;
+function emberTex(){ if(_emberTex) return _emberTex; _emberTex=_canvasTex(128,128,(x,W)=>{ x.fillStyle='#000'; x.fillRect(0,0,W,W);   // glowing seams & hot patches on charred armour
+  for(let i=0;i<11;i++){ const cx=_R(0,W), cy=_R(0,W), r=_R(3,9); const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,200,120,1)'); g.addColorStop(0.5,'rgba(255,90,20,0.6)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(cx-r,cy-r,r*2,r*2); }
+  x.strokeStyle='rgba(255,110,30,0.8)'; x.lineWidth=1.2; for(let i=0;i<5;i++){ let px=_R(0,W), py=_R(0,W); x.beginPath(); x.moveTo(px,py); for(let k=0;k<5;k++){ px+=_R(-12,12); py+=_R(-12,12); x.lineTo(px,py); } x.stroke(); } }); return _emberTex; }
+function _wreckGeos(){ if(_wreckGeo) return; const G=_tankGeo(), parts=[G.hullLo, G.hullUp, G.track.clone().translate(-1.18,0,0), G.track.clone().translate(1.18,0,0)].map(q=>{ const n=q.index?q.toNonIndexed():q.clone(); n.clearGroups(); for(const a of Object.keys(n.attributes)) if(!['position','normal','uv'].includes(a)) n.deleteAttribute(a); return n; });
+  _wreckGeo=mergeGeometries(parts); const bar=new THREE.CylinderGeometry(0.11,0.13,2.6,10).rotateX(Math.PI/2).translate(0,0.02,2.4).toNonIndexed(); const tg=G.turret.toNonIndexed(); for(const a of Object.keys(bar.attributes)) if(!tg.attributes[a]) bar.deleteAttribute(a); _turGeo=mergeGeometries([tg, bar]); }
+function spawnWreck(pos, facing, ms, pal, toss){
+  _wreckGeos(); if(WRECKS.length >= (MOBILE?3:6)){ const o=WRECKS.shift(); scene.remove(o.hull); scene.remove(o.tur); }
+  const burnt=new THREE.Color(pal?pal.hull:0x3a3a30).multiplyScalar(0.28);
+  const mat=new THREE.MeshStandardMaterial({ color:burnt, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1.4, transparent:true });
+  const hull=new THREE.Mesh(_wreckGeo, mat); hull.scale.setScalar(ms); hull.position.set(pos.x,0,pos.z); hull.rotation.set((Math.random()-0.5)*0.12, facing||0, (Math.random()-0.5)*0.16); hull.castShadow=true; hull.receiveShadow=true; scene.add(hull);
+  const tur=new THREE.Mesh(_turGeo, mat); tur.scale.setScalar(ms); tur.castShadow=true; scene.add(tur);
+  const w={ hull, tur, mat, t:0, life:9+Math.random()*3, ms, x:pos.x, z:pos.z,
+    tx:pos.x, ty:1.75*ms, tz:pos.z, tvx:0, tvy:0, tvz:0, rx:0, ry:0, rz:0, flying:!!toss, fireT:0, smokeT:0 };
+  if(toss){ const a=Math.random()*6.283, sp=(3+Math.random()*6); w.tvx=Math.cos(a)*sp; w.tvz=Math.sin(a)*sp; w.tvy=13+Math.random()*7; w.rx=(Math.random()-0.5)*9; w.ry=(Math.random()-0.5)*7; w.rz=(Math.random()-0.5)*9; }   // magazine detonation throws the turret skyward
+  tur.position.set(w.tx,w.ty,w.tz); tur.rotation.y=(facing||0)+(toss?0:(Math.random()-0.5)*0.8);
+  WRECKS.push(w);
+}
+function updateWrecks(dt){
+  for(let i=WRECKS.length-1;i>=0;i--){ const w=WRECKS[i]; w.t+=dt; const k=w.t/w.life;
+    if(w.flying){ w.tvy-=30*dt; w.tx+=w.tvx*dt; w.ty+=w.tvy*dt; w.tz+=w.tvz*dt; w.tur.rotation.x+=w.rx*dt; w.tur.rotation.y+=w.ry*dt; w.tur.rotation.z+=w.rz*dt;
+      if(Math.random()<0.6) spawnPart(w.tx,w.ty,w.tz,(Math.random()-0.5),0.5,(Math.random()-0.5),{color:0x1a1612,size:1.2*w.ms,life:0.9,smoke:true,grav:-0.5,drag:1.5,op:0.5});   // trails smoke as it tumbles
+      if(w.ty<=0.4*w.ms && w.tvy<0){ w.ty=0.4*w.ms; if(Math.abs(w.tvy)>6){ w.tvy*=-0.25; w.tvx*=0.4; w.tvz*=0.4; w.rx*=0.3; w.rz*=0.3; burst({x:w.tx,z:w.tz}, BIOME.ground, 4, 4, {y:0.4,life:0.8,size:1.6,smoke:true,grav:-0.4,drag:2,up:1.5,op:0.5}); sfx('thud'); decalCrater(w.tx,w.tz,0.9*w.ms,0.6); }
+        else { w.flying=false; w.tur.rotation.x=Math.round(w.tur.rotation.x/Math.PI)*Math.PI+(Math.random()-0.5)*0.4; w.tur.rotation.z=(Math.random()-0.5)*0.5; } }
+      w.tur.position.set(w.tx,w.ty,w.tz); }
+    w.mat.emissiveIntensity=Math.max(0.06, 1.4*(1-w.t/4))*(0.85+0.15*Math.sin(w.t*9+w.x));             // embers smoulder, flicker and cool
+    const burn = w.t < w.life*0.7 ? 1 - w.t/(w.life*0.7) : 0;
+    w.fireT-=dt; if(burn>0 && w.fireT<=0){ w.fireT=0.05+(1-burn)*0.12; const ox=(Math.random()-0.5)*2.2*w.ms, oz=(Math.random()-0.5)*3*w.ms;   // flames licking out of the hull hatches
+      spawnPart(w.x+ox, 1.3*w.ms, w.z+oz, (Math.random()-0.5)*0.8, 2.4+Math.random()*2, (Math.random()-0.5)*0.8, {tex:'fire', color:0xffd090, color2:0xff3a08, size:(1.1+Math.random()*1.1)*w.ms*(0.5+burn*0.6), life:0.55+Math.random()*0.3, grav:1.5, drag:1.6, grow:0.6}); }
+    w.smokeT-=dt; if(w.t<w.life*0.9 && w.smokeT<=0){ w.smokeT=0.09; spawnPart(w.x+(Math.random()-0.5)*1.5, 2*w.ms, w.z+(Math.random()-0.5)*1.5, 0.9+(Math.random()-0.5)*0.6, 2.2+Math.random()*1.2, 0.5+(Math.random()-0.5)*0.6,
+        {color: burn>0.3?0x14110e:0x3a3632, size:(1.6+Math.random())*w.ms, life:2.6, smoke:true, grav:0.4, drag:0.6, grow:2.2*w.ms, op:0.55}); }   // black column → grey as it dies, drifting downwind
+    if(k>0.8){ const f=(1-k)/0.2; w.mat.opacity=Math.max(0,f); w.hull.position.y=-(1-f)*0.6*w.ms; }
+    if(w.t>=w.life){ scene.remove(w.hull); scene.remove(w.tur); w.mat.dispose(); WRECKS.splice(i,1); } }
+}
+function clearWrecks(){ for(const w of WRECKS){ scene.remove(w.hull); scene.remove(w.tur); } WRECKS.length=0; }
+// rolling fireball: white-hot core → orange → deep red, expanding and lifting, followed by a dark mushrooming smoke column
+function fireball(pos, scale, y){ y=y||1.2;
+  spawnPart(pos.x, y+0.4*scale, pos.z, 0,1,0, {tex:'flash', color:0xfff2d0, size:5.5*scale, life:0.09, grav:0, drag:0});
+  for(let i=0;i<Math.round(10*scale);i++){ const a=Math.random()*6.283, el=Math.random()*1.2, sp=(2+Math.random()*6)*Math.sqrt(scale);
+    spawnPart(pos.x, y+Math.random()*scale, pos.z, Math.cos(a)*Math.cos(el)*sp, Math.sin(el)*sp+2.5, Math.sin(a)*Math.cos(el)*sp,
+      {tex:'fire', color:0xfff0c0, color2:0xc8280a, size:(1.4+Math.random()*1.4)*scale, life:0.45+Math.random()*0.4, grav:3, drag:2.2, grow:1.6*scale}); }
+  for(let i=0;i<Math.round(6*scale);i++){ const a=Math.random()*6.283, sp=Math.random()*2.5;
+    spawnPart(pos.x+Math.cos(a)*sp*0.4, y+0.6*scale, pos.z+Math.sin(a)*sp*0.4, Math.cos(a)*sp, 3.5+Math.random()*3, Math.sin(a)*sp,
+      {color:0x1a1510, size:(1.6+Math.random())*scale, life:1.8+Math.random()*1.2, smoke:true, grav:0.2, drag:1.0, grow:2.6*scale, op:0.6}); }
+  for(let i=0;i<Math.round(12*scale);i++){ const a=i/(12*scale)*6.283, sp=(9+Math.random()*4)*Math.sqrt(scale);   // ground shock: dust thrown outward in a ring
+    spawnPart(pos.x, 0.35, pos.z, Math.cos(a)*sp, 0.6, Math.sin(a)*sp, {color:BIOME.ground, size:1.2*scale, life:0.8, smoke:true, grav:-0.2, drag:3.2, grow:1.5*scale, op:0.45}); }
+  for(let i=0;i<Math.round(8*scale);i++){ const a=Math.random()*6.283, sp=4+Math.random()*7;                       // dirt clods
+    spawnPart(pos.x, 0.5, pos.z, Math.cos(a)*sp, 6+Math.random()*7, Math.sin(a)*sp, {color:0x3a2c1c, size:0.2+Math.random()*0.25, life:0.9, grav:-26, drag:0.6}); }
+}
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
 function _lockMat(){ return new THREE.MeshBasicMaterial({color:0xff7a2e, transparent:true, opacity:0.92, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}); }
@@ -3198,6 +3266,7 @@ function damageEnemy(e, dmg){
 function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1);
   tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x, e._fx||'fire');   // burst into this tank's own parts (death FX styled by the killing gun)
+  if(!e.def.bomber) spawnWreck(e.pos, e.facing, e.mesh.scale.x, e.def.pal, Math.random()<0.6);   // the burnt-out hull stays & burns; ammo cook-off often blows the turret off
   bumpCombo();
   const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul() * diffRewardMul();
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
@@ -3474,6 +3543,7 @@ function killBoss(now){
   const pos=boss.pos.clone(); const bs=boss.r/1.5;            // boss scale → huge shatter
   const bpal=boss.def.pal, bms=boss.mesh.scale.x;             // capture before boss=null (used in the delayed bursts below)
   spawnTankWreck(pos, bms, bpal);                             // boss bursts into giant components
+  spawnWreck(pos, boss.facing, bms, bpal, true);              // and its huge turret is hurled into the air
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
     bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
@@ -3504,8 +3574,8 @@ function victory(){
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 function bigExplode(pos, color, scale=1.5){
   decalScorch(pos.x, pos.z, 1.6+scale*1.5, 0.85); if(scale>=1.2) decalCrater(pos.x, pos.z, 0.6+scale*0.6, 0.8);   // blast leaves its mark on the ground
-  ringPulse(pos, color, scale*3.2);
-  burst(pos, color, Math.floor(14*scale), 11*scale, {life:0.5, size:1.4*scale, up:3});
+  ringPulse(pos, color, scale*3.2); fireball(pos, scale*0.6);
+  burst(pos, color, Math.floor(6*scale), 11*scale, {life:0.45, size:1.2*scale, up:3});
   burst(pos, 0xffe6a0, Math.floor(9*scale), 7*scale, {life:0.34, size:0.9*scale, up:4});
   burst(pos, 0x201c14, Math.floor(5*scale), 4*scale, {life:0.95, size:2.6*scale, smoke:true, grav:-1.2, drag:1.4, up:2, op:0.55});
   S.shake = Math.min(2.4, S.shake + scale*0.7);
@@ -3583,14 +3653,14 @@ const _WRECK_PARTS=[ {g:'turret',sz:1.0,paint:0.6},{g:'barrel',sz:1.0,paint:0.4}
 function spawnTankWreck(pos, ms, pal){
   const burntHull=_burnt(pal.hull), burntTur=_burnt(pal.turret||pal.hull);
   const rs=Math.sqrt(ms);
-  const count = ms<1.05 ? 8 : ms<1.3 ? 11 : ms<2.2 ? 14 : 16;                // small tank → fewer bits; big tank/boss → full wreck
-  for(let pi=0; pi<count; pi++){ const part=_WRECK_PARTS[pi];
+  const count = ms<1.05 ? 5 : ms<1.3 ? 6 : ms<2.2 ? 8 : 10;                  // torn-off bits only — the burning hull itself stays (spawnWreck)
+  for(let pi=0; pi<count; pi++){ const part=_WRECK_PARTS[pi+1];   // skip the whole-turret slab
     const m=wreckPool.pop(); if(!m) return;                                  // pool exhausted (huge multi-kill) → stop gracefully
     m.geometry=WRECK_GEO[part.g];
     let col; if(Math.random()<part.paint) col = part.g==='turret'?burntTur:burntHull; else col=_SCORCH[(Math.random()*_SCORCH.length)|0];
     if(part.g==='wheel') col=0x0e0e0c;                                        // scorched rubber
     m.material.color.setHex(col);
-    const s=ms*part.sz*(1.15+Math.random()*0.55); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // BIGGER + non-uniform → clearly-readable torn metal
+    const s=ms*part.sz*(0.45+Math.random()*0.3); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // torn plates, wheels, bars — sized like real fragments
     const a=Math.random()*6.283, sp=(7+Math.random()*9)*rs, up=(9+Math.random()*6)*rs;            // arc out then land as visible wreckage (moderate)
     m.position.set(pos.x+(Math.random()-0.5)*ms*0.7, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.7);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
@@ -3632,11 +3702,9 @@ function updateDebris(dt){
 function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire'){
   const cf=KILLFX[fx]||KILLFX.fire, fM=cf.fire, sM=cf.smoke;
   decalScorch(pos.x, pos.z, 2.2+scale*1.6, fx==='ice'?0.35:1); decalCrater(pos.x, pos.z, 0.8+scale*0.55, 0.9);
+  if(fM>0.05) fireball(pos, scale*0.75);
   burst(pos, 0xffffff, Math.floor(7*scale),  9*scale,  {life:0.12, size:1.7*scale, up:5, grav:-2, drag:7});   // quick white flash (always)
-  if(fM>0.05){
-    burst(pos, 0xffe08a, Math.floor(15*fM*scale), 12*scale, {life:0.32, size:1.8*scale, up:5, drag:2.2});      // fireball — flares & clears fast
-    burst(pos, 0xff661c, Math.floor(11*fM*scale), 9*scale,  {life:0.38, size:1.6*scale, up:4, drag:2.2});      // deep-orange fire
-  }
+  if(fM>0.05) burst(pos, 0xffb04a, Math.floor(6*fM*scale), 10*scale, {life:0.3, size:1.4*scale, up:5, drag:2.2});   // flare (the rolling fireball itself is fireball())
   burst(pos, color,    Math.floor(8*scale),  8*scale,  {life:0.32, size:1.2*scale, up:3, drag:2.2});           // tank's own palette tint
   burst(pos, cf.spark, Math.floor(14*scale), 18*scale, {life:0.38, size:0.4*scale, up:3, grav:-9, drag:1.3});  // sparks blast out & clear fast
   if(sM>0.05) burst(pos, 0x16110a, Math.floor(5*sM*scale), 5*scale, {life:0.5, size:2.0*scale, up:4, grav:-1.4, drag:2.2, smoke:true, op:0.42}); // light smoke
@@ -3652,6 +3720,7 @@ function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire'){
   S.shake = Math.min(3.0, S.shake + scale*0.9);                                                                // moderate kick — scales with tank size
   muzzleLight.position.set(pos.x, 2.2, pos.z); muzzleLight.color.setHex(cf.r1); muzzleLight.intensity = 4.0 + scale*0.9;  // brief blast flash (themed colour)
   sfx(scale>=2 ? cf.big : cf.sml);
+  { const p=S.player; if(p && (p.pos.x-pos.x)**2+(p.pos.z-pos.z)**2 < 400) haptic([0,25,30,40]); }
   if(scale>=2.2){   // big tanks/bosses: a delayed secondary blast + extra shards = bigger payoff
     setTimeout(()=>{ if(S.mode==='paused') return;
       burst(pos, fM>0.05?0xffae5c:cf.spark, Math.floor(16*scale), 16*scale, {life:0.6, size:2.2*scale, up:5});
@@ -3679,7 +3748,7 @@ function damagePlayer(dmg, now, dx, dz){    // dx/dz = direction the shot travel
   p.hp -= dmg;
   // HIT REACTION — every hit is FELT: hull flinch/rattle + shake scaled by the blow + red splash
   p.hitT = Math.max(p.hitT||0, 0.26);
-  S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028));
+  S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028)); haptic(Math.min(60, 20+dmg*1.5));
   sfx('hurt');
   burst(p.pos, 0xff5040, 8, 9, {life:0.28, size:1.0, up:3, drag:5}); ringPulse(p.pos, 0xff4632, 1.6);
   addPlayerBurn(dx, dz);                      // a flaming hit-mark on the hull where it was struck (rides with the tank)
@@ -3937,16 +4006,20 @@ function gunDropPool(stage){
   if(stage>=4) pool.push('arty');                // howitzer: a rare late-stage drop (also buyable in the shop)
   return pool;
 }
-function muzzleFlash(x,z,ang,color,rec){
-  const fx=Math.sin(ang), fz=Math.cos(ang);
-  const s=1+Math.min(1.3,(rec||0)*0.28);   // heavier guns → bigger muzzle blast + brighter flash
-  muzzleLight.position.set(x+fx,1.6,z+fz); muzzleLight.color.setHex(color); muzzleLight.intensity=3.4+(rec||0)*0.7;
-  spawnPart(x,1.45,z, fx*8,1.0,fz*8,  {color, size:2.0*s, life:0.12, grav:0, drag:7});                       // colored muzzle flare
-  spawnPart(x,1.45,z, fx*10,1.1,fz*10, {color:0xffffff, size:1.1*s, life:0.07, grav:0, drag:9});             // hot white core
-  for(let i=0;i<3;i++){ const sp=9+Math.random()*11, sa=ang+(Math.random()-0.5)*0.55;                        // forward muzzle sparks
-    spawnPart(x,1.45,z, Math.sin(sa)*sp,0.5+Math.random()*1.7,Math.cos(sa)*sp, {color:0xffe2a0, size:0.38, life:0.16+Math.random()*0.12, grav:-7, drag:2.4}); }
-  if(Math.random()<0.4) spawnPart(x+fx*0.4,1.6,z+fz*0.4, fx*1.6,0.8,fz*1.6, {color:0x423b30, size:0.9, life:0.4, smoke:true, grav:-0.9, drag:3, op:0.38});  // wisp of barrel smoke
+function muzzleFlash(x,z,ang,color,rec,y){
+  y=y||1.6; const fx=Math.sin(ang), fz=Math.cos(ang), s=1+Math.min(1.4,(rec||0)*0.3);
+  muzzleLight.position.set(x+fx,y+0.2,z+fz); muzzleLight.color.setHex(0xffc87a); muzzleLight.intensity=3.4+(rec||0)*0.9;
+  spawnPart(x,y,z, fx*2,0,fz*2, {tex:'flash', color:0xfff4dc, size:2.1*s, life:0.055, grav:0, drag:8});                                  // star-shaped flash
+  spawnPart(x+fx*0.5*s,y,z+fz*0.5*s, fx*16,0.2,fz*16, {tex:'fire', color:0xfff2c8, color2:0xff6a14, size:1.2*s, life:0.1, grav:0, drag:11, grow:0.9*s});   // forward flame tongue
+  spawnPart(x,y,z, fx*4,0,fz*4, {color, size:1.4*s, life:0.07, grav:0, drag:8});                                                     // gun-coloured core
+  if(rec>=1.4) for(const sd of [-1,1]) spawnPart(x,y,z, -fz*sd*10, 0.3, fx*sd*10, {tex:'fire', color:0xffe6b0, color2:0xff5a10, size:0.9*s, life:0.09, grav:0, drag:12});   // muzzle-brake side jets
+  for(let i=0;i<2+Math.round(rec);i++){ const sp=9+Math.random()*12, sa=ang+(Math.random()-0.5)*0.6;
+    spawnPart(x,y,z, Math.sin(sa)*sp,0.5+Math.random()*1.7,Math.cos(sa)*sp, {color:0xffe2a0, size:0.28, life:0.14+Math.random()*0.12, grav:-7, drag:2.4}); }   // burning propellant sparks
+  const nS = rec>=2 ? 3 : (Math.random()<0.5?1:0);
+  for(let i=0;i<nS;i++) spawnPart(x+fx*(0.4+i*0.5),y+0.1,z+fz*(0.4+i*0.5), fx*(1.5+i)+(Math.random()-0.5), 0.5+Math.random()*0.5, fz*(1.5+i)+(Math.random()-0.5), {color:0x8a8478, size:(0.8+i*0.3)*s, life:1.1+i*0.3, smoke:true, grav:0.3, drag:2.6, grow:1.2*s, op:0.32});   // propellant smoke
+  if(rec>=2.4){ for(let i=0;i<10;i++){ const a=i/10*6.283; spawnPart(x-fx*1.2, 0.3, z-fz*1.2, Math.cos(a)*9+fx*4, 0.4, Math.sin(a)*9+fz*4, {color:BIOME.ground, size:1.1, life:0.7, smoke:true, grav:-0.1, drag:3.4, grow:1.3, op:0.42}); } }   // blast overpressure kicks up the dust
 }
+const CASING = { rifle:{n:1,s:0.16}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
 function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 function magCap(g){ return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
 function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1)*gunReloadMul(inst.id); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }   // MASTERY: higher level reloads faster
@@ -4267,8 +4340,10 @@ function fireGun(now, range){
   // RECOIL — the tank kicks back opposite the shot; heavy guns lurch, autos barely nudge
   const rec=g.recoil||0; if(rec){ p.kbx -= Math.sin(ang)*rec; p.kbz -= Math.cos(ang)*rec;
     const km=Math.hypot(p.kbx,p.kbz), kc=6.5; if(km>kc){ p.kbx*=kc/km; p.kbz*=kc/km; } }   // cap so rapid-fire recoil can't fling the tank
-  muzzleFlash(_v.x,_v.z,ang, g.color, rec);   // flash at the real barrel tip (size scales with recoil)
-  tankRecoil(p.mesh, ang, Math.min(1, Math.max(0.12, 0.15 + rec*0.22)), p.facing);   // barrel slams back + shivers, hull rocks off the shot
+  muzzleFlash(_v.x,_v.z,ang, g.color, rec, _v.y);   // flash at the real barrel tip (size scales with recoil)
+  if(CASING[inst.id]){ const c=CASING[inst.id], rx=Math.cos(p.facing), rz=-Math.sin(p.facing), sc=p.mesh.scale.x;   // spent brass ejected from the turret side
+    for(let k=0;k<c.n;k++) spawnPart(p.pos.x+rx*1.0*sc, 2.3*sc, p.pos.z+rz*1.0*sc, rx*(3+Math.random()*2)+(Math.random()-0.5), 3+Math.random()*2, rz*(3+Math.random()*2)+(Math.random()-0.5), {color:0xd8a840, size:c.s, life:0.9, grav:-24, drag:0.4}); }
+  tankRecoil(p.mesh, ang, Math.min(1, Math.max(0.12, 0.15 + rec*0.22)), p.facing); if(rec>=1) haptic(6+rec*5);   // barrel slams back + shivers, hull rocks off the shot
   S.shake = g.special==='rocket' ? Math.min(5, S.shake + 2.4)                                     // SIEGE launch — a strong recoil quake (landing quakes harder still)
           : Math.min(1.6, S.shake + Math.min(0.5, 0.04 + rec*0.07));                               // weightier guns shake more per shot
   sfx(g.special ? 'rocketlaunch' : 'shoot_'+inst.id);   // rocket + howitzer both use the launch thump
@@ -4594,7 +4669,7 @@ function playStageTransition(stage, biomeName, accentHex){
 function chooseUpgrade(u){
   u.apply(S.player); sfx('powerup'); updateHUD();
   hide('upgrade');
-  applyBiome(S.stage); buildBlocks();
+  applyBiome(S.stage); buildBlocks(); clearWrecks();
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
   clearSoldiers(); deploySoldiers(guardTarget()); deployOwnedDrone();   // fresh guard squad + relaunch owned escort drone each stage
   if(S.stage>=3 && !ridersUnlocked){ ridersUnlocked=true; deployRiders(crewTarget()); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)
@@ -4723,7 +4798,7 @@ function startGame(continueRun){
   core.maxHp=240; core.hp=240;
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
-  applyBiome(stStage); buildBlocks();
+  applyBiome(stStage); buildBlocks(); clearWrecks();
   updateWeaponHUD(); updateSpellHUD();
   WAVE.active=false; WAVE.betweenUntil=performance.now()/1000 + 0.6; WAVE.spawnQueue.length=0;
   WAVE.event=null; WAVE.eventBanner=null; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false;
@@ -5369,6 +5444,7 @@ const camOff = new THREE.Vector3(0, MOBILE?18:28, MOBILE?14.5:23);   // base off
 const _camOff = new THREE.Vector3(), _camUP = new THREE.Vector3(0,1,0);
 const camTarget = new THREE.Vector3();
 const camLook = new THREE.Vector3();
+const camBase = new THREE.Vector3(); let _camT = -1;
 function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   // look slightly ahead of the player toward the aim + a bit toward velocity (motion feel)
@@ -5379,9 +5455,15 @@ function updateCamera(dt, now){
   if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
   const want = camTarget.clone().add(_camOff);
   want.y += dashPull;
-  if(S.shake>0){ want.x += (Math.random()-0.5)*S.shake; want.z += (Math.random()-0.5)*S.shake; S.shake = Math.max(0, S.shake - dt*S.shake*4 - dt*2); }
-  camera.position.lerp(want, Math.min(1, dt*4.5));         // a touch smoother
+  if(now - _camT > 0.15) camBase.copy(camera.position); _camT = now;   // resuming after a cinematic → continue from where the camera is
+  camBase.lerp(want, Math.min(1, dt*4.5));
+  const tr=Math.min(1, S.shake/3.2), t2=tr*tr;               // TRAUMA model: shake ∝ trauma², smooth multi-sine noise, decays
+  camera.position.copy(camBase);
+  if(t2>0.0004){ const q=now; camera.position.x += (Math.sin(q*41.3)+Math.sin(q*73.1+1.7)*0.6)*t2*1.15; camera.position.y += (Math.sin(q*37.7+0.4)+Math.sin(q*67.9)*0.5)*t2*0.7; camera.position.z += (Math.sin(q*47.9+2.1)+Math.sin(q*59.3)*0.6)*t2*1.15; }
   camera.lookAt(camTarget.x, 1, camTarget.z);
+  if(t2>0.0004) camera.rotateZ((Math.sin(now*29.7)+Math.sin(now*53.3+0.9)*0.5)*t2*0.035);   // roll
+  gradePass.uniforms.aberr.value = t2*0.007;
+  S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));
 }
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
@@ -5876,10 +5958,10 @@ function loop(nowMs){
   else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); updateTankRigs(dt); }
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   // always-on FX + core idle
-  if(S.mode!=='playing'){ rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
+  if(S.mode!=='playing'){ gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now);
-  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateFlameJet(dt); updateRocketAim(now); flushParticles();
+  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateWrecks(dt); updateFlameJet(dt); updateRocketAim(now); flushParticles();
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); gradePass.uniforms.time.value = now%100;
   composer.render();
