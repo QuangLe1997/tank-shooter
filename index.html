@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="STEEL SIEGE" />
 <title>STEEL SIEGE — Tank Shooter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
 <meta name="description" content="STEEL SIEGE — a fast 3D twin-stick tank-defense game. Hold the line, build your arsenal, survive the siege. Play free in your browser." />
 <!-- Open Graph / Facebook + Twitter link preview (shown when the link is shared) -->
 <meta property="og:type" content="website" />
@@ -918,6 +921,56 @@
     #rotate .ic{width:54px;height:54px;} #rotate .rt-t{font-size:17px;} #rotate .rt-s{font-size:10px;}
     .boot-logo{font-size:clamp(22px,7vh,40px);} .boot-tap{padding:11px 28px;}
   }
+
+  /* =====================================================================================================
+     Z78 · PREMIUM TACTICAL SKIN — visual layer only (no layout sizes changed): chamfered gunmetal plates,
+     brass-amber primary, light sweep on hover, glass HUD with amber accent, crisp tabular numbers, smooth menus.
+     ===================================================================================================== */
+  :root{ --hud:'Rajdhani','Segoe UI',system-ui,-apple-system,Arial,sans-serif; --cham:10px;
+    --plate:linear-gradient(180deg,rgba(40,48,32,.9),rgba(15,19,12,.94)); --edge:rgba(196,214,160,.2); --brass:#e9b64c; }
+  body{font-family:var(--hud);}
+  .btn,.btn-mini,.btn-arsenal,.btn-shop,.btn-terrain,.upcard,.brcard{
+    font-family:var(--hud)!important; letter-spacing:1.6px;
+    clip-path:polygon(var(--cham) 0,100% 0,100% calc(100% - var(--cham)),calc(100% - var(--cham)) 100%,0 100%,0 var(--cham));
+    background-image:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.13) 50%,transparent 62%),var(--plate)!important;
+    background-size:260% 100%,100% 100%!important; background-position:140% 0,0 0!important; background-repeat:no-repeat!important;
+    border:1px solid var(--edge)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -2px 0 rgba(0,0,0,.35)!important;
+    transition:transform .18s cubic-bezier(.2,.8,.3,1),background-position .55s ease,border-color .25s,filter .2s,color .2s!important; }
+  .btn:hover,.btn-mini:hover,.btn-arsenal:hover,.btn-shop:hover,.btn-terrain:hover,.upcard:hover,.brcard:hover{
+    background-position:-40% 0,0 0!important; border-color:rgba(233,182,76,.6)!important; filter:brightness(1.12); transform:translateY(-2px); }
+  .btn:active,.btn-mini:active,.btn-arsenal:active,.btn-shop:active,.btn-terrain:active,.upcard:active,.brcard:active{ transform:translateY(0) scale(.975); filter:brightness(.95); }
+  .btn:focus-visible,.btn-mini:focus-visible,.upcard:focus-visible,.brcard:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; }
+  /* hero action: brass-amber, engraved text, slow ready-pulse */
+  #start .panel .btn-primary,.btn-primary{
+    --plate:linear-gradient(180deg,#ffd98a 0%,#eab04a 46%,#b97a22 100%);
+    color:#1b1306!important; font-weight:800!important; letter-spacing:4px!important; text-shadow:0 1px 0 rgba(255,236,190,.55);
+    border-color:rgba(255,226,150,.85)!important; animation:z78pulse 2.6s ease-in-out infinite; }
+  #start .panel .btn-primary:hover,.btn-primary:hover{ filter:brightness(1.08) saturate(1.1); }
+  #start .panel .btn-continue,.btn-continue{ --plate:linear-gradient(180deg,rgba(150,190,80,.95),rgba(78,110,34,.95)); color:#0f1606!important; text-shadow:0 1px 0 rgba(220,255,170,.4); }
+  @keyframes z78pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(233,182,76,0));}50%{filter:drop-shadow(0 0 14px rgba(233,182,76,.55));}}
+  .btn .ic,.btn-mini .ic,.btn-arsenal .ic,.btn-shop .ic,.btn-terrain .ic{ filter:drop-shadow(0 0 4px currentColor); opacity:.95; }
+  /* HUD plates: dark glass, amber accent along the top edge, chamfer */
+  .chip,.ability,#weaponchip{
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    background:linear-gradient(180deg,rgba(18,24,14,.78),rgba(7,10,6,.86))!important;
+    box-shadow:inset 0 1px 0 rgba(233,182,76,.32),inset 0 0 0 1px rgba(196,214,160,.12),0 10px 28px rgba(0,0,0,.45)!important; border-color:transparent!important; }
+  #topbar .lbl{font-family:var(--hud);letter-spacing:3px;font-weight:700;color:#a8b48e;}
+  #topbar .val{font-family:var(--hud);font-variant-numeric:tabular-nums;font-size:22px;letter-spacing:1px;text-shadow:0 0 12px currentColor;}
+  #weaponchip .wc-nm,#weaponchip .wc-am{font-family:var(--hud);font-size:15px;}
+  .ability.ready{ box-shadow:inset 0 1px 0 rgba(140,220,90,.55),inset 0 0 0 1px rgba(140,220,90,.4),0 0 16px rgba(140,220,90,.25)!important; }
+  /* touch controls: glass discs with a lit ring */
+  .mbtn{ background:radial-gradient(circle at 50% 35%,rgba(70,84,52,.55),rgba(10,14,8,.62) 70%)!important; border:1px solid rgba(233,182,76,.35)!important;
+    box-shadow:0 0 0 3px rgba(0,0,0,.25),inset 0 0 14px rgba(233,182,76,.12),0 8px 20px rgba(0,0,0,.4)!important; transition:transform .12s,box-shadow .2s; }
+  .mbtn:active{ box-shadow:0 0 0 3px rgba(233,182,76,.35),inset 0 0 18px rgba(233,182,76,.3)!important; }
+  .mbtn .mbtag{font-family:var(--hud);letter-spacing:2px;}
+  /* menus slide/fade in smoothly */
+  .overlay:not(.hidden) > .panel,.overlay:not(.hidden) > .title,.overlay:not(.hidden) > .subtitle,.overlay:not(.hidden) .start-id{ animation:z78in .45s cubic-bezier(.2,.8,.3,1) both; }
+  .overlay:not(.hidden) > .panel{ animation-delay:.06s; }
+  @keyframes z78in{from{opacity:0;transform:translateY(10px) scale(.985);}to{opacity:1;transform:none;}}
+  .title{font-family:var(--hud)!important;letter-spacing:6px;}
+  .help kbd{font-family:var(--hud);font-weight:700;border-radius:3px;background:rgba(233,182,76,.1);border-color:rgba(233,182,76,.3);}
+  .upcard,.brcard{border-radius:0!important;}
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;} .btn,.btn-mini,.upcard,.brcard{transition:none!important;} }
 </style>
 </head>
 <body>
@@ -2935,7 +2988,7 @@ function emberTex(){ if(_emberTex) return _emberTex; _emberTex=_canvasTex(128,12
   for(let i=0;i<11;i++){ const cx=_R(0,W), cy=_R(0,W), r=_R(3,9); const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,200,120,1)'); g.addColorStop(0.5,'rgba(255,90,20,0.6)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(cx-r,cy-r,r*2,r*2); }
   x.strokeStyle='rgba(255,110,30,0.8)'; x.lineWidth=1.2; for(let i=0;i<5;i++){ let px=_R(0,W), py=_R(0,W); x.beginPath(); x.moveTo(px,py); for(let k=0;k<5;k++){ px+=_R(-12,12); py+=_R(-12,12); x.lineTo(px,py); } x.stroke(); } }); return _emberTex; }
 function _wreckGeos(){ if(_wreckGeo) return; const G=_tankGeo(), parts=[G.hullLo, G.hullUp, G.track.clone().translate(-1.18,0,0), G.track.clone().translate(1.18,0,0)].map(q=>{ const n=q.index?q.toNonIndexed():q.clone(); n.clearGroups(); for(const a of Object.keys(n.attributes)) if(!['position','normal','uv'].includes(a)) n.deleteAttribute(a); return n; });
-  _wreckGeo=mergeGeometries(parts); const bar=new THREE.CylinderGeometry(0.11,0.13,2.6,10).rotateX(Math.PI/2).translate(0,0.02,2.4).toNonIndexed(); const tg=G.turret.toNonIndexed(); for(const a of Object.keys(bar.attributes)) if(!tg.attributes[a]) bar.deleteAttribute(a); _turGeo=mergeGeometries([tg, bar]); }
+  _wreckGeo=mergeGeometries(parts); const bar=new THREE.CylinderGeometry(0.11,0.13,2.6,10).rotateX(Math.PI/2).translate(0,0.02,2.4).toNonIndexed(); const tg=G.turret.index?G.turret.toNonIndexed():G.turret.clone(); for(const a of Object.keys(bar.attributes)) if(!tg.attributes[a]) bar.deleteAttribute(a); _turGeo=mergeGeometries([tg, bar]); }
 function spawnWreck(pos, facing, ms, pal, toss){
   _wreckGeos(); if(WRECKS.length >= (MOBILE?3:6)){ const o=WRECKS.shift(); scene.remove(o.hull); scene.remove(o.tur); }
   const burnt=new THREE.Color(pal?pal.hull:0x3a3a30).multiplyScalar(0.28);
