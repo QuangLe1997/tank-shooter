@@ -1191,9 +1191,27 @@
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
 }}
 </script>
+<!-- fetch the whole module graph in PARALLEL (no import waterfall) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/EffectComposer.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/RenderPass.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/UnrealBloomPass.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutputPass.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/ShaderPass.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/Pass.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/MaskPass.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/shaders/CopyShader.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/shaders/LuminosityHighPassShader.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/shaders/OutputShader.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/utils/BufferGeometryUtils.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/geometries/RoundedBoxGeometry.js" crossorigin />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/environments/RoomEnvironment.js" crossorigin />
+<link rel="modulepreload" href="./config.js" />
 
 <script type="module">
 import * as THREE from 'three';
+performance.mark('boot:module');
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -1620,6 +1638,7 @@ function updateFlags(now){
       A[i*3+2] = Math.sin(x*f.sx*(6.2/w) - now*5.4 + y*0.9 + f.ph)*0.085*w*u + Math.sin(x*f.sx*(13/w) - now*8.6)*0.02*w*u; A[i*3+1] = y - u*u*0.05*w; }
     pa.needsUpdate=true; f.mesh.geometry.computeVertexNormals(); }
 }
+performance.mark('boot:preground');
 const arena = new THREE.Group(); scene.add(arena);
 const _g0 = groundMaps(BIOMES[0]);
 const groundMat = macroGround(new THREE.MeshStandardMaterial({ map:_g0.map, normalMap:_g0.nrm, normalScale:new THREE.Vector2(1,1), roughness:_g0.rough, metalness:0.0, envMapIntensity:0.5 }));
@@ -1985,9 +2004,12 @@ function applyBiome(stage){
   ring.material.color.setHex(BIOME.accent);
   buildPerimeter(BIOME);   // jersey barriers + concertina wire
   computeEnv();            // ARMS DOCTRINE battlefield conditions (night / heat / frost / urban / open)
+  if(pick<0){ const nb=BIOMES[Math.min(stage, CAMPAIGN_BIOMES-1)]; if(nb!==BIOME && typeof idle==='function') idle(()=>{ groundMaps(nb); rockSet(nb.name); }); }   // prepare the next stage's battlefield while you fight
   buildTerrainDecor(BIOME);
 }
+performance.mark('boot:ground');
 genTerrain(BIOME); buildTerrainDecor(BIOME);   // initial dressing for the menu backdrop
+performance.mark('boot:decor');
 buildFloodlights(); S.tod='day'; applyAtmosphere(BIOME); decalReset(BIOME);
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
@@ -6311,7 +6333,37 @@ window._deployOwnedDrone = deployOwnedDrone; window._droneOwned = droneOwned; wi
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
 function bootHide(){ const b=document.getElementById('boot'); if(!b||b._gone) return; b._gone=true;
   b.classList.add('gone'); setTimeout(()=>{ b.style.display='none'; }, 450); }
+// ---- WARM-UP: compile every material variant (day AND night lighting) + pre-build the enemy pools while the menu is up →
+//      no shader-compile hitches when the first tank, explosion, wreck or night stage appears ----
+let _warmed=false;
+async function warmUp(){
+  if(_warmed) return; _warmed=true;
+  const tmp=[], put=(o)=>{ o.position.set(0,-80,0); o.visible=true; scene.add(o); tmp.push(o); return o; };
+  try{
+    put(buildTank({detail:true, mighty:true}));
+    const pooled=[]; for(const t of Object.keys(ENEMY_DEFS)){ for(let k=0;k<2;k++){ const m=getEnemyMesh(t); m.position.set(0,-80,0); m.visible=true; pooled.push([t,m]); } }
+    for(const k of ['sandbag','drums','tires','crates','pipes','concrete','hesco','hedgehog']) put(makeCoverMesh(k, k==='drums'||k==='sandbag'));
+    put(makeSoldierMesh()); put(makeSoldierMesh({enemy:true})); put(makeRocketMesh()); put(makeMortarShell());
+    _wreckGeos(); put(new THREE.Mesh(_wreckGeo, new THREE.MeshStandardMaterial({ color:0x222222, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1, transparent:true })));
+    { const G=towerGeos(); if(!_woodMat){ _woodMat=new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 }); _tinMat=new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') }); }
+      put(new THREE.Mesh(G.wood,_woodMat)); put(new THREE.Mesh(G.roof,_tinMat)); }
+    for(const id of Object.keys(GUNS)) put(makeGunBarrel(id));
+    if(renderer.compileAsync){ await renderer.compileAsync(scene, camera);
+      const was=NIGHT.on; setNightLights(true); await renderer.compileAsync(scene, camera); setNightLights(was); NIGHT._was=was; }   // both light setups
+    // one real (off-screen) draw with everything in view → also compiles shadow-depth + per-object variants; synchronous → never shown
+    { const rt=new THREE.WebGLRenderTarget(96,96), tgt=camTarget.clone(), keep=[];
+      const all=tmp.concat(pooled.map(x=>x[1])); all.forEach((o,i)=>{ keep.push(o.position.clone()); o.position.set(tgt.x+(i%6-2.5)*4, 0, tgt.z+((i/6|0)-2)*4); });
+      for(const night of [false,true]){ setNightLights(night); renderer.setRenderTarget(rt); renderer.render(scene, camera); }
+      setNightLights(NIGHT.on); renderer.setRenderTarget(null); rt.dispose(); all.forEach((o,i)=>o.position.copy(keep[i])); }
+    for(const [t,m] of pooled){ m.visible=false; m.position.set(0,0,0); (enemyPool[t]=enemyPool[t]||[]).push(m); }   // ready-made enemy pool
+  }catch(e){ console.warn('warm-up skipped', e); }
+  for(const o of tmp) scene.remove(o);
+  performance.mark('boot:warm');
+}
+function idle(fn){ (window.requestIdleCallback||((f)=>setTimeout(f,60)))(fn, {timeout:1500}); }
 function bootReady(forceTap){
+  performance.mark('boot:ready');
+  idle(()=>{ warmUp(); });
   const b=document.getElementById('boot'); if(!b||b._gone) return;
   if(!(MOBILE||forceTap===true)){ bootHide(); return; }                 // desktop: straight into the menu
   b.classList.add('ready');
