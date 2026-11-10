@@ -1,7 +1,7 @@
 // actors/soldiers.js — infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { S, SOLDIER, _R, _canvasTex, bakeGroup, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { MOBILE, S, SOLDIER, _R, _canvasTex, bakeGroup, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -68,7 +68,7 @@ export function makeSoldierMesh(opts){
   const muz=new THREE.Object3D(); muz.position.set(0,0.01,0.7); gun.add(muz);
   g.userData.torso=torso; g.userData.muzzle=muz; g.userData.legs=legs; g.userData.up=up; g.userData.gun=gun; g.userData.walk=0; g.userData.kick=0;
   for(const grp of [up, armG, gun]) bakeGroup(grp); for(const l of legs){ bakeGroup(l.hip); bakeGroup(l.knee); }
-  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=!MOBILE; });   // Z104 phones: no soldier shadows (dozens of men on the wider field)
   return g;
 }
 // walk cycle driven by ground covered; idle breathing; carbine kick

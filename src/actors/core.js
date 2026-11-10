@@ -1,7 +1,7 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GLOW, NIGHT, _R, _canvasTex, _mergeColored, _xf, bigExplode, coverMat, gameOver, makeFlag, propTex, scene, sfx, shieldHexTex, spawnPart, updateHUD, vnTex } from '../hub.js';
+import { GLOW, NIGHT, _R, _canvasTex, _mergeColored, _xf, bigExplode, coverMat, gameOver, makeFlag, propTex, scene, sfx, shieldHexTex, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -31,7 +31,7 @@ export const CrystalShader = {
       gl_FragColor=vec4(c,1.0);
     }` };
 export function buildCore(stage=1){
-  if(core && core.mesh) scene.remove(core.mesh);
+  if(core && core.mesh){ unwave(core.mesh); scene.remove(core.mesh); }   // Z104 stop animating the old core's flags
   const th = CORE_THEMES[Math.min(Math.max(stage,1)-1, CORE_THEMES.length-1)];
   const g=new THREE.Group();
   const stone=new THREE.MeshStandardMaterial({ map:propTex('concrete'), color:0x9c968a, roughness:0.88, metalness:0.02 });

@@ -91,8 +91,9 @@ export const ARMOR = { scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M',
 export const INFANTRY = {
   rifle:{ hp:18, speed:4.4, keep:15, range:24, fireCd:1.5, dmg:4, bspeed:50, score:60 },
   rpg:  { hp:24, speed:3.8, keep:20, range:30, fireCd:5.0, aimT:1.0, dmg:22, rspeed:26, aoe:3.0, score:110 },
-  squad:{ fromWave:2, base:0.5, perWave:0.25, perStage:0.35, size:[3,5], rpgFrom:2, maxOnField:14 },
+  squad:{ fromWave:2, base:0.6, perWave:0.3, perStage:0.4, size:[4,6], rpgFrom:2, maxOnField:22, maxMobile:14 },   // Z104 more men on the wider field
   crushSpeed:3.5, crushBonus:50, bail:0.7,
+  coverThreat: 20, coverSearch: 12,   // Z104 a rifleman who sees a tank this close runs for the far side of the nearest cover
 };
 // NEW ENEMY VEHICLES (Z80). unlock = first stage it appears; weight = [base, +per stage after unlock] in the wave mix.
 export const ROSTER = {
@@ -266,7 +267,7 @@ export const AIM = { mobileFixed: true, cone: 0.17, lane: 1.8, artyCone: 0.32,
 export const TROOPS = {
   ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
   dismount: { fromStage: 2, range: 28, troops: [3, 5], interval: 0.38, rpgFrom: 3 },   // enemy APC stops inside `range`, drops the ramp, troops pile out
-  fireteam: { size: 4, perStage: 0.5, cap: 7, hp: 42, dmg: 7, range: 21, fireCd: 0.8, speed: 7.5, sprint: 12, follow: 7, cd: 24,   // friendly squad
+  fireteam: { size: 6, perStage: 0.8, cap: 12, capMobile: 9, hp: 42, dmg: 7, range: 21, fireCd: 0.8, speed: 7.5, sprint: 12, follow: 7, cd: 24,   // friendly squad
     zoneMul: 0.9, zoneMin: 18,   // Z100 they roam FREELY inside the tank's combat zone (= 90% of its fire range, never under 18)
     detect: 30,                  // how far a soldier spots enemies (it only chases ones it can reach without leaving the zone)
     patrol: [6, 15],             // with nothing to shoot they take up posts this far from the tank
@@ -276,8 +277,28 @@ export const TROOPS = {
   look: { scale: 1.85, barY: 3.6 },   // Z104 every foot soldier (ours + theirs) at the same, slightly bigger size; HP bar height above them
 };
 
+// Z104 SQUAD AI — our soldiers fight on their own across the whole field (no longer leashed to the tank's ring).
+//   Priorities each re-plan: recall (only men inside the ring answer) → carry loot home → take cover from enemy armour →
+//   fight infantry / tower guards → fetch loot → depot / POW jobs → advance on the nearest enemy → regroup on the tank.
+export const SQUAD = {
+  think: 0.4,                                  // seconds between re-plans (staggered per soldier)
+  huntR: 62,                                   // with nothing in sight they advance on the nearest enemy within this
+  cover: { threat: 20, search: 13 },           // enemy armour this close → run for the far side of a wall / rock / sandbags within `search`
+  guardHit: 0.32,                              // chance one rifle shot drops a guard up on a watchtower
+  lootDetect: 26,                              // soldiers spot dropped items this far away, carry them to the RALLY POINT
+  at: { dmg: 34, aoe: 2.4, speed: 34, cd: 3.4, range: 26 },   // anti-tank launcher handed out by a captured weapon depot
+  armedMul: 1.35,                              // rifle damage after re-arming at a captured weapon depot
+};
+// Z104 BATTLEFIELD ZONES (world/zones.js plans the ground before cover is scattered)
+export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
+export const POW = { perStage: [1, 1, 2, 2, 2], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };
+export const DEPOT = { arms: [1, 1, 1, 1, 1], motor: [1, 1, 1, 1, 1], r: 10, guards: [4, 5], guardsMobile: [3, 3], capT: 4, tanks: [1, 2], score: 800, coin: 150 };
+export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30, keep: 15, leash: 58, dmg: 30, fireCd: 1.7, bspeed: 72, cap: 3 };
+// Z104 PARATROOPERS — an enemy transport helicopter crosses the field every so often and drops a stick of paratroopers
+export const PARA = { fromStage: 1, fromWave: 2, every: [42, 62], everyMobile: [55, 80], troops: [4, 6], troopsMobile: [3, 4], alt: 19, speed: 15, fall: 3.6, gap: 0.45, rpgFrom: 3 };
+
 // BATTLEFIELD INSTALLATIONS (Z90) — enemy troop camps that keep feeding infantry, and rope bridges linking paired watchtowers.
-export const CAMP = { perStage: [1, 1, 2, 2, 2], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 3], infCap: 14, coin: 220, score: 900, tentScore: 60 };
+export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };
 export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
 
 // LOOT (Z93) — engine & armour pickups, stacking rules and where the good stuff hides.

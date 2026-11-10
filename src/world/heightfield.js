@@ -1,9 +1,9 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, groundMaps, macroGround, scene } from '../hub.js';
+import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, groundMaps, macroGround, scene } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
-export const HF = { N: MOBILE?96:150, S: ARENA*2 };
+export const HF = { N: Math.min(MOBILE?120:196, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
 HF.step = HF.S/HF.N; HF.W = HF.N+1; HF.h = new Float32Array(HF.W*HF.W);
 export function heightAt(x, z){
   const fx=(x+ARENA)/HF.step, fz=(z+ARENA)/HF.step; if(fx<0||fz<0||fx>=HF.N||fz>=HF.N) return 0;
@@ -26,9 +26,9 @@ export function craterDV(q, th, d, L){                                          
 export function genTerrain(b){
   const st0=TERRAIN_STYLE[b.name]||TERRAIN_STYLE.DESERT, st=Object.assign({}, st0, { mh:st0.mh*1.35, cd:st0.cd*1.25 }), W=HF.W, h=HF.h; h.fill(0);
   const dunes = b.name==='DESERT'||b.name==='TUNDRA', feats=[];
-  for(let i=0;i<st.mounds;i++){ const a=Math.random()*Math.PI; feats.push({t:0, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:5+Math.random()*7, a:st.mh*(0.45+Math.random()*0.55),
+  for(let i=0;i<Math.round(st.mounds*AREA_K);i++){ const a=Math.random()*Math.PI; feats.push({t:0, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:5+Math.random()*7, a:st.mh*(0.45+Math.random()*0.55),
     ex:dunes?1.6+Math.random()*0.8:0.7+Math.random()*0.6, ca:Math.cos(a), sa:Math.sin(a), lee:dunes?0.55:0.2, L:_lobes()}); }
-  for(let i=0;i<st.craters;i++) feats.push({t:1, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:2.6+Math.random()*4.2, a:st.cd*(0.5+Math.random()*0.5), L:_lobes()});
+  for(let i=0;i<Math.round(st.craters*AREA_K);i++) feats.push({t:1, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:2.6+Math.random()*4.2, a:st.cd*(0.5+Math.random()*0.5), L:_lobes()});
   const ph=[Math.random()*9, Math.random()*9, Math.random()*9, Math.random()*9];
   for(let j=0;j<W;j++) for(let i=0;i<W;i++){ const x=-ARENA+i*HF.step, z=-ARENA+j*HF.step; let v=0;
     for(const f of feats){ const dx=x-f.x, dz=z-f.z, d2r=dx*dx+dz*dz, rr=f.r*f.r; if(d2r>rr*5) continue;
@@ -69,6 +69,8 @@ export let _VN=null; export const vnTex=()=>(_VN||(_VN=vnFlagTex()));
 export function makeFlag(tex, w, h, side){ const geo=new THREE.PlaneGeometry(w,h,12,7); geo.translate(w/2*(side||1),0,0);
   const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map:tex, side:THREE.DoubleSide, roughness:0.9 })); m.castShadow=true;
   const f={ mesh:m, base:geo.attributes.position.array.slice(), w, sx:side||1, ph:Math.random()*6 }; WAVING.push(f); m.userData.flag=f; return m; }
+// Z104 stop animating every flag under `root` (call before removing it from the scene — WAVING otherwise grows every stage)
+export function unwave(root){ if(!root) return; root.traverse(o=>{ const f=o.userData&&o.userData.flag; if(f){ const i=WAVING.indexOf(f); if(i>=0) WAVING.splice(i,1); } }); }
 export function updateFlags(now){
   for(let fi=WAVING.length-1; fi>=0; fi--){ const f=WAVING[fi]; if(!f.mesh.parent){ WAVING.splice(fi,1); continue; } if(!f.mesh.visible) continue;
     const pa=f.mesh.geometry.attributes.position, A=pa.array, B=f.base, w=f.w;

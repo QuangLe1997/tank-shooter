@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { S, aoeDamage, bigExplode, blastAllies, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
+import { S, aoeDamage, bigExplode, blastAllies, blastAllyTanks, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -94,7 +94,7 @@ export function artImpact(s, now){
   // ---- distance-graded damage FIRST → decide HIT (shrapnel) vs MISS (just fire+smoke) ----
   const grade=(ox,oz)=>{ const d=Math.hypot(ox-tx,oz-tz); if(d>s.R) return 0;
     return d<=s.innerR ? C.dmgMax : C.dmgMin + (C.dmgMax-C.dmgMin)*(1-(d-s.innerR)/(s.R-s.innerR)); };
-  blastAllies(tx, tz, s.R, C.dmgMax);                                              // Z104 our infantry caught in the barrage
+  blastAllies(tx, tz, s.R, C.dmgMax); blastAllyTanks(tx, tz, s.R, C.dmgMax*0.6);                                              // Z104 our infantry caught in the barrage
   let hit=false; const p=S.player;
   if(p && now>=p.invincibleUntil){ const dmg=grade(p.pos.x,p.pos.z);
     if(dmg>0){ hit=true; const direct = Math.hypot(p.pos.x-tx,p.pos.z-tz)<=s.innerR;

@@ -1,7 +1,7 @@
 // combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS, LETHAL } from '../../config.js';
-import { MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, spawnPart, structMul, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
+import { MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, spawnPart, structMul, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
@@ -79,7 +79,7 @@ export function detonate(b){
   aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
 // enemy AoE that hits the PLAYER + CORE (mortar shells, bomber self-destruct, boss bombs)
 export function enemyGroundStrike(x,z,r,dmg,now){
-  bigExplode({x,z}, 0xff7a3d, r/3); blastAllies(x,z,r,dmg);
+  bigExplode({x,z}, 0xff7a3d, r/3); blastAllies(x,z,r,dmg); blastAllyTanks(x,z,r,dmg*0.8);
   const p=S.player; if(now>=p.invincibleUntil && (p.pos.x-x)**2+(p.pos.z-z)**2 < r*r) damagePlayer(dmg, now);
   if(core && (core.pos.x-x)**2+(core.pos.z-z)**2 < r*r) damageCore(dmg*0.7);
 }

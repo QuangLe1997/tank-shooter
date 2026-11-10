@@ -9,7 +9,8 @@ performance.mark('boot:module');
    ========================================================================= */
 
 // ----------------------------- CONFIG -----------------------------
-export const ARENA = 60;                       // half-extent of the square arena (world units)
+export const ARENA = 84;                       // half-extent of the square arena (world units) — Z104 widened from 60 (≈2× the area) for zoned infantry warfare
+export const AREA_K = (ARENA/60)**2;          // Z104 density multiplier: anything scattered per-map scales with the area so the bigger field is not emptier
 export const PLAYER_STANDOFF = 0.3;            // enemies keep this much clearance from the player hull (anti-glue → easy to shoot)
 export const ARC_G = 110;                      // gravity for ballistic shells — far shots lob in a clear arc, point-blank stays flat (fast guns arc less)
 export const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;

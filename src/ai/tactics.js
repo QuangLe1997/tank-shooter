@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ARENA, ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, armorOf, autoFire, bigExplode, blocks, cMod, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ARENA, ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -100,8 +100,9 @@ export function updateEnemies(dt, now){
     if(def.air){ updateGunship(e, dt, now, edt); continue; }                  // Z80 attack helicopter
     // pick target: player if close, else the guards defending the Core, else the Core
     const dpl = e.pos.distanceTo(p.pos);
-    const targetPlayer = dpl < 34 || !core || (e.ai && dpl < TACTICS.engage);   // Z95 tanks in the director's plan stay on you
+    let targetPlayer = dpl < 34 || !core || (e.ai && dpl < TACTICS.engage);   // Z95 tanks in the director's plan stay on you
     let target = targetPlayer ? p.pos : core.pos;
+    { const at=allyArmourNear(e.pos.x, e.pos.z, Math.min(30, dpl*0.7)); if(at){ target=at.pos; targetPlayer=false; } }   // Z104 a captured tank of ours closer than you draws their fire
     if(!targetPlayer && soldiers.length){                         // guards draw fire — engage the nearest soldier in the way
       let bs=null, bd=36*36; for(const s of soldiers){ const dx=s.pos.x-e.pos.x, dz=s.pos.z-e.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; bs=s; } }
       if(bs) target = bs.pos;

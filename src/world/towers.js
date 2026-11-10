@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE } from '../../config.js';
-import { ARENA, BIOME, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -47,7 +47,7 @@ export function buildTower(x, z){
 }
 export function buildTowers(){
   for(const t of towers) scene.remove(t.g); towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges();
-  const n=(MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&Math.hypot(x,z)>22 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7);
+  const n=Math.round(((MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)))*Math.min(AREA_K,1.7)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&Math.hypot(x,z)>22 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7) && !inZone(x,z,6);
   for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
     for(let tr=0;tr<30&&!ok;tr++){ x=(Math.random()*2-1)*(ARENA-9); z=(Math.random()*2-1)*(ARENA-9); ok=okAt(x,z); }
     if(!ok) continue; buildTower(x,z); const t0=towers[towers.length-1];
@@ -62,11 +62,12 @@ export function updateTowers(dt, now){
     t.beam.material.opacity = NIGHT.k*0.09; t.sl.rotation.y = Math.sin(now*0.5+t.x)*1.2;
     if(t.falling) continue;
     for(const gd of t.guards){ if(!gd.alive) continue;
-      gd.g.getWorldPosition(_tw); const dx=p.pos.x-_tw.x, dz=p.pos.z-_tw.z, d=Math.hypot(dx,dz);
+      gd.g.getWorldPosition(_tw); gd.wx=_tw.x; gd.wy=_tw.y; gd.wz=_tw.z;                         // Z104 cached for our soldiers to aim at
+      const tg=towerGuardAim(_tw.x, _tw.z), dx=tg.x-_tw.x, dz=tg.z-_tw.z, d=Math.hypot(dx,dz);   // Z104 the tank, or one of our men if he is closer
       gd.g.rotation.y = Math.atan2(dx,dz) - t.body.rotation.y;
       const fired = d<TOWER.range && now>=gd.fireAt && S.mode==='playing';
       if(fired){ gd.fireAt = now + TOWER.fireCd*(0.8+Math.random()*0.5);
-        gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(p.pos.x-_tw.x, p.pos.z-_tw.z)+(Math.random()-0.5)*0.08;
+        gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(tg.x-_tw.x, tg.z-_tw.z)+(Math.random()-0.5)*0.08;
         const dmg=(TOWER.guardDmg + S.stage*0.7)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
         spawnBullet(_tw.x, _tw.z, ang, {owner:'e', inf:true, dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
         spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('rifleShot', {x:_tw.x, z:_tw.z}); }
@@ -90,10 +91,21 @@ export function collapseTower(t){
   t.fdx=az/L; t.fdz=-ax/L;
   floatText('THÁP ĐÃ ĐỔ', '#ffcf5a', new THREE.Vector3(t.x, 8, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
   burst({x:t.x,z:t.z}, 0x8a6a40, 18, 8, {y:heightAt(t.x,t.z)+3, life:0.8, size:0.5, grav:-16, drag:1.2, up:3}); burst({x:t.x,z:t.z}, 0xb09a7a, 5, 3, {y:heightAt(t.x,t.z)+1.5, life:1.4, size:2.4, smoke:true, grav:-0.4, drag:1.5, up:1.5, op:0.5});
-  for(const gd of t.guards){ if(!gd.alive) continue; gd.alive=false; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
-    t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
-    fallers.push({ g:gd.g, t:0, vx:ax/L*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:az/L*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false }); }
+  for(const gd of t.guards) dropGuard(t, gd, ax/L, az/L);
 }
+// a guard leaves the tower: shot off it by our infantry (Z104) or thrown when it collapses — he tumbles to the ground (score on landing)
+export function dropGuard(t, gd, ux, uz){ if(!gd.alive) return; gd.alive=false; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
+  t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
+  fallers.push({ g:gd.g, t:0, vx:ux*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:uz*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false }); }
+// Z104 one of our riflemen hits a guard up top (x,z = the shooter) — he falls off the platform
+export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
+  dropGuard(t, gd, ux/L, uz/L); floatText('HẠ LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, 8, t.z), 15); return true; }
+// Z104 who a tower guard shoots: the tank, unless one of our foot soldiers is clearly closer
+export function towerGuardAim(x, z){ const p=S.player; let best=p.pos, bd=Math.hypot(p.pos.x-x, p.pos.z-z)*0.8;
+  for(const a of FT){ const d=Math.hypot(a.pos.x-x, a.pos.z-z); if(d<bd && d<TOWER.range){ bd=d; best=a.pos; } }
+  return best; }
+// every live guard (cached world position) — for our soldiers' target picking
+export function* liveGuards(){ for(const t of towers){ if(t.falling) continue; for(const gd of t.guards) if(gd.alive && gd.wx!=null) yield { t, gd }; } }
 export function clearTowers(){ for(const t of towers) scene.remove(t.g); towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges(); clearCamps(); }
 export function __set__woodMat(v){ _woodMat=v; return v; }   // Z98 cross-module write → setter (imported bindings are read-only)
 export function __set__tinMat(v){ _tinMat=v; return v; }   // Z98 cross-module write → setter (imported bindings are read-only)

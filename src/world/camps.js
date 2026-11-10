@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, LOOT } from '../../config.js';
-import { ARENA, COVER_HP, MOBILE, S, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, burst, cMod, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, scene, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers } from '../hub.js';
+import { ARENA, COVER_HP, MOBILE, S, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, burst, cMod, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, inZone, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, scene, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[];
@@ -38,7 +38,7 @@ export function campFlagTex(){ return _canvasTex(160,100,(x,W,H)=>{ x.fillStyle=
 export function buildCamps(){
   clearCamps(); const n=(CAMP.perStage[Math.min(CAMP.perStage.length-1,S.stage-1)]||1) - (MOBILE&&S.stage<4?0:0);
   for(let c=0;c<n;c++){ let x=0,z=0,ok=false;
-    for(let t=0;t<60&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-16); z=-ARENA+15+Math.random()*(ARENA*0.75); ok=Math.hypot(x,z)>26 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+10) && !CAMPS.some(o=>Math.hypot(o.x-x,o.z-z)<30); }
+    for(let t=0;t<60&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-16); z=-ARENA+15+Math.random()*(ARENA*0.75); ok=Math.hypot(x,z)>26 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+10) && !CAMPS.some(o=>Math.hypot(o.x-x,o.z-z)<30) && !inZone(x,z,12); }
     if(!ok) continue; const ang=(Math.random()*4|0)*Math.PI/2+(Math.random()-0.5)*0.3, ca=Math.cos(ang), sa=Math.sin(ang), at=(lx,lz)=>[x+lx*ca+lz*sa, z-lx*sa+lz*ca];
     const g=new THREE.Group(); scene.add(g);
     const hut=makeQuonset(); const gy=heightAt(x,z); hut.position.set(x,gy-0.05,z); hut.rotation.y=ang; g.add(hut);
@@ -58,7 +58,7 @@ export function buildCamps(){
     CAMPS.push(camp);
   }
 }
-export function clearCamps(){ for(const c of CAMPS) scene.remove(c.g); CAMPS.length=0; TENTS.length=0; }
+export function clearCamps(){ for(const c of CAMPS){ unwave(c.g); scene.remove(c.g); } CAMPS.length=0; TENTS.length=0; }
 export function damageCamp(b, dmg){ const c=b.camp; if(!c.alive) return; b.hp-=dmg; c.hp=b.hp; flashMat(campMats().tin, 0.08, 0.4);
   if(Math.random()<0.5) burst({x:b.x+(Math.random()-0.5)*3,z:b.z+(Math.random()-0.5)*3}, 0xb0b4ac, 3, 4, {y:heightAt(b.x,b.z)+1.5+Math.random()*1.5, life:0.35, size:0.25, grav:-14, drag:1.5, up:2});
   if(b.hp<=0) destroyCamp(b); }

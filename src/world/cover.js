@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildTowers, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, heightAt, makeCoverMesh, placeCaches, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, heightAt, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -17,8 +17,9 @@ export const MAZE_SHAPES = [
 export const blocks=[];   // fuel drums go up after a hit or two
 export function buildBlocks(){
   for(const b of blocks) scene.remove(b.mesh); blocks.length=0; clearWalls(); clearLootBeacons('block');
+  planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
   const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
-  const shapeCount = 4 + Math.floor(S.stage*1.2);
+  const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K);   // Z104 more cover on the wider field (soldiers need somewhere to hide)
   const centers=[];
   let tries=0;
   while(centers.length<shapeCount && tries++<260){
@@ -26,6 +27,7 @@ export function buildBlocks(){
     if(Math.hypot(x,z) < 16) continue;                   // keep Core area open
     if(Math.hypot(x, z-ARENA*0.55) < 13) continue;       // keep player spawn open
     if(centers.some(c=>Math.hypot(c.x-x,c.z-z) < 16)) continue;  // spacing between shapes (navigable corridors)
+    if(inZone(x, z, 8)) continue;                        // Z104 keep installations clear
     centers.push({x,z});
     const shape = MAZE_SHAPES[(Math.random()*MAZE_SHAPES.length)|0];
     const rot = (Math.random()*4|0)*Math.PI/2, ca=Math.cos(rot), sa=Math.sin(rot);
@@ -45,9 +47,9 @@ export function buildBlocks(){
   }
   buildTowers();                                                            // enemy watchtowers with riflemen
   // lone heavy obstacles: boulders + Czech hedgehogs — solid, block shots, deflect tanks
-  const rs=rockSet(BIOME.name), nB=MOBILE?4:7;
+  const rs=rockSet(BIOME.name), nB=Math.round((MOBILE?4:7)*AREA_K);
   for(let i=0;i<nB;i++){ let x=0,z=0,ok=false;
-    for(let t=0;t<20&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-8); z=(Math.random()*2-1)*(ARENA-8); ok=Math.hypot(x,z)>15 && Math.hypot(x,z-ARENA*0.55)>12 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<6); }
+    for(let t=0;t<20&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-8); z=(Math.random()*2-1)*(ARENA-8); ok=Math.hypot(x,z)>15 && Math.hypot(x,z-ARENA*0.55)>12 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<6) && !inZone(x,z,3); }
     if(!ok) continue;
     const hedge = i%3===2, r = hedge ? 1.15 : _R(1.3,2.2);
     const m = hedge ? new THREE.Mesh(coverGeo('hedgehog'), coverMat('hedgehog')) : new THREE.Mesh(rs.big[i%rs.big.length], rs.mat);
@@ -60,6 +62,7 @@ export function buildBlocks(){
   buildBrickWalls();                                                                       // Z86 ruined masonry walls
   buildCamps();                                                                            // Z90 enemy troop camps
   placeCaches();                                                                           // Z93 guarded supply caches
+  buildZones();                                                                            // Z104 rally point · POW stockades · weapon + tank depots (with guards)
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 export function damageBlock(b, dmg){

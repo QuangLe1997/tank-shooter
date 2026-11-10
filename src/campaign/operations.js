@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, scene, sfx, showBanner, spawnPart, spawnSquad, vnTex } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -60,7 +60,7 @@ export function buildObjMesh(kind){
   }
   g.userData=ud; return g;
 }
-export function clearObjective(){ if(!OBJ) return; scene.remove(OBJ.g); freeEnemyBar(OBJ.bar); const i=blocks.indexOf(OBJ.b); if(i>=0) blocks.splice(i,1); OBJ=null; updateObjHUD(); }
+export function clearObjective(){ if(!OBJ) return; unwave(OBJ.g); scene.remove(OBJ.g); freeEnemyBar(OBJ.bar); const i=blocks.indexOf(OBJ.b); if(i>=0) blocks.splice(i,1); OBJ=null; updateObjHUD(); }
 export function buildObjective(){
   clearObjective(); const op=opFor(S.stage), def=OBJECTIVES[op.obj]; if(!def) return;
   let x=0, z=-ARENA*0.6;

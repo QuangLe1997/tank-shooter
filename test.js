@@ -278,14 +278,14 @@ grp('TROOPS & INSTALLATIONS (Z89–Z90)');
   ok(D0.troops[0] >= 2 && D0.troops[1] <= 6 && D0.troops[1] >= D0.troops[0], 'an APC carries 2–6 troops');
   ok(D0.range > 15 && D0.range < 40, 'APC dismounts at a readable mid range');
   ok(D0.interval >= 0.2 && D0.interval <= 1, 'troops pile out one by one (0.2–1s apart)'); }
-{ const F=TROOPS.fireteam; ok(F.size >= 3 && F.cap >= F.size && F.cap <= 8, 'fireteam 3+ soldiers, capped ≤ 8');
+{ const F=TROOPS.fireteam; ok(F.size >= 3 && F.cap >= F.size && F.cap <= 14 && F.capMobile <= F.cap, 'fireteam 3+ soldiers, capped ≤ 14 (Z104 wider field), phones ≤ desktop');
   ok(F.sprint > F.speed && F.speed < PLAYER_MAXSPEED, 'fireteam jogs slower than the tank and sprints to catch up');
   ok(F.dmg > 0 && F.range > 10 && F.fireCd > 0.3, 'fireteam has real but modest firepower');
   ok(F.cd >= 15, 'FIRETEAM call-in has a meaningful cooldown (≥15s)'); }
 ok(TROOPS.ridersFrom >= 1 && TROOPS.ridersFrom <= 3, 'your crew rides the tank from an early stage');
 ok(CAMP.perStage.every(n=>n>=1 && n<=3), '1–3 enemy camps per stage');
 ok(CAMP.every >= 8, 'camps reinforce at a fair pace (≥8s between squads)');
-ok(CAMP.infCap >= 8 && CAMP.infCap <= 20, 'camps stop feeding when the field already holds many soldiers');
+ok(CAMP.infCap >= 8 && CAMP.infCap <= 26, 'camps stop feeding when the field already holds many soldiers (Z104: ≤ 26 on the wider field)');
 ok(CAMP.hp > 150 && CAMP.coin > 0 && CAMP.score > 0, 'a camp is a tough, rewarding target');
 ok(BRIDGE.minD > 6 && BRIDGE.maxD > BRIDGE.minD && BRIDGE.maxD <= 24, 'bridged tower pairs sit 6–24 apart');
 ok(BRIDGE.pairChance > 0 && BRIDGE.pairChance <= 1, 'tower pairing is a probability');

@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, ENV, INFANTRY, EQUIP } from '../../config.js';
-import { ARENA, BIOME, ENVMOD, S, _cv, addScore, animateSoldier, blocks, burst, cMod, diffDmgMul, diffScale, enemies, enemyPool, floatText, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, ENVMOD, FT, MOBILE, S, _cv, addScore, animateSoldier, blocks, burst, cMod, coverSpot, diffDmgMul, diffScale, enemies, enemyPool, floatText, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -16,7 +16,7 @@ export function infMesh(type){
     const war=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.34,10), dm); war.rotation.x=Math.PI/2; war.position.set(0.17,0.66,0.72); u.up.add(war);
     const grip=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.14,0.06), dm); grip.position.set(0.17,0.55,0.18); u.up.add(grip);
     u.gun.visible=false; const mz=new THREE.Object3D(); mz.position.set(0.17,0.66,0.9); u.up.add(mz); u.muzzle=mz; }
-  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=!MOBILE; });
   scene.add(g); return g;
 }
 export function spawnSquad(sp){
@@ -26,14 +26,33 @@ export function spawnSquad(sp){
     spawnEnemy(k<nr?'rpg':'rifle', x, z); }
   ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xd8b070, 2.4);
 }
+export const _INF0={ x:0, z:0 };
+// Z104 who an enemy soldier fights: the tank by default; riflemen switch to one of OUR soldiers (or a captured tank) when clearly closer;
+// RPG teams only ever pick armour — the tank or a captured one
+export function infTarget(e){ const p=S.player; let best={ pos:p.pos, vel:p.vel, tank:true }, bd=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z);
+  for(const t of ALLY_TANKS){ const d=Math.hypot(t.pos.x-e.pos.x, t.pos.z-e.pos.z); if(d<bd*0.85){ bd=d; best={ pos:t.pos, vel:t.vel, tank:true }; } }
+  if(!e.def.rpg) for(const a of FT){ const d=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z); if(d<bd*0.9 && d<e.def.range*1.4){ bd=d; best={ pos:a.pos, vel:_INF0, tank:false }; } }
+  return best; }
+// nearest armour (ours) bearing on this soldier, for taking cover
+export function infTankThreat(e){ const p=S.player, R=INFANTRY.coverThreat; let best=null, bd=R;
+  const dp=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z); if(dp<bd){ bd=dp; best=p; }
+  for(const t of ALLY_TANKS){ const d=Math.hypot(t.pos.x-e.pos.x, t.pos.z-e.pos.z); if(d<bd){ bd=d; best=t; } }
+  return best; }
 export function updateInfantry(e, dt, now, edt){
-  const def=e.def, p=S.player, u=e.mesh.userData, dx=p.pos.x-e.pos.x, dz=p.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, ux=dx/d, uz=dz/d;
+  const def=e.def, p=S.player, u=e.mesh.userData;
+  if(now>=(e.tgtAt||0)){ e.tgtAt=now+0.45+Math.random()*0.3; e.T=infTarget(e); }            // re-pick the target a couple of times a second
+  const T=e.T||{ pos:p.pos, vel:p.vel, tank:true }, dx=T.pos.x-e.pos.x, dz=T.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, ux=dx/d, uz=dz/d;
+  const pdx=p.pos.x-e.pos.x, pdz=p.pos.z-e.pos.z, pd=Math.hypot(pdx,pdz)||1, pux=pdx/pd, puz=pdz/pd;
   let mx=0, mz=0, sp=def.speed;
-  const closing = -(p.vel.x*ux + p.vel.z*uz);                              // how fast the tank is bearing down on this soldier
-  if(d<10 && closing>7){ e.side=e.side||(Math.random()<0.5?-1:1); mx=-uz*e.side; mz=ux*e.side; sp*=1.9; e.aimT=0; }   // SCATTER — dive out of the tank's path
+  const closing = -(p.vel.x*pux + p.vel.z*puz);                            // how fast the tank is bearing down on this soldier
+  const thr = (!def.rpg && !(e.aimT>0)) ? infTankThreat(e) : null;
+  if(thr && now>=(e.coverAt||0)){ e.coverAt=now+1.4+Math.random()*0.6; e.cover=coverSpot(e.pos.x, e.pos.z, thr.pos.x, thr.pos.z, INFANTRY.coverSearch); }
+  if(pd<10 && closing>7){ e.side=e.side||(Math.random()<0.5?-1:1); mx=-puz*e.side; mz=pux*e.side; sp*=1.9; e.aimT=0; }   // SCATTER — dive out of the tank's path
   else if(e.aimT>0){ }                                                       // kneeling with the launcher up: hold still
+  else if(thr && e.cover){ const cx=e.cover.x-e.pos.x, cz=e.cover.z-e.pos.z, cd=Math.hypot(cx,cz); if(cd>0.7){ mx=cx/cd; mz=cz/cd; sp*=1.5; } e.inCover=cd<=1.3; }   // Z104 TANK! → into cover, shoot from there
+  else if(e.guard && e.post){ const gx=e.post[0]-e.pos.x, gz=e.post[1]-e.pos.z, gd=Math.hypot(gx,gz); if(gd>2.5){ mx=gx/gd; mz=gz/gd; } }   // Z104 depot / stockade guards hold their post
   else if(d>def.keep+2){ mx=ux; mz=uz; } else if(d<def.keep-5){ mx=-ux*0.8; mz=-uz*0.8; }
-  e.ph+=dt; const w=Math.sin(e.ph*0.9)*0.6; mx+=-uz*w*0.55; mz+=ux*w*0.55;    // weave — a squad never walks in a conga line
+  if(!(thr && e.cover) && !e.guard){ e.ph+=dt; const w=Math.sin(e.ph*0.9)*0.6; mx+=-uz*w*0.55; mz+=ux*w*0.55; }   // weave — a squad never walks in a conga line
   for(const o of enemies){ if(o===e || !o.def.inf) continue; const ox=e.pos.x-o.pos.x, oz=e.pos.z-o.pos.z, q=ox*ox+oz*oz; if(q<5 && q>1e-4){ const k=(2.24-Math.sqrt(q))*0.8; mx+=ox*k; mz+=oz*k; } }
   const ox0=e.pos.x, oz0=e.pos.z, ml=Math.hypot(mx,mz);
   if(ml>0.05 && !(e.aimT>0)){ e.pos.x+=mx/ml*sp*edt; e.pos.z+=mz/ml*sp*edt; }
@@ -57,7 +76,7 @@ export function updateInfantry(e, dt, now, edt){
   if(e.aimT>0){ e.aimT-=dt;
     if(Math.random()<0.5){ u.muzzle.getWorldPosition(_cv); spawnPart(_cv.x,_cv.y,_cv.z,0,0,0,{tex:'flash', color:0xff3a2a, size:0.55+Math.random()*0.3, life:0.06, grav:0, drag:0}); }   // red sight glint = incoming
     if(e.aimT<=0){ u.muzzle.getWorldPosition(_cv);
-      const lead=Math.min(0.6, d/def.rspeed)*(0.3+0.5*ds), tx=p.pos.x+p.vel.x*lead, tz=p.pos.z+p.vel.z*lead;
+      const lead=Math.min(0.6, d/def.rspeed)*(0.3+0.5*ds), tx=T.pos.x+(T.vel?T.vel.x:0)*lead, tz=T.pos.z+(T.vel?T.vel.z:0)*lead;
       const a=Math.atan2(tx-_cv.x, tz-_cv.z)+(Math.random()-0.5)*0.12*smokeSpread(now);
       launchEnemyMissile(_cv.x, _cv.y, _cv.z, a, { speed:def.rspeed, dmg:def.dmg*dmgMul, aoe:def.aoe, life:2.6, kind:'rpg' });
       spawnPart(_cv.x-Math.sin(a)*1.2,_cv.y,_cv.z-Math.cos(a)*1.2, -Math.sin(a)*6,0.5,-Math.cos(a)*6, {color:0xd8d0c0, size:1.4, life:0.6, smoke:true, grav:0.3, drag:2, op:0.5});   // back-blast

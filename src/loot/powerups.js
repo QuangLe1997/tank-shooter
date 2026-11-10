@@ -99,9 +99,9 @@ export function pickLoot(tier){                                                 
   const pool=POWERUPS.filter(u=>u.id!=='gun' && u.id!=='bomb' && (u.tier||0)===roll); S.giftDry=(S.giftDry||0)+1;
   return pool[(Math.random()*pool.length)|0];
 }
-export function dropPowerup(pos, tier){
+export function dropPowerup(pos, tier, forced){
   tip('loot');
-  tier=tier|0; const def=pickLoot(tier), t=def.tier||0;
+  tier=tier|0; const def=forced||pickLoot(tier), t=def.tier||0;   // Z104 forced = re-drop a carried item (rally point)
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
   const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
   const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false})); icon.scale.set(1.05,1.05,1); icon.position.y=1.75; icon.visible=false; g.add(icon);
@@ -110,7 +110,10 @@ export function dropPowerup(pos, tier){
   const u={def, g, model, beam, icon, ring, x:pos.x, z:pos.z, y:heightAt(pos.x,pos.z)+1.4, vx:Math.cos(a)*sp, vz:Math.sin(a)*sp, vy:7+Math.random()*2, landed:false, bounces:0, born:performance.now()/1000, tier:t};
   g.position.set(u.x,u.y,u.z); pickups.push(u);
   if(t>=1) burst(pos, RAR[t], 6, 5, {y:1.5, life:0.4, size:0.5, grav:-6, drag:2, up:3});
+  return u;
 }
+// Z104 a soldier picks an item up to carry it home → { def, tier } (null if someone was faster)
+export function takePickup(u){ const i=pickups.indexOf(u); if(i<0) return null; disposePickup(u); pickups.splice(i,1); return { def:u.def, tier:u.tier }; }
 export function disposePickup(u){ scene.remove(u.g); u.icon.material.dispose(); u.ring.material.dispose(); u.ring.geometry.dispose(); }
 export function updatePickups(dt, now){
   const p=S.player;
@@ -121,7 +124,7 @@ export function updatePickups(dt, now){
         else { u.landed=true; u.born=now; u.model.rotation.set(0,Math.random()*6,0); u.beam.visible=u.icon.visible=u.ring.visible=true; sfx('thud');
           burst({x:u.x,z:u.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.8, size:1.2, smoke:true, grav:-0.3, drag:2, up:1, op:0.45}); } }
       const lim=ARENA-3; u.x=Math.max(-lim,Math.min(lim,u.x)); u.z=Math.max(-lim,Math.min(lim,u.z)); u.g.position.set(u.x,u.y,u.z); continue; }
-    const age=now-u.born, life=PICKUP_LIFE*(1+u.tier*0.4), rem=Math.max(0, 1-age/life);
+    const age=now-u.born, life=PICKUP_LIFE*(1+u.tier*0.4), rem=u.stash ? 1 : Math.max(0, 1-age/life);   // Z104 stashed at the rally point → never expires
     u.model.rotation.y += dt*0.9; u.model.position.y = 0.05+Math.sin(now*2.4+i)*0.06;
     u.icon.position.y = 1.7 + Math.sin(now*3+i)*0.1;
     u.beam.material.opacity = (0.08+0.03*Math.sin(now*4+i))*(1+u.tier*0.25); u.beam.scale.set(1, 0.6+0.4*rem, 1);   // low halo hugging the item (no tall pillar)
@@ -131,7 +134,7 @@ export function updatePickups(dt, now){
     if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }           // magnet toward player when near
     u.g.position.set(u.x, heightAt(u.x,u.z), u.z);
     if(d2 < (p.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); burst(p.pos, RAR[u.tier], 10, 6, {y:1.6, life:0.5, size:0.45, grav:-4, drag:2, up:4}); disposePickup(u); pickups.splice(i,1); continue; }
-    if(age>life){ disposePickup(u); pickups.splice(i,1); }
+    if(age>life && !u.stash){ disposePickup(u); pickups.splice(i,1); }
   }
 }
 export function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }

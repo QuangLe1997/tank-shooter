@@ -64,10 +64,26 @@ Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3
 |---|---|---|
 | APC địch thả quân (`TROOPS.dismount`) | từ màn 2 · trong 28 · 3–5 lính · 0,38 s/người | lính đầu là RPG từ màn 3 |
 | Kíp lính trên xe (`RIDER`, `TROOPS.ridersFrom`) | từ màn 1 · 3 người (+nâng cấp TANK CREW) | G / CREW: xuống đánh bộ, bấm lại: lên xe |
-| FIRETEAM (`TROOPS.fireteam`) | 4 lính + 0,5/màn (tối đa 7) · 42 máu · 7 dmg (+12%/màn) · tầm 21 · hồi chiêu 24 s | APC ta chở tới rồi rút |
-| Trại lính (`CAMP`) | màn 1–2: 1 trại, màn 3+: 2 · 420 máu (+18%/màn) | ~16 s ra 2–3 lính khi đang có wave, dừng nếu sân ≥ 14 lính |
+| FIRETEAM (`TROOPS.fireteam`) | **Z104:** 6 lính + 0,8/màn (tối đa 12, điện thoại 9) · 42 máu · 7 dmg (+12%/màn) · tầm 21 · hồi chiêu 24 s | APC ta chở tới rồi rút |
+| Trại lính (`CAMP`) | **Z104:** màn 1–3: 2 trại, màn 4+: 3 · 420 máu (+18%/màn) | ~16 s ra 2–4 lính khi đang có wave, dừng nếu sân ≥ 22 lính |
 | Thưởng phá trại | 900 điểm · 220 xu (+25%/màn) · vật phẩm | cán lều +60 điểm |
 | Cầu treo (`BRIDGE`) | 75% tháp ghép cặp, cách 12–18 | 1 lính gác tuần tra 1,6 u/s, bắn như lính tháp |
+
+## 1e. Chiến trường rộng, tổ lính tự chủ, trại giam, kho & lính dù (Z104)
+| Thông số | Giá trị | Ghi chú |
+|---|---|---|
+| Bản đồ (`ARENA`) | nửa cạnh **84** (trước 60) → diện tích ×1,96 | gò, hố, vật cản, đá, tường gạch, tháp nhân theo diện tích (`AREA_K`) |
+| Nòng súng trên điện thoại (`AIM`) | **cố định đầu xe** · nón ngắm ±0,17 rad (pháo/cối ±0,32) · làn 1,8 | đẩy cần nhẹ (< 38%) = xoay tại chỗ để ngắm |
+| Độ sát thương lên lính (`LETHAL`) | **1 phát đạn xe tăng = chết** · nổ: chết trong 45% bán kính, bị thương giảm dần tới 125% (tối thiểu 25%) | đạn súng trường/MG/drone (`inf`) vẫn trừ máu thường · áp dụng cả lính ta lẫn lính địch |
+| Kích thước lính (`TROOPS.look`) | 1,85 cho mọi lính (lính ta trước đây 1,15) | ta: rằn ri xanh, mũ ô liu, băng tay xanh chanh · địch: kaki, mũ đỏ sẫm, băng tay đỏ |
+| Bộ binh địch / sân (`INFANTRY.squad`) | tổ 4–6 · tối đa 22 (điện thoại 14) | lính súng trường **nấp** khi xe tăng trong 20 |
+| Tổ lính tự chủ (`SQUAD`) | nghĩ lại mỗi 0,4 s · săn địch trong 62 · nấp xe tăng trong 20 (tìm chỗ nấp trong 13) | hạ lính gác tháp: 32%/phát · nhặt đồ trong 26 → KHU TẬP KẾT |
+| Súng chống tăng (kho vũ khí) | 34 dmg (+12%/màn) · nổ 2,4 · tầm 26 · nạp 3,4 s | súng trường ×1,35 |
+| Khu tập kết (`RALLY`) | bán kính 6, phía ta cạnh điểm xuất phát | đồ để ở đây **không hết hạn** |
+| Trại giam (`POW`) | màn 1–3: 1, màn 4+: 2 · 3–5 tù binh · 3–4 lính canh (đt 2–3, RPG từ màn 3) | giải cứu: 600 điểm + 120 xu (+25%/màn); tù binh lên xe, đầy chỗ thì đi bộ theo |
+| Kho vũ khí / kho xe tăng (`DEPOT`) | mỗi loại 1/màn · 4–5 lính canh (đt 3) · chiếm 4 s (nhanh hơn khi nhiều lính) | 800 điểm + 150 xu · kho xe: 1–2 xe đỗ |
+| Xe tăng đồng minh (`ALLY_TANK`) | 260 máu (xe nặng ×1,6, +15%/màn) · 30 dmg · tầm 30 · nạp 1,7 s · tối đa 3 | tự chọn mục tiêu (xe trước), về cạnh bạn khi hết địch (dây 58) |
+| Lính dù (`PARA`) | từ đợt 2 · mỗi 42–62 s (đt 55–80) · 4–6 lính (đt 3–4) · rơi 3,6 s | vòng đỏ báo trước chỗ tiếp đất · không thả khi sân đã quá đông |
 
 ## 2. Rải quân (wave) — số lượng & loại địch
 
