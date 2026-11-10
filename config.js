@@ -23,7 +23,7 @@ export const BALANCE = {
   elite:  { chancePerStage:0.025, chancePerLoop:0.06, capChance:0.25,
             hpMul:2.6, sizeMul:1.32, dmgMul:1.3, coinMul:3, dia:1 },
   // shop upgrade per-level effects (used by applyUpgrades)
-  up:     { damage:0.08, boss:0.12, range:0.10, reload:0.12, mag:0.15, hp:20, armor:0.06, engine:0.10 },
+  up:     { damage:0.08, boss:0.12, range:0.10, reload:0.12, mag:0.15, hp:20, armor:0.06, engine:0.10, turbo:0.12, ramplate:0.25, ramguard:0.12 },
   // gun MASTERY: each duplicate gun pickup = +1 xp; cross a threshold → that gun levels up (1→4, permanent).
   // Higher level = more damage, faster fire (lower fireCd), faster reload. Long grind: ~12/15/18 dups per level.
   mastery:{ xp:[0,12,27,45], maxLevel:4, dmgPerLevel:0.10, fireCdPerLevel:0.06, reloadPerLevel:0.08 },
@@ -171,6 +171,8 @@ export const SHOP_UP = [
   {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'HULL PLATING', per:'+20 max HP',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
   {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'ARMOR',        per:'-6% damage taken',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
   {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ENGINE x2',    per:'+10% move speed',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
+  {key:'turbo',  cat:'CHASSIS',   icon:'dash',   name:'TURBOCHARGER', per:'+12% acceleration',  costs:[{c:400},{c:1000},{c:2400}]},
+  {key:'ramplate',cat:'CHASSIS',  icon:'shield', name:'RAM PLATE',    per:'+25% ram damage · −12% ram damage taken', costs:[{c:500},{c:1200},{c:2800}]},
   // ----- SUPPORT units: buy & upgrade the guard squad and the escort drone -----
   {key:'guards',   cat:'SUPPORT', icon:'shield', name:'CORE GUARDS',   per:'+1 Core guard',          costs:[{c:900},{c:2400},{d:16}]},
   {key:'troops',   cat:'SUPPORT', icon:'up',     name:'GUARD: STRIKE', per:'+22% guard damage',      costs:[{c:600},{c:1500},{d:12}]},
@@ -216,7 +218,7 @@ export const CONTRACTS = [
 export const UP_BLURB = {
   damage:'Every round bites harder.', range:'Strike first, from way out.', reload:'Back in the fight in a blink.',
   mag:'More rounds, far fewer reloads.', hp:'Soak up serious punishment.', armor:'Shrug off incoming fire.',
-  engine:'Outrun anything on the battlefield.', guards:'More boots standing on the Core.',
+  engine:'Outrun anything on the battlefield.', turbo:'Off the line like a sprinter — 50 tonnes, no waiting.', ramplate:'A hardened prow: your hull is the weapon.', guards:'More boots standing on the Core.',
   crew:'More gunners riding into battle.', troops:'Your troops hit a whole lot harder.',
   boss:'Tear through bosses far faster.',
   guardRof:'Drilled gunners fire far faster.', guardArm:'Hardened guards hold the line longer.',
@@ -251,3 +253,18 @@ export const TROOPS = {
 // BATTLEFIELD INSTALLATIONS (Z90) — enemy troop camps that keep feeding infantry, and rope bridges linking paired watchtowers.
 export const CAMP = { perStage: [1, 1, 2, 2, 2], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 3], infCap: 14, coin: 220, score: 900, tentScore: 60 };
 export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
+
+// LOOT (Z93) — engine & armour pickups, stacking rules and where the good stuff hides.
+// STACKING: picking a buff you already have EXTENDS it by `extendShare` of its duration (never past `maxDurMul`× a full timer) —
+// it never multiplies its own power. TURBO and ERA are the only LEVEL/CHARGE stacks (capped). Different buffs combine, but every
+// speed source (OVERDRIVE spell × ENGINE pickup × ENGINE shop) is clamped to `speedCap` so the tank never becomes uncontrollable.
+export const LOOT = {
+  rules: { extendShare: 0.5, maxDurMul: 1.5, speedCap: 1.7 },
+  speed: { dur: 22, top: 1.3 },                                              // ENGINE OVERDRIVE: +30% top speed & pull
+  turbo: { dur: 20, accel: 0.35, launch: 0.6, maxLv: 2 },                    // TURBO: per level +35% acceleration, +60% of the missing launch torque
+  ram:   { dur: 20, dealt: 2.2, taken: 0.35, mass: 1.8, wall: 0.55, climb: 0.65 },   // DOZER BLADE: hits like a train, shrugs off rams, bursts walls at a trot
+  era:   { charges: 3, cap: 6, absorb: 0.6, minHit: 8 },                     // REACTIVE ARMOUR: each tile eats 60% of one hit ≥8, then blows off
+  source:{ chanceBase: 0.5, chancePerHp: 1/60, chanceCap: 2.4, rareHp: 70, epicHp: 130 },   // tougher enemies drop more often and roll better loot
+  rarity:{ rareShare: 0.55, epicShare: 0.5 },                                // a RARE source rolls rare 55% of the time, an EPIC source epic 50%
+  cache: { perStage: [2, 2, 3, 3, 3], hp: 70 },                              // guarded supply caches beside camps & towers (always rare+)
+};

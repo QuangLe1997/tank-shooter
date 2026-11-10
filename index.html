@@ -1060,6 +1060,19 @@
   @media (max-height:460px){ #stagewipe .sw-op{font-size:clamp(24px,5.4vw,44px);} #stagewipe .sw-line{margin:10px 0 8px;} }
   @media (prefers-reduced-motion:reduce){ #stagewipe.show .sw-op{animation:none;opacity:1;filter:none;letter-spacing:.08em;} #stagewipe.show .sw-line{animation:none;width:min(560px,72vw);} }
 
+  /* Z93 · loot reward card */
+  #lootToast{position:fixed;right:14px;top:34%;z-index:40;display:flex;gap:10px;align-items:center;min-width:220px;max-width:300px;padding:9px 12px 9px 9px;pointer-events:none;
+    background:linear-gradient(100deg,rgba(10,14,8,.9),rgba(10,14,8,.72));border:1px solid color-mix(in srgb,var(--lc,#9fe07a) 55%,transparent);border-left:3px solid var(--lc,#9fe07a);
+    box-shadow:0 8px 26px rgba(0,0,0,.5),0 0 18px color-mix(in srgb,var(--lc,#9fe07a) 25%,transparent);clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+    opacity:0;transform:translateX(30px);transition:opacity .25s ease,transform .35s cubic-bezier(.2,.9,.2,1);font-family:var(--hud);}
+  #lootToast.on{opacity:1;transform:none;}
+  #lootToast .lt-ic{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--lc);background:color-mix(in srgb,var(--lc) 16%,transparent);border-radius:8px;padding:7px;}
+  #lootToast .lt-ic svg{width:100%;height:100%;}
+  #lootToast .lt-tp{display:flex;align-items:baseline;gap:8px;} #lootToast .lt-nm{font-weight:700;font-size:15px;letter-spacing:.06em;color:#fff;}
+  #lootToast .lt-tr{font-size:9px;letter-spacing:.2em;font-weight:700;color:var(--lc);} #lootToast .lt-ds{font-size:12px;color:#d8e2c4;line-height:1.25;margin-top:2px;}
+  #lootToast .lt-nt{font-size:11px;color:var(--lc);margin-top:2px;letter-spacing:.04em;}
+  #lootToast.lt-2 .lt-nm{color:#e6d0ff;} body.touch #lootToast{top:24%;right:10px;min-width:180px;max-width:240px;padding:7px 9px 7px 7px;} body.touch #lootToast .lt-ic{width:30px;height:30px;}
+  .buffchip{--bc:var(--green);} .buffchip .bic{color:var(--bc)!important;} .buffchip .t{color:var(--bc)!important;}
   /* Z84 · skill switching + names */
   .msp-next{position:absolute;right:calc(100% + 6px);bottom:14px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     font:700 18px/1 Rajdhani,system-ui,sans-serif;color:#10140a;background:linear-gradient(180deg,#d8f08a,#8cbf3f);box-shadow:0 2px 8px rgba(0,0,0,.45);pointer-events:auto;}
@@ -1143,6 +1156,7 @@
   <div id="muteBtn" class="chip"><span class="ic" data-icon="sound"></span></div>
   <div id="gunlist"></div>
   <div id="buffbar"></div>
+  <div id="lootToast"><div class="lt-ic"></div><div class="lt-bd"><div class="lt-tp"><span class="lt-nm"></span><span class="lt-tr"></span></div><div class="lt-ds"></div><div class="lt-nt"></div></div></div>
   <div id="weaponchip" class="chip">RIFLE 24/24</div>
   <div id="bossbar"><div class="bn" id="boss-name">BOSS</div><div class="bar core"><i id="boss-hp"></i></div></div>
   <canvas id="radar" width="144" height="144"></canvas>
@@ -1399,7 +1413,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE } from './config.js';   // tuning + economy data (zero-build ES module)
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT } from './config.js';   // tuning + economy data (zero-build ES module)
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* =========================================================================
@@ -2173,7 +2187,7 @@ function satOBB(A,B){
     if(ov<best){ best=ov; const sg=dist<0?-1:1; nx=ux*sg; nz=uz*sg; } }
   return { nx, nz, d:best };
 }
-function tankMass(t){ if(t===S.player) return 1.25*(t.scale||1)*(t.scale||1); if(t===boss) return 7*(t.def&&t.def.scale||3);
+function tankMass(t){ if(t===S.player) return 1.25*(t.scale||1)*(t.scale||1)*(t.ramOn?LOOT.ram.mass:1); if(t===boss) return 7*(t.def&&t.def.scale||3);
   const d=t.def||{}; return (d.scale||1)*(d.scale||1)*(d.heavy?1.7:1)*(t.elite?1.5:1); }
 function collideTanks(a, b, now){
   const h=satOBB(_tb(a), _tb(b)); if(!h) return 0;
@@ -2199,9 +2213,10 @@ function ramDamage(a, b, imp, sa, sb, ma, mb, now){
   const R=DRIVE.ram, P=S.player; if(imp <= R.minImpact || (a!==P && b!==P && a!==boss && b!==boss)) return;   // enemy-on-enemy shunts are harmless
   const ex=imp-R.minImpact, tot=Math.max(0.01,Math.abs(sa)+Math.abs(sb)), ag=[Math.max(0,sa)/tot, Math.max(0,sb)/tot];
   const hit=(t, mOther, mSelf, agg)=>{ const share=2*mOther/(mOther+mSelf), d=ex*share*(1-R.aggressor*agg);
-    if(t===P){ if(now < p_iframe(t)) return; damagePlayer(Math.round(d*R.toPlayer), now, t.pos.x-(t===a?b:a).pos.x, t.pos.z-(t===a?b:a).pos.z); }
-    else if(t===boss){ damageBoss(d*R.toBoss*(1+(S.stage-1)*R.perStage)); }
-    else if(t.alive!==false && t.hp>0){ const dd=d*R.toEnemy*(1+(S.stage-1)*R.perStage); damageEnemy(t, dd); if(dd>=4) floatText('RAM '+Math.round(dd), '#ffcf7a', {x:t.pos.x,y:3,z:t.pos.z}, 15); } };
+    const vsP = (t===a?b:a)===P, deal = vsP ? (P.ramOn?LOOT.ram.dealt:1)*(P.ramDealMul||1) : 1;   // Z93 dozer blade / RAM PLATE
+    if(t===P){ if(now < p_iframe(t)) return; damagePlayer(Math.round(d*R.toPlayer*(P.ramOn?LOOT.ram.taken:1)*(P.ramTakeMul||1)), now, t.pos.x-(t===a?b:a).pos.x, t.pos.z-(t===a?b:a).pos.z); }
+    else if(t===boss){ damageBoss(d*R.toBoss*deal*(1+(S.stage-1)*R.perStage)); }
+    else if(t.alive!==false && t.hp>0){ const dd=d*R.toEnemy*deal*(1+(S.stage-1)*R.perStage); damageEnemy(t, dd); if(dd>=4) floatText('RAM '+Math.round(dd), '#ffcf7a', {x:t.pos.x,y:3,z:t.pos.z}, 15); } };
   hit(a, mb, ma, ag[0]); hit(b, ma, mb, ag[1]);
   if(imp > 16){ const mx=(a.pos.x+b.pos.x)/2, mz=(a.pos.z+b.pos.z)/2; sfx('explode'); spawnDebris({x:mx,z:mz}, 0.6, 0x3a3a34); if(a===P||b===P){ S.shake=Math.min(3.2,S.shake+imp*0.05); haptic([30,20,40]); } }   // a proper crunch: torn plating flies
 }
@@ -2242,7 +2257,7 @@ function separateTanks(now){
     if(bl.climb){ const dx=bl.x-p.pos.x, dz=bl.z-p.pos.z, dl=Math.hypot(dx,dz)||1, near=dl < bl.r+HULL_HL*p.scale*TANK_SCALE+0.2;
       if(p.climbing===bl){ if(!near) p.climbing=null; else { for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r); continue; } }   // riding over it
       else if(near){ const closing=(p.vel.x*dx+p.vel.z*dz)/dl;
-        if(closing >= DRIVE.climb && hitsHull(p, bl.x, bl.z, bl.r)){ p.climbing=bl; p.vel.x*=0.7; p.vel.z*=0.7; S.shake=Math.min(2.6,S.shake+0.9); p.hitT=Math.max(p.hitT||0,0.16); sfx('thud'); haptic([30,20,30]);
+        if(closing >= DRIVE.climb*(p.ramOn?LOOT.ram.climb:1) && hitsHull(p, bl.x, bl.z, bl.r)){ p.climbing=bl; p.vel.x*=0.7; p.vel.z*=0.7; S.shake=Math.min(2.6,S.shake+0.9); p.hitT=Math.max(p.hitT||0,0.16); sfx('thud'); haptic([30,20,30]);
           burst({x:bl.x,z:bl.z}, BIOME.ground, 4, 3, {y:0.6, life:0.9, size:1.6, smoke:true, grav:-0.3, drag:2, up:1.2, op:0.45}); continue; }
         else if(closing > 4 && hitsHull(p, bl.x, bl.z, bl.r+0.1)) driveHint('BACK UP · BUILD SPEED TO CLIMB'); } }
     const vn=tankVsCircle(p, bl.x, bl.z, bl.r);
@@ -2333,6 +2348,7 @@ function buildBlocks(){
   }
   buildBrickWalls();                                                                       // Z86 ruined masonry walls
   buildCamps();                                                                            // Z90 enemy troop camps
+  placeCaches();                                                                           // Z93 guarded supply caches
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 function damageBlock(b, dmg){
@@ -2340,7 +2356,7 @@ function damageBlock(b, dmg){
   if(b.kind==='tower'){ if(b.tower.falling) return; b.hp-=dmg; flashMat(b.tower.wm, 0.1, 0.5);
     burst({x:b.x,z:b.z}, 0x9a7a52, 3, 5, {y:heightAt(b.x,b.z)+1.5+Math.random()*4, life:0.4, size:0.3, grav:-16, drag:1.5, up:2});   // splinters fly
     b.mesh.position.x = b.x + (Math.random()-0.5)*0.12;                                                                                   // the structure shudders
-    if(b.hp<=0){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); b.mesh.position.x=b.x; collapseTower(b.tower); if(b.loot) dropPowerup({x:b.x,z:b.z}); } return; }
+    if(b.hp<=0){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); b.mesh.position.x=b.x; collapseTower(b.tower); if(b.loot) dropPowerup({x:b.x,z:b.z}, 1); } return; }
   if(b.kind==='brick'){ wallDamage(b, dmg); return; }
   if(b.kind==='camp'){ damageCamp(b, dmg); return; }                      // Z90 barracks                     // Z86 masonry: staged collapse
   if(b.steel){ if(Math.random()<0.5) spawnPart(b.x+(Math.random()-0.5)*2, 1.2+Math.random(), b.z+(Math.random()-0.5)*2, (Math.random()-0.5)*6, 3, (Math.random()-0.5)*6, {color:b.kind==='boulder'?0xd8c8a8:0xffe0a0, size:0.22, life:0.25, grav:-12, drag:2}); return; }   // ricochet chips
@@ -2366,7 +2382,7 @@ function destroyCover(b){
   } else if(b.kind==='tires'){ spawnDebris(pos, 1.2, 0x1e1e1c); burst(pos, 0x0e0d0c, 6, 3, {y:1.2, life:1.6, size:2.6, smoke:true, grav:-1.2, drag:1.2, up:2, op:0.55}); bigExplode(pos, 0xff7a2a, 1.0); }   // burning rubber, thick black smoke
   else if(b.kind==='crates'){ spawnDebris(pos, 1.4, 0x8a6a40); burst(pos, 0xb08a56, 10, 8, {y:1.2, life:0.6, size:0.4, grav:-16, drag:1.4, up:3}); burst(pos, 0xb09a7a, 3, 2.5, {y:1, life:0.9, size:1.6, smoke:true, grav:-0.4, drag:2, up:1, op:0.4}); sfx('explode'); }   // splinters
   else { burst(pos, 0xc8b48a, 7, 4, {y:1.0, life:1.1, size:2.2, smoke:true, grav:-0.5, drag:1.8, up:1.6, op:0.55}); burst(pos, 0xa8936a, 14, 7, {y:1.2, life:0.55, size:0.3, grav:-18, drag:1.2, up:3}); spawnDebris(pos, 1.0, 0xa8936a); decalCrater(b.x,b.z,1.4,0.5); sfx('explode'); }   // sandbags burst: sand cloud + torn sacks
-  if(b.loot) dropPowerup(pos);                                              // beacon-marked stockpiles always yield their power-up
+  if(b.loot){ dropPowerup(pos, b.lootTier||0); if(b.cache) dropPowerup(pos, Math.max(0,(b.lootTier||0)-1)); }   // beacon-marked stockpiles always yield; Z93 caches give two
 }
 function clearBlocks(){ for(const b of blocks) scene.remove(b.mesh); blocks.length=0; clearWalls(); }
 
@@ -2493,7 +2509,7 @@ let _hintT=0;
 function driveHint(txt){ const n=performance.now()/1000; if(n-_hintT<3.5) return; _hintT=n; floatText(txt, '#ffd27a', {x:S.player.pos.x,y:3.4,z:S.player.pos.z}, 16); }
 function ramWall(t, bl, closing){
   const s=Math.sin(bl.obb.f), c=Math.cos(bl.obb.f), side = ((t.pos.x-bl.x)*c-(t.pos.z-bl.z)*s) > 0 ? -1 : 1;   // topple AWAY from the tank
-  if(closing >= DRIVE.wallBreak){ wallDamage(bl, 1e6, side); return true; }
+  if(closing >= DRIVE.wallBreak*(t===S.player&&t.ramOn?LOOT.ram.wall:1)){ wallDamage(bl, 1e6, side); return true; }
   if(closing > 4){ wallDamage(bl, closing*2.2, side); if(t===S.player) driveHint('BACK UP · TAKE A RUN AT IT'); }
   return false;
 }
@@ -3017,7 +3033,15 @@ function makePlayer(){
   const mesh = buildTank({detail:true, mighty:true}); mesh.scale.setScalar(TANK_SCALE);   // player = the hero unit: heavier, more imposing silhouette
   const shield = makeShieldRig(); mesh.add(shield); mesh.userData.shield=shield;           // energy force-field (Aegis / shield power-up)
   { const T=mesh.userData.turret, pole=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.035,2.0,6), new THREE.MeshStandardMaterial({color:0x2a2a26, roughness:0.5, metalness:0.7}));
-    pole.position.set(-0.72,1.25,-1.1); T.add(pole); const fl=makeFlag(vnTex(), 1.25, 0.82, -1); fl.position.set(-0.72,1.82,-1.1); T.add(fl); fl.userData.flag.dyn=true; mesh.userData.flag=fl; }   // 🇻🇳 the player's tank flies the Vietnamese flag
+    pole.position.set(-0.72,1.25,-1.1); T.add(pole); const fl=makeFlag(vnTex(), 1.25, 0.82, -1); fl.position.set(-0.72,1.82,-1.1); T.add(fl); fl.userData.flag.dyn=true; mesh.userData.flag=fl; }
+  { const B=mesh.userData.body, hz=_canvasTex(64,16,(x,W,H)=>{ x.fillStyle='#e8b830'; x.fillRect(0,0,W,H); x.fillStyle='#1a1a16'; for(let i=-2;i<10;i++){ x.beginPath(); x.moveTo(i*10,H); x.lineTo(i*10+8,0); x.lineTo(i*10+13,0); x.lineTo(i*10+5,H); x.fill(); } });
+    const steelM=new THREE.MeshStandardMaterial({color:0x4a4a44,roughness:0.45,metalness:0.85}), dz=new THREE.Group(); dz.visible=false; B.add(dz); mesh.userData.dozer=dz;   // Z93 DOZER BLADE (ram buff)
+    const bl=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.9,0.14), [steelM,steelM,steelM,steelM,new THREE.MeshStandardMaterial({map:hz,roughness:0.6,metalness:0.4}),steelM]); bl.position.set(0,-0.42,2.42); bl.rotation.x=-0.22; dz.add(bl);
+    for(let k=0;k<7;k++){ const t=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.34,5), steelM); t.rotation.x=Math.PI/2; t.position.set(-1.5+k*0.5,-0.86,2.58); dz.add(t); }   // ripper teeth
+    for(const sx of [-1.15,1.15]){ const arm=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.16,0.9), steelM); arm.position.set(sx,-0.38,1.95); arm.rotation.x=0.18; dz.add(arm); }
+    const eraM=new THREE.MeshStandardMaterial({color:0xa89868,roughness:0.75,metalness:0.3}), tiles=[];                  // Z93 REACTIVE ARMOUR bricks (one per charge)
+    for(const sx of [-1,1]) for(const zz of [1.15,0.4,-0.35]){ const t=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.34,0.62), eraM); t.position.set(sx*1.6,0.12,zz); t.rotation.z=sx*0.12; t.visible=false; B.add(t); tiles.push(t); }
+    mesh.userData.eraTiles=tiles; }   // 🇻🇳 the player's tank flies the Vietnamese flag
   { const hl=new THREE.SpotLight(0xfff2dc, 0, 34, 0.5, 0.6, 0); hl.position.set(0,1.2,2.1); const tg=new THREE.Object3D(); tg.position.set(0,0,14); mesh.userData.body.add(hl); mesh.userData.body.add(tg); hl.target=tg; NIGHT.head=hl; }   // driving lights (night)
   scene.add(mesh);
   return {
@@ -3027,7 +3051,7 @@ function makePlayer(){
     hp:100, maxHp:100, lives:3, fireAt:0, weaponLvl:0,
     guns:[{id:'rifle', ammo:24, rU:0, rD:0}], gunIdx:0,   // gun inventory (R2; per-gun reload rU/rD)
     infiniteAmmo:false, ammoMul:1, magMul:1,                  // ammoMul derived from buffs each frame; magMul = persistent BIG MAGAZINE upgrade
-    buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0 },   // timed power-up buffs
+    buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0, turbo:0, ram:0 }, buffLv:{ turbo:0 }, era:0,   // timed power-up buffs (+Z93 turbo/ram levels, ERA tiles)
     rangeMul:1, radius:PLAYER.radius, scale:1,                   // combat-range upgrade + boss-parity scale
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(),
     overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
@@ -3800,7 +3824,7 @@ function spawnEnemy(type, x, z){
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
     hp:hp0, maxHp:hp0, r:1.5*def.scale, facing:0, aim:0,
     fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:def.burst||0, ramAt:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
-    loot: Math.random()<BALANCE.drop.enemy*cMod('lootChanceMul'), elite:false };  // some tanks carry a power-up (CONTRACT can boost loot)
+    loot: Math.random()<BALANCE.drop.enemy*cMod('lootChanceMul')*Math.min(LOOT.source.chanceCap, LOOT.source.chanceBase+def.hp*LOOT.source.chancePerHp), elite:false };   // Z93 tougher hulls carry loot more often  // some tanks carry a power-up (CONTRACT can boost loot)
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on the bomber kamikaze)
   if(def.inf){ e.r=0.55; e.ph=Math.random()*6; e.aimT=0; e.loot=Math.random()<0.04; e.fireAt+=0.8; }
   if(def.air){ e.ph=Math.random()*6; e.dir=Math.random()<0.5?-1:1; e.pos.y=ROSTER.gunship.alt; e.r=1.9; e.fireAt+=1.5; e.rocketAt=performance.now()/1000+3; }
@@ -4459,7 +4483,7 @@ function killEnemy(e){
   addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult * cMod('coinMul'))));   // coin bounty ≈ 1/10 of base score, ×elite ×loop ×CONTRACT
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
   if(e.elite){ addDiamonds(BALANCE.elite.dia); bigExplode(e.pos, 0xffd24a, 2.0); floatText('ELITE DOWN  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
-  if(e.loot || WAVE.treasure) dropPowerup(e.pos);   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
+  if(e.loot || WAVE.treasure) dropPowerup(e.pos, e.elite||e.def.hp>=LOOT.source.epicHp ? 2 : e.def.hp>=LOOT.source.rareHp ? 1 : 0);   // Z93 loot quality follows how hard it was to kill   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
   // recycle mesh + HP bar
   const fx=e.mesh.getObjectByName('eliteFX'); if(fx){ e.mesh.remove(fx); if(fx.material) fx.material.dispose(); }
   if(e.def.bomber){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }   // others are recycled after their death fire (updateDying)
@@ -4623,7 +4647,7 @@ function destroyCamp(b){ const c=b.camp; c.alive=false; const i=blocks.indexOf(b
   for(let k=0;k<3;k++) spawnDebris({x:c.x,z:c.z}, 1.2, 0x8a8e86);
   const R=Math.round; addScore(R(CAMP.score*loopRewardMul()), new THREE.Vector3(c.x,5,c.z)); addCoins(R(CAMP.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
   floatText('CAMP DESTROYED', '#ffcf5a', new THREE.Vector3(c.x,6,c.z), 24); radio('HQ: Enemy camp destroyed — their reinforcements are cut off!'); sfx('bigexplode');
-  if(b.loot) dropPowerup({x:c.x,z:c.z+4}); c.burnT=12; }
+  if(b.loot){ dropPowerup({x:c.x,z:c.z+4}, 2); dropPowerup({x:c.x,z:c.z+4}, 1); } c.burnT=12; }
 let _campRadioAt=0;
 function updateCamps(dt, now){
   const p=S.player; if(!p) return;
@@ -4641,6 +4665,18 @@ function updateCamps(dt, now){
   for(const t of TENTS){ if(t.flat){ if(t.ft<1){ t.ft=Math.min(1,t.ft+dt*5); t.g.scale.y=Math.max(0.08,1-t.ft*0.92); } continue; }   // tracks flatten tents
     if(hitsHull(p, t.x, t.z, 1.4)){ t.flat=true; burst({x:t.x,z:t.z}, 0x8a7c56, 6, 4, {y:heightAt(t.x,t.z)+0.8, life:0.6, size:0.5, grav:-12, drag:1.6, up:2}); burst({x:t.x,z:t.z}, 0xb8a888, 2, 2, {y:heightAt(t.x,t.z)+0.6, life:1.0, size:1.8, smoke:true, grav:-0.3, drag:1.8, up:0.6, op:0.4});
       addScore(CAMP.tentScore, new THREE.Vector3(t.x,2,t.z)); sfx('thud'); haptic(15); } }
+}
+
+// ===== Z93 · SUPPLY CACHES — loot stashed where it is hard to get: inside camp perimeters, under watchtowers, behind ruined walls =====
+function placeCaches(){
+  const n=LOOT.cache.perStage[Math.min(LOOT.cache.perStage.length-1, S.stage-1)], spots=[];
+  for(const c of CAMPS){ const ca=Math.cos(c.ang), sa=Math.sin(c.ang); spots.push([c.x-sa*5.6, c.z-ca*5.6, 2]); }                      // behind the barracks
+  for(const t of towers) if(!t.falling){ const a=Math.random()*6.283; spots.push([t.x+Math.cos(a)*3.4, t.z+Math.sin(a)*3.4, 1]); }   // at the foot of a guarded tower
+  for(const b of blocks) if(b.kind==='brick' && Math.random()<0.3){ const sd=b.z>0?-1:1; spots.push([b.x+Math.cos(b.obb.f)*sd*1.6, b.z-Math.sin(b.obb.f)*sd*1.6, 1]); }   // tucked behind masonry
+  spots.sort(()=>Math.random()-0.5); spots.sort((a,b)=>b[2]-a[2]);
+  let k=0; for(const [x,z,t] of spots){ if(k>=n) break; if(Math.abs(x)>ARENA-5||Math.abs(z)>ARENA-5||blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+1.2)) continue;
+    const m=makeCoverMesh('crates', true); m.scale.set(0.8,0.7,0.8); m.position.set(x,heightAt(x,z)-0.1,z); m.rotation.y=Math.random()*6.283; scene.add(m);
+    const hp=LOOT.cache.hp, b={ mesh:m, x, z, r:1.3, hp, maxHp:hp, steel:false, loot:true, lootTier:t, kind:'crates', cache:true }; blocks.push(b); addLootBeacon(b,'block'); k++; }
 }
 // ===== Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrolling across; drop a tower and it snaps =====
 const BRIDGES=[];
@@ -5177,6 +5213,8 @@ function addScore(base, worldPos){
 function damagePlayer(dmg, now, dx, dz){    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
   const p=S.player; if(now < p.invincibleUntil) return;
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
+  if(p.era>0 && dmg>=LOOT.era.minHit){ p.era--; dmg*=1-LOOT.era.absorb; setEraTiles(p);                 // Z93 REACTIVE ARMOUR: a tile detonates outward and eats most of the hit
+    const a=Math.atan2(dx||0, dz||1); burst({x:p.pos.x-Math.sin(a)*1.6, z:p.pos.z-Math.cos(a)*1.6}, 0xffd27a, 8, 8, {y:1.5, life:0.25, size:0.4, grav:-10, drag:2, up:2}); sfx('clang'); floatText('ERA', '#e0c070', p.pos, 14); }
   p.hp -= dmg;
   // HIT REACTION — every hit is FELT: hull flinch/rattle + shake scaled by the blow + red splash
   p.hitT = Math.max(p.hitT||0, 0.26);
@@ -6079,78 +6117,140 @@ function airstrike(now){
 const NOW=()=>performance.now()/1000;
 const POWERUPS = [
   // timed buffs (longer)
-  { id:'rapid',  svg:'bolt', color:0xfff04a, buff:'rapid',  dur:28, label:'RAPID FIRE ×2' },
-  { id:'power',  svg:'burst', color:0xff7a3d, buff:'power',  dur:28, label:'DAMAGE ×1.6' },
-  { id:'speed',  svg:'dash', color:0x6fe0a0, buff:'speed',  dur:28, label:'SPEED ×1.4' },
-  { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', onGet(p){ for(const g of p.guns) g.rU=0; } },
+  { id:'rapid',  svg:'bolt', color:0xfff04a, buff:'rapid',  dur:28, label:'RAPID FIRE ×2', vi:'BẮN NHANH', ds:'Tốc độ bắn ×2', cat:'ammo', tier:0 },
+  { id:'power',  svg:'burst', color:0xff7a3d, buff:'power',  dur:28, label:'DAMAGE ×1.6', vi:'HOẢ LỰC', ds:'Sát thương ×1,6', cat:'ammo', tier:0 },
+  { id:'speed',  svg:'dash', color:0x6fe0a0, buff:'speed',  dur:LOOT.speed.dur, label:'ENGINE OVERDRIVE', vi:'ĐỘNG CƠ VƯỢT TẢI', ds:'Tốc độ tối đa & lực kéo +30%', cat:'fuel', tier:0 },
+  { id:'turbo',  svg:'bolt', color:0x7fd0ff, buff:'turbo',  dur:LOOT.turbo.dur, stack:LOOT.turbo.maxLv, label:'TURBO', vi:'TURBO TĂNG ÁP', ds:'Gia tốc +35%/cấp, bứt khỏi chỗ đứng', cat:'fuel', tier:1 },   // Z93
+  { id:'ram',    svg:'tank', color:0xffb040, buff:'ram',    dur:LOOT.ram.dur, label:'DOZER BLADE', vi:'LƯỠI ỦI', ds:'Húc ×2,2 · chịu húc −65% · phá tường khi chạy vừa', cat:'armor', tier:1 },   // Z93
+  { id:'era',    svg:'shield', color:0xe0c070, label:'REACTIVE ARMOUR', vi:'GIÁP PHẢN ỨNG', ds:'+3 tấm: mỗi tấm chặn 60% một phát trúng', cat:'armor', tier:1, apply(p){ addEra(LOOT.era.charges); } },   // Z93
+  { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', vi:'ĐẠN VÔ HẠN', ds:'Không cần nạp đạn', cat:'ammo', tier:1, onGet(p){ for(const g of p.guns) g.rU=0; } },
   // PERMANENT buffs (last until death) — rarer feel, lasting progression
-  { id:'range',  svg:'target', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)' },
-  { id:'ammoup', svg:'mag', color:0xc0a060, buff:'ammoup', dur:Infinity, label:'MAGAZINE ×1.6 (∞)', onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
+  { id:'range',  svg:'target', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)', vi:'NÒNG DÀI', ds:'Tầm bắn ×1,4 tới khi mất mạng', cat:'tech', tier:1 },
+  { id:'ammoup', svg:'mag', color:0xc0a060, buff:'ammoup', dur:Infinity, label:'MAGAZINE ×1.6 (∞)', vi:'BĂNG ĐẠN LỚN', ds:'Băng đạn ×1,6 tới khi mất mạng', cat:'ammo', tier:1, onGet(p){ const g=equippedGun(); p.guns[p.gunIdx].ammo=Math.round(g.mag*1.6); } },
   // instant
-  { id:'heal',   svg:'heart', color:0xff6b81, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
-  { id:'repair', svg:'wrench', color:0xffb060, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
-  { id:'shield', svg:'shield', color:0x4fd1ff, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
-  { id:'bomb',   svg:'bomb', color:0xff6030, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
-  { id:'freeze', svg:'snow', color:0x6fd0ff, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
-  { id:'drone',  svg:'drone', color:0x6fd0ff, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
-  { id:'troops', svg:'shield', color:0x9bd14a, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(crewTarget()); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
-  { id:'armory', svg:'up',     color:0xffd24a, apply(){ soldierLvl++; for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
+  { id:'heal',   svg:'heart', color:0xff6b81, vi:'CỨU THƯƠNG', ds:'+40 máu', cat:'med', tier:0, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
+  { id:'repair', svg:'wrench', color:0xffb060, vi:'SỬA CĂN CỨ', ds:'+70 máu cho Lõi', cat:'tool', tier:0, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
+  { id:'shield', svg:'shield', color:0x4fd1ff, vi:'KHIÊN NĂNG LƯỢNG', ds:'Bất tử 5 giây', cat:'tech', tier:1, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
+  { id:'bomb',   svg:'bomb', color:0xff6030, vi:'BOM CHÙM', ds:'80 sát thương mọi địch', cat:'bomb', tier:2, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
+  { id:'freeze', svg:'snow', color:0x6fd0ff, vi:'ĐÓNG BĂNG', ds:'Địch đứng hình 3,5 giây', cat:'tech', tier:0, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
+  { id:'drone',  svg:'drone', color:0x6fd0ff, vi:'DRONE YỂM TRỢ', ds:'Drone bắn tự động 22 giây', cat:'tech', tier:1, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
+  { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(crewTarget()); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
+  { id:'armory', svg:'up',     color:0xffd24a, vi:'TRANG BỊ LÍNH', ds:'Lính bắn mạnh & nhanh hơn', cat:'ammo', tier:1, apply(){ soldierLvl++; for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // gun drop — adds a random gun to the inventory
-  { id:'gun',    svg:'gun', color:0xaef0a0, apply(p){ giveGun(smartGunPick()); } },
+  { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ giveGun(smartGunPick()); } },
 ];
+// Z93 STACKING RULES (numbers in LOOT.rules): same buff again → EXTEND by half its timer (capped at 1.5× a full timer), power never compounds;
+// TURBO climbs a level (max 2) and refreshes; ERA adds tiles (max 6); a permanent buff you already hold pays out coins instead.
 function applyPowerup(def){
-  const p=S.player;
-  if(def.buff){ p.buffUntil[def.buff] = NOW() + def.dur; if(def.onGet) def.onGet(p); floatText(def.label||def.id, '#'+def.color.toString(16).padStart(6,'0'), p.pos, 18); }
+  const p=S.player, now=NOW(); let note='';
+  if(def.buff){ const k=def.buff, rem=Math.max(0,(p.buffUntil[k]||0)-now);
+    if(def.dur===Infinity){ if(p.buffUntil[k]===Infinity){ const c=Math.round(120*(1+S.stage*0.2)); addCoins(c); note='Đã có → +'+c+' xu'; } else { p.buffUntil[k]=Infinity; note='Vĩnh viễn tới khi mất mạng'; } }
+    else if(def.stack){ const lv=rem>0 ? Math.min(def.stack, (p.buffLv[k]||1)+1) : 1; p.buffLv[k]=lv; p.buffUntil[k]=now+def.dur; note='Cấp '+lv+'/'+def.stack+' · '+def.dur+' giây'; }
+    else { const full=def.dur, R=LOOT.rules, nd=rem>0 ? Math.min(full*R.maxDurMul, rem+full*R.extendShare) : full; p.buffUntil[k]=now+Math.max(nd, rem); note = rem>0 ? 'Gia hạn → '+Math.round(nd)+' giây' : full+' giây'; }
+    if(def.onGet) def.onGet(p); }
   else if(def.apply) def.apply(p);
+  lootToast(def, note);
+}
+function addEra(n){ const p=S.player; p.era=Math.min(LOOT.era.cap, (p.era||0)+n); setEraTiles(p); }
+function setEraTiles(p){ const t=p.mesh&&p.mesh.userData.eraTiles; if(t) t.forEach((m,i)=>m.visible=i<(p.era||0)); }
+// reward card — icon · name · effect · rule — slides in on the right, newest replaces the last
+let _ltT=null;
+function lootToast(def, note){
+  const el=document.getElementById('lootToast'); if(!el) return; const col='#'+def.color.toString(16).padStart(6,'0'), tier=def.tier||0;
+  el.style.setProperty('--lc', col); el.className='lt-'+tier;
+  el.querySelector('.lt-ic').replaceChildren(iconEl(def.svg||'star'));
+  el.querySelector('.lt-nm').textContent=def.vi||def.label||def.id; el.querySelector('.lt-ds').textContent=def.ds||''; el.querySelector('.lt-nt').textContent=note||'';
+  el.querySelector('.lt-tr').textContent=['THƯỜNG','HIẾM','QUÝ'][tier];
+  void el.offsetWidth; el.classList.add('on'); clearTimeout(_ltT); _ltT=setTimeout(()=>el.classList.remove('on'), 2600);
+  if(S.player) floatText(def.vi||def.label||def.id, col, S.player.pos, 17);
 }
 const PICKUP_LIFE=11;
 const pickups=[];
 const GUN_DROP_DEF = POWERUPS.find(u=>u.id==='gun');
-function dropPowerup(pos){
-  const p=S.player; const low = (p.hp/p.maxHp<0.4) || (core&&core.hp/core.maxHp<0.4);
-  let def, r=Math.random();
-  if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield'].includes(u.id)); def=pool[(Math.random()*pool.length)|0]; }
-  else if(r<BALANCE.drop.gem){ def=GEM_DEF; }                       // 6% → diamond treasure (VIP currency)
-  else if(Math.random() < Math.min(GIFT.pityCap, GIFT.gunBase + (S.giftDry||0)*GIFT.pityStep)){ def=GUN_DROP_DEF; S.giftDry=0; }   // pity timer: dry streaks raise the gun odds
-  else { def=POWERUPS.filter(u=>u.id!=='gun')[(Math.random()*(POWERUPS.length-1))|0]; S.giftDry=(S.giftDry||0)+1; }
-  const g=new THREE.Group(); g.position.set(pos.x,heightAt(pos.x,pos.z),pos.z); scene.add(g);
-  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:def.color,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false}));
-  glow.scale.set(2.8,2.8,1); glow.position.y=1.5; g.add(glow);
-  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false}));
-  icon.scale.set(2.1,2.1,1); icon.position.y=1.5; g.add(icon);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(1.35,1.6,40), new THREE.MeshBasicMaterial({color:def.color,transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false}));
-  ring.rotation.x=-Math.PI/2; ring.position.y=0.08; g.add(ring);
-  pickups.push({def, g, glow, icon, ring, x:pos.x, z:pos.z, born:performance.now()/1000});
+// ---- Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits under a rarity-coloured light beam ----
+const RAR=[0x9fe07a, 0x5aa9ff, 0xc08bff];                                          // common · rare · epic
+const _LM={}; let _lootGeo=null;
+function lootGeos(){ if(_lootGeo) return _lootGeo; const B=(w,h,d,x,y,z)=>new THREE.BoxGeometry(w,h,d).translate(x||0,y||0,z||0), mg=a=>{ const g=mergeGeometries(a.map(q=>q.index?q.toNonIndexed():q)); a.forEach(q=>q.dispose()); return g; };
+  _lootGeo={
+    case:mg([B(1.0,0.62,0.7,0,0.31,0), B(0.36,0.07,0.08,0,0.66,0)]),                                   // med case body + handle
+    cross:mg([B(0.42,0.12,0.02,0,0.34,0.36), B(0.12,0.42,0.02,0,0.34,0.36), B(0.42,0.12,0.02,0,0.34,-0.36), B(0.12,0.42,0.02,0,0.34,-0.36)]),
+    can:mg([new RoundedBoxGeometry(0.62,0.86,0.3,2,0.06).translate(0,0.43,0), B(0.16,0.1,0.22,0.18,0.92,0), B(0.36,0.06,0.08,-0.06,0.95,0)]),   // jerrycan + spout + handle
+    ammo:mg([B(0.9,0.52,0.42,0,0.26,0), B(0.94,0.06,0.46,0,0.53,0), B(0.3,0.05,0.06,0,0.58,0)]),          // ammo can w/ lid + handle
+    plate:mg([B(0.9,0.12,0.7,0,0.06,0), B(0.86,0.12,0.66,0.02,0.19,0.02), B(0.82,0.12,0.62,-0.02,0.32,-0.01)]),   // stacked ERA tiles
+    tool:mg([B(0.9,0.42,0.42,0,0.21,0), B(0.5,0.06,0.06,0,0.5,0), B(0.06,0.1,0.06,-0.22,0.45,0), B(0.06,0.1,0.06,0.22,0.45,0)]),
+    tech:mg([new RoundedBoxGeometry(0.8,0.5,0.6,2,0.08).translate(0,0.25,0)]),
+    gun:mg([B(1.7,0.4,0.55,0,0.2,0), B(1.74,0.05,0.59,0,0.42,0)]),                                         // long weapon crate
+    gem:new THREE.OctahedronGeometry(0.42,0).translate(0,0.55,0),
+    beam:new THREE.CylinderGeometry(0.22,0.6,7,10,1,true).translate(0,3.5,0) };
+  return _lootGeo; }
+function lootMat(k, col, emi){ return _LM[k]||(_LM[k]=new THREE.MeshStandardMaterial({ color:col, roughness:0.55, metalness:k==='steel'||k==='gem'?0.8:0.25, emissive:emi||0x000000, emissiveIntensity:emi?0.8:0 })); }
+function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def.cat||'tech', add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; g.add(m); return m; };
+  if(cat==='med'){ add(G.case, lootMat('white',0xe8e6de)); add(G.cross, lootMat('red',0xc8202a)); }
+  else if(cat==='fuel'){ add(G.can, lootMat(def.id==='turbo'?'can2':'can', def.id==='turbo'?0x2c6ea8:0x6a7a32)); }
+  else if(cat==='ammo'){ add(G.ammo, lootMat('olive',0x4a5a2a)); }
+  else if(cat==='armor'){ add(G.plate, lootMat('steel',0x6e6a5c)); }
+  else if(cat==='tool'){ add(G.tool, lootMat('toolred',0xb8302a)); }
+  else if(cat==='gun'){ add(G.gun, lootMat('wood',0x7a5a34)); }
+  else if(cat==='gem'){ add(G.gem, lootMat('gem',0x7fe7ff,0x2a8aa8)); }
+  else if(cat==='bomb'){ const b=add(new THREE.SphereGeometry(0.42,14,10).translate(0,0.45,0), lootMat('bomb',0x2a2a26)); }
+  else { add(G.tech, lootMat('tech',0x34404a,0x103040)); }
+  return g; }
+function pickLoot(tier){                                                             // tier = how tough the source was (0 common · 1 rare · 2 epic)
+  const p=S.player, low=(p.hp/p.maxHp<0.4)||(core&&core.hp/core.maxHp<0.4);
+  if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield','era'].includes(u.id)); return pool[(Math.random()*pool.length)|0]; }
+  if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
+  let roll=0; if(tier>=2 && Math.random()<LOOT.rarity.epicShare) roll=2; else if(tier>=1 && Math.random()<LOOT.rarity.rareShare) roll=1;
+  if(roll===2){ const r=Math.random(); if(r<0.55){ S.giftDry=0; return GUN_DROP_DEF; } return r<0.8 ? POWERUPS.find(u=>u.id==='bomb') : GEM_DEF; }   // EPIC: gun · cluster bomb · diamond
+  if(Math.random() < Math.min(GIFT.pityCap, GIFT.gunBase*0.35 + (S.giftDry||0)*GIFT.pityStep)){ S.giftDry=0; return GUN_DROP_DEF; }   // pity timer still guarantees guns on dry streaks
+  const pool=POWERUPS.filter(u=>u.id!=='gun' && u.id!=='bomb' && (u.tier||0)===roll); S.giftDry=(S.giftDry||0)+1;
+  return pool[(Math.random()*pool.length)|0];
 }
-function disposePickup(u){ scene.remove(u.g); u.glow.material.dispose(); u.icon.material.dispose(); u.ring.material.dispose(); u.ring.geometry.dispose(); }
+function dropPowerup(pos, tier){
+  tier=tier|0; const def=pickLoot(tier), t=def.tier||0;
+  const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
+  const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false})); icon.scale.set(1.5,1.5,1); icon.position.y=2.4; icon.visible=false; g.add(icon);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.25,1.45,36), new THREE.MeshBasicMaterial({color:RAR[t],transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=0.08; ring.visible=false; g.add(ring);
+  const a=Math.random()*6.283, sp=3+Math.random()*3;
+  const u={def, g, model, beam, icon, ring, x:pos.x, z:pos.z, y:heightAt(pos.x,pos.z)+1.4, vx:Math.cos(a)*sp, vz:Math.sin(a)*sp, vy:7+Math.random()*2, landed:false, bounces:0, born:performance.now()/1000, tier:t};
+  g.position.set(u.x,u.y,u.z); pickups.push(u);
+  if(t>=1) burst(pos, RAR[t], 6, 5, {y:1.5, life:0.4, size:0.5, grav:-6, drag:2, up:3});
+}
+function disposePickup(u){ scene.remove(u.g); u.icon.material.dispose(); u.ring.material.dispose(); u.ring.geometry.dispose(); }
 function updatePickups(dt, now){
   const p=S.player;
   for(let i=pickups.length-1;i>=0;i--){
-    const u=pickups[i]; const age=now-u.born, rem=Math.max(0, 1-age/PICKUP_LIFE);
-    const bob=1.5 + Math.sin(now*3+i)*0.22;
-    u.glow.position.y=bob; u.icon.position.y=bob;
-    // blink + pulse so it stands out
-    const blink = 0.55 + Math.abs(Math.sin(now*5+i))*0.45;
-    u.glow.material.opacity = blink; const ps=2.8*(1+Math.sin(now*5)*0.12); u.glow.scale.set(ps,ps,1);
-    // shrinking countdown ring (disappears when it runs out)
-    u.ring.scale.setScalar(rem); u.ring.material.opacity = 0.7*rem; u.ring.rotation.z += dt*1.2;
-    // magnet toward player when near
+    const u=pickups[i];
+    if(!u.landed){ u.vy-=26*dt; u.x+=u.vx*dt; u.z+=u.vz*dt; u.y+=u.vy*dt; u.model.rotation.x+=dt*7; u.model.rotation.z+=dt*4;   // tumbling out of the wreck
+      const gy=heightAt(u.x,u.z); if(u.y<=gy){ u.y=gy; if(u.bounces++<1 && u.vy<-5){ u.vy*=-0.32; u.vx*=0.5; u.vz*=0.5; burst({x:u.x,z:u.z}, BIOME.ground, 2, 2, {y:gy+0.2, life:0.5, size:0.8, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.4}); }
+        else { u.landed=true; u.born=now; u.model.rotation.set(0,Math.random()*6,0); u.beam.visible=u.icon.visible=u.ring.visible=true; sfx('thud');
+          burst({x:u.x,z:u.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.8, size:1.2, smoke:true, grav:-0.3, drag:2, up:1, op:0.45}); } }
+      const lim=ARENA-3; u.x=Math.max(-lim,Math.min(lim,u.x)); u.z=Math.max(-lim,Math.min(lim,u.z)); u.g.position.set(u.x,u.y,u.z); continue; }
+    const age=now-u.born, life=PICKUP_LIFE*(1+u.tier*0.4), rem=Math.max(0, 1-age/life);
+    u.model.rotation.y += dt*0.9; u.model.position.y = 0.05+Math.sin(now*2.4+i)*0.06;
+    u.icon.position.y = 2.3 + Math.sin(now*3+i)*0.18;
+    u.beam.material.opacity = (0.045+0.025*Math.sin(now*4+i))*(1+u.tier*0.35); u.beam.scale.set(0.7, 0.5+0.5*rem, 0.7);   // soft column (additive + bloom → keep it faint)
+    u.ring.scale.setScalar(Math.max(0.05,rem)); u.ring.material.opacity = 0.7*rem; u.ring.rotation.z += dt*1.2;
+    if(rem<0.25) u.g.visible = Math.floor(now*8)%2===0;                                  // blinks before it is gone
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
-    if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }
-    u.g.position.set(u.x,0,u.z);
-    if(d2 < (p.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); disposePickup(u); pickups.splice(i,1); continue; }
-    if(age>PICKUP_LIFE){ disposePickup(u); pickups.splice(i,1); }
+    if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }           // magnet toward player when near
+    u.g.position.set(u.x, heightAt(u.x,u.z), u.z);
+    if(d2 < (p.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); burst(p.pos, RAR[u.tier], 10, 6, {y:1.6, life:0.5, size:0.45, grav:-4, drag:2, up:4}); disposePickup(u); pickups.splice(i,1); continue; }
+    if(age>life){ disposePickup(u); pickups.splice(i,1); }
   }
 }
 function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }
-const BUFF_ICON={ rapid:'bolt', power:'burst', speed:'dash', infammo:'infinity', ammoup:'mag', range:'target' };
-function updateBuffHUD(now){
-  const bar=document.getElementById('buffbar'); if(!bar) return;
-  const p=S.player; bar.replaceChildren();
-  for(const k in p.buffUntil){ const until=p.buffUntil[k]; const rem=until-now; if(rem<=0) continue;
-    const c=document.createElement('div'); c.className='buffchip';
+const BUFF_ICON={ rapid:'bolt', power:'burst', speed:'dash', infammo:'infinity', ammoup:'mag', range:'target', turbo:'bolt', ram:'tank', era:'shield' };
+const BUFF_COL={ turbo:'#7fd0ff', ram:'#ffb040', speed:'#6fe0a0', era:'#e0c070' };
+let _buffKey='';
+function updateBuffHUD(now){                                                         // Z93: rebuilt only when something visible changes (was every frame)
+  const bar=document.getElementById('buffbar'); if(!bar) return; const p=S.player, items=[];
+  for(const k in p.buffUntil){ const until=p.buffUntil[k]; const rem=until-now; if(rem<=0) continue; items.push([k, until===Infinity?'∞':Math.ceil(rem)+'s', k==='turbo'&&p.buffLv.turbo>1?'×'+p.buffLv.turbo:'']); }
+  if(p.era>0) items.push(['era', '×'+p.era, '']);
+  const key=items.map(i=>i.join(':')).join('|'); if(key===_buffKey) return; _buffKey=key; bar.replaceChildren();
+  for(const [k,txt,lv] of items){ const c=document.createElement('div'); c.className='buffchip'; if(BUFF_COL[k]) c.style.setProperty('--bc', BUFF_COL[k]);
     const ic=document.createElement('span'); ic.className='bic'; setIcon(ic, BUFF_ICON[k]);
-    const t=document.createElement('span'); t.className='t'; t.textContent = (until===Infinity) ? '∞' : Math.ceil(rem)+'s';
+    const t=document.createElement('span'); t.className='t'; t.textContent = txt + (lv?' '+lv:'');
     c.append(ic,t); bar.appendChild(c); }
 }
 
@@ -6323,7 +6423,7 @@ function startGame(continueRun){
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → the player's chosen battle loadout (≤5), each full mag
   p.guns=loadoutGuns(); p.gunIdx=0; p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
-  p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0 };
+  p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0, turbo:0, ram:0 }; p.buffLv={ turbo:0 }; p.era=0; setEraTiles(p);
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
   applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
@@ -6909,14 +7009,16 @@ function updatePlayer(dt, now){
     const want=Math.atan2(p.dashDir.x, p.dashDir.z), df=wrapAngle(want-p.facing); p.facing += (Math.abs(df)>2.2? 0 : df*Math.min(1,dt*10));
   } else {
     const over = now < p.overUntil;
-    const spd = now < bu.speed ? 1.4 : 1;     // SPEED buff
+    const spd = now < bu.speed ? LOOT.speed.top : 1;     // ENGINE OVERDRIVE pickup (Z93)
     const heavy = 1 - Math.min(0.22, magCap(equippedGun())/450);                 // heavier magazine → a bit slower (ammo↔speed tradeoff)
     const dir = getMoveDir(), inp = Math.min(1, dir.length());
     const gx=(heightAt(p.pos.x+1,p.pos.z)-heightAt(p.pos.x-1,p.pos.z))/2, gz=(heightAt(p.pos.x,p.pos.z+1)-heightAt(p.pos.x,p.pos.z-1))/2;
     const gr = gx*fs0*Math.sign(vf||1)+gz*fc0*Math.sign(vf||1);                    // >0 climbing, <0 descending (along travel)
     const slopeK = Math.max(0.45, Math.min(1.35, 1 - gr*1.3)); p.grade = inp>0.1 ? gr : 0;
-    const maxSp = PLAYER.maxSpeed*(over?1.3:1)*p.speedMul*heavy*spd*Math.max(0.7,slopeK);
-    const pow = (over?1.35:1)*p.speedMul*heavy*spd*slopeK;
+    const mob = Math.min(LOOT.rules.speedCap, (over?1.3:1)*p.speedMul*spd);              // Z93: every speed source multiplies, then the hard cap
+    const maxSp = PLAYER.maxSpeed*mob*heavy*Math.max(0.7,slopeK);
+    const tLv = now < bu.turbo ? (p.buffLv.turbo||1) : 0; p.turboLv=tLv;
+    const pow = mob*(over?1.04:1)*heavy*slopeK*(1+tLv*LOOT.turbo.accel)*(p.accelMul||1);
     if(inp > 0.1){
       const want = Math.atan2(dir.x, dir.z); let df = wrapAngle(want - p.facing);
       if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && vf < 6)) p.rev = true; else p.rev = false;   // pull the stick back → back up (hysteresis)
@@ -6927,7 +7029,7 @@ function updatePlayer(dt, now){
       const thr = inp * (0.12 + 0.88*align*align) * (p.rev?-1:1); p.throttle = thr;
       const top = p.rev ? maxSp*DRIVE.reverseMul : maxSp, v = Math.abs(vf);
       if(vf*thr < -0.5){ vf += Math.sign(thr)*Math.min(Math.abs(vf), DRIVE.brake*dt); }   // pushing against the motion = brakes
-      else { const launch = DRIVE.launch + (1-DRIVE.launch)*Math.min(1, v/DRIVE.launchV);   // heavy launch → builds with speed
+      else { const l0 = DRIVE.launch + (1-DRIVE.launch)*Math.min(1, tLv*LOOT.turbo.launch), launch = l0 + (1-l0)*Math.min(1, v/DRIVE.launchV);   // heavy launch → builds with speed (TURBO fills the gap)
         const fall = Math.max(0, 1 - (v/top)*(v/top));                                   // power fades toward top speed
         vf += thr * DRIVE.accel*(p.rev?DRIVE.reverseMul+0.2:1) * pow * launch * fall * dt;
         if(Math.abs(vf) > top) vf -= Math.sign(vf)*Math.min(Math.abs(vf)-top, DRIVE.brake*dt); }
@@ -6938,6 +7040,10 @@ function updatePlayer(dt, now){
     p.vel.x -= gx*14*dt; p.vel.z -= gz*14*dt;                                     // still slides down into hollows/craters a little
   }
   p.fwdSpeed = p.vel.x*Math.sin(p.facing) + p.vel.z*Math.cos(p.facing);
+  p.ramOn = now < bu.ram; { const bl=p.mesh.userData.dozer; if(bl && bl.visible!==p.ramOn) bl.visible=p.ramOn; }   // Z93 dozer blade bolts on while the buff runs
+  if(p.turboLv && Math.abs(p.throttle||0)>0.4 && Math.random()<0.5*p.turboLv){ const bx=p.pos.x-Math.sin(p.facing)*2.4, bz=p.pos.z-Math.cos(p.facing)*2.4;   // turbo: blue exhaust flare
+    spawnPart(bx+(Math.random()-0.5)*0.8, 1.3, bz, -Math.sin(p.facing)*4, 1.2, -Math.cos(p.facing)*4, {tex:'flash', color:0x8fd8ff, size:0.6, life:0.12, grav:0, drag:4}); }
+  if(now < bu.speed && Math.random()<0.25){ const bx=p.pos.x-Math.sin(p.facing)*2.4, bz=p.pos.z-Math.cos(p.facing)*2.4; spawnPart(bx, 1.5, bz, 0, 1.6, 0, {color:0x1a1814, size:0.9, life:0.8, smoke:true, grav:-0.4, drag:1.5, op:0.45}); }   // overdrive: diesel soot
   p.pos.addScaledVector(p.vel, dt);
   if(p.kbx||p.kbz){ p.pos.x+=p.kbx*dt; p.pos.z+=p.kbz*dt; const kf=Math.max(0,1-dt*8); p.kbx*=kf; p.kbz*=kf; }   // recoil when hit
   // clamp to arena
@@ -7144,6 +7250,8 @@ function applyUpgrades(p){                                     // bake the bough
   p.dmgMul   *= 1 + (U.damage||0)*B.damage;
   p.rangeMul *= 1 + (U.range||0)*B.range;
   p.speedMul *= 1 + (U.engine||0)*B.engine;   // ENGINE: +10%/level → nimbler dodging (max +50%)
+  p.accelMul = 1 + (U.turbo||0)*B.turbo;       // Z93 TURBOCHARGER: +12% acceleration/level
+  p.ramDealMul = 1 + (U.ramplate||0)*B.ramplate; p.ramTakeMul = Math.max(0.5, 1 - (U.ramplate||0)*B.ramguard);   // Z93 RAM PLATE
   p.magMul    = 1 + (U.mag||0)*B.mag;          // separate from the buff-derived ammoMul (which the frame loop overwrites)
   p.reloadMul = 1/(1 + (U.reload||0)*B.reload);
   p.bossMul   = 1 + (U.boss||0)*B.boss;        // WARHEAD: bonus damage vs bosses
@@ -7160,7 +7268,7 @@ function droneOwned(){ return (PROFILE.upgrades.dronePow||0) >= 1; }            
 function guardFireMul(){ return Math.max(SUP.mulFloor, 1 - (PROFILE.upgrades.guardRof||0)*SUP.guardRofPerLvl); }   // GUARD DRILL: faster fire
 function guardBonusHp(){ return (PROFILE.upgrades.guardArm||0)*SUP.guardArmPerLvl; }          // GUARD ARMOR: +HP
 function deployOwnedDrone(){ if(droneOwned() && !S.drone) spawnDrone(true); }                 // auto-launch the owned escort each stage
-const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, apply(){ addDiamonds(1); if(S.player) floatText('+1 DIAMOND','#7fe7ff',S.player.pos,22); } };  // rare treasure
+const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, vi:'KIM CƯƠNG', ds:'+1 ◆', cat:'gem', tier:2, apply(){ addDiamonds(1); if(S.player) floatText('+1 DIAMOND','#7fe7ff',S.player.pos,22); } };  // rare treasure
 function ownGun(id){ if(!GUNS[id]) return false; let fresh=false;
   if(!PROFILE.ownedGuns.includes(id)){ PROFILE.ownedGuns.push(id); fresh=true; }
   if(!PROFILE.loadout.includes(id) && PROFILE.loadout.length<LOADOUT_MAX) PROFILE.loadout.push(id);   // auto-equip while there's room
@@ -7586,7 +7694,7 @@ let _rsT=0;
 function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 window._resize = ()=>doResize(true);   // (debug) force a refit
-if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), skip:()=>skipIntro(), barrel:(id)=>setPlayerBarrel(id), grade:(id)=>barrelGrade(id), get PROFILE(){ return PROFILE; }, get FT(){ return FT; }, get FT_APC(){ return FT_APC; }, get riders(){ return riders; }, hurt:(e,d)=>damageEnemy(e,d), obj:(st)=>{ S.stage=st; buildObjective(); return OBJ; }, spell:(i)=>{ S.spell=i; S.player.spellCdUntil=0; trySpell(); }, contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
+if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), skip:()=>skipIntro(), barrel:(id)=>setPlayerBarrel(id), grade:(id)=>barrelGrade(id), get PROFILE(){ return PROFILE; }, get FT(){ return FT; }, drop:(x,z,t)=>dropPowerup({x,z},t), give:(id)=>applyPowerup(POWERUPS.find(u=>u.id===id)), get pickups(){ return pickups; }, get FT_APC(){ return FT_APC; }, get riders(){ return riders; }, hurt:(e,d)=>damageEnemy(e,d), obj:(st)=>{ S.stage=st; buildObjective(); return OBJ; }, spell:(i)=>{ S.spell=i; S.player.spellCdUntil=0; trySpell(); }, contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
 const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not

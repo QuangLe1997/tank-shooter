@@ -241,6 +241,18 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 ---
 
+## 4b. Vật phẩm động cơ & giáp — luật cộng dồn (Z93)
+| Vật phẩm | Hiệu ứng | Thời lượng | Nhặt lại khi đang có |
+|---|---|---|---|
+| ĐỘNG CƠ VƯỢT TẢI | tốc tối đa & lực kéo ×1,3 | 22 s | gia hạn +11 s, tối đa 33 s |
+| TURBO TĂNG ÁP | gia tốc +35%/cấp, bù 60% độ ì khởi động/cấp | 20 s | lên cấp (tối đa 2) + làm mới 20 s |
+| LƯỠI ỦI | húc gây ×2,2 · chịu húc ×0,35 · khối lượng ×1,8 · phá tường ở 7,7 u/s · leo đá ở 10 u/s | 20 s | gia hạn +10 s, tối đa 30 s |
+| GIÁP PHẢN ỨNG | +3 tấm; phát ≥ 8 sát thương mất 1 tấm, chặn 60% | tới khi dùng hết/mất mạng | cộng tấm, tối đa 6 |
+| Buff vĩnh viễn (NÒNG DÀI, BĂNG ĐẠN LỚN) | — | tới khi mất mạng | đã có → +120 xu × (1 + 0,2·màn) |
+
+Trần tốc độ: OVERDRIVE (kỹ năng ×1,3) × ĐỘNG CƠ (×1,3) × shop ENGINE (tới ×1,5) = ×2,5 → **cắt ở ×1,7**.
+Nguồn rơi: tỉ lệ = 16% × min(2,4; 0,5 + máu gốc/60) — lính trinh sát 16 máu ≈ 10%, xe nặng 140 máu ≈ 38%. Máu gốc ≥ 70 → 55% đồ HIẾM; ≥ 130 hoặc elite → 50% đồ QUÝ (55% súng · 25% bom chùm · 20% kim cương). Tháp → hiếm; trại → 1 quý + 1 hiếm; kho tiếp tế (2/2/3/3/3 theo màn, 70 máu) → 2 món.
+
 ## 5. Tóm tắt phần thưởng theo màn
 
 | Stage | Địch/màn | Boss HP | Súng mở khoá rơi | 💎 từ boss |
