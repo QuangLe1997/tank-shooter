@@ -1,6 +1,6 @@
 // loot/upgrades.js — ROGUELITE UPGRADES (pick 1 of 3 after each boss)
 import { OBJECTIVES, TROOPS } from '../../config.js';
-import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildObjective, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, guardTarget, hide, iconEl, opFor, openBriefing, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD } from '../hub.js';
+import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildObjective, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD } from '../hub.js';
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 export const UPGRADES = [
@@ -27,7 +27,8 @@ export function openUpgrade(){
     const ic=document.createElement('div'); ic.className='ic'; ic.appendChild(iconEl(u.ic));
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=u.nm;
     const ds=document.createElement('div'); ds.className='ds'; ds.textContent=u.ds;
-    card.append(ic,nm,ds);
+    const pg=pickGain(u), pw=document.createElement('div'); pw.className='pw'; pw.textContent = pg>0 ? ('⚔ +'+fmtP(pg)+' sức mạnh') : 'hỗ trợ · không đổi sức mạnh';   // Z107
+    card.append(ic,nm,ds,pw);
     const choose=()=>chooseUpgrade(u);
     card.addEventListener('click', choose);
     card.addEventListener('touchstart', e=>{ e.preventDefault(); choose(); }, {passive:false});

@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunXpToNext, hide, ownGun, payCost, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, show, showSalvo, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunXpToNext, hide, ownGun, payCost, powerKit, powerRating, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -126,6 +126,7 @@ export function shortBy(cost){ if(!cost) return ''; if(cost.d) return Math.max(0
 export function caseState(it){ const owned=it.type==='gun'&&it.owned, maxed=it.type==='up'&&it.level>=it.max;
   return owned?'owned':maxed?'maxed':(!(it.cost&&canAfford(it.cost))?'cant':''); }
 export function renderCaseGrid(){
+  { const sp=document.getElementById('shopPower'); if(sp) sp.innerHTML='⚔ <b>'+fmtP(powerRating(powerKit(false)))+'</b>'; }
   const grid=document.getElementById('caseGrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
   shopList.forEach((it,i)=>{
     const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP ◆':('BẬC '+it.tier)):('CẤP '+it.level+'/'+it.max);
@@ -160,6 +161,7 @@ export function shopStats(it){
 export function spBar(label,val,frac){ frac=Math.max(0.05,Math.min(1,frac));
   return '<div class="sp-bar"><div class="sp-bl">'+label+'<b>'+val+'</b></div><div class="sp-track"><div class="sp-fill" style="width:'+(frac*100).toFixed(0)+'%"></div></div></div>'; }
 export function siPanelHTML(it){
+  const PW=shopPowerLine(it);   // Z107 what this purchase does to your power rating
   if(it.type==='gun'){ const g=GUNS[it.id], lv=gunLevel(it.id);
     const dMul=gunDmgMul(it.id), fMul=gunFireMul(it.id), rMul=gunReloadMul(it.id);
     const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(edmg*(g.frags||1)*rof), erel=g.reload*rMul;
@@ -171,7 +173,7 @@ export function siPanelHTML(it){
       : '';
     const role=gunRole(it.id), cur=currentGunId(), cmp = cur!==it.id ? gunNums(cur) : null, me=gunNums(it.id), M=gunMax();
     const eff='<div class="sp-eff">'+gunEffect(it.id).map(e=>{ const G=effGrade(e.x); return '<span class="ef '+G.c+'"><small>'+e.vi+'</small><b>'+(e.x>0?'×'+e.x.toFixed(2).replace(/0$/,''):'—')+'</b><em>'+G.tx+'</em></span>'; }).join('')+'</div>';
-    return '<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+
+    return PW+'<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+
       '<div class="sp-role" style="--rc:'+role.col+'">'+role.tx+'</div>'+ mastery+
       spBar('Sát thương / phát', edmg*(g.frags||1)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
       spBar('Sát thương / giây', dps+(cmp?delta(me.dps,cmp.dps):''), dps/M.dps)+ spBar('Tầm bắn', '×'+me.rng.toFixed(2)+(cmp?delta(me.rng,cmp.rng):''), me.rng/M.rng)+
@@ -180,13 +182,14 @@ export function siPanelHTML(it){
       '<div class="sp-note">Bộ binh: mọi phát pháo xe tăng đều hạ gục 1 lính'+((g.aoe||g.aoeR)?' · nổ lan diệt cả cụm':'')+'</div>'+
       (cmp?'<div class="sp-note">So với <b>'+escapeHtml(GUNS[cur].name)+'</b> (súng chính đang dùng)</div>':'')+
       (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
-  return '<div class="sp-tier">'+(it.level>=it.max?'CẤP TỐI ĐA':(it.vip?'★ NÂNG CẤP VIP':'NÂNG CẤP'))+'</div>'+
+  return PW+'<div class="sp-tier">'+(it.level>=it.max?'CẤP TỐI ĐA':(it.vip?'★ NÂNG CẤP VIP':'NÂNG CẤP'))+'</div>'+
     spBar('Level', it.level+' / '+it.max, it.level/it.max)+
     '<div class="sp-bl">Mỗi cấp<b>'+it.per+'</b></div>'+
     '<div class="sp-bl">Đang có<b>×'+it.level+'</b></div>'+
     (it.level<it.max?'<div class="sp-bl">Tiếp theo<b>CẤP '+(it.level+1)+'</b></div>':'<div class="sp-tags"><span class="st">ĐÃ NÂNG TỐI ĐA</span></div>');
 }
 export function updateShopInfo(){
+  { const sp=document.getElementById('shopPower'); if(sp) sp.innerHTML='⚔ <b>'+fmtP(powerRating(powerKit(false)))+'</b>'; }
   const it=shopList[shopIdx]; if(!it) return;
   const hex='#'+(RAR_COL[it.rar]||0xffce4a).toString(16).padStart(6,'0');
   document.getElementById('shopInfo').style.setProperty('--rar',hex);

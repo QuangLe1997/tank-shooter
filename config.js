@@ -430,3 +430,17 @@ export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], crate
 // Z107 RENDER BUDGET (LOD) — what is worth drawing: only soldiers near the tank cast shadows, tower / wall riflemen out of
 //   range are not drawn at all, and HP bars show once a unit is hurt (elites and commanders always). Checked 4× a second.
 export const LOD = { shadowR: 26, guardR: 70, every: 0.25 };
+// Z107 POWER RATING — one number for how strong YOUR tank is, and what each level asks of it, on the same scale.
+//   Fight ratio F = time-to-die ÷ time-to-clear-a-wave. Your side: sustained DPS (mag + reload, mastery, upgrades, armour-type
+//   effectiveness vs that level's wave mix, crowd bonus for blast/pierce/chain) and effective HP (HP ÷ (1−armour), dodge from speed).
+//   Level side: the real wave composition (wavePool) × HP ramp × NG+ × difficulty, and the damage it pours in (accuracy → hit
+//   chance, fire chance, rate, burst, specials). 1000 = a brand-new tank (rifle, no upgrades) on campaign level 1 = "even".
+export const POWER = { waves:[2,3,4,5], hitHalfW:0.085, engaged:0.55, infHit:0.3, dodgeK:0.5, eliteK:true,
+  special:{ scout:1.0, bomber:3.0, mortar:1.8, carrier:2.4, atgm:2.3, pyro:3.8, gunship:3.0, engineer:0 },   // est. DPS on you from non-gun attackers (ROSTER/def numbers)
+  crowd:{ aoe:1.35, pierce:1.15, chain:1.25 }, mix0:{ L:0.3, M:0.4, H:0.3, A:0 },
+  calib:1.18,   // measured in simulated waves: level 1→3 got ~20× harder vs the formula's 12.6× (fortress sallies) → threat growth ^1.18
+  bands:[[1.2,'DỄ','#9be04a'],[0.92,'VỪA SỨC','#ffd24a'],[0.75,'KHÓ','#ff9a4a'],[0,'QUÁ SỨC','#ff5a4a']] };
+// Z107 RAM ANYTHING — a ram does max(flat, frac × max HP) × impact (impact 0 at minV → 1 at fullV): flimsy things (sandbags, crates,
+//   drums, tyres) go in ONE hit, sturdy ones (watchtowers, huts, objectives) take a few. Shell-proof steel / concrete / HESCO have a
+//   ram-only strength (steelHp). Natural rock (boulders, ridges) stays put.
+export const RAM = { minV:6, fullV:16, weakHp:120, weakK:0.3, frac:0.4, steelHp:420, cd:0.4, buffMul:1.5 };   // weak (≤120 HP): any solid ram (≥30% impact) smashes it · sturdy: 40% max HP per full ram (~3) · steel: 420 ram-HP (~3)

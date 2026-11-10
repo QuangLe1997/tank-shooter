@@ -1,6 +1,6 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE } from '../../config.js';
+import { BALANCE, RAM } from '../../config.js';
 import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, fortWallHit, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
@@ -84,6 +84,14 @@ export function damageBlock(b, dmg){
   else { b.mesh.scale.setScalar(0.9+0.1*f); }
   if(b.hp<=0) destroyCover(b);
 }
+// Z107 ram a block: flimsy cover in one hit, sturdy structures in a few, steel/concrete on its own ram-strength
+export function ramBlock(b, vn, t){ if(b.fort || b.ridge || b.kind==='boulder' || !(b.hp>0)) return false; const R=RAM, now=performance.now()/1000;
+  if(vn<R.minV || now<(b.ramAt||0)) return false; b.ramAt=now+R.cd;
+  const k=Math.min(1,(vn-R.minV)/(R.fullV-R.minV))*(t&&t.ramOn?R.buffMul:1);
+  if(!isFinite(b.hp)){ if(b.ramHp==null) b.ramHp=R.steelHp; b.ramHp-=R.steelHp*R.frac*k;   // shell-proof: only a ram cracks it
+    burst({x:b.x,z:b.z}, 0x9a968c, 4, 4, {y:1.2, life:0.6, size:0.4, grav:-14, drag:1.4, up:2.5}); sfx('clang');
+    if(b.ramHp<=0){ destroyCover(b); return true; } return false; }
+  const mh=b.maxHp||b.hp, before=b.hp; damageBlock(b, (mh<=R.weakHp && k>=R.weakK) ? b.hp+1 : mh*R.frac*k); return !blocks.includes(b) || b.hp<before; }   // flimsy → gone in one
 export function destroyCover(b){
   const pos={x:b.x,z:b.z}, now=performance.now()/1000;
   scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);

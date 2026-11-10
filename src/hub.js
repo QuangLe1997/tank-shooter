@@ -75,6 +75,7 @@ export * from './combat/aim.js';
 export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
 export * from './combat/mastery.js';
+export * from './combat/power.js';
 export * from './combat/spells.js';
 export * from './campaign/artillery.js';
 export * from './loot/powerups.js';

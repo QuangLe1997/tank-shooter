@@ -16,18 +16,22 @@ export function diffCfg(){ return BALANCE.difficulty[PROFILE.difficulty] || BALA
 export function diffHpMul(){ return diffCfg().hp; }
 export function diffDmgMul(){ return diffCfg().dmg; }
 export function diffRewardMul(){ return diffCfg().reward; }
-export function buildWaveQueue(stage, wave){
-  const n = Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage);   // eased: s1w1=4 → s5w5=~15 (was up to 18)
-  // weighted pool; tougher/new types unlock at later stages
+// Z107 the wave's composition as data (also read by combat/power.js so the power rating sees exactly what the waves send)
+export function waveSize(stage, wave){ return Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage); }   // eased: s1w1=4 → s5w5=~15
+export function waveSquads(stage, wave){ const SQ=INFANTRY.squad; return wave>=SQ.fromWave ? Math.floor(SQ.base + wave*SQ.perWave + (stage-1)*SQ.perStage) : 0; }
+export function wavePool(stage, wave){   // weighted pool; tougher/new types unlock at later stages
   const pool=[['grunt', 5], ['scout', 2+wave*0.4], ['gunner', 1+wave*0.4+(stage-1)]];
   if(stage>=2){ pool.push(['bomber', 1+(stage-1)*0.5]); pool.push(['mortar', 1+(stage-1)*0.6]); }
   if(stage>=3){ pool.push(['shield', 1+(stage-2)*0.7]); pool.push(['heavy', 0.8+(stage-2)*0.5]); pool.push(['carrier', 0.7+(stage-2)*0.4]); }
   if(stage>=4){ pool.push(['sniper', 1+(stage-3)*0.7]); }
   for(const [ty,u] of Object.entries(ROSTER.unlock)) if(stage>=u){ const w=ROSTER.weight[ty]; pool.push([ty, w[0]+(stage-u)*w[1]]); }   // Z80 new vehicles
+  return pool; }
+export function buildWaveQueue(stage, wave){
+  const n = waveSize(stage, wave), pool = wavePool(stage, wave);
   const tot=pool.reduce((s,pp)=>s+pp[1],0);
   const q=[];
   for(let i=0;i<n;i++){ let r=Math.random()*tot, t='grunt'; for(const [ty,w] of pool){ if((r-=w)<=0){ t=ty; break; } } q.push(t); }
-  const SQ=INFANTRY.squad; if(wave>=SQ.fromWave){ const ns=Math.floor(SQ.base + wave*SQ.perWave + (stage-1)*SQ.perStage); for(let k=0;k<ns;k++) q.splice(1+((Math.random()*q.length)|0), 0, 'squad'); }   // Z79 infantry squads mixed into the column
+  { const ns=waveSquads(stage, wave); for(let k=0;k<ns;k++) q.splice(1+((Math.random()*q.length)|0), 0, 'squad'); }   // Z79 infantry squads mixed into the column
   return q;
 }
 export function rollWaveEvent(){
@@ -81,7 +85,7 @@ export function updateWaves(dt, now){
   // spawn from queue (stagger). Concurrent cap + cadence scale with stage so the
   // early game never floods a new player.
   const cap = Math.floor(BALANCE.wave.capBase + S.stage*BALANCE.wave.capPerStage) + (WAVE.assault?BALANCE.wave.assaultCapBonus:0);   // eased: s1=6 … s5=12; ASSAULT crowds the field
-  let _nT=0, _nI=0; for(const e of enemies){ if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap
+  let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
   const _nx=WAVE.spawnQueue[0];
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
     const t=WAVE.spawnQueue.shift(); const sp=edgeSpawnPoint();
@@ -91,7 +95,7 @@ export function updateWaves(dt, now){
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
   }
   // wave clear?
-  if(WAVE.spawnQueue.length===0 && !enemies.some(e=>!e.guard)){   // Z104 depot / stockade guards stay at their post — they don't hold the wave open
+  if(WAVE.spawnQueue.length===0 && !enemies.some(e=>!e.guard && !e.fortOf)){   // Z104 depot / stockade guards stay at their post — they don't hold the wave open · Z107 nor do fortress troops (garrison, sallies, bodyguards)
     WAVE.active=false; WAVE.betweenUntil = now + 2.2;
     addScore(200, new THREE.Vector3(0,2,0));
     showBanner('SẠCH ĐỢT! +200', '#8cbf3f'); sfx('wave');

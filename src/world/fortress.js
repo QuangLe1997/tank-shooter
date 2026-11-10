@@ -171,8 +171,10 @@ function escortFollow(f){ if(!f.escort) return; const c=f.cmd, alive=c && enemie
 // sallies: a squad or a tank marches out of the gate onto the field
 function sally(f, now){ f.sallyAt=now+R2(FORT.sally)*(f.tier===3?0.8:1);
   const p=S.player; if(!p) return; let n=0; for(const e of enemies) if(!e.guard) n++; if(n > (MOBILE?16:26)) return;   // the field is already crowded
+  const n0=enemies.length;
   if(Math.random()<FORT.sallyTank && f.pool.tank>0){ const e=spawnEnemy(['grunt','scout','gunner','shield'][(Math.random()*4)|0], f.ox, f.oz); if(e) f.pool.tank--; }
   else if(f.pool.inf>=3){ spawnSquad({ x:f.ox, z:f.oz }); f.pool.inf-=3; } else return;
+  for(let i=n0;i<enemies.length;i++) enemies[i].fortOf=f;   // Z107 sally troops belong to their fortress (they don't hold a wave open)
   ringPulse(new THREE.Vector3(f.ox,0,f.oz), 0xe0603a, 2.6); }
 // wave reinforcements come out of a fortress gate (most of the time) instead of over the fence
 export function fortSpawnPoint(){ const alive=FORTS.filter(f=>!f.captured && f.g); if(!alive.length || Math.random()>FORT.fromGate) return null;

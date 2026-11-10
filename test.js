@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, HEADING, TERRAIN_FLAT } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, HEADING, TERRAIN_FLAT, POWER, RAM } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -490,6 +490,16 @@ ok(FORT.ram.gate*3 >= 0.85 && FORT.ram.gate*3 < 1, 'three full-speed rams nearly
 ok(FORT.ram.wall < FORT.ram.gate && FORT.wallHpK > 1 && FORT.wallShotK < 1, 'walls are tougher than the gate (less per ram, more HP, shells chip half)');
 ok(FORT.ram.minV > 4 && FORT.ram.fullV > FORT.ram.minV && FORT.ram.fullV < 26, 'a ram needs a run-up but full effect comes below top speed');
 ok(TERRAIN_FLAT.noiseK === 0 && TERRAIN_FLAT.blastK === 0, 'the battlefield stays flat and stable (no micro-bumps, shells do not reshape it)');
+
+grp('Z107 POWER RATING · RAM ANYTHING');
+ok(POWER.bands.every((b,i,a)=>i===0||b[0]<a[i-1][0]) && POWER.bands[POWER.bands.length-1][0]===0, 'power verdict bands run from easy to overwhelming and cover every ratio');
+ok(POWER.calib>=1 && POWER.calib<1.6, 'threat calibration only steepens harder levels (measured ~1.18)');
+ok(POWER.waves.every(w=>w>=1 && w<=5) && POWER.hitHalfW>0 && POWER.engaged>0 && POWER.engaged<=1, 'power model samples real waves and a sane hit / engagement model');
+ok(Math.abs(Object.values(POWER.mix0).reduce((s,v)=>s+v,0)-1)<1e-9, 'the neutral armour mix sums to 1');
+ok(['sandbag','drums','crates','tires'].every(k=>COVER_HP[k] <= RAM.weakHp), 'flimsy cover (sandbags, drums, crates, tyres) breaks in ONE solid ram');
+ok(RAM.frac*3 >= 1 && RAM.frac*2 < 1, 'sturdy structures take about three full rams (not one, not ten)');
+ok(RAM.steelHp*RAM.frac*3 >= RAM.steelHp*0.99, 'steel / concrete cover gives way after ~3 rams');
+ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect comes below top speed');
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

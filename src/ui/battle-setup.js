@@ -1,6 +1,6 @@
 // ui/battle-setup.js — Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the next; map/hour/weather set per level) · CUSTOM = pick map, hour, weather, space and enemy level (among levels you have opened).
 import { CAMPAIGN, SPACE, WEATHER } from '../../config.js';
-import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeVi, drawTerrainPreview, hide, saveProfile, sfx, show, startGame, tapBtn, tapEl, todFor } from '../hub.js';
+import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeVi, drawTerrainPreview, fmtP, hide, levelCheck, saveProfile, sfx, show, startGame, tapBtn, tapEl, todFor, verdictHTML } from '../hub.js';
 
 export const BS = { tab:'campaign', sel:1 };
 export const TOD_KEYS = ['day','noon','sunset','night'];
@@ -22,7 +22,7 @@ export function buildCampaign(){
     const cv=document.createElement('canvas'); cv.width=160; cv.height=84; drawTerrainPreview(cv, I.biome, false);
     c.appendChild(cv);
     c.insertAdjacentHTML('beforeend', '<div class="bs-lvn">CẤP '+L+'</div>'+(done?'<div class="bs-st ok">✓ ĐÃ THẮNG</div>':lock?'<div class="bs-st lk">🔒 THẮNG CẤP '+(L-1)+'</div>':'<div class="bs-st go">▶ SẴN SÀNG</div>')+
-      '<div class="bs-lvm">'+biomeVi(I.biome.name)+(I.boss?' · <b>TƯỚNG</b>':'')+'</div><div class="bs-lvc">'+TOD_ICON[I.tod]+' '+TOD_LABEL[I.tod]+' · '+WX_ICON[I.wx]+' '+WEATHER[I.wx].vi+'</div>'+stars(I.stars)+(I.loop?'<div class="bs-ng">VÒNG '+(I.loop+1)+'</div>':''));
+      (()=>{ const pc=levelCheck(L); return '<div class="bs-pw" style="--pc:'+pc.col+'">CẦN '+fmtP(pc.need)+' · '+pc.tx+'</div>'; })()+'<div class="bs-lvm">'+biomeVi(I.biome.name)+(I.boss?' · <b>TƯỚNG</b>':'')+'</div><div class="bs-lvc">'+TOD_ICON[I.tod]+' '+TOD_LABEL[I.tod]+' · '+WX_ICON[I.wx]+' '+WEATHER[I.wx].vi+'</div>'+stars(I.stars)+(I.loop?'<div class="bs-ng">VÒNG '+(I.loop+1)+'</div>':''));
     if(!lock) tapEl(c, ()=>{ BS.sel=L; buildCampaign(); refreshSummary(); sfx('click'); });
     g.appendChild(c); }
   const on=g.querySelector('.bs-lv.on'); if(on) requestAnimationFrame(()=>on.scrollIntoView({ block:'nearest', inline:'center' }));
@@ -40,8 +40,9 @@ export function buildCustom(){ const C=PROFILE.custom, max=campaignMax();
   opts('bsLvl', Array.from({ length:Math.min(max, 30) }, (_,i)=>i+1).map(L=>({ k:L, html:'CẤP '+L+'<small>'+'★'.repeat(levelInfo(L).stars)+'</small>' })), C.lvl, k=>C.lvl=k);
 }
 export function refreshSummary(){ const el=document.getElementById('bsSum'); if(!el) return;
-  if(BS.tab==='campaign'){ const I=levelInfo(BS.sel); el.innerHTML='<b>CẤP '+I.L+'</b> · '+biomeVi(I.biome.name)+' · '+TOD_LABEL[I.tod]+' · '+WEATHER[I.wx].vi+' '+stars(I.stars); }
-  else { const C=PROFILE.custom; el.innerHTML='<b>TỰ CHỌN</b> · '+biomeVi(BIOMES[C.biome].name)+' · '+TOD_LABEL[C.tod]+' · '+WEATHER[C.wx].vi+' · '+SPACE[C.space].vi+' · địch cấp '+C.lvl; } }
+  const pcL = BS.tab==='campaign' ? BS.sel : PROFILE.custom.lvl, pc=levelCheck(pcL), pw=' <span class="bs-you">⚔ BẠN <b>'+fmtP(pc.P)+'</b> · CẦN <b>'+fmtP(pc.need)+'</b> '+verdictHTML(pc)+'</span>';   // Z107 power rating vs this level
+  if(BS.tab==='campaign'){ const I=levelInfo(BS.sel); el.innerHTML='<b>CẤP '+I.L+'</b> · '+biomeVi(I.biome.name)+' · '+TOD_LABEL[I.tod]+' · '+WEATHER[I.wx].vi+' '+stars(I.stars)+pw; }
+  else { const C=PROFILE.custom; el.innerHTML='<b>TỰ CHỌN</b> · '+biomeVi(BIOMES[C.biome].name)+' · '+TOD_LABEL[C.tod]+' · '+WEATHER[C.wx].vi+' · '+SPACE[C.space].vi+' · địch cấp '+C.lvl+pw; } }
 export function setSetupTab(t){ BS.tab=t; document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>m.classList.toggle('on', m.dataset.m===t));
   document.getElementById('bsCampaign').classList.toggle('hidden', t!=='campaign'); document.getElementById('bsCustom').classList.toggle('hidden', t!=='custom');
   if(t==='campaign') buildCampaign(); else buildCustom(); refreshSummary(); }

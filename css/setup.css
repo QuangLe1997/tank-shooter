@@ -80,3 +80,16 @@ body.touch #mCmd{display:flex;} body.inmenu #mCmd{display:none;}
 .mcm b{font-size:16px;line-height:1;} .mcm span{font:800 7.5px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.06em;white-space:nowrap;}
 .mcm:active{transform:scale(.92);} #mAssault{border-color:rgba(255,138,58,.6);color:#ffd2b0;}
 .mcm i{position:absolute;inset:0;border-radius:11px;background:rgba(0,0,0,.55);font:800 11px/44px 'Saira Condensed',sans-serif;color:#ffcf5a;font-style:normal;text-align:center;display:none;} .mcm i.on{display:block;}
+/* Z107 POWER RATING */
+.power-chip{margin:4px auto 0;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;font-size:11.5px;font-weight:800;letter-spacing:1px;color:#dfe6d4;}
+.power-chip b{color:#fff;font-size:13px;} .power-chip .sep{opacity:.4;} .power-chip .ic{color:#ffd24a;}
+i.pv{font-style:normal;font-weight:900;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:6px;color:#0b0d09;background:var(--pc,#ffd24a);}
+#powHud{position:absolute;left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 62px);transform:translateX(-50%);font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#dfe6d4;
+  padding:3px 9px;border-radius:8px;background:rgba(8,10,8,.55);border:1px solid rgba(255,255,255,.1);pointer-events:none;z-index:3;white-space:nowrap;}
+#powHud b{color:#fff;} body.inmenu #powHud{display:none;} body.touch #powHud{top:calc(max(6px,env(safe-area-inset-top)) + 50px);font-size:9px;}
+.bs-pw{font-size:9px;font-weight:900;letter-spacing:.6px;color:var(--pc,#ffd24a);padding:0 9px;}
+.bs-you{display:inline-flex;align-items:center;gap:5px;margin-left:8px;} .bs-you b{color:#fff;}
+.sp-pw{font-size:11px;font-weight:800;letter-spacing:.6px;color:#dfe6d4;padding:6px 9px;border-radius:8px;background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.28);}
+.sp-pw b{color:#fff;} .sp-pw em{font-style:normal;font-weight:900;margin-left:4px;} .sp-pw em.up{color:#9be04a;} .sp-pw em.dn{color:#ff9a7a;} .sp-pw small{color:var(--muted);font-weight:600;}
+.w-chip.pw{color:#ffd24a;} .w-chip.pw b{color:#fff;}
+.upcard .pw{margin-top:6px;font-size:11px;font-weight:900;letter-spacing:.5px;color:#9be04a;}

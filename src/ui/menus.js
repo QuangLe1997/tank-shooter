@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml).
-import { MOBILE, PROFILE, S, buildTerrainPicker, hide, openGuide, queueResize, refreshWallet, saveProfile, sfx, show } from '../hub.js';
+import { MOBILE, PROFILE, S, buildTerrainPicker, hide, openGuide, queueResize, refreshPowerChip, refreshWallet, saveProfile, sfx, show } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -9,6 +9,7 @@ export function tapBtn(id, fn){ const el=document.getElementById(id); if(!el) re
 export function tapEl(el, fn){ if(!el) return; el.addEventListener('click', fn);
   el.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); fn(e); }, {passive:false}); }
 export function refreshStartUI(){
+  try{ refreshPowerChip(); }catch(e){}   // Z107 power rating vs your next campaign level
   const hello=document.getElementById('hello');
   if(hello) hello.innerHTML = PROFILE.nickname ? ('CHỈ HUY <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
   const cont=document.getElementById('continueBtn'), hasSave=!!(PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));

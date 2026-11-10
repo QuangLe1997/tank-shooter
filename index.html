@@ -77,6 +77,7 @@
   <div id="contractChip" class="hidden"><span class="ic" data-icon="shield"></span><b id="cc-name">—</b></div>
   <div id="objChip" class="hidden"><div class="ob-row"><span class="ob-dot"></span><b class="ob-name">—</b></div><div class="ob-bar"><i></i></div><div class="ob-fx">—</div></div>
   <div id="fortHud" class="hidden"></div>
+  <div id="powHud"></div>
   <div id="radio"><span class="rd-tag">SCH</span><span class="rd-txt"></span></div>
   <div id="hpwrap" class="chip">
     <div class="row"><span class="ic" data-icon="heart"></span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
@@ -141,6 +142,7 @@
   <div class="start-id">
     <div class="hello" id="hello"></div>
     <div class="bestline" id="bestline"></div>
+    <div class="power-chip" id="powerChip"></div>
     <div class="wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></div>
   </div>
   <!-- every action lives in one grid so a short landscape screen can place them all (see the short-landscape CSS block) -->
@@ -247,7 +249,7 @@
 <div class="overlay hidden shop3d" id="shop">
   <div class="shop-top">
     <div class="shop-head"><span class="shop-ttl">KHO VŨ KHÍ</span>
-      <span class="shop-wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></span>
+      <span class="shop-wallet"><span class="w-chip pw" id="shopPower"></span><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></span>
     </div>
     <div class="shop-tabs" id="shopTabs"></div>
     <div class="shop-legend" id="shopLegend"><span class="lg t1">BẬC 1 · cơ bản</span><span class="lg t2">BẬC 2 · chuyên dụng</span><span class="lg t3">BẬC 3 · hạng nặng</span><span class="lg vip">VIP · mua bằng ◆</span><span class="lg cant">giá xám = chưa đủ tiền</span></div>

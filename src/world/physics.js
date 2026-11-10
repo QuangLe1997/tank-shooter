@@ -1,6 +1,6 @@
 // world/physics.js — PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap
 import { DRIVE, LOOT, BOSSFIGHT } from '../../config.js';
-import { BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, fortRam, haptic, hitsHull, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip } from '../hub.js';
+import { BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, fortRam, haptic, hitsHull, ramBlock, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip } from '../hub.js';
 
 // ----------------------------- PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap -----------------------------
 export const HULL_HW=1.52, HULL_HL=2.05;                                            // hull half-width / half-length (model units, × tank scale)
@@ -89,6 +89,7 @@ export function separateTanks(now){
         else if(closing > 4 && hitsHull(p, bl.x, bl.z, bl.r+0.1)) { driveHint('LÙI LẠI · LẤY ĐÀ ĐỂ LEO'); tip('climb'); } } }
     const vn=tankVsCircle(p, bl.x, bl.z, bl.r);
     if(bl.fort && vn>0) fortRam(bl, vn, p);                                                          // Z107 ram a fortress gate / wall section
+    else if(vn>0 && ramBlock(bl, vn, p)){ S.shake=Math.min(2.6,S.shake+0.5); if(!blocks.includes(bl)){ p.vel.x*=0.75; p.vel.z*=0.75; } }   // Z107 ram anything else breakable (flimsy: one hit)
     if(vn>9){ S.shake=Math.min(2.5,S.shake+vn*0.03); p.hitT=Math.max(p.hitT||0,0.12); burst({x:bl.x,z:bl.z}, BIOME.ground, 3, 2.5, {y:0.6, life:0.7, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); sfx('thud'); haptic(20); }
     for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r);
     if(boss&&boss.alive){ const bv=tankVsCircle(boss, bl.x, bl.z, bl.r); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact && bl.kind!=='pylon') stunBoss(performance.now()/1000, boss.def.name+' đâm vào vật cản — nó đang choáng!'); } }
