@@ -1,6 +1,6 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
-import { TROOPS, SQUAD } from '../../config.js';
+import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
 import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
@@ -90,8 +90,10 @@ function allyThink(a, now){
     a.goalKind='fight'; return; }
   const loot=nearestFreePickup(a); if(loot){ loot.claim=a; a.loot=loot; a.task='fetch'; a.goal=[loot.x, loot.z]; a.goalKind='fetch'; return; }
   const job=zoneJob(a); if(job){ a.task=job.kind; a.goal=[job.x, job.z]; a.goalKind=job.kind; a.job=job; return; }
-  const front=nearestAnyEnemy(a, SQUAD.huntR); if(front){ a.task='advance'; const qx=front.pos.x-a.pos.x, qz=front.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1;
+  const front=nearestAnyEnemy(a, SQUAD.huntR); if(front && a.hold && Math.hypot(front.pos.x-a.hold[0], front.pos.z-a.hold[1]) > DEPLOY.holdR) { a.task='post'; a.goal=a.hold; a.goalKind='post'; return; }   // Z105 posted men hold their sector
+  if(front){ a.task='advance'; const qx=front.pos.x-a.pos.x, qz=front.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1;
     a.goal=[front.pos.x-qx/qd*F.range*0.8, front.pos.z-qz/qd*F.range*0.8]; a.goalKind='advance'; return; }
+  if(a.hold){ a.task='post'; if(!a.post || now>(a.postAt||0)){ const ang=Math.random()*6.283, r=1+Math.random()*5; a.post=[a.hold[0]+Math.sin(ang)*r, a.hold[1]+Math.cos(ang)*r]; a.postAt=now+5+Math.random()*4; } a.goal=a.post; a.goalKind='post'; return; }   // Z105 quiet → back to his post
   a.task='post'; if(!a.post || now>(a.postAt||0) || Math.hypot(a.post[0]-p.pos.x, a.post[1]-p.pos.z) > F.patrol[1]*1.6){   // quiet field → regroup around the tank
     const ang=Math.random()*6.283, r=F.patrol[0]+Math.random()*(F.patrol[1]-F.patrol[0]); a.post=[p.pos.x+Math.sin(ang)*r, p.pos.z+Math.cos(ang)*r]; a.postAt=now+4+Math.random()*3; }
   a.goal=a.post; a.goalKind='post'; }

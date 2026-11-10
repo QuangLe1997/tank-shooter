@@ -1,6 +1,6 @@
 // world/zones.js — Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered
 import { DEPOT, POW, RALLY } from '../../config.js';
-import { ARENA, S, buildDepots, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearPOWs, clearRally, depotJob, enemies, enemyPool, freeEnemyBar, powJob, spawnEnemy } from '../hub.js';
+import { ARENA, DEPOTS, POWS, RALLY_PT, S, buildDepots, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearPOWs, clearRally, depotJob, enemies, enemyPool, freeEnemyBar, powJob, spawnEnemy } from '../hub.js';
 
 export const ZONES=[];   // { kind:'rally'|'pow'|'arms'|'motor', x, z, r }
 export function inZone(x, z, pad){ for(const q of ZONES) if(Math.hypot(q.x-x, q.z-z) < q.r+(pad||0)) return true; return false; }
@@ -18,7 +18,10 @@ export function planZones(){
     if(s) ZONES.push({ kind, x:s[0], z:s[1], r:DEPOT.r }); }
 }
 // called last in buildBlocks(): raise the installations on the reserved ground
-export function buildZones(){ clearZoneGuards(); buildRally(); buildPOWs(); buildDepots(); }
+export function buildZones(){ clearZoneGuards(); buildRally(); buildPOWs(); buildDepots();
+  if(RALLY_PT.g) freezeStatic(RALLY_PT.g); for(const w of POWS) freezeStatic(w.g); for(const d of DEPOTS){ freezeStatic(d.g); for(const m of d.g.userData.extra) freezeStatic(m); } }
+// Z105 PERF: static scenery computes its matrices once; anything flagged userData.live (bobbing badges, rings) keeps updating
+export function freezeStatic(root){ root.traverse(o=>{ if(o.userData && o.userData.live) return; o.updateMatrix(); o.matrixAutoUpdate=false; }); root.updateMatrixWorld(true); }
 export function clearZones(){ clearZoneGuards(); clearRally(); clearPOWs(); clearDepots(); clearAllyTanks(); }
 // a soldier with nothing urgent asks for work: capture an open depot, free an open stockade
 export function zoneJob(a){ return depotJob(a) || powJob(a); }

@@ -74,6 +74,7 @@ export * from './campaign/artillery.js';
 export * from './loot/powerups.js';
 export * from './loot/upgrades.js';
 export * from './ui/briefing.js';
+export * from './ui/deploy.js';
 export * from './game/flow.js';
 export * from './ui/menus.js';
 export * from './ui/terrain-picker.js';

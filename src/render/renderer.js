@@ -24,6 +24,12 @@ renderer.toneMappingExposure = 1.08;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 if(!MOBILE){ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }  // real shadows on desktop
 app.appendChild(renderer.domElement);
+// Z105 PERF: the per-frame scene matrix update skips HIDDEN subtrees — pools of spare enemy tanks, wrecks, bullets and debris
+// (thousands of nodes late in a run) no longer recompose their matrices every frame. A hidden object catches up the moment it
+// is shown again (its own updateMatrix() flags it); getWorldPosition() and friends still update on demand, so game code is unaffected.
+{ const P=THREE.Object3D.prototype, _umw=P.updateMatrixWorld;
+  P.updateMatrixWorld=function(force){ if(this.visible===false){ if(force) this.matrixWorldNeedsUpdate=true; return; } return _umw.call(this, force); }; }
+
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(BIOME.fog);
 scene.fog = new THREE.FogExp2(BIOME.fog, 0.0075);

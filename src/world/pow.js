@@ -25,7 +25,7 @@ function buildStockade(q){ const g=new THREE.Group(); scene.add(g); const R=q.r*
   const men=[]; const n=POW.prisoners[0]+((Math.random()*(POW.prisoners[1]-POW.prisoners[0]+1))|0);
   for(let k=0;k<n;k++){ const s=makeSoldierMesh(); s.scale.setScalar(TROOPS.look.scale); const [px,pz]=rot((k-(n-1)/2)*1.5, R*0.15+(k%2)*0.8);
     s.position.set(px, heightAt(px,pz), pz); s.rotation.y=gateA+Math.PI+(Math.random()-0.5)*0.6; kneel(s, true); s.userData.gun.visible=false; g.add(s); men.push(s); }
-  const badge=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#ffcf5a'), transparent:true, depthWrite:false })); badge.scale.set(2.4,2.4,1); badge.position.set(q.x, gy+5.4, q.z); g.add(badge);
+  const badge=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#ffcf5a'), transparent:true, depthWrite:false })); badge.scale.set(2.4,2.4,1); badge.position.set(q.x, gy+5.4, q.z); badge.userData.live=true; g.add(badge);
   const gate=rot(0, R+1.5);
   return { g, men, badge, gate, gateA }; }
 function kneel(s, on){ const u=s.userData, L=u.legs; if(on){ u.up.position.y=0.5; L[0].hip.rotation.x=-1.35; L[0].knee.rotation.x=1.35; L[1].hip.rotation.x=0.25; L[1].knee.rotation.x=1.7; u.up.rotation.x=0.25; }

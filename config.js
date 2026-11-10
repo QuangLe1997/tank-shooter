@@ -301,6 +301,9 @@ export const SQUAD = {
   sapper: { plant: 2.6, fuse: 2.4, reach: 50, safe: 10 },                                        // sapper: runs to a watchtower / camp hut, plants a charge, gets clear → it comes down
   mix: ['rifle','rifle','mg','rifle','sapper','rifle','mortar','rifle'],
 };
+// Z105 DEPLOYMENT (before every stage): how many specialists you may field, and where posted men hold
+export const DEPLOY = { roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1, 2, 2], sapper: [1, 1, 2, 2, 2] }, holdR: 30, stage: 0.62 };   // stage = staging point at this fraction of the way to an enemy site
+
 // Z104 BATTLEFIELD ZONES (world/zones.js plans the ground before cover is scattered)
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
 export const POW = { perStage: [1, 1, 2, 2, 2], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };

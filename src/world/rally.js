@@ -14,7 +14,7 @@ export function buildRally(){ clearRally(); const q=zonesOf('rally')[0]; if(!q) 
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,5.6,6), new THREE.MeshStandardMaterial({ color:0x2a2a24, roughness:0.8 })); pole.position.set(x+R*0.7, gy+2.8, z-R*0.7); g.add(pole);
   const fl=makeFlag(rallyFlagTex(),1.6,1.0,1); fl.position.set(x+R*0.7, gy+5.0, z-R*0.7); g.add(fl);
   for(const [ox,oz,ry] of [[-R*0.75,R*0.35,0.3],[-R*0.62,R*0.62,1.2],[R*0.2,R*0.85,2.1]]){ const c=makeCoverMesh('crates', false); c.scale.setScalar(0.42); c.position.set(x+ox, heightAt(x+ox,z+oz), z+oz); c.rotation.y=ry; g.add(c); }
-  const badge=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#9be04a'), transparent:true, depthWrite:false })); badge.scale.set(2.2,2.2,1); badge.position.set(x, gy+5.6, z); g.add(badge);
+  const badge=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#9be04a'), transparent:true, depthWrite:false })); badge.scale.set(2.2,2.2,1); badge.position.set(x, gy+5.6, z); badge.userData.live=true; g.add(badge);
   Object.assign(RALLY_PT, { x, z, g, ring, badge }); }
 export function clearRally(){ if(RALLY_PT.g){ unwave(RALLY_PT.g); scene.remove(RALLY_PT.g); } RALLY_PT.g=null; }
 export function rallySpot(){ const a=Math.random()*6.283, r=Math.random()*RALLY.r*0.55; return [RALLY_PT.x+Math.cos(a)*r, RALLY_PT.z+Math.sin(a)*r]; }

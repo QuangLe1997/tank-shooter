@@ -85,6 +85,18 @@ Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3
 | Xe tăng đồng minh (`ALLY_TANK`) | 260 máu (xe nặng ×1,6, +15%/màn) · 30 dmg · tầm 30 · nạp 1,7 s · tối đa 3 | tự chọn mục tiêu (xe trước), về cạnh bạn khi hết địch (dây 58) |
 | Lính dù (`PARA`) | từ đợt 2 · mỗi 42–62 s (đt 55–80) · 4–6 lính (đt 3–4) · rơi 3,6 s | vòng đỏ báo trước chỗ tiếp đất · không thả khi sân đã quá đông |
 
+## 1f. Bố trí trận địa, tư thế & binh chủng, địa hình rõ nét (Z105)
+| Thông số | Giá trị | Ghi chú |
+|---|---|---|
+| Quân số khi bố trí | ghế trên xe (3 + nâng cấp, tối đa 7) + tổ bộ binh (6 + 0,8/màn) | mỗi màn tiếp tế đủ quân; lần sau nhớ cách chia |
+| Trọng điểm | đi cùng xe · giữ Lõi (≤6) · khu tập kết (≤4) · mỗi trại giam / kho (≤6) · hai cánh (≤5) | điểm tập kết dừng ở 62% đường tới mục tiêu địch; lính giữ khu vực bán kính 30 |
+| Binh chủng tối đa (`DEPLOY.roleMax`) | súng máy 1–2–2–2–3 · cối 0–1–1–2–2 · công binh 1–1–2–2–2 (theo màn) | phần còn lại là súng trường; dư → giao cho lính nhảy khỏi xe |
+| Súng máy (`SQUAD.mg`) | loạt 8 viên · 0,1 s/viên · nghỉ 1,8 s · 4,2 dmg · tầm 28 | luôn nằm bắn |
+| Cối (`SQUAD.mortar`) | 30 dmg (+12%/màn) · nổ 4 · tầm 12–44 · nạp 3,4 s · bay 1,5 s | ưu tiên cụm lính, tháp, nhà lính, xe |
+| Công binh (`SQUAD.sapper`) | đặt thuốc 2,6 s · ngòi 2,4 s · tìm mục tiêu trong 50 · chạy ra ≥ 10 | đánh sập tháp canh / nhà lính |
+| Tư thế (`SQUAD`) | lao 1–1,6 s rồi giữ 2,4–4,2 s · nằm bắn khi cách > 13 | nằm: bán kính trúng 0,42 (đứng 0,75); địch cũng nằm/quỳ |
+| Địa hình (`RELIEF`) | lõm tối + ẩm + che sáng · sườn dốc lộ đất · đỉnh/vành hố sáng hơn | máy tính: địa hình đổ bóng thật |
+
 ## 2. Rải quân (wave) — số lượng & loại địch
 
 **Số địch mỗi wave** = `floor(3 + wave + (stage-1)×1.5)`

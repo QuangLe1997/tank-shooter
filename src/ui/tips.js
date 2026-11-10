@@ -20,6 +20,7 @@ export const TIPS={
   elite:   ['star','Xe tinh nhuệ', 'Xe có hào quang vàng: trâu hơn, mạnh hơn nhưng <b>luôn rơi đồ quý</b> và +1 💎.'],
   core:    ['bunker','Lõi đang nguy!', 'Nếu <b>LÕI</b> bị phá là thua. Quay về đánh bật địch quanh Lõi, dùng kỹ năng <b>SỬA CHỮA</b> hoặc nhặt <b>SỬA CĂN CỨ</b>.'],
   boss:    ['alert','Trận đánh tướng', 'Tướng địch có <b>nhiều pha</b> và <b>điểm yếu</b>. Bắn vào <b>đuôi xe</b> gây thêm sát thương; phá các <b>bộ phận</b> (thanh nhỏ trên đầu) để vô hiệu đòn của nó. Khi nó <b>choáng</b> hoặc <b>xả nhiệt</b> — dồn hết hoả lực!'],
+  deploy:  ['team','Bố trí trận địa', 'Trước mỗi màn bạn <b>chia quân</b>: bao nhiêu người <b>đi cùng xe</b>, bao nhiêu <b>giữ Lõi</b>, áp sát <b>trại giam / kho</b>, giữ <b>hai cánh</b>. Chọn thêm <b>súng máy</b>, <b>cối</b>, <b>công binh</b> (đánh sập tháp canh). Lính được bố trí sẽ <b>giữ khu vực</b> của mình. Lần sau tự nhớ cách bố trí.'],
   pow:     ['team','Trại giam lính ta', 'Lính ta bị giam sau hàng rào thép gai. <b>Diệt hết lính canh</b>, rồi <b>lái xe tới cổng</b> (hoặc cho lính đi bộ vào): tù binh <b>lên xe</b> — đầy chỗ thì họ <b>cầm súng theo bạn</b>.'],
   depot:   ['bunker','Kho vũ khí & kho xe tăng', 'Diệt lính canh, rồi <b>thả lính xuống</b> trong vòng xanh vài giây để <b>chiếm kho</b>. Kho vũ khí phát <b>súng chống tăng</b> cho lính; kho xe tăng: lính ta <b>lái xe địch</b> và tự chiến đấu.'],
   rally:   ['spark','Khu tập kết', 'Lính nhặt được vật phẩm sẽ <b>mang về khu tập kết</b> (vòng xanh có cờ, bên phía ta). Đồ ở đó <b>không biến mất</b> — lái xe tới để nhận.'],
@@ -30,7 +31,7 @@ export const TIPS={
 };
 export const TIPQ=[]; export let _tipOpen=null;
 // Z104 only the notes that change how you play stop the battle; simple sightings stay quiet (still in the field manual)
-export const TIP_SHOW={ drive2:1, crew2:1, arty:1, atgm:1, core:1, boss:1, shield:1, pow:1, depot:1, rally:1, paradrop:1, allytank:1 };
+export const TIP_SHOW={ deploy:1, drive2:1, crew2:1, arty:1, atgm:1, core:1, boss:1, shield:1, pow:1, depot:1, rally:1, paradrop:1, allytank:1 };
 export function tip(id){ if(!TIPS[id] || !TIP_SHOW[id]) return; const P=PROFILE.tips||(PROFILE.tips={}); if(P[id] || TIPQ.includes(id) || _tipOpen===id) return; TIPQ.push(id); }
 export const TIP_URGENT={ arty:1, atgm:1, boss:1, shield:1, core:1 }; export let _tipNextAt=0;
 export function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing') return; const nowT=performance.now()/1000;

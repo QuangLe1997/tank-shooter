@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -435,6 +435,18 @@ for (const u of SHOP_UP) {
   ok(PARA.everyMobile[0]>=PARA.every[0], 'phones see drops no more often than desktop');
   ok(range(PARA.troops,1,10) && range(PARA.troopsMobile,1,PARA.troops[1]), 'paratroop stick size in range; phones no bigger than desktop');
   ok(PARA.alt>8 && PARA.fall>1 && PARA.speed>4 && PARA.gap>0.1, 'drops are visible: high enough, slow enough to react');
+  // Z105 ground relief, stances, specialists, deployment
+  ok(RELIEF.R>=1 && RELIEF.R<=8 && RELIEF.bowlK>0 && RELIEF.crestK>0 && RELIEF.slopeK>0, 'relief shading has a sane neighbourhood and ranges');
+  ok([RELIEF.bowlDark,RELIEF.bowlAO,RELIEF.crestLift,RELIEF.slopeEarth].every(v=>v>=0 && v<=1), 'relief strengths are 0–1 blends (never inverted or blown out)');
+  ok(RELIEF.bowlTint.length===3 && RELIEF.earth.length===3 && RELIEF.bowlTint.every(v=>v>0 && v<=1), 'relief tints are rgb multipliers ≤ 1 (hollows only ever get darker)');
+  ok(range(SQUAD.rush,0.2,4) && range(SQUAD.hold,0.5,10) && SQUAD.proneR>4, 'soldiers rush briefly, hold longer, go prone only at range');
+  ok(SQUAD.proneHitR < SQUAD.standHitR && SQUAD.proneHitR>0, 'a man lying flat is a smaller target than one standing');
+  ok(SQUAD.mg.burst>=3 && SQUAD.mg.gap<SQUAD.mg.pause && SQUAD.mg.range>TROOPS.fireteam.range, 'HMG fires bursts with pauses and outranges a rifle');
+  ok(SQUAD.mortar.min<SQUAD.mortar.max && SQUAD.mortar.aoe>1 && SQUAD.mortar.flight>0.5 && SQUAD.mortar.cd>1, 'mortar: min < max band, real blast, flight time, reload');
+  ok(SQUAD.sapper.plant>0.5 && SQUAD.sapper.fuse>0.5 && SQUAD.sapper.safe>3 && SQUAD.sapper.reach>10, 'sapper plants, gets clear, then it blows');
+  ok(SQUAD.mix.length>=4 && SQUAD.mix.every(r=>['rifle','mg','mortar','sapper'].includes(r)) && SQUAD.mix.filter(r=>r==='rifle').length*2>=SQUAD.mix.length, 'reinforcement mix uses known roles and stays mostly riflemen');
+  for(const k of ['mg','mortar','sapper']) ok(perStage(DEPLOY.roleMax[k]), `DEPLOY.roleMax.${k} defined for every stage`);
+  ok(DEPLOY.holdR>10 && DEPLOY.stage>0.2 && DEPLOY.stage<0.95, 'posted men hold a real sector; staging points stop short of the enemy site');
 }
 
 for (const id of Object.keys(GUN_PRICE)) {

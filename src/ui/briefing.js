@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, WAVE, barrelGrade, biomeVi, coachFirstRun, escapeHtml, floatText, gunLevel, hide, iconEl, magCap, opFor, playStageTransition, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
+import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, WAVE, barrelGrade, biomeVi, coachFirstRun, escapeHtml, floatText, gunLevel, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -28,8 +28,12 @@ export function openBriefing(opts){
   show('briefing'); sfx('powerup');
 }
 export function chooseContract(c){
-  S.contract=c; applyContractHUD(); hide('briefing'); S.mode='playing'; coachFirstRun();   // first-ever match → show coach toasts (once)
+  S.contract=c; applyContractHUD(); hide('briefing');
   const ctx=_brCtx||{}; _brCtx=null;
+  openDeploy(()=>beginStage(c, ctx));                                       // Z105 post the troops first, then the stage opens
+}
+export function beginStage(c, ctx){
+  S.mode='playing'; coachFirstRun();   // first-ever match → show coach toasts (once)
   WAVE.active=false; S.wave=0;
   const now=performance.now()/1000;
   playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0'))); WAVE.betweenUntil=now+2.8;   // Z84: every operation opens with its mission card
