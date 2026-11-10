@@ -85,6 +85,7 @@ export * from './ui/settings.js';
 export * from './ui/loadout.js';
 export * from './ui/shop-info.js';
 export * from './ui/shop.js';
+export * from './ui/showroom.js';
 export * from './core/helpers.js';
 export * from './game/update.js';
 export * from './game/intro.js';

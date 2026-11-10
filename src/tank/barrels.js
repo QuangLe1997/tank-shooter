@@ -173,11 +173,14 @@ export function makeGunBarrel(id){
 export function gunTier(id){ const pr=GUN_PRICE[id]; if(!pr) return 0; if(pr.d) return 4; const c=pr.c||0; return c<=1700?1:c<=3000?2:3; }
 export function barrelGrade(id){ let lv=1; try{ lv=gunLevel(id)||1; }catch(e){} return Math.max(0, Math.min(6, gunTier(id) + (lv-1))); }
 export function disposeBarrel(grp){ if(!grp) return; grp.traverse(o=>{ if(o.isMesh){ o.geometry.dispose(); if(o.material&&o.material.dispose) o.material.dispose(); } }); }
-export function setPlayerBarrel(id){
-  const p=S.player; if(!p||!p.mesh) return; const ud=p.mesh.userData;
+// mount a gun's real barrel (+ turret mount) on ANY tank built by buildTank — the player in battle, the showroom tank in the shop
+export function mountBarrel(mesh, id){ const ud=mesh.userData;
   if(ud.barrelG){ ud.barrelG.parent && ud.barrelG.parent.remove(ud.barrelG); disposeBarrel(ud.barrelG); }
   if(ud.gunMount){ ud.turret.remove(ud.gunMount); disposeBarrel(ud.gunMount); ud.gunMount=null; }
-  const ng=makeGunBarrel(id); ng.position.set(0,-0.02,-TRUNNION_Z); ud.gunPivot.add(ng); ud.barrelG=ng; p.muzzle=ng.userData.muzzle;
+  const ng=makeGunBarrel(id); ng.position.set(0,-0.02,-TRUNNION_Z); ud.gunPivot.add(ng); ud.barrelG=ng;
   if(ng.userData.mount){ ud.turret.add(ng.userData.mount); ud.gunMount=ng.userData.mount; }
   ud.rig.recoilLen=ng.userData.recoilLen; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
+  return ng; }
+export function setPlayerBarrel(id){
+  const p=S.player; if(!p||!p.mesh) return; const ng=mountBarrel(p.mesh, id); p.muzzle=ng.userData.muzzle;
 }

@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, VIEW, __set_BEST, __set_soldierLvl, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, effGrade, escapeHtml, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunXpToNext, hide, ownGun, payCost, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, sfx, show, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunXpToNext, hide, ownGun, payCost, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, show, showSalvo, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -16,26 +16,12 @@ export function shopModel(){
 }
 export const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', SUPPORT:'drone' };
 export function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
-// ===== 3D showroom: a dark studio + spotlight + turntable; the focused item rotates on a pedestal =====
+// ===== 3D showroom (Z107): the shop scene is dressed as a patch of the current battlefield by ui/showroom.js — your own tank,
+// the real barrel of each gun, the battlefield's sky / ground / sun. This module keeps the scene + camera and the shop logic. =====
 export const shopScene = new THREE.Scene();
 shopScene.background = new THREE.Color(0x05070b);
-shopScene.fog = new THREE.Fog(0x05070b, 11, 26);
-export const shopCam = new THREE.PerspectiveCamera(40, innerWidth/Math.max(1,innerHeight), 0.1, 80);
-shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
-(function(){
-  shopScene.add(new THREE.AmbientLight(0x5a6478, 1.15));
-  const key=new THREE.SpotLight(0xffffff, 130, 30, 0.7, 0.5, 1.1); key.position.set(2.6,9.5,5.4); key.target.position.set(0,1.4,0); shopScene.add(key, key.target);
-  const fill=new THREE.PointLight(0xdfe9ff, 40, 30); fill.position.set(0,2.6,8.5); shopScene.add(fill);   // front fill so the camera-facing side reads clearly
-  const a=new THREE.PointLight(0x6fb6ff, 50, 22); a.position.set(-5.5,3,-1); shopScene.add(a);
-  const b=new THREE.PointLight(0xffc25a, 38, 22); b.position.set(5.5,2.2,-2); shopScene.add(b);
-  const disc=new THREE.Mesh(new THREE.CylinderGeometry(2.7,3.0,0.34,56), new THREE.MeshStandardMaterial({color:0x10131b,metalness:.75,roughness:.5}));
-  disc.position.y=-0.17; shopScene.add(disc);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.72,0.05,12,72), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffce4a,emissiveIntensity:2.4,roughness:.4}));
-  ring.rotation.x=Math.PI/2; ring.position.y=0.03; shopScene.add(ring); shopScene._ring=ring;
-  const glow=new THREE.Mesh(new THREE.CircleGeometry(2.55,48), new THREE.MeshBasicMaterial({color:0xffce4a,transparent:true,opacity:0.1,blending:THREE.AdditiveBlending,depthWrite:false}));
-  glow.rotation.x=-Math.PI/2; glow.position.y=0.04; shopScene.add(glow); shopScene._glow=glow;   // rarity-tinted floor glow (set per item)
-  const grid=new THREE.GridHelper(48, 48, 0x1a3a52, 0x0c1622); grid.position.y=-0.34; shopScene.add(grid);
-})();
+export const shopCam = new THREE.PerspectiveCamera(34, innerWidth/Math.max(1,innerHeight), 0.1, 120);
+shopCam.position.set(0, 3.6, 11); shopCam.lookAt(0, 1.35, 0);
 export const _shMetal=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:.36});
 export const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:2.1,metalness:.4,roughness:.4});
 export const _shopRay=new THREE.Raycaster();
@@ -129,6 +115,7 @@ export function buildUpgradeModel(item){
 export function disposeObj(o){ o.traverse&&o.traverse(c=>{ if(c.geometry)c.geometry.dispose(); if(c.material){ (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{ if(m.map)m.map.dispose(); m.dispose&&m.dispose(); }); } }); }
 // GUN_BLURB / UP_BLURB now imported from config.js
 export function itemBlurb(it){ return it.type==='gun' ? (GUN_BLURB[it.id]||'') : (UP_BLURB[it.key]||''); }
+export let _focusAt=0;
 export let shopOpen=false, shopDetail3D=false, shopCats=[], activeCat='', shopList=[], shopIdx=0, shopHero=null, _shopT=0;
 export function shopRefreshData(){ shopCats=shopModel(); if(!shopCats.find(c=>c.cat===activeCat)) activeCat=shopCats.length?shopCats[0].cat:''; shopList=(shopCats.find(c=>c.cat===activeCat)||{items:[]}).items; }
 export function buildShopTabs(){ const tb=document.getElementById('shopTabs'); if(!tb) return; tb.innerHTML='';
@@ -149,10 +136,14 @@ export function renderCaseGrid(){
       extra='<div class="case-role" style="--rc:'+r.col+'">'+r.tx+'</div><div class="case-bars">'+bar('ST', n.dmg/M.dmg)+bar('NHỊP', n.rof/M.rof)+bar('TẦM', n.rng/M.rng)+'</div>'; }
     else { let pips=''; for(let k=0;k<it.max;k++) pips+='<i class="'+(k<it.level?'on':'')+'"></i>'; extra='<div class="case-role up">'+escapeHtml(it.per||'')+'</div><div class="case-pips">'+pips+'</div>'; }
     const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
-    c.innerHTML='<span class="case-badge">'+badge+'</span><div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'+
+    const disp = it.type==='gun'                                                                          // Z107 guns: a photo of YOUR tank carrying that gun
+      ? '<div class="case-disp photo'+(thumbURL(it.id)?' shot-ok':'')+'"><img class="case-shot" data-thumb="'+it.id+'" alt="" src="'+(thumbURL(it.id)||'data:image/gif;base64,R0lGODlhAQABAAAAACw=')+'"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'
+      : '<div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>';
+    c.innerHTML='<span class="case-badge">'+badge+'</span>'+disp+
       '<div class="case-nm">'+it.name+'</div>'+extra+'<div class="case-price">'+price+'</div>';
     tapEl(c, ()=>openDetail(i)); grid.appendChild(c);
   });
+  queueThumbs(shopList.filter(it=>it.type==='gun').map(it=>it.id));
 }
 export function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
 export function shopStats(it){
@@ -213,25 +204,20 @@ export function updateShopInfo(){
   refreshWallet();
 }
 export function spawnShopHero(){
-  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  setShowEmblem(null); shopHero=null;
   const it=shopList[shopIdx]; if(!it) return;
-  shopHero = it.type==='gun' ? buildGunModel(it.id) : buildUpgradeModel(it);
-  shopHero.position.y = it.type==='gun' ? 1.55 : 0.15;
-  shopHero.rotation.y = -0.55;
-  shopScene.add(shopHero);
-  const rc=RAR_COL[it.rar]||0xffce4a;                       // light the whole pedestal in the item's rarity colour
-  if(shopScene._ring){ shopScene._ring.material.emissive.setHex(rc); shopScene._ring.material.emissiveIntensity=2.0; }
-  if(shopScene._glow) shopScene._glow.material.color.setHex(rc);
+  if(it.type==='gun') setShowGun(it.id);                                       // the real barrel of this gun, on your tank
+  else { setShowGun(currentGunId()); shopHero=setShowEmblem(buildUpgradeModel(it)); }   // upgrades: your tank as it is now + the upgrade emblem
   updateShopInfo();
 }
-export function showGrid(){ shopDetail3D=false; renderPass.scene=shopScene; renderPass.camera=shopCam;   // clean dark studio behind the cabinet
-  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+export function showGrid(){ shopDetail3D=false; renderPass.scene=shopScene; renderPass.camera=shopCam;   // your tank parked behind the cabinets
+  setShowEmblem(null); shopHero=null; setShowGun(currentGunId()); document.body.classList.remove('shopdetail');
   document.getElementById('caseGrid').classList.remove('hidden'); document.getElementById('shopHint').classList.remove('hidden');
   document.getElementById('shopDone').classList.remove('hidden'); document.getElementById('shopDetailView').classList.add('hidden'); }
 export function openDetail(i){ shopIdx=i;
   document.getElementById('caseGrid').classList.add('hidden'); document.getElementById('shopHint').classList.add('hidden');
   document.getElementById('shopDone').classList.add('hidden'); document.getElementById('shopDetailView').classList.remove('hidden');
-  renderPass.scene=shopScene; renderPass.camera=shopCam; shopDetail3D=true; spawnShopHero(); sfx('click'); }
+  renderPass.scene=shopScene; renderPass.camera=shopCam; shopDetail3D=true; document.body.classList.add('shopdetail'); _focusAt=0; spawnShopHero(); sfx('click'); }
 export function backToGrid(){ shopRefreshData(); renderCaseGrid(); showGrid(); sfx('click'); }
 export function shopGo(d){ if(!shopList.length) return; shopIdx=(shopIdx+d+shopList.length)%shopList.length; sfx('click'); spawnShopHero(); }
 export function buyShop(it){
@@ -247,21 +233,21 @@ export function buyShop(it){
     } }
   else { payCost(it.cost); ownGun(it.id); }
   saveProfile(); sfx('powerup'); refreshStartUI();
-  if(shopScene._ring){ shopScene._ring.material.emissiveIntensity=5; }                  // purchase flash on the pedestal ring
   const key = it.type==='gun'?('g:'+it.id):('u:'+it.key);
   shopRefreshData(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);
-  if(shopDetail3D) spawnShopHero(); else renderCaseGrid();
+  if(shopDetail3D){ spawnShopHero(); if(it.type==='gun') showSalvo(); } else renderCaseGrid();   // Z107 a new gun: the tank fires it three times
 }
-export function openShop(){ shopOpen=true; document.body.classList.add('shopopen'); shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); hide('start'); show('shop'); refreshWallet(); sfx('click'); }
-export function closeShop(){ shopOpen=false; shopDetail3D=false; document.body.classList.remove('shopopen'); renderPass.scene=scene; renderPass.camera=camera;
-  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+export function openShop(){ shopOpen=true; document.body.classList.add('shopopen'); dressShowroom(); if(SHOW.bloom0==null) SHOW.bloom0=bloom.strength; bloom.strength=SHOW.bloom0*0.5; shopRefreshData();   // Z107 softer glow in daylight close-ups
+  buildShopTabs(); renderCaseGrid(); showGrid(); hide('start'); show('shop'); refreshWallet(); sfx('click'); }
+export function closeShop(){ shopOpen=false; shopDetail3D=false; document.body.classList.remove('shopopen','shopdetail'); renderPass.scene=scene; renderPass.camera=camera; if(SHOW.bloom0!=null) bloom.strength=SHOW.bloom0;
+  setShowEmblem(null); shopHero=null;
   saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
 export function shop3dUpdate(dt){
   _shopT += dt;
-  if(shopHero){ shopHero.rotation.y += dt*0.65; if(shopHero._spinPart) shopHero._spinPart.rotation.x += dt*3.2;
-    if(shopHero._aura){ shopHero._aura.rotation.x += dt*1.1; shopHero._aura.rotation.z += dt*0.7; }   // tumbling VIP/tier energy field
-    shopHero.position.y += Math.sin(_shopT*1.6)*0.0018; }
-  if(shopScene._ring){ shopScene._ring.rotation.z += dt*0.4; const e=shopScene._ring.material; if(e.emissiveIntensity>2.0) e.emissiveIntensity=Math.max(2.0, e.emissiveIntensity-dt*8); }
+  if(_shopT>_focusAt){ _focusAt=_shopT+0.5; const sp=document.getElementById('siPanel');   // keep the tank clear of the stat panel (measured twice a second, not every frame)
+    SHOW.focusX = shopDetail3D && sp && sp.offsetParent ? (sp.getBoundingClientRect().right/Math.max(1,VIEW.w))*0.42 : 0; }
+  updateShowroom(dt, shopDetail3D);
+  if(!shopDetail3D) pumpThumbs();                                              // one card photo per frame (drawn over by this frame's render)
 }
 tapBtn('shopBtn', openShop);
 tapBtn('shopDone', closeShop);
@@ -269,12 +255,6 @@ tapBtn('shopBack', backToGrid);
 tapBtn('shopPrev', ()=>shopGo(-1));
 tapBtn('shopNext', ()=>shopGo(1));
 tapBtn('si-buy', ()=>buyShop());
-addEventListener('pointerdown', e=>{        // in the detail view, click the 3D item itself to buy it
-  if(!shopDetail3D) return;
-  if(e.target.closest && e.target.closest('.shop-info,.shop-tab,.shop-arrow,.shop-back,.w-chip,#shopTabs')) return;
-  _shopRay.setFromCamera({x:(e.clientX/VIEW.w)*2-1, y:-(e.clientY/VIEW.h)*2+1}, shopCam);
-  if(shopHero && _shopRay.intersectObject(shopHero, true).length) buyShop();
-});
 addEventListener('pagehide', saveProfile);
 addEventListener('visibilitychange', ()=>{ if(document.hidden) saveProfile(); });
 // ---- continue / reset (tap-to-arm, no native dialog) ----

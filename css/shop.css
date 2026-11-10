@@ -142,3 +142,39 @@ body.touch .shop-legend{font-size:8px;gap:7px;margin-top:3px;} body.touch #caseG
 body.touch .case-bars .cb{font-size:7px;} body.touch .case-role{font-size:8px;}
 @media (max-height:520px){ .shop-legend{display:none;} body.touch #caseGrid{top:calc(max(8px,env(safe-area-inset-top)) + 78px);max-height:calc(100% - 112px);} }
 .case-price .pr{display:inline-flex;align-items:center;gap:5px;} .si-buy.cant small{display:inline-flex;align-items:center;gap:3px;font-size:11px;opacity:.85;margin-left:4px;} .si-buy.cant small .ic{width:12px;height:12px;}
+
+/* ---- Z107 REAL SHOWROOM: your tank on the battlefield behind the shop; photo cards; detail = stats left · tank centre · price card right ---- */
+.overlay.shop3d{background:linear-gradient(180deg,rgba(3,5,8,.55) 0%,rgba(3,5,8,0) 22%,rgba(3,5,8,0) 70%,rgba(3,5,8,.5) 100%);}
+body.shopopen:not(.shopdetail) .overlay.shop3d{background:linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,8,.42) 40%,rgba(3,5,8,.62));}
+.case-disp.photo{height:96px;padding:0;background:#0b0f14;}
+.case-disp.photo::after{display:none;}
+.case-disp.photo .case-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;}
+.case-disp.photo.shot-ok .case-shot{opacity:1;}
+.case-disp.photo .case-ic{transition:all .3s;}
+.case-disp.photo.shot-ok .case-ic{position:absolute;left:6px;bottom:6px;width:20px;height:20px;padding:3px;border-radius:6px;background:rgba(0,0,0,.55);filter:none;}
+.case-disp.photo::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -26px 22px -14px rgba(0,0,0,.55);border-radius:11px;}
+.case-disp.photo .case-ic{z-index:2;}
+body.touch .case-disp.photo{height:74px;}
+/* detail view */
+body.shopdetail .shop-tabs,body.shopdetail .shop-legend{display:none;}
+body.shopdetail .shop-top{gap:4px;}
+#shopDetailView .si-panel{top:calc(max(12px,env(safe-area-inset-top)) + 62px);bottom:max(14px,env(safe-area-inset-bottom));transform:none;
+  left:max(14px,env(safe-area-inset-left));width:clamp(220px,25vw,280px);overflow-y:auto;overscroll-behavior:contain;gap:8px;}
+#shopDetailView .si-panel::-webkit-scrollbar{width:4px;} #shopDetailView .si-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:2px;}
+#shopDetailView .shop-info{left:auto;right:max(14px,env(safe-area-inset-right));transform:none;width:min(400px,36vw);align-items:stretch;text-align:left;}
+#shopDetailView .shop-info .si-stats{justify-content:flex-start;}
+#shopDetailView .si-buy{align-self:stretch;}
+#shopDetailView .si-pos{text-align:center;}
+#shopDetailView .shop-arrow.prev{left:calc(max(14px,env(safe-area-inset-left)) + clamp(220px,25vw,280px) + 14px);}
+.shop-drag{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);font-size:9.5px;letter-spacing:2px;color:rgba(255,255,255,.55);text-transform:uppercase;pointer-events:none;text-shadow:0 1px 3px #000;}
+@media(max-width:720px){ #shopDetailView .si-panel{display:flex;} }
+@media (max-height:520px){
+  body.shopdetail .shop-ttl{font-size:15px;letter-spacing:4px;}
+  #shopDetailView .si-panel{top:calc(max(8px,env(safe-area-inset-top)) + 50px);bottom:max(8px,env(safe-area-inset-bottom));width:min(36vw,250px);padding:10px 12px 12px;gap:6px;}
+  #shopDetailView .si-panel .sp-note{display:none;}
+  #shopDetailView .shop-info{width:min(42vw,330px);padding:9px 12px 10px;gap:4px;bottom:max(8px,env(safe-area-inset-bottom));}
+  #shopDetailView .si-desc,#shopDetailView .si-stats{display:none;}
+  #shopDetailView .si-name{font-size:19px;} #shopDetailView .si-buy{padding:9px 14px;font-size:14px;margin-top:2px;}
+  #shopDetailView .shop-arrow{width:42px;height:42px;} #shopDetailView .shop-arrow.prev{left:calc(max(8px,env(safe-area-inset-left)) + min(36vw,250px) + 10px);}
+  .shop-drag{display:none;}
+}
