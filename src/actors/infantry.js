@@ -53,7 +53,7 @@ export function updateInfantry(e, dt, now, edt){
       const a=Math.atan2(dx,dz)+(Math.random()-0.5)*Math.max(0.05, A.spreadBase*(1-ds*A.spreadDrop)*1.25)*(ENVMOD.night?ENV.night.enemySpread:1)*smokeSpread(now);
       spawnBullet(_cv.x,_cv.z,a,{owner:'e', dmg:def.dmg*dmgMul, speed:def.bspeed, color:0xffd06a, r:0.22, life:1.6, maxDist:def.range+3, noArc:true, y:_cv.y, dropTo:1.3});
       spawnPart(_cv.x,_cv.y,_cv.z, Math.sin(a)*5,0.3,Math.cos(a)*5, {tex:'flash', color:0xfff0c0, size:0.5, life:0.05, grav:0, drag:8});
-      sfx('enemyShoot', e.pos); fired=true; e.fireAt=now+def.fireCd*(0.8+Math.random()*0.5)*(A.rateBase-A.rateDrop*ds)/1.6; } }
+      sfx('rifleShot', e.pos); fired=true; e.fireAt=now+def.fireCd*(0.8+Math.random()*0.5)*(A.rateBase-A.rateDrop*ds)/1.6; } }
   if(e.aimT>0){ e.aimT-=dt;
     if(Math.random()<0.5){ u.muzzle.getWorldPosition(_cv); spawnPart(_cv.x,_cv.y,_cv.z,0,0,0,{tex:'flash', color:0xff3a2a, size:0.55+Math.random()*0.3, life:0.06, grav:0, drag:0}); }   // red sight glint = incoming
     if(e.aimT<=0){ u.muzzle.getWorldPosition(_cv);

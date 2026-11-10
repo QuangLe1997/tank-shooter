@@ -32,7 +32,7 @@ export function collideTanks(a, b, now){
     for(let i=0;i<Math.min(14,Math.round(imp*0.8));i++){ const sa=Math.random()*6.283, sp=_R(4,10); spawnPart(mx,_R(0.8,1.6),mz, Math.cos(sa)*sp+tx*_R(-4,4), _R(1,5), Math.sin(sa)*sp+tz*_R(-4,4), {color:Math.random()<0.6?0xffd27a:0xfff2c0, size:_R(0.14,0.3), life:_R(0.15,0.35), grav:-14, drag:2}); }   // steel-on-steel sparks
     burst({x:mx,z:mz}, BIOME.ground, 2, 2, {y:0.5, life:0.7, size:1.4, smoke:true, grav:-0.3, drag:2, up:1, op:0.35});
     a.hitT=Math.max(a.hitT||0, Math.min(0.22, imp*0.012)); b.hitT=Math.max(b.hitT||0, Math.min(0.22, imp*0.012));
-    if(a===S.player||b===S.player){ S.shake=Math.min(3, S.shake+imp*0.04); sfx('clang'); haptic(Math.min(40, imp*2)); } }
+    if(a===S.player||b===S.player){ S.shake=Math.min(3, S.shake+imp*0.04); sfx('clang', {x:mx,z:mz}, imp/16); haptic(Math.min(40, imp*2)); } }
   return imp;
 }
 // Z85 RAM DAMAGE — a collision only hurts once the closing speed beats DRIVE.ram.minImpact. Each hull takes a share set by the OTHER's
@@ -78,7 +78,7 @@ export function separateTanks(now){
   for(const bl of blocks.slice()){                                                                       // tanks ↔ cover / boulders / walls (solid, deflecting)
     if(bl.obb){ const pv={x:p.vel.x,z:p.vel.z}, vn=tankVsWall(p, bl);                                    // Z86 masonry: momentum decides
       if(vn>0 && ramWall(p, bl, vn)){ p.vel.x=pv.x*0.62; p.vel.z=pv.z*0.62; S.shake=Math.min(3,S.shake+1.2); p.hitT=Math.max(p.hitT||0,0.2); haptic([40,30,60]); sfx('clang'); continue; }
-      if(vn>6){ S.shake=Math.min(2.5,S.shake+vn*0.04); p.hitT=Math.max(p.hitT||0,0.14); sfx('thud'); haptic(25); }
+      if(vn>6){ S.shake=Math.min(2.5,S.shake+vn*0.04); p.hitT=Math.max(p.hitT||0,0.14); sfx('thud', null, vn/12); haptic(25); }
       for(const a of enemies) if(solidTank(a)) tankVsWall(a, bl);
       if(boss&&boss.alive){ const bv=tankVsWall(boss, bl); if(bv>2 && blocks.includes(bl)){ ramWall(boss, bl, 99); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact) stunBoss(performance.now()/1000, boss.def.name+' húc vào tường — nó đang choáng, dồn hoả lực!'); } }   // the boss walks through masonry (and a charge into it stuns)
       continue; }

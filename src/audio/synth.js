@@ -16,8 +16,10 @@ export function audio(){
     BNZ=actx.createBuffer(1, sr*2, sr); { const d=BNZ.getChannelData(0); let l=0; for(let i=0;i<d.length;i++){ l=(l+0.02*(Math.random()*2-1))/1.02; d[i]=l*3.5; } }   // brown (rumble)
     const L=Math.floor(sr*2.2), ir=actx.createBuffer(2, L, sr);                                                                          // outdoor IR: sparse early slap-back + soft diffuse tail
     for(let c=0;c<2;c++){ const d=ir.getChannelData(c); let lp=0; for(let i=0;i<L;i++){ const t=i/sr; lp+= ((Math.random()*2-1) - lp)*0.18; d[i]=lp*Math.pow(1-t/2.2,3.2)*0.9; }
-      for(const [t,a] of [[0.045,0.5],[0.11,0.35],[0.19,0.22],[0.31,0.14]]){ const k=Math.floor((t+c*0.007)*sr); d[k]+=a; } }
+      for(const [t,a] of [[0.018,0.42],[0.033,0.3],[0.052,0.26],[0.08,0.2],[0.12,0.16]]){ const k=Math.floor((t+c*0.006)*sr); d[k]+=a; }   // ground + nearby walls
+      for(const [t,a] of [[0.34,0.18],[0.62,0.11],[0.95,0.07],[1.4,0.04]]){ const k0=Math.floor((t+c*0.013)*sr); let l2=0; for(let j=0;j<Math.floor(0.05*sr);j++){ l2+=((Math.random()*2-1)-l2)*0.06; d[k0+j]+=l2*a*Math.exp(-j/(0.012*sr))*3; } } }   // rolling echoes off distant hills (dull, low-passed)
     verb=actx.createConvolver(); verb.buffer=ir; verbSend=actx.createGain(); verbSend.gain.value=0.32; verbSend.connect(verb).connect(master);
+    setTimeout(()=>warmSounds(), 0);   // Z102 fill the sound bank in small slices after the first gesture
     shaper=actx.createWaveShaper(); { const n=1024, cu=new Float32Array(n); for(let i=0;i<n;i++){ const x=i/n*2-1; cu[i]=Math.tanh(x*2.6); } shaper.curve=cu; }
   }catch(e){} }
   if(actx && actx.state==='suspended'){ try{ actx.resume(); }catch(e){} }
@@ -54,47 +56,154 @@ export function noise(dur, {vol=0.2, delay=0, hp=400, lp=8000, type='bp', brown=
   let node=src.connect(f); if(dist && shaper){ const sh=a.createWaveShaper(); sh.curve=shaper.curve; node=node.connect(sh); }
   node.connect(g).connect(bus||_bus||master||a.destination); src.start(t0, Math.random()*1.5); src.stop(t0+dur+0.05);
 }
-// layered gunshot: supersonic CRACK + muzzle-blast BODY (saturated) + SUB thump + optional mechanism click
-export function gunshot(o, bus){
-  const c=o.crack||0, b=o.body||0.2, len=o.len||0.12;
-  if(c) noise(0.012+len*0.04, {vol:c, type:'hp', hp:2600, bus, attack:0.001});
-  noise(len, {vol:b, type:'lp', lp:o.lp||2200, sweepTo:(o.lp||2200)*0.35, bus, attack:0.002, dist:true});
-  if(o.sub) tone(o.subF||90, len*1.8, {type:'sine', vol:o.sub, slideTo:(o.subF||90)*0.42, bus});
-  if(o.click) tone(o.click, 0.03, {type:'square', vol:0.05, slideTo:o.click*0.6, bus, delay:o.clickDelay||0.04});
-  if(o.ring) tone(o.ring, 0.25, {type:'triangle', vol:0.05, slideTo:o.ring*0.9, bus, delay:0.01});
+// ===================================================================================================================
+// Z102 · SOUND BANK — physically-modelled one-shots, rendered once into AudioBuffers (no sample files, still zero-build).
+//   • muzzle BLAST = Friedlander pressure wave (instant rise, exponential decay, negative suction phase) — the "boom" ears expect
+//   • supersonic CRACK = a sub-millisecond N-wave · mechanism = modal clicks (damped inharmonic partials of small steel parts)
+//   • armour IMPACTS / hull COLLISIONS = modal synthesis of steel plates (partials 1 · 2.76 · 5.40 · 8.93) + spall/scrape noise
+//   • EXPLOSIONS = blast wave + brown-noise rumble + debris rain + dirt patter; size scales length and pitch
+//   • every sound has 4 variants and is played with ±5% pitch / ±10% gain jitter → automatic fire never sounds like a loop
+//   • distance: gain falloff, air-absorption low-pass and the speed of sound (far blasts arrive after the flash)
+// ===================================================================================================================
+const SR=()=> (actx?actx.sampleRate:44100);
+function _bq(x, type, f, q){                                    // RBJ biquad over a Float32Array (in place)
+  const sr=SR(), w=2*Math.PI*Math.min(f, sr*0.45)/sr, cs=Math.cos(w), sn=Math.sin(w), al=sn/(2*(q||0.707)); let b0,b1,b2,a0,a1,a2;
+  if(type==='lp'){ b0=(1-cs)/2; b1=1-cs; b2=(1-cs)/2; } else if(type==='hp'){ b0=(1+cs)/2; b1=-(1+cs); b2=(1+cs)/2; } else { b0=al; b1=0; b2=-al; }
+  a0=1+al; a1=-2*cs; a2=1-al; b0/=a0; b1/=a0; b2/=a0; a1/=a0; a2/=a0;
+  let x1=0,x2=0,y1=0,y2=0; for(let i=0;i<x.length;i++){ const v=x[i], y=b0*v+b1*x1+b2*x2-a1*y1-a2*y2; x2=x1; x1=v; y2=y1; y1=y; x[i]=y; } return x; }
+function _buf(sec){ return new Float32Array(Math.max(1, Math.floor(sec*SR()))); }
+function _add(dst, src, at, g){ const o=Math.floor((at||0)*SR()); for(let i=0;i<src.length && o+i<dst.length;i++) dst[o+i]+=src[i]*(g==null?1:g); return dst; }
+function _noise(sec, env){ const x=_buf(sec), n=x.length; for(let i=0;i<n;i++) x[i]=(Math.random()*2-1)*env(i/SR(), i/n); return x; }
+function _brown(sec, env){ const x=_buf(sec), n=x.length; let l=0; for(let i=0;i<n;i++){ l=(l+0.02*(Math.random()*2-1))/1.02; x[i]=l*3.5*env(i/SR(), i/n); } return x; }
+function _friedlander(sec, T, k){ const x=_buf(sec), sr=SR(), rise=Math.max(2, Math.floor(0.00025*sr)); for(let i=0;i<x.length;i++){ const t=i/sr; let v=(1-t/T)*Math.exp(-k*t/T); if(i<rise) v*=i/rise; x[i]=v; } return x; }
+function _modal(sec, f0, ratios, decays, amps, jit){ const x=_buf(sec), sr=SR(); const P=ratios.map((r,i)=>({ w:2*Math.PI*f0*r*(1+(Math.random()-0.5)*(jit||0.02)), d:decays[i], a:amps[i], ph:Math.random()*6.28 }));
+  for(let i=0;i<x.length;i++){ const t=i/sr; let v=0; for(const p of P) v+=p.a*Math.exp(-t/p.d)*Math.sin(p.w*t+p.ph); x[i]=v; } return x; }
+function _sat(x, drive){ for(let i=0;i<x.length;i++) x[i]=Math.tanh(x[i]*drive)/Math.tanh(drive); return x; }
+function _norm(x, peak){ let m=1e-6; for(let i=0;i<x.length;i++) m=Math.max(m, Math.abs(x[i])); const k=(peak||0.9)/m; for(let i=0;i<x.length;i++) x[i]*=k; return x; }
+const PLATE=[1, 2.76, 5.40, 8.93, 13.34];                        // free steel plate modes
+// --- recipes: each returns a mono Float32Array ---
+function rGun(o){                                                // o: { T blast length (s), k decay, lp body cutoff, crack, mech, tail, sub }
+  const len=o.len||0.6, x=_buf(len);
+  _add(x, _bq(_friedlander(len, o.T, o.k||5), 'lp', o.lp||3000), 0, 1.0);                                      // muzzle blast (pressure wave)
+  _add(x, _bq(_noise(o.T*6+0.05, (t)=>Math.exp(-t/(o.T*1.6+0.01))), 'lp', (o.lp||3000)*1.4), 0, 0.55);          // propellant gas turbulence
+  if(o.crack) _add(x, _bq(_noise(0.004, (t,u)=>1-u), 'hp', 2500), 0, o.crack);                                  // supersonic crack (N-wave snap)
+  if(o.sub) _add(x, _modal(o.T*14+0.1, o.subF||55, [1], [o.T*4+0.05], [1]), 0, o.sub);                          // chest thump
+  if(o.tail) _add(x, _bq(_brown(len, (t)=>Math.exp(-t/(o.tail))), 'lp', 700), 0.004, 0.5);                      // ground-reflected rumble
+  if(o.mech) _add(x, _modal(0.06, o.mech, PLATE, [0.012,0.008,0.006,0.004,0.003], [1,0.6,0.4,0.25,0.15], 0.06), o.mechAt||0.03, 0.18);   // bolt / breech click
+  if(o.ring) _add(x, _modal(len, o.ring, [1,2.76,5.4], [0.35,0.18,0.08], [0.6,0.3,0.15], 0.01), 0.002, 0.05);    // barrel ring (big guns)
+  return _norm(_sat(x, o.drive||2.2), 0.95); }
+function rExplosion(size){                                       // size 0.6 (grenade) … 1.6 (fuel dump / boss)
+  const len=1.2+size*1.6, x=_buf(len), T=0.006+size*0.012;
+  _add(x, _bq(_friedlander(len, T, 4), 'lp', 1800/size), 0, 1.0);                                                // blast wave
+  _add(x, _bq(_brown(len, (t)=>Math.exp(-t/(0.35+size*0.5))*(1-Math.exp(-t/0.01))), 'lp', 420), 0.01, 1.1);     // rolling rumble
+  _add(x, _bq(_noise(0.4, (t)=>Math.exp(-t/0.07)), 'lp', 3800), 0, 0.5);                                         // fireball roar crack
+  for(let i=0;i<Math.round(18*size);i++){ const at=0.08+Math.random()*(0.5+size*0.6); _add(x, _bq(_noise(0.012+Math.random()*0.02, (t,u)=>1-u), 'hp', 1500+Math.random()*4000), at, (0.08+Math.random()*0.12)); }   // debris & dirt rain
+  for(let i=0;i<Math.round(4*size);i++) _add(x, _modal(0.12, 300+Math.random()*900, PLATE, [0.05,0.03,0.02,0.012,0.008], [1,.5,.3,.2,.1], 0.05), 0.3+Math.random()*(0.6+size), 0.06);   // metal fragments landing
+  return _norm(_sat(x, 1.8), 0.95); }
+function rImpactMetal(heavy){                                    // a round slapping armour plate (+ spall)
+  const len=heavy?0.5:0.28, x=_buf(len), f0=heavy?190:420+Math.random()*180;
+  _add(x, _modal(len, f0, PLATE, heavy?[0.18,0.1,0.06,0.03,0.02]:[0.09,0.05,0.03,0.018,0.01], [1,0.7,0.5,0.3,0.2], 0.03), 0, 0.7);
+  _add(x, _bq(_noise(0.05, (t)=>Math.exp(-t/0.012)), 'hp', 1800), 0, 0.8);                                       // spall crack
+  if(heavy) _add(x, _bq(_friedlander(len, 0.004, 5), 'lp', 900), 0, 0.6);
+  return _norm(_sat(x, 1.6), 0.9); }
+function rRicochet(){ const len=0.45, x=_buf(len), sr=SR(); let ph=0; const f0=2400+Math.random()*1800, f1=f0*0.55;   // whining ricochet with Doppler drop
+  for(let i=0;i<x.length;i++){ const t=i/sr, u=t/len, f=f0+(f1-f0)*u; ph+=2*Math.PI*f/sr; x[i]=Math.sin(ph)*Math.exp(-t/0.14)*(t<0.004?t/0.004:1)*(0.85+0.15*Math.sin(t*90)); }
+  _add(x, _bq(_noise(0.03, (t)=>Math.exp(-t/0.008)), 'hp', 2500), 0, 0.7); return _norm(x, 0.7); }
+function rCollision(){                                           // 50 t of steel meeting steel: low hull modes + crunch + scrape
+  const len=0.9, x=_buf(len);
+  _add(x, _modal(len, 62+Math.random()*20, PLATE, [0.32,0.2,0.12,0.07,0.05], [1,0.8,0.55,0.35,0.2], 0.04), 0, 0.9);
+  _add(x, _modal(len, 260+Math.random()*80, PLATE, [0.15,0.09,0.05,0.03,0.02], [1,0.6,0.4,0.25,0.15], 0.05), 0.004, 0.45);
+  _add(x, _bq(_friedlander(len, 0.008, 4), 'lp', 600), 0, 0.8);
+  _add(x, _bq(_noise(0.45, (t)=>Math.exp(-t/0.12)*(0.6+0.4*Math.sin(t*140))), 'bp', 1400, 0.8), 0.01, 0.35);    // grinding scrape
+  return _norm(_sat(x, 2), 0.95); }
+function rThud(){ const len=0.45, x=_buf(len); _add(x, _bq(_friedlander(len, 0.012, 4), 'lp', 380), 0, 1); _add(x, _bq(_brown(0.4,(t)=>Math.exp(-t/0.09)), 'lp', 600), 0, 0.6);
+  _add(x, _bq(_noise(0.2,(t)=>Math.exp(-t/0.05)), 'bp', 900, 0.9), 0.01, 0.25); return _norm(x, 0.9); }
+function rCrunch(){ const len=0.3, x=_buf(len); for(let i=0;i<14;i++) _add(x, _bq(_noise(0.01+Math.random()*0.02,(t,u)=>1-u), 'bp', 600+Math.random()*2400, 1.2), Math.random()*0.18, 0.3+Math.random()*0.4);
+  _add(x, _bq(_brown(0.25,(t)=>Math.exp(-t/0.06)), 'lp', 500), 0, 0.5); return _norm(x, 0.8); }
+function rLaunch(){ const len=1.1, x=_buf(len); _add(x, _bq(_friedlander(len, 0.01, 5), 'lp', 1200), 0, 0.8);
+  _add(x, _bq(_noise(1.0,(t)=>Math.min(1,t/0.03)*Math.exp(-t/0.45)), 'bp', 1600, 0.6), 0.005, 0.9);           // rocket motor hiss/roar
+  _add(x, _bq(_brown(1.0,(t)=>Math.exp(-t/0.35)), 'lp', 300), 0, 0.6); return _norm(_sat(x,1.8), 0.9); }
+function rReload(){ const len=0.5, x=_buf(len); _add(x, _modal(0.08, 700, PLATE, [0.02,0.012,0.008,0.005,0.004], [1,.6,.4,.25,.15], 0.05), 0, 0.6);
+  _add(x, _modal(0.12, 320, PLATE, [0.05,0.03,0.02,0.012,0.008], [1,.6,.4,.25,.15], 0.05), 0.17, 0.7); _add(x, _bq(_noise(0.04,(t)=>Math.exp(-t/0.01)),'bp',2500,1), 0.17, 0.4); return _norm(x, 0.8); }
+// sound definitions: recipe + variants + base gain + rate-limit (seconds between starts) + voice priority
+export const SND = {
+  rifle:   { r:()=>rGun({T:0.0024, k:5, lp:3600, crack:0.5, mech:900, sub:0.35, subF:110, tail:0.12, len:0.55}), g:0.62, gap:0.035 },          // 30 mm autocannon
+  mg:      { r:()=>rGun({T:0.0016, k:5, lp:4200, crack:0.7, sub:0.2, subF:140, tail:0.08, len:0.4}), g:0.5, gap:0.028 },                       // 14.5 mm HMG
+  minigun: { r:()=>rGun({T:0.0012, k:6, lp:4600, crack:0.6, sub:0.12, subF:160, tail:0.05, len:0.28}), g:0.38, gap:0.018 },                    // rotary: a ripping buzz
+  shotgun: { r:()=>rGun({T:0.0045, k:4, lp:1800, crack:0.2, sub:0.6, subF:70, tail:0.25, len:0.9, drive:2.6}), g:0.8, gap:0.08 },
+  flak:    { r:()=>rGun({T:0.0026, k:5, lp:3000, crack:0.45, mech:640, sub:0.35, subF:100, tail:0.14, len:0.6}), g:0.62, gap:0.04 },
+  agl:     { r:()=>rGun({T:0.004, k:4, lp:1100, crack:0, mech:520, sub:0.55, subF:80, tail:0.12, len:0.5}), g:0.6, gap:0.05 },                  // 40 mm: hollow thoomp
+  cannon:  { r:()=>rGun({T:0.009, k:4, lp:1500, crack:0.4, sub:0.9, subF:48, tail:0.55, ring:170, len:1.8, drive:2.8}), g:1.0, gap:0.1 },        // 120 mm
+  hesh:    { r:()=>rGun({T:0.0075, k:4, lp:1400, crack:0.35, sub:0.8, subF:55, tail:0.45, ring:210, len:1.5, drive:2.6}), g:0.92, gap:0.1 },
+  enemy:   { r:()=>rGun({T:0.005, k:4.5, lp:1700, crack:0.3, sub:0.5, subF:75, tail:0.3, len:1.0}), g:0.55, gap:0.03 },                          // enemy tank guns
+  rifleE:  { r:()=>rGun({T:0.0011, k:6, lp:4200, crack:0.8, sub:0.05, subF:200, tail:0.06, len:0.3}), g:0.32, gap:0.02 },                     // infantry carbines
+  launch:  { r:rLaunch, g:0.7, gap:0.06 },
+  boom:    { r:()=>rExplosion(0.75), g:0.85, gap:0.04 },
+  bigboom: { r:()=>rExplosion(1.45), g:1.0, gap:0.08 },
+  hitM:    { r:()=>rImpactMetal(false), g:0.4, gap:0.03 },
+  hitH:    { r:()=>rImpactMetal(true), g:0.6, gap:0.05 },
+  ricochet:{ r:rRicochet, g:0.3, gap:0.12 },
+  clang:   { r:rCollision, g:0.85, gap:0.12 },
+  thud:    { r:rThud, g:0.7, gap:0.06 },
+  crunch:  { r:rCrunch, g:0.5, gap:0.05 },
+  reload:  { r:rReload, g:0.5, gap:0.2 },
+};
+const BANK={}, _lastAt={}; let _voices=0;
+export function bankGet(k){ const D=SND[k]; if(!D||!actx) return null; let L=BANK[k]; if(!L){ L=BANK[k]=[]; }
+  if(L.length<4){ const data=D.r(); const b=actx.createBuffer(1, data.length, actx.sampleRate); b.copyToChannel(data,0); L.push(b); return b; }   // build variants lazily, one per call
+  return L[(Math.random()*L.length)|0]; }
+export function warmSounds(){ if(!actx) return; const keys=Object.keys(SND); let i=0; const step=()=>{ const t0=performance.now(); while(i<keys.length*4 && performance.now()-t0<8){ bankGet(keys[i%keys.length]); i++; } if(i<keys.length*4) setTimeout(step, 30); }; setTimeout(step, 50); }   // fill the bank in 8 ms slices
+// play a bank sound in the world: distance gain + air absorption + pan + SPEED OF SOUND delay; vol scales intensity (e.g. impact force)
+export function play(k, pos, vol){
+  const a=audio(); if(!a||muted) return; const D=SND[k]; if(!D) return;
+  const now=a.currentTime; if(_lastAt[k]!=null && now-_lastAt[k] < D.gap) return; _lastAt[k]=now;
+  if(_voices>28) return;                                                         // voice cap: keeps phones smooth under heavy fire
+  const buf=bankGet(k); if(!buf) return;
+  const src=a.createBufferSource(); src.buffer=buf; src.playbackRate.value=0.95+Math.random()*0.1;
+  let delay=0, g=D.g*(vol==null?1:Math.max(0.15,Math.min(1.6,vol)))*(0.9+Math.random()*0.2);
+  const out=a.createGain(); let node=out;
+  if(pos && S.player){ const dx=pos.x-S.player.pos.x, dz=pos.z-S.player.pos.z, d=Math.hypot(dx,dz);
+    g*=1/(1+d/22); delay=d/343*1.6;                                                // 1 unit ≈ 1.6 m: far blasts land a beat after the flash
+    const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=Math.max(500, 18000*Math.exp(-d/28)); node.connect(lp); node=lp;
+    if(a.createStereoPanner){ const sp=worldToScreen(new THREE.Vector3(pos.x,1,pos.z)); const pn=a.createStereoPanner(); pn.pan.value=Math.max(-0.85,Math.min(0.85,(sp.x/VIEW.w-0.5)*1.6)); node.connect(pn); node=pn; } }
+  out.gain.value=g; src.connect(out); node.connect(master);
+  if(verbSend){ const s=a.createGain(); const d=pos&&S.player?Math.hypot(pos.x-S.player.pos.x,pos.z-S.player.pos.z):0; s.gain.value=Math.min(0.9, 0.22+d/70); node.connect(s).connect(verbSend); }   // distant = mostly echo
+  _voices++; src.onended=()=>{ _voices--; try{ out.disconnect(); }catch(e){} };
+  src.start(now+delay);
 }
-export function explosionSnd(big, bus){
-  const k=big?1:0.65;
-  tone(big?58:72, big?1.3:0.8, {type:'sine', vol:0.42*k, slideTo:20, bus});                                     // sub-bass shock
-  noise(big?1.4:0.9, {vol:0.5*k, type:'lp', lp:1200, sweepTo:160, bus, brown:true, attack:0.003, dist:true});   // rolling rumble
-  noise(0.22, {vol:0.35*k, type:'lp', lp:4200, sweepTo:600, bus, attack:0.001, dist:true});                     // the blast crack
-  for(let i=0;i<(big?14:8);i++) noise(0.02+Math.random()*0.03, {vol:(0.05+Math.random()*0.08)*k, type:'hp', hp:2500+Math.random()*3000, delay:0.05+Math.random()*0.6, bus});   // crackle + debris rain
-  for(let i=0;i<(big?5:3);i++) tone(500+Math.random()*900, 0.06, {type:'triangle', vol:0.03*k, slideTo:300, delay:0.25+Math.random()*0.7, bus});   // metal fragments landing
-}
-export function sfx(name, pos){
+export function sfx(name, pos, vol){
   if(muted) return;
+  switch(name){                                                   // Z102 world sounds → physically-modelled bank
+    case 'shoot': case 'shoot_rifle': return play('rifle', pos, vol);
+    case 'shoot_smg': return play('mg', pos, vol);
+    case 'shoot_minigun': return play('minigun', pos, vol);
+    case 'shoot_shotgun': return play('shotgun', pos, vol);
+    case 'shoot_flak': return play('flak', pos, vol);
+    case 'shoot_agl': return play('agl', pos, vol);
+    case 'shoot_cannon': return play('cannon', pos, vol);
+    case 'shoot_hesh': return play('hesh', pos, vol);
+    case 'shoot_thermo': play('launch', pos, vol); return play('hesh', pos, 0.6);
+    case 'shoot_missile': return play('launch', pos, (vol||1)*0.8);
+    case 'rocketlaunch': return play('launch', pos, vol);
+    case 'enemyShoot': return play('enemy', pos, vol);
+    case 'rifleShot': return play('rifleE', pos, vol);
+    case 'explode': return play('boom', pos, vol);
+    case 'bigexplode': return play('bigboom', pos, vol);
+    case 'hit': return play(Math.random()<0.25?'ricochet':'hitM', pos, vol);
+    case 'hitHeavy': return play('hitH', pos, vol);
+    case 'ricochet': return play('ricochet', pos, vol);
+    case 'clang': return play('clang', pos, vol);
+    case 'thud': return play('thud', pos, vol);
+    case 'crunch': return play('crunch', pos, vol);
+    case 'reload': return play('reload', null, vol);
+  }
   const UI = name==='click'||name==='beep'||name==='wave'||name==='powerup'||name==='levelup'||name==='alarm';
   const bus = UI ? null : voice(pos||null, pos?0.3:0.22); _bus = bus;
   switch(name){
-    case 'shoot':
-    case 'shoot_rifle':  gunshot({crack:0.16, body:0.28, lp:2600, len:0.11, sub:0.14, subF:120, click:900}); break;            // 30 mm autocannon
-    case 'shoot_smg':    gunshot({crack:0.12, body:0.18, lp:3200, len:0.06, sub:0.06, subF:150}); break;                       // twin 14.5 mm MG
-    case 'shoot_minigun':gunshot({crack:0.09, body:0.13, lp:3600, len:0.045, sub:0.04, subF:170}); break;                      // rotary — a ripping buzz at rate
-    case 'shoot_shotgun':gunshot({crack:0.12, body:0.42, lp:1500, len:0.2, sub:0.26, subF:80}); noise(0.08,{vol:0.1,type:'hp',hp:3000,delay:0.02}); break;   // canister + pellet hiss
-    case 'shoot_agl':    gunshot({crack:0.06, body:0.34, lp:900, len:0.14, sub:0.26, subF:85}); break;                        // 40 mm grenade — hollow thoomp
-    case 'shoot_thermo': noise(0.6,{vol:0.26,type:'lp',lp:1800,sweepTo:600,attack:0.02,dist:true}); gunshot({crack:0.1, body:0.4, lp:1100, len:0.2, sub:0.32, subF:60}); break;   // rocket motor roar
-    case 'shoot_flak':   gunshot({crack:0.15, body:0.3, lp:2200, len:0.13, sub:0.16, subF:110, click:700}); break;
-    case 'shoot_hesh':   gunshot({crack:0.2, body:0.5, lp:1300, len:0.32, sub:0.38, subF:70, ring:220}); break;               // 105 mm
-    case 'shoot_cannon': gunshot({crack:0.24, body:0.55, lp:1200, len:0.38, sub:0.45, subF:62, ring:180}); break;             // 120 mm — the big boom + barrel ring
-    case 'shoot_missile':noise(0.5,{vol:0.22,type:'lp',lp:2600,sweepTo:900,attack:0.02,dist:true}); tone(220,0.35,{type:'sawtooth',vol:0.06,slideTo:420}); noise(0.06,{vol:0.1,type:'hp',hp:2000}); break;   // ATGM motor whoosh
-    case 'shoot_railgun':tone(2400,0.18,{type:'sawtooth',vol:0.08,slideTo:300}); noise(0.05,{vol:0.3,type:'hp',hp:3500,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;   // capacitor snap + slug crack
+    case 'shoot_railgun':tone(2400,0.18,{type:'sawtooth',vol:0.08,slideTo:300}); noise(0.05,{vol:0.3,type:'hp',hp:3500,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;
     case 'shoot_cryo':   noise(0.16,{vol:0.18,type:'hp',hp:2500,sweepTo:6000}); tone(900,0.12,{type:'sine',vol:0.05,slideTo:1600}); break;
     case 'shoot_tesla':  noise(0.12,{vol:0.2,type:'bp',hp:1500,lp:6000,dist:true}); tone(120,0.15,{type:'sawtooth',vol:0.08,slideTo:60}); break;
-    case 'hit':     noise(0.05,{vol:0.12,type:'bp',hp:1800,lp:5200,bus}); tone(640,0.09,{type:'triangle',vol:0.05,slideTo:420,bus}); break;   // round slapping armour
-    case 'enemyShoot': gunshot({crack:0.1, body:0.24, lp:1700, len:0.15, sub:0.14, subF:95}, bus); break;
-    case 'explode':    explosionSnd(false, bus); break;
-    case 'bigexplode': explosionSnd(true, bus); break;
-    case 'hurt':    noise(0.18,{vol:0.3,type:'lp',lp:1400,dist:true}); tone(150,0.22,{type:'square',vol:0.1,slideTo:70}); tone(820,0.18,{type:'triangle',vol:0.06,slideTo:500,delay:0.02}); break;   // hull hit: thump + clang
+    case 'hurt':    play('hitH', null, 1.1); noise(0.18,{vol:0.2,type:'lp',lp:1400,dist:true}); break;   // our own hull is struck: heavy plate + thump
     case 'corehit': tone(150,0.14,{type:'sawtooth',vol:0.16,slideTo:70}); break;
     case 'wave':    [523,659,784].forEach((f,i)=>tone(f,0.2,{type:'triangle',vol:0.14,delay:i*0.07})); break;
     case 'dash':    noise(0.3,{vol:0.2,type:'lp',lp:900,sweepTo:2400,brown:true}); tone(60,0.3,{type:'sawtooth',vol:0.08,slideTo:110}); break;   // engine surge
@@ -102,14 +211,9 @@ export function sfx(name, pos){
     case 'levelup': [523,659,784,1047,1319].forEach((f,i)=>tone(f,0.24,{type:'triangle',vol:0.15,delay:i*0.08})); break;
     case 'spell':   tone(440,0.25,{type:'sine',vol:0.14,slideTo:1320}); break;
     case 'click':   tone(660,0.07,{type:'square',vol:0.12}); break;
-    case 'reload':  noise(0.05,{vol:0.12,type:'bp',hp:1200,lp:4000}); tone(180,0.06,{type:'square',vol:0.08,delay:0.02}); noise(0.06,{vol:0.14,type:'bp',hp:900,lp:3000,delay:0.16}); tone(120,0.07,{type:'square',vol:0.08,delay:0.17}); break;   // breech open … round seated
-    case 'reloaded':noise(0.04,{vol:0.16,type:'bp',hp:1500,lp:5000}); tone(260,0.08,{type:'square',vol:0.08,slideTo:180}); tone(1320,0.1,{type:'triangle',vol:0.06,delay:0.06}); break;   // breech slams shut
+    case 'reloaded':play('reload', null, 0.7); tone(1320,0.08,{type:'triangle',vol:0.05,delay:0.06}); break;   // breech slams shut
     case 'alarm':   tone(440,0.12,{type:'square',vol:0.11}); tone(330,0.17,{type:'square',vol:0.11,delay:0.13}); break;
-    case 'rocketlaunch': noise(0.7,{vol:0.32,type:'lp',lp:2200,sweepTo:500,attack:0.01,dist:true,brown:true}); noise(0.15,{vol:0.2,type:'hp',hp:1800}); tone(70,0.5,{type:'sine',vol:0.3,slideTo:30}); break;
     case 'beep':    tone(1500,0.05,{type:'square',vol:0.07}); break;
-    case 'crunch':  noise(0.1,{vol:0.12,type:'bp',hp:600,lp:3200,bus}); noise(0.05,{vol:0.08,type:'hp',hp:2500,delay:0.03,bus}); break;      // stones grinding under the tracks
-    case 'clang':   tone(190,0.3,{type:'triangle',vol:0.18,slideTo:120,bus}); tone(470,0.2,{type:'square',vol:0.05,slideTo:330,bus}); noise(0.16,{vol:0.2,type:'bp',hp:500,lp:4000,bus}); break;   // hull-on-hull impact
-    case 'thud':    tone(70,0.22,{type:'sine',vol:0.24,slideTo:38,bus}); noise(0.14,{vol:0.16,type:'lp',lp:900,brown:true,bus}); break;
   }
   _bus=null;
 }

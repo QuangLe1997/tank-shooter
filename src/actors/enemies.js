@@ -144,6 +144,6 @@ export function updateCarrierCrew(e, now){
     const dmg = 5 * (0.7+0.3*ds) * loopDmgMul() * cMod('enemyDmgMul');
     spawnBullet(_cv.x, _cv.z, a, {owner:'e', dmg, speed:44, color:0xffd06a, r:0.3, life:2.4, maxDist:32, arcDist:d});
     spawnPart(_cv.x, _cv.y, _cv.z, Math.sin(a)*6,1,Math.cos(a)*6, {color:0xffd06a, size:0.6, life:0.1, grav:0, drag:7});
-    sfx('enemyShoot', e.pos); c.fireAt = now + 1.4 + Math.random()*0.7;
+    sfx('rifleShot', e.pos); c.fireAt = now + 1.4 + Math.random()*0.7;
   }
 }

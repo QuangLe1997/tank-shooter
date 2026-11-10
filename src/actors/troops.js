@@ -97,7 +97,7 @@ export function updateFireteam(dt, now){
     if(shoot){ const ang=Math.atan2(best.pos.x-a.pos.x, best.pos.z-a.pos.z); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,dt*10);
       if(now>=a.fireAt && Math.abs(wrapAngle(ang-a.facing))<0.3){ a.fireAt=now+F.fireCd*(0.8+Math.random()*0.4); fired=true; a.g.userData.muzzle.getWorldPosition(_sV);
         spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*0.06,{owner:'p', dmg:F.dmg*(1+(S.stage-1)*0.12), speed:80, color:0xe8ef86, r:0.24, life:1.4, maxDist:F.range+2, noArc:true, y:_sV.y});
-        spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('enemyShoot', a.pos); } }
+        spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('rifleShot', a.pos); } }
     else { const mv=Math.hypot(a.pos.x-ox,a.pos.z-oz); if(mv>0.01) a.facing+=wrapAngle(Math.atan2(a.pos.x-ox,a.pos.z-oz)-a.facing)*Math.min(1,dt*8); }
     let jy=0; if(a.jumpT>0){ a.jumpT-=dt; const u=Math.max(0,a.jumpT)/0.4; jy=Math.max(0,(a.jy-heightAt(a.pos.x,a.pos.z)))*u*u + Math.sin((1-u)*Math.PI)*0.5; }   // hop off the hull
     a.g.position.set(a.pos.x, heightAt(a.pos.x,a.pos.z)+jy, a.pos.z); a.g.rotation.y=a.facing;

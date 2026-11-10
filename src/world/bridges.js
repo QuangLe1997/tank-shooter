@@ -44,7 +44,7 @@ export function updateBridges(dt, now){
     if(aiming && now>=s.fireAt && S.mode==='playing'){ s.fireAt=now+TOWER.fireCd*(0.9+Math.random()*0.5); fired=true; s.g.userData.muzzle.getWorldPosition(_bw);
       const ang=Math.atan2(p.pos.x-_bw.x, p.pos.z-_bw.z)+(Math.random()-0.5)*0.1, dmg=(TOWER.guardDmg+S.stage*0.6)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
       spawnBullet(_bw.x,_bw.z,ang,{owner:'e', dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_bw.y, dropTo:1.4});
-      spawnPart(_bw.x,_bw.y,_bw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('enemyShoot', {x:_bw.x,z:_bw.z}); }
+      spawnPart(_bw.x,_bw.y,_bw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('rifleShot', {x:_bw.x,z:_bw.z}); }
     animateSoldier(s.g, aiming?0:dt*BRIDGE.patrolSpeed/1.55, dt, fired);
     for(const b of bullets){ if(b.owner!=='p') continue; const q=(b.x-P.x)**2+(b.z-P.z)**2; if(q<0.9){ s.alive=false; b.life=-1; fallers.push({ g:s.g, t:0, vx:(Math.random()-0.5)*3, vy:3, vz:(Math.random()-0.5)*3, rx:3, rz:1, down:false }); floatText('✝','#ff9a7a',{x:P.x,y:P.y+2,z:P.z},16); break; } }   // a shot picks the sentry off the span
   }

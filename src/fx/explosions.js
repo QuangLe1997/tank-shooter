@@ -20,7 +20,7 @@ export function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), dc=BIOME.g
   burst({x,z}, dc, Math.floor(4*k), 5*k, {y:0.3, life:0.45, size:0.32*k, up:4.5, grav:-16, drag:1.5});                          // clods
   burst({x,z}, dc, Math.max(1,Math.floor(2*k)), 1.6*k, {y:0.4, life:0.7, size:1.1*k, smoke:true, grav:-0.4, drag:2.2, up:1.2, op:0.45}); }   // dust
 // ----- per-gun IMPACT spray (non-lethal hit) — each weapon "reads" differently on contact -----
-export function impactFX(pos, fx, k){ k=k||1;
+export function impactFX(pos, fx, k){ k=k||1; sfx(k>2.2?'hitHeavy':'hit', pos, 0.6+k*0.25);   // Z102 every strike on armour is heard
   if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xfff1c0, Math.floor(7*k), 9*k, {life:0.26, size:1.2*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(5*k), 6*k, {life:0.34, size:1.05*k, drag:3});
     burst(pos, 0x281e14, Math.floor(2+k), 4*k, {life:0.55, size:1.3*k, smoke:true, grav:-0.5, drag:2, op:0.4});   // lingering fire-lit smoke
     muzzleLight.position.set(pos.x,1.6,pos.z); muzzleLight.color.setHex(0xff9a4a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4*k); }
