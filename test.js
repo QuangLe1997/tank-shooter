@@ -379,6 +379,14 @@ ok(PLAYER.maxSpeed === PLAYER_MAXSPEED, 'test constant PLAYER_MAXSPEED matches d
 ok(SOLDIER.hp>0 && RIDER.hp>0 && TOWER.hp>0, 'support/tower units have HP');
 for(const [k,v] of Object.entries(COVER_HP)) ok(v>0, `cover ${k}: positive HP`);
 
+grp('SQUAD (Z100) — free-roam inside the tank zone, hold-to-recall, on-tank healing');
+{ const F=TROOPS.fireteam; ok(F.zoneMul>0.5 && F.zoneMul<=1 && F.zoneMin>=12, 'squad zone tracks the tank fire range (never tiny)');
+  ok(F.detect>=F.range, 'soldiers spot enemies at least as far as they can shoot');
+  ok(F.patrol[0]>3 && F.patrol[1]<F.zoneMin, 'idle posts sit inside the smallest zone');
+  ok(F.spread>1 && F.spread<5, 'soldiers keep personal space');
+  ok(F.tapMax>0.1 && F.tapMax<0.6, 'tap vs hold threshold feels natural (0.1–0.6s)');
+  ok(TROOPS.crewHeal>0 && TROOPS.crewHeal*10 < 60, 'riding heals gradually (not an instant refill)'); }
+
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
   ok(typeof UP_BLURB[u.key] === 'string' && UP_BLURB[u.key].length > 0, `UP_BLURB has copy for upgrade "${u.key}"`);

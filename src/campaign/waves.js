@@ -46,7 +46,7 @@ export function rollWaveEvent(){
   sfx('alarm');
 }
 export function startWave(now){
-  if(S.wave===1){ tip('drive2'); if(riders.length) tip('crew'); if(OBJ&&OBJ.alive) tip('objective'); }
+  if(S.wave===1){ tip('drive2'); if(riders.length) tip('crew2'); if(OBJ&&OBJ.alive) tip('objective'); }
   rollWaveEvent();
   if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
   WAVE.spawnQueue = buildWaveQueue(S.stage, S.wave);

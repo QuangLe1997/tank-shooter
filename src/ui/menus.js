@@ -87,7 +87,7 @@ export function buildGuide(){
     ['alert','SỐNG SÓT','Nhặt vật phẩm (máu · khiên · bom · drone · turbo · lưỡi ủi). Thấy vòng đỏ PHÁO KÍCH thì chạy khỏi nó trước khi đạn rơi!'],
     ['tank','MỐI ĐE DOẠ', (m?'Lái':'Chạy')+' đè lên bộ binh để cán nát. Rocket RPG & ATGM BẮN HẠ ĐƯỢC. Diệt CÔNG BINH trước — chúng sửa xe. FLAK xé nát trực thăng.'],
     ['shield','TRANG BỊ','Trên vòng KỸ NĂNG: KHÓI phá khoá tên lửa · APS bắn hạ rocket bay tới · MÌN chặn xe đuổi theo · GỌI TỔ BỘ BINH đưa APC chở lính tới.'],
-    ['team','LÍNH CỦA BẠN', (m?'Chạm LÍNH':'Bấm G')+' để lính trên xe nhảy xuống đánh bộ cạnh bạn. '+(m?'Chạm lại':'Bấm G lần nữa')+' thì họ chạy về leo lên xe.'],
+    ['team','LÍNH CỦA BẠN', (m?'Chạm LÍNH':'Bấm nhanh G')+' → lính nhảy xuống, tự do tác chiến trong vòng tầm bắn của xe (tự săn địch, tự rút khi lạc xa). '+(m?'Giữ LÍNH':'Giữ G')+' → gom lính về xe, nhả ra là dừng (ai chưa kịp về thì ở lại). Lính trên xe được hồi máu dần.'],
     ['dash','LÁI XE TĂNG','Xe tăng rất nặng: tăng tốc từ từ và trôi tiếp khi nhả ga. Kéo ngược để lùi. Lấy đà để húc đổ tường gạch, leo qua đá — húc nhau thì xe nhỏ hơn thiệt hơn.'],
     ['alert','TRẬN TƯỚNG','Tướng có 3 pha, giáp trước dày — bắn vào ĐUÔI (×1,6–2). Phá BỘ PHẬN (điểm sáng cam có thanh máu) để tắt đòn tương ứng. Dụ nó húc vào tường/đá → CHOÁNG ×2. Sau chuỗi đòn lớn nó XẢ NHIỆT ×1,6. Khi có KHIÊN: phá hết TRỤ PHÁT. Laser không xuyên tường — nấp!'],
     ['spark','VẬT PHẨM','Xe càng trâu, chỗ càng khó (tháp canh, trại lính, kho tiếp tế) càng rơi đồ xịn. Quầng sáng: xanh lá = thường · xanh dương = hiếm · tím = quý. Nhặt trùng buff thì được gia hạn.'],

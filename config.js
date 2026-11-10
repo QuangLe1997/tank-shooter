@@ -257,7 +257,13 @@ export const DRIVE = {
 export const TROOPS = {
   ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
   dismount: { fromStage: 2, range: 28, troops: [3, 5], interval: 0.38, rpgFrom: 3 },   // enemy APC stops inside `range`, drops the ramp, troops pile out
-  fireteam: { size: 4, perStage: 0.5, cap: 7, hp: 42, dmg: 7, range: 21, fireCd: 0.8, speed: 7.5, sprint: 12, follow: 7, cd: 24 },   // friendly squad that moves with your tank
+  fireteam: { size: 4, perStage: 0.5, cap: 7, hp: 42, dmg: 7, range: 21, fireCd: 0.8, speed: 7.5, sprint: 12, follow: 7, cd: 24,   // friendly squad
+    zoneMul: 0.9, zoneMin: 18,   // Z100 they roam FREELY inside the tank's combat zone (= 90% of its fire range, never under 18)
+    detect: 30,                  // how far a soldier spots enemies (it only chases ones it can reach without leaving the zone)
+    patrol: [6, 15],             // with nothing to shoot they take up posts this far from the tank
+    spread: 2.6,                 // personal space between soldiers (no conga lines)
+    tapMax: 0.3 },               // CREW/G pressed shorter than this = dismount; held = recall (release ends it)
+  crewHeal: 5,                   // Z100 riding the tank heals a soldier this many HP per second (the tank is their aid station)
 };
 
 // BATTLEFIELD INSTALLATIONS (Z90) — enemy troop camps that keep feeding infantry, and rope bridges linking paired watchtowers.

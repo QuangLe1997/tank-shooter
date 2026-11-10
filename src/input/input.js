@@ -1,6 +1,6 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
 import * as THREE from 'three';
-import { MOBILE, PROFILE, S, SPELLS, VIEW, audio, camera, crewToggle, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
+import { MOBILE, PROFILE, S, SPELLS, VIEW, audio, camera, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
 addEventListener('keydown', e=>{
@@ -9,11 +9,11 @@ addEventListener('keydown', e=>{
   const k=e.key.toLowerCase();
   if(k === 'e') trySpell();
   if(k === 'q') cycleSpell();
-  if(k === 'g') crewToggle();   // Z89 crew dismount / mount up
+  if(k === 'g' && !e.repeat) crewPress();   // Z100 tap = dismount · hold = recall the squad
   if(k>='1' && k<='8') selectGun(parseInt(k)-1);
   if(e.key === 'Escape' || k==='p') togglePause();
 });
-addEventListener('keyup', e=>{ S.keys[e.key.toLowerCase()] = false; });
+addEventListener('keyup', e=>{ S.keys[e.key.toLowerCase()] = false; if(e.key.toLowerCase()==='g') crewRelease(); });
 // desktop aim: raycast mouse → ground plane
 export const raycaster = new THREE.Raycaster();
 export const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);

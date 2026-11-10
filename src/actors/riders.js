@@ -1,4 +1,5 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+import { TROOPS } from '../../config.js';
 import { RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, soldierLvl, spawnBullet, spawnPart, updateCrewBtn } from '../hub.js';
    // base 3 + TANK CREW upgrade (+1..3)
 export const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55]];   // roof posts (tank-local, before facing+scale)
@@ -19,6 +20,7 @@ export function updateRiders(dt, now){
   const ms=p.scale*TANK_SCALE, cf=Math.cos(p.facing), sf=Math.sin(p.facing);
   const enemyNear = enemies.some(e=>{ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; return dx*dx+dz*dz < (p.radius+3)*(p.radius+3); });
   riders.forEach((r,i)=>{
+    if(r.hp<r.maxHp){ r.hp=Math.min(r.maxHp, r.hp+TROOPS.crewHeal*dt); if(Math.random()<dt*1.5) spawnPart(r.g.position.x, r.g.position.y+1.2, r.g.position.z, 0, 1.2, 0, {color:0x7dff8a, size:0.35, life:0.5, grav:0, drag:2}); }   // Z100 the tank is their aid station
     const o=_RIDER_SLOTS[i%_RIDER_SLOTS.length];
     const wx=p.pos.x+(o[0]*cf+o[2]*sf)*ms, wz=p.pos.z+(-o[0]*sf+o[2]*cf)*ms, wy=o[1]*ms+p.mesh.position.y;
     r.g.position.set(wx,wy,wz); r.g.scale.setScalar(RIDER.scale*p.scale); animateSoldier(r.g, 0, dt, false);

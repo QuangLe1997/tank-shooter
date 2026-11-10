@@ -1,7 +1,7 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
 import * as THREE from 'three';
 import { TROOPS } from '../../config.js';
-import { ARENA, BIOME, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, blocks, boss, buildTank, burst, camera, decorateEnemyMesh, enemies, floatText, haptic, heightAt, makeSoldierBar, makeSoldierMesh, radio, riders, scene, sfx, solidTank, spawnBullet, spawnEnemy, spawnPart, spawnRider, tip, wrapAngle } from '../hub.js';
+import { ARENA, BIOME, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, blocks, boss, buildTank, burst, camera, decorateEnemyMesh, enemies, floatText, haptic, heightAt, makeSoldierBar, makeSoldierMesh, playerRange, radio, rangeRing, riders, scene, sfx, solidTank, spawnBullet, spawnEnemy, spawnPart, spawnRider, tip, wrapAngle } from '../hub.js';
 
 // ===== Z89 · TROOP CARRIERS — enemy APCs dismount squads; your FIRETEAM rides in on a friendly APC and fights beside the tank =====
 export let _dismountRadioAt=0;
@@ -50,29 +50,51 @@ export function spawnAlly(x, z, dirA){ const F=TROOPS.fireteam, g=makeSoldierMes
 export function damageAlly(a, dmg){ if(a.dead) return; a.hp-=dmg; a.hitT=0.16; const t=a.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
   if(a.hp<=0){ a.dead=true; const i=FT.indexOf(a); if(i>=0) FT.splice(i,1); burst(a.pos, 0x2c331c, 5, 4, {y:0.8, life:0.7, size:1.1, smoke:true, op:0.4}); floatText('✝','#ff9a7a',{x:a.pos.x,y:1.7,z:a.pos.z},16);
     scene.remove(a.g); scene.remove(a.bar); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); } }
-export function clearFireteam(){ for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; if(FT_APC){ scene.remove(FT_APC.mesh); FT_APC=null; } updateCrewBtn(); }
+export function clearFireteam(){ S.recall=false; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; if(FT_APC){ scene.remove(FT_APC.mesh); FT_APC=null; } updateCrewBtn(); }
 export function infPushBlocks(pos){ for(const bl of blocks){ if(bl.obb){ const s_=Math.sin(bl.obb.f), c_=Math.cos(bl.obb.f), dx_=pos.x-bl.x, dz_=pos.z-bl.z, al=dx_*s_+dz_*c_, ac=dx_*c_-dz_*s_, hw=bl.obb.hw+0.4; if(Math.abs(al)<bl.obb.hl+0.3 && Math.abs(ac)<hw){ const push=(ac<0?-hw:hw)-ac; pos.x+=c_*push; pos.z-=s_*push; } continue; }
   const bx=pos.x-bl.x, bz=pos.z-bl.z, q=bx*bx+bz*bz, rr=bl.r+0.45; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); pos.x=bl.x+bx/qq*rr; pos.z=bl.z+bz/qq*rr; } } }
-export const _FT_SLOTS=[[-5,-6],[5,-6],[-8,-2],[8,-2],[0,-9],[-10,-8],[10,-8]];   // wedge behind the tank (tank-local x,z)
+// Z100 FREE-ROAM SQUAD — soldiers are not glued to the tank. Each one fights anywhere inside the tank's COMBAT ZONE (the faint range ring):
+// it hunts the nearest enemy it can reach without leaving the zone, takes a post when the field is quiet, keeps personal space,
+// and falls back on its own when it drifts outside the zone. HOLD the crew command (G / LÍNH) to recall: everyone runs to the hull and
+// climbs aboard; RELEASE ends the recall — whoever has not made it stays on foot.
+export function squadZone(){ const F=TROOPS.fireteam; return Math.max(F.zoneMin, playerRange()*F.zoneMul); }
+function allyTarget(a, zone){ const F=TROOPS.fireteam, p=S.player; let best=null, bd=F.detect*F.detect;
+  const consider=(t)=>{ const qx=t.pos.x-a.pos.x, qz=t.pos.z-a.pos.z, q=qx*qx+qz*qz; if(q>=bd) return; const tz=Math.hypot(t.pos.x-p.pos.x, t.pos.z-p.pos.z); if(tz > zone+F.range*0.85) return; bd=q; best=t; };   // only fights it can win from inside the zone
+  for(const e of enemies){ if(e.def.air && Math.random()<0.5) continue; consider(e); }
+  if(boss&&boss.alive) consider(boss);
+  return best; }
+function clampToZone(x, z, zone){ const p=S.player, dx=x-p.pos.x, dz=z-p.pos.z, d=Math.hypot(dx,dz); if(d<=zone) return [x,z]; return [p.pos.x+dx/d*zone, p.pos.z+dz/d*zone]; }
 export function updateFireteam(dt, now){
   updateFireteamAPC(dt, now); if(!FT.length) return;
-  const F=TROOPS.fireteam, p=S.player, fs=Math.sin(p.facing), fc=Math.cos(p.facing);
-  for(const a of FT.slice()){ if(a.mounting){ const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, d=Math.hypot(dx,dz)||1, ox=a.pos.x, oz=a.pos.z;   // run back to the tank and climb aboard
-      if(d < p.radius+2.4 && riders.length<RIDER.cap){ const i=FT.indexOf(a); FT.splice(i,1); scene.remove(a.g); scene.remove(a.bar); spawnRider(); const r=riders[riders.length-1]; r.hp=Math.max(6, a.hp/a.maxHp*r.maxHp); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); continue; }
+  const F=TROOPS.fireteam, p=S.player, zone=squadZone();
+  if(S.recall){ rangeRing.material.opacity = 0.3+0.15*Math.sin(now*10); }                            // recall in progress: the zone ring pulses
+  for(const a of FT.slice()){ a.mounting = !!S.recall;
+    if(a.mounting){ const dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, d=Math.hypot(dx,dz)||1, ox=a.pos.x, oz=a.pos.z;   // run back to the tank and climb aboard
+      if(d < p.radius+2.4 && riders.length<RIDER.cap){ const i=FT.indexOf(a); FT.splice(i,1); scene.remove(a.g); scene.remove(a.bar); spawnRider(); const r=riders[riders.length-1]; r.hp=Math.max(6, a.hp/a.maxHp*r.maxHp); S.recallIn=(S.recallIn||0)+1; floatText('LÊN XE '+S.recallIn, '#9bd14a', p.pos, 14); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); continue; }
       a.pos.x+=dx/d*F.sprint*dt; a.pos.z+=dz/d*F.sprint*dt; infPushBlocks(a.pos); a.facing=Math.atan2(dx,dz);
       a.g.position.set(a.pos.x, heightAt(a.pos.x,a.pos.z), a.pos.z); a.g.rotation.y=a.facing; animateSoldier(a.g, Math.hypot(a.pos.x-ox,a.pos.z-oz)/1.15, dt, false);
       a.bar.position.set(a.pos.x, 2.5+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); continue; }
-    const sl=_FT_SLOTS[a.slot%_FT_SLOTS.length], tx=p.pos.x+fc*sl[0]+fs*sl[1], tz=p.pos.z-fs*sl[0]+fc*sl[1];   // keep the wedge
-    const ox=a.pos.x, oz=a.pos.z, dx=tx-a.pos.x, dz=tz-a.pos.z, d=Math.hypot(dx,dz);
-    let best=null, bd=F.range*F.range; for(const e of enemies){ if(e.def.air&&Math.random()<0.5) continue; const qx=e.pos.x-a.pos.x, qz=e.pos.z-a.pos.z, q=qx*qx+qz*qz; if(q<bd){ bd=q; best=e; } }
-    if(boss&&boss.alive){ const qx=boss.pos.x-a.pos.x, qz=boss.pos.z-a.pos.z, q=qx*qx+qz*qz; if(q<bd){ bd=q; best=boss; } }
-    const hold = best && d < F.follow;                                                                 // in contact and in position → stand and shoot
-    if(!hold && d>1.2){ const sp = d>18 ? F.sprint : F.speed; a.pos.x+=dx/d*Math.min(d,sp*dt); a.pos.z+=dz/d*Math.min(d,sp*dt); }
+    const ox=a.pos.x, oz=a.pos.z, dT=Math.hypot(a.pos.x-p.pos.x, a.pos.z-p.pos.z);
+    if(dT > zone) a.falling=true; else if(dT < zone*0.75) a.falling=false;                          // drifted out (or the tank drove off) → fall back inside
+    const best = a.falling ? null : allyTarget(a, zone);
+    let gx, gz, sprint=false;
+    if(a.falling){ const k=zone*0.6/(dT||1); gx=p.pos.x+(a.pos.x-p.pos.x)*k; gz=p.pos.z+(a.pos.z-p.pos.z)*k; sprint=true; }
+    else if(best){ const qx=best.pos.x-a.pos.x, qz=best.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1;
+      if(qd > F.range*0.85){ [gx,gz]=clampToZone(best.pos.x-qx/qd*F.range*0.7, best.pos.z-qz/qd*F.range*0.7, zone*0.95); }          // close to firing range, but never past the zone edge
+      else { if(now>(a.strafeAt||0)){ a.strafeAt=now+1.4+Math.random()*1.6; a.strafe=(Math.random()<0.5?-1:1)*(1.5+Math.random()*2); }   // in range: hold and shuffle sideways (harder to hit)
+        [gx,gz]=clampToZone(a.pos.x - qz/qd*a.strafe, a.pos.z + qx/qd*a.strafe, zone*0.95); } }
+    else { if(!a.post || now>(a.postAt||0) || Math.hypot(a.post[0]-p.pos.x, a.post[1]-p.pos.z) > zone*0.85){   // quiet: take up a post around the tank
+        const ang=Math.random()*6.283, r=F.patrol[0]+Math.random()*(F.patrol[1]-F.patrol[0]); a.post=[p.pos.x+Math.sin(ang)*r, p.pos.z+Math.cos(ang)*r]; a.postAt=now+4+Math.random()*3; }
+      gx=a.post[0]; gz=a.post[1]; }
+    let mx=gx-a.pos.x, mz=gz-a.pos.z; const md=Math.hypot(mx,mz);
+    for(const o of FT){ if(o===a) continue; const sx=a.pos.x-o.pos.x, sz=a.pos.z-o.pos.z, sq=sx*sx+sz*sz; if(sq < F.spread*F.spread && sq>1e-4){ const k=(F.spread-Math.sqrt(sq))*2; mx+=sx*k; mz+=sz*k; } }   // personal space
+    const ml=Math.hypot(mx,mz); if(ml>0.3){ const sp=(sprint||md>12) ? F.sprint : F.speed; a.pos.x+=mx/ml*Math.min(ml,sp*dt); a.pos.z+=mz/ml*Math.min(ml,sp*dt); }
     if(a.kbx||a.kbz){ a.pos.x+=a.kbx*dt; a.pos.z+=a.kbz*dt; const kf=Math.max(0,1-dt*5); a.kbx*=kf; a.kbz*=kf; if(Math.abs(a.kbx)+Math.abs(a.kbz)<0.1){ a.kbx=a.kbz=0; } }
     const px=a.pos.x-p.pos.x, pz=a.pos.z-p.pos.z, pd=Math.hypot(px,pz); if(pd<p.radius+1.4 && pd>1e-3){ a.pos.x=p.pos.x+px/pd*(p.radius+1.4); a.pos.z=p.pos.z+pz/pd*(p.radius+1.4); }   // step clear of our own tracks
     infPushBlocks(a.pos); const lim=ARENA-2; a.pos.x=Math.max(-lim,Math.min(lim,a.pos.x)); a.pos.z=Math.max(-lim,Math.min(lim,a.pos.z));
     let fired=false;
-    if(best){ const ang=Math.atan2(best.pos.x-a.pos.x, best.pos.z-a.pos.z); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,dt*10);
+    const shoot = best && Math.hypot(best.pos.x-a.pos.x, best.pos.z-a.pos.z) < F.range;
+    if(shoot){ const ang=Math.atan2(best.pos.x-a.pos.x, best.pos.z-a.pos.z); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,dt*10);
       if(now>=a.fireAt && Math.abs(wrapAngle(ang-a.facing))<0.3){ a.fireAt=now+F.fireCd*(0.8+Math.random()*0.4); fired=true; a.g.userData.muzzle.getWorldPosition(_sV);
         spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*0.06,{owner:'p', dmg:F.dmg*(1+(S.stage-1)*0.12), speed:80, color:0xe8ef86, r:0.24, life:1.4, maxDist:F.range+2, noArc:true, y:_sV.y});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('enemyShoot', a.pos); } }
@@ -88,16 +110,26 @@ export function updateFireteam(dt, now){
   }
 }
 // ---- Z89 · YOUR CREW: the riflemen riding the tank dismount to fight on foot, then run back and mount up ----
-export function crewToggle(){
-  if(S.mode!=='playing') return; const p=S.player; if(!p) return;
-  if(riders.length){ const n=riders.length, F=TROOPS.fireteam;
-    riders.slice().forEach((r,i)=>{ const wp=r.g.position, a=p.facing+Math.PI*0.5*(i%2?1:-1)+(Math.random()-0.5)*0.4;
-      spawnAlly(wp.x, wp.z, a); const al=FT[FT.length-1]; al.fromTank=true; al.maxHp=F.hp; al.hp=Math.max(8, r.hp/r.maxHp*F.hp); al.jumpT=0.4; al.jy=wp.y;
-      scene.remove(r.g); scene.remove(r.bar); });
-    riders.length=0; radio('Kíp lính: xuống xe — bọn tôi giữ hai bên sườn!'); sfx('click'); haptic(20); }
-  else { const mine=FT.filter(a=>a.fromTank); if(!mine.length) return; for(const a of mine) a.mounting=true; radio('Kíp lính: lên xe!'); sfx('click'); }
-  updateCrewBtn();
+// TAP = crew on the hull jump down · HOLD = recall everyone on foot (release to stop; latecomers stay on the ground)
+let _crewDownAt=0;
+export function crewPress(){ if(S.mode!=='playing' || _crewDownAt) return; _crewDownAt=performance.now()/1000;
+  if(FT.length){ S.recall=true; S.recallIn=0; radio('Kíp lính: rút về xe — giữ nguyên vị trí cho bọn tôi lên!'); sfx('click'); updateCrewBtn(); } }
+export function crewRelease(){ if(!_crewDownAt) return; const held=performance.now()/1000-_crewDownAt; _crewDownAt=0;
+  const wasRecall=S.recall; S.recall=false; const left=FT.length;
+  if(wasRecall && held>=TROOPS.fireteam.tapMax){ if(S.recallIn) floatText('ĐÃ GOM '+S.recallIn+(left?' · CÒN '+left+' DƯỚI ĐẤT':''), '#9bd14a', S.player.pos, 15); }
+  else if(riders.length) crewDismount();
+  updateCrewBtn(); }
+export function crewToggle(){ crewPress(); crewRelease(); }       // (kept for old callers: behaves like a tap)
+export function crewDismount(){
+  const p=S.player; if(!p || !riders.length) return; const F=TROOPS.fireteam;
+  riders.slice().forEach((r,i)=>{ const wp=r.g.position, a=p.facing+Math.PI*0.5*(i%2?1:-1)+(Math.random()-0.5)*0.4;
+    spawnAlly(wp.x, wp.z, a); const al=FT[FT.length-1]; al.fromTank=true; al.maxHp=F.hp; al.hp=Math.max(8, r.hp/r.maxHp*F.hp); al.jumpT=0.4; al.jy=wp.y;
+    scene.remove(r.g); scene.remove(r.bar); });
+  riders.length=0; radio('Kíp lính: xuống xe — bọn tôi tự lo phạm vi quanh xe!'); sfx('click'); haptic(20); updateCrewBtn();
 }
-export function updateCrewBtn(){ const on=riders.length>0, down=FT.some(a=>a.fromTank); document.body.classList.toggle('hascrew', on||down);
-  const b=document.getElementById('mCrew'); if(b){ b.classList.toggle('up', !on && down); const ar=b.querySelector('.mc-ar'); if(ar) ar.textContent = on ? '⇩' : '⇧'; } }
-{ const b=document.getElementById('mCrew'); if(b){ const go=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); crewToggle(); }; b.addEventListener('touchstart', go, {passive:false}); b.addEventListener('mousedown', go); } }
+export function updateCrewBtn(){ const on=riders.length>0, down=FT.length>0; document.body.classList.toggle('hascrew', on||down);
+  const b=document.getElementById('mCrew'); if(b){ b.classList.toggle('up', down); b.classList.toggle('rec', !!S.recall);
+    const ar=b.querySelector('.mc-ar'), tx=b.querySelector('.mc-tx'); if(ar) ar.textContent = S.recall ? '⇧' : (on ? '⇩' : '⇧'); if(tx) tx.textContent = S.recall ? 'ĐANG GOM' : (down ? 'GIỮ: GOM' : 'LÍNH'); } }
+{ const b=document.getElementById('mCrew'); if(b){ const dn=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); crewPress(); }, up=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); crewRelease(); };
+  b.addEventListener('touchstart', dn, {passive:false}); b.addEventListener('touchend', up, {passive:false}); b.addEventListener('touchcancel', up, {passive:false});
+  b.addEventListener('mousedown', dn); b.addEventListener('mouseup', up); b.addEventListener('mouseleave', up); } }
