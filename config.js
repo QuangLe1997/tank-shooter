@@ -251,6 +251,9 @@ export const DRIVE = {
   pivot: 2.6,         // hull turn rate standing still (neutral steer, rad/s) — Z99: steadier for A/D steering
   turnAtSpeed: 1.55,  // hull turn rate at top speed — wide arcs when flat out
   grip: 14,           // sideways track grip — kills lateral slide (Z107: 10→14)
+  screenPivot: 4.4,   // Z107 screen-relative keys: the hull swings round to the pressed direction this fast (rad/s, standing) — snappy, no fiddly steering
+  screenTurnAtSpeed: 2.6,  // … and while rolling
+  screenReverse: false,    // Z107 keys never back you up: pressing the opposite way turns the tank round to face it
   ram: { minImpact: 7, toEnemy: 1.15, toPlayer: 0.42, toBoss: 0.7, aggressor: 0.5, perStage: 0.22 },   // dmg = k × (closing speed − min) × mass share
   wallBreak: 14,      // closing speed that smashes a brick wall section; slower just thumps it
   climb: 15.5,        // closing speed needed to ride over a low rock; slower → stopped dead, back up and take a run
@@ -389,7 +392,7 @@ export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, 
 export const HEADING = { dist: 3.9, size: 2.4, color: 0x9be04a, idle: 0.32, moving: 0.8, stripe: 0xd8ff6a };
 // Z107 CONTROLS SHEET — one list, shown from the home menu, the pause menu and in battle (H / F1 / ?). [keys, what it does, group]
 export const KEYS_HELP = [
-  [['W','S'], 'Tiến · lùi (↑ ↓ cũng được)', 'LÁI XE'], [['A','D'], 'Quay thân xe (← →)', 'LÁI XE'], [['Cách'], 'Lướt né — bứt tốc ngắn', 'LÁI XE'],
+  [['W','A','S','D'], 'Đi lên · trái · xuống · phải THEO MÀN HÌNH — xe tự quay đầu về hướng đó (↑←↓→ cũng được)', 'LÁI XE'], [['Cách'], 'Lướt né — bứt tốc ngắn', 'LÁI XE'],
   [['Chuột'], 'Ngắm tháp pháo', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'],
   [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
   [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
@@ -418,3 +421,7 @@ export const FORT = {
   chiefs:['BÁ ĐỒ','HOẢ LANG','THIẾT ƯNG','KHÔ LÂU','HẮC HỔ','BÃO CÁT','ĐỘC NHÃN','SẮT ĐÁ'] };
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
 export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };
+
+// Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
+//   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.
+export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0.3, blastK:0.45 };

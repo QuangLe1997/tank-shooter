@@ -20,7 +20,7 @@ export function getMoveDir(){
 }
 // Z99 CONTROL SCHEMES — 'tank': W/S throttle along the hull, A/D rotate the hull (the driver's left/right), mouse aims the turret.
 //                       'screen': push the direction you want to go on screen; the hull turns to it (joystick default).
-export function controlScheme(){ const c=PROFILE.ctrl; return c==='tank'||c==='screen' ? c : (MOBILE ? 'screen' : 'tank'); }
+export function controlScheme(){ const c=PROFILE.ctrl; return c==='tank'||c==='screen' ? c : 'screen'; }   // Z107: SCREEN-relative is the default on every device
 export function tankInput(){                                    // → { thr: -1..1 (forward +), turn: -1..1 (driver's LEFT +) }
   let thr=0, turn=0;
   if(MOBILE){ if(move.id!==null){ const L=Math.max(STICK_R*0.15, Math.hypot(move.x,move.y)); thr=Math.max(-1,Math.min(1,-move.y/STICK_R)); turn=Math.max(-1,Math.min(1,-move.x/STICK_R)); if(Math.abs(thr)<0.12) thr=0; if(Math.abs(turn)<0.12) turn=0; } }

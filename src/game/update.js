@@ -47,7 +47,8 @@ export function updatePlayer(dt, now){
     const maxSp = PLAYER.maxSpeed*mob*heavy*Math.max(0.7,slopeK);
     const tLv = now < bu.turbo ? (p.buffLv.turbo||1) : 0; p.turboLv=tLv;
     const pow = mob*(over?1.04:1)*heavy*slopeK*(1+tLv*LOOT.turbo.accel)*(p.accelMul||1);
-    const turnK = DRIVE.pivot + (DRIVE.turnAtSpeed - DRIVE.pivot)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed);
+    const scr = controlScheme()!=='tank' && !MOBILE, piv = scr ? DRIVE.screenPivot : DRIVE.pivot, tas = scr ? DRIVE.screenTurnAtSpeed : DRIVE.turnAtSpeed;   // Z107 keyboard on screen axes: swing round fast
+    const turnK = piv + (tas - piv)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed);
     let thr = 0;
     if(tankCtl){                                                                  // Z99 TANK CONTROLS: W/S = throttle along the hull, A/D = rotate the hull
       if(TI.turn) p.facing = wrapAngle(p.facing + TI.turn*turnK*dt);
@@ -55,7 +56,7 @@ export function updatePlayer(dt, now){
     } else if(inp > 0.1){                                                         // SCREEN CONTROLS: push where you want to go; the hull turns to it
       const want = Math.atan2(dir.x, dir.z); let df = wrapAngle(want - p.facing);
       const aimOnly = barrelFixed() && inp < AIM.pivotOnly;                       // Z104 light push on a phone = swing the gun (hull) onto the target, stay put
-      if(aimOnly) p.rev = false; else if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && Math.abs(vf) < 3)) p.rev = true; else p.rev = false;   // pull back from (near) standstill → back up; moving → swing round (hysteresis)
+      if(aimOnly || (scr && !DRIVE.screenReverse)) p.rev = false; else if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && Math.abs(vf) < 3)) p.rev = true; else p.rev = false;   // pull back from (near) standstill → back up; moving → swing round (hysteresis)
       if(p.rev) df = wrapAngle(want + Math.PI - p.facing);
       const step = Math.sign(df)*Math.min(Math.abs(df), turnK*dt); p.facing = wrapAngle(p.facing + step);
       const align = Math.max(0, Math.cos(df));                                    // pivot first: little drive until the hull lines up

@@ -1,6 +1,6 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD } from '../../config.js';
+import { RELIEF, FIELD, TERRAIN_FLAT } from '../../config.js';
 import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
@@ -26,8 +26,9 @@ export function craterDV(q, th, d, L){                                          
   return d*0.34*lop*Math.exp(-((u-0.96)**2)/0.03) + d*0.1*lop*Math.exp(-((u-1.45)**2)/0.12)*(0.4+ray); }
 export function genTerrain(b){
   const st0=TERRAIN_STYLE[b.name]||TERRAIN_STYLE.DESERT, st=Object.assign({}, st0, { mh:st0.mh*1.35, cd:st0.cd*1.25 }), W=HF.W, h=HF.h; h.fill(0);
-  const dunes = b.name==='DESERT'||b.name==='TUNDRA', feats=[];
-  for(let i=0;i<Math.round(st.mounds*AREA_K);i++){ const a=Math.random()*Math.PI; feats.push({t:0, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:5+Math.random()*7, a:st.mh*(0.45+Math.random()*0.55),
+  const dunes = b.name==='DESERT'||b.name==='TUNDRA', feats=[], TF=TERRAIN_FLAT, RR=(r)=>r[0]+Math.random()*(r[1]-r[0]);
+  st.mounds = Math.round(RR(TF.hills))/AREA_K; st.craters = Math.round(RR(TF.craters))/AREA_K; st.noise *= TF.noiseK;   // Z107 mostly flat: a few big hills, a couple of old craters
+  for(let i=0;i<Math.round(st.mounds*AREA_K);i++){ const a=Math.random()*Math.PI; feats.push({t:0, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:RR(TF.hillR), a:RR(TF.hillH),
     ex:dunes?1.6+Math.random()*0.8:0.7+Math.random()*0.6, ca:Math.cos(a), sa:Math.sin(a), lee:dunes?0.55:0.2, L:_lobes()}); }
   for(let i=0;i<Math.round(st.craters*AREA_K);i++) feats.push({t:1, x:(Math.random()*2-1)*(ARENA-8), z:(Math.random()*2-1)*(ARENA-8), r:2.6+Math.random()*4.2, a:st.cd*(0.5+Math.random()*0.5), L:_lobes()});
   const ph=[Math.random()*9, Math.random()*9, Math.random()*9, Math.random()*9];
@@ -49,6 +50,7 @@ export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 
   return FIELD.ridgeH*rise*rise*(3-2*rise)*fall*(0.72+0.28*(n||0)); }
 // a blast digs a crater (r = radius, d = depth) and throws up a rim — updates the mesh where it changed
 export function deformCrater(x, z, r, d){
+  d*=TERRAIN_FLAT.blastK;   // Z107 shells scar the ground, they don't turn it into a moonscape
   const W=HF.W, h=HF.h, R=r*2.0, i0=Math.max(0,Math.floor((x-R+ARENA)/HF.step)), i1=Math.min(HF.N,Math.ceil((x+R+ARENA)/HF.step)), j0=Math.max(0,Math.floor((z-R+ARENA)/HF.step)), j1=Math.min(HF.N,Math.ceil((z+R+ARENA)/HF.step));
   HF.dj0=Math.min(HF.dj0??1e9, j0-1); HF.dj1=Math.max(HF.dj1??-1, j1+1);   // dirty rows for this frame's mesh update
   const L=_lobes();
