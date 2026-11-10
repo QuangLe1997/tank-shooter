@@ -104,7 +104,7 @@ export function updateFlags(now){
 performance.mark('boot:preground');
 export const arena = new THREE.Group(); scene.add(arena);
 export const _g0 = groundMaps(BIOMES[0]);
-export const groundMat = macroGround(new THREE.MeshStandardMaterial({ map:_g0.map, normalMap:_g0.nrm, normalScale:new THREE.Vector2(1,1), roughness:_g0.rough, metalness:0.0, envMapIntensity:0.5 }));
+export const groundMat = macroGround(new THREE.MeshStandardMaterial({ map:_g0.map, normalMap:_g0.nrm, normalScale:new THREE.Vector2(TERRAIN_FLAT.nrmK, TERRAIN_FLAT.nrmK), roughness:_g0.rough, metalness:0.0, envMapIntensity:0.5 }));
 export const ground = new THREE.Mesh(terrainGeo(), groundMat);   // displaced heightfield (mounds + craters)
 ground.receiveShadow = true; ground.castShadow = !MOBILE && RELIEF.selfShadow; arena.add(ground);   // Z105 mounds throw real shadows across craters (desktop)
 // outer terrain past the perimeter (same surface, fades into the haze) — no more void beyond the walls

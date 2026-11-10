@@ -36,7 +36,7 @@ scene.fog = new THREE.FogExp2(BIOME.fog, 0.0075);
 export const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;   // replaced per battlefield by a real sky (applyAtmosphere)
 scene.environmentIntensity = 0.55;
-export const camera = new THREE.PerspectiveCamera(54, innerWidth/innerHeight, 0.1, 600);
+export const camera = new THREE.PerspectiveCamera(54, innerWidth/innerHeight, 0.6, 600);   // Z107 near 0.1→0.6: 6× the depth precision — ground decals no longer z-fight (shimmer) on small bumps
 camera.position.set(0, 46, 34);
 camera.lookAt(0,0,0);
 // ---- CINEMATIC GRADE (last pass, display-referred): split-tone + contrast/saturation + vignette + film grain + shake-driven chromatic aberration ----

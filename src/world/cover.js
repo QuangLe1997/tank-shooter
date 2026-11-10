@@ -68,7 +68,7 @@ export function buildBlocks(){
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 export function damageBlock(b, dmg){
   if(b.kind==='gate'){ damageGate(b, dmg); return; }                     // Z107 fortress gate — batter it open
-  if(b.kind==='fortwall'){ fortWallHit(b, dmg); }                         // Z107 a hit on the wall top knocks a rifleman off (then ricochets)
+  if(b.kind==='fortwall'){ fortWallHit(b, dmg); return; }                 // Z107 wall section: chipped by shells (½), a rifleman on top may fall
   if(b.kind==='obj'){ damageObjective(b, dmg); return; }                  // Z83 operation objective
   if(b.kind==='tower'){ if(b.tower.falling) return; b.hp-=dmg; flashMat(b.tower.wm, 0.1, 0.5);
     burst({x:b.x,z:b.z}, 0x9a7a52, 3, 5, {y:heightAt(b.x,b.z)+1.5+Math.random()*4, life:0.4, size:0.3, grav:-16, drag:1.5, up:2});   // splinters fly

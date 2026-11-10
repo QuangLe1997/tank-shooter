@@ -416,6 +416,8 @@ export const FORT = {
   wakeR:72, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'heavy', cmdHp:7, cmdScale:1.25,
+  ram:{ minV:8, fullV:20, gate:0.32, wall:0.22, buffMul:1.5, cd:0.45 },   // Z107 RAMMING: a full-speed hit takes 32% of a gate / 22% of a wall section → ~3 rams + a few shots open a gate
+  wallHpK:1.25, wallShotK:0.5,                                          // a wall section has 1.25× the gate's HP and shrugs off half of every shell → gates break first
   loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },
   names:['HẮC SƠN','ƯNG SẮT','ĐẦU LÂU','LANG NHA','XÍCH VĨ','BÃO LỬA','CỔ THẠCH','HẮC LONG','THIẾT BÍCH','HUYẾT NGUYỆT'],
   chiefs:['BÁ ĐỒ','HOẢ LANG','THIẾT ƯNG','KHÔ LÂU','HẮC HỔ','BÃO CÁT','ĐỘC NHÃN','SẮT ĐÁ'] };
@@ -424,7 +426,7 @@ export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.
-export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0.3, blastK:0 };   // blastK 0 = shells no longer reshape the ground (no mesh rebuilds / popping) — the scorch decal stays
+export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0, blastK:0, nrmK:0.55 };   // Z107 noiseK 0: no micro-bumps at all · nrmK: calmer detail normals (less sparkle while driving)   // blastK 0 = shells no longer reshape the ground (no mesh rebuilds / popping) — the scorch decal stays
 // Z107 RENDER BUDGET (LOD) — what is worth drawing: only soldiers near the tank cast shadows, tower / wall riflemen out of
 //   range are not drawn at all, and HP bars show once a unit is hurt (elites and commanders always). Checked 4× a second.
 export const LOD = { shadowR: 26, guardR: 70, every: 0.25 };

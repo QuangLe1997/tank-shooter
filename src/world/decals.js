@@ -9,7 +9,7 @@ DECAL.stat = document.createElement('canvas'); DECAL.stat.width=DECAL.stat.heigh
 DECAL.dyn  = document.createElement('canvas'); DECAL.dyn.width=DECAL.dyn.height=DECAL.DW;      // tread prints / dirt (soft, fades, cheap to upload)
 DECAL.sx = DECAL.stat.getContext('2d'); DECAL.dx = DECAL.dyn.getContext('2d');
 export const _decalPlane=(cv, y, ord)=>{ const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.generateMipmaps=true;
-  const m=new THREE.Mesh(terrainGeo(), new THREE.MeshLambertMaterial({ map:t, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2-ord, polygonOffsetUnits:-2-ord }));
+  const m=new THREE.Mesh(terrainGeo(), new THREE.MeshLambertMaterial({ map:t, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4-2*ord, polygonOffsetUnits:-8-4*ord }));   // Z107 firmer offset (no z-fighting with the ground)
   m.position.y=y; m.receiveShadow=true; m.renderOrder=-3+ord; arena.add(m); return t; };   // drapes the same heightfield
 DECAL.texS = _decalPlane(DECAL.stat, 0.02, 0); DECAL.texD = _decalPlane(DECAL.dyn, 0.025, 1);
 export const _dpx=(x)=>(x+ARENA)*DECAL.ppu, _dpz=(z)=>(z+ARENA)*DECAL.ppu, _ddx=(x)=>(x+ARENA)*DECAL.dppu, _ddz=(z)=>(z+ARENA)*DECAL.dppu;
