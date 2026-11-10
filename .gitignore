@@ -8,3 +8,7 @@ _*.png
 .vscode/
 .idea/
 .playwright-mcp/
+desktop/node_modules/
+desktop/app/
+desktop/dist/
+desktop/build/

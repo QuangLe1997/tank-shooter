@@ -1,0 +1,17 @@
+{
+  "name": "steel-siege-mac",
+  "productName": "Steel Siege",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native macOS shell for Steel Siege (Electron, Apple Silicon). The game itself stays zero-build; build.mjs copies it in, vendors three.js + fonts for offline play, and packages an arm64 .app.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "node build.mjs --stage && electron .",
+    "mac": "node build.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.2.3",
+    "three": "^0.169.0"
+  }
+}

@@ -14,6 +14,9 @@ export const AREA_K = (ARENA/60)**2*0.7;      // Z104 density multiplier (Z106 �
 export const PLAYER_STANDOFF = 0.3;            // enemies keep this much clearance from the player hull (anti-glue → easy to shoot)
 export const ARC_G = 110;                      // gravity for ballistic shells — far shots lob in a clear arc, point-blank stays flat (fast guns arc less)
 export const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+// Z107 NATIVE = running as the installed Mac app (desktop/ Electron shell, Apple Silicon) → it can afford crisper shadows / more detail
+export const NATIVE = !!(typeof window!=='undefined' && window.__NATIVE);
+export const SHADOW_MAP = NATIVE ? 4096 : 2048;
 export const TANK_SCALE = 1.2;   // global tank visual+hitbox scale — bigger, more imposing tanks fill the arena better (bosses already huge, excluded)
 export const PLAYER_PAL = {hull:0x5e7a2e,turret:0x75933a,barrel:0x9bb04a,tread:0x2a3514,accent:0xe7b54a};   // player's buildTank default palette — used to tint death wreckage
 // effective combat range: grows with stage + permanent upgrade + timed buff

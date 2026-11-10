@@ -11,7 +11,8 @@
     "imports": "node tools/refactor/fix-imports.mjs",
     "move": "node tools/refactor/move.mjs",
     "deep": "node tools/refactor/deepcheck.mjs",
-    "modmap": "node tools/refactor/modmap.mjs"
+    "modmap": "node tools/refactor/modmap.mjs",
+    "mac": "cd desktop && npm install && node build.mjs"
   },
   "devDependencies": {
     "acorn": "^8.14.0",

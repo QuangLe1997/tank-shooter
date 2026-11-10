@@ -1,6 +1,6 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
-import { ATMOS, S, SHADOW_R, SUN_DIR, TOD_ORDER, ambient, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
+import { ATMOS, S, SHADOW_MAP, SHADOW_R, SUN_DIR, TOD_ORDER, ambient, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
@@ -50,7 +50,7 @@ export function applyAtmosphere(b){
 }
 // keep the key light (and its tight shadow frustum) centred on the action; snap to shadow texels to stop shimmer
 export function updateSunFollow(){
-  const p=S.player, cx = p ? p.pos.x : 0, cz = p ? p.pos.z : 0, tx=(SHADOW_R*2)/2048;
+  const p=S.player, cx = p ? p.pos.x : 0, cz = p ? p.pos.z : 0, tx=(SHADOW_R*2)/SHADOW_MAP;
   const sx=Math.round(cx/tx)*tx, sz=Math.round(cz/tx)*tx;
   sun.target.position.set(sx,0,sz); sun.position.set(sx+SUN_DIR.x*90, SUN_DIR.y*90, sz+SUN_DIR.z*90); sun.target.updateMatrixWorld();
 }

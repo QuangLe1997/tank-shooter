@@ -7,7 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { ARENA, BIOME, MOBILE, S, arena } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, SHADOW_MAP, arena } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -70,7 +70,7 @@ export const ambient = new THREE.AmbientLight(0x4a4636, 0.14); scene.add(ambient
 export const sun = new THREE.DirectionalLight(0xfff0d0, 2.8);
 sun.position.set(26, 48, 18); scene.add(sun); scene.add(sun.target);
 export const SHADOW_R = 44;                                                     // tight shadow frustum that FOLLOWS the action → crisp contact shadows
-if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(SHADOW_MAP,SHADOW_MAP);   // Z107 4096 in the Mac app
   const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
   sun.shadow.bias=-0.0003; sun.shadow.normalBias=0.25; sun.shadow.radius=2; }
 export const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.62); scene.add(hemi);
