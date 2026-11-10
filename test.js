@@ -4,6 +4,12 @@
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT } from './config.js';
+import { GUNS } from './src/data/guns.js';
+import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
+import { BOSS_DEFS } from './src/data/bosses.js';
+import { BIOMES, ATMOS, GROUND_STYLE, TERRAIN_STYLE, BRICK_PAL, COVER_HP, TOD_ORDER } from './src/data/world.js';
+import { BIOME_VI, CAT_VI, DIFF_META, STAGE_TAGS, TOD_LABEL } from './src/data/text-vi.js';
+import { PLAYER } from './src/data/player.js';
 
 const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
 
@@ -333,6 +339,45 @@ grp('BOSS FIGHTS (Z96) — phases, arcs, windows, pylons');
   ok(B.transition.invuln<3 && B.transition.blastDmg<25, 'phase change is a breather, not a one-shot');
   ok(B.barrage.lead>=0.8, 'walking barrage gives ≥0.8s before the first shell lands');
   ok(B.barrage.r < B.barrage.step*1.2, 'barrage shells leave gaps you can slip through'); }
+
+grp('DATA CONTRACTS (Z98) — every registry entry is complete, so adding content cannot half-break the game');
+// GUNS ↔ economy ↔ copy
+for(const [id,g] of Object.entries(GUNS)){
+  ok(typeof g.name==='string' && g.name.length>0 && typeof g.svg==='string', `gun ${id}: has name + icon`);
+  ok(DMG_TYPE[g.type] !== undefined, `gun ${id}: damage type "${g.type}" exists in DMG_TYPE`);
+  ok(g.mag>0 && g.reload>0 && g.fireCd>0, `gun ${id}: mag/reload/fireCd are positive`);
+  ok(id==='rifle' || GUN_PRICE[id] !== undefined, `gun ${id}: has a shop price (GUN_PRICE)`);
+  ok(typeof GUN_BLURB[id]==='string', `gun ${id}: has a shop blurb (GUN_BLURB)`); }
+for(const id of Object.keys(GUN_PRICE)) ok(GUNS[id] !== undefined, `GUN_PRICE.${id} points at a real gun`);
+// ENEMIES ↔ armour classes
+for(const [id,d] of Object.entries(ENEMY_DEFS)){
+  ok(d.hp>0 && d.speed>=0 && d.score>0, `enemy ${id}: hp/speed/score sane`);
+  ok(['L','M','H','A'].includes(ARMOR[id]), `enemy ${id}: has an armour class in ARMOR`);
+  ok(d.inf || d.air || d.pal, `enemy ${id}: vehicles carry a colour palette`); }
+// BOSSES ↔ campaign
+ok(BOSS_DEFS.length === OPERATIONS.length, 'one boss per campaign operation');
+for(const b of BOSS_DEFS){
+  ok(b.hp>0 && b.scale>0 && b.pal && b.pal.accent!==undefined, `boss ${b.id}: hp/scale/palette`);
+  ok(Array.isArray(b.phases) && b.phases.length===3, `boss ${b.id}: names all 3 phases`);
+  ok(Array.isArray(b.parts) && b.parts.length>=1 && b.parts.every(q=>q.id && q.vi && q.at && q.at.length===3 && q.r>0 && q.hp>0 && q.hp<0.2), `boss ${b.id}: weak points are complete (id, label, position, radius, hp share <20%)`);
+  ok(b.parts.reduce((a,q)=>a+q.hp,0) < 0.4, `boss ${b.id}: weak points hold < 40% of its HP in total`);
+  ok(b.front>0 && b.front<=1 && b.rear>=1, `boss ${b.id}: front ≤1 ≤ rear armour multipliers`);
+  ok((b.shield||[]).every(ph=>ph>=1 && ph<=2), `boss ${b.id}: shield phases are 1 or 2`);
+  ok(Array.isArray(b.taunt) && b.taunt.length>=1, `boss ${b.id}: has taunt lines`); }
+// WORLD — every biome is fully described everywhere it is looked up
+for(const b of BIOMES){ const n=b.name;
+  ok(ATMOS[n]!==undefined, `biome ${n}: has an atmosphere (ATMOS)`);
+  ok(GROUND_STYLE[n]!==undefined, `biome ${n}: has ground albedo (GROUND_STYLE)`);
+  ok(TERRAIN_STYLE[n]!==undefined, `biome ${n}: has relief style (TERRAIN_STYLE)`);
+  ok(BRICK_PAL[n]!==undefined, `biome ${n}: has a brick palette (BRICK_PAL)`);
+  ok(typeof BIOME_VI[n]==='string', `biome ${n}: has a Vietnamese display name (BIOME_VI)`); }
+for(const t of new Set(TOD_ORDER)) ok(typeof TOD_LABEL[t]==='string', `time of day ${t}: has a Vietnamese label`);
+for(const k of ['recruit','soldier','veteran']) ok(DIFF_META[k] && BALANCE.difficulty[k], `difficulty ${k}: label + balance numbers`);
+for(const c of new Set(SHOP_UP.map(u=>u.cat))) ok(typeof CAT_VI[c]==='string', `shop category ${c}: has a Vietnamese tab name`);
+ok(STAGE_TAGS.length >= OPERATIONS.length, 'a stage tag line for every operation');
+ok(PLAYER.maxSpeed === PLAYER_MAXSPEED, 'test constant PLAYER_MAXSPEED matches data/player.js');
+ok(SOLDIER.hp>0 && RIDER.hp>0 && TOWER.hp>0, 'support/tower units have HP');
+for(const [k,v] of Object.entries(COVER_HP)) ok(v>0, `cover ${k}: positive HP`);
 
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {

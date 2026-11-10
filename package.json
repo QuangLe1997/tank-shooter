@@ -2,5 +2,11 @@
   "name": "steel-siege",
   "private": true,
   "type": "module",
-  "description": "Zero-build: this file only marks config.js/test.js as ES modules so `node test.js` runs. No dependencies, no bundler."
+  "description": "Zero-build game (static files, ES modules, Three.js from CDN). npm is used ONLY as a task runner — no dependencies, no bundler.",
+  "scripts": {
+    "test": "node tools/verify.mjs",
+    "arch": "node tools/archcheck.mjs",
+    "serve": "python3 -m http.server 8765",
+    "where": "node tools/where.mjs"
+  }
 }

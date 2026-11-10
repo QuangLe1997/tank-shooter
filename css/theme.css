@@ -1,0 +1,76 @@
+/* Z98 split from index.html — order matters: files are linked in this sequence. */
+  /* =====================================================================================================
+     Z78 · PREMIUM TACTICAL SKIN — visual layer only (no layout sizes changed): chamfered gunmetal plates,
+     brass-amber primary, light sweep on hover, glass HUD with amber accent, crisp tabular numbers, smooth menus.
+     ===================================================================================================== */
+  :root{ --hud:'Saira Condensed','Rajdhani','Segoe UI',system-ui,-apple-system,Arial,sans-serif; --cham:10px;
+    --plate:linear-gradient(180deg,rgba(40,48,32,.9),rgba(15,19,12,.94)); --edge:rgba(196,214,160,.2); --brass:#e9b64c; }
+  body{font-family:var(--hud);}
+  .btn,.btn-mini,.btn-arsenal,.btn-shop,.btn-terrain,.upcard,.brcard{
+    font-family:var(--hud)!important; letter-spacing:1.6px;
+    clip-path:polygon(var(--cham) 0,100% 0,100% calc(100% - var(--cham)),calc(100% - var(--cham)) 100%,0 100%,0 var(--cham));
+    background-image:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.13) 50%,transparent 62%),var(--plate)!important;
+    background-size:260% 100%,100% 100%!important; background-position:140% 0,0 0!important; background-repeat:no-repeat!important;
+    border:1px solid var(--edge)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -2px 0 rgba(0,0,0,.35)!important;
+    transition:transform .18s cubic-bezier(.2,.8,.3,1),background-position .55s ease,border-color .25s,filter .2s,color .2s!important; }
+  .btn:hover,.btn-mini:hover,.btn-arsenal:hover,.btn-shop:hover,.btn-terrain:hover,.upcard:hover,.brcard:hover{
+    background-position:-40% 0,0 0!important; border-color:rgba(233,182,76,.6)!important; filter:brightness(1.12); transform:translateY(-2px); }
+  .btn:active,.btn-mini:active,.btn-arsenal:active,.btn-shop:active,.btn-terrain:active,.upcard:active,.brcard:active{ transform:translateY(0) scale(.975); filter:brightness(.95); }
+  .btn:focus-visible,.btn-mini:focus-visible,.upcard:focus-visible,.brcard:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; }
+  /* hero action: brass-amber, engraved text, slow ready-pulse */
+  #start .panel .btn-primary,.btn-primary{
+    --plate:linear-gradient(180deg,#ffd98a 0%,#eab04a 46%,#b97a22 100%);
+    color:#1b1306!important; font-weight:800!important; letter-spacing:4px!important; text-shadow:0 1px 0 rgba(255,236,190,.55);
+    border-color:rgba(255,226,150,.85)!important; animation:z78pulse 2.6s ease-in-out infinite; }
+  #start .panel .btn-primary:hover,.btn-primary:hover{ filter:brightness(1.08) saturate(1.1); }
+  #start .panel .btn-continue,.btn-continue{ --plate:linear-gradient(180deg,rgba(150,190,80,.95),rgba(78,110,34,.95)); color:#0f1606!important; text-shadow:0 1px 0 rgba(220,255,170,.4); }
+  @keyframes z78pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(233,182,76,0));}50%{filter:drop-shadow(0 0 14px rgba(233,182,76,.55));}}
+  .btn .ic,.btn-mini .ic,.btn-arsenal .ic,.btn-shop .ic,.btn-terrain .ic{ filter:drop-shadow(0 0 4px currentColor); opacity:.95; }
+  /* HUD plates: dark glass, amber accent along the top edge, chamfer */
+  .chip,.ability,#weaponchip{
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    background:linear-gradient(180deg,rgba(18,24,14,.78),rgba(7,10,6,.86))!important;
+    box-shadow:inset 0 1px 0 rgba(233,182,76,.32),inset 0 0 0 1px rgba(196,214,160,.12),0 10px 28px rgba(0,0,0,.45)!important; border-color:transparent!important; }
+  #topbar .lbl{font-family:var(--hud);letter-spacing:3px;font-weight:700;color:#a8b48e;}
+  #topbar .val{font-family:var(--hud);font-variant-numeric:tabular-nums;font-size:22px;letter-spacing:1px;text-shadow:0 0 12px currentColor;}
+  #weaponchip .wc-nm,#weaponchip .wc-am{font-family:var(--hud);font-size:15px;}
+  .ability.ready{ box-shadow:inset 0 1px 0 rgba(140,220,90,.55),inset 0 0 0 1px rgba(140,220,90,.4),0 0 16px rgba(140,220,90,.25)!important; }
+  /* touch controls: glass discs with a lit ring */
+  .mbtn{ background:radial-gradient(circle at 50% 35%,rgba(70,84,52,.55),rgba(10,14,8,.62) 70%)!important; border:1px solid rgba(233,182,76,.35)!important;
+    box-shadow:0 0 0 3px rgba(0,0,0,.25),inset 0 0 14px rgba(233,182,76,.12),0 8px 20px rgba(0,0,0,.4)!important; transition:transform .12s,box-shadow .2s; }
+  .mbtn:active{ box-shadow:0 0 0 3px rgba(233,182,76,.35),inset 0 0 18px rgba(233,182,76,.3)!important; }
+  .mbtn .mbtag{font-family:var(--hud);letter-spacing:2px;}
+  /* menus slide/fade in smoothly */
+  .overlay:not(.hidden) > .panel,.overlay:not(.hidden) > .title,.overlay:not(.hidden) > .subtitle,.overlay:not(.hidden) .start-id{ animation:z78in .45s cubic-bezier(.2,.8,.3,1) both; }
+  .overlay:not(.hidden) > .panel{ animation-delay:.06s; }
+  @keyframes z78in{from{opacity:0;transform:translateY(10px) scale(.985);}to{opacity:1;transform:none;}}
+  .title{font-family:var(--hud)!important;letter-spacing:6px;}
+  .help kbd{font-family:var(--hud);font-weight:700;border-radius:3px;background:rgba(233,182,76,.1);border-color:rgba(233,182,76,.3);}
+  .upcard,.brcard{border-radius:0!important;}
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;} .btn,.btn-mini,.upcard,.brcard{transition:none!important;} }
+
+  /* Z83 · operation objective chip + HQ radio */
+  #objChip{position:absolute;left:50%;top:36px;transform:translateX(-50%);min-width:210px;max-width:min(320px,60vw);padding:5px 12px 6px;
+    background:linear-gradient(180deg,rgba(20,18,10,.82),rgba(12,11,7,.72));border:1px solid rgba(255,196,64,.45);
+    clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%,0 8px);font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;pointer-events:none;z-index:6}
+  #objChip.hidden{display:none}
+  #objChip .ob-row{display:flex;align-items:center;gap:7px}
+  #objChip .ob-dot{width:7px;height:7px;background:#ffc440;transform:rotate(45deg);box-shadow:0 0 8px #ffc440;animation:obPulse 1.2s ease-in-out infinite}
+  #objChip .ob-name{color:#ffe2a0;font-size:12.5px;letter-spacing:.12em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #objChip .ob-bar{height:4px;margin:4px 0 3px;background:rgba(255,255,255,.08)}
+  #objChip .ob-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff9a2a,#ffd24a);transition:width .25s}
+  #objChip .ob-fx{color:rgba(255,232,190,.68);font-size:11px;letter-spacing:.06em}
+  #objChip.done{border-color:rgba(140,220,110,.55)} #objChip.done .ob-name{color:#bff0a0} #objChip.done .ob-dot{background:#8cdc6e;box-shadow:0 0 8px #8cdc6e;animation:none}
+  @keyframes obPulse{50%{opacity:.35}}
+  #radio{position:absolute;left:50%;top:92px;transform:translate(-50%,-6px);display:flex;align-items:center;gap:9px;max-width:min(560px,80vw);padding:6px 14px 6px 8px;
+    background:rgba(8,12,8,.78);border-left:3px solid #8cdc6e;font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;color:#e6f2dc;font-size:14px;letter-spacing:.03em;
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:6}
+  #radio.show{opacity:1;transform:translate(-50%,0)}
+  #radio .rd-tag{font-size:10px;font-weight:700;letter-spacing:.18em;color:#0c140a;background:#8cdc6e;padding:2px 6px}
+  body.touch #objChip{top:28px;min-width:170px;padding:4px 9px 5px} body.touch #objChip .ob-name{font-size:11px} body.touch #objChip .ob-fx{display:none}
+  body.touch #radio{top:66px;font-size:12px}
+  .br-op{font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;font-weight:700;letter-spacing:.32em;color:#ffc440;font-size:clamp(11px,1.6vw,14px);margin-bottom:2px;text-shadow:0 0 14px rgba(255,180,60,.35)}
+  .br-brief{max-width:620px;margin:6px auto 4px;color:rgba(232,226,206,.82);font-size:clamp(12px,1.7vw,15px);line-height:1.45;text-align:center}
+  .br-obj{margin:4px auto 10px;padding:5px 12px;border:1px solid rgba(255,196,64,.4);background:rgba(255,196,64,.06);color:#ffe2a0;font-size:clamp(11px,1.5vw,13.5px);letter-spacing:.04em;display:inline-block}
+  .br-obj b{letter-spacing:.2em;margin-right:6px;color:#ffc440} .br-obj span{color:rgba(255,232,190,.65)}
+

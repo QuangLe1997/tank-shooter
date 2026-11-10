@@ -1,0 +1,260 @@
+/* Z98 split from index.html — order matters: files are linked in this sequence. */
+  /* ==================================================================================
+     Z66 — MOBILE PASS: boot gate (fullscreen from the first tap) · short-landscape menus
+     that always fit · zero live backdrop-blur over the canvas (that was the stutter)
+     ================================================================================== */
+
+  /* ---- BOOT GATE: covers the un-iconed DOM while three.js + the world load. On touch it also
+         doubles as the single user gesture browsers demand before audio + fullscreen are allowed. ---- */
+  #boot{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:999;display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 14px);
+    background:linear-gradient(180deg,rgba(3,5,2,.6),rgba(3,5,2,.93)),url('../assets/banner-desktop.jpg') center/cover no-repeat;
+    opacity:1;transition:opacity .4s ease;}
+  #boot.gone{opacity:0;pointer-events:none;}
+  .boot-inner{display:flex;flex-direction:column;align-items:center;gap:9px;max-width:92vw;}
+  .boot-logo{font-size:clamp(26px,7vw,60px);font-weight:900;letter-spacing:6px;line-height:1;
+    background:linear-gradient(105deg,var(--green) 0%,var(--ink) 50%,var(--amber) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 20px rgba(0,0,0,.7));}
+  .boot-sub{font-size:clamp(9px,2.4vw,12px);letter-spacing:6px;color:var(--muted);text-transform:uppercase;}
+  .boot-bar{width:min(56vw,220px);height:4px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:4px;}
+  .boot-bar > i{display:block;width:36%;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--amber));
+    animation:bootSlide 1.05s ease-in-out infinite;}
+  @keyframes bootSlide{0%{transform:translateX(-115%);}100%{transform:translateX(325%);}}
+  .boot-msg{font-size:10.5px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;min-height:13px;}
+  .boot-tap{display:none;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+    font-size:clamp(15px,4.4vw,19px);font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#1c1404;
+    padding:14px 34px;border-radius:13px;background:linear-gradient(180deg,#f4c45e 0%,#e29a30 52%,#cd7c20 100%);
+    border:1px solid rgba(255,230,175,.75);box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5);
+    animation:deployPulse 2.4s ease-in-out infinite;-webkit-tap-highlight-color:transparent;}
+  .boot-note{display:none;font-size:9.5px;letter-spacing:2.5px;color:rgba(255,255,255,.5);text-transform:uppercase;}
+  #boot.ready .boot-bar,#boot.ready .boot-msg{display:none;}
+  #boot.ready .boot-tap{display:inline-flex;}
+  #boot.ready .boot-note{display:block;}
+
+  /* ---- camera zoom/rotate join the top-right utility cluster on touch. Anchored to the bottom-left they
+         drifted up into the gun strip as soon as a browser URL bar shortened the screen (overlapping HUD). ---- */
+  body.touch #camCtl{left:auto;bottom:auto;top:max(8px,env(safe-area-inset-top));
+    right:calc(max(10px,env(safe-area-inset-right)) + 168px);flex-direction:row;gap:4px;}
+  body.touch .camBtn{width:38px;height:38px;border-radius:10px;background:rgba(8,12,6,.3);border:1px solid rgba(255,255,255,.1);box-shadow:none;}
+  body.touch .camBtn .ic{width:16px;height:16px;} body.touch #zoomLbl{font-size:7px;}
+
+  /* ---- a menu is open → no battle HUD and no thumb pads underneath it ---- */
+  body.inmenu #hud,body.inmenu #touch{display:none !important;}
+
+  /* ---- MOBILE PERF: a backdrop-filter over an animating canvas re-blurs the whole backdrop every
+         single frame. Seven of them (HUD chips · radar · pads · cam buttons) = the mobile stutter. ---- */
+  body.touch .chip,body.touch .mbtn,body.touch .camBtn,body.touch #radar,body.touch #autoBtn,body.touch #mPause,
+  body.touch .overlay,body.touch .shop-tab,body.touch .shop-arrow,body.touch .shop-info,body.touch .si-panel{
+    backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
+  body.touch *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}   /* Z92: no blur anywhere on phones (each one re-blurs the moving canvas every frame) */
+  body.touch .chip{background:linear-gradient(180deg,rgba(16,24,10,.6),rgba(6,12,5,.7));}    /* readable again without the blur */
+  body.touch #radar{background:linear-gradient(180deg,rgba(14,20,10,.7),rgba(8,13,6,.78));}
+  body.touch .mbtn{background:linear-gradient(180deg,rgba(22,30,14,.6),rgba(10,16,8,.68));}
+  body.touch .camBtn{background:rgba(10,15,8,.6);}
+  body.touch #autoBtn{background:rgba(10,15,8,.55);}
+
+  /* ---- transient banners out of the HUD clusters (buffs used to land on the SWAP/SKILL pads) ---- */
+  body.touch #buffbar{left:50%;right:auto;transform:translateX(-50%);flex-direction:row;align-items:center;
+    top:calc(max(8px,env(safe-area-inset-top)) + 30px);}
+  body.touch #combo{top:calc(max(8px,env(safe-area-inset-top)) + 58px);}
+  /* #coach is fixed to the layout viewport → add back the slice hidden behind the browser toolbar */
+  body.touch #coach{top:auto;bottom:calc(100vh - var(--appH,100svh) + max(14px,env(safe-area-inset-bottom)) + 8px);max-width:52vw;font-size:12px;padding:7px 14px;
+    transform:translateX(-50%) translateY(8px);}
+  body.touch #coach.on{transform:translateX(-50%) translateY(0);}
+
+  /* ---- portrait gate: stop painting the HUD/pads behind it (the gate already covers the screen) ---- */
+  @media (orientation:portrait){ body.touch #hud,body.touch #touch,body.touch #popups{display:none !important;} }
+
+  /* ---- MAIN MENU (all screens): one grid, clear hierarchy — PLAY · CONTINUE · prepare · utility ----
+         box-shadow animations were repainting the whole button every frame on top of the live 3D scene
+         (that is the iPad flicker), so the pulse is now an opacity-only glow layer the GPU composites. */
+  .btn-primary{animation:none;position:relative;}
+  .btn-primary::after{content:'';position:absolute;inset:-2px;border-radius:15px;pointer-events:none;
+    box-shadow:0 0 26px rgba(140,191,63,.45);opacity:0;animation:glowPulse 2.6s ease-in-out infinite;}
+  @keyframes glowPulse{0%,100%{opacity:0;}50%{opacity:1;}}
+  #start .btn-primary{animation:none;}
+  #start .btn-primary::after{box-shadow:0 0 30px rgba(243,185,74,.55);animation:glowPulse 2.4s ease-in-out infinite;}
+  .boot-tap{animation:none;position:relative;}
+  .boot-tap::after{content:'';position:absolute;inset:-2px;border-radius:15px;pointer-events:none;
+    box-shadow:0 0 30px rgba(243,185,74,.55);opacity:0;animation:glowPulse 2.4s ease-in-out infinite;}
+
+  #start .panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+    width:min(94vw,660px);max-width:none;padding:0;align-items:stretch;justify-items:stretch;}
+  #start .panel > *{width:100%;margin:0;}
+  #start #playBtn{grid-column:1/-1;}
+  #start #continueBtn{grid-column:1/-1;}
+  #start .btn-continue{background:rgba(8,14,6,.55);border-color:rgba(140,191,63,.5);color:#dfeccb;
+    font-size:14px;letter-spacing:2px;padding:11px 20px;text-shadow:0 1px 6px rgba(0,0,0,.9);}
+  #start .btn-continue::after{box-shadow:none;animation:none;}
+  #start .btn-continue:hover{background:rgba(20,32,10,.72);border-color:var(--green);filter:none;}
+  #start .btn-arsenal,#start .btn-shop,#start .btn-terrain{font-size:12.5px;letter-spacing:1px;padding:12px 10px;
+    white-space:nowrap;overflow:hidden;}                       /* one line each → the row reads as one clean band */
+  #start .hello{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;   /* legible over the key art */
+    background:rgba(6,9,4,.5);border:1px solid rgba(140,191,63,.3);text-shadow:0 2px 10px rgba(0,0,0,.95);}
+  #start .start-id{align-items:center;}
+  #start .terrain-pick{margin:0;max-width:none;display:flex;}   /* wrapper stretches so BATTLEFIELD lines up with ARSENAL/SHOP */
+  #start .btn-terrain{flex:1;justify-content:center;}
+  #start .btn-mini{justify-content:center;font-size:11px;padding:9px 8px;}
+  #start .help{grid-column:1/-1;margin-top:2px;}
+  /* tablets (iPad & co) get the roomier desktop menu, just with touch-sized hit targets */
+  @media (min-width:760px) and (min-height:560px){
+    body.touch #start .panel{width:min(90vw,700px);gap:12px;}
+    body.touch #start .btn-arsenal,body.touch #start .btn-shop,body.touch #start .btn-terrain{padding:14px 10px;font-size:14px;}
+    body.touch #start .btn-mini{padding:12px 8px;font-size:12px;}
+    body.touch #start .btn-primary{font-size:22px;padding:17px 40px;}
+    body.touch .title{font-size:clamp(30px,7vw,54px);}
+  }
+
+  /* ================= HOME + BOOT JUICE =================
+     Military-HUD dressing: corner brackets, scanlines, a radar sweep and shine passes.
+     Everything animates transform/opacity ONLY, so it is composited on the GPU and never
+     repaints over the live 3D scene (animated box-shadow/filter is what flickered on iPad). */
+  .scanlines{position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.13;
+    background:repeating-linear-gradient(180deg,rgba(220,255,200,.65) 0 1px,transparent 1px 3px);}
+  .sweep{position:absolute;left:0;right:0;top:0;height:150px;pointer-events:none;z-index:1;opacity:0;
+    background:linear-gradient(180deg,transparent,rgba(140,191,63,.14) 55%,rgba(231,181,74,.42) 84%,transparent);
+    animation:sweepDown 6s cubic-bezier(.45,0,.25,1) infinite;}
+  @keyframes sweepDown{0%{transform:translateY(-170px);opacity:0;}6%{opacity:.9;}62%{opacity:.75;}72%{opacity:0;}100%{transform:translateY(1200px);opacity:0;}}
+  .frame{position:absolute;inset:9px;pointer-events:none;z-index:1;}
+  .frame > i{position:absolute;width:24px;height:24px;border:2px solid rgba(231,181,74,.5);opacity:.75;}
+  .frame > i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;}
+  .frame > i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;}
+  .frame > i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;}
+  .frame > i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;}
+  #start .frame,#start .scanlines,#start .sweep{z-index:0;}
+  #start .title,#start .subtitle,#start .start-id,#start .panel,#start .rot-hint{position:relative;z-index:2;}
+
+  /* ---- BOOT: key art push-in, logo assemble + shine, status lines, radar ping on the CTA ---- */
+  #boot{overflow:hidden;align-items:flex-end;padding-bottom:calc(env(safe-area-inset-bottom) + clamp(18px,6vh,54px));}
+  #boot .boot-logo,#boot .boot-sub{display:none;}   /* the key art already carries the logo — don't print it twice */
+  .boot-bg{position:absolute;inset:0;z-index:0;
+    background:linear-gradient(180deg,rgba(3,5,2,.55),rgba(3,5,2,.92)),url('../assets/banner-desktop.jpg') center/cover no-repeat;
+    transform:scale(1.12);animation:bootPush 9s cubic-bezier(.18,.7,.25,1) forwards;}
+  @keyframes bootPush{to{transform:scale(1);}}
+  .boot-inner{position:relative;z-index:2;}
+  .boot-kick{font-size:9.5px;font-weight:900;letter-spacing:6px;color:var(--amber);text-transform:uppercase;
+    opacity:0;animation:bootIn .5s ease .05s forwards;text-shadow:0 0 14px rgba(231,181,74,.6);}
+  .boot-logo{position:relative;opacity:0;animation:bootLogo .85s cubic-bezier(.2,.9,.2,1) .1s forwards;}
+  @keyframes bootLogo{0%{opacity:0;letter-spacing:24px;transform:translateY(6px);}
+    55%{opacity:1;}62%{opacity:.45;}68%{opacity:1;}100%{opacity:1;letter-spacing:6px;transform:none;}}
+  .boot-logo::after{content:'';position:absolute;inset:-2% -6%;pointer-events:none;
+    background:linear-gradient(112deg,transparent 42%,rgba(255,255,255,.42) 50%,transparent 58%);
+    transform:translateX(-130%);animation:shineX 3.4s ease-in-out 1s infinite;}
+  @keyframes shineX{0%,58%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}
+  .boot-sub,.boot-lines,.boot-bar,.boot-msg{opacity:0;animation:bootIn .5s ease forwards;}
+  .boot-sub{animation-delay:.55s;} .boot-lines{animation-delay:.8s;} .boot-bar{animation-delay:.95s;} .boot-msg{animation-delay:1.05s;}
+  @keyframes bootIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .boot-lines{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:2px;}
+  .boot-lines span{font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(190,225,150,.75);text-transform:uppercase;
+    opacity:0;animation:bootIn .45s ease forwards;}
+  .boot-lines span::before{content:'▪ ';color:var(--green);}
+  .boot-lines span:nth-child(1){animation-delay:.9s;} .boot-lines span:nth-child(2){animation-delay:1.15s;} .boot-lines span:nth-child(3){animation-delay:1.4s;}
+  .bt-ping{position:absolute;inset:-6px;border-radius:18px;border:2px solid rgba(255,206,110,.7);pointer-events:none;
+    opacity:0;animation:btPing 2.1s ease-out infinite;}
+  @keyframes btPing{0%{transform:scale(1);opacity:.75;}70%{transform:scale(1.16);opacity:0;}100%{opacity:0;}}
+  #boot.ready .boot-lines{display:none;}
+
+  /* ---- MENU BUTTONS: shine pass + real press feedback ---- */
+  #start .panel .btn{position:relative;}   /* no overflow:hidden — it would clip .btn-primary's composited glow (the shine is already rounded-clipped) */
+  #start .panel .btn::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
+    background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);transform:translateX(-130%);}
+  #start .panel .btn:hover::before{transform:translateX(130%);transition:transform .65s ease;}
+  #start #playBtn::before{background:linear-gradient(112deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%);
+    animation:shineX 3.8s ease-in-out 1.2s infinite;}
+  .btn:active,.btn-arsenal:active,.btn-shop:active,.btn-terrain:active,.btn-mini:active{transform:scale(.972);}
+  .boot-tap:active{transform:scale(.97);}
+  /* portrait hint on the title screen (menus work in portrait — the battle itself wants landscape) */
+  .rot-hint{display:none;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:2.5px;color:#ffe8b6;
+    text-transform:uppercase;padding:5px 14px;border-radius:999px;background:rgba(6,9,4,.5);border:1px solid rgba(231,181,74,.35);}
+  .rot-hint .ic{width:14px;height:14px;color:var(--amber);animation:rotPulse 1.8s ease-in-out infinite;}
+  @media (orientation:portrait){ body.touch #start .rot-hint{display:inline-flex;} }
+
+  /* ================= PORTRAIT (phone/tablet held upright) =================
+     The menus are fully usable upright — only the battle itself asks for landscape. */
+  @media (orientation:portrait){
+    #start{background-image:linear-gradient(180deg,rgba(3,5,2,.15) 0%,rgba(3,5,2,0) 26%,rgba(3,5,2,.55) 62%,rgba(3,5,2,.96) 100%),url('../assets/banner-mobile.jpg');}
+    .boot-bg{background-image:linear-gradient(180deg,rgba(3,5,2,.55),rgba(3,5,2,.92)),url('../assets/banner-mobile.jpg');}
+    #start .panel{grid-template-columns:repeat(6,minmax(0,1fr));width:min(94vw,460px);gap:9px;}
+    #start #playBtn,#start #continueBtn{grid-column:1/-1;}
+    #start .btn-arsenal{grid-column:span 3;} #start .btn-shop{grid-column:span 3;}
+    #start .terrain-pick{grid-column:1/-1;}
+    #start #guideBtn,#start #settingsBtn,#start #resetBtn{grid-column:span 2;}
+    #start .help{grid-column:1/-1;}
+    #start .start-id{flex-direction:column;gap:8px;}
+    .go-stats{gap:18px;} #upcards,#brcards{max-width:94vw;}
+    .upcard{width:46%;min-width:0;} .brcard{width:46%;min-width:0;}
+    .tcard,body.touch .tcard{width:44%;} .tcard canvas,body.touch .tcard canvas{height:96px;}
+    .si-panel{display:none;}
+  }
+  @media (orientation:portrait) and (max-width:520px){
+    .lg{display:none;} .sm{display:inline;}          /* narrow column → short labels, one line each */
+    #start .btn-primary,body.touch #start .btn-primary{font-size:19px;padding:15px 20px;}
+    #start .btn-arsenal,#start .btn-shop,#start .btn-terrain{font-size:12px;padding:11px 8px;}
+    #start .btn-mini{font-size:10.5px;padding:10px 4px;white-space:nowrap;}
+    #start .help{display:none;}
+  }
+
+  /* ================= SHORT LANDSCAPE (phone held sideways: ~300–520px tall) =================
+     Every menu is laid out to FIT: no off-screen buttons, no overlap, no hunting for PLAY. */
+  @media (orientation:landscape) and (max-height:520px){
+    .overlay{gap:7px;padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));}
+    .title{font-size:clamp(17px,4.8vh,30px) !important;letter-spacing:2px;}    /* !important: several titles carry an inline clamp() */
+    .subtitle{font-size:9.5px !important;letter-spacing:3px;margin-top:0;}
+    .panel,body.touch .panel{padding:10px 12px;}
+    .lg{display:none;}                    /* long label half hidden … */
+    .sm{display:inline;}                  /* … short one shown */
+    .btn{padding:10px 16px;font-size:14px;}
+    .btn-primary{padding:11px 22px;font-size:15px;letter-spacing:2px;}
+
+    /* ---- START: identity strip on one line + a fixed 4-column action grid ---- */
+    #start{padding-bottom:max(8px,env(safe-area-inset-bottom));gap:7px;}
+    #start .start-id{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;}
+    #start .hello{font-size:11px;letter-spacing:1px;}
+    #start .bestline{font-size:10px;letter-spacing:1px;padding:3px 10px;margin:0;}
+    #start .wallet{margin:0;gap:8px;}
+    #start .w-chip{font-size:12px;padding:3px 10px;} #start .w-chip .ic{width:14px;height:14px;}
+    #start .panel,body.touch #start .panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
+      width:min(96vw,620px);max-width:none;padding:0;align-items:stretch;}
+    #start .panel > *{width:100%;margin:0 !important;}
+    #start .btn-primary,body.touch #start .btn-primary{grid-area:1/1/2/5;font-size:17px;letter-spacing:3px;padding:11px 8px;}
+    body.hassave #start #playBtn{grid-area:1/1/2/3;}
+    body.hassave #start #continueBtn{grid-area:1/3/2/5;font-size:12px;letter-spacing:1px;padding:11px 6px;}
+    #start .btn-arsenal{grid-area:2/1/3/3;} #start .btn-shop{grid-area:2/3/3/5;}
+    #start .btn-arsenal,#start .btn-shop{font-size:12px;letter-spacing:1px;padding:9px 6px;gap:6px;}
+    #start .btn-arsenal .ic,#start .btn-shop .ic{width:15px;height:15px;}
+    #start .terrain-pick{grid-area:3/1/4/2;margin:0;max-width:none;}
+    #start .btn-terrain{width:100%;font-size:10px;letter-spacing:.5px;padding:7px 5px;gap:5px;}
+    #start .btn-terrain .ic{width:13px;height:13px;} #start .tp-sw{width:10px;height:10px;}
+    #start #guideBtn{grid-area:3/2/4/3;} #start #settingsBtn{grid-area:3/3/4/4;} #start #resetBtn{grid-area:3/4/4/5;}
+    #start .btn-mini{font-size:10px;letter-spacing:.8px;padding:7px 5px;justify-content:center;gap:5px;}
+    #start .btn-mini .ic{width:13px;height:13px;}
+    #start .help{display:none;}
+
+    /* ---- the other menus ---- */
+    .settings{gap:6px;margin-top:4px;} .set-row{padding:7px 11px;} .set-l{font-size:11px;}
+    .seg-chip{font-size:10px;padding:5px 9px;} .seg-chip small{font-size:8px;}
+    .go-stats{gap:16px;margin:6px 0 8px;} .go-stat .v{font-size:22px;} .go-stat .l{font-size:8px;}
+    .go-best,.go-wallet{margin:0 0 4px;font-size:10px;min-height:0;}
+    .guide,body.touch .guide{max-height:48vh;gap:6px;margin-top:6px;} .guide-row{padding:7px 11px;gap:10px;}
+    .guide-row .g-ic,.guide-row .g-ic svg{width:22px;height:22px;}
+    .guide-row .g-tx b{font-size:11px;} .guide-row .g-tx span{font-size:11px;line-height:1.34;}
+    #ldgrid,body.touch #ldgrid{max-height:44vh;gap:6px;} .ldcard,body.touch .ldcard{width:86px;min-width:0;padding:8px 6px 7px;}
+    .ldcard .gi,body.touch .ldcard .gi{width:24px;height:24px;} .ldcard .nm{font-size:10.5px;} .ldcard .tr{font-size:8px;}
+    .tcard,body.touch .tcard{width:128px;} .tcard canvas,body.touch .tcard canvas{height:80px;}
+    .terrain-gallery{gap:10px 10px;padding:8px 4px 10px;}
+    #upcards{gap:8px;} .upcard,body.touch .upcard{width:112px;min-width:0;padding:10px 7px;}
+    .upcard .ic,body.touch .upcard .ic{width:30px;height:30px;} .upcard .nm{font-size:11px;margin:5px 0 3px;} .upcard .ds{font-size:9px;}
+    .brcard{width:120px;min-width:0;padding:10px 7px;} .brcard .ic{width:26px;height:26px;} .brcard .ds{font-size:9px;} .br-hint{font-size:9px;margin-top:6px;}
+    #nickInput{font-size:17px;padding:10px 14px;}
+    /* shop: cabinet grid gets the vertical room back */
+    .shop-top{gap:6px;padding:calc(max(8px,env(safe-area-inset-top))) 10px 4px;}
+    .shop-ttl{font-size:16px;letter-spacing:4px;} .shop-tab{font-size:9px;padding:4px 10px;}
+    #caseGrid{top:calc(max(8px,env(safe-area-inset-top)) + 58px);max-height:calc(100% - 92px);
+      grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;}
+    body.touch #caseGrid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));}
+    .case-disp,body.touch .case-disp{height:52px;} .case-ic,body.touch .case-ic{width:34px;height:34px;} .case-nm{font-size:11px;}
+    .shop-info{padding:8px 14px 10px;gap:3px;} .si-name{font-size:17px;} .si-desc{font-size:10px;} .si-buy{padding:9px 20px;font-size:14px;min-width:140px;}
+    #rotate .ic{width:54px;height:54px;} #rotate .rt-t{font-size:17px;} #rotate .rt-s{font-size:10px;}
+    .boot-logo{font-size:clamp(22px,7vh,40px);} .boot-tap{padding:11px 28px;}
+  }
+

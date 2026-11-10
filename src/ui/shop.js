@@ -1,0 +1,275 @@
+// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+import * as THREE from 'three';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
+import { BEST, GUNS, PROFILE, S, VIEW, __set_BEST, __set_soldierLvl, camera, canAfford, catVi, deployOwnedDrone, deploySoldiers, guardTarget, gunDmgMul, gunFireMul, gunLevel, gunReloadMul, gunXpToNext, hide, ownGun, payCost, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, sfx, show, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax } from '../hub.js';
+
+// ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
+export function shopModel(){
+  const cats={}; const push=(c,it)=>{ (cats[c]=cats[c]||[]).push(it); };
+  Object.keys(GUN_PRICE).forEach(id=>{ if(!GUNS[id]) return;
+    const tier=GUNS[id].tier, vip=VIP_GUNS.includes(id), owned=PROFILE.ownedGuns.includes(id);
+    push('WEAPONS', {type:'gun', id, name:GUNS[id].name, icon:GUNS[id].svg||'gun', tier, cost:GUN_PRICE[id], vip, owned, rar: vip?'vip':('t'+tier)}); });
+  if(cats.WEAPONS) cats.WEAPONS.sort((a,b)=>(a.owned?1:0)-(b.owned?1:0) || a.tier-b.tier);   // buyable first, owned last
+  SHOP_UP.forEach(u=>{ const L=upLevel(u.key), max=upMax(u.key), cost=L<max?u.costs[L]:null;
+    push(u.cat, {type:'up', key:u.key, name:u.name, icon:u.icon, per:u.per, level:L, max, cost, vip:!!(cost&&cost.d), rar:(cost&&cost.d)?'vip':'up'}); });
+  return ['WEAPONS','FIREPOWER','AMMO','CHASSIS','SUPPORT'].filter(c=>cats[c]&&cats[c].length).map(c=>({cat:c, items:cats[c]}));
+}
+export const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', SUPPORT:'drone' };
+export function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
+// ===== 3D showroom: a dark studio + spotlight + turntable; the focused item rotates on a pedestal =====
+export const shopScene = new THREE.Scene();
+shopScene.background = new THREE.Color(0x05070b);
+shopScene.fog = new THREE.Fog(0x05070b, 11, 26);
+export const shopCam = new THREE.PerspectiveCamera(40, innerWidth/Math.max(1,innerHeight), 0.1, 80);
+shopCam.position.set(0, 3.0, 8.6); shopCam.lookAt(0, 1.45, 0);
+(function(){
+  shopScene.add(new THREE.AmbientLight(0x5a6478, 1.15));
+  const key=new THREE.SpotLight(0xffffff, 130, 30, 0.7, 0.5, 1.1); key.position.set(2.6,9.5,5.4); key.target.position.set(0,1.4,0); shopScene.add(key, key.target);
+  const fill=new THREE.PointLight(0xdfe9ff, 40, 30); fill.position.set(0,2.6,8.5); shopScene.add(fill);   // front fill so the camera-facing side reads clearly
+  const a=new THREE.PointLight(0x6fb6ff, 50, 22); a.position.set(-5.5,3,-1); shopScene.add(a);
+  const b=new THREE.PointLight(0xffc25a, 38, 22); b.position.set(5.5,2.2,-2); shopScene.add(b);
+  const disc=new THREE.Mesh(new THREE.CylinderGeometry(2.7,3.0,0.34,56), new THREE.MeshStandardMaterial({color:0x10131b,metalness:.75,roughness:.5}));
+  disc.position.y=-0.17; shopScene.add(disc);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.72,0.05,12,72), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffce4a,emissiveIntensity:2.4,roughness:.4}));
+  ring.rotation.x=Math.PI/2; ring.position.y=0.03; shopScene.add(ring); shopScene._ring=ring;
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(2.55,48), new THREE.MeshBasicMaterial({color:0xffce4a,transparent:true,opacity:0.1,blending:THREE.AdditiveBlending,depthWrite:false}));
+  glow.rotation.x=-Math.PI/2; glow.position.y=0.04; shopScene.add(glow); shopScene._glow=glow;   // rarity-tinted floor glow (set per item)
+  const grid=new THREE.GridHelper(48, 48, 0x1a3a52, 0x0c1622); grid.position.y=-0.34; shopScene.add(grid);
+})();
+export const _shMetal=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:.36});
+export const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:2.1,metalness:.4,roughness:.4});
+export const _shopRay=new THREE.Raycaster();
+export function _box(w,h,d,m){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); }
+export function _barX(rt,rb,h,m){ const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,18), m); c.rotation.z=Math.PI/2; return c; }   // cylinder lying along X
+export function buildGunModel(id){
+  const g=GUNS[id]||GUNS.rifle, col=g.color||0xaef0a0, sv=g.svg||'rifle', grp=new THREE.Group();
+  // tier/VIP-graded skin: higher tier = shinier + brighter accents; VIP = bright chrome. Reads the rank at a glance.
+  const tier=g.tier||1, vip=VIP_GUNS.includes(id), rc=RAR_COL[vip?'vip':('t'+tier)]||0x9fb07a;
+  const rough = vip?0.3 : (tier>=3?0.32 : tier===2?0.38 : 0.46), metal = vip?0.9:0.86;
+  const dark=new THREE.MeshStandardMaterial({color: vip?0x565b5e:(tier>=3?0x4a4f50:0x3e443e), metalness:metal, roughness:rough});
+  const steel=new THREE.MeshStandardMaterial({color: vip?0x787e82:(tier>=3?0x646a6c:0x5c6163), metalness:metal, roughness:rough});
+  const acc=new THREE.MeshStandardMaterial({color:0x0a0a0a, emissive:col, emissiveIntensity: vip?2.2:(tier>=3?1.9:tier===2?1.6:1.3), metalness:.4, roughness:.36});
+  grp.add(_box(1.5,0.5,0.42,dark));                                            // receiver
+  const grip=_box(0.3,0.72,0.34,steel); grip.position.set(-0.36,-0.52,0); grip.rotation.z=0.24; grp.add(grip);
+  const stock=_box(0.72,0.42,0.34,dark); stock.position.set(-0.98,-0.06,0); grp.add(stock);
+  const mag=_box(0.34,0.62,0.3,acc); mag.position.set(0.16,-0.52,0); grp.add(mag);
+  const sight=_box(0.3,0.16,0.1,steel); sight.position.set(-0.12,0.34,0); grp.add(sight);
+  const bar=(len,rad,y,z,mat)=>{ const c=_barX(rad,rad,len,mat||dark); c.position.set(0.75+len/2, y||0, z||0); grp.add(c); return c; };
+  if(id==='mortar'){ const b=bar(1.5,0.19,0.22,0,steel); b.rotation.z=0.34;   // slim, longer tube at a moderate angle (refined mortar)
+      const mb=_barX(0.22,0.24,0.26,acc); mb.position.set(1.78,0.62,0); mb.rotation.z=0.34; grp.add(mb);   // fine muzzle
+      const plate=_box(0.5,0.14,0.6,dark); plate.position.set(0.38,-0.32,0); grp.add(plate); }   // compact baseplate
+  else if(sv==='shotgun'){ bar(1.5,0.1,0.09,0.11); bar(1.5,0.1,0.09,-0.11); }
+  else if(sv==='shell'){ bar(1.4,0.23,0.05,0); const mb=_barX(0.3,0.3,0.3,acc); mb.position.set(2.05,0.05,0); grp.add(mb); }     // cannon
+  else if(sv==='minigun'){ const hub=_barX(0.34,0.34,0.5,steel); hub.position.set(1.05,0,0); grp.add(hub);
+      const cl=new THREE.Group(); for(let i=0;i<6;i++){ const c=_barX(0.07,0.07,1.5,dark); const an=i/6*6.283; c.position.set(1.75,Math.sin(an)*0.22,Math.cos(an)*0.22); cl.add(c);} grp.add(cl); grp._spinPart=cl; }
+  else if(sv==='missile'||sv==='rocket'){ const tubes=sv==='rocket'?1:3, rad=sv==='rocket'?0.3:0.14;
+      for(let i=0;i<tubes;i++){ const o=(i-(tubes-1)/2); const yy=sv==='rocket'?0:o*0.34, zz=sv==='rocket'?0:o*0.0; const tube=_barX(rad,rad,1.4,steel); tube.position.set(1.25,yy,zz); grp.add(tube);
+        const tip=new THREE.Mesh(new THREE.ConeGeometry(rad,0.42,12),acc); tip.rotation.z=-Math.PI/2; tip.position.set(2.05,yy,zz); grp.add(tip); } }
+  else if(sv==='rail'){ const r1=_box(1.9,0.07,0.12,steel); r1.position.set(1.2,0.13,0); const r2=r1.clone(); r2.position.y=-0.13; grp.add(r1,r2);
+      const core=_barX(0.1,0.1,1.7,acc); core.position.set(1.2,0,0); grp.add(core); for(let i=0;i<3;i++){ const rg=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.04,8,18),acc); rg.position.set(0.65+i*0.6,0,0); grp.add(rg);} }
+  else if(sv==='bolt'){ bar(1.2,0.1,0,0,steel); for(let i=0;i<3;i++){ const co=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.06,10,22),acc); co.position.set(0.95+i*0.4,0,0); co.rotation.y=Math.PI/2; grp.add(co);} }
+  else if(sv==='snow'){ bar(1.4,0.13,0,0,steel); for(let i=0;i<4;i++){ const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.15,0),acc); const an=i/4*6.283; cr.position.set(1.7,Math.sin(an)*0.2,Math.cos(an)*0.2); grp.add(cr);} }
+  else if(id==='flamer'){ bar(1.3,0.16,0,0,steel); const noz=_barX(0.3,0.16,0.42,dark); noz.position.set(1.75,0,0); grp.add(noz);
+      const tank=_barX(0.24,0.24,0.95,acc); tank.position.set(0.35,-0.4,0.16); grp.add(tank);   // fuel tank
+      const pilot=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),acc); pilot.position.set(2.05,0,0); grp.add(pilot); }   // pilot flame
+  else if(id==='arty'){ const b=bar(1.7,0.26,0.12,0,steel); b.rotation.z=0.3;   // thick barrel angled UP (howitzer)
+      const mb=_barX(0.42,0.42,0.5,acc); mb.position.set(2.05,0.62,0); mb.rotation.z=0.3; grp.add(mb);   // big muzzle brake
+      const base=_barX(0.5,0.6,0.55,dark); base.position.set(0.55,-0.18,0); grp.add(base); }   // recoil base
+  else { bar(sv==='smg'?1.0:1.6,0.1); const mz=_barX(0.14,0.14,0.18,acc); mz.position.set(sv==='smg'?1.4:1.7,0,0); grp.add(mz); }   // rifle/smg/default
+  const auraN = vip?2:(tier>=3?1:0);   // slim energy rings orbit the higher tiers — a tasteful halo, not a blast
+  if(auraN){ const aura=new THREE.Group();
+    for(let i=0;i<auraN;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(1.25+i*0.22,0.028,8,52), new THREE.MeshStandardMaterial({color:0x000000,emissive:rc,emissiveIntensity:1.5,roughness:.4}));
+      r.rotation.x=Math.PI/2.3 + i*0.55; aura.add(r); }
+    grp.add(aura); grp._aura=aura; }
+  grp.scale.setScalar(vip?1.32:(tier>=3?1.26:tier===2?1.16:1.06));   // bigger = stronger
+  return grp;
+}
+export function buildUpgradeModel(item){
+  const grp=new THREE.Group(); const rc=RAR_COL[item.rar]||0x9bd14a;
+  const isVip=item.rar==='vip';
+  const mat=new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:isVip?1.7:1.1,metalness:.65,roughness:isVip?0.18:0.3});
+  let core;
+  if(item.key==='dronePow'||item.key==='droneRof'||item.key==='droneArm'){          // mini escort drone (quad-rotor)
+    core=new THREE.Group();
+    core.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.6,0), mat));
+    const rotMat=new THREE.MeshStandardMaterial({color:0x0a0d0a,emissive:rc,emissiveIntensity:0.8,transparent:true,opacity:0.5,metalness:.5,roughness:.3});
+    for(const [ax,az] of [[0.78,0.78],[-0.78,0.78],[0.78,-0.78],[-0.78,-0.78]]){
+      const arm=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.08,Math.hypot(ax,az)), mat); arm.position.set(ax/2,0,az/2); arm.rotation.y=Math.atan2(ax,az); core.add(arm);
+      const rotor=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.04,18), rotMat); rotor.position.set(ax,0.12,az); core.add(rotor);
+    }
+  } else if(item.key==='guardRof'||item.key==='guardArm'){                          // mini guard (helmet + torso)
+    core=new THREE.Group();
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,1.0,14), mat); torso.position.y=-0.1; core.add(torso);
+    core.add(new THREE.Mesh(new THREE.SphereGeometry(0.34,16,12), mat).translateY(0.62));
+    const helm=new THREE.Mesh(new THREE.SphereGeometry(0.4,16,8,0,6.3,0,1.45), mat); helm.position.y=0.66; core.add(helm);
+  } else {
+    let geo;
+    switch(item.key){
+      case 'damage': geo=new THREE.TetrahedronGeometry(1.05,0); break;
+      case 'range':  geo=new THREE.CylinderGeometry(0.22,0.22,2.0,22); break;
+      case 'reload': case 'mag': geo=new THREE.BoxGeometry(0.9,1.3,0.62); break;
+      case 'hp':     geo=new THREE.IcosahedronGeometry(1.05,0); break;
+      case 'armor':  geo=new THREE.CylinderGeometry(1.1,1.1,0.26,8); break;
+      case 'engine': geo=new THREE.TorusGeometry(0.74,0.3,18,30); break;
+      default:       geo=new THREE.OctahedronGeometry(1.05,0);
+    }
+    core=new THREE.Mesh(geo, mat);
+  }
+  core.position.y=1.55; core.scale.setScalar(isVip?1.18:1); grp.add(core); grp._spinPart=core;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(item.icon,'#'+rc.toString(16).padStart(6,'0')),transparent:true,depthWrite:false}));
+  spr.scale.set(1.25,1.25,1); spr.position.set(0,3.0,0); grp.add(spr);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.45,0.045,10,44), _shGlow(rc)); halo.rotation.x=Math.PI/2; halo.position.y=0.28; grp.add(halo);
+  if(isVip){ const aura=new THREE.Group();   // VIP upgrade gets slim orbiting energy rings too
+    for(let i=0;i<2;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(1.3+i*0.22,0.028,8,52), new THREE.MeshStandardMaterial({color:0x000000,emissive:rc,emissiveIntensity:1.5,roughness:.4}));
+      r.rotation.x=Math.PI/2.3+i*0.55; r.position.y=1.55; aura.add(r); }
+    grp.add(aura); grp._aura=aura; }
+  grp._floatLock=true;
+  return grp;
+}
+export function disposeObj(o){ o.traverse&&o.traverse(c=>{ if(c.geometry)c.geometry.dispose(); if(c.material){ (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{ if(m.map)m.map.dispose(); m.dispose&&m.dispose(); }); } }); }
+// GUN_BLURB / UP_BLURB now imported from config.js
+export function itemBlurb(it){ return it.type==='gun' ? (GUN_BLURB[it.id]||'') : (UP_BLURB[it.key]||''); }
+export let shopOpen=false, shopDetail3D=false, shopCats=[], activeCat='', shopList=[], shopIdx=0, shopHero=null, _shopT=0;
+export function shopRefreshData(){ shopCats=shopModel(); if(!shopCats.find(c=>c.cat===activeCat)) activeCat=shopCats.length?shopCats[0].cat:''; shopList=(shopCats.find(c=>c.cat===activeCat)||{items:[]}).items; }
+export function buildShopTabs(){ const tb=document.getElementById('shopTabs'); if(!tb) return; tb.innerHTML='';
+  shopCats.forEach(g=>{ const t=document.createElement('div'); t.className='shop-tab'+(g.cat===activeCat?' on':''); t.dataset.cat=g.cat; t.textContent=catVi(g.cat); tapEl(t, ()=>setActiveCat(g.cat)); tb.appendChild(t); }); }
+export function setActiveCat(cat){ activeCat=cat; shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); sfx('click'); }
+export function caseState(it){ const owned=it.type==='gun'&&it.owned, maxed=it.type==='up'&&it.level>=it.max;
+  return owned?'owned':maxed?'maxed':(!(it.cost&&canAfford(it.cost))?'cant':''); }
+export function renderCaseGrid(){
+  const grid=document.getElementById('caseGrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
+  shopList.forEach((it,i)=>{
+    const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP':('T'+it.tier)):('LV '+it.level+'/'+it.max);
+    const price = (it.type==='gun'&&it.owned)?('★ LV '+gunLevel(it.id)+'/'+BALANCE.mastery.maxLevel) : (it.type==='up'&&it.level>=it.max)?'MAX' : priceHTML(it.cost);
+    const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
+    c.innerHTML='<span class="case-badge">'+badge+'</span><div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'+
+      '<div class="case-nm">'+it.name+'</div><div class="case-price">'+price+'</div>';
+    tapEl(c, ()=>openDetail(i)); grid.appendChild(c);
+  });
+}
+export function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
+export function shopStats(it){
+  if(it.type==='gun'){ const g=GUNS[it.id], out=[];
+    out.push(shopStat('DMG', g.dmg)); out.push(shopStat('ROF', (1/g.fireCd).toFixed(g.fireCd<0.2?0:1)+'/s')); out.push(shopStat('MAG', g.mag));
+    if(g.frags>1) out.push(shopStat('', g.frags+'× PELLET', true));
+    if(g.pierce) out.push(shopStat('','PIERCE',true)); if(g.aoe||g.aoeR) out.push(shopStat('','AOE',true));
+    if(g.homing) out.push(shopStat('','HOMING',true)); if(g.freeze) out.push(shopStat('','FREEZE',true)); if(g.chain) out.push(shopStat('','CHAIN',true));
+    return out.join(''); }
+  const out=[shopStat('', it.per)]; out.push(shopStat('LEVEL', it.level+' / '+it.max));
+  if(it.level>=it.max) out.push(shopStat('','MAXED',true)); return out.join('');
+}
+// rich side panel (bars) — the eye-candy stat sheet beside the 3D item
+export function spBar(label,val,frac){ frac=Math.max(0.05,Math.min(1,frac));
+  return '<div class="sp-bar"><div class="sp-bl">'+label+'<b>'+val+'</b></div><div class="sp-track"><div class="sp-fill" style="width:'+(frac*100).toFixed(0)+'%"></div></div></div>'; }
+export function siPanelHTML(it){
+  if(it.type==='gun'){ const g=GUNS[it.id], lv=gunLevel(it.id);
+    const dMul=gunDmgMul(it.id), fMul=gunFireMul(it.id), rMul=gunReloadMul(it.id);
+    const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(edmg*(g.frags||1)*rof), erel=g.reload*rMul;
+    const T=[]; if(g.frags>1)T.push(g.frags+'× VIÊN'); if(g.pierce)T.push('XUYÊN'); if(g.aoe||g.aoeR)T.push('NỔ LAN'); if(g.homing)T.push('TỰ DẪN'); if(g.freeze)T.push('ĐÓNG BĂNG'); if(g.chain)T.push('LAN SÉT');
+    const nx=gunXpToNext(it.id);
+    const mastery = it.owned ? ('<div class="sp-mastery">★ THÔNG THẠO <b>CẤP '+lv+' / '+BALANCE.mastery.maxLevel+'</b>'+
+        (nx?'<span class="sp-xp">'+nx.have+' / '+nx.need+' ▸ CẤP '+(lv+1)+'</span>':'<span class="sp-xp">★ TỐI ĐA</span>')+'</div>'+
+        (lv>1?'<div class="sp-mbuff">+'+Math.round((dMul-1)*100)+'% sát thương · +'+Math.round((1/fMul-1)*100)+'% tốc bắn · −'+Math.round((1-rMul)*100)+'% nạp</div>':''))
+      : '';
+    return '<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+ mastery+
+      spBar('Sát thương', edmg+(lv>1?' ▲':''), edmg/90)+ spBar('Tốc bắn', rof.toFixed(rof<1?2:0)+'/s'+(lv>1?' ▲':''), rof/20)+
+      spBar('Băng đạn', g.mag, g.mag/90)+ spBar('DPS', dps, dps/600)+
+      '<div class="sp-bl">Nạp đạn<b>'+erel.toFixed(1)+'s'+(lv>1?' ▼':'')+'</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
+  return '<div class="sp-tier">'+(it.level>=it.max?'CẤP TỐI ĐA':(it.vip?'★ NÂNG CẤP VIP':'NÂNG CẤP'))+'</div>'+
+    spBar('Level', it.level+' / '+it.max, it.level/it.max)+
+    '<div class="sp-bl">Mỗi cấp<b>'+it.per+'</b></div>'+
+    '<div class="sp-bl">Đang có<b>×'+it.level+'</b></div>'+
+    (it.level<it.max?'<div class="sp-bl">Tiếp theo<b>CẤP '+(it.level+1)+'</b></div>':'<div class="sp-tags"><span class="st">ĐÃ NÂNG TỐI ĐA</span></div>');
+}
+export function updateShopInfo(){
+  const it=shopList[shopIdx]; if(!it) return;
+  const hex='#'+(RAR_COL[it.rar]||0xffce4a).toString(16).padStart(6,'0');
+  document.getElementById('shopInfo').style.setProperty('--rar',hex);
+  document.getElementById('si-cat').textContent = catVi(activeCat) + (it.type==='gun'?(it.vip?' · VIP':' · BẬC '+it.tier):'');
+  document.getElementById('si-name').textContent = it.name;
+  document.getElementById('si-desc').textContent = itemBlurb(it);
+  document.getElementById('si-stats').innerHTML = shopStats(it);
+  const sp=document.getElementById('siPanel'); if(sp){ sp.style.setProperty('--rar',hex); sp.innerHTML=siPanelHTML(it); }
+  const owned = it.type==='gun' && it.owned, maxed = it.type==='up' && it.level>=it.max;
+  const cant = !owned && !maxed && !(it.cost && canAfford(it.cost));
+  const buy=document.getElementById('si-buy');
+  buy.className='si-buy '+(owned?'owned':maxed?'maxed':cant?'cant':(it.vip?'vip':''));
+  buy.innerHTML = owned?'✓ ĐÃ CÓ' : maxed?'TỐI ĐA' : (it.cost? ('MUA · '+priceHTML(it.cost)) : 'TỐI ĐA');
+  document.getElementById('si-pos').textContent = activeCat+'  ·  '+(shopIdx+1)+' / '+shopList.length;
+  refreshWallet();
+}
+export function spawnShopHero(){
+  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  const it=shopList[shopIdx]; if(!it) return;
+  shopHero = it.type==='gun' ? buildGunModel(it.id) : buildUpgradeModel(it);
+  shopHero.position.y = it.type==='gun' ? 1.55 : 0.15;
+  shopHero.rotation.y = -0.55;
+  shopScene.add(shopHero);
+  const rc=RAR_COL[it.rar]||0xffce4a;                       // light the whole pedestal in the item's rarity colour
+  if(shopScene._ring){ shopScene._ring.material.emissive.setHex(rc); shopScene._ring.material.emissiveIntensity=2.0; }
+  if(shopScene._glow) shopScene._glow.material.color.setHex(rc);
+  updateShopInfo();
+}
+export function showGrid(){ shopDetail3D=false; renderPass.scene=shopScene; renderPass.camera=shopCam;   // clean dark studio behind the cabinet
+  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  document.getElementById('caseGrid').classList.remove('hidden'); document.getElementById('shopHint').classList.remove('hidden');
+  document.getElementById('shopDone').classList.remove('hidden'); document.getElementById('shopDetailView').classList.add('hidden'); }
+export function openDetail(i){ shopIdx=i;
+  document.getElementById('caseGrid').classList.add('hidden'); document.getElementById('shopHint').classList.add('hidden');
+  document.getElementById('shopDone').classList.add('hidden'); document.getElementById('shopDetailView').classList.remove('hidden');
+  renderPass.scene=shopScene; renderPass.camera=shopCam; shopDetail3D=true; spawnShopHero(); sfx('click'); }
+export function backToGrid(){ shopRefreshData(); renderCaseGrid(); showGrid(); sfx('click'); }
+export function shopGo(d){ if(!shopList.length) return; shopIdx=(shopIdx+d+shopList.length)%shopList.length; sfx('click'); spawnShopHero(); }
+export function buyShop(it){
+  it = it || shopList[shopIdx]; if(!it) return;
+  if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // own it → never re-buy
+  if(it.type==='up' && upLevel(it.key)>=upMax(it.key)){ sfx('click'); return; }        // maxed
+  if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }                          // can't afford
+  if(it.type==='up'){ payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1;
+    if(S.mode==='playing'){                                                              // live effect if bought mid-run
+      if(it.key.startsWith('drone')){ if(S.drone) spawnDrone(S.drone.owned); else deployOwnedDrone(); }
+      else if(it.key==='guards'){ deploySoldiers(guardTarget()); }                        // extra guard joins the line now
+      else if(it.key==='troops'){ __set_soldierLvl(Math.max(soldierLvl, PROFILE.upgrades.troops||0)); }
+    } }
+  else { payCost(it.cost); ownGun(it.id); }
+  saveProfile(); sfx('powerup'); refreshStartUI();
+  if(shopScene._ring){ shopScene._ring.material.emissiveIntensity=5; }                  // purchase flash on the pedestal ring
+  const key = it.type==='gun'?('g:'+it.id):('u:'+it.key);
+  shopRefreshData(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);
+  if(shopDetail3D) spawnShopHero(); else renderCaseGrid();
+}
+export function openShop(){ shopOpen=true; document.body.classList.add('shopopen'); shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); hide('start'); show('shop'); refreshWallet(); sfx('click'); }
+export function closeShop(){ shopOpen=false; shopDetail3D=false; document.body.classList.remove('shopopen'); renderPass.scene=scene; renderPass.camera=camera;
+  if(shopHero){ shopScene.remove(shopHero); disposeObj(shopHero); shopHero=null; }
+  saveProfile(); hide('shop'); if(S.mode==='start') show('start'); refreshStartUI(); sfx('click'); }
+export function shop3dUpdate(dt){
+  _shopT += dt;
+  if(shopHero){ shopHero.rotation.y += dt*0.65; if(shopHero._spinPart) shopHero._spinPart.rotation.x += dt*3.2;
+    if(shopHero._aura){ shopHero._aura.rotation.x += dt*1.1; shopHero._aura.rotation.z += dt*0.7; }   // tumbling VIP/tier energy field
+    shopHero.position.y += Math.sin(_shopT*1.6)*0.0018; }
+  if(shopScene._ring){ shopScene._ring.rotation.z += dt*0.4; const e=shopScene._ring.material; if(e.emissiveIntensity>2.0) e.emissiveIntensity=Math.max(2.0, e.emissiveIntensity-dt*8); }
+}
+tapBtn('shopBtn', openShop);
+tapBtn('shopDone', closeShop);
+tapBtn('shopBack', backToGrid);
+tapBtn('shopPrev', ()=>shopGo(-1));
+tapBtn('shopNext', ()=>shopGo(1));
+tapBtn('si-buy', ()=>buyShop());
+addEventListener('pointerdown', e=>{        // in the detail view, click the 3D item itself to buy it
+  if(!shopDetail3D) return;
+  if(e.target.closest && e.target.closest('.shop-info,.shop-tab,.shop-arrow,.shop-back,.w-chip,#shopTabs')) return;
+  _shopRay.setFromCamera({x:(e.clientX/VIEW.w)*2-1, y:-(e.clientY/VIEW.h)*2+1}, shopCam);
+  if(shopHero && _shopRay.intersectObject(shopHero, true).length) buyShop();
+});
+addEventListener('pagehide', saveProfile);
+addEventListener('visibilitychange', ()=>{ if(document.hidden) saveProfile(); });
+// ---- continue / reset (tap-to-arm, no native dialog) ----
+tapBtn('continueBtn', ()=>startGame(true));
+export let _resetArm=0;
+tapBtn('resetBtn', ()=>{
+  const lbl=document.querySelector('#resetBtn span:last-child'); const now=performance.now();
+  if(now<_resetArm){ _resetArm=0;                       // CLEAR SESSION → wipe the whole account (wallet, upgrades, arsenal, progress); keep nickname
+    PROFILE.save=null; PROFILE.best={score:0,stage:1}; __set_BEST(PROFILE.best); PROFILE.coins=0; PROFILE.diamonds=0; PROFILE.upgrades={}; PROFILE.gunXp={}; PROFILE.ownedGuns=['rifle']; PROFILE.loadout=['rifle'];
+    saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='ĐÃ XOÁ ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='XOÁ'; },1400); }
+  else { _resetArm=now+2600; if(lbl) lbl.textContent='CHẮC CHƯA?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='XOÁ'; },2700); }
+});

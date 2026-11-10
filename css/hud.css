@@ -1,0 +1,102 @@
+/* Z98 split from index.html — order matters: files are linked in this sequence. */
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;height:100%;height:var(--appH,100svh);pointer-events:none;z-index:10;}
+  .chip{position:absolute;background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));
+    border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(12px) saturate(140%);
+    box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);}
+  #topbar{top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;gap:0;padding:5px;}
+  #topbar .cell{padding:5px 16px;text-align:center;position:relative;}
+  #topbar .cell + .cell::after{content:'';position:absolute;left:0;top:9px;bottom:9px;width:1px;background:rgba(255,255,255,.12);}
+  #topbar .lbl{font-size:8px;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;font-weight:700;}
+  #topbar .val{font-size:19px;font-weight:800;line-height:1.1;}
+  #topbar .score .val{color:var(--amber);} #topbar .wave .val{color:var(--steel);} #topbar .stage .val{color:var(--green);}
+
+  /* health cluster bottom-left */
+  #hpwrap{display:none;}   /* HP + core now ride on the units themselves (#worldbars) — no separate menu */
+  #hpwrap .row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  #hpwrap .row:last-child{margin-bottom:0;}
+  .bar{flex:1;height:10px;border-radius:6px;background:rgba(0,0,0,.4);overflow:hidden;border:1px solid rgba(255,255,255,.1);}
+  .bar > i{display:block;height:100%;width:100%;border-radius:5px;transition:width .18s ease;}
+  .bar.hp > i{background:linear-gradient(90deg,#3fa84a,var(--hp));}
+  .bar.core > i{background:linear-gradient(90deg,#b07a2c,var(--amber));}
+  #hpwrap .ic{font-size:13px;width:16px;text-align:center;}
+  #lives{font-size:13px;font-weight:800;color:#ff8a9c;letter-spacing:1px;}
+
+  /* world-attached HP bars — float right over the tank + core monument (small + see-through) */
+  #worldbars{position:absolute;inset:0;pointer-events:none;z-index:8;}
+  .wbar{position:absolute;width:46px;height:5px;border-radius:4px;transform:translate(-50%,-50%);display:none;
+    background:rgba(6,10,5,.5);border:1px solid rgba(0,0,0,.55);box-shadow:0 1px 3px rgba(0,0,0,.55);}
+  .wbar > i{display:block;height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#3fa84a,#7fe06a);transition:width .12s linear,background .2s;}
+  .wbar > b{position:absolute;right:-2px;top:-12px;font-size:9px;font-weight:800;color:#ffc0cc;letter-spacing:.5px;text-shadow:0 1px 2px #000,0 0 3px #000;}
+  .wbar.core{width:60px;height:6px;}
+  .wbar.core > i{background:linear-gradient(90deg,#b07a2c,#ffc24e);}
+  .wbar .wlabel{position:absolute;left:-3px;top:-13px;width:11px;height:11px;color:var(--amber);filter:drop-shadow(0 1px 2px #000);}
+  .wbar .wlabel svg{width:11px;height:11px;display:block;}
+  @keyframes wbarpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,54,36,0);}50%{box-shadow:0 0 8px 2px rgba(255,60,40,.85);}}
+  .wbar.low{animation:wbarpulse .6s ease-in-out infinite;border-color:rgba(255,86,60,.95);}   /* critical-HP danger telegraph */
+
+  /* dash + spell indicators bottom-right (desktop) */
+  #abilities{right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:10px;}
+  .ability{width:54px;height:54px;border-radius:13px;background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));
+    border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    backdrop-filter:blur(10px);box-shadow:0 8px 22px rgba(0,0,0,.4);position:relative;overflow:hidden;}
+  .ability .ic{font-size:20px;line-height:1;}
+  .ability .k{font-size:8px;letter-spacing:1px;color:var(--muted);}
+  .ability .cool{position:absolute;inset:0;background:rgba(6,9,4,.74);transform-origin:bottom;transform:scaleY(0);}
+  .ability.ready{border-color:rgba(140,191,63,.5);}
+  /* weapon chip bottom-center */
+  #weaponchip{left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);
+    padding:7px 16px;font-size:14px;font-weight:800;letter-spacing:1px;color:var(--ink);white-space:nowrap;}
+  /* mute button top-right */
+  #muteBtn{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:18px;
+    pointer-events:auto;cursor:pointer;}
+  #fsBtn{top:max(12px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 50px);
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;}
+  #fsBtn .ic{width:20px;height:20px;color:var(--ink);}
+  #weaponchip.reloading{color:var(--danger);border-color:rgba(224,96,58,.5);}
+  /* gun inventory list (above weapon chip) */
+  #gunlist{position:absolute;left:50%;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 36px);transform:translateX(-50%);
+    display:flex;gap:6px;pointer-events:none;z-index:10;}
+  .gunicon{position:relative;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;
+    background:linear-gradient(180deg,rgba(20,28,14,.8),rgba(10,16,8,.86));border:1px solid var(--line);opacity:.55;transition:border-color .12s,box-shadow .12s,transform .12s;}
+  .gunicon.on{opacity:1;border-color:var(--green);box-shadow:0 0 12px rgba(140,191,63,.45);transform:scale(1.14);}
+  .gunicon.ready{opacity:.92;}
+  .gcool{position:absolute;inset:0;border-radius:9px;pointer-events:none;}        /* dark conic sweep while reloading */
+  .gchk{position:absolute;right:-3px;bottom:-3px;width:13px;height:13px;border-radius:50%;display:none;align-items:center;justify-content:center;
+    background:var(--green);color:#0a140a;font-size:10px;font-weight:900;line-height:1;box-shadow:0 0 6px rgba(140,191,63,.7);}
+  .gunicon.ready .gchk{display:flex;}
+  .gunicon.ready .gchk::before{content:'✓';}
+  .gunicon.reloading{opacity:.85;border-color:rgba(224,96,58,.5);}
+  /* aim stick removed — mobile uses a single movement joystick (turret auto-aims) */
+  /* active timed-buff chips (under top bar) */
+  #buffbar{position:absolute;top:max(58px,calc(env(safe-area-inset-top) + 46px));left:50%;transform:translateX(-50%);
+    display:flex;gap:6px;pointer-events:none;z-index:10;}
+  .buffchip{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:var(--ink);
+    background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.88));border:1px solid rgba(140,191,63,.5);
+    border-radius:9px;padding:3px 8px;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  .buffchip .t{font-size:10px;color:var(--green);}
+
+  /* ---------- custom SVG icon system (sizing + theme) ---------- */
+  .ic{display:inline-flex;align-items:center;justify-content:center;}
+  .ic svg,.gunicon svg,.buffchip .bic svg,.upcard .ic svg,#weaponchip .wc-ic svg{display:block;width:100%;height:100%;}
+  #hpwrap .ic{width:17px;height:17px;}
+  #hpwrap .row:nth-child(1) .ic{color:#ff7a8c;}        /* HP — heart */
+  #hpwrap .row:nth-child(2) .ic{color:var(--amber);}   /* core — bunker */
+  .ability .ic{width:23px;height:23px;color:var(--ink);}
+  .ability.ready .ic{color:var(--green);}
+  #muteBtn .ic{width:20px;height:20px;color:var(--ink);}
+  .gunicon svg{width:18px;height:18px;}
+  .gunicon{color:var(--ink);}
+  .gunicon.on{color:var(--green);}
+  #weaponchip{display:flex;align-items:center;gap:9px;}
+  #weaponchip .wc-ic{width:21px;height:21px;color:var(--green);display:inline-flex;flex:0 0 auto;}
+  #weaponchip .wc-nm{font-weight:800;letter-spacing:1.5px;}
+  #weaponchip .wc-am{font-weight:800;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+  #weaponchip .wc-ty{margin-left:7px;font-size:9px;font-weight:800;padding:2px 5px;border-radius:4px;background:rgba(255,184,74,.16);color:#ffcf7a;letter-spacing:1px;vertical-align:2px;}
+  #weaponchip.reloading .wc-ic,#weaponchip.reloading .wc-am{color:var(--danger);}
+  .buffchip .bic{width:14px;height:14px;display:inline-flex;color:var(--green);}
+  .upcard .ic{width:46px;height:46px;margin:0 auto 2px;color:var(--green);}
+  .mbtn .ic{width:27px;height:27px;color:var(--ink);display:inline-flex;}
+  #mPause .ic{width:20px;height:20px;color:var(--ink);display:inline-flex;}
+
