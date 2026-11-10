@@ -222,3 +222,21 @@ export const UP_BLURB = {
   guardRof:'Drilled gunners fire far faster.', guardArm:'Hardened guards hold the line longer.',
   dronePow:'Deploy a gunship escort — and it bites harder.', droneRof:'Spin those barrels — the belt reloads in a blink.',
   droneArm:'Armoured rotors keep your drone in the sky longer.' };
+
+// DRIVING (Z85) — the player's tank is a 50-tonne machine: hull-steered tracks, a heavy launch, momentum that carries,
+// and collisions that hurt by mass × closing speed. Speeds in world units/s (top speed = PLAYER.maxSpeed 26).
+export const DRIVE = {
+  accel: 34,          // peak tractive acceleration once rolling
+  launch: 0.32,       // share of that available from a dead stop (low gear, 50 t of inertia) → it CREEPS off the line
+  launchV: 11,        // speed by which full power has come in
+  reverseMul: 0.5,    // reverse top speed / accel vs forward
+  reverseAngle: 2.25, // push the stick this far (rad) behind the hull → back up instead of pivoting round
+  coast: 14,          // rolling resistance with the throttle off (it rolls on, then settles)
+  brake: 44,          // braking against the motion
+  pivot: 3.3,         // hull turn rate standing still (neutral steer, rad/s)
+  turnAtSpeed: 1.9,   // hull turn rate at top speed — wide arcs when flat out
+  grip: 10,           // sideways track grip — kills lateral slide
+  ram: { minImpact: 7, toEnemy: 1.15, toPlayer: 0.42, toBoss: 0.7, aggressor: 0.5, perStage: 0.22 },   // dmg = k × (closing speed − min) × mass share
+  wallBreak: 14,      // closing speed that smashes a brick wall section; slower just thumps it
+  climb: 15.5,        // closing speed needed to ride over a low rock; slower → stopped dead, back up and take a run
+};

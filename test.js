@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE } from './config.js';
 
 const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
 
@@ -248,6 +248,24 @@ ok(ENV.cold.freeze > 1 && ENV.hot.freeze < 1, 'cold helps cryo, heat hurts it');
 ok(ENV.hot.fire > 1 && ENV.cold.fire < 1, 'heat helps fire, cold hurts it');
 ok(GIFT.gunBase > 0 && GIFT.gunBase < GIFT.pityCap && GIFT.pityCap <= 1, 'gun gift chance: base < pity cap ≤ 1');
 ok(GIFT.pityStep > 0, 'pity timer raises the gun chance after dry loot');
+
+grp('DRIVING (Z85) — tracked drive, momentum, ramming');
+ok(DRIVE.launch > 0.15 && DRIVE.launch < 0.6, 'heavy launch: a fraction of full power from a dead stop');
+ok(DRIVE.launchV > 0 && DRIVE.launchV < PLAYER_MAXSPEED, 'full power arrives before top speed');
+{ // simulate the throttle curve: 0 → 90% top speed should take a real tank's second or two, not an instant
+  let v=0, t=0; const top=PLAYER_MAXSPEED; while(v<top*0.9 && t<10){ const launch=DRIVE.launch+(1-DRIVE.launch)*Math.min(1,v/DRIVE.launchV), fall=Math.max(0,1-(v/top)**2); v+=DRIVE.accel*launch*fall*(1/60); t+=1/60; }
+  ok(t > 0.9 && t < 2.6, `0→90% top speed in ${t.toFixed(2)}s (0.9–2.6s: weighty but playable)`); }
+ok(DRIVE.coast > 0 && DRIVE.coast < DRIVE.brake, 'coasting rolls on; braking bites harder');
+ok(PLAYER_MAXSPEED / DRIVE.coast > 1 && PLAYER_MAXSPEED / DRIVE.coast < 3, 'coast-down from top speed lasts 1–3s (inertia you can feel, still controllable)');
+ok(DRIVE.reverseMul > 0.3 && DRIVE.reverseMul < 0.8, 'reverse is slower than forward');
+ok(DRIVE.pivot > DRIVE.turnAtSpeed, 'hull pivots faster standing still than flat out');
+ok(DRIVE.wallBreak > 6 && DRIVE.wallBreak < PLAYER_MAXSPEED*0.75, 'walls need a run-up, but are breakable well below top speed');
+ok(DRIVE.climb > 6 && DRIVE.climb < PLAYER_MAXSPEED*0.75, 'rocks need a run-up to climb');
+ok(DRIVE.ram.minImpact > 3, 'gentle bumps never hurt');
+ok(DRIVE.ram.toPlayer < DRIVE.ram.toEnemy, 'ramming favours the player (it is your weapon, not a trap)');
+ok(DRIVE.ram.aggressor > 0 && DRIVE.ram.aggressor < 1, 'the rammer takes less than the rammed');
+{ const ex=26+3-DRIVE.ram.minImpact, share=2*1/(1+1.25), toPlayer=ex*share*DRIVE.ram.toPlayer*(1-DRIVE.ram.aggressor);
+  ok(toPlayer < 10, `full-speed ram into a light tank costs the player ${toPlayer.toFixed(1)} HP (< 10)`); }
 
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {

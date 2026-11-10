@@ -44,6 +44,21 @@
 - HP mục tiêu × NG+ loop × độ khó × `(1 + 0.14×(màn−1))`. Thưởng phá: **300 + 120×màn xu** (× loop × độ khó × hợp đồng) **+ 1 💎 + 1.500 điểm**.
 - Wave có kịch bản thay cho sự kiện ngẫu nhiên. **Phục kích:** 2 tổ (3 từ màn 3) bộ binh xuất hiện cách xe ~17. **Đoàn xe:** heavy + grunt + gunner + grunt (+ heavy + atgm từ màn 3, + shield + heavy từ màn 5) vào cùng 1 hướng, nhịp ×0.4.
 
+## 1c. Lái xe, va chạm & địa vật (Z85–Z86)
+| Thông số (`DRIVE`, config.js) | Giá trị | Ý nghĩa |
+|---|---|---|
+| `accel` / `launch` / `launchV` | 34 / 0,32 / 11 | từ đứng yên chỉ 32% lực, đủ lực ở 11 u/s → 0→90% tốc tối đa ≈1,6 s |
+| `coast` / `brake` | 14 / 44 | nhả ga trôi ~1,8 s; kéo ngược = phanh |
+| `reverseMul` / `reverseAngle` | 0,5 / 2,25 rad | cần kéo ra sau thân ≥129° → lùi 50% tốc |
+| `pivot` / `turnAtSpeed` | 3,3 / 1,9 rad/s | xoay tại chỗ nhanh, chạy nhanh ôm cua rộng |
+| `ram.minImpact` | 7 u/s | dưới mức này va chạm không mất máu |
+| `ram.toEnemy` / `toPlayer` / `toBoss` | 1,15 / 0,42 / 0,7 | × (tốc áp sát − 7) × 2·m_bên_kia/(m₁+m₂) × (1 − 0,5·phần chủ động), địch/boss +22%/màn |
+| `wallBreak` | 14 u/s | húc tường gạch ≥ mức này → đổ; chậm hơn chỉ sứt (2,2 × tốc) |
+| `climb` | 15,5 u/s | leo qua đá thấp (bán kính < 1,8) |
+
+Ví dụ: xe bạn (khối lượng 1,25) chạy hết tốc 26 húc xe nhẹ (1,0) đang lao tới 3 u/s → địch mất ≈ 28 máu × (1 + 0,22·(màn−1)), bạn mất ≈ 4–5. Boss (khối lượng ~21) lao vào bạn ở 30 u/s → bạn mất ≈ 18.
+Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3 m; máu mỗi đoạn = 140 + 30 × chiều cao còn lại (≈ 240–270); sập tầng ở 66% và 33%.
+
 ## 2. Rải quân (wave) — số lượng & loại địch
 
 **Số địch mỗi wave** = `floor(3 + wave + (stage-1)×1.5)`
