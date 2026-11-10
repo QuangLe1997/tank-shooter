@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -447,6 +447,13 @@ for (const u of SHOP_UP) {
   ok(SQUAD.mix.length>=4 && SQUAD.mix.every(r=>['rifle','mg','mortar','sapper'].includes(r)) && SQUAD.mix.filter(r=>r==='rifle').length*2>=SQUAD.mix.length, 'reinforcement mix uses known roles and stays mostly riflemen');
   for(const k of ['mg','mortar','sapper']) ok(perStage(DEPLOY.roleMax[k]), `DEPLOY.roleMax.${k} defined for every stage`);
   ok(DEPLOY.holdR>10 && DEPLOY.stage>0.2 && DEPLOY.stage<0.95, 'posted men hold a real sector; staging points stop short of the enemy site');
+  // Z106 irregular battlefield
+  ok(FIELD.N>=90 && FIELD.harmonics>=2 && FIELD.amp>0 && FIELD.amp<0.3, 'field outline: enough bearings, gentle harmonics');
+  ok(FIELD.minAny>0.4 && FIELD.minAny<FIELD.minTheirs && FIELD.minTheirs<FIELD.minOurs && FIELD.minOurs<=FIELD.max && FIELD.max<1, 'outline floors keep our side widest, the enemy objective side next, never past the square');
+  ok(range(FIELD.bays,0,8) && range(FIELD.bayDepth,0,0.5) && range(FIELD.bayWidth,0.05,1), 'bays are bounded (depth < half the radius)');
+  ok(FIELD.ridgeH>1 && FIELD.ridgeW>2, 'highland beyond the fence is visible (height, width)');
+  ok(range(FIELD.innerRidges,0,10) && range(FIELD.innerRidgesMobile,0,FIELD.innerRidges[1]) && range(FIELD.ridgeLen,8,120) && range(FIELD.ridgeRock,0.5,5), 'inner ridges: count (phones ≤ desktop), length, rock size in range');
+  ok(FIELD.minAny*0.5*(1+1) > 0.55*0.6, 'the field is always wide enough to hold the spawn line (minAny of the base edge)');
 }
 
 for (const id of Object.keys(GUN_PRICE)) {

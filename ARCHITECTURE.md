@@ -50,7 +50,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (98 module theo thứ tự hub · 7.933 dòng)
+### 2.1 Danh mục module (99 module theo thứ tự hub · 7.984 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -65,8 +65,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | | **core/** — Hằng số runtime, trạng thái, hồ sơ, tiện ích | | |
 | 7 | `src/core/config.js` | 27 | runtime constants derived from config + device: arena size, MOBILE, tank scale, player palette, current BIOME |
 | 9 | `src/core/state.js` | 19 | S — the single runtime game state (mode, stage, wave, score, player, spell, recall …) |
-| 84 | `src/core/helpers.js` | 63 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
-| 88 | `src/core/profile.js` | 86 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
+| 85 | `src/core/helpers.js` | 63 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
+| 89 | `src/core/profile.js` | 86 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
 | | **render/** — Three.js renderer + hậu kỳ | | |
 | 11 | `src/render/renderer.js` | 117 | THREE SETUP |
 | | **audio/** — Âm thanh tổng hợp | | |
@@ -127,21 +127,21 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 44 | `src/actors/vehicles.js` | 152 | Z80 enemy VEHICLES: flame tank, ATGM tank-destroyer, engineer repair truck, attack gunship, APC dismount (Z89) |
 | 45 | `src/actors/paradrop.js` | 57 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
 | 49 | `src/actors/damage.js` | 40 | HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away |
-| 90 | `src/actors/drone.js` | 118 | SUPPORT DRONE (power-up) |
-| 92 | `src/actors/soldiers.js` | 144 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
-| 93 | `src/actors/riders.js` | 44 | TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100) |
+| 91 | `src/actors/drone.js` | 118 | SUPPORT DRONE (power-up) |
+| 93 | `src/actors/soldiers.js` | 144 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
+| 94 | `src/actors/riders.js` | 44 | TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100) |
 | | **ai/** — Trí tuệ địch | | |
 | 47 | `src/ai/tactics.js` | 173 | Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall… |
 | 48 | `src/ai/cover.js` | 14 | Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both … |
 | | **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
-| 46 | `src/campaign/operations.js` | 127 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
+| 46 | `src/campaign/operations.js` | 128 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
 | 58 | `src/campaign/waves.js` | 99 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
 | 59 | `src/campaign/boss.js` | 279 | BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts |
 | 72 | `src/campaign/artillery.js` | 145 | ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss |
 | | **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
 | 73 | `src/loot/powerups.js` | 154 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
 | 74 | `src/loot/upgrades.js` | 62 | ROGUELITE UPGRADES (pick 1 of 3 after each boss) |
-| 91 | `src/loot/beacons.js` | 32 | LOOT BEACONS (mark crates/tanks that hide a power-up) |
+| 92 | `src/loot/beacons.js` | 32 | LOOT BEACONS (mark crates/tanks that hide a power-up) |
 | | **input/** — Bàn phím, chuột, cảm ứng | | |
 | 64 | `src/input/input.js` | 136 | INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire |
 | | **ui/** — Giao diện DOM (menu, shop, HUD phụ, gợi ý) | | |
@@ -154,21 +154,22 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 80 | `src/ui/guide.js` | 41 | Z103 split from ui/menus.js. FIELD MANUAL — the how-to-play screen (first launch + re-openable) and the firs… |
 | 81 | `src/ui/settings.js` | 23 | Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen. |
 | 82 | `src/ui/loadout.js` | 39 | Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the s… |
-| 83 | `src/ui/shop.js` | 276 | SHOP (buy guns + leveled upgrades with coins / diamonds) |
-| 87 | `src/ui/radar.js` | 33 | RADAR / MINIMAP |
-| 89 | `src/ui/alarm.js` | 12 | CORE-UNDER-ATTACK ALARM |
+| 83 | `src/ui/shop-info.js` | 36 | Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas v… |
+| 84 | `src/ui/shop.js` | 290 | SHOP (buy guns + leveled upgrades with coins / diamonds) |
+| 88 | `src/ui/radar.js` | 33 | RADAR / MINIMAP |
+| 90 | `src/ui/alarm.js` | 12 | CORE-UNDER-ATTACK ALARM |
 | | **game/** — Luồng game, vòng lặp, khởi động | | |
 | 62 | `src/game/score.js` | 16 | SCORE / COMBO |
 | 63 | `src/game/player-damage.js` | 103 | PLAYER DAMAGE / DEATH |
 | 77 | `src/game/flow.js` | 93 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
-| 85 | `src/game/update.js` | 177 | per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers |
-| 86 | `src/game/intro.js` | 41 | INTRO CINEMATIC (deploy showcase) |
-| 94 | `src/game/loop.js` | 88 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
-| 95 | `src/game/viewport.js` | 28 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
-| 96 | `src/game/boot-gate.js` | 64 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
-| 97 | `src/game/startup.js` | 22 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
+| 86 | `src/game/update.js` | 177 | per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers |
+| 87 | `src/game/intro.js` | 41 | INTRO CINEMATIC (deploy showcase) |
+| 95 | `src/game/loop.js` | 88 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
+| 96 | `src/game/viewport.js` | 28 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
+| 97 | `src/game/boot-gate.js` | 64 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
+| 98 | `src/game/startup.js` | 22 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
 | | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
-| 98 | `src/dev/hooks.js` | 42 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
+| 99 | `src/dev/hooks.js` | 42 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
 <!-- MODULES:END -->
 
 ---

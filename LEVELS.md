@@ -97,6 +97,15 @@ Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3
 | Tư thế (`SQUAD`) | lao 1–1,6 s rồi giữ 2,4–4,2 s · nằm bắn khi cách > 13 | nằm: bán kính trúng 0,42 (đứng 0,75); địch cũng nằm/quỳ |
 | Địa hình (`RELIEF`) | lõm tối + ẩm + che sáng · sườn dốc lộ đất · đỉnh/vành hố sáng hơn | máy tính: địa hình đổ bóng thật |
 
+## 1g. Chiến trường rộng, ranh giới phức tạp (Z106)
+| Thông số | Giá trị | Ghi chú |
+|---|---|---|
+| Khung (`ARENA`) | nửa cạnh **130** (Z104: 84, gốc: 60) | sân chơi thật ≈ **40–44 nghìn m²** (×3 bản gốc, ×1,5 bản Z104) |
+| Ranh giới (`FIELD`) | đường viền bất quy tắc: nửa tròn nửa vuông + 6 hoạ âm + 2–4 vịnh lõm (sâu 16–30%) | đổi hình mỗi màn; phía ta rộng nhất (≥ 90%), phía mục tiêu địch ≥ 78%, nơi khác ≥ 66% |
+| Ngoài hàng rào | cao nguyên đá cao 5,5 m trong 9 m, đá tảng rải dọc | không đi vào được; hàng rào, dây thép gai đi theo đường viền |
+| Sống đá trong sân | 3–5 dải (điện thoại 2–3), dài 22–46 m, dải dài có **khe vượt** 7–10 m | chắn xe, chắn đạn, làm chỗ nấp → chia khu, tạo điểm nghẽn |
+| Địch vào sân | qua hàng rào, ưu tiên điểm cách xe 40–85 m | đỡ phải chạy xa trên sân lớn |
+
 ## 2. Rải quân (wave) — số lượng & loại địch
 
 **Số địch mỗi wave** = `floor(3 + wave + (stage-1)×1.5)`

@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, VIEW, __set_BEST, __set_soldierLvl, camera, canAfford, catVi, deployOwnedDrone, deploySoldiers, guardTarget, gunDmgMul, gunFireMul, gunLevel, gunReloadMul, gunXpToNext, hide, ownGun, payCost, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, sfx, show, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax } from '../hub.js';
+import { GUNS, PROFILE, S, VIEW, __set_BEST, __set_soldierLvl, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, effGrade, escapeHtml, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunXpToNext, hide, ownGun, payCost, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, sfx, show, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -134,29 +134,36 @@ export function shopRefreshData(){ shopCats=shopModel(); if(!shopCats.find(c=>c.
 export function buildShopTabs(){ const tb=document.getElementById('shopTabs'); if(!tb) return; tb.innerHTML='';
   shopCats.forEach(g=>{ const t=document.createElement('div'); t.className='shop-tab'+(g.cat===activeCat?' on':''); t.dataset.cat=g.cat; t.textContent=catVi(g.cat); tapEl(t, ()=>setActiveCat(g.cat)); tb.appendChild(t); }); }
 export function setActiveCat(cat){ activeCat=cat; shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); sfx('click'); }
+// Z106 how much more you need, e.g. '400 xu' / '6 ◆'
+export function shortBy(cost){ if(!cost) return ''; if(cost.d) return Math.max(0, cost.d-(PROFILE.diamonds||0))+' ◆'; return Math.max(0, cost.c-(PROFILE.coins||0)).toLocaleString()+' xu'; }
 export function caseState(it){ const owned=it.type==='gun'&&it.owned, maxed=it.type==='up'&&it.level>=it.max;
   return owned?'owned':maxed?'maxed':(!(it.cost&&canAfford(it.cost))?'cant':''); }
 export function renderCaseGrid(){
   const grid=document.getElementById('caseGrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
   shopList.forEach((it,i)=>{
-    const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP':('T'+it.tier)):('LV '+it.level+'/'+it.max);
-    const price = (it.type==='gun'&&it.owned)?('★ LV '+gunLevel(it.id)+'/'+BALANCE.mastery.maxLevel) : (it.type==='up'&&it.level>=it.max)?'MAX' : priceHTML(it.cost);
+    const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP ◆':('BẬC '+it.tier)):('CẤP '+it.level+'/'+it.max);
+    const short = st==='cant' && it.cost ? shortBy(it.cost) : '';
+    const price = (it.type==='gun'&&it.owned)?('✓ ĐÃ CÓ · ★'+gunLevel(it.id)) : (it.type==='up'&&it.level>=it.max)?'✓ TỐI ĐA' : '<span class="pr">'+priceHTML(it.cost)+'</span>'+(short?'<small class="short">thiếu '+short+'</small>':'');
+    let extra='';
+    if(it.type==='gun'){ const r=gunRole(it.id), n=gunNums(it.id), M=gunMax(), bar=(lb,v)=>'<div class="cb"><span>'+lb+'</span><i style="--v:'+Math.max(0.06,Math.min(1,v)).toFixed(2)+'"></i></div>';   // Z106 what it is for + how it compares, at a glance
+      extra='<div class="case-role" style="--rc:'+r.col+'">'+r.tx+'</div><div class="case-bars">'+bar('ST', n.dmg/M.dmg)+bar('NHỊP', n.rof/M.rof)+bar('TẦM', n.rng/M.rng)+'</div>'; }
+    else { let pips=''; for(let k=0;k<it.max;k++) pips+='<i class="'+(k<it.level?'on':'')+'"></i>'; extra='<div class="case-role up">'+escapeHtml(it.per||'')+'</div><div class="case-pips">'+pips+'</div>'; }
     const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
     c.innerHTML='<span class="case-badge">'+badge+'</span><div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'+
-      '<div class="case-nm">'+it.name+'</div><div class="case-price">'+price+'</div>';
+      '<div class="case-nm">'+it.name+'</div>'+extra+'<div class="case-price">'+price+'</div>';
     tapEl(c, ()=>openDetail(i)); grid.appendChild(c);
   });
 }
 export function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
 export function shopStats(it){
   if(it.type==='gun'){ const g=GUNS[it.id], out=[];
-    out.push(shopStat('DMG', g.dmg)); out.push(shopStat('ROF', (1/g.fireCd).toFixed(g.fireCd<0.2?0:1)+'/s')); out.push(shopStat('MAG', g.mag));
-    if(g.frags>1) out.push(shopStat('', g.frags+'× PELLET', true));
-    if(g.pierce) out.push(shopStat('','PIERCE',true)); if(g.aoe||g.aoeR) out.push(shopStat('','AOE',true));
-    if(g.homing) out.push(shopStat('','HOMING',true)); if(g.freeze) out.push(shopStat('','FREEZE',true)); if(g.chain) out.push(shopStat('','CHAIN',true));
+    out.push(shopStat('Sát thương', g.dmg)); out.push(shopStat('Nhịp', (1/g.fireCd).toFixed(g.fireCd<0.2?0:1)+' phát/s')); out.push(shopStat('Băng', g.mag));
+    if(g.frags>1) out.push(shopStat('', g.frags+' VIÊN/PHÁT', true));
+    if(g.pierce) out.push(shopStat('','XUYÊN',true)); if(g.aoe||g.aoeR) out.push(shopStat('','NỔ LAN',true));
+    if(g.homing||g.lock) out.push(shopStat('','TỰ DẪN',true)); if(g.freeze) out.push(shopStat('','ĐÓNG BĂNG',true)); if(g.chain) out.push(shopStat('','LAN ĐIỆN',true));
     return out.join(''); }
-  const out=[shopStat('', it.per)]; out.push(shopStat('LEVEL', it.level+' / '+it.max));
-  if(it.level>=it.max) out.push(shopStat('','MAXED',true)); return out.join('');
+  const out=[shopStat('', it.per)]; out.push(shopStat('Cấp', it.level+' / '+it.max));
+  if(it.level>=it.max) out.push(shopStat('','TỐI ĐA',true)); return out.join('');
 }
 // rich side panel (bars) — the eye-candy stat sheet beside the 3D item
 export function spBar(label,val,frac){ frac=Math.max(0.05,Math.min(1,frac));
@@ -171,10 +178,17 @@ export function siPanelHTML(it){
         (nx?'<span class="sp-xp">'+nx.have+' / '+nx.need+' ▸ CẤP '+(lv+1)+'</span>':'<span class="sp-xp">★ TỐI ĐA</span>')+'</div>'+
         (lv>1?'<div class="sp-mbuff">+'+Math.round((dMul-1)*100)+'% sát thương · +'+Math.round((1/fMul-1)*100)+'% tốc bắn · −'+Math.round((1-rMul)*100)+'% nạp</div>':''))
       : '';
-    return '<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+ mastery+
-      spBar('Sát thương', edmg+(lv>1?' ▲':''), edmg/90)+ spBar('Tốc bắn', rof.toFixed(rof<1?2:0)+'/s'+(lv>1?' ▲':''), rof/20)+
-      spBar('Băng đạn', g.mag, g.mag/90)+ spBar('DPS', dps, dps/600)+
-      '<div class="sp-bl">Nạp đạn<b>'+erel.toFixed(1)+'s'+(lv>1?' ▼':'')+'</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
+    const role=gunRole(it.id), cur=currentGunId(), cmp = cur!==it.id ? gunNums(cur) : null, me=gunNums(it.id), M=gunMax();
+    const eff='<div class="sp-eff">'+gunEffect(it.id).map(e=>{ const G=effGrade(e.x); return '<span class="ef '+G.c+'"><small>'+e.vi+'</small><b>'+(e.x>0?'×'+e.x.toFixed(2).replace(/0$/,''):'—')+'</b><em>'+G.tx+'</em></span>'; }).join('')+'</div>';
+    return '<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+
+      '<div class="sp-role" style="--rc:'+role.col+'">'+role.tx+'</div>'+ mastery+
+      spBar('Sát thương / phát', edmg*(g.frags||1)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
+      spBar('Sát thương / giây', dps+(cmp?delta(me.dps,cmp.dps):''), dps/M.dps)+ spBar('Tầm bắn', '×'+me.rng.toFixed(2)+(cmp?delta(me.rng,cmp.rng):''), me.rng/M.rng)+
+      '<div class="sp-bl">Băng đạn<b>'+g.mag+' viên</b></div><div class="sp-bl">Nạp đạn<b>'+erel.toFixed(1)+' s'+(cmp?delta(g.reload,GUNS[cur].reload,true):'')+'</b></div>'+
+      '<div class="sp-sub">HIỆU QUẢ VỚI</div>'+eff+
+      '<div class="sp-note">Bộ binh: mọi phát pháo xe tăng đều hạ gục 1 lính'+((g.aoe||g.aoeR)?' · nổ lan diệt cả cụm':'')+'</div>'+
+      (cmp?'<div class="sp-note">So với <b>'+escapeHtml(GUNS[cur].name)+'</b> (súng chính đang dùng)</div>':'')+
+      (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
   return '<div class="sp-tier">'+(it.level>=it.max?'CẤP TỐI ĐA':(it.vip?'★ NÂNG CẤP VIP':'NÂNG CẤP'))+'</div>'+
     spBar('Level', it.level+' / '+it.max, it.level/it.max)+
     '<div class="sp-bl">Mỗi cấp<b>'+it.per+'</b></div>'+
@@ -194,8 +208,8 @@ export function updateShopInfo(){
   const cant = !owned && !maxed && !(it.cost && canAfford(it.cost));
   const buy=document.getElementById('si-buy');
   buy.className='si-buy '+(owned?'owned':maxed?'maxed':cant?'cant':(it.vip?'vip':''));
-  buy.innerHTML = owned?'✓ ĐÃ CÓ' : maxed?'TỐI ĐA' : (it.cost? ('MUA · '+priceHTML(it.cost)) : 'TỐI ĐA');
-  document.getElementById('si-pos').textContent = activeCat+'  ·  '+(shopIdx+1)+' / '+shopList.length;
+  buy.innerHTML = owned?'✓ ĐÃ CÓ — chọn trong KHO SÚNG' : maxed?'✓ ĐÃ NÂNG TỐI ĐA' : cant ? ('CẦN THÊM '+shortBy(it.cost)+' <small>(giá '+priceHTML(it.cost)+')</small>') : (it.cost? ('MUA · '+priceHTML(it.cost)) : 'TỐI ĐA');
+  document.getElementById('si-pos').textContent = catVi(activeCat)+'  ·  '+(shopIdx+1)+' / '+shopList.length;
   refreshWallet();
 }
 export function spawnShopHero(){

@@ -83,6 +83,7 @@ export * from './ui/terrain-picker.js';
 export * from './ui/guide.js';
 export * from './ui/settings.js';
 export * from './ui/loadout.js';
+export * from './ui/shop-info.js';
 export * from './ui/shop.js';
 export * from './core/helpers.js';
 export * from './game/update.js';

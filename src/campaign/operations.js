@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -64,7 +64,8 @@ export function clearObjective(){ if(!OBJ) return; unwave(OBJ.g); scene.remove(O
 export function buildObjective(){
   clearObjective(); const op=opFor(S.stage), def=OBJECTIVES[op.obj]; if(!def) return;
   let x=0, z=-ARENA*0.6;
-  for(let t=0;t<50;t++){ const cx=(Math.random()*2-1)*ARENA*0.5, cz=-ARENA*(0.48+Math.random()*0.22); if(!blocks.some(b=>Math.hypot(b.x-cx,b.z-cz)<b.r+def.r+2)){ x=cx; z=cz; break; } }
+  for(let t=0;t<50;t++){ const cx=(Math.random()*2-1)*ARENA*0.5, cz=-ARENA*(0.48+Math.random()*0.22); if(inField(cx, cz, def.r+8) && !blocks.some(b=>Math.hypot(b.x-cx,b.z-cz)<b.r+def.r+2)){ x=cx; z=cz; break; } }   // Z106 inside the irregular fence
+  if(!inField(x, z, def.r+4)) [x,z]=clampFieldXZ(x, z, def.r+8);
   const g=buildObjMesh(op.obj); g.position.set(x, heightAt(x,z), z); g.rotation.y=Math.atan2(-x,-z); g.scale.setScalar(OBJ_SCALE); g.userData.h*=OBJ_SCALE; scene.add(g);
   const hp=Math.round(def.hp*loopHpMul()*diffHpMul()*(1+RAMP.hpPerStage*(S.stage-1)));
   const b={ mesh:g, x, z, r:def.r, hp, maxHp:hp, steel:false, loot:false, kind:'obj' }; blocks.push(b);
