@@ -199,7 +199,7 @@ export function updateFireteam(dt, now){
     poseSoldier(a.g, st, dt);
     for(const e of enemies){ if(!solidTank(e)) continue; const qx=e.pos.x-a.pos.x, qz=e.pos.z-a.pos.z; if(qx*qx+qz*qz < (e.r+0.8)**2){ if(Math.hypot(e.vel.x,e.vel.z)>4) damageAlly(a, 999); else { const L=Math.hypot(qx,qz)||1; a.pos.x-=qx/L*0.5; a.pos.z-=qz/L*0.5; } } }   // enemy tracks crush them too
     if(a.dead) continue;
-    a.bar.visible=true; const f=Math.max(0,a.hp/a.maxHp); a.barFill.scale.x=Math.max(0.001,f); a.barFill.position.x=-(1-f)*0.5; a.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
+    a.bar.visible = a.hp < a.maxHp-0.5; const f=Math.max(0,a.hp/a.maxHp); a.barFill.scale.x=Math.max(0.001,f); a.barFill.position.x=-(1-f)*0.5; a.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
     if(a.hitT>0){ a.hitT-=dt; if(a.hitT<=0){ const t2=a.g.userData.torso; if(t2){ t2.material.emissive.setHex(0x000000); t2.material.emissiveIntensity=0; } } }
   }
 }

@@ -9,7 +9,7 @@ export function loop(nowMs){
   const now = nowMs/1000;
   let dt = (nowMs - last)/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
-  document.body.classList.toggle('ingame', !!PLAY_MODES[S.mode]);   // drives the portrait gate (menus stay usable upright)
+  { const ig=!!PLAY_MODES[S.mode]; if(ig!==_ingame){ _ingame=ig; document.body.classList.toggle('ingame', ig); } }   // drives the portrait gate (menus stay usable upright) — Z107: only on change
   if(gated() && !window.__forceFrame) return;   // portrait gate up or tab hidden → don't burn a frame behind the curtain (QA tick may force)
 
   if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
@@ -75,7 +75,7 @@ export function loop(nowMs){
       else if(fps>57){ PERF.slowT=0; PERF.fastT++;
         if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); if(S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); } } } } }
 }
-export let _fpsAcc=0, _fpsN=0;
+export let _fpsAcc=0, _fpsN=0, _ingame=null;
 export let _abC=null;
 export function updateAbilityUI(now){
   const p=S.player; if(!p) return;

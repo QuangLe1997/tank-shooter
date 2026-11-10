@@ -43,20 +43,27 @@ export const _wbV = new THREE.Vector3();
 export let _phpBar=null,_phpFill=null,_phpLives=null,_chpBar=null,_chpFill=null;
 export const _hpGrad =f=> f>0.5 ? 'linear-gradient(90deg,#3fa84a,#7fe06a)' : f>0.25 ? 'linear-gradient(90deg,#c79434,#ffcf5a)' : 'linear-gradient(90deg,#c0392b,#ff6a52)';
 export const _coreGrad=f=> f>0.3 ? 'linear-gradient(90deg,#b07a2c,#ffc24e)' : 'linear-gradient(90deg,#c0392b,#ff7a52)';
+// Z107: every write is cached — the bars used to re-set left/top/width/background/text on every frame (a style recalc each frame);
+// now position moves through transform (compositor-only) and the rest is written only when it actually changes.
+export const _WB = { p:{ d:'', t:'', w:'', g:'', l:'', low:null }, c:{ d:'', t:'', w:'', g:'', low:null } };
+export function _wbSet(el, fill, C, s, f, grad, lowAt){
+  if(!s){ if(C.d!=='none'){ C.d='none'; el.style.display='none'; } return; }
+  if(C.d!=='block'){ C.d='block'; el.style.display='block'; el.style.left='0px'; el.style.top='0px'; }
+  const t='translate3d('+Math.round(s.x)+'px,'+Math.round(s.y)+'px,0) translate(-50%,-50%)'; if(t!==C.t){ C.t=t; el.style.transform=t; }
+  const w=Math.max(0,Math.round(f*100))+'%'; if(w!==C.w){ C.w=w; fill.style.width=w; }
+  const g=grad(f); if(g!==C.g){ C.g=g; fill.style.background=g; }
+  const low=f<=lowAt; if(low!==C.low){ C.low=low; el.classList.toggle('low', low); } }
 export function updateWorldBars(){
   if(!_phpBar){ _phpBar=document.getElementById('phpbar'); _phpFill=_phpBar.querySelector('i'); _phpLives=document.getElementById('phpLives');
                 _chpBar=document.getElementById('chpbar'); _chpFill=_chpBar.querySelector('i'); }
   const p=S.player;
   if(p && p.hp>0){
     const f=p.hp/p.maxHp, sc=p.scale*TANK_SCALE, s=worldToScreen(_wbV.set(p.pos.x, 3.7*sc, p.pos.z));   // float clearly above the turret
-    if(s.infront){ _phpBar.style.display='block'; _phpBar.style.left=s.x+'px'; _phpBar.style.top=s.y+'px';
-      _phpFill.style.width=Math.max(0,f*100)+'%'; _phpFill.style.background=_hpGrad(f); _phpLives.textContent='×'+Math.max(0,p.lives); _phpBar.classList.toggle('low', f<=0.25); }
-    else _phpBar.style.display='none';
-  } else _phpBar.style.display='none';
+    _wbSet(_phpBar, _phpFill, _WB.p, s.infront?s:null, f, _hpGrad, 0.25);
+    if(s.infront){ const l='×'+Math.max(0,p.lives); if(l!==_WB.p.l){ _WB.p.l=l; _phpLives.textContent=l; } }
+  } else _wbSet(_phpBar, _phpFill, _WB.p, null);
   if(core && core.hp>0){
     const f=core.hp/core.maxHp, s=worldToScreen(_wbV.set(core.pos.x, 7.8, core.pos.z));                 // float above the monument crystal
-    if(s.infront){ _chpBar.style.display='block'; _chpBar.style.left=s.x+'px'; _chpBar.style.top=s.y+'px';
-      _chpFill.style.width=Math.max(0,f*100)+'%'; _chpFill.style.background=_coreGrad(f); _chpBar.classList.toggle('low', f<=0.3); }
-    else _chpBar.style.display='none';
-  } else _chpBar.style.display='none';
+    _wbSet(_chpBar, _chpFill, _WB.c, s.infront?s:null, f, _coreGrad, 0.3);
+  } else _wbSet(_chpBar, _chpFill, _WB.c, null);
 }

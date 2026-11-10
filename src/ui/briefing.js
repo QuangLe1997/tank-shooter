@@ -52,19 +52,24 @@ export function updateGunHUD(){
   const p=S.player; if(!p||!p.guns.length) return;
   const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
   { const bk=inst.id+':'+barrelGrade(inst.id); if(p._barrelId!==bk){ setPlayerBarrel(inst.id); p._barrelId=bk; } }   // swap the tank's barrel to match the equipped gun
+  // Z107: the HUD was rebuilt from scratch on every shot (new nodes for the chip + the whole gun strip) — now the nodes are
+  // rebuilt only when the gun/level changes, and a shot only rewrites the ammo text.
   const chip=document.getElementById('weaponchip');
   if(chip){
-    const reloading = inst.rU>performance.now()/1000;
-    const ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g));
-    const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
-    const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ·L'+gunLevel(inst.id):'');   // MASTERY level tag
-    if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=g.type; tg.title=(DMG_TYPE[g.type]||{}).label||''; nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
-    const am=document.createElement('span'); am.className='wc-am'; am.textContent = reloading ? 'NẠP ĐẠN…' : ammo;
-    chip.replaceChildren(ic,nm,am);
-    chip.classList.toggle('reloading', reloading);
+    const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), key=inst.id+':'+gunLevel(inst.id);
+    if(chip._key!==key){ chip._key=key;
+      const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
+      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ·L'+gunLevel(inst.id):'');   // MASTERY level tag
+      if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=g.type; tg.title=(DMG_TYPE[g.type]||{}).label||''; nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
+      const am=document.createElement('span'); am.className='wc-am'; chip._am=am; chip._amT=null; chip._rl=null;
+      chip.replaceChildren(ic,nm,am); }
+    const t = reloading ? 'NẠP ĐẠN…' : ammo; if(chip._amT!==t){ chip._amT=t; chip._am.textContent=t; }
+    if(chip._rl!==reloading){ chip._rl=reloading; chip.classList.toggle('reloading', reloading); }
   }
   const list=document.getElementById('gunlist');
-  if(list){ list.replaceChildren();
+  const lkey=p.guns.map(gi=>gi.id).join(',')+'|'+p.gunIdx;
+  const same = list && list._key===lkey && p.guns.every((gi,i)=>list.children[i] && list.children[i]._gi===gi);   // same gun objects too (a new run makes new ones)
+  if(list && !same){ list._key=lkey; list.replaceChildren();
     list.style.display = p.guns.length>1 ? 'flex' : 'none';   // only show the strip once you own >1 gun (declutter + shows persistence)
     p.guns.forEach((gi,idx)=>{ const d=GUNS[gi.id]; const el=document.createElement('div');
       el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(iconEl(d.svg));
@@ -73,16 +78,16 @@ export function updateGunHUD(){
       el._gi=gi; el._cool=cool;                                // refs for the per-frame reload status
       list.appendChild(el); }); }
   updateGunStatus(performance.now()/1000);
-  const mw=document.querySelector('#mWeapon .ic'); if(mw) setIcon(mw, g.svg);   // mobile weapon button shows the equipped gun
+  { const mw=document.querySelector('#mWeapon .ic'); if(mw && mw._svg!==g.svg){ mw._svg=g.svg; setIcon(mw, g.svg); } }   // mobile weapon button shows the equipped gun
 }
 // per-frame: paint each inventory gun's status — ✓ when reloaded/ready, dark conic sweep while reloading
 export function updateGunStatus(now){
   const list=document.getElementById('gunlist'); if(!list || !S.player) return;
   for(const el of list.children){ const gi=el._gi; if(!gi) continue;
-    if(gi.rU>now && gi.rD>0){ const prog=1-(gi.rU-now)/gi.rD;
-      el.classList.add('reloading'); el.classList.remove('ready');
-      if(el._cool) el._cool.style.background='conic-gradient(transparent '+(prog*360).toFixed(0)+'deg, rgba(4,6,3,.8) 0)';
-    } else { el.classList.remove('reloading'); el.classList.add('ready'); if(el._cool) el._cool.style.background='none'; }
+    const rl = gi.rU>now && gi.rD>0;                                       // Z107: write only on change (was ~27–160 class mutations a frame)
+    if(el._rl!==rl){ el._rl=rl; el.classList.toggle('reloading', rl); el.classList.toggle('ready', !rl); }
+    const bg = rl ? 'conic-gradient(transparent '+(Math.round((1-(gi.rU-now)/gi.rD)*36)*10)+'deg, rgba(4,6,3,.8) 0)' : 'none';
+    if(el._cool && el._bg!==bg){ el._bg=bg; el._cool.style.background=bg; }
   }
 }
 export const updateWeaponHUD = updateGunHUD;   // back-compat alias for older call sites

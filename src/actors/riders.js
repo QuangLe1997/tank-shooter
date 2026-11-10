@@ -34,7 +34,7 @@ export function updateRiders(dt, now){
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*5,0.4,Math.cos(ang)*5, {color:0xf2f7a0, size:0.4, life:0.06, grav:0, drag:9}); } }
     else r.g.rotation.y += (p.facing - r.g.rotation.y)*Math.min(1,dt*4);   // ride facing forward
     if(enemyNear && now>=r.hurtAt){ damageRider(r, 5+S.stage); r.hurtAt=now+0.7; }   // exposed: crowding tanks chip the crew
-    r.bar.visible=true; r.bar.position.set(wx, wy+1.6*RIDER.scale*p.scale, wz); r.bar.quaternion.copy(camera.quaternion); r.bar.scale.setScalar(0.72);
+    r.bar.visible = r.hp < r.maxHp-0.5; r.bar.position.set(wx, wy+1.6*RIDER.scale*p.scale, wz); r.bar.quaternion.copy(camera.quaternion); r.bar.scale.setScalar(0.72);
     const f=Math.max(0,r.hp/r.maxHp); r.barFill.scale.x=Math.max(0.001,f); r.barFill.position.x=-(1-f)*0.5;
     r.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
     if(r.hitT>0){ r.hitT-=dt; if(r.hitT<=0){ const t=r.g.userData.torso; if(t){ t.material.emissive.setHex(0x000000); t.material.emissiveIntensity=0; } } }
