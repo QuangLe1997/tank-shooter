@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -33,7 +33,7 @@ export function startGame(continueRun){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; AID.at=0; AID.press=false; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearFireteam(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearParadrops(); __set_ridersUnlocked(false); if(1>=TROOPS.ridersFrom){ __set_ridersUnlocked(true); deployRiders(crewTarget()); }   /* Z89 crew ride from stage 1 */ __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
+  enemies.length=0; AID.at=0; AID.press=false; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearFireteam(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearParadrops(); clearAllyOrdnance(); __set_ridersUnlocked(false); if(1>=TROOPS.ridersFrom){ __set_ridersUnlocked(true); deployRiders(crewTarget()); }   /* Z89 crew ride from stage 1 */ __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
   if(boss){ scene.remove(boss.mesh); clearBossFight(); __set_boss(null); }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -61,7 +61,7 @@ export function quitToMenu(){
   S.firing=false;
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearParadrops();
+  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearParadrops(); clearAllyOrdnance();
   if(boss){ scene.remove(boss.mesh); clearBossFight(); __set_boss(null); }
   if(S.player){ S.player.pos.set(0,0,ARENA*0.55); S.player.vel.set(0,0,0); S.player.mesh.position.set(0,0,ARENA*0.55); S.player.mesh.visible=true; }   // park at spawn for a clean home
   document.body.classList.remove('corelow','shopopen'); __set__alarmAt(0);

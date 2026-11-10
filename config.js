@@ -293,6 +293,13 @@ export const SQUAD = {
   lootDetect: 26,                              // soldiers spot dropped items this far away, carry them to the RALLY POINT
   at: { dmg: 34, aoe: 2.4, speed: 34, cd: 3.4, range: 26 },   // anti-tank launcher handed out by a captured weapon depot
   armedMul: 1.35,                              // rifle damage after re-arming at a captured weapon depot
+  // Z105 how they fight: rush 1–1.5 s, then hold and fire (kneeling at cover, prone in the open beyond proneR); prone men are harder to hit
+  rush: [1.0, 1.6], hold: [2.4, 4.2], proneR: 13, proneHitR: 0.42, standHitR: 0.75,
+  // Z105 specialists (picked on the deployment screen; default mix below for reinforcements)
+  mg:     { burst: 8, gap: 0.1, pause: 1.8, dmg: 4.2, range: 28, spread: 0.06 },                    // heavy machine gun: fires prone in long bursts
+  mortar: { cd: 3.4, min: 12, max: 44, dmg: 30, aoe: 4.0, flight: 1.5, spread: 1.6 },                         // mortar team: stays back, lobs shells (kills infantry, cracks towers/camps)
+  sapper: { plant: 2.6, fuse: 2.4, reach: 50, safe: 10 },                                        // sapper: runs to a watchtower / camp hut, plants a charge, gets clear → it comes down
+  mix: ['rifle','rifle','mg','rifle','sapper','rifle','mortar','rifle'],
 };
 // Z104 BATTLEFIELD ZONES (world/zones.js plans the ground before cover is scattered)
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect

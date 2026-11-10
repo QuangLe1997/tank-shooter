@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
-import { BALANCE, ENV, INFANTRY, EQUIP } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, ENVMOD, FT, MOBILE, S, _cv, addScore, animateSoldier, blocks, burst, cMod, coverSpot, diffDmgMul, diffScale, enemies, enemyPool, floatText, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
+import { BALANCE, ENV, INFANTRY, EQUIP, SQUAD } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, ENVMOD, FT, MOBILE, S, _cv, addScore, animateSoldier, blocks, burst, cMod, coverSpot, diffDmgMul, diffScale, enemies, enemyPool, floatText, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, poseSoldier, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -52,7 +52,8 @@ export function updateInfantry(e, dt, now, edt){
   else if(thr && e.cover){ const cx=e.cover.x-e.pos.x, cz=e.cover.z-e.pos.z, cd=Math.hypot(cx,cz); if(cd>0.7){ mx=cx/cd; mz=cz/cd; sp*=1.5; } e.inCover=cd<=1.3; }   // Z104 TANK! → into cover, shoot from there
   else if(e.guard && e.post){ const gx=e.post[0]-e.pos.x, gz=e.post[1]-e.pos.z, gd=Math.hypot(gx,gz); if(gd>2.5){ mx=gx/gd; mz=gz/gd; } }   // Z104 depot / stockade guards hold their post
   else if(d>def.keep+2){ mx=ux; mz=uz; } else if(d<def.keep-5){ mx=-ux*0.8; mz=-uz*0.8; }
-  if(!(thr && e.cover) && !e.guard){ e.ph+=dt; const w=Math.sin(e.ph*0.9)*0.6; mx+=-uz*w*0.55; mz+=ux*w*0.55; }   // weave — a squad never walks in a conga line
+  const settled = mx===0 && mz===0 && d<def.range;                          // Z105 in position and in range → stop weaving, get down and shoot
+  if(!(thr && e.cover) && !e.guard && !settled){ e.ph+=dt; const w=Math.sin(e.ph*0.9)*0.6; mx+=-uz*w*0.55; mz+=ux*w*0.55; }   // weave — a squad never walks in a conga line
   for(const o of enemies){ if(o===e || !o.def.inf) continue; const ox=e.pos.x-o.pos.x, oz=e.pos.z-o.pos.z, q=ox*ox+oz*oz; if(q<5 && q>1e-4){ const k=(2.24-Math.sqrt(q))*0.8; mx+=ox*k; mz+=oz*k; } }
   const ox0=e.pos.x, oz0=e.pos.z, ml=Math.hypot(mx,mz);
   if(ml>0.05 && !(e.aimT>0)){ e.pos.x+=mx/ml*sp*edt; e.pos.z+=mz/ml*sp*edt; }
@@ -82,7 +83,10 @@ export function updateInfantry(e, dt, now, edt){
       spawnPart(_cv.x-Math.sin(a)*1.2,_cv.y,_cv.z-Math.cos(a)*1.2, -Math.sin(a)*6,0.5,-Math.cos(a)*6, {color:0xd8d0c0, size:1.4, life:0.6, smoke:true, grav:0.3, drag:2, op:0.5});   // back-blast
       fired=true; e.fireAt=now+def.fireCd*(A.rateBase-A.rateDrop*ds)/1.6; } }
   animateSoldier(e.mesh, moved/def.scale, dt, fired);
-  if(e.aimT>0){ u.up.position.y=0.5; const L=u.legs; L[0].hip.rotation.x=-1.35; L[0].knee.rotation.x=1.35; L[1].hip.rotation.x=0.25; L[1].knee.rotation.x=1.7; }   // kneeling to fire
+  // Z105 stance: kneel for the RPG / behind cover, flat on the ground when settled at range in the open, upright when moving
+  const still = moved < 0.03*Math.max(1, edt/dt);
+  const st = e.aimT>0 ? 'crouch' : (!still ? 'stand' : (e.inCover && thr ? 'crouch' : (settled && d>SQUAD.proneR && !def.rpg ? 'prone' : (settled ? 'crouch' : 'stand'))));
+  poseSoldier(e.mesh, st, dt); e.r = st==='prone' ? 0.34 : 0.55;              // a man lying flat is a smaller target for your gun too
 }
 // a tank rolling over a soldier at speed crushes him; slower contact just shoves him aside
 export function crushInfantry(now){

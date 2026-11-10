@@ -66,7 +66,7 @@ export function makeSoldierMesh(opts){
   put(gun, rb(0.07,0.07,0.22,0.015), M.gun, 0,0.0,0.34); put(gun, rb(0.045,0.16,0.07,0.01), M.gun, 0,-0.11,0.1, 0.25);                       // handguard + magazine
   put(gun, rb(0.05,0.08,0.2,0.015), M.gun, 0,-0.02,-0.18); put(gun, new THREE.CylinderGeometry(0.03,0.03,0.12,10), M.dark, 0,0.08,0.12, Math.PI/2);   // stock + optic
   const muz=new THREE.Object3D(); muz.position.set(0,0.01,0.7); gun.add(muz);
-  g.userData.torso=torso; g.userData.muzzle=muz; g.userData.legs=legs; g.userData.up=up; g.userData.gun=gun; g.userData.walk=0; g.userData.kick=0;
+  g.userData.torso=torso; g.userData.muzzle=muz; g.userData.legs=legs; g.userData.up=up; g.userData.gun=gun; g.userData.walk=0; g.userData.kick=0; g.userData.body=body; g.userData.arms=armG;
   for(const grp of [up, armG, gun]) bakeGroup(grp); for(const l of legs){ bakeGroup(l.hip); bakeGroup(l.knee); }
   g.traverse(o=>{ if(o.isMesh) o.castShadow=!MOBILE; });   // Z104 phones: no soldier shadows (dozens of men on the wider field)
   return g;
@@ -79,6 +79,16 @@ export function animateSoldier(g, dist, dt, firing){
   u.t=(u.t||0)+dt; u.up.position.y = 0.74 + Math.abs(Math.sin(u.walk))*0.03*Math.min(1,amp*2) + Math.sin(u.t*2.1)*0.006;
   if(firing) u.kick=1; u.kick=Math.max(0,u.kick-dt*9); u.gun.position.z = 0.16 - u.kick*0.06; u.gun.rotation.x = -u.kick*0.12;
 }
+// Z105 STANCES — call after animateSoldier(): 'stand' (walk cycle as is) · 'crouch' (kneel to fire / hide behind cover) ·
+// 'prone' (flat on the ground, rifle forward — the hardest target). Blends smoothly so nobody snaps between poses.
+const _ST={ stand:{ rx:0, y:0, z:0, up:0, arm:0, k:0 }, crouch:{ rx:0, y:0, z:0, up:0.15, arm:0, k:1 }, prone:{ rx:1.42, y:0.17, z:-0.55, up:-0.32, arm:-1.08, k:2 } };
+export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) return; const T=_ST[stance]||_ST.stand, P=u.pose||(u.pose={ rx:0, y:0, z:0, up:0, arm:0 }), f=1-Math.exp(-dt*9);
+  for(const k of ['rx','y','z','up','arm']) P[k]+=(T[k]-P[k])*f;
+  u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up; if(u.arms) u.arms.rotation.x=P.arm;
+  u.stance=stance; const L=u.legs;
+  if(T.k===1){ u.up.position.y=0.5; L[0].hip.rotation.x=-1.35; L[0].knee.rotation.x=1.35; L[1].hip.rotation.x=0.25; L[1].knee.rotation.x=1.7; }   // one knee down
+  else if(T.k===2){ u.up.position.y=0.74; for(const l of L){ l.hip.rotation.x=0.05; l.knee.rotation.x=0.12; l.hip.rotation.z=l.sx*0.14; } }      // legs out straight, a little apart
+  if(T.k!==2) for(const l of L) l.hip.rotation.z=0; }
 export const _sV=new THREE.Vector3();
 export function makeSoldierBar(){   // tiny billboarded HP bar above each soldier's head
   const g=new THREE.Group();

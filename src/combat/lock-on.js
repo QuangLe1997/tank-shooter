@@ -1,6 +1,6 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
-import { ROSTER, LETHAL } from '../../config.js';
+import { ROSTER, LETHAL, SQUAD } from '../../config.js';
 import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, groundHit, heightAt, hitAllyTank, impactFX, inBlock, riders, ringPulse, scene, sfx, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
@@ -134,7 +134,7 @@ export function updateBullets(dt, now){
         if(riders.length && Math.random()<0.45){ const rr=riders[(Math.random()*riders.length)|0]; if(rr&&!rr.dead) damageRider(rr, b.dmg); }   // a shot into the tank can wound an exposed rider
         hit=true; }
       if(!hit && hitAllyTank(b.x, b.z, b.r, b.dmg)) hit=true;                       // Z104 our captured tanks take hits too
-      if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z; if(dx*dx+dz*dz < (b.r+0.75)**2){ damageAlly(s, (b.inf||!LETHAL.tankRoundKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright
+      if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2){ damageAlly(s, (b.inf||!LETHAL.tankRoundKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
         if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
