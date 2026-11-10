@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FORT } from '../../config.js';
-import { ARENA, GUNS, HF, MOBILE, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeElite, makeFlag, makeSoldierMesh, ownGun, radio, rallyFlagTex, refreshWallet, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towers, unwave } from '../hub.js';
+import { ARENA, COVER_HP, GUNS, HF, MOBILE, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, ownGun, radio, rallyFlagTex, refreshWallet, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towers, unwave } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -15,10 +15,10 @@ let _nameI=0, _fhT=0;
 export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.stage-1)), n=(MOBILE?FORT.countMobile:FORT.count)[st];
   const cand=[]; _nameI=(Math.random()*FORT.names.length)|0;
   for(let t=0;t<400 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], R=R2(T.r);
-    const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?0.7:1.55), fr=cand.length===0?0.62+Math.random()*0.14:0.42+Math.random()*0.36, d=fieldR(a)*fr;
+    const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?0.7:1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, d=Math.min(FR*fr, FR-R-9);   // big forts: keep the whole ring inside the fence
     const x=Math.cos(a)*d, z=Math.sin(a)*d;
-    if(!inField(x, z, R+9) || Math.hypot(x,z)<R+30 || Math.hypot(x, z-ARENA*0.55)<R+46) continue;
-    if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+24)) continue;
+    if(!inField(x, z, R+7) || Math.hypot(x,z)<R+18 || Math.hypot(x, z-ARENA*0.55)<R+40) continue;
+    if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+16)) continue;
     cand.push({ x, z, R, tier }); }
   for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+FORT.names[(_nameI++)%FORT.names.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],
       captured:false, breached:false, active:false, units:[], cmd:null, sallyAt:0, g:null };
@@ -97,6 +97,12 @@ export function buildForts(){ mats();
     // banner of the garrison over the keep + a name board
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,9,6), _iron); pole.position.set(0, 4.5, 0); g.add(pole);
     const fl=makeFlag(campFlagTex(), 3.2, 2.0, 1); fl.position.set(0, 8.2, 0); g.add(fl); f.flag=fl;
+    // inner cover: sandbag lines, crates, HESCO and concrete — room to fight, things to duck behind
+    { const nC=Math.round(R2(T.cover)*(MOBILE?0.7:1)), kinds=['sandbag','crates','sandbag','hesco','concrete','drums'], gA=Math.atan2(f.gz-f.z, f.gx-f.x);
+      for(let k=0,t=0;k<nC && t<nC*8;t++){ const a=Math.random()*Math.PI*2, r=f.R*(0.32+Math.random()*0.46); if(Math.abs(Math.atan2(Math.sin(a-gA),Math.cos(a-gA)))<0.35 && r>f.R*0.5) continue;   // keep the gate lane open
+        const x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(blocks.some(b=>b.fort===f && b.kind==='cover' && Math.hypot(b.x-x,b.z-z)<5)) continue;
+        const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, !steel); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
+        const hp=steel?Infinity:(COVER_HP[kind]||70); blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }
     f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(0, 12.5, 0); g.add(f.label);
     const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)), tank:RI(T.tanks)+(st0>=3?1:0) };
     f.sallyAt=performance.now()/1000+R2(FORT.sally)*(0.6+Math.random()*0.6);
@@ -149,13 +155,19 @@ function spawnInside(f, type){ const a=Math.random()*Math.PI*2, r=Math.random()*
   const e=spawnEnemy(type, x, z); if(!e) return null; e.fortOf=f; if(!f.breached){ e.guard={ kind:'fort', x:f.x, z:f.z, r:f.R, fort:f }; e.post=[x,z]; e.hold={ x:f.x, z:f.z, r:f.R-3 }; }
   f.units.push(e); return e; }
 export function wakeFort(f, now){ if(f.active) return; f.active=true;
-  if(f.tier!==3){ const c=spawnInside(f, FORT.cmdType); if(c){ makeElite(c); c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; c.commander=f; c.loot=true; f.cmd=c;
+  if(f.tier!==3){ const c=spawnInside(f, FORT.cmdType); if(c){ c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); if(FORT.cmdScale!==1){ c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; } c.commander=f; c.loot=true; f.cmd=c;
+      f.escort=[]; const nE=RI(MOBILE?FORT.escortMobile:FORT.escort); for(let k=0;k<nE;k++){ const a=k/nE*Math.PI*2, r=R2(FORT.escortR), x=c.pos.x+Math.cos(a)*r, z=c.pos.z+Math.sin(a)*r;   // bodyguards ring the commander and go where he goes
+        const e=spawnEnemy(k%3===2?'rpg':'rifle', x, z); if(!e) continue; e.fortOf=f; e.escortOf=c; e.escA=a; e.escR=r; e.guard={ kind:'escort', fort:f }; e.post=[x,z]; f.escort.push(e); }
       c.label=nameSprite(f.chief, '#ffd24a'); c.label.scale.set(10,1.9,1); c.label.position.set(0, 5.2/(c.mesh.scale.x||1), 0); c.label.scale.multiplyScalar(1/(c.mesh.scale.x||1)); c.mesh.add(c.label); } }
   showBanner(f.name+' BÁO ĐỘNG — '+f.chief+' TRẤN GIỮ', '#e0603a'); }
 function refill(f){ const live=f.units.filter(e=>enemies.includes(e)); f.units=live; let nI=0, nT=0; for(const e of live){ if(e.def.inf) nI++; else nT++; }
   const capI=MOBILE?FORT.liveInfMobile:FORT.liveInf, capT=MOBILE?FORT.liveTanksMobile:FORT.liveTanks;
   if(nI<capI && f.pool.inf>0){ spawnInside(f, Math.random()<0.25?'rpg':'rifle'); f.pool.inf--; }
   if(nT<capT && f.pool.tank>0){ spawnInside(f, ['grunt','gunner','shield','heavy'][Math.min(3, (Math.random()*(2+Math.min(2,S.stage/2)))|0)]); f.pool.tank--; } }
+// the bodyguards keep their ring round the commander (posts move with him); he falls → they fight on their own
+function escortFollow(f){ if(!f.escort) return; const c=f.cmd, alive=c && enemies.includes(c);
+  for(let i=f.escort.length-1;i>=0;i--){ const e=f.escort[i]; if(!enemies.includes(e)){ f.escort.splice(i,1); continue; }
+    if(!alive){ e.guard=null; e.post=null; continue; } e.escA+=0.06; e.post=[c.pos.x+Math.cos(e.escA)*e.escR, c.pos.z+Math.sin(e.escA)*e.escR]; } }
 // sallies: a squad or a tank marches out of the gate onto the field
 function sally(f, now){ f.sallyAt=now+R2(FORT.sally)*(f.tier===3?0.8:1);
   const p=S.player; if(!p) return; let n=0; for(const e of enemies) if(!e.guard) n++; if(n > (MOBILE?16:26)) return;   // the field is already crowded
@@ -190,8 +202,8 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
     if(f.bar && f.gate){ const k=Math.max(0, f.gate.hp/f.gate.maxHp); f.bar.g.position.set(f.gx, f.gy+FORT.wallH+3.6, f.gz); f.bar.g.quaternion.copy(camera.quaternion); f.bar.fill.scale.x=Math.max(0.001,k); f.bar.fill.position.x=-(1-k)*0.5; f.bar.fill.material.color.setHex(fortSealed(f)?0x7fa8ff:(k>0.5?0xffcf5a:0xff6a4a)); }
     if(f.captured) continue;
     const d=Math.hypot(p.pos.x-f.x, p.pos.z-f.z);
-    if(!f.active && d<FORT.wakeR) wakeFort(f, now);
-    if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; refill(f); }
+    if(!f.active && d<FORT.wakeR+f.R) wakeFort(f, now);
+    if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; refill(f); escortFollow(f); }
       for(const e of f.units){ const H=e.hold; if(!H || e.def.inf) continue; const dx=e.pos.x-H.x, dz=e.pos.z-H.z, q=Math.hypot(dx,dz); if(q>H.r){ e.pos.x=H.x+dx/q*H.r; e.pos.z=H.z+dz/q*H.r; e.vel.multiplyScalar(0.2); } }   // tanks stay behind the walls until the gate falls
       if(f.cmd && !enemies.includes(f.cmd)) capture(f, now); }
     if(now>f.sallyAt) sally(f, now);

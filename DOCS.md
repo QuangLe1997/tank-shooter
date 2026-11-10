@@ -267,6 +267,7 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 
 ## 12. Điều khiển (hiện hành)
 - **Z107 LÁI THEO MÀN HÌNH (mặc định mọi thiết bị):** W/A/S/D (hoặc mũi tên) = lên/trái/xuống/phải trên màn hình; xe tự quay đầu về hướng đó (`DRIVE.screenPivot` 4.4 rad/s) rồi chạy, không tự lùi. Cài đặt vẫn chuyển lại kiểu XE TĂNG được.
+- **Z107 THÀNH RỘNG + TƯỚNG XE NHỎ:** thành to gấp ~1.7 (22–32 m) có vật cản bên trong; tướng là xe nhỏ lanh lẹ (`ENEMY_DEFS.chief`: nhanh, lách ngang, bắn chậm mà đau + đón đầu) kèm 6–10 cận vệ (`FORT.escort`).
 - **Z107 HÚC PHÁ THÀNH:** lấy đà húc cổng: mỗi cú ở tốc độ cao −~30% máu cổng → 3 cú + vài phát bắn là vỡ (`FORT.ram`). Tường thành giờ phá được theo từng đoạn 3 m (vẽ gộp instanced, 1 draw call/thành): máu ×1.25 cổng, đạn chỉ ăn ½, mỗi cú húc −22% → ~5 cú; một đoạn sập kéo theo đoạn kế bên → lỗ hổng ~6 m đủ cho xe, tính là đã thủng thành. Thành chính vẫn phong toả tới khi các thành khác thất thủ.
 - **Z107 NỀN PHẲNG & ỔN ĐỊNH:** `TERRAIN_FLAT` — chỉ 3–5 ngọn đồi lớn thoai thoải, 1–3 hố cũ, nhiễu mặt đất ×0.3; không còn gợn nhỏ (`noiseK 0`), pháp tuyến chi tiết dịu hơn, camera near 0.1→0.6 (hết z-fighting của lớp vết trên nền), đạn nổ KHÔNG còn đào lại nền (`blastK 0`, chỉ để vết cháy) và nền không tự đổ bóng (`RELIEF.selfShadow false`) → hết nhấp nháy / dựng lại lưới địa hình. Chớp trong mưa dịu hơn.
 - **Z107 NGÂN SÁCH VẼ (`render/lod.js`, `LOD`):** chỉ lính trong 26 m quanh xe đổ bóng; lính gác tháp / tường ngoài 70 m không vẽ; thanh máu địch chỉ hiện khi bị thương (tinh nhuệ, tướng luôn hiện).

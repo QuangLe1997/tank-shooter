@@ -81,7 +81,7 @@ export const DMG_TYPE = {
   HESH: { L:1.00, M:1.25, H:1.05, A:0.60, struct:3.0, label:'HESH' },         // squash-head: spalls medium armour, levels cover & towers
   TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
 };
-export const ARMOR = { scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
+export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
   rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A' };   // A = aircraft (Z80): only direct fire / flak / missiles reach it
 // ============================================================================
 // BATTLEFIELD ROSTER v2 (Z79) — enemy infantry on foot. Squads join waves from W2; RPG teams from stage 2.
@@ -409,13 +409,13 @@ export const TOUCH_HELP = [
 //   stays sealed until the others have fallen, and its commander is the stage boss.
 export const FORT = {
   count:[3,3,4,4,4], countMobile:[3,3,3,3,4],
-  tiers:{ 1:{ r:[14,16], sides:[4,6], towers:2, gunners:[6,8],  inf:[16,22], tanks:[1,2], gate:1500, name:'ĐỒN' },
-          2:{ r:[16,19], sides:[6,8], towers:4, gunners:[8,12], inf:[24,32], tanks:[2,3], gate:2300, name:'PHÁO ĐÀI' },
-          3:{ r:[20,23], sides:[8,8], towers:4, gunners:[12,16],inf:[30,40], tanks:[3,5], gate:3600, name:'THÀNH' } },
+  tiers:{ 1:{ r:[22,25], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:1500, cover:[5,7],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
+          2:{ r:[25,28], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:2300, cover:[7,9],  name:'PHÁO ĐÀI' },
+          3:{ r:[29,32], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:3600, cover:[9,12], name:'THÀNH' } },
   gatePerStage:0.22, mobileMul:0.6, wallH:4.4, wallT:1.6, gateW:7.5, seg:3,
-  wakeR:72, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // garrison on the field at once (refilled from the fortress pool)
+  wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
-  cmdType:'heavy', cmdHp:7, cmdScale:1.25,
+  cmdType:'chief', cmdHp:6, cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards
   ram:{ minV:8, fullV:20, gate:0.32, wall:0.22, buffMul:1.5, cd:0.45 },   // Z107 RAMMING: a full-speed hit takes 32% of a gate / 22% of a wall section → ~3 rams + a few shots open a gate
   wallHpK:1.25, wallShotK:0.5,                                          // a wall section has 1.25× the gate's HP and shrugs off half of every shell → gates break first
   loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },

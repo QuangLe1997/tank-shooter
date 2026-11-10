@@ -108,7 +108,9 @@ Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3
 
 
 ## 1h. Đại bản doanh & chiến dịch vượt cấp (Z107)
-- **Mỗi màn 3–4 thành** (điện thoại 3): 1 THÀNH chính (bậc 3, cổng 3600, 30–40 lính + 3–5 xe trong kho quân), các ĐỒN/PHÁO ĐÀI (cổng 1500/2300, 16–32 lính, 1–3 xe). Cổng ×(1+0.22·(màn−1)) × vòng NG+ × độ khó.
+- **Mỗi màn 3–4 thành** (điện thoại 3): 1 THÀNH chính (bậc 3, cổng 3600, 30–40 lính + 3–5 xe trong kho quân), các ĐỒN/PHÁO ĐÀI (cổng 1500/2300, 16–32 lính, 1–3 xe).
+- **Z107 rộng rãi:** bán kính ĐỒN 22–25 m · PHÁO ĐÀI 25–28 m · THÀNH 29–32 m, bên trong 5–12 vật cản (bao cát, thùng, HESCO, bê tông) để nấp và né; lối từ cổng vào để trống.
+- **Tướng giữ thành:** xe tăng NHỎ `chief` (tốc độ 10, giữ cự ly 22 m, lách ngang liên tục), bắn chậm 3 s/phát nhưng đạn 30 sát thương, bay 110 m/s, luôn ngắm đón đầu; máu ×6; 6–10 lính cận vệ (điện thoại 4–6) bám quanh tướng, tướng chết thì tự chiến đấu. Cổng ×(1+0.22·(màn−1)) × vòng NG+ × độ khó.
 - **Trong trận:** tới gần 72 m hoặc bắn cổng → thành báo động, tướng (xe hạng nặng tinh nhuệ ×7 máu) xuất hiện; tối đa 16 lính + 3 xe cùng lúc (điện thoại 9 + 2), chết bao nhiêu bù bấy nhiêu từ kho quân. Mỗi 10–16 s thành tung một tổ lính/xe ra chiến trường; 70% viện binh của các đợt ra từ cổng thành.
 - **Phá thành:** húc cổng ở tốc độ cao −32% máu cổng/cú (cần ≥ 8 m/s, đủ lực ở 20 m/s, buff húc ×1.5) → 3 cú + vài phát bắn. Tường: mỗi đoạn máu = 1.25× cổng, đạn ×0.5, húc −22%/cú (~5 cú); sập 2 đoạn liền → lỗ ~6 m.
 - **Thắng màn:** chiếm hết các thành (diệt tướng). Thành chính mở phong toả cuối cùng; phá cổng → trùm màn xuất hiện giữa thành.

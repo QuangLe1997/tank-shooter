@@ -122,6 +122,7 @@ export function updateEnemies(dt, now){
     else { desire = -def.speed*0.3; } // back off a touch / hold
     e.vel.x += (to.x*desire - e.vel.x)*Math.min(1,dt*4);
     e.vel.z += (to.z*desire - e.vel.z)*Math.min(1,dt*4);
+    if(def.chief && d < keep+16){ if(e.ph2==null) e.ph2=Math.random()*6.283; const w=Math.sin(now*1.4+e.ph2)*def.speed*0.95, k=Math.min(1,dt*3); e.vel.x += -to.z*w*k; e.vel.z += to.x*w*k; }   // Z107 commander circle-strafes — hard to pin down
     { const sl=Math.hypot(e.vel.x,e.vel.z)||1, ux=e.vel.x/sl, uz=e.vel.z/sl, gr=(heightAt(e.pos.x+ux,e.pos.z+uz)-heightAt(e.pos.x-ux,e.pos.z-uz))/2;
       e.pos.addScaledVector(e.vel, edt*Math.max(0.5, Math.min(1.3, 1-gr*1.2))); }   // slower up the mounds, faster down — hard separation later in separateTanks()
     if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*9); e.kbx*=kf; e.kbz*=kf; }   // recoil from being shot
@@ -144,7 +145,7 @@ export function updateEnemies(dt, now){
       else {
         e.muzzle.getWorldPosition(_v);
         let aimA = e.aim;
-        if(targetPlayer && _iq > 0.15){ const lead=Math.min(0.6, d/Math.max(1,def.bspeed))*TACTICS.leadMax*_iq; aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // Z95 smarter crews lead their shots
+        if(targetPlayer && (_iq > 0.15 || def.chief)){ const lead=Math.min(0.6, d/Math.max(1,def.bspeed))*(def.chief?1:TACTICS.leadMax*_iq); aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // Z95 smarter crews lead their shots
         const spread = A.spreadBase * (1 - ds*A.spreadDrop) * (def.accurate?A.accurateMul:1) / (1 + (S.loop||0)*A.loopAcc);   // ACCURACY tightens hard with stage + NG+ loop
         aimA += (Math.random()-0.5) * Math.max(0.02, spread) * (ENVMOD.night?ENV.night.enemySpread:1) * smokeSpread(now);
         const rateMul = A.rateBase - A.rateDrop*ds;
