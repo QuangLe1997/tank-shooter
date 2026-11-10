@@ -266,6 +266,7 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 | `steelsiege.zoom` | mức zoom camera người chơi chọn |
 
 ## 12. Điều khiển (hiện hành)
+- **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.
 
@@ -279,6 +280,13 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 ---
 
 ## 14. Lịch sử cập nhật lớn
+- **2026-11-10 · ĐẠI BẢN DOANH + CHUẨN BỊ TRẬN + CỬA HÀNG THẬT + XE NHẸ HƠN (Z107):** (yêu cầu: giảm gia tốc/quán tính xe; nâng cấp hiệu năng & UI; cửa hàng trưng bày xe thật lắp nòng; chọn chiến trường (bản đồ/thời tiết/giờ/không gian) hoặc chiến dịch vượt cấp; bảng phím tắt; đại bản doanh địch có cổng, tướng, quân đông; gom quân, lính dù quân ta; đầu xe nổi bật).
+  - *Lái xe:* `DRIVE` accel 23→19, launch 0.32→0.7, coast 14→32 (+`coastLin`), brake 62, grip 14 — dừng sau ~8 m thay vì 19 m. Mũi tên phát sáng trước mũi xe (`HEADING`) + dải sơn trên tấm giáp trước.
+  - *Hiệu năng:* lính dùng chung "soldier kit" (1 atlas/phe, hình học dựng 1 lần) → 7 draw call/người thay vì ~19; −25% draw call trên điện thoại (A/B với main); bỏ đọc `innerWidth/innerHeight` mỗi khung; HUD súng/thanh máu chỉ ghi DOM khi thay đổi; thanh máu lính đầy máu ẩn. `boot/safety.js` tự chữa cache module lẫn phiên bản sau deploy.
+  - *Cửa hàng (`ui/showroom.js`):* xe tăng của bạn (thân, cờ, nòng thật qua `mountBarrel`) đỗ trên một mảnh chiến trường hiện tại (đất, trời, nắng, bóng, bao cát, lưới nguỵ trang, bụi), nổ máy, xoay tháp, khai hoả; kéo để xoay quanh; mua súng = bắn chào 3 phát. Thẻ súng là ảnh chụp xe lắp đúng nòng đó.
+  - *Chuẩn bị trận (`ui/battle-setup.js`):* CHIẾN DỊCH 15+ cấp, độ khó ★ tăng dần, thắng mới mở cấp sau (`PROFILE.campaign.max`); TỰ CHỌN bản đồ · giờ · thời tiết · không gian (hẹp/vừa/rộng = `FIELD_STATE.scale`) · cấp địch. `fx/weather.js`: mưa giông (đất ướt bóng, chớp), bão cát, tuyết, sương mù.
+  - *Đại bản doanh (`world/fortress.js`, `FORT`):* 3–4 thành/màn có tên + tướng; tường đá có lỗ châu mai + lính trên tường (bắn rơi được), tháp góc, một cổng phải bắn liên tục; quân đồn trú đông tràn ra khi bạn tới gần/cổng vỡ, bù dần từ kho quân của thành; phần lớn viện binh xuất phát từ cổng thành. Diệt tướng = chiếm thành (xu, kim cương, vật phẩm, có thể được súng mới). Thành chính bị phong toả tới khi các thành khác thất thủ; tướng của nó là trùm màn — hạ trùm = thắng màn. HUD liệt kê các thành; radar vẽ thành.
+  - *Quân ta (`actors/command.js`, `COMMAND`):* TẬP KẾT gọi mọi lính về xe · XUNG PHONG dàn đội trước cổng rồi tràn vào · LÍNH DÙ trực thăng ta thả 4–6 lính (có hồi chiêu). Trại tù binh tăng lên 2–3/màn.
 - **2026-11-10 · GIAO DIỆN GAMING CAO CẤP (Z78):** (yêu cầu: làm mới nút, form, icon màn chơi & màn bắt đầu cho đẳng cấp gaming, mượt, đẹp). Skin CSS cuối khối style + phông Rajdhani.
 - **2026-11-10 · ÂM THANH CHÂN THỰC + ĐỘNG CƠ RÚ THEO DỐC (Z77):** viết lại engine âm thanh Web Audio (compressor + reverb + positional), súng/nổ ghép lớp, động cơ diesel + xích theo tải/dốc.
 - **2026-11-10 · TỐI ƯU TẢI GAME + LÀM NÓNG SHADER (Z76):** (yêu cầu: tối ưu loading/performance mượt, chỉn chu). modulepreload + compileAsync ngày/đêm + render ẩn + pool địch dựng sẵn + sinh trước chiến trường kế tiếp.

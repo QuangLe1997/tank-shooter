@@ -43,7 +43,7 @@ export function startGame(arg){
   if(boss){ scene.remove(boss.mesh); clearBossFight(); __set_boss(null); }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
-  S.timeScale=1; S.awaitingUpgrade=false; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
+  S.timeScale=1; S.awaitingUpgrade=false; S.cmd=null; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
   core.maxHp=240; core.hp=240;
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;

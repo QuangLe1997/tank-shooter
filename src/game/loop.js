@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pumpTips, radarCanvas, radarCtx, rangeRing, renderer, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyTanks, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCore, updateCoreAlarm, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateFuses, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWaves, updateWeather, updateWorldBars, updateWrecks } from '../hub.js';
+import { HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pumpTips, radarCanvas, radarCtx, rangeRing, renderer, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyTanks, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCmdUI, updateCore, updateCoreAlarm, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWaves, updateWeather, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -33,6 +33,7 @@ export function loop(nowMs){
     updateTankRigs(gdt);                // tracks + wheels + suspension + gun lay/recoil on every tank
     updateCrush();                      // tracks grind stones / flatten grass
     updateTowers(gdt, now);             // watchtower guards fire down; collapsing towers + falling guards
+    updateForts(gdt, now);              // Z107 fortresses: garrison, sallies, gate, capture
     updateBridges(gdt, now); updateCamps(gdt, now);   // Z90 rope bridges + enemy camps
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now);
@@ -43,6 +44,7 @@ export function loop(nowMs){
     updateFireteam(gdt, now);            // Z89 friendly fireteam + their APC (Z104: autonomous squad)
     updateAllyTanks(gdt, now); updatePOWs(gdt, now); updateDepots(gdt, now); updateRally(gdt, now); updateParadrops(gdt, now);   // Z104 allied tanks · POW stockades · depots · rally point · paratroopers
     updateRiders(gdt, now);              // crew mounted on the player's tank
+    updateCmdUI(now);                    // Z107 paratrooper cooldown on the phone strip
     updateBuffHUD(now);
     updateCamera(dt, now);
     updateWorldBars();

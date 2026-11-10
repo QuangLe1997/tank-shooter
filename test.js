@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, HEADING } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -471,6 +471,20 @@ ok(WEATHER.clear.range===1 && WEATHER.clear.n[0]===0, 'clear weather changes not
 ok(Object.values(WEATHER).every(w=>w.n[1]<=w.n[0] && w.n[1]<=450), 'phones get fewer weather particles (≤450)');
 ok(SPACE.wide.k===1 && SPACE.small.k>=0.65 && SPACE.small.k<SPACE.mid.k && SPACE.mid.k<1, 'space: narrow < medium < wide (= the full Z106 field)');
 ok(SPACE.small.k*FIELD.minOurs*(130-6) > 130*0.55+3, 'even the narrow field keeps the player spawn inside the fence');
+
+grp('Z107 FORTRESSES · SQUAD COMMANDS · CONTROLS SHEET');
+ok(FORT.count.every(n=>n>=3 && n<=4) && FORT.countMobile.every(n=>n>=2 && n<=4), '3–4 fortresses a stage (phones ≥2)');
+ok([1,2,3].every(t=>FORT.tiers[t] && FORT.tiers[t].gate>0 && FORT.tiers[t].inf[0]>=12), 'every tier has a gate to batter and a crowded garrison (≥12 men)');
+ok(FORT.tiers[1].gate < FORT.tiers[2].gate && FORT.tiers[2].gate < FORT.tiers[3].gate, 'gates get tougher with the fortress tier');
+ok(FORT.tiers[3].r[1] > FORT.tiers[1].r[1] && FORT.tiers[3].inf[1] > FORT.tiers[1].inf[1], 'the citadel is the biggest and the most crowded');
+ok(FORT.gateW > 5 && FORT.gateW < 10 && FORT.wallH > 3, 'a gate a tank fits through; walls taller than a tank');
+ok(FORT.liveInfMobile < FORT.liveInf && FORT.liveTanksMobile <= FORT.liveTanks, 'phones keep fewer garrison soldiers alive at once');
+ok(FORT.names.length >= 8 && FORT.chiefs.length >= 6, 'enough fortress names and commanders to vary every stage');
+ok(FORT.fromGate > 0.5 && FORT.fromGate < 1, 'most (not all) reinforcements march out of a fortress gate');
+ok(COMMAND.para.cd >= 20 && COMMAND.para.troopsMobile[1] <= COMMAND.para.troops[1], 'paratroopers on a cooldown; phones get fewer');
+ok(['t','x','b','h','g','e','q'].every(k=>KEYS_HELP.some(r=>r[0].some(x=>x.toLowerCase()===k))), 'the controls sheet lists every hotkey (T X B H G E Q)');
+ok(TOUCH_HELP.length >= 6, 'the controls sheet explains the touch controls too');
+ok(HEADING.idle < HEADING.moving && HEADING.dist > 2, 'the heading chevron sits ahead of the nose and brightens on the move');
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

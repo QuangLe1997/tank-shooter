@@ -315,7 +315,7 @@ export const DEPLOY = { roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1, 2, 2],
 
 // Z104 BATTLEFIELD ZONES (world/zones.js plans the ground before cover is scattered)
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
-export const POW = { perStage: [1, 1, 2, 2, 2], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };
+export const POW = { perStage: [2, 2, 3, 3, 3], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };
 export const DEPOT = { arms: [1, 1, 1, 1, 1], motor: [1, 1, 1, 1, 1], r: 10, guards: [4, 5], guardsMobile: [3, 3], capT: 4, tanks: [1, 2], score: 800, coin: 150 };
 export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30, keep: 15, leash: 58, dmg: 30, fireCd: 1.7, bspeed: 72, cap: 3 };
 // Z104 PARATROOPERS — an enemy transport helicopter crosses the field every so often and drops a stick of paratroopers
@@ -387,3 +387,34 @@ export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, 
 // Z107 HULL FRONT MARKER — at speed the hull's heading is hard to read from above: a glowing chevron on the ground just ahead of the nose
 //   (brighter while moving, dim at rest) + a bright stripe across the upper glacis. dist/size in hull units (× TANK_SCALE).
 export const HEADING = { dist: 3.9, size: 2.4, color: 0x9be04a, idle: 0.32, moving: 0.8, stripe: 0xd8ff6a };
+// Z107 CONTROLS SHEET — one list, shown from the home menu, the pause menu and in battle (H / F1 / ?). [keys, what it does, group]
+export const KEYS_HELP = [
+  [['W','S'], 'Tiến · lùi (↑ ↓ cũng được)', 'LÁI XE'], [['A','D'], 'Quay thân xe (← →)', 'LÁI XE'], [['Cách'], 'Lướt né — bứt tốc ngắn', 'LÁI XE'],
+  [['Chuột'], 'Ngắm tháp pháo', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'],
+  [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
+  [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
+  [['X'], 'XUNG PHONG — cả đội đánh thẳng vào thành gần nhất', 'QUÂN TA'], [['B'], 'Gọi trực thăng thả lính dù xuống cạnh xe', 'QUÂN TA'],
+  [['Esc','P'], 'Tạm dừng', 'KHÁC'], [['H'], 'Mở / đóng bảng phím tắt này', 'KHÁC'], [['Enter'], 'Xác nhận bố trí trận địa', 'KHÁC'] ];
+export const TOUCH_HELP = [
+  ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — nòng gắn đầu xe, xe hướng nào bắn hướng đó'], ['Đẩy nhẹ cần', 'Chỉ xoay xe ngắm, không chạy'],
+  ['BẮN (trái)', 'Giữ để bắn · tự bắn khi có mục tiêu trước mũi xe'], ['LƯỚT', 'Bứt tốc né đòn'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
+  ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['⏸', 'Tạm dừng — có nút xem bảng điều khiển'] ];
+// Z107 FORTRESSES (ĐẠI BẢN DOANH) — every stage the enemy holds 3–4 walled strongholds, each with a name and a commander.
+//   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate that must be shot
+//   continuously to break. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
+//   Troops and tanks on the open field SALLY from these gates. Take every fortress = win the stage: the main citadel's gate
+//   stays sealed until the others have fallen, and its commander is the stage boss.
+export const FORT = {
+  count:[3,3,4,4,4], countMobile:[3,3,3,3,4],
+  tiers:{ 1:{ r:[14,16], sides:[4,6], towers:2, gunners:[6,8],  inf:[16,22], tanks:[1,2], gate:1500, name:'ĐỒN' },
+          2:{ r:[16,19], sides:[6,8], towers:4, gunners:[8,12], inf:[24,32], tanks:[2,3], gate:2300, name:'PHÁO ĐÀI' },
+          3:{ r:[20,23], sides:[8,8], towers:4, gunners:[12,16],inf:[30,40], tanks:[3,5], gate:3600, name:'THÀNH' } },
+  gatePerStage:0.22, mobileMul:0.6, wallH:4.4, wallT:1.6, gateW:7.5, seg:3,
+  wakeR:72, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // garrison on the field at once (refilled from the fortress pool)
+  sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
+  cmdType:'heavy', cmdHp:7, cmdScale:1.25,
+  loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },
+  names:['HẮC SƠN','ƯNG SẮT','ĐẦU LÂU','LANG NHA','XÍCH VĨ','BÃO LỬA','CỔ THẠCH','HẮC LONG','THIẾT BÍCH','HUYẾT NGUYỆT'],
+  chiefs:['BÁ ĐỒ','HOẢ LANG','THIẾT ƯNG','KHÔ LÂU','HẮC HỔ','BÃO CÁT','ĐỘC NHÃN','SẮT ĐÁ'] };
+// Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
+export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };

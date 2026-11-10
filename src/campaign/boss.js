@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 export let boss=null;
@@ -257,6 +257,7 @@ export function killBoss(now){
   showBanner('ĐÃ HẠ '+boss.def.name+'!  +'+bcoin+' xu · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
   if(laserMesh) laserMesh.visible=false; clearMines(); clearPylons(); for(const pt of boss.parts){ if(pt.bar){ freeEnemyBar(pt.bar); pt.bar=null; } } scene.remove(boss.dome); { const st=document.getElementById('boss-st'); if(st){ st.innerHTML=''; st._h=''; } }
+  fortBossDown();                                   // Z107 the citadel falls with its commander
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen

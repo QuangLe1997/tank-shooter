@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
+import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortSpawnPoint, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -49,7 +49,7 @@ export function startWave(now){
   if(S.wave===1){ tip('drive2'); if(riders.length) tip('crew2'); if(OBJ&&OBJ.alive) tip('objective'); }
   rollWaveEvent();
   if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
-  WAVE.spawnQueue = buildWaveQueue(S.stage, S.wave);
+  WAVE.spawnQueue = buildWaveQueue(S.stage, Math.min(S.wave, WAVE.perStage));
   if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*BALANCE.wave.hordeMul)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
   else if(WAVE.event==='blitz'){ WAVE.spawnQueue = WAVE.spawnQueue.map(()=>'bomber'); }
   else if(['ambush','column','pyro','airraid'].includes(WAVE.event)) applyScriptedWave(now);   // Z83 scripted beats (airraid also from the random roll)
@@ -62,6 +62,7 @@ export function startWave(now){
 // Z106 enemies enter through the irregular fence: edge 0 = their side (−z) · 1 = ours (+z) · 2 = west · 3 = east. Of a few candidate
 // points on that stretch, prefer one 40–85 m from the tank so a bigger field does not mean long empty drives.
 export function edgeSpawnPoint(){
+  const fp=WAVE.fixedEdge==null ? fortSpawnPoint() : null; if(fp) return fp;   // Z107 most reinforcements march out of a fortress gate
   const e=(WAVE.fixedEdge!=null)?WAVE.fixedEdge:Math.floor(Math.random()*4), c=[-Math.PI/2, Math.PI/2, Math.PI, 0][e], p=S.player;
   let best=null, bs=1e9; for(let k=0;k<6;k++){ const [x,z]=fieldEdgePoint(c+(Math.random()-0.5)*1.3, 4), d=p?Math.hypot(x-p.pos.x, z-p.pos.z):60, s=d<40?40-d:(d>85?d-85:0);
     if(s<bs){ bs=s; best={ x, z }; } }
@@ -72,7 +73,7 @@ export function updateWaves(dt, now){
   if(!WAVE.active){
     if(boss) return;                                   // boss fight in progress → no waves
     if(now>WAVE.betweenUntil){
-      if(S.wave >= WAVE.perStage) startBoss(now);       // final wave done → summon the stage boss
+      if(S.wave >= WAVE.perStage && !FORTS.length) startBoss(now);       // final wave done → summon the stage boss (Z107: with fortresses the boss waits inside the citadel)
       else { S.wave++; startWave(now); }
     }
     return;

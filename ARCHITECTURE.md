@@ -50,7 +50,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (99 module theo thứ tự hub · 7.984 dòng)
+### 2.1 Danh mục module (105 module theo thứ tự hub · 8.532 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -65,8 +65,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | | **core/** — Hằng số runtime, trạng thái, hồ sơ, tiện ích | | |
 | 7 | `src/core/config.js` | 27 | runtime constants derived from config + device: arena size, MOBILE, tank scale, player palette, current BIOME |
 | 9 | `src/core/state.js` | 19 | S — the single runtime game state (mode, stage, wave, score, player, spell, recall …) |
-| 85 | `src/core/helpers.js` | 63 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
-| 89 | `src/core/profile.js` | 86 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
+| 91 | `src/core/helpers.js` | 70 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
+| 95 | `src/core/profile.js` | 91 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
 | | **render/** — Three.js renderer + hậu kỳ | | |
 | 11 | `src/render/renderer.js` | 117 | THREE SETUP |
 | | **audio/** — Âm thanh tổng hợp | | |
@@ -82,94 +82,100 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 17 | `src/world/perimeter.js` | 70 | perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets |
 | 18 | `src/world/decor.js` | 59 | TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) |
 | 19 | `src/world/physics.js` | 100 | PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap |
-| 20 | `src/world/biome.js` | 25 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
-| 21 | `src/world/cover.js` | 104 | TERRAIN BLOCKS (cover) |
+| 20 | `src/world/biome.js` | 28 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
+| 21 | `src/world/cover.js` | 106 | TERRAIN BLOCKS (cover) |
 | 22 | `src/world/ridges.js` | 25 | Z106 INNER RIDGES: rock spines across the field that split it into sectors with passes between them — |
 | 23 | `src/world/brick-walls.js` | 132 | Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed |
-| 50 | `src/world/towers.js` | 112 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
-| 51 | `src/world/camps.js` | 101 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
-| 52 | `src/world/zones.js` | 39 | Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered |
-| 53 | `src/world/rally.js` | 29 | Z104 KHU TẬP KẾT (rally point): soldiers carry the loot they find back here; it waits (never expires) for th… |
-| 54 | `src/world/pow.js` | 58 | Z104 POW STOCKADES along our fence: our captured men behind barbed wire, enemy guards around them. |
-| 55 | `src/world/depots.js` | 73 | Z104 ENEMY DEPOTS in their half of the field: a WEAPON depot and a TANK depot (motor pool), each with a guar… |
-| 56 | `src/world/bridges.js` | 52 | Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrol… |
+| 51 | `src/world/towers.js` | 112 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
+| 52 | `src/world/camps.js` | 101 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
+| 53 | `src/world/zones.js` | 39 | Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered |
+| 54 | `src/world/fortress.js` | 184 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
+| 55 | `src/world/rally.js` | 29 | Z104 KHU TẬP KẾT (rally point): soldiers carry the loot they find back here; it waits (never expires) for th… |
+| 56 | `src/world/pow.js` | 58 | Z104 POW STOCKADES along our fence: our captured men behind barbed wire, enemy guards around them. |
+| 57 | `src/world/depots.js` | 73 | Z104 ENEMY DEPOTS in their half of the field: a WEAPON depot and a TANK depot (motor pool), each with a guar… |
+| 58 | `src/world/bridges.js` | 52 | Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrol… |
 | | **tank/** — Mô hình xe tăng, nòng, khiên, rig | | |
 | 24 | `src/tank/materials.js` | 116 | procedural PBR textures for armour: welded panels (albedo/height/normal/rough), tracks, wheels, blob shadow |
 | 25 | `src/tank/model.js` | 168 | shared tank geometries (built once; every tank references them) |
 | 26 | `src/tank/rig.js` | 46 | living tank rig: track scroll + wheel spin (skid-steer aware), suspension pitch/roll, gun elevation, recoil … |
-| 27 | `src/tank/barrels.js` | 184 | per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they e… |
-| 28 | `src/tank/shield.js` | 56 | premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop) |
+| 27 | `src/tank/barrels.js` | 187 | per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they e… |
+| 28 | `src/tank/shield.js` | 66 | premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop) |
 | | **fx/** — Hiệu ứng hình ảnh | | |
 | 29 | `src/fx/hud-fx.js` | 43 | FX (rings, float text, screen) |
 | 30 | `src/fx/particles.js` | 87 | PARTICLES (juice) |
 | 34 | `src/fx/fire-wrecks.js` | 74 | REAL FIRE / FLASH / WRECKS |
-| 57 | `src/fx/dying.js` | 17 | KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then … |
-| 60 | `src/fx/explosions.js` | 70 | COMBAT FX / EXPLOSIONS (juiced in P4) |
-| 61 | `src/fx/debris.js` | 96 | Z103 split from fx/explosions.js: flying hull fragments (pooled) and the charred multi-part tank WRECK. |
+| 59 | `src/fx/dying.js` | 17 | KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then … |
+| 62 | `src/fx/explosions.js` | 70 | COMBAT FX / EXPLOSIONS (juiced in P4) |
+| 63 | `src/fx/debris.js` | 96 | Z103 split from fx/explosions.js: flying hull fragments (pooled) and the charred multi-part tank WRECK. |
+| 64 | `src/fx/weather.js` | 52 | Z107 WEATHER: rain squalls (streaks + wet, glossy ground + lightning), sandstorms (driven grit + thick ochre… |
 | | **combat/** — Vũ khí, đạn, kỹ năng | | |
 | 33 | `src/combat/projectiles.js` | 22 | PROJECTILES |
 | 35 | `src/combat/lock-on.js` | 150 | MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target |
-| 65 | `src/combat/abilities.js` | 19 | ABILITIES (stubs filled in later phases) |
-| 66 | `src/combat/guns.js` | 107 | ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick |
-| 67 | `src/combat/aim.js` | 18 | Z104 aim policy: desktop aims with the mouse; MOBILE has the barrel FIXED to the hull (shoot where you face) |
-| 68 | `src/combat/siege-rocket.js` | 130 | SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius |
-| 69 | `src/combat/flame.js` | 184 | continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) |
-| 70 | `src/combat/mastery.js` | 19 | GUN MASTERY: duplicate pickups level a gun up (permanent, per-gun). Boosts dmg / fire-rate / reload. |
-| 71 | `src/combat/spells.js` | 86 | SPELLS (one equipped; cast on cooldown) |
+| 68 | `src/combat/abilities.js` | 19 | ABILITIES (stubs filled in later phases) |
+| 69 | `src/combat/guns.js` | 108 | ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick |
+| 70 | `src/combat/aim.js` | 18 | Z104 aim policy: desktop aims with the mouse; MOBILE has the barrel FIXED to the hull (shoot where you face) |
+| 71 | `src/combat/siege-rocket.js` | 130 | SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius |
+| 72 | `src/combat/flame.js` | 184 | continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) |
+| 73 | `src/combat/mastery.js` | 19 | GUN MASTERY: duplicate pickups level a gun up (permanent, per-gun). Boosts dmg / fire-rate / reload. |
+| 74 | `src/combat/spells.js` | 86 | SPELLS (one equipped; cast on cooldown) |
 | | **actors/** — Đơn vị trên sân (địch, lính, drone, Lõi) | | |
 | 36 | `src/actors/core.js` | 105 | CORE (base to defend) |
 | 37 | `src/actors/enemies.js` | 150 | ENEMY tanks: spawn (roster, elites, carrier troops, loot), pooled meshes and floating HP bars |
-| 38 | `src/actors/fireteam.js` | 209 | Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall. |
+| 38 | `src/actors/fireteam.js` | 210 | Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall. |
 | 39 | `src/actors/ally-tanks.js` | 63 | Z104 ALLIED TANKS: enemy tanks taken at a motor pool, driven by our soldiers. They pick their own fights |
 | 40 | `src/actors/crew.js` | 31 | Z89/Z100 YOUR CREW command: tap = riders jump down and fight, hold = recall everyone on foot, + the crew but… |
 | 42 | `src/actors/infantry.js` | 116 | Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets… |
 | 43 | `src/actors/enemy-missiles.js` | 58 | ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with sm… |
 | 44 | `src/actors/vehicles.js` | 152 | Z80 enemy VEHICLES: flame tank, ATGM tank-destroyer, engineer repair truck, attack gunship, APC dismount (Z89) |
-| 45 | `src/actors/paradrop.js` | 57 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
-| 49 | `src/actors/damage.js` | 40 | HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away |
-| 91 | `src/actors/drone.js` | 118 | SUPPORT DRONE (power-up) |
-| 93 | `src/actors/soldiers.js` | 144 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
-| 94 | `src/actors/riders.js` | 44 | TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100) |
+| 45 | `src/actors/paradrop.js` | 61 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
+| 46 | `src/actors/command.js` | 39 | Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our he… |
+| 50 | `src/actors/damage.js` | 40 | HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away |
+| 97 | `src/actors/drone.js` | 118 | SUPPORT DRONE (power-up) |
+| 99 | `src/actors/soldiers.js` | 175 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
+| 100 | `src/actors/riders.js` | 44 | TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100) |
 | | **ai/** — Trí tuệ địch | | |
-| 47 | `src/ai/tactics.js` | 173 | Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall… |
-| 48 | `src/ai/cover.js` | 14 | Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both … |
+| 48 | `src/ai/tactics.js` | 173 | Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall… |
+| 49 | `src/ai/cover.js` | 14 | Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both … |
 | | **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
-| 46 | `src/campaign/operations.js` | 128 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
-| 58 | `src/campaign/waves.js` | 99 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
-| 59 | `src/campaign/boss.js` | 279 | BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts |
-| 72 | `src/campaign/artillery.js` | 145 | ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss |
+| 47 | `src/campaign/operations.js` | 128 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
+| 60 | `src/campaign/waves.js` | 100 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
+| 61 | `src/campaign/boss.js` | 280 | BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts |
+| 75 | `src/campaign/artillery.js` | 145 | ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss |
 | | **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
-| 73 | `src/loot/powerups.js` | 154 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
-| 74 | `src/loot/upgrades.js` | 62 | ROGUELITE UPGRADES (pick 1 of 3 after each boss) |
-| 92 | `src/loot/beacons.js` | 32 | LOOT BEACONS (mark crates/tanks that hide a power-up) |
+| 76 | `src/loot/powerups.js` | 154 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
+| 77 | `src/loot/upgrades.js` | 62 | ROGUELITE UPGRADES (pick 1 of 3 after each boss) |
+| 98 | `src/loot/beacons.js` | 32 | LOOT BEACONS (mark crates/tanks that hide a power-up) |
 | | **input/** — Bàn phím, chuột, cảm ứng | | |
-| 64 | `src/input/input.js` | 136 | INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire |
+| 67 | `src/input/input.js` | 136 | INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire |
 | | **ui/** — Giao diện DOM (menu, shop, HUD phụ, gợi ý) | | |
 | 8 | `src/ui/icons.js` | 78 | CUSTOM ICON SET (military line-art; no emoji) |
 | 41 | `src/ui/tips.js` | 46 | Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note expla… |
-| 75 | `src/ui/briefing.js` | 96 | STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin |
-| 76 | `src/ui/deploy.js` | 78 | Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, how many ride the tank, |
-| 78 | `src/ui/menus.js` | 30 | title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml). |
-| 79 | `src/ui/terrain-picker.js` | 52 | Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a f… |
-| 80 | `src/ui/guide.js` | 41 | Z103 split from ui/menus.js. FIELD MANUAL — the how-to-play screen (first launch + re-openable) and the firs… |
-| 81 | `src/ui/settings.js` | 23 | Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen. |
-| 82 | `src/ui/loadout.js` | 39 | Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the s… |
-| 83 | `src/ui/shop-info.js` | 36 | Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas v… |
-| 84 | `src/ui/shop.js` | 290 | SHOP (buy guns + leveled upgrades with coins / diamonds) |
-| 88 | `src/ui/radar.js` | 33 | RADAR / MINIMAP |
-| 90 | `src/ui/alarm.js` | 12 | CORE-UNDER-ATTACK ALARM |
+| 78 | `src/ui/briefing.js` | 101 | STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin |
+| 79 | `src/ui/deploy.js` | 78 | Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, how many ride the tank, |
+| 81 | `src/ui/menus.js` | 30 | title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml). |
+| 82 | `src/ui/terrain-picker.js` | 52 | Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a f… |
+| 83 | `src/ui/battle-setup.js` | 55 | Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the ne… |
+| 84 | `src/ui/keys.js` | 20 | Z107 CONTROLS SHEET: every key / touch control in one place — from the home menu (PHÍM TẮT), the pause menu,… |
+| 85 | `src/ui/guide.js` | 41 | Z103 split from ui/menus.js. FIELD MANUAL — the how-to-play screen (first launch + re-openable) and the firs… |
+| 86 | `src/ui/settings.js` | 23 | Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen. |
+| 87 | `src/ui/loadout.js` | 39 | Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the s… |
+| 88 | `src/ui/shop-info.js` | 36 | Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas v… |
+| 89 | `src/ui/shop.js` | 270 | SHOP (buy guns + leveled upgrades with coins / diamonds) |
+| 90 | `src/ui/showroom.js` | 128 | Z107 SHOWROOM: the shop shows YOUR battle tank exactly as it rolls out (same hull, paint, flag and the real … |
+| 94 | `src/ui/radar.js` | 36 | RADAR / MINIMAP |
+| 96 | `src/ui/alarm.js` | 12 | CORE-UNDER-ATTACK ALARM |
 | | **game/** — Luồng game, vòng lặp, khởi động | | |
-| 62 | `src/game/score.js` | 16 | SCORE / COMBO |
-| 63 | `src/game/player-damage.js` | 103 | PLAYER DAMAGE / DEATH |
-| 77 | `src/game/flow.js` | 93 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
-| 86 | `src/game/update.js` | 177 | per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers |
-| 87 | `src/game/intro.js` | 41 | INTRO CINEMATIC (deploy showcase) |
-| 95 | `src/game/loop.js` | 88 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
-| 96 | `src/game/viewport.js` | 28 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
-| 97 | `src/game/boot-gate.js` | 64 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
-| 98 | `src/game/startup.js` | 22 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
+| 65 | `src/game/score.js` | 16 | SCORE / COMBO |
+| 66 | `src/game/player-damage.js` | 103 | PLAYER DAMAGE / DEATH |
+| 80 | `src/game/flow.js` | 98 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
+| 92 | `src/game/update.js` | 179 | per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers |
+| 93 | `src/game/intro.js` | 41 | INTRO CINEMATIC (deploy showcase) |
+| 101 | `src/game/loop.js` | 91 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
+| 102 | `src/game/viewport.js` | 31 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
+| 103 | `src/game/boot-gate.js` | 64 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
+| 104 | `src/game/startup.js` | 22 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
 | | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
-| 99 | `src/dev/hooks.js` | 42 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
+| 105 | `src/dev/hooks.js` | 42 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
 <!-- MODULES:END -->
 
 ---

@@ -106,6 +106,14 @@ Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3
 | Sống đá trong sân | 3–5 dải (điện thoại 2–3), dài 22–46 m, dải dài có **khe vượt** 7–10 m | chắn xe, chắn đạn, làm chỗ nấp → chia khu, tạo điểm nghẽn |
 | Địch vào sân | qua hàng rào, ưu tiên điểm cách xe 40–85 m | đỡ phải chạy xa trên sân lớn |
 
+
+## 1h. Đại bản doanh & chiến dịch vượt cấp (Z107)
+- **Mỗi màn 3–4 thành** (điện thoại 3): 1 THÀNH chính (bậc 3, cổng 3600, 30–40 lính + 3–5 xe trong kho quân), các ĐỒN/PHÁO ĐÀI (cổng 1500/2300, 16–32 lính, 1–3 xe). Cổng ×(1+0.22·(màn−1)) × vòng NG+ × độ khó.
+- **Trong trận:** tới gần 72 m hoặc bắn cổng → thành báo động, tướng (xe hạng nặng tinh nhuệ ×7 máu) xuất hiện; tối đa 16 lính + 3 xe cùng lúc (điện thoại 9 + 2), chết bao nhiêu bù bấy nhiêu từ kho quân. Mỗi 10–16 s thành tung một tổ lính/xe ra chiến trường; 70% viện binh của các đợt ra từ cổng thành.
+- **Thắng màn:** chiếm hết các thành (diệt tướng). Thành chính mở phong toả cuối cùng; phá cổng → trùm màn xuất hiện giữa thành.
+- **Phần thưởng chiếm thành:** (700 + 260×màn) × bậc xu · 1–3 ◆ · 3–5 vật phẩm · 35%×bậc cơ hội nhận một khẩu súng chưa có.
+- **Chiến dịch:** cấp L = vòng ⌊(L−1)/5⌋, màn (L−1)%5+1; thời tiết theo `CAMPAIGN.weather`; thắng màn → mở cấp kế. Trận tự chọn không ghi đè điểm lưu chiến dịch.
+
 ## 2. Rải quân (wave) — số lượng & loại địch
 
 **Số địch mỗi wave** = `floor(3 + wave + (stage-1)×1.5)`

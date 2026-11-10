@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -77,6 +77,7 @@ function allyThink(a, now){
     if(a.cover){ a.task='cover'; a.goal=[a.cover.x, a.cover.z]; a.goalKind='cover'; if(!a.tookCover){ a.tookCover=true; tip('cover'); } return; }
     a.task='evade'; const ax=a.pos.x-tank.pos.x, az=a.pos.z-tank.pos.z, L=Math.hypot(ax,az)||1; a.goal=[a.pos.x+ax/L*8 - az/L*4, a.pos.z+az/L*8 + ax/L*4]; a.goalKind='evade'; return; }   // nothing to hide behind → get out of its line
   a.cover=null;
+  { const cg=cmdGoal(a, now, foe); if(cg){ a.task=S.cmd.kind; a.goal=cg; a.goalKind=S.cmd.kind; return; } }   // Z107 an order (muster / assault) beats his own plan
   if(a.role==='mortar'){ const mt=mortarTarget(a); if(mt){ a.target=mt; a.task='fight'; const qx=mt.pos.x-a.pos.x, qz=mt.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1, M=SQUAD.mortar;   // mortar: keep to its band and lob
       a.goal = qd>M.max*0.9 ? [mt.pos.x-qx/qd*M.max*0.75, mt.pos.z-qz/qd*M.max*0.75] : (qd<M.min ? [a.pos.x-qx/qd*6, a.pos.z-qz/qd*6] : null); a.goalKind='fight'; return; } }
   if(a.role==='sapper' && !(foe && Math.hypot(foe.pos.x-a.pos.x, foe.pos.z-a.pos.z)<12)){ const dj=demolitionJob(a, now); if(dj) return; }           // sapper: bring a tower / hut down

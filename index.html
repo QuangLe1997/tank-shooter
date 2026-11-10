@@ -76,6 +76,7 @@
   </div>
   <div id="contractChip" class="hidden"><span class="ic" data-icon="shield"></span><b id="cc-name">—</b></div>
   <div id="objChip" class="hidden"><div class="ob-row"><span class="ob-dot"></span><b class="ob-name">—</b></div><div class="ob-bar"><i></i></div><div class="ob-fx">—</div></div>
+  <div id="fortHud" class="hidden"></div>
   <div id="radio"><span class="rd-tag">SCH</span><span class="rd-txt"></span></div>
   <div id="hpwrap" class="chip">
     <div class="row"><span class="ic" data-icon="heart"></span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
@@ -123,6 +124,7 @@
     <div class="msp-next" id="mSpellNext" aria-label="Next skill">›</div>
     <div class="m-crew" id="mCrew" aria-label="Crew dismount"><span class="mc-ar">⇩</span><span class="mc-tx">LÍNH</span></div>
   </div>
+  <div id="mCmd"><div class="mcm" id="mMuster"><b>⤓</b><span>TẬP KẾT</span></div><div class="mcm" id="mAssault"><b>⚔</b><span>XUNG PHONG</span></div><div class="mcm" id="mPara"><b>☂</b><span>LÍNH DÙ</span><i id="mParaCd"></i></div></div>
   <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
   <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">LƯỚT</span></div>
   <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>TỰ ĐỘNG</span></div>
@@ -151,6 +153,7 @@
     <div class="terrain-pick" id="terrainPick">
       <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span><span class="lg">CHIẾN TRƯỜNG · </span><span class="sm">BẢN ĐỒ · </span><b id="tBtnName">TỰ ĐỘNG</b></span><span class="tp-sw" id="tBtnSw"></span></div>
     </div>
+    <div class="btn btn-mini" id="keysBtn"><span class="ic" data-icon="target"></span><span>PHÍM TẮT</span></div>
     <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span><span class="lg">HƯỚNG DẪN</span><span class="sm">HƯỚNG DẪN</span></span></div>
     <div class="btn btn-mini" id="settingsBtn"><span class="ic" data-icon="wrench"></span><span>CÀI ĐẶT</span></div>
     <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>XOÁ<span class="lg"> TIẾN TRÌNH</span></span></div>
@@ -207,6 +210,14 @@
 </div>
 
 <!-- TERRAIN — grand 3D battlefield picker -->
+<!-- Z107 CONTROLS SHEET -->
+<div class="overlay hidden" id="keysDlg">
+  <div class="title" style="font-size:clamp(22px,4.4vw,38px)">PHÍM TẮT · ĐIỀU KHIỂN</div>
+  <div class="ks-body" id="keysBody"></div>
+  <div class="btn btn-primary" id="keysDone" style="min-width:200px">ĐÃ HIỂU ▶</div>
+  <div class="ks-foot desktop-only">Mở lại bất cứ lúc nào trong trận bằng phím <kbd>H</kbd></div>
+</div>
+
 <!-- Z107 BATTLE SETUP: campaign ladder (rising difficulty, unlock in order) · custom battle (map · hour · weather · space · enemy level) -->
 <div class="overlay hidden" id="battleSetup">
   <div class="bs-top">
@@ -270,6 +281,7 @@
     <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">TIẾP TỤC ▶</div>
     <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>KHO SÚNG</span></div>
     <div class="btn" id="restartBtn" style="margin-bottom:12px">CHƠI LẠI ↻</div>
+    <div class="btn btn-mini" id="keysBtnP" style="margin-bottom:12px"><span class="ic" data-icon="target"></span><span>PHÍM TẮT · ĐIỀU KHIỂN</span></div>
     <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MENU CHÍNH</span></div>
   </div>
 </div>
