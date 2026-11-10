@@ -12,7 +12,7 @@
 <title>STEEL SIEGE — Tank Shooter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
 <meta name="description" content="STEEL SIEGE — a fast 3D twin-stick tank-defense game. Hold the line, build your arsenal, survive the siege. Play free in your browser." />
 <!-- Open Graph / Facebook + Twitter link preview (shown when the link is shared) -->
 <meta property="og:type" content="website" />
@@ -59,7 +59,7 @@
     --bg:#0c1108; --ink:#eaf2dc; --muted:#93a37e;
     --green:#8cbf3f; --amber:#e7b54a; --steel:#9bb0c0; --danger:#e0603a; --hp:#5fd06a;
     --panel:rgba(16,22,12,.86); --line:rgba(255,255,255,.10);
-    --font:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+    --font:'Saira Condensed','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
   html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);
@@ -927,7 +927,7 @@
      Z78 · PREMIUM TACTICAL SKIN — visual layer only (no layout sizes changed): chamfered gunmetal plates,
      brass-amber primary, light sweep on hover, glass HUD with amber accent, crisp tabular numbers, smooth menus.
      ===================================================================================================== */
-  :root{ --hud:'Rajdhani','Segoe UI',system-ui,-apple-system,Arial,sans-serif; --cham:10px;
+  :root{ --hud:'Saira Condensed','Rajdhani','Segoe UI',system-ui,-apple-system,Arial,sans-serif; --cham:10px;
     --plate:linear-gradient(180deg,rgba(40,48,32,.9),rgba(15,19,12,.94)); --edge:rgba(196,214,160,.2); --brass:#e9b64c; }
   body{font-family:var(--hud);}
   .btn,.btn-mini,.btn-arsenal,.btn-shop,.btn-terrain,.upcard,.brcard{
@@ -976,7 +976,7 @@
   /* Z83 · operation objective chip + HQ radio */
   #objChip{position:absolute;left:50%;top:36px;transform:translateX(-50%);min-width:210px;max-width:min(320px,60vw);padding:5px 12px 6px;
     background:linear-gradient(180deg,rgba(20,18,10,.82),rgba(12,11,7,.72));border:1px solid rgba(255,196,64,.45);
-    clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%,0 8px);font-family:Rajdhani,system-ui,sans-serif;pointer-events:none;z-index:6}
+    clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%,0 8px);font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;pointer-events:none;z-index:6}
   #objChip.hidden{display:none}
   #objChip .ob-row{display:flex;align-items:center;gap:7px}
   #objChip .ob-dot{width:7px;height:7px;background:#ffc440;transform:rotate(45deg);box-shadow:0 0 8px #ffc440;animation:obPulse 1.2s ease-in-out infinite}
@@ -987,13 +987,13 @@
   #objChip.done{border-color:rgba(140,220,110,.55)} #objChip.done .ob-name{color:#bff0a0} #objChip.done .ob-dot{background:#8cdc6e;box-shadow:0 0 8px #8cdc6e;animation:none}
   @keyframes obPulse{50%{opacity:.35}}
   #radio{position:absolute;left:50%;top:92px;transform:translate(-50%,-6px);display:flex;align-items:center;gap:9px;max-width:min(560px,80vw);padding:6px 14px 6px 8px;
-    background:rgba(8,12,8,.78);border-left:3px solid #8cdc6e;font-family:Rajdhani,system-ui,sans-serif;color:#e6f2dc;font-size:14px;letter-spacing:.03em;
+    background:rgba(8,12,8,.78);border-left:3px solid #8cdc6e;font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;color:#e6f2dc;font-size:14px;letter-spacing:.03em;
     opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:6}
   #radio.show{opacity:1;transform:translate(-50%,0)}
   #radio .rd-tag{font-size:10px;font-weight:700;letter-spacing:.18em;color:#0c140a;background:#8cdc6e;padding:2px 6px}
   body.touch #objChip{top:28px;min-width:170px;padding:4px 9px 5px} body.touch #objChip .ob-name{font-size:11px} body.touch #objChip .ob-fx{display:none}
   body.touch #radio{top:66px;font-size:12px}
-  .br-op{font-family:Rajdhani,system-ui,sans-serif;font-weight:700;letter-spacing:.32em;color:#ffc440;font-size:clamp(11px,1.6vw,14px);margin-bottom:2px;text-shadow:0 0 14px rgba(255,180,60,.35)}
+  .br-op{font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;font-weight:700;letter-spacing:.32em;color:#ffc440;font-size:clamp(11px,1.6vw,14px);margin-bottom:2px;text-shadow:0 0 14px rgba(255,180,60,.35)}
   .br-brief{max-width:620px;margin:6px auto 4px;color:rgba(232,226,206,.82);font-size:clamp(12px,1.7vw,15px);line-height:1.45;text-align:center}
   .br-obj{margin:4px auto 10px;padding:5px 12px;border:1px solid rgba(255,196,64,.4);background:rgba(255,196,64,.06);color:#ffe2a0;font-size:clamp(11px,1.5vw,13.5px);letter-spacing:.04em;display:inline-block}
   .br-obj b{letter-spacing:.2em;margin-right:6px;color:#ffc440} .br-obj span{color:rgba(255,232,190,.65)}
@@ -1022,7 +1022,7 @@
   @media (max-height:460px){
     #briefing .title{display:none;}
     #briefing .br-op{font-size:15px;letter-spacing:.24em;}
-    #briefing .br-brief{font-size:11.5px;margin:2px auto;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:86vw;}
+    #briefing .br-brief{font-size:11.5px;margin:2px auto;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;max-width:86vw;}
     #briefing .br-obj{font-size:11px;margin:2px auto 6px;padding:3px 9px;}
     #briefing .br-hint{display:none;}
   }
@@ -1032,7 +1032,7 @@
   #stagewipe .sw-top{top:0;transform:translateY(-100%);border-bottom:1px solid rgba(231,181,74,.25);}
   #stagewipe .sw-bot{bottom:0;transform:translateY(100%);border-top:1px solid rgba(231,181,74,.25);}
   #stagewipe.show .sw-bar{transform:none;}
-  #stagewipe .sw-inner{position:relative;z-index:2;transform:none;font-family:Rajdhani,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;}
+  #stagewipe .sw-inner{position:relative;z-index:2;transform:none;font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;}
   #stagewipe .sw-clear{font-size:12px;letter-spacing:.5em;color:#8cdc6e;margin-bottom:12px;font-weight:700;}
   #stagewipe .sw-kick{display:flex;align-items:center;gap:12px;font-size:clamp(11px,1.6vw,14px);letter-spacing:.42em;font-weight:700;color:rgba(255,236,200,.75);
     opacity:0;transform:translateY(8px);transition:opacity .45s ease .15s,transform .45s ease .15s;}
@@ -1060,6 +1060,20 @@
   @media (max-height:460px){ #stagewipe .sw-op{font-size:clamp(24px,5.4vw,44px);} #stagewipe .sw-line{margin:10px 0 8px;} }
   @media (prefers-reduced-motion:reduce){ #stagewipe.show .sw-op{animation:none;opacity:1;filter:none;letter-spacing:.08em;} #stagewipe.show .sw-line{animation:none;width:min(560px,72vw);} }
 
+  /* Z94 · first-time tip card (pauses the battle) */
+  #tipCard{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(80% 70% at 50% 50%,rgba(0,0,0,.35),rgba(0,0,0,.7));pointer-events:auto;}
+  #tipCard.hidden{display:none;}
+  #tipCard .tc-box{width:min(480px,88vw);padding:16px 18px 14px;font-family:var(--hud);color:#eef3e2;background:linear-gradient(180deg,rgba(18,24,12,.97),rgba(8,12,6,.97));
+    border:1px solid rgba(190,230,110,.45);border-top:3px solid #bfe66a;box-shadow:0 18px 60px rgba(0,0,0,.6),0 0 30px rgba(140,191,63,.18);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));animation:tipIn .35s cubic-bezier(.2,.9,.2,1);}
+  @keyframes tipIn{from{opacity:0;transform:translateY(14px) scale(.97);}to{opacity:1;transform:none;}}
+  #tipCard .tc-head{display:flex;gap:12px;align-items:center;margin-bottom:8px;}
+  #tipCard .tc-ic{width:44px;height:44px;flex:none;color:#bfe66a;background:rgba(140,191,63,.14);border-radius:10px;padding:8px;display:flex;} #tipCard .tc-ic svg{width:100%;height:100%;}
+  #tipCard .tc-kick{font-size:10px;letter-spacing:.24em;color:#9fb47a;font-weight:700;} #tipCard .tc-ttl{font-size:21px;font-weight:700;letter-spacing:.04em;line-height:1.15;}
+  #tipCard .tc-body{font-size:15px;line-height:1.5;color:#d6dfc4;} #tipCard .tc-body b{color:#ffe08a;font-weight:700;}
+  #tipCard .tc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;} #tipCard .tc-n{font-size:11px;color:#8a9a72;letter-spacing:.1em;}
+  #tipCard .tc-ok{padding:9px 18px;font-weight:700;letter-spacing:.12em;color:#10140a;background:linear-gradient(180deg,#d8f08a,#8cbf3f);cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);}
+  body.touch #tipCard .tc-box{width:min(520px,80vw);padding:11px 14px 10px;} body.touch #tipCard .tc-body{font-size:13px;line-height:1.4;} body.touch #tipCard .tc-ttl{font-size:17px;} body.touch #tipCard .tc-ic{width:34px;height:34px;}
   /* Z93 · loot reward card */
   #lootToast{position:fixed;right:14px;top:34%;z-index:40;display:flex;gap:10px;align-items:center;min-width:220px;max-width:300px;padding:9px 12px 9px 9px;pointer-events:none;
     background:linear-gradient(100deg,rgba(10,14,8,.9),rgba(10,14,8,.72));border:1px solid color-mix(in srgb,var(--lc,#9fe07a) 55%,transparent);border-left:3px solid var(--lc,#9fe07a);
@@ -1075,18 +1089,18 @@
   .buffchip{--bc:var(--green);} .buffchip .bic{color:var(--bc)!important;} .buffchip .t{color:var(--bc)!important;}
   /* Z84 · skill switching + names */
   .msp-next{position:absolute;right:calc(100% + 6px);bottom:14px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font:700 18px/1 Rajdhani,system-ui,sans-serif;color:#10140a;background:linear-gradient(180deg,#d8f08a,#8cbf3f);box-shadow:0 2px 8px rgba(0,0,0,.45);pointer-events:auto;}
+    font:700 18px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;color:#10140a;background:linear-gradient(180deg,#d8f08a,#8cbf3f);box-shadow:0 2px 8px rgba(0,0,0,.45);pointer-events:auto;}
   .msp-next:active{transform:scale(.9);}
   body:not(.touch) .msp-next{display:none;}
   .m-crew{position:absolute;right:calc(100% + 4px);bottom:58px;width:40px;height:40px;border-radius:12px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1px;
     color:#eaf5c8;background:linear-gradient(180deg,rgba(60,78,34,.92),rgba(30,40,18,.92));border:1px solid rgba(190,230,110,.55);box-shadow:0 2px 10px rgba(0,0,0,.5);pointer-events:auto;}
-  .m-crew .mc-ar{font:700 16px/1 Rajdhani,system-ui,sans-serif;} .m-crew .mc-tx{font:700 8px/1 Rajdhani,system-ui,sans-serif;letter-spacing:.12em;}
+  .m-crew .mc-ar{font:700 16px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;} .m-crew .mc-tx{font:700 8px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.12em;}
   .m-crew:active{transform:scale(.92);} body.touch.hascrew .m-crew{display:flex;} .m-crew.up{border-color:#ffd27a;color:#ffe6a8;}
   body.touch #mSpell .mbtag{font-size:7.5px;letter-spacing:.06em;white-space:nowrap;}
   #abilities{flex-wrap:wrap;max-width:160px;}
-  #abilities .ab-nm{flex-basis:100%;text-align:center;white-space:nowrap;font:700 10px/1 Rajdhani,system-ui,sans-serif;letter-spacing:.14em;color:rgba(255,232,190,.78);text-shadow:0 1px 4px #000;pointer-events:none;}
+  #abilities .ab-nm{flex-basis:100%;text-align:center;white-space:nowrap;font:700 10px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.14em;color:rgba(255,232,190,.78);text-shadow:0 1px 4px #000;pointer-events:none;}
   body.touch #abilities .ab-nm{display:none;}
-  .br-pick{font:700 11px/1 Rajdhani,system-ui,sans-serif;letter-spacing:.34em;color:rgba(255,232,190,.6);margin:2px 0 -4px;}
+  .br-pick{font:700 11px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.34em;color:rgba(255,232,190,.6);margin:2px 0 -4px;}
   @media (max-height:460px){ .br-pick{font-size:9.5px;margin:0 0 -2px;} }
 
   /* Z84 · desktop HUD stacking: score bar → contract → banner; objective card on the left under the skills; HQ radio above the gun bar */
@@ -1096,7 +1110,7 @@
   #abilities .ab-nm{background:rgba(6,9,4,.72);padding:3px 7px;font-size:10.5px;}
   /* banner: compact dark-glass plate, long lines wrap cleanly at a smaller size */
   #combo{top:112px;max-width:min(760px,82vw);padding:7px 18px;text-align:center;line-height:1.2;text-wrap:balance;
-    font-family:Rajdhani,system-ui,sans-serif;font-weight:700;font-size:24px;letter-spacing:.08em;
+    font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;font-weight:700;font-size:24px;letter-spacing:.08em;
     background:linear-gradient(180deg,rgba(10,12,8,.8),rgba(6,8,5,.66));text-shadow:0 0 18px currentColor,0 2px 4px #000;
     clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,12px 100%,0 50%);}
   #combo.long{font-size:15px;letter-spacing:.1em;text-shadow:0 2px 4px #000;}
@@ -1115,28 +1129,28 @@
     <div class="boot-sub">3D Tank Shooter</div>
     <div class="boot-lines"><span>RENDER CORE · ONLINE</span><span>ARMORY LINK · SECURE</span><span>BATTLEFIELD · READY</span></div>
     <div class="boot-bar"><i></i></div>
-    <div class="boot-msg" id="bootMsg">DEPLOYING ARMORY…</div>
-    <div class="boot-tap" id="bootTap"><span class="bt-ping"></span>TAP TO DEPLOY</div>
-    <div class="boot-note">Fullscreen · sound on</div>
+    <div class="boot-msg" id="bootMsg">ĐANG NẠP KHO VŨ KHÍ…</div>
+    <div class="boot-tap" id="bootTap"><span class="bt-ping"></span>CHẠM ĐỂ XUẤT KÍCH</div>
+    <div class="boot-note">Toàn màn hình · bật âm thanh</div>
   </div>
 </div>
 <script>
   /* safety net: if the ES module never boots (CDN blocked / very old browser) say so instead of spinning forever */
   setTimeout(function(){ var b=document.getElementById('boot'), m=document.getElementById('bootMsg');
-    if(b && !b.getAttribute('data-live') && m) m.textContent='STILL LOADING — CHECK YOUR CONNECTION'; }, 12000);
+    if(b && !b.getAttribute('data-live') && m) m.textContent='VẪN ĐANG TẢI — KIỂM TRA KẾT NỐI MẠNG'; }, 12000);
 </script>
 <div id="app"></div>
 
 <!-- HUD -->
 <div id="hud">
   <div id="topbar" class="chip">
-    <div class="cell score"><div class="lbl">SCORE</div><div class="val" id="ui-score">0</div></div>
-    <div class="cell stage"><div class="lbl">STAGE</div><div class="val" id="ui-stage">1</div></div>
-    <div class="cell wave"><div class="lbl">WAVE</div><div class="val" id="ui-wave">1</div></div>
+    <div class="cell score"><div class="lbl">ĐIỂM</div><div class="val" id="ui-score">0</div></div>
+    <div class="cell stage"><div class="lbl">MÀN</div><div class="val" id="ui-stage">1</div></div>
+    <div class="cell wave"><div class="lbl">ĐỢT</div><div class="val" id="ui-wave">1</div></div>
   </div>
   <div id="contractChip" class="hidden"><span class="ic" data-icon="shield"></span><b id="cc-name">—</b></div>
   <div id="objChip" class="hidden"><div class="ob-row"><span class="ob-dot"></span><b class="ob-name">—</b></div><div class="ob-bar"><i></i></div><div class="ob-fx">—</div></div>
-  <div id="radio"><span class="rd-tag">HQ</span><span class="rd-txt"></span></div>
+  <div id="radio"><span class="rd-tag">SCH</span><span class="rd-txt"></span></div>
   <div id="hpwrap" class="chip">
     <div class="row"><span class="ic" data-icon="heart"></span><div class="bar hp"><i id="ui-hp"></i></div><span id="lives">×3</span></div>
     <div class="row"><span class="ic" data-icon="bunker"></span><div class="bar core"><i id="ui-core"></i></div></div>
@@ -1147,9 +1161,9 @@
     <div id="chpbar" class="wbar core"><span class="wlabel" data-icon="bunker"></span><i></i></div>
   </div>
   <div id="abilities">
-    <div class="ability ready" id="ab-dash"><span class="ic" data-icon="dash"></span><span class="k">SPACE</span><div class="cool" id="cool-dash"></div></div>
+    <div class="ability ready" id="ab-dash"><span class="ic" data-icon="dash"></span><span class="k">CÁCH</span><div class="cool" id="cool-dash"></div></div>
     <div class="ability ready" id="ab-spell"><span class="ic" data-icon="spark"></span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
-    <span class="ab-nm" id="ab-spell-nm">Q ‹ SKILL ›</span>
+    <span class="ab-nm" id="ab-spell-nm">Q ‹ KỸ NĂNG ›</span>
   </div>
   <div id="combo">COMBO ×2</div>
   <div id="fsBtn" class="chip"><span class="ic" data-icon="expand"></span></div>
@@ -1158,9 +1172,9 @@
   <div id="buffbar"></div>
   <div id="lootToast"><div class="lt-ic"></div><div class="lt-bd"><div class="lt-tp"><span class="lt-nm"></span><span class="lt-tr"></span></div><div class="lt-ds"></div><div class="lt-nt"></div></div></div>
   <div id="weaponchip" class="chip">RIFLE 24/24</div>
-  <div id="bossbar"><div class="bn" id="boss-name">BOSS</div><div class="bar core"><i id="boss-hp"></i></div></div>
+  <div id="bossbar"><div class="bn" id="boss-name">TƯỚNG</div><div class="bar core"><i id="boss-hp"></i></div></div>
   <canvas id="radar" width="144" height="144"></canvas>
-  <div id="corewarn"><span class="ic" data-icon="alert"></span>CORE UNDER ATTACK</div>
+  <div id="corewarn"><span class="ic" data-icon="alert"></span>LÕI ĐANG BỊ TẤN CÔNG</div>
   <!-- camera controls (zoom + rotate) — in #hud so they show on BOTH desktop & mobile (not gated by the mobile #touch layer) -->
   <div id="camCtl">
     <div class="camBtn" id="zoomBtn"><span class="ic" data-icon="expand"></span><span id="zoomLbl">1.5×</span></div>
@@ -1171,29 +1185,30 @@
 <div id="corealarm"></div>
 <div id="popups"></div>
 <div id="coach"></div>
+<div id="tipCard" class="hidden"><div class="tc-box"><div class="tc-head"><span class="tc-ic"></span><div><div class="tc-kick">HƯỚNG DẪN · LẦN ĐẦU</div><div class="tc-ttl"></div></div></div><div class="tc-body"></div><div class="tc-foot"><span class="tc-n"></span><div class="tc-ok" id="tipOk">ĐÃ HIỂU ▶</div></div></div></div>
 
 <!-- mobile controls -->
 <div id="touch">
   <div id="mPause"><span class="ic" data-icon="pause"></span></div>
   <div class="stick" id="stickL"><div class="knob"></div></div>
   <div id="mbtns">
-    <div class="mbtn" id="mWeapon"><span class="ic" data-icon="rifle"></span><span class="mbtag">SWAP</span></div>
-    <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div><span class="mbtag">SKILL</span></div>
+    <div class="mbtn" id="mWeapon"><span class="ic" data-icon="rifle"></span><span class="mbtag">ĐỔI SÚNG</span></div>
+    <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div><span class="mbtag">KỸ NĂNG</span></div>
     <div class="msp-next" id="mSpellNext" aria-label="Next skill">›</div>
-    <div class="m-crew" id="mCrew" aria-label="Crew dismount"><span class="mc-ar">⇩</span><span class="mc-tx">CREW</span></div>
+    <div class="m-crew" id="mCrew" aria-label="Crew dismount"><span class="mc-ar">⇩</span><span class="mc-tx">LÍNH</span></div>
   </div>
   <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
-  <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">DASH</span></div>
-  <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>AUTO</span></div>
+  <div class="mbtn" id="mDash"><span class="ic" data-icon="dash"></span><span class="mbtag">LƯỚT</span></div>
+  <div id="autoBtn"><span class="ic" data-icon="bolt"></span><span>TỰ ĐỘNG</span></div>
 </div>
 
 <!-- START / TITLE -->
 <div class="overlay" id="start">
   <div class="scanlines"></div><div class="sweep"></div>
   <div class="frame"><i></i><i></i><i></i><i></i></div>
-  <div class="rot-hint"><span class="ic" data-icon="rotate"></span>ROTATE FOR THE BEST VIEW</div>
+  <div class="rot-hint"><span class="ic" data-icon="rotate"></span>XOAY NGANG ĐỂ XEM ĐẸP NHẤT</div>
   <div class="title">STEEL SIEGE</div>
-  <div class="subtitle">3D Tank Shooter</div>
+  <div class="subtitle">Bắn xe tăng 3D</div>
   <!-- identity strip: stacked on desktop, one compact row on a short landscape phone -->
   <div class="start-id">
     <div class="hello" id="hello"></div>
@@ -1203,159 +1218,159 @@
   <!-- every action lives in one grid so a short landscape screen can place them all (see the short-landscape CSS block) -->
   <div class="panel">
     <!-- 1 · PLAY (hero) → 2 · CONTINUE → 3 · prepare (ARSENAL/SHOP/BATTLEFIELD) → 4 · utility. Same order on every screen. -->
-    <div class="btn btn-primary" id="playBtn">PLAY ▶</div>
-    <div class="btn btn-primary btn-continue" id="continueBtn" style="display:none">CONTINUE ▶</div>
-    <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>ARSENAL · <b id="arsenalCount">1</b><span class="lg"> WEAPONS</span></span></div>
-    <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>SHOP<span class="lg"> — UPGRADES</span></span></div>
+    <div class="btn btn-primary" id="playBtn">CHƠI NGAY ▶</div>
+    <div class="btn btn-primary btn-continue" id="continueBtn" style="display:none">CHƠI TIẾP ▶</div>
+    <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>KHO SÚNG · <b id="arsenalCount">1</b><span class="lg"> KHẨU</span></span></div>
+    <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>CỬA HÀNG<span class="lg"> — NÂNG CẤP</span></span></div>
     <div class="terrain-pick" id="terrainPick">
-      <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span><span class="lg">BATTLEFIELD · </span><span class="sm">MAP · </span><b id="tBtnName">AUTO</b></span><span class="tp-sw" id="tBtnSw"></span></div>
+      <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span><span class="lg">CHIẾN TRƯỜNG · </span><span class="sm">BẢN ĐỒ · </span><b id="tBtnName">TỰ ĐỘNG</b></span><span class="tp-sw" id="tBtnSw"></span></div>
     </div>
-    <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span><span class="lg">HOW TO PLAY</span><span class="sm">HELP</span></span></div>
-    <div class="btn btn-mini" id="settingsBtn"><span class="ic" data-icon="wrench"></span><span>SETTINGS</span></div>
-    <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>RESET<span class="lg"> PROGRESS</span></span></div>
+    <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span><span class="lg">HƯỚNG DẪN</span><span class="sm">HƯỚNG DẪN</span></span></div>
+    <div class="btn btn-mini" id="settingsBtn"><span class="ic" data-icon="wrench"></span><span>CÀI ĐẶT</span></div>
+    <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>XOÁ<span class="lg"> TIẾN TRÌNH</span></span></div>
     <div class="help desktop-only">
-      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <b>mouse</b> aim · <b>click / hold</b> to fire<br>
-      <kbd>Space</kbd> dash · <kbd>E</kbd> ability
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> lái · <b>chuột</b> ngắm · <b>nhấn / giữ</b> để bắn<br>
+      <kbd>Cách</kbd> lướt · <kbd>E</kbd> kỹ năng · <kbd>G</kbd> lính xuống/lên xe
     </div>
     <div class="help touch-only">
-      <b>Joystick</b> to drive · turret auto-aims &amp; auto-fires<br>
-      <b>FIRE</b> &amp; <b>DASH</b> on the left · <b>SWAP</b> / <b>SKILL</b> on the right
+      <b>Cần điều khiển</b> để lái · tháp pháo tự ngắm &amp; tự bắn<br>
+      <b>BẮN</b> &amp; <b>LƯỚT</b> bên trái · <b>ĐỔI SÚNG</b> / <b>KỸ NĂNG</b> bên phải
     </div>
   </div>
 </div>
 
 <!-- NICKNAME (first launch) -->
 <div class="overlay hidden" id="nick">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">WELCOME, COMMANDER</div>
-  <div class="subtitle">Enter your call sign</div>
+  <div class="title" style="font-size:clamp(26px,6vw,46px)">CHÀO MỪNG, CHỈ HUY</div>
+  <div class="subtitle">Nhập mật danh của bạn</div>
   <div class="panel">
-    <input id="nickInput" type="text" maxlength="16" placeholder="NICKNAME" autocomplete="off" autocapitalize="characters" spellcheck="false" />
-    <div class="btn btn-primary" id="nickSave" style="margin-top:14px">CONFIRM ▶</div>
+    <input id="nickInput" type="text" maxlength="16" placeholder="MẬT DANH" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+    <div class="btn btn-primary" id="nickSave" style="margin-top:14px">XÁC NHẬN ▶</div>
   </div>
 </div>
 
 <!-- HOW TO PLAY — new-player field manual (auto-shown first launch; re-openable from the menu) -->
 <div class="overlay hidden" id="guide">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">HOW TO PLAY</div>
-  <div class="subtitle">Field manual, Commander — 30 seconds to mastery</div>
+  <div class="title" style="font-size:clamp(26px,6vw,46px)">HƯỚNG DẪN</div>
+  <div class="subtitle">Cẩm nang chiến trường, Chỉ huy — 30 giây để nắm vững</div>
   <div class="guide" id="guideBody"></div>
-  <div class="btn btn-primary" id="guideDone" style="margin-top:10px">GOT IT ▶</div>
+  <div class="btn btn-primary" id="guideDone" style="margin-top:10px">ĐÃ HIỂU ▶</div>
 </div>
 
 <!-- SETTINGS — difficulty · audio · quality -->
 <div class="overlay hidden" id="settings">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">SETTINGS</div>
-  <div class="subtitle">Difficulty · Audio · Quality</div>
+  <div class="title" style="font-size:clamp(26px,6vw,46px)">CÀI ĐẶT</div>
+  <div class="subtitle">Độ khó · Âm thanh · Đồ hoạ</div>
   <div class="settings">
-    <div class="set-row"><span class="set-l">DIFFICULTY</span><div class="seg" id="setDiff"></div></div>
-    <div class="set-row"><span class="set-l">SOUND FX</span><div class="seg" id="setSound"></div></div>
-    <div class="set-row"><span class="set-l">MUSIC</span><div class="seg" id="setMusic"></div></div>
-    <div class="set-row"><span class="set-l">QUALITY</span><div class="seg" id="setQual"></div></div>
-    <div class="set-row"><span class="set-l">FULLSCREEN</span><div class="seg"><div class="seg-chip" id="setFs">TOGGLE ⛶</div></div></div>
+    <div class="set-row"><span class="set-l">ĐỘ KHÓ</span><div class="seg" id="setDiff"></div></div>
+    <div class="set-row"><span class="set-l">HIỆU ỨNG</span><div class="seg" id="setSound"></div></div>
+    <div class="set-row"><span class="set-l">NHẠC</span><div class="seg" id="setMusic"></div></div>
+    <div class="set-row"><span class="set-l">ĐỒ HOẠ</span><div class="seg" id="setQual"></div></div>
+    <div class="set-row"><span class="set-l">TOÀN MÀN HÌNH</span><div class="seg"><div class="seg-chip" id="setFs">BẬT/TẮT ⛶</div></div></div>
   </div>
-  <div class="btn btn-primary" id="settingsDone" style="margin-top:12px">DONE ▶</div>
+  <div class="btn btn-primary" id="settingsDone" style="margin-top:12px">XONG ▶</div>
 </div>
 
 <!-- ARSENAL / LOADOUT (pick ≤5 weapons for battle) -->
 <div class="overlay hidden" id="loadout">
-  <div class="title" style="font-size:clamp(22px,5vw,40px)">ARSENAL</div>
-  <div class="subtitle">Pick up to 5 weapons · <span id="ldcount">1/5</span></div>
+  <div class="title" style="font-size:clamp(22px,5vw,40px)">KHO SÚNG</div>
+  <div class="subtitle">Chọn tối đa 5 khẩu · <span id="ldcount">1/5</span></div>
   <div id="ldgrid"></div>
-  <div class="panel" style="margin-top:6px"><div class="btn btn-primary" id="ldDone">CONFIRM ▶</div></div>
+  <div class="panel" style="margin-top:6px"><div class="btn btn-primary" id="ldDone">XÁC NHẬN ▶</div></div>
 </div>
 
 <!-- TERRAIN — grand 3D battlefield picker -->
 <div class="overlay hidden" id="terrainDlg">
-  <div class="title" style="font-size:clamp(24px,5.5vw,44px)">SELECT BATTLEFIELD</div>
-  <div class="subtitle">Pick your battlefield for this run · <b>AUTO</b> = rotates per stage</div>
+  <div class="title" style="font-size:clamp(24px,5.5vw,44px)">CHỌN CHIẾN TRƯỜNG</div>
+  <div class="subtitle">Chọn chiến trường cho lượt chơi · <b>TỰ ĐỘNG</b> = đổi theo từng màn</div>
   <div class="terrain-stage"><div class="terrain-gallery" id="terrainGallery"></div></div>
-  <div class="btn btn-primary" id="terrainDone" style="margin-top:8px">CONFIRM ▶</div>
+  <div class="btn btn-primary" id="terrainDone" style="margin-top:8px">XÁC NHẬN ▶</div>
 </div>
 
 <!-- SHOP — display-cabinet grid → tap a case for the fullsize 3D detail -->
 <div class="overlay hidden shop3d" id="shop">
   <div class="shop-top">
-    <div class="shop-head"><span class="shop-ttl">ARMORY</span>
+    <div class="shop-head"><span class="shop-ttl">KHO VŨ KHÍ</span>
       <span class="shop-wallet"><span class="w-chip"><span class="ic" data-icon="coin"></span><b class="w-coins">0</b></span><span class="w-chip dia"><span class="ic" data-icon="diamond"></span><b class="w-dia">0</b></span></span>
     </div>
     <div class="shop-tabs" id="shopTabs"></div>
   </div>
   <!-- GRID (display cases) -->
   <div id="caseGrid"></div>
-  <div class="shop-hint2" id="shopHint">Tap a case to inspect &amp; buy</div>
-  <div class="btn btn-mini shop-done" id="shopDone"><span>◀ DONE</span></div>
+  <div class="shop-hint2" id="shopHint">Chạm vào tủ để xem &amp; mua</div>
+  <div class="btn btn-mini shop-done" id="shopDone"><span>◀ XONG</span></div>
   <!-- DETAIL (fullsize 3D) -->
   <div id="shopDetailView" class="hidden">
     <div class="shop-arrow prev" id="shopPrev"><span class="ic" data-icon="dash"></span></div>
     <div class="shop-arrow next" id="shopNext"><span class="ic" data-icon="dash"></span></div>
     <div class="si-panel" id="siPanel"></div>
     <div class="shop-info" id="shopInfo">
-      <div class="si-cat" id="si-cat">WEAPONS</div>
+      <div class="si-cat" id="si-cat">VŨ KHÍ</div>
       <div class="si-name" id="si-name">—</div>
       <div class="si-desc" id="si-desc"></div>
       <div class="si-stats" id="si-stats"></div>
-      <div class="si-buy" id="si-buy">BUY</div>
+      <div class="si-buy" id="si-buy">MUA</div>
       <div class="si-pos" id="si-pos"></div>
     </div>
-    <div class="btn btn-mini shop-back" id="shopBack"><span>◀ BACK</span></div>
+    <div class="btn btn-mini shop-back" id="shopBack"><span>◀ QUAY LẠI</span></div>
   </div>
 </div>
 
 <!-- PAUSE -->
 <div class="overlay hidden" id="pause">
-  <div class="title" style="font-size:clamp(30px,7vw,58px)">PAUSED</div>
+  <div class="title" style="font-size:clamp(30px,7vw,58px)">TẠM DỪNG</div>
   <div class="panel">
-    <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">RESUME ▶</div>
-    <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>ARSENAL</span></div>
-    <div class="btn" id="restartBtn" style="margin-bottom:12px">RESTART ↻</div>
-    <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MAIN MENU</span></div>
+    <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">TIẾP TỤC ▶</div>
+    <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>KHO SÚNG</span></div>
+    <div class="btn" id="restartBtn" style="margin-bottom:12px">CHƠI LẠI ↻</div>
+    <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MENU CHÍNH</span></div>
   </div>
 </div>
 
 <!-- GAME OVER -->
 <div class="overlay hidden" id="gameover">
-  <div class="title" style="font-size:clamp(34px,8vw,68px)">DEFEATED</div>
+  <div class="title" style="font-size:clamp(34px,8vw,68px)">THẤT BẠI</div>
   <div class="panel">
     <div class="go-stats">
-      <div class="go-stat"><div class="l">SCORE</div><div class="v" id="go-score" style="color:var(--amber)">0</div></div>
-      <div class="go-stat"><div class="l">STAGE</div><div class="v" id="go-stage" style="color:var(--green)">1</div></div>
-      <div class="go-stat"><div class="l">WAVE</div><div class="v" id="go-wave" style="color:var(--steel)">1</div></div>
+      <div class="go-stat"><div class="l">ĐIỂM</div><div class="v" id="go-score" style="color:var(--amber)">0</div></div>
+      <div class="go-stat"><div class="l">MÀN</div><div class="v" id="go-stage" style="color:var(--green)">1</div></div>
+      <div class="go-stat"><div class="l">ĐỢT</div><div class="v" id="go-wave" style="color:var(--steel)">1</div></div>
     </div>
     <div class="go-best" id="go-best"></div>
     <div class="go-wallet" id="go-wallet"></div>
-    <div class="btn btn-primary" id="retryBtn" style="margin-bottom:10px">RETRY ↻</div>
-    <div class="btn btn-mini" id="goHomeBtn"><span class="ic" data-icon="bunker"></span><span>MAIN MENU</span></div>
+    <div class="btn btn-primary" id="retryBtn" style="margin-bottom:10px">THỬ LẠI ↻</div>
+    <div class="btn btn-mini" id="goHomeBtn"><span class="ic" data-icon="bunker"></span><span>MENU CHÍNH</span></div>
   </div>
 </div>
 
 <!-- UPGRADE PICK (roguelite) -->
 <div class="overlay hidden" id="upgrade">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">UPGRADE</div>
-  <div class="subtitle">Choose one reward</div>
+  <div class="title" style="font-size:clamp(26px,6vw,46px)">NÂNG CẤP</div>
+  <div class="subtitle">Chọn một phần thưởng</div>
   <div id="upcards"></div>
 </div>
 
 <!-- STAGE BRIEFING (pre-stage contract choice) -->
 <div class="overlay hidden" id="briefing">
-  <div class="br-op" id="br-op">OPERATION</div>
-  <div class="title" style="font-size:clamp(24px,5.5vw,42px)">STAGE BRIEFING</div>
-  <div class="subtitle" id="br-sub">Boss ahead — choose your contract</div>
+  <div class="br-op" id="br-op">CHIẾN DỊCH</div>
+  <div class="title" style="font-size:clamp(24px,5.5vw,42px)">GIAO NHIỆM VỤ</div>
+  <div class="subtitle" id="br-sub">Tướng địch ở cuối màn — chọn hợp đồng</div>
   <div class="br-brief" id="br-brief"></div>
   <div class="br-obj" id="br-obj"></div>
-  <div class="br-pick">CHOOSE YOUR CONTRACT</div>
+  <div class="br-pick">CHỌN HỢP ĐỒNG</div>
   <div id="brcards"></div>
-  <div class="br-hint">Each contract changes the rules for the whole stage — pick by your goal (coins · diamonds · farming · risk)</div>
+  <div class="br-hint">Mỗi hợp đồng đổi luật cho cả màn — chọn theo mục tiêu (xu · kim cương · cày đồ · mạo hiểm)</div>
 </div>
 
 <!-- VICTORY -->
 <div class="overlay hidden" id="victory">
-  <div class="title" style="font-size:clamp(34px,8vw,68px)">VICTORY</div>
-  <div class="subtitle">You defeated the Overlord</div>
+  <div class="title" style="font-size:clamp(34px,8vw,68px)">CHIẾN THẮNG</div>
+  <div class="subtitle">Bạn đã hạ gục OVERLORD</div>
   <div class="panel">
     <div class="go-stats">
-      <div class="go-stat"><div class="l">SCORE</div><div class="v" id="vic-score" style="color:var(--amber)">0</div></div>
+      <div class="go-stat"><div class="l">ĐIỂM</div><div class="v" id="vic-score" style="color:var(--amber)">0</div></div>
     </div>
-    <div class="btn btn-primary" id="ngplusBtn">NEW GAME+ ▶</div>
+    <div class="btn btn-primary" id="ngplusBtn">CHƠI VÒNG MỚI+ ▶</div>
   </div>
 </div>
 
@@ -1363,16 +1378,16 @@
 <div id="cine">
   <div class="bar top"></div>
   <div class="bar bot"></div>
-  <div id="cine-title"><div class="ct-name">STEEL SIEGE</div><div class="ct-sub" id="cine-sub">STAGE 1 · DESERT</div></div>
-  <div id="cine-skip">tap / any key to skip</div>
+  <div id="cine-title"><div class="ct-name">STEEL SIEGE</div><div class="ct-sub" id="cine-sub">MÀN 1 · SA MẠC</div></div>
+  <div id="cine-skip">chạm / bấm phím bất kỳ để bỏ qua</div>
 </div>
 
 <!-- portrait gate — mobile is landscape-only -->
-<div id="rotate"><span class="ic" data-icon="rotate"></span><div class="rt-t">ROTATE YOUR DEVICE</div><div class="rt-s">Landscape mode only</div></div>
+<div id="rotate"><span class="ic" data-icon="rotate"></span><div class="rt-t">XOAY NGANG THIẾT BỊ</div><div class="rt-s">Chỉ chơi ở chế độ màn hình ngang</div></div>
 
 <!-- stage transition wipe (suspenseful reveal of the next stage) -->
 <div id="stagewipe"><div class="sw-bar sw-top"></div><div class="sw-bar sw-bot"></div><div class="sw-scan"></div><div class="sw-inner">
-  <div class="sw-clear" id="sw-clear">SECTOR SECURED</div>
+  <div class="sw-clear" id="sw-clear">KHU VỰC ĐÃ CHIẾM</div>
   <div class="sw-kick"><span id="sw-stage">STAGE 2</span><i></i><span id="sw-biome">RUINS</span></div>
   <div class="sw-op" id="sw-tag">OPERATION</div>
   <div class="sw-line"></div>
@@ -1656,7 +1671,7 @@ function skyEnvTexture(name, A){
 }
 // ---- TIME OF DAY: each stage fights at a different hour — morning · harsh noon · golden sunset · moonlit night under electric floodlights ----
 const TOD_ORDER = ['day','noon','sunset','night','night'];
-const TOD_LABEL = { day:'MORNING', noon:'HIGH NOON', sunset:'SUNSET', night:'NIGHT' };
+const TOD_LABEL = { day:'BUỔI SÁNG', noon:'GIỮA TRƯA', sunset:'HOÀNG HÔN', night:'BAN ĐÊM' };
 function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 function todAtmos(A, tod){
   const o=Object.assign({}, A);
@@ -2216,7 +2231,7 @@ function ramDamage(a, b, imp, sa, sb, ma, mb, now){
     const vsP = (t===a?b:a)===P, deal = vsP ? (P.ramOn?LOOT.ram.dealt:1)*(P.ramDealMul||1) : 1;   // Z93 dozer blade / RAM PLATE
     if(t===P){ if(now < p_iframe(t)) return; damagePlayer(Math.round(d*R.toPlayer*(P.ramOn?LOOT.ram.taken:1)*(P.ramTakeMul||1)), now, t.pos.x-(t===a?b:a).pos.x, t.pos.z-(t===a?b:a).pos.z); }
     else if(t===boss){ damageBoss(d*R.toBoss*deal*(1+(S.stage-1)*R.perStage)); }
-    else if(t.alive!==false && t.hp>0){ const dd=d*R.toEnemy*deal*(1+(S.stage-1)*R.perStage); damageEnemy(t, dd); if(dd>=4) floatText('RAM '+Math.round(dd), '#ffcf7a', {x:t.pos.x,y:3,z:t.pos.z}, 15); } };
+    else if(t.alive!==false && t.hp>0){ const dd=d*R.toEnemy*deal*(1+(S.stage-1)*R.perStage); damageEnemy(t, dd); if(dd>=4) floatText('HÚC '+Math.round(dd), '#ffcf7a', {x:t.pos.x,y:3,z:t.pos.z}, 15); } };
   hit(a, mb, ma, ag[0]); hit(b, ma, mb, ag[1]);
   if(imp > 16){ const mx=(a.pos.x+b.pos.x)/2, mz=(a.pos.z+b.pos.z)/2; sfx('explode'); spawnDebris({x:mx,z:mz}, 0.6, 0x3a3a34); if(a===P||b===P){ S.shake=Math.min(3.2,S.shake+imp*0.05); haptic([30,20,40]); } }   // a proper crunch: torn plating flies
 }
@@ -2259,7 +2274,7 @@ function separateTanks(now){
       else if(near){ const closing=(p.vel.x*dx+p.vel.z*dz)/dl;
         if(closing >= DRIVE.climb*(p.ramOn?LOOT.ram.climb:1) && hitsHull(p, bl.x, bl.z, bl.r)){ p.climbing=bl; p.vel.x*=0.7; p.vel.z*=0.7; S.shake=Math.min(2.6,S.shake+0.9); p.hitT=Math.max(p.hitT||0,0.16); sfx('thud'); haptic([30,20,30]);
           burst({x:bl.x,z:bl.z}, BIOME.ground, 4, 3, {y:0.6, life:0.9, size:1.6, smoke:true, grav:-0.3, drag:2, up:1.2, op:0.45}); continue; }
-        else if(closing > 4 && hitsHull(p, bl.x, bl.z, bl.r+0.1)) driveHint('BACK UP · BUILD SPEED TO CLIMB'); } }
+        else if(closing > 4 && hitsHull(p, bl.x, bl.z, bl.r+0.1)) { driveHint('LÙI LẠI · LẤY ĐÀ ĐỂ LEO'); tip('climb'); } } }
     const vn=tankVsCircle(p, bl.x, bl.z, bl.r);
     if(vn>9){ S.shake=Math.min(2.5,S.shake+vn*0.03); p.hitT=Math.max(p.hitT||0,0.12); burst({x:bl.x,z:bl.z}, BIOME.ground, 3, 2.5, {y:0.6, life:0.7, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); sfx('thud'); haptic(20); }
     for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r);
@@ -2510,7 +2525,7 @@ function driveHint(txt){ const n=performance.now()/1000; if(n-_hintT<3.5) return
 function ramWall(t, bl, closing){
   const s=Math.sin(bl.obb.f), c=Math.cos(bl.obb.f), side = ((t.pos.x-bl.x)*c-(t.pos.z-bl.z)*s) > 0 ? -1 : 1;   // topple AWAY from the tank
   if(closing >= DRIVE.wallBreak*(t===S.player&&t.ramOn?LOOT.ram.wall:1)){ wallDamage(bl, 1e6, side); return true; }
-  if(closing > 4){ wallDamage(bl, closing*2.2, side); if(t===S.player) driveHint('BACK UP · TAKE A RUN AT IT'); }
+  if(closing > 4){ wallDamage(bl, closing*2.2, side); if(t===S.player){ driveHint('LÙI LẠI · LẤY ĐÀ ĐỂ HÚC'); tip('wall'); } }
   return false;
 }
 // ----------------------------- PLAYER TANK -----------------------------
@@ -3680,7 +3695,7 @@ function damageCore(dmg){
   if(!core) return; core.hp-=dmg; core.flash=0.16; core.cu.flash.value=0.85;
   sfx('corehit');
   updateHUD();
-  if(core.hp<=0){ core.hp=0; bigExplode(core.pos, core.theme.crystal, 3); gameOver('CORE DESTROYED'); }
+  if(core.hp<=0){ core.hp=0; bigExplode(core.pos, core.theme.crystal, 3); gameOver('LÕI ĐÃ BỊ PHÁ HUỶ'); }
 }
 function updateCore(dt, now){
   if(!core) return; const c=core;
@@ -3810,6 +3825,7 @@ function getEnemyMesh(type){
   m.visible=true; return m;
 }
 function makeElite(e){   // champion: tanky, bigger, glowing gold, pays big + always drops loot
+  tip('elite');
   e.elite=true; e.hp=Math.round(e.hp*BALANCE.elite.hpMul); e.maxHp=e.hp; e.r*=1.3; e.loot=true;
   e.mesh.scale.multiplyScalar(BALANCE.elite.sizeMul);
   const g=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffd24a,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false}));
@@ -3832,6 +3848,7 @@ function spawnEnemy(type, x, z){
   const eliteChance = (type==='bomber'||def.inf) ? 0 : Math.min(BALANCE.elite.capChance, BALANCE.elite.chancePerStage*(S.stage-1) + BALANCE.elite.chancePerLoop*(S.loop||0));
   if(!def.inf && WAVE.eliteForce>0){ WAVE.eliteForce--; makeElite(e); } else if(Math.random()<eliteChance) makeElite(e);
   e.bar=getEnemyBar(); e.bar.g.scale.setScalar(def.inf?0.8:1.5); updateEnemyBar(e);                       // floating HP bar over the tank
+  if(def.inf) tip('infantry'); else if(def.air) tip('gunship'); else if(def.engineer) tip('engineer');   // Z94 first sighting → field note
   if(def.carrier){ e.unloaded=false; e.unloading=false; e.unloadT=0; const rmp=mesh.getObjectByName('ramp'); if(rmp) rmp.rotation.x=0;
     const D0=TROOPS.dismount; e.troops = S.stage>=D0.fromStage ? D0.troops[0]+((Math.random()*(D0.troops[1]-D0.troops[0]+1))|0) : 0; }
   if(def.carrier){ const nw=performance.now()/1000; e.crew=[];   // load the riflemen onto the APC (reset the pooled mesh's crew)
@@ -3863,7 +3880,7 @@ let _dismountRadioAt=0;
 function updateDismount(e, dt, now, dpl){
   const D0=TROOPS.dismount, rmp=e.mesh.getObjectByName('ramp');
   if(!e.unloading && !e.unloaded && e.troops>0 && dpl < D0.range && S.mode==='playing'){ e.unloading=true; e.unloadT=0; e.dropped=0;
-    if(now-_dismountRadioAt>12){ _dismountRadioAt=now; radio('HQ: Enemy APC dismounting infantry — watch for RPG teams!'); } }
+    tip('apc'); if(now-_dismountRadioAt>12){ _dismountRadioAt=now; radio('SCH: Xe bọc thép địch đang thả bộ binh — coi chừng tổ RPG!'); } }
   if(!e.unloading){ if(rmp) rmp.rotation.x=Math.max(0, rmp.rotation.x-dt*2); return; }
   e.unloadT+=dt; if(rmp) rmp.rotation.x=Math.min(1.25, e.unloadT*2.6);                                   // ramp swings down onto the dirt
   const due=Math.floor((e.unloadT-0.5)/D0.interval)+1;
@@ -3877,14 +3894,14 @@ function updateDismount(e, dt, now, dpl){
 const FT=[]; let FT_APC=null;
 function callFireteam(now){
   const F=TROOPS.fireteam, p=S.player, want=Math.min(F.cap, Math.round(F.size+(S.stage-1)*F.perStage)), need=want-FT.length;
-  if(need<=0){ for(const a of FT) a.hp=a.maxHp; floatText('FIRETEAM RESUPPLIED','#9bd14a',p.pos,16); return; }
+  if(need<=0){ for(const a of FT) a.hp=a.maxHp; floatText('TỔ BỘ BINH ĐÃ TIẾP TẾ','#9bd14a',p.pos,16); return; }
   if(FT_APC) { FT_APC.load+=need; return; }
   const m=buildTank(PLAYER_PAL); m.userData.friendly=true; m.userData.palOverride={hull:0x5e7a2e,turret:0x6a8434,barrel:0x8aa048,tread:0x2a3514,accent:0xe7b54a};
   decorateEnemyMesh(m,'carrier'); for(let i=0;i<3;i++){ const c=m.getObjectByName('crew'+i); if(c) c.visible=true; }
   m.scale.setScalar(1.34*TANK_SCALE); scene.add(m);
   const ex=Math.max(-ARENA+6, Math.min(ARENA-6, p.pos.x+(Math.random()-0.5)*16)), ez=ARENA-4;                // rolls in from our side of the field
   FT_APC={ mesh:m, pos:new THREE.Vector3(ex,0,ez), vel:new THREE.Vector3(), facing:Math.PI, load:need, state:'in', t:0, dropped:0 };
-  radio('HQ: Fireteam inbound — friendly APC on your six.'); sfx('beep');
+  radio('SCH: Tổ bộ binh đang tới — xe bọc thép ta ngay sau lưng anh.'); sfx('beep');
 }
 function updateFireteamAPC(dt, now){
   const A=FT_APC; if(!A) return; const p=S.player, m=A.mesh, rmp=m.getObjectByName('ramp'); A.t+=dt;
@@ -3950,13 +3967,47 @@ function crewToggle(){
     riders.slice().forEach((r,i)=>{ const wp=r.g.position, a=p.facing+Math.PI*0.5*(i%2?1:-1)+(Math.random()-0.5)*0.4;
       spawnAlly(wp.x, wp.z, a); const al=FT[FT.length-1]; al.fromTank=true; al.maxHp=F.hp; al.hp=Math.max(8, r.hp/r.maxHp*F.hp); al.jumpT=0.4; al.jy=wp.y;
       scene.remove(r.g); scene.remove(r.bar); });
-    riders.length=0; radio('Crew: dismounting — we have your flanks!'); sfx('click'); haptic(20); }
-  else { const mine=FT.filter(a=>a.fromTank); if(!mine.length) return; for(const a of mine) a.mounting=true; radio('Crew: mounting up!'); sfx('click'); }
+    riders.length=0; radio('Kíp lính: xuống xe — bọn tôi giữ hai bên sườn!'); sfx('click'); haptic(20); }
+  else { const mine=FT.filter(a=>a.fromTank); if(!mine.length) return; for(const a of mine) a.mounting=true; radio('Kíp lính: lên xe!'); sfx('click'); }
   updateCrewBtn();
 }
 function updateCrewBtn(){ const on=riders.length>0, down=FT.some(a=>a.fromTank); document.body.classList.toggle('hascrew', on||down);
   const b=document.getElementById('mCrew'); if(b){ b.classList.toggle('up', !on && down); const ar=b.querySelector('.mc-ar'); if(ar) ar.textContent = on ? '⇩' : '⇧'; } }
 { const b=document.getElementById('mCrew'); if(b){ const go=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); crewToggle(); }; b.addEventListener('touchstart', go, {passive:false}); b.addEventListener('mousedown', go); } }
+
+// ===== Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note explains it. Once per lifetime (saved). =====
+const TIPS={
+  drive:   ['tank','Xe tăng 50 tấn', 'Xe <b>tăng tốc từ từ</b> và <b>trôi tiếp</b> khi nhả ga. Kéo cần ngược ra sau để <b>lùi</b>. Chạy nhanh rồi mới ôm cua được rộng — hãy tính trước đường đi.'],
+  crew:    ['team','Lính trên xe', 'Có lính ngồi trên nóc xe, tự bắn địch gần. '+(MOBILE?'Chạm nút <b>LÍNH</b>':'Bấm <b>G</b>')+' để họ <b>nhảy xuống đánh bộ</b> bên cạnh bạn; bấm lại để gọi họ <b>về xe</b>.'],
+  infantry:['tank','Bộ binh địch', 'Lính đi bộ yếu nhưng đông. <b>Lái đè qua</b> khi đang chạy để cán nát (+điểm). Tổ <b>RPG</b> quỳ ngắm 1 giây có <b>chớp đỏ</b> — né hoặc bắn hạ rocket.'],
+  loot:    ['spark','Vật phẩm rơi', 'Đồ rơi văng ra từ xác xe. <b>Cột sáng</b> cho biết độ hiếm: <b>xanh lá</b> thường · <b>xanh dương</b> hiếm · <b>tím</b> quý. Xe càng trâu, chỗ càng khó thì đồ càng xịn. Lại gần là đồ tự hút vào.'],
+  stack:   ['bolt','Cộng dồn vật phẩm', 'Nhặt lại buff đang có thì được <b>gia hạn thêm nửa thời gian</b> (tối đa 1,5 lần), không mạnh thêm. <b>TURBO</b> lên tới cấp 2, <b>giáp phản ứng</b> tối đa 6 tấm. Tốc độ tối đa có trần ×1,7.'],
+  wall:    ['tank','Tường gạch', 'Đi chậm thì xe bị dội lại. <b>Lùi ra, lấy đà</b> (trên ~55% tốc độ) rồi húc thẳng — cả đoạn tường sẽ đổ. Bắn cũng làm tường sập dần từng tầng.'],
+  climb:   ['tank','Đá chắn đường', 'Hòn đá thấp này <b>leo qua được</b> nếu bạn lao tới đủ nhanh. Lùi lại vài thân xe, tăng tốc rồi chạy thẳng vào.'],
+  arty:    ['alert','Pháo kích!', 'Vòng <b>đỏ</b> trên mặt đất là nơi đạn pháo sắp rơi. <b>Rời khỏi vòng ngay</b> — tâm vòng đau nhất.'],
+  objective:['bunker','Mục tiêu chiến dịch', 'Công trình viền vàng làm địch mạnh hơn khi còn đứng (xem dòng mô tả trên HUD). <b>Phá nó</b> để nhận xu + 💎 và cắt nguồn sức mạnh của địch.'],
+  camp:    ['bunker','Trại lính địch', 'Nhà vòm tôn liên tục tung lính ra. <b>San phẳng nhà lính</b> để chặn nguồn quân. Lều thì cán bẹp được. Phá trại rơi đồ <b>quý</b>.'],
+  apc:     ['team','Xe chở quân', 'Xe bọc thép đang <b>dừng lại thả lính</b>. Diệt nó trước khi cửa sau hạ xuống, hoặc cán đám lính vừa chạy ra.'],
+  gunship: ['drone','Trực thăng vũ trang', 'Đạn pháo vòng cung không với tới. Dùng <b>súng bắn thẳng, FLAK</b> (×1,8 vào máy bay) hoặc <b>tên lửa</b>.'],
+  atgm:    ['target','Bị khoá laser!', 'Tia đỏ là xe diệt tăng đang khoá bạn. <b>Rẽ gắt</b>, <b>thả khói</b> hoặc <b>bắn hạ tên lửa</b> khi nó bay tới.'],
+  engineer:['wrench','Công binh địch', 'Xe công binh <b>hàn sửa</b> xe địch bị thương bằng tia xanh. <b>Diệt nó trước</b>, nếu không bạn sẽ bắn mãi không hết máu.'],
+  elite:   ['star','Xe tinh nhuệ', 'Xe có hào quang vàng: trâu hơn, mạnh hơn nhưng <b>luôn rơi đồ quý</b> và +1 💎.'],
+  core:    ['bunker','Lõi đang nguy!', 'Nếu <b>LÕI</b> bị phá là thua. Quay về đánh bật địch quanh Lõi, dùng kỹ năng <b>SỬA CHỮA</b> hoặc nhặt <b>SỬA CĂN CỨ</b>.'],
+  boss:    ['alert','Trận đánh tướng', 'Tướng địch có <b>nhiều pha</b> và <b>điểm yếu</b>. Bắn vào <b>đuôi xe</b> gây thêm sát thương; phá các <b>bộ phận</b> (thanh nhỏ trên đầu) để vô hiệu đòn của nó. Khi nó <b>choáng</b> hoặc <b>xả nhiệt</b> — dồn hết hoả lực!'],
+  shield:  ['shield','Khiên năng lượng', 'Tướng đang được <b>trụ phát khiên</b> bảo vệ — đạn không xuyên qua. <b>Phá hết các trụ</b> (đánh dấu trên radar) để tắt khiên.'],
+};
+const TIPQ=[]; let _tipOpen=null;
+function tip(id){ if(!TIPS[id]) return; const P=PROFILE.tips||(PROFILE.tips={}); if(P[id] || TIPQ.includes(id) || _tipOpen===id) return; TIPQ.push(id); }
+const TIP_URGENT={ arty:1, atgm:1, boss:1, shield:1, core:1 }; let _tipNextAt=0;
+function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing') return; const nowT=performance.now()/1000;
+  let qi=TIPQ.findIndex(k=>TIP_URGENT[k]); if(qi<0){ if(nowT<_tipNextAt) return; qi=0; }      // urgent notes jump the queue; the rest wait 6 s of play between them
+  const id=TIPQ.splice(qi,1)[0], T=TIPS[id], el=document.getElementById('tipCard'); if(!el) return;
+  _tipOpen=id; S.mode='tip'; S.firing=false; S.keys={};
+  el.querySelector('.tc-ic').replaceChildren(iconEl(T[0])); el.querySelector('.tc-ttl').textContent=T[1]; el.querySelector('.tc-body').innerHTML=T[2];
+  const seen=Object.keys(PROFILE.tips||{}).length+1; el.querySelector('.tc-n').textContent='Ghi chú '+seen+'/'+Object.keys(TIPS).length;
+  el.classList.remove('hidden'); sfx('beep'); }
+function closeTip(){ if(!_tipOpen) return; (PROFILE.tips||(PROFILE.tips={}))[_tipOpen]=1; saveProfile(); _tipOpen=null; _tipNextAt=performance.now()/1000+6; document.getElementById('tipCard').classList.add('hidden'); if(S.mode==='tip') S.mode='playing'; sfx('click'); }
+{ const ok=document.getElementById('tipOk'); if(ok) tapEl(ok, closeTip); addEventListener('keydown', e=>{ if(_tipOpen && (e.key==='Enter'||e.key===' '||e.key==='Escape')){ e.preventDefault(); closeTip(); } }); }
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
 const INF_DEAD=[];
@@ -4033,7 +4084,7 @@ function infantryDown(e){
   const m=e.mesh, gy=heightAt(e.pos.x,e.pos.z);
   if(e._crushed){ m.scale.y*=0.12; m.position.y=gy+0.05;                    // flattened into the dirt under the tracks
     burst(e.pos, BIOME.ground, 8, 5, {y:gy+0.4, life:0.6, size:1.0, smoke:true, grav:-0.4, drag:2.2, up:1.5, op:0.5}); burst(e.pos, 0x6a2a1c, 6, 4, {y:gy+0.3, life:0.35, size:0.35, grav:-14, drag:2});
-    floatText('CRUSHED +'+INFANTRY.crushBonus, '#ffcf5a', {x:e.pos.x, y:gy+2.4, z:e.pos.z}, 16); addScore(INFANTRY.crushBonus, new THREE.Vector3(e.pos.x,2,e.pos.z));
+    floatText('CÁN NÁT +'+INFANTRY.crushBonus, '#ffcf5a', {x:e.pos.x, y:gy+2.4, z:e.pos.z}, 16); addScore(INFANTRY.crushBonus, new THREE.Vector3(e.pos.x,2,e.pos.z));
     sfx('crunch', e.pos); haptic(28); S.shake=Math.min(2,S.shake+0.25); }
   else { burst(e.pos, 0x7a3020, 6, 4, {y:gy+1.1, life:0.4, size:0.5, grav:-10, drag:2}); }
   INF_DEAD.push({ e, t:0, crushed:!!e._crushed, dir:(Math.random()<0.5?-1:1) });
@@ -4065,7 +4116,7 @@ function launchEnemyMissile(x, y, z, ang, o){
 }
 function blowMissile(i, how){
   const r=EMIS[i], now=performance.now()/1000, gy=heightAt(r.x,r.z);
-  if(how==='shot'){ bigExplode({x:r.x,z:r.z}, 0xffd27a, 0.7); floatText('INTERCEPTED', '#9fe8ff', {x:r.x,y:gy+2.6,z:r.z}, 15); addScore(40, new THREE.Vector3(r.x,2,r.z)); }
+  if(how==='shot'){ bigExplode({x:r.x,z:r.z}, 0xffd27a, 0.7); floatText('ĐÃ ĐÁNH CHẶN', '#9fe8ff', {x:r.x,y:gy+2.6,z:r.z}, 15); addScore(40, new THREE.Vector3(r.x,2,r.z)); }
   else { bigExplode({x:r.x,z:r.z}, 0xff8a3a, r.aoe/3); decalScorch(r.x, r.z, r.aoe*0.6, 0.8);
     if(how!=='direct'){ const p=S.player, dd=Math.hypot(p.pos.x-r.x, p.pos.z-r.z); if(dd<r.aoe+p.radius) damagePlayer(r.dmg*0.55*(1-dd/(r.aoe+p.radius)*0.6), now, p.pos.x-r.x, p.pos.z-r.z); }
     for(const s of soldiers.slice()) if(Math.hypot(s.pos.x-r.x,s.pos.z-r.z)<r.aoe) damageSoldier(s, r.dmg*0.6); }
@@ -4121,7 +4172,7 @@ function enemyFlame(e, d, dt, now, tgt){
 // --- ATGM tank-destroyer: stops, paints you with a laser for a beat, then flies a wire-guided missile at you ---
 function updateAtgm(e, d, now, tgt, dt){
   const R=ROSTER.atgm, L=e.mesh.userData.launcher; if(!L) return;
-  if(e.aimT>0){ e.aimT-=dt; L.getWorldPosition(_pv); if(!e.laser) e.laser=takeBeam();
+  if(e.aimT>0){ e.aimT-=dt; L.getWorldPosition(_pv); if(!e.laser){ e.laser=takeBeam(); tip('atgm'); }
     const p=S.player, jit=inSmoke(now)?2.5:0.15; setBeam(e.laser, _pv.x,_pv.y,_pv.z, tgt.x+(Math.random()-0.5)*jit, heightAt(tgt.x,tgt.z)+1.3, tgt.z+(Math.random()-0.5)*jit);
     e.laser.material.opacity = 0.45+0.4*Math.abs(Math.sin(now*24));
     if(e.aimT<=0){ dropBeam(e.laser); e.laser=null;
@@ -4306,7 +4357,7 @@ function destroyObjective(){
   O.g.rotation.z=(Math.random()-0.5)*0.25; O.g.rotation.x=(Math.random()-0.5)*0.2; O.g.scale.y=OBJ_SCALE*0.6;
   const R=OBJ_REWARD, mul=loopRewardMul()*diffRewardMul()*cMod('coinMul'), coins=Math.round((R.coin+R.coinPerStage*S.stage)*mul);
   addCoins(coins); addDiamonds(R.dia); addScore(R.score, new THREE.Vector3(O.x,4,O.z));
-  showBanner('OBJECTIVE DESTROYED  +'+coins+' ◎  +'+R.dia+' ◆', '#ffd24a'); radio(O.op.win); sfx('levelup'); updateObjHUD();
+  showBanner('ĐÃ PHÁ MỤC TIÊU  +'+coins+' ◎  +'+R.dia+' ◆', '#ffd24a'); radio(O.op.win); sfx('levelup'); updateObjHUD();
 }
 function updateObjective(dt, now){
   if(!OBJ) return; const O=OBJ, ud=O.g.userData, gy=heightAt(O.x,O.z);
@@ -4326,13 +4377,13 @@ function updateObjective(dt, now){
 function updateObjHUD(){
   const el=document.getElementById('objChip'); if(!el) return;
   if(!OBJ){ el.classList.add('hidden'); return; } el.classList.remove('hidden'); el.classList.toggle('done', !OBJ.alive);
-  el.querySelector('.ob-name').textContent = OBJ.alive ? 'DESTROY '+OBJ.def.name : OBJ.def.name+' DESTROYED';
-  el.querySelector('.ob-fx').textContent = OBJ.alive ? OBJ.def.effect : 'Bonus collected';
+  el.querySelector('.ob-name').textContent = OBJ.alive ? 'PHÁ '+(OBJ.def.vi||OBJ.def.name) : 'ĐÃ PHÁ '+(OBJ.def.vi||OBJ.def.name);
+  el.querySelector('.ob-fx').textContent = OBJ.alive ? (OBJ.def.effectVi||OBJ.def.effect) : 'Đã nhận thưởng';
   el.querySelector('.ob-bar i').style.width = (OBJ.alive ? Math.max(0,OBJ.b.hp/OBJ.b.maxHp*100) : 0)+'%';
 }
 // scripted wave events for this operation (override the random roll)
 function scriptedEvent(){ const sc=opFor(S.stage).script[S.wave]; if(!sc) return false;
-  const B={ ambush:['⚠ AMBUSH — INFANTRY CLOSING','#ffb070'], column:['ARMOURED COLUMN INBOUND','#ff8a4a'], pyro:['FLAME TANKS — KEEP YOUR DISTANCE','#ff7a1c'], airraid:['⚠ AIR RAID — GUNSHIPS INBOUND','#ff7ae0'] }[sc];
+  const B={ ambush:['⚠ PHỤC KÍCH — BỘ BINH ÁP SÁT','#ffb070'], column:['ĐOÀN XE THIẾT GIÁP ĐANG TỚI','#ff8a4a'], pyro:['XE PHUN LỬA — GIỮ KHOẢNG CÁCH','#ff7a1c'], airraid:['⚠ KHÔNG KÍCH — TRỰC THĂNG ĐANG TỚI','#ff7ae0'] }[sc];
   WAVE.event=sc; WAVE.eventBanner=B[0]; WAVE.eventColor=B[1]; sfx('alarm'); return true; }
 function applyScriptedWave(now){
   const ev=WAVE.event, q=WAVE.spawnQueue, p=S.player;
@@ -4482,7 +4533,7 @@ function killEnemy(e){
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
   addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult * cMod('coinMul'))));   // coin bounty ≈ 1/10 of base score, ×elite ×loop ×CONTRACT
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
-  if(e.elite){ addDiamonds(BALANCE.elite.dia); bigExplode(e.pos, 0xffd24a, 2.0); floatText('ELITE DOWN  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
+  if(e.elite){ addDiamonds(BALANCE.elite.dia); bigExplode(e.pos, 0xffd24a, 2.0); floatText('HẠ TINH NHUỆ  +1 ◆', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
   if(e.loot || WAVE.treasure) dropPowerup(e.pos, e.elite||e.def.hp>=LOOT.source.epicHp ? 2 : e.def.hp>=LOOT.source.rareHp ? 1 : 0);   // Z93 loot quality follows how hard it was to kill   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
   // recycle mesh + HP bar
   const fx=e.mesh.getObjectByName('eliteFX'); if(fx){ e.mesh.remove(fx); if(fx.material) fx.material.dispose(); }
@@ -4574,7 +4625,7 @@ function updateTowers(dt, now){
 function collapseTower(t){
   t.falling=true; t.ft=0; const p=S.player; const ax=t.x-(p?p.pos.x:0), az=t.z-(p?p.pos.z:0), L=Math.hypot(ax,az)||1;   // falls AWAY from the shooter
   t.fdx=az/L; t.fdz=-ax/L;
-  floatText('TOWER DOWN', '#ffcf5a', new THREE.Vector3(t.x, 8, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
+  floatText('THÁP ĐÃ ĐỔ', '#ffcf5a', new THREE.Vector3(t.x, 8, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
   burst({x:t.x,z:t.z}, 0x8a6a40, 18, 8, {y:heightAt(t.x,t.z)+3, life:0.8, size:0.5, grav:-16, drag:1.2, up:3}); burst({x:t.x,z:t.z}, 0xb09a7a, 5, 3, {y:heightAt(t.x,t.z)+1.5, life:1.4, size:2.4, smoke:true, grav:-0.4, drag:1.5, up:1.5, op:0.5});
   for(const gd of t.guards){ if(!gd.alive) continue; gd.alive=false; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
     t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
@@ -4646,7 +4697,7 @@ function destroyCamp(b){ const c=b.camp; c.alive=false; const i=blocks.indexOf(b
   c.hut.scale.set(1.04,0.32,1.0); c.hut.rotation.z=0.12; c.hut.position.y-=0.2; c.hut.traverse(o=>{ if(o.isMesh && o.material===campMats().tin){ o.material=o.material.clone(); o.material.color.setHex(0x2a2622); } });   // the roof caves in, scorched
   for(let k=0;k<3;k++) spawnDebris({x:c.x,z:c.z}, 1.2, 0x8a8e86);
   const R=Math.round; addScore(R(CAMP.score*loopRewardMul()), new THREE.Vector3(c.x,5,c.z)); addCoins(R(CAMP.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
-  floatText('CAMP DESTROYED', '#ffcf5a', new THREE.Vector3(c.x,6,c.z), 24); radio('HQ: Enemy camp destroyed — their reinforcements are cut off!'); sfx('bigexplode');
+  floatText('ĐÃ PHÁ TRẠI', '#ffcf5a', new THREE.Vector3(c.x,6,c.z), 24); radio('SCH: Trại địch đã bị san phẳng — viện binh của chúng bị cắt đứt!'); sfx('bigexplode');
   if(b.loot){ dropPowerup({x:c.x,z:c.z+4}, 2); dropPowerup({x:c.x,z:c.z+4}, 1); } c.burnT=12; }
 let _campRadioAt=0;
 function updateCamps(dt, now){
@@ -4660,7 +4711,7 @@ function updateCamps(dt, now){
     if(enemies.filter(e=>e.def.inf).length >= CAMP.infCap) continue;
     const n=CAMP.squad[0]+((Math.random()*(CAMP.squad[1]-CAMP.squad[0]+1))|0);
     for(let k=0;k<n;k++) setTimeout(()=>{ if(!c.alive||S.mode!=='playing') return; const t=spawnEnemy(k===n-1&&S.stage>=2?'rpg':'rifle', c.door[0]+(Math.random()-0.5)*1.2, c.door[1]+(Math.random()-0.5)*1.2); if(t){ t.kbx=Math.sin(c.ang)*5; t.kbz=Math.cos(c.ang)*5; } }, k*450);
-    if(now-_campRadioAt>25){ _campRadioAt=now; radio('HQ: Infantry moving out of the enemy camp — level the barracks to stop them.'); }
+    tip('camp'); if(now-_campRadioAt>25){ _campRadioAt=now; radio('SCH: Bộ binh đang kéo ra từ trại địch — san phẳng nhà lính để chặn chúng.'); }
   }
   for(const t of TENTS){ if(t.flat){ if(t.ft<1){ t.ft=Math.min(1,t.ft+dt*5); t.g.scale.y=Math.max(0.08,1-t.ft*0.92); } continue; }   // tracks flatten tents
     if(hitsHull(p, t.x, t.z, 1.4)){ t.flat=true; burst({x:t.x,z:t.z}, 0x8a7c56, 6, 4, {y:heightAt(t.x,t.z)+0.8, life:0.6, size:0.5, grav:-12, drag:1.6, up:2}); burst({x:t.x,z:t.z}, 0xb8a888, 2, 2, {y:heightAt(t.x,t.z)+0.6, life:1.0, size:1.8, smoke:true, grav:-0.3, drag:1.8, up:0.6, op:0.4});
@@ -4747,7 +4798,7 @@ function loopDmgMul(){ return 1 + (S.loop||0)*BALANCE.loop.dmg; }    // enemy da
 function loopBossMul(){ return 1 + (S.loop||0)*BALANCE.loop.boss; }  // boss HP
 function loopRewardMul(){ return 1 + (S.loop||0)*BALANCE.loop.reward; } // coins / score payout
 // player-chosen DIFFICULTY (RECRUIT/SOLDIER/VETERAN) — scales enemy HP/damage + reward, on top of loop & contract
-const DIFF_META = { recruit:{label:'RECRUIT',tag:'EASY'}, soldier:{label:'SOLDIER',tag:'NORMAL'}, veteran:{label:'VETERAN',tag:'HARD'} };   // UI labels (numbers live in config.js BALANCE.difficulty)
+const DIFF_META = { recruit:{label:'TÂN BINH',tag:'DỄ'}, soldier:{label:'CHIẾN SĨ',tag:'THƯỜNG'}, veteran:{label:'LÃO LUYỆN',tag:'KHÓ'} };   // UI labels (numbers live in config.js BALANCE.difficulty)
 function diffCfg(){ return BALANCE.difficulty[PROFILE.difficulty] || BALANCE.difficulty.soldier; }
 function diffHpMul(){ return diffCfg().hp; }
 function diffDmgMul(){ return diffCfg().dmg; }
@@ -4773,15 +4824,16 @@ function rollWaveEvent(){
   if(Math.random()>=BALANCE.wave.eventChance) return;           // ~1 in 3 waves rolls an event
   const pool=['elite','horde','treasure','assault']; if(S.stage>=2) pool.push('blitz'); if(S.stage>=3) pool.push('airraid');
   const ev=pool[(Math.random()*pool.length)|0]; WAVE.event=ev;
-  if(ev==='elite'){ WAVE.eliteForce=Math.min(4, 1+(S.stage>=4?1:0)+(S.loop||0)); WAVE.eventBanner='⚠ ELITE WAVE'; WAVE.eventColor='#ffd24a'; }
-  else if(ev==='horde'){ WAVE.eventBanner='HORDE INCOMING'; WAVE.eventColor='#ff8a4a'; }
-  else if(ev==='treasure'){ WAVE.treasure=true; WAVE.eventBanner='TREASURE WAVE — loot every kill'; WAVE.eventColor='#7fe7ff'; }
-  else if(ev==='assault'){ WAVE.assault=true; WAVE.eventBanner='RELENTLESS ASSAULT'; WAVE.eventColor='#ff5a4a'; }
-  else if(ev==='blitz'){ WAVE.eventBanner='BOMBER BLITZ'; WAVE.eventColor='#ffae5c'; }
-  else if(ev==='airraid'){ WAVE.eventBanner='⚠ AIR RAID — GUNSHIPS INBOUND'; WAVE.eventColor='#ff7ae0'; }
+  if(ev==='elite'){ WAVE.eliteForce=Math.min(4, 1+(S.stage>=4?1:0)+(S.loop||0)); WAVE.eventBanner='⚠ ĐỢT TINH NHUỆ'; WAVE.eventColor='#ffd24a'; }
+  else if(ev==='horde'){ WAVE.eventBanner='ĐÀN ĐÔNG ĐANG TỚI'; WAVE.eventColor='#ff8a4a'; }
+  else if(ev==='treasure'){ WAVE.treasure=true; WAVE.eventBanner='ĐỢT KHO BÁU — hạ ai cũng rơi đồ'; WAVE.eventColor='#7fe7ff'; }
+  else if(ev==='assault'){ WAVE.assault=true; WAVE.eventBanner='TẤN CÔNG DỒN DẬP'; WAVE.eventColor='#ff5a4a'; }
+  else if(ev==='blitz'){ WAVE.eventBanner='CẢM TỬ Ồ ẠT'; WAVE.eventColor='#ffae5c'; }
+  else if(ev==='airraid'){ WAVE.eventBanner='⚠ KHÔNG KÍCH — TRỰC THĂNG ĐANG TỚI'; WAVE.eventColor='#ff7ae0'; }
   sfx('alarm');
 }
 function startWave(now){
+  if(S.wave===1){ tip('drive'); if(riders.length) tip('crew'); if(OBJ&&OBJ.alive) tip('objective'); }
   rollWaveEvent();
   if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
   WAVE.spawnQueue = buildWaveQueue(S.stage, S.wave);
@@ -4791,7 +4843,7 @@ function startWave(now){
   if(objMod('gunshipPerWave',0)>0 && S.stage>=2) WAVE.spawnQueue.splice(Math.min(2,WAVE.spawnQueue.length),0,'gunship');   // Z83 radar site vectors a gunship onto every wave
   setTimeout(()=>{ if(S.mode==='playing') radio(opFor(S.stage).radio[S.wave]); }, 900);                                                // all kamikaze
   WAVE.spawnAt = now + 0.4; WAVE.active = true;
-  showBanner(WAVE.eventBanner || ('WAVE '+S.wave), WAVE.eventColor);
+  showBanner(WAVE.eventBanner || ('ĐỢT '+S.wave), WAVE.eventColor);
   updateHUD();
 }
 function edgeSpawnPoint(){
@@ -4827,7 +4879,7 @@ function updateWaves(dt, now){
   if(WAVE.spawnQueue.length===0 && enemies.length===0){
     WAVE.active=false; WAVE.betweenUntil = now + 2.2;
     addScore(200, new THREE.Vector3(0,2,0));
-    showBanner('WAVE CLEAR! +200', '#8cbf3f'); sfx('wave');
+    showBanner('SẠCH ĐỢT! +200', '#8cbf3f'); sfx('wave');
   }
 }
 
@@ -4862,7 +4914,7 @@ function startBoss(now){
   const bb=document.getElementById('bossbar'); bb.style.display='block';
   document.getElementById('boss-name').textContent = def.name;
   document.getElementById('boss-hp').style.width='100%';
-  showBanner('BOSS: '+def.name, '#e0603a'); sfx('levelup'); setTimeout(()=>radio(opFor(S.stage).boss), 1200);
+  showBanner('TƯỚNG ĐỊCH: '+def.name, '#e0603a'); sfx('levelup'); setTimeout(()=>radio(opFor(S.stage).boss), 1200);
 }
 function damageBoss(dmg){
   if(!boss||!boss.alive) return; boss.hp -= dmg * ((S.player&&S.player.bossMul)||1); hitFlash(boss.mesh);   // WARHEAD upgrade = +% boss damage
@@ -5017,7 +5069,7 @@ function killBoss(now){
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
   const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()*cMod('coinMul')), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia + cMod('bossDiaBonus',0);   // bigger payout each NG+ loop + CONTRACT bonus
   addCoins(bcoin); addDiamonds(bdia);
-  showBanner(boss.def.name+' DOWN!  +'+bcoin+' coins · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
+  showBanner('ĐÃ HẠ '+boss.def.name+'!  +'+bcoin+' xu · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
   if(laserMesh) laserMesh.visible=false; clearMines();
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
@@ -5033,8 +5085,8 @@ function victory(){
   recordRun();
   const nl=(S.loop||0)+1;
   PROFILE.save={ loop:nl, stage:1, score:S.score }; saveProfile(); refreshStartUI();   // advance the campaign into the next NG+ loop
-  const nb=document.getElementById('ngplusBtn'); if(nb) nb.textContent='ENTER NG+'+nl+' ▶';
-  const vs=document.querySelector('#victory .subtitle'); if(vs) vs.textContent='NG+'+nl+' awaits — tougher foes, bigger bounty';
+  const nb=document.getElementById('ngplusBtn'); if(nb) nb.textContent='VÀO VÒNG MỚI+'+nl+' ▶';
+  const vs=document.querySelector('#victory .subtitle'); if(vs) vs.textContent='Vòng mới+'+nl+' đang chờ — địch mạnh hơn, thưởng lớn hơn';
   document.body.classList.remove('corelow');
   show('victory'); sfx('levelup');
 }
@@ -5239,7 +5291,7 @@ const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1
 const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 function playerDie(now){
   const p=S.player; p.lives--;
-  if(p.lives < 0){ tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); gameOver('OUT OF LIVES'); return; }   // final death → shatter + game over
+  if(p.lives < 0){ tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); gameOver('HẾT MẠNG'); return; }   // final death → shatter + game over
   beginDeath(now);
 }
 function beginDeath(now){
@@ -5249,7 +5301,7 @@ function beginDeath(now){
   // catastrophic hit — big blast, knock a few parts loose, hard shake
   bigExplode(p.pos, 0xffd27a, 1.9); spawnDebris(p.pos, 1.6, 0x4a3c28);
   S.shake = Math.min(6, S.shake + 4); sfx('bigexplode');
-  floatText('TANK DOWN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28);
+  floatText('XE BỊ HẠ', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28);
   const v=document.getElementById('vignette'); if(v){ v.style.opacity='1'; }   // hold the red vignette through the death beat
   updateHUD();
 }
@@ -5280,7 +5332,7 @@ function respawnPlayer(now){
   for(const e of enemies){ if(e.pos.distanceTo(p.pos)<13){ const aw=new THREE.Vector3().subVectors(e.pos,p.pos).setLength(17); e.pos.add(aw); } }   // clear the spawn
   S.mode='playing';
   ringPulse(p.pos, 0x8cbf3f, 4); ringPulse(p.pos, 0x8cbf3f, 7);
-  showBanner('BACK IN ACTION', '#8cbf3f'); sfx('levelup');
+  showBanner('TRỞ LẠI CHIẾN ĐẤU', '#8cbf3f'); sfx('levelup');
   const v=document.getElementById('vignette'); if(v) v.style.opacity='0';
   updateHUD();
 }
@@ -5291,8 +5343,8 @@ function gameOver(reason){
   document.getElementById('go-stage').textContent=S.stage;
   document.getElementById('go-wave').textContent=S.wave;
   const beat=recordRun(); const gb=document.getElementById('go-best');
-  if(gb){ gb.textContent = beat ? ('★ NEW BEST  '+S.score.toLocaleString()+' ★') : ('BEST  '+(BEST.score||0).toLocaleString()); gb.classList.toggle('newbest', beat); }
-  const gw=document.getElementById('go-wallet'); if(gw) gw.innerHTML='Earned this run is banked · <b class="w-coins">0</b> coins · <b class="w-dia">0</b> ◆';
+  if(gb){ gb.textContent = beat ? ('★ KỶ LỤC MỚI  '+S.score.toLocaleString()+' ★') : ('KỶ LỤC  '+(BEST.score||0).toLocaleString()); gb.classList.toggle('newbest', beat); }
+  const gw=document.getElementById('go-wallet'); if(gw) gw.innerHTML='Đã cất vào kho · <b class="w-coins">0</b> xu · <b class="w-dia">0</b> ◆';
   saveProfile(); refreshWallet();              // bank the coins/diamonds earned this run
   document.body.classList.remove('corelow');
   show('gameover');
@@ -5386,7 +5438,7 @@ const armBtn=(id,fn)=>{ const el=document.getElementById(id); if(!el) return;
   el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fn();},{passive:false}); };
 armBtn('mDash', tryDash); armBtn('mSpell', trySpell);
 armBtn('mWeapon', ()=>cycleGun(1));
-{ const nx=document.getElementById('mSpellNext'); if(nx){ const go=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); cycleSpell(1); const sp=SPELLS[S.spell]; if(S.player) floatText(sp.name, '#bfe66a', S.player.pos, 15); };
+{ const nx=document.getElementById('mSpellNext'); if(nx){ const go=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); cycleSpell(1); const sp=SPELLS[S.spell]; if(S.player) floatText(sp.vi||sp.name, '#bfe66a', S.player.pos, 15); };
   nx.addEventListener('touchstart', go, {passive:false}); nx.addEventListener('mousedown', go); } }   // Z84: phones can now switch skills (smoke · APS · mines …)
 document.getElementById('mPause').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
 // ----- mobile fire mode: MANUAL (left-thumb trigger) vs AUTO (gun fires itself). Turret always auto-aims. -----
@@ -5487,8 +5539,8 @@ function computeEnv(){ const b=BIOME.name, t=S.tod; ENVMOD={ night:t==='night', 
   if(ENV.open.biomes.includes(b) && t!=='night') ENVMOD.longRange=ENV.open.longRange; }
 function conditionsText(){ const c=[];
   if(ENVMOD.night) c.push('NIGHT — reach −15% (railgun & missile unaffected), enemy aim worse');
-  if(ENVMOD.fire>1) c.push('HEAT — fire +25%, freeze −30%'); if(ENVMOD.freeze>1) c.push('FROST — freeze +50%, cryo +20%, fire −25%');
-  if(ENVMOD.he>1) c.push('URBAN RUBBLE — high-explosive +20%'); if(ENVMOD.longRange>1) c.push('OPEN GROUND — cannon/railgun/HESH reach +10%');
+  if(ENVMOD.fire>1) c.push('NẮNG NÓNG — lửa +25%, đóng băng −30%'); if(ENVMOD.freeze>1) c.push('GIÁ RÉT — đóng băng +50%, cryo +20%, lửa −25%');
+  if(ENVMOD.he>1) c.push('ĐỔ NÁT ĐÔ THỊ — đạn nổ +20%'); if(ENVMOD.longRange>1) c.push('ĐỊA HÌNH TRỐNG — tầm cannon/railgun/HESH +10%');
   return c.join('  ·  '); }
 function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='CRYO'?ENVMOD.cryo : type==='HE'?ENVMOD.he : 1; }
 function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (m[armor]||1) : 1; }
@@ -5497,7 +5549,7 @@ function structMul(type, bl){ const m=type&&DMG_TYPE[type]; if(!m) return 1; ret
 function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r; }
 function bulletFalloff(b){ if(!b.reach || b.fall>=1) return 1; const d=Math.hypot(b.x-b.ox, b.z-b.oz), f=Math.max(0, Math.min(1, (d/b.reach-0.55)/0.45)); return 1 - f*(1-b.fall); }
 let _effT=0;
-function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<1100) return; if(mul>=1.3){ _effT=n; floatText('EFFECTIVE ×'+mul.toFixed(1), '#ffb84a', new THREE.Vector3(pos.x,3.2,pos.z), 14); } else if(mul<=0.6){ _effT=n; floatText('WEAK vs ARMOR', '#9aa3ad', new THREE.Vector3(pos.x,3.2,pos.z), 13); } }
+function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<1100) return; if(mul>=1.3){ _effT=n; floatText('HIỆU QUẢ ×'+mul.toFixed(1), '#ffb84a', new THREE.Vector3(pos.x,3.2,pos.z), 14); } else if(mul<=0.6){ _effT=n; floatText('YẾU TRƯỚC GIÁP', '#9aa3ad', new THREE.Vector3(pos.x,3.2,pos.z), 13); } }
 
 // gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
 // SMART GIFT: weight each droppable gun by how well its damage class counters what's on the field (alive + queued),
@@ -5551,7 +5603,7 @@ function drawReloadDial(prog, secs, ready){
   x.beginPath(); x.arc(c,c,r,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,Math.max(0,prog))); x.stroke(); x.shadowBlur=0;
   if(ready){ x.strokeStyle=col; x.lineWidth=12; x.beginPath(); x.moveTo(c-24,c+1); x.lineTo(c-5,c+20); x.lineTo(c+27,c-21); x.stroke(); }   // ✓
   else { x.fillStyle=col; x.textAlign='center'; x.font='bold 46px system-ui,Arial,sans-serif'; x.textBaseline='middle'; x.fillText(secs.toFixed(1), c, c+2);
-         x.fillStyle='rgba(255,255,255,0.6)'; x.font='bold 15px system-ui,Arial,sans-serif'; x.fillText('RELOAD', c, c+28); }
+         x.fillStyle='rgba(255,255,255,0.6)'; x.font='bold 15px system-ui,Arial,sans-serif'; x.fillText('NẠP ĐẠN', c, c+28); }
   reloadTex.needsUpdate=true;
 }
 function updateReload(now){
@@ -5561,7 +5613,7 @@ function updateReload(now){
   for(const gi of p.guns){
     if(gi.rU && now>=gi.rU){ gi.ammo=magCap(GUNS[gi.id]); gi.rU=0;
       if(gi===eq){ p.readyUntil=now+0.55; ringPulse(p.pos, 0x9be35a, p.radius*1.9); sfx('reloaded'); }
-      else { floatText(GUNS[gi.id].name+' READY', '#9be35a', p.pos, 14); }
+      else { floatText(GUNS[gi.id].name+' SẴN SÀNG', '#9be35a', p.pos, 14); }
       updateGunHUD();
     }
   }
@@ -5850,7 +5902,7 @@ function fireGun(now, range){
     // launch from the BARREL MOUTH (rounds visibly leave the muzzle) — unless an enemy hugs the hull closer than the muzzle reach
     const md=Math.hypot(_v.x-p.pos.x, _v.z-p.pos.z);
     const sx0=_v.x, sz0=_v.z, sy0=_v.y, arcD=0, dropD=Math.min(Math.max(4, aimDist-md), Math.max(4,maxDist-md));   // direct fire is FLAT (APFSDS/autocannon) — no lob over the target   // realism: rounds leave the MUZZLE — a tank pressed against yours is inside the barrel's reach (riders/drone handle it)
-    if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('TOO CLOSE FOR THE MAIN GUN','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
+    if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('QUÁ GẦN CHO PHÁO CHÍNH','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
     for(let i=0;i<n;i++){
       const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
       spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:arcD, y:sy0, dropTo:1.2, dropDist:dropD, type:g.type, reach:maxDist, fall:g.fall??1,
@@ -5877,7 +5929,7 @@ function giveGun(id){
   const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
   if(inst){ inst.ammo=magCap(g); inst.rU=0; } else { p.guns.push({id, ammo:magCap(g), rU:0, rD:0}); p.gunIdx=p.guns.length-1; }
   const fresh = ownGun(id);                                  // remember it in the permanent arsenal (persists across runs)
-  if(fresh){ floatText(g.name+' — NEW!', '#ffd24a', p.pos, 22); }   // first time ever → brand-new weapon
+  if(fresh){ floatText(g.name+' — MỚI!', '#ffd24a', p.pos, 22); }   // first time ever → brand-new weapon
   else { addGunXp(id); }                                     // already own it → the duplicate feeds MASTERY (level up the gun)
   updateGunHUD();
 }
@@ -5898,16 +5950,16 @@ function addGunXp(id){
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 const SPELLS = [
-  { id:'overdrive', name:'OVERDRIVE', svg:'bolt', cd:11, cast(now){ const p=S.player; p.overUntil=now+5; ringPulse(p.pos,0x8cbf3f,3); } },
-  { id:'aegis',     name:'AEGIS',    svg:'shield', cd:13, cast(now){ const p=S.player; p.invincibleUntil=now+3; p.shieldUntil=now+3; } },
-  { id:'emp',       name:'EMP',      svg:'emp', cd:12, cast(now){ const p=S.player; ringPulse(p.pos,0x6fd0ff,10); aoeDamage(p.pos.x,p.pos.z,16,40,true,now,null,true); bigExplode(p.pos,0x6fd0ff,1.6); } },
-  { id:'repair',    name:'REPAIR', svg:'heart', cd:14, cast(now){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+45); if(core)core.hp=Math.min(core.maxHp,core.hp+45); ringPulse(p.pos,0x5fd06a,3); updateHUD(); } },
-  { id:'airstrike', name:'AIRSTRIKE', svg:'crosshair', cd:15, cast(now){ airstrike(now); } },
-  { id:'timewarp',  name:'TIME WARP', svg:'hourglass', cd:14, cast(now){ S.enemySlowUntil=now+4; ringPulse(S.player.pos,0xc0a0ff,12); } },
-  { id:'smoke',     name:'SMOKE',     svg:'smoke', cd:12, cast(now){ castSmoke(now); } },        // Z82 equipment: smoke screen
-  { id:'aps',       name:'APS',       svg:'aps',   cd:16, cast(now){ castAPS(now); } },          // Z82 active protection (hard-kill)
-  { id:'mines',     name:'MINES',     svg:'mine',  cd:14, cast(now){ castMines(now); } },        // Z82 anti-tank mines
-  { id:'fireteam',  name:'FIRETEAM',  svg:'team',  cd:TROOPS.fireteam.cd, cast(now){ callFireteam(now); } },   // Z89 friendly APC drops an infantry squad
+  { id:'overdrive', name:'OVERDRIVE', vi:'TĂNG TỐC', svg:'bolt', cd:11, cast(now){ const p=S.player; p.overUntil=now+5; ringPulse(p.pos,0x8cbf3f,3); } },
+  { id:'aegis',     name:'AEGIS', vi:'KHIÊN AEGIS',    svg:'shield', cd:13, cast(now){ const p=S.player; p.invincibleUntil=now+3; p.shieldUntil=now+3; } },
+  { id:'emp',       name:'EMP', vi:'XUNG EMP',      svg:'emp', cd:12, cast(now){ const p=S.player; ringPulse(p.pos,0x6fd0ff,10); aoeDamage(p.pos.x,p.pos.z,16,40,true,now,null,true); bigExplode(p.pos,0x6fd0ff,1.6); } },
+  { id:'repair',    name:'REPAIR', vi:'SỬA CHỮA', svg:'heart', cd:14, cast(now){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+45); if(core)core.hp=Math.min(core.maxHp,core.hp+45); ringPulse(p.pos,0x5fd06a,3); updateHUD(); } },
+  { id:'airstrike', name:'AIRSTRIKE', vi:'KHÔNG KÍCH', svg:'crosshair', cd:15, cast(now){ airstrike(now); } },
+  { id:'timewarp',  name:'TIME WARP', vi:'CHẬM THỜI GIAN', svg:'hourglass', cd:14, cast(now){ S.enemySlowUntil=now+4; ringPulse(S.player.pos,0xc0a0ff,12); } },
+  { id:'smoke',     name:'SMOKE', vi:'LỰU KHÓI',     svg:'smoke', cd:12, cast(now){ castSmoke(now); } },        // Z82 equipment: smoke screen
+  { id:'aps',       name:'APS', vi:'GIÁP CHỦ ĐỘNG',       svg:'aps',   cd:16, cast(now){ castAPS(now); } },          // Z82 active protection (hard-kill)
+  { id:'mines',     name:'MINES', vi:'RẢI MÌN',     svg:'mine',  cd:14, cast(now){ castMines(now); } },        // Z82 anti-tank mines
+  { id:'fireteam',  name:'FIRETEAM', vi:'GỌI TỔ BỘ BINH',  svg:'team',  cd:TROOPS.fireteam.cd, cast(now){ callFireteam(now); } },   // Z89 friendly APC drops an infantry squad
 ];
 // ===== Z82 · TANK EQUIPMENT — each piece answers a specific threat =====
 function inSmoke(now){ const p=S.player; return !!(p && now<(p.smokeUntil||0) && Math.hypot(p.pos.x-p.smokeX, p.pos.z-p.smokeZ) < EQUIP.smoke.radius); }
@@ -5915,19 +5967,19 @@ function castSmoke(now){ const p=S.player, E=EQUIP.smoke; p.smokeUntil=now+E.dur
   for(let k=0;k<8;k++){ const a=p.facing+(k-3.5)*0.42, sp=9+Math.random()*3;                       // 8 grenades fan out from the turret dischargers
     spawnPart(p.pos.x, 2.6, p.pos.z, Math.sin(a)*sp, 7, Math.cos(a)*sp, {color:0xf0f0e0, size:0.5, life:0.45, grav:-22, drag:0.6}); }
   for(const e of enemies) if(e.laser){ dropBeam(e.laser); e.laser=null; e.aimT=0; }                  // laser designators lose you
-  sfx('dash'); floatText('SMOKE SCREEN','#dfe6e0',p.pos,17); }
-function castAPS(now){ const p=S.player, E=EQUIP.aps; p.apsUntil=now+E.dur; p.apsCharges=E.charges; ringPulse(p.pos,0x7fe7ff,E.radius); floatText('APS ONLINE · '+E.charges,'#7fe7ff',p.pos,17); sfx('beep'); }
+  sfx('dash'); floatText('MÀN KHÓI','#dfe6e0',p.pos,17); }
+function castAPS(now){ const p=S.player, E=EQUIP.aps; p.apsUntil=now+E.dur; p.apsCharges=E.charges; ringPulse(p.pos,0x7fe7ff,E.radius); floatText('APS BẬT · '+E.charges,'#7fe7ff',p.pos,17); sfx('beep'); }
 function apsIntercept(x,y,z){ const p=S.player; p.apsCharges--;
   spawnPart(p.pos.x,2.6,p.pos.z,(x-p.pos.x)*6,(y-2.6)*6,(z-p.pos.z)*6,{tex:'flash', color:0xbff6ff, size:1.2, life:0.08, grav:0, drag:0});   // counter-charge fires
   bigExplode({x,z}, 0xbff6ff, 0.55); burst({x,z}, 0xfff2c0, 8, 7, {y, life:0.25, size:0.3, grav:-12, drag:2});
-  floatText(p.apsCharges>0?'APS · '+p.apsCharges:'APS DEPLETED','#7fe7ff',{x:p.pos.x,y:3.4,z:p.pos.z},14); sfx('hit'); haptic(12); }
+  floatText(p.apsCharges>0?'APS · '+p.apsCharges:'APS ĐÃ CẠN','#7fe7ff',{x:p.pos.x,y:3.4,z:p.pos.z},14); sfx('hit'); haptic(12); }
 const PMINES=[]; let _mineGeo=null, _mineMat=null, _mineLed=null;
 function castMines(now){ const p=S.player, E=EQUIP.mines;
   if(!_mineGeo){ _mineGeo=new THREE.CylinderGeometry(0.55,0.62,0.22,16); _mineMat=new THREE.MeshStandardMaterial({color:0x4a5230,roughness:0.7,metalness:0.35}); _mineLed=new THREE.MeshStandardMaterial({color:0,emissive:0xff2a1a,emissiveIntensity:2}); }
   for(let k=0;k<E.count;k++){ const a=p.facing+Math.PI+(k-(E.count-1)/2)*0.5, r=2.6+k%2*0.8, x=p.pos.x+Math.sin(a)*r, z=p.pos.z+Math.cos(a)*r;
     const m=new THREE.Mesh(_mineGeo,_mineMat); m.castShadow=true; m.position.set(x,heightAt(x,z)+0.1,z); const led=new THREE.Mesh(new THREE.SphereGeometry(0.08,6,4),_mineLed); led.position.y=0.15; m.add(led); scene.add(m);
     PMINES.push({ m, led, x, z, arm:now+E.arm, die:now+E.life }); }
-  sfx('clang'); floatText('MINES LAID ×'+E.count,'#c8d870',p.pos,16); }
+  sfx('clang'); floatText('ĐÃ RẢI MÌN ×'+E.count,'#c8d870',p.pos,16); }
 function updateEquip(dt, now){
   const p=S.player; if(!p) return;
   if(now<(p.smokeUntil||0)){ const left=p.smokeUntil-now, R=EQUIP.smoke.radius;                    // the screen billows, then thins out
@@ -6013,7 +6065,7 @@ function updateArtillery(dt, now){
   const C=BALANCE.artillery, mort=_artMortars();
   if(S.stage<2 || mort===0 || boss){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down
   ART.t-=dt; if(ART.t>0) return;
-  if(ART.phase==='rest'){ ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
+  if(ART.phase==='rest'){ tip('arty'); ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
   else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar); ART.t=0; }
   else if(ART.phase==='barrage'){
     const p=S.player; if(p) artLockStrike(p.pos.x, p.pos.z);     // lock the player's CURRENT spot each shot → must keep moving (the firing mortar flashes at LAUNCH)
@@ -6066,7 +6118,7 @@ function artImpact(s, now){
   let hit=false; const p=S.player;
   if(p && now>=p.invincibleUntil){ const dmg=grade(p.pos.x,p.pos.z);
     if(dmg>0){ hit=true; const direct = Math.hypot(p.pos.x-tx,p.pos.z-tz)<=s.innerR;
-      damagePlayer(Math.round(dmg), now); floatText(direct?'DIRECT HIT!':'GRAZED', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
+      damagePlayer(Math.round(dmg), now); floatText(direct?'TRÚNG ĐÍCH!':'SƯỢT QUA', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
   if(core){ const dc=grade(core.pos.x,core.pos.z); if(dc>0){ hit=true; damageCore(Math.round(dc*C.coreMul)); } }
   for(const sd of soldiers){ const ds=grade(sd.pos.x,sd.pos.z); if(ds>0){ hit=true; damageSoldier(sd, ds*C.coreMul); } }
   // ---- common: flash + impact rings + light ----
@@ -6146,7 +6198,7 @@ function applyPowerup(def){
   if(def.buff){ const k=def.buff, rem=Math.max(0,(p.buffUntil[k]||0)-now);
     if(def.dur===Infinity){ if(p.buffUntil[k]===Infinity){ const c=Math.round(120*(1+S.stage*0.2)); addCoins(c); note='Đã có → +'+c+' xu'; } else { p.buffUntil[k]=Infinity; note='Vĩnh viễn tới khi mất mạng'; } }
     else if(def.stack){ const lv=rem>0 ? Math.min(def.stack, (p.buffLv[k]||1)+1) : 1; p.buffLv[k]=lv; p.buffUntil[k]=now+def.dur; note='Cấp '+lv+'/'+def.stack+' · '+def.dur+' giây'; }
-    else { const full=def.dur, R=LOOT.rules, nd=rem>0 ? Math.min(full*R.maxDurMul, rem+full*R.extendShare) : full; p.buffUntil[k]=now+Math.max(nd, rem); note = rem>0 ? 'Gia hạn → '+Math.round(nd)+' giây' : full+' giây'; }
+    else { if(rem>0) tip('stack'); const full=def.dur, R=LOOT.rules, nd=rem>0 ? Math.min(full*R.maxDurMul, rem+full*R.extendShare) : full; p.buffUntil[k]=now+Math.max(nd, rem); note = rem>0 ? 'Gia hạn → '+Math.round(nd)+' giây' : full+' giây'; }
     if(def.onGet) def.onGet(p); }
   else if(def.apply) def.apply(p);
   lootToast(def, note);
@@ -6206,6 +6258,7 @@ function pickLoot(tier){                                                        
   return pool[(Math.random()*pool.length)|0];
 }
 function dropPowerup(pos, tier){
+  tip('loot');
   tier=tier|0; const def=pickLoot(tier), t=def.tier||0;
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
   const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
@@ -6256,18 +6309,18 @@ function updateBuffHUD(now){                                                    
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 const UPGRADES = [
-  { ic:'shield', nm:'HEAVY ARMOR',      ds:'+30 max HP',     apply(p){ p.maxHp+=30; p.hp+=30; } },
-  { ic:'burst', nm:'FIREPOWER',       ds:'+20% damage',    apply(p){ p.dmgMul*=1.2; } },
-  { ic:'bolt', nm:'RAPID FIRE',        ds:'+15% fire rate',      apply(p){ p.fireMul*=0.85; } },
-  { ic:'dash', nm:'MOBILITY',       ds:'+15% speed',        apply(p){ p.speedMul*=1.15; } },
-  { ic:'dash', nm:'FAST DASH',    ds:'-25% dash CD',      apply(p){ p.dashCdMul*=0.75; } },
-  { ic:'drop', nm:'LIFESTEAL',       ds:'+6 HP per kill', apply(p){ p.lifesteal+=6; } },
-  { ic:'crosshair', nm:'CRITICAL',      ds:'+15% crit (×2)', apply(p){ p.crit=Math.min(0.6,p.crit+0.15); } },
-  { ic:'spark', nm:'FAST CAST',    ds:'-20% spell CD',      apply(p){ p.spellCdMul*=0.8; } },
-  { ic:'target', nm:'RANGE',       ds:'+20% range',       apply(p){ p.rangeMul*=1.2; } },
-  { ic:'tank', nm:'+1 LIFE',       ds:'Gain 1 life',        apply(p){ p.lives++; } },
-  { ic:'bunker', nm:'FORTIFY CORE', ds:'+80 core HP',     apply(p){ if(core){core.maxHp+=80; core.hp+=80;} } },
-  { ic:'up', nm:'WEAPON UP',   ds:'Weapon +1 lvl',      apply(p){ p.weaponLvl=Math.min(3,p.weaponLvl+1); updateWeaponHUD(); } },
+  { ic:'shield', nm:'GIÁP DÀY',      ds:'+30 máu tối đa',     apply(p){ p.maxHp+=30; p.hp+=30; } },
+  { ic:'burst', nm:'HOẢ LỰC',       ds:'+20% sát thương',    apply(p){ p.dmgMul*=1.2; } },
+  { ic:'bolt', nm:'BẮN NHANH',        ds:'+15% tốc độ bắn',      apply(p){ p.fireMul*=0.85; } },
+  { ic:'dash', nm:'CƠ ĐỘNG',       ds:'+15% tốc độ',        apply(p){ p.speedMul*=1.15; } },
+  { ic:'dash', nm:'LƯỚT NHANH',    ds:'−25% hồi chiêu lướt',      apply(p){ p.dashCdMul*=0.75; } },
+  { ic:'drop', nm:'HÚT MÁU',       ds:'+6 máu mỗi lần hạ địch', apply(p){ p.lifesteal+=6; } },
+  { ic:'crosshair', nm:'CHÍ MẠNG',      ds:'+15% chí mạng (×2)', apply(p){ p.crit=Math.min(0.6,p.crit+0.15); } },
+  { ic:'spark', nm:'THI TRIỂN NHANH',    ds:'−20% hồi chiêu kỹ năng',      apply(p){ p.spellCdMul*=0.8; } },
+  { ic:'target', nm:'TẦM XA',       ds:'+20% tầm bắn',       apply(p){ p.rangeMul*=1.2; } },
+  { ic:'tank', nm:'+1 MẠNG',       ds:'Thêm 1 mạng',        apply(p){ p.lives++; } },
+  { ic:'bunker', nm:'GIA CỐ LÕI', ds:'+80 máu Lõi',     apply(p){ if(core){core.maxHp+=80; core.hp+=80;} } },
+  { ic:'up', nm:'NÂNG SÚNG',   ds:'Súng +1 cấp',      apply(p){ p.weaponLvl=Math.min(3,p.weaponLvl+1); updateWeaponHUD(); } },
 ];
 function openUpgrade(){
   S.mode='upgrade';
@@ -6287,20 +6340,20 @@ function openUpgrade(){
   }
   show('upgrade'); sfx('powerup');
 }
-const STAGE_TAGS=['BRACE FOR ASSAULT','THE SIEGE DEEPENS','NO RETREAT','INTO THE STORM','FINAL STAND'];
+const STAGE_TAGS=['CHUẨN BỊ ĐÓN ĐÁNH','VÒNG VÂY SIẾT CHẶT','KHÔNG LÙI BƯỚC','LAO VÀO BÃO LỬA','TRẬN CUỐI CÙNG'];
 function playStageTransition(stage, biomeName, accentHex){
   const w=document.getElementById('stagewipe'); if(!w) return;
   w.style.setProperty('--swaccent', accentHex);
-  document.getElementById('sw-stage').textContent = 'STAGE '+stage;
-  document.getElementById('sw-biome').textContent = biomeName + (S.tod ? ' · '+TOD_LABEL[S.tod] : '');
+  document.getElementById('sw-stage').textContent = 'MÀN '+stage;
+  document.getElementById('sw-biome').textContent = biomeVi(biomeName) + (S.tod ? ' · '+TOD_LABEL[S.tod] : '');
   const op=opFor(stage); document.getElementById('sw-tag').textContent = op.title || STAGE_TAGS[(stage-1)%STAGE_TAGS.length];
-  document.getElementById('sw-objtx').textContent = 'OBJECTIVE · DESTROY THE '+((OBJECTIVES[op.obj]||{}).name||'ENEMY BASE');
+  document.getElementById('sw-objtx').textContent = 'MỤC TIÊU · PHÁ '+((OBJECTIVES[op.obj]||{}).vi||(OBJECTIVES[op.obj]||{}).name||'CĂN CỨ ĐỊCH');
   document.getElementById('sw-clear').style.display = stage>1 ? '' : 'none';   // the opening stage has nothing to "clear" yet
   w.classList.remove('show'); void w.offsetWidth;     // restart the CSS animations
   w.classList.add('show'); sfx('levelup');
   setTimeout(()=>sfx('wave'), 900);                   // rising tension
   setTimeout(()=>w.classList.remove('show'), 2700);
-  setTimeout(()=>{ const ct=conditionsText(); if(ct) showBanner('CONDITIONS: '+ct, '#9fd8ff'); }, 2900);   // tell the player which guns this battlefield favours
+  setTimeout(()=>{ const ct=conditionsText(); if(ct) showBanner('ĐIỀU KIỆN: '+ct, '#9fd8ff'); }, 2900);   // tell the player which guns this battlefield favours
 }
 function chooseUpgrade(u){
   u.apply(S.player); sfx('powerup'); updateHUD();
@@ -6308,7 +6361,7 @@ function chooseUpgrade(u){
   applyBiome(S.stage); buildBlocks(); clearWrecks(); buildObjective();
   rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
   clearSoldiers(); deploySoldiers(guardTarget()); deployOwnedDrone();   // fresh guard squad + relaunch owned escort drone each stage
-  if(S.stage>=TROOPS.ridersFrom && !ridersUnlocked){ ridersUnlocked=true; deployRiders(crewTarget()); if(S.player) floatText('TANK CREW DEPLOYED', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)
+  if(S.stage>=TROOPS.ridersFrom && !ridersUnlocked){ ridersUnlocked=true; deployRiders(crewTarget()); if(S.player) floatText('KÍP LÍNH ĐÃ LÊN XE', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)
   S.awaitingUpgrade=false; WAVE.active=false; S.wave=0;
   openBriefing({ stage:S.stage, biomeName:BIOME.name, accentHex:'#'+BIOME.accent.toString(16).padStart(6,'0') });   // pick a CONTRACT, then the stage transition + waves fire on confirm
 }
@@ -6318,10 +6371,10 @@ function openBriefing(opts){
   _brCtx = opts || {};
   S.mode='briefing';
   const bdef = BOSS_DEFS[(S.stage-1) % BOSS_DEFS.length];
-  const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'STAGE '+S.stage+' · '+BIOME.name+'  —  BOSS: '+(bdef?bdef.name:'???');
+  const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+'  —  TƯỚNG: '+(bdef?bdef.name:'???');
   { const op=opFor(S.stage), od=OBJECTIVES[op.obj]; const t=document.getElementById('br-op'); if(t) t.textContent=op.title;
-    const bf=document.getElementById('br-brief'); if(bf) bf.textContent=op.brief;
-    const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>OBJECTIVE</b> Destroy the '+escapeHtml(od.name)+' <span>· while it stands: '+escapeHtml(od.effect.toLowerCase())+' · bounty + ◆</span>'; }
+    const bf=document.getElementById('br-brief'); if(bf) bf.textContent=(op.story?op.story+' ':'')+op.brief;
+    const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>MỤC TIÊU</b> Phá '+escapeHtml(od.vi||od.name)+' <span>· khi nó còn đứng: '+escapeHtml((od.effectVi||od.effect).toLowerCase())+' · thưởng xu + ◆</span>'; }
   // offer 3: always the STEADY safe baseline + 2 random risk/reward contracts (shuffled)
   const rest=CONTRACTS.filter(c=>c.id!=='steady').slice(), pick=[CONTRACTS.find(c=>c.id==='steady')];
   for(let i=0;i<2 && rest.length;i++) pick.push(rest.splice((Math.random()*rest.length)|0,1)[0]);
@@ -6366,7 +6419,7 @@ function updateGunHUD(){
     const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
     const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ·L'+gunLevel(inst.id):'');   // MASTERY level tag
     if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=g.type; tg.title=(DMG_TYPE[g.type]||{}).label||''; nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
-    const am=document.createElement('span'); am.className='wc-am'; am.textContent = reloading ? 'RELOAD…' : ammo;
+    const am=document.createElement('span'); am.className='wc-am'; am.textContent = reloading ? 'NẠP ĐẠN…' : ammo;
     chip.replaceChildren(ic,nm,am);
     chip.classList.toggle('reloading', reloading);
   }
@@ -6397,8 +6450,8 @@ function updateSpellHUD(){
   const sp=SPELLS[S.spell];
   setIcon(document.querySelector('#ab-spell .ic'), sp.svg);
   setIcon(document.querySelector('#mSpell .ic'), sp.svg);
-  const mt=document.querySelector('#mSpell .mbtag'); if(mt) mt.textContent=sp.name;           // Z84: always show WHICH skill is armed
-  const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q ‹ '+sp.name+' ›';
+  const mt=document.querySelector('#mSpell .mbtag'); if(mt) mt.textContent=sp.vi||sp.name;           // Z84: always show WHICH skill is armed
+  const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q ‹ '+(sp.vi||sp.name)+' ›';
 }
 
 // ----------------------------- GAME FLOW -----------------------------
@@ -6501,11 +6554,11 @@ function tapEl(el, fn){ if(!el) return; el.addEventListener('click', fn);
 
 function refreshStartUI(){
   const hello=document.getElementById('hello');
-  if(hello) hello.innerHTML = PROFILE.nickname ? ('COMMANDER <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
+  if(hello) hello.innerHTML = PROFILE.nickname ? ('CHỈ HUY <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
   const cont=document.getElementById('continueBtn'), hasSave=!!(PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));
   document.body.classList.toggle('hassave', hasSave);   // short-landscape grid: CONTINUE + PLAY share row 1 only when a save exists
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; const lp=hasSave?(PROFILE.save.loop|0):0;
-    cont.textContent = hasSave ? ('CONTINUE ▶  '+(lp>0?'NG+'+lp+' · ':'')+'STAGE '+PROFILE.save.stage) : 'CONTINUE ▶'; }
+    cont.textContent = hasSave ? ('CHƠI TIẾP ▶  '+(lp>0?'VÒNG+'+lp+' · ':'')+'MÀN '+PROFILE.save.stage) : 'CHƠI TIẾP ▶'; }
   const ac=document.getElementById('arsenalCount'); if(ac) ac.textContent=PROFILE.ownedGuns.length;   // show how many guns are collected
   refreshWallet(); buildTerrainPicker();
 }
@@ -6513,7 +6566,7 @@ function refreshStartUI(){
 // start-screen summary button reflects the current pick
 function buildTerrainPicker(){
   const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=0)?PROFILE.terrain:-1;
-  const name=cur<0?'AUTO':BIOMES[cur].name, col=cur<0?0x8a8a8a:BIOMES[cur].ground;
+  const name=cur<0?'TỰ ĐỘNG':biomeVi(BIOMES[cur].name), col=cur<0?0x8a8a8a:BIOMES[cur].ground;
   const nm=document.getElementById('tBtnName'), sw=document.getElementById('tBtnSw');
   if(nm) nm.textContent=name; if(sw) sw.style.background='#'+col.toString(16).padStart(6,'0');
 }
@@ -6544,7 +6597,7 @@ function drawTerrainPreview(cv, b, isAuto){
 function buildTerrainDialog(){
   const g=document.getElementById('terrainGallery'); if(!g) return; g.innerHTML='';
   const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=-1)?PROFILE.terrain:-1;
-  const opts=[{i:-1,name:'AUTO',tag:'ROTATES PER STAGE',auto:true}].concat(BIOMES.map((b,i)=>({i,name:b.name,tag:'BIOME',b})));
+  const opts=[{i:-1,name:'TỰ ĐỘNG',tag:'ĐỔI THEO MÀN',auto:true}].concat(BIOMES.map((b,i)=>({i,name:biomeVi(b.name),tag:'ĐỊA HÌNH',b})));
   for(const o of opts){
     const card=document.createElement('div'); card.className='tcard'+(o.i===cur?' on':''); card.dataset.i=o.i;
     const cv=document.createElement('canvas'); cv.width=192; cv.height=120; card.appendChild(cv);
@@ -6569,17 +6622,18 @@ function buildGuide(){
   const wrap=document.getElementById('guideBody'); if(!wrap) return; wrap.innerHTML='';
   const m=MOBILE;
   const rows=[
-    ['bunker','MISSION','Defend the CORE through 5 waves, then beat the BOSS. Each stage is an OPERATION — destroy its gold-marked OBJECTIVE for a bounty + 💎.'],
-    ['tank', m?'DRIVE':'MOVE & AIM', m?'Left joystick to drive — your turret auto-aims & auto-fires at the nearest enemy in range.':'WASD to move · mouse to aim · click or hold to FIRE.'],
-    ['dash','DASH & SKILLS', m?'DASH = quick dodge with brief invincibility · SKILL = use the armed skill · tap › on it to switch skill.':'SPACE = dash (brief invincibility) · E = use the armed skill · Q = switch skill.'],
-    ['rifle','ARSENAL & GUNS','Collect guns from drops & the SHOP. Equip up to 5 in ARSENAL and swap mid-fight — each gun has its own feel & tracer colour.'],
-    ['coin','ECONOMY & UPGRADES','Earn coins + 💎 diamonds. Spend in the SHOP on permanent upgrades and support units (drone · guards). Duplicate guns level up (Mastery).'],
-    ['target','CONTRACTS','Before each stage pick a CONTRACT (risk vs reward). Choose your BATTLEFIELD from the menu.'],
-    ['alert','STAY ALIVE','Grab power-ups (heal · shield · bomb · drone). Watch for the red ARTILLERY ring — move off it before it lands!'],
-    ['tank','THREATS', (m?'Drive over':'Run over')+' infantry to crush them. RPG & ATGM rockets can be SHOT DOWN. Kill ENGINEERS first — they repair tanks. FLAK shreds gunships.'],
-    ['shield','EQUIPMENT','On the SKILL wheel: SMOKE breaks missile locks · APS shoots down incoming rockets · MINES stop tanks chasing you · FIRETEAM calls an APC with infantry.'],
-    ['team','YOUR CREW', (m?'Tap CREW':'Press G')+' to drop the soldiers riding your tank — they fight on foot beside you. '+(m?'Tap again':'Press G again')+' and they run back and mount up.'],
-    ['dash','DRIVING','A tank is heavy: it builds speed slowly and rolls on when you let go. Pull back to reverse. Take a run-up to smash brick walls or climb rocks — ramming hurts the smaller tank more.'],
+    ['bunker','NHIỆM VỤ','Bảo vệ LÕI qua 5 đợt tấn công rồi hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để nhận thưởng + 💎.'],
+    ['tank', m?'LÁI XE':'LÁI & NGẮM', m?'Cần trái để lái — tháp pháo tự ngắm & tự bắn kẻ địch gần nhất trong tầm.':'WASD để lái · chuột để ngắm · nhấn hoặc giữ để BẮN.'],
+    ['dash','LƯỚT & KỸ NĂNG', m?'LƯỚT = né nhanh, bất tử chốc lát · KỸ NĂNG = dùng kỹ năng đang chọn · chạm › để đổi kỹ năng.':'CÁCH = lướt (bất tử chốc lát) · E = dùng kỹ năng · Q = đổi kỹ năng.'],
+    ['rifle','KHO SÚNG','Nhặt súng từ đồ rơi & CỬA HÀNG. Mang tối đa 5 khẩu và đổi giữa trận — mỗi khẩu một cảm giác & màu đạn riêng.'],
+    ['coin','KINH TẾ & NÂNG CẤP','Kiếm xu + 💎 kim cương. Tiêu ở CỬA HÀNG để nâng cấp vĩnh viễn và mua đơn vị hỗ trợ. Súng trùng sẽ lên cấp thông thạo.'],
+    ['target','HỢP ĐỒNG','Trước mỗi màn chọn một HỢP ĐỒNG (rủi ro đổi phần thưởng). Chọn CHIẾN TRƯỜNG từ menu.'],
+    ['alert','SỐNG SÓT','Nhặt vật phẩm (máu · khiên · bom · drone · turbo · lưỡi ủi). Thấy vòng đỏ PHÁO KÍCH thì chạy khỏi nó trước khi đạn rơi!'],
+    ['tank','MỐI ĐE DOẠ', (m?'Lái':'Chạy')+' đè lên bộ binh để cán nát. Rocket RPG & ATGM BẮN HẠ ĐƯỢC. Diệt CÔNG BINH trước — chúng sửa xe. FLAK xé nát trực thăng.'],
+    ['shield','TRANG BỊ','Trên vòng KỸ NĂNG: KHÓI phá khoá tên lửa · APS bắn hạ rocket bay tới · MÌN chặn xe đuổi theo · GỌI TỔ BỘ BINH đưa APC chở lính tới.'],
+    ['team','LÍNH CỦA BẠN', (m?'Chạm LÍNH':'Bấm G')+' để lính trên xe nhảy xuống đánh bộ cạnh bạn. '+(m?'Chạm lại':'Bấm G lần nữa')+' thì họ chạy về leo lên xe.'],
+    ['dash','LÁI XE TĂNG','Xe tăng rất nặng: tăng tốc từ từ và trôi tiếp khi nhả ga. Kéo ngược để lùi. Lấy đà để húc đổ tường gạch, leo qua đá — húc nhau thì xe nhỏ hơn thiệt hơn.'],
+    ['spark','VẬT PHẨM','Xe càng trâu, chỗ càng khó (tháp canh, trại lính, kho tiếp tế) càng rơi đồ xịn. Cột sáng: xanh lá = thường · xanh dương = hiếm · tím = quý. Nhặt trùng buff thì được gia hạn.'],
   ];
   for(const [ic,h,t] of rows){ const r=document.createElement('div'); r.className='guide-row';
     r.innerHTML='<span class="g-ic"></span><div class="g-tx"><b>'+h+'</b><span>'+t+'</span></div>';
@@ -6593,8 +6647,8 @@ function coach(msg){ const el=document.getElementById('coach'); if(!el) return; 
 function coachFirstRun(){
   if(PROFILE.coached) return; PROFILE.coached=true; saveProfile();
   const tips = MOBILE
-    ? ['Joystick to drive — your turret auto-fires','Defend the CORE — don’t let it fall','Survive 5 waves → the BOSS appears','Grab power-ups to stay alive']
-    : ['WASD to move · mouse to aim · hold to FIRE','SPACE to dash out of danger','Defend the CORE — don’t let it fall','Survive 5 waves → the BOSS appears'];
+    ? ['Cần trái để lái — tháp pháo tự bắn','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện','Nhặt vật phẩm để sống sót']
+    : ['WASD để lái · chuột để ngắm · giữ chuột để BẮN','CÁCH để lướt thoát hiểm','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện'];
   tips.forEach((t,i)=> setTimeout(()=>{ if(S.mode==='playing') coach(t); }, 1500 + i*3400));
 }
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
@@ -6602,9 +6656,9 @@ function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.
 function buildSettings(){
   const D=document.getElementById('setDiff'); if(D){ D.innerHTML=''; for(const k of ['recruit','soldier','veteran']){ const meta=DIFF_META[k];
     D.appendChild(_segChip(meta.label, PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); buildSettings(); sfx('click'); }, meta.tag)); } }
-  const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('ON',PROFILE.sound,()=>_setSnd(true))); So.appendChild(_segChip('OFF',!PROFILE.sound,()=>_setSnd(false))); }
-  const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('ON',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('OFF',!PROFILE.music,()=>_setMus(false))); }
-  const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('HIGH',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('LOW',PROFILE.quality==='low',()=>_setQ('low'))); }
+  const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('BẬT',PROFILE.sound,()=>_setSnd(true))); So.appendChild(_segChip('TẮT',!PROFILE.sound,()=>_setSnd(false))); }
+  const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('BẬT',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('TẮT',!PROFILE.music,()=>_setMus(false))); }
+  const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 function _setSnd(on){ PROFILE.sound=on; saveProfile(); audio(); setMuted(!on); buildSettings(); }
 function _setMus(on){ PROFILE.music=on; saveProfile(); audio(); setMusicOn(on); buildSettings(); }
@@ -6623,7 +6677,7 @@ function renderLoadout(){
     const card=document.createElement('div');
     card.className='ldcard'+(owned?'':' locked')+(on?' on':'');
     const num = on ? ('<div class="num">'+(_ldSel.indexOf(id)+1)+'</div>') : '';
-    card.innerHTML = num+'<div class="pick"></div><div class="gi">'+svgMarkup(g.svg||'gun')+'</div><div class="nm">'+g.name+'</div><div class="tr">TIER '+g.tier+'</div>';
+    card.innerHTML = num+'<div class="pick"></div><div class="gi">'+svgMarkup(g.svg||'gun')+'</div><div class="nm">'+g.name+'</div><div class="tr">BẬC '+g.tier+'</div>';
     if(owned) tapEl(card, ()=>toggleLd(id));
     grid.appendChild(card);
   });
@@ -6782,7 +6836,7 @@ function itemBlurb(it){ return it.type==='gun' ? (GUN_BLURB[it.id]||'') : (UP_BL
 let shopOpen=false, shopDetail3D=false, shopCats=[], activeCat='', shopList=[], shopIdx=0, shopHero=null, _shopT=0;
 function shopRefreshData(){ shopCats=shopModel(); if(!shopCats.find(c=>c.cat===activeCat)) activeCat=shopCats.length?shopCats[0].cat:''; shopList=(shopCats.find(c=>c.cat===activeCat)||{items:[]}).items; }
 function buildShopTabs(){ const tb=document.getElementById('shopTabs'); if(!tb) return; tb.innerHTML='';
-  shopCats.forEach(g=>{ const t=document.createElement('div'); t.className='shop-tab'+(g.cat===activeCat?' on':''); t.dataset.cat=g.cat; t.textContent=g.cat; tapEl(t, ()=>setActiveCat(g.cat)); tb.appendChild(t); }); }
+  shopCats.forEach(g=>{ const t=document.createElement('div'); t.className='shop-tab'+(g.cat===activeCat?' on':''); t.dataset.cat=g.cat; t.textContent=catVi(g.cat); tapEl(t, ()=>setActiveCat(g.cat)); tb.appendChild(t); }); }
 function setActiveCat(cat){ activeCat=cat; shopRefreshData(); buildShopTabs(); renderCaseGrid(); showGrid(); sfx('click'); }
 function caseState(it){ const owned=it.type==='gun'&&it.owned, maxed=it.type==='up'&&it.level>=it.max;
   return owned?'owned':maxed?'maxed':(!(it.cost&&canAfford(it.cost))?'cant':''); }
@@ -6815,27 +6869,27 @@ function siPanelHTML(it){
   if(it.type==='gun'){ const g=GUNS[it.id], lv=gunLevel(it.id);
     const dMul=gunDmgMul(it.id), fMul=gunFireMul(it.id), rMul=gunReloadMul(it.id);
     const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(edmg*(g.frags||1)*rof), erel=g.reload*rMul;
-    const T=[]; if(g.frags>1)T.push(g.frags+'× PELLET'); if(g.pierce)T.push('PIERCE'); if(g.aoe||g.aoeR)T.push('AOE'); if(g.homing)T.push('HOMING'); if(g.freeze)T.push('FREEZE'); if(g.chain)T.push('CHAIN');
+    const T=[]; if(g.frags>1)T.push(g.frags+'× VIÊN'); if(g.pierce)T.push('XUYÊN'); if(g.aoe||g.aoeR)T.push('NỔ LAN'); if(g.homing)T.push('TỰ DẪN'); if(g.freeze)T.push('ĐÓNG BĂNG'); if(g.chain)T.push('LAN SÉT');
     const nx=gunXpToNext(it.id);
-    const mastery = it.owned ? ('<div class="sp-mastery">★ MASTERY <b>LV '+lv+' / '+BALANCE.mastery.maxLevel+'</b>'+
-        (nx?'<span class="sp-xp">'+nx.have+' / '+nx.need+' ▸ LV'+(lv+1)+'</span>':'<span class="sp-xp">★ MAX</span>')+'</div>'+
-        (lv>1?'<div class="sp-mbuff">+'+Math.round((dMul-1)*100)+'% dmg · +'+Math.round((1/fMul-1)*100)+'% rate · −'+Math.round((1-rMul)*100)+'% reload</div>':''))
+    const mastery = it.owned ? ('<div class="sp-mastery">★ THÔNG THẠO <b>CẤP '+lv+' / '+BALANCE.mastery.maxLevel+'</b>'+
+        (nx?'<span class="sp-xp">'+nx.have+' / '+nx.need+' ▸ CẤP '+(lv+1)+'</span>':'<span class="sp-xp">★ TỐI ĐA</span>')+'</div>'+
+        (lv>1?'<div class="sp-mbuff">+'+Math.round((dMul-1)*100)+'% sát thương · +'+Math.round((1/fMul-1)*100)+'% tốc bắn · −'+Math.round((1-rMul)*100)+'% nạp</div>':''))
       : '';
-    return '<div class="sp-tier">'+(it.vip?'★ VIP WEAPON':'TIER '+g.tier+' WEAPON')+'</div>'+ mastery+
-      spBar('Damage', edmg+(lv>1?' ▲':''), edmg/90)+ spBar('Fire rate', rof.toFixed(rof<1?2:0)+'/s'+(lv>1?' ▲':''), rof/20)+
-      spBar('Magazine', g.mag, g.mag/90)+ spBar('DPS', dps, dps/600)+
-      '<div class="sp-bl">Reload<b>'+erel.toFixed(1)+'s'+(lv>1?' ▼':'')+'</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
-  return '<div class="sp-tier">'+(it.level>=it.max?'MAX LEVEL':(it.vip?'★ VIP UPGRADE':'UPGRADE'))+'</div>'+
+    return '<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+ mastery+
+      spBar('Sát thương', edmg+(lv>1?' ▲':''), edmg/90)+ spBar('Tốc bắn', rof.toFixed(rof<1?2:0)+'/s'+(lv>1?' ▲':''), rof/20)+
+      spBar('Băng đạn', g.mag, g.mag/90)+ spBar('DPS', dps, dps/600)+
+      '<div class="sp-bl">Nạp đạn<b>'+erel.toFixed(1)+'s'+(lv>1?' ▼':'')+'</b></div>'+ (T.length?'<div class="sp-tags">'+T.map(t=>'<span class="st">'+t+'</span>').join('')+'</div>':''); }
+  return '<div class="sp-tier">'+(it.level>=it.max?'CẤP TỐI ĐA':(it.vip?'★ NÂNG CẤP VIP':'NÂNG CẤP'))+'</div>'+
     spBar('Level', it.level+' / '+it.max, it.level/it.max)+
-    '<div class="sp-bl">Per level<b>'+it.per+'</b></div>'+
-    '<div class="sp-bl">Owned<b>×'+it.level+'</b></div>'+
-    (it.level<it.max?'<div class="sp-bl">Next<b>LEVEL '+(it.level+1)+'</b></div>':'<div class="sp-tags"><span class="st">FULLY UPGRADED</span></div>');
+    '<div class="sp-bl">Mỗi cấp<b>'+it.per+'</b></div>'+
+    '<div class="sp-bl">Đang có<b>×'+it.level+'</b></div>'+
+    (it.level<it.max?'<div class="sp-bl">Tiếp theo<b>CẤP '+(it.level+1)+'</b></div>':'<div class="sp-tags"><span class="st">ĐÃ NÂNG TỐI ĐA</span></div>');
 }
 function updateShopInfo(){
   const it=shopList[shopIdx]; if(!it) return;
   const hex='#'+(RAR_COL[it.rar]||0xffce4a).toString(16).padStart(6,'0');
   document.getElementById('shopInfo').style.setProperty('--rar',hex);
-  document.getElementById('si-cat').textContent = activeCat + (it.type==='gun'?(it.vip?' · VIP':' · TIER '+it.tier):'');
+  document.getElementById('si-cat').textContent = catVi(activeCat) + (it.type==='gun'?(it.vip?' · VIP':' · BẬC '+it.tier):'');
   document.getElementById('si-name').textContent = it.name;
   document.getElementById('si-desc').textContent = itemBlurb(it);
   document.getElementById('si-stats').innerHTML = shopStats(it);
@@ -6844,7 +6898,7 @@ function updateShopInfo(){
   const cant = !owned && !maxed && !(it.cost && canAfford(it.cost));
   const buy=document.getElementById('si-buy');
   buy.className='si-buy '+(owned?'owned':maxed?'maxed':cant?'cant':(it.vip?'vip':''));
-  buy.innerHTML = owned?'✓ OWNED' : maxed?'MAXED' : (it.cost? ('BUY · '+priceHTML(it.cost)) : 'MAXED');
+  buy.innerHTML = owned?'✓ ĐÃ CÓ' : maxed?'TỐI ĐA' : (it.cost? ('MUA · '+priceHTML(it.cost)) : 'TỐI ĐA');
   document.getElementById('si-pos').textContent = activeCat+'  ·  '+(shopIdx+1)+' / '+shopList.length;
   refreshWallet();
 }
@@ -6921,8 +6975,8 @@ tapBtn('resetBtn', ()=>{
   const lbl=document.querySelector('#resetBtn span:last-child'); const now=performance.now();
   if(now<_resetArm){ _resetArm=0;                       // CLEAR SESSION → wipe the whole account (wallet, upgrades, arsenal, progress); keep nickname
     PROFILE.save=null; PROFILE.best={score:0,stage:1}; BEST=PROFILE.best; PROFILE.coins=0; PROFILE.diamonds=0; PROFILE.upgrades={}; PROFILE.gunXp={}; PROFILE.ownedGuns=['rifle']; PROFILE.loadout=['rifle'];
-    saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='RESET ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='RESET'; },1400); }
-  else { _resetArm=now+2600; if(lbl) lbl.textContent='SURE?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='RESET'; },2700); }
+    saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='ĐÃ XOÁ ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='XOÁ'; },1400); }
+  else { _resetArm=now+2600; if(lbl) lbl.textContent='CHẮC CHƯA?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='XOÁ'; },2700); }
 });
 
 // ----------------------------- HELPERS -----------------------------
@@ -7103,6 +7157,10 @@ function updatePlayer(dt, now){
   if(MOBILE){ if(autoFire ? !!nearestTarget(range) : S.firing) fireGun(now, range); }   // mobile: AUTO fires when a target is in range; MANUAL fires while the trigger is held
   else if(S.firing) fireGun(now, range);                                                 // desktop: fire only while LMB held; gun fireCd caps the rate
 }
+const BIOME_VI={ DESERT:'SA MẠC', RUINS:'PHẾ TÍCH', TUNDRA:'BĂNG GIÁ', FOUNDRY:'LÒ ĐÚC', CITADEL:'THÀNH LUỸ', MEADOW:'THẢO NGUYÊN' };
+function biomeVi(n){ return BIOME_VI[n]||n; }
+const CAT_VI={ WEAPONS:'VŨ KHÍ', FIREPOWER:'HOẢ LỰC', AMMO:'ĐẠN DƯỢC', CHASSIS:'THÂN XE', SUPPORT:'HỖ TRỢ' };
+function catVi(c){ return CAT_VI[c]||c; }
 function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 function _HAT(x,z){ return heightAt(x,z); }
 function _rideH(x,z){ return heightAt(x,z)+bumpAt(x,z); }
@@ -7154,7 +7212,7 @@ function startIntro(){
   const looks=[[0,2.3,1.2],[0,2.1,0.3],[0,1.9,0],[0,1.5,0],[0,1.1,0],[0,1.0,0]];
   const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))));
   intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true;
-  const sub=document.getElementById('cine-sub'); if(sub) sub.textContent=(S.loop>0?'NG+'+S.loop+' · ':'')+'STAGE '+S.stage+' · '+BIOME.name+(S.tod?' · '+TOD_LABEL[S.tod]:'');
+  const sub=document.getElementById('cine-sub'); if(sub) sub.textContent=(S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'');
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
   S.mode='intro';
 }
@@ -7268,7 +7326,7 @@ function droneOwned(){ return (PROFILE.upgrades.dronePow||0) >= 1; }            
 function guardFireMul(){ return Math.max(SUP.mulFloor, 1 - (PROFILE.upgrades.guardRof||0)*SUP.guardRofPerLvl); }   // GUARD DRILL: faster fire
 function guardBonusHp(){ return (PROFILE.upgrades.guardArm||0)*SUP.guardArmPerLvl; }          // GUARD ARMOR: +HP
 function deployOwnedDrone(){ if(droneOwned() && !S.drone) spawnDrone(true); }                 // auto-launch the owned escort each stage
-const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, vi:'KIM CƯƠNG', ds:'+1 ◆', cat:'gem', tier:2, apply(){ addDiamonds(1); if(S.player) floatText('+1 DIAMOND','#7fe7ff',S.player.pos,22); } };  // rare treasure
+const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, vi:'KIM CƯƠNG', ds:'+1 ◆', cat:'gem', tier:2, apply(){ addDiamonds(1); if(S.player) floatText('+1 KIM CƯƠNG','#7fe7ff',S.player.pos,22); } };  // rare treasure
 function ownGun(id){ if(!GUNS[id]) return false; let fresh=false;
   if(!PROFILE.ownedGuns.includes(id)){ PROFILE.ownedGuns.push(id); fresh=true; }
   if(!PROFILE.loadout.includes(id) && PROFILE.loadout.length<LOADOUT_MAX) PROFILE.loadout.push(id);   // auto-equip while there's room
@@ -7278,13 +7336,13 @@ function saveProgress(){ const s=PROFILE.save, cl=S.loop||0;       // checkpoint
   if(better && (S.stage>1 || cl>0)){ PROFILE.save={ loop:cl, stage:S.stage, score:S.score }; saveProfile(); refreshStartUI(); } }
 function clearProgress(){ PROFILE.save=null; saveProfile(); refreshStartUI(); }
 function recordRun(){ const beat = S.score > (BEST.score||0); if(beat){ BEST.score=S.score; BEST.stage=S.stage; saveProfile(); } refreshBestLine(); return beat; }
-function refreshBestLine(){ const el=document.getElementById('bestline'); if(el) el.textContent = (BEST.score>0) ? ('★ BEST  '+BEST.score.toLocaleString()+'  ·  STAGE '+BEST.stage) : ''; }
+function refreshBestLine(){ const el=document.getElementById('bestline'); if(el) el.textContent = (BEST.score>0) ? ('★ KỶ LỤC  '+BEST.score.toLocaleString()+'  ·  MÀN '+BEST.stage) : ''; }
 
 // ----------------------------- CORE-UNDER-ATTACK ALARM -----------------------------
 let _alarmAt=0;
 function updateCoreAlarm(now){
   const low = !!core && core.hp>0 && core.hp/core.maxHp < 0.35 && S.mode==='playing';
-  document.body.classList.toggle('corelow', low);
+  document.body.classList.toggle('corelow', low); if(low) tip('core');
   if(low && now>_alarmAt){ _alarmAt=now+1.3; sfx('alarm'); }
 }
 
@@ -7345,7 +7403,7 @@ function spawnDrone(owned){
   d.ammo   = DRONE.mag; d.reloadUntil = 0;
   d.until  = d.owned ? now + 1e9 : now + DRONE.dur;                   // owned = persists the whole stage; power-up = 22s
   updateDroneBar();
-  if(S.player) floatText(d.owned?'ESCORT DRONE':'DRONE ONLINE', '#6fd0ff', S.player.pos, 18);
+  if(S.player) floatText(d.owned?'DRONE HỘ TỐNG':'DRONE ĐÃ BAY', '#6fd0ff', S.player.pos, 18);
   sfx('powerup');
 }
 function clearDrone(){ if(S.drone){ scene.remove(S.drone.g); if(S.drone.bar) scene.remove(S.drone.bar.g); S.drone=null; } }
@@ -7361,12 +7419,12 @@ function damageDrone(dmg, b){ const d=S.drone; if(!d) return; d.hp-=dmg; d.hitT=
 function destroyDrone(){ const d=S.drone; if(!d) return; const pos=d.g.position.clone();
   tankExplode(pos, 0x6fd0ff, 1.5, null, null, 'shock');                                    // electric-tech blast + shrapnel
   burst(pos, 0x4fd1ff, 14, 12, {life:0.4, size:0.8, up:4, drag:2});
-  floatText('DRONE DOWN', '#ff7a4a', pos, 20); sfx('bigexplode'); S.shake=Math.min(4.5, S.shake+1.4);
+  floatText('DRONE BỊ HẠ', '#ff7a4a', pos, 20); sfx('bigexplode'); S.shake=Math.min(4.5, S.shake+1.4);
   clearDrone();
 }
 function updateDrone(dt, now){
   const d=S.drone; if(!d) return;
-  if(now>=d.until){ burst(d.g.position.clone(), 0x4fd1ff, 8, 6, {life:0.3, size:0.6, up:3}); if(S.player) floatText('DRONE OFFLINE', '#9fd0ff', d.g.position, 16); clearDrone(); return; }
+  if(now>=d.until){ burst(d.g.position.clone(), 0x4fd1ff, 8, 6, {life:0.3, size:0.6, up:3}); if(S.player) floatText('DRONE HẾT GIỜ', '#9fd0ff', d.g.position, 16); clearDrone(); return; }
   const p=S.player; if(!p) return;
   d.ang += dt*1.5;
   const ox=p.pos.x+Math.cos(d.ang)*DRONE.orbit, oz=p.pos.z+Math.sin(d.ang)*DRONE.orbit, oy=DRONE.height+Math.sin(now*2.6)*0.22;
@@ -7610,6 +7668,7 @@ function loop(nowMs){
 
   if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
 
+  pumpTips();                                                // Z94 a queued first-time tip pauses the battle
   if(S.mode==='playing'){
     S.timeNow = now;
     const gdt = dt * S.timeScale;       // slow-mo on boss kill
