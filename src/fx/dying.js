@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// fx/dying.js — KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then the magazine goes
 import { aoeDamage, burst, decalScorch, enemyPool, fireball, heightAt, sfx, spawnPart, spawnWreck, tankExplode } from '../hub.js';
 
 // ---- KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then the magazine goes ----

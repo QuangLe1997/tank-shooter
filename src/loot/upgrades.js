@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// loot/upgrades.js — ROGUELITE UPGRADES (pick 1 of 3 after each boss)
 import { OBJECTIVES, TROOPS } from '../../config.js';
 import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildObjective, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, guardTarget, hide, iconEl, opFor, openBriefing, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD } from '../hub.js';
 

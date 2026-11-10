@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/perimeter.js — perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ARENA, BIOME, MOBILE, _R, arena, propTex, scene } from '../hub.js';

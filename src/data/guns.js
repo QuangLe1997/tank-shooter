@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// data/guns.js — GUNS registry: damage type, damage, fire rate, magazine, reload, projectile per gun
 
 // ===== GUNS =====
 // Stat model: dmg (per fragment) · fireCd (s/shot) · mag (rounds) · reload (s)

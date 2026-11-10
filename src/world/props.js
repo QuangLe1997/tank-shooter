@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/props.js — BATTLEFIELD PROPS (procedural, merged geometry, cached)
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';

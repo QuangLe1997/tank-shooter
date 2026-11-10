@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/mastery.js — GUN MASTERY: duplicate pickups level a gun up (permanent, per-gun). Boosts dmg / fire-rate / reload.
 import { BALANCE } from '../../config.js';
 import { GUNS, PROFILE, S, floatText, ringPulse, saveProfile, sfx } from '../hub.js';
 

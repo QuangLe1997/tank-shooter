@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS } from '../../config.js';
 import { MOBILE, S, airstrike, armorOf, bigExplode, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, spawnPart, structMul, typeMul, updateHUD, updateSpellHUD } from '../hub.js';

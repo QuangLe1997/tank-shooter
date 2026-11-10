@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// fx/fire-wrecks.js — REAL FIRE / FLASH / WRECKS
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BIOME, MOBILE, PL_SMOKE, _R, _canvasTex, _tankGeo, burst, decalCrater, heightAt, makePartLayer, panelTex, scene, sfx, spawnPart } from '../hub.js';

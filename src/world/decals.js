@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
 import { ARENA, MOBILE, arena, terrainGeo } from '../hub.js';
 

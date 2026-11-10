@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/riders.js — TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100)
 import { TROOPS } from '../../config.js';
 import { RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, soldierLvl, spawnBullet, spawnPart, updateCrewBtn } from '../hub.js';
    // base 3 + TANK CREW upgrade (+1..3)

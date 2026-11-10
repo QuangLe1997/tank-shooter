@@ -8,7 +8,7 @@ const files = []; (function walk(d){ for(const f of fs.readdirSync(d)){ const p=
 const rel = p => path.relative(SRC, p).replace(/\\/g,'/');
 let errors = [], warns = [];
 const err = m => errors.push(m), warn = m => warns.push(m);
-const LAYERS = ['data','core','render','audio','world','tank','fx','combat','actors','ai','campaign','loot','input','ui','game','boot'];
+const LAYERS = ['data','core','render','audio','world','tank','fx','combat','actors','ai','campaign','loot','input','ui','game','dev','boot'];
 const hubSrc = fs.readFileSync(path.join(SRC,'hub.js'),'utf8');
 const hubList = [...hubSrc.matchAll(/export \* from '\.\/(.+?)\.js';/g)].map(m=>m[1]);
 const exportsBy = new Map();
@@ -34,6 +34,8 @@ for(const f of files){
   // R4 — exported names are globally unique (export * silently drops duplicates)
   for(const m of code.matchAll(/^export (?:async )?(?:function\*? |const |let |var |class )([\w$]+)/gm)){ const nm=m[1];
     if(exportsBy.has(nm)) err(`export "${nm}" defined in both ${exportsBy.get(nm)} and ${r}`); else exportsBy.set(nm, r); }
+  // R12 — every module opens with its catalogue line: `// layer/file.js — what it owns` (npm run modmap builds ARCHITECTURE.md §2.1 from it)
+  if(!lines[0].startsWith('// '+r+' — ') || lines[0].length < r.length+16) err(`${r}: first line must be "// ${r} — <what this module owns>"`);
   // R5 — size budget (split a module before it becomes the next index.html)
   if(lines.length > 700) warn(`${r}: ${lines.length} lines (budget 700) — consider splitting`);
 }

@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
 import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, WAVE, barrelGrade, biomeVi, coachFirstRun, escapeHtml, floatText, gunLevel, hide, iconEl, magCap, opFor, playStageTransition, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
 

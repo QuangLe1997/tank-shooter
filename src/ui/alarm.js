@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// ui/alarm.js — CORE-UNDER-ATTACK ALARM
 import { S, core, sfx, tip } from '../hub.js';
 
 // ----------------------------- CORE-UNDER-ATTACK ALARM -----------------------------

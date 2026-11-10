@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/brick-walls.js — Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRIVE, LOOT } from '../../config.js';

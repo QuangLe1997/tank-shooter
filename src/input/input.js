@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
 import { MOBILE, PROFILE, S, SPELLS, VIEW, audio, camera, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
 

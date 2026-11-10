@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/enemy-missiles.js — ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke
 import * as THREE from 'three';
 import { EQUIP } from '../../config.js';
 import { ARENA, GLOW, S, addScore, apsIntercept, bigExplode, blocks, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitsHull, inBlock, inSmoke, recycleBullet, scene, sfx, soldiers, spawnPart, wrapAngle } from '../hub.js';

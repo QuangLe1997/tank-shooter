@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER } from '../../config.js';
 import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, groundHit, heightAt, impactFX, inBlock, riders, ringPulse, scene, sfx, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';

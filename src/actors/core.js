@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLOW, NIGHT, _R, _canvasTex, _mergeColored, _xf, bigExplode, coverMat, gameOver, makeFlag, propTex, scene, sfx, shieldHexTex, spawnPart, updateHUD, vnTex } from '../hub.js';

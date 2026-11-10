@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/damage.js — HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, LOOT } from '../../config.js';
 import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, spawnEnemy, startDying, tankExplode, updateHUD } from '../hub.js';

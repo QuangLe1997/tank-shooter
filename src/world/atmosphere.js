@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
 import { ATMOS, S, SHADOW_R, SUN_DIR, TOD_ORDER, ambient, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
 

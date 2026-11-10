@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// core/config.js — runtime constants derived from config + device: arena size, MOBILE, tank scale, player palette, current BIOME
 import { BIOMES, PLAYER, S, gunReach } from '../hub.js';
 
 performance.mark('boot:module');

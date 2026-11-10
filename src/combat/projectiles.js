@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/projectiles.js — PROJECTILES
 import * as THREE from 'three';
 import { GLOW, MOBILE, PART_MAX, scene } from '../hub.js';
 

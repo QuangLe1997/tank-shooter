@@ -1,8 +1,9 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/vehicles.js — Z80 enemy VEHICLES: flame tank, ATGM tank-destroyer, engineer repair truck, attack gunship, APC dismount (Z89)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, ROSTER } from '../../config.js';
-import { ARENA, BIOME, ENVMOD, S, aoeDamage, bigExplode, cMod, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { ARENA, BIOME, ENVMOD, S, aoeDamage, bigExplode, burst, cMod, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { TROOPS } from '../../config.js';
 
 // ===== Z80 · NEW ENEMY VEHICLES — flame tank, ATGM tank-destroyer, combat-engineer repair truck, attack helicopter =====
 export const _lineMat={};
@@ -131,3 +132,20 @@ export function updateHeliDown(dt){
       m.visible=false; ud.body.rotation.set(0,0,0); (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); HELI_DOWN.splice(i,1); } }
 }
 export function clearHeliDown(){ for(const h of HELI_DOWN){ h.e.mesh.visible=false; (enemyPool[h.e.type]=enemyPool[h.e.type]||[]).push(h.e.mesh); } HELI_DOWN.length=0; }
+
+// ---- from actors/troops.js ----
+// ===== Z89 · TROOP CARRIERS — enemy APCs dismount squads; your FIRETEAM rides in on a friendly APC and fights beside the tank =====
+export let _dismountRadioAt=0;
+export function updateDismount(e, dt, now, dpl){
+  const D0=TROOPS.dismount, rmp=e.mesh.getObjectByName('ramp');
+  if(!e.unloading && !e.unloaded && e.troops>0 && dpl < D0.range && S.mode==='playing'){ e.unloading=true; e.unloadT=0; e.dropped=0;
+    tip('apc'); if(now-_dismountRadioAt>12){ _dismountRadioAt=now; radio('SCH: Xe bọc thép địch đang thả bộ binh — coi chừng tổ RPG!'); } }
+  if(!e.unloading){ if(rmp) rmp.rotation.x=Math.max(0, rmp.rotation.x-dt*2); return; }
+  e.unloadT+=dt; if(rmp) rmp.rotation.x=Math.min(1.25, e.unloadT*2.6);                                   // ramp swings down onto the dirt
+  const due=Math.floor((e.unloadT-0.5)/D0.interval)+1;
+  while(e.unloadT>0.5 && e.dropped<Math.min(due, e.troops)){ const k=e.dropped++, bx=e.pos.x-Math.sin(e.facing)*2.9*e.def.scale, bz=e.pos.z-Math.cos(e.facing)*2.9*e.def.scale;
+    const t=spawnEnemy(k===0&&S.stage>=D0.rpgFrom?'rpg':'rifle', bx+(Math.random()-0.5)*1.2, bz+(Math.random()-0.5)*1.2);
+    if(t){ const a=e.facing+Math.PI+(k%2?0.6:-0.6)*(1+k*0.25); t.kbx=Math.sin(a)*7; t.kbz=Math.cos(a)*7; t.fireAt=now+0.9+Math.random()*0.6; }   // they jog out and fan to the flanks
+    burst({x:bx,z:bz}, BIOME.ground, 2, 2, {y:0.4, life:0.6, size:1.0, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.35}); }
+  if(e.dropped>=e.troops && e.unloadT > 0.5+e.troops*D0.interval+0.6){ e.unloading=false; e.unloaded=true; }
+}

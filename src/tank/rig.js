@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// tank/rig.js — living tank rig: track scroll + wheel spin (skid-steer aware), suspension pitch/roll, gun elevation, recoil + barrel shiver
 import { ARC_G, TRUNNION_Z, _HAT, _rideH, wrapAngle } from '../hub.js';
 
 // ---- living tank rig: track scroll + wheel spin (skid-steer aware), suspension pitch/roll, gun elevation, recoil + barrel shiver ----

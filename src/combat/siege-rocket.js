@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/siege-rocket.js — SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius
 import * as THREE from 'three';
 import { ARENA, GLOW, GUNS, MOBILE, S, _v, enemies, equippedGun, heightAt, muzzleLight, nearestTarget, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
 

@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// tank/barrels.js — per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they elevate + recoil
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GUN_PRICE } from '../../config.js';

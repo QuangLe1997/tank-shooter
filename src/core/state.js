@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// core/state.js — S — the single runtime game state (mode, stage, wave, score, player, spell, recall …)
 import * as THREE from 'three';
 import { MOBILE, dprCap, objMod } from '../hub.js';
 

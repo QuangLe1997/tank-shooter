@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// fx/hud-fx.js — FX (rings, float text, screen)
 import * as THREE from 'three';
 import { VIEW, camera, heightAt, scene } from '../hub.js';
 

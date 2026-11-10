@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// game/score.js — SCORE / COMBO
 import { S, floatText, updateHUD } from '../hub.js';
 
 // ----------------------------- SCORE / COMBO -----------------------------

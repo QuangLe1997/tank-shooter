@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// tank/shield.js — premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop)
 import * as THREE from 'three';
 import { ARENA, NIGHT, PLAYER, TANK_SCALE, _canvasTex, buildTank, makeFlag, scene, vnTex } from '../hub.js';
 

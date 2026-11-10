@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// audio/synth.js — AUDIO (Web Audio synth)
 import * as THREE from 'three';
 import { S, VIEW, worldToScreen } from '../hub.js';
 

@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// tank/materials.js — procedural PBR textures for armour: welded panels (albedo/height/normal/rough), tracks, wheels, blob shadow
 import * as THREE from 'three';
 
 // ----------------------------- PLAYER TANK -----------------------------

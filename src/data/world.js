@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// data/world.js — TIME OF DAY: each stage fights at a different hour — morning · harsh noon · golden sunset · moonlit night under electric floodlights
    // ARMS DOCTRINE: each gun has its own reach; night shortens it
 // Battlefields — bg/fog/ground/grid/accent/sky + fog density + sun + scatter-deco theme + perimeter-wall tint.
 // Indices 0-4 = the campaign (one per stage S1-S5). MEADOW (5) is a bonus terrain only via the picker.

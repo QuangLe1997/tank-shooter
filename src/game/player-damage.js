@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { LOOT } from '../../config.js';
 import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, enemies, floatText, haptic, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';

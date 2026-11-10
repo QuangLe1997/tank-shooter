@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
 import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, flashMat, floatText, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';

@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
 import { ARENA, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';

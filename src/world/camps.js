@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, LOOT } from '../../config.js';
 import { ARENA, COVER_HP, MOBILE, S, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, burst, cMod, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, scene, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers } from '../hub.js';

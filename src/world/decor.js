@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
 import { ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushables, decalDirt, enemies, haptic, heightAt, rockSet, sfx, spawnPart } from '../hub.js';
 

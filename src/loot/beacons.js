@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// loot/beacons.js — LOOT BEACONS (mark crates/tanks that hide a power-up)
 import * as THREE from 'three';
 import { GLOW, blocks, enemies, scene } from '../hub.js';
 

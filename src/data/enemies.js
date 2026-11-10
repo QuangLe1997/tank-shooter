@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// data/enemies.js — ENEMY_DEFS registry: hp, speed, score, scale, weapon and role per enemy type
 import { INFANTRY } from '../../config.js';
 
 // ----------------------------- ENEMIES -----------------------------

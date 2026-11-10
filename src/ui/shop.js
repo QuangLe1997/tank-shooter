@@ -1,7 +1,7 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { BEST, GUNS, PROFILE, S, VIEW, __set_BEST, __set_soldierLvl, camera, canAfford, catVi, deployOwnedDrone, deploySoldiers, guardTarget, gunDmgMul, gunFireMul, gunLevel, gunReloadMul, gunXpToNext, hide, ownGun, payCost, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, sfx, show, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax } from '../hub.js';
+import { GUNS, PROFILE, S, VIEW, __set_BEST, __set_soldierLvl, camera, canAfford, catVi, deployOwnedDrone, deploySoldiers, guardTarget, gunDmgMul, gunFireMul, gunLevel, gunReloadMul, gunXpToNext, hide, ownGun, payCost, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, sfx, show, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){

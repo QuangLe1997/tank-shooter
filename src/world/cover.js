@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
 import { ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildTowers, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, heightAt, makeCoverMesh, placeCaches, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';

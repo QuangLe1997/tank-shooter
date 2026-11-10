@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// ui/icons.js — CUSTOM ICON SET (military line-art; no emoji)
 import * as THREE from 'three';
    // current (set by applyBiome from stage or the player's pick)
 

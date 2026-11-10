@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, GIFT } from '../../config.js';
 import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunReloadMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD } from '../hub.js';

@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT } from '../../config.js';
 import { ARENA, BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, animateTank, autoFire, boss, bumpAt, camera, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, nearestTarget, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';

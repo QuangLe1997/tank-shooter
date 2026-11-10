@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// fx/particles.js — PARTICLES (juice)
 import * as THREE from 'three';
 import { MOBILE, PL_FIRE, PL_FLASH, heightAt, scene, trails } from '../hub.js';
 

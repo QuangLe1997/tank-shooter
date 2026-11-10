@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/soldiers.js — infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { S, SOLDIER, _R, _canvasTex, bakeGroup, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, scene, sfx, spawnBullet, spawnPart } from '../hub.js';

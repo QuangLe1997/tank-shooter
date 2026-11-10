@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// data/bosses.js — BOSS (Z96 rework)
 
 // ----------------------------- BOSS (Z96 rework) -----------------------------
 // Every general is a puzzle with its own answer: ARMOUR ARCS (rear hits ×1.6, some fronts nearly immune), BREAKABLE SYSTEMS that switch

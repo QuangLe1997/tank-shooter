@@ -1,23 +1,8 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS } from '../../config.js';
-import { ARENA, BIOME, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, blocks, boss, buildTank, burst, camera, decorateEnemyMesh, enemies, floatText, haptic, heightAt, makeSoldierBar, makeSoldierMesh, playerRange, radio, rangeRing, riders, scene, sfx, solidTank, spawnBullet, spawnEnemy, spawnPart, spawnRider, tip, wrapAngle } from '../hub.js';
+import { ARENA, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, blocks, boss, buildTank, burst, camera, decorateEnemyMesh, enemies, floatText, heightAt, makeSoldierBar, makeSoldierMesh, playerRange, radio, rangeRing, riders, scene, sfx, solidTank, spawnBullet, spawnPart, spawnRider, updateCrewBtn, wrapAngle } from '../hub.js';
 
-// ===== Z89 · TROOP CARRIERS — enemy APCs dismount squads; your FIRETEAM rides in on a friendly APC and fights beside the tank =====
-export let _dismountRadioAt=0;
-export function updateDismount(e, dt, now, dpl){
-  const D0=TROOPS.dismount, rmp=e.mesh.getObjectByName('ramp');
-  if(!e.unloading && !e.unloaded && e.troops>0 && dpl < D0.range && S.mode==='playing'){ e.unloading=true; e.unloadT=0; e.dropped=0;
-    tip('apc'); if(now-_dismountRadioAt>12){ _dismountRadioAt=now; radio('SCH: Xe bọc thép địch đang thả bộ binh — coi chừng tổ RPG!'); } }
-  if(!e.unloading){ if(rmp) rmp.rotation.x=Math.max(0, rmp.rotation.x-dt*2); return; }
-  e.unloadT+=dt; if(rmp) rmp.rotation.x=Math.min(1.25, e.unloadT*2.6);                                   // ramp swings down onto the dirt
-  const due=Math.floor((e.unloadT-0.5)/D0.interval)+1;
-  while(e.unloadT>0.5 && e.dropped<Math.min(due, e.troops)){ const k=e.dropped++, bx=e.pos.x-Math.sin(e.facing)*2.9*e.def.scale, bz=e.pos.z-Math.cos(e.facing)*2.9*e.def.scale;
-    const t=spawnEnemy(k===0&&S.stage>=D0.rpgFrom?'rpg':'rifle', bx+(Math.random()-0.5)*1.2, bz+(Math.random()-0.5)*1.2);
-    if(t){ const a=e.facing+Math.PI+(k%2?0.6:-0.6)*(1+k*0.25); t.kbx=Math.sin(a)*7; t.kbz=Math.cos(a)*7; t.fireAt=now+0.9+Math.random()*0.6; }   // they jog out and fan to the flanks
-    burst({x:bx,z:bz}, BIOME.ground, 2, 2, {y:0.4, life:0.6, size:1.0, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.35}); }
-  if(e.dropped>=e.troops && e.unloadT > 0.5+e.troops*D0.interval+0.6){ e.unloading=false; e.unloaded=true; }
-}
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
 export function callFireteam(now){
@@ -109,27 +94,3 @@ export function updateFireteam(dt, now){
     if(a.hitT>0){ a.hitT-=dt; if(a.hitT<=0){ const t=a.g.userData.torso; if(t){ t.material.emissive.setHex(0x000000); t.material.emissiveIntensity=0; } } }
   }
 }
-// ---- Z89 · YOUR CREW: the riflemen riding the tank dismount to fight on foot, then run back and mount up ----
-// TAP = crew on the hull jump down · HOLD = recall everyone on foot (release to stop; latecomers stay on the ground)
-let _crewDownAt=0;
-export function crewPress(){ if(S.mode!=='playing' || _crewDownAt) return; _crewDownAt=performance.now()/1000;
-  if(FT.length){ S.recall=true; S.recallIn=0; radio('Kíp lính: rút về xe — giữ nguyên vị trí cho bọn tôi lên!'); sfx('click'); updateCrewBtn(); } }
-export function crewRelease(){ if(!_crewDownAt) return; const held=performance.now()/1000-_crewDownAt; _crewDownAt=0;
-  const wasRecall=S.recall; S.recall=false; const left=FT.length;
-  if(wasRecall && held>=TROOPS.fireteam.tapMax){ if(S.recallIn) floatText('ĐÃ GOM '+S.recallIn+(left?' · CÒN '+left+' DƯỚI ĐẤT':''), '#9bd14a', S.player.pos, 15); }
-  else if(riders.length) crewDismount();
-  updateCrewBtn(); }
-export function crewToggle(){ crewPress(); crewRelease(); }       // (kept for old callers: behaves like a tap)
-export function crewDismount(){
-  const p=S.player; if(!p || !riders.length) return; const F=TROOPS.fireteam;
-  riders.slice().forEach((r,i)=>{ const wp=r.g.position, a=p.facing+Math.PI*0.5*(i%2?1:-1)+(Math.random()-0.5)*0.4;
-    spawnAlly(wp.x, wp.z, a); const al=FT[FT.length-1]; al.fromTank=true; al.maxHp=F.hp; al.hp=Math.max(8, r.hp/r.maxHp*F.hp); al.jumpT=0.4; al.jy=wp.y;
-    scene.remove(r.g); scene.remove(r.bar); });
-  riders.length=0; radio('Kíp lính: xuống xe — bọn tôi tự lo phạm vi quanh xe!'); sfx('click'); haptic(20); updateCrewBtn();
-}
-export function updateCrewBtn(){ const on=riders.length>0, down=FT.length>0; document.body.classList.toggle('hascrew', on||down);
-  const b=document.getElementById('mCrew'); if(b){ b.classList.toggle('up', down); b.classList.toggle('rec', !!S.recall);
-    const ar=b.querySelector('.mc-ar'), tx=b.querySelector('.mc-tx'); if(ar) ar.textContent = S.recall ? '⇧' : (on ? '⇩' : '⇧'); if(tx) tx.textContent = S.recall ? 'ĐANG GOM' : (down ? 'GIỮ: GOM' : 'LÍNH'); } }
-{ const b=document.getElementById('mCrew'); if(b){ const dn=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); crewPress(); }, up=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); crewRelease(); };
-  b.addEventListener('touchstart', dn, {passive:false}); b.addEventListener('touchend', up, {passive:false}); b.addEventListener('touchcancel', up, {passive:false});
-  b.addEventListener('mousedown', dn); b.addEventListener('mouseup', up); b.addEventListener('mouseleave', up); } }

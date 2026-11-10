@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// world/ground.js — ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached)
 import * as THREE from 'three';
 import { ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
 

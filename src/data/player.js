@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// data/player.js — PLAYER tank handling constants (accel, speed, dash, turn, base combat range)
 
 export const PLAYER = {
   accel: 130, maxSpeed: 26, friction: 9, radius: 1.5,

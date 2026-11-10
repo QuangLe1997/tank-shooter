@@ -1,7 +1,8 @@
-# KIẾN TRÚC MÃ NGUỒN — STEEL SIEGE (Z98)
+# KIẾN TRÚC MÃ NGUỒN — STEEL SIEGE (Z98 · Z103)
 
 > Tài liệu này là **luật** cho mọi thay đổi mã. Đọc §4 (Quy tắc) và §5 (Công thức) trước khi thêm súng / địch / tướng / màn / truyện.
-> Kiểm tra tự động: **`npm test`** (cú pháp mọi module → luật kiến trúc → 1.000+ test dữ liệu & cân bằng).
+> Kiểm tra tự động: **`npm test`** (cú pháp mọi module → luật kiến trúc R1–R7, R12 → kiểm tra phạm vi sâu R8–R11 → 1.000+ test dữ liệu & cân bằng).
+> Lần đầu trên máy mới: **`npm install`** (chỉ cài công cụ kiểm tra `acorn` + `eslint-scope`; game vẫn zero-build, không nạp gì từ `node_modules`).
 
 ---
 
@@ -35,113 +36,129 @@ src/
   boot/               ← script cổ điển chạy trước khi vẽ (viewport, safety net)
   data/               ← REGISTRY thuần: súng, địch, tướng, biome, chữ tiếng Việt, thông số xe
   core/ render/ audio/ world/ tank/ fx/ combat/ actors/ ai/ campaign/ loot/ input/ ui/ game/
+  game/startup.js     ← GỐC KHỞI ĐỘNG (composition root): module hệ thống cuối cùng — nơi DUY NHẤT thực sự bật game
+  dev/                ← móc kiểm thử window._* (Playwright, #dev) — gameplay không đọc; bản phát hành có thể bỏ
 tools/
   verify.mjs          ← npm test: cú pháp + kiến trúc + test
   archcheck.mjs       ← luật kiến trúc R1–R7 (§4)
   where.mjs           ← npm run where -- <tên>: tìm module sở hữu một hàm/biến
+  refactor/           ← công cụ tái cấu trúc an toàn (Z103, cần npm install) — §4.4
+    deepcheck.mjs     ← luật R8–R11 bằng phân tích phạm vi (acorn + eslint-scope)
+    move.mjs          ← npm run move: chuyển khai báo giữa module, tự sửa import + hub
+    fix-imports.mjs   ← npm run imports: tính lại dòng import hub của mọi module
+    modmap.mjs        ← npm run modmap: sinh bảng §2.1 từ dòng đầu mỗi module
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (80 file · ~7.000 dòng)
+### 2.1 Danh mục module (87 module theo thứ tự hub · 7.183 dòng)
 
-| Module | Dòng | Nội dung |
-|---|---:|---|
-| **actors/** — Đơn vị trên sân (địch, lính, drone, Lõi) | | |
-| `src/actors/core.js` | 104 | CORE (base to defend) |
-| `src/actors/damage.js` | 39 | HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away |
-| `src/actors/drone.js` | 117 | SUPPORT DRONE (power-up) |
-| `src/actors/enemies.js` | 149 | floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar m |
-| `src/actors/enemy-missiles.js` | 55 | ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM |
-| `src/actors/infantry.js` | 92 | ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take po |
-| `src/actors/riders.js` | 41 |  |
-| `src/actors/soldiers.js` | 128 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet  |
-| `src/actors/troops.js` | 103 | Z89 · TROOP CARRIERS — enemy APCs dismount squads; your FIRETEAM rides in on a f |
-| `src/actors/vehicles.js` | 133 | Z80 · NEW ENEMY VEHICLES — flame tank, ATGM tank-destroyer, combat-engineer repa |
-| **ai/** — Trí tuệ địch | | |
-| `src/ai/tactics.js` | 171 | Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, |
-| **audio/** — Âm thanh tổng hợp | | |
-| `src/audio/engine-music.js` | 79 | DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing  |
-| `src/audio/synth.js` | 119 | AUDIO (Web Audio synth) |
-| **boot/** — Script khởi động (không phải module) | | |
-| `src/boot/safety.js` | 5 |  |
-| `src/boot/viewport.js` | 30 |  |
-| **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
-| `src/campaign/artillery.js` | 143 | ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arc |
-| `src/campaign/boss.js` | 278 | phase change: invulnerable roar, shockwave shoves you back, escorts roll in, shi |
-| `src/campaign/operations.js` | 126 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter,  |
-| `src/campaign/waves.js` | 97 | WAVES |
-| **combat/** — Vũ khí, đạn, kỹ năng | | |
-| `src/combat/abilities.js` | 17 | ABILITIES (stubs filled in later phases) |
-| `src/combat/flame.js` | 183 | continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not sc |
-| `src/combat/guns.js` | 106 | ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditi |
-| `src/combat/lock-on.js` | 147 | MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target |
-| `src/combat/mastery.js` | 18 | GUN MASTERY: duplicate pickups level a gun up (permanent, per-gun). Boosts dmg / |
-| `src/combat/projectiles.js` | 21 | PROJECTILES |
-| `src/combat/siege-rocket.js` | 127 | SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big  |
-| `src/combat/spells.js` | 81 | SPELLS (one equipped; cast on cooldown) |
-| **core/** — Hằng số runtime, trạng thái, hồ sơ, tiện ích | | |
-| `src/core/config.js` | 25 | CONFIG |
-| `src/core/helpers.js` | 51 | HELPERS |
-| `src/core/profile.js` | 85 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
-| `src/core/state.js` | 18 | STATE |
-| **data/** — DỮ LIỆU THUẦN (registry) — không logic, test được bằng node | | |
-| `src/data/bosses.js` | 31 | BOSS (Z96 rework) |
-| `src/data/enemies.js` | 32 | ENEMIES |
-| `src/data/guns.js` | 25 | GUNS |
-| `src/data/player.js` | 7 |  |
-| `src/data/text-vi.js` | 8 | player-chosen DIFFICULTY (RECRUIT/SOLDIER/VETERAN) — scales enemy HP/damage + re |
-| `src/data/world.js` | 36 | TIME OF DAY: each stage fights at a different hour — morning · harsh noon · gold |
-| **fx/** — Hiệu ứng hình ảnh | | |
-| `src/fx/dying.js` | 16 | KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black sm |
-| `src/fx/explosions.js` | 161 | COMBAT FX / EXPLOSIONS (juiced in P4) |
-| `src/fx/fire-wrecks.js` | 73 | REAL FIRE / FLASH / WRECKS |
-| `src/fx/hud-fx.js` | 42 | FX (rings, float text, screen) |
-| `src/fx/particles.js` | 86 | PARTICLES (juice) |
-| **game/** — Luồng game, người chơi, vòng lặp | | |
-| `src/game/flow.js` | 92 | GAME FLOW |
-| `src/game/intro.js` | 40 | INTRO CINEMATIC (deploy showcase) |
-| `src/game/loop.js` | 208 | MAIN LOOP |
-| `src/game/player-damage.js` | 102 | PLAYER DAMAGE / DEATH |
-| `src/game/score.js` | 15 | SCORE / COMBO |
-| `src/game/update.js` | 173 | UPDATE |
-| `src/hub.js` | 79 | Z98 HUB — the single place that fixes MODULE EVALUATION ORDER (same order the co |
-| **input/** — Bàn phím, chuột, cảm ứng | | |
-| `src/input/input.js` | 135 | INPUT |
-| **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
-| `src/loot/beacons.js` | 31 | LOOT BEACONS (mark crates/tanks that hide a power-up) |
-| `src/loot/powerups.js` | 150 | POWER-UPS (drops) |
-| `src/loot/upgrades.js` | 61 | ROGUELITE UPGRADES (pick 1 of 3 after each boss) |
-| `src/main.js` | 2 | Z98 entry point: evaluating the hub runs every module in order (scene build → wo |
-| **render/** — Three.js renderer + hậu kỳ | | |
-| `src/render/renderer.js` | 110 | THREE SETUP |
-| **tank/** — Mô hình xe tăng, nòng, khiên, rig | | |
-| `src/tank/barrels.js` | 183 | per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung |
-| `src/tank/materials.js` | 115 | PLAYER TANK |
-| `src/tank/model.js` | 167 | shared tank geometries (built once; every tank references them) |
-| `src/tank/rig.js` | 45 | living tank rig: track scroll + wheel spin (skid-steer aware), suspension pitch/ |
-| `src/tank/shield.js` | 55 | premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in  |
-| **ui/** — Giao diện DOM (menu, shop, HUD phụ, gợi ý) | | |
-| `src/ui/alarm.js` | 11 | CORE-UNDER-ATTACK ALARM |
-| `src/ui/briefing.js` | 91 | STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin |
-| `src/ui/icons.js` | 77 | CUSTOM ICON SET (military line-art; no emoji) |
-| `src/ui/menus.js` | 162 | PROFILE UI: nickname · arsenal/loadout · continue · reset |
-| `src/ui/radar.js` | 23 | RADAR / MINIMAP |
-| `src/ui/shop.js` | 275 | SHOP (buy guns + leveled upgrades with coins / diamonds) |
-| `src/ui/tips.js` | 36 | Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES  |
-| **world/** — Bản đồ: địa hình, khí quyển, vật cản, công trình | | |
-| `src/world/atmosphere.js` | 56 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the |
-| `src/world/brick-walls.js` | 130 | Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed |
-| `src/world/bridges.js` | 51 | Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rop |
-| `src/world/camps.js` | 100 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & |
-| `src/world/cover.js` | 99 | TERRAIN BLOCKS (cover) |
-| `src/world/decals.js` | 61 | GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permane |
-| `src/world/decor.js` | 58 | TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) |
-| `src/world/ground.js` | 85 | ARENA |
-| `src/world/heightfield.js` | 93 | HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, pro |
-| `src/world/perimeter.js` | 64 | perimeter: concrete jersey barriers (instanced) topped with concertina razor wir |
-| `src/world/physics.js` | 120 | PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide  |
-| `src/world/props.js` | 140 | BATTLEFIELD PROPS (procedural, merged geometry, cached) |
-| `src/world/towers.js` | 99 | guards spot your tank and fire plunging rifle rounds; searchlights sweep at nigh |
+<!-- MODULES:BEGIN (npm run modmap) -->
+| # | Module | Dòng | Nội dung |
+|---:|---|---:|---|
+| | **data/** — DỮ LIỆU THUẦN (registry) — không logic, test được bằng node | | |
+| 1 | `src/data/world.js` | 37 | TIME OF DAY: each stage fights at a different hour — morning · harsh noon · golden sunset · moonlit night un… |
+| 2 | `src/data/text-vi.js` | 9 | Vietnamese player-facing labels: time of day, difficulty, stage tags, biome & shop-category names |
+| 3 | `src/data/player.js` | 8 | PLAYER tank handling constants (accel, speed, dash, turn, base combat range) |
+| 4 | `src/data/guns.js` | 26 | GUNS registry: damage type, damage, fire rate, magazine, reload, projectile per gun |
+| 5 | `src/data/enemies.js` | 33 | ENEMY_DEFS registry: hp, speed, score, scale, weapon and role per enemy type |
+| 6 | `src/data/bosses.js` | 32 | BOSS (Z96 rework) |
+| | **core/** — Hằng số runtime, trạng thái, hồ sơ, tiện ích | | |
+| 7 | `src/core/config.js` | 26 | runtime constants derived from config + device: arena size, MOBILE, tank scale, player palette, current BIOME |
+| 9 | `src/core/state.js` | 19 | S — the single runtime game state (mode, stage, wave, score, player, spell, recall …) |
+| 73 | `src/core/helpers.js` | 63 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
+| 77 | `src/core/profile.js` | 86 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
+| | **render/** — Three.js renderer + hậu kỳ | | |
+| 10 | `src/render/renderer.js` | 111 | THREE SETUP |
+| | **audio/** — Âm thanh tổng hợp | | |
+| 29 | `src/audio/synth.js` | 224 | AUDIO (Web Audio synth) |
+| 30 | `src/audio/engine-music.js` | 80 | DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coa… |
+| | **world/** — Bản đồ: địa hình, khí quyển, vật cản, công trình | | |
+| 11 | `src/world/atmosphere.js` | 57 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
+| 12 | `src/world/ground.js` | 86 | ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached) |
+| 13 | `src/world/heightfield.js` | 94 | HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits … |
+| 14 | `src/world/decals.js` | 62 | GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a… |
+| 15 | `src/world/props.js` | 141 | BATTLEFIELD PROPS (procedural, merged geometry, cached) |
+| 16 | `src/world/perimeter.js` | 65 | perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets |
+| 17 | `src/world/decor.js` | 59 | TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) |
+| 18 | `src/world/physics.js` | 101 | PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap |
+| 19 | `src/world/biome.js` | 25 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
+| 20 | `src/world/cover.js` | 100 | TERRAIN BLOCKS (cover) |
+| 21 | `src/world/brick-walls.js` | 131 | Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed |
+| 45 | `src/world/towers.js` | 100 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
+| 46 | `src/world/camps.js` | 101 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
+| 47 | `src/world/bridges.js` | 52 | Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrol… |
+| | **tank/** — Mô hình xe tăng, nòng, khiên, rig | | |
+| 22 | `src/tank/materials.js` | 116 | procedural PBR textures for armour: welded panels (albedo/height/normal/rough), tracks, wheels, blob shadow |
+| 23 | `src/tank/model.js` | 168 | shared tank geometries (built once; every tank references them) |
+| 24 | `src/tank/rig.js` | 46 | living tank rig: track scroll + wheel spin (skid-steer aware), suspension pitch/roll, gun elevation, recoil … |
+| 25 | `src/tank/barrels.js` | 184 | per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they e… |
+| 26 | `src/tank/shield.js` | 56 | premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop) |
+| | **fx/** — Hiệu ứng hình ảnh | | |
+| 27 | `src/fx/hud-fx.js` | 43 | FX (rings, float text, screen) |
+| 28 | `src/fx/particles.js` | 87 | PARTICLES (juice) |
+| 32 | `src/fx/fire-wrecks.js` | 74 | REAL FIRE / FLASH / WRECKS |
+| 48 | `src/fx/dying.js` | 17 | KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then … |
+| 51 | `src/fx/explosions.js` | 70 | COMBAT FX / EXPLOSIONS (juiced in P4) |
+| 52 | `src/fx/debris.js` | 96 | Z103 split from fx/explosions.js: flying hull fragments (pooled) and the charred multi-part tank WRECK. |
+| | **combat/** — Vũ khí, đạn, kỹ năng | | |
+| 31 | `src/combat/projectiles.js` | 22 | PROJECTILES |
+| 33 | `src/combat/lock-on.js` | 148 | MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target |
+| 56 | `src/combat/abilities.js` | 19 | ABILITIES (stubs filled in later phases) |
+| 57 | `src/combat/guns.js` | 107 | ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick |
+| 58 | `src/combat/siege-rocket.js` | 128 | SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius |
+| 59 | `src/combat/flame.js` | 184 | continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) |
+| 60 | `src/combat/mastery.js` | 19 | GUN MASTERY: duplicate pickups level a gun up (permanent, per-gun). Boosts dmg / fire-rate / reload. |
+| 61 | `src/combat/spells.js` | 82 | SPELLS (one equipped; cast on cooldown) |
+| | **actors/** — Đơn vị trên sân (địch, lính, drone, Lõi) | | |
+| 34 | `src/actors/core.js` | 105 | CORE (base to defend) |
+| 35 | `src/actors/enemies.js` | 150 | ENEMY tanks: spawn (roster, elites, carrier troops, loot), pooled meshes and floating HP bars |
+| 36 | `src/actors/fireteam.js` | 97 | Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall. |
+| 37 | `src/actors/crew.js` | 31 | Z89/Z100 YOUR CREW command: tap = riders jump down and fight, hold = recall everyone on foot, + the crew but… |
+| 39 | `src/actors/infantry.js` | 93 | Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets… |
+| 40 | `src/actors/enemy-missiles.js` | 56 | ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with sm… |
+| 41 | `src/actors/vehicles.js` | 152 | Z80 enemy VEHICLES: flame tank, ATGM tank-destroyer, engineer repair truck, attack gunship, APC dismount (Z89) |
+| 44 | `src/actors/damage.js` | 40 | HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away |
+| 79 | `src/actors/drone.js` | 118 | SUPPORT DRONE (power-up) |
+| 81 | `src/actors/soldiers.js` | 129 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
+| 82 | `src/actors/riders.js` | 44 | TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100) |
+| | **ai/** — Trí tuệ địch | | |
+| 43 | `src/ai/tactics.js` | 172 | Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall… |
+| | **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
+| 42 | `src/campaign/operations.js` | 127 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
+| 49 | `src/campaign/waves.js` | 98 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
+| 50 | `src/campaign/boss.js` | 279 | BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts |
+| 62 | `src/campaign/artillery.js` | 144 | ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss |
+| | **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
+| 63 | `src/loot/powerups.js` | 151 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
+| 64 | `src/loot/upgrades.js` | 62 | ROGUELITE UPGRADES (pick 1 of 3 after each boss) |
+| 80 | `src/loot/beacons.js` | 32 | LOOT BEACONS (mark crates/tanks that hide a power-up) |
+| | **input/** — Bàn phím, chuột, cảm ứng | | |
+| 55 | `src/input/input.js` | 136 | INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire |
+| | **ui/** — Giao diện DOM (menu, shop, HUD phụ, gợi ý) | | |
+| 8 | `src/ui/icons.js` | 78 | CUSTOM ICON SET (military line-art; no emoji) |
+| 38 | `src/ui/tips.js` | 37 | Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note expla… |
+| 65 | `src/ui/briefing.js` | 92 | STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin |
+| 67 | `src/ui/menus.js` | 29 | title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml). |
+| 68 | `src/ui/terrain-picker.js` | 52 | Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a f… |
+| 69 | `src/ui/guide.js` | 39 | Z103 split from ui/menus.js. FIELD MANUAL — the how-to-play screen (first launch + re-openable) and the firs… |
+| 70 | `src/ui/settings.js` | 23 | Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen. |
+| 71 | `src/ui/loadout.js` | 39 | Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the s… |
+| 72 | `src/ui/shop.js` | 276 | SHOP (buy guns + leveled upgrades with coins / diamonds) |
+| 76 | `src/ui/radar.js` | 24 | RADAR / MINIMAP |
+| 78 | `src/ui/alarm.js` | 12 | CORE-UNDER-ATTACK ALARM |
+| | **game/** — Luồng game, vòng lặp, khởi động | | |
+| 53 | `src/game/score.js` | 16 | SCORE / COMBO |
+| 54 | `src/game/player-damage.js` | 103 | PLAYER DAMAGE / DEATH |
+| 66 | `src/game/flow.js` | 93 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
+| 74 | `src/game/update.js` | 181 | per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers |
+| 75 | `src/game/intro.js` | 41 | INTRO CINEMATIC (deploy showcase) |
+| 83 | `src/game/loop.js` | 87 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
+| 84 | `src/game/viewport.js` | 28 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
+| 85 | `src/game/boot-gate.js` | 60 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
+| 86 | `src/game/startup.js` | 22 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
+| | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
+| 87 | `src/dev/hooks.js` | 41 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
+<!-- MODULES:END -->
 
 ---
 
@@ -150,8 +167,9 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 1. Mỗi module **`export`** mọi khai báo cấp đỉnh của nó và **`import {…} from '../hub.js'`** những tên của module khác mà nó dùng.
 2. `hub.js` là chuỗi `export * from './x.js'` **theo đúng thứ tự mã đã chạy khi còn một file**. Vì mọi module đều import hub (vòng tròn), trình duyệt đánh giá module **theo thứ tự trong hub** → hành vi khởi tạo giữ nguyên 100%.
 3. Hàm được "hoist" khi liên kết module, nên gọi chéo lúc chạy luôn an toàn; chỉ **mã cấp đỉnh** mới phụ thuộc thứ tự — và thứ tự đó nằm ở một chỗ duy nhất.
-4. Binding nhập khẩu là **chỉ đọc**. Biến nào cần đổi từ module khác thì module chủ cung cấp setter `__set_<tên>(v)` (hiện có cho 15 biến: `BIOME`, `boss`, `muted`, `soldierLvl`, `ridersUnlocked`, …). Ghi trực tiếp từ nơi khác → lỗi ngay khi tải trang, không còn lỗi ngầm.
+4. Binding nhập khẩu là **chỉ đọc**. Biến nào cần đổi từ module khác thì module chủ cung cấp setter `__set_<tên>(v)` (ví dụ `BIOME`, `boss`, `muted`, `soldierLvl`, `ridersUnlocked`, `last`, …). Ghi trực tiếp từ nơi khác sẽ ném `TypeError` khi dòng đó chạy — **R10** (`npm test`) bắt trước, không đợi tới lúc chơi.
 5. `data/*` đứng **đầu** hub và không import gì ngoài `config.js` → node đọc được → test được.
+6. **Khai báo ≠ khởi động** (Z103): module hệ thống chỉ *định nghĩa* (hàm, bảng, pool, listener). Việc *bật game* (dựng Lõi, xe người chơi, áp cài đặt đã lưu, mở hộp thoại lần đầu, cổng boot, khung hình đầu) nằm trong **`game/startup.js`**, module hệ thống cuối hub. Muốn đổi cách game khởi động (vd. client mạng, chế độ thi đấu) → sửa ở đây, không rải vào hệ thống.
 
 ---
 
@@ -167,11 +185,23 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | R5 | Module > 700 dòng → cảnh báo, tách tiếp. |
 | R6 | Mọi `data/*` đứng trước module hệ thống đầu tiên trong hub. |
 | R7 | `index.html` không còn `<script type="module">` hay `<style>` inline. |
+| R12 | Dòng đầu mỗi module: `// tầng/file.js — <module này sở hữu gì>` — nguồn của bảng §2.1 (`npm run modmap`). |
+
+**Luật sâu (`tools/refactor/deepcheck.mjs`, phân tích phạm vi — cũng chạy trong `npm test`):**
+
+| Mã | Luật | Lỗi nó chặn |
+|---|---|---|
+| R8 | Dòng `import {…} from hub` **khớp đúng** tên module dùng: thiếu → lỗi; thừa → cảnh báo. Sửa: `npm run imports`. | `ReferenceError` lúc chạy (chỉ lộ khi nhánh code đó chạy) |
+| R9 | Mọi tên tự do phải là export của hub hoặc global trình duyệt/JS đã biết (`GLOBALS` trong `tools/refactor/lib.mjs`). | gõ sai tên, quên export |
+| R10 | **Không gán vào binding đã import** — ghi qua setter `__set_x(v)` của module chủ. | `TypeError: Assignment to constant variable` |
+| R11 | Mã **cấp đỉnh** chỉ đọc `let/const/class` của module **đứng trước** trong hub (hàm thì được — đã hoist). | `ReferenceError` TDZ lúc tải trang → trắng màn hình |
+
+> Ví dụ thật: khi tách `game/loop.js`, R10 bắt được móc `#dev` `tick()` gán `last=…` — sau khi tách sẽ ném `TypeError`; đã sửa bằng `__set_last`. R9 bắt được `RoundedBoxGeometry` / `THREE` / `CONTRACTS` thiếu import ở module mới.
 
 ### 4.2 Quy ước (review bằng mắt)
 1. **Một nguồn sự thật**: số cân bằng → `config.js`; bảng nội dung (súng/địch/tướng/biome) → `src/data/`; chữ hiển thị tiếng Việt → `data/text-vi.js` hoặc trường `vi:` của bản ghi. Không hard-code số rải rác.
 2. **Sở hữu trạng thái**: biến `let` thuộc module khai báo nó. Module khác chỉ đọc; muốn đổi → gọi hàm của module chủ (hoặc setter `__set_x`).
-3. **Hệ thống mới = module mới** trong đúng tầng, thêm **một dòng** vào `hub.js` ở vị trí hợp lý (sau những gì nó cần lúc khởi tạo).
+3. **Hệ thống mới = module mới** trong đúng tầng, thêm **một dòng** vào `hub.js` ở vị trí hợp lý (sau những gì nó cần lúc khởi tạo), dòng đầu file theo R12. Module > ~250 dòng hoặc chứa 2 hệ thống không liên quan → tách bằng `npm run move` (§4.4).
 4. **Không phá tương thích**: đổi tên một export → `npm run where -- tên` để tìm mọi nơi dùng; R4 + lỗi liên kết module của trình duyệt sẽ báo nếu sót.
 5. **Mỗi tính năng một tag Z**: comment `// Z99 …` cạnh mã mới để lần lịch sử (DOCS.md §14).
 6. **Tiếng Việt cho người chơi, tiếng Anh cho mã**: khoá nội bộ (`'DESERT'`, `'cannon'`) giữ tiếng Anh; chỉ chữ hiển thị là tiếng Việt.
@@ -183,6 +213,20 @@ Thêm nội dung mà thiếu trường là **test đỏ ngay**, không đợi t�
 - **Tướng**: một tướng cho mỗi chiến dịch, đủ 3 tên pha, bộ phận đủ trường (tổng < 40% máu), giáp trước ≤ 1 ≤ giáp đuôi, câu khiêu khích.
 - **Biome**: có khí quyển, màu nền, kiểu địa hình, màu gạch, tên tiếng Việt.
 - **Shop / độ khó / giờ trong ngày**: có nhãn tiếng Việt và số cân bằng.
+
+### 4.4 Công cụ tái cấu trúc (Z103) — tách / gộp module không vỡ
+
+| Lệnh | Làm gì |
+|---|---|
+| `npm run move -- --to ui/abc.js f1 f2 x …` | Chuyển **khai báo cấp đỉnh** (hàm, `let`/`const`, class) sang module khác. Comment ngay trên khai báo đi theo; `let x` mang theo setter `__set_x`; import three/config/data cần thiết được chép theo; module mới tự thêm vào hub **ngay sau module nguồn** (đổi bằng `--after tầng/file`). Cuối cùng tự chạy `fix-imports`. |
+| `npm run imports` | Tính lại dòng import hub của **mọi** module + bỏ tên thừa ở import three/config/data. Chạy sau mọi lần di chuyển code bằng tay. |
+| `npm run deep` | Chỉ chạy R8–R11 (nhanh hơn `npm test`). |
+| `npm run modmap` | Sinh lại bảng §2.1 từ dòng đầu mỗi module (R12). |
+| `npm run where -- tên` | Module nào sở hữu một tên. |
+
+**Quy trình tách một module** (đã dùng cho Z103): `npm run move …` → sửa dòng đầu module mới (R12) → **câu lệnh cấp đỉnh** (gắn listener, vòng lặp dựng pool) thì chuyển bằng tay *cùng* khai báo của nó, đặt module mới ngay sau module cũ trong hub để giữ thứ tự → `npm test` (R11 báo nếu thứ tự sai) → chạy thử trình duyệt → `npm run modmap`.
+
+**Giới hạn đã biết**: `move` không chuyển câu lệnh cấp đỉnh (chỉ khai báo) — cố ý, vì thứ tự chạy của chúng là ngữ nghĩa; R11 không thấy được truy cập *gián tiếp* lúc tải (gọi một hàm của module sau, hàm đó lại đọc `const` chưa khởi tạo) → luôn chạy thử trình duyệt sau khi đổi thứ tự hub.
 
 ---
 
@@ -231,13 +275,14 @@ Markup → `index.html`; style → file `css/` phù hợp (thêm cuối file, kh
 ---
 
 ## 7. Quy trình trước khi commit
-1. `npm test` (cú pháp 80+ file · luật kiến trúc · test dữ liệu/cân bằng) — phải xanh.
+0. Máy mới: `npm install` một lần (công cụ kiểm tra; không có thì `npm test` bỏ qua R8–R11 và báo ⚠).
+1. `npm test` (cú pháp 90+ file · luật kiến trúc · luật sâu · test dữ liệu/cân bằng) — phải xanh.
 2. `npm run serve` → mở `http://127.0.0.1:8765` (desktop 1280×800 + mobile 390×844 / 844×390), console không lỗi (bỏ qua favicon 404).
 3. Cập nhật `DOCS.md` (§14 + bảng hệ thống), `LEVELS.md` nếu đổi số, file này nếu đổi cấu trúc/luật.
 4. Chỉ stage đúng từng file đã sửa (file mới trong thư mục mới cũng liệt kê từng file), không stage cả cây.
 
 ## 8. Nợ kỹ thuật còn lại (ưu tiên)
 1. **Giai đoạn B** (sim/view) — xem §6.
-2. Một số module gom nhiều hệ thống do tách theo khu vực liền mạch: `actors/troops.js` (APC địch + tổ bộ binh + kíp lính), `world/physics.js` (va chạm + `applyBiome`), `fx/explosions.js` (nổ + mảnh vỡ + xác xe). Tách tiếp khi sửa tới.
+2. ~~Module gom nhiều hệ thống~~ — **xong ở Z103**: `actors/troops.js` → `actors/fireteam.js` + `actors/crew.js` (+ dismount APC về `actors/vehicles.js`); `world/physics.js` → + `world/biome.js`; `fx/explosions.js` → + `fx/debris.js`; `ui/menus.js` → + `ui/terrain-picker.js` · `ui/guide.js` · `ui/settings.js` · `ui/loadout.js`; `game/loop.js` → + `game/viewport.js` · `game/boot-gate.js` · `game/startup.js` · `dev/hooks.js`. Ứng viên kế tiếp khi sửa tới: `core/helpers.js` (điều khiển + HUD — nên tách `input/drive-input.js` và `ui/hud.js`), `game/update.js` (người chơi + camera + nhãn tiếng Việt).
 3. `config.js` nằm ở gốc (giữ để không vỡ test & tài liệu cũ); về sau chuyển thành `src/data/balance.js`.
 4. Bảng có hàm (`POWERUPS`, `SPELLS`, `UPGRADES`, `TIPS`) chưa vào `data/` vì chứa logic/`MOBILE` — tách phần chữ & số ra data, giữ hàm ở module hệ thống.

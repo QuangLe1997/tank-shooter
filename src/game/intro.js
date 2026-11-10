@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { BIOME, S, TOD_LABEL, WAVE, biomeVi, camOff, camera, doResize, openBriefing, spawnPart } from '../hub.js';
 

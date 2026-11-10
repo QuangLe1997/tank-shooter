@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
 import { CASING, GLOW, GUNS, MOBILE, NOW, S, _RUP, _rdir, _v, addGunXp, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, haptic, heightAt, magCap, muzzleFlash, muzzleLight, nearestTarget, ownGun, playerRange, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, tankRecoil, typeMul, updateGunHUD } from '../hub.js';

@@ -11,7 +11,7 @@
 3. **Commit message** rõ ràng, một dòng tóm tắt + bullet nếu cần. Kết thúc bằng dòng:
    `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
 4. **An toàn git:** chỉ `git add <file cụ thể>` (KHÔNG `git add -A`/`.`); repo dùng remote **HTTPS** (SSH key không chạy trong môi trường agent).
-5. **Verify trước khi push:** (a) **`npm test`** phải PASS (cú pháp mọi module `src/**` + luật kiến trúc `tools/archcheck.mjs` + test dữ liệu/cân bằng `test.js`); (b) đọc **`ARCHITECTURE.md`** trước khi thêm hệ thống/nội dung mới; (c) chạy thử HTTP server + Playwright MCP (desktop 1280×800 + mobile 390×844), không lỗi console (favicon 404 bỏ qua). Rồi mới commit. Commit message kết thúc bằng dòng `Co-Authored-By:` ở §1.3.
+5. **Verify trước khi push:** (a) **`npm test`** phải PASS (cú pháp mọi module `src/**` + luật kiến trúc `tools/archcheck.mjs` + luật phạm vi sâu `tools/refactor/deepcheck.mjs` R8–R11 — cần `npm install` một lần + test dữ liệu/cân bằng `test.js`); (b) đọc **`ARCHITECTURE.md`** trước khi thêm hệ thống/nội dung mới; (c) chạy thử HTTP server + Playwright MCP (desktop 1280×800 + mobile 390×844), không lỗi console (favicon 404 bỏ qua). Rồi mới commit. Commit message kết thúc bằng dòng `Co-Authored-By:` ở §1.3.
 6. **Cập nhật tài liệu** mỗi khi thêm/đổi tính năng: **`DOCS.md`** (§14 lịch sử + bảng hệ thống nếu có cơ chế mới) + **`LEVELS.md`** (nếu đổi số liệu màn/địch/súng/balance). Số cân bằng → sửa ở **`config.js` (`BALANCE`)**, không hardcode rải rác.
 
 ---
@@ -39,7 +39,7 @@ Game phải **có ý nghĩa & cuốn người chơi**:
 
 ## 4. Kỹ thuật
 
-- **Zero-build, ES modules** (không bundler, npm chỉ là task runner): `index.html` chỉ là vỏ markup; CSS ở `css/`; mã game ở `src/` chia theo tầng (`data/ core/ render/ audio/ world/ tank/ fx/ combat/ actors/ ai/ campaign/ loot/ input/ ui/ game/`), thứ tự chạy do **`src/hub.js`** quyết định. Three.js + addons nạp qua `<script type="importmap">` từ CDN jsDelivr. **Luật chi tiết + công thức thêm súng/địch/tướng/màn: `ARCHITECTURE.md`.** Tìm hàm: `npm run where -- <tên>`.
+- **Zero-build, ES modules** (không bundler, npm chỉ là task runner): `index.html` chỉ là vỏ markup; CSS ở `css/`; mã game ở `src/` chia theo tầng (`data/ core/ render/ audio/ world/ tank/ fx/ combat/ actors/ ai/ campaign/ loot/ input/ ui/ game/ dev/`), thứ tự chạy do **`src/hub.js`** quyết định; game được *bật* ở một chỗ duy nhất **`src/game/startup.js`**. Dòng đầu mỗi module = `// tầng/file.js — mô tả` (R12). Three.js + addons nạp qua `<script type="importmap">` từ CDN jsDelivr. **Luật chi tiết + công thức thêm súng/địch/tướng/màn: `ARCHITECTURE.md`.** Tìm hàm: `npm run where -- <tên>`. Tách/chuyển code giữa module: **`npm run move -- --to tầng/file.js tên…`** rồi `npm test` (không cắt dán tay import).
 - Âm thanh: Web Audio API synth (không file ngoài). Nhạc nền có nhịp điệu, hấp dẫn.
 - Lưu tiến trình/kỷ lục bằng `localStorage`.
 - **Tham khảo repo anh em `neon-serpent-3d`** cho các pattern đã chạy tốt: HUD chip, joystick + chống tap-leak, audio resume cho iOS, cosmic/particle FX, fixed-tick + interpolation, gore/death cinematic, evolution/biome.

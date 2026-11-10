@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// core/helpers.js — shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars
 import * as THREE from 'three';
 import { MOBILE, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, move, worldToScreen } from '../hub.js';
 

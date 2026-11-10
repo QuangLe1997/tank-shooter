@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// core/profile.js — PLAYER PROFILE (nickname · arsenal · loadout · campaign save)
 import { BALANCE, SHOP_UP } from '../../config.js';
 import { BIOMES, GUNS, RIDER, S, SOLDIER, floatText, refreshStartUI, spawnDrone } from '../hub.js';
 

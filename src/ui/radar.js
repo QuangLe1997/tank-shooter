@@ -1,4 +1,4 @@
-// AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
+// ui/radar.js — RADAR / MINIMAP
 import { ARENA, OBJ, S, boss, core, enemies, lootBeacons, playerRange } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
