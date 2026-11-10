@@ -270,7 +270,7 @@ export const FIELD = { N: 360, base: 0.92, harmonics: 6, amp: 0.1, bays: [2, 4],
 // Z105 GROUND RELIEF SHADING — craters / mounds read by colour, not just by geometry (phones have no shadows at all).
 //   relief = height − ring average (R cells away): <0 = bowl (crater floor, hollow), >0 = crest (mound top, crater rim)
 export const RELIEF = { R: 3, bowlDark: 0.85, bowlAO: 0.32, crestLift: 0.3, slopeEarth: 0.5, bowlK: 0.45, crestK: 0.4, slopeK: 0.6,
-  bowlTint: [0.66, 0.56, 0.47], earth: [0.5, 0.36, 0.24], selfShadow: true };   // tint multipliers (rgb); earth = raw soil exposed on steep faces
+  bowlTint: [0.66, 0.56, 0.47], earth: [0.5, 0.36, 0.24], selfShadow: false };   // Z107 off: terrain self-shadow shimmered (acne) as the shadow frame followed the tank   // tint multipliers (rgb); earth = raw soil exposed on steep faces
 
 // Z104 INFANTRY LETHALITY — a soldier is soft: ONE round from a tank gun kills him (rifles still trade hits),
 //   and a blast kills outright inside its core (core × radius) and wounds — fading — out to reach × radius.
@@ -424,4 +424,7 @@ export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.
-export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0.3, blastK:0.45 };
+export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0.3, blastK:0 };   // blastK 0 = shells no longer reshape the ground (no mesh rebuilds / popping) — the scorch decal stays
+// Z107 RENDER BUDGET (LOD) — what is worth drawing: only soldiers near the tank cast shadows, tower / wall riflemen out of
+//   range are not drawn at all, and HP bars show once a unit is hurt (elites and commanders always). Checked 4× a second.
+export const LOD = { shadowR: 26, guardR: 70, every: 0.25 };

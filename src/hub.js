@@ -12,6 +12,7 @@ export * from './ui/icons.js';
 export * from './core/state.js';
 export * from './world/field.js';
 export * from './render/renderer.js';
+export * from './render/lod.js';
 export * from './world/atmosphere.js';
 export * from './world/ground.js';
 export * from './world/heightfield.js';

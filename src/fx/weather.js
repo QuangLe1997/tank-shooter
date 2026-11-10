@@ -33,7 +33,7 @@ export function applyWeather(id){
 }
 // the box follows the camera's ground target; particles wrap round it, so the storm never runs out
 export function updateWeather(dt){
-  if(WX.flash>0){ WX.flash=Math.max(0, WX.flash-dt*5); renderer.toneMappingExposure = WX.exp0*(1+WX.flash*1.6); }
+  if(WX.flash>0){ WX.flash=Math.max(0, WX.flash-dt*5); renderer.toneMappingExposure = WX.exp0*(1+WX.flash*0.7); }   // Z107 softer lightning (a full-screen 160% flash read as flicker)
   if(WX.def && WX.def.bolt){ WX.boltT-=dt; if(WX.boltT<=0){ WX.boltT=WX.def.bolt[0]+Math.random()*(WX.def.bolt[1]-WX.def.bolt[0]); WX.flash=0.9+Math.random()*0.6; } }   // lightning lights the whole field for an instant
   const o=WX.obj; if(!o) return; const p=S.player, cx=p?p.pos.x:camera.position.x, cz=p?p.pos.z:camera.position.z;
   o.position.set(cx, 0, cz);

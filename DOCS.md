@@ -267,7 +267,8 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 
 ## 12. Điều khiển (hiện hành)
 - **Z107 LÁI THEO MÀN HÌNH (mặc định mọi thiết bị):** W/A/S/D (hoặc mũi tên) = lên/trái/xuống/phải trên màn hình; xe tự quay đầu về hướng đó (`DRIVE.screenPivot` 4.4 rad/s) rồi chạy, không tự lùi. Cài đặt vẫn chuyển lại kiểu XE TĂNG được.
-- **Z107 NỀN PHẲNG:** `TERRAIN_FLAT` — chỉ 3–5 ngọn đồi lớn thoai thoải, 1–3 hố cũ, nhiễu mặt đất ×0.3, hố do đạn nổ nông hơn (×0.45).
+- **Z107 NỀN PHẲNG & ỔN ĐỊNH:** `TERRAIN_FLAT` — chỉ 3–5 ngọn đồi lớn thoai thoải, 1–3 hố cũ, nhiễu mặt đất ×0.3; đạn nổ KHÔNG còn đào lại nền (`blastK 0`, chỉ để vết cháy) và nền không tự đổ bóng (`RELIEF.selfShadow false`) → hết nhấp nháy / dựng lại lưới địa hình. Chớp trong mưa dịu hơn.
+- **Z107 NGÂN SÁCH VẼ (`render/lod.js`, `LOD`):** chỉ lính trong 26 m quanh xe đổ bóng; lính gác tháp / tường ngoài 70 m không vẽ; thanh máu địch chỉ hiện khi bị thương (tinh nhuệ, tướng luôn hiện).
 - **Z107 BẢN APP MAC:** `desktop/` (Electron, arm64, offline) — `npm run mac` build và cài `~/Applications/Steel Siege.app`; chạy trên Metal, bóng đổ 4096.
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).

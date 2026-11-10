@@ -50,7 +50,7 @@ export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 
   return FIELD.ridgeH*rise*rise*(3-2*rise)*fall*(0.72+0.28*(n||0)); }
 // a blast digs a crater (r = radius, d = depth) and throws up a rim — updates the mesh where it changed
 export function deformCrater(x, z, r, d){
-  d*=TERRAIN_FLAT.blastK;   // Z107 shells scar the ground, they don't turn it into a moonscape
+  d*=TERRAIN_FLAT.blastK; if(!d) return;   // Z107 blastK 0: shells scorch the ground (decal) but never reshape it → no terrain rebuild, no flicker
   const W=HF.W, h=HF.h, R=r*2.0, i0=Math.max(0,Math.floor((x-R+ARENA)/HF.step)), i1=Math.min(HF.N,Math.ceil((x+R+ARENA)/HF.step)), j0=Math.max(0,Math.floor((z-R+ARENA)/HF.step)), j1=Math.min(HF.N,Math.ceil((z+R+ARENA)/HF.step));
   HF.dj0=Math.min(HF.dj0??1e9, j0-1); HF.dj1=Math.max(HF.dj1??-1, j1+1);   // dirty rows for this frame's mesh update
   const L=_lobes();

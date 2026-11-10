@@ -94,7 +94,7 @@ export function collapseTower(t){
   for(const gd of t.guards) dropGuard(t, gd, ax/L, az/L);
 }
 // a guard leaves the tower: shot off it by our infantry (Z104) or thrown when it collapses — he tumbles to the ground (score on landing)
-export function dropGuard(t, gd, ux, uz){ if(!gd.alive) return; gd.alive=false; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
+export function dropGuard(t, gd, ux, uz){ if(!gd.alive) return; gd.alive=false; gd.g.visible=true; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
   t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
   fallers.push({ g:gd.g, t:0, vx:ux*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:uz*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false }); }
 // Z104 one of our riflemen hits a guard up top (x,z = the shooter) — he falls off the platform
