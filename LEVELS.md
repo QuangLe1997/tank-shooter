@@ -161,6 +161,16 @@ Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3
 
 ---
 
+## 3d. Trí tuệ địch theo màn (Z95)
+IQ = 0,2 + 0,16·(màn−1) + độ khó (Tân binh −0,15 · Chiến sĩ 0 · Lão luyện +0,18) + 0,12·vòng NG+, tối đa 1.
+| Màn | IQ (Chiến sĩ) | Hành vi mở khoá |
+|---|---|---|
+| 1 | 0,20 | lao thẳng, ngắm đón nhẹ |
+| 2 | 0,36 | vu hồi (≈14% đội hình), né khi bị ngắm, rút lui khi máu thấp |
+| 3 | 0,52 | nấp sau vật cản, dồn lên khi bạn < 35% máu, vòng vây ~44% vòng tròn |
+| 4 | 0,68 | vu hồi ≈27%, vòng vây ~58% |
+| 5 | 0,84 | vu hồi ≈34%, vòng vây ~71%, ngắm đón 76% |
+
 ## 3a. Pháo kích khoá mục tiêu (ARTILLERY — từ màn 2, Z29)
 
 Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn pháo kích" chạy theo nhịp **nghỉ → cảnh báo → dồn dập**:

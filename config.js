@@ -278,3 +278,20 @@ export const LOOT = {
   rarity:{ rareShare: 0.55, epicShare: 0.5 },                                // a RARE source rolls rare 55% of the time, an EPIC source epic 50%
   cache: { perStage: [2, 2, 3, 3, 3], hp: 70 },                              // guarded supply caches beside camps & towers (always rare+)
 };
+
+// TACTICS (Z95) — enemy armour fights as a unit. A director re-reads the battle twice a second and hands every engaged tank a ROLE.
+// IQ (0..1) = base + perStage·(stage−1) + difficulty + NG+ loop — it decides how many tanks flank, how cleanly they encircle,
+// whether they use cover, dodge your aim, fall back to their engineers, lead their shots and press when you are hurt.
+export const TACTICS = {
+  iq: { base: 0.2, perStage: 0.16, recruit: -0.15, soldier: 0, veteran: 0.18, loop: 0.12, cap: 1 },
+  tick: 0.45,               // seconds between director passes
+  engage: 40,               // tanks inside this radius of the player join the plan
+  flankShare: 0.4,          // at IQ 1, up to 40% of the engaged tanks are sent round your rear
+  flankFrom: 0.3,           // below this IQ nobody flanks (stage 1 recruits just charge)
+  encircle: 0.85,           // at IQ 1 the ring closes to ~85% of a full circle around you
+  coverFrom: 0.45,          // IQ needed before tanks park behind walls/rocks
+  retreatHp: 0.3, retreatFrom: 0.35,   // badly hurt tanks fall back (toward an engineer if one lives)
+  dodge: { from: 0.35, cd: 2.2, speed: 9, time: 0.45 },   // sidestep when your gun lines up on them
+  press: { hp: 0.35, keep: 0.6, from: 0.5 },              // you are below 35% HP → the line closes to 60% range
+  leadMax: 0.9,             // shot lead at IQ 1 (fraction of a perfect intercept)
+};

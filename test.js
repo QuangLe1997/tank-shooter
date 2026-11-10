@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS } from './config.js';
 
 const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
 
@@ -308,6 +308,20 @@ for(const [i,op] of OPERATIONS.entries()){ ok(typeof op.story==='string' && op.s
 for(const k of Object.keys(OBJECTIVES)) ok(VI.test(OBJECTIVES[k].vi||'') && VI.test(OBJECTIVES[k].effectVi||''), `objective ${k} has a Vietnamese name + effect`);
 for(const c of CONTRACTS) ok(VI.test(c.name+c.desc), `contract ${c.id} is in Vietnamese`);
 for(const u of SHOP_UP) ok(VI.test(u.name+u.per) || /^[A-Z ]+$/.test(u.name)===false, `shop item ${u.key} is in Vietnamese`);
+
+grp('TACTICS (Z95) — enemy IQ climbs with stage & difficulty');
+{ const T=TACTICS, iq=(st,d,l)=>Math.max(0,Math.min(T.iq.cap, T.iq.base+T.iq.perStage*(st-1)+(T.iq[d]||0)+(l||0)*T.iq.loop));
+  ok(iq(1,'recruit') < T.flankFrom && iq(1,'soldier') < T.flankFrom, 'stage 1 enemies never flank (they just charge)');
+  ok(iq(1,'soldier') < T.coverFrom, 'stage 1 enemies do not use cover');
+  ok(iq(3,'soldier') >= T.flankFrom && iq(3,'soldier') < iq(5,'soldier'), 'flanking appears mid-campaign and keeps sharpening');
+  ok(iq(5,'veteran') >= 0.95, 'stage 5 veterans fight at (near) full IQ');
+  ok(iq(5,'recruit') < iq(5,'veteran'), 'difficulty changes how smart they are, not just HP');
+  for(let st=1;st<5;st++) ok(iq(st+1,'soldier') > iq(st,'soldier') || iq(st,'soldier')===T.iq.cap, `IQ never drops from stage ${st} to ${st+1}`);
+  ok(T.flankShare>0 && T.flankShare<=0.5, 'at most half the line flanks — someone still holds your front');
+  ok(T.retreatHp>0 && T.retreatHp<0.5, 'only badly hurt tanks fall back');
+  ok(T.press.keep<1 && T.press.keep>0.3, 'pressing closes the range but does not ram into you');
+  ok(T.dodge.cd>=1 && T.dodge.time<1, 'dodges are short and on a cooldown (still hittable)');
+  ok(T.leadMax>0 && T.leadMax<=1, 'shot lead never exceeds a perfect intercept'); }
 
 grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
