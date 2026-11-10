@@ -711,6 +711,7 @@
   body.touch .chip,body.touch .mbtn,body.touch .camBtn,body.touch #radar,body.touch #autoBtn,body.touch #mPause,
   body.touch .overlay,body.touch .shop-tab,body.touch .shop-arrow,body.touch .shop-info,body.touch .si-panel{
     backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
+  body.touch *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}   /* Z92: no blur anywhere on phones (each one re-blurs the moving canvas every frame) */
   body.touch .chip{background:linear-gradient(180deg,rgba(16,24,10,.6),rgba(6,12,5,.7));}    /* readable again without the blur */
   body.touch #radar{background:linear-gradient(180deg,rgba(14,20,10,.7),rgba(8,13,6,.78));}
   body.touch .mbtn{background:linear-gradient(180deg,rgba(22,30,14,.6),rgba(10,16,8,.68));}
@@ -3092,6 +3093,7 @@ function smokeTex(){   // soft, billowy cloud puff (overlapping soft blobs) — 
 const SMOKE = smokeTex();
 // ---- GPU-INSTANCED particles: every glow/fire/spark in ONE draw call + every smoke/dust puff in ONE more (was one Sprite draw call EACH) ----
 const PART_MAX = MOBILE ? 900 : 1800;
+const PERF = { parts:1, fc:0, slowT:0, fastT:0 };   // Z92 runtime load governor (particles thin out, HUD/cloth update less often when frames run long)
 function makePartLayer(map, additive, order){
   const base=new THREE.PlaneGeometry(1,1), g=new THREE.InstancedBufferGeometry();
   g.index=base.index; g.setAttribute('position', base.attributes.position); g.setAttribute('uv', base.attributes.uv);
@@ -3110,12 +3112,16 @@ function makePartLayer(map, additive, order){
 }
 const PL_SMOKE = makePartLayer(SMOKE, false, 5), PL_GLOW = makePartLayer(GLOW, true, 6);
 const parts=[];
+const PPOOL=[];                                                                       // Z92 recycled particle records → no per-spark allocations (mobile GC hitches)
 function spawnPart(x,y,z,vx,vy,vz,o={}){
-  if(parts.length >= PART_MAX*1.7) return;                                             // hard budget (oldest keep living; new spawns drop)
-  const s=o.size||1, c=new THREE.Color(o.color ?? 0xffd27a);
-  parts.push({ x,y,z, vx,vy,vz, life:o.life||0.6, max:o.life||0.6, size:s, grow:o.grow||0,
-    grav:o.grav??-9, drag:o.drag??2.5, smoke:!!o.smoke, tex:o.tex||null, op:o.op??1, rot:(o.smoke||o.tex)?Math.random()*6.283:0, spin:o.smoke?(Math.random()-0.5)*0.8:0, col:c,
-    c0:(o.color2!=null?c.clone():null), c1:(o.color2!=null?new THREE.Color(o.color2):null) });   // optional colour-over-life (e.g. fire cooling white→red)
+  if(parts.length >= PART_MAX*1.7*PERF.parts) return;                                  // hard budget (oldest keep living; new spawns drop) — shrinks when the device struggles
+  if(PERF.parts<1 && (o.smoke||o.tex==='flash') && Math.random()>PERF.parts) return;  // under load: thin out the cheap-to-lose layers first
+  const P=PPOOL.pop()||{ col:new THREE.Color(), _c0:new THREE.Color(), _c1:new THREE.Color() };
+  P.x=x; P.y=y; P.z=z; P.vx=vx; P.vy=vy; P.vz=vz; P.life=P.max=o.life||0.6; P.size=o.size||1; P.grow=o.grow||0;
+  P.grav=o.grav??-9; P.drag=o.drag??2.5; P.smoke=!!o.smoke; P.tex=o.tex||null; P.op=o.op??1; P.rot=(o.smoke||o.tex)?Math.random()*6.283:0; P.spin=o.smoke?(Math.random()-0.5)*0.8:0;
+  P.col.setHex(o.color ?? 0xffd27a);
+  if(o.color2!=null){ P.c0=P._c0.copy(P.col); P.c1=P._c1.setHex(o.color2); } else { P.c0=null; P.c1=null; }   // optional colour-over-life (e.g. fire cooling white→red)
+  parts.push(P);
 }
 function burst(pos, color, count, spread, o={}){
   for(let i=0;i<count;i++){
@@ -3127,7 +3133,7 @@ function burst(pos, color, count, spread, o={}){
 function updateParticles(dt){
   for(let i=parts.length-1;i>=0;i--){
     const p=parts[i]; p.life-=dt;
-    if(p.life<=0){ parts[i]=parts[parts.length-1]; parts.pop(); continue; }            // swap-remove (no O(n) splice)
+    if(p.life<=0){ parts[i]=parts[parts.length-1]; parts.pop(); PPOOL.push(p); continue; }   // swap-remove (no O(n) splice) + recycle
     p.vx*=Math.max(0,1-p.drag*dt); p.vz*=Math.max(0,1-p.drag*dt); p.vy+=p.grav*dt;
     p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt; p.rot+=p.spin*dt;
     { const gy=heightAt(p.x,p.z)+0.1; if(p.y<gy){ p.y=gy; p.vy*=-0.3; p.vx*=0.6; p.vz*=0.6; } }
@@ -4315,6 +4321,7 @@ function applyScriptedWave(now){
   else if(ev==='airraid'){ q.splice(0,0,'gunship'); q.splice(3,0,'gunship'); if(S.stage>=5) q.push('gunship'); }
 }
 
+const _eTo=new THREE.Vector3();
 function updateEnemies(dt, now){
   const p=S.player;
   const slow = now < S.enemySlowUntil ? 0.35 : 1;     // Time Warp spell
@@ -4339,7 +4346,7 @@ function updateEnemies(dt, now){
     const edt = dt * slow;   // movement slow factor (Time Warp); doesn't affect shared dt
     // BOMBER: kamikaze — charges the player and self-destructs (never shoots). Clearly telegraphed so it reads as a THREAT.
     if(e.def.bomber){
-      const to=new THREE.Vector3().subVectors(p.pos,e.pos); const d=to.length()||1; to.divideScalar(d);
+      const to=_eTo.subVectors(p.pos,e.pos); const d=to.length()||1; to.divideScalar(d);
       e.pos.addScaledVector(to, e.def.speed*edt);
       e.mesh.position.set(e.pos.x,0,e.pos.z); e.facing=Math.atan2(to.x,to.z); e.mesh.rotation.y=e.facing;
       // menacing lit-fuse telegraph: steady red glow + sparks + warning ring that quickens as it closes
@@ -4366,7 +4373,7 @@ function updateEnemies(dt, now){
     }
     let keep=def.keep;
     if(def.engineer){ e.patient=engineerPatient(e); if(e.patient){ target=e.patient.pos; keep=7; } }   // the engineer drives to whoever needs welding
-    const to = new THREE.Vector3().subVectors(target, e.pos); const d=to.length()||1; to.divideScalar(d);
+    const to = _eTo.subVectors(target, e.pos); const d=to.length()||1; to.divideScalar(d);
     // movement
     let desire;
     if(e.type==='scout'){ desire = e.def.speed; }
@@ -7499,7 +7506,7 @@ function loop(nowMs){
     S.timeNow = now;
     const gdt = dt * S.timeScale;       // slow-mo on boss kill
     updateReload(now);              // complete reload on time + drive the countdown dial
-    updateGunStatus(now);           // per-frame ✓/reloading badges on the inventory
+    if(!MOBILE || (PERF.fc&3)===0) updateGunStatus(now);   // ✓/reloading badges (every 4th frame on phones)
     updatePlayer(gdt, now);
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
@@ -7526,7 +7533,7 @@ function loop(nowMs){
     updateCamera(dt, now);
     updateWorldBars();
     updateAbilityUI(now);
-    drawRadar();
+    if(!MOBILE || PERF.fc%3===0) drawRadar();   // Z92 the 2D radar is a canvas repaint → every 3rd frame on phones
     // combo timeout
     if(S.combo>0 && now>S.comboUntil && now>bannerTimer){ S.combo=0; document.getElementById('combo').style.opacity='0'; }
     if(bannerTimer>0 && now>bannerTimer && S.combo===0){ document.getElementById('combo').style.opacity='0'; bannerTimer=0; }
@@ -7541,25 +7548,28 @@ function loop(nowMs){
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   if(HF.dirty){ HF.dirty=false; syncTerrainMesh(HF.dj0, HF.dj1); HF.dj0=HF.dj1=undefined; }   // apply this frame's new craters (one rebuild max)
   updateEngine(dt);
-  updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); updateFlags(now); updateDying(dt); gradePass.uniforms.time.value = now%100;
+  updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); updateDying(dt); PERF.fc++; gradePass.uniforms.time.value = now%100;
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
-  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?0.75:1;
-    if(fps<45 && S.dpr>dprFloor){ S.dpr=Math.max(dprFloor,S.dpr-0.25); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }
-    else if(fps<34 && bloom.enabled && MOBILE){ bloom.enabled=false; } }   // still heavy at the lowest resolution → drop the glow, keep the frames
+  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?0.7:1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
+    if(S.mode==='playing'){                                                   // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
+      if(fps<47){ PERF.fastT=0; PERF.slowT++;
+        if(S.dpr>dprFloor){ S.dpr=Math.max(dprFloor,S.dpr-(fps<34?0.25:0.12)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }
+        PERF.parts=Math.max(0.45, PERF.parts-(fps<34?0.2:0.1));
+        if(MOBILE && fps<38 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
+      else if(fps>57){ PERF.slowT=0; PERF.fastT++;
+        if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); if(S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); } } } } }
 }
 let _fpsAcc=0, _fpsN=0;
+let _abC=null;
 function updateAbilityUI(now){
   const p=S.player; if(!p) return;
-  const dc = Math.max(0, (p.dashCdUntil - now)/PLAYER.dashCd);
-  const el = document.getElementById('cool-dash'); if(el) el.style.transform = `scaleY(${dc})`;
-  document.getElementById('ab-dash')?.classList.toggle('ready', dc<=0);
-  const spCd = SPELLS[S.spell].cd * p.spellCdMul;
-  const sc = Math.max(0, (p.spellCdUntil - now)/spCd);
-  const se = document.getElementById('cool-spell'); if(se) se.style.transform = `scaleY(${sc})`;
-  const sm = document.getElementById('cool-mspell'); if(sm) sm.style.transform = `scaleY(${sc})`;
-  document.getElementById('ab-spell')?.classList.toggle('ready', sc<=0);
+  const dc = Math.round(Math.max(0, (p.dashCdUntil - now)/PLAYER.dashCd)*50)/50;      // Z92 quantised + cached → no DOM write unless the dial actually moves
+  const spCd = SPELLS[S.spell].cd * p.spellCdMul, sc = Math.round(Math.max(0, (p.spellCdUntil - now)/spCd)*50)/50;
+  const C=_abC||(_abC={ d:document.getElementById('cool-dash'), ad:document.getElementById('ab-dash'), s:document.getElementById('cool-spell'), m:document.getElementById('cool-mspell'), as:document.getElementById('ab-spell'), dc:-1, sc:-1 });
+  if(dc!==C.dc){ C.dc=dc; if(C.d) C.d.style.transform='scaleY('+dc+')'; C.ad?.classList.toggle('ready', dc<=0); }
+  if(sc!==C.sc){ C.sc=sc; const t='scaleY('+sc+')'; if(C.s) C.s.style.transform=t; if(C.m) C.m.style.transform=t; C.as?.classList.toggle('ready', sc<=0); }
 }
 
 function doResize(force){
