@@ -1,7 +1,7 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
 import * as THREE from 'three';
 import { DRIVE, LOOT } from '../../config.js';
-import { ARENA, BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, animateTank, autoFire, boss, bumpAt, camera, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, nearestTarget, playerRange, rangeRing, solidTank, spawnPart } from '../hub.js';
+import { ARENA, BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, animateTank, autoFire, boss, bumpAt, camera, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, nearestTarget, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -41,7 +41,8 @@ export function updatePlayer(dt, now){
     const over = now < p.overUntil;
     const spd = now < bu.speed ? LOOT.speed.top : 1;     // ENGINE OVERDRIVE pickup (Z93)
     const heavy = 1 - Math.min(0.22, magCap(equippedGun())/450);                 // heavier magazine → a bit slower (ammo↔speed tradeoff)
-    const dir = getMoveDir(), inp = Math.min(1, dir.length());
+    const tankCtl = controlScheme()==='tank', TI = tankCtl ? tankInput() : null;
+    const dir = tankCtl ? null : getMoveDir(), inp = tankCtl ? Math.max(Math.abs(TI.thr), Math.abs(TI.turn)) : Math.min(1, dir.length());
     const gx=(heightAt(p.pos.x+1,p.pos.z)-heightAt(p.pos.x-1,p.pos.z))/2, gz=(heightAt(p.pos.x,p.pos.z+1)-heightAt(p.pos.x,p.pos.z-1))/2;
     const gr = gx*fs0*Math.sign(vf||1)+gz*fc0*Math.sign(vf||1);                    // >0 climbing, <0 descending (along travel)
     const slopeK = Math.max(0.45, Math.min(1.35, 1 - gr*1.3)); p.grade = inp>0.1 ? gr : 0;
@@ -49,15 +50,21 @@ export function updatePlayer(dt, now){
     const maxSp = PLAYER.maxSpeed*mob*heavy*Math.max(0.7,slopeK);
     const tLv = now < bu.turbo ? (p.buffLv.turbo||1) : 0; p.turboLv=tLv;
     const pow = mob*(over?1.04:1)*heavy*slopeK*(1+tLv*LOOT.turbo.accel)*(p.accelMul||1);
-    if(inp > 0.1){
+    const turnK = DRIVE.pivot + (DRIVE.turnAtSpeed - DRIVE.pivot)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed);
+    let thr = 0;
+    if(tankCtl){                                                                  // Z99 TANK CONTROLS: W/S = throttle along the hull, A/D = rotate the hull
+      if(TI.turn) p.facing = wrapAngle(p.facing + TI.turn*turnK*dt);
+      thr = TI.thr; p.rev = thr < 0; p.throttle = thr || TI.turn*0.25;             // pivoting still loads the engine a little
+    } else if(inp > 0.1){                                                         // SCREEN CONTROLS: push where you want to go; the hull turns to it
       const want = Math.atan2(dir.x, dir.z); let df = wrapAngle(want - p.facing);
-      if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && vf < 6)) p.rev = true; else p.rev = false;   // pull the stick back → back up (hysteresis)
+      if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && Math.abs(vf) < 3)) p.rev = true; else p.rev = false;   // pull back from (near) standstill → back up; moving → swing round (hysteresis)
       if(p.rev) df = wrapAngle(want + Math.PI - p.facing);
-      const turnK = DRIVE.pivot + (DRIVE.turnAtSpeed - DRIVE.pivot)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed);
       const step = Math.sign(df)*Math.min(Math.abs(df), turnK*dt); p.facing = wrapAngle(p.facing + step);
       const align = Math.max(0, Math.cos(df));                                    // pivot first: little drive until the hull lines up
-      const thr = inp * (0.12 + 0.88*align*align) * (p.rev?-1:1); p.throttle = thr;
-      const top = p.rev ? maxSp*DRIVE.reverseMul : maxSp, v = Math.abs(vf);
+      thr = inp * (0.12 + 0.88*align*align) * (p.rev?-1:1); p.throttle = thr;
+    }
+    if(Math.abs(thr) > 0.05){
+      const top = thr<0 ? maxSp*DRIVE.reverseMul : maxSp, v = Math.abs(vf);
       if(vf*thr < -0.5){ vf += Math.sign(thr)*Math.min(Math.abs(vf), DRIVE.brake*dt); }   // pushing against the motion = brakes
       else { const l0 = DRIVE.launch + (1-DRIVE.launch)*Math.min(1, tLv*LOOT.turbo.launch), launch = l0 + (1-l0)*Math.min(1, v/DRIVE.launchV);   // heavy launch → builds with speed (TURBO fills the gap)
         const fall = Math.max(0, 1 - (v/top)*(v/top));                                   // power fades toward top speed

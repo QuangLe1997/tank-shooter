@@ -1,13 +1,14 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
-import { PLAYER, S, getMoveDir, sfx, spawnPart } from '../hub.js';
+import { PLAYER, S, controlScheme, getMoveDir, sfx, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- ABILITIES (stubs filled in later phases) -----------------------------
 export function tryDash(){
   if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
   if(now < p.dashCdUntil) return;
   // dash along current move intent, else along facing
-  const dir = getMoveDir();
-  if(dir.lengthSq()<0.01){ dir.set(Math.sin(p.facing),0,Math.cos(p.facing)); }
+  let dir;
+  if(controlScheme()==='tank'){ const back = tankInput().thr < -0.1 ? -1 : 1; dir=getMoveDir().set(Math.sin(p.facing)*back,0,Math.cos(p.facing)*back); }   // Z99: dash along the hull (back if reversing)
+  else { dir = getMoveDir(); if(dir.lengthSq()<0.01){ dir.set(Math.sin(p.facing),0,Math.cos(p.facing)); } }
   p.dashDir.copy(dir).normalize();
   p.dashUntil = now + PLAYER.dashTime;
   p.dashCdUntil = now + PLAYER.dashCd * p.dashCdMul;

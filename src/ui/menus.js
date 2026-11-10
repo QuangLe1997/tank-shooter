@@ -1,5 +1,5 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
-import { BIOMES, DIFF_META, GUNS, LOADOUT_MAX, MOBILE, PROFILE, S, audio, biomeVi, hide, iconEl, queueResize, refreshWallet, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, svgMarkup, toggleFullscreen, updateGunHUD } from '../hub.js';
+import { BIOMES, DIFF_META, GUNS, LOADOUT_MAX, MOBILE, PROFILE, S, audio, biomeVi, controlScheme, hide, iconEl, queueResize, refreshWallet, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, svgMarkup, toggleFullscreen, updateGunHUD } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -79,7 +79,7 @@ export function buildGuide(){
   const m=MOBILE;
   const rows=[
     ['bunker','NHIỆM VỤ','Bảo vệ LÕI qua 5 đợt tấn công rồi hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để nhận thưởng + 💎.'],
-    ['tank', m?'LÁI XE':'LÁI & NGẮM', m?'Cần trái để lái — tháp pháo tự ngắm & tự bắn kẻ địch gần nhất trong tầm.':'WASD để lái · chuột để ngắm · nhấn hoặc giữ để BẮN.'],
+    ['tank', m?'LÁI XE':'LÁI & NGẮM', m?'Cần trái để lái — tháp pháo tự ngắm & tự bắn kẻ địch gần nhất trong tầm.':'W tiến · S lùi · A/D quay thân xe (như xe tăng thật) · chuột ngắm tháp pháo · giữ chuột để BẮN. Đổi sang lái theo hướng màn hình trong CÀI ĐẶT.'],
     ['dash','LƯỚT & KỸ NĂNG', m?'LƯỚT = né nhanh, bất tử chốc lát · KỸ NĂNG = dùng kỹ năng đang chọn · chạm › để đổi kỹ năng.':'CÁCH = lướt (bất tử chốc lát) · E = dùng kỹ năng · Q = đổi kỹ năng.'],
     ['rifle','KHO SÚNG','Nhặt súng từ đồ rơi & CỬA HÀNG. Mang tối đa 5 khẩu và đổi giữa trận — mỗi khẩu một cảm giác & màu đạn riêng.'],
     ['coin','KINH TẾ & NÂNG CẤP','Kiếm xu + 💎 kim cương. Tiêu ở CỬA HÀNG để nâng cấp vĩnh viễn và mua đơn vị hỗ trợ. Súng trùng sẽ lên cấp thông thạo.'],
@@ -115,6 +115,9 @@ export function buildSettings(){
     D.appendChild(_segChip(meta.label, PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); buildSettings(); sfx('click'); }, meta.tag)); } }
   const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('BẬT',PROFILE.sound,()=>_setSnd(true))); So.appendChild(_segChip('TẮT',!PROFILE.sound,()=>_setSnd(false))); }
   const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('BẬT',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('TẮT',!PROFILE.music,()=>_setMus(false))); }
+  const Ct=document.getElementById('setCtrl'); if(Ct){ Ct.innerHTML=''; const cur=controlScheme();   // Z99 driving scheme
+    Ct.appendChild(_segChip('XE TĂNG',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
+    Ct.appendChild(_segChip('THEO MÀN HÌNH',cur==='screen',()=>{ PROFILE.ctrl='screen'; saveProfile(); buildSettings(); sfx('click'); }, 'đẩy về đâu xe đi về đó')); }
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 export function _setSnd(on){ PROFILE.sound=on; saveProfile(); audio(); setMuted(!on); buildSettings(); }

@@ -47,10 +47,10 @@
 ## 1c. Lái xe, va chạm & địa vật (Z85–Z86)
 | Thông số (`DRIVE`, config.js) | Giá trị | Ý nghĩa |
 |---|---|---|
-| `accel` / `launch` / `launchV` | 34 / 0,32 / 11 | từ đứng yên chỉ 32% lực, đủ lực ở 11 u/s → 0→90% tốc tối đa ≈1,6 s |
+| `accel` / `launch` / `launchV` | 23 / 0,32 / 11 | từ đứng yên chỉ 32% lực, đủ lực ở 11 u/s → 0→90% tốc tối đa ≈2,4 s (Z99) |
 | `coast` / `brake` | 14 / 44 | nhả ga trôi ~1,8 s; kéo ngược = phanh |
 | `reverseMul` / `reverseAngle` | 0,5 / 2,25 rad | cần kéo ra sau thân ≥129° → lùi 50% tốc |
-| `pivot` / `turnAtSpeed` | 3,3 / 1,9 rad/s | xoay tại chỗ nhanh, chạy nhanh ôm cua rộng |
+| `pivot` / `turnAtSpeed` | 2,6 / 1,55 rad/s | xoay tại chỗ (A/D), chạy nhanh ôm cua rộng (Z99) |
 | `ram.minImpact` | 7 u/s | dưới mức này va chạm không mất máu |
 | `ram.toEnemy` / `toPlayer` / `toBoss` | 1,15 / 0,42 / 0,7 | × (tốc áp sát − 7) × 2·m_bên_kia/(m₁+m₂) × (1 − 0,5·phần chủ động), địch/boss +22%/màn |
 | `wallBreak` | 14 u/s | húc tường gạch ≥ mức này → đổ; chậm hơn chỉ sứt (2,2 × tốc) |

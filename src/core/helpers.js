@@ -1,6 +1,6 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
 import * as THREE from 'three';
-import { MOBILE, S, STICK_R, TANK_SCALE, _camUP, core, move, worldToScreen } from '../hub.js';
+import { MOBILE, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, move, worldToScreen } from '../hub.js';
 
 // ----------------------------- HELPERS -----------------------------
 export function getMoveDir(){
@@ -14,8 +14,19 @@ export function getMoveDir(){
     if(S.keys['a']||S.keys['arrowleft']) d.x-=1;
     if(S.keys['d']||S.keys['arrowright']) d.x+=1;
     if(d.lengthSq()>1) d.normalize();
+    if(S.camYaw && d.lengthSq()>0) d.applyAxisAngle(_camUP, S.camYaw);   // Z99 fix: keys stay screen-relative when the view is rotated
   }
   return d;
+}
+// Z99 CONTROL SCHEMES — 'tank': W/S throttle along the hull, A/D rotate the hull (the driver's left/right), mouse aims the turret.
+//                       'screen': push the direction you want to go on screen; the hull turns to it (joystick default).
+export function controlScheme(){ const c=PROFILE.ctrl; return c==='tank'||c==='screen' ? c : (MOBILE ? 'screen' : 'tank'); }
+export function tankInput(){                                    // → { thr: -1..1 (forward +), turn: -1..1 (driver's LEFT +) }
+  let thr=0, turn=0;
+  if(MOBILE){ if(move.id!==null){ const L=Math.max(STICK_R*0.15, Math.hypot(move.x,move.y)); thr=Math.max(-1,Math.min(1,-move.y/STICK_R)); turn=Math.max(-1,Math.min(1,-move.x/STICK_R)); if(Math.abs(thr)<0.12) thr=0; if(Math.abs(turn)<0.12) turn=0; } }
+  else { if(S.keys['w']||S.keys['arrowup']) thr+=1; if(S.keys['s']||S.keys['arrowdown']) thr-=1;
+    if(S.keys['a']||S.keys['arrowleft']) turn+=1; if(S.keys['d']||S.keys['arrowright']) turn-=1; }
+  return { thr, turn };
 }
 export function updateHUD(){
   document.getElementById('ui-score').textContent = S.score.toLocaleString();

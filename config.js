@@ -238,15 +238,15 @@ export const UP_BLURB = {
 // DRIVING (Z85) — the player's tank is a 50-tonne machine: hull-steered tracks, a heavy launch, momentum that carries,
 // and collisions that hurt by mass × closing speed. Speeds in world units/s (top speed = PLAYER.maxSpeed 26).
 export const DRIVE = {
-  accel: 34,          // peak tractive acceleration once rolling
+  accel: 23,          // peak tractive acceleration once rolling (Z99: calmer — was 34, felt like a sports car)
   launch: 0.32,       // share of that available from a dead stop (low gear, 50 t of inertia) → it CREEPS off the line
   launchV: 11,        // speed by which full power has come in
   reverseMul: 0.5,    // reverse top speed / accel vs forward
   reverseAngle: 2.25, // push the stick this far (rad) behind the hull → back up instead of pivoting round
   coast: 14,          // rolling resistance with the throttle off (it rolls on, then settles)
   brake: 44,          // braking against the motion
-  pivot: 3.3,         // hull turn rate standing still (neutral steer, rad/s)
-  turnAtSpeed: 1.9,   // hull turn rate at top speed — wide arcs when flat out
+  pivot: 2.6,         // hull turn rate standing still (neutral steer, rad/s) — Z99: steadier for A/D steering
+  turnAtSpeed: 1.55,  // hull turn rate at top speed — wide arcs when flat out
   grip: 10,           // sideways track grip — kills lateral slide
   ram: { minImpact: 7, toEnemy: 1.15, toPlayer: 0.42, toBoss: 0.7, aggressor: 0.5, perStage: 0.22 },   // dmg = k × (closing speed − min) × mass share
   wallBreak: 14,      // closing speed that smashes a brick wall section; slower just thumps it

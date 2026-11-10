@@ -3,7 +3,7 @@ import { MOBILE, PROFILE, S, iconEl, saveProfile, sfx, tapEl } from '../hub.js';
 
 // ===== Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note explains it. Once per lifetime (saved). =====
 export const TIPS={
-  drive:   ['tank','Xe tăng 50 tấn', 'Xe <b>tăng tốc từ từ</b> và <b>trôi tiếp</b> khi nhả ga. Kéo cần ngược ra sau để <b>lùi</b>. Chạy nhanh rồi mới ôm cua được rộng — hãy tính trước đường đi.'],
+  drive2:  ['tank','Lái xe tăng', (MOBILE ? 'Đẩy cần về hướng muốn đi — thân xe tự quay theo. Kéo cần ngược ra sau khi đang đứng để <b>lùi</b>.' : '<b>W</b> tiến · <b>S</b> lùi · <b>A</b>/<b>D</b> quay thân xe sang trái/phải (như xe tăng thật) · <b>chuột</b> ngắm tháp pháo.')+' Xe <b>tăng tốc từ từ</b> và <b>trôi tiếp</b> khi nhả ga. Muốn lái theo hướng màn hình: CÀI ĐẶT → ĐIỀU KHIỂN.'],
   crew:    ['team','Lính trên xe', 'Có lính ngồi trên nóc xe, tự bắn địch gần. '+(MOBILE?'Chạm nút <b>LÍNH</b>':'Bấm <b>G</b>')+' để họ <b>nhảy xuống đánh bộ</b> bên cạnh bạn; bấm lại để gọi họ <b>về xe</b>.'],
   infantry:['tank','Bộ binh địch', 'Lính đi bộ yếu nhưng đông. <b>Lái đè qua</b> khi đang chạy để cán nát (+điểm). Tổ <b>RPG</b> quỳ ngắm 1 giây có <b>chớp đỏ</b> — né hoặc bắn hạ rocket.'],
   loot:    ['spark','Vật phẩm rơi', 'Đồ rơi văng ra từ xác xe. <b>Quầng sáng</b> quanh món đồ cho biết độ hiếm: <b>xanh lá</b> thường · <b>xanh dương</b> hiếm · <b>tím</b> quý. Xe càng trâu, chỗ càng khó thì đồ càng xịn. Lại gần là đồ tự hút vào.'],
