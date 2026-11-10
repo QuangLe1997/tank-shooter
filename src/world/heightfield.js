@@ -1,5 +1,6 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
+import { RELIEF } from '../../config.js';
 import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, groundMaps, macroGround, scene } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
@@ -53,13 +54,23 @@ export function deformCrater(x, z, r, d){
   HF.dirty=true; for(const c of crushables) if(c.alive && Math.abs(c.x-x)<r*1.4 && Math.abs(c.z-z)<r*1.4) crushAt(c);   // loose stones in the blast are pulverised
 }
 export let TERRAIN_GEO=null;
-export function terrainGeo(){ if(TERRAIN_GEO) return TERRAIN_GEO; const g=new THREE.PlaneGeometry(HF.S, HF.S, HF.N, HF.N); g.rotateX(-Math.PI/2); TERRAIN_GEO=g; return g; }
+export function terrainGeo(){ if(TERRAIN_GEO) return TERRAIN_GEO; const g=new THREE.PlaneGeometry(HF.S, HF.S, HF.N, HF.N); g.rotateX(-Math.PI/2);
+  g.setAttribute('aRelief', new THREE.BufferAttribute(new Float32Array(HF.W*HF.W*2), 2));   // Z105 (curvature, slope) per vertex → ground shader
+  TERRAIN_GEO=g; return g; }
 // heights + analytic normals (central differences) for rows j0..j1 only → craters update a tiny slice of the mesh
 export function syncTerrainMesh(j0, j1){ const g=terrainGeo(), p=g.attributes.position, n=g.attributes.normal, W=HF.W, h=HF.h, s2=2*HF.step; j0=Math.max(0,j0||0); j1=Math.min(HF.N, j1==null?HF.N:j1);
   for(let j=j0;j<=j1;j++) for(let i=0;i<W;i++){ const k=j*W+i, hl=h[j*W+Math.max(0,i-1)], hr=h[j*W+Math.min(HF.N,i+1)], hd=h[Math.max(0,j-1)*W+i], hu=h[Math.min(HF.N,j+1)*W+i];
     const nx=-(hr-hl)/s2, nz=-(hu-hd)/s2, L=1/Math.hypot(nx,1,nz); p.setY(k, h[k]); n.setXYZ(k, nx*L, L, nz*L); }   // PlaneGeometry rows run +z after rotateX(-90°) → row j ↔ world z index j
   p.clearUpdateRanges(); n.clearUpdateRanges(); p.addUpdateRange(j0*W*3, (j1-j0+1)*W*3); n.addUpdateRange(j0*W*3, (j1-j0+1)*W*3); p.needsUpdate=true; n.needsUpdate=true;
+  syncRelief(j0-RELIEF.R, j1+RELIEF.R);
   if(j0===0 && j1===HF.N) g.computeBoundingSphere(); }
+// Z105 relief for rows j0..j1: curvature = height − mean of the 8 samples R cells away (bowls < 0, crests > 0), slope = gradient length
+export function syncRelief(j0, j1){ const g=terrainGeo(), a=g.attributes.aRelief, W=HF.W, N=HF.N, h=HF.h, R=RELIEF.R, s2=2*HF.step; j0=Math.max(0,j0|0); j1=Math.min(N, j1==null?N:j1|0);
+  const at=(i,j)=>h[Math.max(0,Math.min(N,j))*W+Math.max(0,Math.min(N,i))];
+  for(let j=j0;j<=j1;j++) for(let i=0;i<W;i++){ const c=at(i,j);
+    const ring=(at(i-R,j)+at(i+R,j)+at(i,j-R)+at(i,j+R) + 0.7*(at(i-R,j-R)+at(i+R,j-R)+at(i-R,j+R)+at(i+R,j+R)))/6.8;
+    const sx=(at(i+1,j)-at(i-1,j))/s2, sz=(at(i,j+1)-at(i,j-1))/s2; a.setXY(j*W+i, c-ring, Math.hypot(sx,sz)); }
+  a.clearUpdateRanges(); a.addUpdateRange(j0*W*2, (j1-j0+1)*W*2); a.needsUpdate=true; }
 // waving cloth flags (Core + the player's Vietnamese flag)
 export const WAVING=[];
 export function vnFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#da251d'; x.fillRect(0,0,W,H); x.fillStyle='#ffde00'; x.beginPath();
@@ -89,7 +100,7 @@ export const arena = new THREE.Group(); scene.add(arena);
 export const _g0 = groundMaps(BIOMES[0]);
 export const groundMat = macroGround(new THREE.MeshStandardMaterial({ map:_g0.map, normalMap:_g0.nrm, normalScale:new THREE.Vector2(1,1), roughness:_g0.rough, metalness:0.0, envMapIntensity:0.5 }));
 export const ground = new THREE.Mesh(terrainGeo(), groundMat);   // displaced heightfield (mounds + craters)
-ground.receiveShadow = true; arena.add(ground);
+ground.receiveShadow = true; ground.castShadow = !MOBILE && RELIEF.selfShadow; arena.add(ground);   // Z105 mounds throw real shadows across craters (desktop)
 // outer terrain past the perimeter (same surface, fades into the haze) — no more void beyond the walls
 export const outerGeo = new THREE.PlaneGeometry(ARENA*8, ARENA*8); { const uv=outerGeo.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*4, uv.getY(i)*4); }
 export const outerGround = new THREE.Mesh(outerGeo, groundMat); outerGround.rotation.x=-Math.PI/2; outerGround.position.y=-0.04; outerGround.receiveShadow=true; arena.add(outerGround);
