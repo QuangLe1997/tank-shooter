@@ -171,6 +171,17 @@ IQ = 0,2 + 0,16·(màn−1) + độ khó (Tân binh −0,15 · Chiến sĩ 0 · 
 | 4 | 0,68 | vu hồi ≈27%, vòng vây ~58% |
 | 5 | 0,84 | vu hồi ≈34%, vòng vây ~71%, ngắm đón 76% |
 
+## 3e. Trận tướng (Z96)
+| Tướng | Giáp trước / đuôi | Bộ phận (máu = % máu tướng) | Pha 2 (≤66%) | Pha 3 (≤33%) | Cách đánh |
+|---|---|---|---|---|---|
+| IRON BULL | ×0,6 / ×1,8 | mũi húc 10% · xích trái/phải 8% | húc 2 lần liên tiếp + dậm đất, 2 hộ tống | húc 3 lần | dụ húc vào tường/đá → choáng ×2 |
+| TEMPEST | ×0,85 / ×1,6 | 2 bệ tên lửa 9% · radar 7% | mưa tên lửa + pháo kích hàng + 2 hộ tống | gọi trực thăng, xoắn đạn dày | phá bệ & radar, thả khói |
+| GOLIATH | ×0,35 / ×2,0 | pháo chính 8% · máy rải mìn 7% | **khiên + 3 trụ phát** | toả 16 viên | vòng ra sau lưng |
+| REAPER | ×0,85 / ×1,7 | đầu phát laser 8% · lõi dịch chuyển 8% | laser đôi | **khiên + 3 trụ**, laser quét nhanh | nấp sau tường khi nó nạp laser |
+| OVERLORD | ×0,6 / ×1,7 | 2 bệ 6% · laser 6% · pháo 6% | **khiên + 3 trụ** | **khiên lần nữa**, mọi đòn nhanh 25% | tổng hợp mọi kỹ năng |
+
+Chuyển pha: bất tử 1,8 s, sóng xung kích bán kính 9 (đẩy 20, 14 sát thương nếu trong vòng), hộ tống 2 / 3 xe. Choáng 3,2 s ×2; xả nhiệt 2,6 s ×1,6 sau mỗi 3 đòn lớn; phá hết trụ → xả nhiệt 4 s. Trụ phát 240 máu (+15%/màn). Pháo kích hàng: 6 phát, cách 4,2, bán kính 4,2, 22 sát thương, phát đầu sau 1,1 s.
+
 ## 3a. Pháo kích khoá mục tiêu (ARTILLERY — từ màn 2, Z29)
 
 Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn pháo kích" chạy theo nhịp **nghỉ → cảnh báo → dồn dập**:
