@@ -1,6 +1,6 @@
 # STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
 
-> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z81**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
+> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z82**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 
 ---
 
@@ -80,6 +80,14 @@
 - Trọng số xuất hiện trong wave = `base + (stage − màn_mở)×per`: pyro 1.0+0.5 · engineer 0.6+0.3 · atgm 0.8+0.5 · gunship 0.45+0.3.
 - Giáp **A** (máy bay): KIN 1.10 · AP 0.70 · HE 1.00 · FRAG 1.10 · FIRE 0.40 · CRYO 0.90 · ELEC 1.25 · HESH 0.60.
 - Sự kiện **AIR RAID** (màn ≥ 3): +2 gunship vào wave (+1 nữa từ màn 5).
+
+### Thiết bị (Z82) — trên vòng SPELL
+
+| Thiết bị | Hồi | Hiệu quả | Khắc chế |
+|---|---|---|---|
+| **SMOKE** | 12s | Màn khói bán kính 9, 7s. Trong khói: địch bắn lệch ×4.5, tên lửa dẫn đường mất khoá, laser ATGM bị cắt | ATGM, sniper, trực thăng |
+| **APS** | 16s | 12s, tự bắn hạ 4 vật thể bay vào bán kính 7 (rocket, tên lửa, đạn pháo nặng r ≥ 0.6) | RPG, ATGM, trực thăng, heavy |
+| **MINES** | 14s | 3 mìn sau đuôi, kích hoạt 0.8s, 90 sát thương AP bán kính 4.2, sống 45s | Xe phun lửa, scout, bomber đuổi theo |
 
 ### Bộ binh địch (Z79) — đi bộ, theo tổ
 

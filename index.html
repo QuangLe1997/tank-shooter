@@ -1355,6 +1355,9 @@ const GLYPH={
   compress:'<path d="M10 4v6H4M14 4v6h6M10 20v-6H4M14 20v-6h6"/>',
   alert:'<path d="M12 3 1.8 20.5h20.4L12 3Z"/><path d="M12 9.5v4.8"/><path d="M12 17.4v.7"/>',
   drone:'<circle cx="12" cy="12" r="2.6"/><circle cx="5.5" cy="6.5" r="2"/><circle cx="18.5" cy="6.5" r="2"/><path d="M7 8l3 2.4M17 8l-3 2.4M12 14.6V18M9.5 18.4h5"/>',
+  smoke:'<circle cx="8" cy="14" r="4"/><circle cx="14.5" cy="11" r="5"/><circle cx="17" cy="16.5" r="3.4"/>',
+  aps:'<path d="M12 3 5 5.8v5.2c0 4.5 3 7.6 7 9 4-1.4 7-4.5 7-9V5.8L12 3Z"/><path d="M8.5 12h7M12 8.5v7"/>',
+  mine:'<ellipse cx="12" cy="14" rx="8" ry="3.4"/><path d="M4 14v1.6c0 1.9 3.6 3.4 8 3.4s8-1.5 8-3.4V14"/><circle cx="12" cy="12.2" r="1.2"/>',
   agl:'<rect x="3" y="9" width="10" height="5" rx="1"/><path d="M13 10.2h7v2.6h-7"/><circle cx="7.5" cy="17" r="2.6"/><path d="M6 9V7h4v2"/>',
   thermo:'<rect x="3" y="8" width="13" height="8" rx="1.2"/><circle cx="7" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><path d="M16 10l5-2v8l-5-2"/>',
   rocket:'<path d="M12 2.5c2.3 1.7 3.4 4.6 3.4 8l-1 5h-4.8l-1-5c0-3.4 1.1-6.3 3.4-8Z"/><path d="M9.6 13.5 6.6 16.5l2.2.2M14.4 13.5l3 3-2.2.2"/><path d="M10.6 18.5h2.8l-1.4 3Z"/><circle cx="12" cy="8.5" r="1"/>',
@@ -3445,7 +3448,7 @@ function updateCarrierCrew(e, now){
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
 const INF_DEAD=[];
 const solidTank = e => !(e.def.bomber || e.def.inf || e.def.air);          // things that collide like a hull
-function smokeSpread(now){ const p=S.player; return (p && now < (p.smokeUntil||0)) ? EQUIP.smoke.spreadMul : 1; }   // SMOKE screen ruins enemy aim
+function smokeSpread(now){ return inSmoke(now) ? EQUIP.smoke.spreadMul : 1; }   // SMOKE screen ruins enemy aim
 function infMesh(type){
   const g=makeSoldierMesh({enemy:true}), u=g.userData;
   if(type==='rpg'){                                                          // shoulder-fired launcher instead of a carbine
@@ -3557,7 +3560,7 @@ function blowMissile(i, how){
   r.m.visible=false; _emPool.push(r.m); EMIS.splice(i,1);
 }
 function updateEnemyMissiles(dt, now){
-  const p=S.player; if(!p) return; const smoked = now < (p.smokeUntil||0);
+  const p=S.player; if(!p) return; const smoked = inSmoke(now);
   for(let i=EMIS.length-1;i>=0;i--){ const r=EMIS[i]; r.life-=dt;
     const gy=heightAt(r.x,r.z);
     if(r.guided && !smoked){ const want=Math.atan2(p.pos.x-r.x, p.pos.z-r.z); r.ang=wrapAngle(r.ang + Math.max(-r.guided*dt, Math.min(r.guided*dt, wrapAngle(want-r.ang)))); r.y += ((gy+1.5)-r.y)*Math.min(1,dt*2.5); }
@@ -3606,7 +3609,7 @@ function enemyFlame(e, d, dt, now, tgt){
 function updateAtgm(e, d, now, tgt, dt){
   const R=ROSTER.atgm, L=e.mesh.userData.launcher; if(!L) return;
   if(e.aimT>0){ e.aimT-=dt; L.getWorldPosition(_pv); if(!e.laser) e.laser=takeBeam();
-    const p=S.player, jit=(now<(p.smokeUntil||0))?2.5:0.15; setBeam(e.laser, _pv.x,_pv.y,_pv.z, tgt.x+(Math.random()-0.5)*jit, heightAt(tgt.x,tgt.z)+1.3, tgt.z+(Math.random()-0.5)*jit);
+    const p=S.player, jit=inSmoke(now)?2.5:0.15; setBeam(e.laser, _pv.x,_pv.y,_pv.z, tgt.x+(Math.random()-0.5)*jit, heightAt(tgt.x,tgt.z)+1.3, tgt.z+(Math.random()-0.5)*jit);
     e.laser.material.opacity = 0.45+0.4*Math.abs(Math.sin(now*24));
     if(e.aimT<=0){ dropBeam(e.laser); e.laser=null;
       const a=Math.atan2(tgt.x-_pv.x, tgt.z-_pv.z), dmg=R.dmg*(0.75+0.25*diffScale())*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul();
@@ -5110,7 +5113,47 @@ const SPELLS = [
   { id:'repair',    name:'REPAIR', svg:'heart', cd:14, cast(now){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+45); if(core)core.hp=Math.min(core.maxHp,core.hp+45); ringPulse(p.pos,0x5fd06a,3); updateHUD(); } },
   { id:'airstrike', name:'AIRSTRIKE', svg:'crosshair', cd:15, cast(now){ airstrike(now); } },
   { id:'timewarp',  name:'TIME WARP', svg:'hourglass', cd:14, cast(now){ S.enemySlowUntil=now+4; ringPulse(S.player.pos,0xc0a0ff,12); } },
+  { id:'smoke',     name:'SMOKE',     svg:'smoke', cd:12, cast(now){ castSmoke(now); } },        // Z82 equipment: smoke screen
+  { id:'aps',       name:'APS',       svg:'aps',   cd:16, cast(now){ castAPS(now); } },          // Z82 active protection (hard-kill)
+  { id:'mines',     name:'MINES',     svg:'mine',  cd:14, cast(now){ castMines(now); } },        // Z82 anti-tank mines
 ];
+// ===== Z82 · TANK EQUIPMENT — each piece answers a specific threat =====
+function inSmoke(now){ const p=S.player; return !!(p && now<(p.smokeUntil||0) && Math.hypot(p.pos.x-p.smokeX, p.pos.z-p.smokeZ) < EQUIP.smoke.radius); }
+function castSmoke(now){ const p=S.player, E=EQUIP.smoke; p.smokeUntil=now+E.dur; p.smokeX=p.pos.x; p.smokeZ=p.pos.z;
+  for(let k=0;k<8;k++){ const a=p.facing+(k-3.5)*0.42, sp=9+Math.random()*3;                       // 8 grenades fan out from the turret dischargers
+    spawnPart(p.pos.x, 2.6, p.pos.z, Math.sin(a)*sp, 7, Math.cos(a)*sp, {color:0xf0f0e0, size:0.5, life:0.45, grav:-22, drag:0.6}); }
+  for(const e of enemies) if(e.laser){ dropBeam(e.laser); e.laser=null; e.aimT=0; }                  // laser designators lose you
+  sfx('dash'); floatText('SMOKE SCREEN','#dfe6e0',p.pos,17); }
+function castAPS(now){ const p=S.player, E=EQUIP.aps; p.apsUntil=now+E.dur; p.apsCharges=E.charges; ringPulse(p.pos,0x7fe7ff,E.radius); floatText('APS ONLINE · '+E.charges,'#7fe7ff',p.pos,17); sfx('beep'); }
+function apsIntercept(x,y,z){ const p=S.player; p.apsCharges--;
+  spawnPart(p.pos.x,2.6,p.pos.z,(x-p.pos.x)*6,(y-2.6)*6,(z-p.pos.z)*6,{tex:'flash', color:0xbff6ff, size:1.2, life:0.08, grav:0, drag:0});   // counter-charge fires
+  bigExplode({x,z}, 0xbff6ff, 0.55); burst({x,z}, 0xfff2c0, 8, 7, {y, life:0.25, size:0.3, grav:-12, drag:2});
+  floatText(p.apsCharges>0?'APS · '+p.apsCharges:'APS DEPLETED','#7fe7ff',{x:p.pos.x,y:3.4,z:p.pos.z},14); sfx('hit'); haptic(12); }
+const PMINES=[]; let _mineGeo=null, _mineMat=null, _mineLed=null;
+function castMines(now){ const p=S.player, E=EQUIP.mines;
+  if(!_mineGeo){ _mineGeo=new THREE.CylinderGeometry(0.55,0.62,0.22,16); _mineMat=new THREE.MeshStandardMaterial({color:0x4a5230,roughness:0.7,metalness:0.35}); _mineLed=new THREE.MeshStandardMaterial({color:0,emissive:0xff2a1a,emissiveIntensity:2}); }
+  for(let k=0;k<E.count;k++){ const a=p.facing+Math.PI+(k-(E.count-1)/2)*0.5, r=2.6+k%2*0.8, x=p.pos.x+Math.sin(a)*r, z=p.pos.z+Math.cos(a)*r;
+    const m=new THREE.Mesh(_mineGeo,_mineMat); m.castShadow=true; m.position.set(x,heightAt(x,z)+0.1,z); const led=new THREE.Mesh(new THREE.SphereGeometry(0.08,6,4),_mineLed); led.position.y=0.15; m.add(led); scene.add(m);
+    PMINES.push({ m, led, x, z, arm:now+E.arm, die:now+E.life }); }
+  sfx('clang'); floatText('MINES LAID ×'+E.count,'#c8d870',p.pos,16); }
+function updateEquip(dt, now){
+  const p=S.player; if(!p) return;
+  if(now<(p.smokeUntil||0)){ const left=p.smokeUntil-now, R=EQUIP.smoke.radius;                    // the screen billows, then thins out
+    for(let k=0;k<(MOBILE?2:3);k++) if(Math.random()<Math.min(1,left/2)){ const a=Math.random()*6.283, r=Math.sqrt(Math.random())*R;
+      spawnPart(p.smokeX+Math.cos(a)*r, heightAt(p.smokeX,p.smokeZ)+0.8+Math.random()*1.5, p.smokeZ+Math.sin(a)*r, (Math.random()-0.5)*0.8, 0.3+Math.random()*0.4, (Math.random()-0.5)*0.8, {color:0xd8dcd4, size:3+Math.random()*2, life:2.2, smoke:true, grav:-0.05, drag:0.8, grow:1.6, op:0.5}); } }
+  if(p.apsCharges>0 && now<(p.apsUntil||0)){
+    if(Math.random()<0.05) ringPulse(p.pos, 0x7fe7ff, EQUIP.aps.radius*0.6);
+    for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.owner!=='e' || b.r<0.6) continue;   // heavy shells too
+      if(Math.hypot(b.x-p.pos.x, b.z-p.pos.z) < EQUIP.aps.radius){ apsIntercept(b.x, b.by+heightAt(b.x,b.z), b.z); recycleBullet(i); if(p.apsCharges<=0) break; } } }
+  for(let i=PMINES.length-1;i>=0;i--){ const M=PMINES[i]; M.led.visible = now<M.arm ? true : Math.floor(now*2.5+i)%2===0;
+    let boom = now>M.die;
+    if(!boom && now>=M.arm) for(const e of enemies){ if(e.def.air) continue; if(Math.hypot(e.pos.x-M.x, e.pos.z-M.z) < (e.def.inf?0.9:e.r+0.6)){ boom=true; break; } }
+    if(!boom && now>=M.arm && boss && boss.alive && Math.hypot(boss.pos.x-M.x, boss.pos.z-M.z) < boss.r+0.6) boom=true;
+    if(boom){ scene.remove(M.m); PMINES.splice(i,1); if(now>M.die) continue;
+      const E=EQUIP.mines; bigExplode({x:M.x,z:M.z}, 0xff8a3a, 1.4); deformCrater(M.x,M.z,1.6,0.4); decalScorch(M.x,M.z,3,1);
+      aoeDamage(M.x, M.z, E.radius, E.dmg, false, now, 'AP'); S.shake=Math.min(3,S.shake+0.8); sfx('bigexplode'); } }
+}
+function clearEquip(){ for(const M of PMINES) scene.remove(M.m); PMINES.length=0; const p=S.player; if(p){ p.smokeUntil=0; p.apsUntil=0; p.apsCharges=0; } }
 function trySpell(){
   if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
   const sp=SPELLS[S.spell]; if(now < p.spellCdUntil) return;
@@ -5529,7 +5572,7 @@ function startGame(continueRun){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); _alarmAt=0;
+  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); ridersUnlocked=false; soldierLvl=(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); _alarmAt=0;
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(laserMesh) laserMesh.visible=false;
   document.getElementById('bossbar').style.display='none';
@@ -5557,7 +5600,7 @@ function quitToMenu(){
   S.firing=false;
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown();
+  enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip();
   if(boss){ scene.remove(boss.mesh); boss=null; }
   if(S.player){ S.player.pos.set(0,0,ARENA*0.55); S.player.vel.set(0,0,0); S.player.mesh.position.set(0,0,ARENA*0.55); S.player.mesh.visible=true; }   // park at spawn for a clean home
   document.body.classList.remove('corelow','shopopen'); _alarmAt=0;
@@ -6688,7 +6731,7 @@ function loop(nowMs){
     updateLocks(gdt);               // MISSILE lock-on reticles track their locked targets
     updateRockets(gdt, now); updateFuses(dt, now);   // siege-rocket flight + landing fuse
     updateArtillery(dt, now); updateArtStrikes(dt, now);
-    updateEnemyMissiles(gdt, now); updateInfDead(gdt); updateHeliDown(gdt);   // Z79 rockets/missiles in flight · fallen soldiers   // enemy ARTILLERY: barrage director + locked missile strikes
+    updateEnemyMissiles(gdt, now); updateInfDead(gdt); updateHeliDown(gdt); updateEquip(gdt, now);   // Z82 smoke · APS · mines   // Z79 rockets/missiles in flight · fallen soldiers   // enemy ARTILLERY: barrage director + locked missile strikes
     separateTanks(now);                 // resolve overlaps so tanks never merge
     updateTankRigs(gdt);                // tracks + wheels + suspension + gun lay/recoil on every tank
     updateCrush();                      // tracks grind stones / flatten grass
@@ -6754,7 +6797,7 @@ let _rsT=0;
 function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 window._resize = ()=>doResize(true);   // (debug) force a refit
-if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), skip:()=>skipIntro(), hurt:(e,d)=>damageEnemy(e,d), contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
+if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), skip:()=>skipIntro(), hurt:(e,d)=>damageEnemy(e,d), spell:(i)=>{ S.spell=i; S.player.spellCdUntil=0; trySpell(); }, contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 function checkOrientation(){ if(MOBILE && innerHeight > innerWidth && S.mode==='playing') togglePause(); }
 const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not
