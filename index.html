@@ -6233,7 +6233,7 @@ function lootGeos(){ if(_lootGeo) return _lootGeo; const B=(w,h,d,x,y,z)=>new TH
     tech:mg([new RoundedBoxGeometry(0.8,0.5,0.6,2,0.08).translate(0,0.25,0)]),
     gun:mg([B(1.7,0.4,0.55,0,0.2,0), B(1.74,0.05,0.59,0,0.42,0)]),                                         // long weapon crate
     gem:new THREE.OctahedronGeometry(0.42,0).translate(0,0.55,0),
-    beam:new THREE.CylinderGeometry(0.22,0.6,7,10,1,true).translate(0,3.5,0) };
+    beam:new THREE.CylinderGeometry(0.42,0.62,1.5,14,1,true).translate(0,0.75,0) };
   return _lootGeo; }
 function lootMat(k, col, emi){ return _LM[k]||(_LM[k]=new THREE.MeshStandardMaterial({ color:col, roughness:0.55, metalness:k==='steel'||k==='gem'?0.8:0.25, emissive:emi||0x000000, emissiveIntensity:emi?0.8:0 })); }
 function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def.cat||'tech', add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; g.add(m); return m; };
@@ -6262,8 +6262,8 @@ function dropPowerup(pos, tier){
   tier=tier|0; const def=pickLoot(tier), t=def.tier||0;
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
   const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
-  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false})); icon.scale.set(1.5,1.5,1); icon.position.y=2.4; icon.visible=false; g.add(icon);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(1.25,1.45,36), new THREE.MeshBasicMaterial({color:RAR[t],transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=0.08; ring.visible=false; g.add(ring);
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false})); icon.scale.set(1.05,1.05,1); icon.position.y=1.75; icon.visible=false; g.add(icon);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.95,1.08,36), new THREE.MeshBasicMaterial({color:RAR[t],transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=0.08; ring.visible=false; g.add(ring);
   const a=Math.random()*6.283, sp=3+Math.random()*3;
   const u={def, g, model, beam, icon, ring, x:pos.x, z:pos.z, y:heightAt(pos.x,pos.z)+1.4, vx:Math.cos(a)*sp, vz:Math.sin(a)*sp, vy:7+Math.random()*2, landed:false, bounces:0, born:performance.now()/1000, tier:t};
   g.position.set(u.x,u.y,u.z); pickups.push(u);
@@ -6281,8 +6281,8 @@ function updatePickups(dt, now){
       const lim=ARENA-3; u.x=Math.max(-lim,Math.min(lim,u.x)); u.z=Math.max(-lim,Math.min(lim,u.z)); u.g.position.set(u.x,u.y,u.z); continue; }
     const age=now-u.born, life=PICKUP_LIFE*(1+u.tier*0.4), rem=Math.max(0, 1-age/life);
     u.model.rotation.y += dt*0.9; u.model.position.y = 0.05+Math.sin(now*2.4+i)*0.06;
-    u.icon.position.y = 2.3 + Math.sin(now*3+i)*0.18;
-    u.beam.material.opacity = (0.045+0.025*Math.sin(now*4+i))*(1+u.tier*0.35); u.beam.scale.set(0.7, 0.5+0.5*rem, 0.7);   // soft column (additive + bloom → keep it faint)
+    u.icon.position.y = 1.7 + Math.sin(now*3+i)*0.1;
+    u.beam.material.opacity = (0.08+0.03*Math.sin(now*4+i))*(1+u.tier*0.25); u.beam.scale.set(1, 0.6+0.4*rem, 1);   // low halo hugging the item (no tall pillar)
     u.ring.scale.setScalar(Math.max(0.05,rem)); u.ring.material.opacity = 0.7*rem; u.ring.rotation.z += dt*1.2;
     if(rem<0.25) u.g.visible = Math.floor(now*8)%2===0;                                  // blinks before it is gone
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
