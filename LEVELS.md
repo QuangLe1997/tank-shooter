@@ -59,6 +59,16 @@
 Ví dụ: xe bạn (khối lượng 1,25) chạy hết tốc 26 húc xe nhẹ (1,0) đang lao tới 3 u/s → địch mất ≈ 28 máu × (1 + 0,22·(màn−1)), bạn mất ≈ 4–5. Boss (khối lượng ~21) lao vào bạn ở 30 u/s → bạn mất ≈ 18.
 Tường gạch: 4–7 dãy/màn (mobile ít hơn 1), mỗi dãy 3–6 đoạn 3 m; máu mỗi đoạn = 140 + 30 × chiều cao còn lại (≈ 240–270); sập tầng ở 66% và 33%.
 
+## 1d. Lính, trại & cầu (Z89–Z90)
+| Thông số | Giá trị | Ghi chú |
+|---|---|---|
+| APC địch thả quân (`TROOPS.dismount`) | từ màn 2 · trong 28 · 3–5 lính · 0,38 s/người | lính đầu là RPG từ màn 3 |
+| Kíp lính trên xe (`RIDER`, `TROOPS.ridersFrom`) | từ màn 1 · 3 người (+nâng cấp TANK CREW) | G / CREW: xuống đánh bộ, bấm lại: lên xe |
+| FIRETEAM (`TROOPS.fireteam`) | 4 lính + 0,5/màn (tối đa 7) · 42 máu · 7 dmg (+12%/màn) · tầm 21 · hồi chiêu 24 s | APC ta chở tới rồi rút |
+| Trại lính (`CAMP`) | màn 1–2: 1 trại, màn 3+: 2 · 420 máu (+18%/màn) | ~16 s ra 2–3 lính khi đang có wave, dừng nếu sân ≥ 14 lính |
+| Thưởng phá trại | 900 điểm · 220 xu (+25%/màn) · vật phẩm | cán lều +60 điểm |
+| Cầu treo (`BRIDGE`) | 75% tháp ghép cặp, cách 12–18 | 1 lính gác tuần tra 1,6 u/s, bắn như lính tháp |
+
 ## 2. Rải quân (wave) — số lượng & loại địch
 
 **Số địch mỗi wave** = `floor(3 + wave + (stage-1)×1.5)`

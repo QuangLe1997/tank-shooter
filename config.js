@@ -240,3 +240,14 @@ export const DRIVE = {
   wallBreak: 14,      // closing speed that smashes a brick wall section; slower just thumps it
   climb: 15.5,        // closing speed needed to ride over a low rock; slower → stopped dead, back up and take a run
 };
+
+// TROOPS (Z89) — APCs that drive in and DISMOUNT a squad; your own FIRETEAM call-in (equipment wheel).
+export const TROOPS = {
+  ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
+  dismount: { fromStage: 2, range: 28, troops: [3, 5], interval: 0.38, rpgFrom: 3 },   // enemy APC stops inside `range`, drops the ramp, troops pile out
+  fireteam: { size: 4, perStage: 0.5, cap: 7, hp: 42, dmg: 7, range: 21, fireCd: 0.8, speed: 7.5, sprint: 12, follow: 7, cd: 24 },   // friendly squad that moves with your tank
+};
+
+// BATTLEFIELD INSTALLATIONS (Z90) — enemy troop camps that keep feeding infantry, and rope bridges linking paired watchtowers.
+export const CAMP = { perStage: [1, 1, 2, 2, 2], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 3], infCap: 14, coin: 220, score: 900, tentScore: 60 };
+export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
