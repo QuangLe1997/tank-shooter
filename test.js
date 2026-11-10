@@ -256,13 +256,15 @@ ok(GIFT.gunBase > 0 && GIFT.gunBase < GIFT.pityCap && GIFT.pityCap <= 1, 'gun gi
 ok(GIFT.pityStep > 0, 'pity timer raises the gun chance after dry loot');
 
 grp('DRIVING (Z85) — tracked drive, momentum, ramming');
-ok(DRIVE.launch > 0.15 && DRIVE.launch < 0.6, 'heavy launch: a fraction of full power from a dead stop');
+ok(DRIVE.launch > 0.5 && DRIVE.launch < 0.9, 'Z107 light launch: most of the power from a dead stop (no 50-t creep)');
 ok(DRIVE.launchV > 0 && DRIVE.launchV < PLAYER_MAXSPEED, 'full power arrives before top speed');
 { // simulate the throttle curve: 0 → 90% top speed should take a real tank's second or two, not an instant
   let v=0, t=0; const top=PLAYER_MAXSPEED; while(v<top*0.9 && t<10){ const launch=DRIVE.launch+(1-DRIVE.launch)*Math.min(1,v/DRIVE.launchV), fall=Math.max(0,1-(v/top)**2); v+=DRIVE.accel*launch*fall*(1/60); t+=1/60; }
   ok(t > 0.9 && t < 2.6, `0→90% top speed in ${t.toFixed(2)}s (0.9–2.6s: weighty but playable)`); }
 ok(DRIVE.coast > 0 && DRIVE.coast < DRIVE.brake, 'coasting rolls on; braking bites harder');
-ok(PLAYER_MAXSPEED / DRIVE.coast > 1 && PLAYER_MAXSPEED / DRIVE.coast < 3, 'coast-down from top speed lasts 1–3s (inertia you can feel, still controllable)');
+{ let v=PLAYER_MAXSPEED, t=0, s=0; while(v>0.01 && t<5){ v-=Math.min(v,(DRIVE.coast+v*DRIVE.coastLin)/60); s+=v/60; t+=1/60; }
+  ok(t > 0.4 && t < 1.0 && s < 10, 'Z107 coast-down from top speed settles in <1 s and <10 m (little inertia)'); }
+ok(DRIVE.accel < 23, 'Z107 calmer peak acceleration than Z99');
 ok(DRIVE.reverseMul > 0.3 && DRIVE.reverseMul < 0.8, 'reverse is slower than forward');
 ok(DRIVE.pivot > DRIVE.turnAtSpeed, 'hull pivots faster standing still than flat out');
 ok(DRIVE.wallBreak > 6 && DRIVE.wallBreak < PLAYER_MAXSPEED*0.75, 'walls need a run-up, but are breakable well below top speed');

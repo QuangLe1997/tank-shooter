@@ -18,7 +18,7 @@ export function animateTank(mesh, px, pz, facing, dt, ride){
   for(let si=0;si<2;si++){ rig.tracks[si].offset.x += trav[si]*3.4; if(rig.wheelTex[si]) rig.wheelTex[si].rotation += (si?-1:1)*trav[si]/0.33; }
   // suspension: squat on acceleration, dive on braking, lean out of turns, idle engine shiver, terrain bumps when moving
   const v=fwd/dt, a=(v-rig.v)/dt; rig.v=v; rig.a += (a-rig.a)*Math.min(1,dt*10);
-  const pT=Math.max(-0.075,Math.min(0.075,-rig.a*0.0022)), rT=Math.max(-0.05,Math.min(0.05,(dyaw/dt)*v*0.0016));
+  const pT=Math.max(-0.075,Math.min(0.075,-rig.a*0.0016)), rT=Math.max(-0.05,Math.min(0.05,(dyaw/dt)*v*0.0016));
   rig.pv += ((pT-rig.pitch)*170 - rig.pv*13)*dt; rig.pitch += rig.pv*dt;
   rig.rv += ((rT-rig.roll)*170 - rig.rv*13)*dt;  rig.roll  += rig.rv*dt;
   rig.t += dt; const mv=Math.min(1,Math.abs(v)/12), body=ud.body;

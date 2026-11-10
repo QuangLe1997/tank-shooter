@@ -68,11 +68,11 @@ export function updatePlayer(dt, now){
         const fall = Math.max(0, 1 - (v/top)*(v/top));                                   // power fades toward top speed
         vf += thr * DRIVE.accel*(p.rev?DRIVE.reverseMul+0.2:1) * pow * launch * fall * dt;
         if(Math.abs(vf) > top) vf -= Math.sign(vf)*Math.min(Math.abs(vf)-top, DRIVE.brake*dt); }
-    } else { p.rev=false; vf -= Math.sign(vf)*Math.min(Math.abs(vf), (DRIVE.coast + Math.abs(vf)*0.12)*dt); }   // throttle off: it rolls on and settles
+    } else { p.rev=false; vf -= Math.sign(vf)*Math.min(Math.abs(vf), (DRIVE.coast + Math.abs(vf)*DRIVE.coastLin)*dt); }   // throttle off: it rolls on and settles
     vl *= Math.max(0, 1 - DRIVE.grip*dt);                                         // tracks grip: no ice-skating sideways
     const fs1=Math.sin(p.facing), fc1=Math.cos(p.facing);
     p.vel.x = fs1*vf + fc1*vl; p.vel.z = fc1*vf - fs1*vl;
-    p.vel.x -= gx*14*dt; p.vel.z -= gz*14*dt;                                     // still slides down into hollows/craters a little
+    p.vel.x -= gx*DRIVE.slopeSlide*dt; p.vel.z -= gz*DRIVE.slopeSlide*dt;                                     // still slides down into hollows/craters a little
   }
   p.fwdSpeed = p.vel.x*Math.sin(p.facing) + p.vel.z*Math.cos(p.facing);
   p.ramOn = now < bu.ram; { const bl=p.mesh.userData.dozer; if(bl && bl.visible!==p.ramOn) bl.visible=p.ramOn; }   // Z93 dozer blade bolts on while the buff runs
@@ -153,7 +153,7 @@ export const camOff = new THREE.Vector3(0, MOBILE?18:28, MOBILE?14.5:23);   // b
 export const _camOff = new THREE.Vector3(), _camUP = new THREE.Vector3(0,1,0);
 export const camTarget = new THREE.Vector3();
 export const camLook = new THREE.Vector3();
-export const camBase = new THREE.Vector3(); export let _camT = -1;
+export const camBase = new THREE.Vector3(); export let _camT = -1; const _camWant = new THREE.Vector3();
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   // look slightly ahead of the player toward the aim + a bit toward velocity (motion feel)
@@ -162,10 +162,10 @@ export function updateCamera(dt, now){
   const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
   _camOff.copy(camOff).multiplyScalar(S.zoom||1);          // player zoom
   if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
-  const want = camTarget.clone().add(_camOff);
+  const want = _camWant.copy(camTarget).add(_camOff);
   want.y += dashPull;
   if(now - _camT > 0.15) camBase.copy(camera.position); _camT = now;   // resuming after a cinematic → continue from where the camera is
-  camBase.lerp(want, Math.min(1, dt*4.5));
+  camBase.lerp(want, Math.min(1, dt*5.5));   // Z107: tighter follow (was 4.5) — less floaty lag behind the lighter tank
   const tr=Math.min(1, S.shake/3.2), t2=tr*tr;               // TRAUMA model: shake ∝ trauma², smooth multi-sine noise, decays
   camera.position.copy(camBase);
   if(t2>0.0004){ const q=now; camera.position.x += (Math.sin(q*41.3)+Math.sin(q*73.1+1.7)*0.6)*t2*1.15; camera.position.y += (Math.sin(q*37.7+0.4)+Math.sin(q*67.9)*0.5)*t2*0.7; camera.position.z += (Math.sin(q*47.9+2.1)+Math.sin(q*59.3)*0.6)*t2*1.15; }
