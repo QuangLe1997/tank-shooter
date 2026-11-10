@@ -5,7 +5,7 @@ import { FIELD } from '../../config.js';
 import { ARENA } from '../hub.js';
 
 export const FIELD_R = new Float32Array(FIELD.N);
-export const FIELD_STATE = { ver:0 };                  // bumps every time the outline changes (caches key on it)      // radius of the playable field at bearing i·2π/N  (bearing = atan2(z, x))
+export const FIELD_STATE = { ver:0, scale:1 };   // Z107 scale = custom-battle SPACE (fence encloses less of the arena)                  // bumps every time the outline changes (caches key on it)      // radius of the playable field at bearing i·2π/N  (bearing = atan2(z, x))
 const TAU=Math.PI*2, R2=(r)=>r[0]+Math.random()*(r[1]-r[0]);
 // distance from the centre to the inset square edge along bearing a (the outline never leaves the old square)
 export function squareEdge(a){ const c=Math.abs(Math.cos(a)), s=Math.abs(Math.sin(a)); return (ARENA-6)/Math.max(c, s, 1e-6); }
@@ -22,7 +22,7 @@ export function genField(){ const N=FIELD.N, H=[]; for(let k=2;k<2+FIELD.harmoni
     for(const b of bays){ let da=Math.abs(a-b.a); da=Math.min(da, TAU-da); k-=b.d*Math.exp(-(da*da)/(2*b.w*b.w)); }
     f[i]=Math.max(minFrac(a), Math.min(FIELD.max, k)); }
   for(let pass=0;pass<3;pass++){ const g=f.slice(); for(let i=0;i<N;i++) f[i]=(g[(i-1+N)%N]+g[i]*2+g[(i+1)%N])/4; }   // smooth the outline
-  for(let i=0;i<N;i++){ const a=i/N*TAU-Math.PI; FIELD_R[i]=Math.max(minFrac(a), f[i])*baseEdge(a); } FIELD_STATE.ver++; }
+  for(let i=0;i<N;i++){ const a=i/N*TAU-Math.PI; FIELD_R[i]=Math.max(minFrac(a), f[i])*baseEdge(a)*FIELD_STATE.scale; } FIELD_STATE.ver++; }
 export function fieldR(a){ const N=FIELD.N; let u=((a+Math.PI)/TAU)*N; u=((u%N)+N)%N; const i=u|0, t=u-i; return FIELD_R[i]*(1-t)+FIELD_R[(i+1)%N]*t; }
 export function fieldRAt(x, z){ return fieldR(Math.atan2(z, x)); }
 // how far inside the field (x,z) is — negative outside

@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 export let boss=null;
@@ -260,7 +260,7 @@ export function killBoss(now){
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress();   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
+  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1);   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 1900); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 1800); }
 }
@@ -269,7 +269,7 @@ export function victory(){
   document.getElementById('vic-score').textContent = S.score.toLocaleString();
   recordRun();
   const nl=(S.loop||0)+1;
-  PROFILE.save={ loop:nl, stage:1, score:S.score }; saveProfile(); refreshStartUI();   // advance the campaign into the next NG+ loop
+  if(!(S.run && S.run.mode==='custom')){ PROFILE.save={ loop:nl, stage:1, score:S.score }; saveProfile(); } else S.runCfg={ ...S.run, level:nl*5+1 }; refreshStartUI();   // custom: the next loop keeps your map/hour/weather   // advance the campaign into the next NG+ loop
   const nb=document.getElementById('ngplusBtn'); if(nb) nb.textContent='VÀO VÒNG MỚI+'+nl+' ▶';
   const vs=document.querySelector('#victory .subtitle'); if(vs) vs.textContent='Vòng mới+'+nl+' đang chờ — địch mạnh hơn, thưởng lớn hơn';
   document.body.classList.remove('corelow');

@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, openBattleSetup, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -8,12 +8,18 @@ export function loadoutGuns(){
   if(!ld.length) ld=['rifle'];
   return ld.map(id=>({ id, ammo:GUNS[id].mag, rU:0, rD:0 }));   // your chosen ≤5 weapons, full mags
 }
-export function startGame(continueRun){
+// Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
+// anything else (a click Event from RETRY/RESTART, or nothing) = the same battle again (S.runCfg), else campaign level 1
+export function startGame(arg){
   try{ audio(); engineStart(); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
-  const resume = !!(continueRun===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
-  const stStage = resume ? (PROFILE.save.stage|0||1) : 1;
+  const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
+  let cfg = (arg && typeof arg==='object' && arg.mode) ? arg : null;
+  if(!cfg && !resume) cfg = S.runCfg || { mode:'campaign', level:1 };
+  const L = cfg ? Math.max(1, cfg.level|0) : 0;
+  const stStage = resume ? (PROFILE.save.stage|0||1) : ((L-1)%5)+1;
   const stScore = resume ? (PROFILE.save.score|0) : 0;
-  const stLoop  = resume ? (PROFILE.save.loop|0) : 0;
+  const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
+  S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
   S.player = S.player || makePlayer();
   buildCore(stStage);                    // monument matching the (resumed) stage
   const p=S.player;
@@ -77,8 +83,7 @@ export function syncMenuState(){
 }
 export function show(id){ document.getElementById(id).classList.remove('hidden'); syncMenuState(); }
 export function hide(id){ document.getElementById(id).classList.add('hidden'); syncMenuState(); }
-document.getElementById('playBtn').addEventListener('click', startGame);
-document.getElementById('playBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
+tapBtn('playBtn', ()=>openBattleSetup('campaign'));   // Z107 PLAY → battle setup (campaign ladder / custom battle)
 // skip the deploy cinematic on any input (after a short grace window)
 addEventListener('pointerdown', ()=>skipIntro());
 addEventListener('keydown', ()=>skipIntro());
@@ -88,5 +93,5 @@ tapBtn('homeBtn', quitToMenu); tapBtn('goHomeBtn', quitToMenu);   // pause / gam
 document.getElementById('retryBtn').onclick = startGame;
 document.getElementById('retryBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
 export const ngp=document.getElementById('ngplusBtn');
-ngp.onclick = ()=>startGame(true);                                            // resume into the NG+ loop the victory() set up
-ngp.addEventListener('touchstart', e=>{e.preventDefault();startGame(true);},{passive:false});
+ngp.onclick = ()=>startGame(S.run&&S.run.mode==='custom' ? S.runCfg : true);                                            // resume into the NG+ loop the victory() set up
+ngp.addEventListener('touchstart', e=>{e.preventDefault();startGame(S.run&&S.run.mode==='custom' ? S.runCfg : true);},{passive:false});

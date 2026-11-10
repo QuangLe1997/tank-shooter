@@ -1,11 +1,11 @@
 // ui/terrain-picker.js — Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a fixed biome) with a live preview.
-import { BIOMES, PROFILE, biomeVi, hide, saveProfile, sfx, show, tapBtn, tapEl } from '../hub.js';
+import { BIOMES, PROFILE, biomeVi, hide, openBattleSetup, saveProfile, sfx, show, tapBtn, tapEl } from '../hub.js';
 
 // terrain picker (start screen): AUTO (campaign rotation) + every battlefield; persists in PROFILE.terrain
 // start-screen summary button reflects the current pick
 export function buildTerrainPicker(){
-  const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=0)?PROFILE.terrain:-1;
-  const name=cur<0?'TỰ ĐỘNG':biomeVi(BIOMES[cur].name), col=cur<0?0x8a8a8a:BIOMES[cur].ground;
+  const cur=(PROFILE.custom&&Number.isInteger(PROFILE.custom.biome))?PROFILE.custom.biome:0;   // Z107 shows the CUSTOM battle's map
+  const name='TỰ CHỌN · '+biomeVi(BIOMES[cur].name), col=BIOMES[cur].ground;
   const nm=document.getElementById('tBtnName'), sw=document.getElementById('tBtnSw');
   if(nm) nm.textContent=name; if(sw) sw.style.background='#'+col.toString(16).padStart(6,'0');
 }
@@ -48,4 +48,4 @@ export function buildTerrainDialog(){
 }
 export function openTerrainDlg(){ hide('start'); buildTerrainDialog(); show('terrainDlg'); sfx('click'); }
 export function closeTerrainDlg(){ hide('terrainDlg'); show('start'); buildTerrainPicker(); sfx('click'); }
-tapBtn('terrainBtn', openTerrainDlg); tapBtn('terrainDone', closeTerrainDlg);
+tapBtn('terrainBtn', ()=>openBattleSetup('custom'));   // Z107 the battlefield button opens the CUSTOM battle setup tapBtn('terrainDone', closeTerrainDlg);

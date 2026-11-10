@@ -24,6 +24,11 @@ export function loadProfile(){
   if(!pr.upgrades || typeof pr.upgrades!=='object') pr.upgrades={};                  // { key: level } bought stat upgrades
   if(!pr.gunXp || typeof pr.gunXp!=='object') pr.gunXp={};                           // { gunId: dup-pickup count } → MASTERY level
   pr.terrain = (Number.isInteger(pr.terrain) && pr.terrain>=-1 && pr.terrain<BIOMES.length) ? pr.terrain : -1;   // chosen battlefield (-1 = AUTO campaign)
+  { const fromSave = pr.save ? ((pr.save.loop|0)*5 + (pr.save.stage|0)) : 1, c = (pr.campaign && typeof pr.campaign==='object') ? pr.campaign : {};   // Z107 CAMPAIGN: highest level unlocked (old saves keep their reach)
+    pr.campaign = { max: Math.max(1, c.max|0, fromSave, (pr.best&&pr.best.stage)|0 ? Math.min(5, pr.best.stage|0) : 1) }; }
+  { const c = (pr.custom && typeof pr.custom==='object') ? pr.custom : {};                                   // Z107 last CUSTOM battle setup
+    pr.custom = { biome: Number.isInteger(c.biome)&&c.biome>=0&&c.biome<BIOMES.length ? c.biome : (pr.terrain>=0?pr.terrain:0), tod: ['day','noon','sunset','night'].includes(c.tod)?c.tod:'day',
+      wx: typeof c.wx==='string'?c.wx:'clear', space: ['small','mid','wide'].includes(c.space)?c.space:'wide', lvl: Math.max(1, c.lvl|0) }; }
   pr.onboarded = !!pr.onboarded; pr.coached = !!pr.coached;     // first-launch guide + first-match coach shown?
   pr.difficulty = (pr.difficulty && BALANCE.difficulty[pr.difficulty]) ? pr.difficulty : 'soldier';   // RECRUIT/SOLDIER/VETERAN
   pr.sound = pr.sound!==false; pr.music = pr.music!==false;     // audio prefs (default on)
@@ -76,7 +81,7 @@ export function ownGun(id){ if(!GUNS[id]) return false; let fresh=false;
   if(!PROFILE.ownedGuns.includes(id)){ PROFILE.ownedGuns.push(id); fresh=true; }
   if(!PROFILE.loadout.includes(id) && PROFILE.loadout.length<LOADOUT_MAX) PROFILE.loadout.push(id);   // auto-equip while there's room
   saveProfile(); return fresh; }
-export function saveProgress(){ const s=PROFILE.save, cl=S.loop||0;       // checkpoint = furthest (loop, stage) reached; never regresses
+export function saveProgress(){ if(S.run && S.run.mode==='custom') return; const s=PROFILE.save, cl=S.loop||0;       // checkpoint = furthest (loop, stage) reached; never regresses (custom battles never touch it)
   const better = !s || cl>(s.loop|0) || (cl===(s.loop|0) && S.stage>(s.stage||1));
   if(better && (S.stage>1 || cl>0)){ PROFILE.save={ loop:cl, stage:S.stage, score:S.score }; saveProfile(); refreshStartUI(); } }
 export function clearProgress(){ PROFILE.save=null; saveProfile(); refreshStartUI(); }

@@ -38,6 +38,7 @@
 <link rel="stylesheet" href="css/polish.css" />
 <link rel="stylesheet" href="css/intro.css" />
 <link rel="stylesheet" href="css/deploy.css" />
+<link rel="stylesheet" href="css/setup.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
@@ -206,6 +207,24 @@
 </div>
 
 <!-- TERRAIN — grand 3D battlefield picker -->
+<!-- Z107 BATTLE SETUP: campaign ladder (rising difficulty, unlock in order) · custom battle (map · hour · weather · space · enemy level) -->
+<div class="overlay hidden" id="battleSetup">
+  <div class="bs-top">
+    <div class="btn btn-mini bs-back" id="bsBack"><span>◀ QUAY LẠI</span></div>
+    <div class="bs-ttl">CHUẨN BỊ TRẬN</div>
+    <div class="bs-modes"><div class="bs-mode on" data-m="campaign">CHIẾN DỊCH<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom">TỰ CHỌN<small>bản đồ · thời tiết</small></div></div>
+  </div>
+  <div class="bs-body" id="bsCampaign"><div class="bs-hint">Độ khó tăng dần — thắng một cấp để mở cấp tiếp theo</div><div class="bs-ladder" id="bsLadder"></div></div>
+  <div class="bs-body hidden" id="bsCustom">
+    <div class="bs-row"><div class="bs-lbl">BẢN ĐỒ</div><div class="bs-opts maps" id="bsMap"></div></div>
+    <div class="bs-row"><div class="bs-lbl">THỜI GIAN</div><div class="bs-opts" id="bsTod"></div></div>
+    <div class="bs-row"><div class="bs-lbl">THỜI TIẾT</div><div class="bs-opts" id="bsWx"></div></div>
+    <div class="bs-row"><div class="bs-lbl">KHÔNG GIAN</div><div class="bs-opts" id="bsSpace"></div></div>
+    <div class="bs-row"><div class="bs-lbl">CẤP ĐỊCH</div><div class="bs-opts" id="bsLvl"></div></div>
+  </div>
+  <div class="bs-foot"><div class="bs-sum" id="bsSum"></div><div class="btn btn-primary bs-go" id="bsGo">VÀO TRẬN ▶</div></div>
+</div>
+
 <div class="overlay hidden" id="terrainDlg">
   <div class="title" style="font-size:clamp(24px,5.5vw,44px)">CHỌN CHIẾN TRƯỜNG</div>
   <div class="subtitle">Chọn chiến trường cho lượt chơi · <b>TỰ ĐỘNG</b> = đổi theo từng màn</div>

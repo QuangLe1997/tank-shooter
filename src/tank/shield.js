@@ -1,5 +1,6 @@
 // tank/shield.js — premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop)
 import * as THREE from 'three';
+import { HEADING } from '../../config.js';
 import { ARENA, NIGHT, PLAYER, TANK_SCALE, _canvasTex, buildTank, makeFlag, scene, vnTex } from '../hub.js';
 
 // ----- premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop) -----
@@ -36,6 +37,15 @@ export function makePlayer(){
     const eraM=new THREE.MeshStandardMaterial({color:0xa89868,roughness:0.75,metalness:0.3}), tiles=[];                  // Z93 REACTIVE ARMOUR bricks (one per charge)
     for(const sx of [-1,1]) for(const zz of [1.15,0.4,-0.35]){ const t=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.34,0.62), eraM); t.position.set(sx*1.6,0.12,zz); t.rotation.z=sx*0.12; t.visible=false; B.add(t); tiles.push(t); }
     mesh.userData.eraTiles=tiles; }   // 🇻🇳 the player's tank flies the Vietnamese flag
+  { // Z107 HEADING: where the nose points, readable at a glance even flat out — ground chevron ahead + glacis stripe
+    const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.clearRect(0,0,128,128);
+    x.lineJoin='round'; x.lineCap='round'; x.strokeStyle='#fff'; x.shadowColor='#fff'; x.shadowBlur=8;
+    for(const [y,w,a] of [[34,14,0.55],[70,16,1]]){ x.globalAlpha=a; x.lineWidth=w; x.beginPath(); x.moveTo(22,y); x.lineTo(64,y+34); x.lineTo(106,y); x.stroke(); }   // two chevrons pointing DOWN the canvas = +z (forward) once laid flat
+    const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
+    const ar=new THREE.Mesh(new THREE.PlaneGeometry(HEADING.size, HEADING.size), new THREE.MeshBasicMaterial({ map:tex, color:HEADING.color, transparent:true, opacity:HEADING.idle, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, fog:false }));
+    ar.rotation.x=-Math.PI/2; ar.position.set(0, 0.12, HEADING.dist); ar.renderOrder=6; mesh.add(ar); mesh.userData.heading=ar;
+    const st=new THREE.Mesh(new THREE.BoxGeometry(1.9,0.035,0.16), new THREE.MeshStandardMaterial({ color:HEADING.stripe, emissive:HEADING.stripe, emissiveIntensity:0.9, roughness:0.5 }));
+    st.position.set(0, 1.2, 1.78); st.rotation.x=0.29; mesh.userData.body.add(st); }
   { const hl=new THREE.SpotLight(0xfff2dc, 0, 34, 0.5, 0.6, 0); hl.position.set(0,1.2,2.1); const tg=new THREE.Object3D(); tg.position.set(0,0,14); mesh.userData.body.add(hl); mesh.userData.body.add(tg); hl.target=tg; NIGHT.head=hl; }   // driving lights (night)
   scene.add(mesh);
   return {

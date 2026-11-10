@@ -1,6 +1,6 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM } from '../../config.js';
+import { DRIVE, LOOT, AIM, HEADING } from '../../config.js';
 import { BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
@@ -75,6 +75,8 @@ export function updatePlayer(dt, now){
     p.vel.x -= gx*DRIVE.slopeSlide*dt; p.vel.z -= gz*DRIVE.slopeSlide*dt;                                     // still slides down into hollows/craters a little
   }
   p.fwdSpeed = p.vel.x*Math.sin(p.facing) + p.vel.z*Math.cos(p.facing);
+  { const hd=p.mesh.userData.heading; if(hd){ const k=Math.min(1, Math.abs(p.fwdSpeed)/8), want=HEADING.idle+(HEADING.moving-HEADING.idle)*k;   // Z107 the nose chevron brightens with speed
+      hd.material.opacity += (want-hd.material.opacity)*Math.min(1, dt*6); hd.position.z = HEADING.dist + (p.fwdSpeed<0 ? 0 : k*0.6); } }
   p.ramOn = now < bu.ram; { const bl=p.mesh.userData.dozer; if(bl && bl.visible!==p.ramOn) bl.visible=p.ramOn; }   // Z93 dozer blade bolts on while the buff runs
   if(p.turboLv && Math.abs(p.throttle||0)>0.4 && Math.random()<0.5*p.turboLv){ const bx=p.pos.x-Math.sin(p.facing)*2.4, bz=p.pos.z-Math.cos(p.facing)*2.4;   // turbo: blue exhaust flare
     spawnPart(bx+(Math.random()-0.5)*0.8, 1.3, bz, -Math.sin(p.facing)*4, 1.2, -Math.cos(p.facing)*4, {tex:'flash', color:0x8fd8ff, size:0.6, life:0.12, grav:0, drag:4}); }
