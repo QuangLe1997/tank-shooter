@@ -104,6 +104,41 @@ export const ROSTER = {
   weight:  { pyro:[1.0,0.5], engineer:[0.6,0.3], atgm:[0.8,0.5], gunship:[0.45,0.3] },
   aaBonus: 1.8,                                                            // FLAK airburst vs aircraft
 };
+// ============================================================================
+// CAMPAIGN OPERATIONS (Z83) — every stage is a named operation: briefing, radio chatter, scripted waves and a
+// high-value OBJECTIVE. While the objective stands it buffs the enemy (mods); destroying it pays a bounty + 1 diamond.
+//   script = { wave: event }   events: ambush (squads drop in close) · column (armoured column from one edge) · pyro · airraid
+// ============================================================================
+export const OPERATIONS = [
+  { title:'OPERATION SANDSTORM', obj:'depot', script:{ 2:'ambush', 4:'column' },
+    brief:'Enemy armour is massing behind the dunes. Hold the Core, and burn the fuel depot that keeps their tanks rolling.',
+    radio:{ 1:'Contact front — armour in the dunes!', 2:'Infantry in the open. Run them down!', 4:'Armoured column on the east road!', 5:'Last push before their command tank arrives.' },
+    boss:'IRON BULL is rolling in. Hit its flanks.', win:'Depot is burning — their tanks are running dry!' },
+  { title:'OPERATION BROKEN CITY', obj:'radio', script:{ 2:'pyro', 4:'ambush' },
+    brief:'The ruins hide a radio relay calling in endless reinforcements. Silence it, then clear the streets.',
+    radio:{ 1:'Movement in the rubble.', 2:'Flame tanks! Keep your distance!', 4:'RPG teams in the alleys — watch the rockets!', 5:'Relay still transmitting? Take it down!' },
+    boss:'TEMPEST is circling the square.', win:'Relay is down — their reinforcements just went quiet.' },
+  { title:'OPERATION WHITE SILENCE', obj:'radar', script:{ 3:'airraid', 5:'column' },
+    brief:'A radar site on the ice is vectoring attack helicopters onto our position. Destroy it to clear the skies.',
+    radio:{ 1:'Visibility is poor. Stay sharp.', 3:'Rotors inbound — gunships!', 4:'Engineers are patching their tanks. Kill the medics first.', 5:'Heavy column crossing the ice!' },
+    boss:'GOLIATH has broken through the frost line.', win:'Radar is scrap. No more gunships on our heads.' },
+  { title:'OPERATION IRON FURNACE', obj:'battery', script:{ 2:'column', 4:'airraid' },
+    brief:'An artillery battery in the foundry is shelling our lines. Keep moving, and knock out those guns.',
+    radio:{ 1:'Incoming shells — keep moving!', 2:'Armour pouring out of the furnace halls!', 4:'Air raid! Get to cover!', 5:'Tank-destroyers on the ridge — pop smoke if they paint you.' },
+    boss:'REAPER is in the forge. Watch the beam.', win:'Battery silenced. The shelling has stopped.' },
+  { title:'OPERATION LAST CITADEL', obj:'command', script:{ 1:'ambush', 3:'airraid', 5:'column' },
+    brief:'This is their command bunker. Everything they have left is here. Break it, and the war ends today.',
+    radio:{ 1:'They were waiting for us — ambush!', 2:'Hold the Core. Whatever it takes.', 3:'Every gunship they own is in the air!', 5:'Final column. This is it.' },
+    boss:'OVERLORD has taken the field. End this.', win:'Command bunker destroyed — their lines are breaking!' },
+];
+export const OBJECTIVES = {
+  depot:  { name:'FUEL DEPOT',        hp:260, r:6.2, effect:'Enemy tanks move 15% faster',          mods:{ enemySpeedMul:1.15 } },
+  radio:  { name:'RADIO RELAY',       hp:220, r:3.6, effect:'Reinforcements arrive 25% faster',      mods:{ cadenceMul:0.75 } },
+  radar:  { name:'RADAR SITE',        hp:260, r:4.8, effect:'A gunship joins every wave',            mods:{ gunshipPerWave:1 } },
+  battery:{ name:'ARTILLERY BATTERY', hp:320, r:6.8, effect:'Shells your position every 9 seconds',  mods:{ shellEvery:9 } },
+  command:{ name:'COMMAND BUNKER',    hp:440, r:6.6, effect:'Enemies deal 15% more damage',          mods:{ enemyDmgMul:1.15 } },
+};
+export const OBJ_REWARD = { coin:300, coinPerStage:120, dia:1, score:1500 };
 // EQUIPMENT (Z82) — tank-mounted support kit on the SPELL wheel. Each is a counter to a specific threat.
 export const EQUIP = {
   smoke:{ dur:7, radius:9, spreadMul:4.5 },       // smoke grenades: enemy aim ×spreadMul, guided missiles lose lock

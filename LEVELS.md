@@ -1,6 +1,6 @@
 # STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
 
-> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z82**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
+> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z83**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 
 ---
 
@@ -30,6 +30,19 @@
 > **CHỌN ĐỊA HÌNH (Z40, dialog 3D Z48):** nút **BATTLEFIELD** ở màn Start mở **dialog gallery 3D** (thẻ nghiêng phối cảnh, thẻ chọn nhô lên + viền sáng "✓ ĐÃ CHỌN", mỗi thẻ có preview biome) — chọn **AUTO** (xoay 5 biome theo màn như bảng trên) hoặc **khoá 1 loại** cho cả lượt chơi; luôn có mặc định chọn sẵn. Có **6 địa hình**: DESERT · RUINS · TUNDRA · FOUNDRY · CITADEL + **MEADOW (đồng cỏ)**. Mỗi địa hình có nền gồ ghề + chi tiết riêng (cỏ / băng nứt / khe nham thạch / đá vỡ), **vật trang trí rải** (đá·bụi cỏ·băng·xỉ·gạch — tránh Core & điểm spawn nên không cản đường), tường viền + sương + ánh sáng đổi màu. Lưu ở `PROFILE.terrain` (-1 = AUTO).
 
 ---
+
+## 1b. Chiến dịch & mục tiêu chiến lược (Z83)
+
+| Màn | Chiến dịch | Mục tiêu (khi còn đứng) | Wave kịch bản |
+|---|---|---|---|
+| 1 | OPERATION SANDSTORM | FUEL DEPOT — xe địch +15% tốc độ (HP 260) | W2 phục kích · W4 đoàn xe |
+| 2 | OPERATION BROKEN CITY | RADIO RELAY — tiếp viện nhanh 25% (HP 220) | W2 xe phun lửa · W4 phục kích |
+| 3 | OPERATION WHITE SILENCE | RADAR SITE — +1 trực thăng mỗi wave (HP 260) | W3 không kích · W5 đoàn xe |
+| 4 | OPERATION IRON FURNACE | ARTILLERY BATTERY — pháo khoá vị trí bạn mỗi 9s (HP 320) | W2 đoàn xe · W4 không kích |
+| 5 | OPERATION LAST CITADEL | COMMAND BUNKER — địch +15% sát thương (HP 440) | W1 phục kích · W3 không kích · W5 đoàn xe |
+
+- HP mục tiêu × NG+ loop × độ khó × `(1 + 0.14×(màn−1))`. Thưởng phá: **300 + 120×màn xu** (× loop × độ khó × hợp đồng) **+ 1 💎 + 1.500 điểm**.
+- Wave có kịch bản thay cho sự kiện ngẫu nhiên. **Phục kích:** 2 tổ (3 từ màn 3) bộ binh xuất hiện cách xe ~17. **Đoàn xe:** heavy + grunt + gunner + grunt (+ heavy + atgm từ màn 3, + shield + heavy từ màn 5) vào cùng 1 hướng, nhịp ×0.4.
 
 ## 2. Rải quân (wave) — số lượng & loại địch
 
