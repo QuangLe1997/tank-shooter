@@ -1,6 +1,6 @@
 # STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
 
-> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z80**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
+> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z81**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 
 ---
 
@@ -254,6 +254,13 @@ DPS duy trì = `dmg·frags·mag / (mag·fireCd + reload)`; cột L/M/H = DPS duy
 | flamer | FIRE | 1 | 0.05 | 140 | 3.2 | — | — | — | — | — | gián tiếp (flame) |
 
 Vai trò: **RIFLE** đa năng · **SMG** cận chiến xe nhẹ · **SHOTGUN** canister cực mạnh ≤ 10 m · **FLAK** đám đông · **CANNON** diệt tăng (+xuyên 1) · **HESH (mới)** phá chướng ngại/tháp canh, nứt giáp vừa · **MINIGUN** phải **quay lên tốc** (~0.7 s) rồi xả 180 DPS · **MISSILE** tự dẫn, bất chấp đêm · **RAILGUN** VIP diệt tăng xuyên 6 · **CRYO/TESLA** khống chế · **cối/lựu pháo/SIEGE** gián tiếp vượt tường.
+
+### Súng mới (Z81)
+
+| Súng | Loại | Sát thương | Nhịp | Băng / nạp | Đặc tính |
+|---|---|---|---|---|---|
+| **AGL-40** | HE | 16 (nổ lan 2.9) | 0.26s | 16 / 3.0s | Lựu vòng cung vào con trỏ, liên thanh. Khắc chế bộ binh và xe nhẹ đứng cụm. Không trúng trực thăng. Giá 2.600 xu, rơi từ màn 2. |
+| **THERMOBARIC** | TBX | 70 trực tiếp, 56 lan (bán kính 6.5) + đốt cháy | 1.6s | 3 / 4.4s | Tên lửa nhiệt áp: phá công sự/tháp (×1.8/×2.2), yếu với giáp nặng (×0.7). Giá 5.400 xu, rơi từ màn 4. |
 
 ### Điều kiện chiến trường (`ENV`) — báo trên màn chuyển
 | Điều kiện | Khi nào | Hiệu ứng |

@@ -79,6 +79,7 @@ export const DMG_TYPE = {
   CRYO: { L:1.00, M:1.00, H:0.85, A:0.90, struct:0.5, label:'CRYOGENIC' },
   ELEC: { L:1.00, M:1.10, H:1.00, A:1.25, struct:0.4, label:'ELECTRIC' },
   HESH: { L:1.00, M:1.25, H:1.05, A:0.60, struct:3.0, label:'HESH' },         // squash-head: spalls medium armour, levels cover & towers
+  TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
 };
 export const ARMOR = { scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
   rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A' };   // A = aircraft (Z80): only direct fire / flak / missiles reach it
@@ -147,9 +148,9 @@ export const SHOP_UP = [
 ];
 
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
-// VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,000) — value stays ordered. -----
+// VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,500) — value stays ordered. -----
 export const GUN_PRICE = { smg:{c:500}, shotgun:{c:1400}, cryo:{c:1600}, flak:{c:1700}, cannon:{c:2000},
-  flamer:{c:2200}, hesh:{c:3000}, mortar:{c:3800}, minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
+  flamer:{c:2200}, agl:{c:2600}, hesh:{c:3000}, mortar:{c:3800}, minigun:{c:4000}, missile:{c:4500}, tesla:{c:5000}, arty:{c:5500}, thermo:{c:5400}, railgun:{d:28}, rocket:{d:34} };
 export const VIP_GUNS = ['railgun','rocket'];
 
 // ----- punchy marketing blurbs (kept short) -----
@@ -163,7 +164,9 @@ export const GUN_BLURB = {
   arty:'Heavy shells lobbed onto your mark — clears walls, bursts the instant they land.',
   mortar:'Lob shells over any wall — rapid indirect fire that bursts on impact.',
   flamer:'Set them ablaze — the fire only spreads, and it never lets go.',
-  hesh:'Squash-head shells — flatten cover, topple towers, crack medium armour.' };
+  hesh:'Squash-head shells — flatten cover, topple towers, crack medium armour.',
+  agl:'A hail of 40 mm grenades — squads and light armour scatter.',
+  thermo:'Fuel-air rocket: one blinding blast, and everything inside burns.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [

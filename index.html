@@ -1355,6 +1355,8 @@ const GLYPH={
   compress:'<path d="M10 4v6H4M14 4v6h6M10 20v-6H4M14 20v-6h6"/>',
   alert:'<path d="M12 3 1.8 20.5h20.4L12 3Z"/><path d="M12 9.5v4.8"/><path d="M12 17.4v.7"/>',
   drone:'<circle cx="12" cy="12" r="2.6"/><circle cx="5.5" cy="6.5" r="2"/><circle cx="18.5" cy="6.5" r="2"/><path d="M7 8l3 2.4M17 8l-3 2.4M12 14.6V18M9.5 18.4h5"/>',
+  agl:'<rect x="3" y="9" width="10" height="5" rx="1"/><path d="M13 10.2h7v2.6h-7"/><circle cx="7.5" cy="17" r="2.6"/><path d="M6 9V7h4v2"/>',
+  thermo:'<rect x="3" y="8" width="13" height="8" rx="1.2"/><circle cx="7" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><path d="M16 10l5-2v8l-5-2"/>',
   rocket:'<path d="M12 2.5c2.3 1.7 3.4 4.6 3.4 8l-1 5h-4.8l-1-5c0-3.4 1.1-6.3 3.4-8Z"/><path d="M9.6 13.5 6.6 16.5l2.2.2M14.4 13.5l3 3-2.2.2"/><path d="M10.6 18.5h2.8l-1.4 3Z"/><circle cx="12" cy="8.5" r="1"/>',
 };
 function svgMarkup(name, sw){
@@ -2583,6 +2585,15 @@ function makeGunBarrel(id){
       for(const by of [1.8,2.02]){ const brk=new THREE.Mesh(new THREE.CylinderGeometry(0.44,0.4,0.16,SEG),park(0x2e2e26)); brk.position.y=by; tb.add(brk); }
       for(const by of [0.45,1.35]){ const band=new THREE.Mesh(new THREE.TorusGeometry(0.4,0.05,10,SEG),park(0x24221d)); band.rotation.x=Math.PI/2; band.position.y=by; tb.add(band); }
       const rmz=new THREE.Object3D(); rmz.position.y=2.0; tb.add(rmz); g.userData.muzzle=rmz; tip=2.0; }
+  else if(id==='agl'){        // AGL-40: boxy feed tray + stubby finned barrel + side ammo drum
+    rbox(0.56,0.38,0.7,0,Y,1.3,PK); rbox(0.42,0.12,0.5,0,Y+0.25,1.3,paint(0x55603a));
+    tube(0.12,0.12,1.3,2.25,park(0x252621)); for(let k=0;k<6;k++) tube(0.15,0.15,0.05,1.75+k*0.18,PK);
+    tube(0.14,0.13,0.22,2.95,GM); const drum=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.26,18),paint(0x55603a)); drum.rotation.z=Math.PI/2; drum.position.set(0.48,Y-0.05,1.25); g.add(drum);
+    tip=3.1; recoilLen=0.18; }
+  else if(id==='thermo'){     // THERMOBARIC: armoured 4-tube rocket pack on a cradle, orange warhead caps showing
+    rbox(1.0,0.78,1.8,0,Y+0.18,1.9,paint()); rbox(1.06,0.1,1.86,0,Y+0.6,1.9,PK);
+    for(const x of [-0.24,0.24]) for(const y of [-0.04,0.36]){ tube(0.17,0.17,0.06,2.82,PK,x,Y+y); const cap=new THREE.Mesh(new THREE.CircleGeometry(0.15,14),glow(0xff7a2a,0.6)); cap.position.set(x,Y+y,2.86); g.add(cap); }
+    rbox(0.2,0.3,0.5,0.62,Y,1.2,PK); tip=2.95; recoilLen=0.3; }
   else {                      // RIFLE (default): 30 mm Bushmaster AUTOCANNON — receiver, slim barrel, double-baffle muzzle brake
     rbox(0.42,0.34,0.62,0,Y,1.35,PK); tube(0.11,0.11,0.6,1.9,paint()); tube(0.065,0.075,2.0,3.05,GM); brake(0.095,4.15);
     rbox(0.26,0.26,0.4,-0.36,Y-0.03,1.25,paint(0x55603a));   // link-feed ammo box
@@ -2842,6 +2853,8 @@ function sfx(name, pos){
     case 'shoot_smg':    gunshot({crack:0.12, body:0.18, lp:3200, len:0.06, sub:0.06, subF:150}); break;                       // twin 14.5 mm MG
     case 'shoot_minigun':gunshot({crack:0.09, body:0.13, lp:3600, len:0.045, sub:0.04, subF:170}); break;                      // rotary — a ripping buzz at rate
     case 'shoot_shotgun':gunshot({crack:0.12, body:0.42, lp:1500, len:0.2, sub:0.26, subF:80}); noise(0.08,{vol:0.1,type:'hp',hp:3000,delay:0.02}); break;   // canister + pellet hiss
+    case 'shoot_agl':    gunshot({crack:0.06, body:0.34, lp:900, len:0.14, sub:0.26, subF:85}); break;                        // 40 mm grenade — hollow thoomp
+    case 'shoot_thermo': noise(0.6,{vol:0.26,type:'lp',lp:1800,sweepTo:600,attack:0.02,dist:true}); gunshot({crack:0.1, body:0.4, lp:1100, len:0.2, sub:0.32, subF:60}); break;   // rocket motor roar
     case 'shoot_flak':   gunshot({crack:0.15, body:0.3, lp:2200, len:0.13, sub:0.16, subF:110, click:700}); break;
     case 'shoot_hesh':   gunshot({crack:0.2, body:0.5, lp:1300, len:0.32, sub:0.38, subF:70, ring:220}); break;               // 105 mm
     case 'shoot_cannon': gunshot({crack:0.24, body:0.55, lp:1200, len:0.38, sub:0.45, subF:62, ring:180}); break;             // 120 mm — the big boom + barrel ring
@@ -4668,6 +4681,8 @@ const GUNS = {   // ARMS DOCTRINE (Z75): type = damage class (config DMG_TYPE) �
   rocket:  { name:'SIEGE ROCKET', svg:'rocket', tier:3, type:'HE', dmg:0, fireCd:5.0, mag:10, reload:30, bspeed:0, frags:1, spread:0, color:0xff4533, r:0.6, life:0, special:'rocket', aoeR:15, bossDmg:360, recoil:2.0, knock:0, fx:'blast', rng:1, fall:1 },  // lobbed, 2s fuse, wipes a big radius
   arty:    { name:'HOWITZER', svg:'target', tier:3, type:'HE', dmg:40, fireCd:1.05, mag:5, reload:3.6, bspeed:0, frags:1, spread:0, color:0xffd24a, r:0.6, life:0, special:'mortar', aoeR:6.0, bossDmg:90, recoil:1.6, knock:0, fx:'blast', rng:1, fall:1 },
   mortar:  { name:'ARC MORTAR', svg:'target', tier:2, type:'HE', dmg:30, fireCd:0.85, mag:6, reload:3.4, bspeed:0, frags:1, spread:0, color:0xffc24a, r:0.5, life:0, special:'mortar', aoeR:5.0, bossDmg:60, recoil:1.1, knock:0, fx:'blast', rng:1, fall:1 },
+  agl:     { name:'AGL-40', svg:'agl', tier:2, type:'HE', dmg:16, fireCd:0.26, mag:16, reload:3.0, bspeed:0, frags:1, spread:0, color:0xc8e070, r:0.4, life:0, special:'mortar', small:true, aoeR:2.9, bossDmg:12, recoil:0.5, knock:0, fx:'blast', rng:1, fall:1 },   // Z81 40 mm automatic grenade launcher — lobs a stream of small HE grenades onto the cursor: infantry & clustered light armour
+  thermo:  { name:'THERMOBARIC', svg:'thermo', tier:3, type:'TBX', dmg:70, fireCd:1.6, mag:3, reload:4.4, bspeed:46, frags:1, spread:0.01, color:0xff9a3a, r:0.6, life:2.4, aoe:6.5, recoil:2.4, knock:2.4, fx:'blast', rng:1.1, fall:1 },   // Z81 fuel-air rocket: huge blast + burns everything in it; levels cover & towers
   flamer:  { name:'PYRO', svg:'burst', tier:2, type:'FIRE', dmg:1, fireCd:0.05, mag:140, reload:3.2, bspeed:0, frags:1, spread:0, color:0xff6a1c, r:0, life:0, special:'flame', range:20, recoil:0.12, knock:0, fx:'spark', rng:1, fall:1 },
 };
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
@@ -4705,9 +4720,9 @@ function smartGunPick(){
 }
 function gunDropPool(stage){
   const pool=['smg','shotgun','cryo'];
-  if(stage>=2) pool.push('flak','cannon','minigun','hesh');
+  if(stage>=2) pool.push('flak','cannon','minigun','hesh','agl');
   if(stage>=3) pool.push('missile','tesla','flamer','mortar');   // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
-  if(stage>=4) pool.push('arty');                // howitzer: a rare late-stage drop (also buyable in the shop)
+  if(stage>=4) pool.push('arty','thermo');                // howitzer: a rare late-stage drop (also buyable in the shop)
   return pool;
 }
 function muzzleFlash(x,z,ang,color,rec,y){
@@ -4873,8 +4888,8 @@ function fireMortar(now, g, dmg){
   const t=rocketTarget(), tx=t.x, tz=t.z;
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube mouth, same arc as the rocket
   const a=rocketArc(sx,sy,sz,tx,tz, MORTAR_ELEV, MORTAR_G);   // flatter + faster arc than the SIEGE rocket → lands quickly (low delay)
-  const mesh=makeMortarShell(); mesh.position.set(sx,sy,sz); scene.add(mesh);
-  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:a.G, tx, tz, aoeR:g.aoeR||5, dmg, bossDmg:g.bossDmg||60, wipe:false, impact:true, tt:0 });   // impact:true → detonate on landing, no fuse
+  const mesh=makeMortarShell(); mesh.position.set(sx,sy,sz); if(g.small) mesh.scale.setScalar(0.5); scene.add(mesh);
+  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:a.G, tx, tz, aoeR:g.aoeR||5, dmg, bossDmg:g.bossDmg||60, wipe:false, impact:true, tt:0, small:!!g.small });   // impact:true → detonate on landing, no fuse
   for(let i=0;i<6;i++){ const sp=3+Math.random()*5; spawnPart(sx, sy, sz, a.vx*0.1+(Math.random()-0.5)*sp, a.vy*0.1+Math.random()*2, a.vz*0.1+(Math.random()-0.5)*sp, {color:0xfff0c0, color2:0xff8a20, size:0.4+Math.random()*0.3, grow:1.3, life:0.18+Math.random()*0.12, grav:5, drag:3}); }   // muzzle puff at the tube mouth
   muzzleLight.position.set(sx,sy,sz); muzzleLight.color.setHex(0xffd24a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4);
 }
@@ -4972,12 +4987,12 @@ function updateRockets(dt, now){
     if((r.vy<0 && r.y<=heightAt(r.x,r.z)+0.35) || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
       if(r.impact){   // ARC MORTAR shell — bursts ON IMPACT where it really hits the ground (no fuse / danger-zone)
         const x=r.x, z=r.z, aoeR=r.aoeR||5, pos=new THREE.Vector3(x,1.1,z);
-        bigExplode(pos, 0xffae5c, aoeR/3.2); deformCrater(x, z, aoeR*0.5, 0.45+aoeR*0.06);   // mortar / howitzer shell crater
+        bigExplode(pos, 0xffae5c, aoeR/3.2); if(!r.small) deformCrater(x, z, aoeR*0.5, 0.45+aoeR*0.06); else decalScorch(x, z, aoeR*0.6, 0.7);   // mortar / howitzer shell crater (grenades only scorch)
         ringPulse({x,z}, 0xffffff, aoeR*0.9); ringPulse({x,z}, 0xffd27a, aoeR*0.6);
         for(let k=0;k<5;k++){ const aa=Math.random()*6.28, rr=Math.random()*aoeR*0.7; spawnPart(x+Math.cos(aa)*rr,1,z+Math.sin(aa)*rr,(Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*4,{color:0xfff0c0,color2:0xff4a14,size:0.8,grow:1.4,life:0.4,grav:3,drag:2}); }
-        for(const e of enemies.slice()){ const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageEnemy(e, r.dmg||30); }
+        for(const e of enemies.slice()){ if(e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageEnemy(e, (r.dmg||30)*(r.small?typeMul('HE',armorOf(e)):1)); }   // shells can't reach aircraft
         if(boss&&boss.alive){ const dx=boss.pos.x-x, dz=boss.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageBoss(r.bossDmg||(r.dmg||30)*0.6); }
-        S.shake=Math.min(3.0, S.shake + 0.5 + aoeR*0.08); sfx('bigexplode');   // ground burst: earth clods come from fireball(), no metal debris   // bigger AoE → bigger boom (howitzer > mortar)
+        if(r.small){ S.shake=Math.min(1.4, S.shake+0.18); sfx('explode', {x,z}); } else { S.shake=Math.min(3.0, S.shake + 0.5 + aoeR*0.08); sfx('bigexplode'); }   // ground burst: earth clods come from fireball(), no metal debris   // bigger AoE → bigger boom (howitzer > mortar)
       } else {
         fuses.push({ x:r.x, z:r.z, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.x,r.z,r.aoeR) });
         ringPulse({x:r.tx,z:r.tz}, 0x886054, 3);   // dust puff on impact
@@ -5107,7 +5122,15 @@ function aoeDamage(x,z,r,dmg,stun,now,type,air){
   for(const e of enemies.slice()){ if(e.def.air && !air) continue; const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, dmg*(type?typeMul(type,armorOf(e))*envDmg(type):1)); } }
   if(boss&&boss.alive){ const dx=boss.pos.x-x,dz=boss.pos.z-z; if(dx*dx+dz*dz<r*r) damageBoss(dmg); }
 }
-function detonate(b){ aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
+function detonate(b){
+  if(b.type==='TBX'){ const now=performance.now()/1000, R=b.aoe;                  // THERMOBARIC: fuel-air flash → shock wave → everything inside burns
+    fireball({x:b.x,z:b.z}, 2.4); bigExplode({x:b.x,z:b.z}, 0xffc070, R/2.4); ringPulse({x:b.x,z:b.z}, 0xffffff, R*1.1); ringPulse({x:b.x,z:b.z}, 0xff8a3a, R*0.8);
+    for(let k=0;k<18;k++){ const a=Math.random()*6.283, sp=6+Math.random()*10; spawnPart(b.x, heightAt(b.x,b.z)+1, b.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {tex:'fire', color:0xfff0c0, color2:0xff3a08, size:1.4, grow:1.6, life:0.5+Math.random()*0.3, grav:1, drag:2}); }
+    deformCrater(b.x,b.z,2.2,0.5); decalScorch(b.x,b.z,R,1); S.shake=Math.min(4,S.shake+1.6); gradePass.uniforms.aberr.value=Math.max(gradePass.uniforms.aberr.value,0.006);
+    aoeDamage(b.x,b.z,R,b.aoeDmg||b.dmg,false,now,'TBX',true);
+    for(const e of enemies){ if(e.def.air||e.def.bomber) continue; const d=Math.hypot(e.pos.x-b.x,e.pos.z-b.z); if(d<R){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2*(1-d/R)+0.8); e.burn.until=now+BALANCE.flame.duration*0.6; } }
+    sfx('bigexplode'); return; }
+  aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
 // enemy AoE that hits the PLAYER + CORE (mortar shells, bomber self-destruct, boss bombs)
 function enemyGroundStrike(x,z,r,dmg,now){
   bigExplode({x,z}, 0xff7a3d, r/3);
