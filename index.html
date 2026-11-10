@@ -41,6 +41,9 @@
       var vv = window.visualViewport;
       var h = Math.round(vv ? vv.height : window.innerHeight);
       var w = Math.round(vv ? vv.width  : window.innerWidth);
+      d.style.setProperty('--vvTop', Math.round(vv ? vv.offsetTop : 0) + 'px');
+      d.style.setProperty('--vvH', h + 'px');
+      if(document.body && document.body.classList.contains('typing')) return;   // soft keyboard up → don't squash every layer, only the typing card follows it
       if(h > 0) d.style.setProperty('--appH', h + 'px');
       if(w > 0) d.style.setProperty('--appW', w + 'px');
     }
@@ -1080,6 +1083,13 @@
   #tipCard .tc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;} #tipCard .tc-n{font-size:11px;color:#8a9a72;letter-spacing:.1em;}
   #tipCard .tc-ok{padding:9px 18px;font-weight:700;letter-spacing:.12em;color:#10140a;background:linear-gradient(180deg,#d8f08a,#8cbf3f);cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);}
   body.touch #tipCard .tc-box{width:min(520px,80vw);padding:11px 14px 10px;} body.touch #tipCard .tc-body{font-size:13px;line-height:1.4;} body.touch #tipCard .tc-ttl{font-size:17px;} body.touch #tipCard .tc-ic{width:34px;height:34px;}
+  /* Z97 · soft keyboard: the nickname card pins itself to the VISIBLE strip above the keyboard, compact, nothing else reflows */
+  body.typing #nick{top:var(--vvTop,0px);height:var(--vvH,100%);justify-content:flex-start;padding-top:max(6px,env(safe-area-inset-top));gap:4px;overflow:hidden;}
+  body.typing #nick .title{font-size:18px !important;margin:0 0 2px;letter-spacing:.12em;}
+  body.typing #nick .subtitle{display:none;}
+  body.typing #nick .panel{margin-top:2px;} body.typing #nick #nickSave{margin-top:6px !important;padding:9px 18px;}
+  body.typing #nickInput{font-size:16px;padding:8px 12px;}
+  body.typing #hud, body.typing #touch{display:none !important;}
   /* Z93 · loot reward card */
   #lootToast{position:fixed;right:14px;top:34%;z-index:40;display:flex;gap:10px;align-items:center;min-width:220px;max-width:300px;padding:9px 12px 9px 9px;pointer-events:none;
     background:linear-gradient(100deg,rgba(10,14,8,.9),rgba(10,14,8,.72));border:1px solid color-mix(in srgb,var(--lc,#9fe07a) 55%,transparent);border-left:3px solid var(--lc,#9fe07a);
@@ -1250,7 +1260,7 @@
   <div class="title" style="font-size:clamp(26px,6vw,46px)">CHÀO MỪNG, CHỈ HUY</div>
   <div class="subtitle">Nhập mật danh của bạn</div>
   <div class="panel">
-    <input id="nickInput" type="text" maxlength="16" placeholder="MẬT DANH" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+    <input id="nickInput" type="text" maxlength="16" placeholder="MẬT DANH" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" inputmode="text" />
     <div class="btn btn-primary" id="nickSave" style="margin-top:14px">XÁC NHẬN ▶</div>
   </div>
 </div>
@@ -1466,8 +1476,8 @@ const BIOMES = [
   { name:'DESERT',  bg:0x1c160c, fog:0x2a2112, ground:0xb89a5e, grid:0x8a6f3c, accent:0xe7b54a, sky:0x3a3320, fogD:0.0075, sun:0xfff0d0, deco:'rock',   wall:0x6b5a36 },
   { name:'RUINS',   bg:0x14161a, fog:0x20242a, ground:0x6e7178, grid:0x474b52, accent:0xd0d6dc, sky:0x2a2e36, fogD:0.0090, sun:0xdfe6ee, deco:'rubble', wall:0x55585e },
   { name:'TUNDRA',  bg:0x121c24, fog:0x1c2e3a, ground:0xaecbe0, grid:0x6f93ad, accent:0x9fe0ff, sky:0x2a4055, fogD:0.0100, sun:0xeaf6ff, deco:'ice',    wall:0x6f8597 },
-  { name:'FOUNDRY', bg:0x18100c, fog:0x241410, ground:0x4a3e38, grid:0x6e4030, accent:0xff6a3a, sky:0x301812, fogD:0.0110, sun:0xffcaa0, deco:'slag',   wall:0x4a3a32 },
-  { name:'CITADEL', bg:0x140d06, fog:0x231406, ground:0x4e3a1c, grid:0x7a5420, accent:0xffae5c, sky:0x2a1c0a, fogD:0.0120, sun:0xffd9a0, deco:'rubble', wall:0x6a5424 },
+  { name:'FOUNDRY', bg:0x18100c, fog:0x241410, ground:0x6e6862, grid:0x6e4030, accent:0xff6a3a, sky:0x301812, fogD:0.0110, sun:0xffcaa0, deco:'slag',   wall:0x4a3a32 },
+  { name:'CITADEL', bg:0x140d06, fog:0x231406, ground:0x9a8668, grid:0x7a5420, accent:0xffae5c, sky:0x2a1c0a, fogD:0.0120, sun:0xffd9a0, deco:'rubble', wall:0x6a5424 },
   { name:'MEADOW',  bg:0x0e150b, fog:0x1a2613, ground:0x5f7d3a, grid:0x46602a, accent:0x9be25a, sky:0x35451f, fogD:0.0072, sun:0xeaffcf, deco:'grass',  wall:0x4a5a30 },
 ];
 const CAMPAIGN_BIOMES = 5;   // stages auto-rotate through the first 5; MEADOW is picker-only
@@ -1632,8 +1642,8 @@ const ATMOS = {
   DESERT: { top:0x5b84b8, hor:0xc9b48c, fog:0xb6a07a, fogD:0.0048, sun:0xfff1d6, sunI:3.1, el:0.98, az:0.62, hemiG:0x8a6c44, lift:[0.0,0.008,0.022], gain:[1.04,1.0,0.92], sat:0.9,  con:1.1  },
   RUINS:  { top:0x76808a, hor:0x9a9e9f, fog:0x7c8186, fogD:0.0065, sun:0xe8eef4, sunI:2.1, el:0.82, az:0.4,  hemiG:0x4a4c4e, lift:[0.006,0.012,0.022], gain:[0.98,1.0,1.03], sat:0.76, con:1.1  },
   TUNDRA: { top:0x8fb0cc, hor:0xd0dce4, fog:0xb4c4d0, fogD:0.006, sun:0xf2f6ff, sunI:2.5, el:0.5,  az:0.9,  hemiG:0x9aaab8, lift:[0.0,0.01,0.03],   gain:[0.96,1.0,1.06], sat:0.84, con:1.06 },
-  FOUNDRY:{ top:0x3a302c, hor:0x5a4638, fog:0x3c322c, fogD:0.009,  sun:0xffcaa0, sunI:2.1, el:0.62, az:0.3,  hemiG:0x2e2420, lift:[0.014,0.006,0.0],  gain:[1.03,0.99,0.94], sat:0.86, con:1.12 },
-  CITADEL:{ top:0x3e3348, hor:0xb07a4a, fog:0x6a4a32, fogD:0.0095, sun:0xffa860, sunI:2.4, el:0.36, az:1.15, hemiG:0x4a3020, lift:[0.012,0.0,0.03],  gain:[1.09,0.98,0.86], sat:0.92, con:1.12 },
+  FOUNDRY:{ top:0x6a7684, hor:0xa8a296, fog:0x938c80, fogD:0.0058, sun:0xffe6cc, sunI:2.6, el:0.7,  az:0.3,  hemiG:0x56504a, lift:[0.004,0.004,0.006], gain:[1.02,1.0,0.97], sat:0.84, con:1.05 },   // Z97 industrial overcast haze (was a red-brown murk)
+  CITADEL:{ top:0x5476a6, hor:0xd9bc98, fog:0xbca88e, fogD:0.0055, sun:0xffe2bc, sunI:2.8, el:0.62, az:1.15, hemiG:0x6e5c46, lift:[0.004,0.004,0.008], gain:[1.03,1.0,0.95], sat:0.9,  con:1.05 },   // Z97 sunlit sandstone fortress (was a dark red dusk)
   MEADOW: { top:0x6596cc, hor:0xc4d0c0, fog:0xa9b8b0, fogD:0.0042, sun:0xfff6e0, sunI:2.9, el:1.0,  az:0.7,  hemiG:0x4a5a30, lift:[0.0,0.01,0.02],   gain:[1.0,1.02,0.95], sat:0.95, con:1.08 },
 };
 const SUN_DIR = new THREE.Vector3(0.45,0.75,0.35).normalize();
@@ -1682,24 +1692,47 @@ function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]
 function todAtmos(A, tod){
   const o=Object.assign({}, A);
   if(tod==='noon'){ o.el=1.32; o.sunI=A.sunI*1.12; o.sun=0xfff8ee; o.con=A.con+0.04; o.exp=1.0; o.night=0; }
-  else if(tod==='sunset'){ o.el=0.2; o.sunI=A.sunI*0.78; o.sun=0xff9248; o.top=0x34426e; o.hor=0xe2894a; o.fog=0x8e6a52; o.fogD=A.fogD*1.15; o.hemiG=0x4a3426;
-    o.lift=[0.02,0.0,0.035]; o.gain=[1.1,0.97,0.84]; o.sat=Math.min(1,A.sat+0.06); o.exp=1.12; o.night=0; }
-  else if(tod==='night'){ o.el=0.95; o.az=A.az+2.2; o.sunI=0.55; o.sun=0x9db6ff; o.top=0x070c1a; o.hor=0x182236; o.fog=0x0c121e; o.fogD=0.0075; o.hemiG=0x0a0c12;
-    o.lift=[0.0,0.012,0.04]; o.gain=[0.92,1.0,1.1]; o.sat=0.8; o.con=1.14; o.exp=1.3; o.night=1; }
+  else if(tod==='sunset'){ o.el=0.28; o.sunI=A.sunI*0.85; o.sun=0xffc28a; o.top=0x4a669c; o.hor=0xeab68a; o.fog=0xb4a08e; o.fogD=A.fogD*1.05; o.hemiG=0x5a4a3e;   // Z97 golden hour — warm light, blue sky, not a red wash
+    o.lift=[0.008,0.004,0.012]; o.gain=[1.04,1.0,0.94]; o.sat=A.sat; o.con=1.05; o.exp=1.1; o.night=0; }
+  else if(tod==='night'){ o.el=0.9; o.az=A.az+2.2; o.sunI=1.05; o.sun=0xc4d2ff; o.top=0x0e1a36; o.hor=0x2c3b5a; o.fog=0x29354d; o.fogD=0.0042; o.hemiG=0x1e2028;   // Z97 bright moonlit night: you can read the field
+    o.lift=[0.012,0.018,0.032]; o.gain=[0.97,1.0,1.06]; o.sat=0.78; o.con=1.0; o.exp=1.3; o.night=1; }
   else { o.exp=1.08; o.night=0; }
   return o;
 }
+
+// ---- Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night ----
+const SKY = new THREE.Mesh(new THREE.SphereGeometry(480, 48, 24), new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false, fog:false,
+  uniforms:{ top:{value:new THREE.Color(0x5b84b8)}, hor:{value:new THREE.Color(0xc9b48c)}, sunCol:{value:new THREE.Color(0xffffff)}, sunDir:{value:new THREE.Vector3(0,1,0)}, night:{value:0} },
+  vertexShader:'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position=p.xyww; }',
+  fragmentShader:`uniform vec3 top,hor,sunCol,sunDir; uniform float night; varying vec3 vD;
+    float h(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }
+    void main(){ vec3 d=normalize(vD); float y=max(d.y,0.0);
+      vec3 haze=mix(hor, vec3(1.0), 0.18*(1.0-night)); vec3 mid=mix(haze, top, 0.45);
+      vec3 c = y<0.05 ? mix(hor, haze, y/0.05) : (y<0.28 ? mix(haze, mid, (y-0.05)/0.23) : mix(mid, top, smoothstep(0.28,0.85,y)));   // dusty haze on the horizon → clear blue overhead
+      c *= 1.0 + (1.0-night)*0.95*smoothstep(0.02,0.3,y);                                    // daylight sky is brighter than the ground it lights
+      float s=max(dot(d,sunDir),0.0);
+      c += sunCol*(pow(s,8.0)*0.18 + pow(s,64.0)*0.35)*(1.0-night*0.6);                    // forward-scatter glow round the sun / moon
+      c += sunCol*smoothstep(0.9993,0.9997,s)*(night>0.5?1.6:3.0);                           // the disc itself
+      if(night>0.5){ vec3 q=floor(d*420.0); float st=step(0.9975,h(q))*smoothstep(0.04,0.35,y); c += vec3(0.85,0.9,1.0)*st*(0.5+0.5*h(q+1.0)); }   // stars
+      gl_FragColor=vec4(c,1.0); }` }));
+SKY.renderOrder=-10; SKY.frustumCulled=false; scene.add(SKY);
+const _WHITE=new THREE.Color(0xffffff);
+function setSky(A){ const u=SKY.material.uniforms; u.top.value.setHex(A.top); u.hor.value.copy(A._fogC||new THREE.Color(A.fog)); u.sunCol.value.setHex(A.sun); u.sunDir.value.copy(SUN_DIR); u.night.value=A.night?1:0; }
 function applyAtmosphere(b){
   const A=todAtmos(ATMOS[b.name]||ATMOS.DESERT, S.tod||'day');
   SUN_DIR.set(Math.cos(A.el)*Math.sin(A.az), Math.sin(A.el), Math.cos(A.el)*Math.cos(A.az)).normalize();
   scene.environment = skyEnvTexture(b.name, A); scene.environmentIntensity = 0.6;
-  scene.background.setHex(A.fog); scene.fog.color.setHex(A.fog); scene.fog.density = A.fogD;
+  const fogC=new THREE.Color(A.fog); if(!A.night) fogC.lerp(_WHITE, 0.14);                          // Z97 daylight haze is bright (aerial perspective), never a dark smog band
+  scene.background.copy(fogC); scene.fog.color.copy(fogC); scene.fog.density = A.fogD; A._fogC=fogC;
   sun.color.setHex(A.sun); sun.intensity = A.sunI;
   hemi.color.setHex(A.top); hemi.groundColor.setHex(A.hemiG); hemi.intensity = 0.7;
   ambient.color.setHex(A.hor); ambient.intensity = 0.12;
   const u=gradePass.uniforms; u.lift.value.set(...A.lift); u.gain.value.set(...A.gain); u.sat.value=A.sat; u.contrast.value=A.con;
   renderer.toneMappingExposure = A.exp||1.08;
-  hemi.intensity = A.night ? 0.42 : 0.7; scene.environmentIntensity = A.night ? 0.22 : 0.6;
+  hemi.intensity = A.night ? 0.62 : 0.72; scene.environmentIntensity = A.night ? 0.32 : 0.6;
+  if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x6a7aa4); ambient.intensity=0.24; }   // moonlight fill — shadows stay blue-grey, never black
+  u.vig.value = A.night ? 0.22 : 0.28;                                                                 // softer vignette (less eye strain)
+  setSky(A);                                                                                           // Z97 visible sky dome matches the light
   setNightLights(!!A.night);
 }
 // keep the key light (and its tight shadow frustum) centred on the action; snap to shadow texels to stop shimmer
@@ -1727,8 +1760,8 @@ const GROUND_STYLE = {   // c0 dark · c1 mid · c2 light (sRGB), roughness, nor
   DESERT: { c:[[132,104,66],[188,156,108],[222,196,150]], rough:0.96, nrm:2.6, tile:22 },
   RUINS:  { c:[[70,70,70],[112,110,104],[150,146,138]],   rough:0.92, nrm:3.0, tile:20 },
   TUNDRA: { c:[[150,166,182],[206,220,232],[244,248,252]],rough:0.72, nrm:1.8, tile:24 },
-  FOUNDRY:{ c:[[34,30,28],[66,56,50],[96,84,74]],          rough:0.9,  nrm:3.2, tile:18 },
-  CITADEL:{ c:[[46,36,26],[84,66,44],[118,96,66]],         rough:0.95, nrm:2.8, tile:20 },
+  FOUNDRY:{ c:[[66,62,58],[104,98,90],[146,138,126]],      rough:0.9,  nrm:3.2, tile:18 },   // ash & clinker grey (was near-black)
+  CITADEL:{ c:[[104,90,70],[150,132,104],[192,172,140]],   rough:0.95, nrm:2.8, tile:20 },   // weathered sandstone dust
   MEADOW: { c:[[58,72,34],[88,112,52],[126,148,74]],       rough:0.95, nrm:2.4, tile:20 },
 };
 const _gCache={};
@@ -1768,7 +1801,7 @@ function groundMaps(b){
     pebbles(1400,1,3,['rgba(90,88,84,0.9)','rgba(140,136,128,0.9)','rgba(60,58,56,0.9)'],'rgba(255,255,255,0.5)'); }
   else if(b.name==='TUNDRA'){ cracks(26,12,1.2,'rgba(140,170,200,0.4)','rgba(0,0,0,0.2)'); pebbles(500,1,2.4,['rgba(80,86,92,0.7)','rgba(110,116,124,0.7)'],'rgba(255,255,255,0.4)');
     for(let i=0;i<1800;i++){ cx.fillStyle='rgba(255,255,255,'+R(0.4,0.9).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,1,1); } }
-  else if(b.name==='FOUNDRY'){ cracks(22,10,2.4,'rgba(255,110,40,0.7)','rgba(0,0,0,0.7)'); cracks(30,10,1.2,'rgba(16,14,12,0.7)','rgba(0,0,0,0.5)'); pebbles(1200,1,3.5,['rgba(30,26,24,0.9)','rgba(80,70,62,0.9)','rgba(60,40,30,0.9)'],'rgba(255,255,255,0.6)');
+  else if(b.name==='FOUNDRY'){ cracks(22,10,2.4,'rgba(150,84,52,0.45)','rgba(0,0,0,0.45)'); cracks(30,10,1.2,'rgba(16,14,12,0.7)','rgba(0,0,0,0.5)'); pebbles(1200,1,3.5,['rgba(30,26,24,0.9)','rgba(80,70,62,0.9)','rgba(60,40,30,0.9)'],'rgba(255,255,255,0.6)');
     for(let i=0;i<12;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(24,80)*W/1024; const g=cx.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba(10,10,14,0.5)'); g.addColorStop(1,'rgba(10,10,14,0)'); cx.fillStyle=g; cx.fillRect(px-r,py-r,r*2,r*2); } }
   else if(b.name==='CITADEL'){ cracks(30,12,1.6,'rgba(24,18,12,0.6)','rgba(0,0,0,0.5)'); pebbles(1300,1,3.4,['rgba(60,48,34,0.9)','rgba(100,84,60,0.9)','rgba(30,26,22,0.9)'],'rgba(255,255,255,0.55)');
     for(let i=0;i<900;i++){ cx.fillStyle='rgba(30,28,26,'+R(0.2,0.5).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,2,2); } }
@@ -6659,7 +6692,7 @@ function startGame(continueRun){
   document.getElementById('combo').style.opacity='0';
   hide('start'); hide('pause'); hide('gameover'); hide('upgrade'); hide('victory');
   audio(); startMusic(); sfx('click');
-  if(MOBILE){ reqFs(); setTimeout(queueResize, 300); setTimeout(queueResize, 800); }   // go immersive + refit after fullscreen/orientation settle
+  if(MOBILE || PROFILE.autoFs!==false){ reqFs(); setTimeout(queueResize, 300); setTimeout(queueResize, 800); }   // go immersive (Z97: desktop too) + refit after fullscreen/orientation settle
   updateHUD();
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
@@ -6694,7 +6727,7 @@ document.getElementById('playBtn').addEventListener('touchstart', e=>{e.preventD
 // skip the deploy cinematic on any input (after a short grace window)
 addEventListener('pointerdown', ()=>skipIntro());
 addEventListener('keydown', ()=>skipIntro());
-document.getElementById('resumeBtn').onclick = togglePause;
+document.getElementById('resumeBtn').onclick = ()=>{ togglePause(); if(!document.fullscreenElement && PROFILE.autoFs!==false){ reqFs(); setTimeout(queueResize,300); } };   // Z97 back to fullscreen after Esc
 document.getElementById('restartBtn').onclick = startGame;
 tapBtn('homeBtn', quitToMenu); tapBtn('goHomeBtn', quitToMenu);   // pause / game-over → back to home menu
 document.getElementById('retryBtn').onclick = startGame;
@@ -6774,7 +6807,9 @@ function openNick(){ const inp=document.getElementById('nickInput'); if(inp) inp
 function saveNick(){ const inp=document.getElementById('nickInput'); let v=((inp&&inp.value)||'').trim().slice(0,16) || 'COMMANDER';
   PROFILE.nickname=v; saveProfile(); hide('nick'); if(!PROFILE.onboarded){ openGuide(); } else if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
 tapBtn('nickSave', saveNick);
-{ const inp=document.getElementById('nickInput'); if(inp) inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveNick(); } }); }
+{ const inp=document.getElementById('nickInput'); if(inp){ inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); saveNick(); } });
+    if(MOBILE){ inp.addEventListener('focus', ()=>{ document.body.classList.add('typing'); window.__syncAppSize&&window.__syncAppSize(); });     // Z97 keyboard up → compact card above it
+      inp.addEventListener('blur', ()=>{ document.body.classList.remove('typing'); window.scrollTo(0,0); setTimeout(()=>{ window.__syncAppSize&&window.__syncAppSize(); queueResize(); }, 250); }); } } }
 
 // ---- HOW TO PLAY: new-player field manual (auto first launch, re-openable) + first-match coach toasts ----
 function buildGuide(){
@@ -7875,7 +7910,7 @@ function loop(nowMs){
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   if(HF.dirty){ HF.dirty=false; syncTerrainMesh(HF.dj0, HF.dj1); HF.dj0=HF.dj1=undefined; }   // apply this frame's new craters (one rebuild max)
   updateEngine(dt);
-  updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); updateDying(dt); PERF.fc++; gradePass.uniforms.time.value = now%100;
+  SKY.position.copy(camera.position); updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); updateDying(dt); PERF.fc++; gradePass.uniforms.time.value = now%100;
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
@@ -7910,7 +7945,7 @@ function doResize(force){
   if(bloom && bloom.setSize) bloom.setSize(Math.round(w*BLOOM_SCALE), Math.round(h*BLOOM_SCALE));
 }
 let _rsT=0;
-function queueResize(){ clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // refit once the size SETTLES — iOS fires
+function queueResize(){ if(document.body.classList.contains('typing')) return; clearTimeout(_rsT); _rsT=setTimeout(()=>doResize(), 150); }   // Z97: the soft keyboard must not re-allocate the 3D canvas   // refit once the size SETTLES — iOS fires
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 window._resize = ()=>doResize(true);   // (debug) force a refit
 if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), giveGun:(id)=>giveGun(id), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, get boss(){ return boss; }, start:()=>startGame(), skip:()=>skipIntro(), barrel:(id)=>setPlayerBarrel(id), grade:(id)=>barrelGrade(id), get PROFILE(){ return PROFILE; }, get FT(){ return FT; }, startBoss:()=>startBoss(performance.now()/1000), dmgBoss:(d,x,z)=>damageBoss(d,x,z), get pylons(){ return PYLONS; }, stun:()=>stunBoss(performance.now()/1000,''), drop:(x,z,t)=>dropPowerup({x,z},t), give:(id)=>applyPowerup(POWERUPS.find(u=>u.id===id)), get pickups(){ return pickups; }, get FT_APC(){ return FT_APC; }, get riders(){ return riders; }, hurt:(e,d)=>damageEnemy(e,d), obj:(st)=>{ S.stage=st; buildObjective(); return OBJ; }, spell:(i)=>{ S.spell=i; S.player.spellCdUntil=0; trySpell(); }, contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); last=t-16.7; loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)
