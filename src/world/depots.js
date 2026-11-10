@@ -11,9 +11,11 @@ let _netTex=null;
 function netTex(){ return _netTex||(_netTex=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#5a5a3a'; x.fillRect(0,0,W,W); const cs=['#3e4428','#6e6a44','#2c3020'];
   for(let i=0;i<60;i++){ x.fillStyle=cs[i%3]; x.beginPath(); x.ellipse(Math.random()*W,Math.random()*W,3+Math.random()*6,2+Math.random()*4,Math.random()*3,0,7); x.fill(); } })); }
 function addBlock(o){ blocks.push(o); return o; }
+// sagging camouflage net (also used by the boot warm-up)
+export function makeCamoNet(){ const net=new THREE.Mesh(new THREE.PlaneGeometry(8,6,6,4), new THREE.MeshStandardMaterial({ map:netTex(), roughness:0.95, side:THREE.DoubleSide, transparent:true, opacity:0.92 }));
+  const pa=net.geometry.attributes.position; for(let i=0;i<pa.count;i++) pa.setZ(i, (Math.random()-0.5)*0.35 - Math.abs(pa.getX(i))*0.05); net.geometry.computeVertexNormals(); return net; }
 function buildArms(q, g, at){ // camouflage net on four poles over weapon racks + ammo crates, sandbag horseshoe
-  const net=new THREE.Mesh(new THREE.PlaneGeometry(8,6,6,4), new THREE.MeshStandardMaterial({ map:netTex(), roughness:0.95, side:THREE.DoubleSide, transparent:true, opacity:0.92 }));
-  { const pa=net.geometry.attributes.position; for(let i=0;i<pa.count;i++) pa.setZ(i, (Math.random()-0.5)*0.35 - Math.abs(pa.getX(i))*0.05); net.geometry.computeVertexNormals(); }
+  const net=makeCamoNet();
   const [nx,nz]=at(0,0); net.rotation.x=-Math.PI/2; net.rotation.z=q.ang; net.position.set(nx, heightAt(nx,nz)+2.6, nz); g.add(net);
   for(const [px,pz] of [[-3.8,-2.8],[3.8,-2.8],[-3.8,2.8],[3.8,2.8]]){ const [wx,wz]=at(px,pz); const m=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,2.6,5), coverMat('pipes')); m.position.set(wx, heightAt(wx,wz)+1.3, wz); g.add(m); }
   const rackM=new THREE.MeshStandardMaterial({ color:0x3a3426, roughness:0.85 }), gunM=new THREE.MeshStandardMaterial({ color:0x1c1c18, roughness:0.45, metalness:0.7 });

@@ -1,7 +1,7 @@
 // game/boot-gate.js — Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up,
 // and the first user gesture (audio + fullscreen).
 import * as THREE from 'three';
-import { ENEMY_DEFS, GUNS, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, camTarget, camera, emberTex, enemyPool, getEnemyMesh, makeCoverMesh, makeGunBarrel, makeMortarShell, makeRocketMesh, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, towerGeos } from '../hub.js';
+import { ENEMY_DEFS, GUNS, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, buildTransport, camTarget, camera, chute, emberTex, enemyPool, getEnemyMesh, makeAllyTankMesh, makeCamoNet, makeCoverMesh, makeGunBarrel, makeMortarShell, makeRocketMesh, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat } from '../hub.js';
 
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
@@ -25,6 +25,10 @@ export async function warmUp(onStep){
     for(let i=0;i<types.length;i++){ const t=types[i]; for(let k=0;k<2;k++){ const m=getEnemyMesh(t); m.position.set(0,-80,0); m.visible=true; pooled.push([t,m]); } if(i%3===2){ step(0.08+0.3*i/types.length); await _frame(); } }
     for(const k of ['sandbag','drums','tires','crates','pipes','concrete','hesco','hedgehog']) put(makeCoverMesh(k, k==='drums'||k==='sandbag'));
     put(makeSoldierMesh()); put(makeSoldierMesh({enemy:true})); put(makeRocketMesh()); put(makeMortarShell()); step(0.42); await _frame();
+    // Z104 first-appearance models: transport helicopter + parachute, captured tank, depot net, stockade wire, rally / drop-zone rings
+    put(buildTransport()); put(chute()); put(makeAllyTankMesh(false)); put(makeCamoNet()); put(new THREE.Mesh(new THREE.BoxGeometry(0.05,2,0.05), wireMat()));
+    put(new THREE.Mesh(new THREE.RingGeometry(5,5.6,24), new THREE.MeshBasicMaterial({ color:0xff4a2a, transparent:true, opacity:0.6, side:THREE.DoubleSide, depthWrite:false })));
+    { const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#9be04a'), transparent:true, depthWrite:false })); put(s); }
     _wreckGeos(); put(new THREE.Mesh(_wreckGeo, new THREE.MeshStandardMaterial({ color:0x222222, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1, transparent:true })));
     { const G=towerGeos(); if(!_woodMat){ __set__woodMat(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 })); __set__tinMat(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') })); }
       put(new THREE.Mesh(G.wood,_woodMat)); put(new THREE.Mesh(G.roof,_tinMat)); }

@@ -10,7 +10,7 @@ const R=(a)=>a[0]+Math.random()*(a[1]-a[0]);
 function heloMats(){ return _heloMats||(_heloMats={ body:new THREE.MeshStandardMaterial({ color:0x6a6248, roughness:0.7, metalness:0.35 }), dark:new THREE.MeshStandardMaterial({ color:0x202018, roughness:0.6, metalness:0.5 }),
   glass:new THREE.MeshStandardMaterial({ color:0x223038, roughness:0.15, metalness:0.6 }), light:new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xff2a1a, emissiveIntensity:2.5 }) }); }
 // tandem-rotor transport (reads differently from the attack gunship)
-function buildTransport(){ const M=heloMats(), g=new THREE.Group();
+export function buildTransport(){ const M=heloMats(), g=new THREE.Group();
   const body=new THREE.Mesh(new THREE.CapsuleGeometry(1.35, 6.4, 6, 12), M.body); body.rotation.x=Math.PI/2; g.add(body);
   const nose=new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 8, 0, Math.PI*2, 0, Math.PI/2), M.glass); nose.rotation.x=Math.PI/2; nose.position.set(0,0.35,4.1); g.add(nose);
   for(const z of [3.4,-3.4]){ const py=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.5,0.9,8), M.dark); py.position.set(0,1.75,z); g.add(py);
@@ -18,7 +18,7 @@ function buildTransport(){ const M=heloMats(), g=new THREE.Group();
   const lamp=new THREE.Mesh(new THREE.SphereGeometry(0.16,8,6), M.light); lamp.position.set(0,-1.35,0); g.add(lamp);
   for(const sx of [-1,1]){ const gear=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.6,0.18), M.dark); gear.position.set(sx*1.0,-1.5,2.4); g.add(gear); const g2=gear.clone(); g2.position.z=-2.6; g.add(g2); }
   g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g; }
-function chute(){ if(!_chuteGeo){ _chuteGeo=new THREE.SphereGeometry(1.7, 14, 6, 0, Math.PI*2, 0, Math.PI/2.3);
+export function chute(){ if(!_chuteGeo){ _chuteGeo=new THREE.SphereGeometry(1.7, 14, 6, 0, Math.PI*2, 0, Math.PI/2.3);
     _chuteMat=new THREE.MeshStandardMaterial({ map:_canvasTex(64,32,(x,W,H)=>{ for(let i=0;i<8;i++){ x.fillStyle=i%2?'#8a2a20':'#d8cfb8'; x.fillRect(i*W/8,0,W/8,H); } }), roughness:0.9, side:THREE.DoubleSide }); }
   const g=new THREE.Group(); const c=new THREE.Mesh(_chuteGeo, _chuteMat); c.position.y=3.4; g.add(c);
   const lm=new THREE.LineBasicMaterial({ color:0x2a2a22 }); const pts=[]; for(let k=0;k<6;k++){ const a=k/6*6.283; pts.push(new THREE.Vector3(Math.cos(a)*1.55,3.2,Math.sin(a)*1.55), new THREE.Vector3(0,1.35,0)); }

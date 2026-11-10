@@ -7,9 +7,12 @@ import { ARENA, S, TANK_SCALE, aiSteer, animateTank, bakeTank, blocks, boss, bui
 export const ALLY_TANKS=[];
 export const ALLY_PAL={ hull:0x55663a, turret:0x627344, barrel:0x7a8a52, tread:0x22281a, accent:0x9be04a };   // captured hull, our colours
 const _am=new THREE.Vector3(), _ad=new THREE.Vector3();
+// the captured hull in our colours + a lime ID panel on the turret roof (air/ground recognition) — also used by the boot warm-up
+export function makeAllyTankMesh(heavy){ const m=buildTank(ALLY_PAL); bakeTank(m); m.scale.setScalar((heavy?1.15:1)*TANK_SCALE); m.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  const tur=m.userData.turret; if(tur){ const id=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.05,0.7), new THREE.MeshStandardMaterial({ color:0x9be04a, emissive:0x5fae1c, emissiveIntensity:0.8 })); id.position.set(0,0.62,-0.2); tur.add(id); }
+  return m; }
 export function spawnAllyTank(x, z, facing, heavy){
-  const m=buildTank(ALLY_PAL); bakeTank(m); const sc=(heavy?1.15:1)*TANK_SCALE; m.scale.setScalar(sc); m.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); scene.add(m);
-  const tur=m.userData.turret; if(tur){ const id=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.05,0.7), new THREE.MeshStandardMaterial({ color:0x9be04a, emissive:0x5fae1c, emissiveIntensity:0.8 })); id.position.set(0,0.62,-0.2); tur.add(id); }   // lime ID panel on the turret roof (air/ground recognition)
+  const m=makeAllyTankMesh(heavy); scene.add(m);
   const hp=Math.round(ALLY_TANK.hp*(heavy?1.6:1)*(1+(S.stage-1)*0.15)), bar=getEnemyBar(); bar.g.scale.setScalar(1.3);
   const t={ mesh:m, pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(), facing, aim:facing, hp, maxHp:hp, r:1.5*(heavy?1.15:1), heavy:!!heavy, fireAt:performance.now()/1000+1.2, thinkAt:0, target:null, goal:null, kbx:0, kbz:0, bar };
   m.position.set(x,0,z); m.rotation.y=facing; ALLY_TANKS.push(t); radio('Kíp lái: Xe tăng chiến lợi phẩm đã sẵn sàng — tự tìm mục tiêu!'); return t; }

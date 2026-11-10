@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -391,6 +391,52 @@ grp('BLURBS — present for every item');
 for (const u of SHOP_UP) {
   ok(typeof UP_BLURB[u.key] === 'string' && UP_BLURB[u.key].length > 0, `UP_BLURB has copy for upgrade "${u.key}"`);
 }
+// ---------------------------------------------------------------------------
+// Z104 DATA CONTRACTS — wider battlefield, squad AI, installations, paratroopers
+// ---------------------------------------------------------------------------
+{ const N=OPERATIONS.length, perStage=(arr)=>Array.isArray(arr) && arr.length===N && arr.every(n=>Number.isInteger(n) && n>=0);
+  const range=(r,lo,hi)=>Array.isArray(r) && r.length===2 && r[0]<=r[1] && r[0]>=lo && r[1]<=hi;
+  // mobile aim: a narrow forward cone (wide enough to hit, narrow enough to mean "where the hull points")
+  ok(AIM.mobileFixed===true || AIM.mobileFixed===false, 'AIM.mobileFixed is a switch');
+  ok(AIM.cone>0.05 && AIM.cone<0.45, 'AIM.cone is a narrow forward cone (0.05–0.45 rad)');
+  ok(AIM.artyCone>=AIM.cone && AIM.artyCone<0.8, 'lobbed weapons get a slightly wider cone than direct fire');
+  ok(AIM.lane>0.5 && AIM.lane<4, 'AIM.lane (near-target tolerance) is a hull-width-ish strip');
+  ok(AIM.pivotOnly>0.1 && AIM.pivotOnly<0.6, 'a light stick push only pivots; a real push still drives');
+  // lethality: the core kills, the ring wounds, and the numbers are ordered
+  ok(LETHAL.core>0 && LETHAL.core<1, 'blast kill-core is a fraction of the radius');
+  ok(LETHAL.reach>=1 && LETHAL.reach<2, 'blast wound ring reaches a little past the radius (1–2×)');
+  ok(LETHAL.edgeMin>0 && LETHAL.edgeMin<1, 'wounds at the edge are partial, never zero inside the ring');
+  { const k=(d,r)=>{ const c=r*LETHAL.core, R=r*LETHAL.reach; return d<=c?1:(d>=R?0:LETHAL.edgeMin+(1-LETHAL.edgeMin)*(1-(d-c)/(R-c))); };
+    let mono=true, prev=2; for(let d=0; d<=6; d+=0.25){ const v=k(d,4); if(v>prev+1e-9) mono=false; prev=v; }
+    ok(mono && k(0,4)===1 && k(4*LETHAL.reach,4)===0, 'blast lethality falls off monotonically: dead at the core, untouched past reach'); }
+  // soldier look + squad AI
+  ok(TROOPS.look.scale>=1.4 && TROOPS.look.scale<=2.4, 'soldiers are one readable size for both sides (1.4–2.4)');
+  ok(TROOPS.look.barY > TROOPS.look.scale*1.5, 'soldier HP bar floats above the helmet');
+  ok(SQUAD.think>0.1 && SQUAD.think<=1, 'soldiers re-plan several times a second');
+  ok(SQUAD.huntR > TROOPS.fireteam.detect, 'idle soldiers advance on enemies beyond what they can already see');
+  ok(SQUAD.cover.threat>8 && SQUAD.cover.search>4, 'soldiers react to armour at a sane distance and look for nearby cover');
+  ok(SQUAD.guardHit>0 && SQUAD.guardHit<1, 'shooting a tower guard off is a chance, not a certainty');
+  ok(SQUAD.lootDetect>5, 'soldiers notice loot a few metres away');
+  ok(SQUAD.at.dmg>TROOPS.fireteam.dmg && SQUAD.at.aoe>0 && SQUAD.at.cd>TROOPS.fireteam.fireCd && SQUAD.at.range>0, 'AT launcher hits harder but reloads slower than a rifle');
+  ok(SQUAD.armedMul>1 && SQUAD.armedMul<2, 're-armed rifles are better, not absurd');
+  ok(INFANTRY.coverThreat>8 && INFANTRY.coverSearch>4, 'enemy riflemen also take cover from tanks');
+  ok(INFANTRY.squad.maxMobile<=INFANTRY.squad.maxOnField && CAMP.infCap<=INFANTRY.squad.maxOnField+4, 'phones carry fewer soldiers; camps stop feeding near the field cap');
+  // installations
+  ok(RALLY.r>=3 && RALLY.offX>0 && RALLY.offX<0.6 && RALLY.offZ>0.3 && RALLY.offZ<0.9, 'rally point sits on our side, inside the arena');
+  ok(perStage(POW.perStage), 'POW stockades defined for every stage');
+  ok(range(POW.prisoners,1,8) && range(POW.guards,1,8) && range(POW.guardsMobile,1,POW.guards[1]), 'POW prisoners / guards in range; phones get no more guards than desktop');
+  ok(POW.freeR>3 && POW.score>0 && POW.coin>0, 'freeing prisoners pays and has a reachable gate radius');
+  ok(perStage(DEPOT.arms) && perStage(DEPOT.motor), 'weapon + tank depots defined for every stage');
+  ok(range(DEPOT.guards,1,10) && range(DEPOT.guardsMobile,1,DEPOT.guards[1]) && range(DEPOT.tanks,1,4), 'depot guards / parked tanks in range');
+  ok(DEPOT.capT>0.5 && DEPOT.capT<15 && DEPOT.r>=6, 'depot capture takes a few seconds inside a usable ring');
+  ok(ALLY_TANK.hp>0 && ALLY_TANK.dmg>0 && ALLY_TANK.fireCd>0.3 && ALLY_TANK.range>ALLY_TANK.keep, 'captured tanks can fight and keep their stand-off inside gun range');
+  ok(ALLY_TANK.leash>ALLY_TANK.keep && ALLY_TANK.cap>=1 && ALLY_TANK.cap<=6, 'captured tanks stay near you and are capped');
+  ok(PARA.fromStage>=1 && PARA.fromWave>=1 && range(PARA.every,15,180) && range(PARA.everyMobile,15,240), 'paratroop drops are periodic, not constant');
+  ok(PARA.everyMobile[0]>=PARA.every[0], 'phones see drops no more often than desktop');
+  ok(range(PARA.troops,1,10) && range(PARA.troopsMobile,1,PARA.troops[1]), 'paratroop stick size in range; phones no bigger than desktop');
+  ok(PARA.alt>8 && PARA.fall>1 && PARA.speed>4 && PARA.gap>0.1, 'drops are visible: high enough, slow enough to react');
+}
+
 for (const id of Object.keys(GUN_PRICE)) {
   ok(typeof GUN_BLURB[id] === 'string' && GUN_BLURB[id].length > 0, `GUN_BLURB has copy for gun "${id}"`);
 }

@@ -7,7 +7,7 @@ import { FT, MOBILE, RIDER, S, addCoins, addScore, burst, cMod, campMats, diffRe
 
 export const POWS=[];
 let _wireMat=null;
-function wireMat(){ return _wireMat||(_wireMat=new THREE.MeshStandardMaterial({ color:0x6a6a62, roughness:0.5, metalness:0.8 })); }
+export function wireMat(){ return _wireMat||(_wireMat=new THREE.MeshStandardMaterial({ color:0x6a6a62, roughness:0.5, metalness:0.8 })); }
 // square stockade: steel pickets + three strands of wire, a gate gap facing the field, a tent, kneeling prisoners
 function buildStockade(q){ const g=new THREE.Group(); scene.add(g); const R=q.r*0.62, gy=heightAt(q.x,q.z), M=campMats(), W=wireMat();
   const gateA=Math.atan2(-q.x, -q.z);                                                      // the gate looks toward the middle of the field
