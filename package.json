@@ -2,11 +2,19 @@
   "name": "steel-siege",
   "private": true,
   "type": "module",
-  "description": "Zero-build game (static files, ES modules, Three.js from CDN). npm is used ONLY as a task runner — no dependencies, no bundler.",
+  "description": "Zero-build game (static files, ES modules, Three.js from CDN). npm is a task runner; devDependencies are ONLY for the maintainer refactor tools (tools/refactor) — the game never loads them.",
   "scripts": {
     "test": "node tools/verify.mjs",
     "arch": "node tools/archcheck.mjs",
     "serve": "python3 -m http.server 8765",
-    "where": "node tools/where.mjs"
+    "where": "node tools/where.mjs",
+    "imports": "node tools/refactor/fix-imports.mjs",
+    "move": "node tools/refactor/move.mjs",
+    "deep": "node tools/refactor/deepcheck.mjs",
+    "modmap": "node tools/refactor/modmap.mjs"
+  },
+  "devDependencies": {
+    "acorn": "^8.14.0",
+    "eslint-scope": "^7.2.2"
   }
 }
