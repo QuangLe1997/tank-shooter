@@ -1,6 +1,6 @@
 # STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
 
-> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z79**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
+> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z80**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 
 ---
 
@@ -67,6 +67,19 @@
 | **HEAVY** (Z33) | xám sắt | 140 | ✅ đạn nặng | **Bruiser**: máu trâu nhất, chậm, bắn **đạn to chậm sát thương cao (22) + đẩy lùi mạnh**. 2 nòng to + giáp hông. Mở từ màn 3. |
 | **SNIPER** (Z33) | tím-than | 34 | ✅ bắn tỉa | **Marksman**: tầm xa nhất (52), **chính xác cao + đạn nhanh (đỏ)**, bắn chậm. Nòng dài + ống ngắm phát sáng tím. Mở từ màn 4. |
 | **CARRIER** (Z33) | vàng-olive | 96 + 3×26 | ❌ (chở lính) | **APC chở 3 lính** bắn súng trường trên thùng xe. **Hạ vỏ xe HOẶC hạ hết 3 lính → xe gục** (bắn vào vừa bào vỏ vừa tỉa lính). Mở từ màn 3. |
+
+### Xe địch mới (Z80)
+
+| Loại | HP | Mở từ | Vai trò | Cách khắc chế |
+|---|---|---|---|---|
+| **FLAME TANK** | 74 | màn 2 | Lao sát, phun lửa nón tầm 11 (~15/s) | Giữ khoảng cách, CRYO/đạn xuyên; chết thì bình xăng nổ (6 m) |
+| **ATGM** | 52 | màn 3 | Chiếu laser 1.2s → tên lửa dẫn đường (tốc 21, rẽ 1.5 rad/s, 30 sát thương) | Bắn hạ tên lửa, rẽ gắt, SMOKE; diệt khi đang ngắm (đứng yên) |
+| **ENGINEER** | 62 | màn 3 | Hàn sửa xe bị thương nhất (~15% máu/s), tự hồi 3/s | Diệt trước tiên |
+| **GUNSHIP** | 96 | màn 4 (AIR RAID từ màn 3) | Bay cao 7.5, quỹ đạo 19: súng mũi 9 viên/loạt + 2 rocket mỗi ~5s | FLAK ×1.8, MISSILE khoá được, KIN/ELEC; cối/pháo/lửa không chạm tới |
+
+- Trọng số xuất hiện trong wave = `base + (stage − màn_mở)×per`: pyro 1.0+0.5 · engineer 0.6+0.3 · atgm 0.8+0.5 · gunship 0.45+0.3.
+- Giáp **A** (máy bay): KIN 1.10 · AP 0.70 · HE 1.00 · FRAG 1.10 · FIRE 0.40 · CRYO 0.90 · ELEC 1.25 · HESH 0.60.
+- Sự kiện **AIR RAID** (màn ≥ 3): +2 gunship vào wave (+1 nữa từ màn 5).
 
 ### Bộ binh địch (Z79) — đi bộ, theo tổ
 

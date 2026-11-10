@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP } from './config.js';
+import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER } from './config.js';
 
 const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
 
@@ -198,6 +198,18 @@ ok(DMG_TYPE.FRAG.L >= DMG_TYPE.HE.L, 'FRAG shreds LIGHT targets at least as well
 ok(DMG_TYPE.HESH.struct === Math.max(...Object.values(DMG_TYPE).map(m=>m.struct)), 'HESH is the best structure-breaker');
 for (const [e, a] of Object.entries(ARMOR)) ok(['L','M','H','A'].includes(a), `ARMOR.${e} is L/M/H/A`);
 for (const [t, m] of Object.entries(DMG_TYPE)) ok(m.A > 0 && m.A <= 1.5, `DMG_TYPE.${t}.A (vs aircraft) is in (0,1.5]`);
+
+grp('NEW VEHICLES (Z80)');
+for (const k of Object.keys(ROSTER.unlock)) { ok(ARMOR[k], `ROSTER.${k} has an armour class`); ok(ROSTER.unlock[k] >= 2 && ROSTER.unlock[k] <= 5, `${k} unlocks between stage 2 and 5`);
+  ok(Array.isArray(ROSTER.weight[k]) && ROSTER.weight[k][0] > 0 && ROSTER.weight[k][1] >= 0, `${k} has a positive wave weight`); }
+ok(ROSTER.atgm.aimT >= 1, 'ATGM laser-paint telegraph ≥ 1s');
+ok(ROSTER.atgm.speed < PLAYER_MAXSPEED, 'guided missile is slower than the tank — it can be out-turned');
+ok(ROSTER.atgm.turn < 3, 'ATGM turn rate is limited (a sharp dodge shakes it)');
+ok(ROSTER.pyro.cone > 0.5 && ROSTER.pyro.cone < 1, 'flame cone is a valid cosine');
+ok(ROSTER.pyro.dps * 3 < 60, 'standing 3s in the flames is costly but not instant death');
+ok(ROSTER.gunship.alt > 4 && ROSTER.gunship.range > ROSTER.gunship.orbit, 'gunship flies high and engages from its orbit');
+ok(ROSTER.aaBonus > 1, 'flak gets a bonus against aircraft');
+ok(ARMOR.gunship === 'A', 'gunship uses the aircraft armour class');
 
 grp('INFANTRY + EQUIPMENT (Z79/Z82)');
 for (const k of ['rifle','rpg']) { const d = INFANTRY[k];
