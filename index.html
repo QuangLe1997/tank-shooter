@@ -36,22 +36,30 @@
 <link rel="stylesheet" href="css/boot-home.css" />
 <link rel="stylesheet" href="css/theme.css" />
 <link rel="stylesheet" href="css/polish.css" />
+<link rel="stylesheet" href="css/intro.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
 <div id="boot">
-  <div class="boot-bg"></div>
-  <div class="scanlines"></div><div class="sweep"></div>
-  <div class="frame"><i></i><i></i><i></i><i></i></div>
-  <div class="boot-inner">
-    <div class="boot-kick">◤ COMBAT SYSTEM ◢</div>
-    <div class="boot-logo">STEEL SIEGE</div>
-    <div class="boot-sub">3D Tank Shooter</div>
-    <div class="boot-lines"><span>RENDER CORE · ONLINE</span><span>ARMORY LINK · SECURE</span><span>BATTLEFIELD · READY</span></div>
-    <div class="boot-bar"><i></i></div>
+  <div class="ib-art"></div>
+  <div class="ib-shade"></div>
+  <div class="ib-flash"></div>
+  <div class="ib-embers"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="ib-sweep"></div>
+  <div class="ib-scan"></div>
+  <div class="ib-frame"><i></i><i></i><i></i><i></i></div>
+  <div class="ib-hud">
+    <div class="ib-kick"><span>◤</span> ĐẠI ĐỘI THÉP 7 · CHIẾN DỊCH THÉP ĐỎ <span>◢</span></div>
+    <div class="ib-tag"><span>GIỮ</span><span>LÕI.</span><span class="hot">PHÁ</span><span class="hot">VÒNG VÂY.</span></div>
+    <div class="ib-lines">
+      <div class="ib-line" data-step="0"><b></b>HỆ THỐNG KHAI HOẢ<em>· TRỰC TUYẾN</em></div>
+      <div class="ib-line" data-step="1"><b></b>DỰNG CHIẾN TRƯỜNG<em>· HOÀN TẤT</em></div>
+      <div class="ib-line" data-step="2"><b></b>NẠP KHO VŨ KHÍ<em>· SẴN SÀNG</em></div>
+    </div>
+    <div class="ib-prog"><div class="ib-bar"><i id="bootFill"></i></div><span class="ib-pct" id="bootPct">0%</span></div>
     <div class="boot-msg" id="bootMsg">ĐANG NẠP KHO VŨ KHÍ…</div>
-    <div class="boot-tap" id="bootTap"><span class="bt-ping"></span>CHẠM ĐỂ XUẤT KÍCH</div>
-    <div class="boot-note">Toàn màn hình · bật âm thanh</div>
+    <div class="ib-cta" id="bootTap"><span class="ring"></span><span class="ring r2"></span><span class="ib-cta-tx">XUẤT KÍCH</span><span class="ib-chev">▶</span></div>
+    <div class="ib-note" id="bootNote">Chạm hoặc nhấn phím bất kỳ · toàn màn hình · bật âm thanh</div>
   </div>
 </div>
 <script src="src/boot/safety.js"></script>

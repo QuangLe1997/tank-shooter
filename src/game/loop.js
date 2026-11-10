@@ -1,7 +1,7 @@
 // AUTO-SPLIT from index.html (Z98). Edit freely — this is now the source of truth for this system.
 import * as THREE from 'three';
 import { CONTRACTS } from '../../config.js';
-import { ART, BIOME, BIOMES, BLOOM_SCALE, DEATH, DRONE, ENEMY_DEFS, FT, FT_APC, GUNS, HF, MOBILE, NIGHT, OBJ, PERF, PLAYER, POWERUPS, PROFILE, PYLONS, S, SKY, SPELLS, VIEW, WAVE, __set__tinMat, __set__woodMat, __set_bannerTimer, __set_muted, __set_ridersUnlocked, __set_soldierLvl, _tinMat, _woodMat, _wreckGeo, _wreckGeos, addGunXp, aimDots, applyAtmosphere, applyBiome, applyPowerup, applyUpgrades, artImpact, artLockStrike, artStrikes, audio, bannerTimer, barrelGrade, beginDeath, blocks, bloom, boss, buildCore, buildObjective, buildTank, buildTerrainDecor, buildTerrainPicker, bullets, buyShop, cMod, camTarget, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageBoss, damageDrone, damageEnemy, damagePlayer, debris, decorGroup, deployOwnedDrone, deployRiders, deploySoldiers, dprCap, drawRadar, droneBonusHp, droneDmgMul, droneOwned, dropPowerup, emberTex, enemies, enemyBarPool, enemyPool, fireArty, fireFlame, fireGun, flameJet, flushParticles, fuses, getEnemyMesh, giveGun, gradePass, guardFireMul, gunDropPool, gunLevel, gunXp, heightAt, impactFX, initIcons, intro, killBoss, killEnemy, makeCoverMesh, makeElite, makeGunBarrel, makeMortarShell, makePlayer, makeRocketMesh, makeSoldierMesh, muted, muzzleLight, openBriefing, openGuide, openLoadout, openNick, openShop, openUpgrade, ownGun, panelTex, parts, pickups, playerDie, propTex, pumpTips, radarCanvas, radarCtx, rangeRing, refreshBestLine, refreshStartUI, renderer, reqFs, respawnPlayer, riders, ridersUnlocked, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, separateTanks, setMuted, setNightLights, setPlayerBarrel, setQuality, shop3dUpdate, shopCam, shopModel, shopOpen, skipIntro, soldierLvl, soldiers, spawnDrone, spawnEnemy, spawnTankWreck, startBoss, startGame, stunBoss, syncMenuState, syncTerrainMesh, tankExplode, togglePause, towerGeos, towers, trySpell, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCore, updateCoreAlarm, updateCrush, updateDeath, updateDebris, updateDecals, updateDrone, updateDying, updateEnemies, updateEnemyBar, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateFuses, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateObjective, updateParticles, updatePickups, updatePlayer, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSpellHUD, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWaves, updateWorldBars, updateWrecks } from '../hub.js';
+import { ART, BIOME, BIOMES, BLOOM_SCALE, DEATH, DRONE, ENEMY_DEFS, FT, FT_APC, GUNS, HF, MOBILE, NIGHT, OBJ, PERF, PLAYER, POWERUPS, PROFILE, PYLONS, S, SKY, SPELLS, VIEW, WAVE, __set__tinMat, __set__woodMat, __set_bannerTimer, __set_muted, __set_ridersUnlocked, __set_soldierLvl, _tinMat, _woodMat, _wreckGeo, _wreckGeos, addGunXp, aimDots, applyAtmosphere, applyBiome, applyPowerup, applyUpgrades, artImpact, artLockStrike, artStrikes, audio, bannerTimer, barrelGrade, beginDeath, blocks, bloom, boss, buildCore, buildObjective, buildTank, buildTerrainDecor, buildTerrainPicker, bullets, buyShop, cMod, camTarget, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageBoss, damageDrone, damageEnemy, damagePlayer, debris, decorGroup, deployOwnedDrone, deployRiders, deploySoldiers, dprCap, drawRadar, droneBonusHp, droneDmgMul, droneOwned, dropPowerup, emberTex, enemies, enemyBarPool, enemyPool, fireArty, fireFlame, fireGun, flameJet, flushParticles, fuses, getEnemyMesh, giveGun, gradePass, guardFireMul, gunDropPool, gunLevel, gunXp, heightAt, impactFX, initIcons, intro, killBoss, killEnemy, makeCoverMesh, makeElite, makeGunBarrel, makeMortarShell, makePlayer, makeRocketMesh, makeSoldierMesh, muted, muzzleLight, openBriefing, openGuide, openLoadout, openNick, openShop, openUpgrade, ownGun, panelTex, parts, pickups, playerDie, propTex, pumpTips, radarCanvas, radarCtx, rangeRing, refreshBestLine, refreshStartUI, renderer, reqFs, respawnPlayer, riders, ridersUnlocked, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, separateTanks, setMuted, setNightLights, setPlayerBarrel, setQuality, sfx, shop3dUpdate, shopCam, shopModel, shopOpen, skipIntro, soldierLvl, soldiers, spawnDrone, spawnEnemy, spawnTankWreck, startBoss, startGame, stunBoss, syncMenuState, syncTerrainMesh, tankExplode, togglePause, towerGeos, towers, trySpell, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCore, updateCoreAlarm, updateCrush, updateDeath, updateDebris, updateDecals, updateDrone, updateDying, updateEnemies, updateEnemyBar, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateFuses, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateObjective, updateParticles, updatePickups, updatePlayer, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSpellHUD, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWaves, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -157,47 +157,56 @@ window._deployOwnedDrone = deployOwnedDrone; window._droneOwned = droneOwned; wi
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
 export function bootHide(){ const b=document.getElementById('boot'); if(!b||b._gone) return; b._gone=true;
-  b.classList.add('gone'); setTimeout(()=>{ b.style.display='none'; }, 450); }
-// ---- WARM-UP: compile every material variant (day AND night lighting) + pre-build the enemy pools while the menu is up →
-//      no shader-compile hitches when the first tank, explosion, wreck or night stage appears ----
+  b.classList.add('leaving'); setTimeout(()=>{ b.classList.add('gone'); document.body.classList.add('menu-in'); }, 380); setTimeout(()=>{ b.style.display='none'; }, 950); }
+// Z101 real boot progress: bar (transform only) + the three status lines tick off as the work actually finishes
+export function setBootProgress(pct, step){ const f=document.getElementById('bootFill'), t=document.getElementById('bootPct');
+  if(f){ f.style.animation='none'; f.style.transform='scaleX('+Math.max(0.04,Math.min(1,pct/100)).toFixed(3)+')'; } if(t) t.textContent=Math.round(pct)+'%';
+  if(step!=null) document.querySelectorAll('#boot .ib-line').forEach(l=>{ if(+l.dataset.step<=step) l.classList.add('done'); }); }
+const _frame=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+// ---- WARM-UP: compile every material variant (day AND night lighting) + pre-build the enemy pools behind the intro →
+//      no shader-compile hitches when the first tank, explosion, wreck or night stage appears. Z101: done in small slices
+//      with a frame between each, so the intro keeps animating and the progress bar moves for real. ----
 export let _warmed=false;
-export async function warmUp(){
-  if(_warmed) return; _warmed=true;
+export async function warmUp(onStep){
+  if(_warmed) return; _warmed=true; const step=onStep||(()=>{});
   const tmp=[], put=(o)=>{ o.position.set(0,-80,0); o.visible=true; scene.add(o); tmp.push(o); return o; };
   try{
-    put(buildTank({detail:true, mighty:true}));
-    const pooled=[]; for(const t of Object.keys(ENEMY_DEFS)){ for(let k=0;k<2;k++){ const m=getEnemyMesh(t); m.position.set(0,-80,0); m.visible=true; pooled.push([t,m]); } }
+    put(buildTank({detail:true, mighty:true})); step(0.08); await _frame();
+    const pooled=[]; const types=Object.keys(ENEMY_DEFS);
+    for(let i=0;i<types.length;i++){ const t=types[i]; for(let k=0;k<2;k++){ const m=getEnemyMesh(t); m.position.set(0,-80,0); m.visible=true; pooled.push([t,m]); } if(i%3===2){ step(0.08+0.3*i/types.length); await _frame(); } }
     for(const k of ['sandbag','drums','tires','crates','pipes','concrete','hesco','hedgehog']) put(makeCoverMesh(k, k==='drums'||k==='sandbag'));
-    put(makeSoldierMesh()); put(makeSoldierMesh({enemy:true})); put(makeRocketMesh()); put(makeMortarShell());
+    put(makeSoldierMesh()); put(makeSoldierMesh({enemy:true})); put(makeRocketMesh()); put(makeMortarShell()); step(0.42); await _frame();
     _wreckGeos(); put(new THREE.Mesh(_wreckGeo, new THREE.MeshStandardMaterial({ color:0x222222, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1, transparent:true })));
     { const G=towerGeos(); if(!_woodMat){ __set__woodMat(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 })); __set__tinMat(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') })); }
       put(new THREE.Mesh(G.wood,_woodMat)); put(new THREE.Mesh(G.roof,_tinMat)); }
-    for(const id of Object.keys(GUNS)) put(makeGunBarrel(id));
-    if(renderer.compileAsync){ await renderer.compileAsync(scene, camera);
-      const was=NIGHT.on; setNightLights(true); await renderer.compileAsync(scene, camera); setNightLights(was); NIGHT._was=was; }   // both light setups
-    // one real (off-screen) draw with everything in view → also compiles shadow-depth + per-object variants; synchronous → never shown
+    const gids=Object.keys(GUNS); for(let i=0;i<gids.length;i++){ put(makeGunBarrel(gids[i])); if(i%4===3){ step(0.45+0.15*i/gids.length); await _frame(); } }
+    if(renderer.compileAsync){ step(0.62); await renderer.compileAsync(scene, camera); step(0.75); await _frame();
+      const was=NIGHT.on; setNightLights(true); await renderer.compileAsync(scene, camera); setNightLights(was); NIGHT._was=was; step(0.86); await _frame(); }   // both light setups
+    // one real (off-screen) draw with everything in view → also compiles shadow-depth + per-object variants
     { const rt=new THREE.WebGLRenderTarget(96,96), tgt=camTarget.clone(), keep=[];
       const all=tmp.concat(pooled.map(x=>x[1])); all.forEach((o,i)=>{ keep.push(o.position.clone()); o.position.set(tgt.x+(i%6-2.5)*4, 0, tgt.z+((i/6|0)-2)*4); });
-      for(const night of [false,true]){ setNightLights(night); renderer.setRenderTarget(rt); renderer.render(scene, camera); }
+      for(const night of [false,true]){ setNightLights(night); renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(null); step(night?0.97:0.92); await _frame(); }
       setNightLights(NIGHT.on); renderer.setRenderTarget(null); rt.dispose(); all.forEach((o,i)=>o.position.copy(keep[i])); }
     for(const [t,m] of pooled){ m.visible=false; m.position.set(0,0,0); (enemyPool[t]=enemyPool[t]||[]).push(m); }   // ready-made enemy pool
   }catch(e){ console.warn('warm-up skipped', e); }
   for(const o of tmp) scene.remove(o);
-  performance.mark('boot:warm');
+  step(1); performance.mark('boot:warm');
 }
 export function idle(fn){ (window.requestIdleCallback||((f)=>setTimeout(f,60)))(fn, {timeout:1500}); }
-export function bootReady(forceTap){
+export async function bootReady(){
   performance.mark('boot:ready');
-  idle(()=>{ warmUp(); });
-  const b=document.getElementById('boot'); if(!b||b._gone) return;
-  if(!(MOBILE||forceTap===true)){ bootHide(); return; }                 // desktop: straight into the menu
+  const b=document.getElementById('boot'); if(!b||b._gone){ warmUp(); return; }
+  setBootProgress(55, 1);                                                          // modules + world are up
+  await warmUp(f=>setBootProgress(55+f*44, f>=1?2:1));                            // shaders + pools, sliced across frames
+  setBootProgress(100, 2); await _frame();
+  const msg=document.getElementById('bootMsg'); if(msg) msg.textContent='SẴN SÀNG CHIẾN ĐẤU';
   b.classList.add('ready');
-  const go=e=>{ if(e&&e.cancelable) e.preventDefault();
-    b.removeEventListener('touchstart',go); b.removeEventListener('click',go);
-    try{ audio(); }catch(_){}                                            // iOS: AudioContext only resumes inside a gesture
-    reqFs(); bootHide();
-    queueResize(); setTimeout(queueResize,300); setTimeout(queueResize,900); };   // refit once fullscreen/rotation settle
-  b.addEventListener('touchstart',go,{passive:false}); b.addEventListener('click',go);
+  const go=e=>{ if(e&&e.cancelable && e.type!=='keydown') e.preventDefault();
+    b.removeEventListener('touchstart',go); b.removeEventListener('click',go); removeEventListener('keydown',go);
+    try{ audio(); sfx('levelup'); }catch(_){}                                     // the gesture browsers demand before audio …
+    reqFs(); bootHide();                                                           // … and fullscreen (desktop too)
+    queueResize(); setTimeout(queueResize,300); setTimeout(queueResize,900); };
+  b.addEventListener('touchstart',go,{passive:false}); b.addEventListener('click',go); addEventListener('keydown',go);
 }
 window._bootReady = bootReady; window._bootHide = bootHide;   // (debug/test) drive the boot gate
 syncMenuState();                                               // the title screen is an open menu → HUD stays out of the way

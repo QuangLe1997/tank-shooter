@@ -1,0 +1,114 @@
+/* =====================================================================================================
+   Z101 · CINEMATIC INTRO (boot gate). Every animation here moves ONLY transform / opacity, so the browser
+   runs it on the compositor — it stays smooth even while the game builds the world and compiles shaders.
+   Layers: key art push-in · dark shade · artillery flash · rising embers · light sweep · scanlines · frame · HUD.
+   ===================================================================================================== */
+@keyframes shineX{0%,58%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}   /* shared with the PLAY button */
+
+#boot{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:999;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;
+  padding:0 16px calc(env(safe-area-inset-bottom) + clamp(18px,6vh,56px));background:#050703;font-family:var(--hud);color:#eef3e2;
+  opacity:1;transition:opacity .55s ease;}
+#boot.gone{opacity:0;pointer-events:none;}
+#boot .ib-art,#boot .ib-shade,#boot .ib-flash,#boot .ib-embers,#boot .ib-sweep,#boot .ib-scan,#boot .ib-frame{position:absolute;inset:0;pointer-events:none;}
+
+/* key art: slow push-in; on exit it surges forward */
+#boot .ib-art{background:url('../assets/banner-desktop.jpg') center/cover no-repeat;transform:scale(1.14);will-change:transform;
+  animation:ibPush 10s cubic-bezier(.16,.7,.24,1) forwards;}
+@keyframes ibPush{to{transform:scale(1.0);}}
+#boot.leaving .ib-art{transition:transform .6s cubic-bezier(.5,0,.8,.4);transform:scale(1.22);}
+#boot .ib-shade{background:radial-gradient(120% 90% at 50% 38%,rgba(5,7,3,.1) 0%,rgba(5,7,3,.55) 55%,rgba(3,4,2,.94) 100%),
+  linear-gradient(180deg,rgba(3,4,2,.35) 0%,rgba(3,4,2,0) 30%,rgba(3,4,2,.65) 70%,rgba(3,4,2,.96) 100%);}
+
+/* distant artillery: warm flashes on the horizon (opacity only) */
+#boot .ib-flash{background:radial-gradient(60% 40% at 72% 46%,rgba(255,170,80,.55),rgba(255,120,40,0) 70%);opacity:0;animation:ibFlash 5.2s ease-out 1.2s infinite;}
+@keyframes ibFlash{0%{opacity:0;}3%{opacity:.9;}9%{opacity:.15;}12%{opacity:.6;}26%,100%{opacity:0;}}
+
+/* embers rising off the battlefield */
+#boot .ib-embers i{position:absolute;bottom:-12px;width:4px;height:4px;border-radius:50%;background:#ffb04a;box-shadow:0 0 8px 2px rgba(255,140,40,.7);
+  opacity:0;will-change:transform,opacity;animation:ibEmber 6s linear infinite;}
+@keyframes ibEmber{0%{transform:translate3d(0,0,0) scale(1);opacity:0;}10%{opacity:.95;}100%{transform:translate3d(60px,-95vh,0) scale(.3);opacity:0;}}
+#boot .ib-embers i:nth-child(1){left:6%;animation-delay:.2s;}  #boot .ib-embers i:nth-child(2){left:14%;animation-delay:2.4s;animation-duration:7s;}
+#boot .ib-embers i:nth-child(3){left:23%;animation-delay:1.1s;} #boot .ib-embers i:nth-child(4){left:31%;animation-delay:3.6s;animation-duration:8s;}
+#boot .ib-embers i:nth-child(5){left:39%;animation-delay:.7s;animation-duration:5.4s;} #boot .ib-embers i:nth-child(6){left:47%;animation-delay:4.2s;}
+#boot .ib-embers i:nth-child(7){left:55%;animation-delay:1.8s;animation-duration:7.6s;} #boot .ib-embers i:nth-child(8){left:62%;animation-delay:3s;}
+#boot .ib-embers i:nth-child(9){left:69%;animation-delay:.4s;animation-duration:6.6s;} #boot .ib-embers i:nth-child(10){left:76%;animation-delay:2.9s;}
+#boot .ib-embers i:nth-child(11){left:83%;animation-delay:1.5s;animation-duration:5.8s;} #boot .ib-embers i:nth-child(12){left:90%;animation-delay:4.8s;}
+#boot .ib-embers i:nth-child(13){left:96%;animation-delay:2s;width:3px;height:3px;} #boot .ib-embers i:nth-child(14){left:51%;animation-delay:5.5s;width:6px;height:6px;}
+
+/* a slow light sweep across the whole frame + faint scanlines */
+#boot .ib-sweep{background:linear-gradient(105deg,transparent 40%,rgba(255,236,190,.09) 50%,transparent 60%);transform:translateX(-100%);will-change:transform;
+  animation:ibSweep 6.5s ease-in-out .8s infinite;}
+@keyframes ibSweep{0%{transform:translateX(-100%);}55%,100%{transform:translateX(100%);}}
+#boot .ib-scan{background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);opacity:.35;}
+#boot .ib-frame i{position:absolute;width:34px;height:34px;border:2px solid rgba(231,181,74,.55);opacity:0;animation:ibIn .6s ease .3s forwards;}
+#boot .ib-frame i:nth-child(1){left:14px;top:14px;border-right:0;border-bottom:0;} #boot .ib-frame i:nth-child(2){right:14px;top:14px;border-left:0;border-bottom:0;}
+#boot .ib-frame i:nth-child(3){left:14px;bottom:14px;border-right:0;border-top:0;} #boot .ib-frame i:nth-child(4){right:14px;bottom:14px;border-left:0;border-top:0;}
+
+/* ---- HUD block ---- */
+#boot .ib-hud{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;width:min(620px,94vw);text-align:center;}
+#boot .ib-kick{font-size:clamp(10px,1.5vw,12px);font-weight:700;letter-spacing:.42em;color:#e7b54a;text-shadow:0 0 14px rgba(231,181,74,.55);opacity:0;animation:ibIn .5s ease .2s forwards;}
+#boot .ib-kick span{color:#ff8a3a;}
+#boot .ib-tag{display:flex;flex-wrap:wrap;justify-content:center;gap:0 .32em;font-size:clamp(26px,5.2vw,54px);font-weight:700;line-height:1.05;letter-spacing:.04em;
+  text-shadow:0 4px 24px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9);}
+#boot .ib-tag span{display:inline-block;opacity:0;transform:translateY(26px) scale(1.25);will-change:transform,opacity;animation:ibSlam .55s cubic-bezier(.2,1.4,.3,1) forwards;}
+#boot .ib-tag span:nth-child(1){animation-delay:.45s;} #boot .ib-tag span:nth-child(2){animation-delay:.62s;}
+#boot .ib-tag span:nth-child(3){animation-delay:.95s;} #boot .ib-tag span:nth-child(4){animation-delay:1.1s;}
+#boot .ib-tag .hot{color:#ffc760;}
+@keyframes ibSlam{0%{opacity:0;transform:translateY(26px) scale(1.25);}60%{opacity:1;}100%{opacity:1;transform:none;}}
+#boot .ib-hud{animation:ibShake .42s ease 1.12s 1 both;}                                                        /* the last word lands like a shell */
+@keyframes ibShake{0%,100%{transform:none;}20%{transform:translate(3px,-2px);}40%{transform:translate(-3px,2px);}60%{transform:translate(2px,1px);}80%{transform:translate(-1px,-1px);}}
+
+#boot .ib-lines{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:4px;font-size:clamp(10px,1.4vw,12px);letter-spacing:.2em;font-weight:700;color:rgba(214,226,190,.55);}
+#boot .ib-line{display:flex;align-items:center;gap:8px;opacity:0;transform:translateX(-10px);animation:ibIn .4s ease forwards;}
+#boot .ib-line:nth-child(1){animation-delay:1.35s;} #boot .ib-line:nth-child(2){animation-delay:1.5s;} #boot .ib-line:nth-child(3){animation-delay:1.65s;}
+#boot .ib-line b{width:9px;height:9px;border:1px solid rgba(190,225,150,.6);transform:rotate(45deg);}
+#boot .ib-line em{font-style:normal;color:rgba(214,226,190,.25);margin-left:4px;}
+#boot .ib-line.done{color:#d8f08a;} #boot .ib-line.done b{background:#8cbf3f;border-color:#bfe66a;} #boot .ib-line.done em{color:#9bd14a;}
+@keyframes ibIn{to{opacity:1;transform:none;}}
+
+#boot .ib-prog{display:flex;align-items:center;gap:10px;width:min(420px,80vw);opacity:0;animation:ibIn .4s ease 1.2s forwards;}
+#boot .ib-bar{position:relative;flex:1;height:6px;background:rgba(255,255,255,.08);overflow:hidden;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);}
+#boot .ib-bar i{position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(.04);background:linear-gradient(90deg,#8cbf3f,#e7b54a 70%,#ffd27a);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1);will-change:transform;}
+#boot .ib-bar::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(0,0,0,.45) 22px 24px);}   /* segment ticks */
+#boot .ib-pct{min-width:40px;text-align:right;font-size:12px;font-weight:700;letter-spacing:.1em;color:#e7b54a;font-variant-numeric:tabular-nums;}
+#boot .boot-msg{font-size:11px;letter-spacing:.28em;color:rgba(214,226,190,.6);min-height:14px;opacity:0;animation:ibIn .4s ease 1.3s forwards;}
+
+/* ---- the call to action: appears when everything is warm ---- */
+#boot .ib-cta{display:none;position:relative;align-items:center;gap:14px;margin-top:6px;padding:15px 46px 15px 50px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font-size:clamp(18px,2.6vw,24px);font-weight:700;letter-spacing:.32em;color:#1a1204;
+  background:linear-gradient(180deg,#ffd77a 0%,#efac3e 48%,#cf7d1e 100%);clip-path:polygon(16px 0,100% 0,calc(100% - 16px) 100%,0 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+#boot .ib-cta::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.65) 50%,transparent 62%);transform:translateX(-130%);
+  animation:shineX 2.6s ease-in-out .6s infinite;}
+#boot .ib-cta .ib-chev{display:inline-block;animation:ibChev 1s ease-in-out infinite;}
+@keyframes ibChev{0%,100%{transform:translateX(0);}50%{transform:translateX(6px);}}
+#boot .ib-cta .ring{position:absolute;left:50%;top:50%;width:100%;height:100%;border:2px solid rgba(255,206,110,.8);transform:translate(-50%,-50%) scale(1);opacity:0;pointer-events:none;
+  clip-path:polygon(16px 0,100% 0,calc(100% - 16px) 100%,0 100%);animation:ibRing 2s ease-out infinite;}
+#boot .ib-cta .ring.r2{animation-delay:1s;}
+@keyframes ibRing{0%{transform:translate(-50%,-50%) scale(1);opacity:.85;}100%{transform:translate(-50%,-50%) scale(1.35,1.8);opacity:0;}}
+#boot .ib-cta:hover{transform:scale(1.04);} #boot .ib-cta:active{transform:scale(.97);}
+#boot .ib-note{display:none;font-size:10.5px;letter-spacing:.22em;color:rgba(255,255,255,.55);}
+#boot.ready .ib-prog,#boot.ready .boot-msg{display:none;}
+#boot.ready .ib-cta{display:inline-flex;animation:ibCtaIn .5s cubic-bezier(.2,1.4,.3,1) both;}
+#boot.ready .ib-note{display:block;opacity:0;animation:ibIn .4s ease .3s forwards;}
+@keyframes ibCtaIn{0%{opacity:0;transform:scale(.7);}100%{opacity:1;transform:none;}}
+/* exit: white-hot flash, everything punches forward */
+#boot::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 60%,#fff6dc,rgba(255,220,150,.5) 40%,transparent 75%);opacity:0;pointer-events:none;}
+#boot.leaving::after{animation:ibOut .55s ease-out forwards;}
+@keyframes ibOut{0%{opacity:0;}18%{opacity:.95;}100%{opacity:0;}}
+#boot.leaving .ib-hud{transition:transform .5s ease,opacity .4s ease;transform:scale(1.15);opacity:0;}
+
+/* title menu: buttons cascade in once the intro hands over */
+body.menu-in #start .panel > *{animation:menuIn .5s cubic-bezier(.2,1.2,.3,1) both;}
+body.menu-in #start .panel > *:nth-child(1){animation-delay:.05s;} body.menu-in #start .panel > *:nth-child(2){animation-delay:.12s;}
+body.menu-in #start .panel > *:nth-child(3){animation-delay:.18s;} body.menu-in #start .panel > *:nth-child(4){animation-delay:.24s;}
+body.menu-in #start .panel > *:nth-child(5){animation-delay:.3s;}  body.menu-in #start .panel > *:nth-child(6){animation-delay:.36s;}
+body.menu-in #start .panel > *:nth-child(n+7){animation-delay:.42s;}
+body.menu-in #start .start-id{animation:menuIn .5s ease both;}
+@keyframes menuIn{0%{opacity:0;transform:translateY(18px) scale(.96);}100%{opacity:1;transform:none;}}
+
+@media (orientation:portrait){ #boot .ib-art{background-image:url('../assets/banner-mobile.jpg');} }
+@media (max-height:460px){ #boot{padding-bottom:calc(env(safe-area-inset-bottom) + 10px);} #boot .ib-hud{gap:6px;} #boot .ib-tag{font-size:clamp(22px,6vh,34px);}
+  #boot .ib-lines{display:none;} #boot .ib-cta{padding:11px 34px 11px 38px;} }
+@media (prefers-reduced-motion:reduce){ #boot *,#boot::after{animation-duration:.01s !important;animation-iteration-count:1 !important;} }
