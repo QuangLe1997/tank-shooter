@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRIVE, LOOT } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, dropPowerup, floatText, heightAt, inZone, satOBB, scene, sfx, tip } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, dropPowerup, floatText, heightAt, inField, inZone, satOBB, scene, sfx, tip } from '../hub.js';
 
 // ----------------------------- Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed -----------------------------
 // Each 3 m section is real masonry: running-bond bricks (per-brick tone, chips, loose top courses), a ragged broken top, shell holes,
@@ -55,7 +55,7 @@ export function buildBrickWalls(){
     const cx=(Math.random()*2-1)*(ARENA-14), cz=(Math.random()*2-1)*(ARENA-14), ang=(Math.random()*8|0)*Math.PI/4, segs=3+(Math.random()*4|0);
     if(inZone(cx, cz, 12)) continue;                                                        // Z104 keep installations clear
     const fx=Math.sin(ang), fz=Math.cos(ang), pts=[]; for(let k=0;k<segs;k++){ const o=(k-(segs-1)/2)*BRICK.seg; pts.push([cx+fx*o, cz+fz*o]); }
-    if(pts.some(([x,z])=>Math.abs(x)>ARENA-6||Math.abs(z)>ARENA-6||Math.hypot(x,z)<17||Math.hypot(x,z-ARENA*0.55)<13||blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+3.2))) continue;
+    if(pts.some(([x,z])=>Math.abs(x)>ARENA-6||Math.abs(z)>ARENA-6||!inField(x,z,6)||Math.hypot(x,z)<17||Math.hypot(x,z-ARENA*0.55)<13||blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+3.2))) continue;
     n++; const gapAt = segs>=4 ? 1+(Math.random()*(segs-2)|0) : -1;                 // a breach somewhere along longer runs → a way through
     pts.forEach(([x,z],k)=>{ const gy=heightAt(x,z);
       if(k===gapAt){ spawnRubble(x, z, ang, pal, 0.8); return; }

@@ -9,8 +9,8 @@ performance.mark('boot:module');
    ========================================================================= */
 
 // ----------------------------- CONFIG -----------------------------
-export const ARENA = 84;                       // half-extent of the square arena (world units) — Z104 widened from 60 (≈2× the area) for zoned infantry warfare
-export const AREA_K = (ARENA/60)**2;          // Z104 density multiplier: anything scattered per-map scales with the area so the bigger field is not emptier
+export const ARENA = 130;                      // half-extent of the bounding square (world units) — Z104 60→84, Z106 →130; the playable field is the irregular outline in world/field.js
+export const AREA_K = (ARENA/60)**2*0.7;      // Z104 density multiplier (Z106 ×0.7 ≈ the irregular field's share of the bounding square) — scatter scales with real ground
 export const PLAYER_STANDOFF = 0.3;            // enemies keep this much clearance from the player hull (anti-glue → easy to shoot)
 export const ARC_G = 110;                      // gravity for ballistic shells — far shots lob in a clear arc, point-blank stays flat (fast guns arc less)
 export const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;

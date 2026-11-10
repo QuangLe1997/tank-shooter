@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { ARENA, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
+import { MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -59,12 +59,13 @@ export function startWave(now){
   showBanner(WAVE.eventBanner || ('ĐỢT '+S.wave), WAVE.eventColor);
   updateHUD();
 }
+// Z106 enemies enter through the irregular fence: edge 0 = their side (−z) · 1 = ours (+z) · 2 = west · 3 = east. Of a few candidate
+// points on that stretch, prefer one 40–85 m from the tank so a bigger field does not mean long empty drives.
 export function edgeSpawnPoint(){
-  const m=ARENA-4, e=(WAVE.fixedEdge!=null)?WAVE.fixedEdge:Math.floor(Math.random()*4);
-  if(e===0) return {x:(Math.random()*2-1)*m, z:-m};
-  if(e===1) return {x:(Math.random()*2-1)*m, z:m};
-  if(e===2) return {x:-m, z:(Math.random()*2-1)*m};
-  return {x:m, z:(Math.random()*2-1)*m};
+  const e=(WAVE.fixedEdge!=null)?WAVE.fixedEdge:Math.floor(Math.random()*4), c=[-Math.PI/2, Math.PI/2, Math.PI, 0][e], p=S.player;
+  let best=null, bs=1e9; for(let k=0;k<6;k++){ const [x,z]=fieldEdgePoint(c+(Math.random()-0.5)*1.3, 4), d=p?Math.hypot(x-p.pos.x, z-p.pos.z):60, s=d<40?40-d:(d>85?d-85:0);
+    if(s<bs){ bs=s; best={ x, z }; } }
+  return best;
 }
 export function updateWaves(dt, now){
   if(S.awaitingUpgrade) return;                        // boss just died, waiting on upgrade pick

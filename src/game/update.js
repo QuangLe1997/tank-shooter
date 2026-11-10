@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM } from '../../config.js';
-import { ARENA, BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
+import { BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -82,9 +82,7 @@ export function updatePlayer(dt, now){
   p.pos.addScaledVector(p.vel, dt);
   if(p.kbx||p.kbz){ p.pos.x+=p.kbx*dt; p.pos.z+=p.kbz*dt; const kf=Math.max(0,1-dt*8); p.kbx*=kf; p.kbz*=kf; }   // recoil when hit
   // clamp to arena
-  const lim = ARENA - 3;
-  p.pos.x = Math.max(-lim, Math.min(lim, p.pos.x));
-  p.pos.z = Math.max(-lim, Math.min(lim, p.pos.z));
+  clampField(p.pos, 3);
   // apply transforms: hull faces travel dir; turret is a child so subtract hull yaw to hit world aim
   p.mesh.position.set(p.pos.x, 0, p.pos.z);
   p.mesh.rotation.y = p.facing;

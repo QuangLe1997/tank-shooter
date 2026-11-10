@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ARENA, ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -39,7 +39,7 @@ export function aiDest(e, keep, iq){
   if(iq>=TACTICS.coverFrom && A.role!=='flank'){ let best=null, bd=64;                   // park behind solid cover between the slot and your gun
     for(const b of blocks){ if(b.kind==='obj'||b.kind==='camp'||b.cache||b.r<1) continue; const q=(b.x-_aiD.x)**2+(b.z-_aiD.z)**2; if(q<bd){ bd=q; best=b; } }
     if(best){ const dx=best.x-p.pos.x, dz=best.z-p.pos.z, L=Math.hypot(dx,dz)||1, off=(best.obb?1.2:best.r)+2.6; _aiD.set(best.x+dx/L*off, 0, best.z+dz/L*off); } }
-  const lim=ARENA-4; _aiD.x=Math.max(-lim,Math.min(lim,_aiD.x)); _aiD.z=Math.max(-lim,Math.min(lim,_aiD.z));
+  clampField(_aiD, 4);
   return _aiD;
 }
 // look ahead along the travel line and bend round anything solid (Core, walls, rocks, towers) instead of grinding into it
@@ -125,7 +125,7 @@ export function updateEnemies(dt, now){
     { const sl=Math.hypot(e.vel.x,e.vel.z)||1, ux=e.vel.x/sl, uz=e.vel.z/sl, gr=(heightAt(e.pos.x+ux,e.pos.z+uz)-heightAt(e.pos.x-ux,e.pos.z-uz))/2;
       e.pos.addScaledVector(e.vel, edt*Math.max(0.5, Math.min(1.3, 1-gr*1.2))); }   // slower up the mounds, faster down — hard separation later in separateTanks()
     if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*9); e.kbx*=kf; e.kbz*=kf; }   // recoil from being shot
-    const lim=ARENA-2; e.pos.x=Math.max(-lim,Math.min(lim,e.pos.x)); e.pos.z=Math.max(-lim,Math.min(lim,e.pos.z));
+    clampField(e.pos, 2);
     // face
     const sp=Math.hypot(e.vel.x,e.vel.z);
     if(sp>0.5){ const wf=Math.atan2(e.vel.x,e.vel.z); let df=wrapAngle(wf-e.facing); e.facing+=df*Math.min(1,dt*7); }

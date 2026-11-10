@@ -1,7 +1,7 @@
 // combat/siege-rocket.js — SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius
 import * as THREE from 'three';
 import { AIM } from '../../config.js';
-import { ARENA, GLOW, GUNS, MOBILE, S, _v, aheadTarget, aimTarget, barrelFixed, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
+import { GLOW, GUNS, MOBILE, S, _v, aheadTarget, aimTarget, barrelFixed, clampFieldXZ, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
 
 // ----- SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius -----
 export const rockets=[], fuses=[];
@@ -53,7 +53,7 @@ export function rocketTarget(){
       if(tgt.vel && p.muzzle){ p.muzzle.getWorldPosition(_v); const g=equippedGun(), el=g.special==='rocket'?ROCKET_ELEV:MORTAR_ELEV, G=g.special==='rocket'?ROCKET_G:MORTAR_G;
         for(let k=0;k<2;k++){ const T=rocketArc(_v.x,_v.y,_v.z,tx,tz,el,G).T; tx=tgt.pos.x+tgt.vel.x*T; tz=tgt.pos.z+tgt.vel.z*T; } } }   // lead: aim where it WILL be after the flight time
     else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; } }
-  const lim=ARENA-2; return { x:Math.max(-lim,Math.min(lim,tx)), z:Math.max(-lim,Math.min(lim,tz)) };
+  const [cx,cz]=clampFieldXZ(tx, tz, 2); return { x:cx, z:cz };
 }
 export const ROCKET_G=30, ROCKET_LAND_Y=0.8, ROCKET_ELEV=Math.PI/2-0.52;   // SIEGE rocket: steep ~60° lob (matches the tall sky-pointing launcher)
 export const MORTAR_ELEV=Math.PI/2-0.82, MORTAR_G=46;                       // mortar/howitzer: MODERATE ~43° lob + stronger gravity → flatter & FAST, low hang-time so moving tanks can't walk out of it
@@ -120,7 +120,7 @@ export function fireArty(now, g, dmg){
   if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; }
   else if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
   else { tx=p.pos.x+Math.sin(p.aimSmoothed)*30; tz=p.pos.z+Math.cos(p.aimSmoothed)*30; }
-  const lim=ARENA-2; tx=Math.max(-lim,Math.min(lim,tx)); tz=Math.max(-lim,Math.min(lim,tz));
+  [tx,tz]=clampFieldXZ(tx, tz, 2);
   const sx=p.pos.x+Math.sin(p.aimSmoothed)*(p.radius+0.4), sz=p.pos.z+Math.cos(p.aimSmoothed)*(p.radius+0.4);
   const T=1.3, G=40;   // long flight + strong gravity → tall arc that clears walls and drops near-vertically
   const mesh=makeRocketMesh(); mesh.position.set(sx,2.0,sz); scene.add(mesh);

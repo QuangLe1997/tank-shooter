@@ -1,6 +1,6 @@
 // world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushables, decalDirt, enemies, haptic, heightAt, rockSet, sfx, spawnPart } from '../hub.js';
+import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushables, decalDirt, enemies, haptic, heightAt, inField, rockSet, sfx, spawnPart } from '../hub.js';
 
 // ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
 // Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
@@ -20,7 +20,7 @@ export function tuftGeo(bn){                                                    
 export let _tuftMat=null;
 export function clearDecor(){ for(let i=decorGroup.children.length-1;i>=0;i--){ const c=decorGroup.children[i]; decorGroup.remove(c); if(c.isInstancedMesh) c.dispose(); } crushables.length=0; }
 export function _decorSpot(minCore, tries){ for(let t=0;t<(tries||12);t++){ const x=(Math.random()*2-1)*(ARENA-3), z=(Math.random()*2-1)*(ARENA-3);
-    if(Math.hypot(x,z)>minCore && Math.hypot(x, z-ARENA*0.55)>8) return [x,z]; } return null; }
+    if(Math.hypot(x,z)>minCore && Math.hypot(x, z-ARENA*0.55)>8 && inField(x,z,1.5)) return [x,z]; } return null; }
 export function buildTerrainDecor(b){
   clearDecor();
   const set=rockSet(b.name), N=Math.round((MOBILE?60:120)*AREA_K), per=set.small.map(()=>[]);

@@ -1,6 +1,6 @@
 // world/physics.js — PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap
 import { DRIVE, LOOT, BOSSFIGHT } from '../../config.js';
-import { ARENA, BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, core, crushInfantry, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, haptic, hitsHull, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip } from '../hub.js';
+import { BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, haptic, hitsHull, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip } from '../hub.js';
 
 // ----------------------------- PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap -----------------------------
 export const HULL_HW=1.52, HULL_HL=2.05;                                            // hull half-width / half-length (model units, × tank scale)
@@ -63,7 +63,6 @@ export function tankVsCircle(t, cx, cz, r){
 }
 export function separateTanks(now){
   const p=S.player; if(!p) return;
-  const arenaLim=ARENA-2;
   for(let i=0;i<enemies.length;i++){ const a=enemies[i]; if(!solidTank(a)) continue;                    // enemy ↔ enemy
     for(let j=i+1;j<enemies.length;j++){ const b=enemies[j]; if(!solidTank(b)) continue; collideTanks(a,b,now); } }
   for(const a of enemies){ if(!solidTank(a)) continue;                                                   // enemy ↔ player: real hull contact (kamikaze must touch → excluded)
@@ -92,9 +91,9 @@ export function separateTanks(now){
     if(vn>9){ S.shake=Math.min(2.5,S.shake+vn*0.03); p.hitT=Math.max(p.hitT||0,0.12); burst({x:bl.x,z:bl.z}, BIOME.ground, 3, 2.5, {y:0.6, life:0.7, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); sfx('thud'); haptic(20); }
     for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r);
     if(boss&&boss.alive){ const bv=tankVsCircle(boss, bl.x, bl.z, bl.r); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact && bl.kind!=='pylon') stunBoss(performance.now()/1000, boss.def.name+' đâm vào vật cản — nó đang choáng!'); } }
-  for(const a of enemies){ if(!solidTank(a)) continue; a.pos.x=Math.max(-arenaLim,Math.min(arenaLim,a.pos.x)); a.pos.z=Math.max(-arenaLim,Math.min(arenaLim,a.pos.z)); a.mesh.position.set(a.pos.x,0,a.pos.z); }
+  for(const a of enemies){ if(!solidTank(a)) continue; clampField(a.pos, 2); a.mesh.position.set(a.pos.x,0,a.pos.z); }   // Z106 the irregular fence
   crushInfantry(now);                                                                                     // Z79 tracks vs foot soldiers
   if(boss&&boss.alive) boss.mesh.position.set(boss.pos.x,0,boss.pos.z);
-  const plim=ARENA-3; p.pos.x=Math.max(-plim,Math.min(plim,p.pos.x)); p.pos.z=Math.max(-plim,Math.min(plim,p.pos.z));
+  clampField(p.pos, 3);
   p.mesh.position.set(p.pos.x,0,p.pos.z);
 }

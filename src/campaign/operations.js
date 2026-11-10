@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -117,7 +117,7 @@ export function scriptedEvent(){ const sc=opFor(S.stage).script[S.wave]; if(!sc)
 export function applyScriptedWave(now){
   const ev=WAVE.event, q=WAVE.spawnQueue, p=S.player;
   if(ev==='ambush' && p){ const n=S.stage>=3?3:2, a0=Math.random()*6.283;
-    for(let k=0;k<n;k++){ const a=a0+k*(6.283/n), r=17; const x=Math.max(-ARENA+4,Math.min(ARENA-4,p.pos.x+Math.cos(a)*r)), z=Math.max(-ARENA+4,Math.min(ARENA-4,p.pos.z+Math.sin(a)*r));
+    for(let k=0;k<n;k++){ const a=a0+k*(6.283/n), r=17; const [x,z]=clampFieldXZ(p.pos.x+Math.cos(a)*r, p.pos.z+Math.sin(a)*r, 4);
       setTimeout(()=>{ if(S.mode==='playing') spawnSquad({x,z}); }, 400+k*500); } }
   else if(ev==='column'){ const col=['heavy','grunt','gunner','grunt']; if(S.stage>=3) col.push('heavy','atgm'); if(S.stage>=5) col.push('shield','heavy');
     q.unshift(...col); WAVE.fixedEdge=Math.floor(Math.random()*4); WAVE.columnLeft=col.length; }

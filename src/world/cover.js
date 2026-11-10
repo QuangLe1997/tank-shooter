@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, heightAt, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -27,7 +27,7 @@ export function buildBlocks(){
     if(Math.hypot(x,z) < 16) continue;                   // keep Core area open
     if(Math.hypot(x, z-ARENA*0.55) < 13) continue;       // keep player spawn open
     if(centers.some(c=>Math.hypot(c.x-x,c.z-z) < 16)) continue;  // spacing between shapes (navigable corridors)
-    if(inZone(x, z, 8)) continue;                        // Z104 keep installations clear
+    if(inZone(x, z, 8) || !inField(x, z, 10)) continue;  // Z104 keep installations clear · Z106 stay inside the fence
     centers.push({x,z});
     const shape = MAZE_SHAPES[(Math.random()*MAZE_SHAPES.length)|0];
     const rot = (Math.random()*4|0)*Math.PI/2, ca=Math.cos(rot), sa=Math.sin(rot);
@@ -36,7 +36,7 @@ export function buildBlocks(){
     shape.forEach(([ox,oz], si)=>{
       const rx = ox*ca - oz*sa, rz = ox*sa + oz*ca;
       const bx = x + rx*SEG, bz = z + rz*SEG;
-      if(Math.abs(bx)>ARENA-4 || Math.abs(bz)>ARENA-4) return;
+      if(Math.abs(bx)>ARENA-4 || Math.abs(bz)>ARENA-4 || !inField(bx, bz, 3)) return;
       const kind = (!steel && si%3===2) ? kindB : kindA;                                 // mostly one kind, the odd different piece mixed in (real improvised lines)
       const m=makeCoverMesh(kind, !steel); m.position.set(bx,heightAt(bx,bz)-0.12,bz); m.rotation.y=rot+(Math.random()-0.5)*0.12; scene.add(m);
       const hp = steel ? Infinity : (COVER_HP[kind]||70);
@@ -49,7 +49,7 @@ export function buildBlocks(){
   // lone heavy obstacles: boulders + Czech hedgehogs — solid, block shots, deflect tanks
   const rs=rockSet(BIOME.name), nB=Math.round((MOBILE?4:7)*AREA_K);
   for(let i=0;i<nB;i++){ let x=0,z=0,ok=false;
-    for(let t=0;t<20&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-8); z=(Math.random()*2-1)*(ARENA-8); ok=Math.hypot(x,z)>15 && Math.hypot(x,z-ARENA*0.55)>12 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<6) && !inZone(x,z,3); }
+    for(let t=0;t<20&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-8); z=(Math.random()*2-1)*(ARENA-8); ok=Math.hypot(x,z)>15 && Math.hypot(x,z-ARENA*0.55)>12 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<6) && !inZone(x,z,3) && inField(x,z,5); }
     if(!ok) continue;
     const hedge = i%3===2, r = hedge ? 1.15 : _R(1.3,2.2);
     const m = hedge ? new THREE.Mesh(coverGeo('hedgehog'), coverMat('hedgehog')) : new THREE.Mesh(rs.big[i%rs.big.length], rs.mat);
@@ -59,6 +59,7 @@ export function buildBlocks(){
     blocks.push({ mesh:m, x, z, r:hedge?1.2:r*0.92, hp:Infinity, steel:true, loot:false, kind:hedge?'hedgehog':'boulder', climb });
     if(climb) BUMPS.push({ x, z, r:r*1.25, h:r*0.62, rock:true });
   }
+  buildRidges();                                                                           // Z106 rock spines with passes → sectors + chokepoints
   buildBrickWalls();                                                                       // Z86 ruined masonry walls
   buildCamps();                                                                            // Z90 enemy troop camps
   placeCaches();                                                                           // Z93 guarded supply caches

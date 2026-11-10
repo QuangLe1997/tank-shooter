@@ -1,6 +1,6 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
-import { ARENA, MOBILE, arena, terrainGeo } from '../hub.js';
+import { ARENA, MOBILE, arena, inField, terrainGeo } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -18,7 +18,7 @@ export function decalReset(b){
   DECAL.sx.clearRect(0,0,DECAL.W,DECAL.W); DECAL.dx.clearRect(0,0,DECAL.DW,DECAL.DW); DECAL.dirtyS=DECAL.dirtyD=true;
   const nm=b&&b.name; _treadCol = nm==='TUNDRA' ? 'rgba(70,84,100,' : nm==='MEADOW' ? 'rgba(48,40,24,' : nm==='FOUNDRY' ? 'rgba(10,8,6,' : 'rgba(42,30,18,';
   _treadA = nm==='TUNDRA' ? 0.26 : nm==='MEADOW' ? 0.24 : 0.16;
-  for(let i=0;i<(MOBILE?8:14);i++){ let x=0,z=0,ok=false; for(let t=0;t<12&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-6); z=(Math.random()*2-1)*(ARENA-6); ok=Math.hypot(x,z)>14 && Math.hypot(x,z-ARENA*0.55)>8; }   // old shell craters from earlier fighting
+  for(let i=0;i<(MOBILE?8:14);i++){ let x=0,z=0,ok=false; for(let t=0;t<12&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-6); z=(Math.random()*2-1)*(ARENA-6); ok=Math.hypot(x,z)>14 && Math.hypot(x,z-ARENA*0.55)>8 && inField(x,z,4); }   // old shell craters from earlier fighting
     if(ok) decalCrater(x,z,1.4+Math.random()*2.6, 0.6); }
 }
 export function decalTread(x, z, facing, scale){                                       // one pair of track prints (both belts)

@@ -2,7 +2,7 @@
 //   (armour first, then infantry), keep a stand-off range, regroup on you when the field is quiet, and can be knocked out.
 import * as THREE from 'three';
 import { ALLY_TANK, INFANTRY } from '../../config.js';
-import { ARENA, S, TANK_SCALE, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, enemies, freeEnemyBar, getEnemyBar, heightAt, hitsHull, killEnemy, radio, scene, sfx, solidTank, spawnBullet, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
+import { S, TANK_SCALE, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, enemies, freeEnemyBar, getEnemyBar, heightAt, hitsHull, killEnemy, radio, scene, sfx, solidTank, spawnBullet, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
 
 export const ALLY_TANKS=[];
 export const ALLY_PAL={ hull:0x55663a, turret:0x627344, barrel:0x7a8a52, tread:0x22281a, accent:0x9be04a };   // captured hull, our colours
@@ -47,7 +47,7 @@ export function updateAllyTanks(dt, now){ const p=S.player; if(!p || !ALLY_TANKS
     const others=[p, ...ALLY_TANKS.filter(o=>o!==t), ...enemies.filter(solidTank)];
     for(const o of others){ const ox=t.pos.x-o.pos.x, oz=t.pos.z-o.pos.z, q=ox*ox+oz*oz, rr=t.r+(o.radius||o.r||1.5)+0.6; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q), push=(rr-qq)*0.5; t.pos.x+=ox/qq*push; t.pos.z+=oz/qq*push; } }
     if(Math.hypot(t.vel.x,t.vel.z)>INFANTRY.crushSpeed) for(const e of enemies.slice()){ if(e.def.inf && hitsHull(t, e.pos.x, e.pos.z, 0.35)){ e._crushed=true; killEnemy(e); } }   // tracks run enemy infantry down
-    const lim=ARENA-4; t.pos.x=Math.max(-lim,Math.min(lim,t.pos.x)); t.pos.z=Math.max(-lim,Math.min(lim,t.pos.z));
+    clampField(t.pos, 4);
     // lay the gun on the target and fire when it is lined up
     const T=t.target; if(T && !enemies.includes(T) && T!==boss) t.target=null;
     const aimW = t.target ? Math.atan2(t.target.pos.x-t.pos.x, t.target.pos.z-t.pos.z) : t.facing; t.aim=wrapAngle(t.aim+wrapAngle(aimW-t.aim)*Math.min(1,dt*3));

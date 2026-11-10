@@ -2,7 +2,7 @@
 //   paratroopers near you (or near your men). They drift down under canopies and fight as infantry the moment they land.
 import * as THREE from 'three';
 import { INFANTRY, PARA, TROOPS } from '../../config.js';
-import { ARENA, FT, MOBILE, S, WAVE, _canvasTex, enemies, floatText, heightAt, makeSoldierMesh, radio, scene, sfx, spawnEnemy, spawnPart, tip } from '../hub.js';
+import { ARENA, FT, MOBILE, S, WAVE, _canvasTex, clampFieldXZ, enemies, floatText, heightAt, makeSoldierMesh, radio, scene, sfx, spawnEnemy, spawnPart, tip } from '../hub.js';
 
 export const HELOS=[], PARAS=[];
 let _nextAt=0, _heloMats=null, _chuteGeo=null, _chuteMat=null;
@@ -25,7 +25,7 @@ export function chute(){ if(!_chuteGeo){ _chuteGeo=new THREE.SphereGeometry(1.7,
   g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), lm)); return g; }
 // pick a drop zone: near the tank most of the time, otherwise on top of our infantry
 function dropZone(){ const p=S.player; let cx=p.pos.x, cz=p.pos.z; if(FT.length && Math.random()<0.4){ const a=FT[(Math.random()*FT.length)|0]; cx=a.pos.x; cz=a.pos.z; }
-  const ang=Math.random()*6.283, d=R([16,30]), lim=ARENA-8; return [Math.max(-lim,Math.min(lim,cx+Math.cos(ang)*d)), Math.max(-lim,Math.min(lim,cz+Math.sin(ang)*d))]; }
+  const ang=Math.random()*6.283, d=R([16,30]); return clampFieldXZ(cx+Math.cos(ang)*d, cz+Math.sin(ang)*d, 8); }
 export function launchParadrop(now){ const [dx,dz]=dropZone(), a=Math.random()*Math.PI-Math.PI, sx=dx-Math.sin(a)*(ARENA*1.6), sz=dz-Math.cos(a)*(ARENA*1.6);   // inbound from the enemy side, straight over the zone
   const g=buildTransport(); g.position.set(sx, PARA.alt, sz); g.rotation.y=a; scene.add(g);
   const T=MOBILE?PARA.troopsMobile:PARA.troops, n=Math.round(R(T));

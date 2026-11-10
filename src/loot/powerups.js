@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, GIFT, LOOT } from '../../config.js';
-import { ARENA, BIOME, GEM_DEF, S, __set_soldierLvl, addCoins, boss, burst, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, heightAt, iconEl, riders, ridersUnlocked, ringPulse, scene, setIcon, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateHUD } from '../hub.js';
+import { BIOME, GEM_DEF, S, __set_soldierLvl, addCoins, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, heightAt, iconEl, riders, ridersUnlocked, ringPulse, scene, setIcon, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateHUD } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -123,7 +123,7 @@ export function updatePickups(dt, now){
       const gy=heightAt(u.x,u.z); if(u.y<=gy){ u.y=gy; if(u.bounces++<1 && u.vy<-5){ u.vy*=-0.32; u.vx*=0.5; u.vz*=0.5; burst({x:u.x,z:u.z}, BIOME.ground, 2, 2, {y:gy+0.2, life:0.5, size:0.8, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.4}); }
         else { u.landed=true; u.born=now; u.model.rotation.set(0,Math.random()*6,0); u.beam.visible=u.icon.visible=u.ring.visible=true; sfx('thud');
           burst({x:u.x,z:u.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.8, size:1.2, smoke:true, grav:-0.3, drag:2, up:1, op:0.45}); } }
-      const lim=ARENA-3; u.x=Math.max(-lim,Math.min(lim,u.x)); u.z=Math.max(-lim,Math.min(lim,u.z)); u.g.position.set(u.x,u.y,u.z); continue; }
+      clampField(u, 3); u.g.position.set(u.x,u.y,u.z); continue; }
     const age=now-u.born, life=PICKUP_LIFE*(1+u.tier*0.4), rem=u.stash ? 1 : Math.max(0, 1-age/life);   // Z104 stashed at the rally point → never expires
     u.model.rotation.y += dt*0.9; u.model.position.y = 0.05+Math.sin(now*2.4+i)*0.06;
     u.icon.position.y = 1.7 + Math.sin(now*3+i)*0.1;

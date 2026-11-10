@@ -1,7 +1,7 @@
 // ui/deploy.js — Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, how many ride the tank,
 //   specialists (MG / mortar / sapper), the tank's guns & ammo and a map of the field. Confirm → men spawn at their posts.
 import { DEPLOY, TROOPS } from '../../config.js';
-import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, S, SPELLS, clearFireteam, clearRiders, core, crewTarget, deployRiders, escapeHtml, gunLevel, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip } from '../hub.js';
+import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, RIDGES, S, SPELLS, clampFieldXZ, clearFireteam, clearRiders, core, crewTarget, deployRiders, escapeHtml, fieldOutline, gunLevel, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip } from '../hub.js';
 
 export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
@@ -13,7 +13,7 @@ export function deployPosts(){ const p=S.player, sx=p?p.pos.x:0, sz=p?p.pos.z:AR
   const side=w=>w.x<-ARENA*0.3?'TRÁI':(w.x>ARENA*0.3?'PHẢI':'PHÍA SAU'), dup=k=>POWS.filter(o=>side(o)===k).length>1;
   POWS.forEach((w,i)=>{ const [x,z]=toward(w.x, w.z, DEPLOY.stage), sd=side(w); posts.push({ id:'pow'+i, ic:'team', nm:'TRẠI GIAM '+sd+(dup(sd)?' '+(POWS.filter(o=>side(o)===sd).indexOf(w)+1):''), ds:'Áp sát, diệt lính canh, giải cứu tù binh', x, z, max:6, cls:'enemy', site:w }); });
   DEPOTS.forEach((d,i)=>{ const [x,z]=toward(d.x, d.z, DEPLOY.stage); posts.push({ id:d.kind+i, ic:d.kind==='arms'?'rifle':'tank', nm:d.kind==='arms'?'KHO VŨ KHÍ':'KHO XE TĂNG', ds:d.kind==='arms'?'Chiếm kho → súng chống tăng':'Chiếm bãi xe → lính lái xe địch', x, z, max:6, cls:'enemy', site:d }); });
-  for(const sd of [-1,1]) posts.push({ id:sd<0?'left':'right', ic:'target', nm:sd<0?'CÁNH TRÁI':'CÁNH PHẢI', ds:'Giữ sườn, chặn bộ binh vòng sau', x:sd*ARENA*0.5, z:ARENA*0.12, max:5 });
+  for(const sd of [-1,1]){ const [fx,fz]=clampFieldXZ(sd*ARENA*0.5, ARENA*0.12, 14); posts.push({ id:sd<0?'left':'right', ic:'target', nm:sd<0?'CÁNH TRÁI':'CÁNH PHẢI', ds:'Giữ sườn, chặn bộ binh vòng sau', x:fx, z:fz, max:5 }); }
   return posts; }
 function roleMax(k){ const a=DEPLOY.roleMax[k]; return a[Math.min(a.length-1, S.stage-1)]; }
 function assigned(){ return _dp.posts.reduce((n,q)=>n+q.n,0); }
@@ -54,8 +54,10 @@ function render(){ const D=_dp; if(!D) return; const free=D.total-assigned(), on
   if(p){ const sp=SPELLS[S.spell]; if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>KỸ NĂNG · '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+'s</span>'; G.appendChild(r); } }
   drawDeployMap(); }
 export function drawDeployMap(){ const D=_dp, c=document.getElementById('dp-map'); if(!c||!D) return; const x=c.getContext('2d'), W=c.width, s=(W/2-8)/ARENA, X=v=>W/2+v*s, Y=v=>W/2+v*s;
-  x.clearRect(0,0,W,W); x.strokeStyle='rgba(255,255,255,.18)'; x.strokeRect(X(-ARENA),Y(-ARENA),ARENA*2*s,ARENA*2*s);
-  x.fillStyle='rgba(255,80,60,.08)'; x.fillRect(X(-ARENA),Y(-ARENA),ARENA*2*s,ARENA*s);                                          // enemy half
+  x.clearRect(0,0,W,W); const O=fieldOutline(); x.save(); x.beginPath(); O.forEach(([px,pz],i)=> i ? x.lineTo(X(px),Y(pz)) : x.moveTo(X(px),Y(pz))); x.closePath();
+  x.fillStyle='rgba(255,255,255,.05)'; x.fill(); x.clip(); x.fillStyle='rgba(255,80,60,.1)'; x.fillRect(X(-ARENA),Y(-ARENA),ARENA*2*s,ARENA*s); x.restore();   // Z106 the real fence line, enemy half tinted
+  x.strokeStyle='rgba(255,255,255,.35)'; x.lineWidth=1.2; x.beginPath(); O.forEach(([px,pz],i)=> i ? x.lineTo(X(px),Y(pz)) : x.moveTo(X(px),Y(pz))); x.closePath(); x.stroke();
+  x.strokeStyle='rgba(200,190,170,.7)'; x.lineWidth=2; for(const R of RIDGES){ x.beginPath(); R.pts.forEach(([px,pz],i)=> i ? x.lineTo(X(px),Y(pz)) : x.moveTo(X(px),Y(pz))); x.stroke(); }
   for(const w of POWS){ x.strokeStyle='#ffcf5a'; x.lineWidth=1.5; x.beginPath(); x.moveTo(X(w.x),Y(w.z)-5); x.lineTo(X(w.x)+5,Y(w.z)); x.lineTo(X(w.x),Y(w.z)+5); x.lineTo(X(w.x)-5,Y(w.z)); x.closePath(); x.stroke(); }
   for(const d of DEPOTS){ x.strokeStyle='#ff6a4a'; x.lineWidth=1.5; x.strokeRect(X(d.x)-4,Y(d.z)-4,8,8); }
   if(core){ x.fillStyle='#6fe0ff'; x.beginPath(); x.arc(X(core.pos.x),Y(core.pos.z),3.5,0,7); x.fill(); }

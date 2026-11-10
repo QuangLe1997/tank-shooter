@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, LOOT } from '../../config.js';
-import { ARENA, COVER_HP, MOBILE, S, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, burst, cMod, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, inZone, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, scene, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
+import { ARENA, COVER_HP, MOBILE, S, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, burst, cMod, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, inField, inZone, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, scene, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[];
@@ -38,7 +38,7 @@ export function campFlagTex(){ return _canvasTex(160,100,(x,W,H)=>{ x.fillStyle=
 export function buildCamps(){
   clearCamps(); const n=(CAMP.perStage[Math.min(CAMP.perStage.length-1,S.stage-1)]||1) - (MOBILE&&S.stage<4?0:0);
   for(let c=0;c<n;c++){ let x=0,z=0,ok=false;
-    for(let t=0;t<60&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-16); z=-ARENA+15+Math.random()*(ARENA*0.75); ok=Math.hypot(x,z)>26 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+10) && !CAMPS.some(o=>Math.hypot(o.x-x,o.z-z)<30) && !inZone(x,z,12); }
+    for(let t=0;t<60&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-16); z=-ARENA+15+Math.random()*(ARENA*0.75); ok=Math.hypot(x,z)>26 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+10) && !CAMPS.some(o=>Math.hypot(o.x-x,o.z-z)<30) && !inZone(x,z,12) && inField(x,z,16); }
     if(!ok) continue; const ang=(Math.random()*4|0)*Math.PI/2+(Math.random()-0.5)*0.3, ca=Math.cos(ang), sa=Math.sin(ang), at=(lx,lz)=>[x+lx*ca+lz*sa, z-lx*sa+lz*ca];
     const g=new THREE.Group(); scene.add(g);
     const hut=makeQuonset(); const gy=heightAt(x,z); hut.position.set(x,gy-0.05,z); hut.rotation.y=ang; g.add(hut);
@@ -52,7 +52,7 @@ export function buildCamps(){
       const fire=new THREE.Mesh(new THREE.ConeGeometry(0.32,0.6,7), campMats().fire); fire.position.set(cx,cy+0.32,cz); g.add(fire); camp.fire={ m:fire, x:cx, z:cz, y:cy };
       for(const [lx,lz] of [[-0.2,5.4],[-3.0,6.0]]){ const [bx,bz]=at(lx,lz); const crate=new THREE.Mesh(coverGeo('crates'), coverMat('crates')); crate.scale.setScalar(0.5); crate.position.set(bx,heightAt(bx,bz),bz); crate.rotation.y=ang+Math.random(); g.add(crate); } }
     for(let k=0;k<9;k++){ const a=-Math.PI*0.72+k*(Math.PI*1.44/8)+Math.PI, [sx,sz]=at(Math.sin(a)*10.5, Math.cos(a)*10.5);   // sandbag ring, open at the front (the hut door side)
-      if(Math.abs(sx)>ARENA-4||Math.abs(sz)>ARENA-4||blocks.some(b=>b.kind!=='camp'&&Math.hypot(b.x-sx,b.z-sz)<3)) continue;
+      if(Math.abs(sx)>ARENA-4||Math.abs(sz)>ARENA-4||!inField(sx,sz,3)||blocks.some(b=>b.kind!=='camp'&&Math.hypot(b.x-sx,b.z-sz)<3)) continue;
       const m=makeCoverMesh('sandbag', true); m.position.set(sx,heightAt(sx,sz)-0.12,sz); m.rotation.y=ang+a+Math.PI/2; scene.add(m); g.userData.bags=(g.userData.bags||0)+1;
       blocks.push({ mesh:m, x:sx, z:sz, r:1.7, hp:COVER_HP.sandbag, maxHp:COVER_HP.sandbag, steel:false, loot:false, kind:'sandbag' }); }
     CAMPS.push(camp);
@@ -94,7 +94,7 @@ export function placeCaches(){
   for(const t of towers) if(!t.falling){ const a=Math.random()*6.283; spots.push([t.x+Math.cos(a)*3.4, t.z+Math.sin(a)*3.4, 1]); }   // at the foot of a guarded tower
   for(const b of blocks) if(b.kind==='brick' && Math.random()<0.3){ const sd=b.z>0?-1:1; spots.push([b.x+Math.cos(b.obb.f)*sd*1.6, b.z-Math.sin(b.obb.f)*sd*1.6, 1]); }   // tucked behind masonry
   spots.sort(()=>Math.random()-0.5); spots.sort((a,b)=>b[2]-a[2]);
-  let k=0; for(const [x,z,t] of spots){ if(k>=n) break; if(Math.abs(x)>ARENA-5||Math.abs(z)>ARENA-5||blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+1.2)) continue;
+  let k=0; for(const [x,z,t] of spots){ if(k>=n) break; if(Math.abs(x)>ARENA-5||Math.abs(z)>ARENA-5||!inField(x,z,4)||blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+1.2)) continue;
     const m=makeCoverMesh('crates', true); m.scale.set(0.8,0.7,0.8); m.position.set(x,heightAt(x,z)-0.1,z); m.rotation.y=Math.random()*6.283; scene.add(m);
     const hp=LOOT.cache.hp, b={ mesh:m, x, z, r:1.3, hp, maxHp:hp, steel:false, loot:true, lootTier:t, kind:'crates', cache:true }; blocks.push(b); addLootBeacon(b,'block'); k++; }
 }

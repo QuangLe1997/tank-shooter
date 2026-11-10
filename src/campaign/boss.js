@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, flashMat, floatText, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 export let boss=null;
@@ -78,7 +78,7 @@ export function bossPhase(now){
 export const PYLONS=[];
 export function raiseShield(now){
   const P=BF.pylon, hp=Math.round(P.hp*(1+(S.stage-1)*P.perStage)*loopHpMul()); boss.shielded=true; boss.dome.visible=true;
-  for(let i=0;i<P.n;i++){ const a=i/P.n*6.283+Math.random()*0.5; let x=Math.cos(a)*P.ring, z=Math.sin(a)*P.ring*0.85; x=Math.max(-ARENA+6,Math.min(ARENA-6,x)); z=Math.max(-ARENA+6,Math.min(ARENA-6,z));
+  for(let i=0;i<P.n;i++){ const a=i/P.n*6.283+Math.random()*0.5; let x=Math.cos(a)*P.ring, z=Math.sin(a)*P.ring*0.85; [x,z]=clampFieldXZ(x, z, 6);
     const g=new THREE.Group(); g.position.set(x,heightAt(x,z),z); scene.add(g);
     const base=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.4,0.7,8), new THREE.MeshStandardMaterial({color:0x2a2e34,roughness:0.5,metalness:0.8})); base.position.y=0.35; g.add(base);
     const col=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.55,4.2,8), new THREE.MeshStandardMaterial({color:0x3a4048,roughness:0.4,metalness:0.85})); col.position.y=2.6; g.add(col);
@@ -189,7 +189,7 @@ export function updateBoss(dt, now){
   } else if(B.mode==='charge'){
     if(now < B.chargeUntil){ const ox=B.pos.x, oz=B.pos.z; driveFwd(B.phase>=1?56:46);
       if(Math.random()<0.6) burst(B.pos,0xff5028,2,5,{y:1.5});
-      if(Math.abs(B.pos.x)>lim || Math.abs(B.pos.z)>lim){ stunBoss(now, B.def.name+' đâm vào hàng rào — nó đang choáng!'); }
+      if(fieldDepth(B.pos.x, B.pos.z) < 4){ stunBoss(now, B.def.name+' đâm vào hàng rào — nó đang choáng!'); }
       if(distP < B.r+p.radius+0.6 && now>B.ramAt){ damagePlayer(bossAlive('plow')||B.id!=='bull'?34:17,now); B.ramAt=now+0.6; } }
     else if(B.chargeLeft>0){ B.chargeLeft--; B.mode='aim'; B.aimTimeout=now+1.6; }        // chained charges in later phases
     else { B.mode='idle'; B.atkAt = now + 1.4; }
@@ -202,7 +202,7 @@ export function updateBoss(dt, now){
     if(B.id==='tempest' && now>B.spiralAt){ B.spiralAng+=0.5; spawnBullet(B.pos.x,B.pos.z,B.spiralAng,{owner:'e',dmg:7,speed:20,color:0x9fe0ff,r:0.4,life:4.2}); B.spiralAt=now+(B.phase>=2?0.07:0.1); }
     if(now>B.atkAt && !B.shielded || (B.shielded && now>B.atkAt)) bossAttack(now, B.phase);
   }
-  B.pos.x=Math.max(-lim,Math.min(lim,B.pos.x)); B.pos.z=Math.max(-lim,Math.min(lim,B.pos.z));
+  clampField(B.pos, 4);
   if(dt>0){ B.vel.set((B.pos.x-B._px)/dt, 0, (B.pos.z-B._pz)/dt); }   // real hull velocity → collisions know how hard it hit
   B.mesh.position.set(B.pos.x,0,B.pos.z); B.mesh.rotation.y=B.facing;
   B.turret.rotation.y=wrapAngle(B.aim-B.facing);

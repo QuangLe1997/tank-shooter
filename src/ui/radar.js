@@ -1,5 +1,5 @@
 // ui/radar.js — RADAR / MINIMAP
-import { ALLY_TANKS, ARENA, DEPOTS, FT, HELOS, OBJ, POWS, RALLY_PT, S, boss, core, enemies, lootBeacons, playerRange } from '../hub.js';
+import { ALLY_TANKS, ARENA, DEPOTS, FT, HELOS, OBJ, POWS, RALLY_PT, RIDGES, S, boss, core, enemies, fieldOutline, lootBeacons, playerRange } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
 // ----------------------------- RADAR / MINIMAP -----------------------------
@@ -8,7 +8,9 @@ export function drawRadar(){
   const c=radarCtx, W=radarCanvas.width, H=radarCanvas.height, cx=W/2, cy=H/2;
   const scale=(W/2-7)/ARENA, toX=wx=>cx+wx*scale, toY=wz=>cy+wz*scale;
   c.clearRect(0,0,W,H);
-  c.strokeStyle='rgba(255,255,255,0.10)'; c.lineWidth=1; c.strokeRect(toX(-ARENA),toY(-ARENA),ARENA*2*scale,ARENA*2*scale);
+  { const O=fieldOutline(); c.fillStyle='rgba(255,255,255,0.035)'; c.strokeStyle='rgba(255,255,255,0.32)'; c.lineWidth=1.2; c.beginPath();   // Z106 the real (irregular) fence line
+    O.forEach(([x,z],i)=> i ? c.lineTo(toX(x),toY(z)) : c.moveTo(toX(x),toY(z))); c.closePath(); c.fill(); c.stroke(); }
+  c.strokeStyle='rgba(200,190,170,0.55)'; c.lineWidth=2; for(const R of RIDGES){ c.beginPath(); R.pts.forEach(([x,z],i)=> i ? c.lineTo(toX(x),toY(z)) : c.moveTo(toX(x),toY(z))); c.stroke(); }   // rock ridges
   const p=S.player;
   if(p){ c.fillStyle='rgba(140,191,63,0.10)'; c.beginPath(); c.arc(toX(p.pos.x),toY(p.pos.z), playerRange()*scale, 0, Math.PI*2); c.fill(); }  // range coverage
   if(core){ const x=toX(core.pos.x), y=toY(core.pos.z), low=core.hp/core.maxHp<0.35;     // core (cyan diamond, red if low)

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, ROSTER } from '../../config.js';
-import { ARENA, BIOME, ENVMOD, S, aoeDamage, bigExplode, burst, cMod, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { BIOME, ENVMOD, S, aoeDamage, bigExplode, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
 // ===== Z80 · NEW ENEMY VEHICLES — flame tank, ATGM tank-destroyer, combat-engineer repair truck, attack helicopter =====
@@ -94,7 +94,7 @@ export function updateGunship(e, dt, now, edt){
   const ax=(tx-e.pos.x), az=(tz-e.pos.z); e.vel.x += (ax*0.9 - e.vel.x)*Math.min(1,dt*1.2); e.vel.z += (az*0.9 - e.vel.z)*Math.min(1,dt*1.2);
   const vl=Math.hypot(e.vel.x,e.vel.z), vmax=R.speed*1.6; if(vl>vmax){ e.vel.x*=vmax/vl; e.vel.z*=vmax/vl; }
   e.pos.x+=e.vel.x*edt; e.pos.z+=e.vel.z*edt; if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt*0.3; e.pos.z+=e.kbz*edt*0.3; e.kbx*=0.9; e.kbz*=0.9; }
-  const lim=ARENA-3; e.pos.x=Math.max(-lim,Math.min(lim,e.pos.x)); e.pos.z=Math.max(-lim,Math.min(lim,e.pos.z));
+  clampField(e.pos, 3);
   e.pos.y = Math.max(heightAt(e.pos.x,e.pos.z),0) + R.alt + Math.sin(now*1.3+e.ph)*0.35;
   const dx=p.pos.x-e.pos.x, dz=p.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, want=Math.atan2(dx,dz);
   e.facing += wrapAngle(want-e.facing)*Math.min(1,dt*2.2);
