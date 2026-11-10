@@ -254,6 +254,15 @@ export const DRIVE = {
 };
 
 // TROOPS (Z89) — APCs that drive in and DISMOUNT a squad; your own FIRETEAM call-in (equipment wheel).
+// Z104 INFANTRY LETHALITY — a soldier is soft: ONE round from a tank gun kills him (rifles still trade hits),
+//   and a blast kills outright inside its core (core × radius) and wounds — fading — out to reach × radius.
+export const LETHAL = { tankRoundKills: true, core: 0.45, reach: 1.25, edgeMin: 0.25 };
+
+// Z104 MOBILE AIM — phones have no mouse, so the barrel is FIXED to the hull: the tank shoots straight where it faces.
+//   Auto-fire / rockets / mortar / artillery only take a target inside this forward cone (half-angle in rad) or lane (world units).
+export const AIM = { mobileFixed: true, cone: 0.17, lane: 1.8, artyCone: 0.32,
+  pivotOnly: 0.38 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
+
 export const TROOPS = {
   ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
   dismount: { fromStage: 2, range: 28, troops: [3, 5], interval: 0.38, rpgFrom: 3 },   // enemy APC stops inside `range`, drops the ramp, troops pile out
@@ -264,6 +273,7 @@ export const TROOPS = {
     spread: 2.6,                 // personal space between soldiers (no conga lines)
     tapMax: 0.3 },               // CREW/G pressed shorter than this = dismount; held = recall (release ends it)
   crewHeal: 5,                   // Z100 riding the tank heals a soldier this many HP per second (the tank is their aid station)
+  look: { scale: 1.85, barY: 3.6 },   // Z104 every foot soldier (ours + theirs) at the same, slightly bigger size; HP bar height above them
 };
 
 // BATTLEFIELD INSTALLATIONS (Z90) — enemy troop camps that keep feeding infantry, and rope bridges linking paired watchtowers.

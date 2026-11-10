@@ -8,13 +8,15 @@ export let soldiers=[], soldierLvl=0;
 export const SOLDIER_MAT = {};
 export function _soldierMats(){
   if(SOLDIER_MAT.ready) return SOLDIER_MAT;
-  const camo=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#6a7444'; x.fillRect(0,0,W,W); const cs=['#4e5a32','#8a8458','#3a4026','#7a6c48'];
+  const camo=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#55703a'; x.fillRect(0,0,W,W); const cs=['#3e5a2a','#6f8a48','#2c3e1e','#4a6634'];   // Z104 OURS: woodland GREEN camo
     for(let i=0;i<40;i++){ x.fillStyle=cs[i%cs.length]; x.beginPath(); x.ellipse(_R(0,W),_R(0,W),_R(3,9),_R(2,6),_R(0,3),0,7); x.fill(); } });
   SOLDIER_MAT.uni = new THREE.MeshStandardMaterial({ map:camo, roughness:0.9 });
   SOLDIER_MAT.gear= new THREE.MeshStandardMaterial({ color:0x4a4a32, roughness:0.85 });
   SOLDIER_MAT.dark= new THREE.MeshStandardMaterial({ color:0x1e1f1a, roughness:0.75, metalness:0.2 });
   SOLDIER_MAT.skin= new THREE.MeshStandardMaterial({ color:0xb07a52, roughness:0.65 });
   SOLDIER_MAT.gun = new THREE.MeshStandardMaterial({ color:0x1a1b18, roughness:0.45, metalness:0.75 });
+  SOLDIER_MAT.helm= new THREE.MeshStandardMaterial({ color:0x3c5426, roughness:0.85 });                                          // olive helmet cover
+  SOLDIER_MAT.band= new THREE.MeshStandardMaterial({ color:0x9be04a, emissive:0x5fae1c, emissiveIntensity:0.55, roughness:0.6 });   // lime ID armband — reads at a glance
   SOLDIER_MAT.ready=true; return SOLDIER_MAT;
 }
 export const ENEMY_SOLDIER_MAT = {};
@@ -22,7 +24,9 @@ export function _enemySoldierMats(){
   if(ENEMY_SOLDIER_MAT.ready) return ENEMY_SOLDIER_MAT; const F=_soldierMats();
   const camo=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#a8905e'; x.fillRect(0,0,W,W); const cs=['#8a7048','#c8b080','#6a5636','#b49a6a'];   // desert-tan pattern → reads as the OTHER side
     for(let i=0;i<40;i++){ x.fillStyle=cs[i%cs.length]; x.beginPath(); x.ellipse(_R(0,W),_R(0,W),_R(3,9),_R(2,6),_R(0,3),0,7); x.fill(); } });
-  Object.assign(ENEMY_SOLDIER_MAT, F, { uni:new THREE.MeshStandardMaterial({ map:camo, roughness:0.9 }), gear:new THREE.MeshStandardMaterial({ color:0x5a4632, roughness:0.85 }), ready:true });
+  Object.assign(ENEMY_SOLDIER_MAT, F, { uni:new THREE.MeshStandardMaterial({ map:camo, roughness:0.9 }), gear:new THREE.MeshStandardMaterial({ color:0x5a4632, roughness:0.85 }),
+    helm:new THREE.MeshStandardMaterial({ color:0x6a2620, roughness:0.8 }),                                                        // Z104 THEIRS: maroon helmet
+    band:new THREE.MeshStandardMaterial({ color:0xe03a2a, emissive:0xa01a10, emissiveIntensity:0.55, roughness:0.6 }), ready:true });   // red ID armband
   return ENEMY_SOLDIER_MAT;
 }
 export function makeSoldierMesh(opts){
@@ -47,7 +51,7 @@ export function makeSoldierMesh(opts){
   put(up, new THREE.CylinderGeometry(0.06,0.06,0.3,8), M.dark, 0.2,0.58,-0.25, 0,0,Math.PI/2);                                   // bedroll
   put(up, new THREE.CylinderGeometry(0.07,0.08,0.1,10), M.skin, 0,0.6,0);                                                         // neck
   put(up, new THREE.SphereGeometry(0.13,12,10), M.skin, 0,0.75,0.01);                                                             // head
-  put(up, new THREE.SphereGeometry(0.165,14,8,0,6.283,0,1.55), M.uni, 0,0.77,0);                                                  // covered helmet
+  put(up, new THREE.SphereGeometry(0.165,14,8,0,6.283,0,1.55), M.helm||M.uni, 0,0.77,0);                                        // covered helmet (side colour)
   put(up, new THREE.CylinderGeometry(0.17,0.17,0.03,14), M.gear, 0,0.77,0);                                                       // helmet band
   put(up, rb(0.06,0.06,0.05,0.01), M.dark, 0,0.86,0.15);                                                                          // NVG shroud mount
   put(up, rb(0.22,0.04,0.02,0.01), M.dark, 0,0.73,0.13);                                                                          // goggles strap / eyes shadow
@@ -55,7 +59,8 @@ export function makeSoldierMesh(opts){
   const armG=new THREE.Group(); armG.position.set(0,0.48,0.02); up.add(armG);
   put(armG, rb(0.12,0.32,0.13,0.04), M.uni, -0.25,-0.05,0.08, -0.9,0,0.25); put(armG, rb(0.12,0.32,0.13,0.04), M.uni, 0.25,-0.05,0.08, -0.9,0,-0.25);   // upper arms
   put(armG, rb(0.1,0.28,0.11,0.04), M.uni, -0.12,-0.12,0.3, -1.45,0,0.6); put(armG, rb(0.1,0.28,0.11,0.04), M.uni, 0.15,-0.08,0.26, -1.3,0,-0.4);       // forearms
-  for(const [hx,hz] of [[-0.02,0.42],[0.1,0.14]]) put(armG, new THREE.SphereGeometry(0.055,8,6), M.dark, hx,-0.08,hz);                                    // gloves
+  for(const [hx,hz] of [[-0.02,0.42],[0.1,0.14]]) put(armG, new THREE.SphereGeometry(0.055,8,6), M.dark, hx,-0.08,hz);
+  for(const sx of [-1,1]) put(armG, rb(0.135,0.09,0.145,0.02), M.band||M.gear, sx*0.25,0.04,0.0, -0.9,0,sx*-0.25);              // Z104 ID armbands on both upper arms                                    // gloves
   const gun=new THREE.Group(); gun.position.set(0.04,-0.06,0.16); armG.add(gun);
   put(gun, rb(0.06,0.1,0.42,0.015), M.gun, 0,0,0.12); put(gun, new THREE.CylinderGeometry(0.018,0.02,0.36,8), M.gun, 0,0.01,0.5, Math.PI/2);   // receiver + barrel
   put(gun, rb(0.07,0.07,0.22,0.015), M.gun, 0,0.0,0.34); put(gun, rb(0.045,0.16,0.07,0.01), M.gun, 0,-0.11,0.1, 0.25);                       // handguard + magazine
@@ -112,7 +117,7 @@ export function updateSoldiers(dt, now){
     if(best){ const ang=Math.atan2(best.pos.x-s.pos.x, best.pos.z-s.pos.z); s.g.rotation.y=ang;
       if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd*guardFireMul(); _fired=true;   // GUARD: DRILL upgrade → faster fire
         s.g.userData.muzzle.getWorldPosition(_sV);
-        spawnBullet(_sV.x,_sV.z,ang,{owner:'p', dmg:SOLDIER.dmg*(1+soldierLvl*0.22), speed:84, color:0xe8ef86, r:0.26, life:1.4, maxDist:SOLDIER.range+2});
+        spawnBullet(_sV.x,_sV.z,ang,{owner:'p', inf:true, dmg:SOLDIER.dmg*(1+soldierLvl*0.22), speed:84, color:0xe8ef86, r:0.26, life:1.4, maxDist:SOLDIER.range+2});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {color:0xf2f7a0, size:0.55, life:0.07, grav:0, drag:9}); } }
     else { const mvx=tx-s.pos.x, mvz=tz-s.pos.z; if(mvx*mvx+mvz*mvz>0.02){ const wf=Math.atan2(mvx,mvz); let df=((wf-s.g.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI; s.g.rotation.y+=df*Math.min(1,dt*4); } }   // face where they walk
     animateSoldier(s.g, Math.hypot(s.pos.x-ox, s.pos.z-oz)/SOLDIER.scale, dt, _fired);

@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, S, _RUP, _rdir, _v, addGunXp, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, haptic, heightAt, magCap, muzzleFlash, muzzleLight, nearestTarget, ownGun, playerRange, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, haptic, heightAt, magCap, muzzleFlash, muzzleLight, ownGun, playerRange, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -144,7 +144,7 @@ export function fireGun(now, range){
     if(Math.random()<0.12) sfx('shoot_flak'); if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst); updateGunHUD(); return; }   // flame handles its own FX; skip the bullet/muzzle path + throttle sound
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
-    const aimTgt = nearestTarget(maxDist);                 // arc toward the locked target; straight if it's close
+    const aimTgt = aimTarget(maxDist);                     // arc toward the target (mobile: only one straight ahead); straight if it's close
     const aimDist = (!MOBILE && S.pointerActive) ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z)   // desktop: where YOU point
                   : (aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z) : 0);                    // mobile: the auto-locked target
     // launch from the BARREL MOUTH (rounds visibly leave the muzzle) — unless an enemy hugs the hull closer than the muzzle reach

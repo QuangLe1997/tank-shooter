@@ -68,7 +68,7 @@ export function updateTowers(dt, now){
       if(fired){ gd.fireAt = now + TOWER.fireCd*(0.8+Math.random()*0.5);
         gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(p.pos.x-_tw.x, p.pos.z-_tw.z)+(Math.random()-0.5)*0.08;
         const dmg=(TOWER.guardDmg + S.stage*0.7)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
-        spawnBullet(_tw.x, _tw.z, ang, {owner:'e', dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
+        spawnBullet(_tw.x, _tw.z, ang, {owner:'e', inf:true, dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
         spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('rifleShot', {x:_tw.x, z:_tw.z}); }
       animateSoldier(gd.g, 0, dt, fired); }
   }

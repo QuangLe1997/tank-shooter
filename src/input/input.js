@@ -82,7 +82,7 @@ armBtn('mWeapon', ()=>cycleGun(1));
 { const nx=document.getElementById('mSpellNext'); if(nx){ const go=(ev)=>{ ev.stopPropagation(); ev.preventDefault(); cycleSpell(1); const sp=SPELLS[S.spell]; if(S.player) floatText(sp.vi||sp.name, '#bfe66a', S.player.pos, 15); };
   nx.addEventListener('touchstart', go, {passive:false}); nx.addEventListener('mousedown', go); } }   // Z84: phones can now switch skills (smoke · APS · mines …)
 document.getElementById('mPause').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
-// ----- mobile fire mode: MANUAL (left-thumb trigger) vs AUTO (gun fires itself). Turret always auto-aims. -----
+// ----- mobile fire mode: MANUAL (left-thumb trigger) vs AUTO (fires when a target is straight ahead). Z104: barrel fixed to the hull. -----
 export let autoFire = (()=>{ try{ return localStorage.getItem('steelsiege.auto')==='1'; }catch(e){ return false; } })();   // default MANUAL (trigger)
 export function applyAutoFire(){ document.body.classList.toggle('autofire', autoFire); const b=document.getElementById('autoBtn'); if(b) b.classList.toggle('on', autoFire); }
 export const autoBtnEl=document.getElementById('autoBtn');

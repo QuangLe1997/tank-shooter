@@ -107,7 +107,7 @@ export function updateGunship(e, dt, now, edt){
   const ds=diffScale(), dmul=(0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul(), smk=smokeSpread(now);
   if(now>e.fireAt){                                                         // CHIN GUN — short strafing bursts
     ud.muzzle.getWorldPosition(_pv); const a=want+(Math.random()-0.5)*0.22*smk*(ENVMOD.night?ENV.night.enemySpread:1);
-    spawnBullet(_pv.x,_pv.z,a,{owner:'e', dmg:R.gunDmg*dmul, speed:70, color:0xffc070, r:0.24, life:1.4, maxDist:R.range+4, noArc:true, y:_pv.y, dropTo:1.3});
+    spawnBullet(_pv.x,_pv.z,a,{owner:'e', inf:true, dmg:R.gunDmg*dmul, speed:70, color:0xffc070, r:0.24, life:1.4, maxDist:R.range+4, noArc:true, y:_pv.y, dropTo:1.3});
     spawnPart(_pv.x,_pv.y,_pv.z,0,0,0,{tex:'flash', color:0xfff0c0, size:0.9, life:0.05, grav:0, drag:0}); sfx('enemyShoot', e.pos);
     e.burstLeft=(e.burstLeft||R.burst)-1; if(e.burstLeft<=0){ e.burstLeft=R.burst; e.fireAt=now+R.burstCd*(BALANCE.aggro.rateBase-BALANCE.aggro.rateDrop*ds)/1.6; } else e.fireAt=now+R.gunCd; }
   if(now>(e.rocketAt||0)){ e.rocketAt=now+R.salvoCd*(0.8+Math.random()*0.4);  // RIPPLE — a pair of unguided rockets from the pods

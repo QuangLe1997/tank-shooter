@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT } from '../../config.js';
-import { ARENA, BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, animateTank, autoFire, boss, bumpAt, camera, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, nearestTarget, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
+import { DRIVE, LOOT, AIM } from '../../config.js';
+import { ARENA, BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -15,13 +15,10 @@ export function updatePlayer(dt, now){
   p.scale += (targScale - p.scale)*Math.min(1, dt*3);
   p.radius = PLAYER.radius * p.scale * TANK_SCALE;
   p.mesh.scale.setScalar(p.scale * TANK_SCALE);
-  // AIM — mobile: turret auto-targets the nearest enemy in range (no manual aim).
-  //       desktop: aim with the mouse. Firing is always automatic (handled below).
-  if(MOBILE){
-    const t = nearestTarget(56);
-    if(t) p.aim = Math.atan2(t.pos.x - p.pos.x, t.pos.z - p.pos.z);
-    else { const mv=getMoveDir(); if(mv.lengthSq()>0.01) p.aim = Math.atan2(mv.x, mv.z); }
-  } else {
+  // AIM — Z104 mobile: the barrel is FIXED to the hull (no mouse to lay it) → the tank shoots where it faces.
+  //       desktop: aim with the mouse.
+  if(barrelFixed()){ p.aim = p.facing; p.aimSmoothed = p.facing; }
+  else {
     if(S.pointerActive){ p.aim = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
   }
   // smooth the aim angle a touch (avoids jitter); turret yaw applied after hull below
@@ -57,11 +54,12 @@ export function updatePlayer(dt, now){
       thr = TI.thr; p.rev = thr < 0; p.throttle = thr || TI.turn*0.25;             // pivoting still loads the engine a little
     } else if(inp > 0.1){                                                         // SCREEN CONTROLS: push where you want to go; the hull turns to it
       const want = Math.atan2(dir.x, dir.z); let df = wrapAngle(want - p.facing);
-      if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && Math.abs(vf) < 3)) p.rev = true; else p.rev = false;   // pull back from (near) standstill → back up; moving → swing round (hysteresis)
+      const aimOnly = barrelFixed() && inp < AIM.pivotOnly;                       // Z104 light push on a phone = swing the gun (hull) onto the target, stay put
+      if(aimOnly) p.rev = false; else if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && Math.abs(vf) < 3)) p.rev = true; else p.rev = false;   // pull back from (near) standstill → back up; moving → swing round (hysteresis)
       if(p.rev) df = wrapAngle(want + Math.PI - p.facing);
       const step = Math.sign(df)*Math.min(Math.abs(df), turnK*dt); p.facing = wrapAngle(p.facing + step);
       const align = Math.max(0, Math.cos(df));                                    // pivot first: little drive until the hull lines up
-      thr = inp * (0.12 + 0.88*align*align) * (p.rev?-1:1); p.throttle = thr;
+      thr = aimOnly ? 0 : inp * (0.12 + 0.88*align*align) * (p.rev?-1:1); p.throttle = aimOnly ? 0.2 : thr;
     }
     if(Math.abs(thr) > 0.05){
       const top = thr<0 ? maxSp*DRIVE.reverseMul : maxSp, v = Math.abs(vf);
@@ -112,7 +110,7 @@ export function updatePlayer(dt, now){
   else if(!p.mesh.visible) p.mesh.visible = true;
   { const g0=equippedGun(); if(g0.spinUp){ const on = now-(p.spinT||0) < 0.2; p.spin = on ? Math.min(1,(p.spin||0)+dt/g0.spinUp) : Math.max(0,(p.spin||0)-dt/0.9); } else p.spin=0; }
   const _bg=p.mesh.userData.barrelG; if(_bg&&_bg.userData.spin) _bg.userData.spin.rotation.z += dt*(4+26*(p.spin||0));   // rotor speed = spin-up state
-  { const rg=p.mesh.userData.rig; if(rg){ const g0=equippedGun(), tg=nearestTarget(playerRange()+2);   // lay the gun: elevate for the ballistic lob to the target / cursor
+  { const rg=p.mesh.userData.rig; if(rg){ const g0=equippedGun(), tg=aimTarget(playerRange()+2);   // lay the gun: elevate for the ballistic lob to the target / cursor
       const D = tg ? Math.hypot(tg.pos.x-p.pos.x, tg.pos.z-p.pos.z) : (!MOBILE && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
       rg.elevT = rg.elevates===false ? 0 : Math.min(0.05, D*0.0012); }   // flat-shooting tank gun: just a hair of super-elevation
     const radar=p.mesh.userData.gunMount && p.mesh.userData.gunMount.getObjectByName('radar'); if(radar) radar.rotation.z += dt*2.4; }   // flak search radar sweeps
@@ -137,7 +135,7 @@ export function updatePlayer(dt, now){
   rangeRing.visible = true; rangeRing.position.set(p.pos.x, 0.06, p.pos.z);
   rangeRing.scale.set(range, range, range);
   rangeRing.material.opacity = 0.08 + Math.sin(now*2)*0.025;   // thin + faint, just visible
-  if(MOBILE){ if(autoFire ? !!nearestTarget(range) : S.firing) fireGun(now, range); }   // mobile: AUTO fires when a target is in range; MANUAL fires while the trigger is held
+  if(MOBILE){ if(autoFire ? !!aimTarget(range) : S.firing) fireGun(now, range); }   // mobile: AUTO fires when a target is straight ahead in range; MANUAL fires while the trigger is held
   else if(S.firing) fireGun(now, range);                                                 // desktop: fire only while LMB held; gun fireCd caps the rate
 }
 export function biomeVi(n){ return BIOME_VI[n]||n; }

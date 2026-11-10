@@ -58,6 +58,7 @@ export * from './game/player-damage.js';
 export * from './input/input.js';
 export * from './combat/abilities.js';
 export * from './combat/guns.js';
+export * from './combat/aim.js';
 export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
 export * from './combat/mastery.js';

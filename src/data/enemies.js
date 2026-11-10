@@ -1,5 +1,5 @@
 // data/enemies.js — ENEMY_DEFS registry: hp, speed, score, scale, weapon and role per enemy type
-import { INFANTRY } from '../../config.js';
+import { INFANTRY, TROOPS } from '../../config.js';
 
 // ----------------------------- ENEMIES -----------------------------
 export const ENEMY_DEFS = {
@@ -11,8 +11,8 @@ export const ENEMY_DEFS = {
   bomber: { hp:22,  speed:10, keep:0,  range:0,  fireCd:0,    dmg:0,  bspeed:0,  score:180, scale:0.9,  ram:0,  canShoot:false, bomber:true, pal:{hull:0x8a2a2a,turret:0x9a3030,barrel:0xaa3838,tread:0x300f0f,accent:0xff3020} },
   heavy:  { hp:140, speed:3,  keep:20, range:30, fireCd:2.8,  dmg:22, bspeed:40, score:340, scale:1.36, ram:11, canShoot:true,  heavy:true, pal:{hull:0x3a3e44,turret:0x464b52,barrel:0x565c64,tread:0x16181c,accent:0xff9a3a} },   // BRUISER: huge HP, slow, heavy slow shells (big knockback)
   sniper: { hp:34,  speed:5,  keep:36, range:52, fireCd:2.9,  dmg:16, bspeed:128,score:250, scale:0.98, ram:5,  canShoot:true,  accurate:true, pal:{hull:0x3a2f52,turret:0x453a60,barrel:0x564a72,tread:0x18142a,accent:0xc060ff} },   // MARKSMAN: long range, pin-point accurate, fast tracer, slow fire
-  rifle:  { ...INFANTRY.rifle, scale:1.6, ram:0, canShoot:false, inf:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x2a2a22,tread:0x3a3020,accent:0xc8b080} },   // Z79 foot soldiers
-  rpg:    { ...INFANTRY.rpg,   scale:1.6, ram:0, canShoot:false, inf:true, rpg:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x4a5530,tread:0x3a3020,accent:0xff6a3a} },
+  rifle:  { ...INFANTRY.rifle, scale:TROOPS.look.scale, ram:0, canShoot:false, inf:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x2a2a22,tread:0x3a3020,accent:0xc8b080} },   // Z79 foot soldiers
+  rpg:    { ...INFANTRY.rpg,   scale:TROOPS.look.scale, ram:0, canShoot:false, inf:true, rpg:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x4a5530,tread:0x3a3020,accent:0xff6a3a} },
   pyro:   { hp:74,  speed:5.4, keep:7,  range:12, fireCd:0, dmg:0, bspeed:0, score:240, scale:1.1,  ram:8, canShoot:false, pyro:true, pal:{hull:0x3e3a2a,turret:0x4a4430,barrel:0x2a2a22,tread:0x1c1a12,accent:0xff7a1c} },   // Z80 FLAME TANK: closes in and hoses you with fire
   atgm:   { hp:52,  speed:4,   keep:30, range:46, fireCd:6.5, dmg:0, bspeed:0, score:290, scale:1.06, ram:6, canShoot:false, atgm:true, pal:{hull:0x8a7a52,turret:0x9a8a5e,barrel:0x3a3a30,tread:0x2e2818,accent:0xff3030} },   // Z80 TANK-DESTROYER: laser-guided missile
   engineer:{ hp:62, speed:5,   keep:26, range:0,  fireCd:0, dmg:0, bspeed:0, score:270, scale:1.04, ram:5, canShoot:false, engineer:true, pal:{hull:0x8a7a2a,turret:0x9a8a30,barrel:0x2a2a22,tread:0x2a2610,accent:0xffc020} },   // Z80 COMBAT ENGINEER: repairs damaged tanks

@@ -10,7 +10,7 @@ export const enemyBarPool=[];
 export function getEnemyBar(){ let b=enemyBarPool.pop(); if(!b){ b=makeSoldierBar(); b.g.scale.setScalar(1.5); scene.add(b.g); } b.g.visible=true; return b; }
 export function freeEnemyBar(b){ if(!b) return; b.g.visible=false; enemyBarPool.push(b); }
 export function updateEnemyBar(e){ if(!e.bar) return; const f=Math.max(0, e.hp/e.maxHp), ms=e.mesh.scale.x||1;
-  e.bar.g.position.set(e.pos.x, (e.def.inf?3.25:e.def.air?(e.pos.y||0)+2.4:2.7 + ms*0.95) + (e.def.air?0:heightAt(e.pos.x,e.pos.z)), e.pos.z); e.bar.g.quaternion.copy(camera.quaternion);   // float above the turret, always face camera
+  e.bar.g.position.set(e.pos.x, (e.def.inf?TROOPS.look.barY:e.def.air?(e.pos.y||0)+2.4:2.7 + ms*0.95) + (e.def.air?0:heightAt(e.pos.x,e.pos.z)), e.pos.z); e.bar.g.quaternion.copy(camera.quaternion);   // float above the turret, always face camera
   e.bar.fill.scale.x=Math.max(0.001,f); e.bar.fill.position.x=-(1-f)*0.5;                              // shrink from the right
   e.bar.fill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));                         // green → amber → red
 }
@@ -142,7 +142,7 @@ export function updateCarrierCrew(e, now){
     if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ c.fireAt = now+0.4; continue; }
     let a = Math.atan2(dx,dz) + (Math.random()-0.5) * Math.max(0.04, A.spreadBase*(1-ds*A.spreadDrop)*1.3);   // crew a bit less accurate than gun tanks
     const dmg = 5 * (0.7+0.3*ds) * loopDmgMul() * cMod('enemyDmgMul');
-    spawnBullet(_cv.x, _cv.z, a, {owner:'e', dmg, speed:44, color:0xffd06a, r:0.3, life:2.4, maxDist:32, arcDist:d});
+    spawnBullet(_cv.x, _cv.z, a, {owner:'e', inf:true, dmg, speed:44, color:0xffd06a, r:0.3, life:2.4, maxDist:32, arcDist:d});
     spawnPart(_cv.x, _cv.y, _cv.z, Math.sin(a)*6,1,Math.cos(a)*6, {color:0xffd06a, size:0.6, life:0.1, grav:0, drag:7});
     sfx('rifleShot', e.pos); c.fireAt = now + 1.4 + Math.random()*0.7;
   }

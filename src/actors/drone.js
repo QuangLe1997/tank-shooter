@@ -107,7 +107,7 @@ export function updateDrone(dt, now){
     if(!reloading && now>=d.fireAt){
       d.fireAt=now+d.fireCd; d.ammo--;
       const a=d.g.rotation.y, mx=ox+Math.sin(a)*0.95, mz=oz+Math.cos(a)*0.95;
-      spawnBullet(mx, mz, a, {owner:'p', dmg:d.dmg, speed:DRONE.bspeed, color:0x8fe0ff, r:0.26, life:1.2, maxDist:DRONE.detect+4});
+      spawnBullet(mx, mz, a, {owner:'p', inf:true, dmg:d.dmg, speed:DRONE.bspeed, color:0x8fe0ff, r:0.26, life:1.2, maxDist:DRONE.detect+4});
       muzzleFlash(mx, mz, a, 0x8fe0ff);
       if(d.ammo%3===0) sfx('beep');
       if(d.ammo<=0) d.reloadUntil=now+d.reloadT;                                              // belt empty → short reload

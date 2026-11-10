@@ -1,6 +1,7 @@
 // combat/siege-rocket.js — SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius
 import * as THREE from 'three';
-import { ARENA, GLOW, GUNS, MOBILE, S, _v, enemies, equippedGun, heightAt, muzzleLight, nearestTarget, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
+import { AIM } from '../../config.js';
+import { ARENA, GLOW, GUNS, MOBILE, S, _v, aheadTarget, aimTarget, barrelFixed, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
 
 // ----- SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius -----
 export const rockets=[], fuses=[];
@@ -48,7 +49,7 @@ export const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
 export function rocketTarget(){
   const p=S.player; let tx,tz;
   if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
-  else { const tgt=nearestTarget(playerRange()*1.7); if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z;
+  else { const tgt=aimTarget(playerRange()*1.7, AIM.artyCone); if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z;
       if(tgt.vel && p.muzzle){ p.muzzle.getWorldPosition(_v); const g=equippedGun(), el=g.special==='rocket'?ROCKET_ELEV:MORTAR_ELEV, G=g.special==='rocket'?ROCKET_G:MORTAR_G;
         for(let k=0;k<2;k++){ const T=rocketArc(_v.x,_v.y,_v.z,tx,tz,el,G).T; tx=tgt.pos.x+tgt.vel.x*T; tz=tgt.pos.z+tgt.vel.z*T; } } }   // lead: aim where it WILL be after the flight time
     else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; } }
@@ -73,7 +74,7 @@ export function hideRocketAim(){ for(const d of aimDots) if(d.visible) d.visible
 export function updateRocketAim(now){
   const p=S.player; if(S.mode!=='playing'||!p||!p.guns||!p.guns.length){ hideRocketAim(); return; }
   const g=GUNS[p.guns[p.gunIdx].id];
-  if(!(g && (g.special==='rocket'||g.special==='mortar') && (!MOBILE ? S.pointerActive : !!nearestTarget(playerRange()*1.7)))){ hideRocketAim(); return; }
+  if(!(g && (g.special==='rocket'||g.special==='mortar') && (!MOBILE ? S.pointerActive : true))){ hideRocketAim(); return; }
   const t=rocketTarget(), tx=t.x, tz=t.z;
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube MOUTH (same point the shell fires from)
   const a = g.special==='mortar' ? rocketArc(sx,sy,sz,tx,tz, MORTAR_ELEV, MORTAR_G) : rocketArc(sx,sy,sz,tx,tz);   // mortar/howitzer use the flatter fast arc; rocket the steep one
@@ -113,7 +114,8 @@ export function fireArty(now, g, dmg){
   const p=S.player;
   // long-range auto-target: the nearest enemy in a generous radius, ignoring walls/line-of-sight (it falls from above)
   let tgt=null, bd=1e18; const RNG=Math.max(40, playerRange()*2.2);
-  for(const e of enemies){ if(e.def.bomber) continue; const q=(e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2; if(q<bd && q<RNG*RNG){ bd=q; tgt=e; } }
+  if(barrelFixed()) tgt=aheadTarget(RNG, AIM.artyCone);                 // Z104 mobile: the shell goes where the hull points
+  else for(const e of enemies){ if(e.def.bomber) continue; const q=(e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2; if(q<bd && q<RNG*RNG){ bd=q; tgt=e; } }
   let tx,tz;
   if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; }
   else if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }

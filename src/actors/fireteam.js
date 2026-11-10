@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS } from '../../config.js';
-import { ARENA, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, blocks, boss, buildTank, burst, camera, decorateEnemyMesh, enemies, floatText, heightAt, makeSoldierBar, makeSoldierMesh, playerRange, radio, rangeRing, riders, scene, sfx, solidTank, spawnBullet, spawnPart, spawnRider, updateCrewBtn, wrapAngle } from '../hub.js';
+import { ARENA, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, blocks, boss, buildTank, burst, camera, decorateEnemyMesh, enemies, floatText, heightAt, infBlastK, makeSoldierBar, makeSoldierMesh, playerRange, radio, rangeRing, riders, scene, sfx, solidTank, spawnBullet, spawnPart, spawnRider, updateCrewBtn, wrapAngle } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -30,11 +30,13 @@ export function updateFireteamAPC(dt, now){
   const sp=Math.hypot(A.vel.x,A.vel.z); if(sp>1){ A.facing+=wrapAngle(Math.atan2(A.vel.x,A.vel.z)-A.facing)*Math.min(1,dt*3); }
   m.position.set(A.pos.x,0,A.pos.z); m.rotation.y=A.facing; animateTank(m, A.pos.x, A.pos.z, A.facing, dt);
 }
-export function spawnAlly(x, z, dirA){ const F=TROOPS.fireteam, g=makeSoldierMesh(); g.scale.setScalar(1.15); scene.add(g); const bar=makeSoldierBar(); bar.g.scale.setScalar(0.7); scene.add(bar.g);
+export function spawnAlly(x, z, dirA){ const F=TROOPS.fireteam, g=makeSoldierMesh(); g.scale.setScalar(TROOPS.look.scale); scene.add(g); const bar=makeSoldierBar(); bar.g.scale.setScalar(0.7); scene.add(bar.g);
   const k=FT.length; FT.push({ g, bar:bar.g, barFill:bar.fill, pos:new THREE.Vector3(x,0,z), hp:F.hp, maxHp:F.hp, fireAt:0, slot:k, kbx:Math.sin(dirA)*6, kbz:Math.cos(dirA)*6, hitT:0, dead:false, facing:dirA }); }
 export function damageAlly(a, dmg){ if(a.dead) return; a.hp-=dmg; a.hitT=0.16; const t=a.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
   if(a.hp<=0){ a.dead=true; const i=FT.indexOf(a); if(i>=0) FT.splice(i,1); burst(a.pos, 0x2c331c, 5, 4, {y:0.8, life:0.7, size:1.1, smoke:true, op:0.4}); floatText('✝','#ff9a7a',{x:a.pos.x,y:1.7,z:a.pos.z},16);
     scene.remove(a.g); scene.remove(a.bar); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); } }
+// Z104 an enemy blast (mortar, RPG, artillery, bomb) among OUR men on foot: inside the core = killed, the ring = wounded
+export function blastAllies(x, z, r, dmg){ for(const a of FT.slice()){ const k=infBlastK(Math.hypot(a.pos.x-x, a.pos.z-z), r); if(k>0) damageAlly(a, k>=1 ? 999 : dmg*k); } }
 export function clearFireteam(){ S.recall=false; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; if(FT_APC){ scene.remove(FT_APC.mesh); FT_APC=null; } updateCrewBtn(); }
 export function infPushBlocks(pos){ for(const bl of blocks){ if(bl.obb){ const s_=Math.sin(bl.obb.f), c_=Math.cos(bl.obb.f), dx_=pos.x-bl.x, dz_=pos.z-bl.z, al=dx_*s_+dz_*c_, ac=dx_*c_-dz_*s_, hw=bl.obb.hw+0.4; if(Math.abs(al)<bl.obb.hl+0.3 && Math.abs(ac)<hw){ const push=(ac<0?-hw:hw)-ac; pos.x+=c_*push; pos.z-=s_*push; } continue; }
   const bx=pos.x-bl.x, bz=pos.z-bl.z, q=bx*bx+bz*bz, rr=bl.r+0.45; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); pos.x=bl.x+bx/qq*rr; pos.z=bl.z+bz/qq*rr; } } }
@@ -58,7 +60,7 @@ export function updateFireteam(dt, now){
       if(d < p.radius+2.4 && riders.length<RIDER.cap){ const i=FT.indexOf(a); FT.splice(i,1); scene.remove(a.g); scene.remove(a.bar); spawnRider(); const r=riders[riders.length-1]; r.hp=Math.max(6, a.hp/a.maxHp*r.maxHp); S.recallIn=(S.recallIn||0)+1; floatText('LÊN XE '+S.recallIn, '#9bd14a', p.pos, 14); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); continue; }
       a.pos.x+=dx/d*F.sprint*dt; a.pos.z+=dz/d*F.sprint*dt; infPushBlocks(a.pos); a.facing=Math.atan2(dx,dz);
       a.g.position.set(a.pos.x, heightAt(a.pos.x,a.pos.z), a.pos.z); a.g.rotation.y=a.facing; animateSoldier(a.g, Math.hypot(a.pos.x-ox,a.pos.z-oz)/1.15, dt, false);
-      a.bar.position.set(a.pos.x, 2.5+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); continue; }
+      a.bar.position.set(a.pos.x, TROOPS.look.barY+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); continue; }
     const ox=a.pos.x, oz=a.pos.z, dT=Math.hypot(a.pos.x-p.pos.x, a.pos.z-p.pos.z);
     if(dT > zone) a.falling=true; else if(dT < zone*0.75) a.falling=false;                          // drifted out (or the tank drove off) → fall back inside
     const best = a.falling ? null : allyTarget(a, zone);
@@ -81,7 +83,7 @@ export function updateFireteam(dt, now){
     const shoot = best && Math.hypot(best.pos.x-a.pos.x, best.pos.z-a.pos.z) < F.range;
     if(shoot){ const ang=Math.atan2(best.pos.x-a.pos.x, best.pos.z-a.pos.z); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,dt*10);
       if(now>=a.fireAt && Math.abs(wrapAngle(ang-a.facing))<0.3){ a.fireAt=now+F.fireCd*(0.8+Math.random()*0.4); fired=true; a.g.userData.muzzle.getWorldPosition(_sV);
-        spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*0.06,{owner:'p', dmg:F.dmg*(1+(S.stage-1)*0.12), speed:80, color:0xe8ef86, r:0.24, life:1.4, maxDist:F.range+2, noArc:true, y:_sV.y});
+        spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*0.06,{owner:'p', inf:true, dmg:F.dmg*(1+(S.stage-1)*0.12), speed:80, color:0xe8ef86, r:0.24, life:1.4, maxDist:F.range+2, noArc:true, y:_sV.y});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('rifleShot', a.pos); } }
     else { const mv=Math.hypot(a.pos.x-ox,a.pos.z-oz); if(mv>0.01) a.facing+=wrapAngle(Math.atan2(a.pos.x-ox,a.pos.z-oz)-a.facing)*Math.min(1,dt*8); }
     let jy=0; if(a.jumpT>0){ a.jumpT-=dt; const u=Math.max(0,a.jumpT)/0.4; jy=Math.max(0,(a.jy-heightAt(a.pos.x,a.pos.z)))*u*u + Math.sin((1-u)*Math.PI)*0.5; }   // hop off the hull
@@ -89,7 +91,7 @@ export function updateFireteam(dt, now){
     animateSoldier(a.g, Math.hypot(a.pos.x-ox,a.pos.z-oz)/1.15, dt, fired);
     for(const e of enemies){ if(!solidTank(e)) continue; const qx=e.pos.x-a.pos.x, qz=e.pos.z-a.pos.z; if(qx*qx+qz*qz < (e.r+0.8)**2){ if(Math.hypot(e.vel.x,e.vel.z)>4) damageAlly(a, 999); else { const L=Math.hypot(qx,qz)||1; a.pos.x-=qx/L*0.5; a.pos.z-=qz/L*0.5; } } }   // enemy tracks crush them too
     if(a.dead) continue;
-    a.bar.visible=true; a.bar.position.set(a.pos.x, 2.5+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion);
+    a.bar.visible=true; a.bar.position.set(a.pos.x, TROOPS.look.barY+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion);
     const f=Math.max(0,a.hp/a.maxHp); a.barFill.scale.x=Math.max(0.001,f); a.barFill.position.x=-(1-f)*0.5; a.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
     if(a.hitT>0){ a.hitT-=dt; if(a.hitT<=0){ const t=a.g.userData.torso; if(t){ t.material.emissive.setHex(0x000000); t.material.emissiveIntensity=0; } } }
   }
