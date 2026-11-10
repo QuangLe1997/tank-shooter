@@ -68,19 +68,37 @@ export const BALANCE = {
 //   rangeFalloff = 1 inside 55% of the gun's reach, then linear down to gun.fall at full reach.
 //   reach = playerRange() × gun.rng × (night ? ENV.night.range : 1)   (railgun/missile ignore night: thermal sight / lock-on)
 // ============================================================================
-// damage type × armour class (L = light: scout/bomber/gunner · M = medium: grunt/mortar/sniper/carrier · H = heavy: shield/heavy/boss)
+// damage type × armour class (L = light: scout/bomber/gunner/infantry · M = medium: grunt/mortar/sniper/carrier · H = heavy: shield/heavy/boss · A = aircraft)
 // `struct` = vs cover/towers (HESH is the dedicated bunker-buster; fire torches wooden towers but not sandbags/concrete).
 export const DMG_TYPE = {
-  KIN:  { L:1.15, M:1.00, H:0.55, struct:0.6, label:'KINETIC' },      // autocannons / MGs / rotary — shreds light armour, bounces off heavy
-  AP:   { L:0.85, M:1.10, H:1.45, struct:1.2, label:'ARMOR-PIERCING' },// sabot / rail slug — built to kill tanks; over-penetrates light targets
-  HE:   { L:1.20, M:1.00, H:0.85, struct:1.5, label:'HIGH-EXPLOSIVE' },// blast + splinters — crowds, light vehicles, structures
-  FRAG: { L:1.35, M:0.95, H:0.55, struct:0.7, label:'FRAGMENTATION' }, // canister / pellets — brutal close on soft targets
-  FIRE: { L:1.30, M:1.00, H:0.75, struct:0.3, tower:1.6, label:'INCENDIARY' },
-  CRYO: { L:1.00, M:1.00, H:0.85, struct:0.5, label:'CRYOGENIC' },
-  ELEC: { L:1.00, M:1.10, H:1.00, struct:0.4, label:'ELECTRIC' },
-  HESH: { L:1.00, M:1.25, H:1.05, struct:3.0, label:'HESH' },         // squash-head: spalls medium armour, levels cover & towers
+  KIN:  { L:1.15, M:1.00, H:0.55, A:1.10, struct:0.6, label:'KINETIC' },      // autocannons / MGs / rotary — shreds light armour, bounces off heavy
+  AP:   { L:0.85, M:1.10, H:1.45, A:0.70, struct:1.2, label:'ARMOR-PIERCING' },// sabot / rail slug — built to kill tanks; over-penetrates light targets
+  HE:   { L:1.20, M:1.00, H:0.85, A:1.00, struct:1.5, label:'HIGH-EXPLOSIVE' },// blast + splinters — crowds, light vehicles, structures
+  FRAG: { L:1.35, M:0.95, H:0.55, A:1.10, struct:0.7, label:'FRAGMENTATION' }, // canister / pellets — brutal close on soft targets
+  FIRE: { L:1.30, M:1.00, H:0.75, A:0.40, struct:0.3, tower:1.6, label:'INCENDIARY' },
+  CRYO: { L:1.00, M:1.00, H:0.85, A:0.90, struct:0.5, label:'CRYOGENIC' },
+  ELEC: { L:1.00, M:1.10, H:1.00, A:1.25, struct:0.4, label:'ELECTRIC' },
+  HESH: { L:1.00, M:1.25, H:1.05, A:0.60, struct:3.0, label:'HESH' },         // squash-head: spalls medium armour, levels cover & towers
 };
-export const ARMOR = { scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H' };
+export const ARMOR = { scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
+  rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A' };   // A = aircraft (Z80): only direct fire / flak / missiles reach it
+// ============================================================================
+// BATTLEFIELD ROSTER v2 (Z79) — enemy infantry on foot. Squads join waves from W2; RPG teams from stage 2.
+//   squads per wave = floor(base + wave·perWave + (stage−1)·perStage)   (S1W2 = 1 … S5W5 = 3)
+//   a tank moving faster than crushSpeed (or dashing) runs a soldier over (+crushBonus score)
+// ============================================================================
+export const INFANTRY = {
+  rifle:{ hp:18, speed:4.4, keep:15, range:24, fireCd:1.5, dmg:4, bspeed:50, score:60 },
+  rpg:  { hp:24, speed:3.8, keep:20, range:30, fireCd:5.0, aimT:1.0, dmg:22, rspeed:26, aoe:3.0, score:110 },
+  squad:{ fromWave:2, base:0.5, perWave:0.25, perStage:0.35, size:[3,5], rpgFrom:2, maxOnField:14 },
+  crushSpeed:3.5, crushBonus:50, bail:0.7,
+};
+// EQUIPMENT (Z82) — tank-mounted support kit on the SPELL wheel. Each is a counter to a specific threat.
+export const EQUIP = {
+  smoke:{ dur:7, radius:9, spreadMul:4.5 },       // smoke grenades: enemy aim ×spreadMul, guided missiles lose lock
+  aps:  { dur:12, charges:4, radius:7 },          // active protection (hard-kill): shoots down rockets/missiles/shells in radius
+  mines:{ count:3, dmg:90, radius:4.2, arm:0.8, life:45 },   // anti-tank mines dropped behind the tank
+};
 // enemy toughness grows with the campaign so later stages stay a fight even as the arsenal grows
 export const RAMP = { hpPerStage:0.14 };
 // battlefield conditions — the same gun performs differently depending on WHERE and WHEN you fight

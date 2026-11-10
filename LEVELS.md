@@ -1,6 +1,6 @@
 # STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
 
-> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z36**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
+> Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z79**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 
 ---
 
@@ -67,6 +67,18 @@
 | **HEAVY** (Z33) | xám sắt | 140 | ✅ đạn nặng | **Bruiser**: máu trâu nhất, chậm, bắn **đạn to chậm sát thương cao (22) + đẩy lùi mạnh**. 2 nòng to + giáp hông. Mở từ màn 3. |
 | **SNIPER** (Z33) | tím-than | 34 | ✅ bắn tỉa | **Marksman**: tầm xa nhất (52), **chính xác cao + đạn nhanh (đỏ)**, bắn chậm. Nòng dài + ống ngắm phát sáng tím. Mở từ màn 4. |
 | **CARRIER** (Z33) | vàng-olive | 96 + 3×26 | ❌ (chở lính) | **APC chở 3 lính** bắn súng trường trên thùng xe. **Hạ vỏ xe HOẶC hạ hết 3 lính → xe gục** (bắn vào vừa bào vỏ vừa tỉa lính). Mở từ màn 3. |
+
+### Bộ binh địch (Z79) — đi bộ, theo tổ
+
+| Loại | HP | Tầm | Sát thương | Tập tính |
+|---|---|---|---|---|
+| **RIFLEMAN** | 18 | 24 | 4/viên, ~1.5s | Dàn hàng, đi zig-zag, giữ cách ~15. Thấy xe lao tới (<10, tốc >7) thì nhảy sang ngang. |
+| **RPG** | 24 | 30 | 22 trực tiếp, nổ lan 3 | Quỳ ngắm **1s có chớp đỏ** rồi phóng rocket (tốc 26, bắn đón). Rocket **bắn hạ được**. Từ màn 2. |
+
+- **Số tổ mỗi wave** = `floor(0.5 + wave×0.25 + (stage−1)×0.35)` từ W2 → S1W2 = 1 … S5W5 = 3. Mỗi tổ 3–5 người (1 RPG từ S2, 2 RPG từ S4).
+- **Nghiền:** xe player chạy >3.5 (hoặc đang dash) chạm lính → chết ngay, +50 điểm. Chạy chậm thì chỉ đẩy lính ra.
+- **APC bị hạ:** mỗi lính còn sống có 70% nhảy ra thành rifleman.
+- Tối đa 14 lính bộ cùng lúc (mobile 10) — không tính vào giới hạn xe tăng.
 
 > **Lưu ý:** 3 loại **không nổ súng** (scout/mortar/bomber) vẫn tấn công — bằng **húc / gọi pháo / cảm tử**. Ngoài ra mỗi loại có thể thành **ELITE** (champion: HP×2.6, to hơn, hào quang vàng, thưởng béo) + 5 **BOSS** riêng mỗi màn.
 
