@@ -43,8 +43,12 @@ export function decorateEnemyMesh(m, type){
     if(bg) bg.visible=false;
     const wedge=new THREE.Mesh(new THREE.ConeGeometry(0.78,1.5,4), steel(pal.accent)); wedge.rotation.set(Math.PI/2,0,Math.PI/4); wedge.position.set(0,0.78,2.15); m.add(wedge);   // ramming prow
   } else if(type==='heavy'){
-    const big=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.4,3.2,16), steel(pal.barrel)); big.rotation.x=Math.PI/2; big.position.set(0,0.05,1.9); bg.add(big);   // huge main gun
-    const muzz=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.46,0.6,16), dk(0x26262a)); muzz.rotation.x=Math.PI/2; muzz.position.set(0,0.05,3.4); bg.add(muzz);   // big muzzle brake
+    { const prof=[[0.33,1.28],[0.33,1.7],[0.27,1.78],[0.245,2.3],[0.3,2.38],[0.315,2.66],[0.245,2.74],[0.215,3.32]].map(([r,z])=>new THREE.Vector2(r,z));   // Z113 152 mm: turned tube, bore evacuator, taper
+      const lg=new THREE.LatheGeometry(prof, 18); lg.rotateX(Math.PI/2); const big=new THREE.Mesh(lg, steel(pal.barrel)); big.position.y=0.05; bg.add(big);
+      for(const z of [1.95,3.05]){ const cl=new THREE.Mesh(new THREE.CylinderGeometry(0.265,0.265,0.06,16), dk(0x26262a)); cl.rotation.x=Math.PI/2; cl.position.set(0,0.05,z); bg.add(cl); }   // sleeve clamps
+      const brk=new THREE.Mesh(new RoundedBoxGeometry(0.62,0.38,0.46,2,0.06), dk(0x26262a)); brk.position.set(0,0.05,3.53); bg.add(brk);                   // slotted muzzle brake
+      for(const sx of [-1,1]) for(const z of [3.43,3.63]){ const port=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.24,0.1), dk(0x0d0d0f)); port.position.set(sx*0.31,0.05,z); bg.add(port); }
+      const bo=new THREE.Mesh(new THREE.CircleGeometry(0.15,14), dk(0x0d0d0f)); bo.position.set(0,0.05,3.765); bg.add(bo); }
     for(const sx of [-1.0,1.0]){ const arm=new THREE.Mesh(new RoundedBoxGeometry(0.45,0.7,2.6,2,0.12), steel(pal.turret)); arm.position.set(sx*1.62,1.1,0); m.add(arm); }   // bolt-on side armour
   } else if(type==='sniper'){
     const lb=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.13,3.9,14), steel(pal.barrel)); lb.rotation.x=Math.PI/2; lb.position.set(0,0.05,2.4); bg.add(lb);   // long thin barrel

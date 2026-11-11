@@ -60,18 +60,26 @@ export function makeGunBarrel(id){
     for(let k=0;k<7;k++){ const a=k/7*6.283, m=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.06,2.0,8),steel(0x4c4e46)); m.rotation.x=Math.PI/2; m.position.set(Math.cos(a)*0.19,Math.sin(a)*0.19,0.2); spin.add(m); }
     for(const z of [-0.45,0.3,1.05]){ const c=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.08,14),PK); c.rotation.x=Math.PI/2; c.position.z=z; spin.add(c); }
     tip=3.85; recoilLen=0.08; }
-  else if(id==='missile'){    // ATGM twin launcher (Kornet-style) — two sealed launch tubes on a cradle + optical guidance unit
-    rbox(0.42,0.42,0.6,0,Y,1.4,PK);
-    for(const x of [-0.32,0.32]){ tube(0.16,0.16,1.6,2.15,paint(0x5e6838),x,Y+0.12); tube(0.17,0.17,0.08,2.92,PK,x,Y+0.12); const cap=new THREE.Mesh(new THREE.CircleGeometry(0.15,16),glow(0xff6a2a,0.5)); cap.position.set(x,Y+0.12,2.965); g.add(cap); }
-    rbox(0.3,0.26,0.36,0,Y+0.36,1.5,park(0x1e1f1b)); box(0.2,0.12,0.02,0,Y+0.38,1.69,new THREE.MeshStandardMaterial({color:0x0a1418,roughness:0.08,metalness:1}));
-    tip=3.0; recoilLen=0.1; }
+  else if(id==='missile'){    // Z113 ATGM twin launcher — armoured cradle, two ribbed launch tubes with blast covers, guidance optics + cable
+    rbox(0.46,0.44,0.62,0,Y,1.38,PK); rbox(0.96,0.1,1.72,0,Y+0.03,2.15,paint(0x5e6838));                                              // trunnion block + cradle rail
+    for(const x of [-0.3,0.3]){ const y=Y+0.25; tube(0.155,0.155,1.72,2.15,paint(0x5e6838),x,y);
+      for(const z of [1.48,1.96,2.44,2.9]) tube(0.17,0.17,0.06,z,PK,x,y);                                                               // stiffening ribs
+      tube(0.172,0.16,0.1,3.04,PK,x,y); tube(0.168,0.168,0.08,1.28,PK,x,y);                                                              // front collar · rear blast cap
+      const cap=new THREE.Mesh(new THREE.CircleGeometry(0.14,18),glow(0xff6a2a,0.55)); cap.position.set(x,y,3.095); g.add(cap);           // warhead glow behind the frangible cover
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(0.15,0.016,6,18),steel(0x2a2b26)); ring.position.set(x,y,3.09); g.add(ring); }
+    box(0.06,0.26,0.06,0,Y+0.4,1.55,PK); rbox(0.34,0.28,0.42,0,Y+0.64,1.55,park(0x1e1f1b));                                              // guidance unit on a short mast
+    const gl=memo('glass',()=>new THREE.MeshStandardMaterial({color:0x0a1418,roughness:0.08,metalness:1,envMapIntensity:1.6})); box(0.13,0.12,0.02,-0.07,Y+0.65,1.765,gl); box(0.08,0.08,0.02,0.1,Y+0.65,1.765,gl);
+    const cable=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.022,5,14,Math.PI),PK); cable.position.set(0.24,Y+0.42,1.32); cable.rotation.y=Math.PI/2; g.add(cable);
+    tip=3.12; recoilLen=0.1; }
   else if(id==='railgun'){    // RAILGUN — paired conductor rails in an insulating clamp stack, capacitor bank, glowing armature channel
     rbox(0.7,0.5,0.8,0,Y,1.4,park(0x24262c)); for(const x of [-0.42,0.42]) rbox(0.18,0.4,0.6,x,Y+0.05,1.35,glow(0x6a50c0,0.35));   // capacitor banks
     for(const x of [-0.15,0.15]) box(0.1,0.16,3.0,x,Y,3.0,steel(0x5a5e6a));
     for(let k=0;k<6;k++){ box(0.46,0.3,0.1,0,Y,1.9+k*0.48,park(0x1c1d22)); }                                                                   // insulator clamps
     for(const z of [2.4,3.4,4.2]){ const c=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.04,8,20),glow(0xb090ff,1.2)); c.position.set(0,Y,z); g.add(c); }
     tube(0.035,0.035,3.0,3.0,glow(0xe0d0ff,1.6));
-    tip=4.55; recoilLen=0.28; }
+    for(let k=0;k<6;k++) box(0.66,0.03,0.7,0,Y+0.29+k*0.055,1.4,steel(0x5a5e6a));                                                          // Z113 heat-sink fin stack over the capacitors
+    rbox(0.52,0.36,0.26,0,Y,4.5,park(0x1c1d22)); box(0.06,0.2,0.02,0,Y,4.635,glow(0xd0b0ff,1.4));                                          // muzzle armature block + glowing slit
+    tip=4.66; recoilLen=0.28; }
   else if(id==='cryo'){       // CRYO projector — vacuum-jacketed barrel with frost rings, twin LN2 dewars, expansion nozzle
     tube(0.15,0.17,1.9,2.2,steel(0x7c8c92)); for(const z of [1.6,2.1,2.6,3.0]){ const r=new THREE.Mesh(new THREE.TorusGeometry(0.19,0.045,8,18),glow(0xcff4ff,0.6)); r.position.set(0,Y,z); g.add(r); }
     const noz=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.15,0.5,16,1,true),new THREE.MeshStandardMaterial({color:0x5c6a70,roughness:0.3,metalness:0.9,side:THREE.DoubleSide})); noz.rotation.x=Math.PI/2; noz.position.set(0,Y,3.35); g.add(noz);
@@ -135,7 +143,8 @@ export function makeGunBarrel(id){
     tip=3.1; recoilLen=0.18; }
   else if(id==='thermo'){     // THERMOBARIC: armoured 4-tube rocket pack on a cradle, orange warhead caps showing
     rbox(1.0,0.78,1.8,0,Y+0.18,1.9,paint()); rbox(1.06,0.1,1.86,0,Y+0.6,1.9,PK);
-    for(const x of [-0.24,0.24]) for(const y of [-0.04,0.36]){ tube(0.17,0.17,0.06,2.82,PK,x,Y+y); const cap=new THREE.Mesh(new THREE.CircleGeometry(0.15,14),glow(0xff7a2a,0.6)); cap.position.set(x,Y+y,2.86); g.add(cap); }
+    for(const x of [-0.24,0.24]) for(const y of [-0.04,0.36]){ tube(0.17,0.17,0.08,2.82,PK,x,Y+y); const nose=new THREE.Mesh(new THREE.ConeGeometry(0.14,0.26,16),glow(0xff7a2a,0.45)); nose.rotation.x=Math.PI/2; nose.position.set(x,Y+y,2.92); g.add(nose); }   // Z113 rocket noses in the tubes
+    for(const z of [1.3,1.9,2.5]) rbox(1.08,0.82,0.05,0,Y+0.18,z,PK);                                                                     // armour panel seams
     rbox(0.2,0.3,0.5,0.62,Y,1.2,PK); tip=2.95; recoilLen=0.3; }
   else {                      // RIFLE (default): 30 mm Bushmaster AUTOCANNON — receiver, slim barrel, double-baffle muzzle brake
     rbox(0.42,0.34,0.62,0,Y,1.35,PK); lathe([[0.11,1.6],[0.11,2.15],[0.085,2.22],[0.078,2.6],[0.072,3.6],[0.068,4.0]], GM); tube(0.11,0.11,0.5,1.88,paint());

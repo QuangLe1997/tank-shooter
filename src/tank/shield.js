@@ -44,8 +44,8 @@ export function makePlayer(){
     const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
     const ar=new THREE.Mesh(new THREE.PlaneGeometry(HEADING.size, HEADING.size), new THREE.MeshBasicMaterial({ map:tex, color:HEADING.color, transparent:true, opacity:HEADING.idle, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, fog:false }));
     ar.rotation.x=-Math.PI/2; ar.position.set(0, 0.12, HEADING.dist); ar.renderOrder=6; mesh.add(ar); mesh.userData.heading=ar;
-    const st=new THREE.Mesh(new THREE.BoxGeometry(1.9,0.035,0.16), new THREE.MeshStandardMaterial({ color:HEADING.stripe, emissive:HEADING.stripe, emissiveIntensity:0.9, roughness:0.5 }));
-    st.position.set(0, 1.2, 1.78); st.rotation.x=0.29; mesh.userData.body.add(st); }
+    const st=new THREE.Mesh(new THREE.BoxGeometry(1.9,0.035,0.16), new THREE.MeshStandardMaterial({ color:HEADING.stripe, emissive:HEADING.stripe, emissiveIntensity:0.55, roughness:0.5 }));
+    st.position.set(0, 1.075+0.03-0.95, 2.02); st.rotation.x=0.29; st.scale.set(0.92,1,0.7); mesh.userData.body.add(st); }   // Z113 painted on the nose lip (body space is offset −0.95: it used to float ~1 m above the glacis like a loose plank)
   { const hl=new THREE.SpotLight(0xfff2dc, 0, 34, 0.5, 0.6, 0); hl.position.set(0,1.2,2.1); const tg=new THREE.Object3D(); tg.position.set(0,0,14); mesh.userData.body.add(hl); mesh.userData.body.add(tg); hl.target=tg; NIGHT.head=hl; }   // driving lights (night)
   scene.add(mesh);
   return {

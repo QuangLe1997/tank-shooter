@@ -79,8 +79,7 @@ export function buildTank(opts={}){
   const B=(geo,mat,x,y,z)=>mk(body,geo,mat,x,y-0.95,z);
   const hullM=B(G.hullLo, HULL, 0,0,0); B(G.hullUp, HULL, 0,0,0);
   for(const sx of [-1,1]){                                                           // side skirts hang off the upper-hull edge, covering the top half of the wheels
-    if(detail){ for(let k=0;k<4;k++){ const sk=B(G.skirtSeg, HULL, sx*1.51, 0.77, -1.39+k*0.925); sk.rotation.z=sx*0.04; } }
-    else { const sk=B(G.skirt, HULL, sx*1.51, 0.77, 0.03); sk.rotation.z=sx*0.04; }
+    for(let k=0;k<4;k++){ const sk=B(G.skirtSeg, HULL, sx*1.51, 0.77, -1.39+k*0.925); sk.rotation.z=sx*0.04+(detail?0:(k%2?0.012:-0.012)); }   // Z113 segmented skirt plates on every tank (one material → merges into the hull draw)
   }
   const ACC=new THREE.MeshStandardMaterial({ color:accent, emissive:accent, emissiveIntensity:0.12, roughness:0.7, metalness:0.1 });   // painted faction ID marking (matte, not neon)
   const HLM=new THREE.MeshStandardMaterial({color:0xfff2d0,emissive:0xffeec0,emissiveIntensity:0.35,roughness:0.25});
@@ -127,6 +126,16 @@ export function buildTank(opts={}){
     const coax=mk(turretG, new THREE.CylinderGeometry(0.035,0.035,0.6,8), BLACK, 0.3,0.05,1.5); coax.rotation.x=Math.PI/2;                         // coaxial MG
   } else {
     const an=mk(turretG, new THREE.CylinderGeometry(0.008,0.014,1.1,4), dark(0x2a2a26), -0.68,0.82,-0.85);
+    // Z113 field kit for enemy / allied tanks — only materials this tank already uses (STEEL, BLACK, hull & turret paint), so baking folds it into existing draws
+    for(const hx of [-1.22,1.22]){ const gd=B(new THREE.TorusGeometry(0.13,0.02,5,12), STEEL, hx,1.14,2.0); gd.rotation.x=-0.29; }                 // headlight brush guards
+    for(const tx of [-0.62,0.62]){ const th=B(new THREE.TorusGeometry(0.11,0.035,5,10), STEEL, tx,0.66,1.92); th.rotation.y=Math.PI/2; }        // tow hooks
+    for(let i=-2;i<=2;i++){ const lk=B(new THREE.BoxGeometry(0.34,0.07,0.22), STEEL, i*0.36,1.225,1.62); lk.rotation.x=0.29; }                   // spare track shoes on the glacis
+    for(const gx of [-0.46,0.46]) for(let k=0;k<5;k++) B(new THREE.BoxGeometry(0.74,0.03,0.04), STEEL, gx,1.47,-1.48+k*0.19);                    // engine-deck grille slats
+    B(new THREE.BoxGeometry(1.5,0.3,0.04), STEEL, 0,1.12,-2.07);                                                                                // rear exhaust grille
+    for(const sx of [-1,1]) for(let i=0;i<3;i++){ const sm=mk(turretG, new THREE.CylinderGeometry(0.055,0.055,0.28,6), STEEL, sx*0.86,0.2,0.5-i*0.15); sm.rotation.set(-0.9,0,sx*-0.5); }   // smoke dischargers
+    mk(turretG, new RoundedBoxGeometry(1.5,0.32,0.46,1,0.04), TUR, 0,-0.02,-1.25);                                                              // rear stowage bustle
+    mk(turretG, new THREE.CylinderGeometry(0.19,0.19,0.05,12), TUR, 0.34,0.32,-0.42);                                                           // loader's hatch
+    const coax=mk(turretG, new THREE.CylinderGeometry(0.035,0.035,0.55,6), BLACK, 0.3,0.05,1.48); coax.rotation.x=Math.PI/2;                  // coaxial MG
   }
   if(opts.mighty){   // PLAYER — hero unit: Kontakt-style ERA bricks, remote weapon station, panoramic sight, IFF panel, camo net
     const ERA=skin(realCol(hull,0.8,0.82),0.5);

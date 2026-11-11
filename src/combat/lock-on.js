@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -38,10 +38,19 @@ export function updateLocks(dt){
     const op=Math.min(1, L.life/L.max*1.4)*0.92; L.grp.traverse(o=>{ if(o.material) o.material.opacity=op; });
     L.rgrp.scale.setScalar(1 + Math.sin((L.max-L.life)*22)*0.05); }                  // subtle ring pulse
 }
+// Z113 rocket rounds (our soldiers' AT launchers) fly as a real rocket — body, fins, exhaust glow — riding on the pooled bullet
+const _rk=[]; let _rkMat=null;
+function allyRocket(){ if(!_rkMat) _rkMat={ body:new THREE.MeshStandardMaterial({color:0x5a6438,roughness:0.55,metalness:0.4}), war:new THREE.MeshStandardMaterial({color:0x2a2a24,roughness:0.5,metalness:0.6}), glow:new THREE.SpriteMaterial({map:GLOW,color:0xffb060,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false}) };
+  const g=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.7,10), _rkMat.body); b.rotation.x=Math.PI/2; g.add(b);
+  const n=new THREE.Mesh(new THREE.ConeGeometry(0.13,0.36,10), _rkMat.war); n.rotation.x=Math.PI/2; n.position.z=0.52; g.add(n);
+  for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.22,0.16), _rkMat.war); f.position.z=-0.3; f.rotation.z=k*Math.PI/2; f.position.x=Math.sin(k*Math.PI/2)*0.08; f.position.y=Math.cos(k*Math.PI/2)*0.08; g.add(f); }
+  const s=new THREE.Sprite(_rkMat.glow); s.scale.setScalar(0.9); s.position.z=-0.45; g.add(s); return g; }
 export function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
+  if(o.rocket){ const rk=_rk.pop()||allyRocket(); m.add(rk); m.userData.rk=rk; m.userData.core.visible=false; m.userData.halo.visible=false; m.rotation.set(0,angle,0); }   // Z113
   const r = o.r||0.45;
   m.visible=true; m.scale.setScalar((o.scale || (0.78 + r*1.1)) * BVIS);   // heavier rounds render fatter (per-gun size)
+  if(m.userData.rk) m.userData.rk.scale.setScalar(1.15/m.scale.x);           // the rocket keeps its real size
   const col = o.color ?? 0xffe08a;
   const tracer = (o.owner==='e') ? 0xff5a24 : col;                          // enemy fire reads as danger-red; player = the gun's colour
   m.userData.core.material.color.setHex(_hot(tracer));                      // bright white-hot core
@@ -70,7 +79,7 @@ export function blockImpactFX(bl, b){ const gy=heightAt(b.x,b.z), y=gy+Math.max(
 // does a round at (x,z) with radius r strike tank t? — tests the REAL hull footprint (oriented box), not a small circle
 export function hitsHull(t, x, z, r){ const s=t.mesh?t.mesh.scale.x:1, f=t.facing||0, sf=Math.sin(f), cf=Math.cos(f), dx=x-t.pos.x, dz=z-t.pos.z;
   const lx=dx*cf-dz*sf, lz=dx*sf+dz*cf; return Math.abs(lx) < HULL_HW*s+r && Math.abs(lz) < HULL_HL*s+r; }
-export function recycleBullet(i){ const b=bullets[i]; b.mesh.visible=false; bulletPool.push(b.mesh); bullets.splice(i,1); }
+export function recycleBullet(i){ const b=bullets[i], m=b.mesh; m.visible=false; if(m.userData.rk){ m.remove(m.userData.rk); _rk.push(m.userData.rk); m.userData.rk=null; m.userData.core.visible=true; m.userData.halo.visible=true; m.rotation.set(0,0,0); } bulletPool.push(m); bullets.splice(i,1); }
 export function updateBullets(dt, now){
   const lim = ARENA-1;
   for(let i=bullets.length-1;i>=0;i--){
@@ -99,6 +108,7 @@ export function updateBullets(dt, now){
     const _gy=heightAt(b.x,b.z);
     b.mesh.position.set(b.x,b.by+_gy,b.z);
     addTrail(b.x, b.by+_gy, b.z, b.owner==='e'?0xff5a24:b.color, (b.r||0.45)*BVIS*3.0, 0.14+(b.r||0.45)*0.22);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak
+    if(b.mesh.userData.rk && Math.random()<0.8){ const bk=Math.hypot(b.vx,b.vz)||1; spawnPart(b.x-(b.vx/bk)*0.7, b.by+_gy, b.z-(b.vz/bk)*0.7, (Math.random()-0.5)*0.8, 0.3, (Math.random()-0.5)*0.8, {color:0xcfc6b4, size:0.55, life:0.55, smoke:true, grav:0.25, drag:1.6, grow:1.1, op:0.42}); }   // Z113 AT rocket smoke trail
     if(b.lockOn){ const bk=Math.hypot(b.vx,b.vz)||1, ex=b.x-(b.vx/bk)*0.6, ez=b.z-(b.vz/bk)*0.6;   // rocket exhaust plume trailing the missile
       if(Math.random()<0.8) spawnPart(ex,b.by,ez,(Math.random()-0.5)*1.2,0.4,(Math.random()-0.5)*1.2,{color:0x46382e,size:0.72,life:0.34,smoke:true,grav:0.5,drag:3,op:0.34});
       if(Math.random()<0.55) spawnPart(ex,b.by,ez,(Math.random()-0.5)*2,0.3,(Math.random()-0.5)*2,{color:0xff8a3a,size:0.5,life:0.15,grav:0,drag:4}); }

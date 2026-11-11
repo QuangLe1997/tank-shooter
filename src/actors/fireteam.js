@@ -147,7 +147,7 @@ function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return fa
   const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.2); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35) return false;
   a.g.userData.muzzle.getWorldPosition(_sV);
   if(at){ a.fireAt=now+SQUAD.at.cd*(0.85+Math.random()*0.3);                                                            // AT rocket (from a captured weapon depot)
-    spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*0.05,{owner:'p', dmg:SQUAD.at.dmg*(1+(S.stage-1)*0.12), speed:SQUAD.at.speed, color:0xffb060, r:0.34, life:1.6, maxDist:SQUAD.at.range+4, noArc:true, y:_sV.y, aoe:SQUAD.at.aoe, aoeDmg:SQUAD.at.dmg*0.6, type:'HE', fx:'blast'});
+    spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*0.05,{owner:'p', dmg:SQUAD.at.dmg*(1+(S.stage-1)*0.12), speed:SQUAD.at.speed, color:0xffb060, r:0.34, life:1.6, maxDist:SQUAD.at.range+4, noArc:true, y:_sV.y, aoe:SQUAD.at.aoe, aoeDmg:SQUAD.at.dmg*0.6, type:'HE', fx:'blast', rocket:true});
     spawnPart(_sV.x-Math.sin(ang)*1.1,_sV.y,_sV.z-Math.cos(ang)*1.1, -Math.sin(ang)*6,0.5,-Math.cos(ang)*6, {color:0xd8d0c0, size:1.3, life:0.55, smoke:true, grav:0.3, drag:2, op:0.5}); sfx('rocketlaunch', a.pos); return true; }
   if(mg){ a.burst=(a.burst||SQUAD.mg.burst)-1; if(a.burst>0) a.fireAt=now+SQUAD.mg.gap; else { a.burst=SQUAD.mg.burst; a.fireAt=now+SQUAD.mg.pause; } }   // Z105 HMG: long bursts
   else a.fireAt=now+F.fireCd*(0.8+Math.random()*0.4);
@@ -208,4 +208,8 @@ export function updateFireteam(dt, now){
 }
 // Z104 a weapon depot re-arms a soldier: AT launcher on his shoulder + better rifle rounds
 export function armAlly(a){ if(a.at) return; a.at=true; a.armed=true; const u=a.g.userData, tm=new THREE.MeshStandardMaterial({color:0x4a5a30,roughness:0.75,metalness:0.25});
-  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.95,8), tm); tube.rotation.x=Math.PI/2; tube.position.set(-0.2,0.7,-0.05); u.up.add(tube); }
+  const dm=new THREE.MeshStandardMaterial({color:0x22231e,roughness:0.6,metalness:0.45}), L=new THREE.Group(); L.position.set(-0.2,0.7,-0.05); u.up.add(L);   // Z113 recoilless AT launcher on the shoulder
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.95,10), tm); tube.rotation.x=Math.PI/2; L.add(tube);
+  for(const z of [-0.5,0.5]){ const fl=new THREE.Mesh(new THREE.CylinderGeometry(z<0?0.085:0.07,0.06,0.12,10), dm); fl.rotation.x=z<0?-Math.PI/2:Math.PI/2; fl.position.z=z; L.add(fl); }   // venturi + muzzle flare
+  const sight=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.07,0.16), dm); sight.position.set(-0.07,0.07,0.12); L.add(sight);
+  const grip=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.12,0.05), dm); grip.position.set(0,-0.09,0.1); L.add(grip); }
