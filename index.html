@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="STEEL SIEGE" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
 <title>STEEL SIEGE — Tank Shooter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -394,5 +397,7 @@
 <link rel="modulepreload" href="./config.js" />
 
 <script type="module" src="src/main.js"></script>
+<!-- Z108 offline play once installed to the home screen (https only; ?sw to try it on localhost) -->
+<script>if('serviceWorker' in navigator && (location.protocol==='https:' || /[?&]sw\b/.test(location.search))) addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });</script>
 </body>
 </html>

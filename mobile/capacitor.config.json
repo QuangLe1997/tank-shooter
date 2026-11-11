@@ -1,0 +1,13 @@
+{
+  "appId": "vn.quangle.steelsiege",
+  "appName": "Steel Siege",
+  "webDir": "www",
+  "backgroundColor": "#07090a",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false,
+    "preferredContentMode": "mobile",
+    "backgroundColor": "#07090a"
+  }
+}

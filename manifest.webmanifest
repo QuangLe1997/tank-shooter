@@ -1,0 +1,20 @@
+{
+  "name": "STEEL SIEGE — Tank Shooter",
+  "short_name": "Steel Siege",
+  "description": "Game xe tăng 3D: giữ phòng tuyến, phá thành địch, nâng cấp kho vũ khí.",
+  "lang": "vi",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#07090a",
+  "theme_color": "#0c1108",
+  "categories": ["games"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

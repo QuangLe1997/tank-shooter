@@ -12,3 +12,5 @@ desktop/node_modules/
 desktop/app/
 desktop/dist/
 desktop/build/
+mobile/node_modules/
+mobile/www/
