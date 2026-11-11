@@ -459,6 +459,8 @@ export const PAD_HELP = [
   ['LB · RB', 'Súng trước · súng sau'], ['D-pad ↑', 'Tập kết toàn quân'], ['D-pad ←', 'Xung phong vào thành'], ['D-pad ↓', 'Gọi lính dù'], ['D-pad →', 'Camera tự động'],
   ['L3 (nhấn cần trái)', 'Đổi mức zoom'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
   ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong app Flydigi Space Station, ví dụ M1 = A (lướt), M2 = B (lính)'] ];
+// Z119 BATTLE INTRO: cinematic view distance + fog (the sweep no longer draws the whole field), shader warm-up time budget, skip guard
+export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35 };
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.
 //   Every gun has its own beat: crisp ticks (rifle / SMG), a buzz (minigun), a punch + tail (cannon / HESH), charge → crack (railgun),
 //   whoosh → kick (missiles / rockets), thump-thump (twin flak), crackle (tesla), a soft hiss (cryo)…

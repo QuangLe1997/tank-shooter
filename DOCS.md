@@ -388,6 +388,13 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
     - App iPhone dùng plugin `@capacitor/haptics` (đã thêm vào `mobile/`).
     - Cài đặt có thêm dòng RUNG ĐIỆN THOẠI (chỉ hiện trên máy cảm ứng).
   - *Cài đặt:* chia 2 cột trên màn rộng ≥ 980 px.
+- **Z119 ĐOẠN MỞ ĐẦU MƯỢT HƠN:**
+  - *Đo trước khi sửa:* có 6 shader biên dịch ngay trong lúc camera bay; cú quay toàn cảnh vẽ tới 1.480–1.726 lệnh vẽ và 3 triệu tam giác (lúc chơi chỉ 280–400 lệnh vẽ); bấm VÀO TRẬN thì đứng hình ngay trên menu trong lúc dựng bản đồ.
+  - *Màn "ĐANG TRIỂN KHAI…" (`#loadVeil`, `launchGame`):* hiện ngay khi bấm vào trận, đợi màn này hiện lên rồi mới dựng chiến trường.
+  - *Làm nóng (`warmUp`):* `renderer.compileAsync` biên dịch mọi vật liệu của màn chơi (chờ tối đa 2,5 s), rồi vẽ thử 2 khung ở góc rộng nhất để kích hoạt bóng, hậu kỳ và việc tải texture lên GPU. Camera chỉ bắt đầu bay sau bước này.
+  - *Đường bay camera:* thấp và gọn hơn (cao nhất 12 m, 17 m phía sau; trước là 20 m, 24 m). Trong lúc quay, các vật thể gọn nằm xa xe hơn 85 m bị tạm ẩn (`cullFar`; địa hình, trời, decal, đồ trang trí rải khắp bản đồ vẫn giữ), sương mù dày lên một chút (`INTRO`). Kết quả: tối đa 1.011 lệnh vẽ, phần lớn khung khoảng 630.
+  - *Camera chạy theo thời gian làm mượt:* mỗi bước tối đa 1/30 s, nên khung chậm làm camera chậm lại một chút chứ không nhảy. Ít bụi hơn.
+  - *Chống bỏ qua nhầm:* chỉ bỏ qua được sau 0,35 s, để chính cú bấm vào trận không bỏ qua luôn đoạn mở đầu.
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

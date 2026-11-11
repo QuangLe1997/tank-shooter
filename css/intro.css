@@ -112,3 +112,12 @@ body.menu-in #start .start-id{animation:menuIn .5s ease both;}
 @media (max-height:460px){ #boot{padding-bottom:calc(env(safe-area-inset-bottom) + 10px);} #boot .ib-hud{gap:6px;} #boot .ib-tag{font-size:clamp(22px,6vh,34px);}
   #boot .ib-lines{display:none;} #boot .ib-cta{padding:11px 34px 11px 38px;} }
 @media (prefers-reduced-motion:reduce){ #boot *,#boot::after{animation-duration:.01s !important;animation-iteration-count:1 !important;} }
+
+/* Z119 deploying veil — covers the world build and the shader warm-up so the intro sweep starts smooth */
+#loadVeil{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,rgba(20,24,16,.92),rgba(4,5,4,.98));
+  opacity:0;pointer-events:none;transition:opacity .35s ease;}
+#loadVeil.on{opacity:1;pointer-events:auto;transition:opacity .12s ease;}
+#loadVeil .lv-box{display:flex;flex-direction:column;align-items:center;gap:10px;color:#ffe8b0;font-family:'Saira Condensed',Rajdhani,sans-serif;}
+#loadVeil .lv-t{font-size:clamp(18px,3vw,28px);font-weight:900;letter-spacing:4px;} #loadVeil .lv-s{font-size:12px;letter-spacing:1.5px;color:rgba(255,232,176,.55);}
+#loadVeil .lv-spin{width:38px;height:38px;border-radius:50%;border:3px solid rgba(255,210,122,.18);border-top-color:#ffd27a;animation:lvSpin .8s linear infinite;}
+@keyframes lvSpin{to{transform:rotate(360deg);}}

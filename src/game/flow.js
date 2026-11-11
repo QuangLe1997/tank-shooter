@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, openBattleSetup, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, openBattleSetup, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -10,6 +10,8 @@ export function loadoutGuns(){
 }
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
 // anything else (a click Event from RETRY/RESTART, or nothing) = the same battle again (S.runCfg), else campaign level 1
+// Z119 from the menus: put the DEPLOYING veil up, let it paint, then build the world (it used to freeze on the menu)
+export function launchGame(arg){ showVeil(true); requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } })); }
 export function startGame(arg){
   try{ audio(); engineStart(); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
@@ -91,8 +93,8 @@ addEventListener('keydown', ()=>skipIntro());
 document.getElementById('resumeBtn').onclick = ()=>{ togglePause(); if(!document.fullscreenElement && PROFILE.autoFs!==false){ reqFs(); setTimeout(queueResize,300); } };   // Z97 back to fullscreen after Esc
 document.getElementById('restartBtn').onclick = startGame;
 tapBtn('homeBtn', quitToMenu); tapBtn('goHomeBtn', quitToMenu); tapBtn('brBack', quitToMenu); tapBtn('dp-back', quitToMenu);   // Z111b + briefing / deploy   // pause / game-over → back to home menu
-document.getElementById('retryBtn').onclick = startGame;
-document.getElementById('retryBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
+document.getElementById('retryBtn').onclick = ()=>launchGame();
+document.getElementById('retryBtn').addEventListener('touchstart', e=>{e.preventDefault();launchGame();},{passive:false});
 export const ngp=document.getElementById('ngplusBtn');
-ngp.onclick = ()=>startGame(S.run&&S.run.mode==='custom' ? S.runCfg : true);                                            // resume into the NG+ loop the victory() set up
-ngp.addEventListener('touchstart', e=>{e.preventDefault();startGame(S.run&&S.run.mode==='custom' ? S.runCfg : true);},{passive:false});
+ngp.onclick = ()=>launchGame(S.run&&S.run.mode==='custom' ? S.runCfg : true);                                            // resume into the NG+ loop the victory() set up
+ngp.addEventListener('touchstart', e=>{e.preventDefault();launchGame(S.run&&S.run.mode==='custom' ? S.runCfg : true);},{passive:false});

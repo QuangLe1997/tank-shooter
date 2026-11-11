@@ -1,6 +1,6 @@
 // ui/battle-setup.js — Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the next; map/hour/weather set per level) · CUSTOM = pick map, hour, weather, space and enemy level (among levels you have opened).
 import { CAMPAIGN, SPACE, WEATHER } from '../../config.js';
-import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeVi, drawTerrainPreview, fmtP, hide, levelCheck, saveProfile, sfx, show, startGame, tapBtn, tapEl, todFor, verdictHTML } from '../hub.js';
+import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeVi, drawTerrainPreview, fmtP, hide, launchGame, levelCheck, saveProfile, sfx, show, tapBtn, tapEl, todFor, verdictHTML } from '../hub.js';
 
 export const BS = { tab:'campaign', sel:1 };
 export const TOD_KEYS = ['day','noon','sunset','night'];
@@ -49,7 +49,7 @@ export function setSetupTab(t){ BS.tab=t; document.querySelectorAll('#battleSetu
 export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); setSetupTab(tab||'campaign'); sfx('click'); }
 export function closeBattleSetup(){ hide('battleSetup'); show('start'); sfx('click'); }
 export function goBattle(){ hide('battleSetup');
-  if(BS.tab==='campaign') startGame({ mode:'campaign', level:BS.sel });
-  else { const C=PROFILE.custom; saveProfile(); startGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
+  if(BS.tab==='campaign') launchGame({ mode:'campaign', level:BS.sel });   // Z119 behind the deploying veil
+  else { const C=PROFILE.custom; saveProfile(); launchGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
 tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle);
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));
