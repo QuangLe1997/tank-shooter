@@ -48,14 +48,19 @@ export function buildPerimeter(b, withHighland=true){
   if(!MOBILE) perimeter.add(coil(0.38, PH+0.18, OFF+0.5, 5, 0.025));                     // riding the outrigger arms (desktop)
   if(withHighland) buildHighland(b);                                                      // Z106 rocks over the highland beyond the fence (not at module load: rockSet lives in a later module)
 }
-// Z106 the ground beyond the fence: weathered rock outcrops along the ridge so the boundary reads as terrain, not a wall (instanced, 1 draw call)
+// Z106 the ground beyond the fence: weathered rock outcrops along the ridge so the boundary reads as terrain, not a wall.
+// Z108 split into arcs (one InstancedMesh each): a single ring-wide mesh has a bounding sphere covering the whole map, so it was
+// never frustum-culled and every rock round the arena was drawn every frame (~95k triangles on a phone); now only the arcs on screen draw.
+export const HIGHLAND_ARCS = 12;
 export const highland = new THREE.Group(); arena.add(highland);
-export function buildHighland(b){ for(let i=highland.children.length-1;i>=0;i--){ const c=highland.children[i]; highland.remove(c); if(c.geometry) c.geometry.dispose(); }
-  const rs=rockSet(b?b.name:'DESERT'), P=fieldPath(MOBILE?7:4.5, -5), geo=rs.big[0], im=new THREE.InstancedMesh(geo, rs.mat, P.length*2);
-  const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), Sc=new THREE.Vector3(), E=new THREE.Euler(); let k=0;
-  for(const q of P) for(let s=0;s<2;s++){ const out=_R(0,7)+s*4, x=q.x+q.nx*out, z=q.z+q.nz*out; if(Math.abs(x)>ARENA-2||Math.abs(z)>ARENA-2) continue;
-    const r=_R(1.4,3.4)*(s?0.8:1); E.set(_R(-0.3,0.3),_R(0,6.28),_R(-0.3,0.3)); Q.setFromEuler(E); V.set(x, heightAt(x,z)+r*0.1, z); Sc.set(r,r*_R(0.6,1.1),r); M.compose(V,Q,Sc); im.setMatrixAt(k++,M); }
-  im.count=k; im.castShadow=!MOBILE; im.receiveShadow=true; highland.add(im); }
+export function buildHighland(b){ for(let i=highland.children.length-1;i>=0;i--){ const c=highland.children[i]; highland.remove(c); if(c.isInstancedMesh) c.dispose(); }
+  const rs=rockSet(b?b.name:'DESERT'), P=fieldPath(MOBILE?7:4.5, -5), geo=rs.big[0], per=Math.ceil(P.length/HIGHLAND_ARCS);
+  const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), Sc=new THREE.Vector3(), E=new THREE.Euler();
+  for(let a=0;a*per<P.length;a++){ const arc=P.slice(a*per, (a+1)*per), im=new THREE.InstancedMesh(geo, rs.mat, arc.length*2); let k=0;
+    for(const q of arc) for(let s=0;s<2;s++){ const out=_R(0,7)+s*4, x=q.x+q.nx*out, z=q.z+q.nz*out; if(Math.abs(x)>ARENA-2||Math.abs(z)>ARENA-2) continue;
+      const r=_R(1.4,3.4)*(s?0.8:1); E.set(_R(-0.3,0.3),_R(0,6.28),_R(-0.3,0.3)); Q.setFromEuler(E); V.set(x, heightAt(x,z)+r*0.1, z); Sc.set(r,r*_R(0.6,1.1),r); M.compose(V,Q,Sc); im.setMatrixAt(k++,M); }
+    if(!k){ im.dispose(); continue; }
+    im.count=k; im.computeBoundingSphere(); im.castShadow=!MOBILE; im.receiveShadow=true; highland.add(im); } }
 // ---- crushable ground clutter (small rocks/debris) — tanks grind them under their tracks ----
 export const crushables=[];
 buildPerimeter(BIOME, false);
