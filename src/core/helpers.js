@@ -1,6 +1,6 @@
 // core/helpers.js — shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars
 import * as THREE from 'three';
-import { MOBILE, PAD, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, move, worldToScreen } from '../hub.js';
+import { MOBILE, PAD, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, heldAction, move, worldToScreen } from '../hub.js';
 
 // ----------------------------- HELPERS -----------------------------
 export function getMoveDir(){
@@ -10,10 +10,10 @@ export function getMoveDir(){
     if(move.id!==null){ d.set(move.x, 0, move.y); if(d.length()>STICK_R) d.setLength(STICK_R); d.divideScalar(STICK_R);
       if(S.camYaw) d.applyAxisAngle(_camUP, S.camYaw); }   // keep stick screen-relative when the view is rotated
   } else {
-    if(S.keys['w']||S.keys['arrowup']) d.z-=1;
-    if(S.keys['s']||S.keys['arrowdown']) d.z+=1;
-    if(S.keys['a']||S.keys['arrowleft']) d.x-=1;
-    if(S.keys['d']||S.keys['arrowright']) d.x+=1;
+    if(heldAction('up')) d.z-=1;   // Z118 rebindable
+    if(heldAction('down')) d.z+=1;
+    if(heldAction('left')) d.x-=1;
+    if(heldAction('right')) d.x+=1;
     if(d.lengthSq()>1) d.normalize();
     if(S.camYaw && d.lengthSq()>0) d.applyAxisAngle(_camUP, S.camYaw);   // Z99 fix: keys stay screen-relative when the view is rotated
   }
@@ -26,8 +26,8 @@ export function tankInput(){                                    // → { thr: -1
   let thr=0, turn=0;
   if(PAD.active && (PAD.lx || PAD.ly)) return { thr:-PAD.ly, turn:-PAD.lx };   // Z117 left stick: up = throttle, sideways = turn
   if(MOBILE){ if(move.id!==null){ const L=Math.max(STICK_R*0.15, Math.hypot(move.x,move.y)); thr=Math.max(-1,Math.min(1,-move.y/STICK_R)); turn=Math.max(-1,Math.min(1,-move.x/STICK_R)); if(Math.abs(thr)<0.12) thr=0; if(Math.abs(turn)<0.12) turn=0; } }
-  else { if(S.keys['w']||S.keys['arrowup']) thr+=1; if(S.keys['s']||S.keys['arrowdown']) thr-=1;
-    if(S.keys['a']||S.keys['arrowleft']) turn+=1; if(S.keys['d']||S.keys['arrowright']) turn-=1; }
+  else { if(heldAction('up')) thr+=1; if(heldAction('down')) thr-=1;
+    if(heldAction('left')) turn+=1; if(heldAction('right')) turn-=1; }
   return { thr, turn };
 }
 export function updateHUD(){

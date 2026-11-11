@@ -4,7 +4,7 @@ import { LOOT } from '../../config.js';
 import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, enemies, floatText, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
-export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)) padHit(dmg);   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
+export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
   const p=S.player; if(now < p.invincibleUntil) return;
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   if(p.era>0 && dmg>=LOOT.era.minHit){ p.era--; dmg*=1-LOOT.era.absorb; setEraTiles(p);                 // Z93 REACTIVE ARMOUR: a tile detonates outward and eats most of the hit

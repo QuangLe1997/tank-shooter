@@ -452,13 +452,39 @@ export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.
 export const GUN_BARRELS = { smg:2, flak:2, minigun:7, missile:2, thermo:4, rocket:1 };
 // Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
 //   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
-export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false }, rtFire:0.35, assistAfter:0.45, navFirst:0.26, navRepeat:0.14, engine:{ base:0.04, load:0.1 } };
+export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false, phone:true }, rtFire:0.35, assistAfter:0.45, navFirst:0.26, navRepeat:0.14, engine:{ base:0.04, load:0.1 } };
 export const PAD_HELP = [
   ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất'],
   ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Lướt né'], ['B', 'Chạm: lính xuống xe · Giữ: gọi lính về'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
   ['LB · RB', 'Súng trước · súng sau'], ['D-pad ↑', 'Tập kết toàn quân'], ['D-pad ←', 'Xung phong vào thành'], ['D-pad ↓', 'Gọi lính dù'], ['D-pad →', 'Camera tự động'],
   ['L3 (nhấn cần trái)', 'Đổi mức zoom'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
   ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong app Flydigi Space Station, ví dụ M1 = A (lướt), M2 = B (lính)'] ];
+// Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.
+//   Every gun has its own beat: crisp ticks (rifle / SMG), a buzz (minigun), a punch + tail (cannon / HESH), charge → crack (railgun),
+//   whoosh → kick (missiles / rockets), thump-thump (twin flak), crackle (tesla), a soft hiss (cryo)…
+export const GUN_FEEL = {
+  rifle:[[0.12,0.38,38]], smg:[[0,0.3,28]], _rapid:[[0.04,0.3,40]], minigun:[[0.06,0.34,42]], shotgun:[[0.8,0.55,70,10],[0.28,0.22,70]],
+  flak:[[0.4,0.42,45,35],[0.4,0.42,45]], cannon:[[1,0.55,95],[0.45,0.18,150]], hesh:[[0.9,0.5,95],[0.38,0.14,130]],
+  railgun:[[0,0.55,70],[0,0.8,60],[1,0.45,110],[0.3,0.1,170]], missile:[[0.05,0.3,50],[0.15,0.45,70],[0.38,0.25,90]],
+  thermo:[[0.2,0.45,60],[1,0.7,150],[0.3,0.2,160]], rocket:[[0.25,0.6,120],[1,0.85,230],[0.35,0.25,200]],
+  mortar:[[0.65,0.3,80,50],[0.2,0.1,90]], arty:[[0.9,0.4,100,60],[0.3,0.12,140]], agl:[[0.4,0.3,55,30],[0.12,0.08,50]],
+  tesla:[[0,0.6,25,20],[0,0.5,25,30],[0.12,0.75,30,20],[0,0.4,25]], cryo:[[0,0.25,170]], flamer:[[0.08,0.22,60]] };
+export const FEEL = {
+  hit:     [[1,0.12,60,8],[0.12,1,60,8],[0.7,0.1,55,8],[0.1,0.55,55]],                               // shot hits you: left ↔ right shake
+  hitHeavy:[[1,0.2,70,6],[0.2,1,70,6],[1,0.15,65,6],[0.15,0.9,65,6],[0.6,0.1,60,6],[0.1,0.45,60]],     // a big shell: longer, harder
+  impact:  [[0.9,0.65,70],[0.4,0.3,110]],                                                             // ram a wall / a tank: a bang + a short tail
+  blast:   [[0.75,0.6,90],[0.4,0.32,150]],                                                            // an explosion near you
+  connect: [[0.35,0.35,120,60],[0.2,0.5,90]], test:[[1,0.1,240,80],[0.1,1,240,80],[0.6,0.6,200]] };
+// Z118 ACTIONS — the one binding table (rebindable in the key sheet; PROFILE.binds overrides): [id, label, group, keys[], padButton|null, hold]
+//   pad buttons = standard mapping by position: 0 A · 1 B · 2 X · 3 Y · 4 LB · 5 RB · 6 LT · 7 RT · 8 View · 9 Menu · 10 L3 · 11 R3 · 12-15 D-pad ↑↓←→
+export const ACTIONS = [
+  ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
+  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né','CHIẾN ĐẤU',[' '],0,0], ['skill','Dùng kỹ năng · chuột phải','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
+  ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0],
+  ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành','QUÂN',['x'],14,0], ['para','Gọi lính dù','QUÂN',['b'],13,0],
+  ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],10,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
+  ['camAuto','Camera tự động','CAMERA',['c'],15,0], ['camReset','Đặt lại camera','CAMERA',['v'],11,0],
+  ['pause','Tạm dừng','KHÁC',['escape','p'],9,0], ['keys','Bảng phím','KHÁC',['h','f1'],8,0], ['music','Bật / tắt nhạc nền','KHÁC',['m'],null,0] ];
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
 export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };
 

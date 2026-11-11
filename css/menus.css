@@ -196,3 +196,23 @@
 .seg-note{font-size:11px;color:var(--muted);padding:6px 8px;max-width:340px;line-height:1.3;}
 body.pad .seg-note{color:#9be04a;}
 body.touch.pad #touch, body.touch.pad #mbtns, body.touch.pad #stickL{display:none !important;}
+
+/* Z118 rebind sheet */
+.ks-bindbar{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:var(--muted);padding:2px 4px 6px;}
+.ks-grp.bind .ks-gt{display:flex;justify-content:space-between;} .ks-grp.bind .ks-gt i{font-style:normal;font-size:9px;opacity:.6;letter-spacing:.8px;}
+.bind-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.bind-row .ks-t{font-size:12px;text-align:left;} .bind-keys{display:flex;gap:4px;}
+.bind-chip{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:24px;padding:0 7px;border-radius:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  font:700 11px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.5px;color:var(--ink);cursor:pointer;pointer-events:auto;white-space:nowrap;}
+.bind-chip:hover{border-color:#ffd27a;} .bind-chip.empty{opacity:.45;} .bind-chip.cap{background:#ffd27a;color:#1a1408;border-color:#ffd27a;animation:capBlink .7s infinite alternate;}
+.bind-chip.reset{color:#ffd27a;} @keyframes capBlink{to{opacity:.55;}}
+
+/* Z118 settings: two columns on wide screens (the controller rows made it a long scroll) */
+@media (min-width:980px){ #settings .settings{display:grid;grid-template-columns:1fr 1fr;max-width:1060px;gap:10px 14px;} #settings .set-row.set-pad{grid-column:1/-1;} }
+/* Z118 menu hint bar — shows how to drive the menus with the pad / keyboard */
+#navHint{position:fixed;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:none;padding:6px 14px;border-radius:999px;
+  background:rgba(8,10,8,.78);border:1px solid rgba(255,210,122,.35);color:#ffe8b0;font:700 11px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.6px;pointer-events:none;white-space:nowrap;}
+#navHint span{display:none;}
+body.inmenu.pad #navHint, body.inmenu.kbnav #navHint, body.shopopen.pad #navHint{display:block;}
+body.pad #navHint .nh-pad{display:inline;} body.kbnav:not(.pad) #navHint .nh-kb{display:inline;}
+body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only on touch devices */

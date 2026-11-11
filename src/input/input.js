@@ -1,19 +1,9 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
-import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
+import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
-addEventListener('keydown', e=>{
-  S.keys[e.key.toLowerCase()] = true;
-  if(e.key === ' ') { e.preventDefault(); tryDash(); }
-  const k=e.key.toLowerCase();
-  if(k === 'e') trySpell();
-  if(k === 'q') cycleSpell();
-  if(k === 'g' && !e.repeat) crewPress();   // Z100 tap = dismount · hold = recall the squad
-  if(k>='1' && k<='8') selectGun(parseInt(k)-1);
-  if(e.key === 'Escape' || k==='p') togglePause();
-});
-addEventListener('keyup', e=>{ S.keys[e.key.toLowerCase()] = false; if(e.key.toLowerCase()==='g') crewRelease(); });
+addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); if(S.mode==='playing' && k>='1' && k<='8' && !e.metaKey && !e.ctrlKey) selectGun(parseInt(k)-1); });   // gun slots on the number row · Z118 every other key → input/bindings.js
 // desktop aim: raycast mouse → ground plane
 export const raycaster = new THREE.Raycaster();
 export const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
@@ -110,13 +100,7 @@ setCamAuto(S.camAuto);
 export const camAutoBtnEl=document.getElementById('camAutoBtn');
 if(camAutoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} setCamAuto(!S.camAuto); sfx('click'); };
   camAutoBtnEl.addEventListener('click',tog); camAutoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
-addEventListener('keydown', e=>{ if(document.body.classList.contains('typing') || e.metaKey || e.ctrlKey) return; const k=e.key;
-  if(k==='-' || k==='_'){ zoomStep(1); }                 // farther
-  else if(k==='=' || k==='+'){ zoomStep(-1); }           // closer
-  else if(k==='['){ rotStep(-1); } else if(k===']'){ rotStep(1); }
-  else if(k==='c' || k==='C'){ if(!e.repeat){ setCamAuto(!S.camAuto); sfx('click'); } }
-  else if(k==='v' || k==='V'){ if(!e.repeat) camReset(); }
-  else if(k==='m' || k==='M'){ if(!e.repeat) toggleMusic(); } });
+// Z118 camera / music keys moved to the binding table (input/bindings.js)
 export const mFireEl=document.getElementById('mFire');
 if(mFireEl){
   mFireEl.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); S.firing=true; mFireEl.classList.add('firing');

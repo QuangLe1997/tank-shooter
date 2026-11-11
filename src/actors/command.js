@@ -33,6 +33,5 @@ export function cmdCooldownTx(now){ return now<CMD.paraAt ? Math.ceil(CMD.paraAt
 // phone strip: the paratrooper button shows its cooldown (written only when the number changes)
 let _cdTx=null;
 export function updateCmdUI(now){ if(!MOBILE) return; const t=cmdCooldownTx(now); if(t===_cdTx) return; _cdTx=t; const el=document.getElementById('mParaCd'); if(el){ el.textContent=t; el.classList.toggle('on', !!t); } }
-addEventListener('keydown', e=>{ if(e.repeat || document.body.classList.contains('typing')) return; const k=e.key.toLowerCase();
-  if(k==='t') musterAll(); else if(k==='x') assaultFort(); else if(k==='b') callParadrop(); });
+// Z118 T / X / B now live in the binding table (input/bindings.js)
 tapBtn('mMuster', musterAll); tapBtn('mAssault', assaultFort); tapBtn('mPara', callParadrop);

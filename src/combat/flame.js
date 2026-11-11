@@ -165,7 +165,7 @@ export function fireGun(now, range){
   if(CASING[inst.id]){ const c=CASING[inst.id], rx=Math.cos(p.facing), rz=-Math.sin(p.facing), sc=p.mesh.scale.x;   // spent brass ejected from the turret side
     for(let k=0;k<c.n;k++) spawnPart(p.pos.x+rx*1.0*sc, 2.3*sc, p.pos.z+rz*1.0*sc, rx*(3+Math.random()*2)+(Math.random()-0.5), 3+Math.random()*2, rz*(3+Math.random()*2)+(Math.random()-0.5), {color:0xd8a840, size:c.s, life:0.9, grav:-24, drag:0.4}); }
   tankRecoil(p.mesh, ang, Math.min(1, Math.max(0.12, 0.15 + rec*0.22)), p.facing); if(rec>=1) haptic(6+rec*5);   // barrel slams back + shivers, hull rocks off the shot
-  padShot(g);                                                                                       // Z117 the shot kicks the controller
+  padShot(g, inst.id);                                                                                       // Z117 the shot kicks the controller
   S.shake = g.special==='rocket' ? Math.min(5, S.shake + 2.4)                                     // SIEGE launch — a strong recoil quake (landing quakes harder still)
           : Math.min(1.6, S.shake + Math.min(0.5, 0.04 + rec*0.07));                               // weightier guns shake more per shot
   sfx(g.special ? 'rocketlaunch' : 'shoot_'+inst.id);   // rocket + howitzer both use the launch thump

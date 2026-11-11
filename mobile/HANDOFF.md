@@ -10,6 +10,7 @@ Viết ngày 2026-11-11, ở commit `706bbe3` (nhánh `main` = `refactor/modules
 | Gói offline cho app (`npm run sync` → `mobile/www/`) | Đã chạy thử: game khởi động, 145 file đều đọc từ máy, không gọi ra ngoài lần nào, đủ 6 phông chữ. |
 | Project Xcode (`mobile/ios/`) | Tạo bằng Capacitor 8.6 (Swift Package Manager, không dùng CocoaPods). **Chưa build lần nào**, vì máy cũ không có Xcode. |
 | Code Swift tự viết | `GameViewController` ở cuối `ios/App/App/SceneDelegate.swift`. Chưa được biên dịch lần nào, nên lần build đầu có thể phải sửa lỗi nhỏ. |
+| Rung (Z118) | Đã thêm plugin `@capacitor/haptics` 8.0.2 (vào `mobile/package.json` và `ios/App/CapApp-SPM/Package.swift`). Game gọi `Capacitor.Plugins.Haptics.impact` khi có plugin. Sau `npm install` và `npm run ios`, Xcode tự kéo gói này. **Chưa thử trên iPhone thật.** |
 | Hiệu năng | Chỉ đo bằng giả lập khung điện thoại trong Chrome headless: logic ~2 ms/khung, 280–400 lệnh vẽ, 0,4–0,6 triệu tam giác. **Chưa đo fps trên iPhone thật.** |
 
 ## Các bước trên máy mới (Mac)

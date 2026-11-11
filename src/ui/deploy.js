@@ -74,4 +74,4 @@ export function confirmDeploy(){ const D=_dp; if(!D) return; _dp=null; hide('dep
   const mem={ v:1, posts:{}, roles:D.roles }; for(const q of D.posts){ const k=q.id.replace(/\d+$/,''); mem.posts[k]=(mem.posts[k]||0)+q.n; } PROFILE.deploy=mem; saveProfile();
   sfx('levelup'); if(D.onGo) D.onGo(); }
 { const go=document.getElementById('dp-go'), au=document.getElementById('dp-auto'); if(go) tapEl(go, confirmDeploy); if(au) tapEl(au, ()=>{ if(_dp){ autoDeploy(); sfx('click'); } });
-  addEventListener('keydown', e=>{ if(S.mode==='deploy' && e.key==='Enter'){ e.preventDefault(); confirmDeploy(); } }); }
+  /* Z118 Enter = the focused button (XUẤT KÍCH by default) via the menu focus ring */ }

@@ -369,6 +369,25 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
   - *Menu:* D-pad hoặc cần trái di chuyển vòng chọn (`.padfocus`) giữa các nút, A bấm, B quay lại (bấm nút quay lại/xong của màn đó, không có thì như Esc).
   - *Rung:* mỗi phát bắn theo độ giật súng (súng nhanh rung nhẹ, súng to rung mạnh); trúng đạn kích mô-tơ nặng; mỗi lần camera rung (nổ, húc) cũng rung tay cầm; động cơ ù nhẹ theo ga. Các lệnh rung điện thoại có sẵn (`haptic`) cũng rung tay cầm.
   - *Cài đặt → tay cầm* (`PROFILE.pad`): trạng thái kết nối và nút THỬ RUNG; rung tắt/nhẹ/vừa/mạnh; rung động cơ; vùng chết cần 8/15/24%; tự ngắm khi thả cần; đổi A↔B cho tay cầm ghi nhãn kiểu Nintendo. Bảng phím có thêm mục TAY CẦM (`PAD_HELP`).
+- **Z118 GÁN PHÍM TUỲ BIẾN · MENU BẰNG PHÍM / TAY CẦM · RUNG THEO NHỊP:**
+  - *Một bảng gán duy nhất (`ACTIONS` trong config, `input/bindings.js`):* 24 hành động, mỗi hành động 2 phím + 1 nút tay cầm. Gồm di chuyển, bắn, lướt, kỹ năng, đổi kỹ năng, súng trước/sau (mặc định R/F, LB/RB), tự bắn, lính, tập kết, xung phong, lính dù, các phím camera, tạm dừng, bảng phím, nhạc. Bàn phím và tay cầm dùng chung `runAction`. Các bộ xử lý phím cứng cũ (input.js, command.js, keys.js, deploy.js) đã bỏ; chỉ còn phím 1–8 chọn ô súng là cố định.
+  - *Đổi phím:*
+    - Bảng phím (H / ⧉ / nút PHÍM TẮT) chính là màn đổi phím: bấm vào ô phím hoặc ô nút (chuột, Enter hay A), rồi nhấn phím/nút mới. Esc huỷ, chuột phải xoá phím, có nút ↺ MẶC ĐỊNH.
+    - Một phím chỉ thuộc một hành động: lấy phím đang có chủ thì hành động kia nhận lại phím cũ (hoán đổi).
+    - Lưu ở `PROFILE.binds`.
+  - *Menu (`menuRoot`, vòng chọn dùng chung):*
+    - Bàn phím: ↑↓←→ theo hướng trên màn, Tab / Shift+Tab theo thứ tự, Enter / Space bấm, Esc / Backspace quay lại, Q/E đổi tab.
+    - Tay cầm: D-pad / cần trái chọn, A bấm, B quay lại, LB/RB đổi tab (`.shop-tab`, `.bs-mode`), cần phải cuộn, ☰ tiếp tục khi đang tạm dừng.
+    - Thanh gợi ý `#navHint` ở đáy màn hình. Bấm chuột thì vòng chọn tự tắt.
+  - *Rung theo nhịp (`GUN_FEEL`, `FEEL`; bước = mô-tơ nặng (trái), mô-tơ nhẹ (phải), ms, nghỉ):*
+    - Mỗi súng một nhịp riêng: súng trường/SMG tích ngắn, minigun rì đều, pháo chính và HESH đấm mạnh rồi có dư âm, railgun nạp–nạp–nổ, tên lửa vút rồi giật, flak thình thịch đôi, tesla lách tách, cryo xì nhẹ.
+    - Trúng đạn: lắc trái ↔ phải, mạnh nhất về phía đạn tới; đạn ≥ 20 sát thương lắc lâu hơn (`hitHeavy`).
+    - Húc tường, đá, xe khác (`padImpact` trong vật lý): một tiếng va và dư âm. Nổ gần: rung theo độ rung camera.
+  - *Rung điện thoại:*
+    - Android dùng `navigator.vibrate` với cùng nhịp (súng nhẹ không rung, để không rung liên tục).
+    - App iPhone dùng plugin `@capacitor/haptics` (đã thêm vào `mobile/`).
+    - Cài đặt có thêm dòng RUNG ĐIỆN THOẠI (chỉ hiện trên máy cảm ứng).
+  - *Cài đặt:* chia 2 cột trên màn rộng ≥ 980 px.
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.
