@@ -450,6 +450,15 @@ export const TANK_DEATH = { blast:[0.1,0.22], pierce:[0.25,0.4], ice:[0.05,0.1],
 export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.05, reload:0.06 }, mag:{ mag:0.12 }, rareShare:0.15, epicShare:0.25, fortDrops:1, coins:150 };
 // how many tubes each gun really has (shown on the gun card)
 export const GUN_BARRELS = { smg:2, flak:2, minigun:7, missile:2, thermo:4, rocket:1 };
+// Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
+//   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
+export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false }, rtFire:0.35, assistAfter:0.45, navFirst:0.26, navRepeat:0.14, engine:{ base:0.04, load:0.1 } };
+export const PAD_HELP = [
+  ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất'],
+  ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Lướt né'], ['B', 'Chạm: lính xuống xe · Giữ: gọi lính về'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
+  ['LB · RB', 'Súng trước · súng sau'], ['D-pad ↑', 'Tập kết toàn quân'], ['D-pad ←', 'Xung phong vào thành'], ['D-pad ↓', 'Gọi lính dù'], ['D-pad →', 'Camera tự động'],
+  ['L3 (nhấn cần trái)', 'Đổi mức zoom'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
+  ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong app Flydigi Space Station, ví dụ M1 = A (lướt), M2 = B (lính)'] ];
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
 export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };
 

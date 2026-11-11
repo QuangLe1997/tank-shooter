@@ -1,5 +1,5 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
-import { DIFF_META, MOBILE, PROFILE, audio, controlScheme, hide, refreshStartUI, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
+import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, padCfg, padRumble, padTest, refreshStartUI, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
 export function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
@@ -11,6 +11,7 @@ export function buildSettings(){
   const Ct=document.getElementById('setCtrl'); if(Ct){ Ct.innerHTML=''; const cur=controlScheme();   // Z99 driving scheme
     Ct.appendChild(_segChip('XE TĂNG',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
     Ct.appendChild(_segChip('THEO MÀN HÌNH',cur==='screen',()=>{ PROFILE.ctrl='screen'; saveProfile(); buildSettings(); sfx('click'); }, 'đẩy về đâu xe đi về đó')); }
+  buildPadSettings();
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 export function _setSnd(on){ PROFILE.sound=on; saveProfile(); audio(); setMuted(!on); buildSettings(); }
@@ -20,3 +21,15 @@ export function openSettings(){ buildSettings(); hide('start'); show('settings')
 export function closeSettings(){ hide('settings'); show('start'); refreshStartUI(); sfx('click'); }
 tapBtn('settingsBtn', openSettings); tapBtn('settingsDone', closeSettings);
 { const fs=document.getElementById('setFs'); if(fs) tapEl(fs, ()=>{ toggleFullscreen(); sfx('click'); }); }
+
+// Z117 controller settings (PROFILE.pad) — written into the settings sheet; the status row says which pad is connected
+export function buildPadSettings(){ const C=padCfg(), set=(k,v)=>{ C[k]=v; saveProfile(); buildSettings(); sfx('click'); };
+  const P=document.getElementById('setPad'); if(P){ P.innerHTML=''; const st=document.createElement('div'); st.className='seg-note'; st.textContent = PAD.active ? ('✓ '+(PAD.id||'Tay cầm').replace(/\(.*?\)/g,'').trim().slice(0,42)) : 'Chưa thấy — cắm dây / bật 2.4G hoặc Bluetooth rồi bấm một nút bất kỳ'; P.appendChild(st);
+    P.appendChild(_segChip('THỬ RUNG', false, ()=>{ padTest(); sfx('click'); })); }
+  const V=document.getElementById('setVib'); if(V){ V.innerHTML=''; V.appendChild(_segChip('TẮT', !C.vib, ()=>set('vib',false)));
+    for(const [l,k] of [['NHẸ',0.4],['VỪA',0.8],['MẠNH',1.0]]) V.appendChild(_segChip(l, C.vib && Math.abs(C.vibK-k)<0.05, ()=>{ C.vib=true; set('vibK',k); setTimeout(()=>padRumble(0.8,0.5,200,true),30); })); }
+  const E=document.getElementById('setEng'); if(E){ E.innerHTML=''; E.appendChild(_segChip('BẬT', C.engine, ()=>set('engine',true))); E.appendChild(_segChip('TẮT', !C.engine, ()=>set('engine',false))); }
+  const D=document.getElementById('setDead'); if(D){ D.innerHTML=''; for(const [l,k] of [['NHỎ',0.08],['VỪA',0.15],['LỚN',0.24]]) D.appendChild(_segChip(l, Math.abs(C.dead-k)<0.01, ()=>set('dead',k), Math.round(k*100)+'%')); }
+  const A=document.getElementById('setAssist'); if(A){ A.innerHTML=''; A.appendChild(_segChip('BẬT', C.assist, ()=>set('assist',true))); A.appendChild(_segChip('TẮT', !C.assist, ()=>set('assist',false))); }
+  const W=document.getElementById('setSwap'); if(W){ W.innerHTML=''; W.appendChild(_segChip('KIỂU XBOX', !C.swapAB, ()=>set('swapAB',false), 'A dưới')); W.appendChild(_segChip('ĐỔI A↔B', C.swapAB, ()=>set('swapAB',true), 'kiểu Nintendo')); } }
+addEventListener('gamepadconnected', ()=>{ const s=document.getElementById('settings'); if(s && !s.classList.contains('hidden')) setTimeout(buildPadSettings, 50); });

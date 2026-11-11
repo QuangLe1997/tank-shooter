@@ -359,6 +359,16 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
     - Xe tăng: pháo như xe đồng minh.
     - Xe chở quân: thả 3 lính ta, rồi dùng súng máy bắn bộ binh.
     - Xe tải tên lửa: bắn loạt 4 tên lửa tự dẫn hạ trực thăng trước; không có trực thăng thì bắn vồng vào cổng hoặc tường thành gần nhất trong 60 m (nhiệt áp ×1,6); không có thành thì bắn xe địch.
+- **Z117 TAY CẦM (Gamepad API, `input/gamepad.js`):** dùng bản đồ nút "standard" của trình duyệt (theo vị trí nút), nên chạy với Flydigi Direwolf 4 ở chế độ XInput (dây / 2.4G) hoặc Bluetooth (XInput / Switch), tay Xbox, DualSense và Switch Pro. Rung `dual-rumble` có trên Chrome / Edge / app Mac (Electron) và Safari 16.4+; Firefox không rung được.
+  - *Trong trận:*
+    - Cần trái lái xe (có analog: nghiêng nửa là nửa ga, theo kiểu điều khiển đã chọn). Cần phải xoay nòng; thả cần phải ra thì sau 0,45 s tự ngắm địch gần nhất, không có địch thì nhìn theo hướng xe chạy.
+    - RT bắn (giữ là liên thanh), LT dùng kỹ năng, A lướt, B gọi lính (chạm: xuống xe, giữ: gọi về), X đổi kỹ năng, Y bật/tắt tự bắn, LB/RB đổi súng.
+    - D-pad: ↑ tập kết, ← xung phong, ↓ lính dù, → camera tự động.
+    - L3 đổi mức zoom, R3 đặt lại camera, ☰ tạm dừng, ⧉ mở bảng phím.
+    - Trên điện thoại hoặc iPad có tay cầm: nòng hết gắn cố định, nút cảm ứng tự ẩn (`body.pad`).
+  - *Menu:* D-pad hoặc cần trái di chuyển vòng chọn (`.padfocus`) giữa các nút, A bấm, B quay lại (bấm nút quay lại/xong của màn đó, không có thì như Esc).
+  - *Rung:* mỗi phát bắn theo độ giật súng (súng nhanh rung nhẹ, súng to rung mạnh); trúng đạn kích mô-tơ nặng; mỗi lần camera rung (nổ, húc) cũng rung tay cầm; động cơ ù nhẹ theo ga. Các lệnh rung điện thoại có sẵn (`haptic`) cũng rung tay cầm.
+  - *Cài đặt → tay cầm* (`PROFILE.pad`): trạng thái kết nối và nút THỬ RUNG; rung tắt/nhẹ/vừa/mạnh; rung động cơ; vùng chết cần 8/15/24%; tự ngắm khi thả cần; đổi A↔B cho tay cầm ghi nhãn kiểu Nintendo. Bảng phím có thêm mục TAY CẦM (`PAD_HELP`).
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

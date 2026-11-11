@@ -1,9 +1,9 @@
 // combat/aim.js — Z104 aim policy: desktop aims with the mouse; MOBILE has the barrel FIXED to the hull (shoot where you face)
 import { AIM } from '../../config.js';
-import { MOBILE, S, boss, enemies, nearestTarget } from '../hub.js';
+import { MOBILE, PAD, S, boss, enemies, nearestTarget } from '../hub.js';
 
 // true when the turret is locked to the hull (phones/tablets: no mouse to lay the gun)
-export function barrelFixed(){ return MOBILE && AIM.mobileFixed; }
+export function barrelFixed(){ return MOBILE && AIM.mobileFixed && !PAD.active; }   // Z117 with a controller the right stick aims, even on a phone
 // nearest enemy straight AHEAD of the hull: inside the forward cone, or within a narrow lane for targets close by
 export function aheadTarget(maxR, cone){
   const p=S.player; if(!p) return null; const fx=Math.sin(p.facing), fz=Math.cos(p.facing), tc=Math.tan(cone||AIM.cone);

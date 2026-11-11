@@ -1,7 +1,7 @@
 // combat/siege-rocket.js — SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius
 import * as THREE from 'three';
 import { AIM } from '../../config.js';
-import { GLOW, GUNS, MOBILE, S, _v, aheadTarget, aimTarget, barrelFixed, clampFieldXZ, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
+import { GLOW, GUNS, MOBILE, PAD, S, _v, aheadTarget, aimTarget, barrelFixed, clampFieldXZ, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
 
 // ----- SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius -----
 export const rockets=[], fuses=[];
@@ -48,7 +48,7 @@ export const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
 // where a SIEGE ROCKET will land — DESKTOP: the mouse cursor; MOBILE / no pointer: auto-lock nearest enemy → aim direction
 export function rocketTarget(){
   const p=S.player; let tx,tz;
-  if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
+  if((!MOBILE || PAD.active) && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
   else { const tgt=aimTarget(playerRange()*1.7, AIM.artyCone); if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z;
       if(tgt.vel && p.muzzle){ p.muzzle.getWorldPosition(_v); const g=equippedGun(), el=g.special==='rocket'?ROCKET_ELEV:MORTAR_ELEV, G=g.special==='rocket'?ROCKET_G:MORTAR_G;
         for(let k=0;k<2;k++){ const T=rocketArc(_v.x,_v.y,_v.z,tx,tz,el,G).T; tx=tgt.pos.x+tgt.vel.x*T; tz=tgt.pos.z+tgt.vel.z*T; } } }   // lead: aim where it WILL be after the flight time
@@ -118,7 +118,7 @@ export function fireArty(now, g, dmg){
   else for(const e of enemies){ if(e.def.bomber) continue; const q=(e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2; if(q<bd && q<RNG*RNG){ bd=q; tgt=e; } }
   let tx,tz;
   if(tgt){ tx=tgt.pos.x; tz=tgt.pos.z; }
-  else if(!MOBILE && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
+  else if((!MOBILE || PAD.active) && S.pointerActive){ tx=S.aimPoint.x; tz=S.aimPoint.z; }
   else { tx=p.pos.x+Math.sin(p.aimSmoothed)*30; tz=p.pos.z+Math.cos(p.aimSmoothed)*30; }
   [tx,tz]=clampFieldXZ(tx, tz, 2);
   const sx=p.pos.x+Math.sin(p.aimSmoothed)*(p.radius+0.4), sz=p.pos.z+Math.cos(p.aimSmoothed)*(p.radius+0.4);

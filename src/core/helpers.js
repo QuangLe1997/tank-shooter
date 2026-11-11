@@ -1,10 +1,11 @@
 // core/helpers.js — shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars
 import * as THREE from 'three';
-import { MOBILE, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, move, worldToScreen } from '../hub.js';
+import { MOBILE, PAD, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, move, worldToScreen } from '../hub.js';
 
 // ----------------------------- HELPERS -----------------------------
 export function getMoveDir(){
   const d = new THREE.Vector3();
+  if(PAD.active && (PAD.lx || PAD.ly)){ d.set(PAD.lx, 0, PAD.ly); if(d.lengthSq()>1) d.normalize(); if(S.camYaw) d.applyAxisAngle(_camUP, S.camYaw); return d; }   // Z117 left stick (analogue: half-tilt = half power)
   if(MOBILE){
     if(move.id!==null){ d.set(move.x, 0, move.y); if(d.length()>STICK_R) d.setLength(STICK_R); d.divideScalar(STICK_R);
       if(S.camYaw) d.applyAxisAngle(_camUP, S.camYaw); }   // keep stick screen-relative when the view is rotated
@@ -23,6 +24,7 @@ export function getMoveDir(){
 export function controlScheme(){ const c=PROFILE.ctrl; return c==='tank'||c==='screen' ? c : 'screen'; }   // Z107: SCREEN-relative is the default on every device
 export function tankInput(){                                    // → { thr: -1..1 (forward +), turn: -1..1 (driver's LEFT +) }
   let thr=0, turn=0;
+  if(PAD.active && (PAD.lx || PAD.ly)) return { thr:-PAD.ly, turn:-PAD.lx };   // Z117 left stick: up = throttle, sideways = turn
   if(MOBILE){ if(move.id!==null){ const L=Math.max(STICK_R*0.15, Math.hypot(move.x,move.y)); thr=Math.max(-1,Math.min(1,-move.y/STICK_R)); turn=Math.max(-1,Math.min(1,-move.x/STICK_R)); if(Math.abs(thr)<0.12) thr=0; if(Math.abs(turn)<0.12) turn=0; } }
   else { if(S.keys['w']||S.keys['arrowup']) thr+=1; if(S.keys['s']||S.keys['arrowdown']) thr-=1;
     if(S.keys['a']||S.keys['arrowleft']) turn+=1; if(S.keys['d']||S.keys['arrowright']) turn-=1; }
