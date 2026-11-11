@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortSpawnPoint, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
+import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -88,9 +88,9 @@ export function updateWaves(dt, now){
   let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
   const _nx=WAVE.spawnQueue[0];
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
-    const t=WAVE.spawnQueue.shift(); const sp=edgeSpawnPoint();
-    if(t==='squad'){ spawnSquad(sp); WAVE.spawnAt=now+0.6; return; }
-    spawnEnemy(t, sp.x, sp.z); ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);
+    const t=WAVE.spawnQueue.shift(); const sp=edgeSpawnPoint(), n0=enemies.length;
+    if(t==='squad'){ spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6; return; }
+    spawnEnemy(t, sp.x, sp.z); if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
     WAVE.spawnAt = now + (BALANCE.wave.cadence - BALANCE.wave.cadenceDiff*diffScale())*(WAVE.assault?BALANCE.wave.assaultCadenceMul:1)*objMod('cadenceMul')*(WAVE.columnLeft>0?0.4:1);   // Z83 radio relay speeds reinforcements; a column rolls in nose-to-tail
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
   }

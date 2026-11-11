@@ -155,7 +155,7 @@ export function fireGun(now, range){
       const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
       spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:arcD, y:sy0, dropTo:1.2, dropDist:dropD, type:g.type, reach:maxDist, fall:g.fall??1,
         pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0),
-        freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark'});
+        freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos});
     }
   }
   // RECOIL — the tank kicks back opposite the shot; heavy guns lurch, autos barely nudge

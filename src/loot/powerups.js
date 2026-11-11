@@ -17,6 +17,7 @@ export const POWERUPS = [
   { id:'turbo',  svg:'bolt', color:0x7fd0ff, buff:'turbo',  dur:LOOT.turbo.dur, stack:LOOT.turbo.maxLv, label:'TURBO', vi:'TURBO TĂNG ÁP', ds:'Gia tốc +35%/cấp, bứt khỏi chỗ đứng', cat:'fuel', tier:1 },   // Z93
   { id:'ram',    svg:'tank', color:0xffb040, buff:'ram',    dur:LOOT.ram.dur, label:'DOZER BLADE', vi:'LƯỠI ỦI', ds:'Húc ×2,2 · chịu húc −65% · phá tường khi chạy vừa', cat:'armor', tier:1 },   // Z93
   { id:'era',    svg:'shield', color:0xe0c070, label:'REACTIVE ARMOUR', vi:'GIÁP PHẢN ỨNG', ds:'+3 tấm: mỗi tấm chặn 60% một phát trúng', cat:'armor', tier:1, apply(p){ addEra(LOOT.era.charges); } },   // Z93
+  { id:'siege',  svg:'bomb', color:0xff9a3a, buff:'siege',  dur:LOOT.siege.dur, label:'SIEGE ROUNDS', vi:'ĐẠN PHÁ THÀNH', ds:'×2,5 sát thương vào tường, cổng thành, rào chắn, tháp canh', cat:'ammo', tier:1 },   // Z111b
   { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', vi:'ĐẠN VÔ HẠN', ds:'Không cần nạp đạn', cat:'ammo', tier:1, onGet(p){ for(const g of p.guns) g.rU=0; } },
   // PERMANENT buffs (last until death) — rarer feel, lasting progression
   { id:'range',  svg:'target', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)', vi:'NÒNG DÀI', ds:'Tầm bắn ×1,4 tới khi mất mạng', cat:'tech', tier:1 },
@@ -138,8 +139,8 @@ export function updatePickups(dt, now){
   }
 }
 export function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }
-export const BUFF_ICON={ rapid:'bolt', power:'burst', speed:'dash', infammo:'infinity', ammoup:'mag', range:'target', turbo:'bolt', ram:'tank', era:'shield' };
-export const BUFF_COL={ turbo:'#7fd0ff', ram:'#ffb040', speed:'#6fe0a0', era:'#e0c070' };
+export const BUFF_ICON={ siege:'bomb', rapid:'bolt', power:'burst', speed:'dash', infammo:'infinity', ammoup:'mag', range:'target', turbo:'bolt', ram:'tank', era:'shield' };
+export const BUFF_COL={ siege:'#ff9a3a', turbo:'#7fd0ff', ram:'#ffb040', speed:'#6fe0a0', era:'#e0c070' };
 export let _buffKey='';
 export function updateBuffHUD(now){                                                         // Z93: rebuilt only when something visible changes (was every frame)
   const bar=document.getElementById('buffbar'); if(!bar) return; const p=S.player, items=[];

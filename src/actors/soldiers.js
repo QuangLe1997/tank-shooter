@@ -113,6 +113,8 @@ export function animateSoldier(g, dist, dt, firing){
 // Z105 STANCES — call after animateSoldier(): 'stand' (walk cycle as is) · 'crouch' (kneel to fire / hide behind cover) ·
 // 'prone' (flat on the ground, rifle forward — the hardest target). Blends smoothly so nobody snaps between poses.
 const _ST={ stand:{ rx:0, y:0, z:0, up:0, arm:0, k:0 }, crouch:{ rx:0, y:0, z:0, up:0.15, arm:0, k:1 }, prone:{ rx:1.42, y:0.17, z:-0.55, up:-0.32, arm:-1.08, k:2 } };
+// Z111b HP bar height follows the stance: a man lying flat to shoot had his bar hanging 2 m over him → looked like a corpse with an HP bar
+export function stanceBarK(g){ const s=g.userData.stance; return s==='prone' ? 0.42 : s==='crouch' ? 0.74 : 1; }
 export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) return; const T=_ST[stance]||_ST.stand, P=u.pose||(u.pose={ rx:0, y:0, z:0, up:0, arm:0 }), f=1-Math.exp(-dt*9);
   for(const k of ['rx','y','z','up','arm']) P[k]+=(T[k]-P[k])*f;
   u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up; if(u.arms) u.arms.rotation.x=P.arm;

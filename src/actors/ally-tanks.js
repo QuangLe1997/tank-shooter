@@ -55,7 +55,7 @@ export function updateAllyTanks(dt, now){ const p=S.player; if(!p || !ALLY_TANKS
     if(t.target && now>=t.fireAt && Math.abs(wrapAngle(aimW-t.aim))<0.08 && S.mode==='playing'){ const d=Math.hypot(t.target.pos.x-t.pos.x, t.target.pos.z-t.pos.z);
       if(d<A.range){ t.fireAt=now+A.fireCd*(t.heavy?1.2:1)*(0.85+Math.random()*0.3); const mz=t.mesh.userData.muzzle; if(mz) mz.getWorldPosition(_am); else _am.set(t.pos.x,1.6,t.pos.z);
         const dmg=A.dmg*(t.heavy?1.5:1)*(1+(S.stage-1)*0.12);
-        spawnBullet(_am.x, _am.z, t.aim+(Math.random()-0.5)*0.03, { owner:'p', dmg, speed:A.bspeed, color:0xc8f070, r:0.45, life:2, maxDist:A.range+2, noArc:true, y:_am.y, dropTo:1.2, type:'AP', fx:'blast', aoe:1.6, aoeDmg:dmg*0.5, knock:2 });
+        spawnBullet(_am.x, _am.z, t.aim+(Math.random()-0.5)*0.03, { owner:'p', from:t.pos, dmg, speed:A.bspeed, color:0xc8f070, r:0.45, life:2, maxDist:A.range+2, noArc:true, y:_am.y, dropTo:1.2, type:'AP', fx:'blast', aoe:1.6, aoeDmg:dmg*0.5, knock:2 });
         tankRecoil(t.mesh, t.aim, t.heavy?0.9:0.7, t.facing); spawnPart(_am.x,_am.y,_am.z, Math.sin(t.aim)*7,1,Math.cos(t.aim)*7, {tex:'flash', color:0xfff0b0, size:1.2, life:0.08, grav:0, drag:7}); sfx('enemyShoot', t.pos); } }
     t.mesh.position.set(t.pos.x,0,t.pos.z); t.mesh.rotation.y=t.facing; animateTank(t.mesh, t.pos.x, t.pos.z, t.facing, dt);
     if(t.bar){ const f=Math.max(0,t.hp/t.maxHp), ms=t.mesh.scale.x||1; t.bar.g.position.set(t.pos.x, 2.7+ms*0.95+heightAt(t.pos.x,t.pos.z), t.pos.z); t.bar.g.quaternion.copy(camera.quaternion); t.bar.g.visible=true;

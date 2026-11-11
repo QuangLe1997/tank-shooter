@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
-import { ENEMY_DEFS, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, heightAt, infMesh, loopDmgMul, loopHpMul, makeSoldierBar, makeSoldierMesh, scene, sfx, spawnBullet, spawnPart, tip } from '../hub.js';
+import { ENEMY_DEFS, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, heightAt, infMesh, loopDmgMul, loopHpMul, makeSoldierBar, makeSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -10,7 +10,7 @@ export const enemyBarPool=[];
 export function getEnemyBar(){ let b=enemyBarPool.pop(); if(!b){ b=makeSoldierBar(); b.g.scale.setScalar(1.5); scene.add(b.g); } b.g.visible=true; return b; }
 export function freeEnemyBar(b){ if(!b) return; b.g.visible=false; enemyBarPool.push(b); }
 export function updateEnemyBar(e){ if(!e.bar) return; { const w=barWanted(e); if(e.bar.g.visible!==w) e.bar.g.visible=w; if(!w) return; } const f=Math.max(0, e.hp/e.maxHp), ms=e.mesh.scale.x||1;   // Z107 hidden while at full health
-  e.bar.g.position.set(e.pos.x, (e.def.inf?TROOPS.look.barY:e.def.air?(e.pos.y||0)+2.4:2.7 + ms*0.95) + (e.def.air?0:heightAt(e.pos.x,e.pos.z)), e.pos.z); e.bar.g.quaternion.copy(camera.quaternion);   // float above the turret, always face camera
+  e.bar.g.position.set(e.pos.x, (e.def.inf?TROOPS.look.barY*stanceBarK(e.mesh):e.def.air?(e.pos.y||0)+2.4:2.7 + ms*0.95) + (e.def.air?0:heightAt(e.pos.x,e.pos.z)), e.pos.z); e.bar.g.quaternion.copy(camera.quaternion);   // float above the turret, always face camera
   e.bar.fill.scale.x=Math.max(0.001,f); e.bar.fill.position.x=-(1-f)*0.5;                              // shrink from the right
   e.bar.fill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));                         // green → amber → red
 }

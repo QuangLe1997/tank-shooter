@@ -30,7 +30,7 @@ export function startGame(arg){
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → the player's chosen battle loadout (≤5), each full mag
   p.guns=loadoutGuns(); p.gunIdx=0; p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
-  p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0, turbo:0, ram:0 }; p.buffLv={ turbo:0 }; p.era=0; setEraTiles(p);
+  p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0, turbo:0, ram:0, siege:0 }; p.buffLv={ turbo:0 }; p.era=0; setEraTiles(p);
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
   applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
@@ -59,6 +59,7 @@ export function startGame(arg){
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
 export function togglePause(){
+  if(S.mode==='briefing' || S.mode==='deploy'){ quitToMenu(); return; }   // Z111b Esc before the battle starts = back to the home menu
   if(S.mode==='playing'){ S.mode='paused'; show('pause'); saveProfile(); }
   else if(S.mode==='paused'){ S.mode='playing'; hide('pause'); }
 }
@@ -72,7 +73,7 @@ export function quitToMenu(){
   if(S.player){ S.player.pos.set(0,0,ARENA*0.55); S.player.vel.set(0,0,0); S.player.mesh.position.set(0,0,ARENA*0.55); S.player.mesh.visible=true; }   // park at spawn for a clean home
   document.body.classList.remove('corelow','shopopen'); __set__alarmAt(0);
   S.mode='start';
-  hide('pause'); hide('gameover'); show('start');
+  hide('pause'); hide('gameover'); for(const id of ['briefing','deploy','upgrade','victory','tip']){ const o=document.getElementById(id); if(o && !o.classList.contains('hidden')) hide(id); } show('start');   // Z111b also from the briefing / deploy screens
   refreshStartUI(); refreshWallet(); saveProfile(); sfx('click');
 }
 // any open menu hides the battle HUD + the mobile control pads — on a phone they used to sit right
@@ -89,7 +90,7 @@ addEventListener('pointerdown', ()=>skipIntro());
 addEventListener('keydown', ()=>skipIntro());
 document.getElementById('resumeBtn').onclick = ()=>{ togglePause(); if(!document.fullscreenElement && PROFILE.autoFs!==false){ reqFs(); setTimeout(queueResize,300); } };   // Z97 back to fullscreen after Esc
 document.getElementById('restartBtn').onclick = startGame;
-tapBtn('homeBtn', quitToMenu); tapBtn('goHomeBtn', quitToMenu);   // pause / game-over → back to home menu
+tapBtn('homeBtn', quitToMenu); tapBtn('goHomeBtn', quitToMenu); tapBtn('brBack', quitToMenu); tapBtn('dp-back', quitToMenu);   // Z111b + briefing / deploy   // pause / game-over → back to home menu
 document.getElementById('retryBtn').onclick = startGame;
 document.getElementById('retryBtn').addEventListener('touchstart', e=>{e.preventDefault();startGame();},{passive:false});
 export const ngp=document.getElementById('ngplusBtn');

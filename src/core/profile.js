@@ -67,7 +67,7 @@ export function applyUpgrades(p){                                     // bake th
   p.armor     = Math.min(0.6,(U.armor||0)*B.armor);
 }
 export function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
-export function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0); }
+export function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0)*(RIDER.perUp||1); }   // Z111b 5 seats filled + 2 per upgrade level
 // ---- SUPPORT-UNIT upgrades (shop): drone + guards scale by purchased level ----
 export const SUP = BALANCE.support;
 export function droneDmgMul(){ return 1 + (PROFILE.upgrades.dronePow||0)*SUP.dronePowPerLvl; }       // STRIKE DRONE: +power/lvl

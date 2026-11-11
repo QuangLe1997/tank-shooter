@@ -30,4 +30,5 @@ export const SOLDIER = { cap:8, base:3, hp:44, dmg:8, fireCd:0.7, range:17, ring
 // ----------------------------- TANK CREW / RIDERS (infantry mounted on the player's tank, unlocked at Stage 3) -----------------------------
 // Riders stand on the tank roof and auto-fire at enemies — short range, slow fire, each with its own HP/upgrades.
 // They're exposed: shots that hit the tank can wound them and crowding tanks chew them up. Dead = gone; power-ups reinforce.
-export const RIDER = { cap:7, base:3, hp:30, dmg:7, fireCd:0.9, range:14, scale:0.82 };
+export const RIDER = { cap:12, base:5, perUp:2, hp:30,   // Z111b 12 seats (roof + fenders + rear deck), 5 filled + 2 per KÍP LÍNH XE level
+  dmg:7, fireCd:0.9, range:14, scale:0.82 };

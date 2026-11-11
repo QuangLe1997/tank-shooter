@@ -131,7 +131,8 @@
 .case.owned,.case.maxed{filter:none;opacity:.82;} .case.owned{border-color:rgba(155,224,74,.45);} .case.owned .case-badge{background:rgba(60,90,30,.6);}
 .sp-role{font-size:12px;font-weight:900;letter-spacing:1px;color:var(--rc,#9be04a);margin:2px 0 8px;}
 .sp-sub{font-size:9px;font-weight:900;letter-spacing:2px;color:var(--amber);margin:10px 0 5px;}
-.sp-eff{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.sp-eff{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}   /* Z111b + structures */
+.sp-siege b{color:#ffb35a;}
 .sp-eff .ef{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
 .sp-eff .ef small{font-size:8.5px;color:var(--muted);letter-spacing:.3px;} .sp-eff .ef b{font-size:12px;color:var(--ink);} .sp-eff .ef em{font-style:normal;font-size:8px;font-weight:900;letter-spacing:.6px;}
 .sp-eff .ef.good{border-color:rgba(155,224,74,.5);} .sp-eff .ef.good em{color:#9be04a;} .sp-eff .ef.ok em{color:#d8d0a0;} .sp-eff .ef.bad em{color:#ff9a7a;} .sp-eff .ef.no{opacity:.5;} .sp-eff .ef.no em{color:var(--muted);}

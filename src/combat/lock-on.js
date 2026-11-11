@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
-import { ROSTER, LETHAL, SQUAD } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, groundHit, heightAt, hitAllyTank, impactFX, inBlock, riders, ringPulse, scene, sfx, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
+import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -47,6 +47,7 @@ export function spawnBullet(x, z, angle, o={}){
   m.userData.core.material.color.setHex(_hot(tracer));                      // bright white-hot core
   m.userData.halo.material.color.setHex(tracer);                           // glowing aura matches the tracer
   const y0 = o.y!=null ? Math.max(0.6, o.y - heightAt(x,z)) : 1.2;          // launch height ABOVE THE GROUND at the real muzzle
+  if(o.from && y0 < FORT.wallH+0.4 && fortWallCross(o.from.x, o.from.z, x, z)){ x=o.from.x; z=o.from.z; }   // Z111b barrel poking through/over a fortress wall: the round leaves from the hull side → the stone takes it
   m.position.set(x, y0, z);
   const sp = o.speed||60;
   const D=o.arcDist||0; let vy=0; if(!o.lockOn && !o.noArc && D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close (lock-on missiles arc themselves)
@@ -98,9 +99,11 @@ export function updateBullets(dt, now){
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim) groundHit(b.x, b.z, b.r||0.45); recycleBullet(i); continue; }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
-    if(!airborne) for(const bl of blocks){ if(bl===b.ignore) continue; if(inBlock(bl, b.x, b.z, b.r)){
+    const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
+    if(!airborne || low) for(const bl of blocks){ if(bl===b.ignore) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
       if(bl.kind==='obj' && b.owner==='e'){ blocked=true; break; }   // enemy fire never hurts their own objective
-      damageBlock(bl, b.dmg*structMul(b.type, bl)); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
+      if(bl.fort && b.owner==='e'){ ringPulse(b.mesh.position, 0xc89060, 0.9); blocked=true; break; }   // Z111b their own walls soak their fire — no damage to the stone
+      damageBlock(bl, b.dmg*structMul(b.type, bl)*(b.owner==='p'?siegeMul():1)); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
@@ -127,13 +130,14 @@ export function updateBullets(dt, now){
     } else { // enemy bullet
       const p=S.player;
       const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
-      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, b.x, b.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now, b.vx, b.vz);
+      const armK = b.inf ? INFANTRY.vsArmour : 1;                                    // Z111b a rifle round barely scratches armour — only rockets (RPG / ATGM) really hurt a tank
+      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, b.x, b.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg*armK, now, b.vx, b.vz);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
         else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }
         if(riders.length && Math.random()<0.45){ const rr=riders[(Math.random()*riders.length)|0]; if(rr&&!rr.dead) damageRider(rr, b.dmg); }   // a shot into the tank can wound an exposed rider
         hit=true; }
-      if(!hit && hitAllyTank(b.x, b.z, b.r, b.dmg)) hit=true;                       // Z104 our captured tanks take hits too
+      if(!hit && hitAllyTank(b.x, b.z, b.r, b.dmg*armK)) hit=true;                       // Z104 our captured tanks take hits too
       if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2){ damageAlly(s, (b.inf||!LETHAL.tankRoundKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
         if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }

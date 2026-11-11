@@ -1,7 +1,7 @@
 // combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS, LETHAL } from '../../config.js';
-import { MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, spawnPart, structMul, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
+import { MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
@@ -61,8 +61,8 @@ export function trySpell(){
 export function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length; updateSpellHUD(); sfx('click'); }
 // Z104 blast vs a man on foot: 1 = killed (inside the core), else the fraction of the blast damage he takes (fades to edgeMin at reach)
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
-export function aoeDamage(x,z,r,dmg,stun,now,type,air){
-  for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)); }   // blasts bring watchtowers down
+export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){
+  for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)*(siege||1)); }   // blasts bring watchtowers down
   for(const e of enemies.slice()){ if(e.def.air && !air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, q=dx*dx+dz*dz;
     if(e.def.inf){ const R=r*LETHAL.reach; if(q<R*R){ const k=infBlastK(Math.sqrt(q), r); if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, k>=1 ? e.hp+1 : dmg*k); } continue; }   // Z104 core = dead, ring = wounded
     if(q < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, dmg*(type?typeMul(type,armorOf(e))*envDmg(type):1)); } }
@@ -73,10 +73,10 @@ export function detonate(b){
     fireball({x:b.x,z:b.z}, 2.4); bigExplode({x:b.x,z:b.z}, 0xffc070, R/2.4); ringPulse({x:b.x,z:b.z}, 0xffffff, R*1.1); ringPulse({x:b.x,z:b.z}, 0xff8a3a, R*0.8);
     for(let k=0;k<18;k++){ const a=Math.random()*6.283, sp=6+Math.random()*10; spawnPart(b.x, heightAt(b.x,b.z)+1, b.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {tex:'fire', color:0xfff0c0, color2:0xff3a08, size:1.4, grow:1.6, life:0.5+Math.random()*0.3, grav:1, drag:2}); }
     deformCrater(b.x,b.z,2.2,0.5); decalScorch(b.x,b.z,R,1); S.shake=Math.min(4,S.shake+1.6); gradePass.uniforms.aberr.value=Math.max(gradePass.uniforms.aberr.value,0.006);
-    aoeDamage(b.x,b.z,R,b.aoeDmg||b.dmg,false,now,'TBX',true);
+    aoeDamage(b.x,b.z,R,b.aoeDmg||b.dmg,false,now,'TBX',true,siegeMul());
     for(const e of enemies){ if(e.def.air||e.def.bomber) continue; const d=Math.hypot(e.pos.x-b.x,e.pos.z-b.z); if(d<R){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2*(1-d/R)+0.8); e.burn.until=now+BALANCE.flame.duration*0.6; } }
     sfx('bigexplode'); return; }
-  aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
+  aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true,siegeMul()); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
 // enemy AoE that hits the PLAYER + CORE (mortar shells, bomber self-destruct, boss bombs)
 export function enemyGroundStrike(x,z,r,dmg,now){
   bigExplode({x,z}, 0xff7a3d, r/3); blastAllies(x,z,r,dmg); blastAllyTanks(x,z,r,dmg*0.8);

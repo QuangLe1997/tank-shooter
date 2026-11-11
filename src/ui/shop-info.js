@@ -1,5 +1,5 @@
 // ui/shop-info.js — Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas vs your gun
-import { DMG_TYPE, ROSTER } from '../../config.js';
+import { DMG_TYPE, ROSTER, FORT } from '../../config.js';
 import { GUNS, PROFILE, gunDmgMul, gunFireMul } from '../hub.js';
 
 // one short role line per gun (Vietnamese) + a colour family
@@ -21,7 +21,10 @@ export function gunRole(id){ const g=GUNS[id]||{};
 // how hard it hits each kind of target (×) — lobbed shells can't reach aircraft; FLAK shreds them
 export const ARMOR_VI=[['L','Xe nhẹ'],['M','Xe vừa'],['H','Xe nặng'],['A','Trực thăng']];
 export function gunEffect(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, arc=g.special==='arty'||g.special==='mortar'||g.special==='rocket';
-  return ARMOR_VI.map(([k,vi])=>{ let x=m[k]||1; if(k==='A'){ if(arc) x=0; else if(id==='flak') x*=ROSTER.aaBonus; } return { k, vi, x }; }); }
+  return ARMOR_VI.map(([k,vi])=>{ let x=m[k]||1; if(k==='A'){ if(arc) x=0; else if(id==='flak') x*=ROSTER.aaBonus; } return { k, vi, x }; })
+    .concat([{ k:'S', vi:'Công trình', x:m.struct||1 }]); }   // Z111b vs barricades, towers, camps (fortress walls: never below ×1)
+// Z111b siege: damage one round does to a fortress wall / gate
+export function gunSiege(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, k=Math.max(FORT.shotStructMin, m.struct||1); return { k, shot:Math.round(g.dmg*gunDmgMul(id)*(g.frags||1)*k), dps:Math.round(g.dmg*gunDmgMul(id)*(g.frags||1)*k/(g.fireCd*gunFireMul(id))) }; }
 export function effGrade(x){ return x<=0 ? { tx:'KHÔNG VỚI', c:'no' } : x>=1.25 ? { tx:'MẠNH', c:'good' } : x>=0.9 ? { tx:'TỐT', c:'ok' } : { tx:'YẾU', c:'bad' }; }
 // comparable numbers (mastery included) and the field-wide maxima used to scale the bars
 export function gunNums(id){ const g=GUNS[id]||{}, dMul=gunDmgMul(id), fMul=gunFireMul(id), dmg=g.dmg*dMul*(g.frags||1), rof=1/(g.fireCd*fMul);

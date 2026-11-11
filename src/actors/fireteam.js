@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -161,7 +161,7 @@ function allyMount(a, dt){ const F=TROOPS.fireteam, p=S.player, dx=p.pos.x-a.pos
   if(d>stand){ a.pos.x+=dx/d*F.sprint*dt; a.pos.z+=dz/d*F.sprint*dt; infPushBlocks(a.pos); a.facing=Math.atan2(dx,dz); }
   allyPose(a, Math.hypot(a.pos.x-ox,a.pos.z-oz), dt, false); poseSoldier(a.g, 'stand', dt); return true; }
 function allyPose(a, moved, dt, fired){ a.g.position.set(a.pos.x, heightAt(a.pos.x,a.pos.z)+(a.jy0||0), a.pos.z); a.g.rotation.y=a.facing; animateSoldier(a.g, moved/1.15, dt, fired);
-  a.bar.position.set(a.pos.x, TROOPS.look.barY+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); }
+  a.bar.position.set(a.pos.x, TROOPS.look.barY*stanceBarK(a.g)+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); }
 // loot on a soldier's back (a tiny copy of the item) — handed in at the rally point, or dropped where he falls
 function takeCarry(a, u){ const it=takePickup(u); if(!it) return; a.carry=it; const m=lootModel(it.def); m.scale.setScalar(0.32); m.position.set(0,1.32,-0.34); a.g.add(m); a.carryMesh=m;
   floatText('NHẶT ĐỒ → KHU TẬP KẾT', '#9be04a', {x:a.pos.x, y:heightAt(a.pos.x,a.pos.z)+3, z:a.pos.z}, 13); }

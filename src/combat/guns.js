@@ -1,6 +1,6 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
-import { DMG_TYPE, ARMOR, ENV, FORT, GIFT } from '../../config.js';
+import { DMG_TYPE, ARMOR, ENV, FORT, GIFT, LOOT } from '../../config.js';
 import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunReloadMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
@@ -19,6 +19,7 @@ export function conditionsText(){ const c=[];
 export function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='CRYO'?ENVMOD.cryo : type==='HE'?ENVMOD.he : 1; }
 export function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (m[armor]||1) : 1; }
 export function armorOf(e){ return e===boss ? 'H' : (ARMOR[e.type]||'M'); }
+export function siegeMul(){ const p=S.player; return p && p.buffUntil && performance.now()/1000 < (p.buffUntil.siege||0) ? LOOT.siege.mul : 1; }   // Z111b ĐẠN PHÁ THÀNH buff
 export function structMul(type, bl){ const m=type&&DMG_TYPE[type]; if(!m) return 1; if(bl.kind==='gate'||bl.kind==='fortwall') return Math.max(FORT.shotStructMin, m.struct); return (bl.kind==='tower' && m.tower) ? m.tower : m.struct; }   // Z111 fortress gate / wall: no gun is weak against it
 export function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r*weatherRange(); }
 export function bulletFalloff(b){ if(!b.reach || b.fall>=1) return 1; const d=Math.hypot(b.x-b.ox, b.z-b.oz), f=Math.max(0, Math.min(1, (d/b.reach-0.55)/0.45)); return 1 - f*(1-b.fall); }

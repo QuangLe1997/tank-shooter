@@ -187,3 +187,6 @@
   .shop-wallet .w-chip,.go-wallet .w-chip{font-size:13px;padding:4px 12px;box-shadow:none;} .shop-wallet .w-chip .ic{width:15px;height:15px;}
   .shop-wallet{margin:-2px 0 2px;}
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
+
+/* Z111b back-to-menu on the briefing screen (Esc does the same) */
+#brBack{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));z-index:2;}

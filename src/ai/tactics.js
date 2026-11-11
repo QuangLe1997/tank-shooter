@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -112,7 +112,9 @@ export function updateEnemies(dt, now){
     const to = _eTo.subVectors(target, e.pos); const d=to.length()||1; to.divideScalar(d);
     // movement
     let desire;
-    if(e.type==='scout'){ desire = e.def.speed; }
+    const _ex=e.exit ? fortExitDir(e) : null;                       // Z111b filing out of a fortress gate overrides everything
+    if(_ex){ to.set(_ex.x, 0, _ex.z); desire = def.speed*0.8; }
+    else if(e.type==='scout'){ desire = e.def.speed; }
     else if(e.aimT>0){ desire = 0; }                                   // ATGM gunner holds still while painting the target
     else if(e.unloading){ desire = 0; }                                // Z89 APC halted, ramp down, troops piling out
     else if(targetPlayer && e.ai && e.type!=='scout'){ const dst=aiDest(e, keep, _iq);   // Z95 the director's plan: ring slot / flank / cover / fall back
@@ -138,7 +140,8 @@ export function updateEnemies(dt, now){
     // fire — accuracy, rate, damage all scale up with stage (gentle for newcomers)
     // combat range scales with tank size (small tank → small range, large → large)
     const er = def.range * (e.r/1.5);
-    if(def.canShoot && now>e.fireAt && d < er){
+    if(def.canShoot && now>e.fireAt && d < er && fortWallCross(e.pos.x, e.pos.z, target.x, target.z)){ e.fireAt=now+0.5; }   // Z111b stone in the way: no direct shot through a fortress wall / shut gate
+    else if(def.canShoot && now>e.fireAt && d < er){
       const ds=diffScale(), A=BALANCE.aggro;
       // PROACTIVE-FIRE chance ramps with stage — early enemies hesitate, late ones fire relentlessly
       if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ e.fireAt = now + 0.35; }   // hold fire a beat
@@ -151,7 +154,7 @@ export function updateEnemies(dt, now){
         const rateMul = A.rateBase - A.rateDrop*ds;
         const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul') * diffDmgMul();
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
-        spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y)});
+        spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y), from:e.pos});
         tankRecoil(e.mesh, aimA, def.heavy?0.95:(def.accurate?0.7:0.45), e.facing);
         spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:col,size:def.heavy?1.4:1,life:0.1,grav:0,drag:7});
         sfx('enemyShoot', e.pos);

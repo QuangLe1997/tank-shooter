@@ -2,7 +2,9 @@
 import { TROOPS } from '../../config.js';
 import { RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, soldierLvl, spawnBullet, spawnPart, updateCrewBtn } from '../hub.js';
    // base 3 + TANK CREW upgrade (+1..3)
-export const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55]];   // roof posts (tank-local, before facing+scale)
+export const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55],                     // roof posts (tank-local, before facing+scale)
+  [-1.25,1.05,0.55],[1.25,1.05,0.55],[-1.25,1.05,-0.35],[1.25,1.05,-0.35],[-1.25,1.05,-1.25],[1.25,1.05,-1.25],   // Z111b fenders, both sides
+  [-0.55,1.1,-1.8],[0.55,1.1,-1.8]];                                                                          // rear deck → 12 seats, nobody stacked
 export let riders=[], ridersUnlocked=false;
 export function spawnRider(){ if(riders.length>=RIDER.cap) return; const g=makeSoldierMesh(); scene.add(g);
   const mhp=Math.round(RIDER.hp + Math.random()*16 - 6);   // each crew member is an individual

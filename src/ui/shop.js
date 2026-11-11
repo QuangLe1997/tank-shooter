@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunXpToNext, hide, ownGun, payCost, powerKit, powerRating, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMax, gunNums, gunReloadMul, gunRole, gunSiege, gunXpToNext, hide, ownGun, payCost, powerKit, powerRating, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, startGame, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -177,6 +177,7 @@ export function siPanelHTML(it){
       '<div class="sp-role" style="--rc:'+role.col+'">'+role.tx+'</div>'+ mastery+
       spBar('Sát thương / phát', edmg*(g.frags||1)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
       spBar('Sát thương / giây', dps+(cmp?delta(me.dps,cmp.dps):''), dps/M.dps)+ spBar('Tầm bắn', '×'+me.rng.toFixed(2)+(cmp?delta(me.rng,cmp.rng):''), me.rng/M.rng)+
+      (()=>{ const sg=gunSiege(it.id); return '<div class="sp-bl sp-siege">Phá tường thành<b>'+sg.shot+' / phát · '+sg.dps+' /s'+(sg.k>1?' ×'+sg.k.toFixed(1):'')+'</b></div>'; })()+
       '<div class="sp-bl">Băng đạn<b>'+g.mag+' viên</b></div><div class="sp-bl">Nạp đạn<b>'+erel.toFixed(1)+' s'+(cmp?delta(g.reload,GUNS[cur].reload,true):'')+'</b></div>'+
       '<div class="sp-sub">HIỆU QUẢ VỚI</div>'+eff+
       '<div class="sp-note">Bộ binh: mọi phát pháo xe tăng đều hạ gục 1 lính'+((g.aoe||g.aoeR)?' · nổ lan diệt cả cụm':'')+'</div>'+
