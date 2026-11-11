@@ -16,6 +16,10 @@ export const ARC_G = 110;                      // gravity for ballistic shells �
 export const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 // Z107 NATIVE = running as the installed Mac app (desktop/ Electron shell, Apple Silicon) → it can afford crisper shadows / more detail
 export const NATIVE = !!(typeof window!=='undefined' && window.__NATIVE);
+// Z109 APPLE = iPhone / iPad / Mac. Apple GPUs render in on-chip tiles, so multisampling and anisotropic filtering cost almost
+// nothing there → the sharp path (more pixels, MSAA, crisp ground) is safe; other phones keep the lean defaults.
+export const APPLE = typeof navigator!=='undefined' && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+export const MSAA = APPLE ? 4 : (MOBILE ? 0 : 2);   // samples on the post-processing buffer (the canvas' own antialias never reaches the screen through it)
 export const SHADOW_MAP = NATIVE ? 4096 : 2048;
 export const TANK_SCALE = 1.2;   // global tank visual+hitbox scale — bigger, more imposing tanks fill the arena better (bosses already huge, excluded)
 export const PLAYER_PAL = {hull:0x5e7a2e,turret:0x75933a,barrel:0x9bb04a,tread:0x2a3514,accent:0xe7b54a};   // player's buildTank default palette — used to tint death wreckage

@@ -1,7 +1,7 @@
 // world/ground.js — ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached)
 import * as THREE from 'three';
 import { RELIEF } from '../../config.js';
-import { ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
+import { APPLE, ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
 
 // ----------------------------- ARENA -----------------------------
 // ---- procedural PBR battlefield ground: tileable fBm albedo + height→normal, per-biome surface features, macro variation (no visible tiling) ----
@@ -61,8 +61,8 @@ export function groundMaps(b){
   else if(b.name==='MEADOW'){ const Gs=[]; for(let i=0;i<(MOBILE?5000:14000);i++) Gs.push([Math.random()*W,Math.random()*W,R(4,11)*W/1024,R(-3,3)*W/1024, Math.random()<0.3?'rgba(170,200,100,0.55)':(Math.random()<0.5?'rgba(80,110,46,0.55)':'rgba(60,84,34,0.6)')]);
     both((x,isH)=>{ x.lineWidth=1.2*W/1024; for(const [gx,gy,h,lean,cc] of Gs){ x.strokeStyle=isH?'rgba(255,255,255,0.35)':cc; x.beginPath(); x.moveTo(gx,gy); x.lineTo(gx+lean,gy-h); x.stroke(); } });
     pebbles(300,1,2.6,['rgba(110,100,84,0.8)'],'rgba(255,255,255,0.5)'); }
-  const map=new THREE.CanvasTexture(col); map.colorSpace=THREE.SRGBColorSpace; map.wrapS=map.wrapT=THREE.RepeatWrapping; map.anisotropy=MOBILE?2:4;
-  const nrm=_heightToNormal(hc, st.nrm); nrm.anisotropy=MOBILE?2:4;
+  const map=new THREE.CanvasTexture(col); map.colorSpace=THREE.SRGBColorSpace; map.wrapS=map.wrapT=THREE.RepeatWrapping; map.anisotropy=APPLE?8:(MOBILE?2:4);   // Z109 grazing camera → without it the far ground smears
+  const nrm=_heightToNormal(hc, st.nrm); nrm.anisotropy=APPLE?8:(MOBILE?2:4);
   const rep=(ARENA*2)/st.tile; map.repeat.set(rep,rep); nrm.repeat.set(rep,rep);
   const out={ map, nrm, rough:st.rough }; _gCache[b.name]=out; return out;
 }

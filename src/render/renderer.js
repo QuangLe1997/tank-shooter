@@ -7,7 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { ARENA, BIOME, MOBILE, S, SHADOW_MAP, arena } from '../hub.js';
+import { ARENA, BIOME, MOBILE, MSAA, S, SHADOW_MAP, arena } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -41,7 +41,7 @@ camera.position.set(0, 46, 34);
 camera.lookAt(0,0,0);
 // ---- CINEMATIC GRADE (last pass, display-referred): split-tone + contrast/saturation + vignette + film grain + shake-driven chromatic aberration ----
 export const GradeShader = {
-  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:0.035}, sat:{value:0.9}, contrast:{value:1.08},
+  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.016:0.035}, sat:{value:0.9}, contrast:{value:1.08},
     lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0} },
   vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
   fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sat,contrast,aberr,flash; uniform vec3 lift,gain; varying vec2 vUv;
@@ -58,7 +58,8 @@ export const GradeShader = {
       float n=fract(sin(dot(vUv*vec2(1271.3,3117.1)+time*61.7,vec2(12.9898,78.233)))*43758.5453); c+=(n-0.5)*grain;
       gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);
     }` };
-export const composer = new EffectComposer(renderer);
+export const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type:THREE.HalfFloatType, samples:MSAA }));   // Z109 MSAA on the buffer the scene is drawn into
+composer.setSize(innerWidth, innerHeight);
 export const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
 composer.addPass(renderPass);
 export const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.45, 0.42, 0.88);   // tighter radius: no blocky halos from the low mips

@@ -1,7 +1,7 @@
 // game/boot-gate.js — Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up,
 // and the first user gesture (audio + fullscreen).
 import * as THREE from 'three';
-import { ENEMY_DEFS, GUNS, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, buildTransport, camTarget, camera, chute, emberTex, enemyPool, getEnemyMesh, makeAllyTankMesh, makeCamoNet, makeCoverMesh, makeGunBarrel, makeMortarShell, makeRocketMesh, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat } from '../hub.js';
+import { ENEMY_DEFS, FS_SUPPORTED, GUNS, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, buildTransport, camTarget, camera, chute, emberTex, enemyPool, getEnemyMesh, makeAllyTankMesh, makeCamoNet, makeCoverMesh, makeGunBarrel, makeMortarShell, makeRocketMesh, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat } from '../hub.js';
 
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
@@ -12,6 +12,10 @@ export function setBootProgress(pct, step){ const f=document.getElementById('boo
   if(f){ f.style.animation='none'; f.style.transform='scaleX('+Math.max(0.04,Math.min(1,pct/100)).toFixed(3)+')'; } if(t) t.textContent=Math.round(pct)+'%';
   if(step!=null) document.querySelectorAll('#boot .ib-line').forEach(l=>{ if(+l.dataset.step<=step) l.classList.add('done'); }); }
 const _frame=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+// Z109 iPhone in a Safari tab: there is no Fullscreen API, the browser bars always stay — the only full-screen way is the home-screen
+// app (manifest + sw.js) or the native shell. Say so on the splash instead of promising "full screen" on tap.
+export const IOS_TAB = MOBILE && !FS_SUPPORTED && !navigator.standalone && /^https?:$/.test(location.protocol) && !(window.matchMedia && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches);
+if(IOS_TAB){ const n=document.getElementById('bootNote'); if(n){ n.textContent='Chơi toàn màn hình: bấm Chia sẻ → Thêm vào Màn hình chính'; n.classList.add('ios-tip'); } }
 // ---- WARM-UP: compile every material variant (day AND night lighting) + pre-build the enemy pools behind the intro →
 //      no shader-compile hitches when the first tank, explosion, wreck or night stage appears. Z101: done in small slices
 //      with a frame between each, so the intro keeps animating and the progress bar moves for real. ----

@@ -71,11 +71,16 @@
 #fortHud .fh-r b{font-weight:800;letter-spacing:.3px;} #fortHud .fh-r.main b{color:#ffb35a;}
 #fortHud .fh-r em{font-style:normal;font-weight:900;font-size:9.5px;color:#ffcf5a;} #fortHud em.ok{color:#9be04a;} #fortHud em.sl{color:#8fb4ff;} #fortHud em.br{color:#ff7a5a;}
 #fortHud .fh-r.done{opacity:.6;}
-body.touch #fortHud{left:auto;right:10px;top:142px;min-width:150px;padding:4px 7px 5px;} body.touch #fortHud .fh-r{font-size:9px;gap:6px;} body.touch #fortHud .fh-t{font-size:8px;}
+/* Z109 phone layout: under the radar (it used to slide 20px beneath it), compact; tiny phones drop it — the radar marks every fort */
+body.touch #fortHud{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 158px);min-width:0;max-width:156px;padding:4px 7px 5px;} body.touch #fortHud .fh-r{font-size:9px;gap:6px;line-height:1.4;} body.touch #fortHud .fh-t{font-size:8px;}
+@media (max-height:360px){ body.touch #fortHud{display:none;} }
 body.inmenu #fortHud{display:none;}
 /* Z107 phone command strip (muster · assault · paratroopers) */
 #mCmd{display:none;position:absolute;left:max(10px,env(safe-area-inset-left));top:40%;transform:translateY(-50%);flex-direction:column;gap:7px;pointer-events:auto;z-index:4;}
 body.touch #mCmd{display:flex;} body.inmenu #mCmd{display:none;}
+/* Z109 phone: the three orders sit in one row under the gun chip — as a column they ran down into the DASH pad */
+body.touch #mCmd{top:calc(max(8px,env(safe-area-inset-top)) + 80px);transform:none;flex-direction:row;gap:6px;}
+body.touch .mcm{width:46px;height:38px;border-radius:10px;} body.touch .mcm b{font-size:14px;} body.touch .mcm i{line-height:38px;border-radius:10px;}
 .mcm{position:relative;width:52px;height:44px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(10,14,10,.55);border:1px solid rgba(155,224,74,.45);color:#dff3c4;}
 .mcm b{font-size:16px;line-height:1;} .mcm span{font:800 7.5px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.06em;white-space:nowrap;}
 .mcm:active{transform:scale(.92);} #mAssault{border-color:rgba(255,138,58,.6);color:#ffd2b0;}
@@ -86,7 +91,7 @@ body.touch #mCmd{display:flex;} body.inmenu #mCmd{display:none;}
 i.pv{font-style:normal;font-weight:900;font-size:10px;letter-spacing:1px;padding:2px 7px;border-radius:6px;color:#0b0d09;background:var(--pc,#ffd24a);}
 #powHud{position:absolute;left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 62px);transform:translateX(-50%);font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#dfe6d4;
   padding:3px 9px;border-radius:8px;background:rgba(8,10,8,.55);border:1px solid rgba(255,255,255,.1);pointer-events:none;z-index:3;white-space:nowrap;}
-#powHud b{color:#fff;} body.inmenu #powHud{display:none;} body.touch #powHud{top:calc(max(6px,env(safe-area-inset-top)) + 50px);font-size:9px;}
+#powHud b{color:#fff;} body.inmenu #powHud{display:none;} body.touch #powHud{display:none;}   /* Z109 phone: the rating lives in the menus; mid-battle it sat under the objective and the radio */
 .bs-pw{font-size:9px;font-weight:900;letter-spacing:.6px;color:var(--pc,#ffd24a);padding:0 9px;}
 .bs-you{display:inline-flex;align-items:center;gap:5px;margin-left:8px;} .bs-you b{color:#fff;}
 .sp-pw{font-size:11px;font-weight:800;letter-spacing:.6px;color:#dfe6d4;padding:6px 9px;border-radius:8px;background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.28);}

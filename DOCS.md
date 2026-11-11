@@ -276,6 +276,17 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
 - **Z107 NGÂN SÁCH VẼ (`render/lod.js`, `LOD`):** chỉ lính trong 26 m quanh xe đổ bóng; lính gác tháp / tường ngoài 70 m không vẽ; thanh máu địch chỉ hiện khi bị thương (tinh nhuệ, tướng luôn hiện).
 - **Z107 BẢN APP MAC:** `desktop/` (Electron, arm64, offline) — `npm run mac` build và cài `~/Applications/Steel Siege.app`; chạy trên Metal, bóng đổ 4096.
 - **Z108 BẢN IPHONE/IPAD:** (1) *Web app trên Màn hình chính*: `manifest.webmanifest` + `assets/icons/` + `sw.js` (chỉ đăng ký trên https; `?sw` để thử ở localhost). File game luôn lấy từ mạng khi còn mạng, kể cả mạng chậm; cache chỉ dùng khi mất mạng. Nhờ vậy module cũ và mới không bao giờ bị trộn. three.js và phông chữ lấy từ cache trước. Ảnh trong `assets/` trả từ cache ngay rồi làm mới nền. (2) *App native*: `mobile/` (Capacitor 8, WKWebView trên Metal). Lệnh `cd mobile && npm run ios` gói game vào `www/` qua `tools/stage-offline.mjs` (dùng chung với bản Mac), đồng bộ vào `mobile/ios/` rồi mở Xcode; cần Xcode bản đầy đủ. Vỏ native (`SceneDelegate.swift` › `GameViewController`, `Info.plist`) bật Game Mode, khoá ngang, ẩn thanh trạng thái và thanh Home, chặn vuốt mép, giữ màn hình sáng. Xem `mobile/README.md`.
+- **Z109 HÌNH NÉT + HUD ĐIỆN THOẠI:**
+  - *Thiết bị Apple* (`APPLE` trong `core/config.js`; GPU kiến trúc tile nên MSAA và lọc dị hướng gần như miễn phí):
+    - iPhone vẽ ở ×2 thay vì ×1,5 (`dprCap`: trần 2, ngân sách 2,4 triệu điểm ảnh); bộ tự hạ chất lượng theo fps vẫn giữ.
+    - Khử răng cưa MSAA ×4 trên bộ đệm hậu kỳ (`MSAA`: Apple 4, máy tính khác 2, điện thoại khác 0). Trước đây `antialias` của canvas không có tác dụng vì mọi khung hình đều đi qua EffectComposer.
+    - Mặt đất lọc dị hướng ×8.
+  - *Mọi điện thoại:* hạt nhiễu phim giảm còn 0,016.
+  - *HUD ngang trên điện thoại:*
+    - 3 nút lệnh xếp thành hàng dưới ô súng (trước đè nút LƯỚT);
+    - bảng đại bản doanh nằm dưới radar (trước bị radar che), ẩn khi màn hình cao ≤ 360 px;
+    - ẩn dòng sức mạnh trong trận (trước đè mục tiêu và radio).
+  - *Tab Safari trên iPhone:* màn chào hướng dẫn "Thêm vào Màn hình chính" để chơi toàn màn hình (`IOS_TAB`).
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

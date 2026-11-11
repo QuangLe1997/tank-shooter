@@ -1,5 +1,5 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
-import { BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, composer, doResize, master, musicBus, musicSrc, muted, renderer, setIcon, shaper, songBuf, verbSend } from '../hub.js';
+import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, composer, doResize, master, musicBus, musicSrc, muted, renderer, setIcon, shaper, songBuf, verbSend } from '../hub.js';
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
 export const ENG={ on:false, nodes:null, rpm:0 };
@@ -38,9 +38,10 @@ export function haptic(ms){ if(!MOBILE || muted || !navigator.vibrate) return; c
 export function setMuted(m){ __set_muted(m); if(master) master.gain.value = m?0:0.5; const b=document.querySelector('#muteBtn .ic'); if(b) setIcon(b, m?'mute':'sound'); }
 export function setMusicOn(on){ if(musicBus) musicBus.gain.value = on?0.5:0; }                                  // music track on/off (independent of SFX)
 // Touch devices get a PIXEL BUDGET rather than a fixed ratio: a big tablet at dpr 2 asks for ~4× an
-// iPhone's fill rate and drops frames with the bloom pass on. Budget ≈1.8M drawn pixels, never below 1×.
+// iPhone's fill rate and drops frames with the bloom pass on. Budget ≈1.8M drawn pixels (Z109 Apple: 2.4M, up to 2× → an iPhone
+// draws at 2× instead of 1.5×, a third sharper; the FPS governor in game/loop.js still steps down if a phone can't hold 60), never below 1×.
 export function dprCap(){ const d=devicePixelRatio||1; if(!MOBILE) return Math.min(d,2);
-  const px=Math.max(1, innerWidth*innerHeight); return Math.max(1, Math.min(d, 1.5, Math.sqrt(1.8e6/px))); }
+  const px=Math.max(1, innerWidth*innerHeight); return Math.max(1, Math.min(d, APPLE?2:1.5, Math.sqrt((APPLE?2.4e6:1.8e6)/px))); }
 export function setQuality(q){ S.dpr = q==='low' ? (MOBILE?0.8:1) : dprCap();   // explicit Low/High override (adaptive FPS may still lower High later)
   try{ renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }catch(e){} }
 export function startMusic(){
