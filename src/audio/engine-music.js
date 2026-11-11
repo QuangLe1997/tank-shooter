@@ -36,7 +36,7 @@ export function updateEngine(dt){
 export let _hapT=0;
 export function haptic(ms){ if(!MOBILE || muted || !navigator.vibrate) return; const t=performance.now(); if(t-_hapT<60) return; _hapT=t; try{ navigator.vibrate(Array.isArray(ms)?ms:Math.max(5,Math.round(ms))); }catch(e){} }   // device rumble (Android)
 export function setMuted(m){ __set_muted(m); if(master) master.gain.value = m?0:0.5; const b=document.querySelector('#muteBtn .ic'); if(b) setIcon(b, m?'mute':'sound'); }
-export function setMusicOn(on){ if(musicBus) musicBus.gain.value = on?0.5:0; }                                  // music track on/off (independent of SFX)
+export function setMusicOn(on){ if(musicBus) musicBus.gain.value = on?0.5:0; for(const b of document.querySelectorAll('#musBtn .ic, #musBtnP .ic')) setIcon(b, on?'music':'musicOff'); const l=document.getElementById('musLblP'); if(l) l.textContent='NHẠC NỀN: '+(on?'BẬT':'TẮT'); }                                  // music track on/off (independent of SFX)
 // Touch devices get a PIXEL BUDGET rather than a fixed ratio: a big tablet at dpr 2 asks for ~4× an
 // iPhone's fill rate and drops frames with the bloom pass on. Budget ≈1.8M drawn pixels (Z109 Apple: 2.4M, up to 2× → an iPhone
 // draws at 2× instead of 1.5×, a third sharper; the FPS governor in game/loop.js still steps down if a phone can't hold 60), never below 1×.
@@ -48,7 +48,7 @@ export function startMusic(){
   const a=audio(); if(!a || musicSrc) return;
   try{
     if(!songBuf) __set_songBuf(renderSong(a));
-    if(!musicBus){ __set_musicBus(a.createGain()); musicBus.gain.value=(PROFILE.music===false?0:0.5); musicBus.connect(master); }
+    if(!musicBus){ __set_musicBus(a.createGain()); musicBus.connect(master); } setMusicOn(PROFILE.music!==false);   // Z111 also syncs the HUD music button icon
     __set_musicSrc(a.createBufferSource()); musicSrc.buffer=songBuf; musicSrc.loop=true; musicSrc.connect(musicBus); musicSrc.start();
   }catch(e){}
 }

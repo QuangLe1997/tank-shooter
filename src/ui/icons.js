@@ -22,6 +22,8 @@ export const GLYPH={
   snow:'<path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2L3.8 16.8"/><path d="M12 6l-2.4-1.6M12 6l2.4-1.6M12 18l-2.4 1.6M12 18l2.4 1.6"/>',
   sound:'<path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4Z"/><path d="M15.5 8.6a4.6 4.6 0 0 1 0 6.8M18 6a8 8 0 0 1 0 12"/>',
   mute:'<path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4Z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  music:'<path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/>',   // Z111 background music on
+  musicOff:'<path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/><path d="M3.5 3.5l17 17"/>',
   pause:'<rect x="6.5" y="5" width="3.4" height="14" rx="1"/><rect x="14.1" y="5" width="3.4" height="14" rx="1"/>',
   hourglass:'<path d="M6 3.2h12M6 20.8h12M7.5 3.2c0 4.6 4.5 5.8 4.5 8.8s-4.5 4.2-4.5 8.8M16.5 3.2c0 4.6-4.5 5.8-4.5 8.8s4.5 4.2 4.5 8.8"/>',
   emp:'<circle cx="12" cy="12" r="2"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5M12 5.5A6.5 6.5 0 0 0 5.5 12M12 18.5a6.5 6.5 0 0 1-6.5-6.5M12 18.5a6.5 6.5 0 0 0 6.5-6.5"/>',

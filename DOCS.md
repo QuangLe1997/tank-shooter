@@ -293,7 +293,13 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
     - cộng thêm độ lùi lên trên độ zoom người chơi chọn, tối đa +0,6;
     - từng nguồn: tốc độ xe +0,15; đông địch trong 42 m +0,32; gần thành chưa chiếm +0,18; trùm trong 70 m +0,3;
     - lấy mẫu 4 lần/giây, chuyển mượt; không bao giờ tự xoay.
-  - *iPhone nhỏ:* màn rộng ≤ 720 px thì cụm nút camera chuyển xuống cạnh radar; màn cao ≤ 380 px thì ẩn bảng thành.
+  - *iPhone nhỏ:* màn rộng ≤ 720 px thì cụm nút camera chuyển xuống cạnh radar; màn cao ≤ 380 px thì ẩn bảng thành (Z111: nâng lên ≤ 400 px, vì ở 852×393 bảng thành còn đè cột nút súng/kỹ năng).
+- **Z111 CÔNG THÀNH DỄ HƠN + NÚT NHẠC NỀN:**
+  - *Máu cổng (`FORT.tiers[].gate`):* ĐỒN 1500 → 600, PHÁO ĐÀI 2300 → 950, THÀNH 3600 → 1450 (vẫn nhân +22%/màn, độ khó, vòng lặp).
+  - *Tường:* mỗi đoạn tường có 0,8× máu cổng (trước 1,25×) và nhận đủ sát thương đạn (`wallShotK` 0,5 → 1).
+  - *Mọi súng bắn cổng/tường ít nhất ×1* (`FORT.shotStructMin`, trong `structMul`): súng trường hết bị ×0,6 của đạn KIN. Súng trường mở cổng ĐỒN màn 1 trong 43 phát (trước ~180 phát; tường trước ~450 phát).
+  - *Húc (`FORT.ram`):* từ tốc độ 6 (trước 8), đủ lực ở 15 (trước 20); mỗi cú lấy 50% cổng (trước 32%) / 55% đoạn tường (trước 22%) → 2 cú là vỡ.
+  - *Nhạc nền:* nút nốt nhạc cạnh nút loa (desktop), phím `M`, và nút "NHẠC NỀN: BẬT/TẮT" trong menu ⏸ (điện thoại, vì hàng nút trên cùng đã hết chỗ). Cùng một cài đặt với Cài đặt → Nhạc (`PROFILE.music`); tiếng súng, tiếng nổ vẫn giữ.
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

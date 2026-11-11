@@ -1,6 +1,6 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
-import { MOBILE, PROFILE, S, SPELLS, VIEW, audio, camera, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
+import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
 addEventListener('keydown', e=>{
@@ -115,7 +115,8 @@ addEventListener('keydown', e=>{ if(document.body.classList.contains('typing') |
   else if(k==='=' || k==='+'){ zoomStep(-1); }           // closer
   else if(k==='['){ rotStep(-1); } else if(k===']'){ rotStep(1); }
   else if(k==='c' || k==='C'){ if(!e.repeat){ setCamAuto(!S.camAuto); sfx('click'); } }
-  else if(k==='v' || k==='V'){ if(!e.repeat) camReset(); } });
+  else if(k==='v' || k==='V'){ if(!e.repeat) camReset(); }
+  else if(k==='m' || k==='M'){ if(!e.repeat) toggleMusic(); } });
 export const mFireEl=document.getElementById('mFire');
 if(mFireEl){
   mFireEl.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); S.firing=true; mFireEl.classList.add('firing');
@@ -128,6 +129,14 @@ export const muteBtnEl=document.getElementById('muteBtn');
 export const toggleMute=e=>{ if(e){e.preventDefault();e.stopPropagation();} audio(); setMuted(!muted); PROFILE.sound=!muted; saveProfile(); };
 muteBtnEl.addEventListener('click', toggleMute);
 muteBtnEl.addEventListener('touchstart', toggleMute, {passive:false});
+// Z111 background-music toggle (sound effects stay on) — button next to the speaker + the M key; same setting as Cài đặt → Nhạc
+export const musBtnEl=document.getElementById('musBtn');
+export const toggleMusic=e=>{ if(e){e.preventDefault();e.stopPropagation();} _setMus(PROFILE.music===false); };
+musBtnEl.addEventListener('click', toggleMusic);
+musBtnEl.addEventListener('touchstart', toggleMusic, {passive:false});
+export const musBtnPEl=document.getElementById('musBtnP');   // the same switch in the ⏸ menu (the phone's HUD row has no room)
+musBtnPEl.addEventListener('click', toggleMusic);
+musBtnPEl.addEventListener('touchstart', toggleMusic, {passive:false});
 // fullscreen (immersive, like a video). iPhone Safari lacks the API → button is a graceful no-op there.
 export function isFs(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
 export function reqFs(){ const el=document.documentElement; const r=el.requestFullscreen||el.webkitRequestFullscreen;

@@ -397,7 +397,7 @@ export const KEYS_HELP = [
   [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
   [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
   [['X'], 'XUNG PHONG — cả đội đánh thẳng vào thành gần nhất', 'QUÂN TA'], [['B'], 'Gọi trực thăng thả lính dù xuống cạnh xe', 'QUÂN TA'],
-  [['Esc','P'], 'Tạm dừng', 'KHÁC'], [['−','='], 'Camera: thu xa · phóng gần', 'CAMERA'], [['[',']'], 'Camera: xoay trái · xoay phải 45°', 'CAMERA'], [['C'], 'Bật / tắt CAMERA TỰ ĐỘNG (tự lùi xa khi đông địch, chạy nhanh, gần thành, gặp trùm)', 'CAMERA'], [['V'], 'Đặt lại camera (độ zoom mặc định, hướng thẳng)', 'CAMERA'],
+  [['Esc','P'], 'Tạm dừng', 'KHÁC'], [['−','='], 'Camera: thu xa · phóng gần', 'CAMERA'], [['[',']'], 'Camera: xoay trái · xoay phải 45°', 'CAMERA'], [['C'], 'Bật / tắt CAMERA TỰ ĐỘNG (tự lùi xa khi đông địch, chạy nhanh, gần thành, gặp trùm)', 'CAMERA'], [['V'], 'Đặt lại camera (độ zoom mặc định, hướng thẳng)', 'CAMERA'], [['M'], 'Bật / tắt nhạc nền (tiếng súng, tiếng nổ vẫn giữ)', 'KHÁC'],
   [['H'], 'Mở / đóng bảng phím tắt này', 'KHÁC'], [['Enter'], 'Xác nhận bố trí trận địa', 'KHÁC'] ];
 // Z110 AUTO CAMERA — on top of the zoom you picked, the camera pulls back by itself when the fight needs a wider view and eases
 // back in when it's calm: speed, enemies close by, a fortress ahead, the boss. It never rotates by itself (screen-relative driving).
@@ -405,7 +405,7 @@ export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, 
 export const TOUCH_HELP = [
   ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — nòng gắn đầu xe, xe hướng nào bắn hướng đó'], ['Đẩy nhẹ cần', 'Chỉ xoay xe ngắm, không chạy'],
   ['BẮN (trái)', 'Giữ để bắn · tự bắn khi có mục tiêu trước mũi xe'], ['LƯỚT', 'Bứt tốc né đòn'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
-  ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['AUTO', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút xem bảng điều khiển'] ];
+  ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['AUTO', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
 // Z107 FORTRESSES (ĐẠI BẢN DOANH) — every stage the enemy holds 3–4 walled strongholds, each with a name and a commander.
 //   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate that must be shot
 //   continuously to break. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
@@ -413,15 +413,15 @@ export const TOUCH_HELP = [
 //   stays sealed until the others have fallen, and its commander is the stage boss.
 export const FORT = {
   count:[3,3,4,4,4], countMobile:[3,3,3,3,4],
-  tiers:{ 1:{ r:[22,25], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:1500, cover:[5,7],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
-          2:{ r:[25,28], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:2300, cover:[7,9],  name:'PHÁO ĐÀI' },
-          3:{ r:[29,32], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:3600, cover:[9,12], name:'THÀNH' } },
+  tiers:{ 1:{ r:[22,25], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[5,7],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
+          2:{ r:[25,28], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[7,9],  name:'PHÁO ĐÀI' },
+          3:{ r:[29,32], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[9,12], name:'THÀNH' } },
   gatePerStage:0.22, mobileMul:0.6, wallH:4.4, wallT:1.6, gateW:7.5, seg:3,
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'chief', cmdHp:6, cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards
-  ram:{ minV:8, fullV:20, gate:0.32, wall:0.22, buffMul:1.5, cd:0.45 },   // Z107 RAMMING: a full-speed hit takes 32% of a gate / 22% of a wall section → ~3 rams + a few shots open a gate
-  wallHpK:1.25, wallShotK:0.5,                                          // a wall section has 1.25× the gate's HP and shrugs off half of every shell → gates break first
+  ram:{ minV:6, fullV:15, gate:0.5, wall:0.55, buffMul:1.5, cd:0.4 },    // Z111 RAMMING: a hit at 15+ takes 50% of a gate / 55% of a wall section → 2 rams open either
+  wallHpK:0.8, wallShotK:1, shotStructMin:1,                            // Z111 easier sieges: a wall section has 0.8× the gate's HP and takes full shell damage; vs gate/wall every gun hits at least ×1 (the rifle's KIN ×0.6 no longer applies)
   loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },
   names:['HẮC SƠN','ƯNG SẮT','ĐẦU LÂU','LANG NHA','XÍCH VĨ','BÃO LỬA','CỔ THẠCH','HẮC LONG','THIẾT BÍCH','HUYẾT NGUYỆT'],
   chiefs:['BÁ ĐỒ','HOẢ LANG','THIẾT ƯNG','KHÔ LÂU','HẮC HỔ','BÃO CÁT','ĐỘC NHÃN','SẮT ĐÁ'] };

@@ -73,7 +73,7 @@
 #fortHud .fh-r.done{opacity:.6;}
 /* Z109 phone layout: under the radar (it used to slide 20px beneath it), compact; tiny phones drop it — the radar marks every fort */
 body.touch #fortHud{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 158px);min-width:0;max-width:156px;padding:4px 7px 5px;} body.touch #fortHud .fh-r{font-size:9px;gap:6px;line-height:1.4;} body.touch #fortHud .fh-t{font-size:8px;}
-@media (max-height:380px){ body.touch #fortHud{display:none;} }   /* ≤380 tall (iPhone SE / mini / X) it would touch the gun buttons */
+@media (max-height:400px){ body.touch #fortHud{display:none;} }   /* ≤400 tall (iPhone SE / mini / X / 15 / 16) it would touch the gun buttons — the radar marks the forts */
 /* Z110 narrow phones (≤720 wide): the zoom / rotate / AUTO trio leaves the top row (it ran into the objective) and sits left of the radar */
 @media (max-width:720px){ body.touch #camCtl{top:calc(max(8px,env(safe-area-inset-top)) + 70px);right:calc(max(12px,env(safe-area-inset-right)) + 112px);} }
 body.inmenu #fortHud{display:none;}

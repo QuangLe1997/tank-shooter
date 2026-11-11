@@ -54,6 +54,9 @@
   #fsBtn{top:max(12px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 50px);
     width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;}
   #fsBtn .ic{width:20px;height:20px;color:var(--ink);}
+  #musBtn{top:max(12px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 100px);
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;}
+  #musBtn .ic{width:20px;height:20px;color:var(--ink);}
   #weaponchip.reloading{color:var(--danger);border-color:rgba(224,96,58,.5);}
   /* gun inventory list (above weapon chip) */
   #gunlist{position:absolute;left:50%;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 36px);transform:translateX(-50%);
