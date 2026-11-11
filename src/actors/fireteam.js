@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -40,11 +40,17 @@ export function setRole(a, role){ a.role=role||'rifle'; const u=a.g.userData, M=
   else if(a.role==='mortar'){ const t=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.85,8), M); t.position.set(0.14,0.52,-0.34); t.rotation.x=0.35; u.up.add(t); const pl=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.04,10), M); pl.position.set(-0.12,0.42,-0.36); pl.rotation.x=Math.PI/2; u.up.add(pl); }
   else if(a.role==='sapper'){ const S2=new THREE.MeshStandardMaterial({ color:0x6a5a3a, roughness:0.9 }); for(const sx of [-0.13,0.13]){ const s=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.2,0.12), S2); s.position.set(sx,0.28,-0.3); u.up.add(s); } } }
 export function damageAlly(a, dmg){ if(a.dead) return; a.hp-=dmg; if(a.hp<=0) dropCarry(a, false); a.hitT=0.16; const t=a.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
-  if(a.hp<=0){ a.dead=true; const i=FT.indexOf(a); if(i>=0) FT.splice(i,1); burst(a.pos, 0x2c331c, 5, 4, {y:0.8, life:0.7, size:1.1, smoke:true, op:0.4}); floatText('✝','#ff9a7a',{x:a.pos.x,y:1.7,z:a.pos.z},16);
-    scene.remove(a.g); scene.remove(a.bar); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); } }
+  if(a.hp<=0){ a.dead=true; const i=FT.indexOf(a); if(i>=0) FT.splice(i,1); floatText('✝','#ff9a7a',{x:a.pos.x,y:1.7,z:a.pos.z},16); scene.remove(a.bar);
+    if(dmg>=100){ burst(a.pos, 0x2c331c, 6, 5, {y:0.9, life:0.7, size:1.1, smoke:true, op:0.45}); for(let k=0;k<8;k++){ const an=Math.random()*6.283, sp=2+Math.random()*5; spawnPart(a.pos.x, heightAt(a.pos.x,a.pos.z)+0.8, a.pos.z, Math.cos(an)*sp, 2+Math.random()*4, Math.sin(an)*sp, {color:[0x4a5a30,0x3a3f26,0x6a2a1c][k%3], size:0.16+Math.random()*0.18, life:0.7, grav:-18, drag:1}); } scene.remove(a.g); }   // Z113 a tank round tears him apart
+    else { layOut(a.g, a.pos.x, a.pos.z); ALLY_DEAD.push({ g:a.g, t:0, dir:Math.random()<0.5?-1:1 }); }                                                         // Z113 shot: he falls and lies there a while
+    FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); } }
+export const ALLY_DEAD=[];
+export function updateAllyDead(dt){ for(let i=ALLY_DEAD.length-1;i>=0;i--){ const d=ALLY_DEAD[i], m=d.g; d.t+=dt; const k=Math.min(1, d.t/0.45);
+  m.rotation.x=-k*k*Math.PI/2*0.96; m.rotation.z=d.dir*k*0.25; if(m.userData.arms) m.userData.arms.rotation.x=-k*2.5;
+  if(d.t>3.6){ m.position.y-=dt*0.6; if(m.userData.droppedGun) m.userData.droppedGun.position.y-=dt*0.6; if(d.t>4.4){ scene.remove(m); if(m.userData.droppedGun) scene.remove(m.userData.droppedGun); ALLY_DEAD.splice(i,1); } } } }
 // Z104 an enemy blast (mortar, RPG, artillery, bomb) among OUR men on foot: inside the core = killed, the ring = wounded
 export function blastAllies(x, z, r, dmg){ for(const a of FT.slice()){ const k=infBlastK(Math.hypot(a.pos.x-x, a.pos.z-z), r); if(k>0) damageAlly(a, k>=1 ? 999 : dmg*k); } }
-export function clearFireteam(){ S.recall=false; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; if(FT_APC){ scene.remove(FT_APC.mesh); FT_APC=null; } updateCrewBtn(); }
+export function clearFireteam(){ for(const d of ALLY_DEAD){ scene.remove(d.g); if(d.g.userData.droppedGun) scene.remove(d.g.userData.droppedGun); } ALLY_DEAD.length=0; S.recall=false; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; if(FT_APC){ scene.remove(FT_APC.mesh); FT_APC=null; } updateCrewBtn(); }
 export function infPushBlocks(pos){ for(const bl of blocks){ if(bl.obb){ const s_=Math.sin(bl.obb.f), c_=Math.cos(bl.obb.f), dx_=pos.x-bl.x, dz_=pos.z-bl.z, al=dx_*s_+dz_*c_, ac=dx_*c_-dz_*s_, hw=bl.obb.hw+0.4; if(Math.abs(al)<bl.obb.hl+0.3 && Math.abs(ac)<hw){ const push=(ac<0?-hw:hw)-ac; pos.x+=c_*push; pos.z-=s_*push; } continue; }
   const bx=pos.x-bl.x, bz=pos.z-bl.z, q=bx*bx+bz*bz, rr=bl.r+0.45; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); pos.x=bl.x+bx/qq*rr; pos.z=bl.z+bz/qq*rr; } } }
 // Z104 AUTONOMOUS SQUAD — soldiers are no longer leashed to the tank. Each one re-plans a few times a second, in priority order:

@@ -49,6 +49,9 @@ export function decalCrater(x, z, r, k){                                        
   c.fillStyle=ring; c.beginPath(); c.arc(px,pz,R*0.95,0,7); c.fill();
   DECAL.dirtyS=true;
 }
+export function decalBlood(x, z, r){                                                   // Z113 a dark pool under a fallen man (fades with the treads)
+  const c=DECAL.dx, px=_ddx(x), pz=_ddz(z), R=Math.max(1.5,r*DECAL.dppu); const g=c.createRadialGradient(px,pz,0,px,pz,R); g.addColorStop(0,'rgba(70,10,8,0.6)'); g.addColorStop(1,'rgba(60,8,6,0)');
+  c.fillStyle=g; c.beginPath(); c.ellipse(px,pz,R,R*0.7,Math.random()*3,0,7); c.fill(); DECAL.dirtyD=true; }
 export function decalDirt(x, z, r){                                                    // bullet strike / near miss: small dark puff (fades with treads)
   const c=DECAL.dx, px=_ddx(x), pz=_ddz(z), R=Math.max(1.2,r*DECAL.dppu);
   c.fillStyle=_treadCol+'0.32)'; c.beginPath(); c.arc(px,pz,R,0,7); c.fill(); DECAL.dirtyD=true;

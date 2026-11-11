@@ -1,6 +1,6 @@
 // fx/dying.js — KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then the magazine goes
-import { TANK_DEATH } from '../../config.js';
-import { aoeDamage, burst, decalScorch, enemyPool, fireball, heightAt, sfx, spawnPart, spawnWreck, tankExplode } from '../hub.js';
+import { TANK_DEATH, TANK_BLAST } from '../../config.js';
+import { aoeDamage, blastAllies, burst, damageEnemy, damageSoldier, decalScorch, enemies, enemyPool, fireball, heightAt, sfx, soldiers, spawnPart, spawnWreck, tankExplode } from '../hub.js';
 
 // ---- KNOCKED-OUT tanks: engine dies, fire bursts from the hatches with thick black smoke, a few rounds pop… then the magazine goes ----
 export const DYING=[];
@@ -18,6 +18,9 @@ export function updateDying(dt){
     if(Math.random()<0.7) spawnPart(x+(Math.random()-0.5)*s, gy+2.4*s, z+(Math.random()-0.5)*s, 0.6+(Math.random()-0.5), 2.4+Math.random()*1.5, 0.4+(Math.random()-0.5), {color:0x15120f, size:(1.3+k)*s, life:1.8, smoke:true, grav:0.4, drag:0.8, grow:1.8*s, op:0.6});
     d.popT-=dt; if(d.popT<=0){ d.popT=0.18+Math.random()*0.3; burst({x:x+(Math.random()-0.5)*s, z:z+(Math.random()-0.5)*s}, 0xffe6a0, 6, 6, {y:gy+1.8*s, life:0.22, size:0.35, grav:-10, drag:2}); m.position.x=x+(Math.random()-0.5)*0.12; sfx('hit', e.pos); }   // ammo cooking off
     if(d.t>=d.dur){ if(e.def.pyro){ fireball(e.pos, 1.8); aoeDamage(e.pos.x, e.pos.z, 6, 40, false, performance.now()/1000, 'FIRE'); decalScorch(e.pos.x,e.pos.z,5,1); }   // the fuel tanks go up
+      { const R=TANK_BLAST.r*s, B=TANK_BLAST;                                                                                   // Z113 the blast kills the men standing around it
+        for(const o of enemies.slice()){ if(!o.def.inf) continue; const dd=Math.hypot(o.pos.x-x, o.pos.z-z); if(dd<R){ o._blast={ x, z }; o._fx='blast'; damageEnemy(o, B.dmg*(1-(1-B.edge)*dd/R)); } }
+        blastAllies(x, z, R, B.dmg*0.6); for(const so of soldiers.slice()) if(Math.hypot(so.pos.x-x, so.pos.z-z)<R) damageSoldier(so, B.dmg*0.5); }
       tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, s, e._fx||'fire'); spawnWreck(e.pos, e.facing, s, e.def.pal, d.fx==='blast'||d.fx==='pierce'||Math.random()<0.65);   // heavy shells always throw the turret
       m.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); DYING.splice(i,1); } }
 }

@@ -115,13 +115,28 @@ export function animateSoldier(g, dist, dt, firing){
 const _ST={ stand:{ rx:0, y:0, z:0, up:0, arm:0, k:0 }, crouch:{ rx:0, y:0, z:0, up:0.15, arm:0, k:1 }, prone:{ rx:1.42, y:0.17, z:-0.55, up:-0.32, arm:-1.08, k:2 } };
 // Z111b HP bar height follows the stance: a man lying flat to shoot had his bar hanging 2 m over him → looked like a corpse with an HP bar
 export function stanceBarK(g){ const s=g.userData.stance; return s==='prone' ? 0.42 : s==='crouch' ? 0.74 : 1; }
-export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) return; const T=_ST[stance]||_ST.stand, P=u.pose||(u.pose={ rx:0, y:0, z:0, up:0, arm:0 }), f=1-Math.exp(-dt*9);
+// Z113 stances blend as WEIGHTS — legs included (they used to snap to the kneel / prone angles in one frame) — and go through the knee:
+// stand → kneel → lie down, lie → kneel → stand up. A new stance must be asked for ~0.35 s before he commits (no flicker).
+const _LEG={ crouch:[[-1.35,1.35],[0.25,1.7]], prone:[[0.05,0.12],[0.05,0.12]] };
+export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) return; const P=u.pose||(u.pose={ rx:0, y:0, z:0, up:0, arm:0, kw:0, pw:0 });
+  if(u.stance && stance!==u.stance){ u.stAsk=(u.stAsk||0)+dt; if(u.stAsk<0.35) stance=u.stance; else u.stAsk=0; } else u.stAsk=0;
+  let eff=stance; if(stance==='prone' && P.pw<0.05 && P.kw<0.65) eff='crouch'; else if(stance==='stand' && P.pw>0.35) eff='crouch';   // via the knee
+  const T=_ST[eff]||_ST.stand, f=1-Math.exp(-dt*6.5), fw=Math.min(1, dt*4.2);
   for(const k of ['rx','y','z','up','arm']) P[k]+=(T[k]-P[k])*f;
+  P.kw += ((eff==='crouch'?1:0)-P.kw)*fw; P.pw += ((eff==='prone'?1:0)-P.pw)*fw; const sw=P.kw+P.pw; if(sw>1){ P.kw/=sw; P.pw/=sw; }
   u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up; if(u.arms) u.arms.rotation.x=P.arm;
-  u.stance=stance; const L=u.legs;
-  if(T.k===1){ u.up.position.y=0.5; L[0].hip.rotation.x=-1.35; L[0].knee.rotation.x=1.35; L[1].hip.rotation.x=0.25; L[1].knee.rotation.x=1.7; }   // one knee down
-  else if(T.k===2){ u.up.position.y=0.74; for(const l of L){ l.hip.rotation.x=0.05; l.knee.rotation.x=0.12; l.hip.rotation.z=l.sx*0.14; } }      // legs out straight, a little apart
-  if(T.k!==2) for(const l of L) l.hip.rotation.z=0; }
+  u.stance=stance; const L=u.legs, w0=1-P.kw-P.pw;
+  for(let i=0;i<L.length;i++){ const l=L[i], c=_LEG.crouch[i], q=_LEG.prone[i];
+    l.hip.rotation.x = l.hip.rotation.x*w0 + c[0]*P.kw + q[0]*P.pw; l.knee.rotation.x = l.knee.rotation.x*w0 + c[1]*P.kw + q[1]*P.pw; l.hip.rotation.z = l.sx*0.14*P.pw; }
+  u.up.position.y = u.up.position.y*(1-P.kw) + 0.5*P.kw; }
+// Z113 a man brought back from the pool: rifle back in his hands, arms and legs reset
+export function reviveSoldierMesh(m){ const u=m.userData; if(!u.gun) return;
+  if(u.gunHome && u.gun.parent!==u.gunHome){ u.gun.parent && u.gun.parent.remove(u.gun); u.gunHome.add(u.gun); u.gun.position.copy(u.gunPos); u.gun.rotation.set(0,0,0); u.gun.scale.setScalar(1); }
+  if(u.arms) u.arms.rotation.set(0,0,0); u.stance=null; u.stAsk=0; }
+// Z113 the dead are unmistakable: on his back, arms flung back, the rifle dropped beside him (a live man lying down is face-down, rifle forward)
+export function dropSoldierGun(m){ const u=m.userData; if(!u.gun || !u.gun.parent) return; u.gunHome=u.gunHome||u.gun.parent; u.gunPos=u.gunPos||u.gun.position.clone();
+  const wp=new THREE.Vector3(); u.gun.getWorldPosition(wp); const s=m.scale.x||1; u.gun.parent.remove(u.gun); scene.add(u.gun); u.gun.scale.setScalar(s);
+  const a=m.rotation.y+(Math.random()<0.5?1:-1)*(0.9+Math.random()*0.6); u.gun.position.set(wp.x+Math.sin(a)*0.7*s, heightAt(wp.x,wp.z)+0.06*s, wp.z+Math.cos(a)*0.7*s); u.gun.rotation.set(0, a+Math.PI/2, Math.PI/2); u.droppedGun=u.gun; }
 export const _sV=new THREE.Vector3();
 export function makeSoldierBar(){   // tiny billboarded HP bar above each soldier's head
   const g=new THREE.Group();

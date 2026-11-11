@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
-import { ENEMY_DEFS, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, heightAt, infMesh, loopDmgMul, loopHpMul, makeSoldierBar, makeSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
+import { ENEMY_DEFS, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, heightAt, infMesh, loopDmgMul, loopHpMul, makeSoldierBar, makeSoldierMesh, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -97,7 +97,7 @@ export function getEnemyMesh(type){
   let m = enemyPool[type].pop();
   const _d=ENEMY_DEFS[type];
   if(!m){ if(_d.inf) m=infMesh(type); else if(_d.air) m=buildGunship(_d.pal); else { m = buildTank(_d.pal); decorateEnemyMesh(m, type); bakeTank(m); m.traverse(o=>{ if(o.isMesh && o!==m.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); scene.add(m); } }
-  m.scale.setScalar(_d.scale*(_d.inf?1:TANK_SCALE)); if(_d.inf){ m.rotation.set(0,0,0); const u=m.userData; u.pose=null; if(u.body){ u.body.rotation.set(0,0,0); u.body.position.set(0,0,0); } if(u.arms) u.arms.rotation.x=0; if(u.up) u.up.rotation.x=0; }   // Z105 a recycled man stands up again                       // always reset (elites scaled it up)
+  m.scale.setScalar(_d.scale*(_d.inf?1:TANK_SCALE)); if(_d.inf){ m.rotation.set(0,0,0); reviveSoldierMesh(m); const u=m.userData; u.pose=null; if(u.body){ u.body.rotation.set(0,0,0); u.body.position.set(0,0,0); } if(u.arms) u.arms.rotation.x=0; if(u.up) u.up.rotation.x=0; }   // Z105 a recycled man stands up again                       // always reset (elites scaled it up)
   const fx=m.getObjectByName('eliteFX'); if(fx){ m.remove(fx); if(fx.material) fx.material.dispose(); }   // strip old elite glow
   m.visible=true; return m;
 }

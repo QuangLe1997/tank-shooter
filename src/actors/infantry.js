@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, ENV, INFANTRY, EQUIP, SQUAD } from '../../config.js';
-import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, _cv, addScore, animateSoldier, blocks, burst, cMod, clampField, coverSpot, diffDmgMul, diffScale, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, poseSoldier, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
+import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, _cv, addScore, animateSoldier, blocks, burst, cMod, clampField, coverSpot, damageAlly, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, poseSoldier, reviveSoldierMesh, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -99,7 +99,11 @@ export function crushInfantry(now){
       if(ps>INFANTRY.crushSpeed || now<p.dashUntil){ e._crushed=true; killEnemy(e); continue; }
       const nx=e.pos.x-p.pos.x, nz=e.pos.z-p.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.45; e.pos.z+=nz/L*0.45; }
     for(const t of enemies){ if(!solidTank(t)) continue; if(hitsHull(t, e.pos.x, e.pos.z, 0.3)){ const nx=e.pos.x-t.pos.x, nz=e.pos.z-t.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.4; e.pos.z+=nz/L*0.4; } }   // their own tanks shove them aside
+    for(const t of ALLY_TANKS){ if(hitsHull(t, e.pos.x, e.pos.z, 0.35) && Math.hypot(t.vel?t.vel.x:0, t.vel?t.vel.z:0)>INFANTRY.crushSpeed){ e._crushed=true; killEnemy(e); break; } }   // Z113 our captured tanks crush them too
   }
+  // Z113 enemy tanks run OUR men down the same way
+  for(const t of enemies){ if(!solidTank(t)) continue; const ts=Math.hypot(t.vel.x,t.vel.z); if(ts<INFANTRY.crushSpeed) continue;
+    for(const a of FT.slice()){ if(hitsHull(t, a.pos.x, a.pos.z, 0.3)){ burst(a.pos, BIOME.ground, 6, 4, {y:heightAt(a.pos.x,a.pos.z)+0.4, life:0.6, size:1.0, smoke:true, grav:-0.4, drag:2.2, up:1.5, op:0.5}); sfx('crunch', a.pos); damageAlly(a, 999); } } }
 }
 export function infantryDown(e){
   const m=e.mesh, gy=heightAt(e.pos.x,e.pos.z);
@@ -113,23 +117,35 @@ export function infantryDown(e){
     m.visible=false; m.rotation.set(0,0,0); (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); return; }
   else if(e._big || e._blast){                                                 // Z112 a tank round / a blast: the man is THROWN, then breaks apart and is gone
     let ux=e._blast ? e.pos.x-e._blast.x : (e._hx||0), uz=e._blast ? e.pos.z-e._blast.z : (e._hz||0); const L=Math.hypot(ux,uz)||1; ux/=L; uz/=L; if(L<0.05){ const a=Math.random()*6.283; ux=Math.cos(a); uz=Math.sin(a); }
-    const F=INFANTRY.fling, sp=F.speed*(0.75+Math.random()*0.5);
+    const F=INFANTRY.fling, pw=Math.max(0.8, Math.min(INFANTRY.fling.maxK, e._hitK||1)), sp=F.speed*pw*(0.75+Math.random()*0.5);   // Z113 heavier round → thrown farther
     burst(e.pos, 0x7a3020, 7, 6, {y:gy+1.1, life:0.35, size:0.45, grav:-10, drag:2}); burst(e.pos, BIOME.ground, 4, 4, {y:gy+0.6, life:0.8, size:1.2, smoke:true, grav:-0.4, drag:2, up:1.5, op:0.45});
-    INF_DEAD.push({ e, t:0, fling:true, vx:ux*sp, vy:F.up*(0.8+Math.random()*0.5), vz:uz*sp, rx:(Math.random()<0.5?-1:1)*(6+Math.random()*6), rz:(Math.random()-0.5)*8, gibAt:F.gib*(0.8+Math.random()*0.4) }); return; }
-  else { burst(e.pos, 0x7a3020, 6, 4, {y:gy+1.1, life:0.4, size:0.5, grav:-10, drag:2}); }
+    bloodSpurt(e.pos.x, e.pos.z, ux, uz, 1.6*pw);
+    INF_DEAD.push({ e, t:0, fling:true, pw, vx:ux*sp, vy:F.up*Math.sqrt(pw)*(0.8+Math.random()*0.5), vz:uz*sp, rx:(Math.random()<0.5?-1:1)*(6+Math.random()*6), rz:(Math.random()-0.5)*8, gibAt:F.gib*(0.8+Math.random()*0.4) }); return; }
+  else { burst(e.pos, 0x7a3020, 6, 4, {y:gy+1.1, life:0.4, size:0.5, grav:-10, drag:2}); layOut(m, e.pos.x, e.pos.z); }
   INF_DEAD.push({ e, t:0, crushed:!!e._crushed, dir:(Math.random()<0.5?-1:1) });
 }
+// Z113 shot dead (small arms): straighten out of any kneel / prone pose, rifle drops beside him, a dark pool spreads — he falls on his BACK
+export function layOut(m, x, z){ const u=m.userData; if(u.body){ u.body.rotation.x=0; u.body.position.set(0,0,0); } if(u.up) u.up.rotation.x=0; if(u.pose){ u.pose.rx=u.pose.y=u.pose.z=u.pose.up=u.pose.arm=u.pose.kw=u.pose.pw=0; }
+  for(const l of (u.legs||[])){ l.hip.rotation.set(0,0,0); l.knee.rotation.x=0.15; } dropSoldierGun(m); setTimeout(()=>decalBlood(x, z, 0.7+Math.random()*0.4), 450); }
+// Z113 a hit on a man: blood sprays out of the exit side along the shot, a few drops land on the ground
+export function bloodSpurt(x, z, dx, dz, k){ k=Math.max(0.4, Math.min(2.5, k||1)); const gy=heightAt(x,z), y=gy+1.0+Math.random()*0.4, L=Math.hypot(dx,dz)||1; dx/=L; dz/=L;
+  const n=Math.round(4+4*k); for(let i=0;i<n;i++){ const sp=2+Math.random()*4*k; spawnPart(x+dx*0.2, y, z+dz*0.2, dx*sp+(Math.random()-0.5)*2, 1+Math.random()*2.5, dz*sp+(Math.random()-0.5)*2, {color:Math.random()<0.6?0x8a1410:0x5a0a08, size:0.1+Math.random()*0.12*k, life:0.45+Math.random()*0.25, grav:-16, drag:0.8}); }
+  spawnPart(x+dx*0.3, y, z+dz*0.3, dx*1.5, 0.4, dz*1.5, {color:0x7a1210, size:0.5*k, life:0.25, grav:-2, drag:3, op:0.6});
+  if(Math.random()<0.6) decalBlood(x+dx*(0.6+Math.random()*0.8*k), z+dz*(0.6+Math.random()*0.8*k), 0.25+0.15*k); }
 // Z112 the thrown man comes apart: gear, cloth and dust
-function gib(m){ const p=m.position; for(let k=0;k<9;k++){ const a=Math.random()*6.283, sp=2+Math.random()*5; spawnPart(p.x, p.y+0.6, p.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {color:[0x4a5530,0x3a3f26,0x2a2a20,0x6a2a1c][k%4], size:0.16+Math.random()*0.2, life:0.6+Math.random()*0.3, grav:-18, drag:1}); }
-  burst({x:p.x,z:p.z}, 0x8a7a60, 3, 2, {y:p.y+0.5, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, op:0.4}); }
+function gib(m, pw){ pw=pw||1; const p=m.position; for(let k=0;k<9;k++){ const a=Math.random()*6.283, sp=2+Math.random()*5; spawnPart(p.x, p.y+0.6, p.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {color:[0x4a5530,0x3a3f26,0x2a2a20,0x6a2a1c][k%4], size:0.16+Math.random()*0.2, life:0.6+Math.random()*0.3, grav:-18, drag:1}); }
+  burst({x:p.x,z:p.z}, 0x8a7a60, 3, 2, {y:p.y+0.5, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, op:0.4});
+  for(let k=0;k<Math.round(10*pw);k++){ const a=Math.random()*6.283, sp=3+Math.random()*6*pw; spawnPart(p.x, p.y+0.5, p.z, Math.cos(a)*sp, 2+Math.random()*5, Math.sin(a)*sp, {color:Math.random()<0.6?0x8a1410:0x5a0a08, size:0.12+Math.random()*0.16, life:0.6+Math.random()*0.3, grav:-18, drag:0.9}); }   // Z113 bursts apart, spraying red
+  decalBlood(p.x, p.z, 0.9+0.5*pw); for(let k=0;k<3;k++){ const a=Math.random()*6.283, r=0.8+Math.random()*1.6*pw; decalBlood(p.x+Math.cos(a)*r, p.z+Math.sin(a)*r, 0.3+Math.random()*0.3); } }
 export function updateInfDead(dt){
   for(let i=INF_DEAD.length-1;i>=0;i--){ const d=INF_DEAD[i], m=d.e.mesh; d.t+=dt;
     if(d.fling){ if(!d.down){ d.vy-=24*dt; m.position.x+=d.vx*dt; m.position.y+=d.vy*dt; m.position.z+=d.vz*dt; m.rotation.x+=d.rx*dt; m.rotation.z+=d.rz*dt;   // Z112 ballistic tumble
         const g=heightAt(m.position.x, m.position.z); if(m.position.y<=g && d.vy<0){ m.position.y=g; d.down=true; burst({x:m.position.x,z:m.position.z}, BIOME.ground, 3, 3, {y:g+0.3, life:0.6, size:0.9, smoke:true, grav:-0.3, drag:2, op:0.45}); } }
-      if(!d.gone && (d.t>=d.gibAt || d.down)){ d.gone=true; gib(m); m.visible=false; }
+      if(!d.down && Math.random()<0.6) spawnPart(m.position.x, m.position.y+0.7, m.position.z, 0, -1, 0, {color:0x7a1210, size:0.14, life:0.4, grav:-12, drag:1});   // Z113 a red trail through the air
+      if(!d.gone && (d.t>=d.gibAt || d.down)){ d.gone=true; gib(m, d.pw); m.visible=false; }
       if(d.gone){ m.rotation.set(0,0,0); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); }
       continue; }
-    if(!d.crushed){ const k=Math.min(1, d.t/0.45); m.rotation.x=-k*k*Math.PI/2*0.96; m.rotation.z=d.dir*k*0.25; }   // crumples and falls backwards
-    if(d.t>3.2){ const k=Math.max(0,1-(d.t-3.2)/0.8); m.position.y-=dt*0.6; if(k<=0){ m.visible=false; m.rotation.set(0,0,0); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); } } }
+    if(!d.crushed){ const k=Math.min(1, d.t/0.45); m.rotation.x=-k*k*Math.PI/2*0.96; m.rotation.z=d.dir*k*0.25; const u=m.userData; if(u.arms) u.arms.rotation.x=-k*2.5; if(u.legs) u.legs.forEach((l,j)=>{ l.hip.rotation.z=(j?1:-1)*k*0.22; }); }   // crumples and falls backwards, arms flung back
+    if(d.t>3.2){ const k=Math.max(0,1-(d.t-3.2)/0.8); m.position.y-=dt*0.6; if(m.userData.droppedGun) m.userData.droppedGun.position.y-=dt*0.6; if(k<=0){ m.visible=false; m.rotation.set(0,0,0); reviveSoldierMesh(m); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); } } }
 }
-export function clearInfDead(){ for(const d of INF_DEAD){ d.e.mesh.visible=false; d.e.mesh.rotation.set(0,0,0); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(d.e.mesh); } INF_DEAD.length=0; }
+export function clearInfDead(){ for(const d of INF_DEAD){ d.e.mesh.visible=false; d.e.mesh.rotation.set(0,0,0); reviveSoldierMesh(d.e.mesh); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(d.e.mesh); } INF_DEAD.length=0; }
