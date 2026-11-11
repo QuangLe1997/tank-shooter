@@ -104,3 +104,41 @@ i.pv{font-style:normal;font-weight:900;font-size:10px;letter-spacing:1px;padding
 .sp-pw b{color:#fff;} .sp-pw em{font-style:normal;font-weight:900;margin-left:4px;} .sp-pw em.up{color:#9be04a;} .sp-pw em.dn{color:#ff9a7a;} .sp-pw small{color:var(--muted);font-weight:600;}
 .w-chip.pw{color:#ffd24a;} .w-chip.pw b{color:#fff;}
 .upcard .pw{margin-top:6px;font-size:11px;font-weight:900;letter-spacing:.5px;color:#9be04a;}
+
+/* ===================== Z120 MOBILE PASS — fewer, smaller, cleaner controls · compact menus ===================== */
+/* battle HUD: the top-right row keeps only what you use in a fight (camera AUTO · zoom · auto-fire · pause); sound / fullscreen /
+   rotate live in the ⏸ menu; the gun strip (ĐỔI SÚNG + the weapon chip cover it) and the contract chip (it's in the briefing) go */
+body.touch #muteBtn, body.touch #fsBtn, body.touch #musBtn, body.touch #rotBtn, body.touch #gunlist, body.touch #contractChip{display:none !important;}
+body.touch #mPause{right:max(10px,env(safe-area-inset-right));width:34px;height:34px;}
+body.touch #autoBtn{right:calc(max(10px,env(safe-area-inset-right)) + 40px);width:34px;height:34px;}
+body.touch #camCtl{top:max(8px,env(safe-area-inset-top));right:calc(max(10px,env(safe-area-inset-right)) + 80px);gap:5px;}
+body.touch .camBtn{width:34px;height:34px;}
+/* thumb buttons: ~15% smaller, glassier */
+body.touch .mbtn{width:50px;height:50px;}
+body.touch .mbtn .ic{width:18px;height:18px;margin-bottom:5px;} body.touch .mbtn .mbtag{font-size:6.5px;letter-spacing:.08em;}
+body.touch #mbtns{gap:9px;}
+body.touch #mDash{width:52px;height:52px;bottom:calc(max(20px,env(safe-area-inset-bottom)) + 100px);}
+body.touch #mCrew, body.touch #mSpellNext{transform:scale(.86);}
+body.touch #mCmd{top:calc(max(8px,env(safe-area-inset-top)) + 72px);gap:5px;}
+body.touch .mcm{width:42px;height:32px;} body.touch .mcm b{font-size:12px;} body.touch .mcm span{font-size:6.5px;}
+body.touch #weaponchip{font-size:10px;padding:2px 8px;}
+/* ⏸ menu on a short screen: two columns, everything on one page */
+@media (max-height:520px){
+  #pause .title{font-size:22px !important;margin:0;}
+  #pause .panel{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(600px,94vw);padding:12px 14px;}
+  #pause .panel > .btn{margin:0 !important;min-width:0;width:100%;padding:9px 10px;font-size:12px;}
+  #pause #resumeBtn{grid-column:1/-1;padding:11px;font-size:15px;}
+  /* settings: low rows, two columns already on a phone held sideways */
+  #settings .title{font-size:22px !important;} #settings .subtitle{display:none;}
+  #settings .settings{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;max-width:96vw;margin-top:4px;}
+  #settings .set-row{padding:5px 9px;min-height:0;} #settings .set-l{font-size:10px;letter-spacing:.06em;}
+  #settings .seg-chip{padding:4px 8px;font-size:10px;} #settings .seg-chip small{display:none;} #settings .seg-note{font-size:9px;padding:2px 4px;max-width:180px;}
+  #settings .set-row.set-pad{grid-column:1/-1;}
+  #settingsDone{margin-top:6px !important;padding:8px 26px;}
+  /* battle setup: compact header + cards that show all their lines */
+  .bs-top{gap:4px;padding-top:calc(max(6px,env(safe-area-inset-top)) + 2px);} .bs-ttl{font-size:14px;letter-spacing:3px;}
+  .bs-mode{padding:4px 12px;font-size:11px;} .bs-mode small{display:none;}
+  .bs-ladder{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px;} .bs-lv canvas{height:40px;}
+  /* briefing + deploy: tighter type */
+  #briefing .title{font-size:20px !important;} #briefing .br-brief{font-size:11px;line-height:1.35;max-width:92vw;} #briefing .br-hint{display:none;}
+}

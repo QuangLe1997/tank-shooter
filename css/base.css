@@ -13,7 +13,7 @@
   /* The canvas stays on the (stable) layout viewport on purpose: iOS resizes the visible viewport on every
      frame of a toolbar slide, and re-allocating the WebGL + bloom render targets that often is the flicker.
      UI layers below follow --appH so no control ever hides behind the browser chrome. */
-  #app,canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;}   /* canvas always fills the viewport (buffer set via setSize(...,false)) */
+  #app,#app > canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;}   /* the GAME canvas fills the viewport (buffer set via setSize(...,false)) · Z120 only that one: the rule used to pin every UI canvas (level previews, deploy map) to the top of the screen */
   canvas{display:block;}
   /* desktop aiming reticle — a NATIVE cursor (hardware-smooth, follows the pointer 1:1; bigger + bolder than default).
      Native cursor = no lag during the render loop, and the OS keeps it inside the window automatically. */

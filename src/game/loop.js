@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderer, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCmdUI, updateCore, updateCoreAlarm, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWaves, updateWeather, updateWorldBars, updateWrecks } from '../hub.js';
+import { APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderer, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCmdUI, updateCore, updateCoreAlarm, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWaves, updateWeather, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -72,12 +72,13 @@ export function loop(nowMs){
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
-  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?0.7:1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
+  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
     if(S.mode==='playing'){                                                   // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
       if(fps<47){ PERF.fastT=0; PERF.slowT++;
-        if(S.dpr>dprFloor){ S.dpr=Math.max(dprFloor,S.dpr-(fps<34?0.25:0.12)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }
+        const shedFirst = MOBILE && (PERF.parts>0.6 || bloom.enabled);                          // Z120 phones: particles + glow go BEFORE sharpness
+        if(!shedFirst && S.dpr>dprFloor){ S.dpr=Math.max(dprFloor,S.dpr-(fps<34?0.2:0.1)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }
         PERF.parts=Math.max(0.45, PERF.parts-(fps<34?0.2:0.1));
-        if(MOBILE && fps<38 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
+        if(MOBILE && fps<44 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
       else if(fps>57){ PERF.slowT=0; PERF.fastT++;
         if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); if(S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); } } } } }
 }

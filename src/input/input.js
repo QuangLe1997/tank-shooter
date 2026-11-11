@@ -1,6 +1,6 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
-import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, togglePause, tryDash, trySpell } from '../hub.js';
+import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
 addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); if(S.mode==='playing' && k>='1' && k<='8' && !e.metaKey && !e.ctrlKey) selectGun(parseInt(k)-1); });   // gun slots on the number row · Z118 every other key → input/bindings.js
@@ -121,6 +121,8 @@ musBtnEl.addEventListener('touchstart', toggleMusic, {passive:false});
 export const musBtnPEl=document.getElementById('musBtnP');   // the same switch in the ⏸ menu (the phone's HUD row has no room)
 musBtnPEl.addEventListener('click', toggleMusic);
 musBtnPEl.addEventListener('touchstart', toggleMusic, {passive:false});
+// Z120 sound + fullscreen also live in the ⏸ menu (they left the phone HUD)
+tapBtn('sndBtnP', e=>toggleMute(e)); tapBtn('fsBtnP', ()=>{ toggleFullscreen(); });
 // fullscreen (immersive, like a video). iPhone Safari lacks the API → button is a graceful no-op there.
 export function isFs(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
 export function reqFs(){ const el=document.documentElement; const r=el.requestFullscreen||el.webkitRequestFullscreen;

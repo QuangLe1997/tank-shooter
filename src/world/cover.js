@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, RAM, HARD } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -16,7 +16,7 @@ export const MAZE_SHAPES = [
 ];
 export const blocks=[];   // fuel drums go up after a hit or two
 export function buildBlocks(){
-  for(const b of blocks) scene.remove(b.mesh); blocks.length=0; clearWalls(); clearLootBeacons('block');
+  for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block');
   planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
   const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
   const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K);   // Z104 more cover on the wider field (soldiers need somewhere to hide)
@@ -99,7 +99,9 @@ export function hardDamage(b, dmg){ const gy=heightAt(b.x,b.z), rock=b.kind==='b
   burst({x:b.x,z:b.z}, rock?0xb8ad98:0xffe0a0, rock?5:4, rock?5:6, {y:gy+1+Math.random(), life:rock?0.5:0.25, size:rock?0.35:0.22, grav:-16, drag:1.4, up:2.5});
   if(rock) burst({x:b.x,z:b.z}, 0xa89a84, 2, 2, {y:gy+1, life:0.9, size:1.3, smoke:true, grav:-0.4, drag:2, up:1, op:0.4});
   b.hp -= big ? b.hp+1 : dmg; if(b.mesh && b.hp>0){ const k=0.94+0.06*Math.max(0,b.hp/b.maxHp); b.mesh.scale.multiplyScalar(k/(b._k||1)); b._k=k; }   // it visibly loses chunks
-  if(b.hp>0) return;
+  if(b.hp>0){ if(!b.bar){ b.bar=getEnemyBar(); b.bar.g.scale.setScalar(1.7); }                      // Z120 a damaged rock shows how much stone is left
+    const k=Math.max(0,b.hp/b.maxHp), br=b.bar; br.g.visible=true; br.g.position.set(b.x, gy+b.r*1.5+1.4, b.z); br.g.quaternion.copy(camera.quaternion); br.fill.scale.x=Math.max(0.001,k); br.fill.position.x=-(1-k)*0.5; br.fill.material.color.setHex(0xd8c8a8); return; }
+  if(b.bar){ freeEnemyBar(b.bar); b.bar=null; }
   const pos={x:b.x,z:b.z}, now=performance.now()/1000; scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
   if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); }
   if(rock){ for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x9a8f7c); burst(pos, 0xc8b89a, 10, 5, {y:gy+1.2, life:1.4, size:2.6, smoke:true, grav:-0.5, drag:1.6, up:1.8, op:0.55}); burst(pos, 0x8a8070, 22, 11, {y:gy+1.2, life:0.6, size:0.45, grav:-18, drag:1.1, up:4}); decalCrater(b.x,b.z,1.6,0.6); }
@@ -125,4 +127,4 @@ export function destroyCover(b){
   else { burst(pos, 0xc8b48a, 7, 4, {y:1.0, life:1.1, size:2.2, smoke:true, grav:-0.5, drag:1.8, up:1.6, op:0.55}); burst(pos, 0xa8936a, 14, 7, {y:1.2, life:0.55, size:0.3, grav:-18, drag:1.2, up:3}); spawnDebris(pos, 1.0, 0xa8936a); decalCrater(b.x,b.z,1.4,0.5); sfx('explode'); }   // sandbags burst: sand cloud + torn sacks
   if(b.loot){ dropPowerup(pos, b.lootTier||0); if(b.cache) dropPowerup(pos, Math.max(0,(b.lootTier||0)-1)); }   // beacon-marked stockpiles always yield; Z93 caches give two
 }
-export function clearBlocks(){ for(const b of blocks) scene.remove(b.mesh); blocks.length=0; clearWalls(); }
+export function clearBlocks(){ for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); }

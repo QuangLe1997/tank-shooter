@@ -283,7 +283,7 @@ export const LETHAL = { tankRoundKills: true, core: 0.45, reach: 1.25, edgeMin: 
 
 // Z104 MOBILE AIM — phones have no mouse, so the barrel is FIXED to the hull: the tank shoots straight where it faces.
 //   Auto-fire / rockets / mortar / artillery only take a target inside this forward cone (half-angle in rad) or lane (world units).
-export const AIM = { mobileFixed: true, cone: 0.17, lane: 1.8, artyCone: 0.32,
+export const AIM = { rockR: 16, mobileFixed: true, cone: 0.17, lane: 1.8, artyCone: 0.32,
   pivotOnly: 0.38 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
 
 export const TROOPS = {
@@ -452,7 +452,7 @@ export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.
 export const GUN_BARRELS = { smg:2, flak:2, minigun:7, missile:2, thermo:4, rocket:1 };
 // Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
 //   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
-export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false, phone:true }, rtFire:0.35, assistAfter:0.45, navFirst:0.26, navRepeat:0.14, engine:{ base:0.04, load:0.1 } };
+export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false, phone:true }, rtFire:0.35, assistAfter:0.45, phoneTick:{ ms:14, gap:150 }, navFirst:0.26, navRepeat:0.14, engine:{ base:0.04, load:0.1 } };
 export const PAD_HELP = [
   ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất'],
   ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Lướt né'], ['B', 'Chạm: lính xuống xe · Giữ: gọi lính về'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],

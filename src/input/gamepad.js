@@ -75,7 +75,8 @@ const PH={ until:0 };
 function phoneOn(){ return MOBILE && padCfg().phone; }
 function phoneBuzz(pat, k, minLv){ if(!phoneOn()) return; const now=performance.now(); if(now<PH.until) return; const v=[]; let lv=0, tot=0;
   for(const [s,w,ms,gap] of pat){ const l=Math.max(s,w)*k; lv=Math.max(lv,l); v.push(l>0.12?Math.round(ms):0, Math.round(gap||0)); tot+=ms+(gap||0); }
-  if(lv<(minLv||0.3)) return; PH.until=now+Math.max(90, tot);
+  if(lv<(minLv||0.3)){ if(minLv>=0.45 && lv>0.18){ PH.until=now+PAD_CFG.phoneTick.gap; const H=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics; if(H && H.impact){ try{ H.impact({ style:'LIGHT' }); }catch(e){} } else if(navigator.vibrate){ try{ navigator.vibrate(PAD_CFG.phoneTick.ms); }catch(e){} } } return; }   // Z120 light guns: a short tick, never a buzz
+  PH.until=now+Math.max(90, tot);
   const H=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
   if(H && H.impact){ try{ H.impact({ style: lv>0.75?'HEAVY':lv>0.4?'MEDIUM':'LIGHT' }); }catch(e){} return; }
   if(navigator.vibrate){ while(v.length && !v[v.length-1]) v.pop(); try{ navigator.vibrate(v.length>1?v:v[0]||30); }catch(e){} } }

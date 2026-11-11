@@ -395,6 +395,18 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
   - *Đường bay camera:* thấp và gọn hơn (cao nhất 12 m, 17 m phía sau; trước là 20 m, 24 m). Trong lúc quay, các vật thể gọn nằm xa xe hơn 85 m bị tạm ẩn (`cullFar`; địa hình, trời, decal, đồ trang trí rải khắp bản đồ vẫn giữ), sương mù dày lên một chút (`INTRO`). Kết quả: tối đa 1.011 lệnh vẽ, phần lớn khung khoảng 630.
   - *Camera chạy theo thời gian làm mượt:* mỗi bước tối đa 1/30 s, nên khung chậm làm camera chậm lại một chút chứ không nhảy. Ít bụi hơn.
   - *Chống bỏ qua nhầm:* chỉ bỏ qua được sau 0,35 s, để chính cú bấm vào trận không bỏ qua luôn đoạn mở đầu.
+- **Z120 ĐIỆN THOẠI GỌN · NÉT HƠN · ĐÁ:**
+  - *Lỗi canvas (mọi thiết bị):* quy tắc `#app, canvas{position:fixed; inset:0}` trong base.css áp lên **mọi** canvas, nên ảnh xem trước bản đồ trên thẻ cấp bị ghim thành một dải nâu ở đầu màn chuẩn bị trận, che nút quay lại và tiêu đề, còn các thẻ thì mất ảnh xem trước. Giờ quy tắc chỉ áp cho canvas của game (`#app > canvas`).
+  - *HUD trận đấu trên điện thoại:*
+    - Hàng nút trên cùng còn 4 nút 34 px (camera AUTO, zoom, tự bắn, tạm dừng). Loa, toàn màn hình và xoay camera chuyển vào menu ⏸ (nút ÂM THANH / TOÀN MÀN HÌNH mới).
+    - Ẩn dải súng (vốn đè lên nút lệnh; đã có chip súng và nút ĐỔI SÚNG) và chip hợp đồng.
+    - Nút ngón cái nhỏ còn 50–52 px (trước 58), nút lệnh 42×32. Đã kiểm 5 cỡ iPhone, không còn nút chồng nhau.
+  - *Menu trên màn thấp (≤ 520 px):* ⏸ chia 2 cột vừa một trang; Cài đặt 2 cột với dòng thấp; màn chuẩn bị trận, giao nhiệm vụ gọn hơn.
+  - *Độ nét:* khi khung hình chậm, điện thoại bớt hạt hiệu ứng và tắt quầng sáng TRƯỚC; độ phân giải hạ sau cùng, sàn 1,25× trên iPhone (trước là 0,7×, ảnh mờ hẳn).
+  - *Đá:*
+    - Thanh máu hiện ngay khi đá bị bắn trúng.
+    - Trên điện thoại (nòng gắn cố định), không có địch phía trước thì chế độ tự bắn bắn vào đá/hedgehog chắn đường trong 16 m (`AIM.rockR`).
+  - *Rung điện thoại:* súng nhẹ cũng rung một cú tích 14 ms, cách nhau ≥ 150 ms (`PAD_CFG.phoneTick`).
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.
