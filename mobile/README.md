@@ -1,5 +1,7 @@
 # Steel Siege — bản app iPhone / iPad
 
+> Build trên máy khác: xem trạng thái hiện tại, các bước và lỗi hay gặp trong [HANDOFF.md](HANDOFF.md).
+
 Hai cách đưa game lên iPhone. Cả hai đều chạy WebGL qua **Metal** (mọi trình duyệt trên iOS đều dùng WebKit), nên tốc độ khung hình như nhau. Khác nhau ở phần vỏ.
 
 ## 1. Thêm vào Màn hình chính (không cần Xcode)
