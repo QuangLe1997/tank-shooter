@@ -107,11 +107,28 @@ export function infantryDown(e){
     burst(e.pos, BIOME.ground, 8, 5, {y:gy+0.4, life:0.6, size:1.0, smoke:true, grav:-0.4, drag:2.2, up:1.5, op:0.5}); burst(e.pos, 0x6a2a1c, 6, 4, {y:gy+0.3, life:0.35, size:0.35, grav:-14, drag:2});
     floatText('CÁN NÁT +'+INFANTRY.crushBonus, '#ffcf5a', {x:e.pos.x, y:gy+2.4, z:e.pos.z}, 16); addScore(INFANTRY.crushBonus, new THREE.Vector3(e.pos.x,2,e.pos.z));
     sfx('crunch', e.pos); haptic(28); S.shake=Math.min(2,S.shake+0.25); }
+  else if(e._fx==='ice'){                                                     // Z112 frozen solid → shatters into ice on the spot
+    for(let k=0;k<12;k++){ const a=Math.random()*6.283, sp=2+Math.random()*5; spawnPart(e.pos.x, gy+0.9+Math.random()*0.8, e.pos.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {color:Math.random()<0.5?0xd8f6ff:0x7fd0ff, size:0.18+Math.random()*0.22, life:0.7, grav:-16, drag:1}); }
+    burst(e.pos, 0xd8f6ff, 3, 2, {y:gy+1, life:0.6, size:1.2, smoke:true, grav:-0.2, drag:2, op:0.4}); sfx('crunch', e.pos);
+    m.visible=false; m.rotation.set(0,0,0); (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); return; }
+  else if(e._big || e._blast){                                                 // Z112 a tank round / a blast: the man is THROWN, then breaks apart and is gone
+    let ux=e._blast ? e.pos.x-e._blast.x : (e._hx||0), uz=e._blast ? e.pos.z-e._blast.z : (e._hz||0); const L=Math.hypot(ux,uz)||1; ux/=L; uz/=L; if(L<0.05){ const a=Math.random()*6.283; ux=Math.cos(a); uz=Math.sin(a); }
+    const F=INFANTRY.fling, sp=F.speed*(0.75+Math.random()*0.5);
+    burst(e.pos, 0x7a3020, 7, 6, {y:gy+1.1, life:0.35, size:0.45, grav:-10, drag:2}); burst(e.pos, BIOME.ground, 4, 4, {y:gy+0.6, life:0.8, size:1.2, smoke:true, grav:-0.4, drag:2, up:1.5, op:0.45});
+    INF_DEAD.push({ e, t:0, fling:true, vx:ux*sp, vy:F.up*(0.8+Math.random()*0.5), vz:uz*sp, rx:(Math.random()<0.5?-1:1)*(6+Math.random()*6), rz:(Math.random()-0.5)*8, gibAt:F.gib*(0.8+Math.random()*0.4) }); return; }
   else { burst(e.pos, 0x7a3020, 6, 4, {y:gy+1.1, life:0.4, size:0.5, grav:-10, drag:2}); }
   INF_DEAD.push({ e, t:0, crushed:!!e._crushed, dir:(Math.random()<0.5?-1:1) });
 }
+// Z112 the thrown man comes apart: gear, cloth and dust
+function gib(m){ const p=m.position; for(let k=0;k<9;k++){ const a=Math.random()*6.283, sp=2+Math.random()*5; spawnPart(p.x, p.y+0.6, p.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {color:[0x4a5530,0x3a3f26,0x2a2a20,0x6a2a1c][k%4], size:0.16+Math.random()*0.2, life:0.6+Math.random()*0.3, grav:-18, drag:1}); }
+  burst({x:p.x,z:p.z}, 0x8a7a60, 3, 2, {y:p.y+0.5, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, op:0.4}); }
 export function updateInfDead(dt){
   for(let i=INF_DEAD.length-1;i>=0;i--){ const d=INF_DEAD[i], m=d.e.mesh; d.t+=dt;
+    if(d.fling){ if(!d.down){ d.vy-=24*dt; m.position.x+=d.vx*dt; m.position.y+=d.vy*dt; m.position.z+=d.vz*dt; m.rotation.x+=d.rx*dt; m.rotation.z+=d.rz*dt;   // Z112 ballistic tumble
+        const g=heightAt(m.position.x, m.position.z); if(m.position.y<=g && d.vy<0){ m.position.y=g; d.down=true; burst({x:m.position.x,z:m.position.z}, BIOME.ground, 3, 3, {y:g+0.3, life:0.6, size:0.9, smoke:true, grav:-0.3, drag:2, op:0.45}); } }
+      if(!d.gone && (d.t>=d.gibAt || d.down)){ d.gone=true; gib(m); m.visible=false; }
+      if(d.gone){ m.rotation.set(0,0,0); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); }
+      continue; }
     if(!d.crushed){ const k=Math.min(1, d.t/0.45); m.rotation.x=-k*k*Math.PI/2*0.96; m.rotation.z=d.dir*k*0.25; }   // crumples and falls backwards
     if(d.t>3.2){ const k=Math.max(0,1-(d.t-3.2)/0.8); m.position.y-=dt*0.6; if(k<=0){ m.visible=false; m.rotation.set(0,0,0); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); } } }
 }

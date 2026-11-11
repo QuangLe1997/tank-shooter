@@ -62,9 +62,9 @@ export function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length
 // Z104 blast vs a man on foot: 1 = killed (inside the core), else the fraction of the blast damage he takes (fades to edgeMin at reach)
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
 export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){
-  for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)*(siege||1)); }   // blasts bring watchtowers down
+  for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'||b.hard){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)*(siege||1)); }   // Z112 + rocks / hedgehogs   // blasts bring watchtowers down
   for(const e of enemies.slice()){ if(e.def.air && !air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, q=dx*dx+dz*dz;
-    if(e.def.inf){ const R=r*LETHAL.reach; if(q<R*R){ const k=infBlastK(Math.sqrt(q), r); if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, k>=1 ? e.hp+1 : dmg*k); } continue; }   // Z104 core = dead, ring = wounded
+    if(e.def.inf){ const R=r*LETHAL.reach; if(q<R*R){ const k=infBlastK(Math.sqrt(q), r); e._blast={ x, z }; e._fx=type==='CRYO'?'ice':(e._fx||'blast'); if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, k>=1 ? e.hp+1 : dmg*k); } continue; }   // Z104 core = dead, ring = wounded
     if(q < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, dmg*(type?typeMul(type,armorOf(e))*envDmg(type):1)); } }
   if(boss&&boss.alive){ const dx=boss.pos.x-x,dz=boss.pos.z-z; if(dx*dx+dz*dz<r*r) damageBoss(dmg); }
 }

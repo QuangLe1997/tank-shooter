@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, MOBILE, PLAYER_PAL, RIDER, S, TANK_SCALE, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, boss, buildTank, burst, camera, clampField, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, heightAt, inRally, infBlastK, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, updateCrewBtn, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -131,7 +131,9 @@ function fireShell(a, T, now){ const M=SQUAD.mortar; a.g.userData.muzzle.getWorl
   const m=makeMortarShell(); m.scale.setScalar(0.6); scene.add(m); ALLY_SHELLS.push({ m, x0:_sV.x, y0:_sV.y, z0:_sV.z, tx, tz, t:0, T:M.flight, dmg:M.dmg*(1+(S.stage-1)*0.12) });
   spawnPart(_sV.x,_sV.y+0.4,_sV.z, 0,3,0, {color:0xd8d0c0, size:1.2, life:0.6, smoke:true, grav:0.3, drag:2, op:0.5}); sfx('launch', a.pos); }
 function updateShells(dt, now){ const M=SQUAD.mortar; for(let i=ALLY_SHELLS.length-1;i>=0;i--){ const s=ALLY_SHELLS[i]; s.t+=dt; const u=Math.min(1, s.t/s.T), ty=heightAt(s.tx,s.tz);
-    const x=s.x0+(s.tx-s.x0)*u, z=s.z0+(s.tz-s.z0)*u, y=s.y0+(ty-s.y0)*u + Math.sin(u*Math.PI)*11; s.m.position.set(x,y,z); s.m.rotation.x=(u-0.5)*2.4;
+    const x=s.x0+(s.tx-s.x0)*u, z=s.z0+(s.tz-s.z0)*u, y=s.y0+(ty-s.y0)*u + Math.sin(u*Math.PI)*11; s.m.position.set(x,y,z);
+    _rdir.set(s.tx-s.x0, (ty-s.y0)+Math.cos(u*Math.PI)*Math.PI*11, s.tz-s.z0).normalize(); s.m.quaternion.setFromUnitVectors(_RUP, _rdir);   // Z112 nose follows the flight path (it used to tumble on a fixed world axis → looked like it flew sideways / upright)
+    if(Math.random()<0.5) spawnPart(x-_rdir.x*0.5, y-_rdir.y*0.5, z-_rdir.z*0.5, 0, 0.3, 0, {color:0xcfc6b4, size:0.45, life:0.45, smoke:true, grav:0.2, drag:1.8, op:0.4});
     if(u<1) continue; ALLY_SHELLS.splice(i,1); scene.remove(s.m);
     bigExplode({x:s.tx,z:s.tz}, 0xffae5c, M.aoe/3); deformCrater(s.tx, s.tz, 0.9, 0.3); aoeDamage(s.tx, s.tz, M.aoe, s.dmg, false, now, 'HE', false); } }
 export function clearAllyOrdnance(){ for(const c of CHARGES) scene.remove(c.m); CHARGES.length=0; for(const s of ALLY_SHELLS) scene.remove(s.m); ALLY_SHELLS.length=0; }

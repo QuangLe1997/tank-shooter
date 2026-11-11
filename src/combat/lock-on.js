@@ -58,6 +58,15 @@ export function spawnBullet(x, z, angle, o={}){
     lockOn:o.lockOn||false, tgt:null, loft,
     by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf });   // inf = small-arms round (rifle/MG) — anything else is a tank-gun round
 }
+// Z112 what a hit on stone / timber / steel looks like, by the round: heavy explosive → chunks + a dust cloud, armour-piercing → a hard spray of chips, small arms → sparks and grit
+const _STONE=new Set(['fortwall','gate','boulder','brick','tower','concrete','hesco','camp']);
+export function blockImpactFX(bl, b){ const gy=heightAt(b.x,b.z), y=gy+Math.max(0.6, Math.min(4, b.by)), heavy=b.aoe>0 || b.dmg>=40, stone=_STONE.has(bl.kind), col=stone?0xa89a84:(bl.steel||bl.kind==='hedgehog'?0xffe0a0:0x9a7a52);
+  const bx=Math.hypot(b.vx,b.vz)||1, ux=-b.vx/bx, uz=-b.vz/bx;   // debris kicks back toward the shooter
+  if(heavy){ for(let k=0;k<8;k++) spawnPart(b.x, y, b.z, ux*(3+Math.random()*5)+(Math.random()-0.5)*5, 2+Math.random()*5, uz*(3+Math.random()*5)+(Math.random()-0.5)*5, {color:col, size:0.22+Math.random()*0.25, life:0.7, grav:-18, drag:1});
+    spawnPart(b.x, y, b.z, ux*1.2, 1.2, uz*1.2, {color:stone?0xb8a888:0x6a5a44, size:2.2+b.dmg*0.02, life:1.3, smoke:true, grav:-0.3, drag:1.6, grow:1.6, op:0.5}); }
+  else if(b.inf || b.dmg<20){ for(let k=0;k<3;k++) spawnPart(b.x, y, b.z, ux*4+(Math.random()-0.5)*4, 1+Math.random()*3, uz*4+(Math.random()-0.5)*4, {color:stone?0xd8c8a8:0xffe6a0, size:0.12, life:0.25, grav:-14, drag:2}); }
+  else { for(let k=0;k<5;k++) spawnPart(b.x, y, b.z, ux*(4+Math.random()*4)+(Math.random()-0.5)*3, 1+Math.random()*4, uz*(4+Math.random()*4)+(Math.random()-0.5)*3, {color:col, size:0.18, life:0.5, grav:-16, drag:1.2});
+    spawnPart(b.x, y, b.z, ux, 0.8, uz, {color:stone?0xb8a888:0x7a6a54, size:1.2, life:0.8, smoke:true, grav:-0.3, drag:2, op:0.4}); } }
 // does a round at (x,z) with radius r strike tank t? — tests the REAL hull footprint (oriented box), not a small circle
 export function hitsHull(t, x, z, r){ const s=t.mesh?t.mesh.scale.x:1, f=t.facing||0, sf=Math.sin(f), cf=Math.cos(f), dx=x-t.pos.x, dz=z-t.pos.z;
   const lx=dx*cf-dz*sf, lz=dx*sf+dz*cf; return Math.abs(lx) < HULL_HW*s+r && Math.abs(lz) < HULL_HL*s+r; }
@@ -102,8 +111,8 @@ export function updateBullets(dt, now){
     const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
     if(!airborne || low) for(const bl of blocks){ if(bl===b.ignore) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
       if(bl.kind==='obj' && b.owner==='e'){ blocked=true; break; }   // enemy fire never hurts their own objective
-      if(bl.fort && b.owner==='e'){ ringPulse(b.mesh.position, 0xc89060, 0.9); blocked=true; break; }   // Z111b their own walls soak their fire — no damage to the stone
-      damageBlock(bl, b.dmg*structMul(b.type, bl)*(b.owner==='p'?siegeMul():1)); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blocked=true; break; } }
+      if((bl.fort || bl.hard) && b.owner==='e'){ ringPulse(b.mesh.position, 0xc89060, 0.9); blocked=true; break; }   // Z112 enemy fire doesn't break rocks / hedgehogs either   // Z111b their own walls soak their fire — no damage to the stone
+      damageBlock(bl, b.dmg*structMul(b.type, bl)*(b.owner==='p'?siegeMul():1)); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blockImpactFX(bl, b); blocked=true; break; } }
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
@@ -114,6 +123,7 @@ export function updateBullets(dt, now){
             if((b.vx/bl)*nx+(b.vz/bl)*nz < -0.3){ dmg*=0.28; ringPulse(b.mesh.position,0x9fd0ff,1.2); } }  // blocked from the front → flank it
           if(e.def.air && b.type==='HE' && b.fx==='frag') dmg*=ROSTER.aaBonus;   // FLAK airbursts tear helicopters apart
           e._fx=b.fx;                               // remember which gun's style killed it → styled death blast
+          e._big = !b.inf && (b.aoe>0 || b.dmg>=30); e._blast=null; { const L=Math.hypot(b.vx,b.vz)||1; e._hx=b.vx/L; e._hz=b.vz/L; }   // Z112 a heavy round throws a soldier; small arms just drop him
           if(e.def.inf && !b.inf && LETHAL.tankRoundKills) dmg=Math.max(dmg, e.hp+1);   // Z104 one tank round = one dead soldier
           damageEnemy(e, dmg);
           const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(15, (2.2+b.dmg*0.08)*(b.knock||1))/(e.def.scale||1);   // shove back along the shot; per-gun KNOCK; heavy tanks resist

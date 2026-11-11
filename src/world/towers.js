@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -77,7 +77,11 @@ export function updateTowers(dt, now){
     if(!f.down){ f.vy-=26*dt; f.g.position.x+=f.vx*dt; f.g.position.y+=f.vy*dt; f.g.position.z+=f.vz*dt; f.g.rotation.x+=f.rx*dt; f.g.rotation.z+=f.rz*dt;
       const gy=heightAt(f.g.position.x,f.g.position.z); if(f.g.position.y<=gy){ f.g.position.y=gy; f.down=true; f.g.rotation.x=Math.PI/2*(f.rx>0?1:-1);
         burst({x:f.g.position.x,z:f.g.position.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, up:1, op:0.5});
-        addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); addCoins(Math.round(15*loopRewardMul()*diffRewardMul()*cMod('coinMul'))); sfx('thud'); } }
+        sfx('thud');
+        if(f.live){ const x=f.g.position.x, z=f.g.position.z; scene.remove(f.g); fallers.splice(i,1);                       // Z112 survived the fall: picks himself up and fights
+          const e=spawnEnemy(Math.random()<0.25?'rpg':'rifle', x, z); if(e){ e.stunUntil=performance.now()/1000+TOWER.getUp; e.hp=e.maxHp*0.6; if(f.fort) e.fortOf=f.fort; floatText('LÍNH GÁC NGÃ — VẪN SỐNG!', '#ffb35a', new THREE.Vector3(x, gy+2.2, z), 13); }
+          continue; }
+        addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); addCoins(Math.round(15*loopRewardMul()*diffRewardMul()*cMod('coinMul'))); } }
     else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(1.55*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }
   for(const t of towers){ if(!t.falling) continue; t.ft+=dt; const k=Math.min(1, t.ft/1.25), e=k*k;          // topple about the base with a hard landing
     t.g.rotation.x = t.fdx*e*1.45; t.g.rotation.z = t.fdz*e*1.45;
@@ -91,12 +95,13 @@ export function collapseTower(t){
   t.fdx=az/L; t.fdz=-ax/L;
   floatText('THÁP ĐÃ ĐỔ', '#ffcf5a', new THREE.Vector3(t.x, 8, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
   burst({x:t.x,z:t.z}, 0x8a6a40, 18, 8, {y:heightAt(t.x,t.z)+3, life:0.8, size:0.5, grav:-16, drag:1.2, up:3}); burst({x:t.x,z:t.z}, 0xb09a7a, 5, 3, {y:heightAt(t.x,t.z)+1.5, life:1.4, size:2.4, smoke:true, grav:-0.4, drag:1.5, up:1.5, op:0.5});
-  for(const gd of t.guards) dropGuard(t, gd, ax/L, az/L);
+  const rammed = t._ramAt && performance.now()/1000 - t._ramAt < 0.3;                                         // Z112 knocked over by a tank: the men ride it down and live
+  for(const gd of t.guards) dropGuard(t, gd, ax/L, az/L, rammed);
 }
 // a guard leaves the tower: shot off it by our infantry (Z104) or thrown when it collapses — he tumbles to the ground (score on landing)
-export function dropGuard(t, gd, ux, uz){ if(!gd.alive) return; gd.alive=false; gd.g.visible=true; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
+export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; gd.alive=false; gd.g.visible=true; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
   t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
-  fallers.push({ g:gd.g, t:0, vx:ux*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:uz*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false }); }
+  fallers.push({ g:gd.g, t:0, vx:ux*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:uz*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false, live:!!live, fort:t.fort||null }); }
 // Z104 one of our riflemen hits a guard up top (x,z = the shooter) — he falls off the platform
 export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
   dropGuard(t, gd, ux/L, uz/L); floatText('HẠ LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, 8, t.z), 15); return true; }

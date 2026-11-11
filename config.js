@@ -93,7 +93,9 @@ export const INFANTRY = {
   rpg:  { hp:24, speed:3.8, keep:20, range:30, fireCd:5.0, aimT:1.0, dmg:22, rspeed:26, aoe:3.0, score:110 },
   squad:{ fromWave:2, base:0.6, perWave:0.3, perStage:0.4, size:[4,6], rpgFrom:2, maxOnField:22, maxMobile:14 },   // Z104 more men on the wider field
   crushSpeed:3.5, crushBonus:50, bail:0.7,
-  vsArmour:0.3,                       // Z111b small-arms rounds (riflemen, tower / wall guards, MG nests) do 30% to a tank's armour; RPG rockets keep full damage
+  vsArmour:0.3,
+  fling:{ speed:9, up:7, gib:0.75 },  // Z112 killed by a heavy round / blast: thrown away from the hit (speed, lift m/s), breaks apart ~0.75 s later and is gone
+                       // Z111b small-arms rounds (riflemen, tower / wall guards, MG nests) do 30% to a tank's armour; RPG rockets keep full damage
   coverThreat: 20, coverSearch: 12,   // Z104 a rifleman who sees a tank this close runs for the far side of the nearest cover
 };
 // NEW ENEMY VEHICLES (Z80). unlock = first stage it appears; weight = [base, +per stage after unlock] in the wave mix.
@@ -429,6 +431,12 @@ export const FORT = {
   loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },
   names:['HẮC SƠN','ƯNG SẮT','ĐẦU LÂU','LANG NHA','XÍCH VĨ','BÃO LỬA','CỔ THẠCH','HẮC LONG','THIẾT BÍCH','HUYẾT NGUYỆT'],
   chiefs:['BÁ ĐỒ','HOẢ LANG','THIẾT ƯNG','KHÔ LÂU','HẮC HỔ','BÃO CÁT','ĐỘC NHÃN','SẮT ĐÁ'] };
+// Z112 HARD OBSTACLES — lone boulders and steel hedgehogs on the road can be shot apart to open a lane (the rock ridges stay: terrain)
+//   ~3 main-gun shells crack a boulder, one heavy round (≥ oneShot after the structure multiplier) shatters it; the burst of stone wounds men close by.
+//   Enemy fire never breaks them (they are your cover too).
+export const HARD = { boulder:150, hedgehog:110, oneShot:90, shardR:3.6, shardDmg:28 };
+// Z112 KNOCKED-OUT TANKS by the killing gun (seconds of fire before the magazine goes): heavy shells blow them at once, small arms let them burn a moment
+export const TANK_DEATH = { blast:[0.1,0.22], pierce:[0.25,0.4], ice:[0.05,0.1], shock:[0.35,0.5], frag:[0.4,0.55], spark:[0.5,0.7], fire:[0.45,0.65], wreck:[1.9,2.5] };
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
 export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };
 

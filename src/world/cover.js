@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, RAM } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, fortWallHit, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { BALANCE, RAM, HARD } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -56,8 +56,9 @@ export function buildBlocks(){
     if(hedge){ m.scale.setScalar(1.0); } else { m.scale.setScalar(r*1.05); m.position.y=r*0.2; }
     m.position.x=x; m.position.z=z; m.position.y+=heightAt(x,z); m.rotation.y=Math.random()*6.283; m.castShadow=true; m.receiveShadow=true; scene.add(m);
     const climb = !hedge && r < 1.8;                                                     // Z86 low rocks: take a run and the hull rides over them
-    blocks.push({ mesh:m, x, z, r:hedge?1.2:r*0.92, hp:Infinity, steel:true, loot:false, kind:hedge?'hedgehog':'boulder', climb });
-    if(climb) BUMPS.push({ x, z, r:r*1.25, h:r*0.62, rock:true });
+    const hp=Math.round((hedge?HARD.hedgehog:HARD.boulder)*(hedge?1:r/1.6)), bump=climb ? { x, z, r:r*1.25, h:r*0.62, rock:true } : null;   // Z112 shootable: bigger rock, more stone
+    blocks.push({ mesh:m, x, z, r:hedge?1.2:r*0.92, hp, maxHp:hp, steel:false, hard:true, loot:false, kind:hedge?'hedgehog':'boulder', climb, bump });
+    if(bump) BUMPS.push(bump);
   }
   buildRidges();                                                                           // Z106 rock spines with passes → sectors + chokepoints
   buildBrickWalls();                                                                       // Z86 ruined masonry walls
@@ -74,6 +75,7 @@ export function damageBlock(b, dmg){
     burst({x:b.x,z:b.z}, 0x9a7a52, 3, 5, {y:heightAt(b.x,b.z)+1.5+Math.random()*4, life:0.4, size:0.3, grav:-16, drag:1.5, up:2});   // splinters fly
     b.mesh.position.x = b.x + (Math.random()-0.5)*0.12;                                                                                   // the structure shudders
     if(b.hp<=0){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); b.mesh.position.x=b.x; collapseTower(b.tower); if(b.loot) dropPowerup({x:b.x,z:b.z}, 1); } return; }
+  if(b.hard){ hardDamage(b, dmg); return; }                              // Z112 boulder / hedgehog: chip, crack, shatter
   if(b.kind==='brick'){ wallDamage(b, dmg); return; }
   if(b.kind==='camp'){ damageCamp(b, dmg); return; }
   if(b.kind==='pylon'){ damagePylon(b, dmg); return; }                     // Z96 boss shield pylon                      // Z90 barracks                     // Z86 masonry: staged collapse
@@ -86,12 +88,25 @@ export function damageBlock(b, dmg){
 }
 // Z107 ram a block: flimsy cover in one hit, sturdy structures in a few, steel/concrete on its own ram-strength
 export function ramBlock(b, vn, t){ if(b.fort || b.ridge || b.kind==='boulder' || !(b.hp>0)) return false; const R=RAM, now=performance.now()/1000;
-  if(vn<R.minV || now<(b.ramAt||0)) return false; b.ramAt=now+R.cd;
+  if(vn<R.minV || now<(b.ramAt||0)) return false; b.ramAt=now+R.cd; if(b.tower) b.tower._ramAt=now;   // Z112 remember: a ram (not a shell) brought it down
   const k=Math.min(1,(vn-R.minV)/(R.fullV-R.minV))*(t&&t.ramOn?R.buffMul:1);
   if(!isFinite(b.hp)){ if(b.ramHp==null) b.ramHp=R.steelHp; b.ramHp-=R.steelHp*R.frac*k;   // shell-proof: only a ram cracks it
     burst({x:b.x,z:b.z}, 0x9a968c, 4, 4, {y:1.2, life:0.6, size:0.4, grav:-14, drag:1.4, up:2.5}); sfx('clang');
     if(b.ramHp<=0){ destroyCover(b); return true; } return false; }
   const mh=b.maxHp||b.hp, before=b.hp; damageBlock(b, (mh<=R.weakHp && k>=R.weakK) ? b.hp+1 : mh*R.frac*k); return !blocks.includes(b) || b.hp<before; }   // flimsy → gone in one
+// Z112 a lone boulder / steel hedgehog under fire: stone chips + dust each hit, one heavy round or enough hits shatters it
+export function hardDamage(b, dmg){ const gy=heightAt(b.x,b.z), rock=b.kind==='boulder', big=dmg>=HARD.oneShot;
+  burst({x:b.x,z:b.z}, rock?0xb8ad98:0xffe0a0, rock?5:4, rock?5:6, {y:gy+1+Math.random(), life:rock?0.5:0.25, size:rock?0.35:0.22, grav:-16, drag:1.4, up:2.5});
+  if(rock) burst({x:b.x,z:b.z}, 0xa89a84, 2, 2, {y:gy+1, life:0.9, size:1.3, smoke:true, grav:-0.4, drag:2, up:1, op:0.4});
+  b.hp -= big ? b.hp+1 : dmg; if(b.mesh && b.hp>0){ const k=0.94+0.06*Math.max(0,b.hp/b.maxHp); b.mesh.scale.multiplyScalar(k/(b._k||1)); b._k=k; }   // it visibly loses chunks
+  if(b.hp>0) return;
+  const pos={x:b.x,z:b.z}, now=performance.now()/1000; scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
+  if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); }
+  if(rock){ for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x9a8f7c); burst(pos, 0xc8b89a, 10, 5, {y:gy+1.2, life:1.4, size:2.6, smoke:true, grav:-0.5, drag:1.6, up:1.8, op:0.55}); burst(pos, 0x8a8070, 22, 11, {y:gy+1.2, life:0.6, size:0.45, grav:-18, drag:1.1, up:4}); decalCrater(b.x,b.z,1.6,0.6); }
+  else { spawnDebris(pos, 1.0, 0x3a3a36); burst(pos, 0xffe0a0, 16, 12, {y:gy+1, life:0.3, size:0.3, grav:-12, drag:2}); }
+  sfx('bigexplode', pos); S.shake=Math.min(2.4, S.shake+0.5);
+  for(const e of enemies.slice()){ if(!e.def.inf) continue; const d=Math.hypot(e.pos.x-b.x, e.pos.z-b.z); if(d<HARD.shardR){ e._blast={ x:b.x, z:b.z }; damageEnemy(e, HARD.shardDmg*(1-d/HARD.shardR*0.6)); } }   // flying stone cuts down the men sheltering behind it
+  floatText(rock?'MỞ ĐƯỜNG':'PHÁ RÀO THÉP', '#ffcf5a', new THREE.Vector3(b.x, gy+2.6, b.z), 13); }
 export function destroyCover(b){
   const pos={x:b.x,z:b.z}, now=performance.now()/1000;
   scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);

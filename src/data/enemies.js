@@ -21,7 +21,7 @@ export const ENEMY_DEFS = {
   carrier:{ hp:96,  speed:3.4, keep:24, range:0, fireCd:0,    dmg:0,  bspeed:0,  score:360, scale:1.34, ram:8,  canShoot:false, carrier:true, crew:3, pal:{hull:0x6a6234,turret:0x7a7240,barrel:0x8a8048,tread:0x282410,accent:0xd7c24a} },   // APC: carries 3 riflemen on top; kill the chassis OR all crew → it's down
 };
 // ----------------------------- WATCHTOWERS: enemy riflemen fire DOWN on your tank — shoot the tower down and they fall with it -----------------------------
-export const TOWER = { hp:150, guardDmg:4, range:36, fireCd:1.7, h:6.2 };
+export const TOWER = { hp:150, guardDmg:4, range:36, fireCd:1.7, h:6.2, getUp:1.4 };   // Z112 getUp: seconds a guard lies stunned after riding a rammed tower down
 // ----------------------------- FRIENDLY SOLDIERS (squad that guards the Core) -----------------------------
 // Up to 5 infantry hold a ring around the monument, auto-fire at the nearest enemy, intercept incoming
 // shots (body-block) and brawl. One soldier out-DPSes a tank, but a swarm of tanks will overwhelm them.
