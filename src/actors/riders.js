@@ -1,6 +1,6 @@
 // actors/riders.js — TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100)
 import { TROOPS } from '../../config.js';
-import { RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, soldierLvl, spawnBullet, spawnPart, updateCrewBtn } from '../hub.js';
+import { RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, shootGuard, soldierLvl, spawnBullet, spawnPart, towers, updateCrewBtn } from '../hub.js';
    // base 3 + TANK CREW upgrade (+1..3)
 export const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55],                     // roof posts (tank-local, before facing+scale)
   [-1.25,1.05,0.55],[1.25,1.05,0.55],[-1.25,1.05,-0.35],[1.25,1.05,-0.35],[-1.25,1.05,-1.25],[1.25,1.05,-1.25],   // Z111b fenders, both sides
@@ -29,11 +29,17 @@ export function updateRiders(dt, now){
     let best=null, bd=RIDER.range*RIDER.range;   // small combat range (smaller than the tank's)
     for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-wx, dz=e.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
     if(boss&&boss.alive){ const dx=boss.pos.x-wx, dz=boss.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
+    let gBest=null;   // Z122 nobody on the field to shoot → the men on the wall / tower (they stand outside the `enemies` list, so the crew never saw them)
+    if(!best){ let gq=RIDER.guardR*RIDER.guardR; for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const dx=gd.wx-wx, dz=gd.wz-wz, q=dx*dx+dz*dz; if(q<gq){ gq=q; gBest={ t, gd }; } } } }
     if(best){ const ang=Math.atan2(best.pos.x-wx, best.pos.z-wz); r.g.rotation.y=ang;
       if(now>=r.fireAt){ r.fireAt=now + RIDER.fireCd*guardFireMul(); r.g.userData.kick=1;   // slow fire — GUARD: DRILL upgrade speeds it up
         r.g.userData.muzzle.getWorldPosition(_sV);
         spawnBullet(_sV.x,_sV.z,ang,{owner:'p', inf:true, dmg:RIDER.dmg*(1+soldierLvl*0.22), speed:80, color:0xe8ef86, r:0.24, life:1.0, maxDist:RIDER.range+2});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*5,0.4,Math.cos(ang)*5, {color:0xf2f7a0, size:0.4, life:0.06, grav:0, drag:9}); } }
+    else if(gBest){ const G=gBest.gd, ang=Math.atan2(G.wx-wx, G.wz-wz); r.g.rotation.y=ang;
+      if(now>=r.fireAt){ r.fireAt=now + RIDER.fireCd*guardFireMul()*1.3; r.g.userData.kick=1; r.g.userData.muzzle.getWorldPosition(_sV); const d=Math.hypot(G.wx-_sV.x, G.wz-_sV.z)||1;
+        spawnPart(_sV.x,_sV.y,_sV.z, (G.wx-_sV.x)/d*80, (G.wy-_sV.y)/d*80, (G.wz-_sV.z)/d*80, {tex:'flash', color:0xe8ef86, size:0.32, life:d/80, grav:0, drag:0});   // tracer up at the platform
+        if(Math.random()<RIDER.guardHit) shootGuard(gBest.t, G, wx, wz); } }   // a hit knocks him off the parapet
     else r.g.rotation.y += (p.facing - r.g.rotation.y)*Math.min(1,dt*4);   // ride facing forward
     if(enemyNear && now>=r.hurtAt){ damageRider(r, 5+S.stage); r.hurtAt=now+0.7; }   // exposed: crowding tanks chip the crew
     r.bar.visible = r.hp < r.maxHp-0.5; r.bar.position.set(wx, wy+1.6*RIDER.scale*p.scale, wz); r.bar.quaternion.copy(camera.quaternion); r.bar.scale.setScalar(0.72);

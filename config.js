@@ -53,7 +53,7 @@ export const BALANCE = {
   // nearest enemy inside `detect` (reaches beyond the player). NOT invincible — enemy fire crossing its orbit
   // chips `hp`; at 0 it detonates. Sustained DPS ≈ mag·dmg / (mag·fireCd + reload) ≈ 5 (≈ a fraction of the tank's).
   // `fireRot`/`idleRot` = gatling barrel spin (rad/s) when firing vs idle (the "nòng xoáy").
-  drone:{ dur:22, orbit:4.8, height:3.0, detect:26, hp:120, dmg:6, bspeed:78,
+  drone:{ guardR:44, guardHit:0.55, strikeR:3.4, strikeFireR:14, dur:22, orbit:4.8, height:3.0, detect:26, hp:120, dmg:6, bspeed:78,
           mag:6, fireCd:0.4, reload:5.0, fireRot:18, idleRot:6, hitR:1.0 },
   // SUPPORT-UNIT upgrades (shop). DRONE: owning `dronePow` L1 deploys a permanent escort gunship each stage;
   // each level scales its stats. GUARDS: reload/armor tracks on top of the existing count (`guards`) + power (`troops`).

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE } from '../../config.js';
-import { GLOW, NOW, S, boss, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, spawnBullet, spawnPart, tankExplode, wrapAngle } from '../hub.js';
+import { GLOW, NOW, S, boss, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, tankExplode, towers, wrapAngle } from '../hub.js';
 
 // ----------------------------- SUPPORT DRONE (power-up) -----------------------------
 // A 22s orbiting GUNSHIP: sleek fuselage, 4 spinning rotors, glowing sensor eye + an underslung 6-barrel
@@ -85,7 +85,14 @@ export function updateDrone(dt, now){
   if(now>=d.until){ burst(d.g.position.clone(), 0x4fd1ff, 8, 6, {life:0.3, size:0.6, up:3}); if(S.player) floatText('DRONE HẾT GIỜ', '#9fd0ff', d.g.position, 16); clearDrone(); return; }
   const p=S.player; if(!p) return;
   d.ang += dt*1.5;
-  const ox=p.pos.x+Math.cos(d.ang)*DRONE.orbit, oz=p.pos.z+Math.sin(d.ang)*DRONE.orbit, oy=DRONE.height+Math.sin(now*2.6)*0.22;
+  // Z122 TOWER STRIKE: nothing to fight near the tank → the drone climbs out to the nearest tower / wall guard, circles his parapet at his height and shoots him off
+  let strike=null; { let near=!!(boss&&boss.alive); const R2=DRONE.detect*DRONE.detect; if(!near) for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; if(dx*dx+dz*dz<R2){ near=true; break; } }
+    if(!near){ let gq=DRONE.guardR*DRONE.guardR; for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const dx=gd.wx-p.pos.x, dz=gd.wz-p.pos.z, q=dx*dx+dz*dz; if(q<gq){ gq=q; strike={ t, gd }; } } } } }
+  let tx=p.pos.x+Math.cos(d.ang)*DRONE.orbit, tz=p.pos.z+Math.sin(d.ang)*DRONE.orbit, ty=DRONE.height;
+  if(strike){ tx=strike.gd.wx+Math.cos(d.ang)*DRONE.strikeR; tz=strike.gd.wz+Math.sin(d.ang)*DRONE.strikeR; ty=strike.gd.wy+1.2; }
+  if(d.cx==null){ d.cx=tx; d.cy=ty; d.cz=tz; }
+  { const k=Math.min(1, dt*(strike?2.4:4)); d.cx+=(tx-d.cx)*k; d.cy+=(ty-d.cy)*k; d.cz+=(tz-d.cz)*k; }
+  const ox=d.cx, oz=d.cz, oy=d.cy+Math.sin(now*2.6)*0.22*(strike?0.35:1);
   d.g.position.set(ox, oy, oz);
   const ud=d.g.userData;
   if(ud.props) for(const pr of ud.props) pr.rotation.y += dt*40;                            // rotors always whirring
@@ -98,7 +105,7 @@ export function updateDrone(dt, now){
   let best=null, bd=DRONE.detect*DRONE.detect;                                              // acquire nearest target within reach
   for(const e of enemies){ const dx=e.pos.x-ox, dz=e.pos.z-oz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
   if(boss&&boss.alive){ const dx=boss.pos.x-ox, dz=boss.pos.z-oz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
-  const wantSpin = (best&&!reloading) ? DRONE.fireRot : (reloading? DRONE.fireRot*0.5 : DRONE.idleRot);   // gatling spin-up / spin-down
+  const wantSpin = ((best||strike)&&!reloading) ? DRONE.fireRot : (reloading? DRONE.fireRot*0.5 : DRONE.idleRot);   // gatling spin-up / spin-down
   d.spin += (wantSpin-d.spin)*Math.min(1, dt*6);
   if(ud.gat) ud.gat.rotation.z += dt*d.spin;
   if(best){
@@ -112,6 +119,11 @@ export function updateDrone(dt, now){
       if(d.ammo%3===0) sfx('beep');
       if(d.ammo<=0) d.reloadUntil=now+d.reloadT;                                              // belt empty → short reload
     }
-  } else { d.g.rotation.y += dt*1.1; }                                                       // idle scan spin
+  } else if(strike){ const G=strike.gd, ang=Math.atan2(G.wx-ox, G.wz-oz); const da=wrapAngle(ang-d.g.rotation.y); d.g.rotation.y += da*Math.min(1, dt*10);
+    if(!reloading && now>=d.fireAt && Math.hypot(G.wx-ox, G.wz-oz)<DRONE.strikeFireR){ d.fireAt=now+d.fireCd*1.5; d.ammo--; const dd=Math.hypot(G.wx-ox, G.wz-oz)||1, mx=ox+Math.sin(ang)*0.95, mz=oz+Math.cos(ang)*0.95;
+      spawnPart(mx, oy, mz, (G.wx-mx)/dd*70, (G.wy-oy)/dd*70, (G.wz-mz)/dd*70, {tex:'flash', color:0x8fe0ff, size:0.34, life:dd/70, grav:0, drag:0});   // tracer at the platform
+      muzzleFlash(mx, mz, ang, 0x8fe0ff); if(Math.random()<DRONE.guardHit) shootGuard(strike.t, G, ox, oz);   // a hit knocks him off the parapet — he falls
+      if(d.ammo%3===0) sfx('beep'); if(d.ammo<=0) d.reloadUntil=now+d.reloadT; } }
+  else { d.g.rotation.y += dt*1.1; }                                                       // idle scan spin
   if(d.bar){ d.bar.g.position.set(ox, oy+1.05, oz); d.bar.g.quaternion.copy(camera.quaternion); d.bar.g.visible = d.hp < d.maxHp - 0.5; }
 }
