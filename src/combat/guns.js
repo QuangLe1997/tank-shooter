@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, GIFT, LOOT } from '../../config.js';
-import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunReloadMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange } from '../hub.js';
+import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunMagMul, gunReloadMul, gunRngMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
@@ -21,7 +21,7 @@ export function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (
 export function armorOf(e){ return e===boss ? 'H' : (ARMOR[e.type]||'M'); }
 export function siegeMul(){ const p=S.player; return p && p.buffUntil && performance.now()/1000 < (p.buffUntil.siege||0) ? LOOT.siege.mul : 1; }   // Z111b ĐẠN PHÁ THÀNH buff
 export function structMul(type, bl){ const m=type&&DMG_TYPE[type]; if(!m) return 1; if(bl.kind==='gate'||bl.kind==='fortwall') return Math.max(FORT.shotStructMin, m.struct); return (bl.kind==='tower' && m.tower) ? m.tower : m.struct; }   // Z111 fortress gate / wall: no gun is weak against it
-export function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r*weatherRange(); }
+export function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1)*gunRngMul(id); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r*weatherRange(); }   // Z115 + NÒNG parts
 export function bulletFalloff(b){ if(!b.reach || b.fall>=1) return 1; const d=Math.hypot(b.x-b.ox, b.z-b.oz), f=Math.max(0, Math.min(1, (d/b.reach-0.55)/0.45)); return 1 - f*(1-b.fall); }
 export let _effT=0;
 export function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<1100) return; if(mul>=1.3){ _effT=n; floatText('HIỆU QUẢ ×'+mul.toFixed(1), '#ffb84a', new THREE.Vector3(pos.x,3.2,pos.z), 14); } else if(mul<=0.6){ _effT=n; floatText('YẾU TRƯỚC GIÁP', '#9aa3ad', new THREE.Vector3(pos.x,3.2,pos.z), 13); } }
@@ -59,7 +59,8 @@ export function muzzleFlash(x,z,ang,color,rec,y){
 }
 export const CASING = { hesh:{n:1,s:0.4}, rifle:{n:1,s:0.16}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
 export function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
-export function magCap(g){ return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
+const _GID=new Map(); export function gunIdOf(g){ if(!_GID.size) for(const k in GUNS) _GID.set(GUNS[k],k); return _GID.get(g); }
+export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1) * (id?gunMagMul(id):1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
 export function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1)*gunReloadMul(inst.id); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }   // MASTERY: higher level reloads faster
 // ----- reload countdown dial: a glowing circular chart billboarded above the tank, flashes ✓ when ready -----
 export const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=reloadCanvas.height=160;

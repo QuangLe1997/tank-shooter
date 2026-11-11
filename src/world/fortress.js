@@ -1,8 +1,8 @@
 // world/fortress.js — Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, corner watchtowers, one heavy gate to batter open, a crowded garrison + a commander inside; troops sally from the gates. Take them all to win the stage (the main citadel's gate opens last and its commander is the boss).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FORT, COMMAND } from '../../config.js';
-import { ALLY_TANKS, ARENA, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, ownGun, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towers, unwave } from '../hub.js';
+import { FORT, COMMAND, GUN_MODS } from '../../config.js';
+import { ALLY_TANKS, ARENA, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, modDrop, ownGun, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towers, unwave } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -262,6 +262,7 @@ function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false
   const L=FORT.loot, coins=Math.round((L.coins[0]+L.coins[1]*S.stage)*f.tier*loopRewardMul()), dia=L.dia[0]+((Math.random()*(L.dia[1]-L.dia[0]+1))|0)+(f.tier>=2?1:0);
   addCoins(coins); addDiamonds(dia); refreshWallet();
   for(let k=0;k<L.drops+f.tier-1;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*8, z:f.z+(Math.random()-0.5)*8 }, Math.min(3, f.tier));
+  for(let k=0;k<GUN_MODS.fortDrops;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2, modDrop());   // Z115 the armoury: a gun part
   let gunTx=''; if(Math.random()<L.gunChance*f.tier){ const not=Object.keys(GUNS).filter(id=>!PROFILE.ownedGuns.includes(id) && GUNS[id].tier && GUNS[id].tier<=1+f.tier); if(not.length){ const id=not[(Math.random()*not.length)|0]; ownGun(id); gunTx=' · SÚNG MỚI: '+GUNS[id].name; } }
   saveProfile();
   bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup');

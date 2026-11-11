@@ -331,6 +331,18 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
   - *Văng theo sức đạn:* độ văng của lính trúng đạn nặng tăng theo sát thương (`INFANTRY.fling`: 40 sát thương ≈ 8 m, đạn rất mạnh ≈ 17 m) hoặc theo độ gần tâm nổ. Có vệt máu bay theo, rơi xuống thì nổ tung toé máu và mảnh, loang vết máu quanh chỗ rơi.
   - *Xe tăng nổ giết lính xung quanh (`TANK_BLAST`):* kho đạn nổ làm chết hoặc bị thương lính trong bán kính 4,2 m × cỡ xe, cả địch lẫn ta.
   - *Cán lính:* xe tăng lăn qua người ở tốc độ trên 1,2 m/s (trước 3,5) là chết. Xe ta bắt được và xe địch cũng cán được lính.
+- **Z115 CHỈ SỐ SÚNG ĐẦY ĐỦ · LINH KIỆN SÚNG:**
+  - *Thẻ súng:*
+    - Thêm các dòng nổ lan (bán kính và sát thương mỗi phát), số viên mỗi phát, số mục tiêu xuyên; băng đạn tính cả linh kiện.
+    - Mục ĐẶC TÍNH ghi kèm con số (`gunTraits`): số nòng (`GUN_BARRELS`), chùm ×N, nổ lan, xuyên, dẫn đường, đóng băng, giật lan, cầu vồng (bắn vượt tường), nổ chậm, thiêu, chống tăng, diệt bộ binh, phòng không, phá thành, sơ tốc đạn.
+    - Mục LINH KIỆN hiện cấp đã lắp và hiệu quả của từng loại.
+  - *Linh kiện súng (`GUN_MODS`, lưu ở `PROFILE.gunMods`):* nâng vĩnh viễn từng khẩu, mỗi loại tối đa 5 cấp, cộng dồn với cấp thông thạo.
+    - NÒNG TINH CHẾ: +6% sát thương, +4% tầm mỗi cấp.
+    - KHOÁ NÒNG: −5% thời gian giữa hai phát, −6% thời gian nạp mỗi cấp.
+    - BĂNG ĐẠN MỞ RỘNG: +12% số viên mỗi cấp.
+  - *Nhặt linh kiện:* lắp vào súng đang cầm; súng đó đủ cấp thì sang khẩu khác đang mang; tất cả đều đủ thì được 150 xu.
+  - *Nguồn rơi:* 25% các lần rơi đồ sử thi, 15% lần rơi đồ hiếm, và mỗi thành chiếm được chắc chắn rơi 1 linh kiện.
+  - *Ngoại hình:* cứ 5 linh kiện lắp vào thì nòng súng lên một bậc trang trí (`barrelGrade`).
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

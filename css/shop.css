@@ -179,3 +179,9 @@ body.shopdetail .shop-top{gap:4px;}
   #shopDetailView .shop-arrow{width:42px;height:42px;} #shopDetailView .shop-arrow.prev{left:calc(max(8px,env(safe-area-inset-left)) + min(36vw,250px) + 10px);}
   .shop-drag{display:none;}
 }
+
+/* Z115 gun parts on the gun card */
+.sp-mods{display:flex;flex-direction:column;gap:4px;margin-top:2px;}
+.sp-mod{display:grid;grid-template-columns:1fr auto;gap:0 8px;padding:4px 8px;border-radius:7px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);font-size:11px;}
+.sp-mod i{font-style:normal;color:#ffd27a;letter-spacing:1px;font-size:10px;} .sp-mod i u{text-decoration:none;color:rgba(255,255,255,.22);}
+.sp-mod small{grid-column:1/3;color:var(--muted);font-size:9.5px;} .sp-mod.on small{color:#cfe8a8;}

@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, GIFT, LOOT } from '../../config.js';
-import { BIOME, GEM_DEF, S, __set_soldierLvl, addCoins, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, heightAt, iconEl, riders, ridersUnlocked, ringPulse, scene, setIcon, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateHUD } from '../hub.js';
+import { BALANCE, GIFT, LOOT, GUN_MODS } from '../../config.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -31,6 +31,10 @@ export const POWERUPS = [
   { id:'drone',  svg:'drone', color:0x6fd0ff, vi:'DRONE YỂM TRỢ', ds:'Drone bắn tự động 22 giây', cat:'tech', tier:1, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
   { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(crewTarget()); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('REINFORCEMENTS', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, vi:'TRANG BỊ LÍNH', ds:'Lính bắn mạnh & nhanh hơn', cat:'ammo', tier:1, apply(){ __set_soldierLvl(soldierLvl + 1); for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TROOPS ARMED +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
+  // Z115 GUN PARTS — permanent, per gun, stacking (GUN_MODS)
+  { id:'mod_barrel', svg:'gun',    color:0xffb35a, mod:'barrel', vi:'NÒNG TINH CHẾ',   ds:'Súng đang cầm: +6% sát thương, +4% tầm — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('barrel'); } },
+  { id:'mod_action', svg:'wrench', color:0x9fd8ff, mod:'action', vi:'KHOÁ NÒNG',       ds:'Súng đang cầm: bắn nhanh hơn 5%, nạp nhanh hơn 6% — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('action'); } },
+  { id:'mod_mag',    svg:'mag',    color:0xd8c070, mod:'mag',    vi:'BĂNG ĐẠN MỞ RỘNG', ds:'Súng đang cầm: +12% số viên mỗi băng — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('mag'); } },
   // gun drop — adds a random gun to the inventory
   { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ giveGun(smartGunPick()); } },
 ];
@@ -90,14 +94,24 @@ export function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def
   else if(cat==='bomb'){ const b=add(new THREE.SphereGeometry(0.42,14,10).translate(0,0.45,0), lootMat('bomb',0x2a2a26)); }
   else { add(G.tech, lootMat('tech',0x34404a,0x103040)); }
   return g; }
+// Z115 fit a part: the gun in your hands first, else another carried gun that still has room, else coins
+const MOD_VI={ barrel:'NÒNG', action:'KHOÁ NÒNG', mag:'BĂNG ĐẠN' };
+export function fitGunMod(k){ const p=S.player; if(!p||!p.guns) return; const order=[p.guns[p.gunIdx]].concat(p.guns.filter((g,i)=>i!==p.gunIdx)).filter(Boolean);
+  for(const inst of order){ const id=inst.id, before=barrelGrade(id), lv=addGunMod(id, k); if(lv<0) continue; const g=GUNS[id];
+    if(k==='mag'){ const cap=magCap(g); inst.ammo=Math.min(cap, inst.ammo+Math.max(1,Math.round(g.mag*GUN_MODS.mag.mag))); }
+    if(inst===p.guns[p.gunIdx] && barrelGrade(id)!==before) setPlayerBarrel(id);                                   // the barrel looks finer
+    floatText(MOD_VI[k]+' +1 · '+g.name+' ('+lv+'/'+GUN_MODS.max+')', '#ffd27a', p.pos, 20); ringPulse(p.pos, 0xffd27a, 2.4); sfx('levelup'); updateGunHUD(); return; }
+  addCoins(GUN_MODS.coins); floatText('SÚNG ĐÃ ĐỦ LINH KIỆN · +'+GUN_MODS.coins+' xu', '#ffd24a', p.pos, 18); }
+export function modDrop(){ const pool=POWERUPS.filter(u=>u.mod); return pool[(Math.random()*pool.length)|0]; }
 export function pickLoot(tier){                                                             // tier = how tough the source was (0 common · 1 rare · 2 epic)
   const p=S.player, low=(p.hp/p.maxHp<0.4)||(core&&core.hp/core.maxHp<0.4);
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield','era'].includes(u.id)); return pool[(Math.random()*pool.length)|0]; }
   if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
   let roll=0; if(tier>=2 && Math.random()<LOOT.rarity.epicShare) roll=2; else if(tier>=1 && Math.random()<LOOT.rarity.rareShare) roll=1;
-  if(roll===2){ const r=Math.random(); if(r<0.55){ S.giftDry=0; return GUN_DROP_DEF; } return r<0.8 ? POWERUPS.find(u=>u.id==='bomb') : GEM_DEF; }   // EPIC: gun · cluster bomb · diamond
+  if(roll===2){ const r=Math.random(); if(r<0.55){ S.giftDry=0; return GUN_DROP_DEF; } if(r<0.55+GUN_MODS.epicShare) return modDrop(); return r<0.9 ? POWERUPS.find(u=>u.id==='bomb') : GEM_DEF; }   // EPIC: gun · gun part · cluster bomb · diamond
+  if(roll===1 && Math.random()<GUN_MODS.rareShare) return modDrop();                                                   // Z115 rare: sometimes a gun part
   if(Math.random() < Math.min(GIFT.pityCap, GIFT.gunBase*0.35 + (S.giftDry||0)*GIFT.pityStep)){ S.giftDry=0; return GUN_DROP_DEF; }   // pity timer still guarantees guns on dry streaks
-  const pool=POWERUPS.filter(u=>u.id!=='gun' && u.id!=='bomb' && (u.tier||0)===roll); S.giftDry=(S.giftDry||0)+1;
+  const pool=POWERUPS.filter(u=>u.id!=='gun' && u.id!=='bomb' && !u.mod && (u.tier||0)===roll); S.giftDry=(S.giftDry||0)+1;   // Z115 parts come only from their own rolls
   return pool[(Math.random()*pool.length)|0];
 }
 export function dropPowerup(pos, tier, forced){

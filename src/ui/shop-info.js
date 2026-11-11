@@ -1,6 +1,6 @@
 // ui/shop-info.js — Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas vs your gun
-import { DMG_TYPE, ROSTER, FORT } from '../../config.js';
-import { GUNS, PROFILE, gunDmgMul, gunFireMul } from '../hub.js';
+import { DMG_TYPE, ROSTER, FORT, GUN_MODS, GUN_BARRELS } from '../../config.js';
+import { GUNS, PROFILE, gunDmgMul, gunFireMul, gunMod } from '../hub.js';
 
 // one short role line per gun (Vietnamese) + a colour family
 export function gunRole(id){ const g=GUNS[id]||{};
@@ -36,3 +36,27 @@ let _max=null; export function gunMax(){ if(_max) return _max; _max={ dmg:1, rof
 export function currentGunId(){ const L=PROFILE.loadout||[]; return L[0]||'rifle'; }
 export function delta(a, b, lowerIsBetter){ if(b==null||a===b) return ''; const better = lowerIsBetter ? a<b : a>b, pct=Math.round(Math.abs(a-b)/Math.max(1e-6,Math.abs(b))*100);
   return '<i class="dl '+(better?'up':'dn')+'">'+(better?'▲':'▼')+pct+'%</i>'; }
+
+// Z115 everything a gun does, as tags with numbers (pellets, barrels, splash, pierce, guidance, freeze, chain, arc, delayed fuse, roles)
+export function gunTraits(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, T=[], arc=g.special==='mortar'||g.special==='arty'||g.special==='rocket';
+  const nB=GUN_BARRELS[id]||1; if(nB>1) T.push({ t:nB+' NÒNG', d:'Bắn luân phiên / song song từ '+nB+' nòng' });
+  if((g.frags||1)>1) T.push({ t:'CHÙM ×'+g.frags, d:g.frags+' viên mỗi phát, toả '+Math.round((g.spread||0)*57)+'°' });
+  if(g.aoe) T.push({ t:'NỔ LAN '+g.aoe.toFixed(1)+' m', d:'Nổ lan bán kính '+g.aoe.toFixed(1)+' m, 80% sát thương' });
+  if(g.pierce) T.push({ t:'XUYÊN '+g.pierce, d:'Xuyên qua '+g.pierce+' mục tiêu' });
+  if(g.homing || g.lock) T.push({ t:'DẪN ĐƯỜNG', d:'Tự bám mục tiêu' });
+  if(g.freeze) T.push({ t:'ĐÓNG BĂNG '+g.freeze+' s', d:'Làm địch đứng hình' });
+  if(g.chain) T.push({ t:'GIẬT LAN '+g.chain, d:'Tia điện nhảy sang '+g.chain+' địch gần' });
+  if(arc) T.push({ t:'CẦU VỒNG', d:'Bắn vòng qua tường thành và vật cản' });
+  if(g.special==='rocket') T.push({ t:'NỔ CHẬM', d:'Ngòi nổ trễ khi chạm đất' });
+  if(g.special==='flame') T.push({ t:'THIÊU', d:'Gây cháy liên tục' });
+  if((m.H||1)>=1.3) T.push({ t:'CHỐNG TĂNG', d:'×'+m.H+' vào xe nặng' });
+  if((m.L||1)>=1.3 || g.type==='FRAG') T.push({ t:'DIỆT BỘ BINH', d:'×'+(m.L||1)+' vào mục tiêu nhẹ' });
+  if(id==='flak') T.push({ t:'PHÒNG KHÔNG', d:'Xé nát trực thăng' });
+  if((m.struct||1)>=1.5) T.push({ t:'PHÁ THÀNH ×'+m.struct, d:'Mạnh vào tường, cổng, tháp' });
+  if(g.bspeed) T.push({ t:'ĐẠN '+Math.round(g.bspeed)+' m/s', d:'Sơ tốc đầu nòng' });
+  return T; }
+// Z115 parts fitted to a gun: [{k, vi, lv, max, fx}]
+export function gunModRows(id){ const M=GUN_MODS; return [
+  { k:'barrel', vi:'Nòng tinh chế', lv:gunMod(id,'barrel'), fx:'+'+Math.round(gunMod(id,'barrel')*M.barrel.dmg*100)+'% sát thương · +'+Math.round(gunMod(id,'barrel')*M.barrel.rng*100)+'% tầm' },
+  { k:'action', vi:'Khoá nòng', lv:gunMod(id,'action'), fx:'−'+Math.round(gunMod(id,'action')*M.action.fire*100)+'% giãn bắn · −'+Math.round(gunMod(id,'action')*M.action.reload*100)+'% nạp' },
+  { k:'mag', vi:'Băng đạn mở rộng', lv:gunMod(id,'mag'), fx:'+'+Math.round(gunMod(id,'mag')*M.mag.mag*100)+'% số viên' } ].map(r=>({ ...r, max:M.max })); }
