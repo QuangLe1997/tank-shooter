@@ -1,6 +1,6 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
-import { ARENA, MOBILE, arena, inField, terrainGeo } from '../hub.js';
+import { ARENA, MOBILE, arena, bloodSplat, inField, terrainGeo } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -49,9 +49,7 @@ export function decalCrater(x, z, r, k){                                        
   c.fillStyle=ring; c.beginPath(); c.arc(px,pz,R*0.95,0,7); c.fill();
   DECAL.dirtyS=true;
 }
-export function decalBlood(x, z, r){                                                   // Z113 a dark pool under a fallen man (fades with the treads)
-  const c=DECAL.dx, px=_ddx(x), pz=_ddz(z), R=Math.max(1.5,r*DECAL.dppu); const g=c.createRadialGradient(px,pz,0,px,pz,R); g.addColorStop(0,'rgba(70,10,8,0.6)'); g.addColorStop(1,'rgba(60,8,6,0)');
-  c.fillStyle=g; c.beginPath(); c.ellipse(px,pz,R,R*0.7,Math.random()*3,0,7); c.fill(); DECAL.dirtyD=true; }
+export function decalBlood(x, z, r){ bloodSplat(x, z, r); }   // Z121 blood = soft instanced splats (fx/gore.js); the 2 px/m decal canvas drew it as dark blocky squares
 export function decalDirt(x, z, r){                                                    // bullet strike / near miss: small dark puff (fades with treads)
   const c=DECAL.dx, px=_ddx(x), pz=_ddz(z), R=Math.max(1.2,r*DECAL.dppu);
   c.fillStyle=_treadCol+'0.32)'; c.beginPath(); c.arc(px,pz,R,0,7); c.fill(); DECAL.dirtyD=true;

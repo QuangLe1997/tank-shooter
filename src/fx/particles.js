@@ -69,7 +69,8 @@ export function updateParticles(dt){
 // write live particles + tracer trails into the two instanced layers (called once per frame, after all spawning/updates)
 export function flushParticles(){
   const L=[PL_SMOKE, PL_GLOW, PL_FIRE, PL_FLASH]; for(const l of L) l.n=0;
-  for(const p of parts){ const ly=p.smoke?L[0]:(p.tex==='fire'?L[2]:(p.tex==='flash'?L[3]:L[1])); if(ly.n>=PART_MAX) continue; const i=ly.n++;
+  for(const p of parts){ if(!(p.x===p.x && p.y===p.y && p.z===p.z)) continue;   // Z121 a NaN position must never reach the GPU (it showed up as black squares through the bloom)
+    const ly=p.smoke?L[0]:(p.tex==='fire'?L[2]:(p.tex==='flash'?L[3]:L[1])); if(ly.n>=PART_MAX) continue; const i=ly.n++;
     const k=p.life/p.max, sz=p.size*(p.smoke ? (1.4-k*0.8) : (p.tex==='fire' ? (0.55+k*0.45) : k)) + (p.grow*(1-k));
     const col = p.c1 ? _pc.copy(p.c1).lerp(p.c0, k) : p.col;
     const py = (p.smoke||p.tex==='fire') ? Math.max(p.y, heightAt(p.x,p.z)+sz*0.42) : p.y;   // big billboards sit ON the ground instead of being sliced into half-discs

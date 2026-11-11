@@ -20,11 +20,12 @@ export function damageEnemy(e, dmg){
 }
 export function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1);
+  freeEnemyBar(e.bar); e.bar=null;   // Z121 first thing: whatever happens below, a dead unit never keeps its HP bar
   if(e.def.bomber) tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x, e._fx||'fire');   // the kamikaze just goes up
   if(e.laser){ dropBeam(e.laser); e.laser=null; } if(e.mesh.userData.weld) e.mesh.userData.weld.visible=false;
-  if(e.def.inf) infantryDown(e);                                                                          // Z79 soldier falls / is crushed
-  else if(e.def.air) gunshipDown(e);                                                                           // Z80 gunship spirals down
-  else startDying(e);
+  try{ if(e.def.inf) infantryDown(e);                                                                       // Z79 soldier falls / is crushed
+    else if(e.def.air) gunshipDown(e);                                                                       // Z80 gunship spirals down
+    else startDying(e); }catch(err){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); console.error('death fx', err); }   // Z121 a broken effect must never stop the kill (score, loot, bar)
   if(e.def.carrier && e.crew){ const ex=e.pos.x, ez=e.pos.z; e.crew.forEach((c,k)=>{ if(c.alive && Math.random()<INFANTRY.bail) setTimeout(()=>{ if(S.mode==='playing') spawnEnemy('rifle', ex+(Math.random()-0.5)*4, ez+(Math.random()-0.5)*4); }, 300+k*220); }); }   // survivors bail out of the burning APC                                                                                          // knocked out: catches fire & smokes → cooks off → gone
   bumpCombo();
   const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul() * diffRewardMul();

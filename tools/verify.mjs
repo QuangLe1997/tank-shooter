@@ -8,6 +8,7 @@ let bad=0; for(const f of files){ try{ execFileSync(process.execPath, ['--check'
 console.log(`syntax: ${files.length} files · ${bad} failed`); if(bad) process.exit(1);
 const deep = fs.existsSync(path.join(ROOT,'node_modules','acorn')) && fs.existsSync(path.join(ROOT,'node_modules','eslint-scope'));
 if(!deep) console.log('⚠ deepcheck skipped — run `npm install` once to enable the scope-level module checks (R8–R11)');
-for(const script of ['tools/archcheck.mjs', ...(deep?['tools/refactor/deepcheck.mjs']:[]), 'test.js']){ try{ const out=execFileSync(process.execPath, [script], { cwd:ROOT, stdio:'pipe' }).toString(); console.log(out.trim().split('\n').filter(l=>/archcheck:|deepcheck:|PASS|FAIL|✗|⚠/.test(l)).join('\n')); }
+// Z121 first: no live code pushed behind a // comment (tools/check-comments.mjs)
+for(const script of ['tools/check-comments.mjs', 'tools/archcheck.mjs', ...(deep?['tools/refactor/deepcheck.mjs']:[]), 'test.js']){ try{ const out=execFileSync(process.execPath, [script], { cwd:ROOT, stdio:'pipe' }).toString(); console.log(out.trim().split('\n').filter(l=>/archcheck:|deepcheck:|PASS|FAIL|✗|⚠/.test(l)).join('\n')); }
   catch(e){ console.log(String(e.stdout||'')+String(e.stderr||'')); process.exit(1); } }
 console.log('✓ verify: all checks passed');

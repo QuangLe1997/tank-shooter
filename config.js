@@ -94,7 +94,7 @@ export const INFANTRY = {
   squad:{ fromWave:2, base:0.6, perWave:0.3, perStage:0.4, size:[4,6], rpgFrom:2, maxOnField:22, maxMobile:14 },   // Z104 more men on the wider field
   crushSpeed:1.2, crushBonus:50, bail:0.7,   // Z113 a tank rolling over a man at any real speed kills him (was 3.5)
   vsArmour:0.3,
-  fling:{ speed:10, up:8, gib:1.0, maxK:1.7 },  // Z112 killed by a heavy round / blast: thrown away from the hit (speed, lift m/s), breaks apart ~0.75 s later and is gone
+  fling:{ speed:13, up:8.5, gib:1.0, maxK:1.7, tearK:1.9 },   // Z121 a direct tank round (or the core of a blast, hitK ≥ tearK) TEARS the man apart instead  // Z112 killed by a heavy round / blast: thrown away from the hit (speed, lift m/s), breaks apart ~0.75 s later and is gone
                        // Z111b small-arms rounds (riflemen, tower / wall guards, MG nests) do 30% to a tank's armour; RPG rockets keep full damage
   coverThreat: 20, coverSearch: 12,   // Z104 a rifleman who sees a tank this close runs for the far side of the nearest cover
 };
@@ -247,8 +247,9 @@ export const DRIVE = {
   accel: 19,          // peak tractive acceleration once rolling (Z99: 34→23; Z107: 23→19 — no mid-range surge)
   launch: 0.7,        // share of that available from a dead stop (Z107: 0.32→0.7 — moves off at once, no 50-t creep)
   launchV: 6,         // speed by which full power has come in
-  reverseMul: 0.5,    // reverse top speed / accel vs forward
-  reverseAngle: 2.25, // push the stick this far (rad) behind the hull → back up instead of pivoting round
+  reverseMul: 0.72,   // reverse top speed / accel vs forward (Z121: 0.5 → 0.72 — backing out of a fight is a real move)
+  reverseAngle: 2.0,  // push this far (rad, ≈115°) behind the hull → BACK UP straight, no turning round (Z121: at any speed — it brakes, then reverses)
+  reverseKeep: 1.3,   // …and it keeps reversing until the push comes back within this of the hull's rear-to-front line
   coast: 32,          // rolling resistance with the throttle off (Z107: 14→32 — settles in ~0.7 s / 8 m, was 1.6 s / 19 m)
   coastLin: 0.45,     // extra resistance per unit of speed while coasting (Z107: 0.12→0.45)
   brake: 62,          // braking against the motion (Z107: 44→62)
@@ -258,7 +259,7 @@ export const DRIVE = {
   grip: 14,           // sideways track grip — kills lateral slide (Z107: 10→14)
   screenPivot: 4.4,   // Z107 screen-relative keys: the hull swings round to the pressed direction this fast (rad/s, standing) — snappy, no fiddly steering
   screenTurnAtSpeed: 2.6,  // … and while rolling
-  screenReverse: false,    // Z107 keys never back you up: pressing the opposite way turns the tank round to face it
+  screenReverse: true,     // Z121 keys back you up too: pressing the way opposite to the hull reverses straight (it used to spin the tank round)
   ram: { minImpact: 7, toEnemy: 1.15, toPlayer: 0.42, toBoss: 0.7, aggressor: 0.5, perStage: 0.22 },   // dmg = k × (closing speed − min) × mass share
   wallBreak: 14,      // closing speed that smashes a brick wall section; slower just thumps it
   climb: 15.5,        // closing speed needed to ride over a low rock; slower → stopped dead, back up and take a run
@@ -440,7 +441,11 @@ export const FORT = {
 // Z112 HARD OBSTACLES — lone boulders and steel hedgehogs on the road can be shot apart to open a lane (the rock ridges stay: terrain)
 //   ~3 main-gun shells crack a boulder, one heavy round (≥ oneShot after the structure multiplier) shatters it; the burst of stone wounds men close by.
 //   Enemy fire never breaks them (they are your cover too).
-export const HARD = { boulder:150, hedgehog:110, oneShot:90, shardR:3.6, shardDmg:28 };
+export const HARD = { boulder:150, hedgehog:110, oneShot:90, shardR:3.6, shardDmg:28,
+  hits:3, lightHits:6, lightDmg:8, ridgeK:1.3 };   // Z121 ANY tank gun breaks a rock in `hits` shots (rapid light guns: `lightHits`), whatever its damage; ridge rocks are breakable too (×ridgeK stone)
+// Z121 GORE: ground blood splats [desktop, phone] · body chunks [desktop, phone] · seconds a splat stays (last `fade` s fading) · chunk life ·
+//   chunk speed m/s (× the round's power) and lift · spread cone (rad) · blood colour / opacity
+export const GORE = { splats:[160,70], chunks:[64,28], splatLife:24, fade:6, chunkLife:2.4, speed:[12,27], up:[4,11], cone:0.9, color:0x7a0a0a, alpha:0.82 };
 // Z112 KNOCKED-OUT TANKS by the killing gun (seconds of fire before the magazine goes): heavy shells blow them at once, small arms let them burn a moment
 export const TANK_BLAST = { r:4.2, dmg:70, edge:0.25 };   // Z113 a tank's magazine going up kills men within r × tank scale (edge = damage share at the rim) — theirs and ours
 export const TANK_DEATH = { blast:[0.1,0.22], pierce:[0.25,0.4], ice:[0.05,0.1], shock:[0.35,0.5], frag:[0.4,0.55], spark:[0.5,0.7], fire:[0.45,0.65], wreck:[1.9,2.5] };

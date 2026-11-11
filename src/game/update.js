@@ -56,7 +56,7 @@ export function updatePlayer(dt, now){
     } else if(inp > 0.1){                                                         // SCREEN CONTROLS: push where you want to go; the hull turns to it
       const want = Math.atan2(dir.x, dir.z); let df = wrapAngle(want - p.facing);
       const aimOnly = barrelFixed() && inp < AIM.pivotOnly;                       // Z104 light push on a phone = swing the gun (hull) onto the target, stay put
-      if(aimOnly || (scr && !DRIVE.screenReverse)) p.rev = false; else if(p.rev ? Math.abs(df) > 1.55 : (Math.abs(df) > DRIVE.reverseAngle && Math.abs(vf) < 3)) p.rev = true; else p.rev = false;   // pull back from (near) standstill → back up; moving → swing round (hysteresis)
+      if(aimOnly || (scr && !DRIVE.screenReverse)) p.rev = false; else if(p.rev ? Math.abs(df) > DRIVE.reverseKeep : Math.abs(df) > DRIVE.reverseAngle) p.rev = true; else p.rev = false;   // Z121 push behind the hull → back up straight, at any speed (brakes first); hysteresis so it doesn't flip
       if(p.rev) df = wrapAngle(want + Math.PI - p.facing);
       const step = Math.sign(df)*Math.min(Math.abs(df), turnK*dt); p.facing = wrapAngle(p.facing + step);
       const align = Math.max(0, Math.cos(df));                                    // pivot first: little drive until the hull lines up

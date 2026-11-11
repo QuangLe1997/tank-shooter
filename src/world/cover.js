@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, RAM, HARD } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -98,11 +98,13 @@ export function ramBlock(b, vn, t){ if(b.fort || b.ridge || b.kind==='boulder' |
 export function hardDamage(b, dmg){ const gy=heightAt(b.x,b.z), rock=b.kind==='boulder', big=dmg>=HARD.oneShot;
   burst({x:b.x,z:b.z}, rock?0xb8ad98:0xffe0a0, rock?5:4, rock?5:6, {y:gy+1+Math.random(), life:rock?0.5:0.25, size:rock?0.35:0.22, grav:-16, drag:1.4, up:2.5});
   if(rock) burst({x:b.x,z:b.z}, 0xa89a84, 2, 2, {y:gy+1, life:0.9, size:1.3, smoke:true, grav:-0.4, drag:2, up:1, op:0.4});
-  b.hp -= big ? b.hp+1 : dmg; if(b.mesh && b.hp>0){ const k=0.94+0.06*Math.max(0,b.hp/b.maxHp); b.mesh.scale.multiplyScalar(k/(b._k||1)); b._k=k; }   // it visibly loses chunks
+  b.hp -= big ? b.hp+1 : Math.max(dmg, b.maxHp/(dmg>=HARD.lightDmg?HARD.hits:HARD.lightHits)+0.01);   // Z121 3 shots from any real gun (6 from the rapid light ones), 1 from a heavy round
+  if(b.mesh && !b.ridge && b.hp>0){ const k=0.9+0.1*Math.max(0,b.hp/b.maxHp); b.mesh.scale.multiplyScalar(k/(b._k||1)); b._k=k; }   // it visibly loses chunks
   if(b.hp>0){ if(!b.bar){ b.bar=getEnemyBar(); b.bar.g.scale.setScalar(1.7); }                      // Z120 a damaged rock shows how much stone is left
-    const k=Math.max(0,b.hp/b.maxHp), br=b.bar; br.g.visible=true; br.g.position.set(b.x, gy+b.r*1.5+1.4, b.z); br.g.quaternion.copy(camera.quaternion); br.fill.scale.x=Math.max(0.001,k); br.fill.position.x=-(1-k)*0.5; br.fill.material.color.setHex(0xd8c8a8); return; }
+    const k=Math.max(0,b.hp/b.maxHp), br=b.bar; br.g.visible=true; br.g.position.set(b.x, gy+b.r*1.5+1.4, b.z); br.g.quaternion.copy(camera.quaternion); br.fill.scale.x=Math.max(0.001,k); br.fill.position.x=-(1-k)*0.5; br.fill.material.color.setHex(0xd8c8a8); const stamp=b._barT=performance.now(); setTimeout(()=>{ if(b.bar && b._barT===stamp) b.bar.g.visible=false; }, 3500); return; }
   if(b.bar){ freeEnemyBar(b.bar); b.bar=null; }
-  const pos={x:b.x,z:b.z}, now=performance.now()/1000; scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
+  const pos={x:b.x,z:b.z}, now=performance.now()/1000; const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
+  if(b.ridge) ridgeRockDown(b); else scene.remove(b.mesh);   // a ridge rock is two instances of the shared ridge mesh
   if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); }
   if(rock){ for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x9a8f7c); burst(pos, 0xc8b89a, 10, 5, {y:gy+1.2, life:1.4, size:2.6, smoke:true, grav:-0.5, drag:1.6, up:1.8, op:0.55}); burst(pos, 0x8a8070, 22, 11, {y:gy+1.2, life:0.6, size:0.45, grav:-18, drag:1.1, up:4}); decalCrater(b.x,b.z,1.6,0.6); }
   else { spawnDebris(pos, 1.0, 0x3a3a36); burst(pos, 0xffe0a0, 16, 12, {y:gy+1, life:0.3, size:0.3, grav:-12, drag:2}); }

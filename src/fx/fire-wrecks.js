@@ -35,7 +35,7 @@ export function spawnWreck(pos, facing, ms, pal, toss){
   const mat=new THREE.MeshStandardMaterial({ color:burnt, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1.4, transparent:true });
   const hull=new THREE.Mesh(_wreckGeo, mat); hull.scale.setScalar(ms); hull.position.set(pos.x,heightAt(pos.x,pos.z),pos.z); hull.rotation.set((Math.random()-0.5)*0.12, facing||0, (Math.random()-0.5)*0.16); hull.castShadow=true; hull.receiveShadow=true; scene.add(hull);
   const tur=new THREE.Mesh(_turGeo, mat); tur.scale.setScalar(ms); tur.castShadow=true; scene.add(tur);
-  const w={ hull, tur, mat, t:0, life:TANK_DEATH.wreck[0]+Math.random()*(TANK_DEATH.wreck[1]-TANK_DEATH.wreck[0]), ms,   // Z112 burns out and sinks away fast x:pos.x, z:pos.z,
+  const w={ hull, tur, mat, t:0, life:TANK_DEATH.wreck[0]+Math.random()*(TANK_DEATH.wreck[1]-TANK_DEATH.wreck[0]), ms, x:pos.x, z:pos.z,   // Z112 burns out and sinks away fast
     tx:pos.x, ty:1.75*ms, tz:pos.z, tvx:0, tvy:0, tvz:0, rx:0, ry:0, rz:0, flying:!!toss, fireT:0, smokeT:0 };
   if(toss){ const a=Math.random()*6.283, sp=(3+Math.random()*6); w.tvx=Math.cos(a)*sp; w.tvz=Math.sin(a)*sp; w.tvy=13+Math.random()*7; w.rx=(Math.random()-0.5)*9; w.ry=(Math.random()-0.5)*7; w.rz=(Math.random()-0.5)*9; }   // magazine detonation throws the turret skyward
   tur.position.set(w.tx,w.ty,w.tz); tur.rotation.y=(facing||0)+(toss?0:(Math.random()-0.5)*0.8);

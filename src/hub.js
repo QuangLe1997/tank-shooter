@@ -32,6 +32,7 @@ export * from './tank/barrels.js';
 export * from './tank/shield.js';
 export * from './fx/hud-fx.js';
 export * from './fx/particles.js';
+export * from './fx/gore.js';   // Z121
 export * from './audio/synth.js';
 export * from './audio/engine-music.js';
 export * from './combat/projectiles.js';
