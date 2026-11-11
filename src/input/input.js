@@ -99,6 +99,23 @@ if(zoomBtnEl){ const cyc=e=>{ if(e){e.preventDefault();e.stopPropagation();} let
 export const rotBtnEl=document.getElementById('rotBtn');
 if(rotBtnEl){ const rot=e=>{ if(e){e.preventDefault();e.stopPropagation();} S.camYaw=(S.camYaw + Math.PI/4) % (Math.PI*2); sfx('click'); };
   rotBtnEl.addEventListener('click',rot); rotBtnEl.addEventListener('touchstart',rot,{passive:false}); }
+// Z110 camera from the keyboard + the AUTO camera toggle
+export function zoomStep(dir){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=1; i=Math.max(0, Math.min(ZOOM_LEVELS.length-1, i+dir)); setZoom(ZOOM_LEVELS[i]); }
+export function rotStep(dir){ S.camYaw=((S.camYaw + dir*Math.PI/4) % (Math.PI*2) + Math.PI*2) % (Math.PI*2); }
+export function camReset(){ setZoom(MOBILE?1.5:1); S.camYaw=0; }
+export function setCamAuto(on){ S.camAuto=!!on; try{ localStorage.setItem('steelsiege.camAuto', on?'1':'0'); }catch(_){}
+  const b=document.getElementById('camAutoBtn'); if(b) b.classList.toggle('on', S.camAuto); }
+try{ const v=localStorage.getItem('steelsiege.camAuto'); if(v!=null) S.camAuto = v==='1'; }catch(_){}
+setCamAuto(S.camAuto);
+export const camAutoBtnEl=document.getElementById('camAutoBtn');
+if(camAutoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} setCamAuto(!S.camAuto); sfx('click'); };
+  camAutoBtnEl.addEventListener('click',tog); camAutoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
+addEventListener('keydown', e=>{ if(document.body.classList.contains('typing') || e.metaKey || e.ctrlKey) return; const k=e.key;
+  if(k==='-' || k==='_'){ zoomStep(1); }                 // farther
+  else if(k==='=' || k==='+'){ zoomStep(-1); }           // closer
+  else if(k==='['){ rotStep(-1); } else if(k===']'){ rotStep(1); }
+  else if(k==='c' || k==='C'){ if(!e.repeat){ setCamAuto(!S.camAuto); sfx('click'); } }
+  else if(k==='v' || k==='V'){ if(!e.repeat) camReset(); } });
 export const mFireEl=document.getElementById('mFire');
 if(mFireEl){
   mFireEl.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); S.firing=true; mFireEl.classList.add('firing');

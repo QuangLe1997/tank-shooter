@@ -287,6 +287,13 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
     - bảng đại bản doanh nằm dưới radar (trước bị radar che), ẩn khi màn hình cao ≤ 360 px;
     - ẩn dòng sức mạnh trong trận (trước đè mục tiêu và radio).
   - *Tab Safari trên iPhone:* màn chào hướng dẫn "Thêm vào Màn hình chính" để chơi toàn màn hình (`IOS_TAB`).
+- **Z110 CAMERA:**
+  - *Phím:* `−` / `=` thu xa · phóng gần (theo `ZOOM_LEVELS`); `[` / `]` xoay 45°; `C` bật/tắt camera tự động; `V` đặt lại camera.
+  - *Camera tự động* (`CAM_AUTO`, `camAutoPull` trong `game/update.js`, bật sẵn, lưu ở `steelsiege.camAuto`, nút AUTO cạnh nút zoom):
+    - cộng thêm độ lùi lên trên độ zoom người chơi chọn, tối đa +0,6;
+    - từng nguồn: tốc độ xe +0,15; đông địch trong 42 m +0,32; gần thành chưa chiếm +0,18; trùm trong 70 m +0,3;
+    - lấy mẫu 4 lần/giây, chuyển mượt; không bao giờ tự xoay.
+  - *iPhone nhỏ:* màn rộng ≤ 720 px thì cụm nút camera chuyển xuống cạnh radar; màn cao ≤ 380 px thì ẩn bảng thành.
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

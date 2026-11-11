@@ -73,7 +73,9 @@
 #fortHud .fh-r.done{opacity:.6;}
 /* Z109 phone layout: under the radar (it used to slide 20px beneath it), compact; tiny phones drop it — the radar marks every fort */
 body.touch #fortHud{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 158px);min-width:0;max-width:156px;padding:4px 7px 5px;} body.touch #fortHud .fh-r{font-size:9px;gap:6px;line-height:1.4;} body.touch #fortHud .fh-t{font-size:8px;}
-@media (max-height:360px){ body.touch #fortHud{display:none;} }
+@media (max-height:380px){ body.touch #fortHud{display:none;} }   /* ≤380 tall (iPhone SE / mini / X) it would touch the gun buttons */
+/* Z110 narrow phones (≤720 wide): the zoom / rotate / AUTO trio leaves the top row (it ran into the objective) and sits left of the radar */
+@media (max-width:720px){ body.touch #camCtl{top:calc(max(8px,env(safe-area-inset-top)) + 70px);right:calc(max(12px,env(safe-area-inset-right)) + 112px);} }
 body.inmenu #fortHud{display:none;}
 /* Z107 phone command strip (muster · assault · paratroopers) */
 #mCmd{display:none;position:absolute;left:max(10px,env(safe-area-inset-left));top:40%;transform:translateY(-50%);flex-direction:column;gap:7px;pointer-events:auto;z-index:4;}
@@ -85,6 +87,10 @@ body.touch .mcm{width:46px;height:38px;border-radius:10px;} body.touch .mcm b{fo
 .mcm b{font-size:16px;line-height:1;} .mcm span{font:800 7.5px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.06em;white-space:nowrap;}
 .mcm:active{transform:scale(.92);} #mAssault{border-color:rgba(255,138,58,.6);color:#ffd2b0;}
 .mcm i{position:absolute;inset:0;border-radius:11px;background:rgba(0,0,0,.55);font:800 11px/44px 'Saira Condensed',sans-serif;color:#ffcf5a;font-style:normal;text-align:center;display:none;} .mcm i.on{display:block;}
+/* Z110 AUTO CAMERA toggle (sits with zoom / rotate) */
+#camAutoLbl{font:900 8.5px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.08em;color:rgba(255,255,255,.55);}
+#camAutoBtn.on{border-color:rgba(255,200,90,.6);box-shadow:0 0 9px rgba(255,180,60,.35);} #camAutoBtn.on #camAutoLbl{color:#ffcf5a;}
+body.touch #camAutoLbl{font-size:7.5px;}
 /* Z107 POWER RATING */
 .power-chip{margin:4px auto 0;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;font-size:11.5px;font-weight:800;letter-spacing:1px;color:#dfe6d4;}
 .power-chip b{color:#fff;font-size:13px;} .power-chip .sep{opacity:.4;} .power-chip .ic{color:#ffd24a;}

@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING } from '../../config.js';
-import { BIOME_VI, CAT_VI, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO } from '../../config.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -157,13 +157,24 @@ export const _camOff = new THREE.Vector3(), _camUP = new THREE.Vector3(0,1,0);
 export const camTarget = new THREE.Vector3();
 export const camLook = new THREE.Vector3();
 export const camBase = new THREE.Vector3(); export let _camT = -1; const _camWant = new THREE.Vector3();
+// Z110 AUTO CAMERA: how much wider the fight wants the view right now (0 … CAM_AUTO.max), on top of the zoom the player picked
+export let _camAutoAt=0, _camAutoWant=0;
+export function camAutoPull(p){ const A=CAM_AUTO, px=p.pos.x, pz=p.pos.z, R2=A.nearR*A.nearR; let n=0, k=0;
+  k += Math.min(1, Math.hypot(p.vel.x, p.vel.z)/PLAYER.maxSpeed) * A.speedK;                                  // speed: see what you're driving into
+  for(const e of enemies){ if(e.guard) continue; const dx=e.pos.x-px, dz=e.pos.z-pz; if(dx*dx+dz*dz<R2) n++; }
+  k += Math.min(1, n/A.crowd) * A.crowdK;                                                                     // a crowd closing in
+  for(const f of FORTS){ if(f.captured) continue; const d=Math.hypot(f.x-px, f.z-pz); if(d < f.R+A.fortPad){ k += A.fortK; break; } }   // a fortress ahead / inside one
+  if(boss && Math.hypot(boss.pos.x-px, boss.pos.z-pz) < A.bossR) k += A.bossK;                                 // the boss fight
+  return Math.min(A.max, k); }
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   // look slightly ahead of the player toward the aim + a bit toward velocity (motion feel)
   camLook.set(Math.sin(p.aim)*6 + p.vel.x*0.18, 0, Math.cos(p.aim)*6 + p.vel.z*0.18);
   camTarget.set(p.pos.x + camLook.x*0.45, 0, p.pos.z + camLook.z*0.45);
   const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
-  _camOff.copy(camOff).multiplyScalar(S.zoom||1);          // player zoom
+  if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
+  S.camZ += (_camAutoWant - S.camZ) * Math.min(1, dt*CAM_AUTO.ease);
+  _camOff.copy(camOff).multiplyScalar((S.zoom||1) + S.camZ);   // player zoom + the auto camera's pull-back
   if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
   const want = _camWant.copy(camTarget).add(_camOff);
   want.y += dashPull;

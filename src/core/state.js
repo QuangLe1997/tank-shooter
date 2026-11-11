@@ -10,7 +10,8 @@ export const S = {
   keys:{}, aimPoint:new THREE.Vector3(), pointerActive:false, firing:false,
   shake:0, dpr:dprCap(),
   weapon:0, spell:0, enemySlowUntil:0, combo:0, comboUntil:0, timeScale:1, awaitingUpgrade:false, timeNow:0,
-  zoom: (MOBILE?1.5:1), camYaw:0,   // mobile camera: pull back a bit by default + player-adjustable zoom/rotate
+  zoom: (MOBILE?1.5:1), camYaw:0, camAuto:true, camZ:0,   // Z110 camZ = the auto camera's extra pull-back (eased)
+    // mobile camera: pull back a bit by default + player-adjustable zoom/rotate
   loop:0,                           // NG+ loop (0 = first playthrough); each loop is harder + pays more
   contract:null,                    // active STAGE CONTRACT (pre-stage modifier choice); null = neutral
 };
