@@ -27,7 +27,7 @@ export function updateRiders(dt, now){
     const wx=p.pos.x+(o[0]*cf+o[2]*sf)*ms, wz=p.pos.z+(-o[0]*sf+o[2]*cf)*ms, wy=o[1]*ms+p.mesh.position.y;
     r.g.position.set(wx,wy,wz); r.g.scale.setScalar(RIDER.scale*p.scale); animateSoldier(r.g, 0, dt, false);
     let best=null, bd=RIDER.range*RIDER.range;   // small combat range (smaller than the tank's)
-    for(const e of enemies){ const dx=e.pos.x-wx, dz=e.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
+    for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-wx, dz=e.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
     if(boss&&boss.alive){ const dx=boss.pos.x-wx, dz=boss.pos.z-wz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
     if(best){ const ang=Math.atan2(best.pos.x-wx, best.pos.z-wz); r.g.rotation.y=ang;
       if(now>=r.fireAt){ r.fireAt=now + RIDER.fireCd*guardFireMul(); r.g.userData.kick=1;   // slow fire — GUARD: DRILL upgrade speeds it up

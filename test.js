@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { HARD, TANK_DEATH, GUN_MODS, BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, HEADING, TERRAIN_FLAT, POWER, RAM } from './config.js';
+import { HARD, TANK_DEATH, GUN_MODS, HIJACK, BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, HEADING, TERRAIN_FLAT, POWER, RAM } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -495,6 +495,7 @@ ok(FORT.posture.holdK > 0 && FORT.gate.exitMax > 0 && LOOT.siege.mul > 1, 'Z111b
 ok(HARD.boulder/(60*DMG_TYPE.AP.struct) > 2 && HARD.boulder/(60*DMG_TYPE.AP.struct) <= 3 && 95*DMG_TYPE.AP.struct >= HARD.oneShot, 'Z112 a boulder takes 3 cannon shells, one railgun slug');
 ok(TANK_DEATH.blast[1] < TANK_DEATH.spark[0] && TANK_DEATH.wreck[1] <= 3, 'Z112 heavy shells blow a tank at once; wrecks clear fast');
 ok(GUN_MODS.max===5 && (1+GUN_MODS.max*GUN_MODS.barrel.dmg) <= 1.35 && (1-GUN_MODS.max*GUN_MODS.action.fire) >= 0.7 && GUN_MODS.mag.mag*GUN_MODS.max <= 0.6, 'Z115 gun parts cap at +30% dmg, −25% fire gap, +60% magazine');
+ok(HIJACK.hp>0 && HIJACK.hp<0.5 && HIJACK.window>=10 && HIJACK.types.includes('launcher') && ENEMY_DEFS.launcher && ENEMY_DEFS.launcher.truck, 'Z116 abandoned vehicles can be hijacked; the rocket truck exists');
 ok(FORT.ram.minV > 4 && FORT.ram.fullV > FORT.ram.minV && FORT.ram.fullV < 26, 'a ram needs a run-up but full effect comes below top speed');
 ok(TERRAIN_FLAT.noiseK === 0 && TERRAIN_FLAT.blastK === 0, 'the battlefield stays flat and stable (no micro-bumps, shells do not reshape it)');
 

@@ -343,6 +343,22 @@ Cột "Ở đâu" = tên hàm / marker để `grep`. Trạng thái: ✅ xong · 
   - *Nhặt linh kiện:* lắp vào súng đang cầm; súng đó đủ cấp thì sang khẩu khác đang mang; tất cả đều đủ thì được 150 xu.
   - *Nguồn rơi:* 25% các lần rơi đồ sử thi, 15% lần rơi đồ hiếm, và mỗi thành chiếm được chắc chắn rơi 1 linh kiện.
   - *Ngoại hình:* cứ 5 linh kiện lắp vào thì nòng súng lên một bậc trang trí (`barrelGrade`).
+- **Z116 CƯỚP XE ĐỊCH · XE TẢI TÊN LỬA · KHÓI XẢ:**
+  - *Khói xả (`DRIVE.smoke`):* xe ta có ga dưới 7 m/s thì ống xả nhả khói diesel đen, càng chậm và ga càng sâu thì khói càng đặc. Khởi động từ chỗ đứng yên thì phụt một cụm khói lớn.
+  - *Xe tải tên lửa (`launcher`):*
+    - Xe địch mới từ màn 2, loại 6 bánh, có bệ 8 ống trên mâm xoay, vỏ mỏng (lớp giáp L).
+    - Đứng xa khoảng 40 m, cứ ~7 s bắn một loạt 4 quả tên lửa vồng cao qua vật cản (`truckSalvo`, `ROSTER.launcher`).
+  - *Bỏ xe (`HIJACK`):*
+    - Áp dụng cho xe tăng, xe chở quân và xe tải tên lửa của địch (trừ xe tướng và cận vệ). Khi máu còn ≤ 30%, 50% số lần kíp lái bỏ xe: 2 lính nhảy ra đánh tiếp, xe đứng im bốc khói, có vòng xanh nhấp nháy.
+    - Xe bỏ không bị ngắm tự động, không giữ đợt quân và không tính vào giới hạn số xe.
+  - *Cướp xe:*
+    - Trong 20 s, đưa xe ta đến gần (≈ 6,5 m) giữ 1,2 s, hoặc cho lính ta chạm vào xe (nhanh gấp đôi). Có hiện tiến độ %.
+    - Xe về tay ta với 45% máu, sơn màu ta nhưng giữ hình dáng loại xe (`makeAllyTankMesh(heavy, type)`). Tối đa 4 xe đồng minh.
+    - Không ai cướp kịp thì địch tự phá huỷ xe.
+  - *Xe cướp được theo loại:*
+    - Xe tăng: pháo như xe đồng minh.
+    - Xe chở quân: thả 3 lính ta, rồi dùng súng máy bắn bộ binh.
+    - Xe tải tên lửa: bắn loạt 4 tên lửa tự dẫn hạ trực thăng trước; không có trực thăng thì bắn vồng vào cổng hoặc tường thành gần nhất trong 60 m (nhiệt áp ×1,6); không có thành thì bắn xe địch.
 - **Z107 BẢNG PHÍM TẮT:** menu chính → PHÍM TẮT, menu tạm dừng → PHÍM TẮT · ĐIỀU KHIỂN, hoặc phím `H` / `F1` / `?` giữa trận (game tạm dừng khi mở). Dữ liệu: `KEYS_HELP` / `TOUCH_HELP` trong config.js (`ui/keys.js`). Phím mới: `T` tập kết toàn quân · `X` xung phong vào thành gần nhất · `B` gọi lính dù quân ta. Điện thoại: dải nút TẬP KẾT / XUNG PHONG / LÍNH DÙ ở mép trái.
 - **Desktop:** WASD/mũi tên di chuyển · chuột trái = bắn (giữ = liên thanh, theo `fireCd`) · chuột phải = phép · Space = DASH · cuộn chuột = đổi súng · 1-5 chọn súng · Esc/P pause. Nòng tự ngắm; con trỏ "+" tùy biến. **Nút camera (ZOOM/ROTATE) góc trái-dưới** (Z32).
 - **Mobile (chỉ ngang):** 1 joystick lái (nòng tự ngắm + tự bắn / AUTO toggle) · nút FIRE · DASH · SWAP · SKILL · cụm camera (ZOOM/ROTATE) trên DASH · pause/fullscreen/mute góc trên-phải. Cổng xoay máy khi cầm dọc + tự pause.

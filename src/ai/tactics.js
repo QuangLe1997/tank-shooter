@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -63,6 +63,7 @@ export function updateEnemies(dt, now){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i], def=e.def;
     updateEnemyBar(e);                                  // keep the floating HP bar pinned + facing camera every frame
+    if(e.abandoned){ abandonedTick(e, dt, now); continue; }   // Z116 crew gone: it just sits there, smoking, waiting to be taken
     // ON FIRE (flamethrower DoT) — burns down HP over time; the fire grows; the tank keeps fighting while ablaze
     if(e.burn){ const F=BALANCE.flame;
       if(now >= e.burn.until) e.burn=null;
@@ -141,6 +142,7 @@ export function updateEnemies(dt, now){
     // combat range scales with tank size (small tank → small range, large → large)
     const er = def.range * (e.r/1.5);
     if(def.canShoot && now>e.fireAt && d < er && fortWallCross(e.pos.x, e.pos.z, target.x, target.z)){ e.fireAt=now+0.5; }   // Z111b stone in the way: no direct shot through a fortress wall / shut gate
+    else if(def.truck && now>e.fireAt && d < def.range){ e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
     else if(def.canShoot && now>e.fireAt && d < er){
       const ds=diffScale(), A=BALANCE.aggro;
       // PROACTIVE-FIRE chance ramps with stage — early enemies hesitate, late ones fire relentlessly

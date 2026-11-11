@@ -10,7 +10,7 @@ export function aheadTarget(maxR, cone){
   let best=null, bd=maxR;
   const consider=(t, r)=>{ const dx=t.pos.x-p.pos.x, dz=t.pos.z-p.pos.z, ahead=dx*fx+dz*fz; if(ahead<=0 || ahead>=bd) return;
     const side=Math.abs(dx*fz-dz*fx); if(side <= Math.max(AIM.lane, ahead*tc) + (r||0)){ bd=ahead; best=t; } };
-  for(const e of enemies) consider(e, e.r||0.6);
+  for(const e of enemies) if(!e.abandoned) consider(e, e.r||0.6);   // Z116 an abandoned hull is a prize, not a target
   if(boss&&boss.alive) consider(boss, boss.r||3);
   return best; }
 // the one call every weapon uses to pick what it is shooting at

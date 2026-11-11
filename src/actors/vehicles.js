@@ -2,9 +2,41 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, S, aoeDamage, bigExplode, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { BIOME, ENVMOD, S, aoeDamage, bigExplode, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
+// ===== Z116 · ROCKET TRUCK — 6×6 cab-over truck with an 8-tube rocket pod on a turntable (enemy salvo launcher / our hijacked AA + siege truck) =====
+export function makeLauncherMesh(pal){ const g=new THREE.Group(); g.rotation.order='YXZ'; const _m={}, mm=(k,f)=>_m[k]||(_m[k]=f());
+  const paint=(c)=>mm('p'+c,()=>grimeMat(new THREE.MeshStandardMaterial({ color:realCol(c), roughness:0.8, metalness:0.35, map:panelTex() }), 1));
+  const steel=mm('s',()=>new THREE.MeshStandardMaterial({ color:0x3a3b35, roughness:0.4, metalness:0.85 })), dark=mm('d',()=>new THREE.MeshStandardMaterial({ color:0x18181a, roughness:0.7, metalness:0.3 }));
+  const rub=mm('r',()=>new THREE.MeshStandardMaterial({ color:0x161512, roughness:0.95, metalness:0.05 })), glass=mm('g',()=>new THREE.MeshStandardMaterial({ color:0x0a1418, roughness:0.08, metalness:1, envMapIntensity:1.6 }));
+  const add=(par,geo,mat,x,y,z,rx,ry,rz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,rz||0); par.add(m); return m; };
+  const body=new THREE.Group(); g.add(body);
+  add(body, new THREE.BoxGeometry(1.9,0.28,4.7), steel, 0,0.78,-0.1);                                                    // ladder frame
+  for(const z of [1.55,-0.75,-1.75]) for(const sx of [-1,1]){ const w=add(g, new THREE.CylinderGeometry(0.5,0.5,0.42,16), rub, sx*1.05,0.5,z, 0,0,Math.PI/2); add(g, new THREE.CylinderGeometry(0.26,0.26,0.44,10), steel, sx*1.06,0.5,z, 0,0,Math.PI/2); }   // 6 wheels + hubs
+  for(const z of [1.55,-1.25]) add(body, new THREE.BoxGeometry(2.45,0.12,1.5), paint(pal.tread), 0,1.04,z);               // mudguards
+  add(body, new RoundedBoxGeometry(2.25,1.2,1.35,2,0.12), paint(pal.hull), 0,1.65,1.6);                                 // cab
+  add(body, new THREE.BoxGeometry(1.95,0.5,0.05), glass, 0,1.86,2.29, -0.12); for(const sx of [-1,1]) add(body, new THREE.BoxGeometry(0.05,0.42,0.7), glass, sx*1.13,1.85,1.7);   // windscreen + side windows
+  add(body, new THREE.BoxGeometry(2.1,0.32,0.12), steel, 0,1.05,2.3);                                                     // bumper
+  for(const sx of [-0.8,0.8]) add(body, new THREE.CylinderGeometry(0.09,0.1,0.06,10), mm('hl',()=>new THREE.MeshStandardMaterial({color:0xfff2d0,emissive:0xffeec0,emissiveIntensity:0.35})), sx,1.18,2.37, Math.PI/2,0,0);   // headlights
+  add(body, new THREE.BoxGeometry(2.3,0.22,3.0), paint(pal.hull), 0,1.02,-0.85);                                         // rear deck
+  for(const sx of [-1,1]) add(body, new THREE.BoxGeometry(0.28,0.5,0.9), paint(pal.tread), sx*0.95,1.38,0.3);           // fuel / stowage boxes
+  for(const sx of [-1,1]) add(body, new THREE.CylinderGeometry(0.06,0.06,0.9,6), steel, sx*1.0,0.95,-2.3, 0,0,0.6*sx); // stabiliser jacks
+  const tur=new THREE.Group(); tur.position.set(0,1.18,-1.0); body.add(tur);                                               // turntable (yaws like a turret)
+  add(tur, new THREE.CylinderGeometry(0.75,0.85,0.22,18), steel, 0,0,0);
+  const pod=new THREE.Group(); pod.position.set(0,0.55,0.2); pod.rotation.x=-0.42; tur.add(pod);                           // elevated pod
+  add(pod, new RoundedBoxGeometry(1.75,0.95,2.3,2,0.06), paint(pal.turret), 0,0,0);
+  for(const sx of [-1,1]) add(pod, new THREE.BoxGeometry(0.06,0.7,1.9), steel, sx*0.9,0,0);                              // side rails
+  for(let r=0;r<2;r++) for(let c=0;c<4;c++){ const x=-0.6+c*0.4, y=-0.2+r*0.4; add(pod, new THREE.CircleGeometry(0.15,14), dark, x,y,1.155);
+    if((r+c)%3) add(pod, new THREE.ConeGeometry(0.12,0.22,12), mm('w',()=>new THREE.MeshStandardMaterial({color:0x2a2a24,emissive:0xff6a2a,emissiveIntensity:0.35,roughness:0.5})), x,y,1.2, Math.PI/2,0,0); }   // loaded rockets peeking out
+  const muz=new THREE.Object3D(); muz.position.set(0,0.1,1.25); pod.add(muz);
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+  g.userData.turret=tur; g.userData.pod=pod; g.userData.muzzle=muz; g.userData.body=body; g.userData.truck=true; return g; }
+// Z116 rocket salvo — enemy truck lobs it at you; arcs over cover (it is a howitzer-style launcher)
+export function truckSalvo(e, tx, tz, now){ const R=ROSTER.launcher, mz=e.mesh.userData.muzzle; if(!mz) return; const _w=new THREE.Vector3();
+  for(let k=0;k<R.salvo;k++) setTimeout(()=>{ if(S.mode!=='playing' || !enemies.includes(e) || e.abandoned) return; mz.getWorldPosition(_w);
+    const gx=tx+(Math.random()-0.5)*R.spread*2, gz=tz+(Math.random()-0.5)*R.spread*2, D=Math.hypot(gx-_w.x,gz-_w.z)||1, T=D/R.speed, vy=(heightAt(gx,gz)+0.5-_w.y)/T + 0.5*4*T;
+    launchEnemyMissile(_w.x,_w.y,_w.z, Math.atan2(gx-_w.x,gz-_w.z), { speed:R.speed, dmg:R.dmg*diffDmgMul(), aoe:R.aoe, life:T+1.5, kind:'heli', vy }); spawnPart(_w.x,_w.y,_w.z, 0,1.5,0, {color:0xd8d0c0, size:1.4, life:0.7, smoke:true, grav:0.3, drag:2, op:0.5}); }, k*R.gap*1000); }
 // ===== Z80 · NEW ENEMY VEHICLES — flame tank, ATGM tank-destroyer, combat-engineer repair truck, attack helicopter =====
 export const _lineMat={};
 export function makeBeam(color, op){ const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6),3));

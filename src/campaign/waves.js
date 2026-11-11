@@ -85,7 +85,7 @@ export function updateWaves(dt, now){
   // spawn from queue (stagger). Concurrent cap + cadence scale with stage so the
   // early game never floods a new player.
   const cap = Math.floor(BALANCE.wave.capBase + S.stage*BALANCE.wave.capPerStage) + (WAVE.assault?BALANCE.wave.assaultCapBonus:0);   // eased: s1=6 … s5=12; ASSAULT crowds the field
-  let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
+  let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf || e.abandoned) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
   const _nx=WAVE.spawnQueue[0];
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
     const t=WAVE.spawnQueue.shift(); const sp=edgeSpawnPoint(), n0=enemies.length;
@@ -95,7 +95,7 @@ export function updateWaves(dt, now){
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
   }
   // wave clear?
-  if(WAVE.spawnQueue.length===0 && !enemies.some(e=>!e.guard && !e.fortOf)){   // Z104 depot / stockade guards stay at their post — they don't hold the wave open · Z107 nor do fortress troops (garrison, sallies, bodyguards)
+  if(WAVE.spawnQueue.length===0 && !enemies.some(e=>!e.guard && !e.fortOf && !e.abandoned)){   // Z104 depot / stockade guards stay at their post — they don't hold the wave open · Z107 nor do fortress troops (garrison, sallies, bodyguards)
     WAVE.active=false; WAVE.betweenUntil = now + 2.2;
     addScore(200, new THREE.Vector3(0,2,0));
     showBanner('SẠCH ĐỢT! +200', '#8cbf3f'); sfx('wave');

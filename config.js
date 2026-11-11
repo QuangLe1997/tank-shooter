@@ -82,7 +82,7 @@ export const DMG_TYPE = {
   TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
 };
 export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
-  rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A' };   // A = aircraft (Z80): only direct fire / flak / missiles reach it
+  rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A', launcher:'L' };   // Z116 the rocket truck is soft-skinned   // A = aircraft (Z80): only direct fire / flak / missiles reach it
 // ============================================================================
 // BATTLEFIELD ROSTER v2 (Z79) — enemy infantry on foot. Squads join waves from W2; RPG teams from stage 2.
 //   squads per wave = floor(base + wave·perWave + (stage−1)·perStage)   (S1W2 = 1 … S5W5 = 3)
@@ -104,8 +104,9 @@ export const ROSTER = {
   atgm:    { aimT:1.2, speed:21, turn:1.5, dmg:30, aoe:3.2, life:5.5, cd:6.5 },   // laser-painted wire-guided missile: shoot it down, dodge sharply, or pop SMOKE
   engineer:{ heal:9, range:16, selfHeal:3 },                               // heal = % of the patient's max HP ×(60/100)… per second (≈15%/s) — kill the medic first
   gunship: { alt:7.5, orbit:19, speed:9, range:34, gunDmg:3, gunCd:0.13, burst:9, burstCd:3.4, salvo:2, salvoCd:5, rocketDmg:12, rocketSpeed:28 },
-  unlock:  { pyro:2, engineer:3, atgm:3, gunship:4 },
-  weight:  { pyro:[1.0,0.5], engineer:[0.6,0.3], atgm:[0.8,0.5], gunship:[0.45,0.3] },
+  unlock:  { pyro:2, engineer:3, atgm:3, gunship:4, launcher:2 },
+  weight:  { pyro:[1.0,0.5], engineer:[0.6,0.3], atgm:[0.8,0.5], gunship:[0.45,0.3], launcher:[0.5,0.3] },
+  launcher:{ salvo:4, gap:0.22, speed:24, dmg:22, aoe:3.2, spread:2.4 },   // Z116 ROCKET TRUCK: lobs a 4-rocket salvo from long range (weak armour, high value)
   aaBonus: 1.8,                                                            // FLAK airburst vs aircraft
 };
 // ============================================================================
@@ -242,6 +243,7 @@ export const UP_BLURB = {
 // DRIVING (Z85) — the player's tank is a 50-tonne machine: hull-steered tracks, a heavy launch, momentum that carries,
 // and collisions that hurt by mass × closing speed. Speeds in world units/s (top speed = PLAYER.maxSpeed 26).
 export const DRIVE = {
+  smoke: { until: 7, every: 0.06, big: 4 },   // Z116 diesel soot when the tank pulls away under load: below `until` m/s with throttle on; a dead-stop launch belches `big` puffs at once
   accel: 19,          // peak tractive acceleration once rolling (Z99: 34→23; Z107: 23→19 — no mid-range surge)
   launch: 0.7,        // share of that available from a dead stop (Z107: 0.32→0.7 — moves off at once, no 50-t creep)
   launchV: 6,         // speed by which full power has come in
@@ -323,7 +325,11 @@ export const DEPLOY = { roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1, 2, 2],
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
 export const POW = { perStage: [2, 2, 3, 3, 3], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };
 export const DEPOT = { arms: [1, 1, 1, 1, 1], motor: [1, 1, 1, 1, 1], r: 10, guards: [4, 5], guardsMobile: [3, 3], capT: 4, tanks: [1, 2], score: 800, coin: 150 };
-export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30, keep: 15, leash: 58, dmg: 30, fireCd: 1.7, bspeed: 72, cap: 3 };
+export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30, keep: 15, leash: 58, dmg: 30, fireCd: 1.7, bspeed: 72, cap: 4 };
+// Z116 HIJACK: a badly hit enemy vehicle may be ABANDONED — the crew bails out and it sits smoking. Drive up to it (or walk a soldier
+//   onto it) before it is scuttled and it fights for you in our colours. APC → drops 3 of our men + an MG; rocket truck → anti-air first, then siege.
+export const HIJACK = { hp:0.3, chance:0.5, window:20, r:6.5, hold:1.2, footR:3.4, bail:2, types:['grunt','gunner','shield','heavy','sniper','atgm','carrier','launcher','pyro','mortar'], keepHp:0.45,
+  apc:{ dmg:6, range:26, gap:0.12, burst:6, pause:1.2, troops:3 }, rocket:{ cd:6, salvo:4, gap:0.22, dmg:40, aoe:3.4, siegeR:60, airR:60, range:58 } };
 // Z104 PARATROOPERS — an enemy transport helicopter crosses the field every so often and drops a stick of paratroopers
 export const PARA = { fromStage: 1, fromWave: 2, every: [42, 62], everyMobile: [55, 80], troops: [4, 6], troopsMobile: [3, 4], alt: 19, speed: 15, fall: 3.6, gap: 0.45, rpgFrom: 3 };
 

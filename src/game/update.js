@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PLAYER, S, TANK_SCALE, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PLAYER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -81,6 +81,12 @@ export function updatePlayer(dt, now){
   p.ramOn = now < bu.ram; { const bl=p.mesh.userData.dozer; if(bl && bl.visible!==p.ramOn) bl.visible=p.ramOn; }   // Z93 dozer blade bolts on while the buff runs
   if(p.turboLv && Math.abs(p.throttle||0)>0.4 && Math.random()<0.5*p.turboLv){ const bx=p.pos.x-Math.sin(p.facing)*2.4, bz=p.pos.z-Math.cos(p.facing)*2.4;   // turbo: blue exhaust flare
     spawnPart(bx+(Math.random()-0.5)*0.8, 1.3, bz, -Math.sin(p.facing)*4, 1.2, -Math.cos(p.facing)*4, {tex:'flash', color:0x8fd8ff, size:0.6, life:0.12, grav:0, drag:4}); }
+  { const sp=Math.abs(p.fwdSpeed), th=Math.abs(p.throttle||0), E=DRIVE.smoke, ex=p.mesh.userData.exhaust;   // Z116 heavy engine taking the load → black diesel smoke out of the exhaust
+    if(ex && th>0.35 && sp<E.until && now>(p._puffAt||0)){ const load=(1-sp/E.until)*Math.min(1,th), n=p._still?E.big:1; p._puffAt=now+E.every*(0.7+sp/E.until*1.6); p._still=false; ex.getWorldPosition(_v);
+      const bx=-Math.sin(p.facing), bz=-Math.cos(p.facing);
+      for(let k=0;k<n;k++) spawnPart(_v.x+(Math.random()-0.5)*0.3, _v.y+0.15, _v.z+(Math.random()-0.5)*0.3, bx*(1.2+Math.random()*1.5)+(Math.random()-0.5)*0.6, 1.6+Math.random()*1.4+k*0.3, bz*(1.2+Math.random()*1.5)+(Math.random()-0.5)*0.6,
+        {color:k?0x16130f:0x0c0a08, size:(0.7+load*1.3)*(n>1?1.35:1), life:1.2+load*0.9, smoke:true, grav:-0.3, drag:1.3, grow:1.9, op:0.35+0.4*load}); }
+    if(sp<0.5 && th<0.1) p._still=true; }
   if(now < bu.speed && Math.random()<0.25){ const bx=p.pos.x-Math.sin(p.facing)*2.4, bz=p.pos.z-Math.cos(p.facing)*2.4; spawnPart(bx, 1.5, bz, 0, 1.6, 0, {color:0x1a1814, size:0.9, life:0.8, smoke:true, grav:-0.4, drag:1.5, op:0.45}); }   // overdrive: diesel soot
   p.pos.addScaledVector(p.vel, dt);
   if(p.kbx||p.kbz){ p.pos.x+=p.kbx*dt; p.pos.z+=p.kbz*dt; const kf=Math.max(0,1-dt*8); p.kbx*=kf; p.kbz*=kf; }   // recoil when hit

@@ -61,7 +61,7 @@ export function infPushBlocks(pos){ for(const bl of blocks){ if(bl.obb){ const s
 export function squadZone(){ const F=TROOPS.fireteam; return Math.max(F.zoneMin, playerRange()*F.zoneMul); }
 export function recallRange(){ return Math.max(TROOPS.fireteam.zoneMin, playerRange()); }   // the visible range ring
 export const _AT=new THREE.Vector3();
-function nearestEnemyTank(a, R){ let best=null, bd=R*R; for(const e of enemies){ if(!solidTank(e)) continue; const q=(e.pos.x-a.pos.x)**2+(e.pos.z-a.pos.z)**2; if(q<bd){ bd=q; best=e; } }
+function nearestEnemyTank(a, R){ let best=null, bd=R*R; for(const e of enemies){ if(!solidTank(e) || e.abandoned) continue; const q=(e.pos.x-a.pos.x)**2+(e.pos.z-a.pos.z)**2; if(q<bd){ bd=q; best=e; } }
   if(boss&&boss.alive){ const q=(boss.pos.x-a.pos.x)**2+(boss.pos.z-a.pos.z)**2; if(q<bd){ best=boss; } } return best; }
 function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
   for(const e of enemies){ if(e.dead) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z);

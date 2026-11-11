@@ -103,7 +103,7 @@ export function updateReload(now){
 }
 export function nearestTarget(maxR){
   const p=S.player; let best=null, bd=maxR*maxR;
-  for(const e of enemies){ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=e; } }
+  for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=e; } }
   if(boss&&boss.alive){ const dx=boss.pos.x-p.pos.x, dz=boss.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=boss; } }
   return best;
 }
