@@ -2,7 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, heightAt, inField, inZone } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildFlora, heightAt, inField, inZone } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 const WALLS=[ ['#b9b1a4','#6f8aa6'], ['#9fa8b0','#46607a'], ['#c8a98a','#5a6e84'], ['#a99a8a','#3e5670'] ];   // [wall, glass]
@@ -62,7 +62,7 @@ function buildHills(){ const list=[], N=Math.round((MOBILE?40:90)*AREA_K/2);
   for(let t=0;t<N*4 && list.length<N;t++){ const x=_R(-ARENA+8,ARENA-8), z=_R(-ARENA+8,ARENA-8), hh=heightAt(x,z);
     if(hh<0.5 && Math.random()<0.8) continue;                                      // woods cling to the high ground
     if(!free(x,z,1.2)) continue; list.push({x,z,s:_R(0.8,1.5),ry:_R(0,6.28)}); }
-  trees(coniferGeo(), list, 1); list.slice(0,14).forEach(o=>solid(o.x,o.z,0.8*o.s,'tree')); return list.length; }
+  return list.length; }   // Z141 the woods themselves are planted by flora.js (they topple under a tank)
 
 // ---------------- VILLAGE ----------------
 function paddyTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#8fbf4a'; x.fillRect(0,0,128,128);
@@ -85,12 +85,14 @@ function buildVillage(){
   for(let t=0;t<90 && paddies<Math.round(5*AREA_K/2);t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20), w=_R(14,22), d=_R(10,15); if(!free(x,z,Math.max(w,d)/2) || !nearWater(x,z,26)) continue;
     const t2=tex.clone(); t2.needsUpdate=true; t2.repeat.set(w/9,d/9); const p=new THREE.Mesh(new THREE.PlaneGeometry(w,d), new THREE.MeshStandardMaterial({ map:t2, roughness:0.75 })); p.rotation.x=-Math.PI/2; p.rotation.z=_R(0,3.14); p.position.set(x, heightAt(x,z)+0.05, z); p.receiveShadow=true; add(p); paddies++; }
   const list=[]; for(let t=0;t<260 && list.length<Math.round((MOBILE?14:30)*AREA_K/2);t++){ const x=_R(-ARENA+8,ARENA-8), z=_R(-ARENA+8,ARENA-8); if(!free(x,z,0.8) || wetAt2(x,z,3)) continue; list.push({x,z,s:_R(0.8,1.25),ry:_R(0,6.28)}); }
-  trees(palmGeo(), list, 1); list.slice(0,8).forEach(o=>solid(o.x,o.z,0.55,'tree')); return houses; }
+  return houses; }   // Z141 palms / bamboo / reeds now come from flora.js
 const wetAt2=(x,z,r)=>{ for(const a of [[0,0],[r,0],[-r,0],[0,r],[0,-r]]) if(heightAt(x+a[0],z+a[1])<-0.7) return true; return false; };
 const nearWater=(x,z,R)=>{ for(let a=0;a<6.28;a+=0.7) for(const r of [8,R]) if(heightAt(x+Math.cos(a)*r,z+Math.sin(a)*r)<-0.7) return true; return false; };
 
 export function buildLandmarks(){
   clearLandmarks(); LAND.mats.length=0; const n=BIOME.name;
-  if(n==='CITY') buildCity(); else if(n==='HILLS') buildHills(); else if(n==='VILLAGE') buildVillage(); }
+  if(n==='CITY') buildCity(); else if(n==='VILLAGE') buildVillage(); }
+// Z141 vegetation goes in last, round whatever was built
+export function buildScenery(){ buildFlora(); }
 // lit windows glow at night
 export function updateLandmarkGlow(){ if(!LAND.mats.length) return; const k=NIGHT.k*1.5; for(const m of LAND.mats) if(Math.abs(m.emissiveIntensity-k)>0.01) m.emissiveIntensity=k; }

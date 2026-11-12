@@ -1,7 +1,7 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
 import { RELIEF, FIELD, TERRAIN_FLAT } from '../../config.js';
-import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
+import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, _heightToNormal, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:240, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
@@ -74,12 +74,31 @@ function carveRivers(h){
   for(const [line,u,w] of [[main,0.30,5.5],[main,0.66,5.5],[stream,0.2,3.2]]){ const p=at(line,u), ang=p.ang+Math.PI/2; RIVER.bridges.push({ x:p.x, z:p.z, ang, ca:Math.cos(ang), sa:Math.sin(ang), hw:3.6, hl:w*1.9+2, y:0.14 }); }
   riverMeshes();
 }
+// Z141 REAL WATER: depth-tinted (clear shallows → deep green-blue), white foam on the banks and round anything standing in it, two scrolling ripple normal
+//   maps for sun glints and sky reflection, softer near the edge. Depth comes from a small texture of the heightfield baked when the river is carved.
+export const WTIME = { value:0 };
+function waterNormal(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#808080'; x.fillRect(0,0,256,256);
+  for(let i=0;i<900;i++){ const r=2+Math.random()*16, px=Math.random()*256, py=Math.random()*256, g=x.createRadialGradient(px,py,0,px,py,r), v=Math.random()<0.5?255:0; g.addColorStop(0,'rgba('+v+','+v+','+v+',0.22)'); g.addColorStop(1,'rgba('+v+','+v+','+v+',0)');
+    for(const ox of [-256,0,256]) for(const oy of [-256,0,256]){ x.save(); x.translate(ox,oy); x.fillStyle=g; x.fillRect(px-r,py-r,r*2,r*2); x.restore(); } }
+  const t=_heightToNormal(c, 3.2); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
+function depthTex(){ const W=HF.W, d=new Uint8Array(W*W*4); for(let k=0;k<W*W;k++){ const v=Math.max(0,Math.min(255, Math.round((HF.h[k]+2.5)/3.5*255))); d[k*4]=d[k*4+1]=d[k*4+2]=v; d[k*4+3]=255; }
+  const t=new THREE.DataTexture(d, W, W, THREE.RGBAFormat); t.magFilter=t.minFilter=THREE.LinearFilter; t.needsUpdate=true; return t; }
 function riverMeshes(){
-  if(!RIVER.mesh){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#7fb4c8'; x.fillRect(0,0,128,128);
-    for(let i=0;i<70;i++){ x.strokeStyle='rgba(255,255,255,'+(0.08+Math.random()*0.16).toFixed(2)+')'; x.lineWidth=1+Math.random()*1.5; const px=Math.random()*128, py=Math.random()*128, L=6+Math.random()*16; x.beginPath(); x.moveTo(px,py); x.quadraticCurveTo(px+L/2,py+(Math.random()-0.5)*5,px+L,py); x.stroke(); }
-    const tex=new THREE.CanvasTexture(c); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(36,36); tex.colorSpace=THREE.SRGBColorSpace;
-    RIVER.mesh=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2.4, ARENA*2.4), new THREE.MeshStandardMaterial({ color:0x3a86a8, map:tex, transparent:true, opacity:0.82, roughness:0.1, metalness:0.15, envMapIntensity:1.4 }));
-    RIVER.mesh.rotation.x=-Math.PI/2; RIVER.mesh.receiveShadow=true; RIVER.mesh.renderOrder=1; arena.add(RIVER.mesh); }
+  if(!RIVER.mesh){ const nrm=waterNormal(); nrm.repeat.set(30,30);
+    const mat=new THREE.MeshStandardMaterial({ color:0xffffff, normalMap:nrm, normalScale:new THREE.Vector2(0.85,0.85), transparent:true, roughness:0.06, metalness:0.05, envMapIntensity:1.5, depthWrite:false });
+    mat.userData.u={ uDepth:{ value:null }, uWY:{ value:RIVER.y }, uA:{ value:ARENA }, uT:WTIME };
+    mat.onBeforeCompile=(sh)=>{ Object.assign(sh.uniforms, mat.userData.u);
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP; uniform sampler2D uDepth; uniform float uWY, uA, uT;')
+        .replace('#include <color_fragment>',`#include <color_fragment>
+          vec2 duv=(vWP.xz+uA)/(2.0*uA); float hb=texture2D(uDepth, duv).r*3.5-2.5; float dep=max(0.0, uWY-hb);
+          vec3 shallow=vec3(0.26,0.50,0.46), deep=vec3(0.04,0.17,0.22); vec3 wc=mix(shallow, deep, smoothstep(0.04,0.62,dep));
+          float n=sin(vWP.x*1.7+uT*1.3)*sin(vWP.z*1.9-uT*1.1)+sin((vWP.x+vWP.z)*3.1+uT*2.0)*0.5;
+          float foam=(1.0-smoothstep(0.0,0.16+0.05*n,dep))*0.85 + smoothstep(0.85,1.0,n*0.5+0.5)*0.12*(1.0-smoothstep(0.2,0.6,dep));
+          diffuseColor.rgb=mix(wc, vec3(0.93,0.96,0.97), clamp(foam,0.0,1.0)); diffuseColor.a=mix(0.45, 0.9, smoothstep(0.02,0.7,dep))+foam*0.1;`); };
+    RIVER.mesh=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2.4, ARENA*2.4, 1, 1), mat);
+    RIVER.mesh.rotation.x=-Math.PI/2; RIVER.mesh.receiveShadow=true; RIVER.mesh.renderOrder=2; arena.add(RIVER.mesh); }
+  { const U=RIVER.mesh.material.userData.u; if(U.uDepth.value) U.uDepth.value.dispose(); U.uDepth.value=depthTex(); }
   RIVER.mesh.position.y=RIVER.y; RIVER.mesh.visible=true;
   if(RIVER.deck){ arena.remove(RIVER.deck); RIVER.deck.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); RIVER.deck=null; }
   const g=new THREE.Group(), wood=new THREE.MeshStandardMaterial({ color:0x8a6a44, roughness:0.9 }), rail=new THREE.MeshStandardMaterial({ color:0x5e472c, roughness:0.9 });
@@ -91,7 +110,7 @@ function riverMeshes(){
     g.add(br); }
   RIVER.deck=g; arena.add(g); }
 // wave the water (called every frame)
-export function updateWater(dt){ if(RIVER.on && RIVER.mesh && RIVER.mesh.visible){ const t=RIVER.mesh.material.map; t.offset.x+=dt*0.012; t.offset.y+=dt*0.007; } }
+export function updateWater(dt){ WTIME.value+=dt; if(RIVER.on && RIVER.mesh && RIVER.mesh.visible){ const M=RIVER.mesh.material, t=M.normalMap; t.offset.x+=dt*0.018; t.offset.y+=dt*0.011; M.userData.u.uWY.value=RIVER.y; } }
 // Z106 HIGHLAND beyond the fence: rises over ridgeW metres, rolls with the macro noise, eases back down at the bounding square's edge
 export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 0; const sq=ARENA-Math.max(Math.abs(x),Math.abs(z));
   const rise=Math.min(1, Math.max(0, (out+1)/FIELD.ridgeW)), fall=Math.min(1, Math.max(0, sq/9));

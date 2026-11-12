@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, RAM, HARD } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -67,6 +67,7 @@ export function buildBlocks(){
   buildCamps();                                                                            // Z90 enemy troop camps
   placeCaches();                                                                           // Z93 guarded supply caches
   buildZones();                                                                            // Z104 rally point · POW stockades · weapon + tank depots (with guards)
+  buildScenery();                                                                          // Z141 trees · bushes · flowers · reeds · haystacks
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 export function damageBlock(b, dmg){

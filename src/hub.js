@@ -48,6 +48,7 @@ export * from './world/regional.js';       // Z140
 export * from './world/core-walls.js';     // Z140
 export * from './world/env-events.js';     // Z140
 export * from './fx/celebrate.js';         // Z140
+export * from './world/flora.js';          // Z141
 export * from './actors/crew.js';
 export * from './ui/tips.js';
 export * from './actors/infantry.js';

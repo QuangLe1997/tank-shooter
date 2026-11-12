@@ -41,6 +41,9 @@ export function buildTerrainDecor(b){
 // tracks grind clutter: stones burst into chips + dust (gone), grass/shrubs get flattened into the dirt
 export function crushAt(c){
   c.alive=false;
+  if(c.kind==='tree'){ const a=Math.random()*6.28; _IM.compose(_IV.set(c.x,heightAt(c.x,c.z),c.z), _IQ.setFromEuler(_IE.set(Math.cos(a)*1.4, c.ry, Math.sin(a)*1.4)), _IS.set(c.s,c.s,c.s)); c.im.setMatrixAt(c.k,_IM); c.im.instanceMatrix.needsUpdate=true;   // Z141 a tree goes down under the tracks
+    for(let i=0;i<14;i++) spawnPart(c.x+(Math.random()-0.5)*3, 2+Math.random()*4, c.z+(Math.random()-0.5)*3, (Math.random()-0.5)*4, Math.random()*2, (Math.random()-0.5)*4, { color:Math.random()<0.5?0x4e7e32:0x6a9a40, size:0.25+Math.random()*0.25, life:1.2, grav:-4, drag:1.5 });
+    const p=S.player; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2 < 36){ sfx('crunch'); haptic(10); } return; }
   if(c.kind==='grass'){ _IM.compose(_IV.set(c.x,heightAt(c.x,c.z),c.z), _IQ.setFromEuler(_IE.set(0,c.ry,0)), _IS.set(c.s*1.2,c.s*0.12,c.s*1.2)); c.im.setMatrixAt(c.k,_IM); c.im.instanceMatrix.needsUpdate=true; return; }
   _IM.makeScale(0,0,0); c.im.setMatrixAt(c.k,_IM); c.im.instanceMatrix.needsUpdate=true;
   const t=ROCK_TINT[BIOME.name]||ROCK_TINT.DESERT, n=Math.round(3+c.r*9);
