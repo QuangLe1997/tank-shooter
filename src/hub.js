@@ -42,6 +42,7 @@ export * from './actors/core.js';
 export * from './actors/enemies.js';
 export * from './actors/fireteam.js';
 export * from './actors/ally-tanks.js';
+export * from './render/night-marks.js';   // Z137
 export * from './actors/crew.js';
 export * from './ui/tips.js';
 export * from './actors/infantry.js';

@@ -573,5 +573,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const b=fs.readFileSync('src/ui/briefing.js','utf8'), l=fs.readFileSync('src/game/loop.js','utf8'), v=fs.readFileSync('src/game/viewport.js','utf8');
   ok(/S\.mode='countdown'/.test(b) && /function goLive/.test(b) && /updateCountdown/.test(l) && /countdown:1/.test(v) && fs.readFileSync('index.html','utf8').includes('id="countdown"'), '3-2-1 countdown freezes the world before the battle goes live'); }
 
+// Z137 night visibility
+{ const fs=await import('node:fs'); const n=fs.readFileSync('src/render/night-marks.js','utf8'), a=fs.readFileSync('src/world/atmosphere.js','utf8');
+  ok(/updateNightMarks/.test(n) && /ALLY_TANKS/.test(n) && fs.readFileSync('src/game/loop.js','utf8').includes('updateNightMarks'), 'night: enemy / ally tanks wear lamps (pooled sprites)');
+  ok(/o\.exp=1\.45; o\.night=1/.test(a) && /ambient\.intensity=0\.36/.test(a), 'night is brighter than before (exposure, moon, ambient)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

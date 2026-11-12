@@ -8,8 +8,8 @@ export function todAtmos(A, tod){
   if(tod==='noon'){ o.el=1.32; o.sunI=A.sunI*1.12; o.sun=0xfff8ee; o.con=A.con+0.04; o.exp=1.0; o.night=0; }
   else if(tod==='sunset'){ o.el=0.28; o.sunI=A.sunI*0.85; o.sun=0xffc28a; o.top=0x4a669c; o.hor=0xeab68a; o.fog=0xb4a08e; o.fogD=A.fogD*1.05; o.hemiG=0x5a4a3e;   // Z97 golden hour — warm light, blue sky, not a red wash
     o.lift=[0.008,0.004,0.012]; o.gain=[1.04,1.0,0.94]; o.sat=A.sat; o.con=1.05; o.exp=1.1; o.night=0; }
-  else if(tod==='night'){ o.el=0.9; o.az=A.az+2.2; o.sunI=1.05; o.sun=0xc4d2ff; o.top=0x0e1a36; o.hor=0x2c3b5a; o.fog=0x29354d; o.fogD=0.0042; o.hemiG=0x1e2028;   // Z97 bright moonlit night: you can read the field
-    o.lift=[0.012,0.018,0.032]; o.gain=[0.97,1.0,1.06]; o.sat=0.78; o.con=1.0; o.exp=1.3; o.night=1; }
+  else if(tod==='night'){ o.el=0.9; o.az=A.az+2.2; o.sunI=1.6; o.sun=0xc4d2ff; o.top=0x0e1a36; o.hor=0x2c3b5a; o.fog=0x29354d; o.fogD=0.0030; o.hemiG=0x2a2e3c;   // Z97 bright moonlit night: you can read the field
+    o.lift=[0.02,0.027,0.045]; o.gain=[1.0,1.02,1.08]; o.sat=0.88; o.con=1.0; o.exp=1.45; o.night=1; }   // Z137 brighter (was exp 1.3, lift .012/.018/.032)
   else { o.exp=1.08; o.night=0; }
   return o;
 }
@@ -42,8 +42,8 @@ export function applyAtmosphere(b){
   ambient.color.setHex(A.hor); ambient.intensity = 0.12;
   const u=gradePass.uniforms; u.lift.value.set(...A.lift); u.gain.value.set(...A.gain); u.sat.value=A.sat; u.contrast.value=A.con;
   renderer.toneMappingExposure = A.exp||1.08;
-  hemi.intensity = A.night ? 0.62 : 0.72; scene.environmentIntensity = A.night ? 0.32 : 0.6;
-  if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x6a7aa4); ambient.intensity=0.24; }   // moonlight fill — shadows stay blue-grey, never black
+  hemi.intensity = A.night ? 0.85 : 0.72; scene.environmentIntensity = A.night ? 0.5 : 0.6;
+  if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x7a8ab4); ambient.intensity=0.36; }   // moonlight fill — shadows stay blue-grey, never black
   u.vig.value = A.night ? 0.22 : 0.28;                                                                 // softer vignette (less eye strain)
   setSky(A);                                                                                           // Z97 visible sky dome matches the light
   setNightLights(!!A.night);

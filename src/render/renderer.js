@@ -98,10 +98,10 @@ export function setNightLights(on){ NIGHT.on=on; for(const sp of NIGHT.spots) sp
 export function updateNightLights(dt, now){
   NIGHT.k += ((NIGHT.on?1:0)-NIGHT.k)*Math.min(1,dt*2);
   const k=NIGHT.k, fl=0.96+0.04*Math.sin(now*37)*Math.sin(now*11.3);           // slight mains flicker
-  for(const sp of NIGHT.spots) sp.intensity = k*(MOBILE?3.4:2.8)*fl;
+  for(const sp of NIGHT.spots) sp.intensity = k*(MOBILE?4.2:3.6)*fl;
   for(const m of NIGHT.lamps) m.emissiveIntensity = k*3.2*fl;
   for(const m of NIGHT.cones) m.opacity = k*0.07;
-  const p=S.player; if(NIGHT.head && p){ NIGHT.head.intensity = k*3.2; }
+  const p=S.player; if(NIGHT.head && p){ NIGHT.head.intensity = k*4.6; }
 }
 export const _envCache = {};
 export function skyEnvTexture(name, A){
