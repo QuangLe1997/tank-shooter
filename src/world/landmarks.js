@@ -2,7 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildFlora, heightAt, inField, inZone } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, crushables, heightAt, inField, inZone } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 const WALLS=[ ['#b9b1a4','#6f8aa6'], ['#9fa8b0','#46607a'], ['#c8a98a','#5a6e84'], ['#a99a8a','#3e5670'] ];   // [wall, glass]
@@ -15,7 +15,7 @@ function windowTex(i){                                                          
   const t=new THREE.CanvasTexture(c), em=new THREE.CanvasTexture(e); for(const q of [t,em]){ q.wrapS=q.wrapT=THREE.RepeatWrapping; q.colorSpace=THREE.SRGBColorSpace; q.anisotropy=4; }
   return (_wt[i]={ t, em }); }
 function dummy(){ return LAND.dummy||(LAND.dummy=new THREE.Object3D()); }
-export function clearLandmarks(){ for(const m of LAND.meshes){ m.parent && m.parent.remove(m); if(m.geometry) m.geometry.dispose(); if(m.isInstancedMesh) m.dispose(); } LAND.meshes.length=0; }
+export function clearLandmarks(){ for(const m of LAND.meshes){ m.parent && m.parent.remove(m); if(m.geometry && !m.isInstancedMesh) m.geometry.dispose(); if(m.isInstancedMesh) m.dispose(); } LAND.meshes.length=0; for(let i=crushables.length-1;i>=0;i--) if(crushables[i].land) crushables.splice(i,1); }   // (instanced geometry is cached & shared)
 const add=(m)=>{ arena.add(m); LAND.meshes.push(m); return m; };
 const claim=(x,z,r)=>ZONES.push({ kind:'landmark', x, z, r });   // later scatter (cover, camps, depots) keeps clear
 const solid=(x,z,r,kind,mesh,land)=>blocks.push({ mesh:mesh||dummy(), x, z, r, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind, land:land||null });   // indestructible cover, like concrete
@@ -91,7 +91,7 @@ const nearWater=(x,z,R)=>{ for(let a=0;a<6.28;a+=0.7) for(const r of [8,R]) if(h
 
 export function buildLandmarks(){
   clearLandmarks(); LAND.mats.length=0; const n=BIOME.name;
-  if(n==='CITY') buildCity(); else if(n==='VILLAGE') buildVillage(); }
+  if(n==='CITY') buildCityDistrict(); else if(n==='VILLAGE') buildVillage(); }   // Z142 the city is a real district now (city.js)
 // Z141 vegetation goes in last, round whatever was built
 export function buildScenery(){ buildFlora(); }
 // lit windows glow at night

@@ -600,5 +600,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
   ok(/export function buildFlora/.test(f) && /bamboo/.test(f) && /palm/.test(f) && /reeds/.test(f) && /sway/.test(f) && /c\.kind==='tree'/.test(d), 'flora per biome, swaying, trees topple under tanks'); }
 
+// Z142 city district
+{ const fs=await import('node:fs'); const c=fs.readFileSync('src/world/city.js','utf8');
+  ok(/tubeHouse/.test(c) && /apartment/.test(c) && /officeTower/.test(c) && /villaHouse/.test(c) && /motoGeo/.test(c) && /zebra/.test(c) && /LineSegments/.test(c), 'city: street grid, varied buildings, cars, motorbikes, crossings, power lines'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

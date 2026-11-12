@@ -23,6 +23,7 @@ const conifer=(snow)=>geo('con'+(snow?1:0), ()=>{ const P=[], tr=new THREE.Cylin
   for(let k=0;k<6;k++){ const r=2.3-k*0.36, h=2.0-k*0.16, c=new THREE.ConeGeometry(r,h,9,1,true); c.translate(0,1.6+k*1.05,0); const cc=k%2?0x2c5228:0x3a6632; P.push({geo:c,col:cc});
     if(snow){ const sn=new THREE.ConeGeometry(r*0.72,h*0.42,9,1,true); sn.translate(0,1.6+k*1.05+h*0.3,0); P.push({geo:sn,col:0xf2f6fa}); } }
   const tip=new THREE.ConeGeometry(0.35,1.1,7); tip.translate(0,8.2,0); P.push({geo:tip,col:snow?0xf2f6fa:0x3a6632}); return _mergeColored(P); });
+export const treeBroadleaf=()=>broadleaf();
 const broadleaf=()=>geo('bl', ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.2,0.34,3.2,7); tr.translate(0,1.6,0); P.push({geo:tr,col:0x5a4430});
   for(const [a,l] of [[0.6,1.6],[-0.8,1.4],[2.4,1.3]]){ const b=new THREE.CylinderGeometry(0.07,0.12,l,5); b.translate(0,l/2,0); b.rotateZ(0.7); b.rotateY(a); b.translate(0,2.6,0); P.push({geo:b,col:0x5a4430}); }
   const cols=[0x4a7a30,0x5c8c38,0x3e6a2a,0x6a9a40]; for(let i=0;i<8;i++){ const r=_R(1.0,1.6), s=new THREE.IcosahedronGeometry(r,1), a=i/8*6.28;
@@ -63,5 +64,5 @@ export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)
   else if(n==='MEADOW'){ plant(broadleaf(), N(40), { s:[0.8,1.3], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55 }); }
   else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
-  else if(n==='CITY'){ plant(broadleaf(), N(18), { s:[0.7,1.0], kind:'tree', cr:0.6 }); plant(bush(false), N(20), { s:[0.6,1.0], shadow:false }); }
+  else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
   else { plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); } }
