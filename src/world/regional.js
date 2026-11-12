@@ -15,6 +15,8 @@ export const REGION = {
   CITY:    { pat:'concrete', base:'#a2a4a6', seam:'#6a6c70', rough:0.88, metal:0.05, cap:'wire',   roof:'flat',  trim:0x3a3d40 },
   HILLS:   { pat:'log',      base:'#6e5034', seam:'#43301c', rough:0.9,  metal:0.0,  cap:'stake',  roof:'cone',  trim:0x56603a },
   VILLAGE: { pat:'brick',    base:'#b5643e', seam:'#d8c8a8', rough:0.9,  metal:0.0,  cap:'tile',   roof:'tile',  trim:0x7a3a22 },
+  SAVANNA: { pat:'adobe',    base:'#b0704a', seam:'#7a4a2c', rough:0.95, metal:0.0,  cap:'stake',  roof:'thatch',trim:0x8a5a34 },
+  ARCTIC:  { pat:'ice',      base:'#d8ecf6', seam:'#9ab8cc', rough:0.3,  metal:0.05, cap:'snow',   roof:'snow',  trim:0x8aa0b0 },
 };
 export const regionOf = (name)=>(typeof name==='object' && name) ? name : (REGION[name||BIOME.name]||REGION.CITADEL);
 // Z140 every fort of a battlefield is built differently: its own wall material, wall-top, tower roofs and corner towers (square piers or round drums)
@@ -25,7 +27,8 @@ export const REGION_ALT = {
   TUNDRA:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','cone'] },      FOUNDRY:{ pats:['plate','concrete'], caps:['spike','wire'], roofs:['flat','dome'] },
   CITADEL:{ pats:['ashlar','adobe'], caps:['merlon','spike'], roofs:['cone','dome'] },  MEADOW:{ pats:['log','ashlar'], caps:['stake','merlon'], roofs:['cone','flat'] },
   CITY:{ pats:['concrete','plate'], caps:['wire','spike'], roofs:['flat','dome'] },     HILLS:{ pats:['log','ashlar'], caps:['stake','merlon'], roofs:['cone','flat'] },
-  VILLAGE:{ pats:['brick','laterite','bamboo'], caps:['tile','stake','tile'], roofs:['tile','tile','cone'] } };
+  VILLAGE:{ pats:['brick','laterite','bamboo'], caps:['tile','stake','tile'], roofs:['tile','tile','cone'] },
+  SAVANNA:{ pats:['adobe','log'], caps:['stake','merlon'], roofs:['thatch','thatch'] }, ARCTIC:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','flat'] } };
 export function fortStyle(name, i){ const n=name||BIOME.name, st=regionOf(n), A=REGION_ALT[n]||{ pats:[st.pat], caps:[st.cap], roofs:[st.roof] };
   const pat=A.pats[i%A.pats.length], c=PAT_COL[pat]||[st.base,st.seam];
   return Object.assign({}, st, { key:n+'#'+pat+'#'+A.caps[(i+1)%A.caps.length]+'#'+A.roofs[i%A.roofs.length], pat, base:c[0], seam:c[1], cap:A.caps[(i+1)%A.caps.length], roof:A.roofs[i%A.roofs.length],
@@ -78,6 +81,7 @@ export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
   if(st.roof==='tile'){ const r=new THREE.ConeGeometry(s*0.95, s*0.7, 4); r.rotateY(Math.PI/4); _xf(r,0,y+s*0.35,0); P.push({geo:r,col:0xa84a2a});   // hip roof (cổng làng)
     const ridge=new THREE.ConeGeometry(0.18, 0.7, 6); _xf(ridge,0,y+s*0.7+0.3,0); P.push({geo:ridge,col:0x7a3a22});
     for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const c=new THREE.ConeGeometry(0.16,0.5,5); c.rotateZ(q[0]*0.9); _xf(c, q[0]*s*0.62, y+0.12, q[1]*s*0.62); P.push({geo:c,col:0x7a3a22}); } }   // upturned eaves
+  else if(st.roof==='thatch'){ const c=new THREE.ConeGeometry(s*0.9, s*0.95, 10); _xf(c,0,y+s*0.47,0); P.push({geo:c,col:0xc8a460}); const r=new THREE.TorusGeometry(s*0.82,0.08,4,12); r.rotateX(Math.PI/2); _xf(r,0,y+0.12,0); P.push({geo:r,col:0x8a6a3a}); }   // straw thatch
   else if(st.roof==='dome'){ const d=new THREE.SphereGeometry(s*0.55, 12, 8, 0, Math.PI*2, 0, Math.PI/2); _xf(d,0,y,0); P.push({geo:d,col:0xd8b884}); }
   else if(st.roof==='cone'){ const c=new THREE.ConeGeometry(s*0.8, s*0.9, 8); _xf(c,0,y+s*0.45,0); P.push({geo:c,col:st.pat==='log'?0x5a4028:0x7a6248}); }
   else if(st.roof==='snow'){ const c=new THREE.BoxGeometry(s*1.05,0.4,s*1.05); _xf(c,0,y+0.2,0); P.push({geo:c,col:0xf6fbff}); }

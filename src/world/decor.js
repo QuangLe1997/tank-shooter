@@ -31,7 +31,7 @@ export function buildTerrainDecor(b){
     list.forEach((o,k)=>{ _IE.set(o.tilt,o.ry,o.tilt*0.5); _IM.compose(_IV.set(o.x,heightAt(o.x,o.z)+o.r*0.18,o.z), _IQ.setFromEuler(_IE), _IS.set(o.r,o.r,o.r)); im.setMatrixAt(k,_IM);
       crushables.push({ x:o.x, z:o.z, r:o.r, im, k, alive:true, kind:'rock', ry:o.ry }); });
     decorGroup.add(im); });
-  if(b.name==='MEADOW'||b.name==='DESERT'||b.name==='TUNDRA'||b.name==='CITADEL'||b.name==='HILLS'||b.name==='VILLAGE'){                // grass tufts / dry shrubs (flatten under tracks)
+  if(b.name==='MEADOW'||b.name==='DESERT'||b.name==='TUNDRA'||b.name==='CITADEL'||b.name==='HILLS'||b.name==='VILLAGE'||b.name==='SAVANNA'){                // grass tufts / dry shrubs (flatten under tracks)
     const M=Math.round(((b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?(MOBILE?90:200):(MOBILE?30:60))*Math.min(AREA_K, MOBILE?1.5:2)), list=[]; for(let i=0;i<M;i++){ const sp=_decorSpot(9); if(sp) list.push({x:sp[0],z:sp[1],s:_R(0.7,1.4),ry:_R(0,6.28)}); }
     if(!_tuftMat) _tuftMat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.95, side:THREE.DoubleSide });
     const im=new THREE.InstancedMesh(tuftGeo(b.name), _tuftMat, Math.max(1,list.length)); im.castShadow=!MOBILE; im.receiveShadow=true;

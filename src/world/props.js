@@ -63,7 +63,7 @@ export function makeRockGeo(detail, flat, topCol, baseCol){
     tmp.copy(bc).lerp(tc, Math.min(1, up*1.2)).multiplyScalar(ao*(0.9+Math.random()*0.15)); col[i*3]=tmp.r; col[i*3+1]=tmp.g; col[i*3+2]=tmp.b; }
   g.setAttribute('color', new THREE.BufferAttribute(col,3)); g.computeVertexNormals(); return g;
 }
-export const ROCK_TINT = { DESERT:[0xd6bf94,0xa8865a], RUINS:[0xa8a49c,0x7a766e], TUNDRA:[0xf4f8fc,0x6a7078], FOUNDRY:[0x5a504a,0x2e2a28], CITADEL:[0x9a8466,0x5e4c38], MEADOW:[0x7a9a4a,0x7e7c72], CITY:[0x9a9a98,0x6a6a6a], HILLS:[0x8e9082,0x686a5c], VILLAGE:[0x9a9a86,0x6e6e60] };
+export const ROCK_TINT = { DESERT:[0xd6bf94,0xa8865a], RUINS:[0xa8a49c,0x7a766e], TUNDRA:[0xf4f8fc,0x6a7078], FOUNDRY:[0x5a504a,0x2e2a28], CITADEL:[0x9a8466,0x5e4c38], MEADOW:[0x7a9a4a,0x7e7c72], CITY:[0x9a9a98,0x6a6a6a], HILLS:[0x8e9082,0x686a5c], VILLAGE:[0x9a9a86,0x6e6e60], SAVANNA:[0xb08a5a,0x7a5a38], ARCTIC:[0xe8f2fa,0x8aa4b8] };
 export const _rockCache={};
 export function rockSet(bn){ if(_rockCache[bn]) return _rockCache[bn]; const t=ROCK_TINT[bn]||ROCK_TINT.DESERT; const set={ small:[], big:[] };
   for(let i=0;i<5;i++) set.small.push(makeRockGeo(2, _R(0.5,0.85), t[0], t[1]));
@@ -136,6 +136,8 @@ export const COVER_SET = {
   CITY:   [['sandbag','crates','tires','drums'],   ['concrete','concrete','hesco','pipes']],
   HILLS:  [['sandbag','crates','drums'],           ['hesco','concrete']],
   VILLAGE:[['sandbag','crates','tires','drums'],   ['pipes','hesco']],
+  SAVANNA:[['sandbag','sandbag','drums','crates'], ['hesco','concrete']],
+  ARCTIC: [['sandbag','crates','drums'],           ['concrete','hesco']],
 };
 export function makeCoverMesh(kind, destructible){
   const mat = destructible ? coverMat(kind).clone() : coverMat(kind);     // destructible pieces flash on hit → own material

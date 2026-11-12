@@ -165,10 +165,10 @@ export const RAMP = { hpPerStage:0.14 };
 // battlefield conditions — the same gun performs differently depending on WHERE and WHEN you fight
 export const ENV = {
   night:  { range:0.85, enemySpread:1.3, exempt:['railgun','missile'] },   // short sight lines; thermal (railgun) & lock-on (missile) unaffected; enemies shoot worse too
-  hot:    { biomes:['DESERT','FOUNDRY'], hours:['noon'], fire:1.25, freeze:0.7 },   // heat: fires rage, ice melts off fast
-  cold:   { biomes:['TUNDRA'], fire:0.75, freeze:1.5, cryo:1.2 },                  // frost: cryo locks targets for longer, flames gutter
+  hot:    { biomes:['DESERT','FOUNDRY','SAVANNA'], hours:['noon'], fire:1.25, freeze:0.7 },   // heat: fires rage, ice melts off fast
+  cold:   { biomes:['TUNDRA','ARCTIC'], fire:0.75, freeze:1.5, cryo:1.2 },                  // frost: cryo locks targets for longer, flames gutter
   urban:  { biomes:['RUINS','CITADEL','CITY'], he:1.2 },                                  // rubble & walls: blast and splinters wreck more
-  open:   { biomes:['MEADOW','DESERT'], longRange:1.1, guns:['cannon','railgun','hesh'] },   // long sight lines favour the big guns
+  open:   { biomes:['MEADOW','DESERT','SAVANNA','ARCTIC'], longRange:1.1, guns:['cannon','railgun','hesh'] },   // long sight lines favour the big guns
 };
 // battlefield gun gifts: pity timer + counter-pick + prefer guns you don't hold yet (duplicates still feed MASTERY)
 export const GIFT = { gunBase:0.30, pityStep:0.12, pityCap:0.85, counterW:1.6, newGunW:1.6 };

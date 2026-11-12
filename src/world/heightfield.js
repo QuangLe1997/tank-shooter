@@ -51,7 +51,7 @@ export function genTerrain(b){
     v += st.noise*(n1 + n2);
     h[j*W+i] = v*_hfMask(x,z) + ridgeAt(x, z, n1); }
   RIVER.on=false; RIVER.bridges.length=0; RIVER.lines.length=0; if(RIVER.mesh) RIVER.mesh.visible=false; if(RIVER.deck) RIVER.deck.visible=false;
-  if(b.name==='VILLAGE') carveRivers(h);
+  if(b.name==='VILLAGE') carveRivers(h); else if(b.name==='ARCTIC') carveRivers(h, true);   // Z143 open leads of black water through the ice
   syncTerrainMesh();
   try{ if(typeof DECAL!=='undefined' && DECAL.sx) for(const f of feats) if(f.t===1 && _hfMask(f.x,f.z)>0.5) decalCrater(f.x, f.z, f.r*0.9, 0.55); }catch(e){}   // old craters are scarred into the ground too
 }
@@ -62,16 +62,16 @@ function _river(pts, w, h){                                                     
     d=Math.sqrt(d); const u=d/w; if(u>1.5) continue;
     const dep = u<0.62 ? 1 : (()=>{ const t=(u-0.62)/0.88; return 1-t*t*(3-2*t); })();
     const k=j*W+i; h[k]=Math.min(h[k], h[k]*0.25 - D*dep); } }
-function carveRivers(h){
+function carveRivers(h, ice){
   const A=ARENA, ph=Math.random()*6.28, z0=-A*0.5+(Math.random()-0.5)*10, main=[], stream=[];
   for(let i=0;i<=56;i++){ const x=-A-6+(2*A+12)*i/56; main.push({ x, z:z0+Math.sin(x*0.045+ph)*10+Math.sin(x*0.11+ph*2)*3 }); }
   const x0=-A*0.46+(Math.random()-0.5)*8, zEnd=main.reduce((m,p)=>Math.abs(p.x-x0)<Math.abs(m.x-x0)?p:m).z;
   for(let j=0;j<=30;j++){ const z=A+6-(A+6-zEnd)*j/30; stream.push({ x:x0+Math.sin(z*0.07+ph)*6, z }); }
-  _river(main, 5.5, h); _river(stream, 3.2, h);
-  RIVER.on=true; RIVER.lines.push(main, stream);
+  _river(main, ice?7:5.5, h); _river(stream, ice?2.6:3.2, h);
+  RIVER.on=true; RIVER.ice=!!ice; RIVER.lines.push(main, stream);
   // bridges: two over the river, one over the stream — decks run across the channel
   const at=(line,u)=>{ const k=Math.max(1,Math.min(line.length-2,Math.round(u*(line.length-1)))), a=line[k-1], b=line[k+1]; return { x:line[k].x, z:line[k].z, ang:Math.atan2(b.z-a.z, b.x-a.x) }; };
-  for(const [line,u,w] of [[main,0.30,5.5],[main,0.66,5.5],[stream,0.2,3.2]]){ const p=at(line,u), ang=p.ang+Math.PI/2; RIVER.bridges.push({ x:p.x, z:p.z, ang, ca:Math.cos(ang), sa:Math.sin(ang), hw:3.6, hl:w*1.9+2, y:0.14 }); }
+  if(!ice) for(const [line,u,w] of [[main,0.30,5.5],[main,0.66,5.5],[stream,0.2,3.2]]){ const p=at(line,u), ang=p.ang+Math.PI/2; RIVER.bridges.push({ x:p.x, z:p.z, ang, ca:Math.cos(ang), sa:Math.sin(ang), hw:3.6, hl:w*1.9+2, y:0.14 }); }
   riverMeshes();
 }
 // Z141 REAL WATER: depth-tinted (clear shallows → deep green-blue), white foam on the banks and round anything standing in it, two scrolling ripple normal
@@ -86,19 +86,20 @@ function depthTex(){ const W=HF.W, d=new Uint8Array(W*W*4); for(let k=0;k<W*W;k+
 function riverMeshes(){
   if(!RIVER.mesh){ const nrm=waterNormal(); nrm.repeat.set(30,30);
     const mat=new THREE.MeshStandardMaterial({ color:0xffffff, normalMap:nrm, normalScale:new THREE.Vector2(0.85,0.85), transparent:true, roughness:0.06, metalness:0.05, envMapIntensity:1.5, depthWrite:false });
-    mat.userData.u={ uDepth:{ value:null }, uWY:{ value:RIVER.y }, uA:{ value:ARENA }, uT:WTIME };
+    mat.userData.u={ uDepth:{ value:null }, uWY:{ value:RIVER.y }, uA:{ value:ARENA }, uT:WTIME, uSh:{ value:new THREE.Color(0.26,0.50,0.46) }, uDp:{ value:new THREE.Color(0.04,0.17,0.22) } };
     mat.onBeforeCompile=(sh)=>{ Object.assign(sh.uniforms, mat.userData.u);
       sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
-      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP; uniform sampler2D uDepth; uniform float uWY, uA, uT;')
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP; uniform sampler2D uDepth; uniform float uWY, uA, uT; uniform vec3 uSh, uDp;')
         .replace('#include <color_fragment>',`#include <color_fragment>
           vec2 duv=(vWP.xz+uA)/(2.0*uA); float hb=texture2D(uDepth, duv).r*3.5-2.5; float dep=max(0.0, uWY-hb);
-          vec3 shallow=vec3(0.26,0.50,0.46), deep=vec3(0.04,0.17,0.22); vec3 wc=mix(shallow, deep, smoothstep(0.04,0.62,dep));
+          vec3 shallow=uSh, deep=uDp; vec3 wc=mix(shallow, deep, smoothstep(0.04,0.62,dep));
           float n=sin(vWP.x*1.7+uT*1.3)*sin(vWP.z*1.9-uT*1.1)+sin((vWP.x+vWP.z)*3.1+uT*2.0)*0.5;
           float foam=(1.0-smoothstep(0.0,0.16+0.05*n,dep))*0.85 + smoothstep(0.85,1.0,n*0.5+0.5)*0.12*(1.0-smoothstep(0.2,0.6,dep));
           diffuseColor.rgb=mix(wc, vec3(0.93,0.96,0.97), clamp(foam,0.0,1.0)); diffuseColor.a=mix(0.45, 0.9, smoothstep(0.02,0.7,dep))+foam*0.1;`); };
     RIVER.mesh=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2.4, ARENA*2.4, 1, 1), mat);
     RIVER.mesh.rotation.x=-Math.PI/2; RIVER.mesh.receiveShadow=true; RIVER.mesh.renderOrder=2; arena.add(RIVER.mesh); }
-  { const U=RIVER.mesh.material.userData.u; if(U.uDepth.value) U.uDepth.value.dispose(); U.uDepth.value=depthTex(); }
+  { const U=RIVER.mesh.material.userData.u; if(U.uDepth.value) U.uDepth.value.dispose(); U.uDepth.value=depthTex();
+    if(RIVER.ice){ U.uSh.value.setRGB(0.22,0.40,0.46); U.uDp.value.setRGB(0.02,0.07,0.10); } else { U.uSh.value.setRGB(0.26,0.50,0.46); U.uDp.value.setRGB(0.04,0.17,0.22); } }   // arctic leads: near-black cold water
   RIVER.mesh.position.y=RIVER.y; RIVER.mesh.visible=true;
   if(RIVER.deck){ arena.remove(RIVER.deck); RIVER.deck.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); RIVER.deck=null; }
   const g=new THREE.Group(), wood=new THREE.MeshStandardMaterial({ color:0x8a6a44, roughness:0.9 }), rail=new THREE.MeshStandardMaterial({ color:0x5e472c, roughness:0.9 });

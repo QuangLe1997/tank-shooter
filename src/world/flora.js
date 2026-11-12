@@ -41,6 +41,25 @@ const reeds=()=>geo('rd', ()=>{ const P=[]; for(let i=0;i<10;i++){ const h=_R(1.
     if(i%3===0){ const t=new THREE.CylinderGeometry(0.05,0.05,0.25,5); t.translate(0,h*0.85,0); P.push({geo:t,col:0x6a4a2a}); } } return _mergeColored(P); });   // cat-tail heads
 const hay=()=>geo('hy', ()=>{ const P=[], d=new THREE.SphereGeometry(1.3,10,7,0,6.28,0,Math.PI*0.62); d.scale(1,1.5,1); P.push({geo:d,col:0xd8b464}); const pole=new THREE.CylinderGeometry(0.05,0.05,1.0,4); pole.translate(0,2.2,0); P.push({geo:pole,col:0x6a4a2a}); return _mergeColored(P); });
 
+// Z143 savanna + arctic species
+const baobab=()=>geo('bao', ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.85,1.35,5.2,10); tr.translate(0,2.6,0); P.push({geo:tr,col:0x9a8a78});
+  const crown=new THREE.CylinderGeometry(1.0,0.85,0.8,10); crown.translate(0,5.5,0); P.push({geo:crown,col:0x8e7e6c});
+  for(let k=0;k<8;k++){ const a=k/8*6.28, l=_R(1.4,2.4), b=new THREE.CylinderGeometry(0.1,0.22,l,6); b.translate(0,l/2,0); b.rotateZ(_R(0.5,1.0)); b.rotateY(a); b.translate(0,5.7,0); P.push({geo:b,col:0x8a7a68});
+    if(k%2===0){ const lf=new THREE.IcosahedronGeometry(_R(0.4,0.65),0); lf.scale(1,0.6,1); lf.translate(Math.cos(a)*l*0.75, 5.7+l*0.6, -Math.sin(a)*l*0.75); P.push({geo:lf,col:0x7a8a3a}); } }   // a few dry-season leaves
+  return _mergeColored(P); });
+const acacia=()=>geo('aca', ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.12,0.2,3.6,6); tr.translate(0,1.8,0); tr.rotateZ(0.08); P.push({geo:tr,col:0x5a4a3a});
+  for(let k=0;k<4;k++){ const a=k/4*6.28+0.4, b=new THREE.CylinderGeometry(0.05,0.1,2.0,5); b.translate(0,1.0,0); b.rotateZ(0.85); b.rotateY(a); b.translate(0.15,3.4,0); P.push({geo:b,col:0x5a4a3a}); }
+  for(let i=0;i<7;i++){ const a=i/7*6.28, r=i?_R(1.2,2.3):0, c=new THREE.IcosahedronGeometry(_R(1.1,1.6),1); c.scale(1,0.28,1); c.translate(Math.cos(a)*r, 4.4+_R(-0.15,0.2), Math.sin(a)*r); P.push({geo:c,col:i%2?0x8a8a3e:0x9a944a}); }   // flat umbrella crown (dry-season olive)
+  return _mergeColored(P); });
+const deadTree=()=>geo('dead', ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.1,0.22,4.2,6); tr.translate(0,2.1,0); P.push({geo:tr,col:0x8a7e70});
+  for(let k=0;k<6;k++){ const a=_R(0,6.28), l=_R(0.9,1.8), b=new THREE.CylinderGeometry(0.03,0.07,l,4); b.translate(0,l/2,0); b.rotateZ(_R(0.5,1.1)); b.rotateY(a); b.translate(0,_R(2.0,4.0),0); P.push({geo:b,col:0x7a7064}); } return _mergeColored(P); });
+const tallGrass=()=>geo('tg', ()=>{ const P=[], cols=[0xf0d890,0xe0c070,0xc89a50,0xf6e4a8,0x9a7a40]; for(let i=0;i<18;i++){ const h=_R(0.9,1.8), c=new THREE.ConeGeometry(_R(0.06,0.1),h,3); c.translate(0,h/2,0); c.rotateZ(_R(-0.4,0.4)); c.rotateX(_R(-0.4,0.4)); c.translate(_R(-0.55,0.55),0,_R(-0.55,0.55)); P.push({geo:c,col:cols[i%5]}); } return _mergeColored(P); });
+const reedPlume=()=>geo('lau', ()=>{ const P=[]; for(let i=0;i<9;i++){ const h=_R(1.6,2.5), c=new THREE.ConeGeometry(0.03,h,3); c.translate(0,h/2,0); c.rotateZ(_R(-0.2,0.2)); c.rotateX(_R(-0.2,0.2)); const x=_R(-0.4,0.4), z=_R(-0.4,0.4); c.translate(x,0,z); P.push({geo:c,col:0xb8a470});
+    const pl=new THREE.ConeGeometry(0.11,0.7,5); pl.rotateX(Math.PI); pl.translate(x+_R(-0.08,0.08), h+0.1, z); P.push({geo:pl,col:i%2?0xf0e8d8:0xe4dac4}); } return _mergeColored(P); });   // cỏ lau: feathery white plumes
+const termite=()=>geo('mound', ()=>{ const P=[], cols=[0xa8603a,0x9a5434,0xb86c42]; for(let i=0;i<4;i++){ const h=_R(1.6,3.2), c=new THREE.ConeGeometry(_R(0.35,0.7),h,7); c.translate(_R(-0.4,0.4),h/2,_R(-0.4,0.4)); P.push({geo:c,col:cols[i%3]}); }
+  const base=new THREE.SphereGeometry(1.0,8,6,0,6.28,0,Math.PI/2); base.scale(1,0.5,1); P.push({geo:base,col:0x9a5434}); return _mergeColored(P); });
+const iceSpire=()=>geo('ice', ()=>{ const P=[]; for(let i=0;i<4;i++){ const h=_R(1.2,3.6), c=new THREE.ConeGeometry(_R(0.4,0.9),h,5); c.rotateZ(_R(-0.3,0.3)); c.translate(_R(-0.6,0.6),h/2,_R(-0.6,0.6)); P.push({geo:c,col:i%2?0xd8f0ff:0xa8d4ec}); } return _mergeColored(P); });
+const floe=()=>geo('floe', ()=>{ const g=new THREE.CylinderGeometry(1,1.1,0.35,7); g.translate(0,0,0); return _mergeColored([{geo:g,col:0xf2f8fc}]); });
 // ---------- placement ----------
 const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(), V=new THREE.Vector3(), SC=new THREE.Vector3(), C=new THREE.Color();
 export const FLORA = { meshes:[] };
@@ -57,11 +76,21 @@ function plant(g, n, opt){ const list=[]; const tries=n*6;
   im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); }
 function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[(Math.random()*RIVER.lines.length)|0], p=L[(Math.random()*L.length)|0], w=L===RIVER.lines[0]?5.5:3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
   const x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r, h=heightAt(x,z); return (h>RIVER.y-0.05 && h<RIVER.y+0.6) ? [x,z] : null; }
+function patchSpot(centres, R){ const c=centres[(Math.random()*centres.length)|0]; const a=Math.random()*6.28, r=Math.sqrt(Math.random())*R; return [c[0]+Math.cos(a)*r, c[1]+Math.sin(a)*r]; }
+function centres(n){ const C=[]; for(let t=0;t<n*20 && C.length<n;t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20); if(okSpot(x,z,6)) C.push([x,z]); } return C; }
+function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }
 export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
   if(n==='HILLS'){ plant(conifer(false), N(90), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55 }); plant(broadleaf(), N(30), { s:[0.8,1.2], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
   else if(n==='VILLAGE'){ plant(palm(), N(26), { s:[0.85,1.25], kind:'tree', cr:0.4 }); plant(bamboo(), N(16), { s:[0.9,1.2], kind:'tree', cr:0.9 }); plant(broadleaf(), N(22), { s:[0.8,1.15], kind:'tree', cr:0.6 });
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
   else if(n==='MEADOW'){ plant(broadleaf(), N(40), { s:[0.8,1.3], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
+    plant(tallGrass(), N(1600), { s:[1.1,1.8], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
+    plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });
+    plant(baobab(), N(9), { s:[0.9,1.35], kind:'tree', cr:1.3 }); plant(acacia(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.4 }); plant(deadTree(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.3 });
+    plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
+  else if(n==='ARCTIC'){ plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });
+    for(const m of FLORA.meshes){ if(m.geometry===floe()){ const M2=new THREE.Matrix4(), P2=new THREE.Vector3(), Q2=new THREE.Quaternion(), S2=new THREE.Vector3(); for(let i=0;i<m.count;i++){ m.getMatrixAt(i,M2); M2.decompose(P2,Q2,S2); P2.y=RIVER.y+0.05; M2.compose(P2,Q2,S2); m.setMatrixAt(i,M2); } m.instanceMatrix.needsUpdate=true; } } }   // ice floes float on the leads
   else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55 }); }
   else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
