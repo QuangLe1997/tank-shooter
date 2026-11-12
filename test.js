@@ -548,7 +548,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const g=fs.readFileSync('src/input/gamepad.js','utf8'), cfg=fs.readFileSync('config.js','utf8'), b=fs.readFileSync('src/input/bindings.js','utf8'), css=fs.readFileSync('css/menus.css','utf8');
   ok(/function lobAim/.test(g) && /PAD_CFG\.lob/.test(g) && /lob:\{/.test(cfg), 'pad: mortar / rocket range on the right stick (↑↓), 180° front arc (←→)');
   ok(/'autoAim'[^\]]*\],?[^\]]*11,0\]|\['autoAim'.*?,11,0\]/.test(cfg) && /case 'autoAim'/.test(b), 'R3 toggles auto-aim');
-  ok(/\['zoomPing'.*?,17,0\]/.test(cfg) && /\['camTurn'.*?,18,0\]/.test(cfg) && /function dbl\(/.test(b), 'back paddles M1 / M2 = zoom ping-pong / rotate, double tap = reset');
+  ok(/\['zoomPing'.*?,10,0\]/.test(cfg) && /\['camTurn'.*?,15,0\]/.test(cfg) && /PADDLE/.test(g) && /function dbl\(/.test(b), 'back paddles M1 / M2 = zoom ping-pong / rotate, double tap = reset');
   ok(/fireHeld/.test(g) && /padplay/.test(g) && /body\.pad\.padplay/.test(css), 'a held trigger cannot keep shooting behind a menu; legends only show in a live battle'); }
 
 // Z129 default gun

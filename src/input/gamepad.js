@@ -77,13 +77,14 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
   if(down(BT.VIEW)) PAD.viewCombo=false;
   for(let i=0;i<cur.length;i++){ if(!down(i) && !up(i)) continue;
     if(cur[BT.VIEW] && CAMC[i]){ if(down(i)){ PAD.viewCombo=true; runAction(CAMC[i], 'down'); } continue; }                      // Z124 hold ⧉ View + D-pad = camera (↑ in · ↓ out · ←→ rotate)
-    const a=actionForPad(i);
+    const a=actionForPad(i) || PADDLE[i] || null;                                                                              // Z132 a pad that DOES report its back paddles (buttons 17 / 18) gets them as camera too
     if(i===BT.VIEW && a==='keys'){ if(up(i) && !PAD.viewCombo) runAction('keys', 'down'); continue; }                           // ⧉ alone opens the key sheet on release
     if((i===BT.LB || i===BT.RB) && down(i) && cur[i===BT.LB ? BT.RB : BT.LB]){ runAction('gunDefault','down'); PAD.gunCombo=true; continue; }   // Z129 LB + RB together = back to the default gun
     if(a==='fire') PAD.fireHeld=down(i);
     if(a) runAction(a, down(i)?'down':'up'); }
   padHud(now);
 }
+const PADDLE={ 17:'zoomPing', 18:'camTurn' };
 const CAMC={ 12:'zoomIn', 13:'zoomOut', 14:'rotL', 15:'rotR' };
 // Z124 on-screen legend of the pad buttons that have no on-screen button (crew, orders, camera, guns) — follows the rebinding table
 const HUD_IDS=[['crew','LÍNH'],['autoFire','TỰ BẮN'],['gunPrev','SÚNG−'],['gunNext','SÚNG+'],['muster','TẬP KẾT'],['assault','XUNG PHONG'],['para','LÍNH DÙ'],['autoAim','TỰ NGẮM'],['camAuto','CAM TỰ ĐỘNG'],['zoomPing','ZOOM (2× = reset)'],['camTurn','XOAY CAM (2× = reset)']];

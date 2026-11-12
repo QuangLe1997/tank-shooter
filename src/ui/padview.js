@@ -50,8 +50,8 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
      ld('M630 192 H740',630,192)+lab(false,190,'B',F(1),'',1)+
      ld('M596 226 H740',596,226)+lab(false,234,'A',F(0),'',0)+
      ld('M562 278 H740',562,278)+lab(false,274,'CẦN PHẢI',{ t:'Xoay nòng' },['thả ra: tự ngắm · cối/tên lửa: ↑↓ chỉnh tầm', F(11).t ? 'nhấn R3: '+F(11).t : ''],11)+
-     ld('M196 378 H140',196,378)+lab(true,382,'M1 nút sau',F(17),'',17)+
-     ld('M684 378 H740',684,378)+lab(false,382,'M2 nút sau',F(18),'',18)+
+     ld('M196 378 H140',196,378)+lab(true,382,'M1 nút sau',F(17).t?F(17):{ t:'Zoom (nếu tay cầm báo)' },'',17)+
+     ld('M684 378 H740',684,378)+lab(false,382,'M2 nút sau',F(18).t?F(18):{ t:'Xoay cam (nếu tay cầm báo)' },'',18)+
      ld('M398 205 V404',398,205)+lab(true,420,'⧉ View',F(8),'',8)+
      ld('M482 205 V404',482,205)+lab(false,420,'☰ Menu',F(9),'',9);
   const svg='<svg class="pad-svg'+(bare?' bare':'')+'" viewBox="'+(bare?'340 20 560 380':'0 0 1240 448')+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ tay cầm">'+defs+'<g transform="translate(180 0)">'+g+'</g></svg>';
