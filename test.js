@@ -539,5 +539,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/restoreFocus/.test(b) && /NAV\.sig/.test(b), 'menu focus is restored to the same spot after a redraw (no jump to the bottom button)');
   ok(/@keyframes padfocus/.test(css) && /scrollPane\(root\)/.test(gpd), 'focus ring pulses; right stick scrolls the list that holds the focus'); }
 
+// Z127 pad: A only picks — start buttons are on ☰, the ring starts on the choices, deploy steppers answer ←/→
+{ const fs=await import('node:fs'); const b=fs.readFileSync('src/input/bindings.js','utf8'), g=fs.readFileSync('src/input/gamepad.js','utf8');
+  ok(/PAD_FIRST/.test(b) && /PAD_GO/.test(b) && /PAD_GO\[root\.id\]/.test(g), 'pad: ring starts on the choices, ☰ starts the battle / deploy');
+  ok(/dp-step'\)\)\{ const b=NAV\.focus/.test(b) && /b\[b\.length-1\]\.click/.test(b), 'pad: a deploy stepper row answers ←/→ (−1/+1) and A (+1)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

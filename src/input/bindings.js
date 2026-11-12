@@ -40,7 +40,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
   } }
 
 // ---- MENUS: one focus ring for keyboard and pad ----
-const FOCUSABLE='.btn, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .tcard, .shop-tab, .case, .dp-step, .dp-gun, .guide-row, .bind-chip, #upcards > *, [data-pad]';
+const FOCUSABLE='.btn, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .tcard, .shop-tab, .case, .dp-step, .guide-row, .bind-chip, #upcards > *, [data-pad]';
 export function menuRoot(){ if(S.mode==='playing' && !document.body.classList.contains('shopopen')) return null; const L=[...document.querySelectorAll('.overlay:not(.hidden)')]; return L[L.length-1]||null; }
 export function navItems(root){ return [...root.querySelectorAll(FOCUSABLE)].filter(el=>{ if(el.offsetParent===null) return false; const r=el.getBoundingClientRect(); return r.width>10 && r.height>10; }); }
 export const NAV={ focus:null, kb:false, sig:null };
@@ -51,17 +51,28 @@ function focusSig(el){ const c=el.closest('[id]'); const items=c ? [...c.querySe
 function restoreFocus(root, L){ const g=NAV.sig; if(!g || !g.cid) return null; const c=document.getElementById(g.cid); if(!c || !root.contains(c)) return null;
   const items=L.filter(e=>c.contains(e)); if(!items.length) return null; return items[Math.min(g.idx, items.length-1)]; }
 export function setFocus(el, quiet){ if(NAV.focus===el) return; clearFocus(); if(!el) return; NAV.focus=el; NAV.sig=focusSig(el); el.classList.add('padfocus'); try{ el.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){} if(!quiet) sfx('click'); }
-export function ensureFocus(root){ const L=navItems(root); if(!L.length) return null; if(NAV.focus && L.includes(NAV.focus)) return L;
+export function ensureFocus(root){ const L=navItems(root); if(!L.length) return null; navHintFor(root); if(NAV.focus && L.includes(NAV.focus)) return L;
   const back=restoreFocus(root, L); if(back){ setFocus(back, true); return L; }
-  const pri=[...root.querySelectorAll('.btn-primary')].find(el=>L.includes(el)); setFocus(pri||L[0], true); return L; }
-export function menuMove(root, dir){ const L=ensureFocus(root); if(!L) return; const f=NAV.focus.getBoundingClientRect(), fx=f.left+f.width/2, fy=f.top+f.height/2; let best=null, bs=1e9;
+  const pri=[...root.querySelectorAll('.btn-primary')].find(el=>L.includes(el));
+  const fs=PAD_FIRST[root.id], first = fs ? L.find(el=>el.matches(fs)) : null;   // Z127 land on the choices, not on the start button (a double A used to launch blind)
+  setFocus(first||pri||L[0], true); return L; }
+// the bottom hint changes per screen (the battle setup has a start shortcut)
+const HINT_PAD={ battleSetup:'Ⓐ Chọn · LB/RB Đổi chế độ · ☰ VÀO TRẬN · Ⓑ Quay lại', deploy:'Ⓐ / → thêm quân · ← bớt quân · ↑↓ chọn điểm · ☰ XUẤT KÍCH · Ⓑ Quay lại' };
+export const PAD_FIRST={ battleSetup:'.bs-mode.on', deploy:'.dp-step' };      // where the ring starts on a screen
+export const PAD_GO={ battleSetup:'#bsGo', deploy:'#dp-go' };                  // ☰ Menu = the screen's start button (A only ever PICKS, so one A can never also launch)
+let _hintDef=null, _hintRoot=null;
+function navHintFor(root){ if(_hintRoot===root.id) return; _hintRoot=root.id; const h=document.querySelector('#navHint .nh-pad'); if(!h) return; if(_hintDef===null) _hintDef=h.textContent; h.textContent=HINT_PAD[root.id]||_hintDef; }
+export function menuMove(root, dir){ const L=ensureFocus(root); if(!L) return;
+  if((dir==='l'||dir==='r') && NAV.focus.classList.contains('dp-step')){ const b=NAV.focus.querySelectorAll('.s'); const t=b[dir==='l'?0:b.length-1]; if(t) t.click(); return; }
+  // Z127 deploy: ←/→ on a −N+ row = −1 / +1
+   const f=NAV.focus.getBoundingClientRect(), fx=f.left+f.width/2, fy=f.top+f.height/2; let best=null, bs=1e9;
   for(const el of L){ if(el===NAV.focus) continue; const r=el.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2, dx=x-fx, dy=y-fy;
     const main = dir==='u'?-dy : dir==='d'?dy : dir==='l'?-dx : dx, side=(dir==='u'||dir==='d') ? Math.abs(dx) : Math.abs(dy); if(main<4) continue;
     const s=main+side*2.2; if(s<bs){ bs=s; best=el; } }
   if(!best && (dir==='u'||dir==='d')){ const i=L.indexOf(NAV.focus); best=L[(i+(dir==='d'?1:-1)+L.length)%L.length]; }   // wrap at the ends of a column
   if(best) setFocus(best); }
 export function menuCycle(root, step){ const L=ensureFocus(root); if(!L) return; const i=L.indexOf(NAV.focus); setFocus(L[(i+step+L.length)%L.length]); }
-export function menuSelect(root){ ensureFocus(root); if(NAV.focus){ NAV.focus.click(); } }
+export function menuSelect(root){ ensureFocus(root); if(NAV.focus){ if(NAV.focus.classList.contains('dp-step')){ const b=NAV.focus.querySelectorAll('.s'); if(b.length) b[b.length-1].click(); return; } NAV.focus.click(); } }
 export function menuBack(root){ const L=navItems(root); const back=L.find(el=>/QUAY LẠI|VỀ MENU|◀|XONG|ĐÓNG|TIẾP TỤC|ĐÃ HIỂU/i.test(el.textContent||''));
   if(back){ back.click(); return; } if(S.mode==='paused'){ togglePause(); return; } dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); }
 // LB / RB (or Q / E in menus): switch between the tabs of a screen (shop categories, battle-setup modes, settings segments)

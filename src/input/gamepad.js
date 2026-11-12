@@ -7,7 +7,7 @@
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
 import { PAD_CFG, FEEL } from '../../config.js';
-import { MOBILE, NAV, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
+import { MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k]; return p; }
@@ -81,6 +81,7 @@ function navMenu(root, cur, down, lx, ly, ry, now){ ensureFocus(root);
   if(down(BT.A)){ menuSelect(root); padRumble(0, 0.3, 50); }
   if(down(BT.B)) menuBack(root);
   if(down(BT.MENU) && S.mode==='paused') runAction('pause','down');
+  else if(down(BT.MENU) && PAD_GO[root.id]){ const go=root.querySelector(PAD_GO[root.id]); if(go && go.offsetParent) go.click(); }   // Z127 ☰ = the screen's start button
   if(down(BT.VIEW)) runAction('keys','down');
   if(down(BT.LB)) menuTab(root, -1); if(down(BT.RB)) menuTab(root, 1);
 }
