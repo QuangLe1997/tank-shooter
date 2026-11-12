@@ -36,7 +36,8 @@ export function openUpgrade(){
   }
   show('upgrade'); sfx('powerup');
 }
-export function playStageTransition(stage, biomeName, accentHex){
+export function playStageTransition(stage, biomeName, accentHex, quiet){
+  if(quiet) return;   // Z138 no card / banner after the 3-2-1: the mission line + battlefield conditions are shown during the countdown instead
   const w=document.getElementById('stagewipe'); if(!w) return;
   w.style.setProperty('--swaccent', accentHex);
   document.getElementById('sw-stage').textContent = 'MÀN '+stage;

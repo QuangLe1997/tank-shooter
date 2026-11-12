@@ -260,3 +260,5 @@ body.pad.padplay.lob:not(.inmenu) #lobHud{display:block;}
 #countdown.go{font-size:clamp(46px,11vw,120px);color:#9be04a;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 60px rgba(120,220,60,.55);}
 #countdown.show{animation:cdpop .95s ease-out forwards;}
 @keyframes cdpop{0%{opacity:0;transform:translate(-50%,-50%) scale(1.9);}18%{opacity:1;transform:translate(-50%,-50%) scale(1);}80%{opacity:1;}100%{opacity:0;transform:translate(-50%,-50%) scale(.85);}}
+#cdSub{position:fixed;left:50%;top:calc(42% + clamp(62px,13vw,128px));transform:translateX(-50%);z-index:40;pointer-events:none;opacity:0;transition:opacity .25s;max-width:92vw;text-align:center;font:800 clamp(13px,2.4vw,20px)/1.25 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:3px;color:#e8dcc0;text-shadow:0 2px 12px rgba(0,0,0,.9);} #cdSub.on{opacity:1;}
+#cdSub .cdc{margin-top:5px;font-size:.78em;letter-spacing:1.5px;color:#9fd8ff;}

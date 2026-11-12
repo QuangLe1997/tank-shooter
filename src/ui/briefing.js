@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, WAVE, barrelGrade, biomeVi, coachFirstRun, escapeHtml, floatText, gunLevel, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
+import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -36,6 +36,7 @@ export function chooseContract(c){
 let _go=null, _cdN=0;
 export function beginStage(c, ctx){
   S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false;
+  { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml('MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'')+(op&&op.title?'  —  '+op.title:''))+'</div>'+(ct?'<div class="cdc">'+escapeHtml('ĐIỀU KIỆN: '+ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers
   WAVE.active=false; S.wave=0;
   if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
   sfx('click');
@@ -43,7 +44,8 @@ export function beginStage(c, ctx){
 function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||{}; _go=null;
   S.mode='playing'; coachFirstRun();   // first-ever match → show coach toasts (once)
   const now=performance.now()/1000;
-  playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0'))); WAVE.betweenUntil=now+2.8;   // Z84: every operation opens with its mission card
+  playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0')), true); WAVE.betweenUntil=now+1.6;   // Z138 the first wave comes 1.6 s after GO (the countdown already waited)
+  { const sub=document.getElementById('cdSub'); if(sub) sub.classList.remove('on'); }
   const el=document.getElementById('countdown'); if(el){ el.textContent='CHIẾN ĐẤU!'; el.className='go show'; setTimeout(()=>{ if(el.textContent==='CHIẾN ĐẤU!') el.className=''; }, 900); }
   sfx('levelup'); }
 export function updateCountdown(dt){ S.cd-=dt; const n=Math.max(0, Math.ceil(S.cd)), el=document.getElementById('countdown');

@@ -52,7 +52,7 @@ export function makePlayer(){
     mesh, turret: mesh.userData.turret, muzzle: mesh.userData.muzzle,
     pos: new THREE.Vector3(0, 0, ARENA*0.55), vel: new THREE.Vector3(),
     facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI, shieldMesh: mesh.userData.shield,
-    hp:100, maxHp:100, lives:3, fireAt:0, weaponLvl:0,
+    hp:100, maxHp:100, lives:5, fireAt:0, weaponLvl:0,
     guns:[{id:'rifle', ammo:24, rU:0, rD:0}], gunIdx:0,   // gun inventory (R2; per-gun reload rU/rD)
     infiniteAmmo:false, ammoMul:1, magMul:1,                  // ammoMul derived from buffs each frame; magMul = persistent BIG MAGAZINE upgrade
     buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0, turbo:0, ram:0 }, buffLv:{ turbo:0 }, era:0,   // timed power-up buffs (+Z93 turbo/ram levels, ERA tiles)

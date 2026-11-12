@@ -25,7 +25,7 @@ export function startGame(arg){
   S.player = S.player || makePlayer();
   buildCore(stStage);                    // monument matching the (resumed) stage
   const p=S.player;
-  p.maxHp=100; p.hp=100; p.lives=3; p.fireAt=0; p.weaponLvl=0;
+  p.maxHp=100; p.hp=100; p.lives=5; p.fireAt=0; p.weaponLvl=0;
   p.pos.set(0,0,ARENA*0.55); p.vel.set(0,0,0);
   p.dashUntil=0; p.dashCdUntil=0; p.invincibleUntil=0; p.respawnBlinkUntil=0; p.hitT=0; p.burns=[]; p.aimSmoothed=p.aim=-Math.PI;
   p.mesh.visible=true; p.mesh.rotation.set(0,p.aim,0); p.mesh.position.set(p.pos.x,0,p.pos.z);   // ensure upright (clear any death-flip)
