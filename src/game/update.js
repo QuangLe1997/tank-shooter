@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, wetAt } from '../hub.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET } from '../../config.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, wetAt } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -24,7 +24,9 @@ export function updatePlayer(dt, now){
   // smooth the aim angle a touch (avoids jitter); turret yaw applied after hull below
   const da = wrapAngle(p.aim - p.aimSmoothed);
   const padOn = PAD.active && now - PAD.lastAt < 1.5;                                 // Z124 a controller is the one being used right now
-  if(padOn && !barrelFixed()){ const A=PAD_CFG.aim, mx=A.slew*(padCfg().sens||1)*dt, st=da*Math.min(1, dt*A.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
+  const tk=Math.max(TURRET.min, Math.min(TURRET.max, PROFILE.turretK||1));          // Z145 the player's turret traverse speed
+  if(padOn && !barrelFixed()){ const A=PAD_CFG.aim, mx=TURRET.rate*tk*(padCfg().sens||1)*dt, st=da*Math.min(1, dt*A.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
+  else if(!barrelFixed()){ const mx=TURRET.rate*TURRET.mouseMul*tk*dt, st=da*Math.min(1, dt*TURRET.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
   else p.aimSmoothed = wrapAngle(p.aimSmoothed + da * Math.min(1, dt*PLAYER.turnLerp));
 
   // movement — Z85 TRACKED DRIVE: the hull steers (pivot when slow, wide arcs when fast), thrust runs along the hull,

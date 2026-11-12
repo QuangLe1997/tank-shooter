@@ -145,11 +145,19 @@ export function syncRelief(j0, j1){ const g=terrainGeo(), a=g.attributes.aRelief
     const ring=(at(i-R,j)+at(i+R,j)+at(i,j-R)+at(i,j+R) + 0.7*(at(i-R,j-R)+at(i+R,j-R)+at(i-R,j+R)+at(i+R,j+R)))/6.8;
     const sx=(at(i+1,j)-at(i-1,j))/s2, sz=(at(i,j+1)-at(i,j-1))/s2; a.setXY(j*W+i, c-ring, Math.hypot(sx,sz)); }
   a.clearUpdateRanges(); a.addUpdateRange(j0*W*2, (j1-j0+1)*W*2); a.needsUpdate=true; }
-// waving cloth flags (Core + the player's Vietnamese flag)
+// waving cloth flags (Core + the player's Liên Quân Thép banner)
 export const WAVING=[];
-export function vnFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#da251d'; x.fillRect(0,0,W,H); x.fillStyle='#ffde00'; x.beginPath();
-  for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, r=i%2?H*0.15:H*0.38; x.lineTo(W/2+Math.cos(a)*r, H/2+Math.sin(a)*r); } x.closePath(); x.fill();
-  for(let i=0;i<200;i++){ x.fillStyle='rgba(0,0,0,'+_R(0.02,0.07).toFixed(2)+')'; x.fillRect(_R(0,W),_R(0,H),2,2); } }); }
+// Z145 our side flies a FICTIONAL banner (no real nation's flag): "LIÊN QUÂN THÉP" — forest green over steel navy, a bronze hoist chevron
+//   bearing a white cog-star, a thin gold rule between the fields. Woven-cloth grain on top.
+export function vnFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#2f5a3a'; x.fillRect(0,0,W,H/2); x.fillStyle='#1e2e4a'; x.fillRect(0,H/2,W,H/2);
+  x.fillStyle='#c8a24a'; x.fillRect(0,H/2-3,W,6);
+  x.fillStyle='#b8862e'; x.beginPath(); x.moveTo(0,0); x.lineTo(W*0.42,H/2); x.lineTo(0,H); x.closePath(); x.fill();
+  x.strokeStyle='#e8c870'; x.lineWidth=3; x.beginPath(); x.moveTo(0,0); x.lineTo(W*0.42,H/2); x.lineTo(0,H); x.stroke();
+  const cx=W*0.15, cy=H/2; x.fillStyle='#f4f0e4'; x.beginPath(); for(let i=0;i<24;i++){ const a=i/24*Math.PI*2, r=(i%2)?H*0.13:H*0.17; x.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r); } x.closePath(); x.fill();   // cog
+  x.fillStyle='#b8862e'; x.beginPath(); x.arc(cx,cy,H*0.1,0,7); x.fill();
+  x.fillStyle='#f4f0e4'; x.beginPath(); for(let i=0;i<12;i++){ const a=-Math.PI/2+i*Math.PI/6, r=i%2?H*0.035:H*0.085; x.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r); } x.closePath(); x.fill();   // six-point star in the cog
+  for(let i=0;i<260;i++){ x.fillStyle='rgba(0,0,0,'+_R(0.02,0.07).toFixed(2)+')'; x.fillRect(_R(0,W),_R(0,H),2,2); }
+  x.fillStyle='rgba(255,255,255,0.04)'; for(let yy=0;yy<H;yy+=3) x.fillRect(0,yy,W,1); }); }
 export let _VN=null; export const vnTex=()=>(_VN||(_VN=vnFlagTex()));
 export function makeFlag(tex, w, h, side){ const geo=new THREE.PlaneGeometry(w,h,12,7); geo.translate(w/2*(side||1),0,0);
   const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map:tex, side:THREE.DoubleSide, roughness:0.9 })); m.castShadow=true;

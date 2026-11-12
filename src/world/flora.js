@@ -79,11 +79,12 @@ function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=R
 function patchSpot(centres, R){ const c=centres[(Math.random()*centres.length)|0]; const a=Math.random()*6.28, r=Math.sqrt(Math.random())*R; return [c[0]+Math.cos(a)*r, c[1]+Math.sin(a)*r]; }
 function centres(n){ const C=[]; for(let t=0;t<n*20 && C.length<n;t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20); if(okSpot(x,z,6)) C.push([x,z]); } return C; }
 function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }
+// Z145 trees thinned ~40%: the woods still read as woods but leave clear sight-lines for the fight
 export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
-  if(n==='HILLS'){ plant(conifer(false), N(90), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55 }); plant(broadleaf(), N(30), { s:[0.8,1.2], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
-  else if(n==='VILLAGE'){ plant(palm(), N(26), { s:[0.85,1.25], kind:'tree', cr:0.4 }); plant(bamboo(), N(16), { s:[0.9,1.2], kind:'tree', cr:0.9 }); plant(broadleaf(), N(22), { s:[0.8,1.15], kind:'tree', cr:0.6 });
+  if(n==='HILLS'){ plant(conifer(false), N(52), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55 }); plant(broadleaf(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.6 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='VILLAGE'){ plant(palm(), N(17), { s:[0.85,1.25], kind:'tree', cr:0.4 }); plant(bamboo(), N(10), { s:[0.9,1.2], kind:'tree', cr:0.9 }); plant(broadleaf(), N(13), { s:[0.8,1.15], kind:'tree', cr:0.6 });
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
-  else if(n==='MEADOW'){ plant(broadleaf(), N(40), { s:[0.8,1.3], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='MEADOW'){ plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
     plant(tallGrass(), N(1600), { s:[1.1,1.8], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
     plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });

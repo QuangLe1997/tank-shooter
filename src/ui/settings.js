@@ -1,5 +1,5 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
-import { PAD_CFG } from '../../config.js';
+import { PAD_CFG, TURRET } from '../../config.js';
 import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
@@ -13,6 +13,11 @@ export function buildSettings(){
     Ct.appendChild(_segChip('XE TĂNG',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
     Ct.appendChild(_segChip('THEO MÀN HÌNH',cur==='screen',()=>{ PROFILE.ctrl='screen'; saveProfile(); buildSettings(); sfx('click'); }, 'đẩy về đâu xe đi về đó')); }
   buildPadSettings();
+  const Tu=document.getElementById('setTurret'); if(Tu){ Tu.innerHTML=''; const k=PROFILE.turretK||1, setK=(v)=>{ PROFILE.turretK=Math.round(Math.max(TURRET.min, Math.min(TURRET.max, v))*100)/100; saveProfile(); buildSettings(); sfx('click'); };   // Z145
+    Tu.appendChild(_segChip('−', false, ()=>setK(k-TURRET.step)));
+    for(const [l,v] of TURRET.steps) Tu.appendChild(_segChip(l, Math.abs(k-v)<0.01, ()=>setK(v)));
+    Tu.appendChild(_segChip('+', false, ()=>setK(k+TURRET.step)));
+    const n=document.createElement('div'); n.className='seg-note'; n.textContent=Math.round(k*100)+'% · '+Math.round(TURRET.rate*k*57.3)+'°/giây'; Tu.appendChild(n); }
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 export function _setSnd(on){ PROFILE.sound=on; saveProfile(); audio(); setMuted(!on); buildSettings(); }

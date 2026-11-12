@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { MOBILE } from '../hub.js';
+import { MOBILE, detailize } from '../hub.js';
 
 // ----------------------------- BATTLEFIELD PROPS (procedural, merged geometry, cached) -----------------------------
 // rocks (displaced + fractured icosahedra, smooth normals, AO vertex colours) · sandbags · fuel drums · tyre stacks · ammo crates ·
@@ -68,7 +68,7 @@ export const _rockCache={};
 export function rockSet(bn){ if(_rockCache[bn]) return _rockCache[bn]; const t=ROCK_TINT[bn]||ROCK_TINT.DESERT; const set={ small:[], big:[] };
   for(let i=0;i<5;i++) set.small.push(makeRockGeo(2, _R(0.5,0.85), t[0], t[1]));
   for(let i=0;i<4;i++) set.big.push(makeRockGeo(MOBILE?3:4, _R(0.55,0.8), t[0], t[1]));
-  set.mat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.93, metalness:0.02, envMapIntensity:0.5 });
+  set.mat=detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.93, metalness:0.02, envMapIntensity:0.5 }), { scale:0.7, bump:0.03, alb:0.35, foot:0.5, streak:0.1 });   // Z145 rock grain
   _rockCache[bn]=set; return set; }
 // ---- cover pieces: each a single merged mesh with vertex colours (one draw call per block) ----
 export const COVER_GEO = {};
@@ -115,7 +115,7 @@ export function coverGeo(kind){
 export const COVER_MAT = {};
 export function coverMat(kind){
   if(COVER_MAT[kind]) return COVER_MAT[kind];
-  const M=(o)=>new THREE.MeshStandardMaterial(Object.assign({ vertexColors:true, roughness:0.9, metalness:0.05, envMapIntensity:0.6 }, o));
+  const M=(o)=>detailize(new THREE.MeshStandardMaterial(Object.assign({ vertexColors:true, roughness:0.9, metalness:0.05, envMapIntensity:0.6 }, o)), { scale:0.9, bump:0.01, alb:0.28, foot:0.5, streak:0.15 });
   const m = kind==='sandbag' ? M({ map:propTex('burlap'), roughness:0.97 })
     : kind==='drums' ? M({ map:propTex('drum'), roughness:0.55, metalness:0.55 })
     : kind==='tires' ? M({ map:propTex('rubber'), roughness:0.95 })

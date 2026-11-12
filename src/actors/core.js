@@ -74,7 +74,7 @@ export function buildCore(stage=1){
   const flags=[];
   for(const sx of [-1,1]){ const px=sx*3.3, pz=-1.4;
     add(new THREE.CylinderGeometry(0.05,0.07,9,8), brass, px,4.5,pz); add(new THREE.SphereGeometry(0.12,10,8), brass, px,9.05,pz);
-    const fm=makeFlag(vnTex(), 2.6, 1.7, sx); fm.position.set(px,8.1,pz); g.add(fm); flags.push(fm); }   // Vietnamese flags over the command post
+    const fm=makeFlag(vnTex(), 2.6, 1.7, sx); fm.position.set(px,8.1,pz); g.add(fm); flags.push(fm); }   // Liên Quân Thép banners over the command post
   const light=new THREE.PointLight(th.glow,1.6,40); light.position.y=6.25; g.add(light);
   scene.add(g);
   core = { mesh:g, crystal, cu, glow, beam, dome, halo, rings, sparks:[], shards:[], flags, light, theme:th, moteT:0,

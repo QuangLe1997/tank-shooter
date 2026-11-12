@@ -4,16 +4,16 @@
 //   traffic lights, sagging power lines. Facades are merged per material (a handful of draw calls); towers stay single so a shelled one can collapse.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ARENA, LAND, MOBILE, ZONES, _R, _mergeColored, arena, blocks, crushables, floraMat, heightAt, inField, inZone, treeBroadleaf } from '../hub.js';
+import { ARENA, LAND, MOBILE, TEX_K, ZONES, _R, _mergeColored, arena, blocks, crushables, detailize, floraMat, heightAt, inField, inZone, maxAniso, treeBroadleaf } from '../hub.js';
 
 const G=34, ROAD=8, WALK=2.4;            // grid pitch · carriageway · sidewalk
 const SIGNS=['TẠP HOÁ','PHỞ BÒ','CÀ PHÊ','SỬA XE','BÁNH MÌ','NHÀ THUỐC','KARAOKE','NHÀ NGHỈ','ĐIỆN THOẠI','BÚN CHẢ','VÀNG BẠC','GẠO'];
 const WALLC=['#e8c86a','#e89a9a','#9fd0b8','#a8c4e8','#f0ece0','#e8b07a','#c8b8e0','#d8e09a'];
 // ---------- textures (canvas, cached) ----------
 const _tx={};
-function tex(key, w, h, paint){ if(_tx[key]) return _tx[key]; const c=document.createElement('canvas'), e=document.createElement('canvas'); c.width=e.width=w; c.height=e.height=h;
-  const x=c.getContext('2d'), y=e.getContext('2d'); y.fillStyle='#000'; y.fillRect(0,0,w,h); paint(x, y, w, h);
-  const t=new THREE.CanvasTexture(c), em=new THREE.CanvasTexture(e); for(const q of [t,em]){ q.wrapS=q.wrapT=THREE.RepeatWrapping; q.colorSpace=THREE.SRGBColorSpace; q.anisotropy=4; }
+function tex(key, w, h, paint){ if(_tx[key]) return _tx[key]; const c=document.createElement('canvas'), e=document.createElement('canvas'); c.width=e.width=w*TEX_K; c.height=e.height=h*TEX_K;   // Z145 painted 4× finer
+  const x=c.getContext('2d'), y=e.getContext('2d'); x.scale(TEX_K,TEX_K); y.scale(TEX_K,TEX_K); y.fillStyle='#000'; y.fillRect(0,0,w,h); paint(x, y, w, h);
+  const t=new THREE.CanvasTexture(c), em=new THREE.CanvasTexture(e), A=maxAniso(); for(const q of [t,em]){ q.wrapS=q.wrapT=THREE.RepeatWrapping; q.colorSpace=THREE.SRGBColorSpace; q.anisotropy=A; }
   return (_tx[key]={ t, em }); }
 const lit=(y,px,py,w,h)=>{ if(Math.random()<0.35){ y.fillStyle='#ffd890'; y.fillRect(px,py,w,h); return true; } return false; };
 const tubeFloor=(col)=>tex('tube'+col,128,128,(x,y)=>{ x.fillStyle=col; x.fillRect(0,0,128,128); x.fillStyle='rgba(0,0,0,0.08)'; x.fillRect(0,0,128,6);
@@ -42,7 +42,7 @@ const zebraT=()=>tex('zebra',64,64,(x)=>{ x.fillStyle='#3a3c40'; x.fillRect(0,0,
 const parkT=()=>tex('park',64,64,(x)=>{ x.fillStyle='#5a8a3a'; x.fillRect(0,0,64,64); for(let n=0;n<300;n++){ x.fillStyle=Math.random()<0.5?'#6a9a44':'#4e7a32'; x.fillRect(Math.random()*64,Math.random()*64,2,2); } });
 // ---------- buckets: geometry merged per material ----------
 let B=null; function bucket(key, makeMat){ let b=B.get(key); if(!b){ b={ mat:makeMat(), geos:[] }; B.set(key,b); } return b; }
-const facadeMat=(T,metal)=>()=>{ const m=new THREE.MeshStandardMaterial({ map:T.t, emissiveMap:T.em, emissive:0xffffff, emissiveIntensity:0, roughness:metal?0.25:0.85, metalness:metal?0.6:0.04, envMapIntensity:metal?1.4:0.6 }); LAND.mats.push(m); return m; };
+const facadeMat=(T,metal)=>()=>{ const m=new THREE.MeshStandardMaterial({ map:T.t, emissiveMap:T.em, emissive:0xffffff, emissiveIntensity:0, roughness:metal?0.25:0.85, metalness:metal?0.6:0.04, envMapIntensity:metal?1.4:0.6 }); detailize(m, metal?{ scale:0.3, bump:0.004, alb:0.14, foot:1.2, streak:0.16 }:{ scale:0.45, bump:0.018, alb:0.26, foot:1.5, streak:0.3 }); LAND.mats.push(m); return m; };   // Z145 grime, rain streaks, plaster relief
 function boxUV(w,h,d,tw,th){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, sc=[[d,h],[d,h],[1,1],[1,1],[w,h],[w,h]];
   for(let f=0;f<6;f++) for(let v=0;v<4;v++){ const i=f*4+v; uv.setXY(i, uv.getX(i)*Math.max(1,Math.round(sc[f][0]/tw)), uv.getY(i)*Math.max(1,Math.round(sc[f][1]/th))); } return g; }
 const place=(g,x,y,z,ry)=>{ g.rotateY(ry); g.translate(x,y,z); return g; };
@@ -103,7 +103,7 @@ function fleet(geo, list, cr){ if(!list.length) return; const im=new THREE.Insta
 export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA/G), cars=[], vans=[], motos=[], trees=[], lamps=[], poles=[];
   const roadOK=(x,z)=>inField(x,z,4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<158;
   const RT=roadT(), WT=walkT(), ZT=zebraT();
-  const roadMat=()=>new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), walkMat=()=>new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 });
+  const roadMat=()=>detailize(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), walkMat=()=>detailize(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 }), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 });
   const strip=(key,mk,x,z,len,wid,ang,y,tl,tw)=>{ const g=new THREE.PlaneGeometry(len,wid), uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*len/tl, uv.getY(i)*(tw?wid/tw:1)); g.rotateX(-Math.PI/2); g.rotateY(ang); g.translate(x, heightAt(x,z)+y, z); bucket(key,mk).geos.push(g); };
   // roads: every grid edge between two intersections, if that stretch is open ground
   for(let i=-n;i<=n;i++) for(let j=-n;j<n;j++) for(const ax of [0,1]){ const x0=ax?i*G:j*G+G/2, z0=ax?j*G+G/2:i*G, ang=ax?Math.PI/2:0;   // ax=1: runs along z
@@ -125,14 +125,16 @@ export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA
     if(Math.random()<0.6){ const px=x+ROAD/2+1.2, pz=z+ROAD/2+1.2, y=heightAt(px,pz); det(new THREE.CylinderGeometry(0.08,0.1,4.6,6), px, y+2.3, pz, 0, 0x3a3c3e); det(new THREE.BoxGeometry(0.4,1.1,0.4), px, y+4.4, pz-0.3, 0, 0x2a2a2a);
       for(const [yy,c] of [[0.35,0xe82020],[0,0xe8b020],[-0.35,0x20c840]]) det(new THREE.SphereGeometry(0.11,8,6), px, y+4.4+yy, pz-0.52, 0, c); } }
   // blocks: each cell between roads becomes a row of tube houses with alleys, an apartment pair, an office tower, villas or a little park
-  let towers=0;
+  let towers=0; const walkMatP=()=>detailize(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 });
   for(let i=-n;i<n;i++) for(let j=-n;j<n;j++){ const cx=i*G+G/2, cz=j*G+G/2, half=(G-ROAD)/2-WALK-0.4; if(!inField(cx,cz,half+2) || inZone(cx,cz,half) || Math.hypot(cx,cz)<half+26 || Math.hypot(cx,cz)>150) continue;
+    const dC=Math.hypot(cx,cz);                                                                       // Z145 room to fight: a third of the lots stay open (more near the middle)
+    if(Math.random() < (dC<85?0.5:0.3)){ strip('walk', walkMatP, cx, cz, half*2, half*2, 0, 0.1, 2, 2); for(let k=0;k<3;k++) trees.push({ x:cx+_R(-half,half)*0.85, z:cz+_R(-half,half)*0.85, s:_R(0.8,1.15), ry:_R(0,6.28) }); continue; }   // a paved square
     ZONES.push({ kind:'landmark', x:cx, z:cz, r:half*0.95 }); const r=Math.random(), dep=9.2;
-    if(r<0.5){ for(const side of [1,-1]){ let a=-half+0.2; const ry=side>0?0:Math.PI;                                  // two rows back to back, a back alley between them
+    if(r<0.5){ for(const side of (Math.random()<0.55?[Math.random()<0.5?1:-1]:[1,-1])){ let a=-half+0.2; const ry=side>0?0:Math.PI;                                  // two rows back to back, a back alley between them
         while(a<half-3.5){ const w=_R(4,6.2); if(a+w>half) break; const ox=cx+a+w/2, oz=cz+side*(half-dep/2); tubeHouse(ox, oz, ry, w, dep); a+=w;
           if(Math.random()<0.18){ a+=_R(2.2,3); } } } }                                                                   // a ngõ (alley) through the row
     else if(r<0.68){ for(const side of [1,-1]) apartment(cx, cz+side*(half-5), side>0?0:Math.PI, half*1.7, 9); }
-    else if(r<0.82 && towers<8){ officeTower(cx, cz, (Math.random()<0.5?0:Math.PI/2), _R(13,17), _R(13,17)); towers++; }
+    else if(r<0.82 && towers<4 && dC>95){ officeTower(cx, cz, (Math.random()<0.5?0:Math.PI/2), _R(13,17), _R(13,17)); towers++; }
     else if(r<0.93){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaHouse(cx+sx*half*0.5, cz+sz*half*0.5, sz>0?0:Math.PI, 7.5, 7); }
     else { strip('park', ()=>new THREE.MeshStandardMaterial({ map:parkT().t, roughness:0.95 }), cx, cz, half*2, half*2, 0, 0.06, 4, 4); for(let k=0;k<6;k++) trees.push({ x:cx+_R(-half,half)*0.8, z:cz+_R(-half,half)*0.8, s:_R(0.9,1.3), ry:_R(0,6.28) }); } }
   // lamps: pole + arm + glowing head (head material glows at night)
@@ -148,7 +150,7 @@ export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA
     const lg=new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pts,3)); const ln=new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color:0x1a1a1a })); arena.add(ln); LAND.meshes.push(ln); }
   // flush the buckets: one mesh per material
   for(const [k,b] of B){ if(!b.geos.length) continue; const g=mergeGeometries(b.geos.map(q=>q.index?q.toNonIndexed():q), false); b.geos.forEach(q=>q.dispose()); const m=new THREE.Mesh(g, b.mat); m.castShadow=!/road|walk|zebra|park/.test(k); m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
-  if(P.length){ const m=new THREE.Mesh(_mergeColored(P), new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 })); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
+  if(P.length){ const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 }), { scale:0.6, bump:0.012, alb:0.3, foot:0.8, streak:0.2 })); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
   fleet(carGeo(), cars, 1.6); fleet(vanGeo(), vans, 1.8); fleet(motoGeo(), motos, 0.45);
   if(trees.length){ const im=new THREE.InstancedMesh(treeBroadleaf(), floraMat(), trees.length), M=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), v=new THREE.Vector3(), s=new THREE.Vector3();
     trees.forEach((o,k)=>{ M.compose(v.set(o.x,heightAt(o.x,o.z),o.z), q.setFromEuler(e.set(0,o.ry,0)), s.set(o.s,o.s,o.s)); im.setMatrixAt(k,M); crushables.push({ x:o.x, z:o.z, r:0.55*o.s, im, k, alive:true, kind:'tree', ry:o.ry, s:o.s, land:true }); });

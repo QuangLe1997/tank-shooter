@@ -2,7 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, heightAt, inField, inZone } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, detailize, heightAt, inField, inZone } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 const WALLS=[ ['#b9b1a4','#6f8aa6'], ['#9fa8b0','#46607a'], ['#c8a98a','#5a6e84'], ['#a99a8a','#3e5670'] ];   // [wall, glass]
@@ -25,7 +25,7 @@ const free=(x,z,r)=>inField(x,z,r+2) && !inZone(x,z,r) && Math.hypot(x,z)>r+17 &
 function box(w,h,d,styleI,glow){ const g=new THREE.BoxGeometry(w,h,d), { t, em }=windowTex(styleI);   // per-face UV scaling so windows keep one size
   const uv=g.attributes.uv, sc=[[d,h],[d,h],[1,1],[1,1],[w,h],[w,h]];
   for(let f=0;f<6;f++) for(let v=0;v<4;v++){ const i=f*4+v; uv.setXY(i, uv.getX(i)*Math.max(1,Math.round(sc[f][0]/8)), uv.getY(i)*Math.max(1,Math.round(sc[f][1]/6.8))); }
-  const side=new THREE.MeshStandardMaterial({ map:t, emissiveMap:em, emissive:0xffffff, emissiveIntensity:0, roughness:0.85, metalness:0.05 }), roof=new THREE.MeshStandardMaterial({ color:0x5a5c60, roughness:0.95 });
+  const side=detailize(new THREE.MeshStandardMaterial({ map:t, emissiveMap:em, emissive:0xffffff, emissiveIntensity:0, roughness:0.85, metalness:0.05 }), { scale:0.4, bump:0.015, alb:0.26, foot:1.5, streak:0.32 }), roof=detailize(new THREE.MeshStandardMaterial({ color:0x5a5c60, roughness:0.95 }), { foot:0 });
   LAND.mats.push(side); const m=new THREE.Mesh(g,[side,side,roof,roof,side,side]); m.castShadow=true; m.receiveShadow=true; return m; }
 function buildCity(){
   const G=28, n=Math.round(ARENA/G); let built=0;
@@ -68,7 +68,8 @@ function buildHills(){ const list=[], N=Math.round((MOBILE?40:90)*AREA_K/2);
 function paddyTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#8fbf4a'; x.fillRect(0,0,128,128);
   for(let r=0;r<16;r++){ x.fillStyle=r%2?'#a4d05a':'#7aae3c'; x.fillRect(0,r*8,128,5); } for(let n=0;n<40;n++){ x.fillStyle='rgba(200,230,255,0.35)'; x.fillRect(Math.random()*128,Math.random()*128,6,1.5); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
-function house(){ const g=new THREE.Group(), wall=new THREE.MeshStandardMaterial({ color:0xe6d8b8, roughness:0.9 }), roof=new THREE.MeshStandardMaterial({ color:0xb4562f, roughness:0.85 }), dark=new THREE.MeshStandardMaterial({ color:0x4a3a28, roughness:0.9 });
+const _hm={}; function houseMat(k, col, o){ return _hm[k]||(_hm[k]=detailize(new THREE.MeshStandardMaterial({ color:col, roughness:0.9 }), o)); }   // Z145 shared + weathered: lime-wash stained at the foot, moss-dark tiles
+function house(){ const g=new THREE.Group(), wall=houseMat('w', 0xe6d8b8, { scale:0.5, bump:0.02, alb:0.34, foot:1.0, streak:0.4 }), roof=houseMat('r', 0xb4562f, { scale:0.9, bump:0.03, alb:0.3, foot:0, streak:0.15, tiles:1 }), dark=houseMat('d', 0x4a3a28, { foot:0 });
   const w=_R(6.4,8.4), d=_R(4.6,5.6), h=2.7, body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wall); body.position.y=h/2; body.castShadow=true; body.receiveShadow=true; g.add(body);
   const sh=new THREE.Shape(); sh.moveTo(-d/2-0.6,0); sh.lineTo(d/2+0.6,0); sh.lineTo(0,1.9); sh.closePath();                                   // gable
   const rg=new THREE.ExtrudeGeometry(sh,{depth:w+1.0,bevelEnabled:false}); rg.translate(0,0,-(w+1.0)/2); rg.rotateY(Math.PI/2); const rf=new THREE.Mesh(rg, roof); rf.position.y=h; rf.castShadow=true; g.add(rf);

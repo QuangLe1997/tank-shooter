@@ -5,9 +5,10 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { ARENA, BIOME, MOBILE, MSAA, S, SHADOW_MAP, arena } from '../hub.js';
+import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -41,14 +42,17 @@ camera.position.set(0, 46, 34);
 camera.lookAt(0,0,0);
 // ---- CINEMATIC GRADE (last pass, display-referred): split-tone + contrast/saturation + vignette + film grain + shake-driven chromatic aberration ----
 export const GradeShader = {
-  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.016:0.035}, sat:{value:0.9}, contrast:{value:1.08},
+  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.012:0.018}, sharp:{value:MOBILE?0.22:0.42}, sat:{value:0.9}, contrast:{value:1.08},
     lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0} },
   vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sat,contrast,aberr,flash; uniform vec3 lift,gain; varying vec2 vUv;
+  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sharp,sat,contrast,aberr,flash; uniform vec3 lift,gain; varying vec2 vUv;
     void main(){
       vec2 d=vUv-0.5; vec3 c;
       if(aberr>0.0002){ vec2 o=d*aberr; c=vec3(texture2D(tDiffuse,vUv+o).r, texture2D(tDiffuse,vUv).g, texture2D(tDiffuse,vUv-o).b); }
       else c=texture2D(tDiffuse,vUv).rgb;
+      if(sharp>0.0){ vec2 px=1.0/vec2(textureSize(tDiffuse,0));   // Z145 unsharp mask: edges and masonry read crisp, not smeared by MSAA/bloom
+        vec3 nb=texture2D(tDiffuse,vUv+vec2(px.x,0.0)).rgb+texture2D(tDiffuse,vUv-vec2(px.x,0.0)).rgb+texture2D(tDiffuse,vUv+vec2(0.0,px.y)).rgb+texture2D(tDiffuse,vUv-vec2(0.0,px.y)).rgb;
+        c=max(c+(c-nb*0.25)*sharp, vec3(0.0)); }
       float l=dot(c,vec3(0.2126,0.7152,0.0722));
       c=mix(vec3(l),c,sat);
       c=(c-0.5)*contrast+0.5;
@@ -62,6 +66,19 @@ export const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget
 composer.setSize(innerWidth, innerHeight);
 export const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
 composer.addPass(renderPass);
+// Z145 AMBIENT OCCLUSION (desktop): contact shadow where wall meets ground, in every merlon gap, under eaves, between houses — the single biggest
+//   step from "lit toy" to "built place". Half-res (¾ in the Mac app), opaque meshes only; the frame governor drops it first when frames run long.
+export const AO = { want:!MOBILE, on:!MOBILE, scale:NATIVE?0.75:0.5 };
+export const aoPass = new GTAOPass(scene, camera, 2, 2);
+aoPass.updateGtaoMaterial({ radius:2.4, distanceExponent:1.6, thickness:2.5, scale:1.2, samples:NATIVE?16:12, distanceFallOff:1.0, screenSpaceRadius:false });
+aoPass.updatePdMaterial({ lumaPhi:10, depthPhi:2, normalPhi:3, radius:6, radiusExponent:1, rings:2, samples:12 });
+aoPass.blendIntensity = 0.9;
+{ const ss=aoPass.setSize.bind(aoPass); aoPass.setSize=(w,h)=>ss(Math.max(2,Math.round(w*AO.scale)), Math.max(2,Math.round(h*AO.scale)));
+  aoPass.overrideVisibility=function(){ const C=this._visibilityCache, walk=(o)=>{ if(!o.visible) return; const m=o.material;   // skip hidden subtrees (pools), hide sprites / smoke / glass
+      if(o.isPoints||o.isLine||o.isSprite||(m && !Array.isArray(m) && (m.transparent||m.depthWrite===false))){ C.set(o,true); o.visible=false; return; } for(const c of o.children) walk(c); };
+    walk(this.scene); };
+  aoPass.restoreVisibility=function(){ for(const o of this._visibilityCache.keys()) o.visible=true; this._visibilityCache.clear(); }; }
+aoPass.enabled = AO.on; composer.addPass(aoPass);
 export const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.45, 0.42, 0.88);   // tighter radius: no blocky halos from the low mips
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -70,7 +87,9 @@ export const gradePass = new ShaderPass(GradeShader); composer.addPass(gradePass
 export const ambient = new THREE.AmbientLight(0x4a4636, 0.14); scene.add(ambient);
 export const sun = new THREE.DirectionalLight(0xfff0d0, 2.8);
 sun.position.set(26, 48, 18); scene.add(sun); scene.add(sun.target);
-export const SHADOW_R = 44;                                                     // tight shadow frustum that FOLLOWS the action → crisp contact shadows
+export const SHADOW_R = 44; export const SHADOW_EXT = { r:44 };   // Z145 the frustum widens on the far zoom levels so shadows reach the screen edge
+export function fitShadow(z){ if(MOBILE) return; const r=SHADOW_R*Math.max(1,(z||1)/2.1); if(Math.abs(r-SHADOW_EXT.r)<0.5) return; SHADOW_EXT.r=r; const sc=sun.shadow.camera; sc.left=-r; sc.right=r; sc.top=r; sc.bottom=-r; sc.far=180+r; sc.updateProjectionMatrix(); }
+                                                    // tight shadow frustum that FOLLOWS the action → crisp contact shadows
 if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(SHADOW_MAP,SHADOW_MAP);   // Z107 4096 in the Mac app
   const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
   sun.shadow.bias=-0.0003; sun.shadow.normalBias=0.25; sun.shadow.radius=2; }

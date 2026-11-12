@@ -2,7 +2,7 @@
 //   look of the land (adobe in the desert, ice blocks on the tundra, riveted plate at the foundry, concrete T-walls in the city, log palisades in the hills,
 //   red brick with tiled gate roofs in the Vietnamese village…) but stay military: thick walls, merlons, wire, stakes. Materials + cap / roof geometry, cached.
 import * as THREE from 'three';
-import { BIOME, _mergeColored, _xf } from '../hub.js';
+import { BIOME, TEX_K, _mergeColored, _xf, detailize, hiResMaps } from '../hub.js';
 
 // pattern · base colour · mortar / seam colour · roughness · metalness · cap on the wall top · roof on gate towers
 export const REGION = {
@@ -36,11 +36,18 @@ export function fortStyle(name, i){ const n=name||BIOME.name, st=regionOf(n), A=
     rough: pat==='ice'?0.35:pat==='plate'?0.5:0.9, metal: pat==='plate'?0.75:0.03, round: i%2===1 }); }
 
 const R=(a,b)=>a+Math.random()*(b-a);
-function paint(st){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle=st.base; x.fillRect(0,0,256,256);
+// Z145 one dressed stone: face tone, worn chisel texture, lit top/left arris, shadowed bottom/right arris, chipped corners
+function stone(x, px, py, w, h, col, small){ x.fillStyle=col; x.fillRect(px, py, w, h);
+  const e=small?1:1.6; x.fillStyle='rgba(255,248,230,0.22)'; x.fillRect(px, py, w, e); x.fillRect(px, py, e, h);
+  x.fillStyle='rgba(20,12,6,0.32)'; x.fillRect(px, py+h-e, w, e); x.fillRect(px+w-e, py, e, h);
+  if(!small){ for(let n=0;n<10;n++){ x.fillStyle=Math.random()<0.5?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.07)'; x.fillRect(px+R(1,w-4), py+R(1,h-3), R(2,w*0.4), R(0.6,1.4)); }   // tooling marks
+    if(Math.random()<0.35){ x.fillStyle='rgba(20,12,6,0.4)'; x.beginPath(); const cx=Math.random()<0.5?px:px+w, cy=Math.random()<0.5?py:py+h; x.arc(cx,cy,R(1.5,4),0,7); x.fill(); } } }   // chipped corner
+function paint(st){ const c=document.createElement('canvas'); c.width=c.height=256*TEX_K; const x=c.getContext('2d'); x.scale(TEX_K,TEX_K); x.fillStyle=st.base; x.fillRect(0,0,256,256);   // Z145 painted 4× finer
   const shade=(k)=>{ const v=parseInt(st.base.slice(1),16), r=(v>>16)&255, g=(v>>8)&255, b=v&255; return `rgb(${Math.min(255,r*k)|0},${Math.min(255,g*k)|0},${Math.min(255,b*k)|0})`; };
-  if(st.pat==='ashlar' || st.pat==='brick'){ const rowH = st.pat==='brick'?16:32, bw = st.pat==='brick'?42:64;
-    for(let r=0;r<256/rowH;r++){ const off=(r%2)*bw/2; for(let k=-1;k<256/bw+1;k++){ x.fillStyle=shade(R(0.82,1.12)); x.fillRect(k*bw+off+2, r*rowH+2, bw-4, rowH-4); } }
-    x.fillStyle=st.seam; for(let r=0;r<=256/rowH;r++) x.fillRect(0, r*rowH-1, 256, st.pat==='brick'?3:2);
+  if(st.pat==='ashlar' || st.pat==='brick'){ const rowH = st.pat==='brick'?16:32, bw = st.pat==='brick'?42:64, br=st.pat==='brick';
+    x.fillStyle=st.seam; x.fillRect(0,0,256,256);                                                                           // Z145 mortar bed everywhere, stones laid into it
+    for(let r=0;r<256/rowH;r++){ let px=-(r%2)*bw/2 - R(0,bw*0.3); while(px<256){ const w=br?bw:bw*R(0.7,1.35);              // ashlar: uneven stone lengths, like real coursed masonry
+        stone(x, px+1.5, r*rowH+1.5, w-3, rowH-3, shade(R(0.78,1.14)), br); px+=w; } }
     if(st.pat==='brick') for(let n=0;n<90;n++){ x.fillStyle='rgba(70,96,40,'+R(0.05,0.18).toFixed(2)+')'; x.beginPath(); x.ellipse(R(0,256),R(180,256),R(6,22),R(3,9),0,0,7); x.fill(); } }   // moss low on old village brick
   else if(st.pat==='adobe'){ for(let n=0;n<500;n++){ x.fillStyle=shade(R(0.88,1.08)); x.beginPath(); x.ellipse(R(0,256),R(0,256),R(4,18),R(3,10),R(0,3),0,7); x.fill(); }
     x.strokeStyle=st.seam; x.lineWidth=1.2; for(let n=0;n<14;n++){ let px=R(0,256), py=R(0,256); x.beginPath(); x.moveTo(px,py); for(let s=0;s<6;s++){ px+=R(-14,14); py+=R(4,16); x.lineTo(px,py); } x.stroke(); }
@@ -51,9 +58,9 @@ function paint(st){ const c=document.createElement('canvas'); c.width=c.height=2
   else if(st.pat==='plate'){ for(let r=0;r<2;r++) for(let k=0;k<2;k++){ x.fillStyle=shade(R(0.85,1.1)); x.fillRect(k*128+3,r*128+3,122,122);
       x.fillStyle='rgba(150,70,30,0.35)'; for(let n=0;n<10;n++){ x.beginPath(); x.ellipse(k*128+R(10,118), r*128+R(10,118), R(4,16), R(2,8), 0, 0, 7); x.fill(); }
       x.fillStyle='#2a221c'; for(let q=0;q<8;q++){ x.beginPath(); x.arc(k*128+10+q*15, r*128+9, 2.6, 0, 7); x.fill(); x.beginPath(); x.arc(k*128+10+q*15, r*128+119, 2.6, 0, 7); x.fill(); } } }   // rivets
-  else if(st.pat==='ice'){ for(let r=0;r<4;r++) for(let k=0;k<3;k++){ const off=(r%2)*42; x.fillStyle=shade(R(0.9,1.08)); x.fillRect(k*86+off-40, r*64+3, 82, 58); x.fillStyle='rgba(255,255,255,0.35)'; x.fillRect(k*86+off-40, r*64+3, 82, 6); }
+  else if(st.pat==='ice'){ x.fillStyle=st.seam; x.fillRect(0,0,256,256); for(let r=0;r<4;r++) for(let k=-1;k<4;k++){ const off=(r%2)*42; stone(x, k*86+off-40, r*64+3, 82, 58, shade(R(0.9,1.08)), false); x.fillStyle='rgba(255,255,255,0.35)'; x.fillRect(k*86+off-40, r*64+3, 82, 6); }
     x.strokeStyle='rgba(120,160,190,0.5)'; for(let n=0;n<20;n++){ x.beginPath(); x.moveTo(R(0,256),R(0,256)); x.lineTo(R(0,256),R(0,256)); x.stroke(); } }
-  else if(st.pat==='laterite'){ for(let r=0;r<8;r++){ const off=(r%2)*32; for(let k=-1;k<5;k++){ x.fillStyle=shade(R(0.85,1.1)); x.fillRect(k*64+off+2, r*32+2, 60, 28); } }   // đá ong: pitted laterite blocks
+  else if(st.pat==='laterite'){ x.fillStyle=st.seam; x.fillRect(0,0,256,256); for(let r=0;r<8;r++){ const off=(r%2)*32; for(let k=-1;k<5;k++) stone(x, k*64+off+2, r*32+2, 60, 28, shade(R(0.85,1.1)), false); }   // đá ong: pitted laterite blocks
     for(let n=0;n<700;n++){ x.fillStyle='rgba(50,22,10,'+R(0.2,0.5).toFixed(2)+')'; x.beginPath(); x.arc(R(0,256),R(0,256),R(0.8,2.4),0,7); x.fill(); } x.fillStyle=st.seam; for(let r=0;r<=8;r++) x.fillRect(0,r*32-1,256,2); }
   else if(st.pat==='bamboo'){ for(let k=0;k<16;k++){ const g=x.createLinearGradient(k*16,0,k*16+16,0); g.addColorStop(0,st.seam); g.addColorStop(0.4,shade(R(1.05,1.25))); g.addColorStop(1,st.seam); x.fillStyle=g; x.fillRect(k*16,0,16,256);   // lũy tre: bamboo culms with nodes
       x.fillStyle='rgba(60,60,20,0.6)'; for(let y=R(10,30);y<256;y+=R(30,44)) x.fillRect(k*16+1,y,14,3); }
@@ -62,10 +69,19 @@ function paint(st){ const c=document.createElement('canvas'); c.width=c.height=2
       x.strokeStyle='rgba(40,26,14,0.4)'; for(let n=0;n<6;n++){ x.beginPath(); x.moveTo(k*32+R(6,26),R(0,256)); x.lineTo(k*32+R(6,26),R(0,256)); x.stroke(); }
       x.fillStyle='#3a2a18'; x.fillRect(0, 60, 256, 5); x.fillRect(0, 190, 256, 5); } }                                                                  // lashing ropes
   for(let n=0;n<1400;n++){ x.fillStyle='rgba(0,0,0,'+R(0,0.06).toFixed(3)+')'; x.fillRect(R(0,256),R(0,256),1.5,1.5); }
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t; }
+  grain(c, st); return c; }
+// Z145 per-pixel grain at the full resolution: every block gets its own surface (tooling marks, pores, sand) instead of a flat fill
+function grain(c, st){ const W=c.width, x=c.getContext('2d'), im=x.getImageData(0,0,W,W), d=im.data, amp = st.pat==='ice'?6 : st.pat==='plate'?10 : 18;
+  let s=7; const rnd=()=>((s=(s*16807)%2147483647)/2147483647);
+  for(let i=0;i<d.length;i+=4){ const v=(rnd()+rnd()-1)*amp; d[i]=Math.max(0,Math.min(255,d[i]+v)); d[i+1]=Math.max(0,Math.min(255,d[i+1]+v)); d[i+2]=Math.max(0,Math.min(255,d[i+2]+v*0.9)); }
+  x.putImageData(im,0,0); }
+const _lum=(h)=>{ const v=parseInt(h.slice(1),16); return ((v>>16)&255)*0.299+((v>>8)&255)*0.587+(v&255)*0.114; };
 const _mat={};
 export function wallMat(name){ const st=regionOf(name), k=(typeof name==='object' && name) ? name.key : (name||BIOME.name); if(_mat[k]) return _mat[k];
-  return (_mat[k]=new THREE.MeshStandardMaterial({ map:paint(st), roughness:st.rough, metalness:st.metal, envMapIntensity:st.pat==='ice'?1.3:0.6 })); }
+  const M=hiResMaps(paint(st), { inv:_lum(st.seam)>_lum(st.base), rough:st.rough, nrm:st.pat==='ice'?1.6:st.pat==='plate'?2.0:3.0 });   // Z145 colour + normal + roughness
+  const m=new THREE.MeshStandardMaterial({ map:M.map, normalMap:M.normalMap, roughnessMap:M.roughnessMap, roughness:1, metalness:st.metal, envMapIntensity:st.pat==='ice'?1.3:0.6 });
+  m.userData.rough=st.rough; detailize(m, { scale:0.37, bump:st.pat==='ice'?0.012:st.pat==='plate'?0.01:0.03, alb:st.pat==='ice'?0.12:0.3, foot:1.6, streak:st.pat==='ice'?0.05:0.26 });
+  return (_mat[k]=m); }
 // geometry that sits on top of ONE 3 m wall section (instanced along the walls); null = the merlons are enough
 const _cap={};
 export function capGeo(name, H, TH, L){ const st=regionOf(name), key=st.cap+'|'+H+'|'+TH+'|'+L; if(_cap[key]!==undefined) return _cap[key]; const P=[];
@@ -95,7 +111,7 @@ export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
     const sl=new THREE.BoxGeometry(s*0.8,0.15,s*0.8); _xf(sl,0,y+s*0.62,0); P.push({geo:sl,col:0xb8805a}); const d=new THREE.SphereGeometry(s*0.38,12,8,0,6.28,0,Math.PI/2); _xf(d,0,y+s*0.68,0); P.push({geo:d,col:0xe8d8c0}); const t=new THREE.ConeGeometry(0.08,0.5,6); _xf(t,0,y+s*1.1,0); P.push({geo:t,col:0xd8a830}); }
   else if(st.roof==='pinnacle'){ const c=new THREE.CylinderGeometry(s*0.12,s*0.42,s*1.4,8); _xf(c,0,y+s*0.7,0); P.push({geo:c,col:0xb0704a}); const e=new THREE.SphereGeometry(s*0.13,8,6); e.scale(1,1.3,1); _xf(e,0,y+s*1.48,0); P.push({geo:e,col:0xf4f0e8});   // mud pinnacle + ostrich egg
     for(let k=0;k<6;k++){ const t=new THREE.CylinderGeometry(0.05,0.05,0.8,4); t.rotateZ(Math.PI/2); t.rotateY(k/6*6.28); _xf(t,0,y+s*(0.35+(k%2)*0.4),0); P.push({geo:t,col:0x6a4a2a}); } }
-  else if(st.roof==='cornice'){ const c=new THREE.CylinderGeometry(s*0.82, s*0.66, 0.6, 4); c.rotateY(Math.PI/4); _xf(c,0,y+0.3,0); P.push({geo:c,col:0xd8b884}); const b=new THREE.BoxGeometry(s*1.0,0.14,s*1.0); _xf(b,0,y+0.65,0); P.push({geo:b,col:0x3a6ac8}); }   // Egyptian cavetto cornice
+  else if(st.roof==='cornice'){ const c=new THREE.CylinderGeometry(s*0.82, s*0.66, 0.6, 4); c.rotateY(Math.PI/4); _xf(c,0,y+0.3,0); P.push({geo:c,col:0xd8b884}); const b=new THREE.BoxGeometry(s*1.0,0.14,s*1.0); _xf(b,0,y+0.65,0); P.push({geo:b,col:0xb08a4a}); }   // Z145 ochre-painted band (the blue read as a plastic lid from above)   // Egyptian cavetto cornice
   else if(st.roof==='slate'){ const c=new THREE.ConeGeometry(s*0.82, s*1.5, 12); _xf(c,0,y+s*0.75,0); P.push({geo:c,col:0x4a5a78}); }   // European castle slate spire
   else if(st.roof==='thatch'){ const c=new THREE.ConeGeometry(s*0.9, s*0.95, 10); _xf(c,0,y+s*0.47,0); P.push({geo:c,col:0xc8a460}); const r=new THREE.TorusGeometry(s*0.82,0.08,4,12); r.rotateX(Math.PI/2); _xf(r,0,y+0.12,0); P.push({geo:r,col:0x8a6a3a}); }   // straw thatch
   else if(st.roof==='dome'){ const d=new THREE.SphereGeometry(s*0.55, 12, 8, 0, Math.PI*2, 0, Math.PI/2); _xf(d,0,y,0); P.push({geo:d,col:0xd8b884}); }
@@ -103,4 +119,4 @@ export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
   else if(st.roof==='snow'){ const c=new THREE.BoxGeometry(s*1.05,0.4,s*1.05); _xf(c,0,y+0.2,0); P.push({geo:c,col:0xf6fbff}); }
   else { const c=new THREE.BoxGeometry(s*1.1,0.3,s*1.1); _xf(c,0,y+0.15,0); P.push({geo:c,col:0x5a5c5e}); }
   return _mergeColored(P); }
-export const capMat = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.15 });
+export const capMat = detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.1 }), { scale:0.6, bump:0.03, alb:0.28, foot:0, streak:0.18, tiles:1 });   // Z145 roofs and caps weather too; pitched roofs get tile courses

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -26,7 +26,7 @@ export function towerGeos(){
 export let _woodMat=null, _tinMat=null;
 export function buildTower(x, z){
   const G=towerGeos();
-  if(!_woodMat){ _woodMat=new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 }); _tinMat=new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') }); }
+  if(!_woodMat){ _woodMat=detailize(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 }), { scale:0.7, bump:0.012, alb:0.3, foot:1.0, streak:0.25 }); _tinMat=detailize(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') }), { scale:0.8, bump:0.004, alb:0.3, foot:0, streak:0.4 }); }
   const g=new THREE.Group(); const gy=heightAt(x,z); g.position.set(x,gy,z);                 // outer: topples about world axes
   const body=new THREE.Group(); body.rotation.y=Math.random()*6.283; g.add(body);             // inner: the tower's own heading
   const wm=_woodMat.clone(); const add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; body.add(m); return m; };

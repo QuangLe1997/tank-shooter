@@ -17,7 +17,7 @@ export function treadTex(){ const c=document.createElement('canvas'); c.width=64
   for(let y=0;y<256;y+=10){ x.fillStyle='rgba(0,0,0,'+(0.5+Math.random()*0.25).toFixed(2)+')'; x.fillRect(4,y,56,5); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
 
-// the hero: the player's own tank (detail hull, mighty silhouette, 🇻🇳 flag) — same builder the battle uses
+// the hero: the player's own tank (detail hull, mighty silhouette, Liên Quân Thép banner) — same builder the battle uses
 export function makeShowTank(){
   const m=buildTank({detail:true, mighty:true}); m.scale.setScalar(TANK_SCALE);
   const T=m.userData.turret, pole=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.035,2.0,6), new THREE.MeshStandardMaterial({color:0x2a2a26, roughness:0.5, metalness:0.7}));

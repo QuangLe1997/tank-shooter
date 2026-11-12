@@ -1,6 +1,6 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
-import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fireGun, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell } from '../hub.js';
+import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fireGun, fitShadow, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
 addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); if(S.mode==='playing' && k>='1' && k<='8' && !e.metaKey && !e.ctrlKey) selectGun(parseInt(k)-1); });   // gun slots on the number row · Z118 every other key → input/bindings.js
@@ -79,8 +79,8 @@ export const autoBtnEl=document.getElementById('autoBtn');
 if(autoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} autoFire=!autoFire; try{localStorage.setItem('steelsiege.auto',autoFire?'1':'0');}catch(_){} applyAutoFire(); sfx('click'); };
   autoBtnEl.addEventListener('click',tog); autoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
 // ----- camera controls: ZOOM (cycle near→far) + ROTATE view (45° steps); input is re-mapped so the joystick stays screen-relative -----
-export const ZOOM_LEVELS=[1.0, 1.5, 2.0, 2.6];
-export function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } const l=document.getElementById('zoomLbl'); if(l) l.textContent=z.toFixed(1)+'×'; }
+export const ZOOM_LEVELS=[1.0, 1.5, 2.0, 2.6, 3.3];   // Z145 + one wider strategic view
+export function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } try{ fitShadow(z); }catch(_){} const l=document.getElementById('zoomLbl'); if(l) l.textContent=z.toFixed(1)+'×'; }
 try{ const z=parseFloat(localStorage.getItem('steelsiege.zoom')); if(z>0) S.zoom=z; }catch(_){}
 setZoom(S.zoom);
 export const zoomBtnEl=document.getElementById('zoomBtn');

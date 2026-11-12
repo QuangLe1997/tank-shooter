@@ -11,7 +11,9 @@ export * from './core/config.js';
 export * from './ui/icons.js';
 export * from './core/state.js';
 export * from './world/field.js';
+export * from './render/clouds.js';   // Z145 must load before any material patches its shader
 export * from './render/renderer.js';
+export * from './render/surface.js';   // Z145
 export * from './render/lod.js';
 export * from './world/atmosphere.js';
 export * from './world/ground.js';
@@ -41,6 +43,7 @@ export * from './combat/lock-on.js';
 export * from './actors/core.js';
 export * from './actors/enemies.js';
 export * from './actors/fireteam.js';
+export * from './actors/escalade.js';   // Z145
 export * from './actors/ally-tanks.js';
 export * from './render/night-marks.js';   // Z137
 export * from './world/landmarks.js';      // Z139

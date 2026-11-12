@@ -36,7 +36,7 @@ export function makePlayer(){
     for(const sx of [-1.15,1.15]){ const arm=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.16,0.9), steelM); arm.position.set(sx,-0.38,1.95); arm.rotation.x=0.18; dz.add(arm); }
     const eraM=new THREE.MeshStandardMaterial({color:0xa89868,roughness:0.75,metalness:0.3}), tiles=[];                  // Z93 REACTIVE ARMOUR bricks (one per charge)
     for(const sx of [-1,1]) for(const zz of [1.15,0.4,-0.35]){ const t=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.34,0.62), eraM); t.position.set(sx*1.6,0.12,zz); t.rotation.z=sx*0.12; t.visible=false; B.add(t); tiles.push(t); }
-    mesh.userData.eraTiles=tiles; }   // 🇻🇳 the player's tank flies the Vietnamese flag
+    mesh.userData.eraTiles=tiles; }   // the player's tank flies the (fictional) Liên Quân Thép banner
   { // Z107 HEADING: where the nose points, readable at a glance even flat out — ground chevron ahead + glacis stripe
     const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.clearRect(0,0,128,128);
     x.lineJoin='round'; x.lineCap='round'; x.strokeStyle='#fff'; x.shadowColor='#fff'; x.shadowBlur=8;

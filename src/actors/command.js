@@ -1,7 +1,7 @@
 // actors/command.js — Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our helicopter to drop paratroopers (B) — keys + the phone's command strip.
 import * as THREE from 'three';
 import { COMMAND, TROOPS } from '../../config.js';
-import { FORTS, FT, MOBILE, S, floatText, fortSealed, launchParadrop, radio, ringPulse, sfx, showBanner, tapBtn } from '../hub.js';
+import { FORTS, FT, MOBILE, S, floatText, fortSealed, isClimber, ladderGoal, launchParadrop, radio, ringPulse, sfx, showBanner, tapBtn } from '../hub.js';
 
 export const CMD = { paraAt:0 };
 // what a soldier does under an active order (null = carry on with his own judgement)
@@ -9,7 +9,8 @@ export function cmdGoal(a, now, foe){ const C=S.cmd; if(!C || now>C.until) retur
   const near = foe && Math.hypot(foe.pos.x-a.pos.x, foe.pos.z-a.pos.z) < COMMAND.fightNear[C.kind]; if(near) return null;   // a foe in his face → fight first
   if(C.kind==='muster'){ const ang=(a.slot||0)*2.4, r=3+((a.slot||0)%3)*1.6; return [p.pos.x+Math.sin(ang)*r, p.pos.z+Math.cos(ang)*r]; }
   if(C.kind==='assault'){ const f=C.f; if(!f || f.captured){ S.cmd=null; return null; }
-    if(!f.breached){ const ang=(a.slot||0)*0.9-1.8, r=11+((a.slot||0)%2)*3, ux=f.ox-f.x, uz=f.oz-f.z, L=Math.hypot(ux,uz)||1, bx=f.ox+ux/L*6, bz=f.oz+uz/L*6;
+    if(!f.breached && a.inside!==f && isClimber(a)){ const lg=ladderGoal(a, f); if(lg) return lg; }   // Z145 the ladder party goes for a stretch of wall
+    if(!f.breached && a.inside!==f){ const ang=(a.slot||0)*0.9-1.8, r=11+((a.slot||0)%2)*3, ux=f.ox-f.x, uz=f.oz-f.z, L=Math.hypot(ux,uz)||1, bx=f.ox+ux/L*6, bz=f.oz+uz/L*6;
       return [bx+(-uz/L)*Math.sin(ang)*r, bz+(ux/L)*Math.sin(ang)*r]; }                                     // fan out in front of the gate, firing on it
     const c=f.cmd && f.cmd.pos ? f.cmd.pos : f; return [c.x+(Math.random()-0.5)*6, c.z+(Math.random()-0.5)*6]; }   // through the breach → for the commander
   return null; }

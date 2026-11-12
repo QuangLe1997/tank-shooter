@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRIVE, LOOT } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, dropPowerup, floatText, heightAt, inField, inZone, satOBB, scene, sfx, tip } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, detailize, dropPowerup, floatText, heightAt, inField, inZone, satOBB, scene, sfx, tip } from '../hub.js';
 
 // ----------------------------- Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed -----------------------------
 // Each 3 m section is real masonry: running-bond bricks (per-brick tone, chips, loose top courses), a ragged broken top, shell holes,
@@ -15,7 +15,7 @@ export function brickMat(){ if(_brickMat) return _brickMat;
     for(let i=0;i<1500;i++){ const v=(150+Math.random()*105)|0; x.fillStyle='rgba('+v+','+v+','+v+',0.55)'; x.fillRect(Math.random()*W,Math.random()*H,1+Math.random()*2,1+Math.random()*2); }   // fired-clay grit
     for(let i=0;i<14;i++){ x.fillStyle='rgba(70,56,44,0.28)'; x.beginPath(); x.arc(Math.random()*W,Math.random()*H,1+Math.random()*4,0,7); x.fill(); }                       // pits + chips
     x.strokeStyle='rgba(255,255,255,0.35)'; x.lineWidth=2; x.strokeRect(1,1,W-2,H-2); });                                                                               // weathered arris edge
-  _brickMat=new THREE.MeshStandardMaterial({ vertexColors:true, map, roughness:0.94, metalness:0, envMapIntensity:0.35 }); return _brickMat; }
+  _brickMat=detailize(new THREE.MeshStandardMaterial({ vertexColors:true, map, roughness:0.94, metalness:0, envMapIntensity:0.35 }), { scale:0.8, bump:0.008, alb:0.3, foot:0.7, streak:0.2 }); return _brickMat; }
 export function _brickGeo(w,h,d,x,y,z,ry,rz,col){ const g=new THREE.BoxGeometry(w,h,d); g.rotateZ(rz||0); g.rotateY(ry||0); g.translate(x,y,z);
   const c=new THREE.Color(col), n=g.attributes.position.count, a=new Float32Array(n*3); for(let i=0;i<n;i++){ const k=0.9+((i/4|0)%3)*0.05; a[i*3]=c.r*k; a[i*3+1]=c.g*k; a[i*3+2]=c.b*k; }
   g.setAttribute('color', new THREE.BufferAttribute(a,3)); return g; }
