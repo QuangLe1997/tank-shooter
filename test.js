@@ -525,5 +525,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/minMag/.test(gpd) && /CAMC/.test(gpd) && /padHud/.test(gpd), 'pad: dead-tilt holds the gun, View+D-pad = camera, button legend');
   ok(/sens:1/.test(cfg) && fs.readFileSync('index.html','utf8').includes('id="setSens"') && fs.readFileSync('index.html','utf8').includes('id="padHud"'), 'sensitivity setting + legend exist'); }
 
+// Z125 firing no longer rumbles; controller diagram in the key sheet, settings and wizard
+{ const fs=await import('node:fs'); const fl=fs.readFileSync('src/combat/flame.js','utf8'), gpd=fs.readFileSync('src/input/gamepad.js','utf8'), cfg=fs.readFileSync('config.js','utf8'), idx=fs.readFileSync('index.html','utf8');
+  ok(!/padShot|GUN_FEEL/.test(fl+gpd+cfg), 'no per-shot rumble code left (padShot / GUN_FEEL removed)');
+  ok(!/haptic\(6\+rec/.test(fl), 'the recoil of a shot no longer vibrates the pad or the phone');
+  const pv=fs.readFileSync('src/ui/padview.js','utf8'), keys=fs.readFileSync('src/ui/keys.js','utf8'), st=fs.readFileSync('src/ui/settings.js','utf8'), pm=fs.readFileSync('src/input/padmap.js','utf8');
+  ok(/export function padDiagram/.test(pv) && /data-b/.test(pv) && /WIZ\.tgt/.test(pv), 'padview: diagram with per-button hooks, live + wizard target');
+  ok(/padDiagram\(\)/.test(keys) && /padDiagram\(\)/.test(st) && /padDiagram\(true\)/.test(pm), 'diagram is used by the key sheet, the settings and the wizard');
+  ok(idx.includes('id="setPadView"') && idx.includes('id="padWizView"'), 'diagram containers exist'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -1,6 +1,6 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
 import { PAD_CFG } from '../../config.js';
-import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
+import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
 export function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
@@ -24,7 +24,8 @@ tapBtn('settingsBtn', openSettings); tapBtn('settingsDone', closeSettings);
 { const fs=document.getElementById('setFs'); if(fs) tapEl(fs, ()=>{ toggleFullscreen(); sfx('click'); }); }
 
 // Z117 controller settings (PROFILE.pad) — written into the settings sheet; the status row says which pad is connected
-export function buildPadSettings(){ const C=padCfg(), set=(k,v)=>{ C[k]=v; saveProfile(); buildSettings(); sfx('click'); };
+export function buildPadSettings(){ const Pv=document.getElementById('setPadView'); if(Pv) Pv.innerHTML=padDiagram();
+  const C=padCfg(), set=(k,v)=>{ C[k]=v; saveProfile(); buildSettings(); sfx('click'); };
   const P=document.getElementById('setPad'); if(P){ P.innerHTML=''; const st=document.createElement('div'); st.className='seg-note'; const nm=x=>(x||'Tay cầm').replace(/\(.*?\)/g,'').trim().slice(0,42), g=PAD.gp, odd=!!g && g.mapping!=='standard', learned=!!padMapFor(g);
     st.textContent = PAD.active ? ('✓ '+nm(PAD.id)+(odd ? (learned ? ' · đã dò nút' : ' · bố cục lạ — bấm DÒ NÚT') : '')) : PAD.seen ? ('Thấy '+nm(PAD.seen.id)+' — bấm một nút bất kỳ để kích hoạt') : 'Chưa thấy tay cầm — cắm dây / bật 2.4G hoặc Bluetooth rồi bấm một nút bất kỳ (Safari không nhận tay cầm lạ: dùng Chrome hoặc app Mac)'; P.appendChild(st);
     P.appendChild(_segChip('THỬ RUNG', false, ()=>{ padTest(); sfx('click'); }));

@@ -6,7 +6,7 @@
 //   · HAPTICS (feel): rhythm patterns for the pad's two motors — every gun has its own beat, a hit shakes left↔right, rams and blasts thump,
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
-import { PAD_CFG, GUN_FEEL, FEEL } from '../../config.js';
+import { PAD_CFG, FEEL } from '../../config.js';
 import { MOBILE, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
@@ -103,10 +103,8 @@ function phoneBuzz(pat, k, minLv){ if(!phoneOn()) return; const now=performance.
 export function feelPattern(pat, k, side, phoneMin){ k=k==null?1:k; let t=0;
   for(const st of pat){ let [s,w,ms,gap]=st; if(side>0){ const x=s; s=w; w=x; } const S0=s*k, W0=w*k, M=ms; if(t===0) padRumble(S0, W0, M, true); else setTimeout(()=>padRumble(S0, W0, M, true), t); t+=ms+(gap||0); }
   phoneBuzz(pat, k, phoneMin); }
-// named feels (FEEL in config) + per-gun shot rhythms (GUN_FEEL)
+// named feels (FEEL in config). Z125: firing no longer rumbles, so a kick always means something happened TO you
 export function feel(name, k, side){ const P=FEEL[name]; if(P) feelPattern(P, k, side, name==='blast'||name==='hit'||name==='impact'?0.25:0.4); }
-export function padShot(g, id){ const pat=GUN_FEEL[id] || (g.fireCd<0.1 ? GUN_FEEL._rapid : null);
-  if(pat){ feelPattern(pat, 1, 0, 0.45); return; } const r=g.recoil||1; feelPattern([[Math.min(1,r*0.22), Math.min(1,0.25+r*0.14), 55+r*28]], 1, 0, 0.45); }
 // a hit: the pad shakes left↔right (hardest first on the side the shot came from); bigger hits shake longer
 export function padHit(dmg, side){ const k=Math.min(1.2, 0.45+dmg/30); const n=dmg>=20 ? FEEL.hitHeavy : FEEL.hit; feelPattern(n, k, side||0, 0.2); }
 export function padImpact(vn){ if(vn<5) return; feel('impact', Math.min(1.3, vn/18)); }

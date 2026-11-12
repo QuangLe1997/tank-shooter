@@ -1,6 +1,6 @@
 // ui/keys.js — Z107 CONTROLS SHEET: every key / touch control in one place — from the home menu (PHÍM TẮT), the pause menu, or H / F1 / ? in battle (pauses while open).
 import { ACTIONS, TOUCH_HELP } from '../../config.js';
-import { MOBILE, PAD, PAD_NAMES, S, clearKey, escapeHtml, hide, keyLabel, keysFor, padFor, resetBinds, sfx, show, startCapture, tapBtn, togglePause } from '../hub.js';
+import { MOBILE, PAD, PAD_NAMES, padDiagram, S, clearKey, escapeHtml, hide, keyLabel, keysFor, padFor, resetBinds, sfx, show, startCapture, tapBtn, togglePause } from '../hub.js';
 
 export const KEYS_UI = { from:null, paused:false };
 // Z118 the key sheet IS the rebind screen: every action with its 2 keys + its pad button — click / Enter / A on a chip, then press the new key
@@ -12,6 +12,7 @@ function chip(kind, id, slot, txt, empty){ return '<span class="bind-chip'+(empt
 export function buildKeysSheet(){
   const el=document.getElementById('keysBody'); if(!el) return; let h='';
   const groups=[]; for(const a of ACTIONS){ let G=groups.find(x=>x.g===a[2]); if(!G) groups.push(G={ g:a[2], rows:[] }); G.rows.push(a); }
+  h+='<div class="ks-grp padview"><div class="ks-gt">SƠ ĐỒ TAY CẦM<i>nhấn nút trên tay cầm thật để thấy nó sáng · đổi nút ở bảng bên dưới</i></div>'+'<div class="pv-wrap">'+padDiagram()+'</div></div>';
   h+='<div class="ks-bindbar"><span>Bấm vào ô phím / nút để đổi · chuột phải xoá phím</span><span class="bind-chip reset" id="bindReset">↺ MẶC ĐỊNH</span></div>';
   h+=groups.map(G=>'<div class="ks-grp bind"><div class="ks-gt">'+G.g+'<i>PHÍM · TAY CẦM</i></div>'+G.rows.map(a=>{ const ks=keysFor(a[0]), pb=padFor(a[0]);
       return '<div class="bind-row"><span class="ks-t">'+a[1]+'</span><span class="bind-keys">'+chip('key',a[0],0, ks[0]?keyLabel(ks[0]):'+', !ks[0])+chip('key',a[0],1, ks[1]?keyLabel(ks[1]):'+', !ks[1])+'</span>'+chip('pad',a[0],0, pb==null?'—':PAD_NAMES[pb], pb==null)+'</div>'; }).join('')+'</div>').join('');

@@ -2,7 +2,7 @@
 //   mapping '' — its buttons and axes come in an arbitrary order, so the "standard" positions the game reads would be wrong or dead.
 //   The wizard asks for each control in turn, records which raw button / axis moved, and keeps the table per pad id (PROFILE.padmap).
 //   input/gamepad.js then reads such a pad through virtualPad(), so everything else in the game still sees a standard layout.
-import { PAD, PROFILE, hide, saveProfile, sfx, show, tapBtn } from '../hub.js';
+import { PAD, PROFILE, hide, padDiagram, saveProfile, sfx, show, tapBtn } from '../hub.js';
 
 // target = 'lx'|'ly'|'rx'|'ry' (stick axes, positive = right / down) or the standard button index the game uses (see BT in gamepad.js)
 const STEPS=[ ['lx','CẦN TRÁI — gạt sang PHẢI'], ['ly','CẦN TRÁI — gạt xuống DƯỚI'], ['rx','CẦN PHẢI — gạt sang PHẢI'], ['ry','CẦN PHẢI — gạt xuống DƯỚI'],
@@ -10,7 +10,7 @@ const STEPS=[ ['lx','CẦN TRÁI — gạt sang PHẢI'], ['ly','CẦN TRÁI —
   [4,'Nút vai trái (LB)'], [5,'Nút vai phải (RB)'], [9,'Nút ☰ Menu (Start)'], [8,'Nút ⧉ View (Select)'], [10,'Nhấn cần TRÁI xuống (L3)'], [11,'Nhấn cần PHẢI xuống (R3)'],
   [12,'D-pad ↑'], [13,'D-pad ↓'], [14,'D-pad ←'], [15,'D-pad →'] ];
 const SKIP_AFTER=10;                                                       // seconds without input → that control is skipped
-export const WIZ={ on:false, i:0, map:null, base:null, rel:false, at:0 };
+export const WIZ={ tgt:null, on:false, i:0, map:null, base:null, rel:false, at:0 };
 
 const bv=(gp,i)=>{ const b=gp.buttons[i]; return b ? (typeof b==='object' ? b.value : b) : 0; };
 const snap=gp=>({ a:Array.from(gp.axes), b:Array.from(gp.buttons, (_,i)=>bv(gp,i)) });
@@ -39,7 +39,7 @@ function taken(src){ const M=WIZ.map, L=[...Object.values(M.ax), ...Object.value
   return L.some(e=>e.t===src.t && e.i===src.i && (src.t==='b' || (src.t==='h' ? Math.abs(e.p-src.p)<0.14 : e.s===src.s))); }
 
 const $=id=>document.getElementById(id), nm=s=>(s||'').replace(/\(.*?\)/g,'').trim();
-function paint(gp){ const st=STEPS[WIZ.i], t=$('padWizStep'); if(!t) return;
+function paint(gp){ const st=STEPS[WIZ.i], t=$('padWizStep'); if(!t) return; WIZ.tgt = st ? st[0] : null;
   t.textContent = st ? (WIZ.rel ? 'Thả ra…' : st[1]) : 'Xong!'; const n=$('padWizN'); if(n) n.textContent = Math.min(WIZ.i+1, STEPS.length)+' / '+STEPS.length;
   const bar=$('padWizBar'); if(bar) bar.style.width = (100*WIZ.i/STEPS.length)+'%';
   const id=$('padWizId'); if(id) id.textContent = gp ? nm(gp.id).slice(0,40)+' · '+gp.buttons.length+' nút · '+gp.axes.length+' trục'+(gp.mapping?' · '+gp.mapping:' · bố cục lạ') : 'Chưa thấy tay cầm — bấm một nút bất kỳ trên tay cầm (cần có focus cửa sổ game)'; }
@@ -49,8 +49,9 @@ function live(gp, base){ const el=$('padWizLive'); if(!el) return; if(!gp){ el.t
   el.textContent = L.length ? 'Đang nhận: '+L.join(' · ') : 'Chưa nhận nút nào'; }
 
 export function openPadWizard(gp){ WIZ.on=true; WIZ.i=0; WIZ.map={ ax:{}, bt:{} }; WIZ.base=null; WIZ.rel=false; WIZ.at=performance.now()/1000;
+  { const v=$('padWizView'); if(v) v.innerHTML=padDiagram(true); }
   show('padWiz'); paint(gp||null); sfx('click'); }
-function finish(save){ const M=WIZ.map; WIZ.on=false; hide('padWiz');
+function finish(save){ const M=WIZ.map; WIZ.on=false; WIZ.tgt=null; hide('padWiz');
   const n=Object.keys(M.ax).length+Object.keys(M.bt).length; const gp=PAD.gp; if(save && gp && n>=3){ (PROFILE.padmap||(PROFILE.padmap={}))[gp.id]=M; saveProfile(); }
   PAD.prev=[]; refresh(); }
 function refresh(){ dispatchEvent(new CustomEvent('padmapchange')); }

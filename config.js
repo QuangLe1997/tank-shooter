@@ -470,15 +470,7 @@ export const PAD_HELP = [
 // Z119 BATTLE INTRO: cinematic view distance + fog (the sweep no longer draws the whole field), shader warm-up time budget, skip guard
 export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35 };
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.
-//   Every gun has its own beat: crisp ticks (rifle / SMG), a buzz (minigun), a punch + tail (cannon / HESH), charge → crack (railgun),
-//   whoosh → kick (missiles / rockets), thump-thump (twin flak), crackle (tesla), a soft hiss (cryo)…
-export const GUN_FEEL = {
-  rifle:[[0.12,0.38,38]], smg:[[0,0.3,28]], _rapid:[[0.04,0.3,40]], minigun:[[0.06,0.34,42]], shotgun:[[0.8,0.55,70,10],[0.28,0.22,70]],
-  flak:[[0.4,0.42,45,35],[0.4,0.42,45]], cannon:[[1,0.55,95],[0.45,0.18,150]], hesh:[[0.9,0.5,95],[0.38,0.14,130]],
-  railgun:[[0,0.55,70],[0,0.8,60],[1,0.45,110],[0.3,0.1,170]], missile:[[0.05,0.3,50],[0.15,0.45,70],[0.38,0.25,90]],
-  thermo:[[0.2,0.45,60],[1,0.7,150],[0.3,0.2,160]], rocket:[[0.25,0.6,120],[1,0.85,230],[0.35,0.25,200]],
-  mortar:[[0.65,0.3,80,50],[0.2,0.1,90]], arty:[[0.9,0.4,100,60],[0.3,0.12,140]], agl:[[0.4,0.3,55,30],[0.12,0.08,50]],
-  tesla:[[0,0.6,25,20],[0,0.5,25,30],[0.12,0.75,30,20],[0,0.4,25]], cryo:[[0,0.25,170]], flamer:[[0.08,0.22,60]] };
+//   Z125: firing does NOT rumble any more (the old per-gun rhythm table is gone), so every kick is a hit, a blast or a crash.
 export const FEEL = {
   hit:     [[1,0.12,60,8],[0.12,1,60,8],[0.7,0.1,55,8],[0.1,0.55,55]],                               // shot hits you: left ↔ right shake
   hitHeavy:[[1,0.2,70,6],[0.2,1,70,6],[1,0.15,65,6],[0.15,0.9,65,6],[0.6,0.1,60,6],[0.1,0.45,60]],     // a big shell: longer, harder

@@ -226,3 +226,20 @@ body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only o
 #padHud{position:fixed;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:none;flex-wrap:wrap;gap:4px 10px;justify-content:center;max-width:92vw;padding:4px 10px;border-radius:999px;background:rgba(8,10,8,.55);pointer-events:none;
   font:700 10px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.5px;color:#cfd8c0;opacity:.8;}
 #padHud b{color:#ffd27a;margin-right:4px;} body.pad:not(.inmenu) #padHud:not(:empty){display:flex;}
+
+/* Z125 controller diagram (key sheet · settings · wizard) */
+.pad-svg{display:block;width:100%;max-width:960px;margin:0 auto;min-width:640px;aspect-ratio:1240/448;height:auto;}
+.pv-wrap{overflow-x:auto;max-width:100%;} .pv-wrap .pad-svg{max-height:none;}
+.pad-svg text{font-family:'Saira Condensed',Rajdhani,sans-serif;font-weight:800;}
+.pv-t{font-size:21px;fill:#e3ebd6;letter-spacing:.3px;} .pv-s{font-size:15px;fill:#9aa78a;font-weight:700;} .pv-k{fill:#ffd27a;font-size:17px;} .pv-n{fill:#6c7660;}
+.pv-f{font-size:17px;fill:#fff;font-weight:900;stroke:#000;stroke-opacity:.35;stroke-width:.6px;paint-order:stroke;}
+.pv-ld{fill:none;stroke:#8a9478;stroke-opacity:.55;stroke-width:1.4;stroke-dasharray:3 3;} .pv-dot{fill:#ffd27a;}
+.pv-t.on{fill:#fff;} .pv-t.on .pv-k{fill:#fff;}
+.pv-b{transition:filter .08s;} .pv-b.on{filter:brightness(2) drop-shadow(0 0 7px #ffd27a);}
+.pv-b.tgt,.pv-cap.tgt{animation:pvp .6s ease-in-out infinite alternate;}
+@keyframes pvp{from{filter:drop-shadow(0 0 2px #ffd27a) brightness(1.1);}to{filter:drop-shadow(0 0 13px #ffd27a) brightness(1.9);}}
+.ks-grp.padview{grid-column:1/-1;opacity:1;} .ks-grp.padview .ks-gt{display:flex;justify-content:space-between;gap:10px;} .ks-grp.padview .ks-gt i{font-style:normal;font-size:9px;opacity:.6;letter-spacing:.8px;text-align:right;}
+.set-padview{grid-column:1/-1;justify-content:center;} #setPadView{width:100%;overflow-x:auto;}
+.pw-view{width:min(92vw,700px);overflow-x:auto;}
+@media (max-height:520px){ .pad-svg{max-width:640px;min-width:560px;} .pw-view{width:min(92vw,480px);} }
+.pad-svg.bare{aspect-ratio:560/380;max-width:520px;min-width:0;} .pad-svg.bare .pv-t,.pad-svg.bare .pv-s,.pad-svg.bare .pv-ld,.pad-svg.bare .pv-dot{display:none;} .pw-view{display:flex;justify-content:center;}

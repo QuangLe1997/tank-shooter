@@ -90,6 +90,7 @@ export * from './game/flow.js';
 export * from './ui/menus.js';
 export * from './ui/terrain-picker.js';
 export * from './ui/battle-setup.js';
+export * from './ui/padview.js';   // Z125
 export * from './ui/keys.js';
 export * from './ui/guide.js';
 export * from './ui/settings.js';
