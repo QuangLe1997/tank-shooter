@@ -78,8 +78,9 @@ export function menuMove(root, dir){ const L=ensureFocus(root); if(!L) return;
   if(best) setFocus(best); }
 export function menuCycle(root, step){ const L=ensureFocus(root); if(!L) return; const i=L.indexOf(NAV.focus); setFocus(L[(i+step+L.length)%L.length]); }
 export function menuSelect(root){ ensureFocus(root); if(NAV.focus){ if(NAV.focus.classList.contains('dp-step')){ const b=NAV.focus.querySelectorAll('.s'); if(b.length) b[b.length-1].click(); return; } NAV.focus.click(); } }
-export function menuBack(root){ const L=navItems(root); const back=L.find(el=>/QUAY LẠI|VỀ MENU|◀|XONG|ĐÓNG|TIẾP TỤC|ĐÃ HIỂU/i.test(el.textContent||''));
-  if(back){ back.click(); return; } if(S.mode==='paused'){ togglePause(); return; } dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); }
+let _mbBusy=false;   // Z139 the Escape fallback re-enters menuBack through the keydown handler — without this a screen with no 'back' button recursed until the stack blew
+export function menuBack(root){ if(_mbBusy) return; _mbBusy=true; try{ const L=navItems(root); const back=L.find(el=>/QUAY LẠI|VỀ MENU|MENU CHÍNH|◀|XONG|ĐÓNG|TIẾP TỤC|ĐÃ HIỂU/i.test(el.textContent||''));
+  if(back){ back.click(); return; } if(S.mode==='paused'){ togglePause(); return; } dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); } finally{ _mbBusy=false; } }
 // LB / RB (or Q / E in menus): switch between the tabs of a screen (shop categories, battle-setup modes, settings segments)
 export function menuTab(root, step){ const tabs=[...root.querySelectorAll('.shop-tab, .bs-mode')].filter(el=>el.offsetParent!==null); if(tabs.length<2) return false;
   let i=tabs.findIndex(t=>t.classList.contains('on')||t.classList.contains('active')); if(i<0) i=0; tabs[(i+step+tabs.length)%tabs.length].click(); sfx('click'); return true; }

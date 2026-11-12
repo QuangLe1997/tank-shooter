@@ -30,7 +30,7 @@ export function groundMaps(b){
     if(b.name==='DESERT'){ const rip=Math.sin((x*0.82+y*0.57)/W*6.283*38 + n2[i]*14)*0.5+0.5;          // wind ripples bent by large-scale flow
       h = n1[i]*0.7 + rip*0.18*n2[i] + n3[i]*0.12; t = h + (n2[i]-0.5)*0.35; }
     else if(b.name==='TUNDRA'){ h = n1[i]*0.7+n3[i]*0.3; t = 0.3+h*0.8; }                                                          // wind-packed drifts
-    else if(b.name==='MEADOW'){ t = n1[i]*0.6+n3[i]*0.4; }
+    else if(b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE'){ t = n1[i]*0.6+n3[i]*0.4; }
     else if(b.name==='FOUNDRY'||b.name==='CITADEL'){ h=n1[i]*0.75+n3[i]*0.25; t=h; }
     else { h=n1[i]*0.6+n3[i]*0.4; t=h*0.9+(n2[i]-0.5)*0.3; }
     H[i]=h; t=Math.max(0,Math.min(1,t));
@@ -47,7 +47,7 @@ export function groundMaps(b){
   const cracks=(n,len,w,colA,hv)=>{ const L=[]; for(let i=0;i<n;i++){ let px=Math.random()*W, py=Math.random()*W, a=R(0,6.28); const pts=[[px,py]]; for(let s=0;s<len;s++){ a+=R(-0.7,0.7); px+=Math.cos(a)*W/90; py+=Math.sin(a)*W/90; pts.push([px,py]); if(Math.random()<0.15){ L.push({pts:pts.slice(-2).concat([[px+Math.cos(a+1.4)*W/60,py+Math.sin(a+1.4)*W/60]]), w:w*0.6}); } } L.push({pts,w}); }
     both((x,isH)=>{ x.strokeStyle=isH?hv:colA; x.lineCap='round'; x.lineJoin='round'; for(const c of L){ x.lineWidth=c.w*W/1024; x.beginPath(); c.pts.forEach((p,k)=>k?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.stroke(); } }); };
   if(b.name==='DESERT'){ pebbles(900,1,3.2,['rgba(120,96,64,0.8)','rgba(150,124,86,0.8)','rgba(96,80,58,0.7)'],'rgba(255,255,255,0.55)'); cracks(10,10,1.4,'rgba(110,86,56,0.35)','rgba(0,0,0,0.25)'); }
-  else if(b.name==='RUINS'){ // broken concrete slabs: seams + spalling + oil stains + rubble grit
+  else if(b.name==='RUINS'||b.name==='CITY'){ // broken concrete slabs / city asphalt: seams + spalling + oil stains + rubble grit
     both((x,isH)=>{ x.strokeStyle=isH?'rgba(0,0,0,0.7)':'rgba(40,40,40,0.55)'; x.lineWidth=3*W/1024; const s=W/4; for(let i=0;i<=4;i++){ x.beginPath(); x.moveTo(i*s+R(-3,3),0); x.lineTo(i*s+R(-3,3),W); x.moveTo(0,i*s+R(-3,3)); x.lineTo(W,i*s+R(-3,3)); x.stroke(); } });
     cracks(40,14,1.8,'rgba(30,30,30,0.6)','rgba(0,0,0,0.6)');
     for(let i=0;i<3;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(20,60)*W/1024; cx.fillStyle='rgba(20,18,16,'+R(0.08,0.16).toFixed(2)+')'; cx.beginPath(); cx.ellipse(px,py,r,r*R(0.5,1),R(0,3),0,7); cx.fill(); }
@@ -58,9 +58,10 @@ export function groundMaps(b){
     for(let i=0;i<12;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(24,80)*W/1024; const g=cx.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba(10,10,14,0.5)'); g.addColorStop(1,'rgba(10,10,14,0)'); cx.fillStyle=g; cx.fillRect(px-r,py-r,r*2,r*2); } }
   else if(b.name==='CITADEL'){ cracks(30,12,1.6,'rgba(24,18,12,0.6)','rgba(0,0,0,0.5)'); pebbles(1300,1,3.4,['rgba(60,48,34,0.9)','rgba(100,84,60,0.9)','rgba(30,26,22,0.9)'],'rgba(255,255,255,0.55)');
     for(let i=0;i<900;i++){ cx.fillStyle='rgba(30,28,26,'+R(0.2,0.5).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,2,2); } }
-  else if(b.name==='MEADOW'){ const Gs=[]; for(let i=0;i<(MOBILE?5000:14000);i++) Gs.push([Math.random()*W,Math.random()*W,R(4,11)*W/1024,R(-3,3)*W/1024, Math.random()<0.3?'rgba(170,200,100,0.55)':(Math.random()<0.5?'rgba(80,110,46,0.55)':'rgba(60,84,34,0.6)')]);
+  else if(b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE'){ const Gs=[]; for(let i=0;i<(MOBILE?5000:14000);i++) Gs.push([Math.random()*W,Math.random()*W,R(4,11)*W/1024,R(-3,3)*W/1024, Math.random()<0.3?'rgba(170,200,100,0.55)':(Math.random()<0.5?'rgba(80,110,46,0.55)':'rgba(60,84,34,0.6)')]);
     both((x,isH)=>{ x.lineWidth=1.2*W/1024; for(const [gx,gy,h,lean,cc] of Gs){ x.strokeStyle=isH?'rgba(255,255,255,0.35)':cc; x.beginPath(); x.moveTo(gx,gy); x.lineTo(gx+lean,gy-h); x.stroke(); } });
-    pebbles(300,1,2.6,['rgba(110,100,84,0.8)'],'rgba(255,255,255,0.5)'); }
+    pebbles(b.name==='HILLS'?900:300,1,2.6,['rgba(110,100,84,0.8)'],'rgba(255,255,255,0.5)');
+    if(b.name!=='MEADOW'){ for(let i=0;i<(b.name==='VILLAGE'?10:16);i++){ const px=Math.random()*W, py=Math.random()*W, r=R(30,90)*W/1024; cx.fillStyle=b.name==='VILLAGE'?'rgba(120,96,58,0.32)':'rgba(110,92,62,0.35)'; cx.beginPath(); cx.ellipse(px,py,r,r*R(0.4,0.8),R(0,3),0,7); cx.fill(); } } }   // Z139 bare-earth patches in the grass
   const map=new THREE.CanvasTexture(col); map.colorSpace=THREE.SRGBColorSpace; map.wrapS=map.wrapT=THREE.RepeatWrapping; map.anisotropy=APPLE?8:(MOBILE?2:4);   // Z109 grazing camera → without it the far ground smears
   const nrm=_heightToNormal(hc, st.nrm); nrm.anisotropy=APPLE?8:(MOBILE?2:4);
   const rep=(ARENA*2)/st.tile; map.repeat.set(rep,rep); nrm.repeat.set(rep,rep);
@@ -75,7 +76,7 @@ export function macroTexture(){
 }
 export function patchTexture(){ const W=256, a=tileNoise(W,[3,6,12,24,48],0.55); const c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); const img=x.createImageData(W,W), d=img.data;
   for(let i=0;i<W*W;i++){ const v=Math.max(0,Math.min(255,(0.5+(a[i]-0.5)*1.6)*255)); d[i*4]=d[i*4+1]=d[i*4+2]=v; d[i*4+3]=255; } x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
-export const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85] };
+export const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85], CITY:[0x3a3c40,0.55], HILLS:[0x5a4a30,0.7], VILLAGE:[0x5a4a2c,0.7] };
 export const MACRO = { tex:{ value:macroTexture() }, amt:{ value:0.3 }, span:{ value:1/(ARENA*2) }, patch:{ value:patchTexture() }, pcol:{ value:new THREE.Color(0x9a7a50) }, pamt:{ value:0.55 } };
 // Z105 relief shading (see config RELIEF): hollows darker + damper + occluded, steep faces show raw earth, crests/rims sun-bleached
 export const RELIEF_U = { rel0:{ value:new THREE.Vector4(RELIEF.bowlDark, RELIEF.bowlAO, RELIEF.crestLift, RELIEF.slopeEarth) }, rel1:{ value:new THREE.Vector4(RELIEF.bowlK, RELIEF.crestK, RELIEF.slopeK, 1) },

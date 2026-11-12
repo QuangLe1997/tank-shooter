@@ -1,7 +1,7 @@
 // render/night-marks.js — Z137 NIGHT VISIBILITY: at night every tank wears lamps so it can be read in the dark — enemy hulls: white headlamps + red tail lamps +
 //   a red roof beacon; allied hulls: lime roof beacon. Pooled additive sprites (shared materials, no real lights → no per-pixel cost), moved onto the nearest tanks each frame.
 import * as THREE from 'three';
-import { ALLY_TANKS, GLOW, NIGHT, S, enemies, scene, solidTank } from '../hub.js';
+import { ALLY_TANKS, GLOW, NIGHT, S, enemies, scene, solidTank, updateLandmarkGlow } from '../hub.js';
 
 const mk=(c,op)=>new THREE.SpriteMaterial({ map:GLOW, color:c, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, fog:false });
 const M={ head:mk(0xfff0c0), tail:mk(0xff2a1a), foe:mk(0xff3a22), ally:mk(0x9be04a) }, OP={ head:0.9, tail:0.75, foe:0.95, ally:0.95 };
@@ -10,6 +10,7 @@ for(let i=0;i<NMAX;i++){ const s=new THREE.Sprite(M.head); s.visible=false; s.re
 let _n=0;
 function lamp(kind, x, y, z, size){ if(_n>=NMAX) return; const s=POOL[_n++]; s.material=M[kind]; s.position.set(x,y,z); s.scale.setScalar(size); s.visible=true; }
 export function updateNightMarks(dt, now){
+  updateLandmarkGlow();
   const k=NIGHT.k; for(const key in M) M[key].opacity = k*OP[key]*(0.92+0.08*Math.sin(now*5));
   _n=0; if(k<0.04 || S.mode==='start'){ for(const s of POOL) s.visible=false; return; }
   const p=S.player, R2=95*95;

@@ -28,6 +28,14 @@ export function drawTerrainPreview(cv, b, isAuto){
     else if(deco==='slag'){ x.fillStyle='#1c1814'; x.beginPath(); x.arc(0,-s*.4,s*.7,0,7); x.fill(); x.fillStyle='#ff5a1c'; x.beginPath(); x.arc(0,-s*.4,s*.22,0,7); x.fill(); }
     else { x.fillStyle=deco==='rubble'?'#5a564e':'#7a6a48'; x.beginPath(); x.moveTo(-s,0); x.lineTo(-s*.4,-s); x.lineTo(s*.5,-s*.8); x.lineTo(s,0); x.closePath(); x.fill(); }
     x.restore(); } }
+  if(!isAuto){ const nm=b.name;   // Z139 the three newer maps get their own skyline
+    if(nm==='CITY'){ for(let i=0;i<9;i++){ const bw=9+Math.random()*10, bh=14+Math.random()*(h*0.34), bx=6+i*(w-12)/9+Math.random()*4, by=hz+3; x.fillStyle=i%2?'#4a4e56':'#585c64'; x.fillRect(bx,by-bh,bw,bh+6);
+        x.fillStyle='rgba(255,214,130,.85)'; for(let r=0;r<Math.floor(bh/6);r++) for(let k=0;k<2;k++) if(Math.random()<0.45) x.fillRect(bx+2+k*(bw/2-1),by-bh+3+r*6,2,2.4); } }
+    else if(nm==='HILLS'){ x.fillStyle='#4a6a2e'; x.beginPath(); x.moveTo(0,hz+4); for(let i=0;i<=8;i++) x.quadraticCurveTo(i*w/8-w/16, hz-8-Math.random()*h*0.2, i*w/8, hz+4); x.closePath(); x.fill();
+      x.fillStyle='#2f5a2c'; for(let i=0;i<14;i++){ const px=Math.random()*w, py=hz+4+Math.random()*(h-hz-8), s2=2.5+(py-hz)/12; x.beginPath(); x.moveTo(px,py-s2*2.2); x.lineTo(px+s2,py); x.lineTo(px-s2,py); x.closePath(); x.fill(); } }
+    else if(nm==='VILLAGE'){ x.save(); x.strokeStyle='#4f9ec0'; x.lineCap='round'; x.lineWidth=11; x.beginPath(); x.moveTo(-6,hz+(h-hz)*0.55); x.bezierCurveTo(w*0.25,hz+(h-hz)*0.25,w*0.55,hz+(h-hz)*0.95,w+6,hz+(h-hz)*0.45); x.stroke();
+      x.strokeStyle='rgba(255,255,255,.35)'; x.lineWidth=1.4; x.beginPath(); x.moveTo(-6,hz+(h-hz)*0.55-2); x.bezierCurveTo(w*0.25,hz+(h-hz)*0.25-2,w*0.55,hz+(h-hz)*0.95-2,w+6,hz+(h-hz)*0.45-2); x.stroke(); x.restore();
+      x.fillStyle='#e6d8b8'; x.fillRect(w*0.12,hz+6,13,8); x.fillStyle='#b4562f'; x.beginPath(); x.moveTo(w*0.12-2,hz+6); x.lineTo(w*0.12+6.5,hz+1); x.lineTo(w*0.12+15,hz+6); x.closePath(); x.fill(); } }
   let vg=x.createRadialGradient(w/2,h/2,h*.2,w/2,h/2,w*.72); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.45)'); x.fillStyle=vg; x.fillRect(0,0,w,h);
   if(isAuto){ x.fillStyle='rgba(0,0,0,.36)'; x.fillRect(0,0,w,h);   // AUTO: rotate glyph overlay
     x.strokeStyle='#cfe6a0'; x.lineWidth=3.2; x.beginPath(); x.arc(w/2,h*.42,17,0.7,5.5); x.stroke();

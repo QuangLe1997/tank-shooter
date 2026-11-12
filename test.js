@@ -582,5 +582,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const b=fs.readFileSync('src/ui/briefing.js','utf8'), u=fs.readFileSync('src/loot/upgrades.js','utf8'), f=fs.readFileSync('src/game/flow.js','utf8');
   ok(/cdSub/.test(b) && /if\(quiet\) return;/.test(u) && /p\.lives=5/.test(f), 'mission line rides the countdown; no card after GO; 5 starting lives'); }
 
+// Z139 three new battlefields
+{ const fs=await import('node:fs'); const w=fs.readFileSync('src/data/world.js','utf8'), l=fs.readFileSync('src/world/landmarks.js','utf8'), h=fs.readFileSync('src/world/heightfield.js','utf8'), b=fs.readFileSync('src/input/bindings.js','utf8'), t=fs.readFileSync('src/data/text-vi.js','utf8');
+  for(const n of ['CITY','HILLS','VILLAGE']) ok(new RegExp("name:'"+n+"'").test(w) && new RegExp(n+":\\{").test(w) && new RegExp(n+":'").test(t), 'biome '+n+' is fully defined (data, atmosphere, ground, name)');
+  ok(/buildCity/.test(l) && /buildHills/.test(l) && /buildVillage/.test(l) && /carveRivers/.test(h) && /wetAt/.test(h), 'landmarks + river carving exist');
+  ok(/_mbBusy/.test(b), 'menuBack cannot recurse'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

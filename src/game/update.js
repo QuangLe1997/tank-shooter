@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, wetAt } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -46,7 +46,9 @@ export function updatePlayer(dt, now){
     const gr = gx*fs0*Math.sign(vf||1)+gz*fc0*Math.sign(vf||1);                    // >0 climbing, <0 descending (along travel)
     const slopeK = Math.max(0.45, Math.min(1.35, 1 - gr*1.3)); p.grade = inp>0.1 ? gr : 0;
     const mob = Math.min(LOOT.rules.speedCap, (over?1.3:1)*p.speedMul*spd);              // Z93: every speed source multiplies, then the hard cap
-    const maxSp = PLAYER.maxSpeed*mob*heavy*Math.max(0.7,slopeK);
+    const wade = wetAt(p.pos.x, p.pos.z, 0) ? 0.55 : 1;                                   // Z139 wading a river / stream slows the hull (a bridge keeps it dry)
+    if(wade<1 && Math.random()<dt*14) spawnPart(p.pos.x+(Math.random()-0.5)*2.4, RIVER.y+0.15, p.pos.z+(Math.random()-0.5)*2.4, (Math.random()-0.5)*2, 1.2+Math.random()*1.6, (Math.random()-0.5)*2, { color:0xcfe8f2, size:0.35+Math.random()*0.3, life:0.55, grav:-9, drag:1.2 });
+    const maxSp = PLAYER.maxSpeed*mob*heavy*wade*Math.max(0.7,slopeK);
     const tLv = now < bu.turbo ? (p.buffLv.turbo||1) : 0; p.turboLv=tLv;
     const pow = mob*(over?1.04:1)*heavy*slopeK*(1+tLv*LOOT.turbo.accel)*(p.accelMul||1);
     const scr = controlScheme()!=='tank' && !MOBILE, piv = scr ? DRIVE.screenPivot : DRIVE.pivot, tas = scr ? DRIVE.screenTurnAtSpeed : DRIVE.turnAtSpeed;   // Z107 keyboard on screen axes: swing round fast

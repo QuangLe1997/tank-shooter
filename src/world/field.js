@@ -2,7 +2,7 @@
 //   a new shape each stage. Everything that moves or is placed asks inField() / clampField(); the fence follows the outline and the
 //   ground beyond it rises into rocky highland.
 import { FIELD } from '../../config.js';
-import { ARENA } from '../hub.js';
+import { ARENA, wetAt } from '../hub.js';
 
 export const FIELD_R = new Float32Array(FIELD.N);
 export const FIELD_STATE = { ver:0, scale:1 };   // Z107 scale = custom-battle SPACE (fence encloses less of the arena)                  // bumps every time the outline changes (caches key on it)      // radius of the playable field at bearing i·2π/N  (bearing = atan2(z, x))
@@ -27,7 +27,7 @@ export function fieldR(a){ const N=FIELD.N; let u=((a+Math.PI)/TAU)*N; u=((u%N)+
 export function fieldRAt(x, z){ return fieldR(Math.atan2(z, x)); }
 // how far inside the field (x,z) is — negative outside
 export function fieldDepth(x, z){ return fieldRAt(x, z)-Math.hypot(x, z); }
-export function inField(x, z, m){ return fieldDepth(x, z) >= (m||0); }
+export function inField(x, z, m){ return fieldDepth(x, z) >= (m||0) && !wetAt(x, z, Math.min(30, Math.max(2, m||0))); }   // Z139 nothing is placed in a river
 // pull a position {x,z} back inside (m = margin from the fence); true if it had to move
 export function clampField(p, m){ const d=Math.hypot(p.x, p.z), R=fieldRAt(p.x, p.z)-(m||0); if(d<=R || d<1e-6) return false; const k=Math.max(0,R)/d; p.x*=k; p.z*=k; return true; }
 export function clampFieldXZ(x, z, m){ const p={ x, z }; clampField(p, m); return [p.x, p.z]; }

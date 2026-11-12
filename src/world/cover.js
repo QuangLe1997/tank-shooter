@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, RAM, HARD } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildRidges, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, COVER_HP, COVER_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildLandmarks, buildRidges, buildTowers, buildZones, burst, camera, clearLootBeacons, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortWallHit, freeEnemyBar, getEnemyBar, heightAt, inField, inZone, makeCoverMesh, placeCaches, planZones, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -18,6 +18,7 @@ export const blocks=[];   // fuel drums go up after a hit or two
 export function buildBlocks(){
   for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block');
   planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
+  buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
   const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
   const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K);   // Z104 more cover on the wider field (soldiers need somewhere to hide)
   const centers=[];

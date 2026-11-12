@@ -11,8 +11,9 @@ export const _IM=new THREE.Matrix4(), _IQ=new THREE.Quaternion(), _IV=new THREE.
 export const _tuftCache={};
 export function tuftGeo(bn){                                                       // merged grass / dry-shrub / dead-grass tuft (vertex coloured)
   if(_tuftCache[bn]) return _tuftCache[bn];
-  const cols = bn==='MEADOW' ? [0x7caa44,0x5f8a32,0x9fc25a] : bn==='TUNDRA' ? [0x8a7a5a,0x6a5e48,0xb0a080] : [0x9a8458,0x7a6a44,0xb8a070];
-  const P=[]; const n=bn==='MEADOW'?9:7;
+  const grassy = bn==='MEADOW'||bn==='HILLS'||bn==='VILLAGE';
+  const cols = grassy ? [0x7caa44,0x5f8a32,0x9fc25a] : bn==='TUNDRA' ? [0x8a7a5a,0x6a5e48,0xb0a080] : [0x9a8458,0x7a6a44,0xb8a070];
+  const P=[]; const n=grassy?9:7;
   for(let i=0;i<n;i++){ const h=_R(0.5,1.1), c=new THREE.ConeGeometry(_R(0.05,0.09),h,3,1); c.translate(0,h/2,0);
     _xf(c,_R(-0.35,0.35),0,_R(-0.35,0.35),_R(-0.45,0.45),_R(0,6),_R(-0.45,0.45)); P.push({geo:c,col:cols[(Math.random()*cols.length)|0]}); }
   const g=_mergeColored(P); _tuftCache[bn]=g; return g;
@@ -30,8 +31,8 @@ export function buildTerrainDecor(b){
     list.forEach((o,k)=>{ _IE.set(o.tilt,o.ry,o.tilt*0.5); _IM.compose(_IV.set(o.x,heightAt(o.x,o.z)+o.r*0.18,o.z), _IQ.setFromEuler(_IE), _IS.set(o.r,o.r,o.r)); im.setMatrixAt(k,_IM);
       crushables.push({ x:o.x, z:o.z, r:o.r, im, k, alive:true, kind:'rock', ry:o.ry }); });
     decorGroup.add(im); });
-  if(b.name==='MEADOW'||b.name==='DESERT'||b.name==='TUNDRA'||b.name==='CITADEL'){                // grass tufts / dry shrubs (flatten under tracks)
-    const M=Math.round((b.name==='MEADOW'?(MOBILE?90:200):(MOBILE?30:60))*Math.min(AREA_K, MOBILE?1.5:2)), list=[]; for(let i=0;i<M;i++){ const sp=_decorSpot(9); if(sp) list.push({x:sp[0],z:sp[1],s:_R(0.7,1.4),ry:_R(0,6.28)}); }
+  if(b.name==='MEADOW'||b.name==='DESERT'||b.name==='TUNDRA'||b.name==='CITADEL'||b.name==='HILLS'||b.name==='VILLAGE'){                // grass tufts / dry shrubs (flatten under tracks)
+    const M=Math.round(((b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?(MOBILE?90:200):(MOBILE?30:60))*Math.min(AREA_K, MOBILE?1.5:2)), list=[]; for(let i=0;i<M;i++){ const sp=_decorSpot(9); if(sp) list.push({x:sp[0],z:sp[1],s:_R(0.7,1.4),ry:_R(0,6.28)}); }
     if(!_tuftMat) _tuftMat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.95, side:THREE.DoubleSide });
     const im=new THREE.InstancedMesh(tuftGeo(b.name), _tuftMat, Math.max(1,list.length)); im.castShadow=!MOBILE; im.receiveShadow=true;
     list.forEach((o,k)=>{ _IM.compose(_IV.set(o.x,heightAt(o.x,o.z),o.z), _IQ.setFromEuler(_IE.set(0,o.ry,0)), _IS.set(o.s,o.s,o.s)); im.setMatrixAt(k,_IM); crushables.push({ x:o.x, z:o.z, r:0.45*o.s, im, k, alive:true, kind:'grass', ry:o.ry, s:o.s }); });
