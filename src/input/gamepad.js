@@ -10,7 +10,9 @@ import { PAD_CFG, FEEL } from '../../config.js';
 import { MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, equippedGun, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { gunCombo:false, fireHeld:false, lobR:0, lobO:0, lobOn:false, fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
-export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k]; return p; }
+export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k];
+  if(!p.v130){ p.v130=1; p.engine=false; saveProfile(); }   // Z130 the engine hum (a constant buzz while driving) is OFF for everyone once; turn it back on in Cài đặt → RUNG ĐỘNG CƠ
+  return p; }
 // radial dead zone, rescaled so the stick still reaches 1 at the rim (no dead band felt past the edge)
 function dz(x, y, d){ const m=Math.hypot(x,y); if(m<d) return [0,0]; const k=Math.min(1,(m-d)/(1-d))/m; return [x*k, y*k]; }
 const _d=new THREE.Vector3(), _UP=new THREE.Vector3(0,1,0);
