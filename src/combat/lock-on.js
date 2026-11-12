@@ -119,7 +119,7 @@ export function updateBullets(dt, now){
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
     const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
-    if(!airborne || low) for(const bl of blocks){ if(bl===b.ignore) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
+    if(!airborne || low) for(const bl of blocks){ if(bl===b.ignore || (bl.ours && b.owner==='p')) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
       if(bl.kind==='obj' && b.owner==='e'){ blocked=true; break; }   // enemy fire never hurts their own objective
       if(((bl.fort || bl.hard) && b.owner==='e') || (bl.hard && b.inf)){   // Z121 nor do rifle rounds (ours or theirs)
         ringPulse(b.mesh.position, 0xc89060, 0.9); blocked=true; break; }   // Z112 enemy fire doesn't break rocks / hedgehogs either   // Z111b their own walls soak their fire — no damage to the stone

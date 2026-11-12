@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO } from '../../config.js';
-import { BIOME, S, SKY, TOD_LABEL, WAVE, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, scene, spawnPart } from '../hub.js';
+import { BIOME, FORTS, MOBILE, RIVER, S, SKY, TOD_LABEL, WAVE, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, scene, spawnPart } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // A Catmull-Rom camera sweep: low hero shot of the tank → orbiting parade rise →
@@ -10,6 +10,20 @@ export const intro = { active:false, t:0, dur:6.0, camCurve:null, lookCurve:null
 export const _easeIO = u => u<0.5 ? 2*u*u : 1 - Math.pow(-2*u+2,2)/2;
 // Z119 the sweep stays lower and tighter (it used to rise to 20 m / 24 m back and draw the WHOLE field: 1,480 draw calls, 3M triangles)
 const OFFS=[[0.5,1.1,-8.5],[8,2.2,-5.5],[12,5,2],[7,8.5,12],[-4,12,17]], LOOKS=[[0,2.3,1.2],[0,2.1,0.3],[0,1.9,0],[0,1.5,0],[0,1.1,0],[0,1.0,0]];
+// Z140 BATTLEFIELD TOUR: fly over every point of interest — enemy forts (biggest last), the river bridges, our walled Core — then dive to the tank
+function buildTour(T){ const P=[], S0=S;
+  const forts=FORTS.slice().sort((a,b)=>Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
+  for(const f of forts) P.push({ x:f.x, z:f.z, h:f.tier===3?34:28, r:f.tier===3?30:24, txt:(f.tier===3?'ĐẠI BẢN DOANH ĐỊCH · ':'CỨ ĐIỂM ĐỊCH · ')+f.name });
+  if(RIVER.on) for(const b of RIVER.bridges.slice(0,2)) P.push({ x:b.x, z:b.z, h:20, r:18, txt:'CẦU QUA SÔNG — XE LỘI NƯỚC SẼ CHẬM' });
+  P.push({ x:0, z:0, h:26, r:26, txt:'LÕI CỦA TA — TƯỜNG THÀNH · PHÁO CANH SẴN SÀNG' });
+  if(P.length<2) return null;
+  // order: start from the stop farthest from the tank, sweep round, end on our Core, then down to the tank
+  const core0=P.pop(); P.sort((a,b)=>Math.hypot(b.x-T.x,b.z-T.z)-Math.hypot(a.x-T.x,a.z-T.z)); P.push(core0);
+  const cam=[], look=[], caps=[];
+  P.forEach((q,i)=>{ const a=Math.atan2(q.z-T.z, q.x-T.x)+(i%2?0.6:-0.6); cam.push(new THREE.Vector3(q.x-Math.cos(a)*q.r, q.h, q.z-Math.sin(a)*q.r)); look.push(new THREE.Vector3(q.x, 2, q.z)); caps.push(q.txt); });
+  const first=intro.camCurve.getPoint(0), firstL=intro.lookCurve.getPoint(0);
+  cam.push(T.clone().add(new THREE.Vector3(0, 16, 22)), first.clone()); look.push(T.clone().add(new THREE.Vector3(0,1.5,0)), firstL.clone());
+  return { cam:new THREE.CatmullRomCurve3(cam), look:new THREE.CatmullRomCurve3(look), caps, n:P.length, dur:Math.max(9, Math.min(18, P.length*2.6+2)) }; }
 export function startIntro(){
   const p=S.player; if(!p){ S.mode='playing'; return; }
   p.mesh.position.set(p.pos.x,0,p.pos.z); p.mesh.rotation.y=p.facing; p.turret.rotation.y=0;
@@ -19,10 +33,11 @@ export function startIntro(){
   intro.camCurve=mk(offs); intro.lookCurve=mk(LOOKS); intro.t=0; intro.active=true; intro.t0=performance.now()/1000;
   const sub=document.getElementById('cine-sub'); if(sub) sub.textContent=(S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'');
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
-  // Z119 cinematic view distance: the far end of the field is fogged out and not drawn at all during the sweep
-  if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; scene.fog.density=Math.max(scene.fog.density, INTRO.fog); }
-  cullFar(T, true);   // Z119 the far field is hidden while the camera sweeps (fog covers it; play's top-down view never sees it anyway)
-  camera.position.copy(intro.camCurve.getPoint(0)); camera.lookAt(intro.lookCurve.getPoint(0));
+  intro.tour = MOBILE ? null : buildTour(T); intro.tt=0;                       // Z140 desktop: a full 3D tour of the battlefield first (enemy forts → landmarks → our stronghold → your tank)
+  // Z119 cinematic view distance: the far end of the field is fogged out and not drawn at all during the sweep (phones only now — the tour needs the whole field)
+  if(!intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; scene.fog.density=Math.max(scene.fog.density, INTRO.fog); }
+  cullFar(T, true); }   // Z119 the far field is hidden while the camera sweeps (fog covers it; play's top-down view never sees it anyway)
+  if(intro.tour){ camera.position.copy(intro.tour.cam.getPointAt(0)); camera.lookAt(intro.tour.look.getPointAt(0)); } else { camera.position.copy(intro.camCurve.getPoint(0)); camera.lookAt(intro.lookCurve.getPoint(0)); }
   intro.warm=true; intro.warming=false; showVeil(true);   // Z119 compile every shader + draw the widest shot once BEHIND the veil, then fly
   S.mode='intro';
 }
@@ -56,6 +71,11 @@ export function updateIntro(dt, now){
   if(!intro.active) return;
   if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; showVeil(false); } }); }
     camera.position.copy(intro.camCurve.getPoint(0)); camera.lookAt(intro.lookCurve.getPoint(0)); return; }
+  if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + Math.min(dt,1/30)/R.dur); const u=_easeIO(intro.tt);
+    camera.position.copy(R.cam.getPointAt(u)); camera.lookAt(R.look.getPointAt(u));
+    const k=Math.min(R.n-1, Math.floor(u*(R.n+1))); const sub=document.getElementById('cine-sub'); if(sub && R.caps[k] && sub.textContent!==R.caps[k]) sub.textContent=R.caps[k];
+    if(intro.tt>=1){ intro.tour=null; const sub2=document.getElementById('cine-sub'); if(sub2) sub2.textContent=(S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:''); }
+    return; }
   intro.t=Math.min(1, intro.t + Math.min(dt, 1/30)/intro.dur);   // Z119 a slow frame slows the camera for a moment instead of making it jump
   const u=_easeIO(intro.t);
   camera.position.copy(intro.camCurve.getPoint(u));

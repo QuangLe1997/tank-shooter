@@ -588,5 +588,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/buildCity/.test(l) && /buildHills/.test(l) && /buildVillage/.test(l) && /carveRivers/.test(h) && /wetAt/.test(h), 'landmarks + river carving exist');
   ok(/_mbBusy/.test(b), 'menuBack cannot recurse'); }
 
+// Z140 regional strongholds, guard cannons, tour, events, flag fall, celebration
+{ const fs=await import('node:fs'); const r=fs.readFileSync('src/world/regional.js','utf8'), cw=fs.readFileSync('src/world/core-walls.js','utf8'), fo=fs.readFileSync('src/world/fortress.js','utf8'), it=fs.readFileSync('src/game/intro.js','utf8'), ev=fs.readFileSync('src/world/env-events.js','utf8'), ce=fs.readFileSync('src/fx/celebrate.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/export function fortStyle/.test(r) && /REGION_ALT/.test(r) && /laterite/.test(r) && /bamboo/.test(r), 'every biome has regional fort styles, several per map');
+  ok(/buildCoreWalls/.test(cw) && /updateCoreGuns/.test(cw) && /ours:true/.test(cw) && /bl\.ours && b\.owner==='p'/.test(lo), 'our walled core with guard cannons; our walls never stop our fire');
+  ok(/fortStyle\(BIOME\.name, fi\+\+\)/.test(fo) && /leaderless/.test(fo) && /animFlag/.test(fo), 'forts: own architecture each, commander down = no reinforcements, flag topples');
+  ok(/function buildTour/.test(it) && /flood\(|function flood/.test(ev) && /rockslide/.test(ev) && /collapse/.test(ev) && /export function celebrate/.test(ce), 'battlefield tour, land events and victory celebration exist'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

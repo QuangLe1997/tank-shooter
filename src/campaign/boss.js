@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 export let boss=null;
@@ -262,8 +262,9 @@ export function killBoss(now){
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
   S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1);   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
-  if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 1900); }
-  else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 1800); }
+  celebrate('victory', 0, 0);                                                         // Z140 fireworks, cheering troops — then the next screen
+  if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 5600); }
+  else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 5400); }
 }
 export function victory(){
   S.mode='victory';

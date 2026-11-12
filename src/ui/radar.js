@@ -23,7 +23,9 @@ export function drawRadar(){
   if(RALLY_PT.g){ c.strokeStyle='#9be04a'; c.lineWidth=1.6; c.beginPath(); c.arc(toX(RALLY_PT.x),toY(RALLY_PT.z),4,0,Math.PI*2); c.stroke(); }
   for(const f of FORTS){ if(!f.g) continue; const x=toX(f.x), y=toY(f.z), r=Math.max(5, f.R*scale);   // Z107 fortresses: red keep (amber = alerted, blue = sealed citadel, green = ours)
     c.strokeStyle = f.captured?'#9be04a':(fortSealed(f)?'#7fa8ff':(f.active?'#ffb35a':'#ff5a3a')); c.lineWidth=f.tier===3?2.6:2; c.strokeRect(x-r,y-r,r*2,r*2);
-    c.fillStyle=c.strokeStyle; c.globalAlpha=0.18; c.fillRect(x-r,y-r,r*2,r*2); c.globalAlpha=1; if(f.ox!=null && !f.breached){ c.fillRect(toX(f.ox)-1.5, toY(f.oz)-1.5, 3, 3); } }
+    c.fillStyle=c.strokeStyle; c.globalAlpha=f.captured?0.4:0.18; c.fillRect(x-r,y-r,r*2,r*2); c.globalAlpha=1; if(f.ox!=null && !f.breached){ c.fillRect(toX(f.ox)-1.5, toY(f.oz)-1.5, 3, 3); }
+    if(f.captured){ c.strokeStyle='#eaffd0'; c.lineWidth=2.2; c.beginPath(); c.moveTo(x-r*0.45,y); c.lineTo(x-r*0.1,y+r*0.4); c.lineTo(x+r*0.5,y-r*0.4); c.stroke(); }   // Z140 ✓ = ours
+    else { c.fillStyle=f.leaderless?'#ffcf5a':'#ff5a3a'; c.fillRect(x-0.6,y-r*0.7,1.2,r*1.2); c.beginPath(); c.moveTo(x+0.6,y-r*0.7); c.lineTo(x+r*0.6,y-r*0.5); c.lineTo(x+0.6,y-r*0.3); c.closePath(); c.fill(); } }   // enemy flag still flying (amber = commander dead)
   for(const w of POWS){ if(w.state==='free') continue; const x=toX(w.x), y=toY(w.z); c.strokeStyle=w.state==='open'?'#9be04a':'#ffcf5a'; c.lineWidth=1.6; c.beginPath(); c.moveTo(x,y-4.5); c.lineTo(x+4.5,y); c.lineTo(x,y+4.5); c.lineTo(x-4.5,y); c.closePath(); c.stroke(); }
   for(const d of DEPOTS){ const x=toX(d.x), y=toY(d.z); c.strokeStyle=d.state==='ours'?'#9be04a':(d.state==='open'?'#ffcf5a':'#ff6a4a'); c.lineWidth=1.6; c.strokeRect(x-4,y-4,8,8); if(d.kind==='motor'){ c.fillStyle=c.strokeStyle; c.fillRect(x-1.5,y-1.5,3,3); } }
   for(const h of HELOS){ c.strokeStyle='rgba(255,74,42,0.9)'; c.lineWidth=1.2; c.beginPath(); c.arc(toX(h.dx),toY(h.dz),5,0,Math.PI*2); c.stroke(); }

@@ -15,12 +15,12 @@ export function heightAt(x, z){
 }
 // Z139 RIVERS (VILLAGE): a meandering river + a stream are carved into the heightfield; a water plane sits in the bed; bridges lift the surface; the hull wades slowly
 export const RIVER = { on:false, y:-0.85, bridges:[], lines:[], mesh:null, deck:null };
-export function wetAt(x, z, m){ if(!RIVER.on) return false; if(heightAt(x,z)<-0.7) return true; const r=m||0; if(r<=0) return false;
-  for(const f of [0.4,0.7,1]) for(let k=0;k<8;k++){ const a=k*0.785; if(heightAt(x+Math.cos(a)*r*f, z+Math.sin(a)*r*f)<-0.7) return true; } return false; }   // rings round the point, so a wide structure never straddles water
+export function wetAt(x, z, m){ if(!RIVER.on) return false; const W=RIVER.y+0.15; if(heightAt(x,z)<W) return true; const r=m||0; if(r<=0) return false;
+  for(const f of [0.4,0.7,1]) for(let k=0;k<8;k++){ const a=k*0.785; if(heightAt(x+Math.cos(a)*r*f, z+Math.sin(a)*r*f)<W) return true; } return false; }   // rings round the point, so a wide structure never straddles water
 export function _hfMask(x, z){                                                   // keep the Core plaza, the spawn and the wall strip flat
   const dc=Math.hypot(x,z), ds=Math.hypot(x, z-ARENA*0.55), de=fieldDepth(x,z);   // Z106 flatten a strip inside the (irregular) fence
   const s=(v,a,b)=>Math.max(0,Math.min(1,(v-a)/(b-a)));
-  return s(dc,11,17)*s(ds,6,11)*s(de,3,8);
+  return s(dc,23,30)*s(ds,6,11)*s(de,3,8);   // Z140 the Core plaza is flat out past our compound walls (R 19)
 }
 // Z91 natural relief: mounds are irregular (lobed outline, rotated + stretched, a steeper lee face like real dunes/spoil heaps),
 // craters are torn — ragged lobed rim, deeper bowl with a flat floor, an ejecta apron thicker on the blast side and radial spoil rays.

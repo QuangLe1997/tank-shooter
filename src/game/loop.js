@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderer, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCmdUI, updateCore, updateCoreAlarm, updateCountdown, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWater, updateWaves, updateWeather, updateWorldBars, updateWrecks } from '../hub.js';
+import { APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderer, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWater, updateWaves, updateWeather, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -43,6 +43,8 @@ export function loop(nowMs){
     updateDrone(gdt, now);
     updateSoldiers(gdt, now);            // friendly squad guarding the Core
     updateFireteam(gdt, now); updateAllyDead(gdt);   // Z89 friendly fireteam + their APC (Z104: autonomous squad) · Z113 our fallen
+    updateCoreGuns(gdt, now);           // Z140 guard cannons on our bastions
+    updateEnvEvents(gdt, now);          // Z140 floods · rockslides · collapses · weather surges
     updateAllyTanks(gdt, now); updatePOWs(gdt, now); updateDepots(gdt, now); updateRally(gdt, now); updateParadrops(gdt, now);   // Z104 allied tanks · POW stockades · depots · rally point · paratroopers
     updateRiders(gdt, now);              // crew mounted on the player's tank
     updateCmdUI(now);                    // Z107 paratrooper cooldown on the phone strip
@@ -63,7 +65,7 @@ export function loop(nowMs){
   // always-on FX + core idle
   if(S.mode!=='playing'){ gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
-  updateCore(dt, now); updateCoreAlarm(now);
+  updateCore(dt, now); updateCoreAlarm(now); updateCelebration(dt, now);   // Z140 fireworks + cheering after a win
   updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateWrecks(dt); updateFlameJet(dt); updateRocketAim(now); flushParticles();
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   if(HF.dirty){ HF.dirty=false; syncTerrainMesh(HF.dj0, HF.dj1); HF.dj0=HF.dj1=undefined; }   // apply this frame's new craters (one rebuild max)

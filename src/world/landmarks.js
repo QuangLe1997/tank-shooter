@@ -18,7 +18,7 @@ function dummy(){ return LAND.dummy||(LAND.dummy=new THREE.Object3D()); }
 export function clearLandmarks(){ for(const m of LAND.meshes){ m.parent && m.parent.remove(m); if(m.geometry) m.geometry.dispose(); if(m.isInstancedMesh) m.dispose(); } LAND.meshes.length=0; }
 const add=(m)=>{ arena.add(m); LAND.meshes.push(m); return m; };
 const claim=(x,z,r)=>ZONES.push({ kind:'landmark', x, z, r });   // later scatter (cover, camps, depots) keeps clear
-const solid=(x,z,r,kind,mesh)=>blocks.push({ mesh:mesh||dummy(), x, z, r, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind });   // indestructible cover, like concrete
+const solid=(x,z,r,kind,mesh,land)=>blocks.push({ mesh:mesh||dummy(), x, z, r, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind, land:land||null });   // indestructible cover, like concrete
 const free=(x,z,r)=>inField(x,z,r+2) && !inZone(x,z,r) && Math.hypot(x,z)>r+17 && Math.hypot(x,z-ARENA*0.55)>r+11 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+r+1.5);
 
 // ---------------- CITY ----------------
@@ -36,7 +36,8 @@ function buildCity(){
     { const ac=new THREE.Mesh(new THREE.BoxGeometry(2,1,1.6), new THREE.MeshStandardMaterial({ color:0x8a8e92, roughness:0.7 })); ac.position.set(_R(-w/4,w/4), h/2+0.5, _R(-d/4,d/4)); m.add(ac);   // rooftop unit
       const par=new THREE.Mesh(new THREE.BoxGeometry(w+0.5,0.5,d+0.5), new THREE.MeshStandardMaterial({ color:0x6a6c70, roughness:0.9 })); par.position.y=h/2+0.05; m.add(par); }
     const ca=Math.cos(rot), sa=Math.sin(rot);                                              // circle blocks tile the footprint (3 m grid)
-    let first=true; for(let a=-w/2+1.6;a<=w/2-1.2;a+=3) for(let b=-d/2+1.6;b<=d/2-1.2;b+=3){ const bx=x+a*ca+b*sa, bz=z-a*sa+b*ca; solid(bx,bz,2.35,'building', first?m:null); first=false; }
+    let first=true; for(let a=-w/2+1.6;a<=w/2-1.2;a+=3) for(let b=-d/2+1.6;b<=d/2-1.2;b+=3){ const bx=x+a*ca+b*sa, bz=z-a*sa+b*ca; solid(bx,bz,2.35,'building', first?m:null, m); first=false; }
+    m.userData.h=h; m.userData.land=true;
     claim(x,z,R*0.95+1); built++; }
   // cars left in the streets (scenery): merged coloured boxes
   const P=[], cols=[0x7a2a26,0x2a4a7a,0xc8c2b0,0x3a3d40,0x6a7a3a]; for(let k=0;k<Math.round(26*AREA_K/3);k++){ const x=_R(-ARENA+10,ARENA-10), z=_R(-ARENA+10,ARENA-10); if(!free(x,z,2.4)) continue;

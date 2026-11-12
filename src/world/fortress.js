@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FORT, COMMAND, GUN_MODS } from '../../config.js';
-import { ALLY_TANKS, ARENA, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, modDrop, ownGun, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towers, unwave } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, fortStyle, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, modDrop, ownGun, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -48,8 +48,8 @@ function pieceGeo(){ if(_pieceGeo) return _pieceGeo; const H=FORT.wallH, TH=FORT
   _pieceGeo=mergeGeometries(parts.map(q=>q.index?q.toNonIndexed():q), false); parts.forEach(q=>q.dispose()); return _pieceGeo; }
 
 // ---- raise every planned fortress (called from buildZones, after the watchtowers) ----
-export function buildForts(){ mats();
-  for(const f of FORTS){ const T=FORT.tiers[f.tier], gy=flattenFort(f.x, f.z, f.R); f.gy=gy;
+export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z140 the walls are built the way this land builds them — and no two forts alike
+  for(const f of FORTS){ const ST=fortStyle(BIOME.name, fi++), WM=wallMat(ST); f.style=ST; const T=FORT.tiers[f.tier], gy=flattenFort(f.x, f.z, f.R); f.gy=gy;
     const g=new THREE.Group(); g.position.set(f.x, gy, f.z); scene.add(g); f.g=g;
     const sides=T.sides[(Math.random()*T.sides.length)|0], rot=Math.random()*Math.PI, H=FORT.wallH, TH=FORT.wallT;
     const ga=Math.atan2(ARENA*0.55-f.z, -f.x);                          // the gate faces our side of the field
@@ -63,10 +63,13 @@ export function buildForts(){ mats();
         for(let k=0;k<n;k++){ const sc=s0+pl*(k+0.5), cx=x0+ux*sc, cz=z0+uz*sc, hp=Math.round(wallHp);      // Z107 a wall SECTION: own HP, own instance — it can be rammed / shelled down
           const pc={ i:f.pieces.length, cx, cz, ry, pl, prev, next:null, ux, uz }; if(prev) prev.next=pc; prev=pc; f.pieces.push(pc);
           const b={ mesh:g, x:f.x+cx, z:f.z+cz, r:Math.max(1.75, pl*0.58), hp, maxHp:hp, steel:false, loot:false, kind:'fortwall', fort:f, piece:pc }; pc.block=b; blocks.push(b); } } }
-    for(const [vx,vz] of V) geos.push(placed(stoneBox(TH*1.25, H+2.6, TH*1.25), vx, (H+0.6)/2-1, vz, 0));   // corner piers (solid)
+    for(const [vx,vz] of V){ if(ST.round){ const dr=new THREE.CylinderGeometry(1.75, 2.0, H+3.6, 14); dr.translate(vx, (H+3.6)/2-1, vz); geos.push(dr);   // Z140 round drum towers on alternate forts
+        const rf=new THREE.Mesh(towerRoof(ST, 3.4, H+2.6), capMat); rf.position.set(vx,0,vz); rf.castShadow=true; g.add(rf); }
+      else geos.push(placed(stoneBox(TH*1.25, H+2.6, TH*1.25), vx, (H+0.6)/2-1, vz, 0)); }   // corner piers (solid)
     // gatehouse: two square towers flanking the gate + a lintel over it
     { const [x0,z0]=V[gi], [x1,z1]=V[(gi+1)%sides], L=Math.hypot(x1-x0,z1-z0), ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), mx=(x0+x1)/2, mz=(z0+z1)/2;
       for(const s of [-1,1]){ const px=mx+ux*s*(FORT.gateW/2+1.4), pz=mz+uz*s*(FORT.gateW/2+1.4); geos.push(placed(stoneBox(2.8, H+5, 2.8), px, (H+3)/2, pz, ry));
+        { const rf=new THREE.Mesh(towerRoof(ST, 2.8, H+3.9), capMat); rf.position.set(px,0,pz); rf.rotation.y=ry; rf.castShadow=true; g.add(rf); }   // Z140 regional gate-tower roof
         for(const q of [[-1,-1],[1,-1],[-1,1],[1,1]]) geos.push(placed(stoneBox(0.8,0.9,0.8), px+q[0]*1.0, H+3.45, pz+q[1]*1.0, 0)); }
       geos.push(placed(stoneBox(FORT.gateW+0.4, 1.6, TH*1.1), mx, H+0.4, mz, ry));
       const nx=-uz, nz=ux, sg=Math.sign(nx*mx+nz*mz)||1, onx=nx*sg, onz=nz*sg;                       // the outward normal (away from the centre)
@@ -82,9 +85,10 @@ export function buildForts(){ mats();
       blocks.push(b); f.gate=b; f.leaves=leaves; f.gx=gx; f.gz=gz; f.ox=gx+onx*7; f.oz=gz+onz*7;          // f.ox/oz = just outside the gate (sally point)
       f.ix=gx-onx*7; f.iz=gz-onz*7; f.gux=ux; f.guz=uz; f.gateShut=true; f.gv=0; f.openUntil=0; f.posture='idle'; f.postAt=0;   // Z111b f.ix/iz = just inside: troops form up here, the gate swings open, they march out
       f.bar=getEnemyBar(); f.bar.g.scale.setScalar(4.2); }
-    const wall=new THREE.Mesh(mergeGeometries(geos.map(q=>q.index?q.toNonIndexed():q), false), _stone); geos.forEach(q=>q.dispose()); wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
-    { const im=new THREE.InstancedMesh(pieceGeo(), _stone, f.pieces.length); for(const pc of f.pieces){ _m.compose(_p.set(pc.cx,0,pc.cz), _q.setFromAxisAngle(_up, pc.ry), _s.set(pc.pl/FORT.seg+0.02,1,1)); im.setMatrixAt(pc.i, _m); }
-      im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; im.receiveShadow=true; g.add(im); f.wallIM=im; }   // every wall section in ONE draw call
+    const wall=new THREE.Mesh(mergeGeometries(geos.map(q=>q.index?q.toNonIndexed():q), false), WM); geos.forEach(q=>q.dispose()); wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
+    { const im=new THREE.InstancedMesh(pieceGeo(), WM, f.pieces.length); for(const pc of f.pieces){ _m.compose(_p.set(pc.cx,0,pc.cz), _q.setFromAxisAngle(_up, pc.ry), _s.set(pc.pl/FORT.seg+0.02,1,1)); im.setMatrixAt(pc.i, _m); }
+      im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; im.receiveShadow=true; g.add(im); f.wallIM=im;
+      const cg=capGeo(ST, H, TH, FORT.seg); if(cg){ const ci=new THREE.InstancedMesh(cg, capMat, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); ci.setMatrixAt(pc.i, _m); } ci.instanceMatrix.needsUpdate=true; ci.computeBoundingSphere(); ci.castShadow=true; g.add(ci); f.capIM=ci; } }   // every wall section in ONE draw call · Z140 + its regional cap (stakes / snow / wire / tiles)
     // corner watchtowers (real towers: guards, collapse, loot)
     const tw=[]; for(let i=0;i<sides && tw.length<T.towers;i++){ const k=(gi+1+Math.round(i*sides/T.towers))%sides; const [vx,vz]=V[k]; tw.push([f.x+vx*0.86, f.z+vz*0.86]); }
     for(const [x,z] of tw) buildTower(x, z);
@@ -96,15 +100,18 @@ export function buildForts(){ mats();
     const pt={ g, body, x:f.x, z:f.z, guards, sl:new THREE.Object3D(), beam:{ material:{ opacity:0 } }, wm:null, hp:Infinity, falling:false, fort:f };
     towers.push(pt); f.pt=pt;
     // banner of the garrison over the keep + a name board
-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,9,6), _iron); pole.position.set(0, 4.5, 0); g.add(pole);
-    const fl=makeFlag(campFlagTex(), 3.2, 2.0, 1); fl.position.set(0, 8.2, 0); g.add(fl); f.flag=fl;
+    { const PH=f.tier===3?22:16, fg=new THREE.Group(); g.add(fg); f.flagG=fg; f.flagH=PH;                      // Z140 a tall flagpole over the keep (it topples when the fort falls)
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.9,1.2,1.2,10), _iron); base.position.y=0.6; g.add(base);
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,PH,8), _iron); pole.position.set(0, PH/2, 0); pole.castShadow=true; fg.add(pole);
+      const ball=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8), new THREE.MeshStandardMaterial({ color:0xc8a040, metalness:0.8, roughness:0.3 })); ball.position.y=PH+0.2; fg.add(ball);
+      const fl=makeFlag(campFlagTex(), f.tier===3?5.4:4.4, f.tier===3?3.4:2.8, 1); fl.position.set(0, PH-1.8, 0); fg.add(fl); f.flag=fl; }
     // inner cover: sandbag lines, crates, HESCO and concrete — room to fight, things to duck behind
     { const nC=Math.round(R2(T.cover)*(MOBILE?0.7:1)), kinds=['sandbag','crates','sandbag','hesco','concrete','drums'], gA=Math.atan2(f.gz-f.z, f.gx-f.x);
       for(let k=0,t=0;k<nC && t<nC*8;t++){ const a=Math.random()*Math.PI*2, r=f.R*(0.32+Math.random()*0.46); if(Math.abs(Math.atan2(Math.sin(a-gA),Math.cos(a-gA)))<0.35 && r>f.R*0.5) continue;   // keep the gate lane open
         const x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(blocks.some(b=>b.fort===f && b.kind==='cover' && Math.hypot(b.x-x,b.z-z)<5)) continue;
         const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, !steel); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
         const hp=steel?Infinity:(COVER_HP[kind]||70); blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }
-    f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(0, 12.5, 0); g.add(f.label);
+    f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(0, (f.flagH||12)+3, 0); g.add(f.label);
     const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)), tank:RI(T.tanks)+(st0>=3?1:0) };
     f.sallyAt=performance.now()/1000+R2(FORT.sally)*(0.6+Math.random()*0.6);
   }
@@ -123,7 +130,7 @@ export function fortWallDamage(b, dmg, ram){ const f=b.fort; if(!f || !blocks.in
   burst({x:b.x,z:b.z}, 0xa89a84, ram?6:2, ram?6:3, {y:f.gy+1+Math.random()*3, life:0.6, size:ram?0.5:0.3, grav:-16, drag:1.4, up:2.5});
   if(b.hp<=0){ collapsePiece(f, b.piece, now); const pc=b.piece, nb=[pc.prev, pc.next].filter(q=>q && blocks.includes(q.block)).sort((a,c)=>a.block.hp-c.block.hp)[0]; if(nb) collapsePiece(f, nb, now); } }
 function collapsePiece(f, pc, now){ const b=pc.block, i=blocks.indexOf(b); if(i<0) return; blocks.splice(i,1); pc.down=true; f.lastBreach=pc;
-  _m.makeScale(0,0,0); f.wallIM.setMatrixAt(pc.i, _m); f.wallIM.instanceMatrix.needsUpdate=true;
+  _m.makeScale(0,0,0); f.wallIM.setMatrixAt(pc.i, _m); f.wallIM.instanceMatrix.needsUpdate=true; if(f.capIM){ f.capIM.setMatrixAt(pc.i, _m); f.capIM.instanceMatrix.needsUpdate=true; }
   const pos={x:b.x, z:b.z}; bigExplode(pos, 0xc8b49a, 1.6); for(let k=0;k<4;k++) spawnDebris(pos, 1.2, 0x8a8070);
   burst(pos, 0xb8a888, 10, 4, {y:f.gy+1.5, life:1.6, size:2.6, smoke:true, grav:-0.4, drag:1.6, up:1.8, op:0.55}); S.shake=Math.min(3, S.shake+1.1); sfx('bigexplode');
   for(const gd of (f.pt?f.pt.guards:[])){ if(gd.alive && gd.wx!=null && Math.hypot(gd.wx-b.x, gd.wz-b.z)<pc.pl*0.75) dropGuard(f.pt, gd, (gd.wx-f.x)/f.R, (gd.wz-f.z)/f.R); }   // the men on it come down with it
@@ -253,9 +260,16 @@ function sally(f, now){ f.sallyAt=now+R2(FORT.sally)*(f.tier===3?0.8:1);
 export function fortSpawnPoint(){ const alive=FORTS.filter(f=>!f.captured && f.g && f.posture!=='hold' && !fortSealed(f)); if(!alive.length || Math.random()>FORT.fromGate) return null;
   const p=S.player; alive.sort((a,b)=>Math.hypot(a.ox-p.pos.x,a.oz-p.pos.z)-Math.hypot(b.ox-p.pos.x,b.oz-p.pos.z)); const f=alive[Math.random()<0.6?0:(Math.random()*alive.length)|0];
   return { x:f.ix+(Math.random()-0.5)*3, z:f.iz+(Math.random()-0.5)*3, fort:f }; }
+// Z140 the enemy pole topples (1.4 s), then our flag rises up a fresh pole
+function animFlag(f, dt){ const F=f.flagFall, G=f.flagG; F.t+=dt;
+  if(F.t<1.4){ const k=Math.min(1, F.t/1.4), e=k*k; G.rotation.set(Math.sin(F.dir)*e*1.45, 0, Math.cos(F.dir)*e*1.45); if(k>=0.99){ S.shake=Math.max(S.shake,0.6); burst({x:f.x+Math.cos(F.dir)*f.flagH*0.7, z:f.z-Math.sin(F.dir)*f.flagH*0.7}, 0x8a7a60, 6, 5, { y:0.5, life:1.2, size:1.8, smoke:true, grav:-0.3, drag:1.6, up:1.2, op:0.5 }); sfx('clang'); } return; }
+  if(!F.ours){ F.ours=true; unwave(f.flag); f.g.remove(G); const ng=new THREE.Group(); f.g.add(ng); f.flagG=ng;
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,f.flagH,8), _iron); pole.position.y=f.flagH/2; ng.add(pole);
+    const fl=makeFlag(vnTex(), 4.4, 2.8, 1); fl.position.set(0, f.flagH-1.8, 0); ng.add(fl); f.flag=fl; ng.scale.set(1,0.01,1); }
+  const u=Math.min(1,(F.t-1.6)/1.6); if(u>0) f.flagG.scale.y=Math.max(0.01,u); if(u>=1) f.flagFall=null; }
 // ---- capture: the commander is dead → the fortress is ours, its treasury opens ----
 function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false;
-  unwave(f.flag); f.g.remove(f.flag); const fl=makeFlag(rallyFlagTex(), 3.2, 2.0, 1); fl.position.set(0, 8.2, 0); f.g.add(fl); f.flag=fl;
+  if(f.flagG){ f.flagFall={ t:0, dir:Math.random()*6.28 }; } else { unwave(f.flag); f.g.remove(f.flag); const fl=makeFlag(rallyFlagTex(), 3.2, 2.0, 1); fl.position.set(0, 8.2, 0); f.g.add(fl); f.flag=fl; }   // Z140 the enemy colours come crashing down
   if(f.label){ f.label.material.opacity=0.45; }
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);
   if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } if(!f.breached){ f.breached=true; const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); for(const L of f.leaves) L.open=0.001; }
@@ -265,7 +279,7 @@ function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false
   for(let k=0;k<GUN_MODS.fortDrops;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2, modDrop());   // Z115 the armoury: a gun part
   let gunTx=''; if(Math.random()<L.gunChance*f.tier){ const not=Object.keys(GUNS).filter(id=>!PROFILE.ownedGuns.includes(id) && GUNS[id].tier && GUNS[id].tier<=1+f.tier); if(not.length){ const id=not[(Math.random()*not.length)|0]; ownGun(id); gunTx=' · SÚNG MỚI: '+GUNS[id].name; } }
   saveProfile();
-  bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup');
+  bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup'); celebrate('fort', f.x, f.z);   // Z140 fireworks over the taken fort
   showBanner('ĐÃ CHIẾM '+f.name+'!  +'+coins+' xu · +'+dia+' ◆'+gunTx, '#8cbf3f');
   const left=fortsLeft(); radio(left ? ('Còn '+left+' đại bản doanh. '+(left===1 && mainFort() && !mainFort().captured ? 'Cổng '+mainFort().name+' đã mở phong toả!' : 'Tiếp tục tiến công!')) : 'Mọi đại bản doanh đã thất thủ!'); }
 // the citadel falls with its commander — the stage boss (boss.js kills → stage clear)
@@ -277,14 +291,16 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
     updateGate(f, dt, now);
     if(f.hitT>0){ f.hitT-=dt; f.gate && (f.gate.mesh.position.x += (Math.random()-0.5)*0.04); }
     if(f.bar && f.gate){ const k=Math.max(0, f.gate.hp/f.gate.maxHp); f.bar.g.position.set(f.gx, f.gy+FORT.wallH+3.6, f.gz); f.bar.g.quaternion.copy(camera.quaternion); f.bar.fill.scale.x=Math.max(0.001,k); f.bar.fill.position.x=-(1-k)*0.5; f.bar.fill.material.color.setHex(fortSealed(f)?0x7fa8ff:(k>0.5?0xffcf5a:0xff6a4a)); }
+    if(f.flagFall) animFlag(f, dt);
     if(f.captured){ checkCleared(f, now); continue; }
     const d=Math.hypot(p.pos.x-f.x, p.pos.z-f.z);
     if(!f.active && d<FORT.wakeR+f.R) wakeFort(f, now);
-    if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; refill(f); escortFollow(f); }
+    if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; if(!f.leaderless) refill(f); else f.units=f.units.filter(e=>enemies.includes(e)); escortFollow(f); }
       for(const e of f.units){ const H=e.hold; if(!H || e.def.inf) continue; const dx=e.pos.x-H.x, dz=e.pos.z-H.z, q=Math.hypot(dx,dz); if(q>H.r){ e.pos.x=H.x+dx/q*H.r; e.pos.z=H.z+dz/q*H.r; e.vel.multiplyScalar(0.2); } }   // tanks stay behind the walls until the gate falls
-      updatePosture(f, now); if(f.posture==='sally') sortie(f, now);
-      if(f.cmd && !enemies.includes(f.cmd)) capture(f, now); }
-    if(now>f.sallyAt) sally(f, now);
+      updatePosture(f, now); if(f.posture==='sally' && !f.leaderless) sortie(f, now);
+      if(f.cmd && !enemies.includes(f.cmd) && !f.leaderless){ f.leaderless=true; showBanner('TƯỚNG '+f.name+' ĐÃ CHẾT — DIỆT NỐT QUÂN TRONG THÀNH!', '#ffcf5a'); radio('SCH: Tướng giữ '+f.name+' đã bị hạ. Quét sạch quân còn lại — thành sẽ không còn được tiếp viện!'); }   // Z140 commander down → no more reinforcements
+      if(f.leaderless && !f.units.some(e=>enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R+1)) capture(f, now); }   // … and the last defender inside is gone → the fort falls
+    if(now>f.sallyAt && !f.leaderless) sally(f, now);
   }
 }
 // HUD: one line per fortress — name · gate % / sealed / garrison stirred / ours (written only when it changes)
