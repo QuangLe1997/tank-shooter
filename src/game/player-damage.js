@@ -81,6 +81,8 @@ export function respawnPlayer(now){
 export function gameOver(reason){
   if(S.mode==='gameover') return;
   S.mode='gameover';
+  { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
+    if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — xe bị hạ khi không còn lượt hồi sinh' : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù xe còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
   document.getElementById('go-score').textContent=S.score.toLocaleString();
   document.getElementById('go-stage').textContent=S.stage;
   document.getElementById('go-wave').textContent=S.wave;

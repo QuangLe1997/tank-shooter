@@ -251,3 +251,6 @@ body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only o
 #lobHud{position:fixed;left:50%;bottom:calc(max(6px,env(safe-area-inset-bottom)) + 30px);transform:translateX(-50%);z-index:30;display:none;padding:4px 14px;border-radius:999px;background:rgba(8,10,8,.62);border:1px solid rgba(255,210,122,.45);font:800 12px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.6px;color:#ffd27a;pointer-events:none;white-space:nowrap;}
 body.pad.padplay.lob:not(.inmenu) #lobHud{display:block;}
 .pv-live{margin-top:6px;text-align:center;font:800 13px/1.3 'Saira Condensed',Rajdhani,sans-serif;color:#9be04a;letter-spacing:.5px;}
+
+/* Z133 why the battle was lost */
+.go-why{max-width:min(92vw,520px);margin:-4px auto 10px;text-align:center;font:700 14px/1.35 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.4px;color:#cfd8c0;} .go-why b{color:#ffb35a;}
