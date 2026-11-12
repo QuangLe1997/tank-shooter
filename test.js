@@ -551,5 +551,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/\['zoomPing'.*?,17,0\]/.test(cfg) && /\['camTurn'.*?,18,0\]/.test(cfg) && /function dbl\(/.test(b), 'back paddles M1 / M2 = zoom ping-pong / rotate, double tap = reset');
   ok(/fireHeld/.test(g) && /padplay/.test(g) && /body\.pad\.padplay/.test(css), 'a held trigger cannot keep shooting behind a menu; legends only show in a live battle'); }
 
+// Z129 default gun
+{ const fs=await import('node:fs'); const fl=fs.readFileSync('src/combat/flame.js','utf8'), fw=fs.readFileSync('src/game/flow.js','utf8'), g=fs.readFileSync('src/input/gamepad.js','utf8');
+  ok(!/p\.guns\.push\(\{id, ammo:magCap\(g\), rU:0, rD:0\}\); p\.gunIdx=/.test(fl), 'a gift gun does not take over the hands');
+  ok(/defaultGunIdx\(\)/.test(fw) && /selectDefaultGun/.test(fl) && /'gunDefault'/.test(g), 'start with the default gun; LB+RB jumps back to it'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

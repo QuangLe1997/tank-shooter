@@ -9,13 +9,16 @@ export function renderLoadout(){
     const g=GUNS[id], owned=PROFILE.ownedGuns.includes(id), on=_ldSel.includes(id);
     const card=document.createElement('div');
     card.className='ldcard'+(owned?'':' locked')+(on?' on':'');
-    const num = on ? ('<div class="num">'+(_ldSel.indexOf(id)+1)+'</div>') : '';
-    card.innerHTML = num+'<div class="pick"></div><div class="gi">'+svgMarkup(g.svg||'gun')+'</div><div class="nm">'+g.name+'</div><div class="tr">BẬC '+g.tier+'</div>';
-    if(owned) tapEl(card, ()=>toggleLd(id));
+    const num = on ? ('<div class="num">'+(_ldSel.indexOf(id)+1)+'</div>') : '', star = on ? ('<div class="dflt'+(dflt()===id?' is':'')+'" title="Súng mặc định (bắt đầu trận với súng này)">'+(dflt()===id?'★ MẶC ĐỊNH':'☆')+'</div>') : '';
+    card.innerHTML = num+star+'<div class="pick"></div><div class="gi">'+svgMarkup(g.svg||'gun')+'</div><div class="nm">'+g.name+'</div><div class="tr">BẬC '+g.tier+'</div>';
+    if(owned){ tapEl(card, ()=>toggleLd(id)); const st=card.querySelector('.dflt'); if(st) { st.addEventListener('click', e=>{ e.stopPropagation(); setDefaultGun(id); }); st.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); setDefaultGun(id); }, {passive:false}); } }
     grid.appendChild(card);
   });
   const c=document.getElementById('ldcount'); if(c) c.textContent=_ldSel.length+'/'+LOADOUT_MAX;
 }
+// Z129 the DEFAULT gun: first in hand every battle, and what LB+RB (or key 0) jumps back to. Always one of the selected loadout.
+export function dflt(){ return _ldSel.includes(PROFILE.defaultGun) ? PROFILE.defaultGun : _ldSel[0]; }
+export function setDefaultGun(id){ if(!_ldSel.includes(id)) return; PROFILE.defaultGun=id; saveProfile(); sfx('click'); renderLoadout(); }
 export function toggleLd(id){ const i=_ldSel.indexOf(id);
   if(i>=0){ if(_ldSel.length>1) _ldSel.splice(i,1); }        // keep at least one weapon
   else { if(_ldSel.length>=LOADOUT_MAX) return; _ldSel.push(id); }
@@ -29,7 +32,7 @@ export function applyLoadoutToRun(){                                  // re-pick
   if(p.gunIdx>=p.guns.length) p.gunIdx=0;
   updateGunHUD();
 }
-export function closeLoadout(){ PROFILE.loadout=_ldSel.slice(0,LOADOUT_MAX); if(!PROFILE.loadout.length)PROFILE.loadout=['rifle']; saveProfile(); hide('loadout');
+export function closeLoadout(){ PROFILE.loadout=_ldSel.slice(0,LOADOUT_MAX); if(!PROFILE.loadout.length)PROFILE.loadout=['rifle']; PROFILE.defaultGun=dflt()||'rifle'; saveProfile(); hide('loadout');
   if(_ldFrom==='pause'){ applyLoadoutToRun(); if(S.mode==='paused') show('pause'); }   // changes take effect on the current run
   else if(S.mode==='start') show('start');
   refreshStartUI(); sfx('click'); }

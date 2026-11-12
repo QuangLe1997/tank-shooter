@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, heightAt, magCap, muzzleFlash, muzzleLight, ownGun, playerRange, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, heightAt, magCap, muzzleFlash, muzzleLight, ownGun, playerRange, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -172,10 +172,13 @@ export function fireGun(now, range){
   updateGunHUD();
 }
 export function selectGun(i){ const p=S.player; if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.readyUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }   // keep each gun's own reload running
+// Z129 the DEFAULT gun (PROFILE.defaultGun, picked in the arsenal with the ★): the one you start with, and the one LB+RB together jumps back to
+export function defaultGunIdx(){ const p=S.player; if(!p||!p.guns.length) return 0; const i=p.guns.findIndex(g=>g.id===PROFILE.defaultGun); return i>=0 ? i : 0; }
+export function selectDefaultGun(){ const p=S.player; if(!p||!p.guns.length) return; const i=defaultGunIdx(); if(p.gunIdx!==i) selectGun(i); floatText('SÚNG MẶC ĐỊNH · '+(GUNS[p.guns[i].id]||{name:''}).name, '#ffd24a', p.pos, 15); }
 export function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; selectGun((p.gunIdx+d+p.guns.length)%p.guns.length); }
 export function giveGun(id){
   const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
-  if(inst){ inst.ammo=magCap(g); inst.rU=0; } else { p.guns.push({id, ammo:magCap(g), rU:0, rD:0}); p.gunIdx=p.guns.length-1; }
+  if(inst){ inst.ammo=magCap(g); inst.rU=0; } else { p.guns.push({id, ammo:magCap(g), rU:0, rD:0}); }   // Z129 a gift gun joins the rack — it does NOT take over your hands
   const fresh = ownGun(id);                                  // remember it in the permanent arsenal (persists across runs)
   if(fresh){ floatText(g.name+' — MỚI!', '#ffd24a', p.pos, 22); }   // first time ever → brand-new weapon
   else { addGunXp(id); }                                     // already own it → the duplicate feeds MASTERY (level up the gun)

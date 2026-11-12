@@ -2,7 +2,7 @@
 //   (read from the binding table, so it follows rebinding). Used in the key sheet, in Settings → Tay cầm and in the layout wizard, where the control being asked for pulses.
 //   While it is on screen the real pad drives it: pressed buttons light up, the sticks move.
 import { ACTIONS } from '../../config.js';
-import { PAD, WIZ, escapeHtml, padFor } from '../hub.js';
+import { PAD, PAD_NAMES, WIZ, escapeHtml, padFor } from '../hub.js';
 
 const esc=escapeHtml; let _n=0;
 const FACE={ 0:['A','#5fbf3a'], 1:['B','#e05243'], 2:['X','#4a8fe0'], 3:['Y','#e9bd2f'] };
@@ -58,7 +58,8 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
   return svg.replace(/#(BODY|RIM|TG|CAP|SH|DROP)\b/g, '#'+u+'$1').replace(/id="(BODY|RIM|TG|CAP|SH|DROP)"/g, 'id="'+u+'$1"'); }
 
 // live view: pressed buttons light up, sticks move, the wizard's current target pulses (one shared timer; only touches diagrams that are on screen)
-function tick(){ const L=document.querySelectorAll('.pad-svg'); if(!L.length) return; const cur=PAD.prev||[], live=PAD.active && !WIZ.on, tg=WIZ.on ? WIZ.tgt : null;
+function tick(){ const L=document.querySelectorAll('.pad-svg'); if(!L.length) return;
+  { const el=document.getElementById('padLive'); if(el && el.offsetParent){ const c=PAD.prev||[], P=[]; for(let i=0;i<c.length;i++) if(c[i]) P.push((PAD_NAMES[i]||'nút '+i)+' (#'+i+')'); const t=PAD.active ? (P.length ? 'Đang nhận: '+P.join(' + ') : 'Tay cầm đã kết nối ('+c.length+' nút) — bấm thử từng nút, kể cả 2 nút sau') : 'Chưa nhận tay cầm — bấm một nút bất kỳ'; if(t!==el.textContent) el.textContent=t; } } const cur=PAD.prev||[], live=PAD.active && !WIZ.on, tg=WIZ.on ? WIZ.tgt : null;
   for(const s of L){ if(!s.getClientRects().length) continue;
     s.querySelectorAll('[data-b]').forEach(e=>{ const b=+e.dataset.b, on=live && !!cur[b]; e.classList.toggle('on', on); e.classList.toggle('tgt', tg===b); });
     s.querySelectorAll('[data-lb]').forEach(e=>e.classList.toggle('on', live && !!cur[+e.dataset.lb]));

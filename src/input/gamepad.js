@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { PAD_CFG, FEEL } from '../../config.js';
 import { MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, equippedGun, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
-export const PAD = { fireHeld:false, lobR:0, lobO:0, lobOn:false, fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
+export const PAD = { gunCombo:false, fireHeld:false, lobR:0, lobO:0, lobOn:false, fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k]; return p; }
 // radial dead zone, rescaled so the stick still reaches 1 at the rim (no dead band felt past the edge)
 function dz(x, y, d){ const m=Math.hypot(x,y); if(m<d) return [0,0]; const k=Math.min(1,(m-d)/(1-d))/m; return [x*k, y*k]; }
@@ -79,6 +79,7 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
     if(cur[BT.VIEW] && CAMC[i]){ if(down(i)){ PAD.viewCombo=true; runAction(CAMC[i], 'down'); } continue; }                      // Z124 hold ⧉ View + D-pad = camera (↑ in · ↓ out · ←→ rotate)
     const a=actionForPad(i);
     if(i===BT.VIEW && a==='keys'){ if(up(i) && !PAD.viewCombo) runAction('keys', 'down'); continue; }                           // ⧉ alone opens the key sheet on release
+    if((i===BT.LB || i===BT.RB) && down(i) && cur[i===BT.LB ? BT.RB : BT.LB]){ runAction('gunDefault','down'); PAD.gunCombo=true; continue; }   // Z129 LB + RB together = back to the default gun
     if(a==='fire') PAD.fireHeld=down(i);
     if(a) runAction(a, down(i)?'down':'up'); }
   padHud(now);
@@ -88,7 +89,7 @@ const CAMC={ 12:'zoomIn', 13:'zoomOut', 14:'rotL', 15:'rotR' };
 const HUD_IDS=[['crew','LÍNH'],['autoFire','TỰ BẮN'],['gunPrev','SÚNG−'],['gunNext','SÚNG+'],['muster','TẬP KẾT'],['assault','XUNG PHONG'],['para','LÍNH DÙ'],['autoAim','TỰ NGẮM'],['camAuto','CAM TỰ ĐỘNG'],['zoomPing','ZOOM (2× = reset)'],['camTurn','XOAY CAM (2× = reset)']];
 function padHud(now){ if(now<(PAD.hudAt||0)) return; PAD.hudAt=now+0.6; const el=document.getElementById('padHud'); if(!el) return;
   const sig=HUD_IDS.map(([id])=>padFor(id)).join(','); if(sig===PAD.hudSig) return; PAD.hudSig=sig;
-  el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>⧉ + D-pad</b>XOAY CAM</span>'; }
+  el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>LB + RB</b>SÚNG MẶC ĐỊNH</span><span><b>⧉ + D-pad</b>XOAY CAM</span>'; }
 // ---- menus ----
 // the scrollable box the focus lives in (a list inside the overlay), else the overlay itself
 function scrollPane(root){ let e=NAV.focus; while(e && e!==root){ if(e.scrollHeight>e.clientHeight+4 && /auto|scroll/.test(getComputedStyle(e).overflowY)) return e; e=e.parentElement; } return root; }
@@ -98,6 +99,7 @@ function navMenu(root, cur, down, lx, ly, ry, now){ ensureFocus(root);
   if(Math.abs(ry)>0.2) scrollPane(root).scrollTop += ry*14;                                       // right stick scrolls long screens (the list that holds the focus)
   if(down(BT.A)){ menuSelect(root); padRumble(0, 0.3, 50); }
   if(down(BT.B)) menuBack(root);
+  if(down(BT.Y) && NAV.focus){ const st=NAV.focus.querySelector('.dflt'); if(st) st.click(); }   // Z129 arsenal: Y = make the focused gun the default
   if(down(BT.MENU) && S.mode==='paused') runAction('pause','down');
   else if(down(BT.MENU) && PAD_GO[root.id]){ const go=root.querySelector(PAD_GO[root.id]); if(go && go.offsetParent) go.click(); }   // Z127 ☰ = the screen's start button
   if(down(BT.VIEW)) runAction('keys','down');

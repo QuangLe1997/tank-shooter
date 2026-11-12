@@ -2,7 +2,7 @@
 //   camera, music, pause, key sheet) has up to 2 keys + 1 pad button, all rebindable from the key sheet (PROFILE.binds).
 //   Also the shared MENU NAVIGATION (focus ring) for keyboard (arrows / Tab / Enter / Esc) and pad (D-pad / A / B / LB-RB / right stick).
 import { ACTIONS } from '../../config.js';
-import { PROFILE, S, assaultFort, callParadrop, camReset, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep } from '../hub.js';
+import { PROFILE, S, assaultFort, callParadrop, camReset, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, selectDefaultGun, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep } from '../hub.js';
 
 // ---- the table: ACTIONS (config) = [id, label, group, defaultKeys[], defaultPadButton|null, hold?] ----
 export const BIND = { cap:null, map:null };
@@ -32,7 +32,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'fire': if(S.mode==='playing'){ S.firing=true; fireGun(now, playerRange()); } break;
     case 'dash': tryDash(); break;  case 'skill': trySpell(); break;  case 'skillNext': cycleSpell(1); break;
     case 'crew': crewPress(); break; case 'autoFire': { const b=document.getElementById('autoBtn'); if(b) b.click(); } break;
-    case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
+    case 'gunDefault': selectDefaultGun(); break; case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
     case 'muster': musterAll(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;
     case 'zoomOut': if(S.zoom>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
     case 'zoomPing': if(dbl(id)){ zoomReset(); floatText('ZOOM VỀ MẶC ĐỊNH','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else zoomPing(); break;
@@ -62,7 +62,7 @@ export function ensureFocus(root){ const L=navItems(root); if(!L.length) return 
   const fs=PAD_FIRST[root.id], first = fs ? L.find(el=>el.matches(fs)) : null;   // Z127 land on the choices, not on the start button (a double A used to launch blind)
   setFocus(first||pri||L[0], true); return L; }
 // the bottom hint changes per screen (the battle setup has a start shortcut)
-const HINT_PAD={ battleSetup:'Ⓐ Chọn · LB/RB Đổi chế độ · ☰ VÀO TRẬN · Ⓑ Quay lại', deploy:'Ⓐ / → thêm quân · ← bớt quân · ↑↓ chọn điểm · ☰ XUẤT KÍCH · Ⓑ Quay lại' };
+const HINT_PAD={ battleSetup:'Ⓐ Chọn · LB/RB Đổi chế độ · ☰ VÀO TRẬN · Ⓑ Quay lại', loadout:'Ⓐ Chọn / bỏ súng · Ⓨ ★ đặt làm súng mặc định · Ⓑ Xong', deploy:'Ⓐ / → thêm quân · ← bớt quân · ↑↓ chọn điểm · ☰ XUẤT KÍCH · Ⓑ Quay lại' };
 export const PAD_FIRST={ battleSetup:'.bs-mode.on', deploy:'.dp-step' };      // where the ring starts on a screen
 export const PAD_GO={ battleSetup:'#bsGo', deploy:'#dp-go' };                  // ☰ Menu = the screen's start button (A only ever PICKS, so one A can never also launch)
 let _hintDef=null, _hintRoot=null;
