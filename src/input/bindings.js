@@ -2,7 +2,7 @@
 //   camera, music, pause, key sheet) has up to 2 keys + 1 pad button, all rebindable from the key sheet (PROFILE.binds).
 //   Also the shared MENU NAVIGATION (focus ring) for keyboard (arrows / Tab / Enter / Esc) and pad (D-pad / A / B / LB-RB / right stick).
 import { ACTIONS } from '../../config.js';
-import { PROFILE, S, assaultFort, callParadrop, camReset, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, keysOpen, musterAll, openKeys, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, zoomStep } from '../hub.js';
+import { PROFILE, S, assaultFort, callParadrop, camReset, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, fireGun, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep } from '../hub.js';
 
 // ---- the table: ACTIONS (config) = [id, label, group, defaultKeys[], defaultPadButton|null, hold?] ----
 export const BIND = { cap:null, map:null };
@@ -21,9 +21,11 @@ export function bindPad(id, btn){ const b=store(); const old=padFor(id); for(con
 export function clearKey(id, slot){ const b=store(); const cur=keysFor(id).slice(); cur.splice(slot,1); b.k[id]=cur; saveProfile(); rebuild(); }
 export function resetBinds(){ PROFILE.binds={ k:{}, p:{} }; saveProfile(); rebuild(); }
 export function keyLabel(k){ return ({ ' ':'SPACE', arrowup:'↑', arrowdown:'↓', arrowleft:'←', arrowright:'→', escape:'ESC', enter:'ENTER', tab:'TAB', shift:'SHIFT', control:'CTRL', alt:'ALT', backspace:'⌫' })[k] || k.toUpperCase(); }
-export const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','⧉ View','☰ Menu','L3','R3','D-pad ↑','D-pad ↓','D-pad ←','D-pad →','Home'];
+export const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','⧉ View','☰ Menu','L3','R3','D-pad ↑','D-pad ↓','D-pad ←','D-pad →','Home','M1 (nút sau)','M2 (nút sau)','M3 (nút sau)','M4 (nút sau)'];
 
 // ---- run an action (phase 'down' / 'up'); the same entry point for keys and pad buttons ----
+const _tap={};
+function dbl(id){ const t=performance.now(), d=t-(_tap[id]||0)<380; _tap[id]=d?0:t; return d; }   // second tap within 0.38 s = double tap
 export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') crewRelease(); if(id==='fire') S.firing=false; return; } if(repeat && id!=='zoomOut' && id!=='zoomIn') return;
   const now=performance.now()/1000;
   switch(id){
@@ -33,6 +35,9 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
     case 'muster': musterAll(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;
     case 'zoomOut': if(S.zoom>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
+    case 'zoomPing': if(dbl(id)){ zoomReset(); floatText('ZOOM VỀ MẶC ĐỊNH','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else zoomPing(); break;
+    case 'camTurn': if(dbl(id)){ yawReset(); floatText('CAMERA VỀ GÓC ĐẦU','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else rotStep(1); break;
+    case 'autoAim': { const C=padCfg(); C.assist=!C.assist; saveProfile(); floatText(C.assist?'TỰ NGẮM: BẬT':'TỰ NGẮM: TẮT', C.assist?'#9be04a':'#ffcf5a', S.player?S.player.pos:{x:0,y:2,z:0}, 15); sfx('click'); } break;
     case 'zoomIn': zoomStep(-1); break; case 'rotL': rotStep(-1); break; case 'rotR': rotStep(1); break;
     case 'camAuto': setCamAuto(!S.camAuto); sfx('click'); break; case 'camReset': camReset(); break;
     case 'music': toggleMusic(); break; case 'pause': togglePause(); break;

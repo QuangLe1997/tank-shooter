@@ -6,7 +6,7 @@ export const KEYS_UI = { from:null, paused:false };
 // Z118 the key sheet IS the rebind screen: every action with its 2 keys + its pad button — click / Enter / A on a chip, then press the new key
 //   or button (Esc cancels); right-click a key chip to clear it. Mouse and number-row rows are fixed.
 const MOUSE_ROWS=[['Chuột trái','Bắn (giữ = liên thanh)'],['Chuột phải','Dùng kỹ năng'],['Cuộn chuột','Đổi súng'],['1 … 8','Chọn súng theo ô'],['Di chuột','Ngắm (nòng theo con trỏ)']];
-const PAD_FIXED=[['Cần trái','Lái xe — nghiêng nửa = nửa ga'],['Cần phải','Xoay nòng ngắm · thả ra: tự ngắm địch gần nhất'],['Trong menu','D-pad / cần trái chọn · A bấm · B quay lại · LB/RB đổi mục · cần phải cuộn'],['M1 · M2 (nút sau)','Gán trong app Flydigi Space Station, ví dụ M1 = A, M2 = B']];
+const PAD_FIXED=[['Cần trái','Lái xe — nghiêng nửa = nửa ga'],['Cần phải','Xoay nòng ngắm · thả ra: tự ngắm địch gần nhất'],['Cối · tên lửa (cần phải)','←→ xoay trong cung 180° trước mũi xe · ↑↓ chỉnh tầm bắn (nâng / hạ góc)'],['Trong menu','D-pad / cần trái chọn · A bấm · B quay lại · LB/RB đổi mục · cần phải cuộn'],['M1 · M2 (nút sau)','Gán trong app Flydigi Space Station, ví dụ M1 = A, M2 = B']];
 let _capLbl=null;
 function chip(kind, id, slot, txt, empty){ return '<span class="bind-chip'+(empty?' empty':'')+'" data-k="'+kind+'" data-id="'+id+'" data-s="'+slot+'" title="'+(kind==='key'?'Bấm để đổi phím · chuột phải để xoá':'Bấm rồi nhấn nút tay cầm mới')+'">'+txt+'</span>'; }
 export function buildKeysSheet(){

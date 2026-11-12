@@ -228,7 +228,7 @@ body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only o
 /* Z124 pad button legend in battle */
 #padHud{position:fixed;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:none;flex-wrap:wrap;gap:4px 10px;justify-content:center;max-width:92vw;padding:4px 10px;border-radius:999px;background:rgba(8,10,8,.55);pointer-events:none;
   font:700 10px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.5px;color:#cfd8c0;opacity:.8;}
-#padHud b{color:#ffd27a;margin-right:4px;} body.pad:not(.inmenu) #padHud:not(:empty){display:flex;}
+#padHud b{color:#ffd27a;margin-right:4px;} body.pad.padplay:not(.inmenu) #padHud:not(:empty){display:flex;}
 
 /* Z125 controller diagram (key sheet · settings · wizard) */
 .pad-svg{display:block;width:100%;max-width:960px;margin:0 auto;min-width:640px;aspect-ratio:1240/448;height:auto;}
@@ -246,3 +246,7 @@ body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only o
 .pw-view{width:min(92vw,700px);overflow-x:auto;}
 @media (max-height:520px){ .pad-svg{max-width:640px;min-width:560px;} .pw-view{width:min(92vw,480px);} }
 .pad-svg.bare{aspect-ratio:560/380;max-width:520px;min-width:0;} .pad-svg.bare .pv-t,.pad-svg.bare .pv-s,.pad-svg.bare .pv-ld,.pad-svg.bare .pv-dot{display:none;} .pw-view{display:flex;justify-content:center;}
+
+/* Z128 high-angle gun range readout (pad) */
+#lobHud{position:fixed;left:50%;bottom:calc(max(6px,env(safe-area-inset-bottom)) + 30px);transform:translateX(-50%);z-index:30;display:none;padding:4px 14px;border-radius:999px;background:rgba(8,10,8,.62);border:1px solid rgba(255,210,122,.45);font:800 12px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.6px;color:#ffd27a;pointer-events:none;white-space:nowrap;}
+body.pad.padplay.lob:not(.inmenu) #lobHud{display:block;}

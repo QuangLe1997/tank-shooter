@@ -457,12 +457,13 @@ export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.
 export const GUN_BARRELS = { smg:2, flak:2, minigun:7, missile:2, thermo:4, rocket:1 };
 // Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
 //   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
-export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false, phone:true, sens:1 },
+export const PAD_CFG = { def:{ vib:true, vibK:0.8, engine:true, dead:0.15, assist:true, swapAB:false, phone:true, sens:1, lob:true },
+  lob:{ min:10, maxMul:1.5, speed:26, dead:0.1, arc:Math.PI/2, ease:10 },   // Z128 high-angle guns (mortar / rocket) on a pad: the barrel is tied to the hull's FRONT 180° arc; right stick ←/→ swings inside it, ↑/↓ lengthens / shortens the shot (m/s)
   aim:{ slew:4.2, k:9, minMag:0.3, smooth:0.035 },   // Z124 right stick: the gun follows the stick angle with an eased, rate-capped swing (rad/s) — no snap, no jitter near the dead zone
   hull:{ k:6, ease:9, speedFull:0.92 },              // Z124 left stick: the hull turns in proportion to the angle error (eased); stick tilt sets the TOP SPEED (full tilt = full speed)
   sensSteps:[['THẤP',0.7],['VỪA',1],['CAO',1.35]], rtFire:0.35, assistAfter:0.45, phoneTick:{ ms:14, gap:150 }, navFirst:0.26, navRepeat:0.14, engine:{ base:0.04, load:0.1 } };
 export const PAD_HELP = [
-  ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất'],
+  ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất. Cối / tên lửa tầm xa: ←→ xoay trong cung 180° trước mũi xe, ↑↓ chỉnh tầm bắn'],
   ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Lướt né'], ['B', 'Chạm: lính xuống xe · Giữ: gọi lính về'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
   ['LB · RB', 'Súng trước · súng sau'], ['D-pad ↑', 'Tập kết toàn quân'], ['D-pad ←', 'Xung phong vào thành'], ['D-pad ↓', 'Gọi lính dù'], ['D-pad →', 'Camera tự động'],
   ['L3 (nhấn cần trái)', 'Đổi mức zoom'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
@@ -482,10 +483,10 @@ export const FEEL = {
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
   ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né','CHIẾN ĐẤU',[' '],0,0], ['skill','Dùng kỹ năng · chuột phải','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
-  ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0],
+  ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành','QUÂN',['x'],14,0], ['para','Gọi lính dù','QUÂN',['b'],13,0],
-  ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],10,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
-  ['camAuto','Camera tự động','CAMERA',['c'],15,0], ['camReset','Đặt lại camera','CAMERA',['v'],11,0],
+  ['zoomPing','Camera: zoom tăng ⇄ giảm · chạm đôi = về mặc định (nút sau M1)','CAMERA',['z'],17,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (nút sau M2)','CAMERA',['n'],18,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
+  ['camAuto','Camera tự động','CAMERA',['c'],15,0], ['camReset','Đặt lại camera','CAMERA',['v'],null,0],
   ['pause','Tạm dừng','KHÁC',['escape','p'],9,0], ['keys','Bảng phím','KHÁC',['h','f1'],8,0], ['music','Bật / tắt nhạc nền','KHÁC',['m'],null,0] ];
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
 export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };

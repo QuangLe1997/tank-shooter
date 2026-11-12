@@ -92,6 +92,11 @@ if(rotBtnEl){ const rot=e=>{ if(e){e.preventDefault();e.stopPropagation();} S.ca
 // Z110 camera from the keyboard + the AUTO camera toggle
 export function zoomStep(dir){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=1; i=Math.max(0, Math.min(ZOOM_LEVELS.length-1, i+dir)); setZoom(ZOOM_LEVELS[i]); }
 export function rotStep(dir){ S.camYaw=((S.camYaw + dir*Math.PI/4) % (Math.PI*2) + Math.PI*2) % (Math.PI*2); }
+// Z128 back-paddle camera: one button walks the zoom steps out and back (ping-pong), the other turns the view; a double tap resets just that one
+let _zd=1;
+export function zoomPing(){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=1; let n=i+_zd; if(n<0 || n>=ZOOM_LEVELS.length){ _zd=-_zd; n=i+_zd; } setZoom(ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length-1, n))]); }
+export function zoomReset(){ _zd=1; setZoom(MOBILE?1.5:1); }
+export function yawReset(){ S.camYaw=0; }
 export function camReset(){ setZoom(MOBILE?1.5:1); S.camYaw=0; }
 export function setCamAuto(on){ S.camAuto=!!on; try{ localStorage.setItem('steelsiege.camAuto', on?'1':'0'); }catch(_){}
   const b=document.getElementById('camAutoBtn'); if(b) b.classList.toggle('on', S.camAuto); }

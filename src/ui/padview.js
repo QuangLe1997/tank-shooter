@@ -36,19 +36,22 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
     stick('l',10,300,192)+
     '<circle cx="355" cy="278" r="38" fill="#0f120e" stroke="#3b4333" stroke-width="3"/>'+arm(12,344,250,22,30)+arm(13,344,278,22,30)+arm(14,327,267,30,22)+arm(15,355,267,30,22)+'<circle cx="355" cy="278" r="7" fill="#1a1e16"/>'+
     '<circle cx="580" cy="192" r="52" fill="#0f120e" stroke="#3b4333" stroke-width="3"/>'+face(3,580,158)+face(1,614,192)+face(2,546,192)+face(0,580,226)+
-    stick('r',11,525,278);
+    stick('r',11,525,278)+
+    '<rect class="pv-b" data-b="17" x="196" y="366" width="30" height="18" rx="8" fill="url(#TG)" stroke="#ffd27a" stroke-opacity=".6" stroke-width="2"/><rect class="pv-b" data-b="18" x="654" y="366" width="30" height="18" rx="8" fill="url(#TG)" stroke="#ffd27a" stroke-opacity=".6" stroke-width="2"/>';
   const dp=[[12,'↑'],[13,'↓'],[14,'←'],[15,'→']].map(([b,a],i)=>lab(true, 266+i*23, a, F(b), '', b)).join('');
   g+=ld('M268 56 H140',268,56)+lab(true,60,'LT',F(6),'',6)+
      ld('M250 87 H140',250,87)+lab(true,91,'LB',F(4),'',4)+
      ld('M263 192 H140',263,192)+lab(true,184,'CẦN TRÁI',{ t:'Lái xe' },['nghiêng nửa = nửa ga', F(10).t ? 'nhấn L3: '+F(10).t : ''],10)+
-     ld('M317 278 H150 V292 H140',317,278)+dp+'<text class="pv-s" x="130" y="364" text-anchor="end">giữ ⧉ + D-pad: zoom / xoay camera</text>'+
+     ld('M317 278 H150 V292 H140',317,278)+dp+'<text class="pv-s" x="130" y="358" text-anchor="end">giữ ⧉ + D-pad: zoom / xoay camera</text>'+
      ld('M612 56 H740',612,56)+lab(false,60,'RT',F(7),'',7)+
      ld('M630 87 H740',630,87)+lab(false,91,'RB',F(5),'',5)+
      ld('M546 176 V118 H740',546,176)+lab(false,122,'X',F(2),'',2)+
      ld('M596 158 H740',596,158)+lab(false,162,'Y',F(3),'',3)+
      ld('M630 192 H740',630,192)+lab(false,190,'B',F(1),'',1)+
      ld('M596 226 H740',596,226)+lab(false,234,'A',F(0),'',0)+
-     ld('M562 278 H740',562,278)+lab(false,274,'CẦN PHẢI',{ t:'Xoay nòng' },['thả ra: tự ngắm địch gần nhất', F(11).t ? 'nhấn R3: '+F(11).t : ''],11)+
+     ld('M562 278 H740',562,278)+lab(false,274,'CẦN PHẢI',{ t:'Xoay nòng' },['thả ra: tự ngắm · cối/tên lửa: ↑↓ chỉnh tầm', F(11).t ? 'nhấn R3: '+F(11).t : ''],11)+
+     ld('M196 378 H140',196,378)+lab(true,382,'M1 nút sau',F(17),'',17)+
+     ld('M684 378 H740',684,378)+lab(false,382,'M2 nút sau',F(18),'',18)+
      ld('M398 205 V404',398,205)+lab(true,420,'⧉ View',F(8),'',8)+
      ld('M482 205 V404',482,205)+lab(false,420,'☰ Menu',F(9),'',9);
   const svg='<svg class="pad-svg'+(bare?' bare':'')+'" viewBox="'+(bare?'340 20 560 380':'0 0 1240 448')+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ tay cầm">'+defs+'<g transform="translate(180 0)">'+g+'</g></svg>';
