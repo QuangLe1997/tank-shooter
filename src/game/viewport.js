@@ -17,7 +17,7 @@ export function queueResize(){ if(document.body.classList.contains('typing')) re
 // resize/visualViewport-resize on every frame of a URL-bar slide, and re-allocating the render targets that often flickers
 // mobile is landscape-only: auto-pause if rotated to portrait (the #rotate gate covers the screen via CSS)
 export function checkOrientation(){ _readOrient(); if(MOBILE && ORIENT.portrait && S.mode==='playing') togglePause(); }
-export const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1 };   // modes that need landscape; menus/game-over do not
+export const PLAY_MODES = { playing:1, paused:1, intro:1, dying:1, countdown:1 };   // modes that need landscape; menus/game-over do not
 // Z107: orientation is cached on resize — reading innerWidth/innerHeight every frame forced a style/layout flush (3% of a phone frame)
 export const ORIENT = { portrait: innerHeight > innerWidth };
 export function _readOrient(){ ORIENT.portrait = innerHeight > innerWidth; }

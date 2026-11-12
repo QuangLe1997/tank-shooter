@@ -32,14 +32,23 @@ export function chooseContract(c){
   const ctx=_brCtx||{}; _brCtx=null;
   openDeploy(()=>beginStage(c, ctx));                                       // Z105 post the troops first, then the stage opens
 }
+// Z136 COUNTDOWN: after XUẤT KÍCH the world stays frozen for 3 · 2 · 1 (camera already on the battlefield, nobody moves or shoots), then the fight goes live
+let _go=null, _cdN=0;
 export function beginStage(c, ctx){
-  S.mode='playing'; coachFirstRun();   // first-ever match → show coach toasts (once)
+  S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false;
   WAVE.active=false; S.wave=0;
-  const now=performance.now()/1000;
-  playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0'))); WAVE.betweenUntil=now+2.8;   // Z84: every operation opens with its mission card
   if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
   sfx('click');
 }
+function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||{}; _go=null;
+  S.mode='playing'; coachFirstRun();   // first-ever match → show coach toasts (once)
+  const now=performance.now()/1000;
+  playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0'))); WAVE.betweenUntil=now+2.8;   // Z84: every operation opens with its mission card
+  const el=document.getElementById('countdown'); if(el){ el.textContent='CHIẾN ĐẤU!'; el.className='go show'; setTimeout(()=>{ if(el.textContent==='CHIẾN ĐẤU!') el.className=''; }, 900); }
+  sfx('levelup'); }
+export function updateCountdown(dt){ S.cd-=dt; const n=Math.max(0, Math.ceil(S.cd)), el=document.getElementById('countdown');
+  if(n!==_cdN && n>0){ _cdN=n; if(el){ el.textContent=String(n); el.className=''; void el.offsetWidth; el.className='show'; } sfx('beep'); }
+  if(S.cd<=0) goLive(); }
 export function applyContractHUD(){
   const chip=document.getElementById('contractChip'); if(!chip) return;
   const c=S.contract;

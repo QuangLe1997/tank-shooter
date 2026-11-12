@@ -254,3 +254,9 @@ body.pad.padplay.lob:not(.inmenu) #lobHud{display:block;}
 
 /* Z133 why the battle was lost */
 .go-why{max-width:min(92vw,520px);margin:-4px auto 10px;text-align:center;font:700 14px/1.35 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.4px;color:#cfd8c0;} .go-why b{color:#ffb35a;}
+
+/* Z136 3-2-1 countdown before the fight */
+#countdown{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:40;pointer-events:none;opacity:0;font:900 clamp(90px,22vw,220px)/1 'Saira Condensed',Rajdhani,sans-serif;color:#ffd27a;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 60px rgba(255,160,40,.55);letter-spacing:4px;}
+#countdown.go{font-size:clamp(46px,11vw,120px);color:#9be04a;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 60px rgba(120,220,60,.55);}
+#countdown.show{animation:cdpop .95s ease-out forwards;}
+@keyframes cdpop{0%{opacity:0;transform:translate(-50%,-50%) scale(1.9);}18%{opacity:1;transform:translate(-50%,-50%) scale(1);}80%{opacity:1;}100%{opacity:0;transform:translate(-50%,-50%) scale(.85);}}
