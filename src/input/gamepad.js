@@ -47,9 +47,7 @@ export function pollGamepad(dt, now){
   else if(down(BT.A) || down(BT.MENU)) dispatchEvent(new KeyboardEvent('keydown', { key:'Enter' }));   // intro / tips: skip ahead
   // blasts and crashes: every bump of the camera shake becomes a thump (left-heavy, then a lighter tail)
   if(S.shake > PAD.shake0+0.12){ const k=Math.min(1.6, S.shake-PAD.shake0); feel('blast', k); } PAD.shake0=S.shake;
-  // the engine: a low hum in the light motor that grows with the load
-  if(C.engine && S.mode==='playing' && S.player && now>PAD.engAt){ PAD.engAt=now+0.11; const th=Math.abs(S.player.throttle||0), sp=Math.min(1, Math.abs(S.player.fwdSpeed||0)/20);
-    if(th>0.05 || sp>0.05) padRumble(0, PAD_CFG.engine.base+PAD_CFG.engine.load*th*(1-0.5*sp), 130); }
+  // Z131 no engine hum — the pad only rumbles for hits, blasts and crashes
   PAD.prev=cur;
 }
 // Z128 HIGH-ANGLE GUNS (mortar, siege rocket): the tube is tied to the hull's FRONT half (±90°) — right stick ←/→ swings inside that arc,

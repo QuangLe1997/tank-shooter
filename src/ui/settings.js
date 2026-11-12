@@ -32,7 +32,6 @@ export function buildPadSettings(){ const Pv=document.getElementById('setPadView
     P.appendChild(_segChip('DÒ NÚT', false, ()=>{ openPadWizard(PAD.gp); })); if(learned) P.appendChild(_segChip('XOÁ DÒ', false, ()=>{ resetPadMap(PAD.gp); sfx('click'); })); }
   const V=document.getElementById('setVib'); if(V){ V.innerHTML=''; V.appendChild(_segChip('TẮT', !C.vib, ()=>set('vib',false)));
     for(const [l,k] of [['NHẸ',0.4],['VỪA',0.8],['MẠNH',1.0]]) V.appendChild(_segChip(l, C.vib && Math.abs(C.vibK-k)<0.05, ()=>{ C.vib=true; set('vibK',k); setTimeout(()=>padRumble(0.8,0.5,200,true),30); })); }
-  const E=document.getElementById('setEng'); if(E){ E.innerHTML=''; E.appendChild(_segChip('BẬT', C.engine, ()=>set('engine',true))); E.appendChild(_segChip('TẮT', !C.engine, ()=>set('engine',false))); }
   const Lb=document.getElementById('setLob'); if(Lb){ Lb.innerHTML=''; Lb.appendChild(_segChip('KHOÁ ĐẦU XE', C.lob!==false, ()=>set('lob',true), 'cung 180°')); Lb.appendChild(_segChip('TỰ DO', C.lob===false, ()=>set('lob',false), 'như súng thường')); }
   const Se=document.getElementById('setSens'); if(Se){ Se.innerHTML=''; for(const [l,k] of PAD_CFG.sensSteps) Se.appendChild(_segChip(l, Math.abs((C.sens||1)-k)<0.01, ()=>set('sens',k), Math.round(k*100)+'%')); }
   const D=document.getElementById('setDead'); if(D){ D.innerHTML=''; for(const [l,k] of [['NHỎ',0.08],['VỪA',0.15],['LỚN',0.24]]) D.appendChild(_segChip(l, Math.abs(C.dead-k)<0.01, ()=>set('dead',k), Math.round(k*100)+'%')); }
