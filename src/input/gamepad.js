@@ -134,5 +134,8 @@ export function padImpact(vn){ if(vn<5) return; feel('impact', Math.min(1.3, vn/
 // the phone-vibration calls the game already makes (crush, ram, pickups…) also rumble the pad
 export function padHaptic(ms){ if(!PAD.active) return; const total=Array.isArray(ms) ? ms.reduce((s,v,i)=>s+(i%2?0:v),0) : ms; const k=Math.min(1, total/70); padRumble(k*0.8, 0.25+k*0.6, Math.max(60, total*2.2)); }
 export function padTest(){ feelPattern(FEEL.test, 1, 0, 0); }
-addEventListener('gamepadconnected', e=>{ PAD.idx=e.gamepad.index; });
+// Z130 never leave a motor running: stop all rumble when the page is hidden / closed / loses focus, and when a pad connects
+export function padRumbleStop(){ try{ const gs=navigator.getGamepads?navigator.getGamepads():[]; for(const g of gs){ const a=g && g.vibrationActuator; if(a && a.reset){ const r=a.reset(); if(r && r.catch) r.catch(()=>{}); } } }catch(e){} PAD.rumbleUntil=0; }
+addEventListener('pagehide', padRumbleStop); addEventListener('blur', padRumbleStop); document.addEventListener('visibilitychange', ()=>{ if(document.hidden) padRumbleStop(); });
+addEventListener('gamepadconnected', e=>{ PAD.idx=e.gamepad.index; padRumbleStop(); });
 addEventListener('gamepaddisconnected', e=>{ if(e.gamepad.index===PAD.idx){ PAD.idx=-1; PAD.active=false; PAD.gp=null; document.body.classList.remove('pad'); clearFocus(); S.firing=false; } });
