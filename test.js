@@ -510,5 +510,13 @@ ok(RAM.frac*3 >= 1 && RAM.frac*2 < 1, 'sturdy structures take about three full r
 ok(RAM.steelHp*RAM.frac*3 >= RAM.steelHp*0.99, 'steel / concrete cover gives way after ~3 rams');
 ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect comes below top speed');
 
+// Z123 generic HID pad (Flydigi Direwolf 4 over USB on a Mac): the layout wizard learns raw buttons/axes/hat and reads them as a standard pad
+{ const fs=await import('node:fs'); const pm=fs.readFileSync('src/input/padmap.js','utf8'), gpd=fs.readFileSync('src/input/gamepad.js','utf8');
+  ok(/export function virtualPad/.test(pm) && /export function wizPoll/.test(pm), 'padmap: learned pads are read through virtualPad, learned by wizPoll');
+  ok(/padMapFor\(gp\)/.test(gpd) && /PAD\.seen\s*=/.test(gpd), 'gamepad: polls through the learned map and records what the browser sees (PAD.seen)');
+  ok(/openPadWizard\(gp\); PAD\.prev=cur; return;/.test(gpd), 'the waking press never also clicks the wizard it opens');
+  ok(/tgt>=12 \? 0\.4/.test(pm), 'hat D-pad levels (← is only 0.57 from rest) are detected');
+  ok(fs.readFileSync('index.html','utf8').includes('id="padWiz"'), 'the wizard overlay exists'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

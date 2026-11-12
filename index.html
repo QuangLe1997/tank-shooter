@@ -226,6 +226,17 @@
 <!-- TERRAIN — grand 3D battlefield picker -->
 <!-- Z107 CONTROLS SHEET -->
 <div id="navHint" aria-hidden="true"><span class="nh-pad">Ⓐ Chọn · Ⓑ Quay lại · LB/RB Đổi mục · cần phải cuộn</span><span class="nh-kb">↑↓←→ / Tab chọn · Enter bấm · Esc quay lại · Q/E đổi mục</span></div>
+<div class="overlay hidden" id="padWiz">
+  <div class="title" style="font-size:clamp(22px,4.4vw,38px)">DÒ NÚT TAY CẦM</div>
+  <div class="pw-id" id="padWizId"></div>
+  <div class="pw-step" id="padWizStep"></div>
+  <div class="pw-bar"><i id="padWizBar"></i></div>
+  <div class="pw-n" id="padWizN"></div>
+  <div class="pw-live" id="padWizLive"></div>
+  <div class="pw-row"><div class="btn" id="padWizSkip">BỎ QUA</div><div class="btn btn-primary" id="padWizDone">XONG</div><div class="btn" id="padWizReset">ĐẶT LẠI</div><div class="btn" id="padWizClose">ĐÓNG</div></div>
+  <div class="ks-foot">Bấm / gạt từng nút theo gợi ý. Nút nào không có thì chờ 10 giây hoặc bấm BỎ QUA.</div>
+</div>
+
 <div class="overlay hidden" id="keysDlg">
   <div class="title" style="font-size:clamp(22px,4.4vw,38px)">PHÍM TẮT · ĐIỀU KHIỂN</div>
   <div class="ks-body" id="keysBody"></div>

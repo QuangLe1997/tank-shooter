@@ -216,3 +216,8 @@ body.touch.pad #touch, body.touch.pad #mbtns, body.touch.pad #stickL{display:non
 body.inmenu.pad #navHint, body.inmenu.kbnav #navHint, body.shopopen.pad #navHint{display:block;}
 body.pad #navHint .nh-pad{display:inline;} body.kbnav:not(.pad) #navHint .nh-kb{display:inline;}
 body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only on touch devices */
+
+/* Z123 pad layout wizard */
+#padWiz{gap:10px;} .pw-id{font-size:11px;color:var(--muted);max-width:92vw;text-align:center;} .pw-step{font:800 clamp(22px,5vw,40px)/1.1 'Saira Condensed',Rajdhani,sans-serif;color:#ffd27a;text-align:center;letter-spacing:1px;min-height:1.2em;}
+.pw-bar{width:min(420px,80vw);height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;} .pw-bar i{display:block;height:100%;width:0;background:#9be04a;transition:width .2s;} .pw-n{font-size:11px;color:var(--muted);}
+.pw-live{font:700 13px/1.2 'Saira Condensed',Rajdhani,sans-serif;color:#9be04a;min-height:1.3em;text-align:center;} .pw-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}

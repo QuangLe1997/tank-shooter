@@ -72,6 +72,7 @@ export * from './game/player-damage.js';
 export * from './input/input.js';
 export * from './input/bindings.js';   // Z118
 export * from './input/gamepad.js';   // Z117
+export * from './input/padmap.js';   // Z123
 export * from './combat/abilities.js';
 export * from './combat/guns.js';
 export * from './combat/aim.js';

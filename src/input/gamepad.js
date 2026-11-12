@@ -7,7 +7,7 @@
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
 import { PAD_CFG, GUN_FEEL, FEEL } from '../../config.js';
-import { MOBILE, PROFILE, S, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, padCaptured, playerRange, runAction } from '../hub.js';
+import { MOBILE, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k]; return p; }
@@ -20,14 +20,18 @@ const BT={ A:0, B:1, X:2, Y:3, LB:4, RB:5, LT:6, RT:7, VIEW:8, MENU:9, L3:10, R3
 export function pollGamepad(dt, now){
   const pads=navigator.getGamepads ? navigator.getGamepads() : []; let gp=PAD.idx>=0 ? pads[PAD.idx] : null;
   if(!gp || !gp.connected){ gp=null; for(const g of pads) if(g && g.connected){ gp=g; PAD.idx=g.index; break; } }
+  PAD.seen = gp ? { id:gp.id, mapping:gp.mapping, nb:gp.buttons.length, na:gp.axes.length } : null;   // Z123 what the browser can see, even before any input
+  if(WIZ.on){ PAD.gp=gp; wizPoll(gp, now); return; }                                                     // Z123 layout wizard has the pad
   if(!gp){ if(PAD.active){ PAD.active=false; PAD.gp=null; document.body.classList.remove('pad'); } return; }
   PAD.gp=gp; const C=padCfg();
-  const val=i=>{ const b=gp.buttons[i]; return b ? (typeof b==='object' ? b.value : b) : 0; }, on=i=>{ const b=gp.buttons[i]; return !!b && (b.pressed || b.value>0.5); };
-  const [lx,ly]=dz(gp.axes[0]||0, gp.axes[1]||0, C.dead), [rx,ry]=dz(gp.axes[2]||0, gp.axes[3]||0, C.dead);
+  const M=padMapFor(gp), odd=gp.mapping!=='standard', gv=M ? virtualPad(gp, M) : gp;                      // Z123 a generic HID pad reads through its learned table
+  const val=i=>{ const b=gv.buttons[i]; return b ? (typeof b==='object' ? b.value : b) : 0; }, on=i=>{ const b=gv.buttons[i]; return !!b && (b.pressed || b.value>0.5); };
+  const [lx,ly]=dz(gv.axes[0]||0, gv.axes[1]||0, C.dead), [rx,ry]=dz(gv.axes[2]||0, gv.axes[3]||0, C.dead);
   const lt=val(BT.LT), rt=val(BT.RT), cur=[]; for(let i=0;i<17;i++) cur[i]=on(i); cur[BT.LT]=lt>0.4; cur[BT.RT]=rt>PAD_CFG.rtFire;
   if(C.swapAB){ [cur[0],cur[1]]=[cur[1],cur[0]]; [cur[2],cur[3]]=[cur[3],cur[2]]; }   // Nintendo-labelled pads
-  const used = lx||ly||rx||ry||lt>0.2||rt>0.2||cur.some(Boolean);
-  if(used){ PAD.lastAt=now; if(!PAD.active){ PAD.active=true; PAD.id=gp.id; document.body.classList.add('pad'); floatText('TAY CẦM ĐÃ KẾT NỐI', '#9be04a', S.player?S.player.pos:{x:0,y:2,z:0}, 15); feel('connect'); } }
+  const used = (odd && !M) ? cur.some(Boolean) : (lx||ly||rx||ry||lt>0.2||rt>0.2||cur.some(Boolean));   // an unmapped odd pad rests at junk axis values: wake on a button only
+  if(used){ PAD.lastAt=now; if(!PAD.active){ PAD.active=true; PAD.id=gp.id; document.body.classList.add('pad'); floatText('TAY CẦM ĐÃ KẾT NỐI', '#9be04a', S.player?S.player.pos:{x:0,y:2,z:0}, 15); feel('connect');
+      if(odd && !M && S.mode!=='playing'){ const A=PROFILE.padAsk||(PROFILE.padAsk={}); if(!A[gp.id]){ A[gp.id]=1; saveProfile(); openPadWizard(gp); PAD.prev=cur; return; } } } }   // (the waking press must not also click the wizard)   // Z123 first time a generic pad wakes: offer to learn its layout
   if(!PAD.active){ PAD.prev=cur; return; }
   PAD.lx=lx; PAD.ly=ly; PAD.rx=rx; PAD.ry=ry; PAD.lt=lt; PAD.rt=rt;
   const down=i=>cur[i] && !PAD.prev[i], up=i=>!cur[i] && PAD.prev[i];
