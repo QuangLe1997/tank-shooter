@@ -43,10 +43,16 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
 const FOCUSABLE='.btn, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .tcard, .shop-tab, .case, .dp-step, .dp-gun, .guide-row, .bind-chip, #upcards > *, [data-pad]';
 export function menuRoot(){ if(S.mode==='playing' && !document.body.classList.contains('shopopen')) return null; const L=[...document.querySelectorAll('.overlay:not(.hidden)')]; return L[L.length-1]||null; }
 export function navItems(root){ return [...root.querySelectorAll(FOCUSABLE)].filter(el=>{ if(el.offsetParent===null) return false; const r=el.getBoundingClientRect(); return r.width>10 && r.height>10; }); }
-export const NAV={ focus:null, kb:false };
-export function clearFocus(){ if(NAV.focus){ NAV.focus.classList.remove('padfocus'); NAV.focus=null; } }
-export function setFocus(el, quiet){ if(NAV.focus===el) return; clearFocus(); if(!el) return; NAV.focus=el; el.classList.add('padfocus'); try{ el.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){} if(!quiet) sfx('click'); }
+export const NAV={ focus:null, kb:false, sig:null };
+export function clearFocus(){ if(NAV.focus){ NAV.focus.classList.remove('padfocus'); NAV.focus=null; } NAV.sig=null; }
+// Z126 a menu that redraws itself after a pick (settings chips, battle setup, ladder…) replaces the focused element: remember WHERE it was
+//   (nearest container with an id + its index there + its text) so the ring lands on the same spot of the new copy, not on the bottom button
+function focusSig(el){ const c=el.closest('[id]'); const items=c ? [...c.querySelectorAll(FOCUSABLE)].filter(e=>e.offsetParent!==null) : []; return { cid:c?c.id:'', idx:Math.max(0,items.indexOf(el)), txt:(el.textContent||'').trim().slice(0,24) }; }
+function restoreFocus(root, L){ const g=NAV.sig; if(!g || !g.cid) return null; const c=document.getElementById(g.cid); if(!c || !root.contains(c)) return null;
+  const items=L.filter(e=>c.contains(e)); if(!items.length) return null; return items[Math.min(g.idx, items.length-1)]; }
+export function setFocus(el, quiet){ if(NAV.focus===el) return; clearFocus(); if(!el) return; NAV.focus=el; NAV.sig=focusSig(el); el.classList.add('padfocus'); try{ el.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){} if(!quiet) sfx('click'); }
 export function ensureFocus(root){ const L=navItems(root); if(!L.length) return null; if(NAV.focus && L.includes(NAV.focus)) return L;
+  const back=restoreFocus(root, L); if(back){ setFocus(back, true); return L; }
   const pri=[...root.querySelectorAll('.btn-primary')].find(el=>L.includes(el)); setFocus(pri||L[0], true); return L; }
 export function menuMove(root, dir){ const L=ensureFocus(root); if(!L) return; const f=NAV.focus.getBoundingClientRect(), fx=f.left+f.width/2, fy=f.top+f.height/2; let best=null, bs=1e9;
   for(const el of L){ if(el===NAV.focus) continue; const r=el.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2, dx=x-fx, dy=y-fy;

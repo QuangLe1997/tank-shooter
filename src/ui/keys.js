@@ -1,6 +1,6 @@
 // ui/keys.js — Z107 CONTROLS SHEET: every key / touch control in one place — from the home menu (PHÍM TẮT), the pause menu, or H / F1 / ? in battle (pauses while open).
 import { ACTIONS, TOUCH_HELP } from '../../config.js';
-import { MOBILE, PAD, PAD_NAMES, padDiagram, S, clearKey, escapeHtml, hide, keyLabel, keysFor, padFor, resetBinds, sfx, show, startCapture, tapBtn, togglePause } from '../hub.js';
+import { MOBILE, PAD, PAD_NAMES, S, clearKey, escapeHtml, hide, keyLabel, keysFor, padDiagram, padFor, resetBinds, sfx, show, startCapture, tapBtn, togglePause } from '../hub.js';
 
 export const KEYS_UI = { from:null, paused:false };
 // Z118 the key sheet IS the rebind screen: every action with its 2 keys + its pad button — click / Enter / A on a chip, then press the new key

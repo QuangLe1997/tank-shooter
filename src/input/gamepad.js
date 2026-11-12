@@ -7,7 +7,7 @@
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
 import { PAD_CFG, FEEL } from '../../config.js';
-import { MOBILE, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
+import { MOBILE, NAV, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k]; return p; }
@@ -72,10 +72,12 @@ function padHud(now){ if(now<(PAD.hudAt||0)) return; PAD.hudAt=now+0.6; const el
   const sig=HUD_IDS.map(([id])=>padFor(id)).join(','); if(sig===PAD.hudSig) return; PAD.hudSig=sig;
   el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>⧉ + D-pad</b>XOAY CAM</span>'; }
 // ---- menus ----
+// the scrollable box the focus lives in (a list inside the overlay), else the overlay itself
+function scrollPane(root){ let e=NAV.focus; while(e && e!==root){ if(e.scrollHeight>e.clientHeight+4 && /auto|scroll/.test(getComputedStyle(e).overflowY)) return e; e=e.parentElement; } return root; }
 function navMenu(root, cur, down, lx, ly, ry, now){ ensureFocus(root);
   let dir=''; if(cur[BT.UP]||ly<-0.6) dir='u'; else if(cur[BT.DOWN]||ly>0.6) dir='d'; else if(cur[BT.LEFT]||lx<-0.6) dir='l'; else if(cur[BT.RIGHT]||lx>0.6) dir='r';
   if(dir && (dir!==PAD.navDir || now>PAD.navAt)){ PAD.navAt=now+(dir===PAD.navDir?PAD_CFG.navRepeat:PAD_CFG.navFirst); PAD.navDir=dir; menuMove(root, dir); } else if(!dir) PAD.navDir='';
-  if(Math.abs(ry)>0.2) root.scrollTop += ry*14;                                                  // right stick scrolls long screens
+  if(Math.abs(ry)>0.2) scrollPane(root).scrollTop += ry*14;                                       // right stick scrolls long screens (the list that holds the focus)
   if(down(BT.A)){ menuSelect(root); padRumble(0, 0.3, 50); }
   if(down(BT.B)) menuBack(root);
   if(down(BT.MENU) && S.mode==='paused') runAction('pause','down');

@@ -192,7 +192,10 @@
 #brBack{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));z-index:2;}
 
 /* Z117 controller: focus ring in menus · settings note · touch pads hidden while a pad drives */
-.padfocus{outline:3px solid #ffd27a !important;outline-offset:3px;box-shadow:0 0 0 6px rgba(255,210,122,.18),0 0 22px rgba(255,210,122,.45) !important;border-radius:10px;}
+.padfocus{outline:4px solid #ffd27a !important;outline-offset:3px;box-shadow:0 0 0 8px rgba(255,210,122,.22),0 0 28px rgba(255,210,122,.7) !important;border-radius:10px;scroll-margin:22px;transform:scale(1.04);animation:padfocus .75s ease-in-out infinite alternate;}
+@keyframes padfocus{from{outline-color:#ffd27a;filter:brightness(1.05);}to{outline-color:#fff3c8;filter:brightness(1.3);}}
+/* Z126 room round the scrolling lists so the ring is never cut off at their edges */
+.bs-body{padding:14px 18px 16px !important;} .ks-body{padding:14px 16px !important;}
 .seg-note{font-size:11px;color:var(--muted);padding:6px 8px;max-width:340px;line-height:1.3;}
 body.pad .seg-note{color:#9be04a;}
 body.touch.pad #touch, body.touch.pad #mbtns, body.touch.pad #stickL{display:none !important;}

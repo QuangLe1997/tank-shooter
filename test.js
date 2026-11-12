@@ -534,5 +534,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/padDiagram\(\)/.test(keys) && /padDiagram\(\)/.test(st) && /padDiagram\(true\)/.test(pm), 'diagram is used by the key sheet, the settings and the wizard');
   ok(idx.includes('id="setPadView"') && idx.includes('id="padWizView"'), 'diagram containers exist'); }
 
+// Z126 pad menus: the focus ring survives a menu redraw and is easy to see
+{ const fs=await import('node:fs'); const b=fs.readFileSync('src/input/bindings.js','utf8'), css=fs.readFileSync('css/menus.css','utf8'), gpd=fs.readFileSync('src/input/gamepad.js','utf8');
+  ok(/restoreFocus/.test(b) && /NAV\.sig/.test(b), 'menu focus is restored to the same spot after a redraw (no jump to the bottom button)');
+  ok(/@keyframes padfocus/.test(css) && /scrollPane\(root\)/.test(gpd), 'focus ring pulses; right stick scrolls the list that holds the focus'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
