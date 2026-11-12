@@ -560,5 +560,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const a=fs.readFileSync('src/ui/alarm.js','utf8'), h=fs.readFileSync('index.html','utf8');
   ok(/coreatk/.test(a) && /coredanger/.test(a) && /coreArrow/.test(a) && h.includes('id="coreArrow"') && h.includes('id="corewarnT"'), 'the core warns on the first hit (banner, siren, arrow) — not only under 35%'); }
 
+// Z134 the squad razes the boss shield pylons
+{ const fs=await import('node:fs'); const f=fs.readFileSync('src/actors/fireteam.js','utf8');
+  ok(/boss\.shielded/.test(f) && /PYLONS/.test(f) && /kind:at\?'tank':'pylon'/.test(f), 'soldiers / AT target the pylons while the boss is shielded');
+  ok(/kind==='pylon'/.test(f) && /\*0\.6/.test(f), 'sappers charge pylons (60% of their health per charge); mortars shell them'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
