@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG } from '../../config.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -23,7 +23,9 @@ export function updatePlayer(dt, now){
   }
   // smooth the aim angle a touch (avoids jitter); turret yaw applied after hull below
   const da = wrapAngle(p.aim - p.aimSmoothed);
-  p.aimSmoothed = wrapAngle(p.aimSmoothed + da * Math.min(1, dt*PLAYER.turnLerp));
+  const padOn = PAD.active && now - PAD.lastAt < 1.5;                                 // Z124 a controller is the one being used right now
+  if(padOn && !barrelFixed()){ const A=PAD_CFG.aim, mx=A.slew*(padCfg().sens||1)*dt, st=da*Math.min(1, dt*A.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
+  else p.aimSmoothed = wrapAngle(p.aimSmoothed + da * Math.min(1, dt*PLAYER.turnLerp));
 
   // movement — Z85 TRACKED DRIVE: the hull steers (pivot when slow, wide arcs when fast), thrust runs along the hull,
   // a heavy launch builds into real momentum, the tank coasts on when you let go, and pulls back to reverse.
@@ -58,12 +60,16 @@ export function updatePlayer(dt, now){
       const aimOnly = barrelFixed() && inp < AIM.pivotOnly;                       // Z104 light push on a phone = swing the gun (hull) onto the target, stay put
       if(aimOnly || (scr && !DRIVE.screenReverse)) p.rev = false; else if(p.rev ? Math.abs(df) > DRIVE.reverseKeep : Math.abs(df) > DRIVE.reverseAngle) p.rev = true; else p.rev = false;   // Z121 push behind the hull → back up straight, at any speed (brakes first); hysteresis so it doesn't flip
       if(p.rev) df = wrapAngle(want + Math.PI - p.facing);
-      const step = Math.sign(df)*Math.min(Math.abs(df), turnK*dt); p.facing = wrapAngle(p.facing + step);
+      let step = Math.sign(df)*Math.min(Math.abs(df), turnK*dt);
+      if(padOn){ const H=PAD_CFG.hull, mr=(DRIVE.pivot + (DRIVE.turnAtSpeed-DRIVE.pivot)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed))*(padCfg().sens||1), wr=Math.max(-mr, Math.min(mr, df*H.k));
+        p.yawV = (p.yawV||0) + (wr-(p.yawV||0))*Math.min(1, dt*H.ease); step = p.yawV*dt; if(Math.abs(step) > Math.abs(df)) step = df; }
+      p.facing = wrapAngle(p.facing + step);
       const align = Math.max(0, Math.cos(df));                                    // pivot first: little drive until the hull lines up
       thr = aimOnly ? 0 : inp * (0.12 + 0.88*align*align) * (p.rev?-1:1); p.throttle = aimOnly ? 0.2 : thr;
     }
+    if(!(inp > 0.1) || tankCtl) p.yawV = 0;
     if(Math.abs(thr) > 0.05){
-      const top = thr<0 ? maxSp*DRIVE.reverseMul : maxSp, v = Math.abs(vf);
+      const ak = Math.max(0.15, Math.min(1, (tankCtl ? Math.abs(TI.thr) : inp) / PAD_CFG.hull.speedFull)), top = (thr<0 ? maxSp*DRIVE.reverseMul : maxSp)*ak, v = Math.abs(vf);   // Z124 stick tilt = top speed (keys / full tilt = 1)
       if(vf*thr < -0.5){ vf += Math.sign(thr)*Math.min(Math.abs(vf), DRIVE.brake*dt); }   // pushing against the motion = brakes
       else { const l0 = DRIVE.launch + (1-DRIVE.launch)*Math.min(1, tLv*LOOT.turbo.launch), launch = l0 + (1-l0)*Math.min(1, v/DRIVE.launchV);   // heavy launch → builds with speed (TURBO fills the gap)
         const fall = Math.max(0, 1 - (v/top)*(v/top));                                   // power fades toward top speed

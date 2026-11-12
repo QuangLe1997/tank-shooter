@@ -7,9 +7,9 @@
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
 import { PAD_CFG, GUN_FEEL, FEEL } from '../../config.js';
-import { MOBILE, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
+import { MOBILE, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
-export const PAD = { active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
+export const PAD = { fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k]; return p; }
 // radial dead zone, rescaled so the stick still reaches 1 at the rim (no dead band felt past the edge)
 function dz(x, y, d){ const m=Math.hypot(x,y); if(m<d) return [0,0]; const k=Math.min(1,(m-d)/(1-d))/m; return [x*k, y*k]; }
@@ -33,7 +33,8 @@ export function pollGamepad(dt, now){
   if(used){ PAD.lastAt=now; if(!PAD.active){ PAD.active=true; PAD.id=gp.id; document.body.classList.add('pad'); floatText('TAY CẦM ĐÃ KẾT NỐI', '#9be04a', S.player?S.player.pos:{x:0,y:2,z:0}, 15); feel('connect');
       if(odd && !M && S.mode!=='playing'){ const A=PROFILE.padAsk||(PROFILE.padAsk={}); if(!A[gp.id]){ A[gp.id]=1; saveProfile(); openPadWizard(gp); PAD.prev=cur; return; } } } }   // (the waking press must not also click the wizard)   // Z123 first time a generic pad wakes: offer to learn its layout
   if(!PAD.active){ PAD.prev=cur; return; }
-  PAD.lx=lx; PAD.ly=ly; PAD.rx=rx; PAD.ry=ry; PAD.lt=lt; PAD.rt=rt;
+  { const k=1-Math.exp(-dt/PAD_CFG.aim.smooth); PAD.fx+=(rx-PAD.fx)*k; PAD.fy+=(ry-PAD.fy)*k; if(!rx && !ry && Math.hypot(PAD.fx,PAD.fy)<0.02){ PAD.fx=0; PAD.fy=0; } }   // Z124 the aim stick is lightly low-passed (no frame-to-frame jitter)
+  PAD.lx=lx; PAD.ly=ly; PAD.rx=PAD.fx; PAD.ry=PAD.fy; PAD.lt=lt; PAD.rt=rt;
   const down=i=>cur[i] && !PAD.prev[i], up=i=>!cur[i] && PAD.prev[i];
   if(captureActive()){ for(let i=0;i<17;i++) if(down(i)){ padCaptured(i); break; } PAD.prev=cur; return; }   // rebinding: the next button pressed
   const root=menuRoot();
@@ -49,13 +50,27 @@ export function pollGamepad(dt, now){
 }
 // ---- battle: sticks are fixed (drive / aim); buttons go through the binding table ----
 function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
-  if(PAD.rx || PAD.ry){ _d.set(PAD.rx, 0, PAD.ry); const m=Math.min(1,_d.length()); _d.normalize(); if(S.camYaw) _d.applyAxisAngle(_UP, S.camYaw);
+  const am=Math.hypot(PAD.rx, PAD.ry);
+  if(am>0.02 && am<PAD_CFG.aim.minMag){ PAD.aimIdle=0; }                                      // Z124 a barely-tilted stick holds the gun where it is (its angle is just noise)
+  else if(am>=PAD_CFG.aim.minMag){ _d.set(PAD.rx, 0, PAD.ry); const m=Math.min(1,_d.length()); _d.normalize(); if(S.camYaw) _d.applyAxisAngle(_UP, S.camYaw);
     const R=playerRange()*(0.45+0.55*m); S.aimPoint.set(p.pos.x+_d.x*R, 0, p.pos.z+_d.z*R); S.pointerActive=true; PAD.aimIdle=0; }
   else { PAD.aimIdle+=dt; if(C.assist && PAD.aimIdle>PAD_CFG.assistAfter){ const t=aimTarget(playerRange());
       if(t){ S.aimPoint.set(t.pos.x, 0, t.pos.z); S.pointerActive=true; }
       else if(PAD.aimIdle>PAD_CFG.assistAfter+0.8){ S.aimPoint.set(p.pos.x+Math.sin(p.facing)*14, 0, p.pos.z+Math.cos(p.facing)*14); S.pointerActive=true; } } }   // nothing near: look where you drive
-  for(let i=0;i<17;i++){ if(!down(i) && !up(i)) continue; const a=actionForPad(i); if(a) runAction(a, down(i)?'down':'up'); }
+  if(down(BT.VIEW)) PAD.viewCombo=false;
+  for(let i=0;i<17;i++){ if(!down(i) && !up(i)) continue;
+    if(cur[BT.VIEW] && CAMC[i]){ if(down(i)){ PAD.viewCombo=true; runAction(CAMC[i], 'down'); } continue; }                      // Z124 hold ⧉ View + D-pad = camera (↑ in · ↓ out · ←→ rotate)
+    const a=actionForPad(i);
+    if(i===BT.VIEW && a==='keys'){ if(up(i) && !PAD.viewCombo) runAction('keys', 'down'); continue; }                           // ⧉ alone opens the key sheet on release
+    if(a) runAction(a, down(i)?'down':'up'); }
+  padHud(now);
 }
+const CAMC={ 12:'zoomIn', 13:'zoomOut', 14:'rotL', 15:'rotR' };
+// Z124 on-screen legend of the pad buttons that have no on-screen button (crew, orders, camera, guns) — follows the rebinding table
+const HUD_IDS=[['crew','LÍNH'],['autoFire','TỰ BẮN'],['gunPrev','SÚNG−'],['gunNext','SÚNG+'],['muster','TẬP KẾT'],['assault','XUNG PHONG'],['para','LÍNH DÙ'],['camAuto','CAM TỰ ĐỘNG'],['zoomOut','ZOOM'],['camReset','RESET CAM']];
+function padHud(now){ if(now<(PAD.hudAt||0)) return; PAD.hudAt=now+0.6; const el=document.getElementById('padHud'); if(!el) return;
+  const sig=HUD_IDS.map(([id])=>padFor(id)).join(','); if(sig===PAD.hudSig) return; PAD.hudSig=sig;
+  el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>⧉ + D-pad</b>XOAY CAM</span>'; }
 // ---- menus ----
 function navMenu(root, cur, down, lx, ly, ry, now){ ensureFocus(root);
   let dir=''; if(cur[BT.UP]||ly<-0.6) dir='u'; else if(cur[BT.DOWN]||ly>0.6) dir='d'; else if(cur[BT.LEFT]||lx<-0.6) dir='l'; else if(cur[BT.RIGHT]||lx>0.6) dir='r';

@@ -1,4 +1,5 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
+import { PAD_CFG } from '../../config.js';
 import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
@@ -31,6 +32,7 @@ export function buildPadSettings(){ const C=padCfg(), set=(k,v)=>{ C[k]=v; saveP
   const V=document.getElementById('setVib'); if(V){ V.innerHTML=''; V.appendChild(_segChip('TẮT', !C.vib, ()=>set('vib',false)));
     for(const [l,k] of [['NHẸ',0.4],['VỪA',0.8],['MẠNH',1.0]]) V.appendChild(_segChip(l, C.vib && Math.abs(C.vibK-k)<0.05, ()=>{ C.vib=true; set('vibK',k); setTimeout(()=>padRumble(0.8,0.5,200,true),30); })); }
   const E=document.getElementById('setEng'); if(E){ E.innerHTML=''; E.appendChild(_segChip('BẬT', C.engine, ()=>set('engine',true))); E.appendChild(_segChip('TẮT', !C.engine, ()=>set('engine',false))); }
+  const Se=document.getElementById('setSens'); if(Se){ Se.innerHTML=''; for(const [l,k] of PAD_CFG.sensSteps) Se.appendChild(_segChip(l, Math.abs((C.sens||1)-k)<0.01, ()=>set('sens',k), Math.round(k*100)+'%')); }
   const D=document.getElementById('setDead'); if(D){ D.innerHTML=''; for(const [l,k] of [['NHỎ',0.08],['VỪA',0.15],['LỚN',0.24]]) D.appendChild(_segChip(l, Math.abs(C.dead-k)<0.01, ()=>set('dead',k), Math.round(k*100)+'%')); }
   const Ph=document.getElementById('setPhone'); if(Ph){ Ph.innerHTML=''; Ph.appendChild(_segChip('BẬT', C.phone, ()=>{ set('phone',true); if(navigator.vibrate) try{ navigator.vibrate([60,40,90]); }catch(e){} })); Ph.appendChild(_segChip('TẮT', !C.phone, ()=>set('phone',false))); }
   const A=document.getElementById('setAssist'); if(A){ A.innerHTML=''; A.appendChild(_segChip('BẬT', C.assist, ()=>set('assist',true))); A.appendChild(_segChip('TẮT', !C.assist, ()=>set('assist',false))); }

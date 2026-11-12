@@ -518,5 +518,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/tgt>=12 \? 0\.4/.test(pm), 'hat D-pad levels (← is only 0.57 from rest) are detected');
   ok(fs.readFileSync('index.html','utf8').includes('id="padWiz"'), 'the wizard overlay exists'); }
 
+// Z124 analogue pad control: stick tilt = top speed, eased hull / gun swing, sensitivity setting, camera combo, button legend
+{ const fs=await import('node:fs'); const up=fs.readFileSync('src/game/update.js','utf8'), gpd=fs.readFileSync('src/input/gamepad.js','utf8'), cfg=fs.readFileSync('config.js','utf8');
+  ok(/PAD_CFG\.hull\.speedFull/.test(up) && /top = \(thr<0/.test(up), 'stick tilt scales the top speed (not just the acceleration)');
+  ok(/p\.yawV/.test(up) && /A\.slew/.test(up), 'pad: hull turn and gun swing are eased and rate-capped');
+  ok(/minMag/.test(gpd) && /CAMC/.test(gpd) && /padHud/.test(gpd), 'pad: dead-tilt holds the gun, View+D-pad = camera, button legend');
+  ok(/sens:1/.test(cfg) && fs.readFileSync('index.html','utf8').includes('id="setSens"') && fs.readFileSync('index.html','utf8').includes('id="padHud"'), 'sensitivity setting + legend exist'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

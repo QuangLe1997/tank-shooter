@@ -221,3 +221,8 @@ body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only o
 #padWiz{gap:10px;} .pw-id{font-size:11px;color:var(--muted);max-width:92vw;text-align:center;} .pw-step{font:800 clamp(22px,5vw,40px)/1.1 'Saira Condensed',Rajdhani,sans-serif;color:#ffd27a;text-align:center;letter-spacing:1px;min-height:1.2em;}
 .pw-bar{width:min(420px,80vw);height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;} .pw-bar i{display:block;height:100%;width:0;background:#9be04a;transition:width .2s;} .pw-n{font-size:11px;color:var(--muted);}
 .pw-live{font:700 13px/1.2 'Saira Condensed',Rajdhani,sans-serif;color:#9be04a;min-height:1.3em;text-align:center;} .pw-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+
+/* Z124 pad button legend in battle */
+#padHud{position:fixed;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:none;flex-wrap:wrap;gap:4px 10px;justify-content:center;max-width:92vw;padding:4px 10px;border-radius:999px;background:rgba(8,10,8,.55);pointer-events:none;
+  font:700 10px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.5px;color:#cfd8c0;opacity:.8;}
+#padHud b{color:#ffd27a;margin-right:4px;} body.pad:not(.inmenu) #padHud:not(:empty){display:flex;}
