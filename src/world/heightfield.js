@@ -4,7 +4,7 @@ import { RELIEF, FIELD, TERRAIN_FLAT } from '../../config.js';
 import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, _heightToNormal, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
-export const HF = { N: Math.min(MOBILE?140:240, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
+export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
 HF.step = HF.S/HF.N; HF.W = HF.N+1; HF.h = new Float32Array(HF.W*HF.W);
 export function heightAt(x, z){
   const fx=(x+ARENA)/HF.step, fz=(z+ARENA)/HF.step; if(fx<0||fz<0||fx>=HF.N||fz>=HF.N) return 0;

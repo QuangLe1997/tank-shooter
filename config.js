@@ -391,10 +391,10 @@ export const CAMPAIGN = { levels: 15, perLoop: 5,
 // WEATHER — look (fog ×, sun ×, haze tint, particles desktop/phone) + a light gameplay touch (your guns' reach ×)
 export const WEATHER = {
   clear:{ vi:'QUANG ĐÃNG', icon:'sun',  fogK:1,   sunK:1,    hemiK:1,    tint:null,     n:[0,0],     range:1 },
-  rain: { vi:'MƯA GIÔNG',  icon:'rain', fogK:1.7, sunK:0.5,  hemiK:0.82, tint:0x8a96a2, n:[1100,420], range:0.92, wet:0.42, bolt:[7,16] },
-  sand: { vi:'BÃO CÁT',    icon:'sand', fogK:2.7, sunK:0.62, hemiK:0.9,  tint:0xc9a06a, n:[900,360],  range:0.85 },
+  rain: { vi:'MƯA GIÔNG',  icon:'rain', fogK:1.45, sunK:0.5,  hemiK:0.82, tint:0x8a96a2, n:[1100,420], range:0.92, wet:0.42, bolt:[7,16] },
+  sand: { vi:'BÃO CÁT',    icon:'sand', fogK:1.8, sunK:0.72, hemiK:0.92, tint:0xc9a06a, n:[700,300],  range:0.85 },
   snow: { vi:'TUYẾT RƠI',  icon:'snow', fogK:1.6, sunK:0.78, hemiK:1.05, tint:0xd4dde6, n:[1000,400], range:0.95 },
-  fog:  { vi:'SƯƠNG MÙ',   icon:'fog',  fogK:3.4, sunK:0.66, hemiK:0.95, tint:0xc4c8cc, n:[0,0],     range:0.82 },
+  fog:  { vi:'SƯƠNG MÙ',   icon:'fog',  fogK:2.2, sunK:0.66, hemiK:0.95, tint:0xc4c8cc, n:[0,0],     range:0.82 },
 };
 // SPACE — how much of the arena the fence encloses (custom battles); the campaign always fights on the full field
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };
@@ -424,9 +424,9 @@ export const TOUCH_HELP = [
 //   stays sealed until the others have fallen, and its commander is the stage boss.
 export const FORT = {
   count:[3,3,4,4,4], countMobile:[3,3,3,3,4],
-  tiers:{ 1:{ r:[22,25], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[5,7],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
-          2:{ r:[25,28], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[7,9],  name:'PHÁO ĐÀI' },
-          3:{ r:[29,32], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[9,12], name:'THÀNH' } },
+  tiers:{ 1:{ r:[31,35], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[8,11],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
+          2:{ r:[35,40], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[11,14],  name:'PHÁO ĐÀI' },
+          3:{ r:[41,45], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[14,18], name:'THÀNH' } },
   gatePerStage:0.22, mobileMul:0.6, wallH:4.4, wallT:1.6, gateW:7.5, seg:3,
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate

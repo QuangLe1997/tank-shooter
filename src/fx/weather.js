@@ -9,18 +9,21 @@ export function _wxTex(kind){ const c=document.createElement('canvas'); c.width=
   x.fillStyle=g; x.fillRect(0,0,32,32); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
 export function weatherDef(id){ return WEATHER[id]||WEATHER.clear; }
 // apply on top of applyAtmosphere() (call right after it): haze, light, ground gloss, particles
-export function applyWeather(id){
-  const W=weatherDef(id); WX.id=WEATHER[id]?id:'clear'; WX.def=W; S.weather=WX.id;
+export function applyWeather(id, k){
+  const W=weatherDef(id); WX.id=WEATHER[id]?id:'clear'; WX.def=W; S.weather=WX.id; k=k==null?1:k;
+  // Z144 start from the battlefield's own atmosphere every time — weather used to stack on top of the last weather (a passing storm left the haze thick for good)
+  if(!WX.base && scene.fog) WX.base={ fogD:scene.fog.density, fogC:scene.fog.color.clone(), sun:sun.intensity, hemi:hemi.intensity, amb:ambient.intensity };
+  if(WX.base && scene.fog){ const B=WX.base; scene.fog.density=B.fogD; scene.fog.color.copy(B.fogC); if(scene.background && scene.background.isColor) scene.background.copy(B.fogC); sun.intensity=B.sun; hemi.intensity=B.hemi; ambient.intensity=B.amb; }
   if(WX.obj){ scene.remove(WX.obj); WX.obj.geometry.dispose(); WX.obj.material.dispose(); WX.obj=null; }
   if(WX.rough0==null) WX.rough0=groundMat.roughness;
   WX.exp0=renderer.toneMappingExposure; WX.flash=0; WX.boltT=W.bolt?W.bolt[0]:0;
-  if(W.fogK!==1 && scene.fog){ scene.fog.density*=W.fogK; }
-  if(W.tint!=null && scene.fog){ const c=new THREE.Color(W.tint), k=S.tod==='night'?0.25:0.6; scene.fog.color.lerp(c, k); if(scene.background && scene.background.isColor) scene.background.copy(scene.fog.color); }
-  sun.intensity*=W.sunK; hemi.intensity*=W.hemiK; if(WX.id!=='clear') ambient.intensity*=1.15;
+  if(W.fogK!==1 && scene.fog){ scene.fog.density*=1+(W.fogK-1)*k; }
+  if(W.tint!=null && scene.fog){ const c=new THREE.Color(W.tint), kk=(S.tod==='night'?0.25:0.6)*k; scene.fog.color.lerp(c, kk); if(scene.background && scene.background.isColor) scene.background.copy(scene.fog.color); }
+  sun.intensity*=1+(W.sunK-1)*k; hemi.intensity*=1+(W.hemiK-1)*k; if(WX.id!=='clear') ambient.intensity*=1.15;
   groundMat.roughness = W.wet ? Math.min(groundMat.roughness, 1-W.wet) : groundMat.roughness;   // rain: the dirt turns dark and glossy
   if(W.wet){ groundMat.color && groundMat.color.setScalar(0.82); } else if(groundMat.color) groundMat.color.setScalar(1);
   WX.wind.set(id==='sand'?14:(id==='rain'?2.5:1.2), id==='sand'?4:0.8);
-  const n=W.n[MOBILE?1:0]|0; WX.N=n; if(!n) return;
+  const n=Math.round((W.n[MOBILE?1:0]|0)*Math.min(1,k)); WX.N=n; if(!n) return;
   const [bx,by,bz]=WX.box, rain=id==='rain';
   const P=new Float32Array(n*(rain?6:3)), V=new Float32Array(n*3);
   for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*bx, y=Math.random()*by, z=(Math.random()-0.5)*bz;

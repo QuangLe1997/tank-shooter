@@ -609,5 +609,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/name:'SAVANNA'/.test(w) && /name:'ARCTIC'/.test(w) && /baobab/.test(f) && /acacia/.test(f) && /reedPlume/.test(f) && /iceSpire/.test(f), 'savanna and arctic biomes with their own plants');
   ok(/export function updateWildlife/.test(a) && /giraffe/.test(a) && /elephant/.test(a) && /reindeer/.test(a) && /flee/.test(a), 'wildlife herds graze and flee'); }
 
+// Z144 landmarks, country styles, weather reset, roomier field
+{ const fs=await import('node:fs'); const w=fs.readFileSync('src/world/wonders.js','utf8'), r=fs.readFileSync('src/world/regional.js','utf8'), wx=fs.readFileSync('src/fx/weather.js','utf8'), cc=fs.readFileSync('src/core/config.js','utf8');
+  ok(/GIZA/.test(w) && /DJENNÉ/.test(w) && /VẠN LÝ/.test(w) && /MỘT CỘT/.test(w) && /export function buildWonder/.test(w), 'world landmarks per battlefield');
+  ok(/'swallow'/.test(r) && /'tent'/.test(r) && /'pagoda'/.test(r) && /'chhatri'/.test(r) && /'toron'/.test(r), 'country-inspired fort caps and roofs');
+  ok(/WX\.base/.test(wx) && /applyWeather\(id, k\)/.test(wx), 'weather starts from the base atmosphere each time (no stacking)');
+  ok(/ARENA = _TOUCH \? 130 : 184/.test(cc), 'desktop battlefield has twice the area'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

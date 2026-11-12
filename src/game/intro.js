@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO } from '../../config.js';
-import { BIOME, FORTS, MOBILE, RIVER, S, SKY, TOD_LABEL, WAVE, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, scene, spawnPart } from '../hub.js';
+import { BIOME, FORTS, MOBILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, scene, spawnPart } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // A Catmull-Rom camera sweep: low hero shot of the tank → orbiting parade rise →
@@ -15,6 +15,7 @@ function buildTour(T){ const P=[], S0=S;
   const forts=FORTS.slice().sort((a,b)=>Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
   for(const f of forts) P.push({ x:f.x, z:f.z, h:f.tier===3?34:28, r:f.tier===3?30:24, txt:(f.tier===3?'ĐẠI BẢN DOANH ĐỊCH · ':'CỨ ĐIỂM ĐỊCH · ')+f.name });
   if(RIVER.on) for(const b of RIVER.bridges.slice(0,2)) P.push({ x:b.x, z:b.z, h:20, r:18, txt:'CẦU QUA SÔNG — XE LỘI NƯỚC SẼ CHẬM' });
+  if(WONDER.name) P.push({ x:WONDER.x, z:WONDER.z, h:46, r:70, txt:'DI SẢN · '+WONDER.name });   // Z144 the landmark
   P.push({ x:0, z:0, h:26, r:26, txt:'LÕI CỦA TA — TƯỜNG THÀNH · PHÁO CANH SẴN SÀNG' });
   if(P.length<2) return null;
   // order: start from the stop farthest from the tank, sweep round, end on our Core, then down to the tank

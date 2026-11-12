@@ -1,6 +1,6 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
-import { ATMOS, S, SHADOW_MAP, SHADOW_R, SUN_DIR, TOD_ORDER, ambient, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
+import { ATMOS, S, SHADOW_MAP, SHADOW_R, SUN_DIR, TOD_ORDER, WX, ambient, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
@@ -47,6 +47,7 @@ export function applyAtmosphere(b){
   u.vig.value = A.night ? 0.22 : 0.28;                                                                 // softer vignette (less eye strain)
   setSky(A);                                                                                           // Z97 visible sky dome matches the light
   setNightLights(!!A.night);
+  try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }
 // keep the key light (and its tight shadow frustum) centred on the action; snap to shadow texels to stop shimmer
 export function updateSunFollow(){

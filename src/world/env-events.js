@@ -9,7 +9,7 @@ function endActive(){ const A=ENVEV.active; if(!A) return; if(A.kind==='weather'
 function announce(t, c, r){ showBanner(t, c); if(r) radio(r); sfx('alarm'); }
 
 // ---- VILLAGE: flash flood (the water climbs the banks for a while: wading spreads, then it drains) ----
-function flood(now){ if(!RIVER.on) return false; ENVEV.active={ kind:'flood', t0:now, dur:22 }; announce('LŨ QUÉT! NƯỚC SÔNG DÂNG', '#7fd0ff', 'SCH: Lũ đầu nguồn đổ về — tránh xa bờ sông, qua cầu mà đi!'); return true; }
+function flood(now){ if(!RIVER.on) return false; ENVEV.active={ kind:'flood', t0:now, dur:16 }; announce('LŨ QUÉT! NƯỚC SÔNG DÂNG', '#7fd0ff', 'SCH: Lũ đầu nguồn đổ về — tránh xa bờ sông, qua cầu mà đi!'); return true; }
 // ---- HILLS: rockslide (boulders break loose from a crest near you and roll downhill, crushing anything in the way) ----
 function rockslide(now){ const p=S.player; if(!p) return false; let best=null, bh=1.2;
   for(let k=0;k<40;k++){ const a=Math.random()*6.28, r=22+Math.random()*30, x=p.pos.x+Math.cos(a)*r, z=p.pos.z+Math.sin(a)*r, h=heightAt(x,z); if(h>bh){ bh=h; best=[x,z]; } }
@@ -44,7 +44,7 @@ const SURGE={ DESERT:['sand','BÃO CÁT ẬP TỚI!','SCH: Bão cát — tầm n
   RUINS:['fog','SƯƠNG KHÓI DÀY ĐẶC!','SCH: Khói bụi phủ kín phố — địch có thể áp sát!'], FOUNDRY:['fog','KHÓI LÒ PHỦ KÍN!','SCH: Lò cao xả khói — cẩn thận phục kích!'], CITADEL:['sand','BÃO CÁT ẬP TỚI!','SCH: Bão cát quanh thành luỹ!'],
   CITY:['rain','MƯA GIÔNG TRÊN PHỐ!','SCH: Mưa lớn — đường phố trơn trượt!'], HILLS:['fog','SƯƠNG MÙ TRÊN ĐỒI!','SCH: Sương mù phủ đồi — địch có thể đánh úp!'], VILLAGE:['rain','MƯA RÀO!','SCH: Mưa rào trên đồng!'],
   SAVANNA:['sand','BÃO BỤI XAVAN!','SCH: Gió mùa khô cuốn bụi đỏ — tầm nhìn giảm!'], ARCTIC:['snow','BÃO TUYẾT BẮC CỰC!','SCH: Bão tuyết — bám đội hình, đừng lạc!'] };
-function surge(now){ const s=SURGE[BIOME.name]; if(!s || S.weather===s[0]) return false; ENVEV.active={ kind:'weather', t0:now, dur:30, prev:S.weather||'clear' }; applyWeather(s[0]); announce(s[1], '#9fd8ff', s[2]); return true; }
+function surge(now){ const s=SURGE[BIOME.name]; if(!s || S.weather===s[0]) return false; ENVEV.active={ kind:'weather', t0:now, dur:12, prev:S.weather||'clear' }; applyWeather(s[0], 0.55); /* Z144 a short, light gust — never a whole fight in the murk */ announce(s[1], '#9fd8ff', s[2]); return true; }
 
 export function updateEnvEvents(dt, now){
   updateRocks(dt, now); updateFall(dt, now);
@@ -53,6 +53,6 @@ export function updateEnvEvents(dt, now){
     if(u>=1) endActive(); }
   if(!ENVEV.next){ ENVEV.next=now+50+Math.random()*25; return; }
   if(now<ENVEV.next || ENVEV.active || ENVEV.fall || ENVEV.rocks.length) return;
-  ENVEV.next=now+75+Math.random()*40; const n=BIOME.name;
+  ENVEV.next=now+110+Math.random()*50; const n=BIOME.name;
   const done = (n==='VILLAGE' && Math.random()<0.6 && flood(now)) || (n==='HILLS' && Math.random()<0.7 && rockslide(now)) || (n==='CITY' && Math.random()<0.6 && collapse(now)) || surge(now);
   if(!done) ENVEV.next=now+20; }

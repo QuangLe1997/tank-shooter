@@ -6,32 +6,33 @@ import { BIOME, _mergeColored, _xf } from '../hub.js';
 
 // pattern · base colour · mortar / seam colour · roughness · metalness · cap on the wall top · roof on gate towers
 export const REGION = {
-  DESERT:  { pat:'adobe',    base:'#c9a26e', seam:'#9a7448', rough:0.95, metal:0.0,  cap:'merlon', roof:'dome',  trim:0x8a5a2c },
+  DESERT:  { pat:'ashlar',   base:'#d2b47c', seam:'#9a7448', rough:0.95, metal:0.0,  cap:'merlon', roof:'cornice',trim:0x8a5a2c },  // Z144 Egyptian sandstone, pylon cornices
   RUINS:   { pat:'concrete', base:'#8e8f8c', seam:'#5e5f5c', rough:0.9,  metal:0.05, cap:'wire',   roof:'flat',  trim:0x4a4c4e },
-  TUNDRA:  { pat:'ice',      base:'#cfe2ee', seam:'#8fb0c6', rough:0.35, metal:0.05, cap:'snow',   roof:'snow',  trim:0x6f8597 },
+  TUNDRA:  { pat:'brick',    base:'#a8402e', seam:'#e0d8cc', rough:0.85, metal:0.0,  cap:'swallow',roof:'tent',  trim:0x6f8597 },   // Z144 Kremlin-style red brick, swallowtail merlons, tent roofs
   FOUNDRY: { pat:'plate',    base:'#6a5a50', seam:'#3a2e28', rough:0.5,  metal:0.75, cap:'spike',  roof:'flat',  trim:0x9a4a2a },
-  CITADEL: { pat:'ashlar',   base:'#a8957a', seam:'#6e5e48', rough:0.92, metal:0.02, cap:'merlon', roof:'cone',  trim:0x6a5424 },
+  CITADEL: { pat:'ashlar',   base:'#b8805a', seam:'#7a4a30', rough:0.92, metal:0.02, cap:'merlon', roof:'chhatri',trim:0x6a5424 },  // Z144 Rajasthan red sandstone, chhatri pavilions
   MEADOW:  { pat:'log',      base:'#7a5a3a', seam:'#4a3420', rough:0.88, metal:0.0,  cap:'stake',  roof:'cone',  trim:0x4a5a30 },
   CITY:    { pat:'concrete', base:'#a2a4a6', seam:'#6a6c70', rough:0.88, metal:0.05, cap:'wire',   roof:'flat',  trim:0x3a3d40 },
-  HILLS:   { pat:'log',      base:'#6e5034', seam:'#43301c', rough:0.9,  metal:0.0,  cap:'stake',  roof:'cone',  trim:0x56603a },
+  HILLS:   { pat:'ashlar',   base:'#8a8a80', seam:'#5a5a52', rough:0.92, metal:0.0,  cap:'merlon', roof:'pagoda',trim:0x56603a },   // Z144 Great-Wall grey stone, Chinese tiled roofs
   VILLAGE: { pat:'brick',    base:'#b5643e', seam:'#d8c8a8', rough:0.9,  metal:0.0,  cap:'tile',   roof:'tile',  trim:0x7a3a22 },
-  SAVANNA: { pat:'adobe',    base:'#b0704a', seam:'#7a4a2c', rough:0.95, metal:0.0,  cap:'stake',  roof:'thatch',trim:0x8a5a34 },
+  SAVANNA: { pat:'adobe',    base:'#b0704a', seam:'#7a4a2c', rough:0.95, metal:0.0,  cap:'toron',  roof:'pinnacle',trim:0x8a5a34 },  // Z144 Sudano-Sahelian mud: toron beams, pinnacles
   ARCTIC:  { pat:'ice',      base:'#d8ecf6', seam:'#9ab8cc', rough:0.3,  metal:0.05, cap:'snow',   roof:'snow',  trim:0x8aa0b0 },
 };
 export const regionOf = (name)=>(typeof name==='object' && name) ? name : (REGION[name||BIOME.name]||REGION.CITADEL);
 // Z140 every fort of a battlefield is built differently: its own wall material, wall-top, tower roofs and corner towers (square piers or round drums)
-const PAT_COL = { adobe:['#c9a26e','#9a7448'], ashlar:['#a8957a','#6e5e48'], concrete:['#9a9c9e','#64666a'], plate:['#6a5a50','#3a2e28'], ice:['#cfe2ee','#8fb0c6'],
+const PAT_COL = { adobe:['#b8784e','#7a4a2c'], ashlar:['#a8957a','#6e5e48'], concrete:['#9a9c9e','#64666a'], plate:['#6a5a50','#3a2e28'], ice:['#cfe2ee','#8fb0c6'],
   log:['#6e5034','#43301c'], brick:['#b5643e','#d8c8a8'], laterite:['#a4583a','#5a2e1c'], bamboo:['#9aa04a','#5a6228'] };
 export const REGION_ALT = {
-  DESERT:{ pats:['adobe','ashlar'], caps:['merlon','spike'], roofs:['dome','flat'] },   RUINS:{ pats:['concrete','ashlar'], caps:['wire','merlon'], roofs:['flat','cone'] },
-  TUNDRA:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','cone'] },      FOUNDRY:{ pats:['plate','concrete'], caps:['spike','wire'], roofs:['flat','dome'] },
-  CITADEL:{ pats:['ashlar','adobe'], caps:['merlon','spike'], roofs:['cone','dome'] },  MEADOW:{ pats:['log','ashlar'], caps:['stake','merlon'], roofs:['cone','flat'] },
-  CITY:{ pats:['concrete','plate'], caps:['wire','spike'], roofs:['flat','dome'] },     HILLS:{ pats:['log','ashlar'], caps:['stake','merlon'], roofs:['cone','flat'] },
-  VILLAGE:{ pats:['brick','laterite','bamboo'], caps:['tile','stake','tile'], roofs:['tile','tile','cone'] },
-  SAVANNA:{ pats:['adobe','log'], caps:['stake','merlon'], roofs:['thatch','thatch'] }, ARCTIC:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','flat'] } };
+  DESERT:{ pats:['ashlar','adobe'], caps:['merlon','merlon'], roofs:['cornice','dome'] },   RUINS:{ pats:['concrete','ashlar'], caps:['merlon','wire'], roofs:['flat','cone'] },
+  TUNDRA:{ pats:['brick','ice'], caps:['snow','swallow'], roofs:['tent','onion'] },      FOUNDRY:{ pats:['plate','concrete'], caps:['wire','spike'], roofs:['flat','dome'] },
+  CITADEL:{ pats:['ashlar','adobe'], caps:['merlon','merlon'], roofs:['chhatri','onion'] },  MEADOW:{ pats:['ashlar','log'], caps:['stake','merlon'], roofs:['slate','cone'] },
+  CITY:{ pats:['concrete','plate'], caps:['spike','wire'], roofs:['flat','dome'] },     HILLS:{ pats:['ashlar','log'], caps:['stake','merlon'], roofs:['pagoda','pagoda'] },
+  VILLAGE:{ pats:['brick','laterite','bamboo'], caps:['stake','tile','tile'], roofs:['hue','tile','tile'] },
+  SAVANNA:{ pats:['adobe','adobe'], caps:['stake','toron'], roofs:['pinnacle','thatch'] }, ARCTIC:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','flat'] } };
 export function fortStyle(name, i){ const n=name||BIOME.name, st=regionOf(n), A=REGION_ALT[n]||{ pats:[st.pat], caps:[st.cap], roofs:[st.roof] };
   const pat=A.pats[i%A.pats.length], c=PAT_COL[pat]||[st.base,st.seam];
-  return Object.assign({}, st, { key:n+'#'+pat+'#'+A.caps[(i+1)%A.caps.length]+'#'+A.roofs[i%A.roofs.length], pat, base:c[0], seam:c[1], cap:A.caps[(i+1)%A.caps.length], roof:A.roofs[i%A.roofs.length],
+  const base = (pat===st.pat) ? st.base : c[0];
+  return Object.assign({}, st, { key:n+'#'+pat+'#'+A.caps[(i+1)%A.caps.length]+'#'+A.roofs[i%A.roofs.length], pat, base, seam:(pat===st.pat)?st.seam:c[1], cap:A.caps[(i+1)%A.caps.length], roof:A.roofs[i%A.roofs.length],
     rough: pat==='ice'?0.35:pat==='plate'?0.5:0.9, metal: pat==='plate'?0.75:0.03, round: i%2===1 }); }
 
 const R=(a,b)=>a+Math.random()*(b-a);
@@ -72,6 +73,8 @@ export function capGeo(name, H, TH, L){ const st=regionOf(name), key=st.cap+'|'+
   else if(st.cap==='snow'){ const s=new THREE.BoxGeometry(L*1.02, 0.28, TH*1.1); _xf(s,0,H+0.92,0); P.push({geo:s,col:0xf6fbff}); for(const sx of [-L*0.25,L*0.25]){ const c=new THREE.BoxGeometry(L*0.32,0.2,TH); _xf(c,sx,H+1.0,0); P.push({geo:c,col:0xffffff}); } }
   else if(st.cap==='wire'){ for(let k=0;k<3;k++){ const c=new THREE.TorusGeometry(0.34,0.025,4,10); c.rotateY(Math.PI/2); _xf(c, -L/2+0.5+k*(L-1)/2, H+1.25, 0); P.push({geo:c,col:0x9a9a92}); }
     const post=new THREE.BoxGeometry(0.06,0.9,0.06); _xf(post,0,H+1.15,0); P.push({geo:post,col:0x4a4a44}); }
+  else if(st.cap==='swallow'){ for(const sx of [-L*0.25,L*0.25]) for(const q of [-0.28,0.28]){ const m=new THREE.BoxGeometry(0.32,0.9,TH*0.9); m.rotateZ(q*0.9); _xf(m, sx+q, H+1.25, 0); P.push({geo:m,col:0xa8402e}); } }   // Kremlin swallowtail merlons
+  else if(st.cap==='toron'){ for(let k=0;k<5;k++) for(const sd of [-1,1]){ const t=new THREE.CylinderGeometry(0.06,0.07,0.9,5); t.rotateX(Math.PI/2); _xf(t, -L/2+0.3+k*(L-0.6)/4, H*(sd>0?0.55:0.85), sd*(TH/2+0.3)); P.push({geo:t,col:0x6a4a2a}); } }   // Djenné toron palm beams
   else if(st.cap==='spike'){ for(let k=0;k<6;k++){ const s=new THREE.ConeGeometry(0.09,0.7,4); _xf(s, -L/2+0.25+k*(L-0.5)/5, H+1.15, 0); P.push({geo:s,col:0x3a3632}); } }
   else if(st.cap==='tile'){ const sh=new THREE.Shape(); sh.moveTo(-TH*0.75,0); sh.lineTo(TH*0.75,0); sh.lineTo(0,0.55); sh.closePath();   // a little tiled coping, like a village wall
     const g=new THREE.ExtrudeGeometry(sh,{depth:L*1.01,bevelEnabled:false}); g.translate(0,0,-L*0.505); g.rotateY(Math.PI/2); _xf(g,0,H+0.82,0); P.push({geo:g,col:0x9e4a2a}); }
@@ -81,6 +84,19 @@ export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
   if(st.roof==='tile'){ const r=new THREE.ConeGeometry(s*0.95, s*0.7, 4); r.rotateY(Math.PI/4); _xf(r,0,y+s*0.35,0); P.push({geo:r,col:0xa84a2a});   // hip roof (cổng làng)
     const ridge=new THREE.ConeGeometry(0.18, 0.7, 6); _xf(ridge,0,y+s*0.7+0.3,0); P.push({geo:ridge,col:0x7a3a22});
     for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const c=new THREE.ConeGeometry(0.16,0.5,5); c.rotateZ(q[0]*0.9); _xf(c, q[0]*s*0.62, y+0.12, q[1]*s*0.62); P.push({geo:c,col:0x7a3a22}); } }   // upturned eaves
+  else if(st.roof==='tent'){ const c=new THREE.ConeGeometry(s*0.78, s*2.0, 4); c.rotateY(Math.PI/4); _xf(c,0,y+s*1.0,0); P.push({geo:c,col:0x3a6a4a}); const f=new THREE.CylinderGeometry(0.06,0.06,1.2,5); _xf(f,0,y+s*2.0+0.5,0); P.push({geo:f,col:0xd8b040}); }   // Kremlin tent roof
+  else if(st.roof==='onion'){ const d=new THREE.CylinderGeometry(s*0.32,s*0.36,s*0.5,10); _xf(d,0,y+s*0.25,0); P.push({geo:d,col:0xe8e0d0}); const o=new THREE.SphereGeometry(s*0.42,12,10); o.scale(1,1.15,1); _xf(o,0,y+s*0.85,0); P.push({geo:o,col:[0x2a8a5a,0xd8a830,0x3a6ac8,0xc83a3a][(Math.random()*4)|0]});
+    const t=new THREE.ConeGeometry(s*0.14,s*0.7,8); _xf(t,0,y+s*1.4,0); P.push({geo:t,col:0xd8a830}); }   // onion dome
+  else if(st.roof==='pagoda' || st.roof==='hue'){ const cols = st.roof==='hue' ? [0xd8a828,0x3a8a5a] : [0x2a6a4a,0xc8a030];   // two-tier curved tiled roof (Chinese / Huế Ngọ Môn yellow-green glaze)
+    for(let k=0;k<2;k++){ const r=new THREE.ConeGeometry(s*(1.0-k*0.3), s*0.42, 4); r.rotateY(Math.PI/4); _xf(r,0,y+0.3+k*s*0.5,0); P.push({geo:r,col:cols[k%2]});
+      for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const c=new THREE.ConeGeometry(0.12,0.55,4); c.rotateZ(q[0]*1.1); c.rotateX(-q[1]*0.4); _xf(c, q[0]*s*(0.72-k*0.22), y+0.3+k*s*0.5, q[1]*s*(0.72-k*0.22)); P.push({geo:c,col:cols[k%2]}); } }   // upturned eaves
+    const cp=new THREE.BoxGeometry(s*0.5,s*0.45,s*0.5); _xf(cp,0,y+0.1+s*0.25,0); P.push({geo:cp,col:0xa8302a}); const fn=new THREE.SphereGeometry(0.2,8,6); _xf(fn,0,y+s*1.05,0); P.push({geo:fn,col:0xd8a828}); }
+  else if(st.roof==='chhatri'){ for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const pl=new THREE.CylinderGeometry(0.1,0.1,s*0.6,6); _xf(pl, q[0]*s*0.3, y+s*0.3, q[1]*s*0.3); P.push({geo:pl,col:0xc89a70}); }   // Rajasthani chhatri
+    const sl=new THREE.BoxGeometry(s*0.8,0.15,s*0.8); _xf(sl,0,y+s*0.62,0); P.push({geo:sl,col:0xb8805a}); const d=new THREE.SphereGeometry(s*0.38,12,8,0,6.28,0,Math.PI/2); _xf(d,0,y+s*0.68,0); P.push({geo:d,col:0xe8d8c0}); const t=new THREE.ConeGeometry(0.08,0.5,6); _xf(t,0,y+s*1.1,0); P.push({geo:t,col:0xd8a830}); }
+  else if(st.roof==='pinnacle'){ const c=new THREE.CylinderGeometry(s*0.12,s*0.42,s*1.4,8); _xf(c,0,y+s*0.7,0); P.push({geo:c,col:0xb0704a}); const e=new THREE.SphereGeometry(s*0.13,8,6); e.scale(1,1.3,1); _xf(e,0,y+s*1.48,0); P.push({geo:e,col:0xf4f0e8});   // mud pinnacle + ostrich egg
+    for(let k=0;k<6;k++){ const t=new THREE.CylinderGeometry(0.05,0.05,0.8,4); t.rotateZ(Math.PI/2); t.rotateY(k/6*6.28); _xf(t,0,y+s*(0.35+(k%2)*0.4),0); P.push({geo:t,col:0x6a4a2a}); } }
+  else if(st.roof==='cornice'){ const c=new THREE.CylinderGeometry(s*0.82, s*0.66, 0.6, 4); c.rotateY(Math.PI/4); _xf(c,0,y+0.3,0); P.push({geo:c,col:0xd8b884}); const b=new THREE.BoxGeometry(s*1.0,0.14,s*1.0); _xf(b,0,y+0.65,0); P.push({geo:b,col:0x3a6ac8}); }   // Egyptian cavetto cornice
+  else if(st.roof==='slate'){ const c=new THREE.ConeGeometry(s*0.82, s*1.5, 12); _xf(c,0,y+s*0.75,0); P.push({geo:c,col:0x4a5a78}); }   // European castle slate spire
   else if(st.roof==='thatch'){ const c=new THREE.ConeGeometry(s*0.9, s*0.95, 10); _xf(c,0,y+s*0.47,0); P.push({geo:c,col:0xc8a460}); const r=new THREE.TorusGeometry(s*0.82,0.08,4,12); r.rotateX(Math.PI/2); _xf(r,0,y+0.12,0); P.push({geo:r,col:0x8a6a3a}); }   // straw thatch
   else if(st.roof==='dome'){ const d=new THREE.SphereGeometry(s*0.55, 12, 8, 0, Math.PI*2, 0, Math.PI/2); _xf(d,0,y,0); P.push({geo:d,col:0xd8b884}); }
   else if(st.roof==='cone'){ const c=new THREE.ConeGeometry(s*0.8, s*0.9, 8); _xf(c,0,y+s*0.45,0); P.push({geo:c,col:st.pat==='log'?0x5a4028:0x7a6248}); }

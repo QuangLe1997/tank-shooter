@@ -101,7 +101,7 @@ function fleet(geo, list, cr){ if(!list.length) return; const im=new THREE.Insta
   im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }
 // ---------- the district ----------
 export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA/G), cars=[], vans=[], motos=[], trees=[], lamps=[], poles=[];
-  const roadOK=(x,z)=>inField(x,z,4) && !inZone(x,z,3) && Math.hypot(x,z)>30;
+  const roadOK=(x,z)=>inField(x,z,4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<158;
   const RT=roadT(), WT=walkT(), ZT=zebraT();
   const roadMat=()=>new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), walkMat=()=>new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 });
   const strip=(key,mk,x,z,len,wid,ang,y,tl,tw)=>{ const g=new THREE.PlaneGeometry(len,wid), uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*len/tl, uv.getY(i)*(tw?wid/tw:1)); g.rotateX(-Math.PI/2); g.rotateY(ang); g.translate(x, heightAt(x,z)+y, z); bucket(key,mk).geos.push(g); };
@@ -126,7 +126,7 @@ export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA
       for(const [yy,c] of [[0.35,0xe82020],[0,0xe8b020],[-0.35,0x20c840]]) det(new THREE.SphereGeometry(0.11,8,6), px, y+4.4+yy, pz-0.52, 0, c); } }
   // blocks: each cell between roads becomes a row of tube houses with alleys, an apartment pair, an office tower, villas or a little park
   let towers=0;
-  for(let i=-n;i<n;i++) for(let j=-n;j<n;j++){ const cx=i*G+G/2, cz=j*G+G/2, half=(G-ROAD)/2-WALK-0.4; if(!inField(cx,cz,half+2) || inZone(cx,cz,half) || Math.hypot(cx,cz)<half+26) continue;
+  for(let i=-n;i<n;i++) for(let j=-n;j<n;j++){ const cx=i*G+G/2, cz=j*G+G/2, half=(G-ROAD)/2-WALK-0.4; if(!inField(cx,cz,half+2) || inZone(cx,cz,half) || Math.hypot(cx,cz)<half+26 || Math.hypot(cx,cz)>150) continue;
     ZONES.push({ kind:'landmark', x:cx, z:cz, r:half*0.95 }); const r=Math.random(), dep=9.2;
     if(r<0.5){ for(const side of [1,-1]){ let a=-half+0.2; const ry=side>0?0:Math.PI;                                  // two rows back to back, a back alley between them
         while(a<half-3.5){ const w=_R(4,6.2); if(a+w>half) break; const ox=cx+a+w/2, oz=cz+side*(half-dep/2); tubeHouse(ox, oz, ry, w, dep); a+=w;

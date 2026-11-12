@@ -18,7 +18,7 @@ export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.st
     const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?0.7:1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, d=Math.min(FR*fr, FR-R-9);   // big forts: keep the whole ring inside the fence
     const x=Math.cos(a)*d, z=Math.sin(a)*d;
     if(!inField(x, z, R+7) || Math.hypot(x,z)<R+18 || Math.hypot(x, z-ARENA*0.55)<R+40) continue;
-    if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+16)) continue;
+    if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+34)) continue;   // Z144 wide gaps between strongholds
     cand.push({ x, z, R, tier }); }
   for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+FORT.names[(_nameI++)%FORT.names.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],
       captured:false, breached:false, active:false, units:[], cmd:null, sallyAt:0, g:null };

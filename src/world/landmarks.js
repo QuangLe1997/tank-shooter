@@ -2,7 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, crushables, heightAt, inField, inZone } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, heightAt, inField, inZone } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 const WALLS=[ ['#b9b1a4','#6f8aa6'], ['#9fa8b0','#46607a'], ['#c8a98a','#5a6e84'], ['#a99a8a','#3e5670'] ];   // [wall, glass]
@@ -93,6 +93,6 @@ export function buildLandmarks(){
   clearLandmarks(); LAND.mats.length=0; const n=BIOME.name;
   if(n==='CITY') buildCityDistrict(); else if(n==='VILLAGE') buildVillage(); }   // Z142 the city is a real district now (city.js)
 // Z141 vegetation goes in last, round whatever was built
-export function buildScenery(){ buildFlora(); buildWildlife(); }   // Z143 + herds of wild animals
+export function buildScenery(){ buildFlora(); buildWildlife(); buildWonder(); }   // Z144 + the land's famous landmark   // Z143 + herds of wild animals
 // lit windows glow at night
 export function updateLandmarkGlow(){ if(!LAND.mats.length) return; const k=NIGHT.k*1.5; for(const m of LAND.mats) if(Math.abs(m.emissiveIntensity-k)>0.01) m.emissiveIntensity=k; }
