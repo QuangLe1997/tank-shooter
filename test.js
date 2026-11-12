@@ -565,5 +565,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/boss\.shielded/.test(f) && /PYLONS/.test(f) && /kind:at\?'tank':'pylon'/.test(f), 'soldiers / AT target the pylons while the boss is shielded');
   ok(/kind==='pylon'/.test(f) && /\*0\.6/.test(f), 'sappers charge pylons (60% of their health per charge); mortars shell them'); }
 
+// Z135 smarter allied tanks
+{ const fs=await import('node:fs'); const f=fs.readFileSync('src/actors/ally-tanks.js','utf8');
+  ok(/function clearShot/.test(f) && /jinkUntil/.test(f) && /isPylon/.test(f) && /shotOk/.test(f), 'ally tanks: cover-aware targets, jink when hit, pylons, no shooting into walls'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

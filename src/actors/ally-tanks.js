@@ -2,7 +2,7 @@
 //   (armour first, then infantry), keep a stand-off range, regroup on you when the field is quiet, and can be knocked out.
 import * as THREE from 'three';
 import { ALLY_TANK, INFANTRY, HIJACK } from '../../config.js';
-import { FORTS, FT, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, killEnemy, makeLauncherMesh, radio, removeEnemy, ringPulse, scene, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
+import { FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, radio, removeEnemy, ringPulse, scene, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
 
 export const ALLY_TANKS=[];
 export const ALLY_PAL={ hull:0x55663a, turret:0x627344, barrel:0x7a8a52, tread:0x22281a, accent:0x9be04a };   // captured hull, our colours
@@ -46,9 +46,22 @@ export function captureVehicle(e){ if(ALLY_TANKS.length>=ALLY_TANK.cap){ floatTe
 function pickTarget(t){ let best=null, bs=ALLY_TANK.sight;
   if(t.kind==='rocket'){ const R=HIJACK.rocket; for(const e of enemies){ if(!e.def.air || e.abandoned) continue; const d=Math.hypot(e.pos.x-t.pos.x, e.pos.z-t.pos.z); if(d<R.airR && d<bs){ bs=d; best=e; } } if(best) return best; bs=R.range; }   // Z116 AA first
   if(t.kind==='apc'){ for(const e of enemies){ if(!e.def.inf) continue; const d=Math.hypot(e.pos.x-t.pos.x, e.pos.z-t.pos.z); if(d<HIJACK.apc.range && d<bs){ bs=d; best=e; } } return best; }   // MG → infantry only
-  for(const e of enemies){ if(e.def.air || e.abandoned) continue; const d=Math.hypot(e.pos.x-t.pos.x, e.pos.z-t.pos.z)*(solidTank(e)?0.8:1); if(d<bs){ bs=d; best=e; } }
-  if(boss&&boss.alive){ const d=Math.hypot(boss.pos.x-t.pos.x, boss.pos.z-t.pos.z)*0.8; if(d<bs) best=boss; }
+  const p=S.player;                                                                                  // Z135 smarter picks: defend the core and you, finish the wounded, skip what sits behind cover
+  for(const e of enemies){ if(e.def.air || e.abandoned) continue; let d=Math.hypot(e.pos.x-t.pos.x, e.pos.z-t.pos.z)*(solidTank(e)?0.8:1);
+    if(core && Math.hypot(e.pos.x-core.pos.x, e.pos.z-core.pos.z)<45) d*=0.65;
+    if(p && Math.hypot(e.pos.x-p.pos.x, e.pos.z-p.pos.z)<28) d*=0.8;
+    if(e.hp<e.maxHp*0.4) d*=0.85;
+    if(d<bs*1.7 && !clearShot(t, e)) d*=1.7;
+    if(d<bs){ bs=d; best=e; } }
+  if(boss&&boss.alive){
+    if(boss.shielded){ for(const py of PYLONS){ if(!blocks.includes(py)) continue; const d=Math.hypot(py.x-t.pos.x, py.z-t.pos.z)*0.8; if(d<bs){ bs=d; best={ pos:new THREE.Vector3(py.x,0,py.z), isPylon:true, block:py }; } } }   // the general is immune until its pylons fall
+    else { const d=Math.hypot(boss.pos.x-t.pos.x, boss.pos.z-t.pos.z)*0.8; if(d<bs) best=boss; } }
   return best; }
+// is the line from this hull to the target free of cover? (rounds stop on rocks, walls, towers — firing into them is wasted)
+function clearShot(t, T){ const dx=T.pos.x-t.pos.x, dz=T.pos.z-t.pos.z, d=Math.hypot(dx,dz); if(d<5) return true; const ux=dx/d, uz=dz/d;
+  for(let s=2.6; s<d-1.2; s+=1.7){ const x=t.pos.x+ux*s, z=t.pos.z+uz*s;
+    for(const b of blocks){ if(b.kind==='parked' || b.kind==='pylon' || b===T.block || Math.abs(b.x-x)>7 || Math.abs(b.z-z)>7) continue; if(inBlock(b, x, z, 0.3)) return false; } }
+  return true; }
 export function damageAllyTank(t, dmg){ if(t.dead) return; t.hp-=dmg; t.hitT=0.15; if(t.hp<=0) killAllyTank(t); }
 function killAllyTank(t){ t.dead=true; const i=ALLY_TANKS.indexOf(t); if(i>=0) ALLY_TANKS.splice(i,1); if(t.bar){ freeEnemyBar(t.bar); t.bar=null; }
   tankExplode({x:t.pos.x,z:t.pos.z}, 0xff9a4a, t.heavy?1.9:1.6, ALLY_PAL, t.mesh.scale.x); scene.remove(t.mesh); radio('SCH: Một xe tăng đồng minh đã bị hạ!'); }
@@ -78,10 +91,16 @@ export function allyArmourNear(x, z, R){ let best=null, bd=R; for(const t of ALL
 export function clearAllyTanks(){ for(const t of ALLY_TANKS){ scene.remove(t.mesh); if(t.bar) freeEnemyBar(t.bar); } ALLY_TANKS.length=0; }
 export function updateAllyTanks(dt, now){ const p=S.player; if(!p || !ALLY_TANKS.length) return; const A=ALLY_TANK;
   for(const t of ALLY_TANKS.slice()){
+    if(t._hp0!==undefined && t.hp<t._hp0-1){ t.jinkUntil=now+1.1; t.jinkDir=Math.random()<0.5?-1:1; } t._hp0=t.hp;   // Z135 took a hit → jink for a moment
     if(now>=t.thinkAt){ t.thinkAt=now+0.5+Math.random()*0.2; t.target=pickTarget(t);
       const dp=Math.hypot(p.pos.x-t.pos.x, p.pos.z-t.pos.z);
       if(t.target && !(dp>A.leash && Math.hypot(t.target.pos.x-p.pos.x, t.target.pos.z-p.pos.z)>A.leash)){ const qx=t.target.pos.x-t.pos.x, qz=t.target.pos.z-t.pos.z, qd=Math.hypot(qx,qz)||1;
-        t.goal = qd>A.keep+3 ? [t.target.pos.x-qx/qd*A.keep, t.target.pos.z-qz/qd*A.keep] : (qd<A.keep-5 ? [t.pos.x-qx/qd*6, t.pos.z-qz/qd*6] : null); }
+        t.shotOk = clearShot(t, t.target);
+        const sx=-qz/qd, sz=qx/qd, sg=t.jinkDir||(ALLY_TANKS.indexOf(t)%2?1:-1);                                      // sideways unit vector
+        if(t.hp<t.maxHp*0.35 && dp>14){ const bx=-Math.sin(p.facing), bz=-Math.cos(p.facing); t.goal=[p.pos.x+bx*8+sx*sg*6, p.pos.z+bz*8+sz*sg*6]; }   // Z135 badly hurt → fall back behind you, keep shooting
+        else if(now<(t.jinkUntil||0)){ t.goal=[t.pos.x+sx*sg*9, t.pos.z+sz*sg*9]; }                                   // just got hit → jink, don't sit still
+        else if(!t.shotOk){ t.goal=[t.pos.x+sx*sg*10 + qx/qd*3, t.pos.z+sz*sg*10 + qz/qd*3]; }                        // cover in the way → side-step to find a firing lane
+        else t.goal = qd>A.keep+3 ? [t.target.pos.x-qx/qd*A.keep, t.target.pos.z-qz/qd*A.keep] : (qd<A.keep-5 ? [t.pos.x-qx/qd*6, t.pos.z-qz/qd*6] : [t.pos.x+sx*sg*4, t.pos.z+sz*sg*4]); }   // in range: slow circle-strafe instead of parking
       else { const side=(ALLY_TANKS.indexOf(t)%2?1:-1), bx=-Math.sin(p.facing), bz=-Math.cos(p.facing); t.target=t.target&&dp<A.leash?t.target:null;   // regroup: off your rear quarter
         const gx=p.pos.x+bx*10+bz*side*9, gz=p.pos.z+bz*10-bx*side*9; t.goal = Math.hypot(gx-t.pos.x, gz-t.pos.z)>5 ? [gx,gz] : null; } }
     // drive (steer round obstacles), turn the hull toward the travel direction
@@ -96,11 +115,11 @@ export function updateAllyTanks(dt, now){ const p=S.player; if(!p || !ALLY_TANKS
     if(Math.hypot(t.vel.x,t.vel.z)>INFANTRY.crushSpeed) for(const e of enemies.slice()){ if(e.def.inf && hitsHull(t, e.pos.x, e.pos.z, 0.35)){ e._crushed=true; killEnemy(e); } }   // tracks run enemy infantry down
     clampField(t.pos, 4);
     // lay the gun on the target and fire when it is lined up
-    const T=t.target; if(T && !enemies.includes(T) && T!==boss) t.target=null;
+    const T=t.target; if(T && !enemies.includes(T) && T!==boss && !(T.isPylon && blocks.includes(T.block))) t.target=null;
     const aimW = t.target ? Math.atan2(t.target.pos.x-t.pos.x, t.target.pos.z-t.pos.z) : t.facing; t.aim=wrapAngle(t.aim+wrapAngle(aimW-t.aim)*Math.min(1,dt*3));
     const tur=t.mesh.userData.turret; if(tur) tur.rotation.y=wrapAngle(t.aim-t.facing);
     if(t.kind!=='tank'){ allyKindFire(t, now); }   // Z116 MG carrier / rocket truck
-    else if(t.target && now>=t.fireAt && Math.abs(wrapAngle(aimW-t.aim))<0.08 && S.mode==='playing'){ const d=Math.hypot(t.target.pos.x-t.pos.x, t.target.pos.z-t.pos.z);
+    else if(t.target && t.shotOk!==false && now>=t.fireAt && Math.abs(wrapAngle(aimW-t.aim))<0.08 && S.mode==='playing'){ const d=Math.hypot(t.target.pos.x-t.pos.x, t.target.pos.z-t.pos.z);
       if(d<A.range){ t.fireAt=now+A.fireCd*(t.heavy?1.2:1)*(0.85+Math.random()*0.3); const mz=t.mesh.userData.muzzle; if(mz) mz.getWorldPosition(_am); else _am.set(t.pos.x,1.6,t.pos.z);
         const dmg=A.dmg*(t.heavy?1.5:1)*(1+(S.stage-1)*0.12);
         spawnBullet(_am.x, _am.z, t.aim+(Math.random()-0.5)*0.03, { owner:'p', from:t.pos, dmg, speed:A.bspeed, color:0xc8f070, r:0.45, life:2, maxDist:A.range+2, noArc:true, y:_am.y, dropTo:1.2, type:'AP', fx:'blast', aoe:1.6, aoeDmg:dmg*0.5, knock:2 });
