@@ -151,7 +151,11 @@
     display:none;align-items:center;gap:7px;z-index:13;pointer-events:none;white-space:nowrap;
     font-size:13px;font-weight:900;letter-spacing:3px;color:#ff6a4a;text-transform:uppercase;text-shadow:0 2px 10px rgba(0,0,0,.85);}
   #corewarn .ic{width:18px;height:18px;color:#ff6a4a;}
-  body.corelow #corewarn{display:flex;animation:warnBlink .8s steps(2,end) infinite;}
+  body.corelow #corewarn,body.coreatk #corewarn{display:flex;} body.corelow #corewarn,body.coredanger #corewarn{animation:warnBlink .8s steps(2,end) infinite;}
+  body.coredanger #corealarm{opacity:1;animation:alarmPulse 1.4s ease-in-out infinite;}
+  #coreArrow{position:fixed;display:none;z-index:14;pointer-events:none;flex-direction:column;align-items:center;gap:2px;transform:translate(-50%,-50%);}
+  #coreArrow i{display:block;width:0;height:0;border-left:26px solid #ff6a4a;border-top:15px solid transparent;border-bottom:15px solid transparent;filter:drop-shadow(0 0 8px rgba(255,80,50,.9));animation:warnBlink .7s steps(2,end) infinite;}
+  #coreArrow b{font:900 12px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:1px;color:#ffb35a;text-shadow:0 2px 6px #000;}
   @keyframes warnBlink{0%,100%{opacity:1;}50%{opacity:.3;}}
   /* ===== best-score lines ===== */
   .bestline{font-size:12px;letter-spacing:3px;color:var(--amber);font-weight:800;text-transform:uppercase;opacity:.9;margin-top:2px;min-height:14px;}
