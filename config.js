@@ -518,7 +518,7 @@ export const RAM = { minV:6, fullV:16, weakHp:120, weakK:0.3, frac:0.4, steelHp:
 export const CLOUD_CFG = {
   sdk:'https://www.gstatic.com/firebasejs/12.4.0/',
   app:{ apiKey:'AIzaSyAYPbafNmjt60TdetcJqjkfmoBNfauX6Gg', authDomain:'steel-siege.firebaseapp.com', projectId:'steel-siege', storageBucket:'steel-siege.firebasestorage.app', messagingSenderId:'1084345642980', appId:'1:1084345642980:web:4f8e62047785332f8fe1f1' },   // allowlist secret — Firebase web API key is a public identifier (shipped to every browser); data access is enforced by firestore.rules + Auth
-  google:false,          // turned on once the Google provider is enabled in the console
+  google:true,           // Z164 Google provider on (support email = the Firebase account); link button shows on the web build only
   pushEvery:20,          // s — at most one cloud write per this many seconds while playing
   localOnly:['perfDpr','perfAO','quality','pad','padmap','padAsk','binds','autoFs','sfxVol','sound','music','voice','ctrl','turretK','tips','introSeen','_rev','_syncedRev','_cloudUid'],
 };

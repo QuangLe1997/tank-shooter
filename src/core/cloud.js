@@ -58,6 +58,6 @@ export async function syncNow(){ if(!FB){ await initCloud(); return; } await pul
 export async function linkGoogle(){ if(!FB) return false; const { AU, auth }=FB, prov=new AU.GoogleAuthProvider();
   try{ const r=await AU.linkWithPopup(auth.currentUser, prov); CLOUDSAVE.anon=false; CLOUDSAVE.email=r.user.email||''; set('ready'); await pushNow(); return true; }
   catch(e){ if(e.code==='auth/credential-already-in-use'){ const cred=AU.GoogleAuthProvider.credentialFromError(e); if(cred){ backupLocal(); await AU.signInWithCredential(auth, cred); return true; } }   // that Google account already has a save → switch to it (onAuthStateChanged pulls it)
-    set('error', e.code||e.message); return false; } }
+    CLOUDSAVE.err=e.code||e.message; emit(); return false; } }   // a failed / cancelled link leaves the save untouched (state stays as it was)
 export async function signOutCloud(){ if(!FB) return; backupLocal(); await FB.AU.signOut(FB.auth); }   // a new anonymous player starts; the local save stays
 export function cloudFB(){ return FB; }   // Z162 the loaded Firebase modules + app (for core/econ.js)
