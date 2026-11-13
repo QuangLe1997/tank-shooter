@@ -18,6 +18,7 @@ let _atlas=null; function leafAtlas(){ if(_atlas) return _atlas; const S=256, c=
     for(let t=-S*0.44;t<S*0.44;t+=3){ const len=(S*0.07)*(1-Math.abs(t)/(S*0.5))+4, v=(170+rnd()*85)|0; x.strokeStyle=`rgb(${v-20},${v},${v-30})`; x.lineWidth=1.4;
       for(const sg of [-1,1]){ x.beginPath(); x.moveTo(t,0); x.lineTo(t+len*0.5, sg*len); x.stroke(); } } x.restore(); }
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return (_atlas=t); }
+// (the bend centre sits BELOW a layer of sprays so their normals lean up-and-out to the sky, not down at the ground)
 // a leaf card: a quad whose UVs land in the leaf (kind 1) or needle (kind 2) region, its normals bent outward from the crown centre so the
 //   whole canopy shades like one soft mass instead of flat planes
 const _LA=new THREE.Vector3();   // BufferGeometry.lookAt takes a Vector3
@@ -48,8 +49,8 @@ const _MC=_mergeColored, mergeL=(P)=>leafy(P);   // Z146 stems → white texel, 
 // ---------- species ----------
 const conifer=(snow)=>geo('con'+(snow?1:0), ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.12,0.3,8.6,7); tr.translate(0,4.3,0); P.push({geo:tr,col:0x4e3a28});   // Z146 a real spruce: trunk to the tip, whorls of drooping needle sprays
   for(let k=0;k<9;k++){ const y=1.7+k*0.78, r=2.5*(1-k/10)+0.3, n=k<6?8:6;
-    const core=new THREE.ConeGeometry(r*0.55, 1.3, 7, 1, true); core.translate(0,y+0.2,0); P.push({geo:core,col:0x2c4c28});                                // dark inner mass
-    for(let q=0;q<n;q++){ const a=q/n*6.283+k*0.4, c=card(r*1.15, 0.9, 2, 0, y+0.6, 0, 0.55); c.rotateX(-Math.PI/2); c.translate(r*0.5,0,0); c.rotateZ(-0.38-k*0.02); c.rotateY(a); c.translate(0,y,0); P.push({geo:c,col:k%2?0x4a7a3e:0x3e6e34}); }   // Z147 lighter needles: spruce read as black holes on the bright pasture
+    const core=new THREE.ConeGeometry(r*0.55, 1.3, 7, 1, true); core.translate(0,y+0.2,0); P.push({geo:core,col:0x3a6232});                                // dark inner mass
+    for(let q=0;q<n;q++){ const a=q/n*6.283+k*0.4, c=card(r*1.15, 0.9, 2, 0, y-1.6, 0, 0.45); c.rotateX(-Math.PI/2); c.translate(r*0.5,0,0); c.rotateZ(-0.38-k*0.02); c.rotateY(a); c.translate(0,y,0); P.push({geo:c,col:k%2?0x4a7a3e:0x3e6e34}); }   // Z147 lighter needles: spruce read as black holes on the bright pasture
     if(snow && k%2===0){ const sn=new THREE.ConeGeometry(r*0.7,0.5,8,1,true); sn.translate(0,y+0.55,0); P.push({geo:sn,col:0xf2f6fa}); } }
   const tip=new THREE.ConeGeometry(0.28,1.3,6); tip.translate(0,9.1,0); P.push({geo:tip,col:snow?0xf2f6fa:0x2e5a2a}); return mergeL(P); });
 export const treeBroadleaf=()=>broadleaf(), treeConifer=()=>conifer(false), treePalm=()=>palm();
@@ -62,7 +63,7 @@ const broadleaf=()=>geo('bl', ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.
   return mergeL(P); });
 const palm=()=>geo('pm', ()=>{ const P=[]; let x=0, y=0, ang=0;
   for(let k=0;k<5;k++){ const L=1.45, c=new THREE.CylinderGeometry(0.15-k*0.01,0.2-k*0.01,L,7); c.translate(0,L/2,0); c.rotateZ(-ang); c.translate(x,y,0); P.push({geo:c,col:k%2?0x8a7456:0x7a664a}); x+=Math.sin(ang)*L; y+=Math.cos(ang)*L; ang+=0.07; }
-  for(let k=0;k<12;k++){ const a=k/12*6.28, f=card(4.2, 1.5, 2, x, y+0.6, 0, 0.35); f.rotateX(-Math.PI/2); f.translate(2.0,0,0); f.rotateZ(-(0.35+(k%3)*0.22)); f.rotateY(a); f.translate(x,y-0.1,0); P.push({geo:f,col:k%2?0x4f8a34:0x66a040}); }   // Z146 feathery fronds
+  for(let k=0;k<12;k++){ const a=k/12*6.28, f=card(4.2, 1.5, 2, x, y-2.0, 0, 0.4); f.rotateX(-Math.PI/2); f.translate(2.0,0,0); f.rotateZ(-(0.35+(k%3)*0.22)); f.rotateY(a); f.translate(x,y-0.1,0); P.push({geo:f,col:k%2?0x4f8a34:0x66a040}); }   // Z146 feathery fronds
   for(let k=0;k<4;k++){ const n=new THREE.SphereGeometry(0.17,6,5); n.translate(x+Math.cos(k*1.6)*0.25, y-0.35, Math.sin(k*1.6)*0.25); P.push({geo:n,col:0x6a7a34}); } return mergeL(P); });
 const bamboo=()=>geo('bb', ()=>{ const P=[]; for(let k=0;k<11;k++){ const a=Math.random()*6.28, r=Math.random()*0.9, h=_R(6.5,9.5), c=new THREE.CylinderGeometry(0.06,0.09,h,5); c.translate(0,h/2,0); c.rotateZ(_R(-0.12,0.12)); c.rotateX(_R(-0.12,0.12)); c.translate(Math.cos(a)*r,0,Math.sin(a)*r); P.push({geo:c,col:k%2?0x9aa04a:0x88923e});
     for(let q=0;q<4;q++){ const lf=new THREE.ConeGeometry(0.5,1.6,4); lf.scale(1,1,0.2); lf.rotateZ(1.2+_R(-0.3,0.3)); lf.rotateY(_R(0,6.28)); lf.translate(Math.cos(a)*r, h*(0.55+q*0.12), Math.sin(a)*r); P.push({geo:lf,col:q%2?0x5f8a30:0x76a03a}); } } return mergeL(P); });

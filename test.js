@@ -637,5 +637,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/nanPass/.test(rd) && /isnan/.test(rd) && rd.indexOf('composer.addPass(nanPass)') < rd.indexOf('composer.addPass(bloom)'), 'a NaN pixel is cleaned before bloom can smear it into a black block');
   ok(/'MEADOW'\|\|/.test(fs.readFileSync('src/world/ground.js','utf8')) && /0x6e5a3c/.test(fs.readFileSync('src/world/biome.js','utf8')), 'grass reads clear of the olive tanks (sunlit pasture, brown mud grime)'); }
 
+// Z148 real tower roofs
+{ const fs=await import('node:fs'); const r=fs.readFileSync('src/world/regional.js','utf8'), fl=fs.readFileSync('src/world/flora.js','utf8');
+  ok(/function hipRoof/.test(r) && /function lathe/.test(r) && /function ridgeOrn/.test(r) && /idx\.push\(a,c,b, b,c,d\)/.test(r), 'hipped roofs with sweep, curled corners, fascia + soffit (outward winding)');
+  ok(/st\.roof==='tile'\)\{ const h=s\*0\.55, g=hipRoof/.test(r) && /roof==='onion'\)\{[^\n]*CylinderGeometry/.test(r) && /roof==='tent'\)\{[^\n]*CylinderGeometry\(s\*0\.5,s\*0\.52,s\*0\.55,8\)/.test(r), 'gate, onion and tent roofs are built from real profiles');
+  ok(/card\(r\*1\.15, 0\.9, 2, 0, y-1\.6/.test(fl), 'spruce sprays lean their normals up to the sky (no black trees)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

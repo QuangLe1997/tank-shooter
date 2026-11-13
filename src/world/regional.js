@@ -96,25 +96,59 @@ export function capGeo(name, H, TH, L){ const st=regionOf(name), key=st.cap+'|'+
     const g=new THREE.ExtrudeGeometry(sh,{depth:L*1.01,bevelEnabled:false}); g.translate(0,0,-L*0.505); g.rotateY(Math.PI/2); _xf(g,0,H+0.82,0); P.push({geo:g,col:0x9e4a2a}); }
   return (_cap[key] = P.length ? _mergeColored(P) : null); }
 // roof for a square tower of side s whose top sits at height y (local coords) — merged, vertex-coloured
+// Z146b ROOF BUILDERS — real profiles instead of 4-sided cones:
+//   hipRoof: an East-Asian hipped roof — concave sweep (flat at the eaves, steep at the ridge), corners that flare out and curl UP (đầu đao),
+//            a thick fascia under the eave edge and a closed soffit; rectangular (ridge along x) or square
+//   lathe:   a turned profile (onion, flared spire, dome, thatch) from (radius, height) pairs
+function hipRoof(hw, hd, h, o){ const N=10, M=8, C=[[-1,-1],[1,-1],[1,1],[-1,1]], ring=[];
+  for(let sd=0;sd<4;sd++) for(let m=0;m<M;m++){ const t=m/M, a=C[sd], b=C[(sd+1)%4]; ring.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]); }
+  const P=ring.length, pos=[], idx=[], rx=o.ridge??0.3, cv=o.curve??1.8, L=o.lift??0.3*h, F=o.flare??0.1, fas=o.fascia??Math.max(0.12,h*0.06);
+  const at=(u, ux, uz, dy)=>{ const ex=hw+(hw*rx-hw)*u, ez=hd+(0.04-hd)*u, k=Math.pow(Math.abs(ux*uz),3), e=Math.pow(1-u,2.4), f=1+F*k*e;
+    return [ux*ex*f, h*Math.pow(u,cv)+L*k*e+dy, uz*ez*f]; };
+  for(const [ux,uz] of ring) pos.push(...at(0,ux,uz,-fas));                                   // ring 0: fascia bottom edge
+  for(let i=0;i<=N;i++) for(const [ux,uz] of ring) pos.push(...at(i/N,ux,uz,0));                // rings 1..N+1: the roof sweep
+  const top=pos.length/3; pos.push(0, h+0.02, 0); const bot=top+1; pos.push(0, -fas, 0);
+  for(let i=0;i<=N;i++) for(let j=0;j<P;j++){ const a=i*P+j, b=i*P+(j+1)%P, c=(i+1)*P+j, d=(i+1)*P+(j+1)%P; idx.push(a,c,b, b,c,d); }   // outward-facing winding
+  for(let j=0;j<P;j++){ const a=(N+1)*P+j, b=(N+1)*P+(j+1)%P; idx.push(a,top,b); idx.push(j,(j+1)%P,bot); }   // close the ridge · the soffit
+  const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+function lathe(pts, s, seg){ return new THREE.LatheGeometry(pts.map(([r,y])=>new THREE.Vector2(Math.max(0.001,r*s), y*s)), seg||20); }
+// ridge with curled dragon-tail ends (sống nóc + đầu rồng)
+function ridgeOrn(P, len, y, col){ const r=new THREE.BoxGeometry(len, 0.22, 0.26); _xf(r,0,y+0.11,0); P.push({geo:r,col});
+  for(const sx of [-1,1]){ const t=new THREE.ConeGeometry(0.16,0.75,6); t.rotateZ(-sx*0.55); _xf(t, sx*len/2, y+0.42, 0); P.push({geo:t,col}); } }
 export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
-  if(st.roof==='tile'){ const r=new THREE.ConeGeometry(s*0.95, s*0.7, 4); r.rotateY(Math.PI/4); _xf(r,0,y+s*0.35,0); P.push({geo:r,col:0xa84a2a});   // hip roof (cổng làng)
-    const ridge=new THREE.ConeGeometry(0.18, 0.7, 6); _xf(ridge,0,y+s*0.7+0.3,0); P.push({geo:ridge,col:0x7a3a22});
-    for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const c=new THREE.ConeGeometry(0.16,0.5,5); c.rotateZ(q[0]*0.9); _xf(c, q[0]*s*0.62, y+0.12, q[1]*s*0.62); P.push({geo:c,col:0x7a3a22}); } }   // upturned eaves
-  else if(st.roof==='tent'){ const c=new THREE.ConeGeometry(s*0.78, s*2.0, 4); c.rotateY(Math.PI/4); _xf(c,0,y+s*1.0,0); P.push({geo:c,col:0x3a6a4a}); const f=new THREE.CylinderGeometry(0.06,0.06,1.2,5); _xf(f,0,y+s*2.0+0.5,0); P.push({geo:f,col:0xd8b040}); }   // Kremlin tent roof
-  else if(st.roof==='onion'){ const d=new THREE.CylinderGeometry(s*0.32,s*0.36,s*0.5,10); _xf(d,0,y+s*0.25,0); P.push({geo:d,col:0xe8e0d0}); const o=new THREE.SphereGeometry(s*0.42,12,10); o.scale(1,1.15,1); _xf(o,0,y+s*0.85,0); P.push({geo:o,col:[0x2a8a5a,0xd8a830,0x3a6ac8,0xc83a3a][(Math.random()*4)|0]});
-    const t=new THREE.ConeGeometry(s*0.14,s*0.7,8); _xf(t,0,y+s*1.4,0); P.push({geo:t,col:0xd8a830}); }   // onion dome
-  else if(st.roof==='pagoda' || st.roof==='hue'){ const cols = st.roof==='hue' ? [0xd8a828,0x3a8a5a] : [0x2a6a4a,0xc8a030];   // two-tier curved tiled roof (Chinese / Huế Ngọ Môn yellow-green glaze)
-    for(let k=0;k<2;k++){ const r=new THREE.ConeGeometry(s*(1.0-k*0.3), s*0.42, 4); r.rotateY(Math.PI/4); _xf(r,0,y+0.3+k*s*0.5,0); P.push({geo:r,col:cols[k%2]});
-      for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const c=new THREE.ConeGeometry(0.12,0.55,4); c.rotateZ(q[0]*1.1); c.rotateX(-q[1]*0.4); _xf(c, q[0]*s*(0.72-k*0.22), y+0.3+k*s*0.5, q[1]*s*(0.72-k*0.22)); P.push({geo:c,col:cols[k%2]}); } }   // upturned eaves
-    const cp=new THREE.BoxGeometry(s*0.5,s*0.45,s*0.5); _xf(cp,0,y+0.1+s*0.25,0); P.push({geo:cp,col:0xa8302a}); const fn=new THREE.SphereGeometry(0.2,8,6); _xf(fn,0,y+s*1.05,0); P.push({geo:fn,col:0xd8a828}); }
+  if(st.roof==='tile'){ const h=s*0.55, g=hipRoof(s*0.82, s*0.82, h, { ridge:0.35, curve:1.5, lift:s*0.2, flare:0.12 }); _xf(g,0,y,0); P.push({geo:g,col:0xa84a2a});   // Z146b Vietnamese gate roof: sweeping tiles, curled corners
+    ridgeOrn(P, s*0.6, y+h, 0x7a3a22); }
+  else if(st.roof==='tent'){ const dr=new THREE.CylinderGeometry(s*0.5,s*0.52,s*0.55,8); _xf(dr,0,y+s*0.27,0,0,Math.PI/8); P.push({geo:dr,col:0xa8402e});   // Z146b Kremlin: octagonal drum, tall tent, dormers, gilt finial
+    const band=new THREE.CylinderGeometry(s*0.56,s*0.56,0.18,8); _xf(band,0,y+s*0.55,0,0,Math.PI/8); P.push({geo:band,col:0xe8e0d0});
+    const t=lathe([[0.62,0],[0.54,0.12],[0.4,0.55],[0.24,1.1],[0.08,1.75],[0.02,1.95]], s, 8); t.rotateY(Math.PI/8); _xf(t,0,y+s*0.55,0); P.push({geo:t,col:0x3a6a4a});
+    for(let k=0;k<4;k++){ const a=k*Math.PI/2, d=new THREE.BoxGeometry(s*0.16,s*0.2,s*0.16), dx=Math.sin(a)*s*0.42, dz=Math.cos(a)*s*0.42; _xf(d,dx,y+s*0.95,dz,0,a); P.push({geo:d,col:0xe8e0d0});
+      const gc=new THREE.ConeGeometry(s*0.13,s*0.16,4); _xf(gc,dx,y+s*1.13,dz,0,a+Math.PI/4); P.push({geo:gc,col:0x3a6a4a}); }
+    const ball=new THREE.SphereGeometry(s*0.07,10,8); _xf(ball,0,y+s*2.55,0); P.push({geo:ball,col:0xd8b040}); const sp=new THREE.CylinderGeometry(0.03,0.05,s*0.45,5); _xf(sp,0,y+s*2.8,0); P.push({geo:sp,col:0xd8b040});
+    const star=new THREE.OctahedronGeometry(s*0.09); star.scale(1,1,0.35); _xf(star,0,y+s*3.05,0); P.push({geo:star,col:0xc82a2a}); }
+  else if(st.roof==='onion'){ const dr=new THREE.CylinderGeometry(s*0.33,s*0.36,s*0.6,16); _xf(dr,0,y+s*0.3,0); P.push({geo:dr,col:0xe8e0d0});   // Z146b drum with arched windows, a true onion, gilt cross
+    for(let k=0;k<6;k++){ const a=k/6*6.283, w=new THREE.BoxGeometry(s*0.09,s*0.24,0.06); _xf(w,Math.sin(a)*s*0.35,y+s*0.3,Math.cos(a)*s*0.35,0,a); P.push({geo:w,col:0x2a2a30}); }
+    const o=lathe([[0.3,0],[0.38,0.06],[0.46,0.2],[0.49,0.36],[0.45,0.52],[0.34,0.68],[0.2,0.82],[0.09,0.94],[0.04,1.04],[0.03,1.12]], s, 24); _xf(o,0,y+s*0.6,0);
+    P.push({geo:o,col:[0x2a8a5a,0xd8a830,0x3a6ac8,0xc83a3a][(Math.random()*4)|0]});
+    const v=new THREE.BoxGeometry(0.06,s*0.42,0.06); _xf(v,0,y+s*1.92,0); P.push({geo:v,col:0xd8b040}); const hz=new THREE.BoxGeometry(s*0.22,0.06,0.06); _xf(hz,0,y+s*2.02,0); P.push({geo:hz,col:0xd8b040}); }
+  else if(st.roof==='pagoda' || st.roof==='hue'){ const hue=st.roof==='hue', c1=hue?0xd8a828:0x2a6a4a, c2=hue?0x3a8a5a:0xc8a030, h1=s*0.38;   // Z146b two sweeping tiers (Chinese gate-tower / Huế Ngọ Môn glaze)
+    const g1=hipRoof(s*0.85, s*0.85, h1, { ridge:0.55, curve:1.7, lift:s*0.22, flare:0.14 }); _xf(g1,0,y,0); P.push({geo:g1,col:c1});
+    const b=new THREE.BoxGeometry(s*0.66,s*0.36,s*0.66); _xf(b,0,y+h1*0.7+s*0.18,0); P.push({geo:b,col:0xa8302a});                                     // upper hall: red lacquer
+    for(const qx of [-1,1]) for(const qz of [-1,-0.33,0.33,1]){ const c=new THREE.CylinderGeometry(0.07,0.07,s*0.36,6); _xf(c,qx*s*0.35,y+h1*0.7+s*0.18,qz*s*0.35); P.push({geo:c,col:0x6a1a14}); }
+    const y2=y+h1*0.7+s*0.36, h2=s*0.42, g2=hipRoof(s*0.58, s*0.46, h2, { ridge:0.5, curve:1.8, lift:s*0.18, flare:0.16 }); _xf(g2,0,y2,0); P.push({geo:g2,col:hue?c1:c2});
+    ridgeOrn(P, s*0.6, y2+h2, hue?0xd8a828:0x8a6a2a); const pearl=new THREE.SphereGeometry(s*0.06,10,8); _xf(pearl,0,y2+h2+0.42,0); P.push({geo:pearl,col:0xd8b040}); }
   else if(st.roof==='chhatri'){ for(const q of [[1,1],[1,-1],[-1,1],[-1,-1]]){ const pl=new THREE.CylinderGeometry(0.1,0.1,s*0.6,6); _xf(pl, q[0]*s*0.3, y+s*0.3, q[1]*s*0.3); P.push({geo:pl,col:0xc89a70}); }   // Rajasthani chhatri
     const sl=new THREE.BoxGeometry(s*0.8,0.15,s*0.8); _xf(sl,0,y+s*0.62,0); P.push({geo:sl,col:0xb8805a}); const d=new THREE.SphereGeometry(s*0.38,12,8,0,6.28,0,Math.PI/2); _xf(d,0,y+s*0.68,0); P.push({geo:d,col:0xe8d8c0}); const t=new THREE.ConeGeometry(0.08,0.5,6); _xf(t,0,y+s*1.1,0); P.push({geo:t,col:0xd8a830}); }
   else if(st.roof==='pinnacle'){ const c=new THREE.CylinderGeometry(s*0.12,s*0.42,s*1.4,8); _xf(c,0,y+s*0.7,0); P.push({geo:c,col:0xb0704a}); const e=new THREE.SphereGeometry(s*0.13,8,6); e.scale(1,1.3,1); _xf(e,0,y+s*1.48,0); P.push({geo:e,col:0xf4f0e8});   // mud pinnacle + ostrich egg
     for(let k=0;k<6;k++){ const t=new THREE.CylinderGeometry(0.05,0.05,0.8,4); t.rotateZ(Math.PI/2); t.rotateY(k/6*6.28); _xf(t,0,y+s*(0.35+(k%2)*0.4),0); P.push({geo:t,col:0x6a4a2a}); } }
   else if(st.roof==='cornice'){ const c=new THREE.CylinderGeometry(s*0.82, s*0.66, 0.6, 4); c.rotateY(Math.PI/4); _xf(c,0,y+0.3,0); P.push({geo:c,col:0xd8b884}); const b=new THREE.BoxGeometry(s*1.0,0.14,s*1.0); _xf(b,0,y+0.65,0); P.push({geo:b,col:0xb08a4a}); }   // Z145 ochre-painted band (the blue read as a plastic lid from above)   // Egyptian cavetto cornice
-  else if(st.roof==='slate'){ const c=new THREE.ConeGeometry(s*0.82, s*1.5, 12); _xf(c,0,y+s*0.75,0); P.push({geo:c,col:0x4a5a78}); }   // European castle slate spire
-  else if(st.roof==='thatch'){ const c=new THREE.ConeGeometry(s*0.9, s*0.95, 10); _xf(c,0,y+s*0.47,0); P.push({geo:c,col:0xc8a460}); const r=new THREE.TorusGeometry(s*0.82,0.08,4,12); r.rotateX(Math.PI/2); _xf(r,0,y+0.12,0); P.push({geo:r,col:0x8a6a3a}); }   // straw thatch
-  else if(st.roof==='dome'){ const d=new THREE.SphereGeometry(s*0.55, 12, 8, 0, Math.PI*2, 0, Math.PI/2); _xf(d,0,y,0); P.push({geo:d,col:0xd8b884}); }
+  else if(st.roof==='slate'){ const t=lathe([[0.9,0],[0.74,0.1],[0.6,0.32],[0.42,0.75],[0.22,1.2],[0.05,1.65],[0.01,1.8]], s, 20); _xf(t,0,y,0); P.push({geo:t,col:0x4a5a78});   // Z146b flared slate spire + lucarnes + weather vane
+    for(let k=0;k<4;k++){ const a=k*Math.PI/2+Math.PI/4, d=new THREE.BoxGeometry(s*0.14,s*0.18,s*0.14), dx=Math.sin(a)*s*0.55, dz=Math.cos(a)*s*0.55; _xf(d,dx,y+s*0.4,dz,0,a); P.push({geo:d,col:0xd8ccb0}); const gc=new THREE.ConeGeometry(s*0.12,s*0.16,4); _xf(gc,dx,y+s*0.57,dz,0,a+Math.PI/4); P.push({geo:gc,col:0x4a5a78}); }
+    const v=new THREE.CylinderGeometry(0.03,0.03,s*0.5,5); _xf(v,0,y+s*1.95,0); P.push({geo:v,col:0x2a2a2a}); const fl=new THREE.BoxGeometry(s*0.18,s*0.1,0.03); _xf(fl,s*0.09,y+s*2.1,0); P.push({geo:fl,col:0xc8a040}); }
+  else if(st.roof==='thatch'){ const t=lathe([[0.95,0],[0.9,0.05],[0.82,0.12],[0.8,0.2],[0.66,0.34],[0.62,0.42],[0.44,0.6],[0.4,0.68],[0.2,0.88],[0.04,1.0]], s, 18); _xf(t,0,y,0); P.push({geo:t,col:0xc8a460});   // Z146b layered straw courses
+    const r=new THREE.TorusGeometry(s*0.88,0.07,4,18); r.rotateX(Math.PI/2); _xf(r,0,y+0.05,0); P.push({geo:r,col:0x8a6a3a}); const cap=new THREE.ConeGeometry(s*0.08,s*0.25,6); _xf(cap,0,y+s*1.08,0); P.push({geo:cap,col:0x6a4a2a}); }
+  else if(st.roof==='dome'){ const dr=new THREE.CylinderGeometry(s*0.5,s*0.52,s*0.22,20); _xf(dr,0,y+s*0.11,0); P.push({geo:dr,col:0xc8a878});   // Z146b drum, ribbed dome, lantern
+    const d=lathe([[0.5,0],[0.49,0.1],[0.45,0.22],[0.37,0.34],[0.25,0.44],[0.1,0.5],[0.01,0.51]], s, 24); _xf(d,0,y+s*0.22,0); P.push({geo:d,col:0xd8b884});
+    const ln=new THREE.CylinderGeometry(s*0.08,s*0.09,s*0.16,8); _xf(ln,0,y+s*0.8,0); P.push({geo:ln,col:0xc8a878}); const k=new THREE.ConeGeometry(s*0.1,s*0.14,8); _xf(k,0,y+s*0.95,0); P.push({geo:k,col:0xb08a4a}); }
   else if(st.roof==='cone'){ const c=new THREE.ConeGeometry(s*0.8, s*0.9, 8); _xf(c,0,y+s*0.45,0); P.push({geo:c,col:st.pat==='log'?0x5a4028:0x7a6248}); }
   else if(st.roof==='snow'){ const c=new THREE.BoxGeometry(s*1.05,0.4,s*1.05); _xf(c,0,y+0.2,0); P.push({geo:c,col:0xf6fbff}); }
   else { const c=new THREE.BoxGeometry(s*1.1,0.3,s*1.1); _xf(c,0,y+0.15,0); P.push({geo:c,col:0x5a5c5e}); }
