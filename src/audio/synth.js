@@ -28,6 +28,7 @@ export function audio(){
       for(const [t,a] of [[0.34,0.18],[0.62,0.11],[0.95,0.07],[1.4,0.04]]){ const k0=Math.floor((t+c*0.013)*sr); let l2=0; for(let j=0;j<Math.floor(0.05*sr);j++){ l2+=((Math.random()*2-1)-l2)*0.06; d[k0+j]+=l2*a*Math.exp(-j/(0.012*sr))*3; } } }   // rolling echoes off distant hills (dull, low-passed)
     verb=actx.createConvolver(); verb.buffer=ir; verbSend=actx.createGain(); verbSend.gain.value=0.32; verbSend.connect(verb).connect(master);
     setTimeout(()=>warmSounds(), 0);   // Z102 fill the sound bank in small slices after the first gesture
+    setTimeout(()=>loadSamples(), 0);  // Z153 and fetch + level the recorded set
     shaper=actx.createWaveShaper(); { const n=1024, cu=new Float32Array(n); for(let i=0;i<n;i++){ const x=i/n*2-1; cu[i]=Math.tanh(x*2.6); } shaper.curve=cu; }
   }catch(e){} }
   if(actx && actx.state==='suspended'){ try{ actx.resume(); }catch(e){} }
@@ -155,18 +156,42 @@ export const SND = {   // Z151 re-levelled by measurement (K-weighted momentary 
   thud:    { r:rThud, g:0.85, gap:0.08 },
   crunch:  { r:rCrunch, g:0.34, gap:0.06 },
   reload:  { r:rReload, g:0.5, gap:0.2 },
+  railgun: { g:0.8, gap:0.1, big:1, sampleOnly:1 }, tesla:{ g:0.6, gap:0.06, sampleOnly:1 }, cryo:{ g:0.5, gap:0.06, sampleOnly:1 }, flame:{ g:0.5, gap:0.25, sampleOnly:1 }, dash:{ g:0.6, gap:0.3, sampleOnly:1 },   // Z153 sample-only keys (their synth versions stay in sfx())
 };
+// Z153 RECORDED-QUALITY SOUND SET (generated with ElevenLabs, trimmed + peak-normalised offline, assets/sfx/*.mp3): when a key has a
+//   sample it plays the sample, levelled at load time to the SAME loudness the Z151 mix measured for the synth version (LU after g),
+//   so the balance stays ear-safe. Until the files are decoded (or if one fails) the physically-modelled synth plays instead.
+export const SAMPLE_SET = { rifle:['rifle','rifle_2'], mg:['mg','mg_2'], minigun:['minigun'], shotgun:['shotgun'], flak:['flak'], agl:['agl'], cannon:['cannon'], hesh:['hesh'],
+  enemy:['enemy'], rifleE:['rifleE'], launch:['launch'], boom:['boom'], bigboom:['bigboom'], hitM:['hitM','hitM_2'], hitH:['hitH'], ricochet:['ricochet'], clang:['clang'],
+  thud:['thud'], crunch:['crunch'], reload:['reload'], railgun:['railgun'], tesla:['tesla'], cryo:['cryo'], flame:['flame'], dash:['dash'] };
+export const SAMPLE_LU = { rifle:-24.4, mg:-30.3, minigun:-31.4, shotgun:-18.3, flak:-22.4, agl:-26.6, cannon:-15.9, hesh:-16.6, enemy:-23.4, rifleE:-30.9, launch:-21.6,
+  boom:-17.9, bigboom:-15.1, hitM:-25.9, hitH:-21, ricochet:-29.2, clang:-18.4, thud:-27.3, crunch:-29.4, reload:-28, railgun:-17.5, tesla:-23, cryo:-25.5, flame:-26, dash:-25 };
+const SAMPLES={}; let _sampLoad=false;
+// K-weighted momentary loudness (400 ms window, max) of a mono buffer — the same meter the Z151 audit used
+function _lufsMax(x, sr){ const hp=new Float32Array(x.length), y=new Float32Array(x.length);
+  const bq=(src,dst,b0,b1,b2,a1,a2)=>{ let x1=0,x2=0,y1=0,y2=0; for(let i=0;i<src.length;i++){ const v=src[i], o=b0*v+b1*x1+b2*x2-a1*y1-a2*y2; x2=x1; x1=v; y2=y1; y1=o; dst[i]=o; } };
+  { const w=2*Math.PI*60/sr, cs=Math.cos(w), al=Math.sin(w)/(2*0.5), a0=1+al; bq(x,hp,(1+cs)/2/a0,-(1+cs)/a0,(1+cs)/2/a0,-2*cs/a0,(1-al)/a0); }
+  { const A=Math.pow(10,4/40), w=2*Math.PI*1500/sr, cs=Math.cos(w), al=Math.sin(w)/(2*0.707), s=2*Math.sqrt(A)*al, a0=(A+1)-(A-1)*cs+s;
+    bq(hp,y,A*((A+1)+(A-1)*cs+s)/a0,-2*A*((A-1)+(A+1)*cs)/a0,A*((A+1)+(A-1)*cs-s)/a0,2*((A-1)-(A+1)*cs)/a0,((A+1)-(A-1)*cs-s)/a0); }
+  const W=Math.floor(0.4*sr), H=Math.floor(0.1*sr); let best=-99; for(let s0=0; s0<Math.max(1,y.length-W+1); s0+=H){ let e=0; const e1=Math.min(y.length,s0+W); for(let i=s0;i<e1;i++) e+=y[i]*y[i]; best=Math.max(best, -0.691+10*Math.log10(e/W+1e-12)); } return best; }
+export function loadSamples(){ if(_sampLoad || !actx) return; _sampLoad=true;
+  for(const [k, files] of Object.entries(SAMPLE_SET)) files.forEach(f=>{
+    fetch('assets/sfx/'+f+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject(r.status)).then(b=>actx.decodeAudioData(b)).then(buf=>{
+      const d=buf.getChannelData(0), g=(SND[k]&&SND[k].g)||1, L=_lufsMax(d, buf.sampleRate), sc=Math.pow(10, ((SAMPLE_LU[k]??-24)-L)/20)/g;
+      for(let c=0;c<buf.numberOfChannels;c++){ const ch=buf.getChannelData(c); for(let i=0;i<ch.length;i++) ch[i]*=sc; }
+      (SAMPLES[k]=SAMPLES[k]||[]).push(buf); }).catch(()=>{}); }); }
+export function sampleGet(k){ const L=SAMPLES[k]; return L&&L.length ? L[(Math.random()*L.length)|0] : null; }
 const BANK={}, _lastAt={}; let _voices=0;
-export function bankGet(k){ const D=SND[k]; if(!D||!actx) return null; let L=BANK[k]; if(!L){ L=BANK[k]=[]; }
+export function bankGet(k){ const D=SND[k]; if(!D||!D.r||!actx) return null; let L=BANK[k]; if(!L){ L=BANK[k]=[]; }
   if(L.length<4){ const data=D.r(); const b=actx.createBuffer(1, data.length, actx.sampleRate); b.copyToChannel(data,0); L.push(b); return b; }   // build variants lazily, one per call
   return L[(Math.random()*L.length)|0]; }
-export function warmSounds(){ if(!actx) return; const keys=Object.keys(SND); let i=0; const step=()=>{ const t0=performance.now(); while(i<keys.length*4 && performance.now()-t0<8){ bankGet(keys[i%keys.length]); i++; } if(i<keys.length*4) setTimeout(step, 30); }; setTimeout(step, 50); }   // fill the bank in 8 ms slices
+export function warmSounds(){ if(!actx) return; const keys=Object.keys(SND).filter(k=>SND[k].r); let i=0; const step=()=>{ const t0=performance.now(); while(i<keys.length*4 && performance.now()-t0<8){ bankGet(keys[i%keys.length]); i++; } if(i<keys.length*4) setTimeout(step, 30); }; setTimeout(step, 50); }   // fill the bank in 8 ms slices
 // play a bank sound in the world: distance gain + air absorption + pan + SPEED OF SOUND delay; vol scales intensity (e.g. impact force)
 export function play(k, pos, vol){
   const a=audio(); if(!a||muted) return; const D=SND[k]; if(!D) return;
   const now=a.currentTime; if(_lastAt[k]!=null && now-_lastAt[k] < D.gap) return; _lastAt[k]=now;
   if(_voices>28) return;                                                         // voice cap: keeps phones smooth under heavy fire
-  const buf=bankGet(k); if(!buf) return;
+  const buf=sampleGet(k) || (D.sampleOnly ? null : bankGet(k)); if(!buf) return;   // Z153 the recorded-quality sample when it's loaded
   const src=a.createBufferSource(); src.buffer=buf; src.playbackRate.value=0.95+Math.random()*0.1;
   let delay=0, g=D.g*(vol==null?1:Math.max(0.15,Math.min(1.6,vol)))*(0.9+Math.random()*0.2);
   const out=a.createGain(); let node=out;
@@ -191,6 +216,7 @@ export function sfx(name, pos, vol){
     case 'shoot_agl': return play('agl', pos, vol);
     case 'shoot_cannon': return play('cannon', pos, vol);
     case 'shoot_hesh': return play('hesh', pos, vol);
+    case 'shoot_flame': return play(SAMPLES.flame ? 'flame' : 'flak', pos, (vol||1)*(SAMPLES.flame?1:0.6));
     case 'shoot_thermo': play('launch', pos, vol); return play('hesh', pos, 0.6);
     case 'shoot_missile': return play('launch', pos, (vol||1)*0.8);
     case 'rocketlaunch': return play('launch', pos, vol);
@@ -209,13 +235,13 @@ export function sfx(name, pos, vol){
   const UI = name==='click'||name==='beep'||name==='wave'||name==='powerup'||name==='levelup'||name==='alarm';
   const bus = UI ? null : voice(pos||null, pos?0.3:0.22); _bus = bus;
   switch(name){
-    case 'shoot_railgun':tone(1600,0.2,{type:'triangle',vol:0.07,slideTo:220}); noise(0.05,{vol:0.18,type:'bp',hp:1800,lp:6000,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;
-    case 'shoot_cryo':   noise(0.16,{vol:0.11,type:'bp',hp:1500,lp:5000,sweepTo:4500}); tone(900,0.12,{type:'sine',vol:0.05,slideTo:1600}); break;
-    case 'shoot_tesla':  noise(0.12,{vol:0.12,type:'bp',hp:900,lp:4200,dist:true}); tone(120,0.15,{type:'sawtooth',vol:0.08,slideTo:60}); break;
+    case 'shoot_railgun': if(SAMPLES.railgun){ play('railgun', pos, vol); break; }tone(1600,0.2,{type:'triangle',vol:0.07,slideTo:220}); noise(0.05,{vol:0.18,type:'bp',hp:1800,lp:6000,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;
+    case 'shoot_cryo': if(SAMPLES.cryo){ play('cryo', pos, vol); break; } noise(0.16,{vol:0.11,type:'bp',hp:1500,lp:5000,sweepTo:4500}); tone(900,0.12,{type:'sine',vol:0.05,slideTo:1600}); break;
+    case 'shoot_tesla': if(SAMPLES.tesla){ play('tesla', pos, vol); break; } noise(0.12,{vol:0.12,type:'bp',hp:900,lp:4200,dist:true}); tone(120,0.15,{type:'sawtooth',vol:0.08,slideTo:60}); break;
     case 'hurt':    play('hitH', null, 1.1); noise(0.18,{vol:0.2,type:'lp',lp:1400,dist:true}); break;   // our own hull is struck: heavy plate + thump
     case 'corehit': tone(150,0.14,{type:'triangle',vol:0.16,slideTo:70}); break;
     case 'wave':    [523,659,784].forEach((f,i)=>tone(f,0.2,{type:'triangle',vol:0.14,delay:i*0.07})); break;
-    case 'dash':    noise(0.3,{vol:0.2,type:'lp',lp:900,sweepTo:2400,brown:true}); tone(60,0.3,{type:'sawtooth',vol:0.08,slideTo:110}); break;   // engine surge
+    case 'dash': if(SAMPLES.dash){ play('dash', pos, vol); break; } noise(0.3,{vol:0.2,type:'lp',lp:900,sweepTo:2400,brown:true}); tone(60,0.3,{type:'sawtooth',vol:0.08,slideTo:110}); break;   // engine surge
     case 'powerup': [659,988,1319].forEach((f,i)=>tone(f,0.18,{type:'triangle',vol:0.14,delay:i*0.05})); break;
     case 'levelup': [523,659,784,1047,1319].forEach((f,i)=>tone(f,0.24,{type:'triangle',vol:0.15,delay:i*0.08})); break;
     case 'spell':   tone(440,0.25,{type:'sine',vol:0.14,slideTo:1320}); break;

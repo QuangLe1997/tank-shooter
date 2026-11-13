@@ -142,7 +142,7 @@ export function fireGun(now, range){
   else if(g.special==='mortar'){ fireMortar(now, g, dmg); }
   else if(g.special==='arty'){ fireArty(now, g, dmg); }
   else if(g.special==='flame'){ fireFlame(now, g, x, z, ang, dmg/(g.dmg||1)); { const rg=p.mesh.userData.rig; if(rg) rg.vib=Math.min(0.5,rg.vib+0.12); } muzzleLight.position.set(x,1.4,z); muzzleLight.color.setHex(0xff6a1c); muzzleLight.intensity=2.2;
-    if(Math.random()<0.12) sfx('shoot_flak'); if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst); updateGunHUD(); return; }   // flame handles its own FX; skip the bullet/muzzle path + throttle sound
+    if(Math.random()<0.12) sfx('shoot_flame'); if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst); updateGunHUD(); return; }   // flame handles its own FX; skip the bullet/muzzle path + throttle sound
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
     const aimTgt = aimTarget(maxDist);                     // arc toward the target (mobile: only one straight ahead); straight if it's close
