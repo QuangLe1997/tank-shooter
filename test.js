@@ -675,5 +675,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/D\.big \? master : \(duck\|\|master\)/.test(sy) && /duck\.gain\.setTargetAtTime\(0\.5/.test(sy), 'big blasts duck the small-arms bus so they punch through');
   ok(/SFX_LEVELS=\{ low:0\.32, mid:0\.5, high:0\.68 \}/.test(sy) && /\['low','NHỎ'\],\['mid','VỪA'\],\['high','LỚN'\]/.test(fs.readFileSync('src/ui/settings.js','utf8')), 'settings: effects level TẮT / NHỎ / VỪA / LỚN'); }
 
+// Z152 one-press battle entry + one design language for the dialogs
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8');
+  ok(/tapBtn\('playBtn', \(\)=>\{ hide\('start'\); launchGame\(\{ mode:'campaign', level:campaignMax\(\) \}\)/.test(R('src/game/flow.js')), 'PLAY goes straight into the next campaign level');
+  ok(/intro\.quick = !!\(PROFILE\.introSeen/.test(R('src/game/intro.js')) && /if\(intro\.quick\) endIntro\(\)/.test(R('src/game/intro.js')), 'the battlefield tour plays once per map, then the warm-up leads straight to the briefing');
+  ok(/export function launchStage/.test(R('src/ui/briefing.js')) && /if\(quick\)\{ confirmDeploy\(\); return; \}/.test(R('src/ui/deploy.js')) && /id="brGo"/.test(R('index.html')), 'briefing: a contract is pre-chosen, XUẤT KÍCH posts the troops by plan without another screen');
+  ok(/css\/ui152\.css/.test(R('index.html')) && /\.brcard\.on::after/.test(R('css/ui152.css')) && /--card-sh-hover/.test(R('css/ui152.css')), 'shared card surface, hover lift, chosen state'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

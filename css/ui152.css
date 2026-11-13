@@ -1,0 +1,62 @@
+/* =====================================================================================================
+   Z152 UI POLISH — one design language for every dialog: the same card surface, depth, hover lift and
+   press, the same button heights in a row, an obvious "chosen" state. Loaded last so it wins quietly.
+   ===================================================================================================== */
+:root{
+  --card-bg:linear-gradient(165deg,rgba(38,48,28,.94),rgba(13,18,10,.96));
+  --card-bd:rgba(255,255,255,.09);
+  --card-sh:0 8px 22px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.07);
+  --card-sh-hover:0 16px 34px rgba(0,0,0,.55),0 0 0 1px rgba(231,181,74,.55),0 0 26px rgba(231,181,74,.20),inset 0 1px 0 rgba(255,255,255,.10);
+  --pick:#f0c25a; --pick-glow:rgba(240,194,90,.35);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+/* ---- cards: lift on hover, settle on press ---- */
+.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.tcard{transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s,filter .18s;}
+.brcard,.upcard{background:var(--card-bg) !important;border:1px solid var(--card-bd) !important;box-shadow:var(--card-sh) !important;border-radius:16px !important;}
+@media (hover:hover){
+  .brcard:hover,.upcard:hover,.case:hover,.ldcard:not(.locked):hover,.bs-lv:not(.lock):hover,.bs-map:hover,.tc-card:hover,.tcard:hover{transform:translateY(-4px);box-shadow:var(--card-sh-hover) !important;}
+}
+.brcard:active,.upcard:active,.case:active,.ldcard:active,.bs-lv:active{transform:translateY(-1px) scale(.985);}
+/* ---- buttons: a little lift + light on hover, pressed in on click ---- */
+.btn{transition:transform .14s var(--ease),filter .14s,box-shadow .14s;}
+@media (hover:hover){ .btn:hover{transform:translateY(-2px);filter:brightness(1.12);} }
+.btn:active{transform:translateY(1px) scale(.98);filter:brightness(.95);}
+.btn .ic{width:18px;height:18px;flex:none;display:inline-flex;} .btn .ic svg{width:100%;height:100%;}
+
+/* ---- HOME: PLAY says what it starts; the three "prepare" buttons and the four utilities each fill a row ---- */
+#playBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.05;}
+#playBtn small{font-size:12px;letter-spacing:2.5px;font-weight:800;opacity:.72;}
+#start .tp-sw{display:none !important;}
+@media (min-width:761px) and (min-height:541px) and (orientation:landscape){
+  #start .panel{grid-template-columns:repeat(12,minmax(0,1fr)) !important;}
+  #start #playBtn,#start #continueBtn,#start .help{grid-column:1/-1;}
+  #start #arsenalBtn,#start #shopBtn,#start .terrain-pick{grid-column:span 4;}
+  #start .btn-mini{grid-column:span 3;}
+}
+
+/* ---- BRIEFING (SẴN SÀNG): a chosen contract is unmistakable, then one big go button ---- */
+.brcard.on{border-color:var(--pick) !important;box-shadow:0 0 0 2px var(--pick),0 0 30px var(--pick-glow),var(--card-sh) !important;transform:translateY(-3px);}
+.brcard.on::after{content:'✓ ĐÃ CHỌN';position:absolute;top:8px;left:10px;background:var(--pick);color:#1b1206;font-size:10px;font-weight:900;letter-spacing:1.5px;padding:3px 10px;border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.4);white-space:nowrap;}
+.br-pick span{opacity:.6;font-weight:600;letter-spacing:1px;text-transform:none;}
+.br-actions{display:flex;gap:14px;justify-content:center;align-items:stretch;margin:18px auto 4px;pointer-events:auto;flex-wrap:wrap;}
+.br-actions .btn,.dp-actions .btn{min-height:54px;min-width:190px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 26px;margin:0 !important;font-size:17px;letter-spacing:2px;}
+.br-actions .btn-primary,.dp-actions .btn-primary{min-width:250px;font-size:20px;}
+.dp-actions{display:flex;gap:14px;justify-content:center;align-items:stretch;}
+.dp-actions .btn-mini{min-width:150px;font-size:14px;}
+.br-hint{opacity:.7;}
+
+/* ---- PAUSE / GAME OVER: one column of equal buttons, utilities two-up ---- */
+#pause .panel,#gameover .panel{display:grid !important;grid-template-columns:1fr 1fr;gap:10px;width:min(92vw,440px);padding:22px !important;
+  background:var(--card-bg) !important;border:1px solid var(--card-bd) !important;box-shadow:0 18px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07) !important;border-radius:18px !important;}
+#pause .panel > .btn,#gameover .panel > .btn{margin:0 !important;width:100%;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+#pause #resumeBtn,#pause #homeBtn,#gameover #retryBtn,#gameover .go-stats,#gameover .go-best,#gameover .go-wallet,#gameover #goHomeBtn{grid-column:1/-1;}
+#pause #resumeBtn,#gameover #retryBtn{min-height:58px;font-size:21px;}
+#gameover .title{background:linear-gradient(180deg,#ff9a7a,#e0603a 60%,#9a2c18) !important;-webkit-background-clip:text !important;background-clip:text !important;color:transparent !important;text-shadow:none !important;filter:drop-shadow(0 4px 14px rgba(224,96,58,.35));}
+
+/* ---- UPGRADE cards: icon on a glowing disc, the bonus reads first ---- */
+.upcard .ic{width:52px !important;height:52px !important;padding:11px;border-radius:50%;background:radial-gradient(circle,rgba(140,191,63,.25),rgba(140,191,63,0) 70%);}
+#upcards{gap:16px !important;}
+
+/* ---- overlay titles: a touch of depth everywhere ---- */
+.overlay .title{filter:drop-shadow(0 4px 16px rgba(0,0,0,.55));}
+.overlay .subtitle{text-shadow:0 2px 8px rgba(0,0,0,.6);}

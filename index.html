@@ -42,6 +42,7 @@
 <link rel="stylesheet" href="css/intro.css" />
 <link rel="stylesheet" href="css/deploy.css" />
 <link rel="stylesheet" href="css/setup.css" />
+<link rel="stylesheet" href="css/ui152.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
@@ -154,12 +155,12 @@
   <!-- every action lives in one grid so a short landscape screen can place them all (see the short-landscape CSS block) -->
   <div class="panel">
     <!-- 1 · PLAY (hero) → 2 · CONTINUE → 3 · prepare (ARSENAL/SHOP/BATTLEFIELD) → 4 · utility. Same order on every screen. -->
-    <div class="btn btn-primary" id="playBtn">CHƠI NGAY ▶</div>
+    <div class="btn btn-primary" id="playBtn"><span>CHƠI NGAY ▶</span><small id="playSub"></small></div>
     <div class="btn btn-primary btn-continue" id="continueBtn" style="display:none">CHƠI TIẾP ▶</div>
     <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>KHO SÚNG · <b id="arsenalCount">1</b><span class="lg"> KHẨU</span></span></div>
     <div class="btn btn-shop" id="shopBtn"><span class="ic" data-icon="coin"></span><span>CỬA HÀNG<span class="lg"> — NÂNG CẤP</span></span></div>
     <div class="terrain-pick" id="terrainPick">
-      <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span><span class="lg">CHIẾN TRƯỜNG · </span><span class="sm">BẢN ĐỒ · </span><b id="tBtnName">TỰ ĐỘNG</b></span><span class="tp-sw" id="tBtnSw"></span></div>
+      <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span>CHỌN TRẬN<span class="lg"> · CẤP · BẢN ĐỒ</span></span><span class="tp-sw" id="tBtnSw"></span></div>
     </div>
     <div class="btn btn-mini" id="keysBtn"><span class="ic" data-icon="target"></span><span>PHÍM TẮT</span></div>
     <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span><span class="lg">HƯỚNG DẪN</span><span class="sm">HƯỚNG DẪN</span></span></div>
@@ -365,13 +366,14 @@
 <div class="overlay hidden" id="briefing">
   <div class="btn btn-mini ov-back" id="brBack"><span>◀ VỀ MENU</span></div>
   <div class="br-op" id="br-op">CHIẾN DỊCH</div>
-  <div class="title" style="font-size:clamp(24px,5.5vw,42px)">GIAO NHIỆM VỤ</div>
+  <div class="title" style="font-size:clamp(24px,5.5vw,42px)">SẴN SÀNG XUẤT KÍCH</div>
   <div class="subtitle" id="br-sub">Tướng địch ở cuối màn — chọn hợp đồng</div>
   <div class="br-brief" id="br-brief"></div>
   <div class="br-obj" id="br-obj"></div>
-  <div class="br-pick">CHỌN HỢP ĐỒNG</div>
+  <div class="br-pick">HỢP ĐỒNG <span>· đổi luật cho cả màn, mặc định an toàn</span></div>
   <div id="brcards"></div>
-  <div class="br-hint">Mỗi hợp đồng đổi luật cho cả màn — chọn theo mục tiêu (xu · kim cương · cày đồ · mạo hiểm)</div>
+  <div class="br-actions"><div class="btn" id="brDeploy"><span class="ic" data-icon="team"></span><span>BỐ TRÍ QUÂN</span></div><div class="btn btn-primary" id="brGo">XUẤT KÍCH ▶</div></div>
+  <div class="br-hint">Quân tự bố trí theo kế hoạch lần trước · muốn đổi chỗ lính thì bấm BỐ TRÍ QUÂN</div>
 </div>
 
 <!-- VICTORY -->

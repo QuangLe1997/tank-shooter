@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO } from '../../config.js';
-import { BIOME, FORTS, MOBILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, scene, spawnPart } from '../hub.js';
+import { BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, spawnPart } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // A Catmull-Rom camera sweep: low hero shot of the tank → orbiting parade rise →
@@ -32,6 +32,7 @@ export function startIntro(){
   const offs=OFFS.concat([[camOff.x,camOff.y,camOff.z]]);   // low hero close-up on the gun → sweep around → rise to a parade view → settle to gameplay
   const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))));
   intro.camCurve=mk(offs); intro.lookCurve=mk(LOOKS); intro.t=0; intro.active=true; intro.t0=performance.now()/1000;
+  intro.quick = !!(PROFILE.introSeen && PROFILE.introSeen[BIOME.name]);   // Z152 seen this battlefield's tour before → compile behind the veil, then go
   const sub=document.getElementById('cine-sub'); if(sub) sub.textContent=(S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'');
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
   intro.tour = MOBILE ? null : buildTour(T); intro.tt=0;                       // Z140 desktop: a full 3D tour of the battlefield first (enemy forts → landmarks → our stronghold → your tank)
@@ -62,6 +63,7 @@ function cullFar(T, on){ if(!on){ for(const o of _hidden) o.visible=true; _hidde
     if(Math.hypot(_wp.x-T.x, _wp.z-T.z) > R){ o.visible=false; _hidden.push(o); } } }
 export function endIntro(){
   if(!intro.active) return; intro.active=false; intro.warm=false; showVeil(false);
+  if(!PROFILE.introSeen) PROFILE.introSeen={}; if(!PROFILE.introSeen[BIOME.name]){ PROFILE.introSeen[BIOME.name]=1; saveProfile(); }
   cullFar(null, false); if(intro.fog0!=null && scene.fog){ scene.fog.density=intro.fog0; intro.fog0=null; }
   document.getElementById('cine').classList.remove('on'); document.body.classList.remove('cine');
   WAVE.active=false; S.wave=0;
@@ -70,7 +72,7 @@ export function endIntro(){
 }
 export function updateIntro(dt, now){
   if(!intro.active) return;
-  if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; showVeil(false); } }); }
+  if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; showVeil(false); if(intro.quick) endIntro(); } }); }
     camera.position.copy(intro.camCurve.getPoint(0)); camera.lookAt(intro.lookCurve.getPoint(0)); return; }
   if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + Math.min(dt,1/30)/R.dur); const u=_easeIO(intro.tt);
     camera.position.copy(R.cam.getPointAt(u)); camera.lookAt(R.look.getPointAt(u));

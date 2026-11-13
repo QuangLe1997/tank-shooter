@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, resetEnvEvents, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
+import { BIOME, BOSS_DEFS, GUNS, PROFILE, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, resetEnvEvents, saveProfile, setFocus, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -23,14 +23,20 @@ export function openBriefing(opts){
     const tag=document.createElement('div'); tag.className='br-tag'; tag.textContent=c.tag;
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=c.name;
     const ds=document.createElement('div'); ds.className='ds'; ds.textContent=c.desc;
-    card.append(ic,tag,nm,ds); tapEl(card, ()=>chooseContract(c)); wrap.appendChild(card);
+    card.append(ic,tag,nm,ds); card._c=c; tapEl(card, ()=>pickContract(c)); wrap.appendChild(card);
   }
+  pickContract(pick.find(c=>c.id===PROFILE.lastContract) || pick.find(c=>c.id==='steady'), true);   // Z152 one is always chosen — XUẤT KÍCH works straight away
   show('briefing'); sfx('powerup');
+  requestAnimationFrame(()=>{ const go=document.getElementById('brGo'); if(go && typeof setFocus==='function' && document.body.classList.contains('pad')) setFocus(go, true); });
 }
-export function chooseContract(c){
+export let _brPick=null;
+export function pickContract(c, quiet){ _brPick=c; document.querySelectorAll('#brcards .brcard').forEach(el=>el.classList.toggle('on', el._c===c)); if(!quiet) sfx('click'); }
+// Z152 XUẤT KÍCH: the chosen contract, the troops posted by last time's plan (or the auto plan) — no extra screen
+export function launchStage(withDeploy){ const c=_brPick||CONTRACTS.find(x=>x.id==='steady'); PROFILE.lastContract=c.id; saveProfile(); chooseContract(c, !withDeploy); }
+export function chooseContract(c, quick){
   S.contract=c; applyContractHUD(); hide('briefing');
   const ctx=_brCtx||{}; _brCtx=null;
-  openDeploy(()=>beginStage(c, ctx));                                       // Z105 post the troops first, then the stage opens
+  openDeploy(()=>beginStage(c, ctx), quick);                                       // Z105 post the troops first, then the stage opens
 }
 // Z136 COUNTDOWN: after XUẤT KÍCH the world stays frozen for 3 · 2 · 1 (camera already on the battlefield, nobody moves or shoots), then the fight goes live
 let _go=null, _cdN=0;
@@ -109,3 +115,5 @@ export function updateSpellHUD(){
   const mt=document.querySelector('#mSpell .mbtag'); if(mt) mt.textContent=sp.vi||sp.name;           // Z84: always show WHICH skill is armed
   const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q ‹ '+(sp.vi||sp.name)+' ›';
 }
+
+{ const g=document.getElementById('brGo'), d=document.getElementById('brDeploy'); if(g) tapEl(g, ()=>launchStage(false)); if(d) tapEl(d, ()=>launchStage(true)); }   // Z152

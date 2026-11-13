@@ -24,12 +24,13 @@ export function autoDeploy(){ const D=_dp; let left=D.total; for(const q of D.po
   for(const q of D.posts) if(q.site) put(q, 2);
   const c=D.posts.find(q=>q.id==='core'), r=D.posts.find(q=>q.id==='rally'); while(left>0){ const b=left; if(c) put(c,1); if(r) put(r,1); for(const q of D.posts) if(q.id==='left'||q.id==='right') put(q,1); if(left===b) break; }
   D.roles={ mg:Math.min(1,roleMax('mg')), mortar:Math.min(1,roleMax('mortar')), sapper:Math.min(1,roleMax('sapper')) }; render(); }
-export function openDeploy(onGo){
+export function openDeploy(onGo, quick){
   const posts=deployPosts().map(q=>Object.assign(q,{ n:0 })), total=Math.min(RIDER.cap, crewTarget()) + squadWant();
   _dp={ posts, roles:{ mg:0, mortar:0, sapper:0 }, total, onGo }; S.mode='deploy';
   const mem=PROFILE.deploy; if(mem && mem.v===1){ let left=total; for(const q of posts){ const k=Math.max(0, Math.min(q.max, mem.posts[q.id.replace(/\d+$/,'')]||0, left)); q.n=k; left-=k; }
     for(const k of ['mg','mortar','sapper']) _dp.roles[k]=Math.min(roleMax(k), mem.roles[k]||0); render(); }
   else autoDeploy();
+  if(quick){ confirmDeploy(); return; }   // Z152 XUẤT KÍCH from the briefing: the plan is applied without opening this screen
   document.getElementById('dp-op').textContent='BỐ TRÍ TRẬN ĐỊA · MÀN '+S.stage;
   show('deploy'); sfx('powerup'); tip('deploy'); }
 function stepper(get, set, max){ const w=document.createElement('div'); w.className='dp-step';
