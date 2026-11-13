@@ -870,5 +870,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/FLAGS\.push\(\[px,pz,TH2\]\)/.test(fo) && /f\.towerFlags\.push\(fl\)/.test(fo) && /for\(const fl of \(f\.towerFlags\|\|\[\]\)\) fl\.material\.map=vnTex\(\)/.test(fo), 'flags fly from the great towers and turn to our colours when the fort is taken');
   ok(/buildCore\(f, g, WM\)/.test(fo) && /kind:'fortcore'/.test(fo) && /fortCoreHit\(b, dmg\)/.test(R('src/world/cover.js')) && /function coreRuins/.test(fo) && /f\.coreDown\) return;/.test(fo), 'a command post in every fort (main and lesser) — shelled to ruins it burns, and the fort loses its reserves and its sorties'); }
 
+// Z177 loot markers: no light columns — the object blinks gold; a loot tank shows one small blinking light at its hatch
+{ const fs=await import('node:fs'); const b=fs.readFileSync('src/loot/beacons.js','utf8');
+  ok(!/CylinderGeometry\(0\.14,0\.55/.test(b) && /function ownMats/.test(b) && /function hatchLight/.test(b) && /lerp\(_gold, k\)/.test(b), 'loot hides in plain sight: the crate / tower / hut itself blinks gold, a tank carrying loot blinks a small light at its hatch — no light columns'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

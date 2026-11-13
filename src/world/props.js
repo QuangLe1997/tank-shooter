@@ -143,6 +143,6 @@ export const COVER_SET = {
   ARCTIC: [['sandbag','crates','drums'],           ['concrete','hesco']],
 };
 export function makeCoverMesh(kind, destructible){
-  const mat = destructible ? coverMat(kind).clone() : coverMat(kind);     // destructible pieces flash on hit → own material
+  const mat = destructible ? coverMat(kind).clone() : coverMat(kind); if(destructible) mat.userData.own=true;     // destructible pieces flash on hit → own material
   const m=new THREE.Mesh(coverGeo(kind), mat); m.castShadow=true; m.receiveShadow=true; m.userData.kind=kind; return m;
 }
