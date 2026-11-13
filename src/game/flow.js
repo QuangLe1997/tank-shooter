@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -23,6 +23,7 @@ export function startGame(arg){
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
   S.player = S.player || makePlayer();
+  clearRelic();                          // Z154 a new run: no relic power carried over
   buildCore(stStage);                    // monument matching the (resumed) stage
   const p=S.player;
   p.maxHp=100; p.hp=100; p.lives=5; p.fireAt=0; p.weaponLvl=0;

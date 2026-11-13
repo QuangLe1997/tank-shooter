@@ -1,5 +1,5 @@
 // ui/radar.js — RADAR / MINIMAP
-import { ALLY_TANKS, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RIDGES, S, boss, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
+import { ALLY_TANKS, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, boss, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
 // ----------------------------- RADAR / MINIMAP -----------------------------
@@ -29,6 +29,7 @@ export function drawRadar(){
   for(const w of POWS){ if(w.state==='free') continue; const x=toX(w.x), y=toY(w.z); c.strokeStyle=w.state==='open'?'#9be04a':'#ffcf5a'; c.lineWidth=1.6; c.beginPath(); c.moveTo(x,y-4.5); c.lineTo(x+4.5,y); c.lineTo(x,y+4.5); c.lineTo(x-4.5,y); c.closePath(); c.stroke(); }
   for(const d of DEPOTS){ const x=toX(d.x), y=toY(d.z); c.strokeStyle=d.state==='ours'?'#9be04a':(d.state==='open'?'#ffcf5a':'#ff6a4a'); c.lineWidth=1.6; c.strokeRect(x-4,y-4,8,8); if(d.kind==='motor'){ c.fillStyle=c.strokeStyle; c.fillRect(x-1.5,y-1.5,3,3); } }
   for(const h of HELOS){ c.strokeStyle='rgba(255,74,42,0.9)'; c.lineWidth=1.2; c.beginPath(); c.arc(toX(h.dx),toY(h.dz),5,0,Math.PI*2); c.stroke(); }
+  if(RELIC.live){ const x=toX(RELIC.x), y=toY(RELIC.z), pl=0.55+0.45*Math.sin(performance.now()/160); c.fillStyle='rgba(255,210,90,'+pl+')'; c.beginPath(); c.moveTo(x,y-6); c.lineTo(x+4.5,y); c.lineTo(x,y+6); c.lineTo(x-4.5,y); c.closePath(); c.fill(); c.strokeStyle='#fff3c8'; c.lineWidth=1; c.stroke(); }   // Z154 the relic: a pulsing gold gem
   c.fillStyle='#9be04a'; for(const a of FT) c.fillRect(toX(a.pos.x)-1, toY(a.pos.z)-1, 2.5, 2.5);
   for(const at of ALLY_TANKS){ const x=toX(at.pos.x), y=toY(at.pos.z); c.save(); c.translate(x,y); c.rotate(Math.atan2(Math.cos(at.facing),Math.sin(at.facing))); c.fillStyle='#9be04a'; c.beginPath(); c.moveTo(4.5,0); c.lineTo(-3,2.8); c.lineTo(-3,-2.8); c.closePath(); c.fill(); c.restore(); }
   if(p){ const x=toX(p.pos.x), y=toY(p.pos.z);                                            // player arrow (facing)

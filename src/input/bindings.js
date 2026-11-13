@@ -45,7 +45,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
   } }
 
 // ---- MENUS: one focus ring for keyboard and pad ----
-const FOCUSABLE='.btn, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .tcard, .shop-tab, .case, .dp-step, .guide-row, .bind-chip, #upcards > *, [data-pad]';
+const FOCUSABLE='.btn, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .tcard, .shop-tab, .case, .dp-step, .guide-row, .bind-chip, #upcards > *, #relicCards > *, [data-pad]';
 export function menuRoot(){ if(S.mode==='playing' && !document.body.classList.contains('shopopen')) return null; const L=[...document.querySelectorAll('.overlay:not(.hidden)')]; return L[L.length-1]||null; }
 export function navItems(root){ return [...root.querySelectorAll(FOCUSABLE)].filter(el=>{ if(el.offsetParent===null) return false; const r=el.getBoundingClientRect(); return r.width>10 && r.height>10; }); }
 export const NAV={ focus:null, kb:false, sig:null };

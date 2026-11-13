@@ -99,6 +99,7 @@ export * from './combat/power.js';
 export * from './combat/spells.js';
 export * from './campaign/artillery.js';
 export * from './loot/powerups.js';
+export * from './loot/relic.js';   // Z154 one relic per stage: wake it, pick a big power
 export * from './loot/upgrades.js';
 export * from './ui/briefing.js';
 export * from './ui/deploy.js';

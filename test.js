@@ -691,5 +691,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(names.every(n=>files.includes(n+'.mp3')), 'every sample the code asks for exists on disk');
   ok(!files.some(f=>/key|secret/i.test(f)) && !/sk_[0-9a-f]{20,}/.test(sy), 'no API key in the shipped code'); }
 
+// Z154 relic: wake it under fire, pick one big power for the stage
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const rl=R('src/loot/relic.js');
+  ok(/export function spawnRelic/.test(rl) && /function challenge/.test(rl) && /RELIC\.prog>=1\) awaken\(\)/.test(rl), 'relic: hold the ring to wake it; waking calls a strike team');
+  const ids=[...rl.matchAll(/\{ id:'(\w+)'/g)].map(m=>m[1]); ok(['life','dmg','speed','range','mag'].every(k=>ids.includes(k)), 'relic powers include +1 life, ×2 damage, hard acceleration, ×2 range, ×2 magazine');
+  ok(/spawnRelic\(\)/.test(R('src/ui/briefing.js')) && /clearRelic\(\)/.test(R('src/loot/upgrades.js')) && /clearRelic\(\)/.test(R('src/game/flow.js')) && /updateRelic\(gdt, now\)/.test(R('src/game/loop.js')), 'one relic per stage; its power ends with the stage / run');
+  ok(/id="relicDlg"/.test(R('index.html')) && /#relicCards > \*/.test(R('src/input/bindings.js')) && /RELIC\.live/.test(R('src/ui/radar.js')), 'pick dialog (pad-navigable) + radar marker'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

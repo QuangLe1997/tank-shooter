@@ -1,6 +1,6 @@
 // loot/upgrades.js — ROGUELITE UPGRADES (pick 1 of 3 after each boss)
 import { OBJECTIVES, TROOPS } from '../../config.js';
-import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildObjective, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD } from '../hub.js';
+import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildObjective, clearRelic, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD } from '../hub.js';
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 export const UPGRADES = [
@@ -52,6 +52,7 @@ export function playStageTransition(stage, biomeName, accentHex, quiet){
   setTimeout(()=>{ const ct=conditionsText(); if(ct) showBanner('ĐIỀU KIỆN: '+ct, '#9fd8ff'); }, 2900);   // tell the player which guns this battlefield favours
 }
 export function chooseUpgrade(u){
+  clearRelic();   // Z154 last stage's relic power ends with it
   u.apply(S.player); sfx('powerup'); updateHUD();
   hide('upgrade');
   applyBiome(S.stage); buildBlocks(); clearWrecks(); buildObjective();
