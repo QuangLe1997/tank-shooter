@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -34,19 +34,18 @@ export function buildTower(x, z){
   // searchlight (sweeps at night)
   const sl=new THREE.Group(); sl.position.set(1.2,TOWER.h+1.0,-1.2); body.add(sl);
   const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.4,12), _tinMat); lamp.rotation.x=Math.PI/2; sl.add(lamp);
-  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.25,3.2,22,16,1,true), new THREE.MeshBasicMaterial({ color:0xfff0c8, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
-  beam.rotation.x=-Math.PI/2; beam.position.z=11; const bg=new THREE.Group(); bg.rotation.x=0.55; bg.add(beam); sl.add(bg);
+  const bg=new THREE.Group(); bg.rotation.x=0.55; sl.add(bg); const light=makeSearchlight(sl, bg, 26, 0.24, 3.4, gy), beam=light.beam;   // Z146 volumetric beam + ground pool + glare
   const guards=[];
   for(let k=0;k<2;k++){ const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(1.55); s.position.set(k?0.7:-0.7, TOWER.h+0.11, k?0.4:-0.4); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
   scene.add(g);
   const hp=Math.round(TOWER.hp*loopHpMul()*diffHpMul());
-  const t={ g, body, x, z, guards, sl, beam, wm, hp, falling:false };
+  const t={ g, body, x, z, guards, sl, beam, light, wm, hp, falling:false };
   towers.push(t);
   const bobj={ mesh:g, x, z, r:2.0, hp, maxHp:hp, steel:false, loot:Math.random()<0.5, kind:'tower', tower:t };
   blocks.push(bobj); t.block=bobj; if(bobj.loot) addLootBeacon(bobj,'block');
 }
 export function buildTowers(){
-  for(const t of towers) scene.remove(t.g); towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges();
+  for(const t of towers){ scene.remove(t.g); dropSearchlight(t.light); } towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges();
   const n=Math.round(((MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)))*Math.min(AREA_K,1.7)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&Math.hypot(x,z)>22 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7) && !inZone(x,z,6) && inField(x,z,9);
   for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
     for(let tr=0;tr<30&&!ok;tr++){ x=(Math.random()*2-1)*(ARENA-9); z=(Math.random()*2-1)*(ARENA-9); ok=okAt(x,z); }
@@ -57,9 +56,11 @@ export function buildTowers(){
 // guards spot your tank and fire plunging rifle rounds; searchlights sweep at night
 export const _tw=new THREE.Vector3();
 export function updateTowers(dt, now){
+  updateBeams(dt); updateSearchSpot(towers.map(t=>t.light), NIGHT.k);
   const p=S.player; if(!p) return;
   for(const t of towers){
-    t.beam.material.opacity = NIGHT.k*0.09; t.sl.rotation.y = Math.sin(now*0.5+t.x)*1.2;
+    t.sl.rotation.y = Math.sin(now*0.5+t.x)*1.2 + Math.sin(now*0.17+t.z)*0.35;   // Z146 an operator's uneven sweep
+    if(t.light){ if(t.falling){ t.light.beam.visible=false; t.light.pool.visible=false; t.light.on=false; } else updateSearchlight(t.light, NIGHT.k); }
     if(t.falling) continue;
     for(const gd of t.guards){ if(!gd.alive) continue;
       gd.g.getWorldPosition(_tw); gd.wx=_tw.x; gd.wy=_tw.y; gd.wz=_tw.z;                         // Z104 cached for our soldiers to aim at

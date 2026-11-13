@@ -2,7 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, detailize, heightAt, inField, inZone } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, detailize, floraMat, heightAt, inField, inZone, treeConifer, treePalm } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 const WALLS=[ ['#b9b1a4','#6f8aa6'], ['#9fa8b0','#46607a'], ['#c8a98a','#5a6e84'], ['#a99a8a','#3e5670'] ];   // [wall, glass]
@@ -48,13 +48,9 @@ function buildCity(){
 
 // ---------------- trees (instanced) ----------------
 let _conifer=null, _palm=null, _treeMat=null;
-function treeMat(){ return _treeMat||(_treeMat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.92, side:THREE.DoubleSide })); }
-function coniferGeo(){ if(_conifer) return _conifer; const P=[], tr=new THREE.CylinderGeometry(0.18,0.26,1.6,6); tr.translate(0,0.8,0); P.push({geo:tr,col:0x5a4430});
-  for(let k=0;k<4;k++){ const r=2.0-k*0.42, h=2.6-k*0.3, c=new THREE.ConeGeometry(r,h,8); c.translate(0,1.7+k*1.25,0); P.push({geo:c,col:k%2?0x2f5a2c:0x3a6a34}); }
-  return (_conifer=_mergeColored(P)); }
-function palmGeo(){ if(_palm) return _palm; const P=[], tr=new THREE.CylinderGeometry(0.13,0.2,6.4,6); tr.translate(0,3.2,0); tr.rotateZ(0.06); P.push({geo:tr,col:0x8a7456});
-  for(let k=0;k<8;k++){ const a=k/8*Math.PI*2, f=new THREE.ConeGeometry(0.28,3.2,3); f.rotateZ(-1.15); f.translate(1.5,6.5,0); f.rotateY(a); P.push({geo:f,col:k%2?0x4f8a34:0x5f9a3c}); }
-  const nut=new THREE.SphereGeometry(0.2,6,5); nut.translate(0.15,6.3,0.1); P.push({geo:nut,col:0x6a8a3a}); return (_palm=_mergeColored(P)); }
+function treeMat(){ return floraMat(); }   // Z146 the same leaf-card trees as the open field (atlas + sway)
+function coniferGeo(){ return treeConifer(); }
+function palmGeo(){ return treePalm(); }
 function trees(geo, list, scale){ if(!list.length) return; const im=new THREE.InstancedMesh(geo, treeMat(), list.length); im.castShadow=!MOBILE; im.receiveShadow=true;
   const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(), V=new THREE.Vector3(), Sc=new THREE.Vector3();
   list.forEach((o,k)=>{ const s=o.s*(scale||1); M.compose(V.set(o.x,heightAt(o.x,o.z)-0.05,o.z), Q.setFromEuler(E.set(0,o.ry,0)), Sc.set(s,s*_R(0.9,1.15),s)); im.setMatrixAt(k,M); }); add(im); }

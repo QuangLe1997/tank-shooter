@@ -14,6 +14,7 @@ export * from './world/field.js';
 export * from './render/clouds.js';   // Z145 must load before any material patches its shader
 export * from './render/renderer.js';
 export * from './render/surface.js';   // Z145
+export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
 export * from './render/lod.js';
 export * from './world/atmosphere.js';
 export * from './world/ground.js';

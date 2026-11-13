@@ -8,7 +8,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena } from '../hub.js';
+import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -108,7 +108,7 @@ export function buildFloodlights(){
     const head=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.0,0.35), steel); head.position.set(0,13.4,0.3); head.rotation.x=-0.5; g.add(head);
     const lensM=new THREE.MeshStandardMaterial({ color:0x222222, emissive:0xfff2d8, emissiveIntensity:0, roughness:0.2 }); NIGHT.lamps.push(lensM);
     for(let k=0;k<4;k++){ const lens=new THREE.Mesh(new THREE.CircleGeometry(0.24,14), lensM); lens.position.set(-0.85+k*0.57,0,0.18); head.add(lens); }
-    const cone=new THREE.Mesh(new THREE.CylinderGeometry(0.6,9,34,20,1,true), new THREE.MeshBasicMaterial({ map:coneT, color:0xfff0d0, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+    const cone=new THREE.Mesh(new THREE.CylinderGeometry(0.6,9,34,24,1,true), beamMat(0xfff0d0, 0.75, 0));   // Z146 volumetric shaft (soft rim, dust, fades into the ground)
     cone.position.set(0,-17,0); const cg=new THREE.Group(); cg.position.copy(head.position); cg.rotation.x=0.95; cg.add(cone); g.add(cg); NIGHT.cones.push(cone.material);   // visible beam in the haze
     if(i<nLights){ const sp=new THREE.SpotLight(0xfff0d8, 0, 110, 0.62, 0.7, 0); /* decay 0: even pool inside the range, no blow-out near the mast */ sp.position.set(x*0.98,13.4,z*0.98); sp.target.position.set(x*0.25,0,z*0.25); scene.add(sp); scene.add(sp.target); NIGHT.spots.push(sp); }
     arena.add(g); NIGHT.towers.push(g); });
@@ -119,7 +119,7 @@ export function updateNightLights(dt, now){
   const k=NIGHT.k, fl=0.96+0.04*Math.sin(now*37)*Math.sin(now*11.3);           // slight mains flicker
   for(const sp of NIGHT.spots) sp.intensity = k*(MOBILE?4.2:3.6)*fl;
   for(const m of NIGHT.lamps) m.emissiveIntensity = k*3.2*fl;
-  for(const m of NIGHT.cones) m.opacity = k*0.07;
+  /* Z146 mast shafts are driven by BEAM_U.uK (fx/searchlight.js) */
   const p=S.player; if(NIGHT.head && p){ NIGHT.head.intensity = k*4.6; }
 }
 export const _envCache = {};
