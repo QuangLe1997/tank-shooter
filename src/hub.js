@@ -79,6 +79,7 @@ export * from './fx/dying.js';
 export * from './campaign/waves.js';
 export * from './campaign/boss.js';
 export * from './fx/explosions.js';
+export * from './fx/gunfx.js';   // Z149 per-class muzzle fx, lightning / rail beams, ricochets
 export * from './fx/debris.js';
 export * from './fx/weather.js';
 export * from './game/score.js';

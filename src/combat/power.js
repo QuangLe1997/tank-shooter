@@ -1,6 +1,6 @@
 // combat/power.js — Z107 POWER RATING: your tank's strength (sustained firepower × effective HP) and each level's threat (its real wave mix, HP / damage / accuracy ramps), on one scale — 1000 = new tank on level 1.
 import { ARMOR, BALANCE, DMG_TYPE, INFANTRY, POWER, RAMP } from '../../config.js';
-import { ENEMY_DEFS, GUNS, PROFILE, S, campaignMax, gunDmgMul, gunFireMul, gunMagMul, gunReloadMul, wavePool, waveSize, waveSquads } from '../hub.js';
+import { ENEMY_DEFS, GUNS, PROFILE, S, campaignMax, gunDmgMul, gunFireMul, gunMagMul, gunReloadMul, gunShotDmg, wavePool, waveSize, waveSquads } from '../hub.js';
 
 // ---- your side ----
 // kit: the numbers that decide a fight. live=true reads the tank in battle (run picks included), else the profile (shop + mastery)
@@ -13,8 +13,9 @@ export function powerKit(live, over){ const U={ ...(PROFILE.upgrades||{}), ...((
 export const REF_KIT = { dmgMul:1, fireMul:1, reloadMul:1, magMul:1, maxHp:100, armor:0, speed:1, guns:['rifle'], mastery:false };
 // one gun's sustained damage per second against an armour mix (mag + reload cycle, crowd bonus)
 export function gunPower(id, K, mix){ const g=GUNS[id]; if(!g || !g.dmg) return { dps:0, shot:0 };
+  if(g.special==='flame'){ const F=BALANCE.flame, d=F.dps*F.lvlMax*(K.mastery?gunDmgMul(id):1)*K.dmgMul, T=DMG_TYPE.FIRE; let eff=0, tw=0; for(const k in mix){ eff+=mix[k]*(T[k]||1); tw+=mix[k]; } return { dps:d*POWER.crowd.aoe*(tw?eff/tw:1), shot:d }; }   // Z149 the flame jet: burn DoT on everything in the cone
   const dM=K.mastery?gunDmgMul(id):1, fM=K.mastery?gunFireMul(id):1, rM=K.mastery?gunReloadMul(id):1;
-  const shot=g.dmg*(g.frags||1)*dM*K.dmgMul, fcd=g.fireCd*fM*K.fireMul, mag=Math.max(1, Math.round(g.mag*K.magMul*(K.mastery?gunMagMul(id):1))), rel=g.reload*rM*K.reloadMul;
+  const shot=gunShotDmg(g)*dM*K.dmgMul, fcd=g.fireCd*fM*K.fireMul, mag=Math.max(1, Math.round(g.mag*K.magMul*(K.mastery?gunMagMul(id):1))), rel=g.reload*rM*K.reloadMul;
   const sus=shot*mag/(mag*fcd+rel), C=POWER.crowd, crowd=((g.aoe||g.aoeR)?C.aoe:1)*(g.pierce?C.pierce:1)*(g.chain?C.chain:1);
   const T=DMG_TYPE[g.type]||{}; let eff=0, tw=0; for(const k in mix){ eff+=mix[k]*(T[k]||1); tw+=mix[k]; } eff=tw?eff/tw:1;
   return { dps:sus*crowd*eff, shot }; }

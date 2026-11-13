@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunReloadMul, gunRole, gunSiege, gunTraits, gunXpToNext, hide, launchGame, ownGun, payCost, powerKit, powerRating, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunReloadMul, gunRole, gunShotDmg, gunSiege, gunSplash, gunTraits, gunXpToNext, hide, launchGame, ownGun, payCost, powerKit, powerRating, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -164,7 +164,7 @@ export function siPanelHTML(it){
   const PW=shopPowerLine(it);   // Z107 what this purchase does to your power rating
   if(it.type==='gun'){ const g=GUNS[it.id], lv=gunLevel(it.id);
     const dMul=gunDmgMul(it.id), fMul=gunFireMul(it.id), rMul=gunReloadMul(it.id);
-    const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(edmg*(g.frags||1)*rof), erel=g.reload*rMul;
+    const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(gunShotDmg(g)*dMul*rof), erel=g.reload*rMul;
     const T=gunTraits(it.id), mods=gunModRows(it.id), emag=Math.round(g.mag*gunMagMul(it.id));   // Z115 full traits + gun parts
     const nx=gunXpToNext(it.id);
     const mastery = it.owned ? ('<div class="sp-mastery">★ THÔNG THẠO <b>CẤP '+lv+' / '+BALANCE.mastery.maxLevel+'</b>'+
@@ -175,11 +175,11 @@ export function siPanelHTML(it){
     const eff='<div class="sp-eff">'+gunEffect(it.id).map(e=>{ const G=effGrade(e.x); return '<span class="ef '+G.c+'"><small>'+e.vi+'</small><b>'+(e.x>0?'×'+e.x.toFixed(2).replace(/0$/,''):'—')+'</b><em>'+G.tx+'</em></span>'; }).join('')+'</div>';
     return PW+'<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+
       '<div class="sp-role" style="--rc:'+role.col+'">'+role.tx+'</div>'+ mastery+
-      spBar('Sát thương / phát', edmg*(g.frags||1)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
+      spBar('Sát thương / phát', Math.round(gunShotDmg(g)*dMul)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
       spBar('Sát thương / giây', dps+(cmp?delta(me.dps,cmp.dps):''), dps/M.dps)+ spBar('Tầm bắn', '×'+me.rng.toFixed(2)+(cmp?delta(me.rng,cmp.rng):''), me.rng/M.rng)+
       (()=>{ const sg=gunSiege(it.id); return '<div class="sp-bl sp-siege">Phá tường thành<b>'+sg.shot+' / phát · '+sg.dps+' /s'+(sg.k>1?' ×'+sg.k.toFixed(1):'')+'</b></div>'; })()+
       '<div class="sp-bl">Băng đạn<b>'+emag+' viên'+(emag>g.mag?' ▲':'')+'</b></div>'+
-      (g.aoe?'<div class="sp-bl">Nổ lan<b>'+g.aoe.toFixed(1)+' m · '+Math.round(edmg*0.8)+' / phát</b></div>':'')+
+      (g.aoe?'<div class="sp-bl">Nổ lan<b>'+g.aoe.toFixed(1)+' m · '+Math.round(edmg*gunSplash(g))+' / phát</b></div>':'')+
       ((g.frags||1)>1?'<div class="sp-bl">Số viên / phát<b>'+g.frags+' × '+edmg+'</b></div>':'')+
       (g.pierce?'<div class="sp-bl">Xuyên mục tiêu<b>'+g.pierce+'</b></div>':'')+'<div class="sp-bl">Nạp đạn<b>'+erel.toFixed(1)+' s'+(cmp?delta(g.reload,GUNS[cur].reload,true):'')+'</b></div>'+
       '<div class="sp-sub">HIỆU QUẢ VỚI</div>'+eff+

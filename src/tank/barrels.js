@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GUN_PRICE } from '../../config.js';
-import { S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol } from '../hub.js';
+import { GUNS, S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol } from '../hub.js';
 
 // ----- per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they elevate + recoil -----
 // returns a Group with userData { muzzle, spin, recoilLen, elevates, mount } — `mount` = static hardware bolted to the turret (doesn't recoil)
@@ -171,6 +171,9 @@ export function makeGunBarrel(id){
 
     const sc=1+GRADE*0.028; g.scale.set(sc, sc, 1+GRADE*0.022);                                                                      // bigger gun → beefier tube
   }
+  { const MZ={ smg:[[-0.16,Y,3.6],[0.16,Y,3.6]], flak:[[-0.5,Y,4.1],[0.5,Y,4.1]], missile:[[-0.3,Y+0.25,3.12],[0.3,Y+0.25,3.12]],   // Z149 multi-tube guns fire from each tube in turn
+      thermo:[[-0.24,Y+0.36,2.95],[0.24,Y-0.04,2.95],[0.24,Y+0.36,2.95],[-0.24,Y-0.04,2.95]] }[id];
+    if(MZ) g.userData.muzzles=MZ.map(([x,y,z])=>{ const o=new THREE.Object3D(); o.position.set(x,y,z); g.add(o); return o; }); }
   if(!g.userData.muzzle){ const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,tip); g.add(muzzle); g.userData.muzzle=muzzle; }
   g.userData.grade=GRADE;
   bakeGroup(g); bakeGroup(mount);
@@ -179,7 +182,7 @@ export function makeGunBarrel(id){
   return g;
 }
 // visual grade 0–6: gun power tier (by price; VIP top) + mastery level — the barrel looks as strong as the gun is
-export function gunTier(id){ const pr=GUN_PRICE[id]; if(!pr) return 0; if(pr.d) return 4; const c=pr.c||0; return c<=1700?1:c<=3000?2:3; }
+export function gunTier(id){ const pr=GUN_PRICE[id]; if(!pr) return 0; if(pr.d) return 4; return (GUNS[id]&&GUNS[id].tier)||0; }   // Z149 the gun's own BẬC (the rifle stays plain)
 export function barrelGrade(id){ let lv=1, md=0; try{ lv=gunLevel(id)||1; md=gunModTotal(id); }catch(e){} return Math.max(0, Math.min(6, gunTier(id) + (lv-1) + Math.floor(md/5))); }   // Z115 every 5 parts fitted = one grade finer
 export function disposeBarrel(grp){ if(!grp) return; grp.traverse(o=>{ if(o.isMesh){ o.geometry.dispose(); if(o.material&&o.material.dispose) o.material.dispose(); } }); }
 // mount a gun's real barrel (+ turret mount) on ANY tank built by buildTank — the player in battle, the showroom tank in the shop
@@ -191,5 +194,5 @@ export function mountBarrel(mesh, id){ const ud=mesh.userData;
   ud.rig.recoilLen=ng.userData.recoilLen; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
   return ng; }
 export function setPlayerBarrel(id){
-  const p=S.player; if(!p||!p.mesh) return; const ng=mountBarrel(p.mesh, id); p.muzzle=ng.userData.muzzle;
+  const p=S.player; if(!p||!p.mesh) return; const ng=mountBarrel(p.mesh, id); p.muzzle=ng.userData.muzzle; p.muzzles=ng.userData.muzzles||null; p.mzI=0;
 }

@@ -1,6 +1,6 @@
 // ui/shop-info.js — Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas vs your gun
 import { DMG_TYPE, ROSTER, FORT, GUN_MODS, GUN_BARRELS } from '../../config.js';
-import { GUNS, PROFILE, gunDmgMul, gunFireMul, gunMod } from '../hub.js';
+import { GUNS, PROFILE, gunDmgMul, gunFireMul, gunMod, gunShotDmg, gunSplash } from '../hub.js';
 
 // one short role line per gun (Vietnamese) + a colour family
 export function gunRole(id){ const g=GUNS[id]||{};
@@ -27,10 +27,10 @@ export function gunEffect(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, arc
 export function gunSiege(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, k=Math.max(FORT.shotStructMin, m.struct||1); return { k, shot:Math.round(g.dmg*gunDmgMul(id)*(g.frags||1)*k), dps:Math.round(g.dmg*gunDmgMul(id)*(g.frags||1)*k/(g.fireCd*gunFireMul(id))) }; }
 export function effGrade(x){ return x<=0 ? { tx:'KHÔNG VỚI', c:'no' } : x>=1.25 ? { tx:'MẠNH', c:'good' } : x>=0.9 ? { tx:'TỐT', c:'ok' } : { tx:'YẾU', c:'bad' }; }
 // comparable numbers (mastery included) and the field-wide maxima used to scale the bars
-export function gunNums(id){ const g=GUNS[id]||{}, dMul=gunDmgMul(id), fMul=gunFireMul(id), dmg=g.dmg*dMul*(g.frags||1), rof=1/(g.fireCd*fMul);
+export function gunNums(id){ const g=GUNS[id]||{}, dMul=gunDmgMul(id), fMul=gunFireMul(id), dmg=gunShotDmg(g)*dMul, rof=1/(g.fireCd*fMul);
   return { dmg:Math.round(dmg), rof, dps:Math.round(dmg*rof), mag:g.mag, reload:g.reload, rng:g.rng||1 }; }
 let _max=null; export function gunMax(){ if(_max) return _max; _max={ dmg:1, rof:1, dps:1, rng:1 };
-  for(const id of Object.keys(GUNS)){ const g=GUNS[id]; if(!g.dmg) continue; const d=g.dmg*(g.frags||1), r=1/g.fireCd; _max.dmg=Math.max(_max.dmg,d); _max.rof=Math.max(_max.rof,r); _max.dps=Math.max(_max.dps,d*r); _max.rng=Math.max(_max.rng,g.rng||1); }
+  for(const id of Object.keys(GUNS)){ const g=GUNS[id]; if(!g.dmg) continue; const d=gunShotDmg(g), r=1/g.fireCd; _max.dmg=Math.max(_max.dmg,d); _max.rof=Math.max(_max.rof,r); _max.dps=Math.max(_max.dps,d*r); _max.rng=Math.max(_max.rng,g.rng||1); }
   return _max; }
 // the gun you would compare against: the first one in your loadout
 export function currentGunId(){ const L=PROFILE.loadout||[]; return L[0]||'rifle'; }
@@ -39,9 +39,9 @@ export function delta(a, b, lowerIsBetter){ if(b==null||a===b) return ''; const 
 
 // Z115 everything a gun does, as tags with numbers (pellets, barrels, splash, pierce, guidance, freeze, chain, arc, delayed fuse, roles)
 export function gunTraits(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, T=[], arc=g.special==='mortar'||g.special==='arty'||g.special==='rocket';
-  const nB=GUN_BARRELS[id]||1; if(nB>1) T.push({ t:nB+' NÒNG', d:'Bắn luân phiên / song song từ '+nB+' nòng' });
+  const nB=GUN_BARRELS[id]||1; if(nB>1) T.push({ t:nB+' NÒNG', d:'Bắn luân phiên từ '+nB+' nòng — nhịp đều hơn, không nhân đôi sát thương' });
   if((g.frags||1)>1) T.push({ t:'CHÙM ×'+g.frags, d:g.frags+' viên mỗi phát, toả '+Math.round((g.spread||0)*57)+'°' });
-  if(g.aoe) T.push({ t:'NỔ LAN '+g.aoe.toFixed(1)+' m', d:'Nổ lan bán kính '+g.aoe.toFixed(1)+' m, 80% sát thương' });
+  if(g.aoe) T.push({ t:'NỔ LAN '+g.aoe.toFixed(1)+' m', d:'Nổ lan bán kính '+g.aoe.toFixed(1)+' m, '+Math.round(gunSplash(g)*100)+'% sát thương' });
   if(g.pierce) T.push({ t:'XUYÊN '+g.pierce, d:'Xuyên qua '+g.pierce+' mục tiêu' });
   if(g.homing || g.lock) T.push({ t:'DẪN ĐƯỜNG', d:'Tự bám mục tiêu' });
   if(g.freeze) T.push({ t:'ĐÓNG BĂNG '+g.freeze+' s', d:'Làm địch đứng hình' });

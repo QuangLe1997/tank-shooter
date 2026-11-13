@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, heightAt, magCap, muzzleFlash, muzzleLight, ownGun, playerRange, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -41,7 +41,7 @@ export function updateFlameJet(dt){
   ud.bodyMat.opacity=0.5*f*fl; ud.coreMat.opacity=0.84*f*fl; ud.tip.material.opacity=0.6*f*fl;
   ud.bodyMat.map.offset.y -= dt*1.7;                                                                  // fire flows nozzle → tip
 }
-export function fireFlame(now, g, x, z, ang){
+export function fireFlame(now, g, x, z, ang, k=1){
   const F=BALANCE.flame, range=g.range||F.range, cx=Math.sin(ang), cz=Math.cos(ang);
   // ===== VISUAL: a STREAM of MOVING fire — burning fuel that projects out (like tracers) & cools white→red as it flies =====
   const nx=x+cx*0.8, nz=z+cz*0.8;
@@ -59,7 +59,7 @@ export function fireFlame(now, g, x, z, ang){
     if(((dx*cx+dz*cz)/(d||1)) < F.cone) continue;                 // only enemies inside the flame cone catch fire
     if(!e.burn) e.burn={ lvl:0, until:0 };
     e.burn.lvl = Math.min(F.lvlMax, e.burn.lvl + F.add);          // each spray-tick stokes the fire (sustained → max fast)
-    e.burn.until = now + F.duration;
+    e.burn.until = now + F.duration; e.burn.k = Math.max(e.burn.k||1, k);   // Z149 the fire burns as hot as your damage upgrades
     e.hitT = Math.max(e.hitT, 0.08);
   }
 }
@@ -119,6 +119,7 @@ export function updateFuses(dt, now){
   }
 }
 // AUTO-FIRE: called every frame while playing. Handles reload + magazine + fragments.
+const _tp=new THREE.Vector3(), _mz=new THREE.Vector3();
 export function fireGun(now, range){
   const p=S.player; if(!p.guns.length) return;
   const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
@@ -130,7 +131,7 @@ export function fireGun(now, range){
   const spinMul = g.spinUp ? 1 + 2.2*(1-(p.spin||0)) : 1;                  // MINIGUN: the barrel cluster must spin up before full rate
   p.fireAt = now + g.fireCd * rapid * p.fireMul * gunFireMul(inst.id) * spinMul;   // MASTERY: higher level fires faster
   if(!p.infiniteAmmo) inst.ammo--;
-  p.muzzle.getWorldPosition(_v);                 // real barrel tip (used for the muzzle flash)
+  (p.muzzles ? p.muzzles[(p.mzI=((p.mzI||0)+1)%p.muzzles.length)] : p.muzzle).getWorldPosition(_v);   // real barrel tip — Z149 twin / multi-tube guns alternate tubes (rhythm, never double damage)
   const ang=p.aimSmoothed;
   const od=p.radius+0.6;                          // spawn bullets at the hull edge so point-blank shots never overshoot a hugging tank
   const x=p.pos.x+Math.sin(ang)*od, z=p.pos.z+Math.cos(ang)*od;
@@ -140,7 +141,7 @@ export function fireGun(now, range){
   if(g.special==='rocket'){ fireRocket(now, g); }
   else if(g.special==='mortar'){ fireMortar(now, g, dmg); }
   else if(g.special==='arty'){ fireArty(now, g, dmg); }
-  else if(g.special==='flame'){ fireFlame(now, g, x, z, ang); { const rg=p.mesh.userData.rig; if(rg) rg.vib=Math.min(0.5,rg.vib+0.12); } muzzleLight.position.set(x,1.4,z); muzzleLight.color.setHex(0xff6a1c); muzzleLight.intensity=2.2;
+  else if(g.special==='flame'){ fireFlame(now, g, x, z, ang, dmg/(g.dmg||1)); { const rg=p.mesh.userData.rig; if(rg) rg.vib=Math.min(0.5,rg.vib+0.12); } muzzleLight.position.set(x,1.4,z); muzzleLight.color.setHex(0xff6a1c); muzzleLight.intensity=2.2;
     if(Math.random()<0.12) sfx('shoot_flak'); if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst); updateGunHUD(); return; }   // flame handles its own FX; skip the bullet/muzzle path + throttle sound
   else {
     const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
@@ -154,14 +155,18 @@ export function fireGun(now, range){
     for(let i=0;i<n;i++){
       const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
       spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:arcD, y:sy0, dropTo:1.2, dropDist:dropD, type:g.type, reach:maxDist, fall:g.fall??1,
-        pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*0.8 : 0),
+        pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*gunSplash(g) : 0),
         freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos});
     }
   }
   // RECOIL — the tank kicks back opposite the shot; heavy guns lurch, autos barely nudge
   const rec=g.recoil||0; if(rec){ p.kbx -= Math.sin(ang)*rec; p.kbz -= Math.cos(ang)*rec;
     const km=Math.hypot(p.kbx,p.kbz), kc=6.5; if(km>kc){ p.kbx*=kc/km; p.kbz*=kc/km; } }   // cap so rapid-fire recoil can't fling the tank
-  muzzleFlash(_v.x,_v.z,ang, g.color, rec, _v.y);   // flash at the real barrel tip (size scales with recoil)
+  gunMuzzleFX(g, _v.x, _v.y, _v.z, ang, rec);   // Z149 the flash of THIS kind of weapon at the real barrel tip
+  if(g.flash==='arc' || g.flash==='rail'){ const R=(range||playerRange())+2, list=boss&&boss.alive ? enemies.concat([boss]) : enemies;
+    _mz.set(_v.x,_v.y,_v.z);
+    if(g.flash==='arc'){ strikePoint(list, _v.x, _v.z, ang, R*0.9, 0.1, _tp); lightning(_mz, _tp); }      // the bolt jumps to whatever is near the line of fire
+    else { _tp.set(_v.x+Math.sin(ang)*R, _v.y-0.2, _v.z+Math.cos(ang)*R); railBeam(_mz, _tp); } }      // the slug punches through everything: the beam runs its full reach
   if(CASING[inst.id]){ const c=CASING[inst.id], rx=Math.cos(p.facing), rz=-Math.sin(p.facing), sc=p.mesh.scale.x;   // spent brass ejected from the turret side
     for(let k=0;k<c.n;k++) spawnPart(p.pos.x+rx*1.0*sc, 2.3*sc, p.pos.z+rz*1.0*sc, rx*(3+Math.random()*2)+(Math.random()-0.5), 3+Math.random()*2, rz*(3+Math.random()*2)+(Math.random()-0.5), {color:0xd8a840, size:c.s, life:0.9, grav:-24, drag:0.4}); }
   tankRecoil(p.mesh, ang, Math.min(1, Math.max(0.12, 0.15 + rec*0.22)), p.facing); // barrel slams back + shivers, hull rocks off the shot (Z125: no rumble on firing — the pad only rumbles for hits, blasts and crashes)
