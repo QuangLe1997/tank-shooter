@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { TANK_MODELS, blobTex, camoTex, grimeMat, panelNrm, panelRgh, panelTex, realCol, trackTex, turretGeo, wheelTex } from '../hub.js';
+import { TANK_MODELS, blobTex, buildDesignTank, camoTex, grimeMat, hasDesign, panelNrm, panelRgh, panelTex, realCol, trackTex, turretGeo, wheelTex } from '../hub.js';
 
 // ---- shared tank geometries (built once; every tank references them) ----
 export const TANK_GEO = {};
@@ -61,6 +61,17 @@ export function buildTank(opts={}){
   const HULL=CAMO?camoSkin(1):skin(hull,1), TUR=CAMO?camoSkin(0.45):skin(turret,0.45), GUN=metal(barrel), STEEL=metal(0x3d3c35), BLACK=dark(0x141412);
   const rubber=grimeMat(new THREE.MeshStandardMaterial({ color:0x1b1a17, roughness:0.95, metalness:0.05 }), 1);
   const face  =grimeMat(new THREE.MeshStandardMaterial({ map:wheelTex(), roughness:0.75, metalness:0.4 }), 0.8);
+  if(opts.model && hasDesign(opts.model)){   // Z157 this model has its own vehicle build (hull, running gear, turret, gun mount)
+    const ACC=new THREE.MeshStandardMaterial({ color:accent, emissive:accent, emissiveIntensity:0.12, roughness:0.7, metalness:0.1 });
+    const HLM=new THREE.MeshStandardMaterial({ color:0xfff2d0, emissive:0xffeec0, emissiveIntensity:0.35, roughness:0.25 });
+    const GLASS=new THREE.MeshStandardMaterial({ color:0x0a1216, roughness:0.08, metalness:1.0, envMapIntensity:1.6 });
+    const ERA = CAMO ? camoSkin(0.6) : skin(realCol(hull,0.8,0.82),0.5);
+    const _sg={}, out=buildDesignTank(opts, { mk, HULL, TUR, GUN, STEEL, BLACK, GLASS, RUB:rubber, ERA, dark, metal, ACC, HLM, TRUNNION_Z,
+      BELT:(tex)=>grimeMat(new THREE.MeshStandardMaterial({ color:0xb4b0a4, map:tex, roughness:0.85, metalness:0.5 }), 1),
+      FACE:(wt)=>grimeMat(new THREE.MeshStandardMaterial({ map:wt, roughness:0.75, metalness:0.4 }), 0.8),
+      trackTex:()=>{ const t=trackTex().clone(); t.needsUpdate=true; return t; }, wheelTex:()=>{ const t=wheelTex().clone(); t.needsUpdate=true; t.center.set(0.5,0.5); return t; },
+      sprocketGeo:(r)=>_sg[r]||(_sg[r]=G.sprocket.clone().scale(1, r/0.31, r/0.31)), blobGeo:G.blob, blobMat });
+    bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); return out; }
   const rig={ wheels:[[],[]], wheelTex:[], tracks:[], lx:undefined, lz:0, lf:0, v:0, a:0, pitch:0, pv:0, roll:0, rv:0, recoil:0, recoilLen:0.42, vib:0, elev:0, elevT:0, t:Math.random()*10 };
   // ---------- running gear (unsprung: stays on the ground) ----------
   const NW = SP.wheels || (detail?6:5), wGeo = detail?G.wheel:G.wheelS;

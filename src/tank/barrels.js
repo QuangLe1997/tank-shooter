@@ -190,7 +190,7 @@ export function mountBarrel(mesh, id){ const ud=mesh.userData;
   if(ud.barrelG){ ud.barrelG.parent && ud.barrelG.parent.remove(ud.barrelG); disposeBarrel(ud.barrelG); }
   if(ud.gunMount){ ud.turret.remove(ud.gunMount); disposeBarrel(ud.gunMount); ud.gunMount=null; }
   const ng=makeGunBarrel(id); ng.position.set(0,-0.02,-TRUNNION_Z); ud.gunPivot.add(ng); ud.barrelG=ng;
-  if(ng.userData.mount){ ud.turret.add(ng.userData.mount); ud.gunMount=ng.userData.mount; }
+  if(ng.userData.mount){ ng.userData.mount.position.y += ud.mountY||0; ud.turret.add(ng.userData.mount); ud.gunMount=ng.userData.mount; }   // Z157 per-model turrets start at their base: lift the gun's roof hardware onto the roof
   ud.rig.recoilLen=ng.userData.recoilLen; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
   return ng; }
 export function setPlayerBarrel(id){

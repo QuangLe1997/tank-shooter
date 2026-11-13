@@ -30,7 +30,7 @@ export function animateTank(mesh, px, pz, facing, dt, ride){
   rig.recoil = Math.max(0, rig.recoil - dt*(rig.recoil*7.5+0.25));
   rig.vib = Math.max(0, rig.vib - dt*5.5);
   const sh=rig.vib*rig.vib;
-  pv.rotation.x = -rig.elev + Math.sin(rig.t*71)*0.022*sh;
+  pv.rotation.x = -(rig.elev + (rig.elev0||0)) + Math.sin(rig.t*71)*0.022*sh;   // Z157 elev0: the model's rest elevation
   pv.rotation.y = Math.sin(rig.t*57+0.7)*0.012*sh;
   bg.position.z = -TRUNNION_Z - rig.recoil*rig.recoilLen;
 }

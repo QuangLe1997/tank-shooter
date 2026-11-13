@@ -30,7 +30,8 @@ export * from './world/cover.js';
 export * from './world/ridges.js';
 export * from './world/brick-walls.js';
 export * from './tank/materials.js';
-export * from './tank/models.js';   // Z155 tank collection (real MBTs + our designs)
+export * from './tank/models.js';
+export * from './tank/designs.js';   // Z157 a dedicated vehicle build per model   // Z155 tank collection (real MBTs + our designs)
 export * from './tank/model.js';
 export * from './tank/rig.js';
 export * from './tank/barrels.js';

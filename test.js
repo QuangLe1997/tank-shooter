@@ -707,5 +707,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/turretGeo\(SP\.turret\)/.test(R('src/tank/model.js')) && /MD\.dress\(/.test(R('src/tank/model.js')) && /camoTex\(/.test(R('src/tank/model.js')), 'builder: per-model turret silhouette, dress kit and camouflage');
   ok(/model:ENEMY_MODEL\[type\]/.test(R('src/actors/enemies.js')) && /id="garage"/.test(R('index.html')) && /export function openGarage/.test(R('src/ui/garage.js')), 'enemies wear real silhouettes; garage to buy / pick your tank'); }
 
+// Z157 every model its own vehicle: hull, running gear, lofted turret, gun mount
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ds=R('src/tank/designs.js'); const M=await import('./src/tank/designs.js').catch(()=>null);
+  const ids=['abrams','leo2a7','t90m','leclerc','ch3','merkava','type99','k2','t14','ghost','colossus'];
+  ok(ids.every(id=>new RegExp('\\n  '+id+':\\s*\\{ W:').test(ds)) && ids.every(id=>new RegExp('\\n  '+id+'\\(K\\)\\{').test(ds)), 'eleven models each have their own design + their own kit');
+  ok(/export function loft\(/.test(ds) && /function beltGeo\(/.test(ds) && /circleHull/.test(ds), 'lofted sloped turrets; track belts wrapped round each model\'s own wheels');
+  ok(/spr:\{ z:2\.05/.test(ds) && /mantlet==='slot'/.test(ds) && /mantlet==='round'/.test(ds) && /mantlet==='exposed'/.test(ds), 'different gun mounts (slot / box / cast / wedge / exposed) and the Merkava\'s front sprocket');
+  ok(/hasDesign\(opts\.model\)/.test(R('src/tank/model.js')) && /rig\.elev0/.test(R('src/tank/rig.js')) && /ud\.mountY/.test(R('src/tank/barrels.js')), 'builder routes models to their design; weapon barrels follow each mount'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
