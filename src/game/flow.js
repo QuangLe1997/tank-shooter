@@ -21,6 +21,7 @@ export function startGame(arg){
   const stStage = resume ? (PROFILE.save.stage|0||1) : ((L-1)%5)+1;
   const stScore = resume ? (PROFILE.save.score|0) : 0;
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
+  S.runId = Date.now().toString(36)+Math.random().toString(36).slice(2,6);   // Z163 the leaderboard follows one run's score
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
   if(S.player && S.player.modelId !== currentTank()){ scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
   S.player = S.player || makePlayer();

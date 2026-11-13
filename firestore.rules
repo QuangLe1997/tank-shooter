@@ -26,6 +26,9 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+    // Z163 leaderboards: anyone signed in may read; only Cloud Functions write
+    match /lb/{uid} { allow read: if signedIn(); allow write: if false; }
+    match /lbw/{week}/e/{uid} { allow read: if signedIn(); allow write: if false; }
     match /{document=**} {
       allow read, write: if false;
     }

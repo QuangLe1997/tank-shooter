@@ -45,7 +45,7 @@ export async function econBuy(type, id, track, cost, localGrant){
   catch(e){ console.warn('buy', e.message); sfx('alarm'); return false; } }
 // end of a stage / run: report what was earned; the server pays it (clamped) and the snapshot updates the wallet
 export async function econReportRun(o){ if(!econOn() || !ECON.call || ECON.inflight) return; const p=econPend();
-  const rep={ coins:p.c|0, diamonds:p.d|0, ammoUsed:{ ...p.ammo }, guns:[...p.guns], cleared:!!(o&&o.cleared), stage:S.stage|0, loop:S.loop|0, kills:p.kills|0, secs:Math.round((Date.now()-(p.t0||Date.now()))/1000) };
+  const rep={ coins:p.c|0, diamonds:p.d|0, ammoUsed:{ ...p.ammo }, guns:[...p.guns], cleared:!!(o&&o.cleared), stage:S.stage|0, loop:S.loop|0, kills:p.kills|0, score:S.score|0, runId:S.runId||'', name:PROFILE.nickname||'', tank:PROFILE.tankModel||'lqt', secs:Math.round((Date.now()-(p.t0||Date.now()))/1000) };
   ECON.inflight=true;
   try{ const r=await ECON.call('econRun')(rep); p.c-=rep.coins; p.d-=rep.diamonds; for(const k in rep.ammoUsed) p.ammo[k]=Math.max(0,(p.ammo[k]|0)-rep.ammoUsed[k]); p.guns=p.guns.filter(g=>!rep.guns.includes(g)); p.kills=0; p.t0=Date.now();
     saveProfile(true); applyEcon(); if(r && r.clamped) console.warn('payout clamped', r); }

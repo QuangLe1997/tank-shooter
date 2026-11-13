@@ -1,5 +1,5 @@
 {
- "v": 1794563970804,
+ "v": 1794564379686,
  "guns": {
   "smg": {
    "c": 600
@@ -661,6 +661,13 @@
   "minClearGap": 90,
   "gunGap": 120,
   "migrateCoins": 300000,
-  "migrateDia": 1000
+  "migrateDia": 1000,
+  "migrateReach": 10,
+  "migrateValue": 250000,
+  "migrateUntil": 1798675200000,
+  "gunPerReach": 1200,
+  "scorePerMin": 9000,
+  "scoreBucket": 60000,
+  "scorePerClear": 25000
  }
 }

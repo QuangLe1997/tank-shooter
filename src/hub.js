@@ -121,6 +121,7 @@ export * from './ui/settings.js';
 export * from './ui/loadout.js';
 export * from './ui/garage.js';   // Z155 tank collection screen
 export * from './ui/kitshop.js';   // Z161 workshop + crew screen
+export * from './ui/ranking.js';   // Z163 leaderboard screen
 export * from './ui/shop-info.js';
 export * from './ui/shop.js';
 export * from './ui/showroom.js';
