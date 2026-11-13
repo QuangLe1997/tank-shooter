@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, floatText, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, ricochet, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, ricochet, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -117,6 +117,8 @@ export function updateBullets(dt, now){
 
     const overRange = !b.arc && b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);   // shells in flight always come down somewhere
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim) groundHit(b.x, b.z, b.r||0.45); recycleBullet(i); continue; }
+    if(b.owner!=='e'){ const px=b.x-b.vx*dt, pz=b.z-b.vz*dt, wb=fortIntactCross(px, pz, b.x, b.z);   // Z170 a sealed fortress: the round strikes the wall, however high it flies
+      if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); ringPulse(b.mesh.position, 0xc89060, 1.2); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     let blocked=false;
     const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
@@ -144,7 +146,7 @@ export function updateBullets(dt, now){
           if(b.freeze){ e.stunUntil=Math.max(e.stunUntil, now+b.freeze*ENVMOD.freeze*(armorOf(e)==='H'?0.5:1)); ringPulse(b.mesh.position, 0x9fe8ff, 1.5); }   // CRYO: freeze
           if(b.chain){ let hits=b.chain;                                                                               // TESLA: arc to nearby enemies
             for(const e2 of enemies.slice()){ if(e2===e||hits<=0) continue; const cx=e2.pos.x-e.pos.x, cz=e2.pos.z-e.pos.z;
-              if(cx*cx+cz*cz < b.chainR*b.chainR){ e2._fx='shock'; _ca.set(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.3, e.pos.z); _cb.set(e2.pos.x, heightAt(e2.pos.x,e2.pos.z)+1.3, e2.pos.z); lightning(_ca, _cb, 0x7fc0ff, 0.18, 0.26); damageEnemy(e2, b.dmg*0.6); ringPulse(e2.pos, 0x7fd0ff, 1.3);
+              if(cx*cx+cz*cz < b.chainR*b.chainR && !fortIntactCross(e.pos.x, e.pos.z, e2.pos.x, e2.pos.z)){ e2._fx='shock'; _ca.set(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.3, e.pos.z); _cb.set(e2.pos.x, heightAt(e2.pos.x,e2.pos.z)+1.3, e2.pos.z); lightning(_ca, _cb, 0x7fc0ff, 0.18, 0.26); damageEnemy(e2, b.dmg*0.6); ringPulse(e2.pos, 0x7fd0ff, 1.3);
                 spawnPart(e2.pos.x,1.4,e2.pos.z,(Math.random()-0.5)*6,4,(Math.random()-0.5)*6,{color:0x9fe0ff,size:0.9,life:0.2,grav:0,drag:6}); hits--; } } }
           impactFX(b.mesh.position, b.fx, Math.min(3.2, 1 + b.dmg/26)); hit=true;   // per-gun impact spray (spark/frag/blast/pierce/ice/shock)
           if(b.pierce>0){ b.pierce--; } else break; } }

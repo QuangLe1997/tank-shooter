@@ -1,5 +1,5 @@
 // ui/terrain-picker.js — Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a fixed biome) with a live preview.
-import { BIOMES, PROFILE, biomeVi, hide, openBattleSetup, saveProfile, sfx, show, tapBtn, tapEl } from '../hub.js';
+import { BIOMES, PROFILE, biomePlace, biomeVi, hide, openBattleSetup, saveProfile, sfx, show, tapBtn, tapEl } from '../hub.js';
 
 // terrain picker (start screen): AUTO (campaign rotation) + every battlefield; persists in PROFILE.terrain
 // start-screen summary button reflects the current pick
@@ -49,7 +49,7 @@ export function drawTerrainPreview(cv, b, isAuto){
 export function buildTerrainDialog(){
   const g=document.getElementById('terrainGallery'); if(!g) return; g.innerHTML='';
   const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=-1)?PROFILE.terrain:-1;
-  const opts=[{i:-1,name:'TỰ ĐỘNG',tag:'ĐỔI THEO MÀN',auto:true}].concat(BIOMES.map((b,i)=>({i,name:biomeVi(b.name),tag:'ĐỊA HÌNH',b})));
+  const opts=[{i:-1,name:'TỰ ĐỘNG',tag:'ĐỔI THEO MÀN',auto:true}].concat(BIOMES.map((b,i)=>({i,name:biomeVi(b.name),tag:biomePlace(b.name)||'ĐỊA HÌNH',b})));
   for(const o of opts){
     const card=document.createElement('div'); card.className='tcard'+(o.i===cur?' on':''); card.dataset.i=o.i;
     const cv=document.createElement('canvas'); cv.width=192; cv.height=120; card.appendChild(cv);

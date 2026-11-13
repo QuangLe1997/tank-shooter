@@ -115,7 +115,8 @@ export function buildFloodlights(){
     for(let k=0;k<4;k++){ const lens=new THREE.Mesh(new THREE.CircleGeometry(0.24,14), lensM); lens.position.set(-0.85+k*0.57,0,0.18); head.add(lens); }
     const cone=new THREE.Mesh(new THREE.CylinderGeometry(0.6,9,34,24,1,true), beamMat(0xfff0d0, 0.75, 0));   // Z146 volumetric shaft (soft rim, dust, fades into the ground)
     cone.position.set(0,-17,0); const cg=new THREE.Group(); cg.position.copy(head.position); cg.rotation.x=0.95; cg.add(cone); g.add(cg); NIGHT.cones.push(cone.material);   // visible beam in the haze
-    if(i<nLights){ const sp=new THREE.SpotLight(0xfff0d8, 0, 110, 0.62, 0.7, 0); /* decay 0: even pool inside the range, no blow-out near the mast */ sp.position.set(x*0.98,13.4,z*0.98); sp.target.position.set(x*0.25,0,z*0.25); scene.add(sp); scene.add(sp.target); NIGHT.spots.push(sp); }
+    if(i<nLights){ const sp=new THREE.SpotLight(0xfff0d8, 0, 110, 0.62, 0.7, 0); /* decay 0: even pool inside the range, no blow-out near the mast */ sp.position.set(x*0.98,13.4,z*0.98); sp.target.position.set(x*0.25,0,z*0.25); scene.add(sp); scene.add(sp.target); NIGHT.spots.push(sp);
+      if(!MOBILE){ sp.castShadow=true; sp.shadow.mapSize.set(768,768); sp.shadow.bias=-0.0006; sp.shadow.normalBias=0.04; sp.shadow.camera.near=6; sp.shadow.camera.far=150; sp.shadow.autoUpdate=false; sp.shadow.needsUpdate=true; } }   // Z170 walls and buildings block the floodlight (no more light through stone)
     arena.add(g); NIGHT.towers.push(g); });
 }
 export function setNightLights(on){ NIGHT.on=on; for(const sp of NIGHT.spots) sp.visible=on; if(NIGHT.head) NIGHT.head.visible=on; }   // lights only exist at night → no per-pixel cost by day (one recompile at the stage switch)
@@ -123,6 +124,7 @@ export function updateNightLights(dt, now){
   NIGHT.k += ((NIGHT.on?1:0)-NIGHT.k)*Math.min(1,dt*2);
   const k=NIGHT.k, fl=0.96+0.04*Math.sin(now*37)*Math.sin(now*11.3);           // slight mains flicker
   for(const sp of NIGHT.spots) sp.intensity = k*(MOBILE?4.2:3.6)*fl;
+  if(NIGHT.on && NIGHT.spots.length && now>(NIGHT.shAt||0)){ NIGHT.shAt=now+0.2; const sp=NIGHT.spots[(NIGHT.shI=((NIGHT.shI|0)+1)%NIGHT.spots.length)]; if(sp.castShadow) sp.shadow.needsUpdate=true; }   // Z170 floodlight shadows refresh in turn (~2×/s each), not every frame
   for(const m of NIGHT.lamps) m.emissiveIntensity = k*3.2*fl;
   /* Z146 mast shafts are driven by BEAM_U.uK (fx/searchlight.js) */
   const p=S.player; if(NIGHT.head && p){ NIGHT.head.intensity = k*4.6; }

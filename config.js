@@ -430,7 +430,7 @@ export const FORT = {
   gatePerStage:0.22, mobileMul:0.6, wallH:4.4, wallT:1.6, gateW:7.5, seg:3,
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
-  cmdType:'chief', cmdHp:6, cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards
+  cmdType:'chief', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards
   ram:{ minV:6, fullV:15, gate:0.5, wall:0.55, buffMul:1.5, cd:0.4 },    // Z111 RAMMING: a hit at 15+ takes 50% of a gate / 55% of a wall section → 2 rams open either
   gate:{ open:4.5, speed:0.9, inner:5, outer:6, exitMax:18 },                       // Z111b the gate swings open for every sortie (stays open while troops file through) and shuts behind them
   posture:{ near:40, tank:10, inf:1, allyTank:4, gInf:0.6, gTank:3, holdK:0.6, every:[5,8], waveInf:4, waveTank:1 },   // Z111b we come close: our strength (tank 10×hp% + 1/soldier + 4/captured tank) ≥ 0.6× the garrison's → they SHUT THE GATE and hold; weaker → they open up and sally in waves

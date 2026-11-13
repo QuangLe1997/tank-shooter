@@ -5,7 +5,7 @@
 //   · glare on the lamp glass that flares when the beam swings toward the camera
 //   · ONE real SpotLight that rides the searchlight nearest the tank, so the beam actually lights you up as it passes
 import * as THREE from 'three';
-import { MOBILE, NIGHT, S, camera, detailTex, heightAt, scene } from '../hub.js';
+import { MOBILE, NIGHT, S, camera, detailTex, fortBeamBlocked, heightAt, scene } from '../hub.js';
 
 export const BEAM_U = { uT:{ value:0 }, uK:{ value:0 } };
 // s = 0 at the lamp → 1 at the far end (CylinderGeometry with the narrow end on top: uv.y = 1 at the lamp)
@@ -49,15 +49,16 @@ export function updateSearchlight(L, k){ L.on=false; L.pool.visible=k>0.02; if(k
   let t=(L.lamp.y-heightAt(L.lamp.x,L.lamp.z))/(-_d.y); for(let i=0;i<3;i++){ const gx=L.lamp.x+_d.x*t, gz=L.lamp.z+_d.z*t; t=(L.lamp.y-heightAt(gx,gz))/(-_d.y); }   // refine against the terrain
   if(t>L.len*1.15){ L.pool.visible=false; return; }
   L.hit.set(L.lamp.x+_d.x*t, 0, L.lamp.z+_d.z*t); L.hit.y=heightAt(L.hit.x,L.hit.z);
+  if(fortBeamBlocked(L.lamp.x, L.lamp.y, L.lamp.z, L.hit.x, L.hit.y, L.hit.z)){ L.pool.visible=false; return; }   // Z170 a wall in the way: no pool of light behind it
   const r=L.r0+(L.r1-L.r0)*Math.min(1,t/L.len), stretch=Math.min(3.2, 1/Math.max(0.3,-_d.y));
   L.pool.position.set(L.hit.x, L.hit.y+0.08, L.hit.z); L.pool.rotation.set(-Math.PI/2, Math.atan2(_d.x,_d.z), 0); L.pool.scale.set(r*2.3, r*2.3*stretch, 1);   // plane y → stretched along the beam
   L.pool.material.opacity=k*0.85*(1-0.55*t/L.len); L.on=true; }
 
 // the one real light: rides the searchlight nearest the player
-let SPOT=null;
-export function searchSpot(){ if(SPOT || MOBILE) return SPOT; SPOT=new THREE.SpotLight(0xfff0d0, 0, 42, 0.17, 0.55, 0); SPOT.visible=false; scene.add(SPOT); scene.add(SPOT.target); return SPOT; }
+let SPOT=null, SPOT_F=0;
+export function searchSpot(){ if(SPOT || MOBILE) return SPOT; SPOT=new THREE.SpotLight(0xfff0d0, 0, 42, 0.17, 0.55, 0); SPOT.visible=false; SPOT.castShadow=true; SPOT.shadow.mapSize.set(512,512); SPOT.shadow.bias=-0.0008; SPOT.shadow.normalBias=0.04; SPOT.shadow.camera.near=1; SPOT.shadow.camera.far=48; SPOT.shadow.autoUpdate=false; scene.add(SPOT); scene.add(SPOT.target); return SPOT; }   // Z170 the searchlight's pool stops at a wall
 export function updateSearchSpot(list, k){ const sp=searchSpot(); if(!sp) return; const p=S.player; let best=null, bd=75*75;
   if(p && k>0.02) for(const L of list){ if(!L || !L.on) continue; const q=(L.hit.x-p.pos.x)**2+(L.hit.z-p.pos.z)**2; if(q<bd){ bd=q; best=L; } }
   sp.visible=NIGHT.on; if(!best){ sp.intensity=0; return; }   // visibility follows night only: flipping it per frame would recompile every lit shader
-  sp.position.copy(best.lamp); sp.target.position.copy(best.hit); sp.target.updateMatrixWorld(); sp.intensity=k*7; }
+  sp.position.copy(best.lamp); sp.target.position.copy(best.hit); sp.target.updateMatrixWorld(); sp.intensity=k*7; if(sp.castShadow) sp.shadow.needsUpdate=(SPOT_F=(SPOT_F+1)%3)===0; }   // Z170 its shadow redrawn every third frame
 export function updateBeams(dt){ BEAM_U.uT.value+=dt; BEAM_U.uK.value=NIGHT.k; }

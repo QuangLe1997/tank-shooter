@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -56,6 +56,7 @@ export function fireFlame(now, g, x, z, ang, k=1){
   // ===== DAMAGE: light up every enemy inside the cone (ground-plane) =====
   for(const e of enemies){ if(e.def.bomber||e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, d=Math.hypot(dx,dz);
     if(d > range + e.r) continue;
+    if(fortIntactCross(x, z, e.pos.x, e.pos.z)) continue;          // Z170 fire doesn't pour through a fortress wall
     if(((dx*cx+dz*cz)/(d||1)) < F.cone) continue;                 // only enemies inside the flame cone catch fire
     if(!e.burn) e.burn={ lvl:0, until:0 };
     e.burn.lvl = Math.min(F.lvlMax, e.burn.lvl + F.add);          // each spray-tick stokes the fire (sustained → max fast)
@@ -72,6 +73,7 @@ export function makeDangerZone(x,z,r){   // ground decal showing the exact kill 
 export function updateRockets(dt, now){
   for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.tt+=dt;
     r.vy-=r.G*dt; r.x+=r.vx*dt; r.y+=r.vy*dt; r.z+=r.vz*dt; r.mesh.position.set(r.x,r.y,r.z);
+    { const px=r.x-r.vx*dt, pz=r.z-r.vz*dt, wb=fortIntactCross(px, pz, r.x, r.z); if(wb){ fortShellHit(wb, px, pz, r.dmg||36, r.aoeR, r.wipe); scene.remove(r.mesh); rockets.splice(i,1); continue; } }   // Z170 mortar / howitzer / siege rocket coming down on a sealed fort bursts on its wall
     _rdir.set(r.vx,r.vy,r.vz); if(_rdir.lengthSq()>0.0001){ _rdir.normalize(); r.mesh.quaternion.setFromUnitVectors(_RUP,_rdir); }   // nose follows velocity
     const tx=r.x-_rdir.x*1.2, ty=r.y-_rdir.y*1.2, tz=r.z-_rdir.z*1.2;   // tail (behind the nozzle)
     for(let k=0;k<2;k++) spawnPart(tx+(Math.random()-0.5)*0.25, ty+(Math.random()-0.5)*0.25, tz+(Math.random()-0.5)*0.25, -_rdir.x*5+(Math.random()-0.5)*1.6, -_rdir.y*5+(Math.random()-0.5)*1.6, -_rdir.z*5+(Math.random()-0.5)*1.6, {color:0xfff0c0, color2:0xff3a10, size:0.7+Math.random()*0.5, grow:1.5, life:0.3+Math.random()*0.22, grav:0.3, drag:3});   // BURNING fire trail (cools white→red)

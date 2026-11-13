@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FORT, COMMAND, GUN_MODS } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, fortStyle, freeEnemyBar, getEnemyBar, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -13,14 +13,14 @@ let _nameI=0, _fhT=0;
 
 // ---- plan: reserve ground first (called at the top of planZones) — far side + flanks, the biggest one farthest from our spawn ----
 export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.stage-1)), n=(MOBILE?FORT.countMobile:FORT.count)[st];
-  const cand=[]; _nameI=(Math.random()*FORT.names.length)|0;
+  const cand=[], NM=(BIOME_PLACE[BIOME.name]||{}).forts||FORT.names; _nameI=(Math.random()*NM.length)|0;   // Z170 real place names of this land
   for(let t=0;t<400 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], R=R2(T.r);
     const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?0.7:1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, d=Math.min(FR*fr, FR-R-9);   // big forts: keep the whole ring inside the fence
     const x=Math.cos(a)*d, z=Math.sin(a)*d;
     if(!inField(x, z, R+7) || Math.hypot(x,z)<R+18 || Math.hypot(x, z-ARENA*0.55)<R+40) continue;
     if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+34)) continue;   // Z144 wide gaps between strongholds
     cand.push({ x, z, R, tier }); }
-  for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+FORT.names[(_nameI++)%FORT.names.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],
+  for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+NM[(_nameI++)%NM.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],
       captured:false, breached:false, active:false, units:[], cmd:null, sallyAt:0, g:null };
     FORTS.push(f); ZONES.push({ kind:'fort', x:f.x, z:f.z, r:f.R+7, fort:f }); }
 }
@@ -163,10 +163,28 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
         const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, !steel); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
         const hp=steel?Infinity:(COVER_HP[kind]||70); blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }
     f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label);
+    buildHatches(f);
     const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)), tank:RI(T.tanks)+(st0>=3?1:0) };
     f.sallyAt=performance.now()/1000+R2(FORT.sally)*(0.6+Math.random()*0.6);
+    f.tunnel = f.tier===3 ? 0 : FORT.tunnel[f.tier-1]+(S.stage>=4?1:0);   // Z170 squads still hiding in the tunnels when the yard is cleared
   }
 }
+// Z170 BASEMENT HATCHES: the garrison waits below ground in squads; each squad climbs out of a hatch in the yard (iron lid flung open, dust)
+function makeHatch(f, wx, wz){ const g=new THREE.Group(), y=heightAt(wx, wz)-f.gy; g.position.set(wx-f.x, y, wz-f.z); g.rotation.y=Math.random()*Math.PI; f.g.add(g);
+  const fr=new THREE.Mesh(mergeGeometries([placed(stoneBox(2.6,0.36,0.5),0,0.12,1.05,0), placed(stoneBox(2.6,0.36,0.5),0,0.12,-1.05,0), placed(stoneBox(0.5,0.36,1.6),1.05,0.12,0,0), placed(stoneBox(0.5,0.36,1.6),-1.05,0.12,0,0)].map(q=>q.index?q.toNonIndexed():q), false), _stone);
+  fr.receiveShadow=true; g.add(fr); const hole=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1.6), new THREE.MeshBasicMaterial({ color:0x050403 })); hole.rotation.x=-Math.PI/2; hole.position.y=0.05; g.add(hole);
+  const hinge=new THREE.Group(); hinge.position.set(0, 0.3, -0.8); g.add(hinge); const lid=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.12,1.7), _iron); lid.position.set(0,0,0.85); lid.castShadow=true; hinge.add(lid);
+  return { x:wx, z:wz, hinge, open:0, want:0 }; }
+function buildHatches(f){ f.hatches=[]; const n=f.tier+1+(MOBILE?0:1);
+  for(let t=0;t<40 && f.hatches.length<n;t++){ const a=Math.random()*Math.PI*2, r=((f.Rin||f.R)-6)*(0.35+Math.random()*0.6), x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r;
+    if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+3) continue; if(f.hatches.some(h=>Math.hypot(h.x-x,h.z-z)<9)) continue; if(blocks.some(b=>b.fortCover===f && Math.hypot(b.x-x,b.z-z)<3)) continue;
+    f.hatches.push(makeHatch(f, x, z)); } }
+function popHatch(h){ h.want=1; h.shutAt=performance.now()/1000+3.5; const gy=heightAt(h.x,h.z);
+  burst({x:h.x, z:h.z}, 0x8a7a64, 8, 4, {y:gy+0.6, life:1.0, size:1.4, smoke:true, grav:-0.6, drag:1.8, up:2.4, op:0.5}); sfx('clang', {x:h.x, z:h.z}); }
+function animHatches(f, dt, now){ for(const h of (f.hatches||[])){ if(h.want && now>h.shutAt) h.want=0; const k=h.want?6:2.2; h.open+=(h.want-h.open)*Math.min(1, dt*k); h.hinge.rotation.x=-h.open*1.95; } }
+// a squad climbs out at (x,z): 3–5 riflemen, one or two with RPGs
+function squadAt(f, x, z, n, inside){ const out=[]; for(let k=0;k<n;k++){ const a=Math.random()*6.283, r=0.6+Math.random()*2.2, type=(k===0 || (k===3 && S.stage>=3)) ? 'rpg' : 'rifle';
+    const e=inside ? spawnAt(f, type, x+Math.cos(a)*r, z+Math.sin(a)*r) : spawnEnemy(type, x+Math.cos(a)*r, z+Math.sin(a)*r); if(!e) continue; e.fortOf=f; if(!inside) f.units.push(e); out.push(e); } return out; }
 function nameSprite(text, col){ const c=document.createElement('canvas'); c.width=512; c.height=96; const x=c.getContext('2d');
   x.fillStyle='rgba(10,6,4,.72)'; x.beginPath(); x.roundRect(8,14,496,68,14); x.fill(); x.strokeStyle=col; x.lineWidth=3; x.stroke();
   x.fillStyle=col; x.font='900 40px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(text, 256, 50);
@@ -185,7 +203,28 @@ function collapsePiece(f, pc, now){ const b=pc.block, i=blocks.indexOf(b); if(i<
   const pos={x:b.x, z:b.z}; bigExplode(pos, 0xc8b49a, 1.6); for(let k=0;k<4;k++) spawnDebris(pos, 1.2, 0x8a8070);
   burst(pos, 0xb8a888, 10, 4, {y:f.gy+1.5, life:1.6, size:2.6, smoke:true, grav:-0.4, drag:1.6, up:1.8, op:0.55}); S.shake=Math.min(3, S.shake+1.1); sfx('bigexplode');
   for(const gd of (f.pt?f.pt.guards:[])){ if(gd.alive && gd.wx!=null && Math.hypot(gd.wx-b.x, gd.wz-b.z)<pc.pl*0.75) dropGuard(f.pt, gd, (gd.wx-f.x)/f.R, (gd.wz-f.z)/f.R); }   // the men on it come down with it
+  rubble(f, pc);
   if(!f.breached) breachFort(f, now, true); }
+// Z170 RUBBLE: a fallen section leaves its stone behind — broken slabs of masonry and concrete with rebar sticking out, strewn across the breach and spilling
+//   both ways, on ground heaped up under them → the crossing is rough and the tank lurches over it
+let _rubV=null;
+function rubbleVariants(){ if(_rubV) return _rubV; _rubV=[]; for(let v=0;v<5;v++){ const g=new THREE.BoxGeometry(1,1,1,2,1,2), p=g.attributes.position, off=new Map();
+    for(let i=0;i<p.count;i++){ const key=p.getX(i).toFixed(2)+','+p.getY(i).toFixed(2)+','+p.getZ(i).toFixed(2); if(!off.has(key)) off.set(key, [(Math.random()-0.5)*0.42, (Math.random()-0.5)*0.36, (Math.random()-0.5)*0.42]);   // chipped, uneven faces (shared corners stay joined)
+      const o=off.get(key); p.setXYZ(i, p.getX(i)+o[0], p.getY(i)+o[1]*(p.getY(i)>0?1:0.3), p.getZ(i)+o[2]); }
+    g.computeVertexNormals(); _rubV.push(g.index?g.toNonIndexed():g); } return _rubV; }
+function heapGround(x, z, r, hgt){ const W=HF.W, h=HF.h, R=r*1.6, i0=Math.max(0,Math.floor((x-R+ARENA)/HF.step)), i1=Math.min(HF.N,Math.ceil((x+R+ARENA)/HF.step)), j0=Math.max(0,Math.floor((z-R+ARENA)/HF.step)), j1=Math.min(HF.N,Math.ceil((z+R+ARENA)/HF.step));
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const px=-ARENA+i*HF.step, pz=-ARENA+j*HF.step, q=Math.hypot(px-x,pz-z)/r; if(q<1.6) h[j*W+i]+=hgt*Math.exp(-q*q*1.6)*(0.8+Math.random()*0.4); }
+  HF.dj0=Math.min(HF.dj0??1e9, j0-1); HF.dj1=Math.max(HF.dj1??-1, j1+1); HF.dirty=true; }
+function rubble(f, pc){ const V=rubbleVariants(), nx=-pc.uz, nz=pc.ux, n=MOBILE?7:15, geos=[], bars=[];
+  for(let k=0;k<4;k++){ const s=(k/3-0.5)*pc.pl*1.1, o=(Math.random()-0.35)*3.2; heapGround(f.x+pc.cx+pc.ux*s+nx*o, f.z+pc.cz+pc.uz*s+nz*o, 1.6+Math.random()*1.0, 0.45+Math.random()*0.45); }   // humps under the stone
+  f.rubble=f.rubble||[]; f.rubble.push({ x:f.x+pc.cx, z:f.z+pc.cz, r:pc.pl*0.75+2.5 });
+  for(let k=0;k<n;k++){ const s=(Math.random()-0.5)*(pc.pl+2.4), o=(Math.random()-0.4)*(k<4?1.6:6.4), lx=pc.cx+pc.ux*s+nx*o, lz=pc.cz+pc.uz*s+nz*o;   // the big slabs stay on the wall line, the smaller ones spill out
+    const big=k<4, sx=big?1.6+Math.random()*1.3:0.5+Math.random()*0.8, sy=big?0.7+Math.random()*0.6:0.35+Math.random()*0.4, sz=big?1.1+Math.random()*0.9:0.45+Math.random()*0.7;
+    const g=V[(Math.random()*V.length)|0].clone(); g.scale(sx, sy, sz); g.rotateX((Math.random()-0.5)*(big?0.9:1.6)); g.rotateZ((Math.random()-0.5)*(big?0.9:1.6)); g.rotateY(Math.random()*Math.PI);
+    g.translate(lx, heightAt(f.x+lx, f.z+lz)-f.gy+sy*0.18, lz); geos.push(g);
+    if(big) for(let q=0;q<3;q++){ const b=new THREE.CylinderGeometry(0.04,0.04,1.2+Math.random()*1.2,5); b.rotateZ(0.5+Math.random()*1.0); b.rotateY(Math.random()*6.28); b.translate(lx+(Math.random()-0.5)*sx*0.6, heightAt(f.x+lx, f.z+lz)-f.gy+sy*0.6, lz+(Math.random()-0.5)*sz*0.6); bars.push(b); } }   // twisted rebar
+  const mt=(f.wallIM&&f.wallIM.material)||_stone, m=new THREE.Mesh(mergeGeometries(geos, false), mt); geos.forEach(g=>g.dispose()); m.castShadow=true; m.receiveShadow=true; f.g.add(m);
+  if(bars.length){ const bm=new THREE.Mesh(mergeGeometries(bars.map(q=>q.index?q.toNonIndexed():q), false), _iron); bars.forEach(g=>g.dispose()); f.g.add(bm); } }
 // ---- ramming: the tank's closing speed into a gate / wall section (called by physics on contact) ----
 export function fortRam(b, vn, t){ const R=FORT.ram, now=performance.now()/1000; if(vn<R.minV || now<(b.ramAt||0)) return; b.ramAt=now+R.cd;
   const k=Math.min(1, (vn-R.minV)/(R.fullV-R.minV))*(t&&t.ramOn?R.buffMul:1), gate=b.kind==='gate', dmg=b.maxHp*(gate?R.gate:R.wall)*k;
@@ -220,12 +259,30 @@ export function fortWallCross(x1, z1, x2, z2){ let best=null, bt=2;
       const t=_segT(x1,z1,x2,z2, cx-pc.ux*h, cz-pc.uz*h, cx+pc.ux*h, cz+pc.uz*h); if(t>=0 && t<bt){ bt=t; best=pc.block; } }
     if(f.gate && !f.breached && f.gateShut){ const h=FORT.gateW/2+0.3, t=_segT(x1,z1,x2,z2, f.gx-f.gux*h, f.gz-f.guz*h, f.gx+f.gux*h, f.gz+f.guz*h); if(t>=0 && t<bt){ bt=t; best=f.gate; } } }
   return best; }
+// Z170 an UNBROKEN fortress is sealed: until a wall section falls or the gate is smashed nothing fired from outside gets in — not over the parapet, not through an open gateway.
+//   returns the wall section / gate the path (x1,z1)→(x2,z2) strikes first, or null
+export function fortIntactCross(x1, z1, x2, z2){ let best=null, bt=2;
+  for(const f of FORTS){ if(f.breached || f.captured || !f.pieces || !f.gate) continue; if(_segDist(f.x,f.z,x1,z1,x2,z2) > f.R+2.5) continue;
+    for(const pc of f.pieces){ if(pc.down) continue; const h=pc.pl/2+0.25, cx=f.x+pc.cx, cz=f.z+pc.cz, t=_segT(x1,z1,x2,z2, cx-pc.ux*h, cz-pc.uz*h, cx+pc.ux*h, cz+pc.uz*h); if(t>=0 && t<bt){ bt=t; best=pc.block; } }
+    const h=FORT.gateW/2+0.4, t=_segT(x1,z1,x2,z2, f.gx-f.gux*h, f.gz-f.guz*h, f.gx+f.gux*h, f.gz+f.guz*h); if(t>=0 && t<bt){ bt=t; best=f.gate; } }
+  return best; }
+// Z170 does a light ray from the lamp (lx,ly,lz) to the ground at (hx,hy,hz) pass below the top of a standing wall / shut gate? (then the stone stops it)
+export function fortBeamBlocked(lx, ly, lz, hx, hy, hz){
+  for(const f of FORTS){ if(!f.pieces || _segDist(f.x,f.z,lx,lz,hx,hz) > f.R+2.5) continue; const top=f.gy+FORT.wallH+0.9;
+    for(const pc of f.pieces){ if(pc.down) continue; const h=pc.pl/2+0.25, cx=f.x+pc.cx, cz=f.z+pc.cz, t=_segT(lx,lz,hx,hz, cx-pc.ux*h, cz-pc.uz*h, cx+pc.ux*h, cz+pc.uz*h); if(t>0.02 && t<0.98 && ly+(hy-ly)*t < top) return true; }
+    if(f.gate && f.gateShut && !f.breached){ const h=FORT.gateW/2+0.3, t=_segT(lx,lz,hx,hz, f.gx-f.gux*h, f.gz-f.guz*h, f.gx+f.gux*h, f.gz+f.guz*h); if(t>0.02 && t<0.98 && ly+(hy-ly)*t < top) return true; } }
+  return false; }
+// a lobbed shell / rocket that came down on the walls of a sealed fort: it bursts on the stone
+export function fortShellHit(bl, x, z, dmg, aoeR, wipe){ const f=bl.fort, y=(f?f.gy:0)+FORT.wallH;
+  bigExplode(new THREE.Vector3(x, y, z), 0xffae5c, Math.max(0.8, (aoeR||4)/3.2)); burst({x,z}, 0xb8a888, 8, 5, {y, life:1.2, size:1.8, smoke:true, grav:-0.5, drag:1.6, up:1.5, op:0.5});
+  for(let k=0;k<6;k++) spawnPart(x, y, z, (Math.random()-0.5)*9, 3+Math.random()*5, (Math.random()-0.5)*9, {color:0xa89a84, size:0.3+Math.random()*0.3, life:0.8, grav:-18, drag:1});
+  damageBlock(bl, wipe ? bl.maxHp*0.6 : dmg); S.shake=Math.min(3, S.shake+0.4); sfx('bigexplode'); }
 // --- the way out: form up inside the gate (or the nearest breach), then march out ---
 function exitPts(f, e){ const G=FORT.gate; let pts=[[f.ix, f.iz],[f.ox, f.oz]];
   if(f.gateShut && !f.breached){ let bd=1e9; for(const pc of f.pieces){ if(!pc.down) continue; const cx=f.x+pc.cx, cz=f.z+pc.cz, d=Math.hypot(cx-e.pos.x, cz-e.pos.z); if(d<bd){ bd=d;
         const nx=(cx-f.x)/(Math.hypot(cx-f.x,cz-f.z)||1), nz=(cz-f.z)/(Math.hypot(cx-f.x,cz-f.z)||1); pts=[[cx-nx*G.inner, cz-nz*G.inner],[cx+nx*G.outer, cz+nz*G.outer]]; } } }
   return pts; }
-export function fortSendOut(f, e, now){ if(!enemies.includes(e)) return; e.guard=null; e.post=null; e.hold=null;
+export function fortSendOut(f, e, now){ if(!enemies.includes(e) || e.commander) return; e.guard=null; e.post=null; e.hold=null;   // Z170 the commander never leaves his fort
   const d=Math.hypot(e.pos.x-f.x, e.pos.z-f.z); if(d < f.R-0.5){ e.exit={ pts:exitPts(f, e), i:0, f, t0:now }; if(!f.breached) f.openUntil=Math.max(f.openUntil||0, now+FORT.gate.open); } }
 const _ed={ x:0, z:0 };
 // movement override while a unit is filing out (tactics.js / infantry.js call this before their own steering)
@@ -282,17 +339,20 @@ function checkCleared(f, now){ if(f.cleared) return; for(const e of f.units) if(
     radio(f.name+' đã sạch bóng địch — toàn đội rút ra, tập kết về xe!'); floatText('RÚT QUÂN VỀ XE', '#9be04a', S.player.pos, 16); } }
 // ---- garrison: comes alive when you close in (or the gate is hit) — refilled from the fortress pool ----
 function spawnInside(f, type){ const a=Math.random()*Math.PI*2, r=Math.random()*((f.Rin||f.R)-4.5); let x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+1.5){ x=2*f.x-x; z=2*f.z-z; }   // Z145 never inside the donjon
+  return spawnAt(f, type, x, z); }
+function spawnAt(f, type, x, z){
   const e=spawnEnemy(type, x, z); if(!e) return null; e.fortOf=f; if(!f.breached){ e.guard={ kind:'fort', x:f.x, z:f.z, r:f.R, fort:f }; e.post=[x,z]; e.hold={ x:f.x, z:f.z, r:f.R-3 }; }
   f.units.push(e); return e; }
 export function wakeFort(f, now){ if(f.active) return; f.active=true;
-  if(f.tier!==3){ const c=spawnInside(f, FORT.cmdType); if(c){ c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); if(FORT.cmdScale!==1){ c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; } c.commander=f; c.loot=true; f.cmd=c;
+  if(f.tier!==3){ const c=spawnInside(f, FORT.cmdType); if(c){ c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); if(FORT.cmdScale!==1){ c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; } c.commander=f; c.loot=true; f.cmd=c; c.home={ x:f.x, z:f.z, r:(f.Rin||f.R)-5 };   // Z170 his ground: the yard, always
       f.escort=[]; const nE=RI(MOBILE?FORT.escortMobile:FORT.escort); for(let k=0;k<nE;k++){ const a=k/nE*Math.PI*2, r=R2(FORT.escortR), x=c.pos.x+Math.cos(a)*r, z=c.pos.z+Math.sin(a)*r;   // bodyguards ring the commander and go where he goes
         const e=spawnEnemy(k%3===2?'rpg':'rifle', x, z); if(!e) continue; e.fortOf=f; e.escortOf=c; e.escA=a; e.escR=r; e.guard={ kind:'escort', fort:f }; e.post=[x,z]; f.escort.push(e); }
       c.label=nameSprite(f.chief, '#ffd24a'); c.label.scale.set(10,1.9,1); c.label.position.set(0, 5.2/(c.mesh.scale.x||1), 0); c.label.scale.multiplyScalar(1/(c.mesh.scale.x||1)); c.mesh.add(c.label); } }
   showBanner(f.name+' BÁO ĐỘNG — '+f.chief+' TRẤN GIỮ', '#e0603a'); }
 function refill(f){ const live=f.units.filter(e=>enemies.includes(e)); f.units=live; let nI=0, nT=0; for(const e of live){ if(e.def.inf) nI++; else nT++; }
   const capI=MOBILE?FORT.liveInfMobile:FORT.liveInf, capT=MOBILE?FORT.liveTanksMobile:FORT.liveTanks;
-  if(nI<capI && f.pool.inf>0){ spawnInside(f, Math.random()<0.25?'rpg':'rifle'); f.pool.inf--; }
+  if(nI<=capI-3 && f.pool.inf>0 && f.hatches && f.hatches.length){ const h=f.hatches[(Math.random()*f.hatches.length)|0], n=Math.min(f.pool.inf, 3+((Math.random()*3)|0)); popHatch(h); squadAt(f, h.x, h.z, n, true); f.pool.inf-=n; }   // Z170 a whole squad comes up from the basement
+  else if(nI<capI && f.pool.inf>0 && !(f.hatches && f.hatches.length)){ spawnInside(f, Math.random()<0.25?'rpg':'rifle'); f.pool.inf--; }
   if(nT<capT && f.pool.tank>0){ spawnInside(f, ['grunt','gunner','shield','heavy'][Math.min(3, (Math.random()*(2+Math.min(2,S.stage/2)))|0)]); f.pool.tank--; } }
 // the bodyguards keep their ring round the commander (posts move with him); he falls → they fight on their own
 function escortFollow(f){ if(!f.escort) return; const c=f.cmd, alive=c && enemies.includes(c);
@@ -342,18 +402,29 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
     updateGate(f, dt, now);
     if(f.hitT>0){ f.hitT-=dt; f.gate && (f.gate.mesh.position.x += (Math.random()-0.5)*0.04); }
     if(f.bar && f.gate){ const k=Math.max(0, f.gate.hp/f.gate.maxHp); f.bar.g.position.set(f.gx, f.gy+FORT.wallH+3.6, f.gz); f.bar.g.quaternion.copy(camera.quaternion); f.bar.fill.scale.x=Math.max(0.001,k); f.bar.fill.position.x=-(1-k)*0.5; f.bar.fill.material.color.setHex(fortSealed(f)?0x7fa8ff:(k>0.5?0xffcf5a:0xff6a4a)); }
+    if(f.rubble && p.vel){ const sp=Math.hypot(p.vel.x, p.vel.z); if(sp>2.5) for(const q of f.rubble) if((p.pos.x-q.x)**2+(p.pos.z-q.z)**2 < q.r*q.r){ S.shake=Math.max(S.shake, 0.1+Math.min(0.3, sp*0.02)); if(Math.random()<dt*4) haptic(12); break; } }   // Z170 grinding over the rubble
+    if(f.hatches) animHatches(f, dt, now);
     if(f.flagFall) animFlag(f, dt);
     if(f.captured){ checkCleared(f, now); continue; }
+    if(boss && boss.alive && boss.fort===f){ const lim=(f.Rin||f.R)-6, dx=boss.pos.x-f.x, dz=boss.pos.z-f.z, q=Math.hypot(dx,dz); if(q>lim){ boss.pos.x=f.x+dx/q*lim; boss.pos.z=f.z+dz/q*lim; if(boss.mesh){ boss.mesh.position.x=boss.pos.x; boss.mesh.position.z=boss.pos.z; } } }   // Z170 the citadel's general fights from inside his walls
     const d=Math.hypot(p.pos.x-f.x, p.pos.z-f.z);
     if(!f.active && d<FORT.wakeR+f.R) wakeFort(f, now);
     if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; if(!f.leaderless) refill(f); else f.units=f.units.filter(e=>enemies.includes(e)); escortFollow(f); }
-      for(const e of f.units){ const H=e.hold; if(!H || e.def.inf) continue; const dx=e.pos.x-H.x, dz=e.pos.z-H.z, q=Math.hypot(dx,dz); if(q>H.r){ e.pos.x=H.x+dx/q*H.r; e.pos.z=H.z+dz/q*H.r; e.vel.multiplyScalar(0.2); } }   // tanks stay behind the walls until the gate falls
+      for(const e of f.units){ const H=e.home||e.hold; if(!H || e.def.inf) continue; const dx=e.pos.x-H.x, dz=e.pos.z-H.z, q=Math.hypot(dx,dz); if(q>H.r){ e.pos.x=H.x+dx/q*H.r; e.pos.z=H.z+dz/q*H.r; e.vel.multiplyScalar(0.2); } }   // tanks stay behind the walls until the gate falls
       updatePosture(f, now); if(f.posture==='sally' && !f.leaderless) sortie(f, now);
       if(f.cmd && !enemies.includes(f.cmd) && !f.leaderless){ f.leaderless=true; showBanner('TƯỚNG '+f.name+' ĐÃ CHẾT — DIỆT NỐT QUÂN TRONG THÀNH!', '#ffcf5a'); radio('SCH: Tướng giữ '+f.name+' đã bị hạ. Quét sạch quân còn lại — thành sẽ không còn được tiếp viện!'); }   // Z140 commander down → no more reinforcements
-      if(f.leaderless && !f.units.some(e=>enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R+1)) capture(f, now); }   // … and the last defender inside is gone → the fort falls
+      if(f.leaderless && !f.units.some(e=>enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R+1)){ if(f.tunnel>0) tunnelAmbush(f, now); else if(now>(f.tunnelWait||0)) capture(f, now); } }   // … and the last defender inside is gone (Z170 and the tunnels have emptied) → the fort falls
     if(now>f.sallyAt && !f.leaderless) sally(f, now);
   }
 }
+// Z170 TUNNEL AMBUSH: the yard looks clear — then, a beat later, squads burst out of the tunnels: one from a hatch in the yard, one from a hidden exit near the tank
+function tunnelAmbush(f, now){ if(!f.tunnelAt){ f.tunnelAt=now+1.6+Math.random()*2.4; return; } if(now<f.tunnelAt) return;
+  f.tunnel--; f.tunnelAt=0; f.tunnelWait=now+2; const p=S.player, nS=2+((Math.random()*2)|0);
+  if(f.hatches && f.hatches.length){ const h=f.hatches[(Math.random()*f.hatches.length)|0]; popHatch(h); squadAt(f, h.x, h.z, nS+1, true); }
+  if(p){ for(let t=0;t<24;t++){ const a=(p.facing||0)+Math.PI+(Math.random()-0.5)*2.4, d=12+Math.random()*10, x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d;   // behind or beside the tank
+      if(!inField(x, z, 3) || FORTS.some(o=>Math.hypot(o.x-x,o.z-z)<o.R+2) || blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+2)) continue;
+      const h=makeHatch(f, x, z); f.hatches.push(h); popHatch(h); bigExplode(new THREE.Vector3(x, heightAt(x,z)+0.5, z), 0x8a7a64, 0.7); squadAt(f, x, z, nS, false); break; } }
+  showBanner('ĐỊCH CHUI LÊN TỪ ĐƯỜNG HẦM!', '#ff6a4a'); radio('SCH: Phục kích từ đường hầm dưới '+f.name+'! Quay nòng lại!'); }
 // HUD: one line per fortress — name · gate % / sealed / garrison stirred / ours (written only when it changes)
 let _fh='';
 export function updateFortHud(){ const el=document.getElementById('fortHud'); if(!el) return; if(!FORTS.length){ if(_fh){ _fh=''; el.classList.add('hidden'); } return; }

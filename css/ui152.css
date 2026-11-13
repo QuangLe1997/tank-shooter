@@ -209,3 +209,6 @@ body.touch #tipCard{top:auto !important;bottom:12px;left:50% !important;right:au
 /* garage on short screens: smaller photos, more cards per row */
 @media (max-height:520px){ #garGrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr)) !important;gap:10px !important;} .gc-pic{height:96px !important;} .gc-desc{display:none;} .gcard{gap:3px !important;padding:8px 10px 10px !important;} .gc-nm{font-size:15px !important;} }
 #start #resetBtn .lg{display:none;}
+/* Z170 the terrain card's tag is now a real place (GIZA · AI CẬP): it wraps under the name and never spills */
+.tcard .tc-name{flex-wrap:wrap;row-gap:1px}
+.tcard .tc-tag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:.4px}

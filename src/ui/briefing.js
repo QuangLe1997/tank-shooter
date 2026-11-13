@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, GUNS, PROFILE, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage } from '../hub.js';
+import { BIOME, GUNS, PROFILE, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -9,7 +9,7 @@ export function openBriefing(opts){
   S.mode='briefing';
   prewarmStage();   // Z168 compile this stage's shaders in the background while the player reads the briefing (no hitch at the countdown / first frame)
   const bdef = bossForStage(S.stage);   // Z161 may be one of the new generals
-  const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+'  —  TƯỚNG: '+(bdef?bdef.name:'???');
+  const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(biomePlace(BIOME.name)?' · '+biomePlace(BIOME.name):'')+'  —  TƯỚNG: '+(bdef?bdef.name:'???');
   { const op=opFor(S.stage), od=OBJECTIVES[op.obj]; const t=document.getElementById('br-op'); if(t) t.textContent=op.title;
     const bf=document.getElementById('br-brief'); if(bf) bf.textContent=(op.story?op.story+' ':'')+op.brief;
     const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>MỤC TIÊU</b> Phá '+escapeHtml(od.vi||od.name)+' <span>· khi nó còn đứng: '+escapeHtml((od.effectVi||od.effect).toLowerCase())+' · thưởng xu + ◆</span>'; }
@@ -43,7 +43,7 @@ export function chooseContract(c, quick){
 let _go=null, _cdN=0;
 export function beginStage(c, ctx){
   S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage(); voiceStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
-  { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml('MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'')+(op&&op.title?'  —  '+op.title:''))+'</div>'+(ct?'<div class="cdc">'+escapeHtml('ĐIỀU KIỆN: '+ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers
+  { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml('MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(biomePlace(BIOME.name)?' · '+biomePlace(BIOME.name):'')+(S.tod?' · '+TOD_LABEL[S.tod]:'')+(op&&op.title?'  —  '+op.title:''))+'</div>'+(ct?'<div class="cdc">'+escapeHtml('ĐIỀU KIỆN: '+ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers
   WAVE.active=false; S.wave=0;
   if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
   sfx('click');

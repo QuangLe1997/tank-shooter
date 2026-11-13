@@ -824,5 +824,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(lines.length>=45 && lines.every(([,k])=>fs.existsSync('assets/voice/'+k+'.mp3')) && fs.readdirSync('assets/voice').every(f=>/^(x_|f_rally_)/.test(f) || lines.some(([,k])=>k+'.mp3'===f)), 'every scripted line has its file and no stale voice files remain');
   ok(/i===VOICE\.lastTake\[k\]/.test(vo), 'a line never repeats the same take twice running'); }
 
+// Z170 real place names per terrain; sealed forts; lights stop at walls; rubble; basement squads + tunnel ambush; tougher home-bound commanders
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const tv=await import('./src/data/text-vi.js'), wd=await import('./src/data/world.js'), cfg=await import('./config.js'), fo=R('src/world/fortress.js');
+  ok(wd.BIOMES.every(b=>tv.BIOME_PLACE[b.name] && tv.BIOME_PLACE[b.name].forts.length>=8 && / · /.test(tv.BIOME_PLACE[b.name].at)) && /BIOME_PLACE\[BIOME\.name\]/.test(fo) && /biomePlace\(BIOME\.name\)/.test(R('src/ui/briefing.js')), 'every terrain is a real place: its region on the briefing and its fortresses named after famous sites there');
+  ok(/fortIntactCross\(px, pz, b\.x, b\.z\)/.test(R('src/combat/lock-on.js')) && /fortShellHit\(wb/.test(R('src/combat/flame.js')) && /fortIntactCross\(x, z, e\.pos\.x, e\.pos\.z\)\) continue/.test(R('src/combat/spells.js')) && /if\(f\.breached \|\| f\.captured/.test(fo), 'an unbroken fort is sealed: direct rounds, lobbed shells, rockets, blasts, fire and chain lightning all stop at its wall');
+  ok(/sp\.castShadow=true/.test(R('src/render/renderer.js')) && /SPOT\.castShadow=true/.test(R('src/fx/searchlight.js')) && /fortBeamBlocked\(/.test(R('src/fx/searchlight.js')), 'floodlights and the searchlight cast shadows; a searchlight pool never shows behind a wall');
+  ok(/  rubble\(f, pc\);/.test(fo) && /function heapGround/.test(fo) && /twisted rebar/.test(fo), 'a fallen wall section leaves broken slabs, rebar and heaped ground across the breach');
+  ok(/popHatch\(h\); squadAt\(f, h\.x, h\.z, n, true\)/.test(fo) && /if\(f\.tunnel>0\) tunnelAmbush\(f, now\)/.test(fo) && Array.isArray(cfg.FORT.tunnel), 'the garrison comes up from basement hatches in squads; once the yard is cleared, tunnel squads ambush the tank before the fort falls');
+  ok(cfg.FORT.cmdHp>=8 && /fortSendOut\(f, e, now\)\{ if\(!enemies\.includes\(e\) \|\| e\.commander\) return;/.test(fo) && /const H=e\.home\|\|e\.hold/.test(fo) && /boss\.fort===f\)\{ const lim/.test(fo), 'fort commanders are tougher and never leave their walls (the citadel general included)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
