@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FORT, COMMAND, GUN_MODS } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -184,7 +184,8 @@ function popHatch(h){ h.want=1; h.shutAt=performance.now()/1000+3.5; const gy=he
 function animHatches(f, dt, now){ for(const h of (f.hatches||[])){ if(h.want && now>h.shutAt) h.want=0; const k=h.want?6:2.2; h.open+=(h.want-h.open)*Math.min(1, dt*k); h.hinge.rotation.x=-h.open*1.95; } }
 // a squad climbs out at (x,z): 3–5 riflemen, one or two with RPGs
 function squadAt(f, x, z, n, inside){ const out=[]; for(let k=0;k<n;k++){ const a=Math.random()*6.283, r=0.6+Math.random()*2.2, type=(k===0 || (k===3 && S.stage>=3)) ? 'rpg' : 'rifle';
-    const e=inside ? spawnAt(f, type, x+Math.cos(a)*r, z+Math.sin(a)*r) : spawnEnemy(type, x+Math.cos(a)*r, z+Math.sin(a)*r); if(!e) continue; e.fortOf=f; if(!inside) f.units.push(e); out.push(e); } return out; }
+    const e=inside ? spawnAt(f, type, x+Math.cos(a)*r, z+Math.sin(a)*r) : spawnEnemy(type, x+Math.cos(a)*r, z+Math.sin(a)*r); if(!e) continue; e.fortOf=f; if(!inside) f.units.push(e); out.push(e); }
+  if(!inside) makeSquad(out); return out; }   // Z173 a tunnel squad fights as one
 function nameSprite(text, col){ const c=document.createElement('canvas'); c.width=512; c.height=96; const x=c.getContext('2d');
   x.fillStyle='rgba(10,6,4,.72)'; x.beginPath(); x.roundRect(8,14,496,68,14); x.fill(); x.strokeStyle=col; x.lineWidth=3; x.stroke();
   x.fillStyle=col; x.font='900 40px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(text, 256, 50);

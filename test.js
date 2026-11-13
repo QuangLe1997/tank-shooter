@@ -841,5 +841,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/parts\.head/.test(so) && /parts\.lh/.test(so) && /u\.reload=1\.7/.test(so) && /soldierReloading\(e\.mesh\)/.test(R('src/actors/infantry.js')) && /a crawl when flat/.test(so), 'own head + left hand joints: head scan, magazine change (no firing mid-reload), rifle at the ready while running, crouch-walk, crawl, flinch on a hit');
   ok(/buildUnitGrid\(now\)/.test(R('src/game/loop.js')) && /unitsNear\(UGRID\.inf/.test(R('src/actors/infantry.js')) && /blocksAt\(pos\.x, pos\.z\)/.test(R('src/actors/fireteam.js')) && /bulletCands\(b\)/.test(R('src/combat/lock-on.js')), 'spacing, obstacles, crush checks and bullet hits read a unit grid, not every unit'); }
 
+// Z173 squad tactics: enemy squads (leader, wedge, fire-and-manoeuvre with a flank, assault, fall back), suppression, escorts, wave plans, nav grid, our teams + orders
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const sq=R('src/ai/squads.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), wv=R('src/campaign/waves.js'), cfg=await import('./config.js');
+  ok(/return makeSquad\(enemies\.slice\(n0\)/.test(inf) && /_sm=squadMove\(e\)/.test(inf) && /'advance'/.test(sq) && /'fm'/.test(sq) && /'assault'/.test(sq) && /'fallback'/.test(sq) && /'escort'/.test(sq), 'enemy foot squads share one plan: wedge advance → fire-and-manoeuvre round a flank → assault, fall back when broken, escort a tank');
+  ok(/suppress\(e, dt\*/.test(R('src/combat/lock-on.js')) && /suppress\(e, 0\.6\)/.test(R('src/combat/spells.js')) && /PINNED/.test(inf) && /shoot wild/.test(inf), 'near misses and blasts suppress: pinned men hug the ground, fire slower and wilder');
+  ok(/tankEscorted\(g\.e\)/.test(R('src/ai/tactics.js')) && /WAVE\.lastTank/.test(wv) && /'pincer'/.test(wv) && /'probe'/.test(wv) && /prepBarrage\(\)/.test(wv), 'combined arms and wave plans: escorted tanks fix you while the men flank; pincer / probe / artillery-prep waves');
+  ok(/export function navPath/.test(sq) && /string-pull/.test(sq) && /navPath\(L\.pos\.x/.test(sq), 'squads route round fortress walls and buildings on an A* nav grid');
+  ok(/FTSQ\.bound/.test(ft) && /FTSQ\.focus/.test(ft) && /orderGoal\(a, foe, now\)/.test(ft) && cfg.ACTIONS.some(a=>a[0]==='sqOrder') && /cycleSquadOrder\(\)/.test(R('src/input/bindings.js')), 'our fireteam: two teams alternate bounding / covering, one focus target, squad orders (hold · push · flank left · flank right)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

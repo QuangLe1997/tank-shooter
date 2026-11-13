@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, objMod, opFor, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
+import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -59,10 +59,20 @@ export function startWave(now){
   else if(['ambush','column','pyro','airraid'].includes(WAVE.event)) applyScriptedWave(now);   // Z83 scripted beats (airraid also from the random roll)
   if(objMod('gunshipPerWave',0)>0 && S.stage>=2) WAVE.spawnQueue.splice(Math.min(2,WAVE.spawnQueue.length),0,'gunship');   // Z83 radar site vectors a gunship onto every wave
   setTimeout(()=>{ if(S.mode==='playing') radio(opFor(S.stage).radio[S.wave]); }, 900);                                                // all kamikaze
-  WAVE.spawnAt = now + 0.4; WAVE.active = true;
+  WAVE.spawnAt = now + 0.4; WAVE.active = true; planWave(now);
   showBanner(WAVE.eventBanner || ('ĐỢT '+S.wave), WAVE.eventColor);
   updateHUD();
 }
+// Z173 WAVE PLANS — a wave is an operation, not a trickle: PINCER (two arms closing from both flanks of the tank) · PROBE (a scout squad first, the main body
+//   a few seconds later) · PREP (an artillery barrage walks over you, then they come) — and a squad that rolls in right behind a tank moves as its escort
+function planWave(now){ WAVE.plan=null; WAVE.pk=0; WAVE.lastTank=null; WAVE.probeHeld=false;
+  if(WAVE.event || (S.stage===1 && S.wave<=1 && (S.loop||0)===0)) return; const r=Math.random();
+  if(r<0.34){ WAVE.plan='pincer'; WAVE.pincerA=Math.random()*Math.PI*2; setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Địch đánh gọng kìm — chúng đến từ hai hướng!'); }, 2600); }
+  else if(r<0.54){ WAVE.plan='probe'; const i=WAVE.spawnQueue.indexOf('squad'); if(i>0){ WAVE.spawnQueue.splice(i,1); WAVE.spawnQueue.unshift('squad'); } else if(i<0) WAVE.spawnQueue.unshift('squad');
+    setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Tốp thăm dò của địch — diệt gọn, đợt chính đang tới!'); }, 2600); }
+  else if(r<0.7 && S.stage>=2){ WAVE.plan='prep'; prepBarrage(); WAVE.spawnAt=now+3.6; } }
+function pincerPoint(){ const p=S.player; if(!p) return null; const side=(WAVE.pk++%2)?1:-1, a=WAVE.pincerA+side*1.15;
+  for(const d of [58,48,40]){ const x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d; if(inField(x, z, 4)) return { x, z }; } return null; }
 // Z106 enemies enter through the irregular fence: edge 0 = their side (−z) · 1 = ours (+z) · 2 = west · 3 = east. Of a few candidate
 // points on that stretch, prefer one 40–85 m from the tank so a bigger field does not mean long empty drives.
 export function edgeSpawnPoint(){
@@ -88,9 +98,12 @@ export function updateWaves(dt, now){
   let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf || e.abandoned) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
   const _nx=WAVE.spawnQueue[0];
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
-    const t=WAVE.spawnQueue.shift(); const sp=edgeSpawnPoint(), n0=enemies.length;
-    if(t==='squad'){ spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6; return; }
-    spawnEnemy(t, sp.x, sp.z); if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
+    const t=WAVE.spawnQueue.shift(); let sp=(WAVE.plan==='pincer' && pincerPoint()) || edgeSpawnPoint(); const n0=enemies.length;
+    if(t==='squad'){ const L=WAVE.lastTank; if(L && enemies.includes(L.e) && now-L.at<6) sp={ ...L.sp, escort:L.e };   // Z173 right behind a tank → its escort
+      spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;
+      if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact
+      return; }
+    spawnEnemy(t, sp.x, sp.z); { const ne=enemies[n0]; if(ne && solidTank(ne) && !ne.def.air) WAVE.lastTank={ e:ne, at:now, sp }; } if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
     WAVE.spawnAt = now + (BALANCE.wave.cadence - BALANCE.wave.cadenceDiff*diffScale())*(WAVE.assault?BALANCE.wave.assaultCadenceMul:1)*objMod('cadenceMul')*(WAVE.columnLeft>0?0.4:1);   // Z83 radio relay speeds reinforcements; a column rolls in nose-to-tail
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
   }

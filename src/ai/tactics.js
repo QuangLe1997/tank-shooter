@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -25,7 +25,7 @@ export function aiDirector(now){
   // 3) the rest form a ring: sorted by bearing, spread evenly over an arc that widens with IQ
   const ring=G.filter(g=>!g.done).sort((a,b)=>a.a-b.a); const n=ring.length;
   if(n){ let mx=0, mz=0; for(const g of ring){ mx+=Math.sin(g.a); mz+=Math.cos(g.a); } const mid=Math.atan2(mx,mz), arc=Math.min(Math.PI*2*T.encircle*iq, n*0.75)+0.3;
-    ring.forEach((g,i)=>{ const ang = n===1 ? g.a : mid - arc/2 + arc*(i/(n-1||1)); g.e.ai={ role: (g.e.def.heavy||g.e.def.atgm||g.e.type==='sniper') ? 'anchor' : 'ring', ang }; }); }
+    ring.forEach((g,i)=>{ const ang = n===1 ? g.a : mid - arc/2 + arc*(i/(n-1||1)); g.e.ai={ role: (g.e.def.heavy||g.e.def.atgm||g.e.type==='sniper'||tankEscorted(g.e)) ? 'anchor' : 'ring', ang }; }); }   // Z173 a tank with its infantry fixes you from range while the men flank
   if(AID.press && now-AID.pressRadioAt>30){ AID.pressRadioAt=now; radio('SCH: Chúng đánh hơi thấy anh bị thương — cả đội hình đang dồn lên!'); }
 }
 // where this tank wants to stand right now (or null → fall back to the old straight-at-target logic)
