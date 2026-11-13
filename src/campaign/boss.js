@@ -9,10 +9,7 @@ export const BF=BOSSFIGHT;
 export function bossAlive(id){ const pt=boss&&boss.parts.find(q=>q.id===id); return !!(pt && pt.hp>0); }
 export function startBoss(now){
   const def = bossForStage(S.stage);
-  const mesh = buildTank({...def.pal, detail:true}); mesh.scale.setScalar(def.scale);
-  const hornMat=new THREE.MeshStandardMaterial({color:0xede0c0,roughness:0.5,metalness:0.2});
-  if(def.id==='bull'){ const hornL=new THREE.Mesh(new THREE.ConeGeometry(0.28,1.4,10),hornMat); hornL.position.set(-0.7,0.4,1.0); hornL.rotation.set(1.0,0,0.3); mesh.userData.turret.add(hornL);
-    const hornR=hornL.clone(); hornR.position.x=0.7; hornR.rotation.z=-0.3; mesh.userData.turret.add(hornR); }
+  const mesh = buildTank({...def.pal, detail:true, model:'b_'+def.id}); mesh.scale.setScalar(def.scale);   // Z159 the general's own super-heavy
   scene.add(mesh);
   const hp=def.hp*(1+(S.stage-1)*BALANCE.boss.stageRamp)*BALANCE.boss.flat*loopBossMul();
   boss = {
@@ -24,7 +21,8 @@ export function startBoss(now){
     parts: def.parts.map(pd=>({ ...pd, hp:pd.hp*hp, maxHp:pd.hp*hp, mk:null, bar:null })),
   };
   const mkMat=new THREE.MeshStandardMaterial({color:0x221a10, emissive:0xff8a2a, emissiveIntensity:1.4, roughness:0.4});
-  for(const pt of boss.parts){ const mk=new THREE.Mesh(new THREE.OctahedronGeometry(0.2,0), mkMat); mk.position.set(pt.at[0],pt.at[1]+0.25,pt.at[2]); mesh.userData.body.add(mk); pt.mk=mk; pt.bar=getEnemyBar(); pt.bar.g.scale.setScalar(0.9); }   // glowing weak-point marker + its own HP bar
+  const HP=mesh.userData.hard||{};
+  for(const pt of boss.parts){ const mk=new THREE.Mesh(new THREE.OctahedronGeometry(0.2,0), mkMat), hp2=HP[pt.id]; if(hp2){ mk.position.set(hp2.at[0], hp2.at[1]+0.3, hp2.at[2]); (hp2.on==='turret'?mesh.userData.turret:mesh.userData.body).add(mk); } else { mk.position.set(pt.at[0],pt.at[1]+0.25,pt.at[2]); mesh.userData.body.add(mk); } pt.mk=mk; pt.bar=getEnemyBar(); pt.bar.g.scale.setScalar(0.9); }   // Z159 the marker sits ON the real part (and turns with the turret) · glowing weak-point marker + its own HP bar
   boss.dome=new THREE.Mesh(new THREE.SphereGeometry(1,28,18), new THREE.MeshBasicMaterial({color:0x7fd8ff, transparent:true, opacity:0.22, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide}));
   boss.dome.visible=false; scene.add(boss.dome);
   const bb=document.getElementById('bossbar'); bb.style.display='block';
@@ -153,6 +151,7 @@ export function updateBoss(dt, now){
   B.aim = Math.atan2(p.pos.x-B.pos.x, p.pos.z-B.pos.z);
   const lim=ARENA-4, laser=getLaser();
   // part markers pulse + HP bars; broken systems smoke
+  { const sp=B.mesh.userData.spin; if(sp && bossAlive('radar')) sp.rotation.y+=dt*1.8; }   // Z159 the radar sweeps until it's shot off
   for(const pt of B.parts){ if(pt.hp>0){ pt.mk.rotation.y+=dt*2; pt.mk.material.emissiveIntensity=1.1+Math.sin(now*6)*0.5; const w=partWorld(pt);
       pt.bar.g.position.set(w.x, w.y+1.4, w.z); pt.bar.g.quaternion.copy(camera.quaternion); const f=pt.hp/pt.maxHp; pt.bar.fill.scale.x=Math.max(0.001,f); pt.bar.fill.position.x=-(1-f)*0.5; pt.bar.fill.material.color.setHex(0xffa040); }
     else if(Math.random()<0.15){ const w=partWorld(pt); spawnPart(w.x,w.y,w.z,(Math.random()-0.5),2,(Math.random()-0.5),{color:0x1a1612,size:1.2,life:1.2,smoke:true,grav:-0.4,drag:1.4,op:0.5}); } }

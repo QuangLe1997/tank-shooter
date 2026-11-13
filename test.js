@@ -723,5 +723,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function armourArc/.test(R('src/combat/lock-on.js')) && /export function apsKill/.test(R('src/combat/lock-on.js')) && /laid/.test(R('src/ai/tactics.js')) && /export function popSmoke/.test(R('src/ai/tactics.js')) && /S\.spotted=spot/.test(R('src/ai/tactics.js')), 'combat: arcs, APS, turret traverse before firing, smoke screens, scout spotting');
   ok(/K\.g\.userData\.nozzle=nz/.test(ds) && /K\.g\.userData\.launcher=lo/.test(ds) && /K\.g\.userData\.arm=tip/.test(ds), 'flame / missile / crane hooks live on the real vehicles'); }
 
+// Z159 the generals' super-heavies: own machines, weak points on real parts
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ds=R('src/tank/designs.js'), bs=R('src/campaign/boss.js'); const B=(await import('./src/data/bosses.js')).BOSS_DEFS;
+  ok(B.every(b=>new RegExp('\\n  b_'+b.id+':').test(ds) && new RegExp('\\n  b_'+b.id+'\\(K\\)\\{').test(ds)), 'each general has its own super-heavy design and kit');
+  ok(B.every(b=>b.parts.every(pt=>new RegExp('hard(\\.|\\[sd<0\\?\\x27)'+pt.id.replace(/[LR]$/,'')).test(ds))), 'every weak point is recorded on a real part of its machine');
+  ok(/model:'b_'\+def\.id/.test(bs) && /hp2\.on==='turret'\?mesh\.userData\.turret/.test(bs) && !/hornMat/.test(bs), 'boss spawns its machine; turret weak points turn with the turret; no stuck-on horns');
+  ok(/twin:true/.test(ds) && /const units = d\.twin/.test(ds), 'the Overlord runs on four tracks'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
