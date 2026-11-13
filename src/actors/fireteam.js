@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, FTSQ, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, burst, camera, clampField, clearLadders, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropPowerup, enemies, fieldEdgePoint, floatText, gibBody, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, FTSQ, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, burst, camera, clampField, clearLadders, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, floatText, gibBody, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -69,6 +69,8 @@ function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
     if(e.def.inf){ if(d<bs){ bs=d; best={ kind:'inf', ref:e, pos:e.pos }; } }
     else if(a.at && !e.def.air && d*0.8<bs && d<SQUAD.at.range){ bs=d*0.8; best={ kind:'tank', ref:e, pos:e.pos }; } }
   if(a.at && boss && boss.alive){ const d=Math.hypot(boss.pos.x-a.pos.x, boss.pos.z-a.pos.z); if(d*0.8<bs && d<SQUAD.at.range){ bs=d*0.8; best={ kind:'tank', ref:boss, pos:boss.pos }; } }
+  if(a.at) for(const t of towers){ if(t.falling || (t.block && !blocks.includes(t.block))) continue; let live=0; for(const gd of t.guards) if(gd.alive) live++; if(!live) continue;   // Z175 a man with a launcher puts a rocket into a manned tower
+    const d=Math.hypot(t.x-a.pos.x, t.z-a.pos.z), w=d*(1.1-0.12*Math.min(4,live)); if(d>5 && d<SQUAD.at.range+6 && w<bs){ bs=w; best={ kind:'towerAT', ref:t, pos:{ x:t.x, z:t.z } }; } }
   for(const G of liveGuards()){ const d=Math.hypot(G.gd.wx-a.pos.x, G.gd.wz-a.pos.z); if(d*1.1<bs && d<F.range+6){ bs=d*1.1; best={ kind:'guard', ref:G, pos:{ x:G.gd.wx, z:G.gd.wz } }; } }
   { const fo=FTSQ.focus; if(fo && enemies.includes(fo) && (!best || best.kind==='inf')){ const d=Math.hypot(fo.pos.x-a.pos.x, fo.pos.z-a.pos.z); if(d<F.detect && d<bs+12) best={ kind:'inf', ref:fo, pos:fo.pos }; } }   // Z173 the squad's focus target (RPG men, their leader) first
   if(boss && boss.alive && boss.shielded){ const at=!!a.at;                                       // Z134 the general is immune while its shield pylons stand: the squad helps raze them
@@ -129,7 +131,21 @@ function demolitionJob(a, now){ const SP=SQUAD.sapper;
   if(boss && boss.alive && boss.shielded) for(const py of PYLONS){ if(!blocks.includes(py) || py.claimed && py.claimed!==a && FT.includes(py.claimed)) continue; const d=Math.hypot(py.x-a.pos.x, py.z-a.pos.z); if(d<bd){ bd=d; best={ x:py.x, z:py.z, block:py, ref:py }; } }   // Z134 sappers charge the shield pylons too
   if(!best) return false; best.ref.claimed=a; const ux=a.pos.x-best.x, uz=a.pos.z-best.z, L=Math.hypot(ux,uz)||1, off=(best.block.r||2)+0.9;
   a.demo={ state:'go', ...best, spot:[best.x+ux/L*off, best.z+uz/L*off] }; a.task='demolish'; a.goal=a.demo.spot; a.goalKind='demolish'; tip('sapper'); return true; }
-export const CHARGES=[], ALLY_SHELLS=[];
+export const CHARGES=[], ALLY_SHELLS=[], TOWER_RPG=[];
+// Z175 a rocket from the shoulder, up into the tower's platform / cabin (from _sV, the shooter's muzzle)
+function towerRocket(t){ const m=makeMortarShell(); m.scale.setScalar(0.5); scene.add(m); const tx=t.x+(Math.random()-0.5)*1.2, tz=t.z+(Math.random()-0.5)*1.2, ty=t.deckY+1.0+Math.random()*0.5;
+  const D=Math.hypot(tx-_sV.x, ty-_sV.y, tz-_sV.z); TOWER_RPG.push({ m, t, x0:_sV.x, y0:_sV.y, z0:_sV.z, tx, ty, tz, u:0, T:Math.max(0.25, D/SQUAD.at.speed) });
+  spawnPart(_sV.x,_sV.y,_sV.z, 0,0.5,0, {color:0xd8d0c0, size:1.3, life:0.55, smoke:true, grav:0.3, drag:2, op:0.5}); sfx('rocketlaunch', { x:_sV.x, z:_sV.z }); }
+function updateTowerRockets(dt, now){ for(let i=TOWER_RPG.length-1;i>=0;i--){ const r=TOWER_RPG[i]; r.u+=dt/r.T; const u=Math.min(1,r.u);
+    const x=r.x0+(r.tx-r.x0)*u, y=r.y0+(r.ty-r.y0)*u+Math.sin(u*Math.PI)*0.6, z=r.z0+(r.tz-r.z0)*u; r.m.position.set(x,y,z); _rdir.set(r.tx-r.x0, r.ty-r.y0, r.tz-r.z0).normalize(); r.m.quaternion.setFromUnitVectors(_RUP, _rdir);
+    spawnPart(x-_rdir.x*0.4, y-_rdir.y*0.4, z-_rdir.z*0.4, 0,0.2,0, {color:0xcfc6b4, size:0.5, life:0.5, smoke:true, grav:0.2, drag:1.8, op:0.45}); spawnPart(x,y,z, 0,0,0, {color:0xffb060, size:0.35, life:0.06, grav:0, drag:0});
+    if(u<1) continue; TOWER_RPG.splice(i,1); scene.remove(r.m); rocketHitsTower(r.t, r.tx, r.ty, r.tz); } }
+// the warhead bursts on the platform: half the guards up there — or all of them — are killed and thrown off; the structure takes the blast too
+function rocketHitsTower(t, x, y, z){ bigExplode(new THREE.Vector3(x,y,z), 0xffae5c, 1.1); burst({x,z}, 0xffd27a, 10, 7, {y, life:0.35, size:0.35, grav:-14, drag:1.5, up:3}); sfx('explode', {x,z}); S.shake=Math.min(2.5, S.shake+0.3);
+  if(t.falling) return; const live=t.guards.filter(g=>g.alive); if(live.length){ const all=Math.random()<0.45, n=all?live.length:Math.ceil(live.length/2); live.sort(()=>Math.random()-0.5);
+    for(let k=0;k<n;k++){ const gd=live[k], ux=(gd.wx??t.x)-x, uz=(gd.wz??t.z)-z, L=Math.hypot(ux,uz)||1; dropGuard(t, gd, ux/L, uz/L, false); }
+    floatText(n>=live.length ? 'TRÚNG THÁP — DIỆT SẠCH LÍNH GÁC' : 'TRÚNG THÁP — HẠ '+n+'/'+live.length+' LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, y+1.5, t.z), 15); }
+  if(t.block && blocks.includes(t.block)) damageBlock(t.block, SQUAD.at.dmg*1.6); }
 function updateDemolition(a, dt, now){ const D=a.demo; if(!D) return; const SP=SQUAD.sapper;
   if(!blocks.includes(D.block)){ a.demo=null; a.thinkAt=0; return; }                                                     // already down
   if(D.state==='go'){ a.goal=D.spot; if(Math.hypot(a.pos.x-D.spot[0], a.pos.z-D.spot[1])<1.2){ D.state='plant'; D.at=now+SP.plant; a.goal=null; floatText('ĐANG ĐẶT THUỐC NỔ', '#ffcf5a', {x:a.pos.x, y:heightAt(a.pos.x,a.pos.z)+3, z:a.pos.z}, 13); } return; }
@@ -145,13 +161,13 @@ function fireShell(a, T, now){ const M=SQUAD.mortar; a.g.userData.muzzle.getWorl
   const tx=T.pos.x+(T.ref&&T.ref.vel?T.ref.vel.x*lead:0)+(Math.random()-0.5)*M.spread, tz=T.pos.z+(T.ref&&T.ref.vel?T.ref.vel.z*lead:0)+(Math.random()-0.5)*M.spread;
   const m=makeMortarShell(); m.scale.setScalar(0.6); scene.add(m); ALLY_SHELLS.push({ m, x0:_sV.x, y0:_sV.y, z0:_sV.z, tx, tz, t:0, T:M.flight, dmg:M.dmg*(1+(S.stage-1)*0.12) });
   spawnPart(_sV.x,_sV.y+0.4,_sV.z, 0,3,0, {color:0xd8d0c0, size:1.2, life:0.6, smoke:true, grav:0.3, drag:2, op:0.5}); sfx('launch', a.pos); }
-function updateShells(dt, now){ const M=SQUAD.mortar; for(let i=ALLY_SHELLS.length-1;i>=0;i--){ const s=ALLY_SHELLS[i]; s.t+=dt; const u=Math.min(1, s.t/s.T), ty=heightAt(s.tx,s.tz);
+function updateShells(dt, now){ updateTowerRockets(dt, now); const M=SQUAD.mortar; for(let i=ALLY_SHELLS.length-1;i>=0;i--){ const s=ALLY_SHELLS[i]; s.t+=dt; const u=Math.min(1, s.t/s.T), ty=heightAt(s.tx,s.tz);
     const x=s.x0+(s.tx-s.x0)*u, z=s.z0+(s.tz-s.z0)*u, y=s.y0+(ty-s.y0)*u + Math.sin(u*Math.PI)*11; s.m.position.set(x,y,z);
     _rdir.set(s.tx-s.x0, (ty-s.y0)+Math.cos(u*Math.PI)*Math.PI*11, s.tz-s.z0).normalize(); s.m.quaternion.setFromUnitVectors(_RUP, _rdir);   // Z112 nose follows the flight path (it used to tumble on a fixed world axis → looked like it flew sideways / upright)
     if(Math.random()<0.5) spawnPart(x-_rdir.x*0.5, y-_rdir.y*0.5, z-_rdir.z*0.5, 0, 0.3, 0, {color:0xcfc6b4, size:0.45, life:0.45, smoke:true, grav:0.2, drag:1.8, op:0.4});
     if(u<1) continue; ALLY_SHELLS.splice(i,1); scene.remove(s.m);
     bigExplode({x:s.tx,z:s.tz}, 0xffae5c, M.aoe/3); deformCrater(s.tx, s.tz, 0.9, 0.3); aoeDamage(s.tx, s.tz, M.aoe, s.dmg, false, now, 'HE', false); } }
-export function clearAllyOrdnance(){ for(const c of CHARGES) scene.remove(c.m); CHARGES.length=0; for(const s of ALLY_SHELLS) scene.remove(s.m); ALLY_SHELLS.length=0; }
+export function clearAllyOrdnance(){ for(const r of TOWER_RPG) scene.remove(r.m); TOWER_RPG.length=0; for(const c of CHARGES) scene.remove(c.m); CHARGES.length=0; for(const s of ALLY_SHELLS) scene.remove(s.m); ALLY_SHELLS.length=0; }
 function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return false;
   if(T.kind==='inf' && (T.ref.dead || !enemies.includes(T.ref))){ a.target=null; return false; }
   if(T.kind==='guard' && !T.ref.gd.alive){ a.target=null; return false; }
@@ -159,6 +175,9 @@ function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return fa
   if(T.kind==='shell' && T.ref && ((T.ref.def && !enemies.includes(T.ref)) || T.ref.falling || T.ref.alive===false || (T.ref.kind==='pylon' && !blocks.includes(T.ref)))){ a.target=null; return false; }
   const dx=T.pos.x-a.pos.x, dz=T.pos.z-a.pos.z, d=Math.hypot(dx,dz), at=T.kind==='tank', mg=a.role==='mg';
   if(T.kind==='shell'){ const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*0.25; if(now<a.fireAt || d<SQUAD.mortar.min || d>SQUAD.mortar.max*1.2) return false; a.fireAt=now+SQUAD.mortar.cd*(0.85+Math.random()*0.3); fireShell(a, T, now); return true; }   // Z105 mortar lob
+  if(T.kind==='towerAT'){ const t=T.ref; if(t.falling || !t.guards.some(g=>g.alive)){ a.target=null; return false; } if(d>SQUAD.at.range+6) return false;
+    const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.2); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
+    a.fireAt=now+SQUAD.at.cd*(0.85+Math.random()*0.3); a.g.userData.muzzle.getWorldPosition(_sV); towerRocket(t); return true; }
   if(d > (at?SQUAD.at.range:(T.kind==='guard'?F.range+6:(mg?SQUAD.mg.range:F.range)))) return false;
   const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.2); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
   a.g.userData.muzzle.getWorldPosition(_sV);

@@ -8,6 +8,7 @@
 //     the barrel (calibre, length, fume extractor, thermal-sleeve bands, muzzle reference sensor / brake / plain), recoil travel, rest elevation
 //   The weapon barrels the player fits (tank/barrels.js) hang off the same pivot, so they move with each model's mount.
 import * as THREE from 'three';
+import { TANK_REAL } from '../../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
@@ -106,7 +107,19 @@ export const hasDesign = id => !!D[id];
 // ======================================================================================================================
 //   the builder — returns the same rig / userData contract as tank/model.js buildTank, so animation, recoil, barrels, the player all just work
 // ======================================================================================================================
-export function buildDesignTank(opts, ctx){ const id=opts.model, d=D[id]; const { THREE_:_, mk, HULL, TUR, GUN, STEEL, BLACK, GLASS, RUB, BELT, FACE, dark, metal, ACC, HLM } = ctx;
+// Z174b REAL PROPORTIONS — every design but the generals' super-heavies is lengthened to a real MBT's hull (×TANK_REAL.L along the hull: running gear, skirts,
+//   hull profiles, turret seat, exhaust), its hull + turret a little lower, the turret a little longer, the gun longer. Wheels keep their real radius.
+const _REAL={};
+export function realDesign(id){ const d0=D[id]; if(!d0 || id.startsWith('b_')) return d0; if(_REAL[id]) return _REAL[id];
+  const R=TANK_REAL, d=JSON.parse(JSON.stringify(d0)), L=R.L, sz=v=>typeof v==='number'?v*L:v;
+  const r=d.run; r.z0*=L; r.z1*=L; if(r.zs) r.zs=r.zs.map(sz); if(r.spr) r.spr.z*=L; if(r.idl) r.idl.z*=L; if(Array.isArray(r.rol)) r.rol=r.rol.map(sz);
+  if(d.skirt){ d.skirt.z0*=L; d.skirt.z1*=L; }
+  if(d.lower) d.lower=d.lower.map(([z,y])=>[z*L, y]); if(d.upper) d.upper=d.upper.map(([z,y])=>[z*L, typeof y==='number'?y*R.H:y]);
+  if(d.tur){ d.tur.z*=L; d.tur.y*=R.H; if(d.tur.h) d.tur.h*=R.tH; if(d.tur.poly) d.tur.poly=d.tur.poly.map(([x,z])=>[x, z*R.tL]); if(d.tur.top && d.tur.top.length>2) d.tur.top[2]*=R.tL; }
+  if(d.gun){ d.gun.z*=R.tL; d.gun.len*=R.gun; }
+  if(Array.isArray(d.exhaust) && typeof d.exhaust[1]==='number') d.exhaust[1]*=L;
+  return (_REAL[id]=d); }
+export function buildDesignTank(opts, ctx){ const id=opts.model, d=realDesign(id); const { THREE_:_, mk, HULL, TUR, GUN, STEEL, BLACK, GLASS, RUB, BELT, FACE, dark, metal, ACC, HLM } = ctx;
   const g=new THREE.Group(); g.rotation.order='YXZ';
   const R=d.run, W=d.W, tw=d.tw, tx=W/2-tw/2;
   const zs=R.zs || Array.from({ length:R.n }, (_,i)=>R.z0+i*(R.z1-R.z0)/(R.n-1)), wy=R.r+T_BELT;

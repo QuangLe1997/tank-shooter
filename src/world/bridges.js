@@ -7,7 +7,7 @@ import { S, TOWER, animateSoldier, bullets, cMod, campMats, diffDmgMul, fallers,
 // ===== Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrolling across; drop a tower and it snaps =====
 export const BRIDGES=[];
 export function buildBridge(a, b){
-  const M=campMats(), y0=heightAt(a.x,a.z)+TOWER.h+0.12, y1=heightAt(b.x,b.z)+TOWER.h+0.12, dx=b.x-a.x, dz=b.z-a.z, D=Math.hypot(dx,dz), ux=dx/D, uz=dz/D;
+  const M=campMats(), y0=(a.deckY??heightAt(a.x,a.z)+TOWER.h)+0.05, y1=(b.deckY??heightAt(b.x,b.z)+TOWER.h)+0.05, dx=b.x-a.x, dz=b.z-a.z, D=Math.hypot(dx,dz), ux=dx/D, uz=dz/D;
   const s0=1.75, s1=D-1.75, L=s1-s0, sag=Math.min(1.1, L*0.06), yaw=Math.atan2(ux,uz);
   const ptAt=(u)=>{ const s=s0+u*L; return new THREE.Vector3(a.x+ux*s, y0+(y1-y0)*u - sag*4*u*(1-u), a.z+uz*s); };
   const halves=[new THREE.Group(), new THREE.Group()]; const anchors=[ptAt(0), ptAt(1)];

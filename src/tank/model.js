@@ -1,5 +1,6 @@
 // tank/model.js — shared tank geometries (built once; every tank references them)
 import * as THREE from 'three';
+import { TANK_REAL } from '../../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { TANK_MODELS, blobTex, buildDesignTank, camoTex, grimeMat, hasDesign, panelNrm, panelRgh, panelTex, realCol, trackTex, turretGeo, wheelTex } from '../hub.js';
@@ -45,7 +46,8 @@ export const blobMat=()=>(_BLOB_MAT||(_BLOB_MAT=new THREE.MeshBasicMaterial({ ma
 export const TRUNNION_Z = 1.12;   // gun trunnion (pitch pivot) on the turret front — barrels are authored in turret space and hang off this pivot
 export function buildTank(opts={}){
   const { accent=0xe7b54a, detail=false } = opts;
-  const MD = opts.model ? TANK_MODELS[opts.model] : null, SP = (MD && MD.spec) || {}, L=SP.L||1, W=SP.W||1, H=SP.H||1;   // Z155 the model's proportions
+  const RL = String(opts.model||'').startsWith('b_') ? null : TANK_REAL;   // Z174b real proportions for every tank but the generals' super-heavies
+  const MD = opts.model ? TANK_MODELS[opts.model] : null, SP = (MD && MD.spec) || {}, L=(SP.L||1)*(RL?RL.L:1), W=SP.W||1, H=(SP.H||1)*(RL?RL.H:1);   // Z155 the model's proportions
   if(MD && !MD.mighty) opts = { ...opts, mighty:false };
   const CAMO = MD && MD.camo && opts.hull==null ? camoTex(MD.camo.id, MD.camo.cols, MD.camo.kind) : null;   // our own models wear real camouflage; enemies keep their faction paint
   const MD0 = opts.model ? TANK_MODELS[opts.model] : null, camoBarrel = MD0 && MD0.camo && opts.hull==null ? MD0.camo.cols[0] : null;
@@ -114,7 +116,8 @@ export function buildTank(opts={}){
     for(let i=0;i<6;i++){ for(const sx of [-1.545,1.545]) B(new THREE.SphereGeometry(0.035,6,4), STEEL, sx,0.93,-1.7+i*0.66); }                           // skirt mounting bolts
   }
   // ---------- turret (yaws to aim) ----------
-  const turretG=new THREE.Group(); turretG.position.set(0, 1.45+0.3-0.95, -0.12+(SP.tz||0)); turretG.scale.set((SP.tw||1)/W, (SP.th||1)/H, (SP.tl||1)/L); body.add(turretG);
+  const turMount=new THREE.Group(); turMount.position.set(0, 1.45+0.3-0.95, -0.12+(SP.tz||0)); turMount.scale.set(1/W, 1/H, 1/L); body.add(turMount);   // Z174b undo the hull's stretch here, so a turret that yaws never shears
+  const turretG=new THREE.Group(); turretG.scale.set((SP.tw||1), (SP.th||1)*(RL?RL.tH:1), (SP.tl||1)*(RL?RL.tL:1)); turMount.add(turretG);
   mk(turretG, new THREE.CylinderGeometry(0.86,0.9,0.12,24), BLACK, 0,-0.33,0);                                                     // turret ring
   const turM=mk(turretG, SP.turret ? turretGeo(SP.turret) : G.turret, TUR, 0,0,0);
   mk(turretG, new RoundedBoxGeometry(0.7,0.5,0.36,2,0.06), metal(realCol(turret,0.6,0.7)), 0,0.0,1.2);                         // gun mantlet
@@ -126,7 +129,7 @@ export function buildTank(opts={}){
   // main gun: PIVOT at the trunnion (elevation + vibration) → barrelG slides along its own axis (recoil); barrel parts are in turret space
   const gunPivot=new THREE.Group(); gunPivot.position.set(0,0.02,TRUNNION_Z); turretG.add(gunPivot);
   const barrelG=new THREE.Group(); barrelG.position.set(0,-0.02,-TRUNNION_Z); gunPivot.add(barrelG);
-  const tip = (detail?4.05:3.7)*(SP.gun||1), tube=(r1,r2,len,z,mat)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,len,16),mat); m.rotation.x=Math.PI/2; m.position.set(0,0.02,z); barrelG.add(m); return m; };
+  const tip = (detail?4.05:3.7)*(SP.gun||1)*(RL?RL.gun:1), tube=(r1,r2,len,z,mat)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,len,16),mat); m.rotation.x=Math.PI/2; m.position.set(0,0.02,z); barrelG.add(m); return m; };
   tube(0.17,0.17,0.36,1.42,dark(0x2c2c26));                                    // recoil collar
   { const e0=tip-1.36, prof=[[0.128,1.3],[0.128,1.58],[0.122,1.64],[0.115,e0-0.05],[0.16,e0+0.03],[0.168,e0+0.2],[0.165,e0+0.38],[0.11,e0+0.46],[0.104,tip-0.12],[0.11,tip-0.06],[0.108,tip]];   // turned tube: taper + smooth evacuator bulge + muzzle lip
     const lg=new THREE.LatheGeometry(prof.map(([r,z])=>new THREE.Vector2(r,z)), detail?22:14); lg.rotateX(Math.PI/2); const lm=new THREE.Mesh(lg,GUN); lm.position.y=0.02; barrelG.add(lm);

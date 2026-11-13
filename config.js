@@ -294,6 +294,9 @@ export const AIM = { rockR: 16, mobileFixed: true, cone: 0.17, lane: 1.8, artyCo
 // Z174 REAL-WORLD SCALE — 1 world unit = 1 metre. The tanks are the reference (≈ a real MBT: ~7.5 m with the gun, 3.7 m tall to the cupola); a soldier model is
 //   1.407 units tall at scale 1 → HUMAN_SCALE makes every man, ours and theirs, 1.78 m. Fortress curtain walls 7 m + 1.3 m merlons, 2.4 m thick; watchtowers 8 m to the deck;
 //   brick compound walls ~2.4 m; sandbag lines 1.2 m; trees 10–17 m.
+// Z174b real MBT proportions (×TANK_SCALE 1.2): hull ~7.6 m long, 3.6 m wide over the tracks, turret roof ~2.4 m, gun ~2.5 m past the nose (~10 m overall) —
+//   the hull + tracks stretch along, the hull and turret sit a little lower, the turret a touch longer, the gun longer. The generals' super-heavies keep their own size.
+export const TANK_REAL = { L:1.36, H:0.9, tH:0.9, tL:1.1, gun:1.38 };
 export const HUMAN_SCALE = 1.78/1.407;
 export const TROOPS = {
   ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)

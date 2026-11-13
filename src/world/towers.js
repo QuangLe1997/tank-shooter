@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE, HUMAN_SCALE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -24,34 +24,49 @@ export function towerGeos(){
   _towerGeo={ wood:mergeGeometries(W), roof:mergeGeometries(R), bags:P[0] }; return _towerGeo;
 }
 export let _woodMat=null, _tinMat=null;
-export function buildTower(x, z){
-  const G=towerGeos();
+// Z175 one shared material per building material; every tower clones the ones it uses (hit flash + the fade after it falls are per tower)
+const TMAT={};
+function towerMats(){ if(TMAT.wood) return TMAT;
   if(!_woodMat){ _woodMat=detailize(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 }), { scale:0.7, bump:0.012, alb:0.3, foot:1.0, streak:0.25 }); _tinMat=detailize(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') }), { scale:0.8, bump:0.004, alb:0.3, foot:0, streak:0.4 }); }
+  TMAT.wood=_woodMat; TMAT.tin=_tinMat;
+  TMAT.steel=detailize(new THREE.MeshStandardMaterial({ color:0x737a6c, roughness:0.5, metalness:0.45, side:THREE.DoubleSide }), { scale:0.8, bump:0.004, alb:0.32, foot:0.6, streak:0.45 });   // painted steel, rust run-off
+  TMAT.conc=detailize(new THREE.MeshStandardMaterial({ map:propTex("concrete"), color:0xd8d2c4, roughness:0.93 }), { scale:0.5, bump:0.03, alb:0.34, foot:1.6, streak:0.35 });
+  TMAT.glass=new THREE.MeshStandardMaterial({ color:0x1a262c, roughness:0.08, metalness:0.9, envMapIntensity:1.4, side:THREE.DoubleSide });
+  TMAT.dark=new THREE.MeshStandardMaterial({ color:0x121210, roughness:0.9 });
+  TMAT.bamboo=detailize(new THREE.MeshStandardMaterial({ color:0xb4a85a, roughness:0.7 }), { scale:0.8, bump:0.006, alb:0.3, foot:0.6, streak:0.2 });
+  TMAT.thatch=detailize(new THREE.MeshStandardMaterial({ map:propTex('burlap'), color:0xc8a65e, roughness:1.0, side:THREE.DoubleSide }), { scale:0.4, bump:0.05, alb:0.36, foot:0, streak:0.15 });
+  TMAT.bags=coverMat('sandbag'); TMAT.net=new THREE.MeshStandardMaterial({ color:0x4c5632, roughness:1, side:THREE.DoubleSide });
+  return TMAT; }
+export function buildTower(x, z, kindId){
+  const id=kindId||pickTowerKind(BIOME.name), K=TOWER_KINDS[id], G=towerKindGeo(id), M=towerMats();
   const g=new THREE.Group(); const gy=heightAt(x,z); g.position.set(x,gy,z);                 // outer: topples about world axes
   const body=new THREE.Group(); body.rotation.y=Math.random()*6.283; g.add(body);             // inner: the tower's own heading
-  const wm=_woodMat.clone(); const add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; body.add(m); return m; };
-  add(G.wood, wm); add(G.roof, _tinMat); add(G.bags, coverMat('sandbag'));
+  const mats=[]; const add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; body.add(m); return m; };
+  for(const m in G.geo){ const mat=(m==='bags')?M[m]:M[m].clone(); if(m!=='bags') mats.push(mat); add(G.geo[m], mat); }
+  const wm=mats.find(q=>q.map===M[K.mat]?.map && q.color.equals(M[K.mat].color)) || mats[0];
   // searchlight (sweeps at night)
-  const sl=new THREE.Group(); sl.position.set(1.2,TOWER.h+1.0,-1.2); body.add(sl);
-  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.4,12), _tinMat); lamp.rotation.x=Math.PI/2; sl.add(lamp);
+  const sl=new THREE.Group(); sl.position.set(G.sl[0], G.sl[1], G.sl[2]); body.add(sl);
+  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.4,12), M.tin); lamp.rotation.x=Math.PI/2; sl.add(lamp);
   const bg=new THREE.Group(); bg.rotation.x=0.55; sl.add(bg); const light=makeSearchlight(sl, bg, 26, 0.24, 3.4, gy), beam=light.beam;   // Z146 volumetric beam + ground pool + glare
-  const guards=[];
-  for(let k=0;k<2;k++){ const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(HUMAN_SCALE); s.position.set(k?0.7:-0.7, TOWER.h+0.11, k?0.4:-0.4); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
+  // Z175 the guards: one per post of this kind (sometimes a post is empty) — every man up there fires, so the tower's firepower IS its garrison
+  const guards=[], posts=K.guards.slice(), nG=posts.length-(posts.length>2 && Math.random()<0.3 ? 1 : 0), fy=K.h+(K.mat==='conc'?0.16:K.mat==='steel'?0.07:0.12);
+  for(let k=0;k<nG;k++){ const [px,pz]=posts[k], s=makeSoldierMesh({enemy:true}); s.scale.setScalar(HUMAN_SCALE); s.position.set(px, fy, pz); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
   scene.add(g);
-  const hp=Math.round(TOWER.hp*loopHpMul()*diffHpMul());
-  const t={ g, body, x, z, guards, sl, beam, light, wm, hp, falling:false };
+  const hp=Math.round(TOWER.hp*K.hp*loopHpMul()*diffHpMul());
+  const t={ g, body, x, z, guards, sl, beam, light, wm, mats, hp, falling:false, kind:id, h:K.h, deckY:gy+fy, gy };
   towers.push(t);
-  const bobj={ mesh:g, x, z, r:2.0, hp, maxHp:hp, steel:false, loot:Math.random()<0.5, kind:'tower', tower:t };
+  const bobj={ mesh:g, x, z, r:K.r, hp, maxHp:hp, steel:false, loot:Math.random()<0.5, kind:'tower', tower:t, mat:K.mat };
   blocks.push(bobj); t.block=bobj; if(bobj.loot) addLootBeacon(bobj,'block');
 }
+const OPEN_DECK=new Set(['wood','bamboo','lattice']);   // Z175 rope bridges only between open platforms
 export function buildTowers(){
   for(const t of towers){ scene.remove(t.g); dropSearchlight(t.light); } towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges();
   const n=Math.round(((MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)))*Math.min(AREA_K,1.7)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&Math.hypot(x,z)>22 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7) && !inZone(x,z,6) && inField(x,z,9);
   for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
     for(let tr=0;tr<30&&!ok;tr++){ x=(Math.random()*2-1)*(ARENA-9); z=(Math.random()*2-1)*(ARENA-9); ok=okAt(x,z); }
     if(!ok) continue; buildTower(x,z); const t0=towers[towers.length-1];
-    if(i<n-1 && Math.random()<BRIDGE.pairChance){ for(let tr=0;tr<16;tr++){ const a=Math.random()*6.283, d=BRIDGE.minD+Math.random()*(BRIDGE.maxD-BRIDGE.minD), x2=x+Math.cos(a)*d, z2=z+Math.sin(a)*d;   // Z90 a paired guard post across a rope bridge
-      if(okAt(x2,z2)){ buildTower(x2,z2); buildBridge(t0, towers[towers.length-1]); i++; break; } } } }
+    if(i<n-1 && OPEN_DECK.has(t0.kind) && Math.random()<BRIDGE.pairChance){ for(let tr=0;tr<16;tr++){ const a=Math.random()*6.283, d=BRIDGE.minD+Math.random()*(BRIDGE.maxD-BRIDGE.minD), x2=x+Math.cos(a)*d, z2=z+Math.sin(a)*d;   // Z90 a paired guard post across a rope bridge
+      if(okAt(x2,z2)){ buildTower(x2,z2,t0.kind); buildBridge(t0, towers[towers.length-1]); i++; break; } } } }   // Z175 the twin post is the same build
 }
 // guards spot your tank and fire plunging rifle rounds; searchlights sweep at night
 export const _tw=new THREE.Vector3();
@@ -83,18 +98,18 @@ export function updateTowers(dt, now){
           const e=spawnEnemy(Math.random()<0.25?'rpg':'rifle', x, z); if(e){ e.stunUntil=performance.now()/1000+TOWER.getUp; e.hp=e.maxHp*0.6; if(f.fort) e.fortOf=f.fort; floatText('LÍNH GÁC NGÃ — VẪN SỐNG!', '#ffb35a', new THREE.Vector3(x, gy+2.2, z), 13); }
           continue; }
         addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); addCoins(Math.round(15*loopRewardMul()*diffRewardMul()*cMod('coinMul'))); } }
-    else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(1.55*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }
+    else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(HUMAN_SCALE*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }
   for(const t of towers){ if(!t.falling) continue; t.ft+=dt; const k=Math.min(1, t.ft/1.25), e=k*k;          // topple about the base with a hard landing
     t.g.rotation.x = t.fdx*e*1.45; t.g.rotation.z = t.fdz*e*1.45;
-    if(k>=1 && !t.landed){ t.landed=true; const ex=t.x+t.fdz*-5, ez=t.z+t.fdx*5;
+    if(k>=1 && !t.landed){ t.landed=true; const tl=(t.h||7)*0.7, ex=t.x+t.fdz*-tl, ez=t.z+t.fdx*tl;
       bigExplode({x:ex,z:ez}, 0xc8a070, 1.4); burst({x:ex,z:ez}, 0x8a6a40, 14, 9, {y:heightAt(ex,ez)+1, life:0.7, size:0.45, grav:-18, drag:1.2, up:4}); S.shake=Math.min(3,S.shake+1.2); }
-    if(t.ft>7){ const k2=Math.max(0,1-(t.ft-7)/1.5); t.wm.opacity=k2; t.wm.transparent=true; if(k2<=0){ scene.remove(t.g); t.gone=true; } } }
+    if(t.ft>7){ const k2=Math.max(0,1-(t.ft-7)/1.5); for(const m of (t.mats||[t.wm])){ m.opacity=k2; m.transparent=true; } if(k2<=0){ scene.remove(t.g); t.gone=true; } } }
   for(let i=towers.length-1;i>=0;i--) if(towers[i].gone) towers.splice(i,1);
 }
 export function collapseTower(t){
   t.falling=true; t.ft=0; const p=S.player; const ax=t.x-(p?p.pos.x:0), az=t.z-(p?p.pos.z:0), L=Math.hypot(ax,az)||1;   // falls AWAY from the shooter
   t.fdx=az/L; t.fdz=-ax/L;
-  floatText('THÁP ĐÃ ĐỔ', '#ffcf5a', new THREE.Vector3(t.x, 8, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
+  floatText('THÁP ĐÃ ĐỔ', '#ffcf5a', new THREE.Vector3(t.x, (t.gy||0)+(t.h||8)+2, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
   burst({x:t.x,z:t.z}, 0x8a6a40, 18, 8, {y:heightAt(t.x,t.z)+3, life:0.8, size:0.5, grav:-16, drag:1.2, up:3}); burst({x:t.x,z:t.z}, 0xb09a7a, 5, 3, {y:heightAt(t.x,t.z)+1.5, life:1.4, size:2.4, smoke:true, grav:-0.4, drag:1.5, up:1.5, op:0.5});
   const rammed = t._ramAt && performance.now()/1000 - t._ramAt < 0.3;                                         // Z112 knocked over by a tank: the men ride it down and live
   for(const gd of t.guards) dropGuard(t, gd, ax/L, az/L, rammed);

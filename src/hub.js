@@ -78,6 +78,7 @@ export * from './ai/spatial.js';
 export * from './ai/squads.js';
 export * from './actors/damage.js';
 export * from './world/towers.js';
+export * from './world/tower-kinds.js';
 export * from './world/camps.js';
 export * from './world/zones.js';
 export * from './world/fortress.js';

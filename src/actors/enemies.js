@@ -116,7 +116,7 @@ export function spawnEnemy(type, x, z){
   const hp0 = Math.round(def.hp*loopHpMul()*cMod('enemyHpMul')*diffHpMul()*(1+RAMP.hpPerStage*(S.stage-1)));   // ×NG+ loop ×CONTRACT ×DIFFICULTY ×stage ramp
   const e={ type, def, mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle,
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
-    hp:hp0, maxHp:hp0, r:1.5*def.scale, facing:0, aim:0,
+    hp:hp0, maxHp:hp0, r:(def.inf?1.5:1.85)*def.scale, facing:0, aim:0,
     fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:def.burst||0, ramAt:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
     loot: Math.random()<BALANCE.drop.enemy*cMod('lootChanceMul')*Math.min(LOOT.source.chanceCap, LOOT.source.chanceBase+def.hp*LOOT.source.chancePerHp), elite:false };   // Z93 tougher hulls carry loot more often  // some tanks carry a power-up (CONTRACT can boost loot)
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on the bomber kamikaze)

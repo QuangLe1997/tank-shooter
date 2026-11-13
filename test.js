@@ -856,5 +856,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/h:2\.1\+Math\.random\(\)\*0\.6/.test(R('src/world/brick-walls.js')) && /sandbag:0\.7/.test(R('src/world/props.js')) && /real:1\.4/.test(R('src/world/flora.js')), 'compound walls ~2.4 m, sandbag lines 1.2 m, trees 10–17 m');
   ok(ED.ENEMY_DEFS.heavy.scale<=1.1 && ED.ENEMY_DEFS.carrier.scale<=1.0 && cfg.BALANCE.elite.sizeMul===1, 'enemy vehicles at their real size (T-14 ≈ an MBT, APCs not bigger than tanks); elites are not bigger'); }
 
+// Z174b real tank proportions · Z175 watchtower kinds (timber / steel / concrete by land), garrison = firepower, our rocket men hit towers
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), tk=R('src/world/tower-kinds.js'), WD=await import('./src/data/world.js'); const md=R('src/tank/model.js'), ds=R('src/tank/designs.js'), ft=R('src/actors/fireteam.js');
+  ok(cfg.TANK_REAL.L>1.3 && /startsWith\('b_'\) \? null : TANK_REAL/.test(md) && /export function realDesign/.test(ds) && /id\.startsWith\('b_'\)\) return d0/.test(ds) && /turMount\.scale\.set\(1\/W, 1\/H, 1\/L\)/.test(md) && /HULL_HL=2\.05\*1\.36/.test(R('src/world/physics.js')), 'every tank at real MBT proportions (long low hull, longer gun; turret never shears); the generals keep their super-heavies');
+  const kinds=[...tk.matchAll(/\n  (\w+): \{ vi:'[^']+', mat:'(\w+)', h:([\d.]+), r:[\d.]+, hp:([\d.]+), guards:\[((?:\[[^\]]+\],?)+)\]/g)], mats=new Set(kinds.map(k=>k[2])), tb=tk.slice(tk.indexOf('export const TOWER_BIOME'));
+  ok(kinds.length>=7 && ['wood','steel','conc','bamboo'].every(m=>mats.has(m)) && WD.BIOMES.every(b=>new RegExp('\\b'+b.name+':\\{').test(tb)) && kinds.every(k=>(k[5].match(/\[/g)||[]).length>=2 && +k[3]>=6 && +k[4]>0), 'seven watchtower builds in timber, bamboo, steel and concrete; every land raises the kinds it would really have');
+  ok(/posts\.length-\(posts\.length>2/.test(R('src/world/towers.js')) && /K\.hp\*loopHpMul/.test(R('src/world/towers.js')), 'a tower is manned post by post (its firepower is its garrison) and its strength follows its material');
+  ok(/kind:'towerAT'/.test(ft) && /function rocketHitsTower/.test(ft) && /n=all\?live\.length:Math\.ceil\(live\.length\/2\)/.test(ft), 'our soldiers with a launcher fire up into a manned tower: half its guards — or all of them — are killed'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
