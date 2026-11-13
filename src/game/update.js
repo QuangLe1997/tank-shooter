@@ -190,7 +190,7 @@ export function updateCamera(dt, now){
   const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
   S.camZ += (_camAutoWant - S.camZ) * Math.min(1, dt*CAM_AUTO.ease);
-  _camOff.copy(camOff).multiplyScalar((S.zoom||1) + S.camZ);   // player zoom + the auto camera's pull-back
+  { const k=Math.max(0.4, (S.zoom||1) + S.camZ); _camOff.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1), camOff.z*k); }   // player zoom + the auto camera's pull-back · Z165 close-ups drop the camera a little lower for a more cinematic angle
   if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
   const want = _camWant.copy(camTarget).add(_camOff);
   want.y += dashPull;

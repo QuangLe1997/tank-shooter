@@ -79,7 +79,8 @@ export const autoBtnEl=document.getElementById('autoBtn');
 if(autoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} autoFire=!autoFire; try{localStorage.setItem('steelsiege.auto',autoFire?'1':'0');}catch(_){} applyAutoFire(); sfx('click'); };
   autoBtnEl.addEventListener('click',tog); autoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
 // ----- camera controls: ZOOM (cycle near→far) + ROTATE view (45° steps); input is re-mapped so the joystick stays screen-relative -----
-export const ZOOM_LEVELS=[1.0, 1.5, 2.0, 2.6, 3.3];   // Z145 + one wider strategic view
+export const ZOOM_LEVELS=[0.55, 0.75, 1.0, 1.5, 2.0, 2.6, 3.3];   // Z145 + one wider strategic view · Z165 two close-up steps (over the shoulder of the tank)
+const Z1=()=>ZOOM_LEVELS.indexOf(1.0);
 export function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } try{ fitShadow(z); }catch(_){} const l=document.getElementById('zoomLbl'); if(l) l.textContent=z.toFixed(1)+'×'; }
 try{ const z=parseFloat(localStorage.getItem('steelsiege.zoom')); if(z>0) S.zoom=z; }catch(_){}
 setZoom(S.zoom);
@@ -90,11 +91,11 @@ export const rotBtnEl=document.getElementById('rotBtn');
 if(rotBtnEl){ const rot=e=>{ if(e){e.preventDefault();e.stopPropagation();} S.camYaw=(S.camYaw + Math.PI/4) % (Math.PI*2); sfx('click'); };
   rotBtnEl.addEventListener('click',rot); rotBtnEl.addEventListener('touchstart',rot,{passive:false}); }
 // Z110 camera from the keyboard + the AUTO camera toggle
-export function zoomStep(dir){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=1; i=Math.max(0, Math.min(ZOOM_LEVELS.length-1, i+dir)); setZoom(ZOOM_LEVELS[i]); }
+export function zoomStep(dir){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=Z1(); i=Math.max(0, Math.min(ZOOM_LEVELS.length-1, i+dir)); setZoom(ZOOM_LEVELS[i]); }
 export function rotStep(dir){ S.camYaw=((S.camYaw + dir*Math.PI/4) % (Math.PI*2) + Math.PI*2) % (Math.PI*2); }
 // Z128 back-paddle camera: one button walks the zoom steps out and back (ping-pong), the other turns the view; a double tap resets just that one
 let _zd=1;
-export function zoomPing(){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=1; let n=i+_zd; if(n<0 || n>=ZOOM_LEVELS.length){ _zd=-_zd; n=i+_zd; } setZoom(ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length-1, n))]); }
+export function zoomPing(){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=Z1(); let n=i+_zd; if(n<0 || n>=ZOOM_LEVELS.length){ _zd=-_zd; n=i+_zd; } setZoom(ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length-1, n))]); }
 export function zoomReset(){ _zd=1; setZoom(MOBILE?1.5:1); }
 export function yawReset(){ S.camYaw=0; }
 export function camReset(){ setZoom(MOBILE?1.5:1); S.camYaw=0; }
