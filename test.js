@@ -752,7 +752,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(BD.BOSS_NEW.length===3 && BD.BOSS_NEW.every(b=>new RegExp('\\n  b_'+b.id+':').test(ds) && new RegExp('\\n  b_'+b.id+'\\(K\\)\\{').test(ds) && b.intro && b.taunt.length===2), 'three new generals, each with its own machine, intro and taunts');
   ok(/BOSS_ALT\[st\]/.test(bs) && Object.values(BD.BOSS_ALT).every(id=>BD.BOSS_NEW.some(b=>b.id===id)), 'odd NG+ loops hand stages to the new generals');
   ok(/thermoSalvo/.test(bn) && /FIREZ\.push/.test(bn) && /mortarBarrage/.test(bn) && /U\.tail/.test(bn) && /railTel/.test(bn) && /empBurst/.test(bn) && /teslaArcs/.test(bn), 'new generals fight with their own weapons (thermobaric fire, mortars + tail, railgun + EMP + tesla)');
-  ok(/radio\(msg, vkey\)/.test(ops) && /sayVoice\(vkey \|\| voiceKeyFor\(msg\)\)/.test(ops) && VOICE_FILES_OK(), 'radio lines are spoken; every voice file exists');
+  ok(/radio\(msg, vkey\)/.test(ops) && /const vk=vkey \|\| voiceKeyFor\(msg\); if\(vk && voiceOn\(\)\) sayVoice\(vk\)/.test(ops) && VOICE_FILES_OK(), 'radio lines are spoken; every voice file exists');
   ok(/OfflineAudioContext/.test(mu) && /updateScore\(dt\)/.test(R('src/game/loop.js')) && Object.keys(BD.BOSS_DEFS.concat(BD.BOSS_NEW).reduce((a,b)=>(a[b.id]=1,a),{})).every(id=>new RegExp('\\b'+id+':\\[').test(mu)), 'adaptive score: stems rendered offline, faded with the fight, a motif per general');
   function VOICE_FILES_OK(){ const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); keys.push('boss_phase'); return keys.length>40 && keys.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
 

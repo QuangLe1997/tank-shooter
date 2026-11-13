@@ -18,7 +18,7 @@ function load(k){ if(VOICE.bufs[k] || VOICE.loading[k] || !actx) return VOICE.lo
   return (VOICE.loading[k]=fetch('assets/voice/'+k+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject(r.status)).then(b=>actx.decodeAudioData(b)).then(b=>(VOICE.bufs[k]=b)).catch(()=>null)); }
 export function preloadVoices(keys){ if(!actx) return; for(const k of keys) load(k); }
 // speak a line: one at a time, at most two waiting (older chatter is dropped), the same line never twice within 8 s; music ducks underneath
-export function sayVoice(k){ if(!k || !voiceOn()) return; const a=audio(); if(!a) return; const now=performance.now()/1000;
+export function sayVoice(k){ if(!k || !voiceOn()) return; const a=audio(); if(!a || a.state!=='running') return; const now=performance.now()/1000;   // Z166 audio not unlocked yet → skip (a suspended context would jam the queue)
   if(now-(VOICE.lastAt[k]||-99) < 8) return; VOICE.lastAt[k]=now;
   VOICE.queue.push(k); while(VOICE.queue.length>2) VOICE.queue.shift(); if(!VOICE.playing) nextVoice(); }
 function nextVoice(){ const k=VOICE.queue.shift(); if(!k){ VOICE.playing=null; duck(false); return; } VOICE.playing=k;

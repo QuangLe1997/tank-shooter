@@ -2,14 +2,14 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor, voiceOn } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
 export function opFor(stage){ return OPERATIONS[(Math.max(1,stage)-1)%OPERATIONS.length]; }
 export function objMod(key, d){ d=(d===undefined?1:d); return (OBJ && OBJ.alive && OBJ.def.mods[key]!=null) ? OBJ.def.mods[key] : d; }
 export function radio(msg, vkey){ const el=document.getElementById('radio'); if(!el || !msg) return; el.querySelector('.rd-txt').textContent=msg;
-  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(radio._t); radio._t=setTimeout(()=>el.classList.remove('show'), 4600); sfx('beep'); sayVoice(vkey || voiceKeyFor(msg)); }   // Z161 the line is spoken too
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(radio._t); radio._t=setTimeout(()=>el.classList.remove('show'), 4600); { const vk=vkey || voiceKeyFor(msg); if(vk && voiceOn()) sayVoice(vk); else sfx('beep'); } }   // Z161 the line is spoken too · Z166 the voice file carries its own squelch + roger beep
 export function buildObjMesh(kind){
   const g=new THREE.Group(), M={}, mat=(k,o)=>M[k]||(M[k]=new THREE.MeshStandardMaterial(o));
   const steel=mat('st',{color:0x5a5e56,roughness:0.45,metalness:0.8,map:panelTex()}), dark=mat('dk',{color:0x24261f,roughness:0.6,metalness:0.5}), olive=mat('ol',{color:0x56603a,roughness:0.75,metalness:0.35,map:panelTex()});
