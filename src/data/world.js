@@ -8,11 +8,11 @@ export const BIOMES = [
   { name:'TUNDRA',  bg:0x121c24, fog:0x1c2e3a, ground:0xaecbe0, grid:0x6f93ad, accent:0x9fe0ff, sky:0x2a4055, fogD:0.0100, sun:0xeaf6ff, deco:'ice',    wall:0x6f8597 },
   { name:'FOUNDRY', bg:0x18100c, fog:0x241410, ground:0x6e6862, grid:0x6e4030, accent:0xff6a3a, sky:0x301812, fogD:0.0110, sun:0xffcaa0, deco:'slag',   wall:0x4a3a32 },
   { name:'CITADEL', bg:0x140d06, fog:0x231406, ground:0x9a8668, grid:0x7a5420, accent:0xffae5c, sky:0x2a1c0a, fogD:0.0120, sun:0xffd9a0, deco:'rubble', wall:0x6a5424 },
-  { name:'MEADOW',  bg:0x0e150b, fog:0x1a2613, ground:0x5f7d3a, grid:0x46602a, accent:0x9be25a, sky:0x35451f, fogD:0.0072, sun:0xeaffcf, deco:'grass',  wall:0x4a5a30 },
+  { name:'MEADOW',  bg:0x0e150b, fog:0x1a2613, ground:0x8aa64e, grid:0x46602a, accent:0x9be25a, sky:0x35451f, fogD:0.0072, sun:0xeaffcf, deco:'grass',  wall:0x4a5a30 },
   // Z139 three more battlefields (picker / custom battle only): a city of buildings, big rolling hills, a river village with paddies and a bridge
   { name:'CITY',    bg:0x13161b, fog:0x1f242b, ground:0x5b5f66, grid:0x3e434b, accent:0xffc84a, sky:0x2a313c, fogD:0.0085, sun:0xeaf0f8, deco:'rubble', wall:0x4a4e56 },
-  { name:'HILLS',   bg:0x0f160d, fog:0x1b2716, ground:0x6f8244, grid:0x4a5c2c, accent:0xb7e36a, sky:0x2f4425, fogD:0.0068, sun:0xfff2d6, deco:'grass',  wall:0x56603a },
-  { name:'VILLAGE', bg:0x0e170e, fog:0x1c2a1a, ground:0x79974a, grid:0x4f6a30, accent:0x7fe0c0, sky:0x324a30, fogD:0.0066, sun:0xfff4dc, deco:'grass',  wall:0x6a5a3a },
+  { name:'HILLS',   bg:0x0f160d, fog:0x1b2716, ground:0x93a85e, grid:0x4a5c2c, accent:0xb7e36a, sky:0x2f4425, fogD:0.0068, sun:0xfff2d6, deco:'grass',  wall:0x56603a },
+  { name:'VILLAGE', bg:0x0e170e, fog:0x1c2a1a, ground:0x9aba56, grid:0x4f6a30, accent:0x7fe0c0, sky:0x324a30, fogD:0.0066, sun:0xfff4dc, deco:'grass',  wall:0x6a5a3a },
   // Z143 dry-season African savanna (golden grass, reeds, baobabs, acacias, herds) and the Arctic (ice, snow, open leads, reindeer, polar bears)
   { name:'SAVANNA', bg:0x1a140a, fog:0x2a2112, ground:0xb89a58, grid:0x8a6a34, accent:0xffc45a, sky:0x3a3020, fogD:0.0062, sun:0xfff0c8, deco:'grass',  wall:0x7a5a34 },
   { name:'ARCTIC',  bg:0x101820, fog:0x1c2a36, ground:0xe4eef4, grid:0x9ab4c8, accent:0x9fe8ff, sky:0x2a4058, fogD:0.0070, sun:0xf4f8ff, deco:'ice',    wall:0x8aa0b0 },
@@ -39,10 +39,11 @@ export const GROUND_STYLE = {   // c0 dark · c1 mid · c2 light (sRGB), roughne
   TUNDRA: { c:[[150,166,182],[206,220,232],[244,248,252]],rough:0.72, nrm:1.8, tile:24 },
   FOUNDRY:{ c:[[66,62,58],[104,98,90],[146,138,126]],      rough:0.9,  nrm:3.2, tile:18 },   // ash & clinker grey (was near-black)
   CITADEL:{ c:[[104,90,70],[150,132,104],[192,172,140]],   rough:0.95, nrm:2.8, tile:20 },   // weathered sandstone dust
-  MEADOW: { c:[[58,72,34],[88,112,52],[126,148,74]],       rough:0.95, nrm:2.4, tile:20 },
+  // Z147 green fields: sunlit yellow-green pasture, well clear of the tanks' olive drab
+  MEADOW: { c:[[96,124,50],[146,176,76],[200,206,120]],       rough:0.95, nrm:2.4, tile:20 },
   CITY:   { c:[[62,64,68],[96,98,102],[136,138,142]],       rough:0.9,  nrm:2.8, tile:20 },
-  HILLS:  { c:[[64,80,38],[98,122,58],[138,154,84]],        rough:0.95, nrm:2.6, tile:22 },
-  VILLAGE:{ c:[[70,92,40],[106,134,58],[146,168,86]],       rough:0.95, nrm:2.2, tile:20 },
+  HILLS:  { c:[[102,122,64],[150,168,92],[204,200,136]],        rough:0.95, nrm:2.6, tile:22 },
+  VILLAGE:{ c:[[104,138,46],[154,188,68],[206,214,108]],       rough:0.95, nrm:2.2, tile:20 },
   SAVANNA:{ c:[[140,104,58],[190,156,92],[222,196,130]],    rough:0.96, nrm:2.4, tile:22 },
   ARCTIC: { c:[[176,196,214],[224,234,242],[250,252,255]],  rough:0.6,  nrm:1.6, tile:26 },
 };

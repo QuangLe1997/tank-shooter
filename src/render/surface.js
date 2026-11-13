@@ -81,7 +81,7 @@ export function detailize(mat, o={}){ if(!mat || mat.userData.z145) return mat; 
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         { vec2 dHd=vec2(dFdx(dH),dFdy(dH))*${bump}; vec3 sX=dFdx(-vViewPosition), sY=dFdy(-vViewPosition), nn=normal;
           vec3 R1=cross(sY,nn), R2=cross(nn,sX); float det=dot(sX,R1)*faceDirection; vec3 gr=sign(det)*(dHd.x*R1+dHd.y*R2);
-          normal=normalize(abs(det)*nn-gr); }`);
+          vec3 nb=abs(det)*nn-gr; normal = dot(nb,nb)>1e-20 ? normalize(nb) : nn; }`);   /* Z147 degenerate derivatives (edge-on / sliver) must not give NaN */
   };
   mat.customProgramCacheKey=()=>(prevKey?prevKey.call(mat):'')+'|z145'+sc+bump+alb+foot+streak+dust+(o.tiles||0);
   mat.needsUpdate=true; return mat; }

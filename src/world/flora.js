@@ -30,7 +30,7 @@ function leafy(P){ const out=[]; for(const p of P){ const L=p.geo.userData.leaf;
   return _mergeColored(out); }
 export function floraMat(){ if(_mat) return _mat; _mat=new THREE.MeshStandardMaterial({ vertexColors:true, map:leafAtlas(), alphaTest:0.42, alphaToCoverage:!MOBILE, roughness:0.88, metalness:0.0, side:THREE.DoubleSide });
   _mat.onBeforeCompile=(sh)=>{ sh.uniforms.uT=WTIME;
-    sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n  normal = normalize( vNormal );')   /* Z146 foliage keeps its outward crown normal on BOTH faces (a flipped back face went black) */
+    sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n  normal = dot(vNormal,vNormal)>1e-12 ? normalize( vNormal ) : normal;')   /* Z146 foliage keeps its outward crown normal on BOTH faces (a flipped back face went black) */
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * 0.07;');   /* light through the leaves */
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uT;')
     .replace('#include <begin_vertex>',`#include <begin_vertex>
@@ -48,8 +48,8 @@ const _MC=_mergeColored, mergeL=(P)=>leafy(P);   // Z146 stems → white texel, 
 // ---------- species ----------
 const conifer=(snow)=>geo('con'+(snow?1:0), ()=>{ const P=[], tr=new THREE.CylinderGeometry(0.12,0.3,8.6,7); tr.translate(0,4.3,0); P.push({geo:tr,col:0x4e3a28});   // Z146 a real spruce: trunk to the tip, whorls of drooping needle sprays
   for(let k=0;k<9;k++){ const y=1.7+k*0.78, r=2.5*(1-k/10)+0.3, n=k<6?8:6;
-    const core=new THREE.ConeGeometry(r*0.55, 1.3, 7, 1, true); core.translate(0,y+0.2,0); P.push({geo:core,col:0x1e3a1c});                                // dark inner mass
-    for(let q=0;q<n;q++){ const a=q/n*6.283+k*0.4, c=card(r*1.15, 0.9, 2, 0, y+0.6, 0, 0.55); c.rotateX(-Math.PI/2); c.translate(r*0.5,0,0); c.rotateZ(-0.38-k*0.02); c.rotateY(a); c.translate(0,y,0); P.push({geo:c,col:k%2?0x35602e:0x2c5426}); }
+    const core=new THREE.ConeGeometry(r*0.55, 1.3, 7, 1, true); core.translate(0,y+0.2,0); P.push({geo:core,col:0x2c4c28});                                // dark inner mass
+    for(let q=0;q<n;q++){ const a=q/n*6.283+k*0.4, c=card(r*1.15, 0.9, 2, 0, y+0.6, 0, 0.55); c.rotateX(-Math.PI/2); c.translate(r*0.5,0,0); c.rotateZ(-0.38-k*0.02); c.rotateY(a); c.translate(0,y,0); P.push({geo:c,col:k%2?0x4a7a3e:0x3e6e34}); }   // Z147 lighter needles: spruce read as black holes on the bright pasture
     if(snow && k%2===0){ const sn=new THREE.ConeGeometry(r*0.7,0.5,8,1,true); sn.translate(0,y+0.55,0); P.push({geo:sn,col:0xf2f6fa}); } }
   const tip=new THREE.ConeGeometry(0.28,1.3,6); tip.translate(0,9.1,0); P.push({geo:tip,col:snow?0xf2f6fa:0x2e5a2a}); return mergeL(P); });
 export const treeBroadleaf=()=>broadleaf(), treeConifer=()=>conifer(false), treePalm=()=>palm();

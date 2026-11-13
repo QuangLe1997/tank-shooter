@@ -633,7 +633,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function beamMat/.test(sl) && /pow\(edge/.test(sl) && /uFloor/.test(sl) && /makeSearchlight\(sl, bg/.test(tw) && /beamMat\(0xfff0d0/.test(rd), 'searchlights: soft volumetric shaft with dust, fades into the ground (towers + masts)');
   ok(/updateSearchSpot/.test(tw) && /SpotLight/.test(sl) && /sp\.visible=NIGHT\.on;/.test(sl), 'one real spotlight rides the nearest beam (visibility fixed per night: no recompiles)');
   ok(hub.indexOf("fx/searchlight.js") < hub.indexOf("world/biome.js"), 'searchlight module loads before the boot-time floodlights');
-  ok(/leafAtlas/.test(fl) && /alphaTest:0\.42/.test(fl) && /normal = normalize\( vNormal \)/.test(fl) && /_LA\.set\(/.test(fl), 'trees: alpha-tested leaf cards with outward crown normals'); }
+  ok(/leafAtlas/.test(fl) && /alphaTest:0\.42/.test(fl) && /normalize\( vNormal \) : normal/.test(fl) && /_LA\.set\(/.test(fl), 'trees: alpha-tested leaf cards with outward crown normals');
+  ok(/nanPass/.test(rd) && /isnan/.test(rd) && rd.indexOf('composer.addPass(nanPass)') < rd.indexOf('composer.addPass(bloom)'), 'a NaN pixel is cleaned before bloom can smear it into a black block');
+  ok(/'MEADOW'\|\|/.test(fs.readFileSync('src/world/ground.js','utf8')) && /0x6e5a3c/.test(fs.readFileSync('src/world/biome.js','utf8')), 'grass reads clear of the olive tanks (sunlit pasture, brown mud grime)'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

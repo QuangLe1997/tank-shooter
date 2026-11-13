@@ -14,7 +14,7 @@ export function applyBiome(stage){
   decalReset(BIOME); genField(); genTerrain(BIOME);   // Z106 a new field outline every stage
   applyAtmosphere(BIOME);   // sky dome reflections · sun angle/colour · haze · grade
   applyWeather(custom ? R.wx : CAMPAIGN.weather[(Math.max(1, (S.loop||0)*CAMPAIGN.perLoop + stage)-1) % CAMPAIGN.weather.length]);   // Z107 rain · sand · snow · fog
-  if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.ground); GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield
+  if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.deco==='grass' ? 0x6e5a3c : BIOME.ground);   /* Z147 on grass the tracks throw up brown mud, not green */ GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield
   ring.material.color.setHex(BIOME.accent);
   buildPerimeter(BIOME);   // jersey barriers + concertina wire
   computeEnv();            // ARMS DOCTRINE battlefield conditions (night / heat / frost / urban / open)

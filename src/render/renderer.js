@@ -79,6 +79,11 @@ aoPass.blendIntensity = 0.9;
     walk(this.scene); };
   aoPass.restoreVisibility=function(){ for(const o of this._visibilityCache.keys()) o.visible=true; this._visibilityCache.clear(); }; }
 aoPass.enabled = AO.on; composer.addPass(aoPass);
+// Z147 NaN GUARD: a single NaN / inf pixel from any shader used to be smeared by the bloom mip chain into a big black block on screen.
+//   Clean it here (one cheap full-screen pass) so a bad pixel stays one pixel.
+export const nanPass = new ShaderPass({ uniforms:{ tDiffuse:{ value:null } }, vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader:'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c=texture2D(tDiffuse,vUv); if(any(isnan(c)) || any(isinf(c))) c=vec4(0.0,0.0,0.0,1.0); gl_FragColor=vec4(min(c.rgb, vec3(64.0)), c.a); }' });
+composer.addPass(nanPass);
 export const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.45, 0.42, 0.88);   // tighter radius: no blocky halos from the low mips
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
