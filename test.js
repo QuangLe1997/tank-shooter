@@ -864,5 +864,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/posts\.length-\(posts\.length>2/.test(R('src/world/towers.js')) && /K\.hp\*loopHpMul/.test(R('src/world/towers.js')), 'a tower is manned post by post (its firepower is its garrison) and its strength follows its material');
   ok(/kind:'towerAT'/.test(ft) && /function rocketHitsTower/.test(ft) && /n=all\?live\.length:Math\.ceil\(live\.length\/2\)/.test(ft), 'our soldiers with a launcher fire up into a manned tower: half its guards — or all of them — are killed'); }
 
+// Z176 fortress gates carry a carved name stone; flags fly on every great tower; a command post in every fort that can be shelled to ruins
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const fo=R('src/world/fortress.js');
+  ok(/function plaqueMat\(name, place, tier\)/.test(fo) && /plaqueMat\(f\.name, biomePlace\(BIOME\.name\), f\.tier\)/.test(fo), 'every gate has a carved, gilded name stone: the fort and the place');
+  ok(/FLAGS\.push\(\[px,pz,TH2\]\)/.test(fo) && /f\.towerFlags\.push\(fl\)/.test(fo) && /for\(const fl of \(f\.towerFlags\|\|\[\]\)\) fl\.material\.map=vnTex\(\)/.test(fo), 'flags fly from the great towers and turn to our colours when the fort is taken');
+  ok(/buildCore\(f, g, WM\)/.test(fo) && /kind:'fortcore'/.test(fo) && /fortCoreHit\(b, dmg\)/.test(R('src/world/cover.js')) && /function coreRuins/.test(fo) && /f\.coreDown\) return;/.test(fo), 'a command post in every fort (main and lesser) — shelled to ruins it burns, and the fort loses its reserves and its sorties'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
