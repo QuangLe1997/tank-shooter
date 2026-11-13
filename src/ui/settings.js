@@ -1,6 +1,6 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
 import { PAD_CFG, TURRET } from '../../config.js';
-import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
+import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
 export function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
@@ -9,6 +9,7 @@ export function buildSettings(){
     D.appendChild(_segChip(meta.label, PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); buildSettings(); sfx('click'); }, meta.tag)); } }
   const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('TẮT',!PROFILE.sound,()=>_setSnd(false))); for(const [k,t] of [['low','NHỎ'],['mid','VỪA'],['high','LỚN']]) So.appendChild(_segChip(t, PROFILE.sound && (PROFILE.sfxVol||'mid')===k, ()=>_setSnd(true,k))); }   // Z151 effects level: TẮT / NHỎ / VỪA / LỚN
   const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('BẬT',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('TẮT',!PROFILE.music,()=>_setMus(false))); }
+  const Vo=document.getElementById('setVoice'); if(Vo){ Vo.innerHTML=''; Vo.appendChild(_segChip('BẬT',PROFILE.voice!==false,()=>{ PROFILE.voice=true; saveProfile(); buildSettings(); sayVoice('contact'); })); Vo.appendChild(_segChip('TẮT',PROFILE.voice===false,()=>{ PROFILE.voice=false; saveProfile(); buildSettings(); })); }   // Z161 radio voices
   const Ct=document.getElementById('setCtrl'); if(Ct){ Ct.innerHTML=''; const cur=controlScheme();   // Z99 driving scheme
     Ct.appendChild(_segChip('XE TĂNG',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
     Ct.appendChild(_segChip('THEO MÀN HÌNH',cur==='screen',()=>{ PROFILE.ctrl='screen'; saveProfile(); buildSettings(); sfx('click'); }, 'đẩy về đâu xe đi về đó')); }

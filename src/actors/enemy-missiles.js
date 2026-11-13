@@ -18,7 +18,8 @@ export function makeEnemyRocket(){
 }
 export function launchEnemyMissile(x, y, z, ang, o){
   const m=_emPool.pop()||makeEnemyRocket(); m.visible=true; m.scale.setScalar(o.kind==='atgm'?1.35:(o.kind==='heli'?0.9:1));
-  EMIS.push({ m, x, y, z, ang, pitch:0, speed:o.speed, dmg:o.dmg, aoe:o.aoe||2.5, guided:o.guided||0, life:o.life||3, kind:o.kind||'rpg', vy:o.vy||0, wire:o.wire||null, src:o.src||null });
+  EMIS.push({ m, x, y, z, ang, pitch:0, speed:o.speed, dmg:o.dmg, aoe:o.aoe||2.5, guided:o.guided||0, life:o.life||3, kind:o.kind||'rpg', vy:o.vy||0, wire:o.wire||null, src:o.src||null,
+    jam: !!(o.guided && S.player && S.player.sig && Math.random() < S.player.sig.shtora) });   // Z161 SHTORA: this one has lost you
   sfx('rocketlaunch', {x,z});
 }
 export function blowMissile(i, how){
@@ -35,8 +36,8 @@ export function updateEnemyMissiles(dt, now){
   const p=S.player; if(!p) return; const smoked = inSmoke(now);
   for(let i=EMIS.length-1;i>=0;i--){ const r=EMIS[i]; r.life-=dt;
     const gy=heightAt(r.x,r.z);
-    if(r.guided && !smoked){ const want=Math.atan2(p.pos.x-r.x, p.pos.z-r.z); r.ang=wrapAngle(r.ang + Math.max(-r.guided*dt, Math.min(r.guided*dt, wrapAngle(want-r.ang)))); r.y += ((gy+1.5)-r.y)*Math.min(1,dt*2.5); }
-    else if(r.guided && smoked){ r.ang += Math.sin(now*9+i)*dt*1.6; r.y += Math.sin(now*7+i)*dt*1.2; }    // SMOKE: the seeker loses you — it wobbles off course
+    if(r.guided && !smoked && !r.jam){ const want=Math.atan2(p.pos.x-r.x, p.pos.z-r.z); r.ang=wrapAngle(r.ang + Math.max(-r.guided*dt, Math.min(r.guided*dt, wrapAngle(want-r.ang)))); r.y += ((gy+1.5)-r.y)*Math.min(1,dt*2.5); }
+    else if(r.guided && (smoked || r.jam)){ r.ang += Math.sin(now*9+i)*dt*1.6; r.y += Math.sin(now*7+i)*dt*1.2; }    // SMOKE: the seeker loses you — it wobbles off course
     else { r.vy -= 4*dt; r.y += r.vy*dt; }
     const sx=Math.sin(r.ang), sz=Math.cos(r.ang); r.x+=sx*r.speed*dt; r.z+=sz*r.speed*dt;
     r.m.position.set(r.x, r.y, r.z); r.m.rotation.y=r.ang; r.m.rotation.x=-Math.atan2(r.vy||0, r.speed)*0.6;
@@ -46,6 +47,7 @@ export function updateEnemyMissiles(dt, now){
     let gone=null;
     for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j]; if(b.owner!=='p') continue; if((b.x-r.x)**2+(b.z-r.z)**2 < (b.r+0.85)**2){ if(b.pierce>0) b.pierce--; else recycleBullet(j); gone='shot'; break; } }   // SHOOT IT DOWN
     if(!gone && p.apsCharges>0 && now<(p.apsUntil||0) && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < EQUIP.aps.radius){ apsIntercept(r.x, r.y, r.z); gone='shot'; }   // APS hard-kill
+    if(!gone && p.sig && p.sig.trophy && now>(p.apsCd||0) && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < 7){ p.apsCd=now+p.sig.trophy; apsIntercept(r.x, r.y, r.z); gone='shot'; }   // Z161 TROPHY APS (Merkava)
     if(!gone && hitsHull(p, r.x, r.z, 0.3) && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
     if(!gone && r.y < gy+3.2 && hitAllyTank(r.x, r.z, 0.3, r.dmg)) gone='hit';   // Z104 RPG / ATGM into a captured tank
     if(!gone) for(const bl of blocks){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj') damageBlock(bl, r.dmg*1.2); gone='hit'; break; } }

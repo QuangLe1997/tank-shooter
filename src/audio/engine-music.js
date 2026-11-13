@@ -1,5 +1,5 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
-import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, shaper, songBuf, verbSend } from '../hub.js';
+import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, shaper, songBuf, verbSend } from '../hub.js';
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
 export const ENG={ on:false, nodes:null, rpm:0 };
@@ -46,10 +46,12 @@ export function dprCap(){ const d=devicePixelRatio||1; if(!MOBILE) return Math.m
 export function setQuality(q){ S.dpr = q==='low' ? (MOBILE?0.8:1) : Math.min(dprCap(), PROFILE.perfDpr||9);   // Z150 start where the FPS governor settled last time → no stepping down in the first seconds of a battle   // explicit Low/High override (adaptive FPS may still lower High later)
   try{ renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }catch(e){} }
 export function startMusic(){
-  const a=audio(); if(!a || musicSrc) return;
+  const a=audio(); if(!a) return;
   try{
-    if(!songBuf) __set_songBuf(renderSong(a));
     if(!musicBus){ __set_musicBus(a.createGain()); musicBus.connect(master); } setMusicOn(PROFILE.music!==false);   // Z111 also syncs the HUD music button icon
+    if(typeof OfflineAudioContext!=='undefined'){ buildScore(); return; }   // Z161 the adaptive battle score (the old one-loop song stays as a fallback)
+    if(musicSrc) return;
+    if(!songBuf) __set_songBuf(renderSong(a));
     __set_musicSrc(a.createBufferSource()); musicSrc.buffer=songBuf; musicSrc.loop=true; musicSrc.connect(musicBus); musicSrc.start();
   }catch(e){}
 }

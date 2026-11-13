@@ -410,6 +410,22 @@ Object.assign(D, {
     lower:[[-2.35,0.46],[1.75,0.46],[2.35,'F'],[-2.35,'F']], upper:[[-2.45,0],[2.4,0],[2.46,0.1],[1.5,0.55],[-2.1,0.6],[-2.45,0.4]],
     tur:{ y:0.58, z:-0.35, h:0.78, poly:BIG_T(1.35,1.5,1.55), top:[0.92,0.94,-0.02] },
     gun:{ y:0.38, z:1.55, mantlet:'box', mw:1.25, mh:0.6, len:3.4, r0:0.15, r1:0.13, evac:0.45, bands:3, muzzle:'brake', recoil:0.7, elev0:0 }, exhaust:[-1.6,-2.2,'side'] },
+  // Z161 the new generals
+  b_inferno: { W:3.4, tw:0.66, run:{ n:6, r:0.36, z0:-1.55, z1:1.35, spr:{ z:-1.98, y:0.62, r:0.31 }, idl:{ z:1.88, y:0.55, r:0.27 }, rol:[-1.05,-0.05,0.95], rolY:0.98 },
+    skirt:{ kind:'plates', z0:-1.9, z1:2.0, heavyFront:3 },
+    lower:[[-2.05,0.45],[1.3,0.45],[1.92,'F'],[-2.05,'F']], upper:[[-2.1,0],[1.95,0],[2.0,0.07],[1.05,0.4],[-1.85,0.44],[-2.1,0.28]],
+    tur:{ y:0.42, z:-0.1, h:0.42, poly:BIG_T(0.92,0.9,1.0), top:[0.9,0.9,0] },
+    gun:{ y:0.12, z:0.92, mantlet:'box', mw:0.5, mh:0.34, len:1.25, r0:0.16, r1:0.2, evac:0, bands:2, muzzle:'collar', recoil:0.25, elev0:0 }, exhaust:[-1.2,-1.9] },
+  b_serpent: { W:3.3, tw:0.64, run:{ n:6, r:0.34, z0:-1.5, z1:1.4, spr:{ z:-1.95, y:0.6, r:0.3 }, idl:{ z:1.9, y:0.52, r:0.26 }, rol:[-1.0,0.0,0.95], rolY:0.95 },
+    skirt:{ kind:'slab', z0:-1.9, z1:2.05, ribs:1 },
+    lower:[[-1.95,0.44],[1.35,0.44],[1.98,'F'],[-1.95,'F']], upper:[[-2.0,0],[2.0,0],[2.05,0.08],[1.1,0.42],[-1.8,0.46],[-2.0,0.3]],
+    tur:{ y:0.44, z:-0.2, h:0.6, poly:BIG_T(1.0,1.15,1.2), top:[0.9,0.92,0] },
+    gun:{ y:0.24, z:1.1, mantlet:'box', mw:0.8, mh:0.48, len:3.0, r0:0.15, r1:0.13, evac:0.45, bands:3, muzzle:'brake', recoil:0.6, elev0:0 }, exhaust:[0,-2.0] },
+  b_thunder: { W:3.45, tw:0.6, run:{ n:7, r:0.32, z0:-1.7, z1:1.55, spr:{ z:-2.1, y:0.6, r:0.3 }, idl:{ z:2.05, y:0.52, r:0.26 }, rol:[], rolY:0.92 },
+    skirt:{ kind:'stealth', z0:-2.0, z1:2.1 },
+    lower:[[-2.15,0.44],[1.5,0.44],[2.12,'F'],[-2.15,'F']], upper:[[-2.2,0],[2.12,0],[2.16,0.06],[1.1,0.4],[-1.95,0.44],[-2.2,0.3]],
+    tur:{ y:0.44, z:-0.35, h:0.56, poly:[[-1.0,-1.3],[1.0,-1.3],[1.12,-0.6],[1.05,0.6],[0.6,1.2],[-0.6,1.2],[-1.05,0.6],[-1.12,-0.6]], top:[0.86,0.9,-0.05] },
+    gun:{ y:0.2, z:1.15, mantlet:'box', mw:0.7, mh:0.42, len:4.0, r0:0.1, r1:0.09, evac:0, bands:0, muzzle:'collar', recoil:0.9, elev0:0 }, exhaust:[-1.1,-2.15,'side'] },
 });
 const glowM=(c,i)=>new THREE.MeshStandardMaterial({ color:0x000000, emissive:c, emissiveIntensity:i||2.2, roughness:0.4 });
 function plates(K, par, x, y, z, w, h, d, n, ax){ for(let i=0;i<n;i++) rb(K,par,w,h,d, x+(ax==='x'?i*w*1.05:0), y+(ax==='y'?i*h*1.05:0), z+(ax==='z'?i*d*1.05:0), K.HULL); }
@@ -472,6 +488,45 @@ Object.assign(DRESS, {
     for(let i=0;i<3;i++) rb(K,T,2.3,0.1,0.42,0,h+0.05,0.0-i*0.5,K.HULL); rivets(K,T,-1.25,1.25,h*0.45,1.5,11);
     cupola(K,-0.8,-0.85,0.3,h); sightBox(K,0.85,h,0.8,1.3); for(const x of [-1.1,-0.85,0.85,1.1]) aerial(K,x,-1.4,2.0); stacks(K,[-1.4,1.4],K.zr+0.4,1.0,true);
     { const pole=cy(K,T,0.03,0.04,1.8,-1.15,h+0.9,-1.2,K.STEEL,6); K.mk(T,new THREE.BoxGeometry(0.03,0.6,0.9),K.ACC||K.HULL,-1.15,h+1.45,-1.62); } K.g.userData.hard=hard; },
+  b_inferno(K){ const T=K.turretG, h=K.th, hard={}, HOT=glowM(0xff7a1a,2.2);   // HOẢ THẦN — TOS-style thermobaric launcher: a 4×6 rocket box raised on the turntable, flame projector, two fuel drums on the tail, heat shields
+    const L=new THREE.Group(); L.position.set(0,h+0.62,-0.15); L.rotation.x=-0.5; T.add(L);
+    const cols=6, rows=4, w=cols*0.27+0.16, hh=rows*0.27+0.16; rb(K,L,w,hh,2.5,0,0,0,K.TUR); rb(K,L,w+0.1,0.08,2.6,0,hh/2+0.04,0,K.STEEL);
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const cx=(c-(cols-1)/2)*0.27, cy2=(r-(rows-1)/2)*0.27; K.mk(L,new THREE.CircleGeometry(0.1,12),K.dark(0x120d09),cx,cy2,1.251); K.mk(L,new THREE.SphereGeometry(0.06,8,6),HOT,cx,cy2,1.24); mnt(K,'tubes',L,cx,cy2,1.32); }
+    for(const sd of [-1,1]){ rb(K,L,0.06,hh+0.1,2.55, sd*(w/2+0.03),0,0,K.STEEL); const ar=cy(K,T,0.09,0.09,0.9, sd*0.7,h+0.25,0.2,K.STEEL,10); ar.rotation.x=0.9; }   // side cheeks + elevation rams
+    hard.launcher={ at:[0, h+0.9, 0.3], on:'turret' };
+    { const nz=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.05,8,18), HOT); nz.position.set(0,0,1.12+1.22); K.barrelG.add(nz); mnt(K,'flame',K.barrelG,0,0,1.12+1.4); }   // flame-projector nozzle (it fires)
+    for(const sd of [-1,1]){ const dr=cy(K,K.body,0.36,0.36,1.15, sd*0.85, K.F+0.42-0.95, K.zr+0.45, K.metal(0x5a4a3a), 18); dr.rotation.x=Math.PI/2;
+      for(const zz of [-0.35,0.35]){ const bd=new THREE.Mesh(new THREE.TorusGeometry(0.37,0.03,6,22),HOT); bd.position.set(sd*0.85, K.F+0.42-0.95, K.zr+0.45+zz); K.body.add(bd); }
+      hard[sd<0?'fuelL':'fuelR']={ at:[sd*0.85, K.F+0.42-0.95, K.zr+0.45], on:'body' }; }
+    for(const sd of [-1,1]) plates(K,K.body, sd*1.58, K.F-0.05-0.95, -1.3, 0.14, 0.45, 0.6, 5, 'z');
+    for(const x of [-1.25,1.25]) mnt(K,'stack',K.body,x,K.F+1.0-0.95,K.zr+0.9); stacks(K,[-1.25,1.25],K.zr+0.9,0.95,true);
+    cupola(K,-0.55,-0.6,0.24,h); sightBox(K,0.6,h,0.5,1.0); aerial(K,0.8,-0.8,1.5); K.g.userData.hard=hard; },
+  b_serpent(K){ const T=K.turretG, h=K.th, hard={}, V=glowM(0x6dff7a,2.0);   // MÃNG XÀ — articulated super-heavy: a gun-tank front unit coupled to a tracked rear unit carrying a 2×2 mortar battery
+    const tail=new THREE.Group(); tail.position.set(0, 0, K.zr-0.25); K.body.add(tail); K.g.userData.tail=tail;
+    cy(K,tail,0.32,0.32,0.9,0,K.F-0.5-0.95,0.05,K.dark(0x22261f),16).rotation.z=Math.PI/2;   // the coupling drum
+    rb(K,tail,0.5,0.4,0.9,0,K.F-0.5-0.95,-0.45,K.STEEL);
+    const RL=3.0, RW=K.W-0.2, rz=-0.85-RL/2; rb(K,tail,RW-0.9,1.0,RL,0,K.F-0.35-0.95,rz,K.HULL);   // rear hull
+    for(const sd of [-1,1]){ rb(K,tail,0.5,0.62,RL+0.2,sd*(RW/2-0.25),0.31-0.95,rz,K.dark(0x15160f));   // its own track units
+      for(let i=0;i<5;i++){ const wh=cy(K,tail,0.27,0.27,0.18,sd*(RW/2-0.25),0.27-0.95,rz-RL/2+0.3+i*(RL-0.6)/4,K.dark(0x2a2c24),14); wh.rotation.z=Math.PI/2; }
+      rb(K,tail,0.08,0.4,RL,sd*(RW/2+0.02),K.F-0.4-0.95,rz,K.HULL); bx(K,tail,0.02,0.03,RL*0.9,sd*(RW/2+0.07),K.F-0.4-0.95,rz,V); }
+    const bat=new THREE.Group(); bat.position.set(0,K.F-0.1-0.95,rz-0.3); tail.add(bat); rb(K,bat,1.7,0.3,1.5,0,0,0,K.TUR);
+    for(const ix of [-1,1]) for(const iz of [-1,1]){ const tb=new THREE.Group(); tb.position.set(ix*0.42,0.2,iz*0.38); tb.rotation.x=-1.0; bat.add(tb); cy(K,tb,0.15,0.17,1.1,0,0.55,0,K.dark(0x2e3328),14); K.mk(tb,new THREE.TorusGeometry(0.16,0.03,6,16),V,0,1.1,0).rotation.x=Math.PI/2; mnt(K,'mortar',tb,0,1.15,0); }
+    hard.joint={ at:[0, K.F-0.5-0.95, -0.15], on:'tail' }; hard.mortar={ at:[0, K.F+0.4-0.95, rz-0.3], on:'tail' };
+    for(let i=0;i<6;i++){ const f=K.mk(K.body,new THREE.ConeGeometry(0.12,0.38,6),K.metal(0x3a4a3a),0,K.F+0.02-0.95,K.zf-0.4-i*0.55); f.rotation.x=-0.5; }   // dorsal fin row (the serpent's spine)
+    for(const sd of [-1,1]){ const c=hmg(K,T,sd*0.5,0.24,0.95,0.85); mnt(K,'mg',T,sd*0.5,0.24,1.85); bx(K,T,0.02,0.03,1.8,sd*1.0,h*0.55,-0.1,V); }
+    mnt(K,'stack',tail,0,K.F-0.2-0.95,rz-RL/2+0.3);
+    cupola(K,-0.55,-0.5,0.26,h); sightBox(K,0.6,h,0.5,1.1); aerial(K,-0.85,-1.0,1.6); K.g.userData.hard=hard; },
+  b_thunder(K){ const T=K.turretG, h=K.th, hard={}, V=glowM(0xfff04a,2.4), B=K.barrelG;   // LÔI THẦN — railgun tank: twin rails a whole hull long, field coils, capacitor banks, tesla coils on the deck
+    for(const sd of [-1,1]){ rb(K,B,0.1,0.22,3.9, sd*0.19,0,1.12+2.05,K.metal(0x3a3e48)); bx(K,B,0.02,0.04,3.8, sd*0.135,0,1.12+2.05,V); }   // the two rails, the gap between them glowing
+    for(let i=0;i<7;i++){ const ring=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.045,8,20),i%2?K.STEEL:V); ring.position.set(0,0,1.12+0.4+i*0.55); B.add(ring); }   // field coils
+    for(const sd of [-1,1]){ const cap=new THREE.Group(); cap.position.set(sd*1.18,h*0.5,-0.3); T.add(cap); rb(K,cap,0.42,0.62,1.7,0,0,0,K.TUR);
+      for(let i=0;i<5;i++) bx(K,cap,0.44,0.05,0.12,0,0.12,-0.68+i*0.34,V);
+      hard[sd<0?'capL':'capR']={ at:[sd*1.2, h*0.5+0.4, -0.3], on:'turret' }; }
+    hard.rail={ at:[0, K.d.gun.y, K.d.gun.z+1.8], on:'turret' };
+    for(const sd of [-1,1]){ const co=new THREE.Group(); co.position.set(sd*1.0, K.F-0.95, K.zr+0.55); K.body.add(co); cy(K,co,0.12,0.18,0.9,0,0.45,0,K.dark(0x2a2c34),12);
+      for(let i=0;i<4;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(0.2-i*0.025,0.035,6,16),K.STEEL); r.rotation.x=Math.PI/2; r.position.y=0.25+i*0.2; co.add(r); }
+      K.mk(co,new THREE.SphereGeometry(0.17,14,10),V,0,1.02,0); mnt(K,'coil',co,0,1.05,0); }   // tesla coils (they arc to you)
+    rivets(K,T,-1.0,1.0,h*0.5,1.2,9); cupola(K,-0.5,-0.8,0.24,h); sightBox(K,0.55,h,0.55,1.1); aerial(K,0.85,-1.1,1.8); K.g.userData.hard=hard; },
 });
 
 // a lofted block set on top of a group (stacked casemates / superstructures)

@@ -739,5 +739,22 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/U\.aimers\) for/.test(bs) && /accMat\.emissiveIntensity=/.test(bs) && /core, glow, flare/.test(bs), 'sub-turrets track, glowing seams breathe, the beam has core + glow + lens flare');
   ok(B.every(b=>b.pal && b.pal.accent!=null && b.pal.hull<0x404040), 'each general wears a dark livery with its own glowing accent'); }
 
+// Z161 workshop per tank, the crew, three new generals, radio voices, the adaptive score
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const KD=await import('./src/data/kit.js'), BD=await import('./src/data/bosses.js');
+  const kit=R('src/tank/kit.js'), ui=R('src/ui/kitshop.js'), flow=R('src/game/flow.js'), bs=R('src/campaign/boss.js'), bn=R('src/campaign/boss-new.js'), ds=R('src/tank/designs.js'), vo=R('src/audio/voice.js'), mu=R('src/audio/music.js'), ops=R('src/campaign/operations.js'), mdl=R('src/tank/models.js');
+  const order=(mdl.match(/TANK_ORDER = \[([^\]]+)\]/)||[])[1].split(',').map(x=>x.trim().replace(/'/g,''));
+  ok(KD.KIT_TRACKS.length===4 && order.every(id=>KD.KIT_SIG[id] && KD.KIT_SIG[id].d>0 && KD.KIT_SIG[id].fx), 'every tank in the garage has 4 upgrade tracks and its own signature module');
+  ok(/applyTankKit\(p, p\.modelId\)/.test(flow) && /gi\.ammo = magCap/.test(flow.slice(flow.indexOf('applyTankKit'))), 'workshop + crew are baked in after the model stats, then mags refilled');
+  ok(/shtora/.test(R('src/actors/enemy-missiles.js')) && /p\.sig\.trophy/.test(R('src/actors/enemy-missiles.js')) && /capsuleSave/.test(R('src/game/player-damage.js')) && /addEra/.test(kit), 'signature modules work in battle: Shtora, Trophy, crew capsule, reactive tiles');
+  ok(KD.CREW_SEATS.length===4 && KD.CREW_SEATS.every(s=>s.l5&&s.l10) && KD.CREW_RECRUITS.filter(r=>!r.price).length===4 && KD.CREW_RECRUITS.every(r=>!r.trait||KD.CREW_TRAITS[r.trait]), 'four crew seats with level-5/10 skills; four starting crewmen; every trait exists');
+  ok(/grantCrewXp\(true\)/.test(bs) && /grantCrewXp\(false\)/.test(R('src/game/player-damage.js')) && /S\.kitKills/.test(R('src/actors/damage.js')), 'the crew earns XP from stages, kills and (half) from lost battles');
+  ok(/id="kitshop"/.test(R('index.html')) && /id="garKit"/.test(R('index.html')) && /openKitShop/.test(ui) && /hireCrew/.test(ui) && /buySig/.test(ui), 'workshop + crew screen reachable from the garage');
+  ok(BD.BOSS_NEW.length===3 && BD.BOSS_NEW.every(b=>new RegExp('\\n  b_'+b.id+':').test(ds) && new RegExp('\\n  b_'+b.id+'\\(K\\)\\{').test(ds) && b.intro && b.taunt.length===2), 'three new generals, each with its own machine, intro and taunts');
+  ok(/BOSS_ALT\[st\]/.test(bs) && Object.values(BD.BOSS_ALT).every(id=>BD.BOSS_NEW.some(b=>b.id===id)), 'odd NG+ loops hand stages to the new generals');
+  ok(/thermoSalvo/.test(bn) && /FIREZ\.push/.test(bn) && /mortarBarrage/.test(bn) && /U\.tail/.test(bn) && /railTel/.test(bn) && /empBurst/.test(bn) && /teslaArcs/.test(bn), 'new generals fight with their own weapons (thermobaric fire, mortars + tail, railgun + EMP + tesla)');
+  ok(/radio\(msg, vkey\)/.test(ops) && /sayVoice\(vkey \|\| voiceKeyFor\(msg\)\)/.test(ops) && VOICE_FILES_OK(), 'radio lines are spoken; every voice file exists');
+  ok(/OfflineAudioContext/.test(mu) && /updateScore\(dt\)/.test(R('src/game/loop.js')) && Object.keys(BD.BOSS_DEFS.concat(BD.BOSS_NEW).reduce((a,b)=>(a[b.id]=1,a),{})).every(id=>new RegExp('\\b'+id+':\\[').test(mu)), 'adaptive score: stems rendered offline, faded with the fight, a motif per general');
+  function VOICE_FILES_OK(){ const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); keys.push('boss_phase'); return keys.length>40 && keys.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

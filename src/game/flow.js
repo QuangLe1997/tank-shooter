@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -13,7 +13,7 @@ export function loadoutGuns(){
 // Z119 from the menus: put the DEPLOYING veil up, let it paint, then build the world (it used to freeze on the menu)
 export function launchGame(arg){ showVeil(true); requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } })); }
 export function startGame(arg){
-  try{ audio(); engineStart(); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
+  try{ audio(); engineStart(); preloadVoices(VOICE_RULES.map(r=>r[1])); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
   let cfg = (arg && typeof arg==='object' && arg.mode) ? arg : null;
   if(!cfg && !resume) cfg = S.runCfg || { mode:'campaign', level:1 };
@@ -40,6 +40,7 @@ export function startGame(arg){
   applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
   for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]);    // start each gun with its (upgraded) full magazine
   { const TS=tankModel(p.modelId).stats; p.maxHp=Math.round(p.maxHp*TS.hp); p.hp=p.maxHp; p.speedMul*=TS.spd; p.accelMul=TS.acc; p.turnMul=TS.turn; p._size=TS.size; }   // Z155 the model's armour / engine / suspension
+  applyTankKit(p, p.modelId); for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]);   // Z161 workshop upgrades + signature module + crew skills (then refill the bigger mags)
   p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE*(p._size||1); p.mesh.scale.setScalar(TANK_SCALE*(p._size||1));
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);

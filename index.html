@@ -204,6 +204,7 @@
     <div class="set-row"><span class="set-l">ĐỘ KHÓ</span><div class="seg" id="setDiff"></div></div>
     <div class="set-row"><span class="set-l">HIỆU ỨNG</span><div class="seg" id="setSound"></div></div>
     <div class="set-row"><span class="set-l">NHẠC</span><div class="seg" id="setMusic"></div></div>
+    <div class="set-row"><span class="set-l">GIỌNG RADIO</span><div class="seg" id="setVoice"></div></div>
     <div class="set-row"><span class="set-l">ĐIỀU KHIỂN</span><div class="seg" id="setCtrl"></div></div>
     <div class="set-row"><span class="set-l">ĐỒ HOẠ</span><div class="seg" id="setQual"></div></div>
     <div class="set-row"><span class="set-l">TỐC ĐỘ XOAY NÒNG</span><div class="seg" id="setTurret"></div></div>
@@ -231,9 +232,16 @@
 
 <!-- Z155 GARAGE — the tank collection -->
 <div class="overlay hidden" id="garage">
-  <div class="gar-top"><div class="btn btn-mini" id="garDone"><span>◀ XONG</span></div><div class="gar-ttl">GARA XE TĂNG</div><div class="gar-wal" id="garWallet"></div></div>
+  <div class="gar-top"><div class="gar-l"><div class="btn btn-mini" id="garDone"><span>◀ XONG</span></div><div class="btn btn-mini" id="garKit"><span>⚙ XƯỞNG CẢI TIẾN</span></div><div class="btn btn-mini" id="garCrew"><span>★ KÍP XE</span></div></div><div class="gar-ttl">GARA XE TĂNG</div><div class="gar-wal" id="garWallet"></div></div>
   <div class="subtitle">Mỗi mẫu xe đổi giáp, tốc độ, độ cơ động và kích thước — súng lắp trên xe vẫn theo KHO SÚNG</div>
   <div id="garGrid"></div>
+</div>
+
+<!-- Z161 WORKSHOP + CREW -->
+<div class="overlay hidden" id="kitshop">
+  <div class="gar-top"><div class="gar-l"><div class="btn btn-mini" id="kitDone"><span>◀ GARA</span></div></div><div class="gar-ttl">XƯỞNG &amp; KÍP XE</div><div class="gar-wal" id="kitWallet"></div></div>
+  <div class="shop-tabs kit-tabs"><div class="shop-tab kit-tab" data-kt="ws">⚙ CẢI TIẾN XE</div><div class="shop-tab kit-tab" data-kt="crew">★ KÍP XE</div></div>
+  <div id="kitBody"></div>
 </div>
 
 <!-- TERRAIN — grand 3D battlefield picker -->

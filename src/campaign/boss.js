@@ -1,14 +1,14 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BIOME, BOSS_DEFS, GLOW, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, damagePlayer, decalScorch, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, gunMuzzleFX, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle } from '../hub.js';
 
-export function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
+export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 export let boss=null;
 export const BF=BOSSFIGHT;
 export function bossAlive(id){ const pt=boss&&boss.parts.find(q=>q.id===id); return !!(pt && pt.hp>0); }
 export function startBoss(now){
-  const def = bossForStage(S.stage);
+  const def = bossForStage(S.stage); preloadVoices(['boss_'+def.id, 't_'+def.id+'_1', 't_'+def.id+'_2', 'boss_phase']);
   const mesh = buildTank({...def.pal, detail:true, model:'b_'+def.id}); mesh.scale.setScalar(def.scale);   // Z159 the general's own super-heavy
   scene.add(mesh);
   const hp=def.hp*(1+(S.stage-1)*BALANCE.boss.stageRamp)*BALANCE.boss.flat*loopBossMul();
@@ -22,15 +22,15 @@ export function startBoss(now){
   };
   const mkMat=new THREE.MeshStandardMaterial({color:0x221a10, emissive:0xff8a2a, emissiveIntensity:1.4, roughness:0.4});
   const HP=mesh.userData.hard||{};
-  for(const pt of boss.parts){ const mk=new THREE.Mesh(new THREE.OctahedronGeometry(0.2,0), mkMat), hp2=HP[pt.id]; if(hp2){ mk.position.set(hp2.at[0], hp2.at[1]+0.3, hp2.at[2]); (hp2.on==='turret'?mesh.userData.turret:mesh.userData.body).add(mk); } else { mk.position.set(pt.at[0],pt.at[1]+0.25,pt.at[2]); mesh.userData.body.add(mk); } pt.mk=mk; pt.bar=getEnemyBar(); pt.bar.g.scale.setScalar(0.9); }   // Z159 the marker sits ON the real part (and turns with the turret) · glowing weak-point marker + its own HP bar
+  for(const pt of boss.parts){ const mk=new THREE.Mesh(new THREE.OctahedronGeometry(0.2,0), mkMat), hp2=HP[pt.id]; if(hp2){ mk.position.set(hp2.at[0], hp2.at[1]+0.3, hp2.at[2]); (hp2.on==='turret'?mesh.userData.turret:hp2.on==='tail'&&mesh.userData.tail?mesh.userData.tail:mesh.userData.body).add(mk); } else { mk.position.set(pt.at[0],pt.at[1]+0.25,pt.at[2]); mesh.userData.body.add(mk); } pt.mk=mk; pt.bar=getEnemyBar(); pt.bar.g.scale.setScalar(0.9); }   // Z159 the marker sits ON the real part (and turns with the turret) · glowing weak-point marker + its own HP bar
   boss.dome=new THREE.Mesh(new THREE.SphereGeometry(1,28,18), new THREE.MeshBasicMaterial({color:0x7fd8ff, transparent:true, opacity:0.22, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide}));
   boss.dome.visible=false; scene.add(boss.dome);
   const bb=document.getElementById('bossbar'); bb.style.display='block';
   document.getElementById('boss-name').textContent = def.name;
   document.getElementById('boss-hp').style.width='100%'; bossStatus();
-  showBanner('TƯỚNG ĐỊCH: '+def.name, '#e0603a'); sfx('levelup'); setTimeout(()=>radio(opFor(S.stage).boss), 1200); tip('boss');
+  showBanner('TƯỚNG ĐỊCH: '+def.name, '#e0603a'); sfx('levelup'); setTimeout(()=>radio(def.intro || opFor(S.stage).boss, 'boss_'+def.id), 1200); tip('boss');
 }
-export function clearBossFight(){ clearPylons(); if(laserMesh) laserMesh.visible=false; if(boss){ for(const pt of boss.parts||[]){ if(pt.bar){ freeEnemyBar(pt.bar); pt.bar=null; } } if(boss.dome) scene.remove(boss.dome); } const st=document.getElementById('boss-st'); if(st){ st.innerHTML=''; st._h=''; } }
+export function clearBossFight(){ clearPylons(); clearBossNew(); if(laserMesh) laserMesh.visible=false; if(boss){ for(const pt of boss.parts||[]){ if(pt.bar){ freeEnemyBar(pt.bar); pt.bar=null; } } if(boss.dome) scene.remove(boss.dome); } const st=document.getElementById('boss-st'); if(st){ st.innerHTML=''; st._h=''; } }
 export function bossStatus(){ const el=document.getElementById('boss-st'); if(!el||!boss) return; const now=performance.now()/1000;
   const pips=[0,1,2].map(i=>'<i class="'+(i<boss.phase?'done':i===boss.phase?'on':'')+'"></i>').join('');
   let st=''; if(boss.shielded) st='<b class="sh">KHIÊN · PHÁ '+PYLONS.length+' TRỤ</b>'; else if(now<boss.stunUntil) st='<b class="vu">CHOÁNG ×'+BF.stun.mul+'</b>'; else if(now<boss.ventUntil) st='<b class="vu">XẢ NHIỆT ×'+BF.vent.mul+'</b>'; else if(now<boss.invulnUntil) st='<b>ĐỔI PHA…</b>';
@@ -59,14 +59,14 @@ export function breakPart(pt){ const w=partWorld(pt).clone(); pt.hp=0; pt.mk.vis
   bigExplode({x:w.x,z:w.z}, 0xff8a3a, 1.3); spawnDebris({x:w.x,z:w.z}, 0.8, 0x3a3a34); S.shake=Math.min(3,S.shake+0.8); sfx('bigexplode');
   floatText('PHÁ HUỶ: '+pt.vi, '#ffcf5a', {x:w.x,y:5,z:w.z}, 20); showBanner(pt.vi+' ĐÃ BỊ PHÁ — '+pt.fx, '#ffcf5a');
   boss.hp -= boss.maxHp*0.03; addScore(400, new THREE.Vector3(w.x,3,w.z));                             // breaking a system rocks the whole hull
-  if(pt.id==='trackL'||pt.id==='trackR') boss.slow=(boss.slow||1)*0.72; }
+  if(pt.id==='trackL'||pt.id==='trackR') boss.slow=(boss.slow||1)*0.72; if(pt.id==='joint') boss.slow=(boss.slow||1)*0.65; }
 // ---- phase change: invulnerable roar, shockwave shoves you back, escorts roll in, shield pylons rise for the shield phases ----
 export function bossPhase(now){
   boss.phase++; const T=BF.transition, p=S.player; boss.invulnUntil=now+T.invuln; boss.mode='idle'; boss.atkAt=now+T.invuln+0.6; boss.laserFireUntil=0; boss.laserTelUntil=0;
   ringPulse(boss.pos, 0xffffff, T.blastR); setTimeout(()=>ringPulse(boss.pos,0xff5028,T.blastR*1.3),180); bigExplode(boss.pos, boss.def.pal.accent, 2.2); S.shake=Math.min(3.5,S.shake+2);
   const dx=p.pos.x-boss.pos.x, dz=p.pos.z-boss.pos.z, d=Math.hypot(dx,dz)||1; if(d<T.blastR*2){ p.kbx+=dx/d*T.push; p.kbz+=dz/d*T.push; if(d<T.blastR) damagePlayer(T.blastDmg, now, dx, dz); }
   showBanner('PHA '+(boss.phase+1)+' · '+boss.def.phases[boss.phase], '#ff6a3a'); sfx('alarm');
-  radio(boss.def.name+': "'+boss.def.taunt[(boss.phase-1)%boss.def.taunt.length]+'"');
+  { const ti=(boss.phase-1)%boss.def.taunt.length; if(boss.phase>=2) sayVoice('boss_phase'); radio(boss.def.name+': "'+boss.def.taunt[ti]+'"', 't_'+boss.id+'_'+(ti+1)); }   // Z161 the general speaks
   const n=T.escorts[boss.phase]||0, types=boss.id==='tempest'?['scout','gunship']:boss.id==='goliath'?['heavy','grunt']:boss.id==='reaper'?['sniper','scout']:['grunt','shield'];
   for(let i=0;i<n;i++){ const a=Math.random()*6.283; spawnEnemy(types[i%types.length], boss.pos.x+Math.cos(a)*9, boss.pos.z+Math.sin(a)*9); }
   if(boss.def.shield.includes(boss.phase)) raiseShield(now);
@@ -122,7 +122,7 @@ export function bossMG(now){ const acc=boss.def.pal.accent, list=bossMounts('mg'
     spawnBullet(P.x,P.z,a,{ owner:'e', dmg:9, speed:44, color:acc, r:0.42, life:2.4, scale:1.2, y:P.y }); gunMuzzleFX({ flash:'heavy', color:acc }, P.x,P.y,P.z, a, 2.2); sfx('enemyShoot', P); }, 260); }
 export const mines=[];
 export function bossLayMine(x,z,i){ const rk=bossMounts('mines')[0]; if(!rk){ bossMine(x,z); return; } const P=mountPos(rk), T=0.6;   // Z160 the rack throws each mine out in an arc
-  setTimeout(()=>{ if(!boss||!boss.alive) return; for(let s=0;s<4;s++) spawnPart(P.x,P.y,P.z,(x-P.x)/T,9-s,(z-P.z)/T,{ color:s?0xff5020:0x3a2a20, size:s?0.45:0.9, life:T, grav:-30, drag:0 }); gunMuzzleFX({ flash:'small', color:0xff5020 }, P.x,P.y,P.z, Math.atan2(x-P.x,z-P.z), 0.6); sfx('agl', P);
+  setTimeout(()=>{ if(!boss||!boss.alive) return; for(let s=0;s<4;s++) spawnPart(P.x,P.y,P.z,(x-P.x)/T,9-s,(z-P.z)/T,{ color:s?0xff5020:0x3a2a20, size:s?0.45:0.9, life:T, grav:-30, drag:0 }); gunMuzzleFX({ flash:'small', color:0xff5020 }, P.x,P.y,P.z, Math.atan2(x-P.x,z-P.z), 0.6); sfx('shoot_agl', P);
     setTimeout(()=>{ if(boss&&boss.alive) bossMine(x,z); }, T*1000); }, (i||0)*120); }
 export function bossMine(x,z){
   const m=new THREE.Mesh(new THREE.SphereGeometry(0.7,12,10), new THREE.MeshStandardMaterial({color:0x802018,emissive:0xff3020,emissiveIntensity:0.6,roughness:0.5}));
@@ -177,6 +177,7 @@ export function updateBoss(dt, now){
   if(!boss || !boss.alive) return;
   const p=S.player, B=boss, sc=B.def.scale; B._px=B.pos.x; B._pz=B.pos.z;
   B.aim = Math.atan2(p.pos.x-B.pos.x, p.pos.z-B.pos.z);
+  updateBossNew(dt, now);   // Z161 burning ground, flame jet, swinging tail, railgun
   const lim=ARENA-4, laser=getLaser();
   // part markers pulse + HP bars; broken systems smoke
   { const sp=B.mesh.userData.spin; if(sp && bossAlive('radar')) sp.rotation.y+=dt*1.8; }   // Z159 the radar sweeps until it's shot off
@@ -208,7 +209,7 @@ export function updateBoss(dt, now){
   } else if(laser.visible) laser.visible=false;
   const lasering = now < B.laserFireUntil;
   // ---- LOCOMOTION (hull must turn to face you before it can charge — the readable tell) ----
-  const slow=B.slow||1, turnRate = (B.id==='goliath'?1.2 : B.id==='reaper'?2.6 : 1.9) * dt * (B.phase>=2?1.25:1);
+  const slow=B.slow||1, turnRate = (B.id==='goliath'||B.id==='serpent'?1.2 : B.id==='reaper'?2.6 : 1.9) * dt * (B.phase>=2?1.25:1);
   const angP=B.aim, distP=Math.hypot(p.pos.x-B.pos.x, p.pos.z-B.pos.z);
   const steer=(tgt)=>{ let d=wrapAngle(tgt-B.facing); if(d>turnRate)d=turnRate; else if(d<-turnRate)d=-turnRate; B.facing=wrapAngle(B.facing+d); };
   const driveFwd=(spd)=>{ B.pos.x += Math.sin(B.facing)*spd*dt*slow; B.pos.z += Math.cos(B.facing)*spd*dt*slow; };
@@ -231,7 +232,7 @@ export function updateBoss(dt, now){
     else { B.mode='idle'; B.atkAt = now + 1.4; }
   } else {
     B.mode='idle';
-    const keep = B.id==='goliath' ? 20 : 23; steer(angP);
+    const keep = B.id==='goliath' ? 20 : B.id==='thunder' ? 30 : B.id==='inferno' ? 18 : 23; steer(angP);
     const facingP = Math.abs(wrapAngle(angP - B.facing)) < 0.8; let spd=0;
     if(distP > keep+3) spd = (B.id==='goliath'?9:13); else if(distP < keep-3) spd = -(B.id==='goliath'?6:8);
     if(spd>0 ? facingP : true) driveFwd(spd);
@@ -246,6 +247,7 @@ export function updateBoss(dt, now){
 }
 // each general's attack menu by phase (0,1,2) — systems that are broken drop out of the menu
 export function bossAttack(now, ph){
+  if(NEW_GENERALS.includes(boss.id)) return bossAttackNew(now, ph);   // Z161
   const B=boss, id=B.id, r=Math.random(), big=()=>{ B.attacks++; if(B.attacks%BF.vent.every===0 && !B.shielded){ setTimeout(()=>{ if(boss===B&&B.alive&&B.mode==='idle') ventBoss(performance.now()/1000); }, 1400); } };
   const laser=(n,sweep,tel)=>{ if(B.parts.some(q=>q.id==='emitter') && !bossAlive('emitter')) return false; B.laserTelUntil=now+(tel||0.9); B.laserFireUntil=B.laserTelUntil+0.6+0.2*n; B.laserAng=B.aim; B.laserN=n; B.laserSweep=(Math.random()<0.5?-1:1)*sweep; return true; };
   if(id==='bull'){
@@ -293,12 +295,12 @@ export function killBoss(now){
   addCoins(bcoin); addDiamonds(bdia);
   showBanner('ĐÃ HẠ '+boss.def.name+'!  +'+bcoin+' xu · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
-  if(laserMesh) laserMesh.visible=false; clearMines(); clearPylons(); for(const pt of boss.parts){ if(pt.bar){ freeEnemyBar(pt.bar); pt.bar=null; } } scene.remove(boss.dome); { const st=document.getElementById('boss-st'); if(st){ st.innerHTML=''; st._h=''; } }
+  if(laserMesh) laserMesh.visible=false; clearMines(); clearPylons(); clearBossNew(); for(const pt of boss.parts){ if(pt.bar){ freeEnemyBar(pt.bar); pt.bar=null; } } scene.remove(boss.dome); { const st=document.getElementById('boss-st'); if(st){ st.innerHTML=''; st._h=''; } }
   fortBossDown();                                   // Z107 the citadel falls with its commander
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1);   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
+  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1); grantCrewXp(true);   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
   celebrate('victory', 0, 0);                                                         // Z140 fireworks, cheering troops — then the next screen
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 5600); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 5400); }

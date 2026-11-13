@@ -7,6 +7,7 @@ export * from './data/player.js';
 export * from './data/guns.js';
 export * from './data/enemies.js';
 export * from './data/bosses.js';
+export * from './data/kit.js';   // Z161 workshop + crew data
 export * from './core/config.js';
 export * from './ui/icons.js';
 export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on every screen
@@ -36,11 +37,14 @@ export * from './tank/model.js';
 export * from './tank/rig.js';
 export * from './tank/barrels.js';
 export * from './tank/shield.js';
+export * from './tank/kit.js';   // Z161 per-tank workshop + crew
 export * from './fx/hud-fx.js';
 export * from './fx/particles.js';
 export * from './fx/gore.js';   // Z121
 export * from './audio/synth.js';
 export * from './audio/engine-music.js';
+export * from './audio/voice.js';   // Z161 Vietnamese radio voices
+export * from './audio/music.js';   // Z161 adaptive battle score
 export * from './combat/projectiles.js';
 export * from './fx/fire-wrecks.js';
 export * from './combat/lock-on.js';
@@ -81,6 +85,7 @@ export * from './world/bridges.js';
 export * from './fx/dying.js';
 export * from './campaign/waves.js';
 export * from './campaign/boss.js';
+export * from './campaign/boss-new.js';   // Z161 the three new generals' weapons
 export * from './fx/explosions.js';
 export * from './fx/gunfx.js';   // Z149 per-class muzzle fx, lightning / rail beams, ricochets
 export * from './fx/debris.js';
@@ -115,6 +120,7 @@ export * from './ui/guide.js';
 export * from './ui/settings.js';
 export * from './ui/loadout.js';
 export * from './ui/garage.js';   // Z155 tank collection screen
+export * from './ui/kitshop.js';   // Z161 workshop + crew screen
 export * from './ui/shop-info.js';
 export * from './ui/shop.js';
 export * from './ui/showroom.js';
