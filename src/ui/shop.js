@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunPicHTML, gunReloadMul, gunRole, gunShotDmg, gunSiege, gunSplash, gunTierTx, gunTraits, gunXpToNext, hide, launchGame, ownGun, payCost, powerKit, powerRating, queueGunArt, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax, updateShowroom } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, econBuy, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunPicHTML, gunReloadMul, gunRole, gunShotDmg, gunSiege, gunSplash, gunTierTx, gunTraits, gunXpToNext, hide, launchGame, ownGun, powerKit, powerRating, queueGunArt, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -233,13 +233,15 @@ export function buyShop(it){
   if(it.type==='gun' && PROFILE.ownedGuns.includes(it.id)){ sfx('click'); return; }   // own it → never re-buy
   if(it.type==='up' && upLevel(it.key)>=upMax(it.key)){ sfx('click'); return; }        // maxed
   if(!it.cost || !canAfford(it.cost)){ sfx('click'); return; }                          // can't afford
-  if(it.type==='up'){ payCost(it.cost); PROFILE.upgrades[it.key]=upLevel(it.key)+1;
+  const isUp=it.type==='up';   // Z162 through the server when this device is linked (econBuy falls back to the local wallet otherwise)
+  econBuy(isUp?'up':'gun', isUp?it.key:it.id, null, it.cost, ()=>{ if(isUp) PROFILE.upgrades[it.key]=upLevel(it.key)+1; else ownGun(it.id); }).then(ok=>{ if(ok) afterShopBuy(it); else sfx('alarm'); }); }
+export function afterShopBuy(it){
+  if(it.type==='up'){
     if(S.mode==='playing'){                                                              // live effect if bought mid-run
       if(it.key.startsWith('drone')){ if(S.drone) spawnDrone(S.drone.owned); else deployOwnedDrone(); }
       else if(it.key==='guards'){ deploySoldiers(guardTarget()); }                        // extra guard joins the line now
       else if(it.key==='troops'){ __set_soldierLvl(Math.max(soldierLvl, PROFILE.upgrades.troops||0)); }
     } }
-  else { payCost(it.cost); ownGun(it.id); }
   saveProfile(); sfx('powerup'); refreshStartUI();
   const key = it.type==='gun'?('g:'+it.id):('u:'+it.key);
   shopRefreshData(); const ni=shopList.findIndex(x=> (x.type==='gun'?'g:'+x.id:'u:'+x.key)===key); shopIdx = ni>=0?ni:Math.min(shopIdx,shopList.length-1);

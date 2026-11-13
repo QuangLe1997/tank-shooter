@@ -1,6 +1,6 @@
 // core/profile.js — PLAYER PROFILE (nickname · arsenal · loadout · campaign save)
 import { BALANCE, SHOP_UP } from '../../config.js';
-import { BIOMES, GUNS, RIDER, S, SOLDIER, cloudDirty, floatText, refreshStartUI, spawnDrone } from '../hub.js';
+import { BIOMES, ECON, GUNS, RIDER, S, SOLDIER, cloudDirty, econEarn, econGunFound, floatText, refreshStartUI, spawnDrone } from '../hub.js';
 
 // ----------------------------- PLAYER PROFILE (nickname · arsenal · loadout · campaign save) -----------------------------
 // One profile per browser, persisted in localStorage. Tracks the call-sign, every gun ever collected
@@ -40,8 +40,8 @@ export function saveProfile(quiet){ try{ localStorage.setItem(PROFILE_KEY, JSON.
 export let PROFILE=loadProfile();
 export let BEST=PROFILE.best;                    // alias — existing high-score code keeps working
 // ----- wallet (persists across runs; only a full RESET wipes it) -----
-export function addCoins(n){ PROFILE.coins += n; }
-export function addDiamonds(n){ PROFILE.diamonds += n; if(n>0){ refreshWallet(); saveProfile(); } }
+export function addCoins(n){ PROFILE.coins += n; econEarn(n,0); }   // Z162 owed by the server until the run is reported
+export function addDiamonds(n){ PROFILE.diamonds += n; econEarn(0,n); if(n>0){ refreshWallet(); saveProfile(); } }
 export function refreshWallet(){ document.querySelectorAll('.w-coins').forEach(e=>e.textContent=PROFILE.coins.toLocaleString());
   document.querySelectorAll('.w-dia').forEach(e=>e.textContent=PROFILE.diamonds.toLocaleString()); }
 // ----------------------------- SHOP CATALOG + UPGRADES -----------------------------
@@ -81,6 +81,7 @@ export const GEM_DEF = { id:'gem', svg:'diamond', color:0x7fe7ff, vi:'KIM CƯƠN
 export function ownGun(id){ if(!GUNS[id]) return false; let fresh=false;
   if(!PROFILE.ownedGuns.includes(id)){ PROFILE.ownedGuns.push(id); fresh=true; }
   if(!PROFILE.loadout.includes(id) && PROFILE.loadout.length<LOADOUT_MAX) PROFILE.loadout.push(id);   // auto-equip while there's room
+  if(fresh && !ECON.buying) econGunFound(id);   // Z162 a battlefield find is reported with the run
   saveProfile(); return fresh; }
 export function saveProgress(){ if(S.run && S.run.mode==='custom') return; const s=PROFILE.save, cl=S.loop||0;       // checkpoint = furthest (loop, stage) reached; never regresses (custom battles never touch it)
   const better = !s || cl>(s.loop|0) || (cl===(s.loop|0) && S.stage>(s.stage||1));

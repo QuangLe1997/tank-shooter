@@ -764,5 +764,19 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(!quiet\) cloudDirty\(\)/.test(R('src/core/profile.js')) && /initCloud\(\)/.test(R('src/game/boot-gate.js')) && /id="setCloud"/.test(R('index.html')), 'every save queues a cloud write; sign-in after boot; account row in Settings');
   ok(/request\.auth\.uid == uid/.test(rules) && /match \/\{document=\*\*\} \{\s*allow read, write: if false;/.test(rules) && /allow delete: if false/.test(rules), 'Firestore rules: only the owner reads/writes their save; everything else is closed'); }
 
+// Z162b server economy (Firebase phase 2): pure rules shared with Cloud Functions; client routes every spend through them once linked
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json')), cfg=await import('./config.js');
+  ok(JSON.stringify(cat.cap)===JSON.stringify(cfg.PAYOUT_CAP) && Object.keys(cat.ammo).length===cfg.AMMO_SHOP.length && cat.guns.railgun && cat.kit.lqt.length===3, 'server catalog is built from the game data (prices, caps, ammo, kit) — run `node tools/catalog.mjs` after changing them');
+  { const s=E.migrate({ coins:9e9, diamonds:9e9, ownedGuns:['rifle','smg','hack'], ownedTanks:['lqt','t90m','x'], upgrades:{ damage:99, nope:3 }, kit:{ t90m:{ armor:9, engine:2, fcs:2, susp:2, sig:true } } }, cat);
+    ok(s.coins===cat.cap.migrateCoins && s.diamonds===cat.cap.migrateDia && !s.guns.includes('hack') && !s.tanks.includes('x') && s.upgrades.damage===cat.upgrades.damage.length && !('nope' in s.upgrades) && s.kit.t90m.armor===3 && s.kit.t90m.sig===true, 'migration clamps the wallet, drops unknown items, clamps levels'); }
+  { const s=E.freshState(); s.coins=1000; ok(!E.purchase(s,{type:'gun',id:'railgun'},cat).ok && E.purchase(s,{type:'gun',id:'smg'},cat).ok && s.coins===400 && !E.purchase(s,{type:'gun',id:'smg'},cat).ok, 'purchases: VIP needs diamonds, a gun is bought once, the price is taken');
+    ok(E.purchase(s,{type:'kit',id:'lqt',track:'armor'},cat).ok===(400>=cat.kit.lqt[0].c) && !E.purchase(s,{type:'sig',id:'lqt'},cat).ok && !E.purchase(s,{type:'kit',id:'t14',track:'armor'},cat).ok, 'workshop: only owned tanks; the signature needs every track at level 2'); }
+  { const s=E.freshState(); s.meta={ createdAt:0 }; const t=60000, a=E.payout(s,{ coins:500 },t,cat), b=E.payout(s,{ coins:99999 },2*t,cat), c=E.payout(s,{ coins:99999 },3*t,cat);
+    ok(a.coins===500 && b.coins<=cat.cap.coinBucket && c.coins<=cat.cap.coinPerMin+1 && c.clamped, 'payouts come from a refilling bucket: bursts paid, a farming client is held to the average rate'); }
+  const ec=R('src/core/econ.js'), rules=R('firestore.rules');
+  ok(/match \/econ\/\{uid\}[\s\S]*allow write: if false/.test(rules) && /econBootstrap/.test(R('functions/index.js')) && /maxInstances:5/.test(R('functions/index.js')), 'econ/{uid} is server-only (owner may read); functions capped at 5 instances');
+  ok(/econBuy\('tank'/.test(R('src/ui/garage.js')) && /econBuy\(isUp\?'up':'gun'/.test(R('src/ui/shop.js')) && /econBuy\('kit'/.test(R('src/tank/kit.js')) && /econBuy\('ammo'/.test(R('src/tank/kit.js')) && /econReportRun\(\{ cleared:true \}\)/.test(R('src/campaign/boss.js')), 'every spend goes through econBuy; each cleared stage is reported');
+  ok(/stageAmmo\(p\)/.test(R('src/tank/kit.js')) && /ammoSplash/.test(R('src/combat/lock-on.js')) && /ammoBurn/.test(R('src/combat/lock-on.js')) && /ammoFront/.test(R('src/campaign/boss.js')) && /data-kt="ammo"/.test(R('index.html')), 'special ammo: shop tab, one box loaded per stage, AP / HE / incendiary / resupply effects'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

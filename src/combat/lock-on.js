@@ -64,7 +64,7 @@ export function spawnBullet(x, z, angle, o={}){
   const loft = o.lockOn ? (D<14 ? 1.0+Math.random()*1.4 : 2.6+Math.random()*3.0) : 0;   // random arc: low/shallow when the target's close, lofts higher when far (kept snappy — short air time)
   bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
-    homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
+    homing:o.homing||0, angle, aoe:(o.aoe||0)*(o.owner==='p'&&S.player&&S.player.ammoSplash?1+S.player.ammoSplash:1), aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
     lockOn:o.lockOn||false, tgt:null, loft,
     by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf });   // inf = small-arms round (rifle/MG) — anything else is a tank-gun round
 }
@@ -134,6 +134,7 @@ export function updateBullets(dt, now){
           const tm = typeMul(b.type, armorOf(e))*envDmg(b.type)*armourArc(e, b); let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos); if(tm<=0.6 && b.fx==='spark' && Math.random()<0.6) ricochet(b.x, b.by+heightAt(b.x,b.z), b.z, b.vx, b.vz);   // Z149 light rounds skip off heavy armour   // damage class × armour × range × conditions
           if(e.def.air && b.type==='HE' && b.fx==='frag') dmg*=ROSTER.aaBonus;   // FLAK airbursts tear helicopters apart
           e._fx=b.fx;                               // remember which gun's style killed it → styled death blast
+          if(b.owner==='p' && S.player && S.player.ammoBurn && !e.def.air && Math.random()<S.player.ammoBurn){ if(!e.burn) e.burn={ lvl:0, until:0 }; e.burn.lvl=Math.max(e.burn.lvl,1); e.burn.until=Math.max(e.burn.until, now+3); e.burn.k=Math.max(e.burn.k||1,1); }   // Z162 incendiary rounds
           e._big = !b.inf && (b.aoe>0 || b.dmg>=30); e._blast=null; e._hitK=b.dmg/40; { const L=Math.hypot(b.vx,b.vz)||1; e._hx=b.vx/L; e._hz=b.vz/L; }
           if(e.def.inf) bloodSpurt(e.pos.x, e.pos.z, b.vx, b.vz, b.inf ? 0.7 : 1.4);   // Z113 every hit on a man shows   // Z112 a heavy round throws a soldier; small arms just drop him
           if(e.def.inf && !b.inf && LETHAL.tankRoundKills) dmg=Math.max(dmg, e.hp+1);   // Z104 one tank round = one dead soldier
@@ -180,6 +181,7 @@ export function armourArc(e, b){ const D=e.def; if(D.inf || D.air || (!D.armF &&
   const bl=Math.hypot(b.vx,b.vz)||1, c=-(b.vx/bl)*Math.sin(e.facing||0) - (b.vz/bl)*Math.cos(e.facing||0);   // +1 = the shot came at the nose
   const k = c>0.7 ? (D.armF??1) : c<-0.7 ? (D.armR??1) : 1; const n=performance.now();
   if(n-_arcT>1400 && (k>=1.3 || k<=0.55)){ _arcT=n; floatText(k>=1.3 ? 'BẮN ĐUÔI ×'+k.toFixed(1) : 'GIÁP TRƯỚC QUÁ DÀY', k>=1.3?'#ffb84a':'#9aa3ad', new THREE.Vector3(e.pos.x,3.6,e.pos.z), 14); }
+  if(k<1 && S.player && S.player.ammoFront) k=Math.max(k, S.player.ammoFront);   // Z162 armour-piercing rounds
   return k; }
 // Z158 active protection: a radar-cued charge kills the incoming rocket short of the hull
 export function apsKill(b, e){ const a=Math.atan2(b.x-e.pos.x, b.z-e.pos.z), x=e.pos.x+Math.sin(a)*(e.r*1.6), z=e.pos.z+Math.cos(a)*(e.r*1.6);

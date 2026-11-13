@@ -9,5 +9,20 @@
     "providers": {
       "anonymous": true
     }
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.local"
+      ],
+      "predeploy": [
+        "node tools/catalog.mjs"
+      ]
+    }
+  ]
 }

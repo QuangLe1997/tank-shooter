@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -71,7 +71,7 @@ export function togglePause(){
 }
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
-  S.firing=false;
+  S.firing=false; try{ econReportRun({ cleared:false }); }catch(e){}   // Z162 what this run earned is reported
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearParadrops(); clearAllyOrdnance();

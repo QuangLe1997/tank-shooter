@@ -20,7 +20,7 @@ export function progressOf(p){ if(!p) return -1; const c=p.campaign&&p.campaign.
 export async function initCloud(){ if(FB || CLOUDSAVE.state==='connecting') return; if(typeof navigator!=='undefined' && navigator.onLine===false){ set('offline'); addEventListener('online', ()=>initCloud(), { once:true }); return; }
   set('connecting');
   try{ const U=CLOUD_CFG.sdk, [A, AU, FS]=await Promise.all([import(U+'firebase-app.js'), import(U+'firebase-auth.js'), import(U+'firebase-firestore.js')]);
-    const app=A.initializeApp(CLOUD_CFG.app), auth=AU.getAuth(app), db=FS.getFirestore(app); FB={ A, AU, FS, app, auth, db };
+    const app=A.initializeApp(CLOUD_CFG.app), auth=AU.getAuth(app), db=FS.getFirestore(app); FB={ A, AU, FS, app, auth, db, sdkBase:U };
     try{ await AU.setPersistence(auth, AU.indexedDBLocalPersistence); }catch(e){}
     AU.onAuthStateChanged(auth, async u=>{ if(!u){ try{ await AU.signInAnonymously(auth); }catch(e){ set('error', e.code||e.message); } return; }
       CLOUDSAVE.uid=u.uid; CLOUDSAVE.anon=u.isAnonymous; CLOUDSAVE.email=u.email||''; await pullMerge(); });
@@ -60,3 +60,4 @@ export async function linkGoogle(){ if(!FB) return false; const { AU, auth }=FB,
   catch(e){ if(e.code==='auth/credential-already-in-use'){ const cred=AU.GoogleAuthProvider.credentialFromError(e); if(cred){ backupLocal(); await AU.signInWithCredential(auth, cred); return true; } }   // that Google account already has a save → switch to it (onAuthStateChanged pulls it)
     set('error', e.code||e.message); return false; } }
 export async function signOutCloud(){ if(!FB) return; backupLocal(); await FB.AU.signOut(FB.auth); }   // a new anonymous player starts; the local save stays
+export function cloudFB(){ return FB; }   // Z162 the loaded Firebase modules + app (for core/econ.js)

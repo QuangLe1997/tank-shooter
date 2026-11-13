@@ -17,6 +17,15 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
     }
+    // Z162 econ/{uid}: wallet + inventory + its ledger — written ONLY by Cloud Functions (admin SDK bypasses rules); the owner may read.
+    match /econ/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+      match /ledger/{tx} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+    }
     match /{document=**} {
       allow read, write: if false;
     }

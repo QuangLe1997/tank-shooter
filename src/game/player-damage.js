@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { LOOT } from '../../config.js';
-import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
+import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -80,7 +80,7 @@ export function respawnPlayer(now){
 }
 export function gameOver(reason){
   if(S.mode==='gameover') return;
-  S.mode='gameover'; try{ grantCrewXp(false); }catch(e){}   // Z161 the crew still learns from a lost battle (half XP)
+  S.mode='gameover'; try{ grantCrewXp(false); econReportRun({ cleared:false }); }catch(e){}   // Z161 the crew still learns from a lost battle (half XP)
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
     if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — xe bị hạ khi không còn lượt hồi sinh' : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù xe còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
   document.getElementById('go-score').textContent=S.score.toLocaleString();

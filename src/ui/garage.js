@@ -1,6 +1,6 @@
 // ui/garage.js — Z155 GARA XE TĂNG: the tank collection. Every model as a studio photo with its real name, origin, mass, engine and what it
 //   changes in battle (armour, top speed, acceleration, turning, size); buy with coins / diamonds, tap an owned one to take it into battle.
-import { PROFILE, S, SHOW, TANK_MODELS, TANK_ORDER, canAfford, escapeHtml, hide, payCost, refreshStartUI, saveProfile, sfx, shopScene, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
+import { PROFILE, S, SHOW, TANK_MODELS, TANK_ORDER, canAfford, econBuy, escapeHtml, hide, refreshStartUI, saveProfile, sfx, shopScene, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
 
 export function ownedTanks(){ if(!PROFILE.ownedTanks) PROFILE.ownedTanks=['lqt']; if(!PROFILE.ownedTanks.includes('lqt')) PROFILE.ownedTanks.unshift('lqt'); return PROFILE.ownedTanks; }
 export function currentTank(){ const id=PROFILE.tankModel; return TANK_MODELS[id] && ownedTanks().includes(id) ? id : 'lqt'; }
@@ -20,9 +20,11 @@ export function renderGarage(){ const grid=document.getElementById('garGrid'); i
     tapEl(c, ()=>pickTank(id)); grid.appendChild(c); }
   const w=document.getElementById('garWallet'); if(w) w.innerHTML='⦿ <b>'+(PROFILE.coins||0).toLocaleString('vi-VN')+'</b> · ◆ <b>'+(PROFILE.diamonds||0)+'</b>'; }
 export function pickTank(id){ const M=TANK_MODELS[id], own=ownedTanks();
-  if(!own.includes(id)){ if(!payCost(M.price)){ sfx('alarm'); const c=document.querySelectorAll('#garGrid .gcard')[TANK_ORDER.indexOf(id)]; if(c){ c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); } return; }
-    own.push(id); sfx('levelup'); }
-  else sfx('click');
+  if(!own.includes(id)){ if(!canAfford(M.price)){ garShake(id); return; }   // Z162 bought through the server when linked
+    econBuy('tank', id, null, M.price, ()=>{ if(!own.includes(id)) own.push(id); }).then(ok=>{ if(ok){ sfx('levelup'); selectTank(id); } else garShake(id); }); return; }
+  sfx('click'); selectTank(id); }
+function garShake(id){ sfx('alarm'); const c=document.querySelectorAll('#garGrid .gcard')[TANK_ORDER.indexOf(id)]; if(c){ c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); } }
+export function selectTank(id){
   PROFILE.tankModel=id; saveProfile();
   if(SHOW.tank){ shopScene.remove(SHOW.tank); SHOW.tank=null; SHOW.built=''; } if(SHOW.thumbTank){ shopScene.remove(SHOW.thumbTank); SHOW.thumbTank=null; }   // the showroom rolls the new tank out next time
   renderGarage(); refreshStartUI(); }

@@ -522,3 +522,13 @@ export const CLOUD_CFG = {
   pushEvery:20,          // s — at most one cloud write per this many seconds while playing
   localOnly:['perfDpr','perfAO','quality','pad','padmap','padAsk','binds','autoFs','sfxVol','sound','music','voice','ctrl','turretK','tips','introSeen','_rev','_syncedRev','_cloudUid'],
 };
+
+// Z162 SPECIAL AMMO — bought in boxes (one box = one battle stage), one kind loaded per stage from the shop's ĐẠN tab
+export const AMMO_SHOP = [
+  { id:'ap',  vi:'ĐẠN XUYÊN GIÁP', desc:'+15% sát thương · +20% lên tướng · giáp trước tướng không còn chặn nhiều', box:3, price:{ c:900 },  fx:{ dmg:0.15, boss:0.20, front:0.8 } },
+  { id:'he',  vi:'ĐẠN NỔ MẠNH',    desc:'+10% sát thương · vụ nổ đạn rộng hơn 40%',                              box:3, price:{ c:800 },  fx:{ dmg:0.10, splash:0.40 } },
+  { id:'inc', vi:'ĐẠN CHÁY',       desc:'1/4 phát trúng làm xe địch bốc cháy, cháy âm ỉ vài giây',               box:3, price:{ c:1000 }, fx:{ burn:0.25 } },
+  { id:'sup', vi:'HỘP TIẾP ĐẠN',   desc:'băng đạn lớn gấp rưỡi · nạp nhanh hơn 15%',                              box:3, price:{ c:700 },  fx:{ mag:0.5, reload:0.15 } },
+];
+// Z162 what one run may pay out — the server clamps every report to this (minutes are measured by the server, not the client)
+export const PAYOUT_CAP = { coinPerMin:600, coinBucket:6000, coinPerClear:2500, diaPerMin:0.3, diaBucket:20, diaPerClear:6, loopMul:0.6, minClearGap:90, gunGap:120, migrateCoins:300000, migrateDia:1000 };   // token buckets: bursts are fine, the average rate is capped

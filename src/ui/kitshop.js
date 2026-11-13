@@ -1,5 +1,6 @@
 // ui/kitshop.js — Z161 XƯỞNG CẢI TIẾN + KÍP XE screen: upgrade each owned tank's four tracks and its signature module; seat, hire and follow the crew
-import { CREW_RECRUITS, CREW_SEATS, CREW_TRAITS, CREW_XP, KIT_MAX, KIT_SIG, KIT_SIG_NEED, KIT_TRACKS, PROFILE, TANK_MODELS, TANK_ORDER, buyKit, buySig, canAfford, crewMember, crewNeed, crewState, currentTank, escapeHtml, hide, hireCrew, kitCost, kitSigReady, kitState, ownedTanks, renderGarage, seatCrew, sfx, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
+import { AMMO_SHOP } from '../../config.js';
+import { CREW_RECRUITS, CREW_SEATS, CREW_TRAITS, CREW_XP, KIT_MAX, KIT_SIG, KIT_SIG_NEED, KIT_TRACKS, PROFILE, TANK_MODELS, TANK_ORDER, buyAmmo, buyKit, buySig, canAfford, crewMember, crewNeed, crewState, currentTank, escapeHtml, hide, hireCrew, kitCost, kitSigReady, kitState, ownedTanks, pickAmmo, renderGarage, seatCrew, sfx, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
 
 export const KITUI = { tab:'ws', tank:null, from:'garage' };
 const money = c => !c ? '' : c.d ? '◆ '+c.d : '⦿ '+(c.c||0).toLocaleString('vi-VN');
@@ -12,7 +13,8 @@ function shake(e){ if(!e) return; e.classList.remove('shake'); void e.offsetWidt
 
 export function renderKit(){ const body=document.getElementById('kitBody'); if(!body) return; body.replaceChildren(); wallet();
   document.querySelectorAll('#kitshop .kit-tab').forEach(t=>t.classList.toggle('on', t.dataset.kt===KITUI.tab));
-  if(KITUI.tab==='ws') renderWorkshop(body); else renderCrew(body); }
+  if(KITUI.tab==='ws') renderWorkshop(body); else if(KITUI.tab==='ammo') renderAmmo(body); else renderCrew(body); }
+addEventListener('econ', ()=>{ const o=document.getElementById('kitshop'); if(o && !o.classList.contains('hidden')) renderKit(); });   // Z162 server state arrived
 
 // ---------------- workshop tab ----------------
 function renderWorkshop(body){ const own=ownedTanks(); if(!KITUI.tank || !own.includes(KITUI.tank)) KITUI.tank=currentTank(); const id=KITUI.tank, M=TANK_MODELS[id], k=kitState(id);
@@ -26,15 +28,25 @@ function renderWorkshop(body){ const own=ownedTanks(); if(!KITUI.tank || !own.in
   for(const t of KIT_TRACKS){ const L=k[t.key], cost=kitCost(id, t.key), row=el('div','kit-row');
     row.innerHTML='<div class="kr-nm">'+t.vi+'<small>'+t.per+' / cấp</small></div><div class="kr-pips">'+Array.from({length:KIT_MAX},(_,i)=>'<i class="'+(i<L?'on':'')+'"></i>').join('')+'</div>';
     const b=el('div','btn btn-mini kr-buy'+(cost?(canAfford(cost)?'':' poor'):' max'), cost ? '<span>NÂNG '+money(cost)+'</span>' : '<span>TỐI ĐA</span>');
-    if(cost) tapEl(b, ()=>{ if(buyKit(id, t.key)) renderKit(); else shake(row); });
+    if(cost) tapEl(b, ()=>{ buyKit(id, t.key).then(ok=>{ if(ok) renderKit(); else shake(row); }); });
     row.appendChild(b); right.appendChild(row); }
   const S0=KIT_SIG[id];
   if(S0){ const ready=kitSigReady(id), sig=el('div','kit-sig'+(k.sig?' own':ready?' ready':' lock'));
     sig.innerHTML='<div class="ks-tag">MODULE ĐẶC TRƯNG</div><div class="ks-nm">'+escapeHtml(S0.vi)+'</div><div class="ks-ds">'+escapeHtml(S0.desc)+'</div>';
     const b=el('div','btn btn-mini ks-buy'+(k.sig?' max':(ready&&canAfford({d:S0.d})?'':' poor')), k.sig ? '<span>✓ ĐÃ LẮP</span>' : ready ? '<span>LẮP ◆ '+S0.d+'</span>' : '<span>CẦN MỌI HẠNG MỤC CẤP '+KIT_SIG_NEED+'</span>');
-    if(!k.sig) tapEl(b, ()=>{ if(buySig(id)) renderKit(); else shake(sig); });
+    if(!k.sig) tapEl(b, ()=>{ buySig(id).then(ok=>{ if(ok) renderKit(); else shake(sig); }); });
     sig.appendChild(b); right.appendChild(sig); }
   wrap.append(left, right); body.appendChild(wrap); }
+
+// ---------------- Z162 special ammo tab ----------------
+function renderAmmo(body){ body.appendChild(el('div','kit-h','ĐẠN ĐẶC CHỦNG — mỗi hộp dùng cho '+AMMO_SHOP[0].box+' màn; chọn một loại để MANG THEO, mỗi màn tự nạp một hộp'));
+  const grid=el('div','kit-recs');
+  for(const A of AMMO_SHOP){ const n=(PROFILE.ammo&&PROFILE.ammo[A.id])|0, on=PROFILE.ammoPick===A.id, card=el('div','kit-rec'+(on?' on':''));
+    card.innerHTML='<div class="kse-seat">'+(on?'✓ ĐANG MANG THEO':'ĐẠN')+' · CÒN '+n+' MÀN</div><div class="kse-nm">'+A.vi+'</div><div class="kse-trait">'+A.desc+'</div>';
+    const buy=el('div','btn btn-mini kr-buy'+(canAfford(A.price)?'':' poor'),'<span>MUA +'+A.box+' · '+money(A.price)+'</span>'); tapEl(buy, ()=>{ buyAmmo(A.id).then(ok=>{ if(ok) renderKit(); else shake(card); }); });
+    const pick=el('div','btn btn-mini kse-swap','<span>'+(on?'BỎ RA':'MANG THEO')+'</span>'); tapEl(pick, ()=>{ pickAmmo(A.id); renderKit(); });
+    card.append(buy, pick); grid.appendChild(card); }
+  body.appendChild(grid); }
 
 // ---------------- crew tab ----------------
 function renderCrew(body){ const c=crewState();
@@ -54,7 +66,7 @@ function renderCrew(body){ const c=crewState();
   const rec=el('div','kit-recs'); let any=false;
   for(const R of CREW_RECRUITS){ if(!R.price || c.roster.some(m=>m.id===R.id)) continue; any=true; const seat=CREW_SEATS.find(s=>s.key===R.seat), T=R.trait&&CREW_TRAITS[R.trait], card=el('div','kit-rec');
     card.innerHTML='<div class="kse-seat">'+seat.vi+' · CẤP '+R.lvl+'</div><div class="kse-nm">'+escapeHtml(R.name)+'</div>'+(T?'<div class="kse-trait">◆ '+T.vi+' — '+T.desc+'</div>':'');
-    const b=el('div','btn btn-mini kr-buy'+(canAfford(R.price)?'':' poor'),'<span>TUYỂN '+money(R.price)+'</span>'); tapEl(b, ()=>{ if(hireCrew(R.id)) renderKit(); else shake(card); }); card.appendChild(b); rec.appendChild(card); }
+    const b=el('div','btn btn-mini kr-buy'+(canAfford(R.price)?'':' poor'),'<span>TUYỂN '+money(R.price)+'</span>'); tapEl(b, ()=>{ hireCrew(R.id).then(ok=>{ if(ok) renderKit(); else shake(card); }); }); card.appendChild(b); rec.appendChild(card); }
   if(!any) rec.appendChild(el('div','kit-sum','Đã tuyển đủ mọi người.'));
   body.appendChild(rec); }
 

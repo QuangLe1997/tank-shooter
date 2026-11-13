@@ -11,6 +11,8 @@ export const KIT_MAX = 3;            // levels per track
 export const KIT_SIG_NEED = 2;       // every track at ≥ this level unlocks the signature module
 // price of a level: L1/L2 in coins scaled to the tank's value, L3 in diamonds
 export const KIT_COST = { base:320, perCoin:0.22, perDia:40, l2:2.4, dia0:6, diaPer:420 };
+export function kitPrice(tankPrice, L){ if(L>=KIT_MAX) return null; const p=tankPrice, val = !p ? 0 : (p.c||0) + (p.d||0)*KIT_COST.perDia*10, B=Math.round((KIT_COST.base + val*KIT_COST.perCoin)/50)*50;   // Z162 one formula for the game and the server
+  return L===0 ? { c:B } : L===1 ? { c:Math.round(B*KIT_COST.l2/50)*50 } : { d:KIT_COST.dia0 + Math.floor(B/KIT_COST.diaPer) }; }
 
 // ---- SIGNATURE MODULES: what makes each machine itself (bought with diamonds once every track is at level 2) ----
 //   fx keys are multipliers/additions (see tank/kit.js applyTankKit); flags: era (reactive tiles at every stage start), shtora (chance a guided

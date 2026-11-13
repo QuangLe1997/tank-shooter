@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 export let boss=null;
@@ -37,7 +37,7 @@ export function bossStatus(){ const el=document.getElementById('boss-st'); if(!e
   const ph=boss.def.phases[boss.phase]||''; const html='<span class="pp">'+pips+'</span><span class="pn">'+ph+'</span>'+st;
   if(el._h!==html){ el._h=html; el.innerHTML=html; } }
 export function bossArcMul(hx, hz){ const dx=hx-boss.pos.x, dz=hz-boss.pos.z, L=Math.hypot(dx,dz)||1, dot=(dx*Math.sin(boss.facing)+dz*Math.cos(boss.facing))/L;
-  return dot < -0.35 ? (boss.def.rear||BF.arc.rear) : dot > 0.5 ? (boss.def.front||BF.arc.front) : 1; }
+  return dot < -0.35 ? (boss.def.rear||BF.arc.rear) : dot > 0.5 ? Math.max(boss.def.front||BF.arc.front, (S.player&&S.player.ammoFront)||0) : 1; }   // Z162 AP rounds bite into the front
 export const _bpw=new THREE.Vector3();
 export function partWorld(pt){ pt.mk.getWorldPosition(_bpw); return _bpw; }
 export function damageBoss(dmg, hx, hz){
@@ -300,7 +300,7 @@ export function killBoss(now){
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
-  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1); grantCrewXp(true);   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
+  S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1); grantCrewXp(true); econReportRun({ cleared:true });   // Z162 the server pays the stage   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
   celebrate('victory', 0, 0);                                                         // Z140 fireworks, cheering troops — then the next screen
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 5600); }
   else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 5400); }

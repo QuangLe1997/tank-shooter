@@ -1,7 +1,7 @@
 // actors/damage.js — HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, LOOT } from '../../config.js';
-import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, maybeAbandon, popSmoke, radio, spawnEnemy, startDying, tankExplode, updateHUD } from '../hub.js';
+import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, econOn, econPend, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, maybeAbandon, popSmoke, radio, spawnEnemy, startDying, tankExplode, updateHUD } from '../hub.js';
 
 // ---- HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away ----
 export function damageEnemy(e, dmg){
@@ -20,7 +20,7 @@ export function damageEnemy(e, dmg){
   if(e.hp<=0) killEnemy(e); else maybeAbandon(e);   // Z116 badly hit → the crew may bail out and leave it
 }
 export function killEnemy(e){
-  const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); S.kitKills=(S.kitKills|0)+1;   // Z161 crew XP counts kills
+  const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); S.kitKills=(S.kitKills|0)+1; if(econOn()) econPend().kills++;   // Z161 crew XP counts kills · Z162 and the run report
   freeEnemyBar(e.bar); e.bar=null;
   if(e.def.chief){ S.cmdDown={ x:e.pos.x, z:e.pos.z, until:performance.now()/1000+8 }; radio('SCH: Xe chỉ huy địch đã bị hạ — đội hình chúng đang rối loạn, dồn lên!'); }   // Z158   // Z121 first thing: whatever happens below, a dead unit never keeps its HP bar
   if(e.def.bomber) tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, e.mesh.scale.x, e._fx||'fire');   // the kamikaze just goes up
