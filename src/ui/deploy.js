@@ -1,7 +1,7 @@
 // ui/deploy.js — Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, how many ride the tank,
 //   specialists (MG / mortar / sapper), the tank's guns & ammo and a map of the field. Confirm → men spawn at their posts.
 import { DEPLOY, TROOPS } from '../../config.js';
-import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, RIDGES, S, SPELLS, clampFieldXZ, clearFireteam, clearRiders, core, crewTarget, deployRiders, escapeHtml, fieldOutline, gunLevel, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip } from '../hub.js';
+import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, RIDGES, S, SPELLS, clampFieldXZ, clearFireteam, clearRiders, core, crewTarget, deployRiders, escapeHtml, fieldOutline, gunDmgMul, gunLevel, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip } from '../hub.js';
 
 export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
@@ -50,8 +50,8 @@ function render(){ const D=_dp; if(!D) return; const free=D.total-assigned(), on
     row.append(i, n, stepper(()=>D.roles[k], v=>{ D.roles[k]=v; }, ()=>Math.min(roleMax(k), D.roles[k]+Math.max(0, onFootMax()-(D.roles.mg+D.roles.mortar+D.roles.sapper))))); R.appendChild(row); }
   const G=document.getElementById('dp-guns'); G.replaceChildren(); const p=S.player;
   if(p) for(const inst of p.guns){ const g=GUNS[inst.id]; if(!g) continue; const r=document.createElement('div'); r.className='dp-gun';
-    r.innerHTML='<b>'+escapeHtml(g.name)+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'')+'</b><span>'+Math.round(g.dmg)+' dmg · băng '+magCap(g)+' · nạp '+g.reload.toFixed(1)+'s</span>'; G.appendChild(r); }
-  if(p){ const sp=SPELLS[S.spell]; if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>KỸ NĂNG · '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+'s</span>'; G.appendChild(r); } }
+    r.innerHTML=gunPicHTML(inst.id,'gp-dp')+'<b>'+escapeHtml(g.name)+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'')+'</b><span>'+Math.round(gunShotDmg(g)*gunDmgMul(inst.id))+' sát thương · băng '+magCap(g)+' · nạp '+g.reload.toFixed(1)+' giây</span>'; G.appendChild(r); }
+  if(p){ const sp=SPELLS[S.spell]; if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>KỸ NĂNG · '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+' giây</span>'; G.appendChild(r); } }
   drawDeployMap(); }
 export function drawDeployMap(){ const D=_dp, c=document.getElementById('dp-map'); if(!c||!D) return; const x=c.getContext('2d'), W=c.width, s=(W/2-8)/ARENA, X=v=>W/2+v*s, Y=v=>W/2+v*s;
   x.clearRect(0,0,W,W); const O=fieldOutline(); x.save(); x.beginPath(); O.forEach(([px,pz],i)=> i ? x.lineTo(X(px),Y(pz)) : x.moveTo(X(px),Y(pz))); x.closePath();

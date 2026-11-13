@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
-<title>STEEL SIEGE — Tank Shooter</title>
+<title>STEEL SIEGE — Thiết Giáp Chiến</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -96,21 +96,21 @@
     <div class="ability ready" id="ab-spell"><span class="ic" data-icon="spark"></span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
     <span class="ab-nm" id="ab-spell-nm">Q ‹ KỸ NĂNG ›</span>
   </div>
-  <div id="combo">COMBO ×2</div>
+  <div id="combo">LIÊN HOÀN ×2</div>
   <div id="fsBtn" class="chip"><span class="ic" data-icon="expand"></span></div>
   <div id="muteBtn" class="chip"><span class="ic" data-icon="sound"></span></div>
   <div id="musBtn" class="chip" title="Nhạc nền (M)"><span class="ic" data-icon="music"></span></div>
   <div id="gunlist"></div>
   <div id="buffbar"></div>
   <div id="lootToast"><div class="lt-ic"></div><div class="lt-bd"><div class="lt-tp"><span class="lt-nm"></span><span class="lt-tr"></span></div><div class="lt-ds"></div><div class="lt-nt"></div></div></div>
-  <div id="weaponchip" class="chip">RIFLE 24/24</div>
+  <div id="weaponchip" class="chip"></div>
   <div id="bossbar"><div class="bn" id="boss-name">TƯỚNG</div><div class="bar core"><i id="boss-hp"></i></div><div class="bst" id="boss-st"></div></div>
   <canvas id="radar" width="144" height="144"></canvas>
   <div id="corewarn"><span class="ic" data-icon="alert"></span><span id="corewarnT">LÕI ĐANG BỊ TẤN CÔNG</span></div>
   <div id="coreArrow"><i></i><b id="coreArrowT"></b></div>
   <!-- camera controls (zoom + rotate) — in #hud so they show on BOTH desktop & mobile (not gated by the mobile #touch layer) -->
   <div id="camCtl">
-    <div class="camBtn" id="camAutoBtn" title="Camera tự động (C)"><span id="camAutoLbl">AUTO</span></div>
+    <div class="camBtn" id="camAutoBtn" title="Camera tự động (C)"><span id="camAutoLbl">TỰ ĐỘNG</span></div>
     <div class="camBtn" id="zoomBtn"><span class="ic" data-icon="expand"></span><span id="zoomLbl">1.5×</span></div>
     <div class="camBtn" id="rotBtn"><span class="ic" data-icon="rotate"></span></div>
   </div>
@@ -128,8 +128,8 @@
   <div id="mbtns">
     <div class="mbtn" id="mWeapon"><span class="ic" data-icon="rifle"></span><span class="mbtag">ĐỔI SÚNG</span></div>
     <div class="mbtn" id="mSpell"><span class="ic" data-icon="spark"></span><div class="cool" id="cool-mspell"></div><span class="mbtag">KỸ NĂNG</span></div>
-    <div class="msp-next" id="mSpellNext" aria-label="Next skill">›</div>
-    <div class="m-crew" id="mCrew" aria-label="Crew dismount"><span class="mc-ar">⇩</span><span class="mc-tx">LÍNH</span></div>
+    <div class="msp-next" id="mSpellNext" aria-label="Kỹ năng tiếp theo">›</div>
+    <div class="m-crew" id="mCrew" aria-label="Lính xuống xe"><span class="mc-ar">⇩</span><span class="mc-tx">LÍNH</span></div>
   </div>
   <div id="mCmd"><div class="mcm" id="mMuster"><b>⤓</b><span>TẬP KẾT</span></div><div class="mcm" id="mAssault"><b>⚔</b><span>XUNG PHONG</span></div><div class="mcm" id="mPara"><b>☂</b><span>LÍNH DÙ</span><i id="mParaCd"></i></div></div>
   <div id="mFire"><span class="ic" data-icon="crosshair"></span></div>
@@ -377,7 +377,7 @@
 <!-- VICTORY -->
 <div class="overlay hidden" id="victory">
   <div class="title" style="font-size:clamp(34px,8vw,68px)">CHIẾN THẮNG</div>
-  <div class="subtitle">Bạn đã hạ gục OVERLORD</div>
+  <div class="subtitle">Bạn đã hạ gục BẠO CHÚA</div>
   <div class="panel">
     <div class="go-stats">
       <div class="go-stat"><div class="l">ĐIỂM</div><div class="v" id="vic-score" style="color:var(--amber)">0</div></div>
@@ -401,10 +401,10 @@
 <!-- stage transition wipe (suspenseful reveal of the next stage) -->
 <div id="stagewipe"><div class="sw-bar sw-top"></div><div class="sw-bar sw-bot"></div><div class="sw-scan"></div><div class="sw-inner">
   <div class="sw-clear" id="sw-clear">KHU VỰC ĐÃ CHIẾM</div>
-  <div class="sw-kick"><span id="sw-stage">STAGE 2</span><i></i><span id="sw-biome">RUINS</span></div>
-  <div class="sw-op" id="sw-tag">OPERATION</div>
+  <div class="sw-kick"><span id="sw-stage">MÀN 2</span><i></i><span id="sw-biome">PHẾ TÍCH</span></div>
+  <div class="sw-op" id="sw-tag">CHIẾN DỊCH</div>
   <div class="sw-line"></div>
-  <div class="sw-obj"><span class="ob-dot"></span><span id="sw-objtx">DESTROY THE FUEL DEPOT</span></div>
+  <div class="sw-obj"><span class="ob-dot"></span><span id="sw-objtx">PHÁ KHO NHIÊN LIỆU</span></div>
 </div></div>
 
 <script type="importmap">

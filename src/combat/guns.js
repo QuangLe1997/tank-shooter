@@ -11,10 +11,10 @@ export function computeEnv(){ const b=BIOME.name, t=S.tod; ENVMOD={ night:t==='n
   if(ENV.urban.biomes.includes(b)) ENVMOD.he*=ENV.urban.he;
   if(ENV.open.biomes.includes(b) && t!=='night') ENVMOD.longRange=ENV.open.longRange; }
 export function conditionsText(){ const c=[];
-  if(ENVMOD.night) c.push('NIGHT — reach −15% (railgun & missile unaffected), enemy aim worse');
-  if(ENVMOD.fire>1) c.push('NẮNG NÓNG — lửa +25%, đóng băng −30%'); if(ENVMOD.freeze>1) c.push('GIÁ RÉT — đóng băng +50%, cryo +20%, lửa −25%');
+  if(ENVMOD.night) c.push('BAN ĐÊM — tầm bắn −15% (pháo điện từ & tên lửa khoá không ảnh hưởng), địch ngắm kém hơn');
+  if(ENVMOD.fire>1) c.push('NẮNG NÓNG — lửa +25%, đóng băng −30%'); if(ENVMOD.freeze>1) c.push('GIÁ RÉT — đóng băng +50%, súng băng +20%, lửa −25%');
   if(S.weather && S.weather!=='clear'){ const W=weatherDef(S.weather); c.push(W.vi+' — tầm bắn −'+Math.round((1-W.range)*100)+'%'); }
-  if(ENVMOD.he>1) c.push('ĐỔ NÁT ĐÔ THỊ — đạn nổ +20%'); if(ENVMOD.longRange>1) c.push('ĐỊA HÌNH TRỐNG — tầm cannon/railgun/HESH +10%');
+  if(ENVMOD.he>1) c.push('ĐỔ NÁT ĐÔ THỊ — đạn nổ +20%'); if(ENVMOD.longRange>1) c.push('ĐỊA HÌNH TRỐNG — tầm pháo 120 / pháo điện từ / pháo HESH +10%');
   return c.join('  ·  '); }
 export function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='CRYO'?ENVMOD.cryo : type==='HE'?ENVMOD.he : 1; }
 export function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (m[armor]||1) : 1; }

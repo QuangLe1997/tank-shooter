@@ -43,7 +43,7 @@ const $=id=>document.getElementById(id), nm=s=>(s||'').replace(/\(.*?\)/g,'').tr
 function paint(gp){ const st=STEPS[WIZ.i], t=$('padWizStep'); if(!t) return; WIZ.tgt = st ? st[0] : null;
   t.textContent = st ? (WIZ.rel ? 'Thả ra…' : st[1]) : 'Xong!'; const n=$('padWizN'); if(n) n.textContent = Math.min(WIZ.i+1, STEPS.length)+' / '+STEPS.length;
   const bar=$('padWizBar'); if(bar) bar.style.width = (100*WIZ.i/STEPS.length)+'%';
-  const id=$('padWizId'); if(id) id.textContent = gp ? nm(gp.id).slice(0,40)+' · '+gp.buttons.length+' nút · '+gp.axes.length+' trục'+(gp.mapping?' · '+gp.mapping:' · bố cục lạ') : 'Chưa thấy tay cầm — bấm một nút bất kỳ trên tay cầm (cần có focus cửa sổ game)'; }
+  const id=$('padWizId'); if(id) id.textContent = gp ? nm(gp.id).slice(0,40)+' · '+gp.buttons.length+' nút · '+gp.axes.length+' trục'+(gp.mapping?' · '+gp.mapping:' · bố cục lạ') : 'Chưa thấy tay cầm — bấm một nút bất kỳ trên tay cầm (cửa sổ trò chơi phải đang được chọn)'; }
 function live(gp, base){ const el=$('padWizLive'); if(!el) return; if(!gp){ el.textContent=''; return; } const L=[];
   for(let i=0;i<gp.buttons.length;i++) if(bv(gp,i)>0.5) L.push('nút '+i);
   for(let i=0;i<gp.axes.length;i++){ const d=gp.axes[i]-((base&&base.a[i])||0); if(Math.abs(d)>0.4) L.push('trục '+i+' '+(gp.axes[i]>=0?'+':'')+gp.axes[i].toFixed(2)); }

@@ -19,6 +19,6 @@ export function addGunXp(id){
   if(!PROFILE.gunXp) PROFILE.gunXp={};
   const before=gunLevel(id); PROFILE.gunXp[id]=(PROFILE.gunXp[id]||0)+1; const after=gunLevel(id); saveProfile();
   const p=S.player, g=GUNS[id]; if(!p) return;
-  if(after>before){ floatText(g.name+'  ⮕  LV '+after+'!', '#ffd24a', p.pos, 26); sfx('levelup'); ringPulse(p.pos, 0xffd24a, 3); }
-  else { const n=gunXpToNext(id); floatText(n? (g.name+'  '+n.have+'/'+n.need+' ▸ LV'+(gunLevel(id)+1)) : (g.name+'  ★ MAX'), '#aef0a0', p.pos, 18); }
+  if(after>before){ floatText(g.name+'  ⮕  CẤP '+after+'!', '#ffd24a', p.pos, 26); sfx('levelup'); ringPulse(p.pos, 0xffd24a, 3); }
+  else { const n=gunXpToNext(id); floatText(n? (g.name+'  '+n.have+'/'+n.need+' ▸ CẤP '+(gunLevel(id)+1)) : (g.name+'  ★ TỐI ĐA'), '#aef0a0', p.pos, 18); }
 }

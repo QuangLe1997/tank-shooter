@@ -178,7 +178,7 @@
     .guide,body.touch .guide{max-height:48vh;gap:6px;margin-top:6px;} .guide-row{padding:7px 11px;gap:10px;}
     .guide-row .g-ic,.guide-row .g-ic svg{width:22px;height:22px;}
     .guide-row .g-tx b{font-size:11px;} .guide-row .g-tx span{font-size:11px;line-height:1.34;}
-    #ldgrid,body.touch #ldgrid{max-height:44vh;gap:6px;} .ldcard,body.touch .ldcard{width:86px;min-width:0;padding:8px 6px 7px;}
+    #ldgrid,body.touch #ldgrid{max-height:44vh;gap:6px;} .ldcard,body.touch .ldcard{width:104px;min-width:0;padding:8px 6px 7px;} .gunpic.gp-ld{height:40px;margin:2px 0 4px;}
     .ldcard .gi,body.touch .ldcard .gi{width:24px;height:24px;} .ldcard .nm{font-size:10.5px;} .ldcard .tr{font-size:8px;}
     .tcard,body.touch .tcard{width:128px;} .tcard canvas,body.touch .tcard canvas{height:80px;}
     .terrain-gallery{gap:10px 10px;padding:8px 4px 10px;}

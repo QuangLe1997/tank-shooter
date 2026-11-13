@@ -1,7 +1,7 @@
 // game/boot-gate.js — Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up,
 // and the first user gesture (audio + fullscreen).
 import * as THREE from 'three';
-import { ENEMY_DEFS, FS_SUPPORTED, GUNS, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, buildTransport, camTarget, camera, chute, emberTex, enemyPool, getEnemyMesh, makeAllyTankMesh, makeCamoNet, makeCoverMesh, makeGunBarrel, makeMortarShell, makeRocketMesh, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat } from '../hub.js';
+import { ENEMY_DEFS, FS_SUPPORTED, GUNS, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, buildTransport, camTarget, camera, chute, emberTex, enemyPool, getEnemyMesh, makeAllyTankMesh, makeCamoNet, makeCoverMesh, makeGunBarrel, makeMortarShell, makeRocketMesh, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, warmGunArt, wireMat } from '../hub.js';
 
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
@@ -52,12 +52,12 @@ export async function warmUp(onStep){
 export function idle(fn){ (window.requestIdleCallback||((f)=>setTimeout(f,60)))(fn, {timeout:1500}); }
 export async function bootReady(){
   performance.mark('boot:ready');
-  const b=document.getElementById('boot'); if(!b||b._gone){ warmUp(); return; }
+  const b=document.getElementById('boot'); if(!b||b._gone){ warmUp(); idle(()=>warmGunArt()); return; }
   setBootProgress(55, 1);                                                          // modules + world are up
   await warmUp(f=>setBootProgress(55+f*44, f>=1?2:1));                            // shaders + pools, sliced across frames
   setBootProgress(100, 2); await _frame();
   const msg=document.getElementById('bootMsg'); if(msg) msg.textContent='SẴN SÀNG CHIẾN ĐẤU';
-  b.classList.add('ready');
+  b.classList.add('ready'); idle(()=>warmGunArt());   // Z150 gun photos for the shop / arsenal / HUD, rendered in idle slices
   const go=e=>{ if(e&&e.cancelable && e.type!=='keydown') e.preventDefault();
     b.removeEventListener('touchstart',go); b.removeEventListener('click',go); removeEventListener('keydown',go);
     try{ audio(); sfx('levelup'); }catch(_){}                                     // the gesture browsers demand before audio …

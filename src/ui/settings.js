@@ -32,7 +32,7 @@ tapBtn('settingsBtn', openSettings); tapBtn('settingsDone', closeSettings);
 export function buildPadSettings(){ const Pv=document.getElementById('setPadView'); if(Pv) Pv.innerHTML=padDiagram();
   const C=padCfg(), set=(k,v)=>{ C[k]=v; saveProfile(); buildSettings(); sfx('click'); };
   const P=document.getElementById('setPad'); if(P){ P.innerHTML=''; const st=document.createElement('div'); st.className='seg-note'; const nm=x=>(x||'Tay cầm').replace(/\(.*?\)/g,'').trim().slice(0,42), g=PAD.gp, odd=!!g && g.mapping!=='standard', learned=!!padMapFor(g);
-    st.textContent = PAD.active ? ('✓ '+nm(PAD.id)+(odd ? (learned ? ' · đã dò nút' : ' · bố cục lạ — bấm DÒ NÚT') : '')) : PAD.seen ? ('Thấy '+nm(PAD.seen.id)+' — bấm một nút bất kỳ để kích hoạt') : 'Chưa thấy tay cầm — cắm dây / bật 2.4G hoặc Bluetooth rồi bấm một nút bất kỳ (Safari không nhận tay cầm lạ: dùng Chrome hoặc app Mac)'; P.appendChild(st);
+    st.textContent = PAD.active ? ('✓ '+nm(PAD.id)+(odd ? (learned ? ' · đã dò nút' : ' · bố cục lạ — bấm DÒ NÚT') : '')) : PAD.seen ? ('Thấy '+nm(PAD.seen.id)+' — bấm một nút bất kỳ để kích hoạt') : 'Chưa thấy tay cầm — cắm dây / bật 2.4G hoặc Bluetooth rồi bấm một nút bất kỳ (Safari không nhận tay cầm lạ: dùng Chrome hoặc ứng dụng Mac)'; P.appendChild(st);
     P.appendChild(_segChip('THỬ RUNG', false, ()=>{ padTest(); sfx('click'); }));
     P.appendChild(_segChip('DÒ NÚT', false, ()=>{ openPadWizard(PAD.gp); })); if(learned) P.appendChild(_segChip('XOÁ DÒ', false, ()=>{ resetPadMap(PAD.gp); sfx('click'); })); }
   const V=document.getElementById('setVib'); if(V){ V.innerHTML=''; V.appendChild(_segChip('TẮT', !C.vib, ()=>set('vib',false)));

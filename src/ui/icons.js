@@ -54,6 +54,11 @@ export const GLYPH={
   mine:'<ellipse cx="12" cy="14" rx="8" ry="3.4"/><path d="M4 14v1.6c0 1.9 3.6 3.4 8 3.4s8-1.5 8-3.4V14"/><circle cx="12" cy="12.2" r="1.2"/>',
   agl:'<rect x="3" y="9" width="10" height="5" rx="1"/><path d="M13 10.2h7v2.6h-7"/><circle cx="7.5" cy="17" r="2.6"/><path d="M6 9V7h4v2"/>',
   thermo:'<rect x="3" y="8" width="13" height="8" rx="1.2"/><circle cx="7" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><path d="M16 10l5-2v8l-5-2"/>',
+  cannon:'<rect x="2.5" y="10" width="7" height="5" rx="1.2"/><path d="M9.5 11.6h9v1.8h-9"/><rect x="18.4" y="10.7" width="3.1" height="3.6" rx=".6"/><path d="M3.5 17.6h5.5"/>',   // Z150 distinct glyph per gun
+  hesh:'<path d="M8 4.5h8M9 4.5v2.2c0 .9.4 1.7 1 2.3h4c.6-.6 1-1.4 1-2.3V4.5"/><rect x="9.2" y="9" width="5.6" height="10.6" rx="1"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/>',
+  mortar:'<path d="M6.2 17.6 15.2 6.4M8.6 19.4l9-11.2M14.6 5.5l3.6 2.9"/><path d="M3.5 20.5h9.5M11.2 13.4l3 7"/>',
+  howitzer:'<path d="M7.4 13.6 19 6.4l1.1 1.8L8.6 15.4"/><circle cx="8.2" cy="17.4" r="3"/><path d="M10.9 16.4l8.6 3.6M3 20.6h2.6"/>',
+  flame:'<path d="M2.5 10.8h5.6v3.4H2.5zM8.1 11.6h2.4v1.8H8.1"/><path d="M10.5 12.5c2.6-.6 3.8-2.6 3.5-5 2.4 1.4 3.7 3.3 3.5 5.4 1.3-.5 2-1.5 2.1-2.8 1.3 1.6 1.7 3.6.9 5.5-1 2.3-3.7 3.6-6.3 3.1-1.8-.3-3.2-1.4-3.7-3"/>',
   rocket:'<path d="M12 2.5c2.3 1.7 3.4 4.6 3.4 8l-1 5h-4.8l-1-5c0-3.4 1.1-6.3 3.4-8Z"/><path d="M9.6 13.5 6.6 16.5l2.2.2M14.4 13.5l3 3-2.2.2"/><path d="M10.6 18.5h2.8l-1.4 3Z"/><circle cx="12" cy="8.5" r="1"/>',
 };
 export function svgMarkup(name, sw){

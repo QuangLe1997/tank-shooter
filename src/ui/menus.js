@@ -22,7 +22,7 @@ export function refreshStartUI(){
 // ---- nickname (first launch / editable) ----
 export function openNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.value=PROFILE.nickname||''; hide('start'); show('nick'); setTimeout(()=>{ try{ inp&&inp.focus(); }catch(e){} }, 60); }
 export function saveNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.blur();   // Z103: tapBtn's touchstart preventDefault keeps focus in the field → body.typing stuck → HUD + touch controls hidden in the match
-  let v=((inp&&inp.value)||'').trim().slice(0,16) || 'COMMANDER';
+  let v=((inp&&inp.value)||'').trim().slice(0,16) || 'CHỈ HUY';
   PROFILE.nickname=v; saveProfile(); hide('nick'); if(!PROFILE.onboarded){ openGuide(); } else if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
 tapBtn('nickSave', saveNick);
 { const inp=document.getElementById('nickInput'); if(inp){ inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); saveNick(); } });

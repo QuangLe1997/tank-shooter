@@ -71,15 +71,15 @@ export const BALANCE = {
 // damage type × armour class (L = light: scout/bomber/gunner/infantry · M = medium: grunt/mortar/sniper/carrier · H = heavy: shield/heavy/boss · A = aircraft)
 // `struct` = vs cover/towers (HESH is the dedicated bunker-buster; fire torches wooden towers but not sandbags/concrete).
 export const DMG_TYPE = {
-  KIN:  { L:1.15, M:1.00, H:0.55, A:1.10, struct:0.6, label:'KINETIC' },      // autocannons / MGs / rotary — shreds light armour, bounces off heavy
-  AP:   { L:0.85, M:1.10, H:1.45, A:0.70, struct:1.2, label:'ARMOR-PIERCING' },// sabot / rail slug — built to kill tanks; over-penetrates light targets
-  HE:   { L:1.20, M:1.00, H:0.85, A:1.00, struct:1.5, label:'HIGH-EXPLOSIVE' },// blast + splinters — crowds, light vehicles, structures
-  FRAG: { L:1.35, M:0.95, H:0.55, A:1.10, struct:0.7, label:'FRAGMENTATION' }, // canister / pellets — brutal close on soft targets
-  FIRE: { L:1.30, M:1.00, H:0.75, A:0.40, struct:0.3, tower:1.6, label:'INCENDIARY' },
-  CRYO: { L:1.00, M:1.00, H:0.85, A:0.90, struct:0.5, label:'CRYOGENIC' },
-  ELEC: { L:1.00, M:1.10, H:1.00, A:1.25, struct:0.4, label:'ELECTRIC' },
-  HESH: { L:1.00, M:1.25, H:1.05, A:0.60, struct:3.0, label:'HESH' },         // squash-head: spalls medium armour, levels cover & towers
-  TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
+  KIN:  { L:1.15, M:1.00, H:0.55, A:1.10, struct:0.6, label:'KINETIC', vi:'ĐỘNG NĂNG' },      // autocannons / MGs / rotary — shreds light armour, bounces off heavy
+  AP:   { L:0.85, M:1.10, H:1.45, A:0.70, struct:1.2, label:'ARMOR-PIERCING', vi:'XUYÊN GIÁP' },// sabot / rail slug — built to kill tanks; over-penetrates light targets
+  HE:   { L:1.20, M:1.00, H:0.85, A:1.00, struct:1.5, label:'HIGH-EXPLOSIVE', vi:'NỔ MẠNH' },// blast + splinters — crowds, light vehicles, structures
+  FRAG: { L:1.35, M:0.95, H:0.55, A:1.10, struct:0.7, label:'FRAGMENTATION', vi:'MẢNH' }, // canister / pellets — brutal close on soft targets
+  FIRE: { L:1.30, M:1.00, H:0.75, A:0.40, struct:0.3, tower:1.6, label:'INCENDIARY', vi:'CHÁY' },
+  CRYO: { L:1.00, M:1.00, H:0.85, A:0.90, struct:0.5, label:'CRYOGENIC', vi:'BĂNG' },
+  ELEC: { L:1.00, M:1.10, H:1.00, A:1.25, struct:0.4, label:'ELECTRIC', vi:'ĐIỆN' },
+  HESH: { L:1.00, M:1.25, H:1.05, A:0.60, struct:3.0, label:'HESH', vi:'PHÁ CÔNG SỰ' },         // squash-head: spalls medium armour, levels cover & towers
+  TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC', vi:'NHIỆT ÁP' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
 };
 export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
   rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A', launcher:'L' };   // Z116 the rocket truck is soft-skinned   // A = aircraft (Z80): only direct fire / flak / missiles reach it
@@ -119,31 +119,31 @@ export const OPERATIONS = [
     story:'Rạng sáng, Liên minh Hắc Thiết vượt biên dưới màn bão cát. Tiền đồn Sao Đỏ chỉ còn một Lõi năng lượng — và Đại đội Thép 7 của anh.',
     brief:'Thiết giáp địch đang tập kết sau đồi cát. Giữ Lõi, đốt kho nhiên liệu đang tiếp sức cho đoàn xe của chúng.',
     radio:{ 1:'Phát hiện địch phía trước — thiết giáp trong đồi cát!', 2:'Bộ binh đang băng qua bãi trống. Cán qua chúng!', 3:'Trinh sát báo: chúng có một chỉ huy tên "Bò Thép".', 4:'Đoàn thiết giáp trên đường phía đông!', 5:'Đợt cuối trước khi xe chỉ huy của chúng tới. Giữ vững!' },
-    boss:'IRON BULL đang lao tới. Nó húc rất mạnh nhưng ngu — dụ nó đâm vào tường gạch hay đá, nó sẽ choáng. Bắn vào đuôi xe!',
+    boss:'BÒ THÉP đang lao tới. Nó húc rất mạnh nhưng ngu — dụ nó đâm vào tường gạch hay đá, nó sẽ choáng. Bắn vào đuôi xe!',
     win:'Kho nhiên liệu cháy rồi — xe tăng của chúng sắp cạn xăng!' },
   { title:'CHIẾN DỊCH THÀNH PHỐ ĐỔ NÁT', code:'BROKEN CITY', obj:'radio', script:{ 2:'pyro', 4:'ambush' },
     story:'Bò Thép gục ngã, nhưng từ thành phố đổ nát phía bắc, một trạm tiếp sóng vẫn liên tục gọi viện binh Hắc Thiết đổ về.',
     brief:'Đống đổ nát che một trạm tiếp sóng gọi viện binh không ngừng. Bịt miệng nó, rồi dọn sạch các con phố.',
-    radio:{ 1:'Có chuyển động trong đống gạch vụn.', 2:'Xe phun lửa! Giữ khoảng cách!', 3:'Bắt được sóng địch: chỉ huy TEMPEST đang dẫn đội tên lửa tới.', 4:'Tổ RPG trong hẻm — coi chừng rocket!', 5:'Trạm tiếp sóng vẫn phát? Hạ nó ngay!' },
-    boss:'TEMPEST đang lượn quanh quảng trường. Hai bệ tên lửa hai bên tháp pháo là mắt xích yếu — bắn nát chúng, thả khói khi bị khoá!',
+    radio:{ 1:'Có chuyển động trong đống gạch vụn.', 2:'Xe phun lửa! Giữ khoảng cách!', 3:'Bắt được sóng địch: chỉ huy CUỒNG PHONG đang dẫn đội tên lửa tới.', 4:'Tổ RPG trong hẻm — coi chừng tên lửa!', 5:'Trạm tiếp sóng vẫn phát? Hạ nó ngay!' },
+    boss:'CUỒNG PHONG đang lượn quanh quảng trường. Hai bệ tên lửa hai bên tháp pháo là mắt xích yếu — bắn nát chúng, thả khói khi bị khoá!',
     win:'Trạm tiếp sóng đã sập — viện binh của chúng im bặt.' },
   { title:'CHIẾN DỊCH IM LẶNG TRẮNG', code:'WHITE SILENCE', obj:'radar', script:{ 3:'airraid', 5:'column' },
-    story:'Tín hiệu cuối của TEMPEST dẫn về vùng băng giá: một trạm radar đang dẫn đường cho trực thăng tấn công. Đây là nơi Hắc Thiết giấu cỗ xe pháo đài GOLIATH.',
+    story:'Tín hiệu cuối của CUỒNG PHONG dẫn về vùng băng giá: một trạm radar đang dẫn đường cho trực thăng tấn công. Đây là nơi Hắc Thiết giấu cỗ xe pháo đài KHỔNG LỒ.',
     brief:'Trạm radar trên băng đang dẫn trực thăng vào đội hình ta. Phá nó để giành lại bầu trời.',
     radio:{ 1:'Tầm nhìn kém. Tập trung cao độ.', 2:'Băng nứt khắp nơi — đừng để bị dồn vào góc.', 3:'Tiếng cánh quạt — trực thăng vũ trang!', 4:'Công binh đang hàn xe cho chúng. Diệt công binh trước!', 5:'Đoàn xe hạng nặng vượt băng!' },
-    boss:'GOLIATH đã chọc thủng tuyến băng. Giáp trước của nó gần như không xuyên nổi — vòng ra sau lưng mà đánh!',
+    boss:'KHỔNG LỒ đã chọc thủng tuyến băng. Giáp trước của nó gần như không xuyên nổi — vòng ra sau lưng mà đánh!',
     win:'Radar thành sắt vụn. Hết trực thăng trên đầu ta.' },
   { title:'CHIẾN DỊCH LÒ LỬA THÉP', code:'IRON FURNACE', obj:'battery', script:{ 2:'column', 4:'airraid' },
-    story:'Giữa tro tàn của GOLIATH, ta tìm thấy bản đồ: Hắc Thiết đúc xe ngay trong khu lò luyện, có pháo binh canh giữ — và REAPER, sát thủ tàng hình của chúng.',
+    story:'Giữa tro tàn của KHỔNG LỒ, ta tìm thấy bản đồ: Hắc Thiết đúc xe ngay trong khu lò luyện, có pháo binh canh giữ — và TỬ THẦN, sát thủ tàng hình của chúng.',
     brief:'Một trận địa pháo trong khu lò đúc đang nã vào phòng tuyến ta. Luôn di chuyển, và đánh sập những khẩu pháo đó.',
-    radio:{ 1:'Đạn pháo đang tới — di chuyển liên tục!', 2:'Thiết giáp tràn ra từ các xưởng lò!', 3:'REAPER có thể dịch chuyển. Đừng đứng yên một chỗ.', 4:'Không kích! Tìm chỗ nấp!', 5:'Xe diệt tăng trên sườn đồi — bị khoá laser thì thả khói.' },
-    boss:'REAPER đang trong lò rèn. Tia laser của nó không xuyên tường — nấp sau tường gạch khi nó nạp năng lượng!',
+    radio:{ 1:'Đạn pháo đang tới — di chuyển liên tục!', 2:'Thiết giáp tràn ra từ các xưởng lò!', 3:'TỬ THẦN có thể dịch chuyển. Đừng đứng yên một chỗ.', 4:'Không kích! Tìm chỗ nấp!', 5:'Xe diệt tăng trên sườn đồi — bị khoá laser thì thả khói.' },
+    boss:'TỬ THẦN đang trong lò rèn. Tia laser của nó không xuyên tường — nấp sau tường gạch khi nó nạp năng lượng!',
     win:'Trận địa pháo đã câm. Pháo kích ngừng rồi.' },
   { title:'CHIẾN DỊCH THÀNH LUỸ CUỐI', code:'LAST CITADEL', obj:'command', script:{ 1:'ambush', 3:'airraid', 5:'column' },
-    story:'Hầm chỉ huy của Hắc Thiết nằm sau thành luỹ cuối cùng. OVERLORD — kẻ khơi mào cuộc chiến — đang chờ. Kết thúc nó, và chiến tranh kết thúc hôm nay.',
+    story:'Hầm chỉ huy của Hắc Thiết nằm sau thành luỹ cuối cùng. BẠO CHÚA — kẻ khơi mào cuộc chiến — đang chờ. Kết thúc nó, và chiến tranh kết thúc hôm nay.',
     brief:'Đây là hầm chỉ huy của chúng. Mọi thứ còn lại của Hắc Thiết dồn cả về đây. Phá nó, chiến tranh sẽ kết thúc.',
     radio:{ 1:'Chúng đã chờ sẵn — phục kích!', 2:'Giữ Lõi. Bằng mọi giá.', 3:'Toàn bộ trực thăng của chúng đã cất cánh!', 4:'Đại đội Thép 7, cả nước đang dõi theo các anh.', 5:'Đoàn xe cuối cùng. Chính là lúc này.' },
-    boss:'OVERLORD ra trận. Nó có khiên năng lượng nhờ các trụ phát — phá trụ rồi dồn hoả lực. Kết thúc nó!',
+    boss:'BẠO CHÚA ra trận. Nó có khiên năng lượng nhờ các trụ phát — phá trụ rồi dồn hoả lực. Kết thúc nó!',
     win:'Hầm chỉ huy sập rồi — phòng tuyến địch đang tan vỡ!' },
 ];
 export const OBJECTIVES = {
@@ -186,7 +186,7 @@ export const SHOP_UP = [
   {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'BỌC THÂN XE', per:'+20 máu tối đa',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
   {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'GIÁP',        per:'−6% sát thương nhận',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
   {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ĐỘNG CƠ',    per:'+10% tốc độ',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'turbo',  cat:'CHASSIS',   icon:'dash',   name:'TĂNG ÁP TURBO', per:'+12% gia tốc',  costs:[{c:400},{c:1000},{c:2400}]},
+  {key:'turbo',  cat:'CHASSIS',   icon:'dash',   name:'TĂNG ÁP', per:'+12% gia tốc',  costs:[{c:400},{c:1000},{c:2400}]},
   {key:'ramplate',cat:'CHASSIS',  icon:'shield', name:'MŨI HÚC',    per:'+25% sát thương húc · −12% chịu húc', costs:[{c:500},{c:1200},{c:2800}]},
   // ----- SUPPORT units: buy & upgrade the guard squad and the escort drone -----
   {key:'guards',   cat:'SUPPORT', icon:'shield', name:'LÍNH GÁC LÕI',   per:'+1 lính gác Lõi',          costs:[{c:900},{c:2400},{d:16}]},
@@ -218,7 +218,7 @@ export const GUN_BLURB = {
   flamer:'Thiêu rụi chúng — lửa chỉ lan rộng, không bao giờ buông tha.',
   hesh:'Đạn đầu bẹt — san phẳng công sự, quật đổ tháp canh, nứt giáp trung bình.',
   agl:'Mưa lựu đạn 40 mm — bộ binh và xe nhẹ tan tác.',
-  thermo:'Rocket nhiệt áp: một vụ nổ chói loà, mọi thứ bên trong bốc cháy.' };
+  thermo:'Tên lửa nhiệt áp: một vụ nổ chói loà, mọi thứ bên trong bốc cháy.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [
@@ -416,7 +416,7 @@ export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, 
 export const TOUCH_HELP = [
   ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — nòng gắn đầu xe, xe hướng nào bắn hướng đó'], ['Đẩy nhẹ cần', 'Chỉ xoay xe ngắm, không chạy'],
   ['BẮN (trái)', 'Giữ để bắn · tự bắn khi có mục tiêu trước mũi xe'], ['LƯỚT', 'Bứt tốc né đòn'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
-  ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['AUTO', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
+  ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['TỰ ĐỘNG', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
 // Z107 FORTRESSES (ĐẠI BẢN DOANH) — every stage the enemy holds 3–4 walled strongholds, each with a name and a commander.
 //   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate that must be shot
 //   continuously to break. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
@@ -469,8 +469,8 @@ export const PAD_HELP = [
   ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất. Cối / tên lửa tầm xa: ←→ xoay trong cung 180° trước mũi xe, ↑↓ chỉnh tầm bắn'],
   ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Lướt né'], ['B', 'Chạm: lính xuống xe · Giữ: gọi lính về'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
   ['LB · RB', 'Súng trước · súng sau'], ['D-pad ↑', 'Tập kết toàn quân'], ['D-pad ←', 'Xung phong vào thành'], ['D-pad ↓', 'Gọi lính dù'], ['D-pad →', 'Camera tự động'],
-  ['L3 (nhấn cần trái)', 'Đổi mức zoom'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
-  ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong app Flydigi Space Station, ví dụ M1 = A (lướt), M2 = B (lính)'] ];
+  ['L3 (nhấn cần trái)', 'Đổi mức thu phóng'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
+  ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong ứng dụng Flydigi Space Station, ví dụ M1 = A (lướt), M2 = B (lính)'] ];
 // Z119 BATTLE INTRO: cinematic view distance + fog (the sweep no longer draws the whole field), shader warm-up time budget, skip guard
 export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35 };
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.
@@ -488,7 +488,7 @@ export const ACTIONS = [
   ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né','CHIẾN ĐẤU',[' '],0,0], ['skill','Dùng kỹ năng · chuột phải','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
   ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['gunDefault','Về súng mặc định (tay cầm: LB + RB cùng lúc)','CHIẾN ĐẤU',['0'],null,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0],
-  ['zoomPing','Camera: zoom tăng ⇄ giảm · chạm đôi = về mặc định (D-pad ← = M1)','CAMERA',['z'],14,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (D-pad → = M2)','CAMERA',['n'],15,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
+  ['zoomPing','Camera: phóng to ⇄ thu nhỏ · chạm đôi = về mặc định (D-pad ← = M1)','CAMERA',['z'],14,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (D-pad → = M2)','CAMERA',['n'],15,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
   ['camAuto','Camera tự động','CAMERA',['c'],null,0], ['camReset','Đặt lại camera','CAMERA',['v'],null,0],
   ['pause','Tạm dừng','KHÁC',['escape','p'],9,0], ['keys','Bảng phím','KHÁC',['h','f1'],8,0], ['music','Bật / tắt nhạc nền','KHÁC',['m'],null,0] ];
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers

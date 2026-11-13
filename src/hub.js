@@ -9,6 +9,7 @@ export * from './data/enemies.js';
 export * from './data/bosses.js';
 export * from './core/config.js';
 export * from './ui/icons.js';
+export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on every screen
 export * from './core/state.js';
 export * from './world/field.js';
 export * from './render/clouds.js';   // Z145 must load before any material patches its shader

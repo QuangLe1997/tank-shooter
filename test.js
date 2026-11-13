@@ -619,7 +619,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z145 real surfaces, cinematic sky, irregular forts, capital keep, escalade, turret traverse, fictional flag
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const su=R('src/render/surface.js'), cl=R('src/render/clouds.js'), at=R('src/world/atmosphere.js'), fo=R('src/world/fortress.js'), es=R('src/actors/escalade.js'), rd=R('src/render/renderer.js'), up=R('src/game/update.js'), hf=R('src/world/heightfield.js'), ip=R('src/input/input.js');
   ok(/export function detailize/.test(su) && /export function hiResMaps/.test(su) && /normalMap:M\.normalMap/.test(R('src/world/regional.js')), 'walls: hi-res colour + normal + roughness maps and a world-space detail layer');
-  ok(/GTAOPass/.test(rd) && /sharp/.test(rd) && /AO\.on && PERF\.slowT/.test(R('src/game/loop.js')), 'ambient occlusion (shed first when slow) + sharpening');
+  ok(/GTAOPass/.test(rd) && /sharp/.test(rd) && /AO\.on && \(?PERF\.slowT/.test(R('src/game/loop.js')), 'ambient occlusion (shed first when slow) + sharpening');
   ok(/cloudShade/.test(cl) && /MOODS/.test(at) && /storm/.test(at) && /cTex/.test(at), 'cloud deck in the sky, drifting cloud shadows, per-battle sky moods');
   ok(/f\.Rin/.test(fo) && /Math\.random\(\)-0\.5\)\*0\.5\)\/sides/.test(fo) && /GH=H\+\(CAP\?12:8\.5\)/.test(fo) && /portcullis/.test(fo), 'irregular fort outlines, tall towers, fierce gatehouse');
   ok(/f\.keepR/.test(fo) && /kind:'keep'/.test(fo), 'the capital raises a solid donjon with the flag on its roof');
@@ -656,6 +656,16 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/p\.muzzles\[\(p\.mzI=/.test(R('src/combat/flame.js')) && /userData\.muzzles=MZ/.test(R('src/tank/barrels.js')), 'twin / multi-tube guns fire from each real tube in turn');
   ok(/e\.burn\.k/.test(R('src/ai/tactics.js')) && /gunShotDmg\(g\)\*dM/.test(R('src/combat/power.js')), 'flame burn scales with damage upgrades; the power rating counts splash');
   const fx=R('src/fx/gunfx.js'); ok(/export function lightning/.test(fx) && /export function railBeam/.test(fx) && /function smokeRing/.test(fx) && /kind==='launch'/.test(fx) && /updateBolts\(dt\)/.test(R('src/game/loop.js')), 'per-class muzzle fx: smoke rings, backblast, rail beam, forked lightning'); }
+
+// Z150 one picture per gun everywhere, stronger controller focus, smooth battle start, Vietnamese text
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ga=R('src/ui/gunart.js'), G=(await import('./src/data/guns.js')).GUNS;
+  ok(/export function gunPicHTML/.test(ga) && /readRenderTargetPixels/.test(ga) && /RoomEnvironment/.test(ga), 'gun art: a studio render of each real barrel model, cached, painted into every <img data-gunpic>');
+  ok(/gunPicHTML\(id,'gp-ld'\)/.test(R('src/ui/loadout.js')) && /gunPicHTML\(it\.id,'gp-case'\)/.test(R('src/ui/shop.js')) && /gunPicEl\(inst\.id, 'wc-ic'\)/.test(R('src/ui/briefing.js')) && /gunPicHTML\(inst\.id,'gp-dp'\)/.test(R('src/ui/deploy.js')) && /gunPicEl\(gid,'gp-loot'\)/.test(R('src/loot/powerups.js')), 'arsenal, shop, HUD, deploy list and the new-gun card all show the same gun photo');
+  ok(new Set(Object.values(G).map(g=>g.svg)).size === Object.keys(G).length, 'every gun has its own line icon (no two guns share one)');
+  ok(Object.values(G).every(g=>!/^(RIFLE|SMG|SHOTGUN|CANNON|MISSILE|RAILGUN|MINIGUN|SIEGE ROCKET|HOWITZER)$/.test(g.name)), 'gun names are Vietnamese');
+  ok(/\.seg-chip\.padfocus/.test(R('css/menus.css')) && /outline:5px/.test(R('css/menus.css')), 'controller focus: thicker ring, small options turn solid amber');
+  ok(/const calib = S\.mode==='countdown'/.test(R('src/game/loop.js')) && /PROFILE\.perfDpr/.test(R('src/audio/engine-music.js')) && /SHADOW_MAP = 2048/.test(R('src/core/config.js')), 'battle start: resolution settles in the countdown and is remembered (no resize hitches in the first seconds)');
+  ok(!/IRON BULL|OVERLORD/.test(R('src/data/bosses.js')) && !/NIGHT — reach/.test(R('src/combat/guns.js')), 'boss names and battle conditions in Vietnamese'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

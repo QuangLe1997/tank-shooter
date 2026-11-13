@@ -192,8 +192,16 @@
 #brBack{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));z-index:2;}
 
 /* Z117 controller: focus ring in menus · settings note · touch pads hidden while a pad drives */
-.padfocus{outline:4px solid #ffd27a !important;outline-offset:3px;box-shadow:0 0 0 8px rgba(255,210,122,.22),0 0 28px rgba(255,210,122,.7) !important;border-radius:10px;scroll-margin:22px;transform:scale(1.04);animation:padfocus .75s ease-in-out infinite alternate;}
-@keyframes padfocus{from{outline-color:#ffd27a;filter:brightness(1.05);}to{outline-color:#fff3c8;filter:brightness(1.3);}}
+.padfocus{outline:5px solid #ffd96e !important;outline-offset:4px;box-shadow:0 0 0 11px rgba(255,214,110,.30),0 0 40px 8px rgba(255,205,100,.85) !important;border-radius:10px;scroll-margin:26px;transform:scale(1.07);animation:padfocus .7s ease-in-out infinite alternate;}
+@keyframes padfocus{from{outline-color:#ffd96e;filter:brightness(1.12);}to{outline-color:#fff6d2;filter:brightness(1.38);}}
+/* Z150 small option buttons (chips, map / hour / weather options, tabs, mini buttons, HUD gun icons): the focused one turns solid amber
+   with dark bold text and grows — impossible to miss from the sofa; a chip that is ALSO the current value keeps a green inner ring */
+.seg-chip.padfocus,.bs-op.padfocus,.bs-mode.padfocus,.shop-tab.padfocus,.btn-mini.padfocus,.dp-step.padfocus,.tc-card.padfocus,.br-card.padfocus,.upcard.padfocus{
+  background:linear-gradient(180deg,#ffe28a,#f0b43c) !important;color:#1b1206 !important;border-color:#fff2c0 !important;font-weight:900 !important;text-shadow:none !important;transform:scale(1.18);z-index:3;}
+.seg-chip.padfocus small,.bs-op.padfocus small,.bs-mode.padfocus small{color:#3a2a0c !important;opacity:1 !important;}
+.seg-chip.on.padfocus,.bs-op.on.padfocus,.bs-mode.on.padfocus{box-shadow:inset 0 0 0 3px #4f8f1c,0 0 0 11px rgba(255,214,110,.30),0 0 40px 8px rgba(255,205,100,.85) !important;}
+.ldcard.padfocus,.case.padfocus{transform:scale(1.09) translateY(-2px);z-index:3;}
+.padfocus svg{color:inherit;}
 /* Z126 room round the scrolling lists so the ring is never cut off at their edges */
 .bs-body{padding:14px 18px 16px !important;} .ks-body{padding:14px 16px !important;}
 .seg-note{font-size:11px;color:var(--muted);padding:6px 8px;max-width:340px;line-height:1.3;}

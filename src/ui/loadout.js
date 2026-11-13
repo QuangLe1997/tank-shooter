@@ -1,5 +1,5 @@
 // ui/loadout.js — Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the start screen or mid-run pause).
-import { GUNS, LOADOUT_MAX, PROFILE, S, hide, refreshStartUI, saveProfile, sfx, show, svgMarkup, tapBtn, tapEl, updateGunHUD } from '../hub.js';
+import { GUNS, LOADOUT_MAX, PROFILE, S, gunPicHTML, gunTierTx, hide, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD } from '../hub.js';
 
 // ---- arsenal / loadout (pick ≤5 from your collection) ----
 export let _ldSel=[];
@@ -10,7 +10,7 @@ export function renderLoadout(){
     const card=document.createElement('div');
     card.className='ldcard'+(owned?'':' locked')+(on?' on':'');
     const num = on ? ('<div class="num">'+(_ldSel.indexOf(id)+1)+'</div>') : '', star = on ? ('<div class="dflt'+(dflt()===id?' is':'')+'" title="Súng mặc định (bắt đầu trận với súng này)">'+(dflt()===id?'★ MẶC ĐỊNH':'☆')+'</div>') : '';
-    card.innerHTML = num+star+'<div class="pick"></div><div class="gi">'+svgMarkup(g.svg||'gun')+'</div><div class="nm">'+g.name+'</div><div class="tr">BẬC '+g.tier+'</div>';
+    card.innerHTML = num+star+'<div class="pick"></div>'+gunPicHTML(id,'gp-ld')+'<div class="nm">'+g.name+'</div><div class="tr">'+gunTierTx(id)+'</div>';
     if(owned){ tapEl(card, ()=>toggleLd(id)); const st=card.querySelector('.dflt'); if(st) { st.addEventListener('click', e=>{ e.stopPropagation(); setDefaultGun(id); }); st.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); setDefaultGun(id); }, {passive:false}); } }
     grid.appendChild(card);
   });

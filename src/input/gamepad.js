@@ -87,7 +87,7 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
 const PADDLE={ 17:'zoomPing', 18:'camTurn' };
 const CAMC={ 12:'zoomIn', 13:'zoomOut', 14:'rotL', 15:'rotR' };
 // Z124 on-screen legend of the pad buttons that have no on-screen button (crew, orders, camera, guns) — follows the rebinding table
-const HUD_IDS=[['crew','LÍNH'],['autoFire','TỰ BẮN'],['gunPrev','SÚNG−'],['gunNext','SÚNG+'],['muster','TẬP KẾT'],['assault','XUNG PHONG'],['para','LÍNH DÙ'],['autoAim','TỰ NGẮM'],['camAuto','CAM TỰ ĐỘNG'],['zoomPing','ZOOM (2× = reset)'],['camTurn','XOAY CAM (2× = reset)']];
+const HUD_IDS=[['crew','LÍNH'],['autoFire','TỰ BẮN'],['gunPrev','SÚNG−'],['gunNext','SÚNG+'],['muster','TẬP KẾT'],['assault','XUNG PHONG'],['para','LÍNH DÙ'],['autoAim','TỰ NGẮM'],['camAuto','CAM TỰ ĐỘNG'],['zoomPing','THU PHÓNG (2× = MẶC ĐỊNH)'],['camTurn','XOAY CAMERA (2× = MẶC ĐỊNH)']];
 function padHud(now){ if(now<(PAD.hudAt||0)) return; PAD.hudAt=now+0.6; const el=document.getElementById('padHud'); if(!el) return;
   const sig=HUD_IDS.map(([id])=>padFor(id)).join(','); if(sig===PAD.hudSig) return; PAD.hudSig=sig;
   el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>LB + RB</b>SÚNG MẶC ĐỊNH</span><span><b>⧉ + D-pad</b>XOAY CAM</span>'; }

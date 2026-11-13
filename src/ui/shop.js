@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunReloadMul, gunRole, gunShotDmg, gunSiege, gunSplash, gunTraits, gunXpToNext, hide, launchGame, ownGun, payCost, powerKit, powerRating, pumpThumbs, queueThumbs, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, thumbURL, upLevel, upMax, updateShowroom } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunPicHTML, gunReloadMul, gunRole, gunShotDmg, gunSiege, gunSplash, gunTierTx, gunTraits, gunXpToNext, hide, launchGame, ownGun, payCost, powerKit, powerRating, queueGunArt, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -129,7 +129,7 @@ export function renderCaseGrid(){
   { const sp=document.getElementById('shopPower'); if(sp) sp.innerHTML='⚔ <b>'+fmtP(powerRating(powerKit(false)))+'</b>'; }
   const grid=document.getElementById('caseGrid'); if(!grid) return; grid.innerHTML=''; refreshWallet();
   shopList.forEach((it,i)=>{
-    const st=caseState(it), badge=it.type==='gun'?(it.vip?'VIP ◆':('BẬC '+it.tier)):('CẤP '+it.level+'/'+it.max);
+    const st=caseState(it), badge=it.type==='gun'?gunTierTx(it.id):('CẤP '+it.level+'/'+it.max);
     const short = st==='cant' && it.cost ? shortBy(it.cost) : '';
     const price = (it.type==='gun'&&it.owned)?('✓ ĐÃ CÓ · ★'+gunLevel(it.id)) : (it.type==='up'&&it.level>=it.max)?'✓ TỐI ĐA' : '<span class="pr">'+priceHTML(it.cost)+'</span>'+(short?'<small class="short">thiếu '+short+'</small>':'');
     let extra='';
@@ -137,14 +137,14 @@ export function renderCaseGrid(){
       extra='<div class="case-role" style="--rc:'+r.col+'">'+r.tx+'</div><div class="case-bars">'+bar('ST', n.dmg/M.dmg)+bar('NHỊP', n.rof/M.rof)+bar('TẦM', n.rng/M.rng)+'</div>'; }
     else { let pips=''; for(let k=0;k<it.max;k++) pips+='<i class="'+(k<it.level?'on':'')+'"></i>'; extra='<div class="case-role up">'+escapeHtml(it.per||'')+'</div><div class="case-pips">'+pips+'</div>'; }
     const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
-    const disp = it.type==='gun'                                                                          // Z107 guns: a photo of YOUR tank carrying that gun
-      ? '<div class="case-disp photo'+(thumbURL(it.id)?' shot-ok':'')+'"><img class="case-shot" data-thumb="'+it.id+'" alt="" src="'+(thumbURL(it.id)||'data:image/gif;base64,R0lGODlhAQABAAAAACw=')+'"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>'
+    const disp = it.type==='gun'                                                                          // Z150 guns: the same studio photo of the real gun used on every screen
+      ? '<div class="case-disp gun">'+gunPicHTML(it.id,'gp-case')+'</div>'
       : '<div class="case-disp"><span class="case-ic">'+svgMarkup(it.icon)+'</span></div>';
     c.innerHTML='<span class="case-badge">'+badge+'</span>'+disp+
       '<div class="case-nm">'+it.name+'</div>'+extra+'<div class="case-price">'+price+'</div>';
     tapEl(c, ()=>openDetail(i)); grid.appendChild(c);
   });
-  queueThumbs(shopList.filter(it=>it.type==='gun').map(it=>it.id));
+  queueGunArt(shopList.filter(it=>it.type==='gun').map(it=>it.id));
 }
 export function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
 export function shopStats(it){
@@ -188,7 +188,7 @@ export function siPanelHTML(it){
       (T.length?'<div class="sp-sub">ĐẶC TÍNH</div><div class="sp-tags">'+T.map(t=>'<span class="st" title="'+escapeHtml(t.d)+'">'+t.t+'</span>').join('')+'</div>':'')+
       '<div class="sp-sub">LINH KIỆN (nhặt trong trận · vĩnh viễn)</div><div class="sp-mods">'+mods.map(r=>'<div class="sp-mod'+(r.lv?' on':'')+'"><span>'+r.vi+'</span><i>'+'■'.repeat(r.lv)+'<u>'+'□'.repeat(r.max-r.lv)+'</u></i><small>'+(r.lv?r.fx:'chưa lắp')+'</small></div>').join('')+'</div>'; }
   return PW+'<div class="sp-tier">'+(it.level>=it.max?'CẤP TỐI ĐA':(it.vip?'★ NÂNG CẤP VIP':'NÂNG CẤP'))+'</div>'+
-    spBar('Level', it.level+' / '+it.max, it.level/it.max)+
+    spBar('Cấp', it.level+' / '+it.max, it.level/it.max)+
     '<div class="sp-bl">Mỗi cấp<b>'+it.per+'</b></div>'+
     '<div class="sp-bl">Đang có<b>×'+it.level+'</b></div>'+
     (it.level<it.max?'<div class="sp-bl">Tiếp theo<b>CẤP '+(it.level+1)+'</b></div>':'<div class="sp-tags"><span class="st">ĐÃ NÂNG TỐI ĐA</span></div>');
@@ -255,7 +255,6 @@ export function shop3dUpdate(dt){
   if(_shopT>_focusAt){ _focusAt=_shopT+0.5; const sp=document.getElementById('siPanel');   // keep the tank clear of the stat panel (measured twice a second, not every frame)
     SHOW.focusX = shopDetail3D && sp && sp.offsetParent ? (sp.getBoundingClientRect().right/Math.max(1,VIEW.w))*0.42 : 0; }
   updateShowroom(dt, shopDetail3D);
-  if(!shopDetail3D) pumpThumbs();                                              // one card photo per frame (drawn over by this frame's render)
 }
 tapBtn('shopBtn', openShop);
 tapBtn('shopDone', closeShop);

@@ -189,3 +189,27 @@ body.shopdetail .shop-top{gap:4px;}
 /* Z129 default-gun star in the arsenal */
 .ldcard .dflt{position:absolute;right:6px;top:6px;font:900 10px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.5px;padding:3px 6px;border-radius:6px;color:#9aa78a;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);}
 .ldcard .dflt.is{color:#14200a;background:linear-gradient(180deg,#ffe08a,#e0a82a);border-color:#fff0b0;}
+
+/* Z150 ONE PICTURE PER GUN — the studio photo of the real barrel (ui/gunart.js) on every screen; its line icon shows until the photo is ready */
+.gunpic{position:relative;display:flex;align-items:center;justify-content:center;flex:none;}
+.gunpic img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .3s;}
+.gunpic img.ok{opacity:1;}
+.gunpic .gp-ic{position:absolute;inset:18% 30%;display:flex;align-items:center;justify-content:center;opacity:.75;transition:opacity .3s;font-style:normal;}
+.gunpic .gp-ic svg{width:100%;height:100%;}
+.gunpic:has(img.ok) .gp-ic{opacity:0;}
+.ldcard{width:150px;padding:12px 8px 10px;}
+.gunpic.gp-ld{width:100%;height:62px;margin:4px 0 6px;}
+.ldcard.locked .gunpic img{filter:grayscale(1) brightness(.7);}
+.case-disp.gun{height:96px;padding:4px 6px;background:radial-gradient(ellipse 70% 80% at 50% 58%,color-mix(in srgb,var(--rar) 26%,#141a20),#0b0f14 72%);}
+.case-disp.gun::after{bottom:9px;left:18%;right:18%;}
+.gunpic.gp-case{width:100%;height:100%;color:var(--rar);}
+body.touch .case-disp.gun{height:74px;}
+#weaponchip .gunpic.wc-ic{width:56px;height:26px;}
+.gunicon{width:50px;}
+.gunpic.gp-strip{width:44px;height:24px;}
+body.touch .gunicon{width:40px;} body.touch .gunpic.gp-strip{width:36px;height:20px;} body.touch #weaponchip .gunpic.wc-ic{width:40px;height:18px;}
+#deploy .dp-gun{justify-content:flex-start;align-items:center;} #deploy .dp-gun span{margin-left:auto;}
+.gunpic.gp-dp{width:58px;height:26px;margin-right:4px;}
+#lootToast.lt-gun .lt-ic{width:96px;padding:2px 4px;}
+.gunpic.gp-loot{width:100%;height:100%;}
+@media (max-height:520px){ .ldcard,body.touch .ldcard{width:104px;} .gunpic.gp-ld{height:40px;margin:2px 0 4px;} }

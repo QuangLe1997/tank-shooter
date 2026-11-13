@@ -8,7 +8,7 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
   const p=S.player; if(now < p.invincibleUntil) return;
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   if(p.era>0 && dmg>=LOOT.era.minHit){ p.era--; dmg*=1-LOOT.era.absorb; setEraTiles(p);                 // Z93 REACTIVE ARMOUR: a tile detonates outward and eats most of the hit
-    const a=Math.atan2(dx||0, dz||1); burst({x:p.pos.x-Math.sin(a)*1.6, z:p.pos.z-Math.cos(a)*1.6}, 0xffd27a, 8, 8, {y:1.5, life:0.25, size:0.4, grav:-10, drag:2, up:2}); sfx('clang'); floatText('ERA', '#e0c070', p.pos, 14); }
+    const a=Math.atan2(dx||0, dz||1); burst({x:p.pos.x-Math.sin(a)*1.6, z:p.pos.z-Math.cos(a)*1.6}, 0xffd27a, 8, 8, {y:1.5, life:0.25, size:0.4, grav:-10, drag:2, up:2}); sfx('clang'); floatText('GIÁP PHẢN ỨNG', '#e0c070', p.pos, 14); }
   p.hp -= dmg;
   // HIT REACTION — every hit is FELT: hull flinch/rattle + shake scaled by the blow + red splash
   p.hitT = Math.max(p.hitT||0, 0.26);

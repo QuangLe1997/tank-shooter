@@ -20,7 +20,7 @@ export function bindKey(id, slot, key){ const b=store(); const cur=keysFor(id).s
 export function bindPad(id, btn){ const b=store(); const old=padFor(id); for(const a of ACTIONS) if(a[0]!==id && padFor(a[0])===btn) b.p[a[0]]=old; b.p[id]=btn; saveProfile(); }
 export function clearKey(id, slot){ const b=store(); const cur=keysFor(id).slice(); cur.splice(slot,1); b.k[id]=cur; saveProfile(); rebuild(); }
 export function resetBinds(){ PROFILE.binds={ k:{}, p:{} }; saveProfile(); rebuild(); }
-export function keyLabel(k){ return ({ ' ':'SPACE', arrowup:'↑', arrowdown:'↓', arrowleft:'←', arrowright:'→', escape:'ESC', enter:'ENTER', tab:'TAB', shift:'SHIFT', control:'CTRL', alt:'ALT', backspace:'⌫' })[k] || k.toUpperCase(); }
+export function keyLabel(k){ return ({ ' ':'CÁCH', arrowup:'↑', arrowdown:'↓', arrowleft:'←', arrowright:'→', escape:'ESC', enter:'ENTER', tab:'TAB', shift:'SHIFT', control:'CTRL', alt:'ALT', backspace:'⌫' })[k] || k.toUpperCase(); }
 export const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','⧉ View','☰ Menu','L3','R3','D-pad ↑','D-pad ↓','D-pad ←','D-pad →','Home','M1 (nút sau)','M2 (nút sau)','M3 (nút sau)','M4 (nút sau)'];
 
 // ---- run an action (phase 'down' / 'up'); the same entry point for keys and pad buttons ----
@@ -35,7 +35,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'gunDefault': selectDefaultGun(); break; case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
     case 'muster': musterAll(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;
     case 'zoomOut': if(S.zoom>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
-    case 'zoomPing': if(dbl(id)){ zoomReset(); floatText('ZOOM VỀ MẶC ĐỊNH','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else zoomPing(); break;
+    case 'zoomPing': if(dbl(id)){ zoomReset(); floatText('THU PHÓNG VỀ MẶC ĐỊNH','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else zoomPing(); break;
     case 'camTurn': if(dbl(id)){ yawReset(); floatText('CAMERA VỀ GÓC ĐẦU','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else rotStep(1); break;
     case 'autoAim': { const C=padCfg(); C.assist=!C.assist; saveProfile(); floatText(C.assist?'TỰ NGẮM: BẬT':'TỰ NGẮM: TẮT', C.assist?'#9be04a':'#ffcf5a', S.player?S.player.pos:{x:0,y:2,z:0}, 15); sfx('click'); } break;
     case 'zoomIn': zoomStep(-1); break; case 'rotL': rotStep(-1); break; case 'rotR': rotStep(1); break;

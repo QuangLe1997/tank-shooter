@@ -6,8 +6,8 @@ import { MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks,
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
   { id:'overdrive', name:'OVERDRIVE', vi:'TĂNG TỐC', svg:'bolt', cd:11, cast(now){ const p=S.player; p.overUntil=now+5; ringPulse(p.pos,0x8cbf3f,3); } },
-  { id:'aegis',     name:'AEGIS', vi:'KHIÊN AEGIS',    svg:'shield', cd:13, cast(now){ const p=S.player; p.invincibleUntil=now+3; p.shieldUntil=now+3; } },
-  { id:'emp',       name:'EMP', vi:'XUNG EMP',      svg:'emp', cd:12, cast(now){ const p=S.player; ringPulse(p.pos,0x6fd0ff,10); aoeDamage(p.pos.x,p.pos.z,16,40,true,now,null,true); bigExplode(p.pos,0x6fd0ff,1.6); } },
+  { id:'aegis',     name:'AEGIS', vi:'KHIÊN BẤT TỬ',    svg:'shield', cd:13, cast(now){ const p=S.player; p.invincibleUntil=now+3; p.shieldUntil=now+3; } },
+  { id:'emp',       name:'EMP', vi:'XUNG ĐIỆN TỪ',      svg:'emp', cd:12, cast(now){ const p=S.player; ringPulse(p.pos,0x6fd0ff,10); aoeDamage(p.pos.x,p.pos.z,16,40,true,now,null,true); bigExplode(p.pos,0x6fd0ff,1.6); } },
   { id:'repair',    name:'REPAIR', vi:'SỬA CHỮA', svg:'heart', cd:14, cast(now){ const p=S.player; p.hp=Math.min(p.maxHp,p.hp+45); if(core)core.hp=Math.min(core.maxHp,core.hp+45); ringPulse(p.pos,0x5fd06a,3); updateHUD(); } },
   { id:'airstrike', name:'AIRSTRIKE', vi:'KHÔNG KÍCH', svg:'crosshair', cd:15, cast(now){ airstrike(now); } },
   { id:'timewarp',  name:'TIME WARP', vi:'CHẬM THỜI GIAN', svg:'hourglass', cd:14, cast(now){ S.enemySlowUntil=now+4; ringPulse(S.player.pos,0xc0a0ff,12); } },
@@ -23,11 +23,11 @@ export function castSmoke(now){ const p=S.player, E=EQUIP.smoke; p.smokeUntil=no
     spawnPart(p.pos.x, 2.6, p.pos.z, Math.sin(a)*sp, 7, Math.cos(a)*sp, {color:0xf0f0e0, size:0.5, life:0.45, grav:-22, drag:0.6}); }
   for(const e of enemies) if(e.laser){ dropBeam(e.laser); e.laser=null; e.aimT=0; }                  // laser designators lose you
   sfx('dash'); floatText('MÀN KHÓI','#dfe6e0',p.pos,17); }
-export function castAPS(now){ const p=S.player, E=EQUIP.aps; p.apsUntil=now+E.dur; p.apsCharges=E.charges; ringPulse(p.pos,0x7fe7ff,E.radius); floatText('APS BẬT · '+E.charges,'#7fe7ff',p.pos,17); sfx('beep'); }
+export function castAPS(now){ const p=S.player, E=EQUIP.aps; p.apsUntil=now+E.dur; p.apsCharges=E.charges; ringPulse(p.pos,0x7fe7ff,E.radius); floatText('GIÁP CHỦ ĐỘNG BẬT · '+E.charges,'#7fe7ff',p.pos,17); sfx('beep'); }
 export function apsIntercept(x,y,z){ const p=S.player; p.apsCharges--;
   spawnPart(p.pos.x,2.6,p.pos.z,(x-p.pos.x)*6,(y-2.6)*6,(z-p.pos.z)*6,{tex:'flash', color:0xbff6ff, size:1.2, life:0.08, grav:0, drag:0});   // counter-charge fires
   bigExplode({x,z}, 0xbff6ff, 0.55); burst({x,z}, 0xfff2c0, 8, 7, {y, life:0.25, size:0.3, grav:-12, drag:2});
-  floatText(p.apsCharges>0?'APS · '+p.apsCharges:'APS ĐÃ CẠN','#7fe7ff',{x:p.pos.x,y:3.4,z:p.pos.z},14); sfx('hit'); haptic(12); }
+  floatText(p.apsCharges>0?'GIÁP CHỦ ĐỘNG · '+p.apsCharges:'GIÁP CHỦ ĐỘNG ĐÃ CẠN','#7fe7ff',{x:p.pos.x,y:3.4,z:p.pos.z},14); sfx('hit'); haptic(12); }
 export const PMINES=[]; export let _mineGeo=null, _mineMat=null, _mineLed=null;
 export function castMines(now){ const p=S.player, E=EQUIP.mines;
   if(!_mineGeo){ _mineGeo=new THREE.CylinderGeometry(0.55,0.62,0.22,16); _mineMat=new THREE.MeshStandardMaterial({color:0x4a5230,roughness:0.7,metalness:0.35}); _mineLed=new THREE.MeshStandardMaterial({color:0,emissive:0xff2a1a,emissiveIntensity:2}); }

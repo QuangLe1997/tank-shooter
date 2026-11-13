@@ -42,7 +42,7 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
   g+=ld('M268 56 H140',268,56)+lab(true,60,'LT',F(6),'',6)+
      ld('M250 87 H140',250,87)+lab(true,91,'LB',F(4),'',4)+
      ld('M263 192 H140',263,192)+lab(true,184,'CẦN TRÁI',{ t:'Lái xe' },['nghiêng nửa = nửa ga', F(10).t ? 'nhấn L3: '+F(10).t : ''],10)+
-     ld('M317 278 H150 V292 H140',317,278)+dp+'<text class="pv-s" x="130" y="358" text-anchor="end">giữ ⧉ + D-pad: zoom / xoay camera</text>'+
+     ld('M317 278 H150 V292 H140',317,278)+dp+'<text class="pv-s" x="130" y="358" text-anchor="end">giữ ⧉ + D-pad: thu phóng / xoay camera</text>'+
      ld('M612 56 H740',612,56)+lab(false,60,'RT',F(7),'',7)+
      ld('M630 87 H740',630,87)+lab(false,91,'RB',F(5),'',5)+
      ld('M546 176 V118 H740',546,176)+lab(false,122,'X',F(2),'',2)+

@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, aoPass, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSkyMood, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
+import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, aoPass, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateSkyMood, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -78,16 +78,19 @@ export function loop(nowMs){
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
   if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
-    if(S.mode!=='playing') AO.on = AO.want && PROFILE.quality!=='low';   // re-armed between battles
-    if(S.mode==='playing'){                                                   // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
+    const calib = S.mode==='countdown';                                      // Z150 the 3-2-1 countdown is the calibration window: the world is static, a resize there costs nothing you can feel
+    if(S.mode!=='playing' && !calib) AO.on = AO.want && PROFILE.quality!=='low' && PROFILE.perfAO!==false;   // re-armed between battles — unless this machine already proved it can't afford it
+    if(S.mode==='playing' || calib){                                          // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
       if(fps<47){ PERF.fastT=0; PERF.slowT++;
-        if(AO.on && PERF.slowT>=2){ AO.on=false; PERF.slowT=0; }   // Z145 the occlusion pass goes first — sharpness stays
+        if(AO.on && (PERF.slowT>=2 || calib)){ AO.on=false; PERF.slowT=0; PROFILE.perfAO=false; saveProfile(); }   // Z145 the occlusion pass goes first — sharpness stays
         const shedFirst = MOBILE && (PERF.parts>0.6 || bloom.enabled);                          // Z120 phones: particles + glow go BEFORE sharpness
-        if(!shedFirst && S.dpr>dprFloor){ S.dpr=Math.max(dprFloor,S.dpr-(fps<34?0.2:0.1)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }
+        if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/56)*20)/20;   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
+          S.dpr=Math.max(dprFloor, Math.min(S.dpr-0.1, want)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }
         PERF.parts=Math.max(0.45, PERF.parts-(fps<34?0.2:0.1));
         if(MOBILE && fps<44 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
       else if(fps>57){ PERF.slowT=0; PERF.fastT++;
-        if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); if(S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); } } } } }
+        if(calib && S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }   // Z150 sharper again only in the countdown — a resize mid-fight is a hitch you feel
+        if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); } } } }
 }
 export let _fpsAcc=0, _fpsN=0, _ingame=null;
 export let _abC=null;

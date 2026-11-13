@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, resetEnvEvents, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
+import { BIOME, BOSS_DEFS, GUNS, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, resetEnvEvents, setIcon, setPlayerBarrel, sfx, show, tapEl } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -69,9 +69,9 @@ export function updateGunHUD(){
   if(chip){
     const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), key=inst.id+':'+gunLevel(inst.id);
     if(chip._key!==key){ chip._key=key;
-      const ic=document.createElement('span'); ic.className='wc-ic'; ic.appendChild(iconEl(g.svg));
-      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ·L'+gunLevel(inst.id):'');   // MASTERY level tag
-      if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=g.type; tg.title=(DMG_TYPE[g.type]||{}).label||''; nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
+      const ic=gunPicEl(inst.id, 'wc-ic');   // Z150 the gun's own photo, same as the arsenal
+      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'');   // MASTERY level tag
+      if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=(DMG_TYPE[g.type]||{}).vi||g.type; tg.title='Loại đạn: '+((DMG_TYPE[g.type]||{}).vi||''); nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
       const am=document.createElement('span'); am.className='wc-am'; chip._am=am; chip._amT=null; chip._rl=null;
       chip.replaceChildren(ic,nm,am); }
     const t = reloading ? 'NẠP ĐẠN…' : ammo; if(chip._amT!==t){ chip._amT=t; chip._am.textContent=t; }
@@ -83,7 +83,7 @@ export function updateGunHUD(){
   if(list && !same){ list._key=lkey; list.replaceChildren();
     list.style.display = p.guns.length>1 ? 'flex' : 'none';   // only show the strip once you own >1 gun (declutter + shows persistence)
     p.guns.forEach((gi,idx)=>{ const d=GUNS[gi.id]; const el=document.createElement('div');
-      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(iconEl(d.svg));
+      el.className='gunicon'+(idx===p.gunIdx?' on':''); el.appendChild(gunPicEl(gi.id, 'gp-strip')); el.title=d.name;
       const cool=document.createElement('div'); cool.className='gcool'; el.appendChild(cool);
       const chk=document.createElement('span'); chk.className='gchk'; el.appendChild(chk);
       el._gi=gi; el._cool=cool;                                // refs for the per-frame reload status
