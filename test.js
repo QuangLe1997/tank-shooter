@@ -730,5 +730,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/model:'b_'\+def\.id/.test(bs) && /hp2\.on==='turret'\?mesh\.userData\.turret/.test(bs) && !/hornMat/.test(bs), 'boss spawns its machine; turret weak points turn with the turret; no stuck-on horns');
   ok(/twin:true/.test(ds) && /const units = d\.twin/.test(ds), 'the Overlord runs on four tracks'); }
 
+// Z160 the generals fire from their real guns: every mounted weapon works, with FX at boss scale; mysterious liveries
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ds=R('src/tank/designs.js'), bs=R('src/campaign/boss.js'); const B=(await import('./src/data/bosses.js')).BOSS_DEFS;
+  ok(/function mnt\(K, kind/.test(ds) && ['mg','sec','podL','podR','emitter','mines','stack'].every(k=>new RegExp("'"+k+"'").test(ds)), 'super-heavies record a mount for every weapon on the hull');
+  ok(/bossMounts\('main'\)/.test(bs) && /mains\.forEach/.test(bs) && !/n>3/.test(bs.slice(bs.indexOf('export function bossSpread'), bs.indexOf('export function bossBlast'))), 'main guns fire aimed fans out of every real barrel, not a ring from the centre');
+  ok(/export function bossMG/.test(bs) && /bossMounts\('mg'\)\.concat\(bossMounts\('coax'\)\)/.test(bs) && /bossMounts\('sec'\)/.test(bs) && /bossMG\(now\)/.test(bs), 'hull MGs, coax and the 75 mm secondary fire bursts');
+  ok(/bossMounts\('podL'\)/.test(bs) && /flash:'launch'/.test(bs) && /bossLayMine/.test(bs) && /bossMounts\('emitter'\)/.test(bs) && /bossMounts\('stack'\)/.test(bs), 'missiles leave the launch tubes, mines are thrown from the rack, the laser leaves the emitter, stacks smoke');
+  ok(/U\.aimers\) for/.test(bs) && /accMat\.emissiveIntensity=/.test(bs) && /core, glow, flare/.test(bs), 'sub-turrets track, glowing seams breathe, the beam has core + glow + lens flare');
+  ok(B.every(b=>b.pal && b.pal.accent!=null && b.pal.hull<0x404040), 'each general wears a dark livery with its own glowing accent'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

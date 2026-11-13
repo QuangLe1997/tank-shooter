@@ -184,8 +184,12 @@ export function buildDesignTank(opts, ctx){ const id=opts.model, d=D[id]; const 
     const coax=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.5,6), BLACK); coax.rotation.x=Math.PI/2; coax.position.set(0.28,Y-0.02,Z(0.45)); barrelG.add(coax); }
   const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,Z(len+0.05)); barrelG.add(muzzle);
   // ---------- the model's own kit ----------
-  const K={ g, body, turretG, gunPivot, barrelG, ACC, B, T:(geo,mat,x,y,z)=>mk(turretG,geo,mat,x,y,z), mk, F, W, tw, th, d, HULL, TUR, STEEL, BLACK, GLASS, RUB, ERA:ctx.ERA, dark, metal, zf, zr };
+  const K={ g, body, turretG, gunPivot, barrelG, muzzle, ACC, B, T:(geo,mat,x,y,z)=>mk(turretG,geo,mat,x,y,z), mk, F, W, tw, th, d, HULL, TUR, STEEL, BLACK, GLASS, RUB, ERA:ctx.ERA, dark, metal, zf, zr };
+  mnt(K,'coax',barrelG,0.28,Y-0.02,Z(0.72));   // Z160 every hull's coaxial MG is a real firing point
+  if(id.startsWith('b_')){ ACC.emissiveIntensity=1.5; g.userData.accMat=ACC;   // Z160 the generals' glowing seams: accent lines along hull + turret, pulsed by the boss loop
+    for(const sd of [-1,1]){ mk(body, new THREE.BoxGeometry(0.03,0.05,(zf-zr)*0.86), ACC, sd*(W/2-0.25), F+0.05-0.95, (zf+zr)/2); } mk(turretG, new THREE.TorusGeometry(0.98,0.025,6,40), ACC, 0,0.03,0).rotation.x=Math.PI/2; }
   if(DRESS[id]) DRESS[id](K);
+  { const M=g.userData.mounts||(g.userData.mounts={}); if(!M.main) M.main=[muzzle]; }
   g.userData.turret=turretG; g.userData.muzzle=muzzle; g.userData.barrelG=barrelG; g.userData.gunPivot=gunPivot; g.userData.hull=hullM;
   g.userData.body=body; g.userData.rig=rig; g.userData.exhaust=exhaust; g.userData.blob=blob; g.userData.model=id; g.userData.mountY=th*0.5;
   return g; }
@@ -426,24 +430,26 @@ Object.assign(DRESS, {
     hard.plow={ at:[0, K.F-0.95, K.zf+1.0], on:'body' };
     for(const sd of [-1,1]){ plates(K,K.body, sd*1.62, K.F-0.05-0.95, -1.4, 0.16, 0.5, 0.62, 5, 'z'); rivets(K,K.body,-1.6,1.4,K.F+0.25-0.95,0,2); hard[sd<0?'trackL':'trackR']={ at:[sd*(K.W/2+0.1), 0.45-0.95, 0.2], on:'body' }; }
     stacks(K, [-0.75,0.75], K.zr+0.3, 1.1, true);
-    for(const sd of [-1,1]){ const c=hmg(K,T,sd*0.42,0.24,0.95,0.9); }   // twin coax
+    for(const sd of [-1,1]){ const c=hmg(K,T,sd*0.42,0.24,0.95,0.9); mnt(K,'mg',T,sd*0.42,0.24,1.9); }   // twin coax (they fire)
+    for(const x of [-0.75,0.75]) mnt(K,'stack',K.body,x,K.F+1.15-0.95,K.zr+0.3);
     for(let i=0;i<3;i++) rb(K,T,0.9,0.1,0.32, 0, h+0.05, 0.6-i*0.4, K.HULL);   // layered roof armour
     for(const sd of [-1,1]){ bx(K,T,0.02,0.12,1.4, sd*1.12,h*0.5,-0.2, K.ACC||K.HULL); }
     cupola(K,-0.5,-0.55,0.26,h); sightBox(K,0.55,h,0.45,1.1); aerial(K,-0.8,-1.0,1.6); K.g.userData.hard=hard; },
   b_tempest(K){ const T=K.turretG, h=K.th, hard={};   // CUỒNG PHONG — missile tank: two 3×4 launcher boxes, rotating radar on a mast, datalink aerials
-    for(const sd of [-1,1]){ launcherBox(K, sd*1.38, h*0.62, 0.0, 3, 4, 0xff3a20); bx(K,T,0.4,0.2,0.6, sd*1.15,h*0.3,0.0,K.STEEL); hard[sd<0?'podL':'podR']={ at:[sd*1.38, h*0.62+0.3, 0.75], on:'turret' }; }
+    for(const sd of [-1,1]){ launcherBox(K, sd*1.38, h*0.62, 0.0, 3, 4, 0xff3a20); tubeMounts(K, sd<0?'podL':'podR', sd*1.38, h*0.62, 0.0, 3, 4); bx(K,T,0.4,0.2,0.6, sd*1.15,h*0.3,0.0,K.STEEL); hard[sd<0?'podL':'podR']={ at:[sd*1.38, h*0.62+0.3, 0.75], on:'turret' }; }
     const mast=new THREE.Group(); mast.position.set(0,h,-0.95); T.add(mast); cy(K,mast,0.07,0.09,1.1,0,0.55,0,K.STEEL,10);
     const dish=new THREE.Group(); dish.position.set(0,1.15,0); mast.add(dish); K.mk(dish,new THREE.SphereGeometry(0.62,20,8,0,Math.PI*2,0,0.8),K.dark(0x8a9098),0,0,0).rotation.x=-Math.PI/2.3; cy(K,dish,0.03,0.03,0.5,0,0.05,0.3,K.STEEL,6).rotation.x=Math.PI/2;
     K.g.userData.spin=dish; hard.radar={ at:[0, h+1.15, -0.95], on:'turret' };
     sightBox(K,0.55,h,0.55,1.05); cupola(K,-0.5,-0.3,0.24,h); for(const x of [-0.9,-0.6,0.6,0.9]) aerial(K,x,-1.25,1.7); K.g.userData.hard=hard; },
   b_goliath(K){ const T=K.turretG, h=K.th, hard={};   // KHỔNG LỒ — super-heavy fortress: casemate turret of stacked plate, 170 mm + coaxial 75 mm, mine-laying rack, spare track links
-    { const c=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.14,1.6,14), K.metal(0x55555f)); c.rotation.x=Math.PI/2; c.position.set(0.62,-0.12,1.12+1.0); K.barrelG.add(c); }   // coaxial 75 mm
+    { const c=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.14,1.6,14), K.metal(0x55555f)); c.rotation.x=Math.PI/2; c.position.set(0.62,-0.12,1.12+1.0); K.barrelG.add(c); mnt(K,'sec',K.barrelG,0.62,-0.12,1.12+1.85); }   // coaxial 75 mm (it fires)
     for(const sd of [-1,1]){ plates(K,T, sd*1.42, 0.15, -1.2, 0.16, 0.58, 0.66, 4, 'z'); for(let i=0;i<5;i++) bx(K,T,0.06,0.12,0.32, sd*1.52, h*0.82, -1.2+i*0.36, K.STEEL); }   // side appliqué + spare track links
     for(let i=0;i<3;i++) rb(K,T,2.2,0.1,0.42, 0, h+0.05, 0.9-i*0.55, K.HULL); rivets(K,T,-1.1,1.1,h*0.5,1.45,9);
     const rack=new THREE.Group(); rack.position.set(0, K.F+0.2-0.95, K.zr-0.25); K.body.add(rack); rb(K,rack,2.2,0.6,0.5,0,0,0,K.dark(0x2a2a30));
     for(let i=0;i<5;i++){ const m=cy(K,rack,0.17,0.17,0.08,-0.8+i*0.4,-0.1,-0.27,K.dark(0x4a4a3a),14); m.rotation.x=Math.PI/2; K.mk(rack,new THREE.SphereGeometry(0.04,6,4),glowM(0xff4020,1.4),-0.8+i*0.4,-0.1,-0.32); }   // mines in the chutes
     loftOn(K, T, [[-0.8,-0.9],[0.8,-0.9],[0.9,-0.5],[0.9,0.4],[0.6,0.75],[-0.6,0.75],[-0.9,0.4],[-0.9,-0.5]], 0.9, 0.9, h, 0.42, -0.2);   // stacked command casemate: a fortress on a fortress
-    for(const sd of [-1,1]){ const st=new THREE.Group(); st.position.set(sd*1.05, K.F+0.62-0.95, K.zf-0.75); K.body.add(st); cy(K,st,0.32,0.36,0.32,0,0.16,0,K.HULL,16); K.mk(st,new THREE.SphereGeometry(0.3,16,8,0,Math.PI*2,0,Math.PI/2),K.HULL,0,0.32,0); hmg(K,st,0,0.22,0.25,0.75); }   // hull MG sub-turrets
+    for(const sd of [-1,1]){ const st=new THREE.Group(); st.position.set(sd*1.05, K.F+0.62-0.95, K.zf-0.75); K.body.add(st); cy(K,st,0.32,0.36,0.32,0,0.16,0,K.HULL,16); K.mk(st,new THREE.SphereGeometry(0.3,16,8,0,Math.PI*2,0,Math.PI/2),K.HULL,0,0.32,0); hmg(K,st,0,0.22,0.25,0.75); mnt(K,'mg',st,0,0.22,1.05); (K.g.userData.aimers=K.g.userData.aimers||[]).push(st); }   // hull MG sub-turrets (they track you and fire)
+    mnt(K,'mines',rack,0,-0.1,-0.45); for(const x of [-1.2,1.2]) mnt(K,'stack',K.body,x,K.F+0.95-0.95,K.zr+0.5);
     hard.mines={ at:[0, K.F+0.2-0.95, K.zr-0.45], on:'body' }; hard.gun={ at:[0, K.d.gun.y, K.d.gun.z+1.4], on:'turret' };
     cupola(K,-0.7,-0.6,0.3,h); cupola(K,0.7,-0.6,0.26,h); sightBox(K,0.75,h,0.75,1.25); stacks(K,[-1.2,1.2],K.zr+0.5,0.9,true); aerial(K,-1.0,-1.3,1.8); K.g.userData.hard=hard; },
   b_reaper(K){ const T=K.turretG, h=K.th, hard={}, V=glowM(0xa066ff,2.6);   // TỬ THẦN — stealth laser tank: faceted hull, scythe fins, crystal emitter, a caged warp core
@@ -453,12 +459,14 @@ Object.assign(DRESS, {
       bx(K,T,0.02,0.03,1.6, sd*0.9,h*0.55,0.05,V); bx(K,K.body,0.02,0.03,3.4, sd*1.4,K.F-0.95,0,V); }
     const core=new THREE.Group(); core.position.set(0, K.F+0.35-0.95, K.zr+0.45); K.body.add(core); K.mk(core,new THREE.SphereGeometry(0.28,18,12),V,0,0,0);
     for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; cy(K,core,0.025,0.025,0.7,Math.cos(a)*0.32,0,Math.sin(a)*0.32,K.STEEL,6); }
+    mnt(K,'emitter',K.barrelG,0,0.02,1.12+1.12);
     hard.emitter={ at:[0, K.d.gun.y, K.d.gun.z+1.0], on:'turret' }; hard.drive={ at:[0, K.F+0.35-0.95, K.zr+0.45], on:'body' };
     { const p=new THREE.Group(); p.position.set(-0.3,h,-0.5); T.add(p); cy(K,p,0.04,0.05,0.8,0,0.4,0,K.STEEL,8); K.mk(p,new THREE.SphereGeometry(0.13,12,8),K.dark(0x1d1a24),0,0.86,0); } K.g.userData.hard=hard; },
   b_overlord(K){ const T=K.turretG, h=K.th, hard={}, GOLD=K.metal(0xc8a040);   // BẠO CHÚA — command super-heavy: four tracks, twin 150 mm, missile banks, laser, gold command trim
-    { const lm=K.barrelG.children[0]; const l2=lm.clone(); lm.position.x=-0.36; l2.position.x=0.36; K.barrelG.add(l2); }   // twin main guns
-    for(const sd of [-1,1]){ launcherBox(K, sd*1.6, h*0.55, -0.35, 2, 4, 0xffae5c); hard[sd<0?'podL':'podR']={ at:[sd*1.6, h*0.55+0.25, 0.4], on:'turret' }; }
+    { const lm=K.barrelG.children[0]; const l2=lm.clone(); lm.position.x=-0.36; l2.position.x=0.36; K.barrelG.add(l2); K.muzzle.position.x=-0.36; const M=K.g.userData.mounts||(K.g.userData.mounts={}); M.main=[K.muzzle]; mnt(K,'main',K.barrelG,0.36,K.muzzle.position.y,K.muzzle.position.z); }   // twin main guns (both fire)
+    for(const sd of [-1,1]){ launcherBox(K, sd*1.6, h*0.55, -0.35, 2, 4, 0xffae5c); tubeMounts(K, sd<0?'podL':'podR', sd*1.6, h*0.55, -0.35, 2, 4); hard[sd<0?'podL':'podR']={ at:[sd*1.6, h*0.55+0.25, 0.4], on:'turret' }; }
     const em=new THREE.Group(); em.position.set(0,h+0.05,0.55); T.add(em); rb(K,em,0.5,0.32,0.7,0,0.16,0,K.dark(0x2e2a26)); K.mk(em,new THREE.SphereGeometry(0.14,14,10),glowM(0xffae5c,2.6),0,0.18,0.38);
+    mnt(K,'emitter',em,0,0.18,0.5); for(const x of [-1.4,1.4]) mnt(K,'stack',K.body,x,K.F+1.05-0.95,K.zr+0.4);
     hard.emitter={ at:[0, h+0.25, 0.95], on:'turret' }; hard.gun={ at:[0, K.d.gun.y, K.d.gun.z+1.5], on:'turret' };
     for(const sd of [-1,1]){ bx(K,T,0.03,0.08,2.6, sd*1.43,h*0.92,-0.1,GOLD); bx(K,K.body,0.03,0.06,4.4, sd*(K.W/2-0.02),K.F+0.1-0.95,0,GOLD); }   // gold command trim
     for(let i=0;i<3;i++) rb(K,T,2.3,0.1,0.42,0,h+0.05,0.0-i*0.5,K.HULL); rivets(K,T,-1.25,1.25,h*0.45,1.5,11);
@@ -468,3 +476,7 @@ Object.assign(DRESS, {
 
 // a lofted block set on top of a group (stacked casemates / superstructures)
 function loftOn(K, par, poly, sx, sz, y, h, z){ const g=loft(poly, poly.map(([x,zz])=>[x*sx, zz*sz]), 0, h); K.mk(par, g, K.TUR, 0, y, z||0); }
+
+// Z160 a named firing point (muzzle / tube / emitter …) on any part of the vehicle — the boss fight fires from these
+function mnt(K, kind, par, x, y, z){ const o=new THREE.Object3D(); o.position.set(x,y,z); par.add(o); const M=K.g.userData.mounts||(K.g.userData.mounts={}); (M[kind]=M[kind]||[]).push(o); return o; }
+function tubeMounts(K, kind, x, y, z, rows, cols){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.x=-0.18; K.turretG.add(g); for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) mnt(K, kind, g, (c-(cols-1)/2)*0.2, (r-(rows-1)/2)*0.2, 0.8); }

@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BOSS_DEFS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, damagePlayer, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tip, updateHUD, wrapAngle } from '../hub.js';
+import { ARENA, BIOME, BOSS_DEFS, GLOW, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, damagePlayer, decalScorch, diffRewardMul, dropBeam, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, gunMuzzleFX, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ return BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }
 export let boss=null;
@@ -94,13 +94,36 @@ export function damagePylon(b, dmg){ b.hp-=dmg; flashMat(b.orb.material,0.1,1); 
     showBanner('KHIÊN ĐÃ SẬP — DỒN HOẢ LỰC!', '#7fd8ff'); sfx('levelup'); bossStatus(); } }
 export function clearPylons(){ for(const b of PYLONS){ dropBeam(b.beam); scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); } PYLONS.length=0; }
 // ---- attack toolkit ----
-export function bossSpread(now, n, spd){
-  boss.muzzle.getWorldPosition(_v);
-  for(let i=0;i<n;i++){ const a = (n>3 ? (i/n*Math.PI*2) : boss.aim + (i-(n-1)/2)*0.35);
-    spawnBullet(_v.x,_v.z,a,{owner:'e',dmg:14,speed:spd,color:0xff6030,r:0.5,life:3.2,scale:1.4}); }
-  sfx('enemyShoot', boss&&boss.pos);
+export function bossSpread(now, n, spd){   // Z160 the MAIN GUNS fire — every barrel, aimed fans (no more 360° ring out of one muzzle), a blast worthy of the calibre
+  const mains=bossMounts('main'), acc=boss.def.pal.accent, v=Math.max(1, mains.length), per=Math.ceil(n/v), wide=Math.min(1.25, 0.12*n);
+  mains.forEach((m,bi)=>setTimeout(()=>{ if(!boss||!boss.alive||S.mode!=='playing') return; const P=mountPos(m), a0=boss.aim;
+    for(let k=0;k<per;k++){ const a=a0 + (per>1 ? (k/(per-1)-0.5)*wide : 0) + (v>1?(bi-(v-1)/2)*0.05:0);
+      spawnBullet(P.x,P.z,a,{ owner:'e', dmg:14, speed:spd, color:acc, r:0.62, life:3.4, scale:1.7, y:P.y }); }
+    bossBlast(P, a0, boss.def.scale*0.5); }, bi*170));
 }
+// a main-gun blast at boss scale: white flash, fireball, smoke ring, ground shock ring, dust kicked round the hull, hull rocks back
+export function bossBlast(P, a, k){ const acc=boss.def.pal.accent, fx=Math.sin(a), fz=Math.cos(a), gy=heightAt(P.x,P.z);
+  gunMuzzleFX({ flash:'heavy', color:acc }, P.x, P.y, P.z, a, 3.6*k);
+  spawnPart(P.x+fx*1.2,P.y,P.z+fz*1.2, fx*6,0,fz*6, { tex:'flash', color:0xffffff, size:8*k, life:0.11, grav:0, drag:9 });
+  spawnPart(P.x+fx*2.2,P.y,P.z+fz*2.2, fx*14,0.6,fz*14, { tex:'fire', color:0xfff0c0, color2:acc, size:3.6*k, grow:2.8, life:0.34, grav:0.5, drag:4 });
+  for(let i=0;i<8;i++){ const sp=0.5+Math.random()*0.9, d=(Math.random()-0.5)*0.5; spawnPart(P.x+fx*2,P.y,P.z+fz*2, (fx*Math.cos(d)-fz*Math.sin(d))*22*sp,1+Math.random()*3,(fz*Math.cos(d)+fx*Math.sin(d))*22*sp, { color:0xffd27a, size:0.35, life:0.35, grav:9, drag:1.5 }); }   // hot sparks thrown downrange
+  for(let i=0;i<10;i++){ const t=i/10*6.283; spawnPart(P.x+fx*1.6,P.y,P.z+fz*1.6, Math.cos(t)*4*k+fx*5, Math.sin(t)*2.5*k+0.6, fz*5, { color:0xa8a29a, size:1.6*k, life:1.6, smoke:true, grav:0.2, drag:1.6, grow:1.5*k, op:0.45 }); }
+  ringPulse({ x:P.x+fx*2, z:P.z+fz*2 }, 0xffffff, 3.2*k); ringPulse({ x:boss.pos.x, z:boss.pos.z }, acc, boss.r*1.6*k);
+  for(let i=0;i<14;i++){ const t=i/14*6.283; spawnPart(boss.pos.x+Math.cos(t)*boss.r, gy+0.4, boss.pos.z+Math.sin(t)*boss.r, Math.cos(t)*9, 0.6, Math.sin(t)*9, { color:BIOME.ground, size:2.2, life:0.9, smoke:true, grav:-0.1, drag:2.4, grow:1.6, op:0.5 }); }
+  muzzleLight.position.set(P.x+fx*2,P.y+1,P.z+fz*2); muzzleLight.color.setHex(acc); muzzleLight.intensity=9*k;
+  tankRecoil(boss.mesh, a, 1.0, boss.facing); S.shake=Math.min(3.2, S.shake+0.6*k); sfx('shoot_cannon', boss.pos, 1.3); }
+export function bossMounts(kind){ const M=boss&&boss.mesh.userData.mounts||{}; return M[kind]||[]; }
+const _mw=new THREE.Vector3(); export function mountPos(o){ return o.getWorldPosition(_mw).clone(); }
+// Z160 every MG / coax / secondary gun on the hull fires in bursts (rifle-calibre rounds rattle off your armour; the 75 mm hits like a shell)
+export function bossMG(now){ const acc=boss.def.pal.accent, list=bossMounts('mg').concat(bossMounts('coax'));
+  list.forEach((m,mi)=>{ for(let k=0;k<6;k++) setTimeout(()=>{ if(!boss||!boss.alive||S.mode!=='playing') return; const P=mountPos(m), p=S.player, a=Math.atan2(p.pos.x-P.x, p.pos.z-P.z)+(Math.random()-0.5)*0.12;
+      spawnBullet(P.x,P.z,a,{ owner:'e', dmg:3, speed:62, color:0xffd27a, r:0.24, life:1.4, y:P.y, inf:true }); gunMuzzleFX({ flash:'small', color:0xffd27a }, P.x,P.y,P.z, a, 0.4); if(k%2===0) sfx('rifleShot', P, 0.8); }, mi*90+k*80); });
+  for(const m of bossMounts('sec')) setTimeout(()=>{ if(!boss||!boss.alive) return; const P=mountPos(m), p=S.player, a=Math.atan2(p.pos.x-P.x, p.pos.z-P.z);
+    spawnBullet(P.x,P.z,a,{ owner:'e', dmg:9, speed:44, color:acc, r:0.42, life:2.4, scale:1.2, y:P.y }); gunMuzzleFX({ flash:'heavy', color:acc }, P.x,P.y,P.z, a, 2.2); sfx('enemyShoot', P); }, 260); }
 export const mines=[];
+export function bossLayMine(x,z,i){ const rk=bossMounts('mines')[0]; if(!rk){ bossMine(x,z); return; } const P=mountPos(rk), T=0.6;   // Z160 the rack throws each mine out in an arc
+  setTimeout(()=>{ if(!boss||!boss.alive) return; for(let s=0;s<4;s++) spawnPart(P.x,P.y,P.z,(x-P.x)/T,9-s,(z-P.z)/T,{ color:s?0xff5020:0x3a2a20, size:s?0.45:0.9, life:T, grav:-30, drag:0 }); gunMuzzleFX({ flash:'small', color:0xff5020 }, P.x,P.y,P.z, Math.atan2(x-P.x,z-P.z), 0.6); sfx('agl', P);
+    setTimeout(()=>{ if(boss&&boss.alive) bossMine(x,z); }, T*1000); }, (i||0)*120); }
 export function bossMine(x,z){
   const m=new THREE.Mesh(new THREE.SphereGeometry(0.7,12,10), new THREE.MeshStandardMaterial({color:0x802018,emissive:0xff3020,emissiveIntensity:0.6,roughness:0.5}));
   m.position.set(x,heightAt(x,z)+0.5,z); scene.add(m);
@@ -116,8 +139,11 @@ export function updateMines(dt, now){
 }
 export function clearMines(){ for(const mn of mines){ scene.remove(mn.mesh); } mines.length=0; }
 export let laserMesh=null;
-export function getLaser(){ if(!laserMesh){ laserMesh=new THREE.Mesh(new THREE.BoxGeometry(1,0.4,1).translate(0,0,0.5),
-  new THREE.MeshBasicMaterial({color:0xff4060,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})); laserMesh.position.y=1.2; scene.add(laserMesh);} return laserMesh; }
+export function getLaser(){ if(!laserMesh){ const g=new THREE.Group(); const bx=()=>new THREE.BoxGeometry(1,1,1).translate(0,0,0.5);   // Z160 beam = white-hot core inside a coloured glow, a flare at the lens
+    const core=new THREE.Mesh(bx(), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, fog:false }));
+    const glow=new THREE.Mesh(bx(), new THREE.MeshBasicMaterial({ color:0xff4060, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, fog:false }));
+    const flare=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffffff, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }));
+    g.add(glow, core, flare); g.userData={ core, glow, flare }; g.visible=false; scene.add(g); laserMesh=g; } return laserMesh; }
 // how far a beam travels before solid cover stops it (walls, rocks, towers, camps, pylons)
 export function beamReach(x, z, ang, max){ const sx=Math.sin(ang), sz=Math.cos(ang);
   for(let t=2; t<max; t+=0.8){ const px=x+sx*t, pz=z+sz*t; for(const b of blocks){ if(b.kind==='pylon') continue; if((b.x-px)**2+(b.z-pz)**2 < 64 && inBlock(b, px, pz, 0.2)) return t; } } return max; }
@@ -125,8 +151,10 @@ export function bossSummon(type, n){ for(let i=0;i<n;i++){ const a=Math.random()
 export function bossMissiles(now, n){                                                          // real missiles: shoot them down, pop smoke, APS eats them
   const pods = boss.parts.filter(q=>q.id.startsWith('pod')), live = pods.length ? pods.filter(q=>q.hp>0).length : 2; if(!live) return false;
   const k = Math.max(1, Math.round(n*live/2)), guided = bossAlive('radar')||!boss.parts.some(q=>q.id==='radar') ? 1.9 : 0;
-  boss.muzzle.getWorldPosition(_v);
-  for(let i=0;i<k;i++) setTimeout(()=>{ if(!boss||!boss.alive) return; const a=boss.aim+(i-(k-1)/2)*0.32; launchEnemyMissile(_v.x, _v.y+1, _v.z, a, { speed:24, dmg:13, aoe:3, guided, life:3.6, kind:'atgm' }); }, i*140);
+  const tubes=(bossAlive('podL')?bossMounts('podL'):[]).concat(bossAlive('podR')?bossMounts('podR'):[]);   // Z160 out of the real launch tubes of the live pods
+  for(let i=0;i<k;i++) setTimeout(()=>{ if(!boss||!boss.alive) return; const a=boss.aim+(i-(k-1)/2)*0.32; let P;
+    if(tubes.length){ boss.tubeI=((boss.tubeI||0)+5)%tubes.length; P=mountPos(tubes[boss.tubeI]); } else { boss.muzzle.getWorldPosition(_v); P=_v.clone(); P.y+=1; }
+    launchEnemyMissile(P.x, P.y, P.z, a, { speed:24, dmg:13, aoe:3, guided, life:3.6, kind:'atgm' }); gunMuzzleFX({ flash:'launch', color:boss.def.pal.accent }, P.x,P.y,P.z, a, 2); S.shake=Math.min(2.4,S.shake+0.15); }, i*140);
   return true;
 }
 export function artyBarrage(now){                                                              // a walking line of shells marching onto your position
@@ -152,6 +180,9 @@ export function updateBoss(dt, now){
   const lim=ARENA-4, laser=getLaser();
   // part markers pulse + HP bars; broken systems smoke
   { const sp=B.mesh.userData.spin; if(sp && bossAlive('radar')) sp.rotation.y+=dt*1.8; }   // Z159 the radar sweeps until it's shot off
+  { const U=B.mesh.userData; if(U.accMat) U.accMat.emissiveIntensity=1.0+0.8*(0.5+0.5*Math.sin(now*2.2));   // Z160 glowing seams breathe
+    if(U.aimers) for(const a of U.aimers) a.rotation.y=wrapAngle(B.aim-B.facing);   // hull sub-turrets track you
+    const st=bossMounts('stack'), hot=B.mode==='charge'; for(const m of st) if(Math.random()<(hot?0.9:0.12)){ const P=mountPos(m); spawnPart(P.x,P.y,P.z,(Math.random()-0.5)*1.2,hot?7:3,(Math.random()-0.5)*1.2,{ color:hot?0x120e0c:0x2a2622, size:hot?2.4:1.4, life:hot?1.4:1.8, smoke:true, grav:-0.3, drag:1.2, grow:1.6, op:hot?0.75:0.4 }); if(hot && Math.random()<0.5) spawnPart(P.x,P.y,P.z,0,8,0,{ tex:'fire', color:0xfff0c0, color2:0xff4a10, size:0.9, grow:1.2, life:0.2, grav:0, drag:3 }); } }
   for(const pt of B.parts){ if(pt.hp>0){ pt.mk.rotation.y+=dt*2; pt.mk.material.emissiveIntensity=1.1+Math.sin(now*6)*0.5; const w=partWorld(pt);
       pt.bar.g.position.set(w.x, w.y+1.4, w.z); pt.bar.g.quaternion.copy(camera.quaternion); const f=pt.hp/pt.maxHp; pt.bar.fill.scale.x=Math.max(0.001,f); pt.bar.fill.position.x=-(1-f)*0.5; pt.bar.fill.material.color.setHex(0xffa040); }
     else if(Math.random()<0.15){ const w=partWorld(pt); spawnPart(w.x,w.y,w.z,(Math.random()-0.5),2,(Math.random()-0.5),{color:0x1a1612,size:1.2,life:1.2,smoke:true,grav:-0.4,drag:1.4,op:0.5}); } }
@@ -163,12 +194,18 @@ export function updateBoss(dt, now){
     const fire = now >= B.laserTelUntil, n=B.laserN||1;
     if(!fire) B.laserAng += wrapAngle(B.aim-B.laserAng)*Math.min(1,dt*1.6); else B.laserAng += B.laserSweep*dt;   // tracks during charge-up, then sweeps
     const reach = beamReach(B.pos.x, B.pos.z, B.laserAng, 80);
-    laser.visible=true; laser.position.set(B.pos.x,1.4,B.pos.z); laser.rotation.y=B.laserAng; laser.scale.set(fire?2.2:0.3,1,reach); laser.material.opacity = fire?0.85:0.25+Math.sin(now*22)*0.15;
+    { const em=bossMounts('emitter')[0], E=em?mountPos(em):new THREE.Vector3(B.pos.x,1.4*B.def.scale,B.pos.z), L=laser.userData, acc=B.def.pal.accent, fl=0.85+Math.random()*0.15;
+      laser.visible=true; laser.position.copy(E); laser.rotation.set(0,B.laserAng,0); L.glow.material.color.setHex(acc); L.flare.material.color.setHex(acc);
+      L.core.scale.set(fire?0.55:0.08, fire?0.55:0.08, reach); L.glow.scale.set(fire?2.6:0.22, fire?2.0:0.22, reach); L.core.material.opacity=fire?0.95*fl:0.6; L.glow.material.opacity=fire?0.55*fl:0.25+Math.sin(now*22)*0.15;
+      L.flare.scale.setScalar(fire?7+Math.random()*2:2+3*Math.min(1,(now-(B.laserTelUntil-0.9))/0.9)); L.flare.material.opacity=fire?0.95:0.75;
+      if(!fire && Math.random()<0.7){ const t=Math.random()*6.283, rr=3+Math.random()*3; spawnPart(E.x+Math.cos(t)*rr, E.y+(Math.random()-0.5)*2, E.z+Math.sin(t)*rr, -Math.cos(t)*rr*3, 0, -Math.sin(t)*rr*3, { color:acc, size:0.4, life:0.32, grav:0, drag:0.5 }); }   // energy drawn into the lens
+      if(fire && reach<79 && Math.random()<0.25) decalScorch(B.pos.x+Math.sin(B.laserAng)*reach, B.pos.z+Math.cos(B.laserAng)*reach, 1.4, 0.7);
+      if(fire){ muzzleLight.position.copy(E); muzzleLight.color.setHex(acc); muzzleLight.intensity=Math.max(muzzleLight.intensity,7); } }
     if(fire && reach<79 && Math.random()<0.6){ const hx=B.pos.x+Math.sin(B.laserAng)*reach, hz=B.pos.z+Math.cos(B.laserAng)*reach; spawnPart(hx,1.4,hz,(Math.random()-0.5)*6,3,(Math.random()-0.5)*6,{color:0xff8090,size:0.4,life:0.25,grav:-10,drag:2}); }   // sparks where cover eats the beam
     if(fire){ const dx=p.pos.x-B.pos.x, dz=p.pos.z-B.pos.z, fx=Math.sin(B.laserAng), fz=Math.cos(B.laserAng), along=dx*fx+dz*fz;
       if(along>0 && along<reach && Math.abs(-fz*dx+fx*dz)<2.4 && now>B.ramAt){ damagePlayer(24, now, fx, fz); B.ramAt=now+0.35; } }
     B.vel.multiplyScalar(0.85);
-  } else laser.visible=false;
+  } else if(laser.visible) laser.visible=false;
   const lasering = now < B.laserFireUntil;
   // ---- LOCOMOTION (hull must turn to face you before it can charge — the readable tell) ----
   const slow=B.slow||1, turnRate = (B.id==='goliath'?1.2 : B.id==='reaper'?2.6 : 1.9) * dt * (B.phase>=2?1.25:1);
@@ -199,6 +236,7 @@ export function updateBoss(dt, now){
     if(distP > keep+3) spd = (B.id==='goliath'?9:13); else if(distP < keep-3) spd = -(B.id==='goliath'?6:8);
     if(spd>0 ? facingP : true) driveFwd(spd);
     if(B.id==='tempest' && now>B.spiralAt){ B.spiralAng+=0.5; spawnBullet(B.pos.x,B.pos.z,B.spiralAng,{owner:'e',dmg:7,speed:20,color:0x9fe0ff,r:0.4,life:4.2}); B.spiralAt=now+(B.phase>=2?0.07:0.1); }
+    if(now > (B.mgAt||0) && distP < 44 && Math.abs(wrapAngle(angP-B.facing))<1.6){ B.mgAt=now+(B.phase>=2?1.3:1.8); bossMG(now); }   // Z160 the hull's MGs keep up suppressive fire
     if(now>B.atkAt && !B.shielded || (B.shielded && now>B.atkAt)) bossAttack(now, B.phase);
   }
   clampField(B.pos, 4);
@@ -223,7 +261,7 @@ export function bossAttack(now, ph){
     if(r<0.4 && bossAlive('gun')){ bossSpread(now, ph===2?16:12, 24); B.atkAt=now+(ph===2?1.6:2.2); }
     else if(r<0.62){ groundPound(now); B.atkAt=now+2.6; big(); }
     else if(r<0.82){ artyBarrage(now); B.atkAt=now+3.2; big(); }
-    else if(bossAlive('mines')){ for(let i=0;i<(ph===2?6:4);i++){ const a=Math.random()*6.28,rr=4+Math.random()*12; bossMine(B.pos.x+Math.cos(a)*rr, B.pos.z+Math.sin(a)*rr); } B.atkAt=now+3; }
+    else if(bossAlive('mines')){ for(let i=0;i<(ph===2?6:4);i++){ const a=Math.random()*6.28,rr=4+Math.random()*12; bossLayMine(B.pos.x+Math.cos(a)*rr, B.pos.z+Math.sin(a)*rr, i); } B.atkAt=now+3; }
     else { B.atkAt=now+1.2; }
   } else if(id==='reaper'){
     if(r<0.5 && laser(ph>=1?2:1, ph>=2?0.9:0.55, ph>=2?0.7:0.9)){ B.atkAt=now+2.8; big(); }
@@ -236,7 +274,7 @@ export function bossAttack(now, ph){
     else if(r<0.52 && bossMissiles(now, ph===2?6:4)){ B.atkAt=now+2.2*q; big(); }
     else if(r<0.68 && laser(ph>=2?2:1, 0.7, 0.8)){ B.atkAt=now+2.6*q; big(); }
     else if(r<0.84){ artyBarrage(now); B.atkAt=now+2.8*q; }
-    else if(r<0.92){ for(let i=0;i<4;i++){ const a=Math.random()*6.28,rr=5+Math.random()*12; bossMine(B.pos.x+Math.cos(a)*rr, B.pos.z+Math.sin(a)*rr); } B.atkAt=now+2.4*q; }
+    else if(r<0.92){ for(let i=0;i<4;i++){ const a=Math.random()*6.28,rr=5+Math.random()*12; bossLayMine(B.pos.x+Math.cos(a)*rr, B.pos.z+Math.sin(a)*rr, i); } B.atkAt=now+2.4*q; }
     else { bossSummon('bomber', 2); B.atkAt=now+3; }
   }
 }
