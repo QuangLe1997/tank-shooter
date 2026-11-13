@@ -199,7 +199,9 @@ export function updateCamera(dt, now){
   const tr=Math.min(1, S.shake/3.2), t2=tr*tr;               // TRAUMA model: shake ∝ trauma², smooth multi-sine noise, decays
   camera.position.copy(camBase);
   if(t2>0.0004){ const q=now; camera.position.x += (Math.sin(q*41.3)+Math.sin(q*73.1+1.7)*0.6)*t2*1.15; camera.position.y += (Math.sin(q*37.7+0.4)+Math.sin(q*67.9)*0.5)*t2*0.7; camera.position.z += (Math.sin(q*47.9+2.1)+Math.sin(q*59.3)*0.6)*t2*1.15; }
+  { const k=S.camKick||0; if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } S.camKick=k*Math.exp(-dt*10); }   // Z168 the shot shoves the camera back along the barrel, then it springs home
   camera.lookAt(camTarget.x, 1, camTarget.z);
+  { const base=camera.userData.fov0||(camera.userData.fov0=camera.fov), want=base+Math.min(3.2,(S.camKick||0)*2.4); if(Math.abs(camera.fov-want)>0.02){ camera.fov=want; camera.updateProjectionMatrix(); } }   // and a small FOV punch
   if(t2>0.0004) camera.rotateZ((Math.sin(now*29.7)+Math.sin(now*53.3+0.9)*0.5)*t2*0.035);   // roll
   gradePass.uniforms.aberr.value = t2*0.007;
   S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));

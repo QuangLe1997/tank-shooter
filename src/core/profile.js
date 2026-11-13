@@ -30,6 +30,7 @@ export function loadProfile(){
     pr.custom = { biome: Number.isInteger(c.biome)&&c.biome>=0&&c.biome<BIOMES.length ? c.biome : (pr.terrain>=0?pr.terrain:0), tod: ['day','noon','sunset','night'].includes(c.tod)?c.tod:'day',
       wx: typeof c.wx==='string'?c.wx:'clear', space: ['small','mid','wide'].includes(c.space)?c.space:'wide', lvl: Math.max(1, c.lvl|0) }; }
   if(!pr.ctrl107){ pr.ctrl='screen'; pr.ctrl107=true; }   // Z107 one-time switch to screen-relative driving (W/A/S/D = up/left/down/right on screen); Settings can switch back
+  if(!pr.introSeen || typeof pr.introSeen!=='object') pr.introSeen={};   // Z168 per-biome map (an old/odd value used to crash the intro)
   pr.onboarded = !!pr.onboarded; pr.coached = !!pr.coached;     // first-launch guide + first-match coach shown?
   pr.difficulty = (pr.difficulty && BALANCE.difficulty[pr.difficulty]) ? pr.difficulty : 'soldier';   // RECRUIT/SOLDIER/VETERAN
   pr.sound = pr.sound!==false; pr.music = pr.music!==false;     // audio prefs (default on)

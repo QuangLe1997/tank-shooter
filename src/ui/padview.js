@@ -54,7 +54,7 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
      ld('M684 378 H740',684,378)+lab(false,382,'M2 nút sau = →',F(15),'',15)+
      ld('M398 205 V404',398,205)+lab(true,420,'⧉ View',F(8),'',8)+
      ld('M482 205 V404',482,205)+lab(false,420,'☰ Menu',F(9),'',9);
-  const svg='<svg class="pad-svg'+(bare?' bare':'')+'" viewBox="'+(bare?'340 20 560 380':'0 0 1240 448')+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ tay cầm">'+defs+'<g transform="translate(180 0)">'+g+'</g></svg>';
+  const svg='<svg class="pad-svg'+(bare?' bare':'')+'" viewBox="'+(bare?'340 20 560 380':'-170 0 1420 448')+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ tay cầm">'+defs+'<g transform="translate(180 0)">'+g+'</g></svg>';
   return svg.replace(/#(BODY|RIM|TG|CAP|SH|DROP)\b/g, '#'+u+'$1').replace(/id="(BODY|RIM|TG|CAP|SH|DROP)"/g, 'id="'+u+'$1"'); }
 
 // live view: pressed buttons light up, sticks move, the wizard's current target pulses (one shared timer; only touches diagrams that are on screen)

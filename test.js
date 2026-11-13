@@ -808,5 +808,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   { const s=E.freshState(); s.coins=5000; ok(E.purchase(s,{ type:'mg', id:'m2hb' },cat).ok && s.mgs.includes('m2hb') && !E.purchase(s,{ type:'mg', id:'kord' },cat).ok && E.purchase(s,{ type:'mgup', id:'m2hb', track:'dmg' },cat).ok && s.mgUp.m2hb.dmg===1 && !E.purchase(s,{ type:'mgup', id:'kord', track:'dmg' },cat).ok, 'server: buy an MG once, VIP needs diamonds, upgrade only what you own'); }
   ok(['f_rally_1','f_rally_2','f_rally_3','x_scream','x_cheer'].every(k=>fs.existsSync('assets/voice/'+k+'.mp3')) && /'f_rally_1'\)/.test(R('src/world/fortress.js')) && /playClip\('x_scream'/.test(R('src/game/player-damage.js')) && /playClip\('x_cheer'/.test(R('src/fx/celebrate.js')), 'fortress commanders rally their men, a scream when your tank goes, the army cheers a victory'); }
 
+// Z168 smoother battle start, steadier controller focus, UI fit pass, weightier shots
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const tips=R('src/ui/tips.js'), br=R('src/ui/briefing.js'), gp=R('src/input/gamepad.js'), css=R('css/ui152.css'), mcss=R('css/menus.css');
+  ok(!/S\.mode='tip'/.test(tips) && /tickTip/.test(R('src/game/loop.js')) && /#tipCard\.hidden,#tipCard\.away/.test(css), 'first-time tips no longer pause the battle (a pad could not close them): a side card that times out and hides under menus');
+  ok(/prewarmStage\(\)/.test(br) && /compileAsync\(scene, camera\)/.test(br) && /typeof pr\.introSeen!=='object'/.test(R('src/core/profile.js')), 'stage shaders compile in the background during the briefing and the 3-2-1; a bad introSeen value can no longer crash the intro');
+  ok(/PAD\.ensAt=now\+0\.25/.test(gp) && !/filter:brightness\(1\.38\)/.test(mcss) && /body\.pad :is\(/.test(css), 'controller menus: no per-frame re-scan, no full-card filter pulse, mouse hover off while a pad drives');
+  ok(/#start #shopBtn \.lg/.test(css) && /\.case \.case-price\{margin-top:auto/.test(css) && /'-170 0 1420 448'/.test(R('src/ui/padview.js')), 'main menu labels fit, shop prices sit in a button, the pad diagram keeps its left labels');
+  ok(/S\.camKick/.test(R('src/combat/flame.js')) && /S\.hitStop/.test(R('src/actors/damage.js')) && /hitStop/.test(R('src/game/loop.js')) && /export function groundBlast/.test(R('src/fx/gunfx.js')) && /glowing fragments/.test(R('src/fx/explosions.js')), 'shots kick the camera by gun weight, heavy kills hit-stop, muzzle ground blast, hot fragments on hard hits'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

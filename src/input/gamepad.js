@@ -94,7 +94,8 @@ function padHud(now){ if(now<(PAD.hudAt||0)) return; PAD.hudAt=now+0.6; const el
 // ---- menus ----
 // the scrollable box the focus lives in (a list inside the overlay), else the overlay itself
 function scrollPane(root){ let e=NAV.focus; while(e && e!==root){ if(e.scrollHeight>e.clientHeight+4 && /auto|scroll/.test(getComputedStyle(e).overflowY)) return e; e=e.parentElement; } return root; }
-function navMenu(root, cur, down, lx, ly, ry, now){ ensureFocus(root);
+function navMenu(root, cur, down, lx, ly, ry, now){ const f=NAV.focus;   // Z168 re-scan the menu only when the focus is gone/hidden or 4×/s — it used to query + measure every button every frame (layout thrash → stutter)
+  if(!f || !f.isConnected || !root.contains(f) || f.offsetParent===null || now>(PAD.ensAt||0)){ PAD.ensAt=now+0.25; ensureFocus(root); }
   let dir=''; if(cur[BT.UP]||ly<-0.6) dir='u'; else if(cur[BT.DOWN]||ly>0.6) dir='d'; else if(cur[BT.LEFT]||lx<-0.6) dir='l'; else if(cur[BT.RIGHT]||lx>0.6) dir='r';
   if(dir && (dir!==PAD.navDir || now>PAD.navAt)){ PAD.navAt=now+(dir===PAD.navDir?PAD_CFG.navRepeat:PAD_CFG.navFirst); PAD.navDir=dir; menuMove(root, dir); } else if(!dir) PAD.navDir='';
   if(Math.abs(ry)>0.2) scrollPane(root).scrollTop += ry*14;                                       // right stick scrolls long screens (the list that holds the focus)

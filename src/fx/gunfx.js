@@ -71,7 +71,14 @@ const _a=new THREE.Vector3(), _b=new THREE.Vector3();
 function smokeRing(x,y,z,fx,fz,s){ const n=MOBILE?7:12, px=fz, pz=-fx;   // vortex ring: puffs set round the bore axis, blown outward and slowly forward
   for(let i=0;i<n;i++){ const t=i/n*6.283, c=Math.cos(t), sn=Math.sin(t), ox=px*c*0.35*s, oz=pz*c*0.35*s, oy=sn*0.35*s;
     spawnPart(x+ox+fx*0.6*s, y+oy, z+oz+fz*0.6*s, px*c*2.4*s+fx*3.2, sn*2.4*s+0.3, pz*c*2.4*s+fz*3.2, { color:0xb0aa9c, size:0.75*s, life:1.5+Math.random()*0.4, smoke:true, grav:0.25, drag:1.7, grow:1.0*s, op:0.38 }); } }
+// Z168 the muzzle blast hits the ground: a ring of dust and grit thrown out under the barrel (bigger guns, bigger ring)
+export function groundBlast(x, z, fx, fz, k){ const gy=heightAt(x,z), n=MOBILE?6:12, dc=BIOME.ground;
+  for(let i=0;i<n;i++){ const t=i/n*6.283, c=Math.cos(t), s=Math.sin(t), f=0.6+0.4*Math.max(0, c*fx+s*fz);   // stronger ahead of the muzzle
+    spawnPart(x+c*0.6, gy+0.25, z+s*0.6, c*7*k*f, 0.8+Math.random(), s*7*k*f, { color:dc, size:1.1*k, life:0.8+Math.random()*0.4, smoke:true, grav:-0.2, drag:2.6, grow:1.6, op:0.45 }); }
+  for(let i=0;i<(MOBILE?3:6);i++){ const a=Math.atan2(fx,fz)+(Math.random()-0.5)*1.4, sp=6+Math.random()*7; spawnPart(x, gy+0.3, z, Math.sin(a)*sp, 3+Math.random()*3, Math.cos(a)*sp, { color:0x6a5a44, size:0.16, life:0.7, grav:-14, drag:0.6 }); }   // grit
+  ringPulse({ x, z }, 0xfff0d0, 1.8*k); }
 export function gunMuzzleFX(g, x, y, z, ang, rec){ const fx=Math.sin(ang), fz=Math.cos(ang), kind=g.flash||'auto';
+  if(rec>=1.2 && (kind==='heavy'||kind==='rail'||kind==='launch')) groundBlast(x+fx*0.8, z+fz*0.8, fx, fz, Math.min(1.8, 0.6+rec*0.25));
   if(kind==='auto'){ muzzleFlash(x,z,ang,g.color,rec,y); return; }
   if(kind==='small'){   // MG / rotary — crisp and small; rate of fire does the talking
     spawnPart(x+fx*0.25,y,z+fz*0.25, fx*3,0,fz*3, { tex:'flash', color:0xfff2d0, size:0.95+Math.random()*0.35, life:0.04, grav:0, drag:8 });

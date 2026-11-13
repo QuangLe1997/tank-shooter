@@ -162,3 +162,50 @@
 .kit-rec.on{border-color:var(--green);box-shadow:0 0 0 2px var(--green),var(--card-sh);}
 .mg-card .kr-buy,.mg-card .kse-swap{margin-top:4px;}
 .mg-up{grid-template-columns:1fr auto;gap:4px 8px;padding:6px 8px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.03);} .mg-up .kr-nm{grid-column:1/-1;font-size:12.5px;flex-direction:row;gap:6px;align-items:baseline;flex-wrap:wrap;} .mg-up .kr-nm small{font-size:10.5px;} .mg-up .kr-pips{align-self:center;} .mg-up .kr-pips i{width:16px;height:7px;} .mg-up .kr-buy{min-width:96px;font-size:11px;margin-top:0 !important;}
+
+/* ===== Z168 controller: no mouse-hover lift while a pad / keyboard drives (a resting cursor used to fight the focus ring → flicker) ===== */
+body.pad :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.tcard,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus),
+body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.tcard,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus){transform:none !important;filter:none !important;}
+.gcard.padfocus,.kit-rec.padfocus,.brcard.padfocus,.upcard.padfocus{transform:translateY(-3px) scale(1.02) !important;}
+
+/* ===== Z168 first-time tips: a side card (no dimmed backdrop, no pause), under every menu, with a countdown bar ===== */
+#tipCard{inset:auto 14px auto auto !important;top:78px !important;z-index:15 !important;background:none !important;display:block !important;pointer-events:none !important;width:min(380px,calc(100vw - 28px));}
+#tipCard.hidden,#tipCard.away{display:none !important;}
+#tipCard .tc-box{position:relative;width:100% !important;pointer-events:auto;padding:12px 14px 11px !important;box-shadow:0 12px 30px rgba(0,0,0,.5);border-radius:12px;overflow:hidden;animation:tcIn .28s var(--ease) both;}
+#tipCard .tc-body{font-size:13.5px !important;line-height:1.42 !important;} #tipCard .tc-ttl{font-size:17px !important;} #tipCard .tc-ic{width:36px !important;height:36px !important;padding:6px !important;}
+#tipCard .tc-bar{position:absolute;left:0;top:0;height:3px;width:100%;background:linear-gradient(90deg,#8cbf3f,#d8f08a);transform-origin:left;}
+@keyframes tcbar{from{transform:scaleX(1);}to{transform:scaleX(0);}} @keyframes tcIn{from{opacity:0;transform:translateX(24px);}to{opacity:1;transform:none;}}
+body.touch #tipCard{top:auto !important;bottom:12px;left:50% !important;right:auto !important;transform:translateX(-50%);width:min(440px,70vw);}
+
+/* ===== Z168 UI pass: main menu row never overflows; garage / workshop bars stay on one line ===== */
+#start #arsenalBtn .lg,#start #garageBtn .lg,#start #shopBtn .lg,#start #terrainBtn .lg{display:none;}   /* the long words don't fit four-across; the short label + icon do */
+#start .panel .btn>span:not(.ic){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+#start .panel .btn{min-width:0;}
+#start #garageBtn{justify-content:center;gap:8px;}
+@media (max-width:1100px){ .gar-ttl{font-size:clamp(20px,3vw,30px) !important;letter-spacing:3px !important;} .gar-l .btn{padding:6px 10px !important;font-size:11px !important;} .gar-l{gap:6px !important;} }
+@media (max-height:520px){ .gar-top{grid-template-columns:auto 1fr auto !important;} .gar-ttl{font-size:20px !important;letter-spacing:2px !important;text-align:center;} .gar-l .btn{padding:5px 8px !important;font-size:10.5px !important;} #garage .subtitle,#kitshop .subtitle{display:none;} }
+/* short landscape phones: four across (arsenal · garage · shop · battlefield), then the small row */
+@media (orientation:landscape) and (max-height:500px){
+  #start #arsenalBtn{grid-area:2/1/3/2 !important;} #start #garageBtn{grid-area:2/2/3/3 !important;} #start #shopBtn{grid-area:2/3/3/4 !important;} #start .terrain-pick{grid-area:2/4/3/5 !important;}
+  #start #rankBtn{grid-area:3/1/4/2 !important;} #start #guideBtn{grid-area:3/2/4/3 !important;} #start #settingsBtn{grid-area:3/3/4/4 !important;} #start #resetBtn{grid-area:3/4/4/5 !important;}
+  #start #keysBtn{display:none !important;}
+  #start #arsenalBtn,#start #garageBtn,#start #shopBtn{font-size:11px !important;padding:9px 5px !important;gap:5px !important;} #start #garageBtn .ic{width:14px;height:14px;}
+}
+@media (orientation:portrait){
+  #start #arsenalBtn,#start #shopBtn,#start #garageBtn,#start .terrain-pick{grid-column:span 3 !important;}
+  #start #rankBtn,#start #guideBtn,#start #settingsBtn,#start #resetBtn{grid-column:span 3 !important;} #start #keysBtn{display:none !important;}
+}
+
+/* ===== Z168 shop cards: the price IS the button — a full-width pill at the foot of the card ===== */
+.case .case-price{margin-top:auto;align-self:stretch;justify-content:center;align-items:center;flex-direction:row !important;flex-wrap:wrap;gap:2px 6px !important;
+  min-height:30px;padding:5px 8px;border-radius:9px;font-size:13.5px !important;letter-spacing:.5px;line-height:1.1;text-align:center;
+  background:linear-gradient(180deg,#ffd77a,#e8a83a);color:#1b1206 !important;text-shadow:none !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 3px 8px rgba(0,0,0,.35);}
+.case .case-price .ic{color:#1b1206 !important;width:14px !important;height:14px !important;}
+.case.rar-vip .case-price{background:linear-gradient(180deg,#9ff1ff,#3fb8d8);color:#06222a !important;} .case.rar-vip .case-price .ic{color:#06222a !important;}
+.case.cant .case-price{background:rgba(255,255,255,.07);color:#a49a86 !important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);} .case.cant .case-price .ic{color:#a49a86 !important;}
+.case .case-price .short{flex-basis:100%;font-size:9.5px !important;color:#ff9a7a !important;}
+.case.owned .case-price,.case.maxed .case-price{background:rgba(140,191,63,.16);color:#c6f07a !important;box-shadow:inset 0 0 0 1px rgba(140,191,63,.45);font-size:12px !important;}
+.case{display:flex;flex-direction:column;}
+/* garage on short screens: smaller photos, more cards per row */
+@media (max-height:520px){ #garGrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr)) !important;gap:10px !important;} .gc-pic{height:96px !important;} .gc-desc{display:none;} .gcard{gap:3px !important;padding:8px 10px 10px !important;} .gc-nm{font-size:15px !important;} }
+#start #resetBtn .lg{display:none;}

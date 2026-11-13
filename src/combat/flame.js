@@ -163,6 +163,8 @@ export function fireGun(now, range){
   const rec=g.recoil||0; if(rec){ p.kbx -= Math.sin(ang)*rec; p.kbz -= Math.cos(ang)*rec;
     const km=Math.hypot(p.kbx,p.kbz), kc=6.5; if(km>kc){ p.kbx*=kc/km; p.kbz*=kc/km; } }   // cap so rapid-fire recoil can't fling the tank
   gunMuzzleFX(g, _v.x, _v.y, _v.z, ang, rec);   // Z149 the flash of THIS kind of weapon at the real barrel tip
+  { const pw=Math.min(1.7, (g.dmg*(g.frags||1))/48 + rec*0.14); S.camKick=Math.min(2.4, (S.camKick||0)+pw*(g.fireCd<0.15?0.35:1)); S.kickAng=ang; S.shake=Math.min(3.2, S.shake+pw*(g.fireCd<0.15?0.08:0.45));   // Z168 the weight of the gun in your hands
+    if(rec>=1.4){ const mx=_v.x, my=_v.y, mz=_v.z; for(let i=1;i<=4;i++) setTimeout(()=>spawnPart(mx+(Math.random()-0.5)*0.2, my+0.1, mz+(Math.random()-0.5)*0.2, Math.sin(ang)*0.3, 1.1, Math.cos(ang)*0.3, { color:0xbfb8ac, size:0.38, life:1.3, smoke:true, grav:-0.5, drag:1, grow:1.6, op:0.22 }), 260*i); } }   // the hot barrel smokes after a big shot
   if(g.flash==='arc' || g.flash==='rail'){ const R=(range||playerRange())+2, list=boss&&boss.alive ? enemies.concat([boss]) : enemies;
     _mz.set(_v.x,_v.y,_v.z);
     if(g.flash==='arc'){ strikePoint(list, _v.x, _v.z, ang, R*0.9, 0.1, _tp); lightning(_mz, _tp); }      // the bolt jumps to whatever is near the line of fire

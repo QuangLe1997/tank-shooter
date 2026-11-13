@@ -63,7 +63,7 @@ function cullFar(T, on){ if(!on){ for(const o of _hidden) o.visible=true; _hidde
     if(Math.hypot(_wp.x-T.x, _wp.z-T.z) > R){ o.visible=false; _hidden.push(o); } } }
 export function endIntro(){
   if(!intro.active) return; intro.active=false; intro.warm=false; showVeil(false);
-  if(!PROFILE.introSeen) PROFILE.introSeen={}; if(!PROFILE.introSeen[BIOME.name]){ PROFILE.introSeen[BIOME.name]=1; saveProfile(); }
+  if(!PROFILE.introSeen || typeof PROFILE.introSeen!=='object') PROFILE.introSeen={}; if(!PROFILE.introSeen[BIOME.name]){ PROFILE.introSeen[BIOME.name]=1; saveProfile(); }
   cullFar(null, false); if(intro.fog0!=null && scene.fog){ scene.fog.density=intro.fog0; intro.fog0=null; }
   document.getElementById('cine').classList.remove('on'); document.body.classList.remove('cine');
   WAVE.active=false; S.wave=0;

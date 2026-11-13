@@ -1,5 +1,5 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
-import { BIOME, S, burst, decalCrater, decalDirt, decalScorch, fireball, haptic, muzzleLight, ringPulse, sfx, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
+import { BIOME, MOBILE, S, burst, decalCrater, decalDirt, decalScorch, fireball, haptic, muzzleLight, ringPulse, sfx, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 export function bigExplode(pos, color, scale=1.5){
@@ -19,6 +19,9 @@ export function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), dc=BIOME.g
   burst({x,z}, dc, Math.max(1,Math.floor(2*k)), 1.6*k, {y:0.4, life:0.7, size:1.1*k, smoke:true, grav:-0.4, drag:2.2, up:1.2, op:0.45}); }   // dust
 // ----- per-gun IMPACT spray (non-lethal hit) — each weapon "reads" differently on contact -----
 export function impactFX(pos, fx, k){ k=k||1; sfx(k>2.2?'hitHeavy':'hit', pos, 0.6+k*0.25);   // Z102 every strike on armour is heard
+  if(k>=1.3){ const n=Math.min(MOBILE?5:10, Math.floor(3+k*2.5)), y0=(pos.y||1.2);   // Z168 a hard hit tears off glowing fragments that arc out, land and skip across the ground
+    for(let i=0;i<n;i++){ const a=Math.random()*6.283, sp=4+Math.random()*7*Math.min(2,k); spawnPart(pos.x, y0, pos.z, Math.cos(a)*sp, 3+Math.random()*6, Math.sin(a)*sp, { color:0xfff0b0, color2:0xff5a10, size:0.14+0.06*k, life:0.9+Math.random()*0.7, grav:-18, drag:0.4 }); }
+    spawnPart(pos.x, y0, pos.z, 0, 0, 0, { tex:'flash', color:0xffffff, size:1.6+k*0.8, life:0.06, grav:0, drag:0 }); }
   if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xfff1c0, Math.floor(7*k), 9*k, {life:0.26, size:1.2*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(5*k), 6*k, {life:0.34, size:1.05*k, drag:3});
     burst(pos, 0x281e14, Math.floor(2+k), 4*k, {life:0.55, size:1.3*k, smoke:true, grav:-0.5, drag:2, op:0.4});   // lingering fire-lit smoke
     muzzleLight.position.set(pos.x,1.6,pos.z); muzzleLight.color.setHex(0xff9a4a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4*k); }
