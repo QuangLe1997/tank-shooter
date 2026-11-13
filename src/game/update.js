@@ -54,7 +54,7 @@ export function updatePlayer(dt, now){
     const tLv = now < bu.turbo ? (p.buffLv.turbo||1) : 0; p.turboLv=tLv;
     const pow = mob*(over?1.04:1)*heavy*slopeK*(1+tLv*LOOT.turbo.accel)*(p.accelMul||1);
     const scr = controlScheme()!=='tank' && !MOBILE, piv = scr ? DRIVE.screenPivot : DRIVE.pivot, tas = scr ? DRIVE.screenTurnAtSpeed : DRIVE.turnAtSpeed;   // Z107 keyboard on screen axes: swing round fast
-    const turnK = piv + (tas - piv)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed);
+    const turnK = (piv + (tas - piv)*Math.min(1, Math.abs(vf)/PLAYER.maxSpeed))*(p.turnMul||1);   // Z155 the model's suspension / gearbox
     let thr = 0;
     if(tankCtl){                                                                  // Z99 TANK CONTROLS: W/S = throttle along the hull, A/D = rotate the hull
       if(TI.turn) p.facing = wrapAngle(p.facing + TI.turn*turnK*dt);

@@ -698,5 +698,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/spawnRelic\(\)/.test(R('src/ui/briefing.js')) && /clearRelic\(\)/.test(R('src/loot/upgrades.js')) && /clearRelic\(\)/.test(R('src/game/flow.js')) && /updateRelic\(gdt, now\)/.test(R('src/game/loop.js')), 'one relic per stage; its power ends with the stage / run');
   ok(/id="relicDlg"/.test(R('index.html')) && /#relicCards > \*/.test(R('src/input/bindings.js')) && /RELIC\.live/.test(R('src/ui/radar.js')), 'pick dialog (pad-navigable) + radar marker'); }
 
+// Z155 tank collection: real MBTs + our designs, a garage, models on enemies
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const md=R('src/tank/models.js');
+  const real=['T-90M PRORYV','LEOPARD 2A7V','M1A2 SEPv3 ABRAMS','K2 BLACK PANTHER','LECLERC','CHALLENGER 3','MERKAVA MK.4M','TYPE 99A','T-14 ARMATA'];
+  ok(real.every(n=>md.includes("name:'"+n+"'")), 'nine real main battle tanks, named after the vehicles');
+  ok(/real:false/.test(md) && /BÓNG MA S-7/.test(md) && /KHỔNG TƯỢNG K-8/.test(md), 'our own designs (stealth light tank, super-heavy) alongside');
+  ok(/stats:\{ hp:[\d.]+, spd:[\d.]+, acc:[\d.]+, turn:[\d.]+, size:[\d.]+ \}/.test(md) && /p\.turnMul=TS\.turn/.test(R('src/game/flow.js')) && /\(p\.turnMul\|\|1\)/.test(R('src/game/update.js')), 'each model changes armour, speed, acceleration, turning and size in battle');
+  ok(/turretGeo\(SP\.turret\)/.test(R('src/tank/model.js')) && /MD\.dress\(/.test(R('src/tank/model.js')) && /camoTex\(/.test(R('src/tank/model.js')), 'builder: per-model turret silhouette, dress kit and camouflage');
+  ok(/model:ENEMY_MODEL\[type\]/.test(R('src/actors/enemies.js')) && /id="garage"/.test(R('index.html')) && /export function openGarage/.test(R('src/ui/garage.js')), 'enemies wear real silhouettes; garage to buy / pick your tank'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

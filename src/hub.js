@@ -30,6 +30,7 @@ export * from './world/cover.js';
 export * from './world/ridges.js';
 export * from './world/brick-walls.js';
 export * from './tank/materials.js';
+export * from './tank/models.js';   // Z155 tank collection (real MBTs + our designs)
 export * from './tank/model.js';
 export * from './tank/rig.js';
 export * from './tank/barrels.js';
@@ -112,6 +113,7 @@ export * from './ui/keys.js';
 export * from './ui/guide.js';
 export * from './ui/settings.js';
 export * from './ui/loadout.js';
+export * from './ui/garage.js';   // Z155 tank collection screen
 export * from './ui/shop-info.js';
 export * from './ui/shop.js';
 export * from './ui/showroom.js';

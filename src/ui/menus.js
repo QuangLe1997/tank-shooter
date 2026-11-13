@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml).
-import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, openGuide, queueResize, refreshPowerChip, refreshWallet, saveProfile, sfx, show } from '../hub.js';
+import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, currentTank, hide, levelInfo, openGuide, queueResize, refreshPowerChip, refreshWallet, saveProfile, sfx, show, tankModel } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -9,6 +9,7 @@ export function tapBtn(id, fn){ const el=document.getElementById(id); if(!el) re
 export function tapEl(el, fn){ if(!el) return; el.addEventListener('click', fn);
   el.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); fn(e); }, {passive:false}); }
 export function refreshStartUI(){
+  try{ const gn=document.getElementById('garName'); if(gn) gn.textContent=tankModel(currentTank()).name.split(' ')[0]; }catch(e){}   // Z155 which tank rolls out
   try{ const ps=document.getElementById('playSub'), I=levelInfo(campaignMax()); if(ps) ps.textContent='CẤP '+I.L+' · '+biomeVi(I.biome.name)+(I.boss?' · TƯỚNG':''); }catch(e){}   // Z152 what PLAY starts
   try{ refreshPowerChip(); }catch(e){}   // Z107 power rating vs your next campaign level
   const hello=document.getElementById('hello');

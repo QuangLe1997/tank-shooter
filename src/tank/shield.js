@@ -1,7 +1,7 @@
 // tank/shield.js — premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop)
 import * as THREE from 'three';
 import { HEADING } from '../../config.js';
-import { ARENA, NIGHT, PLAYER, TANK_SCALE, _canvasTex, buildTank, makeFlag, scene, vnTex } from '../hub.js';
+import { ARENA, NIGHT, PLAYER, TANK_SCALE, _canvasTex, buildTank, currentTank, makeFlag, scene, tankModel, vnTex } from '../hub.js';
 
 // ----- premium energy SHIELD: hex force-field + rim glow + orbiting rings (animated in the loop) -----
 export let _shieldTex=null;
@@ -25,7 +25,7 @@ export function makeShieldRig(){
   g.userData={fill, shell, rim, ring1, ring2}; g.visible=false; return g;
 }
 export function makePlayer(){
-  const mesh = buildTank({detail:true, mighty:true}); mesh.scale.setScalar(TANK_SCALE);   // player = the hero unit: heavier, more imposing silhouette
+  const modelId = currentTank(), mesh = buildTank({detail:true, mighty:true, model:modelId}); mesh.scale.setScalar(TANK_SCALE*tankModel(modelId).stats.size);   // Z155 the tank you picked in the garage   // player = the hero unit: heavier, more imposing silhouette
   const shield = makeShieldRig(); mesh.add(shield); mesh.userData.shield=shield;           // energy force-field (Aegis / shield power-up)
   { const T=mesh.userData.turret, pole=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.035,2.0,6), new THREE.MeshStandardMaterial({color:0x2a2a26, roughness:0.5, metalness:0.7}));
     pole.position.set(-0.72,1.25,-1.1); T.add(pole); const fl=makeFlag(vnTex(), 1.25, 0.82, -1); fl.position.set(-0.72,1.82,-1.1); T.add(fl); fl.userData.flag.dyn=true; mesh.userData.flag=fl; }
@@ -49,7 +49,7 @@ export function makePlayer(){
   { const hl=new THREE.SpotLight(0xfff2dc, 0, 34, 0.5, 0.6, 0); hl.position.set(0,1.2,2.1); const tg=new THREE.Object3D(); tg.position.set(0,0,14); mesh.userData.body.add(hl); mesh.userData.body.add(tg); hl.target=tg; NIGHT.head=hl; }   // driving lights (night)
   scene.add(mesh);
   return {
-    mesh, turret: mesh.userData.turret, muzzle: mesh.userData.muzzle,
+    mesh, turret: mesh.userData.turret, muzzle: mesh.userData.muzzle, modelId,
     pos: new THREE.Vector3(0, 0, ARENA*0.55), vel: new THREE.Vector3(),
     facing: -Math.PI, aim: -Math.PI, aimSmoothed: -Math.PI, shieldMesh: mesh.userData.shield,
     hp:100, maxHp:100, lives:5, fireAt:0, weaponLvl:0,

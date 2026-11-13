@@ -1,6 +1,6 @@
 // ui/showroom.js — Z107 SHOWROOM: the shop shows YOUR battle tank exactly as it rolls out (same hull, paint, flag and the real barrel of each gun) parked on a patch of the current battlefield under its own sky — idling, sweeping the turret, firing — plus a photo of the tank with every gun for the grid cards.
 import * as THREE from 'three';
-import { ATMOS, BIOME, MOBILE, TANK_SCALE, VIEW, animateTank, barrelGrade, buildTank, groundMaps, makeCamoNet, makeCoverMesh, makeFlag, mountBarrel, renderer, shopCam, shopScene, skyEnvTexture, tankRecoil, vnTex } from '../hub.js';
+import { ATMOS, BIOME, MOBILE, TANK_SCALE, VIEW, animateTank, barrelGrade, buildTank, currentTank, groundMaps, makeCamoNet, makeCoverMesh, makeFlag, mountBarrel, renderer, shopCam, shopScene, skyEnvTexture, tankModel, tankRecoil, vnTex } from '../hub.js';
 
 export const SHOW = { built:'', tank:null, thumbTank:null, gun:'', thumbGun:'', studio:null, flash:null, flashL:null, puffs:[], dust:null, t:0, fireT:2.4,
   orbit:0.62, drag:0, dragging:false, lastX:0, idleT:0, thumbs:{}, queue:[], emblem:null, focusX:0, firing:true, salvo:0 };
@@ -19,7 +19,7 @@ export function treadTex(){ const c=document.createElement('canvas'); c.width=64
 
 // the hero: the player's own tank (detail hull, mighty silhouette, Liên Quân Thép banner) — same builder the battle uses
 export function makeShowTank(){
-  const m=buildTank({detail:true, mighty:true}); m.scale.setScalar(TANK_SCALE);
+  const id=currentTank(), m=buildTank({detail:true, mighty:true, model:id}); m.scale.setScalar(TANK_SCALE*tankModel(id).stats.size);   // Z155 your garage pick
   const T=m.userData.turret, pole=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.035,2.0,6), new THREE.MeshStandardMaterial({color:0x2a2a26, roughness:0.5, metalness:0.7}));
   pole.position.set(-0.72,1.25,-1.1); T.add(pole); const fl=makeFlag(vnTex(), 1.25, 0.82, -1); fl.position.set(-0.72,1.82,-1.1); T.add(fl);
   m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } }); if(m.userData.blob) m.userData.blob.visible=false;

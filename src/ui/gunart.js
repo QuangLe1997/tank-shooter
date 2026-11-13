@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { VIP_GUNS } from '../../config.js';
-import { GUNS, MOBILE, barrelGrade, disposeBarrel, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
+import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
 
 export const GUNART = { cache:{}, queue:[], busy:false, scene:null, cam:null, rt:null, float:false };
 const OW = MOBILE ? 240 : 320, OH = Math.round(OW*0.46), SS = 2, RW = OW*SS, RH = OH*SS;
@@ -26,17 +26,19 @@ const aces=x=>{ x*=1.05; return Math.max(0, Math.min(1, (x*(2.51*x+0.03))/(x*(2.
 const srgb=x=>x<=0.0031308 ? x*12.92 : 1.055*Math.pow(x, 1/2.4)-0.055;
 let _lutF=null; function lutF(){ if(_lutF) return _lutF; _lutF=new Uint8ClampedArray(4096); for(let i=0;i<4096;i++) _lutF[i]=Math.round(srgb(aces(i/1024))*255); return _lutF; }   // linear 0..4 → display byte
 let _lut=null; function lut8(){ if(_lut) return _lut; _lut=new Uint8ClampedArray(256); for(let i=0;i<256;i++) _lut[i]=Math.round(srgb(aces(i/255))*255); return _lut; }
-function renderGun(id){ stage(); const S=GUNART.scene, cam=GUNART.cam, root=new THREE.Group(), g=makeGunBarrel(id);
-  root.add(g); if(g.userData.mount) root.add(g.userData.mount);
-  root.rotation.y=Math.PI/2; S.add(root); root.updateMatrixWorld(true);
+function renderGun(id){ const root=new THREE.Group(), g=makeGunBarrel(id); root.add(g); if(g.userData.mount) root.add(g.userData.mount); root.rotation.y=Math.PI/2;
+  const url=renderObject(root, new THREE.Vector3(-0.32, 0.42, 1), 0.62); disposeBarrel(g); if(g.userData.mount) disposeBarrel(g.userData.mount); return url; }
+// Z155 a studio photo of any object (tank models for the garage use it too); dir = where the camera sits, k = framing tightness
+export function renderObject(root, dir, k, ow, oh){ stage(); const S=GUNART.scene, cam=GUNART.cam; const OWr=ow||OW, OHr=oh||OH;
+  S.add(root); root.updateMatrixWorld(true);
   _box.setFromObject(root); _box.getCenter(_c); _box.getSize(_sz); const r=_sz.length()*0.5;
-  const dir=new THREE.Vector3(-0.32, 0.42, 1).normalize(), d=r/Math.sin(THREE.MathUtils.degToRad(cam.fov)*0.5)*0.62;
+  dir=dir.clone().normalize(); const d=r/Math.sin(THREE.MathUtils.degToRad(cam.fov)*0.5)*(k||0.62);
   cam.position.copy(_c).addScaledVector(dir, d); cam.lookAt(_c); cam.near=d*0.2; cam.far=d*3; cam.updateProjectionMatrix();
   const prevT=renderer.getRenderTarget(); renderer.getViewport(_vp); renderer.getClearColor(_cc); const prevA=renderer.getClearAlpha();
   renderer.setRenderTarget(GUNART.rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(S, cam);
   renderer.readRenderTargetPixels(GUNART.rt, 0, 0, RW, RH, GUNART.buf);
   renderer.setRenderTarget(prevT); renderer.setViewport(_vp); renderer.setClearColor(_cc, prevA);
-  S.remove(root); disposeBarrel(g); if(g.userData.mount) disposeBarrel(g.userData.mount);
+  S.remove(root);
   // pixels (bottom-up) → canvas, tone-mapped, and the bounding box of what was drawn
   const B=GUNART.buf, cv=document.createElement('canvas'); cv.width=RW; cv.height=RH; const x=cv.getContext('2d'), im=x.createImageData(RW, RH), D=im.data, L=lut8(), F=lutF(), q=v=>F[Math.min(4095, Math.max(0, v*1024)|0)];
   let x0=RW, y0=RH, x1=-1, y1=-1;
@@ -46,10 +48,10 @@ function renderGun(id){ stage(); const S=GUNART.scene, cam=GUNART.cam, root=new 
   x.putImageData(im, 0, 0);
   if(x1<0){ x0=0; y0=0; x1=RW-1; y1=RH-1; }
   // fit the drawn gun into the output frame with a little air round it (same framing for every gun)
-  const out=document.createElement('canvas'); out.width=OW; out.height=OH; const o=out.getContext('2d'); o.imageSmoothingEnabled=true; o.imageSmoothingQuality='high';
-  const cw=x1-x0+1, ch=y1-y0+1, pad=0.06, k=Math.min(OW*(1-2*pad)/cw, OH*(1-2*pad)/ch), dw=cw*k, dh=ch*k;
-  o.shadowColor='rgba(0,0,0,0.55)'; o.shadowBlur=OW*0.025; o.shadowOffsetY=OW*0.012;   // a soft drop shadow lifts it off any card
-  o.drawImage(cv, x0, y0, cw, ch, (OW-dw)/2, (OH-dh)/2, dw, dh);
+  const out=document.createElement('canvas'); out.width=OWr; out.height=OHr; const o=out.getContext('2d'); o.imageSmoothingEnabled=true; o.imageSmoothingQuality='high';
+  const cw=x1-x0+1, ch=y1-y0+1, pad=0.06, kk=Math.min(OWr*(1-2*pad)/cw, OHr*(1-2*pad)/ch), dw=cw*kk, dh=ch*kk;
+  o.shadowColor='rgba(0,0,0,0.55)'; o.shadowBlur=OWr*0.025; o.shadowOffsetY=OWr*0.012;   // a soft drop shadow lifts it off any card
+  o.drawImage(cv, x0, y0, cw, ch, (OWr-dw)/2, (OHr-dh)/2, dw, dh);
   return out.toDataURL('image/png'); }
 function pump(){ if(GUNART.busy) return; const id=GUNART.queue.shift(); if(!id) return; GUNART.busy=true;
   const go=()=>{ const key=gunArtKey(id); try{ if(!GUNART.cache[key]){ GUNART.cache[key]=renderGun(id); } paint(id); }catch(e){ console.warn('gun art', id, e); GUNART.cache[key]=GUNART.cache[key]||''; }
@@ -67,3 +69,14 @@ export function gunPicEl(id, cls){ const t=document.createElement('template'); t
 export function gunTierTx(id){ return VIP_GUNS.includes(id) ? 'VIP ◆' : 'BẬC '+((GUNS[id]||{}).tier||1); }
 // warm the cache for every gun right after boot, in idle slices (the shop and the arsenal then open with photos already there)
 export function warmGunArt(){ queueGunArt(Object.keys(GUNS)); }
+
+// ---- Z155 tank model photos (garage cards) ----
+export const TANKART = { cache:{}, queue:[], busy:false };
+function pumpTank(){ if(TANKART.busy) return; const id=TANKART.queue.shift(); if(!id) return; TANKART.busy=true;
+  (window.requestIdleCallback||((f)=>setTimeout(f,30)))(()=>{ try{ if(!TANKART.cache[id]){ const t=buildTank({ detail:true, model:id }); t.rotation.y=0; const url=renderObject(t, new THREE.Vector3(1.0, 0.62, 1.15), 0.58, OW, Math.round(OW*0.62));
+        t.traverse(o=>{ if(o.geometry && !o.geometry._shared) {} }); TANKART.cache[id]=url; }
+      document.querySelectorAll('img[data-tankpic="'+id+'"]').forEach(im=>{ im.src=TANKART.cache[id]; im.classList.add('ok'); }); }catch(e){ console.warn('tank art', id, e); TANKART.cache[id]=''; }
+    TANKART.busy=false; if(TANKART.queue.length) pumpTank(); }, { timeout:500 }); }
+export function queueTankArt(ids){ for(const id of ids) if(TANKART.cache[id]==null && !TANKART.queue.includes(id)) TANKART.queue.push(id); pumpTank(); }
+export function tankPicHTML(id, cls){ const u=TANKART.cache[id]; if(u==null) queueTankArt([id]);
+  return '<span class="gunpic tankpic '+(cls||'')+'"><i class="gp-ic">'+svgMarkup('tank')+'</i><img data-tankpic="'+id+'" class="'+(u?'ok':'')+'" alt="" src="'+(u||BLANK)+'"></span>'; }

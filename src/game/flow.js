@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -22,6 +22,7 @@ export function startGame(arg){
   const stScore = resume ? (PROFILE.save.score|0) : 0;
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
+  if(S.player && S.player.modelId !== currentTank()){ scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
   S.player = S.player || makePlayer();
   clearRelic();                          // Z154 a new run: no relic power carried over
   buildCore(stStage);                    // monument matching the (resumed) stage
@@ -38,7 +39,8 @@ export function startGame(arg){
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
   applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
   for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]);    // start each gun with its (upgraded) full magazine
-  p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE; p.mesh.scale.setScalar(TANK_SCALE);
+  { const TS=tankModel(p.modelId).stats; p.maxHp=Math.round(p.maxHp*TS.hp); p.hp=p.maxHp; p.speedMul*=TS.spd; p.accelMul=TS.acc; p.turnMul=TS.turn; p._size=TS.size; }   // Z155 the model's armour / engine / suspension
+  p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE*(p._size||1); p.mesh.scale.setScalar(TANK_SCALE*(p._size||1));
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
