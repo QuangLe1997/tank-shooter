@@ -752,9 +752,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(BD.BOSS_NEW.length===3 && BD.BOSS_NEW.every(b=>new RegExp('\\n  b_'+b.id+':').test(ds) && new RegExp('\\n  b_'+b.id+'\\(K\\)\\{').test(ds) && b.intro && b.taunt.length===2), 'three new generals, each with its own machine, intro and taunts');
   ok(/BOSS_ALT\[st\]/.test(bs) && Object.values(BD.BOSS_ALT).every(id=>BD.BOSS_NEW.some(b=>b.id===id)), 'odd NG+ loops hand stages to the new generals');
   ok(/thermoSalvo/.test(bn) && /FIREZ\.push/.test(bn) && /mortarBarrage/.test(bn) && /U\.tail/.test(bn) && /railTel/.test(bn) && /empBurst/.test(bn) && /teslaArcs/.test(bn), 'new generals fight with their own weapons (thermobaric fire, mortars + tail, railgun + EMP + tesla)');
-  ok(/radio\(msg, vkey\)/.test(ops) && /const vk=vkey \|\| voiceKeyFor\(msg\); if\(vk && voiceOn\(\)\) sayVoice\(vk\)/.test(ops) && VOICE_FILES_OK(), 'radio lines are spoken; every voice file exists');
+  ok(/radio\(msg, vkey\)/.test(ops) && /const vk=vkey \|\| voiceKeyFor\(msg\); if\(!\(vk && sayVoice\(vk\)\)\) sfx\('beep'\)/.test(ops) && VOICE_FILES_OK(), 'radio lines are spoken; every voice file exists');
   ok(/OfflineAudioContext/.test(mu) && /updateScore\(dt\)/.test(R('src/game/loop.js')) && Object.keys(BD.BOSS_DEFS.concat(BD.BOSS_NEW).reduce((a,b)=>(a[b.id]=1,a),{})).every(id=>new RegExp('\\b'+id+':\\[').test(mu)), 'adaptive score: stems rendered offline, faded with the fight, a motif per general');
-  function VOICE_FILES_OK(){ const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); keys.push('boss_phase'); return keys.length>40 && keys.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
+  function VOICE_FILES_OK(){ const T=Object.fromEntries([...vo.match(/VOICE_TAKES = \{([^}]+)\}/)[1].matchAll(/(\w+):(\d+)/g)].map(m=>[m[1],+m[2]])); const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]).concat('open','streak','boss_phase','f_rally_1','f_rally_2','f_rally_3'); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); const files=keys.flatMap(k=>T[k]?Array.from({length:T[k]},(_,i)=>k+'_'+(i+1)):[k]); return files.length>40 && files.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
 
 // Z162 cloud save (Firebase phase 1): anonymous sign-in, profile mirrored to Firestore users/{uid}, owner-only rules
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cl=R('src/core/cloud.js'), rules=R('firestore.rules'), cfg=await import('./config.js');
@@ -815,6 +815,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/PAD\.ensAt=now\+0\.25/.test(gp) && !/filter:brightness\(1\.38\)/.test(mcss) && /body\.pad :is\(/.test(css), 'controller menus: no per-frame re-scan, no full-card filter pulse, mouse hover off while a pad drives');
   ok(/#start #shopBtn \.lg/.test(css) && /\.case \.case-price\{margin-top:auto/.test(css) && /'-170 0 1420 448'/.test(R('src/ui/padview.js')), 'main menu labels fit, shop prices sit in a button, the pad diagram keeps its left labels');
   ok(/S\.camKick/.test(R('src/combat/flame.js')) && /S\.hitStop/.test(R('src/actors/damage.js')) && /hitStop/.test(R('src/game/loop.js')) && /export function groundBlast/.test(R('src/fx/gunfx.js')) && /glowing fragments/.test(R('src/fx/explosions.js')), 'shots kick the camera by gun weight, heavy kills hit-stop, muzzle ground blast, hot fragments on hard hits'); }
+
+// Z169 radio voice v2: only danger calls and big moments are spoken, 2–3 takes each, danger cuts in, a fresh slate every battle
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const vo=R('src/audio/voice.js'), lines=JSON.parse(R('tools/voice/lines.json'));
+  ok(!/'(contact|infantry|rpg|flank|scout|shield|pow|relic|hold|obj_down|camp_down|ally_down|flame)'/.test(vo) && /if\(!\(vk && sayVoice\(vk\)\)\) sfx\('beep'\)/.test(R('src/campaign/operations.js')), 'routine radio chatter is text + beep only; just danger and climax lines are spoken');
+  ok(/arty:\[3,30,1\]/.test(vo) && /if\(urgent \|\| force\)\{ cutVoice\(\)/.test(vo) && /HYPE\[k\] && \(VOICE\.playing/.test(vo), 'per-battle caps and gaps; a danger call cuts in over calmer talk; hype lines only into silence');
+  ok(/voiceStage\(\)/.test(R('src/ui/briefing.js')) && /sayVoice\('open'\)/.test(R('src/ui/briefing.js')) && /voiceKill\(\)/.test(R('src/actors/damage.js')) && /sayVoice\('lowhp'\)/.test(R('src/game/player-damage.js')), 'new moments: opening call, three-kill streak, armour under 30%');
+  ok(lines.length>=45 && lines.every(([,k])=>fs.existsSync('assets/voice/'+k+'.mp3')) && fs.readdirSync('assets/voice').every(f=>/^(x_|f_rally_)/.test(f) || lines.some(([,k])=>k+'.mp3'===f)), 'every scripted line has its file and no stale voice files remain');
+  ok(/i===VOICE\.lastTake\[k\]/.test(vo), 'a line never repeats the same take twice running'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

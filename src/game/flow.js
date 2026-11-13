@@ -13,7 +13,7 @@ export function loadoutGuns(){
 // Z119 from the menus: put the DEPLOYING veil up, let it paint, then build the world (it used to freeze on the menu)
 export function launchGame(arg){ showVeil(true); requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } })); }
 export function startGame(arg){
-  try{ audio(); engineStart(); preloadVoices([...VOICE_RULES.map(r=>r[1]), 'x_scream', 'x_cheer', 'f_rally_1', 'f_rally_2', 'f_rally_3']); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
+  try{ audio(); engineStart(); preloadVoices(['open', 'streak', ...VOICE_RULES.map(r=>r[1]), 'x_scream', 'x_cheer', 'f_rally_1', 'f_rally_2', 'f_rally_3']); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
   let cfg = (arg && typeof arg==='object' && arg.mode) ? arg : null;
   if(!cfg && !resume) cfg = S.runCfg || { mode:'campaign', level:1 };

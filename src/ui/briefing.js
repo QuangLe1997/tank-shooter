@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, GUNS, PROFILE, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, saveProfile, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl } from '../hub.js';
+import { BIOME, GUNS, PROFILE, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -42,14 +42,14 @@ export function chooseContract(c, quick){
 // Z136 COUNTDOWN: after XUẤT KÍCH the world stays frozen for 3 · 2 · 1 (camera already on the battlefield, nobody moves or shoots), then the fight goes live
 let _go=null, _cdN=0;
 export function beginStage(c, ctx){
-  S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
+  S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage(); voiceStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
   { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml('MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'')+(op&&op.title?'  —  '+op.title:''))+'</div>'+(ct?'<div class="cdc">'+escapeHtml('ĐIỀU KIỆN: '+ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers
   WAVE.active=false; S.wave=0;
   if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
   sfx('click');
 }
 function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||{}; _go=null;
-  S.mode='playing'; stageTankKit(S.player); S.kitKills=0; spawnRelic(); coachFirstRun(); resetEnvEvents(performance.now()/1000);   // Z154 the stage's relic rises somewhere on the field · first-ever match → show coach toasts (once) · Z140 the land's surprises start counting
+  S.mode='playing'; stageTankKit(S.player); S.kitKills=0; spawnRelic(); coachFirstRun(); resetEnvEvents(performance.now()/1000); setTimeout(()=>{ if(S.mode==='playing') sayVoice('open'); }, 700);   // Z154 the stage's relic rises somewhere on the field · first-ever match → show coach toasts (once) · Z140 the land's surprises start counting
   const now=performance.now()/1000;
   playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0')), true); WAVE.betweenUntil=now+1.6;   // Z138 the first wave comes 1.6 s after GO (the countdown already waited)
   { const sub=document.getElementById('cdSub'); if(sub) sub.classList.remove('on'); }

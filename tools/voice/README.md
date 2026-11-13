@@ -1,9 +1,9 @@
 # Radio voices (Z166)
 
-The 47 radio lines in `assets/voice/` are made in two steps.
+The 49 radio lines in `assets/voice/` (Z169 script: only danger calls and big moments; numbered files `key_1…key_n` are alternative takes) are made in two steps.
 
 1. **Read the line.** Google Cloud Text-to-Speech (project `steel-siege`) reads each line in `lines.json`:
-   - speaker `c` (the commander, SCH) uses `vi-VN-Chirp3-HD-Charon` at rate 1.05;
+   - speaker `c` (the commander, SCH) uses `vi-VN-Chirp3-HD-Charon`; the 4th field is the speaking rate (danger calls 1.1–1.12);
    - speaker `v` (the enemy generals) uses `vi-VN-Chirp3-HD-Algenib` at rate 0.92.
 
    Bracketed tags such as `[urgent]` are ElevenLabs cues; the script strips them before reading. `gtts.py` signs in with `gcloud auth print-access-token`, so it needs no key file.
@@ -25,4 +25,4 @@ printf 'vi-VN-Chirp3-HD-Charon\tPháo kích! Chạy ngang ra!\t/tmp/arty.mp3\t1.
 python3 tools/voice/radiofx.py /tmp/arty.mp3 assets/voice/arty.mp3
 ```
 
-For an enemy general's line, add `v` as a third argument to `radiofx.py`. Which radio message plays which file is decided in `src/audio/voice.js` (`VOICE_RULES`, plus the boss intro and taunt keys).
+For an enemy general's line, add `v` as a third argument to `radiofx.py`. Which radio message plays which file, how many takes each has and how often it may speak is decided in `src/audio/voice.js` (`VOICE_RULES`, `VOICE_TAKES`, `VOICE_LIMIT`, plus the boss intro, taunt and rally keys).

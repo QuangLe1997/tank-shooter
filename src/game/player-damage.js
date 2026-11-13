@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { LOOT } from '../../config.js';
-import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
+import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -9,7 +9,7 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   if(p.era>0 && dmg>=LOOT.era.minHit){ p.era--; dmg*=1-LOOT.era.absorb; setEraTiles(p);                 // Z93 REACTIVE ARMOUR: a tile detonates outward and eats most of the hit
     const a=Math.atan2(dx||0, dz||1); burst({x:p.pos.x-Math.sin(a)*1.6, z:p.pos.z-Math.cos(a)*1.6}, 0xffd27a, 8, 8, {y:1.5, life:0.25, size:0.4, grav:-10, drag:2, up:2}); sfx('clang'); floatText('GIÁP PHẢN ỨNG', '#e0c070', p.pos, 14); }
-  p.hp -= dmg; if(p.hp<=0) capsuleSave(p, now||performance.now()/1000);   // Z161 T-14 crew capsule
+  p.hp -= dmg; if(p.hp<=0) capsuleSave(p, now||performance.now()/1000); else if(p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');   // Z161 T-14 crew capsule
   // HIT REACTION — every hit is FELT: hull flinch/rattle + shake scaled by the blow + red splash
   p.hitT = Math.max(p.hitT||0, 0.26);
   S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028)); haptic(Math.min(60, 20+dmg*1.5));
