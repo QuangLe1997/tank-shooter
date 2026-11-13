@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ENVMOD, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -60,9 +60,11 @@ export function updateEnemies(dt, now){
   aiDirector(now); const _iq=aiIQ();   // Z95
   const p=S.player;
   const slow = now < S.enemySlowUntil ? 0.35 : 1;     // Time Warp spell
+  const cmds = enemies.filter(x=>x.def.chief), cmdDown = S.cmdDown && now < S.cmdDown.until ? S.cmdDown : null; let spot=false;   // Z158 command tanks · a fallen commander · scouts marking you
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i], def=e.def;
     updateEnemyBar(e);                                  // keep the floating HP bar pinned + facing camera every frame
+    if(p && !e.seen && !def.inf){ const q=(e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2; if(q<62*62){ e.seen=true; announceEnemy(e.type); } }   // Z158 first sighting of each class: the radio names it
     if(e.abandoned){ abandonedTick(e, dt, now); continue; }   // Z116 crew gone: it just sits there, smoking, waiting to be taken
     // ON FIRE (flamethrower DoT) — burns down HP over time; the fire grows; the tank keeps fighting while ablaze
     if(e.burn){ const F=BALANCE.flame;
@@ -101,6 +103,7 @@ export function updateEnemies(dt, now){
     if(def.air){ updateGunship(e, dt, now, edt); continue; }                  // Z80 attack helicopter
     // pick target: player if close, else the guards defending the Core, else the Core
     const dpl = e.pos.distanceTo(p.pos);
+    if(e.type==='scout' && dpl<46) spot=true;   // Z158 a recon vehicle has eyes on you
     let targetPlayer = dpl < 34 || !core || (e.ai && dpl < TACTICS.engage);   // Z95 tanks in the director's plan stay on you
     let target = targetPlayer ? p.pos : core.pos;
     { const at=allyArmourNear(e.pos.x, e.pos.z, Math.min(30, dpl*0.7)); if(at){ target=at.pos; targetPlayer=false; } }   // Z104 a captured tank of ours closer than you draws their fire
@@ -110,22 +113,25 @@ export function updateEnemies(dt, now){
     }
     let keep=def.keep;
     if(def.engineer){ e.patient=engineerPatient(e); if(e.patient){ target=e.patient.pos; keep=7; } }   // the engineer drives to whoever needs welding
+    if(def.ifv && dpl>14 && FT.length){ let bs=null, bd=26*26; for(const s of FT){ const q=(s.pos.x-e.pos.x)**2+(s.pos.z-e.pos.z)**2; if(q<bd){ bd=q; bs=s; } } if(bs){ target=bs.pos; targetPlayer=false; } }   // Z158 the IFV's 30 mm goes after our infantry first
     const to = _eTo.subVectors(target, e.pos); const d=to.length()||1; to.divideScalar(d);
     // movement
     let desire;
     const _ex=e.exit ? fortExitDir(e) : null;                       // Z111b filing out of a fortress gate overrides everything
     if(_ex){ to.set(_ex.x, 0, _ex.z); desire = def.speed*0.8; }
-    else if(e.type==='scout'){ desire = e.def.speed; }
+    else if(now < (e.smokeUntil||0)){ desire = -def.speed*0.9; }      // Z158 smoke out → reverse out of the line of fire
+    else if(now < (e.scootUntil||0)){ to.set(e.scootX,0,e.scootZ); desire = def.speed*1.35; }   // Z158 shoot-and-scoot
+    else if(def.halt && targetPlayer && d < def.range*(e.r/1.5) && now > e.fireAt-0.8){ desire = 0; }   // Z158 tank destroyer halts to lay the gun
     else if(e.aimT>0){ desire = 0; }                                   // ATGM gunner holds still while painting the target
     else if(e.unloading){ desire = 0; }                                // Z89 APC halted, ramp down, troops piling out
-    else if(targetPlayer && e.ai && e.type!=='scout'){ const dst=aiDest(e, keep, _iq);   // Z95 the director's plan: ring slot / flank / cover / fall back
+    else if(targetPlayer && e.ai){ const dst=aiDest(e, keep, _iq);   // Z95 the director's plan: ring slot / flank / cover / fall back
       if(dst){ const mx=dst.x-e.pos.x, mz=dst.z-e.pos.z, ml=Math.hypot(mx,mz)||1; desire = ml>2 ? def.speed*objMod('enemySpeedMul')*(e.ai.role==='flank'?1.15:e.ai.role==='fall'?1.1:1) : 0;
         to.set(mx/ml, 0, mz/ml); aiSteer(e, to); aiDodge(e, now, _iq); } else desire=0; }
     else if(d > keep+1.5){ desire = def.speed*objMod('enemySpeedMul'); }   // Z83 fuel depot keeps them rolling fast
     else { desire = -def.speed*0.3; } // back off a touch / hold
     e.vel.x += (to.x*desire - e.vel.x)*Math.min(1,dt*4);
     e.vel.z += (to.z*desire - e.vel.z)*Math.min(1,dt*4);
-    if(def.chief && d < keep+16){ if(e.ph2==null) e.ph2=Math.random()*6.283; const w=Math.sin(now*1.4+e.ph2)*def.speed*0.95, k=Math.min(1,dt*3); e.vel.x += -to.z*w*k; e.vel.z += to.x*w*k; }   // Z107 commander circle-strafes — hard to pin down
+    if((def.chief||def.orbit) && d < keep+16){ if(e.ph2==null) e.ph2=Math.random()*6.283; const w=Math.sin(now*1.4+e.ph2)*def.speed*0.95, k=Math.min(1,dt*3); e.vel.x += -to.z*w*k; e.vel.z += to.x*w*k; }   // Z107 commander circle-strafes — hard to pin down
     { const sl=Math.hypot(e.vel.x,e.vel.z)||1, ux=e.vel.x/sl, uz=e.vel.z/sl, gr=(heightAt(e.pos.x+ux,e.pos.z+uz)-heightAt(e.pos.x-ux,e.pos.z-uz))/2;
       e.pos.addScaledVector(e.vel, edt*Math.max(0.5, Math.min(1.3, 1-gr*1.2))); }   // slower up the mounds, faster down — hard separation later in separateTanks()
     if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*9); e.kbx*=kf; e.kbz*=kf; }   // recoil from being shot
@@ -136,14 +142,15 @@ export function updateEnemies(dt, now){
     e.aim = Math.atan2(target.x-e.pos.x, target.z-e.pos.z);
     let _jx=0,_jz=0; if(e.hitT>0){ e.hitT-=dt; const j=e.hitT*1.1; _jx=(Math.random()-0.5)*j; _jz=(Math.random()-0.5)*j; }   // hit jolt shake
     e.mesh.position.set(e.pos.x+_jx,0,e.pos.z+_jz); e.mesh.rotation.y=e.facing;
-    e.turret.rotation.y = wrapAngle(e.aim - e.facing);
+    if(e.taim==null) e.taim=e.aim; { const da=wrapAngle(e.aim-e.taim), mx=(def.trav||2.4)*dt; e.taim=wrapAngle(e.taim+Math.max(-mx,Math.min(mx,da))); }   // Z158 the turret traverses at its real rate
+    e.turret.rotation.y = wrapAngle(e.taim - e.facing); const laid = Math.abs(wrapAngle(e.aim-e.taim)) < 0.14;
     if(e.mesh.userData.rig) e.mesh.userData.rig.elevT = def.canShoot ? aimElevation(d, def.bspeed) : 0;   // lay the gun for the shot's arc
     // fire — accuracy, rate, damage all scale up with stage (gentle for newcomers)
     // combat range scales with tank size (small tank → small range, large → large)
     const er = def.range * (e.r/1.5);
     if(def.canShoot && now>e.fireAt && d < er && fortWallCross(e.pos.x, e.pos.z, target.x, target.z)){ e.fireAt=now+0.5; }   // Z111b stone in the way: no direct shot through a fortress wall / shut gate
     else if(def.truck && now>e.fireAt && d < def.range){ e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
-    else if(def.canShoot && now>e.fireAt && d < er){
+    else if(def.canShoot && now>e.fireAt && d < er && laid){
       const ds=diffScale(), A=BALANCE.aggro;
       // PROACTIVE-FIRE chance ramps with stage — early enemies hesitate, late ones fire relentlessly
       if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ e.fireAt = now + 0.35; }   // hold fire a beat
@@ -152,14 +159,17 @@ export function updateEnemies(dt, now){
         let aimA = e.aim;
         if(targetPlayer && (_iq > 0.15 || def.chief)){ const lead=Math.min(0.6, d/Math.max(1,def.bspeed))*(def.chief?1:TACTICS.leadMax*_iq); aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // Z95 smarter crews lead their shots
         const spread = A.spreadBase * (1 - ds*A.spreadDrop) * (def.accurate?A.accurateMul:1) / (1 + (S.loop||0)*A.loopAcc);   // ACCURACY tightens hard with stage + NG+ loop
-        aimA += (Math.random()-0.5) * Math.max(0.02, spread) * (ENVMOD.night?ENV.night.enemySpread:1) * smokeSpread(now);
-        const rateMul = A.rateBase - A.rateDrop*ds;
+        const nearCmd = cmds.some(c=>c!==e && (c.pos.x-e.pos.x)**2+(c.pos.z-e.pos.z)**2 < 900), lost = cmdDown && (cmdDown.x-e.pos.x)**2+(cmdDown.z-e.pos.z)**2 < 1300;
+        const moving = Math.hypot(e.vel.x,e.vel.z) > 1.5, unit = (moving ? 1+(1-(def.stab??0.8))*1.6 : 1) * (S.spotted?0.78:1) * (nearCmd?0.85:1) * (lost?1.5:1);   // Z158 stabiliser · scout marks · command net · leaderless
+        aimA += (Math.random()-0.5) * Math.max(0.02, spread*unit) * (ENVMOD.night?ENV.night.enemySpread:1) * smokeSpread(now);
+        const rateMul = (A.rateBase - A.rateDrop*ds) * (nearCmd?0.85:1) * (lost?1.3:1);
         const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul') * diffDmgMul();
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
         spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y), from:e.pos});
         tankRecoil(e.mesh, aimA, def.heavy?0.95:(def.accurate?0.7:0.45), e.facing);
         spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:col,size:def.heavy?1.4:1,life:0.1,grav:0,drag:7});
         sfx('enemyShoot', e.pos);
+        if(def.scoot){ const sd=Math.random()<0.5?1:-1; e.scootX=Math.cos(aimA)*sd; e.scootZ=-Math.sin(aimA)*sd; e.scootUntil=now+1.5; }   // Z158 fire, then relocate
         if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
         else e.fireAt=now+def.fireCd*rateMul;
       }
@@ -175,4 +185,14 @@ export function updateEnemies(dt, now){
       else if(core && e.pos.distanceTo(core.pos) < e.r+core.r+0.6){ damageCore(def.ram*0.7); e.ramAt=now+0.8; }
     }
   }
+  if(spot && !S.spotted && p){ floatText('BỊ TRINH SÁT ĐỊCH ĐÁNH DẤU', '#ff9a5a', p.pos, 16); radio('SCH: Xe trinh sát địch đang chỉ điểm vị trí ta — hạ nó để cắt đường ngắm!'); }   // Z158
+  S.spotted=spot;
 }
+
+// Z158 the radio names a class the first time it shows up in a battle
+export function announceEnemy(type){ const C=ENEMY_CLASS[type]; if(!C) return; if(!S.seenTypes) S.seenTypes={}; if(S.seenTypes[type]) return; S.seenTypes[type]=1;
+  radio('TÌNH BÁO: '+C.vi+' ('+C.model+') — '+C.tip); }
+// Z158 a badly hit tank throws a smoke screen and backs out of the line of fire
+export function popSmoke(e, now){ e.smoked=true; e.smokeUntil=now+2.6; const f=e.facing||0;
+  for(let i=0;i<(MOBILE?9:16);i++){ const a=f+(Math.random()-0.5)*2.2, r=2.5+Math.random()*3.5; spawnPart(e.pos.x+Math.sin(a)*r, 1.2+Math.random(), e.pos.z+Math.cos(a)*r, Math.sin(a)*1.5, 0.6, Math.cos(a)*1.5, { color:0xd8d8d0, size:3.2+Math.random()*1.5, life:5+Math.random()*1.5, smoke:true, grav:0.15, drag:1.2, grow:1.4, op:0.7 }); }
+  for(const sx of [-1,1]) spawnPart(e.pos.x, 2.4, e.pos.z, Math.sin(f+sx*0.6)*14, 6, Math.cos(f+sx*0.6)*14, { color:0xffffff, size:0.4, life:0.4, grav:-14, drag:1 }); }

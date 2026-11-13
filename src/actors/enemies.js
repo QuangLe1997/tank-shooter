@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
-import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, heightAt, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
+import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, hasDesign, heightAt, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -17,6 +17,7 @@ export function updateEnemyBar(e){ if(!e.bar) return; { const w=barWanted(e); if
 // per-type silhouette: artillery (mortar) gets a high-angle tube, gunner twin barrels, shield a frontal plate,
 // bomber a warhead payload, scout a ram prow → each enemy class reads at a glance (built once per pooled mesh)
 export function decorateEnemyMesh(m, type){
+  if(m.userData.model && hasDesign(m.userData.model)) return;   // Z158 a role vehicle carries its own real kit (nozzle / launcher / crane built in)
   const pal=m.userData.palOverride||ENEMY_DEFS[type].pal, ud=m.userData, T=ud.turret, bg=ud.barrelG;
   const _mc={}, memo=(k,f)=>_mc[k]||(_mc[k]=f());
   const steel=(c)=>memo('s'+c,()=>new THREE.MeshStandardMaterial({color:c,roughness:0.4,metalness:0.85}));

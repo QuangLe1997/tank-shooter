@@ -146,5 +146,5 @@ export const TANK_MODELS = {
 };
 export const TANK_ORDER = ['lqt','t90m','ghost','leo2a7','leclerc','abrams','type99','k2','ch3','merkava','t14','colossus'];
 // which enemy type wears which hull (the enemy keeps its own paint, stats and hitbox; only the silhouette changes)
-export const ENEMY_MODEL = { grunt:'t90m', gunner:'type99', shield:'merkava', heavy:'t14', chief:'k2', sniper:'leclerc', scout:'ghost' };
+export const ENEMY_MODEL = { grunt:'t90m', scout:'recon', gunner:'ifv', mortar:'spg', shield:'merkava', bomber:'ugv', heavy:'t14', chief:'k2', sniper:'td', pyro:'flametank', atgm:'atgmv', engineer:'arv' };   // Z158 each role on the vehicle built for it
 export function tankModel(id){ return TANK_MODELS[id] || TANK_MODELS.lqt; }

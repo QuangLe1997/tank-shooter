@@ -164,6 +164,7 @@ export function buildDesignTank(opts, ctx){ const id=opts.model, d=D[id]; const 
   for(const s of [-1,1]){ const half = t.dome ? t.dome.rx*0.9 : Math.max(...t.poly.map(p=>Math.abs(p[0]))); mk(turretG, new THREE.BoxGeometry(0.02,0.09,0.8), ACC, s*(half*(t.dome?0.98:0.99)+0.012), th*0.45, -0.3); }   // faction stripe
   // ---------- gun mount: pivot + mantlet + own barrel ----------
   const gn=d.gun, gunPivot=new THREE.Group(); gunPivot.position.set(0, gn.y, gn.z); turretG.add(gunPivot);
+  gunPivot.rotation.x=-(gn.elev0||0);   // rests at its own elevation from the first frame (the rig keeps it there)
   const P=(geo,mat,x,y,z)=>mk(gunPivot,geo,mat,x,y,z);
   if(gn.mantlet==='slot'){ P(new RoundedBoxGeometry(gn.mw,gn.mh,0.32,1,0.04), metal(0x3a3b33), 0,0,0.08); for(const s of [-1,1]) P(new THREE.BoxGeometry(0.06,gn.mh*0.9,0.12), BLACK, s*gn.mw*0.38,0,0.26); }
   else if(gn.mantlet==='box'){ P(new RoundedBoxGeometry(gn.mw,gn.mh,0.34,2,0.05), TUR, 0,0,0.1); P(new THREE.CylinderGeometry(0.17,0.17,0.12,14), metal(0x3a3b33), 0,0,0.3).rotation.x=Math.PI/2; }
@@ -182,7 +183,7 @@ export function buildDesignTank(opts, ctx){ const id=opts.model, d=D[id]; const 
     const coax=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.5,6), BLACK); coax.rotation.x=Math.PI/2; coax.position.set(0.28,Y-0.02,Z(0.45)); barrelG.add(coax); }
   const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,Z(len+0.05)); barrelG.add(muzzle);
   // ---------- the model's own kit ----------
-  const K={ g, body, turretG, gunPivot, B, T:(geo,mat,x,y,z)=>mk(turretG,geo,mat,x,y,z), mk, F, W, tw, th, d, HULL, TUR, STEEL, BLACK, GLASS, RUB, ERA:ctx.ERA, dark, metal, zf, zr };
+  const K={ g, body, turretG, gunPivot, barrelG, B, T:(geo,mat,x,y,z)=>mk(turretG,geo,mat,x,y,z), mk, F, W, tw, th, d, HULL, TUR, STEEL, BLACK, GLASS, RUB, ERA:ctx.ERA, dark, metal, zf, zr };
   if(DRESS[id]) DRESS[id](K);
   g.userData.turret=turretG; g.userData.muzzle=muzzle; g.userData.barrelG=barrelG; g.userData.gunPivot=gunPivot; g.userData.hull=hullM;
   g.userData.body=body; g.userData.rig=rig; g.userData.exhaust=exhaust; g.userData.blob=blob; g.userData.model=id; g.userData.mountY=th*0.5;
@@ -298,3 +299,77 @@ const DRESS = {
     for(const s of [-1,1]) smokeBank(K, s*1.25, h*0.8, -0.6, 6, s*-0.45, 2);
     glacisERA(K, 3, 7, K.zf-0.2, 0.3); aerial(K,-1.0,-1.4,1.5); aerial(K,1.0,-1.4,1.5); },
 };
+
+// ======================================================================================================================
+//   Z158 ENEMY ROLE VEHICLES — the support classes get the real vehicle for their job instead of a tank wearing props:
+//   BMP-3-type hull (IFV · recon · ATGM carrier) · 2S19-type self-propelled howitzer · 2S25-type tank destroyer · flame tank and armoured
+//   recovery vehicle on the T-90 chassis · Uran-9-type demolition UGV. Function hooks for the AI: ud.nozzle (flame), ud.launcher (ATGM), ud.arm (crane).
+// ======================================================================================================================
+const IFV_RUN={ n:6, r:0.3, z0:-1.45, z1:1.4, spr:{ z:-1.86, y:0.56, r:0.27 }, idl:{ z:1.84, y:0.5, r:0.24 }, rol:[-0.9,0.0,0.9], rolY:0.86 };
+const IFV_HULL={ W:3.1, tw:0.5, run:IFV_RUN, skirt:{ kind:'plates', z0:-1.8, z1:1.95 },
+  lower:[[-2.0,0.44],[1.5,0.44],[2.05,'F'],[-2.0,'F']], upper:[[-2.05,0],[2.05,0],[2.1,0.05],[1.2,0.32],[-1.9,0.46],[-2.05,0.38]], exhaust:[1.0,-0.6,'side'] };
+const SMALL_T=[[-0.62,-0.66],[0.62,-0.66],[0.7,-0.3],[0.7,0.36],[0.46,0.72],[-0.46,0.72],[-0.7,0.36],[-0.7,-0.3]];
+Object.assign(D, {
+  ifv:   { ...IFV_HULL, tur:{ y:0.44, z:0.2, h:0.42, poly:SMALL_T, top:[0.84,0.84,0] },
+           gun:{ y:0.2, z:0.74, mantlet:'box', mw:0.32, mh:0.26, len:2.2, r0:0.055, r1:0.045, evac:0, bands:0, muzzle:'collar', recoil:0.25, elev0:0 } },
+  recon: { ...IFV_HULL, tur:{ y:0.44, z:0.25, h:0.4, poly:SMALL_T, top:[0.84,0.84,0] },
+           gun:{ y:0.2, z:0.72, mantlet:'box', mw:0.3, mh:0.24, len:2.0, r0:0.05, r1:0.042, evac:0, bands:0, muzzle:'collar', recoil:0.2, elev0:0 } },
+  atgmv: { ...IFV_HULL, tur:{ y:0.44, z:0.1, h:0.3, poly:[[-0.55,-0.55],[0.55,-0.55],[0.6,0.3],[0.4,0.55],[-0.4,0.55],[-0.6,0.3]], top:[0.85,0.85,0] },
+           gun:{ y:0.18, z:0.5, mantlet:'exposed', len:0.55, r0:0.04, r1:0.035, evac:0, bands:0, muzzle:'plain', recoil:0.05, elev0:0 } },
+  spg:   { W:3.38, tw:0.58, run:{ n:6, r:0.34, z0:-1.6, z1:1.45, spr:{ z:-2.02, y:0.6, r:0.3 }, idl:{ z:1.92, y:0.52, r:0.26 }, rol:[-1.0,0.0,1.0], rolY:0.94 },
+           skirt:{ kind:'rubber', z0:-1.95, z1:2.0 }, lower:[[-2.0,0.42],[1.3,0.42],[2.0,'F'],[-2.0,'F']], upper:[[-2.05,0],[2.0,0],[2.04,0.05],[1.1,0.26],[-1.85,0.28],[-2.05,0.2]],
+           tur:{ y:0.27, z:-0.55, h:0.82, poly:[[-1.16,-1.62],[1.16,-1.62],[1.22,-1.2],[1.22,0.9],[1.0,1.22],[-1.0,1.22],[-1.22,0.9],[-1.22,-1.2]], top:[0.97,0.97,0] },
+           gun:{ y:0.46, z:1.32, mantlet:'box', mw:0.72, mh:0.5, len:3.6, r0:0.13, r1:0.1, evac:0.35, bands:1, muzzle:'brake', recoil:0.7, elev0:0.38 }, exhaust:[-1.2,-1.6,'side'] },   // the howitzer rests raised
+  td:    { W:3.1, tw:0.5, run:{ n:7, r:0.28, z0:-1.6, z1:1.55, spr:{ z:-1.98, y:0.55, r:0.26 }, idl:{ z:1.96, y:0.48, r:0.23 }, rol:[-1.0,0.0,1.0], rolY:0.82 },
+           skirt:{ kind:'plates', z0:-1.9, z1:2.0 }, lower:[[-2.0,0.4],[1.45,0.4],[2.02,'F'],[-2.0,'F']], upper:[[-2.05,0],[2.0,0],[2.05,0.05],[1.0,0.28],[-1.8,0.32],[-2.05,0.24]],
+           tur:{ y:0.3, z:-0.3, h:0.44, poly:[[-0.9,-1.25],[0.9,-1.25],[0.98,-0.85],[1.0,0.45],[0.7,1.0],[-0.7,1.0],[-1.0,0.45],[-0.98,-0.85]], top:[0.88,0.9,-0.03] },
+           gun:{ y:0.2, z:0.98, mantlet:'box', mw:0.42, mh:0.32, len:3.65, r0:0.1, r1:0.085, evac:0.45, bands:3, muzzle:'plain', recoil:0.65, elev0:0 }, exhaust:[-1.0,-1.5,'side'] },
+  flametank: { ...D.t90m, gun:{ y:0.18, z:0.94, mantlet:'round', len:1.15, r0:0.16, r1:0.19, evac:0, bands:1, muzzle:'collar', recoil:0.12, elev0:0 } },
+  arv:   { ...D.t90m, tur:{ y:0.22, z:-0.5, h:0.5, poly:[[-1.0,-1.1],[1.0,-1.1],[1.05,0.7],[0.7,1.0],[-0.7,1.0],[-1.05,0.7]], top:[0.92,0.9,0] },
+           gun:{ y:0.25, z:0.75, mantlet:'exposed', len:0.4, r0:0.03, r1:0.03, evac:0, bands:0, muzzle:'plain', recoil:0.02, elev0:0 } },
+  ugv:   { W:2.3, tw:0.42, run:{ n:4, r:0.26, z0:-0.85, z1:0.85, spr:{ z:-1.2, y:0.48, r:0.22 }, idl:{ z:1.2, y:0.42, r:0.2 }, rol:[] },
+           skirt:{ kind:'none', z0:-1.2, z1:1.2 }, lower:[[-1.3,0.36],[0.9,0.36],[1.35,'F'],[-1.3,'F']], upper:[[-1.32,0],[1.3,0],[1.34,0.04],[0.7,0.2],[-1.2,0.22],[-1.32,0.14]],
+           tur:{ y:0.2, z:-0.1, h:0.42, poly:[[-0.6,-0.7],[0.6,-0.7],[0.62,0.55],[0.4,0.75],[-0.4,0.75],[-0.62,0.55]], top:[0.9,0.92,0] },
+           gun:{ y:0.18, z:0.6, mantlet:'exposed', len:0.5, r0:0.025, r1:0.025, evac:0, bands:0, muzzle:'plain', recoil:0.02, elev0:0 }, exhaust:[0,-1.3] },
+});
+function ifvKit(K, gunTubes){ const T=K.turretG, h=K.th;
+  sightBox(K, 0.42, h, 0.4, 0.8); hatch(K, -0.35, -0.25, 0.18, h); for(const s of [-1,1]) smokeBank(K, s*0.66, h*0.55, 0.25, 3, s*-0.45);
+  for(const [x,z] of [[-0.55,-1.2],[0.55,-1.2],[-0.55,-0.6],[0.55,-0.6]]) cy(K,K.body,0.17,0.17,0.04,x,K.F+0.46-0.95+0.02,z,K.HULL,12);   // troop hatches on the rear roof
+  K.B(new THREE.BoxGeometry(1.2,0.5,0.05), K.dark(0x34352c), 0, K.F+0.15, K.zr-0.01);   // rear doors
+  if(gunTubes){ const g=new THREE.Group(); g.position.set(0.66,h*0.6,0.0); T.add(g); rb(K,g,0.18,0.18,0.9,0,0,0,K.dark(0x34362c)); } }
+Object.assign(DRESS, {
+  ifv(K){ ifvKit(K, true); const T=K.turretG, h=K.th;   // BMP-3 style: 100 mm low-pressure gun beside the 30 mm cannon
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.1,1.3,14), K.metal(0x3a3b33)); b.rotation.x=Math.PI/2; b.position.set(-0.16,0.02,ctxZ(0.95)); K.barrelG.add(b); },
+  recon(K){ ifvKit(K, false); const T=K.turretG, h=K.th;   // BRM-3K style: radar on a telescopic mast, extra optics
+    const m=new THREE.Group(); m.position.set(-0.2,h,-0.45); T.add(m); cy(K,m,0.05,0.06,1.0,0,0.5,0,K.STEEL,8); rb(K,m,0.7,0.28,0.12,0,1.05,0,K.dark(0x2a2c26)); bx(K,m,0.62,0.2,0.02,0,1.05,0.07,K.GLASS);
+    sightBox(K, -0.45, h, 0.35, 0.8); aerial(K,0.5,-0.5,1.6); aerial(K,-0.5,0.5,1.2); },
+  atgmv(K){ ifvKit(K, false); const T=K.turretG, h=K.th;   // Khrizantema-S style: twin launch rails on a raising arm + guidance radar
+    const arm=new THREE.Group(); arm.position.set(0,h,0.1); T.add(arm); rb(K,arm,0.3,0.6,0.32,0,0.3,0,K.TUR);
+    const box=new THREE.Group(); box.position.set(0,0.7,0.2); arm.add(box);
+    for(const sx of [-0.2,0.2]){ const tb=cy(K,box,0.12,0.12,1.5,sx,0,0,K.dark(0x4a4a36),12); tb.rotation.x=Math.PI/2; K.mk(box,new THREE.CircleGeometry(0.11,12),new THREE.MeshStandardMaterial({color:0x111111,emissive:0x331008}),sx,0,0.76); }
+    const lo=new THREE.Object3D(); lo.position.set(0.2,0,0.8); box.add(lo); K.g.userData.launcher=lo;
+    K.mk(T,new THREE.SphereGeometry(0.22,14,10,0,Math.PI*2,0,Math.PI/2),K.dark(0x34362e),-0.3,h,-0.35);
+    rb(K,T,0.32,0.3,0.32,0.38,h+0.15,-0.3,K.dark(0x22221c)); K.mk(T,new THREE.CircleGeometry(0.1,12),new THREE.MeshStandardMaterial({color:0,emissive:0xff2020,emissiveIntensity:2.4}),0.38,h+0.15,-0.13); },
+  spg(K){ const T=K.turretG, h=K.th;   // 2S19 style: tall slab turret, commander's AA MG, loading conveyor hatch, ammo racks at the rear
+    sightBox(K, 0.7, h, 0.6); cupola(K, -0.65, 0.2, 0.26, h); { const p=new THREE.Group(); p.position.set(-0.65,h+0.25,0.2); T.add(p); hmg(K,p,0,0,0,0.9); }
+    for(const s of [-1,1]){ rb(K,T,0.14,0.5,1.6, s*1.27,h*0.55,-0.2,K.dark(0x3a3c30)); smokeBank(K, s*1.05, h*0.9, 0.9, 3, s*-0.4); }
+    bx(K,T,1.2,0.5,0.05,0,h*0.45,-1.63,K.dark(0x34352c)); rb(K,T,0.9,0.22,0.5,0,h+0.11,-0.9,K.dark(0x3a3d30)); aerial(K,0.9,-1.3,1.4);
+    for(const s of [-1,1]){ const sp=K.B(new THREE.BoxGeometry(0.12,0.12,0.9), K.STEEL, s*1.0, K.F+0.08, K.zf+0.25); sp.rotation.x=0.6; } },   // nose travel-lock spades
+  td(K){ const T=K.turretG, h=K.th;   // 2S25 style: light airmobile tank destroyer, long 125 mm on a small turret
+    sightBox(K, 0.48, h, 0.5); sightBox(K, -0.45, h, -0.15, 0.95); for(const s of [-1,1]) smokeBank(K, s*0.95, h*0.6, 0.3, 4, s*-0.45);
+    stowBox(K,T,1.7,0.3,0.45,0,h*0.5,-1.4); aerial(K,-0.7,-1.0,1.3); },
+  flametank(K){ DRESS.t90m(K); const T=K.turretG;   // flame tank on the MBT chassis: projector instead of the gun, fuel cells on the deck
+    const nz=new THREE.Object3D(); nz.position.set(0,0.02,ctxZ(1.25)); K.barrelG.add(nz); K.g.userData.nozzle=nz;
+    K.mk(K.gunPivot, new THREE.SphereGeometry(0.09,8,6), new THREE.MeshStandardMaterial({color:0,emissive:0xff8a20,emissiveIntensity:3}), 0,0.2,1.2).name='pilot';
+    for(const s of [-1,1]){ const tk=cy(K,K.body,0.32,0.32,1.4, s*0.62, K.F+0.55-0.95, -1.15, K.dark(0x5a4a2a), 16); tk.rotation.x=Math.PI/2; cy(K,K.body,0.34,0.34,0.12, s*0.62, K.F+0.55-0.95, -1.15, K.STEEL, 16).rotation.x=Math.PI/2; } },
+  arv(K){ const T=K.turretG, h=K.th;   // BREM-1 style: crane boom, dozer blade, winch, load platform
+    const boom=new THREE.Group(); boom.position.set(0.55,h,-0.2); boom.rotation.set(-0.75,0.35,0); T.add(boom); rb(K,boom,0.24,0.24,2.6,0,0,1.25,K.dark(0xb08a30));
+    const tip=new THREE.Object3D(); tip.position.set(0,0,2.55); boom.add(tip); K.g.userData.arm=tip; cy(K,boom,0.01,0.01,0.9,0,-0.45,2.5,K.BLACK,4);
+    K.B(new THREE.BoxGeometry(2.9,0.42,0.12), K.STEEL, 0, 0.6, K.zf+0.22).rotation.x=-0.2; for(const s of [-1,1]) K.B(new THREE.BoxGeometry(0.12,0.12,0.7), K.STEEL, s*1.0, 0.7, K.zf-0.1);
+    rb(K,T,1.6,0.16,1.0,0,h+0.08,-0.5,K.dark(0x3a3d30)); cy(K,T,0.18,0.18,0.5,-0.6,h*0.5,0.95,K.STEEL,12).rotation.z=Math.PI/2; },
+  ugv(K){ const T=K.turretG, h=K.th;   // remote demolition vehicle: explosive load under hazard bands, aerials, camera, armed fuse light
+    for(const yy of [0.12,0.3]) bx(K,T,1.26,0.06,1.5,0,yy,0.02,new THREE.MeshStandardMaterial({ color:0xffae20, roughness:0.6 }));
+    rb(K,T,0.22,0.16,0.16,0,h+0.08,0.55,K.dark(0x1d1e1a)); bx(K,T,0.14,0.08,0.02,0,h+0.08,0.64,K.GLASS); aerial(K,-0.45,-0.55,1.2); aerial(K,0.45,-0.55,0.9);
+    const tip=K.mk(T,new THREE.SphereGeometry(0.1,10,8),new THREE.MeshStandardMaterial({color:0x000000,emissive:0xff3010,emissiveIntensity:2.4}),0,h+0.08,-0.4); tip.name='bombTip'; },
+});
+function ctxZ(dz){ return 1.12+dz; }   // barrel-space z (TRUNNION_Z + distance ahead of the pivot)

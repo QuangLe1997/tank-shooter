@@ -715,5 +715,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/spr:\{ z:2\.05/.test(ds) && /mantlet==='slot'/.test(ds) && /mantlet==='round'/.test(ds) && /mantlet==='exposed'/.test(ds), 'different gun mounts (slot / box / cast / wedge / exposed) and the Merkava\'s front sprocket');
   ok(/hasDesign\(opts\.model\)/.test(R('src/tank/model.js')) && /rig\.elev0/.test(R('src/tank/rig.js')) && /ud\.mountY/.test(R('src/tank/barrels.js')), 'builder routes models to their design; weapon barrels follow each mount'); }
 
+// Z158 enemy classes: real role vehicles + combat traits per class
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./src/data/enemies.js');
+  ok(['grunt','scout','gunner','mortar','shield','bomber','heavy','chief','sniper','pyro','atgm','engineer','carrier','launcher','gunship'].every(k=>E.ENEMY_CLASS[k] && E.ENEMY_CLASS[k].vi && E.ENEMY_CLASS[k].model), 'every enemy class has a real role name, a vehicle and a counter-tip');
+  ok(E.ENEMY_DEFS.heavy.armF<=0.5 && E.ENEMY_DEFS.heavy.armR>=1.4 && E.ENEMY_DEFS.shield.aps>0 && E.ENEMY_DEFS.sniper.halt && E.ENEMY_DEFS.scout.canShoot, 'traits: armour arcs, APS, halt-to-fire, armed scout');
+  const ds=R('src/tank/designs.js'); ok(['ifv','recon','atgmv','spg','td','flametank','arv','ugv'].every(k=>new RegExp('\\n  '+k+':').test(ds)), 'role vehicles: IFV, recon, ATGM carrier, SP howitzer, tank destroyer, flame tank, recovery vehicle, demolition UGV');
+  ok(/export function armourArc/.test(R('src/combat/lock-on.js')) && /export function apsKill/.test(R('src/combat/lock-on.js')) && /laid/.test(R('src/ai/tactics.js')) && /export function popSmoke/.test(R('src/ai/tactics.js')) && /S\.spotted=spot/.test(R('src/ai/tactics.js')), 'combat: arcs, APS, turret traverse before firing, smoke screens, scout spotting');
+  ok(/K\.g\.userData\.nozzle=nz/.test(ds) && /K\.g\.userData\.launcher=lo/.test(ds) && /K\.g\.userData\.arm=tip/.test(ds), 'flame / missile / crane hooks live on the real vehicles'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

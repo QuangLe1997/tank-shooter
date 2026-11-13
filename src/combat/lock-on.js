@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, ricochet, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, S, _hot, addTrail, armorOf, blocks, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, floatText, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, ricochet, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, typeMul, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -93,7 +93,7 @@ export function updateBullets(dt, now){
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*(b.homing||5))); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp;
         const dist=Math.hypot(t.pos.x-b.x,t.pos.z-b.z), ty=(t.pos.y||1.2);
-        if(dist < b.r+(t.r||1)+0.7){ detonate(b); recycleBullet(i); continue; }     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
+        if(dist < b.r+(t.r||1)+0.7){ if(t.def && t.def.aps && now>(t.apsCd||0) && Math.random()<t.def.aps){ t.apsCd=now+1.0; apsKill(b, t); recycleBullet(i); continue; } detonate(b); recycleBullet(i); continue; }   // Z158 APS can kill a guided missile on its final dive     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
         const desiredY=ty + b.loft*Math.min(1, dist/9);                   // vault while far, dive to strike height as it closes (descends sooner → less loiter)
         b.by += (desiredY-b.by)*Math.min(1, dt*4.2); } }                  // snappy climb/dive — short air time, no orbiting
     else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
@@ -130,9 +130,8 @@ export function updateBullets(dt, now){
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
       for(const e of enemies){ const dx=e.pos.x-b.x, dz=e.pos.z-b.z;
         if(dx*dx+dz*dz < (b.r+e.r*2.2)**2 && ((e.def.inf||e.def.air) ? dx*dx+dz*dz < (b.r+e.r)**2 : hitsHull(e, b.x, b.z, b.r))){
-          const tm = typeMul(b.type, armorOf(e))*envDmg(b.type); let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos); if(tm<=0.6 && b.fx==='spark' && Math.random()<0.6) ricochet(b.x, b.by+heightAt(b.x,b.z), b.z, b.vx, b.vz);   // Z149 light rounds skip off heavy armour   // damage class × armour × range × conditions
-          if(e.def.shield){ const nx=Math.sin(e.aim),nz=Math.cos(e.aim), bl=Math.hypot(b.vx,b.vz)||1;
-            if((b.vx/bl)*nx+(b.vz/bl)*nz < -0.3){ dmg*=0.28; ringPulse(b.mesh.position,0x9fd0ff,1.2); } }  // blocked from the front → flank it
+          if(e.def.aps && (b.rocket||b.type==='TBX') && now>(e.apsCd||0) && Math.random()<e.def.aps){ e.apsCd=now+1.0; apsKill(b, e); b.aoe=0; b.pierce=0; hit=true; break; }   // Z158 APS kills the rocket
+          const tm = typeMul(b.type, armorOf(e))*envDmg(b.type)*armourArc(e, b); let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos); if(tm<=0.6 && b.fx==='spark' && Math.random()<0.6) ricochet(b.x, b.by+heightAt(b.x,b.z), b.z, b.vx, b.vz);   // Z149 light rounds skip off heavy armour   // damage class × armour × range × conditions
           if(e.def.air && b.type==='HE' && b.fx==='frag') dmg*=ROSTER.aaBonus;   // FLAK airbursts tear helicopters apart
           e._fx=b.fx;                               // remember which gun's style killed it → styled death blast
           e._big = !b.inf && (b.aoe>0 || b.dmg>=30); e._blast=null; e._hitK=b.dmg/40; { const L=Math.hypot(b.vx,b.vz)||1; e._hx=b.vx/L; e._hz=b.vz/L; }
@@ -174,3 +173,15 @@ export function updateBullets(dt, now){
     else if(landed && !hit){ if(b.owner==='p'&&b.aoe) detonate(b); else groundHit(b.x,b.z,b.r||0.45); recycleBullet(i); }   // shell lands: burst / dirt + scar
   }
 }
+
+// Z158 ARMOUR BY ARC: where the round strikes the hull — front plates are thick, the rear deck and engine are thin
+let _arcT=0;
+export function armourArc(e, b){ const D=e.def; if(D.inf || D.air || (!D.armF && !D.armR)) return 1;
+  const bl=Math.hypot(b.vx,b.vz)||1, c=-(b.vx/bl)*Math.sin(e.facing||0) - (b.vz/bl)*Math.cos(e.facing||0);   // +1 = the shot came at the nose
+  const k = c>0.7 ? (D.armF??1) : c<-0.7 ? (D.armR??1) : 1; const n=performance.now();
+  if(n-_arcT>1400 && (k>=1.3 || k<=0.55)){ _arcT=n; floatText(k>=1.3 ? 'BẮN ĐUÔI ×'+k.toFixed(1) : 'GIÁP TRƯỚC QUÁ DÀY', k>=1.3?'#ffb84a':'#9aa3ad', new THREE.Vector3(e.pos.x,3.6,e.pos.z), 14); }
+  return k; }
+// Z158 active protection: a radar-cued charge kills the incoming rocket short of the hull
+export function apsKill(b, e){ const a=Math.atan2(b.x-e.pos.x, b.z-e.pos.z), x=e.pos.x+Math.sin(a)*(e.r*1.6), z=e.pos.z+Math.cos(a)*(e.r*1.6);
+  burst({x,z}, 0xffe0a0, 10, 9, { y:1.8, life:0.25, size:0.6, grav:-4, drag:4 }); ringPulse({x,z}, 0x9fd0ff, 1.6); spawnPart(x,1.8,z,0,0.5,0,{ color:0x9a948a, size:2, life:1.2, smoke:true, grav:0.3, drag:2, grow:1.2, op:0.5 });
+  floatText('APS ĐÁNH CHẶN', '#9fd0ff', new THREE.Vector3(e.pos.x,3.8,e.pos.z), 15); sfx('explode', {x,z}, 0.6); }
