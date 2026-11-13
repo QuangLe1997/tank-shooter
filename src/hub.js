@@ -129,6 +129,7 @@ export * from './game/update.js';
 export * from './game/intro.js';
 export * from './ui/radar.js';
 export * from './core/profile.js';
+export * from './core/cloud.js';   // Z162 Firebase cloud save
 export * from './ui/alarm.js';
 export * from './actors/drone.js';
 export * from './loot/beacons.js';

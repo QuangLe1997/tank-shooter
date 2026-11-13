@@ -1,6 +1,6 @@
 // core/profile.js — PLAYER PROFILE (nickname · arsenal · loadout · campaign save)
 import { BALANCE, SHOP_UP } from '../../config.js';
-import { BIOMES, GUNS, RIDER, S, SOLDIER, floatText, refreshStartUI, spawnDrone } from '../hub.js';
+import { BIOMES, GUNS, RIDER, S, SOLDIER, cloudDirty, floatText, refreshStartUI, spawnDrone } from '../hub.js';
 
 // ----------------------------- PLAYER PROFILE (nickname · arsenal · loadout · campaign save) -----------------------------
 // One profile per browser, persisted in localStorage. Tracks the call-sign, every gun ever collected
@@ -36,7 +36,7 @@ export function loadProfile(){
   pr.quality = (pr.quality==='low'||pr.quality==='high') ? pr.quality : 'high';
   return pr;
 }
-export function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} }
+export function saveProfile(quiet){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} if(!quiet) cloudDirty(); }   // Z162 every save also queues a (rate-limited) cloud write
 export let PROFILE=loadProfile();
 export let BEST=PROFILE.best;                    // alias — existing high-score code keeps working
 // ----- wallet (persists across runs; only a full RESET wipes it) -----

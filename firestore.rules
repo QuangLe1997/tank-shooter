@@ -1,0 +1,24 @@
+rules_version = '2';
+// Steel Siege — Z162 phase 1: each player owns their cloud save; nothing else is readable or writable from the client.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function smallMap(m) { return m is map && m.size() < 80; }
+
+    // users/{uid}: the player's profile save (settings, progress, arsenal, wallet snapshot).
+    // Phase 2 moves wallet + inventory into server-only documents written by Cloud Functions.
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && smallMap(request.resource.data)
+        && request.resource.data.v is int
+        && request.resource.data.profile is map
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

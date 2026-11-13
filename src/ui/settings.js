@@ -1,10 +1,11 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
-import { PAD_CFG, TURRET } from '../../config.js';
-import { DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
+import { PAD_CFG, TURRET, CLOUD_CFG } from '../../config.js';
+import { CLOUDSAVE, DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
 export function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
 export function buildSettings(){
+  buildCloudRow();
   const D=document.getElementById('setDiff'); if(D){ D.innerHTML=''; for(const k of ['recruit','soldier','veteran']){ const meta=DIFF_META[k];
     D.appendChild(_segChip(meta.label, PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); buildSettings(); sfx('click'); }, meta.tag)); } }
   const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('TẮT',!PROFILE.sound,()=>_setSnd(false))); for(const [k,t] of [['low','NHỎ'],['mid','VỪA'],['high','LỚN']]) So.appendChild(_segChip(t, PROFILE.sound && (PROFILE.sfxVol||'mid')===k, ()=>_setSnd(true,k))); }   // Z151 effects level: TẮT / NHỎ / VỪA / LỚN
@@ -46,3 +47,13 @@ export function buildPadSettings(){ const Pv=document.getElementById('setPadView
   const W=document.getElementById('setSwap'); if(W){ W.innerHTML=''; W.appendChild(_segChip('KIỂU XBOX', !C.swapAB, ()=>set('swapAB',false), 'A dưới')); W.appendChild(_segChip('ĐỔI A↔B', C.swapAB, ()=>set('swapAB',true), 'kiểu Nintendo')); } }
 addEventListener('padmapchange', ()=>setTimeout(buildPadSettings, 30));
 addEventListener('gamepadconnected', ()=>{ const s=document.getElementById('settings'); if(s && !s.classList.contains('hidden')) setTimeout(buildPadSettings, 50); });
+
+// Z162 TÀI KHOẢN: where the save lives + sync now / link Google (Google only on the web build once the provider is on)
+export function cloudStatusText(C){ const ago=C.lastSync ? Math.max(0, Math.round((Date.now()-C.lastSync)/60000)) : null;
+  return C.state==='ready' ? (C.anon ? 'KHÁCH · ' : (C.email||'GOOGLE')+' · ')+'ĐÃ LƯU ĐÁM MÂY'+(ago!=null?(ago<1?' · VỪA XONG':' · '+ago+' PHÚT TRƯỚC'):'')
+    : C.state==='syncing'||C.state==='connecting' ? 'ĐANG ĐỒNG BỘ…' : C.state==='offline' ? 'NGOẠI TUYẾN · LƯU TRÊN MÁY' : C.state==='error' ? 'LỖI ĐỒNG BỘ · LƯU TRÊN MÁY' : 'LƯU TRÊN MÁY'; }
+export function buildCloudRow(){ const el=document.getElementById('setCloud'); if(!el) return; const C=CLOUDSAVE; el.innerHTML='';
+  const st=document.createElement('div'); st.className='seg-chip cloud-st'+(C.state==='ready'?' on':''); st.textContent=cloudStatusText(C); st.title=C.err||''; el.appendChild(st);
+  el.appendChild(_segChip('ĐỒNG BỘ NGAY', false, ()=>{ sfx('click'); syncNow(); }));
+  if(CLOUD_CFG.google && C.anon && C.state==='ready' && !/^app:/.test(location.protocol)) el.appendChild(_segChip('LIÊN KẾT GOOGLE', false, ()=>{ sfx('click'); linkGoogle(); })); }
+onCloud(()=>buildCloudRow());

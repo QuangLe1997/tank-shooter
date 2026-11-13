@@ -756,5 +756,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/OfflineAudioContext/.test(mu) && /updateScore\(dt\)/.test(R('src/game/loop.js')) && Object.keys(BD.BOSS_DEFS.concat(BD.BOSS_NEW).reduce((a,b)=>(a[b.id]=1,a),{})).every(id=>new RegExp('\\b'+id+':\\[').test(mu)), 'adaptive score: stems rendered offline, faded with the fight, a motif per general');
   function VOICE_FILES_OK(){ const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); keys.push('boss_phase'); return keys.length>40 && keys.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
 
+// Z162 cloud save (Firebase phase 1): anonymous sign-in, profile mirrored to Firestore users/{uid}, owner-only rules
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cl=R('src/core/cloud.js'), rules=R('firestore.rules'), cfg=await import('./config.js');
+  ok(cfg.CLOUD_CFG && /steel-siege/.test(cfg.CLOUD_CFG.app.projectId) && cfg.CLOUD_CFG.localOnly.includes('perfDpr') && cfg.CLOUD_CFG.pushEvery>=10, 'cloud config: project, device-only keys stay local, writes rate-limited');
+  ok(/signInAnonymously/.test(cl) && /indexedDBLocalPersistence/.test(cl) && /import\(U\+'firebase-firestore\.js'\)/.test(cl), 'Firebase loads lazily from the CDN and signs in anonymously, persisting the player');
+  ok(/backupLocal\(\)/.test(cl) && /progressOf\(remote\.profile\)>=progressOf\(PROFILE\)/.test(cl) && /await push\(true\)/.test(cl), 'first sync picks the save that got further and keeps the other as a local backup');
+  ok(/if\(!quiet\) cloudDirty\(\)/.test(R('src/core/profile.js')) && /initCloud\(\)/.test(R('src/game/boot-gate.js')) && /id="setCloud"/.test(R('index.html')), 'every save queues a cloud write; sign-in after boot; account row in Settings');
+  ok(/request\.auth\.uid == uid/.test(rules) && /match \/\{document=\*\*\} \{\s*allow read, write: if false;/.test(rules) && /allow delete: if false/.test(rules), 'Firestore rules: only the owner reads/writes their save; everything else is closed'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
