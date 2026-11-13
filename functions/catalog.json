@@ -1,5 +1,5 @@
 {
- "v": 1794564379686,
+ "v": 1794564676528,
  "guns": {
   "smg": {
    "c": 600
@@ -668,6 +668,9 @@
   "gunPerReach": 1200,
   "scorePerMin": 9000,
   "scoreBucket": 60000,
-  "scorePerClear": 25000
+  "scorePerClear": 25000,
+  "runBase": 30000,
+  "runPerClear": 40000,
+  "runMaxH": 3
  }
 }

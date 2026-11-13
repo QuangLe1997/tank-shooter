@@ -787,6 +787,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(E.weekKey(Date.UTC(2026,10,13,5))==='2026-W46' && E.weekKey(Date.UTC(2026,10,15,18))==='2026-W47', 'week key follows Vietnam time (a Sunday evening UTC is already Monday)');
   { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; const a=E.scoreUpdate(s,{ runId:'r1', score:20000 },5*60000,cat,0,2), b=E.scoreUpdate(s,{ runId:'r1', score:9e8 },6*60000,cat,0,2);
     ok(a.best===20000 && b.clamped && b.best<20000+cat.cap.scoreBucket*2, 'a forged score is cut to what the run bucket allows'); }
+  { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; let r; for(let i=1;i<=60;i++) r=E.scoreUpdate(s,{ runId:'idle', score:i*9000 },i*60000,cat,0,1);
+    const late=E.scoreUpdate(s,{ runId:'idle', score:9e6 },(cat.cap.runMaxH+1)*3600e3,cat,1,1);
+    ok(r.best<=cat.cap.runBase && late.closed, 'a run with no cleared stage stays small, and a run kept open for hours is closed'); }
   ok(E.cleanName('<script>x','u1')==='scriptx' && E.cleanName('','abcd')==='CHỈ HUY ABCD', 'player names are cleaned server-side');
   ok(/match \/lb\/\{uid\} \{ allow read: if signedIn\(\); allow write: if false; \}/.test(R('firestore.rules')) && /lbw\/'\+sc\.week/.test(R('functions/index.js')), 'leaderboards are readable by players, writable only by the server');
   ok(/escapeHtml\(r\.name/.test(R('src/ui/ranking.js')) && /getCountFromServer/.test(R('src/ui/ranking.js')) && /id="rankBtn"/.test(R('index.html')) && /score:S\.score\|0, runId:S\.runId/.test(R('src/core/econ.js')), 'ranking screen: top 50, your own rank, names escaped; runs report their score'); }

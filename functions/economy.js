@@ -63,10 +63,13 @@ export function weekKey(ms){ const d=new Date(ms+7*3600e3); const day=(d.getUTCD
 // a run's score as the server believes it: each report may only add what its score bucket allows (plus a bonus on a validated clear)
 export function scoreUpdate(s, rep, nowMs, cat, clears, lvl){ const C=cat.cap, m=s.meta||(s.meta={}), runId=String(rep.runId||'').slice(0,40);
   if(!runId) return { changed:false };
-  if(m.runId!==runId){ m.runId=runId; m.runScore=0; m.runSeen=0; }
+  if(m.runId!==runId){ m.runId=runId; m.runScore=0; m.runSeen=0; m.runClears=0; m.runStart=nowMs; }
+  if(nowMs-(m.runStart||nowMs) > C.runMaxH*3600e3) return { changed:false, closed:true };   // a run kept open for hours earns nothing more
+  if(clears) m.runClears=(m.runClears|0)+1;
   const mins=Math.max(0, (nowMs-(m.scoreAt||m.createdAt||nowMs))/60000), lm=1+Math.floor((m.reach|0)/5)*C.loopMul;
   const bucket=Math.min(C.scoreBucket*lm, (m.scoreB??C.scoreBucket)+C.scorePerMin*lm*mins), bonus=clears ? C.scorePerClear*Math.max(1,lvl|0) : 0;
-  const claimed=int(rep.score,0,1e9), delta=Math.max(0, claimed-(m.runSeen|0)), take=Math.min(delta, bucket+bonus);
+  const runCap=Math.round((C.runBase + C.runPerClear*(m.runClears|0))*lm);   // what the stages this run actually cleared can be worth
+  const claimed=int(rep.score,0,1e9), delta=Math.max(0, claimed-(m.runSeen|0)), take=Math.max(0, Math.min(delta, bucket+bonus, runCap-(m.runScore|0)));
   m.runSeen=Math.max(m.runSeen|0, claimed); m.runScore=(m.runScore|0)+take; m.scoreB=Math.max(0, bucket+bonus-take); m.scoreAt=nowMs;
   const wk=weekKey(nowMs); if(m.week!==wk){ m.week=wk; m.weekBest=0; }
   let changed=false, weekChanged=false;
