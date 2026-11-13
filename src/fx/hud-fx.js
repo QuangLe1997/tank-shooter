@@ -1,6 +1,6 @@
 // fx/hud-fx.js — FX (rings, float text, screen)
 import * as THREE from 'three';
-import { VIEW, camera, heightAt, scene } from '../hub.js';
+import { VIEW, camera, heightAt, scene, soldierHit } from '../hub.js';
 
 // ----------------------------- FX (rings, float text, screen) -----------------------------
 export const _v = new THREE.Vector3();
@@ -35,7 +35,7 @@ export const _flashing=new Set();   // materials currently flashing white (hit f
 export function flashMat(m, t, inten){ if(!m || !m.emissive) return; const u=m.userData;
   if(u._e0===undefined){ u._e0=m.emissive.getHex(); u._i0=m.emissiveIntensity; }
   m.emissive.setHex(0xffffff); m.emissiveIntensity=inten; u._ft=t; _flashing.add(m); }
-export function hitFlash(mesh){ mesh.traverse(o=>{ if(o.material && !Array.isArray(o.material)) flashMat(o.material, 0.12, 0.9); }); }
+export function hitFlash(mesh){ if(mesh.userData && mesh.userData.parts) soldierHit(mesh); mesh.traverse(o=>{ if(o.material && !Array.isArray(o.material)) flashMat(o.material, 0.12, 0.9); }); }
 export function updateFlashes(dt){
   for(const m of _flashing){ const u=m.userData; u._ft-=dt; m.emissiveIntensity=Math.max(u._i0, m.emissiveIntensity-dt*8);
     if(u._ft<=0){ m.emissive.setHex(u._e0); m.emissiveIntensity=u._i0; u._e0=undefined; _flashing.delete(m); } }

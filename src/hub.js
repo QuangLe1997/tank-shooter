@@ -74,6 +74,7 @@ export * from './actors/command.js';
 export * from './campaign/operations.js';
 export * from './ai/tactics.js';
 export * from './ai/cover.js';
+export * from './ai/spatial.js';
 export * from './actors/damage.js';
 export * from './world/towers.js';
 export * from './world/camps.js';

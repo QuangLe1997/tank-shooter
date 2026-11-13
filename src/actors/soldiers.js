@@ -48,34 +48,50 @@ function _soldierKit(enemy){
   const mat=new THREE.MeshStandardMaterial({ map, vertexColors:true, roughness:1, metalness:1, roughnessMap:orm, metalnessMap:orm,
     emissive:M.band.emissive.clone(), emissiveMap:em, emissiveIntensity:0.55 });
   const kind=m=> m===M.uni ? 'camo' : m===M.band ? 'glow' : m===M.gun ? 'metal' : 'plain';
-  const rb=(w,h,d,r)=>new RoundedBoxGeometry(w,h,d,2,r||0.04);
-  const parts={ up:[], arm:[], gun:[], hip:[], knee:[] };
+  const rb=(w,h,d,r)=>new RoundedBoxGeometry(w,h,d,1,r||0.04);   // Z172 one bevel step: ~1/4 the triangles, same silhouette at game distance
+  const parts={ up:[], head:[], arm:[], lh:[], gun:[], hip:[], knee:[] };
   const put=(L,geo,m,x,y,z,rx,ry,rz)=>L.push({ geo, m, x, y, z, rx:rx||0, ry:ry||0, rz:rz||0 });
-  // legs (one leg's worth — both legs share it)
-  put(parts.hip, rb(0.17,0.38,0.19,0.06), M.uni, 0,-0.19,0);
-  put(parts.knee, rb(0.15,0.34,0.16,0.05), M.uni, 0,-0.17,0); put(parts.knee, rb(0.16,0.12,0.28,0.04), M.dark, 0,-0.33,0.05);   // shin + boot
+  const cyl=(r0,r1,h,n)=>new THREE.CylinderGeometry(r0,r1,h,n||10), sph=(r,a,b)=>new THREE.SphereGeometry(r,a||12,b||10);
+  // legs (one leg's worth — both legs share it): thigh with a cargo pocket, knee pad, shin, laced boot with a sole
+  put(parts.hip, rb(0.17,0.38,0.19,0.06), M.uni, 0,-0.19,0); put(parts.hip, rb(0.06,0.13,0.12,0.02), M.uni, 0.095,-0.2,0.0);    // thigh + cargo pocket
   put(parts.hip, rb(0.19,0.1,0.21,0.03), M.gear, 0,-0.36,0.01);                                                                 // knee pad
-  // upper body
+  put(parts.knee, rb(0.15,0.34,0.16,0.05), M.uni, 0,-0.17,0); put(parts.knee, rb(0.165,0.13,0.29,0.04), M.dark, 0,-0.33,0.05);   // shin + boot
+  put(parts.knee, rb(0.175,0.035,0.31,0.01), M.gear, 0,-0.395,0.05); put(parts.knee, rb(0.155,0.06,0.17,0.02), M.dark, 0,-0.24,0.0);   // sole · boot cuff
+  // upper body: torso, plate carrier with mag pouches, frag grenades, radio, belt with canteen, assault pack + bedroll, collar, shoulder pads
   put(parts.up, rb(0.44,0.52,0.26,0.07), M.uni, 0,0.3,0);                                                                        // torso
   put(parts.up, rb(0.48,0.42,0.32,0.05), M.gear, 0,0.33,0.02);                                                                   // plate carrier
   for(const px of [-0.13,0,0.13]) put(parts.up, rb(0.11,0.15,0.08,0.02), M.gear, px,0.24,0.2);                                  // mag pouches
-  put(parts.up, rb(0.36,0.42,0.2,0.05), M.gear, 0,0.36,-0.25);                                                                   // assault pack
-  put(parts.up, new THREE.CylinderGeometry(0.06,0.06,0.3,8), M.dark, 0.2,0.58,-0.25, 0,0,Math.PI/2);                            // bedroll
-  put(parts.up, new THREE.CylinderGeometry(0.07,0.08,0.1,10), M.skin, 0,0.6,0);                                                  // neck
-  put(parts.up, new THREE.SphereGeometry(0.13,12,10), M.skin, 0,0.75,0.01);                                                      // head
-  put(parts.up, new THREE.SphereGeometry(0.165,14,8,0,6.283,0,1.55), M.helm||M.uni, 0,0.77,0);                                 // covered helmet (side colour)
-  put(parts.up, new THREE.CylinderGeometry(0.17,0.17,0.03,14), M.gear, 0,0.77,0);                                                // helmet band
-  put(parts.up, rb(0.06,0.06,0.05,0.01), M.dark, 0,0.86,0.15);                                                                   // NVG shroud mount
-  put(parts.up, rb(0.22,0.04,0.02,0.01), M.dark, 0,0.73,0.13);                                                                   // goggles strap / eyes shadow
-  // arms (one rigid group — kicks on each shot)
+  for(const px of [-0.2,0.2]) put(parts.up, sph(0.045,8,6), M.dark, px,0.36,0.19);                                              // frag grenades
+  put(parts.up, rb(0.08,0.14,0.07,0.015), M.dark, -0.22,0.44,0.1); put(parts.up, cyl(0.007,0.007,0.42,4), M.dark, -0.24,0.68,-0.02, 0.15);   // radio + whip antenna
+  put(parts.up, rb(0.5,0.07,0.3,0.02), M.gear, 0,0.05,0.0); put(parts.up, cyl(0.06,0.06,0.15,10), M.gear, 0.24,0.06,-0.1);     // belt + canteen
+  put(parts.up, rb(0.36,0.42,0.2,0.05), M.gear, 0,0.36,-0.25); put(parts.up, rb(0.24,0.16,0.07,0.03), M.gear, 0,0.27,-0.37);   // assault pack + lid pocket
+  put(parts.up, cyl(0.06,0.06,0.3,8), M.dark, 0.2,0.58,-0.25, 0,0,Math.PI/2);                                                   // bedroll
+  put(parts.up, cyl(0.1,0.12,0.07,12), M.uni, 0,0.56,0);                                                                         // collar
+  for(const sx of [-1,1]) put(parts.up, rb(0.13,0.07,0.17,0.03), M.gear, sx*0.24,0.55,0.0, 0,0,sx*-0.35);                     // shoulder pads
+  // head (own joint → looks around): neck, face, nose, ears, covered helmet with brim + band + chin strap, NVG mount, goggles
+  put(parts.head, cyl(0.06,0.07,0.1,10), M.skin, 0,0.0,0);
+  put(parts.head, sph(0.13,10,8), M.skin, 0,0.15,0.01); put(parts.head, rb(0.035,0.05,0.04,0.01), M.skin, 0,0.14,0.14);       // face + nose
+  for(const sx of [-1,1]) put(parts.head, sph(0.03,6,5), M.skin, sx*0.128,0.15,0.0);                                            // ears
+  put(parts.head, new THREE.SphereGeometry(0.165,12,6,0,6.283,0,1.55), M.helm||M.uni, 0,0.17,0);                               // covered helmet (side colour)
+  put(parts.head, cyl(0.178,0.178,0.03,12), M.gear, 0,0.17,0); put(parts.head, cyl(0.185,0.185,0.012,12), M.helm||M.uni, 0,0.155,0);   // band + brim
+  for(const sx of [-1,1]) put(parts.head, rb(0.012,0.12,0.02,0.004), M.dark, sx*0.12,0.08,0.03);                              // chin strap
+  put(parts.head, rb(0.06,0.06,0.05,0.01), M.dark, 0,0.26,0.15);                                                                 // NVG shroud mount
+  put(parts.head, rb(0.22,0.05,0.03,0.01), M.dark, 0,0.205,0.14); put(parts.head, rb(0.08,0.04,0.025,0.01), M.gear, 0,0.205,0.16);   // goggles strap + lenses (on the helmet)
+  // arms: right arm + left upper arm ride the rifle; the left forearm + glove is its own joint (reload, grip)
   put(parts.arm, rb(0.12,0.32,0.13,0.04), M.uni, -0.25,-0.05,0.08, -0.9,0,0.25); put(parts.arm, rb(0.12,0.32,0.13,0.04), M.uni, 0.25,-0.05,0.08, -0.9,0,-0.25);   // upper arms
-  put(parts.arm, rb(0.1,0.28,0.11,0.04), M.uni, -0.12,-0.12,0.3, -1.45,0,0.6); put(parts.arm, rb(0.1,0.28,0.11,0.04), M.uni, 0.15,-0.08,0.26, -1.3,0,-0.4);       // forearms
-  for(const [hx,hz] of [[-0.02,0.42],[0.1,0.14]]) put(parts.arm, new THREE.SphereGeometry(0.055,8,6), M.dark, hx,-0.08,hz);                                       // gloves
+  put(parts.arm, rb(0.1,0.28,0.11,0.04), M.uni, 0.15,-0.08,0.26, -1.3,0,-0.4); put(parts.arm, sph(0.055,8,6), M.dark, 0.1,-0.08,0.14);                           // right forearm + glove (on the grip)
   for(const sx of [-1,1]) put(parts.arm, rb(0.135,0.09,0.145,0.02), M.band||M.gear, sx*0.25,0.04,0.0, -0.9,0,sx*-0.25);                                          // Z104 ID armbands
-  // M4-pattern carbine with optic
-  put(parts.gun, rb(0.06,0.1,0.42,0.015), M.gun, 0,0,0.12); put(parts.gun, new THREE.CylinderGeometry(0.018,0.02,0.36,8), M.gun, 0,0.01,0.5, Math.PI/2);   // receiver + barrel
-  put(parts.gun, rb(0.07,0.07,0.22,0.015), M.gun, 0,0.0,0.34); put(parts.gun, rb(0.045,0.16,0.07,0.01), M.gun, 0,-0.11,0.1, 0.25);                       // handguard + magazine
-  put(parts.gun, rb(0.05,0.08,0.2,0.015), M.gun, 0,-0.02,-0.18); put(parts.gun, new THREE.CylinderGeometry(0.03,0.03,0.12,10), M.dark, 0,0.08,0.12, Math.PI/2);   // stock + optic
+  for(const sx of [-1,1]) put(parts.arm, rb(0.13,0.07,0.12,0.03), M.gear, sx*0.205,-0.16,0.2, -1.2,0,sx*-0.3);                                                   // elbow pads
+  put(parts.lh, rb(0.1,0.28,0.11,0.04), M.uni, 0.08,0.03,0.1, -1.45,0,0.6); put(parts.lh, sph(0.055,8,6), M.dark, 0.18,0.07,0.22);                               // left forearm + glove (on the handguard)
+  // M4-pattern carbine: receiver, barrel + muzzle brake, railed handguard + vertical grip, magazine, stock, optic, charging handle, sling
+  put(parts.gun, rb(0.06,0.1,0.42,0.015), M.gun, 0,0,0.12); put(parts.gun, cyl(0.018,0.02,0.36,8), M.gun, 0,0.01,0.5, Math.PI/2);   // receiver + barrel
+  put(parts.gun, cyl(0.026,0.026,0.06,8), M.gun, 0,0.01,0.69, Math.PI/2);                                                           // muzzle brake
+  put(parts.gun, rb(0.07,0.07,0.22,0.015), M.gun, 0,0.0,0.34); put(parts.gun, rb(0.02,0.015,0.24,0.004), M.dark, 0,0.045,0.34);   // handguard + top rail
+  put(parts.gun, rb(0.03,0.08,0.035,0.008), M.gun, 0,-0.07,0.38);                                                                    // vertical foregrip
+  put(parts.gun, rb(0.045,0.16,0.07,0.01), M.gun, 0,-0.11,0.1, 0.25);                                                               // magazine
+  put(parts.gun, rb(0.05,0.08,0.2,0.015), M.gun, 0,-0.02,-0.18); put(parts.gun, rb(0.035,0.07,0.06,0.01), M.gun, 0,-0.08,0.0, -0.35);   // stock + pistol grip
+  put(parts.gun, cyl(0.03,0.03,0.12,10), M.dark, 0,0.08,0.12, Math.PI/2); put(parts.gun, cyl(0.036,0.03,0.025,10), M.dark, 0,0.08,0.185, Math.PI/2);   // optic + objective bell
+  put(parts.gun, rb(0.012,0.012,0.5,0.004), M.gear, -0.04,-0.02,0.12);                                                              // sling
   const _m4=new THREE.Matrix4(), _e=new THREE.Euler(), _q=new THREE.Quaternion(), _one=new THREE.Vector3(1,1,1), _p=new THREE.Vector3(), col=new THREE.Color();
   const bake=L=>{ const geos=L.map(pt=>{ const g=(pt.geo.index? pt.geo.toNonIndexed() : pt.geo.clone()); pt.geo.dispose();
       for(const a of Object.keys(g.attributes)) if(a!=='position'&&a!=='normal'&&a!=='uv') g.deleteAttribute(a);
@@ -85,30 +101,74 @@ function _soldierKit(enemy){
       for(let i=0;i<n;i++){ const u=r===0 ? Math.min(1,Math.max(0,uv[i*2]))*0.23+0.01 : r*0.25+0.125; uv[i*2]=u; if(r!==0) uv[i*2+1]=0.5; c[i*3]=col.r; c[i*3+1]=col.g; c[i*3+2]=col.b; }
       g.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); g.setAttribute('color', new THREE.Float32BufferAttribute(c,3)); g.clearGroups(); return g; });
     const merged=mergeGeometries(geos,false); geos.forEach(g=>g.dispose()); merged.computeBoundingSphere(); return merged; };
-  const kit={ mat, geo:{ up:bake(parts.up), arm:bake(parts.arm), gun:bake(parts.gun), hip:bake(parts.hip), knee:bake(parts.knee) } };
+  const kit={ mat, key, geo:{ up:bake(parts.up), head:bake(parts.head), arm:bake(parts.arm), lh:bake(parts.lh), gun:bake(parts.gun), hip:bake(parts.hip), knee:bake(parts.knee) } };
   return (SOLDIER_KIT[key]=kit);
 }
+// Z172 BATCHED TROOPS — a soldier is now a skeleton of plain Object3D joints; nothing of his is drawn on its own. Every frame the joints of every
+// visible man are written into ONE InstancedMesh per body part per side (×2: near men cast shadows, far ones don't) → ~28 draw calls for
+// the whole battlefield instead of 7 a man, so a crowded assault costs about the same as a quiet one. All the existing animation, stance,
+// death and fling code keeps moving the same joints.
+export const TROOP_BATCH = { roots:new Set(), im:{}, kinds:['up','head','arm','lh','gun','hip','knee'] };
 export function makeSoldierMesh(opts){
   const K=_soldierKit(!!(opts&&opts.enemy)), g=new THREE.Group(), body=new THREE.Group(); body.scale.setScalar(0.84); g.add(body);   // inner rig keeps the old overall height
-  const flash=K.mat.clone(); flash.emissiveMap=null; flash.emissive.setHex(0x000000); flash.emissiveIntensity=0;   // own copy → the hit flash only lights THIS soldier's upper body
-  const mk=(par,geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=!MOBILE; par.add(m); return m; };   // Z104 phones: no soldier shadows
+  const parts=[], mk=(par,kind)=>{ const o=new THREE.Object3D(); par.add(o); parts.push({ o, kind }); return o; };
   const legs=[];
-  for(const sx of [-1,1]){ const hip=new THREE.Group(); hip.position.set(sx*0.12,0.74,0); body.add(hip); mk(hip, K.geo.hip, K.mat);
-    const knee=new THREE.Group(); knee.position.set(0,-0.38,0); hip.add(knee); mk(knee, K.geo.knee, K.mat); legs.push({hip,knee,sx}); }
-  const up=new THREE.Group(); up.position.y=0.74; body.add(up); const torso=mk(up, K.geo.up, flash);
-  const armG=new THREE.Group(); armG.position.set(0,0.48,0.02); up.add(armG); mk(armG, K.geo.arm, K.mat);
-  const gun=new THREE.Group(); gun.position.set(0.04,-0.06,0.16); armG.add(gun); mk(gun, K.geo.gun, K.mat);
+  for(const sx of [-1,1]){ const hip=new THREE.Group(); hip.position.set(sx*0.12,0.74,0); body.add(hip); mk(hip, 'hip');
+    const knee=new THREE.Group(); knee.position.set(0,-0.38,0); hip.add(knee); mk(knee, 'knee'); legs.push({hip,knee,sx}); }
+  const up=new THREE.Group(); up.position.y=0.74; body.add(up); mk(up, 'up');
+  const head=new THREE.Group(); head.position.set(0,0.6,0); up.add(head); mk(head, 'head');
+  const armG=new THREE.Group(); armG.position.set(0,0.48,0.02); up.add(armG); mk(armG, 'arm');
+  const lh=new THREE.Group(); lh.position.set(-0.2,-0.15,0.2); armG.add(lh); mk(lh, 'lh');
+  const gun=new THREE.Group(); gun.position.set(0.04,-0.06,0.16); armG.add(gun); mk(gun, 'gun');
   const muz=new THREE.Object3D(); muz.position.set(0,0.01,0.7); gun.add(muz);
-  g.userData.torso=torso; g.userData.muzzle=muz; g.userData.legs=legs; g.userData.up=up; g.userData.gun=gun; g.userData.walk=0; g.userData.kick=0; g.userData.body=body; g.userData.arms=armG;
+  const torso={ material:{ emissive:new THREE.Color(0), emissiveIntensity:0 } };   // the old per-man hit-flash material, now just data the batch reads
+  Object.assign(g.userData, { torso, muzzle:muz, legs, up, gun, walk:0, kick:0, body, arms:armG, head, lh, parts, kitKey:K.key, seed:Math.random()*100, magN:8+((Math.random()*7)|0), shots:0 });
+  g.addEventListener('added', ()=>TROOP_BATCH.roots.add(g)); g.addEventListener('removed', ()=>TROOP_BATCH.roots.delete(g));
   return g;
 }
-// walk cycle driven by ground covered; idle breathing; carbine kick
+const _tbWhite=new THREE.Color(1,1,1), _tbHit=new THREE.Color(2.4,1.05,0.8), _tbBk={}, _tbFr=new THREE.Frustum(), _tbPM=new THREE.Matrix4(), _tbSp=new THREE.Sphere();
+function tbIM(key, kind, sh, need){ const id=key+'_'+kind+'_'+(sh?1:0); let m=TROOP_BATCH.im[id];
+  if(m && m.instanceMatrix.count>=need) return m;
+  const cap=Math.max(64, 1<<Math.ceil(Math.log2(Math.max(1,need)*1.25))); if(m){ m.parent && m.parent.remove(m); m.dispose(); }
+  const K=SOLDIER_KIT[key]; m=new THREE.InstancedMesh(K.geo[kind], K.mat, cap); m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled=false; m.castShadow=sh; m.count=0;
+  for(let i=0;i<cap;i++) m.setColorAt(i, _tbWhite); m.instanceColor.setUsage(THREE.DynamicDrawUsage); scene.add(m); TROOP_BATCH.im[id]=m; return m; }
+function tbShown(o){ while(o){ if(!o.visible) return false; if(o===scene) return true; o=o.parent; } return false; }
+// call right before the frame is drawn
+export function updateTroopBatch(now){
+  for(const id in _tbBk) _tbBk[id].n=0;
+  camera.updateMatrixWorld(); _tbFr.setFromProjectionMatrix(_tbPM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));   // men off-screen aren't drawn
+  for(const r of TROOP_BATCH.roots){ const u=r.userData; if(!u.parts) continue;
+    let rootShown=tbShown(r); if(rootShown){ r.updateWorldMatrix(true, true); _tbSp.center.setFromMatrixPosition(r.matrixWorld); _tbSp.radius=2.2*(r.scale.x||1)+3; if(!_tbFr.intersectsSphere(_tbSp)) rootShown=false; }
+    const hit=(u.flashUntil||0)>now || u.torso.material.emissiveIntensity>0, sh=!MOBILE && u._cs!==false;
+    for(const pt of u.parts){ const detached=!pt.o.parent || pt.o.parent===scene || (pt.kind==='gun' && u.droppedGun);   // a rifle dropped beside the dead lies on its own
+      if(detached){ if(!tbShown(pt.o)) continue; pt.o.updateWorldMatrix(true, false); } else if(!rootShown || !tbShown(pt.o)) continue;
+      const id=u.kitKey+'_'+pt.kind+'_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:pt.kind, sh });
+      B.m[B.n]=pt.o.matrixWorld; B.c[B.n]=hit; B.n++; } }
+  for(const key in SOLDIER_KIT) for(const kind of TROOP_BATCH.kinds) for(const sh of (MOBILE?[false]:[true,false])){ const id=key+'_'+kind+'_'+(sh?1:0); if(!_tbBk[id]) _tbBk[id]={ n:0, m:[], c:[], key, kind, sh }; }
+  for(const id in _tbBk){ const B=_tbBk[id], m=tbIM(B.key, B.kind, B.sh, B.n), A=m.instanceMatrix.array, C=m.instanceColor.array;
+    for(let i=0;i<B.n;i++){ A.set(B.m[i].elements, i*16); const c=B.c[i]?_tbHit:_tbWhite; C[i*3]=c.r; C[i*3+1]=c.g; C[i*3+2]=c.b; }
+    if(m.count!==B.n || B.n){ m.count=B.n; m.instanceMatrix.needsUpdate=true; m.instanceColor.needsUpdate=true; } } }
+// a man is hit: the batch flashes him and he flinches
+export function soldierHit(g){ const u=g.userData; u.flashUntil=performance.now()/1000+0.12; u.flinch=1; }
+export function soldierReloading(g){ return (g.userData.reload||0)>0; }
+// walk / run / crouch-walk / crawl cycles driven by ground covered; rifle at the ready while moving, shouldered when firing; a mag change every
+// 8–14 rounds (left hand to the pouch and back); flinch on a hit; the head scans when nobody is shooting
 export function animateSoldier(g, dist, dt, firing){
-  const u=g.userData; if(!u.legs) return;
-  u.walk += dist*7.5; const amp=Math.min(0.75, dist/Math.max(dt,1e-3)*0.18);
-  for(const l of u.legs){ const ph=u.walk + (l.sx>0?Math.PI:0); l.hip.rotation.x = Math.sin(ph)*amp; l.knee.rotation.x = Math.max(0, -Math.cos(ph))*amp*1.1; }
-  u.t=(u.t||0)+dt; u.up.position.y = 0.74 + Math.abs(Math.sin(u.walk))*0.03*Math.min(1,amp*2) + Math.sin(u.t*2.1)*0.006;
-  if(firing) u.kick=1; u.kick=Math.max(0,u.kick-dt*9); u.gun.position.z = 0.16 - u.kick*0.06; u.gun.rotation.x = -u.kick*0.12;
+  const u=g.userData; if(!u.legs) return; dt=Math.max(dt,1e-3);
+  const spd=dist/dt; u.spd=(u.spd||0)+(spd-(u.spd||0))*Math.min(1,dt*8); const run=Math.min(1, Math.max(0, (u.spd-2.4)/2.6));
+  u.walk += dist*(7.5-run*1.6); const amp=Math.min(0.75+run*0.2, spd*0.18);
+  for(const l of u.legs){ const ph=u.walk + (l.sx>0?Math.PI:0); l.hip.rotation.x = Math.sin(ph)*amp; l.knee.rotation.x = Math.max(0, -Math.cos(ph))*amp*(1.1+run*0.5); }
+  u.t=(u.t||0)+dt; u.up.position.y = 0.74 + Math.abs(Math.sin(u.walk))*(0.03+run*0.03)*Math.min(1,amp*2) + Math.sin(u.t*2.1)*0.006;
+  if(firing && !(u.reload>0)){ u.kick=1; u.aimT=2.2; u.shots=(u.shots||0)+1; if(u.shots>=u.magN){ u.shots=0; u.reload=1.7; u.magN=8+((Math.random()*7)|0); } }
+  u.kick=Math.max(0,u.kick-dt*9); u.aimT=Math.max(0,(u.aimT||0)-dt); u.gun.position.z = 0.16 - u.kick*0.06; u.gun.rotation.x = -u.kick*0.12;
+  if(u.torso.material.emissiveIntensity>0 && !u._fl){ u.flinch=1; } u._fl=u.torso.material.emissiveIntensity>0; u.flinch=Math.max(0,(u.flinch||0)-dt*5);
+  // rifle handling layered on top of the stance (poseSoldier adds the same offsets)
+  const ready=u.aimT>0?0:1, rl=u.reload>0 ? Math.sin(Math.min(1,(1.7-u.reload)/1.7)*Math.PI) : 0; if(u.reload>0) u.reload=Math.max(0,u.reload-dt);
+  u.armAdd = run*0.55*ready + 0.18*ready*(1-run) + rl*0.42 - u.kick*0.05; u.armRz = rl*0.55 + run*0.12*ready;
+  u.upAdd = run*0.22 - u.flinch*0.35;
+  if(u.lh){ u.lh.rotation.x = rl*1.25; u.lh.rotation.z = -rl*0.5; u.lh.position.y = -0.15 - rl*0.08; }
+  if(u.head){ const scan = u.aimT>0||run>0.3 ? 0 : Math.sin(u.t*0.55+u.seed)*0.55*Math.max(0,Math.sin(u.t*0.21+u.seed*0.7)); u.head.rotation.y += (scan-u.head.rotation.y)*Math.min(1,dt*3); u.head.rotation.x = -u.flinch*0.3 + rl*0.35; }
+  const P=u.pose; if(u.arms){ u.arms.rotation.x=(P?P.arm:0)+u.armAdd; u.arms.rotation.z=u.armRz; } u.up.rotation.x=(P?P.up:0)+u.upAdd;
 }
 // Z105 STANCES — call after animateSoldier(): 'stand' (walk cycle as is) · 'crouch' (kneel to fire / hide behind cover) ·
 // 'prone' (flat on the ground, rifle forward — the hardest target). Blends smoothly so nobody snaps between poses.
@@ -124,10 +184,14 @@ export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) retu
   const T=_ST[eff]||_ST.stand, f=1-Math.exp(-dt*6.5), fw=Math.min(1, dt*4.2);
   for(const k of ['rx','y','z','up','arm']) P[k]+=(T[k]-P[k])*f;
   P.kw += ((eff==='crouch'?1:0)-P.kw)*fw; P.pw += ((eff==='prone'?1:0)-P.pw)*fw; const sw=P.kw+P.pw; if(sw>1){ P.kw/=sw; P.pw/=sw; }
-  u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up; if(u.arms) u.arms.rotation.x=P.arm;
+  u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up+(u.upAdd||0)*(1-P.pw); if(u.arms){ u.arms.rotation.x=P.arm+(u.armAdd||0)*(1-P.pw*0.8); u.arms.rotation.z=(u.armRz||0); }
   u.stance=stance; const L=u.legs, w0=1-P.kw-P.pw;
   for(let i=0;i<L.length;i++){ const l=L[i], c=_LEG.crouch[i], q=_LEG.prone[i];
-    l.hip.rotation.x = l.hip.rotation.x*w0 + c[0]*P.kw + q[0]*P.pw; l.knee.rotation.x = l.knee.rotation.x*w0 + c[1]*P.kw + q[1]*P.pw; l.hip.rotation.z = l.sx*0.14*P.pw; }
+    l.hip.rotation.x = l.hip.rotation.x*w0 + c[0]*P.kw + q[0]*P.pw; l.knee.rotation.x = l.knee.rotation.x*w0 + c[1]*P.kw + q[1]*P.pw; l.hip.rotation.z = l.sx*0.14*P.pw;
+    const mv=Math.min(1,(u.spd||0)/1.2), ph=(u.walk||0)+(l.sx>0?Math.PI:0);   // Z172 moving low: short crouched strides · a crawl when flat (knees drawn up in turn)
+    if(mv>0.05 && P.kw>0.3){ l.hip.rotation.x += Math.sin(ph)*0.32*mv*P.kw; l.knee.rotation.x += Math.max(0,-Math.cos(ph))*0.3*mv*P.kw; }
+    if(mv>0.05 && P.pw>0.4){ l.hip.rotation.z += l.sx*Math.max(0,Math.sin(ph))*0.55*mv*P.pw; l.knee.rotation.x += Math.max(0,Math.sin(ph))*0.9*mv*P.pw; } }
+  if(P.pw>0.4 && (u.spd||0)>0.1 && u.arms){ const mv=Math.min(1,u.spd/1.2); u.arms.rotation.z += Math.sin(u.walk||0)*0.22*mv; u.body.rotation.z = Math.sin(u.walk||0)*0.07*mv; } else if(u.body) u.body.rotation.z*=0.8;
   u.up.position.y = u.up.position.y*(1-P.kw) + 0.5*P.kw; }
 // Z113 a man brought back from the pool: rifle back in his hands, arms and legs reset
 export function reviveSoldierMesh(m){ const u=m.userData; if(!u.gun) return;

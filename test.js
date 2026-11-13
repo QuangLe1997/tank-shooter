@@ -833,5 +833,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/popHatch\(h\); squadAt\(f, h\.x, h\.z, n, true\)/.test(fo) && /if\(f\.tunnel>0\) tunnelAmbush\(f, now\)/.test(fo) && Array.isArray(cfg.FORT.tunnel), 'the garrison comes up from basement hatches in squads; once the yard is cleared, tunnel squads ambush the tank before the fort falls');
   ok(cfg.FORT.cmdHp>=8 && /fortSendOut\(f, e, now\)\{ if\(!enemies\.includes\(e\) \|\| e\.commander\) return;/.test(fo) && /const H=e\.home\|\|e\.hold/.test(fo) && /boss\.fort===f\)\{ const lim/.test(fo), 'fort commanders are tougher and never leave their walls (the citadel general included)'); }
 
+// Z172 batched troops (one InstancedMesh per body part per side), richer soldier detail + handling animations, unit grid
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const so=R('src/actors/soldiers.js');
+  const mk=so.slice(so.indexOf('export function makeSoldierMesh'), so.indexOf('const _tbWhite'));
+  ok(!/new THREE\.Mesh\(/.test(mk) && /TROOP_BATCH\.roots\.add\(g\)/.test(mk) && /new THREE\.InstancedMesh\(K\.geo\[kind\]/.test(so) && /updateTroopBatch\(now\)/.test(R('src/game/loop.js')), 'soldiers are joint skeletons drawn through per-part instanced meshes (draw calls no longer grow with the troop count)');
+  ok(/intersectsSphere/.test(so) && /RoundedBoxGeometry\(w,h,d,1,/.test(so), 'off-screen men are skipped and the parts stay light');
+  ok(/parts\.head/.test(so) && /parts\.lh/.test(so) && /u\.reload=1\.7/.test(so) && /soldierReloading\(e\.mesh\)/.test(R('src/actors/infantry.js')) && /a crawl when flat/.test(so), 'own head + left hand joints: head scan, magazine change (no firing mid-reload), rifle at the ready while running, crouch-walk, crawl, flinch on a hit');
+  ok(/buildUnitGrid\(now\)/.test(R('src/game/loop.js')) && /unitsNear\(UGRID\.inf/.test(R('src/actors/infantry.js')) && /blocksAt\(pos\.x, pos\.z\)/.test(R('src/actors/fireteam.js')) && /bulletCands\(b\)/.test(R('src/combat/lock-on.js')), 'spacing, obstacles, crush checks and bullet hits read a unit grid, not every unit'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

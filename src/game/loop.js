@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, aoPass, bannerTimer, bloom, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateScore, updateSkyMood, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
+import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateIntro, updateLOD, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateScore, updateSkyMood, updateSoldiers, updateSunFollow, updateTankRigs, updateTowers, updateTrails, updateTroopBatch, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -22,6 +22,7 @@ export function loop(nowMs){
     updateReload(now);              // complete reload on time + drive the countdown dial
     if(!MOBILE || (PERF.fc&3)===0) updateGunStatus(now);   // ✓/reloading badges (every 4th frame on phones)
     updatePlayer(gdt, now);
+    buildUnitGrid(now);             // Z172 who-is-near-whom, once a frame
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
     updateBullets(gdt, now);
@@ -75,6 +76,7 @@ export function loop(nowMs){
   if(!shopOpen) updateWeather(dt);   // Z107 rain / sand / snow drift with the camera + lightning
   SKY.position.copy(camera.position); updateClouds(dt, camera); updateSkyMood(dt); updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); updateNightMarks(dt, now); updateWater(dt); updateWonder(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); updateDying(dt); PERF.fc++; gradePass.uniforms.time.value = now%100;
   aoPass.enabled = AO.on && renderPass.scene===scene;   // Z145 not in the 3D shop showroom
+  updateTroopBatch(now);   // Z172 every soldier's joints → the batched body-part meshes
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;

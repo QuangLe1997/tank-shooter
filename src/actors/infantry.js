@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, ENV, INFANTRY, EQUIP, SQUAD } from '../../config.js';
-import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, _cv, addScore, animateSoldier, blocks, burst, cMod, clampField, clearGore, coverSpot, damageAlly, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, gibBody, haptic, heightAt, hitsHull, inSmoke, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, poseSoldier, reviveSoldierMesh, ringPulse, scene, sfx, spawnBullet, spawnEnemy, spawnPart, wrapAngle } from '../hub.js';
+import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, animateSoldier, burst, cMod, clampField, clearGore, coverSpot, damageAlly, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, gibBody, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, launchEnemyMissile, loopDmgMul, makeSoldierMesh, poseSoldier, reviveSoldierMesh, ringPulse, scene, sfx, soldierReloading, spawnBullet, spawnEnemy, spawnPart, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -26,7 +26,7 @@ export function spawnSquad(sp){
     spawnEnemy(k<nr?'rpg':'rifle', x, z); }
   ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xd8b070, 2.4);
 }
-export const _INF0={ x:0, z:0 };
+export const _INF0={ x:0, z:0 }; const _infNb=[], _infTk=[];
 // Z104 who an enemy soldier fights: the tank by default; riflemen switch to one of OUR soldiers (or a captured tank) when clearly closer;
 // RPG teams only ever pick armour — the tank or a captured one
 export function infTarget(e){ const p=S.player; let best={ pos:p.pos, vel:p.vel, tank:true }, bd=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z);
@@ -56,11 +56,11 @@ export function updateInfantry(e, dt, now, edt){
   else if(d>def.keep+2){ mx=ux; mz=uz; } else if(d<def.keep-5){ mx=-ux*0.8; mz=-uz*0.8; }
   const settled = mx===0 && mz===0 && d<def.range;                          // Z105 in position and in range → stop weaving, get down and shoot
   if(!_ex && !(thr && e.cover) && !e.guard && !settled){ e.ph+=dt; const w=Math.sin(e.ph*0.9)*0.6; mx+=-uz*w*0.55; mz+=ux*w*0.55; }   // weave — a squad never walks in a conga line
-  for(const o of enemies){ if(o===e || !o.def.inf) continue; const ox=e.pos.x-o.pos.x, oz=e.pos.z-o.pos.z, q=ox*ox+oz*oz; if(q<5 && q>1e-4){ const k=(2.24-Math.sqrt(q))*0.8; mx+=ox*k; mz+=oz*k; } }
+  for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, 2.3, _infNb)){ if(o===e) continue; const ox=e.pos.x-o.pos.x, oz=e.pos.z-o.pos.z, q=ox*ox+oz*oz; if(q<5 && q>1e-4){ const k=(2.24-Math.sqrt(q))*0.8; mx+=ox*k; mz+=oz*k; } }
   const ox0=e.pos.x, oz0=e.pos.z, ml=Math.hypot(mx,mz);
   if(ml>0.05 && !(e.aimT>0)){ e.pos.x+=mx/ml*sp*edt; e.pos.z+=mz/ml*sp*edt; }
   if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*9); e.kbx*=kf; e.kbz*=kf; }
-  for(const bl of blocks){ if(bl.obb){ const s_=Math.sin(bl.obb.f), c_=Math.cos(bl.obb.f), dx_=e.pos.x-bl.x, dz_=e.pos.z-bl.z, al=dx_*s_+dz_*c_, ac=dx_*c_-dz_*s_, hw=bl.obb.hw+0.4; if(Math.abs(al)<bl.obb.hl+0.3 && Math.abs(ac)<hw){ const push=(ac<0?-hw:hw)-ac; e.pos.x+=c_*push; e.pos.z-=s_*push; } continue; } const bx=e.pos.x-bl.x, bz=e.pos.z-bl.z, q=bx*bx+bz*bz, rr=bl.r+0.45; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); e.pos.x=bl.x+bx/qq*rr; e.pos.z=bl.z+bz/qq*rr; } }
+  infPushBlocks(e.pos);   // Z172 obstacles from the grid
   clampField(e.pos, 2);
   const moved=Math.hypot(e.pos.x-ox0, e.pos.z-oz0), inRange=d<def.range;
   const want = (inRange || moved<0.002) ? Math.atan2(dx,dz) : Math.atan2(e.pos.x-ox0, e.pos.z-oz0);
@@ -68,7 +68,7 @@ export function updateInfantry(e, dt, now, edt){
   e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.mesh.rotation.y=e.facing;
   let fired=false; const ds=diffScale(), A=BALANCE.aggro;
   const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul();
-  if(inRange && now>e.fireAt && !(e.aimT>0) && S.mode==='playing'){
+  if(inRange && now>e.fireAt && !(e.aimT>0) && S.mode==='playing' && !soldierReloading(e.mesh)){   // Z172 nobody fires mid-reload
     if(fortWallCross(e.pos.x, e.pos.z, T.pos.x, T.pos.z)) e.fireAt=now+0.6;     // Z111b a fortress wall between: no shot (rifle or rocket)
     else if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)) e.fireAt=now+0.5;
     else if(def.rpg){ e.aimT=def.aimT; sfx('beep', e.pos); }                 // kneel + aim: a readable 1s telegraph before the rocket
@@ -98,7 +98,7 @@ export function crushInfantry(now){
     if(hitsHull(p, e.pos.x, e.pos.z, 0.35)){
       if(ps>INFANTRY.crushSpeed || now<p.dashUntil){ e._crushed=true; killEnemy(e); continue; }
       const nx=e.pos.x-p.pos.x, nz=e.pos.z-p.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.45; e.pos.z+=nz/L*0.45; }
-    for(const t of enemies){ if(!solidTank(t)) continue; if(hitsHull(t, e.pos.x, e.pos.z, 0.3)){ const nx=e.pos.x-t.pos.x, nz=e.pos.z-t.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.4; e.pos.z+=nz/L*0.4; } }   // their own tanks shove them aside
+    for(const t of unitsNear(UGRID.tank, e.pos.x, e.pos.z, 12, _infTk)){ if(!solidTank(t)) continue; if(hitsHull(t, e.pos.x, e.pos.z, 0.3)){ const nx=e.pos.x-t.pos.x, nz=e.pos.z-t.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.4; e.pos.z+=nz/L*0.4; } }   // their own tanks shove them aside
     for(const t of ALLY_TANKS){ if(hitsHull(t, e.pos.x, e.pos.z, 0.35) && Math.hypot(t.vel?t.vel.x:0, t.vel?t.vel.z:0)>INFANTRY.crushSpeed){ e._crushed=true; killEnemy(e); break; } }   // Z113 our captured tanks crush them too
   }
   // Z113 enemy tanks run OUR men down the same way
