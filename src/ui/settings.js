@@ -7,7 +7,7 @@ export function _segChip(label, on, fn, sub){ const c=document.createElement('di
 export function buildSettings(){
   const D=document.getElementById('setDiff'); if(D){ D.innerHTML=''; for(const k of ['recruit','soldier','veteran']){ const meta=DIFF_META[k];
     D.appendChild(_segChip(meta.label, PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); buildSettings(); sfx('click'); }, meta.tag)); } }
-  const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('BẬT',PROFILE.sound,()=>_setSnd(true))); So.appendChild(_segChip('TẮT',!PROFILE.sound,()=>_setSnd(false))); }
+  const So=document.getElementById('setSound'); if(So){ So.innerHTML=''; So.appendChild(_segChip('TẮT',!PROFILE.sound,()=>_setSnd(false))); for(const [k,t] of [['low','NHỎ'],['mid','VỪA'],['high','LỚN']]) So.appendChild(_segChip(t, PROFILE.sound && (PROFILE.sfxVol||'mid')===k, ()=>_setSnd(true,k))); }   // Z151 effects level: TẮT / NHỎ / VỪA / LỚN
   const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('BẬT',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('TẮT',!PROFILE.music,()=>_setMus(false))); }
   const Ct=document.getElementById('setCtrl'); if(Ct){ Ct.innerHTML=''; const cur=controlScheme();   // Z99 driving scheme
     Ct.appendChild(_segChip('XE TĂNG',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
@@ -20,7 +20,7 @@ export function buildSettings(){
     const n=document.createElement('div'); n.className='seg-note'; n.textContent=Math.round(k*100)+'% · '+Math.round(TURRET.rate*k*57.3)+'°/giây'; Tu.appendChild(n); }
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
-export function _setSnd(on){ PROFILE.sound=on; saveProfile(); audio(); setMuted(!on); buildSettings(); }
+export function _setSnd(on, lv){ PROFILE.sound=on; if(lv) PROFILE.sfxVol=lv; saveProfile(); audio(); setMuted(!on); buildSettings(); if(on) sfx('explode'); }   // Z151 a sample blast so you hear the level you picked
 export function _setMus(on){ PROFILE.music=on; saveProfile(); audio(); setMusicOn(on); buildSettings(); }
 export function _setQ(q){ PROFILE.quality=q; saveProfile(); setQuality(q); buildSettings(); sfx('click'); }
 export function openSettings(){ buildSettings(); hide('start'); show('settings'); sfx('click'); }

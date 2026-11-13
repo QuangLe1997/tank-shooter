@@ -667,5 +667,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/const calib = S\.mode==='countdown'/.test(R('src/game/loop.js')) && /PROFILE\.perfDpr/.test(R('src/audio/engine-music.js')) && /SHADOW_MAP = 2048/.test(R('src/core/config.js')), 'battle start: resolution settles in the countdown and is remembered (no resize hitches in the first seconds)');
   ok(!/IRON BULL|OVERLORD/.test(R('src/data/bosses.js')) && !/NIGHT — reach/.test(R('src/combat/guns.js')), 'boss names and battle conditions in Vietnamese'); }
 
+// Z151 ear-safe, punchier sound: measured levels, limiter, duck bus, effects level
+{ const fs=await import('node:fs'); const sy=fs.readFileSync('src/audio/synth.js','utf8');
+  const g=k=>+(new RegExp('\\n  '+k+':\\s*\\{[^\\n]*g:([0-9.]+)').exec(sy)||[])[1];
+  ok(/limiter\.ratio\.value=20/.test(sy) && /type='highshelf'/.test(sy), 'master: high-shelf softening + brick-wall limiter (no clipping, no fizz)');
+  ok(g('clang') < g('bigboom')*0.5 && g('launch') < 0.5 && g('hitM') < 0.3, 'the collision clang, rocket launch and armour hits no longer outshout the explosions');
+  ok(/D\.big \? master : \(duck\|\|master\)/.test(sy) && /duck\.gain\.setTargetAtTime\(0\.5/.test(sy), 'big blasts duck the small-arms bus so they punch through');
+  ok(/SFX_LEVELS=\{ low:0\.32, mid:0\.5, high:0\.68 \}/.test(sy) && /\['low','NHỎ'\],\['mid','VỪA'\],\['high','LỚN'\]/.test(fs.readFileSync('src/ui/settings.js','utf8')), 'settings: effects level TẮT / NHỎ / VỪA / LỚN'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
