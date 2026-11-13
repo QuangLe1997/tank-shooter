@@ -186,11 +186,12 @@ export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   // look slightly ahead of the player toward the aim + a bit toward velocity (motion feel)
   camLook.set(Math.sin(p.aim)*6 + p.vel.x*0.18, 0, Math.cos(p.aim)*6 + p.vel.z*0.18);
-  camTarget.set(p.pos.x + camLook.x*0.45, 0, p.pos.z + camLook.z*0.45);
+  const zk=Math.min(1, S.zoom||1);   // Z171 close-ups keep the tank centred and ignore most of the auto pull-back
+  camTarget.set(p.pos.x + camLook.x*0.45*zk, 0, p.pos.z + camLook.z*0.45*zk);
   const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
   S.camZ += (_camAutoWant - S.camZ) * Math.min(1, dt*CAM_AUTO.ease);
-  { const k=Math.max(0.4, (S.zoom||1) + S.camZ); _camOff.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1), camOff.z*k); }   // player zoom + the auto camera's pull-back · Z165 close-ups drop the camera a little lower for a more cinematic angle
+  { const k=Math.max(0.26, (S.zoom||1) + S.camZ*zk); _camOff.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1)*(k<0.55 ? 0.8+0.2*k/0.55 : 1), camOff.z*k); }   // player zoom + the auto camera's pull-back · Z165 close-ups drop the camera a little lower for a more cinematic angle
   if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
   const want = _camWant.copy(camTarget).add(_camOff);
   want.y += dashPull;
@@ -200,7 +201,7 @@ export function updateCamera(dt, now){
   camera.position.copy(camBase);
   if(t2>0.0004){ const q=now; camera.position.x += (Math.sin(q*41.3)+Math.sin(q*73.1+1.7)*0.6)*t2*1.15; camera.position.y += (Math.sin(q*37.7+0.4)+Math.sin(q*67.9)*0.5)*t2*0.7; camera.position.z += (Math.sin(q*47.9+2.1)+Math.sin(q*59.3)*0.6)*t2*1.15; }
   { const k=S.camKick||0; if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } S.camKick=k*Math.exp(-dt*10); }   // Z168 the shot shoves the camera back along the barrel, then it springs home
-  camera.lookAt(camTarget.x, 1, camTarget.z);
+  camera.lookAt(camTarget.x, 1+Math.max(0, 0.6-(S.zoom||1))*2.2, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
   { const base=camera.userData.fov0||(camera.userData.fov0=camera.fov), want=base+Math.min(3.2,(S.camKick||0)*2.4); if(Math.abs(camera.fov-want)>0.02){ camera.fov=want; camera.updateProjectionMatrix(); } }   // and a small FOV punch
   if(t2>0.0004) camera.rotateZ((Math.sin(now*29.7)+Math.sin(now*53.3+0.9)*0.5)*t2*0.035);   // roll
   gradePass.uniforms.aberr.value = t2*0.007;

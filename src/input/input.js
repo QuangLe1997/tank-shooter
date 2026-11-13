@@ -79,9 +79,9 @@ export const autoBtnEl=document.getElementById('autoBtn');
 if(autoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} autoFire=!autoFire; try{localStorage.setItem('steelsiege.auto',autoFire?'1':'0');}catch(_){} applyAutoFire(); sfx('click'); };
   autoBtnEl.addEventListener('click',tog); autoBtnEl.addEventListener('touchstart',tog,{passive:false}); }
 // ----- camera controls: ZOOM (cycle near→far) + ROTATE view (45° steps); input is re-mapped so the joystick stays screen-relative -----
-export const ZOOM_LEVELS=[0.55, 0.75, 1.0, 1.5, 2.0, 2.6, 3.3];   // Z145 + one wider strategic view · Z165 two close-up steps (over the shoulder of the tank)
+export const ZOOM_LEVELS=[0.34, 0.44, 0.55, 0.75, 1.0, 1.5, 2.0, 2.6, 3.3];   // Z145 + one wider strategic view · Z165 two close-up steps (over the shoulder of the tank)
 const Z1=()=>ZOOM_LEVELS.indexOf(1.0);
-export function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } try{ fitShadow(z); }catch(_){} const l=document.getElementById('zoomLbl'); if(l) l.textContent=z.toFixed(1)+'×'; }
+export function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } try{ fitShadow(z); }catch(_){} const l=document.getElementById('zoomLbl'); if(l) l.textContent=(1/z).toFixed(1)+'×'; }   // Z171 the label reads as magnification: bigger = closer (1.0× = the default view)
 try{ const z=parseFloat(localStorage.getItem('steelsiege.zoom')); if(z>0) S.zoom=z; }catch(_){}
 setZoom(S.zoom);
 export const zoomBtnEl=document.getElementById('zoomBtn');

@@ -626,7 +626,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function tryClimb/.test(es) && /isClimber/.test(R('src/actors/command.js')) && /updateClimb/.test(R('src/actors/fireteam.js')), 'assault troops carry ladders and scale an unbreached wall');
   ok(/TURRET\.rate\*tk/.test(up) && /id="setTurret"/.test(R('index.html')), 'turret traverse speed is moderate and player-adjustable');
   ok(!/#da251d/.test(hf) && /LIÊN QUÂN THÉP/.test(hf), 'our flag is a fictional banner (no real national flag)');
-  ok(/ZOOM_LEVELS=\[0\.55, 0\.75, 1\.0, 1\.5, 2\.0, 2\.6, 3\.3\]/.test(ip) && /fitShadow/.test(rd), 'one more zoom-out level, shadows widen with it'); }
+  ok(/ZOOM_LEVELS=\[0\.34, 0\.44, 0\.55, 0\.75, 1\.0, 1\.5, 2\.0, 2\.6, 3\.3\]/.test(ip) && /fitShadow/.test(rd), 'one more zoom-out level, shadows widen with it'); }
 
 // Z146 volumetric searchlights, leaf-card trees
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const sl=R('src/fx/searchlight.js'), tw=R('src/world/towers.js'), fl=R('src/world/flora.js'), rd=R('src/render/renderer.js'), hub=R('src/hub.js');
