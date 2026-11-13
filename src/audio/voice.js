@@ -25,3 +25,6 @@ function nextVoice(){ const k=VOICE.queue.shift(); if(!k){ VOICE.playing=null; d
   load(k).then(buf=>{ if(!buf || !voiceOn()){ nextVoice(); return; } const s=actx.createBufferSource(), g=actx.createGain(); s.buffer=buf; g.gain.value=VOICE.gain; s.connect(g).connect(master);
     duck(true); s.onended=()=>setTimeout(nextVoice, 160); s.start(); }); }
 function duck(on){ if(!musicBus || !actx || PROFILE.music===false) return; musicBus.gain.setTargetAtTime(on?0.22:0.5, actx.currentTime, on?0.08:0.4); }
+// Z167 one-shot clips that don't wait in the radio queue (a scream, the victory cheer)
+export function playClip(k, gain){ if(!k || PROFILE.sound===false || muted) return; const a=audio(); if(!a || a.state!=='running') return;
+  load(k).then(buf=>{ if(!buf) return; const s=actx.createBufferSource(), g=actx.createGain(); s.buffer=buf; g.gain.value=gain??1; s.connect(g).connect(master); s.start(); }); }

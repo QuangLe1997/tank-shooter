@@ -533,3 +533,19 @@ export const AMMO_SHOP = [
 // Z162 what one run may pay out — the server clamps every report to this (minutes are measured by the server, not the client)
 export const PAYOUT_CAP = { coinPerMin:600, coinBucket:6000, coinPerClear:2500, diaPerMin:0.3, diaBucket:20, diaPerClear:6, loopMul:0.6, minClearGap:90, gunGap:120, migrateCoins:300000, migrateDia:1000, migrateReach:10, migrateValue:250000, migrateUntil:Date.UTC(2026,11,31), gunPerReach:1200,
   scorePerMin:9000, scoreBucket:60000, scorePerClear:25000, runBase:30000, runPerClear:40000, runMaxH:3 };   // a run's total is also capped by the stages it validly cleared, and a run closes after runMaxH hours   // Z163 leaderboard: a run's score is accepted from its own refilling bucket too   // migration: only until the window closes, wallet + inventory worth at most migrateValue coins   // token buckets: bursts are fine, the average rate is capped
+// Z167 ROOF MACHINE GUN — a pintle MG on the turret roof, worked by the crewman in the hatch: 360° traverse, elevates onto towers, shoots ONLY infantry
+//   (and the men on walls / towers), shorter reach and lighter hits than the main gun. Belt-fed: a box empties, the gunner swaps it by hand.
+export const ROOF_MG = [
+  { id:'pkt',  vi:'PKT 7,62 LY',          origin:'NGA',  desc:'Súng máy đồng trục quen thuộc của tăng Nga, gắn lên giá nóc: nhẹ, xoay nhanh, bắn rát.',             cal:7.62, dmg:4.0, rof:11, mag:100, reload:3.6, range:20, spread:0.055, trav:3.0, elev:2.0, price:null },
+  { id:'m240', vi:'M240 7,62 LY',         origin:'MỸ',   desc:'Súng máy đa năng của Mỹ, giá xoay có tấm chắn: chính xác hơn, thay hộp đạn nhanh.',                cal:7.62, dmg:4.6, rof:10, mag:100, reload:3.0, range:21, spread:0.045, trav:2.8, elev:2.0, price:{ c:1800 } },
+  { id:'m2hb', vi:'M2HB 12,7 LY "BÀ GIÀ"', origin:'MỸ',  desc:'Súng máy hạng nặng huyền thoại: mỗi phát đủ quật ngã một người sau bao cát, nhưng nặng và xoay chậm.', cal:12.7, dmg:9.0, rof:8.5, mag:80, reload:4.4, range:24, spread:0.05, trav:2.0, elev:1.5, price:{ c:3600 } },
+  { id:'nsvt', vi:'NSVT UTYOS 12,7 LY',   origin:'NGA',  desc:'Súng phòng không trên nóc T-72: tốc độ bắn cao cho cỡ 12,7, nâng nòng rất cao để quét lính trên tháp.', cal:12.7, dmg:8.5, rof:11, mag:60, reload:4.0, range:24, spread:0.055, trav:2.3, elev:2.4, price:{ c:4400 } },
+  { id:'kord', vi:'KORD 6P50 12,7 LY',    origin:'NGA',  desc:'Thế hệ mới, giảm giật: bắn loạt dài vẫn chụm, nòng ít nóng — súng máy nóc tốt nhất.',              cal:12.7, dmg:10,  rof:10.5, mag:90, reload:3.8, range:26, spread:0.038, trav:2.4, elev:2.2, price:{ d:18 } },
+];
+export const ROOF_MG_UP = [   // per gun, 3 levels each; the numbers are per level
+  { key:'dmg', vi:'ĐẦU ĐẠN',   per:'+12% sát thương',   fx:0.12, cost:[{ c:400 },{ c:1100 },{ d:10 }] },
+  { key:'rof', vi:'BỘ KHOÁ NÒNG', per:'+10% tốc độ bắn', fx:0.10, cost:[{ c:400 },{ c:1100 },{ d:10 }] },
+  { key:'mag', vi:'HỘP ĐẠN LỚN', per:'+20% băng đạn',   fx:0.20, cost:[{ c:300 },{ c:900 },{ d:8 }] },
+  { key:'rel', vi:'KÍP NẠP',    per:'−12% thời gian thay hộp', fx:0.12, cost:[{ c:300 },{ c:900 },{ d:8 }] },
+];
+export const ROOF_MG_BLOCK = ['agl','missile','rocket'];   // grenade-launcher / missile turrets: the launcher takes the roof, no pintle

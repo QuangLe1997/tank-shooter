@@ -8,6 +8,7 @@ for(const m of models.matchAll(/\n  ([a-z0-9]+): \{ name:'[^']*'[\s\S]*?price:(n
 const kit={}; for(const [id,p] of Object.entries(tanks)) kit[id]=[0,1,2].map(L=>K.kitPrice(p,L));
 const cat={ v:Date.now(), guns:C.GUN_PRICE, gunIds:Object.keys(G.GUNS), upgrades:Object.fromEntries(C.SHOP_UP.map(u=>[u.key,u.costs])), tanks, kit, kitTracks:K.KIT_TRACKS.map(t=>t.key), kitMax:K.KIT_MAX,
   kitSigNeed:K.KIT_SIG_NEED, sig:Object.fromEntries(Object.entries(K.KIT_SIG).map(([id,s])=>[id,{ d:s.d }])), crew:Object.fromEntries(K.CREW_RECRUITS.map(r=>[r.id,{ seat:r.seat, lvl:r.lvl, price:r.price }])),
-  ammo:Object.fromEntries(C.AMMO_SHOP.map(a=>[a.id,{ box:a.box, price:a.price }])), cap:C.PAYOUT_CAP };
+  ammo:Object.fromEntries(C.AMMO_SHOP.map(a=>[a.id,{ box:a.box, price:a.price }])), cap:C.PAYOUT_CAP,
+  mg:Object.fromEntries(C.ROOF_MG.map(m=>[m.id,{ price:m.price }])), mgUp:Object.fromEntries(C.ROOF_MG_UP.map(t=>[t.key,t.cost])) };   // Z167 roof machine guns
 if(Object.keys(tanks).length<10) throw new Error('tank prices not found: '+Object.keys(tanks));
 fs.writeFileSync(path.join(ROOT,'functions','catalog.json'), JSON.stringify(cat,null,1)); console.log('catalog: '+Object.keys(cat.guns).length+' guns · '+Object.keys(tanks).length+' tanks · '+Object.keys(cat.upgrades).length+' upgrades · '+Object.keys(cat.ammo).length+' ammo');

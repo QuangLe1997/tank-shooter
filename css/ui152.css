@@ -154,3 +154,11 @@
 .rk-lv{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--amber);} .rk-sc{font-size:17px;font-weight:900;color:#ffd24a;text-align:right;}
 .rk-row.me{border-color:var(--green);box-shadow:0 0 0 2px var(--green),var(--card-sh);} .rk-me{margin-top:8px;} .rk-msg{color:var(--muted);text-align:center;padding:24px;font-size:13px;}
 @media (max-width:560px){ .rk-row{grid-template-columns:40px 1fr 78px;} .rk-lv{display:none;} }
+
+/* ===== Z167 ROOF MG ammo readout ===== */
+#mgHud{position:fixed;left:14px;bottom:118px;z-index:30;pointer-events:none;font:800 12px/1 'Saira Condensed',sans-serif;letter-spacing:1.5px;color:#ffe6a0;
+  background:rgba(8,12,8,.62);border:1px solid rgba(255,214,120,.28);border-radius:8px;padding:6px 9px;display:none;font-variant-numeric:tabular-nums;}
+#mgHud.on{display:block;} #mgHud b{color:#fff;margin-right:4px;}
+.kit-rec.on{border-color:var(--green);box-shadow:0 0 0 2px var(--green),var(--card-sh);}
+.mg-card .kr-buy,.mg-card .kse-swap{margin-top:4px;}
+.mg-up{grid-template-columns:1fr auto;gap:4px 8px;padding:6px 8px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.03);} .mg-up .kr-nm{grid-column:1/-1;font-size:12.5px;flex-direction:row;gap:6px;align-items:baseline;flex-wrap:wrap;} .mg-up .kr-nm small{font-size:10.5px;} .mg-up .kr-pips{align-self:center;} .mg-up .kr-pips i{width:16px;height:7px;} .mg-up .kr-buy{min-width:96px;font-size:11px;margin-top:0 !important;}

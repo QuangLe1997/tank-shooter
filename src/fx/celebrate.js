@@ -1,12 +1,12 @@
 // fx/celebrate.js — Z140 VICTORY CELEBRATION: a fort taken or a battle won — fireworks over the field, every soldier of ours leaps and cheers
 //   (arms up), our flags whip in the wind, a fanfare. 'fort' = a short local party over the captured fort; 'victory' = the whole army, 6 s.
-import { FT, S, radio, riders, sfx, showBanner, soldiers, spawnPart } from '../hub.js';
+import { FT, S, playClip, radio, riders, sfx, showBanner, soldiers, spawnPart } from '../hub.js';
 
 export const CEL = { until:0, t0:0, kind:'', x:0, z:0, fwAt:0, chAt:0 };
 const COLS=[0xffd24a, 0xda251d, 0x9be04a, 0x7fd0ff, 0xffffff, 0xff8a3a];
 export function celebrate(kind, x, z){ const now=performance.now()/1000; Object.assign(CEL, { kind, x:x||0, z:z||0, t0:now, until:now+(kind==='victory'?6.5:3.6), fwAt:0, chAt:0 });
   sfx('levelup'); setTimeout(()=>sfx('powerup'), 350);
-  if(kind==='victory'){ showBanner('CHIẾN THẮNG!  TOÀN QUÂN REO HÒ', '#ffd24a'); radio('SCH: Chiến thắng! Cờ đã cắm — toàn quân ăn mừng!'); } }
+  if(kind==='victory'){ playClip('x_cheer', 0.85); showBanner('CHIẾN THẮNG!  TOÀN QUÂN REO HÒ', '#ffd24a'); radio('SCH: Chiến thắng! Cờ đã cắm — toàn quân ăn mừng!'); } }   // Z167 the whole army cheers
 function firework(x, y, z){ const c=COLS[(Math.random()*COLS.length)|0], c2=COLS[(Math.random()*COLS.length)|0], n=22+((Math.random()*14)|0);
   for(let i=0;i<n;i++){ const a=Math.random()*6.283, b=Math.acos(2*Math.random()-1), sp=9+Math.random()*6;
     spawnPart(x, y, z, Math.sin(b)*Math.cos(a)*sp, Math.cos(b)*sp, Math.sin(b)*Math.sin(a)*sp, { tex:'flash', color:i%3?c:c2, size:0.55+Math.random()*0.35, life:0.9+Math.random()*0.5, grav:-7, drag:1.6 }); }

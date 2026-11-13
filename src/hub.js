@@ -38,6 +38,7 @@ export * from './tank/rig.js';
 export * from './tank/barrels.js';
 export * from './tank/shield.js';
 export * from './tank/kit.js';   // Z161 per-tank workshop + crew
+export * from './tank/roofmg.js';   // Z167 roof machine gun
 export * from './fx/hud-fx.js';
 export * from './fx/particles.js';
 export * from './fx/gore.js';   // Z121

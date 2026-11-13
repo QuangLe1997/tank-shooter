@@ -2,12 +2,14 @@
 // Shared by index.js (Cloud Functions) and test.js. Prices come from catalog.json (built from the game's own data by tools/catalog.mjs).
 const int=(v,lo,hi)=>Math.max(lo, Math.min(hi, Math.floor(Number(v)||0)));
 const uniq=a=>[...new Set(a)];
-export function freshState(){ return { coins:0, diamonds:0, guns:['rifle'], tanks:['lqt'], upgrades:{}, kit:{}, crew:['d_cmd','d_gun','d_drv','d_ldr'], ammo:{}, meta:{} }; }
+export function freshState(){ return { coins:0, diamonds:0, guns:['rifle'], tanks:['lqt'], upgrades:{}, kit:{}, crew:['d_cmd','d_gun','d_drv','d_ldr'], ammo:{}, mgs:['pkt'], mgUp:{}, meta:{} }; }
 const coinsOf=c=>!c?0:(c.c||0)+(c.d||0)*200;   // diamonds valued at 200 coins
 export function inventoryValue(s, cat){ let v=0; for(const g of s.guns) v+=coinsOf(cat.guns[g]); for(const t of s.tanks) v+=coinsOf(cat.tanks[t]);
   for(const [k,L] of Object.entries(s.upgrades)) for(let i=0;i<L;i++) v+=coinsOf(cat.upgrades[k][i]);
   for(const [id,k] of Object.entries(s.kit)){ for(const t of cat.kitTracks) for(let i=0;i<(k[t]|0);i++) v+=coinsOf(cat.kit[id][i]); if(k.sig) v+=coinsOf({ d:cat.sig[id].d }); }
-  for(const id of s.crew) v+=coinsOf(cat.crew[id]&&cat.crew[id].price); return v; }
+  for(const id of s.crew) v+=coinsOf(cat.crew[id]&&cat.crew[id].price);
+  for(const id of s.mgs||[]) v+=coinsOf(cat.mg&&cat.mg[id]&&cat.mg[id].price); for(const L of Object.values(s.mgUp||{})) for(const [k,n] of Object.entries(L)) for(let i=0;i<n;i++) v+=coinsOf(cat.mgUp[k]&&cat.mgUp[k][i]);
+  return v; }
 // first contact: what the device already had comes across — only during the migration window, unknown items dropped, levels clamped,
 // and the whole lot (wallet + inventory) worth at most migrateValue coins; a save beyond that is not credible → a fresh start
 export function migrate(p, cat, nowMs){ p=p&&typeof p==='object'?p:{}; const s=freshState();
@@ -19,6 +21,8 @@ export function migrate(p, cat, nowMs){ p=p&&typeof p==='object'?p:{}; const s=f
   for(const [id,k] of Object.entries(p.kit||{})) if(cat.kit[id] && s.tanks.includes(id) && k && typeof k==='object'){ const o={}; for(const t of cat.kitTracks) o[t]=int(k[t],0,cat.kitMax); o.sig=!!k.sig && !!cat.sig[id] && cat.kitTracks.every(t=>o[t]>=cat.kitSigNeed); s.kit[id]=o; }
   const ros=(p.crew && Array.isArray(p.crew.roster) ? p.crew.roster : []).map(m=>m&&m.id).filter(id=>cat.crew[id]); s.crew=uniq([...s.crew, ...ros]);
   for(const [k,n] of Object.entries(p.ammo||{})) if(cat.ammo[k]) s.ammo[k]=int(n,0,99);
+  if(cat.mg){ s.mgs=uniq(['pkt', ...(Array.isArray(p.ownedMgs)?p.ownedMgs:[]).filter(m=>cat.mg[m])]);
+    for(const [id,L] of Object.entries(p.mgUp||{})) if(s.mgs.includes(id) && L && typeof L==='object'){ const o={}; for(const k of Object.keys(cat.mgUp)) o[k]=int(L[k],0,cat.mgUp[k].length); s.mgUp[id]=o; } }
   s.meta={ reach:int(((p.campaign&&p.campaign.max)|0)-1, 0, cat.cap.migrateReach) };   // levels cleared, as far as the server is concerned
   const inv=inventoryValue(s, cat); if(inv>cat.cap.migrateValue){ const f=freshState(); f.meta={ reach:0 }; f.meta.rejected=inv; return f; }
   s.coins=Math.min(s.coins, cat.cap.migrateValue-inv); s.diamonds=Math.min(s.diamonds, Math.floor((cat.cap.migrateValue-inv-s.coins)/200)+20);
@@ -37,6 +41,9 @@ export function purchase(s, r, cat){ r=r||{}; let cost=null, grant=null; const i
       cost={ d:cat.sig[id].d }; grant=()=>{ k.sig=true; s.kit[id]=k; }; break; }
     case 'crew': { const R=cat.crew[id]; if(!R || !R.price) return fail('unknown'); if(s.crew.includes(id)) return fail('owned'); cost=R.price; grant=()=>s.crew.push(id); break; }
     case 'ammo': { const A=cat.ammo[id]; if(!A) return fail('unknown'); if((s.ammo[id]|0)>=99) return fail('max'); cost=A.price; grant=()=>{ s.ammo[id]=Math.min(99,(s.ammo[id]|0)+A.box); }; break; }
+    case 'mg': { const R=cat.mg&&cat.mg[id]; if(!R || !R.price) return fail('unknown'); s.mgs=s.mgs||['pkt']; if(s.mgs.includes(id)) return fail('owned'); cost=R.price; grant=()=>s.mgs.push(id); break; }
+    case 'mgup': { s.mgs=s.mgs||['pkt']; s.mgUp=s.mgUp||{}; if(!s.mgs.includes(id)) return fail('not-owned'); const C=cat.mgUp&&cat.mgUp[r.track]; if(!C) return fail('unknown'); const L=s.mgUp[id]||{}; const n=L[r.track]|0; if(n>=C.length) return fail('max');
+      cost=C[n]; grant=()=>{ L[r.track]=n+1; s.mgUp[id]=L; }; break; }
     default: return fail('bad-type'); }
   if(!cost || !afford(s,cost)) return fail('funds');
   s.coins-=cost.c||0; s.diamonds-=cost.d||0; grant(); return { ok:true, cost }; }

@@ -205,7 +205,7 @@ export function breachFort(f, now, viaWall){ if(f.breached) return; f.breached=t
   if(!viaWall){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); for(const L of f.leaves) L.open=0.001; f.leafV=0;   // the leaves blow inward
     bigExplode({x:b.x,z:b.z}, 0xff8a3a, 2.6); for(let k=0;k<6;k++) spawnDebris({x:b.x,z:b.z}, 1.3, 0x5a3e24); S.shake=Math.min(3, S.shake+1.6); sfx('bigexplode');
     if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } }
-  showBanner((viaWall?'TƯỜNG ':'CỔNG ')+f.name+(viaWall?' ĐÃ SẬP':' ĐÃ VỠ')+' — XUNG PHONG!', '#ff8a3a'); radio(f.chief+' tung toàn bộ quân giữ thành ra phản công!');
+  showBanner((viaWall?'TƯỜNG ':'CỔNG ')+f.name+(viaWall?' ĐÃ SẬP':' ĐÃ VỠ')+' — XUNG PHONG!', '#ff8a3a'); radio(f.chief+': "Toàn quân! Địch đã vào thành! Xông lên, giết sạch chúng!"', 'f_rally_1');   // Z167 the commander's megaphone + his men's war cry
   wakeFort(f, now);
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);                                     // the garrison pours out — through the gate / the breach, not through the stone
   if(f.tier===3 && !boss){ startBoss(now); if(boss){ boss.pos.set(f.x, 0, f.z); boss.mesh.position.set(f.x,0,f.z); boss.fort=f; } } }   // the citadel's commander IS the stage boss
@@ -261,9 +261,9 @@ function updatePosture(f, now){ if(now<f.postAt) return; f.postAt=now+0.5; const
   if(near && f.active && !f.breached && !fortSealed(f)){ const s=strength(f); want = s.ours >= s.theirs*P.holdK ? 'hold' : 'sally'; f.ratio=s; }
   if(want===f.posture) return; const was=f.posture; f.posture=want;
   if(want==='hold'){ for(const e of f.units) if(e.exit && e.exit.f===f && enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R-1) regarrison(f, e);
-    f.openUntil=0; showBanner(f.name+' ĐÓNG CỔNG CỐ THỦ — PHÁ CỔNG ĐỂ VÀO!', '#ffb35a'); radio(f.chief+': đóng cổng! Giữ tường, không ai ra ngoài!');
+    f.openUntil=0; showBanner(f.name+' ĐÓNG CỔNG CỐ THỦ — PHÁ CỔNG ĐỂ VÀO!', '#ffb35a'); radio(f.chief+': "Anh em giữ thành! Bắn! Dồn hết hoả lực vào chiếc xe tăng đó!"', 'f_rally_2');
     if(!f.supplied){ f.supplied=true; const sd=POWERUPS.find(d=>d.id==='siege'); if(sd) setTimeout(()=>{ if(S.mode==='playing' && S.player){ dropPowerup({ x:S.player.pos.x+(Math.random()-0.5)*6, z:S.player.pos.z+(Math.random()-0.5)*6 }, 1, sd); radio('Hậu cần: thả ĐẠN PHÁ THÀNH cạnh xe — nhặt lấy rồi dồn vào cổng!'); } }, 2500); } }   // Z111b one siege crate per fortress that shuts its gate on you
-  else if(want==='sally'){ f.sortieAt=now+1.2; showBanner(f.name+' MỞ CỔNG XUẤT QUÂN!', '#ff6a4a'); radio(f.chief+': quân địch yếu — mở cổng, xông ra diệt chúng!'); }
+  else if(want==='sally'){ f.sortieAt=now+1.2; showBanner(f.name+' MỞ CỔNG XUẤT QUÂN!', '#ff6a4a'); radio(f.chief+': "Không ai được lùi! Tất cả, tiến lên!"', 'f_rally_3'); }
   else if(was==='hold') f.sallyAt=Math.max(f.sallyAt, now+4); }
 // SALLY posture: the garrison itself pours out in waves (the commander and his guard stay home)
 function sortie(f, now){ if(now<(f.sortieAt||0)) return; const P=FORT.posture; f.sortieAt=now+R2(P.every);

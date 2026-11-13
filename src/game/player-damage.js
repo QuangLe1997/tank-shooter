@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { LOOT } from '../../config.js';
-import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
+import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, recordRun, refreshWallet, ringPulse, saveProfile, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -32,7 +32,7 @@ export function addPlayerBurn(dx, dz){
 export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0 };
 export const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 export function playerDie(now){
-  const p=S.player; p.lives--;
+  const p=S.player; p.lives--; playClip('x_scream', 0.95);   // Z167 the crew's scream as the tank goes
   if(p.lives < 0){ tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); gameOver('HẾT MẠNG'); return; }   // final death → shatter + game over
   beginDeath(now);
 }

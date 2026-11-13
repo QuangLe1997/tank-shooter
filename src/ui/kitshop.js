@@ -1,6 +1,6 @@
 // ui/kitshop.js — Z161 XƯỞNG CẢI TIẾN + KÍP XE screen: upgrade each owned tank's four tracks and its signature module; seat, hire and follow the crew
-import { AMMO_SHOP } from '../../config.js';
-import { CREW_RECRUITS, CREW_SEATS, CREW_TRAITS, CREW_XP, KIT_MAX, KIT_SIG, KIT_SIG_NEED, KIT_TRACKS, PROFILE, TANK_MODELS, TANK_ORDER, buyAmmo, buyKit, buySig, canAfford, crewMember, crewNeed, crewState, currentTank, escapeHtml, hide, hireCrew, kitCost, kitSigReady, kitState, ownedTanks, pickAmmo, renderGarage, seatCrew, sfx, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
+import { AMMO_SHOP, ROOF_MG, ROOF_MG_UP } from '../../config.js';
+import { CREW_RECRUITS, CREW_SEATS, CREW_TRAITS, CREW_XP, KIT_MAX, KIT_SIG, KIT_SIG_NEED, KIT_TRACKS, PROFILE, TANK_MODELS, TANK_ORDER, buyAmmo, buyKit, buyRoofMG, buySig, canAfford, crewMember, crewNeed, crewState, currentTank, escapeHtml, hide, hireCrew, kitCost, kitSigReady, kitState, mgLevels, mgOwned, mgPicked, mgStats, mgUpCost, ownedTanks, pickAmmo, pickRoofMG, renderGarage, seatCrew, sfx, show, tankPicHTML, tapBtn, tapEl, upRoofMG } from '../hub.js';
 
 export const KITUI = { tab:'ws', tank:null, from:'garage' };
 const money = c => !c ? '' : c.d ? '◆ '+c.d : '⦿ '+(c.c||0).toLocaleString('vi-VN');
@@ -13,7 +13,7 @@ function shake(e){ if(!e) return; e.classList.remove('shake'); void e.offsetWidt
 
 export function renderKit(){ const body=document.getElementById('kitBody'); if(!body) return; body.replaceChildren(); wallet();
   document.querySelectorAll('#kitshop .kit-tab').forEach(t=>t.classList.toggle('on', t.dataset.kt===KITUI.tab));
-  if(KITUI.tab==='ws') renderWorkshop(body); else if(KITUI.tab==='ammo') renderAmmo(body); else renderCrew(body); }
+  if(KITUI.tab==='ws') renderWorkshop(body); else if(KITUI.tab==='ammo') renderAmmo(body); else if(KITUI.tab==='mg') renderRoofMGTab(body); else renderCrew(body); }
 addEventListener('econ', ()=>{ const o=document.getElementById('kitshop'); if(o && !o.classList.contains('hidden')) renderKit(); });   // Z162 server state arrived
 
 // ---------------- workshop tab ----------------
@@ -46,6 +46,21 @@ function renderAmmo(body){ body.appendChild(el('div','kit-h','ĐẠN ĐẶC CH�
     const buy=el('div','btn btn-mini kr-buy'+(canAfford(A.price)?'':' poor'),'<span>MUA +'+A.box+' · '+money(A.price)+'</span>'); tapEl(buy, ()=>{ buyAmmo(A.id).then(ok=>{ if(ok) renderKit(); else shake(card); }); });
     const pick=el('div','btn btn-mini kse-swap','<span>'+(on?'BỎ RA':'MANG THEO')+'</span>'); tapEl(pick, ()=>{ pickAmmo(A.id); renderKit(); });
     card.append(buy, pick); grid.appendChild(card); }
+  body.appendChild(grid); }
+
+// ---------------- Z167 roof machine gun tab ----------------
+function statBar(label, v, lo, hi, txt){ const k=Math.max(0.05, Math.min(1, (v-lo)/(hi-lo))); return '<div class="gr-bar"><span>'+label+'</span><i><u class="up" style="width:'+(k*100).toFixed(0)+'%"></u></i><b>'+txt+'</b></div>'; }
+function renderRoofMGTab(body){ body.appendChild(el('div','kit-h','SÚNG MÁY NÓC — lính đầu tiên trên xe đứng ở cửa nóc điều khiển: xoay 360°, nâng nòng bắn lính trên tháp, chỉ bắn bộ binh. Xe đang dùng súng phóng lựu / tên lửa thì không gắn được.'));
+  const grid=el('div','kit-recs'), own=mgOwned(), pick=mgPicked();
+  for(const B of ROOF_MG){ const owned=own.includes(B.id), on=pick===B.id, S0=mgStats(B.id), card=el('div','kit-rec mg-card'+(on?' on':''));
+    card.innerHTML='<div class="kse-seat">'+(on?'✓ ĐANG GẮN':owned?'ĐÃ CÓ':'CHƯA CÓ')+' · '+escapeHtml(B.origin)+' · '+B.cal+' LY</div><div class="kse-nm">'+escapeHtml(B.vi)+'</div><div class="kse-trait">'+escapeHtml(B.desc)+'</div>'+
+      '<div class="gc-bars">'+statBar('SÁT THƯƠNG', S0.dmg, 2, 14, S0.dmg.toFixed(1))+statBar('TỐC ĐỘ BẮN', S0.rof, 6, 14, S0.rof.toFixed(1)+'/s')+statBar('HỘP ĐẠN', S0.mag, 40, 150, S0.mag+'')+statBar('THAY HỘP', 6-S0.reload, 1, 4, S0.reload.toFixed(1)+'s')+statBar('TẦM BẮN', S0.range, 15, 28, S0.range+'')+statBar('XOAY', S0.trav, 1.5, 3.2, S0.trav.toFixed(1))+'</div>';
+    if(!owned){ const b=el('div','btn btn-mini kr-buy'+(canAfford(B.price)?'':' poor'),'<span>MUA · '+money(B.price)+'</span>'); tapEl(b, ()=>{ buyRoofMG(B.id).then(ok=>{ if(ok) renderKit(); else shake(card); }); }); card.appendChild(b); }
+    else { if(!on){ const b=el('div','btn btn-mini kse-swap','<span>GẮN LÊN XE</span>'); tapEl(b, ()=>{ pickRoofMG(B.id); renderKit(); }); card.appendChild(b); }
+      const L=mgLevels(B.id); for(const t of ROOF_MG_UP){ const c=mgUpCost(B.id, t.key), row=el('div','kit-row mg-up');
+        row.innerHTML='<div class="kr-nm">'+t.vi+'<small>'+t.per+' / cấp</small></div><div class="kr-pips">'+t.cost.map((_,i)=>'<i class="'+(i<(L[t.key]|0)?'on':'')+'"></i>').join('')+'</div>';
+        const b=el('div','btn btn-mini kr-buy'+(c?(canAfford(c)?'':' poor'):' max'), c?'<span>NÂNG '+money(c)+'</span>':'<span>TỐI ĐA</span>'); if(c) tapEl(b, ()=>{ upRoofMG(B.id, t.key).then(ok=>{ if(ok) renderKit(); else shake(row); }); }); row.appendChild(b); card.appendChild(row); } }
+    grid.appendChild(card); }
   body.appendChild(grid); }
 
 // ---------------- crew tab ----------------

@@ -1,6 +1,6 @@
 // actors/riders.js — TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100)
 import { TROOPS } from '../../config.js';
-import { RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, shootGuard, soldierLvl, spawnBullet, spawnPart, towers, updateCrewBtn } from '../hub.js';
+import { MGR, RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, shootGuard, soldierLvl, spawnBullet, spawnPart, towers, updateCrewBtn } from '../hub.js';
    // base 3 + TANK CREW upgrade (+1..3)
 export const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55],                     // roof posts (tank-local, before facing+scale)
   [-1.25,1.05,0.55],[1.25,1.05,0.55],[-1.25,1.05,-0.35],[1.25,1.05,-0.35],[-1.25,1.05,-1.25],[1.25,1.05,-1.25],   // Z111b fenders, both sides
@@ -22,6 +22,7 @@ export function updateRiders(dt, now){
   const ms=p.scale*TANK_SCALE, cf=Math.cos(p.facing), sf=Math.sin(p.facing);
   const enemyNear = enemies.some(e=>{ const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; return dx*dx+dz*dz < (p.radius+3)*(p.radius+3); });
   riders.forEach((r,i)=>{
+    if(i===0 && MGR.on && MGR.gunner===r){ if(r.hp<r.maxHp) r.hp=Math.min(r.maxHp, r.hp+TROOPS.crewHeal*dt); const gp=r.g.position; r.bar.visible=r.hp<r.maxHp-0.5; r.bar.position.set(gp.x, gp.y+1.6*RIDER.scale*p.scale, gp.z); r.bar.quaternion.copy(camera.quaternion); r.bar.scale.setScalar(0.72); const f0=Math.max(0,r.hp/r.maxHp); r.barFill.scale.x=Math.max(0.001,f0); r.barFill.position.x=-(1-f0)*0.5; return; }   // Z167 the man on the roof gun is placed and animated by tank/roofmg.js
     if(r.hp<r.maxHp){ r.hp=Math.min(r.maxHp, r.hp+TROOPS.crewHeal*dt); if(Math.random()<dt*1.5) spawnPart(r.g.position.x, r.g.position.y+1.2, r.g.position.z, 0, 1.2, 0, {color:0x7dff8a, size:0.35, life:0.5, grav:0, drag:2}); }   // Z100 the tank is their aid station
     const o=_RIDER_SLOTS[i%_RIDER_SLOTS.length];
     const wx=p.pos.x+(o[0]*cf+o[2]*sf)*ms, wz=p.pos.z+(-o[0]*sf+o[2]*cf)*ms, wy=o[1]*ms+p.mesh.position.y;

@@ -30,6 +30,7 @@ export function applyEcon(){ const s=ECON.srv; if(!s) return; const p=econPend()
   const c=PROFILE.crew=PROFILE.crew||{ roster:[], seats:{} }; c.roster=c.roster||[];
   for(const id of s.crew||[]) if(!c.roster.some(m=>m.id===id)){ const R=CREW_RECRUITS.find(r=>r.id===id); c.roster.push({ id, lvl:R?R.lvl:1, xp:0 }); }
   c.roster=c.roster.filter(m=>(s.crew||[]).includes(m.id));
+  PROFILE.ownedMgs=[...(s.mgs||['pkt'])]; PROFILE.mgUp=JSON.parse(JSON.stringify(s.mgUp||{}));   // Z167 roof MGs
   PROFILE.ammo={}; for(const [k,n] of Object.entries(s.ammo||{})) PROFILE.ammo[k]=Math.max(0,(n|0)-((p.ammo[k])|0));
   saveProfile(true); try{ refreshWallet(); refreshStartUI(); }catch(e){} dispatchEvent(new Event('econ')); }
 // spend: server mode → econBuy (needs a connection), else the old local payment; resolves true/false
