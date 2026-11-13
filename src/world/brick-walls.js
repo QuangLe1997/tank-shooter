@@ -60,7 +60,7 @@ export function buildBrickWalls(){
     pts.forEach(([x,z],k)=>{ const gy=heightAt(x,z);
       if(k===gapAt){ spawnRubble(x, z, ang, pal, 0.8); return; }
       const lvl = k===gapAt-1||k===gapAt+1 ? 0.42+Math.random()*0.25 : 0.74+Math.random()*0.3;   // walls slump toward the breach
-      const ws=buildWallSection(pal, { h:3.9+Math.random()*0.9, lvl, hole:Math.random()<0.35, soot, slope:k===gapAt-1?0.4:(k===gapAt+1?-0.4:0) });
+      const ws=buildWallSection(pal, { h:2.1+Math.random()*0.6, lvl, hole:Math.random()<0.35, soot, slope:k===gapAt-1?0.4:(k===gapAt+1?-0.4:0) });
       ws.grp.position.set(x, gy-0.08, z); ws.grp.rotation.y=ang; scene.add(ws.grp);
       const hp=Math.round(140+ws.top*30);
       blocks.push({ mesh:ws.grp, x, z, r:1.55, hp, maxHp:hp, steel:false, loot:false, kind:'brick', obb:{ f:ang, hw:BRICK.D/2+0.06, hl:BRICK.seg/2 }, wall:{ bands:ws.bands, stage:0, pal } });

@@ -1,7 +1,7 @@
 // actors/enemies.js — ENEMY tanks: spawn (roster, elites, carrier troops, loot), pooled meshes and floating HP bars
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
+import { BALANCE, RAMP, ROSTER, TROOPS, LOOT, HUMAN_SCALE } from '../../config.js';
 import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, hasDesign, heightAt, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
@@ -89,7 +89,7 @@ export function decorateEnemyMesh(m, type){
     const rp=new THREE.Group(); rp.position.set(0,1.32,-1.52); rp.name='ramp'; m.add(rp);                                   // Z89 rear troop ramp (hinged at the bed)
     const rpl=new THREE.Mesh(new RoundedBoxGeometry(1.7,1.2,0.12,1,0.04), steel(pal.hull)); rpl.position.y=-0.6; rp.add(rpl);
     for(let k=0;k<4;k++){ const st=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.05,0.06), dk(0x2a2a22)); st.position.set(0,-0.2-k*0.26,0.07); rp.add(st); }   // anti-slip treads
-    for(let i=0;i<3;i++){ const s=makeSoldierMesh(m.userData.friendly?null:{enemy:true}); s.scale.setScalar(0.66); s.position.set((i-1)*0.66, 1.7, -0.45+(i%2)*0.5); s.rotation.y=(i-1)*0.4; s.name='crew'+i; m.add(s); }   // 3 riflemen riding on top
+    for(let i=0;i<3;i++){ const s=makeSoldierMesh(m.userData.friendly?null:{enemy:true}); s.scale.setScalar(HUMAN_SCALE/(ENEMY_DEFS.carrier.scale*TANK_SCALE)); s.position.set((i-1)*0.7, 1.7, -0.45+(i%2)*0.5); s.rotation.y=(i-1)*0.4; s.name='crew'+i; m.add(s); }   // 3 riflemen riding on top
   }
   m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
 }

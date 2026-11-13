@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BRIDGE } from '../../config.js';
+import { BRIDGE, HUMAN_SCALE } from '../../config.js';
 import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
 
 export const towers=[], fallers=[];
@@ -36,7 +36,7 @@ export function buildTower(x, z){
   const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.4,12), _tinMat); lamp.rotation.x=Math.PI/2; sl.add(lamp);
   const bg=new THREE.Group(); bg.rotation.x=0.55; sl.add(bg); const light=makeSearchlight(sl, bg, 26, 0.24, 3.4, gy), beam=light.beam;   // Z146 volumetric beam + ground pool + glare
   const guards=[];
-  for(let k=0;k<2;k++){ const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(1.55); s.position.set(k?0.7:-0.7, TOWER.h+0.11, k?0.4:-0.4); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
+  for(let k=0;k<2;k++){ const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(HUMAN_SCALE); s.position.set(k?0.7:-0.7, TOWER.h+0.11, k?0.4:-0.4); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
   scene.add(g);
   const hp=Math.round(TOWER.hp*loopHpMul()*diffHpMul());
   const t={ g, body, x, z, guards, sl, beam, light, wm, hp, falling:false };

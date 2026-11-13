@@ -1,7 +1,7 @@
 // world/bridges.js — Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrolling across; drop a tower and it snaps
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BRIDGE } from '../../config.js';
+import { BRIDGE, HUMAN_SCALE } from '../../config.js';
 import { S, TOWER, animateSoldier, bullets, cMod, campMats, diffDmgMul, fallers, floatText, heightAt, loopDmgMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
 
 // ===== Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrolling across; drop a tower and it snaps =====
@@ -21,7 +21,7 @@ export function buildBridge(a, b){
       halves[hi].add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),12,0.03,4), M.rope));
       for(let k=1;k<10;k+=2){ const u=hi? 0.5+k/20 : k/20, P=ptAt(u), top=pts[k]; const hg=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,1,3), M.rope);
         const bx=P.x+ox-A.x, by=P.y-A.y, bz=P.z+oz-A.z; hg.position.set((bx+top.x)/2,(by+top.y)/2,(bz+top.z)/2); hg.scale.y=Math.max(0.1,top.y-by); halves[hi].add(hg); } } }
-  const sentry=makeSoldierMesh({enemy:true}); sentry.scale.setScalar(1.55); scene.add(sentry);
+  const sentry=makeSoldierMesh({enemy:true}); sentry.scale.setScalar(HUMAN_SCALE); scene.add(sentry);
   BRIDGES.push({ a, b, halves, anchors, ptAt, yaw, L, u:Math.random(), dir:1, sentry:{ g:sentry, alive:true, fireAt:performance.now()/1000+2 }, broken:false, bt:0 });
 }
 export function clearBridges(){ for(const br of BRIDGES){ br.halves.forEach(h=>scene.remove(h)); scene.remove(br.sentry.g); } BRIDGES.length=0; }

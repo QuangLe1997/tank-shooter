@@ -1,7 +1,7 @@
 // world/fortress.js — Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, corner watchtowers, one heavy gate to batter open, a crowded garrison + a commander inside; troops sally from the gates. Take them all to win the stage (the main citadel's gate opens last and its commander is the boss).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FORT, COMMAND, GUN_MODS } from '../../config.js';
+import { FORT, COMMAND, GUN_MODS, HUMAN_SCALE } from '../../config.js';
 import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
@@ -46,13 +46,13 @@ function placed(g, x, y, z, ry){ g.rotateY(ry||0); g.translate(x,y,z); return g;
 const _m=new THREE.Matrix4(), _p=new THREE.Vector3(), _q=new THREE.Quaternion(), _s=new THREE.Vector3(), _up=new THREE.Vector3(0,1,0);
 let _pieceGeo=null;   // one 3 m wall section (wall + footing + two merlons), scaled along x per instance
 function pieceGeo(){ if(_pieceGeo) return _pieceGeo; const H=FORT.wallH, TH=FORT.wallT, L=FORT.seg;
-  const parts=[placed(stoneBox(L, H+2, TH), 0, H/2-1, 0, 0), placed(stoneBox(L*0.3, 0.8, TH*0.9), -L*0.25, H+0.4, 0, 0), placed(stoneBox(L*0.3, 0.8, TH*0.9), L*0.25, H+0.4, 0, 0)];
+  const MH=1.3, parts=[placed(stoneBox(L, H+2, TH), 0, H/2-1, 0, 0), placed(stoneBox(L*0.3, MH, TH*0.9), -L*0.25, H+MH/2, 0, 0), placed(stoneBox(L*0.3, MH, TH*0.9), L*0.25, H+MH/2, 0, 0)];   // Z174 1.3 m merlons: chest-high cover for a 1.78 m man on the wall-walk
   // Z145 real masonry has a profile: a battered plinth, a string course, a projecting parapet on corbels, coped merlons
   parts.push(placed(stoneBox(L, 1.3, TH+0.7), 0, 0.2, 0, 0), placed(stoneBox(L, 0.5, TH+0.36), 0, 0.95, 0, 0));
   parts.push(placed(stoneBox(L, 0.22, TH+0.22), 0, H*0.52, 0, 0));
   parts.push(placed(stoneBox(L, 0.42, TH+0.5), 0, H-0.2, 0, 0));
   for(let k=0;k<4;k++) for(const sd of [-1,1]) parts.push(placed(stoneBox(0.3, 0.5, 0.25), -L/2+L*(k+0.5)/4, H-0.62, sd*(TH/2+0.12), 0));
-  for(const sx of [-L*0.25, L*0.25]) parts.push(placed(stoneBox(L*0.3+0.14, 0.12, TH*0.9+0.14), sx, H+0.86, 0, 0));
+  for(const sx of [-L*0.25, L*0.25]) parts.push(placed(stoneBox(L*0.3+0.14, 0.12, TH*0.9+0.14), sx, H+MH+0.06, 0, 0));
   _pieceGeo=mergeGeometries(parts.map(q=>q.index?q.toNonIndexed():q), false); parts.forEach(q=>q.dispose()); return _pieceGeo; }
 
 // ---- raise every planned fortress (called from buildZones, after the watchtowers) ----
@@ -127,7 +127,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       f.bar=getEnemyBar(); f.bar.g.scale.setScalar(4.2); }
     // Z145 THE CAPITAL: the citadel raises a great DONJON at the back of its ward — an 11 m square keep, 18 m high, with four 23 m corner turrets,
     //   war banners on every face and the garrison's flag flying from its roof. It is solid stone: shells glance off it.
-    if(f.tier===3){ const bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.Rin*0.42, kx=ox*d, kz=oz*d, ry=-Math.atan2(-ox,oz), KW=11, KH=18;
+    if(f.tier===3){ const bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.Rin*0.42, kx=ox*d, kz=oz*d, ry=-Math.atan2(-ox,oz), KW=12, KH=24;
       keep(kx, kz, ry, ox, oz, KW, KH, 7);
       const tx=Math.cos(-ry), tz=Math.sin(-ry); for(const a of [-1,1]) for(const b of [-1,1]) keep(kx+tx*a*KW/2+ox*b*KW/2, kz+tz*a*KW/2+oz*b*KW/2, ry, ox, oz, 3.4, KH+5);
       for(const [a,b] of [[0,1],[0,-1],[1,0],[-1,0]]){ const ban=new THREE.Mesh(new THREE.PlaneGeometry(2.2, 6.5), bannerMat()); ban.position.set(kx+tx*a*(KW/2+0.32)+ox*b*(KW/2+0.32), KH-6, kz+tz*a*(KW/2+0.32)+oz*b*(KW/2+0.32)); ban.rotation.y=Math.atan2(tx*a+ox*b, tz*a+oz*b); g.add(ban); }
@@ -146,7 +146,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     // riflemen along the wall walk — a pseudo watchtower so they aim/fire/fall exactly like tower guards (and our men can shoot them)
     const body=new THREE.Group(); g.add(body); const guards=[], nG=Math.round(R2(T.gunners)*(MOBILE?FORT.mobileMul:1));
     for(let k=0;k<nG;k++){ const i=(k<nG*0.45) ? gi : (k%sides), [x0,z0]=V[i], [x1,z1]=V[(i+1)%sides]; let u=0.12+Math.random()*0.76; if(i===gi && Math.abs(u-0.5)<0.2) u=u<0.5?0.22:0.78;
-      const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(1.55); const px=x0+(x1-x0)*u, pz=z0+(z1-z0)*u; s.position.set(px*0.97, H-0.05, pz*0.97); body.add(s);
+      const s=makeSoldierMesh({enemy:true}); s.scale.setScalar(HUMAN_SCALE); const px=x0+(x1-x0)*u, pz=z0+(z1-z0)*u; s.position.set(px*0.97, H-0.05, pz*0.97); body.add(s);
       guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*3 }); }
     const pt={ g, body, x:f.x, z:f.z, guards, sl:new THREE.Object3D(), beam:{ material:{ opacity:0 } }, wm:null, hp:Infinity, falling:false, fort:f };
     towers.push(pt); f.pt=pt;

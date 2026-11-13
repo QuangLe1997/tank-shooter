@@ -42,7 +42,7 @@ for (const key of ['brick', 'enemy', 'gem', 'gun']) {
 }
 ok(BALANCE.drop.gem < BALANCE.drop.gun, 'gem drop is rarer than gun drop (gem<gun in the cumulative roll)');
 ok(BALANCE.elite.capChance > 0 && BALANCE.elite.capChance <= 1, 'elite.capChance is in (0,1]');
-ok(BALANCE.elite.hpMul > 1 && BALANCE.elite.sizeMul > 1, 'elites are tankier & bigger than base');
+ok(BALANCE.elite.hpMul > 1 && BALANCE.elite.sizeMul === 1, 'elites are tankier; same real-size hull (Z174: the gold aura marks them, not a bigger tank)');
 ok(BALANCE.wave.base > 0 && BALANCE.wave.capBase > 0, 'wave base counts are positive');
 ok(BALANCE.wave.eventChance > 0 && BALANCE.wave.eventChance < 1, 'wave.eventChance is a probability');
 for (const [k, v] of Object.entries(BALANCE.up)) ok(v > 0, `up.${k} upgrade coefficient is positive`);
@@ -412,7 +412,7 @@ for (const u of SHOP_UP) {
     let mono=true, prev=2; for(let d=0; d<=6; d+=0.25){ const v=k(d,4); if(v>prev+1e-9) mono=false; prev=v; }
     ok(mono && k(0,4)===1 && k(4*LETHAL.reach,4)===0, 'blast lethality falls off monotonically: dead at the core, untouched past reach'); }
   // soldier look + squad AI
-  ok(TROOPS.look.scale>=1.4 && TROOPS.look.scale<=2.4, 'soldiers are one readable size for both sides (1.4–2.4)');
+  ok(Math.abs(TROOPS.look.scale*1.407-1.78)<0.02, 'soldiers are one real size for both sides (Z174: 1.78 m)');
   ok(TROOPS.look.barY > TROOPS.look.scale*1.5, 'soldier HP bar floats above the helmet');
   ok(SQUAD.think>0.1 && SQUAD.think<=1, 'soldiers re-plan several times a second');
   ok(SQUAD.huntR > TROOPS.fireteam.detect, 'idle soldiers advance on enemies beyond what they can already see');
@@ -848,6 +848,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/tankEscorted\(g\.e\)/.test(R('src/ai/tactics.js')) && /WAVE\.lastTank/.test(wv) && /'pincer'/.test(wv) && /'probe'/.test(wv) && /prepBarrage\(\)/.test(wv), 'combined arms and wave plans: escorted tanks fix you while the men flank; pincer / probe / artillery-prep waves');
   ok(/export function navPath/.test(sq) && /string-pull/.test(sq) && /navPath\(L\.pos\.x/.test(sq), 'squads route round fortress walls and buildings on an A* nav grid');
   ok(/FTSQ\.bound/.test(ft) && /FTSQ\.focus/.test(ft) && /orderGoal\(a, foe, now\)/.test(ft) && cfg.ACTIONS.some(a=>a[0]==='sqOrder') && /cycleSquadOrder\(\)/.test(R('src/input/bindings.js')), 'our fireteam: two teams alternate bounding / covering, one focus target, squad orders (hold · push · flank left · flank right)'); }
+
+// Z174 real-world scale: 1 unit = 1 m; every man 1.78 m; real wall / tower / cover / tree heights; vehicles and elites at their real size
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), ED=await import('./src/data/enemies.js');
+  ok(Math.abs(cfg.HUMAN_SCALE*1.407-1.78)<0.01 && ED.SOLDIER.scale===cfg.HUMAN_SCALE && ED.RIDER.scale===cfg.HUMAN_SCALE && /setScalar\(HUMAN_SCALE\)/.test(R('src/world/towers.js')) && /setScalar\(HUMAN_SCALE\)/.test(R('src/world/fortress.js')) && /HUMAN_SCALE\/\(ENEMY_DEFS\.carrier\.scale\*TANK_SCALE\)/.test(R('src/actors/enemies.js')), 'every man in the game is 1.78 m — infantry, our squad, guards on walls / towers / bridges, riders, APC passengers');
+  ok(cfg.FORT.wallH===7 && cfg.FORT.wallT>=2.4 && /MH=1\.3/.test(R('src/world/fortress.js')) && /KH=24/.test(R('src/world/fortress.js')) && ED.TOWER.h>=8, 'fortress curtain walls 7 m + 1.3 m merlons, 2.4 m thick, a 24 m donjon; watchtowers 8 m to the deck');
+  ok(/h:2\.1\+Math\.random\(\)\*0\.6/.test(R('src/world/brick-walls.js')) && /sandbag:0\.7/.test(R('src/world/props.js')) && /real:1\.4/.test(R('src/world/flora.js')), 'compound walls ~2.4 m, sandbag lines 1.2 m, trees 10–17 m');
+  ok(ED.ENEMY_DEFS.heavy.scale<=1.1 && ED.ENEMY_DEFS.carrier.scale<=1.0 && cfg.BALANCE.elite.sizeMul===1, 'enemy vehicles at their real size (T-14 ≈ an MBT, APCs not bigger than tanks); elites are not bigger'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -21,7 +21,7 @@ export const BALANCE = {
             eventChance:0.34, assaultCadenceMul:0.5, assaultCapBonus:4, hordeMul:0.5 },
   // elite enemies
   elite:  { chancePerStage:0.025, chancePerLoop:0.06, capChance:0.25,
-            hpMul:2.6, sizeMul:1.32, dmgMul:1.3, coinMul:3, dia:1 },
+            hpMul:2.6, sizeMul:1.0, dmgMul:1.3, coinMul:3, dia:1 },
   // shop upgrade per-level effects (used by applyUpgrades)
   up:     { damage:0.08, boss:0.12, range:0.10, reload:0.12, mag:0.15, hp:20, armor:0.06, engine:0.10, turbo:0.12, ramplate:0.25, ramguard:0.12 },
   // gun MASTERY: each duplicate gun pickup = +1 xp; cross a threshold → that gun levels up (1→4, permanent).
@@ -291,6 +291,10 @@ export const LETHAL = { tankRoundKills: true, core: 0.45, reach: 1.25, edgeMin: 
 export const AIM = { rockR: 16, mobileFixed: true, cone: 0.17, lane: 1.8, artyCone: 0.32,
   pivotOnly: 0.38 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
 
+// Z174 REAL-WORLD SCALE — 1 world unit = 1 metre. The tanks are the reference (≈ a real MBT: ~7.5 m with the gun, 3.7 m tall to the cupola); a soldier model is
+//   1.407 units tall at scale 1 → HUMAN_SCALE makes every man, ours and theirs, 1.78 m. Fortress curtain walls 7 m + 1.3 m merlons, 2.4 m thick; watchtowers 8 m to the deck;
+//   brick compound walls ~2.4 m; sandbag lines 1.2 m; trees 10–17 m.
+export const HUMAN_SCALE = 1.78/1.407;
 export const TROOPS = {
   ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
   dismount: { fromStage: 2, range: 28, troops: [3, 5], interval: 0.38, rpgFrom: 3 },   // enemy APC stops inside `range`, drops the ramp, troops pile out
@@ -301,7 +305,7 @@ export const TROOPS = {
     spread: 2.6,                 // personal space between soldiers (no conga lines)
     tapMax: 0.3 },               // CREW/G pressed shorter than this = dismount; held = recall (release ends it)
   crewHeal: 5,                   // Z100 riding the tank heals a soldier this many HP per second (the tank is their aid station)
-  look: { scale: 1.85, barY: 3.6 },   // Z104 every foot soldier (ours + theirs) at the same, slightly bigger size; HP bar height above them
+  look: { scale: HUMAN_SCALE, barY: 2.45 },   // Z174 a 1.78 m man (was 2.6 m)   // Z104 every foot soldier (ours + theirs) at the same, slightly bigger size; HP bar height above them
 };
 
 // Z104 SQUAD AI — our soldiers fight on their own across the whole field (no longer leashed to the tank's ring).
@@ -431,7 +435,7 @@ export const FORT = {
   tiers:{ 1:{ r:[31,35], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[8,11],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
           2:{ r:[35,40], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[11,14],  name:'PHÁO ĐÀI' },
           3:{ r:[41,45], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[14,18], name:'THÀNH' } },
-  gatePerStage:0.22, mobileMul:0.6, wallH:4.4, wallT:1.6, gateW:7.5, seg:3,
+  gatePerStage:0.22, mobileMul:0.6, wallH:7.0, wallT:2.4, gateW:7.0, seg:3,
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'chief', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards

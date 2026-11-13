@@ -103,11 +103,11 @@ function okSpot(x,z,r){ return inField(x,z,r+1) && !inZone(x,z,r) && Math.hypot(
 function plant(g, n, opt){ const list=[]; const tries=n*6;
   for(let t=0;t<tries && list.length<n;t++){ let x, z; if(opt.near){ const p=opt.near(); if(!p) continue; [x,z]=p; } else { x=_R(-ARENA+6,ARENA-6); z=_R(-ARENA+6,ARENA-6); }
     if(opt.high && heightAt(x,z)<opt.high && Math.random()<0.8) continue; if(!(opt.near?inField(x,z,1)&&!inZone(x,z,1):okSpot(x,z,opt.r||1))) continue;
-    list.push({ x, z, s:_R(opt.s[0],opt.s[1]), ry:_R(0,6.28) }); }
+    list.push({ x, z, s:_R(opt.s[0],opt.s[1])*(opt.real||1), ry:_R(0,6.28) }); }
   if(!list.length) return; const im=new THREE.InstancedMesh(g, floraMat(), list.length); im.castShadow=!MOBILE && opt.shadow!==false; im.receiveShadow=true;
   list.forEach((o,k)=>{ M.compose(V.set(o.x, heightAt(o.x,o.z)-0.05, o.z), Q.setFromEuler(E.set(0,o.ry,0)), SC.set(o.s,o.s*_R(0.9,1.12),o.s)); im.setMatrixAt(k,M);
     C.setHSL(0, 0, 1); C.offsetHSL(_R(-0.03,0.03), _R(-0.08,0.06), _R(-0.08,0.08)); im.setColorAt(k, C);
-    crushables.push({ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s, im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true }); });
+    crushables.push({ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true }); });
   im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); }
 function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[(Math.random()*RIVER.lines.length)|0], p=L[(Math.random()*L.length)|0], w=L===RIVER.lines[0]?5.5:3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
   const x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r, h=heightAt(x,z); return (h>RIVER.y-0.05 && h<RIVER.y+0.6) ? [x,z] : null; }
@@ -116,18 +116,18 @@ function centres(n){ const C=[]; for(let t=0;t<n*20 && C.length<n;t++){ const x=
 function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }
 // Z145 trees thinned ~40%: the woods still read as woods but leave clear sight-lines for the fight
 export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
-  if(n==='HILLS'){ plant(conifer(false), N(52), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55 }); plant(broadleaf(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.6 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
-  else if(n==='VILLAGE'){ plant(palm(), N(17), { s:[0.85,1.25], kind:'tree', cr:0.4 }); plant(bamboo(), N(10), { s:[0.9,1.2], kind:'tree', cr:0.9 }); plant(broadleaf(), N(13), { s:[0.8,1.15], kind:'tree', cr:0.6 });
+  if(n==='HILLS'){ plant(conifer(false), N(52), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='VILLAGE'){ plant(palm(), N(17), { s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13), { s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
-  else if(n==='MEADOW'){ plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='MEADOW'){ plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
     plant(tallGrass(), N(1600), { s:[1.1,1.8], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
     plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });
-    plant(baobab(), N(9), { s:[0.9,1.35], kind:'tree', cr:1.3 }); plant(acacia(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.4 }); plant(deadTree(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.3 });
+    plant(baobab(), N(9), { s:[0.9,1.35], kind:'tree', cr:1.3, real:1.4 }); plant(acacia(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.4, real:1.15 }); plant(deadTree(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 });
     plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
   else if(n==='ARCTIC'){ plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });
     for(const m of FLORA.meshes){ if(m.geometry===floe()){ const M2=new THREE.Matrix4(), P2=new THREE.Vector3(), Q2=new THREE.Quaternion(), S2=new THREE.Vector3(); for(let i=0;i<m.count;i++){ m.getMatrixAt(i,M2); M2.decompose(P2,Q2,S2); P2.y=RIVER.y+0.05; M2.compose(P2,Q2,S2); m.setMatrixAt(i,M2); } m.instanceMatrix.needsUpdate=true; } } }   // ice floes float on the leads
-  else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55 }); }
-  else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
+  else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
+  else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
   else { plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); } }

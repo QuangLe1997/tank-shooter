@@ -72,6 +72,8 @@ export function rockSet(bn){ if(_rockCache[bn]) return _rockCache[bn]; const t=R
   _rockCache[bn]=set; return set; }
 // ---- cover pieces: each a single merged mesh with vertex colours (one draw call per block) ----
 export const COVER_GEO = {};
+// Z174 real heights: a sandbag breastwork ~1.2 m (was 1.7) · Czech hedgehog ~1.6 m (was 2.0) · drums on a pallet ~1.05 m (was 1.3); crates, tyres, pipes, HESCO, T-wall stacks are already true
+export const COVER_REAL_Y = { sandbag:0.7, hedgehog:0.8, drums:0.8 };
 export function coverGeo(kind){
   if(COVER_GEO[kind]) return COVER_GEO[kind];
   const P=[]; let g;
@@ -110,6 +112,7 @@ export function coverGeo(kind){
     const ax=[[Math.PI/4,0,0],[0,0,Math.PI/4],[0.62,Math.PI/2,0.62]];
     for(const [rx,ry,rz] of ax){ const b=beam(); _xf(b,0,0.95,0,rx,ry,rz); P.push({geo:b,col:0x5a4a3c}); }
     g=_mergeColored(P); g.userData.h=1.9; }
+  { const ky=COVER_REAL_Y[kind]; if(ky && ky!==1) g.scale(1,ky,1); }   // Z174 real heights
   COVER_GEO[kind]=g; return g;
 }
 export const COVER_MAT = {};
