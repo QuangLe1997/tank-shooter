@@ -874,5 +874,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const b=fs.readFileSync('src/loot/beacons.js','utf8');
   ok(!/CylinderGeometry\(0\.14,0\.55/.test(b) && /function ownMats/.test(b) && /function hatchLight/.test(b) && /lerp\(_gold, k\)/.test(b), 'loot hides in plain sight: the crate / tower / hut itself blinks gold, a tank carrying loot blinks a small light at its hatch — no light columns'); }
 
+// Z178 hidden overlays leave the compositor (they used to stay as see-through blurred layers and starve GPU tile memory → menus lost pieces on hover)
+{ const fs=await import('node:fs'); const c=fs.readFileSync('css/menus.css','utf8');
+  ok(/\.overlay\.hidden\{visibility:hidden;backdrop-filter:none !important/.test(c) && /visibility 0s linear \.4s/.test(c) && /\.overlay\.hidden \*\{animation:none !important;\}/.test(c), 'a hidden menu fades out, then stops painting: no blur, no animation, nothing left to eat GPU memory'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
