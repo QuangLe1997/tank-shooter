@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -65,6 +65,12 @@ export function startGame(arg){
   updateHUD();
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
+// Z180 a new stage: our tank (and the captured tanks riding with us) roll back to the spawn the world generator keeps clear — the last stage's
+// position may be inside a fort, a wall or a building of the next battlefield. Ladder parties let go of the old walls.
+export function parkAtSpawn(){ const p=S.player; if(!p) return; const sz=ARENA*0.55;
+  p.pos.set(0,0,sz); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI; p.mesh.position.set(0,0,sz); p.mesh.rotation.set(0,p.aim,0);
+  ALLY_TANKS.forEach((t,i,a)=>{ const x=(i-(a.length-1)/2)*7, z=sz+8; t.pos.set(x,0,z); t.vel.set(0,0,0); t.facing=t.aim=Math.PI; t.target=null; t.mesh.position.set(x,0,z); t.mesh.rotation.y=Math.PI; });
+  clearLadders(); }
 export function togglePause(){
   if(S.mode==='briefing' || S.mode==='deploy'){ quitToMenu(); return; }   // Z111b Esc before the battle starts = back to the home menu
   if(S.mode==='playing'){ S.mode='paused'; show('pause'); saveProfile(); }

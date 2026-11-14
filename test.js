@@ -884,5 +884,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/x\.fillRect\(64,0,16,64\)/.test(so) && /88\/256/.test(so) && /paintTroops\(\)/.test(so), 'soldier atlas has its own gear + helmet stripes, repainted per battlefield');
   ok((tm.match(/userData\.paint = CAMO/g)||[]).length===2 && /paintVehicle\(m, 'e'\)/.test(en) && /paintTroops\(\);/.test(bi), 'every enemy / allied hull carries a paint list and is repainted when it enters a battle; troops re-dyed on each new battlefield'); }
 
+// Z180 a stage won inside a fort: the next stage starts at the spawn, not inside the new battlefield's walls
+{ const fs=await import('node:fs'); const up=fs.readFileSync('src/loot/upgrades.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8');
+  ok(/parkAtSpawn\(\);[^\n]*\n  applyBiome\(S\.stage\)/.test(up) && /export function parkAtSpawn\(\)\{[^]*?p\.pos\.set\(0,0,sz\)[^]*?ALLY_TANKS\.forEach[^]*?clearLadders\(\)/.test(fl), 'next stage: our tank + captured tanks roll back to the clear spawn before the new battlefield is built'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
