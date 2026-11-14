@@ -4,7 +4,7 @@
 //   tanks get a crew from our men and roll out as allied tanks that fight on their own.
 import * as THREE from 'three';
 import { DEPOT, ALLY_TANK } from '../../config.js';
-import { ALLY_TANKS, ENEMY_DEFS, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf } from '../hub.js';
+import { ALLY_TANKS, ENEMY_DEFS, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, paintVehicle, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf } from '../hub.js';
 
 export const DEPOTS=[];
 let _netTex=null;
@@ -28,7 +28,7 @@ function buildMotor(q, g, at){ // concrete revetment (U) + parked enemy tanks wa
     const m=new THREE.Mesh(coverGeo('concrete'), coverMat('concrete')); m.position.set(wx, heightAt(wx,wz)-0.12, wz); m.rotation.y=q.ang+(ry?0:Math.PI/2); m.castShadow=m.receiveShadow=true; scene.add(m); g.userData.extra.push(m);
     addBlock({ mesh:m, x:wx, z:wz, r:1.7, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'concrete' }); }
   const n=DEPOT.tanks[0]+((Math.random()*(DEPOT.tanks[1]-DEPOT.tanks[0]+1))|0), parked=[];
-  for(let k=0;k<n;k++){ const def=ENEMY_DEFS[k%2?'heavy':'grunt'], m=buildTank(def.pal); bakeTank(m); m.scale.setScalar((k%2?1.15:1)*TANK_SCALE); const [px,pz]=at(n===1?0:(k?1.9:-1.9), 0.6);
+  for(let k=0;k<n;k++){ const def=ENEMY_DEFS[k%2?'heavy':'grunt'], m=buildTank(def.pal); bakeTank(m); paintVehicle(m, 'e'); m.scale.setScalar((k%2?1.15:1)*TANK_SCALE); const [px,pz]=at(n===1?0:(k?1.9:-1.9), 0.6);
     m.position.set(px, heightAt(px,pz), pz); m.rotation.y=q.ang+Math.PI; m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; } }); scene.add(m); g.userData.extra.push(m);
     const b=addBlock({ mesh:m, x:px, z:pz, r:2.0, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'parked' }); parked.push({ mesh:m, x:px, z:pz, facing:q.ang+Math.PI, block:b, heavy:!!(k%2) }); }
   return parked; }

@@ -31,7 +31,7 @@ export function makeLauncherMesh(pal){ const g=new THREE.Group(); g.rotation.ord
     if((r+c)%3) add(pod, new THREE.ConeGeometry(0.12,0.22,12), mm('w',()=>new THREE.MeshStandardMaterial({color:0x2a2a24,emissive:0xff6a2a,emissiveIntensity:0.35,roughness:0.5})), x,y,1.2, Math.PI/2,0,0); }   // loaded rockets peeking out
   const muz=new THREE.Object3D(); muz.position.set(0,0.1,1.25); pod.add(muz);
   g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
-  g.userData.turret=tur; g.userData.pod=pod; g.userData.muzzle=muz; g.userData.body=body; g.userData.truck=true; return g; }
+  g.userData.turret=tur; g.userData.pod=pod; g.userData.muzzle=muz; g.userData.body=body; g.userData.truck=true; g.userData.paint=Object.keys(_m).filter(k=>k[0]==='p').map(k=>[_m[k], _m[k].color.getHex()]); return g; }   // Z179 paint list for world/sidepaint.js
 // Z116 rocket salvo — enemy truck lobs it at you; arcs over cover (it is a howitzer-style launcher)
 export function truckSalvo(e, tx, tz, now){ const R=ROSTER.launcher, mz=e.mesh.userData.muzzle; if(!mz) return; const _w=new THREE.Vector3();
   for(let k=0;k<R.salvo;k++) setTimeout(()=>{ if(S.mode!=='playing' || !enemies.includes(e) || e.abandoned) return; mz.getWorldPosition(_w);

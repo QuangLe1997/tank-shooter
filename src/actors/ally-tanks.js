@@ -2,7 +2,7 @@
 //   (armour first, then infantry), keep a stand-off range, regroup on you when the field is quiet, and can be knocked out.
 import * as THREE from 'three';
 import { ALLY_TANK, INFANTRY, HIJACK } from '../../config.js';
-import { ENEMY_MODEL, FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, radio, removeEnemy, ringPulse, scene, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
+import { ENEMY_MODEL, FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, paintVehicle, radio, removeEnemy, ringPulse, scene, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
 
 export const ALLY_TANKS=[];
 export const ALLY_PAL={ hull:0x55663a, turret:0x627344, barrel:0x7a8a52, tread:0x22281a, accent:0x9be04a };   // captured hull, our colours
@@ -11,6 +11,7 @@ const _am=new THREE.Vector3(), _ad=new THREE.Vector3();
 export function makeAllyTankMesh(heavy, type){ let m;   // Z116 a hijacked vehicle keeps its shape (APC bed, shield, twin guns, rocket pod…) in our paint
   if(type==='launcher'){ m=makeLauncherMesh(ALLY_PAL); m.scale.setScalar(1.18*TANK_SCALE); }
   else { m=buildTank({ ...ALLY_PAL, model:ENEMY_MODEL[type||'grunt'] }); if(type && type!=='grunt'){ m.userData.palOverride=ALLY_PAL; m.userData.friendly=true; decorateEnemyMesh(m, type); } bakeTank(m); m.scale.setScalar((heavy?1.15:1)*(type==='carrier'?1.2:1)*TANK_SCALE); }
+  paintVehicle(m, 'f');   // Z179 our paint, tuned to stand out from this battlefield
   m.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
   const tur=m.userData.turret; if(tur){ const id=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.05,0.7), new THREE.MeshStandardMaterial({ color:0x9be04a, emissive:0x5fae1c, emissiveIntensity:0.8 })); id.position.set(0,0.62,-0.2); tur.add(id); }
   return m; }

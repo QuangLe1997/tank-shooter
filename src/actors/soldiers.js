@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { MOBILE, S, SOLDIER, _R, _canvasTex, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { MOBILE, S, SOLDIER, _R, _canvasTex, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, paintTroops, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -42,7 +42,8 @@ function _kitTex(draw, srgb){ const c=document.createElement('canvas'); c.width=
 function _soldierKit(enemy){
   const key=enemy?'e':'f'; if(SOLDIER_KIT[key]) return SOLDIER_KIT[key];
   const M=enemy?_enemySoldierMats():_soldierMats(), camoImg=M.uni.map.image;
-  const map=_kitTex(x=>{ x.drawImage(camoImg,0,0,64,64); x.fillStyle='#fff'; x.fillRect(64,0,192,64); }, true);
+  const hx=c=>'#'+c.getHexString();   // Z179 gear (64–80 px) and helmet (80–96 px) get their own stripes so world/sidepaint.js can repaint them per battlefield
+  const map=_kitTex(x=>{ x.drawImage(camoImg,0,0,64,64); x.fillStyle='#fff'; x.fillRect(64,0,192,64); x.fillStyle=hx(M.gear.color); x.fillRect(64,0,16,64); if(M.helm){ x.fillStyle=hx(M.helm.color); x.fillRect(80,0,16,64); } }, true);
   const orm=_kitTex(x=>{ [[0.9,0],[0.8,0.1],[0.6,0],[0.45,0.75]].forEach(([r,m],i)=>{ x.fillStyle=`rgb(0,${Math.round(r*255)},${Math.round(m*255)})`; x.fillRect(i*64,0,64,64); }); }, false);
   const em=_kitTex(x=>{ x.fillStyle='#000'; x.fillRect(0,0,256,64); x.fillStyle='#fff'; x.fillRect(128,0,64,64); }, true);
   const mat=new THREE.MeshStandardMaterial({ map, vertexColors:true, roughness:1, metalness:1, roughnessMap:orm, metalnessMap:orm,
@@ -97,12 +98,13 @@ function _soldierKit(enemy){
       for(const a of Object.keys(g.attributes)) if(a!=='position'&&a!=='normal'&&a!=='uv') g.deleteAttribute(a);
       _m4.compose(_p.set(pt.x,pt.y,pt.z), _q.setFromEuler(_e.set(pt.rx,pt.ry,pt.rz)), _one); g.applyMatrix4(_m4);
       const n=g.attributes.position.count, uv=g.attributes.uv ? g.attributes.uv.array : new Float32Array(n*2), r=_REG[kind(pt.m)], c=new Float32Array(n*3);
-      if(r===0) col.setRGB(1,1,1); else col.copy(pt.m.color);
-      for(let i=0;i<n;i++){ const u=r===0 ? Math.min(1,Math.max(0,uv[i*2]))*0.23+0.01 : r*0.25+0.125; uv[i*2]=u; if(r!==0) uv[i*2+1]=0.5; c[i*3]=col.r; c[i*3+1]=col.g; c[i*3+2]=col.b; }
+      const st = pt.m===M.gear ? 72/256 : (M.helm && pt.m===M.helm) ? 88/256 : 0;   // a stripe carries its own colour
+      if(r===0 || st) col.setRGB(1,1,1); else col.copy(pt.m.color);
+      for(let i=0;i<n;i++){ const u=r===0 ? Math.min(1,Math.max(0,uv[i*2]))*0.23+0.01 : st || r*0.25+0.125; uv[i*2]=u; if(r!==0) uv[i*2+1]=0.5; c[i*3]=col.r; c[i*3+1]=col.g; c[i*3+2]=col.b; }
       g.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); g.setAttribute('color', new THREE.Float32BufferAttribute(c,3)); g.clearGroups(); return g; });
     const merged=mergeGeometries(geos,false); geos.forEach(g=>g.dispose()); merged.computeBoundingSphere(); return merged; };
   const kit={ mat, key, geo:{ up:bake(parts.up), head:bake(parts.head), arm:bake(parts.arm), lh:bake(parts.lh), gun:bake(parts.gun), hip:bake(parts.hip), knee:bake(parts.knee) } };
-  return (SOLDIER_KIT[key]=kit);
+  SOLDIER_KIT[key]=kit; paintTroops(); return kit;   // Z179 dressed for the current battlefield
 }
 // Z172 BATCHED TROOPS — a soldier is now a skeleton of plain Object3D joints; nothing of his is drawn on its own. Every frame the joints of every
 // visible man are written into ONE InstancedMesh per body part per side (×2: near men cast shadows, far ones don't) → ~28 draw calls for

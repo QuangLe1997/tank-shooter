@@ -878,5 +878,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const c=fs.readFileSync('css/menus.css','utf8');
   ok(/\.overlay\.hidden\{visibility:hidden;backdrop-filter:none !important/.test(c) && /visibility 0s linear \.4s/.test(c) && /\.overlay\.hidden \*\{animation:none !important;\}/.test(c), 'a hidden menu fades out, then stops painting: no blur, no animation, nothing left to eat GPU memory'); }
 
+// Z179 battlefield-aware paint: each side is re-dyed per battlefield so it separates from the ground
+{ const fs=await import('node:fs'); const sp=fs.readFileSync('src/world/sidepaint.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), tm=fs.readFileSync('src/tank/model.js','utf8'), en=fs.readFileSync('src/actors/enemies.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8');
+  ok(/export function sideShift/.test(sp) && /export function paintTroops/.test(sp) && /export function paintVehicle/.test(sp) && /hue:\{ f:0\.5, e:0\.985 \}/.test(sp), 'paint rules: same hue as the ground → ours slate-teal, theirs crimson; light ground → darker paint; grey ground → richer colour');
+  ok(/x\.fillRect\(64,0,16,64\)/.test(so) && /88\/256/.test(so) && /paintTroops\(\)/.test(so), 'soldier atlas has its own gear + helmet stripes, repainted per battlefield');
+  ok((tm.match(/userData\.paint = CAMO/g)||[]).length===2 && /paintVehicle\(m, 'e'\)/.test(en) && /paintTroops\(\);/.test(bi), 'every enemy / allied hull carries a paint list and is repainted when it enters a battle; troops re-dyed on each new battlefield'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

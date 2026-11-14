@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT, HUMAN_SCALE } from '../../config.js';
-import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, hasDesign, heightAt, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
+import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildTank, cMod, camera, diffHpMul, diffScale, hasDesign, heightAt, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, paintVehicle, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -100,6 +100,7 @@ export function getEnemyMesh(type){
   if(!m){ if(_d.inf) m=infMesh(type); else if(_d.air) m=buildGunship(_d.pal); else if(_d.truck){ m=makeLauncherMesh(_d.pal); scene.add(m); } else { m = buildTank({ ..._d.pal, model:ENEMY_MODEL[type] }); decorateEnemyMesh(m, type); bakeTank(m); m.traverse(o=>{ if(o.isMesh && o!==m.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); scene.add(m); } }
   m.scale.setScalar(_d.scale*(_d.inf?1:TANK_SCALE)); if(_d.inf){ m.rotation.set(0,0,0); reviveSoldierMesh(m); const u=m.userData; u.pose=null; if(u.body){ u.body.rotation.set(0,0,0); u.body.position.set(0,0,0); } if(u.arms) u.arms.rotation.x=0; if(u.up) u.up.rotation.x=0; }   // Z105 a recycled man stands up again                       // always reset (elites scaled it up)
   const fx=m.getObjectByName('eliteFX'); if(fx){ m.remove(fx); if(fx.material) fx.material.dispose(); }   // strip old elite glow
+  if(!_d.inf && !_d.air) paintVehicle(m, 'e');   // Z179 repainted for this battlefield (a pooled hull may come from the last one)
   m.visible=true; return m;
 }
 export function makeElite(e){   // champion: tanky, bigger, glowing gold, pays big + always drops loot

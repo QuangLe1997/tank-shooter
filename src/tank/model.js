@@ -73,6 +73,7 @@ export function buildTank(opts={}){
       FACE:(wt)=>grimeMat(new THREE.MeshStandardMaterial({ map:wt, roughness:0.75, metalness:0.4 }), 0.8),
       trackTex:()=>{ const t=trackTex().clone(); t.needsUpdate=true; return t; }, wheelTex:()=>{ const t=wheelTex().clone(); t.needsUpdate=true; t.center.set(0.5,0.5); return t; },
       sprocketGeo:(r)=>_sg[r]||(_sg[r]=G.sprocket.clone().scale(1, r/0.31, r/0.31)), blobGeo:G.blob, blobMat });
+    out.userData.paint = CAMO ? [] : Object.keys(_mc).filter(k=>k[0]==='s').map(k=>[_mc[k], _mc[k].color.getHex()]);   // Z179 (design-built vehicles too)
     bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); return out; }
   const rig={ wheels:[[],[]], wheelTex:[], tracks:[], lx:undefined, lz:0, lf:0, v:0, a:0, pitch:0, pv:0, roll:0, rv:0, recoil:0, recoilLen:0.42, vib:0, elev:0, elevT:0, t:Math.random()*10 };
   // ---------- running gear (unsprung: stays on the ground) ----------
@@ -177,6 +178,7 @@ export function buildTank(opts={}){
     MD.dress({ g, body, turretG, B:B2, mk, G, HULL, TUR, STEEL, BLACK, GLASS, dark, metal, skin:(c,k)=>skin(realCol(c),k), detail, L, W, H }); }
   if(SP.roofDy) for(const c of turretG.children) if(c.position.y>0.3 && c!==gunPivot) c.position.y+=SP.roofDy;   // low cast turrets: roof kit sits down on the dome
   g.userData.model = opts.model||'lqt';
+  g.userData.paint = CAMO ? [] : Object.keys(_mc).filter(k=>k[0]==='s').map(k=>[_mc[k], _mc[k].color.getHex()]);   // Z179 painted armour → world/sidepaint.js repaints it per battlefield (hull first)
   g.userData.turret=turretG; g.userData.muzzle=muzzle; g.userData.barrelG=barrelG; g.userData.gunPivot=gunPivot; g.userData.hull=hullM;
   g.userData.body=body; g.userData.rig=rig; g.userData.exhaust=exhaust; g.userData.blob=blob;
   bakeTank(g);

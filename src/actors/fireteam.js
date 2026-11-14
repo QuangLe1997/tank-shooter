@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, FTSQ, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, burst, camera, clampField, clearLadders, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, floatText, gibBody, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, FTSQ, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, burst, camera, clampField, clearLadders, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, floatText, gibBody, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, orderGoal, paintVehicle, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -10,7 +10,7 @@ export function callFireteam(now){
   if(need<=0){ for(const a of FT) a.hp=a.maxHp; floatText('TỔ BỘ BINH ĐÃ TIẾP TẾ','#9bd14a',p.pos,16); return; }
   if(FT_APC) { FT_APC.load+=need; return; }
   const m=buildTank(PLAYER_PAL); m.userData.friendly=true; m.userData.palOverride={hull:0x5e7a2e,turret:0x6a8434,barrel:0x8aa048,tread:0x2a3514,accent:0xe7b54a};
-  decorateEnemyMesh(m,'carrier'); for(let i=0;i<3;i++){ const c=m.getObjectByName('crew'+i); if(c) c.visible=true; }
+  decorateEnemyMesh(m,'carrier'); paintVehicle(m, 'f'); for(let i=0;i<3;i++){ const c=m.getObjectByName('crew'+i); if(c) c.visible=true; }
   m.scale.setScalar(1.34*TANK_SCALE); scene.add(m);
   const [ex,ez]=fieldEdgePoint(Math.PI/2+(Math.random()-0.5)*0.5, 3);                                   // rolls in from our side of the field (Z106 at the fence)
   FT_APC={ mesh:m, pos:new THREE.Vector3(ex,0,ez), vel:new THREE.Vector3(), facing:Math.PI, load:need, state:'in', t:0, dropped:0 };
