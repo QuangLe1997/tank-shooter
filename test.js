@@ -917,6 +917,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function aiEvade\(e, now, iq\)/.test(t) && /if\(def\.canShoot && !def\.truck\) aiEvade\(e, now, _iq\);/.test(t), 'tanks read incoming shells and break sideways');
   ok(/AID\.punish = iq>=T\.punish\.from && !!\(g && g\.rU>now\)/.test(t) && /e\.volleyAt=now\+V\.warn/.test(t) && /if\(!e\.forceShot && Math\.random\(\)/.test(t), 'reload punish + coordinated volley with a muzzle-glint telegraph');
   ok(/evade:  \{ from:0\.2/.test(cf) && /volley: \{ from:0\.55/.test(cf), 'tunable in TACTICS'); }
+// Z186 five ultimate weapons
+{ const fs=await import('node:fs'); const gd=fs.readFileSync('src/data/guns.js','utf8'), u=fs.readFileSync('src/combat/ultimate.js','utf8'), cf=fs.readFileSync('config.js','utf8'), br=fs.readFileSync('src/tank/barrels.js','utf8');
+  const ids=['orbital','plasma','hydra','singularity','photon'];
+  ok(ids.every(id=>new RegExp('\\n  '+id+':\\s+\\{ name:[^\\n]*ulti:true[^\\n]*special:\''+id+'\'').test(gd)), 'five ultimates, each with its own special mechanic');
+  ok(['fireOrbital','firePlasma','fireHydra','fireSingularity','firePhoton','updateUltimates','clearUltimates'].every(f=>u.includes('function '+f)) && /b\.tgt=e/.test(u), 'orbital lance · plasma sun · Hydra (one target per head) · black hole · photon beam');
+  ok(ids.every(id=>cf.includes(id+':{d:')) && /VIP_GUNS = \['railgun','rocket','orbital','plasma','hydra','singularity','photon'\]/.test(cf) && ids.every(id=>br.includes("id==='"+id+"'")), 'diamond-priced, VIP, each with its own barrel model'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

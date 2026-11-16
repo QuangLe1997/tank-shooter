@@ -92,6 +92,35 @@ export function makeGunBarrel(id){
     const orb=new THREE.Mesh(new THREE.SphereGeometry(0.26,18,14),glow(0x7fd0ff,1.3)); orb.position.set(0,Y,3.35); g.add(orb);
     const cage=new THREE.Mesh(new THREE.IcosahedronGeometry(0.34,1),new THREE.MeshBasicMaterial({color:0x9fe0ff,wireframe:true,transparent:true,opacity:0.5})); cage.position.copy(orb.position); g.add(cage);
     tip=3.55; recoilLen=0.06; }
+  // Z186 ULTIMATES — five big, glowing assemblies that read from across the field
+  else if(id==='orbital'){    // ORBITAL UPLINK — armoured designator housing, cyan lens, twin guide rails, uplink mast + dish on the turret
+    rbox(0.86,0.62,1.5,0,Y,1.7,park(0x1d2730)); for(const x of [-0.5,0.5]) box(0.08,0.12,2.6,x,Y+0.12,2.6,steel(0x8a96a6));
+    tube(0.3,0.36,1.3,3.0,steel(0x2b3640)); for(const z of [2.5,3.0,3.5]){ const r=new THREE.Mesh(new THREE.TorusGeometry(0.36,0.035,8,24),glow(0x8fe8ff,1.3)); r.position.set(0,Y,z); g.add(r); }
+    const lens=new THREE.Mesh(new THREE.CircleGeometry(0.28,24),glow(0xcff8ff,2)); lens.position.set(0,Y,3.66); g.add(lens);
+    tube(0.04,0.04,1.6,-0.6,steel(0x9aa4b0),0.5,1.0,mount); const dish=new THREE.Mesh(new THREE.SphereGeometry(0.42,18,10,0,6.283,0,1.1),new THREE.MeshStandardMaterial({color:0xd8dee6,roughness:0.4,metalness:0.6,side:THREE.DoubleSide})); dish.rotation.x=-0.9; dish.position.set(0.5,1.85,-0.6); mount.add(dish);
+    const bcn=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),glow(0x8fe8ff,2)); bcn.position.set(0.5,1.82,-0.42); mount.add(bcn);
+    tip=3.7; recoilLen=0.12; }
+  else if(id==='plasma'){     // PLASMA SUN — fat magnetic containment barrel, three blazing coil rings, a star in the muzzle bulb
+    tube(0.4,0.46,2.6,2.3,park(0x2a1d14)); for(const z of [1.6,2.4,3.2]){ const r=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.09,10,28),glow(0xff9a2a,1.4)); r.position.set(0,Y,z); g.add(r); }
+    for(const a of [0,2.094,4.189]) box(0.12,0.12,2.4,Math.cos(a)*0.46,Y+Math.sin(a)*0.46,2.3,steel(0x8a7a5a));
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.5,22,16),glow(0xffe6a0,2.2)); bulb.position.set(0,Y,3.9); g.add(bulb);
+    const cage=new THREE.Mesh(new THREE.IcosahedronGeometry(0.62,1),new THREE.MeshBasicMaterial({color:0xffb24a,wireframe:true,transparent:true,opacity:0.55})); cage.position.copy(bulb.position); g.add(cage);
+    rbox(1.0,0.5,0.9,0,Y,0.95,park(0x2a1d14)); tip=4.3; recoilLen=0.5; }
+  else if(id==='hydra'){      // HYDRA — a 4×3 micro-missile pod on a cradle, red-capped tubes, blast deflector
+    rbox(1.3,0.92,1.5,0,Y+0.15,1.9,paint(0x4a5038)); for(let r=0;r<3;r++) for(let c=0;c<4;c++){ tube(0.11,0.11,0.06,2.67,park(0x111110),-0.45+c*0.3,Y-0.12+r*0.3); const cap=new THREE.Mesh(new THREE.CircleGeometry(0.085,12),glow(0xff6a3a,0.9)); cap.position.set(-0.45+c*0.3,Y-0.12+r*0.3,2.69); g.add(cap); }
+    box(1.4,0.08,1.6,0,Y-0.36,1.9,steel(0x5a5e52)); for(const x of [-0.7,0.7]) box(0.06,1.0,1.4,x,Y+0.15,1.9,steel(0x5a5e52));
+    tip=2.75; recoilLen=0.1; }
+  else if(id==='singularity'){ // SINGULARITY — a stubby launcher around a captive black sphere held in a violet halo
+    rbox(0.9,0.7,1.2,0,Y,1.3,park(0x150d1c)); tube(0.34,0.3,1.4,2.4,steel(0x2a2236));
+    const core=new THREE.Mesh(new THREE.SphereGeometry(0.34,20,14),new THREE.MeshBasicMaterial({color:0x050208})); core.position.set(0,Y,3.25); g.add(core);
+    for(const [rx,rad] of [[0.3,0.5],[1.2,0.58],[2.1,0.66]]){ const h=new THREE.Mesh(new THREE.TorusGeometry(rad,0.035,8,32),glow(0xb070ff,1.6)); h.rotation.set(rx,0.4,0); h.position.copy(core.position); g.add(h); }
+    for(const a of [0.6,2.6,4.6]){ const arm=box(0.08,0.08,0.6,Math.cos(a)*0.4,Y+Math.sin(a)*0.4,3.0,steel(0x6a5a80)); }
+    tip=3.45; recoilLen=0.3; }
+  else if(id==='photon'){     // PHOTON LANCE — a long sleek emitter: segmented cooling fins, a white light core you can see through the slots, crystal lens
+    tube(0.2,0.24,3.6,2.8,steel(0xc8d0d8)); for(let k=0;k<9;k++) box(0.62,0.62,0.06,0,Y,1.4+k*0.34,park(0x1a2028));
+    for(const x of [-0.24,0.24]) box(0.04,0.04,3.4,x,Y,2.8,glow(0xffffff,2));
+    const lens=new THREE.Mesh(new THREE.OctahedronGeometry(0.26,0),glow(0xbfeaff,2.4)); lens.position.set(0,Y,4.75); lens.scale.set(1,1,1.6); g.add(lens);
+    rbox(0.8,0.55,1.0,0,Y,0.9,park(0x1a2028)); tip=5.0; recoilLen=0.08; }
   else if(id==='rocket'){     // SIEGE: round upward launch tube on a cradle — one rigid tilted assembly (fixed elevation; lobs onto the target)
       const T=0.52, Z=0.12, SEG=32; elevates=false; recoilLen=0.12;
       rbox(0.84,0.5,0.96,0,Y+0.06,0.2,park(0x2a2a22));

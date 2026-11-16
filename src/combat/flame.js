@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -141,6 +141,7 @@ export function fireGun(now, range){
   const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
   const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id) * cMod('playerDmgMul');   // MASTERY: +dmg per gun level; CONTRACT may boost
   if(g.special==='rocket'){ fireRocket(now, g); }
+  else if(g.ulti){ fireUltimate(now, g, dmg, ang, range, _v); }   // Z186 ultimate weapons
   else if(g.special==='mortar'){ fireMortar(now, g, dmg); }
   else if(g.special==='arty'){ fireArty(now, g, dmg); }
   else if(g.special==='flame'){ fireFlame(now, g, x, z, ang, dmg/(g.dmg||1)); { const rg=p.mesh.userData.rig; if(rg) rg.vib=Math.min(0.5,rg.vib+0.12); } muzzleLight.position.set(x,1.4,z); muzzleLight.color.setHex(0xff6a1c); muzzleLight.intensity=2.2;

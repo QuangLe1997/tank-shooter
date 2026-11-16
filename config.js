@@ -206,8 +206,9 @@ export const SHOP_UP = [
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,500) — value stays ordered. -----
 export const GUN_PRICE = { smg:{c:600}, shotgun:{c:1300}, cryo:{c:1500}, flak:{c:1800}, cannon:{c:2100},   // Z149 price climbs with tier: BẬC 1 ≤ 600 · BẬC 2 1.3–3k · BẬC 3 4–5.5k
-  flamer:{c:2300}, agl:{c:2500}, hesh:{c:2800}, mortar:{c:3000}, minigun:{c:4000}, missile:{c:4400}, tesla:{c:4800}, thermo:{c:5200}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34} };
-export const VIP_GUNS = ['railgun','rocket'];
+  flamer:{c:2300}, agl:{c:2500}, hesh:{c:2800}, mortar:{c:3000}, minigun:{c:4000}, missile:{c:4400}, tesla:{c:4800}, thermo:{c:5200}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34},
+  orbital:{d:60}, plasma:{d:48}, hydra:{d:42}, singularity:{d:55}, photon:{d:50} };   // Z186 ultimates
+export const VIP_GUNS = ['railgun','rocket','orbital','plasma','hydra','singularity','photon'];
 
 // ----- punchy marketing blurbs (kept short) -----
 export const GUN_BLURB = {
@@ -217,6 +218,11 @@ export const GUN_BLURB = {
   minigun:'Nòng xoay không ngừng, lửa không ngừng. Giữ vững phòng tuyến.', missile:'Khoá mục tiêu. Nó tự săn. Không bao giờ trượt.',
   tesla:'Sét nhảy từ kẻ địch này sang kẻ địch khác.', railgun:'Một phát xuyên thủng cả đoàn xe.',
   rocket:'Phóng một quả — cả khu vực biến mất.',
+  orbital:'Đánh dấu một điểm — một ngọn thương ánh sáng từ quỹ đạo giáng xuống, san phẳng cả tường thành.',
+  plasma:'Một mặt trời nhỏ trôi qua chiến trường, thiêu xuyên mọi thứ — rồi bùng nổ siêu tân tinh.',
+  hydra:'Mười đầu rắn lửa: mười tên lửa tự săn mười mục tiêu khác nhau.',
+  singularity:'Xé toạc không gian — hút cả đoàn xe vào tâm, nghiền nát, rồi sụp đổ.',
+  photon:'Một chùm quang tử liên tục — vung nòng là cắt đôi mọi thứ trên đường.',
   arty:'Đạn pháo hạng nặng rơi đúng điểm đánh dấu — phá tường, nổ ngay khi chạm đất.',
   mortar:'Bắn vòng qua mọi bức tường — cối bắn nhanh, nổ khi chạm đất.',
   flamer:'Thiêu rụi chúng — lửa chỉ lan rộng, không bao giờ buông tha.',

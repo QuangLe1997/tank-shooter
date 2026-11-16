@@ -105,6 +105,7 @@ export * from './combat/guns.js';
 export * from './combat/aim.js';
 export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
+export * from './combat/ultimate.js';   // Z186 the five ultimate weapons
 export * from './combat/mastery.js';
 export * from './combat/power.js';
 export * from './combat/spells.js';
