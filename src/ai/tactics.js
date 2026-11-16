@@ -1,15 +1,17 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
-export const AID={ at:0, flankRadioAt:0, pressRadioAt:0, press:false };
+export const AID={ at:0, flankRadioAt:0, pressRadioAt:0, press:false, punish:false, punishRadioAt:-99, volleyAt:0, volleyRadioAt:-99 };
 export function aiDirector(now){
   if(now < AID.at) return; AID.at = now + TACTICS.tick;
   const p=S.player, T=TACTICS, iq=aiIQ(); if(!p) return;
   AID.press = iq>=T.press.from && p.hp/p.maxHp < T.press.hp;
+  { const g=p.guns&&p.guns[p.gunIdx], was=AID.punish; AID.punish = iq>=T.punish.from && !!(g && g.rU>now);   // Z185 you are reloading → the line rushes you
+    if(AID.punish && !was && now-AID.punishRadioAt>T.punish.radioGap && enemies.some(e=>e.ai)){ AID.punishRadioAt=now; radio('SCH: Chúng thấy anh đang nạp đạn — xe địch đang ào lên!'); } }
   const G=[]; for(const e of enemies){ if(!solidTank(e) || e.def.bomber || e.type==='scout' || e.def.engineer || e.def.carrier) continue;
     const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; if(dx*dx+dz*dz > T.engage*T.engage){ e.ai=null; continue; } G.push({ e, a:Math.atan2(dx,dz) }); }
   if(!G.length) return;
@@ -26,6 +28,11 @@ export function aiDirector(now){
   const ring=G.filter(g=>!g.done).sort((a,b)=>a.a-b.a); const n=ring.length;
   if(n){ let mx=0, mz=0; for(const g of ring){ mx+=Math.sin(g.a); mz+=Math.cos(g.a); } const mid=Math.atan2(mx,mz), arc=Math.min(Math.PI*2*T.encircle*iq, n*0.75)+0.3;
     ring.forEach((g,i)=>{ const ang = n===1 ? g.a : mid - arc/2 + arc*(i/(n-1||1)); g.e.ai={ role: (g.e.def.heavy||g.e.def.atgm||g.e.type==='sniper'||tankEscorted(g.e)) ? 'anchor' : 'ring', ang }; }); }   // Z173 a tank with its infantry fixes you from range while the men flank
+  // Z185 4) coordinated volley: every so often the pack lays on you together and fires on one count (a red glint at each muzzle first)
+  { const V=T.volley; if(iq>=V.from && now>AID.volleyAt){ AID.volleyAt=now+V.every[0]+Math.random()*(V.every[1]-V.every[0]);
+      const shooters=G.filter(g=>g.e.def.canShoot && !g.e.def.truck && g.e.ai && g.e.ai.role!=='fall').map(g=>g.e);
+      if(shooters.length>=V.minTanks){ for(const e of shooters) e.volleyAt=now+V.warn+Math.random()*0.15;
+        if(now-AID.volleyRadioAt>V.radioGap){ AID.volleyRadioAt=now; radio('SCH: Cả tốp xe đang ngắm loạt vào anh — LƯỚT NÉ!'); } } } }
   if(AID.press && now-AID.pressRadioAt>30){ AID.pressRadioAt=now; radio('SCH: Chúng đánh hơi thấy anh bị thương — cả đội hình đang dồn lên!'); }
 }
 // where this tank wants to stand right now (or null → fall back to the old straight-at-target logic)
@@ -34,7 +41,7 @@ export function aiDest(e, keep, iq){
   const A=e.ai, p=S.player; if(!A) return null;
   if(A.role==='fall'){ if(A.eng && enemies.includes(A.eng)) return _aiD.set(A.eng.pos.x, 0, A.eng.pos.z);
     const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, L=Math.hypot(dx,dz)||1; return _aiD.set(e.pos.x+dx/L*12, 0, e.pos.z+dz/L*12); }
-  const k = keep*(AID.press?TACTICS.press.keep:1)*(A.role==='flank'?0.75:A.role==='anchor'?1.1:1);
+  const k = keep*(AID.press?TACTICS.press.keep:1)*(AID.punish&&A.role!=='anchor'?TACTICS.punish.keep:1)*(A.role==='flank'?0.75:A.role==='anchor'?1.1:1);
   _aiD.set(p.pos.x+Math.sin(A.ang)*k, 0, p.pos.z+Math.cos(A.ang)*k);
   if(iq>=TACTICS.coverFrom && A.role!=='flank'){ let best=null, bd=64;                   // park behind solid cover between the slot and your gun
     for(const b of blocks){ if(b.kind==='obj'||b.kind==='camp'||b.cache||b.r<1) continue; const q=(b.x-_aiD.x)**2+(b.z-_aiD.z)**2; if(q<bd){ bd=q; best=b; } }
@@ -55,6 +62,19 @@ export function aiDodge(e, now, iq){ const D=TACTICS.dodge, p=S.player; if(iq<D.
   const b=Math.atan2(e.pos.x-p.pos.x, e.pos.z-p.pos.z), off=Math.abs(wrapAngle(b-p.aimSmoothed)); if(off>0.12) return;
   e.dodgeCdAt=now+D.cd*(1.4-iq*0.6); if(Math.random()>iq) return;
   const side=Math.random()<0.5?-1:1; e.kbx+=Math.cos(b)*side*D.speed; e.kbz+=-Math.sin(b)*side*D.speed; }
+// Z185 SHELL EVASION — the crew watches your rounds: one that will pass within a hull's width in the next second → break sideways off its line
+export function aiEvade(e, now, iq){ const V=TACTICS.evade; if(iq<V.from || now<(e.evadeCdAt||0) || e.def.halt || e.aimT>0) return;
+  e._evN=((e._evN|0)+1)&3; if(e._evN) return;   // every 4th frame is plenty
+  const R=e.r+0.9;
+  for(const b of bullets){ if(b.owner!=='p') continue; const rx=e.pos.x-b.x, rz=e.pos.z-b.z, vv=b.vx*b.vx+b.vz*b.vz; if(vv<1) continue;
+    const t=(rx*b.vx+rz*b.vz)/vv; if(t<0 || t>V.look) continue;
+    const mx=rx-b.vx*t, mz=rz-b.vz*t; if(mx*mx+mz*mz > R*R) continue;
+    e.evadeCdAt=now+V.cd[0]+Math.random()*(V.cd[1]-V.cd[0]);
+    if(Math.random() > (V.react[0]+(V.react[1]-V.react[0])*iq)*(e.def.heavy?V.heavyMul:1)) return;   // (too slow this time)
+    const vl=Math.sqrt(vv); let sx=-b.vz/vl, sz=b.vx/vl; if(mx*sx+mz*sz<0){ sx=-sx; sz=-sz; }   // break to the side the shell is already passing on
+    const k=V.speed*(e.def.heavy?0.6:1); e.kbx+=sx*k; e.kbz+=sz*k;
+    spawnPart(e.pos.x-sx*1.2, 0.5, e.pos.z-sz*1.2, -sx*3, 1.2, -sz*3, { color:0x9a8a6a, size:1.6, life:0.55, smoke:true, grav:-0.3, drag:2, op:0.42 });   // tracks throw dirt as it swerves
+    return; } }
 export const _eTo=new THREE.Vector3();
 export function updateEnemies(dt, now){
   aiDirector(now); const _iq=aiIQ();   // Z95
@@ -129,9 +149,11 @@ export function updateEnemies(dt, now){
         to.set(mx/ml, 0, mz/ml); aiSteer(e, to); aiDodge(e, now, _iq); } else desire=0; }
     else if(d > keep+1.5){ desire = def.speed*objMod('enemySpeedMul'); }   // Z83 fuel depot keeps them rolling fast
     else { desire = -def.speed*0.3; } // back off a touch / hold
+    if(def.canShoot && !def.truck) aiEvade(e, now, _iq);   // Z185 dodge the shells you fire
     e.vel.x += (to.x*desire - e.vel.x)*Math.min(1,dt*4);
     e.vel.z += (to.z*desire - e.vel.z)*Math.min(1,dt*4);
-    if((def.chief||def.orbit) && d < keep+16){ if(e.ph2==null) e.ph2=Math.random()*6.283; const w=Math.sin(now*1.4+e.ph2)*def.speed*0.95, k=Math.min(1,dt*3); e.vel.x += -to.z*w*k; e.vel.z += to.x*w*k; }   // Z107 commander circle-strafes — hard to pin down
+    { const J=TACTICS.jink, jk = (def.chief||def.orbit) ? 0.95 : (_iq>=J.from && targetPlayer && !def.heavy && !def.halt && !e.aimT && d < def.range*(e.r/1.5)+8 ? J.amp*_iq : 0);   // Z107 commander circle-strafes · Z185 smart crews weave while they fight
+      if(jk && d < keep+16){ if(e.ph2==null){ e.ph2=Math.random()*6.283; e.jw=6.283/(J.per[0]+Math.random()*(J.per[1]-J.per[0])); } const w=Math.sin(now*((def.chief||def.orbit)?1.4:e.jw)+e.ph2)*def.speed*jk, k=Math.min(1,dt*3); e.vel.x += -to.z*w*k; e.vel.z += to.x*w*k; } }
     { const sl=Math.hypot(e.vel.x,e.vel.z)||1, ux=e.vel.x/sl, uz=e.vel.z/sl, gr=(heightAt(e.pos.x+ux,e.pos.z+uz)-heightAt(e.pos.x-ux,e.pos.z-uz))/2;
       e.pos.addScaledVector(e.vel, edt*Math.max(0.5, Math.min(1.3, 1-gr*1.2))); }   // slower up the mounds, faster down — hard separation later in separateTanks()
     if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*9); e.kbx*=kf; e.kbz*=kf; }   // recoil from being shot
@@ -148,12 +170,14 @@ export function updateEnemies(dt, now){
     // fire — accuracy, rate, damage all scale up with stage (gentle for newcomers)
     // combat range scales with tank size (small tank → small range, large → large)
     const er = def.range * (e.r/1.5);
+    if(e.volleyAt){ if(now<e.volleyAt){ if(Math.random()<0.55){ e.muzzle.getWorldPosition(_v); spawnPart(_v.x,_v.y,_v.z, 0,0,0, { color:0xff2a2a, size:1.1+Math.random()*0.6, life:0.09, grav:0, drag:1 }); } }   // Z185 volley telegraph: the muzzles glint red
+      else { e.volleyAt=0; if(targetPlayer && d<er){ e.fireAt=Math.min(e.fireAt, now); e.forceShot=true; } } }
     if(def.canShoot && now>e.fireAt && d < er && fortWallCross(e.pos.x, e.pos.z, target.x, target.z)){ e.fireAt=now+0.5; }   // Z111b stone in the way: no direct shot through a fortress wall / shut gate
     else if(def.truck && now>e.fireAt && d < def.range){ e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
     else if(def.canShoot && now>e.fireAt && d < er && laid){
       const ds=diffScale(), A=BALANCE.aggro;
       // PROACTIVE-FIRE chance ramps with stage — early enemies hesitate, late ones fire relentlessly
-      if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ e.fireAt = now + 0.35; }   // hold fire a beat
+      if(!e.forceShot && Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ e.fireAt = now + 0.35; }   // hold fire a beat
       else {
         e.muzzle.getWorldPosition(_v);
         let aimA = e.aim;
@@ -171,7 +195,8 @@ export function updateEnemies(dt, now){
         sfx('enemyShoot', e.pos);
         if(def.scoot){ const sd=Math.random()<0.5?1:-1; e.scootX=Math.cos(aimA)*sd; e.scootZ=-Math.sin(aimA)*sd; e.scootUntil=now+1.5; }   // Z158 fire, then relocate
         if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
-        else e.fireAt=now+def.fireCd*rateMul;
+        else e.fireAt=now+def.fireCd*rateMul*(AID.punish&&targetPlayer?TACTICS.punish.rate:1);   // Z185 you reload → they fire faster
+        e.forceShot=false;
       }
     }
     if(def.carrier){ updateCarrierCrew(e, now); updateDismount(e, dt, now, dpl); }   // APC: riflemen on top shoot; Z89 it halts and dismounts a squad

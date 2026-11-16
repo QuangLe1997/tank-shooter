@@ -380,6 +380,12 @@ export const TACTICS = {
   dodge: { from: 0.35, cd: 2.2, speed: 9, time: 0.45 },   // sidestep when your gun lines up on them
   press: { hp: 0.35, keep: 0.6, from: 0.5 },              // you are below 35% HP → the line closes to 60% range
   leadMax: 0.9,             // shot lead at IQ 1 (fraction of a perfect intercept)
+  // Z185 SMARTER TANKS — evade: they watch your shells and break sideways out of the line (heavy hulls react less) ·
+  //   jink: in a fight they weave while closing · punish: you reload → they rush in and fire faster · volley: the pack fires together (telegraphed)
+  evade:  { from:0.2, look:1.0, cd:[1.0,2.0], speed:20, heavyMul:0.4, react:[0.4,0.92] },
+  jink:   { from:0.45, amp:0.6, per:[2.4,3.8] },
+  punish: { from:0.4, keep:0.55, rate:0.55, radioGap:45 },
+  volley: { from:0.55, every:[10,16], warn:0.75, minTanks:3, radioGap:35 },
 };
 
 // BOSS FIGHTS (Z96) — every general is a puzzle: armour arcs, breakable systems, three phases, stun & overheat windows, shield pylons.

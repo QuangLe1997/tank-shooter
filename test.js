@@ -912,6 +912,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/cine:     \{ off:\[0,11,17\]/.test(cf) && /tactical: \{ off:\[0,28,23\]/.test(cf) && /export const CAM_TUNE = \{ pitch:\[16,72,4\]/.test(cf), 'two camera styles + tuning ranges');
   ok(/export function camParams\(\)/.test(up) && /camOff\.set\(0, P\.dist\*Math\.sin\(r\), P\.dist\*Math\.cos\(r\)\)/.test(up) && /try\{ k=PROFILE\.camStyle; \}catch\(e\)\{\}/.test(up), 'the camera is built from pitch + distance, safe before the profile loads');
   ok(['setCamPitch','setCamDist','setCamFov','setCamAhead'].every(id=>st.includes("'"+id+"'")), 'settings: pitch, distance, field of view and look-ahead steppers'); }
+// Z185 smarter enemy tanks: dodge your shells, weave in a fight, rush you while you reload, fire telegraphed volleys
+{ const fs=await import('node:fs'); const t=fs.readFileSync('src/ai/tactics.js','utf8'), cf=fs.readFileSync('config.js','utf8');
+  ok(/export function aiEvade\(e, now, iq\)/.test(t) && /if\(def\.canShoot && !def\.truck\) aiEvade\(e, now, _iq\);/.test(t), 'tanks read incoming shells and break sideways');
+  ok(/AID\.punish = iq>=T\.punish\.from && !!\(g && g\.rU>now\)/.test(t) && /e\.volleyAt=now\+V\.warn/.test(t) && /if\(!e\.forceShot && Math\.random\(\)/.test(t), 'reload punish + coordinated volley with a muzzle-glint telegraph');
+  ok(/evade:  \{ from:0\.2/.test(cf) && /volley: \{ from:0\.55/.test(cf), 'tunable in TACTICS'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
