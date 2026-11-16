@@ -902,5 +902,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(TRAIN\.on\)\{ hide\('briefing'\); launchStage\(false\); return; \}/.test(br) && /if\(TRAIN\.on\) trainTick\(gdt, now\);/.test(lp) && /if\(TRAIN\.on\)\{ TRAIN\.on=false; TRIAL\.on=false;/.test(fl), 'training skips contract + troop plan, is watched every frame, and ends cleanly when you leave');
   ok(/openTrainInvite\(\)/.test(st) && /openTrainInvite\(\)/.test(mn) && /S\.player\.modelId !== currentTank\(\)\)\{ scene\.remove\(S\.player\.mesh\); S\.player=makePlayer\(\); \}/.test(fl), 'a new player gets the call-up card after the call sign; afterwards their own tank rolls back out'); }
 
+// Z183 phone HUD: nothing big above the tank — notes small at the right, radio one line at the bottom, timers + pickup card in the left column; notes spaced far apart
+{ const fs=await import('node:fs'); const c=fs.readFileSync('css/ui181.css','utf8'), t=fs.readFileSync('src/ui/tips.js','utf8');
+  ok(/body\.touch #tipCard\{inset:auto !important;top:calc\(max\(8px,env\(safe-area-inset-top\)\) \+ 168px\) !important;/.test(c) && /-webkit-line-clamp:2/.test(c) && /body\.touch #radio\{top:auto !important;bottom:/.test(c) && /body\.touch #buffbar\{left:/.test(c) && /body\.touch #lootToast \.lt-ds\{display:none !important;\}/.test(c), 'phone HUD keeps the space above the tank clear');
+  ok(/TIP_SECS_TOUCH=8, TIP_GAP_TOUCH=20/.test(t) && /MOBILE\?TIP_GAP_TOUCH:6/.test(t), 'on a phone a first-time note lasts 8 s and the next waits 20 s'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

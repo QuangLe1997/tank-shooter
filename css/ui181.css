@@ -143,3 +143,32 @@ body:not(.pad) .set-padview{display:none !important;}
   .si-desc{font-size:14px;line-height:1.45;font-style:normal;color:#e4ead8;text-shadow:none;}
   .si-name{letter-spacing:2px;}
 }
+
+/* =====================================================================================================================
+   Z183 PHONE HUD DECLUTTER — the space above the tank is where the enemy comes from: nothing big may sit there.
+   First-time notes → a small 2-line card at the right under the minimap; the radio → one line at the bottom centre;
+   the objective chip → one row; the coach line above the radio; banners smaller.
+   ===================================================================================================================== */
+body.touch #tipCard{inset:auto !important;top:calc(max(8px,env(safe-area-inset-top)) + 168px) !important;right:calc(max(10px,env(safe-area-inset-right)) + 58px) !important;left:auto !important;bottom:auto !important;transform:none !important;width:min(280px,34vw) !important;}
+body.touch #tipCard .tc-box{padding:7px 10px 7px !important;border-radius:10px;background:linear-gradient(180deg,rgba(14,19,11,.9),rgba(7,10,6,.92)) !important;}
+body.touch #tipCard .tc-head{margin-bottom:2px !important;gap:7px !important;}
+body.touch #tipCard .tc-ic{width:22px !important;height:22px !important;padding:3px !important;border-radius:6px !important;}
+body.touch #tipCard .tc-kick,body.touch #tipCard .tc-n{display:none !important;}
+body.touch #tipCard .tc-ttl{font-size:12.5px !important;letter-spacing:.06em;}
+body.touch #tipCard .tc-body{font-size:10.5px !important;line-height:1.35 !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+body.touch #tipCard .tc-foot{margin-top:4px !important;justify-content:flex-end !important;}
+body.touch #tipCard .tc-ok{padding:3px 10px !important;font-size:9.5px !important;}
+body.touch #radio{top:auto !important;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 4px);max-width:min(420px,46vw);padding:3px 10px 3px 5px;gap:6px;font-size:11px;background:rgba(6,9,6,.7);}
+body.touch #radio .rd-tag{font-size:8px;padding:1px 4px;letter-spacing:.12em;}
+body.touch #radio .rd-txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+body.touch #coach{bottom:calc(100vh - var(--appH,100svh) + max(14px,env(safe-area-inset-bottom)) + 34px) !important;max-width:46vw !important;font-size:11px !important;padding:5px 12px !important;}
+body.touch #objChip{min-width:0 !important;max-width:42vw !important;padding:3px 9px 4px !important;}
+body.touch #objChip .ob-name{font-size:10.5px !important;} body.touch #objChip .ob-bar{margin:3px 0 0 !important;height:3px !important;}
+body.touch #combo{font-size:14px !important;padding:4px 12px !important;max-width:56vw !important;} body.touch #combo.long{font-size:10.5px !important;}
+/* power-up timers + the "you picked up" card: the left column under the command buttons, small (they used to sit on the objective chip / the note card) */
+body.touch #buffbar{left:calc(max(10px,env(safe-area-inset-left))) !important;right:auto !important;top:calc(max(8px,env(safe-area-inset-top)) + 112px) !important;transform:none !important;flex-direction:row !important;flex-wrap:wrap;align-items:center !important;justify-content:flex-start;gap:4px !important;max-width:38vw;}
+body.touch #lootToast{left:calc(max(10px,env(safe-area-inset-left))) !important;right:auto !important;top:calc(max(8px,env(safe-area-inset-top)) + 140px) !important;min-width:0 !important;max-width:min(230px,30vw) !important;padding:4px 9px 4px 5px !important;gap:6px !important;transform:translateX(-8px);}
+body.touch #lootToast.on{transform:none;}
+body.touch #lootToast .lt-ic{width:24px !important;height:24px !important;padding:3px !important;} body.touch #lootToast.lt-gun .lt-ic{width:52px !important;}
+body.touch #lootToast .lt-ds{display:none !important;} body.touch #lootToast .lt-nm{font-size:12px !important;} body.touch #lootToast .lt-nt{font-size:10px !important;margin-top:0 !important;}
+@media (max-width:760px){ body.touch #objChip{left:calc(50% + 72px) !important;max-width:30vw !important;} }   /* narrow phones: clear of the weapon chip */

@@ -37,12 +37,13 @@ export const TIP_URGENT={ arty:1, atgm:1, boss:1, shield:1, core:1 }; export let
 export function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing' || TRAIN.on) return; const nowT=performance.now()/1000;
   let qi=TIPQ.findIndex(k=>TIP_URGENT[k]); if(qi<0){ if(nowT<_tipNextAt) return; qi=0; }      // urgent notes jump the queue; the rest wait 6 s of play between them
   const id=TIPQ.splice(qi,1)[0], T=TIPS[id], el=document.getElementById('tipCard'); if(!el) return;
-  _tipOpen=id; _tipUntil=nowT+TIP_SECS;   // Z168 no more pausing the battle: a side card that dismisses itself (a pad could never close the old modal → the game looked frozen)
+  _tipOpen=id; _tipUntil=nowT+tipSecs();   // Z168 no more pausing the battle: a side card that dismisses itself (a pad could never close the old modal → the game looked frozen)
   el.querySelector('.tc-ic').replaceChildren(iconEl(T[0])); el.querySelector('.tc-ttl').textContent=T[1]; el.querySelector('.tc-body').innerHTML=T[2];
   const seen=Object.keys(TIP_SHOW).filter(k=>(PROFILE.tips||{})[k]).length+1; el.querySelector('.tc-n').textContent='Ghi chú '+Math.min(seen, Object.keys(TIP_SHOW).length)+'/'+Object.keys(TIP_SHOW).length;
-  el.classList.remove('hidden','away'); const bar=el.querySelector('.tc-bar'); if(bar){ bar.style.animation='none'; void bar.offsetWidth; bar.style.animation='tcbar '+TIP_SECS+'s linear forwards'; } sfx('beep'); }
-export function closeTip(quiet){ if(!_tipOpen) return; (PROFILE.tips||(PROFILE.tips={}))[_tipOpen]=1; saveProfile(); _tipOpen=null; _tipNextAt=performance.now()/1000+6; document.getElementById('tipCard').classList.add('hidden'); if(S.mode==='tip') S.mode='playing'; if(!quiet) sfx('click'); }
-export const TIP_SECS=11; let _tipUntil=0;
+  el.classList.remove('hidden','away'); const bar=el.querySelector('.tc-bar'); if(bar){ bar.style.animation='none'; void bar.offsetWidth; bar.style.animation='tcbar '+tipSecs()+'s linear forwards'; } sfx('beep'); }
+export function closeTip(quiet){ if(!_tipOpen) return; (PROFILE.tips||(PROFILE.tips={}))[_tipOpen]=1; saveProfile(); _tipOpen=null; _tipNextAt=performance.now()/1000+(MOBILE?TIP_GAP_TOUCH:6); document.getElementById('tipCard').classList.add('hidden'); if(S.mode==='tip') S.mode='playing'; if(!quiet) sfx('click'); }
+export const TIP_SECS=11, TIP_SECS_TOUCH=8, TIP_GAP_TOUCH=20; let _tipUntil=0;   // Z183 on a phone a note is shorter-lived and they come far apart (the screen is small)
+function tipSecs(){ return MOBILE ? TIP_SECS_TOUCH : TIP_SECS; }
 // every frame: the card waits while a menu / pause / result screen is up, and closes itself when its time is over
 export function tickTip(){ const el=_tipOpen && document.getElementById('tipCard'); if(!el) return; const away=S.mode!=='playing'; el.classList.toggle('away', away);
   if(away){ _tipUntil+=1/60; return; } if(performance.now()/1000>_tipUntil) closeTip(true); }
