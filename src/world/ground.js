@@ -32,6 +32,8 @@ export function groundMaps(b){
     else if(b.name==='TUNDRA'||b.name==='ARCTIC'){ h = n1[i]*0.7+n3[i]*0.3; t = 0.3+h*0.8; }
     else if(b.name==='SAVANNA'){ h=n1[i]*0.65+n3[i]*0.35; t=h*0.9+(n2[i]-0.5)*0.4; }                                                          // wind-packed drifts
     else if(b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE'){ t = n1[i]*0.6+n3[i]*0.4; }
+    else if(b.name==='VOLCANO'){ h=n1[i]*0.7+n3[i]*0.3; t=Math.pow(h,1.6); }                                                                   // Z187 black basalt, flows of rougher clinker
+    else if(b.name==='QUARRY'){ const band=Math.sin((y/W)*6.283*22 + n2[i]*3)*0.5+0.5; h=n1[i]*0.6+band*0.25+n3[i]*0.15; t=0.35+h*0.65; }      // Z187 saw-cut benches leave parallel bands
     else if(b.name==='FOUNDRY'||b.name==='CITADEL'){ h=n1[i]*0.75+n3[i]*0.25; t=h; }
     else { h=n1[i]*0.6+n3[i]*0.4; t=h*0.9+(n2[i]-0.5)*0.3; }
     H[i]=h; t=Math.max(0,Math.min(1,t));
@@ -60,6 +62,13 @@ export function groundMaps(b){
     for(let i=0;i<1800;i++){ cx.fillStyle='rgba(255,255,255,'+R(0.4,0.9).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,1,1); } }
   else if(b.name==='FOUNDRY'){ cracks(22,10,2.4,'rgba(150,84,52,0.45)','rgba(0,0,0,0.45)'); cracks(30,10,1.2,'rgba(16,14,12,0.7)','rgba(0,0,0,0.5)'); pebbles(1200,1,3.5,['rgba(30,26,24,0.9)','rgba(80,70,62,0.9)','rgba(60,40,30,0.9)'],'rgba(255,255,255,0.6)');
     for(let i=0;i<12;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(24,80)*W/1024; const g=cx.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba(10,10,14,0.5)'); g.addColorStop(1,'rgba(10,10,14,0)'); cx.fillStyle=g; cx.fillRect(px-r,py-r,r*2,r*2); } }
+  else if(b.name==='STEELMILL'){ cracks(26,10,2.2,'rgba(30,24,20,0.7)','rgba(0,0,0,0.5)'); pebbles(1500,1,3.4,['rgba(40,32,28,0.9)','rgba(110,70,44,0.9)','rgba(70,58,50,0.9)'],'rgba(255,255,255,0.45)');   // Z187 rust, slag grit, oil, weeds in the cracks
+    for(let i=0;i<22;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(20,90)*W/1024; const g=cx.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,i%3?'rgba(140,64,28,0.42)':'rgba(10,10,12,0.5)'); g.addColorStop(1,'rgba(0,0,0,0)'); cx.fillStyle=g; cx.fillRect(px-r,py-r,r*2,r*2); }
+    for(let i=0;i<900;i++){ cx.fillStyle='rgba(90,110,50,'+R(0.3,0.7).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,1.6,R(2,4)); } }
+  else if(b.name==='VOLCANO'){ cracks(34,14,2.2,'rgba(255,110,30,0.75)','rgba(0,0,0,0.6)'); cracks(20,10,1.2,'rgba(255,190,80,0.6)','rgba(0,0,0,0.4)');   // Z187 basalt with glowing seams + ash
+    pebbles(1600,1,3.2,['rgba(14,12,12,0.9)','rgba(50,44,42,0.9)','rgba(80,40,30,0.8)'],'rgba(255,255,255,0.35)'); for(let i=0;i<1400;i++){ cx.fillStyle='rgba(170,160,150,'+R(0.1,0.35).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,2,2); } }
+  else if(b.name==='QUARRY'){ cracks(18,10,1.4,'rgba(150,140,124,0.5)','rgba(0,0,0,0.25)'); pebbles(1700,1,3.6,['rgba(250,248,242,0.95)','rgba(200,194,182,0.9)','rgba(150,144,134,0.8)'],'rgba(255,255,255,0.6)');   // Z187 marble chips, tyre-pressed dust
+    for(let i=0;i<18;i++){ const px=Math.random()*W, py=Math.random()*W, r=R(30,110)*W/1024; cx.fillStyle=i%2?'rgba(255,252,244,0.2)':'rgba(120,104,84,0.2)'; cx.beginPath(); cx.ellipse(px,py,r,r*R(0.3,0.7),R(0,3),0,7); cx.fill(); } }
   else if(b.name==='CITADEL'){ cracks(30,12,1.6,'rgba(24,18,12,0.6)','rgba(0,0,0,0.5)'); pebbles(1300,1,3.4,['rgba(60,48,34,0.9)','rgba(100,84,60,0.9)','rgba(30,26,22,0.9)'],'rgba(255,255,255,0.55)');
     for(let i=0;i<900;i++){ cx.fillStyle='rgba(30,28,26,'+R(0.2,0.5).toFixed(2)+')'; cx.fillRect(Math.random()*W,Math.random()*W,2,2); } }
   else if(b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE'){ const Gs=[]; for(let i=0;i<(MOBILE?5000:14000);i++) Gs.push([Math.random()*W,Math.random()*W,R(4,11)*W/1024,R(-3,3)*W/1024, (r=>r<0.3?'rgba(196,216,120,0.55)':r<0.6?'rgba(126,160,66,0.5)':r<0.85?'rgba(150,174,82,0.5)':'rgba(208,192,122,0.45)')(Math.random())]);   // Z147 sunlit blades + straw (no olive: that's the tanks' colour)
@@ -80,7 +89,7 @@ export function macroTexture(){
 }
 export function patchTexture(){ const W=256, a=tileNoise(W,[3,6,12,24,48],0.55); const c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); const img=x.createImageData(W,W), d=img.data;
   for(let i=0;i<W*W;i++){ const v=Math.max(0,Math.min(255,(0.5+(a[i]-0.5)*1.6)*255)); d[i*4]=d[i*4+1]=d[i*4+2]=v; d[i*4+3]=255; } x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
-export const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85], CITY:[0x3a3c40,0.55], HILLS:[0x5a4a30,0.7], VILLAGE:[0x5a4a2c,0.7], SAVANNA:[0x8a5a30,0.6], ARCTIC:[0x7a90a4,0.55] };
+export const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85], CITY:[0x3a3c40,0.55], HILLS:[0x5a4a30,0.7], VILLAGE:[0x5a4a2c,0.7], SAVANNA:[0x8a5a30,0.6], ARCTIC:[0x7a90a4,0.55], STEELMILL:[0x2a1a12,0.65], VOLCANO:[0x0e0a0a,0.75], QUARRY:[0xb8b0a0,0.45] };
 export const MACRO = { tex:{ value:macroTexture() }, amt:{ value:0.3 }, span:{ value:1/(ARENA*2) }, patch:{ value:patchTexture() }, pcol:{ value:new THREE.Color(0x9a7a50) }, pamt:{ value:0.55 } };
 // Z105 relief shading (see config RELIEF): hollows darker + damper + occluded, steep faces show raw earth, crests/rims sun-bleached
 export const RELIEF_U = { rel0:{ value:new THREE.Vector4(RELIEF.bowlDark, RELIEF.bowlAO, RELIEF.crestLift, RELIEF.slopeEarth) }, rel1:{ value:new THREE.Vector4(RELIEF.bowlK, RELIEF.crestK, RELIEF.slopeK, 1) },

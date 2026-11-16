@@ -55,6 +55,15 @@ const W = {
     C(0.3,0.3,22,0,y+11,0,0xc8ccd0,6); B(26,6,26,0,3,0,0x8a9aa6); }],
   FOUNDRY:['XƯỞNG GANG VÖLKLINGEN · ĐỨC', ()=>{ C(7,9,34,0,17,0,0x4a3a32,16); C(7.4,7.4,2,0,30,0,0x8a4a2a,16); for(const [x,z] of [[18,6],[24,-6],[-16,10]]) C(1.8,2.6,46,x,23,z,0x6a5a52,12);
     B(30,14,14,-14,7,-18,0x5a4a42); for(let k=0;k<5;k++) B(1,1,26,-2+k*0.1,26-k*4,-6,0x3a3a3a); B(4,40,4,32,20,14,0x3a3a3a); B(16,2,2,32,38,14,0x3a3a3a); }],
+  // Z187 the three new battlefields
+  STEELMILL:['NHÀ MÁY THÉP BETHLEHEM · PENNSYLVANIA, MỸ', ()=>{ for(const [x,z] of [[-14,0],[0,4],[14,0]]){ C(5,6.5,30,x,15,z,0x5a3424,14); C(5.4,5.4,1.6,x,30.8,z,0x7a4a2a,14); C(1.6,1.6,10,x,36,z,0x3a2a22,10); }   // three rusted blast furnaces
+    for(const [x,z] of [[-24,-12],[24,-14]]) C(1.6,2.2,52,x,26,z,0x6a4a3a,12); C(9,11,22,30,11,10,0x8a8278,20);   // two stacks + a cooling tower
+    B(56,10,14,0,5,-16,0x4a3a30); for(let k=0;k<8;k++) B(1.2,1.2,12,-28+k*8,10,-16,0x2a2420); B(48,1.4,2.4,-4,22,9,0x3a3a3a,0.18); B(2,22,2,-26,11,6,0x2a2a2a); B(2,18,2,18,9,12,0x2a2a2a); }],   // cast house, conveyor gantry on trestles
+  VOLCANO:['MIỆNG NÚI LỬA KĪLAUEA · HAWAII, MỸ', ()=>{ K(48,30,0,15,0,0x2e2624,20); C(13,16,4,0,29,0,0x1e1816,20); C(10,10,1,0,31.2,0,0xff5a1a,20);   // the cone, its rim, a glowing lava lake
+    for(const [a,len] of [[0.4,34],[2.2,30],[4.0,26]]) B(3.2,0.8,len,Math.sin(a)*len*0.55,4,Math.cos(a)*len*0.55,0xff6a20,a); }],   // lava rivers down the flanks
+  QUARRY:['MỎ ĐÁ CẨM THẠCH CARRARA · TUSCANY, Ý', ()=>{ for(let k=0;k<6;k++) B(80-k*10,6,16-k*1.2,0,3+k*6,-k*2.8,k%2?0xe6e0d4:0xd8d2c4);   // the terraced white wall, bench on bench
+    for(const [x,y,z] of [[-30,1.5,10],[-24,1.5,14],[28,1.5,12],[22,4.5,12]]) B(5,3,3,x,y,z,0xf0ebe0);   // cut blocks waiting at the foot
+    B(5,3,8,10,1.6,12,0xd8a020); B(1.2,1.2,7,10,5,16,0x3a3a3a,0.6); B(3,2,2,10,7,19,0xd8a020); B(2,30,2,-12,15,4,0xc0302a); B(22,1.2,1.2,-3,30,4,0xc0302a); }],   // a yellow excavator, a red derrick crane
 };
 function greatWall(){ const g=new THREE.Group(); const R0=a=>fieldR(a)+12, a0=-2.6, a1=-0.5, n=70, Q=[];
   for(let k=0;k<n;k++){ const a=a0+(a1-a0)*k/n, b=a0+(a1-a0)*(k+1)/n, x0=Math.cos(a)*R0(a), z0=Math.sin(a)*R0(a), x1=Math.cos(b)*R0(b), z1=Math.sin(b)*R0(b), L=Math.hypot(x1-x0,z1-z0), cx=(x0+x1)/2, cz=(z0+z1)/2, y=heightAt(cx,cz), ry=-Math.atan2(z1-z0,x1-x0);
@@ -75,6 +84,7 @@ export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) 
   if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); windmills(w); WONDER.x=x; WONDER.z=z; return; }
   P.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.05 }), { scale:0.25, bump:0.05, alb:0.34, foot:3, streak:0.3 })); P.length=0;
   m.castShadow=true; m.receiveShadow=true; m.position.set(x, heightAt(x,z)-0.3, z); m.rotation.y=-a-Math.PI/2; g.add(m); WONDER.x=x; WONDER.z=z;
+  if(BIOME.name==='VOLCANO'){ for(const [lx,lz] of [[0,0],[4,3]]){ const v=new THREE.Vector3(lx,33,lz).applyAxisAngle(new THREE.Vector3(0,1,0), m.rotation.y); WONDER.smoke.push([x+v.x, heightAt(x,z)+v.y, z+v.z]); } }   // Z187 the crater breathes ash
   if(BIOME.name==='FOUNDRY'){ for(const [lx,lz] of [[18,6],[24,-6],[-16,10]]){ const v=new THREE.Vector3(lx,47,lz).applyAxisAngle(new THREE.Vector3(0,1,0), m.rotation.y); WONDER.smoke.push([x+v.x, heightAt(x,z)+v.y, z+v.z]); } } }
 export function updateWonder(dt, now){ for(const s of WONDER.spin) s.rotation.z+=dt*0.6;
   if(WONDER.smoke.length && now>WONDER.at){ WONDER.at=now+(MOBILE?0.5:0.22); const q=WONDER.smoke[(Math.random()*WONDER.smoke.length)|0]; spawnPart(q[0], q[1], q[2], 1.5+Math.random(), 2.5+Math.random()*1.5, Math.random()-0.5, { color:0x3a3632, size:4+Math.random()*3, life:4, smoke:true, grav:-0.4, drag:0.4, grow:2.2, op:0.5 }); } }

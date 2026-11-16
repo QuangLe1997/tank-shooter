@@ -127,6 +127,9 @@ export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)
     plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
   else if(n==='ARCTIC'){ plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });
     for(const m of FLORA.meshes){ if(m.geometry===floe()){ const M2=new THREE.Matrix4(), P2=new THREE.Vector3(), Q2=new THREE.Quaternion(), S2=new THREE.Vector3(); for(let i=0;i<m.count;i++){ m.getMatrixAt(i,M2); M2.decompose(P2,Q2,S2); P2.y=RIVER.y+0.05; M2.compose(P2,Q2,S2); m.setMatrixAt(i,M2); } m.instanceMatrix.needsUpdate=true; } } }   // ice floes float on the leads
+  else if(n==='STEELMILL'){ plant(deadTree(), N(16), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(10), { s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(false), N(60), { s:[0.6,1.2], shadow:false }); }   // Z187 nature taking the mill back
+  else if(n==='VOLCANO'){ plant(deadTree(), N(22), { s:[0.7,1.1], kind:'tree', cr:0.3, real:1.15 }); plant(bush(true), N(14), { s:[0.5,0.9], shadow:false }); }   // Z187 scorched snags
+  else if(n==='QUARRY'){ plant(broadleaf(), N(8), { s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
   else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
   else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }

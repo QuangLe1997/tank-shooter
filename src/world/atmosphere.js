@@ -46,7 +46,7 @@ export const MOODS = {
   dramatic:{ cov:[0.44,0.22,1.0],  lit:0xffe6c4, dark:0x434b5a, shadow:0.52, sunK:1.18, expK:0.97, con:0.09, sat:-0.03, wind:5, topK:0.78 },
   storm:   { cov:[0.22,0.32,1.0],  lit:0x9aa2ae, dark:0x2a303a, shadow:0.3,  sunK:0.62, expK:0.98, con:0.07, sat:-0.16, wind:8, topK:0.45, fog:0x7c8696, fogK:1.18, hemiK:1.2, bolt:[7,18] } };
 const MOOD_W = { DESERT:{clear:4,fair:3,dramatic:2,storm:1}, SAVANNA:{clear:3,fair:3,dramatic:3,storm:1}, ARCTIC:{clear:2,fair:2,dramatic:3,storm:3}, TUNDRA:{clear:1,fair:2,dramatic:3,storm:3},
-  FOUNDRY:{clear:1,fair:1,dramatic:3,storm:4}, RUINS:{clear:1,fair:2,dramatic:4,storm:3}, _:{clear:2,fair:4,dramatic:3,storm:2} };
+  FOUNDRY:{clear:1,fair:1,dramatic:3,storm:4}, RUINS:{clear:1,fair:2,dramatic:4,storm:3}, STEELMILL:{clear:1,fair:2,dramatic:4,storm:2}, VOLCANO:{clear:0,fair:1,dramatic:5,storm:3}, QUARRY:{clear:4,fair:4,dramatic:1,storm:1}, _:{clear:2,fair:4,dramatic:3,storm:2} };
 export const SKYMOOD = { id:'fair', m:MOODS.fair, boltT:9 };
 export function pickMood(name, tod){ if(S.skyMood && MOODS[S.skyMood]) return S.skyMood; if(tod==='night') return Math.random()<0.5?'fair':'dramatic'; if(tod==='sunset') return Math.random()<0.6?'dramatic':'fair';
   const W=MOOD_W[name]||MOOD_W._; let t=0; for(const k in W) t+=W[k]; let r=Math.random()*t; for(const k in W){ r-=W[k]; if(r<=0) return k; } return 'fair'; }

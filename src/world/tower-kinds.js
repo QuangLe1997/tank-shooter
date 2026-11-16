@@ -93,7 +93,8 @@ export const TOWER_KINDS = {
 export const TOWER_BIOME = {
   DESERT:{ block:3, round:2, lattice:1 }, SAVANNA:{ bamboo:2, wood:2, block:1 }, TUNDRA:{ log:3, lattice:2, wood:1 }, ARCTIC:{ lattice:3, log:2 },
   FOUNDRY:{ lattice:3, column:2, round:1 }, CITADEL:{ round:3, block:2, wood:1 }, MEADOW:{ wood:3, log:2 }, CITY:{ column:3, round:2, lattice:1 },
-  HILLS:{ log:2, wood:2, block:1 }, VILLAGE:{ bamboo:3, wood:2 }, RUINS:{ block:3, column:1, round:2 } };
+  HILLS:{ log:2, wood:2, block:1 }, VILLAGE:{ bamboo:3, wood:2 }, RUINS:{ block:3, column:1, round:2 },
+  STEELMILL:{ lattice:3, column:2, round:1 }, VOLCANO:{ block:2, lattice:2, round:1 }, QUARRY:{ block:2, lattice:2, wood:1 } };
 export function pickTowerKind(biome){ const W=TOWER_BIOME[biome]||{ wood:1 }; let tot=0; for(const k in W) tot+=W[k]; let r=Math.random()*tot; for(const k in W){ if((r-=W[k])<=0) return k; } return 'wood'; }
 // merged geometry per material for one kind (built once, shared by every tower of that kind)
 const _TK={};

@@ -17,6 +17,9 @@ export const REGION = {
   VILLAGE: { pat:'brick',    base:'#b5643e', seam:'#d8c8a8', rough:0.9,  metal:0.0,  cap:'tile',   roof:'tile',  trim:0x7a3a22 },
   SAVANNA: { pat:'adobe',    base:'#b0704a', seam:'#7a4a2c', rough:0.95, metal:0.0,  cap:'toron',  roof:'pinnacle',trim:0x8a5a34 },  // Z144 Sudano-Sahelian mud: toron beams, pinnacles
   ARCTIC:  { pat:'ice',      base:'#d8ecf6', seam:'#9ab8cc', rough:0.3,  metal:0.05, cap:'snow',   roof:'snow',  trim:0x8aa0b0 },
+  STEELMILL:{ pat:'brick',   base:'#8a4430', seam:'#3a2418', rough:0.85, metal:0.05, cap:'spike',  roof:'flat',  trim:0xa85a2a },   // Z187 soot-stained industrial red brick, iron spikes
+  VOLCANO:  { pat:'ashlar',  base:'#3a3432', seam:'#1e1a18', rough:0.95, metal:0.02, cap:'merlon', roof:'flat',  trim:0xff5a1a },   // Z187 black basalt blocks, lava-lit trim
+  QUARRY:   { pat:'ashlar',  base:'#e4ded2', seam:'#a8a090', rough:0.8,  metal:0.02, cap:'merlon', roof:'cornice',trim:0x8a8478 },  // Z187 white Carrara marble
 };
 export const regionOf = (name)=>(typeof name==='object' && name) ? name : (REGION[name||BIOME.name]||REGION.CITADEL);
 // Z140 every fort of a battlefield is built differently: its own wall material, wall-top, tower roofs and corner towers (square piers or round drums)
@@ -28,7 +31,9 @@ export const REGION_ALT = {
   CITADEL:{ pats:['ashlar','adobe'], caps:['merlon','merlon'], roofs:['chhatri','onion'] },  MEADOW:{ pats:['ashlar','log'], caps:['stake','merlon'], roofs:['slate','cone'] },
   CITY:{ pats:['concrete','plate'], caps:['spike','wire'], roofs:['flat','dome'] },     HILLS:{ pats:['ashlar','log'], caps:['stake','merlon'], roofs:['pagoda','pagoda'] },
   VILLAGE:{ pats:['brick','laterite','bamboo'], caps:['stake','tile','tile'], roofs:['hue','tile','tile'] },
-  SAVANNA:{ pats:['adobe','adobe'], caps:['stake','toron'], roofs:['pinnacle','thatch'] }, ARCTIC:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','flat'] } };
+  SAVANNA:{ pats:['adobe','adobe'], caps:['stake','toron'], roofs:['pinnacle','thatch'] }, ARCTIC:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','flat'] },
+  STEELMILL:{ pats:['brick','plate','brick'], caps:['spike','wire','spike'], roofs:['flat','dome','flat'] }, VOLCANO:{ pats:['ashlar','concrete'], caps:['merlon','spike'], roofs:['flat','cone'] },
+  QUARRY:{ pats:['ashlar','ashlar','concrete'], caps:['merlon','merlon','wire'], roofs:['cornice','dome','flat'] } };
 export function fortStyle(name, i){ const n=name||BIOME.name, st=regionOf(n), A=REGION_ALT[n]||{ pats:[st.pat], caps:[st.cap], roofs:[st.roof] };
   const pat=A.pats[i%A.pats.length], c=PAT_COL[pat]||[st.base,st.seam];
   const base = (pat===st.pat) ? st.base : c[0];

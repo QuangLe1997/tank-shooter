@@ -26,6 +26,7 @@ export * from './world/props.js';
 export * from './world/perimeter.js';
 export * from './world/decor.js';
 export * from './world/physics.js';
+export * from './world/lava.js';   // Z187 volcanic caldera lava pools (runtime only)
 export * from './world/biome.js';
 export * from './world/cover.js';
 export * from './world/ridges.js';

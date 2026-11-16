@@ -43,7 +43,8 @@ function updateFall(dt, now){ const F=ENVEV.fall; if(!F) return; F.t+=dt; const 
 const SURGE={ DESERT:['sand','BÃO CÁT ẬP TỚI!','SCH: Bão cát — tầm nhìn giảm, bám sát đồng đội!'], TUNDRA:['snow','BÃO TUYẾT!','SCH: Bão tuyết kéo tới — giữ đội hình!'], MEADOW:['rain','GIÔNG BÃO!','SCH: Mưa giông — sét có thể đánh trúng!'],
   RUINS:['fog','SƯƠNG KHÓI DÀY ĐẶC!','SCH: Khói bụi phủ kín phố — địch có thể áp sát!'], FOUNDRY:['fog','KHÓI LÒ PHỦ KÍN!','SCH: Lò cao xả khói — cẩn thận phục kích!'], CITADEL:['sand','BÃO CÁT ẬP TỚI!','SCH: Bão cát quanh thành luỹ!'],
   CITY:['rain','MƯA GIÔNG TRÊN PHỐ!','SCH: Mưa lớn — đường phố trơn trượt!'], HILLS:['fog','SƯƠNG MÙ TRÊN ĐỒI!','SCH: Sương mù phủ đồi — địch có thể đánh úp!'], VILLAGE:['rain','MƯA RÀO!','SCH: Mưa rào trên đồng!'],
-  SAVANNA:['sand','BÃO BỤI XAVAN!','SCH: Gió mùa khô cuốn bụi đỏ — tầm nhìn giảm!'], ARCTIC:['snow','BÃO TUYẾT BẮC CỰC!','SCH: Bão tuyết — bám đội hình, đừng lạc!'] };
+  SAVANNA:['sand','BÃO BỤI XAVAN!','SCH: Gió mùa khô cuốn bụi đỏ — tầm nhìn giảm!'], ARCTIC:['snow','BÃO TUYẾT BẮC CỰC!','SCH: Bão tuyết — bám đội hình, đừng lạc!'],
+  STEELMILL:['fog','BỤI GỈ SÉT CUỘN LÊN!','SCH: Gió cuốn bụi gỉ qua xưởng — địch có thể mò sát!'], VOLCANO:['sand','MƯA TRO NÚI LỬA!','SCH: Núi lửa phun tro — tầm nhìn giảm mạnh!'], QUARRY:['sand','BỤI ĐÁ MÙ MỊT!','SCH: Bụi đá trắng xoá — bám đội hình!'] };
 function surge(now){ const s=SURGE[BIOME.name]; if(!s || S.weather===s[0]) return false; ENVEV.active={ kind:'weather', t0:now, dur:12, prev:S.weather||'clear' }; applyWeather(s[0], 0.55); /* Z144 a short, light gust — never a whole fight in the murk */ announce(s[1], '#9fd8ff', s[2]); return true; }
 
 export function updateEnvEvents(dt, now){
