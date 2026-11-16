@@ -172,3 +172,6 @@ body.touch #lootToast.on{transform:none;}
 body.touch #lootToast .lt-ic{width:24px !important;height:24px !important;padding:3px !important;} body.touch #lootToast.lt-gun .lt-ic{width:52px !important;}
 body.touch #lootToast .lt-ds{display:none !important;} body.touch #lootToast .lt-nm{font-size:12px !important;} body.touch #lootToast .lt-nt{font-size:10px !important;margin-top:0 !important;}
 @media (max-width:760px){ body.touch #objChip{left:calc(50% + 72px) !important;max-width:30vw !important;} }   /* narrow phones: clear of the weapon chip */
+/* Z184 camera tuning steppers: the value sits between − and + */
+.seg-chip.seg-val{min-width:64px;cursor:default;font-variant-numeric:tabular-nums;} .seg-chip.seg-val::before{display:none;}
+.set-row.set-cam .seg-note{flex:none;}

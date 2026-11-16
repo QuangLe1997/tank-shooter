@@ -1,6 +1,6 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET } from '../../config.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE } from '../../config.js';
 import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, wetAt } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
@@ -168,7 +168,14 @@ export function updateTankRigs(dt){
 }
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
-export const camOff = new THREE.Vector3(0, MOBILE?18:28, MOBILE?14.5:23);   // base offset; S.zoom scales it, S.camYaw rotates it (player camera controls)
+export const camOff = new THREE.Vector3(0, MOBILE?9.8:11, MOBILE?15.5:17);   // base offset; S.zoom scales it, S.camYaw rotates it (player camera controls) · Z184 set from the chosen CAM_STYLE every frame
+export function camStyle(){ let k; try{ k=PROFILE.camStyle; }catch(e){} return CAM_STYLE[k] || CAM_STYLE.cine; }   // (the boot backdrop frames run before the profile module is evaluated)
+// Z184 the camera the player gets: the style, then their own tuning on top (pitch°, distance ×, field of view°, look-ahead ×)
+export function camParams(){ const C=camStyle(), o=MOBILE?C.offM:C.off; let t=null; try{ t=PROFILE.camTune; }catch(e){}
+  const d0=Math.hypot(o[1],o[2]), p0=Math.atan2(o[1],o[2])*57.29578;
+  return { pitch: t&&t.pitch!=null ? t.pitch : p0, dist: d0*(t&&t.distK!=null ? t.distK : 1), fov: t&&t.fov!=null ? t.fov : C.fov,
+    ahead: (MOBILE?C.aheadM:C.ahead)*(t&&t.aheadK!=null ? t.aheadK : 1), lookY:C.lookY, speedFov:C.speedFov, p0, d0, fov0:C.fov, ahead0:(MOBILE?C.aheadM:C.ahead) }; }
+export function applyCamStyle(){ const P=camParams(), r=P.pitch/57.29578; camOff.set(0, P.dist*Math.sin(r), P.dist*Math.cos(r)); return P; }
 export const _camOff = new THREE.Vector3(), _camUP = new THREE.Vector3(0,1,0);
 export const camTarget = new THREE.Vector3();
 export const camLook = new THREE.Vector3();
@@ -187,7 +194,8 @@ export function updateCamera(dt, now){
   // look slightly ahead of the player toward the aim + a bit toward velocity (motion feel)
   camLook.set(Math.sin(p.aim)*6 + p.vel.x*0.18, 0, Math.cos(p.aim)*6 + p.vel.z*0.18);
   const zk=Math.min(1, S.zoom||1);   // Z171 close-ups keep the tank centred and ignore most of the auto pull-back
-  camTarget.set(p.pos.x + camLook.x*0.45*zk, 0, p.pos.z + camLook.z*0.45*zk);
+  const CS=applyCamStyle(), ah=CS.ahead*Math.max(0.4, zk), cy=S.camYaw||0;   // Z184 the cine style looks well ahead of the tank (into the screen)
+  camTarget.set(p.pos.x + camLook.x*0.45*zk - Math.sin(cy)*ah, 0, p.pos.z + camLook.z*0.45*zk - Math.cos(cy)*ah);
   const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
   S.camZ += (_camAutoWant - S.camZ) * Math.min(1, dt*CAM_AUTO.ease);
@@ -201,8 +209,8 @@ export function updateCamera(dt, now){
   camera.position.copy(camBase);
   if(t2>0.0004){ const q=now; camera.position.x += (Math.sin(q*41.3)+Math.sin(q*73.1+1.7)*0.6)*t2*1.15; camera.position.y += (Math.sin(q*37.7+0.4)+Math.sin(q*67.9)*0.5)*t2*0.7; camera.position.z += (Math.sin(q*47.9+2.1)+Math.sin(q*59.3)*0.6)*t2*1.15; }
   { const k=S.camKick||0; if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } S.camKick=k*Math.exp(-dt*10); }   // Z168 the shot shoves the camera back along the barrel, then it springs home
-  camera.lookAt(camTarget.x, 1+Math.max(0, 0.6-(S.zoom||1))*2.2, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
-  { const base=camera.userData.fov0||(camera.userData.fov0=camera.fov), want=base+Math.min(3.2,(S.camKick||0)*2.4); if(Math.abs(camera.fov-want)>0.02){ camera.fov=want; camera.updateProjectionMatrix(); } }   // and a small FOV punch
+  camera.lookAt(camTarget.x, CS.lookY+Math.max(0, 0.6-(S.zoom||1))*2.2, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
+  { const base=CS.fov + CS.speedFov*Math.min(1, Math.hypot(p.vel.x, p.vel.z)/PLAYER.maxSpeed), want=base+Math.min(3.2,(S.camKick||0)*2.4); if(Math.abs(camera.fov-want)>0.02){ camera.fov=want; camera.updateProjectionMatrix(); } }   // and a small FOV punch
   if(t2>0.0004) camera.rotateZ((Math.sin(now*29.7)+Math.sin(now*53.3+0.9)*0.5)*t2*0.035);   // roll
   gradePass.uniforms.aberr.value = t2*0.007;
   S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));

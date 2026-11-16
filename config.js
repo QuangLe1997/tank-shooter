@@ -423,6 +423,15 @@ export const KEYS_HELP = [
   [['H'], 'Mở / đóng bảng phím tắt này', 'KHÁC'], [['Enter'], 'Xác nhận bố trí trận địa', 'KHÁC'] ];
 // Z110 AUTO CAMERA — on top of the zoom you picked, the camera pulls back by itself when the fight needs a wider view and eases
 // back in when it's calm: speed, enemies close by, a fortress ahead, the boss. It never rotates by itself (screen-relative driving).
+// Z184 CAMERA STYLE — cine (default): a low chase angle, the tank in the lower third, the battlefield and its forts ahead up to the horizon ·
+//   tactical: the old high overview. off = camera offset from the look point [x, up, back] (phone: offM) · ahead = how far in front of the tank it looks ·
+//   lookY = height it aims at · fov + speedFov = the lens widens a little at full speed
+export const CAM_STYLE = {
+  cine:     { off:[0,11,17],  offM:[0,9.8,15.5],  ahead:12, aheadM:8, lookY:3,   fov:58, speedFov:4 },
+  tactical: { off:[0,28,23],  offM:[0,18,14.5],   ahead:0,  aheadM:0, lookY:1,   fov:54, speedFov:0 },
+};
+// Z184 player camera tuning (CÀI ĐẶT → GÓC MÁY): pitch in degrees, distance and look-ahead as × of the style, field of view in degrees
+export const CAM_TUNE = { pitch:[16,72,4], distK:[0.55,1.9,0.1], fov:[40,80,3], aheadK:[0,2,0.25] };   // [min, max, step]
 export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, fortPad:30, fortK:0.18, bossR:70, bossK:0.3, ease:0.9, every:0.25 };
 export const TOUCH_HELP = [
   ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — nòng gắn đầu xe, xe hướng nào bắn hướng đó'], ['Đẩy nhẹ cần', 'Chỉ xoay xe ngắm, không chạy'],

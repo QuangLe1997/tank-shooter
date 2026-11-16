@@ -1,6 +1,6 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
-import { PAD_CFG, TURRET, CLOUD_CFG } from '../../config.js';
-import { CLOUDSAVE, DIFF_META, MOBILE, PAD, PROFILE, audio, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
+import { PAD_CFG, TURRET, CLOUD_CFG, CAM_TUNE } from '../../config.js';
+import { CLOUDSAVE, DIFF_META, MOBILE, PAD, PROFILE, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
 export function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
@@ -20,6 +20,20 @@ export function buildSettings(){
     for(const [l,v] of TURRET.steps) Tu.appendChild(_segChip(l, Math.abs(k-v)<0.01, ()=>setK(v)));
     Tu.appendChild(_segChip('+', false, ()=>setK(k+TURRET.step)));
     const n=document.createElement('div'); n.className='seg-note'; n.textContent=Math.round(k*100)+'% · '+Math.round(TURRET.rate*k*57.3)+'°/giây'; Tu.appendChild(n); }
+  { const Ca=document.getElementById('setCam'); if(Ca){ Ca.innerHTML=''; const cur=PROFILE.camStyle||'cine', tuned=!!PROFILE.camTune, pick=v=>{ PROFILE.camStyle=v; PROFILE.camTune=null; saveProfile(); buildSettings(); sfx('click'); };   // Z184 camera style + the player's own fine tuning
+      Ca.appendChild(_segChip('ĐIỆN ẢNH',cur==='cine'&&!tuned,()=>pick('cine'),'thấp, thấy xa')); Ca.appendChild(_segChip('CHIẾN THUẬT',cur==='tactical'&&!tuned,()=>pick('tactical'),'cao, toàn cảnh'));
+      if(tuned) Ca.appendChild(_segChip('TUỲ CHỈNH',true,()=>{},'↺ chạm kiểu để đặt lại')); }
+    const P=camParams(), T=CAM_TUNE, tune=(k,v,lim)=>{ const t=PROFILE.camTune||(PROFILE.camTune={}); t[k]=Math.round(Math.max(lim[0], Math.min(lim[1], v))*100)/100; saveProfile(); buildSettings(); sfx('click'); };
+    const stepRow=(id, val, lim, k, fmt, base)=>{ const el=document.getElementById(id); if(!el) return; el.innerHTML='';
+      el.appendChild(_segChip('−', false, ()=>tune(k, val-lim[2], lim)));
+      const v=document.createElement('div'); v.className='seg-chip on seg-val'; v.textContent=fmt(val); el.appendChild(v);
+      el.appendChild(_segChip('+', false, ()=>tune(k, val+lim[2], lim)));
+      const n=document.createElement('div'); n.className='seg-note'; n.textContent=base; el.appendChild(n); };
+    const t=PROFILE.camTune||{};
+    stepRow('setCamPitch', Math.round(P.pitch), T.pitch, 'pitch', v=>Math.round(v)+'°', 'thấp = điện ảnh · cao = nhìn xuống');
+    stepRow('setCamDist', t.distK!=null?t.distK:1, T.distK, 'distK', v=>Math.round(P.d0*v)+' m', 'gần = xe to · xa = thấy rộng');
+    stepRow('setCamFov', Math.round(P.fov), T.fov, 'fov', v=>Math.round(v)+'°', 'rộng = kịch tính hơn');
+    stepRow('setCamAhead', t.aheadK!=null?t.aheadK:1, T.aheadK, 'aheadK', v=>Math.round(P.ahead0*v)+' m', 'xe càng lùi xuống dưới màn'); }
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 export function _setSnd(on, lv){ PROFILE.sound=on; if(lv) PROFILE.sfxVol=lv; saveProfile(); audio(); setMuted(!on); buildSettings(); if(on) sfx('explode'); }   // Z151 a sample blast so you hear the level you picked
