@@ -303,7 +303,7 @@ export function killBoss(now){
   S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1); grantCrewXp(true); econReportRun({ cleared:true });   // Z162 the server pays the stage   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
   celebrate('victory', 0, 0);                                                         // Z140 fireworks, cheering troops — then the next screen
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 5600); }
-  else { setTimeout(()=>{ if(S.mode!=='gameover') openUpgrade(); }, 5400); }
+  else { setTimeout(()=>{ if(S.mode==='playing') openUpgrade(); }, 5400); }   // (Z182 not if the run already ended — e.g. a training that closed itself)
 }
 export function victory(){
   S.mode='victory';

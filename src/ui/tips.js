@@ -1,5 +1,5 @@
 // ui/tips.js — Z94 · FIRST-TIME TIPS — the first time something new happens, a short field note explains it (Z168: a side card, the battle keeps running). Once per lifetime (saved).
-import { MOBILE, PROFILE, S, iconEl, saveProfile, sfx, tapEl } from '../hub.js';
+import { MOBILE, PROFILE, S, TRAIN, iconEl, saveProfile, sfx, tapEl } from '../hub.js';
 
 // ===== Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note explains it. Once per lifetime (saved). =====
 export const TIPS={
@@ -34,7 +34,7 @@ export const TIPQ=[]; export let _tipOpen=null;
 export const TIP_SHOW={ deploy:1, drive2:1, crew2:1, arty:1, atgm:1, core:1, boss:1, shield:1, pow:1, depot:1, rally:1, paradrop:1, allytank:1 };
 export function tip(id){ if(!TIPS[id] || !TIP_SHOW[id]) return; const P=PROFILE.tips||(PROFILE.tips={}); if(P[id] || TIPQ.includes(id) || _tipOpen===id) return; TIPQ.push(id); }
 export const TIP_URGENT={ arty:1, atgm:1, boss:1, shield:1, core:1 }; export let _tipNextAt=0;
-export function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing') return; const nowT=performance.now()/1000;
+export function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing' || TRAIN.on) return; const nowT=performance.now()/1000;
   let qi=TIPQ.findIndex(k=>TIP_URGENT[k]); if(qi<0){ if(nowT<_tipNextAt) return; qi=0; }      // urgent notes jump the queue; the rest wait 6 s of play between them
   const id=TIPQ.splice(qi,1)[0], T=TIPS[id], el=document.getElementById('tipCard'); if(!el) return;
   _tipOpen=id; _tipUntil=nowT+TIP_SECS;   // Z168 no more pausing the battle: a side card that dismisses itself (a pad could never close the old modal → the game looked frozen)

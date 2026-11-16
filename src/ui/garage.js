@@ -1,9 +1,10 @@
 // ui/garage.js — Z155 GARA XE TĂNG: the tank collection. Every model as a studio photo with its real name, origin, mass, engine and what it
 //   changes in battle (armour, top speed, acceleration, turning, size); buy with coins / diamonds, tap an owned one to take it into battle.
-import { PROFILE, S, SHOW, TANK_MODELS, TANK_ORDER, canAfford, econBuy, escapeHtml, hide, refreshStartUI, saveProfile, sfx, shopScene, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
+import { PROFILE, S, SHOW, TANK_MODELS, TANK_ORDER, TRIAL, canAfford, econBuy, escapeHtml, hide, refreshStartUI, saveProfile, sfx, shopScene, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
 
 export function ownedTanks(){ if(!PROFILE.ownedTanks) PROFILE.ownedTanks=['lqt']; if(!PROFILE.ownedTanks.includes('lqt')) PROFILE.ownedTanks.unshift('lqt'); return PROFILE.ownedTanks; }
-export function currentTank(){ const id=PROFILE.tankModel; return TANK_MODELS[id] && ownedTanks().includes(id) ? id : 'lqt'; }
+export function currentTank(){ if(TRIAL.on && TANK_MODELS[TRIAL.tank]) return TRIAL.tank;   // Z182 a training run drives the trial tank
+  const id=PROFILE.tankModel; return TANK_MODELS[id] && ownedTanks().includes(id) ? id : 'lqt'; }
 const pct=v=>Math.round((v-1)*100), sign=v=>(v>=1?'+':'')+pct(v)+'%';
 function bar(label, v, lo, hi, inv){ const k=Math.max(0.05, Math.min(1, (v-lo)/(hi-lo))), good=inv ? v<=1 : v>=1;
   return '<div class="gr-bar"><span>'+label+'</span><i><u style="width:'+(k*100).toFixed(0)+'%" class="'+(good?'up':'dn')+'"></u></i><b class="'+(Math.abs(v-1)<0.005?'':(good?'up':'dn'))+'">'+(Math.abs(v-1)<0.005?'CHUẨN':sign(v))+'</b></div>'; }

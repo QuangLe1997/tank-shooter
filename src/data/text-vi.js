@@ -20,4 +20,19 @@ export const BIOME_PLACE={
   RUINS:{ at:'ROMA · Ý', forts:['PALATINO','FORUM ROMANUM','CASTEL SANT\'ANGELO','OSTIA ANTICA','APPIA ANTICA','TIVOLI','CARACALLA','POMPEII'] },
   ARCTIC:{ at:'NUNAVUT · CANADA', forts:['IQALUIT','RESOLUTE','POND INLET','ARCTIC BAY','GRISE FIORD','CAMBRIDGE BAY','ALERT','EUREKA'] },
 };
+// Z181 one line that sells each battlefield (battle setup hero card)
+export const BIOME_BLURB={
+  DESERT:'Cồn cát bỏng rát dưới bóng kim tự tháp — tầm nhìn xa tít, gần như không có chỗ nấp.',
+  RUINS:'Đế chế đổ nát giữa lòng Roma — cột đá, tường vỡ, giao tranh ở cự li sát sườn.',
+  TUNDRA:'Thảo nguyên băng giá ngoại ô Moskva — đất trơn, gió buốt, quân địch ẩn trong tuyết.',
+  FOUNDRY:'Khu luyện thép Völklingen — lò cao, ống khói và khói xỉ che khuất tầm ngắm.',
+  CITADEL:'Thành luỹ sa thạch xứ Agra — tường cao, cổng sắt, tướng địch cố thủ đến cùng.',
+  MEADOW:'Đồng cỏ cối xay gió Kinderdijk — thoáng đãng, cơ động, đọ pháo tầm xa.',
+  CITY:'Phố thị Sài Gòn — cao ốc, ngã tư chật hẹp, mỗi góc phố là một ổ phục kích.',
+  HILLS:'Dãy đồi Vạn Lý Trường Thành — dốc cao, ai chiếm điểm cao người đó thắng.',
+  VILLAGE:'Làng quê sông nước Bắc Bộ — ruộng lúa, cầu tre, luỹ tre làng che chắn.',
+  SAVANNA:'Xavan khô hạn Tây Phi — cỏ vàng, cây bao báp và những đồn đất nung.',
+  ARCTIC:'Băng nguyên Nunavut — trắng xoá, khe nứt băng, gấu trắng rình rập.',
+};
+export function biomeBlurb(name){ return BIOME_BLURB[name]||''; }
 export function biomePlace(name){ return BIOME_PLACE[name] ? BIOME_PLACE[name].at : ''; }

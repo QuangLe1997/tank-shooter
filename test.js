@@ -888,5 +888,19 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const up=fs.readFileSync('src/loot/upgrades.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8');
   ok(/parkAtSpawn\(\);[^\n]*\n  applyBiome\(S\.stage\)/.test(up) && /export function parkAtSpawn\(\)\{[^]*?p\.pos\.set\(0,0,sz\)[^]*?ALLY_TANKS\.forEach[^]*?clearLadders\(\)/.test(fl), 'next stage: our tank + captured tanks roll back to the clear spawn before the new battlefield is built'); }
 
+// Z181 battle setup shows every battlefield by a real in-game photo + one-line story; UI pro pass stylesheet is loaded last
+{ const fs=await import('node:fs'); const bs=fs.readFileSync('src/ui/battle-setup.js','utf8'), tv=fs.readFileSync('src/data/text-vi.js','utf8'), html=fs.readFileSync('index.html','utf8');
+  const names=['DESERT','RUINS','TUNDRA','FOUNDRY','CITADEL','MEADOW','CITY','HILLS','VILLAGE','SAVANNA','ARCTIC'];
+  ok(/export function mapShot\(b\)\{ return 'assets\/maps\/'\+b\.name\.toLowerCase\(\)\+'\.webp'; \}/.test(bs) && names.every(n=>fs.existsSync('assets/maps/'+n.toLowerCase()+'.webp')), 'every battlefield has its photo (assets/maps/<biome>.webp) and the setup screen uses it');
+  ok(names.every(n=>new RegExp('\\n  '+n+":'[^']{20,}'").test(tv)) && /id="bsShotImg"/.test(html) && /id="bsFacts"/.test(html), 'each battlefield has a one-line story; the hero card shows photo + facts');
+  ok(/<link rel="stylesheet" href="css\/ui152\.css" \/>\n<link rel="stylesheet" href="css\/ui181\.css" \/>/.test(html), 'UI pro pass (options, buttons, item text) loads after every other stylesheet'); }
+// Z182 first-run onboarding: call-up card → guided training in a trial tank with two trial guns → showcase with the way to own them
+{ const fs=await import('node:fs'); const tr=fs.readFileSync('src/ui/training.js','utf8'), ga=fs.readFileSync('src/ui/garage.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), br=fs.readFileSync('src/ui/briefing.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), st=fs.readFileSync('src/game/startup.js','utf8'), mn=fs.readFileSync('src/ui/menus.js','utf8');
+  const steps=(tr.match(/\{ id:'(drive|shoot|rail|dash|skill|crew|tesla)'/g)||[]).length;
+  ok(steps===7 && /TRAIN_REWARD = \{ step:150, finish:450 \}/.test(tr), 'training: 7 guided steps (drive · shoot · railgun · dash · skill · crew · tesla), 7×150 + 450 = 1.500 xu = the cheapest real tank');
+  ok(/if\(TRIAL\.on && TANK_MODELS\[TRIAL\.tank\]\) return TRIAL\.tank;/.test(ga) && /if\(TRIAL\.on\) return \['rifle', \.\.\.TRIAL\.guns\]/.test(fl), 'the trial tank + guns are only lent for the run (ownership untouched)');
+  ok(/if\(TRAIN\.on\)\{ hide\('briefing'\); launchStage\(false\); return; \}/.test(br) && /if\(TRAIN\.on\) trainTick\(gdt, now\);/.test(lp) && /if\(TRAIN\.on\)\{ TRAIN\.on=false; TRIAL\.on=false;/.test(fl), 'training skips contract + troop plan, is watched every frame, and ends cleanly when you leave');
+  ok(/openTrainInvite\(\)/.test(st) && /openTrainInvite\(\)/.test(mn) && /S\.player\.modelId !== currentTank\(\)\)\{ scene\.remove\(S\.player\.mesh\); S\.player=makePlayer\(\); \}/.test(fl), 'a new player gets the call-up card after the call sign; afterwards their own tank rolls back out'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

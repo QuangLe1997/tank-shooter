@@ -121,6 +121,7 @@ export * from './ui/battle-setup.js';
 export * from './ui/padview.js';   // Z125
 export * from './ui/keys.js';
 export * from './ui/guide.js';
+export * from './ui/training.js';   // Z182 first-run onboarding: call-up card · guided training in a trial tank · showcase
 export * from './ui/settings.js';
 export * from './ui/loadout.js';
 export * from './ui/garage.js';   // Z155 tank collection screen

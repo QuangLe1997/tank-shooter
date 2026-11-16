@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml).
-import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, currentTank, hide, levelInfo, openGuide, queueResize, refreshPowerChip, refreshWallet, saveProfile, sfx, show, tankModel } from '../hub.js';
+import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, currentTank, hide, levelInfo, openTrainInvite, queueResize, refreshPowerChip, refreshWallet, saveProfile, sfx, show, tankModel } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -25,7 +25,7 @@ export function refreshStartUI(){
 export function openNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.value=PROFILE.nickname||''; hide('start'); show('nick'); setTimeout(()=>{ try{ inp&&inp.focus(); }catch(e){} }, 60); }
 export function saveNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.blur();   // Z103: tapBtn's touchstart preventDefault keeps focus in the field → body.typing stuck → HUD + touch controls hidden in the match
   let v=((inp&&inp.value)||'').trim().slice(0,16) || 'CHỈ HUY';
-  PROFILE.nickname=v; saveProfile(); hide('nick'); if(!PROFILE.onboarded){ openGuide(); } else if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
+  PROFILE.nickname=v; saveProfile(); hide('nick'); if(!PROFILE.onboarded){ openTrainInvite(); } else if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
 tapBtn('nickSave', saveNick);
 { const inp=document.getElementById('nickInput'); if(inp){ inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); saveNick(); } });
     if(MOBILE){ inp.addEventListener('focus', ()=>{ document.body.classList.add('typing'); window.__syncAppSize&&window.__syncAppSize(); });     // Z97 keyboard up → compact card above it

@@ -1,9 +1,10 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { TROOPS } from '../../config.js';
-import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildObjective, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFireteam, clearHeliDown, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
+  if(TRIAL.on) return ['rifle', ...TRIAL.guns].filter(k=>GUNS[k]).map(id=>({ id, ammo:GUNS[id].mag, rU:0, rD:0 }));   // Z182 training: your gun + the two on trial
   let ld=(PROFILE.loadout&&PROFILE.loadout.length?PROFILE.loadout:['rifle']).filter(k=>GUNS[k]).slice(0,LOADOUT_MAX);
   if(!ld.length) ld=['rifle'];
   return ld.map(id=>({ id, ammo:GUNS[id].mag, rU:0, rD:0 }));   // your chosen ≤5 weapons, full mags
@@ -26,6 +27,7 @@ export function startGame(arg){
   if(S.player && S.player.modelId !== currentTank()){ scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
   S.player = S.player || makePlayer();
   clearRelic();                          // Z154 a new run: no relic power carried over
+  if(TRAIN.on){ TRAIN.t0=0; TRAIN.lastPos=null; TRAIN.finished=false; }   // Z182 RESTART inside the training: the current step starts over
   buildCore(stStage);                    // monument matching the (resumed) stage
   const p=S.player;
   p.maxHp=100; p.hp=100; p.lives=5; p.fireAt=0; p.weaponLvl=0;
@@ -78,11 +80,13 @@ export function togglePause(){
 }
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
+  if(TRAIN.on){ TRAIN.on=false; TRIAL.on=false; PROFILE.onboarded=true; const tc=document.getElementById('trainCard'); if(tc) tc.classList.remove('on'); }   // Z182 leaving a training run ends it
   S.firing=false; try{ econReportRun({ cleared:false }); }catch(e){}   // Z162 what this run earned is reported
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearArtillery(); clearPickups(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearParadrops(); clearAllyOrdnance();
   if(boss){ scene.remove(boss.mesh); clearBossFight(); __set_boss(null); }
+  if(S.player && S.player.modelId !== currentTank()){ scene.remove(S.player.mesh); S.player=makePlayer(); }   // Z182 a trial tank goes back to the depot, yours rolls out
   if(S.player){ S.player.pos.set(0,0,ARENA*0.55); S.player.vel.set(0,0,0); S.player.mesh.position.set(0,0,ARENA*0.55); S.player.mesh.visible=true; }   // park at spawn for a clean home
   document.body.classList.remove('corelow','shopopen'); __set__alarmAt(0);
   S.mode='start';

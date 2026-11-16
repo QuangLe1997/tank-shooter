@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, GUNS, PROFILE, S, SPELLS, TOD_LABEL, WAVE, barrelGrade, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage } from '../hub.js';
+import { BIOME, GUNS, PROFILE, S, SPELLS, TOD_LABEL, TRAIN, WAVE, barrelGrade, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -28,6 +28,7 @@ export function openBriefing(opts){
   }
   pickContract(pick.find(c=>c.id===PROFILE.lastContract) || pick.find(c=>c.id==='steady'), true);   // Z152 one is always chosen — XUẤT KÍCH works straight away
   show('briefing'); sfx('powerup');
+  if(TRAIN.on){ hide('briefing'); launchStage(false); return; }   // Z182 a training run: no contract, no troop plan — straight to the countdown
   requestAnimationFrame(()=>{ const go=document.getElementById('brGo'); if(go && typeof setFocus==='function' && document.body.classList.contains('pad')) setFocus(go, true); });
 }
 export let _brPick=null;

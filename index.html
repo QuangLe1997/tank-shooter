@@ -43,6 +43,7 @@
 <link rel="stylesheet" href="css/deploy.css" />
 <link rel="stylesheet" href="css/setup.css" />
 <link rel="stylesheet" href="css/ui152.css" />
+<link rel="stylesheet" href="css/ui181.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
@@ -119,6 +120,7 @@
 <div id="vignette"></div>
 <div id="corealarm"></div>
 <div id="popups"></div>
+<div id="trainCard" aria-live="polite"></div>
 <div id="coach"></div>
 <div id="tipCard" class="hidden"><div class="tc-box"><i class="tc-bar"></i><div class="tc-head"><span class="tc-ic"></span><div><div class="tc-kick">HƯỚNG DẪN · LẦN ĐẦU</div><div class="tc-ttl"></div></div></div><div class="tc-body"></div><div class="tc-foot"><span class="tc-n"></span><div class="tc-ok" id="tipOk">ĐÃ HIỂU ▶</div></div></div></div>
 
@@ -194,7 +196,32 @@
   <div class="title" style="font-size:clamp(26px,6vw,46px)">HƯỚNG DẪN</div>
   <div class="subtitle">Cẩm nang chiến trường, Chỉ huy — 30 giây để nắm vững</div>
   <div class="guide" id="guideBody"></div>
-  <div class="btn btn-primary" id="guideDone" style="margin-top:10px">ĐÃ HIỂU ▶</div>
+  <div class="guide-act"><div class="btn" id="guideTrain">VÀO TRẬN HUẤN LUYỆN</div><div class="btn btn-primary" id="guideDone">ĐÃ HIỂU ▶</div></div>
+</div>
+
+<!-- Z182 CALL-UP — first launch: a guided training battle in a trial super-tank with two VIP-class guns -->
+<div class="overlay hidden" id="trainInvite">
+  <div class="ti-wrap">
+    <div class="ti-kick">ĐẠI ĐỘI THÉP 7 · LỆNH NHẬP NGŨ</div>
+    <div class="ti-ttl">CHÀO MỪNG, <b id="tiNick">CHỈ HUY</b></div>
+    <div class="ti-sub">Trận huấn luyện 3 phút — cầm lái siêu tăng thế hệ mới và hai vũ khí hạng nặng. Miễn phí, không cần mua.</div>
+    <div class="ti-show" id="tiShow"></div>
+    <ol class="ti-steps" id="tiSteps"></ol>
+    <div class="ti-act"><div class="btn btn-mini" id="tiSkip"><span>BỎ QUA</span></div><div class="btn btn-primary" id="tiGo">BẮT ĐẦU HUẤN LUYỆN ▶</div></div>
+    <div class="ti-gift" id="tiGift"></div>
+  </div>
+</div>
+
+<!-- Z182 TRAINING DONE — what you just drove, and how to own it -->
+<div class="overlay hidden" id="trialShow">
+  <div class="ts-wrap">
+    <div class="ti-kick">HUẤN LUYỆN HOÀN TẤT</div>
+    <div class="ti-ttl">BẠN ĐÃ SẴN SÀNG, <b>CHỈ HUY</b></div>
+    <div class="ts-stats" id="tsStats"></div>
+    <div class="ts-h">ĐỒ BẠN VỪA DÙNG THỬ</div>
+    <div class="ts-gear" id="tsGear"></div>
+    <div class="ti-act"><div class="btn btn-mini" id="tsHome"><span>VỀ MENU</span></div><div class="btn btn-primary" id="tsCampaign">VÀO CHIẾN DỊCH ▶</div></div>
+  </div>
 </div>
 
 <!-- SETTINGS — difficulty · audio · quality -->
@@ -280,18 +307,30 @@
 
 <!-- Z107 BATTLE SETUP: campaign ladder (rising difficulty, unlock in order) · custom battle (map · hour · weather · space · enemy level) -->
 <div class="overlay hidden" id="battleSetup">
+  <div class="bs-bg" aria-hidden="true"><img id="bsBgA" alt="" /><img id="bsBgB" alt="" /></div>
   <div class="bs-top">
     <div class="btn btn-mini bs-back" id="bsBack"><span>◀ QUAY LẠI</span></div>
     <div class="bs-ttl">CHUẨN BỊ TRẬN</div>
     <div class="bs-modes"><div class="bs-mode on" data-m="campaign">CHIẾN DỊCH<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom">TỰ CHỌN<small>bản đồ · thời tiết</small></div></div>
   </div>
-  <div class="bs-body" id="bsCampaign"><div class="bs-hint">Độ khó tăng dần — thắng một cấp để mở cấp tiếp theo</div><div class="bs-ladder" id="bsLadder"></div></div>
-  <div class="bs-body hidden" id="bsCustom">
-    <div class="bs-row"><div class="bs-lbl">BẢN ĐỒ</div><div class="bs-opts maps" id="bsMap"></div></div>
-    <div class="bs-row"><div class="bs-lbl">THỜI GIAN</div><div class="bs-opts" id="bsTod"></div></div>
-    <div class="bs-row"><div class="bs-lbl">THỜI TIẾT</div><div class="bs-opts" id="bsWx"></div></div>
-    <div class="bs-row"><div class="bs-lbl">KHÔNG GIAN</div><div class="bs-opts" id="bsSpace"></div></div>
-    <div class="bs-row"><div class="bs-lbl">CẤP ĐỊCH</div><div class="bs-opts" id="bsLvl"></div></div>
+  <div class="bs-main">
+    <div class="bs-hero" id="bsHero">
+      <div class="bs-shot" id="bsShot"><img id="bsShotImg" alt="" /><i class="bs-fx-tod"></i><i class="bs-fx-wx"></i>
+        <div class="bs-cap"><div class="bs-kick" id="bsKick"></div><div class="bs-name" id="bsName"></div><div class="bs-place" id="bsPlace"></div><div class="bs-blurb" id="bsBlurb"></div></div>
+        <div class="bs-badges" id="bsBadges"></div>
+      </div>
+      <div class="bs-facts" id="bsFacts"></div>
+    </div>
+    <div class="bs-side">
+      <div class="bs-body" id="bsCampaign"><div class="bs-hint">Độ khó tăng dần — thắng một cấp để mở cấp tiếp theo</div><div class="bs-ladder" id="bsLadder"></div></div>
+      <div class="bs-body hidden" id="bsCustom">
+        <div class="bs-grp"><div class="bs-lbl">CHIẾN TRƯỜNG</div><div class="bs-opts maps" id="bsMap"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">THỜI GIAN</div><div class="bs-opts" id="bsTod"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">THỜI TIẾT</div><div class="bs-opts" id="bsWx"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">KHÔNG GIAN</div><div class="bs-opts" id="bsSpace"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">CẤP ĐỊCH</div><div class="bs-opts" id="bsLvl"></div></div>
+      </div>
+    </div>
   </div>
   <div class="bs-foot"><div class="bs-sum" id="bsSum"></div><div class="btn btn-primary bs-go" id="bsGo">VÀO TRẬN ▶</div></div>
 </div>
