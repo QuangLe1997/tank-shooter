@@ -1,5 +1,5 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
-import { BIOME, MOBILE, S, burst, decalCrater, decalDirt, decalScorch, fireball, haptic, muzzleLight, ringPulse, sfx, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
+import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, sfx, shockDome, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 export function bigExplode(pos, color, scale=1.5){
@@ -52,6 +52,10 @@ export function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire')
   burst(pos, cf.spark, Math.floor(14*scale), 18*scale, {life:0.38, size:0.4*scale, up:3, grav:-9, drag:1.3});  // sparks blast out & clear fast
   if(sM>0.05) burst(pos, 0x16110a, Math.floor(5*sM*scale), 5*scale, {life:0.5, size:2.0*scale, up:4, grav:-1.4, drag:2.2, smoke:true, op:0.42}); // light smoke
   ringPulse(pos, cf.r1, scale*2.2); ringPulse(pos, cf.r2, scale*4.0);                                          // shockwave (themed tint)
+  shockDome(pos.x, pos.z, 3.5+scale*3.2, fx==='ice'?0xbfeaff:fx==='shock'?0x9fd8ff:0xffd8a0); blastLight(pos.x, pos.z, 70+scale*25, 0.55+scale*0.12);   // Z189 shock dome + the ground lit by the blast
+  if(fM>0.05){ const gy=heightAt(pos.x,pos.z); for(let i=0;i<Math.round((MOBILE?4:8)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*1.2*scale, gy+1.2+Math.random()*scale, pos.z+(Math.random()-0.5)*1.2*scale, (Math.random()-0.5)*1.4, 7+Math.random()*7, (Math.random()-0.5)*1.4, { tex:'fire', color:0xfff0c0, color2:0xb8260a, size:(1.6+Math.random())*scale, life:0.7+Math.random()*0.4, grav:4, drag:1.4, grow:1.4*scale });   // a column of fire punching up
+    setTimeout(()=>{ if(S.mode==='paused') return; for(let i=0;i<Math.round((MOBILE?3:6)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*2*scale, gy+6*scale+Math.random()*2, pos.z+(Math.random()-0.5)*2*scale, (Math.random()-0.5)*3, 1.2+Math.random(), (Math.random()-0.5)*3, { color:0x1a1410, size:(2.4+Math.random())*scale, life:3.2, smoke:true, grav:0.1, drag:0.7, grow:3*scale, op:0.6 }); }, 280); }   // … capped by a rolling black mushroom
+  { const p=S.player; if(p){ const d=Math.hypot(p.pos.x-pos.x, p.pos.z-pos.z); if(d<40 && gradePass.uniforms.flash) gradePass.uniforms.flash.value=Math.min(0.3, gradePass.uniforms.flash.value+0.22*(1-d/40)*Math.min(1.5,scale/1.5)); } }
   // themed extra: frozen shards rain / electric arcs / shrapnel
   if(cf.extra==='ice'){ for(let i=0;i<Math.floor(10*scale);i++){ const a=Math.random()*6.283, sp=4+Math.random()*9; spawnPart(pos.x,1.6,pos.z, Math.cos(a)*sp, 5+Math.random()*6, Math.sin(a)*sp, {color: Math.random()<0.5?0xd8f6ff:0x7fd0ff, size:(0.4+Math.random()*0.5)*scale, life:0.6+Math.random()*0.4, grav:14, drag:1.2}); } ringPulse(pos, 0xffffff, scale*2.8); }
   else if(cf.extra==='shock'){ for(let i=0;i<Math.floor(9*scale);i++){ const a=Math.random()*6.283, sp=8+Math.random()*10; spawnPart(pos.x,1.5,pos.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {color:0xbfe8ff, size:(0.4+Math.random()*0.4)*scale, life:0.18+Math.random()*0.14, grav:0, drag:4}); } }

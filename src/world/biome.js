@@ -1,7 +1,7 @@
 // world/biome.js — Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter,
 // decor, arms-doctrine env) + the initial menu-backdrop dressing that runs at boot.
 import { SPACE, CAMPAIGN } from '../../config.js';
-import { BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, GRIME, MACRO, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyWeather, buildFloodlights, buildHighland, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, ring, rockSet, todFor } from '../hub.js';
+import { BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, GRIME, MACRO, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, ring, rockSet, todFor } from '../hub.js';
 
 export function applyBiome(stage){
   const R = S.run || { mode:'campaign' }, custom = R.mode==='custom';                // Z107 CUSTOM battle: your map · hour · weather · space
@@ -17,6 +17,7 @@ export function applyBiome(stage){
   if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.deco==='grass' ? 0x6e5a3c : BIOME.ground);   /* Z147 on grass the tracks throw up brown mud, not green */ GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield
   ring.material.color.setHex(BIOME.accent);
   buildPerimeter(BIOME);   // jersey barriers + concertina wire
+  buildHorizon(BIOME);     // Z189 distant ranges, smoke columns, flashes on the horizon
   computeEnv();            // ARMS DOCTRINE battlefield conditions (night / heat / frost / urban / open)
   if(!custom){ const nb=BIOMES[Math.min(stage, CAMPAIGN_BIOMES-1)]; if(nb!==BIOME && typeof idle==='function') idle(()=>{ groundMaps(nb); rockSet(nb.name); }); }   // prepare the next stage's battlefield while you fight
   buildTerrainDecor(BIOME);
@@ -25,4 +26,4 @@ export function applyBiome(stage){
 performance.mark('boot:ground');
 genTerrain(BIOME); buildTerrainDecor(BIOME); buildHighland(BIOME);   // initial dressing for the menu backdrop (Z106 + highland rocks)
 performance.mark('boot:decor');
-buildFloodlights(); S.tod='day'; applyAtmosphere(BIOME); decalReset(BIOME);
+buildFloodlights(); S.tod='day'; applyAtmosphere(BIOME); decalReset(BIOME); buildHorizon(BIOME);

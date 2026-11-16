@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { LOOT } from '../../config.js';
-import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
+import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, playerHitFX, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -16,6 +16,7 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
   sfx('hurt');
   burst(p.pos, 0xff5040, 8, 9, {life:0.28, size:1.0, up:3, drag:5}); ringPulse(p.pos, 0xff4632, 1.6);
   addPlayerBurn(dx, dz);                      // a flaming hit-mark on the hull where it was struck (rides with the tank)
+  playerHitFX(p, dx, dz, dmg);                // Z189 sparks + shards off the struck side, a red marker pointing at the shooter
   const v=document.getElementById('vignette'); v.style.opacity='1'; setTimeout(()=>v.style.opacity='0', 170);
   updateHUD();
   if(p.hp<=0) playerDie(now);

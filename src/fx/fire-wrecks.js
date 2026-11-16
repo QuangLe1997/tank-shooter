@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TANK_DEATH } from '../../config.js';
-import { BIOME, MOBILE, PL_SMOKE, _R, _canvasTex, _tankGeo, burst, decalCrater, heightAt, makePartLayer, panelTex, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PL_SMOKE, _R, _canvasTex, _tankGeo, burst, decalCrater, fireLight, heightAt, makePartLayer, panelTex, scene, sfx, spawnPart } from '../hub.js';
 
 // ----------------------------- REAL FIRE / FLASH / WRECKS -----------------------------
 export function fireTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');   // billowing flame puff: hot core, ragged licks, soft edge
@@ -39,7 +39,7 @@ export function spawnWreck(pos, facing, ms, pal, toss){
     tx:pos.x, ty:1.75*ms, tz:pos.z, tvx:0, tvy:0, tvz:0, rx:0, ry:0, rz:0, flying:!!toss, fireT:0, smokeT:0 };
   if(toss){ const a=Math.random()*6.283, sp=(3+Math.random()*6); w.tvx=Math.cos(a)*sp; w.tvz=Math.sin(a)*sp; w.tvy=13+Math.random()*7; w.rx=(Math.random()-0.5)*9; w.ry=(Math.random()-0.5)*7; w.rz=(Math.random()-0.5)*9; }   // magazine detonation throws the turret skyward
   tur.position.set(w.tx,w.ty,w.tz); tur.rotation.y=(facing||0)+(toss?0:(Math.random()-0.5)*0.8);
-  WRECKS.push(w);
+  if(MOBILE) w.life*=0.55; WRECKS.push(w); fireLight(w, w.life*0.7);   // Z189 the burning hulk lights the ground around it
 }
 export function updateWrecks(dt){
   for(let i=WRECKS.length-1;i>=0;i--){ const w=WRECKS[i]; w.t+=dt; const k=w.t/w.life;
@@ -52,8 +52,8 @@ export function updateWrecks(dt){
     const burn = w.t < w.life*0.7 ? 1 - w.t/(w.life*0.7) : 0;
     w.fireT-=dt; if(burn>0 && w.fireT<=0){ w.fireT=0.05+(1-burn)*0.12; const ox=(Math.random()-0.5)*2.2*w.ms, oz=(Math.random()-0.5)*3*w.ms;   // flames licking out of the hull hatches
       spawnPart(w.x+ox, 1.3*w.ms, w.z+oz, (Math.random()-0.5)*0.8, 2.4+Math.random()*2, (Math.random()-0.5)*0.8, {tex:'fire', color:0xffd090, color2:0xff3a08, size:(1.1+Math.random()*1.1)*w.ms*(0.5+burn*0.6), life:0.55+Math.random()*0.3, grav:1.5, drag:1.6, grow:0.6}); }
-    w.smokeT-=dt; if(w.t<w.life*0.9 && w.smokeT<=0){ w.smokeT=0.09; spawnPart(w.x+(Math.random()-0.5)*1.5, 2*w.ms, w.z+(Math.random()-0.5)*1.5, 0.9+(Math.random()-0.5)*0.6, 2.2+Math.random()*1.2, 0.5+(Math.random()-0.5)*0.6,
-        {color: burn>0.3?0x14110e:0x3a3632, size:(1.6+Math.random())*w.ms, life:2.6, smoke:true, grav:0.4, drag:0.6, grow:2.2*w.ms, op:0.55}); }   // black column → grey as it dies, drifting downwind
+    w.smokeT-=dt; if(w.t<w.life*0.9 && w.smokeT<=0){ w.smokeT=MOBILE?0.16:0.08; spawnPart(w.x+(Math.random()-0.5)*1.5, 2*w.ms, w.z+(Math.random()-0.5)*1.5, 0.9+(Math.random()-0.5)*0.6, 3.2+Math.random()*1.6, 0.5+(Math.random()-0.5)*0.6,
+        {color: burn>0.3?0x14110e:0x3a3632, size:(1.8+Math.random())*w.ms, life:MOBILE?3.4:5.2, smoke:true, grav:0.25, drag:0.45, grow:3.2*w.ms, op:0.58}); }   // Z189 a tall column you can see across the field   // black column → grey as it dies, drifting downwind
     if(k>0.8){ const f=(1-k)/0.2; w.mat.opacity=Math.max(0,f); w.hull.position.y=heightAt(w.x,w.z)-(1-f)*0.6*w.ms; }
     if(w.t>=w.life){ scene.remove(w.hull); scene.remove(w.tur); w.mat.dispose(); WRECKS.splice(i,1); } }
 }

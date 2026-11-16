@@ -27,6 +27,7 @@ export * from './world/perimeter.js';
 export * from './world/decor.js';
 export * from './world/physics.js';
 export * from './world/lava.js';   // Z187 volcanic caldera lava pools (runtime only)
+export * from './world/horizon.js';   // Z189 the world beyond the fence
 export * from './world/biome.js';
 export * from './world/cover.js';
 export * from './world/ridges.js';
@@ -91,6 +92,7 @@ export * from './fx/dying.js';
 export * from './campaign/waves.js';
 export * from './campaign/boss.js';
 export * from './campaign/boss-new.js';   // Z161 the three new generals' weapons
+export * from './fx/cinematic.js';   // Z189 shock domes, fire light, our tank's hit / damage FX
 export * from './fx/explosions.js';
 export * from './fx/gunfx.js';   // Z149 per-class muzzle fx, lightning / rail beams, ricochets
 export * from './fx/debris.js';

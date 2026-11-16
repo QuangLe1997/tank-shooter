@@ -439,7 +439,7 @@ export const KEYS_HELP = [
 //   tactical: the old high overview. off = camera offset from the look point [x, up, back] (phone: offM) · ahead = how far in front of the tank it looks ·
 //   lookY = height it aims at · fov + speedFov = the lens widens a little at full speed
 export const CAM_STYLE = {
-  cine:     { off:[0,11,17],  offM:[0,9.8,15.5],  ahead:12, aheadM:8, lookY:3,   fov:58, speedFov:4 },
+  cine:     { off:[0,9.4,18.2], offM:[0,8.6,16.2], ahead:9.5, aheadM:6.5, lookY:3.4, fov:58, speedFov:4 },   // Z189 ~27°: a strip of horizon at the top of the frame
   tactical: { off:[0,28,23],  offM:[0,18,14.5],   ahead:0,  aheadM:0, lookY:1,   fov:54, speedFov:0 },
 };
 // Z184 player camera tuning (CÀI ĐẶT → GÓC MÁY): pitch in degrees, distance and look-ahead as × of the style, field of view in degrees
@@ -480,7 +480,7 @@ export const HARD = { boulder:150, hedgehog:110, oneShot:90, shardR:3.6, shardDm
 export const GORE = { splats:[160,70], chunks:[64,28], splatLife:24, fade:6, chunkLife:2.4, speed:[12,27], up:[4,11], cone:0.9, color:0x7a0a0a, alpha:0.82 };
 // Z112 KNOCKED-OUT TANKS by the killing gun (seconds of fire before the magazine goes): heavy shells blow them at once, small arms let them burn a moment
 export const TANK_BLAST = { r:4.2, dmg:70, edge:0.25 };   // Z113 a tank's magazine going up kills men within r × tank scale (edge = damage share at the rim) — theirs and ours
-export const TANK_DEATH = { blast:[0.1,0.22], pierce:[0.25,0.4], ice:[0.05,0.1], shock:[0.35,0.5], frag:[0.4,0.55], spark:[0.5,0.7], fire:[0.45,0.65], wreck:[1.9,2.5] };
+export const TANK_DEATH = { blast:[0.1,0.22], pierce:[0.25,0.4], ice:[0.05,0.1], shock:[0.35,0.5], frag:[0.4,0.55], spark:[0.5,0.7], fire:[0.45,0.65], wreck:[9,13] };   // Z189 wrecks burn for a while: the field fills with burning hulks and smoke columns
 // Z115 GUN PARTS (linh kiện súng) — pickups that upgrade a gun FOR GOOD, per gun, stacking up to `max` levels each:
 //   barrel = NÒNG TINH CHẾ (+dmg, +range) · action = KHOÁ NÒNG (faster fire + reload) · mag = BĂNG ĐẠN MỞ RỘNG (+rounds)
 //   They fit the gun in your hands; if it is maxed they go to another carried gun, else they pay coins. Rare from tough kills, one per fortress taken.

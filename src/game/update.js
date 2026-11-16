@@ -168,7 +168,7 @@ export function updateTankRigs(dt){
 }
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
-export const camOff = new THREE.Vector3(0, MOBILE?9.8:11, MOBILE?15.5:17);   // base offset; S.zoom scales it, S.camYaw rotates it (player camera controls) · Z184 set from the chosen CAM_STYLE every frame
+export const camOff = new THREE.Vector3(0, MOBILE?8.6:9.4, MOBILE?16.2:18.2);   // base offset; S.zoom scales it, S.camYaw rotates it (player camera controls) · Z184 set from the chosen CAM_STYLE every frame
 export function camStyle(){ let k; try{ k=PROFILE.camStyle; }catch(e){} return CAM_STYLE[k] || CAM_STYLE.cine; }   // (the boot backdrop frames run before the profile module is evaluated)
 // Z184 the camera the player gets: the style, then their own tuning on top (pitch°, distance ×, field of view°, look-ahead ×)
 export function camParams(){ const C=camStyle(), o=MOBILE?C.offM:C.off; let t=null; try{ t=PROFILE.camTune; }catch(e){}

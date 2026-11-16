@@ -493,7 +493,7 @@ ok(RIDER.cap >= 12 && RIDER.base + 3*RIDER.perUp <= RIDER.cap, 'Z111b 12 seats o
 ok(INFANTRY.vsArmour > 0 && INFANTRY.vsArmour <= 0.35, 'Z111b rifle rounds barely scratch a tank');
 ok(FORT.posture.holdK > 0 && FORT.gate.exitMax > 0 && LOOT.siege.mul > 1, 'Z111b fortress posture / gate / siege-rounds tuning present');
 ok(HARD.boulder/(60*DMG_TYPE.AP.struct) > 2 && HARD.boulder/(60*DMG_TYPE.AP.struct) <= 3 && 95*DMG_TYPE.AP.struct >= HARD.oneShot, 'Z112 a boulder takes 3 cannon shells, one railgun slug');
-ok(TANK_DEATH.blast[1] < TANK_DEATH.spark[0] && TANK_DEATH.wreck[1] <= 3, 'Z112 heavy shells blow a tank at once; wrecks clear fast');
+ok(TANK_DEATH.blast[1] < TANK_DEATH.spark[0] && TANK_DEATH.wreck[0] >= 6 && TANK_DEATH.wreck[1] <= 15, 'Z112 heavy shells blow a tank at once · Z189 wrecks burn on for 9–13 s (capped count keeps it cheap)');
 ok(GUN_MODS.max===5 && (1+GUN_MODS.max*GUN_MODS.barrel.dmg) <= 1.35 && (1-GUN_MODS.max*GUN_MODS.action.fire) >= 0.7 && GUN_MODS.mag.mag*GUN_MODS.max <= 0.6, 'Z115 gun parts cap at +30% dmg, −25% fire gap, +60% magazine');
 ok(HIJACK.hp>0 && HIJACK.hp<0.5 && HIJACK.window>=10 && HIJACK.types.includes('launcher') && ENEMY_DEFS.launcher && ENEMY_DEFS.launcher.truck, 'Z116 abandoned vehicles can be hijacked; the rocket truck exists');
 ok(HARD.hits===3 && HARD.lightHits>HARD.hits && GORE.speed[1]>GORE.speed[0] && DRIVE.screenReverse===true && DRIVE.reverseKeep<DRIVE.reverseAngle, 'Z121 rocks break in 3 shots; gore tuning present; tank reverses straight');
@@ -909,7 +909,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z184 camera: a low cinematic chase view by default (old high view kept as CHIẾN THUẬT) + the player's own pitch / distance / FOV / look-ahead
 { const fs=await import('node:fs'); const cf=fs.readFileSync('config.js','utf8'), up=fs.readFileSync('src/game/update.js','utf8'), st=fs.readFileSync('src/ui/settings.js','utf8');
-  ok(/cine:     \{ off:\[0,11,17\]/.test(cf) && /tactical: \{ off:\[0,28,23\]/.test(cf) && /export const CAM_TUNE = \{ pitch:\[16,72,4\]/.test(cf), 'two camera styles + tuning ranges');
+  ok(/cine:     \{ off:\[0,9\.4,18\.2\]/.test(cf) && /tactical: \{ off:\[0,28,23\]/.test(cf) && /export const CAM_TUNE = \{ pitch:\[16,72,4\]/.test(cf), 'two camera styles + tuning ranges');
   ok(/export function camParams\(\)/.test(up) && /camOff\.set\(0, P\.dist\*Math\.sin\(r\), P\.dist\*Math\.cos\(r\)\)/.test(up) && /try\{ k=PROFILE\.camStyle; \}catch\(e\)\{\}/.test(up), 'the camera is built from pitch + distance, safe before the profile loads');
   ok(['setCamPitch','setCamDist','setCamFov','setCamAhead'].every(id=>st.includes("'"+id+"'")), 'settings: pitch, distance, field of view and look-ahead steppers'); }
 // Z185 smarter enemy tanks: dodge your shells, weave in a fight, rush you while you reload, fire telegraphed volleys
@@ -937,6 +937,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function tickArtLock\(zone, k, fly, now, dt, tLeft\)/.test(a) && /'PHÁO KÍCH'/.test(a) && /u\.shadow\.material\.opacity/.test(a) && /sfx\('whistle'\)/.test(a), 'artillery zone: closing chevrons, countdown arc + seconds label, shell shadow, falling whistle');
   ok(/export function updateLockWarn\(dt, now\)/.test(m) && /BỊ KHOÁ/.test(m) && /updateLockWarn\(gdt, now\)/.test(lp) && /case 'lockwarn'/.test(sy), 'guided missile → red brackets + BỊ KHOÁ round your tank, beeping faster as it closes');
   ok(/◆ KHOÁ/.test(l) && /dgrp/.test(l), 'our missile lock: dashed ring + KHOÁ label once the brackets snap'); }
+
+// Z189 cinematic upgrade: the horizon (ranges per battlefield, smoke columns, flashes, jets), a lower chase camera that shows it, rim-lit shock domes,
+//   real fire light, long-burning wrecks with tall smoke columns, sparks + a direction marker when we are hit, smoke / fire as our tank is wrecked
+{ const fs=await import('node:fs'); const h=fs.readFileSync('src/world/horizon.js','utf8'), c=fs.readFileSync('src/fx/cinematic.js','utf8'), ex=fs.readFileSync('src/fx/explosions.js','utf8'), pd=fs.readFileSync('src/game/player-damage.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
+  const names=['DESERT','RUINS','TUNDRA','FOUNDRY','CITADEL','MEADOW','CITY','HILLS','VILLAGE','SAVANNA','ARCTIC','STEELMILL','VOLCANO','QUARRY'];
+  ok(names.every(n=>new RegExp('\\b'+n+':\\[0x').test(h)) && /export function buildHorizon\(b\)/.test(h) && /launchJets/.test(h) && /buildHorizon\(BIOME\)/.test(bi) && /updateHorizon\(dt, now\)/.test(lp), 'every battlefield has distant ranges, war smoke on the horizon, flashes and jet flyovers');
+  ok(/pow\(f,3\.0\)/.test(c) && /shockDome\(pos\.x, pos\.z/.test(ex) && /blastLight\(pos\.x, pos\.z/.test(ex) && /fireLight\(w, w\.life\*0\.7\)/.test(fs.readFileSync('src/fx/fire-wrecks.js','utf8')), 'tank kills: rim-lit shock dome, the ground lit by the blast, burning hulks light their surroundings');
+  ok(/playerHitFX\(p, dx, dz, dmg\)/.test(pd) && /function hitMarker/.test(c) && /f<0\.25\?0x14110e:0x6a645c/.test(c), 'our tank hit: sparks + shards off the struck side, a red direction marker, smoke grey then black + fire as it is wrecked'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
