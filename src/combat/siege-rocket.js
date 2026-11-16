@@ -42,6 +42,8 @@ export function makeArtMissileMesh(){
   for(let k=0;k<4;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.66,0.52,0.07), new THREE.MeshStandardMaterial({color:0x15171a,metalness:0.6,roughness:0.5})); fin.position.y=-0.96; fin.rotation.y=k*1.5708; g.add(fin); }
   const plume=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff7a1c,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); plume.scale.setScalar(2.5); plume.position.y=-1.55; g.add(plume); g._plume=plume;
   const core=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe06a,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); core.scale.setScalar(1.25); core.position.y=-1.42; g.add(core);
+  const tongue=new THREE.Mesh(new THREE.ConeGeometry(0.34,3.2,12,1,true), new THREE.MeshBasicMaterial({ color:0xffa040, transparent:true, opacity:0.75, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); tongue.rotation.x=Math.PI; tongue.position.y=-2.95; g.add(tongue); g._tongue=tongue;   // Z188 a long flame tongue
+  const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff5a1a,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending,depthWrite:false})); halo.scale.setScalar(5.5); halo.position.y=-1.2; g.add(halo);   // the glow it throws around itself
   g.scale.setScalar(1.15); return g;
 }
 export const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();

@@ -4,7 +4,7 @@ import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
 import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, S, UGRID, _hot, addTrail, armorOf, blocks, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, ricochet, riders, ringPulse, scene, sfx, siegeMul, soldiers, spawnPart, structMul, suppress, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
-export const lockFX=[];                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
+export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
 export function _lockMat(){ return new THREE.MeshBasicMaterial({color:0xff7a2e, transparent:true, opacity:0.92, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}); }
 for(let i=0;i<8;i++){
   const grp=new THREE.Group(), bgrp=new THREE.Group(), rgrp=new THREE.Group(), hgrp=new THREE.Group();
@@ -15,8 +15,12 @@ for(let i=0;i<8;i++){
     bgrp.add(h,v); }
   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.2,0.035,8,44), _lockMat()); ring.rotation.x=Math.PI/2; rgrp.add(ring);
   const hex=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.05,6,6), _lockMat());     hex.rotation.x=Math.PI/2; hgrp.add(hex);
-  grp.add(bgrp,rgrp,hgrp); grp.visible=false; grp.renderOrder=6; scene.add(grp);
-  lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, life:0, max:0.55, snap:0});
+  const dgrp=new THREE.Group(); for(let k=0;k<8;k++){ const d=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.06,0.09), _lockMat()); const a=k*Math.PI/4; d.position.set(Math.cos(a)*2.15,0,Math.sin(a)*2.15); d.rotation.y=-a+Math.PI/2; dgrp.add(d); }   // Z188 dashed outer ring
+  grp.add(bgrp,rgrp,hgrp,dgrp); grp.visible=false; grp.renderOrder=6; scene.add(grp);
+  if(!_lockLabel) _lockLabel=(()=>{ const c=document.createElement('canvas'); c.width=160; c.height=48; const x=c.getContext('2d'); x.fillStyle='rgba(30,8,0,0.7)'; x.beginPath(); x.roundRect(4,4,152,40,8); x.fill(); x.strokeStyle='#ff8a3a'; x.lineWidth=2.5; x.stroke();
+    x.font='800 26px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#ffd27a'; x.fillText('◆ KHOÁ', 80, 25); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({ map:_lockLabel, transparent:true, depthTest:false, depthWrite:false })); lab.scale.set(2.4,0.72,1); lab.position.set(0,2.4,0); grp.add(lab);
+  lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, dgrp, lab, life:0, max:0.55, snap:0});
 }
 export function targetAlive(t){ return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }   // dead targets splice out of enemies[]
 export function acquireLock(b){ let best=null, bd=1e9;                                     // nearest live enemy/boss to the missile itself
@@ -34,7 +38,8 @@ export function updateLocks(dt){
     else { L.life-=dt; L.grp.position.set(L.tgt.pos.x,1.4,L.tgt.pos.z); }            // else track it
     if(L.life<=0){ L.grp.visible=false; L.tgt=null; continue; }
     L.snap=Math.min(1, L.snap+dt*7); L.bgrp.scale.setScalar(1 + (1-L.snap)*1.5);     // brackets fly inward & snap shut on acquire
-    L.bgrp.rotation.y += dt*0.8; L.rgrp.rotation.y -= dt*1.7; L.hgrp.rotation.y += dt*3.0;   // counter-spinning tech layers
+    L.bgrp.rotation.y += dt*0.8; L.rgrp.rotation.y -= dt*1.7; L.hgrp.rotation.y += dt*3.0; if(L.dgrp){ L.dgrp.rotation.y += dt*1.2; L.dgrp.scale.setScalar(1+(1-L.snap)*0.6); }   // counter-spinning tech layers
+    if(L.lab){ L.lab.visible = L.snap>0.9; L.lab.scale.set(2.4*(1+(1-L.snap)), 0.72*(1+(1-L.snap)), 1); }   // Z188 "KHOÁ" pops once the brackets snap
     const op=Math.min(1, L.life/L.max*1.4)*0.92; L.grp.traverse(o=>{ if(o.material) o.material.opacity=op; });
     L.rgrp.scale.setScalar(1 + Math.sin((L.max-L.life)*22)*0.05); }                  // subtle ring pulse
 }

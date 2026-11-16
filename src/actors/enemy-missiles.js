@@ -14,6 +14,9 @@ export function makeEnemyRocket(){
   const n=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.5,10), _emMats.war); n.rotation.x=Math.PI/2; n.position.z=0.68; g.add(n);
   for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.34,0.24), _emMats.war); f.position.z=-0.38; f.rotation.z=k*Math.PI/2; f.position.x=Math.sin(k*Math.PI/2)*0.12; f.position.y=Math.cos(k*Math.PI/2)*0.12; g.add(f); }
   const s=new THREE.Sprite(_emMats.glow); s.scale.setScalar(1.3); s.position.z=-0.6; g.add(s);
+  if(!_emMats.tongue) _emMats.tongue=new THREE.MeshBasicMaterial({ color:0xffa040, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });   // Z188 a visible flame tongue
+  const t=new THREE.Mesh(new THREE.ConeGeometry(0.13,1.3,10,1,true), _emMats.tongue); t.rotation.x=-Math.PI/2; t.position.z=-1.1; g.add(t); g.userData.tongue=t;
+  const bc=new THREE.Mesh(new THREE.SphereGeometry(0.07,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); bc.position.set(0,0.16,0.2); g.add(bc); g.userData.beacon=bc;   // seeker beacon (blinks on guided rounds)
   g.rotation.order='YXZ'; scene.add(g); return g;
 }
 export function launchEnemyMissile(x, y, z, ang, o){
@@ -31,6 +34,7 @@ export function blowMissile(i, how){
     blastAllies(r.x, r.z, r.aoe, r.dmg*0.6); if(how!=='hit') blastAllyTanks(r.x, r.z, r.aoe, r.dmg*0.45); }
   if(r.wire){ dropBeam(r.wire); r.wire=null; }
   r.m.visible=false; _emPool.push(r.m); EMIS.splice(i,1);
+  if(!EMIS.length && _lw) _lw.g.visible=false;
 }
 export function updateEnemyMissiles(dt, now){
   const p=S.player; if(!p) return; const smoked = inSmoke(now);
@@ -41,8 +45,9 @@ export function updateEnemyMissiles(dt, now){
     else { r.vy -= 4*dt; r.y += r.vy*dt; }
     const sx=Math.sin(r.ang), sz=Math.cos(r.ang); r.x+=sx*r.speed*dt; r.z+=sz*r.speed*dt;
     r.m.position.set(r.x, r.y, r.z); r.m.rotation.y=r.ang; r.m.rotation.x=-Math.atan2(r.vy||0, r.speed)*0.6;
-    if(Math.random()<0.85) spawnPart(r.x-sx*0.7, r.y, r.z-sz*0.7, (Math.random()-0.5)*0.8, 0.35, (Math.random()-0.5)*0.8, {color:0xcfc6b4, size:0.7, life:0.7, smoke:true, grav:0.25, drag:1.6, grow:1.2, op:0.45});
-    if(Math.random()<0.6) spawnPart(r.x-sx*0.6, r.y, r.z-sz*0.6, -sx*3, 0, -sz*3, {color:0xffb050, color2:0xff4a10, size:0.45, life:0.12, grav:0, drag:4});
+    spawnPart(r.x-sx*0.9, r.y, r.z-sz*0.9, (Math.random()-0.5)*0.6, 0.3, (Math.random()-0.5)*0.6, {color:0xd8cfbe, size:0.85, life:1.2, smoke:true, grav:-0.1, drag:1.4, grow:2.2, op:0.5});   // Z188 a thick smoke ribbon
+    spawnPart(r.x-sx*0.8, r.y, r.z-sz*0.8, -sx*4, 0, -sz*4, {color:0xfff0b0, color2:0xff4a10, size:0.6, life:0.14, grav:0, drag:4});
+    { const u=r.m.userData; if(u.tongue){ const f=0.8+Math.random()*0.45; u.tongue.scale.set(1,f,1); } if(u.beacon) u.beacon.visible = !!r.guided && Math.floor(now*10)%2===0; }
     if(r.wire){ r.wire.visible=true; const s0=r.src; if(s0&&enemies.includes(s0)){ const L=r.wire.geometry.attributes.position; L.setXYZ(0,s0.pos.x,heightAt(s0.pos.x,s0.pos.z)+1.9,s0.pos.z); L.setXYZ(1,r.x,r.y,r.z); L.needsUpdate=true; } else r.wire.visible=false; }
     let gone=null;
     for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j]; if(b.owner!=='p') continue; if((b.x-r.x)**2+(b.z-r.z)**2 < (b.r+0.85)**2){ if(b.pierce>0) b.pierce--; else recycleBullet(j); gone='shot'; break; } }   // SHOOT IT DOWN
@@ -56,4 +61,20 @@ export function updateEnemyMissiles(dt, now){
     if(gone) blowMissile(i, gone);
   }
 }
-export function clearEnemyMissiles(){ for(const r of EMIS){ r.m.visible=false; _emPool.push(r.m); if(r.wire) dropBeam(r.wire); } EMIS.length=0; }
+// Z188 MISSILE LOCK WARNING — while a guided missile is hunting you, red brackets clamp round your tank with "BỊ KHOÁ", beeping faster as it closes
+let _lw=null;
+function lockWarnFX(){ if(_lw) return _lw; const g=new THREE.Group(), M=()=>new THREE.MeshBasicMaterial({ color:0xff2a1a, transparent:true, opacity:0.95, depthTest:false, depthWrite:false, blending:THREE.AdditiveBlending }), br=new THREE.Group();
+  for(let c=0;c<4;c++){ const sx=c&1?-1:1, sz=c<2?1:-1, h=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.1,0.16),M()), v=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,1.1),M()); h.position.set(sx*2.55,0,sz*3.1); v.position.set(sx*3.1,0,sz*2.55); br.add(h,v); }
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(4.1,0.06,6,3), M()); ring.rotation.x=Math.PI/2; g.add(br, ring);
+  const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d'); x.fillStyle='rgba(30,0,0,0.75)'; x.beginPath(); x.roundRect(8,6,240,52,10); x.fill(); x.strokeStyle='#ff3a24'; x.lineWidth=3; x.stroke();
+  x.font='800 30px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#ff5a3a'; x.fillText('⚠ BỊ KHOÁ', 128, 33);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:t, transparent:true, depthTest:false, depthWrite:false })); sp.scale.set(5.2,1.3,1); sp.position.y=6.4; g.add(sp);
+  g.traverse(o=>{ o.renderOrder=22; }); g.visible=false; scene.add(g); _lw={ g, br, ring, sp, at:0 }; return _lw; }
+export function updateLockWarn(dt, now){ const p=S.player; if(!p) return; let near=1e9;
+  for(const r of EMIS){ if(!r.guided || r.jam) continue; const d=Math.hypot(r.x-p.pos.x, r.z-p.pos.z); if(d<near) near=d; }
+  const on=near<75, W=on||_lw ? lockWarnFX() : null; if(!W) return; W.g.visible=on; if(!on) return;
+  const k=Math.max(0, Math.min(1, 1-near/75)); W.g.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z)+0.4, p.pos.z);
+  W.br.scale.setScalar(1.25-0.25*k+Math.sin(now*18)*0.03); W.br.rotation.y=p.facing||0; W.ring.rotation.z+=dt*(2+k*6);
+  const blink=Math.floor(now*(4+k*12))%2===0; W.g.traverse(o=>{ if(o.material) o.material.opacity = o===W.sp ? 1 : (blink?1:0.55); }); W.sp.scale.set(5.2*(1+0.08*k*(blink?1:0)), 1.3*(1+0.08*k*(blink?1:0)), 1);
+  if(now>W.at){ W.at=now+0.55-0.42*k; sfx('lockwarn'); } }
+export function clearEnemyMissiles(){ if(_lw) _lw.g.visible=false; for(const r of EMIS){ r.m.visible=false; _emPool.push(r.m); if(r.wire) dropBeam(r.wire); } EMIS.length=0; }

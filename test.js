@@ -932,5 +932,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const lv=fs.readFileSync('src/world/lava.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
   ok(/export function buildLava\(\)/.test(lv) && /BIOME\.name!=='VOLCANO'/.test(lv) && /damagePlayer\(LAVA\.dps\.player\*dt, now\)/.test(lv) && /buildObjective\(\); buildLava\(\);/.test(fl) && /updateLava\(gdt, now\)/.test(lp), 'caldera lava pools are placed clear of forts, glow, and burn tanks that drive in'); }
 
+// Z188 strike & lock visuals: a readable artillery zone (disc, hazard band, closing chevrons, countdown arc, label, shell shadow), flame tongues + smoke ribbons, a "BỊ KHOÁ" warning, a KHOÁ label on our locks
+{ const fs=await import('node:fs'); const a=fs.readFileSync('src/campaign/artillery.js','utf8'), m=fs.readFileSync('src/actors/enemy-missiles.js','utf8'), l=fs.readFileSync('src/combat/lock-on.js','utf8'), sy=fs.readFileSync('src/audio/synth.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
+  ok(/function tickArtLock\(zone, k, fly, now, dt, tLeft\)/.test(a) && /'PHÁO KÍCH'/.test(a) && /u\.shadow\.material\.opacity/.test(a) && /sfx\('whistle'\)/.test(a), 'artillery zone: closing chevrons, countdown arc + seconds label, shell shadow, falling whistle');
+  ok(/export function updateLockWarn\(dt, now\)/.test(m) && /BỊ KHOÁ/.test(m) && /updateLockWarn\(gdt, now\)/.test(lp) && /case 'lockwarn'/.test(sy), 'guided missile → red brackets + BỊ KHOÁ round your tank, beeping faster as it closes');
+  ok(/◆ KHOÁ/.test(l) && /dgrp/.test(l), 'our missile lock: dashed ring + KHOÁ label once the brackets snap'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

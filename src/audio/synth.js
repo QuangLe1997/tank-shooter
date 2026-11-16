@@ -249,6 +249,8 @@ export function sfx(name, pos, vol){
     case 'reloaded':play('reload', null, 0.7); tone(1320,0.08,{type:'triangle',vol:0.05,delay:0.06}); break;   // breech slams shut
     case 'alarm':   tone(440,0.12,{type:'triangle',vol:0.12}); tone(330,0.17,{type:'triangle',vol:0.12,delay:0.13}); break;
     case 'beep':    tone(1200,0.05,{type:'triangle',vol:0.06}); break;
+    case 'whistle': tone(1650,1.15,{type:'sine',vol:0.045,slideTo:380}); tone(1700,1.15,{type:'triangle',vol:0.018,slideTo:400}); break;   // Z188 a shell falling on you
+    case 'lockwarn':tone(1760,0.05,{type:'square',vol:0.035}); tone(1760,0.05,{type:'square',vol:0.035,delay:0.08}); break;          // Z188 a missile has you
   }
   _bus=null;
 }
