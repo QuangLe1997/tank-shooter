@@ -1,7 +1,7 @@
 // combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS, LETHAL } from '../../config.js';
-import { MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
+import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
@@ -61,8 +61,9 @@ export function trySpell(){
 export function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length; updateSpellHUD(); sfx('click'); }
 // Z104 blast vs a man on foot: 1 = killed (inside the core), else the fraction of the blast damage he takes (fades to edgeMin at reach)
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
+// Z193 a blast also shreds every piece of field cover (sandbags, crates, concrete…)
 export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){
-  for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'||b.kind==='fortcore'||b.hard){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)*(siege||1)); }   // Z112 + rocks / hedgehogs   // blasts bring watchtowers down
+  for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'||b.kind==='fortcore'||b.hard||b.cover||(COVER_HP[b.kind]!=null && isFinite(b.hp))){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)*(siege||1)); }   // Z112 + rocks / hedgehogs   // blasts bring watchtowers down
   for(const e of enemies.slice()){ if(e.def.air && !air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, q=dx*dx+dz*dz; if(q < (r*LETHAL.reach+3)**2 && fortIntactCross(x, z, e.pos.x, e.pos.z)) continue;   // Z170 a blast outside a sealed fort stops at its wall
     if(e.def.inf && q<(r*2.2)**2) suppress(e, 0.6);   // Z173 a blast nearby: heads down
     if(e.def.inf){ const R=r*LETHAL.reach; if(q<R*R){ const k=infBlastK(Math.sqrt(q), r); e._blast={ x, z }; e._hitK=1+1.2*k; e._fx=type==='CRYO'?'ice':(e._fx||'blast'); if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, k>=1 ? e.hp+1 : dmg*k); } continue; }   // Z104 core = dead, ring = wounded

@@ -167,8 +167,8 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     { const nC=Math.round(R2(T.cover)*(MOBILE?0.7:1)), kinds=['sandbag','crates','sandbag','hesco','concrete','drums'], gA=Math.atan2(f.gz-f.z, f.gx-f.x);
       for(let k=0,t=0;k<nC && t<nC*8;t++){ const a=Math.random()*Math.PI*2, r=f.R*(0.32+Math.random()*0.46); if(Math.abs(Math.atan2(Math.sin(a-gA),Math.cos(a-gA)))<0.35 && r>f.R*0.5) continue;   // keep the gate lane open
         const x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(blocks.some(b=>b.fort===f && b.kind==='cover' && Math.hypot(b.x-x,b.z-z)<5)) continue; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+4) continue; if(f.coreR && Math.hypot(x-f.x-f.coreX, z-f.z-f.coreZ)<f.coreR+3) continue;
-        const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, !steel); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
-        const hp=steel?Infinity:(COVER_HP[kind]||70); blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }
+        const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, true); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
+        const hp=COVER_HP[kind]||70; blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, heavy:steel, cover:true, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }   // Z193 the yard's HESCO / concrete break too
     f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label);
     buildHatches(f);
     const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)), tank:RI(T.tanks)+(st0>=3?1:0) };

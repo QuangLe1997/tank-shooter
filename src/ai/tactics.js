@@ -46,7 +46,7 @@ const _lf=[];
 export function fireBlocked(mx, mz, my, tx, tz, sp){ const dx=tx-mx, dz=tz-mz, D=Math.hypot(dx,dz); if(D<3) return null; const ux=dx/D, uz=dz/D, s0=Math.max(1,sp);
   let vy=0; if(D>11){ const T=Math.min(0.9, D/s0); vy=Math.min(30, ARC_G*T/2); } const y0=Math.max(0.6, my-heightAt(mx,mz)), arc=vy>0.5;
   for(let s=1.2; s<D-1.5; s+=1.5){ const t=s/s0, h=arc ? y0+vy*t-0.5*ARC_G*t*t : y0, x=mx+ux*s, z=mz+uz*s, low=h<FORT.wallH+0.4, air=arc && h>3.0;
-    for(const bl of blocksNear(x, z, 0.5, _lf)){ if(!(bl.hard||bl.fort||bl.kind==='obj') || bl.ours) continue; if(bl.fort ? !low : air) continue; if(inBlock(bl, x, z, 0.35)) return bl; } }
+    for(const bl of blocksNear(x, z, 0.5, _lf)){ if(!(bl.hard||bl.heavy||bl.fort||bl.kind==='obj') || bl.ours) continue; if(bl.fort ? !low : air) continue; if(inBlock(bl, x, z, 0.35)) return bl; } }
   return null; }
 // where this tank wants to stand right now (or null → fall back to the old straight-at-target logic)
 export const _aiD=new THREE.Vector3(); const _nb=[];

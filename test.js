@@ -971,5 +971,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/orientShell\(b, _wy, dt\)/.test(lo) && /core\.scale\.set\(0\.38, 0\.38, shellStretch/.test(lo) && /rocketExhaust\(b, b\.x, _wy, b\.z\)/.test(lo), 'rounds fly as streaks pointed along their path; missiles lay a smoke ribbon');
   ok(/keep:true/.test(hx) && /!o\.keep/.test(pt) && /armourHit\(e, b\.x/.test(lo) && /export function enemyDamageFX/.test(hx) && /rockHull\(p, ux, uz, dmg\)/.test(fs.readFileSync('src/fx/cinematic.js','utf8')), 'armour hits rock the hull + spall / glance; hurt tanks smoke; the ribbon is never randomly thinned'); }
 
+// Z193 field obstacles at the tanks' scale, five new kinds, every piece breakable, broken pieces leave rubble
+{ const fs=await import('node:fs'); const W=await import('./src/data/world.js'); const pr=fs.readFileSync('src/world/props.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8'), rb=fs.readFileSync('src/world/rubble.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(W.COVER_K>=1.2 && /SEG=3\*COVER_K/.test(cv) && /m\.scale\.setScalar\(COVER_K\)/.test(cv), 'field cover is built at the scale of the tanks');
+  ok(['jersey','teeth','logs','wreck','container'].every(k=>pr.includes("kind==='"+k+"'") && W.COVER_HP[k]>0), 'jersey barriers, dragon\'s teeth, log barricades, car wrecks, containers exist and have HP');
+  ok(['concrete','pipes','hesco'].every(k=>isFinite(W.COVER_HP[k])) && !/const hp = steel \? Infinity/.test(cv) && /export function heavyDamage/.test(cv), 'concrete / pipes / HESCO break under fire (no more shell-proof cover)');
+  ok(/export function leaveRubble/.test(rb) && /leaveRubble\(b/.test(cv) && /clearRubble\(\)/.test(cv), 'a broken piece leaves a heap of its own material; heaps are cleared each battle');
+  ok(/\(bl\.hard \|\| bl\.heavy\) && b\.inf/.test(lo) && /bl\.heavy\?0\.4:1/.test(lo), 'rifle rounds only chip solid cover; enemy shells wear it slowly'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

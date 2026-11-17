@@ -1,6 +1,6 @@
 // world/physics.js — PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap
 import { DRIVE, LOOT, BOSSFIGHT } from '../../config.js';
-import { BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, fortRam, haptic, hitsHull, padImpact, ramBlock, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip } from '../hub.js';
+import { BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBlock, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, fortRam, haptic, hitsHull, padImpact, ramBlock, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip } from '../hub.js';
 
 // ----------------------------- PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap -----------------------------
 export const HULL_HW=1.52, HULL_HL=2.05*1.36;   // Z174b the real-length hull                                            // hull half-width / half-length (model units, × tank scale)
@@ -75,11 +75,12 @@ export function separateTanks(now){
     for(const a of enemies){ if(solidTank(a)) collideTanks(boss,a,now); } }
   for(const d of DYING){ const r=1.6*(d.e.mesh.scale.x||1); tankVsCircle(p, d.e.pos.x, d.e.pos.z, r); for(const a of enemies) if(solidTank(a)) tankVsCircle(a, d.e.pos.x, d.e.pos.z, r); }   // burning hulks are still solid
   for(const bl of blocks.slice()){                                                                       // tanks ↔ cover / boulders / walls (solid, deflecting)
+    // Z193 an oriented box that is not masonry (container, car wreck) rams like any other cover
     if(bl.obb){ const pv={x:p.vel.x,z:p.vel.z}, vn=tankVsWall(p, bl);                                    // Z86 masonry: momentum decides
-      if(vn>0 && ramWall(p, bl, vn)){ p.vel.x=pv.x*0.62; p.vel.z=pv.z*0.62; S.shake=Math.min(3,S.shake+1.2); p.hitT=Math.max(p.hitT||0,0.2); haptic([40,30,60]); sfx('clang'); continue; }
+      if(vn>0 && (bl.wall ? ramWall(p, bl, vn) : ramBlock(bl, vn, p))){ p.vel.x=pv.x*0.62; p.vel.z=pv.z*0.62; S.shake=Math.min(3,S.shake+1.2); p.hitT=Math.max(p.hitT||0,0.2); haptic([40,30,60]); sfx('clang'); continue; }
       if(vn>6){ padImpact(vn); S.shake=Math.min(2.5,S.shake+vn*0.04); p.hitT=Math.max(p.hitT||0,0.14); sfx('thud', null, vn/12); haptic(25); }
       for(const a of enemies) if(solidTank(a)) tankVsWall(a, bl);
-      if(boss&&boss.alive){ const bv=tankVsWall(boss, bl); if(bv>2 && blocks.includes(bl)){ ramWall(boss, bl, 99); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact) stunBoss(performance.now()/1000, boss.def.name+' húc vào tường — nó đang choáng, dồn hoả lực!'); } }   // the boss walks through masonry (and a charge into it stuns)
+      if(boss&&boss.alive){ const bv=tankVsWall(boss, bl); if(bv>2 && blocks.includes(bl)){ if(bl.wall) ramWall(boss, bl, 99); else damageBlock(bl, 99); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact) stunBoss(performance.now()/1000, boss.def.name+' húc vào tường — nó đang choáng, dồn hoả lực!'); } }   // the boss walks through masonry (and a charge into it stuns)
       continue; }
     if(bl.climb){ const dx=bl.x-p.pos.x, dz=bl.z-p.pos.z, dl=Math.hypot(dx,dz)||1, near=dl < bl.r+HULL_HL*p.scale*TANK_SCALE+0.2;
       if(p.climbing===bl){ if(!near) p.climbing=null; else { for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r); continue; } }   // riding over it

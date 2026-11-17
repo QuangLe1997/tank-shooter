@@ -62,7 +62,12 @@ export const TERRAIN_STYLE = { DESERT:{mounds:13, mh:1.6, craters:6, cd:1.0, noi
   CITY:{mounds:2, mh:0.4, craters:8, cd:0.8, noise:0.06}, HILLS:{mounds:14, mh:2.4, craters:2, cd:0.8, noise:0.2}, VILLAGE:{mounds:6, mh:0.8, craters:3, cd:0.7, noise:0.1},
   SAVANNA:{mounds:7, mh:0.8, craters:3, cd:0.8, noise:0.12}, ARCTIC:{mounds:12, mh:1.4, craters:3, cd:0.7, noise:0.16},
   STEELMILL:{mounds:5, mh:0.9, craters:10, cd:1.1, noise:0.12}, VOLCANO:{mounds:14, mh:2.2, craters:9, cd:1.3, noise:0.24}, QUARRY:{mounds:9, mh:1.8, craters:4, cd:0.9, noise:0.14} };
-export const COVER_HP = { sandbag:85, drums:22, tires:95, crates:55 };
+export const COVER_HP = { sandbag:85, drums:22, tires:95, crates:55,
+  logs:110, concrete:260, pipes:200, hesco:220, jersey:170, teeth:240, container:320, wreck:140 };   // Z193 every piece of cover can be shot to pieces (concrete takes a lot)
+// Z193 field cover is built at the same scale as the tanks (TANK_SCALE 1.2 + a little): a 3 m sandbag cell becomes ~3.9 m, a T-wall ~2.9 m tall
+export const COVER_K = 1.3;
+export const COVER_R = { jersey:1.45, teeth:1.85, logs:1.6 };   // collision radius per cell (before COVER_K; default 1.7)
+export const HEAVY_KINDS = new Set(['concrete','pipes','hesco','jersey','teeth','container','wreck']);   // solid: rifle rounds only chip them, enemy shells wear them slowly
 export const BRICK_PAL={ DESERT:[0xb7825a,0xc79a6c,0xa86e4a,0xd1ab7e], RUINS:[0x9c5a40,0xae6a4c,0x8a4c36,0xb87c5c], TUNDRA:[0x8a7a6c,0x9a8a7a,0x766a5e,0xa89a8a],
   FOUNDRY:[0x7a3e2c,0x8a4a34,0x5e3024,0x96583e], CITADEL:[0xa09684,0xb0a692,0x8c8272,0xbcb2a0], MEADOW:[0xa4583c,0xb46848,0x924a32,0xc07a58],
   CITY:[0x8f8a84,0xa19a92,0x7a746e,0xb0a89c], HILLS:[0x8a7a62,0x9a8a70,0x766a56,0xa89a80], VILLAGE:[0xb06a48,0xc27a54,0x9a5a3c,0xd08a62],
