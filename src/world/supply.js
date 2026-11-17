@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, COVER_K, ENEMY_DEFS, MOBILE, S, _R, _mergeColored, _xf, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, hitsHull, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radio, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, hitsHull, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radio, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -31,9 +31,9 @@ function mats(){ if(_M) return _M; const V=(o)=>new THREE.MeshStandardMaterial(O
     net:new THREE.MeshStandardMaterial({ map:netT, alphaTest:0.45, side:THREE.DoubleSide, roughness:1 }), glow:new THREE.MeshStandardMaterial({ color:0x222018, emissive:0xffd890, emissiveIntensity:1.6 }) };
   return _M; }
 // a kit collects coloured parts per material and bakes them into one mesh each (a structure = a handful of draw calls)
-function kit(){ const P={}; return { add(m, geo, col){ (P[m]=P[m]||[]).push({ geo, col }); return geo; }, bake(own){ const g=new THREE.Group(), M=mats();
+export function kit(){ const P={}; return { add(m, geo, col){ (P[m]=P[m]||[]).push({ geo, col }); return geo; }, bake(own){ const g=new THREE.Group(), M=mats();
   for(const k in P){ const mat=own && k!=='net' && k!=='glow' ? M[k].clone() : M[k]; if(own && mat!==M[k]) mat.userData.own=true; const m=new THREE.Mesh(_mergeColored(P[k]), mat); m.castShadow=k!=='net'; m.receiveShadow=true; g.add(m); } return g; } }; }
-const B3=(w,h,d,x,y,z,ry)=>_xf(new THREE.BoxGeometry(w,h,d),x,y,z,0,ry||0,0), CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
+export const B3=(w,h,d,x,y,z,ry)=>_xf(new THREE.BoxGeometry(w,h,d),x,y,z,0,ry||0,0), CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
 function wheels(K, xs, zs, r){ for(const x of xs) for(const z of zs) K.add('metal', CY(r,r,0.36,14,x,r,z,0,Math.PI/2), 0x1c1b1a); }
 function truckCab(K, col, zc){ K.add('paint', B3(2.3,1.9,2.0,0,1.65,zc), col); K.add('paint', B3(2.2,0.8,1.2,0,1.1,zc+1.5), col); K.add('metal', B3(2.0,0.7,0.05,0,2.0,zc+1.01), 0x1a2228); K.add('metal', B3(2.4,0.3,0.2,0,0.75,zc+2.12), 0x2a2a28); }
 
@@ -75,6 +75,15 @@ function supplyTruck(){ const K=kit(), col=0x5a6440;
   K.add('canvas', B3(2.5,1.2,4.6,0,2.0,-1.3), 0x76764e); wheels(K, [-1.05,1.05], [2.6,-2.2,-3.2], 0.52); return K.bake(true); }
 
 // ---------- placement ----------
+// Z196 level the ground under a compound: flat inside rIn (the mean height there), blending back to the natural ground by rOut;
+//   loose stones sitting on the reshaped ground are tidied away so nothing floats or sinks
+const _Z0=new THREE.Matrix4().makeScale(0,0,0);
+export function flattenPad(x, z, rIn, rOut){ const W=HF.W, h=HF.h, st=HF.step; if(!h) return; let sum=0, n=0;
+  for(let a=0;a<6.283;a+=0.5) for(const r of [0, rIn*0.4, rIn*0.8]){ sum+=heightAt(x+Math.cos(a)*r, z+Math.sin(a)*r); n++; } const h0=sum/n;
+  const i0=Math.max(0,Math.floor((x-rOut+ARENA)/st)), i1=Math.min(HF.N,Math.ceil((x+rOut+ARENA)/st)), j0=Math.max(0,Math.floor((z-rOut+ARENA)/st)), j1=Math.min(HF.N,Math.ceil((z+rOut+ARENA)/st));
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(-ARENA+i*st-x, -ARENA+j*st-z); if(d>=rOut) continue; const t=d<=rIn?1:1-(d-rIn)/(rOut-rIn), w=t*t*(3-2*t); h[j*W+i]=h[j*W+i]*(1-w)+h0*w; }
+  HF.dj0=Math.min(HF.dj0??1e9, j0-1); HF.dj1=Math.max(HF.dj1??-1, j1+1); HF.dirty=true;
+  for(const c of crushables) if(c.alive && Math.hypot(c.x-x,c.z-z)<rOut){ c.alive=false; c.im.setMatrixAt(c.k,_Z0); c.im.instanceMatrix.needsUpdate=true; } }
 const KEEP=new Set(['fortwall','gate','keep','fortcore','tower','camp','brick','obj','corewall','parked','pylon']);
 // a site is free when no structure (fort, tower, camp, wall, ridge, loot) is in the way — scattered cover is simply cleared off the yard
 export function siteOk(x, z, R){ return !blocks.some(b=>(KEEP.has(b.kind)||b.ridge||b.loot||b.fort||b.supply) && Math.hypot(b.x-x,b.z-z)<b.r+R+2); }
@@ -84,7 +93,7 @@ function findSite(R0){ for(const [k,core] of [[1,52],[0.85,48],[0.72,46],[0.58,4
     if(Math.hypot(x,z)<R+core || !inField(x,z,R+4) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+8) || !siteOk(x,z,R)) continue;
     clearSite(x, z, R0); return [x,z]; } } return null; }
 export const SUPPLY_K=1.25;   // the installations are built big: storage tanks ~7.5 m across, 9 m tall
-function newBase(kind, x, z, R, K){ K=K||1; const ang=Math.atan2(-x, ARENA*0.55-z), ca=Math.cos(ang), sa=Math.sin(ang);
+function newBase(kind, x, z, R, K, ang0){ K=K||1; const ang=ang0??Math.atan2(-x, ARENA*0.55-z), ca=Math.cos(ang), sa=Math.sin(ang);
   const B={ kind, x, z, R, K, ang, at:(lx,lz)=>[x+(lx*ca+lz*sa)*K, z+(-lx*sa+lz*ca)*K], pieces:[], alive:true, alarm:false, hitAt:-99, heloN:0, tankN:0, heloAt:0, tankAt:0, spreadAt:0, guards:[], fires:[], decor:null };
   const st=Math.max(0,S.stage-1); B.heloMax=SUPPLYB.heli[0]+Math.min(SUPPLYB.heli[1]-SUPPLYB.heli[0], st>>1); B.tankMax=SUPPLYB.reinf+(st>=3?1:0); SUPPLY.bases.push(B); return B; }
 // one breakable piece of a base (core pieces must all fall for the base to fall)
@@ -117,9 +126,11 @@ function signMat(kind){ if(SIGN_MAT[kind]) return SIGN_MAT[kind]; const W=256, H
   else if(kind==='military'){ x.fillStyle='#f4f2ea'; x.fillRect(0,0,W,H); x.fillStyle='#c81e1e'; x.fillRect(0,0,W,46); txt('KHU VỰC QUÂN SỰ',24,30,'#fff'); txt('CẤM VÀO',82,46,'#c81e1e'); txt('Lính gác được phép nổ súng',128,20,'#222',700); }
   else if(kind==='mines'){ x.fillStyle='#c81e1e'; x.fillRect(0,0,W,H); x.fillStyle='#f4f2ea'; x.beginPath(); x.arc(60,70,26,0,7); x.fill(); x.fillRect(46,88,28,16); x.fillStyle='#c81e1e'; x.beginPath(); x.arc(51,68,7,0,7); x.arc(69,68,7,0,7); x.fill();   // skull
     x.strokeStyle='#f4f2ea'; x.lineWidth=7; x.beginPath(); x.moveTo(26,112); x.lineTo(94,140); x.moveTo(94,112); x.lineTo(26,140); x.stroke(); x.textAlign='left'; x.font=F(40); x.fillStyle='#f4f2ea'; x.fillText('CÓ MÌN!',112,70); x.font=F(20,800); x.fillText('Không ra khỏi lối đi',112,108); }
-  else { x.fillStyle='#2e3a26'; x.fillRect(0,0,W,H); x.strokeStyle='#d8d0b8'; x.lineWidth=3; x.strokeRect(5,5,W-10,H-10); txt(kind==='nameA'?'KHO ĐẠN DƯỢC':'TRẠM NHIÊN LIỆU',H*0.55,40,'#f0e8d0'); }
+  else if(kind==='halt'){ x.fillStyle='#c81e1e'; x.fillRect(0,0,W,H); x.strokeStyle='#f4f2ea'; x.lineWidth=6; x.strokeRect(8,8,W-16,H-16); txt('DỪNG LẠI!',62,52,'#f4f2ea'); txt('TRẠM GÁC — XUẤT TRÌNH GIẤY TỜ',118,19,'#f4f2ea',800); }
+  else { x.fillStyle='#2e3a26'; x.fillRect(0,0,W,H); x.strokeStyle='#d8d0b8'; x.lineWidth=3; x.strokeRect(5,5,W-10,H-10); txt(kind==='nameA'?'KHO ĐẠN DƯỢC':kind==='nameC'?'TRẠI LÍNH':'TRẠM NHIÊN LIỆU',H*0.55,40,'#f0e8d0'); }
   grime(); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4;
-  return SIGN_MAT[kind]=new THREE.MeshStandardMaterial({ map:t, roughness:0.75, metalness:0.15, side:THREE.DoubleSide }); }
+  return SIGN_MAT[kind]=new THREE.MeshStandardMaterial({ map:t, roughness:0.75, metalness:0.15 }); }
+let _sb=null; function signBack(){ return _sb||(_sb=new THREE.MeshStandardMaterial({ color:0x6a6c64, roughness:0.7, metalness:0.4, side:THREE.BackSide })); }
 // one 3 m fence bay (built once): Y-picket with an outrigger, 3 barbed strands + 2 on the outrigger, a razor concertina along the foot outside, and the chain-link panel
 let _bayG=null;
 function bayGeo(){ if(_bayG) return _bayG; const P=[], L=3;
@@ -146,7 +157,7 @@ function fenceBase(B, x0, x1, z0, z1, gw){ const G=bayGeo(), spans=[], K=B.K;
 // signs on two legs, merged per sign kind into the compound's decor (base-local metres; ry turns the face)
 function signs(B, list){ const by={}; for(const [kind,x,z,ry,w] of list){ const W=w||1.5, H=kind.startsWith('name')?W*72/256:W*160/256, legs=[];
     (by[kind]=by[kind]||[]).push(_xf(new THREE.PlaneGeometry(W,H),x,kind.startsWith('name')?0:1.25+H/2,z,0,ry||0,0)); }
-  for(const k in by){ const m=new THREE.Mesh(mergeGeos(by[k]), signMat(k)); m.castShadow=true; B.decor.add(m); } }
+  for(const k in by){ const g=mergeGeos(by[k]), m=new THREE.Mesh(g, signMat(k)); m.castShadow=true; B.decor.add(m); const bk=new THREE.Mesh(g, signBack()); B.decor.add(bk); } }   // Z196 face reads right, the back is bare painted steel
 function mergeGeos(list){ const g=_mergeColored(list.map(geo=>({ geo, col:0xffffff }))); g.deleteAttribute('color'); return g; }
 function signPosts(K, list){ for(const [kind,x,z,ry,w] of list){ if(kind.startsWith('name')) continue; const W=w||1.5, c=Math.cos(ry||0), s=Math.sin(ry||0); for(const o of [-W*0.38,W*0.38]) K.add('metal', CY(0.04,0.04,2.6,5,x+o*c,1.3,z-o*s), 0x5a5a56); } }
 // steel portal over the gate: box columns, a beam with knee braces, the name board, a red-white boom and a sentry booth
@@ -155,15 +166,25 @@ function gate(K, z1, gw, nameKind, B){ for(const s of [-1,1]){ K.add('metal', B3
   for(let i=0;i<9;i++) K.add('paint', B3(gw/9,0.14,0.14,-gw/2+0.2+(i+0.5)*gw/9,1.05,z1+0.7), i%2?0xf2f0ea:0xc81e1e);   // boom barrier
   K.add('conc', B3(2.0,2.5,2.0,gw/2+2.6,1.25,z1-1.6), 0xb4b0a6); K.add('conc', B3(2.3,0.2,2.3,gw/2+2.6,2.6,z1-1.6), 0x8a867c); K.add('metal', B3(1.2,0.6,0.06,gw/2+2.6,1.6,z1-0.59), 0x1a2228);   // sentry booth
   return [nameKind, 0, z1+0.2, 0, gw*0.8]; }
-function nameSignAt(B, z1, item){ const [k,,,,w]=item, H=w*72/256, m=new THREE.Mesh(new THREE.PlaneGeometry(w,H), signMat(k)); m.position.set(0,4.75,z1+0.2); B.decor.add(m); }
+function nameSignAt(B, z1, item){ const [k,,,,w]=item, H=w*72/256, g=new THREE.PlaneGeometry(w,H); for(const [ry,dz] of [[0,0.2],[Math.PI,-0.2]]){ const m=new THREE.Mesh(g, signMat(k)); m.position.set(0,4.75,z1+dz); m.rotation.y=ry; B.decor.add(m); } }   // Z196 the name reads right from outside AND from inside the yard
 // ---------- Z195 the compounds stand in the corners of the map: the two far corners first, then the near ones ----------
 const SP_Z=()=>ARENA*0.55;
-function cornerSite(sx, sz, R0){ for(const k of [1,0.86,0.74]){ const R=R0*k;
+function cornerSite(sx, sz, R0){ for(const k of [1,0.86,0.74,0.62]){ const R=R0*k;
   for(let t=0;t<700;t++){ const reach=Math.min(ARENA*0.6, 4+t*0.12), x=sx*(ARENA-R-6-Math.random()*reach), z=sz*(ARENA-R-6-Math.random()*reach);
-    if(Math.hypot(x,z)<R+50 || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R+3) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+8) || !siteOk(x,z,R)) continue;
+    if(Math.hypot(x,z)<R+50 || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R+3) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+4) || !siteOk(x,z,R)) continue;
     clearSite(x, z, R0*1.05); return [x,z]; } } return null; }
+// Z196 GRID SCAN: walk the whole field on a 6 m grid and take the best-scoring free spot (score = how well it suits: near a corner, high ground…);
+//   unlike random tries it never misses a gap that exists. Tiers shrink the clearance a little when the field is crowded.
+export function scanSite(R0, score, o){ o=o||{}; const step=6;
+  for(const k of [1,0.88,0.76,0.66]){ const R=R0*k; let best=null, bs=Infinity;
+    for(let x=-ARENA+R+5; x<=ARENA-R-5; x+=step) for(let z=-ARENA+R+5; z<=ARENA-R-5; z+=step){
+      if(o.maxZ!=null && z>o.maxZ) continue; const sc=score(x,z); if(sc>=bs) continue;
+      if(Math.hypot(x,z)<R+(o.core??48) || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R*0.8) || inZone(x,z,R*0.8) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+CAMP_R*0.8) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<(B.R+R)*0.92) || !siteOk(x,z,R)) continue;
+      best=[x,z]; bs=sc; }
+    if(best){ clearSite(best[0], best[1], R0*1.05); return best; } }
+  return null; }
 const FUEL_R=24, AMMO_R=23;
-function buildFuel(s){ const B=newBase('fuel', s[0], s[1], FUEL_R*SUPPLY_K, SUPPLY_K);
+function buildFuel(s){ flattenPad(s[0], s[1], FUEL_R*SUPPLY_K*0.95, FUEL_R*SUPPLY_K*1.35); const B=newBase('fuel', s[0], s[1], FUEL_R*SUPPLY_K, SUPPLY_K);
     for(const lx of [-7.6,0,7.6]) piece(B, 'fueltank', fuelTank(), lx, -2.5, 0, { r:3.2 }, true);
     piece(B, 'pumphouse', pumpHouse(), 0, 7.0, 0, { r:3.4, hw:2.4, hl:3.6, across:true });
     piece(B, 'tanker', tankerTruck(), -9.5, 10.5, 0.25, { r:2.2, hw:1.3, hl:4.1 }); piece(B, 'tanker', tankerTruck(), 10.5, 9.0, -0.35, { r:2.2, hw:1.3, hl:4.1 });
@@ -182,7 +203,7 @@ function buildFuel(s){ const B=newBase('fuel', s[0], s[1], FUEL_R*SUPPLY_K, SUPP
     for(const [lx,lz,ry] of [[-15,-9,0.8],[15,-9,-0.8],[-15,6,-0.6],[15,6,0.6],[0,-11,0]]) nest(B, lx, lz, ry);
     { const [tx,tz]=B.at(-15.5,-1); if(!blocks.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+3)) buildTower(tx, tz); }
     B.garrison=true; }
-function buildAmmo(s){ const B=newBase('ammo', s[0], s[1], AMMO_R*SUPPLY_K, SUPPLY_K);
+function buildAmmo(s){ flattenPad(s[0], s[1], AMMO_R*SUPPLY_K*0.95, AMMO_R*SUPPLY_K*1.35); const B=newBase('ammo', s[0], s[1], AMMO_R*SUPPLY_K, SUPPLY_K);
     for(const lx of [-6.8,6.8]) piece(B, 'bunker', igloo(), lx, -3.5, 0, { r:4.4, hw:4.5, hl:4.9 }, true);
     for(const [lx,lz] of [[-6.6,7.2],[-2.2,7.6],[2.2,7.4],[6.6,7.0]]) piece(B, 'ammostack', ammoStack(), lx, lz, _R(-0.2,0.2), { r:1.7 });
     piece(B, 'supplytruck', supplyTruck(), 11.5, 6, -0.3, { r:2.2, hw:1.3, hl:3.7 });
@@ -196,6 +217,10 @@ function buildAmmo(s){ const B=newBase('ammo', s[0], s[1], AMMO_R*SUPPLY_K, SUPP
     K.add('net', _xf(new THREE.PlaneGeometry(19.6,2.6,6,2),0,2.7,10.32,0,0,0), 0xffffff);   // camo net hung on the open side
     const soil=new THREE.Color(BIOME.ground||0x8a7a5a).multiplyScalar(0.75).getHex(); for(const x of [-13,13]) K.add('soil', _xf(new THREE.CylinderGeometry(0.6,1.8,2.0,4,1),x,1.0,-1,0,Math.PI/4,0,1,1,4.5), soil);   // earth traverses
     for(const [x,z] of [[-15.5,-11],[15.5,-11]]) lattice(K, x, z, 10);
+    { const c=0xc8a020; for(const sx of [-1,1]){ for(const sz of [-1,1]) K.add('paint', _xf(new THREE.BoxGeometry(0.3,7.4,0.3),sx*12.2,3.6,1.8+sz*1.1,sz*-0.14,0,0), c); K.add('paint', B3(0.4,0.4,2.8,sx*12.2,0.25,1.8), c); K.add('metal', B3(0.16,0.12,26,sx*12.2,0.06,1.8,Math.PI/2), 0x4a4a46); }   // Z196 rail-mounted gantry crane over the magazine doors
+      K.add('paint', B3(25,0.6,0.5,0,7.3,1.4), c); K.add('paint', B3(25,0.6,0.5,0,7.3,2.2), c); K.add('metal', B3(1.4,0.7,1.4,-3,6.75,1.8), 0x3a3a36); K.add('metal', CY(0.02,0.02,3.2,4,-3,5.0,1.8), 0x222222); K.add('metal', B3(0.5,0.3,0.3,-3,3.3,1.8), 0x2a2a28); }
+    { const fx=-11.5, fz=12.5; K.add('paint', B3(1.2,0.9,2.0,fx,0.75,fz), 0xd8a020); K.add('metal', B3(1.1,0.08,0.9,fx,1.25,fz-0.1), 0x2a2a28); for(const s of [-0.5,0.5]) K.add('metal', B3(0.06,1.9,0.06,fx+s,1.6,fz-0.4), 0x2a2a28); K.add('metal', B3(1.1,0.06,0.06,fx,2.5,fz-0.4), 0x2a2a28);
+      for(const s of [-0.4,0.4]) K.add('metal', B3(0.08,2.4,0.1,fx+s*0.7,1.2,fz+1.05), 0x3a3a36); for(const s of [-0.25,0.25]) K.add('metal', B3(0.1,0.05,1.1,fx+s,0.12,fz+1.6), 0x3a3a36); wheels(K,[fx-0.62,fx+0.62],[fz+0.6,fz-0.6],0.3); K.add('wood', B3(1.2,0.15,1.0,fx,0.22,fz+1.65), 0x8a6a40); K.add('wood', B3(1.0,0.5,0.8,fx,0.55,fz+1.65), 0x4e5a34); }   // forklift with a crate on the forks
     const SG=[['military',-7,16.2,0],['ammo',7,16.2,0],['ammo',-6.8,1.6,0,1.3],['ammo',6.8,1.6,0,1.3],['nosmoke',0,12.6,0,1.3],['mines',-17.1,2,-Math.PI/2],['mines',17.1,-4,Math.PI/2],['military',0,-12.1,Math.PI]];
     signPosts(K, SG); const nm=gate(K, 16, 8, 'nameA', B);
     const d=K.bake(false); d.scale.setScalar(B.K); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 16, nm);
@@ -209,14 +234,33 @@ function lattice(K, x, z, h){ const w=0.55, c=0x56584f; for(const [sx,sz] of [[-
       K.add('metal', _xf(new THREE.BoxGeometry(along?0.06:2*w,0.06,along?2*w:0.06),mx,y,mz), c);
       K.add('metal', _xf(new THREE.BoxGeometry(along?0.05:L,0.05,along?L:0.05),mx,y-1,mz,along?a:0,0,along?0:a), c); } }
   K.add('metal', B3(1.8,0.12,1.8,x,h,z), c); K.add('metal', B3(1.8,0.6,0.05,x,h+0.35,z+0.9), c); K.add('glow', B3(0.6,0.4,0.3,x-0.4,h+0.6,z+0.95), 0xffffff); K.add('glow', B3(0.6,0.4,0.3,x+0.4,h+0.6,z+0.95), 0xffffff); }
-export function buildSupply(){
-  const st=Math.min(4,S.stage-1), N=SUPPLYB.perStage.total[st], far=[[-1,-1],[1,-1]].sort(()=>Math.random()-0.5), near=[[-1,1],[1,1]].sort(()=>Math.random()-0.5), corners=far.concat(near);
-  const kinds=Math.random()<0.5 ? ['fuel','ammo','ammo','fuel'] : ['ammo','fuel','fuel','ammo'];
-  for(let i=0;i<N;i++){ const kind=kinds[i], [sx,sz]=corners[i], R=(kind==='fuel'?FUEL_R:AMMO_R)*SUPPLY_K, s=cornerSite(sx, sz, R) || findSite(R); if(!s) continue;
+export function buildSupply(phase){   // Z196 'far' — the two enemy-side corners (before the camps) · 'near' — the rest (after them)
+  if(phase!=='near'){ const st=Math.min(4,S.stage-1), N=SUPPLYB.perStage.total[st], far=[[-1,-1],[1,-1]].sort(()=>Math.random()-0.5), near=[[-1,1],[1,1]].sort(()=>Math.random()-0.5);
+    const kinds=Math.random()<0.5 ? ['fuel','ammo','ammo','fuel'] : ['ammo','fuel','fuel','ammo']; SUPPLY.plan=far.concat(near).slice(0,N).map((c,i)=>({ c, kind:kinds[i] })); }
+  const todo=(SUPPLY.plan||[]).filter((q,i)=>phase==='near' ? i>=2 : i<2);
+  for(const q of todo){ const [sx,sz]=q.c, kind=q.kind, R=(kind==='fuel'?FUEL_R:AMMO_R)*SUPPLY_K, jx=Math.random()*30, jz=Math.random()*30, s=scanSite(R, (x,z)=>Math.hypot(x-sx*(ARENA-jx), z-sz*(ARENA-jz))); if(!s) continue;   // the free spot nearest this corner
     if(kind==='fuel') buildFuel(s); else buildAmmo(s); }
 }
 // the troop camps (world/camps.js) are bases too: same guards, same alarm, losing one costs the enemy troops
-export function registerCampBase(camp){ const B=newBase('camp', camp.x, camp.z, 15); B.camp=camp; B.garrison=true; B.gInf=Math.round(Math.min(SUPPLYB.guards[1]-2, 2+S.stage)*(MOBILE?0.7:1)); return B; }
+export function registerCampBase(camp){ const B=newBase('camp', camp.x, camp.z, CAMP_R, 1, camp.ang); B.camp=camp; B.garrison=true; B.gInf=Math.round(Math.min(SUPPLYB.guards[1]-2, 2+S.stage)*(MOBILE?0.7:1));
+  // Z196 the barracks become a fenced compound: wire fence, steel gate + boom + sentry booth, a steel-frame vehicle shed with a truck, a water tower, light towers, signs
+  const K=kit(); lattice(K, -25, 24, 10); lattice(K, 25, 24, 10); waterTower(K, 14, -20);
+  for(const x of [18.2,23.8]) for(const z of [-0.8,4.2]) K.add('metal', B3(0.22,3.6,0.22,x,1.8,z), 0x4a4e46);   // vehicle shed
+  for(const z of [-0.8,4.2]) K.add('metal', B3(6.4,0.28,0.2,21,3.6,z), 0x4a4e46); K.add('metal', _xf(new THREE.BoxGeometry(6.9,0.07,5.8),21,3.85,1.7,0.07,0,0), 0x7e8078);
+  for(let x=17.8;x<24.4;x+=0.5) K.add('metal', _xf(new THREE.BoxGeometry(0.07,0.06,5.8),x,3.9,1.7,0.07,0,0), 0x8e9088);
+  const SG=[['military',-7,26.2,0],['halt',7,26.2,0],['mines',-27.1,0,-Math.PI/2],['mines',27.1,-6,Math.PI/2],['military',0,-25.1,Math.PI]];
+  signPosts(K, SG); const nm=gate(K, 26, 8, 'nameC', B);
+  const d=K.bake(false); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 26, nm);
+  { const t=supplyTruck(); t.scale.setScalar(0.9); t.position.set(21, 0, 1.7); t.rotation.y=Math.PI; d.add(t); }   // parked under the shed
+  fenceBase(B, -27, 27, -25, 26, 8);
+  return B; }
+// a steel water tower: four braced legs, a riveted tank with a conical lid, a ladder
+function waterTower(K, x, z){ const h=8, w=1.3, c=0x56584f; for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) K.add('metal', _xf(new THREE.BoxGeometry(0.16,h,0.16),x+sx*w,h/2,z+sz*w,sz*0.04,0,-sx*0.04), c);
+  for(let y=2;y<h;y+=2.6){ K.add('metal', B3(2*w+0.2,0.1,0.1,x,y,z-w), c); K.add('metal', B3(2*w+0.2,0.1,0.1,x,y,z+w), c); K.add('metal', B3(0.1,0.1,2*w+0.2,x-w,y,z), c); K.add('metal', B3(0.1,0.1,2*w+0.2,x+w,y,z), c);
+    const L=Math.hypot(2*w,2.6), a=Math.atan2(2.6,2*w); for(const sg of [1,-1]){ K.add('metal', _xf(new THREE.BoxGeometry(L,0.07,0.07),x,y+1.3,z+w,0,0,sg*a), c); K.add('metal', _xf(new THREE.BoxGeometry(0.07,0.07,L),x+w,y+1.3,z,sg*a,0,0), c); } }
+  K.add('metal', B3(3.4,0.2,3.4,x,h,z), c); K.add('paint', CY(1.7,1.7,2.6,20,x,h+1.4,z), 0x8a9a8a); K.add('paint', _xf(new THREE.ConeGeometry(1.78,0.8,20),x,h+3.1,z), 0x6a7a6a);
+  for(const y of [h+0.5,h+2.3]) K.add('metal', _xf(new THREE.TorusGeometry(1.72,0.04,4,20),x,y,z,Math.PI/2), 0x4a4e46);
+  for(const s of [-0.22,0.22]) K.add('metal', CY(0.03,0.03,h+2.4,5,x+w+0.25,(h+2.4)/2,z+s), c); for(let y=0.4;y<h+2.2;y+=0.45) K.add('metal', B3(0.04,0.04,0.48,x+w+0.25,y,z), c); }
 // the garrisons go in last, after buildZones() has cleared its own guards (it removes every enemy that has a post)
 export function garrisonSupply(){ for(const B of SUPPLY.bases) if(B.garrison){ B.garrison=false; garrison(B, B.gInf); } }
 

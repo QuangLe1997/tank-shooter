@@ -990,10 +990,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z195 the compounds stand in the map corners behind a real fence: chain-link + barbed wire (tanks flatten it), a steel gate, warning signs, steel frames
 { const fs=await import('node:fs'); const su=fs.readFileSync('src/world/supply.js','utf8');
-  ok(/function cornerSite\(sx, sz, R0\)/.test(su) && /cornerSite\(sx, sz, R\) \|\| findSite\(R\)/.test(su), 'compounds go in the corners of the map (fallback: anywhere in the enemy half)');
+  ok(/export function scanSite\(R0, score, o\)/.test(su) && /scanSite\(R, \(x,z\)=>Math\.hypot\(x-sx\*\(ARENA-jx\)/.test(su), 'compounds go to the free spot nearest each map corner (Z196 grid scan: never misses a gap)');
   ok(/function fenceBase\(/.test(su) && /TorusGeometry\(0\.42,0\.013/.test(su) && /alphaTest:0\.35/.test(su) && /sp\.down=true/.test(su), 'chain-link + barbed-wire fence with a razor concertina; the hull flattens a bay');
   ok(['fire','nosmoke','ammo','military','mines'].every(k=>su.includes("kind==='"+k+"'")) && /CẤM LỬA/.test(su) && /KHU VỰC QUÂN SỰ/.test(su), 'Vietnamese warning signs: flammable, no fire, explosives, military zone, mines');
   ok(/function lattice\(/.test(su) && /function gate\(/.test(su) && /storage shed/.test(su), 'steel lattice light towers, a steel gate portal with a boom, a steel-frame storage shed'); }
+
+// Z196 lived-in barracks (mess, quartermaster, medical post, rest area, a crowd that scrambles on the alarm), grid-scanned sites, levelled pads, readable signs
+{ const fs=await import('node:fs'); const cl=fs.readFileSync('src/world/camp-life.js','utf8'), cp=fs.readFileSync('src/world/camps.js','utf8'), su=fs.readFileSync('src/world/supply.js','utf8'), zn=fs.readFileSync('src/world/zones.js','utf8');
+  ok(['messHall','quartermaster','medical','restArea','latrines'].every(f=>cl.includes('export function '+f+'(') && cp.includes(f+'(L,')), 'the camp feeds, clothes, treats and rests its men (mess, stores, medical post, rest area, latrines)');
+  ok(/export function person\(/.test(cl) && /'sit'/.test(cp) && /'lie'/.test(cp) && /'drill'/.test(cp) && /'walk'/.test(cp) && /'guard'/.test(cp) && /scrambleCrowd\(c\)/.test(cp), 'the camp is full of men (eating, by the fire, drilling, wounded, walking, a sentry) who run for the barracks on the alarm');
+  ok(/export function flattenPad\(/.test(su) && /flattenPad\(x, z, CAMP_R/.test(cp) && /buildSupply\('far'\)/.test(fs.readFileSync('src/world/cover.js','utf8')), 'compounds sit on levelled ground; far corners → camps → near corners');
+  ok(/signBack\(\)/.test(su) && /\[Math\.PI,-0\.2\]/.test(su) && /SUPPLY\.bases\) if\(Math\.hypot/.test(zn), 'signs read right from both sides; nothing is scattered inside a compound'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

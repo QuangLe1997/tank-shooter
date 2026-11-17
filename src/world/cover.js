@@ -65,8 +65,9 @@ export function buildBlocks(){
   placeLone();                                                                             // Z193 shipping containers + burnt-out car wrecks
   buildRidges();                                                                           // Z106 rock spines with passes → sectors + chokepoints
   buildBrickWalls();                                                                       // Z86 ruined masonry walls
+  buildSupply('far');                                                                      // Z194 fuel / ammo compounds in the enemy-side corners
   buildCamps();                                                                            // Z90 enemy troop camps
-  buildSupply();                                                                           // Z194 fuel station + ammo depot
+  buildSupply('near');                                                                     // Z196 … then the near corners, round whatever room is left
   placeCaches();                                                                           // Z93 guarded supply caches
   buildZones();                                                                            // Z104 rally point · POW stockades · weapon + tank depots (with guards)
   buildScenery();                                                                          // Z141 trees · bushes · flowers · reeds · haystacks

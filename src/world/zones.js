@@ -1,9 +1,9 @@
 // world/zones.js — Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered
 import { DEPOT, POW, RALLY } from '../../config.js';
-import { ARENA, DEPOTS, POWS, RALLY_PT, S, buildDepots, buildForts, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearForts, clearPOWs, clearRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, inField, planForts, powJob, spawnEnemy } from '../hub.js';
+import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearForts, clearPOWs, clearRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, inField, planForts, powJob, spawnEnemy } from '../hub.js';
 
 export const ZONES=[];   // { kind:'rally'|'pow'|'arms'|'motor', x, z, r }
-export function inZone(x, z, pad){ for(const q of ZONES) if(Math.hypot(q.x-x, q.z-z) < q.r+(pad||0)) return true; return false; }
+export function inZone(x, z, pad){ for(const q of ZONES) if(Math.hypot(q.x-x, q.z-z) < q.r+(pad||0)) return true; for(const B of SUPPLY.bases) if(Math.hypot(B.x-x, B.z-z) < B.R+(pad||0)) return true; return false; }   // Z196 the enemy compounds are claimed ground too (no trees, lava or scatter inside the wire)
 export function zonesOf(kind){ return ZONES.filter(q=>q.kind===kind); }
 function _free(x, z, r){ return Math.abs(x)<ARENA-r-3 && Math.abs(z)<ARENA-r-3 && inField(x, z, r+4) && Math.hypot(x,z)>24+r && Math.hypot(x, z-ARENA*0.55)>14+r && !inZone(x, z, r+8); }
 function _pick(gen, r){ for(let t=0;t<50;t++){ const [x,z]=gen(); if(_free(x,z,r)) return [x,z]; } return null; }
