@@ -934,7 +934,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z188 strike & lock visuals: a readable artillery zone (disc, hazard band, closing chevrons, countdown arc, label, shell shadow), flame tongues + smoke ribbons, a "BỊ KHOÁ" warning, a KHOÁ label on our locks
 { const fs=await import('node:fs'); const a=fs.readFileSync('src/campaign/artillery.js','utf8'), m=fs.readFileSync('src/actors/enemy-missiles.js','utf8'), l=fs.readFileSync('src/combat/lock-on.js','utf8'), sy=fs.readFileSync('src/audio/synth.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
-  ok(/function tickArtLock\(zone, k, fly, now, dt, tLeft\)/.test(a) && /'PHÁO KÍCH'/.test(a) && /u\.shadow\.material\.opacity/.test(a) && /sfx\('whistle'\)/.test(a), 'artillery zone: closing chevrons, countdown arc + seconds label, shell shadow, falling whistle');
+  ok(/function tickArtLock\(zone, k, fly, now, dt\)/.test(a) && /RingGeometry\(R-0\.08,R\+0\.03,96\)/.test(a) && /u\.shadow\.material\.opacity/.test(a) && /sfx\('whistle'\)/.test(a), 'Z213 artillery zone: one thin blinking red ring (faster as the shell nears), shell shadow, falling whistle');
   ok(/export function updateLockWarn\(dt, now\)/.test(m) && /BỊ KHOÁ/.test(m) && /updateLockWarn\(gdt, now\)/.test(lp) && /case 'lockwarn'/.test(sy), 'guided missile → red brackets + BỊ KHOÁ round your tank, beeping faster as it closes');
   ok(/◆ KHOÁ/.test(l) && /dgrp/.test(l), 'our missile lock: dashed ring + KHOÁ label once the brackets snap'); }
 
@@ -951,7 +951,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const c=fs.readFileSync('src/fx/cinematic.js','utf8'), lv=fs.readFileSync('src/world/lava.js','utf8'), lod=fs.readFileSync('src/render/lod.js','utf8'), a=fs.readFileSync('src/campaign/artillery.js','utf8');
   ok(!/new THREE\.PointLight/.test(c) && !/new THREE\.PointLight/.test(lv) && /export function groundGlowMesh/.test(c) && /groundGlowMesh\(/.test(lv), 'fire light and lava glow add no lights mid-fight (no shader recompile freeze)');
   ok(/export function fogCull\(\)/.test(lod) && /fogCull\(\);/.test(lod) && /CULL_LAYER=7/.test(lod) && /isPoints/.test(lod), 'objects lost in the fog are not drawn; particle layers / big pieces are never culled');
-  ok(/sp\.scale\.set\(3\.9,0\.98,1\)/.test(a) && /hot\?12:3\+k\*6/.test(a), 'artillery zone: smaller label, slower pulse'); }
+  ok(!/PHÁO KÍCH'|chev|hazard|ringPulse\(\{x:s\.tx,z:s\.tz\}, 0xff4632/.test(a), 'Z213 artillery zone: no label, chevrons, hazard band or warning waves'); }
 
 // Z191 cinematic colour: film split-tone + vibrance + a soft highlight shoulder in the grade, and every battlefield / hour has its own palette
 { const fs=await import('node:fs'); const r=fs.readFileSync('src/render/renderer.js','utf8'), at=fs.readFileSync('src/world/atmosphere.js','utf8'); const W=await import('./src/data/world.js');
