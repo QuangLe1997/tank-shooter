@@ -55,7 +55,7 @@ export function updateEnemyMissiles(dt, now){
     if(!gone && p.sig && p.sig.trophy && now>(p.apsCd||0) && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < 7){ p.apsCd=now+p.sig.trophy; apsIntercept(r.x, r.y, r.z); gone='shot'; }   // Z161 TROPHY APS (Merkava)
     if(!gone && hitsHull(p, r.x, r.z, 0.3) && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
     if(!gone && r.y < gy+3.2 && hitAllyTank(r.x, r.z, 0.3, r.dmg)) gone='hit';   // Z104 RPG / ATGM into a captured tank
-    if(!gone) for(const bl of blocksNear(r.x, r.z, 0.3, _mbk)){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj') damageBlock(bl, r.dmg*1.2); gone='hit'; break; } }
+    if(!gone) for(const bl of blocksNear(r.x, r.z, 0.3, _mbk)){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj' && !bl.supply) damageBlock(bl, r.dmg*1.2); gone='hit'; break; } }
     if(!gone && core && Math.hypot(core.pos.x-r.x, core.pos.z-r.z) < core.r){ damageCore(r.dmg*0.8); gone='hit'; }
     if(!gone && (r.y<=gy+0.2 || r.life<=0 || Math.abs(r.x)>ARENA || Math.abs(r.z)>ARENA)) gone='ground';
     if(gone) blowMissile(i, gone);

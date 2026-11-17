@@ -979,5 +979,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function leaveRubble/.test(rb) && /leaveRubble\(b/.test(cv) && /clearRubble\(\)/.test(cv), 'a broken piece leaves a heap of its own material; heaps are cleared each battle');
   ok(/\(bl\.hard \|\| bl\.heavy\) && b\.inf/.test(lo) && /bl\.heavy\?0\.4:1/.test(lo), 'rifle rounds only chip solid cover; enemy shells wear it slowly'); }
 
+// Z194 enemy supply bases: fuel station, ammo depot, bigger camps — guarded, reinforced, and losing them weakens the enemy
+{ const fs=await import('node:fs'); const C=await import('./config.js'); const su=fs.readFileSync('src/world/supply.js','utf8'), cp=fs.readFileSync('src/world/camps.js','utf8'), tc=fs.readFileSync('src/ai/tactics.js','utf8'), wv=fs.readFileSync('src/campaign/waves.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8');
+  ok(C.SUPPLYB && C.SUPPLYB.perStage.fuel.every(n=>n>=1) && C.SUPPLYB.perStage.ammo.every(n=>n>=1), 'every battle has a fuel station and an ammo depot');
+  ok(/function fuelTank\(/.test(su) && /function igloo\(/.test(su) && /function tankerTruck\(/.test(su) && /function ammoStack\(/.test(su) && /SUPPLY_K=1\.25/.test(su) && /CAMP_K=1\.35/.test(cp), 'big, detailed installations (tank farm, igloo magazines, trucks, crate stacks) and bigger camps');
+  ok(/garrisonSupply\(\)/.test(cv) && /e\.guardBase=B/.test(su) && /spawnEnemy\('gunship'/.test(su) && /coverSpot\(/.test(su) && /guardLeash\(e, dt, p\)/.test(tc), 'guards spread behind cover, guard tanks hold a leash, gunships and armour are called in');
+  ok(/supplySpeed\(\)/.test(tc) && /supplyRate\(\)/.test(tc) && /supplyDmg\(\)/.test(wv) && /trimWaveForSupply\(WAVE\.spawnQueue\)/.test(wv), 'losing fuel / ammo / barracks slows enemy tanks, softens their fire, thins their waves');
+  ok(/\(bl\.kind==='obj' \|\| bl\.supply\) && b\.owner==='e'/.test(fs.readFileSync('src/combat/lock-on.js','utf8')), 'enemy fire never hurts its own bases');
+  const S={ fuel:0, ammo:0, camp:0 }; ok(Math.max(C.SUPPLYB.cut.min, 1-C.SUPPLYB.cut.speed*2)<1 && C.SUPPLYB.cut.min>=0.6, 'the cuts are capped (the enemy is weakened, never crippled)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

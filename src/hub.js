@@ -31,6 +31,7 @@ export * from './world/horizon.js';   // Z189 the world beyond the fence
 export * from './world/biome.js';
 export * from './world/cover.js';
 export * from './world/rubble.js';   // Z193 broken obstacles leave a heap of their own material
+export * from './world/supply.js';   // Z194 fuel stations, ammo depots, camps as guarded supply bases
 export * from './world/ridges.js';
 export * from './world/brick-walls.js';
 export * from './tank/materials.js';

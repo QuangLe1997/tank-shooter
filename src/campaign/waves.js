@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, tip, updateHUD } from '../hub.js';
+import { FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -14,7 +14,7 @@ export function loopBossMul(){ return 1 + (S.loop||0)*BALANCE.loop.boss; }  // b
 export function loopRewardMul(){ return 1 + (S.loop||0)*BALANCE.loop.reward; }   // UI labels (numbers live in config.js BALANCE.difficulty)
 export function diffCfg(){ return BALANCE.difficulty[PROFILE.difficulty] || BALANCE.difficulty.soldier; }
 export function diffHpMul(){ return diffCfg().hp; }
-export function diffDmgMul(){ return diffCfg().dmg; }
+export function diffDmgMul(){ return diffCfg().dmg * supplyDmg(); }   // Z194 an enemy short of ammunition hits softer
 export function diffRewardMul(){ return diffCfg().reward; }
 // Z107 the wave's composition as data (also read by combat/power.js so the power rating sees exactly what the waves send)
 export function waveSize(stage, wave){ return Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage); }   // eased: s1w1=4 → s5w5=~15
@@ -57,6 +57,7 @@ export function startWave(now){
   if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*BALANCE.wave.hordeMul)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
   else if(WAVE.event==='blitz'){ WAVE.spawnQueue = WAVE.spawnQueue.map(()=>'bomber'); }
   else if(['ambush','column','pyro','airraid'].includes(WAVE.event)) applyScriptedWave(now);   // Z83 scripted beats (airraid also from the random roll)
+  trimWaveForSupply(WAVE.spawnQueue);   // Z194 lost fuel → fewer tanks · lost barracks → fewer squads
   if(objMod('gunshipPerWave',0)>0 && S.stage>=2) WAVE.spawnQueue.splice(Math.min(2,WAVE.spawnQueue.length),0,'gunship');   // Z83 radar site vectors a gunship onto every wave
   setTimeout(()=>{ if(S.mode==='playing') radio(opFor(S.stage).radio[S.wave]); }, 900);                                                // all kamikaze
   WAVE.spawnAt = now + 0.4; WAVE.active = true; planWave(now);

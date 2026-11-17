@@ -130,7 +130,7 @@ export function updateBullets(dt, now){
     let blocked=false;   // Z192 (only the obstacles in this round's grid cells are tested) · Z193 enemy shells wear solid cover down at 40%
     const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
     if(!airborne || low) for(const bl of blocksNear(b.x, b.z, b.r, _bnb)){ if(bl===b.ignore || (bl.ours && b.owner==='p')) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
-      if(bl.kind==='obj' && b.owner==='e'){ blocked=true; break; }   // enemy fire never hurts their own objective
+      if((bl.kind==='obj' || bl.supply) && b.owner==='e'){ blocked=true; break; }   // Z194 nor their own supply bases   // enemy fire never hurts their own objective
       if(((bl.fort || bl.hard) && b.owner==='e') || ((bl.hard || bl.heavy) && b.inf)){   // Z193 rifle rounds only chip concrete / steel   // Z121 nor do rifle rounds (ours or theirs)
         ringPulse(b.mesh.position, 0xc89060, 0.9); blocked=true; break; }   // Z112 enemy fire doesn't break rocks / hedgehogs either   // Z111b their own walls soak their fire — no damage to the stone
       damageBlock(bl, b.dmg*structMul(b.type, bl)*(b.owner==='p'?siegeMul():(bl.heavy?0.4:1))); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blockImpactFX(bl, b); blocked=true; break; } }

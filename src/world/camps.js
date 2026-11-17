@@ -1,10 +1,10 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, LOOT } from '../../config.js';
-import { ARENA, COVER_HP, MOBILE, S, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, burst, cMod, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, inField, inZone, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, scene, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
+import { ARENA, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearSite, coverGeo, coverMat, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, floatText, haptic, heightAt, hitsHull, inField, inZone, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, propTex, radio, registerCampBase, scene, sfx, siteOk, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
-export const CAMPS=[], TENTS=[];
+export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35;   // Z194 the compound at the tanks' scale
 export let _campMats=null;
 export function campMats(){ if(_campMats) return _campMats;
   const tin=propTex('drum').clone(); tin.wrapS=tin.wrapT=THREE.RepeatWrapping; tin.repeat.set(6,2); tin.needsUpdate=true;
@@ -38,36 +38,40 @@ export function campFlagTex(){ return _canvasTex(160,100,(x,W,H)=>{ x.fillStyle=
 export function buildCamps(){
   clearCamps(); const n=(CAMP.perStage[Math.min(CAMP.perStage.length-1,S.stage-1)]||1) - (MOBILE&&S.stage<4?0:0);
   for(let c=0;c<n;c++){ let x=0,z=0,ok=false;
-    for(let t=0;t<60&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-16); z=-ARENA+15+Math.random()*(ARENA*0.75); ok=Math.hypot(x,z)>26 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+10) && !CAMPS.some(o=>Math.hypot(o.x-x,o.z-z)<30) && !inZone(x,z,12) && inField(x,z,16); }
-    if(!ok) continue; const ang=(Math.random()*4|0)*Math.PI/2+(Math.random()-0.5)*0.3, ca=Math.cos(ang), sa=Math.sin(ang), at=(lx,lz)=>[x+lx*ca+lz*sa, z-lx*sa+lz*ca];
+    for(let t=0;t<500&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-16); z=-ARENA+15+Math.random()*(ARENA*0.75); ok=Math.hypot(x,z)>50 && siteOk(x,z,19) && !CAMPS.some(o=>Math.hypot(o.x-x,o.z-z)<42) && !inZone(x,z,15) && inField(x,z,19); }   // Z194 a bigger compound: any structure keeps it away, scattered cover is cleared off the ground
+    if(!ok) continue; clearSite(x, z, 18); const ang=(Math.random()*4|0)*Math.PI/2+(Math.random()-0.5)*0.3, ca=Math.cos(ang), sa=Math.sin(ang), at=(lx,lz)=>[x+lx*ca+lz*sa, z-lx*sa+lz*ca];
     const g=new THREE.Group(); scene.add(g);
-    const hut=makeQuonset(); const gy=heightAt(x,z); hut.position.set(x,gy-0.05,z); hut.rotation.y=ang; g.add(hut);
+    const K=CAMP_K, hut=makeQuonset(); const gy=heightAt(x,z); hut.scale.setScalar(K); hut.position.set(x,gy-0.05,z); hut.rotation.y=ang; g.add(hut);   // Z194 barracks at ×1.35
     const hp=Math.round(CAMP.hp*(1+(S.stage-1)*CAMP.hpPerStage)*loopHpMul()*diffHpMul());
-    const camp={ g, hut, x, z, ang, hp, maxHp:hp, nextAt:performance.now()/1000+6, alive:true, fire:null, door:at(0,4.4) };
-    const bobj={ mesh:hut, x, z, r:3.6, hp, maxHp:hp, steel:false, loot:true, kind:'camp', camp, obb:{ f:ang, hw:2.5, hl:3.6 } }; blocks.push(bobj); camp.block=bobj; addLootBeacon(bobj,'block');
-    for(const [lx,lz,ry] of [[-6.2,1.5,0.1],[6.2,1.0,-0.08],[-5.8,-5.2,0.05]]){ const [tx,tz]=at(lx,lz); const tn=makeTent(); tn.position.set(tx,heightAt(tx,tz)-0.03,tz); tn.rotation.y=ang+ry; g.add(tn); TENTS.push({ g:tn, x:tx, z:tz, flat:false, ft:0 }); }
-    { const [fx,fz]=at(4.2,-4.8), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,6.5,6), campMats().dark); pole.position.set(fx,fy+3.25,fz); g.add(pole);
+    const camp={ g, hut, x, z, ang, hp, maxHp:hp, nextAt:performance.now()/1000+6, alive:true, fire:null, door:at(0,4.4*K), blocks:[] };
+    const bobj={ mesh:hut, x, z, r:3.6*K, hp, maxHp:hp, steel:false, loot:true, kind:'camp', camp, obb:{ f:ang, hw:2.5*K, hl:3.6*K } }; blocks.push(bobj); camp.block=bobj; camp.blocks.push(bobj); addLootBeacon(bobj,'block');
+    { const [hx,hz]=at(9.5,-3.5), h2=makeQuonset(); h2.scale.setScalar(K); h2.position.set(hx,heightAt(hx,hz)-0.05,hz); h2.rotation.y=ang; g.add(h2); camp.hut2=h2;   // Z194 a second barracks block (same garrison, same HP pool)
+      const b2={ mesh:h2, x:hx, z:hz, r:3.6*K, hp, maxHp:hp, steel:false, loot:false, kind:'camp', camp, obb:{ f:ang, hw:2.5*K, hl:3.6*K } }; blocks.push(b2); camp.blocks.push(b2); }
+    { const [tx,tz]=at(-12,-11); if(inField(tx,tz,4) && !blocks.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+3)) buildTower(tx, tz); }   // Z194 a watchtower over the compound
+    for(const [lx,lz,ry,ts] of [[-8.6,2.0,0.1,1],[-8.2,-6.6,0.05,1],[3.5,-11.5,1.57,1.5],[-1.5,-12.5,1.57,1]]){ const [tx,tz]=at(lx,lz); const tn=makeTent(); tn.scale.setScalar(ts*1.2); tn.position.set(tx,heightAt(tx,tz)-0.03,tz); tn.rotation.y=ang+ry; g.add(tn); TENTS.push({ g:tn, x:tx, z:tz, flat:false, ft:0 }); }
+    { const [fx,fz]=at(-4.5,-9.2), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,6.5,6), campMats().dark); pole.position.set(fx,fy+3.25,fz); g.add(pole);
       const fl=makeFlag(campFlagTex(),1.8,1.15,1); fl.position.set(fx,fy+5.85,fz); g.add(fl); }
-    { const [cx,cz]=at(-1.6,6.6), cy=heightAt(cx,cz); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,6,12), campMats().dark); ring.rotation.x=Math.PI/2; ring.position.set(cx,cy+0.08,cz); g.add(ring);
+    { const [cx,cz]=at(-2.4,9.0), cy=heightAt(cx,cz); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,6,12), campMats().dark); ring.rotation.x=Math.PI/2; ring.position.set(cx,cy+0.08,cz); g.add(ring);
       const fire=new THREE.Mesh(new THREE.ConeGeometry(0.32,0.6,7), campMats().fire); fire.position.set(cx,cy+0.32,cz); g.add(fire); camp.fire={ m:fire, x:cx, z:cz, y:cy };
-      for(const [lx,lz] of [[-0.2,5.4],[-3.0,6.0]]){ const [bx,bz]=at(lx,lz); const crate=new THREE.Mesh(coverGeo('crates'), coverMat('crates')); crate.scale.setScalar(0.5); crate.position.set(bx,heightAt(bx,bz),bz); crate.rotation.y=ang+Math.random(); g.add(crate); } }
-    for(let k=0;k<9;k++){ const a=-Math.PI*0.72+k*(Math.PI*1.44/8)+Math.PI, [sx,sz]=at(Math.sin(a)*10.5, Math.cos(a)*10.5);   // sandbag ring, open at the front (the hut door side)
-      if(Math.abs(sx)>ARENA-4||Math.abs(sz)>ARENA-4||!inField(sx,sz,3)||blocks.some(b=>b.kind!=='camp'&&Math.hypot(b.x-sx,b.z-sz)<3)) continue;
-      const m=makeCoverMesh('sandbag', true); m.position.set(sx,heightAt(sx,sz)-0.12,sz); m.rotation.y=ang+a+Math.PI/2; scene.add(m); g.userData.bags=(g.userData.bags||0)+1;
-      blocks.push({ mesh:m, x:sx, z:sz, r:1.7, hp:COVER_HP.sandbag, maxHp:COVER_HP.sandbag, steel:false, loot:false, kind:'sandbag' }); }
-    CAMPS.push(camp);
+      for(const [lx,lz] of [[-0.6,7.6],[-4.2,8.2]]){ const [bx,bz]=at(lx,lz); const crate=new THREE.Mesh(coverGeo('crates'), coverMat('crates')); crate.scale.setScalar(0.5); crate.position.set(bx,heightAt(bx,bz),bz); crate.rotation.y=ang+Math.random(); g.add(crate); } }
+    for(let k=0;k<12;k++){ const a=-Math.PI*0.74+k*(Math.PI*1.48/11)+Math.PI, [sx,sz]=at(Math.sin(a)*15.5, Math.cos(a)*15.5);   // sandbag ring, open at the front (the hut door side) · Z194 wider, taller bags
+      if(Math.abs(sx)>ARENA-4||Math.abs(sz)>ARENA-4||!inField(sx,sz,3)||blocks.some(b=>b.kind!=='camp'&&Math.hypot(b.x-sx,b.z-sz)<3.5)) continue;
+      const m=makeCoverMesh('sandbag', true); m.scale.setScalar(COVER_K); m.position.set(sx,heightAt(sx,sz)-0.12,sz); m.rotation.y=ang+a+Math.PI/2; scene.add(m); g.userData.bags=(g.userData.bags||0)+1;
+      blocks.push({ mesh:m, x:sx, z:sz, r:1.7*COVER_K, hp:COVER_HP.sandbag, maxHp:COVER_HP.sandbag, steel:false, cover:true, ms:COVER_K, loot:false, kind:'sandbag' }); }
+    CAMPS.push(camp); registerCampBase(camp);   // Z194 guarded like the other supply bases
   }
 }
 export function clearCamps(){ for(const c of CAMPS){ unwave(c.g); scene.remove(c.g); } CAMPS.length=0; TENTS.length=0; }
-export function damageCamp(b, dmg){ const c=b.camp; if(!c.alive) return; b.hp-=dmg; c.hp=b.hp; flashMat(campMats().tin, 0.08, 0.4);
+// Z194 both barracks share one HP pool · a hit sounds the alarm
+export function damageCamp(b, dmg){ const c=b.camp; if(!c.alive) return; c.hp-=dmg; for(const q of c.blocks||[b]) q.hp=c.hp; const sb=SUPPLY.bases.find(B=>B.camp===c); if(sb) sb.hitAt=performance.now()/1000; flashMat(campMats().tin, 0.08, 0.4);
   if(Math.random()<0.5) burst({x:b.x+(Math.random()-0.5)*3,z:b.z+(Math.random()-0.5)*3}, 0xb0b4ac, 3, 4, {y:heightAt(b.x,b.z)+1.5+Math.random()*1.5, life:0.35, size:0.25, grav:-14, drag:1.5, up:2});
   if(b.hp<=0) destroyCamp(b); }
-export function destroyCamp(b){ const c=b.camp; c.alive=false; const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
+export function destroyCamp(b){ const c=b.camp; c.alive=false; for(const q of c.blocks||[b]){ const i=blocks.indexOf(q); if(i>=0) blocks.splice(i,1); }
   bigExplode({x:c.x,z:c.z}, 0xff8a3a, 2.2); fireball({x:c.x,z:c.z}, 2.0); decalScorch(c.x,c.z,7,1); deformCrater(c.x,c.z,2.6,0.5); S.shake=Math.min(3.2,S.shake+1.4);
-  c.hut.scale.set(1.04,0.32,1.0); c.hut.rotation.z=0.12; c.hut.position.y-=0.2; c.hut.traverse(o=>{ if(o.isMesh && o.material===campMats().tin){ o.material=o.material.clone(); o.material.color.setHex(0x2a2622); } });   // the roof caves in, scorched
+  for(const h of [c.hut, c.hut2]) if(h){ h.scale.set(1.04*CAMP_K,0.32*CAMP_K,CAMP_K); h.rotation.z=0.12; h.position.y-=0.2; h.traverse(o=>{ if(o.isMesh && o.material===campMats().tin){ o.material=o.material.clone(); o.material.color.setHex(0x2a2622); } }); }   // the roofs cave in, scorched
   for(let k=0;k<3;k++) spawnDebris({x:c.x,z:c.z}, 1.2, 0x8a8e86);
   const R=Math.round; addScore(R(CAMP.score*loopRewardMul()), new THREE.Vector3(c.x,5,c.z)); addCoins(R(CAMP.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
-  floatText('ĐÃ PHÁ TRẠI', '#ffcf5a', new THREE.Vector3(c.x,6,c.z), 24); radio('SCH: Trại địch đã bị san phẳng — viện binh của chúng bị cắt đứt!'); sfx('bigexplode');
+  floatText('ĐÃ PHÁ TRẠI', '#ffcf5a', new THREE.Vector3(c.x,6,c.z), 24); campLost(c); sfx('bigexplode');   // Z194 the radio + the lasting cut come from the supply bases
   if(b.loot){ dropPowerup({x:c.x,z:c.z+4}, 2); dropPowerup({x:c.x,z:c.z+4}, 1); } c.burnT=12; }
 export let _campRadioAt=0;
 export function updateCamps(dt, now){
