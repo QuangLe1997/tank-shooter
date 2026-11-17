@@ -1124,5 +1124,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function formationSlot\(a\)/.test(ft) && /a\.goalKind==='form' && a\.ringOut!=null/.test(ft) && /FIELDCRAFT\.target\.coverMul/.test(inf), 'escort files on the move, all-round ring at a halt; the enemy shoots the man in the open first');
   ok(/id="sqHud"/.test(html) && /export function updateSquadHud\(now\)/.test(hud) && /for\(const sq of SQUADS\)/.test(rd) && /for\(const sm of SMOKES\)/.test(rd), 'squad panel (order, posture, one tile per man) + enemy squad arrows and smoke on the radar'); }
 
+// Z221 lock-on missiles: forward seeker cone, never a mark danger-close to our tank or our men; enemy artillery hits say so
+{ const fs=await import('node:fs'); const lk=fs.readFileSync('src/combat/lock-on.js','utf8'), ar=fs.readFileSync('src/campaign/artillery.js','utf8'), cf=fs.readFileSync('config.js','utf8');
+  ok(/export const LOCKON = \{ cone:/.test(cf) && /function seekOK\(b, x, z, inf\)/.test(lk) && /LOCKON\.cone/.test(lk) && /LOCKON\.minP/.test(lk) && /LOCKON\.allyR/.test(lk), 'the seeker looks ahead only and skips marks next to our tank / our men');
+  ok(/\|\| dangerClose\(b\.tgt\)\) b\.tgt =/.test(lk) && /PHÁO ĐỊCH TRÚNG!/.test(ar), 'a mark that closes on us is dropped; enemy artillery hits are labelled'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

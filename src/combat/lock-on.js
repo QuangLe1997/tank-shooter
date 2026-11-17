@@ -1,6 +1,6 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
-import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
+import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT, LOCKON } from '../../config.js';
 import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, towers, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
@@ -26,12 +26,20 @@ export function targetAlive(t){ if(t && t._twr) return t.gd.alive && !t.t.fallin
 // Z217 a guard up a watchtower as a missile target (one stable object per guard, kept at his real position)
 function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ _twr:true, t, gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7 }); o.pos.x=gd.wx; o.pos.y=(gd.wy||6)+0.9; o.pos.z=gd.wz; return o; }   // dead targets splice out of enemies[]
 // Z214 a smart missile goes for the helicopter first
+// Z221 the seeker only looks AHEAD of the missile (a cone round its flight line) and never takes a mark danger-close to our own tank or our
+//   men — no more missiles whipping round onto your own position or diving into your squad's fight
+function seekOK(b, x, z, inf){ const dx=x-b.x, dz=z-b.z; if(dx*dx+dz*dz>4 && Math.abs(wrapAngle(Math.atan2(dx,dz)-b.angle))>LOCKON.cone) return false;
+  const p=S.player; if(p && (x-p.pos.x)**2+(z-p.pos.z)**2 < LOCKON.minP*LOCKON.minP) return false;
+  if(inf) for(const a of FT){ if((a.pos.x-x)**2+(a.pos.z-z)**2 < LOCKON.allyR*LOCKON.allyR) return false; }
+  return true; }
+function dangerClose(t){ const x=t.pos.x, z=t.pos.z, p=S.player; if(p && (x-p.pos.x)**2+(z-p.pos.z)**2 < LOCKON.minP*LOCKON.minP) return true;
+  if(t.def && t.def.inf) for(const a of FT){ if((a.pos.x-x)**2+(a.pos.z-z)**2 < LOCKON.allyR*LOCKON.allyR) return true; } return false; }
 export function acquireLock(b){ let best=null, bd=1e9;                                     // nearest live enemy/boss to the missile itself
-  if(b.smart){ for(const e of enemies){ const w=e.def.air?0.35:e.def.inf?4:1, d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*w; if(d<bd){ bd=d; best=e; } }   // Z217 heat-seeking: aircraft › armour › guards › foot soldiers — never bricks or stone
-    for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const d=((gd.wx-b.x)**2+(gd.wz-b.z)**2)*1.6; if(d<bd){ bd=d; best=guardTarget(t, gd); } } }
-    if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){ bd=d; best=boss; } } return best; }
-  for(const e of enemies){ const d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*(e.def.inf?9:(e.def.air && b.smart)?0.35:1); if(d<bd){bd=d;best=e;} }   // missiles prefer vehicles over foot soldiers
-  if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
+  if(b.smart){ for(const e of enemies){ const w=e.def.air?0.35:e.def.inf?4:1, d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*w; if(d<bd && seekOK(b, e.pos.x, e.pos.z, e.def.inf)){ bd=d; best=e; } }   // Z217 heat-seeking: aircraft › armour › guards › foot soldiers — never bricks or stone
+    for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const d=((gd.wx-b.x)**2+(gd.wz-b.z)**2)*1.6; if(d<bd && seekOK(b, gd.wx, gd.wz, false)){ bd=d; best=guardTarget(t, gd); } } }
+    if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd && seekOK(b, boss.pos.x, boss.pos.z, false)){ bd=d; best=boss; } } return best; }
+  for(const e of enemies){ const d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*(e.def.inf?9:(e.def.air && b.smart)?0.35:1); if(d<bd && seekOK(b, e.pos.x, e.pos.z, e.def.inf)){bd=d;best=e;} }   // missiles prefer vehicles over foot soldiers
+  if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd && seekOK(b, boss.pos.x, boss.pos.z, false)){bd=d;best=boss;} }
   return best; }
 export function requestLock(t){
   for(const L of lockFX){ if(L.tgt===t && L.life>0){ L.life=L.max; return; } }      // already locked → keep alive while a missile chases it
@@ -141,7 +149,7 @@ export function updateBullets(dt, now){
     if(b.lockOn && b.owner==='p'){ // MISSILE: lock ONE target, chase that object, loft-then-dive arc
       if(b.smart){ const sp=Math.hypot(b.vx,b.vz)||1; if(b.ign>0){ b.ign-=dt; if(b.ign<=0) smartIgnite(b); } else { const ns=Math.min(b.vmax, sp+b.vmax*3.4*dt); b.vx*=ns/sp; b.vz*=ns/sp; }   // Z214 eject → ignite → streak
         const rk=b.mesh.userData.rk; if(rk){ rk.rotation.z+=dt*16; if(rk.userData.glow) rk.userData.glow.visible = b.ign<=0; if(rk.userData.core) rk.userData.core.visible = b.ign<=0; } }
-      if(!b.tgt || !targetAlive(b.tgt)) b.tgt = (b.flared && now<b.flared) ? null : acquireLock(b);            // sticky lock — re-acquire only if it dies · Z198 decoyed by flares: it flies on blind for a moment
+      if(!b.tgt || !targetAlive(b.tgt) || dangerClose(b.tgt)) b.tgt = (b.flared && now<b.flared) ? null : acquireLock(b);   // Z221 a mark that closes on our tank / our men is dropped            // sticky lock — re-acquire only if it dies · Z198 decoyed by flares: it flies on blind for a moment
       const t=b.tgt; if(t && t._twr) guardTarget(t.t, t.gd);
       if(t){ requestLock(t);                                              // hi-tech reticle snaps onto the locked target
         const want=Math.atan2(t.pos.x-b.x,t.pos.z-b.z); let da=wrapAngle(want-b.angle);

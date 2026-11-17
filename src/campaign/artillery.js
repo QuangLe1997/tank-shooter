@@ -104,7 +104,7 @@ export function artImpact(s, now){
   let hit=false; const p=S.player;
   if(p && now>=p.invincibleUntil){ const dmg=grade(p.pos.x,p.pos.z);
     if(dmg>0){ hit=true; const direct = Math.hypot(p.pos.x-tx,p.pos.z-tz)<=s.innerR;
-      damagePlayer(Math.round(dmg), now); floatText(direct?'TRÚNG ĐÍCH!':'SƯỢT QUA', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
+      damagePlayer(Math.round(dmg), now); floatText(direct?'PHÁO ĐỊCH TRÚNG!':'PHÁO ĐỊCH SƯỢT QUA', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
   if(core){ const dc=grade(core.pos.x,core.pos.z); if(dc>0){ hit=true; damageCore(Math.round(dc*C.coreMul)); } }
   for(const sd of soldiers){ const ds=grade(sd.pos.x,sd.pos.z); if(ds>0){ hit=true; damageSoldier(sd, ds*C.coreMul); } }
   // ---- Z218 what the eye sees: a white flash, a rolling fireball, a dark geyser of soil, a dust shockwave rushing out along the ground,
