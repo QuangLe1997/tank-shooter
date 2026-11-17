@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, COVER_K, ENEMY_DEFS, MOBILE, S, _R, _mergeColored, _xf, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radio, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, COVER_K, ENEMY_DEFS, MOBILE, S, _R, _mergeColored, _xf, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, hitsHull, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radio, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -17,7 +17,7 @@ export function supplyRate(){ return 1+SUPPLYB.cut.rate*SUPPLY.ammo; }
 export function trimWaveForSupply(q){ const C=SUPPLYB.cut, isInf=t=>t==='squad'||(ENEMY_DEFS[t]&&ENEMY_DEFS[t].inf), isTank=t=>ENEMY_DEFS[t]&&!ENEMY_DEFS[t].inf&&!ENEMY_DEFS[t].air&&!ENEMY_DEFS[t].bomber;
   const cut=(test, k)=>{ if(k<=0) return; const idx=[]; q.forEach((t,i)=>{ if(test(t)) idx.push(i); }); let n=Math.min(idx.length-1, Math.round(idx.length*Math.min(0.6,k))); while(n-->0){ const j=idx.pop(); q.splice(j,1); } };
   cut(isTank, C.tanks*SUPPLY.fuel); cut(isInf, C.inf*SUPPLY.camp); return q; }
-export function resetSupply(){ for(const B of SUPPLY.bases){ if(B.decor) scene.remove(B.decor); for(const pc of B.pieces) if(pc.mesh) scene.remove(pc.mesh); } SUPPLY.bases.length=0; SUPPLY.fuel=SUPPLY.ammo=SUPPLY.camp=0; }
+export function resetSupply(){ for(const B of SUPPLY.bases){ if(B.decor) scene.remove(B.decor); if(B.fence){ scene.remove(B.fence.a, B.fence.b); B.fence.a.dispose(); B.fence.b.dispose(); } for(const pc of B.pieces) if(pc.mesh) scene.remove(pc.mesh); } SUPPLY.bases.length=0; SUPPLY.fuel=SUPPLY.ammo=SUPPLY.camp=0; }
 
 // ---------- materials / textures ----------
 let _M=null;
@@ -101,34 +101,119 @@ const TANKS_BY=[['grunt','gunner'],['grunt','gunner','shield'],['gunner','shield
 function guardTank(B, a0){ const L=TANKS_BY[Math.min(TANKS_BY.length-1, (S.stage-1)>>1)], a=B.ang+Math.PI+(a0||0)+_R(-0.6,0.6), r=B.R+4, [x,z]=clampFieldXZ(B.x+Math.sin(a)*r, B.z+Math.cos(a)*r, 6);
   const e=spawnEnemy(L[(Math.random()*L.length)|0], x, z); if(!e) return null; e.guard={ kind:'supply', base:B }; e.guardBase=B; e._gA=a; e.loot=Math.random()<0.4; return e; }
 
-export function buildSupply(){
-  const st=Math.min(4,S.stage-1);
-  for(let i=0;i<SUPPLYB.perStage.fuel[st];i++){ const s=findSite(17*SUPPLY_K); if(!s) continue; const B=newBase('fuel', s[0], s[1], 17*SUPPLY_K, SUPPLY_K);
+// ---------- Z195 a real compound: chain-link + barbed-wire fence (tanks flatten it), steel gate with a name board and a boom, warning signs ----------
+const SIGN_MAT={};
+function signMat(kind){ if(SIGN_MAT[kind]) return SIGN_MAT[kind]; const W=256, H=kind==='name'?72:160, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const F=(px,w)=>(w||900)+' '+px+'px "Saira Condensed", Rajdhani, Arial, sans-serif', txt=(t,y,px,col,w)=>{ x.fillStyle=col; x.font=F(px,w); x.textAlign='center'; x.textBaseline='middle'; x.fillText(t, W/2, y); };
+  const grime=()=>{ for(let i=0;i<500;i++){ x.fillStyle='rgba(60,45,30,'+(Math.random()*0.18).toFixed(2)+')'; x.fillRect(Math.random()*W,Math.random()*H,2,2); } for(let i=0;i<6;i++){ const sx=Math.random()*W; const g=x.createLinearGradient(sx,0,sx,H); g.addColorStop(0,'rgba(110,60,25,0.35)'); g.addColorStop(1,'rgba(110,60,25,0)'); x.fillStyle=g; x.fillRect(sx,0,3,H); } for(const [bx,by] of [[10,10],[W-10,10],[10,H-10],[W-10,H-10]]){ x.fillStyle='#555'; x.beginPath(); x.arc(bx,by,3.5,0,7); x.fill(); } };
+  const tri=(cx,cy,r,fill)=>{ x.fillStyle='#111'; x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r*0.95,cy+r*0.7); x.lineTo(cx-r*0.95,cy+r*0.7); x.closePath(); x.fill(); x.fillStyle=fill; x.beginPath(); x.moveTo(cx,cy-r+9); x.lineTo(cx+r*0.95-9,cy+r*0.7-5); x.lineTo(cx-r*0.95+9,cy+r*0.7-5); x.closePath(); x.fill(); };
+  if(kind==='fire'){ x.fillStyle='#f2c21a'; x.fillRect(0,0,W,H); tri(52,70,44,'#f2c21a'); x.fillStyle='#111'; x.beginPath(); x.moveTo(52,92); x.bezierCurveTo(30,80,44,60,50,44); x.bezierCurveTo(56,62,72,70,52,92); x.fill();   // flame
+    txt('NGUY HIỂM',52,34,'#111'); x.textAlign='left'; x.font=F(25); x.fillStyle='#111'; x.fillText('CHẤT DỄ',104,58); x.fillText('CHÁY NỔ',104,88); txt('XĂNG DẦU — CẤM LỬA',134,30,'#111'); }
+  else if(kind==='nosmoke'){ x.fillStyle='#f4f2ea'; x.fillRect(0,0,W,H); x.strokeStyle='#c81e1e'; x.lineWidth=11; x.beginPath(); x.arc(64,78,44,0,7); x.stroke(); x.fillStyle='#222'; x.fillRect(36,72,50,12); x.fillStyle='#d86a2a'; x.fillRect(86,72,8,12);   // cigarette
+    x.beginPath(); x.moveTo(33,47); x.lineTo(95,109); x.stroke(); x.textAlign='left'; x.font=F(30); x.fillStyle='#c81e1e'; x.fillText('CẤM LỬA',122,64); x.font=F(22,800); x.fillStyle='#222'; x.fillText('CẤM HÚT THUỐC',122,98); x.fillText('CẤM ĐIỆN THOẠI',122,124); }
+  else if(kind==='ammo'){ x.fillStyle='#f27a12'; x.fillRect(0,0,W,H); x.save(); x.translate(60,82); x.rotate(Math.PI/4); x.fillStyle='#111'; x.fillRect(-40,-40,80,80); x.fillStyle='#f27a12'; x.fillRect(-35,-35,70,70); x.restore();
+    x.fillStyle='#111'; x.beginPath(); x.arc(60,86,13,0,7); x.fill(); for(let k=0;k<8;k++){ const a=k*0.785; x.fillRect(60+Math.cos(a)*16-3,86+Math.sin(a)*16-3,6,6); } x.font=F(16); x.textAlign='center'; x.fillText('1.1',60,116);   // exploding bomb, class 1.1
+    x.textAlign='left'; x.font=F(30); x.fillText('KHO ĐẠN',118,60); x.font=F(22,800); x.fillText('NGUY HIỂM NỔ',118,92); x.fillText('CẤM LẠI GẦN',118,120); }
+  else if(kind==='military'){ x.fillStyle='#f4f2ea'; x.fillRect(0,0,W,H); x.fillStyle='#c81e1e'; x.fillRect(0,0,W,46); txt('KHU VỰC QUÂN SỰ',24,30,'#fff'); txt('CẤM VÀO',82,46,'#c81e1e'); txt('Lính gác được phép nổ súng',128,20,'#222',700); }
+  else if(kind==='mines'){ x.fillStyle='#c81e1e'; x.fillRect(0,0,W,H); x.fillStyle='#f4f2ea'; x.beginPath(); x.arc(60,70,26,0,7); x.fill(); x.fillRect(46,88,28,16); x.fillStyle='#c81e1e'; x.beginPath(); x.arc(51,68,7,0,7); x.arc(69,68,7,0,7); x.fill();   // skull
+    x.strokeStyle='#f4f2ea'; x.lineWidth=7; x.beginPath(); x.moveTo(26,112); x.lineTo(94,140); x.moveTo(94,112); x.lineTo(26,140); x.stroke(); x.textAlign='left'; x.font=F(40); x.fillStyle='#f4f2ea'; x.fillText('CÓ MÌN!',112,70); x.font=F(20,800); x.fillText('Không ra khỏi lối đi',112,108); }
+  else { x.fillStyle='#2e3a26'; x.fillRect(0,0,W,H); x.strokeStyle='#d8d0b8'; x.lineWidth=3; x.strokeRect(5,5,W-10,H-10); txt(kind==='nameA'?'KHO ĐẠN DƯỢC':'TRẠM NHIÊN LIỆU',H*0.55,40,'#f0e8d0'); }
+  grime(); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4;
+  return SIGN_MAT[kind]=new THREE.MeshStandardMaterial({ map:t, roughness:0.75, metalness:0.15, side:THREE.DoubleSide }); }
+// one 3 m fence bay (built once): Y-picket with an outrigger, 3 barbed strands + 2 on the outrigger, a razor concertina along the foot outside, and the chain-link panel
+let _bayG=null;
+function bayGeo(){ if(_bayG) return _bayG; const P=[], L=3;
+  P.push({ geo:B3(0.09,2.5,0.09,0,1.25,0), col:0x5a4a3a }); P.push({ geo:_xf(new THREE.BoxGeometry(0.06,0.7,0.06),0,2.72,0.18,0.75,0,0), col:0x5a4a3a });   // picket + outrigger
+  P.push({ geo:B3(L,0.05,0.05,L/2,2.45,0), col:0x6a6660 }); P.push({ geo:B3(L,0.05,0.05,L/2,0.12,0), col:0x6a6660 });   // top + bottom rail
+  for(const [y,z] of [[2.62,0.08],[2.82,0.25],[3.0,0.42]]) P.push({ geo:_xf(new THREE.CylinderGeometry(0.012,0.012,L,3),L/2,y,z,0,0,Math.PI/2), col:0x9a9a92 });   // barbed strands on the outrigger
+  for(let k=0;k<9;k++) P.push({ geo:_xf(new THREE.TorusGeometry(0.42,0.013,3,10),0.17+k*0.33,0.42,0.75+_R(-0.05,0.05),0,Math.PI/2+_R(-0.2,0.2),0), col:0xa8a8a0 });   // razor concertina at the foot
+  const steel=_mergeColored(P); const chain=new THREE.PlaneGeometry(L,2.3); chain.translate(L/2,1.3,0); const uv=chain.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*6, uv.getY(i)*4.6);
+  return _bayG={ steel, chain }; }
+let _chainMat=null;
+function chainMat(){ if(_chainMat) return _chainMat; const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d'); x.strokeStyle='#b8b8b0'; x.lineWidth=2.2;
+  x.beginPath(); x.moveTo(0,32); x.lineTo(32,0); x.lineTo(64,32); x.lineTo(32,64); x.closePath(); x.moveTo(-32,32); x.lineTo(0,0); x.moveTo(64,0); x.lineTo(96,32); x.stroke();   // diamond mesh
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return _chainMat=new THREE.MeshStandardMaterial({ map:t, alphaTest:0.35, transparent:false, side:THREE.DoubleSide, color:0x9a9a94, roughness:0.45, metalness:0.8 }); }
+const _fM=new THREE.Matrix4(), _fQ=new THREE.Quaternion(), _fE=new THREE.Euler(0,0,0,'YXZ'), _fV=new THREE.Vector3(), _fS=new THREE.Vector3();
+function bayMatrix(sp, tilt){ _fE.set(tilt||0, sp.th, 0); _fQ.setFromEuler(_fE); _fS.set(sp.L/3*sp.K, sp.K*(tilt?0.9:1), sp.K); return _fM.compose(_fV.set(sp.x0, sp.y, sp.z0), _fQ, _fS); }
+// fence the rectangle x0..x1 × z0..z1 (base-local metres), a gate gap of width gw in the front side
+function fenceBase(B, x0, x1, z0, z1, gw){ const G=bayGeo(), spans=[], K=B.K;
+  const side=(ax,az,bx,bz,th,gate)=>{ const len=Math.hypot(bx-ax,bz-az), n=Math.max(1,Math.round(len/3)), L=len/n;
+    for(let i=0;i<n;i++){ const f0=i/n, lx=ax+(bx-ax)*f0, lz=az+(bz-az)*f0, mx=ax+(bx-ax)*(f0+0.5/n), mz=az+(bz-az)*(f0+0.5/n); if(gate && Math.abs(mx)<gw/2) continue;
+      const [x,z]=B.at(lx,lz), [cx,cz]=B.at(mx,mz); spans.push({ x0:x, z0:z, y:heightAt(x,z)-0.05, cx, cz, th:B.ang+th, L, K, nx:Math.sin(B.ang+th), nz:Math.cos(B.ang+th), down:false }); } };
+  side(x0,z1,x1,z1,0,true); side(x1,z1,x1,z0,Math.PI/2); side(x1,z0,x0,z0,Math.PI); side(x0,z0,x0,z1,-Math.PI/2);
+  const a=new THREE.InstancedMesh(G.steel, mats().metal, spans.length), b=new THREE.InstancedMesh(G.chain, chainMat(), spans.length);
+  spans.forEach((sp,i)=>{ const M=bayMatrix(sp,0); a.setMatrixAt(i,M); b.setMatrixAt(i,M); }); a.castShadow=true; a.receiveShadow=b.receiveShadow=true; scene.add(a, b); B.fence={ a, b, spans }; }
+// signs on two legs, merged per sign kind into the compound's decor (base-local metres; ry turns the face)
+function signs(B, list){ const by={}; for(const [kind,x,z,ry,w] of list){ const W=w||1.5, H=kind.startsWith('name')?W*72/256:W*160/256, legs=[];
+    (by[kind]=by[kind]||[]).push(_xf(new THREE.PlaneGeometry(W,H),x,kind.startsWith('name')?0:1.25+H/2,z,0,ry||0,0)); }
+  for(const k in by){ const m=new THREE.Mesh(mergeGeos(by[k]), signMat(k)); m.castShadow=true; B.decor.add(m); } }
+function mergeGeos(list){ const g=_mergeColored(list.map(geo=>({ geo, col:0xffffff }))); g.deleteAttribute('color'); return g; }
+function signPosts(K, list){ for(const [kind,x,z,ry,w] of list){ if(kind.startsWith('name')) continue; const W=w||1.5, c=Math.cos(ry||0), s=Math.sin(ry||0); for(const o of [-W*0.38,W*0.38]) K.add('metal', CY(0.04,0.04,2.6,5,x+o*c,1.3,z-o*s), 0x5a5a56); } }
+// steel portal over the gate: box columns, a beam with knee braces, the name board, a red-white boom and a sentry booth
+function gate(K, z1, gw, nameKind, B){ for(const s of [-1,1]){ K.add('metal', B3(0.36,5.6,0.36,s*(gw/2+0.3),2.8,z1), 0x4a4e46); K.add('metal', _xf(new THREE.BoxGeometry(0.12,1.6,0.12),s*(gw/2-0.25),4.9,z1,0,0,s*0.75), 0x4a4e46); }
+  K.add('metal', B3(gw+1.4,0.5,0.32,0,5.5,z1), 0x4a4e46); K.add('metal', B3(0.3,1.1,0.3,-gw/2+0.2,0.55,z1+0.7), 0x5a5a56);
+  for(let i=0;i<9;i++) K.add('paint', B3(gw/9,0.14,0.14,-gw/2+0.2+(i+0.5)*gw/9,1.05,z1+0.7), i%2?0xf2f0ea:0xc81e1e);   // boom barrier
+  K.add('conc', B3(2.0,2.5,2.0,gw/2+2.6,1.25,z1-1.6), 0xb4b0a6); K.add('conc', B3(2.3,0.2,2.3,gw/2+2.6,2.6,z1-1.6), 0x8a867c); K.add('metal', B3(1.2,0.6,0.06,gw/2+2.6,1.6,z1-0.59), 0x1a2228);   // sentry booth
+  return [nameKind, 0, z1+0.2, 0, gw*0.8]; }
+function nameSignAt(B, z1, item){ const [k,,,,w]=item, H=w*72/256, m=new THREE.Mesh(new THREE.PlaneGeometry(w,H), signMat(k)); m.position.set(0,4.75,z1+0.2); B.decor.add(m); }
+// ---------- Z195 the compounds stand in the corners of the map: the two far corners first, then the near ones ----------
+const SP_Z=()=>ARENA*0.55;
+function cornerSite(sx, sz, R0){ for(const k of [1,0.86,0.74]){ const R=R0*k;
+  for(let t=0;t<700;t++){ const reach=Math.min(ARENA*0.6, 4+t*0.12), x=sx*(ARENA-R-6-Math.random()*reach), z=sz*(ARENA-R-6-Math.random()*reach);
+    if(Math.hypot(x,z)<R+50 || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R+3) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+8) || !siteOk(x,z,R)) continue;
+    clearSite(x, z, R0*1.05); return [x,z]; } } return null; }
+const FUEL_R=24, AMMO_R=23;
+function buildFuel(s){ const B=newBase('fuel', s[0], s[1], FUEL_R*SUPPLY_K, SUPPLY_K);
     for(const lx of [-7.6,0,7.6]) piece(B, 'fueltank', fuelTank(), lx, -2.5, 0, { r:3.2 }, true);
     piece(B, 'pumphouse', pumpHouse(), 0, 7.0, 0, { r:3.4, hw:2.4, hl:3.6, across:true });
     piece(B, 'tanker', tankerTruck(), -9.5, 10.5, 0.25, { r:2.2, hw:1.3, hl:4.1 }); piece(B, 'tanker', tankerTruck(), 10.5, 9.0, -0.35, { r:2.2, hw:1.3, hl:4.1 });
     const K=kit(); for(const [w,d,x,z] of [[25,0.45,0,-7.4],[25,0.45,0,2.6],[0.45,10,-12.5,-2.4],[0.45,10,12.5,-2.4]]) K.add('conc', B3(w,1.1,d,x,0.55,z), 0xa6a298);   // bund wall
     for(const y of [0.9,1.25,1.6]) K.add('metal', CY(0.16,0.16,15.4,10,0,y,3.6,0,Math.PI/2), [0x8a8a82,0x9a2a1e,0x7a7a72][Math.round((y-0.9)/0.35)]);   // pipe rack
-    for(const x of [-7.4,-2.5,2.5,7.4]){ K.add('metal', B3(0.15,1.8,0.15,x,0.9,3.6), 0x4a4a46); K.add('metal', B3(0.15,0.15,0.8,x,1.75,3.6), 0x4a4a46); }
+    for(const x of [-7.4,-2.5,2.5,7.4]){ K.add('metal', B3(0.15,2.4,0.15,x,1.2,3.3), 0x4a4a46); K.add('metal', B3(0.15,2.4,0.15,x,1.2,3.9), 0x4a4a46); K.add('metal', B3(0.15,0.15,0.9,x,2.35,3.6), 0x4a4a46); }   // Z195 steel H-frames…
+    for(const [xa,xb] of [[-7.4,-2.5],[-2.5,2.5],[2.5,7.4]]){ const L=Math.hypot(xb-xa,2.2), a=Math.atan2(2.2,xb-xa); K.add('metal', _xf(new THREE.BoxGeometry(L,0.08,0.08),(xa+xb)/2,1.2,3.9,0,0,a), 0x4a4a46); K.add('metal', _xf(new THREE.BoxGeometry(L,0.08,0.08),(xa+xb)/2,1.2,3.9,0,0,-a), 0x4a4a46); }   // …with X-bracing
+    K.add('metal', B3(15.2,0.14,0.14,0,2.42,3.6), 0x4a4a46);
     for(const x of [-7.6,0,7.6]) K.add('metal', CY(0.13,0.13,3.2,8,x,0.9,1.7,Math.PI/2), 0x7a7a72);
     for(const x of [-4,4]){ K.add('conc', B3(3.4,0.25,1.4,x,0.12,12.4), 0x9e9a90); for(const s of [-1,1]){ K.add('paint', B3(0.9,1.7,0.6,x+s*0.9,1.05,12.4), 0xc8c4b8); K.add('paint', B3(0.92,0.35,0.62,x+s*0.9,1.6,12.4), 0x9a2a1e); } K.add('metal', B3(3.6,0.15,1.8,x,3.2,12.4), 0x8a8a82); for(const s of [-1,1]) K.add('metal', CY(0.08,0.08,3.1,6,x+s*1.6,1.6,12.4), 0x6a6a64); }   // dispenser islands under canopies
-    for(const [x,z] of [[-12.5,-7.4],[12.5,2.6]]){ K.add('metal', CY(0.1,0.13,10,6,x,5,z), 0x5a5a56); K.add('glow', B3(0.9,0.4,0.5,x,10,z), 0xffffff); }   // floodlight masts
-    const d=K.bake(false); d.scale.setScalar(B.K); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d;
+    for(const [x,z] of [[-16,-11],[16,-11]]) lattice(K, x, z, 11);   // Z195 steel lattice floodlight towers
+    const SG=[['military',-7.5,15.2,0],['fire',7.5,15.2,0],['nosmoke',-4,8.9,0,1.3],['fire',-14.5,-2.4,Math.PI/2,1.3],['mines',-17.6,4,-Math.PI/2],['mines',17.6,-6,Math.PI/2],['nosmoke',0,-12.6,Math.PI,1.3],['military',12,-12.6,Math.PI]];
+    signPosts(K, SG); const nm=gate(K, 15, 8, 'name', B);
+    const d=K.bake(false); d.scale.setScalar(B.K); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 15, nm);
+    fenceBase(B, -18.5, 18.5, -13.5, 15, 8);
     for(const [lx,lz,ry] of [[-15,-9,0.8],[15,-9,-0.8],[-15,6,-0.6],[15,6,0.6],[0,-11,0]]) nest(B, lx, lz, ry);
     { const [tx,tz]=B.at(-15.5,-1); if(!blocks.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+3)) buildTower(tx, tz); }
     B.garrison=true; }
-  for(let i=0;i<SUPPLYB.perStage.ammo[st];i++){ const s=findSite(16*SUPPLY_K); if(!s) continue; const B=newBase('ammo', s[0], s[1], 16*SUPPLY_K, SUPPLY_K);
+function buildAmmo(s){ const B=newBase('ammo', s[0], s[1], AMMO_R*SUPPLY_K, SUPPLY_K);
     for(const lx of [-6.8,6.8]) piece(B, 'bunker', igloo(), lx, -3.5, 0, { r:4.4, hw:4.5, hl:4.9 }, true);
     for(const [lx,lz] of [[-6.6,7.2],[-2.2,7.6],[2.2,7.4],[6.6,7.0]]) piece(B, 'ammostack', ammoStack(), lx, lz, _R(-0.2,0.2), { r:1.7 });
     piece(B, 'supplytruck', supplyTruck(), 11.5, 6, -0.3, { r:2.2, hw:1.3, hl:3.7 });
-    const K=kit(); for(const [x,z] of [[-9,5],[-9,9.6],[0,5],[0,9.6],[9,5],[9,9.6]]) K.add('metal', CY(0.06,0.06,3.4,6,x,1.7,z), 0x5a4a32);
-    K.add('net', _xf(new THREE.PlaneGeometry(19,5.6,6,3),0,3.35,7.3,-Math.PI/2+0.03,0,0.02), 0xffffff);
+    const K=kit();
+    for(const x of [-9.6,-3.2,3.2,9.6]) for(const z of [4.4,10.2]) K.add('metal', B3(0.24,4.0,0.24,x,2.0,z), 0x4a4e46);   // Z195 steel-frame storage shed: I-beam columns…
+    for(const z of [4.4,10.2]) K.add('metal', B3(19.8,0.32,0.22,0,4.0,z), 0x4a4e46);
+    for(const x of [-9.6,-6.4,-3.2,0,3.2,6.4,9.6]) K.add('metal', _xf(new THREE.BoxGeometry(0.16,0.24,6.4),x,4.25,7.3,0.08,0,0), 0x4a4e46);   // rafters
+    K.add('metal', _xf(new THREE.BoxGeometry(20.4,0.07,6.9),0,4.45,7.3,0.08,0,0), 0x8a8c84);   // corrugated roof
+    for(let x=-9.9;x<10;x+=0.5) K.add('metal', _xf(new THREE.BoxGeometry(0.08,0.06,6.9),x,4.5,7.3,0.08,0,0), 0x9a9c94);
+    for(const [xa,xb] of [[-9.6,-3.2],[3.2,9.6]]){ const L=Math.hypot(xb-xa,3.6), a=Math.atan2(3.6,xb-xa); for(const sg of [1,-1]) K.add('metal', _xf(new THREE.BoxGeometry(L,0.08,0.08),(xa+xb)/2,2.1,4.4,0,0,sg*a), 0x4a4e46); }   // back bracing
+    K.add('net', _xf(new THREE.PlaneGeometry(19.6,2.6,6,2),0,2.7,10.32,0,0,0), 0xffffff);   // camo net hung on the open side
     const soil=new THREE.Color(BIOME.ground||0x8a7a5a).multiplyScalar(0.75).getHex(); for(const x of [-13,13]) K.add('soil', _xf(new THREE.CylinderGeometry(0.6,1.8,2.0,4,1),x,1.0,-1,0,Math.PI/4,0,1,1,4.5), soil);   // earth traverses
-    K.add('paint', B3(1.6,1.0,0.05,0,1.5,12.2), 0xd0a020);
-    const d=K.bake(false); d.scale.setScalar(B.K); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d;
+    for(const [x,z] of [[-15.5,-11],[15.5,-11]]) lattice(K, x, z, 10);
+    const SG=[['military',-7,16.2,0],['ammo',7,16.2,0],['ammo',-6.8,1.6,0,1.3],['ammo',6.8,1.6,0,1.3],['nosmoke',0,12.6,0,1.3],['mines',-17.1,2,-Math.PI/2],['mines',17.1,-4,Math.PI/2],['military',0,-12.1,Math.PI]];
+    signPosts(K, SG); const nm=gate(K, 16, 8, 'nameA', B);
+    const d=K.bake(false); d.scale.setScalar(B.K); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 16, nm);
+    fenceBase(B, -17.5, 17.5, -13, 16, 8);
     for(const [lx,lz,ry] of [[-14,-10,0.8],[14,-10,-0.8],[-14,12,-0.6],[14,12,0.6],[-3,13.5,0]]) nest(B, lx, lz, ry);
     { const [tx,tz]=B.at(15,-1); if(!blocks.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+3)) buildTower(tx, tz); }
     B.garrison=true; }
+// a steel lattice light tower: four legs, girts every 2 m, X-braced faces, a railed platform with two lamps
+function lattice(K, x, z, h){ const w=0.55, c=0x56584f; for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) K.add('metal', B3(0.1,h,0.1,x+sx*w,h/2,z+sz*w), c);
+  for(let y=1.8;y<h;y+=2){ for(const [ax,az,bx,bz] of [[-1,-1,1,-1],[1,-1,1,1],[1,1,-1,1],[-1,1,-1,-1]]){ const mx=x+(ax+bx)/2*w, mz=z+(az+bz)/2*w, along=ax===bx, L=Math.hypot(2*w,2), a=Math.atan2(2,2*w);
+      K.add('metal', _xf(new THREE.BoxGeometry(along?0.06:2*w,0.06,along?2*w:0.06),mx,y,mz), c);
+      K.add('metal', _xf(new THREE.BoxGeometry(along?0.05:L,0.05,along?L:0.05),mx,y-1,mz,along?a:0,0,along?0:a), c); } }
+  K.add('metal', B3(1.8,0.12,1.8,x,h,z), c); K.add('metal', B3(1.8,0.6,0.05,x,h+0.35,z+0.9), c); K.add('glow', B3(0.6,0.4,0.3,x-0.4,h+0.6,z+0.95), 0xffffff); K.add('glow', B3(0.6,0.4,0.3,x+0.4,h+0.6,z+0.95), 0xffffff); }
+export function buildSupply(){
+  const st=Math.min(4,S.stage-1), N=SUPPLYB.perStage.total[st], far=[[-1,-1],[1,-1]].sort(()=>Math.random()-0.5), near=[[-1,1],[1,1]].sort(()=>Math.random()-0.5), corners=far.concat(near);
+  const kinds=Math.random()<0.5 ? ['fuel','ammo','ammo','fuel'] : ['ammo','fuel','fuel','ammo'];
+  for(let i=0;i<N;i++){ const kind=kinds[i], [sx,sz]=corners[i], R=(kind==='fuel'?FUEL_R:AMMO_R)*SUPPLY_K, s=cornerSite(sx, sz, R) || findSite(R); if(!s) continue;
+    if(kind==='fuel') buildFuel(s); else buildAmmo(s); }
 }
 // the troop camps (world/camps.js) are bases too: same guards, same alarm, losing one costs the enemy troops
 export function registerCampBase(camp){ const B=newBase('camp', camp.x, camp.z, 15); B.camp=camp; B.garrison=true; B.gInf=Math.round(Math.min(SUPPLYB.guards[1]-2, 2+S.stage)*(MOBILE?0.7:1)); return B; }
@@ -179,6 +264,11 @@ export function campLost(camp){ const B=SUPPLY.bases.find(q=>q.camp===camp); if(
 // ---------- the living bases: alarm, guards shifting to face you, gunships and armour called in, fires burning ----------
 export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='playing') return;
   for(const B of SUPPLY.bases){
+    if(B.fence && Math.hypot(p.pos.x-B.x, p.pos.z-B.z) < B.R+14){ const F=B.fence; let ch=false;   // Z195 the hull rolls the fence flat: the bay falls away from the tank
+      for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down || (sp.cx-p.pos.x)**2+(sp.cz-p.pos.z)**2 > 36 || !hitsHull(p, sp.cx, sp.cz, 0.5)) continue;
+        sp.down=true; ch=true; const out=(p.pos.x-sp.cx)*sp.nx+(p.pos.z-sp.cz)*sp.nz > 0; const M=bayMatrix(sp, out?-1.45:1.45); F.a.setMatrixAt(i,M); F.b.setMatrixAt(i,M);
+        burst({x:sp.cx,z:sp.cz}, BIOME.ground, 3, 2.5, {y:heightAt(sp.cx,sp.cz)+0.5, life:0.8, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); sfx('clang', {x:sp.cx,z:sp.cz}, 0.6); }
+      if(ch){ F.a.instanceMatrix.needsUpdate=true; F.b.instanceMatrix.needsUpdate=true; } }
     for(let i=B.fires.length-1;i>=0;i--){ const F=B.fires[i]; F.t-=dt; if(F.t<=0){ B.fires.splice(i,1); continue; } if(Math.random()>(MOBILE?0.35:0.7)) continue; const k=Math.min(1,F.t/8);
       spawnPart(F.x+_R(-1,1)*F.s, F.y, F.z+_R(-1,1)*F.s, _R(-0.4,0.4), 3+Math.random()*2, _R(-0.4,0.4), { tex:'fire', color:0xffe0a0, color2:0xff3a0a, size:(1+Math.random())*F.s*(0.4+0.6*k), life:0.6, grav:1.6, drag:1.4, grow:0.8 });
       if(Math.random()<0.5) spawnPart(F.x, F.y+2*F.s, F.z, 0.6, 2.4, 0.3, { color:0x120f0c, size:2.2*F.s, life:3, smoke:true, grav:0.25, drag:0.6, grow:3, op:0.3+0.3*k }); }

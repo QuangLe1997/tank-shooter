@@ -981,12 +981,19 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z194 enemy supply bases: fuel station, ammo depot, bigger camps — guarded, reinforced, and losing them weakens the enemy
 { const fs=await import('node:fs'); const C=await import('./config.js'); const su=fs.readFileSync('src/world/supply.js','utf8'), cp=fs.readFileSync('src/world/camps.js','utf8'), tc=fs.readFileSync('src/ai/tactics.js','utf8'), wv=fs.readFileSync('src/campaign/waves.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8');
-  ok(C.SUPPLYB && C.SUPPLYB.perStage.fuel.every(n=>n>=1) && C.SUPPLYB.perStage.ammo.every(n=>n>=1), 'every battle has a fuel station and an ammo depot');
+  ok(C.SUPPLYB && C.SUPPLYB.perStage.total.every(n=>n>=3 && n<=4), 'every battle has 3–4 enemy compounds (fuel and ammo alternating)');
   ok(/function fuelTank\(/.test(su) && /function igloo\(/.test(su) && /function tankerTruck\(/.test(su) && /function ammoStack\(/.test(su) && /SUPPLY_K=1\.25/.test(su) && /CAMP_K=1\.35/.test(cp), 'big, detailed installations (tank farm, igloo magazines, trucks, crate stacks) and bigger camps');
   ok(/garrisonSupply\(\)/.test(cv) && /e\.guardBase=B/.test(su) && /spawnEnemy\('gunship'/.test(su) && /coverSpot\(/.test(su) && /guardLeash\(e, dt, p\)/.test(tc), 'guards spread behind cover, guard tanks hold a leash, gunships and armour are called in');
   ok(/supplySpeed\(\)/.test(tc) && /supplyRate\(\)/.test(tc) && /supplyDmg\(\)/.test(wv) && /trimWaveForSupply\(WAVE\.spawnQueue\)/.test(wv), 'losing fuel / ammo / barracks slows enemy tanks, softens their fire, thins their waves');
   ok(/\(bl\.kind==='obj' \|\| bl\.supply\) && b\.owner==='e'/.test(fs.readFileSync('src/combat/lock-on.js','utf8')), 'enemy fire never hurts its own bases');
   const S={ fuel:0, ammo:0, camp:0 }; ok(Math.max(C.SUPPLYB.cut.min, 1-C.SUPPLYB.cut.speed*2)<1 && C.SUPPLYB.cut.min>=0.6, 'the cuts are capped (the enemy is weakened, never crippled)'); }
+
+// Z195 the compounds stand in the map corners behind a real fence: chain-link + barbed wire (tanks flatten it), a steel gate, warning signs, steel frames
+{ const fs=await import('node:fs'); const su=fs.readFileSync('src/world/supply.js','utf8');
+  ok(/function cornerSite\(sx, sz, R0\)/.test(su) && /cornerSite\(sx, sz, R\) \|\| findSite\(R\)/.test(su), 'compounds go in the corners of the map (fallback: anywhere in the enemy half)');
+  ok(/function fenceBase\(/.test(su) && /TorusGeometry\(0\.42,0\.013/.test(su) && /alphaTest:0\.35/.test(su) && /sp\.down=true/.test(su), 'chain-link + barbed-wire fence with a razor concertina; the hull flattens a bay');
+  ok(['fire','nosmoke','ammo','military','mines'].every(k=>su.includes("kind==='"+k+"'")) && /CẤM LỬA/.test(su) && /KHU VỰC QUÂN SỰ/.test(su), 'Vietnamese warning signs: flammable, no fire, explosives, military zone, mines');
+  ok(/function lattice\(/.test(su) && /function gate\(/.test(su) && /storage shed/.test(su), 'steel lattice light towers, a steel gate portal with a boom, a steel-frame storage shed'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
