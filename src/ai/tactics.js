@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
-import { BALANCE, ENV, TACTICS } from '../../config.js';
-import { ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocks, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
+import { BALANCE, ENV, TACTICS, FORT } from '../../config.js';
+import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateGunship, updateInfantry, wrapAngle } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -35,8 +35,21 @@ export function aiDirector(now){
         if(now-AID.volleyRadioAt>V.radioGap){ AID.volleyRadioAt=now; radio('SCH: Cả tốp xe đang ngắm loạt vào anh — LƯỚT NÉ!'); } } } }
   if(AID.press && now-AID.pressRadioAt>30){ AID.pressRadioAt=now; radio('SCH: Chúng đánh hơi thấy anh bị thương — cả đội hình đang dồn lên!'); }
 }
+// Z192 FIRING SOLUTION — time for a round of speed sp from the muzzle (mx,mz) to meet a target at (tx,tz) moving at (vx,vz): the smallest
+//   positive root of |T + V·t − M| = sp·t (falls back to straight-line flight time when there is no solution), capped so a wild lead never happens
+export function interceptT(mx, mz, tx, tz, vx, vz, sp){ const rx=tx-mx, rz=tz-mz, c=rx*rx+rz*rz, flat=Math.sqrt(c)/Math.max(1,sp), a=vx*vx+vz*vz-sp*sp, b=2*(rx*vx+rz*vz);
+  let t=-1; if(Math.abs(a)<1e-6){ if(b<0) t=-c/b; } else { const D=b*b-4*a*c; if(D>=0){ const q=Math.sqrt(D), t1=(-b-q)/(2*a), t2=(-b+q)/(2*a); t=Math.min(t1,t2); if(t<=0) t=Math.max(t1,t2); } }
+  return t>0 ? Math.min(t, 1.6) : Math.min(flat, 1.6); }
+// Z192 LINE OF FIRE — walks the round's real path (flat, or the same lob spawnBullet gives it past 11 m) and returns the first rock / hedgehog /
+//   fortress wall / objective that would stop an enemy round short of the target, or null when the line is open
+const _lf=[];
+export function fireBlocked(mx, mz, my, tx, tz, sp){ const dx=tx-mx, dz=tz-mz, D=Math.hypot(dx,dz); if(D<3) return null; const ux=dx/D, uz=dz/D, s0=Math.max(1,sp);
+  let vy=0; if(D>11){ const T=Math.min(0.9, D/s0); vy=Math.min(30, ARC_G*T/2); } const y0=Math.max(0.6, my-heightAt(mx,mz)), arc=vy>0.5;
+  for(let s=1.2; s<D-1.5; s+=1.5){ const t=s/s0, h=arc ? y0+vy*t-0.5*ARC_G*t*t : y0, x=mx+ux*s, z=mz+uz*s, low=h<FORT.wallH+0.4, air=arc && h>3.0;
+    for(const bl of blocksNear(x, z, 0.5, _lf)){ if(!(bl.hard||bl.fort||bl.kind==='obj') || bl.ours) continue; if(bl.fort ? !low : air) continue; if(inBlock(bl, x, z, 0.35)) return bl; } }
+  return null; }
 // where this tank wants to stand right now (or null → fall back to the old straight-at-target logic)
-export const _aiD=new THREE.Vector3();
+export const _aiD=new THREE.Vector3(); const _nb=[];
 export function aiDest(e, keep, iq){
   const A=e.ai, p=S.player; if(!A) return null;
   if(A.role==='fall'){ if(A.eng && enemies.includes(A.eng)) return _aiD.set(A.eng.pos.x, 0, A.eng.pos.z);
@@ -44,7 +57,7 @@ export function aiDest(e, keep, iq){
   const k = keep*(AID.press?TACTICS.press.keep:1)*(AID.punish&&A.role!=='anchor'?TACTICS.punish.keep:1)*(A.role==='flank'?0.75:A.role==='anchor'?1.1:1);
   _aiD.set(p.pos.x+Math.sin(A.ang)*k, 0, p.pos.z+Math.cos(A.ang)*k);
   if(iq>=TACTICS.coverFrom && A.role!=='flank'){ let best=null, bd=64;                   // park behind solid cover between the slot and your gun
-    for(const b of blocks){ if(b.kind==='obj'||b.kind==='camp'||b.cache||b.r<1) continue; const q=(b.x-_aiD.x)**2+(b.z-_aiD.z)**2; if(q<bd){ bd=q; best=b; } }
+    for(const b of blocksNear(_aiD.x, _aiD.z, 8, _nb)){ if(b.kind==='obj'||b.kind==='camp'||b.cache||b.r<1) continue; const q=(b.x-_aiD.x)**2+(b.z-_aiD.z)**2; if(q<bd){ bd=q; best=b; } }   // Z192 only the cells round the slot
     if(best){ const dx=best.x-p.pos.x, dz=best.z-p.pos.z, L=Math.hypot(dx,dz)||1, off=(best.obb?1.2:best.r)+2.6; _aiD.set(best.x+dx/L*off, 0, best.z+dz/L*off); } }
   clampField(_aiD, 4);
   return _aiD;
@@ -55,7 +68,7 @@ export function aiSteer(e, dir){ const look=7, R0=e.r+1.2; let ax=0, az=0;
     const px=rx-dir.x*along, pz=rz-dir.z*along, lat=Math.hypot(px,pz), clear=orr+R0; if(lat>clear) return;
     const w=(1-along/(look+orr))*(1-lat/clear+0.35), sx = lat>1e-3 ? -px/lat : dir.z, sz = lat>1e-3 ? -pz/lat : -dir.x; ax+=sx*w*1.6; az+=sz*w*1.6; };
   if(core) test(core.pos.x, core.pos.z, core.r);
-  for(const b of blocks){ const q=(b.x-e.pos.x)**2+(b.z-e.pos.z)**2; if(q<(look+6)**2) test(b.x, b.z, b.obb?b.obb.hl:b.r); }
+  for(const b of blocksNear(e.pos.x, e.pos.z, look+6, _nb)){ const q=(b.x-e.pos.x)**2+(b.z-e.pos.z)**2; if(q<(look+6)**2) test(b.x, b.z, b.obb?b.obb.hl:b.r); }   // Z192 grid, not every rock on the map
   if(ax||az){ dir.x+=ax; dir.z+=az; const L=Math.hypot(dir.x,dir.z)||1; dir.x/=L; dir.z/=L; } }
 // sidestep when the player's gun is lined up and firing (lighter hulls only)
 export function aiDodge(e, now, iq){ const D=TACTICS.dodge, p=S.player; if(iq<D.from || e.def.heavy || now<(e.dodgeCdAt||0) || !S.firing&&!(MOBILE&&autoFire)) return;
@@ -180,8 +193,14 @@ export function updateEnemies(dt, now){
       if(!e.forceShot && Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ e.fireAt = now + 0.35; }   // hold fire a beat
       else {
         e.muzzle.getWorldPosition(_v);
+        const _blk = _iq>=TACTICS.los.from && fireBlocked(_v.x, _v.z, _v.y, target.x, target.z, def.bspeed);   // Z192 a rock / wall between the muzzle and you: don't waste the round on the stone
+        if(_blk){ e.fireAt=now+TACTICS.los.wait; e.forceShot=false; S.losHeld=(S.losHeld|0)+1;
+          if(!def.heavy && now>(e.scootUntil||0)+0.4){ const ux=Math.sin(e.aim), uz=Math.cos(e.aim), sd=((_blk.x-e.pos.x)*uz-(_blk.z-e.pos.z)*ux)>0?-1:1;   // … pull out sideways, away from the side the cover sits on, to open a line
+            e.scootX=uz*sd; e.scootZ=-ux*sd; e.scootUntil=now+TACTICS.los.peek; } }
+        else {
         let aimA = e.aim;
-        if(targetPlayer && (_iq > 0.15 || def.chief)){ const lead=Math.min(0.6, d/Math.max(1,def.bspeed))*(def.chief?1:TACTICS.leadMax*_iq); aimA = Math.atan2((target.x+p.vel.x*lead)-e.pos.x, (target.z+p.vel.z*lead)-e.pos.z); }   // Z95 smarter crews lead their shots
+        if(targetPlayer && (_iq > 0.15 || def.chief)){ const t=interceptT(_v.x, _v.z, target.x, target.z, p.vel.x, p.vel.z, def.bspeed), k=def.chief?1:Math.min(1, TACTICS.leadMax*_iq);   // Z192 the true intercept (where you WILL be when the round arrives), not a fixed guess
+          aimA = Math.atan2((target.x+p.vel.x*t*k)-_v.x, (target.z+p.vel.z*t*k)-_v.z); }   // Z95 smarter crews lead their shots
         const spread = A.spreadBase * (1 - ds*A.spreadDrop) * (def.accurate?A.accurateMul:1) / (1 + (S.loop||0)*A.loopAcc);   // ACCURACY tightens hard with stage + NG+ loop
         const nearCmd = cmds.some(c=>c!==e && (c.pos.x-e.pos.x)**2+(c.pos.z-e.pos.z)**2 < 900), lost = cmdDown && (cmdDown.x-e.pos.x)**2+(cmdDown.z-e.pos.z)**2 < 1300;
         const moving = Math.hypot(e.vel.x,e.vel.z) > 1.5, unit = (moving ? 1+(1-(def.stab??0.8))*1.6 : 1) * (S.spotted?0.78:1) * (nearCmd?0.85:1) * (lost?1.5:1);   // Z158 stabiliser · scout marks · command net · leaderless
@@ -191,12 +210,13 @@ export function updateEnemies(dt, now){
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
         spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y), from:e.pos});
         tankRecoil(e.mesh, aimA, def.heavy?0.95:(def.accurate?0.7:0.45), e.facing);
-        spawnPart(_v.x,1.4,_v.z, Math.sin(aimA)*7,1,Math.cos(aimA)*7, {color:col,size:def.heavy?1.4:1,life:0.1,grav:0,drag:7});
+        enemyMuzzleFX(_v.x, _v.y, _v.z, aimA, !!def.heavy);   // Z192 flash + flame + smoke at the real muzzle (was a flat dot at a fixed height)
         sfx('enemyShoot', e.pos);
         if(def.scoot){ const sd=Math.random()<0.5?1:-1; e.scootX=Math.cos(aimA)*sd; e.scootZ=-Math.sin(aimA)*sd; e.scootUntil=now+1.5; }   // Z158 fire, then relocate
         if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
         else e.fireAt=now+def.fireCd*rateMul*(AID.punish&&targetPlayer?TACTICS.punish.rate:1);   // Z185 you reload → they fire faster
         e.forceShot=false;
+        }
       }
     }
     if(def.carrier){ updateCarrierCrew(e, now); updateDismount(e, dt, now, dpl); }   // APC: riflemen on top shoot; Z89 it halts and dismounts a squad

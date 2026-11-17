@@ -959,5 +959,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(Object.values(W.ATMOS).every(A=>Array.isArray(A.sh) && Array.isArray(A.hi) && typeof A.vib==='number' && A.exp>0.6 && A.exp<1.2), 'every battlefield has its own exposure, shadow / highlight tint and vibrance');
   ok(/u\.shTint\.value\.set/.test(at) && /o\.sh=\[/.test(at) && /ek=\(A\.exp\|\|1\.08\)\/1\.08/.test(at), 'the palette is applied per battle; sunset and night have their own tints, exposure carries through every hour'); }
 
+// Z192 combat: true-intercept lead, no rounds wasted into cover, grid-based obstacle tests; real-looking rounds, missiles and armour hits
+{ const fs=await import('node:fs'); const t=fs.readFileSync('src/ai/tactics.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8'), hx=fs.readFileSync('src/fx/hitfx.js','utf8'), sp=fs.readFileSync('src/ai/spatial.js','utf8'), pt=fs.readFileSync('src/fx/particles.js','utf8');
+  const m=t.match(/export function interceptT\(([^)]*)\)\{([\s\S]*?Math\.min\(flat, 1\.6\); \})/); const iT=m && new Function(...m[1].split(',').map(x=>x.trim()), m[2].replace(/\}\s*$/,''));
+  ok(!!iT, 'interceptT can be lifted out for a math check');
+  if(iT){ const tt=iT(0,0, 30,0, 0,10, 60), hx2=30, hz2=10*tt; ok(Math.abs(Math.hypot(hx2,hz2)-60*tt)<1e-6 && tt>0.5 && tt<0.52, 'intercept: the round and the moving target meet (|T+V·t| = s·t)');
+    ok(Math.abs(iT(0,0, 40,0, 0,0, 50)-0.8)<1e-9, 'intercept: a still target → plain flight time');
+    ok(iT(0,0, 30,0, 80,0, 60) <= 1.6, 'intercept: an uncatchable target never gives a wild lead (capped)'); }
+  ok(/fireBlocked\(_v\.x, _v\.z, _v\.y, target\.x, target\.z, def\.bspeed\)/.test(t) && /e\.scootUntil=now\+TACTICS\.los\.peek/.test(t) && /interceptT\(_v\.x, _v\.z/.test(t), 'enemy gunners check the line of fire, slide out to peek, lead with the true intercept');
+  ok(/export function blocksNear/.test(sp) && /b\._bst!==st/.test(sp) && /blocksNear\(b\.x, b\.z, b\.r, _bnb\)/.test(lo) && /blocksNear\(e\.pos\.x, e\.pos\.z, look\+6, _nb\)/.test(t), 'rounds and steering test only the obstacles in nearby grid cells (each once)');
+  ok(/orientShell\(b, _wy, dt\)/.test(lo) && /core\.scale\.set\(0\.38, 0\.38, shellStretch/.test(lo) && /rocketExhaust\(b, b\.x, _wy, b\.z\)/.test(lo), 'rounds fly as streaks pointed along their path; missiles lay a smoke ribbon');
+  ok(/keep:true/.test(hx) && /!o\.keep/.test(pt) && /armourHit\(e, b\.x/.test(lo) && /export function enemyDamageFX/.test(hx) && /rockHull\(p, ux, uz, dmg\)/.test(fs.readFileSync('src/fx/cinematic.js','utf8')), 'armour hits rock the hull + spall / glance; hurt tanks smoke; the ribbon is never randomly thinned'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

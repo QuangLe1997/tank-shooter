@@ -14,6 +14,7 @@ import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat } fro
 // ----------------------------- THREE SETUP -----------------------------
 export const app = document.getElementById('app');
 export const renderer = new THREE.WebGLRenderer({ antialias:!MOBILE, powerPreference:'high-performance' });
+renderer.debug.checkShaderErrors = /shaderdebug/.test(location.search);   // Z192 reading every new shader's error log back stalls the frame it first draws in
 renderer.setPixelRatio(S.dpr);
 renderer.setSize(innerWidth, innerHeight, false);   // false → leave canvas CSS to fill the viewport (avoids the "render smaller than screen" mobile bug)
 // VIEW = the size the canvas is actually painted at. On mobile innerWidth/innerHeight disagree with the

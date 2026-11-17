@@ -2,7 +2,7 @@
 //   light it orange and flicker), hot sparks + armour shards off the side of OUR tank that was hit, a red marker at the screen edge pointing at
 //   whoever hit you, and a tank that smokes grey when hurt and burns black when it is nearly gone.
 import * as THREE from 'three';
-import { MOBILE, S, gradePass, heightAt, scene, spawnPart } from '../hub.js';
+import { MOBILE, S, gradePass, heightAt, rockHull, scene, spawnPart } from '../hub.js';
 
 export const CINE = { domes:[], lights:[], hitDir:[], dmgT:0, sparkT:0 };
 const _domeGeo=new THREE.SphereGeometry(1, 32, 14, 0, Math.PI*2, 0, Math.PI/2);
@@ -34,7 +34,7 @@ export function playerHitFX(p, dx, dz, dmg){ const L=Math.hypot(dx||0,dz||0); co
   spawnPart(hx, hy, hz, 0, 0, 0, { tex:'flash', color:0xfff0d0, size:2.6+dmg*0.05, life:0.08, grav:0, drag:0 });
   if(dmg>=12) for(let i=0;i<Math.min(6, 2+(dmg/10|0));i++) spawnPart(hx, hy, hz, -ux*(4+Math.random()*5)+(Math.random()-0.5)*4, 5+Math.random()*5, -uz*(4+Math.random()*5)+(Math.random()-0.5)*4, { color:0x3a3a34, size:0.4+Math.random()*0.3, life:1.1, grav:-22, drag:0.4 });   // armour shards
   spawnPart(hx, hy, hz, -ux*1.5, 1.6, -uz*1.5, { color:0x2a2620, size:1.6, life:1.2, smoke:true, grav:-0.4, drag:1.2, grow:1.6, op:0.5 });
-  blastLight(hx, hz, 30, 0.18);
+  blastLight(hx, hz, 30, 0.18); rockHull(p, ux, uz, dmg);   // Z192 our hull rocks under the blow too
   if(L) hitMarker(-ux, -uz, dmg);
   if(gradePass && gradePass.uniforms.flash) gradePass.uniforms.flash.value=Math.min(0.14, gradePass.uniforms.flash.value+0.02+dmg*0.002); }
 function hitMarker(sx, sz, dmg){ let wrap=document.getElementById('hitDir'); if(!wrap){ wrap=document.createElement('div'); wrap.id='hitDir'; document.body.appendChild(wrap); }

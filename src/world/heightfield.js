@@ -164,11 +164,13 @@ export function makeFlag(tex, w, h, side){ const geo=new THREE.PlaneGeometry(w,h
   const f={ mesh:m, base:geo.attributes.position.array.slice(), w, sx:side||1, ph:Math.random()*6 }; WAVING.push(f); m.userData.flag=f; return m; }
 // Z104 stop animating every flag under `root` (call before removing it from the scene — WAVING otherwise grows every stage)
 export function unwave(root){ if(!root) return; root.traverse(o=>{ const f=o.userData&&o.userData.flag; if(f){ const i=WAVING.indexOf(f); if(i>=0) WAVING.splice(i,1); } }); }
-export function updateFlags(now){
+let _flagF=0;
+export function updateFlags(now){ _flagF^=1;
   for(let fi=WAVING.length-1; fi>=0; fi--){ const f=WAVING[fi]; if(!f.mesh.parent){ WAVING.splice(fi,1); continue; } if(!f.mesh.visible) continue;
+    if(((fi&1)^_flagF) || f.mesh.layers.mask===128) continue;   // Z192 each flag re-shapes every other frame (half the cloth + normals work), none while lost in the fog
     const pa=f.mesh.geometry.attributes.position, A=pa.array, B=f.base, w=f.w;
     if(f.dyn){ const sp=f.spd||0, phi=(1-sp)*1.15, amp=0.022+0.09*sp, wv=2.0+5.5*sp, cphi=Math.cos(phi), sphi=Math.sin(phi);   // Z89 a REAL flag: streams taut at speed, hangs limp when the tank stops
-      f.t=(f.t||0)+0.016*wv;
+      f.t=(f.t||0)+0.032*wv;   // Z192 (stepped every other frame)
       for(let i=0;i<pa.count;i++){ const x=B[i*3], y=B[i*3+1], u=Math.abs(x)/w, sag=phi*(0.6+0.4*u);
         A[i*3]   = x*Math.cos(sag) ;
         A[i*3+1] = y - Math.abs(x)*Math.sin(sag) - u*u*0.04*w;

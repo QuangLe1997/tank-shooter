@@ -390,6 +390,8 @@ export const TACTICS = {
   //   jink: in a fight they weave while closing · punish: you reload → they rush in and fire faster · volley: the pack fires together (telegraphed)
   evade:  { from:0.2, look:1.0, cd:[1.0,2.0], speed:20, heavyMul:0.4, react:[0.4,0.92] },
   jink:   { from:0.45, amp:0.6, per:[2.4,3.8] },
+  // Z192 line of fire: a crew this smart checks the round's path first — cover in the way → hold the shot, slide sideways (peek s) to open a line
+  los:    { from:0.25, wait:0.45, peek:0.9 },
   punish: { from:0.4, keep:0.55, rate:0.55, radioGap:45 },
   volley: { from:0.55, every:[10,16], warn:0.75, minTanks:3, radioGap:35 },
 };

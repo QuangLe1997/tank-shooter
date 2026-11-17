@@ -8,9 +8,9 @@ export const bulletGeo = new THREE.SphereGeometry(0.24, 10, 8);
 for(let i=0;i<300;i++){
   const g = new THREE.Group();
   const core = new THREE.Mesh(bulletGeo, new THREE.MeshBasicMaterial({color:0xfff4d0}));   // hot, full-bright core
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xffe08a, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false}));
-  halo.scale.setScalar(1.7);   // glowing aura around every round (kept modest so rapid guns don't bloom-wash)
-  g.add(core, halo); g.userData={core, halo};
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xffe08a, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending, depthWrite:false}));
+  halo.scale.setScalar(1.0);   // glowing aura around every round (kept modest so rapid guns don't bloom-wash) · Z192 tighter: a streak, not a ball
+  g.add(core, halo); g.userData={core, halo}; g.rotation.order='YXZ';   // Z192 yaw then pitch — the round points along its flight
   g.visible=false; scene.add(g); bulletPool.push(g);
 }
 export const BVIS = MOBILE ? 1.6 : 1.15;     // bullets render bigger on small screens
