@@ -1069,5 +1069,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function villageHouse\(\)/.test(ho) && /function classic\(K, X\)/.test(ho) && /function thatched\(K, X\)/.test(ho) && /function twoStorey\(K, X\)/.test(ho) && /function gableRoof\(/.test(ho) && /villageHouse\(\)/.test(fs.readFileSync('src/world/landmarks.js','utf8')), 'three village house kinds with a real pitched roof');
   ok(/function yardProps\(/.test(ho) && /function kitchen\(/.test(ho) && /hoành phi/.test(ho) && /chuồng cọp/.test(ci) && /AC condensers/.test(ci), 'yards, kitchens, lacquered boards; AC units and window cages in town'); }
 
+// Z208 wildlife has real anatomy (ellipsoid masses, jointed tapered legs + hooves, horns / antlers / tusks / trunk) and per-pixel coats
+{ const fs=await import('node:fs'); const w=fs.readFileSync('src/actors/wildlife.js','utf8');
+  ok(/function blob\(/.test(w) && /function chain\(/.test(w) && /function mergeVC\(/.test(w) && /trunk/.test(w) && !/const box=\(P,w,h,d/.test(w), 'animals are modelled from organic parts, not boxes');
+  ok(/aPat/.test(w) && /PAT\.set\(zebraCoat,1\)/.test(w) && /PAT\.set\(giraffeCoat,2\)/.test(w) && /customProgramCacheKey=\(\)=>'wildCoat'/.test(w), 'zebra stripes and giraffe patches drawn per pixel'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
