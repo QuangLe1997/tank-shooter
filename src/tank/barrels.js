@@ -60,17 +60,25 @@ export function makeGunBarrel(id){
     for(let k=0;k<7;k++){ const a=k/7*6.283, m=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.06,2.0,8),steel(0x4c4e46)); m.rotation.x=Math.PI/2; m.position.set(Math.cos(a)*0.19,Math.sin(a)*0.19,0.2); spin.add(m); }
     for(const z of [-0.45,0.3,1.05]){ const c=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.08,14),PK); c.rotation.x=Math.PI/2; c.position.z=z; spin.add(c); }
     tip=3.85; recoilLen=0.08; }
-  else if(id==='missile'){    // Z113 ATGM twin launcher — armoured cradle, two ribbed launch tubes with blast covers, guidance optics + cable
-    rbox(0.46,0.44,0.62,0,Y,1.38,PK); rbox(0.96,0.1,1.72,0,Y+0.03,2.15,paint(0x5e6838));                                              // trunnion block + cradle rail
-    for(const x of [-0.3,0.3]){ const y=Y+0.25; tube(0.155,0.155,1.72,2.15,paint(0x5e6838),x,y);
-      for(const z of [1.48,1.96,2.44,2.9]) tube(0.17,0.17,0.06,z,PK,x,y);                                                               // stiffening ribs
-      tube(0.172,0.16,0.1,3.04,PK,x,y); tube(0.168,0.168,0.08,1.28,PK,x,y);                                                              // front collar · rear blast cap
-      const cap=new THREE.Mesh(new THREE.CircleGeometry(0.14,18),glow(0xff6a2a,0.55)); cap.position.set(x,y,3.095); g.add(cap);           // warhead glow behind the frangible cover
-      const ring=new THREE.Mesh(new THREE.TorusGeometry(0.15,0.016,6,18),steel(0x2a2b26)); ring.position.set(x,y,3.09); g.add(ring); }
-    box(0.06,0.26,0.06,0,Y+0.4,1.55,PK); rbox(0.34,0.28,0.42,0,Y+0.64,1.55,park(0x1e1f1b));                                              // guidance unit on a short mast
-    const gl=memo('glass',()=>new THREE.MeshStandardMaterial({color:0x0a1418,roughness:0.08,metalness:1,envMapIntensity:1.6})); box(0.13,0.12,0.02,-0.07,Y+0.65,1.765,gl); box(0.08,0.08,0.02,0.1,Y+0.65,1.765,gl);
-    const cable=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.022,5,14,Math.PI),PK); cable.position.set(0.24,Y+0.42,1.32); cable.rotation.y=Math.PI/2; g.add(cable);
-    tip=3.12; recoilLen=0.1; }
+  else if(id==='missile'){    // Z214 SMART-MISSILE POD — an armoured 2×2 cell launcher: red seeker eyes in the cells, an EO/IR sensor ball with a laser emitter on top
+    rbox(0.5,0.46,0.6,0,Y,1.36,PK);                                                                                                       // trunnion block
+    const OL=paint(0x4c5634), DK=park(0x16171a), CY=Y+0.22;
+    rbox(1.02,0.8,1.5,0,CY,2.25,OL);                                                                                                      // the pod
+    for(const x of [-0.54,0.54]){ box(0.05,0.72,1.32,x,CY,2.26,paint(0x3e4630)); box(0.07,0.06,1.36,x,CY+0.3,2.26,DK); }                  // bolted side armour + rails
+    box(0.98,0.78,0.05,0,CY,3.0,DK);                                                                                                      // face plate
+    for(const [x,dy] of [[-0.24,0.19],[0.24,0.19],[-0.24,-0.19],[0.24,-0.19]]){ const y=CY+dy;
+      tube(0.135,0.135,0.1,3.02,park(0x0a0a0a),x,y); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.14,0.014,6,20),steel(0x6a6c66)); ring.position.set(x,y,3.075); g.add(ring);
+      const eye=new THREE.Mesh(new THREE.CircleGeometry(0.075,18),glow(0xff2a10,1.6)); eye.position.set(x,y,3.03); g.add(eye); }        // a seeker glowing at the bottom of each cell
+    for(let k=0;k<4;k++) box(0.12,0.06,0.02,-0.36+k*0.24,CY+0.42,3.02,k%2?DK:paint(0xd8a818));                                          // hazard band on the lip
+    box(0.07,0.22,0.07,0,CY+0.52,1.78,PK);                                                                                                // sensor mast
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.17,16,12),park(0x2a2c2e)); ball.position.set(0,CY+0.72,1.8); g.add(ball);
+    const gl=memo('glass',()=>new THREE.MeshStandardMaterial({color:0x0a1418,roughness:0.06,metalness:1,envMapIntensity:1.8}));
+    const lens=new THREE.Mesh(new THREE.CircleGeometry(0.1,18),gl); lens.position.set(-0.04,CY+0.72,1.972); g.add(lens);
+    const lr=new THREE.Mesh(new THREE.TorusGeometry(0.1,0.01,6,18),glow(0xff3020,1.2)); lr.position.set(-0.04,CY+0.72,1.975); g.add(lr);   // IR lens with a red ring
+    const las=new THREE.Mesh(new THREE.CircleGeometry(0.03,10),glow(0xff1a10,2.2)); las.position.set(0.09,CY+0.75,1.968); g.add(las);       // laser designator
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.012,0.55,5),steel(0x2a2b26)); ant.position.set(0.4,CY+0.66,1.65); g.add(ant);
+    const cable=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.022,5,14,Math.PI),PK); cable.position.set(0.3,Y+0.32,1.28); cable.rotation.y=Math.PI/2; g.add(cable);
+    tip=3.06; recoilLen=0.06; }
   else if(id==='railgun'){    // RAILGUN — paired conductor rails in an insulating clamp stack, capacitor bank, glowing armature channel
     rbox(0.7,0.5,0.8,0,Y,1.4,park(0x24262c)); for(const x of [-0.42,0.42]) rbox(0.18,0.4,0.6,x,Y+0.05,1.35,glow(0x6a50c0,0.35));   // capacitor banks
     for(const x of [-0.15,0.15]) box(0.1,0.16,3.0,x,Y,3.0,steel(0x5a5e6a));
@@ -200,7 +208,7 @@ export function makeGunBarrel(id){
 
     const sc=1+GRADE*0.028; g.scale.set(sc, sc, 1+GRADE*0.022);                                                                      // bigger gun → beefier tube
   }
-  { const MZ={ smg:[[-0.16,Y,3.6],[0.16,Y,3.6]], flak:[[-0.5,Y,4.1],[0.5,Y,4.1]], missile:[[-0.3,Y+0.25,3.12],[0.3,Y+0.25,3.12]],   // Z149 multi-tube guns fire from each tube in turn
+  { const MZ={ smg:[[-0.16,Y,3.6],[0.16,Y,3.6]], flak:[[-0.5,Y,4.1],[0.5,Y,4.1]], missile:[[-0.24,Y+0.41,3.08],[0.24,Y+0.41,3.08],[-0.24,Y+0.03,3.08],[0.24,Y+0.03,3.08]],   // Z149 multi-tube guns fire from each tube in turn
       thermo:[[-0.24,Y+0.36,2.95],[0.24,Y-0.04,2.95],[0.24,Y+0.36,2.95],[-0.24,Y-0.04,2.95]] }[id];
     if(MZ) g.userData.muzzles=MZ.map(([x,y,z])=>{ const o=new THREE.Object3D(); o.position.set(x,y,z); g.add(o); return o; }); }
   if(!g.userData.muzzle){ const muzzle=new THREE.Object3D(); muzzle.position.set(0,Y,tip); g.add(muzzle); g.userData.muzzle=muzzle; }

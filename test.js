@@ -1087,5 +1087,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const ca=fs.readFileSync('src/world/cars.js','utf8');
   ok(/mergeVertices\(m, 1e-4\)/.test(ca) && /shadow=!MOBILE && kind==='car'/.test(ca), 'street vehicles are cheap to draw'); }
 
+// Z214 the lock-on gun fires smart mini-missiles: own model, eject → ignite → streak, hard homing, climbs to aircraft and bursts in the air; a 2×2 smart pod
+{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8'), ba=fs.readFileSync('src/tank/barrels.js','utf8');
+  ok(/function smartMissile\(\)/.test(lo) && /function smartIgnite\(b\)/.test(lo) && /function airDetonate\(b, t\)/.test(lo) && /smart:!!o\.smart, ign:o\.smart\?0\.13:0, vmax:sp\*1\.45/.test(lo) && /smart:!!g\.lock/.test(fs.readFileSync('src/combat/flame.js','utf8')), 'smart missile: model, ignition, airburst on aircraft');
+  ok(/SMART-MISSILE POD/.test(ba) && /missile:\[\[-0\.24,Y\+0\.41,3\.08\]/.test(ba) && /case 'whoosh'/.test(fs.readFileSync('src/audio/synth.js','utf8')) && /function smartExhaust\(/.test(fs.readFileSync('src/fx/hitfx.js','utf8')), 'a 2×2 smart pod, whoosh, thin clean exhaust'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

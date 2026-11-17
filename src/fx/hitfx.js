@@ -11,7 +11,8 @@ export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)|
 export function shellStretch(sp){ return Math.max(1.3, Math.min(4.2, (sp||60)/24)); }
 
 // a rocket motor: a flickering flame at the nozzle + a dense smoke ribbon laid down along the path, gap-free however fast it flies
-export function rocketExhaust(b, x, y, z){ const bk=Math.hypot(b.vx,b.vz)||1, ux=b.vx/bk, uz=b.vz/bk, nx=x-ux*0.75, nz=z-uz*0.75, th=Math.max(0.4, PERF.parts), step=(MOBILE?1.3:0.7)/th;   // under load: fewer, fatter puffs — never a broken ribbon
+export function rocketExhaust(b, x, y, z){ const bk=Math.hypot(b.vx,b.vz)||1, ux=b.vx/bk, uz=b.vz/bk, nx=x-ux*0.75, nz=z-uz*0.75, th=Math.max(0.4, PERF.parts), step=(MOBILE?1.3:0.7)/th;
+  if(b.smart){ smartExhaust(b, x, y, z, ux, uz, th); return; }   // under load: fewer, fatter puffs — never a broken ribbon
   if(b._tx==null){ b._tx=nx; b._ty=y; b._tz=nz; }
   const dx=nx-b._tx, dy=y-b._ty, dz=nz-b._tz, L=Math.hypot(dx,dy,dz);
   if(L>=step){ const n=Math.min(14, Math.floor(L/step));
@@ -96,3 +97,14 @@ export function dirtGeyser(x, z, k){ const gy=heightAt(x,z), dc=BIOME.ground;
 // Z210 a big gun's shot leaves a cloud that hangs in front of the tank and rolls away slowly on the wind
 export function muzzleLinger(x, y, z, fx, fz, k){ for(let i=0;i<(MOBILE?2:4);i++){ const s=1.2+i*1.1;
   spawnPart(x+fx*s, y+0.1, z+fz*s, fx*(1.4-i*0.25)+WIND_X, 0.25+Math.random()*0.25, fz*(1.4-i*0.25)+WIND_Z, { color:0xc0baae, size:(1.0+i*0.35)*k, life:2.6+Math.random()*1.0, smoke:true, grav:0.15, drag:1.1, grow:1.9, op:0.3, keep:true }); } }
+
+// Z214 a smart missile's motor: a white-hot, flickering tongue and a THIN, clean smoke line that thins out fast — fast, tight, mean
+function smartExhaust(b, x, y, z, ux, uz, th){ if(b.ign>0) return; const nx=x-ux*0.5, nz=z-uz*0.5, step=(MOBILE?0.9:0.45)/Math.sqrt(th);
+  if(b._tx==null){ b._tx=nx; b._ty=y; b._tz=nz; }
+  const dx=nx-b._tx, dy=y-b._ty, dz=nz-b._tz, L=Math.hypot(dx,dy,dz);
+  if(L>=step){ const n=Math.min(20, Math.floor(L/step));
+    for(let i=1;i<=n;i++){ const k=i*step/L; spawnPart(b._tx+dx*k, b._ty+dy*k, b._tz+dz*k, (Math.random()-0.5)*0.2, 0.15, (Math.random()-0.5)*0.2,
+      { color:0xeeeeea, size:0.42+Math.random()*0.12, life:0.9+Math.random()*0.4, smoke:true, grav:0.1, drag:1.4, grow:1.9, op:0.5, keep:true }); }
+    if(L/step>20){ b._tx=nx; b._ty=y; b._tz=nz; } else { const k=n*step/L; b._tx+=dx*k; b._ty+=dy*k; b._tz+=dz*k; } }
+  spawnPart(nx, y, nz, -ux*7, 0, -uz*7, { tex:'fire', color:0xffffff, color2:0xffa040, size:0.42+Math.random()*0.18, life:0.05, grav:0, drag:6, grow:0.3 });
+  const rk=b.mesh.userData.rk; if(rk && rk.userData.glow){ rk.userData.glow.scale.setScalar(0.9+Math.random()*0.5); rk.userData.core.scale.setScalar(0.35+Math.random()*0.2); } }

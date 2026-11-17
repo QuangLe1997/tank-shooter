@@ -181,7 +181,7 @@ export function updateGunship(e, dt, now, edt){
   if(Math.random()<0.5){ const cf=Math.cos(e.facing), sf=Math.sin(e.facing); for(const sx of [-1,1]) spawnPart(e.pos.x+cf*sx*1.3-sf*1.6, e.pos.y+0.7, e.pos.z-sf*sx*1.3-cf*1.6, cf*sx*1.5-sf*2, -0.5, -sf*sx*1.5-cf*2, { color:0x3a3632, size:0.55, life:0.6, smoke:true, grav:0.2, drag:2, grow:1.2, op:0.18 }); }   // hot exhaust haze
   if(now>(e.flareAt||0)){ for(const b of bullets){ if(b.owner!=='p' || !b.lockOn || b.tgt!==e) continue; if((b.x-e.pos.x)**2+(b.z-e.pos.z)**2 > 26*26) continue;   // Z198 a missile locked on: FLARES
       e.flareAt=now+7; for(let k=0;k<(MOBILE?8:16);k++){ const a=e.facing+Math.PI+(k%2?1:-1)*(0.6+Math.random()*0.9); spawnPart(e.pos.x, e.pos.y-0.3, e.pos.z, Math.sin(a)*(6+Math.random()*6), 2+Math.random()*4, Math.cos(a)*(6+Math.random()*6), { tex:'fire', color:0xffffff, color2:0xffa040, size:0.8, life:1.6+Math.random()*0.6, grav:-5, drag:0.6 }); }
-      if(Math.random()<R.flareDecoy) { b.tgt=null; b.flared=now+1.2; } sfx('rocketlaunch', e.pos, 0.4); break; } }
+      if(Math.random()<R.flareDecoy*(b.smart?0.45:1)) { b.tgt=null; b.flared=now+(b.smart?0.6:1.2); } sfx('rocketlaunch', e.pos, 0.4); break; } }
   if(Math.random()<0.25) spawnPart(e.pos.x+(Math.random()-0.5)*9, heightAt(e.pos.x,e.pos.z)+0.3, e.pos.z+(Math.random()-0.5)*9, (Math.random()-0.5)*6, 0.6, (Math.random()-0.5)*6, {color:BIOME.ground, size:1.6, life:0.7, smoke:true, grav:-0.2, drag:2, op:0.22});   // rotor wash kicks up dust
   if(S.mode!=='playing' || d > R.range) return;
   const ds=diffScale(), dmul=(0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul(), smk=smokeSpread(now);

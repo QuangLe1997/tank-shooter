@@ -253,6 +253,7 @@ export function sfx(name, pos, vol){
     case 'jet':     tone(220,2.2,{type:'sawtooth',vol:0.028,slideTo:70}); tone(900,1.6,{type:'triangle',vol:0.012,slideTo:240,delay:0.1}); break;   // Z189 jets screaming over
     case 'flyby':   noise(0.16,{vol:0.07,type:'bp',hp:2200,lp:7000,attack:0.001,sweepTo:900}); tone(2400,0.12,{type:'triangle',vol:0.012,slideTo:900}); break;   // Z210 a bullet snaps past
     case 'flybyHeavy': noise(0.04,{vol:0.22,type:'bp',hp:1800,lp:9000,attack:0.0005}); noise(0.55,{vol:0.1,type:'lp',lp:2600,sweepTo:500,brown:true,delay:0.02}); tone(140,0.4,{type:'sine',vol:0.05,slideTo:60}); break;   // Z210 a shell's supersonic crack + rush
+    case 'whoosh':  noise(0.5,{vol:0.13,type:'bp',hp:500,lp:3000,sweepTo:5200,attack:0.01}); tone(220,0.45,{type:'sawtooth',vol:0.025,slideTo:660}); break;   // Z214 a missile motor lighting and tearing away
     case 'lockwarn':tone(1320,0.05,{type:'square',vol:0.022}); tone(1320,0.05,{type:'square',vol:0.022,delay:0.08}); break;          // Z188 a missile has you
   }
   _bus=null;
