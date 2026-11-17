@@ -1054,5 +1054,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function surfaceHit\(bl, b\)/.test(wm) && /export function wallMark\(/.test(wm) && /radial cracks/.test(wm) && /InstancedMesh\(geo, mat, CAP\)/.test(wm), 'impact flash / fireball / chips / dust and a lasting mark, one instanced draw call');
   ok((lo.match(/surfaceHit\(/g)||[]).length>=3 && !/ringPulse\(b\.mesh\.position, 0xc89060, 0\.9\)/.test(lo), 'every block strike (fort wall line, unbreakable rock / wall, breakable cover) gets the impact + mark'); }
 
+// Z205 the compound wire is a real barrier: rammed through only at speed, torn down by rounds and blasts
+{ const fs=await import('node:fs'); const C=await import('./config.js'); const su=fs.readFileSync('src/world/supply.js','utf8');
+  ok(C.FENCE && C.FENCE.ramV>=8 && /function fenceCollide\(B, p, now\)/.test(su) && /closing>=FENCE\.ramV/.test(su) && /LẤY ĐÀ HÚC MẠNH/.test(su), 'an upright bay stops the hull unless it rams at speed');
+  ok(/export function fenceShot\(b\)/.test(su) && /export function fenceBlast\(x, z, r\)/.test(su) && /fenceShot\(b\)/.test(fs.readFileSync('src/combat/lock-on.js','utf8')) && /fenceBlast\(x, z, r\)/.test(fs.readFileSync('src/combat/spells.js','utf8')), 'rounds and blasts tear the wire down'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

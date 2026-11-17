@@ -5,8 +5,8 @@
 //   feels it for the rest of the battle: no fuel → their tanks crawl and fewer arrive; no ammo → they hit softer and reload slower; no barracks
 //   → fewer troops in every wave.
 import * as THREE from 'three';
-import { SUPPLYB } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, hitsHull, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple } from '../hub.js';
+import { SUPPLYB, FENCE } from '../../config.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -153,10 +153,34 @@ function bayMatrix(sp, tilt){ _fE.set(tilt||0, sp.th, 0); _fQ.setFromEuler(_fE);
 function fenceBase(B, x0, x1, z0, z1, gw){ const G=bayGeo(), spans=[], K=B.K;
   const side=(ax,az,bx,bz,th,gate)=>{ const len=Math.hypot(bx-ax,bz-az), n=Math.max(1,Math.round(len/3)), L=len/n;
     for(let i=0;i<n;i++){ const f0=i/n, lx=ax+(bx-ax)*f0, lz=az+(bz-az)*f0, mx=ax+(bx-ax)*(f0+0.5/n), mz=az+(bz-az)*(f0+0.5/n); if(gate && Math.abs(mx)<gw/2) continue;
-      const [x,z]=B.at(lx,lz), [cx,cz]=B.at(mx,mz); spans.push({ x0:x, z0:z, y:heightAt(x,z)-0.05, cx, cz, th:B.ang+th, L, K, nx:Math.sin(B.ang+th), nz:Math.cos(B.ang+th), down:false }); } };
+      const [x,z]=B.at(lx,lz), [cx,cz]=B.at(mx,mz); spans.push({ x0:x, z0:z, y:heightAt(x,z)-0.05, cx, cz, th:B.ang+th, L, K, nx:Math.sin(B.ang+th), nz:Math.cos(B.ang+th), dx:Math.cos(B.ang+th), dz:-Math.sin(B.ang+th), Lw:L*K, hp:FENCE.hp, down:false }); } };
   side(x0,z1,x1,z1,0,true); side(x1,z1,x1,z0,Math.PI/2); side(x1,z0,x0,z0,Math.PI); side(x0,z0,x0,z1,-Math.PI/2);
   const a=new THREE.InstancedMesh(G.steel, mats().metal, spans.length), b=new THREE.InstancedMesh(G.chain, chainMat(), spans.length);
   spans.forEach((sp,i)=>{ const M=bayMatrix(sp,0); a.setMatrixAt(i,M); b.setMatrixAt(i,M); }); a.castShadow=true; a.receiveShadow=b.receiveShadow=true; scene.add(a, b); B.fence={ a, b, spans }; }
+// Z205 THE WIRE HOLDS: an upright bay stops the hull (oriented hull box vs the bay's line) unless the tank drives into it at ram speed;
+//   rounds and blasts tear bays down (a shell flattens one, small arms need a lot); a bay that falls goes away from what hit it
+function knockSpan(B, i, fx, fz){ const F=B.fence, sp=F.spans[i]; if(!sp || sp.down) return; sp.down=true; const out=(fx-sp.cx)*sp.nx+(fz-sp.cz)*sp.nz > 0, M=bayMatrix(sp, out?-1.45:1.45);
+  F.a.setMatrixAt(i,M); F.b.setMatrixAt(i,M); F.a.instanceMatrix.needsUpdate=true; F.b.instanceMatrix.needsUpdate=true;
+  burst({x:sp.cx,z:sp.cz}, BIOME.ground, 3, 2.5, {y:heightAt(sp.cx,sp.cz)+0.5, life:0.8, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); for(let k=0;k<6;k++) spawnPart(sp.cx, heightAt(sp.cx,sp.cz)+1.2, sp.cz, (Math.random()-0.5)*6, 2+Math.random()*3, (Math.random()-0.5)*6, { color:0xffe0a0, size:0.1, life:0.3, grav:-14, drag:1.5 }); sfx('clang', {x:sp.cx,z:sp.cz}, 0.7); }
+let _fenceHintAt=0;
+function fenceCollide(B, p, now){ const F=B.fence, s=p.scale*TANK_SCALE, HW=HULL_HW*s, HL=HULL_HL*s, f=p.facing||0, fx=Math.sin(f), fz=Math.cos(f), rx=Math.cos(f), rz=-Math.sin(f);
+  for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down) continue; const qx=p.pos.x-sp.x0, qz=p.pos.z-sp.z0;
+    const extD=HW*Math.abs(sp.dx*rx+sp.dz*rz)+HL*Math.abs(sp.dx*fx+sp.dz*fz), along=qx*sp.dx+qz*sp.dz; if(along<-extD*0.6 || along>sp.Lw+extD*0.6) continue;
+    const side=qx*sp.nx+qz*sp.nz, extN=HW*Math.abs(sp.nx*rx+sp.nz*rz)+HL*Math.abs(sp.nx*fx+sp.nz*fz); if(Math.abs(side)>=extN) continue;
+    const sg=side>=0?1:-1, vn=p.vel.x*sp.nx+p.vel.z*sp.nz, closing=-vn*sg;
+    if(closing>=FENCE.ramV*(p.ramOn?0.7:1)){ knockSpan(B, i, p.pos.x, p.pos.z); for(const j of [i-1,i+1]){ const o=F.spans[j]; if(o && !o.down && Math.hypot(o.cx-sp.cx,o.cz-sp.cz)<4 && Math.random()<0.5) knockSpan(B, j, p.pos.x, p.pos.z); }   // rammed through (the next bay may go with it)
+      p.vel.x*=0.72; p.vel.z*=0.72; S.shake=Math.min(2.6,S.shake+0.6); continue; }
+    const pen=extN-Math.abs(side); p.pos.x+=sp.nx*sg*pen; p.pos.z+=sp.nz*sg*pen; if(closing>0){ p.vel.x+=sp.nx*sg*closing; p.vel.z+=sp.nz*sg*closing; }   // held by the wire
+    if(closing>2 && now>_fenceHintAt){ _fenceHintAt=now+3; driveHint('LẤY ĐÀ HÚC MẠNH · HOẶC BẮN ĐỔ HÀNG RÀO'); } } }
+// a round passing through the wire line: it tears at the bay it crosses
+export function fenceShot(b){ if(!SUPPLY.bases.length) return; for(const B of SUPPLY.bases){ if(!B.fence || (b.x-B.x)**2+(b.z-B.z)**2 > (B.R*1.6)**2) continue;
+    const F=B.fence; for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down) continue; const qx=b.x-sp.x0, qz=b.z-sp.z0, al=qx*sp.dx+qz*sp.dz; if(al<0 || al>sp.Lw || Math.abs(qx*sp.nx+qz*sp.nz)>0.45+b.r) continue;
+      if(b._fenceHit===sp) continue; b._fenceHit=sp; sp.hp-=b.inf ? b.dmg*0.35 : b.dmg*(b.aoe?3:1.6);
+      spawnPart(b.x, heightAt(b.x,b.z)+Math.max(0.5,Math.min(2.4,b.by)), b.z, (Math.random()-0.5)*4, 1.5, (Math.random()-0.5)*4, { color:0xffe0a0, size:0.1, life:0.2, grav:-14, drag:2 });
+      if(sp.hp<=0) knockSpan(B, i, b.x-b.vx, b.z-b.vz); return; } } }
+// a blast near the wire flattens the bays in reach
+export function fenceBlast(x, z, r){ for(const B of SUPPLY.bases){ if(!B.fence || (x-B.x)**2+(z-B.z)**2 > (B.R*1.6+r)**2) continue; const F=B.fence;
+    for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(!sp.down && Math.hypot(sp.cx-x, sp.cz-z) < r+1.2) knockSpan(B, i, x, z); } } }
 // signs on two legs, merged per sign kind into the compound's decor (base-local metres; ry turns the face)
 function signs(B, list){ const by={}; for(const [kind,x,z,ry,w] of list){ const W=w||1.5, H=kind.startsWith('name')?W*72/256:W*160/256, legs=[];
     (by[kind]=by[kind]||[]).push(_xf(new THREE.PlaneGeometry(W,H),x,kind.startsWith('name')?0:1.25+H/2,z,0,ry||0,0)); }
@@ -330,11 +354,7 @@ export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='play
   for(const B of SUPPLY.bases){
     if(B.kind==='radar'){ if(B.tower && B.tower.fall) updateTopple(B.tower, dt); else if(B.head && B.alive) B.head.rotation.y+=dt*(B.alarm?1.9:1.15);   // the array never stops sweeping
       if(B.alive) for(const pc of B.pieces) if(pc.kind==='aagun') updateAAGun(pc.mesh, pc, dt, now, p); }
-    if(B.fence && Math.hypot(p.pos.x-B.x, p.pos.z-B.z) < B.R+14){ const F=B.fence; let ch=false;   // Z195 the hull rolls the fence flat: the bay falls away from the tank
-      for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down || (sp.cx-p.pos.x)**2+(sp.cz-p.pos.z)**2 > 36 || !hitsHull(p, sp.cx, sp.cz, 0.5)) continue;
-        sp.down=true; ch=true; const out=(p.pos.x-sp.cx)*sp.nx+(p.pos.z-sp.cz)*sp.nz > 0; const M=bayMatrix(sp, out?-1.45:1.45); F.a.setMatrixAt(i,M); F.b.setMatrixAt(i,M);
-        burst({x:sp.cx,z:sp.cz}, BIOME.ground, 3, 2.5, {y:heightAt(sp.cx,sp.cz)+0.5, life:0.8, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); sfx('clang', {x:sp.cx,z:sp.cz}, 0.6); }
-      if(ch){ F.a.instanceMatrix.needsUpdate=true; F.b.instanceMatrix.needsUpdate=true; } }
+    if(B.fence && Math.hypot(p.pos.x-B.x, p.pos.z-B.z) < B.R+16) fenceCollide(B, p, now);   // Z205 the wire is a real barrier: ram it hard or shoot it down
     for(let i=B.fires.length-1;i>=0;i--){ const F=B.fires[i]; F.t-=dt; if(F.t<=0){ B.fires.splice(i,1); continue; } if(Math.random()>(MOBILE?0.35:0.7)) continue; const k=Math.min(1,F.t/8);
       spawnPart(F.x+_R(-1,1)*F.s, F.y, F.z+_R(-1,1)*F.s, _R(-0.4,0.4), 3+Math.random()*2, _R(-0.4,0.4), { tex:'fire', color:0xffe0a0, color2:0xff3a0a, size:(1+Math.random())*F.s*(0.4+0.6*k), life:0.6, grav:1.6, drag:1.4, grow:0.8 });
       if(Math.random()<0.5) spawnPart(F.x, F.y+2*F.s, F.z, 0.6, 2.4, 0.3, { color:0x120f0c, size:2.2*F.s, life:3, smoke:true, grav:0.25, drag:0.6, grow:3, op:0.3+0.3*k }); }

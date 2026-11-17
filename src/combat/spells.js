@@ -1,7 +1,7 @@
 // combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS, LETHAL } from '../../config.js';
-import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
+import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fenceBlast, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
@@ -63,6 +63,7 @@ export function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
 // Z193 a blast also shreds every piece of field cover (sandbags, crates, concrete…)
 export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){
+  fenceBlast(x, z, r);   // Z205 the wire goes down in a blast
   for(const b of blocks.slice()) if(b.kind==='tower'||b.kind==='obj'||b.kind==='brick'||b.kind==='camp'||b.kind==='pylon'||b.kind==='gate'||b.kind==='fortwall'||b.kind==='fortcore'||b.hard||b.cover||b.supply||(COVER_HP[b.kind]!=null && isFinite(b.hp))){ const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz < (r+b.r)*(r+b.r)) damageBlock(b, dmg*0.7*(type?structMul(type,b):1)*(siege||1)); }   // Z112 + rocks / hedgehogs   // blasts bring watchtowers down
   for(const e of enemies.slice()){ if(e.def.air && !air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, q=dx*dx+dz*dz; if(q < (r*LETHAL.reach+3)**2 && fortIntactCross(x, z, e.pos.x, e.pos.z)) continue;   // Z170 a blast outside a sealed fort stops at its wall
     if(e.def.inf && q<(r*2.2)**2) suppress(e, 0.6);   // Z173 a blast nearby: heads down
