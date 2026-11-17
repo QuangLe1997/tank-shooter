@@ -1,6 +1,6 @@
 // world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushables, decalDirt, enemies, haptic, heightAt, inField, rockSet, sfx, spawnPart } from '../hub.js';
+import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushables, decalDirt, enemies, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart } from '../hub.js';
 
 // ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
 // Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
@@ -32,11 +32,14 @@ export function buildTerrainDecor(b){
       crushables.push({ x:o.x, z:o.z, r:o.r, im, k, alive:true, kind:'rock', ry:o.ry }); });
     decorGroup.add(im); });
   if(b.name==='MEADOW'||b.name==='DESERT'||b.name==='TUNDRA'||b.name==='CITADEL'||b.name==='HILLS'||b.name==='VILLAGE'||b.name==='SAVANNA'){                // grass tufts / dry shrubs (flatten under tracks)
-    const M=Math.round(((b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?(MOBILE?90:200):(MOBILE?30:60))*Math.min(AREA_K, MOBILE?1.5:2)), list=[]; for(let i=0;i<M;i++){ const sp=_decorSpot(9); if(sp) list.push({x:sp[0],z:sp[1],s:_R(0.7,1.4),ry:_R(0,6.28)}); }
-    if(!_tuftMat) _tuftMat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.95, side:THREE.DoubleSide });
-    const im=new THREE.InstancedMesh(tuftGeo(b.name), _tuftMat, Math.max(1,list.length)); im.castShadow=!MOBILE; im.receiveShadow=true;
-    list.forEach((o,k)=>{ _IM.compose(_IV.set(o.x,heightAt(o.x,o.z),o.z), _IQ.setFromEuler(_IE.set(0,o.ry,0)), _IS.set(o.s,o.s,o.s)); im.setMatrixAt(k,_IM); crushables.push({ x:o.x, z:o.z, r:0.45*o.s, im, k, alive:true, kind:'grass', ry:o.ry, s:o.s }); });
-    im.count=list.length; decorGroup.add(im); }
+    const M=Math.round(((b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?(MOBILE?140:420):(MOBILE?50:120))*Math.min(AREA_K, MOBILE?1.5:2)), list=[]; for(let i=0;i<M;i++){ const sp=_decorSpot(9); if(sp) list.push({x:sp[0],z:sp[1],s:_R(0.7,1.4),ry:_R(0,6.28)}); }
+    const tone=(b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?'green':b.name==='TUNDRA'?'tundra':'dry'; let V=null, mat=null;
+    try{ V=grass(tone).slice(0,3); mat=floraMat(); }catch(err){ V=[tuftGeo(b.name)]; mat=_tuftMat||(_tuftMat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.95, side:THREE.DoubleSide })); }   // Z202 real blade clumps (alpha cards, swaying), 3 variants · the boot-time backdrop runs before world/flora.js is loaded → old tufts
+    const per=V.map(()=>[]);
+    for(const o of list) per[(Math.random()*V.length)|0].push(o);
+    per.forEach((L,vi)=>{ if(!L.length) return; const im=new THREE.InstancedMesh(V[vi], mat, L.length); im.castShadow=false; im.receiveShadow=true;
+      L.forEach((o,k)=>{ _IM.compose(_IV.set(o.x,heightAt(o.x,o.z),o.z), _IQ.setFromEuler(_IE.set(_R(-0.15,0.15),o.ry,_R(-0.15,0.15))), _IS.set(o.s,o.s*_R(0.8,1.2),o.s)); im.setMatrixAt(k,_IM); crushables.push({ x:o.x, z:o.z, r:0.45*o.s, im, k, alive:true, kind:'grass', ry:o.ry, s:o.s }); });
+      decorGroup.add(im); }); }
 }
 // tracks grind clutter: stones burst into chips + dust (gone), grass/shrubs get flattened into the dirt
 export function crushAt(c){

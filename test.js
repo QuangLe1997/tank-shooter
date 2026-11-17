@@ -641,7 +641,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const r=fs.readFileSync('src/world/regional.js','utf8'), fl=fs.readFileSync('src/world/flora.js','utf8');
   ok(/function hipRoof/.test(r) && /function lathe/.test(r) && /function ridgeOrn/.test(r) && /idx\.push\(a,c,b, b,c,d\)/.test(r), 'hipped roofs with sweep, curled corners, fascia + soffit (outward winding)');
   ok(/st\.roof==='tile'\)\{ const h=s\*0\.55, g=hipRoof/.test(r) && /roof==='onion'\)\{[^\n]*CylinderGeometry/.test(r) && /roof==='tent'\)\{[^\n]*CylinderGeometry\(s\*0\.5,s\*0\.52,s\*0\.55,8\)/.test(r), 'gate, onion and tent roofs are built from real profiles');
-  ok(/card\(r\*1\.15, 0\.9, 2, 0, y-1\.6/.test(fl), 'spruce sprays lean their normals up to the sky (no black trees)'); }
+  ok(/card\(r\*_R\(1\.0,1\.3\), 0\.9, 2, 0, y-1\.6/.test(fl), 'spruce sprays lean their normals up to the sky (no black trees)'); }
 
 // Z149 gun ladder: a higher BẬC always out-fights a lower one; extra barrels never mean extra damage
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const GM=await import('./src/data/guns.js'), G=GM.GUNS;
@@ -1035,6 +1035,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.ROOF_MG_AI && C.ROOF_MG_AI.air.rangeK>1 && /air:true/.test(mg) && /para:q/.test(mg) && /HẠ LÍNH DÙ/.test(mg) && /nothing softer: hose the armour/.test(mg), 'the roof gun shoots helicopters first, then paratroopers in the air, infantry, guards, and chips armour');
   ok(/PHÁO THỦ DỰ BỊ ĐANG LÊN THAY/.test(mg) && /MGR\.reserve--/.test(mg) && /spawnRider\(\)/.test(mg), 'a reserve crewman climbs out of the hull to man the gun when the roof is empty');
   ok(/climbs up out of the hatch/.test(mg) && /hands on the spade grips/.test(mg) && /a hot barrel smokes/.test(mg) && /racks the charging handle/.test(mg) && /beltG/.test(mg) && /hatch lid/.test(mg), 'the gunner leans in, grips, tracks, reloads, racks; the gun has sights, a moving belt, an open hatch lid, a smoking barrel'); }
+
+// Z202 real vegetation: bark + grass in the atlas, several variants per species, bending tapered limbs, a bottle baobab, blade-card grass, gusts
+{ const fs=await import('node:fs'); const fl=fs.readFileSync('src/world/flora.js','utf8'), dc=fs.readFileSync('src/world/decor.js','utf8');
+  ok(/const AREG=4/.test(fl) && /bark: long wandering fissures/.test(fl) && /grass blades: thin, tapering/.test(fl), 'the leaf atlas carries bark and real grass blades');
+  ok(/function vars\(k, n, f\)/.test(fl) && /instances spread across the species' variants/.test(fl) && /function limb\(pts, r0, r1/.test(fl) && /LatheGeometry\(pts, 14\)/.test(fl), 'several variants per species, tapered bending limbs, a lathe-turned bottle baobab');
+  ok(/function grassCards\(/.test(fl) && /gusts roll across the field/.test(fl) && /lx:_R\(-lean,lean\)/.test(fl) && /drier here, lusher there/.test(fl), 'grass is crossed blade cards; gusts; every plant leans, stretches and tints a little differently, in patches');
+  ok(/try\{ V=grass\(tone\)/.test(dc) && /catch\(err\)\{ V=\[tuftGeo/.test(dc), 'the boot-time backdrop never touches flora.js before it is loaded (no stuck loading screen)'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
