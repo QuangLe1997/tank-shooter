@@ -935,8 +935,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z188 strike & lock visuals: a readable artillery zone (disc, hazard band, closing chevrons, countdown arc, label, shell shadow), flame tongues + smoke ribbons, a "BỊ KHOÁ" warning, a KHOÁ label on our locks
 { const fs=await import('node:fs'); const a=fs.readFileSync('src/campaign/artillery.js','utf8'), m=fs.readFileSync('src/actors/enemy-missiles.js','utf8'), l=fs.readFileSync('src/combat/lock-on.js','utf8'), sy=fs.readFileSync('src/audio/synth.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
   ok(/function tickArtLock\(zone, k, fly, now, dt, tLeft\)/.test(a) && /'PHÁO KÍCH'/.test(a) && /u\.shadow\.material\.opacity/.test(a) && /sfx\('whistle'\)/.test(a), 'artillery zone: closing chevrons, countdown arc + seconds label, shell shadow, falling whistle');
-  ok(/export function updateLockWarn\(dt, now\)/.test(m) && /TorusGeometry\(3\.4,0\.035/.test(m) && !/BỊ KHOÁ/.test(m) && /updateLockWarn\(gdt, now\)/.test(lp) && /case 'lockwarn'/.test(sy), 'Z212 guided missile → one thin red ring round your tank blinking faster as it closes, + beep');
-  ok(/TorusGeometry\(1\.55,0\.03/.test(l) && !/◆ KHOÁ|dgrp|bgrp/.test(l), 'Z212 our missile lock: one thin blinking red ring, nothing else'); }
+  ok(/export function updateLockWarn\(dt, now\)/.test(m) && /BỊ KHOÁ/.test(m) && /updateLockWarn\(gdt, now\)/.test(lp) && /case 'lockwarn'/.test(sy), 'guided missile → red brackets + BỊ KHOÁ round your tank, beeping faster as it closes');
+  ok(/◆ KHOÁ/.test(l) && /dgrp/.test(l), 'our missile lock: dashed ring + KHOÁ label once the brackets snap'); }
 
 // Z189 cinematic upgrade: the horizon (ranges per battlefield, smoke columns, flashes, jets), a lower chase camera that shows it, rim-lit shock domes,
 //   real fire light, long-burning wrecks with tall smoke columns, sparks + a direction marker when we are hit, smoke / fire as our tank is wrecked
