@@ -953,5 +953,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function fogCull\(\)/.test(lod) && /fogCull\(\);/.test(lod) && /CULL_LAYER=7/.test(lod) && /isPoints/.test(lod), 'objects lost in the fog are not drawn; particle layers / big pieces are never culled');
   ok(/sp\.scale\.set\(3\.9,0\.98,1\)/.test(a) && /hot\?12:3\+k\*6/.test(a), 'artillery zone: smaller label, slower pulse'); }
 
+// Z191 cinematic colour: film split-tone + vibrance + a soft highlight shoulder in the grade, and every battlefield / hour has its own palette
+{ const fs=await import('node:fs'); const r=fs.readFileSync('src/render/renderer.js','utf8'), at=fs.readFileSync('src/world/atmosphere.js','utf8'); const W=await import('./src/data/world.js');
+  ok(/shTint\*\(1\.0-smoothstep/.test(r) && /hiTint\*smoothstep/.test(r) && /vib\*\(1\.0-s0\)/.test(r) && /step\(0\.8,c\)/.test(r), 'grade: split-tone, vibrance and a film shoulder');
+  ok(Object.values(W.ATMOS).every(A=>Array.isArray(A.sh) && Array.isArray(A.hi) && typeof A.vib==='number' && A.exp>0.6 && A.exp<1.2), 'every battlefield has its own exposure, shadow / highlight tint and vibrance');
+  ok(/u\.shTint\.value\.set/.test(at) && /o\.sh=\[/.test(at) && /ek=\(A\.exp\|\|1\.08\)\/1\.08/.test(at), 'the palette is applied per battle; sunset and night have their own tints, exposure carries through every hour'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

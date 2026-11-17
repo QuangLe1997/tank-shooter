@@ -43,9 +43,10 @@ camera.lookAt(0,0,0);
 // ---- CINEMATIC GRADE (last pass, display-referred): split-tone + contrast/saturation + vignette + film grain + shake-driven chromatic aberration ----
 export const GradeShader = {
   uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.012:0.018}, sharp:{value:MOBILE?0.22:0.42}, sat:{value:0.9}, contrast:{value:1.08},
-    lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0} },
+    lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0},
+    shTint:{value:new THREE.Vector3(-0.015,0.0,0.025)}, hiTint:{value:new THREE.Vector3(0.025,0.01,-0.02)}, vib:{value:0.25} },   // Z190 film split-tone + vibrance
   vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sharp,sat,contrast,aberr,flash; uniform vec3 lift,gain; varying vec2 vUv;
+  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sharp,sat,contrast,aberr,flash,vib; uniform vec3 lift,gain,shTint,hiTint; varying vec2 vUv;
     void main(){
       vec2 d=vUv-0.5; vec3 c;
       if(aberr>0.0002){ vec2 o=d*aberr; c=vec3(texture2D(tDiffuse,vUv+o).r, texture2D(tDiffuse,vUv).g, texture2D(tDiffuse,vUv-o).b); }
@@ -54,8 +55,12 @@ export const GradeShader = {
         vec3 nb=texture2D(tDiffuse,vUv+vec2(px.x,0.0)).rgb+texture2D(tDiffuse,vUv-vec2(px.x,0.0)).rgb+texture2D(tDiffuse,vUv+vec2(0.0,px.y)).rgb+texture2D(tDiffuse,vUv-vec2(0.0,px.y)).rgb;
         c=max(c+(c-nb*0.25)*sharp, vec3(0.0)); }
       float l=dot(c,vec3(0.2126,0.7152,0.0722));
-      c=mix(vec3(l),c,sat);
-      c=(c-0.5)*contrast+0.5;
+      float s0=max(c.r,max(c.g,c.b))-min(c.r,min(c.g,c.b));
+      c=mix(vec3(l),c,sat*(1.0+vib*(1.0-s0)));                       // Z190 vibrance: dull colours gain more than already-rich ones
+      c=(c-0.45)*contrast+0.45;                                       // pivot a touch below mid-grey: deeper shadows, highlights kept
+      c=mix(c, 0.8+(c-0.8)/(1.0+(c-0.8)*5.0), step(0.8,c));           // Z190 film shoulder: whites roll off instead of clipping flat
+      float l2=clamp(dot(c,vec3(0.2126,0.7152,0.0722)),0.0,1.0);
+      c+=shTint*(1.0-smoothstep(0.0,0.55,l2)) + hiTint*smoothstep(0.4,1.0,l2);   // Z190 split-tone: cool shadows, warm light (per battlefield)
       c=c*gain + lift*(1.0-l);
       c+=flash*vec3(1.0,0.86,0.62);
       float r=length(d*vec2(1.0,0.82)); c*=1.0-vig*smoothstep(0.32,0.82,r);

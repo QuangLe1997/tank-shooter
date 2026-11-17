@@ -4,12 +4,13 @@ import { ATMOS, CLOUD, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambien
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
-  const o=Object.assign({}, A);
-  if(tod==='noon'){ o.el=1.32; o.sunI=A.sunI*1.12; o.sun=0xfff8ee; o.con=A.con+0.04; o.exp=1.0; o.night=0; }
+  const o=Object.assign({}, A), ek=(A.exp||1.08)/1.08;   // Z190 each battlefield's own exposure carries into every hour
+  if(tod==='noon'){ o.el=1.32; o.sunI=A.sunI*1.12; o.sun=0xfff8ee; o.con=A.con+0.04; o.exp=1.0*ek; o.night=0; }
   else if(tod==='sunset'){ o.el=0.28; o.sunI=A.sunI*0.85; o.sun=0xffc28a; o.top=0x4a669c; o.hor=0xeab68a; o.fog=0xb4a08e; o.fogD=A.fogD*1.05; o.hemiG=0x5a4a3e;   // Z97 golden hour — warm light, blue sky, not a red wash
-    o.lift=[0.008,0.004,0.012]; o.gain=[1.04,1.0,0.94]; o.sat=A.sat; o.con=1.05; o.exp=1.1; o.night=0; }
+    o.lift=[0.008,0.004,0.012]; o.gain=[1.04,1.0,0.94]; o.sat=A.sat; o.con=Math.max(1.1, A.con); o.exp=1.1*ek; o.night=0;
+    o.sh=[-0.03,-0.004,0.045]; o.hi=[0.06,0.022,-0.04]; o.vib=(A.vib||0.25)+0.05; }   // Z190 golden hour: amber light, blue-violet shadows
   else if(tod==='night'){ o.el=0.9; o.az=A.az+2.2; o.sunI=1.6; o.sun=0xc4d2ff; o.top=0x0e1a36; o.hor=0x2c3b5a; o.fog=0x29354d; o.fogD=0.0030; o.hemiG=0x2a2e3c;   // Z97 bright moonlit night: you can read the field
-    o.lift=[0.02,0.027,0.045]; o.gain=[1.0,1.02,1.08]; o.sat=0.88; o.con=1.0; o.exp=1.45; o.night=1; }   // Z137 brighter (was exp 1.3, lift .012/.018/.032)
+    o.lift=[0.02,0.027,0.045]; o.gain=[1.0,1.02,1.08]; o.sat=0.88; o.con=1.06; o.exp=1.45; o.night=1; o.sh=[-0.01,0.004,0.04]; o.hi=[0.015,0.01,-0.005]; o.vib=0.15; }   // Z190 moonlight: blue shadows, lamps stay warm   // Z137 brighter (was exp 1.3, lift .012/.018/.032)
   else { o.exp=1.08; o.night=0; }
   return o;
 }
@@ -67,12 +68,13 @@ export function applyAtmosphere(b){
   const A=todAtmos(ATMOS[b.name]||ATMOS.DESERT, S.tod||'day');
   SUN_DIR.set(Math.cos(A.el)*Math.sin(A.az), Math.sin(A.el), Math.cos(A.el)*Math.cos(A.az)).normalize();
   scene.environment = skyEnvTexture(b.name, A); scene.environmentIntensity = 0.6;
-  const fogC=new THREE.Color(A.fog); if(!A.night) fogC.lerp(_WHITE, 0.14);                          // Z97 daylight haze is bright (aerial perspective), never a dark smog band
+  const fogC=new THREE.Color(A.fog); if(!A.night) fogC.lerp(_WHITE, 0.08);                          // Z97 daylight haze is bright (aerial perspective), never a dark smog band
   scene.background.copy(fogC); scene.fog.color.copy(fogC); scene.fog.density = A.fogD; A._fogC=fogC;
   sun.color.setHex(A.sun); sun.intensity = A.sunI;
   hemi.color.setHex(A.top); hemi.groundColor.setHex(A.hemiG); hemi.intensity = 0.7;
   ambient.color.setHex(A.hor); ambient.intensity = 0.12;
   const u=gradePass.uniforms; u.lift.value.set(...A.lift); u.gain.value.set(...A.gain); u.sat.value=A.sat; u.contrast.value=A.con;
+  u.shTint.value.set(...(A.sh||[-0.015,0,0.025])); u.hiTint.value.set(...(A.hi||[0.025,0.01,-0.02])); u.vib.value=A.vib??0.25;   // Z190 film look per battlefield
   renderer.toneMappingExposure = A.exp||1.08;
   hemi.intensity = A.night ? 0.85 : 0.72; scene.environmentIntensity = A.night ? 0.5 : 0.6;
   if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x7a8ab4); ambient.intensity=0.36; }   // moonlight fill — shadows stay blue-grey, never black
