@@ -1112,5 +1112,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function artRocketTemplate\(\)/.test(sr) && /LatheGeometry\(prof,16\)/.test(sr) && /g\._inner=inner/.test(sr), 'a 122 mm field rocket model with a short white-hot flame');
   ok(/const burn=s\.age<C\.flightTime\*0\.55/.test(ar) && /s\.lx==null/.test(ar) && /shockwave dust ring/.test(ar) && /dirtGeyser\(tx, tz/.test(ar) && /the black smoke column/.test(ar) && !/ringPulse\(\{x:tx,z:tz\}/.test(ar), 'burn → coast, gap-free trail, flash / fireball / geyser / dust ring / smoke column — no neon rings'); }
 
+// Z219 a tower-guard missile target is tagged _twr — depot / stockade soldiers carry their own e.guard, and mistaking them for one threw every frame (the game froze)
+{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/\{ _twr:true, t, gd,/.test(lo) && /if\(t && t\._twr\) return t\.gd\.alive/.test(lo) && !/t\.guard\b/.test(lo), 'smart missile: tower-guard targets use their own tag, never an enemy\'s guard field'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

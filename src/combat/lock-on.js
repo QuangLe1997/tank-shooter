@@ -22,9 +22,9 @@ for(let i=0;i<8;i++){
   const lab=new THREE.Sprite(new THREE.SpriteMaterial({ map:_lockLabel, transparent:true, depthTest:false, depthWrite:false })); lab.scale.set(2.4,0.72,1); lab.position.set(0,2.4,0); grp.add(lab);
   lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, dgrp, lab, life:0, max:0.55, snap:0});
 }
-export function targetAlive(t){ if(t && t.guard) return t.gd.alive && !t.t.falling; return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }
+export function targetAlive(t){ if(t && t._twr) return t.gd.alive && !t.t.falling; return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }
 // Z217 a guard up a watchtower as a missile target (one stable object per guard, kept at his real position)
-function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ guard:true, t, gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7 }); o.pos.x=gd.wx; o.pos.y=(gd.wy||6)+0.9; o.pos.z=gd.wz; return o; }   // dead targets splice out of enemies[]
+function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ _twr:true, t, gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7 }); o.pos.x=gd.wx; o.pos.y=(gd.wy||6)+0.9; o.pos.z=gd.wz; return o; }   // dead targets splice out of enemies[]
 // Z214 a smart missile goes for the helicopter first
 export function acquireLock(b){ let best=null, bd=1e9;                                     // nearest live enemy/boss to the missile itself
   if(b.smart){ for(const e of enemies){ const w=e.def.air?0.35:e.def.inf?4:1, d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*w; if(d<bd){ bd=d; best=e; } }   // Z217 heat-seeking: aircraft › armour › guards › foot soldiers — never bricks or stone
@@ -93,7 +93,7 @@ function airDetonate(b, t){ const y=(t.pos.y||b.by+heightAt(b.x,b.z)), now=perfo
   for(let k=0;k<5;k++){ const a=Math.random()*6.283; spawnPart(b.x, y, b.z, Math.cos(a)*3, (Math.random()-0.3)*3, Math.sin(a)*3, { tex:'fire', color:0xfff0c0, color2:0xff4a10, size:1.6+Math.random(), grow:1.5, life:0.35+Math.random()*0.2, grav:0.5, drag:3 }); }
   for(let k=0;k<(MOBILE?8:16);k++){ const a=Math.random()*6.283, v=8+Math.random()*12; spawnPart(b.x, y, b.z, Math.cos(a)*v, (Math.random()-0.2)*9, Math.sin(a)*v, { color:0xffd890, color2:0xff5a10, size:0.16, life:0.6+Math.random()*0.5, grav:-14, drag:0.8 }); }
   spawnPart(b.x, y, b.z, 0, 0.6, 0, { color:0x22201c, size:3.2, life:2.2, smoke:true, grav:0.3, drag:1.2, grow:1.8, op:0.6, keep:true });
-  if(!t.guard) damageEnemy(t, b.dmg*0.9); aoeDamage(b.x, b.z, b.aoe, b.aoeDmg||b.dmg, false, now, b.type, true, siegeMul()); sfx('explode', { x:b.x, z:b.z }, 0.8); S.shake=Math.min(3, S.shake+0.35); }
+  if(!t._twr) damageEnemy(t, b.dmg*0.9); aoeDamage(b.x, b.z, b.aoe, b.aoeDmg||b.dmg, false, now, b.type, true, siegeMul()); sfx('explode', { x:b.x, z:b.z }, 0.8); S.shake=Math.min(3, S.shake+0.35); }
 const _ca=new THREE.Vector3(), _cb=new THREE.Vector3();   // Z149 chain-lightning ends
 export function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
@@ -142,13 +142,13 @@ export function updateBullets(dt, now){
       if(b.smart){ const sp=Math.hypot(b.vx,b.vz)||1; if(b.ign>0){ b.ign-=dt; if(b.ign<=0) smartIgnite(b); } else { const ns=Math.min(b.vmax, sp+b.vmax*3.4*dt); b.vx*=ns/sp; b.vz*=ns/sp; }   // Z214 eject → ignite → streak
         const rk=b.mesh.userData.rk; if(rk){ rk.rotation.z+=dt*16; if(rk.userData.glow) rk.userData.glow.visible = b.ign<=0; if(rk.userData.core) rk.userData.core.visible = b.ign<=0; } }
       if(!b.tgt || !targetAlive(b.tgt)) b.tgt = (b.flared && now<b.flared) ? null : acquireLock(b);            // sticky lock — re-acquire only if it dies · Z198 decoyed by flares: it flies on blind for a moment
-      const t=b.tgt; if(t && t.guard) guardTarget(t.t, t.gd);
+      const t=b.tgt; if(t && t._twr) guardTarget(t.t, t.gd);
       if(t){ requestLock(t);                                              // hi-tech reticle snaps onto the locked target
         const want=Math.atan2(t.pos.x-b.x,t.pos.z-b.z); let da=wrapAngle(want-b.angle);
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*(b.smart ? (b.ign>0?0:15) : (b.homing||5)))); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp;
         const dist=Math.hypot(t.pos.x-b.x,t.pos.z-b.z), ty=(t.pos.y||1.2);
-        if(dist < b.r+(t.r||1)+0.7){ if(t.def && t.def.aps && now>(t.apsCd||0) && Math.random()<t.def.aps){ t.apsCd=now+1.0; apsKill(b, t); recycleBullet(i); continue; } if(t.guard){ airDetonate(b, t); shootGuard(t.t, t.gd, b.x, b.z); } else if(t.def && t.def.air) airDetonate(b, t); else detonate(b); recycleBullet(i); continue; }   // Z158 APS can kill a guided missile on its final dive · Z214 an aircraft is hit in the air     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
+        if(dist < b.r+(t.r||1)+0.7){ if(t.def && t.def.aps && now>(t.apsCd||0) && Math.random()<t.def.aps){ t.apsCd=now+1.0; apsKill(b, t); recycleBullet(i); continue; } if(t._twr){ airDetonate(b, t); shootGuard(t.t, t.gd, b.x, b.z); } else if(t.def && t.def.air) airDetonate(b, t); else detonate(b); recycleBullet(i); continue; }   // Z158 APS can kill a guided missile on its final dive · Z214 an aircraft is hit in the air     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
         const desiredY=(t.def && (t.def.air||t.def.guard)) ? ty : ty + b.loft*Math.min(1, dist/9);   // Z214 climbs straight to an aircraft's height                   // vault while far, dive to strike height as it closes (descends sooner → less loiter)
         b.by += (desiredY-b.by)*Math.min(1, dt*4.2); } }                  // snappy climb/dive — short air time, no orbiting
     else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
