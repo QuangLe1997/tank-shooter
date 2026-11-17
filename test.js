@@ -1043,5 +1043,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function grassCards\(/.test(fl) && /gusts roll across the field/.test(fl) && /lx:_R\(-lean,lean\)/.test(fl) && /drier here, lusher there/.test(fl), 'grass is crossed blade cards; gusts; every plant leans, stretches and tints a little differently, in patches');
   ok(/try\{ V=grass\(tone\)/.test(dc) && /catch\(err\)\{ V=\[tuftGeo/.test(dc), 'the boot-time backdrop never touches flora.js before it is loaded (no stuck loading screen)'); }
 
+// Z203 debris: fractured shapes by material, a flash, a dust cloud, sparks, grit, dust trails and landing puffs — no more cubes
+{ const fs=await import('node:fs'); const db=fs.readFileSync('src/fx/debris.js','utf8');
+  ok(/export const DEBRIS_GEOS = \{ chunk:/.test(db) && /function plateGeo\(/.test(db) && /function splinterGeo\(/.test(db) && !/debrisGeo = new THREE\.BoxGeometry/.test(db), 'debris is fractured chunks, torn plates, splinters and slivers (no unit cubes)');
+  ok(/function material\(col\)/.test(db) && /blastLight\(pos\.x, pos\.z/.test(db) && /grit/.test(db) && /a puff where it lands/.test(db) && /trails a little dust/.test(db), 'each break lights the ground, throws its own dust, sparks off metal; pieces trail dust and puff on landing');
+  ok(/torn armour plate \(jagged outline\)/.test(db), 'tank wrecks shed jagged torn plates, not slabs'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
