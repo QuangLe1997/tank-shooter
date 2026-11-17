@@ -39,7 +39,7 @@ export function spawnDebris(pos, scale, color){
     m.material.color.setHex(tint); m.material.metalness=metal?0.7:0.05; m.material.roughness=metal?0.55:0.95;
     m.material.emissiveIntensity=metal ? 0.8+Math.random()*0.9 : (Math.random()<0.15?0.5:0);   // metal comes off glowing hot; stone/wood mostly cold
     m.material.opacity=1;
-    m.position.set(pos.x+(Math.random()-0.5)*scale*0.9, gy+1.0+Math.random()*scale*0.8, pos.z+(Math.random()-0.5)*scale*0.9);
+    m.position.set(pos.x+(Math.random()-0.5)*scale*0.9, (pos.y!=null?pos.y:gy+1.0)+Math.random()*scale*0.8, pos.z+(Math.random()-0.5)*scale*0.9);   // Z216 can break off high up (a building's floor)
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6); m.visible=true;
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp, rx:(Math.random()-0.5)*13, ry:(Math.random()-0.5)*13, rz:(Math.random()-0.5)*13,
       age:0, life:2.2+Math.random()*1.8, settled:false, dust:!metal, dcol:color??0x888888, floor:Math.max(0.05, st[1]*0.4) }); }

@@ -1067,7 +1067,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z207 village homes are real Vietnamese houses (classic tiled 3-bay · thatched · two-storey) with yards; city facades get street life
 { const fs=await import('node:fs'); const ho=fs.readFileSync('src/world/houses.js','utf8'), ci=fs.readFileSync('src/world/city.js','utf8');
   ok(/export function villageHouse\(\)/.test(ho) && /function classic\(K, X\)/.test(ho) && /function thatched\(K, X\)/.test(ho) && /function twoStorey\(K, X\)/.test(ho) && /function gableRoof\(/.test(ho) && /villageHouse\(\)/.test(fs.readFileSync('src/world/landmarks.js','utf8')), 'three village house kinds with a real pitched roof');
-  ok(/function yardProps\(/.test(ho) && /function kitchen\(/.test(ho) && /hoành phi/.test(ho) && /chuồng cọp/.test(ci) && /AC condensers/.test(ci), 'yards, kitchens, lacquered boards; AC units and window cages in town'); }
+  ok(/function yardProps\(/.test(ho) && /function kitchen\(/.test(ho) && /hoành phi/.test(ho) && /chuồng cọp/.test(ci) && /AC condenser/.test(ci), 'yards, kitchens, lacquered boards; AC units and window cages in town'); }
 
 // Z208 wildlife has real anatomy (ellipsoid masses, jointed tapered legs + hooves, horns / antlers / tusks / trunk) and per-pixel coats
 { const fs=await import('node:fs'); const w=fs.readFileSync('src/actors/wildlife.js','utf8');
@@ -1095,6 +1095,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z215 lock rings lie on the surface they mark: on the slope under a ground target, upright facing you round an aircraft; the artillery ring follows the slope
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/function seatLock\(L\)/.test(lo) && /export function groundNormal\(x, z, out\)/.test(lo) && /camera\.position\)\.sub\(L\.grp\.position\)/.test(lo) && /groundNormal\(x, z, new THREE\.Vector3\(\)\)/.test(fs.readFileSync('src/campaign/artillery.js','utf8')), 'lock rings sit on the surface they mark'); }
+
+// Z216 the city is rebuilt and BREAKS: boulevards + streets, villas / tube houses / apartments / towers / parks / squares / a pitch; floors are
+//   pieces (vertex-shader cull, shadows too) that come down from the top under fire, leaving scars, rubble and a ruin; poles / lamps / lights topple
+{ const fs=await import('node:fs'); const c=fs.readFileSync('src/world/city.js','utf8');
+  ok(/const isBlvd=/.test(c) && /function villaLot\(/.test(c) && /function fountain\(/.test(c) && /function stall\(/.test(c) && /pitchT/.test(c) && /function busStop\(/.test(c), 'boulevards, villas in walled gardens, parks, market stalls, a pitch, bus stops');
+  ok(/function pieceHook\(mat\)/.test(c) && /texelFetch\(uPieces/.test(c) && /customDepthMaterial=depthMat\(\)/.test(c) && /export function buildingHit\(b, dmg\)/.test(c) && /function brokenEdge\(/.test(c) && /function addRubble\(/.test(c), 'floors are pieces that fall from the top, scars + rubble + ruin');
+  ok(/kind==='building'\)\{ buildingHit\(b, dmg\)/.test(fs.readFileSync('src/world/cover.js','utf8')) && /cityBlast\(x, z, r\)/.test(fs.readFileSync('src/combat/spells.js','utf8')) && /kind==='topple'/.test(fs.readFileSync('src/world/decor.js','utf8')) && /cityCollapse\(S\.player\)/.test(fs.readFileSync('src/world/env-events.js','utf8')) && /updateCity\(gdt\)/.test(fs.readFileSync('src/game/loop.js','utf8')), 'shells / blasts / rams / the collapse event all reach the city'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

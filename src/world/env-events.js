@@ -1,7 +1,7 @@
 // world/env-events.js — Z140 SURPRISES OF THE LAND: every minute or two the battlefield itself does something — the village river floods,
 //   a rockslide thunders down the hills, a shelled city block collapses, a sandstorm / blizzard / downpour sweeps in elsewhere. Announced on the radio.
 import * as THREE from 'three';
-import { BIOME, LAND, RIVER, S, aoeDamage, applyWeather, blocks, burst, damageEnemy, damagePlayer, enemies, floatText, heightAt, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnPart } from '../hub.js';
+import { BIOME, RIVER, S, aoeDamage, applyWeather, blocks, burst, cityCollapse, damageEnemy, damagePlayer, enemies, floatText, heightAt, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnPart } from '../hub.js';
 
 export const ENVEV = { next:0, active:null, rocks:[], fall:null };
 export function resetEnvEvents(now){ ENVEV.next=(now||performance.now()/1000)+50+Math.random()*25; RIVER.y=-0.85; if(RIVER.mesh) RIVER.mesh.position.y=RIVER.y; ENVEV.active=null; /* a new stage already chose its own weather — never restore the old one */ for(const r of ENVEV.rocks) scene.remove(r.m); ENVEV.rocks.length=0; ENVEV.fall=null; }
@@ -27,8 +27,7 @@ function updateRocks(dt, now){ const p=S.player;
       if(p && !r.hit.has(p) && Math.hypot(p.pos.x-r.x, p.pos.z-r.z)<r.s*1.4+1.6){ r.hit.add(p); damagePlayer(18*r.s, now); } }
     if(r.t>7 || (r.t>2 && sp<0.6)){ r.m.scale.multiplyScalar(Math.max(0.0, 1-dt*2)); if(r.m.scale.x<0.1){ scene.remove(r.m); ENVEV.rocks.splice(i,1); } } } }
 // ---- CITY: a shelled block collapses (dust, debris, it crushes what stands at its foot — and opens a new street) ----
-function collapse(now){ const p=S.player; if(!p) return false; const cand=LAND.meshes.filter(m=>m.userData && m.userData.land && m.parent).map(m=>({ m, d:Math.hypot(m.position.x-p.pos.x, m.position.z-p.pos.z) })).filter(o=>o.d>14 && o.d<70).sort((a,b)=>a.d-b.d);
-  if(!cand.length) return false; const m=cand[0].m; ENVEV.fall={ m, t:0, y0:m.position.y, h:m.userData.h||10, done:false, tilt:(Math.random()-0.5)*0.3 };
+function collapse(now){ if(!cityCollapse(S.player)) return false;   // Z216 a real building nearby gives way, floor after floor
   announce('TOÀ NHÀ SẬP!', '#ffcf5a', 'SCH: Một khối nhà trúng pháo đang đổ — tránh xa!'); return true; }
 function updateFall(dt, now){ const F=ENVEV.fall; if(!F) return; F.t+=dt; const m=F.m, x=m.position.x, z=m.position.z;
   if(F.t<2.4){ const k=F.t/2.4; m.position.y=F.y0-F.h*k*k; m.rotation.z=F.tilt*k; m.rotation.x=F.tilt*0.6*k;

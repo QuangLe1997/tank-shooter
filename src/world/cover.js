@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, RAM, HARD } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -75,6 +75,7 @@ export function buildBlocks(){
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 export function damageBlock(b, dmg){
+  if(b.kind==='building'){ buildingHit(b, dmg); return; }                 // Z216 a city building: floors come down from the top
   if(b.supply){ supplyDamage(b, dmg); return; }                         // Z194 a piece of a fuel station / ammo depot
   if(b.kind==='gate'){ damageGate(b, dmg); return; }                     // Z107 fortress gate — batter it open
   if(b.kind==='fortwall'){ fortWallHit(b, dmg); return; }
