@@ -8,7 +8,7 @@
 //   launch — missile / thermobaric tubes: a small front flash and a hard BACKBLAST out of the rear of the tube that rolls dust behind the tank
 // The bolts / beams are a small pool of camera-facing ribbons (no allocation per shot); everything else rides the instanced particle layers.
 import * as THREE from 'three';
-import { BIOME, MOBILE, camera, heightAt, muzzleFlash, muzzleLight, ringPulse, scene, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, camera, heightAt, muzzleFlash, muzzleLight, muzzleLinger, ringPulse, scene, spawnPart } from '../hub.js';
 
 // ---- ribbon pool ----
 const MAXP = 18, POOL = MOBILE ? 10 : 22;
@@ -89,6 +89,7 @@ export function gunMuzzleFX(g, x, y, z, ang, rec){ const fx=Math.sin(ang), fz=Ma
     spawnPart(x+fx*0.9,y,z+fz*0.9, fx*6,0,fz*6, { tex:'flash', color:0xffffff, size:3.2+rec*0.4, life:0.05, grav:0, drag:9 });   // the blinding first instant
     spawnPart(x+fx*1.4,y,z+fz*1.4, fx*9,0.4,fz*9, { tex:'fire', color:0xfff0c0, color2:0xff4a10, size:1.6, grow:1.8, life:0.16, grav:0.5, drag:6 });   // fireball rolling off the muzzle
     smokeRing(x,y,z,fx,fz,0.8+rec*0.15);
+    muzzleLinger(x,y,z,fx,fz,0.8+rec*0.2);   // Z210 the cloud hangs in front of the gun
     muzzleLight.intensity=Math.max(muzzleLight.intensity, 5+rec); return; }
   if(kind==='rail'){
     spawnPart(x+fx*0.3,y,z+fz*0.3, 0,0,0, { tex:'flash', color:0xe6d4ff, size:2.6, life:0.07, grav:0, drag:8 });

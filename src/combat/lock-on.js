@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, typeMul, unitsNear, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -119,11 +119,12 @@ export function updateBullets(dt, now){
     { const tc=b.owner==='e'?0xff5a24:b.color, ts=(b.r||0.45)*BVIS*1.7, tl=0.16+(b.r||0.45)*0.24; addTrail(b.x, _wy, b.z, tc, ts, tl);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak
       if(b._lx!=null){ const gx=b.x-b._lx, gy=_wy-b._ly, gz=b.z-b._lz, n=Math.min(MOBILE?3:6, Math.floor(Math.hypot(gx,gz)/(ts*0.7))); for(let k=1;k<=n;k++){ const f=k/(n+1); addTrail(b._lx+gx*f, b._ly+gy*f, b._lz+gz*f, tc, ts, tl*(0.75+0.25*f)); } }
       b._lx=b.x; b._ly=_wy; b._lz=b.z; }   // Z192 the gap a fast round jumps each frame is filled in: one unbroken streak, not a string of beads
-    if(b.mesh.userData.rk || b.lockOn) rocketExhaust(b, b.x, _wy, b.z);   // Z192 motor flame + a long, lingering smoke ribbon (was a short puff, and the missile's sat at ground level)
+    if(b.mesh.userData.rk || b.lockOn) rocketExhaust(b, b.x, _wy, b.z); else shellTrail(b, b.x, _wy, b.z);   // Z210 every other round: its own light smoke line
+    if(b.owner==='e') nearMiss(b, S.player);   // Z192 motor flame + a long, lingering smoke ribbon (was a short puff, and the missile's sat at ground level)
     const airborne = (b.lockOn && b.by>2.6) || (b.arc && b.by>3.0);   // lofted missiles / high shells sail over cover & bystanders — they strike on the way down
 
     const overRange = !b.arc && b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);   // shells in flight always come down somewhere
-    if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim) groundHit(b.x, b.z, b.r||0.45); recycleBullet(i); continue; }
+    if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim){ groundHit(b.x, b.z, b.r||0.45); if(!b.inf && b.dmg>=30) dirtGeyser(b.x, b.z, Math.min(1.6, 0.7+b.dmg/120)); } recycleBullet(i); continue; }
     if(b.owner!=='e'){ const px=b.x-b.vx*dt, pz=b.z-b.vz*dt, wb=fortIntactCross(px, pz, b.x, b.z);   // Z170 a sealed fortress: the round strikes the wall, however high it flies
       if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); surfaceHit(wb, b); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
@@ -186,7 +187,7 @@ export function updateBullets(dt, now){
     }
     if(hit && b.aoe){ detonate(b); recycleBullet(i); }
     else if(hit && b.pierce<=0) recycleBullet(i);
-    else if(landed && !hit){ if(b.owner==='p'&&b.aoe) detonate(b); else groundHit(b.x,b.z,b.r||0.45); recycleBullet(i); }   // shell lands: burst / dirt + scar
+    else if(landed && !hit){ if(b.owner==='p'&&b.aoe) detonate(b); else { groundHit(b.x,b.z,b.r||0.45); if(!b.inf && b.dmg>=30) dirtGeyser(b.x, b.z, Math.min(1.6, 0.7+b.dmg/120)); } recycleBullet(i); }   // shell lands: burst / dirt + scar
   }
 }
 
