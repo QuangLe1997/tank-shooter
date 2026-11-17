@@ -104,7 +104,8 @@ export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA
       // street furniture along this sidewalk
       for(let s=-L/2+3; s<L/2-2; s+=_R(5,9)){ const px=ax?cx+ox:cx+s, pz=ax?cz+s:cz+oz;
         const r=Math.random(); if(r<0.12) trees.push({ x:px, z:pz, s:_R(0.75,1.0), ry:_R(0,6.28) }); else if(r<0.2) lamps.push({ x:px, z:pz, ry:ax?(sd>0?-Math.PI/2:Math.PI/2):(sd>0?Math.PI:0) });
-        else if(r<0.42){ const rowN=3+((Math.random()*6)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; motos.push({ x:ax?cx+ox:cx+ss, z:ax?cz+ss:cz+oz, ry:(ax?Math.PI/2:0)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; } }
+        else if(r<0.34){ const rowN=2+((Math.random()*5)|0);   // Z211 fewer, shorter rows of scooters (perf)
+         for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; motos.push({ x:ax?cx+ox:cx+ss, z:ax?cz+ss:cz+oz, ry:(ax?Math.PI/2:0)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; } }
       if(Math.random()<0.5) poles.push([ax?cx+ox+sd*0.9:cx-L/2+1, ax?cz-L/2+1:cz+oz+sd*0.9, ax?cx+ox+sd*0.9:cx+L/2-1, ax?cz+L/2-1:cz+oz+sd*0.9]);
       // parked cars along the kerb
       for(let s=-L/2+4; s<L/2-4; s+=_R(6,14)) if(Math.random()<0.45){ const lx=ax?sd*(ROAD/2-1.2):0, lz=ax?0:sd*(ROAD/2-1.2);

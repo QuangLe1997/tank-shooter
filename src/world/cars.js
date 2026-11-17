@@ -5,7 +5,7 @@
 //   chrome, lamps — per-vertex roughness/metalness so glass gleams and rubber doesn't). Some cars are burnt-out wrecks: charred, sitting low on flat tyres.
 //   Tanks flatten them (decor.js crushAt kind 'car').
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LAND, MOBILE, arena, crushables, detailize, heightAt } from '../hub.js';
 
 // ---------- merging with per-vertex colour + roughness/metalness ----------
@@ -16,7 +16,7 @@ function mergeRM(parts){ const geos=[];
     const n=g.attributes.position.count, c=new Float32Array(n*3), rm=new Float32Array(n*2), cc=new THREE.Color(p.col);
     for(let i=0;i<n;i++){ c[i*3]=cc.r; c[i*3+1]=cc.g; c[i*3+2]=cc.b; rm[i*2]=p.r??0.6; rm[i*2+1]=p.m??0.1; }
     g.setAttribute('color', new THREE.BufferAttribute(c,3)); g.setAttribute('aRM', new THREE.BufferAttribute(rm,2)); geos.push(g); p.geo.dispose(); }
-  const m=mergeGeometries(geos, false); geos.forEach(g=>g.dispose()); return m; }
+  const m=mergeGeometries(geos, false); geos.forEach(g=>g.dispose()); const w=mergeVertices(m, 1e-4); m.dispose(); return w; }   // Z211 welded + indexed: a fraction of the vertices to transform (×2 with shadows)
 let _paint=null, _trim=null;
 function paintMat(){ if(_paint) return _paint; const m=new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.3, metalness:0.5, envMapIntensity:1.35 });
   detailize(m, { scale:0.7, bump:0.003, alb:0.16, foot:0.9, streak:0.08, dust:0.22 }); LAND.mats.push(m); return (_paint=m); }
@@ -40,11 +40,11 @@ function slab(pts, width, bevel, arches){ const s=new THREE.Shape(); s.moveTo(pt
 // lathed tyre + alloy face (spokes) — wheel centred at (x, r, z), axle along x
 function wheel(L, x, r, z, tw, side, spokes, wreck){
   const pr=[[r*0.6,-tw/2],[r*0.9,-tw/2],[r,-tw/2+tw*0.22],[r,tw/2-tw*0.22],[r*0.9,tw/2],[r*0.6,tw/2]].map(([a,b])=>new THREE.Vector2(a,b));
-  if(!wreck){ const t=new THREE.LatheGeometry(pr, 16); t.rotateZ(Math.PI/2); t.translate(x,r,z); L.push({ geo:t, ...RUBBER }); }
+  if(!wreck){ const t=new THREE.LatheGeometry(pr, 12); t.rotateZ(Math.PI/2); t.translate(x,r,z); L.push({ geo:t, ...RUBBER }); }
   const rimR=r*(wreck?0.72:0.64), face=x+side*(tw/2-0.03);
-  cyl(L, rimR, rimR, tw*0.9, 14, x, r, z, wreck?{ col:0x3a2a20, r:0.9, m:0.3 }:{ col:0x3a3c3e, r:0.6, m:0.5 }, 'x');               // rim barrel
-  cyl(L, rimR*0.98, rimR*0.98, 0.02, 14, face, r, z, wreck?{ col:0x4a3426, r:0.9, m:0.2 }:DARK, 'x');                              // brake-dark rim well
-  if(!wreck){ const ring=new THREE.TorusGeometry(rimR*0.93, 0.028, 4, 18); ring.rotateY(Math.PI/2); ring.translate(face+side*0.012, r, z); L.push({ geo:ring, ...ALLOY }); }   // alloy lip
+  cyl(L, rimR, rimR, tw*0.9, 10, x, r, z, wreck?{ col:0x3a2a20, r:0.9, m:0.3 }:{ col:0x3a3c3e, r:0.6, m:0.5 }, 'x');               // rim barrel
+  cyl(L, rimR*0.98, rimR*0.98, 0.02, 10, face, r, z, wreck?{ col:0x4a3426, r:0.9, m:0.2 }:DARK, 'x');                              // brake-dark rim well
+  if(!wreck){ const ring=new THREE.TorusGeometry(rimR*0.93, 0.028, 3, 12); ring.rotateY(Math.PI/2); ring.translate(face+side*0.012, r, z); L.push({ geo:ring, ...ALLOY }); }   // alloy lip
   if(!wreck) for(let k=0;k<spokes;k++){ const a=k/spokes*Math.PI*2, g=new THREE.BoxGeometry(0.03, rimR*0.9, 0.07); g.translate(0, rimR*0.45, 0); g.rotateX(a); g.translate(face+side*0.012, r, z); L.push({ geo:g, ...ALLOY }); }
   cyl(L, rimR*0.22, rimR*0.22, 0.05, 8, face+side*0.02, r, z, wreck?DARK:CHROME, 'x'); }   // hub cap
 
@@ -108,10 +108,10 @@ const MODELS=[
 
 // ---------- Vietnamese step-through scooter ----------
 function scooter(){ const P=[], T=[];
-  for(const z of [0.64,-0.6]){ const t=new THREE.TorusGeometry(0.25,0.065,6,16); t.rotateY(Math.PI/2); t.translate(0,0.3,z); T.push({ geo:t, ...RUBBER }); cyl(T, 0.17,0.17,0.07,10, 0,0.3,z, ALLOY, 'x'); cyl(T, 0.05,0.05,0.12,6, 0,0.3,z, CHROME, 'x'); }
+  for(const z of [0.64,-0.6]){ const t=new THREE.TorusGeometry(0.25,0.065,5,12); t.rotateY(Math.PI/2); t.translate(0,0.3,z); T.push({ geo:t, ...RUBBER }); cyl(T, 0.17,0.17,0.07,8, 0,0.3,z, ALLOY, 'x'); cyl(T, 0.05,0.05,0.12,5, 0,0.3,z, CHROME, 'x'); }
   // body: front shield, floorboard, rear cowl — one side profile
   P.push({ geo:slab([[0.52,0.98],[0.36,0.42,'q',0.5,0.6],[0.18,0.28],[-0.22,0.3],[-0.4,0.62,'q',-0.36,0.38],[-0.78,0.66,'q',-0.62,0.58],[-0.86,0.76],[-0.5,0.82,'q',-0.74,0.84],[-0.18,0.72],[-0.1,0.36],[0.26,0.38],[0.44,1.0]], 0.34, 0.04) });
-  { const g=new THREE.TorusGeometry(0.36, 0.05, 4, 10, 1.9); g.rotateZ(0.4); g.rotateY(Math.PI/2); g.translate(0, 0.3, 0.64); P.push({ geo:g }); }   // front mudguard arc
+  { const g=new THREE.TorusGeometry(0.36, 0.05, 3, 8, 1.9); g.rotateZ(0.4); g.rotateY(Math.PI/2); g.translate(0, 0.3, 0.64); P.push({ geo:g }); }   // front mudguard arc
   box(T, 0.28, 0.08, 0.62, 0, 0.86, -0.42, { col:0x1a1a1a, r:0.75, m:0.0 });                                                       // seat
   box(T, 0.04, 0.8, 0.04, 0, 0.68, 0.53, CHROME, -0.3);                                                                              // raked fork
   box(T, 0.66, 0.035, 0.035, 0, 1.08, 0.42, PLASTIC); box(P, 0.22, 0.12, 0.16, 0, 1.06, 0.44, {});                               // bars + headlight cowl
@@ -132,11 +132,11 @@ export function pickCar(o, wrecks){ const B=built().cars, tot=B.reduce((a,m)=>a+
   o.col= o.wreck ? WRECK[(Math.random()*WRECK.length)|0] : m.taxi ? [0xf0f0ea,0x2a8a4a,0xf2c018][(Math.random()*3)|0] : m.truck ? [0x2a4a8a,0xe8e4d8,0x8a1a1a][(Math.random()*3)|0] : CAR_PAINT[(Math.random()*CAR_PAINT.length)|0];
   if(o.wreck){ o.ry+= (Math.random()-0.5)*0.9; o.tilt=(Math.random()-0.5)*0.12; o.sink=0.1; } return o; }
 const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _V=new THREE.Vector3(), _S=new THREE.Vector3(1,1,1), _C=new THREE.Color(), _W=new THREE.Color(0x6a6060);
-function draw(paint, trim, list, cr, kind){ if(!list.length) return; const pm=new THREE.InstancedMesh(paint, paintMat(), list.length), tm=new THREE.InstancedMesh(trim, trimMat(), list.length);
+function draw(paint, trim, list, cr, kind){ const shadow=!MOBILE && kind==='car'; if(!list.length) return; const pm=new THREE.InstancedMesh(paint, paintMat(), list.length), tm=new THREE.InstancedMesh(trim, trimMat(), list.length);
   list.forEach((o,k)=>{ _M.compose(_V.set(o.x, heightAt(o.x,o.z)-(o.sink||0), o.z), _Q.setFromEuler(_E.set(o.tilt||0, o.ry, (o.tilt||0)*0.6)), _S.set(1,1,1)); pm.setMatrixAt(k,_M); tm.setMatrixAt(k,_M);
     pm.setColorAt(k, _C.setHex(o.col)); tm.setColorAt(k, o.wreck ? _W : _C.setHex(0xffffff));                                     // a wreck's trim is soot-darkened too
     crushables.push({ x:o.x, z:o.z, r:cr, im:pm, ims:[tm], k, alive:true, kind, ry:o.ry, s:1, land:true }); });
-  for(const im of [pm,tm]){ im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); } }
+  for(const im of [pm,tm]){ im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); } }
 // cars: objects from pickCar · motos: {x,z,ry,col}
 export function drawStreetVehicles(cars, motos){ const B=built();
   B.cars.forEach((m,i)=>draw(m.paint, m.trim, cars.filter(o=>o.m===i), m.cr, 'car'));

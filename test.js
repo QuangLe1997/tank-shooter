@@ -872,7 +872,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z177 loot markers: no light columns — the object blinks gold; a loot tank shows one small blinking light at its hatch
 { const fs=await import('node:fs'); const b=fs.readFileSync('src/loot/beacons.js','utf8');
-  ok(!/CylinderGeometry\(0\.14,0\.55/.test(b) && /function ownMats/.test(b) && /function hatchLight/.test(b) && /lerp\(_gold, k\)/.test(b), 'loot hides in plain sight: the crate / tower / hut itself blinks gold, a tank carrying loot blinks a small light at its hatch — no light columns'); }
+  ok(!/CylinderGeometry\(0\.14,0\.55/.test(b) && /function topDot\(owner\)/.test(b) && /function hatchLight/.test(b) && !/ownMats|_gold/.test(b), 'Z211 loot shows as ONE blinking gold point above the crate / tower / hut (the object is never recoloured), a tank carrying loot a small light at its hatch — no light columns'); }
 
 // Z178 hidden overlays leave the compositor (they used to stay as see-through blurred layers and starve GPU tile memory → menus lost pieces on hover)
 { const fs=await import('node:fs'); const c=fs.readFileSync('css/menus.css','utf8');
@@ -1078,6 +1078,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/horizon.js','utf8');
   ok(/const heroes=\[\]/.test(h) && /Math\.random\(\)\*1000/.test(h) && /function ridged\(/.test(h) && /computeVertexNormals/.test(h) && /MeshLambertMaterial/.test(h), 'mountains are sculpted relief, seeded fresh each match, lit by the sun');
   ok(/snowLine/.test(h) && /banded cliff strata/.test(h) && /soft-capped/.test(h), 'rock, strata and snow by slope and height; summits soft-capped'); }
+
+// Z210 every round leaves its own light smoke line by ammo type; near misses crack past; shells in the dirt throw up a geyser; big guns leave a hanging cloud
+{ const fs=await import('node:fs'); const h=fs.readFileSync('src/fx/hitfx.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/export function shellTrail\(b, x, y, z\)/.test(h) && /export function trailKind\(b\)/.test(h) && ['wisp','auto','shell','heavy','frag','frost','rail','enemy'].every(k=>new RegExp(k+':\\{ s:').test(h)) && /type==='ELEC'/.test(h) && /else shellTrail\(b, b\.x, _wy, b\.z\)/.test(lo), 'a smoke line per ammo type (tesla none), gap-free');
+  ok(/export function nearMiss\(b, P\)/.test(h) && /nearMiss\(b, S\.player\)/.test(lo) && /case 'flybyHeavy'/.test(fs.readFileSync('src/audio/synth.js','utf8')) && /dirtGeyser\(b\.x, b\.z/.test(lo) && /muzzleLinger\(/.test(fs.readFileSync('src/fx/gunfx.js','utf8')), 'near-miss crack, dirt geysers, lingering muzzle cloud'); }
+// Z211 parked vehicles are welded + indexed (≈⅓ the vertices) and scooters cast no shadow
+{ const fs=await import('node:fs'); const ca=fs.readFileSync('src/world/cars.js','utf8');
+  ok(/mergeVertices\(m, 1e-4\)/.test(ca) && /shadow=!MOBILE && kind==='car'/.test(ca), 'street vehicles are cheap to draw'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
