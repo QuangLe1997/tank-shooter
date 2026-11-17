@@ -1024,5 +1024,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function heliCamoTex\(/.test(v) && /insigniaMat\(\)/.test(v) && /yellow blade tips/.test(v) && /heliCamoTex\(\)/.test(pd) && /insigniaMat\(\)/.test(pd), 'helicopters wear camo, red bands, the faction roundel, a number and yellow blade tips');
   ok(/sat:\[0\.38,0\.72\]/.test(sp) && /0xa02a20/.test(so) && /emissiveIntensity:M\.band\.emissiveIntensity/.test(so), 'soldiers wear richer colours; the enemy has a clearer crimson helmet and a brighter armband'); }
 
+// Z200 a smarter squad: shoots helicopters and tower guards, weighs its strength (advance / hold / fall back), the wounded patch up behind the tank
+{ const fs=await import('node:fs'); const C=await import('./config.js'); const ft=fs.readFileSync('src/actors/fireteam.js','utf8');
+  ok(C.SQUAD.ai && C.SQUAD.ai.airHit>0 && /kind:'air', ref:e/.test(ft) && /bullets\[bullets\.length-1\]\.tgt=e/.test(ft) && /the tracer climbs to it/.test(ft), 'riflemen / MG fire tracers up at helicopters, AT men fire a guided rocket locked on it');
+  ok(/function squadPosture\(now\)/.test(ft) && /FTSQ\.posture==='fallback'/.test(ft) && /FTSQ\.posture==='advance'/.test(ft) && /RÚT LUI/.test(ft) && /TIẾN LÊN!/.test(ft), 'the squad advances when it has the upper hand and falls back behind the tank when outgunned (with a call)');
+  ok(/function fallbackSpot\(a, now\)/.test(ft) && /a\.healing=true/.test(ft) && /SQUAD\.ai\.heal\*dt/.test(ft) && /a\.fcov=coverSpot/.test(ft) && C.SQUAD.guardHit>=0.4, 'the wounded pull back to patch up; covering men fight from cover; tower guards are shot first'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

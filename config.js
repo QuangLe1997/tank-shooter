@@ -324,7 +324,10 @@ export const SQUAD = {
   think: 0.4,                                  // seconds between re-plans (staggered per soldier)
   huntR: 62,                                   // with nothing in sight they advance on the nearest enemy within this
   cover: { threat: 20, search: 13 },           // enemy armour this close → run for the far side of a wall / rock / sandbags within `search`
-  guardHit: 0.32,                              // chance one rifle shot drops a guard up on a watchtower
+  guardHit: 0.4,                               // chance one rifle shot drops a guard up on a watchtower (Z200 0.32 → 0.4: they aim for the platform first)
+  // Z200 SMARTER SQUAD: helicopters are shot at (tracers climb; a share connect — AT men fire a guided rocket), the squad weighs its strength against
+  //   what is around it (advance / hold / fall back behind the tank), a badly hurt man pulls back to the tank to patch up, covering men use cover
+  ai: { airHit:0.34, airHitMg:0.45, airDmgK:0.55, airPri:0.7, woundedHp:0.35, healed:0.85, heal:3.5, postureEvery:1.2, threatR:34, fallK:2.2, advK:0.8, barkGap:18 },
   lootDetect: 26,                              // soldiers spot dropped items this far away, carry them to the RALLY POINT
   at: { dmg: 34, aoe: 2.4, speed: 34, cd: 3.4, range: 26 },   // anti-tank launcher handed out by a captured weapon depot
   armedMul: 1.35,                              // rifle damage after re-arming at a captured weapon depot

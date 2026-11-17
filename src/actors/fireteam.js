@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY } from '../../config.js';
-import { ARENA, CAMPS, FTSQ, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, burst, camera, clampField, clearLadders, cmdGoal, coverSpot, damageBlock, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, floatText, gibBody, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, orderGoal, paintVehicle, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wrapAngle, zoneJob } from '../hub.js';
+import { ARENA, CAMPS, FTSQ, HELI_DOWN, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, bullets, burst, camera, clampField, clearLadders, cmdGoal, coverSpot, damageBlock, damageEnemy, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, floatText, gibBody, heightAt, inRally, infBlastK, layOut, liveGuards, lootModel, makeMortarShell, makeSoldierBar, makeSoldierMesh, orderGoal, paintVehicle, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, scene, sfx, shootGuard, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, takePickup, tip, towers, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wrapAngle, zoneJob } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -71,8 +71,10 @@ function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
   if(a.at && boss && boss.alive){ const d=Math.hypot(boss.pos.x-a.pos.x, boss.pos.z-a.pos.z); if(d*0.8<bs && d<SQUAD.at.range){ bs=d*0.8; best={ kind:'tank', ref:boss, pos:boss.pos }; } }
   if(a.at) for(const t of towers){ if(t.falling || (t.block && !blocks.includes(t.block))) continue; let live=0; for(const gd of t.guards) if(gd.alive) live++; if(!live) continue;   // Z175 a man with a launcher puts a rocket into a manned tower
     const d=Math.hypot(t.x-a.pos.x, t.z-a.pos.z), w=d*(1.1-0.12*Math.min(4,live)); if(d>5 && d<SQUAD.at.range+6 && w<bs){ bs=w; best={ kind:'towerAT', ref:t, pos:{ x:t.x, z:t.z } }; } }
-  for(const G of liveGuards()){ const d=Math.hypot(G.gd.wx-a.pos.x, G.gd.wz-a.pos.z); if(d*1.1<bs && d<F.range+6){ bs=d*1.1; best={ kind:'guard', ref:G, pos:{ x:G.gd.wx, z:G.gd.wz } }; } }
-  { const fo=FTSQ.focus; if(fo && enemies.includes(fo) && (!best || best.kind==='inf')){ const d=Math.hypot(fo.pos.x-a.pos.x, fo.pos.z-a.pos.z); if(d<F.detect && d<bs+12) best={ kind:'inf', ref:fo, pos:fo.pos }; } }   // Z173 the squad's focus target (RPG men, their leader) first
+  for(const G of liveGuards()){ const d=Math.hypot(G.gd.wx-a.pos.x, G.gd.wz-a.pos.z); if(d*0.9<bs && d<F.range+6){ bs=d*0.9; best={ kind:'guard', ref:G, pos:{ x:G.gd.wx, z:G.gd.wz } }; } }   // Z200 a man up on a platform is shot down first (he sees the whole field)
+  if(a.role!=='mortar') for(const e of enemies){ if(!e.def.air || e.dead || HELI_DOWN.some(h=>h.e===e)) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z), rng=a.at?SQUAD.at.range+14:(a.role==='mg'?SQUAD.mg.range:F.range)+10;   // Z200 helicopters: everyone with a gun that reaches
+    if(d<rng && d*SQUAD.ai.airPri<bs){ bs=d*SQUAD.ai.airPri; best={ kind:'air', ref:e, pos:e.pos }; } }
+  { const fo=FTSQ.focus; if(fo && enemies.includes(fo) && (!best || best.kind==='inf') && !(fo.def.air && a.role==='mortar')){ const d=Math.hypot(fo.pos.x-a.pos.x, fo.pos.z-a.pos.z); if(d<F.detect && d<bs+12) best={ kind:'inf', ref:fo, pos:fo.pos }; } }   // Z173 the squad's focus target (RPG men, their leader) first
   if(boss && boss.alive && boss.shielded){ const at=!!a.at;                                       // Z134 the general is immune while its shield pylons stand: the squad helps raze them
     if(at && best && best.ref===boss) best=null, bs=F.detect;                                     // (AT men stop wasting rockets on the shielded hull)
     for(const py of PYLONS){ if(!blocks.includes(py)) continue; const d=Math.hypot(py.x-a.pos.x, py.z-a.pos.z); if(d*(at?0.7:1.3)<bs && d<(at?SQUAD.at.range:F.range)){ bs=d*(at?0.7:1.3); best={ kind:at?'tank':'pylon', ref:py, pos:{ x:py.x, z:py.z } }; } } }
@@ -84,6 +86,8 @@ function nearestAnyEnemy(a, R){ let best=null, bd=R*R; for(const e of enemies){ 
 function allyThink(a, now){
   const F=TROOPS.fireteam, p=S.player; a.thinkAt=now+SQUAD.think*(0.8+Math.random()*0.5);
   const foe=allyTarget(a); a.target=foe;
+  if(a.hp < a.maxHp*SQUAD.ai.woundedHp) a.healing=true; else if(a.hp >= a.maxHp*SQUAD.ai.healed) a.healing=false;   // Z200 badly hurt → back behind the tank to patch up, then back into it
+  if(a.healing && !a.answering){ a.task='fallback'; a.goal=fallbackSpot(a, now); a.goalKind='fallback'; if(!a.saidHurt){ a.saidHurt=true; floatText('BỊ THƯƠNG — RÚT VỀ', '#ffcf5a', new THREE.Vector3(a.pos.x,2.6,a.pos.z), 12); } return; } else a.saidHurt=false;
   if(a.carry){ a.task='rally'; if(!a.goal || a.goalKind!=='rally'){ a.goal=rallySpot(); a.goalKind='rally'; } return; }          // loot in hand → home first (shooting on the way)
   const tank=a.at ? null : nearestEnemyTank(a, SQUAD.cover.threat);
   if(tank){ if(!a.cover || now>(a.coverAt||0)){ a.cover=coverSpot(a.pos.x, a.pos.z, tank.pos.x, tank.pos.z, SQUAD.cover.search); a.coverAt=now+1.3; }
@@ -96,12 +100,13 @@ function allyThink(a, now){
   if(a.role==='mortar'){ const mt=mortarTarget(a); if(mt){ a.target=mt; a.task='fight'; const qx=mt.pos.x-a.pos.x, qz=mt.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1, M=SQUAD.mortar;   // mortar: keep to its band and lob
       a.goal = qd>M.max*0.9 ? [mt.pos.x-qx/qd*M.max*0.75, mt.pos.z-qz/qd*M.max*0.75] : (qd<M.min ? [a.pos.x-qx/qd*6, a.pos.z-qz/qd*6] : null); a.goalKind='fight'; return; } }
   if(a.role==='sapper' && !(foe && Math.hypot(foe.pos.x-a.pos.x, foe.pos.z-a.pos.z)<12)){ const dj=demolitionJob(a, now); if(dj) return; }           // sapper: bring a tower / hut down
-  if(foe){ a.task='fight'; const qx=foe.pos.x-a.pos.x, qz=foe.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1, want=(a.at&&foe.kind==='tank')?SQUAD.at.range*0.75:(a.role==='mg'?SQUAD.mg.range:F.range)*0.75;
+  if(foe && FTSQ.posture==='fallback' && foe.kind!=='air'){ a.task='fallback'; a.goal=fallbackSpot(a, now); a.goalKind='fallback'; return; }   // Z200 outgunned: the squad pulls back behind the tank, firing as it goes
+  if(foe){ a.task='fight'; const qx=foe.pos.x-a.pos.x, qz=foe.pos.z-a.pos.z, qd=Math.hypot(qx,qz)||1, want=(a.at&&foe.kind==='tank')?SQUAD.at.range*0.75:(a.role==='mg'?SQUAD.mg.range:F.range)*(FTSQ.posture==='advance'&&foe.kind!=='air'?0.5:0.75);   // Z200 the upper hand → close in
     if(qd>want){ a.goal=[foe.pos.x-qx/qd*want*0.9, foe.pos.z-qz/qd*want*0.9]; a.bndAt=0; }
     else if(((a.slot||0)%2)===FTSQ.bound && (a.supp||0)<0.8 && a.role!=='mg' && a.role!=='mortar'){ if(a.bndAt!==FTSQ.swapAt){ a.bndAt=FTSQ.swapAt;   // Z173 BOUNDING team: a short dash to the next cover, a little closer and round the side
         const s=(Math.random()<0.5?-1:1)*(1.5+Math.random()*2.5), fwd=qd>want*0.55 ? 2.5+Math.random()*3 : 0; a.goal=[a.pos.x-qz/qd*s+qx/qd*fwd, a.pos.z+qx/qd*s+qz/qd*fwd];
         const cv=coverSpot(a.goal[0], a.goal[1], foe.pos.x, foe.pos.z, 5); if(cv) a.goal=[cv.x, cv.z]; } }
-    else a.goal=null;                                                                                                          // COVERING team: down and firing while the others move
+    else { if(!a.fcov || now>(a.fcovAt||0)){ a.fcov=coverSpot(a.pos.x, a.pos.z, foe.pos.x, foe.pos.z, 5); a.fcovAt=now+3; } a.goal=a.fcov ? [a.fcov.x, a.fcov.z] : null; }   // COVERING team: down and firing while the others move · Z200 from behind the nearest cover
     a.goalKind='fight'; return; }
   const loot=nearestFreePickup(a); if(loot){ loot.claim=a; a.loot=loot; a.task='fetch'; a.goal=[loot.x, loot.z]; a.goalKind='fetch'; return; }
   const job=zoneJob(a); if(job){ a.task=job.kind; a.goal=[job.x, job.z]; a.goalKind=job.kind; a.job=job; return; }
@@ -113,6 +118,18 @@ function allyThink(a, now){
     const ang=Math.random()*6.283, r=F.patrol[0]+Math.random()*(F.patrol[1]-F.patrol[0]); a.post=[p.pos.x+Math.sin(ang)*r, p.pos.z+Math.cos(ang)*r]; a.postAt=now+4+Math.random()*3; }
   a.goal=a.post; a.goalKind='post'; }
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]);
+// Z200 where a man falls back to: behind our tank as seen from the nearest threat, each in his own slot, tucked behind cover if there is some
+function fallbackSpot(a, now){ if(a.fbSpot && now<(a.fbAt||0)) return a.fbSpot; const p=S.player, th=nearestAnyEnemy(a, 50) || { pos:{ x:a.pos.x, z:a.pos.z-10 } };
+  const ux=p.pos.x-th.pos.x, uz=p.pos.z-th.pos.z, L=Math.hypot(ux,uz)||1, s=((a.slot||0)%5-2)*2.6, x=p.pos.x+ux/L*7-uz/L*s, z=p.pos.z+uz/L*7+ux/L*s, cv=coverSpot(x, z, th.pos.x, th.pos.z, 6);
+  a.fbAt=now+2.5; return a.fbSpot = cv ? [cv.x, cv.z] : [x, z]; }
+// Z200 the squad weighs itself against what is around it: advance when it has the upper hand, fall back behind the tank when it is outgunned
+let _postAt=0, _barkAt=-99;
+function squadPosture(now){ if(now<_postAt) return; _postAt=now+SQUAD.ai.postureEvery; if(!FT.length){ FTSQ.posture='hold'; return; }
+  let cx=0, cz=0, str=0; for(const a of FT){ cx+=a.pos.x; cz+=a.pos.z; str+=Math.max(0,a.hp)/a.maxHp; } cx/=FT.length; cz/=FT.length; const at=FT.some(a=>a.at), R=SQUAD.ai.threatR;
+  let thr=0; for(const e of enemies){ if(e.abandoned || e.dead) continue; const q=(e.pos.x-cx)**2+(e.pos.z-cz)**2; if(q>R*R) continue; thr += e.def.inf ? 1 : e.def.air ? 2.5 : (solidTank(e) ? (at?2.5:4) : 1); }
+  const was=FTSQ.posture||'hold', now2 = thr > str*SQUAD.ai.fallK+1 ? 'fallback' : (thr < str*SQUAD.ai.advK && thr>0 ? 'advance' : 'hold'); FTSQ.posture=now2;
+  if(now2!==was && now2!=='hold' && now-_barkAt>SQUAD.ai.barkGap){ _barkAt=now; const adv=now2==='advance'; floatText(adv?'TIẾN LÊN!':'RÚT LUI — VỀ SAU XE TĂNG!', adv?'#9be04a':'#ffcf5a', new THREE.Vector3(cx,3,cz), 16);
+    radio(adv ? 'Tổ bộ binh: địch núng thế rồi — cả tổ tiến lên, áp sát!' : 'Tổ bộ binh: địch quá đông — rút về sau xe tăng, vừa lui vừa bắn!'); } }
 // mortar targets: infantry clusters, tanks, guarded towers, camp huts — anything inside its min..max band, preferring groups of men
 function mortarTarget(a){ const M=SQUAD.mortar; let best=null, bs=-1;
   const score=(x,z,w)=>{ const d=Math.hypot(x-a.pos.x, z-a.pos.z); if(d<M.min||d>M.max*1.2) return -1; return w - d*0.02; };
@@ -178,6 +195,15 @@ function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return fa
   if(T.kind==='towerAT'){ const t=T.ref; if(t.falling || !t.guards.some(g=>g.alive)){ a.target=null; return false; } if(d>SQUAD.at.range+6) return false;
     const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.2); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
     a.fireAt=now+SQUAD.at.cd*(0.85+Math.random()*0.3); a.g.userData.muzzle.getWorldPosition(_sV); towerRocket(t); return true; }
+  if(T.kind==='air'){ const e=T.ref; if(!enemies.includes(e) || HELI_DOWN.some(h=>h.e===e)){ a.target=null; return false; } const rng=a.at?SQUAD.at.range+14:(mg?SQUAD.mg.range:F.range)+10; if(d>rng) return false;   // Z200 shooting at a helicopter
+    const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.25); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
+    a.g.userData.muzzle.getWorldPosition(_sV); const dy=e.pos.y-_sV.y, D=Math.hypot(d,dy)||1;
+    if(a.at){ a.fireAt=now+SQUAD.at.cd*(0.9+Math.random()*0.3); spawnBullet(_sV.x,_sV.z,ang,{ owner:'p', dmg:SQUAD.at.dmg*1.5*(1+(S.stage-1)*0.12), speed:44, color:0xffb060, r:0.34, life:3.2, maxDist:rng+12, y:_sV.y, type:'HE', homing:7, rocket:true, lockOn:true, aoe:2.2, aoeDmg:SQUAD.at.dmg*0.5, fx:'blast' }); bullets[bullets.length-1].tgt=e;   // a guided rocket, locked on it
+      spawnPart(_sV.x-Math.sin(ang)*1.1,_sV.y,_sV.z-Math.cos(ang)*1.1, -Math.sin(ang)*6,0.5,-Math.cos(ang)*6, {color:0xd8d0c0, size:1.3, life:0.55, smoke:true, grav:0.3, drag:2, op:0.5}); sfx('rocketlaunch', a.pos); return true; }
+    if(mg){ a.burst=(a.burst||SQUAD.mg.burst)-1; if(a.burst>0) a.fireAt=now+SQUAD.mg.gap; else { a.burst=SQUAD.mg.burst; a.fireAt=now+SQUAD.mg.pause; } } else a.fireAt=now+F.fireCd*(0.8+Math.random()*0.4);
+    const sp=95, j=()=>(Math.random()-0.5)*0.06; spawnPart(_sV.x,_sV.y,_sV.z, (dx/D+j())*sp, (dy/D+j())*sp, (dz/D+j())*sp, {tex:'flash', color:0xe8ef86, size:0.3, life:D/sp, grav:0, drag:0});   // the tracer climbs to it
+    if(Math.random()<(mg?SQUAD.ai.airHitMg:SQUAD.ai.airHit)){ damageEnemy(e, (mg?SQUAD.mg.dmg:F.dmg)*(1+(S.stage-1)*0.12)*(a.armed?SQUAD.armedMul:1)*SQUAD.ai.airDmgK); spawnPart(e.pos.x,e.pos.y,e.pos.z,(Math.random()-0.5)*6,2,(Math.random()-0.5)*6,{ color:0xffe6a0, size:0.18, life:0.25, grav:-12, drag:1.5 }); }
+    spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.6,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('rifleShot', a.pos); return true; }
   if(d > (at?SQUAD.at.range:(T.kind==='guard'?F.range+6:(mg?SQUAD.mg.range:F.range)))) return false;
   const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.2); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
   a.g.userData.muzzle.getWorldPosition(_sV);
@@ -208,7 +234,7 @@ export function updateFireteam(dt, now){
   updateFireteamAPC(dt, now); updateCharges(dt, now); updateShells(dt, now); if(!FT.length) return;
   const F=TROOPS.fireteam, p=S.player, rr=recallRange();
   if(S.recall){ rangeRing.material.opacity = 0.3+0.15*Math.sin(now*10); }                            // recall in progress: the ring pulses
-  updateLadders();
+  updateLadders(); squadPosture(now);   // Z200
   for(const a of FT.slice()){
     if(a.climb){ updateClimb(a, dt); if(a.climb) continue; }                                       // Z145 on a scaling ladder
     if(S.recall){ if(!a.answering && Math.hypot(a.pos.x-p.pos.x, a.pos.z-p.pos.z) <= rr) a.answering=true; } else a.answering=false;   // only men inside the ring answer
@@ -218,10 +244,11 @@ export function updateFireteam(dt, now){
     const ox=a.pos.x, oz=a.pos.z; let mx=0, mz=0, md=0;
     if(a.goal){ mx=a.goal[0]-a.pos.x; mz=a.goal[1]-a.pos.z; md=Math.hypot(mx,mz); if(md<0.6 && (a.task==='cover'||a.task==='post')){ mx=mz=0; } }
     for(const o of FT){ if(o===a) continue; const sx=a.pos.x-o.pos.x, sz=a.pos.z-o.pos.z, sq=sx*sx+sz*sz; if(sq < F.spread*F.spread && sq>1e-4){ const k=(F.spread-Math.sqrt(sq))*2; mx+=sx*k; mz+=sz*k; } }   // personal space
-    const ml=Math.hypot(mx,mz); if(ml>0.3){ const run = a.task==='cover'||a.task==='evade'||a.task==='rally'||md>12, sp=(run?F.sprint:F.speed)*(a.carry?0.85:1); a.pos.x+=mx/ml*Math.min(ml,sp*dt); a.pos.z+=mz/ml*Math.min(ml,sp*dt); }
+    const ml=Math.hypot(mx,mz); if(ml>0.3){ const run = a.task==='cover'||a.task==='evade'||a.task==='rally'||a.task==='fallback'||md>12, sp=(run?F.sprint:F.speed)*(a.carry?0.85:1); a.pos.x+=mx/ml*Math.min(ml,sp*dt); a.pos.z+=mz/ml*Math.min(ml,sp*dt); }
     if(a.kbx||a.kbz){ a.pos.x+=a.kbx*dt; a.pos.z+=a.kbz*dt; const kf=Math.max(0,1-dt*5); a.kbx*=kf; a.kbz*=kf; if(Math.abs(a.kbx)+Math.abs(a.kbz)<0.1){ a.kbx=a.kbz=0; } }
     const px=a.pos.x-p.pos.x, pz=a.pos.z-p.pos.z, pd=Math.hypot(px,pz); if(pd<p.radius+1.4 && pd>1e-3){ a.pos.x=p.pos.x+px/pd*(p.radius+1.4); a.pos.z=p.pos.z+pz/pd*(p.radius+1.4); }   // step clear of our own tracks
     infPushBlocks(a.pos); clampField(a.pos, 2);
+    if(a.healing && a.task==='fallback' && a.goal && Math.hypot(a.goal[0]-a.pos.x, a.goal[1]-a.pos.z)<2.5){ a.hp=Math.min(a.maxHp, a.hp+SQUAD.ai.heal*dt); if(Math.random()<dt*0.8) spawnPart(a.pos.x, heightAt(a.pos.x,a.pos.z)+1.6, a.pos.z, 0, 1.2, 0, { color:0x9be04a, size:0.35, life:0.6, grav:0.5, drag:2 }); }   // Z200 patching up behind the tank
     if(a.ladPc) tryClimb(a);                                                                         // Z145 reached the wall foot → up the ladder
     // errands: pick up the item he walked to, hand loot in at the rally point
     if(a.task==='fetch' && a.loot){ if(!pickups.includes(a.loot)){ a.loot=null; a.thinkAt=0; } else if(Math.hypot(a.loot.x-a.pos.x, a.loot.z-a.pos.z)<1.4){ takeCarry(a, a.loot); a.loot=null; a.thinkAt=0; } }
