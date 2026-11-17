@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, siegeMul, soldiers, spawnPart, structMul, suppress, typeMul, unitsNear, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, effectFeedback, enemies, envDmg, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -125,15 +125,16 @@ export function updateBullets(dt, now){
     const overRange = !b.arc && b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);   // shells in flight always come down somewhere
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim) groundHit(b.x, b.z, b.r||0.45); recycleBullet(i); continue; }
     if(b.owner!=='e'){ const px=b.x-b.vx*dt, pz=b.z-b.vz*dt, wb=fortIntactCross(px, pz, b.x, b.z);   // Z170 a sealed fortress: the round strikes the wall, however high it flies
-      if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); ringPulse(b.mesh.position, 0xc89060, 1.2); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
+      if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); surfaceHit(wb, b); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
+    // Z204 any round that strikes something solid goes off against it (flash, fireball for a shell, chips, dust) and leaves its mark — breakable or not
     let blocked=false;   // Z192 (only the obstacles in this round's grid cells are tested) · Z193 enemy shells wear solid cover down at 40%
     const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
     if(!airborne || low) for(const bl of blocksNear(b.x, b.z, b.r, _bnb)){ if(bl===b.ignore || (bl.ours && b.owner==='p')) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
       if((bl.kind==='obj' || bl.supply) && b.owner==='e'){ blocked=true; break; }   // Z194 nor their own supply bases   // enemy fire never hurts their own objective
       if(((bl.fort || bl.hard) && b.owner==='e') || ((bl.hard || bl.heavy) && b.inf)){   // Z193 rifle rounds only chip concrete / steel   // Z121 nor do rifle rounds (ours or theirs)
-        ringPulse(b.mesh.position, 0xc89060, 0.9); blocked=true; break; }   // Z112 enemy fire doesn't break rocks / hedgehogs either   // Z111b their own walls soak their fire — no damage to the stone
-      damageBlock(bl, b.dmg*structMul(b.type, bl)*(b.owner==='p'?siegeMul():(bl.heavy?0.4:1))); ringPulse(b.mesh.position, bl.steel?0xb0b0c0:0xc89060, 1.2); blockImpactFX(bl, b); blocked=true; break; } }
+        surfaceHit(bl, b); blockImpactFX(bl, b); blocked=true; break; }   // Z112 enemy fire doesn't break rocks / hedgehogs either   // Z111b their own walls soak their fire — no damage to the stone
+      damageBlock(bl, b.dmg*structMul(b.type, bl)*(b.owner==='p'?siegeMul():(bl.heavy?0.4:1))); surfaceHit(bl, b); blockImpactFX(bl, b); blocked=true; break; } }
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive

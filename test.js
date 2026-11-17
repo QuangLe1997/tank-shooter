@@ -1049,5 +1049,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function material\(col\)/.test(db) && /blastLight\(pos\.x, pos\.z/.test(db) && /grit/.test(db) && /a puff where it lands/.test(db) && /trails a little dust/.test(db), 'each break lights the ground, throws its own dust, sparks off metal; pieces trail dust and puff on landing');
   ok(/torn armour plate \(jagged outline\)/.test(db), 'tank wrecks shed jagged torn plates, not slabs'); }
 
+// Z204 rounds go off against walls / cover / forts (breakable or not) and leave pocks or charred, cracked craters
+{ const fs=await import('node:fs'); const wm=fs.readFileSync('src/fx/wallmarks.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/export function surfaceHit\(bl, b\)/.test(wm) && /export function wallMark\(/.test(wm) && /radial cracks/.test(wm) && /InstancedMesh\(geo, mat, CAP\)/.test(wm), 'impact flash / fireball / chips / dust and a lasting mark, one instanced draw call');
+  ok((lo.match(/surfaceHit\(/g)||[]).length>=3 && !/ringPulse\(b\.mesh\.position, 0xc89060, 0\.9\)/.test(lo), 'every block strike (fort wall line, unbreakable rock / wall, breakable cover) gets the impact + mark'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

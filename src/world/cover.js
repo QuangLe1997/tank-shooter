@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, RAM, HARD } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, burst, camera, clearLootBeacons, clearRubble, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, wallDamage } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -16,7 +16,7 @@ export const MAZE_SHAPES = [
 ];
 export const blocks=[];   // fuel drums go up after a hit or two
 export function buildBlocks(){
-  for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block'); clearRubble(); resetSupply();
+  for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block'); clearRubble(); resetSupply(); clearWallMarks();
   planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
   buildCoreWalls();                                                                        // Z140 our walled compound + guard cannons round the Core
   buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)

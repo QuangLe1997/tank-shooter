@@ -99,6 +99,7 @@ export * from './campaign/boss-new.js';   // Z161 the three new generals' weapon
 export * from './fx/cinematic.js';   // Z189 shock domes, fire light, our tank's hit / damage FX
 export * from './fx/hitfx.js';   // Z192 shell streaks, missile smoke ribbons, armour hits that rock the hull, hurt tanks that smoke
 export * from './fx/explosions.js';
+export * from './fx/wallmarks.js';   // Z204 rounds go off against walls / cover / forts and leave their marks
 export * from './fx/gunfx.js';   // Z149 per-class muzzle fx, lightning / rail beams, ricochets
 export * from './fx/debris.js';
 export * from './fx/weather.js';

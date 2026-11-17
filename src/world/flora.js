@@ -158,7 +158,7 @@ export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
   else if(n==='MEADOW'){ plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
-    plant(grass('straw').concat(grass('dry')), N(2400), { s:[1.0,1.7], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
+    plant(grass('straw').concat(grass('dry')), N(1500), { s:[1.15,1.85], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
     plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });
     plant(baobab(), N(9), { s:[0.9,1.35], kind:'tree', cr:1.3, real:1.4 }); plant(acacia(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.4, real:1.15 }); plant(deadTree(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 });
     plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
