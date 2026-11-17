@@ -63,18 +63,18 @@ export function updateEnemyMissiles(dt, now){
 }
 // Z188 MISSILE LOCK WARNING — while a guided missile is hunting you, red brackets clamp round your tank with "BỊ KHOÁ", beeping faster as it closes
 let _lw=null;
-function lockWarnFX(){ if(_lw) return _lw; const g=new THREE.Group(), M=()=>new THREE.MeshBasicMaterial({ color:0xff2a1a, transparent:true, opacity:0.95, depthTest:false, depthWrite:false, blending:THREE.AdditiveBlending }), br=new THREE.Group();
+function lockWarnFX(){ if(_lw) return _lw; const g=new THREE.Group(), M=()=>new THREE.MeshBasicMaterial({ color:0xff2a1a, transparent:true, opacity:0.6, depthTest:false, depthWrite:false, blending:THREE.AdditiveBlending }), br=new THREE.Group();
   for(let c=0;c<4;c++){ const sx=c&1?-1:1, sz=c<2?1:-1, h=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.1,0.16),M()), v=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.1,1.1),M()); h.position.set(sx*2.55,0,sz*3.1); v.position.set(sx*3.1,0,sz*2.55); br.add(h,v); }
   const ring=new THREE.Mesh(new THREE.TorusGeometry(4.1,0.06,6,3), M()); ring.rotation.x=Math.PI/2; g.add(br, ring);
-  const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d'); x.fillStyle='rgba(30,0,0,0.75)'; x.beginPath(); x.roundRect(8,6,240,52,10); x.fill(); x.strokeStyle='#ff3a24'; x.lineWidth=3; x.stroke();
+  const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d'); x.fillStyle='rgba(30,0,0,0.6)'; x.beginPath(); x.roundRect(8,6,240,52,10); x.fill(); x.strokeStyle='rgba(255,58,36,0.75)'; x.lineWidth=2; x.stroke();
   x.font='800 30px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#ff5a3a'; x.fillText('⚠ BỊ KHOÁ', 128, 33);
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:t, transparent:true, depthTest:false, depthWrite:false })); sp.scale.set(5.2,1.3,1); sp.position.y=6.4; g.add(sp);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:t, transparent:true, depthTest:false, depthWrite:false })); sp.scale.set(3.8,0.95,1); sp.position.y=6.0; g.add(sp);
   g.traverse(o=>{ o.renderOrder=22; }); g.visible=false; scene.add(g); _lw={ g, br, ring, sp, at:0 }; return _lw; }
 export function updateLockWarn(dt, now){ const p=S.player; if(!p) return; let near=1e9;
   for(const r of EMIS){ if(!r.guided || r.jam) continue; const d=Math.hypot(r.x-p.pos.x, r.z-p.pos.z); if(d<near) near=d; }
   const on=near<75, W=on||_lw ? lockWarnFX() : null; if(!W) return; W.g.visible=on; if(!on) return;
   const k=Math.max(0, Math.min(1, 1-near/75)); W.g.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z)+0.4, p.pos.z);
-  W.br.scale.setScalar(1.25-0.25*k+Math.sin(now*18)*0.03); W.br.rotation.y=p.facing||0; W.ring.rotation.z+=dt*(2+k*6);
-  const blink=Math.floor(now*(4+k*12))%2===0; W.g.traverse(o=>{ if(o.material) o.material.opacity = o===W.sp ? 1 : (blink?1:0.55); }); W.sp.scale.set(5.2*(1+0.08*k*(blink?1:0)), 1.3*(1+0.08*k*(blink?1:0)), 1);
-  if(now>W.at){ W.at=now+0.55-0.42*k; sfx('lockwarn'); } }
+  W.br.scale.setScalar(1.2-0.2*k); W.br.rotation.y=p.facing||0; W.ring.rotation.z+=dt*(0.8+k*1.6);   // Z190 calmer
+  const blink=Math.floor(now*(2+k*4))%2===0; W.g.traverse(o=>{ if(o.material) o.material.opacity = o===W.sp ? 0.85 : (blink?0.6:0.35); });
+  if(now>W.at){ W.at=now+0.9-0.45*k; sfx('lockwarn'); } }
 export function clearEnemyMissiles(){ if(_lw) _lw.g.visible=false; for(const r of EMIS){ r.m.visible=false; _emPool.push(r.m); if(r.wire) dropBeam(r.wire); } EMIS.length=0; }

@@ -15,10 +15,18 @@ function domeMat(){ return new THREE.ShaderMaterial({ transparent:true, depthWri
 export function shockDome(x, z, R, col){ let d=CINE.domes.find(q=>q.t<=0);
   if(!d){ if(CINE.domes.length>=(MOBILE?3:6)) return; const m=new THREE.Mesh(_domeGeo, domeMat()); m.renderOrder=9; scene.add(m); d={ m, t:0 }; CINE.domes.push(d); }
   d.t=0.34; d.R=R; d.m.visible=true; d.m.position.set(x, heightAt(x,z)+0.1, z); d.m.material.uniforms.color.value.setHex(col||0xffd8a0); d.m.scale.setScalar(0.1); }
-// a short-lived point light (blast) or a long one that follows a burning wreck — a small pool, desktop only
-function lightSlot(){ if(MOBILE) return null; let L=CINE.lights.find(q=>!q.busy); if(!L){ if(CINE.lights.length>=4) return null; const pl=new THREE.PointLight(0xff8a3a, 0, 30, 2); scene.add(pl); L={ pl, busy:false }; CINE.lights.push(L); } return L; }
-export function blastLight(x, z, power, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life||0.5; L.t0=L.t; L.p=power||60; L.follow=null; L.pl.color.setHex(0xffb060); L.pl.distance=36; L.pl.position.set(x, heightAt(x,z)+4, z); L.pl.intensity=L.p; }
-export function fireLight(wreck, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life; L.t0=life; L.p=24; L.follow=wreck; L.pl.color.setHex(0xff6a24); L.pl.distance=26; }
+// Z190 fire light WITHOUT real lights: adding a PointLight mid-fight changes the scene's light count, so three.js recompiles every
+//   material's shader → multi-second freezes, and each light also costs every pixel. Instead a soft additive glow is laid on the ground
+//   (blasts flash it, burning wrecks keep it flickering orange) — same look, one cheap quad each, never a recompile.
+let _glowTex=null;
+export function groundGlowTex(){ if(_glowTex) return _glowTex; const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'), g=x.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.3,'rgba(255,255,255,0.5)'); g.addColorStop(0.65,'rgba(255,255,255,0.14)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128);
+  _glowTex=new THREE.CanvasTexture(c); _glowTex.colorSpace=THREE.SRGBColorSpace; return _glowTex; }
+const _glowGeo=new THREE.PlaneGeometry(2,2).rotateX(-Math.PI/2);
+export function groundGlowMesh(col, op){ const m=new THREE.Mesh(_glowGeo, new THREE.MeshBasicMaterial({ color:col, map:groundGlowTex(), transparent:true, opacity:op||0, depthWrite:false, blending:THREE.AdditiveBlending, fog:false, polygonOffset:true, polygonOffsetFactor:-4 })); m.renderOrder=6; return m; }
+function lightSlot(){ let L=CINE.lights.find(q=>!q.busy); if(!L){ if(CINE.lights.length>=(MOBILE?4:8)) return null; const m=groundGlowMesh(0xff8a3a, 0); m.visible=false; scene.add(m); L={ m, busy:false }; CINE.lights.push(L); } return L; }
+export function blastLight(x, z, power, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life||0.5; L.t0=L.t; L.p=Math.min(1, (power||60)/110); L.follow=null; L.m.material.color.setHex(0xffb060); L.m.scale.setScalar(6+(power||60)*0.09); L.m.position.set(x, heightAt(x,z)+0.25, z); L.m.visible=true; }
+export function fireLight(wreck, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life; L.t0=life; L.p=0.42; L.follow=wreck; L.m.material.color.setHex(0xff6a24); L.m.scale.setScalar(7*(wreck.ms||1)); L.m.visible=true; }
 // our tank was hit: sparks and shards fly off the struck side + a red marker at the screen edge points at the shooter
 export function playerHitFX(p, dx, dz, dmg){ const L=Math.hypot(dx||0,dz||0); const ux=L?dx/L:Math.sin(p.facing||0), uz=L?dz/L:Math.cos(p.facing||0);
   const hx=p.pos.x-ux*p.radius*0.9, hz=p.pos.z-uz*p.radius*0.9, hy=heightAt(p.pos.x,p.pos.z)+1.3, n=Math.min(26, 8+Math.round(dmg*0.8));
@@ -34,9 +42,9 @@ function hitMarker(sx, sz, dmg){ let wrap=document.getElementById('hitDir'); if(
   setTimeout(()=>el.remove(), 1100); while(wrap.children.length>5) wrap.firstChild.remove(); }
 export function updateCinematic(dt, now){
   for(const d of CINE.domes){ if(d.t<=0) continue; d.t-=dt; const k=1-Math.max(0,d.t)/0.34, e=1-Math.pow(1-k,3); d.m.scale.setScalar(0.3+d.R*1.25*e); d.m.material.uniforms.opacity.value=0.9*(1-k)*(1-k); if(d.t<=0) d.m.visible=false; }
-  for(const L of CINE.lights){ if(!L.busy) continue; L.t-=dt; if(L.t<=0){ L.busy=false; L.pl.intensity=0; continue; }
-    if(L.follow){ const w=L.follow; L.pl.position.set(w.x, heightAt(w.x,w.z)+2.2*(w.ms||1), w.z); const k=Math.min(1, L.t/L.t0*1.4); L.pl.intensity=L.p*k*(0.7+0.3*Math.sin(now*17+w.x)+0.15*Math.random()); }
-    else { const k=L.t/L.t0; L.pl.intensity=L.p*k*k; } }
+  for(const L of CINE.lights){ if(!L.busy) continue; L.t-=dt; if(L.t<=0){ L.busy=false; L.m.visible=false; continue; }
+    if(L.follow){ const w=L.follow; L.m.position.set(w.x, heightAt(w.x,w.z)+0.25, w.z); const k=Math.min(1, L.t/L.t0*1.4); L.m.material.opacity=L.p*k*(0.75+0.2*Math.sin(now*17+w.x)+0.1*Math.random()); }
+    else { const k=L.t/L.t0; L.m.material.opacity=0.85*L.p*k*k; } }
   if(gradePass && gradePass.uniforms.flash && gradePass.uniforms.flash.value>0) gradePass.uniforms.flash.value=Math.max(0, gradePass.uniforms.flash.value-dt*1.6);
   // damage state: a hurt tank smokes grey; nearly gone it burns and pours black smoke
   const p=S.player; if(!p || !p.mesh || !p.mesh.visible || S.mode!=='playing') return; const f=p.hp/p.maxHp; if(f>=0.5) return;

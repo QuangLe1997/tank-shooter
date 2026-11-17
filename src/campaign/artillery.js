@@ -16,43 +16,43 @@ export function _artMortars(){ let n=0; for(const e of enemies) if(e.def.mortar)
 let _artTex=null;
 function artTex(){ if(_artTex) return _artTex;
   const mk=(w,h,draw)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; };
-  const disc=mk(256,256,(x)=>{ const g=x.createRadialGradient(128,128,0,128,128,128); g.addColorStop(0,'rgba(255,70,40,0.10)'); g.addColorStop(0.6,'rgba(255,50,30,0.22)'); g.addColorStop(0.93,'rgba(255,40,20,0.62)'); g.addColorStop(1,'rgba(255,40,20,0)'); x.fillStyle=g; x.fillRect(0,0,256,256); });
+  const disc=mk(256,256,(x)=>{ const g=x.createRadialGradient(128,128,0,128,128,128); g.addColorStop(0,'rgba(255,70,40,0.04)'); g.addColorStop(0.6,'rgba(255,50,30,0.10)'); g.addColorStop(0.93,'rgba(255,40,20,0.34)'); g.addColorStop(1,'rgba(255,40,20,0)'); x.fillStyle=g; x.fillRect(0,0,256,256); });
   const stripes=mk(256,256,(x)=>{ x.fillStyle='rgba(18,8,4,0.9)'; x.fillRect(0,0,256,256); x.fillStyle='#ffb21c'; for(let i=-256;i<512;i+=44){ x.beginPath(); x.moveTo(i,0); x.lineTo(i+22,0); x.lineTo(i+22-256,256); x.lineTo(i-256,256); x.fill(); } });
   _artTex={ disc, stripes }; return _artTex; }
 const _artM=(c,o,map,add)=>new THREE.MeshBasicMaterial({ color:c, map:map||null, transparent:true, opacity:o, side:THREE.DoubleSide, depthWrite:false, depthTest:false, blending:add===false?THREE.NormalBlending:THREE.AdditiveBlending });
 function artLabel(){ const c=document.createElement('canvas'); c.width=320; c.height=80; const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:t, transparent:true, depthTest:false, depthWrite:false })); sp.scale.set(5.2,1.3,1); sp.renderOrder=21; sp.userData={ c, t, last:'' }; return sp; }
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:t, transparent:true, depthTest:false, depthWrite:false })); sp.scale.set(3.9,0.98,1); sp.renderOrder=21; sp.userData={ c, t, last:'' }; return sp; }
 function drawLabel(sp, top, big, hot){ const u=sp.userData, key=top+big+hot; if(u.last===key) return; u.last=key; const x=u.c.getContext('2d'); x.clearRect(0,0,320,80);
-  x.fillStyle=hot?'rgba(255,240,220,0.92)':'rgba(10,4,2,0.78)'; x.beginPath(); x.roundRect(20,10,280,60,12); x.fill(); x.strokeStyle=hot?'#fff':'#ff4a2a'; x.lineWidth=3; x.stroke();
-  x.font='800 22px "Saira Condensed", Rajdhani, sans-serif'; x.textBaseline='middle'; x.textAlign='left'; x.fillStyle=hot?'#c01800':'#ffb21c'; x.fillText(top, 38, 40);
-  x.font='800 34px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='right'; x.fillStyle=hot?'#c01800':'#fff'; x.fillText(big, 286, 41); u.t.needsUpdate=true; }
+  x.fillStyle='rgba(10,4,2,0.62)'; x.beginPath(); x.roundRect(20,10,280,60,12); x.fill(); x.strokeStyle=hot?'rgba(255,120,80,0.9)':'rgba(255,74,42,0.7)'; x.lineWidth=2; x.stroke();
+  x.font='800 22px "Saira Condensed", Rajdhani, sans-serif'; x.textBaseline='middle'; x.textAlign='left'; x.fillStyle=hot?'#ff8a5a':'#ffb21c'; x.fillText(top, 38, 40);
+  x.font='800 34px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='right'; x.fillStyle=hot?'#ffd2b8':'#fff'; x.fillText(big, 286, 41); u.t.needsUpdate=true; }
 export function makeArtLock(x,z,R,innerR){
   const T=artTex(), root=new THREE.Group(), flat=new THREE.Group(); root.position.set(x, heightAt(x,z)+0.16, z); flat.rotation.x=-Math.PI/2; root.add(flat);
   const put=(geo,mat,ro)=>{ const m=new THREE.Mesh(geo,mat); m.renderOrder=ro||18; flat.add(m); return m; };
   const disc=put(new THREE.CircleGeometry(R,64), _artM(0xffffff,1,T.disc,false), 17);
-  const hazard=put(new THREE.RingGeometry(R-0.7,R-0.16,72), _artM(0xffffff,0.85,T.stripes,false), 18);
-  const edge=put(new THREE.RingGeometry(R-0.14,R+0.05,96), _artM(0xff3a24,0.95));
-  const dashG=[]; for(let k=0;k<12;k++) dashG.push(new THREE.RingGeometry(R+0.38,R+0.62,6,1,k*Math.PI/6,Math.PI/10)); const dash=put(mergeGeometries(dashG), _artM(0xff6a3a,0.85)); dashG.forEach(g=>g.dispose());
-  const inner=put(new THREE.RingGeometry(innerR-0.09,innerR+0.02,64), _artM(0xff7048,0.75));
-  const arc=put(new THREE.RingGeometry(innerR+0.18,innerR+0.46,48,1,Math.PI/2,0.001), _artM(0xffd24a,0.95));
-  const dia=put(new THREE.RingGeometry(0.34,0.5,4), _artM(0xffffff,0.9)); dia.rotation.z=Math.PI/4;
-  const crossG=[new THREE.PlaneGeometry(1.5,0.08), new THREE.PlaneGeometry(0.08,1.5)]; const cross=put(mergeGeometries(crossG), _artM(0xff9a6a,0.9)); crossG.forEach(g=>g.dispose());
+  const hazard=put(new THREE.RingGeometry(R-0.5,R-0.16,72), _artM(0xffffff,0.4,T.stripes,false), 18);
+  const edge=put(new THREE.RingGeometry(R-0.14,R+0.05,96), _artM(0xff3a24,0.7));
+  const dashG=[]; for(let k=0;k<12;k++) dashG.push(new THREE.RingGeometry(R+0.38,R+0.62,6,1,k*Math.PI/6,Math.PI/10)); const dash=put(mergeGeometries(dashG), _artM(0xff6a3a,0.4)); dashG.forEach(g=>g.dispose());
+  const inner=put(new THREE.RingGeometry(innerR-0.09,innerR+0.02,64), _artM(0xff7048,0.45));
+  const arc=put(new THREE.RingGeometry(innerR+0.18,innerR+0.46,48,1,Math.PI/2,0.001), _artM(0xffd24a,0.7));
+  const dia=put(new THREE.RingGeometry(0.34,0.5,4), _artM(0xffffff,0.55)); dia.rotation.z=Math.PI/4;
+  const crossG=[new THREE.PlaneGeometry(1.5,0.08), new THREE.PlaneGeometry(0.08,1.5)]; const cross=put(mergeGeometries(crossG), _artM(0xff9a6a,0.5)); crossG.forEach(g=>g.dispose());
   const shadow=put(new THREE.CircleGeometry(1,40), _artM(0x000000,0,null,false), 19);
-  const chev=[], cg=new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-0.55,0.42),new THREE.Vector2(0,-0.42),new THREE.Vector2(0.55,0.42),new THREE.Vector2(0,0.12)]));
-  for(let k=0;k<4;k++){ const pv=new THREE.Group(); pv.rotation.z=k*Math.PI/2; flat.add(pv); const m=new THREE.Mesh(cg, _artM(0xffd24a,0.95)); m.renderOrder=20; pv.add(m); chev.push(m); }
-  const label=artLabel(); label.position.set(0, 3.2, 0); root.add(label);
+  const chev=[], cg=new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-0.4,0.3),new THREE.Vector2(0,-0.3),new THREE.Vector2(0.4,0.3),new THREE.Vector2(0,0.09)]));
+  for(let k=0;k<4;k++){ const pv=new THREE.Group(); pv.rotation.z=k*Math.PI/2; flat.add(pv); const m=new THREE.Mesh(cg, _artM(0xffd24a,0.7)); m.renderOrder=20; pv.add(m); chev.push(m); }
+  const label=artLabel(); label.position.set(0, 2.8, 0); root.add(label);
   root.userData={ disc, hazard, edge, dash, inner, arc, dia, cross, shadow, chev, label, R, innerR, cg }; scene.add(root); return root; }
 // k: 0→1 how tight the lock is (1 while the shell is in the air) · fly: 0→1 shell flight progress (null while locking) · tLeft: seconds to impact
-function tickArtLock(zone, k, fly, now, dt, tLeft){ const u=zone.userData, hot=fly!=null, pul=0.5+0.5*Math.sin(now*(hot?30:8+k*14));
-  u.disc.material.opacity = hot ? 0.7+0.25*pul : 0.42+0.3*pul; u.disc.material.color.setHex(hot?0xfff0e0:0xffffff);
-  u.hazard.rotation.z += dt*(0.25+k*0.9); u.dash.rotation.z -= dt*(0.8+k*2.5); u.dia.rotation.z += dt*3;
-  u.edge.material.opacity = 0.6+0.4*pul; u.edge.material.color.setHex(hot?0xffffff:0xff3a24);
+function tickArtLock(zone, k, fly, now, dt, tLeft){ const u=zone.userData, hot=fly!=null, pul=0.5+0.5*Math.sin(now*(hot?12:3+k*6));   // Z190 calmer pulse
+  u.disc.material.opacity = hot ? 0.55+0.15*pul : 0.4+0.12*pul; u.disc.material.color.setHex(hot?0xffd8c0:0xffffff);
+  u.hazard.rotation.z += dt*(0.12+k*0.3); u.dash.rotation.z -= dt*(0.3+k*0.8); u.dia.rotation.z += dt*1.2;
+  u.edge.material.opacity = 0.5+0.2*pul; u.edge.material.color.setHex(hot?0xff9a70:0xff3a24);
   const ease=hot?1:k*k*(3-2*k), r=(u.R+1.6)-((u.R+1.6)-(u.innerR+0.75))*ease;
-  for(const c of u.chev){ c.position.set(0, r, 0); c.material.opacity = hot ? 0.6+0.4*pul : 0.95; c.material.color.setHex(hot?0xffffff:0xffd24a); }
-  const span=Math.max(0.001, Math.PI*2*(hot?1:k)); u.arc.geometry.dispose(); u.arc.geometry=new THREE.RingGeometry(u.innerR+0.18,u.innerR+0.46,48,1,Math.PI/2,span); u.arc.material.opacity = hot ? 0.5+0.5*pul : 0.95;
-  if(hot){ const s=0.6+fly*u.innerR*1.25; u.shadow.scale.set(s,s,1); u.shadow.material.opacity=0.12+0.5*fly; }
+  for(const c of u.chev){ c.position.set(0, r, 0); c.material.opacity = hot ? 0.45+0.2*pul : 0.7; c.material.color.setHex(hot?0xffc8a0:0xffd24a); }
+  const span=Math.max(0.001, Math.PI*2*(hot?1:k)); u.arc.geometry.dispose(); u.arc.geometry=new THREE.RingGeometry(u.innerR+0.18,u.innerR+0.46,48,1,Math.PI/2,span); u.arc.material.opacity = hot ? 0.4+0.2*pul : 0.7;
+  if(hot){ const s=0.6+fly*u.innerR*1.25; u.shadow.scale.set(s,s,1); u.shadow.material.opacity=0.1+0.35*fly; }
   drawLabel(u.label, hot?'ĐẠN ĐANG RƠI':'PHÁO KÍCH', hot?'TRÁNH RA!':Math.max(0,tLeft).toFixed(1)+'s', hot);
-  u.label.position.y = 3.2+Math.sin(now*4)*0.12; }
+  u.label.position.y = 2.8; }
 export function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material){ if(c.material.map && c.material.map!==_artTex?.disc && c.material.map!==_artTex?.stripes) c.material.map.dispose(); c.material.dispose(); } }); }
 export function _pickMortar(){ const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); return ms.length ? ms[(Math.random()*ms.length)|0] : null; }
 export function artLockStrike(tx,tz){
@@ -92,8 +92,8 @@ export function updateArtStrikes(dt, now){
     if(s.zone){ const lock=s.state==='lock', k = lock ? (1-Math.max(0,s.t)/C.lockTime) : 1;   // Z188
       tickArtLock(s.zone, k, lock ? null : 1-Math.max(0,s.t)/C.flightTime, now, dt, lock ? Math.max(0,s.t)+C.flightTime : Math.max(0,s.t)); }
     if(s.state==='lock'){ const k=1-Math.max(0,s.t)/C.lockTime; s.rip-=dt;   // expanding danger WAVES — quicken as launch nears
-      if(s.rip<=0){ s.rip=0.55-0.4*k; ringPulse({x:s.tx,z:s.tz}, 0xff4632, s.R*0.95); } }
-    s.blink-=dt; if(s.blink<=0){ s.blink=0.34-(s.state==='lock'?0.22:0.28)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep'); }
+      if(s.rip<=0){ s.rip=1.1-0.5*k; ringPulse({x:s.tx,z:s.tz}, 0xff4632, s.R*0.9); } }
+    s.blink-=dt; if(s.blink<=0){ s.blink=0.5-(s.state==='lock'?0.22:0.3)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep'); }
     if(s.state==='lock'){
       if(s.t<=0){   // LAUNCH — shell blasts UP out of the firing mortar's tube and arcs to the locked spot
         s.state='fly'; s.t=C.flightTime;

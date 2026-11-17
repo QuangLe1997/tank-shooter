@@ -946,5 +946,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/pow\(f,3\.0\)/.test(c) && /shockDome\(pos\.x, pos\.z/.test(ex) && /blastLight\(pos\.x, pos\.z/.test(ex) && /fireLight\(w, w\.life\*0\.7\)/.test(fs.readFileSync('src/fx/fire-wrecks.js','utf8')), 'tank kills: rim-lit shock dome, the ground lit by the blast, burning hulks light their surroundings');
   ok(/playerHitFX\(p, dx, dz, dmg\)/.test(pd) && /function hitMarker/.test(c) && /f<0\.25\?0x14110e:0x6a645c/.test(c), 'our tank hit: sparks + shards off the struck side, a red direction marker, smoke grey then black + fire as it is wrecked'); }
 
+// Z190 no freeze + calmer strike visuals: fire light is a ground glow (never a PointLight added mid-fight → no shader recompiles), far objects lost
+//   in the fog are culled from the low cinematic camera, the artillery zone and the lock warning are toned down
+{ const fs=await import('node:fs'); const c=fs.readFileSync('src/fx/cinematic.js','utf8'), lv=fs.readFileSync('src/world/lava.js','utf8'), lod=fs.readFileSync('src/render/lod.js','utf8'), a=fs.readFileSync('src/campaign/artillery.js','utf8');
+  ok(!/new THREE\.PointLight/.test(c) && !/new THREE\.PointLight/.test(lv) && /export function groundGlowMesh/.test(c) && /groundGlowMesh\(/.test(lv), 'fire light and lava glow add no lights mid-fight (no shader recompile freeze)');
+  ok(/export function fogCull\(\)/.test(lod) && /fogCull\(\);/.test(lod) && /CULL_LAYER=7/.test(lod) && /isPoints/.test(lod), 'objects lost in the fog are not drawn; particle layers / big pieces are never culled');
+  ok(/sp\.scale\.set\(3\.9,0\.98,1\)/.test(a) && /hot\?12:3\+k\*6/.test(a), 'artillery zone: smaller label, slower pulse'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
