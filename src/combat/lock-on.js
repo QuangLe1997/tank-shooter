@@ -94,7 +94,7 @@ export function updateBullets(dt, now){
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];
     if(b.lockOn && b.owner==='p'){ // MISSILE: lock ONE target, chase that object, loft-then-dive arc
-      if(!b.tgt || !targetAlive(b.tgt)) b.tgt = acquireLock(b);            // sticky lock — re-acquire only if it dies
+      if(!b.tgt || !targetAlive(b.tgt)) b.tgt = (b.flared && now<b.flared) ? null : acquireLock(b);            // sticky lock — re-acquire only if it dies · Z198 decoyed by flares: it flies on blind for a moment
       const t=b.tgt;
       if(t){ requestLock(t);                                              // hi-tech reticle snaps onto the locked target
         const want=Math.atan2(t.pos.x-b.x,t.pos.z-b.z); let da=wrapAngle(want-b.angle);

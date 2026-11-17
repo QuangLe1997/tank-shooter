@@ -1008,5 +1008,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function aaGun\(/.test(rd) && /updateAAGun\(pc\.mesh, pc, dt, now, p\)/.test(su) && /export function radome\(/.test(rd), 'twin AA guns swing onto you and fire; a radome; the usual wire, gate and garrison');
   ok(/artyShotCut\(\)/.test(ar) && /artyErr\(\)/.test(ar) && /artyRestMul\(\)/.test(ar) && /toppleTower\(b, dir, now\)/.test(su), 'the tower topples; with the radar gone the barrages come less often, with fewer and wilder shells'); }
 
+// Z198 the attack helicopter: a modern armoured gunship model, a chin gun that tracks, exhaust haze, flares against a locked missile
+{ const fs=await import('node:fs'); const v=fs.readFileSync('src/actors/vehicles.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/stepped tandem canopy/.test(v) && /quad ATGM rack/.test(v) && /5-blade main rotor/.test(v) && /_mergeColored\(P\[k\]\)/.test(v), 'gunship: armoured fuselage, tandem canopy, engines, stub wings with pods + ATGMs, 5-blade rotor (merged per material)');
+  ok(/the chin gun tracks you/.test(v) && /FLARES/.test(v) && /b\.flared && now<b\.flared/.test(lo), 'the chin gun tracks; flares can pull a locked missile off'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

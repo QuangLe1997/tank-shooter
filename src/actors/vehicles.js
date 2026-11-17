@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, S, aoeDamage, bigExplode, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { BIOME, ENVMOD, MOBILE, S, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
 // ===== Z116 · ROCKET TRUCK — 6×6 cab-over truck with an 8-tube rocket pod on a turntable (enemy salvo launcher / our hijacked AA + siege truck) =====
@@ -91,31 +91,59 @@ export function updateEngineer(e, dt, now){
 }
 // --- ATTACK HELICOPTER: circles the fight at altitude, strafes with a chin cannon and ripples rockets. Only direct fire, flak and missiles reach it ---
 export let _heliMats=null;
+// Z198 a modern ATTACK HELICOPTER: a narrow armoured fuselage with a stepped tandem cockpit (faceted armoured glazing, frames), twin engine
+//   nacelles with down-turned exhaust deflectors, a tapered boom with a swept fin, stabilator + end plates, a 3-blade tail rotor, a 5-blade
+//   main rotor on a real hub, stub wings carrying rocket pods and quad ATGM racks, a chin cannon turret that tracks you, a nose sensor ball,
+//   fixed landing gear, IR jammer, antennas, and nav lights (red/green wingtips, white tail) + a red strobe. Static parts are merged per
+//   material (a handful of draw calls a helicopter); the rotors and the turret move.
+const _hx=(geo,x,y,z,rx,ry,rz,sx,sy,sz)=>{ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1))); return geo; };
+function _side(pts, w, bev){ const sh=new THREE.Shape(); sh.moveTo(pts[0][0],pts[0][1]); for(const q of pts.slice(1)) sh.lineTo(q[0],q[1]); sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{ depth:w, bevelEnabled:!!bev, bevelThickness:bev||0, bevelSize:bev||0, bevelSegments:2 }); g.translate(0,0,-w/2); g.rotateY(-Math.PI/2); return g; }   // profile (z,y) extruded across x
 export function buildGunship(pal){
-  if(!_heliMats) _heliMats={ hull:new THREE.MeshStandardMaterial({color:pal.hull, roughness:0.55, metalness:0.45, map:panelTex()}), dark:new THREE.MeshStandardMaterial({color:0x22261e, roughness:0.6, metalness:0.5}),
-    glass:new THREE.MeshStandardMaterial({color:0x101a22, roughness:0.08, metalness:0.9, envMapIntensity:1.4}), blade:new THREE.MeshStandardMaterial({color:0x1a1c18, roughness:0.7}),
-    blur:new THREE.MeshBasicMaterial({color:0x222222, transparent:true, opacity:0.18, depthWrite:false, side:THREE.DoubleSide}) };
+  if(!_heliMats){ const pt=panelTex(); _heliMats={ hull:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.5, metalness:0.45, map:pt }),
+    dark:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.55, metalness:0.6 }), glass:new THREE.MeshStandardMaterial({ color:0x1e2a26, roughness:0.05, metalness:0.95, envMapIntensity:1.6 }),
+    blade:new THREE.MeshStandardMaterial({ color:0x1a1c18, roughness:0.6, metalness:0.3 }), blur:new THREE.MeshBasicMaterial({ color:0x202020, transparent:true, opacity:0.14, depthWrite:false, side:THREE.DoubleSide }),
+    lens:new THREE.MeshStandardMaterial({ color:0x101418, emissive:0x3a6a8a, emissiveIntensity:0.8, roughness:0.1, metalness:0.9 }),
+    red:new THREE.MeshStandardMaterial({ color:0x200000, emissive:0xff2020, emissiveIntensity:3 }), green:new THREE.MeshStandardMaterial({ color:0x002000, emissive:0x20ff40, emissiveIntensity:2.6 }), white:new THREE.MeshStandardMaterial({ color:0x202020, emissive:0xffffff, emissiveIntensity:2.2 }) }; }
   const H=_heliMats, g=new THREE.Group(), body=new THREE.Group(); g.add(body);
-  const put=(geo,mat,x,y,z,rx,ry,rz,par)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,rz||0); (par||body).add(m); m.castShadow=true; return m; };
-  const fus=put(new THREE.SphereGeometry(1,20,14), H.hull, 0,0,0.2); fus.scale.set(0.95,0.95,2.4);                       // tandem-seat fuselage
-  put(new THREE.SphereGeometry(0.62,16,12,0,6.283,0,1.6), H.glass, 0,0.55,1.15, -0.25).scale.set(1,0.9,1.9);              // stepped canopy
-  put(new THREE.CylinderGeometry(0.2,0.42,4.4,12), H.hull, 0,0.25,-3.3, Math.PI/2);                                       // tail boom
-  put(new RoundedBoxGeometry(0.12,1.5,0.9,2,0.05), H.hull, 0,0.95,-5.2, -0.3);                                           // tail fin
-  put(new RoundedBoxGeometry(1.6,0.08,0.5,2,0.03), H.hull, 0,0.35,-4.6);                                                 // stabilator
-  for(const sx of [-1,1]){ put(new RoundedBoxGeometry(1.6,0.12,0.7,2,0.04), H.hull, sx*1.5,-0.15,0.1, 0,0,sx*-0.12);        // stub wings
-    for(const k of [0,1]){ const pod=put(new THREE.CylinderGeometry(0.24,0.24,1.3,12), H.dark, sx*(1.25+k*0.75),-0.45,0.25, Math.PI/2); pod.userData.pod=true; }   // rocket pods
-    put(new RoundedBoxGeometry(0.12,0.12,2.6,1,0.03), H.dark, sx*0.75,-1.15,0.2); }                                      // skids
-  for(const sx of [-1,1]) put(new THREE.CylinderGeometry(0.05,0.05,0.5,6), H.dark, sx*0.75,-0.9,0.2);
-  const chin=new THREE.Group(); chin.position.set(0,-0.75,1.9); body.add(chin);
-  put(new THREE.SphereGeometry(0.28,10,8), H.dark, 0,0,0,0,0,0,chin); put(new THREE.CylinderGeometry(0.06,0.06,1.0,8), H.dark, 0,-0.05,0.5, Math.PI/2,0,0,chin);
-  const muz=new THREE.Object3D(); muz.position.set(0,-0.05,1.05); chin.add(muz);
-  put(new THREE.CylinderGeometry(0.42,0.5,0.5,12), H.dark, 0,1.0,0.3);                                                     // engine / mast
-  const rotor=new THREE.Group(); rotor.position.set(0,1.35,0.3); body.add(rotor);
-  for(let k=0;k<4;k++) put(new RoundedBoxGeometry(0.34,0.05,5.4,1,0.02), H.blade, 0,0,0, 0,k*Math.PI/4*2,0, rotor);
-  const blur=new THREE.Mesh(new THREE.CircleGeometry(5.6,32), H.blur); blur.rotation.x=-Math.PI/2; rotor.add(blur);
-  const trot=new THREE.Group(); trot.position.set(0.12,0.95,-5.3); body.add(trot);
-  for(let k=0;k<2;k++) put(new RoundedBoxGeometry(0.04,1.3,0.12,1,0.02), H.blade, 0,0,0, k*Math.PI/2,0,0, trot);
-  const nav=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,6), new THREE.MeshStandardMaterial({color:0, emissive:0xff2020, emissiveIntensity:3})); nav.position.set(0,1.8,-5.5); body.add(nav);
+  const hullC=pal.hull, camo=new THREE.Color(pal.hull).multiplyScalar(0.62).getHex(), belly=new THREE.Color(pal.hull).lerp(new THREE.Color(0x9aa0a0),0.45).getHex(), D=0x26281f, M2=0x3a3c36;
+  const P={ hull:[], dark:[], glass:[] }, add=(k,geo,col)=>P[k].push({ geo, col });
+  add('hull', _side([[4.35,-0.15],[4.05,-0.72],[2.6,-0.98],[-0.4,-1.02],[-1.7,-0.62],[-1.85,0.42],[0.0,0.88],[0.5,0.92],[2.6,0.52],[3.65,0.12],[4.35,0.0]], 1.18, 0.12), hullC);   // armoured fuselage
+  add('hull', _hx(new THREE.BoxGeometry(1.36,0.32,3.2),0,-0.86,0.9), belly);   // belly
+  for(const [z0,w] of [[2.2,0.5],[0.6,0.8],[-1.0,0.6]]) add('hull', _hx(new THREE.BoxGeometry(1.42,0.5,w),0,0.25,z0), camo);   // camouflage bands
+  add('glass', _side([[3.7,0.1],[2.7,0.78],[1.75,0.86],[1.55,1.24],[0.3,1.3],[0.05,0.86],[0.1,0.5],[3.4,0.1]], 1.02, 0.03), 0xffffff);   // stepped tandem canopy
+  for(const z of [2.75,1.65,0.95,0.3]) add('dark', _hx(new THREE.BoxGeometry(1.08,0.08,0.07),0,z>1.6?(z>2.6?0.72:0.92):1.29,z), D);   // canopy frames
+  add('dark', _hx(new THREE.BoxGeometry(0.06,0.55,2.9),0,1.05,1.9,-0.18), D);
+  for(const sx of [-1,1]){ add('hull', _hx(new THREE.CylinderGeometry(0.4,0.42,2.4,16),sx*0.78,1.0,-0.2,Math.PI/2), hullC); add('dark', _hx(new THREE.CylinderGeometry(0.3,0.3,0.12,14),sx*0.78,1.0,1.02,Math.PI/2), D);   // engines + intakes
+    add('dark', _hx(new THREE.CylinderGeometry(0.3,0.42,0.9,12),sx*1.05,0.8,-1.55,Math.PI/2+0.35,0,sx*0.7), M2);   // down-turned exhaust deflectors
+    add('hull', _hx(new THREE.BoxGeometry(1.35,0.13,0.95),sx*1.32,-0.12,0.45,0,0,sx*-0.1), hullC);   // stub wing
+    add('dark', _hx(new THREE.BoxGeometry(0.12,0.35,0.5),sx*1.25,-0.35,0.45), D); add('dark', _hx(new THREE.BoxGeometry(0.12,0.35,0.5),sx*1.85,-0.38,0.45), D);   // pylons
+    add('hull', _hx(new THREE.CylinderGeometry(0.28,0.28,1.55,14),sx*1.25,-0.68,0.5,Math.PI/2), camo); add('dark', _hx(new THREE.CylinderGeometry(0.26,0.26,0.04,14),sx*1.25,-0.68,1.28,Math.PI/2), 0x111111);   // rocket pod
+    for(const [ox,oy] of [[-0.11,-0.6],[0.11,-0.6],[-0.11,-0.82],[0.11,-0.82]]) add('dark', _hx(new THREE.CylinderGeometry(0.095,0.095,1.6,10),sx*1.88+ox,oy,0.55,Math.PI/2), 0x4a5038);   // quad ATGM rack
+    add('dark', _hx(new THREE.CylinderGeometry(0.04,0.05,0.85,6),sx*0.95,-0.95,1.25,0,0,sx*0.35), D); add('dark', _hx(new THREE.CylinderGeometry(0.25,0.25,0.18,12),sx*1.1,-1.32,1.25,0,0,Math.PI/2), 0x161616); }   // main gear
+  add('hull', _hx(new THREE.CylinderGeometry(0.2,0.44,5.3,14),0,0.42,-4.0,Math.PI/2), hullC);   // tapered boom
+  add('hull', _side([[-6.0,0.45],[-6.75,0.45],[-7.35,2.15],[-6.85,2.2]], 0.14, 0.03), camo);   // swept fin
+  add('hull', _hx(new THREE.BoxGeometry(2.4,0.07,0.55),0,0.55,-6.0), hullC); for(const sx of [-1.2,1.2]) add('hull', _hx(new THREE.BoxGeometry(0.06,0.5,0.6),sx,0.6,-6.0), camo);   // stabilator + end plates
+  add('dark', _hx(new THREE.CylinderGeometry(0.05,0.07,0.9,6),0,-0.1,-6.2,0.4), D); add('dark', _hx(new THREE.CylinderGeometry(0.13,0.13,0.1,10),0,-0.5,-6.35,0,0,Math.PI/2), 0x161616);   // tail wheel
+  add('dark', _hx(new THREE.CylinderGeometry(0.3,0.36,0.55,14),0,1.5,0.2), D); add('dark', _hx(new THREE.BoxGeometry(0.5,0.35,0.5),0,1.35,-1.05), M2); add('dark', _hx(new THREE.CylinderGeometry(0.12,0.16,0.3,10),0,1.65,-1.05), 0x2a2c26);   // mast fairing, IR jammer
+  for(const [x,z,h] of [[0.35,-1.6,0.6],[-0.3,2.2,0.4]]) add('dark', _hx(new THREE.BoxGeometry(0.03,h,0.18),x,0.9+h/2,z,0,0,0.2), D);   // blade antennas
+  for(const k in P){ if(!P[k].length) continue; const m=new THREE.Mesh(_mergeColored(P[k]), H[k]); m.castShadow=true; body.add(m); }
+  // chin turret (tracks you), nose sensor ball, lights
+  const chin=new THREE.Group(); chin.position.set(0,-0.95,3.25); body.add(chin);
+  { const b=new THREE.Mesh(new THREE.SphereGeometry(0.32,14,10), H.dark); b.castShadow=true; chin.add(b); const el=new THREE.Group(); chin.add(el); chin.userData.el=el;
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,1.7,10), H.dark); br.rotation.x=Math.PI/2; br.position.z=0.9; el.add(br); const mb=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.25,10), H.dark); mb.rotation.x=Math.PI/2; mb.position.z=1.75; el.add(mb); }
+  const muz=new THREE.Object3D(); muz.position.set(0,0,1.9); chin.userData.el.add(muz);
+  { const s=new THREE.Mesh(new THREE.SphereGeometry(0.3,14,10), H.dark); s.position.set(0,-0.2,4.3); body.add(s); for(const ox of [-0.12,0.12]){ const l=new THREE.Mesh(new THREE.CircleGeometry(0.1,12), H.lens); l.position.set(ox,-0.2,4.6); body.add(l); } }
+  const lt=(mat,x,y,z)=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,6), mat); m.position.set(x,y,z); body.add(m); return m; }; lt(H.red,-2.0,-0.1,0.45); lt(H.green,2.0,-0.1,0.45); lt(H.white,0,2.25,-7.0);
+  const nav=lt(H.red,0,0.15,-1.6);   // anti-collision strobe under the boom
+  // 5-blade main rotor on a hub with pitch links; a 3-blade tail rotor on the right of the fin
+  const rotor=new THREE.Group(); rotor.position.set(0,1.92,0.2); body.add(rotor);
+  { const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.3,0.28,12), H.dark); rotor.add(hub); const cap=new THREE.Mesh(new THREE.SphereGeometry(0.2,10,6,0,6.283,0,1.5), H.dark); cap.position.y=0.14; rotor.add(cap);
+    for(let k=0;k<5;k++){ const a=k*Math.PI*2/5, bl=new THREE.Mesh(new RoundedBoxGeometry(0.4,0.05,6.3,1,0.02), H.blade); bl.position.set(Math.sin(a)*3.4,0,Math.cos(a)*3.4); bl.rotation.set(0.03,a,0); bl.castShadow=true; rotor.add(bl);
+      const pl=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.3,5), H.dark); pl.position.set(Math.sin(a)*0.3,-0.15,Math.cos(a)*0.3); rotor.add(pl); } }
+  const blur=new THREE.Mesh(new THREE.RingGeometry(0.5,6.6,40), H.blur); blur.rotation.x=-Math.PI/2; rotor.add(blur);
+  const trot=new THREE.Group(); trot.position.set(0.2,1.65,-7.0); body.add(trot);
+  for(let k=0;k<3;k++){ const b=new THREE.Mesh(new RoundedBoxGeometry(0.04,1.4,0.16,1,0.02), H.blade); b.position.y=0.7; const arm=new THREE.Group(); arm.rotation.x=k*Math.PI*2/3; arm.add(b); trot.add(arm); }
   g.userData={ body, rotor, trot, chin, muzzle:muz, nav, heli:true };
   scene.add(g); return g;
 }
@@ -133,7 +161,12 @@ export function updateGunship(e, dt, now, edt){
   const side=(e.vel.x*Math.cos(e.facing)-e.vel.z*Math.sin(e.facing)), fwd=(e.vel.x*Math.sin(e.facing)+e.vel.z*Math.cos(e.facing));
   e.bank=(e.bank||0)+((-side*0.05)-(e.bank||0))*Math.min(1,dt*3); e.pitch=(e.pitch||0)+((fwd*0.025)-(e.pitch||0))*Math.min(1,dt*3);
   e.mesh.position.set(e.pos.x, e.pos.y, e.pos.z); e.mesh.rotation.set(0, e.facing, 0); ud.body.rotation.set(e.pitch, 0, e.bank);
-  ud.rotor.rotation.y += dt*38; ud.trot.rotation.x += dt*50; ud.nav.visible = Math.floor(now*2)%2===0;
+  ud.rotor.rotation.y += dt*38; ud.trot.rotation.x += dt*50; ud.nav.visible = (now*1.4)%1 < 0.12;   // Z198 a short strobe flash
+  { const lyaw=wrapAngle(want-e.facing), ch=ud.chin; ch.rotation.y += wrapAngle(lyaw-ch.rotation.y)*Math.min(1,dt*5); if(ch.userData.el){ const el=Math.atan2(e.pos.y-heightAt(p.pos.x,p.pos.z)-1.2, d); ch.userData.el.rotation.x += (el-ch.userData.el.rotation.x)*Math.min(1,dt*5); } }   // the chin gun tracks you
+  if(Math.random()<0.5){ const cf=Math.cos(e.facing), sf=Math.sin(e.facing); for(const sx of [-1,1]) spawnPart(e.pos.x+cf*sx*1.3-sf*1.6, e.pos.y+0.7, e.pos.z-sf*sx*1.3-cf*1.6, cf*sx*1.5-sf*2, -0.5, -sf*sx*1.5-cf*2, { color:0x3a3632, size:0.55, life:0.6, smoke:true, grav:0.2, drag:2, grow:1.2, op:0.18 }); }   // hot exhaust haze
+  if(now>(e.flareAt||0)){ for(const b of bullets){ if(b.owner!=='p' || !b.lockOn || b.tgt!==e) continue; if((b.x-e.pos.x)**2+(b.z-e.pos.z)**2 > 26*26) continue;   // Z198 a missile locked on: FLARES
+      e.flareAt=now+7; for(let k=0;k<(MOBILE?8:16);k++){ const a=e.facing+Math.PI+(k%2?1:-1)*(0.6+Math.random()*0.9); spawnPart(e.pos.x, e.pos.y-0.3, e.pos.z, Math.sin(a)*(6+Math.random()*6), 2+Math.random()*4, Math.cos(a)*(6+Math.random()*6), { tex:'fire', color:0xffffff, color2:0xffa040, size:0.8, life:1.6+Math.random()*0.6, grav:-5, drag:0.6 }); }
+      if(Math.random()<R.flareDecoy) { b.tgt=null; b.flared=now+1.2; } sfx('rocketlaunch', e.pos, 0.4); break; } }
   if(Math.random()<0.25) spawnPart(e.pos.x+(Math.random()-0.5)*9, heightAt(e.pos.x,e.pos.z)+0.3, e.pos.z+(Math.random()-0.5)*9, (Math.random()-0.5)*6, 0.6, (Math.random()-0.5)*6, {color:BIOME.ground, size:1.6, life:0.7, smoke:true, grav:-0.2, drag:2, op:0.22});   // rotor wash kicks up dust
   if(S.mode!=='playing' || d > R.range) return;
   const ds=diffScale(), dmul=(0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul(), smk=smokeSpread(now);
