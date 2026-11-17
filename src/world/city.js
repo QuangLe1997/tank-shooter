@@ -62,10 +62,19 @@ function tubeHouse(ox,oz,ry,w,d){ const floors=2+((Math.random()*4)|0), col=WALL
   if(Math.random()<0.8){ const t=new THREE.CylinderGeometry(0.55,0.55,1.3,10); t.rotateZ(Math.PI/2); const c=Math.cos(ry), s=Math.sin(ry), bx=_R(-w/4,w/4), bz=-d/4; det(t, ox+bx*c+bz*s, y0+H+1.4, oz-bx*s+bz*c, ry, 0xd8dcde);   // inox water tank
     local(bx, y0+H+0.8, bz, 0.9, 0.4, 0.4, ox,oz,ry, 0x6a6c6e); }
   if(Math.random()<0.4) local(_R(-w/4,w/4), y0+H+1.0, d/4, 1.6, 1.6, 1.6, ox,oz,ry, 0xc8c4b8);                                // stair hut
+  // Z207 street life on the facade: AC condensers, iron window cages (chuồng cọp), a vertical shop sign, potted plants, a dish / antenna on the roof
+  for(let f=0;f<floors;f++){ const fy=y0+3.6+f*FH;
+    if(Math.random()<0.55){ const ax=_R(-w/2+0.6,w/2-0.6); local(ax, fy+2.3, d/2+0.2, 0.8, 0.55, 0.32, ox,oz,ry, 0xdcdcd4); local(ax, fy+2.3, d/2+0.37, 0.42, 0.42, 0.02, ox,oz,ry, 0x3a3c3e); }
+    if(Math.random()<0.3){ const cw=w*0.7; for(let k=0;k<=6;k++) local(-cw/2+k*cw/6, fy+1.9, d/2+0.75, 0.04, 1.9, 0.04, ox,oz,ry, 0x3a3a38); for(const yy of [0.95,1.9,2.85]) local(0, fy+yy, d/2+0.75, cw, 0.05, 0.05, ox,oz,ry, 0x3a3a38); local(0, fy+2.85, d/2+0.42, cw, 0.05, 0.7, ox,oz,ry, 0x4a4a46); }
+    else if(Math.random()<0.5) for(let k=0;k<3;k++){ const g=new THREE.SphereGeometry(_R(0.22,0.34),7,5); const c=Math.cos(ry), sn=Math.sin(ry), bx=_R(-w/2+0.5,w/2-0.5), bz=d/2+0.45; det(g, ox+bx*c+bz*sn, fy+0.45, oz-bx*sn+bz*c, ry, [0x3e7a2e,0x5a8a3a,0x2e6a2a][k]); } }
+  if(Math.random()<0.45) local(w/2-0.35, y0+3.6+Math.min(floors,2)*FH*0.6, d/2+0.75, 0.14, Math.min(floors,2)*FH*0.7, 0.95, ox,oz,ry, [0xd82a2a,0x2a6ad8,0xf0c020,0x1a9a5a,0xe8e8e0][(Math.random()*5)|0]);
+  if(Math.random()<0.35){ const g=new THREE.CylinderGeometry(0.45,0.08,0.18,12); g.rotateX(-0.9); const c=Math.cos(ry), sn=Math.sin(ry), bx=_R(-w/3,w/3), bz=d/4; det(g, ox+bx*c+bz*sn, y0+H+1.3, oz-bx*sn+bz*c, ry, 0xe8e8e4); local(bx, y0+H+0.95, bz, 0.06, 0.8, 0.06, ox,oz,ry, 0x6a6a6a); }
+  else if(Math.random()<0.4){ local(0, y0+H+2.0, -d/4, 0.05, 3.0, 0.05, ox,oz,ry, 0x8a8a8a); for(const yy of [2.6,3.0,3.3]) local(0, y0+H+yy, -d/4, 1.4-yy*0.25, 0.04, 0.04, ox,oz,ry, 0x8a8a8a); }
   footprint(ox,oz,ry,w,d); return H; }
 function apartment(ox,oz,ry,w,d){ const floors=5+((Math.random()*5)|0), col=['#d8d0c0','#c8d4dc','#e0c8a8'][(Math.random()*3)|0], y0=heightAt(ox,oz)-0.05, FH=3.2, H=floors*FH;
   const T=apart(col); bucket('ap'+col, facadeMat(T)).geos.push(place(boxUV(w,H,d,4,FH), ox, y0+H/2, oz, ry));
   local(0, y0+H+0.3, 0, w+0.2, 0.6, d+0.2, ox,oz,ry, 0x9a968e); for(let k=0;k<3;k++) local(_R(-w/3,w/3), y0+H+1.0, _R(-d/4,d/4), 1.4, 1.0, 1.2, ox,oz,ry, 0xc8ccd0);
+  for(let f=1;f<floors;f++) for(const px of [-w/4, w/4]) if(Math.random()<0.6) local(px+_R(-1,1), y0+f*FH+0.4, d/2+0.2, 0.8, 0.55, 0.32, ox,oz,ry, 0xdcdcd4);   // Z207 rows of AC condensers
   footprint(ox,oz,ry,w,d); return H; }
 function officeTower(ox,oz,ry,w,d){ const floors=9+((Math.random()*9)|0), FH=3.4, H=floors*FH, y0=heightAt(ox,oz)-0.05, T=office((Math.random()*2)|0);
   const m=new THREE.Mesh(boxUV(w,H,d,8,FH*4), facadeMat(T,true)()); m.position.set(ox,y0+H/2,oz); m.rotation.y=ry; m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); m.userData.land=true; m.userData.h=H;

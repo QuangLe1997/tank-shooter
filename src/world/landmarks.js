@@ -2,7 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, detailize, floraMat, heightAt, inField, inZone, treeConifer, treePalm } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, detailize, floraMat, heightAt, inField, inZone, treeConifer, treePalm, villageHouse } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 const WALLS=[ ['#b9b1a4','#6f8aa6'], ['#9fa8b0','#46607a'], ['#c8a98a','#5a6e84'], ['#a99a8a','#3e5670'] ];   // [wall, glass]
@@ -64,19 +64,13 @@ function buildHills(){ const list=[], N=Math.round((MOBILE?40:90)*AREA_K/2);
 function paddyTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#8fbf4a'; x.fillRect(0,0,128,128);
   for(let r=0;r<16;r++){ x.fillStyle=r%2?'#a4d05a':'#7aae3c'; x.fillRect(0,r*8,128,5); } for(let n=0;n<40;n++){ x.fillStyle='rgba(200,230,255,0.35)'; x.fillRect(Math.random()*128,Math.random()*128,6,1.5); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
-const _hm={}; function houseMat(k, col, o){ return _hm[k]||(_hm[k]=detailize(new THREE.MeshStandardMaterial({ color:col, roughness:0.9 }), o)); }   // Z145 shared + weathered: lime-wash stained at the foot, moss-dark tiles
-function house(){ const g=new THREE.Group(), wall=houseMat('w', 0xe6d8b8, { scale:0.5, bump:0.02, alb:0.34, foot:1.0, streak:0.4 }), roof=houseMat('r', 0xb4562f, { scale:0.9, bump:0.03, alb:0.3, foot:0, streak:0.15, tiles:1 }), dark=houseMat('d', 0x4a3a28, { foot:0 });
-  const w=_R(6.4,8.4), d=_R(4.6,5.6), h=2.7, body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wall); body.position.y=h/2; body.castShadow=true; body.receiveShadow=true; g.add(body);
-  const sh=new THREE.Shape(); sh.moveTo(-d/2-0.6,0); sh.lineTo(d/2+0.6,0); sh.lineTo(0,1.9); sh.closePath();                                   // gable
-  const rg=new THREE.ExtrudeGeometry(sh,{depth:w+1.0,bevelEnabled:false}); rg.translate(0,0,-(w+1.0)/2); rg.rotateY(Math.PI/2); const rf=new THREE.Mesh(rg, roof); rf.position.y=h; rf.castShadow=true; g.add(rf);
-  const door=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.9,0.12), dark); door.position.set(0,0.95,d/2+0.02); g.add(door);
-  for(const sx of [-1,1]){ const win=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.8,0.1), dark); win.position.set(sx*w*0.3,1.5,d/2+0.02); g.add(win); }
-  g.userData={ w, d }; return g; }
 function buildVillage(){
   let houses=0; const H=Math.round(7*AREA_K/2);
   for(let t=0;t<H*14 && houses<H;t++){ const x=_R(-ARENA+14,ARENA-14), z=_R(-ARENA+14,ARENA-14); if(!free(x,z,4.2) || (RIVER.on && wetAt2(x,z,9))) continue;
-    const m=house(), rot=Math.round(_R(0,3))*Math.PI/2+_R(-0.15,0.15); m.position.set(x, heightAt(x,z)-0.05, z); m.rotation.y=rot; add(m);
-    const w=m.userData.w, ca=Math.cos(rot), sa=Math.sin(rot); for(let a=-w/2+1.5;a<=w/2-1;a+=2.6){ const bx=x+a*sa, bz=z+a*ca; solid(bx,bz,2.5,'house', a<-w/2+1.6?m:null); } claim(x,z,w/2+2); houses++; }
+    const m=villageHouse(), rot=Math.round(_R(0,3))*Math.PI/2+_R(-0.15,0.15); m.position.set(x, heightAt(x,z)-0.05, z); m.rotation.y=rot; add(m);   // Z207 a real village home
+    const w=m.userData.w, d=m.userData.d, ca=Math.cos(rot), sa=Math.sin(rot); let first=true;
+    for(let a=-w/2+1.5;a<=w/2-1;a+=2.6) for(let b=-d/2+1.5;b<=d/2-1.2;b+=2.6){ solid(x+a*ca+b*sa, z-a*sa+b*ca, 2.2,'house', first?m:null); first=false; }
+    claim(x,z,Math.max(w,d)/2+3); houses++; }
   // rice paddies beside the water (scenery, no collision)
   const tex=paddyTex(), pm=new THREE.MeshStandardMaterial({ map:tex, roughness:0.8 }); let paddies=0;
   for(let t=0;t<90 && paddies<Math.round(5*AREA_K/2);t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20), w=_R(14,22), d=_R(10,15); if(!free(x,z,Math.max(w,d)/2) || !nearWater(x,z,26)) continue;

@@ -1064,5 +1064,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function carBody\(o\)/.test(ca) && /ExtrudeGeometry/.test(ca) && /LatheGeometry/.test(ca) && ['sedan','hatch','suv','pickup','van','taxi','truck'].every(n=>ca.includes(`name:'${n}'`)) && /function scooter\(\)/.test(ca), 'seven car bodies + a scooter, built from real profiles');
   ok(/aRM/.test(ca) && /roughnessFactor = roughness\*vRM\.x/.test(ca) && /o\.wreck/.test(ca) && /export function crushVehicle\(c\)/.test(ca) && /crushVehicle\(c\)/.test(fs.readFileSync('src/world/decor.js','utf8')), 'glass gleams, rubber does not; wrecks; tanks pancake them'); }
 
+// Z207 village homes are real Vietnamese houses (classic tiled 3-bay · thatched · two-storey) with yards; city facades get street life
+{ const fs=await import('node:fs'); const ho=fs.readFileSync('src/world/houses.js','utf8'), ci=fs.readFileSync('src/world/city.js','utf8');
+  ok(/export function villageHouse\(\)/.test(ho) && /function classic\(K, X\)/.test(ho) && /function thatched\(K, X\)/.test(ho) && /function twoStorey\(K, X\)/.test(ho) && /function gableRoof\(/.test(ho) && /villageHouse\(\)/.test(fs.readFileSync('src/world/landmarks.js','utf8')), 'three village house kinds with a real pitched roof');
+  ok(/function yardProps\(/.test(ho) && /function kitchen\(/.test(ho) && /hoành phi/.test(ho) && /chuồng cọp/.test(ci) && /AC condensers/.test(ci), 'yards, kitchens, lacquered boards; AC units and window cages in town'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
