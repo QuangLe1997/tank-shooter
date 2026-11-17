@@ -1,6 +1,6 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
-import { SQUAD_AI } from '../../config.js';
-import { ARENA, BF, FT, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx } from '../hub.js';
+import { SQUAD_AI, FIELDCRAFT } from '../../config.js';
+import { ARENA, BF, FT, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke } from '../hub.js';
 
 export const SQUADS=[];
 let _sid=0;
@@ -65,6 +65,8 @@ function squadThink(sq, now){
   else if(d<A.assaultR || (T.tank===false && n>=3 && d<R*0.7)) st='assault';
   else st='fm';
   if(st!==sq.state){ sq.state=st; sq.path=null; if(st==='fm'){ sq.swapAt=now+R2(A.boundT); sq.bound=0; } }
+  { const C=FIELDCRAFT.smoke; if(S.stage>=2 && now>(sq.smokeAt||0) && (st==='fallback' || (st==='fm' && sp>0.45) || (st==='assault' && d>9 && sp>0.3))){   // Z220 SMOKE: to break contact, or to cross open ground under fire
+    sq.smokeAt=now+C.cdE*(0.8+Math.random()*0.4); const k=Math.min(d*0.5, C.ahead), sx=cx+ux*k, sz=cz+uz*k; throwSmoke(sx, sz, 'e', now); floatText('ĐỊCH THẢ KHÓI', '#e6e2d6', { x:sx, y:2.8, z:sz }, 13); } }
   // — per-man orders —
   const set=(e,g,stance,noFire,fk)=>{ e.sqGoal=g; e.sqStance=stance||null; e.sqNoFire=!!noFire; e.sqFireK=fk||1; };
   if(st==='fallback'){ for(const e of sq.m){ set(e, [e.pos.x-ux*14+(Math.random()-0.5)*4, e.pos.z-uz*14+(Math.random()-0.5)*4], null, false, 1.6); } return true; }

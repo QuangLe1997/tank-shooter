@@ -208,3 +208,22 @@ body.touch #weaponchip{font-size:10px;padding:2px 8px;}
   /* briefing + deploy: tighter type */
   #briefing .title{font-size:20px !important;} #briefing .br-brief{font-size:11px;line-height:1.35;max-width:92vw;} #briefing .br-hint{display:none;}
 }
+
+/* Z220 TỔ BỘ BINH — squad panel (desktop): order, posture, one tile per man coloured by what he is doing */
+#sqHud{position:absolute;left:14px;bottom:176px;width:236px;padding:7px 9px 7px;border-radius:10px;background:rgba(8,11,8,.66);border:1px solid rgba(155,224,74,.22);pointer-events:none;z-index:3;font-family:inherit;}
+#sqHud.hidden{display:none;} body.touch #sqHud{display:none;}
+#sqHud .sq-h{display:flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:1.8px;color:#cfe8a8;}
+#sqHud .sq-h b{font-weight:900;} #sqHud .sq-n{font-weight:900;color:#0c140a;background:#9be04a;border-radius:6px;padding:0 5px;letter-spacing:0;font-size:10px;}
+#sqHud .sq-p{margin-left:auto;font-weight:900;font-size:9px;letter-spacing:1.2px;padding:1px 6px;border-radius:5px;border:1px solid currentColor;}
+#sqHud .sq-p.adv{color:#9be04a;} #sqHud .sq-p.hold{color:#c8c4b8;} #sqHud .sq-p.fb{color:#ffcf5a;animation:sqBlink 1s steps(2) infinite;}
+@keyframes sqBlink{50%{opacity:.45}}
+#sqHud .sq-o{margin:4px 0 5px;font-size:10px;color:#e6e0d6;letter-spacing:.4px;} #sqHud .sq-o b{color:#ffd27a;font-weight:800;}
+#sqHud .sq-o kbd{font:800 9px/1 inherit;color:#0c140a;background:#e6e0d6;border-radius:3px;padding:1px 4px;margin-right:2px;}
+#sqHud .sq-g{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;}
+#sqHud .sq-g i{position:relative;display:block;height:20px;border-radius:4px;background:rgba(255,255,255,.06);border-bottom:3px solid var(--c,#888);font-style:normal;overflow:hidden;}
+#sqHud .sq-g i s{position:absolute;left:0;right:0;top:3px;text-align:center;text-decoration:none;font-size:9px;font-weight:900;color:#eef3e6;letter-spacing:.3px;}
+#sqHud .sq-g i u{position:absolute;left:0;top:0;height:2px;background:#7fe06a;}
+#sqHud .sq-g i.low u{background:#ff5a4a;} #sqHud .sq-g i.low{animation:sqBlink .8s steps(2) infinite;}
+#sqHud .sq-l{display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:5px;font-size:8.5px;letter-spacing:.6px;color:#bdb8ac;font-weight:700;}
+#sqHud .sq-l em{display:inline-block;width:6px;height:6px;border-radius:2px;background:var(--c);margin-right:3px;vertical-align:0;}
+#sqHud .t-f{--c:#ff9a4a;} #sqHud .t-c{--c:#6fc0ff;} #sqHud .t-a{--c:#c8f06a;} #sqHud .t-r{--c:#ffcf5a;} #sqHud .t-g{--c:#5fae3a;} #sqHud .t-l{--c:#ffd24a;} #sqHud .t-j{--c:#c08aff;}

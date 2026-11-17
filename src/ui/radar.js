@@ -1,8 +1,9 @@
 // ui/radar.js — RADAR / MINIMAP
-import { ALLY_TANKS, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, boss, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
+import { ALLY_TANKS, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, boss, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
 // ----------------------------- RADAR / MINIMAP -----------------------------
+const SQ_COL={ advance:'#ff9a5a', escort:'#ff9a5a', fm:'#ffcf5a', assault:'#ff3a2a', fallback:'#b8e08a' };
 export const radarCanvas=document.getElementById('radar'), radarCtx=radarCanvas.getContext('2d');
 export function drawRadar(){
   const c=radarCtx, W=radarCanvas.width, H=radarCanvas.height, cx=W/2, cy=H/2;
@@ -30,6 +31,12 @@ export function drawRadar(){
   for(const d of DEPOTS){ const x=toX(d.x), y=toY(d.z); c.strokeStyle=d.state==='ours'?'#9be04a':(d.state==='open'?'#ffcf5a':'#ff6a4a'); c.lineWidth=1.6; c.strokeRect(x-4,y-4,8,8); if(d.kind==='motor'){ c.fillStyle=c.strokeStyle; c.fillRect(x-1.5,y-1.5,3,3); } }
   for(const h of HELOS){ c.strokeStyle='rgba(255,74,42,0.9)'; c.lineWidth=1.2; c.beginPath(); c.arc(toX(h.dx),toY(h.dz),5,0,Math.PI*2); c.stroke(); }
   if(RELIC.live){ const x=toX(RELIC.x), y=toY(RELIC.z), pl=0.55+0.45*Math.sin(performance.now()/160); c.fillStyle='rgba(255,210,90,'+pl+')'; c.beginPath(); c.moveTo(x,y-6); c.lineTo(x+4.5,y); c.lineTo(x,y+6); c.lineTo(x-4.5,y); c.closePath(); c.fill(); c.strokeStyle='#fff3c8'; c.lineWidth=1; c.stroke(); }   // Z154 the relic: a pulsing gold gem
+  for(const sm of SMOKES){ c.fillStyle='rgba(220,220,210,0.28)'; c.beginPath(); c.arc(toX(sm.x),toY(sm.z), Math.max(3, sm.R*scale), 0, Math.PI*2); c.fill(); }   // Z220 smoke screens
+  for(const sq of SQUADS){ if(!sq.m.length || !sq.T) continue; let x=0, z=0; for(const e of sq.m){ x+=e.pos.x; z+=e.pos.z; } x/=sq.m.length; z/=sq.m.length;   // Z220 enemy squads: where each one is heading, coloured by its plan
+    let a=Math.atan2(sq.T.pos.x-x, sq.T.pos.z-z); if(sq.state==='fallback') a+=Math.PI; else if(sq.state==='fm') a+=(sq.flank||0)*(sq.flankA||0)*0.6;
+    const col=SQ_COL[sq.state]||'#ff9a5a', X=toX(x), Y=toY(z), ux=Math.sin(a), uz=Math.cos(a);
+    c.strokeStyle=col; c.fillStyle=col; c.lineWidth=1.4; c.globalAlpha=0.9; c.beginPath(); c.moveTo(X,Y); c.lineTo(X+ux*9,Y+uz*9); c.stroke();
+    c.beginPath(); c.moveTo(X+ux*12,Y+uz*12); c.lineTo(X+ux*7-uz*3,Y+uz*7+ux*3); c.lineTo(X+ux*7+uz*3,Y+uz*7-ux*3); c.closePath(); c.fill(); c.globalAlpha=1; }
   c.fillStyle='#9be04a'; for(const a of FT) c.fillRect(toX(a.pos.x)-1, toY(a.pos.z)-1, 2.5, 2.5);
   for(const at of ALLY_TANKS){ const x=toX(at.pos.x), y=toY(at.pos.z); c.save(); c.translate(x,y); c.rotate(Math.atan2(Math.cos(at.facing),Math.sin(at.facing))); c.fillStyle='#9be04a'; c.beginPath(); c.moveTo(4.5,0); c.lineTo(-3,2.8); c.lineTo(-3,-2.8); c.closePath(); c.fill(); c.restore(); }
   if(p){ const x=toX(p.pos.x), y=toY(p.pos.z);                                            // player arrow (facing)

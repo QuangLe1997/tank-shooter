@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, TRAIN, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, trainTick, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateCinematic, updateCity, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateHorizon, updateInfDead, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateRubble, updateScore, updateSkyMood, updateSoldiers, updateSquads, updateSunFollow, updateSupply, updateTankRigs, updateTowers, updateTrails, updateTroopBatch, updateUltimates, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
+import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, TRAIN, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, trainTick, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateCinematic, updateCity, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlameJet, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliDown, updateHorizon, updateInfDead, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateRubble, updateScore, updateSkyMood, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateTankRigs, updateTowers, updateTrails, updateTroopBatch, updateUltimates, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 export let last = performance.now();
@@ -25,7 +25,7 @@ export function loop(nowMs){
     updatePlayer(gdt, now);
     if(TRAIN.on) trainTick(gdt, now);   // Z182 the onboarding steps watch what you do
     buildUnitGrid(now);             // Z172 who-is-near-whom, once a frame
-    updateSquads(gdt, now);         // Z173 squad plans (enemy squads + our fireteam teams / focus)
+    updateSquads(gdt, now); updateFieldcraft(gdt, now);   // Z173 squad plans (enemy squads + our fireteam teams / focus) · Z220 grenades in flight + smoke screens
     updateEnemies(gdt, now);
     updateBoss(gdt, now);
     updateBullets(gdt, now);
@@ -60,7 +60,7 @@ export function loop(nowMs){
     updateCmdUI(now);                    // Z107 paratrooper cooldown on the phone strip
     updateLOD(now);                      // Z107 render budget: near-only soldier shadows, far guards hidden
     updatePowerHud(now);                 // Z107 live power rating vs this stage (1×/s)
-    updateBuffHUD(now);
+    updateBuffHUD(now); updateSquadHud(now);   // Z220 squad panel
     updateCamera(dt, now);
     updateWorldBars();
     updateAbilityUI(now);
@@ -73,7 +73,7 @@ export function loop(nowMs){
   else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); updateTankRigs(dt); }   // Z136 3 · 2 · 1: the world waits
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   // always-on FX + core idle
-  if(S.mode!=='playing'){ gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
+  if(S.mode!=='playing'){ updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now); updateCelebration(dt, now);   // Z140 fireworks + cheering after a win
   updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateDebris(dt); updateWrecks(dt); updateFlameJet(dt); updateBolts(dt); updateRocketAim(now); flushParticles();

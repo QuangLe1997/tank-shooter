@@ -1116,5 +1116,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/\{ _twr:true, t, gd,/.test(lo) && /if\(t && t\._twr\) return t\.gd\.alive/.test(lo) && !/t\.guard\b/.test(lo), 'smart missile: tower-guard targets use their own tag, never an enemy\'s guard field'); }
 
+// Z220 FIELDCRAFT (both sides): line of fire + peek, frag grenades + dodge, smoke screens; escort formation; squad panel; squads on the radar
+{ const fs=await import('node:fs'); const fc=fs.readFileSync('src/ai/fieldcraft.js','utf8'), inf=fs.readFileSync('src/actors/infantry.js','utf8'), ft=fs.readFileSync('src/actors/fireteam.js','utf8'), sq=fs.readFileSync('src/ai/squads.js','utf8'), hud=fs.readFileSync('src/ui/squad-hud.js','utf8'), rd=fs.readFileSync('src/ui/radar.js','utf8'), html=fs.readFileSync('index.html','utf8');
+  ok(/export function losBlocked\(/.test(fc) && /export function peekSpot\(/.test(fc) && /losBlocked\(e\.pos\.x, e\.pos\.z, T\.pos\.x, T\.pos\.z\)\)\{ e\.fireAt=now\+0\.6; wantPeek/.test(inf) && /losBlocked\(a\.pos\.x, a\.pos\.z, T\.pos\.x, T\.pos\.z\)\)\{ wantPeek\(a/.test(ft), 'no rounds into walls: a blocked line means edging out to a clear one (both sides)');
+  ok(/export function throwNade\(side/.test(fc) && /function enemyNade\(e, now\)/.test(inf) && /function allyNade\(a, now\)/.test(ft) && /nadeFlee\(e\.pos, _fl\)/.test(inf) && /nadeFlee\(a\.pos, _fl\)/.test(ft) && /blastAllies\(x, z, N\.R/.test(fc), 'frag grenades into cover / knots of men, and everyone runs from a live one');
+  ok(/export function throwSmoke\(/.test(fc) && /throwSmoke\(sx, sz, 'e', now\)/.test(sq) && /throwSmoke\(sx, sz, 'p', now\)/.test(ft) && /smokeSpreadK\(e\.pos\.x/.test(inf) && /smokeSpreadK\(a\.pos\.x/.test(ft), 'smoke screens to fall back / cross open ground; fire through smoke goes wild');
+  ok(/function formationSlot\(a\)/.test(ft) && /a\.goalKind==='form' && a\.ringOut!=null/.test(ft) && /FIELDCRAFT\.target\.coverMul/.test(inf), 'escort files on the move, all-round ring at a halt; the enemy shoots the man in the open first');
+  ok(/id="sqHud"/.test(html) && /export function updateSquadHud\(now\)/.test(hud) && /for\(const sq of SQUADS\)/.test(rd) && /for\(const sm of SMOKES\)/.test(rd), 'squad panel (order, posture, one tile per man) + enemy squad arrows and smoke on the radar'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

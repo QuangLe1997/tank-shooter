@@ -84,6 +84,7 @@ export * from './ai/tactics.js';
 export * from './ai/cover.js';
 export * from './ai/spatial.js';
 export * from './ai/squads.js';
+export * from './ai/fieldcraft.js';   // Z220 line of fire · grenades · smoke (both sides)
 export * from './actors/damage.js';
 export * from './world/towers.js';
 export * from './world/tower-kinds.js';
@@ -146,6 +147,7 @@ export * from './core/helpers.js';
 export * from './game/update.js';
 export * from './game/intro.js';
 export * from './ui/radar.js';
+export * from './ui/squad-hud.js';   // Z220 TỔ BỘ BINH panel
 export * from './core/profile.js';
 export * from './core/cloud.js';   // Z162 Firebase cloud save
 export * from './core/econ.js';   // Z162 server economy client

@@ -92,6 +92,16 @@ export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', 
 //   assault range · morale that breaks them · regroup time · suppression decay /s · covering-team fire-rate multiplier · A* node budget ·
 //   our side: focus-target radius · order reach · flank offset
 export const SQUAD_AI = { think:0.35, boundT:[3.2,4.6], boundStep:7, flankStep:0.25, flankMax:1.1, spacing:3, assaultR:12, breakMorale:0.3, rallyT:[6,9], suppDecay:0.3, suppressFireK:0.65, navBudget:6000, focusR:40, orderR:60, flankR:22 };
+// Z220 FIELDCRAFT (both sides): no rounds into a wall — a man whose line is blocked edges out to a spot with a clear shot · frag grenades into men behind
+//   cover or bunched up (everyone near a live grenade runs) · smoke screens to fall back or cross open ground under fire (fire through smoke goes wild)
+export const FIELDCRAFT = {
+  los: { step: 1.5, endSkip: 1.8, peekOff: [3, -3, 5.5, -5.5, 8, -8], peekHold: 3.2, peekR: 0.9 },
+  nade: { minD: 8, maxD: 20, cdE: [11, 17], cdA: [12, 18], liveE: 3, liveA: 3, gapE: 1.4, gapA: 1.0, fromStage: 2, iqMin: 0.3,
+          R: 4.4, dmgE: 30, dmgA: 46, fuseGround: 0.75, err: [0.8, 2.6], flee: 6.8, warnT: 2.4, score: 1.5 },
+  smoke: { R: 5.2, life: 10, ahead: 6.5, cdE: 24, cdA: 22, spreadMul: 2.6, puffEvery: 0.32 },
+  form: { moveV: 2.5, file: 4.2, file2: 2.6, rowGap: 3.2, lead: 0.55, ringR: 7.5, ringR2: 1.6 },
+  target: { coverMul: 1.35, proneMul: 1.18 },
+};
 export const INFANTRY = {
   rifle:{ hp:18, speed:4.4, keep:15, range:24, fireCd:1.5, dmg:4, bspeed:50, score:60 },
   rpg:  { hp:24, speed:3.8, keep:20, range:30, fireCd:5.0, aimT:1.0, dmg:22, rspeed:26, aoe:3.0, score:110 },
