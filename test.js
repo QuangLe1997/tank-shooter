@@ -1074,5 +1074,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function blob\(/.test(w) && /function chain\(/.test(w) && /function mergeVC\(/.test(w) && /trunk/.test(w) && !/const box=\(P,w,h,d/.test(w), 'animals are modelled from organic parts, not boxes');
   ok(/aPat/.test(w) && /PAT\.set\(zebraCoat,1\)/.test(w) && /PAT\.set\(giraffeCoat,2\)/.test(w) && /customProgramCacheKey=\(\)=>'wildCoat'/.test(w), 'zebra stripes and giraffe patches drawn per pixel'); }
 
+// Z209 horizon ranges are lit 3D relief with random hero massifs (never the same twice), rock on steep faces, snow caps, haze by distance
+{ const fs=await import('node:fs'); const h=fs.readFileSync('src/world/horizon.js','utf8');
+  ok(/const heroes=\[\]/.test(h) && /Math\.random\(\)\*1000/.test(h) && /function ridged\(/.test(h) && /computeVertexNormals/.test(h) && /MeshLambertMaterial/.test(h), 'mountains are sculpted relief, seeded fresh each match, lit by the sun');
+  ok(/snowLine/.test(h) && /banded cliff strata/.test(h) && /soft-capped/.test(h), 'rock, strata and snow by slope and height; summits soft-capped'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
