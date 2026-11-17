@@ -18,6 +18,8 @@ export const ENEMY_DEFS = {
   atgm:   { hp:52,  speed:4,   keep:30, range:46, fireCd:6.5, dmg:0, bspeed:0, score:290, scale:0.92, ram:6, canShoot:false, atgm:true, pal:{hull:0x8a7a52,turret:0x9a8a5e,barrel:0x3a3a30,tread:0x2e2818,accent:0xff3030} },   // Z80 TANK-DESTROYER: laser-guided missile
   engineer:{ hp:62, speed:5,   keep:26, range:0,  fireCd:0, dmg:0, bspeed:0, score:270, scale:1.0, ram:5, canShoot:false, engineer:true, pal:{hull:0x8a7a2a,turret:0x9a8a30,barrel:0x2a2a22,tread:0x2a2610,accent:0xffc020} },   // Z80 COMBAT ENGINEER: repairs damaged tanks
   gunship:{ hp:96,  speed:9,   keep:0,  range:34, fireCd:0, dmg:0, bspeed:0, score:420, scale:1.0,  ram:0, canShoot:false, air:true, pal:{hull:0x4a5040,turret:0x4a5040,barrel:0x22261e,tread:0x22261e,accent:0xff4ad0} },   // Z80 ATTACK HELICOPTER
+  heliBomb:{ hp:84, speed:18,  keep:0,  range:0,  fireCd:0, dmg:0, bspeed:0, score:400, scale:1.0,  ram:0, canShoot:false, air:true, bombHeli:true, pal:{hull:0x3a4434,turret:0x3a4434,barrel:0x1e221a,tread:0x1e221a,accent:0xff5a2a} },   // Z222 BOMBER HELICOPTER: bomb runs, no guns
+  heliTroop:{ hp:130, speed:13, keep:0,  range:0,  fireCd:0, dmg:0, bspeed:0, score:460, scale:1.0,  ram:0, canShoot:false, air:true, troopHeli:true, pal:{hull:0x5a6040,turret:0x5a6040,barrel:0x22261e,tread:0x22261e,accent:0xffc84a} },   // Z222 TRANSPORT: hovers, a squad climbs down a rope ladder
   launcher:{ hp:70, speed:4.2, keep:40, range:58, fireCd:7, dmg:0, bspeed:0, score:340, scale:1.0, ram:6, canShoot:false, truck:true, pal:{hull:0x9a8656,turret:0x86744a,barrel:0x2c2c24,tread:0x2a2418,accent:0xff6a3a} },   // Z116 ROCKET TRUCK: 6×6 with an 8-tube pod — siege & anti-air rockets
   carrier:{ hp:96,  speed:3.4, keep:24, range:0, fireCd:0,    dmg:0,  bspeed:0,  score:360, scale:1.0, ram:8,  canShoot:false, carrier:true, crew:3, pal:{hull:0x6a6234,turret:0x7a7240,barrel:0x8a8048,tread:0x282410,accent:0xd7c24a} },   // APC: carries 3 riflemen on top; kill the chassis OR all crew → it's down
 };
@@ -41,6 +43,8 @@ export const ENEMY_CLASS = {
   engineer:{ vi:'XE CÔNG BINH CỨU KÉO',     model:'BREM-1',           tip:'hàn sửa xe địch bị thương — diệt nó để địch hết hồi máu' },
   carrier: { vi:'XE THIẾT GIÁP CHỞ QUÂN',   model:'BTR TÍCH XÍCH',    tip:'dừng lại thả bộ binh — diệt trước khi lính xuống' },
   launcher:{ vi:'XE PHÓNG ROCKET',          model:'BM-21 GRAD',       tip:'bắn loạt rocket vòng cầu từ rất xa' },
+  heliBomb:{ vi:'TRỰC THĂNG NÉM BOM',       model:'MI-24 HIND (BOM)', tip:'không bắn — lao thẳng qua đầu rải một chuỗi bom; thấy nó vào đường bay thì bẻ lái tránh' },
+  heliTroop:{ vi:'TRỰC THĂNG ĐỔ QUÂN',      model:'MI-8 HIP',         tip:'dừng lơ lửng thả lính xuống thang dây — bắn hạ khi nó đang treo, lính trên thang rơi theo' },
   gunship: { vi:'TRỰC THĂNG TẤN CÔNG',      model:'MI-28',            tip:'chỉ súng bắn thẳng, pháo phòng không và tên lửa với tới' },
 };
 export const ENEMY_TRAITS = {

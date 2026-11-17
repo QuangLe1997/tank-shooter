@@ -1,7 +1,7 @@
 // actors/vehicles.js — Z80 enemy VEHICLES: flame tank, ATGM tank-destroyer, engineer repair truck, attack gunship, APC dismount (Z89)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, ENV, ROSTER } from '../../config.js';
+import { BALANCE, ENV, HELI, ROSTER } from '../../config.js';
 import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
@@ -164,17 +164,19 @@ export function buildGunship(pal){
 }
 export function updateGunship(e, dt, now, edt){
   const R=ROSTER.gunship, p=S.player, ud=e.mesh.userData;
+  const J=HELI.jink; if(now>(e.jinkAt||0)){ e.jinkAt=now+J.every[0]+Math.random()*(J.every[1]-J.every[0]); e.jT=(Math.random()<0.5?-1:1)*J.side*(0.4+Math.random()*0.6); e.jaT=(Math.random()-0.5)*2*J.alt; if(Math.random()<J.rev) e.dir=-(e.dir||1); }   // Z222 it weaves: hard jinks in and out of its orbit, up and down, sometimes reversing round
+  e.jo=(e.jo||0)+((e.jT||0)-(e.jo||0))*Math.min(1,dt*J.rate); e.ja=(e.ja||0)+((e.jaT||0)-(e.ja||0))*Math.min(1,dt*J.rate*0.7);
   e.orb=(e.orb??Math.atan2(e.pos.z-p.pos.z, e.pos.x-p.pos.x)) + (R.speed/R.orbit)*edt*(e.dir||1);
-  const tx=p.pos.x+Math.cos(e.orb)*R.orbit, tz=p.pos.z+Math.sin(e.orb)*R.orbit;
-  const ax=(tx-e.pos.x), az=(tz-e.pos.z); e.vel.x += (ax*0.9 - e.vel.x)*Math.min(1,dt*1.2); e.vel.z += (az*0.9 - e.vel.z)*Math.min(1,dt*1.2);
+  const tx=p.pos.x+Math.cos(e.orb)*(R.orbit+e.jo), tz=p.pos.z+Math.sin(e.orb)*(R.orbit+e.jo);
+  const ax=(tx-e.pos.x), az=(tz-e.pos.z); e.vel.x += (ax*1.1 - e.vel.x)*Math.min(1,dt*1.6); e.vel.z += (az*1.1 - e.vel.z)*Math.min(1,dt*1.6);
   const vl=Math.hypot(e.vel.x,e.vel.z), vmax=R.speed*1.6; if(vl>vmax){ e.vel.x*=vmax/vl; e.vel.z*=vmax/vl; }
   e.pos.x+=e.vel.x*edt; e.pos.z+=e.vel.z*edt; if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt*0.3; e.pos.z+=e.kbz*edt*0.3; e.kbx*=0.9; e.kbz*=0.9; }
   clampField(e.pos, 3);
-  e.pos.y = Math.max(heightAt(e.pos.x,e.pos.z),0) + R.alt + Math.sin(now*1.3+e.ph)*0.35;
+  e.pos.y = Math.max(heightAt(e.pos.x,e.pos.z),0) + R.alt + e.ja + Math.sin(now*1.3+e.ph)*0.35;
   const dx=p.pos.x-e.pos.x, dz=p.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, want=Math.atan2(dx,dz);
   e.facing += wrapAngle(want-e.facing)*Math.min(1,dt*2.2);
   const side=(e.vel.x*Math.cos(e.facing)-e.vel.z*Math.sin(e.facing)), fwd=(e.vel.x*Math.sin(e.facing)+e.vel.z*Math.cos(e.facing));
-  e.bank=(e.bank||0)+((-side*0.05)-(e.bank||0))*Math.min(1,dt*3); e.pitch=(e.pitch||0)+((fwd*0.025)-(e.pitch||0))*Math.min(1,dt*3);
+  e.bank=(e.bank||0)+((Math.max(-0.6,Math.min(0.6,-side*0.065)))-(e.bank||0))*Math.min(1,dt*3); e.pitch=(e.pitch||0)+((fwd*0.025)-(e.pitch||0))*Math.min(1,dt*3);
   e.mesh.position.set(e.pos.x, e.pos.y, e.pos.z); e.mesh.rotation.set(0, e.facing, 0); ud.body.rotation.set(e.pitch, 0, e.bank);
   ud.rotor.rotation.y += dt*38; ud.trot.rotation.x += dt*50; ud.nav.visible = (now*1.4)%1 < 0.12;   // Z198 a short strobe flash
   { const lyaw=wrapAngle(want-e.facing), ch=ud.chin; ch.rotation.y += wrapAngle(lyaw-ch.rotation.y)*Math.min(1,dt*5); if(ch.userData.el){ const el=Math.atan2(e.pos.y-heightAt(p.pos.x,p.pos.z)-1.2, d); ch.userData.el.rotation.x += (el-ch.userData.el.rotation.x)*Math.min(1,dt*5); } }   // the chin gun tracks you

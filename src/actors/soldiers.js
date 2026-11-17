@@ -168,8 +168,9 @@ export function animateSoldier(g, dist, dt, firing){
   const ready=u.aimT>0?0:1, rl=u.reload>0 ? Math.sin(Math.min(1,(1.7-u.reload)/1.7)*Math.PI) : 0; if(u.reload>0) u.reload=Math.max(0,u.reload-dt);
   u.armAdd = run*0.55*ready + 0.18*ready*(1-run) + rl*0.42 - u.kick*0.05; u.armRz = rl*0.55 + run*0.12*ready;
   u.upAdd = run*0.22 - u.flinch*0.35;
+  { const nw=performance.now()/1000, el=(u.aimElAt && nw-u.aimElAt<0.6) ? u.aimEl : 0; u.elS=(u.elS||0)+(el-(u.elS||0))*Math.min(1,dt*6); if(u.elS>0.01){ u.armAdd-=u.elS; u.upAdd-=u.elS*0.22; } }   // Z222 rifle raised to a target in the sky
   if(u.lh){ u.lh.rotation.x = rl*1.25; u.lh.rotation.z = -rl*0.5; u.lh.position.y = -0.15 - rl*0.08; }
-  if(u.head){ const scan = u.aimT>0||run>0.3 ? 0 : Math.sin(u.t*0.55+u.seed)*0.55*Math.max(0,Math.sin(u.t*0.21+u.seed*0.7)); u.head.rotation.y += (scan-u.head.rotation.y)*Math.min(1,dt*3); u.head.rotation.x = -u.flinch*0.3 + rl*0.35; }
+  if(u.head){ const scan = u.aimT>0||run>0.3 ? 0 : Math.sin(u.t*0.55+u.seed)*0.55*Math.max(0,Math.sin(u.t*0.21+u.seed*0.7)); u.head.rotation.y += (scan-u.head.rotation.y)*Math.min(1,dt*3); u.head.rotation.x = -u.flinch*0.3 + rl*0.35 - (u.elS||0)*0.5; }
   const P=u.pose; if(u.arms){ u.arms.rotation.x=(P?P.arm:0)+u.armAdd; u.arms.rotation.z=u.armRz; } u.up.rotation.x=(P?P.up:0)+u.upAdd;
 }
 // Z105 STANCES — call after animateSoldier(): 'stand' (walk cycle as is) · 'crouch' (kneel to fire / hide behind cover) ·

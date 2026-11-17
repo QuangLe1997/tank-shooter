@@ -72,7 +72,7 @@ function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
   if(a.at) for(const t of towers){ if(t.falling || (t.block && !blocks.includes(t.block))) continue; let live=0; for(const gd of t.guards) if(gd.alive) live++; if(!live) continue;   // Z175 a man with a launcher puts a rocket into a manned tower
     const d=Math.hypot(t.x-a.pos.x, t.z-a.pos.z), w=d*(1.1-0.12*Math.min(4,live)); if(d>5 && d<SQUAD.at.range+6 && w<bs){ bs=w; best={ kind:'towerAT', ref:t, pos:{ x:t.x, z:t.z } }; } }
   for(const G of liveGuards()){ const d=Math.hypot(G.gd.wx-a.pos.x, G.gd.wz-a.pos.z); if(d*0.9<bs && d<F.range+6){ bs=d*0.9; best={ kind:'guard', ref:G, pos:{ x:G.gd.wx, z:G.gd.wz } }; } }   // Z200 a man up on a platform is shot down first (he sees the whole field)
-  if(a.role!=='mortar') for(const e of enemies){ if(!e.def.air || e.dead || HELI_DOWN.some(h=>h.e===e)) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z), rng=a.at?SQUAD.at.range+14:(a.role==='mg'?SQUAD.mg.range:F.range)+10;   // Z200 helicopters: everyone with a gun that reaches
+  if(a.role!=='mortar') for(const e of enemies){ if(!e.def.air || e.dead || HELI_DOWN.some(h=>h.e===e)) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z), rng=a.at?SQUAD.at.range+SQUAD.ai.airRng+4:(a.role==='mg'?SQUAD.mg.range:F.range)+SQUAD.ai.airRng;   // Z200 helicopters: everyone with a gun that reaches
     if(d<rng && d*SQUAD.ai.airPri<bs){ bs=d*SQUAD.ai.airPri; best={ kind:'air', ref:e, pos:e.pos }; } }
   { const fo=FTSQ.focus; if(fo && enemies.includes(fo) && (!best || best.kind==='inf') && !(fo.def.air && a.role==='mortar')){ const d=Math.hypot(fo.pos.x-a.pos.x, fo.pos.z-a.pos.z); if(d<F.detect && d<bs+12) best={ kind:'inf', ref:fo, pos:fo.pos }; } }   // Z173 the squad's focus target (RPG men, their leader) first
   if(boss && boss.alive && boss.shielded){ const at=!!a.at;                                       // Z134 the general is immune while its shield pylons stand: the squad helps raze them
@@ -210,13 +210,13 @@ function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return fa
   if(T.kind==='towerAT'){ const t=T.ref; if(t.falling || !t.guards.some(g=>g.alive)){ a.target=null; return false; } if(d>SQUAD.at.range+6) return false;
     const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.2); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
     a.fireAt=now+SQUAD.at.cd*(0.85+Math.random()*0.3); a.g.userData.muzzle.getWorldPosition(_sV); towerRocket(t); return true; }
-  if(T.kind==='air'){ const e=T.ref; if(!enemies.includes(e) || HELI_DOWN.some(h=>h.e===e)){ a.target=null; return false; } const rng=a.at?SQUAD.at.range+14:(mg?SQUAD.mg.range:F.range)+10; if(d>rng) return false;   // Z200 shooting at a helicopter
-    const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.25); if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;
+  if(T.kind==='air'){ const e=T.ref; if(!enemies.includes(e) || HELI_DOWN.some(h=>h.e===e)){ a.target=null; return false; } const rng=a.at?SQUAD.at.range+SQUAD.ai.airRng+4:(mg?SQUAD.mg.range:F.range)+SQUAD.ai.airRng; if(d>rng) return false;   // Z200 shooting at a helicopter
+    const ang=Math.atan2(dx,dz); a.facing+=wrapAngle(ang-a.facing)*Math.min(1,0.3); { const u=a.g.userData; u.aimEl=Math.max(0, Math.min(1.25, Math.atan2(e.pos.y-heightAt(a.pos.x,a.pos.z)-1.4, Math.max(1,d)))); u.aimElAt=now; } if(now<a.fireAt || Math.abs(wrapAngle(ang-a.facing))>0.35 || soldierReloading(a.g)) return false;   // Z222 he looks up and lays the rifle on it, tracking it across the sky
     a.g.userData.muzzle.getWorldPosition(_sV); const dy=e.pos.y-_sV.y, D=Math.hypot(d,dy)||1;
     if(a.at){ a.fireAt=now+SQUAD.at.cd*(0.9+Math.random()*0.3); spawnBullet(_sV.x,_sV.z,ang,{ owner:'p', dmg:SQUAD.at.dmg*1.5*(1+(S.stage-1)*0.12), speed:44, color:0xffb060, r:0.34, life:3.2, maxDist:rng+12, y:_sV.y, type:'HE', homing:7, rocket:true, lockOn:true, aoe:2.2, aoeDmg:SQUAD.at.dmg*0.5, fx:'blast' }); bullets[bullets.length-1].tgt=e;   // a guided rocket, locked on it
       spawnPart(_sV.x-Math.sin(ang)*1.1,_sV.y,_sV.z-Math.cos(ang)*1.1, -Math.sin(ang)*6,0.5,-Math.cos(ang)*6, {color:0xd8d0c0, size:1.3, life:0.55, smoke:true, grav:0.3, drag:2, op:0.5}); sfx('rocketlaunch', a.pos); return true; }
     if(mg){ a.burst=(a.burst||SQUAD.mg.burst)-1; if(a.burst>0) a.fireAt=now+SQUAD.mg.gap; else { a.burst=SQUAD.mg.burst; a.fireAt=now+SQUAD.mg.pause; } } else a.fireAt=now+F.fireCd*(0.8+Math.random()*0.4);
-    const sp=95, j=()=>(Math.random()-0.5)*0.06; spawnPart(_sV.x,_sV.y,_sV.z, (dx/D+j())*sp, (dy/D+j())*sp, (dz/D+j())*sp, {tex:'flash', color:0xe8ef86, size:0.3, life:D/sp, grav:0, drag:0});   // the tracer climbs to it
+    const sp=95, j=()=>(Math.random()-0.5)*0.06; spawnPart(_sV.x,_sV.y,_sV.z, (dx/D+j())*sp, (dy/D+j())*sp, (dz/D+j())*sp, {tex:'flash', color:0xf4ff90, size:mg?0.5:0.42, life:D/sp, grav:0, drag:0});   // Z222 a brighter tracer you can follow up   // the tracer climbs to it
     if(Math.random()<(mg?SQUAD.ai.airHitMg:SQUAD.ai.airHit)){ damageEnemy(e, (mg?SQUAD.mg.dmg:F.dmg)*(1+(S.stage-1)*0.12)*(a.armed?SQUAD.armedMul:1)*SQUAD.ai.airDmgK); spawnPart(e.pos.x,e.pos.y,e.pos.z,(Math.random()-0.5)*6,2,(Math.random()-0.5)*6,{ color:0xffe6a0, size:0.18, life:0.25, grav:-12, drag:1.5 }); }
     spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.6,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('rifleShot', a.pos); return true; }
   if(d > (at?SQUAD.at.range:(T.kind==='guard'?F.range+6:(mg?SQUAD.mg.range:F.range)))) return false;
@@ -280,6 +280,7 @@ export function updateFireteam(dt, now){
       if(a.task==='cover' && atCover(a.pos, a.cover)) st='crouch';
       else if(a.demo) st='crouch';
       else if(T && T.kind==='shell') st='crouch';
+      else if(T && T.kind==='air') st='stand';                                                     // Z222 on his feet to fire up at a helicopter
       else if(T && (a.role==='mg' || (dT>SQUAD.proneR && T.kind==='inf' && !a.at))) st='prone';
       else if(T || a.task==='post') st='crouch'; }
     poseSoldier(a.g, st, dt);

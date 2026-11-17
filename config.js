@@ -82,7 +82,7 @@ export const DMG_TYPE = {
   TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC', vi:'NHIỆT ÁP' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
 };
 export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
-  rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A', launcher:'L' };   // Z116 the rocket truck is soft-skinned   // A = aircraft (Z80): only direct fire / flak / missiles reach it
+  rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A', heliBomb:'A', heliTroop:'A', launcher:'L' };   // Z116 the rocket truck is soft-skinned   // A = aircraft (Z80): only direct fire / flak / missiles reach it
 // ============================================================================
 // BATTLEFIELD ROSTER v2 (Z79) — enemy infantry on foot. Squads join waves from W2; RPG teams from stage 2.
 //   squads per wave = floor(base + wave·perWave + (stage−1)·perStage)   (S1W2 = 1 … S5W5 = 3)
@@ -338,7 +338,7 @@ export const SQUAD = {
   guardHit: 0.4,                               // chance one rifle shot drops a guard up on a watchtower (Z200 0.32 → 0.4: they aim for the platform first)
   // Z200 SMARTER SQUAD: helicopters are shot at (tracers climb; a share connect — AT men fire a guided rocket), the squad weighs its strength against
   //   what is around it (advance / hold / fall back behind the tank), a badly hurt man pulls back to the tank to patch up, covering men use cover
-  ai: { airHit:0.34, airHitMg:0.45, airDmgK:0.55, airPri:0.7, woundedHp:0.35, healed:0.85, heal:3.5, postureEvery:1.2, threatR:34, fallK:2.2, advK:0.8, barkGap:18 },
+  ai: { airHit:0.42, airHitMg:0.52, airDmgK:0.75, airPri:0.45, airRng:16, woundedHp:0.35, healed:0.85, heal:3.5, postureEvery:1.2, threatR:34, fallK:2.2, advK:0.8, barkGap:18 },
   lootDetect: 26,                              // soldiers spot dropped items this far away, carry them to the RALLY POINT
   at: { dmg: 34, aoe: 2.4, speed: 34, cd: 3.4, range: 26 },   // anti-tank launcher handed out by a captured weapon depot
   armedMul: 1.35,                              // rifle damage after re-arming at a captured weapon depot
@@ -362,6 +362,16 @@ export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30,
 //   onto it) before it is scuttled and it fights for you in our colours. APC → drops 3 of our men + an MG; rocket truck → anti-air first, then siege.
 export const HIJACK = { hp:0.3, chance:0.5, window:20, r:6.5, hold:1.2, footR:3.4, bail:2, types:['grunt','gunner','shield','heavy','sniper','atgm','carrier','launcher','pyro','mortar'], keepHp:0.45,
   apc:{ dmg:6, range:26, gap:0.12, burst:6, pause:1.2, troops:3 }, rocket:{ cd:6, salvo:4, gap:0.22, dmg:40, aoe:3.4, siegeR:60, airR:60, range:58 } };
+// Z222 THE HELICOPTER FLEET — three airframes, three ways to fight. mix = [type, weight, from stage]: an enemy "gunship" call rolls one of them.
+//   jink: the attack gunship weaves — every few seconds a hard lateral jink in/out of its orbit, a change of height, sometimes it reverses round.
+//   bomb: the bomber helicopter carries no guns — it lines up on you, runs in level and fast, lays a string of bombs across your position, overshoots,
+//   swings round wide and comes again. troop: the transport flies to a spot near you, STOPS in a hover, lowers a rope ladder and its squad climbs
+//   down one man at a time; then it lifts off, repositions and does it again (drops), and finally circles with its door gunner firing.
+export const HELI = { mix:[['gunship',1,1],['heliBomb',0.65,2],['heliTroop',0.75,2]], maxBomb:2, maxTroop:1,
+  jink:{ every:[1.3,2.8], side:9, alt:2.4, rev:0.3, rate:1.9 },
+  bomb:{ alt:12, speed:22, cruise:16, turn:1.15, bombs:6, gap:0.16, dmg:30, R:4.4, over:52, lead:1.3, g:22 },
+  troop:{ cruise:14, alt:13, turn:1.3, standoff:[22,38], ladder:7, deploy:1.1, men:[4,6], menMobile:[3,4], climb:3.0, gap:0.8, drops:3, recon:12, rpgEvery:3,
+    gunR:40, gunDmg:2.2, gunCd:0.15, burst:6, burstCd:3.4, loiterR:44 } };
 // Z104 PARATROOPERS — an enemy transport helicopter crosses the field every so often and drops a stick of paratroopers
 export const PARA = { fromStage: 1, fromWave: 2, every: [50, 72], everyMobile: [60, 85], troops: [6, 9], troopsMobile: [4, 5], alt: 27, speed: 15, fall: 6.0, gap: 0.3, rpgFrom: 2,
   helos:[1,2,2,3,3], helosMobile:[1,1,2,2,2], spread:10, trail:9, escortFrom:3, cargoFrom:2 };   // Z199 an airborne assault: a formation of transports, sticks of 6–9 from the ramp, canopies filling the sky, a cargo bundle, an escort gunship

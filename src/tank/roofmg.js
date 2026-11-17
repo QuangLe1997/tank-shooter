@@ -2,7 +2,7 @@
 //   trigger-disciplined bursts at infantry only, belt boxes swapped by hand, brass + link pouring off the receiver; the next rider takes over when he falls.
 import * as THREE from 'three';
 import { ROOF_MG, ROOF_MG_AI, ROOF_MG_BLOCK, ROOF_MG_UP } from '../../config.js';
-import { HELI_DOWN, PARAS, PROFILE, RIDER, S, animateSoldier, bloodSpurt, canAfford, damageEnemy, econBuy, enemies, floatText, heightAt, radio, riders, saveProfile, scene, sfx, shootGuard, spawnBullet, spawnPart, spawnRider, towers, updateCrewBtn, wrapAngle } from '../hub.js';
+import { HELI_DOWN, PARAS, PROFILE, RIDER, S, animateSoldier, bloodSpurt, canAfford, damageEnemy, econBuy, enemies, floatText, heightAt, muzzleLight, radio, riders, saveProfile, scene, sfx, shootGuard, spawnBullet, spawnPart, spawnRider, towers, updateCrewBtn, wrapAngle } from '../hub.js';
 
 export const MGR = { on:false, mesh:null, parts:null, id:null, stat:null, yaw:0, pitch:0, ammo:0, reloadUntil:0, reloadDur:1, swapUntil:0, gunner:null,
   tgt:null, tgtAt:0, shotT:0, burst:0, pauseUntil:0, kick:0, owner:null, hud:null, shots:0 };
@@ -123,20 +123,22 @@ export function updateRoofMG(dt, now){ const p=S.player, M=MGR.mesh; if(!p || !M
     if(u.head){ const scan = MGR.tgt ? 0 : Math.sin(now*0.9+(u.seed||0))*0.55; u.head.rotation.y += (scan - ph*0.6 - u.head.rotation.y)*Math.min(1,dt*4); u.head.rotation.x = -MGR.pitch*0.45 + MGR.kick*0.05; }   // eyes on the target / scanning the flank / on the box
   }
   hud(); }
-function fire(D, now){ const M=MGR.mesh, p=S.player; M.muzzle.getWorldPosition(_w); const a=MGR.yaw+(Math.random()-0.5)*D.spread*2, fx=Math.sin(a), fz=Math.cos(a), tr=(MGR.shots++%4)===0;
+function fire(D, now){ const M=MGR.mesh, p=S.player; M.muzzle.getWorldPosition(_w); const a=MGR.yaw+(Math.random()-0.5)*D.spread*2, fx=Math.sin(a), fz=Math.cos(a), tr=(MGR.shots++%2)===0;   // Z222 every other round a tracer (was 1 in 4)
   MGR.kick=1; MGR.heat=Math.min(1,(MGR.heat||0)+0.012);   // Z201b the barrel heats up
   const AI=ROOF_MG_AI, T=MGR.tgt;
   if(T && (T.air || T.para)){ const dx=T.x-_w.x, dy=T.y-_w.y, dz=T.z-_w.z, D3=Math.hypot(dx,dy,dz)||1, j=()=>(Math.random()-0.5)*D.spread*1.6;   // Z201 up at a helicopter / a paratrooper: the tracer climbs, a share connects
-    spawnPart(_w.x,_w.y,_w.z, (dx/D3+j())*100, (dy/D3+j())*100, (dz/D3+j())*100, { tex:'flash', color:tr?0xffb040:0xffe6a0, size:tr?0.34:0.2, life:D3/100, grav:0, drag:0 });
+    spawnPart(_w.x,_w.y,_w.z, (dx/D3+j())*100, (dy/D3+j())*100, (dz/D3+j())*100, { tex:'flash', color:tr?0xff8a2a:0xfff0b0, size:tr?0.62:0.38, life:D3/100, grav:0, drag:0 });
     const near=Math.max(0.35, 1-D3/(D.range*2.2));
     if(T.air && Math.random()<AI.air.hit*near){ damageEnemy(T.e, D.dmg*AI.dmgK*AI.air.dmgK); spawnPart(T.x,T.y,T.z,(Math.random()-0.5)*6,2,(Math.random()-0.5)*6,{ color:0xffe6a0, size:0.2, life:0.25, grav:-12, drag:1.5 }); }
     if(T.para && Math.random()<AI.para.hit*near){ const q=T.para, i=PARAS.indexOf(q); if(i>=0){ PARAS.splice(i,1); scene.remove(q.g); bloodSpurt(q.x, q.z, 0, -1, 0.8); spawnPart(q.x,q.y+3,q.z,0,-2,0,{ color:0x6a6646, size:2.4, life:1.2, smoke:true, grav:-3, drag:1, op:0.6 }); MGR.tgt=null; floatText('HẠ LÍNH DÙ', '#9be04a', {x:q.x,y:q.y+1,z:q.z}, 12); } } }
   else if(T && T.gd){ const G=T, d=Math.hypot(G.x-_w.x, G.z-_w.z)||1;   // up at a man on a tower: a tracer, and a chance to knock him off
-    spawnPart(_w.x,_w.y,_w.z, (G.x-_w.x)/d*90, (G.y-_w.y)/d*90, (G.z-_w.z)/d*90, { tex:'flash', color:tr?0xffb040:0xffe6a0, size:tr?0.34:0.2, life:d/90, grav:0, drag:0 });
+    spawnPart(_w.x,_w.y,_w.z, (G.x-_w.x)/d*90, (G.y-_w.y)/d*90, (G.z-_w.z)/d*90, { tex:'flash', color:tr?0xff8a2a:0xfff0b0, size:tr?0.62:0.38, life:d/90, grav:0, drag:0 });
     if(Math.random() < 0.04+D.dmg*0.007) shootGuard(G.t, G.gd, p.pos.x, p.pos.z); }
-  else spawnBullet(_w.x, _w.z, a, { owner:'p', inf:true, dmg:(D.dmg*(p.dmgMul||1)*0.5+D.dmg*0.5)*AI.dmgK, speed:105, color:tr?0xffa030:0xffe6a0, r:tr?0.24:0.16, life:0.5, maxDist:D.range+3, y:_w.y });   // Z201 harder-hitting rounds
+  else spawnBullet(_w.x, _w.z, a, { owner:'p', inf:true, dmg:(D.dmg*(p.dmgMul||1)*0.5+D.dmg*0.5)*AI.dmgK, speed:105, color:tr?0xff7a1e:0xfff0b0, r:tr?0.24:0.16, life:0.5, maxDist:D.range+3, y:_w.y, trailK:tr?2.6:1.7 });   // Z222 a fat, bright, long tracer line you can follow   // Z201 harder-hitting rounds
   // muzzle: flash, a few sparks, a wisp of smoke · receiver: brass (and a link) thrown out to the right
-  spawnPart(_w.x+fx*0.1,_w.y,_w.z+fz*0.1, fx*3,0.2,fz*3, { tex:'flash', color:0xfff0b0, size:M.heavy?0.75:0.55, life:0.045, grav:0, drag:9 });
+  spawnPart(_w.x+fx*0.1,_w.y,_w.z+fz*0.1, fx*3,0.2,fz*3, { tex:'flash', color:0xfff0b0, size:M.heavy?1.25:0.95, life:0.045, grav:0, drag:9 });
+  spawnPart(_w.x+fx*0.5,_w.y,_w.z+fz*0.5, fx*6,0,fz*6, { tex:'flash', color:0xffc060, size:M.heavy?0.8:0.6, life:0.06, grav:0, drag:6 });   // Z222 the flame tongue out of the flash hider
+  if(muzzleLight.intensity<2){ muzzleLight.position.set(_w.x+fx*0.6,_w.y+0.2,_w.z+fz*0.6); muzzleLight.color.setHex(0xffc070); muzzleLight.intensity=2.4; }   // each shot lights the hull up (never dims a cannon flash)
   for(let k=0;k<2;k++) spawnPart(_w.x,_w.y,_w.z, fx*9+(Math.random()-0.5)*5, 1+Math.random()*2.5, fz*9+(Math.random()-0.5)*5, { color:0xffc860, size:0.07, life:0.18, grav:6, drag:2 });
   if(MGR.shots%2===0) spawnPart(_w.x,_w.y+0.05,_w.z, fx*1.2,0.8,fz*1.2, { color:0xb8b0a4, size:0.35, life:0.8, smoke:true, grav:-0.6, drag:1.4, grow:1.4, op:0.28 });
   M.eject.getWorldPosition(_w2); const rx=Math.cos(MGR.yaw), rz=-Math.sin(MGR.yaw);

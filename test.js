@@ -1129,5 +1129,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export const LOCKON = \{ cone:/.test(cf) && /function seekOK\(b, x, z, inf\)/.test(lk) && /LOCKON\.cone/.test(lk) && /LOCKON\.minP/.test(lk) && /LOCKON\.allyR/.test(lk), 'the seeker looks ahead only and skips marks next to our tank / our men');
   ok(/\|\| dangerClose\(b\.tgt\)\) b\.tgt =/.test(lk) && /PHÁO ĐỊCH TRÚNG!/.test(ar), 'a mark that closes on us is dropped; enemy artillery hits are labelled'); }
 
+// Z222 helicopter fleet (bomber run, rope-ladder troop drop, weaving gunship), allies fire up at helicopters, brighter roof-MG tracers
+{ const fs=await import('node:fs'); const hl=fs.readFileSync('src/actors/helis.js','utf8'), en=fs.readFileSync('src/actors/enemies.js','utf8'), vh=fs.readFileSync('src/actors/vehicles.js','utf8'), ft=fs.readFileSync('src/actors/fireteam.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), mg=fs.readFileSync('src/tank/roofmg.js','utf8'), cf=fs.readFileSync('config.js','utf8'), E=await import('./src/data/enemies.js');
+  ok(E.ENEMY_DEFS.heliBomb && E.ENEMY_DEFS.heliBomb.air && E.ENEMY_DEFS.heliTroop && E.ENEMY_DEFS.heliTroop.air && E.ENEMY_CLASS.heliBomb && E.ENEMY_CLASS.heliTroop && /heliBomb:'A', heliTroop:'A'/.test(cf), 'two new airframes: bomber helicopter + troop transport (aircraft armour)');
+  ok(/export function buildHind\(/.test(hl) && /export function buildHip\(/.test(hl) && /_d\.bombHeli \? buildHind\(\) : _d\.troopHeli \? buildHip\(\)/.test(en) && /if\(type==='gunship'\) type=heliRoll\(\)/.test(en), 'each has its own model; an air-support call rolls one of the three');
+  ok(/function bombRun\(/.test(hl) && /dropBomb\(e\)/.test(hl) && /enemyGroundStrike\(b\.x, b\.z, B\.R/.test(hl) && /function troopRun\(/.test(hl) && /h\.st='hover'/.test(hl) && /buildLadder\(/.test(hl) && /startClimber\(e,/.test(hl) && /c\.st='fall'/.test(hl), 'bomb runs; the transport stops, lowers a ladder, men climb down (and fall if it is shot down)');
+  ok(/HELI\.jink/.test(vh) && /u\.aimEl=/.test(ft) && /T\.kind==='air'\) st='stand'/.test(ft) && /u\.armAdd-=u\.elS/.test(so), 'the gunship weaves; our men stand, raise their rifles and track a helicopter');
+  ok(/MGR\.shots\+\+%2/.test(mg) && /trailK:tr\?2\.6:1\.7/.test(mg) && /muzzleLight\.intensity=2\.4/.test(mg), 'roof MG: a tracer every other round, fat bright trails, a muzzle flash that lights the hull'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
