@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, typeMul, unitsNear, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, towers, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -22,9 +22,14 @@ for(let i=0;i<8;i++){
   const lab=new THREE.Sprite(new THREE.SpriteMaterial({ map:_lockLabel, transparent:true, depthTest:false, depthWrite:false })); lab.scale.set(2.4,0.72,1); lab.position.set(0,2.4,0); grp.add(lab);
   lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, dgrp, lab, life:0, max:0.55, snap:0});
 }
-export function targetAlive(t){ return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }   // dead targets splice out of enemies[]
+export function targetAlive(t){ if(t && t.guard) return t.gd.alive && !t.t.falling; return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }
+// Z217 a guard up a watchtower as a missile target (one stable object per guard, kept at his real position)
+function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ guard:true, t, gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7 }); o.pos.x=gd.wx; o.pos.y=(gd.wy||6)+0.9; o.pos.z=gd.wz; return o; }   // dead targets splice out of enemies[]
 // Z214 a smart missile goes for the helicopter first
 export function acquireLock(b){ let best=null, bd=1e9;                                     // nearest live enemy/boss to the missile itself
+  if(b.smart){ for(const e of enemies){ const w=e.def.air?0.35:e.def.inf?4:1, d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*w; if(d<bd){ bd=d; best=e; } }   // Z217 heat-seeking: aircraft › armour › guards › foot soldiers — never bricks or stone
+    for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const d=((gd.wx-b.x)**2+(gd.wz-b.z)**2)*1.6; if(d<bd){ bd=d; best=guardTarget(t, gd); } } }
+    if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){ bd=d; best=boss; } } return best; }
   for(const e of enemies){ const d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*(e.def.inf?9:(e.def.air && b.smart)?0.35:1); if(d<bd){bd=d;best=e;} }   // missiles prefer vehicles over foot soldiers
   if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
   return best; }
@@ -37,7 +42,7 @@ export function requestLock(t){
 //   aircraft's height, turned to face you, round a helicopter. The KHOÁ label always floats straight above.
 const _UP=new THREE.Vector3(0,1,0), _ln=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lqi=new THREE.Quaternion();
 export function groundNormal(x, z, out){ const e=1.2, hx=heightAt(x+e,z)-heightAt(x-e,z), hz=heightAt(x,z+e)-heightAt(x,z-e); return out.set(-hx/(2*e), 1, -hz/(2*e)).normalize(); }
-function seatLock(L){ const t=L.tgt, air=t.def && t.def.air;
+function seatLock(L){ const t=L.tgt, air=t.def && (t.def.air||t.def.guard);
   if(air){ L.grp.position.set(t.pos.x, t.pos.y||(heightAt(t.pos.x,t.pos.z)+8), t.pos.z); _ln.copy(camera.position).sub(L.grp.position).normalize(); }
   else { L.grp.position.set(t.pos.x, heightAt(t.pos.x,t.pos.z)+0.25, t.pos.z); groundNormal(t.pos.x, t.pos.z, _ln); }
   _lq.setFromUnitVectors(_UP, _ln); L.grp.quaternion.slerp(_lq, L.snap<0.05 ? 1 : 0.35);
@@ -88,7 +93,7 @@ function airDetonate(b, t){ const y=(t.pos.y||b.by+heightAt(b.x,b.z)), now=perfo
   for(let k=0;k<5;k++){ const a=Math.random()*6.283; spawnPart(b.x, y, b.z, Math.cos(a)*3, (Math.random()-0.3)*3, Math.sin(a)*3, { tex:'fire', color:0xfff0c0, color2:0xff4a10, size:1.6+Math.random(), grow:1.5, life:0.35+Math.random()*0.2, grav:0.5, drag:3 }); }
   for(let k=0;k<(MOBILE?8:16);k++){ const a=Math.random()*6.283, v=8+Math.random()*12; spawnPart(b.x, y, b.z, Math.cos(a)*v, (Math.random()-0.2)*9, Math.sin(a)*v, { color:0xffd890, color2:0xff5a10, size:0.16, life:0.6+Math.random()*0.5, grav:-14, drag:0.8 }); }
   spawnPart(b.x, y, b.z, 0, 0.6, 0, { color:0x22201c, size:3.2, life:2.2, smoke:true, grav:0.3, drag:1.2, grow:1.8, op:0.6, keep:true });
-  damageEnemy(t, b.dmg*0.9); aoeDamage(b.x, b.z, b.aoe, b.aoeDmg||b.dmg, false, now, b.type, true, siegeMul()); sfx('explode', { x:b.x, z:b.z }, 0.8); S.shake=Math.min(3, S.shake+0.35); }
+  if(!t.guard) damageEnemy(t, b.dmg*0.9); aoeDamage(b.x, b.z, b.aoe, b.aoeDmg||b.dmg, false, now, b.type, true, siegeMul()); sfx('explode', { x:b.x, z:b.z }, 0.8); S.shake=Math.min(3, S.shake+0.35); }
 const _ca=new THREE.Vector3(), _cb=new THREE.Vector3();   // Z149 chain-lightning ends
 export function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
@@ -115,7 +120,7 @@ export function spawnBullet(x, z, angle, o={}){
     by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf });   // inf = small-arms round (rifle/MG) — anything else is a tank-gun round
 }
 // Z112 what a hit on stone / timber / steel looks like, by the round: heavy explosive → chunks + a dust cloud, armour-piercing → a hard spray of chips, small arms → sparks and grit
-const _STONE=new Set(['fortwall','gate','boulder','brick','tower','concrete','hesco','camp','pipes','jersey','teeth']);
+const _STONE=new Set(['building','fortwall','gate','boulder','brick','tower','concrete','hesco','camp','pipes','jersey','teeth']);
 export function blockImpactFX(bl, b){ const gy=heightAt(b.x,b.z), y=gy+Math.max(0.6, Math.min(4, b.by)), heavy=b.aoe>0 || b.dmg>=40, stone=_STONE.has(bl.kind), col=stone?0xa89a84:(bl.steel||bl.kind==='hedgehog'?0xffe0a0:0x9a7a52);
   const bx=Math.hypot(b.vx,b.vz)||1, ux=-b.vx/bx, uz=-b.vz/bx;   // debris kicks back toward the shooter
   if(heavy){ for(let k=0;k<8;k++) spawnPart(b.x, y, b.z, ux*(3+Math.random()*5)+(Math.random()-0.5)*5, 2+Math.random()*5, uz*(3+Math.random()*5)+(Math.random()-0.5)*5, {color:col, size:0.22+Math.random()*0.25, life:0.7, grav:-18, drag:1});
@@ -137,14 +142,14 @@ export function updateBullets(dt, now){
       if(b.smart){ const sp=Math.hypot(b.vx,b.vz)||1; if(b.ign>0){ b.ign-=dt; if(b.ign<=0) smartIgnite(b); } else { const ns=Math.min(b.vmax, sp+b.vmax*3.4*dt); b.vx*=ns/sp; b.vz*=ns/sp; }   // Z214 eject → ignite → streak
         const rk=b.mesh.userData.rk; if(rk){ rk.rotation.z+=dt*16; if(rk.userData.glow) rk.userData.glow.visible = b.ign<=0; if(rk.userData.core) rk.userData.core.visible = b.ign<=0; } }
       if(!b.tgt || !targetAlive(b.tgt)) b.tgt = (b.flared && now<b.flared) ? null : acquireLock(b);            // sticky lock — re-acquire only if it dies · Z198 decoyed by flares: it flies on blind for a moment
-      const t=b.tgt;
+      const t=b.tgt; if(t && t.guard) guardTarget(t.t, t.gd);
       if(t){ requestLock(t);                                              // hi-tech reticle snaps onto the locked target
         const want=Math.atan2(t.pos.x-b.x,t.pos.z-b.z); let da=wrapAngle(want-b.angle);
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*(b.smart ? (b.ign>0?0:15) : (b.homing||5)))); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp;
         const dist=Math.hypot(t.pos.x-b.x,t.pos.z-b.z), ty=(t.pos.y||1.2);
-        if(dist < b.r+(t.r||1)+0.7){ if(t.def && t.def.aps && now>(t.apsCd||0) && Math.random()<t.def.aps){ t.apsCd=now+1.0; apsKill(b, t); recycleBullet(i); continue; } if(t.def && t.def.air) airDetonate(b, t); else detonate(b); recycleBullet(i); continue; }   // Z158 APS can kill a guided missile on its final dive · Z214 an aircraft is hit in the air     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
-        const desiredY=(t.def && t.def.air) ? ty : ty + b.loft*Math.min(1, dist/9);   // Z214 climbs straight to an aircraft's height                   // vault while far, dive to strike height as it closes (descends sooner → less loiter)
+        if(dist < b.r+(t.r||1)+0.7){ if(t.def && t.def.aps && now>(t.apsCd||0) && Math.random()<t.def.aps){ t.apsCd=now+1.0; apsKill(b, t); recycleBullet(i); continue; } if(t.guard){ airDetonate(b, t); shootGuard(t.t, t.gd, b.x, b.z); } else if(t.def && t.def.air) airDetonate(b, t); else detonate(b); recycleBullet(i); continue; }   // Z158 APS can kill a guided missile on its final dive · Z214 an aircraft is hit in the air     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
+        const desiredY=(t.def && (t.def.air||t.def.guard)) ? ty : ty + b.loft*Math.min(1, dist/9);   // Z214 climbs straight to an aircraft's height                   // vault while far, dive to strike height as it closes (descends sooner → less loiter)
         b.by += (desiredY-b.by)*Math.min(1, dt*4.2); } }                  // snappy climb/dive — short air time, no orbiting
     else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
       let best=null, bd=1e9; for(const e of enemies){ const d=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2; if(d<bd){bd=d;best=e;} }
@@ -163,18 +168,18 @@ export function updateBullets(dt, now){
       b._lx=b.x; b._ly=_wy; b._lz=b.z; }   // Z192 the gap a fast round jumps each frame is filled in: one unbroken streak, not a string of beads
     if(b.mesh.userData.rk || b.lockOn) rocketExhaust(b, b.x, _wy, b.z); else shellTrail(b, b.x, _wy, b.z);   // Z210 every other round: its own light smoke line
     if(b.owner==='e') nearMiss(b, S.player);   // Z192 motor flame + a long, lingering smoke ribbon (was a short puff, and the missile's sat at ground level)
-    const airborne = (b.lockOn && b.by>2.6) || (b.arc && b.by>3.0);   // lofted missiles / high shells sail over cover & bystanders — they strike on the way down
+    const airborne = (b.lockOn && (b.smart || b.by>2.6)) || (b.arc && b.by>3.0);   // Z217 a smart missile never strikes bricks / stone / cover — it flies over them to its target   // lofted missiles / high shells sail over cover & bystanders — they strike on the way down
 
     const overRange = !b.arc && b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);   // shells in flight always come down somewhere
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim){ groundHit(b.x, b.z, b.r||0.45); if(!b.inf && b.dmg>=30) dirtGeyser(b.x, b.z, Math.min(1.6, 0.7+b.dmg/120)); } recycleBullet(i); continue; }
-    if(b.owner!=='e'){ const px=b.x-b.vx*dt, pz=b.z-b.vz*dt, wb=fortIntactCross(px, pz, b.x, b.z);   // Z170 a sealed fortress: the round strikes the wall, however high it flies
+    if(b.owner!=='e' && !b.smart){ const px=b.x-b.vx*dt, pz=b.z-b.vz*dt, wb=fortIntactCross(px, pz, b.x, b.z);   // Z170 a sealed fortress: the round strikes the wall, however high it flies
       if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); surfaceHit(wb, b); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     // Z204 any round that strikes something solid goes off against it (flash, fireball for a shell, chips, dust) and leaves its mark — breakable or not
-    if(b.owner==='p') fenceShot(b);   // Z205 the compound wire takes rounds too
+    if(b.owner==='p' && !b.smart) fenceShot(b);   // Z205 the compound wire takes rounds too
     let blocked=false;   // Z192 (only the obstacles in this round's grid cells are tested) · Z193 enemy shells wear solid cover down at 40%
     const low = b.by < FORT.wallH+0.4;                                // Z111b below the parapet → a fortress wall stops it, even a lobbed shell
-    if(!airborne || low) for(const bl of blocksNear(b.x, b.z, b.r, _bnb)){ if(bl===b.ignore || (bl.ours && b.owner==='p')) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
+    if((!airborne || low) && !b.smart) for(const bl of blocksNear(b.x, b.z, b.r, _bnb)){ if(bl===b.ignore || (bl.ours && b.owner==='p')) continue; if(bl.fort ? !low : airborne) continue; if(inBlock(bl, b.x, b.z, b.r)){
       if((bl.kind==='obj' || bl.supply) && b.owner==='e'){ blocked=true; break; }   // Z194 nor their own supply bases   // enemy fire never hurts their own objective
       if(((bl.fort || bl.hard) && b.owner==='e') || ((bl.hard || bl.heavy) && b.inf)){   // Z193 rifle rounds only chip concrete / steel   // Z121 nor do rifle rounds (ours or theirs)
         surfaceHit(bl, b); blockImpactFX(bl, b); blocked=true; break; }   // Z112 enemy fire doesn't break rocks / hedgehogs either   // Z111b their own walls soak their fire — no damage to the stone

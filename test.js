@@ -1103,5 +1103,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function pieceHook\(mat\)/.test(c) && /texelFetch\(uPieces/.test(c) && /customDepthMaterial=depthMat\(\)/.test(c) && /export function buildingHit\(b, dmg\)/.test(c) && /function brokenEdge\(/.test(c) && /function addRubble\(/.test(c), 'floors are pieces that fall from the top, scars + rubble + ruin');
   ok(/kind==='building'\)\{ buildingHit\(b, dmg\)/.test(fs.readFileSync('src/world/cover.js','utf8')) && /cityBlast\(x, z, r\)/.test(fs.readFileSync('src/combat/spells.js','utf8')) && /kind==='topple'/.test(fs.readFileSync('src/world/decor.js','utf8')) && /cityCollapse\(S\.player\)/.test(fs.readFileSync('src/world/env-events.js','utf8')) && /updateCity\(gdt\)/.test(fs.readFileSync('src/game/loop.js','utf8')), 'shells / blasts / rams / the collapse event all reach the city'); }
 
+// Z217 smart missiles hunt heat only — aircraft › armour › tower guards › foot soldiers — and fly over bricks, stone, cover and walls
+{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/function guardTarget\(t, gd\)/.test(lo) && /if\(b\.smart\)\{ for\(const e of enemies\)/.test(lo) && /for\(const t of towers\)/.test(lo) && /\(b\.lockOn && \(b\.smart \|\| b\.by>2\.6\)\)/.test(lo) && /\(\(!airborne \|\| low\) && !b\.smart\)/.test(lo), 'smart missiles: heat targets incl. tower guards, never cover'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
