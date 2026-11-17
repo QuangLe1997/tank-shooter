@@ -1092,5 +1092,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function smartMissile\(\)/.test(lo) && /function smartIgnite\(b\)/.test(lo) && /function airDetonate\(b, t\)/.test(lo) && /smart:!!o\.smart, ign:o\.smart\?0\.13:0, vmax:sp\*1\.45/.test(lo) && /smart:!!g\.lock/.test(fs.readFileSync('src/combat/flame.js','utf8')), 'smart missile: model, ignition, airburst on aircraft');
   ok(/SMART-MISSILE POD/.test(ba) && /missile:\[\[-0\.24,Y\+0\.41,3\.08\]/.test(ba) && /case 'whoosh'/.test(fs.readFileSync('src/audio/synth.js','utf8')) && /function smartExhaust\(/.test(fs.readFileSync('src/fx/hitfx.js','utf8')), 'a 2×2 smart pod, whoosh, thin clean exhaust'); }
 
+// Z215 lock rings lie on the surface they mark: on the slope under a ground target, upright facing you round an aircraft; the artillery ring follows the slope
+{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/function seatLock\(L\)/.test(lo) && /export function groundNormal\(x, z, out\)/.test(lo) && /camera\.position\)\.sub\(L\.grp\.position\)/.test(lo) && /groundNormal\(x, z, new THREE\.Vector3\(\)\)/.test(fs.readFileSync('src/campaign/artillery.js','utf8')), 'lock rings sit on the surface they mark'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

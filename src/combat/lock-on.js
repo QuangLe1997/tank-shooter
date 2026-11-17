@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, typeMul, unitsNear, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -31,12 +31,21 @@ export function acquireLock(b){ let best=null, bd=1e9;                          
 export function requestLock(t){
   for(const L of lockFX){ if(L.tgt===t && L.life>0){ L.life=L.max; return; } }      // already locked → keep alive while a missile chases it
   const L=lockFX.find(L=>L.life<=0); if(!L) return;                                 // grab a free reticle (skip if all 8 busy)
-  L.tgt=t; L.life=L.max; L.snap=0; L.bgrp.scale.setScalar(2.5); L.grp.visible=true; L.grp.position.set(t.pos.x,1.4,t.pos.z);
+  L.tgt=t; L.life=L.max; L.snap=0; L.bgrp.scale.setScalar(2.5); L.grp.visible=true; seatLock(L);
   ringPulse(t.pos, 0xff7a3a, 1.7); sfx('beep'); }                                    // acquisition: scan-ring pulse + tech blip
+// Z215 the reticle sits ON the surface it marks: flat on the terrain under a ground target, tilted with the slope; standing upright at the
+//   aircraft's height, turned to face you, round a helicopter. The KHOÁ label always floats straight above.
+const _UP=new THREE.Vector3(0,1,0), _ln=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lqi=new THREE.Quaternion();
+export function groundNormal(x, z, out){ const e=1.2, hx=heightAt(x+e,z)-heightAt(x-e,z), hz=heightAt(x,z+e)-heightAt(x,z-e); return out.set(-hx/(2*e), 1, -hz/(2*e)).normalize(); }
+function seatLock(L){ const t=L.tgt, air=t.def && t.def.air;
+  if(air){ L.grp.position.set(t.pos.x, t.pos.y||(heightAt(t.pos.x,t.pos.z)+8), t.pos.z); _ln.copy(camera.position).sub(L.grp.position).normalize(); }
+  else { L.grp.position.set(t.pos.x, heightAt(t.pos.x,t.pos.z)+0.25, t.pos.z); groundNormal(t.pos.x, t.pos.z, _ln); }
+  _lq.setFromUnitVectors(_UP, _ln); L.grp.quaternion.slerp(_lq, L.snap<0.05 ? 1 : 0.35);
+  if(L.lab){ _lqi.copy(L.grp.quaternion).invert(); L.lab.position.set(0, air?2.6:2.4, 0).applyQuaternion(_lqi); } }
 export function updateLocks(dt){
   for(const L of lockFX){ if(L.life<=0) continue;
     if(!targetAlive(L.tgt)) L.life-=dt*2.4;                                          // target gone → fade fast
-    else { L.life-=dt; L.grp.position.set(L.tgt.pos.x,1.4,L.tgt.pos.z); }            // else track it
+    else { L.life-=dt; seatLock(L); }                                                 // else track it · Z215 laid on the surface it marks
     if(L.life<=0){ L.grp.visible=false; L.tgt=null; continue; }
     L.snap=Math.min(1, L.snap+dt*7); L.bgrp.scale.setScalar(1 + (1-L.snap)*1.5);     // brackets fly inward & snap shut on acquire
     L.bgrp.rotation.y += dt*0.8; L.rgrp.rotation.y -= dt*1.7; L.hgrp.rotation.y += dt*3.0; if(L.dgrp){ L.dgrp.rotation.y += dt*1.2; L.dgrp.scale.setScalar(1+(1-L.snap)*0.6); }   // counter-spinning tech layers

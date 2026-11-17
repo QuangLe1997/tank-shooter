@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { S, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, freeEnemyBar, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
+import { S, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -15,6 +15,7 @@ export function _artMortars(){ let n=0; for(const e of enemies) if(e.def.mortar)
 const _artM=(c,o)=>new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:o, side:THREE.DoubleSide, depthWrite:false, depthTest:false, blending:THREE.NormalBlending });
 export function makeArtLock(x,z,R,innerR){
   const root=new THREE.Group(), flat=new THREE.Group(); root.position.set(x, heightAt(x,z)+0.16, z); flat.rotation.x=-Math.PI/2; root.add(flat);
+  root.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), groundNormal(x, z, new THREE.Vector3()));   // Z215 the ring lies on the slope
   const edge=new THREE.Mesh(new THREE.RingGeometry(R-0.08,R+0.03,96), _artM(0xff2a1a,0.85)); edge.renderOrder=18; flat.add(edge);
   const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,40), _artM(0x000000,0)); shadow.renderOrder=19; flat.add(shadow);
   root.userData={ edge, shadow, R, innerR }; scene.add(root); return root; }
