@@ -1013,5 +1013,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/stepped tandem canopy/.test(v) && /quad ATGM rack/.test(v) && /5-blade main rotor/.test(v) && /_mergeColored\(P\[k\]\)/.test(v), 'gunship: armoured fuselage, tandem canopy, engines, stub wings with pods + ATGMs, 5-blade rotor (merged per material)');
   ok(/the chin gun tracks you/.test(v) && /FLARES/.test(v) && /b\.flared && now<b\.flared/.test(lo), 'the chin gun tracks; flares can pull a locked missile off'); }
 
+// Z199 the airborne assault: a formation of transports, sticks from the ramp, real canopies filling the sky, a cargo bundle, an escort
+{ const fs=await import('node:fs'); const C=await import('./config.js'); const pd=fs.readFileSync('src/actors/paradrop.js','utf8');
+  ok(C.PARA.helos.every(n=>n>=1) && Math.max(...C.PARA.helos)>=3 && C.PARA.troops[0]>=6 && C.PARA.alt>=25, 'a formation of up to 3 transports, 6–9 jumpers each, from high up');
+  ok(/the lowered ramp/.test(pd) && /jumpmaster/.test(pd) && /freefall a beat, then the canopy cracks open/.test(pd) && /the canopy breathes/.test(pd), 'tandem-rotor transport with the ramp down; jumpers freefall, then the canopy opens and breathes');
+  ok(/SMOKE_ZONES\.push/.test(pd) && /spawnEnemy\('gunship'/.test(pd) && /a supply bundle: cover to fight from/.test(pd) && /CANOPIES\.push/.test(pd), 'red smoke on the drop zone, an escort gunship, a cargo bundle that lands as cover, canopies left lying on the ground'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

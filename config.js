@@ -349,7 +349,8 @@ export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30,
 export const HIJACK = { hp:0.3, chance:0.5, window:20, r:6.5, hold:1.2, footR:3.4, bail:2, types:['grunt','gunner','shield','heavy','sniper','atgm','carrier','launcher','pyro','mortar'], keepHp:0.45,
   apc:{ dmg:6, range:26, gap:0.12, burst:6, pause:1.2, troops:3 }, rocket:{ cd:6, salvo:4, gap:0.22, dmg:40, aoe:3.4, siegeR:60, airR:60, range:58 } };
 // Z104 PARATROOPERS — an enemy transport helicopter crosses the field every so often and drops a stick of paratroopers
-export const PARA = { fromStage: 1, fromWave: 2, every: [42, 62], everyMobile: [55, 80], troops: [4, 6], troopsMobile: [3, 4], alt: 19, speed: 15, fall: 3.6, gap: 0.45, rpgFrom: 3 };
+export const PARA = { fromStage: 1, fromWave: 2, every: [50, 72], everyMobile: [60, 85], troops: [6, 9], troopsMobile: [4, 5], alt: 27, speed: 15, fall: 6.0, gap: 0.3, rpgFrom: 2,
+  helos:[1,2,2,3,3], helosMobile:[1,1,2,2,2], spread:10, trail:9, escortFrom:3, cargoFrom:2 };   // Z199 an airborne assault: a formation of transports, sticks of 6–9 from the ramp, canopies filling the sky, a cargo bundle, an escort gunship
 
 // BATTLEFIELD INSTALLATIONS (Z90) — enemy troop camps that keep feeding infantry, and rope bridges linking paired watchtowers.
 // Z194 ENEMY SUPPLY BASES — a fuel station and an ammo depot (count per stage), piece HP (× stage/loop/difficulty), alarm radius, how far a guard tank
