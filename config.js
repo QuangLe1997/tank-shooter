@@ -592,4 +592,8 @@ export const ROOF_MG_UP = [   // per gun, 3 levels each; the numbers are per lev
   { key:'mag', vi:'HỘP ĐẠN LỚN', per:'+20% băng đạn',   fx:0.20, cost:[{ c:300 },{ c:900 },{ d:8 }] },
   { key:'rel', vi:'KÍP NẠP',    per:'−12% thời gian thay hộp', fx:0.12, cost:[{ c:300 },{ c:900 },{ d:8 }] },
 ];
-export const ROOF_MG_BLOCK = ['agl','missile','rocket'];   // grenade-launcher / missile turrets: the launcher takes the roof, no pintle
+export const ROOF_MG_BLOCK = ['agl','missile','rocket'];
+// Z201 the roof gun as the tank's AIR DEFENCE and anti-infantry gun: helicopters first (it reaches up and out further — rangeK — and a share of the burst
+//   connects), then paratroopers still hanging under their canopies, men on the ground, tower guards, and last of all armour (rifle-calibre rounds only
+//   chip it); hits harder all round (dmgK); and when the gunner is killed with nobody left on the roof a reserve man climbs up out of the hull
+export const ROOF_MG_AI = { dmgK:1.3, air:{ rangeK:1.7, hit:0.55, dmgK:0.9, pri:0.55 }, para:{ rangeK:1.9, hit:0.32 }, armour:true, reserve:2, relieve:2.4 };   // grenade-launcher / missile turrets: the launcher takes the roof, no pintle
