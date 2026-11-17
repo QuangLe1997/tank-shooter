@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BALANCE } from '../../config.js';
-import { S, aoeDamage, bigExplode, blastAllies, blastAllyTanks, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, freeEnemyBar, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
+import { S, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, freeEnemyBar, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -76,11 +76,11 @@ export function updateArtillery(dt, now){
   if(S.stage<2 || mort===0 || boss){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down
   ART.t-=dt; if(ART.t>0) return;
   if(ART.phase==='rest'){ tip('arty'); ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
-  else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar); ART.t=0; }
+  else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.max(1, Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar) - artyShotCut()); ART.t=0; }   // Z197 no radar → fewer shells
   else if(ART.phase==='barrage'){
-    const p=S.player; if(p) artLockStrike(p.pos.x, p.pos.z);     // lock the player's CURRENT spot each shot → must keep moving (the firing mortar flashes at LAUNCH)
+    const p=S.player, er=artyErr(), ea=Math.random()*6.283, ed=er*(0.5+Math.random()*0.7); if(p) artLockStrike(p.pos.x+Math.cos(ea)*ed, p.pos.z+Math.sin(ea)*ed);   // Z197 blind without the radar: the shells land wide     // lock the player's CURRENT spot each shot → must keep moving (the firing mortar flashes at LAUNCH)
     ART.shots--;
-    if(ART.shots<=0){ ART.phase='rest'; ART.t=C.restMin + Math.random()*(C.restMax-C.restMin); }
+    if(ART.shots<=0){ ART.phase='rest'; ART.t=(C.restMin + Math.random()*(C.restMax-C.restMin))*artyRestMul(); }   // Z197 … and the barrages come less often
     else ART.t=C.shotSpacing;
   }
 }

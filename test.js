@@ -1002,5 +1002,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function flattenPad\(/.test(su) && /flattenPad\(x, z, CAMP_R/.test(cp) && /buildSupply\('far'\)/.test(fs.readFileSync('src/world/cover.js','utf8')), 'compounds sit on levelled ground; far corners → camps → near corners');
   ok(/signBack\(\)/.test(su) && /\[Math\.PI,-0\.2\]/.test(su) && /SUPPLY\.bases\) if\(Math\.hypot/.test(zn), 'signs read right from both sides; nothing is scattered inside a compound'); }
 
+// Z197 the radar station: a sweeping phased array high on a lattice tower, AA guns, artillery blinded when it falls
+{ const fs=await import('node:fs'); const rd=fs.readFileSync('src/world/radar.js','utf8'), su=fs.readFileSync('src/world/supply.js','utf8'), ar=fs.readFileSync('src/campaign/artillery.js','utf8');
+  ok(/function taperLattice\(/.test(rd) && /export function radarTower\(/.test(rd) && /panelMat\(\)/.test(rd) && /B\.head\.rotation\.y\+=dt\*/.test(su), 'a tall lattice radar tower whose phased array sweeps without stopping');
+  ok(/export function aaGun\(/.test(rd) && /updateAAGun\(pc\.mesh, pc, dt, now, p\)/.test(su) && /export function radome\(/.test(rd), 'twin AA guns swing onto you and fire; a radome; the usual wire, gate and garrison');
+  ok(/artyShotCut\(\)/.test(ar) && /artyErr\(\)/.test(ar) && /artyRestMul\(\)/.test(ar) && /toppleTower\(b, dir, now\)/.test(su), 'the tower topples; with the radar gone the barrages come less often, with fewer and wilder shells'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

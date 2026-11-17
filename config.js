@@ -355,7 +355,7 @@ export const PARA = { fromStage: 1, fromWave: 2, every: [42, 62], everyMobile: [
 // Z194 ENEMY SUPPLY BASES — a fuel station and an ammo depot (count per stage), piece HP (× stage/loop/difficulty), alarm radius, how far a guard tank
 //   strays, garrison (riflemen [min,max], guard tanks [early,late]), gunships called per base [min,max], armour called in, and what losing each costs the enemy
 export const SUPPLYB = { perStage:{ total:[3,3,4,4,4] }, hpPerStage:0.15,   // Z195 3–4 compounds, fuel and ammo alternating, in the corners of the map
-  hp:{ fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110 },
+  hp:{ radartower:560, radome:220, aagun:150, fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110 },
   alertR:46, leash:40, guards:[3,6], tanks:[1,1], heli:[1,3], heliCd:40, reinf:2, tankCd:30,
   cut:{ speed:0.12, tanks:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
 export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };

@@ -6,9 +6,9 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, hitsHull, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radio, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, hitsHull, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple } from '../hub.js';
 
-export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0 };
+export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
 export function supplySpeed(){ return Math.max(SUPPLYB.cut.min, 1-SUPPLYB.cut.speed*SUPPLY.fuel); }
 export function supplyDmg(){ return Math.max(SUPPLYB.cut.min, 1-SUPPLYB.cut.dmg*SUPPLY.ammo); }
@@ -17,7 +17,7 @@ export function supplyRate(){ return 1+SUPPLYB.cut.rate*SUPPLY.ammo; }
 export function trimWaveForSupply(q){ const C=SUPPLYB.cut, isInf=t=>t==='squad'||(ENEMY_DEFS[t]&&ENEMY_DEFS[t].inf), isTank=t=>ENEMY_DEFS[t]&&!ENEMY_DEFS[t].inf&&!ENEMY_DEFS[t].air&&!ENEMY_DEFS[t].bomber;
   const cut=(test, k)=>{ if(k<=0) return; const idx=[]; q.forEach((t,i)=>{ if(test(t)) idx.push(i); }); let n=Math.min(idx.length-1, Math.round(idx.length*Math.min(0.6,k))); while(n-->0){ const j=idx.pop(); q.splice(j,1); } };
   cut(isTank, C.tanks*SUPPLY.fuel); cut(isInf, C.inf*SUPPLY.camp); return q; }
-export function resetSupply(){ for(const B of SUPPLY.bases){ if(B.decor) scene.remove(B.decor); if(B.fence){ scene.remove(B.fence.a, B.fence.b); B.fence.a.dispose(); B.fence.b.dispose(); } for(const pc of B.pieces) if(pc.mesh) scene.remove(pc.mesh); } SUPPLY.bases.length=0; SUPPLY.fuel=SUPPLY.ammo=SUPPLY.camp=0; }
+export function resetSupply(){ for(const B of SUPPLY.bases){ if(B.decor) scene.remove(B.decor); if(B.fence){ scene.remove(B.fence.a, B.fence.b); B.fence.a.dispose(); B.fence.b.dispose(); } for(const pc of B.pieces) if(pc.mesh) scene.remove(pc.mesh); } SUPPLY.bases.length=0; SUPPLY.fuel=SUPPLY.ammo=SUPPLY.camp=SUPPLY.radar=0; }
 
 // ---------- materials / textures ----------
 let _M=null;
@@ -126,8 +126,11 @@ function signMat(kind){ if(SIGN_MAT[kind]) return SIGN_MAT[kind]; const W=256, H
   else if(kind==='military'){ x.fillStyle='#f4f2ea'; x.fillRect(0,0,W,H); x.fillStyle='#c81e1e'; x.fillRect(0,0,W,46); txt('KHU VỰC QUÂN SỰ',24,30,'#fff'); txt('CẤM VÀO',82,46,'#c81e1e'); txt('Lính gác được phép nổ súng',128,20,'#222',700); }
   else if(kind==='mines'){ x.fillStyle='#c81e1e'; x.fillRect(0,0,W,H); x.fillStyle='#f4f2ea'; x.beginPath(); x.arc(60,70,26,0,7); x.fill(); x.fillRect(46,88,28,16); x.fillStyle='#c81e1e'; x.beginPath(); x.arc(51,68,7,0,7); x.arc(69,68,7,0,7); x.fill();   // skull
     x.strokeStyle='#f4f2ea'; x.lineWidth=7; x.beginPath(); x.moveTo(26,112); x.lineTo(94,140); x.moveTo(94,112); x.lineTo(26,140); x.stroke(); x.textAlign='left'; x.font=F(40); x.fillStyle='#f4f2ea'; x.fillText('CÓ MÌN!',112,70); x.font=F(20,800); x.fillText('Không ra khỏi lối đi',112,108); }
+  else if(kind==='radar'){ x.fillStyle='#f2c21a'; x.fillRect(0,0,W,H); x.fillStyle='#111'; x.beginPath(); x.arc(58,80,9,0,7); x.fill();   // radiation trefoil
+    for(let k=0;k<3;k++){ const a=-Math.PI/2+k*2.094; x.beginPath(); x.moveTo(58,80); x.arc(58,80,42,a-0.52,a+0.52); x.closePath(); x.fill(); } x.fillStyle='#f2c21a'; x.beginPath(); x.arc(58,80,15,0,7); x.fill(); x.fillStyle='#111'; x.beginPath(); x.arc(58,80,9,0,7); x.fill();
+    x.textAlign='left'; x.font=F(26); x.fillText('BỨC XẠ',112,58); x.fillText('ĐIỆN TỪ',112,88); x.font=F(20,800); x.fillText('CẤM VÀO KHU ĂNG-TEN',108,124); }
   else if(kind==='halt'){ x.fillStyle='#c81e1e'; x.fillRect(0,0,W,H); x.strokeStyle='#f4f2ea'; x.lineWidth=6; x.strokeRect(8,8,W-16,H-16); txt('DỪNG LẠI!',62,52,'#f4f2ea'); txt('TRẠM GÁC — XUẤT TRÌNH GIẤY TỜ',118,19,'#f4f2ea',800); }
-  else { x.fillStyle='#2e3a26'; x.fillRect(0,0,W,H); x.strokeStyle='#d8d0b8'; x.lineWidth=3; x.strokeRect(5,5,W-10,H-10); txt(kind==='nameA'?'KHO ĐẠN DƯỢC':kind==='nameC'?'TRẠI LÍNH':'TRẠM NHIÊN LIỆU',H*0.55,40,'#f0e8d0'); }
+  else { x.fillStyle='#2e3a26'; x.fillRect(0,0,W,H); x.strokeStyle='#d8d0b8'; x.lineWidth=3; x.strokeRect(5,5,W-10,H-10); txt(kind==='nameA'?'KHO ĐẠN DƯỢC':kind==='nameC'?'TRẠI LÍNH':kind==='nameR'?'TRẠM RADAR':'TRẠM NHIÊN LIỆU',H*0.55,40,'#f0e8d0'); }
   grime(); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4;
   return SIGN_MAT[kind]=new THREE.MeshStandardMaterial({ map:t, roughness:0.75, metalness:0.15 }); }
 let _sb=null; function signBack(){ return _sb||(_sb=new THREE.MeshStandardMaterial({ color:0x6a6c64, roughness:0.7, metalness:0.4, side:THREE.BackSide })); }
@@ -234,12 +237,24 @@ function lattice(K, x, z, h){ const w=0.55, c=0x56584f; for(const [sx,sz] of [[-
       K.add('metal', _xf(new THREE.BoxGeometry(along?0.06:2*w,0.06,along?2*w:0.06),mx,y,mz), c);
       K.add('metal', _xf(new THREE.BoxGeometry(along?0.05:L,0.05,along?L:0.05),mx,y-1,mz,along?a:0,0,along?0:a), c); } }
   K.add('metal', B3(1.8,0.12,1.8,x,h,z), c); K.add('metal', B3(1.8,0.6,0.05,x,h+0.35,z+0.9), c); K.add('glow', B3(0.6,0.4,0.3,x-0.4,h+0.6,z+0.95), 0xffffff); K.add('glow', B3(0.6,0.4,0.3,x+0.4,h+0.6,z+0.95), 0xffffff); }
+const RADAR_R=21;
+function buildRadar(s){ flattenPad(s[0], s[1], RADAR_R*0.95, RADAR_R*1.35); const B=newBase('radar', s[0], s[1], RADAR_R, 1);
+  const tw=piece(B, 'radartower', radarTower(), 0, -2, 0, { r:3.0 }, true); B.tower=tw; B.head=tw.mesh.userData.head;
+  piece(B, 'radome', radome(), -9.5, -6, 0, { r:3.3 }); for(const [lx,lz] of [[-8,6.5],[8.5,3]]) piece(B, 'aagun', aaGun(), lx, lz, Math.PI*0.1, { r:1.9 });
+  const K=kit(); radarYard(K); for(const [cx,cz] of [[-8,6.5],[8.5,3]]) for(let k=0;k<14;k++){ const a=k/14*6.283; if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<0.35) continue; for(const L of [0,1]) K.add('canvas', _xf(new THREE.BoxGeometry(1.0,0.42,0.5),cx+Math.sin(a)*2.6,0.22+L*0.42,cz+Math.cos(a)*2.6,0,a+L*0.2,0), 0xbca57a); }   // sandbagged gun pits
+  const SG=[['military',-6,16.2,0],['radar',6,16.2,0],['radar',3,-1,0,1.3],['mines',-16.1,0,-Math.PI/2],['mines',16.1,-4,Math.PI/2],['military',0,-15.1,Math.PI]];
+  signPosts(K, SG); const nm=gate(K, 16, 8, 'nameR', B);
+  const d=K.bake(false); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 16, nm);
+  fenceBase(B, -16.5, 16.5, -15, 16, 8);
+  for(const [lx,lz,ry] of [[-13,-12,0.8],[13,-12,-0.8],[-13,13,-0.6],[13,13,0.6]]) nest(B, lx, lz, ry);
+  B.garrison=true; }
 export function buildSupply(phase){   // Z196 'far' — the two enemy-side corners (before the camps) · 'near' — the rest (after them)
   if(phase!=='near'){ const st=Math.min(4,S.stage-1), N=SUPPLYB.perStage.total[st], far=[[-1,-1],[1,-1]].sort(()=>Math.random()-0.5), near=[[-1,1],[1,1]].sort(()=>Math.random()-0.5);
     const kinds=Math.random()<0.5 ? ['fuel','ammo','ammo','fuel'] : ['ammo','fuel','fuel','ammo']; SUPPLY.plan=far.concat(near).slice(0,N).map((c,i)=>({ c, kind:kinds[i] })); }
   const todo=(SUPPLY.plan||[]).filter((q,i)=>phase==='near' ? i>=2 : i<2);
   for(const q of todo){ const [sx,sz]=q.c, kind=q.kind, R=(kind==='fuel'?FUEL_R:AMMO_R)*SUPPLY_K, jx=Math.random()*30, jz=Math.random()*30, s=scanSite(R, (x,z)=>Math.hypot(x-sx*(ARENA-jx), z-sz*(ARENA-jz))); if(!s) continue;   // the free spot nearest this corner
     if(kind==='fuel') buildFuel(s); else buildAmmo(s); }
+  if(phase!=='near'){ const jx=_R(-40,40), s=scanSite(RADAR_R, (x,z)=>-heightAt(x,z)*8 + Math.hypot(x-jx, z+ARENA*0.6)*0.25, { maxZ:ARENA*0.05 }); if(s) buildRadar(s); }   // Z197 the radar on the highest free ground of the enemy half
 }
 // the troop camps (world/camps.js) are bases too: same guards, same alarm, losing one costs the enemy troops
 export function registerCampBase(camp){ const B=newBase('camp', camp.x, camp.z, CAMP_R, 1, camp.ang); B.camp=camp; B.garrison=true; B.gInf=Math.round(Math.min(SUPPLYB.guards[1]-2, 2+S.stage)*(MOBILE?0.7:1));
@@ -281,7 +296,11 @@ function cookOff(x, z, n, R, dmg){ for(let k=0;k<n;k++) setTimeout(()=>{ if(S.mo
     if(k%2===0) aoeDamage(q.x, q.z, R*0.6, dmg, false, performance.now()/1000, 'HE'); }, 120+k*(240+Math.random()*200)); }
 function pieceDown(b){ const B=b.supply, pos={x:b.x,z:b.z}, gy=heightAt(b.x,b.z), now=performance.now()/1000; const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
   const char=(k)=>{ b.mesh.traverse(o=>{ if(o.material&&o.material.color){ if(!o.material.userData.own){ o.material=o.material.clone(); o.material.userData.own=true; } o.material.color.multiplyScalar(k); if(o.material.emissive) o.material.emissive.setHex(0); } }); };
-  if(b.kind==='fueltank'){ bigExplode(pos, 0xff7a2a, 3.2); fireball(pos, 3.2); shockDome(b.x, b.z, 16, 0xffc890); decalScorch(b.x, b.z, 10, 1); deformCrater(b.x,b.z,2.6,0.4); aoeDamage(b.x, b.z, 8, 80, false, now, 'HE');
+  if(b.kind==='radartower'){ const p=S.player, dir=p ? Math.atan2(b.x-p.pos.x, b.z-p.pos.z) : Math.random()*6.283; toppleTower(b, dir, now); bigExplode(pos, 0xffd27a, 2.0); for(let k=0;k<(MOBILE?8:16);k++) spawnPart(b.x, gy+18*Math.random()+2, b.z, _R(-6,6), _R(2,8), _R(-6,6), { color:0x9fd8ff, size:0.25, life:0.6, grav:-14, drag:1 });   // shorting electrics
+    char(0.35); B.fires.push({ x:b.x, z:b.z, y:gy+1, t:20, s:1.0 }); sfx('bigexplode', pos); }
+  else if(b.kind==='aagun'){ bigExplode(pos, 0xff8a3a, 1.4); fireball(pos, 1.0); char(0.25); b.mesh.userData.turret && (b.mesh.userData.turret.rotation.z=0.5); cookOff(b.x, b.z, 2, 3, 25); }
+  else if(b.kind==='radome'){ burst(pos, 0xeceae2, 14, 7, {y:gy+3, life:0.7, size:0.6, grav:-14, drag:1.2, up:3}); b.mesh.scale.y*=0.35; char(0.5); sfx('explode', pos); }
+  else if(b.kind==='fueltank'){ bigExplode(pos, 0xff7a2a, 3.2); fireball(pos, 3.2); shockDome(b.x, b.z, 16, 0xffc890); decalScorch(b.x, b.z, 10, 1); deformCrater(b.x,b.z,2.6,0.4); aoeDamage(b.x, b.z, 8, 80, false, now, 'HE');
     for(let k=0;k<(MOBILE?8:16);k++) spawnPart(b.x+_R(-2,2), gy+2+Math.random()*3, b.z+_R(-2,2), _R(-2,2), 12+Math.random()*12, _R(-2,2), { tex:'fire', color:0xfff0c0, color2:0xb8260a, size:3+Math.random()*2, life:1.0+Math.random()*0.5, grav:5, drag:1.3, grow:2.4 });   // a fire column
     char(0.22); b.mesh.scale.y*=0.42; b.mesh.rotation.z=_R(-0.12,0.12); B.fires.push({ x:b.x, z:b.z, y:gy+2.2, t:45, s:1.8 }); S.shake=Math.min(4.5, S.shake+2.0); sfx('bigexplode', pos);
     for(const o of B.pieces) if(o!==b && o.hp>0 && Math.hypot(o.x-b.x,o.z-b.z)<11) setTimeout(()=>{ if(o.hp>0 && blocks.includes(o)) supplyDamage(o, o.maxHp*0.45); }, 350+Math.random()*400); }   // the fire spreads along the farm
@@ -293,8 +312,8 @@ function pieceDown(b){ const B=b.supply, pos={x:b.x,z:b.z}, gy=heightAt(b.x,b.z)
   else { bigExplode(pos, 0xff8a3a, 1.8); burst(pos, 0xb0aaa0, 10, 5, {y:gy+1.4, life:1.5, size:3, smoke:true, grav:-0.5, drag:1.5, up:1.8, op:0.55}); char(0.3); b.mesh.scale.y*=0.4; for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x9a968c); }   // pump house caves in
   addScore(300, new THREE.Vector3(b.x, gy+4, b.z));
   if(B.alive && B.pieces.filter(o=>o.core).every(o=>!(o.hp>0))) baseLost(B); }
-const NAME={ fuel:'TRẠM NHIÊN LIỆU', ammo:'KHO ĐẠN DƯỢC', camp:'TRẠI LÍNH' };
-const LOST={ fuel:'Xe tăng địch thiếu nhiên liệu: chạy chậm hơn, viện binh thiết giáp giảm.', ammo:'Địch thiếu đạn: bắn yếu hơn, nạp đạn chậm hơn.', camp:'Địch mất trại lính: mỗi đợt ít bộ binh hơn.' };
+const NAME={ fuel:'TRẠM NHIÊN LIỆU', ammo:'KHO ĐẠN DƯỢC', camp:'TRẠI LÍNH', radar:'TRẠM RADAR' };
+const LOST={ radar:'Pháo binh địch mất mắt: pháo kích thưa hơn, ít đạn hơn và rơi lệch xa.', fuel:'Xe tăng địch thiếu nhiên liệu: chạy chậm hơn, viện binh thiết giáp giảm.', ammo:'Địch thiếu đạn: bắn yếu hơn, nạp đạn chậm hơn.', camp:'Địch mất trại lính: mỗi đợt ít bộ binh hơn.' };
 export function baseLost(B){ if(!B.alive) return; B.alive=false; SUPPLY[B.kind]++;
   for(const e of B.guards) if(enemies.includes(e) && e.guard && e.guard.base===B){ e.guard=null; e.post=null; }   // the garrison is loose now — no post to hold
   for(const e of enemies) if(e.guardBase===B){ e.guardBase=null; e.guard=null; }
@@ -307,7 +326,10 @@ export function campLost(camp){ const B=SUPPLY.bases.find(q=>q.camp===camp); if(
 
 // ---------- the living bases: alarm, guards shifting to face you, gunships and armour called in, fires burning ----------
 export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='playing') return;
+  aviationMat().emissiveIntensity = Math.floor(now*1.2)%2 ? 0.2 : 2.6;   // Z197 aviation lights blink
   for(const B of SUPPLY.bases){
+    if(B.kind==='radar'){ if(B.tower && B.tower.fall) updateTopple(B.tower, dt); else if(B.head && B.alive) B.head.rotation.y+=dt*(B.alarm?1.9:1.15);   // the array never stops sweeping
+      if(B.alive) for(const pc of B.pieces) if(pc.kind==='aagun') updateAAGun(pc.mesh, pc, dt, now, p); }
     if(B.fence && Math.hypot(p.pos.x-B.x, p.pos.z-B.z) < B.R+14){ const F=B.fence; let ch=false;   // Z195 the hull rolls the fence flat: the bay falls away from the tank
       for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down || (sp.cx-p.pos.x)**2+(sp.cz-p.pos.z)**2 > 36 || !hitsHull(p, sp.cx, sp.cz, 0.5)) continue;
         sp.down=true; ch=true; const out=(p.pos.x-sp.cx)*sp.nx+(p.pos.z-sp.cz)*sp.nz > 0; const M=bayMatrix(sp, out?-1.45:1.45); F.a.setMatrixAt(i,M); F.b.setMatrixAt(i,M);

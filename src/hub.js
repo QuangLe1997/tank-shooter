@@ -32,7 +32,8 @@ export * from './world/biome.js';
 export * from './world/cover.js';
 export * from './world/rubble.js';   // Z193 broken obstacles leave a heap of their own material
 export * from './world/supply.js';
-export * from './world/camp-life.js';   // Z196 the barracks' mess, stores, medical post, rest area and its people   // Z194 fuel stations, ammo depots, camps as guarded supply bases
+export * from './world/camp-life.js';
+export * from './world/radar.js';   // Z197 the radar station: sweeping array, AA guns, artillery blinded when it falls   // Z196 the barracks' mess, stores, medical post, rest area and its people   // Z194 fuel stations, ammo depots, camps as guarded supply bases
 export * from './world/ridges.js';
 export * from './world/brick-walls.js';
 export * from './tank/materials.js';
