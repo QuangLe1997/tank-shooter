@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, MOBILE, S, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
 // ===== Z116 · ROCKET TRUCK — 6×6 cab-over truck with an 8-tube rocket pod on a turntable (enemy salvo launcher / our hijacked AA + siege truck) =====
@@ -97,16 +97,28 @@ export let _heliMats=null;
 //   fixed landing gear, IR jammer, antennas, and nav lights (red/green wingtips, white tail) + a red strobe. Static parts are merged per
 //   material (a handful of draw calls a helicopter); the rotors and the turret move.
 const _hx=(geo,x,y,z,rx,ry,rz,sx,sy,sz)=>{ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1))); return geo; };
+// Z199b heli paint: a two-tone splinter camouflage (sand / olive / brown) with panel lines, the faction roundel and a white tactical number
+let _hcT=null, _insM=null, _numM={};
+export function heliCamoTex(){ if(_hcT) return _hcT; const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#c2ab72'; x.fillRect(0,0,256,256);
+  const poly=(col,n)=>{ for(let i=0;i<n;i++){ x.fillStyle=col; x.beginPath(); const cx=Math.random()*256, cy=Math.random()*256; x.moveTo(cx,cy); for(let k=0;k<5;k++) x.lineTo(cx+(Math.random()-0.5)*110, cy+(Math.random()-0.5)*70); x.closePath(); x.fill(); } };
+  poly('#6e7a3c',9); poly('#7a5232',7); x.strokeStyle='rgba(30,26,18,0.35)'; x.lineWidth=1.2; for(let k=0;k<256;k+=32){ x.beginPath(); x.moveTo(k,0); x.lineTo(k,256); x.moveTo(0,k+12); x.lineTo(256,k+12); x.stroke(); }
+  for(let i=0;i<80;i++){ x.fillStyle='rgba(30,26,18,0.5)'; x.fillRect(Math.random()*256,Math.random()*256,2,2); }   // rivets
+  _hcT=new THREE.CanvasTexture(c); _hcT.colorSpace=THREE.SRGBColorSpace; _hcT.wrapS=_hcT.wrapT=THREE.RepeatWrapping; _hcT.anisotropy=4; return _hcT; }
+export function insigniaMat(){ return _insM||(_insM=new THREE.MeshStandardMaterial({ map:_canvasTex(128,128,(x,W)=>{ x.clearRect(0,0,W,W); x.fillStyle='#f0e8d0'; x.beginPath(); x.arc(64,64,62,0,7); x.fill(); x.fillStyle='#161616'; x.beginPath(); x.arc(64,64,54,0,7); x.fill();
+    x.fillStyle='#c81e1e'; x.fillRect(10,48,108,32); x.fillStyle='#f0e8d0'; x.beginPath(); x.arc(64,64,17,0,7); x.fill(); x.fillStyle='#c81e1e'; x.beginPath(); for(let k=0;k<10;k++){ const r=k%2?6:14, a=-Math.PI/2+k*Math.PI/5; x.lineTo(64+Math.cos(a)*r, 64+Math.sin(a)*r); } x.fill(); }), transparent:true, alphaTest:0.4, roughness:0.6, polygonOffset:true, polygonOffsetFactor:-2 })); }
+export function numMat(n){ return _numM[n]||(_numM[n]=new THREE.MeshStandardMaterial({ map:_canvasTex(128,64,(x,W,H)=>{ x.clearRect(0,0,W,H); x.font='900 52px "Saira Condensed", Arial'; x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#f4f0e4'; x.fillText(n,W/2,H/2+2); }), transparent:true, alphaTest:0.4, roughness:0.6, polygonOffset:true, polygonOffsetFactor:-2 })); }
+export function decal(par, mat, w, h, x, y, z, ry){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat); m.position.set(x,y,z); m.rotation.y=ry||0; par.add(m); return m; }
 function _side(pts, w, bev){ const sh=new THREE.Shape(); sh.moveTo(pts[0][0],pts[0][1]); for(const q of pts.slice(1)) sh.lineTo(q[0],q[1]); sh.closePath();
   const g=new THREE.ExtrudeGeometry(sh,{ depth:w, bevelEnabled:!!bev, bevelThickness:bev||0, bevelSize:bev||0, bevelSegments:2 }); g.translate(0,0,-w/2); g.rotateY(-Math.PI/2); return g; }   // profile (z,y) extruded across x
+let _tm=null; function _tipM(){ return _tm||(_tm=new THREE.MeshStandardMaterial({ color:0xf2c21a, roughness:0.5 })); }
 export function buildGunship(pal){
-  if(!_heliMats){ const pt=panelTex(); _heliMats={ hull:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.5, metalness:0.45, map:pt }),
+  if(!_heliMats){ _heliMats={ hull:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.5, metalness:0.35, map:heliCamoTex() }),
     dark:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.55, metalness:0.6 }), glass:new THREE.MeshStandardMaterial({ color:0x1e2a26, roughness:0.05, metalness:0.95, envMapIntensity:1.6 }),
     blade:new THREE.MeshStandardMaterial({ color:0x1a1c18, roughness:0.6, metalness:0.3 }), blur:new THREE.MeshBasicMaterial({ color:0x202020, transparent:true, opacity:0.14, depthWrite:false, side:THREE.DoubleSide }),
     lens:new THREE.MeshStandardMaterial({ color:0x101418, emissive:0x3a6a8a, emissiveIntensity:0.8, roughness:0.1, metalness:0.9 }),
     red:new THREE.MeshStandardMaterial({ color:0x200000, emissive:0xff2020, emissiveIntensity:3 }), green:new THREE.MeshStandardMaterial({ color:0x002000, emissive:0x20ff40, emissiveIntensity:2.6 }), white:new THREE.MeshStandardMaterial({ color:0x202020, emissive:0xffffff, emissiveIntensity:2.2 }) }; }
   const H=_heliMats, g=new THREE.Group(), body=new THREE.Group(); g.add(body);
-  const hullC=pal.hull, camo=new THREE.Color(pal.hull).multiplyScalar(0.62).getHex(), belly=new THREE.Color(pal.hull).lerp(new THREE.Color(0x9aa0a0),0.45).getHex(), D=0x26281f, M2=0x3a3c36;
+  const hullC=0xffffff, camo=0xb8b0a0, belly=0xd8dcde, D=0x26281f, M2=0x3a3c36, RED=0xc81e1e;   // Z199b painted: the camo lives in the texture, vertex colours only tint
   const P={ hull:[], dark:[], glass:[] }, add=(k,geo,col)=>P[k].push({ geo, col });
   add('hull', _side([[4.35,-0.15],[4.05,-0.72],[2.6,-0.98],[-0.4,-1.02],[-1.7,-0.62],[-1.85,0.42],[0.0,0.88],[0.5,0.92],[2.6,0.52],[3.65,0.12],[4.35,0.0]], 1.18, 0.12), hullC);   // armoured fuselage
   add('hull', _hx(new THREE.BoxGeometry(1.36,0.32,3.2),0,-0.86,0.9), belly);   // belly
@@ -122,12 +134,14 @@ export function buildGunship(pal){
     for(const [ox,oy] of [[-0.11,-0.6],[0.11,-0.6],[-0.11,-0.82],[0.11,-0.82]]) add('dark', _hx(new THREE.CylinderGeometry(0.095,0.095,1.6,10),sx*1.88+ox,oy,0.55,Math.PI/2), 0x4a5038);   // quad ATGM rack
     add('dark', _hx(new THREE.CylinderGeometry(0.04,0.05,0.85,6),sx*0.95,-0.95,1.25,0,0,sx*0.35), D); add('dark', _hx(new THREE.CylinderGeometry(0.25,0.25,0.18,12),sx*1.1,-1.32,1.25,0,0,Math.PI/2), 0x161616); }   // main gear
   add('hull', _hx(new THREE.CylinderGeometry(0.2,0.44,5.3,14),0,0.42,-4.0,Math.PI/2), hullC);   // tapered boom
+  add('dark', _hx(new THREE.CylinderGeometry(0.3,0.32,0.45,14),0,0.42,-5.0,Math.PI/2), RED); add('dark', _hx(new THREE.CylinderGeometry(0.36,0.38,0.4,14),0,0.42,-2.4,Math.PI/2), RED);   // red recognition bands
   add('hull', _side([[-6.0,0.45],[-6.75,0.45],[-7.35,2.15],[-6.85,2.2]], 0.14, 0.03), camo);   // swept fin
   add('hull', _hx(new THREE.BoxGeometry(2.4,0.07,0.55),0,0.55,-6.0), hullC); for(const sx of [-1.2,1.2]) add('hull', _hx(new THREE.BoxGeometry(0.06,0.5,0.6),sx,0.6,-6.0), camo);   // stabilator + end plates
   add('dark', _hx(new THREE.CylinderGeometry(0.05,0.07,0.9,6),0,-0.1,-6.2,0.4), D); add('dark', _hx(new THREE.CylinderGeometry(0.13,0.13,0.1,10),0,-0.5,-6.35,0,0,Math.PI/2), 0x161616);   // tail wheel
   add('dark', _hx(new THREE.CylinderGeometry(0.3,0.36,0.55,14),0,1.5,0.2), D); add('dark', _hx(new THREE.BoxGeometry(0.5,0.35,0.5),0,1.35,-1.05), M2); add('dark', _hx(new THREE.CylinderGeometry(0.12,0.16,0.3,10),0,1.65,-1.05), 0x2a2c26);   // mast fairing, IR jammer
   for(const [x,z,h] of [[0.35,-1.6,0.6],[-0.3,2.2,0.4]]) add('dark', _hx(new THREE.BoxGeometry(0.03,h,0.18),x,0.9+h/2,z,0,0,0.2), D);   // blade antennas
   for(const k in P){ if(!P[k].length) continue; const m=new THREE.Mesh(_mergeColored(P[k]), H[k]); m.castShadow=true; body.add(m); }
+  { const num=String(10+((Math.random()*89)|0)); for(const sx of [-1,1]){ decal(body, insigniaMat(), 0.75, 0.75, sx*0.4, 0.42, -3.6, sx*Math.PI/2); decal(body, numMat(num), 0.9, 0.45, sx*0.62, 0.05, 2.9, sx*Math.PI/2); decal(body, insigniaMat(), 0.6, 0.6, sx*0.08, 1.45, -6.75, sx*Math.PI/2); } }   // faction roundel on the boom + fin, the tactical number on the nose
   // chin turret (tracks you), nose sensor ball, lights
   const chin=new THREE.Group(); chin.position.set(0,-0.95,3.25); body.add(chin);
   { const b=new THREE.Mesh(new THREE.SphereGeometry(0.32,14,10), H.dark); b.castShadow=true; chin.add(b); const el=new THREE.Group(); chin.add(el); chin.userData.el=el;
@@ -140,6 +154,7 @@ export function buildGunship(pal){
   const rotor=new THREE.Group(); rotor.position.set(0,1.92,0.2); body.add(rotor);
   { const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.3,0.28,12), H.dark); rotor.add(hub); const cap=new THREE.Mesh(new THREE.SphereGeometry(0.2,10,6,0,6.283,0,1.5), H.dark); cap.position.y=0.14; rotor.add(cap);
     for(let k=0;k<5;k++){ const a=k*Math.PI*2/5, bl=new THREE.Mesh(new RoundedBoxGeometry(0.4,0.05,6.3,1,0.02), H.blade); bl.position.set(Math.sin(a)*3.4,0,Math.cos(a)*3.4); bl.rotation.set(0.03,a,0); bl.castShadow=true; rotor.add(bl);
+      const tip=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.06,0.35), _tipM()); tip.position.set(Math.sin(a)*6.4,0.01,Math.cos(a)*6.4); tip.rotation.y=a; rotor.add(tip);   // yellow blade tips
       const pl=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.3,5), H.dark); pl.position.set(Math.sin(a)*0.3,-0.15,Math.cos(a)*0.3); rotor.add(pl); } }
   const blur=new THREE.Mesh(new THREE.RingGeometry(0.5,6.6,40), H.blur); blur.rotation.x=-Math.PI/2; rotor.add(blur);
   const trot=new THREE.Group(); trot.position.set(0.2,1.65,-7.0); body.add(trot);

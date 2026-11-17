@@ -1019,5 +1019,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/the lowered ramp/.test(pd) && /jumpmaster/.test(pd) && /freefall a beat, then the canopy cracks open/.test(pd) && /the canopy breathes/.test(pd), 'tandem-rotor transport with the ramp down; jumpers freefall, then the canopy opens and breathes');
   ok(/SMOKE_ZONES\.push/.test(pd) && /spawnEnemy\('gunship'/.test(pd) && /a supply bundle: cover to fight from/.test(pd) && /CANOPIES\.push/.test(pd), 'red smoke on the drop zone, an escort gunship, a cargo bundle that lands as cover, canopies left lying on the ground'); }
 
+// Z199b painted helicopters (splinter camo, red bands, roundels, numbers, yellow tips) and enemy soldiers that stand out
+{ const fs=await import('node:fs'); const v=fs.readFileSync('src/actors/vehicles.js','utf8'), pd=fs.readFileSync('src/actors/paradrop.js','utf8'), sp=fs.readFileSync('src/world/sidepaint.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8');
+  ok(/export function heliCamoTex\(/.test(v) && /insigniaMat\(\)/.test(v) && /yellow blade tips/.test(v) && /heliCamoTex\(\)/.test(pd) && /insigniaMat\(\)/.test(pd), 'helicopters wear camo, red bands, the faction roundel, a number and yellow blade tips');
+  ok(/sat:\[0\.38,0\.72\]/.test(sp) && /0xa02a20/.test(so) && /emissiveIntensity:M\.band\.emissiveIntensity/.test(so), 'soldiers wear richer colours; the enemy has a clearer crimson helmet and a brighter armband'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

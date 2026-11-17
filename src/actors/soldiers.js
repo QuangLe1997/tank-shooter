@@ -26,8 +26,8 @@ export function _enemySoldierMats(){
   const camo=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#a8905e'; x.fillRect(0,0,W,W); const cs=['#8a7048','#c8b080','#6a5636','#b49a6a'];   // desert-tan pattern → reads as the OTHER side
     for(let i=0;i<40;i++){ x.fillStyle=cs[i%cs.length]; x.beginPath(); x.ellipse(_R(0,W),_R(0,W),_R(3,9),_R(2,6),_R(0,3),0,7); x.fill(); } });
   Object.assign(ENEMY_SOLDIER_MAT, F, { uni:new THREE.MeshStandardMaterial({ map:camo, roughness:0.9 }), gear:new THREE.MeshStandardMaterial({ color:0x5a4632, roughness:0.85 }),
-    helm:new THREE.MeshStandardMaterial({ color:0x6a2620, roughness:0.8 }),                                                        // Z104 THEIRS: maroon helmet
-    band:new THREE.MeshStandardMaterial({ color:0xe03a2a, emissive:0xa01a10, emissiveIntensity:0.55, roughness:0.6 }), ready:true });   // red ID armband
+    helm:new THREE.MeshStandardMaterial({ color:0xa02a20, roughness:0.75 }),   // Z199b a clearer crimson helmet                                                        // Z104 THEIRS: maroon helmet
+    band:new THREE.MeshStandardMaterial({ color:0xff4a32, emissive:0xd02010, emissiveIntensity:0.9, roughness:0.6 }), ready:true });   // Z199b the red armband glows brighter   // red ID armband
   return ENEMY_SOLDIER_MAT;
 }
 // Z107 SOLDIER KIT — the body used to be ~19 meshes (one per material per joint) built fresh for every man: on the wider
@@ -47,7 +47,7 @@ function _soldierKit(enemy){
   const orm=_kitTex(x=>{ [[0.9,0],[0.8,0.1],[0.6,0],[0.45,0.75]].forEach(([r,m],i)=>{ x.fillStyle=`rgb(0,${Math.round(r*255)},${Math.round(m*255)})`; x.fillRect(i*64,0,64,64); }); }, false);
   const em=_kitTex(x=>{ x.fillStyle='#000'; x.fillRect(0,0,256,64); x.fillStyle='#fff'; x.fillRect(128,0,64,64); }, true);
   const mat=new THREE.MeshStandardMaterial({ map, vertexColors:true, roughness:1, metalness:1, roughnessMap:orm, metalnessMap:orm,
-    emissive:M.band.emissive.clone(), emissiveMap:em, emissiveIntensity:0.55 });
+    emissive:M.band.emissive.clone(), emissiveMap:em, emissiveIntensity:M.band.emissiveIntensity });   // Z199b each side its own armband glow
   const kind=m=> m===M.uni ? 'camo' : m===M.band ? 'glow' : m===M.gun ? 'metal' : 'plain';
   const rb=(w,h,d,r)=>new RoundedBoxGeometry(w,h,d,1,r||0.04);   // Z172 one bevel step: ~1/4 the triangles, same silhouette at game distance
   const parts={ up:[], head:[], arm:[], lh:[], gun:[], hip:[], knee:[] };

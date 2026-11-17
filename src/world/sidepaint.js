@@ -4,7 +4,7 @@ import { BIOME, GROUND_STYLE, SOLDIER_KIT, _R } from '../hub.js';
 
 // each side keeps its identity: ours = cool greens, theirs = warm tans / reds. When the ground is the same hue, ours turn slate-teal and theirs turn crimson;
 // when the ground is the same brightness, the paint goes darker (light ground) or darker / lighter (dark ground) until it separates
-export const SIDE_PAINT = { gap:0.2, lightGap:0.24, snowGap:0.45, floor:0.12, hueNear:0.11, groundSat:0.18, hue:{ f:0.5, e:0.985 }, sat:[0.28,0.55],
+export const SIDE_PAINT = { gap:0.2, lightGap:0.24, snowGap:0.45, floor:0.12, hueNear:0.11, groundSat:0.18, hue:{ f:0.5, e:0.985 }, sat:[0.38,0.72],
   troops:{ f:{ base:'#55703a', blot:['#3e5a2a','#6f8a48','#2c3e1e','#4a6634'], gear:'#4a4a32', helm:'#3c5426' },
            e:{ base:'#a8905e', blot:['#8a7048','#c8b080','#6a5636','#b49a6a'], gear:'#5a4632', helm:null } } };   // helm:null = the side colour helmet stays as it is (maroon)
 const _a=new THREE.Color(), _h={ h:0, s:0, l:0 }, _g={ h:0, s:0, l:0 };

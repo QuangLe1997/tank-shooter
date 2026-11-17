@@ -3,20 +3,20 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { INFANTRY, PARA, TROOPS } from '../../config.js';
-import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, enemies, floatText, heightAt, makeCoverMesh, makeSoldierMesh, panelTex, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip } from '../hub.js';
+import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip } from '../hub.js';
 
 export const HELOS=[], PARAS=[];
 let _nextAt=0, _heloMats=null, _chuteGeo=null, _chuteMat=null;
 const R=(a)=>a[0]+Math.random()*(a[1]-a[0]);
 function heloMats(){ return _heloMats||(_heloMats={ body:new THREE.MeshStandardMaterial({ color:0x6a6248, roughness:0.7, metalness:0.35 }), dark:new THREE.MeshStandardMaterial({ color:0x202018, roughness:0.6, metalness:0.5 }),
   glass:new THREE.MeshStandardMaterial({ color:0x223038, roughness:0.15, metalness:0.6 }), light:new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xff2a1a, emissiveIntensity:2.5 }),
-  bodyV:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.7, metalness:0.35, map:panelTex() }), darkV:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.55, metalness:0.5 }), glassV:new THREE.MeshStandardMaterial({ color:0x1e2a2e, roughness:0.06, metalness:0.9, envMapIntensity:1.4 }),
+  bodyV:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.65, metalness:0.3, map:heliCamoTex() }), darkV:new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.55, metalness:0.5 }), glassV:new THREE.MeshStandardMaterial({ color:0x1e2a2e, roughness:0.06, metalness:0.9, envMapIntensity:1.4 }),
   green:new THREE.MeshStandardMaterial({ color:0x002000, emissive:0x20ff40, emissiveIntensity:2.4 }), white:new THREE.MeshStandardMaterial({ color:0x202020, emissive:0xffffff, emissiveIntensity:2 }),
   blur:new THREE.MeshBasicMaterial({ color:0x202020, transparent:true, opacity:0.13, depthWrite:false, side:THREE.DoubleSide }) }); }
 // Z199 tandem-rotor TRANSPORT: a long boxy hull with a cockpit of framed glass, a row of cabin windows, side sponsons, a tall aft pylon,
 //   two 3-blade rotors with blur discs, wheels, a refuelling probe, nav lights — and the rear ramp lowered, a jumpmaster in the doorway
 function _tx(geo,x,y,z,rx,ry,rz){ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(1,1,1))); return geo; }
-export function buildTransport(){ const M=heloMats(), g=new THREE.Group(), P={ body:[], dark:[], glass:[] }, add=(k,geo,col)=>P[k].push({ geo, col }), OD=0x5e5a40, OD2=0x4a4632, BL=0x7a7a6a;
+export function buildTransport(){ const M=heloMats(), g=new THREE.Group(), P={ body:[], dark:[], glass:[] }, add=(k,geo,col)=>P[k].push({ geo, col }), OD=0xf0ece4, OD2=0xc8c0b0, BL=0xdadee0;   // Z199b painted camo (texture) + light belly
   add('body', _tx(new RoundedBoxGeometry(2.7,2.7,11.5,3,0.55),0,0,0), OD); add('body', _tx(new RoundedBoxGeometry(2.72,0.6,11.4,2,0.25),0,-1.1,0), BL);   // hull + lighter belly
   add('body', _tx(new THREE.SphereGeometry(1.36,16,10,0,Math.PI*2,0,Math.PI/2),0,-0.1,5.75,Math.PI/2), OD);   // nose
   for(const sx of [-1,1]) add('glass', _tx(new THREE.BoxGeometry(0.06,0.75,1.4),sx*1.12,0.35,6.0,0,sx*0.35,0), 0xffffff); add('glass', _tx(new THREE.BoxGeometry(1.8,0.7,0.06),0,0.55,6.75,-0.5,0,0), 0xffffff);   // cockpit glass
@@ -27,8 +27,10 @@ export function buildTransport(){ const M=heloMats(), g=new THREE.Group(), P={ b
   for(const sx of [-1,1]) add('dark', _tx(new THREE.CylinderGeometry(0.42,0.42,1.6,12),sx*0.95,2.1,-4.6,Math.PI/2), 0x34342c);   // engine pods
   add('dark', _tx(new THREE.CylinderGeometry(0.06,0.06,2.4,6),0.9,-0.4,7.0,Math.PI/2-0.1), 0x2a2a24);   // refuelling probe
   add('body', _tx(new THREE.BoxGeometry(2.4,0.12,2.4),0,-1.65,-6.6,0.55,0,0), BL);   // the lowered ramp
+  add('dark', _tx(new THREE.CylinderGeometry(1.4,1.4,0.5,18),0,0.05,-3.2,Math.PI/2), 0xc81e1e);   // red recognition band
   for(const k in P){ const m=new THREE.Mesh(_mergeColored(P[k]), M[k+'V']); m.castShadow=true; g.add(m); }
-  for(const z of [4.0,-4.3]){ const rot=new THREE.Group(); rot.position.set(0,z>0?2.8:3.6,z); for(let k=0;k<3;k++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.06,9.6), M.dark); b.position.z=0; b.rotation.y=k*Math.PI*2/3; b.castShadow=true; rot.add(b); }
+  { const num=String(10+((Math.random()*89)|0)); for(const sx of [-1,1]){ decal(g, insigniaMat(), 1.3, 1.3, sx*1.37, 0.2, -1.4, sx*Math.PI/2); decal(g, numMat(num), 1.4, 0.7, sx*1.37, 0.4, 4.6, sx*Math.PI/2); decal(g, insigniaMat(), 1.1, 1.1, sx*0.71, 2.2, -4.6, sx*Math.PI/2); } }
+  for(const z of [4.0,-4.3]){ const rot=new THREE.Group(); rot.position.set(0,z>0?2.8:3.6,z); for(let k=0;k<3;k++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.06,9.6), M.dark); b.position.z=0; b.rotation.y=k*Math.PI*2/3; b.castShadow=true; rot.add(b); for(const e of [-4.6,4.6]){ const t=new THREE.Mesh(new THREE.BoxGeometry(0.44,0.07,0.4), M.tip||(M.tip=new THREE.MeshStandardMaterial({ color:0xf2c21a, roughness:0.5 }))); t.position.z=e; b.add(t); } }
     const blur=new THREE.Mesh(new THREE.RingGeometry(0.4,4.9,36), M.blur); blur.rotation.x=-Math.PI/2; rot.add(blur); g.add(rot); (g.userData.rotors=g.userData.rotors||[]).push(rot); }
   for(const [mat,x,y,z] of [[M.light,0,-1.45,0],[M.green,1.4,0.3,5.0],[M.light,-1.4,0.3,5.0],[M.white,0,3.0,-5.6]]){ const l=new THREE.Mesh(new THREE.SphereGeometry(0.13,8,6), mat); l.position.set(x,y,z); g.add(l); }
   const jm=makeSoldierMesh({ enemy:true }); jm.scale.setScalar(TROOPS.look.scale); jm.position.set(0.5,-1.3,-5.6); jm.rotation.y=Math.PI; jm.userData.gun.visible=false; g.add(jm);   // the jumpmaster at the ramp
