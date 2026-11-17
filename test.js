@@ -1107,5 +1107,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/function guardTarget\(t, gd\)/.test(lo) && /if\(b\.smart\)\{ for\(const e of enemies\)/.test(lo) && /for\(const t of towers\)/.test(lo) && /\(b\.lockOn && \(b\.smart \|\| b\.by>2\.6\)\)/.test(lo) && /\(\(!airborne \|\| low\) && !b\.smart\)/.test(lo), 'smart missiles: heat targets incl. tower guards, never cover'); }
 
+// Z218 the enemy artillery rocket is a real field rocket: burns then coasts, a continuous lingering smoke trail, a real launch and impact
+{ const fs=await import('node:fs'); const sr=fs.readFileSync('src/combat/siege-rocket.js','utf8'), ar=fs.readFileSync('src/campaign/artillery.js','utf8');
+  ok(/function artRocketTemplate\(\)/.test(sr) && /LatheGeometry\(prof,16\)/.test(sr) && /g\._inner=inner/.test(sr), 'a 122 mm field rocket model with a short white-hot flame');
+  ok(/const burn=s\.age<C\.flightTime\*0\.55/.test(ar) && /s\.lx==null/.test(ar) && /shockwave dust ring/.test(ar) && /dirtGeyser\(tx, tz/.test(ar) && /the black smoke column/.test(ar) && !/ringPulse\(\{x:tx,z:tz\}/.test(ar), 'burn → coast, gap-free trail, flash / fireball / geyser / dust ring / smoke column — no neon rings'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

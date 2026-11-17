@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { S, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, boss, burst, core, damageCore, damagePlayer, damageSoldier, deformCrater, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
+import { BIOME, MOBILE, S, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -35,11 +35,13 @@ export function fireSpotter(e){
   if(!e) e=_pickMortar(); if(!e) return;
   const x=e.pos.x, z=e.pos.z;
   e.hitT=Math.max(e.hitT,0.16); e.kbx+=(Math.random()-0.5)*3; e.kbz+=(Math.random()-0.5)*3;          // recoil kick
-  spawnPart(x, 2.4, z, 0, 20, 0, {color:0xffe06a, size:1.6, life:0.3, grav:-8, drag:1});              // muzzle flash up the tube
-  for(let i=0;i<7;i++) spawnPart(x, 2.5, z, (Math.random()-0.5)*3, 12+Math.random()*10, (Math.random()-0.5)*3, {color:0xffb24a, size:0.6, life:0.5, grav:9, drag:1});   // launch sparks
-  spawnPart(x, 1.8, z, 0, 1, 0, {color:0x4a4038, size:2.2, life:0.7, smoke:true, grav:-0.5, drag:1.6, op:0.5});   // muzzle smoke
-  ringPulse(e.pos, 0xc0e060, 1.9); sfx('rocketlaunch');
-  muzzleLight.position.set(x,2.4,z); muzzleLight.color.setHex(0xc0e060); muzzleLight.intensity=3.4;
+  // Z218 the launch: a blinding flash up the tube, a hard backblast of white smoke and a ring of dust thrown off the ground round the launcher
+  spawnPart(x, 2.6, z, 0, 4, 0, { tex:'flash', color:0xfff4d8, size:4.5, life:0.08, grav:0, drag:8 });
+  for(let i=0;i<4;i++) spawnPart(x, 2.4, z, (Math.random()-0.5)*2, 6+Math.random()*6, (Math.random()-0.5)*2, { tex:'fire', color:0xfff0c0, color2:0xff6a1a, size:1.2, grow:1.4, life:0.22, grav:0, drag:4 });
+  for(let i=0;i<(MOBILE?5:10);i++){ const a=Math.random()*6.283; spawnPart(x+Math.cos(a)*0.8, 1.6+Math.random(), z+Math.sin(a)*0.8, Math.cos(a)*3, 1+Math.random()*2, Math.sin(a)*3, { color:0xe0dcd2, size:1.6+Math.random(), life:2.6+Math.random(), smoke:true, grav:0.2, drag:1.2, grow:2.2, op:0.6, keep:true }); }
+  { const gy=heightAt(x,z); for(let i=0;i<(MOBILE?7:14);i++){ const a=i/(MOBILE?7:14)*6.283; spawnPart(x+Math.cos(a)*1.2, gy+0.4, z+Math.sin(a)*1.2, Math.cos(a)*8, 0.6, Math.sin(a)*8, { color:BIOME.ground, size:1.4, life:1.4, smoke:true, grav:-0.2, drag:2.2, grow:1.8, op:0.5, keep:true }); } }
+  sfx('rocketlaunch');
+  muzzleLight.position.set(x,2.4,z); muzzleLight.color.setHex(0xffd090); muzzleLight.intensity=5;
 }
 export function updateArtillery(dt, now){
   const C=BALANCE.artillery, mort=_artMortars();
@@ -54,7 +56,7 @@ export function updateArtillery(dt, now){
     else ART.t=C.shotSpacing;
   }
 }
-export const _artUP=new THREE.Vector3(0,1,0), _artDir=new THREE.Vector3();
+export const _artUP=new THREE.Vector3(0,1,0), _artDir=new THREE.Vector3(), _artRq=new THREE.Quaternion();
 export function updateArtStrikes(dt, now){
   const C=BALANCE.artillery;
   for(let i=artStrikes.length-1;i>=0;i--){ const s=artStrikes[i]; s.t-=dt;
@@ -72,16 +74,21 @@ export function updateArtStrikes(dt, now){
         s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (heightAt(s.tx,s.tz)+0.6-s.my)/T;            // lob up then down to impact
         s.mesh=makeArtMissileMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh); sfx('whistle');   // Z188 you hear it coming
       }
-    } else { // flying — blazing arc + roiling smoke trail
+    } else { // Z218 flying: the motor burns for the first half of the flight (flame + a thick, lingering smoke trail), then it falls silent, trailing a wisp
+      s.age=(s.age||0)+dt; const burn=s.age<C.flightTime*0.55;
       s.mvy-=C.gravity*dt; s.mx+=s.mvx*dt; s.my+=s.mvy*dt; s.mz+=s.mvz*dt; s.mesh.position.set(s.mx,s.my,s.mz);
-      _artDir.set(s.mvx,s.mvy,s.mvz); if(_artDir.lengthSq()>1e-4){ _artDir.normalize(); s.mesh.quaternion.setFromUnitVectors(_artUP,_artDir); }
-      if(s.mesh._plume) s.mesh._plume.scale.setScalar(2.3+Math.sin(now*42)*0.55);   // flickering engine plume
-      if(s.mesh._tongue){ const f=0.85+Math.random()*0.35; s.mesh._tongue.scale.set(1, f, 1); s.mesh._tongue.material.opacity=0.55+Math.random()*0.3; }   // Z188
-      { const bx=s.mx-_artDir.x*1.6, by=s.my-_artDir.y*1.6, bz=s.mz-_artDir.z*1.6;   // Z188 everything trails from the tail, along the flight line
-        spawnPart(bx,by,bz,-_artDir.x*6+(Math.random()-0.5)*1.5,-_artDir.y*6,-_artDir.z*6+(Math.random()-0.5)*1.5,{color:0xfff0b0,size:1.3,life:0.16,grav:0,drag:6});           // white-hot exhaust core
-        spawnPart(bx,by,bz,-_artDir.x*3+(Math.random()-0.5)*2,-_artDir.y*3,-_artDir.z*3+(Math.random()-0.5)*2,{color:0xff7a2e,color2:0xc0300a,size:1.9,life:0.38,grav:0.4,drag:2.6,op:0.85});   // fiery wake
-        for(let q=0;q<2;q++) spawnPart(bx,by,bz,(Math.random()-0.5)*1.2,(Math.random()-0.5)*0.6,(Math.random()-0.5)*1.2,{color:q?0x6a5e52:0xb8ae9e,size:1.4+q*0.5,life:1.6+q*0.5,smoke:true,grav:-0.2,drag:1.2,grow:2.4,op:0.5});   // a thick rolling smoke ribbon
-        if(Math.random()<0.4) spawnPart(bx,by,bz,(Math.random()-0.5)*7,(Math.random()-0.5)*7,(Math.random()-0.5)*7,{color:0xffd27a,size:0.3,life:0.35,grav:6,drag:1}); }   // sparks
+      _artDir.set(s.mvx,s.mvy,s.mvz); if(_artDir.lengthSq()>1e-4){ _artDir.normalize(); s.mesh.quaternion.setFromUnitVectors(_artUP,_artDir); s.roll=(s.roll||0)+dt*7; _artRq.setFromAxisAngle(_artUP, s.roll); s.mesh.quaternion.multiply(_artRq); }
+      const m=s.mesh; if(m._tongue){ m._tongue.visible=m._inner.visible=m._plume.visible=burn; if(burn){ const f=0.8+Math.random()*0.45; m._tongue.scale.set(1,f,1); m._tongue.material.opacity=0.6+Math.random()*0.3; m._plume.scale.setScalar(1.1+Math.random()*0.6); } }
+      const k=1.25, tx=s.mx-_artDir.x*1.75*k, ty=s.my-_artDir.y*1.75*k, tz=s.mz-_artDir.z*1.75*k, step=burn?(MOBILE?0.55:0.26):1.4;
+      if(s.lx==null){ s.lx=tx; s.ly=ty; s.lz=tz; }
+      const dx=tx-s.lx, dy=ty-s.ly, dz=tz-s.lz, L=Math.hypot(dx,dy,dz);
+      if(L>=step){ const n=Math.min(40, Math.floor(L/step));
+        for(let q=1;q<=n;q++){ const f=q*step/L, px=s.lx+dx*f, py=s.ly+dy*f, pz=s.lz+dz*f;
+          if(burn) spawnPart(px+(Math.random()-0.5)*0.25,py+(Math.random()-0.5)*0.25,pz+(Math.random()-0.5)*0.25, (Math.random()-0.5)*0.6+0.25, 0.2+Math.random()*0.3, (Math.random()-0.5)*0.6+0.1, { color:Math.random()<0.7?0xdedad2:0xbab4aa, size:1.0+Math.random()*0.5, life:2.6+Math.random()*1.2, smoke:true, grav:0.12, drag:1.0, grow:2.6, op:0.55, keep:true });   // a thick white trail that hangs and spreads
+          else if(Math.random()<0.6) spawnPart(px,py,pz, 0, 0.1, 0, { color:0xb4aea4, size:0.45, life:1.2, smoke:true, grav:0.1, drag:1.2, grow:1.6, op:0.22, keep:true }); }   // after burnout, only a wisp
+        if(L/step>40){ s.lx=tx; s.ly=ty; s.lz=tz; } else { const f=n*step/L; s.lx+=dx*f; s.ly+=dy*f; s.lz+=dz*f; } }
+      if(burn){ spawnPart(tx,ty,tz, -_artDir.x*9, -_artDir.y*9, -_artDir.z*9, { tex:'fire', color:0xfff6dc, color2:0xff8a2a, size:0.7+Math.random()*0.3, life:0.09, grav:0, drag:6, grow:0.5 });   // white-hot exhaust jet
+        if(Math.random()<0.25) spawnPart(tx,ty,tz, (Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4, { color:0xffd890, color2:0xff6a10, size:0.12, life:0.4, grav:-6, drag:1 }); }   // a few embers
       if(s.my<=0.85 || s.t<=0){ artImpact(s, now); if(s.mesh) scene.remove(s.mesh);
         disposeArtZone(s.zone);
         artStrikes.splice(i,1); }
@@ -100,36 +107,20 @@ export function artImpact(s, now){
       damagePlayer(Math.round(dmg), now); floatText(direct?'TRÚNG ĐÍCH!':'SƯỢT QUA', direct?'#ff4028':'#ffcf5a', new THREE.Vector3(p.pos.x,2.4,p.pos.z), direct?24:18); } }
   if(core){ const dc=grade(core.pos.x,core.pos.z); if(dc>0){ hit=true; damageCore(Math.round(dc*C.coreMul)); } }
   for(const sd of soldiers){ const ds=grade(sd.pos.x,sd.pos.z); if(ds>0){ hit=true; damageSoldier(sd, ds*C.coreMul); } }
-  // ---- common: flash + impact rings + light ----
-  burst(pos, 0xffffff, Math.floor((hit?11:7)*sc), 7*sc, {life:0.13, size:2.5*sc, up:2, grav:-2, drag:8});   // flash
-  ringPulse({x:tx,z:tz}, 0xffd27a, s.R*(hit?1.0:0.7)); ringPulse({x:tx,z:tz}, 0xff5028, s.R*(hit?0.7:0.45));
+  // ---- Z218 what the eye sees: a white flash, a rolling fireball, a dark geyser of soil, a dust shockwave rushing out along the ground,
+  //      flying dirt, a scorch, then a smoke column that climbs slowly and hangs (bigger + shrapnel when it caught someone) ----
+  const K=hit?1.25:0.9, gy=heightAt(tx,tz);
+  spawnPart(tx, gy+1.2, tz, 0, 0, 0, { tex:'flash', color:0xffffff, size:9*K, life:0.09, grav:0, drag:8 }); blastLight(tx, tz, 70*K, 0.4);
+  for(let k=0;k<(MOBILE?5:9);k++){ const a=Math.random()*6.283, v=2+Math.random()*4; spawnPart(tx, gy+1, tz, Math.cos(a)*v, 2+Math.random()*4, Math.sin(a)*v, { tex:'fire', color:0xfff0c0, color2:0xff4a10, size:(1.8+Math.random()*1.2)*K, grow:1.6, life:0.4+Math.random()*0.25, grav:1.5, drag:2.6 }); }
+  dirtGeyser(tx, tz, 1.5*K);
+  for(let k=0;k<(MOBILE?10:20);k++){ const a=k/(MOBILE?10:20)*6.283; spawnPart(tx+Math.cos(a)*1.5, gy+0.5, tz+Math.sin(a)*1.5, Math.cos(a)*(14+Math.random()*4)*K, 0.6, Math.sin(a)*(14+Math.random()*4)*K, { color:BIOME.ground, size:1.8*K, life:1.4+Math.random()*0.5, smoke:true, grav:-0.2, drag:2.6, grow:2.0, op:0.55, keep:true }); }   // shockwave dust ring
+  spawnDebris(pos, 2.2*K, 0x6e6658); decalScorch(tx, tz, s.R*0.55, 1);
+  for(let k=0;k<(MOBILE?4:7);k++){ const a=Math.random()*6.283, r=Math.random()*s.R*0.5; spawnPart(tx+Math.cos(a)*r, gy+0.8, tz+Math.sin(a)*r, Math.cos(a)*1.2, 0.5, Math.sin(a)*1.2, { color:0x8a8070, size:(3.0+Math.random()*1.5)*K, life:3.5+Math.random(), smoke:true, grav:0.05, drag:1.0, grow:1.7, op:0.55, keep:true }); }   // the dust cloud that hangs over the hole
+  for(let k=0;k<6;k++) setTimeout(()=>{ if(S.mode==='paused') return; spawnPart(tx+(Math.random()-0.5)*1.5, gy+1.2+k*1.4, tz+(Math.random()-0.5)*1.5, 0.3, 1.6-k*0.18, 0.1, { color:k<3?0x221c16:0x3a342c, size:(3.2+k*0.8)*K, life:4.5+k*0.5, smoke:true, grav:0.25, drag:1.0, grow:1.7, op:0.78, keep:true }); }, k*70);   // the black smoke column, climbing and hanging
   muzzleLight.position.set(tx,4,tz); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=hit?9.5:5.5;
-  if(hit){
-    // ===== DIRECT HIT → grand devastation + METAL SHRAPNEL =====
-    burst(pos, 0xffe8a0, Math.floor(22*sc), 13*sc, {life:0.4,  size:2.5*sc, up:6, drag:2});
-    burst(pos, 0xff6a1c, Math.floor(18*sc), 11*sc, {life:0.5,  size:2.3*sc, up:5, drag:2});
-    burst(pos, 0xc4301a, Math.floor(12*sc), 9*sc,  {life:0.55, size:2.0*sc, up:4, drag:2});
-    burst(pos, 0xffe6a0, Math.floor(26*sc), s.R*2.3, {life:0.5, size:0.5*sc, up:4, grav:-10, drag:1.2});   // sparks to the edge
-    spawnDebris(pos, 2.6, 0x6a5a3a); spawnDebris(pos, 1.6, 0x33302a);                                       // dirt + metal shards (only on a hit)
-    ringPulse({x:tx,z:tz}, 0xffffff, s.R*1.15); ringPulse({x:tx,z:tz}, 0xff3018, s.innerR*1.5);
-    for(let k=0;k<6;k++) setTimeout(()=>{ if(S.mode==='paused') return;
-      burst({x:tx,z:tz}, k<2?0x2a221a:0x191510, 2, 3+k*0.7, {y:1.2+k*1.15, life:0.9+k*0.12, size:(2.1+k*0.55)*sc, smoke:true, grav:-0.6, drag:1.5, up:2.4, op:0.5}); }, k*55);   // mushroom column
-    setTimeout(()=>{ if(S.mode!=='paused') burst({x:tx,z:tz}, 0x241c14, 7, 5.5*sc, {y:8, life:1.5, size:3.6*sc, smoke:true, grav:-0.3, drag:1.6, up:1, op:0.45}); }, 360);
-    for(let k=0;k<7;k++){ const a=Math.random()*6.283, rr=s.R*(0.35+Math.random()*0.6);
-      setTimeout(()=>{ if(S.mode==='paused') return; const ep={x:tx+Math.cos(a)*rr, z:tz+Math.sin(a)*rr};
-        burst(ep, 0xffba5c, 6, 8, {life:0.34, size:1.5, up:4, drag:2.6}); burst(ep, 0xff5a1c, 4, 6, {life:0.42, size:1.3, drag:2.6}); ringPulse(ep, 0xffaa50, 2.3); }, 40+k*42); }   // secondary pops
-    S.shake=Math.min(5.5, S.shake+3.4);
-    sfx('bigexplode'); setTimeout(()=>{ if(S.mode!=='paused') sfx('explode'); }, 130);
-  } else {
-    // ===== MISS (you dodged) → just fire + smoke "xèo" — no shrapnel =====
-    burst(pos, 0xffd28a, Math.floor(10*sc), 8*sc, {life:0.36, size:1.8*sc, up:4, drag:2.6});               // modest fireball
-    burst(pos, 0xff7a2e, Math.floor(7*sc),  6*sc, {life:0.42, size:1.5*sc, up:3, drag:2.6});
-    burst(pos, 0x8a7355, Math.floor(5*sc),  5*sc, {life:0.5,  size:1.0*sc, up:2, grav:5, drag:2});         // light dirt puff (no metal)
-    for(let k=0;k<3;k++) setTimeout(()=>{ if(S.mode==='paused') return;
-      burst({x:tx,z:tz}, 0x241c14, 2, 3+k, {y:1+k*0.7, life:0.7, size:(1.7+k*0.4)*sc, smoke:true, grav:-0.5, drag:1.6, up:2, op:0.4}); }, k*55);   // small smoke wisp
-    S.shake=Math.min(2.8, S.shake+1.1);
-    sfx('explode');
-  }
+  if(hit){ for(let k=0;k<(MOBILE?12:24);k++){ const a=Math.random()*6.283, v=12+Math.random()*16; spawnPart(tx, gy+1, tz, Math.cos(a)*v, 2+Math.random()*7, Math.sin(a)*v, { color:0xffe6a0, color2:0xff5a10, size:0.16, life:0.5+Math.random()*0.4, grav:-14, drag:0.6 }); }   // shrapnel
+    spawnDebris(pos, 1.6, 0x33302a); S.shake=Math.min(5.5, S.shake+3.4); sfx('bigexplode'); setTimeout(()=>{ if(S.mode!=='paused') sfx('explode'); }, 130); }
+  else { S.shake=Math.min(2.8, S.shake+1.1); sfx('explode'); }
 }
 export function clearArtillery(){ for(const s of artStrikes){ if(s.mesh) scene.remove(s.mesh); disposeArtZone(s.zone); } artStrikes.length=0; ART={phase:'rest', t:BALANCE.artillery.restMin}; }
 export function removeEnemy(e){ const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh);

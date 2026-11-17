@@ -32,20 +32,24 @@ export function makeMortarShell(){
   return g;
 }
 // dedicated ENEMY ARTILLERY missile — bigger & menacing: dark hull, glowing red warhead, hazard band, swept fins, fierce plume
-export function makeArtMissileMesh(){
-  const g=new THREE.Group();
-  const hull=new THREE.MeshStandardMaterial({color:0x23262b,metalness:0.78,roughness:0.34});
-  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.40,2.1,14), hull); g.add(body);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.39,1.05,14), new THREE.MeshStandardMaterial({color:0x180a08,emissive:0xff2a12,emissiveIntensity:1.5,metalness:0.5,roughness:0.4})); nose.position.y=1.55; g.add(nose);
-  const tip=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,10), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xff4020,emissiveIntensity:2.4})); tip.position.y=2.08; g.add(tip);   // glowing seeker tip
-  const band=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.32,14), new THREE.MeshStandardMaterial({color:0xffc24a,emissive:0xffae20,emissiveIntensity:0.55,metalness:0.4,roughness:0.5})); band.position.y=0.55; g.add(band);   // hazard stripe
-  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.66,0.52,0.07), new THREE.MeshStandardMaterial({color:0x15171a,metalness:0.6,roughness:0.5})); fin.position.y=-0.96; fin.rotation.y=k*1.5708; g.add(fin); }
-  const plume=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff7a1c,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); plume.scale.setScalar(2.5); plume.position.y=-1.55; g.add(plume); g._plume=plume;
-  const core=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe06a,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); core.scale.setScalar(1.25); core.position.y=-1.42; g.add(core);
-  const tongue=new THREE.Mesh(new THREE.ConeGeometry(0.34,3.2,12,1,true), new THREE.MeshBasicMaterial({ color:0xffa040, transparent:true, opacity:0.75, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); tongue.rotation.x=Math.PI; tongue.position.y=-2.95; g.add(tongue); g._tongue=tongue;   // Z188 a long flame tongue
-  const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff5a1a,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending,depthWrite:false})); halo.scale.setScalar(5.5); halo.position.y=-1.2; g.add(halo);   // the glow it throws around itself
-  g.scale.setScalar(1.15); return g;
-}
+// Z218 the enemy artillery rocket — a real 122 mm field rocket: long olive-drab body, steel ogive nose with a fuse, a red HE band + stencil band,
+//   four tail fins round a dark nozzle; a short white-hot flame while the motor burns (hidden once it burns out). It rolls as it flies.
+let _artRk=null;
+function artRocketTemplate(){ if(_artRk) return _artRk; const g=new THREE.Group(), od=new THREE.MeshStandardMaterial({ color:0x4a5236, roughness:0.62, metalness:0.32 }), st=new THREE.MeshStandardMaterial({ color:0x6e726c, roughness:0.38, metalness:0.8 }),
+    dk=new THREE.MeshStandardMaterial({ color:0x1c1d1e, roughness:0.5, metalness:0.6 }), red=new THREE.MeshStandardMaterial({ color:0x8a2018, roughness:0.6, metalness:0.2 }), yel=new THREE.MeshStandardMaterial({ color:0xb89a3a, roughness:0.6, metalness:0.2 });
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,2.2,16), od); body.position.y=-0.15; g.add(body);
+  const prof=[[0.17,0],[0.165,0.12],[0.15,0.3],[0.12,0.48],[0.08,0.62],[0.04,0.72],[0.025,0.78]].map(([r,y])=>new THREE.Vector2(r,y)); const nose=new THREE.Mesh(new THREE.LatheGeometry(prof,16), st); nose.position.y=0.95; g.add(nose);   // ogive nose
+  const fuse=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,0.12,8), dk); fuse.position.y=1.78; g.add(fuse);
+  const b1=new THREE.Mesh(new THREE.CylinderGeometry(0.172,0.172,0.08,16), red); b1.position.y=0.78; g.add(b1); const b2=new THREE.Mesh(new THREE.CylinderGeometry(0.172,0.172,0.04,16), yel); b2.position.y=0.62; g.add(b2);
+  const noz=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.12,0.22,14), dk); noz.position.y=-1.36; g.add(noz);
+  for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.46,0.3), dk); const a=k*Math.PI/2; f.position.set(Math.cos(a)*0.3,-1.06,Math.sin(a)*0.3); f.rotation.y=-a; g.add(f); }   // tail fins
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.18,0.025,6,16), dk); ring.rotation.x=Math.PI/2; ring.position.y=-1.24; g.add(ring);
+  _artRk=g; return g; }
+export function makeArtMissileMesh(){ const g=artRocketTemplate().clone();
+  const tongue=new THREE.Mesh(new THREE.ConeGeometry(0.15,1.5,10,1,true), new THREE.MeshBasicMaterial({ color:0xffc070, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); tongue.rotation.x=Math.PI; tongue.position.y=-2.2; g.add(tongue); g._tongue=tongue;
+  const inner=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.8,8,1,true), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); inner.rotation.x=Math.PI; inner.position.y=-1.85; g.add(inner); g._inner=inner;
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffd8a0, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false })); glow.scale.setScalar(1.4); glow.position.y=-1.5; g.add(glow); g._plume=glow;
+  g.scale.setScalar(1.25); return g; }
 export const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
 // where a SIEGE ROCKET will land — DESKTOP: the mouse cursor; MOBILE / no pointer: auto-lock nearest enemy → aim direction
 export function rocketTarget(){

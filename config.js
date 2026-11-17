@@ -31,7 +31,7 @@ export const BALANCE = {
   // Dodge window = lockTime+flightTime (move out of `radius`). Damage falls off by distance: bullseye = dmgMax, edge = dmgMin, outside = 0.
   // Designed dodgeable: player base maxSpeed 26 clears radius 6.5 in ~0.25s, far under the ~2s window — threat is REACTION + barrage density.
   artillery:{ radius:6.5, innerFrac:0.4, dmgMax:32, dmgMin:8, coreMul:0.5,
-    lockTime:0.9, flightTime:1.2, gravity:26,
+    lockTime:0.9, flightTime:1.2, gravity:38,   /* Z218 a higher, plunging arc */
     warnLead:1.3, restMin:5, restMax:8, shotSpacing:0.65, shotsBase:2, shotsPerMortar:1, shotsMax:6 },
   // enemy AGGRESSION & ACCURACY — both ramp with stage (diffScale 0→1 over S1→S5) and NG+ loop.
   // fireChance = how proactively they shoot (early = hesitant, late = relentless); spread shrinks → far more accurate late.
