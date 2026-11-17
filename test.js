@@ -602,7 +602,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z142 city district
 { const fs=await import('node:fs'); const c=fs.readFileSync('src/world/city.js','utf8');
-  ok(/tubeHouse/.test(c) && /apartment/.test(c) && /officeTower/.test(c) && /villaHouse/.test(c) && /motoGeo/.test(c) && /zebra/.test(c) && /LineSegments/.test(c), 'city: street grid, varied buildings, cars, motorbikes, crossings, power lines'); }
+  ok(/tubeHouse/.test(c) && /apartment/.test(c) && /officeTower/.test(c) && /villaHouse/.test(c) && /drawStreetVehicles/.test(c) && /zebra/.test(c) && /LineSegments/.test(c), 'city: street grid, varied buildings, cars, motorbikes, crossings, power lines'); }
 
 // Z143 savanna, arctic, wildlife
 { const fs=await import('node:fs'); const w=fs.readFileSync('src/data/world.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), a=fs.readFileSync('src/actors/wildlife.js','utf8');
@@ -1058,6 +1058,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'); const su=fs.readFileSync('src/world/supply.js','utf8');
   ok(C.FENCE && C.FENCE.ramV>=8 && /function fenceCollide\(B, p, now\)/.test(su) && /closing>=FENCE\.ramV/.test(su) && /LẤY ĐÀ HÚC MẠNH/.test(su), 'an upright bay stops the hull unless it rams at speed');
   ok(/export function fenceShot\(b\)/.test(su) && /export function fenceBlast\(x, z, r\)/.test(su) && /fenceShot\(b\)/.test(fs.readFileSync('src/combat/lock-on.js','utf8')) && /fenceBlast\(x, z, r\)/.test(fs.readFileSync('src/combat/spells.js','utf8')), 'rounds and blasts tear the wire down'); }
+
+// Z206 street vehicles are real bodies: side silhouettes with wheel arches, cabin + glass, lathed tyres on alloys, lamps; paint + trim draws; crushable
+{ const fs=await import('node:fs'); const ca=fs.readFileSync('src/world/cars.js','utf8');
+  ok(/function carBody\(o\)/.test(ca) && /ExtrudeGeometry/.test(ca) && /LatheGeometry/.test(ca) && ['sedan','hatch','suv','pickup','van','taxi','truck'].every(n=>ca.includes(`name:'${n}'`)) && /function scooter\(\)/.test(ca), 'seven car bodies + a scooter, built from real profiles');
+  ok(/aRM/.test(ca) && /roughnessFactor = roughness\*vRM\.x/.test(ca) && /o\.wreck/.test(ca) && /export function crushVehicle\(c\)/.test(ca) && /crushVehicle\(c\)/.test(fs.readFileSync('src/world/decor.js','utf8')), 'glass gleams, rubber does not; wrecks; tanks pancake them'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -83,7 +83,7 @@ export function flattenPad(x, z, rIn, rOut){ const W=HF.W, h=HF.h, st=HF.step; i
   const i0=Math.max(0,Math.floor((x-rOut+ARENA)/st)), i1=Math.min(HF.N,Math.ceil((x+rOut+ARENA)/st)), j0=Math.max(0,Math.floor((z-rOut+ARENA)/st)), j1=Math.min(HF.N,Math.ceil((z+rOut+ARENA)/st));
   for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(-ARENA+i*st-x, -ARENA+j*st-z); if(d>=rOut) continue; const t=d<=rIn?1:1-(d-rIn)/(rOut-rIn), w=t*t*(3-2*t); h[j*W+i]=h[j*W+i]*(1-w)+h0*w; }
   HF.dj0=Math.min(HF.dj0??1e9, j0-1); HF.dj1=Math.max(HF.dj1??-1, j1+1); HF.dirty=true;
-  for(const c of crushables) if(c.alive && Math.hypot(c.x-x,c.z-z)<rOut){ c.alive=false; c.im.setMatrixAt(c.k,_Z0); c.im.instanceMatrix.needsUpdate=true; } }
+  for(const c of crushables) if(c.alive && Math.hypot(c.x-x,c.z-z)<rOut){ c.alive=false; for(const im of [c.im, ...(c.ims||[])]){ im.setMatrixAt(c.k,_Z0); im.instanceMatrix.needsUpdate=true; } } }
 const KEEP=new Set(['fortwall','gate','keep','fortcore','tower','camp','brick','obj','corewall','parked','pylon']);
 // a site is free when no structure (fort, tower, camp, wall, ridge, loot) is in the way — scattered cover is simply cleared off the yard
 export function siteOk(x, z, R){ return !blocks.some(b=>(KEEP.has(b.kind)||b.ridge||b.loot||b.fort||b.supply) && Math.hypot(b.x-x,b.z-z)<b.r+R+2); }

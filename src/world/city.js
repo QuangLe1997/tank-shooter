@@ -4,7 +4,7 @@
 //   traffic lights, sagging power lines. Facades are merged per material (a handful of draw calls); towers stay single so a shelled one can collapse.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ARENA, LAND, MOBILE, TEX_K, ZONES, _R, _mergeColored, arena, blocks, crushables, detailize, floraMat, heightAt, inField, inZone, maxAniso, treeBroadleaf } from '../hub.js';
+import { ARENA, LAND, MOBILE, TEX_K, ZONES, _R, _mergeColored, arena, blocks, crushables, detailize, drawStreetVehicles, floraMat, heightAt, inField, inZone, maxAniso, pickCar, treeBroadleaf } from '../hub.js';
 
 const G=34, ROAD=8, WALK=2.4;            // grid pitch · carriageway · sidewalk
 const SIGNS=['TẠP HOÁ','PHỞ BÒ','CÀ PHÊ','SỬA XE','BÁNH MÌ','NHÀ THUỐC','KARAOKE','NHÀ NGHỈ','ĐIỆN THOẠI','BÚN CHẢ','VÀNG BẠC','GẠO'];
@@ -76,31 +76,12 @@ function villaHouse(ox,oz,ry,w,d){ const y0=heightAt(ox,oz)-0.05, H=6.4, T=villa
   const sh=new THREE.Shape(); sh.moveTo(-d/2-0.5,0); sh.lineTo(d/2+0.5,0); sh.lineTo(0,2.4); sh.closePath(); const rg=new THREE.ExtrudeGeometry(sh,{depth:w+0.8,bevelEnabled:false}); rg.translate(0,0,-(w+0.8)/2); rg.rotateY(Math.PI/2); det(rg, ox, y0+H, oz, ry, 0xb04a2a);
   local(0, y0+0.6, d/2+2.2, w+2, 1.2, 0.25, ox,oz,ry, 0xe8e0c8);   // front garden wall
   footprint(ox,oz,ry,w,d); return H; }
-// ---------- vehicles (instanced; white body is tinted per instance, wheels/glass stay dark) ----------
-let _car=null, _van=null, _moto=null, _vmat=null;
+// ---------- vehicles: Z206 real bodies live in world/cars.js (paint + trim draws per body type) ----------
+let _vmat=null;
 function vmat(){ return _vmat||(_vmat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.35, metalness:0.45, envMapIntensity:1.2 })); }
-function carGeo(){ if(_car) return _car; const Q=[], b=(w,h,d,x,y,z,col,rx)=>{ const g=new THREE.BoxGeometry(w,h,d); if(rx) g.rotateX(rx); g.translate(x,y,z); Q.push({geo:g,col}); };
-  b(1.8,0.55,4.3,0,0.6,0,0xffffff); b(1.7,0.12,1.2,0,0.9,1.45,0xffffff,-0.12); b(1.6,0.62,2.1,0,1.18,-0.2,0xffffff);
-  b(1.62,0.48,0.08,0,1.2,0.86,0x18242e,0.55); b(1.62,0.44,0.08,0,1.2,-1.26,0x18242e,-0.5); b(0.06,0.42,1.7,0.81,1.2,-0.2,0x18242e); b(0.06,0.42,1.7,-0.81,1.2,-0.2,0x18242e);   // glass
-  for(const [x,z] of [[0.82,1.35],[-0.82,1.35],[0.82,-1.35],[-0.82,-1.35]]){ const w=new THREE.CylinderGeometry(0.36,0.36,0.26,12); w.rotateZ(Math.PI/2); w.translate(x,0.36,z); Q.push({geo:w,col:0x151515}); }
-  b(0.4,0.14,0.05,0.6,0.7,2.16,0xf8f8e8); b(0.4,0.14,0.05,-0.6,0.7,2.16,0xf8f8e8); b(0.4,0.12,0.05,0.6,0.72,-2.16,0xc82020); b(0.4,0.12,0.05,-0.6,0.72,-2.16,0xc82020);
-  return (_car=_mergeColored(Q)); }
-function vanGeo(){ if(_van) return _van; const Q=[], b=(w,h,d,x,y,z,col)=>{ const g=new THREE.BoxGeometry(w,h,d); g.translate(x,y,z); Q.push({geo:g,col}); };
-  b(1.9,1.5,4.8,0,1.15,-0.1,0xffffff); b(1.84,0.6,0.08,0,1.55,2.31,0x18242e); b(0.06,0.5,1.0,0.96,1.55,1.6,0x18242e); b(0.06,0.5,1.0,-0.96,1.55,1.6,0x18242e);
-  for(const [x,z] of [[0.86,1.5],[-0.86,1.5],[0.86,-1.6],[-0.86,-1.6]]){ const w=new THREE.CylinderGeometry(0.38,0.38,0.28,12); w.rotateZ(Math.PI/2); w.translate(x,0.38,z); Q.push({geo:w,col:0x151515}); }
-  return (_van=_mergeColored(Q)); }
-function motoGeo(){ if(_moto) return _moto; const Q=[];
-  for(const z of [0.62,-0.62]){ const w=new THREE.TorusGeometry(0.27,0.07,6,14); w.rotateY(Math.PI/2); w.translate(0,0.3,z); Q.push({geo:w,col:0x151515}); }
-  const body=new THREE.BoxGeometry(0.34,0.32,1.05); body.translate(0,0.55,-0.1); Q.push({geo:body,col:0xffffff}); const seat=new THREE.BoxGeometry(0.3,0.1,0.62); seat.translate(0,0.8,-0.25); Q.push({geo:seat,col:0x202020});
-  const front=new THREE.BoxGeometry(0.3,0.62,0.14); front.rotateX(0.25); front.translate(0,0.72,0.5); Q.push({geo:front,col:0xffffff}); const bar=new THREE.BoxGeometry(0.62,0.05,0.05); bar.translate(0,1.05,0.55); Q.push({geo:bar,col:0x303030});
-  const lamp=new THREE.BoxGeometry(0.12,0.1,0.06); lamp.translate(0,0.95,0.62); Q.push({geo:lamp,col:0xf8f8e0}); return (_moto=_mergeColored(Q)); }
-const VCOL=[0xc8c8c8,0xf0f0f0,0x2a2a2a,0x8a1a1a,0x1a3a7a,0x6a6a6a,0xd8c8a0,0x3a5a3a];
-function fleet(geo, list, cr){ if(!list.length) return; const im=new THREE.InstancedMesh(geo, vmat(), list.length), M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(), V=new THREE.Vector3(), S=new THREE.Vector3(1,1,1), C=new THREE.Color();
-  list.forEach((o,k)=>{ M.compose(V.set(o.x, heightAt(o.x,o.z), o.z), Q.setFromEuler(E.set(0,o.ry,0)), S); im.setMatrixAt(k,M); im.setColorAt(k, C.setHex(o.col));
-    crushables.push({ x:o.x, z:o.z, r:cr, im, k, alive:true, kind:'grass', ry:o.ry, s:1, land:true }); });
-  im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }
+const VCOL=[0xc8c8c8,0xf0f0f0,0x2a2a2a,0xa81a1a,0x1a3a7a,0x6a6a6a,0xd8c8a0,0x3a5a3a,0xe8e4dc,0x8a1a2a,0x2a5a9a];   // scooter paint
 // ---------- the district ----------
-export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA/G), cars=[], vans=[], motos=[], trees=[], lamps=[], poles=[];
+export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA/G), cars=[], motos=[], trees=[], lamps=[], poles=[];
   const roadOK=(x,z)=>inField(x,z,4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<158;
   const RT=roadT(), WT=walkT(), ZT=zebraT();
   const roadMat=()=>detailize(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), walkMat=()=>detailize(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 }), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 });
@@ -117,8 +98,8 @@ export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA
         else if(r<0.42){ const rowN=3+((Math.random()*6)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; motos.push({ x:ax?cx+ox:cx+ss, z:ax?cz+ss:cz+oz, ry:(ax?Math.PI/2:0)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; } }
       if(Math.random()<0.5) poles.push([ax?cx+ox+sd*0.9:cx-L/2+1, ax?cz-L/2+1:cz+oz+sd*0.9, ax?cx+ox+sd*0.9:cx+L/2-1, ax?cz+L/2-1:cz+oz+sd*0.9]);
       // parked cars along the kerb
-      for(let s=-L/2+4; s<L/2-4; s+=_R(6,14)) if(Math.random()<0.45){ const lx=ax?sd*(ROAD/2-1.2):0, lz=ax?0:sd*(ROAD/2-1.2), list=Math.random()<0.25?vans:cars;
-        list.push({ x:ax?cx+lx:cx+s, z:ax?cz+s:cz+lz, ry:ax?(sd>0?0:Math.PI):(sd>0?Math.PI/2:-Math.PI/2), col:Math.random()<0.12?0xf0c020:VCOL[(Math.random()*VCOL.length)|0] }); } } }
+      for(let s=-L/2+4; s<L/2-4; s+=_R(6,14)) if(Math.random()<0.45){ const lx=ax?sd*(ROAD/2-1.2):0, lz=ax?0:sd*(ROAD/2-1.2);
+        cars.push(pickCar({ x:ax?cx+lx:cx+s, z:ax?cz+s:cz+lz, ry:ax?(sd>0?0:Math.PI):(sd>0?Math.PI/2:-Math.PI/2)+(Math.random()-0.5)*0.06 })); s+=2; } } }
   // intersections: plain asphalt + zebra crossings + a traffic light on one corner
   for(let i=-n;i<=n;i++) for(let j=-n;j<=n;j++){ const x=i*G, z=j*G; if(!roadOK(x,z)) continue; strip('road',roadMat, x, z, ROAD, ROAD, 0, 0.035, 64);
     for(const [dx,dz,a] of [[0,ROAD/2+1.6,0],[0,-ROAD/2-1.6,0],[ROAD/2+1.6,0,Math.PI/2],[-ROAD/2-1.6,0,Math.PI/2]]) strip('zebra',zebMat, x+dx, z+dz, ROAD, 3, a, 0.05, 8, 3);
@@ -151,7 +132,7 @@ export function buildCityDistrict(){ B=new Map(); P=[]; const n=Math.floor(ARENA
   // flush the buckets: one mesh per material
   for(const [k,b] of B){ if(!b.geos.length) continue; const g=mergeGeometries(b.geos.map(q=>q.index?q.toNonIndexed():q), false); b.geos.forEach(q=>q.dispose()); const m=new THREE.Mesh(g, b.mat); m.castShadow=!/road|walk|zebra|park/.test(k); m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
   if(P.length){ const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 }), { scale:0.6, bump:0.012, alb:0.3, foot:0.8, streak:0.2 })); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
-  fleet(carGeo(), cars, 1.6); fleet(vanGeo(), vans, 1.8); fleet(motoGeo(), motos, 0.45);
+  drawStreetVehicles(cars, motos);
   if(trees.length){ const im=new THREE.InstancedMesh(treeBroadleaf(), floraMat(), trees.length), M=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), v=new THREE.Vector3(), s=new THREE.Vector3();
     trees.forEach((o,k)=>{ M.compose(v.set(o.x,heightAt(o.x,o.z),o.z), q.setFromEuler(e.set(0,o.ry,0)), s.set(o.s,o.s,o.s)); im.setMatrixAt(k,M); crushables.push({ x:o.x, z:o.z, r:0.55*o.s, im, k, alive:true, kind:'tree', ry:o.ry, s:o.s, land:true }); });
     im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }

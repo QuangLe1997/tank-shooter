@@ -67,6 +67,7 @@ export * from './world/core-walls.js';     // Z140
 export * from './world/env-events.js';     // Z140
 export * from './fx/celebrate.js';         // Z140
 export * from './world/flora.js';          // Z141
+export * from './world/cars.js';           // Z206
 export * from './world/city.js';           // Z142
 export * from './actors/wildlife.js';      // Z143
 export * from './world/wonders.js';        // Z144
