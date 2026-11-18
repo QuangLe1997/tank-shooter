@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -198,7 +198,7 @@ function nameSignAt(B, z1, item){ const [k,,,,w]=item, H=w*72/256, g=new THREE.P
 const SP_Z=()=>ARENA*0.55;
 function cornerSite(sx, sz, R0){ for(const k of [1,0.86,0.74,0.62]){ const R=R0*k;
   for(let t=0;t<700;t++){ const reach=Math.min(ARENA*0.6, 4+t*0.12), x=sx*(ARENA-R-6-Math.random()*reach), z=sz*(ARENA-R-6-Math.random()*reach);
-    if(Math.hypot(x,z)<R+50 || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R+3) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+4) || !siteOk(x,z,R)) continue;
+    if(!homeClear(x,z,R0) || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R+3) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+4) || !siteOk(x,z,R)) continue;
     clearSite(x, z, R0*1.05); return [x,z]; } } return null; }
 // Z196 GRID SCAN: walk the whole field on a 6 m grid and take the best-scoring free spot (score = how well it suits: near a corner, high ground…);
 //   unlike random tries it never misses a gap that exists. Tiers shrink the clearance a little when the field is crowded.
@@ -206,7 +206,7 @@ export function scanSite(R0, score, o){ o=o||{}; const step=6;
   for(const k of [1,0.88,0.76,0.66]){ const R=R0*k; let best=null, bs=Infinity;
     for(let x=-ARENA+R+5; x<=ARENA-R-5; x+=step) for(let z=-ARENA+R+5; z<=ARENA-R-5; z+=step){
       if(o.maxZ!=null && z>o.maxZ) continue; const sc=score(x,z); if(sc>=bs) continue;
-      if(Math.hypot(x,z)<R+(o.core??48) || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R*0.8) || inZone(x,z,R*0.8) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+CAMP_R*0.8) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<(B.R+R)*0.92) || !siteOk(x,z,R)) continue;
+      if(!homeClear(x,z,R0,false,o.homeK) || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R*0.8) || inZone(x,z,R*0.8) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+CAMP_R*0.8) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<(B.R+R)*0.92) || !siteOk(x,z,R)) continue;
       best=[x,z]; bs=sc; }
     if(best){ clearSite(best[0], best[1], R0*1.05); return best; } }
   return null; }

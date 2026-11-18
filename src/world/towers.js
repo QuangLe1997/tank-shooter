@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE, HUMAN_SCALE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, clearCamps, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -61,7 +61,7 @@ export function buildTower(x, z, kindId){
 const OPEN_DECK=new Set(['wood','bamboo','lattice']);   // Z175 rope bridges only between open platforms
 export function buildTowers(){
   for(const t of towers){ scene.remove(t.g); dropSearchlight(t.light); } towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges();
-  const n=Math.round(((MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)))*Math.min(AREA_K,1.7)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&Math.hypot(x,z)>22 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7) && !inZone(x,z,6) && inField(x,z,9);
+  const n=Math.round(((MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)))*Math.min(AREA_K,1.7)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&homeClear(x,z,4,true) && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7) && !inZone(x,z,6) && inField(x,z,9);
   for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
     for(let tr=0;tr<30&&!ok;tr++){ x=(Math.random()*2-1)*(ARENA-9); z=(Math.random()*2-1)*(ARENA-9); ok=okAt(x,z); }
     if(!ok) continue; buildTower(x,z); const t0=towers[towers.length-1];

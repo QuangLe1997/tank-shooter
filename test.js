@@ -1231,5 +1231,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/RoundedBoxGeometry\(0\.96,0\.34,0\.48,1,0\.14\)/.test(R('src/world/props.js')), 'sandbag walls built with one bevel segment (27k → ~10k triangles each)');
   ok(/export function tankDetail\(m, on\)/.test(lod) && /tankDetailR: 38, smallR: 0\.9/.test(cf) && /bakeGroup\(G0\); \}/.test(R('src/actors/core.js')) && /bakeGroup\(g\);   \/\/ Z233/.test(R('src/world/core-walls.js')) && /c\.isInstancedMesh \|\| c\.isSkinnedMesh/.test(R('src/tank/model.js')), 'far tanks drop their fittings; the podium and citadel are baked; baking never folds instanced fields or flags'); }
 
+// Z234 home ground: every enemy installation stands clear of our citadel (forts, camps, compounds, underground gate, bunkers, towers, depots)
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cf=R('config.js'), fd=R('src/world/field.js'), ft=R('src/world/fortress.js'), sp=R('src/world/supply.js'), cp=R('src/world/camps.js');
+  const wall=+/HOME_GAP = \{ wall:(\d+)/.exec(cf)[1], citR=+/CORE_DEF = \{ R:(\d+)/.exec(R('src/world/core-walls.js'))[1];
+  ok(wall===citR, 'HOME_GAP.wall matches our citadel radius ('+wall+' vs '+citR+')');
+  const gap=+/HOME_GAP = \{[^}]*\bgap:(\d+)/.exec(cf)[1], minK=+/minK:([\d.]+)/.exec(cf)[1];
+  ok(gap*minK > 54-citR, 'even relaxed, the gap is wider than our guard cannons reach past the wall ('+(gap*minK).toFixed(1)+' m > '+(54-citR)+' m)');
+  ok(/export function homeGap\(x, z, R\)/.test(fd) && /export function homeClear\(x, z, R, small, k\)/.test(fd), 'homeGap / homeClear live in world/field.js');
+  ok(/!homeClear\(x, z, R, false, hk\)/.test(ft) && !/Math\.hypot\(x,z\)<R\+18/.test(ft) && /dMin=HOME_GAP\.wall\+R\+/.test(ft), 'forts are placed past our home ground (the old 18 m rule is gone)');
+  ok((sp.match(/!homeClear\(x,z,R0/g)||[]).length===2 && !/o\.core\?\?48/.test(sp), 'supply compounds and camps test the full site radius against our home ground');
+  ok(/homeClear\(x,z,16\)/.test(R('src/world/underbase.js')) && /!homeClear\(x,z,need,true\)/.test(R('src/world/tunnels.js')) && /homeClear\(x,z,4,true\)/.test(R('src/world/towers.js')) && /DEPOT\.r, true\)/.test(R('src/world/zones.js')), 'the underground gate, bunkers, watchtowers and depots keep off it too');
+  ok(/function campOverDepot\(tx, tz\)/.test(cp) && /countMobile:\[2,2,3,3,3\]/.test(cf) && /mobileR:0\.8, minR:26/.test(cf), 'the small phone field: smaller, fewer forts; one camp may take a depot\'s ground'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

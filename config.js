@@ -102,6 +102,10 @@ export const CAVE_DEF = { wallH:30, wallW:12, shafts:[4,5], shaftR:[9,15], light
 export const TUNNEL = { from:2, n:[3,4], caveN:3, hp:{ hatch:70, bunker:280, mouth:520 }, seeR:20, under:[4,8], hurtK:0.6, suppK:0.5, grabR:7, heal:0.25,
   ambush:{ first:[35,55], every:[30,48], r:[24,70], cap:90 }, score:{ seal:250, all:800, buried:60 } };
 // Z226 the UNDERGROUND BASE under every battlefield, reached through the guarded MAIN TUNNEL GATE (electronic lock)
+// Z234 HOME GROUND: every enemy installation (fortress, barracks camp, fuel/ammo/radar compound, the underground gate, bunkers, watchtowers)
+//   stands well clear of OUR citadel — gap = open ground between our wall (wall: its radius, world/core-walls.js) and the edge of theirs,
+//   wider than our guard cannons' reach past the wall (54 − 24 = 30 m); small posts (bunkers, towers) keep a shorter gap. spawn: the same from our spawn point.
+export const HOME_GAP = { wall:24, gap:46, gapMobile:26, small:34, smallMobile:20, spawn:36, spawnMobile:24, minK:0.7, campMobileK:0.5 };   // campMobileK: on the small phone field the first barracks camp may relax to half the gap rather than not exist   // minK: when the field is too crowded to place a site, the gap relaxes step by step to this share, never below
 export const UNDERBASE = { off:170, W:75, D:55, gate:{ lockHp:[380,80], turretHp:300, turretR:36, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },
   hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26], tank:[38,48], maxTanks:3 }, lights:{ desk:8, mob:3, I:50, range:34 }, score:{ target:400, all:2000, lock:300 } };
 export const REAL = {
@@ -520,11 +524,12 @@ export const TOUCH_HELP = [
 //   Troops and tanks on the open field SALLY from these gates. Take every fortress = win the stage: the main citadel's gate
 //   stays sealed until the others have fallen, and its commander is the stage boss.
 export const FORT = {
-  count:[3,3,4,4,4], countMobile:[3,3,3,3,4],
+  count:[3,3,4,4,4], countMobile:[2,2,3,3,3],   // Z234 phones: the 130 m field holds fewer forts now that they stand clear of our citadel
   tiers:{ 1:{ r:[31,35], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[8,11],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
           2:{ r:[35,40], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[11,14],  name:'PHÁO ĐÀI' },
           3:{ r:[41,45], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[14,18], name:'THÀNH' } },
-  gatePerStage:0.22, mobileMul:0.6, wallH:7.0, wallT:2.4, gateW:7.0, seg:3,
+  gatePerStage:0.22, mobileMul:0.6, mobileR:0.8, minR:26,   // Z234 mobileR: fort radius on phones (the 130 m field) · minR: never smaller (the gate wall needs its length)
+   wallH:7.0, wallT:2.4, gateW:7.0, seg:3,
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'chief', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards

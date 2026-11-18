@@ -7,7 +7,7 @@
 //     seal them all and the men still down there are buried
 import * as THREE from 'three';
 import { TUNNEL } from '../../config.js';
-import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, inField, inZone, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
+import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, homeClear, inField, inZone, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
 
 export const TUN = { list:[], under:[], next:0, chk:0, told:false, g:null };
 const R=(a,b)=>a+Math.random()*(b-a), RN=a=>Math.round(R(a[0], a[1]+0.99)-0.49), TAU=Math.PI*2;
@@ -64,7 +64,7 @@ export function buildTunnels(){ clearTunnels(); if(CAVE) CAVE.extra.length=0; co
   const n=cave ? TUNNEL.caveN : RN(TUNNEL.n), kinds=[]; for(let i=0;i<n;i++) kinds.push(i===0?'bunker':'hatch');
   for(const kind of kinds){ const need=kind==='bunker'?5:2.5;
     for(let t=0;t<200;t++){ const x=R(-ARENA*0.82, ARENA*0.82), z=R(-ARENA*0.86, ARENA*0.3);
-      if(!inField(x,z,9) || Math.hypot(x,z)<30 || Math.hypot(x, z-ARENA*0.55)<46 || inZone(x,z,4) || wetAt(x,z,3) || !clearOf(x,z,need) || TUN.list.some(E=>Math.hypot(E.x-x,E.z-z)<38)) continue;
+      if(!inField(x,z,9) || !homeClear(x,z,need,true) || Math.hypot(x, z-ARENA*0.55)<46 || inZone(x,z,4) || wetAt(x,z,3) || !clearOf(x,z,need) || TUN.list.some(E=>Math.hypot(E.x-x,E.z-z)<38)) continue;
       const E=add(kind, x, z, Math.atan2(x, z)+Math.PI+R(-0.6,0.6));
       if(cave && kind==='bunker'){ const fx=Math.sin(E.a), fz=Math.cos(E.a), sx=Math.cos(E.a), sz=-Math.sin(E.a); CAVE.extra.push({ x:x+fx*1.0+sx*1.9, y:heightAt(x,z)+1.9, z:z+fz*1.0+sz*1.9, k:0.9, ph:Math.random()*9 }); }   // a torch at the bunker door
       break; } }

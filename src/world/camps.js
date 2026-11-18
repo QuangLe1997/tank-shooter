@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
-import { CAMP, LOOT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
+import { CAMP, HOME_GAP, LOOT } from '../../config.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -35,9 +35,14 @@ export function makeQuonset(){ const M=campMats(), g=new THREE.Group(), R=2.4, L
   const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,3.2,5), M.dark); ant.position.set(1.1,R+1.0,-2.6); g.add(ant);                // radio mast
   return g; }
 export function campFlagTex(){ return _canvasTex(160,100,(x,W,H)=>{ x.fillStyle='#2a2a2a'; x.fillRect(0,0,W,H); x.fillStyle='#b8202a'; x.fillRect(0,H*0.35,W,H*0.3); x.fillStyle='#d8d0b8'; x.beginPath(); x.arc(W*0.25,H*0.5,H*0.16,0,7); x.fill(); }); }
+// Z234 the small phone field: when nothing else is free, the first camp may take a weapon/tank depot's planned ground (that depot is dropped)
+//   and relax toward half the home gap — a barracks camp matters more than a depot
+function campOverDepot(tx, tz){ const D=ZONES.filter(q=>q.kind==='arms'||q.kind==='motor'); for(const q of D) ZONES.splice(ZONES.indexOf(q),1);
+  const sc=(x,z)=>Math.hypot(x-tx,z-tz)+Math.max(0,z)*2, s=scanSite(CAMP_R, sc, { homeK:HOME_GAP.minK }) || scanSite(CAMP_R, sc, { homeK:HOME_GAP.campMobileK });
+  for(const q of D) if(!s || Math.hypot(q.x-s[0], q.z-s[1]) > CAMP_R+q.r+4) ZONES.push(q); return s; }
 export function buildCamps(){
   clearCamps(); const n=(CAMP.perStage[Math.min(CAMP.perStage.length-1,S.stage-1)]||1) - (MOBILE&&S.stage<4?0:0);
-  for(let c=0;c<n;c++){ const tx=(Math.random()*2-1)*ARENA*0.6, tz=-ARENA*(0.35+Math.random()*0.45), site=scanSite(CAMP_R, (x,z)=>Math.hypot(x-tx,z-tz), { maxZ:ARENA*0.15 }) || scanSite(CAMP_R, (x,z)=>Math.hypot(x-tx,z-tz), { maxZ:ARENA*0.45, core:40 });   // no room in the enemy half → nearer the middle   // Z196 grid-scanned site for the big fenced camp, in the enemy half
+  for(let c=0;c<n;c++){ const tx=(Math.random()*2-1)*ARENA*0.6, tz=-ARENA*(0.35+Math.random()*0.45), site=scanSite(CAMP_R, (x,z)=>Math.hypot(x-tx,z-tz), { maxZ:ARENA*0.15 }) || scanSite(CAMP_R, (x,z)=>Math.hypot(x-tx,z-tz), { maxZ:ARENA*0.45 }) || scanSite(CAMP_R, (x,z)=>Math.hypot(x-tx,z-tz), { maxZ:ARENA*0.45, homeK:HOME_GAP.minK }) || scanSite(CAMP_R, (x,z)=>Math.hypot(x-tx,z-tz)+Math.max(0,z)*2, { homeK:HOME_GAP.minK }) || (MOBILE && !CAMPS.length ? campOverDepot(tx, tz) : null);   // Z234 last resort: out on a flank, never on our home ground (the small phone field: one camp may sit a little nearer)   // no room in the enemy half → nearer the middle (still off our home ground, Z234)   // Z196 grid-scanned site for the big fenced camp, in the enemy half
     if(!site) continue; const [x,z]=site; flattenPad(x, z, CAMP_R*0.9, CAMP_R*1.3); const ang=(Math.random()*4|0)*Math.PI/2+(Math.random()-0.5)*0.3, ca=Math.cos(ang), sa=Math.sin(ang), at=(lx,lz)=>[x+lx*ca+lz*sa, z-lx*sa+lz*ca];
     const g=new THREE.Group(); scene.add(g); const K=CAMP_K, hp=Math.round(CAMP.hp*(1+(S.stage-1)*CAMP.hpPerStage)*loopHpMul()*diffHpMul());
     const camp={ g, x, z, ang, at, hp, maxHp:hp, nextAt:performance.now()/1000+6, alive:true, fire:null, door:at(-6,-7+4.4*K), blocks:[], huts:[] };

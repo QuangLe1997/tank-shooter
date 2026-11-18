@@ -10,7 +10,7 @@
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
 import { UNDERBASE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -50,7 +50,7 @@ function turret(par, x, z, wx, wz, base){ const M=mats(), g=new THREE.Group(); g
 export function clearGate(){ const G=UNDER.gate; if(!G) return; scene.remove(G.g); for(const b of [G.lockBlk, G.blk, ...G.turrets.map(t=>t.blk)]){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); } UNDER.gate=null; }
 function buildGate(){ const U=UNDERBASE, M=mats();
   let x=0, z=0, ok=false; for(let t=0;t<900 && !ok;t++){ const k=t<400?1:t<700?0.6:0.35; x=R(-ARENA*0.75, ARENA*0.75); z=R(-ARENA*0.6, ARENA*0.25);   // looser and looser: every battlefield gets its gate
-    ok=inField(x,z,16*k) && Math.hypot(x,z)>42 && Math.hypot(x, z-ARENA*0.55)>60*k && !inZone(x,z,10*k) && clearOf(x,z,12*k) && !(TUN && TUN.list.some(E=>Math.hypot(E.x-x,E.z-z)<28*k)); }
+    ok=inField(x,z,16*k) && homeClear(x,z,16) && Math.hypot(x, z-ARENA*0.55)>60*k && !inZone(x,z,10*k) && clearOf(x,z,12*k) && !(TUN && TUN.list.some(E=>Math.hypot(E.x-x,E.z-z)<28*k)); }
   if(!ok) return; const a=Math.atan2(-x, ARENA*0.55-z), g=new THREE.Group(); g.position.set(x, heightAt(x,z), z); g.rotation.y=a; scene.add(g);
   const G={ x, z, a, g, open:0, opening:false, lockHp:U.gate.lockHp[0]+U.gate.lockHp[1]*(S.stage||1), turrets:[], told:false, beacon:null };
   // the portal: a concrete block over a ramp that dives under it, sandbags on the roof, a red beacon turning on top

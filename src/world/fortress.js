@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, COMMAND, GUN_MODS, HUMAN_SCALE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
+import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -15,10 +15,12 @@ let _nameI=0, _fhT=0;
 // ---- plan: reserve ground first (called at the top of planZones) — far side + flanks, the biggest one farthest from our spawn ----
 export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.stage-1)), n=(MOBILE?FORT.countMobile:FORT.count)[st];
   const cand=[], NM=(BIOME_PLACE[BIOME.name]||{}).forts||FORT.names; _nameI=(Math.random()*NM.length)|0;   // Z170 real place names of this land
-  for(let t=0;t<400 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], R=R2(T.r);
-    const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?0.7:1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, d=Math.min(FR*fr, FR-R-9);   // big forts: keep the whole ring inside the fence
+  for(let t=0;t<600 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], late=t>=220, R=Math.max(FORT.minR, (late?T.r[0]:R2(T.r))*(MOBILE?FORT.mobileR:1));   // Z234 phones: the small field takes smaller forts (so they stand clear of our citadel)
+    const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?(late?1.1:0.7):1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, hk=t<220?1:t<380?0.85:HOME_GAP.minK;
+    const dMin=HOME_GAP.wall+R+(MOBILE?HOME_GAP.gapMobile:HOME_GAP.gap)*hk+1, dMax=FR-R-9; if(dMax<dMin) continue;   // Z234 between our home ground and the fence (big forts keep the whole ring inside it)
+    const d=late ? dMin+Math.random()*(dMax-dMin) : Math.max(dMin, Math.min(FR*fr, dMax));   // a crowded / watery field: try the whole band, not only the preferred depth
     const x=Math.cos(a)*d, z=Math.sin(a)*d;
-    if(!inField(x, z, R+7) || Math.hypot(x,z)<R+18 || Math.hypot(x, z-ARENA*0.55)<R+40) continue;
+    if(!inField(x, z, R+7) || !homeClear(x, z, R, false, hk) || Math.hypot(x, z-ARENA*0.55)<R+40) continue;
     if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+34)) continue;   // Z144 wide gaps between strongholds
     cand.push({ x, z, R, tier }); }
   for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+NM[(_nameI++)%NM.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],

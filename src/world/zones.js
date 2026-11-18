@@ -1,12 +1,12 @@
 // world/zones.js — Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered
 import { DEPOT, POW, RALLY } from '../../config.js';
-import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearForts, clearPOWs, clearRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, inField, planForts, powJob, spawnEnemy } from '../hub.js';
+import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearForts, clearPOWs, clearRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, homeClear, inField, planForts, powJob, spawnEnemy } from '../hub.js';
 
 export const ZONES=[];   // { kind:'rally'|'pow'|'arms'|'motor', x, z, r }
 export function inZone(x, z, pad){ for(const q of ZONES) if(Math.hypot(q.x-x, q.z-z) < q.r+(pad||0)) return true; for(const B of SUPPLY.bases) if(Math.hypot(B.x-x, B.z-z) < B.R+(pad||0)) return true; return false; }   // Z196 the enemy compounds are claimed ground too (no trees, lava or scatter inside the wire)
 export function zonesOf(kind){ return ZONES.filter(q=>q.kind===kind); }
-function _free(x, z, r){ return Math.abs(x)<ARENA-r-3 && Math.abs(z)<ARENA-r-3 && inField(x, z, r+4) && Math.hypot(x,z)>24+r && Math.hypot(x, z-ARENA*0.55)>14+r && !inZone(x, z, r+8); }
-function _pick(gen, r){ for(let t=0;t<50;t++){ const [x,z]=gen(); if(_free(x,z,r)) return [x,z]; } return null; }
+function _free(x, z, r, enemy){ return Math.abs(x)<ARENA-r-3 && Math.abs(z)<ARENA-r-3 && inField(x, z, r+4) && Math.hypot(x,z)>24+r && Math.hypot(x, z-ARENA*0.55)>14+r && !inZone(x, z, r+8) && (!enemy || homeClear(x, z, r)); }   // Z234 enemy depots keep off our home ground
+function _pick(gen, r, enemy){ for(let t=0;t<(enemy?120:50);t++){ const [x,z]=gen(); if(_free(x,z,r,enemy)) return [x,z]; } return null; }
 // called first thing in buildBlocks() so every scatter loop can keep clear of these sites
 export function planZones(){
   ZONES.length=0; planForts(); const st=Math.min(4, S.stage-1), side=Math.random()<0.5?-1:1;   // Z107 fortresses claim their ground first
@@ -16,7 +16,7 @@ export function planZones(){
                                      : Math.PI/2+(Math.random()-0.5)*1.4;                                       // or the rear fence behind our spawn
     return fieldEdgePoint(a, POW.r+6); }, POW.r);   // Z106 hug OUR side of the irregular fence
     if(s) ZONES.push({ kind:'pow', x:s[0], z:s[1], r:POW.r }); }
-  for(const kind of ['arms','motor']) for(let i=0;i<DEPOT[kind][st];i++){ const s=_pick(()=>[(Math.random()*2-1)*(ARENA-24), -ARENA*(0.18+Math.random()*0.55)], DEPOT.r);   // depots sit in the enemy half
+  for(const kind of ['arms','motor']) for(let i=0;i<DEPOT[kind][st];i++){ const s=_pick(()=>[(Math.random()*2-1)*(ARENA-24), -ARENA*(0.18+Math.random()*0.55)], DEPOT.r, true);   // depots sit in the enemy half
     if(s) ZONES.push({ kind, x:s[0], z:s[1], r:DEPOT.r }); }
 }
 // called last in buildBlocks(): raise the installations on the reserved ground

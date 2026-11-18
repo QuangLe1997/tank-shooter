@@ -1,8 +1,8 @@
 // world/field.js — Z106 FIELD BOUNDARY: the playable area is an irregular outline (radius per bearing around the Core) — bays, bulges,
 //   a new shape each stage. Everything that moves or is placed asks inField() / clampField(); the fence follows the outline and the
 //   ground beyond it rises into rocky highland.
-import { FIELD, UNDERBASE } from '../../config.js';
-import { ARENA, wetAt } from '../hub.js';
+import { FIELD, HOME_GAP, UNDERBASE } from '../../config.js';
+import { ARENA, MOBILE, wetAt } from '../hub.js';
 
 // Z226 the underground base's state + its bounds (the field functions defer to them while you are down there) — lives here so it exists before the world is built
 export const UNDER = { on:false, busy:false, x0:1e9, BX:0, W:UNDERBASE.W, D:UNDERBASE.D, gate:null, base:null, surf:[], sblocks:[], bmen:[], bblocks:[], turrets:[], targets:[], lamps:[], lights:[],
@@ -56,3 +56,8 @@ export function fieldPath(step, inset){ const N=720, raw=[]; for(let i=0;i<N;i++
 let _ol=null, _olv=-1; export function fieldOutline(){ if(_olv!==FIELD_STATE.ver){ _ol=fieldPath(6, 0).map(q=>[q.x,q.z]); _olv=FIELD_STATE.ver; } return _ol; }
 export function fieldArea(){ let s=0; const N=FIELD.N; for(let i=0;i<N;i++) s+=FIELD_R[i]*FIELD_R[i]; return s*Math.PI/N; }
 genField();
+
+// Z234 HOME GROUND: open ground (m) between our citadel's wall and a site of radius R at (x,z) — and the test every enemy installation must pass
+export function homeGap(x, z, R){ return Math.hypot(x, z)-(R||0)-HOME_GAP.wall; }
+export function homeClear(x, z, R, small, k){ const H=HOME_GAP, g=(small ? (MOBILE?H.smallMobile:H.small) : (MOBILE?H.gapMobile:H.gap))*(k??1), sp=MOBILE?H.spawnMobile:H.spawn;   // k < 1: a crowded field relaxes the gap (never below HOME_GAP.minK)
+  return homeGap(x, z, R) >= g && Math.hypot(x, z-ARENA*0.55)-(R||0) >= sp; }
