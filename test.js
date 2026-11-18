@@ -1211,5 +1211,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function gunNums\(id\)\{ const s=gunStats\(id\)/.test(si) && /st \? st\.vs\[k\]/.test(si) && /spBar\('Mục tiêu \/ phát'/.test(sh) && /Hạ xe tăng nặng/.test(sh) && /Math\.round\(me\.rng\)\+' m'/.test(sh), 'the arsenal shows the model: sustained + burst DPS, reach in metres, targets per pull, muzzle velocity, time to kill a heavy tank');
   ok(G.shotgun.dmg===14 && G.flak.dmg===12, 'shotgun + flak pellets rebalanced back onto their tier (half their pellets miss at their fighting distance)'); }
 
+// Z231 the starter 30 mm autocannon looks and fires like a weapon: armoured cradle, dual-feed boxes, cooling jacket, 3-port brake; amber tracer, brake jets, HE-I pop
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const br=R('src/tank/barrels.js'), G=(await import('./src/data/guns.js')).GUNS;
+  ok(/RIFLE \(default\) — Z231/.test(br) && /dual-feed ammo boxes/.test(br) && /cooling holes/.test(br) && /three-port muzzle brake/.test(br) && /return id==='rifle'\?1:0/.test(br), 'the 30 mm is a real autocannon mount, worn at grade 1');
+  ok(G.rifle.flash==='auto30' && G.rifle.fx==='he30' && G.rifle.color===0xffa646 && /kind==='auto30'/.test(R('src/fx/gunfx.js')) && /fx==='he30'/.test(R('src/fx/explosions.js')), 'amber tracer, brake side-jets, HE-I impact pop'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

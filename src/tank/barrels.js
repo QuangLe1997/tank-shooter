@@ -183,11 +183,30 @@ export function makeGunBarrel(id){
     for(const x of [-0.24,0.24]) for(const y of [-0.04,0.36]){ tube(0.17,0.17,0.08,2.82,PK,x,Y+y); const nose=new THREE.Mesh(new THREE.ConeGeometry(0.14,0.26,16),glow(0xff7a2a,0.45)); nose.rotation.x=Math.PI/2; nose.position.set(x,Y+y,2.92); g.add(nose); }   // Z113 rocket noses in the tubes
     for(const z of [1.3,1.9,2.5]) rbox(1.08,0.82,0.05,0,Y+0.18,z,PK);                                                                     // armour panel seams
     rbox(0.2,0.3,0.5,0.62,Y,1.2,PK); tip=2.95; recoilLen=0.3; }
-  else {                      // RIFLE (default): 30 mm Bushmaster AUTOCANNON — receiver, slim barrel, double-baffle muzzle brake
-    rbox(0.42,0.34,0.62,0,Y,1.35,PK); lathe([[0.11,1.6],[0.11,2.15],[0.085,2.22],[0.078,2.6],[0.072,3.6],[0.068,4.0]], GM); tube(0.11,0.11,0.5,1.88,paint());
-    lathe([[0.07,3.98],[0.1,4.0],[0.1,4.12],[0.08,4.14],[0.1,4.16],[0.1,4.3],[0.075,4.32]], PK); for(const s2 of [-1,1]) for(const z of [4.06,4.23]) box(0.05,0.09,0.05,s2*0.1,Y,z,park(0x111110));   // double-baffle brake + ports
-    bore(0.035,4.32,0.3); rbox(0.26,0.26,0.4,-0.36,Y-0.03,1.25,paint(0x55603a));   // link-feed ammo box
-    main={z0:2.25,z1:3.95,r:0.078}; tip=4.36; recoilLen=0.22; }
+  else {                      // RIFLE (default) — Z231 the 30 mm AUTOCANNON every new commander starts with, built to look the part:
+                              // an armoured cradle bolted to the turret face, dual-feed ammo boxes (HE yellow band / AP black band) with link chutes,
+                              // a heavy breech collar, a perforated cooling jacket, the recoil buffer slung underneath, a clamped barrel,
+                              // a three-port muzzle brake with a bronze muzzle-velocity sensor ring, and a coaxial MG alongside
+    const OL=paint(0x55603a), DARK=park(0x111110), BRZ=memo('brz',()=>new THREE.MeshStandardMaterial({color:0xb88a3a,roughness:0.3,metalness:1,envMapIntensity:1.4}));
+    rbox(0.7,0.5,0.46,0,Y,1.44,paint());                                                                                     // armoured cradle on the turret face
+    for(const bx of [-0.25,0,0.25]) for(const by of [-0.14,0.14]){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.03,8),PK); b.rotation.x=Math.PI/2; b.position.set(bx,Y+by,1.68); g.add(b); }   // bolt heads
+    box(0.13,0.09,0.06,0.2,Y+0.19,1.68,DARK);                                                                                   // gunner's sight window
+    box(0.05,0.11,0.18,0.36,Y-0.02,1.5,DARK);                                                                                  // spent-case ejection port
+    for(const sd of [-1,1]){ rbox(0.26,0.34,0.46,sd*0.5,Y-0.02,1.4,OL); box(0.265,0.05,0.465,sd*0.5,Y+0.07,1.4,sd<0?memo('heb',()=>new THREE.MeshStandardMaterial({color:0xd0a628,roughness:0.6,metalness:0.2})):DARK);   // dual-feed ammo boxes (HE / AP)
+      const ch=new THREE.Mesh(new THREE.TorusGeometry(0.13,0.035,6,12,Math.PI/2),PK); ch.position.set(sd*0.36,Y+0.13,1.4); ch.rotation.set(0,Math.PI/2,sd<0?0:Math.PI/2); g.add(ch); }   // link chutes into the receiver
+    tube(0.17,0.18,0.34,1.82,GM);                                                                                                  // breech collar
+    tube(0.15,0.15,0.9,2.42,PK);                                                                                                    // perforated cooling jacket
+    for(let r=0;r<5;r++) for(let k=0;k<8;k++){ const a=k/8*Math.PI*2+(r%2)*0.39, hz=2.08+r*0.17, hole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.02,8),DARK);
+      hole.position.set(Math.cos(a)*0.151, Y+Math.sin(a)*0.151, hz); hole.rotation.z=a+Math.PI/2; hole.rotation.order='ZXY'; g.add(hole); }   // the jacket's cooling holes
+    tube(0.065,0.065,0.8,2.12,PK,0,Y-0.2); box(0.06,0.12,0.06,0,Y-0.13,2.5,PK);                                                   // recoil buffer + hanger
+    lathe([[0.105,2.84],[0.1,2.95],[0.094,3.4],[0.09,3.9],[0.088,4.04]], GM);                                                   // the barrel
+    for(const z of [3.1,3.55]) tube(0.112,0.112,0.05,z,PK);                                                                             // barrel clamps
+    tube(0.125,0.125,0.05,4.0,BRZ);                                                                                                 // muzzle-velocity sensor ring
+    lathe([[0.088,4.03],[0.125,4.06],[0.125,4.42],[0.095,4.44]], PK);                                                                 // three-port muzzle brake
+    for(const sd of [-1,1]) for(const z of [4.13,4.23,4.33]) box(0.05,0.08,0.055,sd*0.12,Y,z,DARK);                              // its side ports
+    bore(0.046,4.44,0.3);
+    tube(0.028,0.028,0.62,1.98,PK,0.28,Y+0.04); tube(0.036,0.036,0.06,2.28,PK,0.28,Y+0.04);                                       // coaxial MG
+    main={z0:2.84,z1:3.95,r:0.096}; tip=4.48; recoilLen=0.24; }
   // ---- GRADE (gun power tier + mastery): the stronger the gun, the finer and meaner the barrel ----
   // 1: thermal sleeve bands · 2: blued steel + bronze collars · 3: engraved glowing band + gold muzzle crown · 4+: kill rings, heat-tinted muzzle, bigger bore
   if(GRADE>0){
@@ -219,7 +238,7 @@ export function makeGunBarrel(id){
   return g;
 }
 // visual grade 0–6: gun power tier (by price; VIP top) + mastery level — the barrel looks as strong as the gun is
-export function gunTier(id){ const pr=GUN_PRICE[id]; if(!pr) return 0; if(pr.d) return 4; return (GUNS[id]&&GUNS[id].tier)||0; }   // Z149 the gun's own BẬC (the rifle stays plain)
+export function gunTier(id){ const pr=GUN_PRICE[id]; if(!pr) return id==='rifle'?1:0; if(pr.d) return 4; return (GUNS[id]&&GUNS[id].tier)||0; }   // Z149 the gun's own BẬC · Z231 the starter autocannon wears grade 1 (sleeve clamps) — a new commander's first gun should look like a weapon
 export function barrelGrade(id){ let lv=1, md=0; try{ lv=gunLevel(id)||1; md=gunModTotal(id); }catch(e){} return Math.max(0, Math.min(6, gunTier(id) + (lv-1) + Math.floor(md/5))); }   // Z115 every 5 parts fitted = one grade finer
 export function disposeBarrel(grp){ if(!grp) return; grp.traverse(o=>{ if(o.isMesh){ o.geometry.dispose(); if(o.material&&o.material.dispose) o.material.dispose(); } }); }
 // mount a gun's real barrel (+ turret mount) on ANY tank built by buildTank — the player in battle, the showroom tank in the shop

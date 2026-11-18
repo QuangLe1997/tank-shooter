@@ -57,7 +57,7 @@ export function muzzleFlash(x,z,ang,color,rec,y){
   for(let i=0;i<nS;i++) spawnPart(x+fx*(0.4+i*0.5),y+0.1,z+fz*(0.4+i*0.5), fx*(1.5+i)+(Math.random()-0.5), 0.5+Math.random()*0.5, fz*(1.5+i)+(Math.random()-0.5), {color:0x8a8478, size:(0.8+i*0.3)*s, life:1.1+i*0.3, smoke:true, grav:0.3, drag:2.6, grow:1.2*s, op:0.32});   // propellant smoke
   if(rec>=2.4){ for(let i=0;i<10;i++){ const a=i/10*6.283; spawnPart(x-fx*1.2, 0.3, z-fz*1.2, Math.cos(a)*9+fx*4, 0.4, Math.sin(a)*9+fz*4, {color:BIOME.ground, size:1.1, life:0.7, smoke:true, grav:-0.1, drag:3.4, grow:1.3, op:0.42}); } }   // blast overpressure kicks up the dust
 }
-export const CASING = { hesh:{n:1,s:0.4}, rifle:{n:1,s:0.16}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
+export const CASING = { hesh:{n:1,s:0.4}, rifle:{n:1,s:0.22}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
 export function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 const _GID=new Map(); export function gunIdOf(g){ if(!_GID.size) for(const k in GUNS) _GID.set(GUNS[k],k); return _GID.get(g); }
 export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1) * (id?gunMagMul(id):1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade

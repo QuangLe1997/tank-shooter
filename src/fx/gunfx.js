@@ -80,6 +80,11 @@ export function groundBlast(x, z, fx, fz, k){ const gy=heightAt(x,z), n=MOBILE?6
 export function gunMuzzleFX(g, x, y, z, ang, rec){ const fx=Math.sin(ang), fz=Math.cos(ang), kind=g.flash||'auto';
   if(rec>=1.2 && (kind==='heavy'||kind==='rail'||kind==='launch')) groundBlast(x+fx*0.8, z+fz*0.8, fx, fz, Math.min(1.8, 0.6+rec*0.25));
   if(kind==='auto'){ muzzleFlash(x,z,ang,g.color,rec,y); return; }
+  if(kind==='auto30'){   // Z231 the 30 mm: a hard white star, the three-port brake throws flame jets out both sides, a ring of gas, a hot amber glint
+    muzzleFlash(x,z,ang,g.color,1.5,y); const fx=Math.sin(ang), fz=Math.cos(ang);
+    for(const sd of [-1,1]) for(let k=0;k<2;k++) spawnPart(x-fx*0.15*k,y,z-fz*0.15*k, -fz*sd*(13+k*4)+fx*2, 0.4, fx*sd*(13+k*4)+fz*2, { tex:'fire', color:0xfff0c8, color2:0xff6a14, size:0.75-k*0.15, life:0.08, grav:0, drag:12 });
+    spawnPart(x+fx*0.3,y,z+fz*0.3, fx*3,0.2,fz*3, { color:0xd8d2c4, size:0.9, life:0.35, smoke:true, grav:0.2, drag:5, grow:2.4, op:0.28 });
+    muzzleLight.color.setHex(0xffb060); muzzleLight.intensity=Math.max(muzzleLight.intensity, 4.2); return; }
   if(kind==='small'){   // MG / rotary — crisp and small; rate of fire does the talking
     spawnPart(x+fx*0.25,y,z+fz*0.25, fx*3,0,fz*3, { tex:'flash', color:0xfff2d0, size:0.95+Math.random()*0.35, life:0.04, grav:0, drag:8 });
     spawnPart(x+fx*0.4,y,z+fz*0.4, fx*12,0.1,fz*12, { tex:'fire', color:0xfff0c0, color2:0xff7a20, size:0.55, grow:0.5, life:0.06, grav:0, drag:12 });

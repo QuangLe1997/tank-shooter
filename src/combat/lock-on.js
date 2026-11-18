@@ -206,7 +206,7 @@ export function updateBullets(dt, now){
           const arcK=armourArc(e, b), tm = typeMul(b.type, armorOf(e))*envDmg(b.type)*arcK; let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos);   // damage class × armour × range × conditions
           const tank=!e.def.inf && !e.def.air, glance = tank && (tm<=0.6 || (arcK<1 && !b.aoe && Math.random()<0.45));   // Z192 thick front plate / the wrong gun: the round skips off
           if(tank){ const L=Math.hypot(b.vx,b.vz)||1; armourHit(e, b.x, b.by+heightAt(b.x,b.z), b.z, b.vx/L, b.vz/L, b.dmg, glance); }   // Z192 the hull rocks · spall out of the hole / sparks off the plate
-          else if(tm<=0.6 && b.fx==='spark' && Math.random()<0.6) ricochet(b.x, b.by+heightAt(b.x,b.z), b.z, b.vx, b.vz);   // Z149 light rounds skip off heavy armour
+          else if(tm<=0.6 && (b.fx==='spark'||b.fx==='he30') && Math.random()<0.6) ricochet(b.x, b.by+heightAt(b.x,b.z), b.z, b.vx, b.vz);   // Z149 light rounds skip off heavy armour
           if(e.def.air && b.type==='HE' && b.fx==='frag') dmg*=ROSTER.aaBonus;   // FLAK airbursts tear helicopters apart
           e._fx=b.fx;                               // remember which gun's style killed it → styled death blast
           if(b.owner==='p' && S.player && S.player.ammoBurn && !e.def.air && Math.random()<S.player.ammoBurn){ if(!e.burn) e.burn={ lvl:0, until:0 }; e.burn.lvl=Math.max(e.burn.lvl,1); e.burn.until=Math.max(e.burn.until, now+3); e.burn.k=Math.max(e.burn.k||1,1); }   // Z162 incendiary rounds

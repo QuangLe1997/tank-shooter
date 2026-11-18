@@ -26,6 +26,8 @@ export function impactFX(pos, fx, k, armour){ k=k||1; sfx(k>2.2?'hitHeavy':'hit'
   if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xfff1c0, Math.floor(7*k), 9*k, {life:0.26, size:1.2*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(5*k), 6*k, {life:0.34, size:1.05*k, drag:3});
     burst(pos, 0x281e14, Math.floor(2+k), 4*k, {life:0.55, size:1.3*k, smoke:true, grav:-0.5, drag:2, op:0.4});   // lingering fire-lit smoke
     muzzleLight.position.set(pos.x,1.6,pos.z); muzzleLight.color.setHex(0xff9a4a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4*k); }
+  else if(fx==='he30'){ spawnPart(pos.x, pos.y||1.2, pos.z, 0,0,0, { tex:'flash', color:0xfff2d0, size:1.6*k, life:0.05, grav:0, drag:0 });   // Z231 30 mm HE-I: a sharp pop, a fistful of burning fragments, a puff of black smoke
+    burst(pos, 0xffb050, Math.floor(6*k), 8*k, {life:0.22, size:0.55*k, grav:-5, drag:4}); burst(pos, 0x2a2420, 2, 2.5, {life:0.6, size:1.1*k, smoke:true, grav:-0.4, drag:2, op:0.38}); ringPulse(pos, 0xffb060, 1.1*k); }
   else if(fx==='frag'){ ringPulse(pos, 0xffc070, 1.5*k); burst(pos, 0xffd27a, Math.floor(9*k), 13*k, {life:0.26, size:0.55*k, grav:-6, drag:4}); }                                  // shrapnel spray
   else if(fx==='pierce'){ ringPulse(pos, 0xd6b8ff, 1.9*k); burst(pos, 0xeaddff, Math.floor(5*k), 15*k, {life:0.2, size:0.5*k, grav:-2, drag:6}); }                                // clean punch-through streak
   else if(fx==='ice'){ ringPulse(pos, 0x9fe8ff, 1.7*k); burst(pos, 0xd8f6ff, Math.floor(7*k), 8*k, {life:0.42, size:0.7*k, grav:7, drag:3}); burst(pos, 0x7fd0ff, Math.floor(3*k), 5*k, {life:0.3, size:0.5*k, drag:5}); }   // frost shards fall
