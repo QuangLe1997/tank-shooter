@@ -2,7 +2,7 @@
 //   long lingering smoke ribbon behind a flickering motor flame, an enemy gun barks with flash + smoke at the real muzzle, a hit on armour
 //   rocks the hull on its springs and throws molten spall back out of the hole (or skips off thick front plate in a shower of sparks),
 //   and an enemy tank that is badly hurt smokes from the engine deck, then burns
-import { BIOME, MOBILE, PART_MAX, PERF, S, boss, enemies, heightAt, parts, ricochet, sfx, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PART_MAX, PERF, S, boss, enemies, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
 
 // point the pooled round along its velocity (yaw + the pitch of its real climb / fall this frame); the core is stretched at spawn
 export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)||1, vy=(dt>0 && b._py!=null) ? (y-b._py)/dt : 0; b._py=y;
@@ -76,6 +76,7 @@ export function trailKind(b){ if(b.type==='ELEC' || (b.mesh && b.mesh.userData.r
   return heavy ? (b.dmg>=80?'heavy':'shell') : b.dmg>=12 ? 'auto' : 'wisp'; }
 const WIND_X=0.32, WIND_Z=0.12;
 export function shellTrail(b, x, y, z){ let k=b._trk; if(k===undefined) k=b._trk=trailKind(b); if(!k) return;
+  if(smokeKind(k) && b._rb!==null && smokeRibbon(b, k, x, y, z)) return;   // Z236 a tank-gun round lays one unbroken smoke ribbon (puffs only when no ribbon is free)
   if(b._sx==null){ b._sx=x; b._sy=y; b._sz=z; return; }
   const T=TR[k], th=Math.max(0.35, PERF.parts), step=T.s*(MOBILE?1.8:1)/Math.sqrt(th), dx=x-b._sx, dy=y-b._sy, dz=z-b._sz, L=Math.hypot(dx,dy,dz); if(L<step) return;
   const cap=MOBILE?8:20, n=Math.floor(L/step), busy=parts.length > PART_MAX*1.15*PERF.parts;

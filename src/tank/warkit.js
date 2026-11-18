@@ -8,11 +8,11 @@
 // baked into a handful of draws, and is marked noRoof so the roof-MG mount ignores it.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { bakeGroup, propTex } from '../hub.js';
+import { bakeGroup } from '../hub.js';
 
 const _ray=new THREE.Raycaster(), _o=new THREE.Vector3(), _d=new THREE.Vector3(0,-1,0), _m=new THREE.Matrix4();
 let _bag=null;
-const bagMat=()=>_bag||(_bag=new THREE.MeshStandardMaterial({ color:0xa48f66, roughness:0.96, metalness:0, map:propTex('burlap') }));
+const bagMat=()=>_bag||(_bag=new THREE.MeshStandardMaterial({ color:0x7c7258, roughness:0.97, metalness:0 }));   // Z236 plain sun-bleached hessian (the grimy burlap tile read as brown cookies with spots)
 
 // bounding box of a group's direct mesh children, in that group's own space (skipping the given sub-groups)
 function localBox(par, skip){ const b=new THREE.Box3(), t=new THREE.Box3();
@@ -49,7 +49,7 @@ export function warKit(g, M){
   { const n=11; for(let i=0;i<n;i++){ const u=i/(n-1), x=-trX+0.3+u*(trX*2-0.6), sag=Math.sin(u*Math.PI)*0.16; const l=put(KB, new THREE.TorusGeometry(0.045,0.014,4,8), IRON, x, yB+0.06-sag, zP+0.06); l.rotation.y=(i%2)*Math.PI/2; } }   // drag chain between the shares (detonates tilt-rod mines)
 
   // ---- sandbags on the glacis corners ----
-  { const BG=new RoundedBoxGeometry(0.46,0.17,0.28,2,0.07), bm=bagMat();
+  { const BG=new RoundedBoxGeometry(0.46,0.17,0.28,3,0.078), bm=bagMat();
     for(const sd of [-1,1]) for(let r=0;r<2;r++) for(let c=0;c<2;c++){ const x=sd*(maxX-0.5-c*0.44), z=zF-0.32-r*0.32, s=surf(x,z); if(!s || s.p.y<gy+0.5) continue;
       const b=put(KB, BG, bm, x, s.p.y+0.07, z, Math.atan2(s.n.z, s.n.y), (c+r)%2?0.12:-0.1, 0); b.scale.setScalar(0.92+((c*3+r)%3)*0.06);
       if(r===0 && c===0){ const s2=surf(x-sd*0.2, z-0.12); if(s2) put(KB, BG, bm, x-sd*0.2, Math.max(s.p.y,s2.p.y)+0.22, z-0.12, Math.atan2(s.n.z, s.n.y), 0.3, 0); } } }   // one more on top of each pile
@@ -64,6 +64,14 @@ export function warKit(g, M){
     for(const sd of [-1,1]){ put(KB, new RoundedBoxGeometry(0.3,0.42,0.15,1,0.025), dark(0x3f4a2c), sd*(x1-0.45), mid-0.04, zc-0.1);     // jerry cans
       put(KB, new THREE.BoxGeometry(0.06,0.05,0.05), RUST, sd*(x1-0.45)+sd*0.08, mid+0.2, zc-0.1); } }
 
+  // ---- Z236 tow cables: a braided steel cable along each side of the deck edge, an eye at each end over a hook ----
+  { const CAB=metal(0x4a4842); for(const sd of [-1,1]){ const x=sd*(maxX-0.16), pts=[];
+      for(let k=0;k<=6;k++){ const z=zR+0.45+(zF-zR-1.2)*k/6, s=surf(x,z); if(s) pts.push(new THREE.Vector3(x, s.p.y+0.035, z)); }
+      if(pts.length<4) continue; const cv=new THREE.CatmullRomCurve3(pts); put(KB, new THREE.TubeGeometry(cv, 28, 0.026, 5), CAB, 0,0,0);
+      for(const e of [pts[0], pts[pts.length-1]]){ const o=put(KB, new THREE.TorusGeometry(0.075,0.022,5,10), CAB, e.x, e.y+0.01, e.z+(e===pts[0]?-0.07:0.07)); o.rotation.x=Math.PI/2;
+        put(KB, new THREE.BoxGeometry(0.06,0.06,0.09), IRON, e.x, e.y+0.02, e.z+(e===pts[0]?-0.07:0.07)); }
+      for(let k=1;k<pts.length-1;k+=2) put(KB, new THREE.BoxGeometry(0.08,0.035,0.05), IRON, pts[k].x, pts[k].y+0.005, pts[k].z); } }   // clamps holding it down
+
   // ---- turret: APS radar panels + launchers, laser-warning domes, jammer mast ----
   { const tx=tb.max.x, tz0=tb.min.z, tz1=tb.max.z, ty0=tb.min.y, ty1=tb.max.y, ym=ty0+(ty1-ty0)*0.55;
     for(const sd of [-1,1]){ const z=tz0+(tz1-tz0)*0.38;
@@ -71,7 +79,7 @@ export function warKit(g, M){
       put(KT, new THREE.BoxGeometry(0.012,0.22,0.36), M.GLASS||BLACK, sd*(tx+0.082), ym, z, 0, sd*0.12, 0);    // its face
       const ln=put(KT, new THREE.CylinderGeometry(0.1,0.12,0.16,12), IRON, sd*(tx-0.12), ty1+0.06, z-0.55); ln.rotation.z=sd*0.25;   // hard-kill launcher on the roof edge
       put(KT, new THREE.BoxGeometry(0.12,0.1,0.22), STEEL, sd*(tx-0.12), ty1+0.17, z-0.55, 0, 0, sd*0.25); }
-    for(const [x,z] of [[tx-0.12,tz1-0.25],[-(tx-0.12),tz1-0.25],[tx-0.1,tz0+0.15],[-(tx-0.1),tz0+0.15]]){ put(KT, new THREE.SphereGeometry(0.055,10,6,0,Math.PI*2,0,Math.PI/2), dark(0xd8d6c8), x, ty1, z); }   // laser-warning receivers
+    for(const [x,z] of [[tx-0.12,tz1-0.25],[-(tx-0.12),tz1-0.25],[tx-0.1,tz0+0.15],[-(tx-0.1),tz0+0.15]]){ put(KT, new THREE.CylinderGeometry(0.06,0.065,0.04,10), IRON, x, ty1+0.02, z); put(KT, new THREE.SphereGeometry(0.045,10,6,0,Math.PI*2,0,Math.PI/2), M.GLASS||dark(0x2c3236), x, ty1+0.04, z); }   // laser-warning receivers: smoked-glass domes on a base (Z236: were bare white balls that bloomed into eggs)
     const mx=-(tx-0.16), mz=tz0+0.2; put(KT, new THREE.CylinderGeometry(0.025,0.035,1.1,6), IRON, mx, ty1+0.55, mz);                         // jammer mast (rear corner, clear of the roof seats)
     for(let k=0;k<3;k++) put(KT, new THREE.CylinderGeometry(0.11-k*0.025,0.11-k*0.025,0.03,10), BLACK, mx, ty1+0.75+k*0.16, mz);       // stacked omni antenna discs
     put(KT, new THREE.CylinderGeometry(0.006,0.01,1.5,4), BLACK, mx, ty1+1.6, mz); }                                                      // whip on top

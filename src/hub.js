@@ -57,6 +57,7 @@ export * from './combat/projectiles.js';
 export * from './combat/ballistics.js';   // Z228b velocity curves, sabot, vapour, swept hits
 export * from './fx/fire-wrecks.js';
 export * from './fx/flames.js';
+export * from './fx/smoketrail.js';
 export * from './world/skylife.js';   // Z235 birds and high aircraft   // Z235 living flames for every standing fire
 export * from './combat/lock-on.js';
 export * from './actors/core.js';

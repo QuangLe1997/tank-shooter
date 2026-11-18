@@ -662,6 +662,13 @@ export const ROOF_MG_AI = { dmgK:1.3, air:{ rangeK:1.7, hit:0.55, dmgK:0.9, pri:
 //   rockets are kicked out slow by the booster, the motor lights and pushes them up past the gun's speed.
 export const BALLISTIC = { gun:{ v0:1.5, decay:3 }, rocket:{ v0:0.3, k:6, cap:1.6 }, T:{ def:1.1, lifeK:0.5, rocket:1.0, min:0.12, max:2.5 },
   sabot:{ petals:3, out:7, life:0.5 }, vapor:{ t:0.12, every:0.02 }, enemyMissile:{ v0:0.3, k:5, T:1.1 } };
+// Z236 SMOKE RIBBONS — a tank-gun round lays one unbroken ribbon of smoke along its real path (a strip that always faces the camera, wispy
+//   and torn by noise, widening, rising, drifting on the wind and curling as it fades). Per kind: w0 = width at the muzzle (m), grow = how
+//   fast it spreads (m per √s), life (s), op = opacity, col = colour; step = metres between laid points. cap = ribbons alive at once.
+export const SMOKE_TRAIL = { points:64, cap:36, capMobile:14, step:1.0, stepMobile:1.7, wind:[0.32,0.12], rise:0.18, curl:0.22,
+  kinds:{ shell:{ w0:0.16, grow:0.5, life:2.8, op:0.68, col:0xdedcd6 }, heavy:{ w0:0.22, grow:0.66, life:3.4, op:0.76, col:0xd6d3cc },
+    rail:{ w0:0.08, grow:0.26, life:3.4, op:0.68, col:0xeeeaff }, enemy:{ w0:0.16, grow:0.5, life:2.4, op:0.64, col:0x948f87 },
+    frost:{ w0:0.2, grow:0.55, life:1.8, op:0.45, col:0xe6f8ff } } };
 // Z229 WIND ON THE LAND — dust devils (and snow devils / leaf whirls) that spin up at random, wander with the wind and die away;
 //   avalanches that pour off the mountains onto the snow battlefields.
 export const WHIRL = { first:[5,12], every:[14,34], max:2, maxMobile:1, life:[13,24], dist:[20,55], speed:[2.2,5.2], R:[0.9,1.9], H:[8,15],

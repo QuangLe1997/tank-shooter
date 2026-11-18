@@ -1254,5 +1254,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/BARREL_SCALE = \{ r:1\.22, len:1\.12, slide:1\.25 \}/.test(cf) && /userData\.z0 \?\? -TRUNNION_Z/.test(R('src/tank/rig.js')), 'guns are thicker and longer and still pivot on the trunnion; the recoil slide is longer');
   ok(/HEADING = \{ show: false/.test(cf) && /if\(HEADING\.show\)\{/.test(R('src/tank/shield.js')), 'the heading chevron and nose stripe are gone'); }
 
+// Z236 a real tank and crew: tank-gun rounds lay one unbroken smoke ribbon (wind, rise, curl, fade); crew with faces and rounded limbs;
+//   the hull's lamps are dark glass in steel housings, plain hessian sandbags, braided tow cables, smoked-glass laser-warning domes
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const st=R('src/fx/smoketrail.js'), hf=R('src/fx/hitfx.js'), cf=R('config.js'), so=R('src/actors/soldiers.js'), wk=R('src/tank/warkit.js');
+  ok(/export const SMOKE_TRAIL = \{ points:64/.test(cf) && /export function smokeRibbon\(b, kind, x, y, z\)/.test(st) && /updateSmokeTrails\(dt\)/.test(R('src/game/loop.js')), 'smoke ribbons: config, the ribbon layer and its clock in the loop');
+  ok(/smokeKind\(k\) && b\._rb!==null && smokeRibbon\(b, k, x, y, z\)\) return;/.test(hf), 'a tank-gun round lays a ribbon; the puff trail is only the fallback when the pool is spent');
+  ok(/carry on in a fresh one/.test(st) && /RIB\.length<\(MOBILE\?ST\.capMobile:ST\.cap\)/.test(st), 'a long flight chains into a fresh ribbon; the pool is capped (smaller on phones)');
+  ok(/const cap=\(w,h,d\)=>/.test(so) && /\/\/ Z236 eyes \+ brows/.test(so) && /mouth \+ jaw/.test(so), 'soldiers have rounded limbs and a face (eyes, brows, nose, mouth, jaw)');
+  ok(/tow cables/.test(wk) && /smoked-glass domes/.test(wk) && !/propTex/.test(wk), 'the war kit: tow cables, smoked-glass LWR domes, plain hessian bags');
+  ok((R('src/tank/model.js').match(/color:0x2a2a26/g)||[]).length===2 && /flattened into the hull so it bakes with it/.test(R('src/tank/designs.js')), 'headlights are dark glass in a housing, baked into the hull (no glowing puck)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

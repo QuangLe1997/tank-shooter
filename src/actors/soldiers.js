@@ -15,10 +15,10 @@ export function _soldierMats(){
   SOLDIER_MAT.uni = new THREE.MeshStandardMaterial({ map:camo, roughness:0.9 });
   SOLDIER_MAT.gear= new THREE.MeshStandardMaterial({ color:0x4a4a32, roughness:0.85 });
   SOLDIER_MAT.dark= new THREE.MeshStandardMaterial({ color:0x1e1f1a, roughness:0.75, metalness:0.2 });
-  SOLDIER_MAT.skin= new THREE.MeshStandardMaterial({ color:0xb07a52, roughness:0.65 });
+  SOLDIER_MAT.skin= new THREE.MeshStandardMaterial({ color:0xb98c6c, roughness:0.62 });   // Z236 a warmer, lighter skin (read as a face under the helmet brim, not a brown block)
   SOLDIER_MAT.gun = new THREE.MeshStandardMaterial({ color:0x1a1b18, roughness:0.45, metalness:0.75 });
   SOLDIER_MAT.helm= new THREE.MeshStandardMaterial({ color:0x3c5426, roughness:0.85 });                                          // olive helmet cover
-  SOLDIER_MAT.band= new THREE.MeshStandardMaterial({ color:0x9be04a, emissive:0x5fae1c, emissiveIntensity:0.55, roughness:0.6 });   // lime ID armband — reads at a glance
+  SOLDIER_MAT.band= new THREE.MeshStandardMaterial({ color:0x86c444, emissive:0x5fae1c, emissiveIntensity:0.3, roughness:0.6 });   // Z236 a little less neon up close   // lime ID armband — reads at a glance
   SOLDIER_MAT.ready=true; return SOLDIER_MAT;
 }
 export const ENEMY_SOLDIER_MAT = {};
@@ -54,10 +54,13 @@ function _soldierKit(enemy){
   const parts={ up:[], head:[], arm:[], lh:[], gun:[], hip:[], knee:[] };
   const put=(L,geo,m,x,y,z,rx,ry,rz)=>L.push({ geo, m, x, y, z, rx:rx||0, ry:ry||0, rz:rz||0 });
   const cyl=(r0,r1,h,n)=>new THREE.CylinderGeometry(r0,r1,h,n||10), sph=(r,a,b)=>new THREE.SphereGeometry(r,a||12,b||10);
+  const cap=(w,h,d)=>{ const r=Math.min(w,d)/2, g=new THREE.CapsuleGeometry(r, Math.max(0.01,h-2*r), 3, 9); g.scale(w/(2*r), 1, d/(2*r));
+    const P=g.attributes.position, U=g.attributes.uv; for(let i=0;i<P.count;i++) U.setXY(i, Math.min(1,Math.max(0, 0.5+(P.getX(i)*0.7+P.getZ(i)*0.7)/(w+d))), Math.min(1,Math.max(0, 0.5+P.getY(i)/h)));   // the camo laid across the limb like on a box face (the wrap-around UV stretched one blot round it)
+    return g; };   // Z236 rounded limbs (a body, not stacked bricks)
   // legs (one leg's worth — both legs share it): thigh with a cargo pocket, knee pad, shin, laced boot with a sole
-  put(parts.hip, rb(0.17,0.38,0.19,0.06), M.uni, 0,-0.19,0); put(parts.hip, rb(0.06,0.13,0.12,0.02), M.uni, 0.095,-0.2,0.0);    // thigh + cargo pocket
+  put(parts.hip, cap(0.17,0.4,0.19), M.uni, 0,-0.19,0); put(parts.hip, rb(0.06,0.13,0.12,0.02), M.uni, 0.095,-0.2,0.0);    // thigh + cargo pocket
   put(parts.hip, rb(0.19,0.1,0.21,0.03), M.gear, 0,-0.36,0.01);                                                                 // knee pad
-  put(parts.knee, rb(0.15,0.34,0.16,0.05), M.uni, 0,-0.17,0); put(parts.knee, rb(0.165,0.13,0.29,0.04), M.dark, 0,-0.33,0.05);   // shin + boot
+  put(parts.knee, cap(0.15,0.36,0.16), M.uni, 0,-0.17,0); put(parts.knee, rb(0.165,0.13,0.29,0.04), M.dark, 0,-0.33,0.05);   // shin + boot
   put(parts.knee, rb(0.175,0.035,0.31,0.01), M.gear, 0,-0.395,0.05); put(parts.knee, rb(0.155,0.06,0.17,0.02), M.dark, 0,-0.24,0.0);   // sole · boot cuff
   // upper body: torso, plate carrier with mag pouches, frag grenades, radio, belt with canteen, assault pack + bedroll, collar, shoulder pads
   put(parts.up, rb(0.44,0.52,0.26,0.07), M.uni, 0,0.3,0);                                                                        // torso
@@ -72,19 +75,21 @@ function _soldierKit(enemy){
   for(const sx of [-1,1]) put(parts.up, rb(0.13,0.07,0.17,0.03), M.gear, sx*0.24,0.55,0.0, 0,0,sx*-0.35);                     // shoulder pads
   // head (own joint → looks around): neck, face, nose, ears, covered helmet with brim + band + chin strap, NVG mount, goggles
   put(parts.head, cyl(0.06,0.07,0.1,10), M.skin, 0,0.0,0);
-  put(parts.head, sph(0.13,10,8), M.skin, 0,0.15,0.01); put(parts.head, rb(0.035,0.05,0.04,0.01), M.skin, 0,0.14,0.14);       // face + nose
+  put(parts.head, sph(0.13,10,8), M.skin, 0,0.15,0.01); put(parts.head, rb(0.035,0.05,0.04,0.01), M.skin, 0,0.105,0.135);       // face + nose
   for(const sx of [-1,1]) put(parts.head, sph(0.03,6,5), M.skin, sx*0.128,0.15,0.0);                                            // ears
+  for(const sx of [-1,1]){ put(parts.head, sph(0.019,7,5), M.dark, sx*0.045,0.127,0.118); put(parts.head, rb(0.05,0.013,0.02,0.005), M.dark, sx*0.046,0.148,0.117, 0,0,sx*-0.12); }   // Z236 eyes + brows
+  put(parts.head, rb(0.05,0.011,0.012,0.004), M.dark, 0,0.07,0.112); put(parts.head, rb(0.1,0.05,0.07,0.02), M.skin, 0,0.075,0.08);   // mouth + jaw
   put(parts.head, new THREE.SphereGeometry(0.165,12,6,0,6.283,0,1.55), M.helm||M.uni, 0,0.17,0);                               // covered helmet (side colour)
   put(parts.head, cyl(0.178,0.178,0.03,12), M.gear, 0,0.17,0); put(parts.head, cyl(0.185,0.185,0.012,12), M.helm||M.uni, 0,0.155,0);   // band + brim
   for(const sx of [-1,1]) put(parts.head, rb(0.012,0.12,0.02,0.004), M.dark, sx*0.12,0.08,0.03);                              // chin strap
   put(parts.head, rb(0.06,0.06,0.05,0.01), M.dark, 0,0.26,0.15);                                                                 // NVG shroud mount
   put(parts.head, rb(0.22,0.05,0.03,0.01), M.dark, 0,0.205,0.14); put(parts.head, rb(0.08,0.04,0.025,0.01), M.gear, 0,0.205,0.16);   // goggles strap + lenses (on the helmet)
   // arms: right arm + left upper arm ride the rifle; the left forearm + glove is its own joint (reload, grip)
-  put(parts.arm, rb(0.12,0.32,0.13,0.04), M.uni, -0.25,-0.05,0.08, -0.9,0,0.25); put(parts.arm, rb(0.12,0.32,0.13,0.04), M.uni, 0.25,-0.05,0.08, -0.9,0,-0.25);   // upper arms
-  put(parts.arm, rb(0.1,0.28,0.11,0.04), M.uni, 0.15,-0.08,0.26, -1.3,0,-0.4); put(parts.arm, sph(0.055,8,6), M.dark, 0.1,-0.08,0.14);                           // right forearm + glove (on the grip)
-  for(const sx of [-1,1]) put(parts.arm, rb(0.135,0.09,0.145,0.02), M.band||M.gear, sx*0.25,0.04,0.0, -0.9,0,sx*-0.25);                                          // Z104 ID armbands
+  put(parts.arm, cap(0.12,0.34,0.13), M.uni, -0.25,-0.05,0.08, -0.9,0,0.25); put(parts.arm, cap(0.12,0.34,0.13), M.uni, 0.25,-0.05,0.08, -0.9,0,-0.25);   // upper arms
+  put(parts.arm, cap(0.1,0.3,0.11), M.uni, 0.15,-0.08,0.26, -1.3,0,-0.4); put(parts.arm, sph(0.055,8,6), M.dark, 0.1,-0.08,0.14);                           // right forearm + glove (on the grip)
+  for(const sx of [-1,1]) put(parts.arm, rb(0.132,0.055,0.142,0.02), M.band||M.gear, sx*0.25,0.02,0.02, -0.9,0,sx*-0.25);                                          // Z104 ID armbands
   for(const sx of [-1,1]) put(parts.arm, rb(0.13,0.07,0.12,0.03), M.gear, sx*0.205,-0.16,0.2, -1.2,0,sx*-0.3);                                                   // elbow pads
-  put(parts.lh, rb(0.1,0.28,0.11,0.04), M.uni, 0.08,0.03,0.1, -1.45,0,0.6); put(parts.lh, sph(0.055,8,6), M.dark, 0.18,0.07,0.22);                               // left forearm + glove (on the handguard)
+  put(parts.lh, cap(0.1,0.3,0.11), M.uni, 0.08,0.03,0.1, -1.45,0,0.6); put(parts.lh, sph(0.055,8,6), M.dark, 0.18,0.07,0.22);                               // left forearm + glove (on the handguard)
   // M4-pattern carbine: receiver, barrel + muzzle brake, railed handguard + vertical grip, magazine, stock, optic, charging handle, sling
   put(parts.gun, rb(0.06,0.1,0.42,0.015), M.gun, 0,0,0.12); put(parts.gun, cyl(0.018,0.02,0.36,8), M.gun, 0,0.01,0.5, Math.PI/2);   // receiver + barrel
   put(parts.gun, cyl(0.026,0.026,0.06,8), M.gun, 0,0.01,0.69, Math.PI/2);                                                           // muzzle brake

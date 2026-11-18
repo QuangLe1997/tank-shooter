@@ -66,7 +66,7 @@ export function buildTank(opts={}){
   const face  =grimeMat(new THREE.MeshStandardMaterial({ map:wheelTex(), roughness:0.75, metalness:0.4 }), 0.8);
   if(opts.model && hasDesign(opts.model)){   // Z157 this model has its own vehicle build (hull, running gear, turret, gun mount)
     const ACC=new THREE.MeshStandardMaterial({ color:accent, emissive:accent, emissiveIntensity:0.12, roughness:0.7, metalness:0.1 });
-    const HLM=new THREE.MeshStandardMaterial({ color:0xfff2d0, emissive:0xffeec0, emissiveIntensity:0.35, roughness:0.25 });
+    const HLM=new THREE.MeshStandardMaterial({ color:0x2a2a26, emissive:0x000000, roughness:0.25, metalness:0.0, envMapIntensity:0.35 });   // Z236 a dark lamp glass with a soft glint (was a glowing / mirror-bright puck)
     const GLASS=new THREE.MeshStandardMaterial({ color:0x0a1216, roughness:0.08, metalness:1.0, envMapIntensity:1.6 });
     const ERA = CAMO ? camoSkin(0.6) : skin(realCol(hull,0.8,0.82),0.5);
     const _sg={}, out=buildDesignTank(opts, { mk, HULL, TUR, GUN, STEEL, BLACK, GLASS, RUB:rubber, ERA, dark, metal, ACC, HLM, TRUNNION_Z,
@@ -104,8 +104,8 @@ export function buildTank(opts={}){
     for(let k=0;k<4;k++){ const sk=B(G.skirtSeg, HULL, sx*1.51, 0.77, -1.39+k*0.925); sk.rotation.z=sx*0.04+(detail?0:(k%2?0.012:-0.012)); }   // Z113 segmented skirt plates on every tank (one material → merges into the hull draw)
   }
   const ACC=new THREE.MeshStandardMaterial({ color:accent, emissive:accent, emissiveIntensity:0.12, roughness:0.7, metalness:0.1 });   // painted faction ID marking (matte, not neon)
-  const HLM=new THREE.MeshStandardMaterial({color:0xfff2d0,emissive:0xffeec0,emissiveIntensity:0.35,roughness:0.25});
-  for(const hx of [-1.22,1.22]){ const hl=B(new THREE.CylinderGeometry(0.09,0.1,0.1,12), HLM, hx,1.14,1.98); hl.rotation.x=Math.PI/2-0.29; }   // headlights on the nose corners
+  const HLM=new THREE.MeshStandardMaterial({color:0x2a2a26,emissive:0x000000,roughness:0.25,metalness:0.0,envMapIntensity:0.35});
+  for(const hx of [-1.22,1.22]){ const hb=B(new RoundedBoxGeometry(0.27,0.19,0.15,1,0.03), BLACK, hx,1.13,1.92); hb.rotation.x=-0.29; const hl=B(new THREE.CylinderGeometry(0.07,0.07,0.03,16), HLM, hx,1.15,2.0); hl.rotation.x=Math.PI/2-0.29; }   // headlights on the nose corners — Z236 a lens set in a steel housing
   const exhaust=new THREE.Object3D(); exhaust.position.set(-0.9,1.32-0.95,-2.08); body.add(exhaust);   // engine exhaust outlet (smoke FX source)
   if(detail){
     for(const hx of [-1.22,1.22]){ const gd=B(new THREE.TorusGeometry(0.13,0.02,6,14), STEEL, hx,1.14,2.0); gd.rotation.x=-0.29; }                 // headlight brush guards

@@ -165,7 +165,10 @@ export function buildDesignTank(opts, ctx){ const id=opts.model, d=realDesign(id
     if(S.eraFront && S.kind==='plates') for(let k=0;k<S.eraFront;k++) B(new RoundedBoxGeometry(0.14,0.36,0.5,1,0.03), ctx.ERA, x+sd*0.07, sy-0.2, S.z1-0.3-k*0.55); }
   // nose kit: headlights + brush guards, tow hooks, driver's hatch + periscopes, deck grille, exhaust
   const zf=d.upper.reduce((m,p)=>Math.max(m,p[0]),-9), zr=d.upper.reduce((m,p)=>Math.min(m,p[0]),9), lx=W/2-0.32;
-  for(const hx of [-lx,lx]){ const hl=B(new THREE.CylinderGeometry(0.08,0.09,0.1,12), HLM, hx, F+0.12, zf-0.04); hl.rotation.x=Math.PI/2-0.3; const gd=B(new THREE.TorusGeometry(0.12,0.018,5,12), STEEL, hx, F+0.12, zf-0.02); gd.rotation.x=-0.3; }
+  for(const hx of [-lx,lx]){ const L=new THREE.Group(); L.position.set(hx, F+0.15, zf-0.06); L.rotation.x=-0.3; body.add(L);   // Z236 a lamp in a steel housing, its glass flush with the front (was a bare puck whose glass side-wall caught the sky)
+    mk(L, new RoundedBoxGeometry(0.26,0.18,0.16,1,0.03), BLACK, 0,0,0); const gl=mk(L, new THREE.CylinderGeometry(0.066,0.066,0.012,16), HLM, 0,0.005,0.077); gl.rotation.x=Math.PI/2;
+    mk(L, new THREE.TorusGeometry(0.12,0.018,5,12), STEEL, 0,0,0.1);
+    L.updateMatrix(); for(const c of [...L.children]){ c.applyMatrix4(L.matrix); body.add(c); } body.remove(L); }   // flattened into the hull so it bakes with it
   for(const tx2 of [-0.6,0.6]){ const th=B(new THREE.TorusGeometry(0.1,0.033,5,10), STEEL, tx2, F-0.3, zf-0.04); th.rotation.y=Math.PI/2; }
   for(let k=0;k<5;k++) B(new THREE.BoxGeometry(0.8,0.025,0.035), STEEL, (k%2?0.45:-0.45), F+(d.upper[4]?d.upper[4][1]:0.4)+0.015, zr+0.35+Math.floor(k/2)*0.2);
   const ex=d.exhaust||[0,-2]; const exhaust=new THREE.Object3D(); exhaust.position.set(ex[0], F+0.25-0.95, ex[1]); body.add(exhaust);
