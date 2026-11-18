@@ -98,7 +98,7 @@ export function gameOver(reason){
 export let bannerTimer=0;
 export function showBanner(text, color){
   const el=document.getElementById('combo');
-  el.textContent=text; el.style.color=color||'#e7b54a'; el.style.opacity='1'; el.classList.toggle('long', text.length>34);   // Z84: long notices drop to a calm, readable size
+  el.textContent=text; el.style.color=color||'#e7b54a'; el.style.opacity='1'; el.classList.toggle('long', text.length>34); el.classList.toggle('warn', /^⚠|!$/.test(text));   // Z228 a warning gets the hazard-striped plate   // Z84: long notices drop to a calm, readable size
   el.style.transform='translateX(-50%) scale(1.1)';
   bannerTimer = performance.now()/1000 + 1.4;
 }

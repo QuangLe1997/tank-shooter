@@ -50,7 +50,7 @@ function buildMG(D){ const heavy=D.cal>10, s=heavy?1.18:1, root=new THREE.Group(
 // the commander's side of the roof, behind the gun mantlet: measured from the turret's bulk (barrel + thin aerials ignored)
 const _bb=new THREE.Box3(), _tb=new THREE.Box3(), _mx=new THREE.Matrix4(), _inv=new THREE.Matrix4(), _sz=new THREE.Vector3();
 function roofSpot(p){ const T=p.mesh.userData.turret, gp=p.mesh.userData.gunPivot; p.mesh.updateMatrixWorld(true); _inv.copy(T.matrixWorld).invert(); _bb.makeEmpty();
-  T.traverse(o=>{ if(!o.isMesh || !o.geometry) return; for(let a=o; a && a!==T; a=a.parent) if(a===gp) return; if(!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+  T.traverse(o=>{ if(!o.isMesh || !o.geometry) return; for(let a=o; a && a!==T; a=a.parent) if(a===gp || a.userData.noRoof) return; if(!o.geometry.boundingBox) o.geometry.computeBoundingBox();
     _tb.copy(o.geometry.boundingBox).applyMatrix4(_mx.multiplyMatrices(_inv, o.matrixWorld)); _tb.getSize(_sz); if(_sz.x<0.3 || _sz.z<0.3) return; _bb.union(_tb); });
   if(_bb.isEmpty()) return { x:0.45, y:0.5, z:-0.3 }; return { x:_bb.max.x*0.4, y:_bb.max.y-0.02, z:_bb.min.z+(_bb.max.z-_bb.min.z)*0.3 }; }
 // a new run / a different tank or gun: mount the picked MG on this tank's roof

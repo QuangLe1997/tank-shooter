@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { TANK_REAL } from '../../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { TANK_MODELS, blobTex, buildDesignTank, camoTex, grimeMat, hasDesign, panelNrm, panelRgh, panelTex, realCol, trackTex, turretGeo, wheelTex } from '../hub.js';
+import { TANK_MODELS, blobTex, buildDesignTank, camoTex, grimeMat, hasDesign, panelNrm, panelRgh, panelTex, realCol, trackTex, turretGeo, warKit, wheelTex } from '../hub.js';
 
 // ---- shared tank geometries (built once; every tank references them) ----
 export const TANK_GEO = {};
@@ -47,6 +47,7 @@ export const TRUNNION_Z = 1.12;   // gun trunnion (pitch pivot) on the turret fr
 export function buildTank(opts={}){
   const { accent=0xe7b54a, detail=false } = opts;
   const RL = String(opts.model||'').startsWith('b_') ? null : TANK_REAL;   // Z174b real proportions for every tank but the generals' super-heavies
+  const KIT = !!opts.mighty || !!opts.kit;   // Z228 our own tank (player / garage) carries the war kit, whatever model it is
   const MD = opts.model ? TANK_MODELS[opts.model] : null, SP = (MD && MD.spec) || {}, L=(SP.L||1)*(RL?RL.L:1), W=SP.W||1, H=(SP.H||1)*(RL?RL.H:1);   // Z155 the model's proportions
   if(MD && !MD.mighty) opts = { ...opts, mighty:false };
   const CAMO = MD && MD.camo && opts.hull==null ? camoTex(MD.camo.id, MD.camo.cols, MD.camo.kind) : null;   // our own models wear real camouflage; enemies keep their faction paint
@@ -73,6 +74,7 @@ export function buildTank(opts={}){
       FACE:(wt)=>grimeMat(new THREE.MeshStandardMaterial({ map:wt, roughness:0.75, metalness:0.4 }), 0.8),
       trackTex:()=>{ const t=trackTex().clone(); t.needsUpdate=true; return t; }, wheelTex:()=>{ const t=wheelTex().clone(); t.needsUpdate=true; t.center.set(0.5,0.5); return t; },
       sprocketGeo:(r)=>_sg[r]||(_sg[r]=G.sprocket.clone().scale(1, r/0.31, r/0.31)), blobGeo:G.blob, blobMat });
+    if(KIT) warKit(out, { HULL, STEEL, BLACK, GLASS, dark, metal });
     out.userData.paint = CAMO ? [] : Object.keys(_mc).filter(k=>k[0]==='s').map(k=>[_mc[k], _mc[k].color.getHex()]);   // Z179 (design-built vehicles too)
     bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); return out; }
   const rig={ wheels:[[],[]], wheelTex:[], tracks:[], lx:undefined, lz:0, lf:0, v:0, a:0, pitch:0, pv:0, roll:0, rv:0, recoil:0, recoilLen:0.42, vib:0, elev:0, elevT:0, t:Math.random()*10 };
@@ -181,6 +183,7 @@ export function buildTank(opts={}){
   g.userData.paint = CAMO ? [] : Object.keys(_mc).filter(k=>k[0]==='s').map(k=>[_mc[k], _mc[k].color.getHex()]);   // Z179 painted armour → world/sidepaint.js repaints it per battlefield (hull first)
   g.userData.turret=turretG; g.userData.muzzle=muzzle; g.userData.barrelG=barrelG; g.userData.gunPivot=gunPivot; g.userData.hull=hullM;
   g.userData.body=body; g.userData.rig=rig; g.userData.exhaust=exhaust; g.userData.blob=blob;
+  if(KIT) warKit(g, { HULL, STEEL, BLACK, GLASS, dark, metal });
   bakeTank(g);
   g.traverse(o=>{ if(o.isMesh && o!==blob){ o.castShadow=true; o.receiveShadow=true; } });
   return g;

@@ -73,7 +73,8 @@ export function warmGunArt(){ queueGunArt(Object.keys(GUNS)); }
 // ---- Z155 tank model photos (garage cards) ----
 export const TANKART = { cache:{}, queue:[], busy:false };
 function pumpTank(){ if(TANKART.busy) return; const id=TANKART.queue.shift(); if(!id) return; TANKART.busy=true;
-  (window.requestIdleCallback||((f)=>setTimeout(f,30)))(()=>{ try{ if(!TANKART.cache[id]){ const t=buildTank({ detail:true, model:id }); t.rotation.y=0; const url=renderObject(t, new THREE.Vector3(1.0, 0.62, 1.15), 0.58, OW, Math.round(OW*0.62));
+  (window.requestIdleCallback||((f)=>setTimeout(f,30)))(()=>{ try{ if(!TANKART.cache[id]){ const t=buildTank({ detail:true, model:id, kit:true });   // Z228 the card shows the tank as you'll drive it — war kit on
+        t.rotation.y=0; const url=renderObject(t, new THREE.Vector3(1.0, 0.62, 1.15), 0.58, OW, Math.round(OW*0.62));
         t.traverse(o=>{ if(o.geometry && !o.geometry._shared) {} }); TANKART.cache[id]=url; }
       document.querySelectorAll('img[data-tankpic="'+id+'"]').forEach(im=>{ im.src=TANKART.cache[id]; im.classList.add('ok'); }); }catch(e){ console.warn('tank art', id, e); TANKART.cache[id]=''; }
     TANKART.busy=false; if(TANKART.queue.length) pumpTank(); }, { timeout:500 }); }

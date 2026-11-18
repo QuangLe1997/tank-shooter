@@ -1173,5 +1173,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function podium\(/.test(co) && /core = \{ mesh:G0,/.test(co) && /TorusGeometry\(4\.6,0\.26/.test(co), 'the Core stands on a three-tier marble podium under a colonnade and a gilt dome');
   ok(/U\.poolM=new THREE\.MeshBasicMaterial/.test(ub) && /floodlight poles/.test(ub) && /scene\.fog\.density=0\.0055/.test(ub), 'the underground base is clearly lit: floor pools, floodlight poles, lit wall strips'); }
 
+// Z228 real military HUD (plates, stencil, fire-control digits, radio set, tactical map grid, commander's instrument panel) + the war kit on our tank
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const html=R('index.html'), mc=R('css/mil.css'), ins=R('src/ui/instruments.js'), wk=R('src/tank/warkit.js'), md=R('src/tank/model.js'), rm=R('src/tank/roofmg.js');
+  ok(/<link rel="stylesheet" href="css\/ui181\.css" \/>\n<link rel="stylesheet" href="css\/mil\.css" \/>/.test(html) && /Saira\+Stencil\+One/.test(html) && /Share\+Tech\+Mono/.test(html), 'the military HUD sheet loads last, with the stencil + fire-control fonts');
+  ok(/--m-screws:/.test(mc) && /#combo\.warn\{/.test(mc) && /#instr\{/.test(mc) && /body\.touch #instr\{display:none;\}/.test(mc), 'plates with screw heads, hazard-striped warnings, the instrument panel (desktop only)');
+  ok(/export function updateInstr\(/.test(ins) && /export function headingDeg\(/.test(ins) && /function laze\(/.test(ins) && /export function radioType\(/.test(ins) && /updateInstr\(now\)/.test(R('src/game/loop.js')) && /radioType\(el, msg\)/.test(R('src/campaign/operations.js')), 'heading / speed / rangefinder / armour gauges and the teleprinter radio are wired in');
+  { const hd=f=>((Math.atan2(Math.sin(f), -Math.cos(f))*180/Math.PI)+360)%360; ok(Math.round(hd(Math.PI))===0 && Math.round(hd(Math.PI/2))===90 && Math.round(hd(0))===180, 'heading: −z is north, clockwise'); }
+  ok(/rd-fq/.test(html) && /'ABCDEFGH'/.test(R('src/ui/radar.js')), 'radio set shows its net + frequency; the map carries a lettered grid');
+  ok(/export function warKit\(/.test(wk) && /mine plough/.test(wk) && /slat-armour cage/.test(wk) && /noRoof=true/.test(wk) && /if\(KIT\) warKit\(out,/.test(md) && /if\(KIT\) warKit\(g,/.test(md) && /a\.userData\.noRoof/.test(rm), 'our tank carries the war kit on every model; the roof MG ignores it'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

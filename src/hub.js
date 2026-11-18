@@ -40,6 +40,7 @@ export * from './tank/materials.js';
 export * from './tank/models.js';
 export * from './tank/designs.js';   // Z157 a dedicated vehicle build per model   // Z155 tank collection (real MBTs + our designs)
 export * from './tank/model.js';
+export * from './tank/warkit.js';   // Z228 our tank's war kit (mine plough, sandbags, slat cage, APS, jammer)
 export * from './tank/rig.js';
 export * from './tank/barrels.js';
 export * from './tank/shield.js';
@@ -153,6 +154,7 @@ export * from './core/helpers.js';
 export * from './game/update.js';
 export * from './game/intro.js';
 export * from './ui/radar.js';
+export * from './ui/instruments.js';   // Z228 commander's instrument panel + radio teleprinter
 export * from './ui/squad-hud.js';   // Z220 TỔ BỘ BINH panel
 export * from './core/profile.js';
 export * from './core/cloud.js';   // Z162 Firebase cloud save

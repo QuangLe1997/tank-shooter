@@ -1,0 +1,141 @@
+/* =====================================================================================================
+   Z228 · REAL MILITARY HUD — loads last. The battle HUD reads like vehicle equipment, not a mobile game:
+   matte painted steel plates with screw heads and a little grain, stencilled labels, phosphor fire-control digits
+   (amber = data, green = ours / ready, red = danger), a radio set with net + frequency + signal, a tactical map with
+   a grid and a north mark, hazard-striped warning plates, and the commander's instrument panel (ui/instruments.js).
+   Desktop gets the full plates; phones keep their light see-through chips and only take the fonts and the plates
+   that already exist there (banner, radio).
+   ===================================================================================================== */
+:root{
+  --m-ink:#dcdfc8; --m-dim:#9ea385; --m-amb:#ffb84a; --m-grn:#9fe07a; --m-red:#ff5a3a; --m-edge:rgba(206,210,176,.16);
+  --m-mono:'Share Tech Mono','Saira Condensed',ui-monospace,monospace; --m-sten:'Saira Stencil One','Saira Condensed',system-ui,sans-serif;
+  --m-noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .55  0 0 0 0 .48  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --m-screws:
+    radial-gradient(circle at 6px 6px,rgba(196,196,176,.75) 0 1.3px,rgba(0,0,0,.65) 1.6px 2.5px,transparent 2.8px),
+    radial-gradient(circle at calc(100% - 6px) 6px,rgba(196,196,176,.75) 0 1.3px,rgba(0,0,0,.65) 1.6px 2.5px,transparent 2.8px),
+    radial-gradient(circle at 6px calc(100% - 6px),rgba(196,196,176,.75) 0 1.3px,rgba(0,0,0,.65) 1.6px 2.5px,transparent 2.8px),
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px),rgba(196,196,176,.75) 0 1.3px,rgba(0,0,0,.65) 1.6px 2.5px,transparent 2.8px);
+  --m-paint:linear-gradient(180deg,rgba(46,50,37,.93),rgba(25,28,20,.95));
+  --m-shade:inset 0 1px 0 rgba(255,255,236,.09),inset 0 0 0 1px var(--m-edge),inset 0 -2px 0 rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.5);
+}
+
+/* ---------- the plate: every desktop HUD panel ---------- */
+body:not(.touch) #hud .chip, body:not(.touch) #hud .ability, body:not(.touch) #objChip, body:not(.touch) #fortHud, body:not(.touch) #sqHud,
+body:not(.touch) #mgHud, body:not(.touch) #instr, body:not(.touch) #contractChip, body:not(.touch) #powHud, body:not(.touch) #bossbar, body:not(.touch) .buffchip, body:not(.touch) .gunicon{
+  clip-path:none!important; border-radius:3px!important; backdrop-filter:none!important;
+  background:var(--m-screws),var(--m-noise),var(--m-paint)!important; background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat,no-repeat!important;
+  border:1px solid rgba(0,0,0,.7)!important; box-shadow:var(--m-shade)!important; }
+body:not(.touch) .gunicon, body:not(.touch) .buffchip, body:not(.touch) #hud .ability, body:not(.touch) #fsBtn, body:not(.touch) #muteBtn, body:not(.touch) #musBtn{ background:var(--m-noise),var(--m-paint)!important; background-repeat:repeat,no-repeat!important; }
+
+/* ---------- top data strip: score · stage · wave ---------- */
+body:not(.touch) #topbar{padding:4px 6px;}
+#topbar .lbl{font-family:'Saira Condensed',sans-serif!important;font-size:9px!important;letter-spacing:3px!important;color:var(--m-dim)!important;}
+#topbar .val{font-family:var(--m-mono)!important;font-weight:400!important;letter-spacing:1px!important;text-shadow:0 0 7px rgba(255,170,60,.38)!important;}
+body:not(.touch) #topbar .val{font-size:25px!important;}
+#topbar .score .val{color:var(--m-amb)!important;} #topbar .stage .val{color:var(--m-grn)!important;text-shadow:0 0 7px rgba(140,230,110,.4)!important;} #topbar .wave .val{color:var(--m-ink)!important;text-shadow:none!important;}
+body:not(.touch) #topbar .cell + .cell::after{background:rgba(0,0,0,.55);box-shadow:1px 0 0 rgba(255,255,230,.07);}
+
+/* desktop top-centre stack (was overlapping): strip → power rating → contract → boss bar → banner */
+body:not(.touch) #powHud{top:78px!important;padding:3px 10px!important;font-family:var(--m-mono);letter-spacing:.5px;}
+body:not(.touch) #contractChip{top:106px!important;}
+body:not(.touch) #bossbar{top:138px!important;padding:6px 12px 7px!important;}
+body:not(.touch) #combo{top:180px!important;}
+
+/* ---------- gun bar: weapon in the breech, rounds left, ready lamp ---------- */
+#weaponchip .wc-nm{font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:2px!important;color:var(--m-ink);}
+#weaponchip .wc-am{font-family:var(--m-mono)!important;font-weight:400!important;color:var(--m-amb)!important;text-shadow:0 0 7px rgba(255,170,60,.45);}
+body:not(.touch) #weaponchip{padding:7px 18px 7px 30px!important;gap:11px!important;}
+body:not(.touch) #weaponchip .wc-nm{font-size:17px!important;} body:not(.touch) #weaponchip .wc-am{font-size:22px!important;}
+#weaponchip .wc-ty{font-family:'Saira Condensed',sans-serif;border-radius:1px!important;background:transparent!important;border:1px solid rgba(255,184,74,.55);color:var(--m-amb)!important;}
+body:not(.touch) #weaponchip::before{content:'';position:absolute;left:12px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#e6ffd0,#7fe05a 45%,#2c5a1c);box-shadow:0 0 8px rgba(130,230,90,.8);}
+body:not(.touch) #weaponchip.reloading::before{background:radial-gradient(circle at 35% 35%,#ffd8c8,#ff5a3a 45%,#5a1a10);box-shadow:0 0 8px rgba(255,80,50,.85);animation:mBlink .5s steps(2) infinite;}
+#weaponchip.reloading .wc-am{color:var(--m-red)!important;}
+@keyframes mBlink{50%{opacity:.25}}
+body:not(.touch) .gunicon{opacity:.6;}
+body:not(.touch) .gunicon.on{border-color:rgba(159,224,122,.85)!important;box-shadow:var(--m-shade),0 0 0 1px rgba(159,224,122,.6),0 0 10px rgba(159,224,122,.35)!important;opacity:1;}
+.gchk{border-radius:1px!important;}
+
+/* ---------- banner: a stencilled plate; warnings carry hazard stripes ---------- */
+#combo{font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:.12em!important;clip-path:none!important;border-radius:2px;
+  background:var(--m-noise),linear-gradient(180deg,rgba(26,28,20,.92),rgba(12,13,9,.9))!important;background-repeat:repeat,no-repeat!important;
+  border-top:2px solid currentColor;border-bottom:2px solid currentColor;text-shadow:0 0 10px rgba(0,0,0,.9),0 2px 3px #000!important;box-shadow:0 8px 24px rgba(0,0,0,.55);}
+#combo.warn{padding-left:44px!important;padding-right:44px!important;
+  background:repeating-linear-gradient(-45deg,#e8b030 0 7px,#14130c 7px 14px) left/26px 100% no-repeat,
+    repeating-linear-gradient(-45deg,#e8b030 0 7px,#14130c 7px 14px) right/26px 100% no-repeat,
+    var(--m-noise),linear-gradient(180deg,rgba(30,24,16,.94),rgba(14,11,8,.92))!important;}
+#combo.long{font-family:'Saira Condensed',sans-serif!important;font-weight:700!important;letter-spacing:.1em!important;}
+body.touch #combo.warn{padding-left:24px!important;padding-right:24px!important;background-size:14px 100%,14px 100%,auto,auto!important;}
+
+/* ---------- radio set: net · frequency · signal, the message typed out ---------- */
+#radio{border-left:3px solid var(--m-grn)!important;border-radius:2px;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px),var(--m-noise),linear-gradient(180deg,rgba(16,24,14,.92),rgba(8,12,7,.9))!important;
+  box-shadow:inset 0 0 0 1px rgba(159,224,122,.14),0 8px 22px rgba(0,0,0,.5);}
+#radio .rd-hd{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+#radio .rd-tag{font-family:'Saira Condensed',sans-serif;border-radius:1px;}
+#radio .rd-fq{font-family:var(--m-mono);font-size:11px;color:var(--m-grn);opacity:.8;letter-spacing:.5px;}
+#radio .rd-sig{display:inline-flex;align-items:flex-end;gap:2px;height:11px;margin-left:auto;}
+#radio .rd-sig i{display:block;width:3px;background:var(--m-grn);opacity:.85;} #radio .rd-sig i:nth-child(1){height:30%} #radio .rd-sig i:nth-child(2){height:55%} #radio .rd-sig i:nth-child(3){height:80%} #radio .rd-sig i:nth-child(4){height:100%;animation:mBlink 1.3s steps(2) infinite;}
+#radio .rd-txt{font-family:'Saira Condensed',sans-serif;color:#e4eed8;}
+body:not(.touch) #radio{flex-direction:column;align-items:stretch!important;gap:3px!important;width:min(560px,60vw);padding:6px 14px 8px 10px!important;}
+body:not(.touch) #radio .rd-txt{font-size:15.5px;line-height:1.3;min-height:20px;}
+body:not(.touch) #radio .rd-txt::after{content:'▌';color:var(--m-grn);margin-left:2px;animation:mBlink .8s steps(2) infinite;}
+#radio.show{animation:mStatic .32s steps(4) 1;}
+@keyframes mStatic{0%{filter:brightness(2.2) contrast(.6);opacity:.4}40%{filter:brightness(.6);opacity:1}70%{filter:brightness(1.5)}100%{filter:none}}
+body.touch #radio .rd-fq, body.touch #radio .rd-sig{display:none;}
+
+/* ---------- tactical map: bezel, grid (drawn in ui/radar.js), north mark ---------- */
+body:not(.touch) #radar{border-radius:2px!important;border:1px solid rgba(0,0,0,.8)!important;backdrop-filter:none!important;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px),radial-gradient(circle at 50% 50%,rgba(22,36,20,.86),rgba(8,14,8,.9))!important;
+  box-shadow:0 0 0 3px #23261b,0 0 0 4px rgba(206,210,176,.22),0 0 0 6px rgba(0,0,0,.6),0 10px 24px rgba(0,0,0,.5)!important;}
+body:not(.touch) #radar{width:150px!important;height:150px!important;top:68px!important;}
+
+/* ---------- side panels: objective, fortresses, squad, PKT ---------- */
+body:not(.touch) #objChip{border-left:3px solid var(--m-amb)!important;padding:7px 14px 8px 12px!important;}
+#objChip .ob-name{font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:.14em!important;}
+#objChip .ob-dot{border-radius:0;}
+#objChip .ob-bar{background:rgba(0,0,0,.5)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+#objChip .ob-bar i{background:repeating-linear-gradient(90deg,var(--m-amb) 0 6px,rgba(0,0,0,.3) 6px 7px)!important;}
+body:not(.touch) #fortHud{padding:8px 12px 9px!important;}
+#fortHud .fh-t{font-family:var(--m-sten);font-weight:400!important;letter-spacing:2.5px!important;font-size:10.5px!important;}
+#fortHud .fh-r em{font-family:var(--m-mono);font-weight:400!important;font-size:10.5px!important;}
+body:not(.touch) #sqHud{padding:9px 11px!important;}
+#sqHud .sq-h b{font-family:var(--m-sten);font-weight:400;letter-spacing:2.5px;font-size:11px;}
+#sqHud .sq-n,#sqHud .sq-p{border-radius:1px!important;}
+#sqHud .sq-g i{border-radius:1px!important;}
+#mgHud{font-family:var(--m-mono)!important;font-weight:400!important;padding:5px 11px!important;color:var(--m-amb)!important;}
+#mgHud b{font-family:'Saira Condensed',sans-serif;font-weight:800;color:var(--m-dim)!important;letter-spacing:2px;}
+body:not(.touch) #hud .ability .k{font-family:var(--m-mono);letter-spacing:.5px;}
+#abilities .ab-nm{font-family:'Saira Condensed',sans-serif!important;border-radius:1px;}
+#bossbar .bn{font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:4px!important;}
+#bossbar .bar{border-radius:1px!important;} #bossbar .bar > i{border-radius:0!important;}
+
+/* ---------- world bars over our tank and the Core: thin, square, segmented ---------- */
+.wbar,.wbar > i{border-radius:1px!important;}
+.wbar > i{background-image:repeating-linear-gradient(90deg,transparent 0 5px,rgba(0,0,0,.45) 5px 6px),linear-gradient(90deg,#3fa84a,#7fe06a)!important;}
+.wbar.core > i{background-image:repeating-linear-gradient(90deg,transparent 0 5px,rgba(0,0,0,.45) 5px 6px),linear-gradient(90deg,#b07a2c,#ffc24e)!important;}
+.wbar > b{font-family:var(--m-mono);font-weight:400!important;}
+
+/* ---------- commander's instrument panel (bottom-right, desktop) ---------- */
+#instr{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;padding:9px 14px 9px 9px;pointer-events:none;z-index:9;}
+#instr.hidden{display:none;} body.touch #instr{display:none;}
+#instr .in-dial{width:116px;height:116px;display:block;border-radius:50%;box-shadow:0 0 0 2px #15170f,0 0 0 3px rgba(206,210,176,.22),inset 0 0 12px rgba(0,0,0,.8);}
+#instr .in-rd{display:flex;flex-direction:column;gap:2px;min-width:128px;}
+#instr .in-row{display:flex;align-items:baseline;gap:5px;line-height:1.15;}
+#instr .in-row span{font:700 9.5px/1 'Saira Condensed',sans-serif;letter-spacing:2.2px;color:var(--m-dim);width:52px;}
+#instr .in-row b{font:400 21px/1 var(--m-mono);color:var(--m-amb);text-shadow:0 0 7px rgba(255,170,60,.42);margin-left:auto;letter-spacing:.5px;}
+#instr .in-row em{font:400 10px/1 var(--m-mono);font-style:normal;color:var(--m-dim);width:28px;}
+#instr .in-row.lz b{color:var(--m-grn);text-shadow:0 0 8px rgba(140,230,110,.55);}
+#instr .in-a b{color:var(--m-grn);text-shadow:0 0 7px rgba(140,230,110,.4);}
+#instr .in-bar{height:7px;margin-top:2px;background:rgba(0,0,0,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+#instr .in-bar i{display:block;height:100%;width:100%;background:repeating-linear-gradient(90deg,var(--m-grn) 0 8px,transparent 8px 10px);transition:width .2s;}
+#instr.warn .in-a b{color:var(--m-amb);} #instr.warn .in-bar i{background:repeating-linear-gradient(90deg,var(--m-amb) 0 8px,transparent 8px 10px);}
+#instr.crit .in-a b{color:var(--m-red);animation:mBlink .6s steps(2) infinite;} #instr.crit .in-bar i{background:repeating-linear-gradient(90deg,var(--m-red) 0 8px,transparent 8px 10px);}
+
+/* ---------- menus: the hero button is painted signal-yellow steel with a stencilled order, not gold glass ---------- */
+#start .panel .btn-primary,.btn-primary{
+  --plate:linear-gradient(180deg,#e2b443 0%,#c99a2e 55%,#a87a1c 100%);
+  font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:5px!important;color:#1a1306!important;text-shadow:0 1px 0 rgba(255,236,190,.35)!important;
+  border-color:rgba(40,30,10,.75)!important;box-shadow:inset 0 1px 0 rgba(255,240,200,.45),inset 0 -3px 0 rgba(60,40,8,.45),0 8px 22px rgba(0,0,0,.5)!important;}
+.btn,.btn-mini,.btn-arsenal,.btn-shop,.btn-terrain{--plate:linear-gradient(180deg,rgba(44,48,35,.94),rgba(20,23,16,.96));}   /* one layer: theme.css sizes exactly two (sheen + plate) */
+body.touch #weaponchip .wc-nm{font-family:'Saira Condensed',sans-serif!important;font-weight:700!important;letter-spacing:1px!important;}   /* the stencil runs wide — phones keep the narrow face */

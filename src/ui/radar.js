@@ -9,6 +9,9 @@ export function drawRadar(){
   const c=radarCtx, W=radarCanvas.width, H=radarCanvas.height, cx=W/2, cy=H/2;
   const scale=(W/2-7)/ARENA, toX=wx=>cx+wx*scale, toY=wz=>cy+wz*scale;
   c.clearRect(0,0,W,H);
+  { c.strokeStyle='rgba(150,220,120,0.11)'; c.lineWidth=1; c.beginPath(); for(let i=1;i<8;i++){ const g=Math.round(W*i/8)+0.5; c.moveTo(g,0); c.lineTo(g,H); c.moveTo(0,g); c.lineTo(W,g); } c.stroke();   // Z228 map grid (8×8 squares)
+    c.fillStyle='rgba(170,230,140,0.45)'; c.font='600 '+Math.round(W*0.05)+'px "Share Tech Mono",monospace'; c.textAlign='left'; c.textBaseline='bottom'; for(let i=0;i<8;i++){ c.fillText('ABCDEFGH'[i], W*i/8+2, H-1); c.fillText(String(i+1), 2, W*i/8+W*0.065); }   // grid letters along the bottom, numbers down the side
+    c.fillStyle='#ffb84a'; c.beginPath(); c.moveTo(cx,3); c.lineTo(cx+5,12); c.lineTo(cx-5,12); c.closePath(); c.fill(); }   // north mark
   { const O=fieldOutline(); c.fillStyle='rgba(255,255,255,0.035)'; c.strokeStyle='rgba(255,255,255,0.32)'; c.lineWidth=1.2; c.beginPath();   // Z106 the real (irregular) fence line
     O.forEach(([x,z],i)=> i ? c.lineTo(toX(x),toY(z)) : c.moveTo(toX(x),toY(z))); c.closePath(); c.fill(); c.stroke(); }
   c.strokeStyle='rgba(200,190,170,0.55)'; c.lineWidth=2; for(const R of RIDGES){ c.beginPath(); R.pts.forEach(([x,z],i)=> i ? c.lineTo(toX(x),toY(z)) : c.moveTo(toX(x),toY(z))); c.stroke(); }   // rock ridges
