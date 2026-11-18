@@ -488,7 +488,7 @@ ok(HEADING.idle < HEADING.moving && HEADING.dist > 2, 'the heading chevron sits 
 
 ok(FORT.ram.gate*2 >= 1 && FORT.ram.wall*2 >= 1 && FORT.ram.fullV <= 15, 'Z111 two rams at 15+ break a gate or a wall section');
 ok(FORT.wallHpK <= 1 && FORT.wallShotK === 1 && FORT.shotStructMin >= 1, 'Z111 wall sections no tougher than the gate; shells hit them in full, no gun weak vs fortresses');
-ok(FORT.tiers[1].gate/(GUNS.rifle.dmg*Math.max(FORT.shotStructMin, DMG_TYPE[GUNS.rifle.type].struct)) <= 50, 'Z111 the starter rifle opens a tier-1 gate in under ~50 shots');
+ok(FORT.tiers[1].gate/(GUNS.rifle.dmg*(1+(GUNS.rifle.splash||0))*Math.max(FORT.shotStructMin, DMG_TYPE[GUNS.rifle.type].struct)) <= 50, 'Z111 the starter rifle opens a tier-1 gate in under ~50 shots');
 ok(RIDER.cap >= 12 && RIDER.base + 3*RIDER.perUp <= RIDER.cap, 'Z111b 12 seats on the tank; base + 3 crew upgrades fit');
 ok(INFANTRY.vsArmour > 0 && INFANTRY.vsArmour <= 0.35, 'Z111b rifle rounds barely scratch a tank');
 ok(FORT.posture.holdK > 0 && FORT.gate.exitMax > 0 && LOOT.siege.mul > 1, 'Z111b fortress posture / gate / siege-rounds tuning present');
@@ -1215,6 +1215,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const br=R('src/tank/barrels.js'), G=(await import('./src/data/guns.js')).GUNS;
   ok(/RIFLE \(default\) — Z231/.test(br) && /dual-feed ammo boxes/.test(br) && /cooling holes/.test(br) && /three-port muzzle brake/.test(br) && /return id==='rifle'\?1:0/.test(br), 'the 30 mm is a real autocannon mount, worn at grade 1');
   ok(G.rifle.flash==='auto30' && G.rifle.fx==='he30' && G.rifle.color===0xffa646 && /kind==='auto30'/.test(R('src/fx/gunfx.js')) && /fx==='he30'/.test(R('src/fx/explosions.js')), 'amber tracer, brake side-jets, HE-I impact pop'); }
+
+// Z232 HE-I 30 mm + HE ammo bursts; the swept-hit start point must not share fields with the smoke-trail code (it did → rounds stopped hitting)
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const lo=R('src/combat/lock-on.js'), hf=R('src/fx/hitfx.js'), sp=R('src/combat/spells.js'), G=(await import('./src/data/guns.js')).GUNS;
+  const own=f=>new Set([...f.matchAll(/\bb\.(_[a-z]{2})\s*=/g)].map(m=>m[1]));
+  const sweepVars=[...lo.matchAll(/sweepPoint\(b\.(_[a-z]+), b\.(_[a-z]+),/g)].flatMap(m=>[m[1],m[2]]), trail=own(hf);
+  ok(sweepVars.length>=4 && sweepVars.every(v=>!trail.has(v)), 'swept hits read their own path start (_hx/_hz), never the smoke trail’s _sx/_sz');
+  ok(G.rifle.aoe===1.3 && G.rifle.splash===0.45 && G.rifle.dmg===10 && /function smallBurst\(b\)/.test(sp) && /if\(b\.aoe<2\)\{ smallBurst\(b\); return; \}/.test(sp), 'the 30 mm fires HE-I: a 1.3 m burst on every strike (struck target ≈14, neighbours a share), a small pop instead of a shell blast');
+  ok(/export const HE_AMMO = \{ R:1\.4, share:0\.35 \}/.test(lo) && /aoe:heAoe\(o\)/.test(lo), 'HE ammo makes every direct-fire gun burst on impact'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

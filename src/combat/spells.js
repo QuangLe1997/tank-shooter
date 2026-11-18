@@ -73,6 +73,13 @@ export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){
     if(q < r*r){ if(stun)e.stunUntil=(now||performance.now()/1000)+2; damageEnemy(e, dmg*(type?typeMul(type,armorOf(e))*envDmg(type):1)); } }
   if(boss&&boss.alive){ const dx=boss.pos.x-x,dz=boss.pos.z-z; if(dx*dx+dz*dz<r*r) damageBoss(dmg); }
 }
+// Z232 a small HE burst: flash, a fistful of burning fragments, a dark puff, a ring the size of the blast — and an occasional scorch mark
+function smallBurst(b){ const y=heightAt(b.x,b.z)+Math.max(0.5, Math.min(2.5, b.by||1)), k=b.aoe/1.3, pos={ x:b.x, y, z:b.z };
+  spawnPart(b.x, y, b.z, 0,0,0, { tex:'flash', color:0xfff2d0, size:2.2*k, life:0.06, grav:0, drag:0 });
+  spawnPart(b.x, y, b.z, 0,0.6,0, { tex:'fire', color:0xfff0c0, color2:0xff5a10, size:1.3*k, grow:1.4, life:0.18, grav:0.5, drag:4 });
+  burst(pos, 0xffb050, Math.floor(7*k), 8*k, { y, life:0.28, size:0.5*k, grav:-6, drag:3.5 });
+  burst(pos, 0x2a2420, 2, 2.2, { y, life:0.7, size:1.3*k, smoke:true, grav:-0.4, drag:2, op:0.42 });
+  ringPulse(pos, 0xffb060, b.aoe*1.1); if(Math.random()<0.35) decalScorch(b.x, b.z, 0.9*k, 0.6); sfx('explode', { x:b.x, z:b.z }, 0.35); }
 export function detonate(b){
   if(b.type==='TBX'){ const now=performance.now()/1000, R=b.aoe;                  // THERMOBARIC: fuel-air flash → shock wave → everything inside burns
     fireball({x:b.x,z:b.z}, 2.4); bigExplode({x:b.x,z:b.z}, 0xffc070, R/2.4); ringPulse({x:b.x,z:b.z}, 0xffffff, R*1.1); ringPulse({x:b.x,z:b.z}, 0xff8a3a, R*0.8);
@@ -81,7 +88,9 @@ export function detonate(b){
     aoeDamage(b.x,b.z,R,b.aoeDmg||b.dmg,false,now,'TBX',true,siegeMul());
     for(const e of enemies){ if(e.def.air||e.def.bomber) continue; const d=Math.hypot(e.pos.x-b.x,e.pos.z-b.z); if(d<R){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2*(1-d/R)+0.8); e.burn.until=now+BALANCE.flame.duration*0.6; } }
     sfx('bigexplode'); return; }
-  aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true,siegeMul()); bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
+  aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true,siegeMul());
+  if(b.aoe<2){ smallBurst(b); return; }   // Z232 an autocannon HE-I round (or HE ammo on a light gun): a quick bright pop, not a shell's fireball + screen shake
+  bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
 // enemy AoE that hits the PLAYER + CORE (mortar shells, bomber self-destruct, boss bombs)
 export function enemyGroundStrike(x,z,r,dmg,now){
   bigExplode({x,z}, 0xff7a3d, r/3); blastAllies(x,z,r,dmg); blastAllyTanks(x,z,r,dmg*0.8);

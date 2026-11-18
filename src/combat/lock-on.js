@@ -103,6 +103,9 @@ function airDetonate(b, t){ const y=(t.pos.y||b.by+heightAt(b.x,b.z)), now=perfo
   spawnPart(b.x, y, b.z, 0, 0.6, 0, { color:0x22201c, size:3.2, life:2.2, smoke:true, grav:0.3, drag:1.2, grow:1.8, op:0.6, keep:true });
   if(!t._twr) damageEnemy(t, b.dmg*0.9); aoeDamage(b.x, b.z, b.aoe, b.aoeDmg||b.dmg, false, now, b.type, true, siegeMul()); sfx('explode', { x:b.x, z:b.z }, 0.8); S.shake=Math.min(3, S.shake+0.35); }
 const _ca=new THREE.Vector3(), _cb=new THREE.Vector3();   // Z149 chain-lightning ends
+// Z232 ĐẠN NỔ MẠNH (HE ammo box) loaded: a gun that already bursts bursts 40% wider; one that doesn't now bursts on impact too (small blast, a share of the hit)
+export const HE_AMMO = { R:1.4, share:0.35 };
+function heAoe(o){ const he=o.owner==='p' && S.player && S.player.ammoSplash && !o.inf; if(o.aoe) return o.aoe*(he?1+S.player.ammoSplash:1); return he && !o.lockOn && !o.rocket ? HE_AMMO.R : 0; }
 export function spawnBullet(x, z, angle, o={}){
   const m = bulletPool.pop(); if(!m) return;
   if(o.rocket){ const rk=o.smart ? (_sm.pop()||smartMissile()) : (_rk.pop()||allyRocket()); m.add(rk); m.userData.rk=rk; m.userData.core.visible=false; m.userData.halo.visible=false; m.rotation.set(0,angle,0); }   // Z113
@@ -123,7 +126,7 @@ export function spawnBullet(x, z, angle, o={}){
   const sp0 = o.smart ? sp*0.3 : sp;   // Z214 a smart missile is ejected slowly, then its motor lights
   const B0={ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp0, vz:Math.cos(angle)*sp0, smart:!!o.smart, ign:o.smart?0.13:0, vmax:sp*1.45,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
-    homing:o.homing||0, angle, aoe:(o.aoe||0)*(o.owner==='p'&&S.player&&S.player.ammoSplash?1+S.player.ammoSplash:1), aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
+    homing:o.homing||0, angle, aoe:heAoe(o), aoeDmg:o.aoeDmg||(o.aoe?0:heAoe(o)?(o.dmg||20)*HE_AMMO.share:0), maxDist:o.maxDist||0, color:col,
     lockOn:o.lockOn||false, tgt:null, loft, _py:null, _tx:null,
     by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1 };
   bullets.push(B0);
@@ -169,8 +172,8 @@ export function updateBullets(dt, now){
       if(best){ const want=Math.atan2(best.pos.x-b.x,best.pos.z-b.z); let da=wrapAngle(want-b.angle);
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*b.homing)); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp; } }
-    b._sx=b.x; b._sz=b.z; ballisticStep(b, dt);   // Z228b drag / motor along the round's velocity curve
-    b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt; b._st=Math.hypot(b.x-b._sx, b.z-b._sz);
+    b._hx=b.x; b._hz=b.z; ballisticStep(b, dt);   // Z228b drag / motor along the round's velocity curve · Z232 _hx/_hz = where this frame's path starts (NOT _sx/_sz: fx/hitfx.js shellTrail owns those)
+    b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt; b._st=Math.hypot(b.x-b._hx, b.z-b._hz);
     let landed=false;
     if(b.arc){ b.by+=b.vy*dt; b.vy-=ARC_G*dt; if(b.by<=0.3 && b.vy<0){ b.by=0.3; landed=true; } }   // ballistic shell: up, over, and DOWN into the ground
     if(b.vyl) b.by=Math.max(0.3, b.by+b.vyl*dt);                                                      // plunging fire (tower guards shooting down)
@@ -200,7 +203,7 @@ export function updateBullets(dt, now){
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
-      for(const e of bulletCands(b)){ sweepPoint(b._sx, b._sz, b.x, b.z, e.pos.x, e.pos.z, _sw); const dx=e.pos.x-_sw.x, dz=e.pos.z-_sw.z; if(e.def.inf && dx*dx+dz*dz<9) suppress(e, dt*(1.1+b.dmg*0.03));   // Z173 a near miss pins him
+      for(const e of bulletCands(b)){ sweepPoint(b._hx, b._hz, b.x, b.z, e.pos.x, e.pos.z, _sw); const dx=e.pos.x-_sw.x, dz=e.pos.z-_sw.z; if(e.def.inf && dx*dx+dz*dz<9) suppress(e, dt*(1.1+b.dmg*0.03));   // Z173 a near miss pins him
         if(dx*dx+dz*dz < (b.r+e.r*2.2)**2 && ((e.def.inf||e.def.air) ? dx*dx+dz*dz < (b.r+e.r)**2 : hitsHull(e, _sw.x, _sw.z, b.r))){ b.x=_sw.x; b.z=_sw.z; b.mesh.position.x=b.x; b.mesh.position.z=b.z;
           if(e.def.aps && (b.rocket||b.type==='TBX') && now>(e.apsCd||0) && Math.random()<e.def.aps){ e.apsCd=now+1.0; apsKill(b, e); b.aoe=0; b.pierce=0; hit=true; break; }   // Z158 APS kills the rocket
           const arcK=armourArc(e, b), tm = typeMul(b.type, armorOf(e))*envDmg(b.type)*arcK; let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos);   // damage class × armour × range × conditions
@@ -227,7 +230,7 @@ export function updateBullets(dt, now){
         if(dx*dx+dz*dz < (b.r+boss.r*2.5)**2 && hitsHull(boss, b.x, b.z, b.r)){ damageBoss(b.dmg*bulletFalloff(b)*typeMul(b.type,'H')*envDmg(b.type), b.x, b.z); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
     } else { // enemy bullet
       const p=S.player;
-      sweepPoint(b._sx, b._sz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
+      sweepPoint(b._hx, b._hz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
       const armK = b.inf ? INFANTRY.vsArmour : 1;                                    // Z111b a rifle round barely scratches armour — only rockets (RPG / ATGM) really hurt a tank
       if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, _sw.x, _sw.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg*armK, now, b.vx, b.vz);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
