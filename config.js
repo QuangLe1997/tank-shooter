@@ -650,3 +650,8 @@ export const FENCE = { hp:34, ramV:9 };   // Z205 a compound's wire: HP per 3 m 
 //   connects), then paratroopers still hanging under their canopies, men on the ground, tower guards, and last of all armour (rifle-calibre rounds only
 //   chip it); hits harder all round (dmgK); and when the gunner is killed with nobody left on the roof a reserve man climbs up out of the hull
 export const ROOF_MG_AI = { dmgK:1.3, air:{ rangeK:1.7, hit:0.55, dmgK:0.9, pri:0.55 }, para:{ rangeK:1.9, hit:0.32 }, armour:true, reserve:2, relieve:2.4 };   // grenade-launcher / missile turrets: the launcher takes the roof, no pintle
+// Z228b BALLISTICS — every round has a real velocity curve, but still arrives where (and when) it was aimed:
+//   gun rounds leave the muzzle at v0× the gun's speed and bleed speed to drag over the flight (k = decay/T);
+//   rockets are kicked out slow by the booster, the motor lights and pushes them up past the gun's speed.
+export const BALLISTIC = { gun:{ v0:1.5, decay:3 }, rocket:{ v0:0.3, k:6, cap:1.6 }, T:{ def:1.1, lifeK:0.5, rocket:1.0, min:0.12, max:2.5 },
+  sabot:{ petals:3, out:7, life:0.5 }, vapor:{ t:0.12, every:0.02 }, enemyMissile:{ v0:0.3, k:5, T:1.1 } };

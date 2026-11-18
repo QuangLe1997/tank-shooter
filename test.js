@@ -1182,5 +1182,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/rd-fq/.test(html) && /'ABCDEFGH'/.test(R('src/ui/radar.js')), 'radio set shows its net + frequency; the map carries a lettered grid');
   ok(/export function warKit\(/.test(wk) && /mine plough/.test(wk) && /slat-armour cage/.test(wk) && /noRoof=true/.test(wk) && /if\(KIT\) warKit\(out,/.test(md) && /if\(KIT\) warKit\(g,/.test(md) && /a\.userData\.noRoof/.test(rm), 'our tank carries the war kit on every model; the roof MG ignores it'); }
 
+// Z228b ballistics: every round on a real velocity curve that still arrives where (and when) it was aimed; sabot, vapour wake, swept hits, boosted enemy rockets
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const bl=R('src/combat/ballistics.js'), lo=R('src/combat/lock-on.js'), em=R('src/actors/enemy-missiles.js'), cf=R('config.js');
+  ok(/export const BALLISTIC = \{ gun:\{ v0:1\.5, decay:3 \}, rocket:\{ v0:0\.3, k:6, cap:1\.6 \}/.test(cf), 'ballistics tuning lives in config (gun: 1.5× out of the muzzle; rocket: 0.3× booster kick)');
+  { const sp=76, T=60/76, v0=sp*1.5, k=3/T, q=(1-Math.exp(-3))/3, vE=sp*(1-1.5*q)/(1-q); let x=0; for(let t=0;t<T;t+=1/2000) x+=(vE+(v0-vE)*Math.exp(-k*t))/2000;
+    ok(Math.abs(x-60)<0.3 && vE<sp && v0>sp, 'a gun round starts fast, ends slow, and still covers the aimed 60 m in the aimed time'); }
+  { const sp=30, T=1, kk=6, v0=sp*0.3, g=(1-Math.exp(-kk*T))/kk, vM=(sp*T-v0*g)/(T-g); let x=0; for(let t=0;t<T;t+=1/2000) x+=(vM-(vM-v0)*Math.exp(-kk*t))/2000;
+    ok(Math.abs(x-30)<0.2 && vM>sp, 'a rocket leaves slow, the motor pushes it past the gun speed, same arrival'); }
+  ok(/export function ballisticInit\(/.test(bl) && /export function sabotDiscard\(/.test(bl) && /export function vaporWake\(/.test(bl) && /export function sweepPoint\(/.test(bl) && /export function missileBoost\(/.test(bl), 'curves + sabot petals + shock-vapour wake + swept hits + enemy missile boost');
+  ok(/ballisticInit\(B0, o, sp\)/.test(lo) && /ballisticStep\(b, dt\)/.test(lo) && /hitsHull\(e, _sw\.x, _sw\.z, b\.r\)/.test(lo) && /hitsHull\(p, _sw\.x, _sw\.z, b\.r\)/.test(lo) && /missileBoost\(r, dt\)/.test(em), 'wired into every round, its hit tests and the enemy rockets'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

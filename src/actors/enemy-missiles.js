@@ -1,7 +1,7 @@
 // actors/enemy-missiles.js — ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke
 import * as THREE from 'three';
 import { EQUIP } from '../../config.js';
-import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, hitsHull, inBlock, inSmoke, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle } from '../hub.js';
+import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, hitsHull, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle } from '../hub.js';
 
 // ===== ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke =====
 export const EMIS=[], _emPool=[]; const _mbk=[];
@@ -21,7 +21,7 @@ export function makeEnemyRocket(){
 }
 export function launchEnemyMissile(x, y, z, ang, o){
   const m=_emPool.pop()||makeEnemyRocket(); m.visible=true; m.scale.setScalar(o.kind==='atgm'?1.35:(o.kind==='heli'?0.9:1));
-  EMIS.push({ m, x, y, z, ang, pitch:0, speed:o.speed, dmg:o.dmg, aoe:o.aoe||2.5, guided:o.guided||0, life:o.life||3, kind:o.kind||'rpg', vy:o.vy||0, wire:o.wire||null, src:o.src||null,
+  EMIS.push({ m, x, y, z, ang, pitch:0, speed:o.speed, dmg:o.dmg, aoe:o.aoe||2.5, guided:o.guided||0, life:o.life||3, kind:o.kind||'rpg', vy:o.vy||0, T:o.T||0, wire:o.wire||null, src:o.src||null,
     jam: !!(o.guided && S.player && S.player.sig && Math.random() < S.player.sig.shtora) });   // Z161 SHTORA: this one has lost you
   sfx('rocketlaunch', {x,z});
 }
@@ -43,7 +43,7 @@ export function updateEnemyMissiles(dt, now){
     if(r.guided && !smoked && !r.jam){ const want=Math.atan2(p.pos.x-r.x, p.pos.z-r.z); r.ang=wrapAngle(r.ang + Math.max(-r.guided*dt, Math.min(r.guided*dt, wrapAngle(want-r.ang)))); r.y += ((gy+1.5)-r.y)*Math.min(1,dt*2.5); }
     else if(r.guided && (smoked || r.jam)){ r.ang += Math.sin(now*9+i)*dt*1.6; r.y += Math.sin(now*7+i)*dt*1.2; }    // SMOKE: the seeker loses you — it wobbles off course
     else { r.vy -= 4*dt; r.y += r.vy*dt; }
-    const sx=Math.sin(r.ang), sz=Math.cos(r.ang); r.x+=sx*r.speed*dt; r.z+=sz*r.speed*dt;
+    const sx=Math.sin(r.ang), sz=Math.cos(r.ang), spd=missileBoost(r, dt); r.x+=sx*spd*dt; r.z+=sz*spd*dt;   // Z228b booster kick, then the motor
     r.m.position.set(r.x, r.y, r.z); r.m.rotation.y=r.ang; r.m.rotation.x=-Math.atan2(r.vy||0, r.speed)*0.6;
     spawnPart(r.x-sx*0.9, r.y, r.z-sz*0.9, (Math.random()-0.5)*0.6, 0.3, (Math.random()-0.5)*0.6, {color:0xd8cfbe, size:0.85, life:1.2, smoke:true, grav:-0.1, drag:1.4, grow:2.2, op:0.5});   // Z188 a thick smoke ribbon
     spawnPart(r.x-sx*0.8, r.y, r.z-sz*0.8, -sx*4, 0, -sz*4, {color:0xfff0b0, color2:0xff4a10, size:0.6, life:0.14, grav:0, drag:4});

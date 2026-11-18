@@ -36,7 +36,7 @@ export function makeLauncherMesh(pal){ const g=new THREE.Group(); g.rotation.ord
 export function truckSalvo(e, tx, tz, now){ const R=ROSTER.launcher, mz=e.mesh.userData.muzzle; if(!mz) return; const _w=new THREE.Vector3();
   for(let k=0;k<R.salvo;k++) setTimeout(()=>{ if(S.mode!=='playing' || !enemies.includes(e) || e.abandoned) return; mz.getWorldPosition(_w);
     const gx=tx+(Math.random()-0.5)*R.spread*2, gz=tz+(Math.random()-0.5)*R.spread*2, D=Math.hypot(gx-_w.x,gz-_w.z)||1, T=D/R.speed, vy=(heightAt(gx,gz)+0.5-_w.y)/T + 0.5*4*T;
-    launchEnemyMissile(_w.x,_w.y,_w.z, Math.atan2(gx-_w.x,gz-_w.z), { speed:R.speed, dmg:R.dmg*diffDmgMul(), aoe:R.aoe, life:T+1.5, kind:'heli', vy }); spawnPart(_w.x,_w.y,_w.z, 0,1.5,0, {color:0xd8d0c0, size:1.4, life:0.7, smoke:true, grav:0.3, drag:2, op:0.5}); }, k*R.gap*1000); }
+    launchEnemyMissile(_w.x,_w.y,_w.z, Math.atan2(gx-_w.x,gz-_w.z), { speed:R.speed, dmg:R.dmg*diffDmgMul(), aoe:R.aoe, life:T+1.5, kind:'heli', vy, T }); spawnPart(_w.x,_w.y,_w.z, 0,1.5,0, {color:0xd8d0c0, size:1.4, life:0.7, smoke:true, grav:0.3, drag:2, op:0.5}); }, k*R.gap*1000); }
 // ===== Z80 · NEW ENEMY VEHICLES — flame tank, ATGM tank-destroyer, combat-engineer repair truck, attack helicopter =====
 export const _lineMat={};
 export function makeBeam(color, op){ const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6),3));
@@ -197,7 +197,7 @@ export function updateGunship(e, dt, now, edt){
       const sx=(k%2?1:-1)*1.6, cf=Math.cos(e.facing), sf=Math.sin(e.facing), x=e.pos.x+cf*sx, z=e.pos.z-sf*sx, y=e.pos.y-0.4;
       const lead=0.4, tgx=p.pos.x+p.vel.x*lead+(Math.random()-0.5)*3*smk, tgz=p.pos.z+p.vel.z*lead+(Math.random()-0.5)*3*smk, D=Math.hypot(tgx-x,tgz-z)||1, T=D/R.rocketSpeed;
       const vy=((heightAt(tgx,tgz)+0.5-y) + 0.5*4*T*T)/T;
-      launchEnemyMissile(x,y,z, Math.atan2(tgx-x,tgz-z), { speed:R.rocketSpeed, dmg:R.rocketDmg*dmul, aoe:2.6, life:T+1.5, kind:'heli', vy }); }, k*180);
+      launchEnemyMissile(x,y,z, Math.atan2(tgx-x,tgz-z), { speed:R.rocketSpeed, dmg:R.rocketDmg*dmul, aoe:2.6, life:T+1.5, kind:'heli', vy, T }); }, k*180);
   }
 }
 export const HELI_DOWN=[];

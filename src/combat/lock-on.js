@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT, LOCKON } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, towers, tunnelBlast, typeMul, unitsNear, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -121,11 +121,14 @@ export function spawnBullet(x, z, angle, o={}){
   const D=o.arcDist||0; let vy=0; if(!o.lockOn && !o.noArc && D>11){ const T=Math.min(0.9, D/sp); vy=Math.min(30, ARC_G*T/2); }   // lob: more arc the farther/slower; flat up close (lock-on missiles arc themselves)
   const loft = o.smart ? (D<14 ? 0.8+Math.random()*0.8 : 2.2+Math.random()*1.6) : o.lockOn ? (D<14 ? 1.0+Math.random()*1.4 : 2.6+Math.random()*3.0) : 0;   // Z214 smart missiles fly flatter and faster, diving onto armour from above   // random arc: low/shallow when the target's close, lofts higher when far (kept snappy — short air time)
   const sp0 = o.smart ? sp*0.3 : sp;   // Z214 a smart missile is ejected slowly, then its motor lights
-  bullets.push({ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp0, vz:Math.cos(angle)*sp0, smart:!!o.smart, ign:o.smart?0.13:0, vmax:sp*1.45,
+  const B0={ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp0, vz:Math.cos(angle)*sp0, smart:!!o.smart, ign:o.smart?0.13:0, vmax:sp*1.45,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:(o.aoe||0)*(o.owner==='p'&&S.player&&S.player.ammoSplash?1+S.player.ammoSplash:1), aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col,
     lockOn:o.lockOn||false, tgt:null, loft, _py:null, _tx:null,
-    by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1 });   // inf = small-arms round (rifle/MG) — anything else is a tank-gun round
+    by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, freeze:o.freeze||0, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1 };
+  bullets.push(B0);
+  { const v=ballisticInit(B0, o, sp); if(B0.bk){ B0.vx=Math.sin(angle)*v; B0.vz=Math.cos(angle)*v; if(!m.userData.rk) m.userData.core.scale.z=shellStretch(v); }   // Z228b the round's velocity curve (fast out of the muzzle / booster kick)
+    if(B0.bk==='g' && !o.inf && (o.type==='AP' || (o.owner==='e' && !o.aoe && (o.dmg||0)>=20))) sabotDiscard(x, heightAt(x,z)+y0, z, angle, v); }   // APFSDS: the sabot petals peel away   // inf = small-arms round (rifle/MG) — anything else is a tank-gun round
 }
 // Z112 what a hit on stone / timber / steel looks like, by the round: heavy explosive → chunks + a dust cloud, armour-piercing → a hard spray of chips, small arms → sparks and grit
 const _STONE=new Set(['building','fortwall','gate','boulder','brick','tower','concrete','hesco','camp','pipes','jersey','teeth']);
@@ -141,7 +144,8 @@ export function hitsHull(t, x, z, r){ const s=t.mesh?t.mesh.scale.x:1, f=t.facin
   const lx=dx*cf-dz*sf, lz=dx*sf+dz*cf; return Math.abs(lx) < HULL_HW*s+r && Math.abs(lz) < HULL_HL*s+r; }
 export function recycleBullet(i){ const b=bullets[i], m=b.mesh; m.visible=false; if(m.userData.rk){ m.remove(m.userData.rk); (m.userData.rk.userData.smart?_sm:_rk).push(m.userData.rk); m.userData.rk=null; m.userData.core.visible=true; m.userData.halo.visible=true; m.rotation.set(0,0,0); } bulletPool.push(m); bullets.splice(i,1); }
 const _bcI=[], _bcT=[], _bcA=[], _bnb=[];
-function bulletCands(b){ unitsNear(UGRID.inf, b.x, b.z, b.r+2.5, _bcI); unitsNear(UGRID.tank, b.x, b.z, b.r+16, _bcT); _bcA.length=0; for(const e of _bcI) _bcA.push(e); for(const e of _bcT) _bcA.push(e); return _bcA; }   // Z172 only the units near the round
+const _sw={ x:0, z:0 };   // Z228b swept-hit scratch
+function bulletCands(b){ const st=b._st||0; unitsNear(UGRID.inf, b.x, b.z, b.r+2.5+st, _bcI); unitsNear(UGRID.tank, b.x, b.z, b.r+16+st, _bcT); _bcA.length=0; for(const e of _bcI) _bcA.push(e); for(const e of _bcT) _bcA.push(e); return _bcA; }   // Z172 only the units near the round
 export function updateBullets(dt, now){
   const lim = UNDER.on ? 1e4 : ARENA-1;   // Z226 the underground base lies beyond the arena
   for(let i=bullets.length-1;i>=0;i--){
@@ -165,15 +169,16 @@ export function updateBullets(dt, now){
       if(best){ const want=Math.atan2(best.pos.x-b.x,best.pos.z-b.z); let da=wrapAngle(want-b.angle);
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*b.homing)); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp; } }
-    b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt;
+    b._sx=b.x; b._sz=b.z; ballisticStep(b, dt);   // Z228b drag / motor along the round's velocity curve
+    b.x+=b.vx*dt; b.z+=b.vz*dt; b.life-=dt; b._st=Math.hypot(b.x-b._sx, b.z-b._sz);
     let landed=false;
     if(b.arc){ b.by+=b.vy*dt; b.vy-=ARC_G*dt; if(b.by<=0.3 && b.vy<0){ b.by=0.3; landed=true; } }   // ballistic shell: up, over, and DOWN into the ground
     if(b.vyl) b.by=Math.max(0.3, b.by+b.vyl*dt);                                                      // plunging fire (tower guards shooting down)
     const _gy=heightAt(b.x,b.z);
     const _wy=b.by+_gy; b.mesh.position.set(b.x,_wy,b.z); orientShell(b, _wy, dt);   // Z192 nose along the real flight path
-    { const tc=(b.owner==='e' && b.tk<=1)?0xff5a24:b.color, ts=(b.r||0.45)*BVIS*1.7*b.tk, tl=(0.16+(b.r||0.45)*0.24)*(1+(b.tk-1)*0.6); addTrail(b.x, _wy, b.z, tc, ts, tl);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak   · Z222 trailK draws a gun's tracer fatter / longer · Z223 an enemy tracer keeps its own green
+    { const tc=(b.owner==='e' && b.tk<=1)?0xff5a24:b.color, ts=(b.r||0.45)*BVIS*1.7*b.tk*ballisticTrailK(b), tl=(0.16+(b.r||0.45)*0.24)*(1+(b.tk-1)*0.6); addTrail(b.x, _wy, b.z, tc, ts, tl);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak   · Z222 trailK draws a gun's tracer fatter / longer · Z223 an enemy tracer keeps its own green
       if(b._lx!=null){ const gx=b.x-b._lx, gy=_wy-b._ly, gz=b.z-b._lz, n=Math.min(MOBILE?3:6, Math.floor(Math.hypot(gx,gz)/(ts*0.7))); for(let k=1;k<=n;k++){ const f=k/(n+1); addTrail(b._lx+gx*f, b._ly+gy*f, b._lz+gz*f, tc, ts, tl*(0.75+0.25*f)); } }
-      b._lx=b.x; b._ly=_wy; b._lz=b.z; }   // Z192 the gap a fast round jumps each frame is filled in: one unbroken streak, not a string of beads
+      b._lx=b.x; b._ly=_wy; b._lz=b.z; vaporWake(b, b.x, _wy, b.z); }   // Z192 the gap a fast round jumps each frame is filled in: one unbroken streak, not a string of beads
     if(b.mesh.userData.rk || b.lockOn) rocketExhaust(b, b.x, _wy, b.z); else shellTrail(b, b.x, _wy, b.z);   // Z210 every other round: its own light smoke line
     if(b.owner==='e') nearMiss(b, S.player);   // Z192 motor flame + a long, lingering smoke ribbon (was a short puff, and the missile's sat at ground level)
     const airborne = (b.lockOn && (b.smart || b.by>2.6)) || (b.arc && b.by>3.0);   // Z217 a smart missile never strikes bricks / stone / cover — it flies over them to its target   // lofted missiles / high shells sail over cover & bystanders — they strike on the way down
@@ -195,8 +200,8 @@ export function updateBullets(dt, now){
     if(blocked){ if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; }
     let hit=false;
     if(b.owner==='p' && !airborne){       // lofted missiles can't hit while high — they strike on the dive
-      for(const e of bulletCands(b)){ const dx=e.pos.x-b.x, dz=e.pos.z-b.z; if(e.def.inf && dx*dx+dz*dz<9) suppress(e, dt*(1.1+b.dmg*0.03));   // Z173 a near miss pins him
-        if(dx*dx+dz*dz < (b.r+e.r*2.2)**2 && ((e.def.inf||e.def.air) ? dx*dx+dz*dz < (b.r+e.r)**2 : hitsHull(e, b.x, b.z, b.r))){
+      for(const e of bulletCands(b)){ sweepPoint(b._sx, b._sz, b.x, b.z, e.pos.x, e.pos.z, _sw); const dx=e.pos.x-_sw.x, dz=e.pos.z-_sw.z; if(e.def.inf && dx*dx+dz*dz<9) suppress(e, dt*(1.1+b.dmg*0.03));   // Z173 a near miss pins him
+        if(dx*dx+dz*dz < (b.r+e.r*2.2)**2 && ((e.def.inf||e.def.air) ? dx*dx+dz*dz < (b.r+e.r)**2 : hitsHull(e, _sw.x, _sw.z, b.r))){ b.x=_sw.x; b.z=_sw.z; b.mesh.position.x=b.x; b.mesh.position.z=b.z;
           if(e.def.aps && (b.rocket||b.type==='TBX') && now>(e.apsCd||0) && Math.random()<e.def.aps){ e.apsCd=now+1.0; apsKill(b, e); b.aoe=0; b.pierce=0; hit=true; break; }   // Z158 APS kills the rocket
           const arcK=armourArc(e, b), tm = typeMul(b.type, armorOf(e))*envDmg(b.type)*arcK; let dmg=b.dmg*bulletFalloff(b)*tm; if(b.type) effectFeedback(tm, e.pos);   // damage class × armour × range × conditions
           const tank=!e.def.inf && !e.def.air, glance = tank && (tm<=0.6 || (arcK<1 && !b.aoe && Math.random()<0.45));   // Z192 thick front plate / the wrong gun: the round skips off
@@ -222,9 +227,9 @@ export function updateBullets(dt, now){
         if(dx*dx+dz*dz < (b.r+boss.r*2.5)**2 && hitsHull(boss, b.x, b.z, b.r)){ damageBoss(b.dmg*bulletFalloff(b)*typeMul(b.type,'H')*envDmg(b.type), b.x, b.z); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
     } else { // enemy bullet
       const p=S.player;
-      const dpx=p.pos.x-b.x, dpz=p.pos.z-b.z;
+      sweepPoint(b._sx, b._sz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
       const armK = b.inf ? INFANTRY.vsArmour : 1;                                    // Z111b a rifle round barely scratches armour — only rockets (RPG / ATGM) really hurt a tank
-      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, b.x, b.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg*armK, now, b.vx, b.vz);
+      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, _sw.x, _sw.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg*armK, now, b.vx, b.vz);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
         else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }

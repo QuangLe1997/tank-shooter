@@ -54,6 +54,7 @@ export * from './audio/engine-music.js';
 export * from './audio/voice.js';   // Z161 Vietnamese radio voices
 export * from './audio/music.js';   // Z161 adaptive battle score
 export * from './combat/projectiles.js';
+export * from './combat/ballistics.js';   // Z228b velocity curves, sabot, vapour, swept hits
 export * from './fx/fire-wrecks.js';
 export * from './combat/lock-on.js';
 export * from './actors/core.js';
