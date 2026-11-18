@@ -86,7 +86,7 @@ export function coverGeo(kind){
   const P=[]; let g;
   if(kind==='sandbag'){ const tones=[0xc9b48a,0xb8a276,0xa8936a,0xd4c29a,0x9c8a64];                          // 5 courses, alternating bond, slight sag/jitter
     for(let L=0;L<5;L++){ const along=L%2===0, y=0.19+L*0.33;
-      for(let a=-1;a<=1;a++) for(let b=0;b<6;b++){ const bag=new RoundedBoxGeometry(0.96,0.34,0.48,2,0.14), u=a*1.0+_R(-0.05,0.05), v=-1.25+b*0.5+_R(-0.03,0.03);
+      for(let a=-1;a<=1;a++) for(let b=0;b<6;b++){ const bag=new RoundedBoxGeometry(0.96,0.34,0.48,1,0.14),   /* Z233 1 bevel segment: 108 tris a bag (was 300) — 90 bags × 300 made every sandbag wall 27k tris, ~2.3M on screen */ u=a*1.0+_R(-0.05,0.05), v=-1.25+b*0.5+_R(-0.03,0.03);
         _xf(bag, along?u:v, y+_R(-0.02,0.02), along?v:u, _R(-0.06,0.06), (along?0:Math.PI/2)+_R(-0.08,0.08), _R(-0.05,0.05), 1, _R(0.9,1.08), 1); P.push({geo:bag, col:tones[(Math.random()*tones.length)|0]}); } }
     g=_mergeColored(P); g.userData.h=1.85; }
   else if(kind==='drums'){ const paints=[0x8a2a1e,0x3e4a2a,0x2a3e5a,0x9a7a1e,0x5a5a52,0x7a3a1a];

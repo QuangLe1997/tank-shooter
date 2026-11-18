@@ -7,7 +7,7 @@ export function buildGuide(){
   const m=MOBILE;
   const rows=[
     ['bunker','NHIỆM VỤ','Bảo vệ LÕI qua 5 đợt tấn công rồi hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để nhận thưởng + 💎.'],
-    ['tank', m?'LÁI XE':'LÁI & NGẮM', m?'Kéo cần để lái. Nòng pháo GẮN CỐ ĐỊNH theo đầu xe: xe quay về hướng nào là bắn thẳng hướng đó — quay mũi xe vào địch rồi khai hoả.':'W tiến · S lùi · A/D quay thân xe (như xe tăng thật) · chuột ngắm tháp pháo · giữ chuột để BẮN. Đổi sang lái theo hướng màn hình trong CÀI ĐẶT.'],
+    ['tank', m?'LÁI XE':'LÁI & NGẮM', m?'Kéo cần để lái. Tháp pháo TỰ XOAY theo địch gần nhất trong tầm — cứ lái thoải mái, nòng tự bám mục tiêu; giữ BẮN (hoặc bật TỰ BẮN) để khai hoả.':'W tiến · S lùi · A/D quay thân xe (như xe tăng thật) · chuột ngắm tháp pháo · giữ chuột để BẮN. Đổi sang lái theo hướng màn hình trong CÀI ĐẶT.'],
     ['dash','LƯỚT & KỸ NĂNG', m?'LƯỚT = né nhanh, bất tử chốc lát · KỸ NĂNG = dùng kỹ năng đang chọn · chạm › để đổi kỹ năng.':'CÁCH = lướt (bất tử chốc lát) · E = dùng kỹ năng · Q = đổi kỹ năng.'],
     ['rifle','KHO SÚNG','Nhặt súng từ đồ rơi & CỬA HÀNG. Mang tối đa 5 khẩu và đổi giữa trận — mỗi khẩu một cảm giác & màu đạn riêng.'],
     ['coin','KINH TẾ & NÂNG CẤP','Kiếm xu + 💎 kim cương. Tiêu ở CỬA HÀNG để nâng cấp vĩnh viễn và mua đơn vị hỗ trợ. Súng trùng sẽ lên cấp thông thạo.'],
@@ -34,7 +34,7 @@ export function coach(msg){ const el=document.getElementById('coach'); if(!el) r
 export function coachFirstRun(){
   if(PROFILE.coached) return; PROFILE.coached=true; saveProfile();
   const tips = MOBILE
-    ? ['Nòng cố định đầu xe — quay mũi xe vào địch để bắn','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện','Nhặt vật phẩm để sống sót']
+    ? ['Tháp pháo tự xoay theo địch — cứ lái, nòng tự ngắm','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện','Nhặt vật phẩm để sống sót']
     : ['WASD để lái · chuột để ngắm · giữ chuột để BẮN','CÁCH để lướt thoát hiểm','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện'];
   tips.forEach((t,i)=> setTimeout(()=>{ if(S.mode==='playing') coach(t); }, 1500 + i*3400));
 }

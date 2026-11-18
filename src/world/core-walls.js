@@ -3,7 +3,7 @@
 //   Our walls stop enemy fire but never our own (blocks flagged ours); the guns are indestructible but slow, so the Core still needs you.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BIOME, MOBILE, S, TANK_SCALE, ZONES, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
+import { BIOME, MOBILE, S, TANK_SCALE, ZONES, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
 
 export const CORE_DEF = { R:24, H:6.2, T:2.0, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
@@ -93,6 +93,7 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
   // the honour guard: two men at the foot of each stair of the Core's podium, at attention, facing out
   for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const r=10.2, x=Math.sin(a)*r+Math.cos(a)*sd*2.3, z=Math.cos(a)*r-Math.sin(a)*sd*2.3, s=makeSoldierMesh({ enemy:false });
       s.position.set(x, heightAt(x,z), z); s.rotation.y=a; s.scale.setScalar(TANK_SCALE*1.05); g.add(s); poseSoldier(s, 'stand', 1); s.userData.upAdd=-0.05; CORE_DEF.guards.push({ s, a, ph:Math.random()*9 }); } }
+  bakeGroup(g);   // Z233 roofs, poles, emblems… that share a material become one draw (flags, guns, guards are their own objects and stay)
 }
 // Z227 automatic MG tower: a six-barrel rotary gun on an armoured mount, ammo box, a little search radar spinning on a mast
 function makeMG(){ const m=gunMats(), root=new THREE.Group(), yaw=new THREE.Group(); root.add(yaw);

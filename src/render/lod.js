@@ -12,9 +12,15 @@ export function updateLOD(now){ if(now<_at) return; _at=now+LOD.every; const p=S
     for(const r of riders) castNear(r.g, false);                                     // the crew rides on the hull — the hull's shadow covers them
   }
   fogCull();
+  { const cx=camera.position.x, cz=camera.position.z, D2=LOD.tankDetailR*LOD.tankDetailR;   // Z233 far enemy tanks: the small fittings (hooks, lamps, hatches, boxes) go — ~10 draws each, unseen at that range
+    for(const e of enemies){ if(e.def.inf || e.def.air || !e.mesh) continue; const dx=e.pos.x-cx, dz=e.pos.z-cz, far=dx*dx+dz*dz>D2; if(e.mesh.userData._lodFar===far) continue; e.mesh.userData._lodFar=far; tankDetail(e.mesh, !far); } }
   for(const t of towers){ if(t.falling) continue; const dx=t.x-px, dz=t.z-pz, far=dx*dx+dz*dz > G2+(t.fort?t.fort.R*t.fort.R*2:0);
     for(const gd of t.guards){ if(!gd.alive) continue; if(gd.g.visible===far) gd.g.visible=!far; if(!gd._cs){ gd._cs=1; castNear(gd.g, false); } } }
 }
+// Z233 the fittings of a tank: measured once (world size under LOD.smallR), shown or hidden together
+export function tankDetail(m, on){ const u=m.userData; let L=u._small;
+  if(!L){ L=u._small=[]; m.updateMatrixWorld(true); m.traverse(o=>{ if(!o.isMesh || !o.visible || !o.geometry || o.userData.keep) return; if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); o.getWorldScale(_cv); if(o.geometry.boundingSphere.radius*Math.max(_cv.x,_cv.y,_cv.z) < LOD.smallR) L.push(o); }); }
+  for(const o of L) o.visible=on; }
 // HP bars only when it matters (hurt, elite, commander) — two draws saved per healthy unit
 export function barWanted(e){ return e.hp < e.maxHp-0.5 || e.elite || e.commander; }
 // Z190 FOG CULL — the low cinematic camera looks across the whole arena, so ~3,700 draws a frame went on things already lost in the fog.

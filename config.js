@@ -326,7 +326,8 @@ export const LETHAL = { tankRoundKills: true, core: 0.45, reach: 1.25, edgeMin: 
 
 // Z104 MOBILE AIM — phones have no mouse, so the barrel is FIXED to the hull: the tank shoots straight where it faces.
 //   Auto-fire / rockets / mortar / artillery only take a target inside this forward cone (half-angle in rad) or lane (world units).
-export const AIM = { rockR: 16, mobileFixed: true, cone: 0.17, lane: 1.8, artyCone: 0.32,
+export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol: 0.1, trackSticky: 1.35,   // Z233 phones: the turret tracks the enemy on its own (was: barrel fixed to the hull)
+   cone: 0.17, lane: 1.8, artyCone: 0.32,
   pivotOnly: 0.38 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
 
 // Z174 REAL-WORLD SCALE — 1 world unit = 1 metre. The tanks are the reference (≈ a real MBT: ~7.5 m with the gun, 3.7 m tall to the cupola); a soldier model is
@@ -510,8 +511,8 @@ export const CAM_STYLE = {
 export const CAM_TUNE = { pitch:[16,72,4], distK:[0.55,1.9,0.1], fov:[40,80,3], aheadK:[0,2,0.25] };   // [min, max, step]
 export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, fortPad:30, fortK:0.18, bossR:70, bossK:0.3, ease:0.9, every:0.25 };
 export const TOUCH_HELP = [
-  ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — nòng gắn đầu xe, xe hướng nào bắn hướng đó'], ['Đẩy nhẹ cần', 'Chỉ xoay xe ngắm, không chạy'],
-  ['BẮN (trái)', 'Giữ để bắn · tự bắn khi có mục tiêu trước mũi xe'], ['LƯỚT', 'Bứt tốc né đòn'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
+  ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — tháp pháo tự xoay bám địch, xe đi đâu nòng vẫn ngắm mục tiêu'],
+  ['BẮN (trái)', 'Giữ để bắn · TỰ BẮN: tự khai hoả khi nòng đã chĩa trúng địch'], ['LƯỚT', 'Bứt tốc né đòn'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
   ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['TỰ ĐỘNG', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
 // Z107 FORTRESSES (ĐẠI BẢN DOANH) — every stage the enemy holds 3–4 walled strongholds, each with a name and a commander.
 //   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate that must be shot
@@ -595,7 +596,7 @@ export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault
 export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0, blastK:0, nrmK:0.55 };   // Z107 noiseK 0: no micro-bumps at all · nrmK: calmer detail normals (less sparkle while driving)   // blastK 0 = shells no longer reshape the ground (no mesh rebuilds / popping) — the scorch decal stays
 // Z107 RENDER BUDGET (LOD) — what is worth drawing: only soldiers near the tank cast shadows, tower / wall riflemen out of
 //   range are not drawn at all, and HP bars show once a unit is hurt (elites and commanders always). Checked 4× a second.
-export const LOD = { shadowR: 26, guardR: 70, every: 0.25 };
+export const LOD = { shadowR: 26, guardR: 70, every: 0.25, tankDetailR: 38, smallR: 0.9 };   // Z233 enemy tanks past tankDetailR (from the camera) drop fittings smaller than smallR
 // Z107 POWER RATING — one number for how strong YOUR tank is, and what each level asks of it, on the same scale.
 //   Fight ratio F = time-to-die ÷ time-to-clear-a-wave. Your side: sustained DPS (mag + reload, mastery, upgrades, armour-type
 //   effectiveness vs that level's wave mix, crowd bonus for blast/pierce/chain) and effective HP (HP ÷ (1−armour), dodge from speed).

@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, wetAt } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -18,6 +18,7 @@ export function updatePlayer(dt, now){
   // AIM — Z104 mobile: the barrel is FIXED to the hull (no mouse to lay it) → the tank shoots where it faces.
   //       desktop: aim with the mouse.
   if(barrelFixed()){ p.aim = p.facing; p.aimSmoothed = p.facing; }
+  else if(turretTracks()){ const t=trackTarget(playerRange()); p.aim = t ? Math.atan2(t.pos.x-p.pos.x, t.pos.z-p.pos.z) : p.facing; }   // Z233 phones: the turret lays itself on the enemy (or back to the bow)
   else {
     if(S.pointerActive){ p.aim = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
   }
@@ -26,7 +27,7 @@ export function updatePlayer(dt, now){
   const padOn = PAD.active && now - PAD.lastAt < 1.5;                                 // Z124 a controller is the one being used right now
   const tk=Math.max(TURRET.min, Math.min(TURRET.max, PROFILE.turretK||1));          // Z145 the player's turret traverse speed
   if(padOn && !barrelFixed()){ const A=PAD_CFG.aim, mx=TURRET.rate*tk*(padCfg().sens||1)*dt, st=da*Math.min(1, dt*A.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
-  else if(!barrelFixed()){ const mx=TURRET.rate*TURRET.mouseMul*tk*dt, st=da*Math.min(1, dt*TURRET.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
+  else if(!barrelFixed()){ const mx=TURRET.rate*(turretTracks()?1:TURRET.mouseMul)*tk*dt, st=da*Math.min(1, dt*TURRET.k); p.aimSmoothed = wrapAngle(p.aimSmoothed + Math.max(-mx, Math.min(mx, st))); }
   else p.aimSmoothed = wrapAngle(p.aimSmoothed + da * Math.min(1, dt*PLAYER.turnLerp));
 
   // movement — Z85 TRACKED DRIVE: the hull steers (pivot when slow, wide arcs when fast), thrust runs along the hull,
@@ -152,7 +153,7 @@ export function updatePlayer(dt, now){
   rangeRing.visible = true; rangeRing.position.set(p.pos.x, 0.06, p.pos.z);
   rangeRing.scale.set(range, range, range);
   rangeRing.material.opacity = 0.08 + Math.sin(now*2)*0.025;   // thin + faint, just visible
-  if(MOBILE){ if(autoFire ? !!aimTarget(range) : S.firing) fireGun(now, range); }   // mobile: AUTO fires when a target is straight ahead in range; MANUAL fires while the trigger is held
+  if(MOBILE){ const t = autoFire ? aimTarget(range) : null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) fireGun(now, range); }   // Z233 tracking: fire once the barrel is laid on it   // mobile: AUTO fires when a target is straight ahead in range; MANUAL fires while the trigger is held
   else if(S.firing) fireGun(now, range);                                                 // desktop: fire only while LMB held; gun fireCd caps the rate
 }
 export function biomeVi(n){ return BIOME_VI[n]||n; }

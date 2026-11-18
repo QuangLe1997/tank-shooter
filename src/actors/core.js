@@ -1,7 +1,7 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { CORE_DEF } from '../../config.js';
-import { GLOW, NIGHT, _canvasTex, _mergeColored, bigExplode, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
+import { GLOW, NIGHT, _canvasTex, _mergeColored, bakeGroup, bigExplode, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -79,7 +79,7 @@ export function buildCore(stage=1){
 }
 // Z227 THE CORE'S PODIUM — a three-tier octagonal marble podium with gilt edges and a stair on each side, a balustrade round the top,
 //   eight marble columns carrying a gilt ring and an open gilt dome over the crystal (a jewel in its cage), gold braziers at the stair heads
-function podium(G0, g, PH, gold){ const marble=new THREE.MeshStandardMaterial({ color:0xece6da, roughness:0.35, metalness:0.05, envMapIntensity:0.9 }), P=[], Q=[];
+function podium(G0in, g, PH, gold){ const marble=new THREE.MeshStandardMaterial({ color:0xece6da, roughness:0.35, metalness:0.05, envMapIntensity:0.9 }), P=[], Q=[], G0=new THREE.Group(); G0in.add(G0);   // Z233 the podium is all static: built in its own group, then baked to a handful of draws
   const add=(geo,mat,x,y,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; G0.add(m); return m; };
   const tiers=[[9.0,0],[7.4,0.6],[5.8,1.2]]; for(const [r,y] of tiers){ add(new THREE.CylinderGeometry(r,r+0.15,0.6,8), marble, 0,y+0.3,0).rotation.y=Math.PI/8; add(new THREE.CylinderGeometry(r+0.04,r+0.04,0.08,8), gold, 0,y+0.62,0).rotation.y=Math.PI/8; }
   for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(let st=0;st<6;st++){ const r=10.1-st*0.72, h=0.3*(st+1), b=new THREE.BoxGeometry(3.4, h, 0.74); b.rotateY(a); b.translate(Math.sin(a)*r, h/2, Math.cos(a)*r); P.push({ geo:b, col:0xe6e0d4 }); }
@@ -97,7 +97,7 @@ function podium(G0, g, PH, gold){ const marble=new THREE.MeshStandardMaterial({ 
   const fire=new THREE.MeshStandardMaterial({ color:0x401000, emissive:0xffa040, emissiveIntensity:3 });
   for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const x=Math.sin(a)*5.9+Math.cos(a)*sd*2.1, z=Math.cos(a)*5.9-Math.sin(a)*sd*2.1;   // gold braziers at the stair heads
       add(new THREE.CylinderGeometry(0.42,0.2,0.4,10), gold, x,PH+0.95,z); add(new THREE.CylinderGeometry(0.08,0.12,0.8,6), gold, x,PH+0.4,z); const f=add(new THREE.ConeGeometry(0.3,0.7,8), fire, x,PH+1.45,z); f.castShadow=false; } }
-}
+  bakeGroup(G0); }
 export function rebuildCore(stage){ const keepMax = core ? core.maxHp : CORE_DEF.hp; buildCore(stage); core.maxHp=Math.max(keepMax, CORE_DEF.hp+((stage||1)-1)*CORE_DEF.perStage); core.hp=core.maxHp; updateHUD(); }
 // Z223 EMERGENCY SHIELD — the dome hardens and swallows every hit for a while (once per CORE_DEF.shield.cd s)
 function coreShield(now){ const c=core, Sd=CORE_DEF.shield; c.shieldUntil=now+Sd.t; c.shieldReady=now+Sd.cd; ringPulse(c.pos, c.theme.ring, 9); ringPulse(c.pos, 0xffffff, 5.5);

@@ -192,7 +192,7 @@ export function buildTank(opts={}){
 export const _ZERO_UV = new Map();
 export function bakeGroup(par){
   const buckets=new Map();
-  for(const c of par.children){ if(!c.isMesh || c.name || c.children.length || Array.isArray(c.material) || c.userData.keep) continue;
+  for(const c of par.children){ if(!c.isMesh || c.isInstancedMesh || c.isSkinnedMesh || c.name || c.children.length || Array.isArray(c.material) || c.userData.keep || c.userData.flag) continue;   // Z233 instanced fields / waving flags are never folded in
     const k=c.material.uuid; let L=buckets.get(k); if(!L) buckets.set(k, L=[]); L.push(c); }
   for(const list of buckets.values()){ if(list.length<2) continue;
     const geos=[]; for(const m of list){ m.updateMatrix(); const gg = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone(); gg.applyMatrix4(m.matrix);

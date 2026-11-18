@@ -1224,5 +1224,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(G.rifle.aoe===1.3 && G.rifle.splash===0.45 && G.rifle.dmg===10 && /function smallBurst\(b\)/.test(sp) && /if\(b\.aoe<2\)\{ smallBurst\(b\); return; \}/.test(sp), 'the 30 mm fires HE-I: a 1.3 m burst on every strike (struck target ≈14, neighbours a share), a small pop instead of a shell blast');
   ok(/export const HE_AMMO = \{ R:1\.4, share:0\.35 \}/.test(lo) && /aoe:heAoe\(o\)/.test(lo), 'HE ammo makes every direct-fire gun burst on impact'); }
 
+// Z233 phones: the turret tracks the enemy itself · render budget: sandbag walls 27k → ~10k tris, far enemy tanks drop fittings, the Core podium + citadel baked
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const aim=R('src/combat/aim.js'), up=R('src/game/update.js'), cf=R('config.js'), lod=R('src/render/lod.js');
+  ok(/mobileFixed: false, mobileTrack: true/.test(cf) && /export function turretTracks\(\)/.test(aim) && /export function trackTarget\(maxR\)/.test(aim) && /export function trackOnTarget\(t\)/.test(aim) && /trackSticky/.test(aim), 'phones: the turret picks, keeps and lays itself on the enemy');
+  ok(/else if\(turretTracks\(\)\)\{ const t=trackTarget\(playerRange\(\)\)/.test(up) && /turretTracks\(\) \|\| trackOnTarget\(t\)/.test(up), 'the hull drives free; auto-fire waits until the barrel is on target');
+  ok(/RoundedBoxGeometry\(0\.96,0\.34,0\.48,1,0\.14\)/.test(R('src/world/props.js')), 'sandbag walls built with one bevel segment (27k → ~10k triangles each)');
+  ok(/export function tankDetail\(m, on\)/.test(lod) && /tankDetailR: 38, smallR: 0\.9/.test(cf) && /bakeGroup\(G0\); \}/.test(R('src/actors/core.js')) && /bakeGroup\(g\);   \/\/ Z233/.test(R('src/world/core-walls.js')) && /c\.isInstancedMesh \|\| c\.isSkinnedMesh/.test(R('src/tank/model.js')), 'far tanks drop their fittings; the podium and citadel are baked; baking never folds instanced fields or flags'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
