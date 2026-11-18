@@ -1279,5 +1279,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/\} else if\(b\.owner!=='p'\)\{ \/\/ enemy bullet/.test(lo) && !/\} else \{ \/\/ enemy bullet/.test(lo), 'an airborne round of ours no longer falls through into the enemy-round branch (it used to hit our own tank as it flew over the hull)'); }
 
+// Z238 the lock-on missile: never through a wall (climbs over what is in its path, strikes a wall too close to clear), a capped reach, a slower rate
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const lo=R('src/combat/lock-on.js'), cf=R('config.js'), G=(await import('./src/data/guns.js')).GUNS;
+  ok(/LOCKON = \{ cone:1\.2, minP:9, allyR:3\.2, range:42, clear:1\.5, look:\[5,30\] \}/.test(cf), 'lock-on range cap, climb clearance and look-ahead in config');
+  ok(/export function smartClear\(b, toTgt\)/.test(lo) && /hold=Math\.max\(desiredY, clr\)/.test(lo), 'the missile climbs over anything standing between it and its mark');
+  ok(/_wy < blockTop\(bl\)\+0\.15\)\{ wb=bl; break; \}/.test(lo) && /if\(!wb && b\.by < FORT\.wallH\+0\.3\) wb=fortIntactCross/.test(lo), 'a wall it could not climb takes the hit — it never passes through');
+  ok(/bl\.kind==='fortwall' \|\| bl\.kind==='gate'\)\) bl\._top=heightAt\(bl\.x,bl\.z\)\+FORT\.wallH/.test(lo), 'a fortress wall is measured at its parapet (not the whole fort’s towers and flags)');
+  ok(/const mD=g\.lock \? Math\.min\(maxDist, LOCKON\.range\) : maxDist;/.test(R('src/combat/flame.js')) && /GUNS\[gid\]\.lock \? Math\.min\(r, LOCKON\.range\)/.test(R('src/core/config.js')) && /const left=b\.maxDist-/.test(lo), 'reach capped at fire, in the range ring / auto-fire, and in the seeker');
+  ok(G.missile.fireCd===0.75 && G.missile.dmg===64, 'the lock-on launcher fires slower (0.55 → 0.75 s), each missile a little heavier'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

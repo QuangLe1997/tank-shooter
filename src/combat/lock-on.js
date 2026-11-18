@@ -22,6 +22,16 @@ for(let i=0;i<8;i++){
   const lab=new THREE.Sprite(new THREE.SpriteMaterial({ map:_lockLabel, transparent:true, depthTest:false, depthWrite:false })); lab.scale.set(2.4,0.72,1); lab.position.set(0,2.4,0); grp.add(lab);
   lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, dgrp, lab, life:0, max:0.55, snap:0});
 }
+// Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
+const _tb=new THREE.Box3(), _bnc=[];
+export function blockTop(bl){ if(bl._top==null || bl._topHp!==bl.hp){ bl._topHp=bl.hp; if(bl.fort && (bl.kind==='fortwall' || bl.kind==='gate')) bl._top=heightAt(bl.x,bl.z)+FORT.wallH+0.6;   // a fortress wall's block carries the whole fort's mesh — its own height is the parapet's
+    else if(bl.mesh){ _tb.setFromObject(bl.mesh); bl._top=_tb.isEmpty() ? heightAt(bl.x,bl.z)+2 : Math.min(_tb.max.y, heightAt(bl.x,bl.z)+16); } else bl._top=heightAt(bl.x,bl.z)+2; } return bl._top; }
+// Z238 the height (above the ground under it) a lock-on missile must hold to clear everything on its path for the next few metres (up to the mark)
+export function smartClear(b, toTgt){ const sp=Math.hypot(b.vx,b.vz)||1, ux=b.vx/sp, uz=b.vz/sp, L=Math.min(toTgt+1, Math.max(LOCKON.look[0], Math.min(LOCKON.look[1], sp*0.5+4))), gy=heightAt(b.x,b.z); let need=0;
+  for(const bl of blocksNear(b.x+ux*L/2, b.z+uz*L/2, L/2+3, _bnc)){ if(bl.ours || bl===b.ignore) continue; const dx=bl.x-b.x, dz=bl.z-b.z, along=dx*ux+dz*uz; if(along<-1.5 || along>L) continue;
+    if(Math.abs(dx*uz-dz*ux) > (bl.r||1.5)+0.8) continue; const h=blockTop(bl)-gy+LOCKON.clear; if(h>need) need=h; }
+  if(fortIntactCross(b.x, b.z, b.x+ux*L, b.z+uz*L)) need=Math.max(need, FORT.wallH+LOCKON.clear);
+  return need; }
 export function targetAlive(t){ if(t && t._twr) return t.gd.alive && !t.t.falling; return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }
 // Z217 a guard up a watchtower as a missile target (one stable object per guard, kept at his real position)
 function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ _twr:true, t, gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7 }); o.pos.x=gd.wx; o.pos.y=(gd.wy||6)+0.9; o.pos.z=gd.wz; return o; }   // dead targets splice out of enemies[]
@@ -29,6 +39,7 @@ function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ _twr:true, t, gd, pos:{ x
 // Z221 the seeker only looks AHEAD of the missile (a cone round its flight line) and never takes a mark danger-close to our own tank or our
 //   men — no more missiles whipping round onto your own position or diving into your squad's fight
 function seekOK(b, x, z, inf){ const dx=x-b.x, dz=z-b.z; if(dx*dx+dz*dz>4 && Math.abs(wrapAngle(Math.atan2(dx,dz)-b.angle))>LOCKON.cone) return false;
+  if(b.maxDist){ const left=b.maxDist-Math.hypot(b.x-b.ox, b.z-b.oz)+3; if(dx*dx+dz*dz > left*left) return false; }   // Z238 only what it can still reach
   const p=S.player; if(p && (x-p.pos.x)**2+(z-p.pos.z)**2 < LOCKON.minP*LOCKON.minP) return false;
   if(inf) for(const a of FT){ if((a.pos.x-x)**2+(a.pos.z-z)**2 < LOCKON.allyR*LOCKON.allyR) return false; }
   return true; }
@@ -165,7 +176,9 @@ export function updateBullets(dt, now){
         const dist=Math.hypot(t.pos.x-b.x,t.pos.z-b.z), ty=(t.pos.y||1.2);
         if(dist < b.r+(t.r||1)+0.7){ if(t.def && t.def.aps && now>(t.apsCd||0) && Math.random()<t.def.aps){ t.apsCd=now+1.0; apsKill(b, t); recycleBullet(i); continue; } if(t._twr){ airDetonate(b, t); shootGuard(t.t, t.gd, b.x, b.z); } else if(t.def && t.def.air) airDetonate(b, t); else detonate(b); recycleBullet(i); continue; }   // Z158 APS can kill a guided missile on its final dive · Z214 an aircraft is hit in the air     // PROXIMITY FUSE: reached the locked target → detonate now (clean hit at any speed, no tunnelling/orbiting)
         const desiredY=(t.def && (t.def.air||t.def.guard)) ? ty : ty + b.loft*Math.min(1, dist/9);   // Z214 climbs straight to an aircraft's height                   // vault while far, dive to strike height as it closes (descends sooner → less loiter)
-        b.by += (desiredY-b.by)*Math.min(1, dt*4.2); } }                  // snappy climb/dive — short air time, no orbiting
+        const clr=b.smart && b.ign<=0 ? smartClear(b, dist) : 0, hold=Math.max(desiredY, clr);   // Z238 up and over anything standing between it and the mark
+        b.by += (hold-b.by)*Math.min(1, dt*(hold>b.by+0.2 ? 7 : 4.2)); }
+      else if(b.smart && b.ign<=0){ const clr=smartClear(b, 1e9); if(clr>b.by) b.by += (clr-b.by)*Math.min(1, dt*7); } }                  // snappy climb/dive — short air time, no orbiting
     else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
       let best=null, bd=1e9; for(const e of enemies){ const d=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2; if(d<bd){bd=d;best=e;} }
       if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
@@ -188,6 +201,10 @@ export function updateBullets(dt, now){
 
     const overRange = !b.arc && b.maxDist && ((b.x-b.ox)**2+(b.z-b.oz)**2 > b.maxDist*b.maxDist);   // shells in flight always come down somewhere
     if(b.life<=0 || overRange || Math.abs(b.x)>lim || Math.abs(b.z)>lim){ if(b.owner==='p'&&b.aoe) detonate(b); else if(Math.abs(b.x)<lim && Math.abs(b.z)<lim){ groundHit(b.x, b.z, b.r||0.45); if(!b.inf && b.dmg>=30) dirtGeyser(b.x, b.z, Math.min(1.6, 0.7+b.dmg/120)); if(b.owner==='p' && b.dmg>=20) tunnelBlast(b.x, b.z, 1.2, b.dmg); } recycleBullet(i); continue; }
+    if(b.smart && b.owner==='p' && b.ign<=0){ let wb=null;   // Z238 a lock-on missile that could not climb clear strikes the wall in front of it — it never passes through
+      for(const bl of blocksNear(b.x, b.z, b.r, _bnb)){ if(bl.ours || bl===b.ignore || bl.ridge) continue; if(inBlock(bl, b.x, b.z, b.r) && _wy < blockTop(bl)+0.15){ wb=bl; break; } }
+      if(!wb && b.by < FORT.wallH+0.3) wb=fortIntactCross(b.x-b.vx*dt, b.z-b.vz*dt, b.x, b.z);
+      if(wb){ damageBlock(wb, b.dmg*structMul(b.type, wb)*siegeMul()); surfaceHit(wb, b); blockImpactFX(wb, b); detonate(b); recycleBullet(i); continue; } }
     if(b.owner!=='e' && !b.smart){ const px=b.x-b.vx*dt, pz=b.z-b.vz*dt, wb=fortIntactCross(px, pz, b.x, b.z);   // Z170 a sealed fortress: the round strikes the wall, however high it flies
       if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); surfaceHit(wb, b); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop

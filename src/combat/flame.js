@@ -1,6 +1,6 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
-import { BALANCE } from '../../config.js';
+import { BALANCE, LOCKON } from '../../config.js';
 import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
@@ -157,7 +157,8 @@ export function fireGun(now, range){
     if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('QUÁ GẦN CHO PHÁO CHÍNH','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
     for(let i=0;i<n;i++){
       const a = ang + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
-      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist, arcDist:arcD, y:sy0, dropTo:1.2, dropDist:dropD, type:g.type, reach:maxDist, fall:g.fall??1,
+      const mD=g.lock ? Math.min(maxDist, LOCKON.range) : maxDist;   // Z238 a lock-on missile's reach is capped
+      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist:mD, arcDist:arcD, y:sy0, dropTo:1.2, dropDist:dropD, type:g.type, reach:mD, fall:g.fall??1,
         pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, rocket:!!g.lock, smart:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*gunSplash(g) : 0),
         freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos});
     }

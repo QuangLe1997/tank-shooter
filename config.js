@@ -94,7 +94,10 @@ export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', 
 export const SQUAD_AI = { think:0.35, boundT:[3.2,4.6], boundStep:7, flankStep:0.25, flankMax:1.1, spacing:3, assaultR:12, breakMorale:0.3, rallyT:[6,9], suppDecay:0.3, suppressFireK:0.65, navBudget:6000, focusR:40, orderR:60, flankR:22 };
 // Z220 FIELDCRAFT (both sides): no rounds into a wall — a man whose line is blocked edges out to a spot with a clear shot · frag grenades into men behind
 //   cover or bunched up (everyone near a live grenade runs) · smoke screens to fall back or cross open ground under fire (fire through smoke goes wild)
-export const LOCKON = { cone:1.2, minP:9, allyR:3.2 };   // Z221 the lock-on seeker: looks ±cone rad round its flight line, never picks a mark within minP m of our tank or allyR m of our men
+export const LOCKON = { cone:1.2, minP:9, allyR:3.2, range:42, clear:1.5, look:[5,30] };   // Z221 the lock-on seeker: looks ±cone rad round its flight line, never picks a mark within minP m of our tank or allyR m of our men
+//   Z238 a lock-on missile flies at most `range` m whatever the range upgrades (it used to reach nearly the whole screen late on) and only locks what
+//   it can still reach; it never passes through a wall — it looks ahead (look = [min, max] m) and climbs to `clear` m over anything in its path,
+//   then dives on the mark; a wall too close to climb over takes the hit (and the damage)
 // Z223 REAL WAR — blast concussion, side-coloured tracers, brass, varied deaths, men of different build, surprises
 // Z225 UNDERGROUND — the CAVERN battlefield (HANG NGẦM, after Sơn Đoòng) and the enemy TUNNEL NETWORK (địa đạo) dug under every battlefield
 export const CAVE_DEF = { wallH:30, wallW:12, shafts:[4,5], shaftR:[9,15], lights:{ desk:8, mob:3, range:24, I:34, big:70 }, shaftLight:{ desk:4, mob:2, I:5.5 },
