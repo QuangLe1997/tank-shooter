@@ -68,6 +68,7 @@ export * from './world/landmarks.js';      // Z139
 export * from './world/regional.js';       // Z140
 export * from './world/core-walls.js';     // Z140
 export * from './world/env-events.js';     // Z140
+export * from './world/whirlwinds.js';   // Z229 dust devils + avalanches
 export * from './fx/celebrate.js';         // Z140
 export * from './world/flora.js';          // Z141
 export * from './world/cars.js';           // Z206

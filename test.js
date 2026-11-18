@@ -1192,5 +1192,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function ballisticInit\(/.test(bl) && /export function sabotDiscard\(/.test(bl) && /export function vaporWake\(/.test(bl) && /export function sweepPoint\(/.test(bl) && /export function missileBoost\(/.test(bl), 'curves + sabot petals + shock-vapour wake + swept hits + enemy missile boost');
   ok(/ballisticInit\(B0, o, sp\)/.test(lo) && /ballisticStep\(b, dt\)/.test(lo) && /hitsHull\(e, _sw\.x, _sw\.z, b\.r\)/.test(lo) && /hitsHull\(p, _sw\.x, _sw\.z, b\.r\)/.test(lo) && /missileBoost\(r, dt\)/.test(em), 'wired into every round, its hit tests and the enemy rockets'); }
 
+// Z229 wind on the land: dust / snow / leaf devils that spin up at random and wander with the wind; avalanches on the snow battlefields
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const w=R('src/world/whirlwinds.js'), ev=R('src/world/env-events.js'), cf=R('config.js');
+  ok(/export const WHIRL = \{/.test(cf) && /export const AVALANCHE = \{/.test(cf), 'whirl + avalanche tuning lives in config');
+  ok(/function spawnWhirl\(/.test(w) && /function funnel\(/.test(w) && /function axis\(/.test(w) && /WX\.wind/.test(w) && /SNOW=new Set\(\['TUNDRA','ARCTIC'\]\)/.test(w), 'a devil: snaking, flaring vortex funnel + grains + puffs, drifting with the wind; snow devils on the ice');
+  ok(/export function startAvalanche\(/.test(w) && /\(n==='ARCTIC' \|\| n==='TUNDRA'\) && Math\.random\(\)<0\.65 && startAvalanche\(now\)/.test(ev) && /updateWhirls\(dt, now\)/.test(ev) && /clearWhirls\(\)/.test(ev), 'avalanches join the land events on the snow fields; devils update with the land and clear on a new stage');
+  ok(/!UNDER\.on && !BIOME\.cave/.test(w) && /S\.weather!=='rain'/.test(w), 'no devils underground, in the cave, or in the rain'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

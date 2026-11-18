@@ -655,3 +655,8 @@ export const ROOF_MG_AI = { dmgK:1.3, air:{ rangeK:1.7, hit:0.55, dmgK:0.9, pri:
 //   rockets are kicked out slow by the booster, the motor lights and pushes them up past the gun's speed.
 export const BALLISTIC = { gun:{ v0:1.5, decay:3 }, rocket:{ v0:0.3, k:6, cap:1.6 }, T:{ def:1.1, lifeK:0.5, rocket:1.0, min:0.12, max:2.5 },
   sabot:{ petals:3, out:7, life:0.5 }, vapor:{ t:0.12, every:0.02 }, enemyMissile:{ v0:0.3, k:5, T:1.1 } };
+// Z229 WIND ON THE LAND — dust devils (and snow devils / leaf whirls) that spin up at random, wander with the wind and die away;
+//   avalanches that pour off the mountains onto the snow battlefields.
+export const WHIRL = { first:[5,12], every:[14,34], max:2, maxMobile:1, life:[13,24], dist:[20,55], speed:[2.2,5.2], R:[0.9,1.9], H:[8,15],
+  grains:120, puffs:30, grainsMobile:55, puffsMobile:12, spin:[5.5,8.5], rise:[2.6,4.6], shove:5 };
+export const AVALANCHE = { warn:2.6, width:30, run:[48,64], v0:3, vmax:15, accel:5, band:3.2, dmg:{ inf:80, veh:30, player:14 }, push:9, mounds:14, moundLife:40 };
