@@ -1264,5 +1264,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/tow cables/.test(wk) && /smoked-glass domes/.test(wk) && !/propTex/.test(wk), 'the war kit: tow cables, smoked-glass LWR domes, plain hessian bags');
   ok((R('src/tank/model.js').match(/color:0x2a2a26/g)||[]).length===2 && /flattened into the hull so it bakes with it/.test(R('src/tank/designs.js')), 'headlights are dark glass in a housing, baked into the hull (no glowing puck)'); }
 
+// Z237b our own guided / lofted missile never strikes our tank: the bullet loop's enemy branch is only for rounds that are not ours
+{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
+  ok(/\} else if\(b\.owner!=='p'\)\{ \/\/ enemy bullet/.test(lo) && !/\} else \{ \/\/ enemy bullet/.test(lo), 'an airborne round of ours no longer falls through into the enemy-round branch (it used to hit our own tank as it flew over the hull)'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

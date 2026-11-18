@@ -228,7 +228,7 @@ export function updateBullets(dt, now){
           if(b.pierce>0){ b.pierce--; } else break; } }
       if(!hit && boss && boss.alive){ const dx=boss.pos.x-b.x, dz=boss.pos.z-b.z;
         if(dx*dx+dz*dz < (b.r+boss.r*2.5)**2 && hitsHull(boss, b.x, b.z, b.r)){ damageBoss(b.dmg*bulletFalloff(b)*typeMul(b.type,'H')*envDmg(b.type), b.x, b.z); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
-    } else { // enemy bullet
+    } else if(b.owner!=='p'){ // enemy bullet — Z237 only an ENEMY round can hit our tank: our own lofted / guided missile used to fall through to here while airborne and strike us as it flew over the hull (firing on the move or back over the engine deck)
       const p=S.player;
       sweepPoint(b._hx, b._hz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
       const armK = b.inf ? INFANTRY.vsArmour : 1;                                    // Z111b a rifle round barely scratches armour — only rockets (RPG / ATGM) really hurt a tank
