@@ -1,5 +1,5 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
-import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, sfx, shockDome, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
+import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, sfx, shockDome, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 export function bigExplode(pos, color, scale=1.5){
@@ -8,7 +8,7 @@ export function bigExplode(pos, color, scale=1.5){
   burst(pos, color, Math.floor(6*scale), 11*scale, {life:0.45, size:1.2*scale, up:3});
   burst(pos, 0xffe6a0, Math.floor(9*scale), 7*scale, {life:0.34, size:0.9*scale, up:4});
   burst(pos, 0x201c14, Math.floor(5*scale), 4*scale, {life:0.95, size:2.6*scale, smoke:true, grav:-1.2, drag:1.4, up:2, op:0.55});
-  S.shake = Math.min(2.4, S.shake + scale*0.7);
+  S.shake = Math.min(2.4, S.shake + scale*0.7); dustSkirt(pos.x, pos.z, scale);   // Z223 the blast wave kicks a dust ring out along the ground
   muzzleLight.position.set(pos.x, 2, pos.z); muzzleLight.color.setHex(color); muzzleLight.intensity = 3.4;
   sfx(scale>=2 ? 'bigexplode' : 'explode', pos);
 }

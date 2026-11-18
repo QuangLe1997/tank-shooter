@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { REAL } from '../../config.js';
 import { MOBILE, S, SOLDIER, _R, _canvasTex, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, paintTroops, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
@@ -125,6 +126,8 @@ export function makeSoldierMesh(opts){
   const muz=new THREE.Object3D(); muz.position.set(0,0.01,0.7); gun.add(muz);
   const torso={ material:{ emissive:new THREE.Color(0), emissiveIntensity:0 } };   // the old per-man hit-flash material, now just data the batch reads
   Object.assign(g.userData, { torso, muzzle:muz, legs, up, gun, walk:0, kick:0, body, arms:armG, head, lh, parts, kitKey:K.key, seed:Math.random()*100, magN:8+((Math.random()*7)|0), shots:0 });
+  { const L=REAL.look, r=a=>a[0]+Math.random()*(a[1]-a[0]), h=r(L.h), w=r(L.w), t=r(L.tint); body.scale.set(0.84*w, 0.84*h, 0.84*(0.5+w*0.5));   // Z223 no two men alike: height, build,
+    g.userData.tint=new THREE.Color(t, t*(0.96+Math.random()*0.06), t*(0.94+Math.random()*0.08)); }                                                       //   and how faded / muddy his kit is
   g.addEventListener('added', ()=>TROOP_BATCH.roots.add(g)); g.addEventListener('removed', ()=>TROOP_BATCH.roots.delete(g));
   return g;
 }
@@ -145,10 +148,10 @@ export function updateTroopBatch(now){
     for(const pt of u.parts){ const detached=!pt.o.parent || pt.o.parent===scene || (pt.kind==='gun' && u.droppedGun);   // a rifle dropped beside the dead lies on its own
       if(detached){ if(!tbShown(pt.o)) continue; pt.o.updateWorldMatrix(true, false); } else if(!rootShown || !tbShown(pt.o)) continue;
       const id=u.kitKey+'_'+pt.kind+'_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:pt.kind, sh });
-      B.m[B.n]=pt.o.matrixWorld; B.c[B.n]=hit; B.n++; } }
+      B.m[B.n]=pt.o.matrixWorld; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; } }
   for(const key in SOLDIER_KIT) for(const kind of TROOP_BATCH.kinds) for(const sh of (MOBILE?[false]:[true,false])){ const id=key+'_'+kind+'_'+(sh?1:0); if(!_tbBk[id]) _tbBk[id]={ n:0, m:[], c:[], key, kind, sh }; }
   for(const id in _tbBk){ const B=_tbBk[id], m=tbIM(B.key, B.kind, B.sh, B.n), A=m.instanceMatrix.array, C=m.instanceColor.array;
-    for(let i=0;i<B.n;i++){ A.set(B.m[i].elements, i*16); const c=B.c[i]?_tbHit:_tbWhite; C[i*3]=c.r; C[i*3+1]=c.g; C[i*3+2]=c.b; }
+    for(let i=0;i<B.n;i++){ A.set(B.m[i].elements, i*16); const c=B.c[i]||_tbWhite; C[i*3]=c.r; C[i*3+1]=c.g; C[i*3+2]=c.b; }
     if(m.count!==B.n || B.n){ m.count=B.n; m.instanceMatrix.needsUpdate=true; m.instanceColor.needsUpdate=true; } } }
 // a man is hit: the batch flashes him and he flinches
 export function soldierHit(g){ const u=g.userData; u.flashUntil=performance.now()/1000+0.12; u.flinch=1; }
@@ -175,23 +178,24 @@ export function animateSoldier(g, dist, dt, firing){
 }
 // Z105 STANCES — call after animateSoldier(): 'stand' (walk cycle as is) · 'crouch' (kneel to fire / hide behind cover) ·
 // 'prone' (flat on the ground, rifle forward — the hardest target). Blends smoothly so nobody snaps between poses.
-const _ST={ stand:{ rx:0, y:0, z:0, up:0, arm:0, k:0 }, crouch:{ rx:0, y:0, z:0, up:0.15, arm:0, k:1 }, prone:{ rx:1.42, y:0.17, z:-0.55, up:-0.32, arm:-1.08, k:2 } };
+const _ST={ low:{ rx:0.12, y:-0.09, z:0, up:0.34, arm:0.1, k:0 }, stand:{ rx:0, y:0, z:0, up:0, arm:0, k:0 }, crouch:{ rx:0, y:0, z:0, up:0.15, arm:0, k:1 }, prone:{ rx:1.42, y:0.17, z:-0.55, up:-0.32, arm:-1.08, k:2 } };
 // Z111b HP bar height follows the stance: a man lying flat to shoot had his bar hanging 2 m over him → looked like a corpse with an HP bar
-export function stanceBarK(g){ const s=g.userData.stance; return s==='prone' ? 0.42 : s==='crouch' ? 0.74 : 1; }
+export function stanceBarK(g){ const s=g.userData.stance; return s==='prone' ? 0.42 : s==='crouch' ? 0.74 : s==='low' ? 0.88 : 1; }
 // Z113 stances blend as WEIGHTS — legs included (they used to snap to the kneel / prone angles in one frame) — and go through the knee:
 // stand → kneel → lie down, lie → kneel → stand up. A new stance must be asked for ~0.35 s before he commits (no flicker).
 const _LEG={ crouch:[[-1.35,1.35],[0.25,1.7]], prone:[[0.05,0.12],[0.05,0.12]] };
 export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) return; const P=u.pose||(u.pose={ rx:0, y:0, z:0, up:0, arm:0, kw:0, pw:0 });
   if(u.stance && stance!==u.stance){ u.stAsk=(u.stAsk||0)+dt; if(u.stAsk<0.35) stance=u.stance; else u.stAsk=0; } else u.stAsk=0;
-  let eff=stance; if(stance==='prone' && P.pw<0.05 && P.kw<0.65) eff='crouch'; else if(stance==='stand' && P.pw>0.35) eff='crouch';   // via the knee
+  let eff=stance; if(stance==='prone' && P.pw<0.05 && P.kw<0.65) eff='crouch'; else if((stance==='stand'||stance==='low') && P.pw>0.35) eff='crouch';   // via the knee
   const T=_ST[eff]||_ST.stand, f=1-Math.exp(-dt*6.5), fw=Math.min(1, dt*4.2);
   for(const k of ['rx','y','z','up','arm']) P[k]+=(T[k]-P[k])*f;
-  P.kw += ((eff==='crouch'?1:0)-P.kw)*fw; P.pw += ((eff==='prone'?1:0)-P.pw)*fw; const sw=P.kw+P.pw; if(sw>1){ P.kw/=sw; P.pw/=sw; }
+  P.lw=(P.lw||0)+((eff==='low'?1:0)-(P.lw||0))*fw; P.kw += ((eff==='crouch'?1:0)-P.kw)*fw; P.pw += ((eff==='prone'?1:0)-P.pw)*fw; const sw=P.kw+P.pw; if(sw>1){ P.kw/=sw; P.pw/=sw; }
   u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up+(u.upAdd||0)*(1-P.pw); if(u.arms){ u.arms.rotation.x=P.arm+(u.armAdd||0)*(1-P.pw*0.8); u.arms.rotation.z=(u.armRz||0); }
   u.stance=stance; const L=u.legs, w0=1-P.kw-P.pw;
   for(let i=0;i<L.length;i++){ const l=L[i], c=_LEG.crouch[i], q=_LEG.prone[i];
     l.hip.rotation.x = l.hip.rotation.x*w0 + c[0]*P.kw + q[0]*P.pw; l.knee.rotation.x = l.knee.rotation.x*w0 + c[1]*P.kw + q[1]*P.pw; l.hip.rotation.z = l.sx*0.14*P.pw;
     const mv=Math.min(1,(u.spd||0)/1.2), ph=(u.walk||0)+(l.sx>0?Math.PI:0);   // Z172 moving low: short crouched strides · a crawl when flat (knees drawn up in turn)
+    if(P.lw>0.02){ l.hip.rotation.x -= 0.32*P.lw; l.knee.rotation.x += 0.5*P.lw; }   // Z223 LOW: knees bent, hips back — the combat crouch-run
     if(mv>0.05 && P.kw>0.3){ l.hip.rotation.x += Math.sin(ph)*0.32*mv*P.kw; l.knee.rotation.x += Math.max(0,-Math.cos(ph))*0.3*mv*P.kw; }
     if(mv>0.05 && P.pw>0.4){ l.hip.rotation.z += l.sx*Math.max(0,Math.sin(ph))*0.55*mv*P.pw; l.knee.rotation.x += Math.max(0,Math.sin(ph))*0.9*mv*P.pw; } }
   if(P.pw>0.4 && (u.spd||0)>0.1 && u.arms){ const mv=Math.min(1,u.spd/1.2); u.arms.rotation.z += Math.sin(u.walk||0)*0.22*mv; u.body.rotation.z = Math.sin(u.walk||0)*0.07*mv; } else if(u.body) u.body.rotation.z*=0.8;

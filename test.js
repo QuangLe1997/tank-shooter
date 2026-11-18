@@ -1137,5 +1137,19 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/HELI\.jink/.test(vh) && /u\.aimEl=/.test(ft) && /T\.kind==='air'\) st='stand'/.test(ft) && /u\.armAdd-=u\.elS/.test(so), 'the gunship weaves; our men stand, raise their rifles and track a helicopter');
   ok(/MGR\.shots\+\+%2/.test(mg) && /trailK:tr\?2\.6:1\.7/.test(mg) && /muzzleLight\.intensity=2\.4/.test(mg), 'roof MG: a tracer every other round, fat bright trails, a muzzle flash that lights the hull'); }
 
+// Z223 real war: blast concussion, side-coloured tracers + brass, varied deaths, men of different build, battlefield surprises, a harder Core
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const rw=R('src/fx/realwar.js'), sp=R('src/combat/spells.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), so=R('src/actors/soldiers.js'), su=R('src/campaign/surprises.js'), co=R('src/actors/core.js'), lp=R('src/game/loop.js'), C=R('config.js');
+  ok(/export const REAL = \{/.test(C) && /export function concuss\(/.test(rw) && /concuss\(e, x, z,/.test(sp) && /concuss\(a, x, z, now\)/.test(ft) && /if\(dazed\(e, now\)\)/.test(inf) && /dazePose\(a\.g, now, dt\)/.test(ft), 'a blast throws its survivors flat and dazed (both sides)');
+  ok(/REAL\.tracer\.enemy/.test(inf) && /REAL\.tracer\.ally/.test(ft) && /rifleFX\(/.test(inf) && /rifleFX\(/.test(ft) && /b\.owner==='e' && b\.tk<=1/.test(R('src/combat/lock-on.js')) && /dustSkirt\(pos\.x, pos\.z, scale\)/.test(R('src/fx/explosions.js')), 'green enemy / red-orange allied tracers, brass + muzzle smoke, dust skirt on big blasts');
+  ok(/kind==='crawl'/.test(inf) && /d\.kind==='fwd'/.test(inf) && /d\.kind==='spin'/.test(inf) && /g\.userData\.tint=/.test(so) && /u\.tint\|\|_tbWhite/.test(so), 'men fall forward / spin / crawl wounded; each has his own height, build and kit shade');
+  ok(['mortar','ambush','armour','vbied','heli','friendly'].every(k=>new RegExp('function '+k+'\\(').test(su)) && /updateSurprises\(gdt, now\)/.test(lp) && /\(C\.w\[k\]\?\?1\)>0/.test(su), 'six weighted, stage-gated battlefield surprises on a timer');
+  ok(/export const CORE_DEF/.test(C) && /dmg\*=CORE_DEF\.armour/.test(co) && /coreShield\(now\)/.test(co) && /if\(c\.hp<=0\) c\.hp=1/.test(co) && /CORE_DEF\.regen\*dt/.test(co), 'the Core: thicker, armoured, self-mending, emergency shield that turns a killing blow once'); }
+
+// Z224 drilled movement (crouch-run, dive at the end of a bound, wedge approach) + cinematic weather (film grade per sky, splashes, visible bolts, gusts, drifting sheets)
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const so=R('src/actors/soldiers.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), wx=R('src/fx/weather.js'), C=R('config.js');
+  ok(/low:\{ rx:0\.12/.test(so) && /\? \(low \? 'low' : 'stand'\)/.test(inf) && /\? 'low' : 'stand';/.test(ft) && /combatDive\(e\.mesh/.test(inf) && /combatDive\(a\.g/.test(ft), 'men run bent low under fire and drop flat at the end of a bound');
+  ok(/WEDGE/.test(ft) && /row\*3\.2/.test(ft), 'our squad closes on the enemy in a wedge');
+  ok(/export const WXFX/.test(C) && /WXFX\.grade\[WX\.id\]/.test(wx) && /function skyBolt\(/.test(wx) && /function airLife\(/.test(wx) && /WX\.gustE/.test(wx), 'each weather its own grade (never stacked), visible lightning + thunder, gusts, splashes, drifting sand/fog/snow'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

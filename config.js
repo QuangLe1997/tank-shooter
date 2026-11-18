@@ -95,6 +95,19 @@ export const SQUAD_AI = { think:0.35, boundT:[3.2,4.6], boundStep:7, flankStep:0
 // Z220 FIELDCRAFT (both sides): no rounds into a wall — a man whose line is blocked edges out to a spot with a clear shot · frag grenades into men behind
 //   cover or bunched up (everyone near a live grenade runs) · smoke screens to fall back or cross open ground under fire (fire through smoke goes wild)
 export const LOCKON = { cone:1.2, minP:9, allyR:3.2 };   // Z221 the lock-on seeker: looks ±cone rad round its flight line, never picks a mark within minP m of our tank or allyR m of our men
+// Z223 REAL WAR — blast concussion, side-coloured tracers, brass, varied deaths, men of different build, surprises
+export const REAL = {
+  concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
+  tracer:{ every:3, enemy:0x6dff4a, ally:0xff5a2a },             // every Nth round a tracer: theirs burn green, ours red-orange
+  brass:{ R:44 },                                                // spent casings only near the player (cheap)
+  death:{ fwd:0.3, spin:0.22, crawl:0.16 }, crawl:{ t:[3.2,5.5], sp:0.42 },   // small-arms death: fall forward / spin down / crawl wounded, else back
+  look:{ h:[0.93,1.07], w:[0.93,1.08], tint:[0.8,1.1] },         // no two men the same height, build or shade of kit
+  shock:{ minScale:1.0 },                                        // blasts this big send a dust skirt racing out along the ground
+  surprise:{ first:[60,85], every:[50,90], from:{ mortar:1, ambush:1, armour:2, vbied:2, friendly:1, heli:2 }, w:{ mortar:1, ambush:1.1, armour:0.7, vbied:0.7, friendly:0.6, heli:0.5 },
+    mortar:{ shells:7, gap:0.5, walk:3.0, R:4.2, dmg:20, warn:1.3 },
+    ambush:{ r:[14,19], squads:[1,2] }, armour:{ r:[44,56] }, vbied:{ n:[2,3] },
+    friendly:{ shells:8, R:5, dmg:80, minFoes:4 } } };
+export const CORE_DEF = { hp:420, perStage:50, armour:0.72, regen:2.4, regenDelay:6, shield:{ at:0.35, t:9, cd:70 } };   // Z223 the Core is harder to break: thicker, armoured, mends itself when left alone, and throws up an emergency shield (also saves it from a killing blow) once per cd s
 export const FIELDCRAFT = {
   los: { step: 1.5, endSkip: 1.8, peekOff: [3, -3, 5.5, -5.5, 8, -8], peekHold: 3.2, peekR: 0.9 },
   nade: { minD: 8, maxD: 20, cdE: [11, 17], cdA: [12, 18], liveE: 3, liveA: 3, gapE: 1.4, gapA: 1.0, fromStage: 2, iqMin: 0.3,
@@ -445,6 +458,16 @@ export const BOSSFIGHT = {
 export const CAMPAIGN = { levels: 15, perLoop: 5,
   weather: ['clear','clear','snow','fog','sand',  'sand','rain','snow','rain','fog',  'sand','fog','snow','rain','rain'] };
 // WEATHER — look (fog ×, sun ×, haze tint, particles desktop/phone) + a light gameplay touch (your guns' reach ×)
+// Z224 CINEMATIC WEATHER — each sky its own film stock (grade offsets on top of the battlefield's look) + life in the air near the camera
+export const WXFX = {
+  grade:{ rain:{ sat:-0.1, con:0.07, sh:[-0.025,0.006,0.035], hi:[-0.01,0,0.012], vig:0.1, exp:0.94 },
+          sand:{ sat:-0.04, con:-0.05, sh:[0.03,0.012,-0.02], hi:[0.035,0.012,-0.03], vig:0.08, exp:1.02 },
+          snow:{ sat:-0.08, con:0.02, sh:[-0.02,0,0.04], hi:[-0.01,0.004,0.02], vig:0.04, exp:1.05 },
+          fog:{ sat:-0.08, con:-0.06, sh:[-0.01,0,0.015], hi:[0.008,0.006,0], vig:0.12, exp:1.0 } },
+  splash:{ R:22, rate:[70,30] },            // rain: droplets bouncing off the ground around you (per s, desktop / phone)
+  bolt:{ r:[45,110], h:70, thunder:[0.6,2.6] },   // a visible bolt somewhere off in the storm; the thunder rolls in a beat later
+  gust:{ every:[5,11], k:[1.6,2.6], t:2.2 },        // wind gusts lean the rain, drive the sand, stir the snow
+  drift:{ sand:[9,4], fog:[4,2], snow:[3,1] } };  // ground-hugging sheets of sand / fog / snow-smoke per s (desktop / phone)
 export const WEATHER = {
   clear:{ vi:'QUANG ĐÃNG', icon:'sun',  fogK:1,   sunK:1,    hemiK:1,    tint:null,     n:[0,0],     range:1 },
   rain: { vi:'MƯA GIÔNG',  icon:'rain', fogK:1.45, sunK:0.5,  hemiK:0.82, tint:0x8a96a2, n:[1100,420], range:0.92, wet:0.42, bolt:[7,16] },

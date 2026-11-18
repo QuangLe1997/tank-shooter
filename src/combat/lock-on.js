@@ -171,7 +171,7 @@ export function updateBullets(dt, now){
     if(b.vyl) b.by=Math.max(0.3, b.by+b.vyl*dt);                                                      // plunging fire (tower guards shooting down)
     const _gy=heightAt(b.x,b.z);
     const _wy=b.by+_gy; b.mesh.position.set(b.x,_wy,b.z); orientShell(b, _wy, dt);   // Z192 nose along the real flight path
-    { const tc=b.owner==='e'?0xff5a24:b.color, ts=(b.r||0.45)*BVIS*1.7*b.tk, tl=(0.16+(b.r||0.45)*0.24)*(1+(b.tk-1)*0.6); addTrail(b.x, _wy, b.z, tc, ts, tl);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak   · Z222 trailK draws a gun's tracer fatter / longer
+    { const tc=(b.owner==='e' && b.tk<=1)?0xff5a24:b.color, ts=(b.r||0.45)*BVIS*1.7*b.tk, tl=(0.16+(b.r||0.45)*0.24)*(1+(b.tk-1)*0.6); addTrail(b.x, _wy, b.z, tc, ts, tl);   // per-gun glowing tracer (enemy = danger-red); heavier rounds leave a fatter, longer streak   · Z222 trailK draws a gun's tracer fatter / longer · Z223 an enemy tracer keeps its own green
       if(b._lx!=null){ const gx=b.x-b._lx, gy=_wy-b._ly, gz=b.z-b._lz, n=Math.min(MOBILE?3:6, Math.floor(Math.hypot(gx,gz)/(ts*0.7))); for(let k=1;k<=n;k++){ const f=k/(n+1); addTrail(b._lx+gx*f, b._ly+gy*f, b._lz+gz*f, tc, ts, tl*(0.75+0.25*f)); } }
       b._lx=b.x; b._ly=_wy; b._lz=b.z; }   // Z192 the gap a fast round jumps each frame is filled in: one unbroken streak, not a string of beads
     if(b.mesh.userData.rk || b.lockOn) rocketExhaust(b, b.x, _wy, b.z); else shellTrail(b, b.x, _wy, b.z);   // Z210 every other round: its own light smoke line

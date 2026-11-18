@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
-import { BALANCE, ENV, INFANTRY, EQUIP, SQUAD, FIELDCRAFT } from '../../config.js';
-import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, coverSpot, damageAlly, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, gibBody, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, launchEnemyMissile, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, unitsNear, wantPeek, wrapAngle } from '../hub.js';
+import { BALANCE, ENV, INFANTRY, EQUIP, SQUAD, FIELDCRAFT, REAL } from '../../config.js';
+import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, gibBody, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, launchEnemyMissile, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -46,6 +46,8 @@ export function infTankThreat(e){ const p=S.player, R=INFANTRY.coverThreat; let 
   return best; }
 export function updateInfantry(e, dt, now, edt){
   const def=e.def, p=S.player, u=e.mesh.userData;
+  if(dazed(e, now)){ if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*6); e.kbx*=kf; e.kbz*=kf; } infPushBlocks(e.pos); clampField(e.pos, 2);   // Z223 knocked flat by a blast: slides, lies there, then gets up
+    e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.aimT=0; dazePose(e.mesh, now, dt); e.r=0.34; e.fireAt=Math.max(e.fireAt||0, now+0.4); return; }
   if(now>=(e.tgtAt||0)){ e.tgtAt=now+0.45+Math.random()*0.3; e.T=infTarget(e); }            // re-pick the target a couple of times a second
   const T=e.T||{ pos:p.pos, vel:p.vel, tank:true }, dx=T.pos.x-e.pos.x, dz=T.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, ux=dx/d, uz=dz/d;
   const pdx=p.pos.x-e.pos.x, pdz=p.pos.z-e.pos.z, pd=Math.hypot(pdx,pdz)||1, pux=pdx/pd, puz=pdz/pd;
@@ -85,7 +87,7 @@ export function updateInfantry(e, dt, now, edt){
     else if(def.rpg){ e.aimT=def.aimT; sfx('beep', e.pos); }                 // kneel + aim: a readable 1s telegraph before the rocket
     else { u.muzzle.getWorldPosition(_cv);
       const a=Math.atan2(dx,dz)+(Math.random()-0.5)*Math.max(0.05, A.spreadBase*(1-ds*A.spreadDrop)*1.25)*(ENVMOD.night?ENV.night.enemySpread:1)*smokeSpread(now)*smokeSpreadK(e.pos.x, e.pos.z, T.pos.x, T.pos.z)*(1+1.6*(e.supp||0));   // Z173 suppressed men shoot wild · Z220 and through smoke
-      spawnBullet(_cv.x,_cv.z,a,{owner:'e', inf:true, dmg:def.dmg*dmgMul, speed:def.bspeed, color:0xffd06a, r:0.22, life:1.6, maxDist:def.range+3, noArc:true, y:_cv.y, dropTo:1.3});
+      const tr=tracerNext(e.mesh); spawnBullet(_cv.x,_cv.z,a,{owner:'e', inf:true, dmg:def.dmg*dmgMul, speed:def.bspeed, color:tr?REAL.tracer.enemy:0xffd06a, r:tr?0.3:0.22, trailK:tr?2.4:1, life:1.6, maxDist:def.range+3, noArc:true, y:_cv.y, dropTo:1.3}); rifleFX(_cv.x, _cv.y, _cv.z, a, false);   // Z223 green tracer every Nth round · brass + smoke
       spawnPart(_cv.x,_cv.y,_cv.z, Math.sin(a)*5,0.3,Math.cos(a)*5, {tex:'flash', color:0xfff0c0, size:0.5, life:0.05, grav:0, drag:8});
       sfx('rifleShot', e.pos); fired=true; e.fireAt=now+def.fireCd*(0.8+Math.random()*0.5)*(A.rateBase-A.rateDrop*ds)/1.6*(e.sqFireK||1)*(1+(e.supp||0)); } }
   if(!fired && !def.rpg && FT.length && now>(e.nadeAt||0)) enemyNade(e, now);   // Z220 frag grenade into our men behind cover / bunched up
@@ -100,7 +102,9 @@ export function updateInfantry(e, dt, now, edt){
   animateSoldier(e.mesh, moved/def.scale, dt, fired);
   // Z105 stance: kneel for the RPG / behind cover, flat on the ground when settled at range in the open, upright when moving
   const still = moved < 0.03*Math.max(1, edt/dt);
-  let st = e.aimT>0 ? 'crouch' : (!still ? 'stand' : (e.inCover && thr ? 'crouch' : (settled && d>SQUAD.proneR && !def.rpg ? 'prone' : (settled ? 'crouch' : 'stand'))));
+  const low = !!thr || (e.supp||0)>0.25 || (e.sq && (e.sqNoFire || e.sq.state==='assault' || e.sq.state==='fm')) || d<def.range*1.15;   // Z223 within reach of the enemy: bent low on the move
+  let st = e.aimT>0 ? 'crouch' : (!still ? (low ? 'low' : 'stand') : (e.inCover && thr ? 'crouch' : (settled && d>SQUAD.proneR && !def.rpg ? 'prone' : (settled ? 'crouch' : 'stand'))));
+  if(still && e._dash && e.sqNoFire && !(e.aimT>0)){ st=e.inCover?'crouch':'prone'; combatDive(e.mesh, e.pos.x, e.pos.z); } e._dash = !still && !!e.sqNoFire;   // Z223 end of a bound: down at once
   if(still && !(e.aimT>0)){ if((e.supp||0)>0.55) st='prone'; else if(e.sq && e.sqStance && !e.sqGoal) st=e.sqStance; }   // Z173 under fire → flat · the covering team kneels / lies to shoot
   poseSoldier(e.mesh, st, dt); e.r = st==='prone' ? 0.34 : 0.55;              // a man lying flat is a smaller target for your gun too
 }
@@ -138,7 +142,9 @@ export function infantryDown(e){
     bloodSpurt(e.pos.x, e.pos.z, ux, uz, 1.6*pw);
     INF_DEAD.push({ e, t:0, fling:true, pw, vx:ux*sp, vy:F.up*Math.sqrt(pw)*(0.8+Math.random()*0.5), vz:uz*sp, rx:(Math.random()<0.5?-1:1)*(6+Math.random()*6), rz:(Math.random()-0.5)*8, gibAt:F.gib*(0.8+Math.random()*0.4) }); return; }
   else { burst(e.pos, 0x7a3020, 6, 4, {y:gy+1.1, life:0.4, size:0.5, grav:-10, drag:2}); layOut(m, e.pos.x, e.pos.z); }
-  INF_DEAD.push({ e, t:0, crushed:!!e._crushed, dir:(Math.random()<0.5?-1:1) });
+  const D=REAL.death, r=Math.random(), kind=e._crushed ? 'back' : r<D.crawl ? 'crawl' : r<D.crawl+D.fwd ? 'fwd' : r<D.crawl+D.fwd+D.spin ? 'spin' : 'back';   // Z223 every man goes down his own way
+  if(kind!=='back') m.rotation.order='YXZ';   // fall relative to where he faced
+  INF_DEAD.push({ e, t:0, crushed:!!e._crushed, dir:(Math.random()<0.5?-1:1), kind, crawlT:kind==='crawl' ? REAL.crawl.t[0]+Math.random()*(REAL.crawl.t[1]-REAL.crawl.t[0]) : 0, f0:m.rotation.y });
 }
 // Z113 shot dead (small arms): straighten out of any kneel / prone pose, rifle drops beside him, a dark pool spreads — he falls on his BACK
 export function layOut(m, x, z){ const u=m.userData; if(u.body){ u.body.rotation.x=0; u.body.position.set(0,0,0); } if(u.up) u.up.rotation.x=0; if(u.pose){ u.pose.rx=u.pose.y=u.pose.z=u.pose.up=u.pose.arm=u.pose.kw=u.pose.pw=0; }
@@ -161,7 +167,23 @@ export function updateInfDead(dt){
       if(!d.gone && (d.t>=d.gibAt || d.down)){ d.gone=true; gib(m, d.pw); gibBody(m.position.x, m.position.y, m.position.z, d.vx, d.vz, 0.45, false, m.scale.x||1.5); m.visible=false; }   // Z121 lands → breaks up
       if(d.gone){ m.rotation.set(0,0,0); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); }
       continue; }
+    if(!d.crushed && d.kind && d.kind!=='back'){ deathPose(d, m, dt); const hold=3.2+(d.crawlT||0);
+      if(d.t>hold){ const k=Math.max(0,1-(d.t-hold)/0.8); m.position.y-=dt*0.6; if(m.userData.droppedGun) m.userData.droppedGun.position.y-=dt*0.6; if(k<=0){ m.visible=false; m.rotation.set(0,0,0); m.rotation.order='XYZ'; reviveSoldierMesh(m); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); } }
+      continue; }
     if(!d.crushed){ const k=Math.min(1, d.t/0.45); m.rotation.x=-k*k*Math.PI/2*0.96; m.rotation.z=d.dir*k*0.25; const u=m.userData; if(u.arms) u.arms.rotation.x=-k*2.5; if(u.legs) u.legs.forEach((l,j)=>{ l.hip.rotation.z=(j?1:-1)*k*0.22; }); }   // crumples and falls backwards, arms flung back
     if(d.t>3.2){ const k=Math.max(0,1-(d.t-3.2)/0.8); m.position.y-=dt*0.6; if(m.userData.droppedGun) m.userData.droppedGun.position.y-=dt*0.6; if(k<=0){ m.visible=false; m.rotation.set(0,0,0); reviveSoldierMesh(m); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(m); INF_DEAD.splice(i,1); } } }
 }
-export function clearInfDead(){ clearGore(); for(const d of INF_DEAD){ d.e.mesh.visible=false; d.e.mesh.rotation.set(0,0,0); reviveSoldierMesh(d.e.mesh); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(d.e.mesh); } INF_DEAD.length=0; }
+// Z223 the other ways a man goes down to rifle fire
+function deathPose(d, m, dt){ const u=m.userData, t=d.t;
+  if(d.kind==='fwd'){ const kn=Math.min(1, t/0.3), k=Math.max(0, Math.min(1, (t-0.25)/0.45));   // knees buckle, then he pitches onto his face
+    m.rotation.x=k*k*Math.PI/2*0.95; m.position.y=heightAt(m.position.x,m.position.z)-kn*0.35*(1-k);
+    if(u.legs) u.legs.forEach(l=>{ l.hip.rotation.x=-kn*1.1*(1-k); l.knee.rotation.x=kn*1.6*(1-k)+0.15; }); if(u.arms) u.arms.rotation.x=-0.6-k*1.6; }
+  else if(d.kind==='spin'){ const s=Math.min(1, t/0.5), k=Math.max(0, Math.min(1, (t-0.2)/0.5));   // hit in the shoulder: spun half round, falls on his side
+    m.rotation.y=d.f0+d.dir*s*2.2; m.rotation.z=d.dir*k*k*Math.PI/2*0.92; if(u.arms) u.arms.rotation.x=-k*1.8; if(u.legs) u.legs.forEach((l,j)=>{ l.hip.rotation.x=(j?0.4:-0.3)*k; }); }
+  else if(d.kind==='crawl'){ const k=Math.min(1, t/0.4);   // wounded: down on his front, drags himself a few metres, then lies still
+    m.rotation.x=k*Math.PI/2*0.96; const go=t>0.6 && t<0.6+d.crawlT, ph=t*5.5;
+    if(go){ const sp=REAL.crawl.sp*(1-(t-0.6)/d.crawlT*0.7); m.position.x+=Math.sin(m.rotation.y)*sp*dt; m.position.z+=Math.cos(m.rotation.y)*sp*dt; m.position.y=heightAt(m.position.x,m.position.z);
+      if(Math.random()<dt*1.5) decalBlood(m.position.x, m.position.z, 0.22+Math.random()*0.12); }
+    if(u.legs) u.legs.forEach((l,j)=>{ l.hip.rotation.x=go ? Math.sin(ph+j*Math.PI)*0.45 : 0; l.knee.rotation.x=go ? 0.5+Math.sin(ph+j*Math.PI)*0.4 : 0.15; });
+    if(u.arms) u.arms.rotation.x=go ? -2.7+Math.sin(ph)*0.35 : -2.4; } }
+export function clearInfDead(){ clearGore(); for(const d of INF_DEAD){ d.e.mesh.visible=false; d.e.mesh.rotation.set(0,0,0); d.e.mesh.rotation.order="XYZ"; reviveSoldierMesh(d.e.mesh); (enemyPool[d.e.type]=enemyPool[d.e.type]||[]).push(d.e.mesh); } INF_DEAD.length=0; }

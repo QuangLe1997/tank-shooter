@@ -78,6 +78,8 @@ export * from './actors/infantry.js';
 export * from './actors/enemy-missiles.js';
 export * from './actors/vehicles.js';
 export * from './actors/helis.js';
+export * from './fx/realwar.js';
+export * from './campaign/surprises.js';
 export * from './actors/paradrop.js';
 export * from './actors/command.js';
 export * from './campaign/operations.js';

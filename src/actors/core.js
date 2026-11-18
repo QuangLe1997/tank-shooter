@@ -1,7 +1,8 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
+import { CORE_DEF } from '../../config.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GLOW, NIGHT, _R, _canvasTex, _mergeColored, _xf, bigExplode, coverMat, gameOver, makeFlag, propTex, scene, sfx, shieldHexTex, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
+import { GLOW, NIGHT, _R, _canvasTex, _mergeColored, _xf, bigExplode, coverMat, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -78,14 +79,20 @@ export function buildCore(stage=1){
   const light=new THREE.PointLight(th.glow,1.6,40); light.position.y=6.25; g.add(light);
   scene.add(g);
   core = { mesh:g, crystal, cu, glow, beam, dome, halo, rings, sparks:[], shards:[], flags, light, theme:th, moteT:0,
-    pos:new THREE.Vector3(0,0,0), hp:240, maxHp:240, r:4.2, flash:0 };
+    pos:new THREE.Vector3(0,0,0), hp:CORE_DEF.hp, maxHp:CORE_DEF.hp, r:4.2, flash:0 };
 }
-export function rebuildCore(stage){ const keepMax = core ? core.maxHp : 240; buildCore(stage); core.maxHp=keepMax; core.hp=keepMax; updateHUD(); }
+export function rebuildCore(stage){ const keepMax = core ? core.maxHp : CORE_DEF.hp; buildCore(stage); core.maxHp=Math.max(keepMax, CORE_DEF.hp+((stage||1)-1)*CORE_DEF.perStage); core.hp=core.maxHp; updateHUD(); }
+// Z223 EMERGENCY SHIELD — the dome hardens and swallows every hit for a while (once per CORE_DEF.shield.cd s)
+function coreShield(now){ const c=core, Sd=CORE_DEF.shield; c.shieldUntil=now+Sd.t; c.shieldReady=now+Sd.cd; ringPulse(c.pos, c.theme.ring, 9); ringPulse(c.pos, 0xffffff, 5.5);
+  showBanner('LÁ CHẮN KHẨN CẤP — LÕI ĐƯỢC BẢO VỆ', '#7fe6ff'); radio('SCH: Lõi bị đánh nặng — kích hoạt lá chắn! Quay về phòng thủ ngay!'); sfx('spell'); }
 export function damageCore(dmg){
-  if(!core) return; core.hp-=dmg; core.flash=0.16; core.cu.flash.value=0.85;
+  if(!core) return; const now=performance.now()/1000, c=core;
+  if((c.shieldUntil||0)>now){ c.dome.material.opacity=0.5; if(Math.random()<0.5) sfx('clang'); return; }   // the shield takes it
+  dmg*=CORE_DEF.armour; c.lastHit=now; c.hp-=dmg; c.flash=0.16; c.cu.flash.value=0.85;
   sfx('corehit');
+  if(c.hp<c.maxHp*CORE_DEF.shield.at && now>=(c.shieldReady||0)){ if(c.hp<=0) c.hp=1; coreShield(now); }   // a killing blow is turned aside once
   updateHUD();
-  if(core.hp<=0){ core.hp=0; bigExplode(core.pos, core.theme.crystal, 3); gameOver('LÕI ĐÃ BỊ PHÁ HUỶ'); }
+  if(c.hp<=0){ c.hp=0; bigExplode(c.pos, c.theme.crystal, 3); gameOver('LÕI ĐÃ BỊ PHÁ HUỶ'); }
 }
 export function updateCore(dt, now){
   if(!core) return; const c=core;
@@ -101,4 +108,6 @@ export function updateCore(dt, now){
   c.moteT -= dt; if(c.moteT<=0){ c.moteT=0.12; const a=Math.random()*6.283, r=1+Math.random()*2.6;   // glints drifting up through the beam
     spawnPart(Math.cos(a)*r, 2+Math.random()*3, Math.sin(a)*r, Math.cos(a)*0.2, 1.6+Math.random()*1.4, Math.sin(a)*0.2, { color:c.theme.beam, size:0.22+Math.random()*0.2, life:1.4, grav:0.2, drag:0.4 }); }
   if(c.flash>0){ c.flash-=dt; c.cu.flash.value=Math.max(0, c.flash/0.16)*0.85; }
+  if((c.shieldUntil||0)>now){ c.dome.material.opacity=Math.max(0.22, c.dome.material.opacity*0.96)+Math.sin(now*9)*0.04; c.dome.scale.setScalar(1.12); }   // Z223 shield up: the hex dome glows solid
+  else { c.dome.scale.setScalar(1); if(c.hp>0 && c.hp<c.maxHp && now-(c.lastHit||0)>CORE_DEF.regenDelay){ c.hp=Math.min(c.maxHp, c.hp+CORE_DEF.regen*dt); if(Math.random()<dt*2) updateHUD(); } }   // left alone, it mends
 }
