@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -107,7 +107,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
         const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.5, 4.2), bannerMat()); const [bx,bz]=at(sd*off, 0.7+TW/2+0.05); ban.position.set(bx, GH-4.4, bz); ban.rotation.y=Math.atan2(onx,onz); g.add(ban);
         const [hx,hz]=at(sd*off, 0.7+TW/2+0.12); dk.push(placed(new THREE.BoxGeometry(1.8,0.14,0.14), hx, GH-2.25, hz, ry));                                  // banner pole
         const [fx,fz]=at(sd*(off+TW/2+1.6), TH/2+2.4); dk.push(placed(new THREE.CylinderGeometry(0.1,0.16,1.5,8), fx, 0.75, fz, 0), placed(new THREE.CylinderGeometry(0.6,0.3,0.45,12), fx, 1.65, fz, 0));
-        for(const [r,h,c] of [[0.42,1.1,0xff7a1e],[0.24,0.8,0xffe08a]]){ const fl=new THREE.Mesh(new THREE.ConeGeometry(r,h,8), new THREE.MeshBasicMaterial({ color:c })); fl.position.set(fx, 1.85+h/2, fz); g.add(fl); }   // brazier fire
+        { const fl=flameFX(2.1, 1.4); fl.position.set(fx, 1.8, fz); g.add(fl); }   // brazier fire (Z235 a living flame)
         for(let k=0;k<3;k++){ const [cx,cz]=at(sd*(off-1.2+k*1.4), TH/2+5.2); for(const q of [-0.7,0.7]){ const st=new THREE.CylinderGeometry(0.08,0.1,3.0,6); st.rotateZ(q); st.rotateY(ry); st.translate(cx, 0.9, cz); wd.push(st); } } }   // chevaux-de-frise
       // fighting gallery over the gate: deep, corbelled out, crenellated
       { const [gx2,gz2]=at(0, 0.3); geos.push(placed(stoneBox(FORT.gateW+0.8, 2.6, TH*1.6), gx2, H+1.1, gz2, ry)); }

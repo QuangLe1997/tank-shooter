@@ -32,13 +32,13 @@ export function animateTank(mesh, px, pz, facing, dt, ride){
   const sh=rig.vib*rig.vib;
   pv.rotation.x = -(rig.elev + (rig.elev0||0)) + Math.sin(rig.t*71)*0.022*sh;   // Z157 elev0: the model's rest elevation
   pv.rotation.y = Math.sin(rig.t*57+0.7)*0.012*sh;
-  bg.position.z = -TRUNNION_Z - rig.recoil*rig.recoilLen;
+  bg.position.z = (bg.userData.z0 ?? -TRUNNION_Z) - rig.recoil*rig.recoilLen;
 }
 // fire kick: barrel slams back + shivers, hull rocks away from the shot (all tanks share this)
 export function tankRecoil(mesh, aimWorld, kick, facing){
   const rig=mesh.userData.rig; if(!rig) return;
   rig.recoil=Math.min(1.2, Math.max(rig.recoil, kick)); rig.vib=Math.min(1, rig.vib+0.35+kick*0.5);
-  const rel=aimWorld-(facing||0), k=kick*0.9;
+  const rel=aimWorld-(facing||0), k=kick*1.15;   // Z235 the hull rocks harder off the shot
   rig.pv -= Math.cos(rel)*k; rig.rv += Math.sin(rel)*k*0.7;                           // nose lifts when firing forward, rolls when firing over the side
 }
 // solve the visual barrel elevation for a ballistic lob of distance D at muzzle speed sp (matches spawnBullet's arc)

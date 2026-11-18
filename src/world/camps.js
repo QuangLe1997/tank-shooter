@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flameFX, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -54,7 +54,7 @@ export function buildCamps(){
     { const [fx,fz]=at(0,4), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,8,6), campMats().dark); pole.position.set(fx,fy+4,fz); g.add(pole);   // parade-ground flag
       const fl=makeFlag(campFlagTex(),2.2,1.4,1); fl.position.set(fx,fy+7.2,fz); g.add(fl); }
     { const [cx,cz]=at(9,12), cy=heightAt(cx,cz); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,6,12), campMats().dark); ring.rotation.x=Math.PI/2; ring.position.set(cx,cy+0.08,cz); g.add(ring);   // the campfire
-      const fire=new THREE.Mesh(new THREE.ConeGeometry(0.32,0.6,7), campMats().fire); fire.position.set(cx,cy+0.32,cz); g.add(fire); camp.fire={ m:fire, x:cx, z:cz, y:cy }; }
+      const fire=flameFX(1.25, 0.9); fire.position.set(cx,cy+0.05,cz); g.add(fire); camp.fire={ m:fire, x:cx, z:cz, y:cy }; }   // Z235 a living flame
     { const L=kit(); messHall(L, -15, 12); quartermaster(L, -17, -9); medical(L, 15, 11); restArea(L, 17, -9); latrines(L, -24, -20);   // Z196 feeding, clothing, treating and resting the men
       for(const a of [0,1.57,3.14,4.71]) L.add('wood', B3(1.6,0.3,0.35,9+Math.sin(a)*1.9,0.25,12+Math.cos(a)*1.9,a), 0x5a4428);   // log benches round the fire
       const d=L.bake(false); d.position.set(x, heightAt(x,z)-0.05, z); d.rotation.y=ang; g.add(d); }
@@ -93,7 +93,7 @@ export let _campRadioAt=0;
 export function updateCamps(dt, now){
   const p=S.player; if(!p) return;
   for(const c of CAMPS){
-    if(c.fire && Math.random()<(c.alive?0.25:0)){ spawnPart(c.fire.x,c.fire.y+0.6,c.fire.z,(Math.random()-0.5)*0.3,1.4,(Math.random()-0.5)*0.3,{color:0x3a342c,size:0.9,life:1.6,smoke:true,grav:-0.3,drag:1,op:0.35}); c.fire.m.scale.y=0.8+Math.random()*0.5; }   // cookfire smoke
+    if(c.fire && Math.random()<(c.alive?0.25:0)){ spawnPart(c.fire.x,c.fire.y+0.6,c.fire.z,(Math.random()-0.5)*0.3,1.4,(Math.random()-0.5)*0.3,{color:0x3a342c,size:0.9,life:1.6,smoke:true,grav:-0.3,drag:1,op:0.35}); }   // cookfire smoke
     if(!c.alive){ if(c.burnT>0){ c.burnT-=dt; if(Math.random()<0.6) spawnPart(c.x+(Math.random()-0.5)*4,heightAt(c.x,c.z)+1.2,c.z+(Math.random()-0.5)*5,(Math.random()-0.5),2.4,(Math.random()-0.5),{tex:'fire',color:0xffd080,color2:0xff3a08,size:1.4,life:0.6,grav:1.5,drag:1.4,grow:0.8});
         if(Math.random()<0.5) spawnPart(c.x,heightAt(c.x,c.z)+2.5,c.z,0.5,2.2,0.3,{color:0x15120f,size:2.2,life:2.2,smoke:true,grav:0.3,drag:0.7,grow:1.5,op:0.55}); } continue; }
     { const B=SUPPLY.bases.find(q=>q.camp===c); if(B && B.alarm && !c.scrambled && S.mode==='playing'){ c.scrambled=true; scrambleCrowd(c);   // Z196 alarm: the men run inside… and come back out armed

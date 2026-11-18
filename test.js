@@ -1243,5 +1243,16 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/homeClear\(x,z,16\)/.test(R('src/world/underbase.js')) && /!homeClear\(x,z,need,true\)/.test(R('src/world/tunnels.js')) && /homeClear\(x,z,4,true\)/.test(R('src/world/towers.js')) && /DEPOT\.r, true\)/.test(R('src/world/zones.js')), 'the underground gate, bunkers, watchtowers and depots keep off it too');
   ok(/function campOverDepot\(tx, tz\)/.test(cp) && /countMobile:\[2,2,3,3,3\]/.test(cf) && /mobileR:0\.8, minR:26/.test(cf), 'the small phone field: smaller, fewer forts; one camp may take a depot\'s ground'); }
 
+// Z235 the battlefield's look: a real sky (blue deepening above a pale horizon, sun disc + glow, moon in phase, twinkling stars, Milky Way), lit
+//   distant ranges, natural grass, living flames, swallows / raptors / high aircraft with contrails, grander guns with a harder kick, no heading chevron
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const at=R('src/world/atmosphere.js'), hz=R('src/world/horizon.js'), cf=R('config.js'), sl=R('src/world/skylife.js'), fl=R('src/fx/flames.js');
+  ok(/float k=1\.0-exp\(-yy\*/.test(at) && /moonPh/.test(at) && /starL\(d,260\.0/.test(at) && /the Milky Way/.test(at) && /uniform float night,cFlash,time,moonPh/.test(at), 'the sky: optical-depth blue, moon phase, layered twinkling stars, the Milky Way');
+  ok(/idx\.push\(k,k2,k\+1, k\+1,k2,k2\+1\)/.test(hz), 'the distant ranges are wound with their normals up (lit from the sky, not from underground)');
+  ok(/MEADOW: \{ c:\[\[74,104,48\]/.test(R('src/data/world.js')), 'meadow grass is a natural green, not a glaring lime');
+  ok(/export function flameFX\(h, w\)/.test(fl) && /updateFlames\(dt\)/.test(R('src/game/loop.js')) && /flameFX\(/.test(R('src/world/camps.js')) && /flameFX\(/.test(R('src/actors/core.js')) && /flameFX\(/.test(R('src/world/fortress.js')), 'camp fires, braziers and fort torches are living flames');
+  ok(/export function updateSkyLife\(dt, now\)/.test(sl) && /export function scareBirds\(x, z\)/.test(sl) && /scareBirds\(pos\.x, pos\.z\)/.test(R('src/fx/explosions.js')), 'swallows, raptors and high aircraft; birds scatter from blasts');
+  ok(/BARREL_SCALE = \{ r:1\.22, len:1\.12, slide:1\.25 \}/.test(cf) && /userData\.z0 \?\? -TRUNNION_Z/.test(R('src/tank/rig.js')), 'guns are thicker and longer and still pivot on the trunnion; the recoil slide is longer');
+  ok(/HEADING = \{ show: false/.test(cf) && /if\(HEADING\.show\)\{/.test(R('src/tank/shield.js')), 'the heading chevron and nose stripe are gone'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

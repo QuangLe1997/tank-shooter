@@ -2,12 +2,12 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, MOBILE, S, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
+import { ARENA, MOBILE, S, SKY, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
-// per battlefield: [base colour, snow/highlight colour, shape kind, height (m)]
+// per battlefield: [base colour, snow/highlight colour, shape kind, height (m)] — Z235 the green lands' ranges are forested blue-green, never the meadow's yellow-green
 const LOOK = { DESERT:[0xa8885a,0xd8bc8a,'dune',38], SAVANNA:[0x8a6a40,0xb89a68,'mesa',46], TUNDRA:[0x5a6a78,0xf2f6fa,'peak',120], ARCTIC:[0x7a8ea4,0xffffff,'peak',140],
-  MEADOW:[0x4a6a34,0x7a9a52,'hill',58], HILLS:[0x3e5a30,0x6a8a48,'hill',90], VILLAGE:[0x3a5a34,0x5e8248,'karst',110], CITADEL:[0x8a6a4a,0xc49a6a,'peak',85],
+  MEADOW:[0x3a5644,0x6a8a62,'hill',58], HILLS:[0x34503e,0x62806a,'hill',90], VILLAGE:[0x2e4c40,0x58786a,'karst',110], CITADEL:[0x8a6a4a,0xc49a6a,'peak',85],
   RUINS:[0x5a5a5e,0x8a8a8e,'city',70], CITY:[0x4a5260,0x7a8494,'city',110], FOUNDRY:[0x4a423e,0x6a5e56,'stacks',80], STEELMILL:[0x4a3a32,0x6e5446,'stacks',90],
   VOLCANO:[0x2a2222,0x5a3a30,'volcano',150], QUARRY:[0x9a948a,0xf0ece2,'peak',110] };
 function texes(){ if(!HZN.smokeTex){ HZN.smokeTex=smokeTex2(); const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d'), g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.4,'rgba(255,220,160,0.6)'); g.addColorStop(1,'rgba(255,160,60,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); HZN.glowTex=new THREE.CanvasTexture(c); } }
@@ -20,7 +20,7 @@ function vn(x,y,s){ const i=Math.floor(x), j=Math.floor(y), fx=x-i, fy=y-j, u=fx
 function fbm(x,y,s,o){ let t=0, A=0.5, f=1; for(let k=0;k<o;k++){ t+=A*vn(x*f,y*f,s+k*13); f*=2.03; A*=0.5; } return t; }
 function ridged(x,y,s,o){ let t=0, A=0.5, f=1, w=1; for(let k=0;k<o;k++){ let n=1-Math.abs(vn(x*f,y*f,s+k*7)); n*=n; t+=n*A*w; w=Math.min(1,n*1.7); f*=2.1; A*=0.5; } return t; }
 const wrapA=(d)=>Math.atan2(Math.sin(d),Math.cos(d));
-function ring(R, H, kind, base, hi, fogC, mix, seed){ const n=MOBILE?160:360, rows=MOBILE?10:18, D=Math.max(28, H*0.85), sd=Math.random()*1000+seed*17;
+function ring(R, H, kind, base, hi, fogC, mix, seed){ const skyC=SKY.material.uniforms.top.value.clone(); const n=MOBILE?160:360, rows=MOBILE?10:18, D=Math.max(28, H*0.85), sd=Math.random()*1000+seed*17;
   // hero massifs: a few big named-feeling mountains at random bearings, each its own width and height
   const heroes=[]; const nh=kind==='dune'?2:kind==='volcano'?1:3+((Math.random()*3)|0); for(let k=0;k<nh;k++) heroes.push({ a:Math.random()*Math.PI*2, w:_r(0.12,0.32), h:_r(0.55,1.0), c:_r(-0.35,0.35) });
   const peaky=kind==='peak'||kind==='volcano'||kind==='karst', snowy=peaky && (hi>0xe0e0e0), sharp=kind==='peak'?1.25:kind==='karst'?1.6:kind==='hill'?2.2:1.7;
@@ -39,16 +39,16 @@ function ring(R, H, kind, base, hi, fogC, mix, seed){ const n=MOBILE?160:360, ro
       if(y>H) y=H+(y-H)*0.4;                                                                                   // summits soft-capped: majestic, not spikes
       y+=H*0.05*det*pf; if(j===0) y=-14; else if(j===rows-1) y=Math.min(y, H*0.15);
       const k=(i*rows+j); pos[k*3]=x; pos[k*3+1]=y; pos[k*3+2]=z; hgt[k]=y; }
-    if(i<n) for(let j=0;j<rows-1;j++){ const k=i*rows+j, k2=k+rows; idx.push(k,k+1,k2, k+1,k2+1,k2); } }
+    if(i<n) for(let j=0;j<rows-1;j++){ const k=i*rows+j, k2=k+rows; idx.push(k,k2,k+1, k+1,k2,k2+1); } }   // Z235 wound so the normals face up: the ranges were lit from underground (flat dark cut-outs)
   const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
-  // colour: vegetation / ground low and on gentle slopes · rock on steep faces · snow above the snowline · then haze by distance
+  // colour: vegetation / ground low and on gentle slopes · rock on steep faces · snow above the snowline · then haze by distance (Z235: bluer and paler with each ring)
   const nrm=g.attributes.normal, cB=new THREE.Color(base), cR=new THREE.Color(base).lerp(new THREE.Color(0x6a6660), 0.55).multiplyScalar(0.85), cH=new THREE.Color(hi), cF=new THREE.Color(base).multiplyScalar(0.8), c=new THREE.Color(), snowLine=H*(snowy?0.5:0.8);
   for(let k=0;k<hgt.length;k++){ const y=hgt[k], ny=nrm.getY(k), steep=Math.min(1, Math.max(0, (0.86-ny)/0.3)); c.copy(cB).lerp(cR, peaky||kind==='mesa'?steep:steep*0.4);
     if(kind==='mesa' && steep>0.5) c.lerp(new THREE.Color(hi).multiplyScalar(0.8), 0.5*Math.abs(Math.sin(y*0.45)));   // banded cliff strata
     if((peaky || snowy) && y>snowLine){ const sn=Math.min(1,(y-snowLine)/(H*0.1))*(1-steep*(snowy?0.35:0.65)); c.lerp(cH, sn); }
-    if(y<H*0.12) c.lerp(cF, 0.4); c.lerp(fogC, mix*0.32); col[k*3]=c.r; col[k*3+1]=c.g; col[k*3+2]=c.b; }
+    if(y<H*0.12) c.lerp(cF, 0.4); c.lerp(skyC, mix*0.2).lerp(fogC, 0.08+mix*0.42); col[k*3]=c.r; col[k*3+1]=c.g; col[k*3+2]=c.b; }
   g.setAttribute('color', new THREE.BufferAttribute(col,3));
-  const m=new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors:true, fog:false, emissive:fogC.clone().multiplyScalar(0.06+mix*0.22) })); m.renderOrder=-8; m.frustumCulled=false; return m; }
+  const m=new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors:true, fog:false, emissive:fogC.clone().multiplyScalar(0.03+mix*0.16) })); m.renderOrder=-8; m.frustumCulled=false; return m; }
 const _r=(a,b)=>a+Math.random()*(b-a);
 // a skyline: towers / stacks standing on the nearest ring
 function skyline(R, H, kind, base, fogC, mix){ const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);

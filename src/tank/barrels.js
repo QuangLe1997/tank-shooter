@@ -1,7 +1,7 @@
 // tank/barrels.js — per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they elevate + recoil
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GUN_PRICE } from '../../config.js';
+import { BARREL_SCALE, GUN_PRICE } from '../../config.js';
 import { GUNS, S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol } from '../hub.js';
 
 // ----- per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they elevate + recoil -----
@@ -245,9 +245,9 @@ export function disposeBarrel(grp){ if(!grp) return; grp.traverse(o=>{ if(o.isMe
 export function mountBarrel(mesh, id){ const ud=mesh.userData;
   if(ud.barrelG){ ud.barrelG.parent && ud.barrelG.parent.remove(ud.barrelG); disposeBarrel(ud.barrelG); }
   if(ud.gunMount){ ud.turret.remove(ud.gunMount); disposeBarrel(ud.gunMount); ud.gunMount=null; }
-  const ng=makeGunBarrel(id); ng.position.set(0,-0.02,-TRUNNION_Z); ud.gunPivot.add(ng); ud.barrelG=ng;
+  const ng=makeGunBarrel(id), K=BARREL_SCALE; ng.scale.set(K.r, K.r, K.len); ng.userData.z0=-TRUNNION_Z*K.len; ng.position.set(0,-0.02,ng.userData.z0); ud.gunPivot.add(ng); ud.barrelG=ng;   // Z235 a heavier, grander gun: thicker and longer, pivoting on the same trunnion
   if(ng.userData.mount){ ng.userData.mount.position.y += ud.mountY||0; ud.turret.add(ng.userData.mount); ud.gunMount=ng.userData.mount; }   // Z157 per-model turrets start at their base: lift the gun's roof hardware onto the roof
-  ud.rig.recoilLen=ng.userData.recoilLen; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
+  ud.rig.recoilLen=ng.userData.recoilLen*K.len*K.slide; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
   return ng; }
 export function setPlayerBarrel(id){
   const p=S.player; if(!p||!p.mesh) return; const ng=mountBarrel(p.mesh, id); p.muzzle=ng.userData.muzzle; p.muzzles=ng.userData.muzzles||null; p.mzI=0;

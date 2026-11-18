@@ -1,7 +1,7 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { CORE_DEF } from '../../config.js';
-import { GLOW, NIGHT, _canvasTex, _mergeColored, bakeGroup, bigExplode, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
+import { GLOW, NIGHT, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -94,9 +94,8 @@ function podium(G0in, g, PH, gold){ const marble=new THREE.MeshStandardMaterial(
   const ring=new THREE.Mesh(new THREE.TorusGeometry(4.6,0.26,8,64), gold); ring.rotation.x=Math.PI/2; ring.position.y=PH+6.4; ring.castShadow=true; G0.add(ring);
   for(let k=0;k<8;k++){ const rib=new THREE.Mesh(new THREE.TorusGeometry(4.6,0.07,6,24,Math.PI/2), gold); rib.position.y=PH+6.4; rib.rotation.set(0, k/8*Math.PI*2+Math.PI/8, Math.PI/2); rib.scale.set(1,1,0.75); G0.add(rib); }   // open gilt dome
   const fin=new THREE.Mesh(new THREE.ConeGeometry(0.22,1.1,8), gold); fin.position.y=PH+6.4+3.45+0.5; G0.add(fin);
-  const fire=new THREE.MeshStandardMaterial({ color:0x401000, emissive:0xffa040, emissiveIntensity:3 });
   for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const x=Math.sin(a)*5.9+Math.cos(a)*sd*2.1, z=Math.cos(a)*5.9-Math.sin(a)*sd*2.1;   // gold braziers at the stair heads
-      add(new THREE.CylinderGeometry(0.42,0.2,0.4,10), gold, x,PH+0.95,z); add(new THREE.CylinderGeometry(0.08,0.12,0.8,6), gold, x,PH+0.4,z); const f=add(new THREE.ConeGeometry(0.3,0.7,8), fire, x,PH+1.45,z); f.castShadow=false; } }
+      add(new THREE.CylinderGeometry(0.42,0.2,0.4,10), gold, x,PH+0.95,z); add(new THREE.CylinderGeometry(0.08,0.12,0.8,6), gold, x,PH+0.4,z); const f=flameFX(1.3, 0.85); f.position.set(x,PH+1.1,z); G0.add(f); } }
   bakeGroup(G0); }
 export function rebuildCore(stage){ const keepMax = core ? core.maxHp : CORE_DEF.hp; buildCore(stage); core.maxHp=Math.max(keepMax, CORE_DEF.hp+((stage||1)-1)*CORE_DEF.perStage); core.hp=core.maxHp; updateHUD(); }
 // Z223 EMERGENCY SHIELD — the dome hardens and swallows every hit for a while (once per CORE_DEF.shield.cd s)

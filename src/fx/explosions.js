@@ -1,8 +1,9 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
-import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, sfx, shockDome, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
+import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, spawnTankWreck } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
-export function bigExplode(pos, color, scale=1.5){
+export function bigExplode(pos, color, scale=1.5){ scareBirds(pos.x, pos.z);   // Z235 the swallows scatter from the blast
+ 
   decalScorch(pos.x, pos.z, 1.6+scale*1.5, 0.85); if(scale>=1.2) decalCrater(pos.x, pos.z, 0.6+scale*0.6, 0.8);   // blast leaves its mark on the ground
   ringPulse(pos, color, scale*3.2); fireball(pos, scale*0.6);
   burst(pos, color, Math.floor(6*scale), 11*scale, {life:0.45, size:1.2*scale, up:3});
