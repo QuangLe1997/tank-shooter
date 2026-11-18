@@ -49,8 +49,8 @@ function turret(par, x, z, wx, wz, base){ const M=mats(), g=new THREE.Group(); g
 // =================================================================== THE GATE (surface) ===================================================================
 export function clearGate(){ const G=UNDER.gate; if(!G) return; scene.remove(G.g); for(const b of [G.lockBlk, G.blk, ...G.turrets.map(t=>t.blk)]){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); } UNDER.gate=null; }
 function buildGate(){ const U=UNDERBASE, M=mats();
-  let x=0, z=0, ok=false; for(let t=0;t<400 && !ok;t++){ x=R(-ARENA*0.7, ARENA*0.7); z=R(-ARENA*0.55, ARENA*0.22);
-    ok=inField(x,z,16) && Math.hypot(x,z)>42 && Math.hypot(x, z-ARENA*0.55)>60 && !inZone(x,z,10) && clearOf(x,z,12) && !(TUN && TUN.list.some(E=>Math.hypot(E.x-x,E.z-z)<28)); }
+  let x=0, z=0, ok=false; for(let t=0;t<900 && !ok;t++){ const k=t<400?1:t<700?0.6:0.35; x=R(-ARENA*0.75, ARENA*0.75); z=R(-ARENA*0.6, ARENA*0.25);   // looser and looser: every battlefield gets its gate
+    ok=inField(x,z,16*k) && Math.hypot(x,z)>42 && Math.hypot(x, z-ARENA*0.55)>60*k && !inZone(x,z,10*k) && clearOf(x,z,12*k) && !(TUN && TUN.list.some(E=>Math.hypot(E.x-x,E.z-z)<28*k)); }
   if(!ok) return; const a=Math.atan2(-x, ARENA*0.55-z), g=new THREE.Group(); g.position.set(x, heightAt(x,z), z); g.rotation.y=a; scene.add(g);
   const G={ x, z, a, g, open:0, opening:false, lockHp:U.gate.lockHp[0]+U.gate.lockHp[1]*(S.stage||1), turrets:[], told:false, beacon:null };
   // the portal: a concrete block over a ramp that dives under it, sandbags on the roof, a red beacon turning on top
@@ -105,8 +105,8 @@ function wallBlocks(list, x0, z0, x1, z1){ const L=Math.hypot(x1-x0, z1-z0), n=M
 function buildBase(){ const U=UNDER, M=mats(), C=UNDERBASE, g=new THREE.Group(), W=U.W, D=U.D, B=U.BX; g.position.set(B, 0, 0); scene.add(g);
   const base={ g }, bl=[]; U.base=base; U.bblocks=bl; U.targets.length=0; U.turrets.length=0; U.lamps.length=0;
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(W*2+8, D*2+40), new THREE.MeshStandardMaterial({ map:floorTex(), roughness:0.85, metalness:0.05 })); fl.rotation.x=-Math.PI/2; fl.position.set(0,0.02,12); fl.receiveShadow=true; g.add(fl);
-  const wall=(x0,z0,x1,z1,h)=>{ const H=h||3.4, L=Math.hypot(x1-x0,z1-z0), m=BX(g,L+1.2,H,1.2,(x0+x1)/2,H/2,(z0+z1)/2,M.conc, -Math.atan2(z1-z0,x1-x0)); BX(g,L+1.3,0.18,1.35,(x0+x1)/2,H+0.09,(z0+z1)/2,M.hazard, -Math.atan2(z1-z0,x1-x0)); m.material=M.conc; wallBlocks(bl, B+x0, z0, B+x1, z1); return m; };
-  // outer shell + the ramp corridor up to the gate
+  const wall=(x0,z0,x1,z1,h)=>{ const H=h||3.4, L=Math.hypot(x1-x0,z1-z0), m=BX(g,L+1.2,H,1.2,(x0+x1)/2,H/2,(z0+z1)/2,M.conc, -Math.atan2(z1-z0,x1-x0)); BX(g,L+1.3,0.18,1.35,(x0+x1)/2,H+0.09,(z0+z1)/2,M.hazard, -Math.atan2(z1-z0,x1-x0)); BX(g,L+0.6,0.1,1.34,(x0+x1)/2,0.32,(z0+z1)/2,M.lamp, -Math.atan2(z1-z0,x1-x0)); m.material=M.conc; wallBlocks(bl, B+x0, z0, B+x1, z1); return m; };
+  // outer shell + the ramp corridor up to the gate (each wall carries a lit strip along its foot)
   wall(-W,-D,W,-D); wall(-W,-D,-W,D); wall(W,-D,W,D); wall(-W,D,-6.5,D); wall(6.5,D,W,D); wall(-6.5,D,-6.5,D+22); wall(6.5,D,6.5,D+22); wall(-6.5,D+22,6.5,D+22,1.2);
   for(let k=0;k<4;k++){ const s=new THREE.Mesh(new THREE.PlaneGeometry(12,0.5), new THREE.MeshBasicMaterial({ color:0xffd040 })); s.rotation.x=-Math.PI/2; s.position.set(0,0.06,D+4+k*4.5); g.add(s); }   // chevrons up the ramp
   // inner partitions with doorways: barracks (west), vehicle bay (east), arsenal + generator (north)
@@ -116,6 +116,13 @@ function buildBase(){ const U=UNDER, M=mats(), C=UNDERBASE, g=new THREE.Group(),
   // lamps: strip lights along the walls, real lights ride the nearest ones
   for(let z=-D+6; z<D; z+=11) for(const x of [-W+0.8, W-0.8, -28.8, 28.8]){ const m=BX(g,0.25,0.25,3.2,x,3.0,z,M.lamp); U.lamps.push({ x:B+x+(x<0?1.2:-1.2), z, m }); }
   for(let x=-24; x<=24; x+=12) for(const z of [-24.2, D-0.8]){ BX(g,3.2,0.25,0.25,x,3.0,z,M.lamp); U.lamps.push({ x:B+x, z:z+(z<0?1.2:-1.2) }); }
+  // floodlight poles out on the floor of the hall and the wings
+  for(const [x,z] of [[-8,-8],[8,-8],[-8,22],[8,22],[0,44],[-52,-22],[-52,8],[52,-18],[52,12],[-14,-40],[14,-30]]){ BX(g,0.2,5.2,0.2,x,2.6,z,M.steel); const hd=BX(g,1.4,0.35,0.7,x,5.3,z,M.lamp); hd.rotation.x=0.3; U.lamps.push({ x:B+x, z, pole:true }); }
+  // a pool of light on the floor under every lamp
+  { const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'), gr=x.createRadialGradient(64,64,0,64,64,64); gr.addColorStop(0,'rgba(255,255,255,0.85)'); gr.addColorStop(0.45,'rgba(255,255,255,0.32)'); gr.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=gr; x.fillRect(0,0,128,128);
+    const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; U.poolM=new THREE.MeshBasicMaterial({ map:t, color:0x9aa8c0, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2, fog:false });
+    const pg=new THREE.PlaneGeometry(1,1); pg.rotateX(-Math.PI/2); const im=new THREE.InstancedMesh(pg, U.poolM, U.lamps.length), Mx=new THREE.Matrix4(), Q=new THREE.Quaternion(), S3=new THREE.Vector3(), P3=new THREE.Vector3();
+    U.lamps.forEach((q,k)=>{ const r=q.pole?16:9; Mx.compose(P3.set(q.x-B, 0.05, q.z), Q, S3.set(r,1,r)); im.setMatrixAt(k, Mx); }); im.renderOrder=2; g.add(im); }
   // ---- the targets ----
   const T=(role, x, z, r, hp, build)=>{ const grp=new THREE.Group(); grp.position.set(x,0,z); g.add(grp); build(grp); const o={ role, x:B+x, z, r, hp, maxHp:hp, alive:true, g:grp, bar:null };
     o.blk={ mesh:grp, x:B+x, z, r, hp:1e9, maxHp:1e9, steel:false, hard:false, loot:false, kind:'utarget', ub:true, tg:o }; bl.push(o.blk); U.targets.push(o); return o; };
@@ -129,7 +136,7 @@ function buildBase(){ const U=UNDER, M=mats(), C=UNDERBASE, g=new THREE.Group(),
     const fan=new THREE.Group(); fan.position.y=5.4; gr.add(fan); for(let k=0;k<4;k++){ const b=BX(fan,4.6,0.15,0.7,0,0,0,M.dark); b.rotation.y=k*Math.PI/4; } gr.userData.fan=fan; for(const s of [-1,1]) CY(gr,0.5,0.5,6,8,s*4.4,3,0,M.dark); });
   U.gen=gen;
   // base guns in the hall
-  for(const [x,z] of [[-18,-18],[18,-18],[0,14]]){ const Tt=turret(g, x, z, B+x, z, true); U.turrets.push(Tt); bl.push(Tt.blk); }
+  for(const [x,z] of [[-18,-18],[18,-18],[-20,34]]){ const Tt=turret(g, x, z, B+x, z, true); U.turrets.push(Tt); bl.push(Tt.blk); }
   // crates and sandbag lines as cover in the hall
   for(const [x,z,ry] of [[-8,10,0],[9,4,0.3],[-4,36,0],[12,38,-0.2],[0,-12,0]]){ BX(g,3.6,1.2,1.2,x,0.6,z,M.bag,ry); bl.push({ mesh:null, x:B+x, z, r:1.6, hp:1e9, maxHp:1e9, steel:true, hard:false, loot:false, kind:'uwall' }); }
   // real lights (made once)
@@ -158,7 +165,7 @@ function wreck(o){ const U=UNDER, C=UNDERBASE; o.alive=false; if(o.bar){ freeEne
   if(o.role==='veh' && !left) radio('SCH: Bãi xe ngầm tan tành — xe tăng địch không còn đường ra!');
   if(U.targets.every(q=>!q.alive)){ addScore(C.score.all, { x:o.x, y:6, z:o.z }); setTimeout(()=>{ showBanner('CĂN CỨ NGẦM ĐÃ BỊ XOÁ SỔ!', '#9be04a'); radio('SCH: Căn cứ ngầm của địch đã thành đống đổ nát — rút lên mặt đất!'); }, 1500); }
   hud(); }
-function powerDown(){ const U=UNDER; U.power=false; const M=mats(); M.lamp.emissive.setHex(0xff2a14); M.lamp.emissiveIntensity=1.6; if(U.genLight) U.genLight.intensity=0;
+function powerDown(){ const U=UNDER; U.power=false; const M=mats(); M.lamp.emissive.setHex(0xff2a14); M.lamp.emissiveIntensity=1.6; if(U.poolM) U.poolM.color.setHex(0x7a1408); if(U.genLight) U.genLight.intensity=0;
   for(const l of U.lights) l.color.setHex(0xff3a24); radio('SCH: Căn cứ mất điện — ụ súng của chúng đã câm!'); }
 
 // =================================================================== going down / coming up ===================================================================
@@ -180,8 +187,8 @@ function moveAllies(fromX, fromZ, toX, toZ, face){ let k=0; for(const a of FT){ 
   k=0; for(const t of ALLY_TANKS){ if(t.hp<=0) continue; t.pos.set(toX+Math.sin(face)*-(10+k*6)+(k%2?4:-4), 0, toZ+Math.cos(face)*-(10+k*6)); t.mesh.position.set(t.pos.x, 0, t.pos.z); t.facing=t.aim=face; t.goal=null; t.target=null; k++; } }
 function placePlayer(x, z, face){ const p=S.player; p.pos.x=x; p.pos.z=z; if(p.vel) p.vel.set(0,0,0); p.facing=face; p.aim=p.aimSmoothed=face; p.mesh.position.set(x, heightAt(x,z), z); p.mesh.rotation.y=face; }
 function underLook(on){ const U=UNDER;
-  if(on){ U.wx=S.weather||'clear'; applyWeather('clear'); if(HZN.g) HZN.g.visible=false; SKY.visible=false; scene.background.setHex(0x050506); scene.fog.color.setHex(0x050506); scene.fog.density=0.008;
-    sun.intensity=0.12; hemi.color.setHex(0x8a96aa); hemi.groundColor.setHex(0x2a2a2a); hemi.intensity=0.55; ambient.color.setHex(0x8a8a90); ambient.intensity=0.45; renderer.toneMappingExposure=1.25;
+  if(on){ U.wx=S.weather||'clear'; applyWeather('clear'); if(HZN.g) HZN.g.visible=false; SKY.visible=false; scene.background.setHex(0x050506); scene.fog.color.setHex(0x050506); scene.fog.density=0.0055;
+    sun.intensity=0.12; hemi.color.setHex(0x8a96aa); hemi.groundColor.setHex(0x2a2a2a); hemi.intensity=0.95; ambient.color.setHex(0x9a9aa4); ambient.intensity=0.7; renderer.toneMappingExposure=1.3;
     NIGHT.on=true; if(NIGHT.head) NIGHT.head.visible=true; for(const sp of NIGHT.spots) sp.visible=false; for(const l of U.lights){ l.visible=true; } if(U.genLight){ U.genLight.visible=true; U.genLight.intensity=U.power?40:0; } }
   else { for(const l of U.lights) l.visible=false; if(U.genLight) U.genLight.visible=false; if(HZN.g) HZN.g.visible=true; applyAtmosphere(BIOME); applyWeather(U.wx); } }
 function goDown(){ const U=UNDER, G=U.gate, p=S.player; if(U.busy || !G) return; U.busy=true; fade(true, 'ĐỘT NHẬP CĂN CỨ NGẦM'); sfx('bigexplode');

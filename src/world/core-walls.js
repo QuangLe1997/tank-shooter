@@ -3,9 +3,9 @@
 //   Our walls stop enemy fire but never our own (blocks flagged ours); the guns are indestructible but slow, so the Core still needs you.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BIOME, MOBILE, S, ZONES, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
+import { BIOME, MOBILE, S, TANK_SCALE, ZONES, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
 
-export const CORE_DEF = { R:19, H:4.6, T:1.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], g:null };
+export const CORE_DEF = { R:24, H:6.2, T:2.0, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
   for(let i=0;i<uv.count;i++){ const ax=Math.abs(n.getX(i)), ay=Math.abs(n.getY(i)); const u=ax>0.5?p.getZ(i):p.getX(i), v=ay>0.5?p.getZ(i):p.getY(i); uv.setXY(i,u/4,v/4); } return g; }
 const at=(g,x,y,z,ry)=>{ g.rotateY(ry||0); g.translate(x,y,z); return g; };
@@ -25,37 +25,92 @@ function makeGun(){ const m=gunMats(), root=new THREE.Group(), yaw=new THREE.Gro
   const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,2.2,4), m.dark); ant.position.set(-1.1,2.6,-1.0); yaw.add(ant);
   return { root, yaw, muz }; }
 
-export function clearCoreWalls(){ if(CORE_DEF.g){ unwave(CORE_DEF.g); scene.remove(CORE_DEF.g); CORE_DEF.g.traverse(o=>{ if(o.geometry && !o.userData.shared) o.geometry.dispose(); }); CORE_DEF.g=null; } CORE_DEF.guns.length=0; }
-export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D.H, TH=D.T, name=BIOME.name, WM=wallMat(name), g=new THREE.Group(), y0=heightAt(0,0);
-  g.position.set(0,y0,0); scene.add(g); D.g=g; ZONES.push({ kind:'landmark', x:0, z:0, r:R+4 });   // scatter keeps clear of our compound
+// Z227 OUR CITADEL — never mistaken for theirs: pale dressed stone, gold trim, lime ID light, our banners and emblem shields on every face;
+//   one shared plan (octagon, eight towers, a grand gatehouse facing our lines, three side gates, cannon towers + automatic MG towers) built in
+//   five styles by land: Huế imperial (tiled hip roofs), desert domes, northern spires, steel-and-concrete, basalt keep
+const OUR_STYLE = {
+  hue:  { key:'OUR_hue',  pat:'ashlar',   base:'#dcd4c2', seam:'#8e8672', rough:0.88, metal:0.02, cap:'tile',   roof:'hue',   round:false, trim:0xd8b040 },
+  dome: { key:'OUR_dome', pat:'ashlar',   base:'#e8dcc0', seam:'#9c8a66', rough:0.88, metal:0.02, cap:'merlon', roof:'dome',  round:true,  trim:0xd8b040 },
+  spire:{ key:'OUR_spire',pat:'ashlar',   base:'#e8ecf0', seam:'#8a96a4', rough:0.8,  metal:0.03, cap:'snow',   roof:'slate', round:true,  trim:0xd8b040 },
+  steel:{ key:'OUR_steel',pat:'concrete', base:'#c4c8ca', seam:'#6e7276', rough:0.85, metal:0.05, cap:'wire',   roof:'cornice',round:false,trim:0xd8b040 },
+  basalt:{ key:'OUR_bas', pat:'ashlar',   base:'#6a6460', seam:'#2a2624', rough:0.92, metal:0.02, cap:'merlon', roof:'cone',  round:true,  trim:0xe0b848 } };
+const LAND_STYLE = { VILLAGE:'hue', HILLS:'hue', MEADOW:'hue', SAVANNA:'dome', DESERT:'dome', CITADEL:'dome', QUARRY:'dome', TUNDRA:'spire', ARCTIC:'spire',
+  CITY:'steel', RUINS:'steel', FOUNDRY:'steel', STEELMILL:'steel', VOLCANO:'basalt', CAVERN:'basalt' };
+export function ourStyle(name){ return OUR_STYLE[LAND_STYLE[name||BIOME.name]||'hue']; }
+let _em=null;
+function emblemTex(){ if(_em) return _em; const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');   // our emblem: a gold star on green inside a gold ring
+  x.fillStyle='#d8b040'; x.beginPath(); x.arc(128,128,124,0,7); x.fill(); x.fillStyle='#1e5a2a'; x.beginPath(); x.arc(128,128,104,0,7); x.fill();
+  x.strokeStyle='#f0d070'; x.lineWidth=4; x.beginPath(); x.arc(128,128,92,0,7); x.stroke(); x.fillStyle='#f4d460'; x.beginPath();
+  for(let k=0;k<10;k++){ const a=-Math.PI/2+k*Math.PI/5, r=k%2?30:72; x.lineTo(128+Math.cos(a)*r, 128+Math.sin(a)*r); } x.closePath(); x.fill();
+  _em=new THREE.CanvasTexture(c); _em.colorSpace=THREE.SRGBColorSpace; _em.anisotropy=4; return _em; }
+const _om={};
+function ourMats(st){ if(!_om.gold){ _om.gold=new THREE.MeshStandardMaterial({ color:0xd8b040, roughness:0.3, metalness:0.95, envMapIntensity:1.3 });
+    _om.lime=new THREE.MeshStandardMaterial({ color:0x1a3a10, emissive:0x8aff4a, emissiveIntensity:2.2 }); _om.emblem=new THREE.MeshStandardMaterial({ map:emblemTex(), roughness:0.4, metalness:0.5 });
+    _om.lamp=new THREE.MeshStandardMaterial({ color:0x302010, emissive:0xffd890, emissiveIntensity:2.6 }); }
+  return _om; }
+export function clearCoreWalls(){ if(CORE_DEF.g){ unwave(CORE_DEF.g); scene.remove(CORE_DEF.g); CORE_DEF.g.traverse(o=>{ if(o.geometry && !o.userData.shared) o.geometry.dispose(); }); CORE_DEF.g=null; } CORE_DEF.guns.length=0; CORE_DEF.mgs.length=0; CORE_DEF.guards.length=0; }
+export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D.H, TH=D.T, ST=ourStyle(BIOME.name), WM=wallMat(ST), OM=ourMats(ST), g=new THREE.Group(), y0=heightAt(0,0);
+  g.position.set(0,y0,0); scene.add(g); D.g=g; ZONES.push({ kind:'landmark', x:0, z:0, r:R+5 });   // scatter keeps clear of our compound
   const N=8, rot=Math.PI/8, V=[]; for(let i=0;i<N;i++){ const a=rot+i/N*Math.PI*2; V.push([Math.cos(a)*R, Math.sin(a)*R]); }
-  const geos=[], caps=[];
-  for(let i=0;i<N;i++){ const [x0,z0]=V[i], [x1,z1]=V[(i+1)%N], L=Math.hypot(x1-x0,z1-z0), ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), gate=i%2===0;
-    const spans = gate ? [[0, L/2-D.gateW/2], [L/2+D.gateW/2, L]] : [[0,L]];
+  const geos=[], caps=[], gold=[], lime=[], gm=gunMats(), MAIN=1;   // side 1 faces +z: our lines → the grand gatehouse
+  const tower=(x,z,s,h,ry,deck)=>{ if(ST.round){ const c=new THREE.CylinderGeometry(s*0.55,s*0.62,h,16); c.translate(x,h/2-0.75,z); geos.push(c); gold.push(at(new THREE.CylinderGeometry(s*0.6,s*0.6,0.28,16), x, h-0.9, z)); }
+      else { geos.push(at(box(s,h,s), x, h/2-0.75, z, ry)); gold.push(at(new THREE.BoxGeometry(s*1.06,0.28,s*1.06), x, h-0.9, z, ry)); }
+      if(deck){ for(let k=0;k<8;k++){ const a=(ry||0)+k/8*Math.PI*2, r=s*(ST.round?0.52:0.47); geos.push(at(box(1.1,1.0,0.7), x+Math.sin(a)*r, h-0.3, z+Math.cos(a)*r, a)); } return; }   // an open gun deck behind merlons
+      const rf=new THREE.Mesh(towerRoof(ST, s, h-0.75), capMat); rf.position.set(x,0,z); rf.rotation.y=ry||0; rf.castShadow=true; g.add(rf); };
+  for(let i=0;i<N;i++){ const [x0,z0]=V[i], [x1,z1]=V[(i+1)%N], L=Math.hypot(x1-x0,z1-z0), ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), gate=i%2===1, main=i===MAIN, gw=main?D.gateW+2:D.gateW;
+    const nx=-uz, nz=ux, out=(nx*(x0+x1)+nz*(z0+z1))>0?1:-1;   // outward normal sign
+    const spans = gate ? [[0, L/2-gw/2], [L/2+gw/2, L]] : [[0,L]];
     for(const [s0,s1] of spans){ const len=s1-s0; if(len<0.6) continue; const c=(s0+s1)/2, cx=x0+ux*c, cz=z0+uz*c;
       geos.push(at(box(len, H+1.5, TH), cx, (H+1.5)/2-0.75, cz, ry));                                                       // wall
+      gold.push(at(new THREE.BoxGeometry(len, 0.22, TH+0.12), cx, H-0.35, cz, ry));                                           // gilt string course
+      lime.push(at(new THREE.BoxGeometry(len*0.96, 0.1, 0.08), cx-nx*out*(TH/2+0.05), H-0.9, cz-nz*out*(TH/2+0.05), ry));       // ID light strip on the inner face
       for(let k=0;k<Math.max(1,Math.round(len/3));k++){ const sc=s0+(k+0.5)*len/Math.max(1,Math.round(len/3)), mx=x0+ux*sc, mz=z0+uz*sc; geos.push(at(box(0.9,0.75,TH*0.9), mx, H+0.4, mz, ry)); caps.push([mx,mz,ry,len/Math.max(1,Math.round(len/3))]); }
       for(let s=s0+1.2; s<=s1-0.6; s+=2.4){ const bx=x0+ux*s, bz=z0+uz*s; blocks.push({ mesh:g, x:bx, z:bz, r:1.35, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'corewall', ours:true }); } }   // collision (enemy fire stops here, ours passes)
-    if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2;
-      for(const sd of [-1,1]){ const px=mx+ux*sd*(D.gateW/2+1.1), pz=mz+uz*sd*(D.gateW/2+1.1); geos.push(at(box(2.8, H+4, 2.8), px, (H+4)/2-0.5, pz, ry));
-        const rf=new THREE.Mesh(towerRoof(name, 2.8, H+3.5), capMat); rf.position.set(px,0,pz); rf.rotation.y=ry; rf.castShadow=true; g.add(rf); }
-      const lintel=at(box(D.gateW+0.6, 1.0, TH*1.1), mx, H+1.0, mz, ry); geos.push(lintel); } }
-  // bastions on the four corners between the gates, a guard cannon on each
-  const gm=gunMats();
-  for(let i=1;i<N;i+=2){ const [vx,vz]=V[i], s=6.6; geos.push(at(box(s, H+2.2, s), vx, (H+2.2)/2-0.75, vz, -rot-i/N*Math.PI*2)); geos.push(at(box(s*1.12, 0.6, s*1.12), vx, H+0.95, vz, -rot-i/N*Math.PI*2));   // bastion + its overhanging gun deck
-    for(const q of [[-1,-1],[1,-1],[-1,1],[1,1]]){ const a=-rot-i/N*Math.PI*2, ca=Math.cos(a), sa=Math.sin(a), lx=q[0]*s*0.42, lz=q[1]*s*0.42; geos.push(at(box(1.0,1.0,1.0), vx+lx*ca+lz*sa, H+1.75, vz-lx*sa+lz*ca, a)); }
-    blocks.push({ mesh:g, x:vx, z:vz, r:3.6, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'corewall', ours:true });
-    const gun=makeGun(); gun.root.position.set(vx, H+1.25, vz); gun.root.scale.setScalar(1.4); g.add(gun.root); gun.yaw.rotation.y=Math.atan2(vx,vz);
-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.11,8,6), gm.steel); const ox=vx*1.1, oz=vz*1.1; pole.position.set(ox, H+5.2, oz); g.add(pole);
-    const fl=makeFlag(vnTex(), 3.2, 2.1, 1); fl.position.set(ox, H+8.0, oz); g.add(fl);
-    CORE_DEF.guns.push({ x:vx, z:vz, y:y0+H+1.25, ...gun, aim:Math.atan2(vx,vz), fireAt:performance.now()/1000+2+Math.random()*2, k:0, kick:0, target:null, thinkAt:0 }); }
+    if(!gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2; tower(mx, mz, 3.4, H+3.6, ry);   // a roofed watch pavilion over the middle of every curtain wall: the land's own style
+      const em=new THREE.Mesh(new THREE.CircleGeometry(1.5,32), OM.emblem); const off=(ST.round?2.15:1.75)+0.06; em.position.set(mx+nx*out*off, H*0.55, mz+nz*out*off); em.rotation.y=Math.atan2(nx*out, nz*out); g.add(em); }   // our emblem on every curtain wall
+    if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2, th=main?H+10:H+5, ts=main?4.6:3.0;
+      for(const sd of [-1,1]){ const px=mx+ux*sd*(gw/2+ts*0.5), pz=mz+uz*sd*(gw/2+ts*0.5); tower(px, pz, ts, th, ry);
+        if(main){ const lm=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.5), OM.lamp); lm.position.set(px+nx*out*(ts*0.55), H+0.5, pz+nz*out*(ts*0.55)); g.add(lm);
+          const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,7,6), gm.steel); pole.position.set(px, th+2.6, pz); g.add(pole); const fl=makeFlag(vnTex(), 4.2, 2.7, 1); fl.position.set(px, th+5, pz); g.add(fl); } }
+      geos.push(at(box(gw+0.8, main?2.2:1.0, TH*1.2), mx, (main?H+2.0:H+1.0), mz, ry)); gold.push(at(new THREE.BoxGeometry(gw+1.0, 0.25, TH*1.3), mx, main?H+0.8:H+0.4, mz, ry));
+      if(main){ const em=new THREE.Mesh(new THREE.CircleGeometry(1.9,40), OM.emblem); em.position.set(mx+nx*out*(TH*0.6+0.08), H+2.0, mz+nz*out*(TH*0.6+0.08)); em.rotation.y=Math.atan2(nx*out, nz*out); g.add(em); } } }
+  // eight towers on the corners: cannon towers and automatic MG towers in turn
+  for(let i=0;i<N;i++){ const [vx,vz]=V[i], s=7.0, a=-rot-i/N*Math.PI*2; tower(vx, vz, s, H+3.4, a, true);
+    blocks.push({ mesh:g, x:vx, z:vz, r:3.8, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'corewall', ours:true });
+    for(let k=0;k<4;k++){ const la=a+k*Math.PI/2+Math.PI/4, lm=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), OM.lime); lm.position.set(vx+Math.sin(la)*s*0.5, H+2.2, vz+Math.cos(la)*s*0.5); g.add(lm); }
+    const deckY=H+2.65;
+    if(i%2===0){ const gun=makeGun(); gun.root.position.set(vx, deckY, vz); gun.root.scale.setScalar(1.4); g.add(gun.root); gun.yaw.rotation.y=Math.atan2(vx,vz);
+      CORE_DEF.guns.push({ x:vx, z:vz, y:y0+deckY, ...gun, aim:Math.atan2(vx,vz), fireAt:performance.now()/1000+2+Math.random()*2, k:0, kick:0, target:null, thinkAt:0 }); }
+    else { const mg=makeMG(); mg.root.position.set(vx, deckY, vz); mg.root.scale.setScalar(1.25); g.add(mg.root);
+      CORE_DEF.mgs.push({ x:vx, z:vz, y:y0+deckY+1.5, ...mg, aim:Math.atan2(vx,vz), fireAt:0, burst:0, target:null, thinkAt:0, spin:0 }); }
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.11,8,6), gm.steel), ox=vx*1.06, oz=vz*1.06; pole.position.set(ox, H+7, oz); g.add(pole);
+    const fl=makeFlag(vnTex(), 3.2, 2.1, 1); fl.position.set(ox, H+9.8, oz); g.add(fl); }
   const wall=new THREE.Mesh(mergeGeometries(geos.map(q=>q.index?q.toNonIndexed():q), false), WM); geos.forEach(q=>q.dispose()); wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
-  const cg=capGeo(name, H-0.35, TH, 3); if(cg){ const im=new THREE.InstancedMesh(cg, capMat, caps.length), m=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), p=new THREE.Vector3(), sc=new THREE.Vector3();
+  const gw=new THREE.Mesh(mergeGeometries(gold.map(q=>q.index?q.toNonIndexed():q), false), OM.gold); gold.forEach(q=>q.dispose()); gw.castShadow=true; g.add(gw);
+  const lw=new THREE.Mesh(mergeGeometries(lime.map(q=>q.index?q.toNonIndexed():q), false), OM.lime); lime.forEach(q=>q.dispose()); g.add(lw);
+  const cg=capGeo(ST, H-0.35, TH, 3); if(cg){ const im=new THREE.InstancedMesh(cg, capMat, caps.length), m=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), p=new THREE.Vector3(), sc=new THREE.Vector3();
     caps.forEach(([x,z,ry,l],k)=>{ m.compose(p.set(x,0,z), q.setFromAxisAngle(up,ry), sc.set(l/3,1,1)); im.setMatrixAt(k,m); }); im.userData.shared=true; im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; g.add(im); }
+  // the honour guard: two men at the foot of each stair of the Core's podium, at attention, facing out
+  for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const r=10.2, x=Math.sin(a)*r+Math.cos(a)*sd*2.3, z=Math.cos(a)*r-Math.sin(a)*sd*2.3, s=makeSoldierMesh({ enemy:false });
+      s.position.set(x, heightAt(x,z), z); s.rotation.y=a; s.scale.setScalar(TANK_SCALE*1.05); g.add(s); poseSoldier(s, 'stand', 1); s.userData.upAdd=-0.05; CORE_DEF.guards.push({ s, a, ph:Math.random()*9 }); } }
 }
+// Z227 automatic MG tower: a six-barrel rotary gun on an armoured mount, ammo box, a little search radar spinning on a mast
+function makeMG(){ const m=gunMats(), root=new THREE.Group(), yaw=new THREE.Group(); root.add(yaw);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.4,0.6,16), m.dark); base.position.y=0.3; root.add(base);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.2,1.8), m.hull); body.position.y=1.2; body.castShadow=true; yaw.add(body);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(0.62,16,10,0,Math.PI*2,0,Math.PI/2), new THREE.MeshStandardMaterial({ color:0xe8e8e0, roughness:0.5 })); dome.position.set(0,1.8,-0.4); yaw.add(dome);
+  const box=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.6,0.9), m.dark); box.position.set(0.95,1.05,0); yaw.add(box);
+  const barrels=new THREE.Group(); barrels.position.set(0,1.25,1.0); yaw.add(barrels);
+  for(let k=0;k<6;k++){ const a=k/6*Math.PI*2, b=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,2.2,6), m.steel); b.rotation.x=Math.PI/2; b.position.set(Math.cos(a)*0.16, Math.sin(a)*0.16, 1.1); barrels.add(b); }
+  const ring=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.25,10), m.dark); ring.rotation.x=Math.PI/2; ring.position.z=2.1; barrels.add(ring);
+  const tip=new THREE.Object3D(); tip.position.z=2.3; barrels.add(tip);
+  const mast=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,1.4,6), m.steel); mast.position.set(-0.6,2.3,-0.6); yaw.add(mast);
+  const radar=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.35,0.06), m.steel); radar.position.set(-0.6,3.0,-0.6); yaw.add(radar);
+  const id=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.05,0.6), m.lime); id.position.set(0,1.82,0.4); yaw.add(id);
+  return { root, yaw, barrels, tip, radar }; }
 // the guard cannons: pick the enemy nearest the Core (inside range), swing round, fire alternate barrels
 const _w=new THREE.Vector3();
-export function updateCoreGuns(dt, now){ const D=CORE_DEF; if(!D.guns.length || !core || core.hp<=0) return;
+export function updateCoreGuns(dt, now){ const D=CORE_DEF; updateCoreMG(dt, now); if(!D.guns.length || !core || core.hp<=0) return;
   for(const G of D.guns){
     if(now>=G.thinkAt){ G.thinkAt=now+0.4; let best=null, bs=D.range;
       for(const e of enemies){ if(e.dead || e.abandoned || e.def.air) continue; const d=Math.hypot(e.pos.x-G.x, e.pos.z-G.z); if(d>D.range) continue; const s=d*0.6+Math.hypot(e.pos.x,e.pos.z)*0.4; if(s<bs){ bs=s; best=e; } }
@@ -71,3 +126,20 @@ export function updateCoreGuns(dt, now){ const D=CORE_DEF; if(!D.guns.length || 
     spawnPart(_w.x, _w.y, _w.z, Math.sin(G.aim)*2, 1, Math.cos(G.aim)*2, { color:0xd8d0c0, size:1.6, life:0.7, smoke:true, grav:0.4, drag:2, op:0.45 });
     sfx('enemyShoot', { x:G.x, z:G.z }); }
 }
+
+// Z227 the automatic MG towers: lock the nearest enemy (infantry and low helicopters too), spin up, hose it in long bursts; the radar never stops
+const _m=new THREE.Vector3();
+function updateCoreMG(dt, now){ const D=CORE_DEF, C=D.mg;
+  for(const q of D.guards){ q.s.rotation.y=q.a+Math.sin(now*0.3+q.ph)*0.12; poseSoldier(q.s, 'stand', dt); }   // the honour guard: still, eyes moving
+  if(!D.mgs.length || !core || core.hp<=0) return;
+  for(const G of D.mgs){ G.radar.rotation.y+=dt*3; G.spin=Math.max(0, G.spin-dt*1.5);
+    if(now>=G.thinkAt){ G.thinkAt=now+0.3; let best=null, bs=C.range; for(const e of enemies){ if(e.dead || e.abandoned || e.hp<=0) continue; const d=Math.hypot(e.pos.x-G.x, e.pos.z-G.z); if(d<bs){ bs=d; best=e; } } G.target=best; }
+    const T=G.target && enemies.includes(G.target) ? G.target : null, want=T ? Math.atan2(T.pos.x-G.x, T.pos.z-G.z) : G.aim+dt*0.25, da=Math.atan2(Math.sin(want-G.aim), Math.cos(want-G.aim));
+    G.aim+=Math.sign(da)*Math.min(Math.abs(da), C.turn*dt); G.yaw.rotation.y=G.aim; G.barrels.rotation.z+=dt*G.spin*40;
+    if(!T || S.mode!=='playing' || now<G.fireAt || Math.abs(da)>0.12) continue; G.spin=1;
+    if(G.burst<C.burst){ G.burst++; G.fireAt=now+C.cd; G.tip.getWorldPosition(_m); const air=!!T.def.air;
+      spawnBullet(_m.x, _m.z, G.aim+(Math.random()-0.5)*0.05, { owner:'p', dmg:C.dmg*(1+(S.stage-1)*0.1), speed:95, color:0xb8ff70, r:0.2, life:0.6, maxDist:C.range+4, noArc:true, y:_m.y, dropTo:air?6:1.0, inf:true, air });
+      spawnPart(_m.x, _m.y, _m.z, 0, 0, 0, { tex:'flash', color:0xfff0a0, size:0.9, life:0.04, grav:0, drag:6 });
+      if(G.burst%2===0) spawnPart(G.x+Math.cos(G.aim)*0.8, _m.y-0.3, G.z-Math.sin(G.aim)*0.8, Math.cos(G.aim)*2.5, 2, -Math.sin(G.aim)*2.5, { color:0xe0ac44, size:0.07, life:0.5, grav:-22, drag:0.5 });   // brass
+      if(G.burst%4===0) sfx('mg', { x:G.x, z:G.z }); }
+    else { G.burst=0; G.fireAt=now+C.rest; } } }

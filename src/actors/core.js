@@ -1,8 +1,7 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { CORE_DEF } from '../../config.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GLOW, NIGHT, _R, _canvasTex, _mergeColored, _xf, bigExplode, coverMat, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
+import { GLOW, NIGHT, _canvasTex, _mergeColored, bigExplode, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -34,7 +33,7 @@ export const CrystalShader = {
 export function buildCore(stage=1){
   if(core && core.mesh){ unwave(core.mesh); scene.remove(core.mesh); }   // Z104 stop animating the old core's flags
   const th = CORE_THEMES[Math.min(Math.max(stage,1)-1, CORE_THEMES.length-1)];
-  const g=new THREE.Group();
+  const G0=new THREE.Group(), g=new THREE.Group(), PH=1.8; g.position.y=PH; G0.add(g);   // Z227 the monument stands on a marble podium
   const stone=new THREE.MeshStandardMaterial({ map:propTex('concrete'), color:0x9c968a, roughness:0.88, metalness:0.02 });
   const brass=new THREE.MeshStandardMaterial({ color:0xb08a3e, roughness:0.32, metalness:0.95, envMapIntensity:1.2 });
   const iron =new THREE.MeshStandardMaterial({ color:0x2a2e30, roughness:0.42, metalness:0.9, map:propTex('drum'), envMapIntensity:1.0 });
@@ -67,19 +66,37 @@ export function buildCore(stage=1){
   const dome=new THREE.Mesh(new THREE.SphereGeometry(5.6,28,18,0,Math.PI*2,0,Math.PI*0.55), new THREE.MeshBasicMaterial({ map:shieldHexTex(), color:th.ring, transparent:true, opacity:0.06, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); dome.position.y=0.2; g.add(dome);
   // ground halo
   const halo=new THREE.Mesh(new THREE.CircleGeometry(8,40), new THREE.MeshBasicMaterial({ map:GLOW, color:th.glow, transparent:true, opacity:0.35, blending:THREE.AdditiveBlending, depthWrite:false })); halo.rotation.x=-Math.PI/2; halo.position.y=0.05; g.add(halo);
-  // sandbag ring guarding the plinth
-  { const P=[], tones=[0xc9b48a,0xb8a276,0xa8936a,0xd4c29a]; for(let L=0;L<2;L++){ const n=26; for(let k=0;k<n;k++){ const a=(k+(L?0.5:0))/n*Math.PI*2, bag=new RoundedBoxGeometry(1.0,0.34,0.5,2,0.14);
-      _xf(bag, Math.cos(a)*4.45, 0.18+L*0.32, Math.sin(a)*4.45, _R(-0.05,0.05), -a+Math.PI/2+_R(-0.06,0.06), 0, 1,_R(0.9,1.08),1); P.push({geo:bag,col:tones[(Math.random()*tones.length)|0]}); } }
-    const ring=new THREE.Mesh(_mergeColored(P), coverMat('sandbag')); ring.castShadow=true; ring.receiveShadow=true; g.add(ring); }
   // two flagpoles with flags that wave in the wind
   const flags=[];
   for(const sx of [-1,1]){ const px=sx*3.3, pz=-1.4;
     add(new THREE.CylinderGeometry(0.05,0.07,9,8), brass, px,4.5,pz); add(new THREE.SphereGeometry(0.12,10,8), brass, px,9.05,pz);
     const fm=makeFlag(vnTex(), 2.6, 1.7, sx); fm.position.set(px,8.1,pz); g.add(fm); flags.push(fm); }   // Liên Quân Thép banners over the command post
   const light=new THREE.PointLight(th.glow,1.6,40); light.position.y=6.25; g.add(light);
-  scene.add(g);
-  core = { mesh:g, crystal, cu, glow, beam, dome, halo, rings, sparks:[], shards:[], flags, light, theme:th, moteT:0,
+  g.remove(halo); G0.add(halo); podium(G0, g, PH, brass);
+  scene.add(G0);
+  core = { mesh:G0, crystal, cu, glow, beam, dome, halo, rings, sparks:[], shards:[], flags, light, theme:th, moteT:0,
     pos:new THREE.Vector3(0,0,0), hp:CORE_DEF.hp, maxHp:CORE_DEF.hp, r:4.2, flash:0 };
+}
+// Z227 THE CORE'S PODIUM — a three-tier octagonal marble podium with gilt edges and a stair on each side, a balustrade round the top,
+//   eight marble columns carrying a gilt ring and an open gilt dome over the crystal (a jewel in its cage), gold braziers at the stair heads
+function podium(G0, g, PH, gold){ const marble=new THREE.MeshStandardMaterial({ color:0xece6da, roughness:0.35, metalness:0.05, envMapIntensity:0.9 }), P=[], Q=[];
+  const add=(geo,mat,x,y,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; G0.add(m); return m; };
+  const tiers=[[9.0,0],[7.4,0.6],[5.8,1.2]]; for(const [r,y] of tiers){ add(new THREE.CylinderGeometry(r,r+0.15,0.6,8), marble, 0,y+0.3,0).rotation.y=Math.PI/8; add(new THREE.CylinderGeometry(r+0.04,r+0.04,0.08,8), gold, 0,y+0.62,0).rotation.y=Math.PI/8; }
+  for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(let st=0;st<6;st++){ const r=10.1-st*0.72, h=0.3*(st+1), b=new THREE.BoxGeometry(3.4, h, 0.74); b.rotateY(a); b.translate(Math.sin(a)*r, h/2, Math.cos(a)*r); P.push({ geo:b, col:0xe6e0d4 }); }
+    for(const sd of [-1,1]){ const cx=Math.sin(a)*9.6+Math.cos(a)*sd*1.95, cz=Math.cos(a)*9.6-Math.sin(a)*sd*1.95, c=new THREE.BoxGeometry(0.5,1.1,0.5); c.translate(cx,0.55,cz); Q.push({ geo:c, col:0xd8b040 }); } }   // gilt newel posts at the stair foot
+  for(let k=0;k<64;k++){ const a=k/64*Math.PI*2, near=Math.min(...[0,1,2,3].map(q=>Math.abs(Math.atan2(Math.sin(a-q*Math.PI/2),Math.cos(a-q*Math.PI/2))))); if(near<0.3) continue;   // balustrade round the top, open at the stairs
+    const b=new THREE.CylinderGeometry(0.09,0.12,0.7,6); b.translate(Math.sin(a)*5.5, PH+0.35, Math.cos(a)*5.5); P.push({ geo:b, col:0xf0ebe0 }); }
+  const steps=new THREE.Mesh(_mergeColored(P), marble.clone()); steps.material.vertexColors=true; steps.material.color.setHex(0xffffff); steps.castShadow=true; steps.receiveShadow=true; G0.add(steps);
+  const posts=new THREE.Mesh(_mergeColored(Q), gold.clone()); posts.material.vertexColors=true; posts.material.color.setHex(0xffffff); G0.add(posts);
+  const rail=new THREE.Mesh(new THREE.TorusGeometry(5.5,0.07,6,64), gold); rail.rotation.x=Math.PI/2; rail.position.y=PH+0.72; G0.add(rail);
+  for(let k=0;k<8;k++){ const a=k/8*Math.PI*2+Math.PI/8, x=Math.sin(a)*4.6, z=Math.cos(a)*4.6;   // the colonnade
+    add(new THREE.CylinderGeometry(0.3,0.36,6.0,14), marble, x,PH+3.0,z); add(new THREE.BoxGeometry(0.85,0.3,0.85), gold, x,PH+0.15,z); add(new THREE.BoxGeometry(0.9,0.34,0.9), gold, x,PH+6.15,z); }
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(4.6,0.26,8,64), gold); ring.rotation.x=Math.PI/2; ring.position.y=PH+6.4; ring.castShadow=true; G0.add(ring);
+  for(let k=0;k<8;k++){ const rib=new THREE.Mesh(new THREE.TorusGeometry(4.6,0.07,6,24,Math.PI/2), gold); rib.position.y=PH+6.4; rib.rotation.set(0, k/8*Math.PI*2+Math.PI/8, Math.PI/2); rib.scale.set(1,1,0.75); G0.add(rib); }   // open gilt dome
+  const fin=new THREE.Mesh(new THREE.ConeGeometry(0.22,1.1,8), gold); fin.position.y=PH+6.4+3.45+0.5; G0.add(fin);
+  const fire=new THREE.MeshStandardMaterial({ color:0x401000, emissive:0xffa040, emissiveIntensity:3 });
+  for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const x=Math.sin(a)*5.9+Math.cos(a)*sd*2.1, z=Math.cos(a)*5.9-Math.sin(a)*sd*2.1;   // gold braziers at the stair heads
+      add(new THREE.CylinderGeometry(0.42,0.2,0.4,10), gold, x,PH+0.95,z); add(new THREE.CylinderGeometry(0.08,0.12,0.8,6), gold, x,PH+0.4,z); const f=add(new THREE.ConeGeometry(0.3,0.7,8), fire, x,PH+1.45,z); f.castShadow=false; } }
 }
 export function rebuildCore(stage){ const keepMax = core ? core.maxHp : CORE_DEF.hp; buildCore(stage); core.maxHp=Math.max(keepMax, CORE_DEF.hp+((stage||1)-1)*CORE_DEF.perStage); core.hp=core.maxHp; updateHUD(); }
 // Z223 EMERGENCY SHIELD — the dome hardens and swallows every hit for a while (once per CORE_DEF.shield.cd s)

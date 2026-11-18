@@ -1166,5 +1166,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function stashSurface\(/.test(ub) && /function restoreSurface\(/.test(ub) && /function moveAllies\(/.test(ub) && /goUp\(true\)/.test(ub) && /if\(UNDER\.on\) return;/.test(wv), 'going down freezes the surface (enemies + blocks stashed), our squad and tanks come along, death below brings you back up');
   ok(/role==='inf'/.test(ub) && /U\.cut\.inf=Math\.min/.test(ub) && /function powerDown\(/.test(ub) && /if\(underCut\(t\)\)/.test(wv) && /UNDER\.targets\.some\(o=>o\.role==='inf' && o\.alive\)/.test(tn) && /if\(b\.ub\)\{ underHit\(b, dmg\)/.test(cov), 'wrecked barracks / lifts / arsenal cut the waves and the tunnel squads; the generator kills the lights and the base guns'); }
 
+// Z227 our citadel (taller, grander, five land styles with one shared look, MG towers, honour guard), the Core's marble podium + colonnade, a well-lit underground base
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cw=R('src/world/core-walls.js'), co=R('src/actors/core.js'), ub=R('src/world/underbase.js');
+  ok(/const OUR_STYLE = \{/.test(cw) && ['hue','dome','spire','steel','basalt'].every(k=>new RegExp('\\b'+k+':\\s*\\{').test(cw)) && /export function ourStyle\(/.test(cw) && /wallMat\(ST\)/.test(cw) && /function emblemTex\(/.test(cw), 'our citadel: five styles by land, one shared look (pale stone, gold, lime ID, our emblem)');
+  ok(/R:24, H:6\.2/.test(cw) && /function makeMG\(/.test(cw) && /function updateCoreMG\(/.test(cw) && /CORE_DEF\.mgs\.push/.test(cw) && /makeSoldierMesh\(\{ enemy:false \}\)/.test(cw), 'bigger, taller walls; automatic MG towers beside the cannon towers; an honour guard at the Core');
+  ok(/function podium\(/.test(co) && /core = \{ mesh:G0,/.test(co) && /TorusGeometry\(4\.6,0\.26/.test(co), 'the Core stands on a three-tier marble podium under a colonnade and a gilt dome');
+  ok(/U\.poolM=new THREE\.MeshBasicMaterial/.test(ub) && /floodlight poles/.test(ub) && /scene\.fog\.density=0\.0055/.test(ub), 'the underground base is clearly lit: floor pools, floodlight poles, lit wall strips'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
