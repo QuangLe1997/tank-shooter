@@ -70,7 +70,7 @@ export function makeRockGeo(detail, flat, topCol, baseCol){
     tmp.copy(bc).lerp(tc, Math.min(1, up*1.2)).multiplyScalar(ao*(0.9+Math.random()*0.15)); col[i*3]=tmp.r; col[i*3+1]=tmp.g; col[i*3+2]=tmp.b; }
   g.setAttribute('color', new THREE.BufferAttribute(col,3)); g.computeVertexNormals(); return g;
 }
-export const ROCK_TINT = { DESERT:[0xd6bf94,0xa8865a], RUINS:[0xa8a49c,0x7a766e], TUNDRA:[0xf4f8fc,0x6a7078], FOUNDRY:[0x5a504a,0x2e2a28], CITADEL:[0x9a8466,0x5e4c38], MEADOW:[0x7a9a4a,0x7e7c72], CITY:[0x9a9a98,0x6a6a6a], HILLS:[0x8e9082,0x686a5c], VILLAGE:[0x9a9a86,0x6e6e60], SAVANNA:[0xb08a5a,0x7a5a38], ARCTIC:[0xe8f2fa,0x8aa4b8], STEELMILL:[0x5a4a40,0x2e2622], VOLCANO:[0x34302e,0x141212], QUARRY:[0xf0ece2,0xb0a898] };
+export const ROCK_TINT = { DESERT:[0xd6bf94,0xa8865a], RUINS:[0xa8a49c,0x7a766e], TUNDRA:[0xf4f8fc,0x6a7078], FOUNDRY:[0x5a504a,0x2e2a28], CITADEL:[0x9a8466,0x5e4c38], MEADOW:[0x7a9a4a,0x7e7c72], CITY:[0x9a9a98,0x6a6a6a], HILLS:[0x8e9082,0x686a5c], VILLAGE:[0x9a9a86,0x6e6e60], SAVANNA:[0xb08a5a,0x7a5a38], ARCTIC:[0xe8f2fa,0x8aa4b8], STEELMILL:[0x5a4a40,0x2e2622], VOLCANO:[0x34302e,0x141212], QUARRY:[0xf0ece2,0xb0a898], CAVERN:[0x9a9282,0x4a443c] };
 export const _rockCache={};
 export function rockSet(bn){ if(_rockCache[bn]) return _rockCache[bn]; const t=ROCK_TINT[bn]||ROCK_TINT.DESERT; const set={ small:[], big:[] };
   for(let i=0;i<5;i++) set.small.push(makeRockGeo(2, _R(0.5,0.85), t[0], t[1]));
@@ -182,9 +182,10 @@ export const COVER_SET = {   // Z193 + jersey barriers · dragon's teeth (solid)
   STEELMILL:[['drums','tires','crates','drums'],   ['pipes','concrete','jersey']],
   VOLCANO:[['sandbag','drums','crates'],          ['concrete','hesco','teeth']],
   QUARRY: [['crates','sandbag','drums'],          ['concrete','jersey','pipes','teeth']],
+  CAVERN: [['crates','sandbag','logs','drums'],    ['concrete','hesco','logs']],
 };
 // Z193 lone big pieces per battlefield: shipping containers (some stacked two high) + burnt-out car wrecks
-export const LONE_SET = { DESERT:[3,4], RUINS:[3,5], TUNDRA:[2,2], FOUNDRY:[6,3], CITADEL:[2,3], MEADOW:[1,3], CITY:[6,6], HILLS:[1,2], VILLAGE:[2,4], SAVANNA:[2,3], ARCTIC:[2,2], STEELMILL:[7,3], VOLCANO:[2,2], QUARRY:[6,3] };
+export const LONE_SET = { DESERT:[3,4], RUINS:[3,5], TUNDRA:[2,2], FOUNDRY:[6,3], CITADEL:[2,3], MEADOW:[1,3], CITY:[6,6], HILLS:[1,2], VILLAGE:[2,4], SAVANNA:[2,3], ARCTIC:[2,2], STEELMILL:[7,3], VOLCANO:[2,2], QUARRY:[6,3], CAVERN:[3,1] };
 export const CONTAINER_PAINT = [0x9a2e22,0x2a4e74,0x3c6040,0xc0802a,0x76766e,0x7a4a2a,0xd0cbbd];
 export function makeCoverMesh(kind, destructible){
   const mat = destructible ? coverMat(kind).clone() : coverMat(kind); if(destructible) mat.userData.own=true;     // destructible pieces flash on hit → own material

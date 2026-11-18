@@ -20,6 +20,8 @@ export const BIOMES = [
   { name:'STEELMILL', bg:0x15110e, fog:0x231a14, ground:0x6a5a4c, grid:0x5a3a28, accent:0xff8a3a, sky:0x2e2018, fogD:0.0085, sun:0xffd2a8, deco:'slag',  wall:0x5a3e30 },
   { name:'VOLCANO',   bg:0x120806, fog:0x2a120a, ground:0x3a3230, grid:0x5a1e10, accent:0xff5a1a, sky:0x2a120c, fogD:0.0075, sun:0xffb080, deco:'rock',  wall:0x2e2624 },
   { name:'QUARRY',    bg:0x1a1a18, fog:0x2c2c28, ground:0xd8d2c4, grid:0xa8a090, accent:0xfff0c8, sky:0x3a3a34, fogD:0.0062, sun:0xfff8ec, deco:'rock',  wall:0x9a948a },
+  // Z225 underground: a cavern the size of a city district — torchlit, shafts of daylight falling through the roof onto a jungle, enemy tunnels in the walls
+  { name:'CAVERN',    bg:0x07060a, fog:0x0c0a0d, ground:0x5a5046, grid:0x2e2822, accent:0xffa040, sky:0x1a1820, fogD:0.0078, sun:0xa8c0e8, deco:'rock',  wall:0x2e2a26, cave:true },
 ];
 // per-battlefield atmosphere: sky dome (→ environment reflections), sun angle/colour/strength, haze, grade
 export const ATMOS = {
@@ -36,6 +38,7 @@ export const ATMOS = {
   ARCTIC: { top:0x7aa8d8, hor:0xdce8f2, fog:0xa9bccd, fogD:0.0048, sun:0xf8fbff, sunI:2.6, el:0.32, az:1.0,  hemiG:0x7f93a8, lift:[0.0,0.01,0.03],   gain:[0.96,1.0,1.07], sat:0.9, con:1.18, exp:0.74, sh:[-0.03,0.0,0.06], hi:[0.035,0.016,-0.005], vib:0.25 },
   STEELMILL:{ top:0x6a6e74, hor:0xb09a86, fog:0x8a7c70, fogD:0.0056, sun:0xffe0c0, sunI:2.5, el:0.62, az:0.45, hemiG:0x4a3e36, lift:[0.006,0.004,0.002], gain:[1.04,0.99,0.94], sat:0.86, con:1.15, exp:1.0, sh:[-0.03,0.008,0.03], hi:[0.05,0.016,-0.03], vib:0.25 },   // Z187 rust haze over dead furnaces
   VOLCANO:  { top:0x54424c, hor:0xc0745a, fog:0x6a3e34, fogD:0.0055, sun:0xffc8a0, sunI:2.6, el:0.55, az:0.8,  hemiG:0x3a2420, lift:[0.012,0.004,0.0], gain:[1.08,0.96,0.88], sat:0.98, con:1.17, exp:1.0, sh:[-0.01,-0.012,0.035], hi:[0.05,0.012,-0.035], vib:0.2 },          // ash-red sky, lava glow from below
+  CAVERN:   { top:0x0a0a10, hor:0x141218, fog:0x14131a, fogD:0.0052, sun:0xa8c4f0, sunI:0.32, el:1.38, az:0.5, hemiG:0x1a140c, lift:[0.012,0.01,0.018], gain:[1.05,1.0,0.92], sat:0.98, con:1.12, exp:1.15, sh:[-0.02,0.004,0.04], hi:[0.07,0.03,-0.03], vib:0.32, cave:1 },   // Z225 black rock, warm torchlight, cool shafts
   QUARRY:   { top:0x6e9ccc, hor:0xd8cfbe, fog:0xc4b8a4, fogD:0.0042, sun:0xfff2dc, sunI:2.7, el:0.85, az:0.6,  hemiG:0x9a907e, lift:[0.008,0.004,0.0], gain:[1.03,1.0,0.94], sat:0.92, con:1.14, exp:0.92, sh:[-0.025,0.0,0.04], hi:[0.04,0.016,-0.02], vib:0.25 },           // white stone glare under a clear sky
 };
 // ---- TIME OF DAY: each stage fights at a different hour — morning · harsh noon · golden sunset · moonlit night under electric floodlights ----
@@ -55,13 +58,15 @@ export const GROUND_STYLE = {   // c0 dark · c1 mid · c2 light (sRGB), roughne
   ARCTIC: { c:[[176,196,214],[224,234,242],[250,252,255]],  rough:0.6,  nrm:1.6, tile:26 },
   STEELMILL:{ c:[[58,46,38],[104,84,68],[150,124,100]],   rough:0.85, nrm:3.0, tile:18 },
   VOLCANO:{ c:[[24,22,22],[58,52,50],[96,86,80]],         rough:0.9,  nrm:3.4, tile:20 },
+  CAVERN: { c:[[46,40,36],[86,76,66],[128,116,100]],      rough:0.9,  nrm:3.4, tile:18 },   // Z225 wet limestone mud, flowstone
   QUARRY: { c:[[150,140,124],[190,180,162],[222,214,198]], rough:0.85, nrm:2.8, tile:22 },   // warm grey-cream marble dust (not snow)
 };
 export const TERRAIN_STYLE = { DESERT:{mounds:13, mh:1.6, craters:6, cd:1.0, noise:0.22}, RUINS:{mounds:6, mh:0.9, craters:12, cd:1.2, noise:0.12}, TUNDRA:{mounds:11, mh:1.3, craters:5, cd:0.8, noise:0.18},
   FOUNDRY:{mounds:7, mh:1.1, craters:9, cd:1.1, noise:0.14}, CITADEL:{mounds:8, mh:1.2, craters:13, cd:1.3, noise:0.12}, MEADOW:{mounds:12, mh:1.4, craters:7, cd:0.9, noise:0.16},
   CITY:{mounds:2, mh:0.4, craters:8, cd:0.8, noise:0.06}, HILLS:{mounds:14, mh:2.4, craters:2, cd:0.8, noise:0.2}, VILLAGE:{mounds:6, mh:0.8, craters:3, cd:0.7, noise:0.1},
   SAVANNA:{mounds:7, mh:0.8, craters:3, cd:0.8, noise:0.12}, ARCTIC:{mounds:12, mh:1.4, craters:3, cd:0.7, noise:0.16},
-  STEELMILL:{mounds:5, mh:0.9, craters:10, cd:1.1, noise:0.12}, VOLCANO:{mounds:14, mh:2.2, craters:9, cd:1.3, noise:0.24}, QUARRY:{mounds:9, mh:1.8, craters:4, cd:0.9, noise:0.14} };
+  STEELMILL:{mounds:5, mh:0.9, craters:10, cd:1.1, noise:0.12}, VOLCANO:{mounds:14, mh:2.2, craters:9, cd:1.3, noise:0.24}, QUARRY:{mounds:9, mh:1.8, craters:4, cd:0.9, noise:0.14},
+  CAVERN:{mounds:10, mh:1.5, craters:2, cd:0.7, noise:0.22} };
 export const COVER_HP = { sandbag:85, drums:22, tires:95, crates:55,
   logs:110, concrete:260, pipes:200, hesco:220, jersey:170, teeth:240, container:320, wreck:140 };   // Z193 every piece of cover can be shot to pieces (concrete takes a lot)
 // Z193 field cover is built at the same scale as the tanks (TANK_SCALE 1.2 + a little): a 3 m sandbag cell becomes ~3.9 m, a T-wall ~2.9 m tall
@@ -72,4 +77,5 @@ export const BRICK_PAL={ DESERT:[0xb7825a,0xc79a6c,0xa86e4a,0xd1ab7e], RUINS:[0x
   FOUNDRY:[0x7a3e2c,0x8a4a34,0x5e3024,0x96583e], CITADEL:[0xa09684,0xb0a692,0x8c8272,0xbcb2a0], MEADOW:[0xa4583c,0xb46848,0x924a32,0xc07a58],
   CITY:[0x8f8a84,0xa19a92,0x7a746e,0xb0a89c], HILLS:[0x8a7a62,0x9a8a70,0x766a56,0xa89a80], VILLAGE:[0xb06a48,0xc27a54,0x9a5a3c,0xd08a62],
   SAVANNA:[0xa86a42,0xb87a4e,0x965a36,0xc48a5a], ARCTIC:[0x9aa8b4,0xaab6c2,0x8a98a6,0xbac4ce],
-  STEELMILL:[0x7a3a26,0x8a4630,0x5e2c1e,0x9a5640], VOLCANO:[0x3a3432,0x4a4240,0x2c2826,0x5a504c], QUARRY:[0xd8d2c4,0xe6e0d4,0xc4bcae,0xf0ebe0] };
+  STEELMILL:[0x7a3a26,0x8a4630,0x5e2c1e,0x9a5640], VOLCANO:[0x3a3432,0x4a4240,0x2c2826,0x5a504c], QUARRY:[0xd8d2c4,0xe6e0d4,0xc4bcae,0xf0ebe0],
+  CAVERN:[0x7a7264,0x8a8272,0x665e52,0x968e7e] };

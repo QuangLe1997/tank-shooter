@@ -4,7 +4,7 @@ export const TOD_LABEL = { day:'BUỔI SÁNG', noon:'GIỮA TRƯA', sunset:'HOÀ
 // player-chosen DIFFICULTY (RECRUIT/SOLDIER/VETERAN) — scales enemy HP/damage + reward, on top of loop & contract
 export const DIFF_META = { recruit:{label:'TÂN BINH',tag:'DỄ'}, soldier:{label:'CHIẾN SĨ',tag:'THƯỜNG'}, veteran:{label:'LÃO LUYỆN',tag:'KHÓ'} };
 export const STAGE_TAGS=['CHUẨN BỊ ĐÓN ĐÁNH','VÒNG VÂY SIẾT CHẶT','KHÔNG LÙI BƯỚC','LAO VÀO BÃO LỬA','TRẬN CUỐI CÙNG'];
-export const BIOME_VI={ DESERT:'SA MẠC', RUINS:'PHẾ TÍCH', TUNDRA:'BĂNG GIÁ', FOUNDRY:'LÒ ĐÚC', CITADEL:'THÀNH LUỸ', MEADOW:'THẢO NGUYÊN', CITY:'THÀNH PHỐ', HILLS:'ĐỒI NÚI', VILLAGE:'LÀNG QUÊ SÔNG SUỐI', SAVANNA:'XAVAN CHÂU PHI', ARCTIC:'BẮC CỰC' , STEELMILL:'NHÀ MÁY THÉP BỎ HOANG', VOLCANO:'CHẢO NÚI LỬA', QUARRY:'MỎ ĐÁ THẠCH CAO' };
+export const BIOME_VI={ DESERT:'SA MẠC', RUINS:'PHẾ TÍCH', TUNDRA:'BĂNG GIÁ', FOUNDRY:'LÒ ĐÚC', CITADEL:'THÀNH LUỸ', MEADOW:'THẢO NGUYÊN', CITY:'THÀNH PHỐ', HILLS:'ĐỒI NÚI', VILLAGE:'LÀNG QUÊ SÔNG SUỐI', SAVANNA:'XAVAN CHÂU PHI', ARCTIC:'BẮC CỰC' , STEELMILL:'NHÀ MÁY THÉP BỎ HOANG', VOLCANO:'CHẢO NÚI LỬA', QUARRY:'MỎ ĐÁ THẠCH CAO', CAVERN:'HANG NGẦM' };
 export const CAT_VI={ WEAPONS:'VŨ KHÍ', FIREPOWER:'HOẢ LỰC', AMMO:'ĐẠN DƯỢC', CHASSIS:'THÂN XE', SUPPORT:'HỖ TRỢ' };
 // Z170 every battlefield is a real, famous place in the land its terrain belongs to: where it is, and what its strongholds are called
 export const BIOME_PLACE={
@@ -22,6 +22,7 @@ export const BIOME_PLACE={
   STEELMILL:{ at:'BETHLEHEM · PENNSYLVANIA, MỸ', forts:['BETHLEHEM','HOMESTEAD','YOUNGSTOWN','GARY','SPARROWS POINT','LACKAWANNA','JOHNSTOWN','MCKEESPORT'] },
   VOLCANO:{ at:'KĪLAUEA · HAWAII, MỸ', forts:['HALEMAʻUMAʻU','MAUNA LOA','KĪLAUEA IKI','PUʻU ʻŌʻŌ','HILO','KAʻŪ','PUNA','KALAPANA'] },
   QUARRY:{ at:'CARRARA · TUSCANY, Ý', forts:['COLONNATA','FANTISCRITTI','TORANO','MISEGLIA','BEDIZZANO','MASSA','LUNI','CAMPO CECINA'] },
+  CAVERN:{ at:'SƠN ĐOÒNG · QUẢNG BÌNH, VIỆT NAM', forts:['HANG ÉN','PHONG NHA','THIÊN ĐƯỜNG','TÚ LÀN','HANG TỐI','HANG VÒM','KẺ BÀNG','NƯỚC NỨT'] },
 };
 // Z181 one line that sells each battlefield (battle setup hero card)
 export const BIOME_BLURB={
@@ -39,6 +40,7 @@ export const BIOME_BLURB={
   STEELMILL:'Nhà máy thép bỏ hoang nửa thế kỷ — lò cao gỉ sét, băng tải sập, đường ray mọc cỏ dại.',
   VOLCANO:'Lòng chảo núi lửa Kīlauea — đá bazan đen, dòng dung nham đỏ rực, tro bụi phủ trời. Đừng lái vào lửa.',
   QUARRY:'Mỏ đá trắng Carrara khai thác từ thời La Mã — vách bậc thang khổng lồ, khối đá cắt vuông, bụi đá mù mịt.',
+  CAVERN:'Lòng hang khổng lồ dưới núi đá vôi — giếng trời rọi nắng xuống rừng nguyên sinh, đuốc cháy dọc vách, địa đạo địch chằng chịt. Bám ánh đuốc, coi chừng trần sập.',
 };
 export function biomeBlurb(name){ return BIOME_BLURB[name]||''; }
 export function biomePlace(name){ return BIOME_PLACE[name] ? BIOME_PLACE[name].at : ''; }

@@ -7,7 +7,7 @@
 //   · and sometimes the luck is ours: OUR ARTILLERY drops a fire mission on the thickest knot of enemies
 import * as THREE from 'three';
 import { REAL } from '../../config.js';
-import { FT, S, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad } from '../hub.js';
+import { FT, S, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad } from '../hub.js';
 
 const rnd = a => a[0]+Math.random()*(a[1]-a[0]);
 export const SURP = { next:0, shells:[], last:null, count:0 };
@@ -21,7 +21,9 @@ function mortar(now){ const p=S.player, C=REAL.surprise.mortar, a=Math.random()*
   for(let i=0;i<C.shells;i++){ const o=(i-(C.shells-1)/2)*C.walk, [x,z]=clampFieldXZ(p.pos.x+ux*o+(Math.random()-0.5)*2.5, p.pos.z+uz*o+(Math.random()-0.5)*2.5, 3);
     SURP.shells.push({ x, z, t:C.warn+i*C.gap, warn:C.warn, R:C.R, dmg:C.dmg, ours:false, pulse:0, wh:false }); }
   tell('⚠ PHÁO CỐI ĐỊCH BẮN CHẶN — DI CHUYỂN!', '#ff7a4a', 'SCH: Cối địch đang bắn dồn về phía anh — đừng đứng yên!'); return true; }
-function ambush(now){ const p=S.player, C=REAL.surprise.ambush, back=Math.atan2(-(p.vel.x||Math.sin(p.aimSmoothed||0)), -(p.vel.z||Math.cos(p.aimSmoothed||0))), n=Math.round(rnd(C.squads));   // they rise behind you
+function ambush(now){ const p=S.player;
+  if(tunnelSquad(Math.atan2(-Math.sin(p.facing||0), -Math.cos(p.facing||0)))){ tell('⚠ PHỤC KÍCH TỪ ĐỊA ĐẠO SAU LƯNG!', '#ffb070', 'SCH: Địch chui lên từ hầm ngầm phía sau — quay lại!'); return true; }   // Z225 if they have tunnels, they come up out of one
+  const C=REAL.surprise.ambush, back=Math.atan2(-(p.vel.x||Math.sin(p.aimSmoothed||0)), -(p.vel.z||Math.cos(p.aimSmoothed||0))), n=Math.round(rnd(C.squads));   // they rise behind you
   for(let k=0;k<n;k++){ const a=back+(k-(n-1)/2)*0.9+(Math.random()-0.5)*0.5, r=rnd(C.r), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*r, p.pos.z+Math.cos(a)*r, 4);
     setTimeout(()=>{ if(S.mode==='playing'){ spawnSquad({ x, z }); for(let i=0;i<6;i++) spawnPart(x+(Math.random()-0.5)*5, heightAt(x,z)+0.4, z+(Math.random()-0.5)*5, 0, 1.2, 0, { color:0x8a7a5a, size:1.6, life:1.2, smoke:true, grav:0.1, drag:2, grow:1.6, op:0.45 }); } }, 300+k*600); }
   tell('⚠ PHỤC KÍCH SAU LƯNG!', '#ffb070', 'SCH: Bộ binh địch trồi lên phía sau — quay lại!'); return true; }

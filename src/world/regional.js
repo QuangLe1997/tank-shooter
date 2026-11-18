@@ -20,6 +20,7 @@ export const REGION = {
   STEELMILL:{ pat:'brick',   base:'#8a4430', seam:'#3a2418', rough:0.85, metal:0.05, cap:'spike',  roof:'flat',  trim:0xa85a2a },   // Z187 soot-stained industrial red brick, iron spikes
   VOLCANO:  { pat:'ashlar',  base:'#3a3432', seam:'#1e1a18', rough:0.95, metal:0.02, cap:'merlon', roof:'flat',  trim:0xff5a1a },   // Z187 black basalt blocks, lava-lit trim
   QUARRY:   { pat:'ashlar',  base:'#e4ded2', seam:'#a8a090', rough:0.8,  metal:0.02, cap:'merlon', roof:'cornice',trim:0x8a8478 },  // Z187 white Carrara marble
+  CAVERN:   { pat:'ashlar',  base:'#7a7264', seam:'#3a342c', rough:0.95, metal:0.02, cap:'merlon', roof:'flat',  trim:0xffa040 },   // Z225 limestone blocks, torch-orange trim
 };
 export const regionOf = (name)=>(typeof name==='object' && name) ? name : (REGION[name||BIOME.name]||REGION.CITADEL);
 // Z140 every fort of a battlefield is built differently: its own wall material, wall-top, tower roofs and corner towers (square piers or round drums)
@@ -33,7 +34,8 @@ export const REGION_ALT = {
   VILLAGE:{ pats:['brick','laterite','bamboo'], caps:['stake','tile','tile'], roofs:['hue','tile','tile'] },
   SAVANNA:{ pats:['adobe','adobe'], caps:['stake','toron'], roofs:['pinnacle','thatch'] }, ARCTIC:{ pats:['ice','concrete'], caps:['snow','wire'], roofs:['snow','flat'] },
   STEELMILL:{ pats:['brick','plate','brick'], caps:['spike','wire','spike'], roofs:['flat','dome','flat'] }, VOLCANO:{ pats:['ashlar','concrete'], caps:['merlon','spike'], roofs:['flat','cone'] },
-  QUARRY:{ pats:['ashlar','ashlar','concrete'], caps:['merlon','merlon','wire'], roofs:['cornice','dome','flat'] } };
+  QUARRY:{ pats:['ashlar','ashlar','concrete'], caps:['merlon','merlon','wire'], roofs:['cornice','dome','flat'] },
+  CAVERN:{ pats:['ashlar','log','concrete'], caps:['merlon','stake','wire'], roofs:['flat','flat','dome'] } };
 export function fortStyle(name, i){ const n=name||BIOME.name, st=regionOf(n), A=REGION_ALT[n]||{ pats:[st.pat], caps:[st.cap], roofs:[st.roof] };
   const pat=A.pats[i%A.pats.length], c=PAT_COL[pat]||[st.base,st.seam];
   const base = (pat===st.pat) ? st.base : c[0];

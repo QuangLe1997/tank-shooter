@@ -59,7 +59,7 @@ function mergeGeos(list){ let n=0; for(const g of list) n+=g.toNonIndexed().attr
   for(const g0 of list){ const g=g0.toNonIndexed(), p=g.attributes.position.array; out.set(p,o); o+=p.length; g.dispose(); g0.dispose(); }
   const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(out,3)); return g; }
 export function clearHorizon(){ if(HZN.g){ scene.remove(HZN.g); HZN.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material && !o.material.map) o.material.dispose(); }); } HZN.g=null; HZN.cols.length=0; HZN.flashes.length=0; }
-export function buildHorizon(b){ clearHorizon(); texes(); const L=LOOK[b.name]||LOOK.DESERT, fogC=scene.fog.color.clone(), g=new THREE.Group(); HZN.g=g; scene.add(g);
+export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); const L=LOOK[b.name]||LOOK.DESERT, fogC=scene.fog.color.clone(), g=new THREE.Group(); HZN.g=g; scene.add(g);
   const R0=ARENA*1.55, kind=L[2], H=L[3]*(MOBILE?0.85:1);
   const rk = kind==='city'||kind==='stacks' ? 'hill' : kind;   // behind a skyline there are still hills
   g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest

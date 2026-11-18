@@ -96,6 +96,11 @@ export const SQUAD_AI = { think:0.35, boundT:[3.2,4.6], boundStep:7, flankStep:0
 //   cover or bunched up (everyone near a live grenade runs) · smoke screens to fall back or cross open ground under fire (fire through smoke goes wild)
 export const LOCKON = { cone:1.2, minP:9, allyR:3.2 };   // Z221 the lock-on seeker: looks ±cone rad round its flight line, never picks a mark within minP m of our tank or allyR m of our men
 // Z223 REAL WAR — blast concussion, side-coloured tracers, brass, varied deaths, men of different build, surprises
+// Z225 UNDERGROUND — the CAVERN battlefield (HANG NGẦM, after Sơn Đoòng) and the enemy TUNNEL NETWORK (địa đạo) dug under every battlefield
+export const CAVE_DEF = { wallH:30, wallW:12, shafts:[4,5], shaftR:[9,15], lights:{ desk:8, mob:3, range:24, I:34, big:70 }, shaftLight:{ desk:4, mob:2, I:5.5 },
+  torchStep:15, braziers:6, pillars:[2,3], crystals:[22,12], mouths:3, caveIn:{ every:[40,65], warn:1.7, R:4.6, dmg:16, rocks:[3,5] } };
+export const TUNNEL = { from:2, n:[3,4], caveN:3, hp:{ hatch:70, bunker:280, mouth:520 }, seeR:20, under:[4,8], hurtK:0.6, suppK:0.5, grabR:7, heal:0.25,
+  ambush:{ first:[35,55], every:[30,48], r:[24,70], cap:90 }, score:{ seal:250, all:800, buried:60 } };
 export const REAL = {
   concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
   tracer:{ every:3, enemy:0x6dff4a, ally:0xff5a2a },             // every Nth round a tracer: theirs burn green, ours red-orange

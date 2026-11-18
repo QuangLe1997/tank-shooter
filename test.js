@@ -1151,5 +1151,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/WEDGE/.test(ft) && /row\*3\.2/.test(ft), 'our squad closes on the enemy in a wedge');
   ok(/export const WXFX/.test(C) && /WXFX\.grade\[WX\.id\]/.test(wx) && /function skyBolt\(/.test(wx) && /function airLife\(/.test(wx) && /WX\.gustE/.test(wx), 'each weather its own grade (never stacked), visible lightning + thunder, gusts, splashes, drifting sand/fog/snow'); }
 
+// Z225 underground: the CAVERN battlefield (walls, torches, shafts of daylight, pillars, roof falls) + the enemy tunnel network on every battlefield
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cv=R('src/world/cavern.js'), tn=R('src/world/tunnels.js'), hf=R('src/world/heightfield.js'), at=R('src/world/atmosphere.js'), bi=R('src/world/biome.js'), sp=R('src/combat/spells.js'), cov=R('src/world/cover.js'), C=R('config.js'), W=await import('./src/data/world.js');
+  const cave=W.BIOMES.find(b=>b.name==='CAVERN'); ok(cave && cave.cave===true && W.ATMOS.CAVERN && W.ATMOS.CAVERN.cave, 'a CAVERN battlefield exists, flagged as underground');
+  ok(/export const CAVE_DEF/.test(C) && /export const TUNNEL/.test(C) && /caveNotch\(x, z, out\)/.test(hf) && /CAVE_DEF\.wallH/.test(hf) && /planCavern\(\); genTerrain/.test(bi), 'the cave walls rise round the field, cut open at the tunnel mouths, planned before the terrain');
+  ok(/if\(A\.cave\)\{ o\.night=1; return o; \}/.test(at) && /SKY\.visible=!A\.cave/.test(at) && /BIOME\.cave \? 'night'/.test(bi) && /BIOME\.cave \? 'clear'/.test(bi), 'underground: no sky, no weather, always dark');
+  ok(/function shaftMat\(/.test(cv) && /PointLight\(/.test(cv) && /export function caveIn\(/.test(cv) && /kind:'pillar'/.test(cv) && /P\.mat\.opacity=P\.op/.test(cv), 'torches with riding lights, daylight shafts, pillars that thin out for the camera, roof falls');
+  ok(/function goUnder\(/.test(tn) && /function comeUp\(/.test(tn) && /export function tunnelSquad\(/.test(tn) && /tunnelBlast\(x, z, r, dmg\)/.test(sp) && /b\.kind==='tunnel'\)\{ hitTunnel/.test(cov) && /damageEnemy\(e, e\.hp\+999\)/.test(tn), 'enemies drop into the tunnels and come up elsewhere; blasts cave the ways in; sealing all buries those below'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

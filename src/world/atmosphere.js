@@ -5,6 +5,7 @@ import { ATMOS, CLOUD, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambien
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
   const o=Object.assign({}, A), ek=(A.exp||1.08)/1.08;   // Z190 each battlefield's own exposure carries into every hour
+  if(A.cave){ o.night=1; return o; }   // Z225 underground there is no hour: always dark, lit by torches and the shafts
   if(tod==='noon'){ o.el=1.32; o.sunI=A.sunI*1.12; o.sun=0xfff8ee; o.con=A.con+0.04; o.exp=1.0*ek; o.night=0; }
   else if(tod==='sunset'){ o.el=0.28; o.sunI=A.sunI*0.85; o.sun=0xffc28a; o.top=0x4a669c; o.hor=0xeab68a; o.fog=0xb4a08e; o.fogD=A.fogD*1.05; o.hemiG=0x5a4a3e;   // Z97 golden hour — warm light, blue sky, not a red wash
     o.lift=[0.008,0.004,0.012]; o.gain=[1.04,1.0,0.94]; o.sat=A.sat; o.con=Math.max(1.1, A.con); o.exp=1.1*ek; o.night=0;
@@ -80,7 +81,10 @@ export function applyAtmosphere(b){
   if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x7a8ab4); ambient.intensity=0.36; }   // moonlight fill — shadows stay blue-grey, never black
   u.vig.value = A.night ? 0.22 : 0.28;                                                                 // softer vignette (less eye strain)
   setSky(A);                                                                                           // Z97 visible sky dome matches the light
-  applyMood(A, pickMood(b.name, S.tod||'day'));                                                       // Z145 the sky's mood for this battle
+  SKY.visible=!A.cave;
+  if(A.cave){ SKYMOOD.id='clear'; SKYMOOD.m=MOODS.clear; SKYMOOD.boltT=0; CLOUD.u.uCloud.value.w=0;   // Z225 the cavern: no sky, no clouds — black rock, warm torch fill, a cool glow off the shafts
+    hemi.color.setHex(0x4a5878); hemi.groundColor.setHex(0x3a2614); hemi.intensity=0.95; ambient.color.setHex(0x8a6a4a); ambient.intensity=0.62; scene.environmentIntensity=0.3; u.vig.value=0.3; renderer.toneMappingExposure=1.4; }
+  else applyMood(A, pickMood(b.name, S.tod||'day'));                                                  // Z145 the sky's mood for this battle
   setNightLights(!!A.night);
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }
