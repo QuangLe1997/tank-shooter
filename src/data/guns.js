@@ -9,15 +9,18 @@
 //   BẬC 3 (4–5.5k)   ≈ 76–108  the same roles, harder: rotary (minigun) · never-miss (missile) · chain (tesla) · fuel-air (thermo) · heavy indirect (arty)
 //   VIP              ≈ 100+    railgun (pierces a column) · siege rocket (wipes an area)
 //   Lower-DPS guns in a tier pay it back with area, control or reach — never with raw numbers above the next tier.
+//   Z230 the ladder is now measured by combat/gunstats.js at each gun's FIGHTING distance (pellets that land, falloff, mag + reload,
+//   armour) — the shotgun's 8 pellets only half-land at 10 m, so its pellet damage went 10 → 14 to sit back on its tier;
+//   the flak's 5 airburst pellets likewise (8 → 12) — it had fallen below the tier-1 guns on ground targets.
 //   How many tubes a gun has (GUN_BARRELS) only changes which muzzle fires — two barrels never means double damage.
 export const GUNS = {   // ARMS DOCTRINE (Z75): type = damage class (config DMG_TYPE) · rng = reach × combat range · fall = damage left at full reach
   // ---- BẬC 1 ----
   rifle:   { name:'PHÁO TỰ ĐỘNG 30', svg:'rifle', tier:1, type:'KIN', dmg:14, fireCd:0.2, mag:24, reload:1.9, bspeed:68, frags:1, spread:0.03, color:0xaef0a0, r:0.42, life:2.0, recoil:0.9, knock:1.0, fx:'spark', flash:'auto', rng:1.0, fall:0.7 },
   smg:     { name:'ĐẠI LIÊN ĐÔI',   svg:'smg', tier:1, type:'KIN', dmg:7,  fireCd:0.075,mag:45, reload:2.6, bspeed:74, frags:1, spread:0.08, color:0xfff0a0, r:0.32, life:1.6, recoil:0.3, knock:0.6, fx:'spark', flash:'small', rng:0.8, fall:0.5 },   // twin HMG: fast but short and light — no longer out-damages tier 2
   // ---- BẬC 2 ----
-  shotgun: { name:'PHÁO CHÙM 152',    svg:'shotgun', tier:2, type:'FRAG', dmg:10, fireCd:0.65, mag:6,  reload:2.4, bspeed:58, frags:8, spread:0.55, color:0xff8a38, r:0.36, life:0.7, recoil:2.4, knock:1.9, fx:'frag', flash:'heavy', rng:0.6, fall:0.25 },
+  shotgun: { name:'PHÁO CHÙM 152',    svg:'shotgun', tier:2, type:'FRAG', dmg:14, fireCd:0.65, mag:6,  reload:2.4, bspeed:58, frags:8, spread:0.55, color:0xff8a38, r:0.36, life:0.7, recoil:2.4, knock:1.9, fx:'frag', flash:'heavy', rng:0.6, fall:0.25 },
   cryo:    { name:'SÚNG BĂNG',  svg:'snow', tier:2, type:'CRYO', dmg:18, fireCd:0.28, mag:20, reload:2.4, bspeed:60, frags:1, spread:0.05, color:0x9fe8ff, r:0.42, life:1.8, freeze:2.0, recoil:0.9, knock:0.8, fx:'ice', flash:'frost', rng:0.85, fall:0.8 },          // control: freezes (half on heavy armour)
-  flak:    { name:'PHÁO PHÒNG KHÔNG',   svg:'flak', tier:2, type:'HE', dmg:8, fireCd:0.6, mag:10, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0x8fc8ff, r:0.46,  life:0.9, aoe:2.2, splash:0.35, recoil:1.4, knock:1.2, fx:'frag', flash:'auto', rng:0.9, fall:0.75 },   // airbursts: small blasts, ×aaBonus on aircraft
+  flak:    { name:'PHÁO PHÒNG KHÔNG',   svg:'flak', tier:2, type:'HE', dmg:12, fireCd:0.6, mag:10, reload:2.8, bspeed:54, frags:5, spread:0.34, color:0x8fc8ff, r:0.46,  life:0.9, aoe:2.2, splash:0.35, recoil:1.4, knock:1.2, fx:'frag', flash:'auto', rng:0.9, fall:0.75 },   // airbursts: small blasts, ×aaBonus on aircraft
   cannon:  { name:'PHÁO 120',  svg:'cannon', tier:2, type:'AP', dmg:85, fireCd:1.0,  mag:5,  reload:3.0, bspeed:76, frags:1, spread:0.01, color:0xffb83a, r:0.55, life:2.0, aoe:2.4, splash:0.25, pierce:1, recoil:3.6, knock:2.6, fx:'blast', flash:'heavy', rng:1.2, fall:1 },   // tank-killer: AP ×1.45 on heavy armour
   flamer:  { name:'SÚNG PHUN LỬA', svg:'flame', tier:2, type:'FIRE', dmg:1, fireCd:0.05, mag:140, reload:3.2, bspeed:0, frags:1, spread:0, color:0xff6a1c, r:0, life:0, special:'flame', range:20, recoil:0.12, knock:0, fx:'spark', rng:1, fall:1 },   // burn DoT (BALANCE.flame) — now scales with your damage upgrades
   agl:     { name:'PHÓNG LỰU 40', svg:'agl', tier:2, type:'HE', dmg:20, fireCd:0.24, mag:18, reload:2.8, bspeed:0, frags:1, spread:0, color:0xc8e070, r:0.4, life:0, special:'mortar', small:true, aoeR:2.9, bossDmg:14, recoil:0.5, knock:0, fx:'blast', rng:1, fall:1 },   // Z81 40 mm automatic grenade launcher — lobs a stream of small HE grenades onto the cursor

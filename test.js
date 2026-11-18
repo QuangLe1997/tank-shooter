@@ -645,7 +645,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z149 gun ladder: a higher BẬC always out-fights a lower one; extra barrels never mean extra damage
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const GM=await import('./src/data/guns.js'), G=GM.GUNS;
-  const sus=id=>{ const g=G[id]; return GM.gunShotDmg(g)*g.mag/(g.mag*g.fireCd+g.reload); };
+  const CF=await import('./config.js'), PL=await import('./src/data/player.js'), GS=CF.GUNSTAT;   // Z230 measured like combat/gunstats.js: at the fighting distance (pellets that land, falloff)
+  const sus=id=>{ const g=G[id], reach=PL.PLAYER.rangeBase*(g.rng||1), d=Math.min(reach*GS.engage.frac, GS.engage.max), fr=g.frags||1;
+    const acc = fr>1 ? Math.max(GS.minHit, Math.min(1, GS.W.tank/(2*d*Math.tan((g.spread||0)/2)))) : g.spread>0 ? Math.max(0.55, Math.min(1, GS.W.tank/(2*d*Math.tan(g.spread)))) : 1;
+    const f=Math.max(0, Math.min(1, (d/reach-0.55)/0.45)), fallK=1-f*(1-(g.fall??1)), shot=g.dmg*fr*acc*(1+GM.gunSplash(g))*fallK*(g.lock?0.9:1);
+    return shot*g.mag/(g.mag*g.fireCd+g.reload); };
   const direct=['rifle','smg','shotgun','flak','cannon','hesh','minigun','missile','tesla','thermo'], T=t=>direct.filter(id=>G[id].tier===t).map(sus);
   ok(Math.max(...T(1)) < Math.min(...T(2)), 'every tier-2 direct-fire gun out-damages the best tier-1 gun (the SMG no longer beats tier 2)');
   ok(Math.max(...T(2)) <= Math.min(...T(3)), 'every tier-3 direct-fire gun matches or beats the best tier-2 gun');
@@ -654,7 +658,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(Math.max(...coin(1)) < Math.min(...coin(2)) && Math.max(...coin(2)) < Math.min(...coin(3)), 'shop prices climb with the tier');
   ok(GM.gunSplash(G.flak) < 0.5 && /dmg\*gunSplash\(g\)/.test(R('src/combat/flame.js')), 'flak airbursts no longer stack five full blasts on one target');
   ok(/p\.muzzles\[\(p\.mzI=/.test(R('src/combat/flame.js')) && /userData\.muzzles=MZ/.test(R('src/tank/barrels.js')), 'twin / multi-tube guns fire from each real tube in turn');
-  ok(/e\.burn\.k/.test(R('src/ai/tactics.js')) && /gunShotDmg\(g\)\*dM/.test(R('src/combat/power.js')), 'flame burn scales with damage upgrades; the power rating counts splash');
+  ok(/e\.burn\.k/.test(R('src/ai/tactics.js')) && /gunStats\(id, K\)/.test(R('src/combat/power.js')), 'flame burn scales with damage upgrades; the power rating counts splash');
   const fx=R('src/fx/gunfx.js'); ok(/export function lightning/.test(fx) && /export function railBeam/.test(fx) && /function smokeRing/.test(fx) && /kind==='launch'/.test(fx) && /updateBolts\(dt\)/.test(R('src/game/loop.js')), 'per-class muzzle fx: smoke rings, backblast, rail beam, forked lightning'); }
 
 // Z150 one picture per gun everywhere, stronger controller focus, smooth battle start, Vietnamese text
@@ -1198,6 +1202,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function spawnWhirl\(/.test(w) && /function funnel\(/.test(w) && /function axis\(/.test(w) && /WX\.wind/.test(w) && /SNOW=new Set\(\['TUNDRA','ARCTIC'\]\)/.test(w), 'a devil: snaking, flaring vortex funnel + grains + puffs, drifting with the wind; snow devils on the ice');
   ok(/export function startAvalanche\(/.test(w) && /\(n==='ARCTIC' \|\| n==='TUNDRA'\) && Math\.random\(\)<0\.65 && startAvalanche\(now\)/.test(ev) && /updateWhirls\(dt, now\)/.test(ev) && /clearWhirls\(\)/.test(ev), 'avalanches join the land events on the snow fields; devils update with the land and clear on a new stage');
   ok(/!UNDER\.on && !BIOME\.cave/.test(w) && /S\.weather!=='rain'/.test(w), 'no devils underground, in the cave, or in the rain'); }
+
+// Z230 one gun model (combat/gunstats.js) for the arsenal, the shop and the power rating — real mechanics at the fighting distance
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const gs=R('src/combat/gunstats.js'), si=R('src/ui/shop-info.js'), sh=R('src/ui/shop.js'), cf=R('config.js'), G=(await import('./src/data/guns.js')).GUNS;
+  ok(/export const GUNSTAT = \{ engage:\{ frac:0\.65, max:22 \}/.test(cf), 'gun-model yardsticks (fighting distance, target width, battle-line density) live in config');
+  ok(/export function gunStats\(id, K\)/.test(gs) && ['flame','mortar','orbital','plasma','hydra','singularity','photon','rocket'].every(k=>gs.includes("S==='"+k+"'")), 'every special mechanic is modelled (flame, shells, the five ultimates, the siege rocket)');
+  ok(/sus = flame \? shot\*duty : shot\*mag\/cycle/.test(gs) && /hits=Math\.min\(C\.hitsCap, hits\)/.test(gs) && /typed:!!g\.small, air:false/.test(gs), 'sustained DPS over the mag + reload cycle; targets per pull capped; shells ignore armour type and never reach aircraft');
+  ok(/export function gunNums\(id\)\{ const s=gunStats\(id\)/.test(si) && /st \? st\.vs\[k\]/.test(si) && /spBar\('Mục tiêu \/ phát'/.test(sh) && /Hạ xe tăng nặng/.test(sh) && /Math\.round\(me\.rng\)\+' m'/.test(sh), 'the arsenal shows the model: sustained + burst DPS, reach in metres, targets per pull, muzzle velocity, time to kill a heavy tank');
+  ok(G.shotgun.dmg===14 && G.flak.dmg===12, 'shotgun + flak pellets rebalanced back onto their tier (half their pellets miss at their fighting distance)'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

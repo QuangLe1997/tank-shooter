@@ -1,7 +1,7 @@
 // ui/shop.js — SHOP (buy guns + leveled upgrades with coins / diamonds)
 import * as THREE from 'three';
 import { BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB } from '../../config.js';
-import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, econBuy, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunPicHTML, gunReloadMul, gunRole, gunShotDmg, gunSiege, gunSplash, gunTierTx, gunTraits, gunXpToNext, hide, launchGame, ownGun, powerKit, powerRating, queueGunArt, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax, updateShowroom } from '../hub.js';
+import { GUNS, PROFILE, S, SHOW, VIEW, __set_BEST, __set_soldierLvl, bloom, camera, canAfford, catVi, currentGunId, delta, deployOwnedDrone, deploySoldiers, dressShowroom, econBuy, effGrade, escapeHtml, fmtP, guardTarget, gunDmgMul, gunEffect, gunFireMul, gunLevel, gunMagMul, gunMax, gunModRows, gunNums, gunPicHTML, gunReloadMul, gunRole, gunSiege, gunSplash, gunTierTx, gunTraits, gunXpToNext, hide, launchGame, ownGun, powerKit, powerRating, queueGunArt, refreshBestLine, refreshStartUI, refreshWallet, renderPass, saveProfile, scene, setShowEmblem, setShowGun, sfx, shopPowerLine, show, showSalvo, soldierLvl, spawnDrone, svgBadgeTex, svgMarkup, tapBtn, tapEl, upLevel, upMax, updateShowroom } from '../hub.js';
 
 // ---- SHOP (buy guns + leveled upgrades with coins / diamonds) ----
 export function shopModel(){
@@ -134,7 +134,7 @@ export function renderCaseGrid(){
     const price = (it.type==='gun'&&it.owned)?('✓ ĐÃ CÓ · ★'+gunLevel(it.id)) : (it.type==='up'&&it.level>=it.max)?'✓ TỐI ĐA' : '<span class="pr">'+priceHTML(it.cost)+'</span>'+(short?'<small class="short">thiếu '+short+'</small>':'');
     let extra='';
     if(it.type==='gun'){ const r=gunRole(it.id), n=gunNums(it.id), M=gunMax(), bar=(lb,v)=>'<div class="cb"><span>'+lb+'</span><i style="--v:'+Math.max(0.06,Math.min(1,v)).toFixed(2)+'"></i></div>';   // Z106 what it is for + how it compares, at a glance
-      extra='<div class="case-role" style="--rc:'+r.col+'">'+r.tx+'</div><div class="case-bars">'+bar('ST', n.dmg/M.dmg)+bar('NHỊP', n.rof/M.rof)+bar('TẦM', n.rng/M.rng)+'</div>'; }
+      extra='<div class="case-role" style="--rc:'+r.col+'">'+r.tx+'</div><div class="case-bars">'+bar('ST/S', n.dps/M.dps)+bar('TẦM', n.rng/M.rng)+bar('DIỆN', (n.hits-1)/Math.max(0.01,M.hits-1))+'</div>'; }
     else { let pips=''; for(let k=0;k<it.max;k++) pips+='<i class="'+(k<it.level?'on':'')+'"></i>'; extra='<div class="case-role up">'+escapeHtml(it.per||'')+'</div><div class="case-pips">'+pips+'</div>'; }
     const c=document.createElement('div'); c.className='case rar-'+it.rar+(st?' '+st:'');
     const disp = it.type==='gun'                                                                          // Z150 guns: the same studio photo of the real gun used on every screen
@@ -149,7 +149,7 @@ export function renderCaseGrid(){
 export function shopStat(label,val,tag){ return '<span class="st'+(tag?' tag':'')+'">'+(label?label+' ':'')+'<b>'+val+'</b></span>'; }
 export function shopStats(it){
   if(it.type==='gun'){ const g=GUNS[it.id], out=[];
-    out.push(shopStat('Sát thương', g.dmg)); out.push(shopStat('Nhịp', (1/g.fireCd).toFixed(g.fireCd<0.2?0:1)+' phát/s')); out.push(shopStat('Băng', g.mag));
+    { const n=gunNums(it.id); out.push(shopStat('Sát thương', n.st&&n.st.wipe?'diệt sạch':n.dmg)); out.push(shopStat('ST/giây', n.st&&n.st.wipe?'—':n.dps)); } out.push(shopStat('Nhịp', (1/g.fireCd).toFixed(g.fireCd<0.2?0:1)+' phát/s')); out.push(shopStat('Băng', g.mag));
     if(g.frags>1) out.push(shopStat('', g.frags+' VIÊN/PHÁT', true));
     if(g.pierce) out.push(shopStat('','XUYÊN',true)); if(g.aoe||g.aoeR) out.push(shopStat('','NỔ LAN',true));
     if(g.homing||g.lock) out.push(shopStat('','TỰ DẪN',true)); if(g.freeze) out.push(shopStat('','ĐÓNG BĂNG',true)); if(g.chain) out.push(shopStat('','LAN ĐIỆN',true));
@@ -164,19 +164,23 @@ export function siPanelHTML(it){
   const PW=shopPowerLine(it);   // Z107 what this purchase does to your power rating
   if(it.type==='gun'){ const g=GUNS[it.id], lv=gunLevel(it.id);
     const dMul=gunDmgMul(it.id), fMul=gunFireMul(it.id), rMul=gunReloadMul(it.id);
-    const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), dps=Math.round(gunShotDmg(g)*dMul*rof), erel=g.reload*rMul;
+    const edmg=Math.round(g.dmg*dMul), rof=1/(g.fireCd*fMul), erel=g.reload*rMul;   // Z230 damage / DPS / reach come from the shared gun model (gunNums)
     const T=gunTraits(it.id), mods=gunModRows(it.id), emag=Math.round(g.mag*gunMagMul(it.id));   // Z115 full traits + gun parts
     const nx=gunXpToNext(it.id);
     const mastery = it.owned ? ('<div class="sp-mastery">★ THÔNG THẠO <b>CẤP '+lv+' / '+BALANCE.mastery.maxLevel+'</b>'+
         (nx?'<span class="sp-xp">'+nx.have+' / '+nx.need+' ▸ CẤP '+(lv+1)+'</span>':'<span class="sp-xp">★ TỐI ĐA</span>')+'</div>'+
         (lv>1?'<div class="sp-mbuff">+'+Math.round((dMul-1)*100)+'% sát thương · +'+Math.round((1/fMul-1)*100)+'% tốc bắn · −'+Math.round((1-rMul)*100)+'% nạp</div>':''))
       : '';
-    const role=gunRole(it.id), cur=currentGunId(), cmp = cur!==it.id ? gunNums(cur) : null, me=gunNums(it.id), M=gunMax();
+    const role=gunRole(it.id), cur=currentGunId(), me=gunNums(it.id), cmp = cur!==it.id && !me.st.wipe ? gunNums(cur) : null, M=gunMax();   // Z230 the siege rocket wipes an area — a % against a gun is meaningless
     const eff='<div class="sp-eff">'+gunEffect(it.id).map(e=>{ const G=effGrade(e.x); return '<span class="ef '+G.c+'"><small>'+e.vi+'</small><b>'+(e.x>0?'×'+e.x.toFixed(2).replace(/0$/,''):'—')+'</b><em>'+G.tx+'</em></span>'; }).join('')+'</div>';
     return PW+'<div class="sp-tier">'+(it.vip?'★ VŨ KHÍ VIP':'VŨ KHÍ BẬC '+g.tier)+'</div>'+
       '<div class="sp-role" style="--rc:'+role.col+'">'+role.tx+'</div>'+ mastery+
-      spBar('Sát thương / phát', Math.round(gunShotDmg(g)*dMul)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
-      spBar('Sát thương / giây', dps+(cmp?delta(me.dps,cmp.dps):''), dps/M.dps)+ spBar('Tầm bắn', '×'+me.rng.toFixed(2)+(cmp?delta(me.rng,cmp.rng):''), me.rng/M.rng)+
+      spBar('Sát thương / phát', (me.st.wipe?'TIÊU DIỆT ('+me.st.boss+' với tướng)':me.dmg)+(lv>1?' ▲':'')+(cmp?delta(me.dmg,cmp.dmg):''), me.dmg/M.dmg)+ spBar('Nhịp bắn', rof.toFixed(rof<1?2:1)+' /s'+(cmp?delta(me.rof,cmp.rof):''), rof/M.rof)+
+      spBar('Sát thương / giây', (me.st.wipe?'—':me.dps+' · dồn '+me.burst)+(cmp?delta(me.dps,cmp.dps):''), me.dps/M.dps)+ spBar('Tầm bắn', Math.round(me.rng)+' m'+(cmp?delta(me.rng,cmp.rng):''), me.rng/M.rng)+
+      spBar('Mục tiêu / phát', (me.hits>1.05?'×'+me.hits.toFixed(1)+' · '+(me.st.R?'vùng '+me.st.R.toFixed(1)+' m':me.st.kind==='beam'?'cả đường tia':me.st.kind==='flame'?'cả hình nón':'xuyên / lan'):'1 mục tiêu')+(cmp?delta(me.hits,cmp.hits):''), (me.hits-1)/Math.max(0.01,M.hits-1))+
+      '<div class="sp-bl">Sơ tốc · bay tới '+Math.round(me.st.d)+' m<b>'+(me.v0?Math.round(me.v0)+' m/s · '+me.st.tof.toFixed(2)+' s':me.st.lob?'cầu vồng · ~'+me.st.tof.toFixed(1)+' s':me.st.kind==='flame'?'luồng lửa':me.st.kind==='orbital'?'từ quỹ đạo · '+me.st.delay.toFixed(1)+' s':me.st.kind==='beam'?'tia sáng · tức thì':'tức thì')+'</b></div>'+
+      '<div class="sp-bl">Hạ xe tăng nặng ('+me.st.hp+' máu)<b>'+(me.st.wipe?'1 phát':!isFinite(me.ttk)?'không xuyên':me.ttk<0.05?'1 phát':me.ttk.toFixed(1)+' s')+'</b></div>'+
+      (me.st.acc<0.99?'<div class="sp-bl">Trúng ở '+Math.round(me.st.d)+' m<b>'+Math.round(me.st.acc*100)+'% '+((g.frags||1)>1?'số viên':'phát')+'</b></div>':'')+
       (()=>{ const sg=gunSiege(it.id); return '<div class="sp-bl sp-siege">Phá tường thành<b>'+sg.shot+' / phát · '+sg.dps+' /s'+(sg.k>1?' ×'+sg.k.toFixed(1):'')+'</b></div>'; })()+
       '<div class="sp-bl">Băng đạn<b>'+emag+' viên'+(emag>g.mag?' ▲':'')+'</b></div>'+
       (g.aoe?'<div class="sp-bl">Nổ lan<b>'+g.aoe.toFixed(1)+' m · '+Math.round(edmg*gunSplash(g))+' / phát</b></div>':'')+

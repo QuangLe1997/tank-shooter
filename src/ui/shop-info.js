@@ -1,6 +1,6 @@
 // ui/shop-info.js — Z106 what a gun is FOR, in plain words: role tag, effect vs each armour class, comparable numbers + deltas vs your gun
 import { DMG_TYPE, ROSTER, FORT, GUN_MODS, GUN_BARRELS } from '../../config.js';
-import { GUNS, PROFILE, gunDmgMul, gunFireMul, gunMod, gunShotDmg, gunSplash } from '../hub.js';
+import { GUNS, PROFILE, gunMod, gunSplash, gunStatMax, gunStats } from '../hub.js';
 
 // one short role line per gun (Vietnamese) + a colour family
 export function gunRole(id){ const g=GUNS[id]||{};
@@ -21,17 +21,17 @@ export function gunRole(id){ const g=GUNS[id]||{};
 // how hard it hits each kind of target (×) — lobbed shells can't reach aircraft; FLAK shreds them
 export const ARMOR_VI=[['L','Xe nhẹ'],['M','Xe vừa'],['H','Xe nặng'],['A','Trực thăng']];
 export function gunEffect(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, arc=g.special==='arty'||g.special==='mortar'||g.special==='rocket';
-  return ARMOR_VI.map(([k,vi])=>{ let x=m[k]||1; if(k==='A'){ if(arc) x=0; else if(id==='flak') x*=ROSTER.aaBonus; } return { k, vi, x }; })
+  const st=gunStats(id);   // Z230 the real multipliers: lobbed shells ignore armour type and never reach aircraft, flak airbursts ×aaBonus on aircraft
+  return ARMOR_VI.map(([k,vi])=>{ let x = st ? st.vs[k] : (m[k]||1); if(!st && k==='A'){ if(arc) x=0; else if(id==='flak') x*=ROSTER.aaBonus; } return { k, vi, x }; })
     .concat([{ k:'S', vi:'Công trình', x:m.struct||1 }]); }   // Z111b vs barricades, towers, camps (fortress walls: never below ×1)
 // Z111b siege: damage one round does to a fortress wall / gate
-export function gunSiege(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, k=Math.max(FORT.shotStructMin, m.struct||1); return { k, shot:Math.round(g.dmg*gunDmgMul(id)*(g.frags||1)*k), dps:Math.round(g.dmg*gunDmgMul(id)*(g.frags||1)*k/(g.fireCd*gunFireMul(id))) }; }
+export function gunSiege(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, k=Math.max(FORT.shotStructMin, m.struct||1), st=gunStats(id); return { k, shot:Math.round(st?st.siegeShot:0), dps:Math.round(st?st.siegeDps:0) }; }   // Z230 from the shared gun model (pellets that land, lobbed shells ×0.8)
 export function effGrade(x){ return x<=0 ? { tx:'KHÔNG VỚI', c:'no' } : x>=1.25 ? { tx:'MẠNH', c:'good' } : x>=0.9 ? { tx:'TỐT', c:'ok' } : { tx:'YẾU', c:'bad' }; }
 // comparable numbers (mastery included) and the field-wide maxima used to scale the bars
-export function gunNums(id){ const g=GUNS[id]||{}, dMul=gunDmgMul(id), fMul=gunFireMul(id), dmg=gunShotDmg(g)*dMul, rof=1/(g.fireCd*fMul);
-  return { dmg:Math.round(dmg), rof, dps:Math.round(dmg*rof), mag:g.mag, reload:g.reload, rng:g.rng||1 }; }
-let _max=null; export function gunMax(){ if(_max) return _max; _max={ dmg:1, rof:1, dps:1, rng:1 };
-  for(const id of Object.keys(GUNS)){ const g=GUNS[id]; if(!g.dmg) continue; const d=gunShotDmg(g), r=1/g.fireCd; _max.dmg=Math.max(_max.dmg,d); _max.rof=Math.max(_max.rof,r); _max.dps=Math.max(_max.dps,d*r); _max.rng=Math.max(_max.rng,g.rng||1); }
-  return _max; }
+export function gunNums(id){ const s=gunStats(id); if(!s) return { dmg:0, rof:0, dps:0, burst:0, mag:0, reload:0, rng:1, hits:1, v0:0, ttk:0 };   // Z230 the shared gun model (real mechanics at the fighting distance)
+  const fin=v=>isFinite(v)?v:9999;
+  return { dmg:Math.round(fin(s.shot)), rof:s.rof, dps:Math.round(fin(s.sus)), burst:Math.round(fin(s.burst)), mag:s.mag, reload:s.rel, rng:s.reach, hits:s.hits, v0:s.v0, ttk:s.ttk, st:s }; }
+export function gunMax(){ const m=gunStatMax(); return { dmg:m.shot, rof:m.rof, dps:m.sus, rng:m.reach, hits:m.hits, v0:m.v0 }; }
 // the gun you would compare against: the first one in your loadout
 export function currentGunId(){ const L=PROFILE.loadout||[]; return L[0]||'rifle'; }
 export function delta(a, b, lowerIsBetter){ if(b==null||a===b) return ''; const better = lowerIsBetter ? a<b : a>b, pct=Math.round(Math.abs(a-b)/Math.max(1e-6,Math.abs(b))*100);
@@ -53,7 +53,7 @@ export function gunTraits(id){ const g=GUNS[id]||{}, m=DMG_TYPE[g.type]||{}, T=[
   if((m.L||1)>=1.3 || g.type==='FRAG') T.push({ t:'DIỆT BỘ BINH', d:'×'+(m.L||1)+' vào mục tiêu nhẹ' });
   if(id==='flak') T.push({ t:'PHÒNG KHÔNG', d:'Xé nát trực thăng' });
   if((m.struct||1)>=1.5) T.push({ t:'PHÁ THÀNH ×'+m.struct, d:'Mạnh vào tường, cổng, tháp' });
-  if(g.bspeed) T.push({ t:'ĐẠN '+Math.round(g.bspeed)+' m/s', d:'Sơ tốc đầu nòng' });
+  if(g.bspeed && !g.special){ const st=gunStats(id); T.push({ t:'ĐẠN '+Math.round(st.v0)+' m/s', d:'Sơ tốc đầu nòng (đạn chậm dần theo lực cản không khí; tên lửa tăng tốc sau khi rời ống)' }); }   // Z230 the real muzzle velocity
   return T; }
 // Z115 parts fitted to a gun: [{k, vi, lv, max, fx}]
 export function gunModRows(id){ const M=GUN_MODS; return [

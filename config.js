@@ -660,3 +660,8 @@ export const BALLISTIC = { gun:{ v0:1.5, decay:3 }, rocket:{ v0:0.3, k:6, cap:1.
 export const WHIRL = { first:[5,12], every:[14,34], max:2, maxMobile:1, life:[13,24], dist:[20,55], speed:[2.2,5.2], R:[0.9,1.9], H:[8,15],
   grains:120, puffs:30, grainsMobile:55, puffsMobile:12, spin:[5.5,8.5], rise:[2.6,4.6], shove:5 };
 export const AVALANCHE = { warn:2.6, width:30, run:[48,64], v0:3, vmax:15, accel:5, band:3.2, dmg:{ inf:80, veh:30, player:14 }, push:9, mounds:14, moundLife:40 };
+// Z230 GUN STATS — one model of what a gun really does in a fight (combat/gunstats.js), used by the arsenal, the shop and the power rating:
+//   engage = typical fighting distance (fraction of reach, capped) · W = target width (tank / man) · rho = enemies per m² around an impact
+//   (a loose battle line) · hitsCap = most targets one trigger pull is credited with · ref = the targets time-to-kill is quoted against
+export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, rho:1/50, hitsCap:3, pierceK:0.3, lineW:3.4,
+  ref:{ tank:'heavy', light:'grunt' }, minHit:0.3 };

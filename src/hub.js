@@ -128,6 +128,7 @@ export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
 export * from './combat/ultimate.js';   // Z186 the five ultimate weapons
 export * from './combat/mastery.js';
+export * from './combat/gunstats.js';   // Z230 what a gun really does (arsenal · shop · power rating)
 export * from './combat/power.js';
 export * from './combat/spells.js';
 export * from './campaign/artillery.js';
