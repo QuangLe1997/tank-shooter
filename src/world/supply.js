@@ -26,7 +26,7 @@ function mats(){ if(_M) return _M; const V=(o)=>new THREE.MeshStandardMaterial(O
     for(let i=0;i<260;i++){ x.fillStyle=['#4a5530','#5e6a3a','#6a5a3a','#3a4428'][i%4]; x.beginPath(); x.ellipse(Math.random()*128,Math.random()*128,3+Math.random()*7,2+Math.random()*4,Math.random()*3,0,7); x.fill(); }   // leaf scrim
     x.strokeStyle='#2a2a20'; x.lineWidth=1.5; for(let k=0;k<=128;k+=11){ x.beginPath(); x.moveTo(k,0); x.lineTo(k,128); x.moveTo(0,k); x.lineTo(128,k); x.stroke(); }
     const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,2); return t; })();
-  _M={ paint:V({ map:propTex('steel'), roughness:0.55, metalness:0.45 }), conc:V({ map:propTex('concrete'), roughness:0.92, metalness:0.02 }), metal:V({ map:propTex('drum'), roughness:0.55, metalness:0.6 }),
+  _M={ paint:V({ map:propTex('steel'), roughness:0.58, metalness:0.2 }), conc:V({ map:propTex('concrete'), roughness:0.92, metalness:0.02 }), metal:V({ map:propTex('drum'), roughness:0.55, metalness:0.6 }),
     soil:V({ roughness:1, metalness:0 }), wood:V({ map:propTex('wood'), roughness:0.85 }), canvas:V({ map:propTex('burlap'), roughness:0.95 }),
     net:new THREE.MeshStandardMaterial({ map:netT, alphaTest:0.45, side:THREE.DoubleSide, roughness:1 }), glow:new THREE.MeshStandardMaterial({ color:0x222018, emissive:0xffd890, emissiveIntensity:1.6 }) };
   return _M; }

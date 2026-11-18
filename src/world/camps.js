@@ -7,10 +7,10 @@ import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTe
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
 export let _campMats=null;
 export function campMats(){ if(_campMats) return _campMats;
-  const tin=propTex('drum').clone(); tin.wrapS=tin.wrapT=THREE.RepeatWrapping; tin.repeat.set(6,2); tin.needsUpdate=true;
+  const tin=propTex('tin').clone(); tin.wrapS=tin.wrapT=THREE.RepeatWrapping; tin.center.set(0.5,0.5); tin.rotation=Math.PI/2; tin.repeat.set(1.5,4); tin.needsUpdate=true;   // Z236 corrugated sheet (was the drum's paint texture)
   const canvasT=_canvasTex(64,64,(x,W)=>{ x.fillStyle='#8a7c56'; x.fillRect(0,0,W,W); for(let i=0;i<900;i++){ const v=(110+Math.random()*60)|0; x.fillStyle='rgba('+v+','+(v-8)+','+(v-30)+',0.35)'; x.fillRect(Math.random()*W,Math.random()*W,2,1); }
     x.strokeStyle='rgba(60,50,30,0.5)'; x.lineWidth=1; for(let k=8;k<W;k+=16){ x.beginPath(); x.moveTo(0,k); x.lineTo(W,k); x.stroke(); } });   // weathered canvas with seams
-  _campMats={ tin:new THREE.MeshStandardMaterial({ map:tin, color:0x8a8e86, roughness:0.5, metalness:0.7, side:THREE.DoubleSide }),
+  _campMats={ tin:new THREE.MeshStandardMaterial({ map:tin, color:0xa2a69e, roughness:0.5, metalness:0.35, side:THREE.DoubleSide }),   // Z236 weathered zinc reads grey, not black
     wall:new THREE.MeshStandardMaterial({ color:0x6e6a5a, roughness:0.85, map:propTex('wood') }),
     canvas:new THREE.MeshStandardMaterial({ map:canvasT, roughness:0.95, side:THREE.DoubleSide }),
     dark:new THREE.MeshStandardMaterial({ color:0x1a1814, roughness:0.9 }), rope:new THREE.MeshStandardMaterial({ color:0x8a7a58, roughness:0.9 }),

@@ -6,18 +6,21 @@
 //   · shell a way in to cave it in (a spider hole goes with one good hit, bunkers and mouths take a pounding);
 //     seal them all and the men still down there are buried
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { TUNNEL } from '../../config.js';
-import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, homeClear, inField, inZone, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
+import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, _canvasTex, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, detailize, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, homeClear, inField, inZone, propTex, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
 
 export const TUN = { list:[], under:[], next:0, chk:0, told:false, g:null };
 const R=(a,b)=>a+Math.random()*(b-a), RN=a=>Math.round(R(a[0], a[1]+0.99)-0.49), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
 let _M=null;
 function mats(){ if(_M) return _M; const ground=new THREE.Color(BIOME.ground);
-  _M={ conc:new THREE.MeshStandardMaterial({ color:0x8e8a80, roughness:0.92 }), bag:new THREE.MeshStandardMaterial({ color:0xb8a47a, roughness:0.97 }),
+  _M={ conc:detailize(new THREE.MeshStandardMaterial({ map:propTex('concrete'), color:0xb0aca2, roughness:0.92 }), { scale:0.6, bump:0.025, alb:0.3, foot:0.8, streak:0.3 }), bag:new THREE.MeshStandardMaterial({ color:0x9c8e6c, roughness:0.97 }),   // Z236 cast concrete with stains (was a flat untextured grey that read as placeholder boxes)
     wood:new THREE.MeshStandardMaterial({ color:0x5a3e26, roughness:0.9 }), black:new THREE.MeshBasicMaterial({ color:0x000000 }),
     lid:new THREE.MeshStandardMaterial({ color:ground, roughness:1 }), rim:new THREE.MeshStandardMaterial({ color:ground.clone().multiplyScalar(0.7), roughness:1 }),
     leaf:new THREE.MeshStandardMaterial({ color:0x4a5a2a, roughness:1 }), lamp:new THREE.MeshStandardMaterial({ color:0x300000, emissive:0xff2a14, emissiveIntensity:3 }),
+    steel:new THREE.MeshStandardMaterial({ color:0x4a4c48, roughness:0.55, metalness:0.7, map:propTex('drum') }), yel:new THREE.MeshStandardMaterial({ color:0xc8a030, roughness:0.7 }), black2:new THREE.MeshStandardMaterial({ color:0x1e1e1c, roughness:0.7 }),
+    sign:new THREE.MeshStandardMaterial({ map:_canvasTex(128,80,(x,W,H)=>{ x.fillStyle='#c8b080'; x.fillRect(0,0,W,H); x.fillStyle='#8a1a14'; x.fillRect(0,0,W,18); x.fillStyle='#f0e6d0'; x.font='bold 13px monospace'; x.fillText('CẤM VÀO',24,14); x.fillStyle='#2a2420'; x.font='bold 22px monospace'; x.fillText('HẦM B-3',14,54); }), roughness:0.85 }),
     mark:new THREE.MeshBasicMaterial({ color:0xff7a3a, transparent:true, opacity:0.7, depthWrite:false, side:THREE.DoubleSide, fog:false }) };
   return _M; }
 const BX=(w,h,d,x,y,z,m,par)=>{ const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); o.position.set(x,y,z); o.castShadow=!MOBILE; o.receiveShadow=true; par.add(o); return o; };
@@ -31,7 +34,10 @@ function hatch(E){ const M=mats(), g=E.g;
   E.lid=hinge; E.rad=1.6; E.hp=E.maxHp=TUNNEL.hp.hatch; E.seen=false; }
 function bunker(E){ const M=mats(), g=E.g;
   BX(4.4,0.5,3.4,0,1.25,-0.7,M.conc,g); BX(0.45,1.25,4.8,-2.0,0.5,0,M.conc,g); BX(0.45,1.25,4.8,2.0,0.5,0,M.conc,g); BX(4.4,1.25,0.45,0,0.5,-2.3,M.conc,g);
-  for(let k=0;k<6;k++) BX(0.9,0.34,0.55,-1.6+(k%3)*1.6,1.67+(k>2?0.32:0),-1.6+(k>2?0.5:0)+R(-0.1,0.1),M.bag,g);
+  { const BG=new RoundedBoxGeometry(0.9,0.3,0.5,2,0.12); for(let k=0;k<10;k++){ const o=new THREE.Mesh(BG, M.bag); o.position.set(-1.8+(k%5)*0.9+(k>4?0.45:0),1.66+(k>4?0.28:0),-1.55+(k>4?0.35:0)+R(-0.06,0.06)); o.rotation.set(R(-0.05,0.05),R(-0.12,0.12),R(-0.05,0.05)); o.castShadow=!MOBILE; g.add(o); } }   // Z236 a course of sandbags on the roof slab
+  for(const sx of [-1,1]){ BX(0.12,1.3,0.14,sx*1.72,0.65,1.12,M.steel,g); for(let k=0;k<5;k++){ const st=BX(0.13,0.2,0.15,sx*1.72,0.18+k*0.26,1.13,k%2?M.black2:M.yel,g); st.rotation.z=sx*0.0; } }   // steel door frame with hazard banding
+  BX(3.6,0.14,0.16,0,1.3,1.12,M.steel,g);   // lintel
+  { const pl=new THREE.Mesh(new THREE.PlaneGeometry(0.7,0.42), M.sign); pl.position.set(1.0,1.02,1.21); g.add(pl); }   // stencilled sign
   const hole=new THREE.Mesh(new THREE.PlaneGeometry(3.5,4.1), M.black); hole.rotation.x=-Math.PI/2; hole.position.set(0,0.07,0); g.add(hole);
   for(let k=0;k<3;k++){ const s=new THREE.Mesh(new THREE.PlaneGeometry(3.5,0.18), new THREE.MeshBasicMaterial({ color:new THREE.Color(0x6a665e).multiplyScalar(0.8-k*0.25) })); s.rotation.x=-Math.PI/2; s.position.set(0,0.09,1.8-k*0.75); g.add(s); }   // the top steps, sinking into the dark
   BX(0.22,1.6,0.22,-1.55,0.8,1.0,M.wood,g); BX(0.22,1.6,0.22,1.55,0.8,1.0,M.wood,g); BX(3.4,0.24,0.24,0,1.55,1.0,M.wood,g);

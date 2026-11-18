@@ -1264,6 +1264,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/tow cables/.test(wk) && /smoked-glass domes/.test(wk) && !/propTex/.test(wk), 'the war kit: tow cables, smoked-glass LWR domes, plain hessian bags');
   ok((R('src/tank/model.js').match(/color:0x2a2a26/g)||[]).length===2 && /flattened into the hull so it bakes with it/.test(R('src/tank/designs.js')), 'headlights are dark glass in a housing, baked into the hull (no glowing puck)'); }
 
+// Z237 props and buildings that read as the real thing: a burnt-out car with arches, an open cabin and bare rims; containers in faded paint with a
+//   stencil once per wall; HESCO cages; pine ammo crates; steel hedgehogs; weathered steel / drum / tin textures without rust polka dots;
+//   painted props no longer near-black (dielectric paint, not bare metal); a textured tunnel bunker with sandbags, a door frame and a sign
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const pr=R('src/world/props.js'), tu=R('src/world/tunnels.js'), ca=R('src/world/camps.js');
+  ok(/export function boxUV\(g, su, sv\)/.test(pr) && /boxUV\(g, 1\/\(Lh\*2\), 1\/H\)/.test(pr) && /propTex\('container'\)/.test(pr), 'containers: planar UVs, their own stencilled texture');
+  ok(/a burnt-out car that reads as one/.test(pr) && /absarc\(-0\.95,0\.32,0\.4,Math\.PI,0,true\)/.test(pr) && /seat frames/.test(pr), 'the wreck has wheel arches, an open cabin and seat frames');
+  ok(/HESCO bastion/.test(pr) && /cage corner posts/.test(pr) && /name==='crate'/.test(pr) && /name==='tin'/.test(pr), 'HESCO cages, pine crate and corrugated tin textures');
+  ok(/kind==='drums' \? M\(\{ map:propTex\('drum'\), roughness:0\.6, metalness:0\.2 \}\)/.test(pr) && /kind==='container' \? M\(\{ map:propTex\('container'\), roughness:0\.62, metalness:0\.12 \}\)/.test(pr), 'painted props are dielectric (no near-black drums / containers)');
+  ok(/detailize\(new THREE\.MeshStandardMaterial\(\{ map:propTex\('concrete'\)/.test(tu) && /HẦM B-3/.test(tu) && /RoundedBoxGeometry/.test(tu), 'the tunnel bunker is textured concrete with sandbags and a sign');
+  ok(/propTex\('tin'\)/.test(ca) && /metalness:0\.35/.test(ca), 'camp huts in corrugated grey tin'); }
+
 // Z237b our own guided / lofted missile never strikes our tank: the bullet loop's enemy branch is only for rounds that are not ours
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/\} else if\(b\.owner!=='p'\)\{ \/\/ enemy bullet/.test(lo) && !/\} else \{ \/\/ enemy bullet/.test(lo), 'an airborne round of ours no longer falls through into the enemy-round branch (it used to hit our own tank as it flew over the hull)'); }
