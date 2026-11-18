@@ -8,7 +8,7 @@
 //   · water drips out of the dark, dust trickles down after every big blast, and now and then the roof gives way (SẬP TRẦN): warning dust, then rock
 import * as THREE from 'three';
 import { CAVE_DEF } from '../../config.js';
-import { ARENA, BIOME, MOBILE, RIDGES, S, blocks, burst, camera, damageEnemy, damagePlayer, decalCrater, detailTex, detailize, enemies, fieldDepth, fieldPath, heightAt, inField, inZone, radio, ringPulse, rockSet, scene, sfx, showBanner, spawnDebris, spawnPart } from '../hub.js';
+import { ARENA, BIOME, MOBILE, RIDGES, S, UNDER, blocks, burst, camera, damageEnemy, damagePlayer, decalCrater, detailTex, detailize, enemies, fieldDepth, fieldPath, heightAt, inField, inZone, radio, ringPulse, rockSet, scene, sfx, showBanner, spawnDebris, spawnPart } from '../hub.js';
 
 export const CAVE = { on:false, shafts:[], mouths:[], torches:[], extra:[], lights:[], spots:[], pillars:[], motes:[], fall:[], g:null, flames:null, glow:null, crystal:null, pools:null, lightAt:0, dripAt:0, dustAt:0, next:0, uT:{ value:0 } };
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
@@ -178,7 +178,7 @@ export function updateCavern(dt, now){ if(!CAVE.on || !CAVE.g) return; const p=S
   if(p && S.shake>0.5 && now>CAVE.dustAt){ CAVE.dustAt=now+0.22; for(let i=0;i<(MOBILE?3:6);i++){ const x=p.pos.x+R(-24,24), z=p.pos.z+R(-20,16);
       spawnPart(x, heightAt(x,z)+R(7,12), z, R(-0.3,0.3), -2, R(-0.3,0.3), { color:0x9a9284, size:R(0.5,1.0), life:1.8, smoke:true, grav:-1.4, drag:0.6, grow:1.4, op:0.28 }); } }
   // the roof gives way
-  if(S.mode==='playing' && p){ if(!CAVE.next) CAVE.next=now+R(C.caveIn.every[0], C.caveIn.every[1]); else if(now>CAVE.next){ CAVE.next=now+R(C.caveIn.every[0], C.caveIn.every[1]); caveIn(now); } }
+  if(S.mode==='playing' && p && !UNDER.on){ if(!CAVE.next) CAVE.next=now+R(C.caveIn.every[0], C.caveIn.every[1]); else if(now>CAVE.next){ CAVE.next=now+R(C.caveIn.every[0], C.caveIn.every[1]); caveIn(now); } }
   updateFall(dt, now); }
 
 // ---- SẬP TRẦN: dust trickles at a spot near the tank (red ring), then rock comes down ----

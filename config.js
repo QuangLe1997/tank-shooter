@@ -101,6 +101,9 @@ export const CAVE_DEF = { wallH:30, wallW:12, shafts:[4,5], shaftR:[9,15], light
   torchStep:15, braziers:6, pillars:[2,3], crystals:[22,12], mouths:3, caveIn:{ every:[40,65], warn:1.7, R:4.6, dmg:16, rocks:[3,5] } };
 export const TUNNEL = { from:2, n:[3,4], caveN:3, hp:{ hatch:70, bunker:280, mouth:520 }, seeR:20, under:[4,8], hurtK:0.6, suppK:0.5, grabR:7, heal:0.25,
   ambush:{ first:[35,55], every:[30,48], r:[24,70], cap:90 }, score:{ seal:250, all:800, buried:60 } };
+// Z226 the UNDERGROUND BASE under every battlefield, reached through the guarded MAIN TUNNEL GATE (electronic lock)
+export const UNDERBASE = { off:170, W:75, D:55, gate:{ lockHp:[380,80], turretHp:300, turretR:36, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },
+  hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26], tank:[38,48], maxTanks:3 }, lights:{ desk:6, mob:3, I:46, range:30 }, score:{ target:400, all:2000, lock:300 } };
 export const REAL = {
   concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
   tracer:{ every:3, enemy:0x6dff4a, ally:0xff5a2a },             // every Nth round a tracer: theirs burn green, ours red-orange

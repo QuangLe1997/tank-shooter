@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { BIOME, FORTS, MOBILE, OBJ, PROFILE, S, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, mouthSpawnPoint, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, updateHUD } from '../hub.js';
+import { BIOME, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, mouthSpawnPoint, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -85,6 +85,7 @@ export function edgeSpawnPoint(){
   return best;
 }
 export function updateWaves(dt, now){
+  if(UNDER.on) return;                                 // Z226 the surface holds its breath while you are below
   if(S.awaitingUpgrade) return;                        // boss just died, waiting on upgrade pick
   if(!WAVE.active){
     if(boss) return;                                   // boss fight in progress → no waves
@@ -100,7 +101,8 @@ export function updateWaves(dt, now){
   let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf || e.abandoned) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
   const _nx=WAVE.spawnQueue[0];
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
-    const t=WAVE.spawnQueue.shift(); let sp=(WAVE.plan==='pincer' && pincerPoint()) || edgeSpawnPoint(); const n0=enemies.length;
+    const t=WAVE.spawnQueue.shift(); if(underCut(t)){ WAVE.spawnAt=now+0.5; return; }   // Z226 its depot under the battlefield was wrecked: this one never comes
+    let sp=(WAVE.plan==='pincer' && pincerPoint()) || edgeSpawnPoint(); const n0=enemies.length;
     if(t==='squad'){ const L=WAVE.lastTank; if(L && enemies.includes(L.e) && now-L.at<6) sp={ ...L.sp, escort:L.e };   // Z173 right behind a tank → its escort
       spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;
       if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact

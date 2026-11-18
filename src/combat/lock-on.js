@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT, LOCKON } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, towers, tunnelBlast, typeMul, unitsNear, wrapAngle } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, towers, tunnelBlast, typeMul, unitsNear, wrapAngle } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -143,7 +143,7 @@ export function recycleBullet(i){ const b=bullets[i], m=b.mesh; m.visible=false;
 const _bcI=[], _bcT=[], _bcA=[], _bnb=[];
 function bulletCands(b){ unitsNear(UGRID.inf, b.x, b.z, b.r+2.5, _bcI); unitsNear(UGRID.tank, b.x, b.z, b.r+16, _bcT); _bcA.length=0; for(const e of _bcI) _bcA.push(e); for(const e of _bcT) _bcA.push(e); return _bcA; }   // Z172 only the units near the round
 export function updateBullets(dt, now){
-  const lim = ARENA-1;
+  const lim = UNDER.on ? 1e4 : ARENA-1;   // Z226 the underground base lies beyond the arena
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];
     if(b.lockOn && b.owner==='p'){ // MISSILE: lock ONE target, chase that object, loft-then-dive arc

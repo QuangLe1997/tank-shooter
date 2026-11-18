@@ -82,6 +82,7 @@ export * from './fx/realwar.js';
 export * from './campaign/surprises.js';
 export * from './world/cavern.js';
 export * from './world/tunnels.js';
+export * from './world/underbase.js';
 export * from './actors/paradrop.js';
 export * from './actors/command.js';
 export * from './campaign/operations.js';

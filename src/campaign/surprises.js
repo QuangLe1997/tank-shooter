@@ -7,7 +7,7 @@
 //   · and sometimes the luck is ours: OUR ARTILLERY drops a fire mission on the thickest knot of enemies
 import * as THREE from 'three';
 import { REAL } from '../../config.js';
-import { FT, S, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad } from '../hub.js';
+import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad } from '../hub.js';
 
 const rnd = a => a[0]+Math.random()*(a[1]-a[0]);
 export const SURP = { next:0, shells:[], last:null, count:0 };
@@ -49,7 +49,7 @@ function roll(now){ const C=REAL.surprise, live=enemies.length, pool=[];
   if(!pool.length) return null; let tot=0; for(const [,w] of pool) tot+=w; let r=Math.random()*tot;
   for(const [k,w] of pool){ r-=w; if(r<=0){ if(EV[k](now)){ SURP.last=k; SURP.count++; return k; } break; } }
   return null; }
-export function updateSurprises(dt, now){
+export function updateSurprises(dt, now){ if(UNDER.on) return;   // Z226
   for(let i=SURP.shells.length-1;i>=0;i--){ const s=SURP.shells[i]; s.t-=dt;
     if(!s.ours && s.t<s.warn){ s.pulse-=dt; if(s.pulse<=0){ s.pulse=0.32; ringPulse(_v.set(s.x, 0, s.z), 0xff3a2a, s.R*0.7); } }   // red ring blinks where it will land
     if(!s.wh && s.t<0.8){ s.wh=true; sfx('whistle', _v.set(s.x, 0, s.z)); }

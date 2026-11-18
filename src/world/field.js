@@ -1,8 +1,20 @@
 // world/field.js — Z106 FIELD BOUNDARY: the playable area is an irregular outline (radius per bearing around the Core) — bays, bulges,
 //   a new shape each stage. Everything that moves or is placed asks inField() / clampField(); the fence follows the outline and the
 //   ground beyond it rises into rocky highland.
-import { FIELD } from '../../config.js';
+import { FIELD, UNDERBASE } from '../../config.js';
 import { ARENA, wetAt } from '../hub.js';
+
+// Z226 the underground base's state + its bounds (the field functions defer to them while you are down there) — lives here so it exists before the world is built
+export const UNDER = { on:false, busy:false, x0:1e9, BX:0, W:UNDERBASE.W, D:UNDERBASE.D, gate:null, base:null, surf:[], sblocks:[], bmen:[], bblocks:[], turrets:[], targets:[], lamps:[], lights:[],
+  cut:{ inf:0, veh:0 }, power:true, sqAt:0, tkAt:0, wx:'clear', hud:null, veil:null, back:[], told:false, cool:0 };
+
+const inRect=(x,z,m)=>{ const U=UNDER, lx=x-U.BX; return (Math.abs(lx)<=U.W-m && Math.abs(z)<=U.D-m) || (Math.abs(lx)<=6.5-m && z>0 && z<=U.D+22-m); };
+export function underActive(x){ return UNDER.on && x>UNDER.x0; }
+export function underInside(x, z, m){ return inRect(x, z, m||0); }
+export function underDepth(x, z){ const U=UNDER, lx=x-U.BX; return Math.min(U.W-Math.abs(lx), U.D-Math.abs(z)); }
+export function underClamp(p, m){ const U=UNDER, mm=m||0; if(inRect(p.x,p.z,mm)) return false; const lx=p.x-U.BX;
+  if(Math.abs(lx)<=6.5 && p.z>U.D-mm){ p.x=U.BX+Math.max(-6.5+mm, Math.min(6.5-mm, lx)); p.z=Math.min(U.D+22-mm, p.z); return true; }
+  p.x=U.BX+Math.max(-U.W+mm, Math.min(U.W-mm, lx)); p.z=Math.max(-U.D+mm, Math.min(U.D-mm, p.z)); return true; }
 
 export const FIELD_R = new Float32Array(FIELD.N);
 export const FIELD_STATE = { ver:0, scale:1 };   // Z107 scale = custom-battle SPACE (fence encloses less of the arena)                  // bumps every time the outline changes (caches key on it)      // radius of the playable field at bearing i·2π/N  (bearing = atan2(z, x))
@@ -26,10 +38,10 @@ export function genField(){ const N=FIELD.N, H=[]; for(let k=2;k<2+FIELD.harmoni
 export function fieldR(a){ const N=FIELD.N; let u=((a+Math.PI)/TAU)*N; u=((u%N)+N)%N; const i=u|0, t=u-i; return FIELD_R[i]*(1-t)+FIELD_R[(i+1)%N]*t; }
 export function fieldRAt(x, z){ return fieldR(Math.atan2(z, x)); }
 // how far inside the field (x,z) is — negative outside
-export function fieldDepth(x, z){ return fieldRAt(x, z)-Math.hypot(x, z); }
-export function inField(x, z, m){ return fieldDepth(x, z) >= (m||0) && !wetAt(x, z, Math.min(30, Math.max(2, m||0))); }   // Z139 nothing is placed in a river
+export function fieldDepth(x, z){ if(underActive(x)) return underDepth(x, z); return fieldRAt(x, z)-Math.hypot(x, z); }   // Z226 below ground: the base's own walls
+export function inField(x, z, m){ if(underActive(x)) return underInside(x, z, m); return fieldDepth(x, z) >= (m||0) && !wetAt(x, z, Math.min(30, Math.max(2, m||0))); }   // Z139 nothing is placed in a river
 // pull a position {x,z} back inside (m = margin from the fence); true if it had to move
-export function clampField(p, m){ const d=Math.hypot(p.x, p.z), R=fieldRAt(p.x, p.z)-(m||0); if(d<=R || d<1e-6) return false; const k=Math.max(0,R)/d; p.x*=k; p.z*=k; return true; }
+export function clampField(p, m){ if(underActive(p.x)) return underClamp(p, m); const d=Math.hypot(p.x, p.z), R=fieldRAt(p.x, p.z)-(m||0); if(d<=R || d<1e-6) return false; const k=Math.max(0,R)/d; p.x*=k; p.z*=k; return true; }
 export function clampFieldXZ(x, z, m){ const p={ x, z }; clampField(p, m); return [p.x, p.z]; }
 // a point on the outline at bearing a, `inset` metres inside the fence
 export function fieldEdgePoint(a, inset){ const r=fieldR(a)-(inset||0); return [Math.cos(a)*r, Math.sin(a)*r]; }

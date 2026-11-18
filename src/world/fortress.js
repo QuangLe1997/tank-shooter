@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, COMMAND, GUN_MODS, HUMAN_SCALE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -492,7 +492,8 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
   }
 }
 // Z170 TUNNEL AMBUSH: the yard looks clear — then, a beat later, squads burst out of the tunnels: one from a hatch in the yard, one from a hidden exit near the tank
-function tunnelAmbush(f, now){ if(!f.tunnelAt){ f.tunnelAt=now+1.6+Math.random()*2.4; return; } if(now<f.tunnelAt) return;
+function tunnelAmbush(f, now){ if(UNDER.on) return;   // Z226 not while you are in the base below
+  if(!f.tunnelAt){ f.tunnelAt=now+1.6+Math.random()*2.4; return; } if(now<f.tunnelAt) return;
   f.tunnel--; f.tunnelAt=0; f.tunnelWait=now+2; const p=S.player, nS=2+((Math.random()*2)|0);
   if(f.hatches && f.hatches.length){ const h=f.hatches[(Math.random()*f.hatches.length)|0]; popHatch(h); squadAt(f, h.x, h.z, nS+1, true); }
   if(p){ for(let t=0;t<24;t++){ const a=(p.facing||0)+Math.PI+(Math.random()-0.5)*2.4, d=12+Math.random()*10, x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d;   // behind or beside the tank

@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { BIOME, MOBILE, S, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
+import { BIOME, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -43,7 +43,7 @@ export function fireSpotter(e){
   sfx('rocketlaunch');
   muzzleLight.position.set(x,2.4,z); muzzleLight.color.setHex(0xffd090); muzzleLight.intensity=5;
 }
-export function updateArtillery(dt, now){
+export function updateArtillery(dt, now){ if(UNDER.on) return;   // Z226
   const C=BALANCE.artillery, mort=_artMortars();
   if(S.stage<2 || mort===0 || boss){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down
   ART.t-=dt; if(ART.t>0) return;

@@ -1,7 +1,7 @@
 // actors/enemy-missiles.js — ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke
 import * as THREE from 'three';
 import { EQUIP } from '../../config.js';
-import { ARENA, GLOW, S, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, hitsHull, inBlock, inSmoke, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle } from '../hub.js';
+import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, hitsHull, inBlock, inSmoke, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle } from '../hub.js';
 
 // ===== ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke =====
 export const EMIS=[], _emPool=[]; const _mbk=[];
@@ -57,7 +57,7 @@ export function updateEnemyMissiles(dt, now){
     if(!gone && r.y < gy+3.2 && hitAllyTank(r.x, r.z, 0.3, r.dmg)) gone='hit';   // Z104 RPG / ATGM into a captured tank
     if(!gone) for(const bl of blocksNear(r.x, r.z, 0.3, _mbk)){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj' && !bl.supply) damageBlock(bl, r.dmg*1.2); wallMark(bl, r.x, r.y, r.z, -Math.sin(r.ang), -Math.cos(r.ang), 2.0, true); gone='hit'; break; } }
     if(!gone && core && Math.hypot(core.pos.x-r.x, core.pos.z-r.z) < core.r){ damageCore(r.dmg*0.8); gone='hit'; }
-    if(!gone && (r.y<=gy+0.2 || r.life<=0 || Math.abs(r.x)>ARENA || Math.abs(r.z)>ARENA)) gone='ground';
+    if(!gone && (r.y<=gy+0.2 || r.life<=0 || (!UNDER.on && (Math.abs(r.x)>ARENA || Math.abs(r.z)>ARENA)))) gone='ground';
     if(gone) blowMissile(i, gone);
   }
 }

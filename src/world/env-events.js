@@ -1,7 +1,7 @@
 // world/env-events.js — Z140 SURPRISES OF THE LAND: every minute or two the battlefield itself does something — the village river floods,
 //   a rockslide thunders down the hills, a shelled city block collapses, a sandstorm / blizzard / downpour sweeps in elsewhere. Announced on the radio.
 import * as THREE from 'three';
-import { BIOME, RIVER, S, aoeDamage, applyWeather, blocks, burst, cityCollapse, damageEnemy, damagePlayer, enemies, floatText, heightAt, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnPart } from '../hub.js';
+import { BIOME, RIVER, S, UNDER, aoeDamage, applyWeather, blocks, burst, cityCollapse, damageEnemy, damagePlayer, enemies, floatText, heightAt, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnPart } from '../hub.js';
 
 export const ENVEV = { next:0, active:null, rocks:[], fall:null };
 export function resetEnvEvents(now){ ENVEV.next=(now||performance.now()/1000)+50+Math.random()*25; RIVER.y=-0.85; if(RIVER.mesh) RIVER.mesh.position.y=RIVER.y; ENVEV.active=null; /* a new stage already chose its own weather — never restore the old one */ for(const r of ENVEV.rocks) scene.remove(r.m); ENVEV.rocks.length=0; ENVEV.fall=null; }
@@ -46,7 +46,7 @@ const SURGE={ DESERT:['sand','BÃO CÁT ẬP TỚI!','SCH: Bão cát — tầm n
   STEELMILL:['fog','BỤI GỈ SÉT CUỘN LÊN!','SCH: Gió cuốn bụi gỉ qua xưởng — địch có thể mò sát!'], VOLCANO:['sand','MƯA TRO NÚI LỬA!','SCH: Núi lửa phun tro — tầm nhìn giảm mạnh!'], QUARRY:['sand','BỤI ĐÁ MÙ MỊT!','SCH: Bụi đá trắng xoá — bám đội hình!'] };
 function surge(now){ const s=SURGE[BIOME.name]; if(!s || S.weather===s[0]) return false; ENVEV.active={ kind:'weather', t0:now, dur:12, prev:S.weather||'clear' }; applyWeather(s[0], 0.55); /* Z144 a short, light gust — never a whole fight in the murk */ announce(s[1], '#9fd8ff', s[2]); return true; }
 
-export function updateEnvEvents(dt, now){
+export function updateEnvEvents(dt, now){ if(UNDER.on) return;   // Z226
   updateRocks(dt, now); updateFall(dt, now);
   const A=ENVEV.active; if(A){ const u=(now-A.t0)/A.dur;
     if(A.kind==='flood'){ const k=u<0.15 ? u/0.15 : u>0.8 ? Math.max(0,(1-u)/0.2) : 1; RIVER.y=-0.85+0.55*k; if(RIVER.mesh) RIVER.mesh.position.y=RIVER.y; }

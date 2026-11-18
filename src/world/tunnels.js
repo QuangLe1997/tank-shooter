@@ -7,7 +7,7 @@
 //     seal them all and the men still down there are buried
 import * as THREE from 'three';
 import { TUNNEL } from '../../config.js';
-import { ARENA, BIOME, CAVE, MOBILE, S, addScore, blocks, buildCavern, burst, damageEnemy, decalCrater, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, inField, inZone, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
+import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, inField, inZone, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
 
 export const TUN = { list:[], under:[], next:0, chk:0, told:false, g:null };
 const R=(a,b)=>a+Math.random()*(b-a), RN=a=>Math.round(R(a[0], a[1]+0.99)-0.49), TAU=Math.PI*2;
@@ -71,7 +71,7 @@ export function buildTunnels(){ clearTunnels(); if(CAVE) CAVE.extra.length=0; co
   TUN.next=0; }
 
 // the whole underground for a new stage: the tunnels first (the cavern hangs torches on the mine mouths), then the cavern
-export function buildUnderground(){ buildTunnels(); buildCavern(); }
+export function buildUnderground(){ buildTunnels(); buildCavern(); buildUnderbase(); }
 
 // ---- queries ----
 const openList=()=>TUN.list.filter(E=>!E.sealed);
@@ -98,14 +98,16 @@ function comeUp(e, now){ const p=S.player, E=pickExit(p ? Math.atan2(-Math.sin(p
   e._under=null; const a=Math.random()*TAU; e.pos.x=E.x+Math.cos(a)*(E.rad+0.6); e.pos.z=E.z+Math.sin(a)*(E.rad+0.6);
   e.hp=Math.min(e.maxHp, e.hp+e.maxHp*TUNNEL.heal); e.supp=0; e.mesh.visible=true; enemies.push(e); puff(E);
   if(p && Math.hypot(p.pos.x-E.x, p.pos.z-E.z)<70) reveal(E); }
-export function tunnelSquad(pref){ if(!TUN.list.length || enemies.length>TUNNEL.ambush.cap) return false; const E=pickExit(pref); if(!E) return false;
+export function tunnelSquad(pref){ if(!TUN.list.length || enemies.length>TUNNEL.ambush.cap || UNDER.on) return false;
+  if(Math.random()<UNDER.cut.inf || (UNDER.targets.length && !UNDER.targets.some(o=>o.role==='inf' && o.alive))) return false;   // Z226 their barracks below are wrecked
+  const E=pickExit(pref); if(!E) return false;
   const back=Math.atan2(-E.x, -E.z); spawnSquad({ x:E.x+Math.sin(back)*(E.rad+1), z:E.z+Math.cos(back)*(E.rad+1) }); puff(E, true);
   if(E.kind==='mouth' && S.stage>=2 && Math.random()<0.4) setTimeout(()=>{ if(S.mode==='playing' && !E.sealed) spawnEnemy(S.stage>=4?'heavy':'grunt', E.x, E.z); }, 1400);
   reveal(E); return true; }
 export function updateTunnels(dt, now){ if(!TUN.g) return;
   for(const E of TUN.list){ if(E.open>0){ E.open=Math.max(0, E.open-dt); if(E.lid) E.lid.rotation.z=Math.min(1, E.open)*1.85; }
     if(E.mark && E.mark.visible){ E.mark.material.opacity=0.35+0.3*Math.sin(now*4+E.x); } }
-  if(S.mode!=='playing') return; const p=S.player;
+  if(S.mode!=='playing' || UNDER.on) return; const p=S.player;
   for(let i=TUN.under.length-1;i>=0;i--){ const e=TUN.under[i]; if(e._under && now>e._under.until && openList().length){ TUN.under.splice(i,1); comeUp(e, now); } }
   if(now<TUN.chk) return; TUN.chk=now+0.4;
   if(p) for(const E of TUN.list) if(!E.sealed && !(E.mark && E.mark.visible) && Math.hypot(p.pos.x-E.x, p.pos.z-E.z)<TUNNEL.seeR) reveal(E);
