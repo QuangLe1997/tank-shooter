@@ -63,6 +63,7 @@ export function tankVsCircle(t, cx, cz, r){
 }
 export function separateTanks(now){
   const p=S.player; if(!p) return;
+  if(p.cav){ separateNoHull(now); return; }   // Z245 cavalry: the general / horse handles its own collisions (game/cavalry.js)
   for(let i=0;i<enemies.length;i++){ const a=enemies[i]; if(!solidTank(a)) continue;                    // enemy ↔ enemy
     for(let j=i+1;j<enemies.length;j++){ const b=enemies[j]; if(!solidTank(b)) continue; collideTanks(a,b,now); } }
   for(const a of enemies){ if(!solidTank(a)) continue;                                                   // enemy ↔ player: real hull contact (kamikaze must touch → excluded)
@@ -101,3 +102,13 @@ export function separateTanks(now){
   clampField(p.pos, 3);
   p.mesh.position.set(p.pos.x,0,p.pos.z);
 }
+
+// Z245 the field without the player's hull (cavalry mode): enemies keep apart, round the Core, off cover and walls, inside the fence
+export function separateNoHull(now){
+  for(let i=0;i<enemies.length;i++){ const a=enemies[i]; if(!solidTank(a)) continue; for(let j=i+1;j<enemies.length;j++){ const b=enemies[j]; if(solidTank(b)) collideTanks(a,b,now); }
+    if(core){ const cx=a.pos.x-core.pos.x, cz=a.pos.z-core.pos.z, m2=a.r+core.r, cd2=cx*cx+cz*cz; if(cd2<m2*m2 && cd2>1e-4){ const cd=Math.sqrt(cd2), ov=m2-cd; a.pos.x+=cx/cd*ov; a.pos.z+=cz/cd*ov; } } }
+  if(boss && boss.alive) for(const a of enemies){ if(solidTank(a)) collideTanks(boss,a,now); }
+  for(const bl of blocks){ if(bl.obb){ for(const a of enemies) if(solidTank(a)) tankVsWall(a, bl); if(boss&&boss.alive) tankVsWall(boss, bl); continue; }
+    for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r); if(boss&&boss.alive) tankVsCircle(boss, bl.x, bl.z, bl.r); }
+  for(const a of enemies){ if(!solidTank(a)) continue; clampField(a.pos, 2); a.mesh.position.set(a.pos.x,0,a.pos.z); }
+  if(boss&&boss.alive) boss.mesh.position.set(boss.pos.x,0,boss.pos.z); }

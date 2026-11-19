@@ -202,7 +202,7 @@ function sd(o, k, target, st, dt){ const kv=k+'V', om=2/st, x=om*dt, e=1/(1+x+0.
   o[kv]=(o[kv]-om*tmp)*e; o[k]=target+(ch+tmp)*e; }
 export const smoother = u => u<=0 ? 0 : u>=1 ? 1 : u*u*u*(u*(u*6-15)+10);   // smootherstep: zero velocity AND acceleration at both ends
 export function camShakeGain(){ let k; try{ k=PROFILE.shake; }catch(e){} const L=SHAKE.levels; return L[k]!=null ? L[k] : L[SHAKE.def]; }
-function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk);
+function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)*((S.player&&S.player.camK)||1);   // Z245 cavalry: a man needs a closer lens
   out.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1)*(k<0.55 ? 0.8+0.2*k/0.55 : 1), camOff.z*k);   // player zoom + the auto camera's pull-back · Z165 close-ups sit a little lower
   if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
 // the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
@@ -210,9 +210,9 @@ function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)
 export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+3.2;
   for(const L of F.lift){ const y=pos.y+L; if(!fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z)) return L; }
   return F.lift[F.lift.length-1]; }
-export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk);
+export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), ck=p.camK||1, z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk)*ck*ck;
   const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
-  look.set(p.pos.x+lx-Math.sin(y)*ah, CS.lookY+Math.max(0,0.6-z)*2.2, p.pos.z+lz-Math.cos(y)*ah);
+  look.set(p.pos.x+lx-Math.sin(y)*ah, (CS.lookY+Math.max(0,0.6-z)*2.2)*ck, p.pos.z+lz-Math.cos(y)*ah);
   camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; pos.y+=camLift(pos, p); return CS.fov; }   // (lifted over a wall in the way, as play will be)
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
@@ -227,7 +227,7 @@ export function updateCamera(dt, now){
   sd(CAM, 'zl', Math.log(Math.max(0.05, S.zoomT??S.zoom)), F.zoom, st); S.zoom=Math.exp(CAM.zl);                    // zoom glides
   { const yt=S.camYawT??S.camYaw, d=wrapAngle(yt-CAM.ya); sd(CAM, 'ya', CAM.ya+d, F.yaw, st);                       // the view turns along the shortest arc
     if(Math.abs(d)<2e-4 && Math.abs(CAM.yaV)<2e-3){ CAM.ya=yt; CAM.yaV=0; } S.camYaw=CAM.ya; }
-  const z=S.zoom, zk=Math.min(1, z), cy=S.camYaw, ah=CS.ahead*Math.max(0.4, zk);   // Z171 close-ups keep the tank centred · Z184 the cine style looks well ahead
+  const ck=(p.camK||1), z=S.zoom, zk=Math.min(1, z), cy=S.camYaw, ah=CS.ahead*Math.max(0.4, zk)*ck*ck;   // Z245 a man / horseman: look-ahead shrinks (×camK²) so he stays in frame   // Z171 close-ups keep the tank centred · Z184 the cine style looks well ahead
   sd(CAM, 'lx', (Math.sin(p.aim)*6 + p.vel.x*0.18)*0.45*zk, F.lead, st); sd(CAM, 'lz', (Math.cos(p.aim)*6 + p.vel.z*0.18)*0.45*zk, F.lead, st);   // look-ahead (aim + motion) glides
   sd(CAM, 'fx', p.pos.x, F.follow, st); sd(CAM, 'fz', p.pos.z, F.follow, st);                                       // the tank itself is held tight
   camLook.set(CAM.lx, 0, CAM.lz);
@@ -245,7 +245,7 @@ export function updateCamera(dt, now){
   CAM.kick += ((S.camKick||0) - CAM.kick)*(1-Math.exp(-dt*28));   // Z168 the shot shoves the camera back along the barrel (now eased in over a couple of frames, not a one-frame jump)
   { const k=CAM.kick*F.kick*(0.4+0.6*Math.min(1, g/SHAKE.levels.mid)); if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } }
   S.camKick=(S.camKick||0)*Math.exp(-dt*10);
-  camera.lookAt(camTarget.x, CS.lookY+Math.max(0, 0.6-z)*2.2, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
+  camera.lookAt(camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
   { const want=CS.fov + CS.speedFov*Math.min(1, Math.hypot(p.vel.x, p.vel.z)/PLAYER.maxSpeed) + Math.min(2, CAM.kick*1.4)*F.kick, f=camera.fov+(want-camera.fov)*(1-Math.exp(-dt*F.fovEase));   // the lens breathes with speed, never steps
     if(CAM.blend>0){ CAM.blend=Math.max(0, CAM.blend-dt); const b=smoother(1-CAM.blend/F.resume);   // gliding home from a cinematic
       camera.position.lerpVectors(CAM.bp, camera.position, b); _q0.copy(camera.quaternion); camera.quaternion.slerpQuaternions(CAM.bq, _q0, b); camera.fov=CAM.bf+(f-CAM.bf)*b; camera.updateProjectionMatrix(); }

@@ -1,8 +1,8 @@
 // combat/abilities.js — ABILITIES (stubs filled in later phases)
-import { PLAYER, S, controlScheme, getMoveDir, sfx, spawnPart, tankInput } from '../hub.js';
+import { PLAYER, S, cavDash, controlScheme, getMoveDir, sfx, spawnPart, tankInput } from '../hub.js';
 
 // ----------------------------- ABILITIES (stubs filled in later phases) -----------------------------
-export function tryDash(){
+export function tryDash(){ if(S.player && S.player.cav){ cavDash(); return; }   // Z245
   if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
   if(now < p.dashCdUntil) return;
   // dash along current move intent, else along facing

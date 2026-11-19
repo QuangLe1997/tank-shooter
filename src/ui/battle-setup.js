@@ -68,10 +68,15 @@ export function refreshSummary(){ const el=document.getElementById('bsSum'); if(
 export function setSetupTab(t){ BS.tab=t; document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>m.classList.toggle('on', m.dataset.m===t));
   document.getElementById('bsCampaign').classList.toggle('hidden', t!=='campaign'); document.getElementById('bsCustom').classList.toggle('hidden', t!=='custom');
   if(t==='campaign') buildCampaign(); else buildCustom(); refreshSummary(); }
-export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); setSetupTab(tab||'campaign'); sfx('click'); }
+export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); buildUnitPick(); setSetupTab(tab||'campaign'); sfx('click'); }
 export function closeBattleSetup(){ hide('battleSetup'); show('start'); sfx('click'); }
 export function goBattle(){ hide('battleSetup');
   if(BS.tab==='campaign') launchGame({ mode:'campaign', level:BS.sel });   // Z119 behind the deploying veil
   else { const C=PROFILE.custom; saveProfile(); launchGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
 tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle);
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));
+
+// Z245 UNIT: fight as the tank, or as the general in full plate on his war horse (KỴ SĨ THÉP) — remembered between battles
+export function buildUnitPick(){ const el=document.getElementById('bsUnit'); if(!el) return; el.innerHTML='';
+  for(const [k,t,sub] of [['tank','XE TĂNG','thiết giáp'],['cav','KỴ SĨ THÉP','tướng giáp · chiến mã']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.unit||'tank')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';
+    tapEl(c, ()=>{ PROFILE.unit=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); } }

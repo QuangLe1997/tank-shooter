@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
-import { CORE_DEF, TROOPS } from '../../config.js';
-import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildUnderground, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
+import { CORE_DEF, TROOPS, CAV } from '../../config.js';
+import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildUnderground, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makeCavPlayer, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -24,8 +24,9 @@ export function startGame(arg){
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.runId = Date.now().toString(36)+Math.random().toString(36).slice(2,6);   // Z163 the leaderboard follows one run's score
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
-  if(S.player && S.player.modelId !== currentTank()){ scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
-  S.player = S.player || makePlayer();
+  const cavWanted = PROFILE.unit==='cav';   // Z245 the unit picked in CHUẨN BỊ TRẬN
+  if(S.player && (!!S.player.cav!==cavWanted || (!cavWanted && S.player.modelId !== currentTank()))){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
+  S.player = S.player || (cavWanted ? makeCavPlayer() : makePlayer());
   clearRelic();                          // Z154 a new run: no relic power carried over
   if(TRAIN.on){ TRAIN.t0=0; TRAIN.lastPos=null; TRAIN.finished=false; }   // Z182 RESTART inside the training: the current step starts over
   buildCore(stStage);                    // monument matching the (resumed) stage
@@ -40,6 +41,7 @@ export function startGame(arg){
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0, turbo:0, ram:0, siege:0 }; p.buffLv={ turbo:0 }; p.era=0; setEraTiles(p);
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
+  if(p.cav){ p.dmgMul=CAV.atk; p.crit=CAV.crit; p.fireMul=CAV.fireK; }   // Z245 the general: heavy rifle rounds, a marksman's eye, quick hands
   applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
   for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]);    // start each gun with its (upgraded) full magazine
   { const TS=tankModel(p.modelId).stats; p.maxHp=Math.round(p.maxHp*TS.hp); p.hp=p.maxHp; p.speedMul*=TS.spd; p.accelMul=TS.acc; p.turnMul=TS.turn; p._size=TS.size; }   // Z155 the model's armour / engine / suspension

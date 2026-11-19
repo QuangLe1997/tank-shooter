@@ -20,7 +20,7 @@ export function engineStart(){
 export function engineStop(){ const n=ENG.nodes; if(!n||!actx) return; n.out.gain.setTargetAtTime(0, actx.currentTime, 0.15); }
 export function updateEngine(dt){
   const n=ENG.nodes, p=S.player; if(!n||!actx) return;
-  const t=actx.currentTime, live = S.mode==='playing' && p && !muted;
+  const t=actx.currentTime, live = S.mode==='playing' && p && !muted && !p.cav;   // Z245 no diesel in cavalry mode
   if(!live){ n.out.gain.setTargetAtTime(0, t, 0.2); return; }
   const sp=Math.hypot(p.vel.x,p.vel.z), thr=Math.min(1, Math.abs(p.throttle||0)+(NOW()<p.dashUntil?1:0)), up=Math.max(0, p.grade||0), down=Math.max(0, -(p.grade||0));
   const load=Math.min(1.6, thr*(0.65+up*3.2) - down*0.5*thr + (NOW()<p.dashUntil?0.6:0));          // uphill = heavy load, downhill = engine braking

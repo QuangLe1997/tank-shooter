@@ -504,7 +504,7 @@ export const KEYS_HELP = [
   [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
   [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
   [['X'], 'XUNG PHONG — cả đội đánh thẳng vào thành gần nhất', 'QUÂN TA'], [['B'], 'Gọi trực thăng thả lính dù xuống cạnh xe', 'QUÂN TA'],
-  [['Esc','P'], 'Tạm dừng', 'KHÁC'], [['−','='], 'Camera: thu xa · phóng gần', 'CAMERA'], [['[',']'], 'Camera: xoay trái · xoay phải 45°', 'CAMERA'], [['Giữ chuột giữa + kéo'], 'Camera: xoay tự do quanh xe', 'CAMERA'], [['Ctrl/Shift + cuộn','Chụm 2 ngón'], 'Camera: zoom mượt (trackpad / chuột)', 'CAMERA'], [['Vuốt ngang 2 ngón'], 'Camera: xoay góc nhìn (trackpad)', 'CAMERA'], [['C'], 'Bật / tắt CAMERA TỰ ĐỘNG (tự lùi xa khi đông địch, chạy nhanh, gần thành, gặp trùm)', 'CAMERA'], [['V'], 'Đặt lại camera (độ zoom mặc định, hướng thẳng)', 'CAMERA'], [['M'], 'Bật / tắt nhạc nền (tiếng súng, tiếng nổ vẫn giữ)', 'KHÁC'], [['F3'], 'Bảng đo hiệu năng: FPS, thời gian khung, logic, GPU, lệnh vẽ', 'KHÁC'],
+  [['Esc','P'], 'Tạm dừng', 'KHÁC'], [['−','='], 'Camera: thu xa · phóng gần', 'CAMERA'], [['[',']'], 'Camera: xoay trái · xoay phải 45°', 'CAMERA'], [['Giữ chuột giữa + kéo'], 'Camera: xoay tự do quanh xe', 'CAMERA'], [['Ctrl/Shift + cuộn','Chụm 2 ngón'], 'Camera: zoom mượt (trackpad / chuột)', 'CAMERA'], [['Vuốt ngang 2 ngón'], 'Camera: xoay góc nhìn (trackpad)', 'CAMERA'], [['C'], 'Bật / tắt CAMERA TỰ ĐỘNG (tự lùi xa khi đông địch, chạy nhanh, gần thành, gặp trùm)', 'CAMERA'], [['V'], 'Đặt lại camera (độ zoom mặc định, hướng thẳng)', 'CAMERA'], [['M'], 'Bật / tắt nhạc nền (tiếng súng, tiếng nổ vẫn giữ)', 'KHÁC'], [['F3'], 'Bảng đo hiệu năng: FPS, thời gian khung, logic, GPU, lệnh vẽ', 'KHÁC'], [['G'], 'Lên / xuống ngựa · ngựa ở xa: huýt sáo gọi về', 'KỴ SĨ THÉP'], [['Space'], 'Trên ngựa: phi nước đại 5 s · đi bộ: chạy nước rút', 'KỴ SĨ THÉP'], [['C'], 'Đi bộ: quỳ / đứng dậy', 'KỴ SĨ THÉP'], [['Z'], 'Đi bộ: nằm / đứng dậy (nằm + di chuyển = bò)', 'KỴ SĨ THÉP'],
   [['H'], 'Mở / đóng bảng phím tắt này', 'KHÁC'], [['Enter'], 'Xác nhận bố trí trận địa', 'KHÁC'] ];
 // Z110 AUTO CAMERA — on top of the zoom you picked, the camera pulls back by itself when the fight needs a wider view and eases
 // back in when it's calm: speed, enemies close by, a fortress ahead, the boss. It never rotates by itself (screen-relative driving).
@@ -529,6 +529,18 @@ export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.
 //   weaker sky / ambient / environment fill (real light-and-shadow modelling instead of flat, evenly lit "toy" scenes), a grade that keeps contrast and
 //   colour but adds no vibrance boost, thinner haze. The per-battlefield ATMOS values are multiplied by these (expK × exposure, sunK × sun, …).
 //   flora = colour multiplier on every leaf, frond and grass blade (muted, darker natural greens)
+// Z245 THE WAR HORSE (actors/horse.js), metres: bodyY = barrel centre height · leg segment lengths [upper, cannon, pastern+hoof] · leg pivots ·
+//   neckX / headX carriage · gaitV = speeds (m/s) where walk→trot→canter→gallop change over (gaitHys either side) · blendT = seconds to blend two gaits
+export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:0.72, headX:0.25, front:[0.58,0.35,0.22], hind:[0.6,0.42,0.2],
+  legs:{ fx:0.19, fy:-0.2, fz:0.55, hx:0.2, hy:-0.14, hz:-0.6 }, gaitV:[2.0,4.8,9.5], gaitHys:0.35, blendT:0.35 };
+// Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
+//   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
+//   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·
+//   mountR = reach to climb back on · call = the horse trots to your whistle at this speed · trample: galloping over infantry · recoilK = recoil × (no tank to soak it)
+export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.2, surgeAccel:6.5, decel:6.5, turnLow:2.6, turnHigh:1.05 }, surge:{ dur:5, cd:7 },
+  foot:{ run:5.2, sprint:7.4, crouch:2.0, crawl:0.9, sprintDur:3, sprintCd:4 }, radius:{ mounted:1.0, foot:0.45, prone:0.38 },
+  defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.5, call:{ speed:9, arrive:2.6 },
+  trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85 };   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
 //   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)
 export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };

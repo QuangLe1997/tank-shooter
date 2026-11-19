@@ -10,7 +10,8 @@ export function spawnRider(){ if(riders.length>=RIDER.cap) return; const g=makeS
   const mhp=Math.round(RIDER.hp + Math.random()*16 - 6);   // each crew member is an individual
   const bar=makeSoldierBar(); scene.add(bar.g);
   riders.push({ g, bar:bar.g, barFill:bar.fill, hp:mhp, maxHp:mhp, fireAt:0, hurtAt:0, hitT:0, dead:false }); }
-export function deployRiders(target){ while(riders.length<Math.min(RIDER.cap,target)) spawnRider(); updateCrewBtn(); }
+export function deployRiders(target){ if(S.player && S.player.cav) return;   // Z245 nobody rides on a horse's back but the general
+  while(riders.length<Math.min(RIDER.cap,target)) spawnRider(); updateCrewBtn(); }
 export function clearRiders(){ for(const r of riders){ scene.remove(r.g); scene.remove(r.bar); } riders.length=0; updateCrewBtn(); }
 export function damageRider(r, dmg){ if(r.dead) return; r.hp-=dmg; r.hitT=0.16;
   const t=r.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }

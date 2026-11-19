@@ -618,6 +618,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.PYLON_SITE && C.PYLON_SITE.coreGap>=10 && C.PYLON_SITE.apart>=12 && C.PYLON_SITE.pillar>=40, 'pylon site rules: citadel gap, spacing, a tall light pillar');
   ok(/function pylonMarker/.test(bo) && /updatePylonBeacons/.test(bo) && /export function updatePylonMarks/.test(pm) && /updatePylonMarks\(\)/.test(lp) && /PYLONS\.length/.test(rd), 'every pylon: light pillar + pulsing ring + diamond, an on-screen / edge marker with its distance, a radar blip'); }
 
+// Z245 cavalry mode: the war horse (gait engine + IK), the general in plate, mount / dismount, stances
+{ const fs=await import('node:fs'); const ho=fs.readFileSync('src/actors/horse.js','utf8'), ge=fs.readFileSync('src/actors/general.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), C=await import('./config.js');
+  ok(/walk:\s*\{ off:\[0, 0\.25, 0\.5, 0\.75\]/.test(ho) && /trot:\s*\{ off:\[0, 0\.5, 0\.5, 0\]/.test(ho) && /canter:\{ off:/.test(ho) && /gallop:\{ off:/.test(ho), 'four gaits with their real footfall order (walk lateral 4-beat, trot diagonal pairs, canter 3-beat, gallop transverse)');
+  ok(/function solveLeg/.test(ho) && /function footTarget/.test(ho) && /heightAt\(wx, wz\)/.test(ho) && /S\.onStep/.test(ho), 'two-bone IK legs planted on the ground, footfall events');
+  ok(/chanfron/.test(ho) && /crinet/.test(ho) && /peytral/.test(ho) && /flanchards/.test(ho) && /crupper/.test(ho), 'the horse wears full barding');
+  ok(/armet/.test(ge) && /breastplate/.test(ge) && /pauldrons/.test(ge) && /greaves/.test(ge) && /function battleRifle/.test(ge) && /export function poseRider/.test(ge), 'the general: full plate, a battle rifle, a riding pose');
+  ok(/export function cavToggleMount/.test(cv) && /export function cavStance/.test(cv) && /export function cavDash/.test(cv) && /trample/.test(cv) && /whistle\(\)/.test(cv), 'mount / dismount, kneel / prone / crawl, gallop surge / sprint, trampling, whistle the horse');
+  ok(/if\(S\.player\.cav\) updateCavalry/.test(lp) && /PROFILE\.unit==='cav'/.test(fl) && C.CAV && C.CAV.horse.gallop>=14 && C.CAV.defK.prone<C.CAV.defK.stand && C.HORSE && C.HORSE.gaitV.length===3, 'cavalry mode wired in: the loop, the unit pick, speeds, armour by posture'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

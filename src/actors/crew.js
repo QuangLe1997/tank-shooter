@@ -1,14 +1,15 @@
 // actors/crew.js — Z89/Z100 YOUR CREW command: tap = riders jump down and fight, hold = recall everyone on foot, + the crew button.
 import { TROOPS } from '../../config.js';
-import { FT, S, floatText, haptic, radio, riders, scene, sfx, spawnAlly } from '../hub.js';
+import { FT, S, cavToggleMount, floatText, haptic, radio, riders, scene, sfx, spawnAlly } from '../hub.js';
 
 // ---- from actors/troops.js ----
 // ---- Z89 · YOUR CREW: the riflemen riding the tank dismount to fight on foot, then run back and mount up ----
 // TAP = crew on the hull jump down · HOLD = recall everyone on foot (release to stop; latecomers stay on the ground)
 export let _crewDownAt=0;
-export function crewPress(){ if(S.mode!=='playing' || _crewDownAt) return; _crewDownAt=performance.now()/1000;
+export function crewPress(){ if(S.player && S.player.cav){ cavToggleMount(); return; }   // Z245 G = mount / dismount
+  if(S.mode!=='playing' || _crewDownAt) return; _crewDownAt=performance.now()/1000;
   if(FT.length){ S.recall=true; S.recallIn=0; radio('Kíp lính: rút về xe — giữ nguyên vị trí cho bọn tôi lên!'); sfx('click'); updateCrewBtn(); } }
-export function crewRelease(){ if(!_crewDownAt) return; const held=performance.now()/1000-_crewDownAt; _crewDownAt=0;
+export function crewRelease(){ if(S.player && S.player.cav) return; if(!_crewDownAt) return; const held=performance.now()/1000-_crewDownAt; _crewDownAt=0;
   const wasRecall=S.recall; S.recall=false; const left=FT.length;
   if(wasRecall && held>=TROOPS.fireteam.tapMax){ if(S.recallIn) floatText('ĐÃ GOM '+S.recallIn+(left?' · CÒN '+left+' DƯỚI ĐẤT':''), '#9bd14a', S.player.pos, 15); }
   else if(riders.length) crewDismount();

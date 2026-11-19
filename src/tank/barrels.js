@@ -249,6 +249,7 @@ export function mountBarrel(mesh, id){ const ud=mesh.userData;
   if(ng.userData.mount){ ng.userData.mount.position.y += ud.mountY||0; ud.turret.add(ng.userData.mount); ud.gunMount=ng.userData.mount; }   // Z157 per-model turrets start at their base: lift the gun's roof hardware onto the roof
   ud.rig.recoilLen=ng.userData.recoilLen*K.len*K.slide; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
   return ng; }
-export function setPlayerBarrel(id){
+export function setPlayerBarrel(id){ if(S.player && S.player.cav) return;   // Z245 the general carries his own rifle — no turret to mount a barrel on
+ 
   const p=S.player; if(!p||!p.mesh) return; const ng=mountBarrel(p.mesh, id); p.muzzle=ng.userData.muzzle; p.muzzles=ng.userData.muzzles||null; p.mzI=0;
 }

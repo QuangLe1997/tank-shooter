@@ -171,6 +171,9 @@ export * from './ui/alarm.js';
 export * from './actors/drone.js';
 export * from './loot/beacons.js';
 export * from './actors/soldiers.js';
+export * from './actors/horse.js';   // Z245 the war horse + gait engine
+export * from './actors/general.js';   // Z245 the general in full plate
+export * from './game/cavalry.js';   // Z245 cavalry mode
 export * from './world/sidepaint.js';   // Z179 battlefield-aware paint for both sides (runtime only)
 export * from './actors/riders.js';
 export * from './game/loop.js';
