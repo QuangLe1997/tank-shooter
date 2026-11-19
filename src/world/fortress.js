@@ -135,7 +135,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
         { const fl=flameFX(2.1, 1.4); fl.position.set(fx, 1.8, fz); g.add(fl); }   // brazier fire (Z235 a living flame)
         for(let k=0;k<3;k++){ const [cx,cz]=at(sd*(off-1.2+k*1.4), TH/2+5.2); for(const q of [-0.7,0.7]){ const st=new THREE.CylinderGeometry(0.08,0.1,3.0,6); st.rotateZ(q); st.rotateY(ry); st.translate(cx, 0.9, cz); wd.push(st); } } }   // chevaux-de-frise
       // Z241 the GATE HALL: a storey bridging the two gate towers above the fighting gallery — arcaded, with its own crenellated roof
-      { const [hx,hz]=at(0, 0.5), HW=FORT.gateW+0.6, HY=H+3.0, HH=GH-H-6.5; if(HH>2){ geos.push(placed(stoneBox(HW, HH, TH*1.3), hx, HY+HH/2, hz, ry), placed(stoneBox(HW+0.5, 0.3, TH*1.3+0.5), hx, HY+HH+0.15, hz, ry), placed(stoneBox(HW+0.4, 0.26, TH*1.3+0.3), hx, HY+0.13, hz, ry));
+      { const [hx,hz]=at(0, 0.5), HW=FORT.gateW+0.6, HY=H-0.2, HH=GH-H-3.4; if(HH>2){ geos.push(placed(stoneBox(HW, HH, TH*1.3), hx, HY+HH/2, hz, ry), placed(stoneBox(HW+0.5, 0.3, TH*1.3+0.5), hx, HY+HH+0.15, hz, ry), placed(stoneBox(HW+0.4, 0.26, TH*1.3+0.3), hx, HY+0.13, hz, ry));
           for(let k=0;k<3;k++){ const l=-HW/2+HW*(k+0.5)/3, [wx,wz]=at(l, 0.5+TH*0.65+0.02); dk.push(placed(new THREE.BoxGeometry(0.75, Math.min(2.4, HH*0.55), 0.14), wx, HY+HH*0.5, wz, ry)); }   // arcade windows
           for(let k=0;k<5;k++){ const l=-HW/2+0.5+k*(HW-1)/4, [mx2,mz2]=at(l, 0.5+TH*0.65-0.3); geos.push(placed(stoneBox(0.85,1.0,0.6), mx2, HY+HH+0.8, mz2, ry)); } } }
       // fighting gallery over the gate: deep, corbelled out, crenellated
