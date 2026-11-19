@@ -103,3 +103,4 @@
   .mbtn .ic{width:27px;height:27px;color:var(--ink);display:inline-flex;}
   #mPause .ic{width:20px;height:20px;color:var(--ink);display:inline-flex;}
 
+body.cam-drag, body.cam-drag *{cursor:grabbing !important;}   /* Z239 middle-button orbit */

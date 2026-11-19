@@ -1,6 +1,6 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE } from '../../config.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE } from '../../config.js';
 import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
@@ -190,29 +190,61 @@ export function camAutoPull(p){ const A=CAM_AUTO, px=p.pos.x, pz=p.pos.z, R2=A.n
   for(const f of FORTS){ if(f.captured) continue; const d=Math.hypot(f.x-px, f.z-pz); if(d < f.R+A.fortPad){ k += A.fortK; break; } }   // a fortress ahead / inside one
   if(boss && Math.hypot(boss.pos.x-px, boss.pos.z-pz) < A.bossR) k += A.bossK;                                 // the boss fight
   return Math.min(A.max, k); }
+// Z239 SMOOTH CAMERA — every moving part of the view is a critically-damped spring (SmoothDamp): the tank is followed tightly, the
+//   aim/motion look-ahead glides (a flick of the mouse never yanks the frame), zoom eases in log space (equal feel near and far), the
+//   view turns along the shortest arc so the camera ORBITS the tank instead of cutting a chord through it, and after any cinematic
+//   (intro, death cam) the view glides back over CAM_FEEL.resume s instead of snapping. S.zoomT / S.camYawT are what the player asked
+//   for; S.zoom / S.camYaw are what is on screen (driving stays relative to what you see).
+const CAM={ on:false, t:-1, lx:0,lxV:0, lz:0,lzV:0, fx:0,fxV:0, fz:0,fzV:0, ya:0,yaV:0, zl:0,zlV:0, dash:0,dashV:0, kick:0, blend:0, bf:58,
+  bp:new THREE.Vector3(), bq:new THREE.Quaternion() };
+const _q0=new THREE.Quaternion();
+function sd(o, k, target, st, dt){ const kv=k+'V', om=2/st, x=om*dt, e=1/(1+x+0.48*x*x+0.235*x*x*x), ch=o[k]-target, tmp=(o[kv]+om*ch)*dt;
+  o[kv]=(o[kv]-om*tmp)*e; o[k]=target+(ch+tmp)*e; }
+export const smoother = u => u<=0 ? 0 : u>=1 ? 1 : u*u*u*(u*(u*6-15)+10);   // smootherstep: zero velocity AND acceleration at both ends
+export function camShakeGain(){ let k; try{ k=PROFILE.shake; }catch(e){} const L=SHAKE.levels; return L[k]!=null ? L[k] : L[SHAKE.def]; }
+function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk);
+  out.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1)*(k<0.55 ? 0.8+0.2*k/0.55 : 1), camOff.z*k);   // player zoom + the auto camera's pull-back · Z165 close-ups sit a little lower
+  if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
+// the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
+export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk);
+  const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
+  look.set(p.pos.x+lx-Math.sin(y)*ah, CS.lookY+Math.max(0,0.6-z)*2.2, p.pos.z+lz-Math.cos(y)*ah);
+  camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; return CS.fov; }
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
-  // look slightly ahead of the player toward the aim + a bit toward velocity (motion feel)
-  camLook.set(Math.sin(p.aim)*6 + p.vel.x*0.18, 0, Math.cos(p.aim)*6 + p.vel.z*0.18);
-  const zk=Math.min(1, S.zoom||1);   // Z171 close-ups keep the tank centred and ignore most of the auto pull-back
-  const CS=applyCamStyle(), ah=CS.ahead*Math.max(0.4, zk), cy=S.camYaw||0;   // Z184 the cine style looks well ahead of the tank (into the screen)
-  camTarget.set(p.pos.x + camLook.x*0.45*zk - Math.sin(cy)*ah, 0, p.pos.z + camLook.z*0.45*zk - Math.cos(cy)*ah);
-  const dashPull = (now && now < p.dashUntil) ? 4 : 0;     // ease back during a dash
+  const F=CAM_FEEL, CS=applyCamStyle(), st=Math.min(dt, 1/20);
+  if(now-CAM.t > 0.15 || !CAM.on){   // first frame, or back from a cinematic / the death cam / a pause → springs settle on the goal, the view glides over
+    CAM.blend = CAM.on ? F.resume : 0; CAM.on=true;
+    S.zoom=S.zoomT??S.zoom; S.camYaw=S.camYawT??S.camYaw; CAM.zl=Math.log(Math.max(0.05,S.zoom)); CAM.ya=S.camYaw;
+    const zk=Math.min(1,S.zoom); CAM.lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk; CAM.lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk; CAM.fx=p.pos.x; CAM.fz=p.pos.z;
+    CAM.lxV=CAM.lzV=CAM.fxV=CAM.fzV=CAM.yaV=CAM.zlV=CAM.dashV=0; CAM.dash=0; CAM.kick=0;
+    CAM.bp.copy(camera.position); CAM.bq.copy(camera.quaternion); CAM.bf=camera.fov; }
+  CAM.t=now;
+  sd(CAM, 'zl', Math.log(Math.max(0.05, S.zoomT??S.zoom)), F.zoom, st); S.zoom=Math.exp(CAM.zl);                    // zoom glides
+  { const yt=S.camYawT??S.camYaw, d=wrapAngle(yt-CAM.ya); sd(CAM, 'ya', CAM.ya+d, F.yaw, st);                       // the view turns along the shortest arc
+    if(Math.abs(d)<2e-4 && Math.abs(CAM.yaV)<2e-3){ CAM.ya=yt; CAM.yaV=0; } S.camYaw=CAM.ya; }
+  const z=S.zoom, zk=Math.min(1, z), cy=S.camYaw, ah=CS.ahead*Math.max(0.4, zk);   // Z171 close-ups keep the tank centred · Z184 the cine style looks well ahead
+  sd(CAM, 'lx', (Math.sin(p.aim)*6 + p.vel.x*0.18)*0.45*zk, F.lead, st); sd(CAM, 'lz', (Math.cos(p.aim)*6 + p.vel.z*0.18)*0.45*zk, F.lead, st);   // look-ahead (aim + motion) glides
+  sd(CAM, 'fx', p.pos.x, F.follow, st); sd(CAM, 'fz', p.pos.z, F.follow, st);                                       // the tank itself is held tight
+  camLook.set(CAM.lx, 0, CAM.lz);
+  camTarget.set(CAM.fx + CAM.lx - Math.sin(cy)*ah, 0, CAM.fz + CAM.lz - Math.cos(cy)*ah);
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
-  S.camZ += (_camAutoWant - S.camZ) * Math.min(1, dt*CAM_AUTO.ease);
-  { const k=Math.max(0.26, (S.zoom||1) + S.camZ*zk); _camOff.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1)*(k<0.55 ? 0.8+0.2*k/0.55 : 1), camOff.z*k); }   // player zoom + the auto camera's pull-back · Z165 close-ups drop the camera a little lower for a more cinematic angle
-  if(S.camYaw) _camOff.applyAxisAngle(_camUP, S.camYaw);   // player view rotation
-  const want = _camWant.copy(camTarget).add(_camOff);
-  want.y += dashPull;
-  if(now - _camT > 0.15) camBase.copy(camera.position); _camT = now;   // resuming after a cinematic → continue from where the camera is
-  camBase.lerp(want, Math.min(1, dt*5.5));   // Z107: tighter follow (was 4.5) — less floaty lag behind the lighter tank
-  const tr=Math.min(1, S.shake/3.2), t2=tr*tr;               // TRAUMA model: shake ∝ trauma², smooth multi-sine noise, decays
+  S.camZ += (_camAutoWant - S.camZ) * (1-Math.exp(-dt*CAM_AUTO.ease));
+  camOffset(z, cy, zk, _camOff);
+  sd(CAM, 'dash', (now && now < p.dashUntil) ? F.dashPull : 0, F.dash, st);   // eases back during a dash
+  camBase.set(camTarget.x+_camOff.x, _camOff.y+CAM.dash, camTarget.z+_camOff.z);
   camera.position.copy(camBase);
-  if(t2>0.0004){ const q=now; camera.position.x += (Math.sin(q*41.3)+Math.sin(q*73.1+1.7)*0.6)*t2*1.15; camera.position.y += (Math.sin(q*37.7+0.4)+Math.sin(q*67.9)*0.5)*t2*0.7; camera.position.z += (Math.sin(q*47.9+2.1)+Math.sin(q*59.3)*0.6)*t2*1.15; }
-  { const k=S.camKick||0; if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } S.camKick=k*Math.exp(-dt*10); }   // Z168 the shot shoves the camera back along the barrel, then it springs home
-  camera.lookAt(camTarget.x, CS.lookY+Math.max(0, 0.6-(S.zoom||1))*2.2, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
-  { const base=CS.fov + CS.speedFov*Math.min(1, Math.hypot(p.vel.x, p.vel.z)/PLAYER.maxSpeed), want=base+Math.min(3.2,(S.camKick||0)*2.4); if(Math.abs(camera.fov-want)>0.02){ camera.fov=want; camera.updateProjectionMatrix(); } }   // and a small FOV punch
-  if(t2>0.0004) camera.rotateZ((Math.sin(now*29.7)+Math.sin(now*53.3+0.9)*0.5)*t2*0.035);   // roll
-  gradePass.uniforms.aberr.value = t2*0.007;
+  const g=camShakeGain(), tr=Math.min(1, S.shake/3.2), t2=tr*tr*g;   // TRAUMA model: shake ∝ trauma² × the player's level (CÀI ĐẶT → RUNG MÀN HÌNH), a slow rumble, not a buzz
+  if(t2>0.0004){ const q=now, A=SHAKE.pos*t2; camera.position.x += (Math.sin(q*31.1)+Math.sin(q*52.7+1.7)*0.45)*A; camera.position.y += (Math.sin(q*27.3+0.4)+Math.sin(q*47.9)*0.4)*A*0.55; camera.position.z += (Math.sin(q*35.9+2.1)+Math.sin(q*44.3)*0.45)*A; }
+  CAM.kick += ((S.camKick||0) - CAM.kick)*(1-Math.exp(-dt*28));   // Z168 the shot shoves the camera back along the barrel (now eased in over a couple of frames, not a one-frame jump)
+  { const k=CAM.kick*F.kick*(0.4+0.6*Math.min(1, g/SHAKE.levels.mid)); if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } }
+  S.camKick=(S.camKick||0)*Math.exp(-dt*10);
+  camera.lookAt(camTarget.x, CS.lookY+Math.max(0, 0.6-z)*2.2, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
+  { const want=CS.fov + CS.speedFov*Math.min(1, Math.hypot(p.vel.x, p.vel.z)/PLAYER.maxSpeed) + Math.min(2, CAM.kick*1.4)*F.kick, f=camera.fov+(want-camera.fov)*(1-Math.exp(-dt*F.fovEase));   // the lens breathes with speed, never steps
+    if(CAM.blend>0){ CAM.blend=Math.max(0, CAM.blend-dt); const b=smoother(1-CAM.blend/F.resume);   // gliding home from a cinematic
+      camera.position.lerpVectors(CAM.bp, camera.position, b); _q0.copy(camera.quaternion); camera.quaternion.slerpQuaternions(CAM.bq, _q0, b); camera.fov=CAM.bf+(f-CAM.bf)*b; camera.updateProjectionMatrix(); }
+    else if(Math.abs(camera.fov-f)>0.005){ camera.fov=f; camera.updateProjectionMatrix(); } }
+  if(t2>0.0004) camera.rotateZ((Math.sin(now*23.7)+Math.sin(now*41.3+0.9)*0.45)*t2*SHAKE.roll);   // roll
+  gradePass.uniforms.aberr.value = t2*SHAKE.aberr;
   S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));
 }

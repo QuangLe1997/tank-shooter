@@ -34,7 +34,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'crew': crewPress(); break; case 'autoFire': { const b=document.getElementById('autoBtn'); if(b) b.click(); } break;
     case 'gunDefault': selectDefaultGun(); break; case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
     case 'muster': musterAll(); break; case 'sqOrder': cycleSquadOrder(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;
-    case 'zoomOut': if(S.zoom>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
+    case 'zoomOut': if(S.zoomT>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
     case 'zoomPing': if(dbl(id)){ zoomReset(); floatText('THU PHÓNG VỀ MẶC ĐỊNH','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else zoomPing(); break;
     case 'camTurn': if(dbl(id)){ yawReset(); floatText('CAMERA VỀ GÓC ĐẦU','#9be04a',S.player?S.player.pos:{x:0,y:2,z:0},13); } else rotStep(1); break;
     case 'autoAim': { const C=padCfg(); C.assist=!C.assist; saveProfile(); floatText(C.assist?'TỰ NGẮM: BẬT':'TỰ NGẮM: TẮT', C.assist?'#9be04a':'#ffcf5a', S.player?S.player.pos:{x:0,y:2,z:0}, 15); sfx('click'); } break;

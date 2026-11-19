@@ -1,60 +1,95 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO } from '../../config.js';
-import { BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, spawnPart } from '../hub.js';
+import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
-// A Catmull-Rom camera sweep: low hero shot of the tank → orbiting parade rise →
-// wide overview → settles EXACTLY onto the gameplay framing, then play begins. Skippable.
+// Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
+//   while the points of interest are named, then swoops down behind your tank and lands EXACTLY on the gameplay framing (camRestPose),
+//   so play begins without a jolt. The path is reparameterised by what the eye feels (screen-angle per second, not metres), so the high
+//   orbit and the low arrival move at the same perceived speed — no lurches, no whip pans. Phones keep the short close sweep (Z119).
 export const intro = { active:false, t:0, dur:6.0, camCurve:null, lookCurve:null, warm:false, warming:false, t0:0, far0:600, fog0:null };
 export const _easeIO = u => u<0.5 ? 2*u*u : 1 - Math.pow(-2*u+2,2)/2;
-// Z119 the sweep stays lower and tighter (it used to rise to 20 m / 24 m back and draw the WHOLE field: 1,480 draw calls, 3M triangles)
+const _easeSine = u => 0.5-0.5*Math.cos(Math.PI*u);   // gentle departure and arrival
+// Z119 the phone sweep stays low and tight (the far field is fogged and culled)
 const OFFS=[[0.5,1.1,-8.5],[8,2.2,-5.5],[12,5,2],[7,8.5,12],[-4,12,17]], LOOKS=[[0,2.3,1.2],[0,2.1,0.3],[0,1.9,0],[0,1.5,0],[0,1.1,0],[0,1.0,0]];
-// Z140 BATTLEFIELD TOUR: fly over every point of interest — enemy forts (biggest last), the river bridges, our walled Core — then dive to the tank
-function buildTour(T){ const P=[], S0=S;
-  const forts=FORTS.slice().sort((a,b)=>Math.atan2(a.z,a.x)-Math.atan2(b.z,b.x));
-  for(const f of forts) P.push({ x:f.x, z:f.z, h:f.tier===3?34:28, r:f.tier===3?30:24, txt:(f.tier===3?'ĐẠI BẢN DOANH ĐỊCH · ':'CỨ ĐIỂM ĐỊCH · ')+f.name });
-  if(RIVER.on) for(const b of RIVER.bridges.slice(0,2)) P.push({ x:b.x, z:b.z, h:20, r:18, txt:'CẦU QUA SÔNG — XE LỘI NƯỚC SẼ CHẬM' });
-  if(WONDER.name) P.push({ x:WONDER.x, z:WONDER.z, h:46, r:70, txt:'DI SẢN · '+WONDER.name });   // Z144 the landmark
-  P.push({ x:0, z:0, h:26, r:26, txt:'LÕI CỦA TA — TƯỜNG THÀNH · PHÁO CANH SẴN SÀNG' });
-  if(P.length<2) return null;
-  // order: start from the stop farthest from the tank, sweep round, end on our Core, then down to the tank
-  const core0=P.pop(); P.sort((a,b)=>Math.hypot(b.x-T.x,b.z-T.z)-Math.hypot(a.x-T.x,a.z-T.z)); P.push(core0);
-  const cam=[], look=[], caps=[];
-  P.forEach((q,i)=>{ const a=Math.atan2(q.z-T.z, q.x-T.x)+(i%2?0.6:-0.6); cam.push(new THREE.Vector3(q.x-Math.cos(a)*q.r, q.h, q.z-Math.sin(a)*q.r)); look.push(new THREE.Vector3(q.x, 2, q.z)); caps.push(q.txt); });
-  const first=intro.camCurve.getPoint(0), firstL=intro.lookCurve.getPoint(0);
-  cam.push(T.clone().add(new THREE.Vector3(0, 16, 22)), first.clone()); look.push(T.clone().add(new THREE.Vector3(0,1.5,0)), firstL.clone());
-  return { cam:new THREE.CatmullRomCurve3(cam), look:new THREE.CatmullRomCurve3(look), caps, n:P.length, dur:Math.max(9, Math.min(18, P.length*2.6+2)) }; }
+const _rp=new THREE.Vector3(), _rl=new THREE.Vector3();
+// ---- the grand tour (desktop) ----
+const TOUR = { dur:7.2, split:0.6, sweep:1.15, fogK:0.42 };   // seconds · share of the path spent on the high orbit · orbit angle (rad) · fog thinned to see the whole field
+function buildGrandTour(T){
+  const fov=camRestPose(_rp, _rl); if(!fov) return null;
+  const rp=_rp.clone(), rl=_rl.clone();
+  const caps=[];   // what the voice-over names while we circle (big stronghold first, the landmark, then home)
+  const forts=FORTS.slice().sort((a,b)=>(b.tier||0)-(a.tier||0));
+  for(const f of forts.slice(0,2)) caps.push((f.tier===3?'ĐẠI BẢN DOANH ĐỊCH · ':'CỨ ĐIỂM ĐỊCH · ')+f.name);
+  if(RIVER.on && RIVER.bridges.length) caps.push('CẦU QUA SÔNG — XE LỘI NƯỚC SẼ CHẬM');
+  if(WONDER.name) caps.push('DI SẢN · '+WONDER.name);
+  caps.push('LÕI CỦA TA — TƯỜNG THÀNH · PHÁO CANH SẴN SÀNG');
+  const C=new THREE.Vector3(T.x*0.35, 0, T.z*0.35);                      // the heart of the field, leaning a little toward our side
+  const aEnd=Math.atan2(rp.z-T.z, rp.x-T.x);                             // finish the orbit on the side the play camera sits → the swoop never doubles back
+  const R=ARENA*0.92, H=ARENA*0.56, A=TOUR.sweep, wA=TOUR.split, rate=A/wA;
+  const orbit=(a, s, out)=>out.set(C.x+Math.cos(a)*R*(1-0.1*s), H*(1-0.14*s), C.z+Math.sin(a)*R*(1-0.1*s));
+  const _o=new THREE.Vector3(), _ol=new THREE.Vector3();
+  // pose(w): w∈[0,1] along the move. Orbit, then a blend from the still-turning orbit onto the rest pose (smootherstep → the hand-over has
+  //   no kink in velocity: the swoop starts in exactly the direction the orbit was already travelling)
+  const pose=(w, pos, look)=>{
+    if(w<=wA){ const s=w/wA; orbit(aEnd-A+rate*w, s, pos); look.set(C.x+(T.x-C.x)*0.12*s, 0, C.z+(T.z-C.z)*0.12*s); return; }
+    const s=(w-wA)/(1-wA), e=smoother(s), eh=smoother(Math.min(1, s*1.06))**1.25, el=smoother(Math.min(1, s*1.12));
+    orbit(aEnd-A+rate*w, 1, _o); _ol.set(C.x+(T.x-C.x)*0.12, 0, C.z+(T.z-C.z)*0.12);
+    pos.set(_o.x+(rp.x-_o.x)*e, _o.y+(rp.y-_o.y)*eh, _o.z+(rp.z-_o.z)*e);   // height lets go a touch later: a swoop, not a slide
+    look.lerpVectors(_ol, rl, el); };
+  // perceived-motion table: cost of each step = how far the picture slides (camera travel ÷ distance to what it looks at + the turn of the gaze)
+  const N=360, cum=new Float32Array(N+1), p0=new THREE.Vector3(), l0=new THREE.Vector3(), p1=new THREE.Vector3(), l1=new THREE.Vector3(), d0=new THREE.Vector3(), d1=new THREE.Vector3();
+  pose(0, p0, l0); d0.subVectors(l0, p0).normalize();
+  for(let i=1;i<=N;i++){ pose(i/N, p1, l1); d1.subVectors(l1, p1).normalize();
+    const dist=Math.max(10, p1.distanceTo(l1)), turn=Math.acos(Math.min(1, Math.max(-1, d0.dot(d1))));
+    cum[i]=cum[i-1] + p0.distanceTo(p1)/dist + turn*1.4; p0.copy(p1); d0.copy(d1); }
+  const total=cum[N]||1;
+  const wAt=u=>{ const c=u*total; let lo=0, hi=N; while(hi-lo>1){ const m=(lo+hi)>>1; if(cum[m]<c) lo=m; else hi=m; } const span=cum[hi]-cum[lo]||1; return Math.min(1, (lo+(c-cum[lo])/span)/N); };
+  return { pose, wAt, caps, fov, wA, dur:TOUR.dur, fog:null, capK:-1 }; }
 export function startIntro(){
   const p=S.player; if(!p){ S.mode='playing'; return; }
   p.mesh.position.set(p.pos.x,0,p.pos.z); p.mesh.rotation.y=p.facing; p.turret.rotation.y=0;
   const T=new THREE.Vector3(p.pos.x,0,p.pos.z);
-  const offs=OFFS.concat([[camOff.x,camOff.y,camOff.z]]);   // low hero close-up on the gun → sweep around → rise to a parade view → settle to gameplay
-  const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))));
-  intro.camCurve=mk(offs); intro.lookCurve=mk(LOOKS); intro.t=0; intro.active=true; intro.t0=performance.now()/1000;
+  // phones: low hero close-up on the gun → sweep around → rise → land on the real play framing (zoom + view turn included)
+  const offs=OFFS.slice(), looks=LOOKS.slice(0,5);
+  if(camRestPose(_rp, _rl)){ offs.push([_rp.x-T.x, _rp.y, _rp.z-T.z]); looks.push([_rl.x-T.x, _rl.y, _rl.z-T.z]); } else { offs.push([camOff.x,camOff.y,camOff.z]); looks.push(LOOKS[5]); }
+  const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))), false, 'centripetal');   // centripetal: no overshoot loops between close points
+  intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true; intro.t0=performance.now()/1000;
   intro.quick = !!(PROFILE.introSeen && PROFILE.introSeen[BIOME.name]);   // Z152 seen this battlefield's tour before → compile behind the veil, then go
-  const sub=document.getElementById('cine-sub'); if(sub) sub.textContent=(S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:'');
+  const sub=document.getElementById('cine-sub'); if(sub){ clearTimeout(sub._t); sub._next=null; sub.style.transition='opacity .22s ease'; sub.style.opacity='1'; sub.textContent=stageLine(); }
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
-  intro.tour = MOBILE ? null : buildTour(T); intro.tt=0;                       // Z140 desktop: a full 3D tour of the battlefield first (enemy forts → landmarks → our stronghold → your tank)
-  // Z119 cinematic view distance: the far end of the field is fogged out and not drawn at all during the sweep (phones only now — the tour needs the whole field)
+  intro.tour = MOBILE ? null : buildGrandTour(T); intro.tt=0;
+  if(intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; intro.tour.fog=scene.fog.density; }   // the wide shot sees through thinner haze, thickening back as we land
+    camera.fov=intro.tour.fov; camera.updateProjectionMatrix(); }
+  // Z119 phones: the far end of the field is fogged out and not drawn at all during the sweep
   if(!intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; scene.fog.density=Math.max(scene.fog.density, INTRO.fog); }
-  cullFar(T, true); }   // Z119 the far field is hidden while the camera sweeps (fog covers it; play's top-down view never sees it anyway)
-  if(intro.tour){ camera.position.copy(intro.tour.cam.getPointAt(0)); camera.lookAt(intro.tour.look.getPointAt(0)); } else { camera.position.copy(intro.camCurve.getPoint(0)); camera.lookAt(intro.lookCurve.getPoint(0)); }
+  cullFar(T, true); }
+  placeAt(0);
   intro.warm=true; intro.warming=false; showVeil(true);   // Z119 compile every shader + draw the widest shot once BEHIND the veil, then fly
   S.mode='intro';
 }
-// Z119 warm-up: every material this stage uses is compiled (in parallel where the browser can), then the overview is rendered once so the
-//   shadow / post passes and texture uploads happen now — not as hitches in the middle of the sweep
-async function warmUp(){ const keep=camera.position.clone(), q=camera.quaternion.clone();
-  try{ camera.position.copy(intro.camCurve.getPoint(0.72)); camera.lookAt(intro.lookCurve.getPoint(0.72)); camera.updateMatrixWorld();
+function stageLine(){ return (S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:''); }
+function setCap(txt){ const sub=document.getElementById('cine-sub'); if(!sub || sub.textContent===txt || sub._next===txt) return; sub._next=txt;   // captions cross-fade instead of flicking
+  sub.style.opacity='0'; clearTimeout(sub._t); sub._t=setTimeout(()=>{ sub.textContent=txt; sub.style.opacity='1'; sub._next=null; }, 220); }
+// place the camera at progress u of whichever move is playing (also used by the warm-up)
+function placeAt(u){ const R=intro.tour;
+  if(R){ const w=R.wAt(_easeSine(u)); R.pose(w, _rp, _rl); camera.position.copy(_rp); camera.lookAt(_rl);
+    if(R.fog!=null && scene.fog) scene.fog.density=R.fog*(w<=R.wA ? TOUR.fogK : TOUR.fogK+(1-TOUR.fogK)*smoother((w-R.wA)/(1-R.wA)));
+    return w; }
+  const e=_easeIO(u); camera.position.copy(intro.camCurve.getPoint(e)); camera.lookAt(intro.lookCurve.getPoint(e)); return e; }
+// Z119 warm-up: every material this stage uses is compiled (in parallel where the browser can), then the widest shots are rendered once so
+//   the shadow / post passes and texture uploads happen now — not as hitches in the middle of the move
+async function warmUp(){ const keep=camera.position.clone(), q=camera.quaternion.clone(), fog=scene.fog?scene.fog.density:null;
+  const A=intro.tour?0.05:0.72, B=intro.tour?0.5:0.35;
+  try{ placeAt(A); camera.updateMatrixWorld();
     if(renderer.compileAsync) await Promise.race([renderer.compileAsync(scene, camera), new Promise(r=>setTimeout(r, INTRO.compileWait))]); else renderer.compile(scene, camera);
-    if(!intro.active) return; camera.position.copy(intro.camCurve.getPoint(0.72)); camera.lookAt(intro.lookCurve.getPoint(0.72)); composer.render();
-    camera.position.copy(intro.camCurve.getPoint(0.35)); camera.lookAt(intro.lookCurve.getPoint(0.35)); composer.render(); }
+    if(!intro.active) return; placeAt(A); composer.render(); placeAt(B); composer.render(); }
   catch(e){}
-  camera.position.copy(keep); camera.quaternion.copy(q); }
+  camera.position.copy(keep); camera.quaternion.copy(q); if(fog!=null && scene.fog) scene.fog.density=fog; }
 // Z119 hide every compact scene object farther than INTRO.cullR from the tank (forts, towers, rocks, props, wrecks…); big field-wide meshes
 //   (terrain, sky, decals, scattered instanced decor) stay. Restored when the intro ends.
-const _hidden=[], _bs=new THREE.Sphere(), _wp=new THREE.Vector3();
+const _hidden=[], _wp=new THREE.Vector3();
 function cullFar(T, on){ if(!on){ for(const o of _hidden) o.visible=true; _hidden.length=0; return; }
   const R=INTRO.cullR, p=S.player;
   for(const o of scene.children){ if(!o.visible || o===SKY || o===arena || o.isLight || o.isCamera || (p && o===p.mesh) || o.isPoints) continue;
@@ -65,6 +100,9 @@ export function endIntro(){
   if(!intro.active) return; intro.active=false; intro.warm=false; showVeil(false);
   if(!PROFILE.introSeen || typeof PROFILE.introSeen!=='object') PROFILE.introSeen={}; if(!PROFILE.introSeen[BIOME.name]){ PROFILE.introSeen[BIOME.name]=1; saveProfile(); }
   cullFar(null, false); if(intro.fog0!=null && scene.fog){ scene.fog.density=intro.fog0; intro.fog0=null; }
+  const fov=camRestPose(_rp, _rl); if(fov){ camera.position.copy(_rp); camera.lookAt(_rl); camera.fov=fov; camera.updateProjectionMatrix(); }   // a skip lands on the play framing too
+  intro.tour=null; const p=S.player; if(p) p.turret.rotation.y=0;
+  { const sub=document.getElementById('cine-sub'); if(sub){ clearTimeout(sub._t); sub._next=null; sub.style.opacity='1'; } }
   document.getElementById('cine').classList.remove('on'); document.body.classList.remove('cine');
   WAVE.active=false; S.wave=0;
   doResize();   // viewport may have changed during the intro (fullscreen/orientation) → refit so play renders full-screen
@@ -73,21 +111,20 @@ export function endIntro(){
 export function updateIntro(dt, now){
   if(!intro.active) return;
   if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; showVeil(false); if(intro.quick) endIntro(); } }); }
-    camera.position.copy(intro.camCurve.getPoint(0)); camera.lookAt(intro.lookCurve.getPoint(0)); return; }
-  if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + Math.min(dt,1/30)/R.dur); const u=_easeIO(intro.tt);
-    camera.position.copy(R.cam.getPointAt(u)); camera.lookAt(R.look.getPointAt(u));
-    const k=Math.min(R.n-1, Math.floor(u*(R.n+1))); const sub=document.getElementById('cine-sub'); if(sub && R.caps[k] && sub.textContent!==R.caps[k]) sub.textContent=R.caps[k];
-    if(intro.tt>=1){ intro.tour=null; const sub2=document.getElementById('cine-sub'); if(sub2) sub2.textContent=(S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:''); }
+    placeAt(0); return; }
+  const step=Math.min(dt, 1/30);   // Z119 a slow frame slows the camera for a moment instead of making it jump
+  if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + step/R.dur); const w=placeAt(intro.tt);
+    if(w<R.wA*0.98){ const k=Math.min(R.caps.length-1, Math.floor(w/R.wA*R.caps.length)); if(k!==R.capK){ R.capK=k; setCap(R.caps[k]); } }
+    else if(R.capK!==-2){ R.capK=-2; setCap(stageLine()); }
+    if(intro.tt>=1) endIntro();
     return; }
-  intro.t=Math.min(1, intro.t + Math.min(dt, 1/30)/intro.dur);   // Z119 a slow frame slows the camera for a moment instead of making it jump
-  const u=_easeIO(intro.t);
-  camera.position.copy(intro.camCurve.getPoint(u));
-  camera.lookAt(intro.lookCurve.getPoint(u));
-  const p=S.player; if(p) p.turret.rotation.y=Math.sin(intro.t*Math.PI*1.5)*0.55;   // slow showcase sweep
+  intro.t=Math.min(1, intro.t + step/intro.dur);
+  placeAt(intro.t);
+  const p=S.player; if(p) p.turret.rotation.y=Math.sin(intro.t*Math.PI*2)*0.5;   // slow showcase sweep, back on the bow when we land
   if(p && Math.random()<0.35) spawnPart(p.pos.x+(Math.random()-0.5)*6, 0.3, p.pos.z+(Math.random()-0.5)*6,   // drifting battlefield dust for atmosphere
     (Math.random()-0.5)*2, 0.4+Math.random()*0.9, (Math.random()-0.5)*2, {color:0xccbf94, size:1.6+Math.random(), life:1.1, smoke:true, grav:-0.25, drag:1.4, op:0.26});
   if(intro.t>=1) endIntro();
 }
 export function skipIntro(){ if(intro.active && performance.now()/1000-intro.t0>INTRO.skipGuard) endIntro(); }   // (not the very click that started the battle)
-// Z119 the "deploying" veil: up from the moment you press PLAY until the sweep can run smoothly
+// Z119 the "deploying" veil: up from the moment you press PLAY until the move can run smoothly
 export function showVeil(on){ const v=document.getElementById('loadVeil'); if(v) v.classList.toggle('on', !!on); }

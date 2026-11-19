@@ -593,7 +593,16 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function fortStyle/.test(r) && /REGION_ALT/.test(r) && /laterite/.test(r) && /bamboo/.test(r), 'every biome has regional fort styles, several per map');
   ok(/buildCoreWalls/.test(cw) && /updateCoreGuns/.test(cw) && /ours:true/.test(cw) && /bl\.ours && b\.owner==='p'/.test(lo), 'our walled core with guard cannons; our walls never stop our fire');
   ok(/fortStyle\(BIOME\.name, fi\+\+\)/.test(fo) && /leaderless/.test(fo) && /animFlag/.test(fo), 'forts: own architecture each, commander down = no reinforcements, flag topples');
-  ok(/function buildTour/.test(it) && /flood\(|function flood/.test(ev) && /rockslide/.test(ev) && /collapse/.test(ev) && /export function celebrate/.test(ce), 'battlefield tour, land events and victory celebration exist'); }
+  ok(/function build(Grand)?Tour/.test(it) && /flood\(|function flood/.test(ev) && /rockslide/.test(ev) && /collapse/.test(ev) && /export function celebrate/.test(ce), 'battlefield tour, land events and victory celebration exist'); }
+
+// Z239 smooth camera + gentle shake + one wide intro move
+{ const fs=await import('node:fs'); const up=fs.readFileSync('src/game/update.js','utf8'), it=fs.readFileSync('src/game/intro.js','utf8'), inp=fs.readFileSync('src/input/input.js','utf8'), C=await import('./config.js');
+  ok(/function sd\(o, k, target, st, dt\)/.test(up) && /sd\(CAM, 'ya'/.test(up) && /sd\(CAM, 'zl'/.test(up) && /wrapAngle\(yt-CAM\.ya\)/.test(up), 'camera: follow, look-ahead, zoom and view turn are damped springs; the turn takes the shortest arc');
+  ok(/export function camRestPose/.test(up) && /camRestPose\(_rp, _rl\)/.test(it) && /CAM\.blend/.test(up), 'intro lands on the exact play framing; the follow camera glides back after any cinematic');
+  ok(/S\.camYawT/.test(inp) && /S\.zoomT=z/.test(inp) && !/S\.camYaw=\(/.test(inp) && /e\.ctrlKey \|\| e\.shiftKey/.test(inp) && /e\.button!==1/.test(inp), 'inputs set camera TARGETS (pinch / shift-wheel zoom, swipe / middle-drag orbit)');
+  ok(C.SHAKE && C.SHAKE.levels.off===0 && C.SHAKE.levels[C.SHAKE.def]<=0.4 && C.SHAKE.pos<1.15 && C.SHAKE.roll<0.035, 'screen shake: player level (off…strong), gentle by default, smaller than before');
+  const sm=u=>u*u*u*(u*(u*6-15)+10); ok(Math.abs(sm(0))<1e-9 && Math.abs(sm(1)-1)<1e-9 && Math.abs(sm(0.5)-0.5)<1e-9, 'smootherstep endpoints');
+  ok(/wAt/.test(it) && /TOUR\.dur/.test(it) && /TOUR = \{ dur:7\.2/.test(it), 'desktop intro: one wide move reparameterised by perceived motion, ~7 s'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

@@ -1,5 +1,6 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
+import { CAM_FEEL } from '../../config.js';
 import { MOBILE, PROFILE, S, SPELLS, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fireGun, fitShadow, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
@@ -8,10 +9,11 @@ addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); if(S.mode==='playi
 export const raycaster = new THREE.Raycaster();
 export const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
 export const ndc = new THREE.Vector2();
+const _aimHit = new THREE.Vector3();
 export function updateAimFromMouse(cx, cy){
   ndc.x = (cx/VIEW.w)*2 - 1; ndc.y = -(cy/VIEW.h)*2 + 1;
   raycaster.setFromCamera(ndc, camera);
-  const hit = new THREE.Vector3();
+  const hit = _aimHit;   // Z239 reused (mousemove fires hundreds of times a second — no garbage per event)
   groundPlane.constant=0;
   if(raycaster.ray.intersectPlane(groundPlane, hit)){
     for(let k=0;k<4;k++){ groundPlane.constant=-heightAt(hit.x,hit.z); if(!raycaster.ray.intersectPlane(groundPlane, hit)) break; }   // walk the ray onto the real (uneven) ground
@@ -24,7 +26,21 @@ addEventListener('mousedown', e=>{ if(MOBILE) return;
 addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
 addEventListener('blur', ()=>{ S.firing=false; });
 addEventListener('contextmenu', e=>e.preventDefault());
-addEventListener('wheel', e=>{ if(S.mode==='playing') cycleGun(e.deltaY>0?1:-1); }, {passive:true});
+// Z239 free camera on desktop: a trackpad PINCH (ctrl+wheel) or SHIFT+wheel zooms smoothly, a two-finger SIDEWAYS swipe or a MIDDLE-button
+//   drag orbits the view round the tank; a plain wheel notch still changes gun. The camera springs (game/update.js) make every one glide.
+let _gunWheel=0;
+addEventListener('wheel', e=>{ if(S.mode!=='playing' && S.mode!=='countdown') return;
+  const dx=e.deltaX, dy=e.deltaY, px=e.deltaMode===1?16:1;   // line-mode wheels (Firefox) → pixels
+  if(e.ctrlKey || e.shiftKey){ if(e.cancelable) e.preventDefault(); const d=(e.shiftKey && !e.ctrlKey && !dy) ? dx : dy;   // macOS turns shift+wheel into deltaX
+    setZoom(S.zoomT*Math.exp(d*px*CAM_FEEL.wheelZoom*(e.ctrlKey?4:1))); return; }
+  if(Math.abs(dx)>Math.abs(dy)*1.2){ if(e.cancelable) e.preventDefault(); yawBy(dx*px*CAM_FEEL.orbit*0.5); return; }
+  if(S.mode!=='playing') return; const now=performance.now(); if(now<_gunWheel) return; _gunWheel=now+(Math.abs(dy)<40 ? 160 : 60);   // a trackpad's stream of tiny deltas = one gun step, not ten
+  cycleGun(dy>0?1:-1); }, {passive:false});
+export const DRAG={ on:false, x:0 };
+addEventListener('mousedown', e=>{ if(MOBILE || e.button!==1) return; e.preventDefault(); DRAG.on=true; DRAG.x=e.clientX; document.body.classList.add('cam-drag'); });
+addEventListener('mousemove', e=>{ if(!DRAG.on) return; yawBy(-(e.clientX-DRAG.x)*CAM_FEEL.orbit); DRAG.x=e.clientX; });
+addEventListener('mouseup', e=>{ if(e.button===1 && DRAG.on){ DRAG.on=false; document.body.classList.remove('cam-drag'); } });
+addEventListener('auxclick', e=>{ if(e.button===1) e.preventDefault(); });   // no middle-click autoscroll / paste
 // mobile: ONE movement joystick (dynamic origin — press anywhere on the field). The turret
 // auto-aims the nearest enemy and auto-fires, so there is no aim stick and no fire button.
 if(MOBILE) document.body.classList.add('touch');
@@ -81,24 +97,28 @@ if(autoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} aut
 // ----- camera controls: ZOOM (cycle near→far) + ROTATE view (45° steps); input is re-mapped so the joystick stays screen-relative -----
 export const ZOOM_LEVELS=[0.34, 0.44, 0.55, 0.75, 1.0, 1.5, 2.0, 2.6, 3.3];   // Z145 + one wider strategic view · Z165 two close-up steps (over the shoulder of the tank)
 const Z1=()=>ZOOM_LEVELS.indexOf(1.0);
-export function setZoom(z){ try{ S.zoom=z; localStorage.setItem('steelsiege.zoom', z); }catch(_){ S.zoom=z; } try{ fitShadow(z); }catch(_){} const l=document.getElementById('zoomLbl'); if(l) l.textContent=(1/z).toFixed(1)+'×'; }   // Z171 the label reads as magnification: bigger = closer (1.0× = the default view)
-try{ const z=parseFloat(localStorage.getItem('steelsiege.zoom')); if(z>0) S.zoom=z; }catch(_){}
-setZoom(S.zoom);
+export const ZOOM_MIN=ZOOM_LEVELS[0], ZOOM_MAX=ZOOM_LEVELS[ZOOM_LEVELS.length-1];
+export function setZoom(z){ z=Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)); S.zoomT=z; try{ localStorage.setItem('steelsiege.zoom', z.toFixed(3)); }catch(_){} try{ fitShadow(z); }catch(_){} const l=document.getElementById('zoomLbl'); if(l) l.textContent=(1/z).toFixed(1)+'×'; }   // Z171 the label reads as magnification: bigger = closer (1.0× = the default view)
+try{ const z=parseFloat(localStorage.getItem('steelsiege.zoom')); if(z>0) S.zoomT=z; }catch(_){}
+setZoom(S.zoomT); S.zoom=S.zoomT;   // Z239 the first frame starts settled
 export const zoomBtnEl=document.getElementById('zoomBtn');
-if(zoomBtnEl){ const cyc=e=>{ if(e){e.preventDefault();e.stopPropagation();} let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); i=(i+1)%ZOOM_LEVELS.length; setZoom(ZOOM_LEVELS[i]); sfx('click'); };
+if(zoomBtnEl){ const cyc=e=>{ if(e){e.preventDefault();e.stopPropagation();} let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoomT)<0.06); i=(i+1)%ZOOM_LEVELS.length; setZoom(ZOOM_LEVELS[i]); sfx('click'); };
   zoomBtnEl.addEventListener('click',cyc); zoomBtnEl.addEventListener('touchstart',cyc,{passive:false}); }
 export const rotBtnEl=document.getElementById('rotBtn');
-if(rotBtnEl){ const rot=e=>{ if(e){e.preventDefault();e.stopPropagation();} S.camYaw=(S.camYaw + Math.PI/4) % (Math.PI*2); sfx('click'); };
+if(rotBtnEl){ const rot=e=>{ if(e){e.preventDefault();e.stopPropagation();} rotStep(1); sfx('click'); };
   rotBtnEl.addEventListener('click',rot); rotBtnEl.addEventListener('touchstart',rot,{passive:false}); }
 // Z110 camera from the keyboard + the AUTO camera toggle
-export function zoomStep(dir){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=Z1(); i=Math.max(0, Math.min(ZOOM_LEVELS.length-1, i+dir)); setZoom(ZOOM_LEVELS[i]); }
-export function rotStep(dir){ S.camYaw=((S.camYaw + dir*Math.PI/4) % (Math.PI*2) + Math.PI*2) % (Math.PI*2); }
+// Z239 steps go to the next level PAST where the zoom is now (a pinch / wheel may have left it between levels); the camera glides there
+export function zoomStep(dir){ const z=S.zoomT; let n; if(dir>0){ n=ZOOM_LEVELS.find(v=>v>z+0.03); if(n==null) n=ZOOM_MAX; } else if(dir<-1){ n=ZOOM_MIN; } else { n=[...ZOOM_LEVELS].reverse().find(v=>v<z-0.03); if(n==null) n=ZOOM_MIN; } setZoom(n); }
+// 45° turns snap the TARGET to the nearest 45° notch so a free drag followed by [ ] lands on a clean angle
+export function rotStep(dir){ const q=Math.PI/4, a=Math.round(S.camYawT/q)*q + dir*q; S.camYawT=((a % (Math.PI*2)) + Math.PI*2) % (Math.PI*2); }
+export function yawBy(da){ S.camYawT=(((S.camYawT+da) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2); }
 // Z128 back-paddle camera: one button walks the zoom steps out and back (ping-pong), the other turns the view; a double tap resets just that one
 let _zd=1;
-export function zoomPing(){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoom)<0.06); if(i<0) i=Z1(); let n=i+_zd; if(n<0 || n>=ZOOM_LEVELS.length){ _zd=-_zd; n=i+_zd; } setZoom(ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length-1, n))]); }
+export function zoomPing(){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoomT)<0.06); if(i<0) i=Z1(); let n=i+_zd; if(n<0 || n>=ZOOM_LEVELS.length){ _zd=-_zd; n=i+_zd; } setZoom(ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length-1, n))]); }
 export function zoomReset(){ _zd=1; setZoom(MOBILE?1.5:1); }
-export function yawReset(){ S.camYaw=0; }
-export function camReset(){ setZoom(MOBILE?1.5:1); S.camYaw=0; }
+export function yawReset(){ S.camYawT=0; }
+export function camReset(){ setZoom(MOBILE?1.5:1); S.camYawT=0; }
 export function setCamAuto(on){ S.camAuto=!!on; try{ localStorage.setItem('steelsiege.camAuto', on?'1':'0'); }catch(_){}
   const b=document.getElementById('camAutoBtn'); if(b) b.classList.toggle('on', S.camAuto); }
 try{ const v=localStorage.getItem('steelsiege.camAuto'); if(v!=null) S.camAuto = v==='1'; }catch(_){}

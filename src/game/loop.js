@@ -2,6 +2,7 @@
 import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, TRAIN, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, trainTick, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCavern, updateCelebration, updateCinematic, updateCity, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlameJet, updateFlames, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliCrew, updateHeliDown, updateHorizon, updateInfDead, updateInstr, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateRubble, updateScore, updateSkyLife, updateSkyMood, updateSmokeTrails, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateSurprises, updateTankRigs, updateTowers, updateTrails, updateTroopBatch, updateTunnels, updateUltimates, updateUnder, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
+const PERF_GOV = { low:54, aim:59, high:58 };   // Z239 frame governor: step down under low fps, aim the one resize step at aim fps, creep back up above high
 export let last = performance.now();
 export function __set_last(v){ last=v; }   // (dev/hooks tick) — imports are read-only, writes go through a setter
 export function loop(nowMs){
@@ -20,9 +21,9 @@ export function loop(nowMs){
   pollGamepad(dt, now);                                      // Z117 controller: battle, menus, rumble
   if(S.mode==='playing'){
     S.timeNow = now;
-    const gdt = dt * S.timeScale * (now < (S.hitStop||0) ? 0.12 : 1);       // slow-mo on boss kill · Z168 a heavy kill freezes the action for a few frames (hit-stop)
+    const gdt = dt * S.timeScale * (now < (S.hitStop||0) ? 0.35 : 1);   // Z239 hit-stop softened (was 0.12: read as a dropped frame)       // slow-mo on boss kill · Z168 a heavy kill freezes the action for a few frames (hit-stop)
     updateReload(now);              // complete reload on time + drive the countdown dial
-    if(!MOBILE || (PERF.fc&3)===0) updateGunStatus(now);   // ✓/reloading badges (every 4th frame on phones)
+    if((PERF.fc&(MOBILE?3:1))===0) updateGunStatus(now);   // ✓/reloading badges (every 4th frame on phones)
     updatePlayer(gdt, now);
     if(TRAIN.on) trainTick(gdt, now);   // Z182 the onboarding steps watch what you do
     buildUnitGrid(now);             // Z172 who-is-near-whom, once a frame
@@ -66,7 +67,7 @@ export function loop(nowMs){
     updateCamera(dt, now);
     updateWorldBars();
     updateAbilityUI(now);
-    if(!MOBILE || PERF.fc%3===0) drawRadar();   // Z92 the 2D radar is a canvas repaint → every 3rd frame on phones
+    if(PERF.fc%(MOBILE?3:2)===0) drawRadar();   // Z239 desktop too: every 2nd frame (a canvas repaint the eye can't tell from every frame)   // Z92 the 2D radar is a canvas repaint → every 3rd frame on phones
     updateInstr(now);                            // Z228 commander's instrument panel (desktop only)
     // combo timeout
     if(S.combo>0 && now>S.comboUntil && now>bannerTimer){ S.combo=0; document.getElementById('combo').style.opacity='0'; }
@@ -85,7 +86,7 @@ export function loop(nowMs){
   updateEngine(dt); updateScore(dt);   // Z161 the score follows the fight
   if(!shopOpen) updateWeather(dt);   // Z107 rain / sand / snow drift with the camera + lightning
   SKY.position.copy(camera.position); updateClouds(dt, camera); updateSkyMood(dt); updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); updateNightMarks(dt, now); updateWater(dt); updateWonder(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); updateDying(dt); PERF.fc++; gradePass.uniforms.time.value = now%100;
-  aoPass.enabled = AO.on && renderPass.scene===scene;   // Z145 not in the 3D shop showroom
+  aoPass.enabled = AO.on && renderPass.scene===scene && S.mode!=='intro';   // Z239 not during the wide intro move either (the whole field on screen, AO is the priciest pass)   // Z145 not in the 3D shop showroom
   updateTroopBatch(now);   // Z172 every soldier's joints → the batched body-part meshes
   composer.render();
   // adaptive quality: drop internal resolution one-way if frames get heavy
@@ -94,14 +95,14 @@ export function loop(nowMs){
     const calib = S.mode==='countdown';                                      // Z150 the 3-2-1 countdown is the calibration window: the world is static, a resize there costs nothing you can feel
     if(S.mode!=='playing' && !calib) AO.on = AO.want && PROFILE.quality!=='low' && PROFILE.perfAO!==false;   // re-armed between battles — unless this machine already proved it can't afford it
     if(S.mode==='playing' || calib){                                          // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
-      if(fps<47){ PERF.fastT=0; PERF.slowT++;
+      if(fps<PERF_GOV.low){ PERF.fastT=0; PERF.slowT++;   // Z239 smoothness first: shed load below ~54 fps (was 47 — a visible judder band)
         if(AO.on && (PERF.slowT>=2 || calib)){ AO.on=false; PERF.slowT=0; PROFILE.perfAO=false; saveProfile(); }   // Z145 the occlusion pass goes first — sharpness stays
         const shedFirst = MOBILE && (PERF.parts>0.6 || bloom.enabled);                          // Z120 phones: particles + glow go BEFORE sharpness
-        if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/56)*20)/20;   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
+        if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/PERF_GOV.aim)*20)/20;   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
           S.dpr=Math.max(dprFloor, Math.min(S.dpr-0.1, want)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }
         PERF.parts=Math.max(0.45, PERF.parts-(fps<34?0.2:0.1));
         if(MOBILE && fps<44 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
-      else if(fps>57){ PERF.slowT=0; PERF.fastT++;
+      else if(fps>PERF_GOV.high){ PERF.slowT=0; PERF.fastT++;
         if(calib && S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }   // Z150 sharper again only in the countdown — a resize mid-fight is a hitch you feel
         if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); } } } }
 }

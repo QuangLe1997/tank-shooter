@@ -1,5 +1,5 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
-import { PAD_CFG, TURRET, CLOUD_CFG, CAM_TUNE } from '../../config.js';
+import { PAD_CFG, TURRET, CLOUD_CFG, CAM_TUNE, SHAKE } from '../../config.js';
 import { CLOUDSAVE, DIFF_META, MOBILE, PAD, PROFILE, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
@@ -34,6 +34,8 @@ export function buildSettings(){
     stepRow('setCamDist', t.distK!=null?t.distK:1, T.distK, 'distK', v=>Math.round(P.d0*v)+' m', 'gần = xe to · xa = thấy rộng');
     stepRow('setCamFov', Math.round(P.fov), T.fov, 'fov', v=>Math.round(v)+'°', 'rộng = kịch tính hơn');
     stepRow('setCamAhead', t.aheadK!=null?t.aheadK:1, T.aheadK, 'aheadK', v=>Math.round(P.ahead0*v)+' m', 'xe càng lùi xuống dưới màn'); }
+  const Sh=document.getElementById('setShake'); if(Sh){ Sh.innerHTML=''; const cur=PROFILE.shake||SHAKE.def;   // Z239 screen-shake level
+    for(const [k,t,sub] of [['off','TẮT','khung hình đứng yên'],['low','NHẸ','mặc định'],['mid','VỪA',''],['high','MẠNH','như cũ']]) Sh.appendChild(_segChip(t, cur===k, ()=>{ PROFILE.shake=k; saveProfile(); buildSettings(); sfx('click'); }, sub)); }
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 export function _setSnd(on, lv){ PROFILE.sound=on; if(lv) PROFILE.sfxVol=lv; saveProfile(); audio(); setMuted(!on); buildSettings(); if(on) sfx('explode'); }   // Z151 a sample blast so you hear the level you picked
