@@ -109,7 +109,7 @@ export function applyAtmosphere(b){
   const A=todAtmos(ATMOS[b.name]||ATMOS.DESERT, S.tod||'day');
   SUN_DIR.set(Math.cos(A.el)*Math.sin(A.az), Math.sin(A.el), Math.cos(A.el)*Math.cos(A.az)).normalize();
   scene.environment = skyEnvTexture(b.name, A); scene.environmentIntensity = 0.6;
-  const fogC=new THREE.Color(A.fog); if(!A.night) fogC.lerp(_WHITE, 0.08).lerp(new THREE.Color(A.top), 0.14);   // Z235 aerial perspective: distance turns faintly blue                          // Z97 daylight haze is bright (aerial perspective), never a dark smog band
+  const fogC=new THREE.Color(A.fog); if(!A.night) fogC.lerp(new THREE.Color(A.top), LIGHT.fogBlue);   // Z244 distance turns faintly blue, never milky white   // Z235 aerial perspective: distance turns faintly blue                          // Z97 daylight haze is bright (aerial perspective), never a dark smog band
   scene.background.copy(fogC); scene.fog.color.copy(fogC); scene.fog.density = A.fogD; A._fogC=fogC;
   sun.color.setHex(A.sun); sun.intensity = A.sunI;
   hemi.color.setHex(A.top); hemi.groundColor.setHex(A.hemiG); hemi.intensity = 0.7;
@@ -126,9 +126,11 @@ export function applyAtmosphere(b){
     hemi.color.setHex(0x4a5878); hemi.groundColor.setHex(0x3a2614); hemi.intensity=0.95; ambient.color.setHex(0x8a6a4a); ambient.intensity=0.62; scene.environmentIntensity=0.3; u.vig.value=0.3; renderer.toneMappingExposure=1.4; }
   else applyMood(A, pickMood(b.name, S.tod||'day'));                                                  // Z145 the sky's mood for this battle
   { const L=LIGHT, g=gradePass.uniforms; renderer.toneMappingExposure*=L.expK; g.sat.value*=L.satK; g.contrast.value*=L.conK; g.vib.value=L.vib;   // Z242 realistic light (config LIGHT)
+    const dusk=(S.tod==='sunset');   // the low sun leaves the field in shade: keep its lift and more sky fill so the shadows stay readable
+    if(!A.night && !A.cave && !dusk){ g.lift.value.multiplyScalar(L.liftK); g.shTint.value.multiplyScalar(L.tintK); g.hiTint.value.multiplyScalar(L.tintK); }   // Z244 clear air: no lifted blacks
     if(!A.cave){ scene.fog.density*=L.fogK;
       if(A.night) hemi.intensity*=L.nightHemiK;
-      else { sun.intensity*=L.sunK; hemi.intensity*=L.hemiK; ambient.intensity=L.ambient; scene.environmentIntensity*=L.envK; } } }
+      else { sun.intensity*=L.sunK; hemi.intensity*=dusk?L.duskHemiK:L.hemiK; ambient.intensity=dusk?L.duskAmbient:L.ambient; scene.environmentIntensity*=L.envK; } } }
   setNightLights(!!A.night);
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }

@@ -44,7 +44,7 @@ camera.position.set(0, 46, 34);
 camera.lookAt(0,0,0);
 // ---- CINEMATIC GRADE (last pass, display-referred): split-tone + contrast/saturation + vignette + film grain + shake-driven chromatic aberration ----
 export const GradeShader = {
-  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.012:0.018}, sharp:{value:MOBILE?0.22:0.42}, sat:{value:0.9}, contrast:{value:1.08},
+  uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.012:0.018}, sharp:{value:MOBILE?0.22:LIGHT.sharp}, sat:{value:0.9}, contrast:{value:1.08},
     lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0},
     shTint:{value:new THREE.Vector3(-0.015,0.0,0.025)}, hiTint:{value:new THREE.Vector3(0.025,0.01,-0.02)}, vib:{value:0.25} },   // Z190 film split-tone + vibrance
   vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
@@ -95,7 +95,7 @@ aoPass.enabled = AO.on; composer.addPass(aoPass);
 export const nanPass = new ShaderPass({ uniforms:{ tDiffuse:{ value:null } }, vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
   fragmentShader:'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c=texture2D(tDiffuse,vUv); if(any(isnan(c)) || any(isinf(c))) c=vec4(0.0,0.0,0.0,1.0); gl_FragColor=vec4(min(c.rgb, vec3(64.0)), c.a); }' });
 composer.addPass(nanPass);
-export const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), 0.45, 0.42, 0.88);   // tighter radius: no blocky halos from the low mips
+export const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), LIGHT.bloom, 0.42, 0.88);   // Z244 0.45 → 0.24: glow on what really shines, not a haze over the whole frame   // tighter radius: no blocky halos from the low mips
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 export const gradePass = new ShaderPass(GradeShader); composer.addPass(gradePass);
