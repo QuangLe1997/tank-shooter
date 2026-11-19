@@ -50,10 +50,10 @@ export const GROUND_STYLE = {   // c0 dark · c1 mid · c2 light (sRGB), roughne
   FOUNDRY:{ c:[[66,62,58],[104,98,90],[146,138,126]],      rough:0.9,  nrm:3.2, tile:18 },   // ash & clinker grey (was near-black)
   CITADEL:{ c:[[104,90,70],[150,132,104],[192,172,140]],   rough:0.95, nrm:2.8, tile:20 },   // weathered sandstone dust
   // Z147 green fields: sunlit pasture, well clear of the tanks' olive drab · Z235 a natural grass green (was a yellow, glaring lime) — buildings stand off it, not lost in it
-  MEADOW: { c:[[74,104,48],[118,150,70],[166,178,100]],       rough:0.95, nrm:2.4, tile:20 },
+  MEADOW: { c:[[62,82,40],[98,118,62],[142,148,96]],       rough:0.95, nrm:2.4, tile:20 },   // Z242 muted olive pasture (was a bright yellow-green)
   CITY:   { c:[[62,64,68],[96,98,102],[136,138,142]],       rough:0.9,  nrm:2.8, tile:20 },
-  HILLS:  { c:[[82,104,56],[124,146,80],[170,176,112]],        rough:0.95, nrm:2.6, tile:22 },
-  VILLAGE:{ c:[[78,112,44],[122,158,64],[170,186,96]],       rough:0.95, nrm:2.2, tile:20 },
+  HILLS:  { c:[[66,82,46],[104,118,70],[148,150,104]],        rough:0.95, nrm:2.6, tile:22 },   // Z242
+  VILLAGE:{ c:[[64,86,40],[100,124,60],[146,152,94]],       rough:0.95, nrm:2.2, tile:20 },   // Z242
   SAVANNA:{ c:[[140,104,58],[190,156,92],[222,196,130]],    rough:0.96, nrm:2.4, tile:22 },
   ARCTIC: { c:[[176,196,214],[224,234,242],[250,252,255]],  rough:0.6,  nrm:1.6, tile:26 },
   STEELMILL:{ c:[[58,46,38],[104,84,68],[150,124,100]],   rough:0.85, nrm:3.0, tile:18 },

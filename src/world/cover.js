@@ -1,6 +1,6 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, RAM, HARD } from '../../config.js';
+import { BALANCE, RAM, HARD, OPEN_LAND } from '../../config.js';
 import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, underHit, wallDamage } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
@@ -21,7 +21,7 @@ export function buildBlocks(){
   buildCoreWalls();                                                                        // Z140 our walled compound + guard cannons round the Core
   buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
   const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
-  const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K);   // Z104 more cover on the wider field (soldiers need somewhere to hide)
+  const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K*((OPEN_LAND[BIOME.name]||{}).cover||1));   // Z242 town / countryside: more open ground   // Z104 more cover on the wider field (soldiers need somewhere to hide)
   const centers=[];
   let tries=0;
   while(centers.length<shapeCount && tries++<260){

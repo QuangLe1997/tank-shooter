@@ -1,5 +1,6 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
+import { LIGHT } from '../../config.js';
 import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
@@ -124,6 +125,10 @@ export function applyAtmosphere(b){
   if(A.cave){ SKYMOOD.id='clear'; SKYMOOD.m=MOODS.clear; SKYMOOD.boltT=0; CLOUD.u.uCloud.value.w=0;   // Z225 the cavern: no sky, no clouds — black rock, warm torch fill, a cool glow off the shafts
     hemi.color.setHex(0x4a5878); hemi.groundColor.setHex(0x3a2614); hemi.intensity=0.95; ambient.color.setHex(0x8a6a4a); ambient.intensity=0.62; scene.environmentIntensity=0.3; u.vig.value=0.3; renderer.toneMappingExposure=1.4; }
   else applyMood(A, pickMood(b.name, S.tod||'day'));                                                  // Z145 the sky's mood for this battle
+  { const L=LIGHT, g=gradePass.uniforms; renderer.toneMappingExposure*=L.expK; g.sat.value*=L.satK; g.contrast.value*=L.conK; g.vib.value=L.vib;   // Z242 realistic light (config LIGHT)
+    if(!A.cave){ scene.fog.density*=L.fogK;
+      if(A.night) hemi.intensity*=L.nightHemiK;
+      else { sun.intensity*=L.sunK; hemi.intensity*=L.hemiK; ambient.intensity=L.ambient; scene.environmentIntensity*=L.envK; } } }
   setNightLights(!!A.night);
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }

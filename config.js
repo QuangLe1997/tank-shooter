@@ -525,6 +525,14 @@ export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, 
 export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.38, yaw:0.24, zoom:0.2, dash:0.22, dashPull:3.2, resume:0.6, kick:0.55, fovEase:5, orbit:0.0065, wheelZoom:0.0016 };
 // Z239 SCREEN SHAKE — the player's level (CÀI ĐẶT → RUNG MÀN HÌNH) scales every quake; NHẸ is the default. pos = metres at full trauma,
 //   roll = radians, aberr = chromatic fringe at full trauma
+// Z242 REALISTIC LIGHT — AgX tone mapping (film-like roll-off: highlights desaturate the way a camera does, no neon greens), a stronger sun against a
+//   weaker sky / ambient / environment fill (real light-and-shadow modelling instead of flat, evenly lit "toy" scenes), a grade that keeps contrast and
+//   colour but adds no vibrance boost, thinner haze. The per-battlefield ATMOS values are multiplied by these (expK × exposure, sunK × sun, …).
+//   flora = colour multiplier on every leaf, frond and grass blade (muted, darker natural greens)
+export const LIGHT = { tone:'agx', expK:1.12, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.08, satK:1.18, vib:0, fogK:0.72, nightHemiK:0.8, flora:[0.8,0.84,0.72] };
+// Z242 OPEN GROUND — town and countryside battlefields keep more open space: cover shapes × cover, city blocks built up to `built` (was 0.66),
+//   village homes × houses, village trees × trees
+export const OPEN_LAND = { CITY:{ cover:0.55, built:0.42 }, VILLAGE:{ cover:0.6, houses:0.6, trees:0.68 }, MEADOW:{ cover:0.8 } };
 // Z240 PERFORMANCE HUD (F3 / ?perf): frames averaged, refresh interval (s), frame-time colour bands (ms) — green ≤ good, amber ≤ warn, red above
 export const PERF_HUD = { n:120, every:0.5, good:16.7, warn:25 };
 export const SHAKE = { levels:{ off:0, low:0.32, mid:0.6, high:1 }, def:'low', pos:0.7, roll:0.018, aberr:0.0035 };

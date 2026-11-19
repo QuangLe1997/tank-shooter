@@ -9,12 +9,13 @@
 //   topple (blast, or a tank ramming them) and the wires on a fallen pole drop; cars in a blast burn out.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { OPEN_LAND } from '../../config.js';
 import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
 const SIGNS=['TẠP HOÁ','PHỞ BÒ','CÀ PHÊ','SỬA XE','BÁNH MÌ','NHÀ THUỐC','KARAOKE','NHÀ NGHỈ','ĐIỆN THOẠI','BÚN CHẢ','VÀNG BẠC','GẠO'];
-const WALLC=['#e8c86a','#e89a9a','#9fd0b8','#a8c4e8','#f0ece0','#e8b07a','#c8b8e0','#d8e09a'];
+const WALLC=['#d6c48e','#cda59a','#a9bfae','#abb9c8','#e2ded4','#d4b08c','#bab3c4','#c6c9a2'];   // Z242 weathered paint, not candy colours
 // ---------- textures (canvas, cached) ----------
 const _tx={};
 function tex(key, w, h, paint){ if(_tx[key]) return _tx[key]; const c=document.createElement('canvas'), e=document.createElement('canvas'); c.width=e.width=w*TEX_K; c.height=e.height=h*TEX_K;   // Z145 painted 4× finer
@@ -43,7 +44,7 @@ const roadT=()=>tex('road',256,64,(x)=>{ x.fillStyle='#3a3c40'; x.fillRect(0,0,2
   x.fillStyle='rgba(20,20,20,0.35)'; for(let n=0;n<6;n++){ x.beginPath(); x.ellipse(Math.random()*256,10+Math.random()*44,8+Math.random()*16,3+Math.random()*5,0,0,7); x.fill(); } });   // oil stains
 const walkT=()=>tex('walk',64,64,(x)=>{ x.fillStyle='#a8a49a'; x.fillRect(0,0,64,64); for(let r=0;r<4;r++) for(let c=0;c<4;c++){ x.fillStyle=(r+c)%2?'#b4b0a4':'#9c988e'; x.fillRect(c*16+1,r*16+1,14,14); } });
 const zebraT=()=>tex('zebra',64,64,(x)=>{ x.fillStyle='#3a3c40'; x.fillRect(0,0,64,64); x.fillStyle='#e8e8e0'; for(let k=0;k<5;k++) x.fillRect(k*13+2,4,7,56); });
-const parkT=()=>tex('park',64,64,(x)=>{ x.fillStyle='#5a8a3a'; x.fillRect(0,0,64,64); for(let n=0;n<300;n++){ x.fillStyle=Math.random()<0.5?'#6a9a44':'#4e7a32'; x.fillRect(Math.random()*64,Math.random()*64,2,2); } });
+const parkT=()=>tex('park',64,64,(x)=>{ x.fillStyle='#5a7444'; x.fillRect(0,0,64,64); for(let n=0;n<300;n++){ x.fillStyle=Math.random()<0.5?'#687e4c':'#4a623a';   /* Z242 trodden city lawn */ x.fillRect(Math.random()*64,Math.random()*64,2,2); } });
 const bvdT=()=>tex('bvd',256,64,(x)=>{ x.fillStyle='#38393d'; x.fillRect(0,0,256,64); for(let n=0;n<700;n++){ x.fillStyle='rgba(255,255,255,0.035)'; x.fillRect(Math.random()*256,Math.random()*64,2,2); }
   x.fillStyle='#ecebe2'; x.fillRect(0,3,256,2.5); x.fillRect(0,58.5,256,2.5); for(let k=0;k<4;k++) x.fillRect(k*64+6,31,40,2.2);   // one carriageway: two lanes, solid edges, dashed divider
   x.fillStyle='rgba(18,18,18,0.3)'; for(let n=0;n<5;n++){ x.beginPath(); x.ellipse(Math.random()*256,12+Math.random()*40,10+Math.random()*16,3+Math.random()*4,0,0,7); x.fill(); } });
@@ -52,7 +53,7 @@ const villaBay=(col,sh)=>tex('vb'+col+sh,128,128,(x,y)=>{ x.fillStyle=col; x.fil
   x.strokeStyle='#f4f2ea'; x.lineWidth=4; x.stroke(); x.lineWidth=2; x.beginPath(); x.moveTo(64,28); x.lineTo(64,112); x.moveTo(44,70); x.lineTo(84,70); x.moveTo(44,92); x.lineTo(84,92); x.stroke();
   x.fillStyle=sh; for(const px of [22,88]){ x.fillRect(px,34,18,78); x.fillStyle='rgba(0,0,0,0.25)'; for(let k=0;k<12;k++) x.fillRect(px,37+k*6.3,18,1.6); x.fillStyle=sh; }   // louvred shutters
   x.fillStyle='#e8e4d8'; x.fillRect(38,112,52,5); });
-const pitchT=()=>tex('pitch',128,64,(x)=>{ for(let k=0;k<8;k++){ x.fillStyle=k%2?'#4f8a34':'#5a9a3c'; x.fillRect(k*16,0,16,64); } x.strokeStyle='#f0f0e8'; x.lineWidth=1.5; x.strokeRect(3,3,122,58); x.beginPath(); x.moveTo(64,3); x.lineTo(64,61); x.stroke(); x.beginPath(); x.arc(64,32,9,0,7); x.stroke(); x.strokeRect(3,18,14,28); x.strokeRect(111,18,14,28); });
+const pitchT=()=>tex('pitch',128,64,(x)=>{ for(let k=0;k<8;k++){ x.fillStyle=k%2?'#4c7238':'#567c40'; x.fillRect(k*16,0,16,64); } x.strokeStyle='#f0f0e8'; x.lineWidth=1.5; x.strokeRect(3,3,122,58); x.beginPath(); x.moveTo(64,3); x.lineTo(64,61); x.stroke(); x.beginPath(); x.arc(64,32,9,0,7); x.stroke(); x.strokeRect(3,18,14,28); x.strokeRect(111,18,14,28); });
 // ---------- breakable pieces: every floor / scar / ruin / wire span has an id; a tiny texture says which are standing (vertex shader drops the rest) ----------
 const PC={ W:256, H:64, data:null, tex:null, n:1 };
 function pcInit(){ if(!PC.tex){ PC.data=new Uint8Array(PC.W*PC.H*4); PC.tex=new THREE.DataTexture(PC.data, PC.W, PC.H, THREE.RGBAFormat); PC.tex.magFilter=PC.tex.minFilter=THREE.NearestFilter; } PC.data.fill(255); PC.tex.needsUpdate=true; PC.n=1; }
@@ -177,7 +178,7 @@ function officeTower(ox,oz,ry,w,d){ const floors=9+((Math.random()*9)|0), FH=3.4
   const top=y0+floors*FH; local(0, top+0.3, 0, w+0.2, 0.6, d+0.2, ox,oz,ry, 0x6a7078);
   if(Math.random()<0.5) facade('of'+T.t.uuid, T, true).geos.push(place(boxUV(w*0.6,FH*3,d*0.6,8,FH*4), ox, top+FH*1.5, oz, ry));                       // setback crown
   localG(new THREE.CylinderGeometry(0.06,0.1,6,5), w*0.2, top+FH*3+3, 0, ox,oz,ry, 0x8a8e92); endBld(Bd); return top-y0; }
-const VWALL=['#f0dca0','#f2eee4','#e8c070','#f0c8b8','#cfe4d0','#f4e6c8'], VSHUT=['#3a7a4a','#2a5a8a','#4a6a3a','#6a8aa0'];
+const VWALL=['#e2d4a8','#e8e4da','#d8bc84','#dcc2b6','#c8d6c8','#e6dac2'], VSHUT=['#3e6a4a','#34546e','#4a6040','#5e7484'];   // Z242 faded villa ochres
 function villaHouse(ox,oz,ry,w,d){ const y0=heightAt(ox,oz)-0.05, FH=3.6, PL=0.6, col=VWALL[(Math.random()*VWALL.length)|0], T=villaBay(col, VSHUT[(Math.random()*VSHUT.length)|0]), Bd=newBld('villa', ox,oz,ry,w,d,y0, 150, col);
   floorPiece(Bd, y0, y0+PL+FH); local(0, y0+PL/2, 0.6, w+0.8, PL, d+2.6, ox,oz,ry, 0xc8c2b4);                                                                // stone plinth (porch included)
   facade('vl'+col+T.t.uuid, T).geos.push(place(boxUV(w,FH,d,4.2,FH), ox, y0+PL+FH/2, oz, ry));
@@ -250,11 +251,12 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
         if(Math.random()<0.35){ const [x,z]=at(_R(-L/4,L/4), sd*(W/2+WW*0.55)); busStop(x, z, sideRy(ax,sd)+Math.PI); } }
       else for(let s=-L/2+3; s<L/2-2; s+=_R(5,9)){ const [x,z]=at(s, ow), r=Math.random();
         if(r<0.1) trees.push({ x, z, s:_R(0.75,1.0), ry:_R(0,6.28) }); else if(r<0.17) lamps.push({ x, z, ry:sideRy(ax,sd) });
-        else if(r<0.36){ const rowN=2+((Math.random()*5)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; const [mx,mz]=at(ss, ow); motos.push({ x:mx, z:mz, ry:(ax?0:Math.PI/2)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; }
-        else if(r<0.42){ CURP=0; det(new THREE.CylinderGeometry(0.28,0.25,0.9,10), x, heightAt(x,z)+0.45, z, 0, 0x2a7a3a); } }   // a green bin
+        else if(r<0.25){ const rowN=2+((Math.random()*4)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; const [mx,mz]=at(ss, ow); motos.push({ x:mx, z:mz, ry:(ax?0:Math.PI/2)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; }
+        else if(r<0.28){ CURP=0; det(new THREE.CylinderGeometry(0.28,0.25,0.9,10), x, heightAt(x,z)+0.45, z, 0, 0x2a7a3a); } }   // a green bin
       if(sd===polesSide) for(let s=-L/2+2; s<=L/2-2; s+=_R(10,13)){ const [x,z]=at(s, sd*(W/2+0.45)); const o={ x, z, ry:ang, spans:[] }; poles.push(o); chain.push(o); }
       // parked cars along the kerb lane
-      const lane=sd*(W/2-1.3); for(let s=-L/2+4; s<L/2-4; s+=_R(6,13)) if(Math.random()<(blvd?0.32:0.45)){ const [x,z]=at(s, lane); cars.push(pickCar({ x, z, ry:(ax?(sd>0?0:Math.PI):(sd>0?Math.PI/2:-Math.PI/2))+(Math.random()-0.5)*0.06 })); s+=2; } }
+      const lane=sd*(W/2-1.3); for(let s=-L/2+4; s<L/2-4; s+=_R(6,13)) if(Math.random()<(blvd?0.2:0.26)){ const [x,z]=at(s, lane);   // Z242 fewer parked cars
+ cars.push(pickCar({ x, z, ry:(ax?(sd>0?0:Math.PI):(sd>0?Math.PI/2:-Math.PI/2))+(Math.random()-0.5)*0.06 })); s+=2; } }
     if(chain.length>1) chains.push(chain);
     if(Math.random()<0.1){ const [x,z]=at(_R(-L/3,L/3), _R(-W/4,W/4)); cars.push(pickCar({ x, z, ry:ang+_R(-0.8,0.8) }, 0.6)); } }   // a car abandoned in the road, often burnt out
   // ---- crossings: asphalt, zebra crossings on every arm, traffic lights ----
@@ -267,27 +269,29 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
   for(let i=-n;i<n;i++) for(let j=-n;j<n;j++){ const x0=i*G+roadW(i)/2+walkW(i)+0.4, x1=(i+1)*G-roadW(i+1)/2-walkW(i+1)-0.4, z0=j*G+roadW(j)/2+walkW(j)+0.4, z1=(j+1)*G-roadW(j+1)/2-walkW(j+1)-0.4;
     const cx=(x0+x1)/2, cz=(z0+z1)/2, w=x1-x0, d=z1-z0, R=Math.max(w,d)/2, dC=Math.hypot(cx,cz);
     if(w<14 || d<14 || !inField(cx,cz,R+2) || inZone(cx,cz,R*0.9) || dC<R+24 || dC>ARENA*0.82) continue;
-    let r=Math.random(); if(dC<80 && r<0.3) r=0.86+Math.random()*0.14;                                                                   // room to fight near the middle: squares, parks, a pitch
-    const built = r<0.66; if(built) ZONES.push({ kind:'landmark', x:cx, z:cz, r:Math.min(w,d)/2*0.95 });
-    if(r<0.34){ const dep=_R(9.5,12); for(const side of [1,-1]){ let a=-w/2+0.2; const ry=side>0?0:Math.PI;                                  // tube-house rows on both long edges, a back alley between
-        while(a<w/2-3.5){ const hw=_R(4,6.4); if(a+hw>w/2) break; tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.16) a+=_R(2.2,3); } }
+    const OB=OPEN_LAND.CITY.built, k=OB/0.66; let r=Math.random(); if(dC<80 && r<0.45) r=OB+Math.random()*(1-OB);                    // room to fight near the middle: squares, parks, a pitch · Z242 fewer blocks built up (OPEN_LAND)
+    const built = r<OB; if(built) ZONES.push({ kind:'landmark', x:cx, z:cz, r:Math.min(w,d)/2*0.95 });
+    if(r<0.34*k){ const dep=_R(9.5,12); for(const side of [1,-1]){ let a=-w/2+0.2; const ry=side>0?0:Math.PI;                                  // tube-house rows on both long edges, a back alley between
+        while(a<w/2-3.5){ const hw=_R(4,6.4); if(a+hw>w/2) break; tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.35) a+=_R(3,6.5); } }   // Z242 gaps in the row: yards, alleys
       CURP=0; for(let k=0;k<3;k++) trees.push({ x:cx+_R(-w/2,w/2)*0.8, z:cz+_R(-1,1)*Math.max(0,d/2-dep-1), s:_R(0.7,0.95), ry:_R(0,6.28) }); }
-    else if(r<0.5){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }   // four walled villas
-    else if(r<0.6){ for(const side of [1,-1]) apartment(cx, cz+side*(d/2-6), side>0?0:Math.PI, w*0.8, 11); CURP=0;                           // two slabs round a courtyard
+    else if(r<0.5*k){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }   // four walled villas
+    else if(r<0.6*k){ for(const side of [1,-1]) apartment(cx, cz+side*(d/2-6), side>0?0:Math.PI, w*0.8, 11); CURP=0;                           // two slabs round a courtyard
       strip('walk', walkMat, cx, cz, w*0.8, Math.max(4,d-24), 0, 0.1, 2, 2); for(let k=0;k<4;k++) trees.push({ x:cx+_R(-w/3,w/3), z:cz+_R(-2,2), s:_R(0.8,1.05), ry:_R(0,6.28) });
       for(let k=0;k<3;k++) cars.push(pickCar({ x:cx+_R(-w/3,w/3), z:cz+_R(-1.5,1.5), ry:Math.PI/2*(Math.random()<0.5?1:-1) }, 0.05)); }
-    else if(r<0.66 && towers<5 && dC>95){ officeTower(cx, cz, (Math.random()<0.5?0:Math.PI/2), _R(14,18), _R(14,18)); towers++; CURP=0; strip('walk', walkMat, cx, cz, w, d, 0, 0.1, 2, 2);
+    else if(r<OB && towers<4 && dC>95){ officeTower(cx, cz, (Math.random()<0.5?0:Math.PI/2), _R(14,18), _R(14,18)); towers++; CURP=0; strip('walk', walkMat, cx, cz, w, d, 0, 0.1, 2, 2);
       for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-2), z:cz+sz*(d/2-2), s:1.0, ry:_R(0,6.28) }); }
-    else if(r<0.66){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }
-    else if(r<0.86){ CURP=0; strip('park', grassMat, cx, cz, w, d, 0, 0.06, 4, 4);                                                          // a PARK: cross paths, fountain or gazebo, benches, lamps, trees, flower beds
+    else if(r<OB){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }
+    else if(r<0.7){ CURP=0; strip('park', grassMat, cx, cz, w, d, 0, 0.06, 4, 4);                                                          // a PARK: cross paths, fountain or gazebo, benches, lamps, trees, flower beds
       strip('path', walkMat, cx, cz, w, 3, 0, 0.09, 2, 2); strip('path', walkMat, cx, cz, 3, d, 0, 0.091, 2, 2);
       if(Math.random()<0.6) fountain(cx, cz); else gazebo(cx, cz);
       for(const [sx,sz] of [[-1,0],[1,0],[0,-1],[0,1]]){ const bx=cx+sx*(w/4), bz=cz+sz*(d/4); bench(bx+(sz?2.2:0), bz+(sx?2.2:0), sx?0:Math.PI/2); lamps.push({ x:bx+(sz?-2.2:0), z:bz+(sx?-2.2:0), ry:0 }); }
-      for(let k=0;k<(MOBILE?8:14);k++){ let x, z, t=0; do { x=cx+_R(-w/2+2,w/2-2); z=cz+_R(-d/2+2,d/2-2); t++; } while(t<8 && (Math.abs(x-cx)<3.5 || Math.abs(z-cz)<3.5)); trees.push({ x, z, s:_R(0.9,1.35), ry:_R(0,6.28) }); }
-      for(let k=0;k<4;k++){ const x=cx+_R(-w/2+3,w/2-3), z=cz+_R(-d/2+3,d/2-3); if(Math.abs(x-cx)<4 || Math.abs(z-cz)<4) continue; det(new THREE.BoxGeometry(_R(2,3.5),0.3,_R(1.2,2)), x, heightAt(x,z)+0.2, z, _R(0,3), 0x7a5a3a);
+      for(let k=0;k<(MOBILE?5:9);k++){ let x, z, t=0; do { x=cx+_R(-w/2+2,w/2-2); z=cz+_R(-d/2+2,d/2-2); t++; } while(t<8 && (Math.abs(x-cx)<3.5 || Math.abs(z-cz)<3.5)); trees.push({ x, z, s:_R(0.9,1.35), ry:_R(0,6.28) }); }
+      for(let k=0;k<2;k++){ const x=cx+_R(-w/2+3,w/2-3), z=cz+_R(-d/2+3,d/2-3); if(Math.abs(x-cx)<4 || Math.abs(z-cz)<4) continue; det(new THREE.BoxGeometry(_R(2,3.5),0.3,_R(1.2,2)), x, heightAt(x,z)+0.2, z, _R(0,3), 0x7a5a3a);
         for(let q=0;q<6;q++) det(new THREE.SphereGeometry(_R(0.18,0.3),6,4), x+_R(-1,1), heightAt(x,z)+0.45, z+_R(-0.6,0.6), 0, [0xe03a5a,0xf0c020,0xf0f0f0,0xa04ad0][(Math.random()*4)|0]); } }
-    else if(r<0.94){ CURP=0; strip('walk', walkMat, cx, cz, w, d, 0, 0.1, 2, 2);                                                            // a MARKET SQUARE: umbrella stalls, stools, a few trees
-      for(let k=0;k<(MOBILE?6:11);k++) stall(cx+_R(-w/2+2.5,w/2-2.5), cz+_R(-d/2+2.5,d/2-2.5), _R(0,6.28));
+    else if(r<0.84){ CURP=0; strip('park', grassMat, cx, cz, w, d, 0, 0.06, 4, 4); strip('path', walkMat, cx, cz, w*0.55, d*0.55, 0, 0.09, 2, 2);   // Z242 an OPEN SQUARE: a paved plaza on a lawn, a tree at each corner, a couple of benches
+      for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-3), z:cz+sz*(d/2-3), s:_R(0.95,1.2), ry:_R(0,6.28) }); bench(cx-w*0.2, cz, Math.PI/2); bench(cx+w*0.2, cz, -Math.PI/2); }
+    else if(r<0.93){ CURP=0; strip('walk', walkMat, cx, cz, w, d, 0, 0.1, 2, 2);                                                            // a MARKET SQUARE: umbrella stalls, stools, a few trees
+      for(let k=0;k<(MOBILE?4:7);k++) stall(cx+_R(-w/2+2.5,w/2-2.5), cz+_R(-d/2+2.5,d/2-2.5), _R(0,6.28));
       for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-1.5), z:cz+sz*(d/2-1.5), s:_R(0.9,1.1), ry:_R(0,6.28) }); }
     else { CURP=0; const pw=Math.min(w-4, 36), pd=Math.min(d-4, 22);                                                                         // a FOOTBALL PITCH with goals and a low fence
       strip('pitch', ()=>new THREE.MeshStandardMaterial({ map:pitchT().t, roughness:0.95 }), cx, cz, pw, pd, 0, 0.07, pw, pd);

@@ -2,6 +2,7 @@
 //   HILLS: conifer woods on the slopes. VILLAGE: tile-roofed houses, rice paddies, palms (the river + bridges live in heightfield.js).
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
+import { OPEN_LAND } from '../../config.js';
 import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, _mergeColored, _xf, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, detailize, floraMat, heightAt, inField, inZone, resetCity, treeConifer, treePalm, villageHouse } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
@@ -61,16 +62,16 @@ function buildHills(){ const list=[], N=Math.round((MOBILE?40:90)*AREA_K/2);
   return list.length; }   // Z141 the woods themselves are planted by flora.js (they topple under a tank)
 
 // ---------------- VILLAGE ----------------
-function paddyTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#8fbf4a'; x.fillRect(0,0,128,128);
-  for(let r=0;r<16;r++){ x.fillStyle=r%2?'#a4d05a':'#7aae3c'; x.fillRect(0,r*8,128,5); } for(let n=0;n<40;n++){ x.fillStyle='rgba(200,230,255,0.35)'; x.fillRect(Math.random()*128,Math.random()*128,6,1.5); }
+function paddyTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.fillStyle='#7c9650'; x.fillRect(0,0,128,128);   // Z242 young rice, not lime paint
+  for(let r=0;r<16;r++){ x.fillStyle=r%2?'#8aa25a':'#6a8642'; x.fillRect(0,r*8,128,5); } for(let n=0;n<40;n++){ x.fillStyle='rgba(200,230,255,0.35)'; x.fillRect(Math.random()*128,Math.random()*128,6,1.5); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
 function buildVillage(){
-  let houses=0; const H=Math.round(7*AREA_K/2);
+  let houses=0; const H=Math.round(7*AREA_K/2*OPEN_LAND.VILLAGE.houses);   // Z242 fewer homes, more open countryside
   for(let t=0;t<H*14 && houses<H;t++){ const x=_R(-ARENA+14,ARENA-14), z=_R(-ARENA+14,ARENA-14); if(!free(x,z,4.2) || (RIVER.on && wetAt2(x,z,9))) continue;
     const m=villageHouse(), rot=Math.round(_R(0,3))*Math.PI/2+_R(-0.15,0.15); m.position.set(x, heightAt(x,z)-0.05, z); m.rotation.y=rot; add(m);   // Z207 a real village home
     const w=m.userData.w, d=m.userData.d, ca=Math.cos(rot), sa=Math.sin(rot); let first=true;
     for(let a=-w/2+1.5;a<=w/2-1;a+=2.6) for(let b=-d/2+1.5;b<=d/2-1.2;b+=2.6){ solid(x+a*ca+b*sa, z-a*sa+b*ca, 2.2,'house', first?m:null); first=false; }
-    claim(x,z,Math.max(w,d)/2+3); houses++; }
+    claim(x,z,Math.max(w,d)/2+7); houses++; }   // Z242 each home keeps a yard of open ground round it
   // rice paddies beside the water (scenery, no collision)
   const tex=paddyTex(), pm=new THREE.MeshStandardMaterial({ map:tex, roughness:0.8 }); let paddies=0;
   for(let t=0;t<90 && paddies<Math.round(5*AREA_K/2);t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20), w=_R(14,22), d=_R(10,15); if(!free(x,z,Math.max(w,d)/2) || !nearWater(x,z,26)) continue;

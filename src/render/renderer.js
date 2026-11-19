@@ -8,6 +8,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { LIGHT } from '../../config.js';
 import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
@@ -21,7 +22,7 @@ renderer.setSize(innerWidth, innerHeight, false);   // false → leave canvas CS
 // fixed inset:0 canvas while the URL bar / rotation settle → reading them stretched the frame. doResize() keeps this current.
 export const VIEW = { w:innerWidth, h:innerHeight };
 export const BLOOM_SCALE = MOBILE ? 0.5 : 1;   // half-res bloom on phones: same glow, ~4× cheaper per frame
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = LIGHT.tone==='agx' ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;   // Z242 AgX: a camera-like highlight roll-off, no neon colours
 renderer.toneMappingExposure = 1.08;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 if(!MOBILE){ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }  // real shadows on desktop

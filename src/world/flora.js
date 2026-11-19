@@ -2,6 +2,7 @@
 //   reeds along the water and haystacks in the village — instanced (one draw per species), tinted per instance, swaying in the wind (vertex shader).
 //   Tanks plough through it all: trees topple, bushes / flowers / reeds flatten (decor.js crushables).
 import * as THREE from 'three';
+import { LIGHT, OPEN_LAND } from '../../config.js';
 import { AREA_K, ARENA, BIOME, MOBILE, RIVER, WTIME, _R, _mergeColored, arena, blocks, crushables, heightAt, inField, inZone, shaftSpot, wetAt } from '../hub.js';
 
 let _mat=null;
@@ -34,7 +35,7 @@ function leafy(P){ const out=[]; for(const p of P){ const L=p.geo.userData.leaf;
       for(let i=0;i<ps.count;i++){ v.set(ps.getX(i)-L.c[0], ps.getY(i)-L.c[1], ps.getZ(i)-L.c[2]).normalize(); nn.set(n.getX(i),n.getY(i),n.getZ(i)); if(nn.dot(v)<0) nn.negate(); nn.lerp(v, L.bend).normalize(); n.setXYZ(i, nn.x, nn.y, nn.z); } }
     out.push({ geo:g, col:L ? new THREE.Color(p.col).multiplyScalar(L.kind===3?1.25:1.55).getHex() : p.col }); }   // the leaf texture darkens → cards start brighter
   return _mergeColored(out); }
-export function floraMat(){ if(_mat) return _mat; _mat=new THREE.MeshStandardMaterial({ vertexColors:true, map:leafAtlas(), alphaTest:0.42, alphaToCoverage:!MOBILE, roughness:0.88, metalness:0.0, side:THREE.DoubleSide });
+export function floraMat(){ if(_mat) return _mat; _mat=new THREE.MeshStandardMaterial({ vertexColors:true, map:leafAtlas(), alphaTest:0.42, alphaToCoverage:!MOBILE, roughness:0.88, metalness:0.0, side:THREE.DoubleSide }); _mat.color.setRGB(...LIGHT.flora);   // Z242 natural, muted greens
   _mat.onBeforeCompile=(sh)=>{ sh.uniforms.uT=WTIME;
     sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n  normal = dot(vNormal,vNormal)>1e-12 ? normalize( vNormal ) : normal;')   /* Z146 foliage keeps its outward crown normal on BOTH faces (a flipped back face went black) */
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * 0.07;');   /* light through the leaves */
@@ -154,7 +155,7 @@ function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=
 // Z145 trees thinned ~40%: the woods still read as woods but leave clear sight-lines for the fight
 export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
   if(n==='HILLS'){ plant(conifer(false), N(52), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
-  else if(n==='VILLAGE'){ plant(palm(), N(17), { s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13), { s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
+  else if(n==='VILLAGE'){ const T=OPEN_LAND.VILLAGE.trees; plant(palm(), N(17*T), { s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10*T), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13*T), { s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
   else if(n==='MEADOW'){ plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
