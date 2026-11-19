@@ -534,7 +534,7 @@ export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.
 export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };
 //   Z244 CLEAR AIR: no milky veil — the grade's shadow lift goes (liftK 0: blacks stay black, shadows stay deep), the split-tone tints halve (tintK),
 //   the haze is thinner again and tinted sky-blue instead of whitened (fogBlue = share of the zenith colour, no white mix), crisper contrast + sharpening
-export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.19, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
+export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.12, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
   liftK:0, tintK:0.5, fogBlue:0.22, bloom:0.24, sharp:0.58, duskHemiK:0.85, duskAmbient:0.08 };   // sunset keeps more sky fill + its lift
 // Z242 OPEN GROUND — town and countryside battlefields keep more open space: cover shapes × cover, city blocks built up to `built` (was 0.66),
 //   village homes × houses, village trees × trees
