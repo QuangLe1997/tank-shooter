@@ -529,6 +529,9 @@ export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.
 //   weaker sky / ambient / environment fill (real light-and-shadow modelling instead of flat, evenly lit "toy" scenes), a grade that keeps contrast and
 //   colour but adds no vibrance boost, thinner haze. The per-battlefield ATMOS values are multiplied by these (expK × exposure, sunK × sun, …).
 //   flora = colour multiplier on every leaf, frond and grass blade (muted, darker natural greens)
+// Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
+//   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)
+export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };
 export const LIGHT = { tone:'agx', expK:1.12, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.08, satK:1.18, vib:0, fogK:0.72, nightHemiK:0.8, flora:[0.8,0.84,0.72] };
 // Z242 OPEN GROUND — town and countryside battlefields keep more open space: cover shapes × cover, city blocks built up to `built` (was 0.66),
 //   village homes × houses, village trees × trees

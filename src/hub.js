@@ -161,6 +161,7 @@ export * from './core/helpers.js';
 export * from './game/update.js';
 export * from './game/intro.js';
 export * from './ui/radar.js';
+export * from './ui/pylon-marks.js';   // Z243 screen markers for the general's shield pylons
 export * from './ui/instruments.js';   // Z228 commander's instrument panel + radio teleprinter
 export * from './ui/squad-hud.js';   // Z220 TỔ BỘ BINH panel
 export * from './core/profile.js';

@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
-import { BALANCE, BOSSFIGHT } from '../../config.js';
-import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle } from '../hub.js';
+import { BALANCE, BOSSFIGHT, PYLON_SITE } from '../../config.js';
+import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 export let boss=null;
@@ -74,17 +74,50 @@ export function bossPhase(now){
 }
 // ---- SHIELD PYLONS ----
 export const PYLONS=[];
+// Z243 WHERE THE PYLONS STAND: round the general (not round the map centre — that ring of 24 m sat exactly on our own citadel's walls),
+//   always outside our citadel, outside every fortress, clear of walls / cover / buildings and of each other, on open ground inside the fence.
+//   Rules relax step by step if the field is crowded, but never into our citadel.
+function pylonSpots(n, ring){ const B=boss&&boss.pos ? boss.pos : { x:0, z:0 }, PS=PYLON_SITE, out=[], a0=Math.random()*6.283;
+  const okAt=(x, z, lv)=>{ if(Math.hypot(x, z) < CORE_DEF.R+PS.coreGap) return false; if(!inField(x, z, PS.edge)) return false;
+    for(const q of out) if(Math.hypot(q[0]-x, q[1]-z) < PS.apart) return false;
+    if(lv<3) for(const f of FORTS) if(!f.captured && Math.hypot(f.x-x, f.z-z) < f.R+PS.fortGap) return false;
+    if(lv<2 && inZone(x, z, 3)) return false;
+    if(lv<1) for(const b of blocks){ const d=PS.clear+(b.r||1); if(Math.abs(b.x-x)<d+6 && Math.abs(b.z-z)<d+6 && (b.x-x)**2+(b.z-z)**2 < d*d) return false; }
+    return true; };
+  for(let i=0;i<n;i++){ const want=a0+i/n*6.283; let hit=null;
+    for(let lv=0; lv<4 && !hit; lv++) for(const r of PS.rings.map(k=>ring*k)) { for(let s=0;s<PS.steps && !hit;s++){ const a=want+(s%2?1:-1)*Math.ceil(s/2)*(6.283/PS.steps)*0.5, x=B.x+Math.cos(a)*r, z=B.z+Math.sin(a)*r; if(okAt(x, z, lv)) hit=[x, z]; } if(hit) break; }
+    if(!hit){ const a=want, d=Math.max(CORE_DEF.R+PS.coreGap+4, Math.hypot(B.x, B.z)); let x=Math.cos(a)*d, z=Math.sin(a)*d; [x,z]=clampFieldXZ(x, z, 6); hit=[x, z]; }   // last resort: out past our walls
+    out.push(hit); }
+  return out; }
+// Z243 THE BEACON: a tall cyan light pillar (day and night, never fogged out), a ground ring that pulses outward, a diamond spinning above the orb
+const PYL_COL=0x7fe0ff; let _pylGeo=null;
+function pylonMarker(){ const root=new THREE.Group();
+  if(!_pylGeo){ const pil=new THREE.CylinderGeometry(0.9, 1.5, PYLON_SITE.pillar, 20, 1, true); pil.translate(0, PYLON_SITE.pillar/2, 0); _pylGeo={ pil, ring:new THREE.RingGeometry(2.6, 3.3, 48).rotateX(-Math.PI/2), dia:new THREE.OctahedronGeometry(0.9, 0) }; }
+  const pm=new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, fog:false, uniforms:{ uT:{ value:0 }, uC:{ value:new THREE.Color(PYL_COL) }, uH:{ value:PYLON_SITE.pillar } },
+    vertexShader:'varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY=position.y; vec4 mv=modelViewMatrix*vec4(position,1.0); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }',
+    fragmentShader:'uniform float uT,uH; uniform vec3 uC; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float h=vY/uH; float rim=1.0-abs(dot(normalize(vN),normalize(vV))); float band=0.55+0.45*sin(vY*0.35-uT*6.0); float a=pow(1.0-h,1.4)*(0.5+0.5*rim)*(0.75+0.25*band); gl_FragColor=vec4(uC*a*2.8, min(1.0,a*1.1)); }' });
+  const pillar=new THREE.Mesh(_pylGeo.pil, pm); pillar.renderOrder=8; pillar.frustumCulled=false; root.add(pillar);
+  const core=new THREE.Mesh(_pylGeo.pil, pm); core.scale.set(0.3,1,0.3); core.renderOrder=8; core.frustumCulled=false; root.add(core);   // a bright thin core: the column reads against a daylight sky
+  const rm=new THREE.MeshBasicMaterial({ color:PYL_COL, transparent:true, opacity:0.8, depthWrite:false, blending:THREE.AdditiveBlending, fog:false, side:THREE.DoubleSide });
+  const ring=new THREE.Mesh(_pylGeo.ring, rm); ring.position.y=0.12; ring.renderOrder=7; root.add(ring);
+  const ring2=new THREE.Mesh(_pylGeo.ring, rm.clone()); ring2.position.y=0.1; ring2.renderOrder=7; root.add(ring2);
+  const dia=new THREE.Mesh(_pylGeo.dia, new THREE.MeshStandardMaterial({ color:0x0a1820, emissive:PYL_COL, emissiveIntensity:2.6, roughness:0.3, metalness:0.4 })); dia.position.y=7.4; dia.scale.set(1,1.5,1); root.add(dia);
+  return { root, pm, ring, ring2, dia }; }
+export function updatePylonBeacons(dt, now){ for(const b of PYLONS){ const M=b.mk; if(!M) continue; M.pm.uniforms.uT.value=now; M.dia.rotation.y+=dt*1.8; M.dia.position.y=7.4+Math.sin(now*2.2)*0.35;
+    const k=(now*0.7)%1, k2=(now*0.7+0.5)%1; M.ring.scale.setScalar(1+k*2.2); M.ring.material.opacity=0.85*(1-k); M.ring2.scale.setScalar(1+k2*2.2); M.ring2.material.opacity=0.85*(1-k2); } }
 export function raiseShield(now){
   const P=BF.pylon, hp=Math.round(P.hp*(1+(S.stage-1)*P.perStage)*loopHpMul()); boss.shielded=true; boss.dome.visible=true;
-  for(let i=0;i<P.n;i++){ const a=i/P.n*6.283+Math.random()*0.5; let x=Math.cos(a)*P.ring, z=Math.sin(a)*P.ring*0.85; [x,z]=clampFieldXZ(x, z, 6);
+  const spots=pylonSpots(P.n, P.ring);
+  for(let i=0;i<P.n;i++){ const [x,z]=spots[i];
     const g=new THREE.Group(); g.position.set(x,heightAt(x,z),z); scene.add(g);
     const base=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.4,0.7,8), new THREE.MeshStandardMaterial({color:0x2a2e34,roughness:0.5,metalness:0.8})); base.position.y=0.35; g.add(base);
     const col=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.55,4.2,8), new THREE.MeshStandardMaterial({color:0x3a4048,roughness:0.4,metalness:0.85})); col.position.y=2.6; g.add(col);
     for(const y of [1.6,2.6,3.6]){ const rr=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.07,8,20), new THREE.MeshStandardMaterial({color:0x101418,emissive:0x5fd0ff,emissiveIntensity:1.6})); rr.rotation.x=Math.PI/2; rr.position.y=y; g.add(rr); }
     const orb=new THREE.Mesh(new THREE.SphereGeometry(0.55,16,12), new THREE.MeshStandardMaterial({color:0x0a1418,emissive:0x8fe8ff,emissiveIntensity:2.4})); orb.position.y=5.0; g.add(orb);
     g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+    const mk=pylonMarker(); g.add(mk.root);   // Z243 a beacon you can see from anywhere: light pillar, pulsing ground ring, spinning diamond
     const beam=takeBeam(); beam.material.color.setHex(0x7fd8ff);
-    const b={ mesh:g, x, z, r:1.4, hp, maxHp:hp, steel:false, loot:false, kind:'pylon', beam, orb }; blocks.push(b); PYLONS.push(b); }
+    const b={ mesh:g, x, z, r:1.4, hp, maxHp:hp, steel:false, loot:false, kind:'pylon', beam, orb, mk }; blocks.push(b); PYLONS.push(b); }
   radio('SCH: '+boss.def.name+' đang được khiên năng lượng bảo vệ — phá '+P.n+' trụ phát!'); tip('shield');
 }
 export function damagePylon(b, dmg){ b.hp-=dmg; flashMat(b.orb.material,0.1,1); burst({x:b.x,z:b.z}, 0x8fe8ff, 3, 4, {y:3.5, life:0.3, size:0.3, grav:-8, drag:2, up:2});
@@ -173,7 +206,7 @@ export function stunBoss(now, why){ if(!boss||now<boss.stunUntil) return; boss.s
   S.shake=Math.min(3.2,S.shake+1.6); sfx('clang'); bigExplode(boss.pos, 0xffd27a, 1.2); floatText('CHOÁNG! ×'+BF.stun.mul, '#ffe08a', {x:boss.pos.x,y:boss.r*2.6,z:boss.pos.z}, 26);
   if(why) radio('SCH: '+why); bossStatus(); }
 export function ventBoss(now){ boss.ventUntil=now+BF.vent.time; boss.mode='vent'; floatText('XẢ NHIỆT — BẮN NGAY!', '#ff9a5a', {x:boss.pos.x,y:boss.r*2.6,z:boss.pos.z}, 22); bossStatus(); }
-export function updateBoss(dt, now){
+export function updateBoss(dt, now){ if(PYLONS.length) updatePylonBeacons(dt, now);   // Z243
   if(!boss || !boss.alive) return;
   const p=S.player, B=boss, sc=B.def.scale; B._px=B.pos.x; B._pz=B.pos.z;
   B.aim = Math.atan2(p.pos.x-B.pos.x, p.pos.z-B.pos.z);
