@@ -5,10 +5,12 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BIOME, MOBILE, S, TANK_SCALE, ZONES, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
 
-export const CORE_DEF = { R:24, H:6.2, T:2.0, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
+export const CORE_DEF = { R:24, H:9.4, T:2.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
   for(let i=0;i<uv.count;i++){ const ax=Math.abs(n.getX(i)), ay=Math.abs(n.getY(i)); const u=ax>0.5?p.getZ(i):p.getX(i), v=ay>0.5?p.getZ(i):p.getY(i); uv.setXY(i,u/4,v/4); } return g; }
 const at=(g,x,y,z,ry)=>{ g.rotateY(ry||0); g.translate(x,y,z); return g; };
+// Z241 battered block (talus): the top face pulled in to dTop deep (and wTop wide)
+function talus(w, h, dBot, dTop, wTop){ const g=box(w, h, dBot), p=g.attributes.position, kz=dTop/dBot, kx=(wTop||w)/w; for(let i=0;i<p.count;i++) if(p.getY(i)>0){ p.setZ(i, p.getZ(i)*kz); p.setX(i, p.getX(i)*kx); } g.computeVertexNormals(); return g; }
 const _gm={};
 function gunMats(){ if(_gm.hull) return _gm; const M=(c,r,m)=>new THREE.MeshStandardMaterial({ color:c, roughness:r, metalness:m });
   _gm.hull=M(0x4e5c34,0.55,0.55); _gm.dark=M(0x23271c,0.5,0.7); _gm.steel=M(0x5a5e58,0.4,0.85); _gm.lime=new THREE.MeshStandardMaterial({ color:0x9be04a, emissive:0x5fae1c, emissiveIntensity:0.8 }); return _gm; }
@@ -48,12 +50,19 @@ function ourMats(st){ if(!_om.gold){ _om.gold=new THREE.MeshStandardMaterial({ c
     _om.lime=new THREE.MeshStandardMaterial({ color:0x1a3a10, emissive:0x8aff4a, emissiveIntensity:2.2 }); _om.emblem=new THREE.MeshStandardMaterial({ map:emblemTex(), roughness:0.4, metalness:0.5 });
     _om.lamp=new THREE.MeshStandardMaterial({ color:0x302010, emissive:0xffd890, emissiveIntensity:2.6 }); }
   return _om; }
+// Z241 does the sight line (lx,ly,lz)→(hx,hy,hz) pass below the top of our walls where it crosses their ring? (the camera rises over them)
+export function coreBeamBlocked(lx, ly, lz, hx, hy, hz){ if(!CORE_DEF.g) return false; const R=CORE_DEF.R, top=CORE_DEF.g.position.y+CORE_DEF.H+1.2;
+  const dx=hx-lx, dz=hz-lz, a=dx*dx+dz*dz; if(a<1e-6) return false; const b=2*(lx*dx+lz*dz), c=lx*lx+lz*lz-R*R, disc=b*b-4*a*c; if(disc<0) return false;
+  const q=Math.sqrt(disc); for(const t of [(-b-q)/(2*a), (-b+q)/(2*a)]) if(t>0.02 && t<0.98 && ly+(hy-ly)*t < top) return true;
+  return false; }
 export function clearCoreWalls(){ if(CORE_DEF.g){ unwave(CORE_DEF.g); scene.remove(CORE_DEF.g); CORE_DEF.g.traverse(o=>{ if(o.geometry && !o.userData.shared) o.geometry.dispose(); }); CORE_DEF.g=null; } CORE_DEF.guns.length=0; CORE_DEF.mgs.length=0; CORE_DEF.guards.length=0; }
 export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D.H, TH=D.T, ST=ourStyle(BIOME.name), WM=wallMat(ST), OM=ourMats(ST), g=new THREE.Group(), y0=heightAt(0,0);
   g.position.set(0,y0,0); scene.add(g); D.g=g; ZONES.push({ kind:'landmark', x:0, z:0, r:R+5 });   // scatter keeps clear of our compound
   const N=8, rot=Math.PI/8, V=[]; for(let i=0;i<N;i++){ const a=rot+i/N*Math.PI*2; V.push([Math.cos(a)*R, Math.sin(a)*R]); }
   const geos=[], caps=[], gold=[], lime=[], gm=gunMats(), MAIN=1;   // side 1 faces +z: our lines → the grand gatehouse
-  const tower=(x,z,s,h,ry,deck)=>{ if(ST.round){ const c=new THREE.CylinderGeometry(s*0.55,s*0.62,h,16); c.translate(x,h/2-0.75,z); geos.push(c); gold.push(at(new THREE.CylinderGeometry(s*0.6,s*0.6,0.28,16), x, h-0.9, z)); }
+  const tower=(x,z,s,h,ry,deck)=>{ if(ST.round){ geos.push(at(new THREE.CylinderGeometry(s*0.62+0.2, s*0.62+1.3, 3.6, 16), x, 1.05, z)); gold.push(at(new THREE.CylinderGeometry(s*0.6+0.1, s*0.6+0.1, 0.2, 16), x, h*0.5, z)); }   // Z241 battered foot · gilt mid course
+      else { geos.push(at(talus(s+2.4, 3.6, s+2.4, s+0.25, s+0.25), x, 1.05, z, ry)); gold.push(at(new THREE.BoxGeometry(s+0.14, 0.2, s+0.14), x, h*0.5, z, ry)); }
+      if(ST.round){ const c=new THREE.CylinderGeometry(s*0.55,s*0.62,h,16); c.translate(x,h/2-0.75,z); geos.push(c); gold.push(at(new THREE.CylinderGeometry(s*0.6,s*0.6,0.28,16), x, h-0.9, z)); }
       else { geos.push(at(box(s,h,s), x, h/2-0.75, z, ry)); gold.push(at(new THREE.BoxGeometry(s*1.06,0.28,s*1.06), x, h-0.9, z, ry)); }
       if(deck){ for(let k=0;k<8;k++){ const a=(ry||0)+k/8*Math.PI*2, r=s*(ST.round?0.52:0.47); geos.push(at(box(1.1,1.0,0.7), x+Math.sin(a)*r, h-0.3, z+Math.cos(a)*r, a)); } return; }   // an open gun deck behind merlons
       const rf=new THREE.Mesh(towerRoof(ST, s, h-0.75), capMat); rf.position.set(x,0,z); rf.rotation.y=ry||0; rf.castShadow=true; g.add(rf); };
@@ -62,13 +71,17 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
     const spans = gate ? [[0, L/2-gw/2], [L/2+gw/2, L]] : [[0,L]];
     for(const [s0,s1] of spans){ const len=s1-s0; if(len<0.6) continue; const c=(s0+s1)/2, cx=x0+ux*c, cz=z0+uz*c;
       geos.push(at(box(len, H+1.5, TH), cx, (H+1.5)/2-0.75, cz, ry));                                                       // wall
+      geos.push(at(talus(len, 3.4, TH+2.6, TH+0.2), cx, 0.95, cz, ry));                                                     // Z241 battered talus
+      gold.push(at(new THREE.BoxGeometry(len, 0.18, TH+0.1), cx, H*0.45, cz, ry));                                            // Z241 second gilt course
+      { const nP=Math.max(1, Math.round(len/3.2)); for(let k=0;k<nP;k++){ const sc=s0+(k+0.5)*len/nP, px=x0+ux*sc+nx*out*(TH/2+0.3), pz=z0+uz*sc+nz*out*(TH/2+0.3);   // Z241 pilasters + stepped corbels on the outer face
+          geos.push(at(box(0.85, H-3.6, 0.6), px, 2.9+(H-3.6)/2-0.75, pz, ry), at(box(0.55, 0.5, 0.95), px+nx*out*0.15, H-1.3, pz+nz*out*0.15, ry), at(box(0.55, 0.4, 0.6), px+nx*out*0.32, H-0.85, pz+nz*out*0.32, ry)); } }
       gold.push(at(new THREE.BoxGeometry(len, 0.22, TH+0.12), cx, H-0.35, cz, ry));                                           // gilt string course
       lime.push(at(new THREE.BoxGeometry(len*0.96, 0.1, 0.08), cx-nx*out*(TH/2+0.05), H-0.9, cz-nz*out*(TH/2+0.05), ry));       // ID light strip on the inner face
       for(let k=0;k<Math.max(1,Math.round(len/3));k++){ const sc=s0+(k+0.5)*len/Math.max(1,Math.round(len/3)), mx=x0+ux*sc, mz=z0+uz*sc; geos.push(at(box(0.9,0.75,TH*0.9), mx, H+0.4, mz, ry)); caps.push([mx,mz,ry,len/Math.max(1,Math.round(len/3))]); }
       for(let s=s0+1.2; s<=s1-0.6; s+=2.4){ const bx=x0+ux*s, bz=z0+uz*s; blocks.push({ mesh:g, x:bx, z:bz, r:1.35, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'corewall', ours:true }); } }   // collision (enemy fire stops here, ours passes)
-    if(!gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2; tower(mx, mz, 3.4, H+3.6, ry);   // a roofed watch pavilion over the middle of every curtain wall: the land's own style
+    if(!gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2; tower(mx, mz, 3.8, H+5.5, ry);   // a roofed watch pavilion over the middle of every curtain wall: the land's own style
       const em=new THREE.Mesh(new THREE.CircleGeometry(1.5,32), OM.emblem); const off=(ST.round?2.15:1.75)+0.06; em.position.set(mx+nx*out*off, H*0.55, mz+nz*out*off); em.rotation.y=Math.atan2(nx*out, nz*out); g.add(em); }   // our emblem on every curtain wall
-    if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2, th=main?H+10:H+5, ts=main?4.6:3.0;
+    if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2, th=main?H+14:H+7, ts=main?5.6:3.6;   // Z241 a towering main gatehouse
       for(const sd of [-1,1]){ const px=mx+ux*sd*(gw/2+ts*0.5), pz=mz+uz*sd*(gw/2+ts*0.5); tower(px, pz, ts, th, ry);
         if(main){ const lm=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.5), OM.lamp); lm.position.set(px+nx*out*(ts*0.55), H+0.5, pz+nz*out*(ts*0.55)); g.add(lm);
           const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,7,6), gm.steel); pole.position.set(px, th+2.6, pz); g.add(pole); const fl=makeFlag(vnTex(), 4.2, 2.7, 1); fl.position.set(px, th+5, pz); g.add(fl); } }

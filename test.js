@@ -638,7 +638,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function detailize/.test(su) && /export function hiResMaps/.test(su) && /normalMap:M\.normalMap/.test(R('src/world/regional.js')), 'walls: hi-res colour + normal + roughness maps and a world-space detail layer');
   ok(/GTAOPass/.test(rd) && /sharp/.test(rd) && /AO\.on && \(?PERF\.slowT/.test(R('src/game/loop.js')), 'ambient occlusion (shed first when slow) + sharpening');
   ok(/cloudShade/.test(cl) && /MOODS/.test(at) && /storm/.test(at) && /cTex/.test(at), 'cloud deck in the sky, drifting cloud shadows, per-battle sky moods');
-  ok(/f\.Rin/.test(fo) && /Math\.random\(\)-0\.5\)\*0\.5\)\/sides/.test(fo) && /GH=H\+\(CAP\?12:8\.5\)/.test(fo) && /portcullis/.test(fo), 'irregular fort outlines, tall towers, fierce gatehouse');
+  ok(/f\.Rin/.test(fo) && /Math\.random\(\)-0\.5\)\*0\.5\)\/sides/.test(fo) && /GH=H\+FORT\.arch\.gateH\[CAP\?1:0\]/.test(fo) && /portcullis/.test(fo), 'irregular fort outlines, tall towers, fierce gatehouse');
   ok(/f\.keepR/.test(fo) && /kind:'keep'/.test(fo), 'the capital raises a solid donjon with the flag on its roof');
   ok(/export function tryClimb/.test(es) && /isClimber/.test(R('src/actors/command.js')) && /updateClimb/.test(R('src/actors/fireteam.js')), 'assault troops carry ladders and scale an unbreached wall');
   ok(/TURRET\.rate\*tk/.test(up) && /id="setTurret"/.test(R('index.html')), 'turret traverse speed is moderate and player-adjustable');
@@ -873,7 +873,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z174 real-world scale: 1 unit = 1 m; every man 1.78 m; real wall / tower / cover / tree heights; vehicles and elites at their real size
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), ED=await import('./src/data/enemies.js');
   ok(Math.abs(cfg.HUMAN_SCALE*1.407-1.78)<0.01 && ED.SOLDIER.scale===cfg.HUMAN_SCALE && ED.RIDER.scale===cfg.HUMAN_SCALE && /setScalar\(HUMAN_SCALE\)/.test(R('src/world/towers.js')) && /setScalar\(HUMAN_SCALE\)/.test(R('src/world/fortress.js')) && /HUMAN_SCALE\/\(ENEMY_DEFS\.carrier\.scale\*TANK_SCALE\)/.test(R('src/actors/enemies.js')), 'every man in the game is 1.78 m — infantry, our squad, guards on walls / towers / bridges, riders, APC passengers');
-  ok(cfg.FORT.wallH===7 && cfg.FORT.wallT>=2.4 && /MH=1\.3/.test(R('src/world/fortress.js')) && /KH=24/.test(R('src/world/fortress.js')) && ED.TOWER.h>=8, 'fortress curtain walls 7 m + 1.3 m merlons, 2.4 m thick, a 24 m donjon; watchtowers 8 m to the deck');
+  ok(cfg.FORT.wallH>=11 && cfg.FORT.wallT>=3.2 && /stoneBox\(0\.98, 1\.45/.test(R('src/world/fortress.js')) && cfg.FORT.arch.keepH>=34 && /KH=FORT\.arch\.keepH/.test(R('src/world/fortress.js')) && ED.TOWER.h>=8, 'Z241 great curtain walls ≥ 11 m with 1.45 m merlons on a corbelled gallery, ≥ 3.2 m thick, a ≥ 34 m donjon; watchtowers 8 m to the deck');
   ok(/h:2\.1\+Math\.random\(\)\*0\.6/.test(R('src/world/brick-walls.js')) && /sandbag:0\.7/.test(R('src/world/props.js')) && /real:1\.4/.test(R('src/world/flora.js')), 'compound walls ~2.4 m, sandbag lines 1.2 m, trees 10–17 m');
   ok(ED.ENEMY_DEFS.heavy.scale<=1.1 && ED.ENEMY_DEFS.carrier.scale<=1.0 && cfg.BALANCE.elite.sizeMul===1, 'enemy vehicles at their real size (T-14 ≈ an MBT, APCs not bigger than tanks); elites are not bigger'); }
 
@@ -1190,7 +1190,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z227 our citadel (taller, grander, five land styles with one shared look, MG towers, honour guard), the Core's marble podium + colonnade, a well-lit underground base
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cw=R('src/world/core-walls.js'), co=R('src/actors/core.js'), ub=R('src/world/underbase.js');
   ok(/const OUR_STYLE = \{/.test(cw) && ['hue','dome','spire','steel','basalt'].every(k=>new RegExp('\\b'+k+':\\s*\\{').test(cw)) && /export function ourStyle\(/.test(cw) && /wallMat\(ST\)/.test(cw) && /function emblemTex\(/.test(cw), 'our citadel: five styles by land, one shared look (pale stone, gold, lime ID, our emblem)');
-  ok(/R:24, H:6\.2/.test(cw) && /function makeMG\(/.test(cw) && /function updateCoreMG\(/.test(cw) && /CORE_DEF\.mgs\.push/.test(cw) && /makeSoldierMesh\(\{ enemy:false \}\)/.test(cw), 'bigger, taller walls; automatic MG towers beside the cannon towers; an honour guard at the Core');
+  ok(/R:24, H:9\.4, T:2\.8/.test(cw) && /function makeMG\(/.test(cw) && /function updateCoreMG\(/.test(cw) && /CORE_DEF\.mgs\.push/.test(cw) && /makeSoldierMesh\(\{ enemy:false \}\)/.test(cw), 'bigger, taller walls; automatic MG towers beside the cannon towers; an honour guard at the Core');
   ok(/function podium\(/.test(co) && /core = \{ mesh:G0,/.test(co) && /TorusGeometry\(4\.6,0\.26/.test(co), 'the Core stands on a three-tier marble podium under a colonnade and a gilt dome');
   ok(/U\.poolM=new THREE\.MeshBasicMaterial/.test(ub) && /floodlight poles/.test(ub) && /scene\.fog\.density=0\.0055/.test(ub), 'the underground base is clearly lit: floor pools, floodlight poles, lit wall strips'); }
 

@@ -520,8 +520,9 @@ export const CAM_TUNE = { pitch:[16,72,4], distK:[0.55,1.9,0.1], fov:[40,80,3], 
 export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, fortPad:30, fortK:0.18, bossR:70, bossK:0.3, ease:0.9, every:0.25 };
 // Z239 SMOOTH CAMERA — spring smoothing times (s, ~time to settle 60%): follow = the tank, lead = aim/motion look-ahead, yaw = turning the
 //   view, zoom = zoom steps / pinch, dash = the pull-back during a dash (dashPull m), resume = glide back from a cinematic, kick = recoil shove ×,
-//   fovEase = how fast the lens breathes with speed (1/s), orbit = mouse-drag / swipe turn rate (rad per px), wheelZoom = zoom per wheel notch
-export const CAM_FEEL = { follow:0.09, lead:0.38, yaw:0.24, zoom:0.2, dash:0.22, dashPull:3.2, resume:0.6, kick:0.55, fovEase:5, orbit:0.0065, wheelZoom:0.0016 };
+//   fovEase = how fast the lens breathes with speed (1/s), orbit = mouse-drag / swipe turn rate (rad per px), wheelZoom = zoom per wheel notch ·
+//   Z241 lift = heights (m) tried, lowest first, to see the tank over a wall in the way; liftT = how fast the camera rises / settles (s)
+export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.38, yaw:0.24, zoom:0.2, dash:0.22, dashPull:3.2, resume:0.6, kick:0.55, fovEase:5, orbit:0.0065, wheelZoom:0.0016 };
 // Z239 SCREEN SHAKE — the player's level (CÀI ĐẶT → RUNG MÀN HÌNH) scales every quake; NHẸ is the default. pos = metres at full trauma,
 //   roll = radians, aberr = chromatic fringe at full trauma
 // Z240 PERFORMANCE HUD (F3 / ?perf): frames averaged, refresh interval (s), frame-time colour bands (ms) — green ≤ good, amber ≤ warn, red above
@@ -542,7 +543,11 @@ export const FORT = {
           2:{ r:[35,40], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[11,14],  name:'PHÁO ĐÀI' },
           3:{ r:[41,45], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[14,18], name:'THÀNH' } },
   gatePerStage:0.22, mobileMul:0.6, mobileR:0.8, minR:26,   // Z234 mobileR: fort radius on phones (the 130 m field) · minR: never smaller (the gate wall needs its length)
-   wallH:7.0, wallT:2.4, gateW:7.0, seg:3,
+   wallH:11.0, wallT:3.2, gateW:7.0, seg:3,   // Z241 great walls: 7 → 11 m high, 2.4 → 3.2 m thick
+  // Z241 ARCHITECTURE (m): tall corner towers rise `tall` above the wall-walk (width tallW), the other corners are squat bastions (bastW, +bastH);
+  //   curtain walls longer than flankMin get a flanking tower (flankW, +flankH) proud of the outer face; gate towers +gateH[tier<3, capital], gateW2 wide;
+  //   the capital's donjon keepW wide, keepH high, its four turrets +turret above it
+  arch:{ tall:12, tallW:5.2, bastW:4.4, bastH:4.5, flankMin:22, flankW:6.0, flankH:6.5, gateH:[12,16], gateTW:[5.2,6.4], keepW:15, keepH:34, turret:8, flagH:[20,24] },
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'chief', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards

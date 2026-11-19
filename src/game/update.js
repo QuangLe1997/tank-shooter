@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, decalTread, enemies, equippedGun, fireGun, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -195,7 +195,7 @@ export function camAutoPull(p){ const A=CAM_AUTO, px=p.pos.x, pz=p.pos.z, R2=A.n
 //   view turns along the shortest arc so the camera ORBITS the tank instead of cutting a chord through it, and after any cinematic
 //   (intro, death cam) the view glides back over CAM_FEEL.resume s instead of snapping. S.zoomT / S.camYawT are what the player asked
 //   for; S.zoom / S.camYaw are what is on screen (driving stays relative to what you see).
-const CAM={ on:false, t:-1, lx:0,lxV:0, lz:0,lzV:0, fx:0,fxV:0, fz:0,fzV:0, ya:0,yaV:0, zl:0,zlV:0, dash:0,dashV:0, kick:0, blend:0, bf:58,
+const CAM={ lift:0, liftV:0, on:false, t:-1, lx:0,lxV:0, lz:0,lzV:0, fx:0,fxV:0, fz:0,fzV:0, ya:0,yaV:0, zl:0,zlV:0, dash:0,dashV:0, kick:0, blend:0, bf:58,
   bp:new THREE.Vector3(), bq:new THREE.Quaternion() };
 const _q0=new THREE.Quaternion();
 function sd(o, k, target, st, dt){ const kv=k+'V', om=2/st, x=om*dt, e=1/(1+x+0.48*x*x+0.235*x*x*x), ch=o[k]-target, tmp=(o[kv]+om*ch)*dt;
@@ -206,10 +206,14 @@ function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)
   out.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1)*(k<0.55 ? 0.8+0.2*k/0.55 : 1), camOff.z*k);   // player zoom + the auto camera's pull-back · Z165 close-ups sit a little lower
   if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
 // the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
+// Z241 the lowest extra height (CAM_FEEL.lift) from which the lens at `pos` sees the tank's hull over every wall in the way
+export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+3.2;
+  for(const L of F.lift){ const y=pos.y+L; if(!fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z)) return L; }
+  return F.lift[F.lift.length-1]; }
 export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk);
   const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
   look.set(p.pos.x+lx-Math.sin(y)*ah, CS.lookY+Math.max(0,0.6-z)*2.2, p.pos.z+lz-Math.cos(y)*ah);
-  camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; return CS.fov; }
+  camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; pos.y+=camLift(pos, p); return CS.fov; }   // (lifted over a wall in the way, as play will be)
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   const F=CAM_FEEL, CS=applyCamStyle(), st=Math.min(dt, 1/20);
@@ -217,7 +221,7 @@ export function updateCamera(dt, now){
     CAM.blend = CAM.on ? F.resume : 0; CAM.on=true;
     S.zoom=S.zoomT??S.zoom; S.camYaw=S.camYawT??S.camYaw; CAM.zl=Math.log(Math.max(0.05,S.zoom)); CAM.ya=S.camYaw;
     const zk=Math.min(1,S.zoom); CAM.lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk; CAM.lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk; CAM.fx=p.pos.x; CAM.fz=p.pos.z;
-    CAM.lxV=CAM.lzV=CAM.fxV=CAM.fzV=CAM.yaV=CAM.zlV=CAM.dashV=0; CAM.dash=0; CAM.kick=0;
+    CAM.lxV=CAM.lzV=CAM.fxV=CAM.fzV=CAM.yaV=CAM.zlV=CAM.dashV=0; CAM.dash=0; CAM.kick=0; CAM.liftSnap=true;
     CAM.bp.copy(camera.position); CAM.bq.copy(camera.quaternion); CAM.bf=camera.fov; }
   CAM.t=now;
   sd(CAM, 'zl', Math.log(Math.max(0.05, S.zoomT??S.zoom)), F.zoom, st); S.zoom=Math.exp(CAM.zl);                    // zoom glides
@@ -233,6 +237,8 @@ export function updateCamera(dt, now){
   camOffset(z, cy, zk, _camOff);
   sd(CAM, 'dash', (now && now < p.dashUntil) ? F.dashPull : 0, F.dash, st);   // eases back during a dash
   camBase.set(camTarget.x+_camOff.x, _camOff.y+CAM.dash, camTarget.z+_camOff.z);
+  if(CAM.liftSnap){ CAM.liftSnap=false; CAM.lift=camLift(camBase, p); CAM.liftV=0; }
+  sd(CAM, 'lift', camLift(camBase, p), CAM_FEEL.liftT, st); camBase.y+=CAM.lift;   // Z241 a great wall between the lens and the tank → rise over it, settle back when clear
   camera.position.copy(camBase);
   const g=camShakeGain(), tr=Math.min(1, S.shake/3.2), t2=tr*tr*g;   // TRAUMA model: shake ∝ trauma² × the player's level (CÀI ĐẶT → RUNG MÀN HÌNH), a slow rumble, not a buzz
   if(t2>0.0004){ const q=now, A=SHAKE.pos*t2; camera.position.x += (Math.sin(q*31.1)+Math.sin(q*52.7+1.7)*0.45)*A; camera.position.y += (Math.sin(q*27.3+0.4)+Math.sin(q*47.9)*0.4)*A*0.55; camera.position.z += (Math.sin(q*35.9+2.1)+Math.sin(q*44.3)*0.45)*A; }

@@ -47,16 +47,31 @@ function stoneBox(w, h, d){ const g=new THREE.BoxGeometry(w,h,d); const uv=g.att
 function cylUV(g, circ, h){ const uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*circ/4, uv.getY(i)*h/4); return g; }   // Z145 courses keep their size round a drum
 function placed(g, x, y, z, ry){ g.rotateY(ry||0); g.translate(x,y,z); return g; }
 const _m=new THREE.Matrix4(), _p=new THREE.Vector3(), _q=new THREE.Quaternion(), _s=new THREE.Vector3(), _up=new THREE.Vector3(0,1,0);
-let _pieceGeo=null;   // one 3 m wall section (wall + footing + two merlons), scaled along x per instance
-function pieceGeo(){ if(_pieceGeo) return _pieceGeo; const H=FORT.wallH, TH=FORT.wallT, L=FORT.seg;
-  const MH=1.3, parts=[placed(stoneBox(L, H+2, TH), 0, H/2-1, 0, 0), placed(stoneBox(L*0.3, MH, TH*0.9), -L*0.25, H+MH/2, 0, 0), placed(stoneBox(L*0.3, MH, TH*0.9), L*0.25, H+MH/2, 0, 0)];   // Z174 1.3 m merlons: chest-high cover for a 1.78 m man on the wall-walk
-  // Z145 real masonry has a profile: a battered plinth, a string course, a projecting parapet on corbels, coped merlons
-  parts.push(placed(stoneBox(L, 1.3, TH+0.7), 0, 0.2, 0, 0), placed(stoneBox(L, 0.5, TH+0.36), 0, 0.95, 0, 0));
-  parts.push(placed(stoneBox(L, 0.22, TH+0.22), 0, H*0.52, 0, 0));
-  parts.push(placed(stoneBox(L, 0.42, TH+0.5), 0, H-0.2, 0, 0));
-  for(let k=0;k<4;k++) for(const sd of [-1,1]) parts.push(placed(stoneBox(0.3, 0.5, 0.25), -L/2+L*(k+0.5)/4, H-0.62, sd*(TH/2+0.12), 0));
-  for(const sx of [-L*0.25, L*0.25]) parts.push(placed(stoneBox(L*0.3+0.14, 0.12, TH*0.9+0.14), sx, H+MH+0.06, 0, 0));
+// Z241 battered (sloped) block: a box whose top face is pulled in to dTop deep — talus at the foot of a wall / tower
+function taperBox(w, h, dBot, dTop, wTop){ const g=stoneBox(w, h, dBot), p=g.attributes.position, kz=dTop/dBot, kx=(wTop||w)/w;
+  for(let i=0;i<p.count;i++) if(p.getY(i)>0){ p.setZ(i, p.getZ(i)*kz); p.setX(i, p.getX(i)*kx); } g.computeVertexNormals(); return g; }
+let _pieceGeo=null, _pieceDark=null;   // one 3 m wall section (stone · dark recesses), scaled along x per instance
+// Z241 A GREAT CURTAIN WALL SECTION (11 m): local −z is the outer face. Battered talus at the foot, a moulded plinth, two string courses,
+//   a buttress pilaster per section, a machicolation gallery corbelled out from the top carrying a breastwork with coped merlons, a low
+//   parapet on the inner edge of the wall-walk; arrow loops, gun ports and the murder-holes between the corbels are the dark recesses
+function pieceGeo(){ if(_pieceGeo) return _pieceGeo; const H=FORT.wallH, TH=FORT.wallT, L=FORT.seg, ox=-(TH/2), parts=[];
+  parts.push(placed(stoneBox(L, H+2, TH), 0, H/2-1, 0, 0));                                                   // the curtain
+  parts.push(placed(taperBox(L, 3.6, TH+3.0, TH+0.2), 0, 0.8, 0, 0));                                          // battered talus
+  parts.push(placed(stoneBox(L, 0.36, TH+0.5), 0, 2.72, 0, 0));                                                // plinth moulding on the talus
+  for(const y of [H*0.42, H*0.7]) parts.push(placed(stoneBox(L, 0.24, TH+0.24), 0, y, 0, 0));                  // string courses
+  parts.push(placed(taperBox(0.95, H-3.4, 0.8, 0.55, 0.8), 0, 2.9+(H-3.4)/2, ox-0.35, 0));                      // buttress pilaster on the outer face
+  for(const k of [-1,0,1]){ parts.push(placed(stoneBox(0.42, 0.55, 1.1), k*1.0, H-1.55, ox-0.48, 0), placed(stoneBox(0.42, 0.55, 0.8), k*1.0, H-1.0, ox-0.62, 0)); }   // stepped corbels
+  parts.push(placed(stoneBox(L, 1.1, 0.75), 0, H+0.35, ox-0.55, 0));                                           // breastwork on the gallery
+  parts.push(placed(stoneBox(L, 0.2, 0.95), 0, H-0.28, ox-0.5, 0));                                             // gallery floor edge
+  for(const sx of [-0.78, 0.78]){ parts.push(placed(stoneBox(0.98, 1.45, 0.75), sx, H+1.62, ox-0.55, 0), placed(stoneBox(1.12, 0.14, 0.9), sx, H+2.41, ox-0.55, 0)); }   // merlons + coping
+  parts.push(placed(stoneBox(L, 0.75, 0.42), 0, H+0.38, TH/2-0.2, 0), placed(stoneBox(L, 0.12, 0.55), 0, H+0.8, TH/2-0.2, 0));   // inner parapet of the wall-walk
   _pieceGeo=mergeGeometries(parts.map(q=>q.index?q.toNonIndexed():q), false); parts.forEach(q=>q.dispose()); return _pieceGeo; }
+function pieceDarkGeo(){ if(_pieceDark) return _pieceDark; const H=FORT.wallH, TH=FORT.wallT, L=FORT.seg, ox=-(TH/2), parts=[];
+  for(const sx of [-0.95, 0.95]){ parts.push(placed(new THREE.BoxGeometry(0.2, 1.6, 0.14), sx, H*0.56, ox-0.02, 0), placed(new THREE.BoxGeometry(0.7, 0.16, 0.14), sx, H*0.56, ox-0.02, 0)); }   // cross-shaped arrow loops
+  parts.push(placed(new THREE.BoxGeometry(0.62, 0.42, 0.14), 0, 4.4, ox-0.72, 0));                              // gun port through the pilaster
+  for(const sx of [-0.5, 0.5]) parts.push(placed(new THREE.BoxGeometry(0.52, 0.06, 0.42), sx, H-0.39, ox-0.6, 0));   // murder-holes under the gallery
+  parts.push(placed(new THREE.BoxGeometry(0.42, 0.7, 0.1), 0, H+1.15, ox-0.94, 0));                              // the crenel's sighting slot
+  _pieceDark=mergeGeometries(parts.map(q=>q.index?q.toNonIndexed():q), false); parts.forEach(q=>q.dispose()); return _pieceDark; }
 
 // ---- raise every planned fortress (called from buildZones, after the watchtowers) ----
 export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z140 the walls are built the way this land builds them — and no two forts alike
@@ -82,33 +97,47 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     const slit=(x,y,z,ry)=>dk.push(placed(new THREE.BoxGeometry(0.24,1.1,0.12), x, y, z, ry));
     // Z145 a stone tower: battered two-step plinth, string courses, a projecting machicolation gallery on corbels, merlons, arrow slits on its outer faces
     const FLAGS=[];
-    const keep=(px,pz,ry,ox,oz,TW,TH2,nm=3)=>{ geos.push(placed(stoneBox(TW, TH2+1, TW), px, (TH2-1)/2, pz, ry), placed(stoneBox(TW+1.0, 1.8, TW+1.0), px, 0.3, pz, ry), placed(stoneBox(TW+0.5, 0.6, TW+0.5), px, 1.3, pz, ry));
-      for(const y of [H*0.52, H+2.4]) geos.push(placed(stoneBox(TW+0.24, 0.26, TW+0.24), px, y, pz, ry));
+    const keep=(px,pz,ry,ox,oz,TW,TH2,nm=3)=>{ geos.push(placed(stoneBox(TW, TH2+1, TW), px, (TH2-1)/2, pz, ry), placed(taperBox(TW+3.2, 4.2, TW+3.2, TW+0.3, TW+0.3), px, 1.0, pz, ry), placed(stoneBox(TW+0.6, 0.4, TW+0.6), px, 3.2, pz, ry));   // Z241 battered talus + plinth moulding
+      for(const y of [H*0.42, H*0.72, H+2.4, ...(TH2-H>9?[H+(TH2-H)*0.55]:[])]) geos.push(placed(stoneBox(TW+0.24, 0.26, TW+0.24), px, y, pz, ry));   // string courses up the shaft
+      { const c=Math.cos(-ry), s2=Math.sin(-ry); for(const a of [-1,1]) for(const b of [-1,1]){ const lx=a*(TW/2+0.12), lz=b*(TW/2+0.12); geos.push(placed(stoneBox(0.62, TH2-5.2, 0.62), px+c*lx-s2*lz, 3.4+(TH2-5.2)/2, pz+s2*lx+c*lz, ry)); } }   // Z241 corner pilasters
       geos.push(placed(stoneBox(TW+0.9, 0.6, TW+0.9), px, TH2-0.9, pz, ry));
       const tx=Math.cos(-ry), tz=Math.sin(-ry), at=(l,o)=>[px+tx*l+ox*o, pz+tz*l+oz*o];
       for(const [lx,lz] of [[1,0],[-1,0],[0,1],[0,-1]]) for(const t of (nm>4?[-0.42,-0.3,-0.18,-0.06,0.06,0.18,0.3,0.42]:[-0.36,-0.12,0.12,0.36])){ const [cx,cz]=at(lx?lx*(TW/2+0.16):t*TW*1.3, lz?lz*(TW/2+0.16):t*TW*1.3); geos.push(placed(stoneBox(0.3,0.6,0.3), cx, TH2-1.5, cz, ry)); }
       const E=(TW+0.9)/2-0.2; for(const [lx,lz] of [[1,0],[-1,0],[0,1],[0,-1]]) for(let q=0;q<nm;q++){ const t=nm>1?-1+2*q/(nm-1):0, [cx,cz]=at(lx?lx*E:t*E*0.8, lz?lz*E:t*E*0.8); geos.push(placed(stoneBox(0.62,0.95,0.62), cx, TH2-0.12, cz, ry)); }
-      for(const y of [H*0.35, H+1.3, TH2-2.9]) for(const l of (nm>4?[-TW*0.3,0,TW*0.3]:[0])) for(const [a1,a2] of (nm>4?[[0,1],[0,-1],[1,0],[-1,0]]:[[0,1]])){ const [sx,sz]=at(a1?a1*(TW/2+0.03):l, a2?a2*(TW/2+0.03):l); slit(sx, y, sz, a1?ry+Math.PI/2:ry); }
+      for(const y of [H*0.35, H*0.62, H+1.3, ...(TH2-H>9?[H+(TH2-H)*0.45]:[]), TH2-2.9]) for(const l of (nm>3?[-TW*0.28,0,TW*0.28]:[0])) for(const [a1,a2] of (nm>3?[[0,1],[0,-1],[1,0],[-1,0]]:[[0,1],[0,-1]])){ const [sx,sz]=at(a1?a1*(TW/2+0.03):l, a2?a2*(TW/2+0.03):l); slit(sx, y, sz, a1?ry+Math.PI/2:ry); }
       const rf=new THREE.Mesh(towerRoof(ST, TW-0.2, TH2+0.4), capMat); rf.position.set(px,0,pz); rf.rotation.y=ry; rf.castShadow=true; g.add(rf); if(TW<10) FLAGS.push([px,pz,TH2]); };   // Z176 every great tower flies the garrison's colours
     V.forEach(([vx,vz],vi)=>{ const L=Math.hypot(vx,vz), ox=vx/L, oz=vz/L, ry=-Math.atan2(-ox,oz), tall = vi%2===0 || sides<=6 && vi%3===1;   // Z145 every other corner is a TALL tower
-      if(tall && !ST.round) keep(vx, vz, ry, ox, oz, 3.6, H+6.5);
-      else if(ST.round){ const hh=tall?H+7:H+3.6, rr=tall?2.3:1.9, dr=cylUV(new THREE.CylinderGeometry(rr, rr+0.3, hh, 28), 14, hh); dr.translate(vx, hh/2-1, vz); geos.push(dr);   // Z140 round drum towers on alternate forts
-        for(const [r0,r1,h2,yy] of [[rr+0.7,rr+0.85,1.6,0.3],[rr+0.25,rr+0.3,0.26,H*0.55],[rr+0.45,rr+0.25,0.55,hh-1.9]]){ const ring=cylUV(new THREE.CylinderGeometry(r0,r1,h2,28), 14, h2); ring.translate(vx,yy,vz); geos.push(ring); }   // plinth · string course · corbel ring
-        for(let k=0;k<10;k++){ const a=k/10*6.283; geos.push(placed(stoneBox(0.6,0.95,0.55), vx+Math.cos(a)*(rr+0.2), hh-0.6, vz+Math.sin(a)*(rr+0.2), -a)); }   // merlon ring
-        for(const y of tall?[H*0.4,H+2,H+4.6]:[H*0.45]) slit(vx+ox*(rr+0.32), y, vz+oz*(rr+0.32), ry);
-        const rf=new THREE.Mesh(towerRoof(ST, rr*1.8, hh-0.6), capMat); rf.position.set(vx,0,vz); rf.castShadow=true; g.add(rf); if(tall) FLAGS.push([vx,vz,hh-0.6]); }
-      else { geos.push(placed(stoneBox(TH*1.25, H+2.6, TH*1.25), vx, (H+0.6)/2-1, vz, 0)); geos.push(placed(stoneBox(TH*1.25+0.8, 1.3, TH*1.25+0.8), vx, 0.2, vz, 0), placed(stoneBox(TH*1.25+0.4, 0.4, TH*1.25+0.4), vx, H+1.2, vz, 0)); } });   // corner pier · plinth + cornice
+      if(!ST.round) keep(vx, vz, ry, ox, oz, tall?FORT.arch.tallW:FORT.arch.bastW, H+(tall?FORT.arch.tall:FORT.arch.bastH), tall?5:4);   // Z241 great corner towers · squat bastions between them
+      else { const hh=tall?H+FORT.arch.tall:H+FORT.arch.bastH, rr=tall?FORT.arch.tallW*0.62:FORT.arch.bastW*0.56, dr=cylUV(new THREE.CylinderGeometry(rr, rr+0.3, hh, 28), 14, hh); dr.translate(vx, hh/2-1, vz); geos.push(dr);   // Z140 round drum towers on alternate forts
+        for(const [r0,r1,h2,yy] of [[rr+0.3,rr+1.6,4.2,1.0],[rr+0.3,rr+0.3,0.4,3.2],[rr+0.25,rr+0.3,0.26,H*0.42],[rr+0.25,rr+0.3,0.26,H*0.72],[rr+0.25,rr+0.3,0.26,H+2.4],[rr+0.55,rr+0.25,0.7,hh-2.0]]){ const ring=cylUV(new THREE.CylinderGeometry(r0,r1,h2,28), 14, h2); ring.translate(vx,yy,vz); geos.push(ring); }   // plinth · string course · corbel ring
+        { const nM=Math.round(rr*4.4); for(let k=0;k<nM;k++){ const a=k/nM*6.283; geos.push(placed(stoneBox(0.62,1.05,0.55), vx+Math.cos(a)*(rr+0.3), hh-0.55, vz+Math.sin(a)*(rr+0.3), -a)); } }   // merlon ring
+        for(const y of tall?[H*0.36,H*0.66,H+2.2,H+5.4,hh-3.6]:[H*0.4,H*0.72]) for(const da of [-0.5,0,0.5]){ const sa=Math.atan2(oz,ox)+da; slit(vx+Math.cos(sa)*(rr+0.32), y, vz+Math.sin(sa)*(rr+0.32), -sa+Math.PI/2); }
+        const rf=new THREE.Mesh(towerRoof(ST, rr*1.8, hh-0.6), capMat); rf.position.set(vx,0,vz); rf.castShadow=true; g.add(rf); if(tall) FLAGS.push([vx,vz,hh-0.6]); } });
+    // Z241 FLANKING TOWERS: every long curtain gets a tower standing proud of its outer face at mid-span (solid stone: a collider of its own)
+    for(let i=0;i<sides;i++){ if(i===gi) continue; const [x0,z0]=V[i], [x1,z1]=V[(i+1)%sides], L=Math.hypot(x1-x0,z1-z0); if(L<FORT.arch.flankMin) continue;
+      const ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), mx=(x0+x1)/2, mz=(z0+z1)/2, sg=Math.sign(-uz*mx+ux*mz)||1, onx=-uz*sg, onz=ux*sg, FW=FORT.arch.flankW, off=TH/2+FW/2-0.8, cx=mx+onx*off, cz=mz+onz*off, hh=H+FORT.arch.flankH;
+      if(ST.round){ const rr=FW*0.55, dr=cylUV(new THREE.CylinderGeometry(rr, rr+0.3, hh, 28), 14, hh); dr.translate(cx, hh/2-1, cz); geos.push(dr);
+        for(const [r0,r1,h2,yy] of [[rr+0.3,rr+1.5,4.2,1.0],[rr+0.25,rr+0.3,0.26,H*0.5],[rr+0.25,rr+0.3,0.26,H+2.2],[rr+0.55,rr+0.25,0.7,hh-2.0]]){ const ring=cylUV(new THREE.CylinderGeometry(r0,r1,h2,28), 14, h2); ring.translate(cx,yy,cz); geos.push(ring); }
+        { const nM=Math.round(rr*4.4); for(let k=0;k<nM;k++){ const a=k/nM*6.283; geos.push(placed(stoneBox(0.62,1.05,0.55), cx+Math.cos(a)*(rr+0.3), hh-0.55, cz+Math.sin(a)*(rr+0.3), -a)); } }
+        for(const y of [H*0.4, H*0.7, H+3]) for(const da of [-0.6,0,0.6]){ const sa=Math.atan2(onz,onx)+da; slit(cx+Math.cos(sa)*(rr+0.32), y, cz+Math.sin(sa)*(rr+0.32), -sa+Math.PI/2); }
+        const rf=new THREE.Mesh(towerRoof(ST, rr*1.8, hh-0.6), capMat); rf.position.set(cx,0,cz); rf.castShadow=true; g.add(rf); }
+      else keep(cx, cz, ry, onx, onz, FW, hh, 4);
+      blocks.push({ mesh:g, x:f.x+cx, z:f.z+cz, r:FW*0.62, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'keep' }); }
     // Z145 THE GATEHOUSE: two tall keeps standing proud of the wall, a fighting gallery bridging the gate, a raised portcullis with its teeth showing,
     //   war banners down the towers, fire braziers and chevaux-de-frise out front — the face of the fort
     { const [x0,z0]=V[gi], [x1,z1]=V[(gi+1)%sides], L=Math.hypot(x1-x0,z1-z0), ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), mx=(x0+x1)/2, mz=(z0+z1)/2;
       const nx=-uz, nz=ux, sg=Math.sign(nx*mx+nz*mz)||1, onx=nx*sg, onz=nz*sg;                       // the outward normal (away from the centre)
-      const CAP=f.tier===3, GH=H+(CAP?12:8.5), TW=CAP?4.4:3.6, off=FORT.gateW/2+TW/2, at=(l,o)=>[mx+ux*l+onx*o, mz+uz*l+onz*o];
+      const CAP=f.tier===3, GH=H+FORT.arch.gateH[CAP?1:0], TW=FORT.arch.gateTW[CAP?1:0], off=FORT.gateW/2+TW/2, at=(l,o)=>[mx+ux*l+onx*o, mz+uz*l+onz*o];
       for(const sd of [-1,1]){ const [px,pz]=at(sd*off, 0.7); keep(px, pz, ry, onx, onz, TW, GH);
         const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.5, 4.2), bannerMat()); const [bx,bz]=at(sd*off, 0.7+TW/2+0.05); ban.position.set(bx, GH-4.4, bz); ban.rotation.y=Math.atan2(onx,onz); g.add(ban);
         const [hx,hz]=at(sd*off, 0.7+TW/2+0.12); dk.push(placed(new THREE.BoxGeometry(1.8,0.14,0.14), hx, GH-2.25, hz, ry));                                  // banner pole
         const [fx,fz]=at(sd*(off+TW/2+1.6), TH/2+2.4); dk.push(placed(new THREE.CylinderGeometry(0.1,0.16,1.5,8), fx, 0.75, fz, 0), placed(new THREE.CylinderGeometry(0.6,0.3,0.45,12), fx, 1.65, fz, 0));
         { const fl=flameFX(2.1, 1.4); fl.position.set(fx, 1.8, fz); g.add(fl); }   // brazier fire (Z235 a living flame)
         for(let k=0;k<3;k++){ const [cx,cz]=at(sd*(off-1.2+k*1.4), TH/2+5.2); for(const q of [-0.7,0.7]){ const st=new THREE.CylinderGeometry(0.08,0.1,3.0,6); st.rotateZ(q); st.rotateY(ry); st.translate(cx, 0.9, cz); wd.push(st); } } }   // chevaux-de-frise
+      // Z241 the GATE HALL: a storey bridging the two gate towers above the fighting gallery — arcaded, with its own crenellated roof
+      { const [hx,hz]=at(0, 0.5), HW=FORT.gateW+0.6, HY=H+3.0, HH=GH-H-6.5; if(HH>2){ geos.push(placed(stoneBox(HW, HH, TH*1.3), hx, HY+HH/2, hz, ry), placed(stoneBox(HW+0.5, 0.3, TH*1.3+0.5), hx, HY+HH+0.15, hz, ry), placed(stoneBox(HW+0.4, 0.26, TH*1.3+0.3), hx, HY+0.13, hz, ry));
+          for(let k=0;k<3;k++){ const l=-HW/2+HW*(k+0.5)/3, [wx,wz]=at(l, 0.5+TH*0.65+0.02); dk.push(placed(new THREE.BoxGeometry(0.75, Math.min(2.4, HH*0.55), 0.14), wx, HY+HH*0.5, wz, ry)); }   // arcade windows
+          for(let k=0;k<5;k++){ const l=-HW/2+0.5+k*(HW-1)/4, [mx2,mz2]=at(l, 0.5+TH*0.65-0.3); geos.push(placed(stoneBox(0.85,1.0,0.6), mx2, HY+HH+0.8, mz2, ry)); } } }
       // fighting gallery over the gate: deep, corbelled out, crenellated
       { const [gx2,gz2]=at(0, 0.3); geos.push(placed(stoneBox(FORT.gateW+0.8, 2.6, TH*1.6), gx2, H+1.1, gz2, ry)); }
       for(let k=0;k<5;k++){ const l=-FORT.gateW/2+0.6+k*(FORT.gateW-1.2)/4, [cx,cz]=at(l, 0.3+TH*0.8+0.2); geos.push(placed(stoneBox(0.9,0.95,0.5), cx, H+2.87, cz, ry)); const [kx,kz]=at(l, 0.3+TH*0.8+0.12); geos.push(placed(stoneBox(0.32,0.6,0.28), kx, H+0.05, kz, ry)); }
@@ -132,9 +161,9 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       f.bar=getEnemyBar(); f.bar.g.scale.setScalar(4.2); }
     // Z145 THE CAPITAL: the citadel raises a great DONJON at the back of its ward — an 11 m square keep, 18 m high, with four 23 m corner turrets,
     //   war banners on every face and the garrison's flag flying from its roof. It is solid stone: shells glance off it.
-    if(f.tier===3){ const bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.Rin*0.42, kx=ox*d, kz=oz*d, ry=-Math.atan2(-ox,oz), KW=12, KH=24;
+    if(f.tier===3){ const bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.Rin*0.42, kx=ox*d, kz=oz*d, ry=-Math.atan2(-ox,oz), KW=FORT.arch.keepW, KH=FORT.arch.keepH;   // Z241 a towering donjon
       keep(kx, kz, ry, ox, oz, KW, KH, 7);
-      const tx=Math.cos(-ry), tz=Math.sin(-ry); for(const a of [-1,1]) for(const b of [-1,1]) keep(kx+tx*a*KW/2+ox*b*KW/2, kz+tz*a*KW/2+oz*b*KW/2, ry, ox, oz, 3.4, KH+5);
+      const tx=Math.cos(-ry), tz=Math.sin(-ry); for(const a of [-1,1]) for(const b of [-1,1]) keep(kx+tx*a*KW/2+ox*b*KW/2, kz+tz*a*KW/2+oz*b*KW/2, ry, ox, oz, 4.4, KH+FORT.arch.turret);
       for(const [a,b] of [[0,1],[0,-1],[1,0],[-1,0]]){ const ban=new THREE.Mesh(new THREE.PlaneGeometry(2.2, 6.5), bannerMat()); ban.position.set(kx+tx*a*(KW/2+0.32)+ox*b*(KW/2+0.32), KH-6, kz+tz*a*(KW/2+0.32)+oz*b*(KW/2+0.32)); ban.rotation.y=Math.atan2(tx*a+ox*b, tz*a+oz*b); g.add(ban); }
       { const [sx,sz]=[kx-ox*(KW/2+1.2), kz-oz*(KW/2+1.2)]; for(let k=0;k<6;k++) geos.push(placed(stoneBox(4.2, 0.5*(k+1), 0.9), sx-ox*(5-k)*0.9, 0.25*(k+1), sz-oz*(5-k)*0.9, ry)); }   // the great stair to the keep door
       { const [dx,dz]=[kx-ox*(KW/2+0.06), kz-oz*(KW/2+0.06)]; const door=new THREE.Mesh(new THREE.BoxGeometry(2.6,4.2,0.2), _wood); door.position.set(dx, 2.1+3, dz); door.rotation.y=ry; g.add(door); }
@@ -148,6 +177,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     for(const [arr,mt] of [[dk,_iron],[wd,_wood]]) if(arr.length){ const m=new THREE.Mesh(mergeGeometries(arr.map(q=>q.index?q.toNonIndexed():q), false), mt); arr.forEach(q=>q.dispose()); m.castShadow=true; g.add(m); }   // Z145
     { const im=new THREE.InstancedMesh(pieceGeo(), WM, f.pieces.length); for(const pc of f.pieces){ _m.compose(_p.set(pc.cx,0,pc.cz), _q.setFromAxisAngle(_up, pc.ry), _s.set(pc.pl/FORT.seg+0.02,1,1)); im.setMatrixAt(pc.i, _m); }
       im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; im.receiveShadow=true; g.add(im); f.wallIM=im;
+      { const di=new THREE.InstancedMesh(pieceDarkGeo(), _iron, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); di.setMatrixAt(pc.i, _m); } di.instanceMatrix.needsUpdate=true; di.computeBoundingSphere(); g.add(di); f.darkIM=di; }   // Z241 loops · ports · murder-holes
       const cg=capGeo(ST, H, TH, FORT.seg); if(cg){ const ci=new THREE.InstancedMesh(cg, capMat, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); ci.setMatrixAt(pc.i, _m); } ci.instanceMatrix.needsUpdate=true; ci.computeBoundingSphere(); ci.castShadow=true; g.add(ci); f.capIM=ci; } }   // every wall section in ONE draw call · Z140 + its regional cap (stakes / snow / wire / tiles)
     // corner watchtowers (real towers: guards, collapse, loot)
     const tw=[]; for(let i=0;i<sides && tw.length<T.towers;i++){ const k=(gi+1+Math.round(i*sides/T.towers))%sides; const [vx,vz]=V[k]; tw.push([f.x+vx*0.86, f.z+vz*0.86]); }
@@ -160,7 +190,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     const pt={ g, body, x:f.x, z:f.z, guards, sl:new THREE.Object3D(), beam:{ material:{ opacity:0 } }, wm:null, hp:Infinity, falling:false, fort:f };
     towers.push(pt); f.pt=pt;
     // banner of the garrison over the keep + a name board
-    { const PH=f.tier===3?22:16, fg=new THREE.Group(); g.add(fg); f.flagG=fg; f.flagH=PH;                      // Z140 a tall flagpole over the keep (it topples when the fort falls)
+    { const PH=FORT.arch.flagH[f.tier===3?1:0], fg=new THREE.Group(); g.add(fg); f.flagG=fg; f.flagH=PH;                      // Z140 a tall flagpole over the keep (it topples when the fort falls)
       const base=new THREE.Mesh(new THREE.CylinderGeometry(0.9,1.2,1.2,10), _iron); base.position.set(f.keepX||0, (f.keepY||0)+0.6, f.keepZ||0); g.add(base); fg.position.set(f.keepX||0, f.keepY||0, f.keepZ||0);   // Z145 the capital's flag flies from the donjon roof
       const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,PH,8), _iron); pole.position.set(0, PH/2, 0); pole.castShadow=true; fg.add(pole);
       const ball=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8), new THREE.MeshStandardMaterial({ color:0xc8a040, metalness:0.8, roughness:0.3 })); ball.position.y=PH+0.2; fg.add(ball);
@@ -270,7 +300,7 @@ export function fortWallDamage(b, dmg, ram){ const f=b.fort; if(!f || !blocks.in
   burst({x:b.x,z:b.z}, 0xa89a84, ram?6:2, ram?6:3, {y:f.gy+1+Math.random()*3, life:0.6, size:ram?0.5:0.3, grav:-16, drag:1.4, up:2.5});
   if(b.hp<=0){ collapsePiece(f, b.piece, now); const pc=b.piece, nb=[pc.prev, pc.next].filter(q=>q && blocks.includes(q.block)).sort((a,c)=>a.block.hp-c.block.hp)[0]; if(nb) collapsePiece(f, nb, now); } }
 function collapsePiece(f, pc, now){ const b=pc.block, i=blocks.indexOf(b); if(i<0) return; blocks.splice(i,1); pc.down=true; f.lastBreach=pc;
-  _m.makeScale(0,0,0); f.wallIM.setMatrixAt(pc.i, _m); f.wallIM.instanceMatrix.needsUpdate=true; if(f.capIM){ f.capIM.setMatrixAt(pc.i, _m); f.capIM.instanceMatrix.needsUpdate=true; }
+  _m.makeScale(0,0,0); f.wallIM.setMatrixAt(pc.i, _m); f.wallIM.instanceMatrix.needsUpdate=true; if(f.capIM){ f.capIM.setMatrixAt(pc.i, _m); f.capIM.instanceMatrix.needsUpdate=true; } if(f.darkIM){ f.darkIM.setMatrixAt(pc.i, _m); f.darkIM.instanceMatrix.needsUpdate=true; }
   const pos={x:b.x, z:b.z}; bigExplode(pos, 0xc8b49a, 1.6); for(let k=0;k<4;k++) spawnDebris(pos, 1.2, 0x8a8070);
   burst(pos, 0xb8a888, 10, 4, {y:f.gy+1.5, life:1.6, size:2.6, smoke:true, grav:-0.4, drag:1.6, up:1.8, op:0.55}); S.shake=Math.min(3, S.shake+1.1); sfx('bigexplode');
   for(const gd of (f.pt?f.pt.guards:[])){ if(gd.alive && gd.wx!=null && Math.hypot(gd.wx-b.x, gd.wz-b.z)<pc.pl*0.75) dropGuard(f.pt, gd, (gd.wx-f.x)/f.R, (gd.wz-f.z)/f.R); }   // the men on it come down with it
