@@ -18,6 +18,7 @@ export * from './render/renderer.js';
 export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
 export * from './render/lod.js';
+export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD
 export * from './world/atmosphere.js';
 export * from './world/ground.js';
 export * from './world/heightfield.js';

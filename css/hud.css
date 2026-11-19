@@ -104,3 +104,6 @@
   #mPause .ic{width:20px;height:20px;color:var(--ink);display:inline-flex;}
 
 body.cam-drag, body.cam-drag *{cursor:grabbing !important;}   /* Z239 middle-button orbit */
+/* Z240 performance HUD (F3) */
+#perfHud{display:none;position:fixed;right:10px;top:50%;transform:translateY(-50%);z-index:60;pointer-events:none;padding:7px 10px;border-radius:6px;
+  background:rgba(8,10,8,.72);border:1px solid rgba(155,224,74,.28);color:#d8dccc;font:11px/1.55 ui-monospace,Menlo,monospace;letter-spacing:.2px;white-space:nowrap;}

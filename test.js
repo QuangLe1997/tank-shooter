@@ -604,6 +604,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const sm=u=>u*u*u*(u*(u*6-15)+10); ok(Math.abs(sm(0))<1e-9 && Math.abs(sm(1)-1)<1e-9 && Math.abs(sm(0.5)-0.5)<1e-9, 'smootherstep endpoints');
   ok(/wAt/.test(it) && /TOUR\.dur/.test(it) && /TOUR = \{ dur:7\.2/.test(it), 'desktop intro: one wide move reparameterised by perceived motion, ~7 s'); }
 
+// Z240 performance: AO reads the main depth (no second scene render), perf HUD, detail cull, dynamic resolution upward
+{ const fs=await import('node:fs'); const rd=fs.readFileSync('src/render/renderer.js','utf8'), lod=fs.readFileSync('src/render/lod.js','utf8'), ph=fs.readFileSync('src/render/perfhud.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), hub=fs.readFileSync('src/hub.js','utf8'), C=await import('./config.js');
+  ok(/R\.depthTexture=new THREE\.DepthTexture/.test(rd) && /aoPass\.setGBuffer\(composer\.renderTarget1\.depthTexture\)/.test(rd) && /rb\.depthTexture/.test(rd), 'AO reads the depth of the frame just drawn (no normal re-render of the scene)');
+  ok(/EXT_disjoint_timer_query_webgl2/.test(ph) && /QUERY_RESULT_AVAILABLE/.test(ph) && /'F3'/.test(ph) && /render\/perfhud\.js/.test(hub), 'perf HUD: GPU timer read back without stalls, F3 toggle, in the hub');
+  ok(/perfFrameBegin\(\)/.test(lp) && /perfRenderBegin\(\); composer\.render\(\); perfFrameEnd\(rawMs\)/.test(lp), 'the main loop is probed around the render');
+  ok(/export function detailCull/.test(lod) && /Math\.exp\(-fd\*fd\)/.test(lod) && C.LOD.detailPx>=1 && C.LOD.detailPx<=3 && C.LOD.detailHys>1, 'detail cull by on-screen size × fog, with hysteresis');
+  ok(/perfGpuMs\(60\)/.test(lp) && /upHold/.test(lp) && C.PERF_HUD && C.PERF_HUD.n>=60, 'dynamic resolution steps back up from measured GPU headroom'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

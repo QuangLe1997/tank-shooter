@@ -73,17 +73,21 @@ composer.setSize(innerWidth, innerHeight);
 export const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
 composer.addPass(renderPass);
 // Z145 AMBIENT OCCLUSION (desktop): contact shadow where wall meets ground, in every merlon gap, under eaves, between houses — the single biggest
-//   step from "lit toy" to "built place". Half-res (¾ in the Mac app), opaque meshes only; the frame governor drops it first when frames run long.
+//   step from "lit toy" to "built place". Half-res (¾ in the Mac app), read from the main depth (Z240); the frame governor drops it first when frames run long.
 export const AO = { want:!MOBILE, on:!MOBILE, scale:NATIVE?0.75:0.5 };
 export const aoPass = new GTAOPass(scene, camera, 2, 2);
 aoPass.updateGtaoMaterial({ radius:2.4, distanceExponent:1.6, thickness:2.5, scale:1.2, samples:NATIVE?16:12, distanceFallOff:1.0, screenSpaceRadius:false });
 aoPass.updatePdMaterial({ lumaPhi:10, depthPhi:2, normalPhi:3, radius:6, radiusExponent:1, rings:2, samples:12 });
 aoPass.blendIntensity = 0.9;
-{ const ss=aoPass.setSize.bind(aoPass); aoPass.setSize=(w,h)=>ss(Math.max(2,Math.round(w*AO.scale)), Math.max(2,Math.round(h*AO.scale)));
-  aoPass.overrideVisibility=function(){ const C=this._visibilityCache, walk=(o)=>{ if(!o.visible) return; const m=o.material;   // skip hidden subtrees (pools), hide sprites / smoke / glass
-      if(o.isPoints||o.isLine||o.isSprite||(m && !Array.isArray(m) && (m.transparent||m.depthWrite===false))){ C.set(o,true); o.visible=false; return; } for(const c of o.children) walk(c); };
-    walk(this.scene); };
-  aoPass.restoreVisibility=function(){ for(const o of this._visibilityCache.keys()) o.visible=true; this._visibilityCache.clear(); }; }
+{ const ss=aoPass.setSize.bind(aoPass); aoPass.setSize=(w,h)=>ss(Math.max(2,Math.round(w*AO.scale)), Math.max(2,Math.round(h*AO.scale))); }   // (Z240: the old normal-pass visibility filter went with the normal pass itself)
+// Z240 AO WITHOUT A SECOND SCENE RENDER: GTAOPass used to draw the whole scene again (normals + depth) every frame — 1,300 extra draws,
+//   3M triangles, 45% of the frame. The main render targets now carry their own depth texture; AO reads the depth of the frame just drawn
+//   and rebuilds normals from it (NORMAL_VECTOR_TYPE 0). Measured on an M4 at 2.2 MP: render 20.4 → 11.6 ms. The composer ping-pongs its
+//   two targets, so the depth bound to AO follows whichever one the scene was drawn into this frame.
+if(!MOBILE){ for(const R of [composer.renderTarget1, composer.renderTarget2]){ R.depthTexture=new THREE.DepthTexture(R.width, R.height); R.depthTexture.type=THREE.UnsignedIntType; }   // phones run without AO: no depth resolve for them
+  aoPass.setGBuffer(composer.renderTarget1.depthTexture); }
+{ const _aoRender=aoPass.render.bind(aoPass);
+  aoPass.render=function(rd, wb, rb, ...a){ const d=rb.depthTexture; if(d && d!==this.depthTexture){ this.depthTexture=d; this.gtaoMaterial.uniforms.tDepth.value=d; this.pdMaterial.uniforms.tDepth.value=d; } return _aoRender(rd, wb, rb, ...a); }; }
 aoPass.enabled = AO.on; composer.addPass(aoPass);
 // Z147 NaN GUARD: a single NaN / inf pixel from any shader used to be smeared by the bloom mip chain into a big black block on screen.
 //   Clean it here (one cheap full-screen pass) so a bad pixel stays one pixel.

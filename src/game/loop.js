@@ -1,17 +1,18 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, TRAIN, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, trainTick, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCavern, updateCelebration, updateCinematic, updateCity, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlameJet, updateFlames, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliCrew, updateHeliDown, updateHorizon, updateInfDead, updateInstr, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateRubble, updateScore, updateSkyLife, updateSkyMood, updateSmokeTrails, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateSurprises, updateTankRigs, updateTowers, updateTrails, updateTroopBatch, updateTunnels, updateUltimates, updateUnder, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
+import { AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, SPELLS, TRAIN, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, perfFrameBegin, perfFrameEnd, perfFrameMs, perfGpuMs, perfRenderBegin, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, syncTerrainMesh, tickTip, trainTick, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCavern, updateCelebration, updateCinematic, updateCity, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateDying, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlameJet, updateFlames, updateFlashes, updateForts, updateFuses, updateGore, updateGunStatus, updateHeliCrew, updateHeliDown, updateHorizon, updateInfDead, updateInstr, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePlayer, updatePowerHud, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateRubble, updateScore, updateSkyLife, updateSkyMood, updateSmokeTrails, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateSurprises, updateTankRigs, updateTowers, updateTrails, updateTroopBatch, updateTunnels, updateUltimates, updateUnder, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
-const PERF_GOV = { low:54, aim:59, high:58 };   // Z239 frame governor: step down under low fps, aim the one resize step at aim fps, creep back up above high
+const PERF_GOV = { low:54, aim:59, high:58, upK:0.55, upHold:6, upEvery:10 };   // Z240 + step back up in play when the GPU sits under upK × frame budget for upHold s (≤ once per upEvery s)   // Z239 frame governor: step down under low fps, aim the one resize step at aim fps, creep back up above high
 export let last = performance.now();
 export function __set_last(v){ last=v; }   // (dev/hooks tick) — imports are read-only, writes go through a setter
 export function loop(nowMs){
   requestAnimationFrame(loop);
   const now = nowMs/1000;
-  let dt = (nowMs - last)/1000; last = nowMs;
+  const rawMs = nowMs - last; let dt = rawMs/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
   { const ig=!!PLAY_MODES[S.mode]; if(ig!==_ingame){ _ingame=ig; document.body.classList.toggle('ingame', ig); } }   // drives the portrait gate (menus stay usable upright) — Z107: only on change
   if(gated() && !window.__forceFrame) return;   // portrait gate up or tab hidden → don't burn a frame behind the curtain (QA tick may force)
+  perfFrameBegin();   // Z240 frame-time probe (render/perfhud.js)
 
   if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
 
@@ -88,7 +89,7 @@ export function loop(nowMs){
   SKY.position.copy(camera.position); updateClouds(dt, camera); updateSkyMood(dt); updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); updateNightMarks(dt, now); updateWater(dt); updateWonder(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); updateDying(dt); PERF.fc++; gradePass.uniforms.time.value = now%100;
   aoPass.enabled = AO.on && renderPass.scene===scene && S.mode!=='intro';   // Z239 not during the wide intro move either (the whole field on screen, AO is the priciest pass)   // Z145 not in the 3D shop showroom
   updateTroopBatch(now);   // Z172 every soldier's joints → the batched body-part meshes
-  composer.render();
+  perfRenderBegin(); composer.render(); perfFrameEnd(rawMs);
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
   if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
@@ -104,7 +105,13 @@ export function loop(nowMs){
         if(MOBILE && fps<44 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
       else if(fps>PERF_GOV.high){ PERF.slowT=0; PERF.fastT++;
         if(calib && S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }   // Z150 sharper again only in the countdown — a resize mid-fight is a hitch you feel
-        if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); } } } }
+        if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); }
+        // Z240 DYNAMIC RESOLUTION, upward too: the GPU timer shows real headroom (vsync hides it from the fps count) → one step sharper,
+        //   never more often than PERF_GOV.upEvery s, only after PERF_GOV.upHold s of headroom in a row (a resize is a small hitch)
+        { const g=perfGpuMs(60), budget=Math.min(16.7, Math.max(6, perfFrameMs(60)));
+          if(!calib && g>0 && g<budget*PERF_GOV.upK && S.dpr<dprTop-0.01){ PERF.upT=(PERF.upT|0)+1;
+            if(PERF.upT>=PERF_GOV.upHold && now>(PERF.upAt||0)){ PERF.upT=0; PERF.upAt=now+PERF_GOV.upEvery; S.dpr=Math.min(dprTop, S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); } }
+          else PERF.upT=0; } } } }
 }
 export let _fpsAcc=0, _fpsN=0, _ingame=null;
 export let _abC=null;
