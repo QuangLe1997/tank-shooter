@@ -133,6 +133,10 @@ export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }
   biomes:{ RUINS:{ n:6, keys:['ruin_chapel','ruin_wall','ruin_tower','ruin_block'] }, CITADEL:{ n:4, keys:['ruin_wall','ruin_tower','ruin_chapel'] }, MEADOW:{ n:3, keys:['ruin_chapel','ruin_tower','ruin_villa'] },
     DESERT:{ n:3, keys:['ruin_wall','ruin_tower'] }, QUARRY:{ n:3, keys:['ruin_wall','ruin_block'] }, SAVANNA:{ n:2, keys:['ruin_tower','ruin_villa'] }, FOUNDRY:{ n:3, keys:['ruin_block','ruin_wall'] },
     ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
+// Z285 enemy outposts (world/outposts.js): sizes (w = length, h = height, m), tents per fort, the ring round the walls (m beyond R), the gate lane kept clear (rad), wire rows and distance, solid pieces
+export const OUTPOST = { size:{ base_barracks:{ w:16 }, base_tent:{ w:7 }, base_radar:{ h:9 }, base_bunker:{ w:7 }, base_wire:{ w:6 } }, tents:2, ring:[10, 22], laneA:0.5, wireRows:2, wireAt:9, solid:['base_barracks','base_bunker','base_radar'] };
+// Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink
+export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen' }, fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0 }, yaw:{}, sink:0.02 };
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
 export const XEOM = { k:2.3, xeom:{ driver:[0.78, 0.05], seat:[0.84, -0.36], livery:0 }, xichlo:{ driver:[1.05, -0.95], seat:[0.6, 0.38], yaw:3.1416 }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,

@@ -27,7 +27,11 @@ for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['g
 // Z262 the tree species (world/real-trees.js)
 for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + k + '.glb';
 // Z264 the city's buildings and vehicles (world/real-city.js)
-MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb'; MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
+MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
+for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders
+// Z285 enemy outposts
+for(const k of ['base_tent','base_radar','base_bunker','base_barracks','base_wire']) MODEL_FILES[k] = 'assets/models/real/camp/' + k + '.glb';
+MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
 for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';
 for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins
 for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry']) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters

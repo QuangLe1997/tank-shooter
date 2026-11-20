@@ -1,0 +1,27 @@
+// world/outposts.js — Z285 ENEMY OUTPOSTS: round every enemy fort a camp of real things (Tripo): a long barracks, field tents, a radar on the
+// bigger forts, a concrete bunker covering the gate, and rows of concertina wire across the approach — laid round the walls, clear of the gate's
+// own lane (troops sally through it), solid where they should be (tanks and rounds stop at the barracks, bunker and radar).
+import * as THREE from 'three';
+import { OUTPOST } from '../../config.js';
+import { blocks, heightAt, inField, loadGLTF } from '../hub.js';
+
+const PREP = {};
+function piece(gl, k){ if(PREP[k]) return PREP[k]; let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
+  const g = src.geometry.clone().applyMatrix4(src.matrixWorld); g.computeBoundingBox(); let b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+  if(b.max.z - b.min.z > b.max.x - b.min.x) g.rotateY(Math.PI / 2); g.computeBoundingBox(); b = g.boundingBox; const S = OUTPOST.size[k], sz = b.getSize(new THREE.Vector3()), f = S.h ? S.h / sz.y : S.w / sz.x;
+  g.scale(f, f, f); g.computeBoundingBox(); g.computeBoundingSphere(); return (PREP[k] = { geo:g, mat:src.material.clone(), size:g.boundingBox.getSize(new THREE.Vector3()) }); }
+
+// f: a fort just built (its group f.g at the fort's centre); the gate's outward direction keeps a lane clear
+export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /nooutpost/.test(location.search + location.hash)) return; const C = OUTPOST;
+  const ga = Math.atan2((f.oz ?? f.z + 1) - f.z, (f.ox ?? f.x) - f.x), list = [], R = f.R || 30;
+  const spot = (a, d) => [Math.cos(a) * d, Math.sin(a) * d];
+  const away = a => Math.abs(Math.atan2(Math.sin(a - ga), Math.cos(a - ga))) > C.laneA;
+  const plan = [['base_barracks', 1], ['base_tent', C.tents], ['base_radar', f.tier >= 2 ? 1 : 0]];
+  for(const [k, n] of plan) for(let i = 0; i < n; i++){ for(let t = 0; t < 20; t++){ const a = Math.random() * Math.PI * 2, d = R + C.ring[0] + Math.random() * (C.ring[1] - C.ring[0]); if(!away(a)) continue;
+      const [lx, lz] = spot(a, d); if(!inField(f.x + lx, f.z + lz, 6) || list.some(q => Math.hypot(q.x - lx, q.z - lz) < 12)) continue; list.push({ k, x:lx, z:lz, ry:-a + Math.PI / 2 }); break; } }
+  { const sd = Math.random() < 0.5 ? 1 : -1, a = ga + sd * C.laneA * 1.3, [lx, lz] = spot(a, R + 6); list.push({ k:'base_bunker', x:lx, z:lz, ry:-ga + Math.PI / 2 }); }   // the bunker covering the gate
+  for(let r = 0; r < C.wireRows; r++) for(const sd of [-1, 1]){ const a = ga + sd * (C.laneA * 0.9 + r * 0.12), [lx, lz] = spot(a, R + C.wireAt + r * 3); list.push({ k:'base_wire', x:lx, z:lz, ry:-a }); }   // wire across the approach, the lane left open
+  const keys = [...new Set(list.map(q => q.k))]; Promise.all(keys.map(k => loadGLTF(k))).then(L => { if(!f.g.parent) return; const by = {}; keys.forEach((k, i) => { if(L[i]) by[k] = piece(L[i], k); });
+    for(const q of list){ const P = by[q.k]; if(!P) continue; const wx = f.x + q.x, wz = f.z + q.z, m = new THREE.Mesh(P.geo, P.mat);
+      m.position.set(q.x, heightAt(wx, wz) - f.g.position.y - 0.05, q.z); m.rotation.y = q.ry; m.castShadow = m.receiveShadow = true; m.userData.outpost = true; f.g.add(m);
+      if(C.solid.includes(q.k)) blocks.push({ mesh:m, x:wx, z:wz, r:Math.max(P.size.x, P.size.z) * 0.42, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'outpost' }); } }); }

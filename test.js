@@ -834,6 +834,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js');
   ok(['meadow','ruins','quarry','savanna','foundry'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/fort_'+st+'_'+p+'.glb'))) && C.REALFORT.biomes.SAVANNA==='savanna' && C.REALFORT.biomes.FOUNDRY==='foundry', 'nine fort styles'); }
 
+// Z284 real wonders · Z285 enemy outposts round the forts
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(Object.values(C.REALWONDER.biomes).every(k=>fs.existsSync('assets/models/real/wonder/'+k+'.glb')) && /function dressWonder/.test(R('src/world/wonders.js')) && /dressWonder\(g, m\)/.test(R('src/world/wonders.js')), 'four real wonders fitted over the old ones');
+  ok(Object.keys(C.OUTPOST.size).every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')) && /export function buildOutpost/.test(R('src/world/outposts.js')) && /buildOutpost\(f\)/.test(R('src/world/fortress.js')) && /!o\.userData\.outpost/.test(R('src/world/fortress.js')), 'enemy camps round the forts, kept visible when the fort dresses'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

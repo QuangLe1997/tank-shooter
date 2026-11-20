@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -180,6 +180,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       { const di=new THREE.InstancedMesh(pieceDarkGeo(), _iron, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); di.setMatrixAt(pc.i, _m); } di.instanceMatrix.needsUpdate=true; di.computeBoundingSphere(); g.add(di); f.darkIM=di; }   // Z241 loops · ports · murder-holes
       const cg=capGeo(ST, H, TH, FORT.seg); if(cg){ const ci=new THREE.InstancedMesh(cg, capMat, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); ci.setMatrixAt(pc.i, _m); } ci.instanceMatrix.needsUpdate=true; ci.computeBoundingSphere(); ci.castShadow=true; g.add(ci); f.capIM=ci; } }   // every wall section in ONE draw call · Z140 + its regional cap (stakes / snow / wire / tiles)
     dressFort(f, wall);   // Z279 the colossal Tripo fortress, once its pieces are in
+    buildOutpost(f);   // Z285 its camp outside the walls
     // corner watchtowers (real towers: guards, collapse, loot)
     const tw=[]; for(let i=0;i<sides && tw.length<T.towers;i++){ const k=(gi+1+Math.round(i*sides/T.towers))%sides; const [vx,vz]=V[k]; tw.push([f.x+vx*0.86, f.z+vz*0.86]); }
     for(const [x,z] of tw) buildTower(x, z);
@@ -558,7 +559,7 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
   Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p))).then(([wg,tg,gg])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
     const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg), T=fortPiece(tg), Gt=gg && f.gp ? fortPiece(gg, true) : null, add=(geo,mat,x,z,ry,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,-0.4,z); m.rotation.y=ry; m.scale.set(sx,sy,sz); m.castShadow=m.receiveShadow=true; host.add(m); return m; };
     // the architecture (baked meshes straight under the fort's group) goes; groups (gate leaves, guards, guns, flags) and the wall sections stay
-    for(const o of host.children.slice()) if(o.isMesh && !o.isInstancedMesh) o.visible=false; for(const m of [f.darkIM, f.capIM]) if(m) m.visible=false;
+    for(const o of host.children.slice()) if(o.isMesh && !o.isInstancedMesh && !o.userData.outpost) o.visible=false; for(const m of [f.darkIM, f.capIM]) if(m) m.visible=false;
     { const hh=H+2+C.wallUp, k=hh/W.size.y, len=W.size.x*k, rep=Math.max(1, Math.round(len/FORT.seg)), g=W.geo.clone(); g.scale(rep*FORT.seg/W.size.x, k, TH*C.thick/W.size.z); g.translate(0,-1,0); g.computeBoundingSphere();
       // the wall at its true proportions spans rep sections; each section shows its own stretch of it (an offset per instance) and cuts the rest away
       const off=new Float32Array(f.pieces.length); for(const pc of f.pieces) off[pc.i]=((pc.i%rep)-(rep-1)/2)*FORT.seg; g.setAttribute('aOff', new THREE.InstancedBufferAttribute(off, 1));
