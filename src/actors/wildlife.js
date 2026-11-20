@@ -3,7 +3,9 @@
 //   They are scenery that reacts — not targets: shells and tracks never hurt them, they just get out of the way.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ALLY_TANKS, ARENA, BIOME, MOBILE, S, _R, blocks, clampField, enemies, heightAt, inField, inZone, scene, solidTank, wetAt } from '../hub.js';
+import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
+import { REALWILD } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, MOBILE, S, _R, blocks, clampField, enemies, heightAt, inField, inZone, loadGLTF, scene, solidTank, wetAt } from '../hub.js';
 
 // Z208 organic anatomy: ellipsoid masses, tapered limbs with knees + hooves, coats painted per vertex (stripes, patches, bands, mottling)
 const _up=new THREE.Vector3(0,1,0), _d=new THREE.Vector3();
@@ -99,7 +101,20 @@ const SETS={ SAVANNA:[['gazelle',3],['zebra',2],['giraffe',1],['elephant',1]], H
 const freeAt=(x,z)=>inField(x,z,8) && !inZone(x,z,6) && Math.hypot(x,z)>40 && Math.hypot(x,z-ARENA*0.55)>28 && !wetAt(x,z,2) && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+2);
 export function buildWildlife(){ clearWildlife(); const set=SETS[BIOME.name]; if(!set) return; WILD.g=new THREE.Group(); scene.add(WILD.g);
   for(const [id,herds] of set) for(let h=0;h<Math.max(1, Math.round(herds*(MOBILE?0.6:1)));h++){ let cx=0, cz=0, ok=false; for(let t=0;t<40&&!ok;t++){ cx=_R(-ARENA+20,ARENA-20); cz=_R(-ARENA+20,ARENA-20); ok=freeAt(cx,cz); } if(!ok) continue;
-    const sp=SPECIES[id], n=Math.round(_R(sp.herd[0], sp.herd[1])*(MOBILE?0.7:1)); for(let k=0;k<n;k++){ const a=Math.random()*6.28, r=Math.random()*7; const x=cx+Math.cos(a)*r, z=cz+Math.sin(a)*r; if(inField(x,z,4)) spawn(id, x, z); } } }
+    const sp=SPECIES[id], n=Math.round(_R(sp.herd[0], sp.herd[1])*(MOBILE?0.7:1)); for(let k=0;k<n;k++){ const a=Math.random()*6.28, r=Math.random()*7; const x=cx+Math.cos(a)*r, z=cz+Math.sin(a)*r; if(inField(x,z,4)) spawn(id, x, z); } }
+  dressWild(); }
+// Z286 the real animals: each species with a Tripo model swaps its procedural body for the rigged one walking its own cycle (the herd logic is unchanged)
+const FIT={};
+function fitOf(gl, id){ if(FIT[id]) return FIT[id]; const m=skClone(gl.scene), mx=new THREE.AnimationMixer(m); mx.clipAction(gl.animations[0]).play(); mx.setTime(0); m.updateMatrixWorld(true);
+  const pts=[], v=new THREE.Vector3(), b=new THREE.Box3(); m.traverse(o=>{ if(o.isSkinnedMesh || o.isMesh){ const P=o.geometry.attributes.position; for(let i=0;i<P.count;i+=5){ if(o.isSkinnedMesh) o.getVertexPosition(i, v); else v.fromBufferAttribute(P,i); v.applyMatrix4(o.matrixWorld); pts.push(v.clone()); b.expandByPoint(v); } } });   // the posed animal, as it walks
+  const sz=b.getSize(new THREE.Vector3()), c=b.getCenter(new THREE.Vector3()), top=pts.filter(p=>p.y>b.min.y+sz.y*0.7); let hx=0, hz=0; for(const p of top){ hx+=p.x-c.x; hz+=p.z-c.z; }   // the head end stands higher
+  const al=Math.round(Math.atan2(hx, hz)/(Math.PI/2))*(Math.PI/2), ry=-al+(REALWILD.yaw[id]||0), k=REALWILD.h[id]/sz.y; mx.stopAllAction();
+  return (FIT[id]={ k, ry, off:new THREE.Vector3(-c.x, -b.min.y, -c.z) }); }
+function dressWild(){ if(typeof window==='undefined' || (MOBILE && !REALWILD.mobile) || /procwild/.test(location.search+location.hash)) return; const g=WILD.g;
+  for(const id of new Set(WILD.list.map(a=>a.id))) if(REALWILD.h[id]) loadGLTF('wild_'+id).then(gl=>{ if(!gl || WILD.g!==g || !gl.animations.length) return; const F=fitOf(gl, id);
+    for(const a of WILD.list){ if(a.id!==id || a.mix) continue; const m=skClone(gl.scene), pivot=new THREE.Group(), turn=new THREE.Group(); m.position.copy(F.off); turn.add(m); turn.rotation.y=F.ry; pivot.add(turn); pivot.scale.setScalar(F.k);
+      m.traverse(o=>{ if(o.isMesh){ o.castShadow=!MOBILE; o.receiveShadow=true; o.frustumCulled=false; } }); a.root.children.forEach(c=>c.visible=false); a.root.add(pivot);
+      a.mix=new THREE.AnimationMixer(m); const act=a.mix.clipAction(gl.animations[0]); act.play(); a.mix.setTime(Math.random()*gl.animations[0].duration); } }); }
 // the nearest threat (any tank) to a point → [dx,dz,dist]
 function threat(x, z){ let best=null, bd=1e9; const P=S.player; const chk=(o)=>{ const d=Math.hypot(o.pos.x-x, o.pos.z-z); if(d<bd){ bd=d; best=o; } };
   if(P) chk(P); for(const e of enemies) if(solidTank(e)) chk(e); for(const t of ALLY_TANKS) chk(t); return best ? [x-best.pos.x, z-best.pos.z, bd] : null; }
@@ -114,6 +129,7 @@ export function updateWildlife(dt, now){ if(!WILD.list.length) return;
     for(const b of blocks){ const dx=a.x-b.x, dz=a.z-b.z; if(Math.abs(dx)>b.r+1.5 || Math.abs(dz)>b.r+1.5) continue; const q=Math.hypot(dx,dz), rr=b.r+0.9; if(q<rr && q>1e-3){ a.x=b.x+dx/q*rr; a.z=b.z+dz/q*rr; } }
     const p={ x:a.x, z:a.z }; if(clampField(p, 6)){ a.x=p.x; a.z=p.z; a.vx*=-0.5; a.vz*=-0.5; }
     const v=Math.hypot(a.vx,a.vz); if(v>0.2){ const want=Math.atan2(a.vx,a.vz), d=Math.atan2(Math.sin(want-a.face),Math.cos(want-a.face)); a.face+=d*Math.min(1,dt*6); }
+    if(a.mix) a.mix.update(v<0.25 ? 0 : dt*Math.max(REALWILD.cycle[0], Math.min(REALWILD.cycle[1], v/sp.walk*0.9)));   // Z286 the walk cycle keeps pace; still when it stands
     a.ph+=dt*(1.5+v*1.6); const sw=Math.min(0.55, v*0.08)*Math.sin(a.ph*2.2); a.la.rotation.x=sw; a.lb.rotation.x=-sw;
     const bob = v>0.3 ? Math.abs(Math.sin(a.ph*2.2))*Math.min(0.18, v*0.02) : 0, graze = (v<0.3 && a.state==='graze') ? 0.08*Math.sin(now*1.3+a.ph) : 0;
     a.root.position.set(a.x, heightAt(a.x,a.z)+bob, a.z); a.root.rotation.set(graze*0.5, a.face, 0); } }

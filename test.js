@@ -839,6 +839,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(Object.values(C.REALWONDER.biomes).every(k=>fs.existsSync('assets/models/real/wonder/'+k+'.glb')) && /function dressWonder/.test(R('src/world/wonders.js')) && /dressWonder\(g, m\)/.test(R('src/world/wonders.js')), 'four real wonders fitted over the old ones');
   ok(Object.keys(C.OUTPOST.size).every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')) && /export function buildOutpost/.test(R('src/world/outposts.js')) && /buildOutpost\(f\)/.test(R('src/world/fortress.js')) && /!o\.userData\.outpost/.test(R('src/world/fortress.js')), 'enemy camps round the forts, kept visible when the fort dresses'); }
 
+// Z286 real wildlife, rigged and walking
+{ const fs=await import('node:fs'); const C=await import('./config.js'), w=fs.readFileSync('src/actors/wildlife.js','utf8');
+  ok(Object.keys(C.REALWILD.h).every(k=>fs.existsSync('assets/models/real/wild/'+k+'.glb')) && /function dressWild/.test(w) && /AnimationMixer/.test(w) && /a\.mix\.update/.test(w), 'six real animals walk their own cycle in the herds'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
