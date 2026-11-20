@@ -1,8 +1,8 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { HUMAN_SCALE, INFGUN, REALCAV, XEOM } from '../../config.js';
-import { PROFILE, S, drivePuppet, loadGLTF, makePuppet } from '../hub.js';
+import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM } from '../../config.js';
+import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, turnBone } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -31,10 +31,53 @@ function armInfantry(arms, cb, C){ const K = C.carbine.len / 0.954;
   for(const [k, g] of Object.entries(INFGUN.guns)) loadGLTF('inf_' + k).then(gl => { if(!gl) return; const m = gl.scene.clone(true), b = new THREE.Box3().setFromObject(m), c = b.getCenter(new THREE.Vector3()), L = b.max.z - b.min.z || 1;
     m.position.sub(c); const turn = new THREE.Group(); turn.add(m); turn.rotation.y = g.muzzle > 0 ? -Math.PI / 2 : Math.PI / 2;   // muzzle → −X
     const wl = g.len / K, s = wl / L, w = new THREE.Group(); w.add(turn); w.scale.setScalar(s); w.position.set(C.carbine.grip[0] - g.grip * wl, C.carbine.grip[1] + 0.05 + (g.lift || 0) / K, 0); w.visible = false;
-    m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } }); cb.add(w); arms[k] = w; w.userData.muzzle = [w.position.x - wl / 2, w.position.y + 0.02, 0]; }); }
+    m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } }); cb.add(w); arms[k] = w; w.userData.muzzle = [w.position.x - wl / 2, w.position.y + 0.02, 0];
+    // Z297 the same weapon at its true size in metres (muzzle −X, centred): the special-forces soldier holds this one, aimed, with his hands on it
+    const m2 = gl.scene.clone(true); m2.position.sub(c); const t2 = new THREE.Group(); t2.add(m2); t2.rotation.y = turn.rotation.y; const met = new THREE.Group(); met.add(t2); met.scale.setScalar(g.len / L);
+    const hold = new THREE.Group(); hold.add(met); hold.visible = false; hold.userData = { k, len:g.len, muzzle:[-g.len / 2, 0.02, 0] }; m2.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
+    if(arms._G) arms._G.add(hold); (arms._metric || (arms._metric = {}))[k] = hold; }); }
 function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'rifle', want = R.arms[INFGUN.map[id]] ? INFGUN.map[id] : '_carbine';
-  if(want === R.armK) return; for(const [k, o] of Object.entries(R.arms)) o.visible = k === want; R.armK = want; const u = G.userData;
-  if(u.muzzle) u.muzzle.position.fromArray(want === '_carbine' ? REALCAV.carbine.muzzle : R.arms[want].userData.muzzle); }
+  const met = R.pup && R.arms._metric && R.arms._metric[want], mode = met ? 'met' : 'cb';
+  if(want === R.armK && mode === R.armMode) return; R.armK = want; R.armMode = mode; const u = G.userData;
+  for(const [k, o] of Object.entries(R.arms)) if(o && o.isObject3D && k[0] !== '_' || k === '_carbine') o.visible = mode === 'cb' && k === want;
+  for(const [k, o] of Object.entries(R.arms._metric || {})) o.visible = mode === 'met' && k === want;
+  if(!u.muzzle) return; if(mode === 'met'){ met.add(u.muzzle); u.muzzle.position.fromArray(met.userData.muzzle); }
+  else { R.cb.add(u.muzzle); u.muzzle.position.fromArray(want === '_carbine' ? REALCAV.carbine.muzzle : R.arms[want].userData.muzzle); } }
+// Z297 THE SOLDIER'S HOLD: the gun first — its butt in his shoulder pocket (on top of the shoulder for the RPG, at the hip for the minigun and flamethrower),
+//   its bore along where he aims (up / down to the target too) — then his hands onto it by IK: the right on the pistol grip, trigger finger along the guard,
+//   the left under the handguard; fingers closed round both. Every shot kicks it STRAIGHT BACK along the bore with a little muzzle climb, a spring
+//   brings it home, and his shoulders take the push.
+const _gp = new THREE.Vector3(), _gq = new THREE.Quaternion(), _gx = new THREE.Vector3(), _gy = new THREE.Vector3(), _gz = new THREE.Vector3(), _gr = new THREE.Vector3(), _gu = new THREE.Vector3(), _gf = new THREE.Vector3(), _gt = new THREE.Vector3(), _gm = new THREE.Matrix4(), _gw = new THREE.Vector3();
+function gunPoint(out, pts, len, o, q){ return out.set(pts[0] * len, pts[1], 0).applyQuaternion(q).add(o); }
+function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.armK]; if(!met || !met.visible) return false; const H = GUNHOLD, g = H[R.armK] || H.ar, D = R.pup.D, p = S.player, len = met.userData.len;
+  // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
+  const rc = R.rc || (R.rc = { z:0, zv:0, a:0, av:0, last:0 }); if(p && p.fireAt > rc.last + 1e-4){ if(rc.last) { rc.zv += g.kick[0] * H.k * 0.12; rc.av += g.kick[1] * H.k * 0.12; } rc.last = p.fireAt; }
+  const c = 2 * Math.sqrt(H.k) * H.damp; for(const [x, v] of [['z', 'zv'], ['a', 'av']]){ rc[v] += (-H.k * rc[x] - c * rc[v]) * dt; rc[x] += rc[v] * dt; }
+  // the body frame: up, and his facing turned by the aim twist
+  G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
+  _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));
+  const yaw = gy + clamp(dyw, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders can turn
+  // the shoulders take the kick before the gun is laid in them
+  _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);
+  // the pocket the butt sits in
+  const sh = D.RightArm, hip = D.RightUpLeg; if(!sh || !D.RightHand || !D.LeftHand) return false; _gf.set(Math.sin(yaw), 0, Math.cos(yaw)); _gr.set(-Math.cos(yaw), 0, Math.sin(yaw));   // ahead · his right
+  if(g.hold === 'hip'){ hip.getWorldPosition(_gp); _gp.addScaledVector(_gu, 0.22).addScaledVector(_gf, 0.12).addScaledVector(_gr, 0.05); }
+  else { sh.getWorldPosition(_gp); _gp.addScaledVector(_gr, -H.pocket[0]).addScaledVector(_gu, g.hold === 'top' ? 0.1 : H.pocket[1]).addScaledVector(_gf, H.pocket[2]); }
+  // where he aims: the pointer's ground point lifted to a man's chest, or straight ahead
+  if(p && S.aimPoint && S.pointerActive){ const tx = S.aimPoint.x, tz = S.aimPoint.z, ty = heightAt(tx, tz) + 1.1, hd = Math.hypot(tx - _gp.x, tz - _gp.z); if(hd > 1.5) pitch = Math.atan2(ty - _gp.y, hd); }
+  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], H.pitch[1]) + rc.a;
+  _gx.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).negate();   // the gun's +X runs back to the butt
+  _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize(); _gz.crossVectors(_gx, _gy); _gm.makeBasis(_gx, _gy, _gz); _gq.setFromRotationMatrix(_gm);
+  // butt into the pocket, then the whole gun pushed straight back by the kick
+  gunPoint(_gt, g.butt, len, _gw.set(0, 0, 0), _gq); _gp.sub(_gt).addScaledVector(_gx, rc.z);
+  _gm.compose(_gp, _gq, _gt.set(1, 1, 1)); _mi.copy(G.matrixWorld).invert(); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true);
+  // hands onto it: the wrist just behind / above each contact, so the grip sits in the palm; elbows down (the right one out)
+  const grip = gunPoint(new THREE.Vector3(), g.grip, len, _gp, _gq), fore = gunPoint(new THREE.Vector3(), g.fore, len, _gp, _gq);
+  const wr = grip.clone().addScaledVector(_gy, 0.045).addScaledVector(_gx, 0.035), wl = fore.clone().addScaledVector(_gy, -0.035).addScaledVector(_gx, 0.02).addScaledVector(_gz, g.hold === 'hip' ? 0 : 0.02);
+  sh.getWorldPosition(_gt); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, _gt.clone().addScaledVector(_gu, -0.45).addScaledVector(_gr, 0.3).addScaledVector(_gf, -0.1));
+  D.LeftArm.getWorldPosition(_gt); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15));
+  curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', 0.8, fore.clone().addScaledVector(_gy, 0.02));
+  return true; }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
   return (CV.realP = Promise.all(['horse', 'operator', 'rideGallop', 'rideWalk', 'carbine', 'soldier2'].map(loadGLTF)).then(L => {
@@ -73,7 +116,7 @@ export function fitRealCav(CV){
     // Z295 the hold: the carbine and the infantry arsenal share one frame (the carbine's: muzzle toward −X, stock +X, the grip where the right hand goes)
     const cb = new THREE.Group(); cb.name = 'realCarbine'; G.add(cb); const carb = cg.scene.clone(true); cb.add(carb);
     if(u.muzzle){ cb.add(u.muzzle); u.muzzle.position.fromArray(C.carbine.muzzle); }
-    const arms = { _carbine:carb }; armInfantry(arms, cb, C);
+    const arms = { _carbine:carb, _G:G }; armInfantry(arms, cb, C);
     CV.real = { hr, hm, HA, seat, op, om, OA, HIT, hitW:0, wasHit:false, deadOn:false, cb, arms, armK:'_carbine', csc: C.carbine.len / 0.954,
       hips: bone('Hips'), spine: ['Spine', 'Spine1', 'Spine2'].map(bone), rh: bone('RightHand'), rhm: bone('RightHandMiddle1'), lh: bone('LeftHand'), lhm: bone('LeftHandMiddle1'), pup };
     if(pup){ const D = pup.D; Object.assign(CV.real, { rh:D.RightHand, rhm:D.RightHandMiddle1 || null, lh:D.LeftHand, lhm:D.LeftHandMiddle1 || null }); }   // Z294 the gun goes in the hands that are seen
@@ -119,6 +162,7 @@ export function updateRealCav(CV, dt, P){
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
   if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
+  if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
   R.rh.getWorldPosition(_a); if(R.rhm){ R.rhm.getWorldPosition(_b); _a.lerp(_b, 0.5); }
   (R.lhm || R.lh).getWorldPosition(_b); _d.subVectors(_b, _a); const span = _d.length();

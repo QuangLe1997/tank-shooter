@@ -887,6 +887,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['xeom','xichlo','bagac'].every(k=>C.RIDE.fit[k] && C.RIDE.model[k]) && C.RIDE.fit.xichlo.pedal && C.RIDE.fit.xeom.wheelie && ['start','wheelie','underfire','crash','getup','lift','remount'].every(e=>C.RIDE_TALK[e] && C.RIDE_TALK[e].d.length && C.RIDE_TALK[e].s.length), 'every ride fitted, the xích lô pedals, the xe ôm wheelies, every event has both voices');
   ok(/bikeWheelie\(CV\.H\)/.test(R('src/game/cavalry.js')) && /rideBump\(-vn\)/.test(R('src/game/cavalry.js')) && /rideHit\(dmg\)/.test(R('src/game/player-damage.js')) && /driveDriver\(H, dt, v, yawRate\)/.test(R('src/game/xeom.js')) && /H\.drv\.onCrash/.test(R('src/game/cavalry.js')), 'Space wheelies, crashes and hits reach the driver, the soldier jumps clear and is called back'); }
 
+// Z297 the gun first, the hands onto it, recoil straight back along the bore
+{ const fs=await import('node:fs'); const C=await import('./config.js'), r=fs.readFileSync('src/actors/real-cav.js','utf8');
+  ok(/function holdReal/.test(r) && /ik2\(D\.RightArm/.test(r) && /ik2\(D\.LeftArm/.test(r) && /curlHand\(D, 'Right', 0\.85, grip, 0, 0\.35\)/.test(r) && /addScaledVector\(_gx, rc\.z\)/.test(r), 'the gun laid along the aim, hands IK onto grip and handguard, kick straight back');
+  ok(Object.keys(C.INFGUN.guns).every(k=>C.GUNHOLD[k] && C.GUNHOLD[k].butt && C.GUNHOLD[k].grip && C.GUNHOLD[k].fore && C.GUNHOLD[k].kick) && C.GUNHOLD.rpg.hold==='top' && C.GUNHOLD.minigun.hold==='hip', 'every weapon has its butt, grip, handguard, kick and hold'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

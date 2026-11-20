@@ -730,6 +730,15 @@ export const INFGUN = { map:{ rifle:'ar', smg:'lmg', flak:'lmg', minigun:'minigu
     agl:'gl', mortar:'gl', arty:'gl', flamer:'flamer', cryo:'flamer', tesla:'energy', plasma:'energy', photon:'energy', orbital:'energy', singularity:'energy' },
   guns:{ ar:{ len:0.92, muzzle:1, grip:0.2 }, lmg:{ len:1.12, muzzle:-1, grip:0.18 }, minigun:{ len:1.15, muzzle:1, grip:0.22 }, shotgun:{ len:1.0, muzzle:-1, grip:0.22 }, sniper:{ len:1.42, muzzle:-1, grip:0.24 },
     rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18 }, flamer:{ len:1.0, muzzle:1, grip:0.14 }, energy:{ len:0.95, muzzle:1, grip:0.2 } } };
+// Z297 HOLDING THE GUN FOR REAL (the special-forces soldier): where each weapon meets the body — butt (in the shoulder pocket), grip (the right hand, trigger
+//   finger on the guard), fore (the left hand) as [share of the length from the middle toward the butt, metres above the middle]; hold = shoulder | top (the RPG
+//   rides ON the shoulder) | hip (minigun, flamethrower); kick = [straight back (m), muzzle climb (rad)] per shot, rate = the recoil spring's stiffness
+export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.02, -0.05, 0.03],
+  ar:{ butt:[0.5, -0.01], grip:[0.15, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
+  minigun:{ hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
+  sniper:{ butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1] },
+  gl:{ butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
+  energy:{ butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
