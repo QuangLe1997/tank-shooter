@@ -997,6 +997,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/function stanceOf\(t\)/.test(lo) && /function manHigh\(t\)/.test(lo) && /const h = inf \? manHigh\(t\)/.test(lo) && /dropTo=Math\.min\(dropTo, LINE\.aim\[st\]\)/.test(lo) && C.LINE.aim.prone<C.LINE.body.prone && C.LINE.aim.crouch<C.LINE.body.crouch && C.LINE.body.crouch<C.LINE.manH, 'a man lying flat is low and the enemy lays its aim low on him; one aimed at him standing goes over'); }
 
+// Z317 stone breaks into pieces that add up to the stone (count by its size, fill × its volume) and clears away sooner
+{ const fs=await import('node:fs'); const C=await import('./config.js'), sh=fs.readFileSync('src/fx/shatter.js','utf8');
+  ok(/Math\.round\(Rv \* 2 \* F\.stone\.perM\)/.test(sh) && /F\.stone\.fill \* V \* \(pc\.r \*\* 3 \/ wSum\)/.test(sh) && !/m\.scale\.multiplyScalar\(pc\.r \* 0\.6\)/.test(sh) && /s\.r \* 2\.2 \/ F\.sinkT/.test(sh) && C.SHATTER.stone.fill<1 && C.SHATTER.stone.life<C.SHATTER.life && C.SHATTER.life<9, 'a stone breaks into its own volume (no lump bigger than the stone), by its size, and the pieces clear away sooner'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

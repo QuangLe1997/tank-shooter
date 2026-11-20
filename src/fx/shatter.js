@@ -54,20 +54,26 @@ export function shatter(obj, o){ if(!obj || /noshatter/.test(location.search + l
     for(const c of list) n += shatter(c, { ...o, n:Math.max(3, Math.round((o && o.n || SHATTER.n) / Math.max(1, list.length * 0.6))) }); return n; }
   if(!obj.geometry || Array.isArray(obj.material) || obj.isInstancedMesh) return 0;
   o = o || {}; const F = SHATTER, cap = MOBILE ? F.maxMobile : F.max; obj.updateMatrixWorld(true); obj.matrixWorld.decompose(_p, _q, _s);
-  const pieces = cutGeometry(obj.geometry, Math.round((o.n || F.n) * (MOBILE ? 0.6 : 1))), mat = sideMat(obj.material), from = o.from || { x:_p.x, y:_p.y + 0.2, z:_p.z };
+  // Z317 a stone breaks into pieces that add up to it: its own size in the world (bounding box → the volume of an ellipsoid that fills it), as many
+  //   pieces as a stone that size breaks into, and the lumps share fill × its volume in proportion to the parts of it they replace
+  let V = 0, Rv = 0; if(o.solid){ const g = obj.geometry; if(!g.boundingBox) g.computeBoundingBox(); g.boundingBox.getSize(_ax).multiply(_s); V = Math.PI / 6 * _ax.x * _ax.y * _ax.z; Rv = Math.cbrt(V * 3 / (4 * Math.PI)); }
+  const want = o.solid ? Math.max(F.stone.minN, Math.min(o.n || F.n, Math.round(Rv * 2 * F.stone.perM))) : (o.n || F.n);
+  const pieces = cutGeometry(obj.geometry, Math.round(want * (MOBILE ? 0.6 : 1))), mat = sideMat(obj.material), from = o.from || { x:_p.x, y:_p.y + 0.2, z:_p.z };
+  const wSum = o.solid ? pieces.reduce((a, q) => a + q.r ** 3, 0) || 1 : 1;
   for(const pc of pieces){
     while(LIVE.length >= cap){ const old = LIVE.shift(); drop(old.m); }
     const sg = o.solid ? stoneLump(obj.geometry) : null, m = new THREE.Mesh(sg || pc.geo, mat); if(sg && !LUMPS.includes(sg)) m.userData.ownGeo = true; m.castShadow = !MOBILE; m.receiveShadow = true;
-    _v.copy(pc.c).applyMatrix4(obj.matrixWorld); m.position.copy(_v); m.quaternion.copy(_q); m.scale.copy(_s); if(o.solid) m.scale.multiplyScalar(pc.r * 0.6); scene.add(m);   // (Z312 a solid lump the size of the piece)
+    _v.copy(pc.c).applyMatrix4(obj.matrixWorld); m.position.copy(_v); m.quaternion.copy(_q); m.scale.copy(_s);
+    const lr = o.solid ? Math.cbrt(F.stone.fill * V * (pc.r ** 3 / wSum) * 3 / (4 * Math.PI)) : 0; if(o.solid) m.scale.setScalar(lr / 0.93); scene.add(m);   // (Z317 a lump of its share of the stone's volume — the lump shape's own radius is ~0.93)
     const dx = _v.x - from.x, dy = _v.y - from.y, dz = _v.z - from.z, L = Math.hypot(dx, dy, dz) || 1, sp = (o.power || F.power) * (0.55 + Math.random() * 0.9);
     const v = new THREE.Vector3(dx / L * sp, Math.max(0.2, dy / L) * sp * 0.6 + (o.up || F.up) * (0.5 + Math.random()), dz / L * sp);
     const w = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar((o.spin || F.spin) * 2);
-    LIVE.push({ m, v, w, r:pc.r * Math.max(_s.x, _s.y, _s.z), t:0, rest:0, life:F.life * (0.8 + Math.random() * 0.4), fire:o.fire ? 0.6 + Math.random() * 1.4 : 0, bounce:o.bounce || F.bounce, hits:0 }); }
+    LIVE.push({ m, v, w, r:o.solid ? lr : pc.r * Math.max(_s.x, _s.y, _s.z), t:0, rest:0, life:(o.solid ? F.stone.life : F.life) * (0.8 + Math.random() * 0.4), fire:o.fire ? 0.6 + Math.random() * 1.4 : 0, bounce:o.bounce || F.bounce, hits:0 }); }
   return pieces.length; }
 
 export function updateShatter(dt){ if(!LIVE.length) return; dt = Math.min(dt, 0.05); const F = SHATTER;
   for(let i = LIVE.length - 1; i >= 0; i--){ const s = LIVE[i], m = s.m; s.t += dt;
-    if(s.t > s.life){ m.position.y -= dt * F.sink; if(s.t > s.life + F.sinkT){ drop(m); LIVE.splice(i, 1); } continue; }   // sinks out of sight
+    if(s.t > s.life){ m.position.y -= dt * Math.max(F.sink, s.r * 2.2 / F.sinkT); if(s.t > s.life + F.sinkT){ drop(m); LIVE.splice(i, 1); } continue; }   // sinks out of sight (Z317 all the way under, however big)
     if(s.rest > 0.6) continue;
     s.v.y -= F.g * dt; m.position.addScaledVector(s.v, dt);
     const wl = s.w.length(); if(wl > 0.01){ _ax.copy(s.w).divideScalar(wl); _dq.setFromAxisAngle(_ax, wl * dt); m.quaternion.premultiply(_dq); }
