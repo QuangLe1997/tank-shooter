@@ -3,7 +3,7 @@
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
 import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
-import { STONE } from '../../config.js';
+import { REALCITY, STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
 // per battlefield: [base colour, snow/highlight colour, shape kind, height (m)] — Z235 the green lands' ranges are forested blue-green, never the meadow's yellow-green
@@ -54,10 +54,12 @@ const _r=(a,b)=>a+Math.random()*(b-a);
 // a skyline: towers / stacks standing on the nearest ring
 // Z264 a real skyline: the city's own Meshy towers (glass, apartment, mid-rise) stand round the horizon in their real colours, each scaled to its
 //   slot's height and turned at random, set back past the old ring, hazed toward the fog in the shader (they keep the procedural ring's draw order); boxes until loaded
-function realSkyline(R, H, fogC, mix){ const keys=['bld_glass','bld_apart'].filter(k=>REAL_CITY[k]); if(!keys.length) return null; const n=MOBILE?30:56, per={}, g=new THREE.Group();
-  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+40+Math.random()*70, h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
+// Z267 offices too, glass towers twice as often, a lighter veil (REALCITY.skyHaze) so they keep their glass and stone, and all of them in front of
+//   the hill ring at R + 65 (behind it their feet were hidden and they floated on the ridge)
+function realSkyline(R, H, fogC, mix){ const keys=['bld_glass','bld_apart','bld_office','bld_glass'].filter(k=>REAL_CITY[k]); if(!keys.length) return null; const n=MOBILE?30:56, per={}, g=new THREE.Group();
+  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+8+Math.random()*48, h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
   const M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), S3=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
-  for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.min(0.85, mix*1.15) }, hc={ value:fogC.clone() };
+  for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.min(REALCITY.skyHaze, mix) }, hc={ value:fogC.clone() };
     mat.onBeforeCompile=sh=>{ sh.uniforms.hzAmt=hz; sh.uniforms.hzCol=hc; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>','#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
     mat.customProgramCacheKey=()=>'skylineHaze';
     const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });

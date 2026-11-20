@@ -90,7 +90,7 @@ export const _rockCache={};
 export function rockSet(bn){ if(_rockCache[bn]) return _rockCache[bn]; const t=ROCK_TINT[bn]||ROCK_TINT.DESERT; const set={ small:[], big:[] };
   for(let i=0;i<5;i++) set.small.push(makeRockGeo(2, _R(0.5,0.85), t[0], t[1]));
   for(let i=0;i<4;i++) set.big.push(makeRockGeo(MOBILE?3:4, _R(0.55,0.8), t[0], t[1]));
-  set.mat=stoneTriMat('rock_face', bn);   // Z259 photographed rock face, projected three ways (was the Z145 procedural grain)
+  set.mat=stoneTriMat(bn==='CITY'?'cracked_concrete':'rock_face', bn);   // Z267 the city's loose stones are broken concrete, not field rock   // Z259 photographed rock face, projected three ways (was the Z145 procedural grain)
   _rockCache[bn]=set; return set; }
 // ---- cover pieces: each a single merged mesh with vertex colours (one draw call per block) ----
 // Z236 planar box mapping: a merged prop takes its texture from where each face sits on the whole piece (the stencil on a container reads once

@@ -52,12 +52,12 @@ export async function warmUp(onStep){
 export function idle(fn){ (window.requestIdleCallback||((f)=>setTimeout(f,60)))(fn, {timeout:1500}); }
 export async function bootReady(){
   performance.mark('boot:ready');
-  const b=document.getElementById('boot'); if(!b||b._gone){ warmUp(); idle(()=>warmGunArt()); setTimeout(()=>loadRealCity(), 6000); setTimeout(()=>loadRealTrees(), 4000); return; }   // Z264 the city's buildings + cars, in the background
+  const b=document.getElementById('boot'); if(!b||b._gone){ warmUp(); idle(()=>warmGunArt()); loadRealCity(); setTimeout(()=>loadRealTrees(), 1500); return; }   // Z267 the city's models from the start (a city built before they land waits for them)   // Z264 the city's buildings + cars, in the background
   setBootProgress(55, 1);                                                          // modules + world are up
   await warmUp(f=>setBootProgress(55+f*44, f>=1?2:1));                            // shaders + pools, sliced across frames
   setBootProgress(100, 2); await _frame();
   const msg=document.getElementById('bootMsg'); if(msg) msg.textContent='SẴN SÀNG CHIẾN ĐẤU';
-  b.classList.add('ready'); idle(()=>warmGunArt()); setTimeout(()=>initCloud(), 2500); setTimeout(()=>loadRealCity(), 6000); setTimeout(()=>loadRealTrees(), 4000);   // Z162 cloud save signs in quietly once the game is up   // Z150 gun photos for the shop / arsenal / HUD, rendered in idle slices
+  b.classList.add('ready'); idle(()=>warmGunArt()); setTimeout(()=>initCloud(), 2500); loadRealCity(); setTimeout(()=>loadRealTrees(), 1500);   // Z162 cloud save signs in quietly once the game is up   // Z150 gun photos for the shop / arsenal / HUD, rendered in idle slices
   const go=e=>{ if(e&&e.cancelable && e.type!=='keydown') e.preventDefault();
     b.removeEventListener('touchstart',go); b.removeEventListener('click',go); removeEventListener('keydown',go);
     try{ audio(); sfx('levelup'); }catch(_){}                                     // the gesture browsers demand before audio …

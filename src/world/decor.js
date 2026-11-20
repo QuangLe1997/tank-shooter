@@ -25,8 +25,8 @@ export function _decorSpot(minCore, tries){ for(let t=0;t<(tries||12);t++){ cons
     if(Math.hypot(x,z)>minCore && Math.hypot(x, z-ARENA*0.55)>8 && inField(x,z,1.5)) return [x,z]; } return null; }
 export function buildTerrainDecor(b){
   clearDecor();
-  const set=rockSet(b.name), N=Math.round((MOBILE?60:120)*AREA_K), per=set.small.map(()=>[]);
-  for(let i=0;i<N;i++){ const sp=_decorSpot(12); if(!sp) continue; const r = Math.random()<0.75 ? _R(0.18,0.42) : _R(0.42,0.7);   // pebbles + fist-to-knee sized stones
+  const city=b.name==='CITY', set=rockSet(b.name), N=Math.round((MOBILE?60:120)*AREA_K*(city?0.4:1)), per=set.small.map(()=>[]);   // Z267 the city: fewer, smaller lumps of concrete (no boulders on the asphalt)
+  for(let i=0;i<N;i++){ const sp=_decorSpot(12); if(!sp) continue; const r = city ? _R(0.1,0.26) : Math.random()<0.75 ? _R(0.18,0.42) : _R(0.42,0.7);   // pebbles + fist-to-knee sized stones
     per[(Math.random()*per.length)|0].push({x:sp[0], z:sp[1], r, ry:_R(0,6.28), tilt:_R(-0.25,0.25)}); }
   per.forEach((list,gi)=>{ if(!list.length) return; const im=new THREE.InstancedMesh(set.small[gi], set.mat, list.length); im.castShadow=true; im.receiveShadow=true;
     list.forEach((o,k)=>{ _IE.set(o.tilt,o.ry,o.tilt*0.5); _IM.compose(_IV.set(o.x,heightAt(o.x,o.z)+o.r*0.18,o.z), _IQ.setFromEuler(_IE), _IS.set(o.r,o.r,o.r)); im.setMatrixAt(k,_IM);

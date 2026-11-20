@@ -4,7 +4,8 @@
 //   One Pillar Pagoda, an Inuit igloo camp with a lighthouse, a Saigon skyscraper, a Ruhr blast furnace. Low-poly, vertex-coloured, not targets.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ARENA, BIOME, MAGMA, MOBILE, _mergeColored, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart } from '../hub.js';
+import { REALCITY } from '../../config.js';
+import { ARENA, BIOME, MAGMA, MOBILE, REAL_CITY, _mergeColored, loadRealCity, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart } from '../hub.js';
 
 export const WONDER = { g:null, name:'', x:0, z:0, spin:[], smoke:[], at:0 };
 const P=[], PY=[]; const add=(geo,x,y,z,col,ry)=>{ if(ry) geo.rotateY(ry); geo.translate(x,y,z); P.push({ geo, col }); };
@@ -78,6 +79,9 @@ export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) 
   const a=-Math.PI/2+(Math.random()-0.5)*1.2, R=Math.min(ARENA-14, fieldR(a)+40), x=Math.cos(a)*R, z=Math.sin(a)*R;   // on the enemy side, on the high ground beyond the fence
   if(BIOME.name==='HILLS'){ g.add(greatWall()); const am=-1.55, rm=fieldR(am)+12; WONDER.x=Math.cos(am)*rm; WONDER.z=Math.sin(am)*rm; return; }
   if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); windmills(w); WONDER.x=x; WONDER.z=z; return; }
+  if(BIOME.name==='CITY'){ WONDER.x=x; WONDER.z=z; const put=()=>{ const M=REAL_CITY.bld_landmark; if(!M || WONDER.g!==g) return false;   // Z267 the real Landmark 81 (Meshy), the stacked boxes only if it never loads
+      const m=new THREE.Mesh(M.geo, M.mat), k=REALCITY.landmarkH/M.size.y; m.scale.setScalar(k); m.position.set(x, heightAt(x,z)-1, z); m.rotation.y=-a-Math.PI/2; m.castShadow=m.receiveShadow=true; g.add(m); return true; };
+    if(put()) return; loadRealCity().then(ok=>{ if(!put() && WONDER.g===g){ P.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85 })); P.length=0; m.position.set(x, heightAt(x,z)-0.3, z); m.rotation.y=-a-Math.PI/2; g.add(m); } }); return; }
   if(BIOME.name==='VOLCANO'){ const v=buildVolcano(); v.position.set(x, heightAt(x,z)-0.3, z); v.rotation.y=-a-Math.PI/2; g.add(v); placeVolcano(v); WONDER.x=x; WONDER.z=z;   // Z258 the real volcano: lathed cone, gullies, lava flows, crater lake
     for(const p of MAGMA.vents) WONDER.smoke.push([p.x, p.y+1, p.z]); return; }
   P.length=0; PY.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.05 }), { scale:0.25, bump:0.05, alb:0.34, foot:3, streak:0.3 })); P.length=0;

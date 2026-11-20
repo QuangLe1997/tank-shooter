@@ -576,7 +576,11 @@ export const STREET = { wet:0.9, puddle:0.55, mirror:3.5, wheel:0.2, oil:0.6, pa
 //   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
 export const REALCITY = { env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement:[0.72, 0.72, 0.72], lawn:[0.78, 0.9, 0.62],   // street photo albedo ×
  
-  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 } },   // (the stone tower came out with a broken diagonal glass panel: left out)
+  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 }, bld_landmark:{ role:'landmark', env:1.2 } }, landmarkH:150,
+  // Z267 the street furniture (world/real-city.js prepProp): h = height, w = width, s = scale (the Poly Haven scans are true size), glow = the material that lights at night
+  props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.15 }, prop_tarpcar:{ s:1.05 },
+    city_fountain:{ w:9, sink:0.18 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5, skyHaze:0.3,   // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)
+    // (the stone tower came out with a broken diagonal glass panel: left out)
   carTint:0.55, cars:{ car_sedan:{ yaw:1.5708, L:4.8 }, car_taxi:{ yaw:1.5708, L:4.6 }, car_suv:{ yaw:1.5708, L:4.9 }, car_van:{ yaw:1.5708, L:5.4 }, car_bus:{ yaw:1.5708, L:11 } },
   carFor:{ sedan:'car_sedan', hatch:'car_sedan', suv:'car_suv', pickup:'car_suv', van:'car_van', taxi:'car_taxi', truck:'car_van', bus:'car_bus' } };
 // Z264 WALL SKINS (world/regional.js): the photographed set a fortress / Core wall pattern takes (`biome` overrides per battlefield); tint = how much of
@@ -598,7 +602,7 @@ export const SHATTER = { n:10, power:7, up:3, spin:6, bounce:0.32, bounceMin:2.2
 //   colours carry the battlefield's rock tint); hills = the far ranges' photo detail: aerial-photo tile (m) on gentle slopes, rock-face tile (m) on steep
 //   ones, their mean brightness (the detail is brightness about 1), gain = its contrast, near = the detail strength × (1 − the ring's haze), the aerial set per battlefield
 export const STONE = { env:0.5, ao:0.85, rockTile:0.55,
-  sets:{ large_sandstone_blocks:{ fallback:0xc8a878, tint:[1.0, 0.89, 0.72], nrm:1.1 }, rock_face:{ fallback:0x6e6458, tint:[0.8, 0.76, 0.7], rockTint:[1.7, 1.7, 1.7], nrm:1.3 } },
+  sets:{ t_concrete_wall_002:{ fallback:0xe0d8c4, tint:[1.3, 1.24, 1.12], nrm:0.9 }, large_sandstone_blocks:{ fallback:0xc8a878, tint:[1.0, 0.89, 0.72], nrm:1.1 }, rock_face:{ fallback:0x6e6458, tint:[0.8, 0.76, 0.7], rockTint:[1.7, 1.7, 1.7], nrm:1.3 } },
   hills:{ tileA:45, tileR:18, meanA:0.42, meanR:0.38, gain:2.6, near:1.5, sets:{ _:'aerial_rocks_02', MEADOW:'aerial_grass_rock', SAVANNA:'aerial_grass_rock', CITADEL:'aerial_grass_rock', DESERT:'aerial_sand', QUARRY:'aerial_rocks_02' } },
   pyramid:{ course:1.25, tile:3, edge:2.2, ragged:0.55, gap:0.06, capFrom:0.82, casing:0xfff4e0, tumbled:14, tones:[0xffffff, 0xf4ece0, 0xfff8ee, 0xece2d2] } };
 // Z258 MAGMA (world/magma.js): glow = emissive strength of the hottest melt (the bloom catches it); scale = crust plates per metre (≈ 1 / plate size);

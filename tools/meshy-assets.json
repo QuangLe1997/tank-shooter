@@ -1480,5 +1480,97 @@
       ],
       "texture_prompt": "White and grey facade tiles, glass balconies, colourful shop signs, steel and glass shop fronts, light city grime, rain streaks under the windows, realistic PBR"
     }
+  },
+  "bld_landmark": {
+    "_role": "Z267 the city's landmark (wonders.js): a supertall tower of bundled glass shafts standing beyond the fence",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A supertall skyscraper about 460 m tall in Ho Chi Minh City made of nine slender square glass shafts of different heights bundled together, stepping up like a bundle of bamboo to a tall central crown, vertical silver fins on the glass, a wide podium at the base. Realistic, true-to-life proportions. One single building standing alone, the whole building in view, no street, no ground plate, no surrounding buildings, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Reflective blue-grey glass curtain wall with silver vertical fins, light grey stone podium, realistic PBR"
+    }
+  },
+  "city_fountain": {
+    "_role": "Z267 the park fountain (city.js fountain): the centrepiece of every city park, in place of the procedural cylinders",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 9000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A classical stone fountain for a city park square, about 9 m across and 4 m tall: a wide round basin with a carved moulded rim full of water, a central pedestal rising from the water carrying two tiers of round stone bowls, the upper bowl smaller, a finial on top. Realistic, true-to-life proportions. One single fountain, no ground plate, no pavement, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Pale weathered limestone with darker water stains and moss in the joints, dark green-blue water in the basin, realistic PBR"
+    }
+  },
+  "city_signal": {
+    "_role": "Z267 the traffic light (city.js crossings): instanced at the crossings, topples when hit",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 4000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A street traffic signal post: a slim grey galvanised steel pole about 4.5 m tall on a small base, a black three-aspect signal head (red, amber, green lenses with visors) near the top facing forward, a small pedestrian signal and a push-button box lower on the pole. Realistic, true-to-life proportions. One single post, no ground, no road, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Galvanised grey steel pole with light grime, matte black signal housings, red amber and green glass lenses, realistic PBR"
+    }
+  },
+  "city_stall": {
+    "_role": "Z267 the market stall (city.js market squares): a street-market stall under a big umbrella, in place of the procedural cone and boxes",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A Vietnamese street-market stall: a wooden trestle table about 1.6 m long piled with fruit and vegetables in woven baskets and plastic crates, a large faded red market umbrella on a pole above the table, two low blue plastic stools beside it. Realistic, true-to-life proportions. One single stall, no ground plate, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Faded red canvas umbrella, worn wooden table, colourful tropical fruit and green vegetables in woven bamboo baskets, blue plastic stools, realistic PBR"
+    }
   }
 }

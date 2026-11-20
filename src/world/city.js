@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OPEN_LAND, REALCITY, REALTREE } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees } from '../hub.js';
+import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -147,7 +147,7 @@ export function cityBlast(x, z, r){ if(!TOP.length && !BLD.length) return;
 export function cityCollapse(p){ if(!p) return false; const cand=BLD.filter(b=>!b.dead && b.floors.length>=3).map(b=>({ b, d:Math.hypot(b.x-p.pos.x, b.z-p.pos.z) })).filter(o=>o.d>14 && o.d<70).sort((a,b)=>a.d-b.d);
   if(!cand.length) return false; cand[0].b.casc=0.05; return true; }
 export function updateCity(dt){ if(TOP.length) updateTopple(dt); for(const Bd of BLD) if(Bd.casc>0){ Bd.casc-=dt; if(Bd.casc<=0 && !Bd.dead){ Bd.hp=Bd.hpPer*Bd.top; dropFloor(Bd); Bd.casc = Bd.dead ? 0 : 0.38; } } }
-export function resetCity(){ BLD.length=0; TOP.length=0; RUB=null; RUBn=0; }
+export function resetCity(){ BLD.length=0; TOP.length=0; RUB=null; RUBn=0; CITY_GEN++; }   // Z267 anything still waiting for the models belongs to a city that is gone
 export function cityBuildings(){ return BLD; }
 
 // ---------- building kinds (front faces +z in the local frame; ox,oz = footprint centre; ry = rotation) ----------
@@ -173,21 +173,21 @@ function tubeHouse(ox,oz,ry,w,d){ const floors=2+((Math.random()*4)|0), col=WALL
   else if(Math.random()<0.8){ const t=new THREE.CylinderGeometry(0.55,0.55,1.3,10); t.rotateZ(Math.PI/2); const bx=_R(-w/4,w/4), bz=-d/4; localG(t, bx, y0+H+1.4, bz, ox,oz,ry, 0xd8dcde); local(bx, y0+H+0.8, bz, 0.9, 0.4, 0.4, ox,oz,ry, 0x6a6c6e); }   // inox water tank
   if(Math.random()<0.35){ const g=new THREE.CylinderGeometry(0.45,0.08,0.18,12); g.rotateX(-0.9); localG(g, _R(-w/3,w/3), y0+H+1.3, d/4, ox,oz,ry, 0xe8e8e4); }   // satellite dish
   endBld(Bd); return H; }
-function apartment(ox,oz,ry,w,d){ { const M=pickBuilding('apartment'); if(M && Math.random()<REALCITY.share) return meshyBuilding(M, 'apartment', ox,oz,ry,w,d, 130, '#d0c8b8', 3.2); }   // Z264
+function apartment(ox,oz,ry,w,d){ { const h=realOrWait('apartment', 'apartment', ox,oz,ry,w,d, 130, '#d0c8b8', 3.2); if(h!=null) return h; }   // Z264 · Z267
   const floors=5+((Math.random()*5)|0), col=['#d8d0c0','#c8d4dc','#e0c8a8','#d0c8b8'][(Math.random()*4)|0], y0=heightAt(ox,oz)-0.05, FH=3.2, H=floors*FH, T=apart(col);
   const Bd=newBld('apartment', ox,oz,ry,w,d,y0, 130, col);
   for(let f=0;f<floors;f++){ const fy=y0+f*FH; floorPiece(Bd, fy, fy+FH); facade('ap'+col, T).geos.push(place(boxUV(w,FH,d,4,FH), ox, fy+FH/2, oz, ry));
     if(f>0) for(const px of [-w/4, w/4]) if(Math.random()<0.6) local(px+_R(-1,1), fy+0.4, d/2+0.2, 0.8, 0.55, 0.32, ox,oz,ry, 0xdcdcd4); }
   local(0, y0+H+0.3, 0, w+0.2, 0.6, d+0.2, ox,oz,ry, 0x9a968e); for(let k=0;k<3;k++) local(_R(-w/3,w/3), y0+H+1.0, _R(-d/4,d/4), 1.4, 1.0, 1.2, ox,oz,ry, 0xc8ccd0);
   endBld(Bd); return H; }
-function officeTower(ox,oz,ry,w,d){ { const M=pickBuilding('tower'); if(M && Math.random()<REALCITY.share) return meshyBuilding(M, 'tower', ox,oz,ry,w,d, 190, '#8a98a2', 3.4); }   // Z264
+function officeTower(ox,oz,ry,w,d){ { const h=realOrWait('tower', 'tower', ox,oz,ry,w,d, 190, '#8a98a2', 3.4); if(h!=null) return h; }   // Z264 · Z267
   const floors=9+((Math.random()*9)|0), FH=3.4, y0=heightAt(ox,oz)-0.05, T=office((Math.random()*2)|0), Bd=newBld('tower', ox,oz,ry,w,d,y0, 190, '#8a98a2');
   for(let f=0;f<floors;f+=3){ const n=Math.min(3, floors-f), fy=y0+f*FH; floorPiece(Bd, fy, fy+n*FH); facade('of'+T.t.uuid, T, true).geos.push(place(boxUV(w,n*FH,d,8,FH*4), ox, fy+n*FH/2, oz, ry)); }
   const top=y0+floors*FH; local(0, top+0.3, 0, w+0.2, 0.6, d+0.2, ox,oz,ry, 0x6a7078);
   if(Math.random()<0.5) facade('of'+T.t.uuid, T, true).geos.push(place(boxUV(w*0.6,FH*3,d*0.6,8,FH*4), ox, top+FH*1.5, oz, ry));                       // setback crown
   localG(new THREE.CylinderGeometry(0.06,0.1,6,5), w*0.2, top+FH*3+3, 0, ox,oz,ry, 0x8a8e92); endBld(Bd); return top-y0; }
 const VWALL=['#e2d4a8','#e8e4da','#d8bc84','#dcc2b6','#c8d6c8','#e6dac2'], VSHUT=['#3e6a4a','#34546e','#4a6040','#5e7484'];   // Z242 faded villa ochres
-function villaHouse(ox,oz,ry,w,d){ { const M=pickBuilding('villa'); if(M && Math.random()<REALCITY.share) return meshyBuilding(M, 'villa', ox,oz,ry,w,d, 150, '#e2d4a8', 3.6); }   // Z266
+function villaHouse(ox,oz,ry,w,d){ { const h=realOrWait('villa', 'villa', ox,oz,ry,w,d, 150, '#e2d4a8', 3.6); if(h!=null) return h; }   // Z266 · Z267
   const y0=heightAt(ox,oz)-0.05, FH=3.6, PL=0.6, col=VWALL[(Math.random()*VWALL.length)|0], T=villaBay(col, VSHUT[(Math.random()*VSHUT.length)|0]), Bd=newBld('villa', ox,oz,ry,w,d,y0, 150, col);
   floorPiece(Bd, y0, y0+PL+FH); local(0, y0+PL/2, 0.6, w+0.8, PL, d+2.6, ox,oz,ry, 0xc8c2b4);                                                                // stone plinth (porch included)
   facade('vl'+col+T.t.uuid, T).geos.push(place(boxUV(w,FH,d,4.2,FH), ox, y0+PL+FH/2, oz, ry));
@@ -202,36 +202,62 @@ function villaHouse(ox,oz,ry,w,d){ { const M=pickBuilding('villa'); if(M && Math
   localG(rf, 0, y0+PL+FH*2+0.24+hR/2, 0, ox,oz,ry, [0xb5532e,0xa04628,0x8a4a3a][(Math.random()*3)|0]);                                                      // pavilion roof, old terracotta
   local(w*0.28, y0+PL+FH*2+2.0, -d*0.18, 0.6, 1.6, 0.6, ox,oz,ry, 0xd8d0c0);                                                                                 // chimney
   endBld(Bd); }
-// a villa's own walled garden: lawn, a drive with a car, trees, bougainvillea over the wall, a wrought-iron gate
+// a villa's own walled garden: lawn, a drive with a car (or one under a tarp), trees, painted block walls, a wrought-iron gate
 function villaLot(cx,cz,ry,lw,ld,cars,trees){ const vw=_R(10.5,12.5), vd=_R(8.5,10), vz=-ld/2+vd/2+2.2, [vx0,vz0]=L2W(0,vz,cx,cz,ry);
   strip('lawn', ()=>new THREE.MeshStandardMaterial({ map:parkT().t, roughness:0.95 }), cx, cz, lw-0.6, ld-0.6, ry, 0.06, 4, 4);
   villaHouse(vx0, vz0, ry, vw, vd); CURP=0;
-  const wc=0xece4cc, cap=0xb86a48;
+  const wc=0xe4dcc8, cap=0xb07a5a, local=vwall;   // Z267 the garden walls in photographed rendered concrete, painted cream, a terracotta coping
   for(const sd of [-1,1]){ local(sd*lw/2, 0.8, 0, 0.3, 1.6, ld, cx,cz,ry, wc); local(sd*lw/2, 1.65, 0, 0.42, 0.12, ld+0.1, cx,cz,ry, cap); }
   local(0, 0.8, -ld/2, lw, 1.6, 0.3, cx,cz,ry, wc); local(0, 1.65, -ld/2, lw+0.1, 0.12, 0.42, cx,cz,ry, cap);
   const gw=3.4; for(const sd of [-1,1]){ const L=(lw-gw)/2; local(sd*(gw/2+L/2), 0.8, ld/2, L, 1.6, 0.3, cx,cz,ry, wc); local(sd*(gw/2+L/2), 1.65, ld/2, L+0.1, 0.12, 0.42, cx,cz,ry, cap);
-    local(sd*gw/2, 1.1, ld/2, 0.55, 2.2, 0.55, cx,cz,ry, 0xf2ecd8); local(sd*gw/2, 2.25, ld/2, 0.7, 0.14, 0.7, cx,cz,ry, cap); }   // gate pillars
-  for(let k=0;k<9;k++) local(-gw/2+0.25+k*0.11, 0.95, ld/2+0.6+k*0.06, 0.04, 1.7, 0.04, cx,cz,ry, 0x1e1e1c);                                                 // the iron gate swung half open
-  for(let k=0;k<(MOBILE?6:12);k++){ const sd=Math.random()<0.5?-1:1, along=Math.random()<0.6; const bx=along?_R(-lw/2,lw/2):sd*lw/2, bz=along?(Math.random()<0.5?ld/2:-ld/2):_R(-ld/2,ld/2);
-    localG(new THREE.SphereGeometry(_R(0.4,0.75),7,5), bx, 1.8+_R(0,0.4), bz, cx,cz,ry, Math.random()<0.55?[0xc8288a,0xe04aa0,0xd83a7a][(Math.random()*3)|0]:0x3e7a2e); }   // bougainvillea spilling over
+    local(sd*gw/2, 1.5, ld/2, 0.55, 3.0, 0.55, cx,cz,ry, 0xf0e8d4); local(sd*gw/2, 3.07, ld/2, 0.7, 0.14, 0.7, cx,cz,ry, cap); }   // gate pillars, as tall as the gate
+  { const [gx,gz]=L2W(0, ld/2, cx,cz,ry); prop('prop_gate', gx, gz, ry, ()=>{ for(let k=0;k<9;k++){ const [bx,bz]=L2W(-gw/2+0.25+k*0.11, ld/2+0.6+k*0.06, cx,cz,ry); det(new THREE.BoxGeometry(0.04,1.7,0.04), bx, 0.95, bz, ry, 0x1e1e1c); } }); }   // Z267 the photoscanned wrought-iron gate (bars only if it fails)
   strip('drive', ()=>detailize(new THREE.MeshStandardMaterial({ map:walkT().t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 }), ...L2W(0,ld/2-2.6,cx,cz,ry), 3.2, 5.2, ry, 0.08, 2, 2);
-  if(Math.random()<0.8){ const [x,z]=L2W(_R(-0.4,0.4), ld/2-2.8, cx,cz,ry); cars.push(pickCar({ x, z, ry:ry+(Math.random()<0.5?0:Math.PI) }, 0.03)); }
+  if(Math.random()<0.8){ const [x,z]=L2W(_R(-0.4,0.4), ld/2-2.8, cx,cz,ry), cry=ry+(Math.random()<0.5?0:Math.PI); if(Math.random()<0.25) prop('prop_tarpcar', x, z, cry); else cars.push(pickCar({ x, z, ry:cry }, 0.03)); }   // Z267 now and then a car kept under a tarp
   for(let k=0;k<2+((Math.random()*2)|0);k++){ const [x,z]=L2W(_R(-lw/2+1.5,lw/2-1.5), _R(ld/2-2.5,ld/2-1.2)*(Math.random()<0.5?1:-0.6), cx,cz,ry); trees.push({ x, z, s:_R(0.8,1.15), ry:_R(0,6.28) }); } }
 // ---------- city furniture ----------
-function bench(x,z,ry){ det(new THREE.BoxGeometry(1.6,0.08,0.45), x, heightAt(x,z)+0.45, z, ry, 0x7a5a3a); const [bx,bz]=L2W(0,-0.22,x,z,ry); det(new THREE.BoxGeometry(1.6,0.45,0.06), bx, heightAt(x,z)+0.72, bz, ry, 0x7a5a3a);
+function benchP(x,z,ry){ det(new THREE.BoxGeometry(1.6,0.08,0.45), x, heightAt(x,z)+0.45, z, ry, 0x7a5a3a); const [bx,bz]=L2W(0,-0.22,x,z,ry); det(new THREE.BoxGeometry(1.6,0.45,0.06), bx, heightAt(x,z)+0.72, bz, ry, 0x7a5a3a);
   for(const s of [-0.7,0.7]){ const [lx,lz]=L2W(s,0,x,z,ry); det(new THREE.BoxGeometry(0.08,0.45,0.42), lx, heightAt(x,z)+0.22, lz, ry, 0x2a2a28); } }
-function busStop(x,z,ry){ const y=heightAt(x,z); for(const s of [-1.6,1.6]){ const [px,pz]=L2W(s,-0.6,x,z,ry); det(new THREE.BoxGeometry(0.08,2.6,0.08), px, y+1.3, pz, ry, 0x6a6c6e); }
+function busStopP(x,z,ry){ const y=heightAt(x,z); for(const s of [-1.6,1.6]){ const [px,pz]=L2W(s,-0.6,x,z,ry); det(new THREE.BoxGeometry(0.08,2.6,0.08), px, y+1.3, pz, ry, 0x6a6c6e); }
   const [rx,rz]=L2W(0,-0.1,x,z,ry); det(new THREE.BoxGeometry(3.6,0.1,1.6), rx, y+2.65, rz, ry, 0x2a5a8a); const [gx,gz]=L2W(0,-0.65,x,z,ry); det(new THREE.BoxGeometry(3.4,1.8,0.04), gx, y+1.4, gz, ry, 0x9ab4c4);
-  det(new THREE.BoxGeometry(3.0,0.08,0.4), rx, y+0.5, rz, ry, 0x8a8c8e); const [sx,sz]=L2W(1.9,0,x,z,ry); det(new THREE.BoxGeometry(0.06,2.2,0.06), sx, y+1.1, sz, ry, 0x6a6c6e); det(new THREE.BoxGeometry(0.5,0.5,0.04), sx, y+2.2, sz, ry, 0x2a6ad8); }
-function stall(x,z,ry){ const y=heightAt(x,z), uc=[0xd83a2a,0x2a7ad8,0xf0c020,0x2aa05a,0xe8e8e0][(Math.random()*5)|0];
+  det(new THREE.BoxGeometry(3.0,0.08,0.4), rx, y+0.5, rz, ry, 0x8a8c8e); }
+function stallP(x,z,ry){ const y=heightAt(x,z), uc=[0xd83a2a,0x2a7ad8,0xf0c020,0x2aa05a,0xe8e8e0][(Math.random()*5)|0];
   det(new THREE.BoxGeometry(1.4,0.08,0.9), x, y+0.75, z, ry, 0x9a7a52); for(const [a,b] of [[-0.6,-0.38],[0.6,-0.38],[-0.6,0.38],[0.6,0.38]]){ const [lx,lz]=L2W(a,b,x,z,ry); det(new THREE.BoxGeometry(0.05,0.75,0.05), lx, y+0.37, lz, ry, 0x4a4a48); }
   det(new THREE.BoxGeometry(1.2,0.18,0.7), x, y+0.88, z, ry, [0xd8b060,0xc84a3a,0x6aa04a,0xe8e0c8][(Math.random()*4)|0]);                                        // the goods
   det(new THREE.CylinderGeometry(0.03,0.03,2.2,5), x, y+1.1, z, 0, 0x6a6a6a); const um=new THREE.ConeGeometry(1.5,0.55,8); det(um, x, y+2.3, z, ry, uc);
   for(let k=0;k<2;k++){ const [sx,sz]=L2W(_R(-1,1),_R(0.9,1.5),x,z,ry); det(new THREE.BoxGeometry(0.34,0.36,0.34), sx, y+0.18, sz, 0, [0xc82a2a,0x2a6ac8][k]); } }
-function fountain(x,z){ const y=heightAt(x,z); det(new THREE.CylinderGeometry(4.2,4.4,0.6,28), x, y+0.3, z, 0, 0xc8c2b4); det(new THREE.CylinderGeometry(3.8,3.8,0.04,28), x, y+0.52, z, 0, 0x4a8ab0);
+function fountainP(x,z){ const y=heightAt(x,z); det(new THREE.CylinderGeometry(4.2,4.4,0.6,28), x, y+0.3, z, 0, 0xc8c2b4); det(new THREE.CylinderGeometry(3.8,3.8,0.04,28), x, y+0.52, z, 0, 0x4a8ab0);
   det(new THREE.CylinderGeometry(0.5,0.7,1.6,12), x, y+1.2, z, 0, 0xd8d2c4); det(new THREE.CylinderGeometry(1.4,0.6,0.3,16), x, y+2.0, z, 0, 0xd8d2c4); det(new THREE.SphereGeometry(0.3,10,8), x, y+2.4, z, 0, 0xd8d2c4); }
-function gazebo(x,z){ const y=heightAt(x,z); det(new THREE.CylinderGeometry(3,3,0.3,6), x, y+0.15, z, 0, 0xc8c2b4); for(let k=0;k<6;k++){ const a=k/6*6.283; det(new THREE.CylinderGeometry(0.12,0.12,2.8,8), x+Math.cos(a)*2.6, y+1.7, z+Math.sin(a)*2.6, 0, 0xf2eee4); }
+function gazeboP(x,z){ const y=heightAt(x,z); det(new THREE.CylinderGeometry(3,3,0.3,6), x, y+0.15, z, 0, 0xc8c2b4); for(let k=0;k<6;k++){ const a=k/6*6.283; det(new THREE.CylinderGeometry(0.12,0.12,2.8,8), x+Math.cos(a)*2.6, y+1.7, z+Math.sin(a)*2.6, 0, 0xf2eee4); }
   det(new THREE.ConeGeometry(3.4,1.6,6), x, y+3.9, z, 0, 0xa84a2a); }
+// Z267 REAL STREET FURNITURE: benches, bus stops, market stalls, park fountains, bins, hydrants, pavement cafés, concrete blocks, villa gates and
+//   tarp-covered cars are photoscanned (Poly Haven) or Meshy models, instanced per model once they have loaded; the procedural piece is only the
+//   fallback when a model fails. The villa walls are photographed concrete (world/stone.js) instead of flat paint.
+let PP=null;
+const prop=(k,x,z,ry,fb,y)=>{ PP.push({ k, x, z, ry:ry||0, y:y||0, fb }); };
+function bench(x,z,ry){ prop('prop_bench', x, z, ry, ()=>benchP(x,z,ry)); }
+function busStop(x,z,ry){ const y=heightAt(x,z), [sx,sz]=L2W(1.9,0,x,z,ry); det(new THREE.BoxGeometry(0.06,2.2,0.06), sx, y+1.1, sz, ry, 0x6a6c6e); det(new THREE.BoxGeometry(0.5,0.5,0.04), sx, y+2.2, sz, ry, 0x2a6ad8);   // the stop's sign
+  prop('prop_bench', x-Math.sin(ry)*0.3, z-Math.cos(ry)*0.3, ry, ()=>busStopP(x,z,ry)); const [hx,hz]=L2W(-2.1,0.1,x,z,ry); prop('prop_bin', hx, hz, _R(0,6.28)); }
+function stall(x,z,ry){ prop('city_stall', x, z, ry, ()=>stallP(x,z,ry)); for(let k=0;k<1+((Math.random()*2)|0);k++){ const [cx,cz]=L2W(_R(-1.2,1.2), _R(1.1,1.7)*(Math.random()<0.5?1:-1), x,z,ry); prop('prop_chair', cx, cz, _R(0,6.28)); } }
+function fountain(x,z,fb){ prop('city_fountain', x, z, _R(0,6.28), fb||(()=>fountainP(x,z))); }
+const vwall=(bx,by,bz,w,h,d,ox,oz,ry,tone)=>{ const [x,z]=L2W(bx,bz,ox,oz,ry); bucket('vwall', ()=>stoneMat('t_concrete_wall_002')).geos.push(tag(stoneBox(w,h,d,x,by,z,2.4,tone,ry),0)); };
+// the street furniture in: one instanced mesh per model (its material list), each piece on the ground, turned; whatever has no model falls back
+function placeProps(list, gen, anchor){ if(gen!==CITY_GEN || (anchor && !anchor.parent)) return; const by=new Map(), fbs=[];
+  for(const q of list){ const m=cityProp(q.k); if(m){ if(!by.has(m)) by.set(m,[]); by.get(m).push(q); } else if(q.fb) fbs.push(q.fb); }
+  for(const [m,L] of by){ const im=new THREE.InstancedMesh(m.geo, m.mats, L.length);
+    const sink=(REALCITY.props[m.key]||{}).sink||0; L.forEach((q,k)=>{ _M4.compose(_v3.set(q.x, heightAt(q.x,q.z)+q.y-sink, q.z), _qy.setFromEuler(_eu.set(0,q.ry,0)), _one); im.setMatrixAt(k,_M4); });
+    im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); for(const g of m.glows) if(!LAND.mats.includes(g)) LAND.mats.push(g); }
+  if(fbs.length){ B=new Map(); P=[]; CURP=0; for(const f of fbs) f(); flushBuckets(); B=null; P=null; } }
+// the lamps and signals are built at once (they topple): their meshes take the real models when these are in — the lantern post (its glass and
+//   bulb light at night), the signal head on its steel pole
+function dressPoles(lampIm, headIm, sigIm){ const L=cityProp('prop_lamp'), Sg=cityProp('city_signal');
+  if(L && lampIm){ lampIm.geometry=L.geo; lampIm.material=L.mats; lampIm.computeBoundingSphere(); for(const g of L.glows) if(!LAND.mats.includes(g)) LAND.mats.push(g);
+    if(headIm){ const b=L.bulb||{ y:L.size.y*0.85, r:0.06 }, g=new THREE.SphereGeometry(Math.max(0.05,b.r),10,8); g.translate(0,b.y,0); headIm.geometry=g; headIm.computeBoundingSphere(); } }
+  if(Sg && sigIm){ const y0=REALCITY.signalAt, pole=new THREE.CylinderGeometry(0.075,0.09,y0+0.4,10); pole.translate(0,(y0+0.4)/2,0);
+    const top=Sg.geo.clone(); top.translate(0,y0,0); const groups=top.groups.length?top.groups:[{ start:0, count:top.attributes.position.count, materialIndex:0 }];
+    const p=pole.toNonIndexed(); p.clearGroups(); const g=mergeGeometries([p, top.index?top.toNonIndexed():top], false), n=p.attributes.position.count;
+    g.clearGroups(); g.addGroup(0, n, 0); groups.forEach(G0=>g.addGroup(n+G0.start, G0.count, G0.materialIndex+1));
+    sigIm.geometry=g; sigIm.material=[new THREE.MeshStandardMaterial({ color:0x7a7e80, roughness:0.45, metalness:0.7 }), ...Sg.mats]; sigIm.computeBoundingSphere(); } }
 // ---------- road strips ----------
 let strip=null;
 
@@ -247,7 +273,20 @@ function drawFixtures(fix){ const M4=new THREE.Matrix4(), Q=new THREE.Quaternion
     const m=new THREE.MeshStandardMaterial({ map:T.t, bumpMap:T.t, bumpScale:2, roughness:0.62, metalness:0.55, envMapIntensity:0.8 }), im=new THREE.InstancedMesh(geo, m, L.length);
     L.forEach((f,i)=>{ const [x,z]=f.p; im.setMatrixAt(i, M4.compose(V.set(x, heightAt(x,z)+0.05, z), Q.setFromAxisAngle(up, f.ry), S1)); });
     im.instanceMatrix.needsUpdate=true; im.receiveShadow=true; arena.add(im); LAND.meshes.push(im); } }
-export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; CURP=0; const fix=[];
+// one mesh per material bucket + the merged detail mesh (pieces honoured), into the scene
+function flushBuckets(){ for(const [k,b] of B){ if(!b.geos.length) continue; const g=mergeGeometries(b.geos.map(q=>q.index?q.toNonIndexed():q), false); b.geos.forEach(q=>q.dispose()); const m=new THREE.Mesh(g, b.mat);
+    m.castShadow=!/road|walk|zebra|park|bvd|median|path|lawn|drive|pitch/.test(k); m.receiveShadow=true; if(b.pieces) m.customDepthMaterial=depthMat(); arena.add(m); LAND.meshes.push(m); }
+  if(P.length){ const m=new THREE.Mesh(mergeP(P), pieceHook(detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 }), { scale:0.6, bump:0.012, alb:0.3, foot:0.8, streak:0.2 }))); m.customDepthMaterial=depthMat(); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); } }
+// Z267 NO BLOCKY STAND-INS: a lot built before the Meshy buildings have loaded waits (empty) and its building rises the moment they arrive —
+//   same lot, same breakable floors — instead of a procedural block; only a city whose models failed outright keeps procedural buildings
+const PENDING=[]; let CITY_GEN=0;
+function realOrWait(role, kind, ox,oz,ry,w,d,hpPer,col,FH){ const M=pickBuilding(role); if(M) return meshyBuilding(M, kind, ox,oz,ry,w,d,hpPer,col,FH);
+  if(typeof window==='undefined' || realCityReady() || REALCITY.share<1) return null; PENDING.push({ role, kind, ox,oz,ry,w,d,hpPer,col,FH, gen:CITY_GEN }); return 3*FH; }
+function flushPending(){ const list=PENDING.splice(0).filter(q=>q.gen===CITY_GEN); if(!list.length || !realCityReady()) return; B=new Map(); P=[];
+  for(const q of list){ const M=pickBuilding(q.role); if(M) meshyBuilding(M, q.kind, q.ox,q.oz,q.ry,q.w,q.d,q.hpPer,q.col,q.FH); }
+  CURP=0; flushBuckets(); B=null; P=null; }
+export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; PP=[]; CURP=0; const fix=[]; CITY_GEN++; PENDING.length=0;
+  const lantern=typeof window!=='undefined' && REALCITY.share>=1;   // Z267 one lantern post stands where the procedural median had a lamp each way
   const n=Math.ceil(ARENA/G), cars=[], motos=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[];
   const inCity=(x,z,m)=>inField(x,z,m||4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<ARENA*0.86;
   const RT=roadT(), BT=bvdT(), WT=walkT(), ZT=zebraT(), PT=parkT();
@@ -262,7 +301,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
     const at=(s,t)=>ax ? [i*G+t, mid+s] : [mid+s, i*G+t], ang=ax?Math.PI/2:0, [cx,cz]=at(0,0); if(L<6 || !inCity(cx,cz)) continue;
     if(blvd){ const cw=(BV-MED)/2; for(const sd of [-1,1]) strip('bvd', bvdMat, ...at(0, sd*(MED/2+cw/2)), L, cw, ang, 0.04, 8);
       strip('median', grassMat, ...at(0,0), L, MED-0.3, ang, 0.14, 4, 4); for(const sd of [-1,1]) kerb(...at(0, sd*MED/2), L, ang);
-      for(let s=-L/2+4; s<L/2-3; s+=10){ const [x,z]=at(s,0); if((s/10|0)%2) palms.push({ x, z, s:_R(0.85,1.05), ry:_R(0,6.28) }); else { lamps.push({ x, z, ry:ang+Math.PI/2 }); lamps.push({ x, z, ry:ang-Math.PI/2 }); } } }
+      for(let s=-L/2+4; s<L/2-3; s+=10){ const [x,z]=at(s,0); if((s/10|0)%2) palms.push({ x, z, s:_R(0.85,1.05), ry:_R(0,6.28) }); else { lamps.push({ x, z, ry:ang+Math.PI/2 }); if(!lantern) lamps.push({ x, z, ry:ang-Math.PI/2 }); } } }
     else strip('road', roadMat, cx, cz, L, W, ang, 0.04, 8);
     { const half=blvd?BV/2:W/2, lanes=blvd?[-(MED/2+(BV-MED)/4), MED/2+(BV-MED)/4]:[0];   // Z265 manhole covers down the lanes, drain grates at the kerbs
       for(let s=-L/2+4; s<L/2-4; s+=_R(16,30)){ const lc=lanes[(Math.random()*lanes.length)|0]+_R(-1.6,1.6); fix.push({ k:'mh', p:at(s, lc), ry:Math.random()*6.28 }); }
@@ -275,7 +314,9 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
       else for(let s=-L/2+3; s<L/2-2; s+=_R(5,9)){ const [x,z]=at(s, ow), r=Math.random();
         if(r<0.1) trees.push({ x, z, s:_R(0.75,1.0), ry:_R(0,6.28) }); else if(r<0.17) lamps.push({ x, z, ry:sideRy(ax,sd) });
         else if(r<0.25){ const rowN=2+((Math.random()*4)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; const [mx,mz]=at(ss, ow); motos.push({ x:mx, z:mz, ry:(ax?0:Math.PI/2)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; }
-        else if(r<0.28){ CURP=0; det(new THREE.CylinderGeometry(0.28,0.25,0.9,10), x, heightAt(x,z)+0.45, z, 0, 0x2a7a3a); } }   // a green bin
+        else if(r<0.28) prop('prop_bin', x, z, _R(0,6.28), ()=>{ CURP=0; det(new THREE.CylinderGeometry(0.28,0.25,0.9,10), x, heightAt(x,z)+0.45, z, 0, 0x2a7a3a); });   // a bin
+        else if(r<0.3){ const [hx,hz]=at(s, sd*(W/2+0.45)); prop('prop_hydrant', hx, hz, sideRy(ax,sd)); }                                                   // Z267 a hydrant at the kerb
+        else if(r<0.34){ prop('prop_cafe', x, z, ang+Math.PI/2); s+=2; } }                                                                               // Z267 a pavement café table
       if(sd===polesSide) for(let s=-L/2+2; s<=L/2-2; s+=_R(10,13)){ const [x,z]=at(s, sd*(W/2+0.45)); const o={ x, z, ry:ang, spans:[] }; poles.push(o); chain.push(o); }
       // parked cars along the kerb lane
       const lane=sd*(W/2-1.3); for(let s=-L/2+4; s<L/2-4; s+=_R(6,13)) if(Math.random()<(blvd?0.2:0.26)){ const [x,z]=at(s, lane);   // Z242 fewer parked cars
@@ -286,7 +327,8 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
   for(let i=-n;i<=n;i++) for(let j=-n;j<=n;j++){ const x=i*G, z=j*G, wx=roadW(i), wz=roadW(j); if(!inCity(x,z)) continue;
     strip('road', roadMat, x, z, wx, wz, 0, 0.035, 64);
     for(const sd of [-1,1]){ strip('zebra', zebMat, x, z+sd*(wz/2+1.8), wx, 3, 0, 0.05, 8, 3); strip('zebra', zebMat, x+sd*(wx/2+1.8), z, wz, 3, Math.PI/2, 0.05, 8, 3); }
-    const big=isBlvd(i)||isBlvd(j); for(const [sx,sz] of (big?[[1,1],[-1,1],[1,-1],[-1,-1]]:(Math.random()<0.55?[[1,1]]:[]))) lights.push({ x:x+sx*(wx/2+1.0), z:z+sz*(wz/2+1.0), ry:Math.atan2(-sx,-sz) }); }
+    const big=isBlvd(i)||isBlvd(j); for(const [sx,sz] of (big?[[1,1],[-1,1],[1,-1],[-1,-1]]:(Math.random()<0.55?[[1,1]]:[]))) lights.push({ x:x+sx*(wx/2+1.0), z:z+sz*(wz/2+1.0), ry:Math.atan2(-sx,-sz) });
+    if(Math.random()<0.22){ const sx=Math.random()<0.5?1:-1, sz=Math.random()<0.5?1:-1; for(let q=0;q<2+((Math.random()*2)|0);q++) prop('prop_barrier', x+sx*(wx/2+2.6+q*1.9), z+sz*(wz/2+1.2), _R(-0.12,0.12)); } }   // Z267 concrete blocks dragged to a corner
   // ---- blocks ----
   let towers=0;
   for(let i=-n;i<n;i++) for(let j=-n;j<n;j++){ const x0=i*G+roadW(i)/2+walkW(i)+0.4, x1=(i+1)*G-roadW(i+1)/2-walkW(i+1)-0.4, z0=j*G+roadW(j)/2+walkW(j)+0.4, z1=(j+1)*G-roadW(j+1)/2-walkW(j+1)-0.4;
@@ -295,7 +337,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
     const OB=OPEN_LAND.CITY.built, k=OB/0.66; let r=Math.random(); if(dC<80 && r<0.45) r=OB+Math.random()*(1-OB);                    // room to fight near the middle: squares, parks, a pitch · Z242 fewer blocks built up (OPEN_LAND)
     const built = r<OB; if(built) ZONES.push({ kind:'landmark', x:cx, z:cz, r:Math.min(w,d)/2*0.95 });
     if(r<0.34*k){ const dep=_R(9.5,12); for(const side of [1,-1]){ let a=-w/2+0.2; const ry=side>0?0:Math.PI;                                  // tube-house rows on both long edges, a back alley between
-        while(a<w/2-3.5){ const row=pickBuilding('row'), big=row && Math.random()<REALCITY.share, hw=big?Math.min(_R(11,14), w/2-a):_R(4,6.4); if(a+hw>w/2 || (big && hw<9)) break; if(big) meshyBuilding(row, 'tube', cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep, 100, '#d6c48e', 3.2); else tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.25) a+=_R(2.5,5); } }   // Z264 · Z266 the rows are Meshy townhouse rows (procedural only before the models load)   // Z242 gaps in the row: yards, alleys
+        while(a<w/2-3.5){ const big=REALCITY.share>=1 || !!pickBuilding('row'), hw=big?Math.min(_R(11,14), w/2-a):_R(4,6.4); if(a+hw>w/2 || (big && hw<9)) break; if(!big || realOrWait('row', 'tube', cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep, 100, '#d6c48e', 3.2)==null) tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.25) a+=_R(2.5,5); } }   // Z264 · Z266 the rows are Meshy townhouse rows (procedural only before the models load)   // Z242 gaps in the row: yards, alleys
       CURP=0; for(let k=0;k<3;k++) trees.push({ x:cx+_R(-w/2,w/2)*0.8, z:cz+_R(-1,1)*Math.max(0,d/2-dep-1), s:_R(0.7,0.95), ry:_R(0,6.28) }); }
     else if(r<0.5*k){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }   // four walled villas
     else if(r<0.6*k){ for(const side of [1,-1]) apartment(cx, cz+side*(d/2-6), side>0?0:Math.PI, w*0.8, 11); CURP=0;                           // two slabs round a courtyard
@@ -306,7 +348,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
     else if(r<OB){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }
     else if(r<0.7){ CURP=0; strip('park', grassMat, cx, cz, w, d, 0, 0.06, 4, 4);                                                          // a PARK: cross paths, fountain or gazebo, benches, lamps, trees, flower beds
       strip('path', walkMat, cx, cz, w, 3, 0, 0.09, 2, 2); strip('path', walkMat, cx, cz, 3, d, 0, 0.091, 2, 2);
-      if(Math.random()<0.6) fountain(cx, cz); else gazebo(cx, cz);
+      fountain(cx, cz, Math.random()<0.6?null:()=>gazeboP(cx,cz));   // Z267 a real stone fountain (the gazebo only as a fallback)
       for(const [sx,sz] of [[-1,0],[1,0],[0,-1],[0,1]]){ const bx=cx+sx*(w/4), bz=cz+sz*(d/4); bench(bx+(sz?2.2:0), bz+(sx?2.2:0), sx?0:Math.PI/2); lamps.push({ x:bx+(sz?-2.2:0), z:bz+(sx?-2.2:0), ry:0 }); }
       for(let k=0;k<(MOBILE?5:9);k++){ let x, z, t=0; do { x=cx+_R(-w/2+2,w/2-2); z=cz+_R(-d/2+2,d/2-2); t++; } while(t<8 && (Math.abs(x-cx)<3.5 || Math.abs(z-cz)<3.5)); trees.push({ x, z, s:_R(0.9,1.35), ry:_R(0,6.28) }); }
       for(let k=0;k<2;k++){ const x=cx+_R(-w/2+3,w/2-3), z=cz+_R(-d/2+3,d/2-3); if(Math.abs(x-cx)<4 || Math.abs(z-cz)<4) continue; det(new THREE.BoxGeometry(_R(2,3.5),0.3,_R(1.2,2)), x, heightAt(x,z)+0.2, z, _R(0,3), 0x7a5a3a);
@@ -323,12 +365,13 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
   CURP=0;
   // ---- street lamps (pole + arm · glowing head) · traffic lights · power poles: instanced and topple-able ----
   const inst=(geo, mat, list)=>{ const im=new THREE.InstancedMesh(geo, mat, list.length); list.forEach((o,k)=>{ _M4.compose(_v3.set(o.x, heightAt(o.x,o.z), o.z), _qy.setFromEuler(_eu.set(0,o.ry||0,0)), _one); im.setMatrixAt(k,_M4); }); im.castShadow=!MOBILE; im.computeBoundingSphere(); im.frustumCulled=false; arena.add(im); LAND.meshes.push(im); return im; };
+  let lampIm=null, headIm=null, sigIm=null;
   if(lamps.length){ const Q=[]; const pole=new THREE.CylinderGeometry(0.07,0.1,6,6); pole.translate(0,3,0); Q.push({geo:pole,col:0x4a4c4e}); const arm=new THREE.BoxGeometry(0.08,0.08,1.6); arm.translate(0,5.9,0.75); Q.push({geo:arm,col:0x4a4c4e});
     const head=new THREE.BoxGeometry(0.5,0.16,0.3); head.translate(0,5.8,1.5); const hm=new THREE.MeshStandardMaterial({ color:0xfff4d0, emissive:0xffe0a0, emissiveIntensity:0 }); LAND.mats.push(hm);
-    regTopple([inst(_mergeColored(Q), vmat(), lamps), inst(head, hm, lamps)], lamps, 6); }
+    lampIm=inst(_mergeColored(Q), vmat(), lamps); headIm=inst(head, hm, lamps); regTopple([lampIm, headIm], lamps, 6); }
   if(lights.length){ const Q=[]; const pole=new THREE.CylinderGeometry(0.08,0.1,4.6,6); pole.translate(0,2.3,0); Q.push({geo:pole,col:0x3a3c3e}); const bx=new THREE.BoxGeometry(0.4,1.1,0.4); bx.translate(0,4.4,0.3); Q.push({geo:bx,col:0x2a2a2a});
     for(const [yy,c] of [[0.35,0xe82020],[0,0xe8b020],[-0.35,0x20c840]]){ const s=new THREE.SphereGeometry(0.11,8,6); s.translate(0,4.4+yy,0.52); Q.push({geo:s,col:c}); }
-    regTopple([inst(_mergeColored(Q), vmat(), lights)], lights, 4.6); }
+    sigIm=inst(_mergeColored(Q), vmat(), lights); regTopple([sigIm], lights, 4.6); }
   if(poles.length){ const Q=[]; const pole=new THREE.CylinderGeometry(0.1,0.15,7.6,6); pole.translate(0,3.8,0); Q.push({geo:pole,col:0x9a968c}); const arm=new THREE.BoxGeometry(0.1,0.1,1.5); arm.translate(0,7.05,0); Q.push({geo:arm,col:0x5a5650});
     for(const s of [-0.6,0,0.6]){ const ins=new THREE.CylinderGeometry(0.04,0.05,0.16,6); ins.translate(0,7.18,s); Q.push({geo:ins,col:0xe8e4dc}); } const tr=new THREE.CylinderGeometry(0.28,0.28,0.7,10); tr.translate(0.32,5.6,0); Q.push({geo:tr,col:0x6a6e70});
     // wires: three on the crossarm + a sagging low bundle, one piece per span (they drop when either pole falls)
@@ -339,9 +382,8 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
       const ln=new THREE.LineSegments(lg, pieceHook(new THREE.LineBasicMaterial({ color:0x161616 }))); ln.frustumCulled=false; arena.add(ln); LAND.meshes.push(ln); }
     regTopple([inst(_mergeColored(Q), vmat(), poles)], poles, 7.6); }
   // ---- flush the buckets (one mesh per material) and the detail mesh ----
-  for(const [k,b] of B){ if(!b.geos.length) continue; const g=mergeGeometries(b.geos.map(q=>q.index?q.toNonIndexed():q), false); b.geos.forEach(q=>q.dispose()); const m=new THREE.Mesh(g, b.mat);
-    m.castShadow=!/road|walk|zebra|park|bvd|median|path|lawn|drive|pitch/.test(k); m.receiveShadow=true; if(b.pieces) m.customDepthMaterial=depthMat(); arena.add(m); LAND.meshes.push(m); }
-  if(P.length){ const m=new THREE.Mesh(mergeP(P), pieceHook(detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 }), { scale:0.6, bump:0.012, alb:0.3, foot:0.8, streak:0.2 }))); m.customDepthMaterial=depthMat(); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
+  flushBuckets(); const anchor=arena.children[arena.children.length-1], gen=CITY_GEN, plist=PP; PP=null;
+  loadRealCity().then(()=>{ if(gen!==CITY_GEN || !anchor.parent) return; flushPending(); placeProps(plist, gen, anchor); dressPoles(lampIm, headIm, sigIm); });   // Z267 the waiting lots rise, the furniture and poles go real, once the models are in
   drawStreetVehicles(cars, motos);
   drawFixtures(fix);   // Z265
   // Z266 the street trees and median palms as real Meshy species: the trees split into groups, each group one species of the city's mix (linden,
