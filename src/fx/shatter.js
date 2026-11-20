@@ -10,6 +10,22 @@ import { MOBILE, heightAt, scene, spawnPart } from '../hub.js';
 const CUTS = new Map(), MATS = new Map(), LIVE = [];
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _ax = new THREE.Vector3(), _dq = new THREE.Quaternion();
 
+// Z312 stone breaks into SOLID lumps, not open shells: a rock, a concrete block, a sandbag or a rock-filled basket comes apart into faceted chunks
+//   in its own texture (a few shapes, made once), sized by the piece they replace; metal (containers, drums, wrecks) still tears into sheets
+const SOLID = new Set(['boulder', 'concrete', 'jersey', 'teeth', 'hesco', 'sandbag']), LUMPS = [];
+export const solidKind = k => SOLID.has(k);
+function lump(){ if(!LUMPS.length) for(let v = 0; v < 5; v++){ const g = new THREE.IcosahedronGeometry(1, 1), P = g.attributes.position, seen = new Map(), sx = 0.9 + Math.random() * 0.4, sy = 0.6 + Math.random() * 0.35;
+    for(let i = 0; i < P.count; i++){ const k = P.getX(i).toFixed(3) + ',' + P.getY(i).toFixed(3) + ',' + P.getZ(i).toFixed(3); let f = seen.get(k); if(f == null){ f = 0.68 + Math.random() * 0.5; seen.set(k, f); }
+      P.setXYZ(i, P.getX(i) * f * sx, P.getY(i) * f * sy, P.getZ(i) * f); }
+    g.computeVertexNormals(); LUMPS.push(g); }
+  return LUMPS[(Math.random() * LUMPS.length) | 0]; }
+// a lump in the stone's own colour when the stone is painted per vertex (else it would come out black)
+const TINT = new Map();
+function stoneLump(src){ const C = src.attributes.color, g = lump(); if(!C) return g; let t = TINT.get(src.uuid);
+  if(!t){ let r = 0, gg = 0, b = 0; const n = C.count, st = Math.max(1, (n / 400) | 0); let k = 0; for(let i = 0; i < n; i += st){ r += C.getX(i); gg += C.getY(i); b += C.getZ(i); k++; } t = [r / k, gg / k, b / k]; TINT.set(src.uuid, t); }
+  const c = g.clone(), a = new Float32Array(c.attributes.position.count * 3);
+  for(let i = 0; i < a.length; i += 3){ const v = 0.85 + Math.random() * 0.25; a[i] = t[0] * v; a[i + 1] = t[1] * v; a[i + 2] = t[2] * v; }
+  c.setAttribute('color', new THREE.BufferAttribute(a, 3)); return c; }
 // cut a geometry into n pieces: [{ geo (centred), c (its centre in the source's frame), r (radius) }]
 export function cutGeometry(geo, n){ const key = geo.uuid + ':' + n; if(CUTS.has(key)) return CUTS.get(key);
   const g = geo.index ? geo.toNonIndexed() : geo, P = g.attributes.position, T = P.count / 3, cen = new Float32Array(T * 3);
@@ -40,9 +56,9 @@ export function shatter(obj, o){ if(!obj || /noshatter/.test(location.search + l
   o = o || {}; const F = SHATTER, cap = MOBILE ? F.maxMobile : F.max; obj.updateMatrixWorld(true); obj.matrixWorld.decompose(_p, _q, _s);
   const pieces = cutGeometry(obj.geometry, Math.round((o.n || F.n) * (MOBILE ? 0.6 : 1))), mat = sideMat(obj.material), from = o.from || { x:_p.x, y:_p.y + 0.2, z:_p.z };
   for(const pc of pieces){
-    while(LIVE.length >= cap){ const old = LIVE.shift(); scene.remove(old.m); }
-    const m = new THREE.Mesh(pc.geo, mat); m.castShadow = !MOBILE; m.receiveShadow = true;
-    _v.copy(pc.c).applyMatrix4(obj.matrixWorld); m.position.copy(_v); m.quaternion.copy(_q); m.scale.copy(_s); scene.add(m);
+    while(LIVE.length >= cap){ const old = LIVE.shift(); drop(old.m); }
+    const sg = o.solid ? stoneLump(obj.geometry) : null, m = new THREE.Mesh(sg || pc.geo, mat); if(sg && !LUMPS.includes(sg)) m.userData.ownGeo = true; m.castShadow = !MOBILE; m.receiveShadow = true;
+    _v.copy(pc.c).applyMatrix4(obj.matrixWorld); m.position.copy(_v); m.quaternion.copy(_q); m.scale.copy(_s); if(o.solid) m.scale.multiplyScalar(pc.r * 0.6); scene.add(m);   // (Z312 a solid lump the size of the piece)
     const dx = _v.x - from.x, dy = _v.y - from.y, dz = _v.z - from.z, L = Math.hypot(dx, dy, dz) || 1, sp = (o.power || F.power) * (0.55 + Math.random() * 0.9);
     const v = new THREE.Vector3(dx / L * sp, Math.max(0.2, dy / L) * sp * 0.6 + (o.up || F.up) * (0.5 + Math.random()), dz / L * sp);
     const w = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar((o.spin || F.spin) * 2);
@@ -51,7 +67,7 @@ export function shatter(obj, o){ if(!obj || /noshatter/.test(location.search + l
 
 export function updateShatter(dt){ if(!LIVE.length) return; dt = Math.min(dt, 0.05); const F = SHATTER;
   for(let i = LIVE.length - 1; i >= 0; i--){ const s = LIVE[i], m = s.m; s.t += dt;
-    if(s.t > s.life){ m.position.y -= dt * F.sink; if(s.t > s.life + F.sinkT){ scene.remove(m); LIVE.splice(i, 1); } continue; }   // sinks out of sight
+    if(s.t > s.life){ m.position.y -= dt * F.sink; if(s.t > s.life + F.sinkT){ drop(m); LIVE.splice(i, 1); } continue; }   // sinks out of sight
     if(s.rest > 0.6) continue;
     s.v.y -= F.g * dt; m.position.addScaledVector(s.v, dt);
     const wl = s.w.length(); if(wl > 0.01){ _ax.copy(s.w).divideScalar(wl); _dq.setFromAxisAngle(_ax, wl * dt); m.quaternion.premultiply(_dq); }
@@ -61,5 +77,6 @@ export function updateShatter(dt){ if(!LIVE.length) return; dt = Math.min(dt, 0.
       if(s.v.y < -F.bounceMin){ s.hits++; if(s.hits < 3) spawnPart(m.position.x, gy + 0.2, m.position.z, s.v.x * 0.1, 1.2, s.v.z * 0.1, { color:0x8a7a62, size:0.8 + s.r, life:0.9, smoke:true, grav:-0.3, drag:2, grow:1.6, op:0.35 });
         s.v.y = -s.v.y * s.bounce; s.v.x *= 0.62; s.v.z *= 0.62; s.w.multiplyScalar(0.6); }
       else { s.v.y = 0; s.v.x *= Math.max(0, 1 - dt * 6); s.v.z *= Math.max(0, 1 - dt * 6); s.w.multiplyScalar(Math.max(0, 1 - dt * 5)); if(s.v.lengthSq() < 0.05) s.rest += dt; } } } }
-export function clearShatter(){ for(const s of LIVE) scene.remove(s.m); LIVE.length = 0; }
+export function clearShatter(){ for(const s of LIVE) drop(s.m); LIVE.length = 0; }
+function drop(m){ scene.remove(m); if(m.userData.ownGeo) m.geometry.dispose(); }   // (Z312 a tinted stone lump owns its geometry)
 export const SHATTER_LIVE = LIVE;

@@ -10,11 +10,16 @@ export function glowTex(){
   x.fillStyle=g; x.fillRect(0,0,64,64); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
 }
 export const GLOW = glowTex();
-export function smokeTex(){   // soft, billowy cloud puff (overlapping soft blobs) — reads as real smoke, not a hard dot
-  const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
-  for(let i=0;i<6;i++){ const cx=18+Math.random()*28, cy=18+Math.random()*28, r=12+Math.random()*16;
-    const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,255,255,0.42)'); g.addColorStop(0.6,'rgba(255,255,255,0.16)'); g.addColorStop(1,'rgba(255,255,255,0)');
-    x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,7); x.fill(); }
+export function smokeTex(){   // Z312 a real puff: a cauliflower of soft lobes (bigger toward the middle), thick and a shade darker in the core, thinner and lighter at a
+  //   ragged rim, with a fine grain through it — it reads as a volume of smoke / dust, not a flat disc (radial shading, so it holds up as the puff spins)
+  const N=128, c=document.createElement('canvas'); c.width=c.height=N; const x=c.getContext('2d');
+  for(let i=0;i<28;i++){ const a=Math.random()*6.283, r=Math.pow(Math.random(),0.75)*N*0.27, cx=N/2+Math.cos(a)*r, cy=N/2+Math.sin(a)*r, rad=N*(0.1+Math.random()*0.15)*(1.15-r/(N*0.5));
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,rad); g.addColorStop(0,'rgba(255,255,255,0.32)'); g.addColorStop(0.55,'rgba(255,255,255,0.17)'); g.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=g; x.beginPath(); x.arc(cx,cy,rad,0,7); x.fill(); }
+  x.globalCompositeOperation='source-atop'; const core=x.createRadialGradient(N/2,N/2,0,N/2,N/2,N*0.46); core.addColorStop(0,'rgba(92,86,80,0.42)'); core.addColorStop(0.6,'rgba(150,144,136,0.18)'); core.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=core; x.fillRect(0,0,N,N); x.globalCompositeOperation='source-over';
+  const im=x.getImageData(0,0,N,N), d=im.data; for(let i=3;i<d.length;i+=4) d[i]=Math.max(0, Math.min(255, d[i]*(0.86+Math.random()*0.28)));   // grain
+  x.putImageData(im,0,0);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
 }
 export const SMOKE = smokeTex();

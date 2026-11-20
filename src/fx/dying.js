@@ -21,6 +21,6 @@ export function updateDying(dt){
       { const R=TANK_BLAST.r*s, B=TANK_BLAST;                                                                                   // Z113 the blast kills the men standing around it
         for(const o of enemies.slice()){ if(!o.def.inf) continue; const dd=Math.hypot(o.pos.x-x, o.pos.z-z); if(dd<R){ o._blast={ x, z }; o._fx='blast'; damageEnemy(o, B.dmg*(1-(1-B.edge)*dd/R)); } }
         blastAllies(x, z, R, B.dmg*0.6); for(const so of soldiers.slice()) if(Math.hypot(so.pos.x-x, so.pos.z-z)<R) damageSoldier(so, B.dmg*0.5); }
-      tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, s, e._fx||'fire'); spawnWreck(e.pos, e.facing, s, e.def.pal, d.fx==='blast'||d.fx==='pierce'||Math.random()<0.65);   // heavy shells always throw the turret
+      tankExplode(e.pos, 0xff7a3d, e.def.scale*1.5, e.def.pal, s, e._fx||'fire'); spawnWreck(e.pos, e.facing, s, e.def.pal, d.fx==='blast'||d.fx==='pierce'||Math.random()<0.65, m);   // Z312 its own model, burnt (fx/fire-wrecks.js)   // heavy shells always throw the turret
       m.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); DYING.splice(i,1); } }
 }

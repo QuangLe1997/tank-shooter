@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT, PYLON_SITE } from '../../config.js';
-import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnTankWreck, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle, MODE } from '../hub.js';
+import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle, MODE } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 export let boss=null;
@@ -319,10 +319,10 @@ export function killBoss(now){
   S.timeScale=0.35;                                   // slow-mo
   const pos=boss.pos.clone(); const bs=boss.r/1.5;            // boss scale → huge shatter
   const bpal=boss.def.pal, bms=boss.mesh.scale.x;             // capture before boss=null (used in the delayed bursts below)
-  spawnTankWreck(pos, bms, bpal);                             // boss bursts into giant components
-  spawnWreck(pos, boss.facing, bms, bpal, true);              // and its huge turret is hurled into the air
+  spawnDebris(pos, bms*1.6, 0x2a2824);                        // Z312 torn, scorched steel (its own hull stays burning)
+  spawnWreck(pos, boss.facing, bms, bpal, true, boss.mesh);   // and its huge turret is hurled into the air · Z312 its own model, burnt
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
-    bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnTankWreck(ep, bms*0.55, bpal); }, k*130);   // a few extra part-bursts (pool-budget friendly)
+    bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnDebris(ep, bms*0.9, 0x2a2824); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
   const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()*cMod('coinMul')), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia + cMod('bossDiaBonus',0);   // bigger payout each NG+ loop + CONTRACT bonus
   addCoins(bcoin); addDiamonds(bdia);
