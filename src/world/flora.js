@@ -65,7 +65,7 @@ function crown(P, cx, cy, cz, R, n, cols, fy, kind){ for(let i=0;i<n;i++){ const
   const h=new THREE.IcosahedronGeometry(R*0.5,1); h.scale(1,fy||0.7,1); h.translate(cx,cy,cz); P.push({geo:h,col:0x2a4420}); }   // shadowed heart
 const BARK=[0x5a4430,0x4e3a2a,0x6a5040], BARKG=[0x8a7e70,0x7a7064,0x968a7a];
 // ---------- species ----------
-const conifer=(snow)=>vars('con'+(snow?1:0), 3, (vv)=>{ const P=[], H=_R(7.5,10), lean=_R(-0.15,0.15);   // Z146 spruce → Z202 three different trees (height, whorls, droop)
+const conifer=(snow)=>vars('con'+(snow?1:0), MOBILE?3:6, (vv)=>{ const P=[], H=_R(7.5,10), lean=_R(-0.15,0.15);   // Z146 spruce → Z202 three different trees (height, whorls, droop)
   P.push({geo:limb([[0,0,0],[lean*0.3,H*0.5,0],[lean,H,0]], 0.3, 0.1, 6, 7), col:BARK[vv%3]});
   const W=Math.round(_R(8,11)); for(let k=0;k<W;k++){ const t=k/W, y=1.4+t*(H-1.6), r=_R(2.2,2.8)*(1-t*0.9)+0.25, n=k<W*0.6?8:6, droop=_R(0.3,0.5);
     const core=new THREE.ConeGeometry(r*0.55, 1.2, 7, 1, true); core.translate(lean*t,y+0.2,0); P.push({geo:core,col:0x34582c});
@@ -73,15 +73,39 @@ const conifer=(snow)=>vars('con'+(snow?1:0), 3, (vv)=>{ const P=[], H=_R(7.5,10)
     if(snow && k%2===0){ const sn=new THREE.ConeGeometry(r*0.7,0.5,8,1,true); sn.translate(lean*t,y+0.55,0); P.push({geo:sn,col:0xf2f6fa}); } }
   const tip=new THREE.ConeGeometry(0.28,1.3,6); tip.translate(lean,H+0.5,0); P.push({geo:tip,col:snow?0xf2f6fa:0x2e5a2a}); return mergeL(P); });
 export const treeBroadleaf=()=>broadleaf()[0], treeConifer=()=>conifer(false)[0], treePalm=()=>palm()[0];
-const broadleaf=()=>vars('bl', 4, (vv)=>{ const P=[], h=_R(2.6,3.6), lx=_R(-0.3,0.3), lz=_R(-0.3,0.3);   // Z202 a real limb structure: a bending trunk forking into 3–5 limbs, a sub-crown at each tip
-  P.push({geo:limb([[0,0,0],[lx*0.4,h*0.5,lz*0.4],[lx,h,lz]], 0.36, 0.2, 6, 8), col:BARK[vv%3]});
-  const L=3+(vv%3), cols=[[0x4a7a30,0x5c8c38,0x3e6a2a,0x6a9a40],[0x557a2c,0x6a8e36,0x46682a,0x7a9a44],[0x3e7034,0x4e8040,0x34602c,0x5a8a46]][vv%3];
-  for(let k=0;k<L;k++){ const a=k/L*6.283+_R(-0.4,0.4), out=_R(1.4,2.3), up=_R(1.2,2.2), ex=lx+Math.cos(a)*out, ez=lz+Math.sin(a)*out, ey=h+up;
-    P.push({geo:limb([[lx,h-0.2,lz],[lx+Math.cos(a)*out*0.45,h+up*0.55,lz+Math.sin(a)*out*0.45],[ex,ey,ez]], 0.16, 0.06, 5, 5), col:BARK[(vv+k)%3]});
-    crown(P, ex, ey+0.3, ez, _R(1.3,1.8), 9, cols, _R(0.6,0.8)); }
-  crown(P, lx, h+_R(2.2,2.8), lz, _R(1.4,1.9), 10, cols, 0.7);
+// Z260 RECURSIVE LIMBS: a limb bends a little as it grows, forks into 2–3 children turned off its own axis (biased upward, never back down), each
+//   shorter and thinner, and ends in a leaf clump — every variant its own random tree, nothing mirrored, nothing on a grid
+const _UP=new THREE.Vector3(0,1,0), _ax=new THREE.Vector3();
+function branch(P, p0, dir, len, r0, depth, cols, bark, cr){ const d=dir.clone().add(new THREE.Vector3(_R(-0.22,0.22), _R(0.02,0.16), _R(-0.22,0.22))).normalize();
+  const end=p0.clone().addScaledVector(d, len), mid=p0.clone().addScaledVector(d, len*0.5).add(new THREE.Vector3(_R(-0.12,0.12)*len, _R(-0.04,0.08)*len, _R(-0.12,0.12)*len));
+  P.push({ geo:limb([p0.toArray(), mid.toArray(), end.toArray()], r0, r0*0.6, depth>0?6:4, depth>0?7:5), col:bark });
+  if(depth<=0){ crown(P, end.x, end.y+cr[0]*0.35, end.z, _R(cr[0], cr[1]), cr[2], cols, _R(0.55,0.8)); return; }
+  const n=2+(Math.random()<0.45?1:0);
+  for(let k=0;k<n;k++){ _ax.set(_R(-1,1), 0, _R(-1,1)).normalize(); const cd=d.clone().applyAxisAngle(_ax, _R(0.35,0.85)); cd.y=Math.max(cd.y, 0.12); cd.normalize();
+    branch(P, end.clone().addScaledVector(d, -len*_R(0,0.18)), cd, len*_R(0.55,0.78), r0*0.62, depth-1, cols, bark, cr); }
+  if(depth===1 && Math.random()<0.5) crown(P, end.x, end.y+0.3, end.z, _R(cr[0], cr[1])*0.85, cr[2]-2, cols, 0.7); }   // a fuller middle
+const LEAF=[[0x4a7a30,0x5c8c38,0x3e6a2a,0x6a9a40],[0x557a2c,0x6a8e36,0x46682a,0x7a9a44],[0x3e7034,0x4e8040,0x34602c,0x5a8a46],[0x5a7a34,0x6e8c3c,0x4c6a2e,0x7e9a48]];
+const broadleaf=()=>vars('bl2', MOBILE?4:8, (vv)=>{ const P=[], h=_R(2.2,4.0), lean=new THREE.Vector3(_R(-0.25,0.25),1,_R(-0.25,0.25)).normalize(), bark=BARK[vv%3];   // Z260 eight random trees, recursive limbs
+  const top=new THREE.Vector3(0,0,0).addScaledVector(lean, h);
+  P.push({geo:limb([[0,0,0],[lean.x*h*0.45+_R(-0.1,0.1),h*0.5,lean.z*h*0.45+_R(-0.1,0.1)],top.toArray()], _R(0.3,0.42), 0.22, 6, 8), col:bark});
+  const L=2+((Math.random()*3)|0), cols=LEAF[vv%LEAF.length];
+  for(let k=0;k<L;k++){ const a=k/L*6.283+_R(-0.5,0.5), d=new THREE.Vector3(Math.cos(a)*_R(0.5,1.0), _R(0.7,1.3), Math.sin(a)*_R(0.5,1.0)).normalize();
+    branch(P, top.clone(), d, _R(1.6,2.6), 0.2, Math.random()<0.6?2:1, cols, BARK[(vv+k)%3], [1.0,1.5,8]); }
+  crown(P, top.x, top.y+_R(2.0,2.8), top.z, _R(1.3,1.8), 10, cols, 0.7);
   return mergeL(P); });
-const palm=()=>vars('pm', 3, (vv)=>{ const P=[]; let x=0, y=0, ang=0; const bendK=_R(0.04,0.11), segs=Math.round(_R(5,7));   // Z202 curved trunks of different heights, fronds drooping differently
+// Z260 ANCIENT TREE: a giant (12–16 m across) — a short, massive trunk on buttress roots running out over the ground, splitting low into great limbs
+//   that reach out almost level before they climb, a wide dark dome of leaf clumps; planted few, never crushed (a tank stops at its trunk)
+export const ANCIENT_R=1.1;   // trunk radius (× the instance scale) that blocks tanks and shells
+const ancient=()=>vars('anc', MOBILE?2:4, (vv)=>{ const P=[], h=_R(3.2,4.6), bark=[0x4a3c30,0x3e3228,0x564636][vv%3], cols=[[0x2e5a24,0x3a6a2a,0x264e1e,0x46742e],[0x355e26,0x41702c,0x2c5220,0x4c7a32]][vv%2];
+  P.push({geo:limb([[0,0,0],[_R(-0.2,0.2),h*0.5,_R(-0.2,0.2)],[_R(-0.3,0.3),h,_R(-0.3,0.3)]], ANCIENT_R, 0.75, 6, 12), col:bark});
+  const nr=5+((Math.random()*3)|0); for(let k=0;k<nr;k++){ const a=k/nr*6.283+_R(-0.3,0.3), r=_R(1.8,3.0);   // buttress roots
+    P.push({geo:limb([[Math.cos(a)*0.5,1.3,Math.sin(a)*0.5],[Math.cos(a)*r*0.5,0.45,Math.sin(a)*r*0.5],[Math.cos(a)*r,-0.15,Math.sin(a)*r]], 0.42, 0.08, 5, 6), col:bark}); }
+  const top=new THREE.Vector3(0,h,0), L=4+((Math.random()*3)|0);
+  for(let k=0;k<L;k++){ const a=k/L*6.283+_R(-0.35,0.35), d=new THREE.Vector3(Math.cos(a), _R(0.25,0.6), Math.sin(a)).normalize();
+    branch(P, top.clone().add(new THREE.Vector3(0,_R(-0.6,0.4),0)), d, _R(3.6,5.2), 0.5, 2, cols, bark, [1.8,2.6,11]); }
+  crown(P, 0, h+_R(4.5,6), 0, _R(2.4,3.2), 14, cols, 0.6);
+  return mergeL(P); });
+const palm=()=>vars('pm', MOBILE?3:5, (vv)=>{ const P=[]; let x=0, y=0, ang=0; const bendK=_R(0.04,0.11), segs=Math.round(_R(5,7));   // Z202 curved trunks of different heights, fronds drooping differently
   for(let k=0;k<segs;k++){ const L=1.35, c=new THREE.CylinderGeometry(0.15-k*0.008,0.2-k*0.008,L,7); c.translate(0,L/2,0); c.rotateZ(-ang); c.translate(x,y,0); P.push({geo:c,col:k%2?0x8a7456:0x7a664a});
     const ring=new THREE.TorusGeometry(0.19-k*0.008,0.035,4,10); ring.rotateX(Math.PI/2); ring.rotateZ(-ang); ring.translate(x,y,0); P.push({geo:ring,col:0x6a5a40}); x+=Math.sin(ang)*L; y+=Math.cos(ang)*L; ang+=bendK; }
   const nF=Math.round(_R(10,14)); for(let k=0;k<nF;k++){ const a=k/nF*6.28+_R(-0.15,0.15), len=_R(3.6,4.6), f=card(len, 1.5, 2, x, y-2.0, 0, 0.4); f.rotateX(-Math.PI/2); f.translate(len*0.48,0,0); f.rotateZ(-(0.3+(k%3)*0.2+_R(0,0.25))); f.rotateY(a); f.translate(x,y-0.1,0); P.push({geo:f,col:[0x3e6a30,0x4e7a38,0x5e7a36,0x707a3c][(k+vv)%4]}); }
@@ -134,7 +158,8 @@ const floe=()=>[geo('floe', ()=>{ const g=new THREE.CylinderGeometry(1,1.1,0.35,
 // ---------- placement ----------
 const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(), V3=new THREE.Vector3(), SC=new THREE.Vector3(), C=new THREE.Color();
 export const FLORA = { meshes:[] };
-export function clearFlora(){ for(const m of FLORA.meshes){ m.parent && m.parent.remove(m); m.dispose && m.dispose(); } FLORA.meshes.length=0; for(let i=crushables.length-1;i>=0;i--) if(crushables[i].flora) crushables.splice(i,1); }
+export function clearFlora(){ for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='trunk') blocks.splice(i,1);   // Z260 the giants' trunks go with them
+  for(const m of FLORA.meshes){ m.parent && m.parent.remove(m); m.dispose && m.dispose(); } FLORA.meshes.length=0; for(let i=crushables.length-1;i>=0;i--) if(crushables[i].flora) crushables.splice(i,1); }
 function okSpot(x,z,r){ return inField(x,z,r+1) && !inZone(x,z,r) && Math.hypot(x,z)>32 && Math.hypot(x,z-ARENA*0.55)>12 && !wetAt(x,z,r+0.5) && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+r+0.6); }
 function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[]); const tries=n*6; let got=0;   // Z202 instances spread across the species' variants
   const grassy=opt.kind==='grass' || opt.kind==null, lean=opt.lean ?? (grassy?0.16:0.05);
@@ -145,7 +170,8 @@ function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[
     list.forEach((o,k)=>{ M.compose(V3.set(o.x, heightAt(o.x,o.z)-0.05, o.z), Q.setFromEuler(E.set(o.lx,o.ry,o.lz)), SC.set(o.s*o.sw,o.s*o.sy,o.s*o.sw)); im.setMatrixAt(k,M);
       const patch=Math.sin(o.x*0.045+1.3)*Math.cos(o.z*0.038-0.7)+Math.sin((o.x+o.z)*0.021);   // big soft patches: drier here, lusher there
       C.setHSL(0, 0, 1); C.offsetHSL(_R(-0.04,0.04)+patch*0.025, _R(-0.14,0.1)+patch*0.06, _R(-0.13,0.1)+patch*0.05); im.setColorAt(k, C);
-      crushables.push({ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true }); });
+      if(opt.fixed) blocks.push({ mesh:new THREE.Object3D(), x:o.x, z:o.z, r:opt.fixed*o.s*o.sw, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'trunk' });   // Z260 a giant: its trunk stops tanks and shells, nothing fells it
+      else crushables.push({ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true }); });
     im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); }); }
 function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[(Math.random()*RIVER.lines.length)|0], p=L[(Math.random()*L.length)|0], w=L===RIVER.lines[0]?5.5:3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
   const x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r, h=heightAt(x,z); return (h>RIVER.y-0.05 && h<RIVER.y+0.6) ? [x,z] : null; }
@@ -157,20 +183,22 @@ export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)
   if(n==='HILLS'){ plant(conifer(false), N(52), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
   else if(n==='VILLAGE'){ const T=OPEN_LAND.VILLAGE.trees; plant(palm(), N(17*T), { s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10*T), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13*T), { s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
-  else if(n==='MEADOW'){ plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='MEADOW'){ plant(ancient(), N(5), { s:[0.85,1.15], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
     plant(grass('straw').concat(grass('dry')), N(1500), { s:[1.15,1.85], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
     plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });
     plant(baobab(), N(9), { s:[0.9,1.35], kind:'tree', cr:1.3, real:1.4 }); plant(acacia(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.4, real:1.15 }); plant(deadTree(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 });
     plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
-  else if(n==='ARCTIC'){ plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });
+  else if(n==='ARCTIC'){ plant(conifer(true), N(34), { s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });   // Z260 + the tundra's snowy spruce (merged into the Arctic)
     for(const m of FLORA.meshes){ if(m.geometry===floe()[0]){ const M2=new THREE.Matrix4(), P2=new THREE.Vector3(), Q2=new THREE.Quaternion(), S2=new THREE.Vector3(); for(let i=0;i<m.count;i++){ m.getMatrixAt(i,M2); M2.decompose(P2,Q2,S2); P2.y=RIVER.y+0.05; M2.compose(P2,Q2,S2); m.setMatrixAt(i,M2); } m.instanceMatrix.needsUpdate=true; } } }   // ice floes float on the leads
   else if(n==='STEELMILL'){ plant(deadTree(), N(16), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(10), { s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(false), N(60), { s:[0.6,1.2], shadow:false }); }   // Z187 nature taking the mill back
   else if(n==='VOLCANO'){ plant(deadTree(), N(22), { s:[0.7,1.1], kind:'tree', cr:0.3, real:1.15 }); plant(bush(true), N(14), { s:[0.5,0.9], shadow:false }); }   // Z187 scorched snags
-  else if(n==='QUARRY'){ plant(broadleaf(), N(8), { s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
+  else if(n==='QUARRY'){ plant(ancient(), N(1), { s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(8), { s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
   else if(n==='CAVERN'){ plant(broadleaf(), N(18), { s:[0.6,0.95], near:shaftSpot, kind:'tree', cr:0.6, real:1.2 }); plant(palm(), N(8), { s:[0.6,0.9], near:shaftSpot, kind:'tree', cr:0.4, real:1.2 });   // Z225 a jungle grows in each shaft of daylight
     plant(bush(false), N(110), { s:[0.7,1.4], near:shaftSpot, shadow:false }); plant(flowers(), N(120), { s:[0.8,1.3], near:shaftSpot, shadow:false }); }
   else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
   else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
+  else if(n==='CITADEL'){ plant(ancient(), N(3), { s:[0.85,1.1], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(12), { s:[0.75,1.15], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(26), { s:[0.6,1.1], shadow:false }); }   // Z260 old trees in the citadel's orchards
+  else if(n==='RUINS'){ plant(ancient(), N(1), { s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(deadTree(), N(10), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(6), { s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); }   // Z260 nature taking the ruins back
   else { plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); } }

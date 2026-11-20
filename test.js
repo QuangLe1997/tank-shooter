@@ -730,6 +730,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function stoneTriMat/.test(st) && /stoneTriMat\('rock_face', bn\)/.test(pr) && /export function hillDetail/.test(st) && /hillDetail\(new THREE\.MeshLambertMaterial/.test(hz), 'boulders take the triplanar rock face; the far ranges take photo detail fading with the haze');
   ok(/GROUND_PHOTO\.extra/.test(tl) && C.GROUND_PHOTO.extra.every(n=>fs.existsSync('assets/ground/'+n+'/diff.jpg')) && C.STONE.pyramid.tile>0, 'the stone and aerial sets ship with the ground sets'); }
 
+// Z260 trees: recursive limbs, more variants per species, ancient giants with solid trunks, snowy spruce in the merged Arctic, trees in citadel and ruins
+{ const fs=await import('node:fs'); const fl=fs.readFileSync('src/world/flora.js','utf8');
+  ok(/function branch\(P, p0, dir, len, r0, depth/.test(fl) && /branch\(P, end\.clone\(\)/.test(fl) && /vars\('bl2', MOBILE\?4:8/.test(fl) && /vars\('con'\+\(snow\?1:0\), MOBILE\?3:6/.test(fl), 'broadleaf trees grow recursive limbs; eight / six random variants a species');
+  ok(/const ancient=\(\)=>vars\('anc'/.test(fl) && /buttress roots/.test(fl) && /if\(opt\.fixed\) blocks\.push/.test(fl) && /blocks\[i\]\.kind==='trunk'\) blocks\.splice/.test(fl), 'ancient giants: buttress roots, spreading limbs, a trunk that stops tanks, cleared with the flora');
+  ok(/n==='ARCTIC'\)\{ plant\(conifer\(true\)/.test(fl) && /n==='CITADEL'\)\{ plant\(ancient\(\)/.test(fl) && /n==='RUINS'\)\{ plant\(ancient\(\)/.test(fl) && /n==='MEADOW'\)\{ plant\(ancient\(\)/.test(fl), 'giants on the meadow, the citadel, the ruins and the quarry; spruce in the Arctic'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
