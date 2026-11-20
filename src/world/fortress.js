@@ -3,13 +3,13 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
 export function fortsLeft(){ let n=0; for(const f of FORTS) if(!f.captured) n++; return n; }
 export function mainFort(){ return FORTS.find(f=>f.tier===3); }
-export function fortSealed(f){ return f.tier===3 && FORTS.some(o=>o!==f && !o.captured); }   // the citadel opens last
+export function fortSealed(f){ return !MODE.fortsOpen && f.tier===3 && FORTS.some(o=>o!==f && !o.captured); }   // the citadel opens last (Z315 not in soldier mode: every gate is open)
 let _nameI=0, _fhT=0;
 
 // ---- plan: reserve ground first (called at the top of planZones) — far side + flanks, the biggest one farthest from our spawn ----
@@ -401,6 +401,7 @@ function gateBusy(f){ const r2=(FORT.gateW*0.75)**2, p=S.player; if(p && (p.pos.
   for(const e of enemies) if((e.pos.x-f.gx)**2+(e.pos.z-f.gz)**2 < r2) return true;
   for(const a of FT) if((a.pos.x-f.gx)**2+(a.pos.z-f.gz)**2 < r2) return true; return false; }
 function updateGate(f, dt, now){ if(!f.leaves || f.breached) return;
+  if(MODE.fortsOpen){ if(f.gv < 1 || f.gateShut){ f.gv = 1; for(const L of f.leaves) L.g.rotation.y = L.s*1.45; f.gateShut = false; const i = blocks.indexOf(f.gate); if(i >= 0) blocks.splice(i, 1); } return; }   // Z315 soldier mode: every gate stands open, the citadel's too — a man goes in through it, he never has to blast a wall
   let want = now < (f.openUntil||0) ? 1 : 0; if(!want && f.gv>0.02 && gateBusy(f)) want=1;
   for(const e of enemies) if(e.exit && e.exit.f===f){ if(now-(e.exit.t0||now) > FORT.gate.exitMax){ if(Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R-1) regarrison(f, e); else e.exit=null; continue; } want=1; }   // hold it open while the column files out (a man stuck > exitMax goes back to his post)
   if(want && fortSealed(f)) want=0;
@@ -421,8 +422,8 @@ function updatePosture(f, now){ if(now<f.postAt) return; f.postAt=now+0.5; const
   if(near && f.active && !f.breached && !fortSealed(f)){ const s=strength(f); want = s.ours >= s.theirs*P.holdK ? 'hold' : 'sally'; f.ratio=s; }
   if(want===f.posture) return; const was=f.posture; f.posture=want;
   if(want==='hold'){ for(const e of f.units) if(e.exit && e.exit.f===f && enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R-1) regarrison(f, e);
-    f.openUntil=0; showBanner(f.name+' ĐÓNG CỔNG CỐ THỦ — PHÁ CỔNG ĐỂ VÀO!', '#ffb35a'); radio(f.chief+': "Anh em giữ thành! Bắn! Dồn hết hoả lực vào chiếc xe tăng đó!"', 'f_rally_2');
-    if(!f.supplied){ f.supplied=true; const sd=POWERUPS.find(d=>d.id==='siege'); if(sd) setTimeout(()=>{ if(S.mode==='playing' && S.player){ dropPowerup({ x:S.player.pos.x+(Math.random()-0.5)*6, z:S.player.pos.z+(Math.random()-0.5)*6 }, 1, sd); radio('Hậu cần: thả ĐẠN PHÁ THÀNH cạnh xe — nhặt lấy rồi dồn vào cổng!'); } }, 2500); } }   // Z111b one siege crate per fortress that shuts its gate on you
+    f.openUntil=0; showBanner(f.name+(MODE.fortsOpen ? ' CỐ THỦ TRONG THÀNH — CỔNG VẪN MỞ, XÔNG VÀO!' : ' ĐÓNG CỔNG CỐ THỦ — PHÁ CỔNG ĐỂ VÀO!'), '#ffb35a'); radio(f.chief+(MODE.fortsOpen ? ': "Anh em giữ thành! Bắn! Đừng để thằng lính đó lọt qua cổng!"' : ': "Anh em giữ thành! Bắn! Dồn hết hoả lực vào chiếc xe tăng đó!"'), 'f_rally_2');   // (Z315 for a soldier the gate stays open)
+    if(!f.supplied && !MODE.fortsOpen){ f.supplied=true; const sd=POWERUPS.find(d=>d.id==='siege'); if(sd) setTimeout(()=>{ if(S.mode==='playing' && S.player){ dropPowerup({ x:S.player.pos.x+(Math.random()-0.5)*6, z:S.player.pos.z+(Math.random()-0.5)*6 }, 1, sd); radio('Hậu cần: thả ĐẠN PHÁ THÀNH cạnh xe — nhặt lấy rồi dồn vào cổng!'); } }, 2500); } }   // Z111b one siege crate per fortress that shuts its gate on you
   else if(want==='sally'){ f.sortieAt=now+1.2; showBanner(f.name+' MỞ CỔNG XUẤT QUÂN!', '#ff6a4a'); radio(f.chief+': "Không ai được lùi! Tất cả, tiến lên!"', 'f_rally_3'); }
   else if(was==='hold') f.sallyAt=Math.max(f.sallyAt, now+4); }
 // SALLY posture: the garrison itself pours out in waves (the commander and his guard stay home)
@@ -537,7 +538,7 @@ function tunnelAmbush(f, now){ if(UNDER.on) return;   // Z226 not while you are 
 // HUD: one line per fortress — name · gate % / sealed / garrison stirred / ours (written only when it changes)
 let _fh='';
 export function updateFortHud(){ const el=document.getElementById('fortHud'); if(!el) return; if(!FORTS.length){ if(_fh){ _fh=''; el.classList.add('hidden'); } return; }
-  const rows=FORTS.map(f=>{ const st=f.captured?'<em class="ok">✓ ĐÃ CHIẾM</em>':fortSealed(f)?'<em class="sl">🔒 PHONG TOẢ</em>':f.breached?'<em class="br">THỦNG THÀNH · '+(f.cmd?'DIỆT TƯỚNG':'TƯỚNG')+'</em>':'<em>CỔNG '+Math.ceil(100*Math.max(0,f.gate.hp)/f.gate.maxHp)+'%</em>';
+  const rows=FORTS.map(f=>{ const st=f.captured?'<em class="ok">✓ ĐÃ CHIẾM</em>':fortSealed(f)?'<em class="sl">🔒 PHONG TOẢ</em>':f.breached?'<em class="br">THỦNG THÀNH · '+(f.cmd?'DIỆT TƯỚNG':'TƯỚNG')+'</em>':MODE.fortsOpen?'<em>CỔNG MỞ</em>':'<em>CỔNG '+Math.ceil(100*Math.max(0,f.gate.hp)/f.gate.maxHp)+'%</em>';
     return '<div class="fh-r'+(f.captured?' done':'')+(f.tier===3?' main':'')+'"><b>'+f.name+'</b>'+st+'</div>'; }).join('');
   const html='<div class="fh-t">ĐẠI BẢN DOANH · '+(FORTS.length-fortsLeft())+'/'+FORTS.length+'</div>'+rows;
   if(html!==_fh){ _fh=html; el.innerHTML=html; el.classList.remove('hidden'); } }

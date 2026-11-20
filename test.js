@@ -983,6 +983,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function aimAlong\(x, z, a, o\)/.test(lo) && /dropTo = o\.dropTo \?\? \(o\.owner==='e' \? 1\.2 : null\)/.test(lo) && /noArc:true, dropTo:1\.2/.test(R('src/ai/tactics.js')) && /noArc:true, dropTo:1\.3\}\)/.test(R('src/actors/enemies.js')) && /dropTo:1\.1, dropDist:T/.test(R('src/tank/roofmg.js')), 'enemy guns fire straight at the chest, no lob; unmarked rounds aim at whoever is on their line');
   ok(/function lineH\(b, wy, t, man\)/.test(lo) && /hitsHull\(e, _sw\.x, _sw\.z, b\.r\)\) && lineH\(b, _wy, e\)/.test(lo) && /MODE\.hitTest\(p, _sw\.x, _sw\.z, b\.r\) && lineH\(b, _wy, p\)/.test(lo) && /blockTop\(bl\)\+LINE\.over\) continue;/.test(lo) && C.LINE.tankH>C.LINE.manH, 'a body is hit only at its real height; a round well over an obstacle flies on'); }
 
+// Z315 soldier mode: every fortress gate stands open (the citadel's too); the tank keeps shut gates to breach
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fo=R('src/world/fortress.js'), md=R('src/game/mode.js');
+  ok(/fortsOpen:true/.test(md) && /fortsOpen:false/.test(md) && /if\(MODE\.fortsOpen\)\{ if\(f\.gv < 1 \|\| f\.gateShut\)/.test(fo) && /return !MODE\.fortsOpen && f\.tier===3/.test(fo) && /MODE\.fortsOpen\?'<em>CỔNG MỞ<\/em>'/.test(fo), 'soldier mode: gates open, no sealed citadel, no wall to blast'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

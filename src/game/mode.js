@@ -8,7 +8,7 @@ import { GUNS, PLAYER, TANK_SCALE, TROOPER_SPELLS, addPlayerBurn, applyTankKit, 
   makePlayer, mountRoofMG, playClip, playerHitFX, soldierFire, soldierHitFX, tankExplode, tankModel, trooperGuns, trooperLoot, updateCavalry, updatePlayer, PLAYER_PAL, updateSoldierWar, soldierWaveQueue, tankShellZone, clearSoldierWar } from '../hub.js';
 
 const refill = p => { for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]); };
-const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true, fleeK:1, spells:null, loot:null, overText:'xe bị hạ khi không còn lượt hồi sinh',
+const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true, fortsOpen:false, fleeK:1, spells:null, loot:null, overText:'xe bị hạ khi không còn lượt hồi sinh',
   makePlayer(){ return makePlayer(); },
   setupRun(p){ p.guns = loadoutGuns(); p.gunIdx = defaultGunIdx();
     applyUpgrades(p); p.hp = p.maxHp; refill(p);   // shop upgrades (health / damage / range / speed / mag / reload / armour)
@@ -20,7 +20,8 @@ const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true,
   hitTest(p, x, z, r){ return hitsHull(p, x, z, r); }, rifleK(){ return INFANTRY.vsArmour; },
   onHit(p, dmg, dx, dz){ addPlayerBurn(dx, dz); playerHitFX(p, dx, dz, dmg); },
   finalDeath(p){ playClip('x_scream', 0.95); tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); } };
-const SOLDIER = { id:'soldier', crushes:false, riders:false, crewXp:false, powerHud:false, get fleeK(){ return CAV.soldier.fleeK; }, get spells(){ return TROOPER_SPELLS; },
+const SOLDIER = { id:'soldier', crushes:false, riders:false, crewXp:false, powerHud:false, fortsOpen:true,   // (Z315 a man walks in through the open gate, he does not breach walls)
+  get fleeK(){ return CAV.soldier.fleeK; }, get spells(){ return TROOPER_SPELLS; },
   loot(tier){ return trooperLoot(tier); }, overText:'người lính ngã xuống khi không còn lượt hồi sinh',
   makePlayer(kind){ return makeCavPlayer(kind); },
   setupRun(p){ clearSoldierWar(); p.guns = trooperGuns(); p.gunIdx = 0; p.dmgMul = CAV.atk; p.crit = CAV.crit; p.fireMul = CAV.fireK;   // a marksman's eye, quick hands, heavy rifle rounds
