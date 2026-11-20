@@ -9,8 +9,8 @@
 //   topple (blast, or a tank ramming them) and the wires on a fallen pole drop; cars in a blast burn out.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { OPEN_LAND, REALCITY } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface } from '../hub.js';
+import { OPEN_LAND, REALCITY, REALTREE } from '../../config.js';
+import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -187,7 +187,8 @@ function officeTower(ox,oz,ry,w,d){ { const M=pickBuilding('tower'); if(M && Mat
   if(Math.random()<0.5) facade('of'+T.t.uuid, T, true).geos.push(place(boxUV(w*0.6,FH*3,d*0.6,8,FH*4), ox, top+FH*1.5, oz, ry));                       // setback crown
   localG(new THREE.CylinderGeometry(0.06,0.1,6,5), w*0.2, top+FH*3+3, 0, ox,oz,ry, 0x8a8e92); endBld(Bd); return top-y0; }
 const VWALL=['#e2d4a8','#e8e4da','#d8bc84','#dcc2b6','#c8d6c8','#e6dac2'], VSHUT=['#3e6a4a','#34546e','#4a6040','#5e7484'];   // Z242 faded villa ochres
-function villaHouse(ox,oz,ry,w,d){ const y0=heightAt(ox,oz)-0.05, FH=3.6, PL=0.6, col=VWALL[(Math.random()*VWALL.length)|0], T=villaBay(col, VSHUT[(Math.random()*VSHUT.length)|0]), Bd=newBld('villa', ox,oz,ry,w,d,y0, 150, col);
+function villaHouse(ox,oz,ry,w,d){ { const M=pickBuilding('villa'); if(M && Math.random()<REALCITY.share) return meshyBuilding(M, 'villa', ox,oz,ry,w,d, 150, '#e2d4a8', 3.6); }   // Z266
+  const y0=heightAt(ox,oz)-0.05, FH=3.6, PL=0.6, col=VWALL[(Math.random()*VWALL.length)|0], T=villaBay(col, VSHUT[(Math.random()*VSHUT.length)|0]), Bd=newBld('villa', ox,oz,ry,w,d,y0, 150, col);
   floorPiece(Bd, y0, y0+PL+FH); local(0, y0+PL/2, 0.6, w+0.8, PL, d+2.6, ox,oz,ry, 0xc8c2b4);                                                                // stone plinth (porch included)
   facade('vl'+col+T.t.uuid, T).geos.push(place(boxUV(w,FH,d,4.2,FH), ox, y0+PL+FH/2, oz, ry));
   for(const sx of [-1.7,-0.6,0.6,1.7]){ localG(new THREE.CylinderGeometry(0.16,0.18,FH,10), sx, y0+PL+FH/2, d/2+1.6, ox,oz,ry, 0xf4f0e6); local(sx, y0+PL+0.12, d/2+1.6, 0.42, 0.24, 0.42, ox,oz,ry, 0xd8d2c4); }   // porch columns
@@ -294,7 +295,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
     const OB=OPEN_LAND.CITY.built, k=OB/0.66; let r=Math.random(); if(dC<80 && r<0.45) r=OB+Math.random()*(1-OB);                    // room to fight near the middle: squares, parks, a pitch · Z242 fewer blocks built up (OPEN_LAND)
     const built = r<OB; if(built) ZONES.push({ kind:'landmark', x:cx, z:cz, r:Math.min(w,d)/2*0.95 });
     if(r<0.34*k){ const dep=_R(9.5,12); for(const side of [1,-1]){ let a=-w/2+0.2; const ry=side>0?0:Math.PI;                                  // tube-house rows on both long edges, a back alley between
-        while(a<w/2-3.5){ const row=pickBuilding('row'), big=row && Math.random()<REALCITY.share*0.7, hw=big?_R(11,13.5):_R(4,6.4); if(a+hw>w/2) break; if(big) meshyBuilding(row, 'tube', cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep, 100, '#d6c48e', 3.2); else tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.35) a+=_R(3,6.5); } }   // Z264 a Meshy row of three tube houses now and then   // Z242 gaps in the row: yards, alleys
+        while(a<w/2-3.5){ const row=pickBuilding('row'), big=row && Math.random()<REALCITY.share, hw=big?Math.min(_R(11,14), w/2-a):_R(4,6.4); if(a+hw>w/2 || (big && hw<9)) break; if(big) meshyBuilding(row, 'tube', cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep, 100, '#d6c48e', 3.2); else tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.25) a+=_R(2.5,5); } }   // Z264 · Z266 the rows are Meshy townhouse rows (procedural only before the models load)   // Z242 gaps in the row: yards, alleys
       CURP=0; for(let k=0;k<3;k++) trees.push({ x:cx+_R(-w/2,w/2)*0.8, z:cz+_R(-1,1)*Math.max(0,d/2-dep-1), s:_R(0.7,0.95), ry:_R(0,6.28) }); }
     else if(r<0.5*k){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }   // four walled villas
     else if(r<0.6*k){ for(const side of [1,-1]) apartment(cx, cz+side*(d/2-6), side>0?0:Math.PI, w*0.8, 11); CURP=0;                           // two slabs round a courtyard
@@ -343,9 +344,14 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
   if(P.length){ const m=new THREE.Mesh(mergeP(P), pieceHook(detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 }), { scale:0.6, bump:0.012, alb:0.3, foot:0.8, streak:0.2 }))); m.customDepthMaterial=depthMat(); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
   drawStreetVehicles(cars, motos);
   drawFixtures(fix);   // Z265
-  for(const [list, geo] of [[trees, treeBroadleaf()], [palms, treePalm()]]){ if(!list.length) continue; const im=new THREE.InstancedMesh(geo, floraMat(), list.length);
-    list.forEach((o,k)=>{ _M4.compose(_v3.set(o.x,heightAt(o.x,o.z),o.z), _qy.setFromEuler(_eu.set(0,o.ry,0)), _sc.set(o.s,o.s,o.s)); im.setMatrixAt(k,_M4); crushables.push({ x:o.x, z:o.z, r:0.55*o.s, im, k, alive:true, kind:'tree', ry:o.ry, s:o.s, land:true }); });
-    im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }
+  // Z266 the street trees and median palms as real Meshy species: the trees split into groups, each group one species of the city's mix (linden,
+  //   oak, birch, poplar…), the palms coconut palms; each tree its own size, turn and lean; they sway in the wind and go down to shells, blasts and tanks
+  for(const [list, geo, tk, nv] of [[trees, treeBroadleaf(), 'broadleaf', MOBILE?3:6], [palms, treePalm(), 'palm', 1]]){ if(!list.length) continue;
+    const groups=Array.from({ length:nv }, ()=>[]); list.forEach(o=>groups[(Math.random()*nv)|0].push(o));
+    groups.forEach((g,vi)=>{ if(!g.length) return; const im=new THREE.InstancedMesh(geo, floraMat(), g.length);
+      g.forEach((o,k)=>{ const sy=o.s*_R(0.88,1.15); _M4.compose(_v3.set(o.x,heightAt(o.x,o.z)-0.05,o.z), _qy.setFromEuler(_eu.set(_R(-0.04,0.04),o.ry,_R(-0.04,0.04))), _sc.set(o.s,sy,o.s)); im.setMatrixAt(k,_M4);
+        const c={ x:o.x, z:o.z, r:0.55*o.s, im, k, alive:true, kind:'tree', ry:o.ry, s:o.s, land:true }; crushables.push(c); TREES.push(c); });
+      im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); im.userData.tree={ tk, vi, sMid:REALTREE.citySize }; arena.add(im); LAND.meshes.push(im); trackTrees(im); }); }
   B=null; P=null; strip=null; }
 let _vmat=null;
 function vmat(){ return _vmat||(_vmat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.35, metalness:0.45, envMapIntensity:1.2 })); }

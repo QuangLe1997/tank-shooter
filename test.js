@@ -766,6 +766,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/roadMat=\(\)=>streetSurface/.test(ct) && /bvdMat=\(\)=>streetSurface/.test(ct) && /walkMat=\(\)=>streetSurface/.test(ct) && /zebMat=\(\)=>streetSurface/.test(ct), 'roads, boulevards, zebras and pavements all take it');
   ok(/function drawFixtures/.test(ct) && /k:'mh'/.test(ct) && /k:'dr'/.test(ct) && C.STREET.wet>0, 'manhole covers down the lanes, drain grates at the kerbs'); }
 
+// Z266 the whole city in real models: every lot Meshy (towers, apartments / offices, townhouse rows, French villas), street trees and palms as Meshy species
+{ const fs=await import('node:fs'); const ct=fs.readFileSync('src/world/city.js','utf8'), rt=fs.readFileSync('src/world/real-trees.js','utf8'), bg=fs.readFileSync('src/game/boot-gate.js','utf8'), C=await import('./config.js');
+  ok(C.REALCITY.share===1 && /pickBuilding\('villa'\)/.test(ct) && C.REALCITY.blds.bld_villa && C.REALCITY.blds.bld_office && C.REALCITY.blds.bld_shoprow2, 'every lot takes a Meshy building (villa, office and a second townhouse row added)');
+  ok(/export function trackTrees/.test(rt) && /trackTrees\(im\)/.test(ct) && /TREES\.push\(c\)/.test(ct) && C.REALTREE.map.CITY && /loadRealTrees\(\)/.test(bg), 'street trees and palms become Meshy species, sway, and fall; the species load from boot'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

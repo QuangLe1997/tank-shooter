@@ -9,14 +9,16 @@ import * as THREE from 'three';
 import { REALTREE } from '../../config.js';
 import { BIOME, FLORA, WTIME, crushables, loadGLTF } from '../hub.js';
 
-const SP = {}, GEO = {}; let _p = null;
+const SP = {}, GEO = {}, EXTRA = new Set(); let _p = null;
 const U = { wDir:{ value:new THREE.Vector2(REALTREE.wind.dir[0], REALTREE.wind.dir[1]).normalize() }, wAmp:{ value:REALTREE.wind.sway }, wLeaf:{ value:REALTREE.wind.leaf } };
 export const REAL_TREES = SP;
 
 export function loadRealTrees(){ if(_p) return _p; if(typeof window === 'undefined' || /proctree/.test(location.search + location.hash)) return (_p = Promise.resolve(false));
   return (_p = Promise.all(Object.keys(REALTREE.h).map(k => loadGLTF('tree_' + k).then(gl => [k, gl]))).then(L => {
     for(const [k, gl] of L){ if(!gl) continue; try{ SP[k] = prepTree(gl, k); } catch(e){ console.warn('[trees]', k, e.message); } }
-    for(const im of FLORA.meshes) dressTrees(im); return true; })); }
+    for(const im of FLORA.meshes) dressTrees(im); for(const im of EXTRA) dressTrees(im); EXTRA.clear(); return true; })); }
+// a tree mesh planted outside the flora (the city's street trees, palms): dressed now if the species are in, else as soon as they are
+export function trackTrees(im){ if(Object.keys(SP).length) dressTrees(im); else { EXTRA.add(im); loadRealTrees(); } return im; }
 
 // read the texture once (small) to tell leaf from wood at each vertex's uv
 function sampler(map){ const img = map && map.image; if(!img || !img.width) return null; const N = 128, cv = document.createElement('canvas'); cv.width = cv.height = N;

@@ -1411,5 +1411,74 @@
       ],
       "texture_prompt": "White bus body with a green stripe, dark glass, black tyres, light road grime, realistic PBR"
     }
+  },
+  "bld_villa": {
+    "_role": "Z266 city French villa: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a lot",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 10000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A two-storey French colonial villa in Hanoi about 12 m wide and 10 m deep: pale yellow rendered walls, tall windows with dark green wooden shutters, a columned porch with a balcony above, an orange clay-tile hipped roof with eaves, a small attic dormer. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no fence, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Pale yellow lime render, dark green wooden shutters, white columns and trim, orange clay roof tiles, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "bld_office": {
+    "_role": "Z266 city mid-rise office: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a lot",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A modern six-storey office building about 24 m wide and 18 m deep: grey concrete frame with horizontal bands of dark glass windows on every floor, a glazed ground-floor lobby with a canopy, rooftop air-conditioning units. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no fence, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Light grey concrete, dark blue-grey glass, brushed metal canopy, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "bld_shoprow2": {
+    "_role": "Z266 city shop-row: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a lot",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 10000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A row of four narrow modern Vietnamese townhouses side by side, each about 4 m wide and 5 floors tall, tiled facades in white and grey with glass balconies, big shop signs and glass shop fronts on the ground floor, air conditioners, a few plants. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no fence, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "White and grey facade tiles, glass balconies, colourful shop signs, steel and glass shop fronts, light city grime, rain streaks under the windows, realistic PBR"
+    }
   }
 }
