@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HORSE, HUMAN_SCALE } from '../../config.js';
-import { blot, keySec, lineAlong, lineAround, loftGeo, makeSoldierMesh, pathKeys, skinMesh, toLocal, trimGeo } from '../hub.js';
+import { blot, fitRealRifle, keySec, lineAlong, lineAround, loftGeo, makeSoldierMesh, pathKeys, skinMesh, toLocal, trimGeo } from '../hub.js';
 
 let _GM=null;
 function gmats(){ if(_GM) return _GM; const S=(c,r,m,o)=>new THREE.MeshStandardMaterial(Object.assign({ color:c, roughness:r, metalness:m }, o||{}));
@@ -163,7 +163,8 @@ function battleRifle(g){ const u=g.userData;
   for(const sx of [-1,1]) P.add(G, R.blk, cyl(0.007, 0.007, 0.24, 8), sx*0.022, -0.06, 0.56, Math.PI/2);   // folded bipod legs
   P.add(G, R.blk, box(0.028, 0.07, 0.03), 0, -0.08, 0.44, 0.35);                          // angled fore-grip
   P.add(G, R.sling, box(0.012, 0.014, 0.66), -0.04, -0.03, 0.12);                          // sling
-  P.done(); u.muzzle.position.set(GOFF.x, 0.005+GOFF.y, 1.04+GOFF.z); }
+  P.done(); u.muzzle.position.set(GOFF.x, 0.005+GOFF.y, 1.04+GOFF.z);
+  fitRealRifle(G, u, GOFF); }   // Z247 the photo-scanned rifle replaces this one once it has loaded
 let _RM=null;
 function gunMats(){ if(_RM) return _RM; const S=(c,r,m,o)=>new THREE.MeshStandardMaterial(Object.assign({ color:c, roughness:r, metalness:m }, o||{}));
   _RM={ fde:S(0x8a7a58,0.62,0.25), blk:S(0x1c1d1f,0.42,0.6), slot:S(0x050505,0.8,0.2), sling:S(0x3c3a2c,0.9,0.0), lens:S(0x0a1a2a,0.05,0.4, { emissive:0x0a2a4a, emissiveIntensity:0.25 }) }; return _RM; }

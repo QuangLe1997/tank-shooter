@@ -634,6 +634,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/new THREE\.Skeleton\(bones\)/.test(ge) && /u\.parts=\[\]/.test(ge) && /function leftHand/.test(ge) && /function finger/.test(ge) && /GOFF/.test(ge), 'the general is one skinned body, not the batched infantry kit; fingers round grip and handguard; rifle forward of the carrier');
   const C=await import('./config.js'); ok(/L\.hip\.rotation\.z=L\.sx\*0\.62/.test(ge), 'the rider straddles the barrel (legs down the horse\'s sides)'); }
 
+// Z247 real glTF models: the photo-scanned CC0 rifle on the general (loaded once, cloned; the procedural rifle stays if it fails)
+{ const fs=await import('node:fs'); const mo=fs.readFileSync('src/actors/models.js','utf8'), ge=fs.readFileSync('src/actors/general.js','utf8');
+  ok(/GLTFLoader/.test(mo) && /export function loadModel/.test(mo) && /export function fitRealRifle/.test(mo) && /catch\(/.test(mo) && /CC0/.test(mo), 'real models: glTF loader, cached, falls back to the procedural model, licence noted');
+  ok(/fitRealRifle\(G, u, GOFF\)/.test(ge), 'the general carries the scanned rifle');
+  const m=JSON.parse(fs.readFileSync('assets/models/rifle/bolt_action_rifle_7_62_1k.gltf','utf8')); ok(m.buffers.every(b=>fs.existsSync('assets/models/rifle/'+b.uri)) && m.images.every(i=>fs.existsSync('assets/models/rifle/'+i.uri)), 'the rifle model ships with its buffer and textures'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
