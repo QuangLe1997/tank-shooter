@@ -1,0 +1,22 @@
+{
+ "leafy_grass": 2,
+ "brown_mud_02": 1.3,
+ "rock_ground": 1.5,
+ "grass_path_2": 1,
+ "dry_ground_01": 4,
+ "dry_ground_rocks": 4,
+ "aerial_sand": 15,
+ "sandy_gravel": 2.1,
+ "snow_01": 2,
+ "rock_ground_02": 3,
+ "dark_rock": 2.42,
+ "burned_ground_01": 1,
+ "gravel_ground_01": 3,
+ "gravel_road": 2,
+ "asphalt_02": 3,
+ "concrete_floor_damaged_01": 5,
+ "gravel_floor": 2.25,
+ "dirt": 2,
+ "concrete_rock_path": 2,
+ "brown_mud_rocks_01": 1.3
+}

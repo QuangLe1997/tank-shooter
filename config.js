@@ -545,6 +545,18 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z250 PHOTO GROUND (world/ground-photo.js): per battlefield the photo-scanned CC0 sets (Poly Haven, fetched by tools/ground-photos.mjs) — [base, second]:
+//   the base covers the field, the second shows through on steep faces, crater bowls and the field's bare patches. dual = how much the base is
+//   blended with itself at another scale (breaks the tiling); nrm = normal strength; altRep = the second layer's tile × the base's
+export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55,
+  // albedo × per battlefield: the scene's sun and exposure were tuned for the darker procedural ground — a photo albedo needs bringing down
+  tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.5, 0.62, 0.42], HILLS:[0.5, 0.6, 0.42], VILLAGE:[0.54, 0.6, 0.46], SAVANNA:[0.62, 0.58, 0.5], DESERT:[0.76, 0.64, 0.5],
+    TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[0.6, 0.58, 0.56], STEELMILL:[0.6, 0.58, 0.56] },
+  biomes:{
+  MEADOW:['leafy_grass','brown_mud_02'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['dry_ground_01','dry_ground_rocks'],
+  DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','dark_rock'], VOLCANO:['burned_ground_01','dark_rock'],
+  QUARRY:['gravel_ground_01','rock_ground'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_02','concrete_floor_damaged_01'],
+  CITADEL:['gravel_floor','dirt'], RUINS:['dry_ground_rocks','concrete_rock_path'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] } };
 // Z249 REAL INFANTRY (actors/real-troops.js): material roughness; the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);
 //   stretch = [×, min length]: a triangle the pose made that many times longer than at rest (and longer than that, rig units) is dropped as a sliver; anchor = offsets (rig units) from the

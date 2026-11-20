@@ -21,6 +21,7 @@ export * from './render/lod.js';
 export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD
 export * from './world/atmosphere.js';
 export * from './world/ground.js';
+export * from './world/ground-photo.js';   // Z250 photo-scanned CC0 ground sets per battlefield
 export * from './world/heightfield.js';
 export * from './world/decals.js';
 export * from './world/props.js';

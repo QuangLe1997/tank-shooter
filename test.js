@@ -661,6 +661,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper && sp.trooper.retex && sp.trooper.preview.target_polycount<=8000 && sp.rifle.remesh, 'the trooper spec: low-poly, enemy retexture, a light carbine');
   ok(['assets/models/real/trooper.glb','assets/models/real/carbine-light.glb','assets/models/real/trooper-enemy.jpg'].every(f=>fs.existsSync(f) && fs.statSync(f).size<1.2e6), 'the troop files ship small'); }
 
+// Z250 photo ground: CC0 photo-scanned sets per battlefield, a second layer on slopes / bowls / patches, dual-scale anti-tiling
+{ const fs=await import('node:fs'); const gp=fs.readFileSync('src/world/ground-photo.js','utf8'), gr=fs.readFileSync('src/world/ground.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8'), C=await import('./config.js');
+  ok(/export function applyGroundPhoto/.test(gp) && /_want !== b\.name/.test(gp) && /catch\(/.test(gp) && /procground/.test(gp), 'photo ground: per battlefield, late loads ignored, procedural fallback');
+  ok(/altOn>0\.5 \? altC : patchCol/.test(gr) && /altOn>0\.5 \? altC : earthCol/.test(gr) && /vMapUv\*0\.29/.test(gr), 'second layer on patches and steep faces; the base blended with itself at another scale');
+  ok(/applyGroundPhoto\(BIOME\)/.test(bi), 'applyBiome swaps the photo ground in');
+  const Z=JSON.parse(fs.readFileSync('assets/ground/sizes.json','utf8')), sets=[...new Set(Object.values(C.GROUND_PHOTO.biomes).flat())];
+  ok(sets.every(n=>Z[n]>0 && ['diff','nor','arm'].every(k=>fs.existsSync('assets/ground/'+n+'/'+k+'.jpg'))), 'every battlefield\'s photo sets ship with their real-world size');
+  ok(Object.keys(C.GROUND_PHOTO.biomes).length>=14 && C.GROUND_PHOTO.tint._, 'all battlefields mapped, albedo tints in config'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

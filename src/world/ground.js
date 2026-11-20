@@ -93,20 +93,22 @@ export function patchTexture(){ const W=256, a=tileNoise(W,[3,6,12,24,48],0.55);
   for(let i=0;i<W*W;i++){ const v=Math.max(0,Math.min(255,(0.5+(a[i]-0.5)*1.6)*255)); d[i*4]=d[i*4+1]=d[i*4+2]=v; d[i*4+3]=255; } x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
 export const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85], CITY:[0x3a3c40,0.55], HILLS:[0x5a4a30,0.7], VILLAGE:[0x5a4a2c,0.7], SAVANNA:[0x8a5a30,0.6], ARCTIC:[0x7a90a4,0.55], STEELMILL:[0x2a1a12,0.65], VOLCANO:[0x0e0a0a,0.75], QUARRY:[0xb8b0a0,0.45], CAVERN:[0x14100c,0.7] };
 export const MACRO = { tex:{ value:macroTexture() }, amt:{ value:0.3 }, span:{ value:1/(ARENA*2) }, patch:{ value:patchTexture() }, pcol:{ value:new THREE.Color(0x9a7a50) }, pamt:{ value:0.55 } };
+// Z250 the photo ground's second layer (world/ground-photo.js fills it; altOn 0 = the procedural look)
+export const PHOTO_U = { altMap:{ value:null }, altOn:{ value:0 }, altScale:{ value:0.5 }, dual:{ value:0 } };
 // Z105 relief shading (see config RELIEF): hollows darker + damper + occluded, steep faces show raw earth, crests/rims sun-bleached
 export const RELIEF_U = { rel0:{ value:new THREE.Vector4(RELIEF.bowlDark, RELIEF.bowlAO, RELIEF.crestLift, RELIEF.slopeEarth) }, rel1:{ value:new THREE.Vector4(RELIEF.bowlK, RELIEF.crestK, RELIEF.slopeK, 1) },
   bowlTint:{ value:new THREE.Color().setRGB(...RELIEF.bowlTint) }, earth:{ value:new THREE.Color().setRGB(...RELIEF.earth) } };
 export const RELIEF_GLSL = `{ float cv=vRelief.x, sl=vRelief.y; vec3 c=diffuseColor.rgb; float lum=dot(c,vec3(0.333));
   float bowl=smoothstep(0.0, rel1.x, -cv)*rel1.w, crest=smoothstep(0.0, rel1.y, cv)*rel1.w, steep=smoothstep(0.12, 0.12+rel1.z, sl)*rel1.w;
-  c = mix(c, earthCol*(0.55+lum*0.9), steep*rel0.w);
+  c = mix(c, altOn>0.5 ? altC : earthCol*(0.55+lum*0.9), steep*rel0.w);   // Z250 steep faces show the photo second layer (rock / dirt)
   c = mix(c, c*bowlTint, bowl*rel0.x); c *= 1.0 - bowl*rel0.y;
   c *= 1.0 + crest*rel0.z;
   diffuseColor.rgb = c; }`;
 export function macroGround(mat){
   mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
-    sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;')
-      .replace('#include <map_fragment>','#include <map_fragment>\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL); };
-  mat.customProgramCacheKey=()=>'macroGround'; return mat;
+    sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief; varying vec2 vWXZ;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief; vWXZ = mwp.xz;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;\nuniform sampler2D altMap; uniform float altOn, altScale, dual; varying vec2 vWXZ;')
+      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = texture2D(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\n#endif\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL); };
+  mat.customProgramCacheKey=()=>'macroGround2'; return mat;
 }
