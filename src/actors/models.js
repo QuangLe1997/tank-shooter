@@ -12,6 +12,10 @@ export const MODEL_FILES = {
   rideGallop: 'assets/models/real/operator-ride-gallop.glb', // Text-to-Motion riding clips (animation only, hips rebased to the library frame)
   rideWalk: 'assets/models/real/operator-ride-walk.glb',
   carbine: 'assets/models/real/carbine.glb',                 // M4-style carbine: +X to the stock, muzzle at -X
+  // Z249 every infantryman: the low-poly trooper (rig + the two clips its pose is taken from), the enemy side's retextured base colour, an 814-triangle carbine
+  trooper: 'assets/models/real/trooper.glb',
+  trooperEnemyTex: 'assets/models/real/trooper-enemy.jpg',
+  troopGun: 'assets/models/real/carbine-light.glb',
 };
 const _load = {}, _gl = {};
 let _loader = null;

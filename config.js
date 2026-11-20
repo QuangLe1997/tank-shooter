@@ -545,6 +545,11 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z249 REAL INFANTRY (actors/real-troops.js): material roughness; the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
+//   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);
+//   stretch = [×, min length]: a triangle the pose made that many times longer than at rest (and longer than that, rig units) is dropped as a sliver; anchor = offsets (rig units) from the
+//   right / left upper-arm and upper-spine bones to where an RPG, a slung AT tube and the pack-borne kit sit
+export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
 export const REALCAV = { opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, pitch:[0.06, 0.3], proneDrop:0.15 };
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /

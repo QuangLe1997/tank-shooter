@@ -31,7 +31,8 @@ const cssOf=hex=>'#'+hex.toString(16).padStart(6,'0'), hexOf=css=>parseInt(css.s
 export function paintVehicle(mesh, side){ const P=mesh && mesh.userData.paint; if(!P || !P.length) return;
   const sh=sideShift(P[0][1], side); for(const [m,c0] of P) m.color.setHex(shiftHex(c0, sh)); }
 // the soldiers' shared atlas: camo (u 0–64 px), gear stripe (64–80), helmet stripe (80–96) → redrawn for this battlefield
-export function paintTroops(){ for(const side of ['f','e']){ const K=SOLDIER_KIT[side]; if(!K) continue; const T=SIDE_PAINT.troops[side], sh=sideShift(hexOf(T.base), side);
+export function paintTroops(){ for(const side of ['f','e']){ const K=SOLDIER_KIT[side]; if(!K || K.real) continue;   // Z249 the Meshy kit wears its own texture
+ const T=SIDE_PAINT.troops[side], sh=sideShift(hexOf(T.base), side);
     const map=K.mat.map, x=map.image.getContext('2d'), c=v=>cssOf(shiftHex(hexOf(v), sh));
     x.fillStyle=c(T.base); x.fillRect(0,0,64,64); for(let i=0;i<40;i++){ x.fillStyle=c(T.blot[i%T.blot.length]); x.beginPath(); x.ellipse(_R(0,64),_R(0,64),_R(3,9),_R(2,6),_R(0,3),0,7); x.fill(); }
     x.fillStyle=c(T.gear); x.fillRect(64,0,16,64); if(T.helm){ x.fillStyle=c(T.helm); x.fillRect(80,0,16,64); }

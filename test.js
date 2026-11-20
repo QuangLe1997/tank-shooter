@@ -651,6 +651,16 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['horse','operator','rideGallop','rideWalk','carbine'].every(k=>{ const m=mo.match(new RegExp(k+": '([^']+)'")); return m && fs.existsSync(m[1]) && glb(m[1]); }), 'every real model ships as a valid GLB');
   const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.rifle && sp.operator && sp.horse2 && sp.operator.rig.skeleton_template==='mixamo' && sp.horse2.rig.animation_type==='quadruped', 'the Meshy generation spec is in the repo'); }
 
+// Z249 real infantry at batch cost: the Meshy trooper baked into the batched rig's joints; role gear on kit anchors
+{ const fs=await import('node:fs'); const rt=fs.readFileSync('src/actors/real-troops.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), inf=fs.readFileSync('src/actors/infantry.js','utf8'), ft=fs.readFileSync('src/actors/fireteam.js','utf8'), C=await import('./config.js');
+  ok(/export function loadRealTroops/.test(rt) && /applyBoneTransform/.test(rt) && /function swapKit/.test(rt) && !/AnimationMixer\(root\)[^;]*update\(dt/.test(rt), 'real troops: one pose baked once, no skinning per man');
+  ok(/const near = /.test(rt) && /REALTROOP\.stretch/.test(rt) && /mirror X/.test(rt), 'mis-weighted vertices follow their nearest bone; stretched slivers dropped; mirrored into the rig\'s handedness');
+  ok(/kinds:\['up','head','arm','lh','gun','hipL','hipR','kneeL','kneeR'\]/.test(so) && /K\.mats && K\.mats\[kind\]/.test(so) && /loadRealTroops\(\)/.test(so), 'the batch: a piece per leg, a material per piece, the real kit loads in');
+  ok(/kitAttach\(u, u\.up, L, 'shoulderR'\)/.test(inf) && /'muzzle'/.test(ft) && /'back'/.test(ft) && /'shoulderL'/.test(ft), 'RPG, MG, mortar, satchels and the AT tube sit on kit anchors');
+  ok(C.REALTROOP && C.REALTROOP.anchor && C.REALTROOP.stretch.length===2, 'REALTROOP calibration in config');
+  const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper && sp.trooper.retex && sp.trooper.preview.target_polycount<=8000 && sp.rifle.remesh, 'the trooper spec: low-poly, enemy retexture, a light carbine');
+  ok(['assets/models/real/trooper.glb','assets/models/real/carbine-light.glb','assets/models/real/trooper-enemy.jpg'].every(f=>fs.existsSync(f) && fs.statSync(f).size<1.2e6), 'the troop files ship small'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, ENV, INFANTRY, EQUIP, SQUAD, FIELDCRAFT, REAL } from '../../config.js';
-import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, gibBody, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, launchEnemyMissile, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle } from '../hub.js';
+import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, enemies, enemyPool, floatText, fortExitDir, fortWallCross, gibBody, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -12,10 +12,11 @@ export function infMesh(type){
   const g=makeSoldierMesh({enemy:true}), u=g.userData;
   if(type==='rpg'){                                                          // shoulder-fired launcher instead of a carbine
     const tm=new THREE.MeshStandardMaterial({color:0x4a5530,roughness:0.75,metalness:0.25}), dm=new THREE.MeshStandardMaterial({color:0x2c2c22,roughness:0.6,metalness:0.4});
-    const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,1.0,10), tm); tube.rotation.x=Math.PI/2; tube.position.set(0.17,0.66,0.08); u.up.add(tube);
-    const war=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.34,10), dm); war.rotation.x=Math.PI/2; war.position.set(0.17,0.66,0.72); u.up.add(war);
-    const grip=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.14,0.06), dm); grip.position.set(0.17,0.55,0.18); u.up.add(grip);
-    u.gun.visible=false; const mz=new THREE.Object3D(); mz.position.set(0.17,0.66,0.9); u.up.add(mz); u.muzzle=mz; }
+    const L=new THREE.Group(); kitAttach(u, u.up, L, 'shoulderR');                          // Z249 one group on the kit's right-shoulder anchor (real or procedural body)
+    const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,1.0,10), tm); tube.rotation.x=Math.PI/2; L.add(tube);
+    const war=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.34,10), dm); war.rotation.x=Math.PI/2; war.position.set(0,0,0.64); L.add(war);
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.14,0.06), dm); grip.position.set(0,-0.11,0.1); L.add(grip);
+    u.gun.visible=false; const mz=new THREE.Object3D(); mz.position.set(0,0,0.82); L.add(mz); u.muzzle=mz; }
   g.traverse(o=>{ if(o.isMesh) o.castShadow=!MOBILE; });
   scene.add(g); return g;
 }

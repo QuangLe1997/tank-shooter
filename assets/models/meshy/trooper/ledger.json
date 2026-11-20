@@ -1,0 +1,42 @@
+{
+  "preview": {
+    "id": "01a1f751-83e0-76bb-96a3-dc1dcf557cac",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:58:02.310Z",
+    "credits": 5,
+    "finished": "2026-11-20T04:58:23.979Z"
+  },
+  "refine": {
+    "id": "01a1f752-9982-74a1-8dbe-adbf239c88e1",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:59:10.150Z",
+    "credits": 10,
+    "finished": "2026-11-20T04:59:37.143Z"
+  },
+  "rig": {
+    "id": "01a1f753-1124-7798-a2a3-20219b556476",
+    "ep": "v1/rigging",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:59:41.787Z",
+    "credits": 5,
+    "finished": "2026-11-20T04:59:58.090Z"
+  },
+  "anim": {
+    "id": "01a1f753-69d3-7386-8c5a-9a17eef8cb24",
+    "ep": "v1/animations",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T05:00:01.550Z",
+    "credits": 6,
+    "finished": "2026-11-20T05:00:49.777Z"
+  },
+  "retex": {
+    "id": "01a1f754-2b9b-7128-9a21-beb9aae71882",
+    "ep": "v1/retexture",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T05:00:53.369Z",
+    "credits": 10,
+    "finished": "2026-11-20T05:01:31.009Z"
+  }
+}

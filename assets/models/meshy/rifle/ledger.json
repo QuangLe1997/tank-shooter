@@ -13,5 +13,13 @@
     "created": "2026-11-20T04:22:43.911Z",
     "credits": 10,
     "finished": "2026-11-20T04:23:05.617Z"
+  },
+  "remesh": {
+    "id": "01a1f751-83df-732c-9b73-e36d94ee5c0f",
+    "ep": "v1/remesh",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:57:57.097Z",
+    "credits": 5,
+    "finished": "2026-11-20T04:58:50.687Z"
   }
 }

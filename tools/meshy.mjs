@@ -2,7 +2,7 @@
 // keeps a ledger per asset so a step is NEVER created twice (Meshy charges on create, has no idempotency key,
 // and a timed-out create may still have run; one ledger per asset, assets/models/meshy/<asset>/ledger.json), polls politely (Retry-After), downloads every GLB / thumbnail into assets/models/meshy/<asset>/.
 //   node tools/meshy.mjs balance
-//   node tools/meshy.mjs run <asset> <step>      step: preview | refine | retex | rig | anim | motion:<name> | motionanim:<name>
+//   node tools/meshy.mjs run <asset> <step>      step: preview | refine | retex | remesh | rig | anim | motion:<name> | motionanim:<name>
 //   node tools/meshy.mjs wait <asset> <step>     resume waiting on a step already created (never creates)
 //   node tools/meshy.mjs status
 // Key: $MESHY_API_KEY or ~/.config/tank-shooter/meshy.key (never printed).
@@ -30,6 +30,7 @@ function plan(asset, step, L){
   const [kind, name] = step.split(':');
   if(kind === 'preview') return { ep: 'v2/text-to-3d', body: A.preview };
   if(kind === 'refine') return { ep: 'v2/text-to-3d', body: { ...A.refine, preview_task_id: done('preview') } };
+  if(kind === 'remesh') return { ep: 'v1/remesh', body: { ...strip(A.remesh), input_task_id: done('refine') } };
   if(kind === 'retex') return { ep: 'v1/retexture', body: { ...strip(A.retex), input_task_id: done('refine') } };
   if(kind === 'rig'){ const R = strip(A.rig);
     if(R.model_file){ const f = R.model_file; delete R.model_file; return { ep: 'v1/rigging', body: { ...R, model_url: 'data:model/gltf-binary;base64,' + fs.readFileSync(path.join(ROOT, f)).toString('base64') } }; }

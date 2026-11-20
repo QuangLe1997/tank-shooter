@@ -20,7 +20,7 @@ function blend(A, want, ts, dt, freeze){ const k = Math.min(1, dt / REALCAV.fade
     if(on){ if(freeze != null){ a.timeScale = 0; a.time = freeze; } else a.timeScale = ts; } } }
 
 // a one-frame pose clip assembled from parts of other clips: [[clip, time, which tracks]…]
-function poseClip(name, parts){ const tracks = [];
+export function poseClip(name, parts){ const tracks = [];
   for(const [clip, t, keep] of parts){ if(!clip) continue; for(const k of clip.tracks){ if(!keep(k)) continue; const I = k.createInterpolant(), v = Array.from(I.evaluate(t));
     tracks.push(new k.constructor(k.name, [0], v)); } }
   return new THREE.AnimationClip(name, 0.1, tracks); }

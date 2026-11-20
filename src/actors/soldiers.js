@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REAL } from '../../config.js';
-import { MOBILE, S, SOLDIER, _R, _canvasTex, boss, burst, camera, core, enemies, floatText, guardBonusHp, guardFireMul, heightAt, paintTroops, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { MOBILE, S, SOLDIER, _R, _canvasTex, boss, burst, camera, core, enemies, fitRealMan, floatText, guardBonusHp, guardFireMul, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -109,20 +109,21 @@ function _soldierKit(enemy){
       for(let i=0;i<n;i++){ const u=r===0 ? Math.min(1,Math.max(0,uv[i*2]))*0.23+0.01 : st || r*0.25+0.125; uv[i*2]=u; if(r!==0) uv[i*2+1]=0.5; c[i*3]=col.r; c[i*3+1]=col.g; c[i*3+2]=col.b; }
       g.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); g.setAttribute('color', new THREE.Float32BufferAttribute(c,3)); g.clearGroups(); return g; });
     const merged=mergeGeometries(geos,false); geos.forEach(g=>g.dispose()); merged.computeBoundingSphere(); return merged; };
-  const kit={ mat, key, geo:{ up:bake(parts.up), head:bake(parts.head), arm:bake(parts.arm), lh:bake(parts.lh), gun:bake(parts.gun), hip:bake(parts.hip), knee:bake(parts.knee) } };
-  SOLDIER_KIT[key]=kit; paintTroops(); return kit;   // Z179 dressed for the current battlefield
+  const hipG=bake(parts.hip), kneeG=bake(parts.knee), kit={ mat, key, geo:{ up:bake(parts.up), head:bake(parts.head), arm:bake(parts.arm), lh:bake(parts.lh), gun:bake(parts.gun), hipL:hipG, hipR:hipG, kneeL:kneeG, kneeR:kneeG } };
+  SOLDIER_KIT[key]=kit; paintTroops(); if(typeof window!=='undefined') loadRealTroops();   // Z179 dressed for the current battlefield · Z249 the real kit replaces it once loaded
+  return kit;
 }
 // Z172 BATCHED TROOPS — a soldier is now a skeleton of plain Object3D joints; nothing of his is drawn on its own. Every frame the joints of every
 // visible man are written into ONE InstancedMesh per body part per side (×2: near men cast shadows, far ones don't) → ~28 draw calls for
 // the whole battlefield instead of 7 a man, so a crowded assault costs about the same as a quiet one. All the existing animation, stance,
 // death and fling code keeps moving the same joints.
-export const TROOP_BATCH = { roots:new Set(), im:{}, kinds:['up','head','arm','lh','gun','hip','knee'] };
+export const TROOP_BATCH = { roots:new Set(), im:{}, kinds:['up','head','arm','lh','gun','hipL','hipR','kneeL','kneeR'] };   // Z249 each leg its own piece (the real kit is not symmetric)
 export function makeSoldierMesh(opts){
   const K=_soldierKit(!!(opts&&opts.enemy)), g=new THREE.Group(), body=new THREE.Group(); body.scale.setScalar(0.84); g.add(body);   // inner rig keeps the old overall height
   const parts=[], mk=(par,kind)=>{ const o=new THREE.Object3D(); par.add(o); parts.push({ o, kind }); return o; };
   const legs=[];
-  for(const sx of [-1,1]){ const hip=new THREE.Group(); hip.position.set(sx*0.12,0.74,0); body.add(hip); mk(hip, 'hip');
-    const knee=new THREE.Group(); knee.position.set(0,-0.38,0); hip.add(knee); mk(knee, 'knee'); legs.push({hip,knee,sx}); }
+  for(const sx of [-1,1]){ const hip=new THREE.Group(); hip.position.set(sx*0.12,0.74,0); body.add(hip); mk(hip, sx>0?'hipR':'hipL');
+    const knee=new THREE.Group(); knee.position.set(0,-0.38,0); hip.add(knee); mk(knee, sx>0?'kneeR':'kneeL'); legs.push({hip,knee,sx}); }
   const up=new THREE.Group(); up.position.y=0.74; body.add(up); mk(up, 'up');
   const head=new THREE.Group(); head.position.set(0,0.6,0); up.add(head); mk(head, 'head');
   const armG=new THREE.Group(); armG.position.set(0,0.48,0.02); up.add(armG); mk(armG, 'arm');
@@ -132,7 +133,8 @@ export function makeSoldierMesh(opts){
   const torso={ material:{ emissive:new THREE.Color(0), emissiveIntensity:0 } };   // the old per-man hit-flash material, now just data the batch reads
   Object.assign(g.userData, { torso, muzzle:muz, legs, up, gun, walk:0, kick:0, body, arms:armG, head, lh, parts, kitKey:K.key, seed:Math.random()*100, magN:8+((Math.random()*7)|0), shots:0 });
   { const L=REAL.look, r=a=>a[0]+Math.random()*(a[1]-a[0]), h=r(L.h), w=r(L.w), t=r(L.tint); body.scale.set(0.84*w, 0.84*h, 0.84*(0.5+w*0.5));   // Z223 no two men alike: height, build,
-    g.userData.tint=new THREE.Color(t, t*(0.96+Math.random()*0.06), t*(0.94+Math.random()*0.08)); }                                                       //   and how faded / muddy his kit is
+    g.userData.tint=new THREE.Color(t, t*(0.96+Math.random()*0.06), t*(0.94+Math.random()*0.08)); }
+  if(K.real) fitRealMan(g.userData, K);   // Z249 the Meshy kit: realistic proportions (a size factor) and its own muzzle                                                       //   and how faded / muddy his kit is
   g.addEventListener('added', ()=>TROOP_BATCH.roots.add(g)); g.addEventListener('removed', ()=>TROOP_BATCH.roots.delete(g));
   return g;
 }
@@ -140,7 +142,7 @@ const _tbWhite=new THREE.Color(1,1,1), _tbHit=new THREE.Color(2.4,1.05,0.8), _tb
 function tbIM(key, kind, sh, need){ const id=key+'_'+kind+'_'+(sh?1:0); let m=TROOP_BATCH.im[id];
   if(m && m.instanceMatrix.count>=need) return m;
   const cap=Math.max(64, 1<<Math.ceil(Math.log2(Math.max(1,need)*1.25))); if(m){ m.parent && m.parent.remove(m); m.dispose(); }
-  const K=SOLDIER_KIT[key]; m=new THREE.InstancedMesh(K.geo[kind], K.mat, cap); m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled=false; m.castShadow=sh; m.count=0;
+  const K=SOLDIER_KIT[key]; m=new THREE.InstancedMesh(K.geo[kind], (K.mats && K.mats[kind]) || K.mat, cap); m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled=false; m.castShadow=sh; m.count=0;
   for(let i=0;i<cap;i++) m.setColorAt(i, _tbWhite); m.instanceColor.setUsage(THREE.DynamicDrawUsage); scene.add(m); TROOP_BATCH.im[id]=m; return m; }
 function tbShown(o){ while(o){ if(!o.visible) return false; if(o===scene) return true; o=o.parent; } return false; }
 // call right before the frame is drawn
