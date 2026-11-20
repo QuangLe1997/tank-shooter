@@ -104,7 +104,12 @@ export function fitGunMod(k){ const p=S.player; if(!p||!p.guns) return; const or
     floatText(MOD_VI[k]+' +1 · '+g.name+' ('+lv+'/'+GUN_MODS.max+')', '#ffd27a', p.pos, 20); ringPulse(p.pos, 0xffd27a, 2.4); sfx('levelup'); updateGunHUD(); return; }
   addCoins(GUN_MODS.coins); floatText('SÚNG ĐÃ ĐỦ LINH KIỆN · +'+GUN_MODS.coins+' xu', '#ffd24a', p.pos, 18); }
 export function modDrop(){ const pool=POWERUPS.filter(u=>u.mod); return pool[(Math.random()*pool.length)|0]; }
+// Z306 a soldier picks up a soldier's loot: nothing for an engine, a hull or a turret (speed, turbo, ram, reactive armour, siege shells, tank guns and their parts)
+const NOT_FOR_A_MAN=['speed','turbo','ram','era','siege','gun'];
+function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
+  const pool=POWERUPS.filter(u=>!u.mod && !NOT_FOR_A_MAN.includes(u.id) && (u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
 export function pickLoot(tier){                                                             // tier = how tough the source was (0 common · 1 rare · 2 epic)
+  if(S.player && S.player.cav) return trooperLoot(tier);
   const p=S.player, low=(p.hp/p.maxHp<0.4)||(core&&core.hp/core.maxHp<0.4);
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield','era'].includes(u.id)); return pool[(Math.random()*pool.length)|0]; }
   if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;

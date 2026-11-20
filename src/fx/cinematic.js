@@ -37,7 +37,7 @@ export function playerHitFX(p, dx, dz, dmg){ const L=Math.hypot(dx||0,dz||0); co
   blastLight(hx, hz, 30, 0.18); rockHull(p, ux, uz, dmg);   // Z192 our hull rocks under the blow too
   if(L) hitMarker(-ux, -uz, dmg);
   if(gradePass && gradePass.uniforms.flash) gradePass.uniforms.flash.value=Math.min(0.14, gradePass.uniforms.flash.value+0.02+dmg*0.002); }
-function hitMarker(sx, sz, dmg){ let wrap=document.getElementById('hitDir'); if(!wrap){ wrap=document.createElement('div'); wrap.id='hitDir'; document.body.appendChild(wrap); }
+export function hitMarker(sx, sz, dmg){ let wrap=document.getElementById('hitDir'); if(!wrap){ wrap=document.createElement('div'); wrap.id='hitDir'; document.body.appendChild(wrap); }
   const yaw=S.camYaw||0, a=Math.atan2(sx, -sz)+yaw, el=document.createElement('i'); el.style.setProperty('--a', a+'rad'); el.style.setProperty('--k', Math.min(1, 0.45+dmg/40).toFixed(2)); wrap.appendChild(el);
   setTimeout(()=>el.remove(), 1100); while(wrap.children.length>5) wrap.firstChild.remove(); }
 export function updateCinematic(dt, now){

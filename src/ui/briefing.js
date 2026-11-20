@@ -78,7 +78,7 @@ export function updateGunHUD(){
     const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), key=inst.id+':'+gunLevel(inst.id);
     if(chip._key!==key){ chip._key=key;
       const ic=gunPicEl(inst.id, 'wc-ic');   // Z150 the gun's own photo, same as the arsenal
-      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=((p.cav && inst.id==='rifle') ? 'SÚNG TRƯỜNG 7.62' : g.name)+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'');   // MASTERY level tag
+      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'');   // MASTERY level tag
       if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=(DMG_TYPE[g.type]||{}).vi||g.type; tg.title='Loại đạn: '+((DMG_TYPE[g.type]||{}).vi||''); nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
       const am=document.createElement('span'); am.className='wc-am'; chip._am=am; chip._amT=null; chip._rl=null;
       chip.replaceChildren(ic,nm,am); }

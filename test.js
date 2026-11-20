@@ -348,7 +348,7 @@ for(const [id,g] of Object.entries(GUNS)){
   ok(typeof g.name==='string' && g.name.length>0 && typeof g.svg==='string', `gun ${id}: has name + icon`);
   ok(DMG_TYPE[g.type] !== undefined, `gun ${id}: damage type "${g.type}" exists in DMG_TYPE`);
   ok(g.mag>0 && g.reload>0 && g.fireCd>0, `gun ${id}: mag/reload/fireCd are positive`);
-  ok(id==='rifle' || GUN_PRICE[id] !== undefined, `gun ${id}: has a shop price (GUN_PRICE)`);
+  ok(id==='rifle' || g.trooper || GUN_PRICE[id] !== undefined, `gun ${id}: has a shop price (GUN_PRICE)`);   // (Z306 the soldier's rifle is never sold)
   ok(typeof GUN_BLURB[id]==='string', `gun ${id}: has a shop blurb (GUN_BLURB)`); }
 for(const id of Object.keys(GUN_PRICE)) ok(GUNS[id] !== undefined, `GUN_PRICE.${id} points at a real gun`);
 // ENEMIES ↔ armour classes
@@ -924,7 +924,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z303 walk away / call the ride / a broken ride; no spinning riders
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), w=R('src/game/ride-wear.js'), cv=R('src/game/cavalry.js'), d=R('src/actors/driver.js'), r=R('src/actors/real-cav.js');
-  ok(!/if\(d<=CAV\.mountR\) CV\.trans=\{ k:'on', t:0 \}; else \{ CV\.call=true; floatText\('BẤM G LÊN XE'/.test(cv) && /BÁC TÀI ĐANG CHỜ/.test(cv) && /GỌI XE ÔM/.test(cv), 'back up, the driver waits: no dragging aboard, no chasing; G climbs on or calls the ride');
+  ok(!/if\(d<=CAV\.mountR\) CV\.trans=\{ k:'on', t:0 \}; else \{ CV\.call=true; floatText\('BẤM G LÊN XE'/.test(cv) && /BÁC TÀI ĐANG CHỜ/.test(cv) && /callRide\(p\)/.test(cv), 'back up, the driver waits: no dragging aboard, no chasing; G climbs on or calls the ride');
   ok(['export function rideWear','export function rideBreak','export function rideFixed','export function rideSmoke','export function rideSpeedK'].every(k=>w.includes(k)) && C.XEOM.wear && C.XEOM.wear.hp.xeom>0 && /function fixPose/.test(d) && /else if\(D\.state === 'fix'\) fixStep/.test(d) && C.RIDE.fix && C.RIDE.fix.xeom && /rideSpeedK\(CV\.H\)/.test(cv), 'the ride wears, smokes, limps, breaks down and is repaired by the driver');
   ok(/R\.tu \+ Math\.atan2\(Math\.sin\(raw - R\.tu\)/.test(r) && /C\.aimRate \* dt/.test(r) && /R\.step = \{ from/.test(r) && /dyw = R\.av \?\?/.test(r) && C.REALCAV.aimRate>0 && C.REALCAV.flip>0, 'the aim relative to the ride is unwrapped and swung at a human pace; standing riders step round'); }
 
@@ -939,6 +939,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function fitFaceMask/.test(fm) && /new THREE\.SkinnedMesh\(/.test(fm) && /bind\(host\.skeleton/.test(fm) && /fitFaceMask\(D\.B\.Head/.test(d) && /actors\/face-mask\.js/.test(hub), 'the mask is read off his face and bound to his own skeleton');
   const M=C.RIDE.mask && C.RIDE.mask.drv_xeom; ok(M && M.top < 0.32 && M.top - M.dip < 0.27 && M.halfW < 0.36 && M.ear && M.ear.top < M.helmet && M.ear.lobe < M.ear.top && M.ear.back < M.ear.front, 'its top runs under his eyes (lower lids at 0.32), its sides stop on the cheeks; his ear sits under the helmet rim');
   ok(/upperHull\(rows\[j\]\)/.test(fm) && /G0\[k\] \+ lift/.test(fm) && /CatmullRomCurve3\(path/.test(fm) && !/earU/.test(fm) && !/__maskDbg/.test(fm), 'taut over the hollows, never puffed out; one elastic per side round the configured ear, not the helmet'); }
+
+// Z306 the ride rams traffic and animals, shot vehicles burn, the call-the-ride button; soldier mode fires its own rifle
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), tr=R('src/world/traffic.js'), im=R('src/game/ride-impact.js'), rc=R('src/game/ride-call.js'), cv=R('src/game/cavalry.js'), sf=R('src/combat/soldier-fire.js'), G=(await import('./src/data/guns.js')).GUNS;
+  ok(['export function trafficKnock','export function trafficBurn','export function trafficShot','export function trafficContacts'].every(k=>tr.includes(k)) && /const tank = p && !p\.cav/.test(tr) && /trafficShot\(b, dt\)/.test(R('src/combat/lock-on.js')) && C.REALCITY.traffic.hit.hp[0]>C.REALCITY.traffic.hit.hp[1], 'traffic: knocked over, halted, shot and burnt; only a tank flattens it; rounds strike it (swept)');
+  ok(/export function rideImpacts/.test(im) && /trafficKnock\(v, p\.vel\.x, p\.vel\.z\)/.test(im) && /killWild\(a/.test(im) && /export function killWild/.test(R('src/actors/wildlife.js')) && /rideImpacts\(p\)/.test(cv) && C.XEOM.impact.flipV>C.XEOM.impact.knockV && C.XEOM.wear.spill<C.XEOM.wear.crash, 'the ride: scooters go over, cars stop and we spill (lightly), animals are run down');
+  ok(/export function callRide/.test(rc) && /export function rideCallUi/.test(rc) && /function hop\(p\)/.test(rc) && /callRide\(p\)/.test(cv) && /CV\.autoOn/.test(cv) && C.XEOM.call.farR>C.XEOM.call.dropR, 'call the ride: a button with the ETA, a call that waits for a repair, round by the streets when far; stay by a spill and climb back on');
+  ok(G.carbine && G.carbine.trooper && !G.carbine.aoe && /inf:true/.test(sf) && /soldierFire\(now, range\)/.test(cv) && !/fireGun\(/.test(cv) && /p\.cav \? trooperGuns\(\)/.test(R('src/game/flow.js')) && /trooperLoot/.test(R('src/loot/powerups.js')) && /soldierHitFX/.test(R('src/game/player-damage.js')), 'soldier mode: his own rifle and fire path, his own kit, loot and hit effect — not the tank\'s'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

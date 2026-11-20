@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
-import { CAV, HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fireGun, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, driverReady, rideBump, rideReset, rideSpeedK } from '../hub.js';
+import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM } from '../../config.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, rideBump, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -14,14 +14,16 @@ export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'xichlo' ride the 
   const H=kind ? buildBikeMount(kind) : buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
   if(kind) H.root.scale.setScalar(XEOM.k); seatRider(G, H);
   if(H.drv){ H.drv.onCrash=()=>{ if(CV.mounted && !CV.trans){ CV.trans={ k:'off', t:0, crash:true }; CV.call=false; } };   // Z296 the bike goes down: the soldier jumps clear
-    H.drv.onBack=()=>{ const p=S.player; if(!p || CV.mounted || CV.trans || CV.dead) return; floatText('BÁC TÀI ĐANG CHỜ — G: LÊN XE / GỌI XE', '#9be04a', p.pos, 14); }; }   // Z303 back up and waiting: no dragging him aboard, no chasing him — on foot he goes where he likes, G brings him back   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
+    H.drv.onBack=()=>{ const p=S.player; if(!p || CV.mounted || CV.trans || CV.dead) return;
+      const L=CV.landAt; CV.landAt=null; if(L && Math.hypot(p.pos.x-L.x, p.pos.z-L.z)<XEOM.call.stayR && Math.hypot(p.pos.x-CV.hPos.x, p.pos.z-CV.hPos.z)<RIDE.crash.callR){ CV.call=true; CV.autoOn=true; CV.callAt=performance.now()/1000; floatText('DỰNG XONG — LÊN XE ĐI CON!', '#9be04a', p.pos, 14); return; }   // Z306 you stayed by it: he rides up and you climb on
+      floatText('BÁC TÀI ĐANG CHỜ — G: LÊN XE / GỌI XE', '#9be04a', p.pos, 14); }; }   // Z303 back up and waiting: no dragging him aboard, no chasing him — on foot he goes where he likes, G brings him back   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
   if(!kind) H.onStep=hoofFall;
-  CV.real=null; CV.realP=null; fitRealCav(CV); if(kind) floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
+  CV.real=null; CV.realP=null; fitRealCav(CV); rideCallUi(); if(kind) floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
   const mesh=new THREE.Group(); mesh.add(H.root); scene.add(mesh);
   const u=G.userData, p={
     mesh, turret:new THREE.Object3D(), muzzle:u.muzzle, modelId:kind||'cav', bike:kind||null, cav:CV,
     pos:new THREE.Vector3(0, 0, ARENA*0.55), vel:new THREE.Vector3(), facing:-Math.PI, aim:-Math.PI, aimSmoothed:-Math.PI, shieldMesh:null,
-    hp:100, maxHp:100, lives:5, fireAt:0, weaponLvl:0, guns:[{ id:'rifle', ammo:24, rU:0, rD:0 }], gunIdx:0, infiniteAmmo:false, ammoMul:1, magMul:1,
+    hp:100, maxHp:100, lives:5, fireAt:0, weaponLvl:0, guns:trooperGuns(), gunIdx:0, infiniteAmmo:false, ammoMul:1, magMul:1,
     buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0, turbo:0, ram:0 }, buffLv:{ turbo:0 }, era:0, rangeMul:1, radius:CAV.radius.mounted, scale:1,
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(), overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     dmgMul:1, fireMul:1, speedMul:1, dashCdMul:1, spellCdMul:1, crit:0, lifesteal:0, kbx:0, kbz:0, reloadMul:1, armor:0, bossMul:1, camK:CAV.camK.mounted, defK:CAV.defK.mounted, fwdSpeed:0, throttle:0 };
@@ -37,12 +39,12 @@ function hoofFall(i, x, z, v){ const k=Math.min(1, v/12);
     n.buffer=b; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200+Math.random()*900; f.Q.value=1.4; const g2=actx.createGain(); g2.gain.value=vol*0.55; n.connect(f).connect(g2).connect(master); n.start(t); }catch(e){} }
 // ---- G: get off / get on (or whistle him over if he is far) ----
 export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!=='playing' || CV.trans) return;
-  if(!CV.mounted && CV.H && !driverReady(CV.H)){ floatText(CV.H.broken ? 'XE HƯ — BÁC TÀI ĐANG SỬA!' : 'CHỜ BÁC TÀI DỰNG XE!', '#ffcf5a', p.pos, 14); return; }   // Z296 the driver is still picking the bike up
-  if(CV.mounted){ if(CV.speed>CAV.horse.cruise*0.6){ floatText('GHÌM CƯƠNG ĐÃ', '#ffcf5a', p.pos, 14); return; }
+  if(CV.mounted){ if(CV.speed>CAV.horse.cruise*0.6){ floatText(CV.H && CV.H.bike ? 'CHẠY CHẬM LẠI ĐÃ' : 'GHÌM CƯƠNG ĐÃ', '#ffcf5a', p.pos, 14); return; }
     CV.trans={ k:'off', t:0 }; sfx('click'); return; }
-  const d=Math.hypot(CV.hPos.x-p.pos.x, CV.hPos.z-p.pos.z);
-  if(d<=CAV.mountR){ CV.trans={ k:'on', t:0 }; sfx('click'); }
-  else { CV.call=true; whistle(); floatText(CV.H && CV.H.bike ? ({ xichlo:'GỌI XÍCH LÔ', bagac:'GỌI BA GÁC', bantai:'GỌI XE BÁN TẢI' }[CV.H.bike] || 'GỌI XE ÔM') : 'HUÝT SÁO GỌI NGỰA', '#9be04a', p.pos, 14); } }
+  const d=Math.hypot(CV.hPos.x-p.pos.x, CV.hPos.z-p.pos.z), ready=rideCanCome();
+  if(d<=CAV.mountR && ready){ CV.trans={ k:'on', t:0 }; sfx('click'); return; }
+  if(d<=CAV.mountR){ floatText(CV.H.broken ? 'XE HƯ — BÁC TÀI ĐANG SỬA!' : 'CHỜ BÁC TÀI DỰNG XE!', '#ffcf5a', p.pos, 14); return; }   // Z296 the driver is still picking the bike up
+  if(CV.call) return; whistle(); callRide(p); }   // Z306 away from it: call it — he comes now, or as soon as it is fit to (game/ride-call.js)
 function whistle(){ if(!actx || !master) return; const t=actx.currentTime; try{ const o=actx.createOscillator(), g=actx.createGain(); o.type='sine';
   o.frequency.setValueAtTime(1500, t); o.frequency.linearRampToValueAtTime(2300, t+0.18); o.frequency.linearRampToValueAtTime(1700, t+0.32); o.frequency.linearRampToValueAtTime(2500, t+0.5);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t+0.04); g.gain.setValueAtTime(0.09, t+0.45); g.gain.exponentialRampToValueAtTime(0.0001, t+0.6); o.connect(g).connect(master); o.start(t); o.stop(t+0.62); }catch(e){} }
@@ -89,7 +91,7 @@ export function updateCavalry(dt, now){
     // the riderless horse: grazes where you left him, or trots / gallops to your whistle
     horseAlone(p, dt);
   }
-  if(!CV.trans){ CV.last.copy(p.pos); p.pos.addScaledVector(p.vel, dt); collide(p, now); clampField(p.pos, 3);
+  if(!CV.trans){ CV.last.copy(p.pos); p.pos.addScaledVector(p.vel, dt); collide(p, now); rideImpacts(p); clampField(p.pos, 3);
     if(CV.mounted){ const moved=(p.pos.x-CV.last.x)*Math.sin(CV.facing)+(p.pos.z-CV.last.z)*Math.cos(CV.facing); CV.speed = dt>0 ? Math.sign(CV.speed)*Math.min(Math.abs(CV.speed), Math.abs(moved/dt)+0.5) : CV.speed; CV.hPos.copy(p.pos); } }
   p.fwdSpeed=CV.mounted?CV.speed:Math.hypot(p.vel.x, p.vel.z);
   // place + animate
@@ -105,11 +107,11 @@ export function updateCavalry(dt, now){
   updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: CV.trans ? { k:CV.trans.k, e:Math.min(1, CV.trans.t/CAV.mountT) } : false, hit: p.hitT>0, ride: CV.mounted && CV.H.inert ? CV.H.inert : null });   // Z299 what the sprung body feels, for him to sway with   // Z295 which way and how far through getting on / off
   // fire: hold LMB (desktop) · the trigger / auto-fire on phones, exactly like the tank
   const range=playerRange();
-  if(!CV.trans){ if(MOBILE){ const t=autoFire?aimTarget(range):null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) fireGun(now, range); } else if(S.firing) fireGun(now, range); }
+  if(!CV.trans){ if(MOBILE){ const t=autoFire?aimTarget(range):null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) soldierFire(now, range); } else if(S.firing) soldierFire(now, range); }   // Z306 his own rifle (combat/soldier-fire.js), not the tank's gun
 }
 // ---- the horse on his own ----
-function horseAlone(p, dt){ const H=CV.H; if(!H) return; let v=0, yr=0; if(H.drv && !driverReady(H) || H.broken) CV.call=false;   // Z296 a crashed bike answers no whistle
-  if(CV.call){ const dx=p.pos.x-CV.hPos.x, dz=p.pos.z-CV.hPos.z, d=Math.hypot(dx,dz); if(d<CAV.call.arrive){ CV.call=false; }
+function horseAlone(p, dt){ const H=CV.H; if(!H) return; let v=0, yr=0; const can=rideCanCome(); if(CV.call && can) rideCallStep(p);   // Z306 a call waits while the ride is down or broken; far off or stuck, he comes round (game/ride-call.js)   // Z296 a crashed bike answers no whistle
+  if(CV.call && can){ const dx=p.pos.x-CV.hPos.x, dz=p.pos.z-CV.hPos.z, d=Math.hypot(dx,dz); if(d<CAV.call.arrive){ CV.call=false; if(CV.autoOn && !CV.trans && !CV.dead){ CV.autoOn=false; CV.trans={ k:'on', t:0 }; sfx('click'); } }
     else { const tgt=Math.atan2(dx,dz), df=wrapA(tgt-CV.facing); CV.facing=wrapA(CV.facing+Math.max(-2.4*dt, Math.min(2.4*dt, df))); yr=df*2; v=Math.min(CAV.call.speed, d*1.6); } }
   CV.speed+=(v-CV.speed)*Math.min(1, dt*2.2);
   CV.hPos.x+=Math.sin(CV.facing)*CV.speed*dt; CV.hPos.z+=Math.cos(CV.facing)*CV.speed*dt; clampField(CV.hPos, 3);
@@ -129,7 +131,7 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1,
     const hop = T.crash ? 0.45 : H.bike ? (XEOM[H.bike].pose==='stand' ? 0.22 : 0.06) : 0.35;   // a step down off a ride, a jump off a horse (thrown off a crash: a real leap)
     G.position.set(0, (T.from.y-gy)*(1-e)+Math.sin(Math.PI*e)*hop, 0); poseSoldier(G, 'stand', dt);
     animateHorse(H, dt, 0, 0);
-    if(k>=1){ CV.trans=null; CV.mounted=false; G.position.set(0,0,0); p.facing=CV.facing; CV.stance=CV.want='stand'; } return; }
+    if(k>=1){ CV.trans=null; CV.mounted=false; G.position.set(0,0,0); p.facing=CV.facing; CV.stance=CV.want='stand'; CV.landAt=T.crash ? p.pos.clone() : null; CV.autoOn=false; } return; }   // Z306 where he landed: stay by it and you ride on
   // on: from beside him up into the saddle
   if(!T.started){ T.started=true; T.from=p.pos.clone(); p.vel.set(0,0,0); }
   const to=CV.hPos, s2=CV.hPos.clone().add(side); const px=T.from.x+(s2.x-T.from.x)*Math.min(1, e*2), pz=T.from.z+(s2.z-T.from.z)*Math.min(1, e*2);
@@ -173,6 +175,6 @@ export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=
   H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, 0); H.root.position.set(0,0,0); H.root.rotation.y=0;
   updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand', dead:true }); }
 // after a death: straight back in the saddle at the spawn point
-export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);
+export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.autoOn=false; CV.landAt=null; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);
   if(!CV.mounted){ G.parent && G.parent.remove(G); seatRider(G, H); H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.set(0,0,0); CV.mounted=true; }
   CV.facing=-Math.PI; H.wantGraze=false; rideReset(H); }

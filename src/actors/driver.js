@@ -70,7 +70,7 @@ export function rideHit(dmg, dx, dz){ const H = CV.H, D = H && H.drv; if(H && CV
   D.ivp += F.flinch * (0.7 + Math.random() * 0.6); D.ivl += (D.threat ? -D.threat : Math.random() < 0.5 ? -1 : 1) * F.flinch * 0.7; D.ivh += F.flinch;
   if(dmg >= RIDE.crash.hit && Math.random() < RIDE.crash.p && performance.now() / 1000 > D.cool) bikeCrash(H, 'hit'); else talk(D, 'underfire'); }
 export function rideBump(vn){ const H = CV.H, D = H && H.drv; if(D && D.ok && D.state === 'ride' && CV.mounted && vn > RIDE.crash.v && performance.now() / 1000 > D.cool) bikeCrash(H, 'bump'); }
-export function bikeCrash(H, why){ const D = H.drv; if(!D || D.state !== 'ride') return; const now = performance.now() / 1000; rideWear(H, XEOM.wear.crash);   // (Z303 a crash knocks it about)
+export function bikeCrash(H, why, wear){ const D = H.drv; if(!D || D.state !== 'ride') return; const now = performance.now() / 1000; rideWear(H, wear ?? XEOM.wear.crash);   // (Z303 a crash knocks it about · Z306 a spill in traffic only a little)
   D.state = 'fall'; D.t = 0; D.cool = now + RIDE.crash.cool; D.side = Math.random() < 0.5 ? -1 : 1; D.slide = Math.max(4, Math.abs(CV.speed)); D.wheelT = 0;
   // he is thrown: out of the ride, into the world where he was, carried forward and to the side
   const w = D.w; w.getWorldPosition(_a); w.getWorldQuaternion(_qw); scene.add(w); w.position.copy(_a); w.rotation.order = 'YXZ'; w.rotation.setFromQuaternion(_qw, 'YXZ'); w.rotation.x = 0; w.rotation.z = 0; w.scale.setScalar(RIDE.h / Math.max(1e-3, D.h0 || 1));

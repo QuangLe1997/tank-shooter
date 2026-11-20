@@ -64,7 +64,7 @@ export function crushAt(c){
 }
 export function updateCrush(){
   if(!crushables.length) return;
-  const tanks=[]; const p=S.player; if(p&&p.mesh) tanks.push(p); for(const e of enemies) tanks.push(e); if(boss&&boss.alive) tanks.push(boss);
+  const tanks=[]; const p=S.player; if(p&&p.mesh&&!p.cav) tanks.push(p); for(const e of enemies) tanks.push(e); if(boss&&boss.alive) tanks.push(boss);   // (Z306 not a soldier: a man on foot or on a scooter flattens nothing)
   for(const t of tanks){ const s=t.mesh?t.mesh.scale.x:1, hw=HULL_HW*s, hl=HULL_HL*s, R2=(hl+0.8)*(hl+0.8), fs=Math.sin(t.facing||0), fc=Math.cos(t.facing||0);
     for(const c of crushables){ if(!c.alive) continue; const dx=c.x-t.pos.x, dz=c.z-t.pos.z; if(dx*dx+dz*dz > R2) continue;
       const lx=dx*fc-dz*fs, lz=dx*fs+dz*fc; if(Math.abs(lx) < hw+c.r*0.3 && Math.abs(lz) < hl+c.r*0.3) crushAt(c); } }   // anything under the hull footprint

@@ -118,8 +118,13 @@ function dressWild(){ if(typeof window==='undefined' || (MOBILE && !REALWILD.mob
 // the nearest threat (any tank) to a point → [dx,dz,dist]
 function threat(x, z){ let best=null, bd=1e9; const P=S.player; const chk=(o)=>{ const d=Math.hypot(o.pos.x-x, o.pos.z-z); if(d<bd){ bd=d; best=o; } };
   if(P) chk(P); for(const e of enemies) if(solidTank(e)) chk(e); for(const t of ALLY_TANKS) chk(t); return best ? [x-best.pos.x, z-best.pos.z, bd] : null; }
+// Z306 an animal run down by a ride: knocked over onto its side where it was struck, skidding to a stop, still — and after a while gone
+export function killWild(a, ix, iz){ if(!a || a.dead) return; a.dead=true; a.deadT=0; a.state='dead'; a.vx=ix*0.3; a.vz=iz*0.3; a.fall=Math.random()<0.5?-1:1; a.ra=0; }
+export const wildRadius = a => Math.max(0.45, (a.sp.hz||0.4)*1.1)*a.s;
+function lieDead(a, dt){ a.deadT+=dt; const k=Math.exp(-dt*4); a.vx*=k; a.vz*=k; a.x+=a.vx*dt; a.z+=a.vz*dt; a.ra+=(a.fall*1.45-a.ra)*Math.min(1, dt*6);
+  a.root.position.set(a.x, heightAt(a.x,a.z)+0.05, a.z); a.root.rotation.set(0, a.face, a.ra); if(a.deadT>40) a.root.visible=false; }
 export function updateWildlife(dt, now){ if(!WILD.list.length) return;
-  for(const a of WILD.list){ const sp=a.sp; a.t-=dt; const T=threat(a.x, a.z); let speed=0, dirx=0, dirz=0;
+  for(const a of WILD.list){ if(a.dead){ lieDead(a, dt); continue; } const sp=a.sp; a.t-=dt; const T=threat(a.x, a.z); let speed=0, dirx=0, dirz=0;
     if(T && T[2]<sp.flee*(a.state==='flee'?1.4:1)){ a.state='flee'; a.fleeT=3+Math.random()*2; const L=T[2]||1; dirx=T[0]/L; dirz=T[1]/L; const j=Math.sin(now*1.7+a.ph)*0.35; const c=Math.cos(j), s=Math.sin(j); [dirx,dirz]=[dirx*c-dirz*s, dirx*s+dirz*c]; speed=sp.run; }
     else if(a.state==='flee'){ a.fleeT-=dt; if(a.fleeT<=0){ a.state='graze'; a.t=_R(2,6); } else { dirx=Math.sin(a.face); dirz=Math.cos(a.face); speed=sp.run*0.6; } }
     else { if(a.t<=0){ if(a.goal){ a.goal=null; a.t=_R(3,8); } else { const r=_R(4,12), an=Math.random()*6.28; a.goal=[a.x+Math.cos(an)*r, a.z+Math.sin(an)*r]; a.t=_R(4,9); } }

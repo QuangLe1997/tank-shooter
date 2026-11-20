@@ -80,6 +80,6 @@ export function gunMixDps(st, mix){ let e=0, w=0; for(const k in mix){ e+=mix[k]
 
 // the arsenal's yardsticks: the best of every number across the ordinary arsenal (ultimates and the siege rocket would flatten the bars)
 let _gm=null; export function gunStatMax(){ if(_gm) return _gm; _gm={ shot:1, rof:1, sus:1, burst:1, reach:1, hits:1, v0:1 };
-  for(const id of Object.keys(GUNS)){ const g=GUNS[id]; if(g.ulti || g.special==='rocket') continue; const s=gunStats(id, { mastery:false }); if(!s) continue;
+  for(const id of Object.keys(GUNS)){ const g=GUNS[id]; if(g.ulti || g.special==='rocket' || g.trooper) continue; const s=gunStats(id, { mastery:false }); if(!s) continue;
     for(const k of Object.keys(_gm)) if(isFinite(s[k])) _gm[k]=Math.max(_gm[k], s[k]); }
   return _gm; }

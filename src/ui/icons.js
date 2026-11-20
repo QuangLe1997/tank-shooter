@@ -29,6 +29,7 @@ export const GLYPH={
   emp:'<circle cx="12" cy="12" r="2"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5M12 5.5A6.5 6.5 0 0 0 5.5 12M12 18.5a6.5 6.5 0 0 1-6.5-6.5M12 18.5a6.5 6.5 0 0 0 6.5-6.5"/>',
   shell:'<path d="M12 2.4c1.9 1.7 2.5 3.4 2.5 5.1V10h-5V7.5c0-1.7.6-3.4 2.5-5.1Z"/><rect x="9.2" y="10" width="5.6" height="9.6" rx="1"/><path d="M9.2 13.4h5.6M9.2 16.4h5.6"/>',
   rifle:'<path d="M3 9.4h15.5l2.5 1.1v2.2h-4l-1 2h-3l-1-2H3z"/><path d="M6 12.7v3M18.5 10.5V8"/>',
+  carbine:'<path d="M2 11.5l3-1.5h14l3 .8v1.4H14l-1.2 3.3h-2.3l.6-3.3H7L4.5 14H2z"/><path d="M19 10V8.6"/>',   // Z306 the soldier's rifle: stock, magazine, front sight
   smg:'<path d="M4 9.4h10.5v2.6h-2.5l-1 1.8H7.5l-1-1.8H4z"/><path d="M7.5 12v3.4M12.5 9.4V7.6"/>',
   shotgun:'<path d="M3 9.6h17.5M3 12.4h17.5"/><path d="M3 9.6v2.8M20.5 8.8v4.4"/><path d="M6 12.4v3"/>',
   flak:'<path d="M5 19l8-8"/><path d="M3 17.2l1.8 1.8 1.8-1.8"/><path d="M11 13l2.4 2.4"/><circle cx="17.5" cy="6.5" r="1.1"/><circle cx="20.5" cy="9.5" r="1.1"/><circle cx="14.6" cy="4.2" r="1.1"/>',

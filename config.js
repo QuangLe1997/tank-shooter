@@ -192,7 +192,13 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   sus:{ k:190, z:0.32, kp:120, zp:0.36, kr:110, zr:0.4, pitchAcc:0.006, pitch:[-0.075, 0.045], rollLat:0.005, rollMax:0.055, rough:0.5, bump:0.32, kickP:0.5, gY:0.6, buzz:0.0012, steerMax:0.55, steerRate:9, restLean:0.06, leanK:1, leanMax:0.72, dustRun:0.9, dustHard:1.6, dustAcc:4, dustC:0xbfa88a },
   // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
   //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
-  wear:{ hp:{ xeom:150, xichlo:110, bagac:190 }, share:0.5, crash:28, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
+  wear:{ hp:{ xeom:150, xichlo:110, bagac:190 }, share:0.5, crash:28, spill:6, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
+  // Z306 the ride on the street (game/ride-impact.js): closing speed (m/s) to knock a scooter over or stop a car (below it a nudge), to go over the top of a
+  //   car; a scooter's share of our speed kept; animals: run down above animalV, a big one (legs longer than bigLeg) brings the ride down. (spill: wear above)
+  impact:{ knockV:2.5, flipV:3.5, motoKeep:0.55, animalV:3, bigLeg:1.1 },
+  // Z306 calling the ride (game/ride-call.js): farther than farR (m) he comes round by the streets — after delay s he turns up dropR m away and rides in; no
+  //   closer for stuckT s → he comes round too; after a spill you climb straight back on if you stayed within stayR m of where you landed
+  call:{ farR:55, delay:4, dropR:26, stuckT:3, stayR:4 },
   // Z301 the lamps (mount units; HDR colour multipliers, so the bright ones bloom): headlamp lens radius, its glow by day / by night, the beam by night
   //   (a spot on the bars: it swings with the steering); tail lens size, its running glow and its brake flare (braking harder than brakeAcc m/s²)
   lamp:{ headR:0.026, day:2.2, night:7, beam:{ i:4.2, dist:28, ang:0.5, pen:0.6, ahead:6, drop:0.55, r0:0.02, r1:0.9, len:4.4, op:0.2 }, tail:[0.034, 0.02], run:1.1, brake:4.5, brakeAcc:1.2, ease:14 },
@@ -333,7 +339,7 @@ export const VIP_GUNS = ['railgun','rocket','orbital','plasma','hydra','singular
 
 // ----- punchy marketing blurbs (kept short) -----
 export const GUN_BLURB = {
-  rifle:'Bền bỉ, đa năng — không bao giờ kẹt đạn.', smg:'Cơn mưa đạn dữ dội ở cự ly gần.',
+  rifle:'Bền bỉ, đa năng — không bao giờ kẹt đạn.', carbine:'Súng trường của người lính: đạn thẳng, chính xác, không nổ.', smg:'Cơn mưa đạn dữ dội ở cự ly gần.',
   shotgun:'Tàn phá cự ly gần — tám viên chì, một lần bóp cò.', flak:'Mảnh đạn nổ tung xé nát cả bầy.',
   cannon:'Một phát đạn khổng lồ. Giáp dày cũng phải gập.', cryo:'Đóng băng chúng — rồi đập vỡ vụn.',
   minigun:'Nòng xoay không ngừng, lửa không ngừng. Giữ vững phòng tuyến.', missile:'Khoá mục tiêu. Nó tự săn. Không bao giờ trượt.',
@@ -669,6 +675,9 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
   traffic:{ wheel:[0.33, 0.26], files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
     liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
+    // Z306 struck / shot (world/traffic.js): health [car, scooter]; a knocked-down scooter lies downT s (gone once you are clearR m off) and skids at knockK of the blow;
+    //   a struck or shot-at car stops haltT s; a burnt-out one burns burnT s, sunk sink m on its rims
+    hit:{ hp:[160, 60], downT:8, clearR:25, knockK:0.6, haltT:7, burnT:22, sink:0.12 },
       { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
   lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
   flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]

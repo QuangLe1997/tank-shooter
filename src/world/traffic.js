@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY, XEOM } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, haptic, heightAt, loadGLTF, sfx, spawnPart, loadRealCity, cityProp } from '../hub.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, fireball, haptic, heightAt, loadGLTF, sfx, spawnPart, loadRealCity, cityProp } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -90,13 +90,17 @@ function runsOf(segs){ const by = new Map(); for(const s of segs){ const k = s.a
 const pos = (r, t, off, s) => r.ax ? [r.c - s * off, t] : [t, r.c + s * off];   // keep right: heading +x the right is +z, heading +z it is −x
 const yaw = (r, s) => r.ax ? (s > 0 ? 0 : Math.PI) : (s > 0 ? Math.PI / 2 : -Math.PI / 2);
 
-function place(v){ const R = v.r, [x, z] = pos(R, v.t, v.off, v.s); v.x = x; v.z = z; if(v.dead){ _M.makeScale(0, 0, 0); v.im.setMatrixAt(v.k, _M); return; }
-  _M.compose(_V.set(x, heightAt(x, z) + REALCITY.lift.road, z), _Q.setFromEuler(_E.set(0, yaw(R, v.s) + v.wob, v.lean)), _S.setScalar(v.sc)); v.im.setMatrixAt(v.k, _M); }
+function place(v){ const R = v.r, [x, z] = pos(R, v.t, v.off, v.s); v.x = x + (v.ox || 0); v.z = z + (v.oz || 0); if(v.dead){ _M.makeScale(0, 0, 0); v.im.setMatrixAt(v.k, _M); return; }   // (Z306 a knocked-down scooter has slid off its line)
+  _M.compose(_V.set(v.x, heightAt(v.x, v.z) + REALCITY.lift.road - (v.sink || 0), v.z), _Q.setFromEuler(_E.set(0, yaw(R, v.s) + v.wob, v.lean + (v.tip || 0))), _S.setScalar(v.sc)); v.im.setMatrixAt(v.k, _M); }   // (tip: on its side · sink: a burnt-out car on its rims)
+export const trafficYaw = v => yaw(v.r, v.s) + (v.wob || 0);
 function spawn(v){ const p = S.player, R = TR.runs; let r = null, t = 0;
   for(let n = 0; n < 12; n++){ r = R[(Math.random() * R.length) | 0]; t = r.a0 + 3 + Math.random() * (r.a1 - r.a0 - 6); const [x, z] = pos(r, t, 0, 1); if(!p || Math.hypot(x - p.pos.x, z - p.pos.z) > 40) break; }
   const C = REALCITY.traffic, moto = v.moto; v.r = r; v.t = t; v.s = Math.random() < 0.5 ? 1 : -1;
   v.off = r.blvd ? (moto ? C.laneB[1] + (Math.random() - 0.5) * 1.4 : C.laneB[0]) : (moto ? C.laneS[1] + (Math.random() - 0.5) * 0.4 : C.laneS[0]);
-  v.vmax = (moto ? C.motoV : C.carV)[0] + Math.random() * ((moto ? C.motoV : C.carV)[1] - (moto ? C.motoV : C.carV)[0]); v.v = v.vmax * 0.6; v.dead = false; v.wob = 0; v.lean = 0; }
+  v.vmax = (moto ? C.motoV : C.carV)[0] + Math.random() * ((moto ? C.motoV : C.carV)[1] - (moto ? C.motoV : C.carV)[0]); v.v = v.vmax * 0.6; v.dead = false; v.wob = 0; v.lean = 0;
+  v.st = null; v.stT = 0; v.hp = C.hit.hp[moto ? 1 : 0]; v.tip = v.tipTo = 0; v.ox = v.oz = v.svx = v.svz = 0; v.sink = 0; v.fireT = 0; tint(v, _W); }   // Z306 whole again, in its own paint
+const _W = new THREE.Color(1, 1, 1), _CH = new THREE.Color(0x2e2925);
+function tint(v, c){ const ic = v.im.instanceColor; if(!ic) return; v.im.setColorAt(v.k, c); ic.needsUpdate = true; }
 
 // Z290 ROLLING WHEELS: each kind's geometry is cloned with a per-vertex tag for the wheels (found from the model itself: the vertices touching
 //   the road give the two axles; a wheel is the disc of the real tyre radius round each axle, on the outer side for cars) and every vehicle
@@ -123,12 +127,61 @@ export async function buildTraffic(segs){ TR.on = false; TR.list.length = 0; TR.
     im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);
     const lm = new THREE.InstancedMesh(lampGeo(q.size, q.moto, q.sc), LM, n); lm.instanceMatrix = im.instanceMatrix; lm.frustumCulled = false; arena.add(lm); LAND.meshes.push(lm);   // the lamps ride on the same matrices
     contactShadow(q.size.x * (q.moto ? 1.05 : 1.12), q.size.z * 1.06, n, im.instanceMatrix, 0.012 / q.sc);   // Z271 seated on the road
-    for(let k = 0; k < n; k++){ const v = { im, k, len:q.len, moto:q.moto, sc:q.sc, respawn:0 }; spawn(v); place(v); TR.list.push(v); } im.instanceMatrix.needsUpdate = true; }
+    for(let k = 0; k < n; k++) im.setColorAt(k, _W); im.instanceColor.setUsage(THREE.DynamicDrawUsage);   // Z306 a colour per vehicle (white = its own paint), so a burnt one can char
+    for(let k = 0; k < n; k++){ const v = { im, k, len:q.len, moto:q.moto, sc:q.sc, respawn:0, hw:q.moto ? 0.36 : q.size.x * q.sc / 2, hl:q.len / 2 }; spawn(v); place(v); TR.list.push(v); } im.instanceMatrix.needsUpdate = true; }
   TR.on = true; }
 
-// a blast wrecks what is near it
-export function trafficBlast(x, z, r){ if(!TR.on) return; for(const v of TR.list) if(!v.dead && Math.hypot(v.x - x, v.z - z) < r * 1.15 + 1) wreck(v, true); }
-function wreck(v, fire){ v.dead = true; v.respawn = REALCITY.traffic.respawn; const y = heightAt(v.x, v.z);
+// a blast wrecks what is near it (Z306: and leaves it burning where it stood)
+export function trafficBlast(x, z, r){ if(!TR.on) return; for(const v of TR.list) if(!v.dead && v.st !== 'burn' && Math.hypot(v.x - x, v.z - z) < r * 1.15 + 1) wreck(v, true); }
+// Z306 STRUCK, SHOT, BURNING: every vehicle has its own health and a state — 'down' (a scooter knocked over: it slides off on its side, lies there, and is
+//   gone once you are clear of it) · 'halt' (a car hit or shot at stops dead for a while, and the street queues behind it) · 'burn' (shot to pieces or caught
+//   in a blast: charred, on its rims or its side, flames and a modest smoke column, then gone). Rounds strike the vehicle they cross (any player's)
+const HIT = () => REALCITY.traffic.hit;
+function local(v, x, z){ const f = trafficYaw(v), dx = x - v.x, dz = z - v.z, s = Math.sin(f), c = Math.cos(f); return [dx * c - dz * s, dx * s + dz * c]; }   // [across (its right), along (its front)]
+export function trafficKnock(v, ix, iz){ if(!v || v.dead || v.st === 'burn') return; const C = HIT(), y = heightAt(v.x, v.z), f = trafficYaw(v);
+  if(v.moto){ if(v.st === 'down') return; const lx = ix * Math.cos(f) - iz * Math.sin(f); v.st = 'down'; v.stT = C.downT; v.v = 0; v.tipTo = (lx > 0 ? -1 : 1) * 1.4; v.svx = ix * C.knockK; v.svz = iz * C.knockK;   // it goes over away from the blow, and skids
+    sfx('crunch', { x:v.x, z:v.z }, 0.7); }
+  else { v.st = 'halt'; v.stT = C.haltT; v.v = 0; sfx('clang', { x:v.x, z:v.z }, 0.6); }
+  burst({ x:v.x, z:v.z }, 0x8a8a88, 6, 3, { y:y + 0.4, life:0.4, size:0.4 }); }
+export function trafficBurn(v){ if(!v || v.dead || v.st === 'burn') return; const C = HIT(), y = heightAt(v.x, v.z);
+  v.st = 'burn'; v.stT = C.burnT; v.v = 0; v.fireT = 0; v.svx = v.svz = 0; v.sink = v.moto ? 0 : C.sink; if(v.moto && !v.tipTo) v.tipTo = (Math.random() < 0.5 ? -1 : 1) * 1.4; tint(v, _CH);
+  fireball({ x:v.x, z:v.z }, v.moto ? 0.35 : 0.6, y + 0.6);
+  for(let n = 0; n < (v.moto ? 5 : 9); n++) spawnPart(v.x, y + 0.5, v.z, (Math.random() - 0.5) * 7, 2 + Math.random() * 4, (Math.random() - 0.5) * 7, { color:Math.random() < 0.5 ? 0x2a2a2a : 0x9a9c9e, size:0.15 + Math.random() * 0.2, life:0.9, grav:-14, drag:0.8 });
+  const p = S.player; if(p && Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < 40) sfx('boom', { x:v.x, z:v.z }, v.moto ? 0.45 : 0.7); }
+// a round crossing a vehicle: sparks off the panel, health off it (a car stops); true = the round is spent here
+export function trafficShot(b, dt){ if(!TR.on) return false; const C = HIT(), ox = b.x - b.vx * dt, oz = b.z - b.vz * dt, step = Math.hypot(b.x - ox, b.z - oz);
+  for(const v of TR.list){ if(v.dead) continue; const dx = b.x - v.x, dz = b.z - v.z, R = v.hl + 1 + step; if(dx * dx + dz * dz > R * R) continue;
+    const [ax, az] = local(v, ox, oz), [lx, lz] = local(v, b.x, b.z), rr = (b.r || 0.2) * 0.4; if(!crosses(ax, az, lx, lz, v.hw + rr, v.hl + rr)) continue;   // swept: a fast round jumps a car's width in a frame
+    if(b.by != null && b.by > (v.moto ? 1.5 : 1.7)) continue;   // it flies over
+    const y = heightAt(v.x, v.z); for(let n = 0; n < 4; n++) spawnPart(b.x, y + 0.6 + Math.random() * 0.5, b.z, (Math.random() - 0.5) * 4, 1 + Math.random() * 2.5, (Math.random() - 0.5) * 4, { color:Math.random() < 0.5 ? 0xffd27a : 0x9a9c9e, size:0.07 + Math.random() * 0.08, life:0.3, grav:-12, drag:0.6 });
+    if(v.st !== 'burn'){ v.hp -= b.dmg || 10; if(!v.st && !v.moto){ v.st = 'halt'; v.stT = C.haltT; v.v = 0; } if(v.hp <= 0) trafficBurn(v); }
+    return true; }
+  return false; }
+// does the segment (ax, az) → (bx, bz) cross the box |x| ≤ W, |z| ≤ L (slab clipping)
+function crosses(ax, az, bx, bz, W, L){ let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+  for(const [p, d, h] of [[ax, dx, W], [az, dz, L]]){ if(Math.abs(d) < 1e-9){ if(Math.abs(p) > h) return false; continue; }
+    let u0 = (-h - p) / d, u1 = (h - p) / d; if(u0 > u1) [u0, u1] = [u1, u0]; t0 = Math.max(t0, u0); t1 = Math.min(t1, u1); if(t0 > t1) return false; }
+  return true; }
+// the vehicles a body at (x, z) of radius R is pressing into: [{ v, nx, nz, d }] (out of the vehicle, how deep)
+export function trafficContacts(x, z, R, out = []){ out.length = 0; if(!TR.on) return out;
+  for(const v of TR.list){ if(v.dead) continue; const dx = x - v.x, dz = z - v.z, Q = v.hl + R + 0.5; if(dx * dx + dz * dz > Q * Q) continue;
+    const [lx, lz] = local(v, x, z), cx = Math.max(-v.hw, Math.min(v.hw, lx)), cz = Math.max(-v.hl, Math.min(v.hl, lz)); let ex = lx - cx, ez = lz - cz, d = Math.hypot(ex, ez), pen;
+    if(d > 1e-4){ if(d >= R) continue; pen = R - d; ex /= d; ez /= d; }
+    else { const px = v.hw - Math.abs(lx), pz = v.hl - Math.abs(lz); if(px < pz){ ex = Math.sign(lx) || 1; ez = 0; pen = px + R; } else { ex = 0; ez = Math.sign(lz) || 1; pen = pz + R; } }   // inside it: out the nearest side
+    const f = trafficYaw(v), s = Math.sin(f), c = Math.cos(f); out.push({ v, nx:ex * c + ez * s, nz:-ex * s + ez * c, d:pen }); }
+  return out; }
+function stateStep(v, dt, p){ const C = HIT(); v.stT -= dt; v.tip += (v.tipTo - v.tip) * Math.min(1, dt * 7);
+  if(v.st === 'down'){ if(Math.hypot(v.svx, v.svz) > 0.2){ v.ox += v.svx * dt; v.oz += v.svz * dt; const k = Math.exp(-dt * 3); v.svx *= k; v.svz *= k;
+      if(Math.random() < 0.5) spawnPart(v.x, heightAt(v.x, v.z) + 0.1, v.z, (Math.random() - 0.5) * 3, 1 + Math.random() * 2, (Math.random() - 0.5) * 3, { color:0xffd27a, size:0.08 + Math.random() * 0.1, life:0.35, grav:-9, drag:1 }); }   // sparks off the tarmac
+    if(v.stT <= 0 && (!p || Math.hypot(p.pos.x - v.x, p.pos.z - v.z) > C.clearR || v.stT < -C.downT * 3)) spawn(v); }   // gone once nobody is watching
+  else if(v.st === 'halt'){ v.v = 0; if(v.stT <= 0) v.st = null; }
+  else if(v.st === 'burn'){ burnFx(v, dt); if(v.stT <= 0){ v.dead = true; v.respawn = REALCITY.traffic.respawn; v.st = null; } } }
+function burnFx(v, dt){ const C = HIT(), k = Math.max(0, v.stT / C.burnT), y = heightAt(v.x, v.z), m = v.moto ? 0.55 : 1; v.fireT -= dt; if(v.fireT > 0) return; v.fireT = (MOBILE ? 0.13 : 0.07) / Math.max(0.45, k);
+  if(k > 0.15) spawnPart(v.x + (Math.random() - 0.5) * v.hw * 1.4, y + 0.5 * m + 0.3, v.z + (Math.random() - 0.5) * v.hl * 1.2, (Math.random() - 0.5) * 0.6, 1.6 + Math.random() * 1.4, (Math.random() - 0.5) * 0.6,
+    { tex:'fire', color:0xffd090, color2:0xff3a08, size:(0.8 + Math.random() * 0.7) * m * (0.6 + k * 0.6), life:0.5 + Math.random() * 0.3, grav:1.5, drag:1.6, grow:0.5 });
+  if(Math.random() < 0.55) spawnPart(v.x + (Math.random() - 0.5) * 0.6, y + 1.1 * m + 0.3, v.z + (Math.random() - 0.5) * 0.6, 0.5 + (Math.random() - 0.5) * 0.4, 1.6 + Math.random() * 0.8, 0.3 + (Math.random() - 0.5) * 0.4,
+    { color:k > 0.4 ? 0x16130f : 0x3a3632, size:(0.8 + Math.random() * 0.5) * m, life:MOBILE ? 2.2 : 3.2, smoke:true, grav:0.25, drag:0.5, grow:1.8 * m, op:0.45, keep:true }); }   // a modest column, not a tank's
+function wreck(v, fire){ if(fire){ trafficBurn(v); return; } v.dead = true; v.respawn = REALCITY.traffic.respawn; const y = heightAt(v.x, v.z);   // (flattened under a tank: gone)
   burst({ x:v.x, z:v.z }, fire ? 0xff7a2a : 0x8a8a88, v.moto ? 6 : 12, 5, { y:y + 0.6, life:0.5, size:v.moto ? 0.5 : 0.8 });
   for(let n = 0; n < (v.moto ? 5 : 9); n++) spawnPart(v.x, y + 0.5, v.z, (Math.random() - 0.5) * 7, 2 + Math.random() * 4, (Math.random() - 0.5) * 7, { color:Math.random() < 0.5 ? 0x2a2a2a : 0x9a9c9e, size:0.15 + Math.random() * 0.2, life:0.9, grav:-14, drag:0.8 });
   const p = S.player; if(p && Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < 30){ sfx('crunch', { x:v.x, z:v.z }, 0.6); if(!fire) haptic(6); } }
@@ -139,9 +192,11 @@ export function updateTraffic(dt){ if(!TR.on) return; if(!TR.ims.length || !TR.i
     const key = v.r.c + ':' + v.r.ax + ':' + v.s + ':' + (v.r.blvd ? (v.moto ? 'm' : 'c') : 's'); if(!lanes.has(key)) lanes.set(key, []); lanes.get(key).push(v); }   // boulevards: scooters and cars in their own lanes
   for(const L of lanes.values()){ L.sort((a, b) => (a.t - b.t) * a.s);
     for(let i = 0; i < L.length; i++){ const v = L[i], R = v.r, lead = L[i + 1]; let gap = lead && lead.r === R ? Math.abs(lead.t - v.t) - (lead.len + v.len) / 2 - (v.moto ? 1.2 : 2.5) : 99;
+      const tank = p && !p.cav;   // Z306 only a tank flattens what it drives into — the soldier's ride has its own collisions (game/ride-impact.js)
+      if(tank && Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < (v.moto ? 1.9 : 2.8)){ wreck(v, false); continue; }   // run over
+      if(v.st){ stateStep(v, dt, p); if(!v.dead) place(v); continue; }   // Z306 knocked down / stopped / burning: it stays where it is
       if(p){ const al = R.ax ? p.pos.z : p.pos.x, cr = R.ax ? p.pos.x : p.pos.z, [lx, lz] = pos(R, v.t, v.off, v.s), lc = R.ax ? lx : lz, ahead = (al - v.t) * v.s;
-        if(Math.abs(cr - lc) < 3.2 && ahead > -2 && ahead < 16) gap = Math.min(gap, ahead - 4.5);
-        if(Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < (v.moto ? 1.9 : 2.8)){ wreck(v, false); continue; } }   // run over
+        if(Math.abs(cr - lc) < 3.2 && ahead > -2 && ahead < 16) gap = Math.min(gap, ahead - 4.5); }   // it brakes for you in its lane
       const vt = Math.max(0, Math.min(v.vmax, gap * 1.1)); v.v += Math.max(-14 * dt, Math.min(3.5 * dt, vt - v.v)); v.t += v.v * v.s * dt;
       const RA = v.im.geometry.attributes.aRoll; if(RA){ v.roll = ((v.roll || 0) + v.v * dt / v.im.userData.rM) % 6.2832; RA.setX(v.k, v.roll); }   // Z290 roll as far as it went
       if(v.moto){ v.wob = Math.sin(performance.now() * 0.0013 + v.k) * 0.03; v.lean = Math.sin(performance.now() * 0.0009 + v.k * 1.7) * 0.025; }

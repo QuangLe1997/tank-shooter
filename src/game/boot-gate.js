@@ -36,7 +36,7 @@ export async function warmUp(onStep){
     _wreckGeos(); put(new THREE.Mesh(_wreckGeo, new THREE.MeshStandardMaterial({ color:0x222222, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1, transparent:true })));
     { const G=towerGeos(); if(!_woodMat){ __set__woodMat(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 })); __set__tinMat(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') })); }
       put(new THREE.Mesh(G.wood,_woodMat)); put(new THREE.Mesh(G.roof,_tinMat)); }
-    const gids=Object.keys(GUNS); for(let i=0;i<gids.length;i++){ put(makeGunBarrel(gids[i])); if(i%4===3){ step(0.45+0.15*i/gids.length); await _frame(); } }
+    const gids=Object.keys(GUNS).filter(id=>!GUNS[id].trooper); for(let i=0;i<gids.length;i++){ put(makeGunBarrel(gids[i])); if(i%4===3){ step(0.45+0.15*i/gids.length); await _frame(); } }
     if(renderer.compileAsync){ step(0.62); await renderer.compileAsync(scene, camera); step(0.75); await _frame();
       const was=NIGHT.on; setNightLights(true); await renderer.compileAsync(scene, camera); setNightLights(was); NIGHT._was=was; step(0.86); await _frame(); }   // both light setups
     // one real (off-screen) draw with everything in view → also compiles shadow-depth + per-object variants

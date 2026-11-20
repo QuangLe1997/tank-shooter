@@ -122,6 +122,7 @@ export * from './campaign/waves.js';
 export * from './campaign/boss.js';
 export * from './campaign/boss-new.js';   // Z161 the three new generals' weapons
 export * from './fx/cinematic.js';   // Z189 shock domes, fire light, our tank's hit / damage FX
+export * from './fx/soldier-fx.js';   // Z306 soldier mode: a man is hit, not a hull
 export * from './fx/hitfx.js';   // Z192 shell streaks, missile smoke ribbons, armour hits that rock the hull, hurt tanks that smoke
 export * from './fx/explosions.js';
 export * from './fx/wallmarks.js';   // Z204 rounds go off against walls / cover / forts and leave their marks
@@ -137,6 +138,8 @@ export * from './world/ruins3d.js';   // Z275 ruins of war
 export * from './fx/dust.js';   // Z278 dust in the sunlight
 export * from './game/xeom.js';   // Z282 xe ôm / xích lô mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair
+export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams scooters, cars and animals
+export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
@@ -153,6 +156,7 @@ export * from './combat/guns.js';
 export * from './combat/aim.js';
 export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
+export * from './combat/soldier-fire.js';   // Z306 soldier mode: his own rifle and its firing
 export * from './combat/ultimate.js';   // Z186 the five ultimate weapons
 export * from './combat/mastery.js';
 export * from './combat/gunstats.js';   // Z230 what a gun really does (arsenal · shop · power rating)

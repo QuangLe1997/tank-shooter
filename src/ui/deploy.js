@@ -7,7 +7,7 @@ export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
 // the key points of this field (built from the planned zones): where a squad can be posted at the start
 export function deployPosts(){ const p=S.player, sx=p?p.pos.x:0, sz=p?p.pos.z:ARENA*0.55, toward=(x,z,f)=>[sx+(x-sx)*f, sz+(z-sz)*f], posts=[];
-  posts.push({ id:'tank', ic:'tank', nm:'ĐI CÙNG XE TĂNG', ds:'Ngồi trên nóc xe, hồi máu dần · thả xuống khi cần', max:RIDER.cap, cls:'tank' });
+  if(!(p && p.cav)) posts.push({ id:'tank', ic:'tank', nm:'ĐI CÙNG XE TĂNG', ds:'Ngồi trên nóc xe, hồi máu dần · thả xuống khi cần', max:RIDER.cap, cls:'tank' });   // (Z306 no hull to ride on in soldier mode)
   if(core) posts.push({ id:'core', ic:'bunker', nm:'GIỮ LÕI', ds:'Phòng thủ quanh Lõi', x:core.pos.x, z:core.pos.z+6, max:6 });
   if(RALLY_PT.g) posts.push({ id:'rally', ic:'spark', nm:'KHU TẬP KẾT', ds:'Canh đồ & tiếp tế, sát xuất phát', x:RALLY_PT.x, z:RALLY_PT.z, max:4 });
   const side=w=>w.x<-ARENA*0.3?'TRÁI':(w.x>ARENA*0.3?'PHẢI':'PHÍA SAU'), dup=k=>POWS.filter(o=>side(o)===k).length>1;
@@ -20,7 +20,7 @@ function assigned(){ return _dp.posts.reduce((n,q)=>n+q.n,0); }
 // sensible default: crew on the tank, a pair at each enemy site, the rest split between the core and the rally point
 export function autoDeploy(){ const D=_dp; let left=D.total; for(const q of D.posts) q.n=0;
   const put=(q,n)=>{ const k=Math.max(0, Math.min(n, q.max, left)); q.n+=k; left-=k; };
-  put(D.posts.find(q=>q.id==='tank'), Math.min(crewTarget(), RIDER.cap));
+  { const tq=D.posts.find(q=>q.id==='tank'); if(tq) put(tq, Math.min(crewTarget(), RIDER.cap)); }
   for(const q of D.posts) if(q.site) put(q, 2);
   const c=D.posts.find(q=>q.id==='core'), r=D.posts.find(q=>q.id==='rally'); while(left>0){ const b=left; if(c) put(c,1); if(r) put(r,1); for(const q of D.posts) if(q.id==='left'||q.id==='right') put(q,1); if(left===b) break; }
   D.roles={ mg:Math.min(1,roleMax('mg')), mortar:Math.min(1,roleMax('mortar')), sapper:Math.min(1,roleMax('sapper')) }; render(); }

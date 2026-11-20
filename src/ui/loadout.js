@@ -5,7 +5,7 @@ import { GUNS, LOADOUT_MAX, PROFILE, S, gunPicHTML, gunTierTx, hide, refreshStar
 export let _ldSel=[];
 export function renderLoadout(){
   const grid=document.getElementById('ldgrid'); if(!grid) return; grid.innerHTML='';
-  Object.keys(GUNS).forEach(id=>{                            // show every gun: owned = selectable, the rest = locked (collection goal)
+  Object.keys(GUNS).filter(id=>!GUNS[id].trooper).forEach(id=>{                            // show every gun: owned = selectable, the rest = locked (collection goal) · Z306 not the soldier's rifle
     const g=GUNS[id], owned=PROFILE.ownedGuns.includes(id), on=_ldSel.includes(id);
     const card=document.createElement('div');
     card.className='ldcard'+(owned?'':' locked')+(on?' on':'');

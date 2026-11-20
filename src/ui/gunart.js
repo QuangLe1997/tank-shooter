@@ -68,7 +68,7 @@ export function gunPicEl(id, cls){ const t=document.createElement('template'); t
 // the tier tag every screen prints for a gun (shop case, arsenal card, new-gun card)
 export function gunTierTx(id){ return (GUNS[id]||{}).ulti ? 'TỐI THƯỢNG ◆' : VIP_GUNS.includes(id) ? 'VIP ◆' : 'BẬC '+((GUNS[id]||{}).tier||1); }
 // warm the cache for every gun right after boot, in idle slices (the shop and the arsenal then open with photos already there)
-export function warmGunArt(){ queueGunArt(Object.keys(GUNS)); }
+export function warmGunArt(){ queueGunArt(Object.keys(GUNS).filter(id=>!GUNS[id].trooper)); }   // (Z306 not the soldier's rifle)
 
 // ---- Z155 tank model photos (garage cards) ----
 export const TANKART = { cache:{}, queue:[], busy:false };
