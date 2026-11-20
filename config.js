@@ -146,11 +146,15 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 // Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
 //   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet (or pedal = the crank's [half-width, height, along], crankR m) · rear = the rear axle (wheelie pivot)
 //   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do
-export const RIDE = { h:1.68, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
-  fit:{ xeom:{ hip:[0, 0.31, -0.04], grip:[[0.15, 0.45, 0.16], [-0.15, 0.45, 0.16]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
-    xichlo:{ hip:[0, 0.43, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
-    bagac:{ hip:[0, 0.37, 0.2], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
-  grip:0.85, lean:{ body:0.22, head:0.6 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.35, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.55 }, gears:[3, 6.5, 10],
+export const RIDE = { h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
+  fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.15, 0.45, 0.16], [-0.15, 0.45, 0.16]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
+    xichlo:{ hip:[0, 0.48, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
+    bagac:{ hip:[0, 0.395, 0.19], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
+  grip:0.85, lean:{ body:0.22, head:0.6 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.35, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] },
+  // Z300 feet on the road (mount units, m/s, m/s²): both down below stopV (out to the side, a little ahead); the inside foot out ahead skimming the road
+  //   through a bend taken faster than dabV with more than dabLat of cornering; under a storm of fire (n hits in win s): ducked, face down and away, jinking
+  feet:{ stopV:1.1, rate:6, out:0.04, fwd:0.05, dabV:4.5, dabLat:5.5, dabOut:0.17, dabFwd:0.17, hover:0.015, dust:2.2, dustC:0xbfa88a },
+  dodge:{ win:2.2, n:3, flinch:1.6, jink:2.2, every:[0.35, 0.45], bend:0.14, face:0.2, away:0.45, lean:0.2 }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.36 }, gears:[3, 6.5, 10],
   crash:{ v:7.5, hit:22, p:0.3, down:1.3, getup:1.2, lift:1.1, mount:0.45, cool:8, throwSoldier:true, callR:9 } };
 // Z296 what the driver and the soldier say to each other, by event (d = the driver, s = the soldier's answer) — on screen now, voices to be laid on later
 export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
@@ -169,7 +173,7 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   bagac:{ len:3.3, side:1.15, wheels:[{ c:[0, 0.13, 0.595], r:0.13, w:0.05, steer:true }, { c:[0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }, { c:[-0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }], yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12, steer:{ a:[0.595, 0.13], b:[0.46, 0.44], back:0.025, top:0.4, z:0.36 } }, bantai:{ len:4.7, side:1.45, yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
   // Z299 the sprung body on its wheels (metres, seconds): heave / pitch / roll springs (k stiffness, z damping ratio); squat and dive per m/s² of
   //   acceleration; trikes roll outward per m/s² of cornering; rough road kicks (per metre at speed, m/s); the steer angle from the turn rate and wheelbase
-  sus:{ k:190, z:0.32, kp:120, zp:0.36, kr:110, zr:0.4, pitchAcc:0.006, pitch:[-0.075, 0.045], rollLat:0.005, rollMax:0.055, rough:0.5, bump:0.32, kickP:0.5, gY:0.6, buzz:0.0012, steerMax:0.55, steerRate:9 },
+  sus:{ k:190, z:0.32, kp:120, zp:0.36, kr:110, zr:0.4, pitchAcc:0.006, pitch:[-0.075, 0.045], rollLat:0.005, rollMax:0.055, rough:0.5, bump:0.32, kickP:0.5, gY:0.6, buzz:0.0012, steerMax:0.55, steerRate:9, restLean:0.06, dustRun:0.9, dustHard:1.6, dustAcc:4, dustC:0xbfa88a },
   pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
@@ -744,7 +748,7 @@ export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket
   sniper:{ butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
   gl:{ butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
-export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
+export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
 //   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)

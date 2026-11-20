@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIDE, XEOM } from '../../config.js';
-import { S, driveDriver, floatText, loadGLTF, makeDriver, mountModel } from '../hub.js';
+import { S, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, spawnPart } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter / cyclo assembled from the city's parts stay as the fallback
@@ -53,20 +53,41 @@ function realWheel(R, T, spoked){ const M = wheelMats(), w = new THREE.Group(), 
 function buildWheels(H, kind){ const X = XEOM[kind]; if(!X.wheels) return; H.wheels = []; for(const wd of X.wheels){ const R = wd.r * XEOM.k, pivot = new THREE.Group(), spin = realWheel(R, wd.w * XEOM.k * 0.9, wd.spoke !== false);
     spin.scale.setScalar(1 / XEOM.k); pivot.add(spin); pivot.position.fromArray(wd.c); H.B.add(pivot); H.wheels.push({ pivot, spin, R, steer:!!wd.steer }); } }
 const _sa = new THREE.Vector3(), _sp = new THREE.Vector3(), _sq = new THREE.Quaternion();
-// Z299 the parts: root → B (the machine's lean / wheelie; the wheels, unsprung, on the road) → body (sprung: frame, seat, driver, passenger, its own
+// Z299 the parts: root → T (Z300 laid on the ground under its wheels) → B (the machine's lean / wheelie; the wheels, unsprung, on the road) → body (sprung: frame, seat, driver, passenger, its own
 //   heave / pitch / roll on the suspension) → bar (the steering head, turning about the raked axis)
-export function buildBikeMount(kind){ const root = new THREE.Group(), B = new THREE.Group(), body = new THREE.Group(); root.add(B); B.add(body); const X = XEOM[kind];
-  const H = { root, B, body, bike:kind, t:0, v:0, lean:0, wantGraze:false, onStep:null, sayAt:0, gait:'stand', phase:0, steer:0, roll:0,
+export function buildBikeMount(kind){ const root = new THREE.Group(), T = new THREE.Group(), B = new THREE.Group(), body = new THREE.Group(); root.add(T); T.add(B); B.add(body); const X = XEOM[kind];
+  const H = { root, T, B, body, tp:0, tr:0, ty:0, bike:kind, t:0, v:0, lean:0, wantGraze:false, onStep:null, sayAt:0, gait:'stand', phase:0, steer:0, roll:0,
     sus:{ y:0, vy:0, p:0, vp:0, r:0, vr:0, acc:0, lastV:0, gy:null, gvy:0 }, inert:{ acc:0, lat:0, vy:0, p:0, r:0 } };
   if(X.steer){ const st = X.steer; H.axisP = new THREE.Vector3(0, st.a[1], st.a[0]); H.axis = new THREE.Vector3(0, st.b[1] - st.a[1], st.b[0] - st.a[0]).normalize(); }
   // a point fixed to the body (or, steered, to the bars) in the world
   H.toWorld = (arr, out, steered) => { out.fromArray(arr); if(steered && H.axis && H.steer){ out.sub(H.axisP).applyAxisAngle(H.axis, H.steer).add(H.axisP); } return body.localToWorld(out); };
   const put = m => { if(!m) return; const mesh = new THREE.Mesh(m.geo, m.mats); mesh.castShadow = true; mesh.receiveShadow = true; body.add(mesh); H.mesh = mesh;
     if(m.bar && H.axis){ const piv = new THREE.Group(), bm = new THREE.Mesh(m.bar, m.mats); bm.castShadow = true; bm.receiveShadow = true; piv.position.copy(H.axisP); bm.position.copy(H.axisP).negate(); piv.add(bm); body.add(piv); H.bar = piv; }
-    if(!H.wheels) buildWheels(H, kind); };
+    if(!H.wheels) buildWheels(H, kind);
+    // Z300 how far it must be lifted to lie on either side (rolled ±1.35) with its lowest point on the ground — bars, pegs, wheels all counted
+    const P = m.geo.attributes.position, lie = [0, 0]; for(const [i, a] of [[0, -1.35], [1, 1.35]]){ const sn = Math.sin(a), cs = Math.cos(a); let lo = 0; for(let j = 0; j < P.count; j += 3) lo = Math.min(lo, P.getX(j) * sn + P.getY(j) * cs); lie[i] = -lo; } H.lie = lie; };
   loadGLTF('ride_' + kind).then(gl => gl ? put(heroGeo(gl, kind)) : (XEOM[kind].driver ? mountModel(kind).then(put) : null));
   if(RIDE.fit[kind]) makeDriver(H, kind);   // Z296 the driver rides it as his own man
   return H; }
+// Z300 ON THE GROUND UNDER ITS WHEELS: the ground's height is read under every wheel and the machine is pitched (front axle against rear) and, on three
+//   wheels, rolled (left track against right) and lifted so each tyre sits on the ground beneath it — up a rise, down into a dip, across a slope
+function groundFit(H, dt, X){ const W = X.wheels; if(!W || !H.T) return; const k = XEOM.k; H.root.updateMatrixWorld(true); H.root.getWorldPosition(_sp); const g0 = _sp.y;
+  let fS = 0, fN = 0, rS = 0, rN = 0, lS = 0, lN = 0, qS = 0, qN = 0, zf = 0, zr = 0, xl = 0, xr = 0;
+  for(const w of W){ _sa.set(w.c[0], 0, w.c[2]); H.root.localToWorld(_sa); const g = heightAt(_sa.x, _sa.z) - g0;
+    if(w.c[2] > 0){ fS += g; fN++; zf += w.c[2]; } else { rS += g; rN++; zr += w.c[2]; }
+    if(w.c[0] > 0.05){ lS += g; lN++; xl += w.c[0]; } else if(w.c[0] < -0.05){ qS += g; qN++; xr += w.c[0]; } }
+  if(!fN || !rN) return; const gf = fS / fN, gr = rS / rN; zf /= fN; zr /= rN;
+  const sp = Math.max(-0.35, Math.min(0.35, (gf - gr) / (k * (zf - zr)))), pitch = Math.asin(sp);
+  let roll = 0, sr = 0; if(lN && qN){ const gl = lS / lN, gq = qS / qN; xl /= lN; xr /= qN; sr = Math.max(-0.3, Math.min(0.3, (gl - gq) / (k * (xl - xr)))); roll = Math.asin(sr); }
+  const lift = gf / k - zf * sp, r = Math.min(1, dt * 14);   // (rolling about the centre line leaves it where it is)
+  H.tp += (pitch - H.tp) * r; H.tr += (roll - H.tr) * r; H.ty += (lift - H.ty) * r;
+  H.T.rotation.set(-H.tp, 0, H.tr); H.T.position.set(0, H.ty, 0); }
+// Z300 dust off the tyres: a little at speed on loose ground, a spray off the rear wheel when it is spun up or braked hard, from the inside tyre in a hard bend
+function wheelDust(H, dt, v, X){ const W = X.wheels, s = H.sus; if(!W || !H.wheels) return; const U = XEOM.sus, av = Math.abs(v), hard = Math.max(0, Math.abs(s.acc) - U.dustAcc);
+  const n = dt * (av * U.dustRun + hard * U.dustHard); if(Math.random() > n) return;
+  const w = W[W.length - 1]; _sa.set(w.c[0] + (Math.random() - 0.5) * 0.05, 0.01, w.c[2] - w.r * 0.6); H.B.localToWorld(_sa); const back = v >= 0 ? -1 : 1;
+  H.root.getWorldQuaternion(_sq); _sp.set(0, 0, back).applyQuaternion(_sq);
+  spawnPart(_sa.x, _sa.y + 0.05, _sa.z, _sp.x * (1 + hard * 0.2) + (Math.random() - 0.5), 0.5 + Math.random() * (0.6 + hard * 0.1), _sp.z * (1 + hard * 0.2) + (Math.random() - 0.5), { color:U.dustC, size:0.45 + Math.min(0.6, hard * 0.05), life:0.8 + hard * 0.04, grav:-1.2, drag:2.2, smoke:true, op:0.45 }); }
 // Z299 THE SUSPENSION: the body rides on springs over the wheels — it squats when the throttle opens and dives when braking hard (and rocks back after),
 //   rolls out of the bend on three wheels, heaves over the ground's rises and dips and is kicked by the rough road at speed; the engine buzzes.
 //   What the body feels (H.inert: acceleration, cornering, heave) is passed on to the people on it, who sway with it and catch themselves.
@@ -88,8 +109,10 @@ function suspension(H, dt, v, yr, two){ const U = XEOM.sus, s = H.sus, k = XEOM.
 // the bike's motion: lean into the turn, a little bob on the road, a word from the driver now and then
 export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = Math.min(1, Math.abs(v) / 8); H.gait = Math.abs(v) < 0.5 ? 'stand' : 'walk'; H.phase = (H.phase + dt * 0.8) % 1;
   const X = XEOM[H.bike], two = H.two = !!(X.wheels && X.wheels.length === 2);
-  H.lean += (-yawRate * sp * (X.lean ?? XEOM.lean) - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
-  suspension(H, dt, v, yawRate, two);
+  groundFit(H, dt, X);
+  const rest = two && H.drv && H.drv.fd ? -XEOM.sus.restLean * H.drv.fd[0] : 0;   // Z300 stopped, a two-wheeler rests over on his left foot
+  H.lean += (-yawRate * sp * (X.lean ?? XEOM.lean) + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
+  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X);
   const now = performance.now() / 1000, p = S.player;
   if(H.wheels){ H.roll = (H.roll || 0) + v * dt; const U = XEOM.sus, wb = Math.abs(X.wheels[0].c[2] - X.wheels[X.wheels.length - 1].c[2]) * XEOM.k;
     const want = Math.max(-U.steerMax, Math.min(U.steerMax, Math.atan(wb * yawRate / Math.max(1.4, Math.abs(v))))) * Math.sign(v || 1);   // Z299 the steer a turn this tight needs at this speed (a lot slow, a touch fast)

@@ -127,7 +127,7 @@ export function fitRealCav(CV){
     G.traverse(o => { if(o.isMesh) o.visible = false; });
     G.add(op);
     // Z294 the second soldier (the special-forces Tripo model) wears the operator's moves: the operator stays, unseen, and drives him bone by bone
-    let pup = null; if(sg && C.s2.on && (PROFILE.trooper || 's2') === 's2'){ const sw = new THREE.Group(), s2 = skClone(sg.scene); sw.name = 'realS2'; sw.rotation.y = C.s2.yaw; sw.scale.setScalar(C.opH / HUMAN_SCALE);
+    let pup = null; if(sg && C.s2.on && (PROFILE.trooper || 's2') === 's2'){ const sw = new THREE.Group(), s2 = skClone(sg.scene); sw.name = 'realS2'; sw.rotation.y = C.s2.yaw; sw.scale.setScalar(C.opH / HUMAN_SCALE * (C.s2.k || 1));   // (Z300 a touch bigger and taller)
       s2.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; } }); sw.add(s2); G.add(sw); G.updateMatrixWorld(true); pup = makePuppet(op, s2);
       if(pup) op.traverse(o => { if(o.isMesh) o.visible = false; }); else G.remove(sw); }
     const clips = [...og.animations, ...rg.animations, ...rw.animations].map(c => inPlace(c, 'mixamorigHips.position')), byName = n => clips.find(c => c.name === n);

@@ -10,7 +10,7 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
   if(p.cav) dmg *= p.defK||1;                // Z245 the general: plate armour, and lying flat / kneeling makes a smaller target
   if(p.era>0 && dmg>=LOOT.era.minHit){ p.era--; dmg*=1-LOOT.era.absorb; setEraTiles(p);                 // Z93 REACTIVE ARMOUR: a tile detonates outward and eats most of the hit
     const a=Math.atan2(dx||0, dz||1); burst({x:p.pos.x-Math.sin(a)*1.6, z:p.pos.z-Math.cos(a)*1.6}, 0xffd27a, 8, 8, {y:1.5, life:0.25, size:0.4, grav:-10, drag:2, up:2}); sfx('clang'); floatText('GIÁP PHẢN ỨNG', '#e0c070', p.pos, 14); }
-  p.hp -= dmg; if(p.cav && p.bike) rideHit(dmg);   // Z296 the driver ducks — a heavy hit may bring the bike down
+  p.hp -= dmg; if(p.cav && p.bike) rideHit(dmg, dx, dz);   // Z296 the driver ducks — a heavy hit may bring the bike down
   if(p.hp<=0) capsuleSave(p, now||performance.now()/1000); else if(p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');   // Z161 T-14 crew capsule
   // HIT REACTION — every hit is FELT: hull flinch/rattle + shake scaled by the blow + red splash
   p.hitT = Math.max(p.hitT||0, 0.26);

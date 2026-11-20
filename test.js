@@ -885,7 +885,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), d=R('src/actors/driver.js');
   ok(['export function makeDriver','export function driveDriver','function ik2','function ridePose','function crashStep','export function bikeCrash','export function bikeWheelie','export function rideHit','export const RIDE_VOICE'].every(k=>d.includes(k)), 'driver module: IK riding pose, actions, crash sequence, voice hook');
   ok(['xeom','xichlo','bagac'].every(k=>C.RIDE.fit[k] && C.RIDE.model[k]) && C.RIDE.fit.xichlo.pedal && C.RIDE.fit.xeom.wheelie && ['start','wheelie','underfire','crash','getup','lift','remount'].every(e=>C.RIDE_TALK[e] && C.RIDE_TALK[e].d.length && C.RIDE_TALK[e].s.length), 'every ride fitted, the xích lô pedals, the xe ôm wheelies, every event has both voices');
-  ok(/bikeWheelie\(CV\.H\)/.test(R('src/game/cavalry.js')) && /rideBump\(-vn\)/.test(R('src/game/cavalry.js')) && /rideHit\(dmg\)/.test(R('src/game/player-damage.js')) && /driveDriver\(H, dt, v, yawRate\)/.test(R('src/game/xeom.js')) && /H\.drv\.onCrash/.test(R('src/game/cavalry.js')), 'Space wheelies, crashes and hits reach the driver, the soldier jumps clear and is called back'); }
+  ok(/bikeWheelie\(CV\.H\)/.test(R('src/game/cavalry.js')) && /rideBump\(-vn\)/.test(R('src/game/cavalry.js')) && /rideHit\(dmg(, dx, dz)?\)/.test(R('src/game/player-damage.js')) && /driveDriver\(H, dt, v, yawRate\)/.test(R('src/game/xeom.js')) && /H\.drv\.onCrash/.test(R('src/game/cavalry.js')), 'Space wheelies, crashes and hits reach the driver, the soldier jumps clear and is called back'); }
 
 // Z297 the gun first, the hands onto it, recoil straight back along the bore
 { const fs=await import('node:fs'); const C=await import('./config.js'), r=fs.readFileSync('src/actors/real-cav.js','utf8');
@@ -902,6 +902,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function splitBar/.test(x) && /function suspension/.test(x) && /B\.add\(body\)/.test(x) && /H\.toWorld = /.test(x) && /setFromAxisAngle\(H\.axis, H\.steer\)/.test(x) && C.XEOM.sus && C.XEOM.xeom.steer && C.XEOM.bagac.steer, 'wheels unsprung on B, the body sprung, the steering head split off and turned about its raked axis');
   ok(/onRide\(H, R\.grip\[i\], _a, true\)/.test(d) && /\(H\.body \|\| H\.B\)\.add\(w\)/.test(d) && /I\.acc \* Z\.acc/.test(d) && C.RIDE.sway && C.RIDE.sway.glance, 'the driver rides the sprung body, his hands on the turning bars, his trunk thrown by the ride, glancing about');
   ok(/function rideSway/.test(r) && /R\.op\.rotation\.y = R\.opRY \+ R\.hy/.test(r) && /yaw = gy \+ hy \+ clamp\(dyw - hy/.test(r) && C.REALCAV.seatTurn && C.REALCAV.sway && /ride: CV\.mounted && CV\.H\.inert/.test(cv) && /\(H\.body\|\|H\.B\)\.add\(G\)/.test(cv), 'the soldier swings his hips round on the seat, his head leads, his trunk sways with the ride'); }
+
+// Z300 seated true, feet on the real ground, the racer's dab, dodging, wheels on the terrain
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), d=R('src/actors/driver.js'), x=R('src/game/xeom.js'), cv=R('src/game/cavalry.js');
+  ok(/function flatFoot/.test(d) && /heightAt\(_c\.x, _c\.z\) \+ D\.ankle/.test(d) && /D\.fdab\[i\]/.test(d) && C.RIDE.feet && C.RIDE.feet.dabV>0 && C.RIDE.fit.xeom.hip[1]>0.38, 'hips above the seat, both feet planted on the real ground when stopped, the inside foot out in a hard bend');
+  ok(/turn\(B\[n\], RIGHT, -bend \/ 3\)/.test(d) && /D\.storm/.test(d) && /rideHit\(dmg, dx, dz\)/.test(R('src/game/player-damage.js')) && C.RIDE.dodge && C.RIDE.dodge.n>=2, 'bending to the bars leans him forward; a storm of fire has him ducked, face down and away, jinking');
+  ok(/function groundFit/.test(x) && /function wheelDust/.test(x) && /T\.add\(B\)/.test(x) && /H\.lie = lie/.test(x) && /H\.lie\[D\.roll < 0/.test(d) && /if\(!H\.bike\)\{ H\.root\.position\.copy/.test(cv), 'the machine laid on the ground under its wheels; down on its side it lies on the ground; a ride works in its true place');
+  ok(C.RIDE.h>=1.74 && C.RIDE.legK>1 && C.REALCAV.s2.k>1 && /endsWith\('\.scale'\)/.test(d), 'driver taller and longer in the leg, soldier a touch bigger'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

@@ -96,7 +96,7 @@ export function updateCavalry(dt, now){
   // place + animate
   p.mesh.position.set(p.pos.x, heightAt(p.pos.x, p.pos.z), p.pos.z);
   const firing=!!(S.firing || (MOBILE && autoFire && p.fireAt>now-0.15));
-  if(CV.mounted && !CV.trans){ p.mesh.rotation.y=CV.facing; H.root.position.set(0,0,0); H.root.rotation.y=0; H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, CV.yawRate); H.root.position.set(0,0,0); H.root.rotation.y=0;
+  if(CV.mounted && !CV.trans){ p.mesh.rotation.y=CV.facing; H.root.position.set(0,0,0); H.root.rotation.y=0; if(!H.bike){ H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; } animateHorse(H, dt, CV.speed, CV.yawRate); H.root.position.set(0,0,0); H.root.rotation.y=0;   // (Z300 a ride works in its true place: its feet and wheels read the real ground)
     poseRider(G, H, dt, wrapA(p.aimSmoothed-CV.facing), firing); }
   else if(!CV.trans){ p.mesh.rotation.y=p.facing; const d=Math.hypot(p.pos.x-CV.last.x, p.pos.z-CV.last.z); animateSoldier(G, d, dt, firing); poseSoldier(G, CV.stance, dt);
     u.up.rotation.y += (Math.max(-0.9, Math.min(0.9, wrapA(p.aimSmoothed-p.facing))) - u.up.rotation.y)*Math.min(1, dt*10); cloakFoot(G, Math.hypot(p.vel.x,p.vel.z), CV.stance==='prone'); }
@@ -149,7 +149,7 @@ function collide(p, now){ const R=p.radius;
 // the horse and the general idle through the intro and the 3-2-1 (no input)
 export function cavIdle(dt){ const p=S.player; if(!p || !p.cav || !CV.H) return; const H=CV.H;
   if(CV.mounted){ H.root.position.set(0,0,0); H.root.rotation.y=0; p.mesh.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing=p.facing;
-    const save=H.root.position.clone(); H.root.position.copy(p.mesh.position); H.root.rotation.y=p.facing; animateHorse(H, dt, 0, 0); H.root.position.copy(save); H.root.rotation.y=0; poseRider(CV.G, H, dt, 0, false); updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand' }); } }
+    const save=H.root.position.clone(); if(!H.bike){ H.root.position.copy(p.mesh.position); H.root.rotation.y=p.facing; } animateHorse(H, dt, 0, 0); H.root.position.copy(save); H.root.rotation.y=0; poseRider(CV.G, H, dt, 0, false); updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand' }); } }
 
 // ---- Z254 the general is killed: hit in the saddle he is thrown off sideways with the horse's momentum and falls to the ground (the real model plays
 //   its fall-backwards clip; the procedural rig falls as a ragdoll); on foot he goes down where he stands. The riderless horse runs on, slowing, a little panicked.
