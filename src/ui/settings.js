@@ -1,6 +1,6 @@
 // ui/settings.js — Z103 split from ui/menus.js. SETTINGS — difficulty · sound · music · quality · fullscreen.
 import { PAD_CFG, TURRET, CLOUD_CFG, CAM_TUNE, SHAKE } from '../../config.js';
-import { CLOUDSAVE, DIFF_META, MOBILE, PAD, PROFILE, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen } from '../hub.js';
+import { CLOUDSAVE, DIFF_META, MOBILE, PAD, PROFILE, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen, hudOn, setHud } from '../hub.js';
 
 // ---- SETTINGS: difficulty · audio · quality · fullscreen ----
 export function _segChip(label, on, fn, sub){ const c=document.createElement('div'); c.className='seg-chip'+(on?' on':''); c.innerHTML=label+(sub?' <small>'+sub+'</small>':''); tapEl(c, fn); return c; }
@@ -36,6 +36,8 @@ export function buildSettings(){
     stepRow('setCamAhead', t.aheadK!=null?t.aheadK:1, T.aheadK, 'aheadK', v=>Math.round(P.ahead0*v)+' m', 'xe càng lùi xuống dưới màn'); }
   const Sh=document.getElementById('setShake'); if(Sh){ Sh.innerHTML=''; const cur=PROFILE.shake||SHAKE.def;   // Z239 screen-shake level
     for(const [k,t,sub] of [['off','TẮT','khung hình đứng yên'],['low','NHẸ','mặc định'],['mid','VỪA',''],['high','MẠNH','như cũ']]) Sh.appendChild(_segChip(t, cur===k, ()=>{ PROFILE.shake=k; saveProfile(); buildSettings(); sfx('click'); }, sub)); }
+  for(const [id, k] of [['setHudTalk','talk'], ['setHudCards','cards'], ['setHudBanners','banners']]){ const E=document.getElementById(id); if(!E) continue; E.innerHTML='';   // Z324 what the battle HUD shows (ui/hud-prefs.js)
+    E.appendChild(_segChip('BẬT', hudOn(k), ()=>{ setHud(k, true); buildSettings(); sfx('click'); })); E.appendChild(_segChip('TẮT', !hudOn(k), ()=>{ setHud(k, false); buildSettings(); sfx('click'); })); }
   const Qu=document.getElementById('setQual'); if(Qu){ Qu.innerHTML=''; Qu.appendChild(_segChip('CAO',PROFILE.quality==='high',()=>_setQ('high'))); Qu.appendChild(_segChip('THẤP',PROFILE.quality==='low',()=>_setQ('low'))); }
 }
 export function _setSnd(on, lv){ PROFILE.sound=on; if(lv) PROFILE.sfxVol=lv; saveProfile(); audio(); setMuted(!on); buildSettings(); if(on) sfx('explode'); }   // Z151 a sample blast so you hear the level you picked

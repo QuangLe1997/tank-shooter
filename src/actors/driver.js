@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, NIGHT, S, bikeHop, burst, curlHand, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, CV, NIGHT, S, bikeHop, burst, curlHand, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, spawnPart, hudOn } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -56,8 +56,8 @@ export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof w
 export const RIDE_VOICE = { on:false, play:null };   // a voice player can be hung here: play(who, event, index)
 function talk(D, ev, force){ const T = RIDE_TALK[ev], now = performance.now() / 1000, p = S.player; if(!T || !p || (!force && now < D.sayAt)) return; D.sayAt = now + RIDE_TALK.gap;
   const i = (Math.random() * T.d.length) | 0, at = () => new THREE.Vector3(p.pos.x, p.pos.y + 3.2, p.pos.z);
-  floatText(T.d[i], RIDE_TALK.col.d, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('driver', ev, i);
-  if(T.s && T.s.length){ const j = (Math.random() * T.s.length) | 0; setTimeout(() => { if(S.player === p){ floatText(T.s[j], RIDE_TALK.col.s, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('soldier', ev, j); } }, RIDE_TALK.reply * 1000); } }
+  const show = hudOn('talk'); if(show) floatText(T.d[i], RIDE_TALK.col.d, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('driver', ev, i);   // (Z324 the lines on screen only when THOẠI TRÊN MÀN HÌNH is on; the voice always)
+  if(T.s && T.s.length){ const j = (Math.random() * T.s.length) | 0; setTimeout(() => { if(S.player === p){ if(show) floatText(T.s[j], RIDE_TALK.col.s, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('soldier', ev, j); } }, RIDE_TALK.reply * 1000); } }
 export function rideTalk(ev, force){ const D = CV.H && CV.H.drv; if(D) talk(D, ev, force); }
 
 // ---- events from the game ----

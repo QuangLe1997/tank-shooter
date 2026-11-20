@@ -1,0 +1,44 @@
+/* Z324 HUD, SLIM AND SEE-THROUGH — loaded last. Every battle card is a thin pane of dark field glass (the battlefield shows through it, softly blurred),
+   a hairline edge and brass corner ticks like a gunsight's frame; the text is crisp with a dark halo so it reads on sand, snow or sky. Banners are a
+   slim band that fades out at both ends instead of a heavy painted plate. What the player switched off in CÀI ĐẶT is hidden (ui/hud-prefs.js). */
+:root{ --hs-bg:rgba(14,18,11,.46); --hs-bg2:rgba(8,10,6,.30); --hs-edge:rgba(214,222,186,.20); --hs-tick:rgba(236,214,148,.78); --hs-ink:#eef1e2; --hs-dim:rgba(226,230,206,.66); }
+
+/* ---- switched off in the settings ---- */
+body.hud-no-talk #radio{display:none!important}
+body.hud-no-cards #objChip, body.hud-no-cards #fortHud, body.hud-no-cards #sqHud, body.hud-no-cards #powHud, body.hud-no-cards #contractChip{display:none!important}
+body.hud-no-banners #combo{display:none!important}
+
+/* ---- the glass pane ---- */
+html body:not(.hs-x) #hud .chip, html body:not(.hs-x) #hud .ability, html body:not(.hs-x) #objChip, html body:not(.hs-x) #fortHud, html body:not(.hs-x) #sqHud, html body:not(.hs-x) #mgHud, html body:not(.hs-x) #instr, html body:not(.hs-x) #contractChip, html body:not(.hs-x) #powHud, html body:not(.hs-x) #bossbar, html body:not(.hs-x) .buffchip, html body:not(.hs-x) #weaponchip, html body:not(.hs-x) #radio{
+  background:
+    linear-gradient(var(--hs-tick),var(--hs-tick)) 0 0/7px 1px, linear-gradient(var(--hs-tick),var(--hs-tick)) 0 0/1px 7px,
+    linear-gradient(var(--hs-tick),var(--hs-tick)) 100% 0/7px 1px, linear-gradient(var(--hs-tick),var(--hs-tick)) 100% 0/1px 7px,
+    linear-gradient(var(--hs-tick),var(--hs-tick)) 0 100%/7px 1px, linear-gradient(var(--hs-tick),var(--hs-tick)) 0 100%/1px 7px,
+    linear-gradient(var(--hs-tick),var(--hs-tick)) 100% 100%/7px 1px, linear-gradient(var(--hs-tick),var(--hs-tick)) 100% 100%/1px 7px,
+    linear-gradient(180deg,var(--hs-bg),var(--hs-bg2))!important;
+  background-repeat:no-repeat!important;
+  -webkit-backdrop-filter:blur(3px) saturate(1.15)!important; backdrop-filter:blur(3px) saturate(1.15)!important;
+  border:1px solid var(--hs-edge)!important; border-radius:2px!important; clip-path:none!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.22)!important; text-shadow:0 1px 2px rgba(0,0,0,.85); }
+html body:not(.hs-x) .gunicon{ background:linear-gradient(180deg,var(--hs-bg),var(--hs-bg2))!important; border:1px solid var(--hs-edge)!important; box-shadow:none!important;
+  -webkit-backdrop-filter:blur(3px)!important; backdrop-filter:blur(3px)!important; }
+
+/* ---- compact cards ---- */
+html body:not(.hs-x) #objChip{ padding:4px 10px 5px!important; min-width:190px!important; }
+html body:not(.hs-x) #objChip .ob-name{ color:var(--hs-ink)!important; font-size:12px!important; letter-spacing:.14em!important; }
+html body:not(.hs-x) #objChip .ob-fx{ color:var(--hs-dim)!important; font-size:10.5px!important; }
+html body:not(.hs-x) #objChip .ob-bar{ height:3px!important; margin:3px 0 2px!important; background:rgba(255,255,255,.10)!important; }
+html body:not(.hs-x) #fortHud, html body:not(.hs-x) #sqHud{ padding:6px 10px!important; }
+html body:not(.hs-x) #powHud, html body:not(.hs-x) #contractChip{ padding:3px 10px!important; }
+html body:not(.hs-x) #weaponchip{ padding:5px 14px 5px 26px!important; }
+html body:not(.touch):not(.hs-x) #weaponchip .wc-nm{ font-size:15px!important; } html body:not(.touch):not(.hs-x) #weaponchip .wc-am{ font-size:19px!important; }
+
+/* ---- banners: a slim band fading out at both ends ---- */
+html body:not(.hs-x) #combo{ background:linear-gradient(90deg,transparent,rgba(10,12,8,.56) 14%,rgba(10,12,8,.56) 86%,transparent)!important;
+  border:0!important; border-top:1px solid rgba(236,214,148,.45)!important; border-bottom:1px solid rgba(236,214,148,.45)!important;
+  box-shadow:none!important; border-radius:0!important; padding:5px 56px!important; font-size:clamp(15px,1.55vw,21px)!important; letter-spacing:.16em!important;
+  text-shadow:0 1px 3px #000,0 0 12px rgba(0,0,0,.55)!important; -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); }
+html body:not(.hs-x) #combo.warn{ background:linear-gradient(90deg,transparent,rgba(52,32,8,.6) 14%,rgba(52,32,8,.6) 86%,transparent)!important; padding:5px 56px!important;
+  border-top-color:rgba(255,186,74,.65)!important; border-bottom-color:rgba(255,186,74,.65)!important; }
+html body:not(.hs-x) #combo.long{ font-size:clamp(13px,1.2vw,16px)!important; letter-spacing:.1em!important; }
+html body.touch:not(.hs-x) #combo{ font-size:14px!important; padding:4px 30px!important; } html body.touch:not(.hs-x) #combo.long{ font-size:11.5px!important; }

@@ -184,6 +184,7 @@ export * from './ui/keys.js';
 export * from './ui/guide.js';
 export * from './ui/training.js';   // Z182 first-run onboarding: call-up card · guided training in a trial tank · showcase
 export * from './ui/settings.js';
+export * from './ui/hud-prefs.js';   // Z324 what the battle HUD shows: on-screen dialogue, info cards, banners (CÀI ĐẶT)
 export * from './ui/loadout.js';
 export * from './ui/garage.js';   // Z155 tank collection screen
 export * from './ui/kitshop.js';   // Z161 workshop + crew screen

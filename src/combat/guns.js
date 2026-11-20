@@ -67,18 +67,14 @@ export const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=r
 export const reloadCtx=reloadCanvas.getContext('2d');
 export const reloadTex=new THREE.CanvasTexture(reloadCanvas); reloadTex.colorSpace=THREE.SRGBColorSpace;
 export const reloadSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:reloadTex,transparent:true,depthWrite:false,depthTest:false}));
-reloadSprite.scale.set(3.4,3.4,1); reloadSprite.visible=false; reloadSprite.renderOrder=999; scene.add(reloadSprite);
-export function drawReloadDial(prog, secs, ready){
-  const x=reloadCtx, c=80, r=56; x.clearRect(0,0,160,160);
-  x.beginPath(); x.arc(c,c,r+12,0,Math.PI*2); x.fillStyle='rgba(8,12,6,0.55)'; x.fill();             // backdrop disc
-  x.lineWidth=13; x.lineCap='round';
-  x.strokeStyle='rgba(255,255,255,0.13)'; x.beginPath(); x.arc(c,c,r,0,Math.PI*2); x.stroke();        // full track
-  const col = ready ? '#9be35a' : '#ffce4a';
-  x.strokeStyle=col; x.shadowColor=col; x.shadowBlur=18;                                              // glowing progress arc (12 o'clock, clockwise)
-  x.beginPath(); x.arc(c,c,r,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,Math.max(0,prog))); x.stroke(); x.shadowBlur=0;
-  if(ready){ x.strokeStyle=col; x.lineWidth=12; x.beginPath(); x.moveTo(c-24,c+1); x.lineTo(c-5,c+20); x.lineTo(c+27,c-21); x.stroke(); }   // ✓
-  else { x.fillStyle=col; x.textAlign='center'; x.font='bold 46px system-ui,Arial,sans-serif'; x.textBaseline='middle'; x.fillText(secs.toFixed(1), c, c+2);
-         x.fillStyle='rgba(255,255,255,0.6)'; x.font='bold 15px system-ui,Arial,sans-serif'; x.fillText('NẠP ĐẠN', c, c+28); }
+reloadSprite.scale.set(2.1,2.1,1);   /* Z324 smaller */ reloadSprite.visible=false; reloadSprite.renderOrder=999; scene.add(reloadSprite);
+export function drawReloadDial(prog, secs, ready){   // Z324 compact: a thin ring filling round and the seconds left — nothing more (no disc, no label, no tick)
+  const x=reloadCtx, c=80, r=52; x.clearRect(0,0,160,160); x.lineCap='round';
+  x.lineWidth=9; x.strokeStyle='rgba(0,0,0,0.38)'; x.beginPath(); x.arc(c,c,r,0,Math.PI*2); x.stroke();                // a dark track so it reads on sand or sky
+  x.lineWidth=5; x.strokeStyle='rgba(255,255,255,0.16)'; x.beginPath(); x.arc(c,c,r,0,Math.PI*2); x.stroke();
+  const col = ready ? '#9be35a' : '#ffce4a'; x.lineWidth=6; x.strokeStyle=col;
+  x.beginPath(); x.arc(c,c,r,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,Math.max(0,prog))); x.stroke();
+  if(!ready){ x.fillStyle=col; x.textAlign='center'; x.textBaseline='middle'; x.font='bold 36px "Share Tech Mono",monospace'; x.shadowColor='rgba(0,0,0,.85)'; x.shadowBlur=5; x.fillText(secs.toFixed(1), c, c+1); x.shadowBlur=0; }
   reloadTex.needsUpdate=true;
 }
 export function updateReload(now){

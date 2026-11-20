@@ -82,7 +82,7 @@ export function updateGunHUD(){
       if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=(DMG_TYPE[g.type]||{}).vi||g.type; tg.title='Loại đạn: '+((DMG_TYPE[g.type]||{}).vi||''); nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
       const am=document.createElement('span'); am.className='wc-am'; chip._am=am; chip._amT=null; chip._rl=null;
       chip.replaceChildren(ic,nm,am); }
-    const t = reloading ? 'NẠP ĐẠN…' : ammo; if(chip._amT!==t){ chip._amT=t; chip._am.textContent=t; }
+    const t = reloading ? 'NẠP' : ammo; if(chip._amT!==t){ chip._amT=t; chip._am.textContent=t; }   // (Z324 short)
     if(chip._rl!==reloading){ chip._rl=reloading; chip.classList.toggle('reloading', reloading); }
   }
   const list=document.getElementById('gunlist');
