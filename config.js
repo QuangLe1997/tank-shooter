@@ -853,6 +853,18 @@ export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket
   sniper:{ butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
   gl:{ butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
+// Z339 THE SOLDIER'S OWN LEGS (actors/soldier-legs.js; m, s, rad, m/s): his speed smoothed (/s), the legs eased in / out (/s), moving above moveV;
+//   the pelvis turns toward a sideways move above turnV (all of it by turnFull m/s, at turnRate rad/s, the forward / backward branch kept hyst past
+//   the side); toes out; a foot more than urgent × a stride behind steps at once (the other's swing overlap done); the pelvis down at most maxDrop; a crossing step allowed once the feet are crossF apart fore / aft, swung crossArc round the other; stood still a foot steps back under him once it is yawStep off his heading or idle m off its place (idleT s a step, idleGap
+//   apart); sway = how far the pelvis rides over the standing foot, roll / gaitYaw = its tilt and swing with the stride; the foot: slope = ankle → ball
+//   when flat, toeH = the ball's height, toeFlat = the toes' slope with the heel up; reach = how straight a leg may go; backing up: cadence × backCad,
+//   steps × backStep. Per stance: hips height (× the leg) over the ankle, the dip walking, the bob per step, feet half a track apart walking / stood
+//   (stance, the left foot stagger ahead), never closer than gap, the longest stride a foot travels, the lift, cadence [min steps/s, + per m/s, max], the swing's
+//   share of a step, how far ahead of the hips a foot lands (× a stride), how far the pelvis turns to a side move / a move backward; crouched, the lean forward
+export const SOLDIER_LEGS = { velK:10, fade:7, moveV:0.15, turnV:0.35, turnFull:1.0, turnRate:5, hyst:0.26, toeOut:0.12, crossF:0.22, crossArc:0.14, urgent:0.35, overlap:0.6, maxDrop:0.12, yawStep:0.55, idleT:0.3, idleGap:0.2, sway:0.3, roll:0.05, gaitYaw:0.07,
+  slope:-0.9, toeH:0.012, toeFlat:-0.12, reach:0.99, backCad:1.15, backStep:0.75,
+  stand:{ maxV:2.4, hipK:0.962, dip:0.035, bob:0.026, half:0.1, stance:0.17, stagger:0.07, gap:0.12, maxStride:1.5, lift:0.07, cad:[1.8, 0.55, 2.9], swing:0.78, lead:0.45, idle:0.15, turn:0.95, turnBack:0.4 },
+  crouch:{ minV:0.25, hipK:0.68, lean:0.24, dip:0, bob:0.016, half:0.12, stance:0.18, stagger:0.08, gap:0.14, maxStride:1.0, lift:0.06, cad:[1.6, 0.4, 2.3], swing:0.8, lead:0.45, idle:0.15, turn:0.9, turnBack:0.4 } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.6, 0.55], gaitAt:[2.3, 4.4], twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z340 TURNED ROUND IN THE SADDLE (actors/real-cav.js, combat/soldier-fire.js): sat on the horse or a pillion his hips and chest together turn up to `max`

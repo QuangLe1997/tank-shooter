@@ -1120,6 +1120,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/_qd\.setFromAxisAngle\(_up, -R\.hy\)/.test(r) && /R\.sat \? gy \+ chest \+ clamp\(dyw - chest, -RIDER_TURN\.lead, RIDER_TURN\.lead\)/.test(r) && /R\.gunYaw = yw/.test(r), 'his thighs stay along the horse; the gun goes where his chest is turned; the bore yaw is kept for the trigger');
   ok(/R\.sat && R\.gunYaw != null/.test(f) && /> RIDER_TURN\.fire\) return;/.test(f) && f.indexOf('RIDER_TURN.fire') < f.indexOf('p.fireAt = now'), 'no round out of his back: the trigger waits (before the shot is spent) until the bore is on the aim'); }
 
+// Z339 the soldier's own legs: planted feet stepping the way he goes — forward, backward, sideways (hips open, crossing over), crouched
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), lg=R('src/actors/soldier-legs.js'), rc=R('src/actors/real-cav.js'), L=C.SOLDIER_LEGS;
+  ok(/export function soldierLegs\(R, G, dt, P, mounted\)/.test(lg) && /if\(R\.pup && !P\.dead\) soldierLegs\(R, G, dt, P, mounted\)/.test(rc) && /actors\/soldier-legs\.js/.test(R('src/hub.js')), 'his legs laid over the clips every frame, before the hold');
+  ok(/best = 1 - L\.lastFoot/.test(lg) && /function step\(f, to, yaw, dur, h, cross = 0\)/.test(lg) && /f\.p\.addScaledVector\(F2, w\.cross \* A\.crossArc/.test(lg) && /A\.maxDrop/.test(lg), 'left, right, left; a crossing step swung round the other foot; the pelvis never drops into a squat');
+  ok(/R\.legs && R\.legs\.on\)\{ ok = 'Aim_Stand'/.test(rc) && /R\.legs\.mode === 'crouch'\)\{ ok = 'Aim_Stand'/.test(rc), 'walking or crouched on the move under his own legs, the rifle held steady (no clip legs, no hunched crouch-walk)');
+  ok(L.stand.maxStride >= 1.4 && L.stand.cad[2] > L.stand.cad[0] && L.stand.turn > 0.6 && L.stand.turnBack < L.stand.turn && L.crouch.hipK < L.stand.hipK && L.maxDrop <= 0.15 && L.slope < -0.5, 'a whole stride per foot, quicker steps when faster, hips open more to the side than backing up, crouched lower'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN } from '../../config.js';
-import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch } from '../hub.js';
+import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -216,8 +216,8 @@ export function updateRealCav(CV, dt, P){
   else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
-  else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Aim'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }
-  else if(fv < C.gaitAt[0]){ ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); }
+  else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Aim'; freeze = 0; } else if(R.legs && R.legs.on && R.legs.mode === 'crouch'){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }   // (Z339 crouched on the move: rifle up, his own legs under him)
+  else if(fv < C.gaitAt[0]){ if(R.legs && R.legs.on){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); } }   // (Z339 walking, his legs are his own: the rifle held steady over them)
   else if(fv < C.gaitAt[1]){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }   // (Z304 thresholds for a man's real walk / run / sprint)
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
   blend(R.OA, ok, ts, dt, freeze);
@@ -260,6 +260,7 @@ export function updateRealCav(CV, dt, P){
   if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
   if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   R.H = H; R.seated = seated && !P.trans; R.sat = sat && !P.trans && !P.dead; if(!R.sat) R.gunYaw = null;   // (Z335 for the hold: the ride and its driver · Z340 in the saddle)
+  if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil

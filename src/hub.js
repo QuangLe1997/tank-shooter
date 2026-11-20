@@ -217,6 +217,7 @@ export * from './actors/horse.js';   // Z245 the war horse + gait engine
 export * from './actors/models.js';   // Z247 real glTF models (Poly Haven CC0) on the procedural rigs
 export * from './actors/general.js';
 export * from './actors/puppet.js';   // Z294 the second soldier wears the operator's moves
+export * from './actors/soldier-legs.js';   // Z339 the soldier's own legs: planted feet, steps the way he goes
 export * from './actors/real-cav.js';
 export * from './actors/real-troops.js';
 export * from './actors/ragdoll.js';   // Z254 a real fall for men shot down   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate
