@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CORE_DEF } from '../../config.js';
 import { REALCAMP } from '../../config.js';
-import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
+import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -89,7 +89,7 @@ function dressCore(c){ const R=REALCAMP.hq; if(typeof window==='undefined' || /p
     const mat=src.material.clone(); mat.envMapIntensity=R.env; const hq=new THREE.Mesh(geo, mat); hq.position.y=-R.sink*(b.max.y-b.min.y)*k; hq.castShadow=hq.receiveShadow=true; c.mesh.add(hq);
     const keep=new Set([c.dome, c.light, ...c.flags, ...c.poles]); for(const o of c.g.children) if(!keep.has(o)) o.visible=false; c.halo.visible=false; if(c.pod) c.pod.visible=false;
     const hw=R.w/2+0.9; c.poles.forEach((p,i)=>{ const sx=i?1:-1; p.position.set(sx*hw, p.position.y, hw); c.flags[i].position.set(sx*hw, c.flags[i].position.y, hw); });
-    c.domeS=R.w/2/5.6*1.3; c.dome.scale.setScalar(c.domeS); c.light.position.y=R.lightY; c.r=R.hitR; c.hq=hq; c.roofY=geo.boundingBox.max.y*0.55+hq.position.y; }); }
+    c.domeS=R.w/2/5.6*1.3; c.dome.scale.setScalar(c.domeS); c.light.position.y=R.lightY; c.r=R.hitR; c.hq=hq; c.roofY=geo.boundingBox.max.y*0.55+hq.position.y; farLOD(hq); }); }   // Z328 a light copy far away
 // Z227 THE CORE'S PODIUM — a three-tier octagonal marble podium with gilt edges and a stair on each side, a balustrade round the top,
 //   eight marble columns carrying a gilt ring and an open gilt dome over the crystal (a jewel in its cage), gold braziers at the stair heads
 function podium(G0in, g, PH, gold){ const marble=new THREE.MeshStandardMaterial({ color:0xece6da, roughness:0.35, metalness:0.05, envMapIntensity:0.9 }), P=[], Q=[], G0=new THREE.Group(); G0in.add(G0);   // Z233 the podium is all static: built in its own group, then baked to a handful of draws

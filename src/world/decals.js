@@ -1,6 +1,6 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
-import { ARENA, MOBILE, arena, bloodSplat, inField, terrainGeo } from '../hub.js';
+import { ARENA, DECAL_U, MOBILE, bloodSplat, inField } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -8,10 +8,8 @@ DECAL.ppu = DECAL.W/(ARENA*2); DECAL.dppu = DECAL.DW/(ARENA*2);
 DECAL.stat = document.createElement('canvas'); DECAL.stat.width=DECAL.stat.height=DECAL.W;     // scorch / craters (sharp, rarely re-uploaded)
 DECAL.dyn  = document.createElement('canvas'); DECAL.dyn.width=DECAL.dyn.height=DECAL.DW;      // tread prints / dirt (soft, fades, cheap to upload)
 DECAL.sx = DECAL.stat.getContext('2d'); DECAL.dx = DECAL.dyn.getContext('2d');
-export const _decalPlane=(cv, y, ord)=>{ const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.generateMipmaps=true;
-  const m=new THREE.Mesh(terrainGeo(), new THREE.MeshLambertMaterial({ map:t, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4-2*ord, polygonOffsetUnits:-8-4*ord }));   // Z107 firmer offset (no z-fighting with the ground)
-  m.position.y=y; m.receiveShadow=true; m.renderOrder=-3+ord; arena.add(m); return t; };   // drapes the same heightfield
-DECAL.texS = _decalPlane(DECAL.stat, 0.02, 0); DECAL.texD = _decalPlane(DECAL.dyn, 0.025, 1);
+const decalTex=(cv)=>{ const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.generateMipmaps=true; return t; };   // Z328 read by the ground's shader (world/ground.js DECAL_U), no draped planes
+DECAL.texS = DECAL_U.decalS.value = decalTex(DECAL.stat); DECAL.texD = DECAL_U.decalD.value = decalTex(DECAL.dyn);
 export const _dpx=(x)=>(x+ARENA)*DECAL.ppu, _dpz=(z)=>(z+ARENA)*DECAL.ppu, _ddx=(x)=>(x+ARENA)*DECAL.dppu, _ddz=(z)=>(z+ARENA)*DECAL.dppu;
 export let _treadCol='rgba(42,30,18,', _treadA=0.16;
 export function decalReset(b){

@@ -971,6 +971,9 @@ export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault
 export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], craters:[1,3], noiseK:0, blastK:0, nrmK:0.55 };   // Z107 noiseK 0: no micro-bumps at all · nrmK: calmer detail normals (less sparkle while driving)   // blastK 0 = shells no longer reshape the ground (no mesh rebuilds / popping) — the scorch decal stays
 // Z107 RENDER BUDGET (LOD) — what is worth drawing: only soldiers near the tank cast shadows, tower / wall riflemen out of
 //   range are not drawn at all, and HP bars show once a unit is hurt (elites and commanders always). Checked 4× a second.
+// Z328 FAR LOD (render/far-lod.js): big static models (fort towers / gatehouse, the HQ) swap to a simplified copy past far m (or rK × their radius if more;
+//   ×mobileK on phones); keep = share of triangles kept, err = allowed deviation (share of the model's size), hys = LOD hysteresis
+export const FARLOD = { on:true, far:60, rK:6, mobileK:0.7, keep:0.15, err:0.02, hys:0.1 };
 export const LOD = { shadowR: 26, guardR: 70, every: 0.25, tankDetailR: 38, smallR: 0.9,
   detailR: 3, detailPx: 1.6, detailHys: 1.35, rescan: 2 };   // Z240 pieces under detailR m are skipped once their on-screen size × fog transparency drops under detailPx px (back in above ×detailHys); the list is rebuilt every rescan s   // Z233 enemy tanks past tankDetailR (from the camera) drop fittings smaller than smallR
 // Z107 POWER RATING — one number for how strong YOUR tank is, and what each level asks of it, on the same scale.
