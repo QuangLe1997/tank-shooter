@@ -1090,6 +1090,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export const BATCH_LAYER = 6;/.test(cb) && /new THREE\.InstancedMesh\(g\.geo, g\.mat, cap\)/.test(cb) && /g\.im\.instanceMatrix\.array\.set\(e, g\.n \* 16\); g\.im\.setColorAt\(g\.n, m\.material\.color\)/.test(cb) && /mt\.userData\._e0 === undefined/.test(cb) && /scene\.onBeforeRender = function/.test(cb) && /nobatch/.test(cb), 'cover is batched per kind, a flashing piece draws itself, ?nobatch switches it off');
   ok(/trackCover\(m\); batchCover\(m\); loadRealCover\(\);/.test(R('src/world/props.js')) && /if\(u\.cb\) continue;/.test(R('src/render/lod.js')) && /render\/cover-batch\.js/.test(R('src/hub.js')), 'every cover mesh joins the batch; the fog cull leaves it to the batch'); }
 
+// Z334 aiming at the men up high (towers, walls) like aircraft · Z335 sat tall on the xe ôm, the gun over the driver's shoulder · Z336 jump, sprint, combat roll, cover
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), aa=R('src/combat/air-aim.js'), lo=R('src/combat/lock-on.js'), rc=R('src/actors/real-cav.js'), sm=R('src/game/soldier-moves.js'), cv=R('src/game/cavalry.js');
+  ok(/function\* high\(\)/.test(aa) && /liveGuards\(\)/.test(aa) && /b\.airAim\._twr/.test(lo) && /shootGuard\(G\.t, G\.gd, b\.ox, b\.oz\)/.test(lo), 'a rifleman on a tower or a wall is laid on like an aircraft; the round climbs to him and drops him');
+  ok(/function overDriver\(R, gp, yaw\)/.test(rc) && C.REALCAV.overDrv.up>0 && C.REALCAV.sit.lean===0 && C.XEOM.xeom.seat[0]>0.415, 'on the xe ôm he sits tall and straight, the gun laid ahead over the driver\'s shoulder');
+  ok(['export function soldierJump','export function soldierRoll','export function footStance','export function footMotion','export function footPose'].every(k=>sm.includes(k)) && /else soldierJump\(\)/.test(cv) && /heldAction\('sprint'\)/.test(cv) && C.ACTIONS.some(a=>a[0]==='roll') && C.ACTIONS.some(a=>a[0]==='sprint') && C.CAV.moves.roll.defK<C.CAV.defK.crouch, 'Space jumps, Shift sprints, Alt / L rolls (hard to hit going over), cover pulls him down behind it');
+  ok(/if\(tuck\)\{/.test(rc) && /MV\.cover \+ CR\.rest/.test(rc) && /freeze = MV\.roll >= 0 \? 0\.42/.test(rc), 'tucked in a roll with the rifle held in, the rifle laid on the cover'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

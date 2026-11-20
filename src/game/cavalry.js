@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -53,7 +53,7 @@ export function cavDash(){ const p=S.player, now=performance.now()/1000; if(!p |
   if(CV.mounted){ if(now<CV.surgeCd) return; CV.surgeUntil=now+CAV.surge.dur; CV.surgeCd=now+CAV.surge.cd;
     if(CV.H && CV.H.bike){ if(!bikeWheelie(CV.H)){ sfx('whoosh'); floatText('VÍT GA!', '#ffcf5a', p.pos, 15); } }   // Z296 on the xe ôm a wheelie, on the rest the throttle wide open
     else { sfx('whoosh'); floatText('PHI NƯỚC ĐẠI!', '#ffcf5a', p.pos, 15); } }
-  else { if(now<CV.sprintCd || CV.stance!=='stand') return; CV.sprintUntil=now+CAV.foot.sprintDur; CV.sprintCd=now+CAV.foot.sprintCd; } }
+  else soldierJump(); }   // Z336 on foot Space jumps (Shift held sprints)
 // ---- C: kneel / stand · Z: go prone / get up (on foot only) ----
 export function cavStance(kind){ if(!cavOn() || CV.mounted || CV.trans) return; CV.want = CV.want===kind ? 'stand' : kind; }
 // ---- every frame in play (replaces updatePlayer) ----
@@ -81,13 +81,14 @@ export function updateCavalry(dt, now){
   } else {
     // on foot: run where you push; crouch / prone slow you right down; the body turns to the aim when firing or standing
     if(MOBILE){ const mv0=Math.hypot(p.vel.x, p.vel.z); CV.still = mv0<0.25 ? CV.still+dt : 0; if(CV.want!=='prone') CV.want = CV.still>1.2 ? 'crouch' : 'stand'; }   // phones: he kneels by himself when he stops
-    if(CV.want!==CV.stance) CV.stance=CV.want;
-    const F=CAV.foot, sprint=now<CV.sprintUntil && CV.stance==='stand', sp=(CV.stance==='prone'?F.crawl:CV.stance==='crouch'?F.crouch:(sprint?F.sprint:S.firing?F.fire:F.run))*p.speedMul*wade;   // Z304 a man's pace: a jog with the rifle, a sprint, a walk while he fires
+    if(CV.want!==CV.stance) CV.stance=CV.want; footStance(p, dt, now);   // Z336 behind cover he goes down on a knee
+    const F=CAV.foot, sprint=(now<CV.sprintUntil || heldAction('sprint') && !S.firing) && CV.stance==='stand', sp=(CV.stance==='prone'?F.crawl:CV.stance==='crouch'?F.crouch:(sprint?F.sprint:S.firing?F.fire:F.run))*p.speedMul*wade;   // Z304 a man's pace: a jog with the rifle, a sprint, a walk while he fires
     let mx=0, mz=0; if(tankCtl){ const f=p.facing+TI.turn*2.8*dt; p.facing=wrapA(f); mx=Math.sin(p.facing)*TI.thr; mz=Math.cos(p.facing)*TI.thr; } else if(inp>0.1){ mx=dir.x; mz=dir.z; }
     const tvx=mx*sp, tvz=mz*sp, dvx=tvx-p.vel.x, dvz=tvz-p.vel.z, dv=Math.hypot(dvx,dvz), acc=(Math.hypot(tvx,tvz)>Math.hypot(p.vel.x,p.vel.z)?F.accel:F.decel)*dt, ak=dv>acc?acc/dv:1; p.vel.x+=dvx*ak; p.vel.z+=dvz*ak;   // Z304 he takes a few strides to get going, and pulls up quicker
     const mv=Math.hypot(p.vel.x, p.vel.z), face = (S.firing||mv<0.4||CV.stance==='prone'&&mv<0.2) ? p.aimSmoothed : Math.atan2(p.vel.x, p.vel.z);
     p.facing=wrapA(p.facing+wrapA(face-p.facing)*Math.min(1, dt*(CV.stance==='prone'?3:9)));
     p.radius=CV.stance==='prone'?CAV.radius.prone:CAV.radius.foot; p.defK=CAV.defK[CV.stance]||CAV.defK.stand; p.camK=CV.stance==='prone'?CAV.camK.prone:CAV.camK.foot;
+    footMotion(p, dt);   // Z336 a roll carries him, a jump keeps his way
     // the riderless horse: grazes where you left him, or trots / gallops to your whistle
     horseAlone(p, dt);
   }
@@ -99,12 +100,12 @@ export function updateCavalry(dt, now){
   const firing=!!(S.firing || (MOBILE && autoFire && p.fireAt>now-0.15));
   if(CV.mounted && !CV.trans){ p.mesh.rotation.y=CV.facing; H.root.position.set(0,0,0); H.root.rotation.y=0; if(!H.bike){ H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; } animateHorse(H, dt, CV.speed, CV.yawRate); H.root.position.set(0,0,0); H.root.rotation.y=0; if(!H.bike) H.root.position.y=horseAir(H, dt)/(p.mesh.scale.y||1);   // (Z300 a ride works in its true place: its feet and wheels read the real ground · Z321 a horse in mid-leap rides above it)
     poseRider(G, H, dt, wrapA(p.aimSmoothed-CV.facing), firing); }
-  else if(!CV.trans){ p.mesh.rotation.y=p.facing; const d=Math.hypot(p.pos.x-CV.last.x, p.pos.z-CV.last.z); animateSoldier(G, d, dt, firing); poseSoldier(G, CV.stance, dt);
+  else if(!CV.trans){ p.mesh.rotation.y=p.facing; const d=Math.hypot(p.pos.x-CV.last.x, p.pos.z-CV.last.z); animateSoldier(G, d, dt, firing); poseSoldier(G, CV.stance, dt); footPose(G, p);
     u.up.rotation.y += (Math.max(-0.9, Math.min(0.9, wrapA(p.aimSmoothed-p.facing))) - u.up.rotation.y)*Math.min(1, dt*10); cloakFoot(G, Math.hypot(p.vel.x,p.vel.z), CV.stance==='prone'); }
   if(p.hitT>0){ p.hitT-=dt; }
   if(now < p.respawnBlinkUntil) p.mesh.visible=Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0; else if(!p.mesh.visible) p.mesh.visible=true;
   p.kbx=p.kbz=0;
-  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: CV.trans ? { k:CV.trans.k, e:Math.min(1, CV.trans.t/CAV.mountT) } : false, hit: p.hitT>0, ride: CV.mounted && CV.H.inert ? CV.H.inert : null });   // Z299 what the sprung body feels, for him to sway with   // Z295 which way and how far through getting on / off
+  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: CV.trans ? { k:CV.trans.k, e:Math.min(1, CV.trans.t/CAV.mountT) } : false, hit: p.hitT>0, ride: CV.mounted && CV.H.inert ? CV.H.inert : null, move: CV.mounted ? null : footMoveState() });   // Z299 what the sprung body feels, for him to sway with   // Z295 which way and how far through getting on / off
   // fire: hold LMB (desktop) · the trigger / auto-fire on phones, exactly like the tank
   const range=playerRange();
   if(!CV.trans){ if(MOBILE){ const t=autoFire?aimTarget(range):null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) soldierFire(now, range); } else if(S.firing) soldierFire(now, range); }   // Z306 his own rifle (combat/soldier-fire.js), not the tank's gun

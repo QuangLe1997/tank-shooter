@@ -3,22 +3,29 @@
 //   pad or on a phone, the aircraft nearest the line of the aim is taken up — no extra button, no third axis on a stick: the elevation is worked out. The
 //   rounds lead it (its own speed) and climb to its height, the tank's gun / the soldier's rifle tips up to it, and a round aimed at it hits only near it
 //   in the air. A red ring sits on it with a dashed line down to the ground and its height and range beside it.
+// Z334 AND THE MEN UP HIGH: a rifleman on a watchtower or on a fortress wall is laid on the same way (a soldier's rounds never reached him before —
+//   they flew at chest height above the ground under him); the round climbs to him and drops him off his platform.
 import * as THREE from 'three';
 import { AIRAIM } from '../../config.js';
-import { MOBILE, PAD, S, VIEW, camera, enemies, heightAt, playerRange, scene } from '../hub.js';
+import { MOBILE, PAD, S, VIEW, camera, enemies, heightAt, liveGuards, playerRange, scene } from '../hub.js';
 
 export const AIR = { e:null, mx:-1, my:-1, vx:0, vy:0, vz:0, last:null, ring:null, line:null, dot:null, label:null };
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
 export function airMouse(cx, cy){ AIR.mx = cx; AIR.my = cy; }   // (from the mouse ray)
-const alive = e => !!e && enemies.includes(e) && e.hp > 0;
+const alive = e => !!e && (e._twr ? e.gd.alive && !e.t.falling && (mark(e), true) : enemies.includes(e) && e.hp > 0);
+// a man up on a tower or a wall as a target: where his chest is now
+function mark(o){ o.pos.x = o.gd.wx; o.pos.y = (o.gd.wy || 6) + 0.95; o.pos.z = o.gd.wz; return o; }
+const guardOf = G => G.gd._am || (G.gd._am = mark({ _twr:true, t:G.t, gd:G.gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7, hp:1 }));
+// every target that stands above the ground: aircraft, and the men on the towers and walls
+function* high(){ for(const e of enemies) if(e.def.air && e.hp > 0) yield e; for(const G of liveGuards()) yield mark(guardOf(G)); }
 // every frame: which aircraft the gun is laid on (null = the ground, as before)
 export function updateAirAim(dt){ const p = S.player; if(!p || S.mode !== 'playing'){ lay(null, dt); return; }
   const range = playerRange() * 1.15, C = AIRAIM; let t = null;
   if(!MOBILE && !PAD.active){ if(S.pointerActive && AIR.mx >= 0){ let bd = 1e9;   // mouse: the aircraft nearest the cursor on screen
-      for(const e of enemies){ if(!e.def.air || !(e.hp > 0) || Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z) > range) continue; _v.copy(e.pos).project(camera); if(_v.z > 1) continue;
+      for(const e of high()){ if(Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z) > range) continue; _v.copy(e.pos).project(camera); if(_v.z > 1) continue;
         const d = Math.hypot((_v.x + 1) / 2 * VIEW.w - AIR.mx, (1 - _v.y) / 2 * VIEW.h - AIR.my), lim = e === AIR.e ? C.keepPx : C.snapPx; if(d < lim && d < bd){ bd = d; t = e; } } } }
   else { const a = p.aimSmoothed ?? p.aim ?? p.facing; let bd = C.padCone;   // pad / phone: the aircraft nearest the line of the aim
-    for(const e of enemies){ if(!e.def.air || !(e.hp > 0)) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz); if(d > range || d < 2) continue;
+    for(const e of high()){ const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz); if(d > range || d < 2) continue;
       const da = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - a), Math.cos(Math.atan2(dx, dz) - a))) * (e === AIR.e ? 0.7 : 1); if(da < bd){ bd = da; t = e; } } }
   lay(t, dt);
   if(t && !MOBILE && !PAD.active){ const L = lead(p.pos.x, p.pos.z, 80); S.aimPoint.set(L.x, heightAt(L.x, L.z), L.z); } }   // the turret / rifle swings onto it

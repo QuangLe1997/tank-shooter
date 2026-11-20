@@ -227,6 +227,7 @@ export function updateBullets(dt, now){
       if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); surfaceHit(wb, b); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     // Z204 any round that strikes something solid goes off against it (flash, fireball for a shell, chips, dust) and leaves its mark — breakable or not
+    if(b.owner==='p' && b.airAim && b.airAim._twr){ const G=b.airAim; if(G.gd.alive && Math.hypot(G.pos.x-b.x, G.pos.z-b.z)<1.4 && Math.abs(_wy-G.pos.y)<1.5){ shootGuard(G.t, G.gd, b.ox, b.oz); if(b.aoe) detonate(b); recycleBullet(i); continue; } }   // Z334 a round laid on a man up on a tower or a wall drops him
     if(b.owner==='p' && !b.smart) fenceShot(b);   // Z205 the compound wire takes rounds too
     if(b.owner==='p' && !airborne && !aaHigh && trafficShot(b, dt)){ if(b.aoe) detonate(b); recycleBullet(i); continue; }   // Z306 a round that crosses a car or a scooter strikes it
     if(!airborne && !aaHigh && !b.inf && b.dmg>=TREEFALL.minDmg) shotTree(b.x, b.z, b.by, b.vx, b.vz);   // Z262 a shell through a trunk fells the tree along its flight
