@@ -15,3 +15,5 @@ City models — where each one comes from
 - ../camp/hq.glb (Z270): the field headquarters at our base — Tripo text-to-image concept → four views → multiview-to-model (H3.1)
 - ../air/*.glb (Z272): Tripo text-to-model (H3.1): air_uav (sci-fi UAV), heli_attack (gunship), heli_swallow (swept-wing bomber), heli_bomber (heavy transport), para_trooper (canopy; its soldier cut away)
 - ../camp/base_wall.glb, ../camp/base_tower.glb (Z273): Tripo text-to-model (H3.1)
+- ../tree/*.glb (Z274, Z275): Tripo text-to-model (H3.1), all 13 species
+- ../ruin/ruin_chapel.glb (Z277): Tripo image-to-model from the user's own reference image; ../ruin/ruin_{wall,block,tower,villa}.glb: Tripo text-to-model (H3.1)

@@ -807,6 +807,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z274 the first Tripo trees: oak, coconut palm and Scots pine replace their Meshy versions (open crowns of leaf clusters, real bark)
 { const fs=await import('node:fs'); ok(['oak','palm','pine'].every(k=>{ const f='assets/models/real/tree/'+k+'.glb'; return fs.existsSync(f) && fs.statSync(f).size<1.5e6; }) && /Z274/.test(fs.readFileSync('DOCS.md','utf8')), 'oak, palm and pine are the Tripo trees'); }
 
+// Z275 all thirteen tree species are Tripo models · Z276 light shafts through the sun's shadow map, leaves and grass glowing against the sun · Z277 ruins of war
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(Object.keys(C.REALTREE.h).every(k=>fs.existsSync('assets/models/real/tree/'+k+'.glb')), 'every tree species ships');
+  ok(/export function makeShaftPass/.test(R('src/render/shafts.js')) && /unpackRGBAToDepth/.test(R('src/render/shafts.js')) && /composer\.insertPass\(shaftPass, 1\)/.test(R('src/render/renderer.js')) && C.SHAFTS.on && /uSunView/.test(R('src/world/real-trees.js')) && /uSunView/.test(R('src/world/grass-carpet.js')), 'light shafts on every battlefield; backlit leaves and grass');
+  ok(/export function buildRuins/.test(R('src/world/ruins3d.js')) && /buildRuins\(\)/.test(R('src/world/landmarks.js')) && Object.keys(C.REALRUIN.models).every(k=>fs.existsSync('assets/models/real/ruin/'+k+'.glb')) && Object.keys(C.REALRUIN.biomes).length>=8, 'ruins of war on the open battlefields, with collision'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

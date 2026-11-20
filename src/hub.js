@@ -14,6 +14,7 @@ export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on ever
 export * from './core/state.js';
 export * from './world/field.js';
 export * from './render/clouds.js';   // Z145 must load before any material patches its shader
+export * from './render/shafts.js';   // Z276 light shafts (before the renderer, which builds the pass)
 export * from './render/renderer.js';
 export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
@@ -131,7 +132,8 @@ export * from './world/tree-fall.js';   // Z262 trees topple for real
 export * from './world/real-trees.js';   // Z262 Meshy tree species with wind
 export * from './world/real-city.js';   // Z264 Meshy city buildings + vehicles
 export * from './world/traffic.js';
-export * from './actors/real-air.js';   // Z272 real aircraft   // Z268 scooters and cars on the move
+export * from './actors/real-air.js';   // Z272 real aircraft
+export * from './world/ruins3d.js';   // Z275 ruins of war   // Z268 scooters and cars on the move
 export * from './fx/weather.js';
 export * from './game/score.js';
 export * from './game/player-damage.js';

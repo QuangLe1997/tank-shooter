@@ -8,8 +8,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { LIGHT } from '../../config.js';
-import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat } from '../hub.js';
+import { LIGHT, SHAFTS } from '../../config.js';
+import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -109,6 +109,8 @@ export function fitShadow(z){ if(MOBILE) return; const r=SHADOW_R*Math.max(1,(z|
 if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(SHADOW_MAP,SHADOW_MAP);   // Z107 4096 in the Mac app
   const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
   sun.shadow.bias=-0.0003; sun.shadow.normalBias=0.25; sun.shadow.radius=2; }
+export const shaftPass = !MOBILE && SHAFTS.on ? makeShaftPass(composer, { cfg:SHAFTS, sun, camera:()=>renderPass.camera, biome:()=>BIOME.name, night:()=>NIGHT.k }) : null;   // Z276 light shafts: right after the scene, in linear HDR
+if(shaftPass) composer.insertPass(shaftPass, 1);
 export const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.62); scene.add(hemi);
 export const muzzleLight = new THREE.PointLight(0xffd27a, 0, 18, 2); scene.add(muzzleLight);
 export const SUN_DIR = new THREE.Vector3(0.45,0.75,0.35).normalize();

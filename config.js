@@ -127,6 +127,12 @@ export const REAL = {
 //   (the paratrooper's own soldier), keep = the procedural parts that stay visible
 export const REALAIR = { models:{ heli_attack:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, heli_swallow:{ yaw:0, cutRotor:0.24, hubR:0.06, rotorUp:0.5 },
   heli_bomber:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, air_uav:{ yaw:0, keep:['gat','ring'], env:1.2 }, para_trooper:{ keepAbove:0.3, double:true } } };
+// Z275 ruins of war (world/ruins3d.js; Tripo): size (w = footprint, h = height, m), sink = share of the height under ground (base plates), and each
+//   battlefield's mix: n ruins of these keys; clearCore = metres kept clear beyond our base walls
+export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }, ruin_wall:{ w:18, sink:0.03 }, ruin_block:{ w:16, sink:0.02 }, ruin_tower:{ h:14, sink:0.03 }, ruin_villa:{ w:15, sink:0.03 } },
+  biomes:{ RUINS:{ n:6, keys:['ruin_chapel','ruin_wall','ruin_tower','ruin_block'] }, CITADEL:{ n:4, keys:['ruin_wall','ruin_tower','ruin_chapel'] }, MEADOW:{ n:3, keys:['ruin_chapel','ruin_tower','ruin_villa'] },
+    DESERT:{ n:3, keys:['ruin_wall','ruin_tower'] }, QUARRY:{ n:3, keys:['ruin_wall','ruin_block'] }, SAVANNA:{ n:2, keys:['ruin_tower','ruin_villa'] }, FOUNDRY:{ n:3, keys:['ruin_block','ruin_wall'] },
+    ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
 // Z269 the field headquarters at the heart of our base (actors/core.js dressCore; Tripo, from a generated concept): w = footprint (m), sink = share of its height under the pad, hitR = the core's hit radius with it
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
   walls:{ wallUp:0.4, thick:1.0, sink:-0.4, towerUp:-0.6, towerW:0.85 } };   // Z273 the concrete compound (world/core-walls.js dressWalls): wall height over CORE_DEF.H, thickness ×, tower height / width
@@ -566,7 +572,7 @@ export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85
 // Z262 REAL TREES (world/real-trees.js): thirteen Meshy species, each at its true height h (m) before the tree's own ± scale; map = which species a
 //   battlefield's procedural tree kinds become (variant i takes species i mod the list; `_` = everywhere else); wind = its direction, how far the top
 //   sways (m), how far the leaves flutter (m); env = reflections; tint = albedo × per species
-export const REALTREE = { env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }, tint:{},
+export const REALTREE = { trans:1.6, env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }, tint:{},
   h:{ oak:15, linden:12, birch:11, poplar:18, pine:17, spruce_snow:14, palm:12, acacia:8, baobab:13, dead:9, cypress:14, olive:7, giant:20 },
   map:{ _:{ broadleaf:['oak','linden','birch','poplar'], conifer:['pine'], coniferSnow:['spruce_snow'], palm:['palm'], acacia:['acacia'], baobab:['baobab'], dead:['dead'], ancient:['giant'] },
     MEADOW:{ broadleaf:['oak','linden','birch','poplar','oak','pine','linden','birch'] }, CITADEL:{ broadleaf:['olive','cypress','oak','cypress','olive','linden','olive','cypress'] },
@@ -655,7 +661,7 @@ export const REALPROP = { kinds:['sandbag','concrete','container','crates','drum
 //   mobile:false = none there), grid cell (m), where (× radius) the carpet starts thinning out, clumps tried per cell, clump height range (m), how far
 //   ahead of the camera the carpet centres (m), re-lay step (m), alpha cut-off, root shade; the photo strip (dir, its size in px, the five clump cards
 //   [x, y, w, h] in px); per battlefield: density (0–1), tex 'dry' = the dry grass photo, tint = colour ×, dryTint = × on the odd drier clump
-export const GRASS = { R:34, Rm:12, rim:0.45, mobile:true, cell:0.55, perCell:2, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
+export const GRASS = { trans:1.4, R:34, Rm:12, rim:0.45, mobile:true, cell:0.55, perCell:2, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
   dir:'assets/grass/medium01/', atlas:[2048, 518], cards:[[402, 4, 598, 262], [1201, 20, 499, 218], [61, 254, 351, 264], [474, 272, 549, 246], [1181, 248, 436, 270]],
   biomes:{ MEADOW:{ dens:0.9, tint:[1.02, 1.1, 0.92], dryTint:[1.2, 1.05, 0.72] }, SAVANNA:{ dens:0.8, tex:'dry', tint:[1.0, 0.94, 0.82], dryTint:[1.1, 1.0, 0.85] },
     CITADEL:{ dens:0.32, tex:'dry', tint:[0.95, 0.92, 0.82], dryTint:[1.1, 1.0, 0.85] }, RUINS:{ dens:0.3, tint:[0.95, 0.98, 0.85], dryTint:[1.2, 1.05, 0.75] }, QUARRY:{ dens:0.22, tex:'dry', tint:[0.95, 0.92, 0.85], dryTint:[1.1, 1.0, 0.85] } } };
@@ -685,6 +691,10 @@ export const REALCAV = { opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', c
 export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };
 //   Z244 CLEAR AIR: no milky veil — the grade's shadow lift goes (liftK 0: blacks stay black, shadows stay deep), the split-tone tints halve (tintK),
 //   the haze is thinner again and tinted sky-blue instead of whitened (fogBlue = share of the zenith colour, no white mix), crisper contrast + sharpening
+// Z276 light shafts (render/shafts.js): ray steps through the sun's shadow map, gain, air density (/m), how far the ray is walked (m), forward
+//   scattering g, the even haze share, and per-battlefield strength
+// Z276 leaf / grass translucency strength (real-trees.js, grass-carpet.js) lives in REALTREE.trans and GRASS.trans
+export const SHAFTS = { on:true, steps:24, gain:0.14, dens:0.009, maxD:150, g:0.62, even:0.08, biome:{ CITY:0.85, ARCTIC:0.7, DESERT:0.7, VOLCANO:1.25, FOUNDRY:1.15 } };
 export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.12, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
   liftK:0, tintK:0.5, fogBlue:0.22, bloom:0.24, sharp:0.58, duskHemiK:0.85, duskAmbient:0.08 };   // sunset keeps more sky fill + its lift
 // Z242 OPEN GROUND — town and countryside battlefields keep more open space: cover shapes × cover, city blocks built up to `built` (was 0.66),

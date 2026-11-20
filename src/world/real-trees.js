@@ -7,7 +7,7 @@
 // load, or if they fail, the procedural trees stay.
 import * as THREE from 'three';
 import { REALTREE } from '../../config.js';
-import { BIOME, FLORA, WTIME, crushables, loadGLTF } from '../hub.js';
+import { BIOME, FLORA, SUN_VIEW, WTIME, crushables, loadGLTF } from '../hub.js';
 
 const SP = {}, GEO = {}, EXTRA = new Set(); let _p = null;
 const U = { wDir:{ value:new THREE.Vector2(REALTREE.wind.dir[0], REALTREE.wind.dir[1]).normalize() }, wAmp:{ value:REALTREE.wind.sway }, wLeaf:{ value:REALTREE.wind.leaf } };
@@ -43,8 +43,10 @@ function prepTree(gl, k){ let src = null; gl.scene.updateMatrixWorld(true); gl.s
   return { geo:g, mat:m, leafy:k !== 'dead' && k !== 'baobab' }; }
 
 // the wind: the tree bends from its root (gusts rolling across the field, world-space, the same for every tree), the leaves flutter on top
-function windify(m){ m.onBeforeCompile = sh => { sh.uniforms.wT = WTIME; Object.assign(sh.uniforms, U);
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float wT, wAmp, wLeaf; uniform vec2 wDir; attribute float aFlex; attribute float aLeaf;')
+function windify(m){ m.onBeforeCompile = sh => { sh.uniforms.wT = WTIME; Object.assign(sh.uniforms, U); sh.uniforms.uSunView = SUN_VIEW; sh.uniforms.uTrans = { value:REALTREE.trans };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uSunView; uniform float uTrans; varying float vLeaf;')
+      .replace('#include <opaque_fragment>', 'float trL = pow(clamp(dot(normalize(vViewPosition), uSunView), 0.0, 1.0), 4.0) * vLeaf;   // Z276 a leaf with the sun behind it glows through\n outgoingLight += diffuseColor.rgb * vec3(1.0, 0.92, 0.55) * trL * uTrans;\n#include <opaque_fragment>');
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float wT, wAmp, wLeaf; uniform vec2 wDir; attribute float aFlex; attribute float aLeaf; varying float vLeaf;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
       #ifdef USE_INSTANCING
       vec4 tp = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0); mat3 tIm = mat3(instanceMatrix);
@@ -54,6 +56,7 @@ function windify(m){ m.onBeforeCompile = sh => { sh.uniforms.wT = WTIME; Object.
       float ph = tp.x * 0.061 + tp.z * 0.047, gust = 0.55 * sin(wT * 0.8 - ph) + 0.3 * sin(wT * 1.9 - ph * 1.7) + 0.25 * sin(wT * 0.31 - ph * 0.4);
       vec3 wb = vec3(wDir.x, 0.0, wDir.y) * (0.45 + 0.55 * gust) * wAmp * aFlex;   // metres, world space
       vec3 lb = transpose(tIm) * wb; lb /= vec3(dot(tIm[0], tIm[0]), dot(tIm[1], tIm[1]), dot(tIm[2], tIm[2]));
+      vLeaf = aLeaf;
       transformed += lb + vec3(sin(wT * 6.3 + position.y * 31.0 + ph * 7.0), sin(wT * 7.7 + position.x * 29.0), sin(wT * 5.9 + position.z * 33.0)) * wLeaf * aLeaf * (0.6 + 0.4 * gust);`); };
   m.customProgramCacheKey = () => 'realTree'; }
 

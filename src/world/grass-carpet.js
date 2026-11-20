@@ -5,7 +5,7 @@
 // few drier clumps here and there, and swayed by one gust field for the whole field (world space). One draw call; none on phones' lowest tier.
 import * as THREE from 'three';
 import { GRASS } from '../../config.js';
-import { BIOME, MOBILE, camera, heightAt, scene, wetAt } from '../hub.js';
+import { BIOME, MOBILE, SUN_VIEW, camera, heightAt, scene, wetAt } from '../hub.js';
 
 const G = { mesh:null, biome:null, cx:1e9, cz:1e9, time:{ value:0 }, cap:0, tex:{} };
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _ray = new THREE.Vector3();
@@ -35,7 +35,9 @@ function grassMat(map, alpha, C){
       float bend = (gust * 0.16 + flut * 0.05) * uv.y * uv.y; mat3 gIm = mat3(instanceMatrix);
       vec3 wb = vec3(bend, -abs(bend) * 0.3, bend * 0.6), lb = transpose(gIm) * wb; lb /= vec3(dot(gIm[0], gIm[0]), dot(gIm[1], gIm[1]), dot(gIm[2], gIm[2]));
       transformed += lb;   // the gust in world space (one wind for the whole field), taken back into this clump's turned, scaled frame`);
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 gDry; varying float vGh; varying float vGv;')
+    sh.uniforms.uSunView = SUN_VIEW; sh.uniforms.uTrans = { value:GRASS.trans };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 gDry; uniform vec3 uSunView; uniform float uTrans; varying float vGh; varying float vGv;')
+      .replace('#include <opaque_fragment>', 'outgoingLight += diffuseColor.rgb * vec3(1.0, 0.93, 0.6) * pow(clamp(dot(normalize(vViewPosition), uSunView), 0.0, 1.0), 4.0) * smoothstep(0.3, 1.0, vGh) * uTrans;   // Z276 blade tips glow against the sun\n#include <opaque_fragment>')
       .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);   // both faces lit as the sky lights them (three flips a back face\'s normal: an up-normal card would go black)')
       .replace('#include <color_fragment>', `#include <color_fragment>
       diffuseColor.rgb *= mix(${GRASS.rootDark.toFixed(2)}, 1.0, smoothstep(0.0, 0.45, vGh));   // shade down among the stems
