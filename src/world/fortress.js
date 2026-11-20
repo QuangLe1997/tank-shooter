@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat } from '../hub.js';
+import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -97,7 +97,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     const slit=(x,y,z,ry)=>dk.push(placed(new THREE.BoxGeometry(0.24,1.1,0.12), x, y, z, ry));
     // Z145 a stone tower: battered two-step plinth, string courses, a projecting machicolation gallery on corbels, merlons, arrow slits on its outer faces
     const FLAGS=[];
-    const keep=(px,pz,ry,ox,oz,TW,TH2,nm=3)=>{ geos.push(placed(stoneBox(TW, TH2+1, TW), px, (TH2-1)/2, pz, ry), placed(taperBox(TW+3.2, 4.2, TW+3.2, TW+0.3, TW+0.3), px, 1.0, pz, ry), placed(stoneBox(TW+0.6, 0.4, TW+0.6), px, 3.2, pz, ry));   // Z241 battered talus + plinth moulding
+    const keep=(px,pz,ry,ox,oz,TW,TH2,nm=3)=>{ (f.kp||(f.kp=[])).push([px,pz,ry,TW,TH2]); geos.push(placed(stoneBox(TW, TH2+1, TW), px, (TH2-1)/2, pz, ry), placed(taperBox(TW+3.2, 4.2, TW+3.2, TW+0.3, TW+0.3), px, 1.0, pz, ry), placed(stoneBox(TW+0.6, 0.4, TW+0.6), px, 3.2, pz, ry));   // Z241 battered talus + plinth moulding
       for(const y of [H*0.42, H*0.72, H+2.4, ...(TH2-H>9?[H+(TH2-H)*0.55]:[])]) geos.push(placed(stoneBox(TW+0.24, 0.26, TW+0.24), px, y, pz, ry));   // string courses up the shaft
       { const c=Math.cos(-ry), s2=Math.sin(-ry); for(const a of [-1,1]) for(const b of [-1,1]){ const lx=a*(TW/2+0.12), lz=b*(TW/2+0.12); geos.push(placed(stoneBox(0.62, TH2-5.2, 0.62), px+c*lx-s2*lz, 3.4+(TH2-5.2)/2, pz+s2*lx+c*lz, ry)); } }   // Z241 corner pilasters
       geos.push(placed(stoneBox(TW+0.9, 0.6, TW+0.9), px, TH2-0.9, pz, ry));
@@ -116,7 +116,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     // Z241 FLANKING TOWERS: every long curtain gets a tower standing proud of its outer face at mid-span (solid stone: a collider of its own)
     for(let i=0;i<sides;i++){ if(i===gi) continue; const [x0,z0]=V[i], [x1,z1]=V[(i+1)%sides], L=Math.hypot(x1-x0,z1-z0); if(L<FORT.arch.flankMin) continue;
       const ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), mx=(x0+x1)/2, mz=(z0+z1)/2, sg=Math.sign(-uz*mx+ux*mz)||1, onx=-uz*sg, onz=ux*sg, FW=FORT.arch.flankW, off=TH/2+FW/2-0.8, cx=mx+onx*off, cz=mz+onz*off, hh=H+FORT.arch.flankH;
-      if(ST.round){ const rr=FW*0.55, dr=cylUV(new THREE.CylinderGeometry(rr, rr+0.3, hh, 28), 14, hh); dr.translate(cx, hh/2-1, cz); geos.push(dr);
+      if(ST.round){ (f.kp||(f.kp=[])).push([cx,cz,ry,FW*1.1,hh]); const rr=FW*0.55, dr=cylUV(new THREE.CylinderGeometry(rr, rr+0.3, hh, 28), 14, hh); dr.translate(cx, hh/2-1, cz); geos.push(dr);
         for(const [r0,r1,h2,yy] of [[rr+0.3,rr+1.5,4.2,1.0],[rr+0.25,rr+0.3,0.26,H*0.5],[rr+0.25,rr+0.3,0.26,H+2.2],[rr+0.55,rr+0.25,0.7,hh-2.0]]){ const ring=cylUV(new THREE.CylinderGeometry(r0,r1,h2,28), 14, h2); ring.translate(cx,yy,cz); geos.push(ring); }
         { const nM=Math.round(rr*4.4); for(let k=0;k<nM;k++){ const a=k/nM*6.283; geos.push(placed(stoneBox(0.62,1.05,0.55), cx+Math.cos(a)*(rr+0.3), hh-0.55, cz+Math.sin(a)*(rr+0.3), -a)); } }
         for(const y of [H*0.4, H*0.7, H+3]) for(const da of [-0.6,0,0.6]){ const sa=Math.atan2(onz,onx)+da; slit(cx+Math.cos(sa)*(rr+0.32), y, cz+Math.sin(sa)*(rr+0.32), -sa+Math.PI/2); }
@@ -148,7 +148,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
         const t=new THREE.ConeGeometry(0.09,0.4,5); t.rotateX(Math.PI); t.translate(bx, H-1.9, bz); dk.push(t); }
       for(const y of [H-1.4, H-0.6]){ const [hx,hz]=at(0, 0.62); dk.push(placed(new THREE.BoxGeometry(FORT.gateW-0.5,0.1,0.1), hx, y, hz, ry)); }
       // the gate: two iron-strapped timber leaves
-      const gate=new THREE.Group(); gate.position.set(mx, 0, mz); gate.rotation.y=ry; g.add(gate);
+      const gate=new THREE.Group(); gate.position.set(mx, 0, mz); gate.rotation.y=ry; g.add(gate); f.gp=[mx,mz,ry,GH,TW];   // Z279 where the gatehouse model goes
       const leaves=[]; for(const s of [-1,1]){ const lf=new THREE.Group(); lf.position.set(s*FORT.gateW/2, 0, 0); gate.add(lf);
         const door=new THREE.Mesh(new THREE.BoxGeometry(FORT.gateW/2, H-0.2, 0.55), _wood); door.position.set(-s*FORT.gateW/4, (H-0.2)/2, 0); door.castShadow=true; door.receiveShadow=true; lf.add(door);
         for(const yy of [0.7, H*0.45, H-0.9]){ const band=new THREE.Mesh(new THREE.BoxGeometry(FORT.gateW/2-0.1, 0.28, 0.66), _iron); band.position.set(-s*FORT.gateW/4, yy, 0); lf.add(band); }
@@ -161,7 +161,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       f.bar=getEnemyBar(); f.bar.g.scale.setScalar(4.2); }
     // Z145 THE CAPITAL: the citadel raises a great DONJON at the back of its ward — an 11 m square keep, 18 m high, with four 23 m corner turrets,
     //   war banners on every face and the garrison's flag flying from its roof. It is solid stone: shells glance off it.
-    if(f.tier===3){ const bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.Rin*0.42, kx=ox*d, kz=oz*d, ry=-Math.atan2(-ox,oz), KW=FORT.arch.keepW, KH=FORT.arch.keepH;   // Z241 a towering donjon
+    if(f.tier===3){ const bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.Rin*0.42, kx=ox*d, kz=oz*d, ry=-Math.atan2(-ox,oz), KW=FORT.arch.keepW, KH=FORT.arch.keepH; f.dj=[kx,kz,ry,KW,KH];   // Z241 a towering donjon
       keep(kx, kz, ry, ox, oz, KW, KH, 7);
       const tx=Math.cos(-ry), tz=Math.sin(-ry); for(const a of [-1,1]) for(const b of [-1,1]) keep(kx+tx*a*KW/2+ox*b*KW/2, kz+tz*a*KW/2+oz*b*KW/2, ry, ox, oz, 4.4, KH+FORT.arch.turret);
       for(const [a,b] of [[0,1],[0,-1],[1,0],[-1,0]]){ const ban=new THREE.Mesh(new THREE.PlaneGeometry(2.2, 6.5), bannerMat()); ban.position.set(kx+tx*a*(KW/2+0.32)+ox*b*(KW/2+0.32), KH-6, kz+tz*a*(KW/2+0.32)+oz*b*(KW/2+0.32)); ban.rotation.y=Math.atan2(tx*a+ox*b, tz*a+oz*b); g.add(ban); }
@@ -174,11 +174,12 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       if(poles.length){ const pm=new THREE.Mesh(mergeGeometries(poles.map(q=>q.index?q.toNonIndexed():q), false), _iron); poles.forEach(q=>q.dispose()); pm.castShadow=true; g.add(pm); } }
     buildCore(f, g, WM);   // Z176 the heart of the fort
     const wall=new THREE.Mesh(mergeGeometries(geos.map(q=>q.index?q.toNonIndexed():q), false), WM); geos.forEach(q=>q.dispose()); wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
-    for(const [arr,mt] of [[dk,_iron],[wd,_wood]]) if(arr.length){ const m=new THREE.Mesh(mergeGeometries(arr.map(q=>q.index?q.toNonIndexed():q), false), mt); arr.forEach(q=>q.dispose()); m.castShadow=true; g.add(m); }   // Z145
+    for(const [arr,mt] of [[dk,_iron],[wd,_wood]]) if(arr.length){ const m=new THREE.Mesh(mergeGeometries(arr.map(q=>q.index?q.toNonIndexed():q), false), mt); arr.forEach(q=>q.dispose()); m.castShadow=true; g.add(m); (f.deco||(f.deco=[])).push(m); }   // Z145
     { const im=new THREE.InstancedMesh(pieceGeo(), WM, f.pieces.length); for(const pc of f.pieces){ _m.compose(_p.set(pc.cx,0,pc.cz), _q.setFromAxisAngle(_up, pc.ry), _s.set(pc.pl/FORT.seg+0.02,1,1)); im.setMatrixAt(pc.i, _m); }
       im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; im.receiveShadow=true; g.add(im); f.wallIM=im;
       { const di=new THREE.InstancedMesh(pieceDarkGeo(), _iron, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); di.setMatrixAt(pc.i, _m); } di.instanceMatrix.needsUpdate=true; di.computeBoundingSphere(); g.add(di); f.darkIM=di; }   // Z241 loops · ports · murder-holes
       const cg=capGeo(ST, H, TH, FORT.seg); if(cg){ const ci=new THREE.InstancedMesh(cg, capMat, f.pieces.length); for(const pc of f.pieces){ im.getMatrixAt(pc.i, _m); ci.setMatrixAt(pc.i, _m); } ci.instanceMatrix.needsUpdate=true; ci.computeBoundingSphere(); ci.castShadow=true; g.add(ci); f.capIM=ci; } }   // every wall section in ONE draw call · Z140 + its regional cap (stakes / snow / wire / tiles)
+    dressFort(f, wall);   // Z279 the colossal Tripo fortress, once its pieces are in
     // corner watchtowers (real towers: guards, collapse, loot)
     const tw=[]; for(let i=0;i<sides && tw.length<T.towers;i++){ const k=(gi+1+Math.round(i*sides/T.towers))%sides; const [vx,vz]=V[k]; tw.push([f.x+vx*0.86, f.z+vz*0.86]); }
     for(const [x,z] of tw) buildTower(x, z);
@@ -541,3 +542,35 @@ export function updateFortHud(){ const el=document.getElementById('fortHud'); if
   if(html!==_fh){ _fh=html; el.innerHTML=html; el.classList.remove('hidden'); } }
 export function clearForts(){ { const el=document.getElementById('fortHud'); if(el){ el.classList.add('hidden'); _fh=''; } } for(const f of FORTS){ if(f.g){ unwave(f.g); scene.remove(f.g); } if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } } FORTS.length=0;
   for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='fortwall'||blocks[i].kind==='gate') blocks.splice(i,1); }
+// Z279 COLOSSAL FORTS: each battlefield's forts in their own monumental style (REALFORT: granite citadel, desert kasbah, arctic basalt-and-ice,
+//   volcanic obsidian — Tripo, 4K textures). The wall sections keep their own hit points and fall one by one as before: only the instanced shape
+//   changes to the model's wall, fitted to a section; every tower and the donjon become the model's tower, the gate the model's gatehouse with its
+//   own doorway cut open so the game's gate leaves still swing; the procedural stonework, slits and caps are put away
+function fortPiece(gl, cutDoor, slice){ let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; });
+  let g=src.geometry.clone().applyMatrix4(src.matrixWorld); g=g.index?g.toNonIndexed():g; for(const a of Object.keys(g.attributes)) if(a!=='position' && a!=='normal' && a!=='uv') g.deleteAttribute(a);
+  g.computeBoundingBox(); let b=g.boundingBox; g.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); if(b.max.z-b.min.z > b.max.x-b.min.x) g.rotateY(Math.PI/2); g.computeBoundingBox(); b=g.boundingBox;
+  if(cutDoor || slice){ const P=g.attributes.position, sz=b.getSize(new THREE.Vector3()), keep=[], half=slice ? sz.y*slice/2 : 0;   // the doorway cut out of a gatehouse · or, for a wall, a slice of its own true proportions (a section's length : height)
+    for(let t=0;t<P.count/3;t++){ let x=0,y=0; for(let j=0;j<3;j++){ x+=P.getX(t*3+j); y+=P.getY(t*3+j); } x/=3; y/=3; if(cutDoor && Math.abs(x)<sz.x*REALFORT.door[0] && y<sz.y*REALFORT.door[1]) continue; if(slice && Math.abs(x)>half) continue; keep.push(t); }
+    const o=new THREE.BufferGeometry(); for(const a of ['position','normal','uv']){ const A=g.attributes[a]; if(!A) continue; const n=A.itemSize, arr=new Float32Array(keep.length*3*n); let q=0; for(const t of keep) for(let j=0;j<3;j++) for(let c=0;c<n;c++) arr[q++]=A.getComponent(t*3+j,c); o.setAttribute(a, new THREE.BufferAttribute(arr,n)); }
+    g=o; g.computeBoundingBox(); b=g.boundingBox; }
+  return { geo:g, mat:src.material.clone(), size:b.getSize(new THREE.Vector3()) }; }
+function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
+  Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p))).then(([wg,tg,gg])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
+    const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg), T=fortPiece(tg), Gt=gg && f.gp ? fortPiece(gg, true) : null, add=(geo,mat,x,z,ry,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,-0.4,z); m.rotation.y=ry; m.scale.set(sx,sy,sz); m.castShadow=m.receiveShadow=true; host.add(m); return m; };
+    // the architecture (baked meshes straight under the fort's group) goes; groups (gate leaves, guards, guns, flags) and the wall sections stay
+    for(const o of host.children.slice()) if(o.isMesh && !o.isInstancedMesh) o.visible=false; for(const m of [f.darkIM, f.capIM]) if(m) m.visible=false;
+    { const hh=H+2+C.wallUp, k=hh/W.size.y, len=W.size.x*k, rep=Math.max(1, Math.round(len/FORT.seg)), g=W.geo.clone(); g.scale(rep*FORT.seg/W.size.x, k, TH*C.thick/W.size.z); g.translate(0,-1,0); g.computeBoundingSphere();
+      // the wall at its true proportions spans rep sections; each section shows its own stretch of it (an offset per instance) and cuts the rest away
+      const off=new Float32Array(f.pieces.length); for(const pc of f.pieces) off[pc.i]=((pc.i%rep)-(rep-1)/2)*FORT.seg; g.setAttribute('aOff', new THREE.InstancedBufferAttribute(off, 1));
+      const clip=(m)=>{ m.onBeforeCompile=sh=>{ sh.uniforms.uHalf={ value:FORT.seg/2+0.02 };
+          sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aOff; varying float vLx;').replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x -= aOff; vLx = transformed.x;');
+          sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uHalf; varying float vLx;').replace('void main() {','void main() {\n if(abs(vLx) > uHalf) discard;'); };
+        m.customProgramCacheKey=()=>'fortClip'; return m; };
+      f.wallIM.geometry=g; f.wallIM.material=clip(W.mat.clone()); f.wallIM.customDepthMaterial=clip(new THREE.MeshDepthMaterial({ depthPacking:THREE.RGBADepthPacking })); f.wallIM.frustumCulled=false; }
+    // a tower at every corner and at both ends of each run of wall (the gate's sides included), the gatehouse over the gate
+    const gw=Gt ? (FORT.gateW+2*(f.gp[4]||5))*C.gateW : 0, TW=FORT.arch.flankW*C.towerW, TH2=H+C.towerUp, pts=[];
+    for(const pc of f.pieces||[]){ for(const [end,sg] of [[pc.prev,-1],[pc.next,1]]) if(!end) pts.push([pc.cx+pc.ux*sg*pc.pl/2, pc.cz+pc.uz*sg*pc.pl/2, pc.ry]); }
+    const put=[]; for(const [x,z,ry] of pts){ if(put.some(([a,b])=>Math.hypot(a-x,b-z)<TW*0.8)) continue; if(Gt && Math.hypot(x-f.gp[0], z-f.gp[1]) < gw*0.55) continue; put.push([x,z]);
+      const k=TW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, TH2/T.size.y, k); }
+    if(f.dj){ const [x,z,ry,w,h]=f.dj, k=w*C.keepW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, (h+C.towerUp)*C.keepH/T.size.y, k); }
+    if(Gt){ const [x,z,ry,GH]=f.gp, kx=gw/Gt.size.x; add(Gt.geo, Gt.mat, x, z, ry, kx, Math.max(GH, TH2)/Gt.size.y, kx); } }); }

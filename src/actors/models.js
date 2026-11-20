@@ -29,7 +29,8 @@ for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/model
 // Z264 the city's buildings and vehicles (world/real-city.js)
 MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb'; MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
 for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';
-for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins   // Z272 the aircraft   // Z269 the field headquarters
+for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins
+for(const st of ['citadel','desert','arctic','volcano']) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters
 for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + k + '.glb';
 const _load = {}, _gl = {};
 let _loader = null;

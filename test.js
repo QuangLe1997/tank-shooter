@@ -817,6 +817,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(/THREE\.Texture\.DEFAULT_ANISOTROPY/.test(R('src/render/renderer.js')) && C.GRASS.perCell>=3 && /export function initDust/.test(R('src/fx/dust.js')) && /initDust\(\)/.test(R('src/game/boot-gate.js')) && C.DUST.on, 'sharp textures, dense grass, sunlit dust'); }
 
+// Z279 colossal forts: each battlefield's forts in a Tripo style (granite citadel, desert kasbah, arctic ice, volcanic obsidian), wall sections still fall one by one
+{ const fs=await import('node:fs'); const C=await import('./config.js'), F=fs.readFileSync('src/world/fortress.js','utf8');
+  ok(/function dressFort\(f, stone\)/.test(F) && /dressFort\(f, wall\)/.test(F) && /aOff/.test(F) && /discard/.test(F) && ['citadel','desert','arctic','volcano'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/fort_'+st+'_'+p+'.glb'))) && C.REALFORT.biomes.CITADEL, 'forts dressed in their battlefield style, destructible as before'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
