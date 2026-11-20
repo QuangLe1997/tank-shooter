@@ -141,6 +141,7 @@ export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a c
 export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams scooters, cars and animals
 export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets
 export * from './game/mode.js';   // Z307 the tank and the soldier: one object per mode with its own rules (player, setup, update, fire, hits, death, loot, skills, HUD)
+export * from './campaign/soldier-war.js';   // Z309 soldier mode: waves of men, armour as a set piece, a tank's shell as a warned burst
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine

@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS, FORT } from '../../config.js';
-import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle } from '../hub.js';
+import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -209,10 +209,11 @@ export function updateEnemies(dt, now){
         const rateMul = (A.rateBase - A.rateDrop*ds) * (nearCmd?0.85:1) * (lost?1.3:1) * supplyRate();   // Z194 short of ammunition → slower to reload
         const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul') * diffDmgMul();
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
+        if(!(MODE.tankShell && def.fireCd >= 1.4 && MODE.tankShell(e, aimA, d, dmg, !!def.heavy))){   // Z309 against a soldier the main gun lays on a spot and bursts there (campaign/soldier-war.js)
         spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y), from:e.pos});
         tankRecoil(e.mesh, aimA, def.heavy?0.95:(def.accurate?0.7:0.45), e.facing);
         enemyMuzzleFX(_v.x, _v.y, _v.z, aimA, !!def.heavy);   // Z192 flash + flame + smoke at the real muzzle (was a flat dot at a fixed height)
-        sfx('enemyShoot', e.pos);
+        sfx('enemyShoot', e.pos); }
         if(def.scoot){ const sd=Math.random()<0.5?1:-1; e.scootX=Math.cos(aimA)*sd; e.scootZ=-Math.sin(aimA)*sd; e.scootUntil=now+1.5; }   // Z158 fire, then relocate
         if(def.burst){ e.burstLeft--; if(e.burstLeft<=0){ e.fireAt=now+def.reload*rateMul; e.burstLeft=def.burst; } else e.fireAt=now+def.fireCd; }
         else e.fireAt=now+def.fireCd*rateMul*(AID.punish&&targetPlayer?TACTICS.punish.rate:1);   // Z185 you reload → they fire faster

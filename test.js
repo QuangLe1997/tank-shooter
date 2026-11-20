@@ -955,6 +955,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/p\.maxHp = CAV\.soldier\.hp/.test(md) && !/applyUpgrades|applyTankKit|tankModel/.test(md.slice(md.indexOf('const SOLDIER'))) && C.CAV.soldier.rifleK>C.INFANTRY.vsArmour && /Math\.hypot\(x - p\.pos\.x, z - p\.pos\.z\) < p\.radius \+ r/.test(md), 'the soldier: his own health, none of the tank\'s progression, a man\'s outline hit at full rifle weight');
   ok(['grenade','smokeHand','medkit'].every(k=>ts.includes("id:'"+k+"'")) && /export function spellNow/.test(R('src/combat/spells.js')) && /MODE\.powerHud/.test(R('src/combat/power.js')) && /function man\(c, p, k, R\)/.test(R('src/ui/instruments.js')) && /MODE\.crushes/.test(R('src/world/decor.js')) && /MODE\.riders/.test(R('src/world/pow.js')) && /MODE\.fleeK/.test(R('src/actors/wildlife.js')), 'his skills, HUD, loot, no crushing, no riders, animals let him closer'); }
 
+// Z309 a soldier's war: waves of men, armour as a set piece, a tank's shell as a warned burst
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), sw=R('src/campaign/soldier-war.js'), md=R('src/game/mode.js');
+  ok(/if\(MODE\.waveQueue\) return MODE\.waveQueue\(stage, wave\)/.test(R('src/campaign/waves.js')) && /waveQueue\(stage, wave\)\{ return soldierWaveQueue/.test(md) && /\['rifle', w\.rifle\]/.test(sw) && /q\.push\(stage >= 4 \? 'heavy' : 'grunt'\)/.test(sw) && C.CAV.soldier.war.sizeK>1, 'soldier waves: men first, a tank last as a set piece, announced');
+  ok(/MODE\.tankShell && def\.fireCd >= 1\.4 && MODE\.tankShell\(e, aimA, d, dmg/.test(R('src/ai/tactics.js')) && /makeArtLock\(tx, tz, R/.test(sw) && /s\.dud = true/.test(sw) && /if\(d < s\.R\) damagePlayer/.test(sw) && C.CAV.soldier.war.shell.lock>0.5, 'a tank\'s main gun on a soldier: a red ring while it lays, then a burst there — step out and it misses'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

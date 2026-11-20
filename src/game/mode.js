@@ -5,7 +5,7 @@
 //   ride on him; his loot, his skills, his HUD; how close animals let him come. Every system that asked "is this the soldier?" asks MODE instead.
 import { CAV, INFANTRY } from '../../config.js';
 import { GUNS, PLAYER, TANK_SCALE, TROOPER_SPELLS, addPlayerBurn, applyTankKit, applyUpgrades, cavIdle, defaultGunIdx, fireGun, hitsHull, loadoutGuns, magCap, makeCavPlayer,
-  makePlayer, mountRoofMG, playClip, playerHitFX, soldierFire, soldierHitFX, tankExplode, tankModel, trooperGuns, trooperLoot, updateCavalry, updatePlayer, PLAYER_PAL } from '../hub.js';
+  makePlayer, mountRoofMG, playClip, playerHitFX, soldierFire, soldierHitFX, tankExplode, tankModel, trooperGuns, trooperLoot, updateCavalry, updatePlayer, PLAYER_PAL, updateSoldierWar, soldierWaveQueue, tankShellZone, clearSoldierWar } from '../hub.js';
 
 const refill = p => { for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]); };
 const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true, fleeK:1, spells:null, loot:null, overText:'xe bị hạ khi không còn lượt hồi sinh',
@@ -23,9 +23,11 @@ const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true,
 const SOLDIER = { id:'soldier', crushes:false, riders:false, crewXp:false, powerHud:false, get fleeK(){ return CAV.soldier.fleeK; }, get spells(){ return TROOPER_SPELLS; },
   loot(tier){ return trooperLoot(tier); }, overText:'người lính ngã xuống khi không còn lượt hồi sinh',
   makePlayer(kind){ return makeCavPlayer(kind); },
-  setupRun(p){ p.guns = trooperGuns(); p.gunIdx = 0; p.dmgMul = CAV.atk; p.crit = CAV.crit; p.fireMul = CAV.fireK;   // a marksman's eye, quick hands, heavy rifle rounds
+  setupRun(p){ clearSoldierWar(); p.guns = trooperGuns(); p.gunIdx = 0; p.dmgMul = CAV.atk; p.crit = CAV.crit; p.fireMul = CAV.fireK;   // a marksman's eye, quick hands, heavy rifle rounds
     p.maxHp = CAV.soldier.hp; p.hp = p.maxHp; p.accelMul = p.turnMul = p._size = 1; refill(p); p.radius = CAV.radius.mounted; p.mesh.scale.setScalar(1); },
-  update(dt, now){ updateCavalry(dt, now); }, idle(dt){ cavIdle(dt); },
+  update(dt, now){ updateCavalry(dt, now); updateSoldierWar(dt, now); }, idle(dt){ cavIdle(dt); },
+  waveQueue(stage, wave){ return soldierWaveQueue(stage, wave); },   // Z309 men first, armour as a set piece
+  tankShell(e, a, d, dmg, heavy){ tankShellZone(e, a, d, dmg, heavy); return true; },   // Z309 a tank's main gun: a warned burst on a spot, not a round at a hull
   fire(now, range){ soldierFire(now, range); },
   hitTest(p, x, z, r){ return Math.hypot(x - p.pos.x, z - p.pos.z) < p.radius + r; }, rifleK(){ return CAV.soldier.rifleK; },   // his outline by stance (game/cavalry.js sets the radius)
   onHit(p, dmg, dx, dz){ soldierHitFX(p, dx, dz, dmg); },

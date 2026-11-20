@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { BIOME, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, mouthSpawnPoint, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD } from '../hub.js';
+import { BIOME, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, mouthSpawnPoint, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, MODE } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -27,6 +27,7 @@ export function wavePool(stage, wave){   // weighted pool; tougher/new types unl
   for(const [ty,u] of Object.entries(ROSTER.unlock)) if(stage>=u){ const w=ROSTER.weight[ty]; pool.push([ty, w[0]+(stage-u)*w[1]]); }   // Z80 new vehicles
   return pool; }
 export function buildWaveQueue(stage, wave){
+  if(MODE.waveQueue) return MODE.waveQueue(stage, wave);   // Z309 a mode with its own waves (the soldier's: men first, armour as a set piece)
   const n = waveSize(stage, wave), pool = wavePool(stage, wave);
   const tot=pool.reduce((s,pp)=>s+pp[1],0);
   const q=[];
