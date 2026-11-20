@@ -613,25 +613,27 @@ export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.
 //   stretch = pieces filled to the footprint on each axis (the container came out nearly cubic)
 export const REALPROP = { kinds:['sandbag','concrete','container','crates','drums','jersey','logs','pipes','teeth','tires','wreck'], fit:0.96, hMax:1.35, env:0.6,
   tint:{ logs:0xa07a52, pipes:0x9c9a92, teeth:0xa6a49c, concrete:0xb4b2aa, jersey:0xb4b2aa }, matte:['sandbag','logs','teeth','concrete','jersey','pipes'], stretch:['container'] };
-// Z251 GRASS CARPET (world/grass-carpet.js): blades round the camera on grassy battlefields — radius (m; Rm on phones, mobile:false = none there), grid cell (m),
-//   where (× radius) the carpet starts thinning out, clumps tried per cell, blades per clump, blade half-width at the root (m), clump height range (m), how far ahead of the camera the carpet centres (m), re-lay step (m);
-//   per battlefield: density (0–1) and colours [root, tip, dry tips]
-export const GRASS = { R:26, Rm:12, rim:0.45, mobile:true, cell:0.6, perCell:2, blades:9, bladeW:0.042, h:[0.3, 0.6], ahead:8, step:1.5,
-  biomes:{ MEADOW:{ dens:0.92, col:[0x243c14, 0x5f8a30, 0x98a052] }, HILLS:{ dens:0.8, col:[0x223a16, 0x5a8030, 0x94985a] },
-    VILLAGE:{ dens:0.65, col:[0x2a3e16, 0x648a34, 0x9ea25a] }, SAVANNA:{ dens:0.75, col:[0x5a4c22, 0xb09a58, 0xd2bc80] } } };
+// Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS (world/grass-carpet.js): clumps round the camera on grassy battlefields — radius (m; Rm on phones,
+//   mobile:false = none there), grid cell (m), where (× radius) the carpet starts thinning out, clumps tried per cell, clump height range (m), how far
+//   ahead of the camera the carpet centres (m), re-lay step (m), alpha cut-off, root shade; the photo strip (dir, its size in px, the five clump cards
+//   [x, y, w, h] in px); per battlefield: density (0–1), tex 'dry' = the dry grass photo, tint = colour ×, dryTint = × on the odd drier clump
+export const GRASS = { R:34, Rm:12, rim:0.45, mobile:true, cell:0.55, perCell:2, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
+  dir:'assets/grass/medium01/', atlas:[2048, 518], cards:[[402, 4, 598, 262], [1201, 20, 499, 218], [61, 254, 351, 264], [474, 272, 549, 246], [1181, 248, 436, 270]],
+  biomes:{ MEADOW:{ dens:0.9, tint:[1.02, 1.1, 0.92], dryTint:[1.2, 1.05, 0.72] }, SAVANNA:{ dens:0.8, tex:'dry', tint:[1.0, 0.94, 0.82], dryTint:[1.1, 1.0, 0.85] },
+    CITADEL:{ dens:0.32, tex:'dry', tint:[0.95, 0.92, 0.82], dryTint:[1.1, 1.0, 0.85] }, RUINS:{ dens:0.3, tint:[0.95, 0.98, 0.85], dryTint:[1.2, 1.05, 0.75] }, QUARRY:{ dens:0.22, tex:'dry', tint:[0.95, 0.92, 0.85], dryTint:[1.1, 1.0, 0.85] } } };
 // Z250 PHOTO GROUND (world/ground-photo.js): per battlefield the photo-scanned CC0 sets (Poly Haven, fetched by tools/ground-photos.mjs) — [base, second]:
 //   the base covers the field, the second shows through on steep faces, crater bowls and the field's bare patches. dual = how much the base is
 //   blended with itself at another scale (breaks the tiling); nrm = normal strength; altRep = the second layer's tile × the base's
-export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55,
+export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTile:true, ntFreq:0.32, hi:true,   // Z263 stochastic sampling (no repeat grid); ntFreq = patches per photo tile; hi = the base set at 2K (colour + normal) off phones
   // albedo × per battlefield: the scene's sun and exposure were tuned for the darker procedural ground — a photo albedo needs bringing down
-  tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.46, 0.62, 0.38], HILLS:[0.47, 0.6, 0.39], VILLAGE:[0.52, 0.6, 0.44], SAVANNA:[0.62, 0.58, 0.5], DESERT:[0.76, 0.64, 0.5],
+  tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.9, 1.0, 0.72], HILLS:[0.47, 0.6, 0.39], VILLAGE:[0.52, 0.6, 0.44], SAVANNA:[0.62, 0.58, 0.5], DESERT:[0.76, 0.64, 0.5],
     TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[0.6, 0.58, 0.56], STEELMILL:[0.6, 0.58, 0.56] },
   biomes:{
-  MEADOW:['leafy_grass','brown_mud_02'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['dry_ground_01','dry_ground_rocks'],
-  DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','dark_rock'], VOLCANO:['burned_ground_01','dark_rock'],
-  QUARRY:['gravel_ground_01','rock_ground'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_02','concrete_floor_damaged_01'],
-  CITADEL:['gravel_floor','dirt'], RUINS:['dry_ground_rocks','concrete_rock_path'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
-  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02'] };   // retired battlefields: no 2K copies   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
+  MEADOW:['sparse_grass','forest_ground_04'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['red_laterite_soil_stones','mud_cracked_dry_03'],
+  DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_02','snow_03'], VOLCANO:['ground_grey','dark_rock_02'],
+  QUARRY:['rocks_ground_05','rocks_ground_06'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_01','cracked_concrete'],
+  CITADEL:['rocky_trail','gravel_floor'], RUINS:['rocks_ground_02','rocks_ground_04'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
+  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02'], retired:['HILLS','VILLAGE','TUNDRA','STEELMILL','CAVERN'] };   // retired battlefields: no 2K copies   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
 // Z249 REAL INFANTRY (actors/real-troops.js): material roughness; Z254 seamInset = how far (rig units) a seam triangle's copy sits inside the next part;
 //   team = albedo × per side (ours a cooler green cast, theirs a warmer red one); the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);

@@ -22,5 +22,20 @@
  "large_sandstone_blocks": 3,
  "rock_face": 2.38,
  "aerial_grass_rock": 15,
- "aerial_rocks_02": 50
+ "aerial_rocks_02": 50,
+ "sparse_grass": 2,
+ "forest_ground_04": 3.15,
+ "red_laterite_soil_stones": 2,
+ "mud_cracked_dry_03": 1.5,
+ "snow_02": 2,
+ "snow_03": 2,
+ "ground_grey": 1,
+ "dark_rock_02": 2,
+ "rocks_ground_05": 3,
+ "rocks_ground_06": 3,
+ "asphalt_01": 2.08,
+ "cracked_concrete": 2,
+ "rocky_trail": 2,
+ "rocks_ground_02": 2,
+ "rocks_ground_04": 2
 }

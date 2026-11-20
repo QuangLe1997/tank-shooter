@@ -9,15 +9,15 @@ const off = () => typeof location !== 'undefined' && /procground/.test((location
 function tex(url, srgb){ if(_tex[url]) return _tex[url];
   return (_tex[url] = new THREE.TextureLoader().loadAsync(url).then(t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.anisotropy = APPLE ? 8 : (MOBILE ? 2 : 8); return t; })); }
 export const photoDiff = name => tex('assets/ground/' + name + '/diff.jpg', true);   // Z259 just the colour photo of a set (the far hills)
-export function photoSet(name){ if(_set[name]) return _set[name]; const d = 'assets/ground/' + name + '/';
-  return (_set[name] = Promise.all([tex(d + 'diff.jpg', true), tex(d + 'nor.jpg', false), tex(d + 'arm.jpg', false)]).then(([diff, nor, arm]) => ({ diff, nor, arm }))); }
+export function photoSet(name, hi){ const key = name + (hi ? ':2k' : ''); if(_set[key]) return _set[key]; const d = 'assets/ground/' + name + '/', h = hi ? d + '2k/' : d;   // Z263 hi = colour + normal at 2K
+  return (_set[key] = Promise.all([tex(h + 'diff.jpg', true), tex(h + 'nor.jpg', false), tex(d + 'arm.jpg', false)]).then(([diff, nor, arm]) => ({ diff, nor, arm }))); }
 function sizes(){ return _sizes || (_sizes = fetch('assets/ground/sizes.json').then(r => r.json())); }
 
 // called by applyBiome right after it puts the procedural maps on: back to the procedural look at once, the photo sets swap in when loaded
 export function applyGroundPhoto(b){
   _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); _want = b.name;
   const pair = GROUND_PHOTO.biomes[b.name]; if(!pair || off() || typeof window === 'undefined') return Promise.resolve(false);
-  return Promise.all([photoSet(pair[0]), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {
+  return Promise.all([photoSet(pair[0], GROUND_PHOTO.hi && !MOBILE), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {
     if(_want !== b.name) return false;                                   // the player moved on to another battlefield meanwhile
     const rep = (ARENA * 2) / (Z[pair[0]] || 2);
     for(const t of [A.diff, A.nor, A.arm]) t.repeat.set(rep, rep);

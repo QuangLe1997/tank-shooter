@@ -21,4 +21,11 @@ for(const name of sets){
   const dm = info.dimensions || [2000, 2000]; sizes[name] = +(Math.max(dm[0], dm[1]) / 1000).toFixed(2);   // metres the tile covers
   console.log('got', name, sizes[name] + ' m', (fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0) / 1048576).toFixed(2) + ' MB');
 }
+// Z263 the base set of every battlefield also at 2K (colour + normal; AO / roughness stays 1K) for desktops: assets/ground/<set>/2k/{diff,nor}.jpg
+if(GROUND_PHOTO.hi) for(const name of new Set(Object.entries(GROUND_PHOTO.biomes).filter(([b]) => !(GROUND_PHOTO.retired || []).includes(b)).map(([, p]) => p[0]))){ const dir = path.join(OUT, name, '2k'); if(fs.existsSync(path.join(dir, 'nor.jpg'))) continue;
+  const files = await (await fetch('https://api.polyhaven.com/files/' + name, { headers:UA })).json(), pick = k => files[k] && files[k]['2k'] && (files[k]['2k'].jpg || files[k]['2k'].png);
+  if(!pick('Diffuse') || !pick('nor_gl')){ console.log('SKIP 2k', name); continue; } fs.mkdirSync(dir, { recursive:true }); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gp2-'));
+  for(const [k, f] of [['diff', pick('Diffuse')], ['nor', pick('nor_gl')]]){ const raw = path.join(tmp, k); fs.writeFileSync(raw, Buffer.from(await (await fetch(f.url, { headers:UA })).arrayBuffer()));
+    execFileSync('magick', [raw, '-resize', '2048x2048>', '-quality', k === 'diff' ? '84' : '88', '-strip', path.join(dir, k + '.jpg')]); }
+  fs.rmSync(tmp, { recursive:true }); console.log('got 2k', name, (fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0) / 1048576).toFixed(2) + ' MB'); }
 fs.writeFileSync(sizesF, JSON.stringify(sizes, null, 1) + '\n');

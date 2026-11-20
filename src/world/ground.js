@@ -1,6 +1,6 @@
 // world/ground.js — ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached)
 import * as THREE from 'three';
-import { RELIEF } from '../../config.js';
+import { GROUND_PHOTO, RELIEF } from '../../config.js';
 import { APPLE, ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
 
 // ----------------------------- ARENA -----------------------------
@@ -104,11 +104,25 @@ export const RELIEF_GLSL = `{ float cv=vRelief.x, sl=vRelief.y; vec3 c=diffuseCo
   c = mix(c, c*bowlTint, bowl*rel0.x); c *= 1.0 - bowl*rel0.y;
   c *= 1.0 + crest*rel0.z;
   diffuseColor.rgb = c; }`;
+// Z263 NO TILING: the photo ground is sampled through a stochastic lookup (Quilez) — the field is cut into soft patches by a low-frequency noise and
+//   each patch reads the photo at its own offset, two neighbours blended across a seam the photo's own detail hides — so the 1–4 m photo never shows
+//   as a grid of repeats; the same offsets for colour, normal, roughness and AO (they stay in register). Same cost class as before: two taps a map.
+const NT_GLSL = `float ntH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float ntN(vec2 p){ vec2 i = floor(p), f = fract(p), u = f * f * (3.0 - 2.0 * f); return mix(mix(ntH(i), ntH(i + vec2(1.0, 0.0)), u.x), mix(ntH(i + vec2(0.0, 1.0)), ntH(i + vec2(1.0, 1.0)), u.x), u.y); }
+vec4 ntTex(sampler2D s, vec2 uv){ float k = ntN(uv * ${GROUND_PHOTO.ntFreq.toFixed(3)}) * 8.0, f = fract(k), ia = floor(k); vec2 dx = dFdx(uv), dy = dFdy(uv);
+  vec4 a = textureGrad(s, uv + sin(vec2(3.0, 7.0) * ia), dx, dy), b = textureGrad(s, uv + sin(vec2(3.0, 7.0) * (ia + 1.0)), dx, dy);
+  return mix(a, b, smoothstep(0.2, 0.8, f - 0.1 * dot(a.rgb - b.rgb, vec3(1.0)))); }`;
+function noTile(fs){ if(!GROUND_PHOTO.noTile) return fs; const C = THREE.ShaderChunk;
+  return fs.replace('#include <common>', '#include <common>\n' + NT_GLSL)
+    .replace('#include <map_fragment>', C.map_fragment.replace('texture2D( map, vMapUv )', 'ntTex( map, vMapUv )'))
+    .replace('#include <normal_fragment_maps>', C.normal_fragment_maps.split('texture2D( normalMap, vNormalMapUv )').join('ntTex( normalMap, vNormalMapUv )'))
+    .replace('#include <roughnessmap_fragment>', C.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'ntTex( roughnessMap, vRoughnessMapUv )'))
+    .replace('#include <aomap_fragment>', C.aomap_fragment.replace('texture2D( aoMap, vAoMapUv )', 'ntTex( aoMap, vAoMapUv )')); }
 export function macroGround(mat){
   mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
     sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief; varying vec2 vWXZ;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief; vWXZ = mwp.xz;');
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;\nuniform sampler2D altMap; uniform float altOn, altScale, dual; varying vec2 vWXZ;')
-      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = texture2D(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\n#endif\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL); };
-  mat.customProgramCacheKey=()=>'macroGround2'; return mat;
+      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = texture2D(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\n#endif\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL); sh.fragmentShader=noTile(sh.fragmentShader); };
+  mat.customProgramCacheKey=()=>'macroGround3'; return mat;
 }

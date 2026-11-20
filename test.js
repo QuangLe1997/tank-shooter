@@ -747,6 +747,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function fellTree/.test(tf) && /F\.g \/ \(f\.h \* F\.cg\) \* Math\.sin\(f\.th\)/.test(tf) && /export function shotTree/.test(tf) && /export function blastTrees/.test(tf) && /function impact/.test(tf), 'tree fall: gravity topple about the foot, crown strike, bounce, settle');
   ok(/fellTree\(c, dx, dz, TREEFALL\.push\)/.test(dc) && /shotTree\(b\.x, b\.z, b\.by, b\.vx, b\.vz\)/.test(lo) && /blastTrees\(x, z, r\)/.test(sp), 'rammed, shot through or blasted, a tree goes down the right way'); }
 
+// Z263 photographed grass + no-tile ground: scanned grass clump cards, stochastic photo sampling, the base set at 2K on desktops
+{ const fs=await import('node:fs'); const gc=fs.readFileSync('src/world/grass-carpet.js','utf8'), gd=fs.readFileSync('src/world/ground.js','utf8'), gp=fs.readFileSync('src/world/ground-photo.js','utf8'), C=await import('./config.js');
+  ok(/aRect/.test(gc) && /alphaMap:alpha/.test(gc) && /vMapUv = aRect\.xy \+ uv \* aRect\.zw/.test(gc) && /normal = normalize\(\(viewMatrix \* vec4\(0\.0, 1\.0, 0\.0, 0\.0\)\)\.xyz\)/.test(gc) && C.GRASS.cards.length===5 && fs.existsSync(C.GRASS.dir+'alpha.jpg') && fs.existsSync(C.GRASS.dir+'dry.jpg'), 'grass: five photographed clumps cut by their alpha, lit evenly on both faces, a dry version');
+  ok(/vec4 ntTex\(sampler2D s, vec2 uv\)/.test(gd) && /textureGrad/.test(gd) && /ntTex\( normalMap, vNormalMapUv \)/.test(gd) && /noTile\(sh\.fragmentShader\)/.test(gd), 'ground: stochastic no-tile lookup for colour, normal, roughness, AO');
+  ok(/photoSet\(pair\[0\], GROUND_PHOTO\.hi && !MOBILE\)/.test(gp) && Object.values(C.GROUND_PHOTO.biomes).every(p=>fs.existsSync('assets/ground/'+p[1]+'/diff.jpg')) && ['MEADOW','SAVANNA','ARCTIC','VOLCANO','QUARRY','CITY','CITADEL','RUINS','DESERT','FOUNDRY'].every(b=>fs.existsSync('assets/ground/'+C.GROUND_PHOTO.biomes[b][0]+'/2k/diff.jpg')), 'every battlefield has its sets on disk, its base set also at 2K'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

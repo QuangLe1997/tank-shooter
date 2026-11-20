@@ -1,0 +1,4 @@
+grass_medium_01 by Poly Haven (CC0) — https://polyhaven.com/a/grass_medium_01
+Only the bottom strip of the 2K texture atlas is kept (rows 1530–2047): five photographed grass clump cards.
+medium01/diff.jpg = Diffuse, medium01/dry.jpg = dry_diff, medium01/alpha.jpg = Alpha.
+Card rectangles (pixels in the 2048x518 strip, y down): A 402,4 598x262 · B 1201,20 499x218 · C 61,254 351x264 · D 474,272 549x246 · E 1181,248 436x270
