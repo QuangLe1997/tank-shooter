@@ -16,7 +16,7 @@ export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /no
   const ga = Math.atan2((f.oz ?? f.z + 1) - f.z, (f.ox ?? f.x) - f.x), list = [], R = f.R || 30;
   const spot = (a, d) => [Math.cos(a) * d, Math.sin(a) * d];
   const away = a => Math.abs(Math.atan2(Math.sin(a - ga), Math.cos(a - ga))) > C.laneA;
-  const plan = [['base_barracks', 1], ['base_tent', C.tents], ['base_radar', f.tier >= 2 ? 1 : 0]];
+  const plan = [['base_barracks', 1], ['base_tent', C.tents], ['base_radar', f.tier >= 2 ? 1 : 0], ...Array.from({ length:C.nVeh }, () => [C.veh[(Math.random() * C.veh.length) | 0], 1])];   // Z291 trucks, APCs, jeeps parked in the camp
   for(const [k, n] of plan) for(let i = 0; i < n; i++){ for(let t = 0; t < 20; t++){ const a = Math.random() * Math.PI * 2, d = R + C.ring[0] + Math.random() * (C.ring[1] - C.ring[0]); if(!away(a)) continue;
       const [lx, lz] = spot(a, d); if(!inField(f.x + lx, f.z + lz, 6) || list.some(q => Math.hypot(q.x - lx, q.z - lz) < 12)) continue; list.push({ k, x:lx, z:lz, ry:-a + Math.PI / 2 }); break; } }
   { const sd = Math.random() < 0.5 ? 1 : -1, a = ga + sd * C.laneA * 1.3, [lx, lz] = spot(a, R + 6); list.push({ k:'base_bunker', x:lx, z:lz, ry:-ga + Math.PI / 2 }); }   // the bunker covering the gate

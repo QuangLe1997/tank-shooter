@@ -98,13 +98,28 @@ function spawn(v){ const p = S.player, R = TR.runs; let r = null, t = 0;
   v.off = r.blvd ? (moto ? C.laneB[1] + (Math.random() - 0.5) * 1.4 : C.laneB[0]) : (moto ? C.laneS[1] + (Math.random() - 0.5) * 0.4 : C.laneS[0]);
   v.vmax = (moto ? C.motoV : C.carV)[0] + Math.random() * ((moto ? C.motoV : C.carV)[1] - (moto ? C.motoV : C.carV)[0]); v.v = v.vmax * 0.6; v.dead = false; v.wob = 0; v.lean = 0; }
 
+// Z290 ROLLING WHEELS: each kind's geometry is cloned with a per-vertex tag for the wheels (found from the model itself: the vertices touching
+//   the road give the two axles; a wheel is the disc of the real tyre radius round each axle, on the outer side for cars) and every vehicle
+//   carries its own roll angle (an instanced attribute): the vertex shader turns the wheel's vertices (and normals) about the axle by it.
+function wheelGeo(geo, moto, sc){ const g = geo.clone(); g.computeBoundingBox(); const b = g.boundingBox, P = g.attributes.position, n = P.count, H = b.max.y - b.min.y, W = b.max.x - b.min.x, y0 = b.min.y, zm = (b.min.z + b.max.z) / 2, xm = (b.min.x + b.max.x) / 2;
+  const zs = [[], []]; for(let i = 0; i < n; i++) if(P.getY(i) < y0 + 0.025 * H) zs[P.getZ(i) > zm ? 0 : 1].push(P.getZ(i)); if(zs[0].length < 3 || zs[1].length < 3) return null;
+  const zc = zs.map(L => L.reduce((a, q) => a + q, 0) / L.length), r = (moto ? REALCITY.traffic.wheel[1] : REALCITY.traffic.wheel[0]) / sc, A = new Float32Array(n * 3); let cnt = 0;
+  for(let i = 0; i < n; i++){ const x = P.getX(i), y = P.getY(i), z = P.getZ(i); for(const c of (moto ? zc.slice(0, 1) : zc)){ const dy = y - (y0 + r), dz = z - c; if(dy * dy + dz * dz < r * r * 1.02 && (moto ? Math.abs(x - xm) < 0.07 / sc : Math.abs(x - xm) > W * 0.3)){   // a scooter: the front tyre only (its body hides the rear one)
+      A[i * 3] = 1; A[i * 3 + 1] = y0 + r; A[i * 3 + 2] = c; cnt++; break; } } }
+  if(!cnt) return null; g.setAttribute('aWheel', new THREE.BufferAttribute(A, 3)); return { g, rM:r * sc, cnt }; }
+function wheelMat(m){ const w = m.clone(); w.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aWheel; attribute float aRoll;')
+    .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n  float wc = cos(aRoll * aWheel.x), ws = sin(aRoll * aWheel.x); objectNormal.yz = vec2(objectNormal.y * wc - objectNormal.z * ws, objectNormal.y * ws + objectNormal.z * wc);')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\n  if(aWheel.x > 0.5){ vec2 wq = transformed.yz - aWheel.yz; transformed.yz = aWheel.yz + vec2(wq.x * wc - wq.y * ws, wq.x * ws + wq.y * wc); }'); };
+  w.customProgramCacheKey = () => 'trafficWheel' + (m.customProgramCacheKey ? m.customProgramCacheKey() : ''); return w; }
 export async function buildTraffic(segs){ TR.on = false; TR.list.length = 0; TR.ims.length = 0; TR.runs = runsOf(segs); const C = REALCITY.traffic;
   if(!TR.runs.length || typeof window === 'undefined' || /notraffic/.test(location.search + location.hash)) return;
   const motos = await motoModels(), cars = Object.keys(REALCITY.cars).filter(k => REAL_CITY[k] && k !== 'car_bus'), N = MOBILE ? C.nMobile : C.n;
   const kinds = []; for(const m of motos || []) kinds.push({ geo:m.geo, mats:m.mats, len:m.len, moto:true, sc:1, size:new THREE.Vector3(0.7, 1.15, m.len), w:C.motoShare * m.w });
   for(const k of cars){ const M = REAL_CITY[k], sc = (REALCITY.cars[k].L || 4.6) / M.size.z; kinds.push({ geo:M.geo, mats:M.mat, len:REALCITY.cars[k].L || 4.6, moto:false, sc, size:M.size, w:(1 - C.motoShare) / cars.length }); }
   if(!kinds.length) return; const tot = kinds.reduce((a, q) => a + q.w, 0), LM = lampMats(); for(const m of LM) if(!LAND.mats.includes(m)) LAND.mats.push(m);
-  for(const q of kinds){ const n = Math.max(1, Math.round(N * q.w / tot)), im = new THREE.InstancedMesh(q.geo, q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for(const q of kinds){ const n = Math.max(1, Math.round(N * q.w / tot)), W = REALCITY.traffic.wheel && wheelGeo(q.geo, q.moto, q.sc);   // Z290 the wheels turn
+    if(W){ W.g.setAttribute('aRoll', new THREE.InstancedBufferAttribute(new Float32Array(n), 1).setUsage(THREE.DynamicDrawUsage)); }
+    const im = new THREE.InstancedMesh(W ? W.g : q.geo, W ? (Array.isArray(q.mats) ? q.mats.map(wheelMat) : wheelMat(q.mats)) : q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.userData.rM = W ? W.rM : 0;
     im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);
     const lm = new THREE.InstancedMesh(lampGeo(q.size, q.moto, q.sc), LM, n); lm.instanceMatrix = im.instanceMatrix; lm.frustumCulled = false; arena.add(lm); LAND.meshes.push(lm);   // the lamps ride on the same matrices
     contactShadow(q.size.x * (q.moto ? 1.05 : 1.12), q.size.z * 1.06, n, im.instanceMatrix, 0.012 / q.sc);   // Z271 seated on the road
@@ -128,11 +143,12 @@ export function updateTraffic(dt){ if(!TR.on) return; if(!TR.ims.length || !TR.i
         if(Math.abs(cr - lc) < 3.2 && ahead > -2 && ahead < 16) gap = Math.min(gap, ahead - 4.5);
         if(Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < (v.moto ? 1.9 : 2.8)){ wreck(v, false); continue; } }   // run over
       const vt = Math.max(0, Math.min(v.vmax, gap * 1.1)); v.v += Math.max(-14 * dt, Math.min(3.5 * dt, vt - v.v)); v.t += v.v * v.s * dt;
+      const RA = v.im.geometry.attributes.aRoll; if(RA){ v.roll = ((v.roll || 0) + v.v * dt / v.im.userData.rM) % 6.2832; RA.setX(v.k, v.roll); }   // Z290 roll as far as it went
       if(v.moto){ v.wob = Math.sin(performance.now() * 0.0013 + v.k) * 0.03; v.lean = Math.sin(performance.now() * 0.0009 + v.k * 1.7) * 0.025; }
       if(v.s > 0 && v.t > R.a1 - 2){ v.s = -1; v.t = R.a1 - 2; } else if(v.s < 0 && v.t < R.a0 + 2){ v.s = 1; v.t = R.a0 + 2; }   // U-turn at the end of the road
       place(v); } }
   for(const v of TR.list) if(v.dead) place(v);
-  for(const im of TR.ims) im.instanceMatrix.needsUpdate = true; }
+  for(const im of TR.ims){ im.instanceMatrix.needsUpdate = true; if(im.geometry.attributes.aRoll) im.geometry.attributes.aRoll.needsUpdate = true; } }
 export const TRAFFIC = TR;
 // Z282 a mount for the xe-ôm / xích-lô mode: the bike (green-jacket driver on the scooter, or the cyclo with its driver on the rear saddle) as one
 //   geometry with its materials, in metres, front toward +z — the player's soldier sits on it where XEOM says

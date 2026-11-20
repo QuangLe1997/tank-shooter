@@ -134,7 +134,7 @@ export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }
     DESERT:{ n:3, keys:['ruin_wall','ruin_tower'] }, QUARRY:{ n:3, keys:['ruin_wall','ruin_block'] }, SAVANNA:{ n:2, keys:['ruin_tower','ruin_villa'] }, FOUNDRY:{ n:3, keys:['ruin_block','ruin_wall'] },
     ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
 // Z285 enemy outposts (world/outposts.js): sizes (w = length, h = height, m), tents per fort, the ring round the walls (m beyond R), the gate lane kept clear (rad), wire rows and distance, solid pieces
-export const OUTPOST = { size:{ base_barracks:{ w:16 }, base_tent:{ w:7 }, base_radar:{ h:9 }, base_bunker:{ w:7 }, base_wire:{ w:6 } }, tents:2, ring:[10, 22], laneA:0.5, wireRows:2, wireAt:9, solid:['base_barracks','base_bunker','base_radar'] };
+export const OUTPOST = { size:{ base_barracks:{ w:16 }, base_tent:{ w:7 }, base_radar:{ h:9 }, base_bunker:{ w:7 }, base_wire:{ w:6 }, mil_truck:{ w:8 }, mil_apc:{ w:7.6 }, mil_jeep:{ w:4.3 } }, veh:['mil_truck','mil_apc','mil_jeep'], nVeh:2, tents:2, ring:[10, 22], laneA:0.5, wireRows:2, wireAt:9, solid:['base_barracks','base_bunker','base_radar','mil_truck','mil_apc','mil_jeep'] };
 // Z286 real wildlife (actors/wildlife.js; Tripo, rigged + walk cycle): height (m) per species, turn fix (rad), walk-cycle speed limits, off on phones
 export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, reindeer:2.4, bear:1.5 }, yaw:{}, cycle:[0.7, 2.6], mobile:false };
 // Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink
@@ -609,7 +609,7 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
     city_fountain:{ w:9, sink:0.18 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5,
   bitexco:{ h:118, turn:0.5, sink:0.03 },   // Z268 Bitexco Financial Tower (Tripo, from a photo) standing out in the skyline, beside the Landmark 81 bearing (rad)
   // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]
-  traffic:{ files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
+  traffic:{ wheel:[0.33, 0.26], files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
     liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
       { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness

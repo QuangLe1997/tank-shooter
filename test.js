@@ -856,6 +856,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const m=fs.readFileSync('src/actors/models.js','utf8'), h=fs.readFileSync('src/world/horizon.js','utf8');
   ok(/export function fixNormals/.test(m) && /fixNormals\(o\.geometry\)/.test(m) && (h.match(/\(i\+0\.15\+Math\.random\(\)\*0\.7\)\/n/g)||[]).length===2, 'weak normals fixed on load, skyline towers spread round the ring'); }
 
+// Z290 rolling wheels in the city traffic · Z291 military vehicles parked in the enemy camps
+{ const fs=await import('node:fs'); const C=await import('./config.js'), t=fs.readFileSync('src/world/traffic.js','utf8');
+  ok(/function wheelGeo/.test(t) && /function wheelMat/.test(t) && /aRoll/.test(t) && C.REALCITY.traffic.wheel.length===2, 'traffic wheels roll with the distance driven');
+  ok(C.OUTPOST.veh.every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb') && C.OUTPOST.size[k] && C.OUTPOST.solid.includes(k)) && /C\.nVeh/.test(fs.readFileSync('src/world/outposts.js','utf8')), 'trucks, APCs and jeeps parked in every enemy camp'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
