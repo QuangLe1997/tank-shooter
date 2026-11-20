@@ -49,7 +49,7 @@ function grassMat(map, alpha, C){
 let _cv = null;
 const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
 function pixels(img, W, H){ _cv = _cv || document.createElement('canvas'); _cv.width = W; _cv.height = H; const x = _cv.getContext('2d', { willReadFrequently:true }); x.clearRect(0, 0, W, H); x.drawImage(img, 0, 0, W, H); return x.getImageData(0, 0, W, H).data; }
-function avgOf(img, alpha){ const W = 128, H = Math.max(8, Math.round(W * (img.height || 1) / (img.width || 1))), d = pixels(img, W, H), a = alpha ? pixels(alpha, W, H) : null, A = GRASS.atlas; let r = 0, g = 0, b = 0, n = 0;
+export function avgOf(img, alpha){ const W = 128, H = Math.max(8, Math.round(W * (img.height || 1) / (img.width || 1))), d = pixels(img, W, H), a = alpha ? pixels(alpha, W, H) : null, A = GRASS.atlas; let r = 0, g = 0, b = 0, n = 0;
   for(let y = 0; y < H; y++) for(let x = 0; x < W; x++){ const i = (y * W + x) * 4;
     if(a){ const px = x / W * A[0], py = y / H * A[1]; if(a[i] < GRASS.alphaTest * 255 || !GRASS.cards.some(([cx, cy, cw, ch]) => px >= cx && px < cx + cw && py >= cy && py < cy + ch)) continue; }
     r += lin(d[i]); g += lin(d[i + 1]); b += lin(d[i + 2]); n++; }

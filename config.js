@@ -929,6 +929,10 @@ export const INTRO_CITY = { on:true, l81:{ dur:3.4, fov:36, back:0.95 }, street:
 // Z322 THE INTRO'S SKY (game/intro-clouds.js): band = the cloud deck between these shares of the descent's height (0 = landing, 1 = high orbit);
 //   puffs laid along the swoop (it flies through them) + wisps over the field; size (m), opacity of each, sideways drift (m/s); haze = the screen
 //   mist at the top of the flight; inside = the whiteout inside a puff; tintK = how far the fog colour is lifted toward white (day; a third at night)
+// Z325 BLEND-IN (render/blend-in.js): every lit opaque material on the field, once the stage is built — hue = share of the field's hue (the floor's
+//   average colour over its brightness, clamped tintMin..tintMax per channel), desat = saturation taken off, dust = share of ground colour at the
+//   foot of things, fading out over dustH metres above where each stands
+export const BLEND = { on:true, hue:0.25, desat:0.12, dust:0.36, dustH:1.4, tintMin:0.7, tintMax:1.45 };
 export const INTRO_CLOUDS = { on:true, band:[0.3, 0.82], puffs:16, wisps:16, size:[26, 46], op:0.55, wispOp:0.26, drift:1.6, haze:0.34, inside:0.82, tintK:0.55 };
 export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35, assetWait:9000 };   // Z322 assetWait (ms): the longest the veil waits for the photo ground, grass and real models before the move
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.

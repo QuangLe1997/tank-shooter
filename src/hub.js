@@ -26,6 +26,7 @@ export * from './world/sky-photo.js';   // Z255 photographed HDRI skies per hour
 export * from './world/ground.js';
 export * from './world/ground-photo.js';
 export * from './world/grass-carpet.js';   // Z251 instanced grass blades round the camera   // Z250 photo-scanned CC0 ground sets per battlefield
+export * from './render/blend-in.js';   // Z325 forts, city, ruins, props and models graded into the field's own colour   // Z251 instanced grass blades round the camera   // Z250 photo-scanned CC0 ground sets per battlefield
 export * from './world/heightfield.js';
 export * from './world/decals.js';
 export * from './world/props.js';

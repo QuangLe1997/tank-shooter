@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO, INTRO_CITY } from '../../config.js';
-import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds } from '../hub.js';
+import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -110,7 +110,7 @@ async function assetsReady(){ const t0=performance.now(), cap=INTRO.assetWait, l
   await _frame(); await _frame(); }
 // Z119 warm-up: every material this stage uses is compiled (in parallel where the browser can), then the widest shots are rendered once so
 //   the shadow / post passes and texture uploads happen now — not as hitches in the middle of the move
-async function warmUp(){ try{ await assetsReady(); }catch(e){} if(!intro.active) return;
+async function warmUp(){ try{ await assetsReady(); }catch(e){} try{ blendScene(scene); }catch(e){} if(!intro.active) return;   // Z325 everything on the field graded into its colours before the shaders compile (a skipped intro too)
   const keep=camera.position.clone(), q=camera.quaternion.clone(), fog=scene.fog?scene.fog.density:null;
   const A=intro.tour?0.05:0.72, B=intro.tour?0.5:0.35;
   try{ placeAt(A); camera.updateMatrixWorld();

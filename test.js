@@ -1033,6 +1033,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), r=fs.readFileSync('src/actors/real-cav.js','utf8');
   ok(C.INFGUN.map.carbine==='ar' && /R\.lean = \(R\.lean \|\| 0\) \+ \(want - \(R\.lean \|\| 0\)\) \* Math\.min\(1, dt \* AIRPOSE\.rate\)/.test(r) && /\['Spine', 'Spine1', 'Spine2'\]\.forEach\(\(n, i\) => turnBone\(D\[n\], _gr, -R\.lean \* AIRPOSE\.split\[i\]\)\)/.test(r) && /turnBone\(D\.Head, _gr, up \* \(1 - AIRPOSE\.neck\)\)/.test(r) && /prone \? AIRPOSE\.prone : AIRAIM\.manUp/.test(r) && C.AIRPOSE.max>0 && C.AIRPOSE.prone<C.AIRAIM.manUp, 'his rifle is held for real again; at an aircraft he leans back from the waist and sights along the barrel; lying flat he cannot'); }
 
+// Z325 forts, the real city, ruins, wonders, props and models graded into the field's colour once a stage is built
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), bi=R('src/render/blend-in.js'), B=C.BLEND;
+  ok(B && B.on && B.hue > 0 && B.hue <= 0.35 && B.desat >= 0 && B.desat <= 0.25 && B.dust > 0 && B.dust <= 0.5 && B.tintMin < 1 && B.tintMax > 1, 'blend-in is light: a share of the field\'s hue, a touch less saturation, a dusty foot');
+  ok(/export function blendIn\(m\)/.test(bi) && /m\.transparent/.test(bi) && /m === groundMat/.test(bi) && /grassPhoto\|macroGround/.test(bi) && /key0 \+ '\|blendIn1'/.test(bi) && /if\(f0\) f0\.call\(this, sh, r\)/.test(bi) && /isSkinnedMesh/.test(bi) && /p === skip/.test(bi), 'each material keeps its own shader work and program key; the ground, grass, glass, skinned men and our own tank are left alone');
+  ok(/try\{ blendScene\(scene\); \}catch\(e\)\{\} if\(!intro\.active\) return;/.test(R('src/game/intro.js')) && /blendWhenReady\(scene\)/.test(R('src/loot/upgrades.js')) && /^export \* from '\.\/render\/blend-in\.js';/m.test(R('src/hub.js')), 'graded when a stage is built: in the intro warm-up (even a skipped one) and on the next stage'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
