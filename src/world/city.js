@@ -156,6 +156,19 @@ export function cityBuildings(){ return BLD; }
 // Z280 WINDOWS AT NIGHT: on the Meshy buildings, the glass (bluish or dark in the facade photo) lights up after dusk, cell by cell (a world-space
 //   grid of rooms, hashed): about half the rooms on, most warm, some cool-white office light, each a little brighter or dimmer — the emissive
 //   strength is the landmark glow (LAND.mats, 0 by day), so the city's towers become constellations of lit windows as night falls
+// Z287 LIGHT POOLS: at night each street lamp throws a warm pool on the pavement under its head — a soft additive disc (one instanced draw),
+// brightest at the centre, fading out; it follows NIGHT.k with the windows (POOL_K, set in updateLandmarkGlow)
+export const POOL_K = { value:0 };
+let _poolTex = null;
+function poolTex(){ if(_poolTex) return _poolTex; const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'), g=x.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.35,'rgba(255,255,255,0.55)'); g.addColorStop(0.7,'rgba(255,255,255,0.14)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128);
+  return (_poolTex=new THREE.CanvasTexture(c)); }
+function lampPools(lamps){ if(typeof document==='undefined' || !REALCITY.pools) return; const P=REALCITY.pools, geo=new THREE.PlaneGeometry(1,1); geo.rotateX(-Math.PI/2);
+  const mat=new THREE.MeshBasicMaterial({ map:poolTex(), color:P.col, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, polygonOffset:true, polygonOffsetFactor:-2, toneMapped:true });
+  mat.onBeforeCompile=sh=>{ sh.uniforms.uK=POOL_K; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uK;').replace('#include <opaque_fragment>','outgoingLight*=uK;\n#include <opaque_fragment>'); };
+  const im=new THREE.InstancedMesh(geo, mat, lamps.length), M=new THREE.Matrix4(), q=new THREE.Quaternion(), s=new THREE.Vector3(P.r*2,1,P.r*2), v=new THREE.Vector3();
+  lamps.forEach((o,k)=>{ const ry=o.ry||0, x=o.x+Math.sin(ry)*P.reach, z=o.z+Math.cos(ry)*P.reach; M.compose(v.set(x, heightAt(x,z)+0.06, z), q, s); im.setMatrixAt(k,M); });
+  im.frustumCulled=false; im.renderOrder=2; arena.add(im); LAND.meshes.push(im); }
 export const WIN_K={ value:0 };   // the night's window glow (world/landmarks.js updateLandmarkGlow)
 export function windowLights(m){ const prev=m.onBeforeCompile, pk=m.customProgramCacheKey;
   m.onBeforeCompile=(sh,r)=>{ if(prev) prev.call(m,sh,r); sh.uniforms.uWinShare={ value:REALCITY.windows.share }; sh.uniforms.uWinK=WIN_K;
@@ -384,7 +397,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
   let lampIm=null, headIm=null, sigIm=null;
   if(lamps.length){ const Q=[]; const pole=new THREE.CylinderGeometry(0.07,0.1,6,6); pole.translate(0,3,0); Q.push({geo:pole,col:0x4a4c4e}); const arm=new THREE.BoxGeometry(0.08,0.08,1.6); arm.translate(0,5.9,0.75); Q.push({geo:arm,col:0x4a4c4e});
     const head=new THREE.BoxGeometry(0.5,0.16,0.3); head.translate(0,5.8,1.5); const hm=new THREE.MeshStandardMaterial({ color:0xfff4d0, emissive:0xffe0a0, emissiveIntensity:0 }); LAND.mats.push(hm);
-    lampIm=inst(_mergeColored(Q), vmat(), lamps); headIm=inst(head, hm, lamps); regTopple([lampIm, headIm], lamps, 6); }
+    lampIm=inst(_mergeColored(Q), vmat(), lamps); headIm=inst(head, hm, lamps); regTopple([lampIm, headIm], lamps, 6); lampPools(lamps); }
   if(lights.length){ const Q=[]; const pole=new THREE.CylinderGeometry(0.08,0.1,4.6,6); pole.translate(0,2.3,0); Q.push({geo:pole,col:0x3a3c3e}); const bx=new THREE.BoxGeometry(0.4,1.1,0.4); bx.translate(0,4.4,0.3); Q.push({geo:bx,col:0x2a2a2a});
     for(const [yy,c] of [[0.35,0xe82020],[0,0xe8b020],[-0.35,0x20c840]]){ const s=new THREE.SphereGeometry(0.11,8,6); s.translate(0,4.4+yy,0.52); Q.push({geo:s,col:c}); }
     sigIm=inst(_mergeColored(Q), vmat(), lights); regTopple([sigIm], lights, 4.6); }

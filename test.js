@@ -843,6 +843,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), w=fs.readFileSync('src/actors/wildlife.js','utf8');
   ok(Object.keys(C.REALWILD.h).every(k=>fs.existsSync('assets/models/real/wild/'+k+'.glb')) && /function dressWild/.test(w) && /AnimationMixer/.test(w) && /a\.mix\.update/.test(w), 'six real animals walk their own cycle in the herds'); }
 
+// Z287 grades of their own for meadow / hills / village, cỏ lau on the hills and meadow, lamp pools at night
+{ const fs=await import('node:fs'); const C=await import('./config.js'), W=await import('./src/data/world.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(JSON.stringify(W.ATMOS.MEADOW.hi)!==JSON.stringify(W.ATMOS.HILLS.hi) && JSON.stringify(W.ATMOS.HILLS.hi)!==JSON.stringify(W.ATMOS.VILLAGE.hi), 'meadow, hills and village each graded their own way');
+  ok((R('src/world/flora.js').match(/reedPlume\(\), N\(/g)||[]).length>=3 && /function lampPools/.test(R('src/world/city.js')) && /POOL_K\.value=NIGHT\.k/.test(R('src/world/landmarks.js')) && C.REALCITY.pools.r>0, 'cỏ lau in three battlefields, warm pools under the street lamps'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
