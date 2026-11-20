@@ -716,6 +716,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(all.length===16 && new Set(all).size===16 && keep.every(id=>!all.includes(id)), 'sixteen guns in nine families, each in one; the lobbers, the rotary cannon and two ultimates stay procedural');
   ok(Object.entries(G.fams).every(([k,f])=>f.fromTank ? C.REALTANK.fams[f.fromTank] : (fs.existsSync('assets/models/real/gun/'+k+'.glb') && fs.statSync('assets/models/real/gun/'+k+'.glb').size<8e5 && ['+x','-x','+z','-z'].includes(f.front))), 'each family has its model (a tank family, or its own file under 0.8 MB with a muzzle direction)'); }
 
+// Z258 real magma + a real volcano: one molten-rock shader (crust plates on the melt, glowing cracks, temperature ramp) for the pools, the crater lake and the cone's lava flows
+{ const fs=await import('node:fs'); const mg=fs.readFileSync('src/world/magma.js','utf8'), lv=fs.readFileSync('src/world/lava.js','utf8'), wd=fs.readFileSync('src/world/wonders.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), C=await import('./config.js');
+  ok(/export function magmaMat/.test(mg) && /float mT\(vec2 p/.test(mg) && /vec2 mV\(vec2 p, float t\)/.test(mg) && /vec3 mRamp/.test(mg) && /totalEmissiveRadiance \+= mRamp\(T\)/.test(mg) && /mRim \* smoothstep/.test(mg), 'magma: Voronoi crust plates drifting on a warped melt, a temperature ramp into the emissive, a cooler rim');
+  ok(/export function buildVolcano/.test(mg) && /Math\.pow\(t, 1\.65\)/.test(mg) && /radial gullies/.test(mg) && /for\(int k = 0; k < 3; k\+\+\)/.test(mg) && /the lathe's seam/.test(mg) && /export function updateMagma/.test(mg), 'the volcano: concave lathed cone, gullies, three lava flows, crater lake, seam closed, lava bombs');
+  ok(/magmaMat\(\{ hot:0\.06 \}\)/.test(lv) && /buildVolcano\(\)/.test(wd) && /placeVolcano\(v\)/.test(wd) && /clearVolcano\(\)/.test(wd) && /updateMagma\(dt, now\)/.test(lp), 'the caldera pools and the wonder use it; the melt moves every frame');
+  ok(C.MAGMA_FX && C.MAGMA_FX.cone.H>20 && C.MAGMA_FX.cone.rc<C.MAGMA_FX.cone.R/3, 'magma + volcano settings'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

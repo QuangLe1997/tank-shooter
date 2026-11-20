@@ -31,6 +31,7 @@ export * from './world/real-props.js';   // Z252 Meshy cover pieces in place of 
 export * from './world/perimeter.js';
 export * from './world/decor.js';
 export * from './world/physics.js';
+export * from './world/magma.js';   // Z258 the magma shader + the real volcano
 export * from './world/lava.js';   // Z187 volcanic caldera lava pools (runtime only)
 export * from './world/horizon.js';   // Z189 the world beyond the fence
 export * from './world/biome.js';
