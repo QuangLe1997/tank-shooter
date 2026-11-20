@@ -1,4 +1,4 @@
-// actors/real-troops.js — Z249 REAL INFANTRY at batch cost: one low-poly Meshy soldier, posed once (rifle shouldered, feet square), baked to a static mesh and cut along its bones into the batched rig's joints (torso, head, arms, left hand, rifle, each thigh and shin). Every man on the field keeps his plain-Object3D skeleton and all of the existing walk / stance / reload / flinch / death code; only the geometry the troop batch instances changes — no skinning, no mixer per man, the same ~30 draw calls. Ours wear the woodland texture, theirs the retextured desert / crimson one (same mesh, same UVs). Until the files load (or if one fails) the procedural kit stays.
+// actors/real-troops.js — Z249 REAL INFANTRY at batch cost: one Meshy soldier (Z254: the ~10k-triangle, 2K-texture pass), posed once (rifle shouldered, feet square), baked to a static mesh and cut along its bones into the batched rig's joints (torso, head, arms, left hand, rifle, each thigh and shin). Every man on the field keeps his plain-Object3D skeleton and all of the existing walk / stance / reload / flinch / death code; only the geometry the troop batch instances changes — no skinning, no mixer per man, the same ~30 draw calls. Ours wear the woodland texture, theirs the retextured desert / crimson one (same mesh, same UVs). Until the files load (or if one fails) the procedural kit stays.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { REALTROOP } from '../../config.js';
@@ -24,7 +24,7 @@ export function loadRealTroops(){
     if(!tg || !gg || !eTex) return false;
     const B = bakeTrooper(tg, gg);
     for(const [key, map] of [['f', B.map], ['e', eTex]]){
-      const mat = new THREE.MeshStandardMaterial({ map, roughness:REALTROOP.rough, metalness:0 });
+      const mat = new THREE.MeshStandardMaterial({ map, normalMap:B.nrm, roughness:REALTROOP.rough, metalness:0 }); mat.color.setRGB(...REALTROOP.team[key]);   // Z254 each side its own cast
       swapKit({ real:true, key, mat, mats:{ gun:B.gunMat }, geo:B.geo, muz:B.muz, anchor:B.anchor, bodyK:B.bodyK }); }
     return true; })); }
 
@@ -62,9 +62,12 @@ function bakeTrooper(tg, gg){
   const buck = {}; for(const k of Object.keys(J)) buck[k] = { p:[], n:[], uv:[] };
   for(let t = 0; t < flipped.length; t += 3){ const a = flipped[t], b = flipped[t+1], c = flipped[t+2];
     const k = jv[a] === jv[b] || jv[a] === jv[c] ? jv[a] : jv[b] === jv[c] ? jv[b] : jv[a], o = J[k], B = buck[k];
+    const others = [...new Set([jv[a], jv[b], jv[c]])].filter(q => q !== k);   // Z254 a seam triangle goes to every joint it touches (an inset copy for the others) → no gap opens as the joint bends
     { const ed = (P0, i, j) => _a.fromArray(P0, i*3).distanceTo(_b.fromArray(P0, j*3)), e = Math.max(ed(tp, a, b), ed(tp, b, c), ed(tp, c, a)), r = Math.max(ed(rest, a, b), ed(rest, b, c), ed(rest, c, a)) * s;
       if(e > REALTROOP.stretch[1] && e > r * REALTROOP.stretch[0]) continue; }   // a sliver the pose stretched between two parts (true seams barely stretch)
-    for(const i of [a, b, c]){ B.p.push(tp[i*3] - o[0], tp[i*3+1] - o[1], tp[i*3+2] - o[2]); B.n.push(nrm[i*3], nrm[i*3+1], nrm[i*3+2]); B.uv.push(UV.getX(i), UV.getY(i)); } }
+    for(const i of [a, b, c]){ B.p.push(tp[i*3] - o[0], tp[i*3+1] - o[1], tp[i*3+2] - o[2]); B.n.push(nrm[i*3], nrm[i*3+1], nrm[i*3+2]); B.uv.push(UV.getX(i), UV.getY(i)); }
+    for(const q of others){ const oq = J[q], Bq = buck[q], ins = REALTROOP.seamInset;
+      for(const i of [a, b, c]){ Bq.p.push(tp[i*3] - nrm[i*3] * ins - oq[0], tp[i*3+1] - nrm[i*3+1] * ins - oq[1], tp[i*3+2] - nrm[i*3+2] * ins - oq[2]); Bq.n.push(nrm[i*3], nrm[i*3+1], nrm[i*3+2]); Bq.uv.push(UV.getX(i), UV.getY(i)); } } }
   const geo = {};
   for(const [k, B] of Object.entries(buck)){ const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(B.p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(B.n, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(B.uv, 2)); g.computeBoundingSphere(); geo[k] = g; }
   // the rifle: grip in the right palm, barrel through the left hand, in the posed model; then the same mirror + scale, into the gun joint's frame
@@ -72,7 +75,8 @@ function bakeTrooper(tg, gg){
   const parts = []; gg.scene.traverse(o => { if(o.isMesh){ const g = o.geometry.clone().applyMatrix4(o.matrixWorld); parts.push(g); gmat = gmat || o.material; } });
   gm = parts.length === 1 ? parts[0] : null; if(!gm) throw new Error('troop gun: expected one mesh');
   const box = new THREE.Box3().setFromBufferAttribute(gm.attributes.position), gs = G.len / (box.max.x - box.min.x);
-  W(bone('RightHand'), _a); W(bone('LeftHand'), _b); const dir = _b.clone().sub(_a).normalize(), grip = _a.clone().addScaledVector(dir, G.palm);
+  const palm = (h, f, out) => { W(bone(h), out); const fa = W(bone(f), new THREE.Vector3()); return out.addScaledVector(out.clone().sub(fa).normalize(), G.palm); };   // Z254 the palm: past the wrist along the forearm
+  palm('RightHand', 'RightForeArm', _a); palm('LeftHand', 'LeftForeArm', _b); const dir = _b.clone().sub(_a).normalize(), grip = _a.clone();
   const up = new THREE.Vector3(0, 1, 0), X = dir.clone().negate(), Y = up.clone().addScaledVector(X, -up.dot(X)).normalize(), Z = new THREE.Vector3().crossVectors(X, Y);
   const R = new THREE.Matrix4().makeBasis(X, Y, Z), off = new THREE.Vector3().fromArray(G.grip).multiplyScalar(gs).applyMatrix4(R);
   const M = new THREE.Matrix4().makeScale(gs, gs, gs).premultiply(R).setPosition(grip.clone().sub(off));
@@ -84,7 +88,9 @@ function bakeTrooper(tg, gg){
   // anchors for the kit some men carry (up-joint frame): an RPG on the right shoulder, an AT tube slung on the left, mortar / satchels on the pack
   const A = REALTROOP.anchor, rel = (n, add) => { W(bone(n), _v); T(_v.x, _v.y, _v.z, _v); return [_v.x - J.up[0] + add[0], _v.y - J.up[1] + add[1], _v.z - J.up[2] + add[2]]; };
   const anchor = { shoulderR:rel('RightArm', A.shoulderR), shoulderL:rel('LeftArm', A.shoulderL), back:rel('Spine2', A.back), muzzle:mz.toArray() };
-  return { geo, map:sm.material.map, gunMat:gmat, muz:mz, anchor, bodyK:REALTROOP.top / (top * s) }; }
+  { const gp = new THREE.Vector3().fromArray(G.grip).applyMatrix4(M); T(gp.x, gp.y, gp.z, gp); gp.sub(new THREE.Vector3().fromArray(o));   // Z254 the barrel's way in the gun joint: an MG barrel / bipod hung on the muzzle follows the real rifle
+    anchor.muzzleQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), mz.clone().sub(gp).normalize()).toArray(); }
+  return { geo, map:sm.material.map, nrm:sm.material.normalMap || null, gunMat:gmat, muz:mz, anchor, bodyK:REALTROOP.top / (top * s) }; }
 
 // the batch takes the new kit: drop that side's instanced meshes (rebuilt from the new geometry on the next frame) and refit the men already out
 function swapKit(K){
@@ -96,6 +102,8 @@ export function fitRealMan(u, K){ u.body.scale.multiplyScalar(K.bodyK); if(u.muz
 // gear hung on a man by role (RPG, AT tube, MG barrel, mortar, satchels) sits on an anchor of whichever kit he wears — the procedural kit's numbers
 //   until the real one arrives, then moved onto the real body's shoulder / pack / muzzle
 const DEF_ANCHOR = { shoulderR:[0.17, 0.66, 0.08], shoulderL:[-0.2, 0.7, -0.05], back:[0, 0.47, -0.35], muzzle:[0, 0.01, 0.7] };
-function placeAtt(K, a){ const p = (K && K.anchor && K.anchor[a.anchor]) || DEF_ANCHOR[a.anchor]; a.obj.position.set(p[0] + a.off[0], p[1] + a.off[1], p[2] + a.off[2]); }
-export function kitAttach(u, parent, obj, anchor, off){ const a = { obj, anchor, off:off || [0, 0, 0] }; (u.kitAtt || (u.kitAtt = [])).push(a); parent.add(obj);
+function placeAtt(K, a){ const p = (K && K.anchor && K.anchor[a.anchor]) || DEF_ANCHOR[a.anchor], q = K && K.anchor && K.anchor[a.anchor + 'Q'];
+  if(q){ const Q = new THREE.Quaternion().fromArray(q), off = new THREE.Vector3().fromArray(a.off).applyQuaternion(Q); a.obj.position.set(p[0] + off.x, p[1] + off.y, p[2] + off.z); a.obj.quaternion.copy(Q).multiply(a.q0); }   // turned with the anchor (the barrel's way)
+  else { a.obj.position.set(p[0] + a.off[0], p[1] + a.off[1], p[2] + a.off[2]); a.obj.quaternion.copy(a.q0); } }
+export function kitAttach(u, parent, obj, anchor, off){ const a = { obj, anchor, off:off || [0, 0, 0], q0:obj.quaternion.clone() }; (u.kitAtt || (u.kitAtt = [])).push(a); parent.add(obj);
   placeAtt(u.realKit ? SOLDIER_KIT[u.kitKey] : null, a); return obj; }

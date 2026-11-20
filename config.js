@@ -540,11 +540,16 @@ export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:
 export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.2, surgeAccel:6.5, decel:6.5, turnLow:2.6, turnHigh:1.05 }, surge:{ dur:5, cd:7 },
   foot:{ run:5.2, sprint:7.4, crouch:2.0, crawl:0.9, sprintDur:3, sprintCd:4 }, radius:{ mounted:1.0, foot:0.45, prone:0.38 },
   defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.5, call:{ speed:9, arrive:2.6 },
-  trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85 };   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
+  trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85,
+  death:{ dur:3.8, carry:0.6, side:1.8, up:1.4, slow:0.7, swerve:1.6 } };   // Z254 killed: how long the death beat lasts (s), the share of the horse's speed he keeps as he is thrown, the sideways push and the hop (m/s), the riderless horse slowing (/s) and swerving (rad/s)   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
 // Z248 REAL CAVALRY (actors/real-cav.js) — calibration of the Meshy models: the operator's height (m); the saddle seat in the horse model (m, bind pose)
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z254 RAGDOLL (actors/ragdoll.js) — a man shot down: gravity (m/s²) over the fall length (m); the round's push (rad/s at the start); twist while falling (rad);
+//   how long the knees take to give (s); bounce on striking the ground (× speed) and the speed below which he does not bounce; limb spring stiffness /
+//   damping; body thickness lying down and the sag as the knees go (× the man's scale); how long he lies before he sinks away (s)
+export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.12, 0.3], bounce:0.22, bounceMin:1.1, k:36, damp:6.5, thick:0.13, sag:0.22, hold:4.2 };
 // Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (the Czech hedgehog and the HESCO stay procedural), the share of the procedural
 //   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
 //   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;
@@ -569,13 +574,14 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55,
   DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','dark_rock'], VOLCANO:['burned_ground_01','dark_rock'],
   QUARRY:['gravel_ground_01','rock_ground'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_02','concrete_floor_damaged_01'],
   CITADEL:['gravel_floor','dirt'], RUINS:['dry_ground_rocks','concrete_rock_path'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] } };
-// Z249 REAL INFANTRY (actors/real-troops.js): material roughness; the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
+// Z249 REAL INFANTRY (actors/real-troops.js): material roughness; Z254 seamInset = how far (rig units) a seam triangle's copy sits inside the next part;
+//   team = albedo × per side (ours a cooler green cast, theirs a warmer red one); the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);
 //   stretch = [×, min length]: a triangle the pose made that many times longer than at rest (and longer than that, rig units) is dropped as a sliver; anchor = offsets (rig units) from the
 //   right / left upper-arm and upper-spine bones to where an RPG, a slung AT tube and the pack-borne kit sit
-export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
+export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
 export const REALCAV = { opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
-  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, pitch:[0.06, 0.3], proneDrop:0.15 };
+  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
 //   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)
 export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };

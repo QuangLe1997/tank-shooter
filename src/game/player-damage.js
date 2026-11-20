@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
-import { LOOT } from '../../config.js';
-import { ARENA, BEST, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, playerHitFX, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
+import { CAV, LOOT } from '../../config.js';
+import { ARENA, BEST, CV, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, playerHitFX, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -41,6 +41,7 @@ export function playerDie(now){
 export function beginDeath(now){
   const p=S.player; S.mode='dying'; S.firing=false;
   DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos);
+  if(p.cav){ cavDeathStart(p, now); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD(); return; }   // Z254 no tank wreck: the general is shot off his horse
   DEATH.flipDir = Math.random()<0.5?1:-1; DEATH.tilt = 0.4+Math.random()*0.4;
   // catastrophic hit — big blast, knock a few parts loose, hard shake
   bigExplode(p.pos, 0xffd27a, 1.9); spawnDebris(p.pos, 1.6, 0x4a3c28);
@@ -52,6 +53,9 @@ export function beginDeath(now){
 export const _eoCube = u => 1-Math.pow(1-Math.max(0,Math.min(1,u)),3);
 export function updateDeath(dt, now){
   const p=S.player, m=p.mesh; DEATH.t+=dt;
+  if(p.cav){ cavDeathUpdate(dt, now); const w=CV.dead ? CV.dead.pos : p.pos, ang=2.2+DEATH.t*0.45, r=6.5;   // Z254 the camera circles where the general fell
+    _dcam.set(w.x+Math.cos(ang)*r, w.y+3.4, w.z+Math.sin(ang)*r); camera.position.lerp(_dcam, Math.min(1, dt*3)); camera.lookAt(w.x, w.y+0.6, w.z);
+    if(DEATH.t >= CAV.death.dur) respawnPlayer(now); return; }
   const wx=DEATH.wreck.x, wz=DEATH.wreck.z;
   // 1) the hull tips over (first ~0.7s) and settles, sinking a touch
   const f=_eoCube(DEATH.t/0.7);

@@ -658,8 +658,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/kinds:\['up','head','arm','lh','gun','hipL','hipR','kneeL','kneeR'\]/.test(so) && /K\.mats && K\.mats\[kind\]/.test(so) && /loadRealTroops\(\)/.test(so), 'the batch: a piece per leg, a material per piece, the real kit loads in');
   ok(/kitAttach\(u, u\.up, L, 'shoulderR'\)/.test(inf) && /'muzzle'/.test(ft) && /'back'/.test(ft) && /'shoulderL'/.test(ft), 'RPG, MG, mortar, satchels and the AT tube sit on kit anchors');
   ok(C.REALTROOP && C.REALTROOP.anchor && C.REALTROOP.stretch.length===2, 'REALTROOP calibration in config');
-  const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper && sp.trooper.retex && sp.trooper.preview.target_polycount<=8000 && sp.rifle.remesh, 'the trooper spec: low-poly, enemy retexture, a light carbine');
-  ok(['assets/models/real/trooper.glb','assets/models/real/carbine-light.glb','assets/models/real/trooper-enemy.jpg'].every(f=>fs.existsSync(f) && fs.statSync(f).size<1.2e6), 'the troop files ship small'); }
+  const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper && sp.trooper.retex && sp.trooper2.preview.target_polycount<=12000 && sp.rifle.remesh, 'the trooper spec: low-poly, enemy retexture, a light carbine');
+  ok(['assets/models/real/trooper.glb','assets/models/real/carbine-light.glb','assets/models/real/trooper-enemy.jpg'].every(f=>fs.existsSync(f) && fs.statSync(f).size<3e6), 'the troop files ship small (Z254: 2K textures)'); }
 
 // Z250 photo ground: CC0 photo-scanned sets per battlefield, a second layer on slopes / bowls / patches, dual-scale anti-tiling
 { const fs=await import('node:fs'); const gp=fs.readFileSync('src/world/ground-photo.js','utf8'), gr=fs.readFileSync('src/world/ground.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8'), C=await import('./config.js');
@@ -681,6 +681,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function loadRealCover/.test(rp) && /export function trackCover/.test(rp) && /REALPROP\.hMax/.test(rp) && /old\.userData\.own/.test(rp) && !/old\.dispose\(\)/.test(rp), 'real cover: fitted to the footprint, own hit materials keep their tint, nothing disposed mid-compile');
   ok(/trackCover\(m\); loadRealCover\(\)/.test(pr) && /trackCover\(up\)/.test(cv), 'every cover mesh (the stacked container too) is tracked');
   ok(!C.REALPROP.kinds.includes('hedgehog') && !C.REALPROP.kinds.includes('hesco') && C.REALPROP.kinds.every(k=>fs.existsSync('assets/models/real/cover/'+k+'.glb') && fs.statSync('assets/models/real/cover/'+k+'.glb').size<7e5), 'eleven Meshy cover pieces ship small; hedgehog and HESCO stay procedural'); }
+
+// Z254 soldiers finished: a high-detail trooper, seams covered, per-side cast, palm grip; a real fall for the dead; the general shot off his horse
+{ const fs=await import('node:fs'); const rd=fs.readFileSync('src/actors/ragdoll.js','utf8'), inf=fs.readFileSync('src/actors/infantry.js','utf8'), ft=fs.readFileSync('src/actors/fireteam.js','utf8'), rt=fs.readFileSync('src/actors/real-troops.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8'), pd=fs.readFileSync('src/game/player-damage.js','utf8'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), C=await import('./config.js');
+  ok(/export function startFall/.test(rd) && /export function stepFall/.test(rd) && /'buckle'/.test(rd) && /F\.g \/ F\.len \* Math\.sin\(d\.th\)/.test(rd) && /bounce/.test(rd) && /function endAngle/.test(rd), 'ragdoll: knees give, topples under gravity, bounces, settles on the slope, limbs on springs');
+  ok(/startFall\(m, \(e\._hx/.test(inf) && /if\(d\.rag\)/.test(inf) && /startFall\(a\.g, null\)/.test(ft) && /stepFall\(m, dt\)/.test(ft), 'enemy and ally riflemen fall as ragdolls (thrown / crushed / crawling kept)');
+  ok(/seamInset/.test(rt) && /REALTROOP\.team\[key\]/.test(rt) && /palm\('RightHand', 'RightForeArm'/.test(rt) && /muzzleQ/.test(rt), 'trooper bake: seams covered, each side its own cast, rifle in the palms, muzzle gear follows the barrel');
+  ok(/export function cavDeathStart/.test(cv) && /export function cavDeathUpdate/.test(cv) && /scene\.attach\(G\)/.test(cv) && /if\(p\.cav\)\{ cavDeathStart/.test(pd) && /if\(p\.cav\)\{ cavDeathUpdate/.test(pd), 'the general killed: thrown from the saddle, no tank wreck, the horse runs on');
+  ok(/dying_backwards/.test(rc) && /Hit_Upper/.test(rc) && C.CAV.death && C.RAGDOLL && C.REALCAV.hitT>0, 'real general: falls backwards once, flinches (upper body) when hit');
+  const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper2 && sp.trooper2.preview.target_polycount>=9000, 'the trooper re-made at ~10k triangles'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

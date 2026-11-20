@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE } from '../../config.js';
-import { ARENA, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, clampField, cloakFoot, controlScheme, core, damageEnemy, enemies, fireGun, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fireGun, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -95,7 +95,7 @@ export function updateCavalry(dt, now){
   if(p.hitT>0){ p.hitT-=dt; }
   if(now < p.respawnBlinkUntil) p.mesh.visible=Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0; else if(!p.mesh.visible) p.mesh.visible=true;
   p.kbx=p.kbz=0;
-  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: !!CV.trans });
+  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: !!CV.trans, hit: p.hitT>0 });
   // fire: hold LMB (desktop) · the trigger / auto-fire on phones, exactly like the tank
   const range=playerRange();
   if(!CV.trans){ if(MOBILE){ const t=autoFire?aimTarget(range):null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) fireGun(now, range); } else if(S.firing) fireGun(now, range); }
@@ -139,7 +139,28 @@ export function cavIdle(dt){ const p=S.player; if(!p || !p.cav || !CV.H) return;
   if(CV.mounted){ H.root.position.set(0,0,0); H.root.rotation.y=0; p.mesh.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing=p.facing;
     const save=H.root.position.clone(); H.root.position.copy(p.mesh.position); H.root.rotation.y=p.facing; animateHorse(H, dt, 0, 0); H.root.position.copy(save); H.root.rotation.y=0; poseRider(CV.G, H, dt, 0, false); updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand' }); } }
 
+// ---- Z254 the general is killed: hit in the saddle he is thrown off sideways with the horse's momentum and falls to the ground (the real model plays
+//   its fall-backwards clip; the procedural rig falls as a ragdoll); on foot he goes down where he stands. The riderless horse runs on, slowing, a little panicked.
+export function cavDeathStart(p, now){ const H=CV.H, G=CV.G; if(!H || !G) return; const C=CAV.death;
+  const fx=Math.sin(CV.facing), fz=Math.cos(CV.facing), side=Math.random()<0.5?-1:1, sx=fz*side, sz=-fx*side, from=CV.mounted;
+  if(from){ scene.attach(G); G.rotation.set(0, CV.facing, 0); }
+  const gy=heightAt(G.position.x, G.position.z);
+  CV.dead={ t:0, from, vx:from ? fx*CV.speed*C.carry+sx*C.side : 0, vz:from ? fz*CV.speed*C.carry+sz*C.side : 0, vy:from ? C.up : 0, down:!from, pos:G.position.clone(), panic:side };
+  CV.mounted=false; CV.trans=null; S.shake=Math.min(3, S.shake+1.2);
+  if(!CV.real) startFall(G, [sx, sz], { drop:Math.max(0, G.position.y-gy) }); }
+export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=CV.G; if(!D || !H) return; const C=CAV.death; D.t+=dt;
+  if(!D.down){ D.vy-=9.8*dt; G.position.x+=D.vx*dt; G.position.y+=D.vy*dt; G.position.z+=D.vz*dt; const g=heightAt(G.position.x, G.position.z);
+    if(G.position.y<=g && D.vy<0){ G.position.y=g; D.down=true; D.vx*=0.25; D.vz*=0.25; burst({x:G.position.x, z:G.position.z}, BIOME.ground, 4, 3, {y:g+0.3, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, op:0.45}); sfx('thud'); } }
+  else { D.vx*=Math.exp(-dt*6); D.vz*=Math.exp(-dt*6); G.position.x+=D.vx*dt; G.position.z+=D.vz*dt; if(CV.real) G.position.y=heightAt(G.position.x, G.position.z); }
+  if(!CV.real && G.userData.fall) stepFall(G, dt);
+  D.pos.copy(G.position);
+  // the riderless horse: runs on, slowing, swerving
+  if(D.from){ CV.speed*=Math.exp(-dt*C.slow); CV.facing=wrapA(CV.facing+Math.sin(D.t*1.7)*D.panic*C.swerve*dt);
+    p.pos.x+=Math.sin(CV.facing)*CV.speed*dt; p.pos.z+=Math.cos(CV.facing)*CV.speed*dt; clampField(p.pos, 3); CV.hPos.copy(p.pos); }
+  p.mesh.position.set(p.pos.x, heightAt(p.pos.x, p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing;
+  H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, 0); H.root.position.set(0,0,0); H.root.rotation.y=0;
+  updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand', dead:true }); }
 // after a death: straight back in the saddle at the spawn point
-export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.speed=0; CV.stance=CV.want='stand';
+export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);
   if(!CV.mounted){ G.parent && G.parent.remove(G); H.B.add(G); G.position.set(0,0,-0.1); G.rotation.set(0,0,0); G.scale.setScalar(HUMAN_SCALE/HORSE.size); H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.set(0,0,0); CV.mounted=true; }
   CV.facing=-Math.PI; H.wantGraze=false; }

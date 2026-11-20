@@ -179,7 +179,8 @@ export * from './actors/horse.js';   // Z245 the war horse + gait engine
 export * from './actors/models.js';   // Z247 real glTF models (Poly Haven CC0) on the procedural rigs
 export * from './actors/general.js';
 export * from './actors/real-cav.js';
-export * from './actors/real-troops.js';   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate
+export * from './actors/real-troops.js';
+export * from './actors/ragdoll.js';   // Z254 a real fall for men shot down   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate
 export * from './game/cavalry.js';   // Z245 cavalry mode
 export * from './world/sidepaint.js';   // Z179 battlefield-aware paint for both sides (runtime only)
 export * from './actors/riders.js';

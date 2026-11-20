@@ -47,16 +47,19 @@ export function fitRealCav(CV){
     const UP = /Spine|Neck|Head|Shoulder|Arm|Hand/;
     clips.push(poseClip('Aim_Stand', [[byName('Walk_Forward_While_Shooting'), 0.1, t => UP.test(t.name)], [byName('Standing_Reload'), 0, t => !UP.test(t.name)]]));
     const om = new THREE.AnimationMixer(op), OA = actions(om, clips);
+    // Z254 a hit: the upper body of the gunshot-reaction clip laid over whatever he is doing (legs stay in the saddle / on the ground)
+    const hitClip = byName('Gunshot_Reaction'), HIT = hitClip ? om.clipAction(new THREE.AnimationClip('Hit_Upper', hitClip.duration, hitClip.tracks.filter(t => UP.test(t.name)))) : null;
+    if(HIT){ HIT.setLoop(THREE.LoopOnce, 1); HIT.clampWhenFinished = true; HIT.enabled = true; HIT.setEffectiveWeight(0); HIT.play(); }
     const bone = n => op.getObjectByName('mixamorig' + n);
     // ---- the carbine: laid between the hands each frame; the game's muzzle point moves onto its muzzle
     const cb = cg.scene.clone(true); cb.name = 'realCarbine'; G.add(cb);
     if(u.muzzle){ cb.add(u.muzzle); u.muzzle.position.fromArray(C.carbine.muzzle); }
-    CV.real = { hr, hm, HA, seat, op, om, OA, cb, csc: C.carbine.len / 0.954,
+    CV.real = { hr, hm, HA, seat, op, om, OA, HIT, hitW:0, wasHit:false, deadOn:false, cb, csc: C.carbine.len / 0.954,
       hips: bone('Hips'), spine: ['Spine', 'Spine1', 'Spine2'].map(bone), rh: bone('RightHand'), rhm: bone('RightHandMiddle1'), lh: bone('LeftHand'), lhm: bone('LeftHandMiddle1') };
     u.realOp = op;
     return true; })); }
 
-// P = { twist (aim − facing, rad), footV (m/s on foot), stance ('stand' | 'crouch' | 'prone'), trans (getting on / off) }
+// P = { twist (aim − facing, rad), footV (m/s on foot), stance ('stand' | 'crouch' | 'prone'), trans (getting on / off), hit (he was just struck), dead }
 export function updateRealCav(CV, dt, P){
   const R = CV.real; if(!R || !dt) return; const H = CV.H, G = CV.G, C = REALCAV;
   // the horse
@@ -67,14 +70,19 @@ export function updateRealCav(CV, dt, P){
   const mounted = G.parent === R.seat;
   if(mounted){ G.position.set(0, 0, 0); G.scale.setScalar(HUMAN_SCALE); }
   let ok, ts = 1, freeze = null; const fv = P.footV || 0, s = P.stance;
-  if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
+  if(P.dead && !R.deadOn){ R.deadOn = true; const a = R.OA.dying_backwards; if(a){ a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } }   // Z254 killed: falls backwards, once
+  if(!P.dead && R.deadOn){ R.deadOn = false; const a = R.OA.dying_backwards; if(a){ a.setLoop(THREE.LoopRepeat, Infinity); a.clampWhenFinished = false; } }
+  if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
+  else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
   else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Reload'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }
   else if(fv < 1.8){ ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); }
   else if(fv < 3.2){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
-  blend(R.OA, ok, ts, dt, freeze); R.om.update(dt);
+  blend(R.OA, ok, ts, dt, freeze);
+  if(R.HIT){ if(P.hit && !R.wasHit && !P.dead){ R.HIT.reset(); R.HIT.play(); R.hitW = 1; } R.wasHit = !!P.hit; R.hitW = Math.max(0, R.hitW - dt / C.hitT); R.HIT.setEffectiveWeight(R.hitW * C.hitK); }   // the flinch fades back into the clip
+  R.om.update(dt);
   // hips onto the seat (the riding clips carry their own hip height); feet on the ground on foot
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
   if(mounted){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }

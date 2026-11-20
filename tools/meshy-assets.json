@@ -524,5 +524,53 @@
       ],
       "texture_prompt": "Burnt rusty steel, black soot and orange rust, grey ash, realistic PBR"
     }
+  },
+  "trooper2": {
+    "_role": "Z254 every infantryman, high-detail pass: ~10k triangles, arms held clear of the body for a clean auto-rig, 2K textures (the 6k Z249 trooper read blurry and faceted)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 10000,
+      "pose_mode": "a-pose",
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Full-body photorealistic modern infantry soldier, average athletic man, 1.80 m, standing in a clean A-pose facing forward, arms held straight out about 45 degrees away from the body with a clear gap between the arms and the torso, empty open hands in gloves, holding no weapon. Combat helmet with cover and goggles on the brim, face visible. Woodland green camouflage combat uniform, olive plate carrier vest with three magazine pouches across the front, belt with small pouches, compact assault pack on the back, knee pads, black combat boots. Both legs identical, nothing on the thighs, left and right sides symmetrical. Realistic human anatomy and proportions."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Realistic woodland green camouflage cotton uniform, olive drab nylon vest and pouches, olive green helmet cover with black goggles, natural skin, black gloves, black leather boots, a lime green armband on each upper arm, realistic PBR fabric"
+    },
+    "retex": {
+      "_why": "the enemy side: same mesh and UVs, their own uniform (desert tan, crimson helmet, red armbands — the game's colour code)",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "enable_original_uv": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "text_style_prompt": "Realistic enemy soldier uniform: desert tan and khaki camouflage cotton, coyote brown vest and pouches, crimson red helmet cover with black goggles, natural skin, dark brown gloves, tan boots, a bright red armband on each upper arm, realistic PBR fabric"
+    },
+    "rig": {
+      "input": "refine",
+      "animation_type": "biped",
+      "height_meters": 1.8,
+      "skeleton_template": "mixamo"
+    },
+    "anim": {
+      "_actions": "walk-and-fire (its shouldered rifle is the pose's upper body) and standing reload (its square stance is the legs)",
+      "action_ids": [
+        234,
+        170
+      ]
+    }
   }
 }
