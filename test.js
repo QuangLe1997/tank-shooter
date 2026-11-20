@@ -1095,7 +1095,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function\* high\(\)/.test(aa) && /liveGuards\(\)/.test(aa) && /b\.airAim\._twr/.test(lo) && /shootGuard\(G\.t, G\.gd, b\.ox, b\.oz\)/.test(lo), 'a rifleman on a tower or a wall is laid on like an aircraft; the round climbs to him and drops him');
   ok(/function overDriver\(R, gp, yaw\)/.test(rc) && C.REALCAV.overDrv.up>0 && C.REALCAV.sit.lean===0 && C.XEOM.xeom.seat[0]>0.415, 'on the xe ôm he sits tall and straight, the gun laid ahead over the driver\'s shoulder');
   ok(['export function soldierJump','export function soldierRoll','export function footStance','export function footMotion','export function footPose'].every(k=>sm.includes(k)) && /else soldierJump\(\)/.test(cv) && /heldAction\('sprint'\)/.test(cv) && C.ACTIONS.some(a=>a[0]==='roll') && C.ACTIONS.some(a=>a[0]==='sprint') && C.CAV.moves.roll.defK<C.CAV.defK.crouch, 'Space jumps, Shift sprints, Alt / L rolls (hard to hit going over), cover pulls him down behind it');
-  ok(/if\(tuck\)\{/.test(rc) && /MV\.cover \+ CR\.rest/.test(rc) && /freeze = MV\.roll >= 0 \? 0\.42/.test(rc), 'tucked in a roll with the rifle held in, the rifle laid on the cover'); }
+  ok(/if\(tuck\)\{/.test(rc) && /MV\.cover \+ CR\.rest/.test(rc) && /MV\.roll >= 0\)\{ ok = 'Cautious_Crouch_Walk_Forward'; freeze = 0\.42/.test(rc), 'tucked in a roll with the rifle held in, the rifle laid on the cover'); }
 
 // Z331 the driver off the ride: the crawl to a downed bike, the two-try heave, giving himself up beside the fallen soldier
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), a=R('src/actors/driver-acts.js'), d=R('src/actors/driver.js'), pd=R('src/game/player-damage.js'), md=R('src/game/mode.js'), cv=R('src/game/cavalry.js');
@@ -1126,6 +1126,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/best = 1 - L\.lastFoot/.test(lg) && /function step\(f, to, yaw, dur, h, cross = 0\)/.test(lg) && /f\.p\.addScaledVector\(F2, w\.cross \* A\.crossArc/.test(lg) && /A\.maxDrop/.test(lg), 'left, right, left; a crossing step swung round the other foot; the pelvis never drops into a squat');
   ok(/R\.legs && R\.legs\.on\)\{ ok = 'Aim_Stand'/.test(rc) && /R\.legs\.mode === 'crouch'\)\{ ok = 'Aim_Stand'/.test(rc), 'walking or crouched on the move under his own legs, the rifle held steady (no clip legs, no hunched crouch-walk)');
   ok(L.stand.maxStride >= 1.4 && L.stand.cad[2] > L.stand.cad[0] && L.stand.turn > 0.6 && L.stand.turnBack < L.stand.turn && L.crouch.hipK < L.stand.hipK && L.maxDrop <= 0.15 && L.slope < -0.5, 'a whole stride per foot, quicker steps when faster, hips open more to the side than backing up, crouched lower'); }
+
+// Z341 the firing positions: kneeling (right knee down, left shin upright, bladed, square shoulders), prone (legs in a V), the jump, cover
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), lg=R('src/actors/soldier-legs.js'), rc=R('src/actors/real-cav.js'), L=C.SOLDIER_LEGS, Mv=C.CAV.moves.cover;
+  ok(['function kneelPose','function pronePose','function airPose','function setHips','function torso','function finish'].every(k=>lg.includes(k)) && /mode = s > \(L\.mode === 'crouch'/.test(lg) && /if\(MV && MV\.air\) mode = 'air'; else if\(P\.stance === 'prone'\) mode = 'prone'/.test(lg), 'each position its own pose, chosen by stance and speed; every change eased from the last pose');
+  ok(/if\(st > mx\) _d\.copy\(f\.p\)\.addScaledVector\(_e, mx \/ st\);   \/\/ \(a foot travels/.test(lg) && !/\/\/[^\n]*if\(st > mx\)/.test(lg), 'the stride cap runs (it had slipped into a comment)');
+  ok(L.kneel.turn > 0.3 && L.kneel.torso > 0 && L.kneel.kneeH < 0.1 && L.kneel.hipK < 1 && L.prone.spread > 0.15 && L.air.tuck < L.air.ext && L.landDip > 0.05 && L.coverRest > 0, 'bladed on one knee, legs in a V, tucked in the air, a give on landing, the bore over the cover');
+  ok(Mv.probe[Mv.probe.length - 1] <= 1.1 && Mv.kneel <= 0.85 && /MV\.cover \+ A\.coverRest - A\.pocket/.test(lg) && /if\(MV && MV\.land > 0\) hipY -= A\.landDip/.test(lg), 'cover only close enough to lay the rifle on; kneeling or crouched to just the height that puts it on top');
+  ok(/MV && \(MV\.air \|\| MV\.land > 0\)\)\{ ok = 'Aim_Stand'/.test(rc), 'in the air and landing the rifle stays shouldered'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

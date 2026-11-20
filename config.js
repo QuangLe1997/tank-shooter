@@ -680,7 +680,7 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
   // Z336 on his feet (game/soldier-moves.js): jump = take-off m/s, fall m/s², the landing's give s · roll = how long the roll lasts s, its speed m/s, how hard he is
   //   to hit going over (defK), cooldown s, its pivot height and how low it goes m, the kneel after it s · cover = how far ahead along his aim (probe points m) a
   //   block counts, its height band [min, max] m (up to kneel he kneels behind it), how slow he must be m/s (REALCAV.cv: the rifle laid rest m over its top, raised at most restMax)
-  moves:{ jump:{ vy:4.4, g:15, land:0.25 }, roll:{ dur:0.8, v:4.6, defK:0.2, cd:1.1, pivot:0.68, sink:0.38, rise:0.4 }, cover:{ reach:2.2, probe:[0.5, 0.8, 1.1, 1.4, 1.7, 2.0], h:[0.5, 1.6], kneel:1.15, maxV:1.3 } }, radius:{ mounted:1.0, foot:0.45, prone:0.38 }, radius:{ mounted:1.0, foot:0.45, prone:0.38 },
+  moves:{ jump:{ vy:4.4, g:15, land:0.25 }, roll:{ dur:0.8, v:4.6, defK:0.2, cd:1.1, pivot:0.68, sink:0.38, rise:0.4 }, cover:{ reach:1.4, probe:[0.45, 0.65, 0.85, 1.05], h:[0.5, 1.6], kneel:0.8, maxV:1.3 } }, radius:{ mounted:1.0, foot:0.45, prone:0.38 }, radius:{ mounted:1.0, foot:0.45, prone:0.38 },
   defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.85, call:{ speed:9, arrive:2.6 },
   trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85,
   soldier:{ hp:150, rifleK:1, fleeK:0.55, grenade:{ cd:9, r:4.2, dmg:85 }, smoke:{ cd:12, toss:5 }, medkit:{ cd:16, hp:45 },
@@ -864,6 +864,17 @@ export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket
 export const SOLDIER_LEGS = { velK:10, fade:7, moveV:0.15, turnV:0.35, turnFull:1.0, turnRate:5, hyst:0.26, toeOut:0.12, crossF:0.22, crossArc:0.14, urgent:0.35, overlap:0.6, maxDrop:0.12, yawStep:0.55, idleT:0.3, idleGap:0.2, sway:0.3, roll:0.05, gaitYaw:0.07,
   slope:-0.9, toeH:0.012, toeFlat:-0.12, reach:0.99, backCad:1.15, backStep:0.75,
   stand:{ maxV:2.4, hipK:0.962, dip:0.035, bob:0.026, half:0.1, stance:0.17, stagger:0.07, gap:0.12, maxStride:1.5, lift:0.07, cad:[1.8, 0.55, 2.9], swing:0.78, lead:0.45, idle:0.15, turn:0.95, turnBack:0.4 },
+  // Z341 the firing positions: switchT = how long each change of position eases in (s); behind cover the rifle's bore lies coverRest over the top, the
+  //   butt pocket is `pocket` over the hip joints, crouching behind higher cover by at most coverDrop; landing, the knees give landDip.
+  //   kneel: hips turned right (rad), the pelvis' and the torso's lean, the knee pad's height, hips over the knee (× the thigh; lowest `low` m over it),
+  //   the hips' place (ahead, right), the left foot out to the left and its toe turned toward the aim. prone: the legs' V (rad from straight back),
+  //   how far they reach (× the leg), the ankle's height, crawling a knee drawn in (× the leg) and out (m), the crawl's rate (rad/s).
+  //   air: the legs' reach at take-off and tucked (× the leg), how fast they tuck going up and reach going down, the knees forward, the left foot leading,
+  //   out to the side, the toes pointed at take-off
+  switchT:{ kneel:0.35, prone:0.5, air:0.12, stand:0.3, crouch:0.3 }, coverRest:0.08, pocket:0.31, coverDrop:0.45, landDip:0.14,
+  kneel:{ turn:0.55, lean:0.1, torso:0.2, kneeH:0.06, hipK:0.92, low:0.22, hipF:-0.02, hipR:0.06, footOut:0.06, footYaw:0.35 },
+  prone:{ spread:0.28, reach:0.96, ankleY:0.09, pullIn:0.45, pullOut:0.3, crawlRate:5 },
+  air:{ ext:0.97, tuck:0.55, rise:1.8, reachK:1.5, fwd:0.12, lead:0.1, out:0.03, point:0.6 },
   crouch:{ minV:0.25, hipK:0.68, lean:0.24, dip:0, bob:0.016, half:0.12, stance:0.18, stagger:0.08, gap:0.14, maxStride:1.0, lift:0.06, cad:[1.6, 0.4, 2.3], swing:0.8, lead:0.45, idle:0.15, turn:0.9, turnBack:0.4 } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.6, 0.55], gaitAt:[2.3, 4.4], twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows

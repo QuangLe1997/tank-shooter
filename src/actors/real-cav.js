@@ -207,8 +207,8 @@ export function updateRealCav(CV, dt, P){
   if(!P.dead && R.deadOn){ R.deadOn = false; const a = R.OA.dying_backwards; if(a){ a.setLoop(THREE.LoopRepeat, Infinity); a.clampWhenFinished = false; } }
   const MV = !mounted && !P.dead && P.move;   // Z336 jumping / rolling / just landed
   if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
-  else if(MV && (MV.roll >= 0 || MV.air)){ ok = 'Cautious_Crouch_Walk_Forward'; freeze = MV.roll >= 0 ? 0.42 : 0.2; }   // tucked: knees up, head down
-  else if(MV && MV.land > 0){ ok = 'Kneeling_Aim'; freeze = 0; }   // the landing gives at the knees
+  else if(MV && MV.roll >= 0){ ok = 'Cautious_Crouch_Walk_Forward'; freeze = 0.42; }   // tucked: knees up, head down
+  else if(MV && (MV.air || MV.land > 0)){ ok = 'Aim_Stand'; freeze = 0; }   // Z341 in the air and landing the rifle stays up; his legs tuck and give (actors/soldier-legs.js)
   else if(P.trans && P.trans.k === 'off'){ if(P.trans.e < 0.55){ ok = 'Cautious_Crouch_Walk_Forward'; ts = 1.3; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // Z295 getting off: a crouched step down, landing on one knee, rifle up
   else if(P.trans && P.trans.k === 'on'){ if(P.trans.e < 0.45){ ok = 'Walk_Forward_While_Shooting'; ts = 1.1; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // getting on: a step to it, then gathered up onto the seat
   else if(mounted && stand){ if(R.step){ ok = 'Walk_Forward_While_Shooting'; ts = 1.35; } else { ok = 'Aim_Stand'; freeze = 0; } }   // braced in the bed, rifle shouldered (Z303 his feet step round when he turns his body)
