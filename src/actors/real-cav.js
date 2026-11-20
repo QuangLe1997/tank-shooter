@@ -1,7 +1,7 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE } from '../../config.js';
+import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN } from '../../config.js';
 import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
@@ -57,7 +57,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // the body frame: up, and his facing turned by the aim twist
   G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
   _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = R.av ?? Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));   // (Z303 the calmed, unwrapped aim: the gun never flips sides)
-  const hy = R.hy || 0, yaw = gy + hy + clamp(dyw - hy, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders (and, sat on a ride, his hips) can turn
+  const hy = R.hy || 0, chest = hy + (R.tw || 0), yaw = R.sat ? gy + chest + clamp(dyw - chest, -RIDER_TURN.lead, RIDER_TURN.lead) : gy + hy + clamp(dyw - hy, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders (and, sat on a ride, his hips) can turn (Z340 in the saddle: where his chest is turned, the arms a little ahead)
   // the shoulders take the kick before the gun is laid in them
   _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);   // (about his left: the kick rocks him back)
   // Z326 an aircraft above: he leans back from the waist, up the spine, so the butt stays in his shoulder as the muzzle climbs past its usual tip-up
@@ -76,7 +76,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // where he aims: the pointer's ground point lifted to a man's chest, or straight ahead
   if(p && S.aimPoint && S.pointerActive){ const tx = S.aimPoint.x, tz = S.aimPoint.z, ty = heightAt(tx, tz) + 1.1, hd = Math.hypot(tx - _gp.x, tz - _gp.z); if(hd > 1.5) pitch = Math.atan2(ty - _gp.y, hd); }
   const airP = airPitch(_gp.x, _gp.y, _gp.z); if(airP != null) pitch = airP;   // Z313 laid on an aircraft: up to its height
-  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], airP != null ? (prone ? AIRPOSE.prone : AIRAIM.manUp) : H.pitch[1]) + rc.a - low * RL.low - (R.rdy || 0) * REALCAV.ready[1]; const yw = yaw + low * RL.turn;   // (Z304 running, not firing: the muzzle carried low)
+  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], airP != null ? (prone ? AIRPOSE.prone : AIRAIM.manUp) : H.pitch[1]) + rc.a - low * RL.low - (R.rdy || 0) * REALCAV.ready[1]; const yw = yaw + low * RL.turn; R.gunYaw = yw;   // (Z304 running, not firing: the muzzle carried low · Z340 where the bore really points, for the trigger)
   if(low > 0){ _gp.addScaledVector(_gu, -0.07 * low).addScaledVector(_gr, -0.06 * low); }   // drawn down and in to the chest
   _gx.set(Math.sin(yw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yw) * Math.cos(pitch)).negate();   // the gun's +X runs back to the butt
   _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize();
@@ -227,32 +227,39 @@ export function updateRealCav(CV, dt, P){
   // Z299 sat on a ride, past a quarter turn he swings his hips round on the seat (slower than his shoulders) to bring the gun to bear behind him
   // Z303 WHERE HE LOOKS, CALMLY: the aim relative to the ride is unwrapped (no snapping from +180° to −180° as the target passes behind — he stays on the
   //   side he turned to until it is well past, `flip`), then swung toward at a human pace (`aimRate`): a ride whipping through a bend no longer spins him
-  const seated = mounted && bike && !stand, braced = mounted && bike && stand; if(R.opRY == null) R.opRY = R.op.rotation.y;
+  // Z340 TURNED ROUND IN THE SADDLE (horse or pillion, RIDER_TURN): hips swung on the seat and the chest twisted on them reach `max` (~170°) either way, so he
+  //   can turn to shoot behind; the gap straight behind is beyond him — the aim there, he holds at the limit; once it is `flip` past the middle he swings
+  //   back the long way round the front (faster, `swing`), never right round. On the horse his legs stay along its flanks as his hips turn.
+  const seated = mounted && bike && !stand, braced = mounted && bike && stand, sat = mounted && !stand, RT = RIDER_TURN; if(R.opRY == null) R.opRY = R.op.rotation.y;
   const ready = !mounted && !P.trans && fv > C.ready[0] && !S.firing; R.rdy = (R.rdy || 0) + ((ready ? 1 : 0) - (R.rdy || 0)) * Math.min(1, dt * 5);   // Z304 running and not shooting: eyes and muzzle where he runs
   const raw = (P.twist || 0) * (1 - R.rdy);
   R.tu = R.tu == null ? raw : R.tu + Math.atan2(Math.sin(raw - R.tu), Math.cos(raw - R.tu)); const TAU = Math.PI * 2;
-  if(!braced){ if(R.tu > Math.PI + C.flip) R.tu -= TAU; else if(R.tu < -Math.PI - C.flip) R.tu += TAU; }   // sat, he can't turn past his back: well past it, he comes round the front
+  if(!braced){ const L = Math.PI + (sat ? RT.flip : C.flip); if(R.tu > L) R.tu -= TAU; else if(R.tu < -L) R.tu += TAU; }   // sat, he can't turn past his back: well past it, he comes round the front
   else if(Math.abs(R.tu) > TAU && R.av != null){ const w = Math.sign(R.tu) * TAU; R.tu -= w; R.av -= w; R.hy = (R.hy || 0) - w; if(R.step){ R.step.from -= w; R.step.to -= w; } }   // standing he can step right round: keep the numbers small
-  R.av = R.av == null ? R.tu : R.av + clamp(R.tu - R.av, -C.aimRate * dt, C.aimRate * dt); const twAll = R.av;
+  const tgt = sat ? clamp(R.tu, -RT.max, RT.max) : R.tu, far = Math.abs(tgt - (R.av ?? tgt)), rate = sat ? C.aimRate + (RT.swing - C.aimRate) * clamp((far - 0.8) / 1.5, 0, 1) : C.aimRate;   // (a long way round: quicker)
+  R.av = R.av == null ? tgt : R.av + clamp(tgt - R.av, -rate * dt, rate * dt); const twAll = R.av;
   // the body: sat, the hips swing round on the seat (slowly); standing in a bed, he turns his whole body by stepping round — a step at a time, feet moving
   if(braced){ const want = twAll;   // (on his feet any way round, the short way)
     if(!R.step && Math.abs(want - (R.hy || 0)) > C.standTurn[1]){ R.step = { from:R.hy || 0, to:(R.hy || 0) + clamp(want - (R.hy || 0), -C.standTurn[2], C.standTurn[2]), t:0 }; }
     if(R.step){ R.step.t = Math.min(1, R.step.t + dt / C.standTurn[3]); R.hy = R.step.from + (R.step.to - R.step.from) * smooth(R.step.t); if(R.step.t >= 1) R.step = null; } }
-  else { R.step = null; const hyT = seated ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -C.seatTurn[1], C.seatTurn[1]) : 0;
+  else { R.step = null; const hipMax = sat ? (bike ? C.seatTurn[1] : RT.hip) : 0, hyT = sat ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -hipMax, hipMax) : 0;
     R.hy = (R.hy || 0) + clamp((hyT - (R.hy || 0)) * Math.min(1, dt * C.seatTurn[2]), -C.hipRate * dt, C.hipRate * dt); }
   R.op.rotation.y = R.opRY + R.hy;
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
   if(mounted && !stand){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
   else if(s === 'prone' && !P.trans){ R.op.position.y = -C.proneDrop / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
   // the torso turns toward the aim (spread over three spine bones, about the body's up)
-  R.tw = (R.tw || 0) + clamp((clamp(twAll - R.hy, -C.twistMax, C.twistMax) - (R.tw || 0)) * Math.min(1, dt * C.seatTurn[3]), -C.twistRate * dt, C.twistRate * dt); const tw = R.tw;   // the shoulders follow the eyes, the hips follow the shoulders
+  const twLim = sat ? RT.max - (bike ? C.seatTurn[1] : RT.hip) : C.twistMax;   // (Z340 sat: the chest takes the rest of the turn)
+  R.tw = (R.tw || 0) + clamp((clamp(twAll - R.hy, -twLim, twLim) - (R.tw || 0)) * Math.min(1, dt * C.seatTurn[3]), -C.twistRate * dt, C.twistRate * dt); const tw = R.tw;   // the shoulders follow the eyes, the hips follow the shoulders
   if(Math.abs(tw) > 1e-3){ G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
+  if(sat && !bike && Math.abs(R.hy) > 1e-3){ R.legs = R.legs || ['LeftUpLeg', 'RightUpLeg'].map(n => R.op.getObjectByName('mixamorig' + n)); G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);   // Z340 his hips turn on the saddle, his thighs stay along the horse
+    for(const b of R.legs){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, -R.hy); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
   if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }
   if(R.pup && !P.dead && mounted && bike && !stand && !P.trans) sitTall(R, G);   // Z304 sat up straight on the seat, not slumped over the gun
   if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
   if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
-  R.H = H; R.seated = seated && !P.trans;   // (Z335 for the hold: the ride and its driver)
+  R.H = H; R.seated = seated && !P.trans; R.sat = sat && !P.trans && !P.dead; if(!R.sat) R.gunYaw = null;   // (Z335 for the hold: the ride and its driver · Z340 in the saddle)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil

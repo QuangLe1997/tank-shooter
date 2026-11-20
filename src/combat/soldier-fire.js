@@ -6,7 +6,8 @@
 //   PKM, the minigun), eight pellets (the shotgun), a slug through two men (the 12.7), a rocket that bursts (the B41), a grenade lobbed onto the aim point (the
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
-import { GUNS, MOBILE, PAD, S, aimTarget, cMod, fireFlame, fireMortar, floatText, magCap, playerRange, rifleFX, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot } from '../hub.js';
+import { RIDER_TURN } from '../../config.js';
+import { GUNS, MOBILE, PAD, S, aimTarget, cMod, fireFlame, fireMortar, floatText, magCap, playerRange, rifleFX, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV } from '../hub.js';
 
 const _v = new THREE.Vector3();
 export function trooperGuns(){ return ['carbine', 't_rpg'].map(id => ({ id, ammo:GUNS[id].mag, rU:0, rD:0 })); }
@@ -21,6 +22,7 @@ export function trooperGive(id){ const p = S.player, g = GUNS[id]; if(!p || !g) 
   updateGunHUD(); }
 export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length) return; const inst = p.guns[p.gunIdx], g = GUNS[inst.id];
   if(!g || inst.rU) return; if(!p.infiniteAmmo && inst.ammo <= 0){ startReload(now, inst); return; } if(now < p.fireAt) return;
+  const R = CV.mounted && CV.real; if(R && R.sat && R.gunYaw != null){ const off = R.gunYaw - p.aimSmoothed; if(Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > RIDER_TURN.fire) return; }   // Z340 turning round in the saddle: the trigger waits for the bore to come onto the aim
   const rapid = (now < p.overUntil || now < p.buffUntil.rapid) ? 0.5 : 1; p.fireAt = now + g.fireCd * rapid * p.fireMul; if(!p.infiniteAmmo) inst.ammo--;
   p.muzzle.getWorldPosition(_v); const air = g.special ? null : airShot(_v.x, _v.z, g.bspeed), a0 = air ? air.a : p.aimSmoothed, crit = Math.random() < p.crit, power = now < p.buffUntil.power ? 1.6 : 1;
   const dmg = g.dmg * p.dmgMul * power * (crit ? 2 : 1) * cMod('playerDmgMul'), reach = (range || playerRange()) * (g.rng || 1) + 2, t = aimTarget(reach);
