@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { TANK_REAL } from '../../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { TANK_MODELS, blobTex, buildDesignTank, camoTex, grimeMat, hasDesign, panelNrm, panelRgh, panelTex, realCol, trackTex, turretGeo, warKit, wheelTex } from '../hub.js';
+import { TANK_MODELS, blobTex, buildDesignTank, camoTex, grimeMat, hasDesign, panelNrm, panelRgh, panelTex, realCol, realTank, trackTex, turretGeo, warKit, wheelTex } from '../hub.js';
 
 // ---- shared tank geometries (built once; every tank references them) ----
 export const TANK_GEO = {};
@@ -76,7 +76,7 @@ export function buildTank(opts={}){
       sprocketGeo:(r)=>_sg[r]||(_sg[r]=G.sprocket.clone().scale(1, r/0.31, r/0.31)), blobGeo:G.blob, blobMat });
     if(KIT) warKit(out, { HULL, STEEL, BLACK, GLASS, dark, metal });
     out.userData.paint = CAMO ? [] : Object.keys(_mc).filter(k=>k[0]==='s').map(k=>[_mc[k], _mc[k].color.getHex()]);   // Z179 (design-built vehicles too)
-    bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); return out; }
+    bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); return realTank(out, opts); }   // Z256 the Meshy vehicle of its family dresses it
   const rig={ wheels:[[],[]], wheelTex:[], tracks:[], lx:undefined, lz:0, lf:0, v:0, a:0, pitch:0, pv:0, roll:0, rv:0, recoil:0, recoilLen:0.42, vib:0, elev:0, elevT:0, t:Math.random()*10 };
   // ---------- running gear (unsprung: stays on the ground) ----------
   const NW = SP.wheels || (detail?6:5), wGeo = detail?G.wheel:G.wheelS;
@@ -186,13 +186,13 @@ export function buildTank(opts={}){
   if(KIT) warKit(g, { HULL, STEEL, BLACK, GLASS, dark, metal });
   bakeTank(g);
   g.traverse(o=>{ if(o.isMesh && o!==blob){ o.castShadow=true; o.receiveShadow=true; } });
-  return g;
+  return realTank(g, opts);   // Z256
 }
 // ---- draw-call baking: merge every group's direct child meshes that share a material into ONE mesh (animated groups stay separate) ----
 export const _ZERO_UV = new Map();
 export function bakeGroup(par){
   const buckets=new Map();
-  for(const c of par.children){ if(!c.isMesh || c.isInstancedMesh || c.isSkinnedMesh || c.name || c.children.length || Array.isArray(c.material) || c.userData.keep || c.userData.flag) continue;   // Z233 instanced fields / waving flags are never folded in
+  for(const c of par.children){ if(!c.isMesh || c.isInstancedMesh || c.isSkinnedMesh || c.name || c.children.length || Array.isArray(c.material) || c.userData.keep || c.userData.flag || !c.visible) continue;   // Z233 instanced fields / waving flags are never folded in (Z256 nor parts a real model hid: merged, they would show again)
     const k=c.material.uuid; let L=buckets.get(k); if(!L) buckets.set(k, L=[]); L.push(c); }
   for(const list of buckets.values()){ if(list.length<2) continue;
     const geos=[]; for(const m of list){ m.updateMatrix(); const gg = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone(); gg.applyMatrix4(m.matrix);
@@ -200,7 +200,7 @@ export function bakeGroup(par){
       if(!gg.attributes.uv) gg.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(gg.attributes.position.count*2),2));
       if(!gg.attributes.normal) gg.computeVertexNormals(); gg.clearGroups(); geos.push(gg); }
     const merged=mergeGeometries(geos,false); geos.forEach(gg=>gg.dispose()); if(!merged) continue;
-    const mm=new THREE.Mesh(merged, list[0].material); mm.castShadow=list[0].castShadow; mm.receiveShadow=list[0].receiveShadow; par.add(mm);
+    const mm=new THREE.Mesh(merged, list[0].material); mm.castShadow=list[0].castShadow; mm.receiveShadow=list[0].receiveShadow; if(list[0].userData.proc) mm.userData.proc=true; par.add(mm);   // (Z256 still the build's own, for a real model dressed later)
     for(const m of list) par.remove(m); }
 }
 export function bakeTank(root){ const ud=root.userData; for(const grp of [root, ud.body, ud.turret, ud.gunPivot, ud.barrelG]) if(grp) bakeGroup(grp); }

@@ -572,5 +572,166 @@
         170
       ]
     }
+  },
+  "tank_west": {
+    "_role": "Z256 tank family 'tank_west' — Smart Topology t2 (separate parts): the code sorts the parts into hull / turret / gun / running gear and fits each into the procedural vehicle's own groups",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Modern western main battle tank in the style of a Leopard 2A7: an angular wedge-armoured turret set in the middle of the hull, a long 120 mm smoothbore gun pointing straight forward over the front, armoured side skirts over tracks with seven road wheels per side, flat low hull, commander's panoramic sight and a roof machine gun on the turret. About 7.7 m hull length, 3.7 m wide, 3 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
+  },
+  "tank_east": {
+    "_role": "Z256 tank family 'tank_east' — Smart Topology t2 (separate parts) sorted into hull / turret / gun / running gear by tank/real-tanks.js",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Modern Russian main battle tank in the style of a T-90M: a low rounded cast turret covered with explosive reactive armour blocks, a long 125 mm smoothbore gun pointing straight forward, six large road wheels per side with thin rubber side skirts, a flat hull with reactive armour on the glacis, a roof machine gun and commander's sight. About 7 m hull length, 3.5 m wide, 2.3 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
+  },
+  "tank_merkava": {
+    "_role": "Z256 tank family 'tank_merkava' — Smart Topology t2 (separate parts) sorted into hull / turret / gun / running gear by tank/real-tanks.js",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Israeli Merkava Mk4 main battle tank: a long sharply wedged low turret set far back on the hull with a big rear bustle and ball-and-chain curtains under it, the engine at the front, a long 120 mm gun pointing straight forward, six road wheels per side behind spaced armour skirts. About 7.6 m hull length, 3.7 m wide, 2.7 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
+  },
+  "tank_armata": {
+    "_role": "Z256 tank family 'tank_armata' — Smart Topology t2 (separate parts) sorted into hull / turret / gun / running gear by tank/real-tanks.js",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Russian T-14 Armata main battle tank: a compact angular unmanned turret with sensor blocks, a long 125 mm gun pointing straight forward, a long flat hull with seven road wheels per side under armoured skirts, crew capsule hatches at the front of the hull. About 8.7 m hull length, 3.5 m wide, 3.3 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
+  },
+  "tank_ifv": {
+    "_role": "Z256 tank family 'tank_ifv' — Smart Topology t2 (separate parts) sorted into hull / turret / gun / running gear by tank/real-tanks.js",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Modern tracked infantry fighting vehicle in the style of a Bradley M2: a tall boxy hull with a sloped front, a small two-man turret offset to one side with a 25 mm autocannon pointing forward and a twin anti-tank missile launcher box on its side, six road wheels per side under skirts, a rear troop ramp. About 6.5 m long, 3.3 m wide, 3 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
+  },
+  "tank_spg": {
+    "_role": "Z256 tank family 'tank_spg' — Smart Topology t2 (separate parts) sorted into hull / turret / gun / running gear by tank/real-tanks.js",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Modern self-propelled howitzer in the style of a PzH 2000: a large tall boxy turret set at the rear of the hull with a very long 155 mm gun pointing straight forward with a muzzle brake, seven road wheels per side under skirts, a sloped front hull. About 7.9 m hull length, 3.6 m wide, 3.1 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
+  },
+  "tank_ugv": {
+    "_role": "Z256 tank family 'tank_ugv' — Smart Topology t2 (separate parts) sorted into hull / turret / gun / running gear by tank/real-tanks.js",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Small modern tracked unmanned ground combat vehicle robot: a low flat armoured hull with rubber tracks, four road wheels per side, a remote weapon station turret on top with a 30 mm cannon pointing straight forward, sensors and antennas, no crew hatches. About 4 m long, 2.3 m wide, 1.6 m tall. Realistic. Turret facing forward, gun level. Single vehicle on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
+    }
   }
 }

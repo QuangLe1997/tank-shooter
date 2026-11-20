@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { VIP_GUNS } from '../../config.js';
-import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
+import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, loadRealTanks, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
 
 export const GUNART = { cache:{}, queue:[], busy:false, scene:null, cam:null, rt:null, float:false };
 const OW = MOBILE ? 240 : 320, OH = Math.round(OW*0.46), SS = 2, RW = OW*SS, RH = OH*SS;
@@ -73,11 +73,11 @@ export function warmGunArt(){ queueGunArt(Object.keys(GUNS)); }
 // ---- Z155 tank model photos (garage cards) ----
 export const TANKART = { cache:{}, queue:[], busy:false };
 function pumpTank(){ if(TANKART.busy) return; const id=TANKART.queue.shift(); if(!id) return; TANKART.busy=true;
-  (window.requestIdleCallback||((f)=>setTimeout(f,30)))(()=>{ try{ if(!TANKART.cache[id]){ const t=buildTank({ detail:true, model:id, kit:true });   // Z228 the card shows the tank as you'll drive it — war kit on
+  loadRealTanks().catch(()=>{}).then(()=>(window.requestIdleCallback||((f)=>setTimeout(f,30)))(()=>{ try{ if(!TANKART.cache[id]){ const t=buildTank({ detail:true, model:id, kit:true });   // Z228 the card shows the tank as you'll drive it — war kit on (Z256 and in its real model: the photo waits for it)
         t.rotation.y=0; const url=renderObject(t, new THREE.Vector3(1.0, 0.62, 1.15), 0.58, OW, Math.round(OW*0.62));
         t.traverse(o=>{ if(o.geometry && !o.geometry._shared) {} }); TANKART.cache[id]=url; }
       document.querySelectorAll('img[data-tankpic="'+id+'"]').forEach(im=>{ im.src=TANKART.cache[id]; im.classList.add('ok'); }); }catch(e){ console.warn('tank art', id, e); TANKART.cache[id]=''; }
-    TANKART.busy=false; if(TANKART.queue.length) pumpTank(); }, { timeout:500 }); }
+    TANKART.busy=false; if(TANKART.queue.length) pumpTank(); }, { timeout:500 })); }
 export function queueTankArt(ids){ for(const id of ids) if(TANKART.cache[id]==null && !TANKART.queue.includes(id)) TANKART.queue.push(id); pumpTank(); }
 export function tankPicHTML(id, cls){ const u=TANKART.cache[id]; if(u==null) queueTankArt([id]);
   return '<span class="gunpic tankpic '+(cls||'')+'"><i class="gp-ic">'+svgMarkup('tank')+'</i><img data-tankpic="'+id+'" class="'+(u?'ok':'')+'" alt="" src="'+(u||BLANK)+'"></span>'; }

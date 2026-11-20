@@ -20,7 +20,7 @@ export function updateLOD(now){ if(now<_at) return; _at=now+LOD.every; const p=S
 // Z233 the fittings of a tank: measured once (world size under LOD.smallR), shown or hidden together
 export function tankDetail(m, on){ const u=m.userData; let L=u._small;
   if(!L){ L=u._small=[]; m.updateMatrixWorld(true); m.traverse(o=>{ if(!o.isMesh || !o.visible || !o.geometry || o.userData.keep) return; if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); o.getWorldScale(_cv); if(o.geometry.boundingSphere.radius*Math.max(_cv.x,_cv.y,_cv.z) < LOD.smallR) L.push(o); }); }
-  for(const o of L) o.visible=on; }
+  for(const o of L) if(!o.userData.realHidden) o.visible=on; }   // Z256 a procedural part a real model replaced stays hidden
 // HP bars only when it matters (hurt, elite, commander) — two draws saved per healthy unit
 export function barWanted(e){ return e.hp < e.maxHp-0.5 || e.elite || e.commander; }
 // Z190 FOG CULL — the low cinematic camera looks across the whole arena, so ~3,700 draws a frame went on things already lost in the fog.

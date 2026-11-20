@@ -697,6 +697,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/uniform sampler2D hdrTex/.test(at) && /c=mix\(c, h, hdrAmt/.test(at) && /applySkyPhoto\(A\)/.test(at), 'the dome mixes the photo over the procedural sky');
   const M=JSON.parse(fs.readFileSync('assets/sky/skies.json','utf8')); ok(Object.values(C.SKY_PHOTO.tod).concat(Object.values(C.SKY_PHOTO.mood)).every(n=>M[n] && fs.existsSync('assets/sky/'+n+'.jpg') && fs.existsSync('assets/sky/'+n+'_2k.jpg')), 'every photo sky ships (4K + 2K) with its sun position'); }
 
+// Z256 real tanks: one Meshy vehicle per family, split into hull / turret / gun by shape, fitted onto the procedural rig (tracks, traverse, elevation, recoil kept)
+{ const fs=await import('node:fs'); const rt=fs.readFileSync('src/tank/real-tanks.js','utf8'), md=fs.readFileSync('src/tank/model.js','utf8'), lod=fs.readFileSync('src/render/lod.js','utf8'), dp=fs.readFileSync('src/world/depots.js','utf8'), ga=fs.readFileSync('src/ui/gunart.js','utf8'), C=await import('./config.js'), tm=fs.readFileSync('src/tank/models.js','utf8');
+  ok(/export function realTank/.test(rt) && /export function loadRealTanks/.test(rt) && /function prepare/.test(rt) && /chains/.test(rt) && /gunSet/.test(rt) && /'gear'/.test(rt), 'real tanks: parts sorted by shape — the gun chained from its pieces, the running gear dropped');
+  ok(/tur\.rotation\.set\(0, 0, 0\)/.test(rt) && /procBox\(g, g, \[body\]\)/.test(rt) && /o\.userData\.proc/.test(rt) && /p\.z = tip\.z/.test(rt) && /gp\.position\.copy/.test(rt), 'fitted in the rest pose, the hull spans the tracks, only the build\'s own parts hidden, the muzzle and the gun pivot moved to the real gun');
+  ok((md.match(/realTank\([a-z]+, opts\)/g)||[]).length===2 && /!c\.visible\) continue/.test(md) && /mm\.userData\.proc=true/.test(md), 'every model-named build is dressed; a bake never folds hidden parts back in');
+  ok(/realHidden/.test(lod) && /model:ENEMY_MODEL\[role\]/.test(dp) && /loadRealTanks\(\)\.catch/.test(ga), 'LOD keeps them hidden; parked depot tanks and garage photos wear the real model too');
+  const all=Object.values(C.REALTANK.fams).flatMap(f=>f.designs), tmb=tm.slice(tm.indexOf('export const TANK_MODELS'), tm.indexOf('\n};', tm.indexOf('export const TANK_MODELS'))), em=tm.match(/export const ENEMY_MODEL = \{([^}]*)\}/)[1];
+  const used=new Set([...tmb.matchAll(/^  ([a-z0-9]+): ?\{/gm)].map(m=>m[1]).concat([...em.matchAll(/'([a-z0-9]+)'/g)].map(m=>m[1]))); ok(used.size>=13, 'the design list was read ('+used.size+')');
+  ok([...used].every(id=>all.includes(id)) && new Set(all).size===all.length, 'every garage and enemy design belongs to exactly one family');
+  ok(Object.keys(C.REALTANK.fams).every(k=>fs.existsSync('assets/models/real/tank/'+k+'.glb') && fs.statSync('assets/models/real/tank/'+k+'.glb').size<2.2e6), 'seven family models ship small (≤2.2 MB each)'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

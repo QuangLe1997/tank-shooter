@@ -546,6 +546,15 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z256 REAL TANKS (tank/real-tanks.js): one Meshy vehicle per family, dressed onto the designs listed; gearK = how high (× the deck height) the dropped
+//   running-gear parts reach; dev = how far the width scale may stray from the length scale (the height keeps the model's proportion); overGear =
+//   the hull's length over the procedural tracks' (fenders, the glacis and the rear plates run a little past them); tint = how much of the old hull colour the
+//   texture keeps (the side still reads; the battlefield repaint tints it), shade = albedo × on top (the generated paint came out light); env = reflection strength; gun = [min length, max thickness] (× the
+//   model's length) of the pieces taken as the main gun, [2] the lowest they may sit (× the model's height), [3] the least length / thickness of a
+//   piece, [4] the shortest gun taken when nothing long is there (an IFV's autocannon)
+export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
+  fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus'] }, east:{ designs:['lqt','t90m','type99','flametank','arv'] }, merkava:{ designs:['merkava'] },
+    armata:{ designs:['t14','ghost'] }, ifv:{ designs:['ifv','recon','atgmv'] }, spg:{ designs:['spg','td'] }, ugv:{ designs:['ugv'] } } };   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
 // Z255 PHOTO SKY (world/sky-photo.js): a photographed pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs) laid into the sky dome per hour of the day, and an
 //   overcast one for storms — amt = how much of the photo shows (the procedural sky, clouds and lightning stay underneath), cloudK = how much of
 //   the procedural cloud layer survives under the photo, fogMix = how far the fog takes the photo's horizon colour, midGrey = the exposure target
