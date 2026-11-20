@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
-import { BALANCE, LOCKON } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing } from '../hub.js';
+import { BALANCE, LOCKON, REALCITY } from '../../config.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -63,6 +63,7 @@ export function fireFlame(now, g, x, z, ang, k=1){
     e.burn.until = now + F.duration; e.burn.k = Math.max(e.burn.k||1, k);   // Z149 the fire burns as hot as your damage upgrades
     e.hitT = Math.max(e.hitT, 0.08);
   }
+  trafficCone(x, z, cx, cz, range, F.cone, (g.dmg || 10) * k * REALCITY.traffic.hit.flameK);   // Z320 the street's cars and scooters in the flame catch fire too
 }
 export function makeDangerZone(x,z,r){   // ground light showing the exact kill radius during the fuse · Z318 our own ordnance = threat orange: a hot rim, a glow falling inward
   const grp=new THREE.Group(); grp.position.set(x,heightAt(x,z)+0.12,z); grp.rotation.x=-Math.PI/2;

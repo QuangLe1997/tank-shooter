@@ -333,7 +333,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
   for(let i=-n;i<=n;i++) for(let j=-n;j<n;j++) for(const ax of [0,1]){
     const W=roadW(i), WW=walkW(i), blvd=isBlvd(i), a0=j*G+roadW(j)/2, a1=(j+1)*G-roadW(j+1)/2, L=a1-a0, mid=(a0+a1)/2;
     const at=(s,t)=>ax ? [i*G+t, mid+s] : [mid+s, i*G+t], ang=ax?Math.PI/2:0, [cx,cz]=at(0,0); if(L<6 || !inCity(cx,cz)) continue;
-    roads.push({ ax, c:i*G, a0:mid-L/2, a1:mid+L/2, blvd });   // Z268 for the traffic
+    roads.push({ ax, c:i*G, a0:mid-L/2, a1:mid+L/2, blvd, w:W, med:MED, g:G });   // Z268 for the traffic (Z320 with its width, median and the grid pitch)
     if(blvd){ const cw=(BV-MED)/2; for(const sd of [-1,1]) strip('bvd', bvdMat, ...at(0, sd*(MED/2+cw/2)), L, cw, ang, 0.04, 8);
       strip('median', grassMat, ...at(0,0), L, MED-0.3, ang, 0.14, 4, 4); for(const sd of [-1,1]) kerb(...at(0, sd*MED/2), L, ang);
       for(let s=-L/2+4; s<L/2-3; s+=10){ const [x,z]=at(s,0); if((s/10|0)%2) palms.push({ x, z, s:_R(0.85,1.05), ry:_R(0,6.28) }); else { lamps.push({ x, z, ry:ang+Math.PI/2 }); if(!lantern) lamps.push({ x, z, ry:ang-Math.PI/2 }); } } }
@@ -360,8 +360,9 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
     if(chain.length>1) chains.push(chain);
     if(Math.random()<0.1){ const [x,z]=at(_R(-L/3,L/3), _R(-W/4,W/4)); cars.push(pickCar({ x, z, ry:ang+_R(-0.8,0.8) }, 0.6)); } }   // a car abandoned in the road, often burnt out
   // ---- crossings: asphalt, zebra crossings on every arm, traffic lights ----
+  roads.xing=new Set();   // Z320 the crossings that are laid (the traffic crosses and U-turns only on asphalt)
   for(let i=-n;i<=n;i++) for(let j=-n;j<=n;j++){ const x=i*G, z=j*G, wx=roadW(i), wz=roadW(j); if(!inCity(x,z)) continue;
-    strip('road', roadMat, x, z, wx, wz, 0, 0.035, 64);
+    roads.xing.add(i+','+j); strip('road', roadMat, x, z, wx, wz, 0, 0.035, 64);
     for(const sd of [-1,1]){ strip('zebra', zebMat, x, z+sd*(wz/2+1.8), wx, 3, 0, 0.05, 8, 3); strip('zebra', zebMat, x+sd*(wx/2+1.8), z, wz, 3, Math.PI/2, 0.05, 8, 3); }
     const big=isBlvd(i)||isBlvd(j); for(const [sx,sz] of (big?[[1,1],[-1,1],[1,-1],[-1,-1]]:(Math.random()<0.55?[[1,1]]:[]))) lights.push({ x:x+sx*(wx/2+1.0), z:z+sz*(wz/2+1.0), ry:Math.atan2(-sx,-sz) });
     if(Math.random()<0.22){ const sx=Math.random()<0.5?1:-1, sz=Math.random()<0.5?1:-1; for(let q=0;q<2+((Math.random()*2)|0);q++) prop('prop_barrier', x+sx*(wx/2+2.6+q*1.9), z+sz*(wz/2+1.2), _R(-0.12,0.12)); } }   // Z267 concrete blocks dragged to a corner

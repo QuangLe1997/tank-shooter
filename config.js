@@ -213,9 +213,10 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
   //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
   wear:{ hp:{ xeom:150, xichlo:110, bagac:190 }, share:0.5, crash:28, spill:6, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
-  // Z306 the ride on the street (game/ride-impact.js): closing speed (m/s) to knock a scooter over or stop a car (below it a nudge), to go over the top of a
-  //   car; a scooter's share of our speed kept; animals: run down above animalV, a big one (legs longer than bigLeg) brings the ride down. (spill: wear above)
-  impact:{ knockV:2.5, flipV:3.5, motoKeep:0.55, animalV:3, bigLeg:1.1 },
+  // Z306 the ride on the street (game/ride-impact.js): closing speed (m/s) above which a blow is a knock (sparks, glass, a scooter over); animals: run down
+  //   above animalV, a big one (legs longer than bigLeg) brings the ride down (spill: wear above). Z320 a ram is a collision of masses (a car = 1, a scooter
+  //   moto): the ride's mass by kind, e = how much they spring apart — the blow shoves and spins what it hits and takes speed off the ride by the masses, no spill
+  impact:{ knockV:2.5, mass:{ xeom:0.8, xichlo:0.7, bagac:1.1, bantai:2.6, horse:0.9 }, moto:0.35, e:0.25, animalV:3, bigLeg:1.1 },
   // Z306 calling the ride (game/ride-call.js): farther than farR (m) he comes round by the streets — after delay s he turns up dropR m away and rides in; no
   //   closer for stuckT s → he comes round too; after a spill you climb straight back on if you stayed within stayR m of where you landed
   call:{ farR:55, delay:4, dropR:26, stuckT:3, stayR:4 },
@@ -713,12 +714,21 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
     // Z310 wheel = the starting tyre radius [car, scooter] m (each model's own is measured from its mesh); grips = the middle of each scooter's rubber grip
     //   (its own frame as normalised to motoL: x out to his left, y up, z ahead), where the baked rider's hands close
     grips:{ moto_scooter:[0.335, 1.02, 0.245], moto_escooter:[0.32, 1.05, 0.34] },
-    // Z306 struck / shot (world/traffic.js): health [car, scooter]; a knocked-down scooter lies downT s (gone once you are clearR m off) and skids at knockK of the blow;
-    //   a struck or shot-at car stops haltT s; a burnt-out one burns burnT s, sunk sink m on its rims
-    hit:{ hp:[160, 60], downT:8, clearR:25, knockK:0.6, haltT:7, burnT:22, sink:0.12 },
+    // Z306 struck / shot (world/traffic.js): health [car, scooter]; a knocked-down scooter lies downT s (gone once you are clearR m off); a struck or shot-at car
+    //   stops haltT s; a burnt-out one burns burnT s, sunk sink m on its rims. Z320 hp: a carbine round (≈22) sets a scooter alight, a car takes four (it smokes
+    //   below smoke of its health); a wreck sinks away in fadeT s; a blow slides it (the tarmac takes mu [car, scooter] of its speed a second) and turns it
+    //   (spinK × the blow's lever, at most spinMax rad/s); a scooter goes over at tipV m/s, a car rolls onto its side at flipV; motoM = a scooter's mass to a car's; blastV = a blast's throw (m/s); flameK = a flame's bite on a vehicle × its bite on a man; the round that sets it alight throws it shotThrow m/s along its flight and hop m/s up [car, scooter]
+    hit:{ hp:[70, 20], downT:8, clearR:25, haltT:6, burnT:5, sink:0.12, smoke:0.6, fadeT:1.6, mu:[2.0, 1.7], spinK:1.0, spinMax:4, tipV:0.6, flipV:7, motoM:0.35, blastV:9, flameK:3, shotThrow:5, hop:[2.6, 3.4] },
+    // Z320 the lanes (m from the road's centre line): a street's scooters keep street (min, max); a boulevard's cars keep blvdCar off the median's kerb, its
+    //   scooters blvdMoto; kerb = the room kept off a kerb; gap = the side clearance [car, scooter]. carStreets: cars on the narrow streets too (no: parked cars
+    //   leave one car's width). drive: acc / brake m/s², T = time gap s, s0 = standing gap m, lat = sideways m/s [car, scooter], uturnV m/s; junc.yieldT = how
+    //   long one road waits at a crossing before the other must let it through; stuckT = s stopped (out of farR m of you) before it goes round another way;
+    //   spawnR = never closer to you than this
+    lane:{ street:[0.85, 1.05], blvdCar:0.3, blvdMoto:[4.65, 5.35], kerb:0.3, gap:[0.28, 0.16] }, carStreets:false,
+    drive:{ acc:[2.2, 3.0], brake:4, T:[0.9, 0.6], s0:[1.8, 0.9], lat:[1.0, 1.4], uturnV:[4, 4.5] }, junc:{ yieldT:2 }, stuckT:12, farR:50, spawnR:45,
     // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
     liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
-      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
+      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
   lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
   flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
     // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)

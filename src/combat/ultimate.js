@@ -1,6 +1,6 @@
 // combat/ultimate.js — Z186 ULTIMATE WEAPONS (TỐI THƯỢNG): orbital lance · plasma sun · Hydra swarm · black-hole grenade · photon lance — each its own mechanic, telegraph and spectacle
 import * as THREE from 'three';
-import { GLOW, MOBILE, PAD, S, aimTarget, aoeDamage, bigExplode, blocks, boss, bullets, damageBlock, damageBoss, damageEnemy, deformCrater, enemies, fortIntactCross, heightAt, playerRange, ringPulse, scene, sfx, spawnBullet, spawnPart, blPulse, holoRing } from '../hub.js';
+import { GLOW, MOBILE, PAD, S, aimTarget, aoeDamage, bigExplode, blocks, boss, bullets, damageBlock, damageBoss, damageEnemy, deformCrater, enemies, fortIntactCross, heightAt, playerRange, ringPulse, scene, sfx, spawnBullet, spawnPart, blPulse, holoRing, trafficBeam } from '../hub.js';
 
 export const ULTI = { strikes:[], orbs:[], holes:[], beams:[] };
 const add=(o)=>{ scene.add(o); return o; };
@@ -74,6 +74,7 @@ export function updateUltimates(dt, now){
     for(let k=0;k<3;k++) spawnPart(b.x+(Math.random()-0.5)*1.2, y+(Math.random()-0.5)*1.2, b.z+(Math.random()-0.5)*1.2, -b.vx*0.08+(Math.random()-0.5)*2, (Math.random()-0.5)*2, -b.vz*0.08+(Math.random()-0.5)*2, { color:Math.random()<0.5?0xff8a2a:0xffe08a, size:0.9, life:0.45, grav:0, drag:2 });
     if((b.tick-=dt)<=0){ b.tick=0.15;   // burn everything it brushes
       for(const e of targets()){ const q=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2, rr=(e.r||1.5)+2.6; if(q<rr*rr) damageEnemy(e, b.dmg*0.3); }
+      trafficBeam(px, pz, b.x, b.z, 2.6, b.dmg*0.3);   // Z320 and the street's vehicles it brushes
       if(boss && boss.alive && (boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2 < 25) damageBoss(b.dmg*0.3);
       for(const bl of blocks.slice()){ const rr=(bl.r||1)+2.2; if((bl.x-b.x)**2+(bl.z-b.z)**2 < rr*rr && bl.kind!=='fortwall' && bl.kind!=='gate') damageBlock(bl, b.dmg*0.5); } }
     if(b.left<=0 || fortIntactCross(px, pz, b.x, b.z)){ nova(b.x, b.z, b.dmg*1.6, b.R, now); drop(b.o); ULTI.orbs.splice(i,1); } }
@@ -98,6 +99,7 @@ export function updateUltimates(dt, now){
     for(const e of targets()){ if(_segD(e.pos.x,e.pos.z,ax,az,ex,ez) < (e.r||1.5)+1.7){ damageEnemy(e, b.dps*dt); if(Math.random()<0.4) spawnPart(e.pos.x,1.4,e.pos.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{ color:0xbfeaff, size:0.5, life:0.25, grav:6, drag:1 }); } }
     if(boss && boss.alive && _segD(boss.pos.x,boss.pos.z,ax,az,ex,ez) < 4) damageBoss(b.dps*dt);
     for(const bl of blocks.slice()){ if(_segD(bl.x,bl.z,ax,az,ex,ez) < (bl.r||1)+0.6) damageBlock(bl, b.dps*0.45*dt); }
+    trafficBeam(ax, az, ex, ez, 1.7, b.dps*dt);   // Z320 a car or scooter in the beam burns
     for(let k=0;k<2;k++){ const t=Math.random(); spawnPart(ax+(ex-ax)*t, 0.25, az+(ez-az)*t, 0, 1.2, 0, { color:0xff8a3a, size:0.7, life:0.5, smoke:false, grav:-1, drag:1.5 }); }   // the ground under it scorches
     S.shake=Math.min(2.2, S.shake+dt*2); } }
 export function clearUltimates(){ for(const s of ULTI.strikes){ drop(s.ring); drop(s.guide); drop(s.col); } for(const b of ULTI.orbs) drop(b.o); for(const h of ULTI.holes) drop(h.o); for(const b of ULTI.beams) drop(b.o);
