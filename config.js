@@ -126,7 +126,7 @@ export const REAL = {
 //   within hubR × width of the mast, rotorUp = where our rotor sits (× model height above its middle), keepAbove = cut everything below that share
 //   (the paratrooper's own soldier), keep = the procedural parts that stay visible
 export const REALAIR = { models:{ heli_attack:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, heli_swallow:{ yaw:0, cutRotor:0.24, hubR:0.06, rotorUp:0.5 },
-  heli_bomber:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, air_uav:{ yaw:0, keep:['gat','ring'], env:1.2 }, para_trooper:{ keepAbove:0.3, double:true } } };
+  heli_bomber:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, air_uav:{ yaw:0, keep:['ring'], env:1.2 }, para_trooper:{ keepAbove:0.3, double:true } } };
 // Z275 ruins of war (world/ruins3d.js; Tripo): size (w = footprint, h = height, m), sink = share of the height under ground (base plates), and each
 //   battlefield's mix: n ruins of these keys; clearCore = metres kept clear beyond our base walls
 export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }, ruin_wall:{ w:18, sink:0.03 }, ruin_block:{ w:16, sink:0.02 }, ruin_tower:{ h:14, sink:0.03 }, ruin_villa:{ w:15, sink:0.03 } },
@@ -604,7 +604,8 @@ export const REALCITY = { env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement
   traffic:{ files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
     liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
-      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
+      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
+  lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
   flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
     // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)
     // (the stone tower came out with a broken diagonal glass panel: left out)

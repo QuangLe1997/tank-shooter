@@ -2,7 +2,7 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
+import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, scene, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
 import { REALCITY, STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
@@ -61,7 +61,7 @@ function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bl
   const M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), S3=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
   for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.max(REALCITY.skyHaze, mix) }, hc={ value:fogC.clone() };
     mat.onBeforeCompile=sh=>{ sh.uniforms.hzAmt=hz; sh.uniforms.hzCol=hc; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>','#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
-    mat.customProgramCacheKey=()=>'skylineHaze';
+    mat.customProgramCacheKey=()=>'skylineHaze'; windowLights(mat);   // Z280 the skyline's windows light up at night too
     const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });
     im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; im.renderOrder=-7; g.add(im); }
   return g; }

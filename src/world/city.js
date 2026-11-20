@@ -153,8 +153,21 @@ export function cityBuildings(){ return BLD; }
 // ---------- building kinds (front faces +z in the local frame; ox,oz = footprint centre; ry = rotation) ----------
 // Z264 a Meshy building on the lot: scaled into the footprint (the same scale up, so it keeps its own proportions), cut into floor slices that are
 //   pieces of the breakable-floor system like every other floor (shells bring them down from the top; scars, ruin, solid footprint as before)
+// Z280 WINDOWS AT NIGHT: on the Meshy buildings, the glass (bluish or dark in the facade photo) lights up after dusk, cell by cell (a world-space
+//   grid of rooms, hashed): about half the rooms on, most warm, some cool-white office light, each a little brighter or dimmer — the emissive
+//   strength is the landmark glow (LAND.mats, 0 by day), so the city's towers become constellations of lit windows as night falls
+export const WIN_K={ value:0 };   // the night's window glow (world/landmarks.js updateLandmarkGlow)
+export function windowLights(m){ const prev=m.onBeforeCompile, pk=m.customProgramCacheKey;
+  m.onBeforeCompile=(sh,r)=>{ if(prev) prev.call(m,sh,r); sh.uniforms.uWinShare={ value:REALCITY.windows.share }; sh.uniforms.uWinK=WIN_K;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWinP;').replace('#include <begin_vertex>','#include <begin_vertex>\n vWinP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWinP; uniform float uWinShare, uWinK;').replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+      { vec3 bc = diffuseColor.rgb; float lum = dot(bc, vec3(0.299, 0.587, 0.114)), glassy = clamp(smoothstep(0.06, 0.18, bc.b - bc.r) * smoothstep(0.55, 0.2, lum) + smoothstep(0.18, 0.06, lum) * 0.5, 0.0, 1.0);
+        vec3 cell = floor(vWinP / vec3(${REALCITY.windows.cell[0].toFixed(2)}, ${REALCITY.windows.cell[1].toFixed(2)}, ${REALCITY.windows.cell[0].toFixed(2)})); float h = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        vec3 tint = mix(vec3(1.0, 0.7, 0.36), vec3(0.78, 0.88, 1.0), step(0.78, fract(h * 7.3)));
+        totalEmissiveRadiance += uWinK * glassy * step(1.0 - uWinShare, h) * tint * (0.55 + 0.45 * fract(h * 13.1)) * ${REALCITY.windows.k.toFixed(2)}; }`); };
+  m.customProgramCacheKey=()=>(pk?pk.call(m):'')+'|win'; return m; }
 function meshyBuilding(M, kind, ox,oz,ry,w,d,hpPer,col,FH){ const y0=heightAt(ox,oz)-0.05, s=M.size, k=Math.min(w/s.x, d/s.z), H=s.y*k, n=Math.max(2, Math.min(40, Math.round(H/FH)));
-  const Bd=newBld(kind, ox,oz,ry, s.x*k, s.z*k, y0, hpPer, col), bands=floorBands(M, n), b=bucket('mb_'+M.key, ()=>pieceHook(M.mat.clone()), true);
+  const Bd=newBld(kind, ox,oz,ry, s.x*k, s.z*k, y0, hpPer, col), bands=floorBands(M, n), b=bucket('mb_'+M.key, ()=>pieceHook(windowLights(M.mat.clone())), true);   // Z280 lit windows at night
   bands.forEach((band,i)=>{ floorPiece(Bd, y0+H*i/n, y0+H*(i+1)/n); if(!band.attributes.position.count) return; const g=band.clone(); g.scale(k,k,k); b.geos.push(place(g, ox, y0, oz, ry)); });
   endBld(Bd); return H; }
 function tubeHouse(ox,oz,ry,w,d){ const floors=2+((Math.random()*4)|0), col=WALLC[(Math.random()*WALLC.length)|0], y0=heightAt(ox,oz)-0.05, FH=3.2, H=3.6+floors*FH;

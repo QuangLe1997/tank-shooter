@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY } from '../../config.js';
-import { ARENA, BIOME, MAGMA, MOBILE, REAL_CITY, _mergeColored, loadRealCity, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart } from '../hub.js';
+import { ARENA, BIOME, MAGMA, MOBILE, REAL_CITY, _mergeColored, loadRealCity, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart, windowLights } from '../hub.js';
 
 export const WONDER = { g:null, name:'', x:0, z:0, spin:[], smoke:[], at:0 };
 const P=[], PY=[]; const add=(geo,x,y,z,col,ry)=>{ if(ry) geo.rotateY(ry); geo.translate(x,y,z); P.push({ geo, col }); };
@@ -80,8 +80,8 @@ export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) 
   if(BIOME.name==='HILLS'){ g.add(greatWall()); const am=-1.55, rm=fieldR(am)+12; WONDER.x=Math.cos(am)*rm; WONDER.z=Math.sin(am)*rm; return; }
   if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); windmills(w); WONDER.x=x; WONDER.z=z; return; }
   if(BIOME.name==='CITY'){ WONDER.x=x; WONDER.z=z; const put=()=>{ const M=REAL_CITY.bld_landmark; if(!M || WONDER.g!==g) return false;   // Z267 the real Landmark 81 (Z268 rebuilt by Tripo from a photo: its stepped square shafts), the stacked boxes only if it never loads
-      const m=new THREE.Mesh(M.geo, M.mat), k=REALCITY.landmarkH/M.size.y; m.scale.setScalar(k); m.position.set(x, heightAt(x,z)-REALCITY.landmarkSink*REALCITY.landmarkH, z); m.rotation.y=-a-Math.PI/2; m.castShadow=m.receiveShadow=true; g.add(m);
-      const Bx=REAL_CITY.bld_bitexco, BC=REALCITY.bitexco; if(Bx){ const c=Math.cos(BC.turn), s=Math.sin(BC.turn), bx=(x*c-z*s)*1.22, bz=(x*s+z*c)*1.22, b=new THREE.Mesh(Bx.geo, Bx.mat), kb=BC.h/Bx.size.y;   // Z268 Bitexco beside it, further out
+      const m=new THREE.Mesh(M.geo, windowLights(M.mat.clone())), k=REALCITY.landmarkH/M.size.y; m.scale.setScalar(k); m.position.set(x, heightAt(x,z)-REALCITY.landmarkSink*REALCITY.landmarkH, z); m.rotation.y=-a-Math.PI/2; m.castShadow=m.receiveShadow=true; g.add(m);
+      const Bx=REAL_CITY.bld_bitexco, BC=REALCITY.bitexco; if(Bx){ const c=Math.cos(BC.turn), s=Math.sin(BC.turn), bx=(x*c-z*s)*1.22, bz=(x*s+z*c)*1.22, b=new THREE.Mesh(Bx.geo, windowLights(Bx.mat.clone())), kb=BC.h/Bx.size.y;   // Z268 Bitexco beside it, further out
         b.scale.setScalar(kb); b.position.set(bx, heightAt(bx,bz)-BC.sink*BC.h, bz); b.rotation.y=-Math.atan2(bz,bx)-Math.PI/2; b.castShadow=b.receiveShadow=true; g.add(b); }
       return true; };
     if(put()) return; loadRealCity().then(ok=>{ if(!put() && WONDER.g===g){ P.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85 })); P.length=0; m.position.set(x, heightAt(x,z)-0.3, z); m.rotation.y=-a-Math.PI/2; g.add(m); } }); return; }
