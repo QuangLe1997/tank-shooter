@@ -852,6 +852,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), i=fs.readFileSync('src/game/intro.js','utf8');
   ok(C.INTRO_CITY.on && /function cityShots/.test(i) && /function streetShot/.test(i) && /function playShot/.test(i) && /updateTraffic\(dt\); \}/.test(fs.readFileSync('src/game/loop.js','utf8')), 'city intro: two cut shots before the grand tour, traffic moving'); }
 
+// Z289 no black shards: weak normals repaired on load; skyline spread evenly
+{ const fs=await import('node:fs'); const m=fs.readFileSync('src/actors/models.js','utf8'), h=fs.readFileSync('src/world/horizon.js','utf8');
+  ok(/export function fixNormals/.test(m) && /fixNormals\(o\.geometry\)/.test(m) && (h.match(/\(i\+0\.15\+Math\.random\(\)\*0\.7\)\/n/g)||[]).length===2, 'weak normals fixed on load, skyline towers spread round the ring'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

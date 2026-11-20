@@ -42,11 +42,20 @@ let _loader = null;
 const procOnly = () => typeof location !== 'undefined' && /procgun/.test((location.search || '') + (location.hash || ''));
 const loader = () => (_loader = _loader || new GLTFLoader());
 // the whole glTF (scene + animations), shared — clone the scene per use (SkeletonUtils.clone for skinned ones)
+// Z289 a normal squashed to ~zero by mesh simplification / quantisation makes normalize() NaN in the shader, and the NaN guard paints that
+//   triangle black (the black shards on the skyline towers). Any such vertex takes its triangle's own face normal when the model loads.
+const _fa=new THREE.Vector3(), _fb=new THREE.Vector3(), _fc=new THREE.Vector3();
+export function fixNormals(geo){ const N=geo.attributes.normal, P=geo.attributes.position; if(!N || !P) return 0; let bad=0; const weak=i=>Math.hypot(N.getX(i), N.getY(i), N.getZ(i))<0.5;
+  for(let i=0;i<N.count;i++) if(weak(i)){ bad++; break; } if(!bad) return 0; bad=0; const I=geo.index, n=I?I.count:P.count;
+  for(let t=0;t+2<n;t+=3){ const a=I?I.getX(t):t, b=I?I.getX(t+1):t+1, c=I?I.getX(t+2):t+2; if(!weak(a) && !weak(b) && !weak(c)) continue;
+    _fa.fromBufferAttribute(P,a); _fb.fromBufferAttribute(P,b).sub(_fa); _fc.fromBufferAttribute(P,c).sub(_fa); _fb.cross(_fc); if(_fb.lengthSq()<1e-20) _fb.set(0,1,0); _fb.normalize();
+    for(const v of [a,b,c]) if(weak(v)){ N.setXYZ(v, _fb.x, _fb.y, _fb.z); bad++; } }
+  for(let i=0;i<N.count;i++) if(weak(i)){ N.setXYZ(i,0,1,0); bad++; } N.needsUpdate=true; return bad; }
 export function loadGLTF(key){
   if(_gl[key]) return _gl[key];
   if(procOnly() || typeof window === 'undefined') return (_gl[key] = Promise.resolve(null));
   return (_gl[key] = loader().loadAsync(MODEL_FILES[key]).then(gl => {
-    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } }); return gl;
+    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); return gl;
   }).catch(e => { console.warn('[models]', key, 'not loaded — keeping the procedural one:', e && e.message); return null; })); }
 export function loadModel(key){
   if(_load[key]) return _load[key];

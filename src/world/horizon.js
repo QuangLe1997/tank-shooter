@@ -57,7 +57,8 @@ const _r=(a,b)=>a+Math.random()*(b-a);
 // Z268 no apartment slabs (their open ground floors read as floating), count / depth per ring · Z267 offices too, glass towers twice as often, a lighter veil (REALCITY.skyHaze) so they keep their glass and stone, and all of them in front of
 //   the hill ring at R + 65 (behind it their feet were hidden and they floated on the ridge)
 function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bld_office','bld_glass','bld_office','bld_hotel'].filter(k=>REAL_CITY[k]); if(!keys.length) return null; const n=Math.round((count||56)*(MOBILE?0.55:1)), per={}, g=new THREE.Group();
-  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+8+Math.random()*(depth||48), h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
+  const a0=Math.random()*6.283; for(let i=0;i<n;i++){ const a=a0+(i+0.15+Math.random()*0.7)/n*Math.PI*2, r=R+8+Math.random()*(depth||48),   // Z289 spread evenly round the ring (jittered): no clumps, no empty gaps of sky
+    h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
   const M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), S3=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
   for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.max(REALCITY.skyHaze, mix) }, hc={ value:fogC.clone() };
     mat.onBeforeCompile=sh=>{ sh.uniforms.hzAmt=hz; sh.uniforms.hzCol=hc; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>','#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
@@ -67,7 +68,8 @@ function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bl
   return g; }
 function skyline(R, H, kind, base, fogC, mix){ if(kind==='city' && realCityReady()){ const rs=realSkyline(R, H*1.15, fogC, Math.min(0.85, mix+0.12)); if(rs) return rs; }
   const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);
-  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+(Math.random()-0.5)*30, w=kind==='stacks'?3+Math.random()*3:8+Math.random()*16, h=kind==='stacks'?H*(0.6+Math.random()*0.8):H*(0.25+Math.random()*0.75);
+  const a0=Math.random()*6.283; for(let i=0;i<n;i++){ const a=a0+(i+0.15+Math.random()*0.7)/n*Math.PI*2, r=R+(Math.random()-0.5)*30,   // Z289 evenly round, jittered
+    w=kind==='stacks'?3+Math.random()*3:8+Math.random()*16, h=kind==='stacks'?H*(0.6+Math.random()*0.8):H*(0.25+Math.random()*0.75);
     const g=kind==='stacks' && Math.random()<0.6 ? new THREE.CylinderGeometry(w*0.4,w*0.55,h,8) : new THREE.BoxGeometry(w,h,w*(0.6+Math.random()*0.8)); g.translate(Math.cos(a)*r, h/2-6, Math.sin(a)*r); g.rotateY(0); geos.push(g); }
   const merged=mergeGeos(geos); const m=new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ color:c, fog:false })); m.renderOrder=-7; m.frustumCulled=false; return m; }
 function mergeGeos(list){ let n=0; for(const g of list) n+=g.toNonIndexed().attributes.position.count; const out=new Float32Array(n*3); let o=0;
