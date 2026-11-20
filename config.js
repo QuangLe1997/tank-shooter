@@ -150,9 +150,10 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 // Z311 WHAT A RIDE RUNS INTO (game/ride-collide.js — a bike or a horse): trees, poles, parked cars, a stone knee-high or more (rock m radius), the city's
 //   street furniture and every wire stop it — head-on it stops dead, a glancing blow slides it along, hard enough a bike goes down (RIDE.crash.v); the light
 //   pieces (knock) go over at knockV m/s, a wire bay or coil is flattened at wireV (wireW m deep); each costs slow of its speed. A low thing (XEOM.air.low)
-//   is only leapt in a wheelie (a horse jumps it: horse) — horse = how high a horse clears at a gallop, how fast it must be going, its spring
+//   is only leapt in a wheelie (a horse jumps it: horse) — Z321 horse = the tallest thing a horse clears at a gallop (m), the speed it must be going (m/s), its spring
+//   off the ground (m/s, least and most), its fall (m/s²), how much higher than its hooves at rest it can lift them (tuck m)
 export const RIDE_HIT = { rock:0.45, knock:['prop_bin','prop_chair','prop_cafe','prop_barrier','city_stall'], knockV:3.5, wireV:5.5, wireW:0.7, slow:0.75,
-  horse:{ h:1.6, v:6, vy:[4.2, 5.6] } };
+  horse:{ h:1.6, v:6, vy:[3.6, 6.2], g:14, tuck:0.35 } };
 // Z305 cloth masks fitted to a driver's face (by model), all as shares of h = Head bone → HeadTop_End, measured from the Head bone (u right, v up, f ahead):
 //   cols / rows = the grid the face is read on · halfW = half-width (the cheek sides, where the face turns) · top = the edge over the nose bridge (his lower
 //   eyelids are at v 0.32), dipping by dip under the eyes once noseW of the half-width out (an inverted V over the nose) · bottom = under the chin, rising

@@ -154,7 +154,7 @@ function rideRocks(H, v, X){ const W = X.wheels, R = XEOM.air.rock, s = H.sus, a
 export function bikeHop(H, vy){ const A = H && H.air; if(!A || A.y > 0.02 || !(vy > 0)) return false; A.vy = Math.max(A.vy, vy); A.y = Math.max(A.y, 0.001); return true; }
 function airborne(H, dt, v){ const A = H.air, AC = XEOM.air, s = H.sus; A.landT = Math.max(0, A.landT - dt); if(!(A.y > 0)) return;
   A.vy -= AC.g * dt; A.y += A.vy * dt;
-  if(A.y <= 0){ const imp = -A.vy; A.y = 0; A.vy = 0; A.over = null; s.vy -= imp * AC.land; s.vp -= imp * AC.land * 0.8; A.landT = AC.landT;   // (down on the springs, nose first after a wheelie)
+  if(A.y <= 0){ const imp = -A.vy; A.y = 0; A.vy = 0; A.over = null; A.leapH = 0; s.vy -= imp * AC.land; s.vp -= imp * AC.land * 0.8; A.landT = AC.landT;   // (down on the springs, nose first after a wheelie)
     if(imp > 1.2){ sfx('thud', undefined, Math.min(1, imp / 4)); if(H.wheels) for(const w of H.wheels){ w.pivot.getWorldPosition(_rk); spawnPart(_rk.x, _rk.y - 0.25, _rk.z, (Math.random() - 0.5) * 2, 0.8 + Math.random(), (Math.random() - 0.5) * 2, { color:0xbfa88a, size:0.6, life:0.7, grav:2.5, drag:1.2, smoke:true, op:0.45 }); } } }
   H.T.position.y += A.y / XEOM.k; }
 // the bike's motion: lean into the turn, a little bob on the road, a word from the driver now and then

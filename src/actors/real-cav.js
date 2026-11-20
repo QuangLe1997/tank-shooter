@@ -180,8 +180,9 @@ export function fitRealCav(CV){
 export function updateRealCav(CV, dt, P){
   const R = CV.real; if(!R || !dt) return; const H = CV.H, G = CV.G, C = REALCAV;
   // the horse
-  const g = H.gait, v = Math.abs(H.v || 0), hk = g === 'idle' ? 'Idle' : g === 'walk' ? 'Walk' : (g === 'trot' || g === 'canter') ? 'Canter' : 'Sprint';
-  if(R.hm){ blend(R.HA, hk, hk === 'Idle' ? 1 : clamp(v / C.horseV[hk], 0.6, 1.5), dt); R.hm.update(dt); }
+  const g = H.gait, v = Math.abs(H.v || 0), leap = H.air && H.air.y > 0.02 && R.HA && R.HA.Jump_Sprint, hk = leap ? 'Jump_Sprint' : g === 'idle' ? 'Idle' : g === 'walk' ? 'Walk' : (g === 'trot' || g === 'canter') ? 'Canter' : 'Sprint';   // (Z321 in mid-leap it jumps)
+  if(leap && H.air.jumpNew){ H.air.jumpNew = false; R.HA.Jump_Sprint.time = 0; }   // (from take-off, played over just the time it is in the air)
+  if(R.hm){ blend(R.HA, hk, hk === 'Idle' ? 1 : leap ? R.HA.Jump_Sprint.getClip().duration / (H.air.flight || 0.7) : clamp(v / C.horseV[hk], 0.6, 1.5), dt); R.hm.update(dt); }
   // the rider: on the real horse's back while mounted (every mount / respawn puts the rig on the procedural body bone — move it to the seat)
   const bike = H.bike, stand = bike && XEOM[bike].pose === 'stand';   // Z293 on a war ride he keeps the ride's own seat (seatRider): sat on it, or standing in the bed
   if(!bike && G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }
