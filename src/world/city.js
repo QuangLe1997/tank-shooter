@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OPEN_LAND, REALCITY } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , photoSurface } from '../hub.js';
+import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -235,12 +235,23 @@ function gazebo(x,z){ const y=heightAt(x,z); det(new THREE.CylinderGeometry(3,3,
 let strip=null;
 
 // ---------- the district ----------
-export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; CURP=0;
+// Z265 street ironwork: cast-iron manhole covers (raised pattern, a rim, rust in the grooves) and gutter grates (slots), instanced, flush with the road
+const ironT=(k)=>tex(k,128,128,(x)=>{ x.fillStyle='#2e2c2a'; x.fillRect(0,0,128,128);
+  if(k==='mh'){ x.strokeStyle='#4a4642'; x.lineWidth=6; x.beginPath(); x.arc(64,64,58,0,7); x.stroke(); x.lineWidth=3; for(let r=14;r<54;r+=10){ x.beginPath(); x.arc(64,64,r,0,7); x.stroke(); }
+    for(let a=0;a<12;a++){ x.beginPath(); x.moveTo(64+Math.cos(a/12*6.283)*14,64+Math.sin(a/12*6.283)*14); x.lineTo(64+Math.cos(a/12*6.283)*52,64+Math.sin(a/12*6.283)*52); x.stroke(); } }
+  else { x.fillStyle='#4a4642'; x.fillRect(4,4,120,120); x.fillStyle='#0c0b0a'; for(let i=0;i<9;i++) x.fillRect(12+i*12.5,14,6,100); }
+  for(let n=0;n<160;n++){ x.fillStyle='rgba('+(110+Math.random()*60|0)+','+(60+Math.random()*30|0)+',30,'+(Math.random()*0.25)+')'; x.fillRect(Math.random()*128,Math.random()*128,3,3); } });
+function drawFixtures(fix){ const M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), S1=new THREE.Vector3(1,1,1), up=new THREE.Vector3(0,1,0);
+  for(const k of ['mh','dr']){ const L=fix.filter(f=>f.k===k); if(!L.length) continue; const T=ironT(k), geo=k==='mh'?new THREE.CylinderGeometry(0.42,0.42,0.03,24):new THREE.BoxGeometry(0.42,0.03,0.85);
+    const m=new THREE.MeshStandardMaterial({ map:T.t, bumpMap:T.t, bumpScale:2, roughness:0.62, metalness:0.55, envMapIntensity:0.8 }), im=new THREE.InstancedMesh(geo, m, L.length);
+    L.forEach((f,i)=>{ const [x,z]=f.p; im.setMatrixAt(i, M4.compose(V.set(x, heightAt(x,z)+0.05, z), Q.setFromAxisAngle(up, f.ry), S1)); });
+    im.instanceMatrix.needsUpdate=true; im.receiveShadow=true; arena.add(im); LAND.meshes.push(im); } }
+export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; CURP=0; const fix=[];
   const n=Math.ceil(ARENA/G), cars=[], motos=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[];
   const inCity=(x,z,m)=>inField(x,z,m||4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<ARENA*0.86;
   const RT=roadT(), BT=bvdT(), WT=walkT(), ZT=zebraT(), PT=parkT();
-  const roadMat=()=>photoSurface(detailize(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), 'asphalt_01', 2.08, true, REALCITY.asphalt), bvdMat=()=>photoSurface(detailize(new THREE.MeshStandardMaterial({ map:BT.t, roughness:0.8 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), 'asphalt_01', 2.08, true, REALCITY.asphalt);   // Z264 photographed asphalt under the painted lines
-  const walkMat=()=>photoSurface(detailize(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 }), 'pavement_02', 2.12, false, REALCITY.pavement), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 }), grassMat=()=>new THREE.MeshStandardMaterial({ map:PT.t, roughness:0.95 });
+  const ASP={ set:'asphalt_01', tile:2.08, lanes:true, marks:true, hi:!MOBILE, tint:REALCITY.asphalt }, roadMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), ASP), bvdMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:BT.t, roughness:0.8 }), ASP);   // Z265 real asphalt: wheel paths, oil, gutters, patches, cracks, worn paint, puddles
+  const walkMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { set:'pavement_02', tile:2.12, wet:0.3, tint:REALCITY.pavement }), zebMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 }), { ...ASP, lanes:false }), grassMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:PT.t, roughness:0.95 }), { set:'sparse_grass', tile:3.12, hard:false, wet:0.12, hi:!MOBILE, tint:REALCITY.lawn });   // Z265 photographed lawn on the medians and parks
   strip=(key,mk,x,z,len,wid,ang,y,tl,tw)=>{ const g=new THREE.PlaneGeometry(len,wid), uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*len/tl, uv.getY(i)*(tw?wid/tw:1)); g.rotateX(-Math.PI/2); g.rotateY(ang); g.translate(x, heightAt(x,z)+y, z); bucket(key,mk).geos.push(tag(g,0)); };
   const kerb=(x,z,len,ang)=>{ CURP=0; det(new THREE.BoxGeometry(len,0.18,0.16), x, heightAt(x,z)+0.09, z, ang, 0x8a8a84); };
   const sideRy=(ax,sd)=>ax?(sd>0?-Math.PI/2:Math.PI/2):(sd>0?Math.PI:0);
@@ -252,6 +263,9 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
       strip('median', grassMat, ...at(0,0), L, MED-0.3, ang, 0.14, 4, 4); for(const sd of [-1,1]) kerb(...at(0, sd*MED/2), L, ang);
       for(let s=-L/2+4; s<L/2-3; s+=10){ const [x,z]=at(s,0); if((s/10|0)%2) palms.push({ x, z, s:_R(0.85,1.05), ry:_R(0,6.28) }); else { lamps.push({ x, z, ry:ang+Math.PI/2 }); lamps.push({ x, z, ry:ang-Math.PI/2 }); } } }
     else strip('road', roadMat, cx, cz, L, W, ang, 0.04, 8);
+    { const half=blvd?BV/2:W/2, lanes=blvd?[-(MED/2+(BV-MED)/4), MED/2+(BV-MED)/4]:[0];   // Z265 manhole covers down the lanes, drain grates at the kerbs
+      for(let s=-L/2+4; s<L/2-4; s+=_R(16,30)){ const lc=lanes[(Math.random()*lanes.length)|0]+_R(-1.6,1.6); fix.push({ k:'mh', p:at(s, lc), ry:Math.random()*6.28 }); }
+      for(const sd of [-1,1]) for(let s=-L/2+5; s<L/2-4; s+=_R(14,24)) fix.push({ k:'dr', p:at(s, sd*(half-0.32)), ry:ang }); }
     const polesSide = !blvd && Math.random()<0.75 ? (Math.random()<0.5?1:-1) : 0, chain=[];
     for(const sd of [-1,1]){ const ow=sd*(W/2+WW/2); strip('walk', walkMat, ...at(0,ow), L, WW, ang, 0.12, 2, 2); kerb(...at(0, sd*(W/2+0.08)), L, ang);
       if(blvd){ for(let s=-L/2+3; s<L/2-2; s+=9){ const [x,z]=at(s, sd*(W/2+WW-0.9)); trees.push({ x, z, s:_R(0.85,1.1), ry:_R(0,6.28) }); }
@@ -328,6 +342,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
     m.castShadow=!/road|walk|zebra|park|bvd|median|path|lawn|drive|pitch/.test(k); m.receiveShadow=true; if(b.pieces) m.customDepthMaterial=depthMat(); arena.add(m); LAND.meshes.push(m); }
   if(P.length){ const m=new THREE.Mesh(mergeP(P), pieceHook(detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.8, metalness:0.1 }), { scale:0.6, bump:0.012, alb:0.3, foot:0.8, streak:0.2 }))); m.customDepthMaterial=depthMat(); m.castShadow=true; m.receiveShadow=true; arena.add(m); LAND.meshes.push(m); }
   drawStreetVehicles(cars, motos);
+  drawFixtures(fix);   // Z265
   for(const [list, geo] of [[trees, treeBroadleaf()], [palms, treePalm()]]){ if(!list.length) continue; const im=new THREE.InstancedMesh(geo, floraMat(), list.length);
     list.forEach((o,k)=>{ _M4.compose(_v3.set(o.x,heightAt(o.x,o.z),o.z), _qy.setFromEuler(_eu.set(0,o.ry,0)), _sc.set(o.s,o.s,o.s)); im.setMatrixAt(k,_M4); crushables.push({ x:o.x, z:o.z, r:0.55*o.s, im, k, alive:true, kind:'tree', ry:o.ry, s:o.s, land:true }); });
     im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }

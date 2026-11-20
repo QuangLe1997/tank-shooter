@@ -3,7 +3,7 @@
 // that lay world-aligned UVs (one texture tile = the set's real size in metres) so blocks keep their true scale on every face. Used by the Giza
 // pyramids (limestone courses with ragged, robbed-out edges and a smooth casing cap) and by the highland cliffs / rocks.
 import * as THREE from 'three';
-import { STONE } from '../../config.js';
+import { STONE, STREET } from '../../config.js';
 import { photoDiff, photoSet } from '../hub.js';
 
 const _mats = {};
@@ -80,18 +80,46 @@ export function hillDetail(m, biome, amt){ const H = STONE.hills, U = { hdA:{ va
   if(typeof window !== 'undefined' && !/procstone/.test(location.search + location.hash)) Promise.all([photoDiff(H.sets[biome] || H.sets._), photoDiff('rock_face')]).then(([a, r]) => { U.hdA.value = a; U.hdR.value = r; U.hdOn.value = 1; }).catch(() => {});
   return m; }
 
-// Z264 a photographed street surface laid over a painted one in world space (one tile = the set's real size): asphalt keeps the painted lane
-//   markings (the bright paint shows through), a pavement takes the photo whole; chained after any shader the material already has
-export function photoSurface(m, set, tile, keepMarks, tint){ const U = { psMap:{ value:null }, psOn:{ value:0 }, psT:{ value:1 / tile }, psTint:{ value:new THREE.Color().setRGB(...(tint || [1, 1, 1])) } };
-  const prev = m.onBeforeCompile, pk = m.customProgramCacheKey;
+// Z265 REAL STREETS: the city's asphalt (and paving) drawn from a photographed set at 2K — colour, normal and roughness, sampled without visible
+//   repeats — with what a lived-in street carries: two polished, darker wheel paths in every lane and an oily drip line down its middle, sand and
+//   grit along the gutters, rectangular repair patches of newer asphalt, a crack network, the painted lines worn patchy, and puddles that turn
+//   the surface into a dark mirror of the sky (glossy, flat), their damp rims darker. o = { set, tile (m), lanes (a two-lane carriageway: v runs
+//   0→1 across it), marks (keep the painted lines of the material's own map), hard (false: no repairs / cracks — a lawn), tint, wet (puddle share) }
+export function streetSurface(m, o){ const S = STREET, U = { ssD:{ value:null }, ssN:{ value:null }, ssA:{ value:null }, ssOn:{ value:0 }, ssT:{ value:1 / o.tile }, ssTint:{ value:new THREE.Color().setRGB(...(o.tint || [1, 1, 1])) }, ssWet:{ value:o.wet ?? S.wet } };
+  const prev = m.onBeforeCompile, pk = m.customProgramCacheKey, f = v => v.toFixed(3);
   m.onBeforeCompile = (sh, r) => { if(prev) prev.call(m, sh, r); Object.assign(sh.uniforms, U);
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vPSW;').replace('#include <project_vertex>', '#include <project_vertex>\n vPSW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D psMap; uniform float psOn, psT; uniform vec3 psTint; varying vec3 vPSW;')
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSSW; varying vec2 vSSUv;').replace('#include <project_vertex>', '#include <project_vertex>\n vSSW = (modelMatrix * vec4(transformed, 1.0)).xyz; vSSUv = uv;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+uniform sampler2D ssD, ssN, ssA; uniform float ssOn, ssT, ssWet; uniform vec3 ssTint; varying vec3 vSSW; varying vec2 vSSUv;
+float ssH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float ssV(vec2 p){ vec2 i = floor(p), q = fract(p), u = q * q * (3.0 - 2.0 * q); return mix(mix(ssH(i), ssH(i + vec2(1.0, 0.0)), u.x), mix(ssH(i + vec2(0.0, 1.0)), ssH(i + vec2(1.0, 1.0)), u.x), u.y); }
+float ssF(vec2 p){ float s = 0.0, a = 0.5; for(int i = 0; i < 4; i++){ s += a * ssV(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; } return s; }
+vec4 ssTex(sampler2D s, vec2 uv){ float k = ssV(uv * 0.3) * 8.0, fr = fract(k), ia = floor(k); vec2 dx = dFdx(uv), dy = dFdy(uv);
+  vec4 a = textureGrad(s, uv + sin(vec2(3.0, 7.0) * ia), dx, dy), b = textureGrad(s, uv + sin(vec2(3.0, 7.0) * (ia + 1.0)), dx, dy); return mix(a, b, smoothstep(0.2, 0.8, fr - 0.1 * dot(a.rgb - b.rgb, vec3(1.0)))); }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
+      float ssPud = 0.0, ssDamp = 0.0, ssWheel = 0.0;
       #ifdef USE_MAP
-      if(psOn > 0.5){ vec3 ph = texture2D(psMap, vPSW.xz * psT).rgb * psTint; float mark = ${keepMarks ? 'smoothstep(0.42, 0.6, dot(sampledDiffuseColor.rgb, vec3(0.333)))' : '0.0'};
-        diffuseColor.rgb = mix(ph, diffuseColor.rgb, mark); }
-      #endif`); };
-  m.customProgramCacheKey = () => (pk ? pk.call(m) : '') + '|ps' + (keepMarks ? 1 : 0);
-  if(typeof window !== 'undefined' && !/procstreet/.test(location.search + location.hash)) photoDiff(set).then(t => { U.psMap.value = t; U.psOn.value = 1; }).catch(() => {});
+      if(ssOn > 0.5){ vec2 wp = vSSW.xz; vec3 ph = ssTex(ssD, wp * ssT).rgb * ssTint; float v = vSSUv.y;
+        float mark = ${o.marks ? 'smoothstep(0.42, 0.6, dot(sampledDiffuseColor.rgb, vec3(0.333))) * smoothstep(0.22, 0.6, ssF(wp * 2.3))' : '0.0'};   // painted lines, worn patchy
+        ${o.lanes ? `float lv = fract(v * 2.0); ssWheel = exp(-pow((lv - 0.3) / 0.06, 2.0)) + exp(-pow((lv - 0.7) / 0.06, 2.0));
+        float oil = exp(-pow((lv - 0.5) / 0.05, 2.0)) * smoothstep(0.42, 0.75, ssF(vec2(vSSUv.x * 1.3, v * 4.0)));
+        float gut = smoothstep(0.07, 0.0, v) + smoothstep(0.93, 1.0, v);
+        ph *= 1.0 - ${f(S.wheel)} * ssWheel; ph = mix(ph, ph * vec3(0.5, 0.46, 0.42), oil * ${f(S.oil)}); ph = mix(ph, ph * vec3(1.05, 0.95, 0.78), gut * 0.55);` : ''}
+        float patchK = 0.0; ${o.hard === false ? '' : `vec2 cell = floor((wp + ssV(wp * 0.21) * 1.4) / vec2(3.2, 2.4)); patchK = step(${f(1 - S.patch)}, ssH(cell)); ph *= mix(1.0, 0.84 + 0.1 * ssH(cell + 7.0), patchK);   // repairs, their edges a little ragged
+        float crack = smoothstep(0.035, 0.0, abs(ssF(wp * 0.55 + ssF(wp * 1.7) * 0.7) - 0.5)) * smoothstep(0.52, 0.72, ssF(wp * 0.12 + 3.1)); ph *= 1.0 - 0.5 * crack;`}
+        float wet = ssF(wp * 0.085 + 11.3); ssDamp = smoothstep(${f(S.puddle - 0.09)}, ${f(S.puddle - 0.01)}, wet) * ssWet; ssPud = smoothstep(${f(S.puddle)}, ${f(S.puddle + 0.05)}, wet) * ssWet * (1.0 - patchK * 0.4);
+        vec3 col = mix(ph, sampledDiffuseColor.rgb * vec3(0.94, 0.92, 0.84), mark); col *= 1.0 - ${f(S.dampDark)} * ssDamp; col *= 1.0 - 0.55 * ssPud;   // standing water: the surface under it goes dark, the sky takes over
+        diffuseColor.rgb = col; }
+      #endif`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      if(ssOn > 0.5){ roughnessFactor = ssTex(ssA, vSSW.xz * ssT).g * ${f(S.rough)}; roughnessFactor *= 1.0 - 0.25 * ssWheel; roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.6, ssDamp); roughnessFactor = mix(roughnessFactor, 0.04, ssPud); }`)
+      .replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
+      #ifdef USE_ENVMAP
+      radiance *= 1.0 + ${f(S.mirror)} * ssPud + 0.6 * ssDamp;   // the puddles mirror the sky
+      #endif`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      if(ssOn > 0.5){ vec3 nm = ssTex(ssN, vSSW.xz * ssT).xyz * 2.0 - 1.0; vec3 nw = normalize(vec3(nm.x * ${f(S.nrm)}, 1.0, -nm.y * ${f(S.nrm)})); nw = normalize(mix(nw, vec3(0.0, 1.0, 0.0), ssPud)); normal = normalize((viewMatrix * vec4(nw, 0.0)).xyz); }`); };
+  m.customProgramCacheKey = () => (pk ? pk.call(m) : '') + '|street' + (o.lanes ? 1 : 0) + (o.marks ? 1 : 0);
+  m.envMapIntensity = Math.max(m.envMapIntensity, S.env);
+  if(typeof window !== 'undefined' && !/procstreet/.test(location.search + location.hash)) photoSet(o.set, !!o.hi).then(P => { U.ssD.value = P.diff; U.ssN.value = P.nor; U.ssA.value = P.arm; U.ssOn.value = 1; }).catch(() => {});
   return m; }

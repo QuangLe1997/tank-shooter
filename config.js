@@ -567,9 +567,13 @@ export const REALTREE = { env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }
 //   radius (m × the tree's scale), hitH = the height a round still strikes the tree; minDmg = the least damage a round needs to fell one; a blast of
 //   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands
 export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18 };
+// Z265 REAL STREETS (world/stone.js streetSurface): wet = the share of the street under puddles (0 = dry), wheel = how much darker the wheel paths,
+//   oil = the drip line's strength, patch = the share of 3 m cells re-laid with newer asphalt, dampDark = how dark the damp rims, rough = roughness ×,
+//   nrm = photo normal strength, env = reflection strength (the puddles mirror the sky), puddle = the wetness-noise level above which water stands (lower = more), mirror = extra sky reflection in it
+export const STREET = { wet:0.9, puddle:0.55, mirror:3.5, wheel:0.2, oil:0.6, patch:0.08, dampDark:0.42, rough:1.0, nrm:1.4, env:1.0 };
 // Z264 REAL CITY (world/real-city.js): Meshy buildings by role (tower / apartment / row — cut into floor slices) and vehicles (carFor = which model a
 //   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
-export const REALCITY = { env:0.8, share:0.85, asphalt:[0.62, 0.62, 0.64], pavement:[0.8, 0.78, 0.74],   // street photo albedo ×
+export const REALCITY = { env:0.8, share:0.85, asphalt:[0.62, 0.62, 0.64], pavement:[0.72, 0.72, 0.72], lawn:[0.78, 0.9, 0.62],   // street photo albedo ×
  
   blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_shophouse:{ role:'row' } },   // (the stone tower came out with a broken diagonal glass panel: left out)
   carTint:0.55, cars:{ car_sedan:{ yaw:1.5708, L:4.8 }, car_taxi:{ yaw:1.5708, L:4.6 }, car_suv:{ yaw:1.5708, L:4.9 }, car_van:{ yaw:1.5708, L:5.4 }, car_bus:{ yaw:1.5708, L:11 } },
