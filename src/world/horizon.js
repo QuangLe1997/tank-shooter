@@ -2,7 +2,7 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, BIOME, MOBILE, S, SKY, hillDetail, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
+import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
 import { STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
@@ -52,7 +52,19 @@ function ring(R, H, kind, base, hi, fogC, mix, seed){ const skyC=SKY.material.un
   const m=new THREE.Mesh(g, hillDetail(new THREE.MeshLambertMaterial({ vertexColors:true, fog:false, emissive:fogC.clone().multiplyScalar(0.03+mix*0.16) }), BIOME.name, Math.max(0, (1-mix)*STONE.hills.near))); m.renderOrder=-8; m.frustumCulled=false; return m; }   // Z259 photographed detail, fading with the haze
 const _r=(a,b)=>a+Math.random()*(b-a);
 // a skyline: towers / stacks standing on the nearest ring
-function skyline(R, H, kind, base, fogC, mix){ const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);
+// Z264 a real skyline: the city's own Meshy towers (glass, apartment, mid-rise) stand round the horizon in their real colours, each scaled to its
+//   slot's height and turned at random, set back past the old ring, hazed toward the fog in the shader (they keep the procedural ring's draw order); boxes until loaded
+function realSkyline(R, H, fogC, mix){ const keys=['bld_glass','bld_apart'].filter(k=>REAL_CITY[k]); if(!keys.length) return null; const n=MOBILE?30:56, per={}, g=new THREE.Group();
+  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+40+Math.random()*70, h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
+  const M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), S3=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
+  for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.min(0.85, mix*1.15) }, hc={ value:fogC.clone() };
+    mat.onBeforeCompile=sh=>{ sh.uniforms.hzAmt=hz; sh.uniforms.hzCol=hc; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>','#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
+    mat.customProgramCacheKey=()=>'skylineHaze';
+    const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });
+    im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; im.renderOrder=-7; g.add(im); }
+  return g; }
+function skyline(R, H, kind, base, fogC, mix){ if(kind==='city' && realCityReady()){ const rs=realSkyline(R, H*1.15, fogC, Math.min(0.85, mix+0.12)); if(rs) return rs; }
+  const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);
   for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+(Math.random()-0.5)*30, w=kind==='stacks'?3+Math.random()*3:8+Math.random()*16, h=kind==='stacks'?H*(0.6+Math.random()*0.8):H*(0.25+Math.random()*0.75);
     const g=kind==='stacks' && Math.random()<0.6 ? new THREE.CylinderGeometry(w*0.4,w*0.55,h,8) : new THREE.BoxGeometry(w,h,w*(0.6+Math.random()*0.8)); g.translate(Math.cos(a)*r, h/2-6, Math.sin(a)*r); g.rotateY(0); geos.push(g); }
   const merged=mergeGeos(geos); const m=new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ color:c, fog:false })); m.renderOrder=-7; m.frustumCulled=false; return m; }

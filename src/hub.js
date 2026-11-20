@@ -129,6 +129,7 @@ export * from './fx/debris.js';
 export * from './fx/shatter.js';   // Z261 props break into pieces of themselves
 export * from './world/tree-fall.js';   // Z262 trees topple for real
 export * from './world/real-trees.js';   // Z262 Meshy tree species with wind
+export * from './world/real-city.js';   // Z264 Meshy city buildings + vehicles
 export * from './fx/weather.js';
 export * from './game/score.js';
 export * from './game/player-damage.js';

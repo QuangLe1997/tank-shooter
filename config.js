@@ -567,6 +567,18 @@ export const REALTREE = { env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }
 //   radius (m × the tree's scale), hitH = the height a round still strikes the tree; minDmg = the least damage a round needs to fell one; a blast of
 //   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands
 export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18 };
+// Z264 REAL CITY (world/real-city.js): Meshy buildings by role (tower / apartment / row — cut into floor slices) and vehicles (carFor = which model a
+//   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
+export const REALCITY = { env:0.8, share:0.85, asphalt:[0.62, 0.62, 0.64], pavement:[0.8, 0.78, 0.74],   // street photo albedo ×
+ 
+  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_shophouse:{ role:'row' } },   // (the stone tower came out with a broken diagonal glass panel: left out)
+  carTint:0.55, cars:{ car_sedan:{ yaw:1.5708, L:4.8 }, car_taxi:{ yaw:1.5708, L:4.6 }, car_suv:{ yaw:1.5708, L:4.9 }, car_van:{ yaw:1.5708, L:5.4 }, car_bus:{ yaw:1.5708, L:11 } },
+  carFor:{ sedan:'car_sedan', hatch:'car_sedan', suv:'car_suv', pickup:'car_suv', van:'car_van', taxi:'car_taxi', truck:'car_van', bus:'car_bus' } };
+// Z264 WALL SKINS (world/regional.js): the photographed set a fortress / Core wall pattern takes (`biome` overrides per battlefield); tint = how much of
+//   the land's own stone colour tints the photo, bright = albedo ×, nrm / ao = normal and AO strength
+export const WALLSKIN = { tint:0.35, bright:0.92, nrm:1.2, ao:0.8,
+  pat:{ ashlar:'sandstone_blocks_08', brick:'red_brick_03', concrete:'t_concrete_wall_002', plate:'rusty_metal_02', log:'bark_brown_02', adobe:'red_plaster_weathered' },
+  biome:{ CITADEL:{ ashlar:'sandstone_blocks_05' }, QUARRY:{ ashlar:'medieval_blocks_03' }, VOLCANO:{ ashlar:'medieval_blocks_03' }, HILLS:{ ashlar:'medieval_blocks_03' }, CAVERN:{ ashlar:'medieval_blocks_03' }, STEELMILL:{ brick:'factory_brick' } } };
 // Z261 SHATTER (fx/shatter.js): a destroyed prop breaks into n pieces of its own mesh — thrown at `power` m/s out of the blast plus `up`, spinning
 //   up to `spin` rad/s, falling at g, bouncing back `bounce` × the impact speed (above bounceMin m/s), lying `life` s, then sinking (sink m/s for
 //   sinkT s); at most max pieces at once (maxMobile on phones); per kind overrides (fire = the pieces burn as they fly)
@@ -633,7 +645,7 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
   DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_02','snow_03'], VOLCANO:['ground_grey','dark_rock_02'],
   QUARRY:['rocks_ground_05','rocks_ground_06'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_01','cracked_concrete'],
   CITADEL:['rocky_trail','gravel_floor'], RUINS:['rocks_ground_02','rocks_ground_04'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
-  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02'], retired:['HILLS','VILLAGE','TUNDRA','STEELMILL','CAVERN'] };   // retired battlefields: no 2K copies   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
+  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02','sandstone_blocks_08','sandstone_blocks_05','medieval_blocks_03','red_brick_03','factory_brick','t_concrete_wall_002','rusty_metal_02','bark_brown_02','red_plaster_weathered','pavement_02','corrugated_iron','weathered_brown_planks'], retired:['HILLS','VILLAGE','TUNDRA','STEELMILL','CAVERN'] };   // retired battlefields: no 2K copies   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
 // Z249 REAL INFANTRY (actors/real-troops.js): material roughness; Z254 seamInset = how far (rig units) a seam triangle's copy sits inside the next part;
 //   team = albedo × per side (ours a cooler green cast, theirs a warmer red one); the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);

@@ -9,8 +9,8 @@
 //   topple (blast, or a tank ramming them) and the wires on a fallen pole drop; cars in a blast burn out.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { OPEN_LAND } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm } from '../hub.js';
+import { OPEN_LAND, REALCITY } from '../../config.js';
+import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , photoSurface } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -151,6 +151,12 @@ export function resetCity(){ BLD.length=0; TOP.length=0; RUB=null; RUBn=0; }
 export function cityBuildings(){ return BLD; }
 
 // ---------- building kinds (front faces +z in the local frame; ox,oz = footprint centre; ry = rotation) ----------
+// Z264 a Meshy building on the lot: scaled into the footprint (the same scale up, so it keeps its own proportions), cut into floor slices that are
+//   pieces of the breakable-floor system like every other floor (shells bring them down from the top; scars, ruin, solid footprint as before)
+function meshyBuilding(M, kind, ox,oz,ry,w,d,hpPer,col,FH){ const y0=heightAt(ox,oz)-0.05, s=M.size, k=Math.min(w/s.x, d/s.z), H=s.y*k, n=Math.max(2, Math.min(40, Math.round(H/FH)));
+  const Bd=newBld(kind, ox,oz,ry, s.x*k, s.z*k, y0, hpPer, col), bands=floorBands(M, n), b=bucket('mb_'+M.key, ()=>pieceHook(M.mat.clone()), true);
+  bands.forEach((band,i)=>{ floorPiece(Bd, y0+H*i/n, y0+H*(i+1)/n); if(!band.attributes.position.count) return; const g=band.clone(); g.scale(k,k,k); b.geos.push(place(g, ox, y0, oz, ry)); });
+  endBld(Bd); return H; }
 function tubeHouse(ox,oz,ry,w,d){ const floors=2+((Math.random()*4)|0), col=WALLC[(Math.random()*WALLC.length)|0], y0=heightAt(ox,oz)-0.05, FH=3.2, H=3.6+floors*FH;
   const Bd=newBld('tube', ox,oz,ry,w,d,y0, 105, col), shop=tubeShop(col, SIGNS[(Math.random()*SIGNS.length)|0]), up=tubeFloor(col);
   floorPiece(Bd, y0, y0+3.6); facade('shop'+col+shop.t.uuid, shop).geos.push(place(boxUV(w,3.6,d,w,3.6), ox, y0+1.8, oz, ry));
@@ -167,13 +173,15 @@ function tubeHouse(ox,oz,ry,w,d){ const floors=2+((Math.random()*4)|0), col=WALL
   else if(Math.random()<0.8){ const t=new THREE.CylinderGeometry(0.55,0.55,1.3,10); t.rotateZ(Math.PI/2); const bx=_R(-w/4,w/4), bz=-d/4; localG(t, bx, y0+H+1.4, bz, ox,oz,ry, 0xd8dcde); local(bx, y0+H+0.8, bz, 0.9, 0.4, 0.4, ox,oz,ry, 0x6a6c6e); }   // inox water tank
   if(Math.random()<0.35){ const g=new THREE.CylinderGeometry(0.45,0.08,0.18,12); g.rotateX(-0.9); localG(g, _R(-w/3,w/3), y0+H+1.3, d/4, ox,oz,ry, 0xe8e8e4); }   // satellite dish
   endBld(Bd); return H; }
-function apartment(ox,oz,ry,w,d){ const floors=5+((Math.random()*5)|0), col=['#d8d0c0','#c8d4dc','#e0c8a8','#d0c8b8'][(Math.random()*4)|0], y0=heightAt(ox,oz)-0.05, FH=3.2, H=floors*FH, T=apart(col);
+function apartment(ox,oz,ry,w,d){ { const M=pickBuilding('apartment'); if(M && Math.random()<REALCITY.share) return meshyBuilding(M, 'apartment', ox,oz,ry,w,d, 130, '#d0c8b8', 3.2); }   // Z264
+  const floors=5+((Math.random()*5)|0), col=['#d8d0c0','#c8d4dc','#e0c8a8','#d0c8b8'][(Math.random()*4)|0], y0=heightAt(ox,oz)-0.05, FH=3.2, H=floors*FH, T=apart(col);
   const Bd=newBld('apartment', ox,oz,ry,w,d,y0, 130, col);
   for(let f=0;f<floors;f++){ const fy=y0+f*FH; floorPiece(Bd, fy, fy+FH); facade('ap'+col, T).geos.push(place(boxUV(w,FH,d,4,FH), ox, fy+FH/2, oz, ry));
     if(f>0) for(const px of [-w/4, w/4]) if(Math.random()<0.6) local(px+_R(-1,1), fy+0.4, d/2+0.2, 0.8, 0.55, 0.32, ox,oz,ry, 0xdcdcd4); }
   local(0, y0+H+0.3, 0, w+0.2, 0.6, d+0.2, ox,oz,ry, 0x9a968e); for(let k=0;k<3;k++) local(_R(-w/3,w/3), y0+H+1.0, _R(-d/4,d/4), 1.4, 1.0, 1.2, ox,oz,ry, 0xc8ccd0);
   endBld(Bd); return H; }
-function officeTower(ox,oz,ry,w,d){ const floors=9+((Math.random()*9)|0), FH=3.4, y0=heightAt(ox,oz)-0.05, T=office((Math.random()*2)|0), Bd=newBld('tower', ox,oz,ry,w,d,y0, 190, '#8a98a2');
+function officeTower(ox,oz,ry,w,d){ { const M=pickBuilding('tower'); if(M && Math.random()<REALCITY.share) return meshyBuilding(M, 'tower', ox,oz,ry,w,d, 190, '#8a98a2', 3.4); }   // Z264
+  const floors=9+((Math.random()*9)|0), FH=3.4, y0=heightAt(ox,oz)-0.05, T=office((Math.random()*2)|0), Bd=newBld('tower', ox,oz,ry,w,d,y0, 190, '#8a98a2');
   for(let f=0;f<floors;f+=3){ const n=Math.min(3, floors-f), fy=y0+f*FH; floorPiece(Bd, fy, fy+n*FH); facade('of'+T.t.uuid, T, true).geos.push(place(boxUV(w,n*FH,d,8,FH*4), ox, fy+n*FH/2, oz, ry)); }
   const top=y0+floors*FH; local(0, top+0.3, 0, w+0.2, 0.6, d+0.2, ox,oz,ry, 0x6a7078);
   if(Math.random()<0.5) facade('of'+T.t.uuid, T, true).geos.push(place(boxUV(w*0.6,FH*3,d*0.6,8,FH*4), ox, top+FH*1.5, oz, ry));                       // setback crown
@@ -231,8 +239,8 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
   const n=Math.ceil(ARENA/G), cars=[], motos=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[];
   const inCity=(x,z,m)=>inField(x,z,m||4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<ARENA*0.86;
   const RT=roadT(), BT=bvdT(), WT=walkT(), ZT=zebraT(), PT=parkT();
-  const roadMat=()=>detailize(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), bvdMat=()=>detailize(new THREE.MeshStandardMaterial({ map:BT.t, roughness:0.8 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 });
-  const walkMat=()=>detailize(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 }), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 }), grassMat=()=>new THREE.MeshStandardMaterial({ map:PT.t, roughness:0.95 });
+  const roadMat=()=>photoSurface(detailize(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), 'asphalt_01', 2.08, true, REALCITY.asphalt), bvdMat=()=>photoSurface(detailize(new THREE.MeshStandardMaterial({ map:BT.t, roughness:0.8 }), { scale:0.5, bump:0.006, alb:0.3, foot:0, streak:0 }), 'asphalt_01', 2.08, true, REALCITY.asphalt);   // Z264 photographed asphalt under the painted lines
+  const walkMat=()=>photoSurface(detailize(new THREE.MeshStandardMaterial({ map:WT.t, roughness:0.9 }), { scale:0.6, bump:0.01, alb:0.3, foot:0, streak:0 }), 'pavement_02', 2.12, false, REALCITY.pavement), zebMat=()=>new THREE.MeshStandardMaterial({ map:ZT.t, roughness:0.8 }), grassMat=()=>new THREE.MeshStandardMaterial({ map:PT.t, roughness:0.95 });
   strip=(key,mk,x,z,len,wid,ang,y,tl,tw)=>{ const g=new THREE.PlaneGeometry(len,wid), uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*len/tl, uv.getY(i)*(tw?wid/tw:1)); g.rotateX(-Math.PI/2); g.rotateY(ang); g.translate(x, heightAt(x,z)+y, z); bucket(key,mk).geos.push(tag(g,0)); };
   const kerb=(x,z,len,ang)=>{ CURP=0; det(new THREE.BoxGeometry(len,0.18,0.16), x, heightAt(x,z)+0.09, z, ang, 0x8a8a84); };
   const sideRy=(ax,sd)=>ax?(sd>0?-Math.PI/2:Math.PI/2):(sd>0?Math.PI:0);
@@ -272,7 +280,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; C
     const OB=OPEN_LAND.CITY.built, k=OB/0.66; let r=Math.random(); if(dC<80 && r<0.45) r=OB+Math.random()*(1-OB);                    // room to fight near the middle: squares, parks, a pitch · Z242 fewer blocks built up (OPEN_LAND)
     const built = r<OB; if(built) ZONES.push({ kind:'landmark', x:cx, z:cz, r:Math.min(w,d)/2*0.95 });
     if(r<0.34*k){ const dep=_R(9.5,12); for(const side of [1,-1]){ let a=-w/2+0.2; const ry=side>0?0:Math.PI;                                  // tube-house rows on both long edges, a back alley between
-        while(a<w/2-3.5){ const hw=_R(4,6.4); if(a+hw>w/2) break; tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.35) a+=_R(3,6.5); } }   // Z242 gaps in the row: yards, alleys
+        while(a<w/2-3.5){ const row=pickBuilding('row'), big=row && Math.random()<REALCITY.share*0.7, hw=big?_R(11,13.5):_R(4,6.4); if(a+hw>w/2) break; if(big) meshyBuilding(row, 'tube', cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep, 100, '#d6c48e', 3.2); else tubeHouse(cx+a+hw/2, cz+side*(d/2-dep/2), ry, hw, dep); a+=hw; if(Math.random()<0.35) a+=_R(3,6.5); } }   // Z264 a Meshy row of three tube houses now and then   // Z242 gaps in the row: yards, alleys
       CURP=0; for(let k=0;k<3;k++) trees.push({ x:cx+_R(-w/2,w/2)*0.8, z:cz+_R(-1,1)*Math.max(0,d/2-dep-1), s:_R(0.7,0.95), ry:_R(0,6.28) }); }
     else if(r<0.5*k){ for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) villaLot(cx+sx*w/4, cz+sz*d/4, sz>0?0:Math.PI, w/2-0.6, d/2-0.6, cars, trees); }   // four walled villas
     else if(r<0.6*k){ for(const side of [1,-1]) apartment(cx, cz+side*(d/2-6), side>0?0:Math.PI, w*0.8, 11); CURP=0;                           // two slabs round a courtyard

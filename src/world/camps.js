@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flameFX, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flameFX, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -15,7 +15,11 @@ export function campMats(){ if(_campMats) return _campMats;
     canvas:new THREE.MeshStandardMaterial({ map:canvasT, roughness:0.95, side:THREE.DoubleSide }),
     dark:new THREE.MeshStandardMaterial({ color:0x1a1814, roughness:0.9 }), rope:new THREE.MeshStandardMaterial({ color:0x8a7a58, roughness:0.9 }),
     fire:new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xff7a2a, emissiveIntensity:2.2 }), glass:new THREE.MeshStandardMaterial({ color:0x2a3a3a, emissive:0xffc070, emissiveIntensity:0.0, roughness:0.2 }) };
-  return _campMats; }
+  skinCamp(_campMats); return _campMats; }
+// Z264 photographed skins once they load: weathered corrugated iron on the Quonset huts (the sheet's own turn and repeat kept), old planks on the walls
+function skinCamp(M){ if(typeof window==='undefined' || /procwall/.test(location.search+location.hash)) return;
+  photoSet('corrugated_iron').then(P=>{ const t=P.diff.clone(), o=M.tin.map; t.center.copy(o.center); t.rotation=o.rotation; t.repeat.copy(o.repeat); t.needsUpdate=true; M.tin.map=t; M.tin.color.setHex(0xc8ccc4); M.tin.metalness=0.45; M.tin.needsUpdate=true; }).catch(()=>{});
+  photoSet('weathered_brown_planks').then(P=>{ const t=P.diff.clone(), o=M.wall.map; if(o){ t.repeat.copy(o.repeat); t.offset.copy(o.offset); } t.wrapS=t.wrapT=THREE.RepeatWrapping; t.needsUpdate=true; M.wall.map=t; M.wall.color.setHex(0xb8b2a6); M.wall.needsUpdate=true; }).catch(()=>{}); }
 export function makeTent(){ const M=campMats(), g=new THREE.Group(), L=3.6, W=2.6, H=1.9;
   const sh=new THREE.Shape(); sh.moveTo(-W/2,0); sh.lineTo(0,H); sh.lineTo(W/2,0); sh.lineTo(W/2-0.05,0); sh.lineTo(0,H-0.07); sh.lineTo(-W/2+0.05,0); sh.closePath();
   const sk=new THREE.ExtrudeGeometry(sh,{depth:L,bevelEnabled:false}); sk.translate(0,0,-L/2); const tm=new THREE.Mesh(sk,M.canvas); tm.castShadow=true; tm.receiveShadow=true; g.add(tm);

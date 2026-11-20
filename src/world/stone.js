@@ -79,3 +79,19 @@ export function hillDetail(m, biome, amt){ const H = STONE.hills, U = { hdA:{ va
   m.customProgramCacheKey = () => 'hillDetail'; m.userData.hd = U;
   if(typeof window !== 'undefined' && !/procstone/.test(location.search + location.hash)) Promise.all([photoDiff(H.sets[biome] || H.sets._), photoDiff('rock_face')]).then(([a, r]) => { U.hdA.value = a; U.hdR.value = r; U.hdOn.value = 1; }).catch(() => {});
   return m; }
+
+// Z264 a photographed street surface laid over a painted one in world space (one tile = the set's real size): asphalt keeps the painted lane
+//   markings (the bright paint shows through), a pavement takes the photo whole; chained after any shader the material already has
+export function photoSurface(m, set, tile, keepMarks, tint){ const U = { psMap:{ value:null }, psOn:{ value:0 }, psT:{ value:1 / tile }, psTint:{ value:new THREE.Color().setRGB(...(tint || [1, 1, 1])) } };
+  const prev = m.onBeforeCompile, pk = m.customProgramCacheKey;
+  m.onBeforeCompile = (sh, r) => { if(prev) prev.call(m, sh, r); Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vPSW;').replace('#include <project_vertex>', '#include <project_vertex>\n vPSW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D psMap; uniform float psOn, psT; uniform vec3 psTint; varying vec3 vPSW;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+      #ifdef USE_MAP
+      if(psOn > 0.5){ vec3 ph = texture2D(psMap, vPSW.xz * psT).rgb * psTint; float mark = ${keepMarks ? 'smoothstep(0.42, 0.6, dot(sampledDiffuseColor.rgb, vec3(0.333)))' : '0.0'};
+        diffuseColor.rgb = mix(ph, diffuseColor.rgb, mark); }
+      #endif`); };
+  m.customProgramCacheKey = () => (pk ? pk.call(m) : '') + '|ps' + (keepMarks ? 1 : 0);
+  if(typeof window !== 'undefined' && !/procstreet/.test(location.search + location.hash)) photoDiff(set).then(t => { U.psMap.value = t; U.psOn.value = 1; }).catch(() => {});
+  return m; }

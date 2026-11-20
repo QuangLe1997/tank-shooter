@@ -37,5 +37,17 @@
  "cracked_concrete": 2,
  "rocky_trail": 2,
  "rocks_ground_02": 2,
- "rocks_ground_04": 2
+ "rocks_ground_04": 2,
+ "sandstone_blocks_08": 3,
+ "sandstone_blocks_05": 3,
+ "medieval_blocks_03": 2,
+ "red_brick_03": 1,
+ "factory_brick": 1.5,
+ "t_concrete_wall_002": 3,
+ "rusty_metal_02": 1,
+ "bark_brown_02": 1,
+ "red_plaster_weathered": 2,
+ "pavement_02": 2.12,
+ "corrugated_iron": 1.12,
+ "weathered_brown_planks": 1.8
 }

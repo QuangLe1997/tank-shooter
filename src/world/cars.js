@@ -6,7 +6,8 @@
 //   Tanks flatten them (decor.js crushAt kind 'car').
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { LAND, MOBILE, arena, crushables, detailize, heightAt } from '../hub.js';
+import { REALCITY } from '../../config.js';
+import { LAND, MOBILE, arena, carModel, crushables, detailize, heightAt } from '../hub.js';
 
 // ---------- merging with per-vertex colour + roughness/metalness ----------
 function mergeRM(parts){ const geos=[];
@@ -137,9 +138,19 @@ function draw(paint, trim, list, cr, kind){ const shadow=!MOBILE && kind==='car'
     pm.setColorAt(k, _C.setHex(o.col)); tm.setColorAt(k, o.wreck ? _W : _C.setHex(0xffffff));                                     // a wreck's trim is soot-darkened too
     crushables.push({ x:o.x, z:o.z, r:cr, im:pm, ims:[tm], k, alive:true, kind, ry:o.ry, s:1, land:true }); });
   for(const im of [pm,tm]){ im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); } }
+// Z264 a body drawn as its Meshy model: one instanced mesh (the model brings its own glass, trim, tyres), its paint tinted toward the car's colour
+//   (taxis and the bus keep their livery), a wreck charred; crushable and burnable like the rest
+const _RG={};
+function drawReal(R, list, cr, kind, livery){ if(!list.length) return; const k=R.key, L=(REALCITY.cars[k]||{}).L||4.6;
+  if(!_RG[k]){ const g=R.geo.clone(), sc=L/Math.max(R.size.x, R.size.z); g.scale(sc,sc,sc); g.computeBoundingSphere(); _RG[k]=g; }
+  const im=new THREE.InstancedMesh(_RG[k], R.mat, list.length), shadow=!MOBILE, wc=new THREE.Color(0x3a3430);
+  list.forEach((o,i)=>{ _M.compose(_V.set(o.x, heightAt(o.x,o.z)-(o.sink||0), o.z), _Q.setFromEuler(_E.set(o.tilt||0, o.ry, (o.tilt||0)*0.6)), _S.set(1,1,1)); im.setMatrixAt(i,_M);
+    im.setColorAt(i, o.wreck ? wc : livery ? _C.setHex(0xffffff) : _C.setHex(0xffffff).lerp(_W.setHex(o.col), REALCITY.carTint)); _W.setHex(0x6a6060);
+    crushables.push({ x:o.x, z:o.z, r:cr, im, ims:[], k:i, alive:true, kind, ry:o.ry, s:1, land:true }); });
+  im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }
 // cars: objects from pickCar · motos: {x,z,ry,col}
 export function drawStreetVehicles(cars, motos){ const B=built();
-  B.cars.forEach((m,i)=>draw(m.paint, m.trim, cars.filter(o=>o.m===i), m.cr, 'car'));
+  B.cars.forEach((m,i)=>{ const list=cars.filter(o=>o.m===i), R=carModel(m.name); if(R) drawReal(R, list, m.cr, 'car', m.taxi||m.truck); else draw(m.paint, m.trim, list, m.cr, 'car'); });
   draw(B.moto.paint, B.moto.trim, motos, 0.45, 'moto'); }
 // a crushed car / scooter: pancaked, skewed; both draws follow
 const _CM=new THREE.Matrix4();

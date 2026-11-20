@@ -2,7 +2,8 @@
 //   look of the land (adobe in the desert, ice blocks on the tundra, riveted plate at the foundry, concrete T-walls in the city, log palisades in the hills,
 //   red brick with tiled gate roofs in the Vietnamese village…) but stay military: thick walls, merlons, wire, stakes. Materials + cap / roof geometry, cached.
 import * as THREE from 'three';
-import { BIOME, TEX_K, _mergeColored, _xf, detailize, hiResMaps } from '../hub.js';
+import { BIOME, TEX_K, _mergeColored, _xf, detailize, hiResMaps, photoSet } from '../hub.js';
+import { WALLSKIN } from '../../config.js';
 
 // pattern · base colour · mortar / seam colour · roughness · metalness · cap on the wall top · roof on gate towers
 export const REGION = {
@@ -88,7 +89,15 @@ export function wallMat(name){ const st=regionOf(name), k=(typeof name==='object
   const M=hiResMaps(paint(st), { inv:_lum(st.seam)>_lum(st.base), rough:st.rough, nrm:st.pat==='ice'?1.6:st.pat==='plate'?2.0:3.0 });   // Z145 colour + normal + roughness
   const m=new THREE.MeshStandardMaterial({ map:M.map, normalMap:M.normalMap, roughnessMap:M.roughnessMap, roughness:1, metalness:st.metal, envMapIntensity:st.pat==='ice'?1.3:0.6 });
   m.userData.rough=st.rough; detailize(m, { scale:0.37, bump:st.pat==='ice'?0.012:st.pat==='plate'?0.01:0.03, alb:st.pat==='ice'?0.12:0.3, foot:1.6, streak:st.pat==='ice'?0.05:0.26 });
+  skinWall(m, st, String(k).split('#')[0]);
   return (_mat[k]=m); }
+// Z264 PHOTO SKINS: the painted wall texture gives way to a photographed CC0 set for its pattern (sandstone blocks, red sandstone, grey stone blocks,
+//   brick, factory brick, concrete T-wall, rusted plate, bark logs, weathered mud plaster) once it loads — the textures cloned so their repeat fits
+//   the walls' 4 m UV tile, the land's own stone colour kept as a light tint
+function skinWall(m, st, biome){ const W=WALLSKIN, set=(W.biome[biome]||{})[st.pat] || W.pat[st.pat]; if(!set || typeof window==='undefined' || /procwall/.test(location.search+location.hash)) return;
+  Promise.all([photoSet(set), fetch('assets/ground/sizes.json').then(r=>r.json())]).then(([P, Z])=>{ const rep=4/(Z[set]||2), cl=t=>{ const c=t.clone(); c.repeat.set(rep, rep); c.needsUpdate=true; return c; };
+    m.map=cl(P.diff); m.normalMap=cl(P.nor); m.roughnessMap=cl(P.arm); m.aoMap=m.roughnessMap; m.aoMapIntensity=W.ao; m.normalScale.set(W.nrm, W.nrm);
+    const b=new THREE.Color(st.base), mx=Math.max(b.r, b.g, b.b)||1; b.multiplyScalar(1/mx); m.color.setRGB(1,1,1).lerp(b, W.tint).multiplyScalar(W.bright); m.needsUpdate=true; }).catch(()=>{}); }
 // geometry that sits on top of ONE 3 m wall section (instanced along the walls); null = the merlons are enough
 const _cap={};
 export function capGeo(name, H, TH, L){ const st=regionOf(name), key=st.cap+'|'+H+'|'+TH+'|'+L; if(_cap[key]!==undefined) return _cap[key]; const P=[];

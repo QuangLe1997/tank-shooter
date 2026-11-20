@@ -1181,5 +1181,235 @@
       ],
       "texture_prompt": "Grey-green poplar bark, bright green leaves, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
     }
+  },
+  "bld_glass": {
+    "_role": "Z264 city glass tower: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a block's footprint",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A modern glass office skyscraper about 90 m tall on a 30 by 30 m square footprint: a blue-green glass curtain wall with thin steel mullions marking every floor, two setbacks near the top, a rooftop plant room and an antenna mast, a recessed stone-clad lobby at street level. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Reflective blue-green glass with steel mullions, grey stone lobby, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "bld_apart": {
+    "_role": "Z264 city apartment tower: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a block's footprint",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A modern residential apartment tower about 50 m tall with 16 floors on a 25 by 20 m footprint: a white and grey concrete facade, rows of windows and balconies with railings on every floor, air-conditioner units on the walls, a flat roof with water tanks. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "White and grey painted concrete, dark windows, steel railings, beige air-conditioner boxes, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "bld_stone": {
+    "_role": "Z264 city stone office tower: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a block's footprint",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A classic corporate office tower about 60 m tall on a 28 by 24 m footprint: beige stone cladding with a regular grid of tall dark windows on every floor, a heavier two-floor base with columns at the entrance, a cornice at the top. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Beige limestone cladding, dark glass windows, bronze window frames, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "bld_hotel": {
+    "_role": "Z264 city mid-rise: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a block's footprint",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A mid-rise city hotel and commercial building about 30 m tall with 8 floors on a 30 by 18 m footprint: shops with glass fronts and awnings on the ground floor, a red-brick and cream facade above with repeated windows, a sign on the roof edge. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Red brick and cream render, glass shop fronts, dark green awnings, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "bld_shophouse": {
+    "_role": "Z264 city tube-house row: cut into floor slices by height (each slice one piece of the city's breakable-floor system), fitted to a block's footprint",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 10000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A row of three narrow Vietnamese tube houses side by side, each 4 m wide and 4 to 5 floors tall with different heights, painted facades in faded yellow, mint and pink, balconies with potted plants and iron railings, roller-shutter shops on the ground floor, small shop signs, air conditioners. Realistic, true-to-life proportions, straight vertical walls with every floor clearly marked. One single building standing alone, the whole building in view, no street, no ground plate, no surrounding buildings, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Faded painted plaster in yellow, mint and pink, rusty iron railings, metal roller shutters, colourful small shop signs, light city grime, rain streaks under the windows, realistic PBR"
+    }
+  },
+  "car_sedan": {
+    "_role": "Z264 city vehicle sedan: instanced along the kerbs in place of the procedural cars (crushable, burns out)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A modern four-door sedan car about 4.8 m long, dark grey metallic paint, tinted windows, alloy wheels. Realistic, true-to-life proportions, wheels on the ground plane. One single vehicle, no ground, no road, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Dark grey metallic car paint, black tyres, chrome details, tinted glass, light dust, realistic PBR"
+    }
+  },
+  "car_taxi": {
+    "_role": "Z264 city vehicle taxi: instanced along the kerbs in place of the procedural cars (crushable, burns out)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A city taxi: a four-door sedan about 4.6 m long painted bright yellow with a taxi sign on the roof and a checker stripe on the doors. Realistic, true-to-life proportions, wheels on the ground plane. One single vehicle, no ground, no road, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Bright yellow car paint, black and white checker stripe, black tyres, light dust, realistic PBR"
+    }
+  },
+  "car_suv": {
+    "_role": "Z264 city vehicle SUV: instanced along the kerbs in place of the procedural cars (crushable, burns out)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A modern sport utility vehicle about 4.9 m long, white paint, roof rails, black plastic wheel arches. Realistic, true-to-life proportions, wheels on the ground plane. One single vehicle, no ground, no road, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "White car paint, black trims, black tyres, tinted glass, light dust, realistic PBR"
+    }
+  },
+  "car_van": {
+    "_role": "Z264 city vehicle van: instanced along the kerbs in place of the procedural cars (crushable, burns out)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A white delivery panel van about 5.5 m long with a high roof and sliding side door, no windows in the cargo area. Realistic, true-to-life proportions, wheels on the ground plane. One single vehicle, no ground, no road, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "White van paint, black bumpers and tyres, light road dirt along the bottom, realistic PBR"
+    }
+  },
+  "car_bus": {
+    "_role": "Z264 city vehicle bus: instanced along the kerbs in place of the procedural cars (crushable, burns out)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A city bus about 12 m long, low floor, large side windows, white body with a green stripe, route display above the windscreen. Realistic, true-to-life proportions, wheels on the ground plane. One single vehicle, no ground, no road, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "White bus body with a green stripe, dark glass, black tyres, light road grime, realistic PBR"
+    }
   }
 }
