@@ -210,7 +210,7 @@ export function updateEnemies(dt, now){
         const dmg = def.dmg * (0.65 + 0.35*ds) * loopDmgMul() * (e.elite?BALANCE.elite.dmgMul:1) * cMod('enemyDmgMul') * diffDmgMul();
         const col = def.accurate?0xff3a66 : (def.heavy?0xffb050 : 0xff7a4a), br = def.heavy?0.7 : (def.accurate?0.28:0.4);
         if(!(MODE.tankShell && def.fireCd >= 1.4 && MODE.tankShell(e, aimA, d, dmg, !!def.heavy))){   // Z309 against a soldier the main gun lays on a spot and bursts there (campaign/soldier-war.js)
-        spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y), from:e.pos});
+        spawnBullet(_v.x, _v.z, aimA, {owner:'e', dmg, speed:def.bspeed, color:col, r:br, life:3.0, maxDist:er+2, arcDist:d, noArc:true, dropTo:1.2, knock:def.heavy?2.2:1, y:Math.max(1.2,_v.y), from:e.pos});
         tankRecoil(e.mesh, aimA, def.heavy?0.95:(def.accurate?0.7:0.45), e.facing);
         enemyMuzzleFX(_v.x, _v.y, _v.z, aimA, !!def.heavy);   // Z192 flash + flame + smoke at the real muzzle (was a flat dot at a fixed height)
         sfx('enemyShoot', e.pos); }

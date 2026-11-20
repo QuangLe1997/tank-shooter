@@ -149,7 +149,7 @@ export function updateCarrierCrew(e, now){
     if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ c.fireAt = now+0.4; continue; }
     let a = Math.atan2(dx,dz) + (Math.random()-0.5) * Math.max(0.04, A.spreadBase*(1-ds*A.spreadDrop)*1.3);   // crew a bit less accurate than gun tanks
     const dmg = 5 * (0.7+0.3*ds) * loopDmgMul() * cMod('enemyDmgMul');
-    spawnBullet(_cv.x, _cv.z, a, {owner:'e', inf:true, dmg, speed:44, color:0xffd06a, r:0.3, life:2.4, maxDist:32, arcDist:d});
+    spawnBullet(_cv.x, _cv.z, a, {owner:'e', inf:true, dmg, speed:44, color:0xffd06a, r:0.3, life:2.4, maxDist:32, arcDist:d, noArc:true, dropTo:1.3});   // Z314 a rifle: straight at his chest, no lob
     spawnPart(_cv.x, _cv.y, _cv.z, Math.sin(a)*6,1,Math.cos(a)*6, {color:0xffd06a, size:0.6, life:0.1, grav:0, drag:7});
     sfx('rifleShot', e.pos); c.fireAt = now + 1.4 + Math.random()*0.7;
   }

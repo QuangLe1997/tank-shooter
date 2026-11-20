@@ -434,6 +434,9 @@ export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol:
 //   or phone lays on the one within padCone (rad) of the aim; rounds lead it and climb to its height; a round aimed at it hits within hitR (m) across
 //   (the airframe and rotor, not the hub) and hTol (m) up or down of it;
 //   how far a tank gun / a man's rifle may tip up (rad); the reticle: ring colour, label
+// Z314 A GUN'S ROUND FLIES A STRAIGHT LINE (combat/lock-on.js): it hits a body only at that body's real height — a man (m), a tank (m at TANK_SCALE),
+//   from floor (m) below its feet — and flies over an obstacle when it passes over m clear of its top
+export const LINE = { manH:2.1, tankH:2.8, floor:0.4, over:1.2 };
 export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, tankUp:0.55, manUp:1.05, col:0xff5a3a };
 
 // Z174 REAL-WORLD SCALE — 1 world unit = 1 metre. The tanks are the reference (≈ a real MBT: ~7.5 m with the gun, 3.7 m tall to the cupola); a soldier model is

@@ -134,7 +134,7 @@ function fire(D, now){ const M=MGR.mesh, p=S.player; M.muzzle.getWorldPosition(_
   else if(T && T.gd){ const G=T, d=Math.hypot(G.x-_w.x, G.z-_w.z)||1;   // up at a man on a tower: a tracer, and a chance to knock him off
     spawnPart(_w.x,_w.y,_w.z, (G.x-_w.x)/d*90, (G.y-_w.y)/d*90, (G.z-_w.z)/d*90, { tex:'flash', color:tr?0xff8a2a:0xfff0b0, size:tr?0.62:0.38, life:d/90, grav:0, drag:0 });
     if(Math.random() < 0.04+D.dmg*0.007) shootGuard(G.t, G.gd, p.pos.x, p.pos.z); }
-  else spawnBullet(_w.x, _w.z, a, { owner:'p', inf:true, dmg:(D.dmg*(p.dmgMul||1)*0.5+D.dmg*0.5)*AI.dmgK, speed:105, color:tr?0xff7a1e:0xfff0b0, r:tr?0.24:0.16, life:0.5, maxDist:D.range+3, y:_w.y, trailK:tr?2.6:1.7 });   // Z222 a fat, bright, long tracer line you can follow   // Z201 harder-hitting rounds
+  else spawnBullet(_w.x, _w.z, a, { owner:'p', inf:true, dmg:(D.dmg*(p.dmgMul||1)*0.5+D.dmg*0.5)*AI.dmgK, speed:105, color:tr?0xff7a1e:0xfff0b0, r:tr?0.24:0.16, life:0.5, maxDist:D.range+3, y:_w.y, dropTo:1.1, dropDist:T && T.x!=null ? Math.max(2, Math.hypot(T.x-_w.x, T.z-_w.z)) : D.range, trailK:tr?2.6:1.7 });   // Z314 from the roof down to the target   // Z222 a fat, bright, long tracer line you can follow   // Z201 harder-hitting rounds
   // muzzle: flash, a few sparks, a wisp of smoke · receiver: brass (and a link) thrown out to the right
   spawnPart(_w.x+fx*0.1,_w.y,_w.z+fz*0.1, fx*3,0.2,fz*3, { tex:'flash', color:0xfff0b0, size:M.heavy?1.25:0.95, life:0.045, grav:0, drag:9 });
   spawnPart(_w.x+fx*0.5,_w.y,_w.z+fz*0.5, fx*6,0,fz*6, { tex:'flash', color:0xffc060, size:M.heavy?0.8:0.6, life:0.06, grav:0, drag:6 });   // Z222 the flame tongue out of the flash hider

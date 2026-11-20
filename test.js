@@ -977,6 +977,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(!/spawnTankWreck\(/.test(ex) && !/ringPulse\(pos, cf\.r1/.test(ex) && !/0xb088ff/.test(ex) && /export function rollSmoke/.test(ex) && /dustSkirt\(pos\.x, pos\.z, scale\*1\.2\)/.test(ex), 'blasts: no painted box parts, no flat coloured rings, no violet; dust skirt and a rolling smoke cloud');
   ok(/const N=128/.test(R('src/fx/particles.js')) && /solidKind/.test(R('src/world/cover.js')) && /function stoneLump\(src\)/.test(sh) && !/gibBody\(/.test(inf) && !/gibBody\(/.test(R('src/actors/fireteam.js')) && /d\.flat=/.test(inf), 'smoke with volume, stone in solid lumps, men thrown whole and lying where they fall'); }
 
+// Z314 a gun's round flies a straight line in the world, bites into the ground where the line meets it, and hits a body only at its height
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), lo=R('src/combat/lock-on.js');
+  ok(/const lineRound = !o\.lockOn && !o\.smart && !o\.homing && !\(vy>0\.5\)/.test(lo) && /if\(b\.line\)\{ b\.by=b\.wy0\+b\.slope\*Math\.hypot\(b\.x-b\.ox, b\.z-b\.oz\)-heightAt\(b\.x,b\.z\); if\(b\.by<0\.05\)\{ b\.by=0\.05; landed=true; \} \}/.test(lo), 'a straight line in the world, into the ground where it meets it — no hugging the ground');
+  ok(/function aimAlong\(x, z, a, o\)/.test(lo) && /dropTo = o\.dropTo \?\? \(o\.owner==='e' \? 1\.2 : null\)/.test(lo) && /noArc:true, dropTo:1\.2/.test(R('src/ai/tactics.js')) && /noArc:true, dropTo:1\.3\}\)/.test(R('src/actors/enemies.js')) && /dropTo:1\.1, dropDist:T/.test(R('src/tank/roofmg.js')), 'enemy guns fire straight at the chest, no lob; unmarked rounds aim at whoever is on their line');
+  ok(/function lineH\(b, wy, t, man\)/.test(lo) && /hitsHull\(e, _sw\.x, _sw\.z, b\.r\)\) && lineH\(b, _wy, e\)/.test(lo) && /MODE\.hitTest\(p, _sw\.x, _sw\.z, b\.r\) && lineH\(b, _wy, p\)/.test(lo) && /blockTop\(bl\)\+LINE\.over\) continue;/.test(lo) && C.LINE.tankH>C.LINE.manH, 'a body is hit only at its real height; a round well over an obstacle flies on'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
