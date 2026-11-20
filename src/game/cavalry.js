@@ -14,7 +14,7 @@ export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'xichlo' ride the 
   const H=kind ? buildBikeMount(kind) : buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
   if(kind) H.root.scale.setScalar(XEOM.k); seatRider(G, H);   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
   if(!kind) H.onStep=hoofFall;
-  CV.real=null; CV.realP=kind ? Promise.resolve(false) : null; if(!kind) fitRealCav(CV); else floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
+  CV.real=null; CV.realP=null; fitRealCav(CV); if(kind) floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
   const mesh=new THREE.Group(); mesh.add(H.root); scene.add(mesh);
   const u=G.userData, p={
     mesh, turret:new THREE.Object3D(), muzzle:u.muzzle, modelId:kind||'cav', bike:kind||null, cav:CV,

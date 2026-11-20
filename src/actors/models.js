@@ -9,6 +9,7 @@ export const MODEL_FILES = {
   rifle: 'assets/models/rifle/bolt_action_rifle_7_62_1k.gltf',
   // Z248 generated with Meshy (Pro plan: commercial use) from tools/meshy-assets.json, packed by tools/glb-pack.mjs
   horse: 'assets/models/real/horse.glb',                     // war horse, quadruped rig, clips horse_Idle / Walk / Canter / Sprint / Jump_Sprint
+  soldier2: 'assets/models/real/soldier2.glb',             // Z294 the second soldier: Tripo P2, Mixamo skeleton, special-forces kit
   operator: 'assets/models/real/operator.glb',               // the general: Mixamo skeleton with fingers, 10 rifle clips
   rideGallop: 'assets/models/real/operator-ride-gallop.glb', // Text-to-Motion riding clips (animation only, hips rebased to the library frame)
   rideWalk: 'assets/models/real/operator-ride-walk.glb',

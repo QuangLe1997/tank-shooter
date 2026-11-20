@@ -642,7 +642,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z248 real cavalry: Meshy-generated war horse, operator and carbine over the procedural rigs (loaded together; procedural stays on failure)
 { const fs=await import('node:fs'); const rc=fs.readFileSync('src/actors/real-cav.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8'), mo=fs.readFileSync('src/actors/models.js','utf8'), C=await import('./config.js');
-  ok(/export function fitRealCav/.test(rc) && /export function updateRealCav/.test(rc) && /AnimationMixer/.test(rc) && /SkeletonUtils/.test(rc) && /L\.some\(x => !x\)/.test(rc), 'real cavalry: skinned clones with mixers, all-or-nothing load');
+  ok(/export function fitRealCav/.test(rc) && /export function updateRealCav/.test(rc) && /AnimationMixer/.test(rc) && /SkeletonUtils/.test(rc) && /L\.slice\(1, 5\)\.some\(x => !x\)/.test(rc), 'real cavalry: skinned clones with mixers, all-or-nothing load (Z294: the second soldier optional, no horse on a ride)');
   ok(/'Ride_Gallop'/.test(rc) && /'Rifle_Charge'/.test(rc) && /'Kneeling_Reload'/.test(rc) && /'Prone_Reload'/.test(rc) && /poseClip\('Aim_Stand'/.test(rc) && /'Sprint'/.test(rc) && /'Canter'/.test(rc), 'clips per state: riding, rifle walk / run / charge, kneel, prone, the composed standing aim; horse gaits');
   ok(/inPlace\(/.test(rc) && /R\.seat\.add\(G\)/.test(rc) && /R\.cb/.test(rc) && /u\.muzzle/.test(rc), 'root motion pinned, the rider rides the real horse\'s back, the carbine carries the muzzle');
   ok(/fitRealCav\(CV\)/.test(cv) && (cv.match(/updateRealCav\(CV, dt/g)||[]).length>=2, 'cavalry dresses its rigs and drives them each frame (play + intro idle)');
@@ -870,6 +870,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(['xeom','xichlo','bagac','bantai'].every(k=>fs.existsSync('assets/models/real/ride/'+k+'.glb') && C.XEOM[k].len>1 && C.XEOM.poses[C.XEOM[k].pose]) && /function heroGeo/.test(R('src/game/xeom.js')), 'four ride models fitted to their true length');
   ok(/function seatRider/.test(R('src/game/cavalry.js')) && !/G\.scale\.setScalar\(HUMAN_SCALE\/HORSE\.size\);\s*H\.root/.test(R('src/game/cavalry.js')) && /XEOM\.poses\[XEOM\[H\.bike\]\.pose\]/.test(R('src/actors/general.js')) && /'bagac','bantai'/.test(R('src/game/flow.js')) && /BÁN TẢI/.test(R('src/ui/battle-setup.js')), 'seated / standing poses, remount keeps the seat, two new rides to pick'); }
+
+// Z294 the second soldier: a detailed special-forces model wearing the operator's moves (puppet), on every war ride and on foot
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(fs.existsSync('assets/models/real/soldier2.glb') && /export function makePuppet/.test(R('src/actors/puppet.js')) && /export function drivePuppet/.test(R('src/actors/puppet.js')) && /drivePuppet\(R\.pup\)/.test(R('src/actors/real-cav.js')) && C.REALCAV.s2.on, 'the special-forces soldier follows the operator bone by bone');
+  ok(/CV\.realP=null; fitRealCav\(CV\)/.test(R('src/game/cavalry.js')) && /if\(!H\.bike\)\{/.test(R('src/actors/real-cav.js')) && /PROFILE\.trooper=k/.test(R('src/ui/battle-setup.js')), 'real riders on the war rides, soldier picked in battle setup'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

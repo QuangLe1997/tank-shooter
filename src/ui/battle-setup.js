@@ -79,4 +79,7 @@ document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ set
 // Z245 UNIT: fight as the tank, or as the general on his war horse (KỴ SĨ THÉP; Z246 a modern heavy operator) — remembered between battles
 export function buildUnitPick(){ const el=document.getElementById('bsUnit'); if(!el) return; el.innerHTML='';
   for(const [k,t,sub] of [['tank','XE TĂNG','thiết giáp'],['cav','KỴ SĨ THÉP','tướng giáp · chiến mã'],['xeom','XE ÔM','bác tài chở · lính bắn'],['xichlo','XÍCH LÔ','ngồi trước · bắn thẳng'],['bagac','BA GÁC','đứng thùng sau · bắn quanh'],['bantai','BÁN TẢI','đứng thùng xe · khung chống lật']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.unit||'tank')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';   // Z293 + the ba gác and the pickup technical
-    tapEl(c, ()=>{ PROFILE.unit=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); } }
+    tapEl(c, ()=>{ PROFILE.unit=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); }
+  // Z294 which soldier fights off the tank: the new special-forces trooper (his own detailed model wearing the rifle moves) or the steel operator
+  for(const [k,t,sub] of [['s2','LÍNH ĐẶC NHIỆM','giáp đủ đồ · kính đêm'],['op','LÍNH THÉP','operator cũ']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.trooper||'s2')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';
+    tapEl(c, ()=>{ PROFILE.trooper=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); } }

@@ -1,8 +1,8 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { HUMAN_SCALE, REALCAV } from '../../config.js';
-import { loadGLTF } from '../hub.js';
+import { HUMAN_SCALE, REALCAV, XEOM } from '../../config.js';
+import { PROFILE, drivePuppet, loadGLTF, makePuppet } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -26,22 +26,28 @@ export function poseClip(name, parts){ const tracks = [];
   return new THREE.AnimationClip(name, 0.1, tracks); }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
-  return (CV.realP = Promise.all(['horse', 'operator', 'rideGallop', 'rideWalk', 'carbine'].map(loadGLTF)).then(L => {
-    if(L.some(x => !x) || !CV.H || !CV.G) return false;
-    const [hg, og, rg, rw, cg] = L, H = CV.H, G = CV.G, u = G.userData, C = REALCAV;
+  return (CV.realP = Promise.all(['horse', 'operator', 'rideGallop', 'rideWalk', 'carbine', 'soldier2'].map(loadGLTF)).then(L => {
+    if(L.slice(1, 5).some(x => !x) || (!L[0] && !CV.H?.bike) || !CV.H || !CV.G) return false;
+    const [hg, og, rg, rw, cg, sg] = L, H = CV.H, G = CV.G, u = G.userData, C = REALCAV;
+    let hr = null, hm = null, HA = null, seat = null;   // Z293 on a war ride there is no horse to dress: the ride is already the real model
+    if(!H.bike){
     // ---- the horse: the real body on the procedural root (it cancels the root's size), the seat a node on its back bone
-    const hr = skClone(hg.scene), K = H.root.scale.x || 1; hr.name = 'realHorse'; hr.scale.setScalar(1 / K);
+    hr = skClone(hg.scene); const K = H.root.scale.x || 1; hr.name = 'realHorse'; hr.scale.setScalar(1 / K);
     hr.traverse(o => { if(o.isSkinnedMesh) o.frustumCulled = false; });
-    const seat = new THREE.Object3D(); seat.name = 'realSeat'; seat.position.fromArray(C.seat); hr.add(seat); hr.updateMatrixWorld(true);
+    seat = new THREE.Object3D(); seat.name = 'realSeat'; seat.position.fromArray(C.seat); hr.add(seat); hr.updateMatrixWorld(true);
     const sb = hr.getObjectByName(C.seatBone); if(sb) sb.attach(seat);
     H.root.traverse(o => { if(o.isMesh && !under(o, G)) o.visible = false; });
     H.root.add(hr);
-    const hm = new THREE.AnimationMixer(hr), HA = actions(hm, hg.animations.map(c => inPlace(c, 'root.position')), n => n.replace(/^horse_/, ''));
+    hm = new THREE.AnimationMixer(hr); HA = actions(hm, hg.animations.map(c => inPlace(c, 'root.position')), n => n.replace(/^horse_/, '')); }
     // ---- the operator inside the general's rig group (its scale cancelled to metres), every procedural mesh hidden
     const op = skClone(og.scene); op.name = 'realOp'; op.scale.setScalar(C.opH / 1.88 / HUMAN_SCALE);
     op.traverse(o => { if(o.isSkinnedMesh) o.frustumCulled = false; });
     G.traverse(o => { if(o.isMesh) o.visible = false; });
     G.add(op);
+    // Z294 the second soldier (the special-forces Tripo model) wears the operator's moves: the operator stays, unseen, and drives him bone by bone
+    let pup = null; if(sg && C.s2.on && (PROFILE.trooper || 's2') === 's2'){ const sw = new THREE.Group(), s2 = skClone(sg.scene); sw.name = 'realS2'; sw.rotation.y = C.s2.yaw; sw.scale.setScalar(C.opH / HUMAN_SCALE);
+      s2.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; } }); sw.add(s2); G.add(sw); G.updateMatrixWorld(true); pup = makePuppet(op, s2);
+      if(pup) op.traverse(o => { if(o.isMesh) o.visible = false; }); else G.remove(sw); }
     const clips = [...og.animations, ...rg.animations, ...rw.animations].map(c => inPlace(c, 'mixamorigHips.position')), byName = n => clips.find(c => c.name === n);
     // the standing aim: the shouldered rifle of the walk-and-fire clip over the square stance of the standing reload (one held frame)
     const UP = /Spine|Neck|Head|Shoulder|Arm|Hand/;
@@ -55,7 +61,7 @@ export function fitRealCav(CV){
     const cb = cg.scene.clone(true); cb.name = 'realCarbine'; G.add(cb);
     if(u.muzzle){ cb.add(u.muzzle); u.muzzle.position.fromArray(C.carbine.muzzle); }
     CV.real = { hr, hm, HA, seat, op, om, OA, HIT, hitW:0, wasHit:false, deadOn:false, cb, csc: C.carbine.len / 0.954,
-      hips: bone('Hips'), spine: ['Spine', 'Spine1', 'Spine2'].map(bone), rh: bone('RightHand'), rhm: bone('RightHandMiddle1'), lh: bone('LeftHand'), lhm: bone('LeftHandMiddle1') };
+      hips: bone('Hips'), spine: ['Spine', 'Spine1', 'Spine2'].map(bone), rh: bone('RightHand'), rhm: bone('RightHandMiddle1'), lh: bone('LeftHand'), lhm: bone('LeftHandMiddle1'), pup };
     u.realOp = op;
     return true; })); }
 
@@ -64,15 +70,18 @@ export function updateRealCav(CV, dt, P){
   const R = CV.real; if(!R || !dt) return; const H = CV.H, G = CV.G, C = REALCAV;
   // the horse
   const g = H.gait, v = Math.abs(H.v || 0), hk = g === 'idle' ? 'Idle' : g === 'walk' ? 'Walk' : (g === 'trot' || g === 'canter') ? 'Canter' : 'Sprint';
-  blend(R.HA, hk, hk === 'Idle' ? 1 : clamp(v / C.horseV[hk], 0.6, 1.5), dt); R.hm.update(dt);
+  if(R.hm){ blend(R.HA, hk, hk === 'Idle' ? 1 : clamp(v / C.horseV[hk], 0.6, 1.5), dt); R.hm.update(dt); }
   // the rider: on the real horse's back while mounted (every mount / respawn puts the rig on the procedural body bone — move it to the seat)
-  if(G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }
-  const mounted = G.parent === R.seat;
-  if(mounted){ G.position.set(0, 0, 0); G.scale.setScalar(HUMAN_SCALE); }
+  const bike = H.bike, stand = bike && XEOM[bike].pose === 'stand';   // Z293 on a war ride he keeps the ride's own seat (seatRider): sat on it, or standing in the bed
+  if(!bike && G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }
+  const mounted = bike ? G.parent === H.B : G.parent === R.seat;
+  if(mounted && !bike){ G.position.set(0, 0, 0); G.scale.setScalar(HUMAN_SCALE); }
   let ok, ts = 1, freeze = null; const fv = P.footV || 0, s = P.stance;
   if(P.dead && !R.deadOn){ R.deadOn = true; const a = R.OA.dying_backwards; if(a){ a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } }   // Z254 killed: falls backwards, once
   if(!P.dead && R.deadOn){ R.deadOn = false; const a = R.OA.dying_backwards; if(a){ a.setLoop(THREE.LoopRepeat, Infinity); a.clampWhenFinished = false; } }
   if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
+  else if(mounted && stand){ ok = 'Aim_Stand'; freeze = 0; }   // braced in the bed, rifle shouldered
+  else if(mounted && bike){ ok = 'Ride_Walk'; ts = 0.35; }   // sat on the pillion / the cyclo's bench: the gentle sway of the riding clip
   else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
@@ -85,7 +94,7 @@ export function updateRealCav(CV, dt, P){
   R.om.update(dt);
   // hips onto the seat (the riding clips carry their own hip height); feet on the ground on foot
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
-  if(mounted){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
+  if(mounted && !stand){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
   else if(s === 'prone' && !P.trans){ R.op.position.y = -C.proneDrop / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
   // the torso turns toward the aim (spread over three spine bones, about the body's up)
   const tw = clamp(P.twist || 0, -C.twistMax, C.twistMax);
@@ -104,4 +113,5 @@ export function updateRealCav(CV, dt, P){
   const sc = R.csc;
   _v.fromArray(C.carbine.grip).multiplyScalar(sc).applyQuaternion(_qd); _a.sub(_v).addScaledVector(_d, -(G.userData.kick || 0) * 0.05);
   _m.compose(_a, _qd, _s.set(sc, sc, sc)); _mi.copy(G.matrixWorld).invert(); _m.premultiply(_mi);
-  _m.decompose(R.cb.position, R.cb.quaternion, R.cb.scale); }
+  _m.decompose(R.cb.position, R.cb.quaternion, R.cb.scale);
+  if(R.pup) drivePuppet(R.pup); }   // Z294 the second soldier takes the operator's pose
