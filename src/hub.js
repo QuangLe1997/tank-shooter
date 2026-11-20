@@ -133,7 +133,8 @@ export * from './world/real-trees.js';   // Z262 Meshy tree species with wind
 export * from './world/real-city.js';   // Z264 Meshy city buildings + vehicles
 export * from './world/traffic.js';
 export * from './actors/real-air.js';   // Z272 real aircraft
-export * from './world/ruins3d.js';   // Z275 ruins of war   // Z268 scooters and cars on the move
+export * from './world/ruins3d.js';   // Z275 ruins of war
+export * from './fx/dust.js';   // Z278 dust in the sunlight   // Z268 scooters and cars on the move
 export * from './fx/weather.js';
 export * from './game/score.js';
 export * from './game/player-damage.js';

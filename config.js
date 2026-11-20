@@ -661,7 +661,7 @@ export const REALPROP = { kinds:['sandbag','concrete','container','crates','drum
 //   mobile:false = none there), grid cell (m), where (× radius) the carpet starts thinning out, clumps tried per cell, clump height range (m), how far
 //   ahead of the camera the carpet centres (m), re-lay step (m), alpha cut-off, root shade; the photo strip (dir, its size in px, the five clump cards
 //   [x, y, w, h] in px); per battlefield: density (0–1), tex 'dry' = the dry grass photo, tint = colour ×, dryTint = × on the odd drier clump
-export const GRASS = { trans:1.4, R:34, Rm:12, rim:0.45, mobile:true, cell:0.55, perCell:2, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
+export const GRASS = { trans:1.4, R:40, Rm:12, rim:0.45, mobile:true, cell:0.5, perCell:3, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
   dir:'assets/grass/medium01/', atlas:[2048, 518], cards:[[402, 4, 598, 262], [1201, 20, 499, 218], [61, 254, 351, 264], [474, 272, 549, 246], [1181, 248, 436, 270]],
   biomes:{ MEADOW:{ dens:0.9, tint:[1.02, 1.1, 0.92], dryTint:[1.2, 1.05, 0.72] }, SAVANNA:{ dens:0.8, tex:'dry', tint:[1.0, 0.94, 0.82], dryTint:[1.1, 1.0, 0.85] },
     CITADEL:{ dens:0.32, tex:'dry', tint:[0.95, 0.92, 0.82], dryTint:[1.1, 1.0, 0.85] }, RUINS:{ dens:0.3, tint:[0.95, 0.98, 0.85], dryTint:[1.2, 1.05, 0.75] }, QUARRY:{ dens:0.22, tex:'dry', tint:[0.95, 0.92, 0.85], dryTint:[1.1, 1.0, 0.85] } } };
@@ -694,6 +694,8 @@ export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, r
 // Z276 light shafts (render/shafts.js): ray steps through the sun's shadow map, gain, air density (/m), how far the ray is walked (m), forward
 //   scattering g, the even haze share, and per-battlefield strength
 // Z276 leaf / grass translucency strength (real-trees.js, grass-carpet.js) lives in REALTREE.trans and GRASS.trans
+// Z278 dust motes in the sunlight (fx/dust.js): count, the box of air round the view (m), how far ahead of the camera it sits, size, glow, colour
+export const DUST = { on:true, n:2600, box:[70, 16, 70], ahead:22, size:0.09, gain:1.0, col:0xfff1d0 };
 export const SHAFTS = { on:true, steps:24, gain:0.14, dens:0.009, maxD:150, g:0.62, even:0.08, biome:{ CITY:0.85, ARCTIC:0.7, DESERT:0.7, VOLCANO:1.25, FOUNDRY:1.15 } };
 export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.12, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
   liftK:0, tintK:0.5, fogBlue:0.22, bloom:0.24, sharp:0.58, duskHemiK:0.85, duskAmbient:0.08 };   // sunset keeps more sky fill + its lift

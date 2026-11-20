@@ -15,6 +15,7 @@ import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, make
 // ----------------------------- THREE SETUP -----------------------------
 export const app = document.getElementById('app');
 export const renderer = new THREE.WebGLRenderer({ antialias:!MOBILE, powerPreference:'high-performance' });
+THREE.Texture.DEFAULT_ANISOTROPY = Math.min(MOBILE ? 4 : 16, renderer.capabilities.getMaxAnisotropy());   // Z278 every texture made from now on (photo sets, GLB models) filtered at full anisotropy: ground, walls and roads stay sharp at grazing angles
 renderer.debug.checkShaderErrors = /shaderdebug/.test(location.search);   // Z192 reading every new shader's error log back stalls the frame it first draws in
 renderer.setPixelRatio(S.dpr);
 renderer.setSize(innerWidth, innerHeight, false);   // false → leave canvas CSS to fill the viewport (avoids the "render smaller than screen" mobile bug)
