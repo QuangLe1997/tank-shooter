@@ -5,13 +5,14 @@
 //   · fast and under fire he weaves (lạng lách); Space pulls a wheelie (bốc đầu) — front up off the rear axle, him back on his arms;
 //   · opening the throttle he twists the right grip back; through the gears his left foot flicks the lever;
 //   · shot at, he ducks down behind the bars, head tucked to one side;
-//   · a hard hit or a crash at speed and the bike goes down on its side and slides; he is thrown off (his own fall clip), gets up, walks back,
-//     heaves it upright, swings back on — and the soldier, who jumped clear, is called back on board.
+//   · a hard hit or a crash at speed and the bike goes down on its side and slides; he is thrown off (his own fall clip), scrambles onto all fours and
+//     crawls back to it, heaves it upright, swings back on — and the soldier, who jumped clear, is called back on board (Z331 actors/driver-acts.js);
+//   · Z331 the soldier shot down: he gives himself up — off the ride, to the body with his hands up, on his knees beside it (actors/driver-acts.js).
 // What the two of them say is kept in one table (RIDE_TALK: the driver's line, the soldier's answer, by event) so voices can be laid on later.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, NIGHT, S, bikeHop, burst, curlHand, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, spawnPart, hudOn } from '../hub.js';
+import { BIOME, CV, DRIVER_ACTS, NIGHT, S, bikeHop, blendPose, burst, curlHand, downedRide, driverAct, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, snapPose, spawnPart, hudOn } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -97,8 +98,9 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
   // throttle and gears: the right grip twists back as he opens it; the left foot flicks up through the gears
   D.thr += (clamp(acc / 6, -0.4, 1) - D.thr) * Math.min(1, dt * 8);
   const g = RIDE.gears.filter(x => Math.abs(v) > x).length; if(g !== D.gear){ if(g > D.gear && R.gearFoot){ D.gearT = 0.28; sfx('click'); } D.gear = g; } D.gearT = Math.max(0, D.gearT - dt);
-  if(D.state === 'ride' || D.state === 'mount'){ ridePose(H, D, dt, v, yr); if(D.state === 'mount'){ D.t2 += dt; if(D.t2 >= RIDE.crash.mount){ if(H.broken){ D.state = 'fix'; D.t2 = 0; } else { D.state = 'ride'; talk(D, 'remount', true); if(D.onBack) D.onBack(); } } } }   // (Z303 picked up but dead: straight to the repair)
+  if(D.state === 'ride' || D.state === 'mount'){ ridePose(H, D, dt, v, yr); if(D.state === 'mount'){ blendPose(D, dt); D.t2 += dt; if(D.t2 >= RIDE.crash.mount){ if(H.broken){ D.state = 'fix'; D.t2 = 0; } else { D.state = 'ride'; talk(D, 'remount', true); if(D.onBack) D.onBack(); } } } }   // (Z303 picked up but dead: straight to the repair)
   else if(D.state === 'fix') fixStep(H, D, dt);
+  else if(DRIVER_ACTS.has(D.state)) driverAct(H, D, dt);   // Z331 crawling to it, heaving it up, giving himself up
   else crashStep(H, D, dt);
   if(D.state === 'ride' && sp > 0.85 && Math.abs(yr) > 1.1) talk(D, 'turn');
   else if(D.state === 'ride' && sp > 0.9) talk(D, 'fast'); }
@@ -209,30 +211,16 @@ function fixPose(H, D, dt, k){ const B = D.B, R = D.R, F = RIDE.fix, P = F[D.kin
     B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(_fk, 1).addScaledVector(_rk, sd * -0.3).addScaledVector(UP, 0.5);
     ik2(B[L + 'UpLeg'], B[L + 'Leg'], B[L + 'Foot'], _h1.clone(), _b.clone()); if(k > 0.3) flatFoot(B[L + 'Foot'], B[L + 'ToeBase'], D.toeSlope, k); } }
 
-// ---- the crash: thrown and sliding · down · up again · back to the bike · heave it up · back on ----
+// ---- the crash: thrown and sliding · down · (Z331 actors/driver-acts.js) onto all fours, the crawl back to it, the heave ----
 function crashStep(H, D, dt){ const C = RIDE.crash, w = D.w; D.t2 = (D.t2 || 0) + dt; const st = D.state;
-  // the ride: on its side, sliding to a stop, sparks and dust while it slides
-  if(st === 'fall' || st === 'down' || st === 'getup' || st === 'walk'){ D.roll += ((D.side || 1) * 1.35 - D.roll) * Math.min(1, dt * 7);
-    if(D.slide > 0.2){ D.slide *= Math.exp(-dt * 2.2); CV.hPos.x += Math.sin(CV.facing) * D.slide * dt; CV.hPos.z += Math.cos(CV.facing) * D.slide * dt; CV.speed = 0;
-      if(Math.random() < 0.6) spawnPart(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z) + 0.15, CV.hPos.z, (Math.random() - 0.5) * 3, 1 + Math.random() * 2, (Math.random() - 0.5) * 3, { color:Math.random() < 0.5 ? 0xffd27a : 0xc8b890, size:0.12 + Math.random() * 0.2, life:0.4, grav:-9, drag:1 }); } }
+  downedRide(D, dt);   // the ride: on its side, sliding to a stop, sparks and dust while it slides
   D.mix.update(dt);
-  // he goes over backwards (tipped about his feet), lands flat on his back, lies a moment twitching, then sits up and gets to his feet
+  // he goes over backwards (tipped about his feet), lands flat on his back, lies a moment twitching, then scrambles onto hands and knees
   const lie = () => { w.rotation.x = -D.tip; w.position.y = heightAt(w.position.x, w.position.z) + Math.sin(D.tip) * 0.14; };
   if(st === 'fall'){ D.vel.y -= 9.8 * dt; w.position.addScaledVector(D.vel, dt); D.tip = Math.min(Math.PI / 2, D.tip + dt * 3.2); w.rotation.x = -D.tip;
     const g = heightAt(w.position.x, w.position.z) + Math.sin(D.tip) * 0.14;
     if(w.position.y <= g){ w.position.y = g; D.vel.multiplyScalar(0.3); D.vel.y = 0; if(D.t2 > 0.25){ D.state = 'down'; D.t2 = 0; sfx('thud');
       burst({ x:w.position.x, z:w.position.z }, BIOME.ground, 6, 3, { y:w.position.y + 0.2, life:0.6, size:0.9, smoke:true, grav:-0.3, drag:2, op:0.45 }); } } }
-  else if(st === 'down'){ D.tip += (Math.PI / 2 - D.tip) * Math.min(1, dt * 8); lie(); const fa = D.A.hurt; if(fa) fa.timeScale = 0.5;
-    if(D.t2 > C.down){ D.state = 'getup'; D.t2 = 0; talk(D, 'getup', true); } }
-  else if(st === 'getup'){ const k = ease(Math.min(1, D.t2 / C.getup)); D.tip = Math.PI / 2 * (1 - k); lie();
-    const fa = D.A.hurt; if(fa) fa.timeScale = 0.8;
-    if(D.t2 > C.getup){ D.state = 'walk'; D.t2 = 0; D.tip = 0; w.rotation.x = 0; D.mix.stopAllAction(); const wk = D.A.walk; if(wk){ wk.reset(); wk.setLoop(THREE.LoopRepeat, Infinity); wk.play(); } } }
-  else if(st === 'walk'){ const tx = CV.hPos.x + Math.cos(CV.facing) * 0.9, tz = CV.hPos.z - Math.sin(CV.facing) * 0.9, dx = tx - w.position.x, dz = tz - w.position.z, d = Math.hypot(dx, dz);
-    w.rotation.set(0, Math.atan2(dx, dz), 0); if(d > 0.15){ const s = Math.min(d, 1.6 * dt); w.position.x += dx / d * s; w.position.z += dz / d * s; } w.position.y = heightAt(w.position.x, w.position.z);
-    if(d <= 0.15 || D.t2 > 5){ D.state = 'lift'; D.t2 = 0; D.mix.stopAllAction(); talk(D, 'lift', true); } }
-  else if(st === 'lift'){ const k = ease(Math.min(1, D.t2 / C.lift)); D.roll = (D.side || 1) * 1.35 * (1 - k); w.rotation.set(0, CV.facing - Math.PI / 2, 0);
-    for(const [b, q] of D.rest) b.quaternion.copy(q); w.updateMatrixWorld(true);   // braced beside it, hands on the grips, heaving it up
-    H.B.updateMatrixWorld(true); const B = D.B; for(const [L, i] of [['Left', 0], ['Right', 1]]){ onRide(H, D.R.grip[i], _a, true); B[L + 'Arm'].getWorldPosition(_b); _b.y -= 0.4; ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], _a.clone(), _b.clone()); }
-    for(const n of ['Spine', 'Spine1']) turn(B[n], _e.set(Math.cos(CV.facing), 0, -Math.sin(CV.facing)), 0.35 * (1 - k));
-    if(D.t2 >= C.lift){ D.state = 'mount'; D.t2 = 0; D.roll = 0; (H.body || H.B).add(w); w.position.set(0, 0, 0); w.rotation.set(0, 0, 0, 'XYZ'); w.scale.setScalar(D.s0); } } }
+  else { D.tip += (Math.PI / 2 - D.tip) * Math.min(1, dt * 8); lie(); const fa = D.A.hurt; if(fa) fa.timeScale = 0.5;
+    if(D.t2 > C.down){ snapPose(D, C.getup); D.state = 'crawl'; D.t2 = 0; D.tip = 0; D.hd = null; D.mix.stopAllAction(); talk(D, 'getup', true); } } }
 export function driverReady(H){ const D = H && H.drv; return !D || !D.ok || D.state === 'ride'; }

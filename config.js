@@ -180,7 +180,20 @@ export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model
   dodge:{ win:2.2, n:3, flinch:1.6, jink:2.2, every:[0.35, 0.45], bend:0.14, face:0.2, away:0.45, lean:0.2, peek:[0.7, 0.5], hide:[0.8, 0.7] },
   // Z304 in a fight: how long it stays (s after a hit), the glances then (every / +random / held / +random), the darting eyes when peeking, how fast his head snaps
   alert:{ t:6, glance:[0.9, 1.1, 0.25, 0.3], sac:[0.22, 0.3], snap:14 }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.36 }, gears:[2.2, 4.4, 6.4],
-  crash:{ v:7.5, hit:22, p:0.3, down:1.3, getup:1.2, lift:1.1, mount:0.45, cool:8, throwSoldier:true, callR:9 } };
+  crash:{ v:7.5, hit:22, p:0.3, down:1.3, getup:0.5, mount:0.45, cool:8, throwSoldier:true, callR:9 } };   // (Z331 getup = the scramble off his back onto all fours, mount = easing onto the seat)
+// Z331 THE DRIVER OFF THE RIDE (actors/driver-acts.js; m, s, rad, m/s). crawl: his speed on hands and knees, how far each hand / knee reaches per stride,
+//   how high a limb lifts, knees ahead of the hips, knee spread, hands ahead of the shoulders, turn rate, the scramble before he gets going, give-up time.
+//   heave (righting the bike): grab, first heave [s, how far up it comes], it slips back [s, down to], a breath, the big heave (s), stood a moment; hips
+//   [squatting, stood] height off the ground, back bent [squatting, stood], hips behind his feet [squatting, stood], feet out from his hands [at the
+//   start, stood], feet apart, a foot steps in once it is step from where it should be (stepT s, stepH m high, aimed lead s ahead), how hard he trembles, the seat hand
+//   (mount units from the saddle point: out to the side, up, back). give (the soldier shot down): the jump off [sideways, up, share of the ride's
+//   speed carried], run speed and clip rate, how far beside the body he kneels, farther than far he kneels where he lands, the drop to his knees (s),
+//   hands up for up s then behind his head over behind s, how far he sinks back, head bowed [neck, head], tremble, the last beat lingers show s on
+//   him on his knees (wait s at most) before the battle is lost
+export const RIDE_ACT = { crawl:{ v:1.3, reach:0.11, lift:0.07, kneeF:0.08, kneeW:0.11, handF:0.05, turn:5, scramble:0.5, max:7 },
+  heave:{ grab:0.35, h1:[0.75, 0.42], slip:[0.35, 0.22], breath:0.4, h2:1.05, hold:0.4, hip:[0.52, 0.86], bend:[0.85, 0.22], back:[0.18, 0.06], off:[0.42, 0.3], feet:0.19,
+    step:0.13, stepT:0.17, stepH:0.07, lead:0.2, shake:0.012, seat:[0.13, 0, -0.06] },
+  give:{ jump:[2.4, 2.6, 0.5], run:3.4, runClip:1.1, beside:0.9, far:18, drop:0.45, up:1.1, behind:0.5, sink:0.1, bow:[0.55, 0.3], shake:0.01, show:1.6, wait:5 } };
 // Z296 what the driver and the soldier say to each other, by event (d = the driver, s = the soldier's answer) — on screen now, voices to be laid on later
 export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
   start:{ d:['Lên xe đi con, chú chở!', 'Ngồi chắc nha, mình đi!'], s:['Đi chú!', 'Chạy đi chú, em yểm trợ!'] },
@@ -191,6 +204,8 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
   crash:{ d:['Té rồi! Té rồi!', 'Ui da!', 'Xe ngã rồi con ơi!'], s:['Chú có sao không?!', 'Em yểm trợ, chú dựng xe đi!'] },
   getup:{ d:['Không sao… còn sống!', 'Đau quá mà không chết!'], s:['Nhanh lên chú!'] },
   lift:{ d:['Dựng xe dậy cái đã!', 'Một… hai… ba… lên!'], s:['Em canh cho!'] },
+  slip:{ d:['Hự… tuột tay!', 'Nặng quá trời đất ơi…', 'Ối… thêm cái nữa!'], s:['Cố lên chú!', 'Lẹ lên chú ơi!'] },   // Z331 the first heave slips back
+  surrender:{ d:['Đừng bắn! Tôi đầu hàng!', 'Tôi chỉ chạy xe ôm thôi mà!', 'Tha cho tôi, nhà còn vợ con!'], s:[] },   // Z331 the soldier is down: he gives himself up
   remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!'], s:['Đi!'] } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn

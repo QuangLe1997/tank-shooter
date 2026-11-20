@@ -166,7 +166,7 @@ export function cavDeathStart(p, now){ const H=CV.H, G=CV.G; if(!H || !G) return
   const fx=Math.sin(CV.facing), fz=Math.cos(CV.facing), side=Math.random()<0.5?-1:1, sx=fz*side, sz=-fx*side, from=CV.mounted;
   if(from){ scene.attach(G); G.rotation.set(0, CV.facing, 0); }
   const gy=heightAt(G.position.x, G.position.z);
-  CV.dead={ t:0, from, vx:from ? fx*CV.speed*C.carry+sx*C.side : 0, vz:from ? fz*CV.speed*C.carry+sz*C.side : 0, vy:from ? C.up : 0, down:!from, pos:G.position.clone(), panic:side };
+  CV.dead={ t:0, from, vx:from ? fx*CV.speed*C.carry+sx*C.side : 0, vz:from ? fz*CV.speed*C.carry+sz*C.side : 0, vy:from ? C.up : 0, down:!from, pos:G.getWorldPosition(new THREE.Vector3()), panic:side };   // (Z331 where he fell in the world: on foot he is carried in p.mesh, his own position is local)
   CV.mounted=false; CV.trans=null; S.shake=Math.min(3, S.shake+1.2);
   if(!CV.real) startFall(G, [sx, sz], { drop:Math.max(0, G.position.y-gy) }); }
 export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=CV.G; if(!D || !H) return; const C=CAV.death; D.t+=dt;
@@ -174,12 +174,13 @@ export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=
     if(G.position.y<=g && D.vy<0){ G.position.y=g; D.down=true; D.vx*=0.25; D.vz*=0.25; burst({x:G.position.x, z:G.position.z}, BIOME.ground, 4, 3, {y:g+0.3, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, op:0.45}); sfx('thud'); } }
   else { D.vx*=Math.exp(-dt*6); D.vz*=Math.exp(-dt*6); G.position.x+=D.vx*dt; G.position.z+=D.vz*dt; if(CV.real) G.position.y=heightAt(G.position.x, G.position.z); }
   if(!CV.real && G.userData.fall) stepFall(G, dt);
-  D.pos.copy(G.position);
+  G.getWorldPosition(D.pos);
   // the riderless horse: runs on, slowing, swerving
   if(D.from){ CV.speed*=Math.exp(-dt*C.slow); CV.facing=wrapA(CV.facing+Math.sin(D.t*1.7)*D.panic*C.swerve*dt);
     p.pos.x+=Math.sin(CV.facing)*CV.speed*dt; p.pos.z+=Math.cos(CV.facing)*CV.speed*dt; clampField(p.pos, 3); CV.hPos.copy(p.pos); }
   p.mesh.position.set(p.pos.x, heightAt(p.pos.x, p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing;
-  H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, 0); H.root.position.set(0,0,0); H.root.rotation.y=0;
+  if(!D.from){ H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing; animateHorse(H, dt, 0, 0); }   // Z331 killed on foot: the ride stays where it stood (it was snapped to the world's origin)
+  else { if(!H.bike){ H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; } animateHorse(H, dt, CV.speed, 0); H.root.position.set(0,0,0); H.root.rotation.y=0; }   // (a bike works in its true place, like the live ride: its driver gets off where it is)
   updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand', dead:true }); }
 // after a death: straight back in the saddle at the spawn point
 export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.autoOn=false; CV.landAt=null; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);

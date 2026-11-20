@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
-import { CAV, LOOT } from '../../config.js';
-import { ARENA, BEST, CV, S, bigExplode, burst, camera, capsuleSave, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, updateHUD, rideHit, MODE } from '../hub.js';
+import { CAV, LOOT, RIDE_ACT } from '../../config.js';
+import { ARENA, BEST, CV, S, bigExplode, burst, camera, capsuleSave, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, updateHUD, rideHit, MODE, driverBack, driverDone, driverSurrender } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -31,17 +31,17 @@ export function addPlayerBurn(dx, dz){
 }
 // ===== DEATH → RESPAWN cinematic: tank flips, burns & smokes; camera swoops in close; then it rights itself,
 // blinks 3× (invincible) and the fight resumes. Makes losing a life land emotionally (not an instant teleport). =====
-export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0 };
+export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0, final:false };   // (Z331 final: the last life — the fall plays out, then the battle is lost)
 export const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 export function playerDie(now){
   const p=S.player; p.lives--;
-  if(p.lives < 0){ MODE.finalDeath(p); gameOver('HẾT MẠNG'); return; }   // final death → (the tank: the crew's scream as it shatters · Z307 the soldier simply falls) + game over
+  if(p.lives < 0){ if(MODE.finalDeath(p)) beginDeath(now, true); else gameOver('HẾT MẠNG'); return; }   // final death → (the tank: the crew's scream as it shatters, game over · Z331 the soldier: his fall and the driver giving himself up play out first)
   beginDeath(now);
 }
-export function beginDeath(now){
+export function beginDeath(now, final){
   const p=S.player; S.mode='dying'; S.firing=false;
-  DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos);
-  if(p.cav){ cavDeathStart(p, now); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD(); return; }   // Z254 no tank wreck: the general is shot off his horse
+  DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos); DEATH.final=!!final;
+  if(p.cav){ cavDeathStart(p, now); driverSurrender(CV.H); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD(); return; }   // Z254 no tank wreck: the general is shot off his horse
   DEATH.flipDir = Math.random()<0.5?1:-1; DEATH.tilt = 0.4+Math.random()*0.4;
   // catastrophic hit — big blast, knock a few parts loose, hard shake
   bigExplode(p.pos, 0xffd27a, 1.9); spawnDebris(p.pos, 1.6, 0x4a3c28);
@@ -55,7 +55,7 @@ export function updateDeath(dt, now){
   const p=S.player, m=p.mesh; DEATH.t+=dt;
   if(p.cav){ cavDeathUpdate(dt, now); const w=CV.dead ? CV.dead.pos : p.pos, ang=2.2+DEATH.t*0.45, r=6.5;   // Z254 the camera circles where the general fell
     _dcam.set(w.x+Math.cos(ang)*r, w.y+3.4, w.z+Math.sin(ang)*r); camera.position.lerp(_dcam, Math.min(1, dt*3)); camera.lookAt(w.x, w.y+0.6, w.z);
-    if(DEATH.t >= CAV.death.dur) respawnPlayer(now); return; }
+    if(DEATH.t >= CAV.death.dur){ if(!DEATH.final) respawnPlayer(now); else if(driverDone(CV.H) || DEATH.t >= CAV.death.dur + RIDE_ACT.give.wait){ DEATH.active=false; DEATH.final=false; gameOver('HẾT MẠNG'); } } return; }   // Z331 the last life: held until the driver is on his knees by the body
   const wx=DEATH.wreck.x, wz=DEATH.wreck.z;
   // 1) the hull tips over (first ~0.7s) and settles, sinking a touch
   const f=_eoCube(DEATH.t/0.7);
@@ -72,7 +72,7 @@ export function updateDeath(dt, now){
   if(DEATH.t >= DEATH.dur) respawnPlayer(now);
 }
 export function respawnPlayer(now){
-  const p=S.player, m=p.mesh; DEATH.active=false; if(p.cav) cavRespawn(p);   // Z245 the general is back in the saddle
+  const p=S.player, m=p.mesh; DEATH.active=false; if(p.cav){ cavRespawn(p); driverBack(CV.H); }   // Z245 the general is back in the saddle (Z331 and the driver back on his seat)
   // right the hull + reset to the spawn point
   p.hp=p.maxHp; p.pos.set(0,0,ARENA*0.45); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI;
   m.position.set(p.pos.x,0,p.pos.z); m.rotation.set(0, p.facing, 0); m.visible=true; p.hitT=0; p.burns=[];   // fresh hull, no leftover fires

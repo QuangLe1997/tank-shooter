@@ -151,6 +151,7 @@ export * from './campaign/soldier-war.js';   // Z309 soldier mode: waves of men,
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
+export * from './actors/driver-acts.js';   // Z331 the driver off the ride: the crawl to a downed bike, the heave, giving himself up
 export * from './world/outposts.js';   // Z285 enemy outposts   // Z268 scooters and cars on the move
 export * from './fx/weather.js';
 export * from './game/score.js';
