@@ -546,6 +546,13 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z255 PHOTO SKY (world/sky-photo.js): a photographed pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs) laid into the sky dome per hour of the day, and an
+//   overcast one for storms — amt = how much of the photo shows (the procedural sky, clouds and lightning stay underneath), cloudK = how much of
+//   the procedural cloud layer survives under the photo, fogMix = how far the fog takes the photo's horizon colour, midGrey = the exposure target
+//   for the upper sky (tool), minEl = the lowest sun elevation the shadows take from a photo (rad)
+export const SKY_PHOTO = { midGrey:0.24, cloudK:0.18, fogMix:0.5, minEl:0.2,
+  tod:{ day:'kloofendal_48d_partly_cloudy_puresky', noon:'qwantani_noon_puresky', sunset:'kloppenheim_06_puresky' },   // night: the procedural stars / Milky Way / moon beat the photo
+  mood:{ storm:'kloofendal_overcast_puresky' }, amt:{ clear:1, fair:1, dramatic:0.85, storm:0.9 } };
 // Z254 RAGDOLL (actors/ragdoll.js) — a man shot down: gravity (m/s²) over the fall length (m); the round's push (rad/s at the start); twist while falling (rad);
 //   how long the knees take to give (s); bounce on striking the ground (× speed) and the speed below which he does not bounce; limb spring stiffness /
 //   damping; body thickness lying down and the sag as the knees go (× the man's scale); how long he lies before he sinks away (s)

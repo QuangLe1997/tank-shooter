@@ -1,0 +1,42 @@
+{
+ "kloofendal_48d_partly_cloudy_puresky": {
+  "sunU": 0.5947,
+  "sunEl": 0.8406,
+  "hor": [
+   0.44,
+   0.453,
+   0.498
+  ],
+  "exposure": 0.3775
+ },
+ "qwantani_noon_puresky": {
+  "sunU": 0.6006,
+  "sunEl": 0.8652,
+  "hor": [
+   0.468,
+   0.494,
+   0.524
+  ],
+  "exposure": 0.5923
+ },
+ "kloppenheim_06_puresky": {
+  "sunU": 0.6064,
+  "sunEl": 0.1411,
+  "hor": [
+   0.548,
+   0.513,
+   0.482
+  ],
+  "exposure": 0.2779
+ },
+ "kloofendal_overcast_puresky": {
+  "sunU": 0.5811,
+  "sunEl": 0.3988,
+  "hor": [
+   0.416,
+   0.426,
+   0.449
+  ],
+  "exposure": 0.2165
+ }
+}

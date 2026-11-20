@@ -1,7 +1,7 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
 import { LIGHT } from '../../config.js';
-import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
+import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
@@ -22,13 +22,14 @@ export function todAtmos(A, tod){
 export const SKY = new THREE.Mesh(new THREE.SphereGeometry(480, 64, 32), new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false, fog:false, defines:{ FINE_STARS: MOBILE?0:1 },   // Z235 phones skip the faintest star layer
   uniforms:{ top:{value:new THREE.Color(0x5b84b8)}, hor:{value:new THREE.Color(0xc9b48c)}, sunCol:{value:new THREE.Color(0xffffff)}, sunDir:{value:new THREE.Vector3(0,1,0)}, night:{value:0},
     cTex:{value:null}, cOff:{value:new THREE.Vector2()}, cCov:{value:new THREE.Vector3(0.6,0.2,0)}, cLit:{value:new THREE.Color(0xffffff)}, cDark:{value:new THREE.Color(0x8a94a4)}, cFlash:{value:0},   // Z145 clouds
+    hdrTex:{value:null}, hdrAmt:{value:0}, hdrRot:{value:0},   // Z255 a photographed sky laid in (world/sky-photo.js)
     time:{value:0}, moonPh:{value:1.2}, mwN:{value:new THREE.Vector3(0.38,0.62,0.68).normalize()}, mwC:{value:new THREE.Vector3(0.72,0.34,-0.6).normalize()} },   // Z235 twinkle clock · moon phase · Milky Way plane + its bright core
   vertexShader:'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position=p.xyww; }',
   // Z235 A REAL SKY: the blue deepens fast above the horizon (optical depth), a bright pale-blue horizon band instead of a white wall; the sun is a
   //   limb-darkened disc in a three-part glow with a warm horizon flush on its side when low; at night: point stars of every brightness and
   //   colour that twinkle, the Milky Way (a glowing band with a warm core, dark dust rifts and a dense star field), and a cratered moon in its
   //   phase with earthshine on the dark side and a soft halo
-  fragmentShader:`uniform vec3 top,hor,sunCol,sunDir,cCov,cLit,cDark,mwN,mwC; uniform float night,cFlash,time,moonPh; uniform sampler2D cTex; uniform vec2 cOff; varying vec3 vD;
+  fragmentShader:`uniform vec3 top,hor,sunCol,sunDir,cCov,cLit,cDark,mwN,mwC; uniform float night,cFlash,time,moonPh; uniform sampler2D hdrTex; uniform float hdrAmt,hdrRot; uniform sampler2D cTex; uniform vec2 cOff; varying vec3 vD;
     float h(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }
     vec3 starL(vec3 d, float N, float th, float tw){ vec3 p=d*N, q=floor(p); float r=h(q); if(r<th) return vec3(0.0);
       vec3 o=vec3(h(q+1.3),h(q+2.7),h(q+4.1))*0.7+0.15; float dist=length(p-q-o), b=pow((r-th)/(1.0-th),2.2);
@@ -77,6 +78,8 @@ export const SKY = new THREE.Mesh(new THREE.SphereGeometry(480, 64, 32), new THR
         cc=mix(cc, haze, (1.0-smoothstep(0.0,0.3,d.y))*0.55);                                       // Z235 far clouds fade into the horizon haze
         c=mix(c, cc, dens*cCov.z);
         c=mix(c, c*0.82, (1.0-dens)*cCov.z*smoothstep(0.35,0.6,1.0-cCov.x)*0.5); }                    // overcast dims the gaps too
+      if(hdrAmt>0.0){ float ang=atan(d.z,d.x)+hdrRot; vec2 hu=vec2(fract(ang*0.15915494+0.5), asin(clamp(d.y,-1.0,1.0))*0.31830989+0.5);   // Z255 the photographed sky (equirect, turned so its sun is ours), lightning lights it too
+        vec3 h=texture2D(hdrTex,hu).rgb*(1.0+cFlash*1.5); c=mix(c, h, hdrAmt*smoothstep(-0.04,0.06,d.y)); }
       gl_FragColor=vec4(c,1.0); }` }));
 SKY.renderOrder=-10; SKY.frustumCulled=false; scene.add(SKY);
 export const _WHITE=new THREE.Color(0xffffff);
@@ -125,6 +128,7 @@ export function applyAtmosphere(b){
   if(A.cave){ SKYMOOD.id='clear'; SKYMOOD.m=MOODS.clear; SKYMOOD.boltT=0; CLOUD.u.uCloud.value.w=0;   // Z225 the cavern: no sky, no clouds — black rock, warm torch fill, a cool glow off the shafts
     hemi.color.setHex(0x4a5878); hemi.groundColor.setHex(0x3a2614); hemi.intensity=0.95; ambient.color.setHex(0x8a6a4a); ambient.intensity=0.62; scene.environmentIntensity=0.3; u.vig.value=0.3; renderer.toneMappingExposure=1.4; }
   else applyMood(A, pickMood(b.name, S.tod||'day'));                                                  // Z145 the sky's mood for this battle
+  applySkyPhoto(A);                                                                                    // Z255 a photographed sky over it (none underground / at night)
   { const L=LIGHT, g=gradePass.uniforms; renderer.toneMappingExposure*=L.expK; g.sat.value*=L.satK; g.contrast.value*=L.conK; g.vib.value=L.vib;   // Z242 realistic light (config LIGHT)
     const dusk=(S.tod==='sunset');   // the low sun leaves the field in shade: keep its lift and more sky fill so the shadows stay readable
     if(!A.night && !A.cave && !dusk){ g.lift.value.multiplyScalar(L.liftK); g.shTint.value.multiplyScalar(L.tintK); g.hiTint.value.multiplyScalar(L.tintK); }   // Z244 clear air: no lifted blacks

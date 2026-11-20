@@ -691,6 +691,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/dying_backwards/.test(rc) && /Hit_Upper/.test(rc) && C.CAV.death && C.RAGDOLL && C.REALCAV.hitT>0, 'real general: falls backwards once, flinches (upper body) when hit');
   const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper2 && sp.trooper2.preview.target_polycount>=9000, 'the trooper re-made at ~10k triangles'); }
 
+// Z255 photographed skies: CC0 pure-sky HDRIs laid into the dome per hour (+ an overcast one for storms), turned onto our sun
+{ const fs=await import('node:fs'); const sp=fs.readFileSync('src/world/sky-photo.js','utf8'), at=fs.readFileSync('src/world/atmosphere.js','utf8'), C=await import('./config.js');
+  ok(/export function applySkyPhoto/.test(sp) && /hdrRot\.value = \(m\.sunU - 0\.5\)/.test(sp) && /SKY_PHOTO\.minEl/.test(sp) && /A\.night \|\| A\.cave/.test(sp) && /procsky/.test(sp), 'photo sky: turned onto our sun, shadows take its elevation, none at night / underground, procedural fallback');
+  ok(/uniform sampler2D hdrTex/.test(at) && /c=mix\(c, h, hdrAmt/.test(at) && /applySkyPhoto\(A\)/.test(at), 'the dome mixes the photo over the procedural sky');
+  const M=JSON.parse(fs.readFileSync('assets/sky/skies.json','utf8')); ok(Object.values(C.SKY_PHOTO.tod).concat(Object.values(C.SKY_PHOTO.mood)).every(n=>M[n] && fs.existsSync('assets/sky/'+n+'.jpg') && fs.existsSync('assets/sky/'+n+'_2k.jpg')), 'every photo sky ships (4K + 2K) with its sun position'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

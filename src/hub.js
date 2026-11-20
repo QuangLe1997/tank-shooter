@@ -20,6 +20,7 @@ export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the flood
 export * from './render/lod.js';
 export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD
 export * from './world/atmosphere.js';
+export * from './world/sky-photo.js';   // Z255 photographed HDRI skies per hour of the day
 export * from './world/ground.js';
 export * from './world/ground-photo.js';
 export * from './world/grass-carpet.js';   // Z251 instanced grass blades round the camera   // Z250 photo-scanned CC0 ground sets per battlefield
