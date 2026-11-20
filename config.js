@@ -555,6 +555,25 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
   fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus'] }, east:{ designs:['lqt','t90m','type99','flametank','arv'] }, merkava:{ designs:['merkava'] },
     armata:{ designs:['t14','ghost'] }, ifv:{ designs:['ifv','recon','atgmv'] }, spg:{ designs:['spg','td'] }, ugv:{ designs:['ugv'] } } };   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
+// Z262 REAL TREES (world/real-trees.js): thirteen Meshy species, each at its true height h (m) before the tree's own ± scale; map = which species a
+//   battlefield's procedural tree kinds become (variant i takes species i mod the list; `_` = everywhere else); wind = its direction, how far the top
+//   sways (m), how far the leaves flutter (m); env = reflections; tint = albedo × per species
+export const REALTREE = { env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }, tint:{},
+  h:{ oak:15, linden:12, birch:11, poplar:18, pine:17, spruce_snow:14, palm:12, acacia:8, baobab:13, dead:9, cypress:14, olive:7, giant:20 },
+  map:{ _:{ broadleaf:['oak','linden','birch','poplar'], conifer:['pine'], coniferSnow:['spruce_snow'], palm:['palm'], acacia:['acacia'], baobab:['baobab'], dead:['dead'], ancient:['giant'] },
+    MEADOW:{ broadleaf:['oak','linden','birch','poplar','oak','pine','linden','birch'] }, CITADEL:{ broadleaf:['olive','cypress','oak','cypress','olive','linden','olive','cypress'] },
+    QUARRY:{ broadleaf:['olive','cypress','pine','olive'] }, RUINS:{ broadleaf:['linden','birch','oak','birch'] } } };
+// Z262 TREE FALL (world/tree-fall.js): push = the starting swing (rad/s) a tank's ram gives, shotPush = a shell's / blast's; trunk = the trunk's hit
+//   radius (m × the tree's scale), hitH = the height a round still strikes the tree; minDmg = the least damage a round needs to fell one; a blast of
+//   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands
+export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18 };
+// Z261 SHATTER (fx/shatter.js): a destroyed prop breaks into n pieces of its own mesh — thrown at `power` m/s out of the blast plus `up`, spinning
+//   up to `spin` rad/s, falling at g, bouncing back `bounce` × the impact speed (above bounceMin m/s), lying `life` s, then sinking (sink m/s for
+//   sinkT s); at most max pieces at once (maxMobile on phones); per kind overrides (fire = the pieces burn as they fly)
+export const SHATTER = { n:10, power:7, up:3, spin:6, bounce:0.32, bounceMin:2.2, g:9.8, life:9, sink:0.35, sinkT:2.5, max:220, maxMobile:70,
+  kinds:{ drums:{ n:14, power:13, up:6, fire:true }, tires:{ n:9, power:8, up:5, bounce:0.6 }, crates:{ n:14, power:6.5, up:3 }, logs:{ n:9, power:7, up:3 }, sandbag:{ n:10, power:4, up:2 },
+    concrete:{ n:10, power:5, up:2.5 }, jersey:{ n:9, power:5, up:2.5 }, pipes:{ n:10, power:6, up:3 }, teeth:{ n:8, power:5, up:2.5 }, hesco:{ n:9, power:4, up:2 },
+    container:{ n:14, power:9, up:5, fire:true }, wreck:{ n:14, power:9, up:5, fire:true }, boulder:{ n:12, power:7, up:4 }, hedgehog:{ n:8, power:8, up:4 }, wire:{ n:10, power:6, up:3, spin:9 } } };
 // Z259 PHOTO STONE (world/stone.js): env / ao strengths; per set the colour shown until the photo loads, the albedo × once it has (the scene's
 //   exposure was tuned for darker procedural surfaces), the normal strength; pyramid = course height (m), texture tile (m), edge-strip depth (m),
 //   share of edge strips cut short (ragged corners), share robbed out, where the smooth casing cap starts (× courses), its colour, tumbled blocks,
@@ -612,7 +631,7 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55,
   DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','dark_rock'], VOLCANO:['burned_ground_01','dark_rock'],
   QUARRY:['gravel_ground_01','rock_ground'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_02','concrete_floor_damaged_01'],
   CITADEL:['gravel_floor','dirt'], RUINS:['dry_ground_rocks','concrete_rock_path'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
-  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02'] };   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
+  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02'] };   // retired battlefields: no 2K copies   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
 // Z249 REAL INFANTRY (actors/real-troops.js): material roughness; Z254 seamInset = how far (rig units) a seam triangle's copy sits inside the next part;
 //   team = albedo × per side (ours a cooler green cast, theirs a warmer red one); the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);

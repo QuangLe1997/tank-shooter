@@ -1,0 +1,18 @@
+{
+  "preview": {
+    "id": "01a1f7c6-5660-7308-8326-5dfbc9f4eec9",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T07:05:35.558Z",
+    "credits": 5,
+    "finished": "2026-11-20T07:06:24.016Z"
+  },
+  "refine": {
+    "id": "01a1f7c8-9742-773f-b384-2615651ed66c",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T07:08:03.040Z",
+    "credits": 10,
+    "finished": "2026-11-20T07:08:46.045Z"
+  }
+}

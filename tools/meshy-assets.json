@@ -871,5 +871,315 @@
       ],
       "texture_prompt": "Dark gunmetal and graphite composite, white ceramic insulator rings, copper rail faces, light wear, realistic PBR"
     }
+  },
+  "tree_oak": {
+    "_role": "Z262 real tree 'oak': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A large mature European oak tree about 16 m tall: a thick gnarled trunk splitting low into heavy crooked limbs that spread wide, a broad, irregular, dense green leafy crown with gaps where branches show through. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Grey-brown rugged oak bark, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
+    },
+    "retex": {
+      "_why": "the refine painted the leaf clumps bark-brown; repaint on the same UVs with green foliage",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "enable_original_uv": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "text_style_prompt": "A real summer oak tree photo texture. All the leaf clumps in the crown are lush green oak foliage: many small lobed green leaves in mid green and dark green with yellow-green highlights and shadowed depths, no brown, no grey on the leaves. Only the trunk, the limbs and the twigs are bark: rugged grey-brown oak bark with deep fissures and a little green moss at the base."
+    }
+  },
+  "tree_linden": {
+    "_role": "Z262 real tree 'linden': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A medium deciduous linden tree about 12 m tall: a straight trunk, a tall rounded dome-shaped dense green leafy crown, a few low branches. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Grey-brown bark, fresh mid-green leaves, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
+    }
+  },
+  "tree_birch": {
+    "_role": "Z262 real tree 'birch': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A slender young silver birch tree about 10 m tall: a thin white trunk with black horizontal marks, thin drooping branches, a light airy pale-green crown you can see through. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "White papery birch bark with black lenticel marks, light green small leaves, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
+    }
+  },
+  "tree_pine": {
+    "_role": "Z262 real tree 'pine': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A tall Scots pine about 18 m tall: a long straight bare orange-brown upper trunk, a few dead branch stubs, an irregular flat-topped dark green needle crown in clumps near the top. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Orange-brown flaky pine bark higher up, dark grey-brown at the base, dark green needle clumps, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
+    }
+  },
+  "tree_spruce_snow": {
+    "_role": "Z262 real tree 'snowy spruce': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A Norway spruce conifer about 14 m tall: a dense narrow cone of drooping dark green branches from near the ground to a pointed top, thick snow lying on top of every branch tier. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Dark green spruce needles under white snow, grey-brown bark, realistic PBR"
+    }
+  },
+  "tree_palm": {
+    "_role": "Z262 real tree 'palm': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A tall coconut palm tree about 13 m tall: a slender ringed grey trunk curving gently, a crown of long feathery drooping green fronds with a few dry brown ones hanging, a cluster of coconuts under the crown. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Grey ringed palm trunk, green and some dry brown fronds, green-brown coconuts, realistic PBR"
+    }
+  },
+  "tree_acacia": {
+    "_role": "Z262 real tree 'acacia': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "An African umbrella thorn acacia about 9 m tall: two or three thin dark forked trunks leaning outward, a very wide flat umbrella-shaped canopy of small olive-green leaves on top. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Dark grey-brown rough acacia bark, small olive-green leaves, realistic PBR"
+    }
+  },
+  "tree_baobab": {
+    "_role": "Z262 real tree 'baobab': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "An African baobab tree about 15 m tall: a massive thick bottle-shaped grey trunk about 4 m across, and at its top a wide crown of many thick crooked bare branches spreading out sideways and up like roots turned to the sky, small clusters of green leaves at the branch tips. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Smooth grey-brown baobab bark with folds and scars (grey, not pink), small green leaf clusters, realistic PBR"
+    }
+  },
+  "tree_dead": {
+    "_role": "Z262 real tree 'dead': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 5000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A dead burnt tree about 10 m tall: a charred blackened bare trunk with split bark, broken leafless crooked branches, one limb snapped off. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Charred black and ash-grey burnt wood, cracked bark, realistic PBR"
+    }
+  },
+  "tree_cypress": {
+    "_role": "Z262 real tree 'cypress': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A tall slim Italian cypress about 16 m tall: a narrow dense columnar dark green tree, slightly irregular outline, pointed top. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Very dark green dense scale foliage, brown trunk at the base, realistic PBR"
+    }
+  },
+  "tree_olive": {
+    "_role": "Z262 real tree 'olive': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 8000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "An old olive tree about 7 m tall: a short thick twisted gnarled trunk with hollows, a low wide irregular crown of small silvery grey-green leaves. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Grey twisted olive bark, silvery grey-green small leaves, realistic PBR"
+    }
+  },
+  "tree_giant": {
+    "_role": "Z262 real tree 'ancient giant': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 10000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "An ancient giant tree about 22 m tall and 26 m wide: an enormous buttressed trunk with great roots spreading over the ground around its foot, huge horizontal limbs, a vast wide dense dark green canopy. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Old dark grey-brown bark with moss, dark green dense leaves, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
+    }
+  },
+  "tree_poplar": {
+    "_role": "Z262 real tree 'poplar': instanced over the battlefield (scaled ±, turned, tinted per tree), swayed by the wind (the leaves flutter, the trunk bends from the root), felled by shells and tanks",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A tall Lombardy poplar about 20 m tall: a straight trunk, a tall narrow upright crown of fresh green leaves that flutter, branches sweeping upward. Realistic and natural, true-to-life proportions. One single tree standing upright, the whole tree in view from the root flare to the top, no ground, no grass, no base, no pot, no rocks, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Grey-green poplar bark, bright green leaves, Natural bark texture with deep fissures, real leaf colours with light and shade variation inside the crown, realistic PBR"
+    }
   }
 }

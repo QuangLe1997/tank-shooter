@@ -3,7 +3,7 @@
 //   Tanks plough through it all: trees topple, bushes / flowers / reeds flatten (decor.js crushables).
 import * as THREE from 'three';
 import { LIGHT, OPEN_LAND } from '../../config.js';
-import { AREA_K, ARENA, BIOME, MOBILE, RIVER, WTIME, _R, _mergeColored, arena, blocks, crushables, heightAt, inField, inZone, shaftSpot, wetAt } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, RIVER, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, shaftSpot, TREES, wetAt } from '../hub.js';
 
 let _mat=null;
 // Z146 LEAF ATLAS → Z202 four regions: u 0–¼ BARK (vertical fissures, lichen — trunks and limbs) · ¼–½ broadleaf clusters · ½–¾ needle / frond sprays ·
@@ -158,7 +158,7 @@ const floe=()=>[geo('floe', ()=>{ const g=new THREE.CylinderGeometry(1,1.1,0.35,
 // ---------- placement ----------
 const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(), V3=new THREE.Vector3(), SC=new THREE.Vector3(), C=new THREE.Color();
 export const FLORA = { meshes:[] };
-export function clearFlora(){ for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='trunk') blocks.splice(i,1);   // Z260 the giants' trunks go with them
+export function clearFlora(){ clearTrees(); for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='trunk') blocks.splice(i,1);   // Z260 the giants' trunks go with them
   for(const m of FLORA.meshes){ m.parent && m.parent.remove(m); m.dispose && m.dispose(); } FLORA.meshes.length=0; for(let i=crushables.length-1;i>=0;i--) if(crushables[i].flora) crushables.splice(i,1); }
 function okSpot(x,z,r){ return inField(x,z,r+1) && !inZone(x,z,r) && Math.hypot(x,z)>32 && Math.hypot(x,z-ARENA*0.55)>12 && !wetAt(x,z,r+0.5) && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+r+0.6); }
 function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[]); const tries=n*6; let got=0;   // Z202 instances spread across the species' variants
@@ -166,39 +166,39 @@ function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[
   for(let t=0;t<tries && got<n;t++){ let x, z; if(opt.near){ const p=opt.near(); if(!p) continue; [x,z]=p; } else { x=_R(-ARENA+6,ARENA-6); z=_R(-ARENA+6,ARENA-6); }
     if(opt.high && heightAt(x,z)<opt.high && Math.random()<0.8) continue; if(!(opt.near?inField(x,z,1)&&!inZone(x,z,1):okSpot(x,z,opt.r||1))) continue;
     lists[(Math.random()*V.length)|0].push({ x, z, s:_R(opt.s[0],opt.s[1])*(opt.real||1), ry:_R(0,6.28), lx:_R(-lean,lean), lz:_R(-lean,lean), sy:_R(0.82,1.2), sw:_R(0.85,1.15) }); got++; }
-  V.forEach((g,vi)=>{ const list=lists[vi]; if(!list.length) return; const im=new THREE.InstancedMesh(g, floraMat(), list.length); im.castShadow=!MOBILE && opt.shadow!==false; im.receiveShadow=true;
+  V.forEach((g,vi)=>{ const list=lists[vi]; if(!list.length) return; const im=new THREE.InstancedMesh(g, floraMat(), list.length); if(opt.tk) im.userData.tree={ tk:opt.tk, vi, sMid:(opt.s[0]+opt.s[1])/2*(opt.real||1) }; /* Z262 a real species takes its place */ im.castShadow=!MOBILE && opt.shadow!==false; im.receiveShadow=true;
     list.forEach((o,k)=>{ M.compose(V3.set(o.x, heightAt(o.x,o.z)-0.05, o.z), Q.setFromEuler(E.set(o.lx,o.ry,o.lz)), SC.set(o.s*o.sw,o.s*o.sy,o.s*o.sw)); im.setMatrixAt(k,M);
       const patch=Math.sin(o.x*0.045+1.3)*Math.cos(o.z*0.038-0.7)+Math.sin((o.x+o.z)*0.021);   // big soft patches: drier here, lusher there
       C.setHSL(0, 0, 1); C.offsetHSL(_R(-0.04,0.04)+patch*0.025, _R(-0.14,0.1)+patch*0.06, _R(-0.13,0.1)+patch*0.05); im.setColorAt(k, C);
       if(opt.fixed) blocks.push({ mesh:new THREE.Object3D(), x:o.x, z:o.z, r:opt.fixed*o.s*o.sw, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'trunk' });   // Z260 a giant: its trunk stops tanks and shells, nothing fells it
-      else crushables.push({ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true }); });
-    im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); }); }
+      else { const cr={ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true, leafy:opt.leafy!==false }; crushables.push(cr); if(cr.kind==='tree') TREES.push(cr); } });   // Z262 standing trees can be felled
+    im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); dressTrees(im); }); }
 function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[(Math.random()*RIVER.lines.length)|0], p=L[(Math.random()*L.length)|0], w=L===RIVER.lines[0]?5.5:3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
   const x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r, h=heightAt(x,z); return (h>RIVER.y-0.05 && h<RIVER.y+0.6) ? [x,z] : null; }
 function patchSpot(centres, R){ const c=centres[(Math.random()*centres.length)|0]; const a=Math.random()*6.28, r=Math.sqrt(Math.random())*R; return [c[0]+Math.cos(a)*r, c[1]+Math.sin(a)*r]; }
 function centres(n){ const C=[]; for(let t=0;t<n*20 && C.length<n;t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20); if(okSpot(x,z,6)) C.push([x,z]); } return C; }
 function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }
 // Z145 trees thinned ~40%: the woods still read as woods but leave clear sight-lines for the fight
-export function buildFlora(){ clearFlora(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
-  if(n==='HILLS'){ plant(conifer(false), N(52), { s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
-  else if(n==='VILLAGE'){ const T=OPEN_LAND.VILLAGE.trees; plant(palm(), N(17*T), { s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10*T), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13*T), { s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
+export function buildFlora(){ clearFlora(); loadRealTrees(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
+  if(n==='HILLS'){ plant(conifer(false), N(52), { tk:'conifer', s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { tk:'broadleaf', s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='VILLAGE'){ const T=OPEN_LAND.VILLAGE.trees; plant(palm(), N(17*T), { tk:'palm', s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10*T), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13*T), { tk:'broadleaf', s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
     plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
-  else if(n==='MEADOW'){ plant(ancient(), N(5), { s:[0.85,1.15], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
+  else if(n==='MEADOW'){ plant(ancient(), N(5), { tk:'ancient', s:[0.85,1.15], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(26), { tk:'broadleaf', s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(70), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(200), { s:[0.8,1.4], shadow:false }); }
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
     plant(grass('straw').concat(grass('dry')), N(1500), { s:[1.15,1.85], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
     plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });
-    plant(baobab(), N(9), { s:[0.9,1.35], kind:'tree', cr:1.3, real:1.4 }); plant(acacia(), N(26), { s:[0.8,1.3], kind:'tree', cr:0.4, real:1.15 }); plant(deadTree(), N(18), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 });
+    plant(baobab(), N(9), { tk:'baobab', s:[0.9,1.35], kind:'tree', cr:1.3, real:1.4 }); plant(acacia(), N(26), { tk:'acacia', s:[0.8,1.3], kind:'tree', cr:0.4, real:1.15 }); plant(deadTree(), N(18), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 });
     plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
-  else if(n==='ARCTIC'){ plant(conifer(true), N(34), { s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });   // Z260 + the tundra's snowy spruce (merged into the Arctic)
+  else if(n==='ARCTIC'){ plant(conifer(true), N(34), { tk:'coniferSnow', s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); plant(iceSpire(), N(46), { s:[0.8,1.6], kind:'rock', cr:0.9 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });   // Z260 + the tundra's snowy spruce (merged into the Arctic)
     for(const m of FLORA.meshes){ if(m.geometry===floe()[0]){ const M2=new THREE.Matrix4(), P2=new THREE.Vector3(), Q2=new THREE.Quaternion(), S2=new THREE.Vector3(); for(let i=0;i<m.count;i++){ m.getMatrixAt(i,M2); M2.decompose(P2,Q2,S2); P2.y=RIVER.y+0.05; M2.compose(P2,Q2,S2); m.setMatrixAt(i,M2); } m.instanceMatrix.needsUpdate=true; } } }   // ice floes float on the leads
-  else if(n==='STEELMILL'){ plant(deadTree(), N(16), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(10), { s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(false), N(60), { s:[0.6,1.2], shadow:false }); }   // Z187 nature taking the mill back
-  else if(n==='VOLCANO'){ plant(deadTree(), N(22), { s:[0.7,1.1], kind:'tree', cr:0.3, real:1.15 }); plant(bush(true), N(14), { s:[0.5,0.9], shadow:false }); }   // Z187 scorched snags
-  else if(n==='QUARRY'){ plant(ancient(), N(1), { s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(8), { s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
-  else if(n==='CAVERN'){ plant(broadleaf(), N(18), { s:[0.6,0.95], near:shaftSpot, kind:'tree', cr:0.6, real:1.2 }); plant(palm(), N(8), { s:[0.6,0.9], near:shaftSpot, kind:'tree', cr:0.4, real:1.2 });   // Z225 a jungle grows in each shaft of daylight
+  else if(n==='STEELMILL'){ plant(deadTree(), N(16), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(10), { tk:'broadleaf', s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(false), N(60), { s:[0.6,1.2], shadow:false }); }   // Z187 nature taking the mill back
+  else if(n==='VOLCANO'){ plant(deadTree(), N(22), { tk:'dead', s:[0.7,1.1], kind:'tree', cr:0.3, real:1.15 }); plant(bush(true), N(14), { s:[0.5,0.9], shadow:false }); }   // Z187 scorched snags
+  else if(n==='QUARRY'){ plant(ancient(), N(1), { tk:'ancient', s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(8), { tk:'broadleaf', s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
+  else if(n==='CAVERN'){ plant(broadleaf(), N(18), { tk:'broadleaf', s:[0.6,0.95], near:shaftSpot, kind:'tree', cr:0.6, real:1.2 }); plant(palm(), N(8), { tk:'palm', s:[0.6,0.9], near:shaftSpot, kind:'tree', cr:0.4, real:1.2 });   // Z225 a jungle grows in each shaft of daylight
     plant(bush(false), N(110), { s:[0.7,1.4], near:shaftSpot, shadow:false }); plant(flowers(), N(120), { s:[0.8,1.3], near:shaftSpot, shadow:false }); }
-  else if(n==='TUNDRA'){ plant(conifer(true), N(40), { s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
-  else if(n==='DESERT'){ plant(palm(), N(10), { s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
+  else if(n==='TUNDRA'){ plant(conifer(true), N(40), { tk:'coniferSnow', s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
+  else if(n==='DESERT'){ plant(palm(), N(10), { tk:'palm', s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
-  else if(n==='CITADEL'){ plant(ancient(), N(3), { s:[0.85,1.1], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(12), { s:[0.75,1.15], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(26), { s:[0.6,1.1], shadow:false }); }   // Z260 old trees in the citadel's orchards
-  else if(n==='RUINS'){ plant(ancient(), N(1), { s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(deadTree(), N(10), { s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(6), { s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); }   // Z260 nature taking the ruins back
+  else if(n==='CITADEL'){ plant(ancient(), N(3), { tk:'ancient', s:[0.85,1.1], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(12), { tk:'broadleaf', s:[0.75,1.15], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(26), { s:[0.6,1.1], shadow:false }); }   // Z260 old trees in the citadel's orchards
+  else if(n==='RUINS'){ plant(ancient(), N(1), { tk:'ancient', s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(deadTree(), N(10), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(6), { tk:'broadleaf', s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); }   // Z260 nature taking the ruins back
   else { plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); } }

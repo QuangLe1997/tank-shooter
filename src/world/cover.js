@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, RAM, HARD, OPEN_LAND } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage } from '../hub.js';
+import { BALANCE, RAM, HARD, OPEN_LAND, SHATTER } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage , clearShatter, shatter } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -147,7 +147,7 @@ export function hardDamage(b, dmg){ const gy=heightAt(b.x,b.z), rock=b.kind==='b
     const k=Math.max(0,b.hp/b.maxHp), br=b.bar; br.g.visible=true; br.g.position.set(b.x, gy+b.r*1.5+1.4, b.z); br.g.quaternion.copy(camera.quaternion); br.fill.scale.x=Math.max(0.001,k); br.fill.position.x=-(1-k)*0.5; br.fill.material.color.setHex(0xd8c8a8); const stamp=b._barT=performance.now(); setTimeout(()=>{ if(b.bar && b._barT===stamp) b.bar.g.visible=false; }, 3500); return; }
   if(b.bar){ freeEnemyBar(b.bar); b.bar=null; }
   const pos={x:b.x,z:b.z}, now=performance.now()/1000; const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
-  if(b.ridge) ridgeRockDown(b); else scene.remove(b.mesh);   // a ridge rock is two instances of the shared ridge mesh
+  if(b.ridge) ridgeRockDown(b); else { shatter(b.mesh, SHATTER.kinds[b.kind] || SHATTER.kinds.boulder); scene.remove(b.mesh); }   // a ridge rock is two instances of the shared ridge mesh · Z261 the rock / the hedgehog breaks apart
   if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); }
   if(!b.ridge) leaveRubble(b);   // Z193 split stone / twisted beams stay where it stood
   if(rock){ for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x9a8f7c); burst(pos, 0xc8b89a, 10, 5, {y:gy+1.2, life:1.4, size:2.6, smoke:true, grav:-0.5, drag:1.6, up:1.8, op:0.55}); burst(pos, 0x8a8070, 22, 11, {y:gy+1.2, life:0.6, size:0.45, grav:-18, drag:1.1, up:4}); decalCrater(b.x,b.z,1.6,0.6); }
@@ -157,7 +157,7 @@ export function hardDamage(b, dmg){ const gy=heightAt(b.x,b.z), rock=b.kind==='b
   floatText(rock?'MỞ ĐƯỜNG':'PHÁ RÀO THÉP', '#ffcf5a', new THREE.Vector3(b.x, gy+2.6, b.z), 13); }
 export function destroyCover(b){
   const pos={x:b.x,z:b.z}, now=performance.now()/1000;
-  scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
+  shatter(b.mesh, SHATTER.kinds[b.kind]); scene.remove(b.mesh); const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);   // Z261 it breaks into pieces of itself
   if(b.kind==='drums'){                                                     // FUEL stockpile: fireball + shock wave + burning fuel splashed over everything nearby
     const R=7.5;
     bigExplode(pos, 0xff8a3a, 2.4); fireball(pos, 2.2); decalScorch(b.x, b.z, R*0.9, 1);
@@ -183,4 +183,4 @@ export function destroyCover(b){
   if(b.kind==='drums'||b.kind==='tires') leaveRubble(b, b.kind==='drums'?7:10); else if(b.kind==='sandbag'||b.kind==='crates') leaveRubble(b);   // Z193 what is left of it
   if(b.loot){ dropPowerup(pos, b.lootTier||0); if(b.cache) dropPowerup(pos, Math.max(0,(b.lootTier||0)-1)); }   // beacon-marked stockpiles always yield; Z93 caches give two
 }
-export function clearBlocks(){ for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearRubble(); resetSupply(); }
+export function clearBlocks(){ clearShatter(); for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearRubble(); resetSupply(); }

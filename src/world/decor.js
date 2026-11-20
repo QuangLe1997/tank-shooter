@@ -1,6 +1,7 @@
 // world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
-import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushVehicle, crushables, decalDirt, enemies, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, toppleAt } from '../hub.js';
+import { TREEFALL } from '../../config.js';
+import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushVehicle, crushables, decalDirt, enemies, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, toppleAt } from '../hub.js';
 
 // ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
 // Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
@@ -44,7 +45,7 @@ export function buildTerrainDecor(b){
 // tracks grind clutter: stones burst into chips + dust (gone), grass/shrubs get flattened into the dirt
 export function crushAt(c){
   c.alive=false;
-  if(c.kind==='tree'){ const a=Math.random()*6.28; _IM.compose(_IV.set(c.x,heightAt(c.x,c.z),c.z), _IQ.setFromEuler(_IE.set(Math.cos(a)*1.4, c.ry, Math.sin(a)*1.4)), _IS.set(c.s,c.s,c.s)); c.im.setMatrixAt(c.k,_IM); c.im.instanceMatrix.needsUpdate=true;   // Z141 a tree goes down under the tracks
+  if(c.kind==='tree'){ const pl=S.player; let dx=Math.random()-0.5, dz=Math.random()-0.5; if(pl && (pl.pos.x-c.x)**2+(pl.pos.z-c.z)**2<100){ dx=c.x-pl.pos.x; dz=c.z-pl.pos.z; } fellTree(c, dx, dz, TREEFALL.push);   // Z141 a tree goes down under the tracks · Z262 it topples away from the tank
     for(let i=0;i<14;i++) spawnPart(c.x+(Math.random()-0.5)*3, 2+Math.random()*4, c.z+(Math.random()-0.5)*3, (Math.random()-0.5)*4, Math.random()*2, (Math.random()-0.5)*4, { color:Math.random()<0.5?0x4e7e32:0x6a9a40, size:0.25+Math.random()*0.25, life:1.2, grav:-4, drag:1.5 });
     const p=S.player; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2 < 36){ sfx('crunch'); haptic(10); } return; }
   if(c.kind==='topple'){ const p=S.player; let dx=Math.random()-0.5, dz=Math.random()-0.5; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2<100){ dx=c.x-p.pos.x; dz=c.z-p.pos.z; } toppleAt(c.T, dx, dz); return; }   // Z216 a pole / lamp rammed over

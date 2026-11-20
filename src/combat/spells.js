@@ -1,7 +1,7 @@
 // combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS, LETHAL, REAL } from '../../config.js';
-import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, cityBlast, concuss, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fenceBlast, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateHUD, updateSpellHUD } from '../hub.js';
+import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, cityBlast, concuss, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fenceBlast, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateHUD, updateSpellHUD , blastTrees } from '../hub.js';
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
@@ -62,7 +62,7 @@ export function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length
 // Z104 blast vs a man on foot: 1 = killed (inside the core), else the fraction of the blast damage he takes (fades to edgeMin at reach)
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
 // Z193 a blast also shreds every piece of field cover (sandbags, crates, concrete…)
-export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){
+export function aoeDamage(x,z,r,dmg,stun,now,type,air,siege){ blastTrees(x, z, r);   // Z262 the trees round the blast go down
   fenceBlast(x, z, r);   // Z205 the wire goes down in a blast
   tunnelBlast(x, z, r, dmg);   // Z225 a blast caves in a tunnel way-in
   cityBlast(x, z, r);    // Z216 poles / lamps topple, parked cars burn out, street trees come down

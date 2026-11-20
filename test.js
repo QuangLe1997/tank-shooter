@@ -736,6 +736,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/const ancient=\(\)=>vars\('anc'/.test(fl) && /buttress roots/.test(fl) && /if\(opt\.fixed\) blocks\.push/.test(fl) && /blocks\[i\]\.kind==='trunk'\) blocks\.splice/.test(fl), 'ancient giants: buttress roots, spreading limbs, a trunk that stops tanks, cleared with the flora');
   ok(/n==='ARCTIC'\)\{ plant\(conifer\(true\)/.test(fl) && /n==='CITADEL'\)\{ plant\(ancient\(\)/.test(fl) && /n==='RUINS'\)\{ plant\(ancient\(\)/.test(fl) && /n==='MEADOW'\)\{ plant\(ancient\(\)/.test(fl), 'giants on the meadow, the citadel, the ruins and the quarry; spruce in the Arctic'); }
 
+// Z261 shatter: a destroyed prop breaks into pieces of its own mesh (clustered triangles), thrown, bouncing, settling, sinking; capped
+{ const fs=await import('node:fs'); const sh=fs.readFileSync('src/fx/shatter.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), C=await import('./config.js');
+  ok(/export function cutGeometry/.test(sh) && /relax: even, chunky pieces/.test(sh) && /export function shatter/.test(sh) && /DoubleSide/.test(sh) && /LIVE\.length >= cap/.test(sh) && /s\.v\.y = -s\.v\.y \* s\.bounce/.test(sh), 'shatter: own-mesh pieces, two-sided, capped, bounce and settle');
+  ok(/shatter\(b\.mesh, SHATTER\.kinds\[b\.kind\]\); scene\.remove\(b\.mesh\); const i=blocks\.indexOf\(b\)/.test(cv) && /clearShatter\(\); for\(const b of blocks\)/.test(cv) && /updateShatter\(dt\)/.test(lp), 'every destroyed cover piece and rock breaks apart; cleared with the blocks');
+  ok(C.SHATTER.kinds.drums.fire && C.SHATTER.kinds.tires.bounce>C.SHATTER.bounce && C.SHATTER.maxMobile<C.SHATTER.max, 'fuel drums throw burning pieces, tyres bounce, fewer pieces on phones'); }
+
+// Z262 trees fall for real: tanks, shells and blasts fell them with a gravity topple
+{ const fs=await import('node:fs'); const tf=fs.readFileSync('src/world/tree-fall.js','utf8'), dc=fs.readFileSync('src/world/decor.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8'), sp=fs.readFileSync('src/combat/spells.js','utf8');
+  ok(/export function fellTree/.test(tf) && /F\.g \/ \(f\.h \* F\.cg\) \* Math\.sin\(f\.th\)/.test(tf) && /export function shotTree/.test(tf) && /export function blastTrees/.test(tf) && /function impact/.test(tf), 'tree fall: gravity topple about the foot, crown strike, bounce, settle');
+  ok(/fellTree\(c, dx, dz, TREEFALL\.push\)/.test(dc) && /shotTree\(b\.x, b\.z, b\.by, b\.vx, b\.vz\)/.test(lo) && /blastTrees\(x, z, r\)/.test(sp), 'rammed, shot through or blasted, a tree goes down the right way'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

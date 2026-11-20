@@ -126,6 +126,9 @@ export * from './fx/explosions.js';
 export * from './fx/wallmarks.js';   // Z204 rounds go off against walls / cover / forts and leave their marks
 export * from './fx/gunfx.js';   // Z149 per-class muzzle fx, lightning / rail beams, ricochets
 export * from './fx/debris.js';
+export * from './fx/shatter.js';   // Z261 props break into pieces of themselves
+export * from './world/tree-fall.js';   // Z262 trees topple for real
+export * from './world/real-trees.js';   // Z262 Meshy tree species with wind
 export * from './fx/weather.js';
 export * from './game/score.js';
 export * from './game/player-damage.js';
