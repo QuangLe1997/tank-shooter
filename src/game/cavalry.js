@@ -8,9 +8,11 @@ export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Mat
 const wrapA=a=>Math.atan2(Math.sin(a), Math.cos(a));
 export function cavOn(){ const p=S.player; return !!(p && p.cav); }
 // ---- the player object: same fields as the tank (makePlayer) so every system that reads S.player keeps working ----
+// Z293 the rider into his place on whatever he rides: the saddle (horse units) or the ride's pillion / bench / bed (XEOM seat, mount units) — mounting, remounting and respawning all go through here
+function seatRider(G, H){ H.B.add(G); G.rotation.set(0,0,0); if(H.bike){ const X=XEOM[H.bike]; G.position.set(0, X.seat[0], X.seat[1]); G.scale.setScalar(HUMAN_SCALE/XEOM.k); } else { G.position.set(0, 0, -0.1); G.scale.setScalar(HUMAN_SCALE/HORSE.size); } }
 export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'xichlo' ride the bike instead of the horse
   const H=kind ? buildBikeMount(kind) : buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
-  H.B.add(G); if(kind){ const X=XEOM[kind]; H.root.scale.setScalar(XEOM.k); G.position.set(0, X.seat[0], X.seat[1]); G.scale.setScalar(HUMAN_SCALE/XEOM.k); } else { G.position.set(0, 0, -0.1); G.scale.setScalar(HUMAN_SCALE/HORSE.size); }   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
+  if(kind) H.root.scale.setScalar(XEOM.k); seatRider(G, H);   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
   if(!kind) H.onStep=hoofFall;
   CV.real=null; CV.realP=kind ? Promise.resolve(false) : null; if(!kind) fitRealCav(CV); else floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
   const mesh=new THREE.Group(); mesh.add(H.root); scene.add(mesh);
@@ -124,7 +126,7 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1,
   const to=CV.hPos, s2=CV.hPos.clone().add(side); const px=T.from.x+(s2.x-T.from.x)*Math.min(1, e*2), pz=T.from.z+(s2.z-T.from.z)*Math.min(1, e*2);
   p.pos.set(px+(to.x-s2.x)*Math.max(0, e*2-1), 0, pz+(to.z-s2.z)*Math.max(0, e*2-1)); const gy=heightAt(p.pos.x, p.pos.z); p.mesh.position.set(p.pos.x, gy, p.pos.z);
   G.position.set(0, Math.max(0, e*2-1)*((HORSE.bodyY+HORSE.saddleY)*HORSE.size-0.8), 0); animateHorse(H, dt, 0, 0);
-  if(k>=1){ CV.trans=null; CV.mounted=true; p.pos.copy(CV.hPos); G.parent && G.parent.remove(G); H.B.add(G); G.position.set(0,0,-0.1); G.rotation.set(0,0,0); G.scale.setScalar(HUMAN_SCALE/HORSE.size);
+  if(k>=1){ CV.trans=null; CV.mounted=true; p.pos.copy(CV.hPos); G.parent && G.parent.remove(G); H.B.add(G); seatRider(G, H);
     H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.y=0; p.facing=CV.facing; H.wantGraze=false; CV.call=false; } }
 // ---- collisions: a circle (horse or man) against every solid thing; a galloping horse knocks infantry flying ----
 function collide(p, now){ const R=p.radius;
@@ -162,5 +164,5 @@ export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=
   updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand', dead:true }); }
 // after a death: straight back in the saddle at the spawn point
 export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);
-  if(!CV.mounted){ G.parent && G.parent.remove(G); H.B.add(G); G.position.set(0,0,-0.1); G.rotation.set(0,0,0); G.scale.setScalar(HUMAN_SCALE/HORSE.size); H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.set(0,0,0); CV.mounted=true; }
+  if(!CV.mounted){ G.parent && G.parent.remove(G); H.B.add(G); seatRider(G, H); H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.set(0,0,0); CV.mounted=true; }
   CV.facing=-Math.PI; H.wantGraze=false; }

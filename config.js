@@ -143,7 +143,11 @@ export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, re
 // Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink
 export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen' }, fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0 }, yaw:{}, sink:0.02 };
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
-export const XEOM = { k:2.3, xeom:{ driver:[0.78, 0.05], seat:[0.84, -0.36], livery:0 }, xichlo:{ driver:[1.05, -0.95], seat:[0.6, 0.38], yaw:3.1416 }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
+// Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
+//   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
+export const XEOM = { k:2.3, xeom:{ len:2.3, yaw:0, seat:[0.42, -0.32], pose:'straddle', lean:0.35, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.75, yaw:-1.5708, seat:[0.4, 0.165], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
+  bagac:{ len:3.9, yaw:3.1416, seat:[0.39, -0.42], pose:'stand', lean:0.12 }, bantai:{ len:5.4, yaw:-1.5708, seat:[0.42, -0.62], pose:'stand', lean:0 },
+  poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry' },

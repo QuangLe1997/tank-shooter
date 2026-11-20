@@ -866,6 +866,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.PHONE_LOD.on && Object.keys(C.REALTREE.h).every(k=>fs.existsSync('assets/models/real/tree/m/'+k+'.glb')) && ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/m/fort_'+st+'_'+p+'.glb'))) && C.PHONE_LOD.city.every(k=>fs.existsSync('assets/models/real/city/m/'+k+'.glb')), 'every phone model is there');
   ok(/PHONE && PHONE_LOD\.trees/.test(m) && /PHONE && PHONE_LOD\.forts/.test(m) && /PHONE_LOD\.city\.includes/.test(m) && /realCityReady\(\) && !MOBILE/.test(fs.readFileSync('src/world/horizon.js','utf8')) && /--thin/.test(fs.readFileSync('tools/city-props.mjs','utf8')), 'phones take the light copies'); }
 
+// Z293 the war rides: xe ôm, xích lô, ba gác, pickup — real models, the soldier seated / standing in his true place
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(['xeom','xichlo','bagac','bantai'].every(k=>fs.existsSync('assets/models/real/ride/'+k+'.glb') && C.XEOM[k].len>1 && C.XEOM.poses[C.XEOM[k].pose]) && /function heroGeo/.test(R('src/game/xeom.js')), 'four ride models fitted to their true length');
+  ok(/function seatRider/.test(R('src/game/cavalry.js')) && !/G\.scale\.setScalar\(HUMAN_SCALE\/HORSE\.size\);\s*H\.root/.test(R('src/game/cavalry.js')) && /XEOM\.poses\[XEOM\[H\.bike\]\.pose\]/.test(R('src/actors/general.js')) && /'bagac','bantai'/.test(R('src/game/flow.js')) && /BÁN TẢI/.test(R('src/ui/battle-setup.js')), 'seated / standing poses, remount keeps the seat, two new rides to pick'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

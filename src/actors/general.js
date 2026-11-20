@@ -175,7 +175,10 @@ export function poseRider(g, H, dt, twist, firing){ const u=g.userData; if(!u.le
   const lift = gal*0.09+tro*Math.max(0, Math.sin(ph*4*Math.PI))*0.07+can*0.03;
   u.rideLift=(u.rideLift||0)+(lift-(u.rideLift||0))*Math.min(1, dt*10);
   g.position.y = H.bike ? XEOM[H.bike].seat[0]-0.74*u.body.scale.y*g.scale.y : HORSE.saddleY+0.06-0.74*u.body.scale.y*g.scale.y + u.rideLift - (H.B.position.y-HORSE.bodyY)*gal*0.6;   // two-point: the legs soak the horse's bob, the head stays level · Z282 on a bike: the pillion / cyclo seat
-  for(const L of u.legs){ L.hip.rotation.x=-0.83-gal*0.3; L.hip.rotation.y=0; L.hip.rotation.z=L.sx*0.62; L.knee.rotation.x=1.12+gal*0.4; }   // Z246 thighs spread round the barrel, shins down the horse's sides to the stirrups
+  const RP = H.bike && XEOM[H.bike].pose ? XEOM.poses[XEOM[H.bike].pose] : null;   // Z293 on a ride: straddling the pillion, sat on the cyclo's bench, or standing braced in the bed
+  if(RP){ g.position.y = XEOM[H.bike].seat[0] - (RP.stand ? 0 : 0.74*u.body.scale.y*g.scale.y);
+    for(const L of u.legs){ L.hip.rotation.x=RP.hip; L.hip.rotation.y=0; L.hip.rotation.z=L.sx*RP.spread; L.knee.rotation.x=RP.knee; } }
+  else for(const L of u.legs){ L.hip.rotation.x=-0.83-gal*0.3; L.hip.rotation.y=0; L.hip.rotation.z=L.sx*0.62; L.knee.rotation.x=1.12+gal*0.4; }   // Z246 thighs spread round the barrel, shins down the horse's sides to the stirrups
   u.body.rotation.set(0, 0, 0); u.body.position.set(0, 0, 0);
   const lean = gal*0.42 + can*0.16 + tro*0.06 + Math.sin(ph*2*Math.PI)*can*0.05;
   u.up.rotation.x = lean*(firing?0.45:1); u.up.rotation.y += (Math.max(-2.0, Math.min(2.0, twist)) - u.up.rotation.y)*Math.min(1, dt*10);
