@@ -825,6 +825,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(/export function windowLights/.test(R('src/world/city.js')) && /WIN_K\.value=NIGHT\.k/.test(R('src/world/landmarks.js')) && /windowLights\(mat\)/.test(R('src/world/horizon.js')) && /windowLights\(M\.mat\.clone\(\)\)/.test(R('src/world/wonders.js')) && C.REALCITY.windows.share>0, 'lit windows at night'); }
 
+// Z281 the base's main gatehouse lowered, its short wall runs clipped not squeezed · Z282 the xe ôm / xích lô mode
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(/th=main\?H\+9:H\+7/.test(R('src/world/core-walls.js')) && /coreClip/.test(R('src/world/core-walls.js')), 'base walls: no squeezed runs, a sane gatehouse');
+  ok(/export function buildBikeMount/.test(R('src/game/xeom.js')) && /export async function mountModel/.test(R('src/world/traffic.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/cavalry.js')) && /if\(S\.bike\) return animateBike/.test(R('src/actors/horse.js')) && /\['xeom','XE ÔM'/.test(R('src/ui/battle-setup.js')) && /makeCavPlayer\(cavKind\)/.test(R('src/game/flow.js')) && C.XEOM.xeom && C.XEOM.xichlo, 'ride into battle on a xe ôm or a xích lô'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

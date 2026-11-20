@@ -5,8 +5,8 @@
 // gone for a while, then another comes. Built once the models are in (world/city.js), drawn as one instanced mesh per model.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { REALCITY } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, haptic, heightAt, loadGLTF, sfx, spawnPart } from '../hub.js';
+import { REALCITY, XEOM } from '../../config.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, haptic, heightAt, loadGLTF, sfx, spawnPart, loadRealCity, cityProp } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -40,10 +40,9 @@ function livery(tex, L){ const img = tex && tex.image; if(!img || !img.width) re
     c.setHSL(L.h / 360, Math.min(1, Math.max(hsl.s, 0.35) * L.s / 0.6), Math.min(0.95, hsl.l * L.l)); d[i] = c.r * 255; d[i + 1] = c.g * 255; d[i + 2] = c.b * 255; }
   x.putImageData(D, 0, 0); const t = new THREE.CanvasTexture(cv); t.flipY = tex.flipY; t.colorSpace = tex.colorSpace; t.anisotropy = 4; return t; }
 
-// the scooters with their riders: one model per livery (the rider's rig posed seated and baked once), on the bike that livery rides
-async function motoModels(){ if(_moto) return _moto; const C = REALCITY.traffic, bikes = [...new Set(C.liveries.map(l => l.bike))];
-  const [rg, ...bg] = await Promise.all([loadGLTF('rider_driver'), ...bikes.map(k => loadGLTF(k))]); if(!rg) return null;
-  const BK = {}; bikes.forEach((k, i) => { if(bg[i]) BK[k] = bikeGeo(bg[i], C.motoL); }); if(!Object.keys(BK).length) return null;
+// the rider (the rigged Tripo driver) posed in the saddle and baked once: hips at the origin, facing +z, sized
+let _rider = null;
+async function riderGeo(){ if(_rider) return _rider; const C = REALCITY.traffic, rg = await loadGLTF('rider_driver'); if(!rg) return null;
   // the rider: sized, then posed in the saddle — thighs forward, shins down, a little lean, hands forward on the bars
   const sk = firstMesh(rg.scene, true); if(!sk) return null; rg.scene.updateMatrixWorld(true); const B = n => sk.skeleton.getBoneByName('mixamorig' + n) || sk.skeleton.getBoneByName('mixamorig:' + n);   // three drops the ':' from node names
   const toe = B('LeftToe_End') || B('LeftToeBase'), foot = B('LeftFoot'); foot.getWorldPosition(_a); toe.getWorldPosition(_b); const F = _b.sub(_a).setY(0).normalize().clone();
@@ -57,8 +56,15 @@ async function motoModels(){ if(_moto) return _moto; const C = REALCITY.traffic,
     aim(B(n + 'ForeArm'), B(n + 'Hand'), mix([F, 1], [D, 0.18], [Lf, sd * 0.06])); }
   rg.scene.updateMatrixWorld(true); const hips = B('Hips').getWorldPosition(new THREE.Vector3()); const rgeo = bake(sk);
   rgeo.translate(-hips.x, -hips.y, -hips.z); rgeo.rotateY(-Math.atan2(F.x, F.z)); rgeo.computeBoundingBox();
-  const r0 = rgeo.boundingBox, kr = C.riderH * C.seatK / (r0.max.y - r0.min.y); rgeo.scale(kr, kr, kr); rgeo.translate(0, C.seat[0], C.seat[1]);
+  const r0 = rgeo.boundingBox, kr = C.riderH * C.seatK / (r0.max.y - r0.min.y); rgeo.scale(kr, kr, kr);
   if(!rgeo.attributes.uv) rgeo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(rgeo.attributes.position.count * 2), 2));
+  return (_rider = { geo:rgeo, sk }); }
+
+// the scooters with their riders: one model per livery (the rider's rig posed seated and baked once), on the bike that livery rides
+async function motoModels(){ if(_moto) return _moto; const C = REALCITY.traffic, bikes = [...new Set(C.liveries.map(l => l.bike))];
+  const bg = await Promise.all(bikes.map(k => loadGLTF(k)));
+  const BK = {}; bikes.forEach((k, i) => { if(bg[i]) BK[k] = bikeGeo(bg[i], C.motoL); }); if(!Object.keys(BK).length) return null;
+  const R = await riderGeo(); if(!R) return null; const sk = R.sk, rgeo = R.geo.clone(); rgeo.translate(0, C.seat[0], C.seat[1]);
   const GEO = {}, out = [];
   for(const L of C.liveries){ const bk = BK[L.bike] || Object.values(BK)[0]; const key = L.bike in BK ? L.bike : Object.keys(BK)[0];
     if(!GEO[key]){ GEO[key] = mergeGeometries([bk.geo, rgeo], true); GEO[key].computeBoundingSphere(); }
@@ -128,3 +134,12 @@ export function updateTraffic(dt){ if(!TR.on) return; if(!TR.ims.length || !TR.i
   for(const v of TR.list) if(v.dead) place(v);
   for(const im of TR.ims) im.instanceMatrix.needsUpdate = true; }
 export const TRAFFIC = TR;
+// Z282 a mount for the xe-ôm / xích-lô mode: the bike (green-jacket driver on the scooter, or the cyclo with its driver on the rear saddle) as one
+//   geometry with its materials, in metres, front toward +z — the player's soldier sits on it where XEOM says
+export async function mountModel(kind){ const X = XEOM[kind]; if(!X) return null; const R = await riderGeo(); if(!R) return null;
+  let bike = null; if(kind === 'xeom'){ const gl = await loadGLTF('moto_scooter'); if(gl) bike = bikeGeo(gl, REALCITY.traffic.motoL); }
+  else { await loadRealCity(); const P = cityProp('prop_cyclo'); if(P){ const g = P.geo.clone(); if(X.yaw) g.rotateY(X.yaw); bike = { geo:g, mat:Array.isArray(P.mats) ? P.mats[0] : P.mats }; } }
+  if(!bike) return null; const rgeo = R.geo.clone(); rgeo.translate(0, X.driver[0], X.driver[1]);
+  const rm = R.sk.material.clone(); if(X.livery != null) rm.map = livery(R.sk.material.map, REALCITY.traffic.liveries[X.livery]);
+  const geo = mergeGeometries([bike.geo, rgeo], true); geo.computeBoundingSphere(); return { geo, mats:[bike.mat, rm] }; }
+

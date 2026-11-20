@@ -1,21 +1,21 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
-import { CAV, HORSE, HUMAN_SCALE } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fireGun, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt } from '../hub.js';
+import { CAV, HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fireGun, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
 const wrapA=a=>Math.atan2(Math.sin(a), Math.cos(a));
 export function cavOn(){ const p=S.player; return !!(p && p.cav); }
 // ---- the player object: same fields as the tank (makePlayer) so every system that reads S.player keeps working ----
-export function makeCavPlayer(){
-  const H=buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
-  H.B.add(G); G.position.set(0, 0, -0.1); G.scale.setScalar(HUMAN_SCALE/HORSE.size);                       // the rider sits on the horse's body (bobs and pitches with it)
-  H.onStep=hoofFall;
-  CV.real=null; CV.realP=null; fitRealCav(CV);   // Z248 the real horse / operator / carbine dress the rigs once loaded
+export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'xichlo' ride the bike instead of the horse
+  const H=kind ? buildBikeMount(kind) : buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
+  H.B.add(G); if(kind){ const X=XEOM[kind]; H.root.scale.setScalar(XEOM.k); G.position.set(0, X.seat[0], X.seat[1]); G.scale.setScalar(HUMAN_SCALE/XEOM.k); } else { G.position.set(0, 0, -0.1); G.scale.setScalar(HUMAN_SCALE/HORSE.size); }   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
+  if(!kind) H.onStep=hoofFall;
+  CV.real=null; CV.realP=kind ? Promise.resolve(false) : null; if(!kind) fitRealCav(CV); else floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
   const mesh=new THREE.Group(); mesh.add(H.root); scene.add(mesh);
   const u=G.userData, p={
-    mesh, turret:new THREE.Object3D(), muzzle:u.muzzle, modelId:'cav', cav:CV,
+    mesh, turret:new THREE.Object3D(), muzzle:u.muzzle, modelId:kind||'cav', bike:kind||null, cav:CV,
     pos:new THREE.Vector3(0, 0, ARENA*0.55), vel:new THREE.Vector3(), facing:-Math.PI, aim:-Math.PI, aimSmoothed:-Math.PI, shieldMesh:null,
     hp:100, maxHp:100, lives:5, fireAt:0, weaponLvl:0, guns:[{ id:'rifle', ammo:24, rU:0, rD:0 }], gunIdx:0, infiniteAmmo:false, ammoMul:1, magMul:1,
     buffUntil:{ rapid:0, power:0, speed:0, infammo:0, ammoup:0, range:0, turbo:0, ram:0 }, buffLv:{ turbo:0 }, era:0, rangeMul:1, radius:CAV.radius.mounted, scale:1,

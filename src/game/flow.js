@@ -24,9 +24,9 @@ export function startGame(arg){
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.runId = Date.now().toString(36)+Math.random().toString(36).slice(2,6);   // Z163 the leaderboard follows one run's score
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
-  const cavWanted = PROFILE.unit==='cav';   // Z245 the unit picked in CHUẨN BỊ TRẬN
-  if(S.player && (!!S.player.cav!==cavWanted || (!cavWanted && S.player.modelId !== currentTank()))){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
-  S.player = S.player || (cavWanted ? makeCavPlayer() : makePlayer());
+  const cavWanted = ['cav','xeom','xichlo'].includes(PROFILE.unit), cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / xích lô
+  if(S.player && (!!S.player.cav!==cavWanted || (cavWanted && (S.player.bike||null)!==cavKind) || (!cavWanted && S.player.modelId !== currentTank()))){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
+  S.player = S.player || (cavWanted ? makeCavPlayer(cavKind) : makePlayer());
   clearRelic();                          // Z154 a new run: no relic power carried over
   if(TRAIN.on){ TRAIN.t0=0; TRAIN.lastPos=null; TRAIN.finished=false; }   // Z182 RESTART inside the training: the current step starts over
   buildCore(stStage);                    // monument matching the (resumed) stage

@@ -133,6 +133,8 @@ export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }
   biomes:{ RUINS:{ n:6, keys:['ruin_chapel','ruin_wall','ruin_tower','ruin_block'] }, CITADEL:{ n:4, keys:['ruin_wall','ruin_tower','ruin_chapel'] }, MEADOW:{ n:3, keys:['ruin_chapel','ruin_tower','ruin_villa'] },
     DESERT:{ n:3, keys:['ruin_wall','ruin_tower'] }, QUARRY:{ n:3, keys:['ruin_wall','ruin_block'] }, SAVANNA:{ n:2, keys:['ruin_tower','ruin_villa'] }, FOUNDRY:{ n:3, keys:['ruin_block','ruin_wall'] },
     ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
+// Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
+export const XEOM = { k:2.3, xeom:{ driver:[0.78, 0.05], seat:[0.84, -0.36], livery:0 }, xichlo:{ driver:[1.05, -0.95], seat:[0.6, 0.38], yaw:3.1416 }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'citadel', RUINS:'citadel', HILLS:'citadel', VILLAGE:'citadel', DESERT:'desert', SAVANNA:'desert', QUARRY:'desert', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'volcano', STEELMILL:'volcano' },

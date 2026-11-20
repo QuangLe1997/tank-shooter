@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HORSE } from '../../config.js';
-import { blot, heightAt, keySec, lineAlong, lineAround, loftGeo, pathKeys, ringAt, secAt, skinMesh, toLocal, trimGeo } from '../hub.js';
+import { blot, heightAt, keySec, lineAlong, lineAround, loftGeo, pathKeys, ringAt, secAt, skinMesh, toLocal, trimGeo, animateBike } from '../hub.js';
 
 // ---- materials (shared) ----
 let _M=null;
@@ -149,7 +149,7 @@ function solveLeg(leg, tz, ty){ const a=leg.a, b=leg.b; let d=Math.hypot(tz, ty)
   const th=Math.atan2(tz, -ty), al=Math.acos(Math.min(1, Math.max(-1, (a*a+d*d-b*b)/(2*a*d)))), be=Math.acos(Math.min(1, Math.max(-1, (a*a+b*b-d*d)/(2*a*b))));
   if(leg.front){ leg.up.rotation.x=-(th+al); leg.mid.rotation.x=(Math.PI-be); } else { leg.up.rotation.x=-(th-al); leg.mid.rotation.x=-(Math.PI-be); } }
 // ---- drive the whole animal: speed v (m/s along its facing), yaw rate (rad/s), dt; the horse root must already be placed in the world ----
-export function animateHorse(S, dt, v, yawRate){ dt=Math.min(dt, 0.05); S.t+=dt; S.v=v; const K=S.root.scale.x||1;   // world metres ↔ horse units
+export function animateHorse(S, dt, v, yawRate){ if(S.bike) return animateBike(S, Math.min(dt, 0.05), v, yawRate); dt=Math.min(dt, 0.05); S.t+=dt; S.v=v; const K=S.root.scale.x||1;   // world metres ↔ horse units · Z282 a bike mount (xe ôm / cyclo) moves its own way
   const g0=S.gait, g1=gaitFor(Math.abs(v), g0); if(g1!==g0){ S.prevGait=g0; S.prevPhase=S.phase; S.blend=0; S.gait=g1; }
   S.blend=Math.min(1, S.blend+dt/HORSE.blendT);
   const G=GAITS[S.gait==='idle'?'walk':S.gait], f=G.f(Math.abs(v)), sgn=v<0?-1:1;

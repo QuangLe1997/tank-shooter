@@ -82,7 +82,7 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
       for(let s=s0+1.2; s<=s1-0.6; s+=2.4){ const bx=x0+ux*s, bz=z0+uz*s; blocks.push({ mesh:g, x:bx, z:bz, r:1.35, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'corewall', ours:true }); } }   // collision (enemy fire stops here, ours passes)
     if(!gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2; tower(mx, mz, 3.8, H+5.5, ry);   // a roofed watch pavilion over the middle of every curtain wall: the land's own style
       const em=new THREE.Mesh(new THREE.CircleGeometry(1.5,32), OM.emblem); const off=(ST.round?2.15:1.75)+0.06; em.position.set(mx+nx*out*off, H*0.55, mz+nz*out*off); em.rotation.y=Math.atan2(nx*out, nz*out); g.add(em); }   // our emblem on every curtain wall
-    if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2, th=main?H+14:H+7, ts=main?5.6:3.6;   // Z241 a towering main gatehouse
+    if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2, th=main?H+9:H+7, ts=main?5.6:3.6;   // Z281 the main gatehouse no longer towers over the whole compound   // Z241 a towering main gatehouse
       for(const sd of [-1,1]){ const px=mx+ux*sd*(gw/2+ts*0.5), pz=mz+uz*sd*(gw/2+ts*0.5); tower(px, pz, ts, th, ry);
         if(main){ const lm=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.5), OM.lamp); lm.position.set(px+nx*out*(ts*0.55), H+0.5, pz+nz*out*(ts*0.55)); g.add(lm);
           const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,7,6), gm.steel); pole.position.set(px, th+2.6, pz); g.add(pole); const fl=makeFlag(vnTex(), 4.2, 2.7, 1); fl.position.set(px, th+5, pz); g.add(fl); } }
@@ -118,9 +118,15 @@ function dressWalls(g, spans, towers, hideMats){ if(typeof window==='undefined' 
       geo.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); if(b.max.z-b.min.z > b.max.x-b.min.x) geo.rotateY(Math.PI/2); geo.computeBoundingBox(); return { geo, mat:src.material.clone(), size:geo.boundingBox.getSize(new THREE.Vector3()) }; };
     const W=piece(wg), T=piece(tg), C=REALCAMP.walls, k=(CORE_DEF.H+C.wallUp)/W.size.y, M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), P=new THREE.Vector3(), Sc=new THREE.Vector3(), up=new THREE.Vector3(0,1,0), wl=[];
     g.traverse(o=>{ if(o.isMesh && hideMats.has(o.material)) o.visible=false; });
-    for(const [cx,cz,len,ry] of spans){ const n=Math.max(1, Math.round(len/(W.size.x*k))), l=len/n, ux=Math.cos(ry), uz=-Math.sin(ry);   // sections of about the model's own length
-      for(let i=0;i<n;i++){ const s=-len/2+(i+0.5)*l; wl.push([cx+ux*s, cz+uz*s, ry, l/W.size.x]); } }
-    const wi=new THREE.InstancedMesh(W.geo, W.mat, wl.length); wl.forEach(([x,z,ry,sx],i)=>{ M4.compose(P.set(x,C.sink,z), Q.setFromAxisAngle(up,ry), Sc.set(sx,k,k*C.thick)); wi.setMatrixAt(i,M4); });
+    // Z281 every run shows the wall at its own proportions: each piece draws the whole section shifted (aOff) and cuts away what lies outside its own
+    //   length (aHalf) — a short run beside a gate is a true stretch of wall, not the whole wall squeezed into it
+    const segL=W.size.x*k; for(const [cx,cz,len,ry] of spans){ const n=Math.max(1, Math.round(len/segL)), l=len/n, ux=Math.cos(ry), uz=-Math.sin(ry);
+      for(let i=0;i<n;i++){ const s=-len/2+(i+0.5)*l; wl.push([cx+ux*s, cz+uz*s, ry, l, (Math.random()-0.5)*Math.max(0, segL-l)]); } }
+    const wg2=W.geo.clone(); wg2.setAttribute('aOff', new THREE.InstancedBufferAttribute(new Float32Array(wl.map(q=>q[4]/k)), 1)); wg2.setAttribute('aHalf', new THREE.InstancedBufferAttribute(new Float32Array(wl.map(q=>q[3]/2/k)), 1));
+    const clip=m=>{ m.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aOff; attribute float aHalf; varying float vLx; varying float vHalf;').replace('#include <begin_vertex>','#include <begin_vertex>\n transformed.x -= aOff; vLx = transformed.x; vHalf = aHalf;');
+        sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vLx; varying float vHalf;').replace('void main() {','void main() {\n if(abs(vLx) > vHalf + 0.01) discard;'); }; m.customProgramCacheKey=()=>'coreClip'; return m; };
+    const wi=new THREE.InstancedMesh(wg2, clip(W.mat.clone()), wl.length); wi.customDepthMaterial=clip(new THREE.MeshDepthMaterial({ depthPacking:THREE.RGBADepthPacking })); wi.frustumCulled=false;
+    wl.forEach(([x,z,ry],i)=>{ M4.compose(P.set(x,C.sink,z), Q.setFromAxisAngle(up,ry), Sc.set(k,k,k*C.thick)); wi.setMatrixAt(i,M4); });
     const ti=new THREE.InstancedMesh(T.geo, T.mat, towers.length); towers.forEach(([x,z,h,ry],i)=>{ const kt=(h+C.towerUp)/T.size.y; M4.compose(P.set(x,C.sink,z), Q.setFromAxisAngle(up,ry), Sc.set(kt*C.towerW,kt,kt*C.towerW)); ti.setMatrixAt(i,M4); });
     for(const im of [wi,ti]){ im.castShadow=true; im.receiveShadow=true; im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); g.add(im); } }); }
 // Z227 automatic MG tower: a six-barrel rotary gun on an armoured mount, ammo box, a little search radar spinning on a mast

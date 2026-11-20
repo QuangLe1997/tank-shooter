@@ -78,5 +78,5 @@ document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ set
 
 // Z245 UNIT: fight as the tank, or as the general on his war horse (KỴ SĨ THÉP; Z246 a modern heavy operator) — remembered between battles
 export function buildUnitPick(){ const el=document.getElementById('bsUnit'); if(!el) return; el.innerHTML='';
-  for(const [k,t,sub] of [['tank','XE TĂNG','thiết giáp'],['cav','KỴ SĨ THÉP','tướng giáp · chiến mã']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.unit||'tank')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';
+  for(const [k,t,sub] of [['tank','XE TĂNG','thiết giáp'],['cav','KỴ SĨ THÉP','tướng giáp · chiến mã'],['xeom','XE ÔM','bác tài chở · lính bắn'],['xichlo','XÍCH LÔ','ngồi trước · bắn thẳng']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.unit||'tank')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';
     tapEl(c, ()=>{ PROFILE.unit=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); } }
