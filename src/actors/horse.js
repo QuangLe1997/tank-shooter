@@ -1,95 +1,129 @@
-// actors/horse.js — Z245 THE WAR HORSE: an armoured charger (chanfron, crinet, peytral, flanchards, crupper, caparison, saddle) on a real gait engine — walk · trot · canter · gallop with the true footfall order and timing of each, two-bone IK legs that plant on the ground, body bob / pitch / bank, a nodding neck, mane and tail with lag
+// actors/horse.js — Z245/Z246 THE WAR HORSE: one sculpted, skinned body (barrel, neck, head, four legs and tail lofted through real cross-sections and bent by a skeleton — no seams, no stuck-on blocks; a bay coat with black points, a sheen on it) in modern military tack that follows its shape (soft ballistic breast panel, clear face shield, leg boots, saddle, saddlebags, bedroll, reins); mane, forelock, a white star and sock, muscle under the skin, on a real gait engine — walk · trot · canter · gallop with the true footfall order and timing of each, two-bone IK legs that plant on the ground, body bob / pitch / bank, a nodding neck, a tail with lag
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HORSE } from '../../config.js';
-import { heightAt } from '../hub.js';
+import { blot, heightAt, keySec, lineAlong, lineAround, loftGeo, pathKeys, ringAt, secAt, skinMesh, toLocal, trimGeo } from '../hub.js';
 
 // ---- materials (shared) ----
 let _M=null;
 function mats(){ if(_M) return _M; const S=(c,r,m,o)=>new THREE.MeshStandardMaterial(Object.assign({ color:c, roughness:r, metalness:m }, o||{}));
-  _M={ coat:S(HORSE.coat,0.62,0.02), coatDk:S(0x1e130b,0.7,0.02), hair:S(0x0c0a08,0.85,0.0), hoof:S(0x1a1612,0.55,0.05), eye:S(0x050404,0.15,0.2),
-    steel:S(0xaeb3b8,0.3,0.92), steelDk:S(0x5a5e62,0.38,0.9), gold:S(0xd2a33c,0.3,0.95), leather:S(0x4a2c18,0.7,0.05), cloth:S(0x1e4a26,0.85,0.0, { side:THREE.DoubleSide }),
-    clothTrim:S(0xc8962e,0.5,0.6, { side:THREE.DoubleSide }), plume:S(0xb4201a,0.8,0.0) };
+  _M={ coat:new THREE.MeshPhysicalMaterial({ vertexColors:true, roughness:0.46, metalness:0, sheen:0.35, sheenRoughness:0.45, sheenColor:new THREE.Color(0x76665a) }),
+    eye:S(0x050404,0.08,0.3), leather:S(0x1e1612,0.55,0.05, { side:THREE.DoubleSide }), strap:S(0x2a2a26,0.7,0.02, { side:THREE.DoubleSide }), iron:S(0x8a8e92,0.35,0.9),
+    cloth:new THREE.MeshPhysicalMaterial({ color:0x4a4a34, roughness:0.9, sheen:0.5, sheenRoughness:0.6, sheenColor:new THREE.Color(0x77775a), side:THREE.DoubleSide }),
+    gear:S(0x6c5e45,0.88,0, { side:THREE.DoubleSide }), gearDk:S(0x54493a,0.9,0, { side:THREE.DoubleSide }), boot:S(0x202226,0.65,0.05),
+    visor:new THREE.MeshPhysicalMaterial({ color:0x2a3a44, roughness:0.04, metalness:0.15, transparent:true, opacity:0.42, clearcoat:1, clearcoatRoughness:0.03, side:THREE.DoubleSide, depthWrite:false }) };
   return _M; }
-const mesh=(geo, m, x, y, z, rx, ry, rz, par)=>{ const o=new THREE.Mesh(geo, m); o.position.set(x||0, y||0, z||0); o.rotation.set(rx||0, ry||0, rz||0); o.castShadow=true; o.receiveShadow=true; if(par) par.add(o); return o; };
-const cap=(r, len, seg)=>new THREE.CapsuleGeometry(r, Math.max(0.01, len), 4, seg||12);
-const cyl=(r0, r1, h, seg, open)=>new THREE.CylinderGeometry(r0, r1, h, seg||12, 1, !!open);
+const COAT=()=>new THREE.Color(HORSE.coat), POINT=new THREE.Color(0x100c09), HOOF=new THREE.Color(0x2a2522), MUZ=new THREE.Color(0x1c140f), WHITE=new THREE.Color(0xd8d0c4);
+const gs=(x, m, w)=>Math.exp(-((x-m)/w)*((x-m)/w));
+const bone=(par, x, y, z)=>{ const b=new THREE.Bone(); b.position.set(x, y, z); par.add(b); return b; };
+const put=(geo, mat, par)=>{ const m=new THREE.Mesh(geo, mat); m.castShadow=true; m.receiveShadow=true; par.add(m); return m; };
 
-// ---- a leg: pivot → upper (forearm / gaskin) → joint (knee / hock) → cannon → fetlock → pastern + hoof ----
-function buildLeg(par, x, y, z, front, M, armour){ const L=front ? HORSE.front : HORSE.hind;
-  const piv=new THREE.Group(); piv.position.set(x, y, z); par.add(piv);
-  const up=new THREE.Group(); piv.add(up);
-  { const g=cyl(front?0.06:0.07, front?0.12:0.15, L[0], 12); mesh(g, M.coat, 0, -L[0]/2, front?0.0:-0.02, 0, 0, 0, up).scale.set(0.85, 1, front?1.2:1.45); }   // forearm / gaskin: thick muscle at the top, tapering to the joint
-  mesh(new THREE.SphereGeometry(front?0.1:0.12, 10, 8), M.coat, 0, 0.02, front?0.02:-0.03, 0, 0, 0, up).scale.set(0.9, 1.1, 1.2);   // elbow / stifle mass
-  const mid=new THREE.Group(); mid.position.y=-L[0]; up.add(mid);
-  mesh(new THREE.SphereGeometry(0.065, 10, 8), M.coat, 0, 0, front?0.015:-0.03, 0, 0, 0, mid).scale.set(0.95, 1.1, front?1.2:1.6);   // knee / hock (the point of the hock sticks out behind)
-  mesh(cyl(0.05, 0.058, L[1], 10), M.coat, 0, -L[1]/2, 0, 0, 0, 0, mid).scale.set(1, 1, 1.25);                                                          // cannon bone: slim, flat
-  const fet=new THREE.Group(); fet.position.y=-L[1]; mid.add(fet);
-  mesh(new THREE.SphereGeometry(0.05, 10, 8), M.coatDk, 0, 0, -0.01, 0, 0, 0, fet).scale.set(1, 1, 1.25);                         // fetlock
-  mesh(cyl(0.048, 0.056, L[2]*0.6, 10), M.coatDk, 0, -L[2]*0.3, 0.01, 0, 0, 0, fet);                                              // pastern
-  mesh(cyl(0.065, 0.08, L[2]*0.42, 12), M.hoof, 0, -L[2]*0.79, 0.02, 0, 0, 0, fet).scale.set(1, 1, 1.12);                                             // hoof
-  if(armour && front) mesh(cyl(0.075, 0.07, 0.2, 10, true), M.steelDk, 0, -0.26, 0.005, 0, 0, 0, up);                           // a steel cuff over the forearm
-  return { piv, up, mid, fet, front, L, a:L[0], b:L[1]+L[2], z0:z, x0:x, y0:y, st:false, curl:0 }; }
-
-export function buildHorse(opts){ const M=mats(), armour=!(opts&&opts.bare), root=new THREE.Group(), B=new THREE.Group(); B.position.y=HORSE.bodyY; root.add(B);
-  // ---- body: barrel, deep chest, rounded hindquarters, withers ----
-  mesh(cap(0.35, 0.82, 16), M.coat, 0, 0, -0.02, Math.PI/2, 0, 0, B).scale.set(0.84, 1, 1);
-  mesh(new THREE.SphereGeometry(0.38, 16, 12), M.coat, 0, 0.0, 0.52, 0, 0, 0, B).scale.set(0.86, 1.02, 0.92);
-  mesh(new THREE.SphereGeometry(0.4, 16, 12), M.coat, 0, 0.04, -0.56, 0, 0, 0, B).scale.set(0.92, 1, 1.05);
-  mesh(new THREE.SphereGeometry(0.2, 12, 8), M.coat, 0, 0.29, 0.42, 0, 0, 0, B).scale.set(0.9, 0.7, 1.4);                        // withers
-  for(const sx of [-1,1]) mesh(new THREE.SphereGeometry(0.2, 10, 8), M.coat, sx*0.2, -0.05, 0.58, 0, 0, 0, B).scale.set(0.8, 1.2, 0.9);   // shoulders
-  // ---- neck → head (each its own joint) ----
-  const N=new THREE.Group(); N.position.set(0, 0.24, 0.66); N.rotation.x=HORSE.neckX; B.add(N);
-  mesh(cyl(0.13, 0.23, 0.86, 14), M.coat, 0, 0.4, 0, 0, 0, 0, N).scale.set(0.75, 1, 1.1);
-  const H=new THREE.Group(); H.position.set(0, 0.84, 0.02); H.rotation.x=HORSE.headX; N.add(H);
-  { const g=cyl(0.075, 0.135, 0.56, 14); g.rotateX(Math.PI/2); g.translate(0, 0, 0.26); mesh(g, M.coat, 0, 0, 0, 0, 0, 0, H).scale.set(0.72, 1, 1); }   // head: broad jaw tapering to the muzzle
-  mesh(new THREE.SphereGeometry(0.14, 12, 10), M.coat, 0, -0.02, 0.04, 0, 0, 0, H).scale.set(0.72, 1, 1.05);                        // jowl
-  mesh(new THREE.SphereGeometry(0.085, 10, 8), M.coatDk, 0, -0.02, 0.53, 0, 0, 0, H).scale.set(0.9, 0.8, 0.85);                     // muzzle
-  for(const sx of [-1,1]){ mesh(new THREE.SphereGeometry(0.024, 8, 6), M.eye, sx*0.095, 0.05, 0.12, 0, 0, 0, H);                     // eyes
-    mesh(new THREE.ConeGeometry(0.04, 0.15, 8), M.coat, sx*0.055, 0.14, -0.02, -0.25, 0, sx*-0.2, H);                                   // ears
-    mesh(new THREE.SphereGeometry(0.016, 6, 5), M.eye, sx*0.035, -0.0, 0.6, 0, 0, 0, H); }                                              // nostrils
-  const ears=H.children.filter(o=>o.geometry && o.geometry.type==='ConeGeometry');
-  // mane: cards along the crest of the neck, each sways on its own
-  const mane=[]; for(let i=0;i<11;i++){ const t=i/10, g=new THREE.Group(); g.position.set(0, 0.06+t*0.8, -0.14+t*0.02); N.add(g);
-    mesh(new THREE.PlaneGeometry(0.06, 0.26-t*0.06), M.hair, 0.02, -0.08, -0.02, 0, 0.12, 0.35, g).material.side=THREE.DoubleSide; mane.push(g); }
-  { const fl=mesh(new THREE.PlaneGeometry(0.09, 0.16), M.hair, 0, 0.1, 0.06, -0.6, 0, 0, H); fl.material.side=THREE.DoubleSide; }       // forelock
-  // tail: a chain of segments that trails the motion
-  const tail=[]; { let par=B; const T0=new THREE.Group(); T0.position.set(0, 0.22, -0.93); T0.rotation.x=0.55; B.add(T0); par=T0;
-    for(let i=0;i<5;i++){ const s=new THREE.Group(); s.position.y = i ? -0.17 : 0; par.add(s); mesh(cyl(0.05-i*0.006, 0.06-i*0.006, 0.19, 8), M.hair, 0, -0.085, 0, 0, 0, 0, s); tail.push(s); par=s; }
-    mesh(new THREE.ConeGeometry(0.13, 0.55, 10), M.hair, 0, -0.36, 0, Math.PI, 0, 0, par).scale.set(0.75, 1, 1.15); mesh(new THREE.SphereGeometry(0.1, 10, 8), M.hair, 0, -0.1, 0, 0, 0, 0, par).scale.set(0.8, 1.6, 1); }   // a full, long tail
-  // legs: [LH, LF, RH, RF]  (x: −left / +right in horse space = −x left)
-  const F=HORSE.legs, legs=[ buildLeg(B, -F.hx, F.hy, F.hz, false, M, armour), buildLeg(B, -F.fx, F.fy, F.fz, true, M, armour), buildLeg(B, F.hx, F.hy, F.hz, false, M, armour), buildLeg(B, F.fx, F.fy, F.fz, true, M, armour) ];
-  // ---- tack: saddle, girth, stirrups, bridle ----
-  const saddle=new THREE.Group(); saddle.position.set(0, HORSE.saddleY, 0.05); B.add(saddle);
-  mesh(new THREE.BoxGeometry(0.5, 0.08, 0.62), M.cloth, 0, -0.03, 0, 0, 0, 0, saddle);                                              // saddle cloth
-  mesh(new THREE.BoxGeometry(0.4, 0.09, 0.5), M.leather, 0, 0.03, 0, 0, 0, 0, saddle);                                              // seat
-  mesh(new THREE.BoxGeometry(0.3, 0.11, 0.08), M.leather, 0, 0.08, 0.25, -0.25, 0, 0, saddle);                                     // pommel
-  mesh(new THREE.BoxGeometry(0.36, 0.13, 0.08), M.leather, 0, 0.09, -0.25, 0.35, 0, 0, saddle);                                     // cantle
-  mesh(new THREE.TorusGeometry(0.37, 0.025, 6, 24, Math.PI), M.leather, 0, -0.06, 0.08, 0, Math.PI/2, Math.PI, saddle).scale.set(1, 1.05, 1);   // girth
-  const stirrups=[]; for(const sx of [-1,1]){ const s=new THREE.Group(); s.position.set(sx*0.25, 0.0, 0.05); saddle.add(s);
-    mesh(new THREE.BoxGeometry(0.02, 0.48, 0.04), M.leather, 0, -0.24, 0, 0, 0, 0, s); mesh(new THREE.TorusGeometry(0.06, 0.012, 6, 12), M.steel, 0, -0.5, 0, 0, Math.PI/2, 0, s); stirrups.push(s); }
-  mesh(new THREE.TorusGeometry(0.14, 0.012, 6, 18), M.leather, 0, -0.02, 0.32, Math.PI/2, 0, 0, H).scale.set(0.75, 1, 1);           // noseband
-  mesh(new THREE.TorusGeometry(0.13, 0.012, 6, 18), M.leather, 0, 0.03, 0.04, 0, Math.PI/2, 0, H).scale.set(1, 1.2, 0.8);           // headstall
-  // ---- barding (war armour) ----
-  if(armour){
-    { const g=new THREE.BoxGeometry(0.2, 0.06, 0.5); g.translate(0, 0, 0.25); mesh(g, M.steel, 0, 0.1, 0.02, 0.06, 0, 0, H).scale.set(1, 1, 1);   // chanfron: the face plate
-      mesh(new THREE.ConeGeometry(0.03, 0.18, 8), M.gold, 0, 0.17, 0.12, -0.5, 0, 0, H);                                                // its spike
-      for(const sx of [-1,1]) mesh(new THREE.SphereGeometry(0.045, 10, 8, 0, Math.PI*2, 0, Math.PI/2), M.steelDk, sx*0.09, 0.05, 0.12, 0, 0, sx*1.57, H);   // eye guards
-      mesh(new THREE.BoxGeometry(0.22, 0.012, 0.52), M.gold, 0, 0.13, 0.27, 0.06, 0, 0, H); }                                              // gilt edge
-    for(let i=0;i<7;i++){ const t=i/6, g=new THREE.CylinderGeometry(0.125+0.045*(1-t), 0.14+0.045*(1-t), 0.12, 14, 1, true, Math.PI*0.62, Math.PI*0.76); mesh(g, M.steel, 0, 0.1+t*0.68, -0.015, 0, 0, 0, N).scale.set(0.8, 1, 1.05); }   // crinet: lames over the crest only, the throat stays free
-    { const g=new THREE.CylinderGeometry(0.44, 0.47, 0.5, 20, 1, true, -Math.PI*0.62, Math.PI*1.24); mesh(g, M.steel, 0, -0.02, 0.5, 0, 0, 0, B).scale.set(0.95, 1, 1.0);   // peytral: the chest plate
-      mesh(new THREE.TorusGeometry(0.46, 0.018, 6, 24, Math.PI*1.24), M.gold, 0, 0.23, 0.5, Math.PI/2, 0, Math.PI*0.88, B).scale.set(0.95, 1, 1);   // gilt rim
-      mesh(new THREE.SphereGeometry(0.07, 10, 8), M.gold, 0, 0.0, 0.96, 0, 0, 0, B); }                                                    // boss on the breast
-    for(const sx of [-1,1]){ const g=new THREE.CylinderGeometry(0.37, 0.37, 0.5, 16, 1, true, sx>0?Math.PI*0.32:Math.PI*1.32, Math.PI*0.36); mesh(g, M.steel, 0, -0.04, 0.02, Math.PI/2, 0, 0, B).scale.set(0.9, 1, 1.02);   // flanchards: curved side plates under the saddle
-      mesh(new THREE.BoxGeometry(0.02, 0.025, 0.56), M.gold, sx*0.335, 0.12, 0.02, 0, 0, sx*0.5, B); }
-    { const g=new THREE.SphereGeometry(0.46, 18, 10, 0, Math.PI*2, 0, Math.PI*0.42); mesh(g, M.steel, 0, -0.04, -0.6, 0, 0, 0, B).scale.set(0.95, 0.9, 1.05);   // crupper over the hindquarters
-      mesh(new THREE.TorusGeometry(0.44*0.95, 0.016, 6, 28), M.gold, 0, 0.11, -0.6, Math.PI/2, 0, 0, B).scale.set(1, 1.1, 1); }
-    // caparison: a green cloth skirt with a gold hem hanging under the plates, front and back
-    { const c=mesh(new THREE.CylinderGeometry(0.46, 0.5, 0.2, 18, 1, true, Math.PI*0.45, Math.PI*1.1), M.cloth, 0, -0.26, -0.6, 0, 0, 0, B); c.scale.set(0.95, 1, 0.9);   // caparison: a short cloth skirt round the hindquarters, gold hem (the legs stay in view)
-      mesh(new THREE.CylinderGeometry(0.505, 0.505, 0.04, 18, 1, true, Math.PI*0.45, Math.PI*1.1), M.clothTrim, 0, -0.37, -0.6, 0, 0, 0, B).scale.set(0.95, 1, 0.9); }
-    { const pl=new THREE.Group(); pl.position.set(0, 0.2, 0.0); H.add(pl); for(let k=0;k<5;k++) mesh(new THREE.ConeGeometry(0.03, 0.34, 6), M.plume, (k-2)*0.02, 0.17, -0.04*k, -0.3-k*0.12, 0, (k-2)*0.12, pl); }   // a plume on the chanfron
-  }
-  root.traverse(o=>{ if(o.isMesh && o.geometry.type!=='PlaneGeometry') o.castShadow=true; }); root.scale.setScalar(HORSE.size);   // Z245 a big destrier
-  const S={ root, B, N, H, legs, mane, tail, ears, saddle, stirrups, phase:0, gait:'idle', prevGait:null, blend:1, prevPhase:0, bob:0, pitch:0, bank:0, nod:0, t:Math.random()*10, tailV:0, tailA:0, graze:0, onStep:null, v:0 };
+export function buildHorse(opts){ const M=mats(), armour=!(opts&&opts.bare), root=new THREE.Group(), CT=COAT();
+  // ---- skeleton: body → neck → head; a tail chain; each leg pivot → upper (forearm / gaskin) → cannon → pastern ----
+  const B=bone(root, 0, HORSE.bodyY, 0), N=bone(B, 0, 0.24, 0.66), H=bone(N, 0, 0.84, 0.02); N.rotation.x=HORSE.neckX; H.rotation.x=HORSE.headX;
+  const T0=new THREE.Group(); T0.position.set(0, 0.24, -0.95); T0.rotation.x=0.3; B.add(T0);
+  const tail=[]; { let par=T0; for(let i=0;i<5;i++){ const s=bone(par, 0, i?-0.17:0, 0); tail.push(s); par=s; } }
+  const F=HORSE.legs, legDef=[[-F.hx, F.hy, F.hz, false], [-F.fx, F.fy, F.fz, true], [F.hx, F.hy, F.hz, false], [F.fx, F.fy, F.fz, true]];   // [LH, LF, RH, RF]
+  const legs=legDef.map(([x, y, z, front])=>{ const L=front ? HORSE.front : HORSE.hind, piv=new THREE.Group(); piv.position.set(x, y, z); B.add(piv);
+    const up=bone(piv, 0, 0, 0), mid=bone(up, 0, -L[0], 0), fet=bone(mid, 0, -L[1], 0);
+    return { piv, up, mid, fet, front, L, a:L[0], b:L[1]+L[2], z0:z, x0:x, y0:y, st:false, curl:0 }; });
+  root.updateMatrixWorld(true);
+  const bones=[B, N, H, ...tail, ...legs.flatMap(l=>[l.up, l.mid, l.fet])], I=new Map(bones.map((b, i)=>[b, i])), iB=0, iN=1, iH=2;
+  // ---- the body: tail-head → hindquarters → barrel → withers → the chest turning up into the neck → the poll, one tube ----
+  const bk=(z, y, rx, rt, rb, o)=>keySec(B, [0, y, z], [0, 0, 1], [0, 1, 0], rx, rt, rb, Object.assign({ w:[[iB,1]], col:CT, e:0.86 }, o||{}));
+  const ba=(z, y, al, rx, rt, rb, o)=>keySec(B, [0, y, z], [0, Math.cos(al), Math.sin(al)], [0, Math.sin(al), -Math.cos(al)], rx, rt, rb, Object.assign({ w:[[iB,1]], col:CT, e:0.86 }, o||{}));
+  const nk=(s, rx, rt, rb, o)=>keySec(N, [0, s, 0], [0, 1, 0], [0, 0, -1], rx, rt, rb, Object.assign({ w:[[iN,1]], col:CT, e:0.94 }, o||{}));
+  const BK=[ bk(-1.02, 0.05, 0.03, 0.03, 0.04), bk(-0.98, 0.05, 0.17, 0.2, 0.26), bk(-0.9, 0.04, 0.27, 0.29, 0.38), bk(-0.76, 0.04, 0.32, 0.33, 0.43), bk(-0.6, 0.03, 0.335, 0.33, 0.42),
+    bk(-0.44, 0.0, 0.32, 0.31, 0.37), bk(-0.28, 0.0, 0.31, 0.29, 0.36), bk(-0.08, 0.0, 0.325, 0.29, 0.4), bk(0.12, 0.0, 0.335, 0.3, 0.43), bk(0.3, 0.02, 0.32, 0.34, 0.44), bk(0.46, 0.05, 0.3, 0.39, 0.43),
+    ba(0.6, 0.1, 1.33, 0.28, 0.36, 0.44), ba(0.7, 0.18, 1.1, 0.25, 0.29, 0.41, { w:[[iB,0.9],[iN,0.1]] }), ba(0.76, 0.29, 0.92, 0.22, 0.27, 0.36, { w:[[iB,0.7],[iN,0.3]] }),
+    nk(0.2, 0.18, 0.25, 0.3, { w:[[iB,0.4],[iN,0.6]] }), nk(0.4, 0.15, 0.2, 0.23, { w:[[iB,0.1],[iN,0.9]] }), nk(0.6, 0.125, 0.16, 0.18), nk(0.76, 0.11, 0.135, 0.15),
+    nk(0.88, 0.095, 0.11, 0.12, { w:[[iN,0.6],[iH,0.4]] }), nk(0.95, 0.05, 0.06, 0.06, { w:[[iN,0.4],[iH,0.6]] }), nk(0.98, 0.01, 0.01, 0.01, { w:[[iH,1]] }) ];
+  // muscle under the skin: the quarters, the stifle, the point of the hip, the ribs, the shoulder and its point, the crest, the jugular groove
+  const relief=(s, a, t)=>{ const ca=Math.abs(Math.cos(a)), sa=Math.sin(a);
+    return gs(t, 2.6, 1.2)*ca*Math.max(0, Math.min(1, (sa+0.2)/0.8))*0.032 + gs(t, 4.3, 0.5)*ca*gs(sa, -0.2, 0.35)*0.016 + gs(t, 4.6, 0.35)*gs(sa, 0.72, 0.18)*0.02
+      + (t>6 && t<9 ? ca*gs(sa, -0.2, 0.4)*0.004*Math.sin(t*9) : 0) + gs(t, 10.3, 0.9)*ca*gs(sa, 0.1, 0.55)*0.03 + gs(t, 11.5, 0.4)*ca*gs(sa, -0.35, 0.3)*0.02
+      + gs(t, 15, 1.2)*gs(sa, 0.7, 0.3)*0.014 - gs(t, 16, 1.5)*ca*gs(sa, -0.25, 0.15)*0.009 + gs(t, 7.5, 1.8)*gs(sa, -1, 0.4)*0.012; };
+  const dorsal=(s, a, t, c, q)=>{ const sa=Math.sin(a); if(sa>0.6) c.multiplyScalar(0.86+0.14*(1-sa)); else if(sa<-0.7) c.multiplyScalar(1.06);   // a darker line down the back, a paler belly,
+    c.multiplyScalar(1+relief(s, a, t)*4+0.05*blot(q, 16)); };                                                                                   //   light on the muscle, a faint dapple
+  const flesh=[ loftGeo(BK, { seg:6, ring:36, caps:true, skin:true, color:true, tint:dorsal, bump:relief }) ];
+  // ---- the head: broad jowls, a flat face narrowing to the muzzle ----
+  const hd=(z, y, rx, rt, rb, o)=>keySec(H, [0, y*1.15, z*1.12], [0, 0, 1], [0, 1, 0], rx*1.15, rt*1.15, rb*1.15, Object.assign({ w:[[iH,1]], col:CT, e:0.9 }, o||{}));
+  const HK=[ hd(-0.1, 0, 0.02, 0.02, 0.02), hd(-0.07, -0.01, 0.085, 0.08, 0.11), hd(0.0, -0.03, 0.11, 0.095, 0.16), hd(0.09, -0.03, 0.112, 0.1, 0.15), hd(0.18, -0.02, 0.095, 0.09, 0.11),
+    hd(0.3, -0.02, 0.078, 0.08, 0.085), hd(0.42, -0.025, 0.07, 0.072, 0.075), hd(0.52, -0.03, 0.074, 0.07, 0.08, { col:MUZ }), hd(0.58, -0.035, 0.066, 0.06, 0.07, { col:MUZ }),
+    hd(0.615, -0.04, 0.04, 0.035, 0.045, { col:MUZ }), hd(0.63, -0.04, 0.005, 0.005, 0.005, { col:MUZ }) ];
+  flesh.push(loftGeo(HK, { seg:6, ring:26, caps:true, skin:true, color:true, tint:(s, a, t, c)=>{ if(t>8.6 && Math.abs(Math.sin(a)+0.15)<0.12) c.multiplyScalar(0.35); const st=gs(t, 2.7, 0.3)*gs(a, Math.PI/2, 0.3); if(st>0.3) c.lerp(WHITE, Math.min(1, (st-0.3)*2)); } }));   // the line of the lips · a white star
+  // ---- legs: the forearm / gaskin muscle coming out of the body, knee / hock, the flat cannon with its tendons behind, fetlock, pastern, hoof ----
+  legs.forEach((l, i)=>{ const iU=I.get(l.up), iM=I.get(l.mid), iF=I.get(l.fet), MIX=CT.clone().lerp(POINT, 0.55);
+    const lk=(y, z, rx, rt, rb, w, col)=>keySec(l.piv, [0, y, z], [0, -1, 0], [0, 0, 1], rx, rt, rb, { w, col:col||CT, e:0.9 });
+    const K = l.front ? [ lk(0.22, 0, 0.13, 0.15, 0.15, [[iB,1]]), lk(0.05, -0.01, 0.12, 0.14, 0.15, [[iB,0.7],[iU,0.3]]), lk(-0.08, 0, 0.11, 0.13, 0.16, [[iB,0.25],[iU,0.75]]),
+        lk(-0.25, 0.005, 0.085, 0.1, 0.1, [[iU,1]]), lk(-0.45, 0, 0.062, 0.066, 0.06, [[iU,1]]), lk(-0.56, 0.005, 0.058, 0.062, 0.055, [[iU,0.7],[iM,0.3]], MIX),
+        lk(-0.62, 0, 0.05, 0.05, 0.052, [[iU,0.3],[iM,0.7]], POINT), lk(-0.7, -0.005, 0.044, 0.04, 0.058, [[iM,1]], POINT), lk(-0.84, -0.005, 0.042, 0.038, 0.058, [[iM,1]], POINT),
+        lk(-0.91, -0.01, 0.046, 0.04, 0.064, [[iM,0.7],[iF,0.3]], POINT), lk(-0.96, 0, 0.044, 0.04, 0.055, [[iM,0.2],[iF,0.8]], POINT), lk(-1.02, 0.008, 0.043, 0.042, 0.045, [[iF,1]], POINT),
+        lk(-1.045, 0.01, 0.05, 0.055, 0.045, [[iF,1]], HOOF), lk(-1.1, 0.016, 0.062, 0.072, 0.055, [[iF,1]], HOOF), lk(-1.145, 0.02, 0.068, 0.08, 0.06, [[iF,1]], HOOF) ]
+      : [ lk(0.22, 0, 0.17, 0.18, 0.2, [[iB,1]]), lk(0.05, -0.04, 0.15, 0.15, 0.21, [[iB,0.65],[iU,0.35]]), lk(-0.1, -0.05, 0.125, 0.12, 0.2, [[iB,0.2],[iU,0.8]]),
+        lk(-0.28, -0.05, 0.09, 0.08, 0.14, [[iU,1]]), lk(-0.48, -0.04, 0.06, 0.055, 0.08, [[iU,1]]), lk(-0.58, -0.035, 0.06, 0.055, 0.095, [[iU,0.7],[iM,0.3]], MIX),
+        lk(-0.64, -0.02, 0.05, 0.048, 0.065, [[iU,0.3],[iM,0.7]], POINT), lk(-0.72, -0.01, 0.045, 0.042, 0.06, [[iM,1]], POINT), lk(-0.92, -0.01, 0.043, 0.04, 0.058, [[iM,1]], POINT),
+        lk(-1.0, -0.012, 0.046, 0.04, 0.064, [[iM,0.7],[iF,0.3]], POINT), lk(-1.05, 0, 0.044, 0.04, 0.055, [[iM,0.2],[iF,0.8]], POINT), lk(-1.1, 0.008, 0.043, 0.042, 0.045, [[iF,1]], POINT),
+        lk(-1.12, 0.01, 0.05, 0.055, 0.045, [[iF,1]], HOOF), lk(-1.175, 0.016, 0.062, 0.07, 0.055, [[iF,1]], HOOF), lk(-1.22, 0.02, 0.067, 0.078, 0.06, [[iF,1]], HOOF) ];
+    if(i===0) for(const k of K.slice(9, 12)) k.col=WHITE;   // a white sock on the near hind
+    flesh.push(loftGeo(K, { seg:5, ring:18, caps:true, skin:true, color:true })); l.K=K; });
+  // ---- tail: a dock, then a long, full fall of hair; mane: a ridge along the crest (only on a bare horse — the crinet covers it) ----
+  { const tw=d=>{ const s=Math.max(0, d)/0.17, w=[]; for(let k=0;k<5;k++){ const v=k===4 && s>4.5 ? 1 : Math.max(0, 1-Math.abs(s-(k+0.5))); if(v>0) w.push([I.get(tail[k]), v]); } return w.length ? w : [[I.get(tail[0]), 1]]; };
+    const HAIR=POINT, arch=d=>-0.16*Math.sin(Math.min(1, Math.max(0, d)/0.5)*Math.PI*0.5)+0.05*Math.max(0, d-0.5),   // the dock arches out behind, then the hair falls
+      tk=(d, r, col)=>keySec(T0, [0, -d, arch(d)], [0, -1, 0], [0, 0, -1], r*0.92, r, r, { w:tw(d), col:col||HAIR, e:0.95 });
+    const K=[ tk(-0.08, 0.04, CT), tk(0, 0.055, CT), tk(0.12, 0.058, CT.clone().lerp(HAIR, 0.6)), tk(0.25, 0.06), tk(0.45, 0.075), tk(0.7, 0.08), tk(0.9, 0.075), tk(1.05, 0.06), tk(1.2, 0.035), tk(1.32, 0.008) ];
+    flesh.push(loftGeo(K, { seg:5, ring:14, caps:true, skin:true, color:true, tint:(s, a, t, c)=>{ if(t>2.5) c.multiplyScalar(0.85+0.3*((Math.sin(a*7+t*3)+1)*0.5)); } })); }   // strands
+  { const MK=[]; for(let i=0;i<=12;i++){ const s=secAt(BK, 12.6+i*0.5), cp=ringAt(s, Math.PI/2, -0.02), u=s.u.clone().addScaledVector(s.X, 0.55).normalize(), k=Math.sin(Math.PI*Math.min(1, i/11));   // the mane falls to the off side
+      MK.push(keySec(null, [cp.x, cp.y, cp.z], [s.n.x, s.n.y, s.n.z], [u.x, u.y, u.z], 0.025+0.02*k, 0.04+0.1*k, 0.01, { w:s.w, col:POINT })); }
+    flesh.push(loftGeo(MK, { seg:4, ring:14, caps:true, skin:true, color:true, tint:(s, a, t, c)=>c.multiplyScalar(0.8+0.5*((Math.sin(a*9+t*5)+1)*0.5)) })); }   // strands
+  const skel=new THREE.Skeleton(bones), body=skinMesh(mergeGeometries(flesh, false), M.coat, skel, root); flesh.forEach(g=>g.dispose());
+  // ---- eyes, ears, nostrils (rigid on the head) ----
+  const onHead=(t, a, off)=>H.worldToLocal(ringAt(secAt(HK, t), a, off));
+  const ears=[]; for(const sx of [1,-1]){ const ex=sx>0 ? 0.42 : Math.PI-0.42, e=put(new THREE.SphereGeometry(0.027, 14, 10), M.eye, H); e.position.copy(onHead(3.35, ex, -0.012));
+    const eg=new THREE.LatheGeometry([[0,0],[0.034,0.02],[0.04,0.07],[0.026,0.13],[0.008,0.165],[0,0.172]].map(p=>new THREE.Vector2(p[0], p[1])), 12); eg.scale(1, 1, 0.55);
+    const ear=put(eg, M.coat, H); ear.geometry.setAttribute('color', new THREE.Float32BufferAttribute(new Array(eg.attributes.position.count*3).fill(0).map((_, k)=>[CT.r, CT.g, CT.b][k%3]), 3));
+    ear.position.copy(onHead(1.3, Math.PI/2 - sx*0.5, -0.02)); ear.rotation.set(-0.25, 0, sx*-0.2); ears.push(ear);
+    const ns=put(new THREE.SphereGeometry(0.016, 10, 8), M.eye, H); ns.position.copy(onHead(8.9, sx>0 ? 0.25 : Math.PI-0.25, -0.006)); ns.scale.set(0.7, 1, 1.4); }
+  // ---- tack: saddle cloth, seat, pommel and cantle, girth, stirrups; bridle ----
+  const saddle=new THREE.Group(); saddle.position.set(0, HORSE.saddleY, 0.05); B.add(saddle); saddle.updateMatrixWorld(true);
+  const onSaddle=(geo, mat)=>put(toLocal(geo, saddle), mat, saddle), onB=(geo, mat)=>put(toLocal(geo, B), mat, B), onH=(geo, mat)=>put(toLocal(geo, H), mat, H);
+  onSaddle(loftGeo(BK, { t0:5.7, t1:9.0, a0:0.12, a1:Math.PI-0.12, off:0.035, seg:8, ring:20 }), M.cloth);
+  for(const a of [0.12, Math.PI-0.12]) onSaddle(trimGeo(lineAlong(BK, 5.7, 9.0, a, 0.037, 16), 0.009), M.strap);
+  for(const t of [5.7, 9.0]) onSaddle(trimGeo(lineAround(BK, t, 0.12, Math.PI-0.12, 0.037, 16), 0.009), M.strap);
+  onSaddle(loftGeo(BK, { t0:6.2, t1:8.7, a0:Math.PI*0.3, a1:Math.PI*0.7, off:0.075, seg:8, ring:12 }), M.leather);                      // the seat
+  onSaddle(trimGeo([...lineAlong(BK, 6.2, 8.7, Math.PI*0.3, 0.075, 10), ...lineAround(BK, 8.7, Math.PI*0.3, Math.PI*0.7, 0.075, 8).slice(1), ...lineAlong(BK, 8.7, 6.2, Math.PI*0.7, 0.075, 10).slice(1)], 0.018), M.leather);   // its rolled edge
+  onSaddle(trimGeo(lineAround(BK, 8.95, Math.PI*0.26, Math.PI*0.74, 0.11, 12), 0.04), M.leather);                                  // pommel
+  onSaddle(trimGeo(lineAround(BK, 6.05, Math.PI*0.24, Math.PI*0.76, 0.13, 12), 0.045), M.leather);                                 // cantle
+  onB(loftGeo(BK, { t0:8.3, t1:8.45, off:0.012, seg:2, ring:32 }), M.leather);                                                        // girth
+  const stirrups=[];   // Z246 no hanging irons: the rider's boots sit against the horse's sides (two-point at the gallop)
+  for(const t of [1.4, 5.2]) onH(loftGeo(HK, { t0:t, t1:t+0.18, off:0.007, seg:2, ring:26 }), M.leather);                           // headstall · noseband
+  for(const a of [0.05, Math.PI-0.05]) onH(trimGeo(lineAlong(HK, 1.45, 5.3, a, 0.008, 12), 0.011), M.leather);                         // cheekpieces
+  // ---- forelock over the brow ----
+  { const P=[ringAt(secAt(HK, 0.9), Math.PI/2, 0.0), ringAt(secAt(HK, 1.8), Math.PI/2, 0.012), ringAt(secAt(HK, 2.6), Math.PI/2, 0.01)], up=secAt(HK, 1.8).u;
+    onH(loftGeo(pathKeys(P, up, t=>[0.045-0.02*t, 0.012, 0.01]), { seg:5, ring:10, caps:true }), M.strap).material=M.leather; }
+  // ---- modern kit: a soft ballistic breast panel, a clear face shield, leg boots, breast collar, saddlebags, bedroll, reins ----
+  if(armour){ const trimB=(pts, mat)=>onB(trimGeo(pts, 0.009), mat||M.strap);
+    onB(loftGeo(BK, { t0:10.4, t1:13.5, a0:Math.PI-0.35, a1:2*Math.PI+0.35, off:0.032, seg:8, ring:22 }), M.gear);                     // breast panel
+    for(let k=1;k<4;k++) onB(trimGeo(lineAround(BK, 10.4+k*0.78, Math.PI+0.15, 2*Math.PI-0.15, 0.034, 20), 0.005), M.gearDk);         // MOLLE webbing rows
+    for(const a of [Math.PI-0.35, 2*Math.PI+0.35]) trimB(lineAlong(BK, 10.4, 13.5, a, 0.034, 14));
+    onB(loftGeo(BK, { t0:10.9, t1:11.12, a0:Math.PI*0.15, a1:Math.PI*0.85, off:0.012, seg:2, ring:16 }), M.leather);                    // breast collar over the withers
+    onH(loftGeo(HK, { t0:2.5, t1:5.6, a0:Math.PI*0.04, a1:Math.PI*0.96, off:0.045, seg:8, ring:18 }), M.visor);                           // clear face shield
+    for(const a of [Math.PI*0.04, Math.PI*0.96]) onH(trimGeo(lineAlong(HK, 2.5, 5.6, a, 0.046, 12), 0.007), M.strap);
+    for(const t of [2.5, 5.6]) onH(trimGeo(lineAround(HK, t, Math.PI*0.04, Math.PI*0.96, 0.046, 14), 0.007), M.strap);
+    legs.forEach(l=>skinMesh(loftGeo(l.K, { t0:6.7, t1:9.3, off:0.012, seg:5, ring:16, skin:true }), M.boot, skel, root));            // splint boots on the cannons
+    for(const sx of [-1,1]){ const sb=put(new RoundedBoxGeometry(0.09, 0.2, 0.27, 4, 0.04), M.gear, B); sb.position.set(sx*0.36, 0.1, -0.42); sb.rotation.z=sx*0.12;   // saddlebags
+      const fl=put(new RoundedBoxGeometry(0.088, 0.07, 0.29, 2, 0.02), M.gearDk, B); fl.position.set(sx*0.37, 0.2, -0.42); fl.rotation.z=sx*0.12; }
+    { const br=put(new THREE.CylinderGeometry(0.075, 0.075, 0.62, 18), M.cloth, B); br.position.set(0, 0.43, -0.4); br.rotation.z=Math.PI/2;    // bedroll behind the cantle
+      for(const x of [-0.2, 0.2]){ const st=put(new THREE.TorusGeometry(0.078, 0.008, 6, 20), M.strap, B); st.position.set(x, 0.43, -0.4); st.rotation.y=Math.PI/2; } }
+    // reins: from the bit up the neck to the pommel — skinned, so they follow the head
+    for(const sx of [1,-1]){ const pts=[], w=[]; const bit=ringAt(secAt(HK, 8.2), sx>0 ? -0.2 : Math.PI+0.2, 0.01);
+      pts.push(bit); w.push([[iH,1]]); for(const [t, wt] of [[17.5, [[iN,0.7],[iH,0.3]]], [15.5, [[iN,1]]], [13.6, [[iN,0.5],[iB,0.5]]]]){ pts.push(ringAt(secAt(BK, t), sx>0 ? 0.35 : Math.PI-0.35, 0.03)); w.push(wt); }
+      pts.push(ringAt(secAt(BK, 9.2), Math.PI/2-sx*0.25, 0.12)); w.push([[iB,1]]);
+      skinMesh(loftGeo(pathKeys(pts, null, ()=>[0.009, 0.004, 0.004], t=>({ w:w[Math.round(t*(pts.length-1))] })), { seg:6, ring:6, caps:true, skin:true }), M.leather, skel, root);
+      const rr=put(new THREE.TorusGeometry(0.022, 0.005, 6, 14), M.iron, H); rr.position.copy(H.worldToLocal(bit.clone())); rr.rotation.y=Math.PI/2; } }
+  root.scale.setScalar(HORSE.size);   // Z245 a big destrier
+  const S={ root, B, N, H, legs, mane:[], tail, ears, saddle, stirrups, body, phase:0, gait:'idle', prevGait:null, blend:1, prevPhase:0, bob:0, pitch:0, bank:0, nod:0, t:Math.random()*10, tailV:0, tailA:0, graze:0, onStep:null, v:0 };
   return S; }
 
 // ---- GAIT TABLE: footfall order (phase offsets for LH, LF, RH, RF), duty factor (share of the stride a hoof is on the ground), stride rate,

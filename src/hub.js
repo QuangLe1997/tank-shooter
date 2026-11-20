@@ -171,6 +171,7 @@ export * from './ui/alarm.js';
 export * from './actors/drone.js';
 export * from './loot/beacons.js';
 export * from './actors/soldiers.js';
+export * from './actors/loft.js';   // Z246 sculpted lofted surfaces (horse, plate armour)
 export * from './actors/horse.js';   // Z245 the war horse + gait engine
 export * from './actors/general.js';   // Z245 the general in full plate
 export * from './game/cavalry.js';   // Z245 cavalry mode

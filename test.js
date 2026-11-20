@@ -622,10 +622,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const ho=fs.readFileSync('src/actors/horse.js','utf8'), ge=fs.readFileSync('src/actors/general.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), C=await import('./config.js');
   ok(/walk:\s*\{ off:\[0, 0\.25, 0\.5, 0\.75\]/.test(ho) && /trot:\s*\{ off:\[0, 0\.5, 0\.5, 0\]/.test(ho) && /canter:\{ off:/.test(ho) && /gallop:\{ off:/.test(ho), 'four gaits with their real footfall order (walk lateral 4-beat, trot diagonal pairs, canter 3-beat, gallop transverse)');
   ok(/function solveLeg/.test(ho) && /function footTarget/.test(ho) && /heightAt\(wx, wz\)/.test(ho) && /S\.onStep/.test(ho), 'two-bone IK legs planted on the ground, footfall events');
-  ok(/chanfron/.test(ho) && /crinet/.test(ho) && /peytral/.test(ho) && /flanchards/.test(ho) && /crupper/.test(ho), 'the horse wears full barding');
-  ok(/armet/.test(ge) && /breastplate/.test(ge) && /pauldrons/.test(ge) && /greaves/.test(ge) && /function battleRifle/.test(ge) && /export function poseRider/.test(ge), 'the general: full plate, a battle rifle, a riding pose');
+  ok(/breast panel/.test(ho) && /face shield/.test(ho) && /splint boots/.test(ho) && /saddlebags/.test(ho) && /reins/.test(ho), 'the horse wears modern military tack');
+  ok(/visor/.test(ge) && /plate carrier/.test(ge) && /headset/.test(ge) && /knee pad/.test(ge) && /function rightHand/.test(ge) && /function battleRifle/.test(ge) && /export function poseRider/.test(ge), 'the general: modern helmet with visor, plate carrier, pads, gloved hands on a battle rifle, a riding pose');
   ok(/export function cavToggleMount/.test(cv) && /export function cavStance/.test(cv) && /export function cavDash/.test(cv) && /trample/.test(cv) && /whistle\(\)/.test(cv), 'mount / dismount, kneel / prone / crawl, gallop surge / sprint, trampling, whistle the horse');
   ok(/if\(S\.player\.cav\) updateCavalry/.test(lp) && /PROFILE\.unit==='cav'/.test(fl) && C.CAV && C.CAV.horse.gallop>=14 && C.CAV.defK.prone<C.CAV.defK.stand && C.HORSE && C.HORSE.gaitV.length===3, 'cavalry mode wired in: the loop, the unit pick, speeds, armour by posture'); }
+
+// Z246 sculpted bodies: one lofted, skinned skin for the horse and the general (no stuck-on primitives), muscle relief, hands that grip
+{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/actors/loft.js','utf8'), ho=fs.readFileSync('src/actors/horse.js','utf8'), ge=fs.readFileSync('src/actors/general.js','utf8');
+  ok(/export function loftGeo/.test(lo) && /export function secAt/.test(lo) && /skinIndex/.test(lo) && /export function skinMesh/.test(lo) && /bump/.test(lo), 'loft: Catmull-Rom sections, bone weights, skinned meshes, relief');
+  ok(/new THREE\.Skeleton\(bones\)/.test(ho) && /new THREE\.Bone\(\)/.test(ho) && /const relief=/.test(ho) && /bump:relief/.test(ho) && /mane falls/.test(ho), 'the horse is one skinned body with muscle relief and a mane');
+  ok(/new THREE\.Skeleton\(bones\)/.test(ge) && /u\.parts=\[\]/.test(ge) && /function leftHand/.test(ge) && /function finger/.test(ge) && /GOFF/.test(ge), 'the general is one skinned body, not the batched infantry kit; fingers round grip and handguard; rifle forward of the carrier');
+  const C=await import('./config.js'); ok(/L\.hip\.rotation\.z=L\.sx\*0\.62/.test(ge), 'the rider straddles the barrel (legs down the horse\'s sides)'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
