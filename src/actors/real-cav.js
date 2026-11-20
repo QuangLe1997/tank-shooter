@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN } from '../../config.js';
-import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs } from '../hub.js';
+import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, mountHand } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -209,6 +209,7 @@ export function updateRealCav(CV, dt, P){
   if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
   else if(MV && MV.roll >= 0){ ok = 'Cautious_Crouch_Walk_Forward'; freeze = 0.42; }   // tucked: knees up, head down
   else if(MV && (MV.air || MV.land > 0)){ ok = 'Aim_Stand'; freeze = 0; }   // Z341 in the air and landing the rifle stays up; his legs tuck and give (actors/soldier-legs.js)
+  else if(P.trans && CV.trans && !CV.trans.crash && R.pup){ ok = 'Aim_Stand'; freeze = 0; }   // Z342 getting on / off: his own climb (actors/soldier-mount.js), the rifle carried low
   else if(P.trans && P.trans.k === 'off'){ if(P.trans.e < 0.55){ ok = 'Cautious_Crouch_Walk_Forward'; ts = 1.3; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // Z295 getting off: a crouched step down, landing on one knee, rifle up
   else if(P.trans && P.trans.k === 'on'){ if(P.trans.e < 0.45){ ok = 'Walk_Forward_While_Shooting'; ts = 1.1; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // getting on: a step to it, then gathered up onto the seat
   else if(mounted && stand){ if(R.step){ ok = 'Walk_Forward_While_Shooting'; ts = 1.35; } else { ok = 'Aim_Stand'; freeze = 0; } }   // braced in the bed, rifle shouldered (Z303 his feet step round when he turns his body)
@@ -231,7 +232,7 @@ export function updateRealCav(CV, dt, P){
   //   can turn to shoot behind; the gap straight behind is beyond him — the aim there, he holds at the limit; once it is `flip` past the middle he swings
   //   back the long way round the front (faster, `swing`), never right round. On the horse his legs stay along its flanks as his hips turn.
   const seated = mounted && bike && !stand, braced = mounted && bike && stand, sat = mounted && !stand, RT = RIDER_TURN; if(R.opRY == null) R.opRY = R.op.rotation.y;
-  const ready = !mounted && !P.trans && fv > C.ready[0] && !S.firing; R.rdy = (R.rdy || 0) + ((ready ? 1 : 0) - (R.rdy || 0)) * Math.min(1, dt * 5);   // Z304 running and not shooting: eyes and muzzle where he runs
+  const ready = (!mounted && !P.trans && fv > C.ready[0] && !S.firing) || !!(P.trans && CV.trans && !CV.trans.crash && R.pup); R.rdy = (R.rdy || 0) + ((ready ? 1 : 0) - (R.rdy || 0)) * Math.min(1, dt * 5);   // Z304 running and not shooting: eyes and muzzle where he runs
   const raw = (P.twist || 0) * (1 - R.rdy);
   R.tu = R.tu == null ? raw : R.tu + Math.atan2(Math.sin(raw - R.tu), Math.cos(raw - R.tu)); const TAU = Math.PI * 2;
   if(!braced){ const L = Math.PI + (sat ? RT.flip : C.flip); if(R.tu > L) R.tu -= TAU; else if(R.tu < -L) R.tu += TAU; }   // sat, he can't turn past his back: well past it, he comes round the front
@@ -262,7 +263,7 @@ export function updateRealCav(CV, dt, P){
   R.H = H; R.seated = seated && !P.trans; R.sat = sat && !P.trans && !P.dead; if(!R.sat) R.gunYaw = null;   // (Z335 for the hold: the ride and its driver · Z340 in the saddle)
   if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
-  if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
+  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ mountHand(R); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride)   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
   R.rh.getWorldPosition(_a); if(R.rhm){ R.rhm.getWorldPosition(_b); _a.lerp(_b, 0.5); }
   (R.lhm || R.lh).getWorldPosition(_b); _d.subVectors(_b, _a); const span = _d.length();

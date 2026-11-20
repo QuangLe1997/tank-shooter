@@ -18,7 +18,7 @@
 //   · behind cover: kneeling or crouched behind it at exactly the height that lays the rifle on its top.
 import * as THREE from 'three';
 import { CAV, SOLDIER_LEGS } from '../../config.js';
-import { CV, heightAt, ik2 } from '../hub.js';
+import { CV, heightAt, ik2, mountOwn, mountPose } from '../hub.js';
 
 const V3 = () => new THREE.Vector3();
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _e = V3(), _g = V3(), _h = V3(), _k = V3(), _ank = [V3(), V3()], _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion();
@@ -48,14 +48,15 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   G.getWorldPosition(_g); if(!L.prev) L.prev = _g.clone(); _a.subVectors(_g, L.prev).divideScalar(dt); _a.y = 0; if(_a.lengthSq() > 144) _a.set(0, 0, 0); L.prev.copy(_g);
   L.v.lerp(_a, Math.min(1, dt * A.velK)); const s = Math.hypot(L.v.x, L.v.z);
   // Z341 which position: in the air, prone, kneeling (crouched and still), crouched or stood on the move
-  const busy = mounted || P.trans || P.dead || (MV && MV.roll >= 0); let mode = null;
-  if(!busy){ if(MV && MV.air) mode = 'air'; else if(P.stance === 'prone') mode = 'prone';
+  const T = CV.trans, own = !!(P.trans && T && !T.crash && mountOwn());   // Z342 getting on / off: walking there on his own legs, then the climb (actors/soldier-mount.js)
+  const busy = mounted || P.dead || (MV && MV.roll >= 0) || (P.trans && !own); let mode = null;
+  if(!busy){ if(own) mode = T.k === 'on' && T.t < (T.walkT || 0) ? 'stand' : 'mount'; else if(MV && MV.air) mode = 'air'; else if(P.stance === 'prone') mode = 'prone';
     else if(P.stance === 'crouch') mode = s > (L.mode === 'crouch' ? A.crouch.minV * 0.5 : A.crouch.minV) ? 'crouch' : 'kneel';
     else if(P.stance === 'stand' && s < A.stand.maxV) mode = 'stand'; }
   L.w += ((mode ? 1 : 0) - L.w) * Math.min(1, dt * A.fade);
   if(mode && mode !== L.mode){ const gait = m => m === 'stand' || m === 'crouch';
     if(L.mode && L.pp && L.w > 0.5) L.tr = { on:true, t:0, dur:A.switchT[mode] || 0.3, q:new Map([...L.pp.q].map(([b, q]) => [b, q.clone()])), hp:L.pp.hp.clone(), hq:L.pp.hq.clone() };
-    if(!gait(mode) || !gait(L.mode)) L.on = false; L.mode = mode; }
+    if(!gait(mode) || !gait(L.mode)) L.on = false; if(mode === 'mount' && !L.mode) L.w = 1; L.mode = mode; }   // (Z342 off a saddle: the climb's first pose is his seat — no easing from the clip, which already stands him on the ground)
   if(!mode && L.w < 0.03){ L.w = 0; L.on = false; L.mode = null; L.tr = null; return; }
   const M = A[L.mode || 'stand']; L.t += dt;
   for(const n of BONES){ const b = D[n]; if(!b) continue; let q = L.snap.get(b); if(!q) L.snap.set(b, q = new THREE.Quaternion()); q.copy(b.quaternion); } L.hp.copy(D.Hips.position);   // (the clip's legs, to ease against)
@@ -64,6 +65,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   if(L.mode === 'kneel'){ kneelPose(D, L, A, psi, len, ankleH, MV); return finish(D, L, dt); }
   if(L.mode === 'prone'){ pronePose(D, L, A, psi, len, dt, s); return finish(D, L, dt); }
   if(L.mode === 'air'){ airPose(D, L, A, psi, len, slope); return finish(D, L, dt); }
+  if(L.mode === 'mount'){ mountPose(D, len, ankleH, slope); return finish(D, L, dt); }
   if(!L.on){ for(const [L1, sd] of SIDES){ const f = L.feet[sd < 0 ? 0 : 1]; wp(D[L1 + 'Foot'], _a); wp(D[L1 + 'ToeBase'], _b); f.p.set(_a.x, 0, _a.z); f.yaw = Math.atan2(_b.x - _a.x, _b.z - _a.z); f.sw = null; f.ph = 0; }
     L.on = true; L.th = 0; L.last = L.t; L.br = 1; }
   // the pelvis turns toward a move off to the side (forward branch), or square-ish to a move backward (backward branch) — kept on a branch past the side
@@ -196,3 +198,5 @@ function airPose(D, L, A, psi, len, slope){ const J = CV.jump, Q = A.air; if(!J)
     _b.copy(_a).addScaledVector(UP, -r).addScaledVector(FA, (Q.fwd + (sd < 0 ? Q.lead : 0)) * tuck).addScaledVector(RA, sd * Q.out);
     ik2(D[L1 + 'UpLeg'], D[L1 + 'Leg'], D[L1 + 'Foot'], _b, _d.copy(_a).addScaledVector(FA, 0.8).addScaledVector(UP, -0.2));
     const sl = slope - (Q.point * (1 - tuck) + 0.15 * tuck); aim(D[L1 + 'Foot'], D[L1 + 'ToeBase'], _e.copy(FA).multiplyScalar(Math.cos(sl)).addScaledVector(UP, Math.sin(sl))); } }
+// Z342 the bone tools, for the climb on and off (actors/soldier-mount.js)
+export const LEGKIT = { aim, turn, setHips, torso, wp };

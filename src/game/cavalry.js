@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape , mountDur, mountMove, mountOwn} from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -120,7 +120,7 @@ function horseAlone(p, dt){ const H=CV.H; if(!H) return; let v=0, yr=0; const ca
   rideClear(CV.hPos, 0.9);   // Z321 nor through a tree, a parked car, the street furniture or the wire (held there, he comes round: game/ride-call.js)
   H.wantGraze = !CV.call; H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, yr); }
 // ---- getting on and off: a short, eased move between the saddle and the ground beside the horse ----
-function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1, (T.t+=dt)/CAV.mountT), e=k*k*(3-2*k);
+function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, own=!T.crash && mountOwn(), k=Math.min(1, (T.t+=dt)/(own ? mountDur(T) : CAV.mountT)), e=k*k*(3-2*k);   // Z342 own: on / off the way a rider does (actors/soldier-mount.js)
   const side=new THREE.Vector3(-Math.cos(CV.facing), 0, Math.sin(CV.facing)).multiplyScalar(H.bike ? XEOM[H.bike].side : 1.05);   // the horse's left side (Z295 a ride's: clear of its body)
   if(T.k==='off'){ if(!T.started){ T.started=true; CV.speed=0; p.vel.set(0,0,0); CV.hPos.copy(p.pos);
       H.root.parent && H.root.parent.remove(H.root); scene.add(H.root); H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing;
@@ -128,6 +128,7 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1,
       if(H.bike && XEOM[H.bike].pose!=='stand') T.from.y=heightAt(wp.x, wp.z)+XEOM.pegY;   // Z295 off a seat his feet start on the pegs, not at his hips
       if(T.crash){ const d=Math.max(1.5, Math.min(4, ((H.drv && H.drv.slide) || 4)*0.4)); T.to=new THREE.Vector3(wp.x+Math.sin(CV.facing)*d, 0, wp.z+Math.cos(CV.facing)*d).add(side.clone().multiplyScalar(0.4)); } }   // Z304 thrown clear on his own line (the camera, on him, no longer slides along with the bike)
     if(T.crash) H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z);   // Z296 the crashed bike slides on while he jumps clear
+    if(own){ mountMove(p, T); animateHorse(H, dt, 0, 0); if(k>=1){ CV.trans=null; CV.mounted=false; G.position.set(0,0,0); CV.stance=CV.want='stand'; CV.landAt=null; CV.autoOn=false; } return; }   // (he ends stood beside it, facing it)
     const to=T.to || CV.hPos.clone().add(side); p.pos.set(T.from.x+(to.x-T.from.x)*e, 0, T.from.z+(to.z-T.from.z)*e);
     const gy=heightAt(p.pos.x, p.pos.z); p.mesh.position.set(p.pos.x, gy, p.pos.z); p.mesh.rotation.y=CV.facing;
     const hop = T.crash ? 0.45 : H.bike ? (XEOM[H.bike].pose==='stand' ? 0.22 : 0.06) : 0.35;   // a step down off a ride, a jump off a horse (thrown off a crash: a real leap)
@@ -136,10 +137,11 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1,
     if(k>=1){ CV.trans=null; CV.mounted=false; G.position.set(0,0,0); p.facing=CV.facing; CV.stance=CV.want='stand'; CV.landAt=T.crash ? p.pos.clone() : null; CV.autoOn=false; } return; }   // Z306 where he landed: stay by it and you ride on
   // on: from beside him up into the saddle
   if(!T.started){ T.started=true; T.from=p.pos.clone(); p.vel.set(0,0,0); }
-  const to=CV.hPos, s2=CV.hPos.clone().add(side); const px=T.from.x+(s2.x-T.from.x)*Math.min(1, e*2), pz=T.from.z+(s2.z-T.from.z)*Math.min(1, e*2);
+  if(own){ mountMove(p, T); animateHorse(H, dt, 0, 0); }
+  else { const to=CV.hPos, s2=CV.hPos.clone().add(side); const px=T.from.x+(s2.x-T.from.x)*Math.min(1, e*2), pz=T.from.z+(s2.z-T.from.z)*Math.min(1, e*2);
   p.pos.set(px+(to.x-s2.x)*Math.max(0, e*2-1), 0, pz+(to.z-s2.z)*Math.max(0, e*2-1)); const gy=heightAt(p.pos.x, p.pos.z); p.mesh.position.set(p.pos.x, gy, p.pos.z);
   const upY = H.bike ? XEOM[H.bike].seat[0]*XEOM.k*(XEOM[H.bike].pose==='stand' ? 1 : 0.55) : (HORSE.bodyY+HORSE.saddleY)*HORSE.size-0.8;   // Z295 up onto the ride's own seat / bed, not a horse's back
-  G.position.set(0, Math.max(0, e*2-1)*upY, 0); animateHorse(H, dt, 0, 0);
+  G.position.set(0, Math.max(0, e*2-1)*upY, 0); animateHorse(H, dt, 0, 0); }
   if(k>=1){ CV.trans=null; CV.mounted=true; p.pos.copy(CV.hPos); G.parent && G.parent.remove(G); seatRider(G, H);
     H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.y=0; p.facing=CV.facing; H.wantGraze=false; CV.call=false; } }
 // ---- collisions: a circle (horse or man) against every solid thing; a galloping horse knocks infantry flying ----

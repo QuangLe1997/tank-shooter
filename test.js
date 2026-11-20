@@ -1135,6 +1135,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(Mv.probe[Mv.probe.length - 1] <= 1.1 && Mv.kneel <= 0.85 && /MV\.cover \+ A\.coverRest - A\.pocket/.test(lg) && /if\(MV && MV\.land > 0\) hipY -= A\.landDip/.test(lg), 'cover only close enough to lay the rifle on; kneeling or crouched to just the height that puts it on top');
   ok(/MV && \(MV\.air \|\| MV\.land > 0\)\)\{ ok = 'Aim_Stand'/.test(rc), 'in the air and landing the rifle stays shouldered'); }
 
+// Z342 getting on and off from the near (left) side the way a rider does: foot in the stirrup, the leg swung over the croup; over a pillion; up into a bed
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), mt=R('src/actors/soldier-mount.js'), cv=R('src/game/cavalry.js'), rc=R('src/actors/real-cav.js'), lg=R('src/actors/soldier-legs.js'), SM=C.SOLDIER_MOUNT;
+  ok(['export function mountOwn','export function mountDur','export function mountMove','export function mountPose','export function mountHand','function keysAt','function frame'].every(k=>mt.includes(k)) && /actors\/soldier-mount\.js/.test(R('src/hub.js')), 'a timeline of key poses in the ride\'s own frame, eased, reached by IK');
+  ok(/own=!T\.crash && mountOwn\(\)/.test(cv) && /if\(own\)\{ mountMove\(p, T\); animateHorse\(H, dt, 0, 0\); \}/.test(cv) && /mountHand\(R\); return;/.test(rc) && /mode = T\.k === 'on' && T\.t < \(T\.walkT \|\| 0\) \? 'stand' : 'mount'/.test(lg), 'the transition hands the climb to it (a crash still throws him clear); he walks there on his own legs; the left hand takes hold');
+  const ok3 = ['horse','pillion','bed'].every(k => { const M = SM[k]; return ['on','off'].every(d => { const K = M[d]; return K[0].u === 0 && K[K.length - 1].u === 1 && K.every((x, i) => !i || x.u > K[i - 1].u); }) && M.dur.on > 0.8 && M.grab; });
+  ok(ok3 && SM.horse.on[0].yaw < -1.2 && SM.horse.on[0].hips[0] > 0.4 && SM.pillion.on[0].hips[0] > 0.4, 'every timeline runs 0 → 1 in order; he starts at the ride\'s LEFT side, facing it');
+  const sw = SM.horse.on.filter(k => k.ra[3] && k.ra[2] < -0.5); ok(sw.length >= 2 && sw.every(k => k.ra[1] > -0.05), 'the right leg goes over the croup above the horse\'s back (from the seat\'s height), not through it');
+  ok(/T\.path\.push\(_b\.copy\(F\.O\)\.addScaledVector\(F\.Fm, end\)\.addScaledVector\(F\.Lm, Math\.min\(side, -out\)\)/.test(mt) && /const glide = /.test(mt) && /if\(mode === 'mount' && !L\.mode\) L\.w = 1;/.test(lg) && /lastT/.test(mt), 'from the far side round the head / tail; an even walk; no sinking at the start of a dismount, no snap at the end of a mount'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

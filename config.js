@@ -871,11 +871,58 @@ export const SOLDIER_LEGS = { velK:10, fade:7, moveV:0.15, turnV:0.35, turnFull:
   //   how far they reach (× the leg), the ankle's height, crawling a knee drawn in (× the leg) and out (m), the crawl's rate (rad/s).
   //   air: the legs' reach at take-off and tucked (× the leg), how fast they tuck going up and reach going down, the knees forward, the left foot leading,
   //   out to the side, the toes pointed at take-off
-  switchT:{ kneel:0.35, prone:0.5, air:0.12, stand:0.3, crouch:0.3 }, coverRest:0.08, pocket:0.31, coverDrop:0.45, landDip:0.14,
+  switchT:{ kneel:0.35, prone:0.5, air:0.12, stand:0.3, crouch:0.3, mount:0.25 }, coverRest:0.08, pocket:0.31, coverDrop:0.45, landDip:0.14,
   kneel:{ turn:0.55, lean:0.1, torso:0.2, kneeH:0.06, hipK:0.92, low:0.22, hipF:-0.02, hipR:0.06, footOut:0.06, footYaw:0.35 },
   prone:{ spread:0.28, reach:0.96, ankleY:0.09, pullIn:0.45, pullOut:0.3, crawlRate:5 },
   air:{ ext:0.97, tuck:0.55, rise:1.8, reachK:1.5, fwd:0.12, lead:0.1, out:0.03, point:0.6 },
   crouch:{ minV:0.25, hipK:0.68, lean:0.24, dip:0, bob:0.016, half:0.12, stance:0.18, stagger:0.08, gap:0.14, maxStride:1.0, lift:0.06, cad:[1.6, 0.4, 2.3], swing:0.8, lead:0.45, idle:0.15, turn:0.9, turnBack:0.4 } };
+// Z342 GETTING ON AND OFF (actors/soldier-mount.js): the walk to the stirrup (m/s; at least walkMin, at most walkMax s), how far round the ride's end he
+//   goes from its far side (m); per ride: its length (m), the climb on / off (s), where the left hand takes hold, and the key poses — u = 0…1 through
+//   the climb; hips = the hip joints' middle, la / ra = the left / right ankle's spot (0 up = on the ground), all [left, up, ahead] of the point on the
+//   ground under the seat (a 4th 1: up measured from the seat — the hips' height on a saddle or pillion, the floor of a bed); yaw = the hips' heading
+//   off the ride's (−1.57: facing it from its left side); lean = the torso's lean forward (rad); lh = the left hand on its hold (0…1)
+export const SOLDIER_MOUNT = { walkV:1.6, walkMin:0.25, walkMax:3.5, clear:0.7,
+  horse:{ len:2.6, dur:{ on:1.8, off:1.5 }, grab:[0.06, 0.16, 0.3, 1],
+    on:[{ u:0, hips:[0.62, 0.96, 0.1], yaw:-1.42, lean:0.05, la:[0.58, 0, 0.26], ra:[0.66, 0, -0.04] },
+      { u:0.16, hips:[0.58, 0.93, 0.08], yaw:-1.42, lean:0.2, la:[0.3, 0.8, 0.14], ra:[0.66, 0, -0.04], lh:1 },
+      { u:0.3, hips:[0.5, 1.02, 0.08], yaw:-1.42, lean:0.3, la:[0.3, 0.8, 0.14], ra:[0.62, 0, -0.06], lh:1 },
+      { u:0.48, hips:[0.36, -0.07, 0.06, 1], yaw:-1.4, lean:0.5, la:[0.3, 0.8, 0.14], ra:[0.42, 0.92, -0.12], lh:1 },
+      { u:0.62, hips:[0.24, 0.03, 0.02, 1], yaw:-1.15, lean:0.45, la:[0.3, 0.82, 0.14], ra:[0.02, 0.02, -0.84, 1], lh:1 },
+      { u:0.75, hips:[0.08, 0.07, 0, 1], yaw:-0.5, lean:0.3, la:[0.28, 0.95, 0.16], ra:[-0.45, 0.04, -0.68, 1], lh:1 },
+      { u:0.88, hips:[0, 0.04, 0, 1], yaw:-0.1, lean:0.12, la:[0.27, -0.6, 0.17, 1], ra:[-0.3, -0.5, 0.05, 1], lh:0.6 },
+      { u:1, hips:[0, 0, 0, 1], yaw:0, lean:0, la:[0.27, -0.52, 0.17, 1], ra:[-0.27, -0.52, 0.17, 1] }],
+    off:[{ u:0, hips:[0, 0, 0, 1], yaw:0, lean:0, la:[0.27, -0.52, 0.17, 1], ra:[-0.27, -0.52, 0.17, 1] },
+      { u:0.14, hips:[0.02, 0.05, 0.02, 1], yaw:0, lean:0.35, la:[0.27, -0.6, 0.17, 1], ra:[-0.28, -0.56, 0.1, 1], lh:0.8 },
+      { u:0.3, hips:[0.08, 0.07, 0, 1], yaw:-0.45, lean:0.38, la:[0.28, 0.95, 0.16], ra:[-0.45, 0.04, -0.68, 1], lh:1 },
+      { u:0.44, hips:[0.22, 0.04, 0.02, 1], yaw:-1.15, lean:0.42, la:[0.3, 0.82, 0.14], ra:[0.02, 0.02, -0.84, 1], lh:1 },
+      { u:0.56, hips:[0.36, -0.07, 0.06, 1], yaw:-1.4, lean:0.45, la:[0.3, 0.8, 0.14], ra:[0.44, 0.9, -0.12], lh:1 },
+      { u:0.72, hips:[0.54, 0.98, 0.08], yaw:-1.42, lean:0.25, la:[0.3, 0.8, 0.14], ra:[0.64, 0, -0.04], lh:1 },
+      { u:0.86, hips:[0.6, 0.94, 0.1], yaw:-1.42, lean:0.08, la:[0.58, 0, 0.26], ra:[0.64, 0, -0.04], lh:0.4 },
+      { u:1, hips:[0.62, 0.97, 0.1], yaw:-1.42, lean:0.03, la:[0.58, 0, 0.26], ra:[0.66, 0, -0.04] }] },
+  pillion:{ len:1.95, dur:{ on:1.25, off:1.05 }, grab:[0.15, -0.2, -0.38, 1],
+    on:[{ u:0, hips:[0.56, 0.96, -0.06], yaw:-1.42, lean:0.05, la:[0.52, 0, 0.12], ra:[0.6, 0, -0.18] },
+      { u:0.22, hips:[0.52, 0.94, -0.06], yaw:-1.35, lean:0.15, la:[0.52, 0, 0.12], ra:[0.48, 0.55, -0.42], lh:1 },
+      { u:0.42, hips:[0.36, 0.97, -0.04], yaw:-1, lean:0.15, la:[0.48, 0, 0.12], ra:[0.05, -0.05, -0.52, 1], lh:1 },
+      { u:0.6, hips:[0.16, -0.01, -0.02, 1], yaw:-0.45, lean:0.1, la:[0.42, 0, 0.14], ra:[-0.32, -0.42, -0.25, 1], lh:0.8 },
+      { u:0.78, hips:[0, 0, 0, 1], yaw:0, lean:0.03, la:[0.38, 0, 0.15], ra:[-0.3, -0.54, 0.28, 1], lh:0.3 },
+      { u:1, hips:[0, 0, 0, 1], yaw:0, lean:0, la:[0.26, -0.56, 0.28, 1], ra:[-0.3, -0.54, 0.28, 1] }],
+    off:[{ u:0, hips:[0, 0, 0, 1], yaw:0, lean:0, la:[0.26, -0.56, 0.28, 1], ra:[-0.3, -0.54, 0.28, 1] },
+      { u:0.2, hips:[0.03, -0.01, 0, 1], yaw:0, lean:0.05, la:[0.38, 0, 0.15], ra:[-0.3, -0.54, 0.28, 1], lh:0.5 },
+      { u:0.4, hips:[0.16, -0.01, -0.02, 1], yaw:-0.45, lean:0.1, la:[0.44, 0, 0.13], ra:[-0.32, -0.36, -0.3, 1], lh:1 },
+      { u:0.6, hips:[0.36, 0.97, -0.04], yaw:-1, lean:0.15, la:[0.5, 0, 0.12], ra:[0.05, -0.05, -0.52, 1], lh:1 },
+      { u:0.8, hips:[0.52, 0.95, -0.06], yaw:-1.35, lean:0.12, la:[0.52, 0, 0.12], ra:[0.48, 0.5, -0.4], lh:0.6 },
+      { u:1, hips:[0.56, 0.96, -0.06], yaw:-1.42, lean:0.05, la:[0.52, 0, 0.12], ra:[0.6, 0, -0.18] }] },
+  bed:{ len:3.3, dur:{ on:1.2, off:1.05 }, grab:[0.55, 0.45, 0.1, 1],
+    on:[{ u:0, hips:[0.95, 0.96, 0], yaw:-1.42, lean:0.05, la:[0.92, 0, 0.12], ra:[0.98, 0, -0.12] },
+      { u:0.25, hips:[0.88, 0.98, 0], yaw:-1.42, lean:0.25, la:[0.5, 0, 0.1, 1], ra:[0.98, 0, -0.12], lh:1 },
+      { u:0.5, hips:[0.55, 0.85, 0.02, 1], yaw:-1.3, lean:0.35, la:[0.5, 0, 0.1, 1], ra:[0.8, 0.35, -0.15], lh:1 },
+      { u:0.72, hips:[0.3, 0.95, 0, 1], yaw:-0.8, lean:0.15, la:[0.4, 0, 0.1, 1], ra:[0.2, 0, -0.15, 1], lh:0.4 },
+      { u:1, hips:[0, 0.97, 0, 1], yaw:0, lean:0, la:[0.12, 0, 0.1, 1], ra:[-0.12, 0, -0.1, 1] }],
+    off:[{ u:0, hips:[0, 0.97, 0, 1], yaw:0, lean:0, la:[0.12, 0, 0.1, 1], ra:[-0.12, 0, -0.1, 1] },
+      { u:0.3, hips:[0.35, 0.96, 0, 1], yaw:1.2, lean:0.05, la:[0.42, 0, 0.12, 1], ra:[0.3, 0, -0.12, 1], lh:0.5 },
+      { u:0.6, hips:[0.7, 0.55, 0, 1], yaw:1.42, lean:0.2, la:[0.45, 0, 0.12, 1], ra:[0.95, 0, -0.1], lh:1 },
+      { u:0.85, hips:[0.95, 0.95, 0.02], yaw:1.45, lean:0.05, la:[0.95, 0, 0.14], ra:[0.97, 0, -0.12], lh:0.3 },
+      { u:1, hips:[0.98, 0.97, 0.02], yaw:1.45, lean:0.03, la:[0.95, 0, 0.14], ra:[1, 0, -0.12] }] } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.6, 0.55], gaitAt:[2.3, 4.4], twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z340 TURNED ROUND IN THE SADDLE (actors/real-cav.js, combat/soldier-fire.js): sat on the horse or a pillion his hips and chest together turn up to `max`
