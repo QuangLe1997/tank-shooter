@@ -27,7 +27,7 @@ const _tb=new THREE.Box3(), _bnc=[];
 // Z314 does a straight round at world height wy meet this body (a man / a tank / the player / the boss) — feet to head, not above it, not under it
 function lineH(b, wy, t, man){ if(!b.line || (t.def && t.def.air)) return true; const gy=heightAt(t.pos.x, t.pos.z), inf = man || (t.def ? !!t.def.inf : !!t.cav);
   const h = inf ? manHigh(t) : LINE.tankH*((t.mesh ? t.mesh.scale.x : TANK_SCALE)/TANK_SCALE); return wy > gy-LINE.floor && wy < gy+h; }
-// Z315 one of our men as he is now — lying flat, crouched, standing, sat on the ride — and how high that makes him (a round aimed at a standing man's chest goes over a man lying flat)
+// Z316 one of our men as he is now — lying flat, crouched, standing, sat on the ride — and how high that makes him (a round aimed at a standing man's chest goes over a man lying flat)
 function stanceOf(t){ if(t && t.cav) return t.cav.mounted ? 'mounted' : (t.cav.stance || 'stand'); const s = t && t.g && t.g.userData && t.g.userData.stance; return s==='low' ? 'crouch' : (s || 'stand'); }
 function manHigh(t){ const st=stanceOf(t); return st==='prone' ? LINE.body.prone : st==='crouch' ? LINE.body.crouch : LINE.manH + (st==='mounted' ? 0.4 : 0); }
 export function blockTop(bl){ if(bl._top==null || bl._topHp!==bl.hp){ bl._topHp=bl.hp; if(bl.fort && (bl.kind==='fortwall' || bl.kind==='gate')) bl._top=heightAt(bl.x,bl.z)+FORT.wallH+0.6;   // a fortress wall's block carries the whole fort's mesh — its own height is the parapet's
@@ -125,7 +125,7 @@ export const HE_AMMO = { R:1.4, share:0.35 };
 function heAoe(o){ const he=o.owner==='p' && S.player && S.player.ammoSplash && !o.inf; if(o.aoe) return o.aoe*(he?1+S.player.ammoSplash:1); return he && !o.lockOn && !o.rocket ? HE_AMMO.R : 0; }
 // Z314 how far along a round's line the first body on it stands (the player or our men for an enemy's round, the enemy for ours) — where a round with no
 //   distance of its own is aimed at chest height; nobody on the line: most of its reach
-function aimAlong(x, z, a, o){ const s=Math.sin(a), c=Math.cos(a); let bd=1e9, who=null;   // (Z315 and who it is)
+function aimAlong(x, z, a, o){ const s=Math.sin(a), c=Math.cos(a); let bd=1e9, who=null;   // (Z316 and who it is)
   const on=(px, pz, lat, w)=>{ const dx=px-x, dz=pz-z, al=dx*s+dz*c; if(al>1 && al<bd && Math.abs(dx*c-dz*s)<lat){ bd=al; who=w; } };
   if(o.owner==='e'){ const p=S.player; if(p) on(p.pos.x, p.pos.z, 3, p); for(const f of FT) on(f.pos.x, f.pos.z, 2, f); } else for(const e of enemies) on(e.pos.x, e.pos.z, e.def && e.def.inf ? 2 : 3.5, e);
   return { d:bd<1e9 ? bd : (o.maxDist||30)*0.6, who }; }
@@ -149,7 +149,7 @@ export function spawnBullet(x, z, angle, o={}){
   //   ground at its aimed distance (dropDist / arcDist — or, for an enemy's round, as far as you are along its line), and on along the same line past it
   const lineRound = !o.lockOn && !o.smart && !o.homing && !(vy>0.5); let dropTo = o.dropTo ?? (o.owner==='e' ? 1.2 : null), A = o.dropDist || D;   // (an enemy's round with no mark set: at the chest of whoever stands on its line)
   if(lineRound && dropTo!=null && (o.owner==='e' || !A)){ const t=aimAlong(x, z, angle, o); if(!A) A=t.d;
-    if(o.owner==='e' && t.who && !(t.who.def) && Math.abs(t.d-A)<5){ const st=stanceOf(t.who); if(st==='prone' || st==='crouch') dropTo=Math.min(dropTo, LINE.aim[st]); } }   // Z315 one of ours lying flat or crouched: the enemy lays its aim low on him
+    if(o.owner==='e' && t.who && !(t.who.def) && Math.abs(t.d-A)<5){ const st=stanceOf(t.who); if(st==='prone' || st==='crouch') dropTo=Math.min(dropTo, LINE.aim[st]); } }   // Z316 one of ours lying flat or crouched: the enemy lays its aim low on him
   const wy0 = heightAt(x,z)+y0; let slope=0; if(lineRound && dropTo!=null && A>0.5){ const ex=x+Math.sin(angle)*A, ez=z+Math.cos(angle)*A; slope=(heightAt(ex,ez)+dropTo-wy0)/A; }
   const loft = o.smart ? (D<14 ? 0.8+Math.random()*0.8 : 2.2+Math.random()*1.6) : o.lockOn ? (D<14 ? 1.0+Math.random()*1.4 : 2.6+Math.random()*3.0) : 0;   // Z214 smart missiles fly flatter and faster, diving onto armour from above   // random arc: low/shallow when the target's close, lofts higher when far (kept snappy — short air time)
   const sp0 = o.smart ? sp*0.3 : sp;   // Z214 a smart missile is ejected slowly, then its motor lights

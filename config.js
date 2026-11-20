@@ -438,7 +438,7 @@ export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol:
 //   how far a tank gun / a man's rifle may tip up (rad); the reticle: ring colour, label
 // Z314 A GUN'S ROUND FLIES A STRAIGHT LINE (combat/lock-on.js): it hits a body only at that body's real height — a man (m), a tank (m at TANK_SCALE),
 //   from floor (m) below its feet — and flies over an obstacle when it passes over m clear of its top
-//   Z315 one of our men lying flat / crouched stands only body.prone / body.crouch (m) high, and the enemy lays its aim on aim.prone / aim.crouch (m)
+//   Z316 one of our men lying flat / crouched stands only body.prone / body.crouch (m) high, and the enemy lays its aim on aim.prone / aim.crouch (m)
 export const LINE = { manH:2.1, tankH:2.8, floor:0.4, over:1.2, body:{ prone:0.7, crouch:1.4 }, aim:{ prone:0.35, crouch:0.85 } };
 export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, tankUp:0.55, manUp:1.05, col:0xff5a3a };
 
