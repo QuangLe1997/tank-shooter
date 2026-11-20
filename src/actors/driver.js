@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, NIGHT, S, burst, curlHand, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, CV, NIGHT, S, bikeHop, burst, curlHand, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, spawnPart } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -61,7 +61,9 @@ function talk(D, ev, force){ const T = RIDE_TALK[ev], now = performance.now() / 
 export function rideTalk(ev, force){ const D = CV.H && CV.H.drv; if(D) talk(D, ev, force); }
 
 // ---- events from the game ----
-export function bikeWheelie(H){ const D = H && H.drv; if(!D || D.state !== 'ride' || !RIDE.fit[D.kind].wheelie) return false; D.wheelT = RIDE.wheelie.dur; sfx('whoosh'); talk(D, 'wheelie', true); return true; }
+export function bikeWheelie(H){ const D = H && H.drv; if(!D || D.state !== 'ride' || !RIDE.fit[D.kind].wheelie) return false; D.wheelT = RIDE.wheelie.dur; sfx('whoosh'); talk(D, 'wheelie', true);
+  const P = XEOM.air.hop, av = Math.abs(H.v || 0); if(av > P.v) bikeHop(H, P.vy[0] + (P.vy[1] - P.vy[0]) * Math.min(1, (av - P.v) / 3));   // Z311 fast, the wheelie leaves the ground: a short hop, the faster the higher
+  return true; }
 export function rideHit(dmg, dx, dz){ const H = CV.H, D = H && H.drv; if(H && CV.mounted) rideWear(H, dmg * XEOM.wear.share);   // Z303 the ride takes its share of the hit
   if(!D || !D.ok) return; D.duckT = RIDE.duck.t; if(D.state !== 'ride' || !CV.mounted) return;
   // Z300 every hit makes him flinch (a jerk down and to one side); several close together and he is under a storm of fire: he dodges and ducks his face

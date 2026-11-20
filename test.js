@@ -1017,6 +1017,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const css=R('css/battle-light.css'), html=R('index.html');
   ok(/href="css\/battle-light\.css"/.test(html) && /id="hpEdge"/.test(html) && !/steps\(/.test(css) && /body\.hpcrit #hpEdge/.test(css) && /#lockAlert\.on/.test(css) && /classList\.toggle\('hpcrit', low\)/.test(R('src/ui/instruments.js')) && B.hpCrit > 0 && B.hpCrit < 0.5, 'HUD warnings share the palette and smooth pulses (no stepped blinks); low health lights a slow red screen edge'); }
 
+// Z311 the ride's feel (lean only at speed, drift, stones, airborne hops, springy landings) and what it runs into (stops dead, knocks light things over, flattens wire)
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), rc=R('src/game/ride-collide.js'), cv=R('src/game/cavalry.js'), d=R('src/actors/driver.js'), hub=R('src/hub.js');
+  const A=C.XEOM.air; ok(A && A.lean[0] > 1 && A.lean[1] > A.lean[0] && A.slip.max > 0 && A.g > 9 && A.land > 0 && A.landZ < C.XEOM.sus.z && /export function bikeHop/.test(x) && /function airborne/.test(x) && /function rideRocks/.test(x) && /bikeHop\(H, P\.vy\[0\]/.test(d), 'it banks only once going, slips when fast, jolts over stones, hops off a fast wheelie and lands on bouncing springs');
+  ok(/export function rideCollide/.test(rc) && /game\/ride-collide\.js/.test(hub) && /if\(CV\.mounted\) rideCollide\(p, now\)/.test(cv) && /H\.drv\.wheelT>0 && bikeHop/.test(cv) && C.RIDE_HIT && C.RIDE_HIT.knock.includes('prop_bin') && C.RIDE_HIT.wireV > C.RIDE_HIT.knockV, 'trees, poles, parked cars, street furniture and wire stop a ride; light things go over, wire is flattened by a charge; a low thing is only leapt in a wheelie');
+  const ci=R('src/world/city.js'), op=R('src/world/outposts.js'), su=R('src/world/supply.js'); ok(/export const CITY_PROPS/.test(ci) && /export function knockProp/.test(ci) && /export const OUTPOST_WIRE/.test(op) && /export function rideFence/.test(su), 'the street furniture, the outposts\' wire and the compounds\' fences are known to the ride'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

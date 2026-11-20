@@ -172,6 +172,14 @@ function fenceCollide(B, p, now){ const F=B.fence, s=p.scale*TANK_SCALE, HW=HULL
       p.vel.x*=0.72; p.vel.z*=0.72; S.shake=Math.min(2.6,S.shake+0.6); continue; }
     const pen=extN-Math.abs(side); p.pos.x+=sp.nx*sg*pen; p.pos.z+=sp.nz*sg*pen; if(closing>0){ p.vel.x+=sp.nx*sg*closing; p.vel.z+=sp.nz*sg*closing; }   // held by the wire
     if(closing>2 && now>_fenceHintAt){ _fenceHintAt=now+3; driveHint('LẤY ĐÀ HÚC MẠNH · HOẶC BẮN ĐỔ HÀNG RÀO'); } } }
+// Z311 a ride (bike or horse: a circle of radius R moving at vel) against every compound's wire: a bay holds it unless it comes on at wireV, which
+//   flattens the bay (and it goes on, slowed); returns how hard it hit (closing m/s) when held, 0 otherwise
+export function rideFence(p, R, wireV){ let hit=0; for(const B of SUPPLY.bases){ const F=B.fence; if(!F || (p.pos.x-B.x)**2+(p.pos.z-B.z)**2 > (B.R*1.6)**2) continue;
+    for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down) continue; const qx=p.pos.x-sp.x0, qz=p.pos.z-sp.z0, along=qx*sp.dx+qz*sp.dz; if(along<-R || along>sp.Lw+R) continue;
+      const side=qx*sp.nx+qz*sp.nz; if(Math.abs(side)>=R) continue; const sg=side>=0?1:-1, vn=p.vel.x*sp.nx+p.vel.z*sp.nz, closing=-vn*sg;
+      if(closing>=wireV){ knockSpan(B, i, p.pos.x, p.pos.z); p.vel.x*=0.75; p.vel.z*=0.75; S.shake=Math.min(2, S.shake+0.4); continue; }
+      const pen=R-Math.abs(side); p.pos.x+=sp.nx*sg*pen; p.pos.z+=sp.nz*sg*pen; if(closing>0){ p.vel.x+=sp.nx*sg*closing; p.vel.z+=sp.nz*sg*closing; hit=Math.max(hit, closing); } } }
+  return hit; }
 // a round passing through the wire line: it tears at the bay it crosses
 export function fenceShot(b){ if(!SUPPLY.bases.length) return; for(const B of SUPPLY.bases){ if(!B.fence || (b.x-B.x)**2+(b.z-B.z)**2 > (B.R*1.6)**2) continue;
     const F=B.fence; for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down) continue; const qx=b.x-sp.x0, qz=b.z-sp.z0, al=qx*sp.dx+qz*sp.dz; if(al<0 || al>sp.Lw || Math.abs(qx*sp.nx+qz*sp.nz)>0.45+b.r) continue;

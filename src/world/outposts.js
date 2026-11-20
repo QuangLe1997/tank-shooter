@@ -12,6 +12,8 @@ function piece(gl, k){ if(PREP[k]) return PREP[k]; let src = null; gl.scene.upda
   g.scale(f, f, f); g.computeBoundingBox(); g.computeBoundingSphere(); return (PREP[k] = { geo:g, mat:src.material.clone(), size:g.boundingBox.getSize(new THREE.Vector3()) }); }
 
 // f: a fort just built (its group f.g at the fort's centre); the gate's outward direction keeps a lane clear
+// Z311 the concertina coils laid across each outpost's approach: [f, mesh, centre, direction along it, length, flattened]
+export const OUTPOST_WIRE = [];
 export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /nooutpost/.test(location.search + location.hash)) return; const C = OUTPOST;
   const ga = Math.atan2((f.oz ?? f.z + 1) - f.z, (f.ox ?? f.x) - f.x), list = [], R = f.R || 30;
   const spot = (a, d) => [Math.cos(a) * d, Math.sin(a) * d];
@@ -24,4 +26,6 @@ export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /no
   const keys = [...new Set(list.map(q => q.k))]; Promise.all(keys.map(k => loadGLTF(k))).then(L => { if(!f.g.parent) return; const by = {}; keys.forEach((k, i) => { if(L[i]) by[k] = piece(L[i], k); });
     for(const q of list){ const P = by[q.k]; if(!P) continue; const wx = f.x + q.x, wz = f.z + q.z, m = new THREE.Mesh(P.geo, P.mat);
       m.position.set(q.x, heightAt(wx, wz) - f.g.position.y - 0.05, q.z); m.rotation.y = q.ry; m.castShadow = m.receiveShadow = true; m.userData.outpost = true; f.g.add(m);
-      if(C.solid.includes(q.k)) blocks.push({ mesh:m, x:wx, z:wz, r:Math.max(P.size.x, P.size.z) * 0.42, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'outpost' }); } }); }
+      if(C.solid.includes(q.k)) blocks.push({ mesh:m, x:wx, z:wz, r:Math.max(P.size.x, P.size.z) * 0.42, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'outpost' });
+      if(q.k === 'base_wire'){ const lx = P.size.x >= P.size.z, L = Math.max(P.size.x, P.size.z), dx = lx ? Math.cos(q.ry) : Math.sin(q.ry), dz = lx ? -Math.sin(q.ry) : Math.cos(q.ry);
+        OUTPOST_WIRE.push({ f, m, x:wx, z:wz, dx, dz, L, down:false }); } } }); }   // Z311 the coil across the approach holds a ride (flattened if rammed hard)

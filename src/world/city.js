@@ -9,7 +9,7 @@
 //   topple (blast, or a tank ramming them) and the wires on a fallen pole drop; cars in a blast burn out.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { OPEN_LAND, REALCITY, REALTREE } from '../../config.js';
+import { OPEN_LAND, REALCITY, REALTREE, RIDE_HIT } from '../../config.js';
 import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox, buildTraffic, trafficBlast, updateTraffic } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
@@ -128,6 +128,10 @@ const _M4=new THREE.Matrix4(), _v3=new THREE.Vector3(), _qy=new THREE.Quaternion
 const TOP=[];
 function regTopple(ims, list, h){ list.forEach((o,k)=>{ const T={ ims, k, x:o.x, z:o.z, y:heightAt(o.x,o.z)+REALCITY.lift.walk, ry:o.ry||0, h, alive:true, fall:null, spans:o.spans||[], pole:h>7 }; TOP.push(T);
   crushables.push({ x:o.x, z:o.z, r:0.45, im:ims[0], k, alive:true, kind:'topple', T, ry:T.ry, s:1, land:true }); }); }
+// a light piece knocked over by a ride: it tips away from the blow onto its side, where it lies
+export function knockProp(P, dx, dz){ if(!P || P.down) return; P.down=true; const L=Math.hypot(dx,dz)||1; _ax.set(dz/L, 0, -dx/L);
+  _qy.setFromEuler(_eu.set(0,P.ry,0)); _qf.setFromAxisAngle(_ax, 1.45).multiply(_qy); _M4.compose(_v3.set(P.x+dx/L*P.h*0.45, P.y+Math.min(P.h, P.r)*0.4, P.z+dz/L*P.h*0.45), _qf, _one);
+  P.im.setMatrixAt(P.k, _M4); P.im.instanceMatrix.needsUpdate=true; }
 export function toppleAt(T, dx, dz){ if(!T || !T.alive) return; T.alive=false; const L=Math.hypot(dx,dz)||1; T.fall={ t:0, dx:dx/L, dz:dz/L, done:false }; for(const s of T.spans) setPiece(s,false);
   if(T.pole) for(let i=0;i<10;i++) spawnPart(T.x, T.y+T.h, T.z, (Math.random()-0.5)*6, Math.random()*4, (Math.random()-0.5)*6, { color:0xfff2b0, color2:0xff6a10, size:0.14, life:0.5+Math.random()*0.4, grav:-14, drag:0.8 });   // the wires snap in a shower of sparks
   sfx('clang', { x:T.x, z:T.z }, 0.5); }
@@ -147,7 +151,7 @@ export function cityBlast(x, z, r){ trafficBlast(x, z, r); if(!TOP.length && !BL
 export function cityCollapse(p){ if(!p) return false; const cand=BLD.filter(b=>!b.dead && b.floors.length>=3).map(b=>({ b, d:Math.hypot(b.x-p.pos.x, b.z-p.pos.z) })).filter(o=>o.d>14 && o.d<70).sort((a,b)=>a.d-b.d);
   if(!cand.length) return false; cand[0].b.casc=0.05; return true; }
 export function updateCity(dt){ updateTraffic(dt); if(TOP.length) updateTopple(dt); for(const Bd of BLD) if(Bd.casc>0){ Bd.casc-=dt; if(Bd.casc<=0 && !Bd.dead){ Bd.hp=Bd.hpPer*Bd.top; dropFloor(Bd); Bd.casc = Bd.dead ? 0 : 0.38; } } }
-export function resetCity(){ BLD.length=0; TOP.length=0; RUB=null; RUBn=0; CITY_GEN++; }   // Z267 anything still waiting for the models belongs to a city that is gone
+export function resetCity(){ BLD.length=0; TOP.length=0; CITY_PROPS.length=0; RUB=null; RUBn=0; CITY_GEN++; }   // Z267 anything still waiting for the models belongs to a city that is gone
 export function cityBuildings(){ return BLD; }
 
 // ---------- building kinds (front faces +z in the local frame; ox,oz = footprint centre; ry = rotation) ----------
@@ -268,10 +272,14 @@ function stall(x,z,ry){ prop('city_stall', x, z, ry, ()=>stallP(x,z,ry)); for(le
 function fountain(x,z,fb){ prop('city_fountain', x, z, _R(0,6.28), fb||(()=>fountainP(x,z))); }
 const vwall=(bx,by,bz,w,h,d,ox,oz,ry,tone)=>{ const [x,z]=L2W(bx,bz,ox,oz,ry); bucket('vwall', ()=>stoneMat('t_concrete_wall_002')).geos.push(tag(stoneBox(w,h,d,x,by,z,2.4,tone,ry),0)); };
 // the street furniture in: one instanced mesh per model (its material list), each piece on the ground, turned; whatever has no model falls back
+// Z311 the street furniture is solid for a ride (a bike, a horse): its footprint and height off its own model; the light pieces (RIDE_HIT.knock) can be
+//   knocked over — they lie where they fell and no longer stop anything
+export const CITY_PROPS=[];
 function placeProps(list, gen, anchor){ if(gen!==CITY_GEN || (anchor && !anchor.parent)) return; const by=new Map(), fbs=[];
   for(const q of list){ const m=cityProp(q.k); if(m){ if(!by.has(m)) by.set(m,[]); by.get(m).push(q); } else if(q.fb) fbs.push(q.fb); }
-  for(const [m,L] of by){ const im=new THREE.InstancedMesh(m.geo, m.mats, L.length);
-    const sink=(REALCITY.props[m.key]||{}).sink||0; L.forEach((q,k)=>{ _M4.compose(_v3.set(q.x, heightAt(q.x,q.z)+REALCITY.lift.prop+q.y-sink, q.z), _qy.setFromEuler(_eu.set(0,q.ry,0)), _one); im.setMatrixAt(k,_M4); });
+  for(const [m,L] of by){ const im=new THREE.InstancedMesh(m.geo, m.mats, L.length); if(!m.geo.boundingBox) m.geo.computeBoundingBox(); const bb=m.geo.boundingBox, ph=bb.max.y-bb.min.y, pr=Math.max(0.3, 0.42*Math.max(bb.max.x-bb.min.x, bb.max.z-bb.min.z));
+    const sink=(REALCITY.props[m.key]||{}).sink||0; L.forEach((q,k)=>{ const y=heightAt(q.x,q.z)+REALCITY.lift.prop+q.y-sink; _M4.compose(_v3.set(q.x, y, q.z), _qy.setFromEuler(_eu.set(0,q.ry,0)), _one); im.setMatrixAt(k,_M4);
+      CITY_PROPS.push({ x:q.x, z:q.z, y, ry:q.ry, r:pr, h:ph, key:m.key, knock:RIDE_HIT.knock.includes(m.key), im, k, down:false }); });
     im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); for(const g of m.glows) if(!LAND.mats.includes(g)) LAND.mats.push(g); }
   if(fbs.length){ B=new Map(); P=[]; CURP=0; for(const f of fbs) f(); flushBuckets(); B=null; P=null; } }
 // the lamps and signals are built at once (they topple): their meshes take the real models when these are in — the lantern post (its glass and

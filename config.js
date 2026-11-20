@@ -147,6 +147,12 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 //   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet (or pedal = the crank's [half-width, height, along], crankR m) · rear = the rear axle (wheelie pivot)
 //   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do · Z308 grip = the middle of each rubber grip (measured on
 //   the model: the hands close round it, back of the hand up); sweep = how far (rad) the grips sweep back from straight across, so the knuckles follow the bar
+// Z311 WHAT A RIDE RUNS INTO (game/ride-collide.js — a bike or a horse): trees, poles, parked cars, a stone knee-high or more (rock m radius), the city's
+//   street furniture and every wire stop it — head-on it stops dead, a glancing blow slides it along, hard enough a bike goes down (RIDE.crash.v); the light
+//   pieces (knock) go over at knockV m/s, a wire bay or coil is flattened at wireV (wireW m deep); each costs slow of its speed. A low thing (XEOM.air.low)
+//   is only leapt in a wheelie (a horse jumps it: horse) — horse = how high a horse clears at a gallop, how fast it must be going, its spring
+export const RIDE_HIT = { rock:0.45, knock:['prop_bin','prop_chair','prop_cafe','prop_barrier','city_stall'], knockV:3.5, wireV:5.5, wireW:0.7, slow:0.75,
+  horse:{ h:1.6, v:6, vy:[4.2, 5.6] } };
 // Z305 cloth masks fitted to a driver's face (by model), all as shares of h = Head bone → HeadTop_End, measured from the Head bone (u right, v up, f ahead):
 //   cols / rows = the grid the face is read on · halfW = half-width (the cheek sides, where the face turns) · top = the edge over the nose bridge (his lower
 //   eyelids are at v 0.32), dipping by dip under the eyes once noseW of the half-width out (an inverted V over the nose) · bottom = under the chin, rising
@@ -196,6 +202,13 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   // Z299 the sprung body on its wheels (metres, seconds): heave / pitch / roll springs (k stiffness, z damping ratio); squat and dive per m/s² of
   //   acceleration; trikes roll outward per m/s² of cornering; rough road kicks (per metre at speed, m/s); the steer angle from the turn rate and wheelbase
   sus:{ k:190, z:0.32, kp:120, zp:0.36, kr:110, zr:0.4, pitchAcc:0.006, pitch:[-0.075, 0.045], rollLat:0.005, rollMax:0.055, rough:0.5, bump:0.32, kickP:0.5, gY:0.6, buzz:0.0012, steerMax:0.55, steerRate:9, restLean:0.06, leanK:1, leanMax:0.72, dustRun:0.9, dustHard:1.6, dustAcc:4, dustC:0xbfa88a },
+  // Z311 the ride's feel: lean = it banks into a bend only from lean[0] m/s, fully from lean[1] (slow or standing it stays upright); slip = fast and turning
+  //   hard the rear steps out (rad per m/s over v per rad/s of turn, at most max) · rock = a stone under a tyre jolts it (k × the stone's radius, nose up off the
+  //   front wheel, down off the rear), and at speed over hopV a stone bigger than hop throws it off the ground · hop = Space at over v m/s: the wheelie leaves
+  //   the ground (launch vy m/s, the faster the higher) · g = its fall (m/s²); land = how hard a landing squashes the springs, which bounce on less damped
+  //   (landZ) for landT s, and may squash further (sag m) · low = an obstacle under h m: over v m/s it is jumped (clearing it by over m), slower it still blocks
+  air:{ lean:[3, 6.5], slip:{ v:5, k:0.05, max:0.2 }, rock:{ k:1.4, hop:0.42, hopV:5.5 }, hop:{ v:4.5, vy:[2.0, 3.0] }, g:15, land:0.5, landZ:0.12, landT:1.1, sag:0.11,
+    low:{ h:0.85, v:4.5, over:0.25 } },
   // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
   //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
   wear:{ hp:{ xeom:150, xichlo:110, bagac:190 }, share:0.5, crash:28, spill:6, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
