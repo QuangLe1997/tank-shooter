@@ -190,3 +190,9 @@
   body.touch #start .btn-primary{ font-size:18px; padding:13px 42px; }
   #rotate{ background:linear-gradient(180deg,rgba(3,5,2,.5),rgba(3,5,2,.8)), url('../assets/banner-mobile.jpg') center/cover no-repeat; }
 
+  /* Z322 the intro's mist (game/intro-clouds.js): a haze round the edges high up (--haze) and the whiteout inside a cloud (--fill), under the captions */
+  #introMist{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:29;pointer-events:none;display:none;--haze:0;--fill:0;--mist:#d8dde2;}
+  #introMist.on{display:block;}
+  #introMist i{position:absolute;inset:0;}
+  #introMist .haze{opacity:var(--haze);background:radial-gradient(ellipse 85% 75% at 50% 58%,transparent 30%,var(--mist) 100%),linear-gradient(180deg,var(--mist) 0%,transparent 45%);}
+  #introMist .fill{opacity:var(--fill);background:var(--mist);}

@@ -14,7 +14,9 @@ export function photoSet(name, hi){ const key = name + (hi ? ':2k' : ''); if(_se
 function sizes(){ return _sizes || (_sizes = fetch('assets/ground/sizes.json').then(r => r.json())); }
 
 // called by applyBiome right after it puts the procedural maps on: back to the procedural look at once, the photo sets swap in when loaded
-export function applyGroundPhoto(b){
+export const GROUND_READY = { p:Promise.resolve(false) };   // Z322 the photo floor of the battlefield being built (the intro waits for it)
+export function applyGroundPhoto(b){ return (GROUND_READY.p = groundPhoto(b)); }
+function groundPhoto(b){
   _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); _want = b.name;
   const pair = GROUND_PHOTO.biomes[b.name]; if(!pair || off() || typeof window === 'undefined') return Promise.resolve(false);
   return Promise.all([photoSet(pair[0], GROUND_PHOTO.hi && !MOBILE), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {

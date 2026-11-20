@@ -5,7 +5,7 @@
 // few drier clumps here and there, and swayed by one gust field for the whole field (world space). One draw call; none on phones' lowest tier.
 import * as THREE from 'three';
 import { GRASS } from '../../config.js';
-import { BIOME, MOBILE, SUN_VIEW, camera, heightAt, scene, wetAt } from '../hub.js';
+import { BIOME, GRASS_FAR, MOBILE, SUN_VIEW, camera, groundMat, heightAt, scene, wetAt } from '../hub.js';
 
 const G = { mesh:null, biome:null, cx:1e9, cz:1e9, time:{ value:0 }, cap:0, tex:{} };
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _ray = new THREE.Vector3();
@@ -44,13 +44,30 @@ function grassMat(map, alpha, C){
       diffuseColor.rgb *= mix(vec3(1.0), gDry, smoothstep(0.82, 1.0, vGv) * 0.6);   // a drier clump here and there`); };
   m.customProgramCacheKey = () => 'grassPhoto'; return m; }
 
+// Z322 the carpet's colour seen from afar: the clump photo averaged where it is opaque (inside the cards, linear light) × the battlefield's tint;
+//   and the floor's own average under it — the ground shader paints that colour past the carpet's rim, so far and near read the same
+let _cv = null;
+const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+function pixels(img, W, H){ _cv = _cv || document.createElement('canvas'); _cv.width = W; _cv.height = H; const x = _cv.getContext('2d', { willReadFrequently:true }); x.clearRect(0, 0, W, H); x.drawImage(img, 0, 0, W, H); return x.getImageData(0, 0, W, H).data; }
+function avgOf(img, alpha){ const W = 128, H = Math.max(8, Math.round(W * (img.height || 1) / (img.width || 1))), d = pixels(img, W, H), a = alpha ? pixels(alpha, W, H) : null, A = GRASS.atlas; let r = 0, g = 0, b = 0, n = 0;
+  for(let y = 0; y < H; y++) for(let x = 0; x < W; x++){ const i = (y * W + x) * 4;
+    if(a){ const px = x / W * A[0], py = y / H * A[1]; if(a[i] < GRASS.alphaTest * 255 || !GRASS.cards.some(([cx, cy, cw, ch]) => px >= cx && px < cx + cw && py >= cy && py < cy + ch)) continue; }
+    r += lin(d[i]); g += lin(d[i + 1]); b += lin(d[i + 2]); n++; }
+  return n ? new THREE.Color(r / n, g / n, b / n) : null; }
+function farColour(){ const k = GRASS_FAR.k.value, C = GRASS.biomes[BIOME.name];
+  if(!C || !G.mesh || !G.blade){ k.x = 0; return; }
+  const img = groundMat.map && groundMat.map.image; if(img === G.farImg) return; G.farImg = img;   // again when the photo floor swaps in
+  let gl = 0.3; try{ const c = img ? avgOf(img) : null; if(c){ c.multiply(groundMat.color); gl = (c.r + c.g + c.b) / 3; } }catch(e){}
+  GRASS_FAR.col.value.copy(G.blade); k.set(C.dens * GRASS.far.cover, Math.max(0.02, gl), 0, 0); }
+export function grassReady(){ return G.ready || Promise.resolve(); }   // Z322 the intro waits for it
 function build(){
   if(G.mesh){ scene.remove(G.mesh); G.mesh.material.dispose(); G.mesh = null; }
-  G.biome = BIOME.name; G.cx = G.cz = 1e9;
+  G.biome = BIOME.name; G.cx = G.cz = 1e9; G.blade = null; G.farImg = null; GRASS_FAR.k.value.x = 0; G.ready = null;
   const C = GRASS.biomes[BIOME.name]; if(!C || (MOBILE && !GRASS.mobile) || /procgrass/.test(location.search + location.hash)) return;
   const want = BIOME.name;
-  Promise.all([load(C.tex === 'dry' ? 'dry.jpg' : 'diff.jpg', true), load('alpha.jpg', false)]).then(([map, alpha]) => {
+  G.ready = Promise.all([load(C.tex === 'dry' ? 'dry.jpg' : 'diff.jpg', true), load('alpha.jpg', false)]).then(([map, alpha]) => {
     if(G.biome !== want || G.mesh) return;   // the battlefield changed while it loaded
+    try{ const c = avgOf(map.image, alpha.image); G.blade = c ? c.multiply(new THREE.Color().setRGB(...C.tint)).multiplyScalar(0.93 * GRASS.far.k) : null; }catch(e){ G.blade = null; }
     const R = MOBILE ? GRASS.Rm : GRASS.R, per = Math.ceil(Math.PI * (R / GRASS.cell) ** 2 * GRASS.perCell * C.dens);
     G.cap = per; const geo = clumpGeo(); geo.setAttribute('aRect', new THREE.InstancedBufferAttribute(new Float32Array(per * 4), 4));
     const mesh = new THREE.InstancedMesh(geo, grassMat(map, alpha, C), per);
@@ -72,7 +89,7 @@ function lay(x, z){ const C = GRASS.biomes[BIOME.name], R = MOBILE ? GRASS.Rm : 
 // every frame: follow the camera's ground point (re-lay when it crosses a cell, or the battlefield changed)
 export function updateGrass(dt){
   if(G.biome !== BIOME.name) build();
-  if(!G.mesh) return; G.time.value += dt;
+  if(!G.mesh) return; G.time.value += dt; farColour();
   camera.getWorldDirection(_ray); const t = _ray.y < -0.05 ? Math.min(GRASS.ahead, camera.position.y / -_ray.y * 0.6) : GRASS.ahead;   // a little ahead of the camera, where it looks
   const x = camera.position.x + _ray.x * t, z = camera.position.z + _ray.z * t, cx = Math.floor(x / GRASS.step), cz = Math.floor(z / GRASS.step);
-  if(cx !== G.cx || cz !== G.cz){ G.cx = cx; G.cz = cz; lay((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step); } }
+  if(cx !== G.cx || cz !== G.cz){ G.cx = cx; G.cz = cz; lay((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step); const R = MOBILE ? GRASS.Rm : GRASS.R; GRASS_FAR.c.value.set((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step, R * GRASS.far.rim0, R * GRASS.far.rim1); } }

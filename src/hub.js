@@ -192,6 +192,7 @@ export * from './ui/shop.js';
 export * from './ui/showroom.js';
 export * from './core/helpers.js';
 export * from './game/update.js';
+export * from './game/intro-clouds.js';   // Z322 the intro's haze and the cloud deck the swoop flies through
 export * from './game/intro.js';
 export * from './ui/radar.js';
 export * from './ui/pylon-marks.js';   // Z243 screen markers for the general's shield pylons

@@ -778,7 +778,9 @@ export const REALPROP = { kinds:['sandbag','concrete','container','crates','drum
 //   mobile:false = none there), grid cell (m), where (× radius) the carpet starts thinning out, clumps tried per cell, clump height range (m), how far
 //   ahead of the camera the carpet centres (m), re-lay step (m), alpha cut-off, root shade; the photo strip (dir, its size in px, the five clump cards
 //   [x, y, w, h] in px); per battlefield: density (0–1), tex 'dry' = the dry grass photo, tint = colour ×, dryTint = × on the odd drier clump
-export const GRASS = { trans:1.4, R:40, Rm:12, rim:0.45, mobile:true, cell:0.5, perCell:3, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
+// Z322 far = how the carpet reads past its own radius: the floor there takes the carpet's colour (the clumps' photo average × tint) over `cover` × the
+//   battlefield's density, fading in from rim0 × R to rim1 × R round the carpet's centre; k = brightness of that colour against the lit blades
+export const GRASS = { far:{ cover:0.92, rim0:0.55, rim1:0.95, k:1.0 }, trans:1.4, R:40, Rm:12, rim:0.45, mobile:true, cell:0.5, perCell:3, h:[0.42, 0.78], ahead:8, step:1.5, alphaTest:0.42, rootDark:0.72,
   dir:'assets/grass/medium01/', atlas:[2048, 518], cards:[[402, 4, 598, 262], [1201, 20, 499, 218], [61, 254, 351, 264], [474, 272, 549, 246], [1181, 248, 436, 270]],
   biomes:{ MEADOW:{ dens:0.9, tint:[1.02, 1.1, 0.92], dryTint:[1.2, 1.05, 0.72] }, SAVANNA:{ dens:0.8, tex:'dry', tint:[1.0, 0.94, 0.82], dryTint:[1.1, 1.0, 0.85] },
     CITADEL:{ dens:0.32, tex:'dry', tint:[0.95, 0.92, 0.82], dryTint:[1.1, 1.0, 0.85] }, RUINS:{ dens:0.3, tint:[0.95, 0.98, 0.85], dryTint:[1.2, 1.05, 0.75] }, QUARRY:{ dens:0.22, tex:'dry', tint:[0.95, 0.92, 0.85], dryTint:[1.1, 1.0, 0.85] } } };
@@ -920,7 +922,11 @@ export const PAD_HELP = [
 // Z119 BATTLE INTRO: cinematic view distance + fog (the sweep no longer draws the whole field), shader warm-up time budget, skip guard
 // Z288 the city opens on film: Landmark 81 from its foot (tilt up), then a tracking shot down the busiest boulevard (seconds, lens fov, camera speed m/s)
 export const INTRO_CITY = { on:true, l81:{ dur:3.4, fov:36, back:0.95 }, street:{ dur:3.2, fov:48, v:9, h:1.5, off:4.2 } };
-export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35 };
+// Z322 THE INTRO'S SKY (game/intro-clouds.js): band = the cloud deck between these shares of the descent's height (0 = landing, 1 = high orbit);
+//   puffs laid along the swoop (it flies through them) + wisps over the field; size (m), opacity of each, sideways drift (m/s); haze = the screen
+//   mist at the top of the flight; inside = the whiteout inside a puff; tintK = how far the fog colour is lifted toward white (day; a third at night)
+export const INTRO_CLOUDS = { on:true, band:[0.3, 0.82], puffs:16, wisps:16, size:[26, 46], op:0.55, wispOp:0.26, drift:1.6, haze:0.34, inside:0.82, tintK:0.55 };
+export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35, assetWait:9000 };   // Z322 assetWait (ms): the longest the veil waits for the photo ground, grass and real models before the move
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.
 //   Z125: firing does NOT rumble any more (the old per-gun rhythm table is gone), so every kick is a hit, a blast or a crash.
 export const FEEL = {

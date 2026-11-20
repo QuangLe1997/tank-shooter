@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO, INTRO_CITY } from '../../config.js';
-import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt } from '../hub.js';
+import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -78,7 +78,7 @@ export function startIntro(){
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
   intro.tour = MOBILE ? null : buildGrandTour(T); intro.tt=0;
   if(intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; intro.tour.fog=scene.fog.density; }   // the wide shot sees through thinner haze, thickening back as we land
-    camera.fov=intro.tour.fov; camera.updateProjectionMatrix(); }
+    camera.fov=intro.tour.fov; camera.updateProjectionMatrix(); buildIntroClouds(intro.tour, T); }   // Z322 haze up high, a cloud deck to fly down through
   // Z119 phones: the far end of the field is fogged out and not drawn at all during the sweep
   if(!intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; scene.fog.density=Math.max(scene.fog.density, INTRO.fog); }
   cullFar(T, true); }
@@ -95,9 +95,23 @@ function placeAt(u){ const R=intro.tour;
     if(R.fog!=null && scene.fog) scene.fog.density=R.fog*(w<=R.wA ? TOUR.fogK : TOUR.fogK+(1-TOUR.fogK)*smoother((w-R.wA)/(1-R.wA)));
     return w; }
   const e=_easeIO(u); camera.position.copy(intro.camCurve.getPoint(e)); camera.lookAt(intro.lookCurve.getPoint(e)); return e; }
+// Z322 nothing swaps in mid-flight: before the warm-up compiles and draws, the veil waits (up to INTRO.assetWait) for the photo floor, the grass
+//   carpet's photos, the real trees (and on the city field the real city), then for three's loader queue to drain (their textures) — so the
+//   high shots already show the finished ground and models, not the stand-ins that are replaced a few seconds later
+const LOADS={ left:0 };
+{ const M=THREE.DefaultLoadingManager, on=(k, f)=>{ const f0=M[k]; M[k]=(...a)=>{ f(...a); if(f0) f0(...a); }; };
+  on('onStart', (u, l, t)=>{ LOADS.left=Math.max(1, t-l); }); on('onProgress', (u, l, t)=>{ LOADS.left=t-l; }); on('onLoad', ()=>{ LOADS.left=0; }); }
+const _wait=ms=>new Promise(r=>setTimeout(r, ms)), _frame=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+async function assetsReady(){ const t0=performance.now(), cap=INTRO.assetWait, left=()=>Math.max(0, cap-(performance.now()-t0));
+  await _frame(); await _frame();   // the grass carpet starts loading on the first frame of a new battlefield
+  const want=[GROUND_READY.p, grassReady(), loadRealTrees()]; if(BIOME.name==='CITY') want.push(loadRealCity());
+  await Promise.race([Promise.all(want.map(p=>Promise.resolve(p).catch(()=>{}))), _wait(left())]);
+  let calm=0; while(left()>0 && calm<3){ await _wait(100); calm = LOADS.left>0 ? 0 : calm+1; }   // the models' own textures, then a few quiet ticks
+  await _frame(); await _frame(); }
 // Z119 warm-up: every material this stage uses is compiled (in parallel where the browser can), then the widest shots are rendered once so
 //   the shadow / post passes and texture uploads happen now — not as hitches in the middle of the move
-async function warmUp(){ const keep=camera.position.clone(), q=camera.quaternion.clone(), fog=scene.fog?scene.fog.density:null;
+async function warmUp(){ try{ await assetsReady(); }catch(e){} if(!intro.active) return;
+  const keep=camera.position.clone(), q=camera.quaternion.clone(), fog=scene.fog?scene.fog.density:null;
   const A=intro.tour?0.05:0.72, B=intro.tour?0.5:0.35;
   try{ placeAt(A); camera.updateMatrixWorld();
     if(renderer.compileAsync) await Promise.race([renderer.compileAsync(scene, camera), new Promise(r=>setTimeout(r, INTRO.compileWait))]); else renderer.compile(scene, camera);
@@ -116,7 +130,7 @@ function cullFar(T, on){ if(!on){ for(const o of _hidden) o.visible=true; _hidde
 export function endIntro(){
   if(!intro.active) return; intro.active=false; intro.warm=false; showVeil(false);
   if(!PROFILE.introSeen || typeof PROFILE.introSeen!=='object') PROFILE.introSeen={}; if(!PROFILE.introSeen[BIOME.name]){ PROFILE.introSeen[BIOME.name]=1; saveProfile(); }
-  cullFar(null, false); if(intro.fog0!=null && scene.fog){ scene.fog.density=intro.fog0; intro.fog0=null; }
+  cullFar(null, false); clearIntroClouds(); if(intro.fog0!=null && scene.fog){ scene.fog.density=intro.fog0; intro.fog0=null; }
   const fov=camRestPose(_rp, _rl); if(fov){ camera.position.copy(_rp); camera.lookAt(_rl); camera.fov=fov; camera.updateProjectionMatrix(); }   // a skip lands on the play framing too
   intro.tour=null; const p=S.player; if(p) p.turret.rotation.y=0;
   { const sub=document.getElementById('cine-sub'); if(sub){ clearTimeout(sub._t); sub._next=null; sub.style.opacity='1'; } }
@@ -131,8 +145,8 @@ export function updateIntro(dt, now){
     placeAt(0); return; }
   const step=Math.min(dt, 1/30);   // Z119 a slow frame slows the camera for a moment instead of making it jump
   if(intro.tour && !intro.tour.shotsAt){ intro.tour.shotsAt=1; intro.tour.shots=cityShots(); if(!intro.tour.shots){ const s=streetShot(); if(s){ intro.tour.shots=[s]; intro.tour.streetAt=1; } } }   // laid out once the warm-up is over: the traffic has its roads by then
-  if(intro.tour && intro.tour.shots && intro.tour.st>=0){ const R=intro.tour; R.st+=step; if(playShot(R, R.st)) return; if(!R.streetAt){ R.streetAt=1; const s=streetShot(); if(s){ R.shots.push(s); playShot(R, R.st); return; } } R.st=-1; R.shots=null; }   // Z288 the city's opening shots first
-  if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + step/R.dur); const w=placeAt(intro.tt);
+  if(intro.tour && intro.tour.shots && intro.tour.st>=0){ const R=intro.tour; R.st+=step; updateIntroClouds(step); if(playShot(R, R.st)) return; if(!R.streetAt){ R.streetAt=1; const s=streetShot(); if(s){ R.shots.push(s); playShot(R, R.st); return; } } R.st=-1; R.shots=null; }   // Z288 the city's opening shots first
+  if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + step/R.dur); const w=placeAt(intro.tt); updateIntroClouds(step);
     if(w<R.wA*0.98){ const k=Math.min(R.caps.length-1, Math.floor(w/R.wA*R.caps.length)); if(k!==R.capK){ R.capK=k; setCap(R.caps[k]); } }
     else if(R.capK!==-2){ R.capK=-2; setCap(stageLine()); }
     if(intro.tt>=1) endIntro();
