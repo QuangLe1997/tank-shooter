@@ -1001,6 +1001,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), sh=fs.readFileSync('src/fx/shatter.js','utf8');
   ok(/Math\.round\(Rv \* 2 \* F\.stone\.perM\)/.test(sh) && /F\.stone\.fill \* V \* \(pc\.r \*\* 3 \/ wSum\)/.test(sh) && !/m\.scale\.multiplyScalar\(pc\.r \* 0\.6\)/.test(sh) && /s\.r \* 2\.2 \/ F\.sinkT/.test(sh) && C.SHATTER.stone.fill<1 && C.SHATTER.stone.life<C.SHATTER.life && C.SHATTER.life<9, 'a stone breaks into its own volume (no lump bigger than the stone), by its size, and the pieces clear away sooner'); }
 
+// Z319 broken things blow up and are gone: no lumps, sheets or chunks — a flash, dust, smoke, fire for what burns, fine grit
+{ const fs=await import('node:fs'); const C=await import('./config.js'), sh=fs.readFileSync('src/fx/shatter.js','utf8'), db=fs.readFileSync('src/fx/debris.js','utf8');
+  ok(C.SHATTER.pieces===false && /if\(!SHATTER\.pieces\) return blowUp\(obj, o \|\| \{\}\)/.test(sh) && /function blowUp\(obj, o\)/.test(sh) && /if\(!SHATTER\.pieces\)\{ grit\(pos, scale, color\); return; \}/.test(db) && /function grit\(pos, scale, color\)/.test(db), 'what is destroyed goes up in dust, smoke and fire and is gone; blasts throw grit, not chunks'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

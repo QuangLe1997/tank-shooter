@@ -5,7 +5,7 @@
 // heavy chunks. The cuts are made once per mesh and reused; the pieces are drawn double-sided (a fragment is an open shell) and capped in number.
 import * as THREE from 'three';
 import { SHATTER } from '../../config.js';
-import { MOBILE, heightAt, scene, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, fireball, heightAt, scene, spawnPart } from '../hub.js';
 
 const CUTS = new Map(), MATS = new Map(), LIVE = [];
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _ax = new THREE.Vector3(), _dq = new THREE.Quaternion();
@@ -49,7 +49,7 @@ const sideMat = m => { if(MATS.has(m)) return MATS.get(m); const c = m.clone(); 
 
 // break `obj` (a Mesh in the scene, or just removed from it — its matrixWorld still holds) into pieces; o = { n, power, up, spin, fire, bounce,
 // from:{x,y,z} (the blast; default: below its middle) }
-export function shatter(obj, o){ if(!obj || /noshatter/.test(location.search + location.hash)) return 0;
+export function shatter(obj, o){ if(!obj || /noshatter/.test(location.search + location.hash)) return 0; if(!SHATTER.pieces) return blowUp(obj, o || {});   // Z319
   if(!obj.isMesh){ let n = 0; const list = []; obj.updateMatrixWorld(true); obj.traverse(c => { if(c.isMesh && c.visible) list.push(c); });   // a group: each part breaks
     for(const c of list) n += shatter(c, { ...o, n:Math.max(3, Math.round((o && o.n || SHATTER.n) / Math.max(1, list.length * 0.6))) }); return n; }
   if(!obj.geometry || Array.isArray(obj.material) || obj.isInstancedMesh) return 0;
@@ -71,6 +71,21 @@ export function shatter(obj, o){ if(!obj || /noshatter/.test(location.search + l
     LIVE.push({ m, v, w, r:o.solid ? lr : pc.r * Math.max(_s.x, _s.y, _s.z), t:0, rest:0, life:(o.solid ? F.stone.life : F.life) * (0.8 + Math.random() * 0.4), fire:o.fire ? 0.6 + Math.random() * 1.4 : 0, bounce:o.bounce || F.bounce, hits:0 }); }
   return pieces.length; }
 
+// Z319 IT GOES UP, NOT TO PIECES: what is destroyed leaves no lumps or sheets behind — a flash (a fireball for what burns: drums, containers, wrecks),
+//   dust thrown out round its foot, a puff of smoke the size of it (dark and lingering when it burns), fine grit flying — and it is gone
+const _bb = new THREE.Box3();
+function blowUp(obj, o){ obj.updateMatrixWorld(true); _bb.setFromObject(obj); if(_bb.isEmpty()) return 0; _bb.getCenter(_v); _bb.getSize(_ax);
+  const R = Math.max(0.3, Math.max(_ax.x, _ax.z) / 2), H = Math.max(0.3, _ax.y), gy = heightAt(_v.x, _v.z), k = Math.min(2.2, Math.max(0.35, R)), burn = !!o.fire, stone = !!o.solid, f = MOBILE ? 0.6 : 1;
+  const dust = stone ? (BIOME.ground ?? 0x8a7a62) : 0x8a7a62, mid = gy + H * 0.5;
+  if(burn) fireball({ x:_v.x, z:_v.z }, 0.45 + k * 0.35, mid);
+  else spawnPart(_v.x, mid, _v.z, 0, 0.4, 0, { tex:'flash', color:0xfff0d0, size:1 + k * 1.2, life:0.08, grav:0, drag:0 });
+  const nd = Math.round((7 + 6 * k) * f); for(let i = 0; i < nd; i++){ const a = i / nd * 6.283 + Math.random() * 0.5, sp = (2.5 + Math.random() * 4) * Math.sqrt(k);   // dust thrown out round its foot
+    spawnPart(_v.x + Math.cos(a) * R * 0.5, gy + 0.3, _v.z + Math.sin(a) * R * 0.5, Math.cos(a) * sp, 0.4 + Math.random(), Math.sin(a) * sp, { color:dust, size:(0.7 + Math.random() * 0.6) * k, life:0.8 + Math.random() * 0.6, smoke:true, grav:-0.2, drag:2.6, grow:1.6, op:0.45 }); }
+  const ns = Math.round((4 + 4 * k) * f); for(let i = 0; i < ns; i++) spawnPart(_v.x + (Math.random() - 0.5) * R, gy + H * (0.3 + Math.random() * 0.6), _v.z + (Math.random() - 0.5) * R, (Math.random() - 0.5) * 1.2, 1.1 + Math.random() * 1.6, (Math.random() - 0.5) * 1.2,
+    { color:burn ? 0x1c1814 : 0x9a9088, size:(0.9 + Math.random() * 0.7) * k, life:(burn ? 2.6 : 1.5) + Math.random(), smoke:true, grav:0.15, drag:1, grow:2, op:burn ? 0.6 : 0.4 });   // a puff the size of it
+  const ng = Math.round((10 + 8 * k) * f); for(let i = 0; i < ng; i++){ const a = Math.random() * 6.283, sp = 4 + Math.random() * 7;   // fine grit (dots, not shapes)
+    spawnPart(_v.x, mid, _v.z, Math.cos(a) * sp, 2.5 + Math.random() * 5, Math.sin(a) * sp, { color:burn ? 0xffa040 : stone ? 0x6e6458 : 0x5a5048, size:0.05 + Math.random() * 0.07, life:0.45 + Math.random() * 0.4, grav:-16, drag:0.6 }); }
+  return 0; }
 export function updateShatter(dt){ if(!LIVE.length) return; dt = Math.min(dt, 0.05); const F = SHATTER;
   for(let i = LIVE.length - 1; i >= 0; i--){ const s = LIVE[i], m = s.m; s.t += dt;
     if(s.t > s.life){ m.position.y -= dt * Math.max(F.sink, s.r * 2.2 / F.sinkT); if(s.t > s.life + F.sinkT){ drop(m); LIVE.splice(i, 1); } continue; }   // sinks out of sight (Z317 all the way under, however big)

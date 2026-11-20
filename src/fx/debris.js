@@ -1,6 +1,7 @@
 // fx/debris.js — Z103 split from fx/explosions.js: flying hull fragments (pooled) and the charred multi-part tank WRECK.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { SHATTER } from '../../config.js';
 import { MOBILE, blastLight, heightAt, scene, spawnPart } from '../hub.js';
 
 // ----- Z203 DEBRIS: not cubes — a library of fractured shapes (faceted chunks, jagged torn plates, splinters, slivers), sized like real breakage
@@ -25,7 +26,12 @@ export const _DEBRIS_DARK=[0x26241f,0x312c25,0x3a342c,0x1d1b18,0x2c2a26];
 const _hc=new THREE.Color(), _hs={h:0,s:0,l:0};
 function material(col){ _hc.setHex(col); _hc.getHSL(_hs); if(_hs.h>0.04 && _hs.h<0.14 && _hs.s>0.25 && _hs.l>0.2 && _hs.l<0.6) return 'wood'; if(_hs.l>0.42 || (_hs.s<0.18 && _hs.l>0.3)) return 'stone'; return 'metal'; }
 let _landT=0;
-export function spawnDebris(pos, scale, color){
+// Z319 what flies off a blast: a little dust and fine grit (glowing sparks off metal) — dots that fall and fade, no chunks of anything
+function grit(pos, scale, color){ const gy = heightAt(pos.x, pos.z), y = pos.y != null ? pos.y : gy + 1, metal = material(color == null ? 0x2a2824 : color) === 'metal', n = Math.min(24, Math.round((6 + 6 * scale) * (MOBILE ? 0.6 : 1)));
+  for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, sp = (3 + Math.random() * 7) * Math.sqrt(scale);
+    spawnPart(pos.x, y, pos.z, Math.cos(a) * sp, 3 + Math.random() * 6, Math.sin(a) * sp, { color:metal && Math.random() < 0.6 ? 0xffb050 : (color ?? 0x5a5048), size:0.05 + Math.random() * 0.08, life:0.4 + Math.random() * 0.45, grav:-16, drag:0.6 }); }
+  for(let i = 0; i < Math.round(2 + scale * 2); i++) spawnPart(pos.x + (Math.random() - 0.5) * scale, gy + 0.3, pos.z + (Math.random() - 0.5) * scale, (Math.random() - 0.5) * 2, 0.6 + Math.random(), (Math.random() - 0.5) * 2, { color:0x8a7a62, size:(0.6 + Math.random() * 0.5) * Math.min(2, scale), life:0.9 + Math.random() * 0.5, smoke:true, grav:-0.2, drag:2.4, grow:1.5, op:0.35 }); }
+export function spawnDebris(pos, scale, color){ if(!SHATTER.pieces){ grit(pos, scale, color); return; }   // Z319 no flying chunks: dust and fine grit
   const kind=material(color==null?0x2a2824:color), metal=kind==='metal', wood=kind==='wood', gy=heightAt(pos.x,pos.z);
   const n=Math.min(30, Math.floor(7*scale)+3);
   for(let i=0;i<n;i++){ const m=debrisPool.pop(); if(!m) break;

@@ -717,7 +717,8 @@ export const WALLSKIN = { tint:0.35, bright:0.92, nrm:1.2, ao:0.8,
 //   sinkT s); at most max pieces at once (maxMobile on phones); per kind overrides (fire = the pieces burn as they fly)
 //   Z317 stone: perM pieces per metre of the stone (at least minN, at most its kind's n), all of them together fill × the stone's own volume — no lump
 //   bigger than the stone it came from — gone after life s; every piece sinks at least as fast as it needs to be under in sinkT
-export const SHATTER = { n:10, power:7, up:3, spin:6, bounce:0.32, bounceMin:2.2, g:9.8, life:6, sink:0.35, sinkT:1.6, max:220, maxMobile:70, stone:{ perM:5, minN:3, fill:0.7, life:3.5 },
+//   Z319 pieces:false — nothing breaks into lumps, sheets or chunks any more: it blows up (a flash, dust, smoke, fire for what burns, fine grit) and is gone
+export const SHATTER = { pieces:false, n:10, power:7, up:3, spin:6, bounce:0.32, bounceMin:2.2, g:9.8, life:6, sink:0.35, sinkT:1.6, max:220, maxMobile:70, stone:{ perM:5, minN:3, fill:0.7, life:3.5 },
   kinds:{ drums:{ n:14, power:13, up:6, fire:true }, tires:{ n:9, power:8, up:5, bounce:0.6 }, crates:{ n:14, power:6.5, up:3 }, logs:{ n:9, power:7, up:3 }, sandbag:{ n:10, power:4, up:2 },
     concrete:{ n:10, power:5, up:2.5 }, jersey:{ n:9, power:5, up:2.5 }, pipes:{ n:10, power:6, up:3 }, teeth:{ n:8, power:5, up:2.5 }, hesco:{ n:9, power:4, up:2 },
     container:{ n:14, power:9, up:5, fire:true }, wreck:{ n:14, power:9, up:5, fire:true }, boulder:{ n:12, power:7, up:4 }, hedgehog:{ n:8, power:8, up:4 }, wire:{ n:10, power:6, up:3, spin:9 } } };
