@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY, RIDE, XEOM } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, crushables, curlHand, fireball, haptic, heightAt, ik2, loadGLTF, rollHand, sfx, spawnPart, loadRealCity, cityProp, MODE } from '../hub.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, crushables, curlHand, fireball, haptic, heightAt, ik2, loadGLTF, rollHand, sfx, spawnPart, MODE } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false, juncs:[], pool:[], frame:0, stats:{ mm:0, sw:0, ut:0, jw:0, shot:0 } };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -437,11 +437,10 @@ export function updateTraffic(dt){ if(!TR.on) return; if(!TR.ims.length || !TR.i
   for(const v of TR.list) place(v);
   for(const im of TR.ims){ im.instanceMatrix.needsUpdate = true; if(im.geometry.attributes.aRoll) im.geometry.attributes.aRoll.needsUpdate = true; } }
 export const TRAFFIC = TR;
-// Z282 a mount for the xe-ôm / xích-lô mode: the bike (green-jacket driver on the scooter, or the cyclo with its driver on the rear saddle) as one
+// Z282 a mount for the xe-ôm mode: the bike (green-jacket driver on the scooter) as one
 //   geometry with its materials, in metres, front toward +z — the player's soldier sits on it where XEOM says
 export async function mountModel(kind){ const X = XEOM[kind]; if(!X) return null; const R = await riderGeo(); if(!R) return null;
-  let bike = null; if(kind === 'xeom'){ const gl = await loadGLTF('moto_scooter'); if(gl) bike = bikeGeo(gl, REALCITY.traffic.motoL); }
-  else { await loadRealCity(); const P = cityProp('prop_cyclo'); if(P){ const g = P.geo.clone(); if(X.yaw) g.rotateY(X.yaw); bike = { geo:g, mat:Array.isArray(P.mats) ? P.mats[0] : P.mats }; } }
+  let bike = null; if(kind === 'xeom'){ const gl = await loadGLTF('moto_scooter'); if(gl) bike = bikeGeo(gl, REALCITY.traffic.motoL); }   // (Z332 the xích lô is gone: only the xe ôm has a stand-in)
   if(!bike) return null; const rgeo = R.geo.clone(); rgeo.translate(0, X.driver[0], X.driver[1]);
   const rm = R.sk.material.clone(); if(X.livery != null) rm.map = livery(R.sk.material.map, REALCITY.traffic.liveries[X.livery]);
   const geo = mergeGeometries([bike.geo, rgeo], true); geo.computeBoundingSphere(); return { geo, mats:[bike.mat, rm] }; }

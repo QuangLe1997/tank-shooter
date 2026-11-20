@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, GIFT, LOOT, GUN_MODS } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing } from '../hub.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -36,7 +36,7 @@ export const POWERUPS = [
   { id:'mod_action', svg:'wrench', color:0x9fd8ff, mod:'action', vi:'KHOÁ NÒNG',       ds:'Súng đang cầm: bắn nhanh hơn 5%, nạp nhanh hơn 6% — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('action'); } },
   { id:'mod_mag',    svg:'mag',    color:0xd8c070, mod:'mag',    vi:'BĂNG ĐẠN MỞ RỘNG', ds:'Súng đang cầm: +12% số viên mỗi băng — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('mag'); } },
   // gun drop — adds a random gun to the inventory
-  { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ const id=smartGunPick(); p._gotGun=id; giveGun(id); } },
+  { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ if(MODE.id==='soldier'){ const id=trooperGunPick(); p._gotGun=id; trooperGive(id); return; } const id=smartGunPick(); p._gotGun=id; giveGun(id); } },   // Z329 the soldier's crate brings a hand weapon
 ];
 // Z93 STACKING RULES (numbers in LOOT.rules): same buff again → EXTEND by half its timer (capped at 1.5× a full timer), power never compounds;
 // TURBO climbs a level (max 2) and refreshes; ERA adds tiles (max 6); a permanent buff you already hold pays out coins instead.
@@ -105,7 +105,7 @@ export function fitGunMod(k){ const p=S.player; if(!p||!p.guns) return; const or
   addCoins(GUN_MODS.coins); floatText('SÚNG ĐÃ ĐỦ LINH KIỆN · +'+GUN_MODS.coins+' xu', '#ffd24a', p.pos, 18); }
 export function modDrop(){ const pool=POWERUPS.filter(u=>u.mod); return pool[(Math.random()*pool.length)|0]; }
 // Z306 a soldier picks up a soldier's loot: nothing for an engine, a hull or a turret (speed, turbo, ram, reactive armour, siege shells, tank guns and their parts)
-const NOT_FOR_A_MAN=['speed','turbo','ram','era','siege','gun'];
+const NOT_FOR_A_MAN=['speed','turbo','ram','era','siege'];   // (Z329 the gun crate is his too: it brings a hand weapon)
 export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
   const pool=POWERUPS.filter(u=>!u.mod && !NOT_FOR_A_MAN.includes(u.id) && (u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
 export function pickLoot(tier){                                                             // tier = how tough the source was (0 common · 1 rare · 2 epic)

@@ -33,7 +33,7 @@ export function updateEngine(dt){
   n.out.gain.setTargetAtTime(0.07 + ENG.rpm*0.11, t, 0.08);
   n.lfo.frequency.setTargetAtTime(1 + sp*0.55, t, 0.1); n.lfg.gain.setTargetAtTime(Math.min(0.09, sp*0.004), t, 0.1);
 }
-// Z302 THE RIDE'S ENGINE: a small four-stroke single (the xe ôm's 100 cc; the ba gác's bigger, lower one; the xích lô is pedalled, so silent). It fires
+// Z302 THE RIDE'S ENGINE: a small four-stroke single (the xe ôm's 100 cc; the ba gác's bigger, lower one). It fires
 //   once every two turns, so the firing pulse IS the pitch: a lazy put-put at idle, a rising buzz through each gear, a drop as the next gear goes in
 //   (the revs are where the speed sits inside the gear's band), a blip with the throttle, a scream in a wheelie; exhaust hiss pulsing with the bangs
 export const ENGB={ nodes:null, rpm:0.18 };
@@ -45,7 +45,7 @@ function bikeEngineStart(a){ const out=a.createGain(); out.gain.value=0; out.con
   const o3=a.createOscillator(); o3.type='square'; o3.frequency.value=11; const am=a.createGain(); am.gain.value=0.12; o3.connect(am).connect(ng.gain); nz.connect(bp).connect(ng).connect(sh);
   for(const n of [o1,o2,o3,nz]) n.start(); return (ENGB.nodes={ out, lp, o1, o2, o3, bp }); }
 function updateBikeEngine(dt, p, t){ const CV=p && p.cav, H=CV && CV.H, D=H && H.drv, a=actx; if(!a) return;
-  const on = S.mode==='playing' && !muted && CV && CV.mounted && H && H.bike && H.bike!=='xichlo' && (!D || D.state==='ride' || D.state==='mount');
+  const on = S.mode==='playing' && !muted && CV && CV.mounted && H && H.bike && (!D || D.state==='ride' || D.state==='mount');
   if(!on){ if(ENGB.nodes) ENGB.nodes.out.gain.setTargetAtTime(0, t, 0.25); return; }
   const n=ENGB.nodes || bikeEngineStart(a), G=RIDE.gears, v=Math.abs(H.v||0), g=D ? D.gear : G.filter(x=>v>x).length, lo=g ? G[g-1] : 0, hi=G[g] ?? G[G.length-1]*1.3;
   const thr=Math.max(0, D ? D.thr : 0), within=Math.min(1, Math.max(0, (v-lo)/Math.max(0.5, hi-lo))), big=H.bike==='bagac' ? 0.78 : 1;

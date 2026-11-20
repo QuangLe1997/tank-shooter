@@ -828,7 +828,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z281 the base's main gatehouse lowered, its short wall runs clipped not squeezed · Z282 the xe ôm / xích lô mode
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(/th=main\?H\+9:H\+7/.test(R('src/world/core-walls.js')) && /coreClip/.test(R('src/world/core-walls.js')), 'base walls: no squeezed runs, a sane gatehouse');
-  ok(/export function buildBikeMount/.test(R('src/game/xeom.js')) && /export async function mountModel/.test(R('src/world/traffic.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/cavalry.js')) && /if\(S\.bike\) return animateBike/.test(R('src/actors/horse.js')) && /\['xeom','XE ÔM'/.test(R('src/ui/battle-setup.js')) && /MODE\.makePlayer\(cavKind\)/.test(R('src/game/flow.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/mode.js')) && C.XEOM.xeom && C.XEOM.xichlo, 'ride into battle on a xe ôm or a xích lô'); }
+  ok(/export function buildBikeMount/.test(R('src/game/xeom.js')) && /export async function mountModel/.test(R('src/world/traffic.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/cavalry.js')) && /if\(S\.bike\) return animateBike/.test(R('src/actors/horse.js')) && /\['xeom','XE ÔM'/.test(R('src/ui/battle-setup.js')) && /MODE\.makePlayer\(cavKind\)/.test(R('src/game/flow.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/mode.js')) && C.XEOM.xeom && !C.XEOM.xichlo, 'ride into battle on a xe ôm (Z332 the xích lô is gone)'); }
 
 // Z283 every battlefield its own fort style: limestone castle, Roman, marble, dry-stone, industrial joined the first four
 { const fs=await import('node:fs'); const C=await import('./config.js');
@@ -868,7 +868,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z293 the war rides: xe ôm, xích lô, ba gác, pickup — real models, the soldier seated / standing in his true place
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
-  ok(['xeom','xichlo','bagac','bantai'].every(k=>fs.existsSync('assets/models/real/ride/'+k+'.glb') && C.XEOM[k].len>1 && C.XEOM.poses[C.XEOM[k].pose]) && /function heroGeo/.test(R('src/game/xeom.js')), 'four ride models fitted to their true length');
+  ok(['xeom','bagac','bantai'].every(k=>fs.existsSync('assets/models/real/ride/'+k+'.glb') && C.XEOM[k].len>1 && C.XEOM.poses[C.XEOM[k].pose]) && /function heroGeo/.test(R('src/game/xeom.js')), 'four ride models fitted to their true length');
   ok(/function seatRider/.test(R('src/game/cavalry.js')) && !/G\.scale\.setScalar\(HUMAN_SCALE\/HORSE\.size\);\s*H\.root/.test(R('src/game/cavalry.js')) && /XEOM\.poses\[XEOM\[H\.bike\]\.pose\]/.test(R('src/actors/general.js')) && /'bagac','bantai'/.test(R('src/game/flow.js')) && /BÁN TẢI/.test(R('src/ui/battle-setup.js')), 'seated / standing poses, remount keeps the seat, two new rides to pick'); }
 
 // Z294 the second soldier: a detailed special-forces model wearing the operator's moves (puppet), on every war ride and on foot
@@ -879,12 +879,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z295 the infantry arsenal and the pose review: nine hand weapons, kneeling aim, feet on the ground, getting on / off a ride for real
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(Object.keys(C.INFGUN.guns).length===9 && Object.keys(C.INFGUN.guns).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb')) && Object.values(C.INFGUN.map).every(k=>C.INFGUN.guns[k]) && /function holdGun/.test(R('src/actors/real-cav.js')), 'nine infantry weapons, one for every gun of the game, swapped with the gun in use');
-  ok(/'Kneeling_Aim'/.test(R('src/actors/real-cav.js')) && /P\.ground/.test(R('src/actors/puppet.js')) && /XEOM\.pegY/.test(R('src/game/cavalry.js')) && C.CAV.mountT>=0.8 && ['xeom','xichlo','bagac','bantai'].every(k=>C.XEOM[k].side>0), 'kneeling aim, grounded feet, a real step off / onto each ride'); }
+  ok(/'Kneeling_Aim'/.test(R('src/actors/real-cav.js')) && /P\.ground/.test(R('src/actors/puppet.js')) && /XEOM\.pegY/.test(R('src/game/cavalry.js')) && C.CAV.mountT>=0.8 && ['xeom','bagac','bantai'].every(k=>C.XEOM[k].side>0), 'kneeling aim, grounded feet, a real step off / onto each ride'); }
 
 // Z296 the driver: his own rigged man riding his own machine — IK hands / feet / hips, lean, wheelie, weave, throttle, gears, ducking, crash → up → lift → back on, the talk table
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), d=R('src/actors/driver.js');
   ok(['export function makeDriver','export function driveDriver','function ik2','function ridePose','function crashStep','export function bikeCrash','export function bikeWheelie','export function rideHit','export const RIDE_VOICE'].every(k=>d.includes(k)), 'driver module: IK riding pose, actions, crash sequence, voice hook');
-  ok(['xeom','xichlo','bagac'].every(k=>C.RIDE.fit[k] && C.RIDE.model[k]) && C.RIDE.fit.xichlo.pedal && C.RIDE.fit.xeom.wheelie && ['start','wheelie','underfire','crash','getup','lift','remount'].every(e=>C.RIDE_TALK[e] && C.RIDE_TALK[e].d.length && C.RIDE_TALK[e].s.length), 'every ride fitted, the xích lô pedals, the xe ôm wheelies, every event has both voices');
+  ok(['xeom','bagac'].every(k=>C.RIDE.fit[k] && C.RIDE.model[k]) && C.RIDE.fit.xeom.wheelie && ['start','wheelie','underfire','crash','getup','lift','remount'].every(e=>C.RIDE_TALK[e] && C.RIDE_TALK[e].d.length && C.RIDE_TALK[e].s.length), 'every ride fitted, the xe ôm wheelies, every event has both voices');
   ok(/bikeWheelie\(CV\.H\)/.test(R('src/game/cavalry.js')) && /rideBump\(-vn\)/.test(R('src/game/cavalry.js')) && /rideHit\(dmg(, dx, dz)?\)/.test(R('src/game/player-damage.js')) && /driveDriver\(H, dt, v, yawRate\)/.test(R('src/game/xeom.js')) && /H\.drv\.onCrash/.test(R('src/game/cavalry.js')), 'Space wheelies, crashes and hits reach the driver, the soldier jumps clear and is called back'); }
 
 // Z297 the gun first, the hands onto it, recoil straight back along the bore
@@ -894,7 +894,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z298 real wheels, the reload drill
 { const fs=await import('node:fs'); const C=await import('./config.js'), x=fs.readFileSync('src/game/xeom.js','utf8'), r=fs.readFileSync('src/actors/real-cav.js','utf8');
-  ok(/function cutWheels/.test(x) && /function realWheel/.test(x) && /function buildWheels/.test(x) && ['xeom','xichlo','bagac'].every(k=>C.XEOM[k].wheels && C.XEOM[k].wheels.every(w=>w.c.length===3 && w.r>0.1 && Math.abs(w.c[1]-w.r)<0.01)), 'model wheels cut, real tyres/rims/spokes built, every wheel standing on the ground');
+  ok(/function cutWheels/.test(x) && /function realWheel/.test(x) && /function buildWheels/.test(x) && ['xeom','bagac'].every(k=>C.XEOM[k].wheels && C.XEOM[k].wheels.every(w=>w.c.length===3 && w.r>0.1 && Math.abs(w.c[1]-w.r)<0.01)), 'model wheels cut, real tyres/rims/spokes built, every wheel standing on the ground');
   ok(C.GUNHOLD.reload && C.GUNHOLD.reload.min>0 && /inst\.rD >= RL\.min/.test(r) && /RL\.drop/.test(r) && /turnBone\(D\.Neck/.test(r), 'the reload drill plays only when there is time for it'); }
 
 // Z299 parts, suspension, riders moving with the ride
@@ -917,8 +917,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z302 cyclo steering, physical lean, passenger feet, tyre tracks, the bike's engine, day stages without night lights
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), r=R('src/actors/real-cav.js'), e=R('src/audio/engine-music.js'), b=R('src/game/boot-gate.js');
-  ok(/Math\.atan\(wb \/ \(Rt - w\.x \* XEOM\.k\)\)/.test(x) && C.XEOM.xichlo.wheels.filter(w=>w.steer).length===2 && /Math\.atan\(v \* yawRate \/ 9\.81\)/.test(x), 'the cyclo steers Ackermann-true; two wheels lean as the bend asks (atan v·ω/g)');
-  ok(/function seatFeet/.test(r) && C.XEOM.xeom.feet && C.XEOM.xichlo.feet && /function tyreTrail/.test(x) && /MultiplyBlending/.test(x), 'passenger feet on the pegs / footboard; tyre tracks laid on the ground');
+  ok(/Math\.atan\(wb \/ \(Rt - w\.x \* XEOM\.k\)\)/.test(x) && C.XEOM.bantai.wheels.filter(w=>w.steer).length===2 && /Math\.atan\(v \* yawRate \/ 9\.81\)/.test(x), 'the bán tải steers Ackermann-true; two wheels lean as the bend asks (atan v·ω/g)');
+  ok(/function seatFeet/.test(r) && C.XEOM.xeom.feet && /function tyreTrail/.test(x) && /MultiplyBlending/.test(x), 'passenger feet on the pegs; tyre tracks laid on the ground');
   ok(/function updateBikeEngine/.test(e) && /updateBikeEngine\(dt, p, t\)/.test(e) && C.RIDE.gears.length===3 && C.RIDE.gears[2] < 7.7, 'the ride has its own single-cylinder engine through all four gears');
   ok(/wasN=NIGHT\.on/.test(b) && /setNightLights\(wasN\)/.test(b), 'the warm-up puts back the stage\'s own day / night lights'); }
 
@@ -946,7 +946,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['export function trafficShove','export function trafficBurn','export function trafficShot','export function trafficContacts'].every(k=>tr.includes(k)) && /p && MODE\.crushes && Math\.hypot/.test(tr) && /trafficShot\(b, dt\)/.test(R('src/combat/lock-on.js')) && C.REALCITY.traffic.hit.hp[0]>C.REALCITY.traffic.hit.hp[1], 'traffic: knocked over, halted, shot and burnt; only a tank flattens it; rounds strike it (swept)');
   ok(/export function rideImpacts/.test(im) && /trafficShove\(v, ux \* j \/ mv/.test(im) && /killWild\(a/.test(im) && /export function killWild/.test(R('src/actors/wildlife.js')) && /rideImpacts\(p\)/.test(cv) && C.XEOM.impact.mass.bantai>1 && C.XEOM.wear.spill<C.XEOM.wear.crash, 'the ride: scooters go over, cars are shoved aside (Z320), animals are run down');
   ok(/export function callRide/.test(rc) && /export function rideCallUi/.test(rc) && /function hop\(p\)/.test(rc) && /callRide\(p\)/.test(cv) && /CV\.autoOn/.test(cv) && C.XEOM.call.farR>C.XEOM.call.dropR, 'call the ride: a button with the ETA, a call that waits for a repair, round by the streets when far; stay by a spill and climb back on');
-  ok(G.carbine && G.carbine.trooper && !G.carbine.aoe && /inf:true/.test(sf) && /soldierFire\(now, range\)/.test(cv) && !/fireGun\(/.test(cv) && /p\.guns = trooperGuns\(\)/.test(R('src/game/mode.js')) && /trooperLoot/.test(R('src/loot/powerups.js')) && /soldierHitFX/.test(R('src/game/mode.js')), 'soldier mode: his own rifle and fire path, his own kit, loot and hit effect — not the tank\'s'); }
+  ok(G.carbine && G.carbine.trooper && !G.carbine.aoe && /inf:!g\.aoe/.test(sf) && /soldierFire\(now, range\)/.test(cv) && !/fireGun\(/.test(cv) && /p\.guns = trooperGuns\(\)/.test(R('src/game/mode.js')) && /trooperLoot/.test(R('src/loot/powerups.js')) && /soldierHitFX/.test(R('src/game/mode.js')), 'soldier mode: his own rifle and fire path, his own kit, loot and hit effect — not the tank\'s'); }
 
 // Z307 soldier mode is a mode of its own: one object per mode, every soldier check asks MODE
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), md=R('src/game/mode.js'), ts=R('src/combat/trooper-spells.js');
@@ -1070,6 +1070,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function sliceX\(g, x0, x1, mid\)/.test(F) && /new THREE\.InstancedMesh\(sg, mat, list\.length\)/.test(F) && /im\.computeBoundingSphere\(\); im\.castShadow=im\.receiveShadow=true;/.test(F) && !/fortClip/.test(F), 'each wall section draws only its own stretch, culled to the view and the shadow');
   ok(/if\(f\.wallSl && f\.wallSl\[pc\.i\]\)\{ const \[im,j\]=f\.wallSl\[pc\.i\]; im\.setMatrixAt\(j, _m\);/.test(F) && /for\(const g of f\.wallGeos\|\|\[\]\) g\.dispose\(\);/.test(F), 'a fallen section hides its slice; a stage change frees the slices');
   ok(!/export function buildGunModel/.test(R('src/ui/shop.js')) && !/thumbTank|pumpThumbs/.test(R('src/ui/showroom.js')) && !/id="terrainDlg"/.test(R('index.html')) && !/function buildCity\(/.test(R('src/world/landmarks.js')) && !/\.tcard/.test(R('css/menus.css')), 'dead features are gone: the old 3D gun model, card photos, the old battlefield dialog, the box city'); }
+
+// Z329 the soldier's arsenal: the nine Tripo hand weapons are his guns, each fired its own way; the gun crate brings him one · Z330 the steel operator holds it gun-first too · Z332 no xích lô
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sf=R('src/combat/soldier-fire.js'), rc=R('src/actors/real-cav.js');
+  const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===9 && new Set(T.map(k=>C.INFGUN.map[k])).size===9 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns, one per hand-weapon model, each one held in his hands');
+  ok(/g\.special === 'flame'\)\{ fireFlame/.test(sf) && /g\.special === 'mortar'\)\{ fireMortar/.test(sf) && /pierce:g\.pierce/.test(sf) && /chain:g\.chain/.test(sf) && /export function trooperGive/.test(sf) && /\['carbine', 't_rpg'\]/.test(sf) && /MODE\.id==='soldier'\)\{ const id=trooperGunPick\(\)/.test(R('src/loot/powerups.js')), 'each fires its own way (rounds, pellets, a slug through, a rocket, a lobbed grenade, a flame, an arc); he starts with a carbine and a B41 and picks up the rest');
+  ok(/\(PROFILE\.trooper \|\| 's2'\) === 'op'\)\{ const seen = skClone\(og\.scene\)/.test(rc) && /pup = makePuppet\(op, seen\)/.test(rc), 'the steel operator is worn by the clips like the special-forces soldier, so he holds every gun gun-first, bore on the aim');
+  ok(!C.XEOM.xichlo && !C.RIDE.fit.xichlo && !/xichlo/.test(R('src/ui/battle-setup.js')) && !fs.existsSync('assets/models/real/ride/xichlo.glb') && /PROFILE\.unit==='xichlo'\) PROFILE\.unit='xeom'/.test(R('src/game/flow.js')), 'the xích lô is gone (a saved pick rides the xe ôm)'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

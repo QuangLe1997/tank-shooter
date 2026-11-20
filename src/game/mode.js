@@ -1,4 +1,4 @@
-// game/mode.js — Z307 ONE MODE AT A TIME, EACH WITH ITS OWN RULES: the tank and the soldier (the horse / xe ôm / xích lô / ba gác / bán tải units) are
+// game/mode.js — Z307 ONE MODE AT A TIME, EACH WITH ITS OWN RULES: the tank and the soldier (the horse / xe ôm / ba gác / bán tải units) are
 //   two modes, each one object: who the player is; how a run sets him up (the tank: its garage loadout, shop upgrades, model stats, workshop kit, crew and
 //   roof gun · the soldier: his rifle and his own toughness, none of the tank's progression); how he moves and fires; what a hit on him is (a hull's box
 //   that shrugs off rifle rounds · a man's outline that doesn't); what being hit and falling for good look like; whether he flattens things; whether men

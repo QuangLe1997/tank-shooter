@@ -109,7 +109,7 @@ function sitTall(R, G){ const D = R.pup.D, C = REALCAV.sit; if(!D.Hips || !D.Nec
   D.RightUpLeg.getWorldPosition(_fr); D.LeftUpLeg.getWorldPosition(_ff); _fr.sub(_ff); _fr.addScaledVector(_fu, -_fr.dot(_fu)).normalize(); _ff.crossVectors(_fu, _fr).normalize();   // his right · ahead
   const corr = (Math.atan2(_fb.dot(_ff), _fb.dot(_fu)) - C.lean) * C.k; if(Math.abs(corr) < 1e-3) return;   // (about his right: + leans him back)
   turnBone(D.Spine, _fr, corr * 0.45); turnBone(D.Spine1, _fr, corr * 0.35); turnBone(D.Spine2, _fr, corr * 0.2); }
-// Z302 A PASSENGER'S FEET: sat on the ride his feet go onto the passenger pegs (the xe ôm's fold-out pegs, the xích lô's footboard) instead of hanging
+// Z302 A PASSENGER'S FEET: sat on the ride his feet go onto the passenger pegs (the xe ôm's fold-out pegs) instead of hanging
 //   in the air — less so as he swings his hips round on the seat to fire behind (a foot comes off the peg), none at all getting on or off
 const _fa = new THREE.Vector3(), _fb = new THREE.Vector3(), _fq = new THREE.Quaternion(), _ff = new THREE.Vector3(), _fr = new THREE.Vector3(), _fu = new THREE.Vector3();
 function seatFeet(R, H, dt, on){ const F = XEOM[H.bike] && XEOM[H.bike].feet, D = R.pup.D; R.fw = (R.fw || 0) + ((on && F ? 1 : 0) - (R.fw || 0)) * Math.min(1, dt * 4);
@@ -155,6 +155,9 @@ export function fitRealCav(CV){
     let pup = null; if(sg && C.s2.on && (PROFILE.trooper || 's2') === 's2'){ const sw = new THREE.Group(), s2 = skClone(sg.scene); sw.name = 'realS2'; sw.rotation.y = C.s2.yaw; sw.scale.setScalar(C.opH / HUMAN_SCALE * (C.s2.k || 1));   // (Z300 a touch bigger and taller)
       s2.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } }); sw.add(s2); G.add(sw); G.updateMatrixWorld(true); pup = makePuppet(op, s2);   // (Z301 he takes his own shadows: arms across the chest, the helmet over the face)
       if(pup) op.traverse(o => { if(o.isMesh) o.visible = false; }); else G.remove(sw); }
+    else if((PROFILE.trooper || 's2') === 'op'){ const seen = skClone(og.scene); seen.name = 'realOpSeen'; seen.scale.copy(op.scale);   // Z330 THE STEEL OPERATOR HOLDS IT THE SAME WAY: a second copy of him is the one
+      seen.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } }); G.add(seen); G.updateMatrixWorld(true); pup = makePuppet(op, seen);   //   seen, worn by the clips like the special-forces soldier, so the gun-first hold (bore on the aim, butt in the shoulder, hands by IK) is his too
+      if(pup) op.traverse(o => { if(o.isMesh) o.visible = false; }); else G.remove(seen); }
     const clips = [...og.animations, ...rg.animations, ...rw.animations].map(c => inPlace(c, 'mixamorigHips.position')), byName = n => clips.find(c => c.name === n);
     // the standing aim: the shouldered rifle of the walk-and-fire clip over the square stance of the standing reload (one held frame)
     const UP = /Spine|Neck|Head|Shoulder|Arm|Hand/;
@@ -195,7 +198,7 @@ export function updateRealCav(CV, dt, P){
   else if(P.trans && P.trans.k === 'off'){ if(P.trans.e < 0.55){ ok = 'Cautious_Crouch_Walk_Forward'; ts = 1.3; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // Z295 getting off: a crouched step down, landing on one knee, rifle up
   else if(P.trans && P.trans.k === 'on'){ if(P.trans.e < 0.45){ ok = 'Walk_Forward_While_Shooting'; ts = 1.1; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // getting on: a step to it, then gathered up onto the seat
   else if(mounted && stand){ if(R.step){ ok = 'Walk_Forward_While_Shooting'; ts = 1.35; } else { ok = 'Aim_Stand'; freeze = 0; } }   // braced in the bed, rifle shouldered (Z303 his feet step round when he turns his body)
-  else if(mounted && bike){ ok = 'Ride_Walk'; ts = 0.35; }   // sat on the pillion / the cyclo's bench: the gentle sway of the riding clip
+  else if(mounted && bike){ ok = 'Ride_Walk'; ts = 0.35; }   // sat on the pillion: the gentle sway of the riding clip
   else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
@@ -234,7 +237,7 @@ export function updateRealCav(CV, dt, P){
   if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }
   if(R.pup && !P.dead && mounted && bike && !stand && !P.trans) sitTall(R, G);   // Z304 sat up straight on the seat, not slumped over the gun
   if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
-  if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs / the cyclo's footboard   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
+  if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil

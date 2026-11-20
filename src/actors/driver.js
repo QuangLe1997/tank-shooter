@@ -1,6 +1,6 @@
-// actors/driver.js — Z296 THE DRIVER, A CHARACTER OF HIS OWN: the xe ôm / ba gác / xích lô driver is no longer baked into the ride. He is his own rigged
+// actors/driver.js — Z296 THE DRIVER, A CHARACTER OF HIS OWN: the xe ôm / ba gác driver is no longer baked into the ride. He is his own rigged
 // Tripo model (Mixamo skeleton), sat on his own ride, and he RIDES it: every frame his hips are set on the saddle, his hands are reached onto the
-// grips and his feet onto the pegs (the xích lô's pedals turn, and his feet with them) by two-bone IK, so whatever the machine does he does with it.
+// grips and his feet onto the pegs by two-bone IK, so whatever the machine does he does with it.
 //   · in the bends the bike banks and he leans with it, head turned into the corner and held level;
 //   · fast and under fire he weaves (lạng lách); Space pulls a wheelie (bốc đầu) — front up off the rear axle, him back on his arms;
 //   · opening the throttle he twists the right grip back; through the gears his left foot flicks the lever;
@@ -36,7 +36,7 @@ function ik2(a, b, c, t, pole){ a.getWorldPosition(_ia); b.getWorldPosition(_ib)
 
 // ---- build: the driver onto ride H (once his model is in) ----
 export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof window === 'undefined') return null;
-  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, crank:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, peek:false, pk:0, pkN:0, sacN:0, sacA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0 };
+  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, peek:false, pk:0, pkN:0, sacN:0, sacA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0 };
   loadGLTF(RIDE.model[kind]).then(gl => { if(!gl || H.drv !== D) return; const sc = skClone(gl.scene), w = new THREE.Group(); w.name = 'driver';
     sc.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } });
     const b = new THREE.Box3().setFromObject(sc); w.add(sc); sc.rotation.y = RIDE.yaw; D.h0 = Math.max(1e-3, b.max.y - b.min.y); const s = D.s0 = RIDE.h / XEOM.k / D.h0; w.scale.setScalar(s);
@@ -97,14 +97,13 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
   // throttle and gears: the right grip twists back as he opens it; the left foot flicks up through the gears
   D.thr += (clamp(acc / 6, -0.4, 1) - D.thr) * Math.min(1, dt * 8);
   const g = RIDE.gears.filter(x => Math.abs(v) > x).length; if(g !== D.gear){ if(g > D.gear && R.gearFoot){ D.gearT = 0.28; sfx('click'); } D.gear = g; } D.gearT = Math.max(0, D.gearT - dt);
-  D.crank += v * dt / (R.crankR || 0.17) * (R.pedal ? 0.5 : 0);
   if(D.state === 'ride' || D.state === 'mount'){ ridePose(H, D, dt, v, yr); if(D.state === 'mount'){ D.t2 += dt; if(D.t2 >= RIDE.crash.mount){ if(H.broken){ D.state = 'fix'; D.t2 = 0; } else { D.state = 'ride'; talk(D, 'remount', true); if(D.onBack) D.onBack(); } } } }   // (Z303 picked up but dead: straight to the repair)
   else if(D.state === 'fix') fixStep(H, D, dt);
   else crashStep(H, D, dt);
   if(D.state === 'ride' && sp > 0.85 && Math.abs(yr) > 1.1) talk(D, 'turn');
   else if(D.state === 'ride' && sp > 0.9) talk(D, 'fast'); }
 
-// ---- riding: hips on the saddle, back bent to the bars, head into the bend, hands on the grips, feet on the pegs / pedals ----
+// ---- riding: hips on the saddle, back bent to the bars, head into the bend, hands on the grips, feet on the pegs ----
 const UP = new THREE.Vector3(), FWD = new THREE.Vector3(), RIGHT = new THREE.Vector3();
 const onRide = (H, arr, out, steered) => H.toWorld ? H.toWorld(arr, out, steered) : H.B.localToWorld(out.fromArray(arr));   // a point on the body (or the bars), in the world
 function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
@@ -112,7 +111,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   H.B.updateMatrixWorld(true); D.w.updateMatrixWorld(true); (H.body || H.B).getWorldQuaternion(_qw);   // Z299 his frame is the sprung body's: it dives, squats and rolls under him
   UP.set(0, 1, 0).applyQuaternion(_qw); FWD.set(0, 0, 1).applyQuaternion(_qw); RIGHT.set(-1, 0, 0).applyQuaternion(_qw);   // the ride's own frame (+z ahead)
   // the hips: on the seat, square to the ride (side = his right), sat back a little in a wheelie
-  const stopped = Math.abs(v) < 0.4 && !R.pedal;
+  const stopped = Math.abs(v) < 0.4;
   onRide(H, R.hip, _a); const hips = B.Hips; hips.parent.worldToLocal(_a); hips.position.copy(_a); hips.updateMatrixWorld(true);
   hips.getWorldPosition(_a); B.Spine.getWorldPosition(_b); B.RightUpLeg.getWorldPosition(_c); B.LeftUpLeg.getWorldPosition(_d);
   _e.subVectors(_b, _a).normalize(); _f.subVectors(_c, _d).normalize(); _g.crossVectors(_f, _e).normalize();
@@ -152,20 +151,19 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
     const gp = _a.clone(), wrist = gp.clone().addScaledVector(UP, 0.035).addScaledVector(FWD, -0.065);   // the bar in the palm: the wrist just behind and above it
     ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); rollHand(B, L, _c.copy(RIGHT).multiplyScalar(i ? 1 : -1).applyAxisAngle(UP, (i ? -1 : 1) * (R.sweep || 0))); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // (Z304 knuckles out along the bar)   // fingers closed round the grip
   if(B.RightHand && B.RightForeArm){ B.RightForeArm.getWorldPosition(_a); B.RightHand.getWorldPosition(_b); turn(B.RightHand, _c.subVectors(_b, _a).normalize(), -D.thr * 0.7); }
-  // feet: on the pegs / floorboard; the xích lô's pedals go round; stopped, the left foot goes down to the road; the gear flick lifts the left toe
+  // feet: on the pegs / floorboard; stopped, the left foot goes down to the road; the gear flick lifts the left toe
   // Z300 THE FEET ON THE ROAD: slowing to a stop both feet come off the pegs / pedals and are planted on the actual ground either side (its real height under
   //   each foot, the sole flat); hard through a bend at speed the inside foot goes out ahead and skims the road like a racer's, kicking up dust
   const FT = RIDE.feet, body = H.body || H.B, ws = body.getWorldScale(_g).y, lat = I ? I.lat : 0, inner = yr > 0 ? 0 : 1;
-  const dab = !R.pedal && H.two !== false && Math.abs(v) > FT.dabV && Math.abs(lat) > FT.dabLat && D.state === 'ride';
+  const dab = H.two !== false && Math.abs(v) > FT.dabV && Math.abs(lat) > FT.dabLat && D.state === 'ride';
   for(const [L, i] of [['Left', 0], ['Right', 1]]){ const sd = i ? -1 : 1;   // (+x is his left)
     D.fd[i] += ((Math.abs(v) < FT.stopV && D.state === 'ride' ? 1 : 0) - D.fd[i]) * Math.min(1, dt * FT.rate * (i ? 0.8 : 1.15));   // (the left foot first, the right a beat later)
     D.fdab[i] += ((dab && i === inner ? 1 : 0) - D.fdab[i]) * Math.min(1, dt * FT.rate * 1.4);
-    if(R.pedal){ const ph = D.crank + (i ? Math.PI : 0); _a.set(R.pedal[0] * (i ? -1 : 1), R.pedal[1] + Math.sin(ph) * R.crankR / k, R.pedal[2] + Math.cos(ph) * R.crankR / k); }
-    else _a.fromArray(R.peg[i]);
-    if(!R.pedal && i === 0 && D.gearT > 0) _a.y += Math.sin(D.gearT / 0.28 * Math.PI) * 0.035;
+    _a.fromArray(R.peg[i]);
+    if(i === 0 && D.gearT > 0) _a.y += Math.sin(D.gearT / 0.28 * Math.PI) * 0.035;
     body.localToWorld(_a); const down = Math.max(D.fd[i], D.fdab[i]);
     if(down > 1e-3){ // where that foot meets the road: out to the side (and ahead, for the dab), at the ground's real height under it
-      const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg ? R.peg[i][0] : R.pedal[0]) + (dk ? FT.dabOut : FT.out)), 0, (R.peg ? R.peg[i][2] : R.hip[2]) + (dk ? FT.dabFwd : FT.fwd)); body.localToWorld(_c);
+      const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg[i][0]) + (dk ? FT.dabOut : FT.out)), 0, R.peg[i][2] + (dk ? FT.dabFwd : FT.fwd)); body.localToWorld(_c);
       _c.y = heightAt(_c.x, _c.z) + D.ankle * ws + (dk ? FT.hover : 0); _a.lerp(_c, ease(down));
       if(dk && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:new THREE.Color(FT.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
     B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(FWD, 1).addScaledVector(RIGHT, sd * -0.35 * (1 + down)).addScaledVector(UP, 0.3);
@@ -177,7 +175,7 @@ function flatFoot(f, t, slope, w){ if(!f || !t) return; f.getWorldPosition(_d); 
   const ang = Math.acos(clamp(_e.dot(_f), -1, 1)) * w; if(ang < 1e-4) return; _g.crossVectors(_e, _f).normalize(); turn(f, _g, ang); }
 
 // ---- Z303 the repair: off the seat into a squat on the ride's left side, facing it; one hand braced on the frame, the other hammering at the engine
-//   (the cyclo's chain), head down over it; then up and back onto the seat, the engine fires (rideFixed) and he waits for the soldier ----
+//   head down over it; then up and back onto the seat, the engine fires (rideFixed) and he waits for the soldier ----
 const _fk = new THREE.Vector3(), _rk = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3(), _h3 = new THREE.Vector3(), _h4 = new THREE.Vector3(), _hq = new THREE.Quaternion(), _hm = new THREE.Matrix4();
 function fixStep(H, D, dt){ const F = RIDE.fix, T = XEOM.wear.fixT; D.t2 += dt; const back = D.t2 > T;
   D.fixK = clamp((D.fixK || 0) + (back ? -1 : 1) * dt * F.ease, 0, 1);
@@ -204,9 +202,9 @@ function fixPose(H, D, dt, k){ const B = D.B, R = D.R, F = RIDE.fix, P = F[D.kin
     B[L + 'Arm'].getWorldPosition(_b); _b.addScaledVector(_rk, (i ? 1 : -1) * 0.5).addScaledVector(UP, -0.35).addScaledVector(_fk, -0.15);
     ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], _h1.clone(), _b.clone()); curlHand(B, L, RIDE.grip, _h1.clone().addScaledVector(UP, -0.03)); }
   if(k > 0.9 && blow !== D.blow){ D.blow = blow; onRide(H, P.tool, _h2); sfx('click'); for(let n = 0; n < 3; n++) spawnPart(_h2.x, _h2.y, _h2.z, (Math.random() - 0.5) * 2, 1 + Math.random() * 1.5, (Math.random() - 0.5) * 2, { color:0xffc860, size:0.12, life:0.35, grav:-9, drag:1 }); }
-  // feet: off the pegs / pedals onto the ground either side of the squat, soles flat
+  // feet: off the pegs onto the ground either side of the squat, soles flat
   for(const [L, i] of [['Left', 0], ['Right', 1]]){ const sd = i ? -1 : 1;
-    if(R.pedal) _h1.set(R.pedal[0] * (i ? -1 : 1), R.pedal[1], R.pedal[2]); else _h1.fromArray(R.peg[i]); body.localToWorld(_h1);
+    _h1.fromArray(R.peg[i]); body.localToWorld(_h1);
     onRide(H, P.foot[i], _h2); _h2.y = heightAt(_h2.x, _h2.z) + D.ankle * ws; _h1.lerp(_h2, k);
     B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(_fk, 1).addScaledVector(_rk, sd * -0.3).addScaledVector(UP, 0.5);
     ik2(B[L + 'UpLeg'], B[L + 'Leg'], B[L + 'Foot'], _h1.clone(), _b.clone()); if(k > 0.3) flatFoot(B[L + 'Foot'], B[L + 'ToeBase'], D.toeSlope, k); } }

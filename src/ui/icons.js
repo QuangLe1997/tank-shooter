@@ -29,7 +29,15 @@ export const GLYPH={
   emp:'<circle cx="12" cy="12" r="2"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5M12 5.5A6.5 6.5 0 0 0 5.5 12M12 18.5a6.5 6.5 0 0 1-6.5-6.5M12 18.5a6.5 6.5 0 0 0 6.5-6.5"/>',
   shell:'<path d="M12 2.4c1.9 1.7 2.5 3.4 2.5 5.1V10h-5V7.5c0-1.7.6-3.4 2.5-5.1Z"/><rect x="9.2" y="10" width="5.6" height="9.6" rx="1"/><path d="M9.2 13.4h5.6M9.2 16.4h5.6"/>',
   rifle:'<path d="M3 9.4h15.5l2.5 1.1v2.2h-4l-1 2h-3l-1-2H3z"/><path d="M6 12.7v3M18.5 10.5V8"/>',
-  carbine:'<path d="M2 11.5l3-1.5h14l3 .8v1.4H14l-1.2 3.3h-2.3l.6-3.3H7L4.5 14H2z"/><path d="M19 10V8.6"/>',   // Z306 the soldier's rifle: stock, magazine, front sight
+  carbine:'<path d="M2 11.5l3-1.5h14l3 .8v1.4H14l-1.2 3.3h-2.3l.6-3.3H7L4.5 14H2z"/><path d="M19 10V8.6"/>',
+  pkm:'<path d="M2 11l3-1.2h15l2 .7v1.3h-8l-1 1.4H9l-.6-1.4H5L3.5 13H2z"/><path d="M8 12.2l-1.6 3.6M10.5 12.2l1 3.4M19.5 9.8V8.4"/>',   // Z329 the soldier's arsenal: PKM on its bipod
+  minigunH:'<path d="M3 9.5h12M3 11h12M3 12.5h12"/><rect x="15" y="8.6" width="4.5" height="4.8" rx="1"/><path d="M19.5 11h2.5M16.5 13.4v2.6"/>',   // hand-held rotary barrels
+  shotgunH:'<path d="M2.5 10h16M2.5 12h16"/><path d="M18.5 10l3 .6v1.8l-3 .6M6 12v2.6h3V12"/>',   // pump shotgun, the fore-end slide
+  sniper:'<path d="M1.5 11.5h17.5l3 .6v1H14l-1 2.6h-2l.4-2.6H5l-2 1.6H1.5z"/><rect x="8" y="8" width="6" height="2.2" rx="1"/><path d="M9.5 10.2v1.3M12.5 10.2v1.3"/>',   // 12.7 with its scope
+  b41:'<path d="M3 11h13M3 13h13"/><path d="M16 9.4l5 2.6-5 2.6z"/><path d="M7 13v2.8M10 13v2.8"/>',   // the RPG tube and its rocket head
+  m79:'<rect x="4" y="9.4" width="9" height="3.6" rx="1.4"/><path d="M13 10.2h7.5v2H13M7 13l-1.4 3.4h2.4l.8-3.4"/>',   // stubby break-open grenade launcher
+  flamerH:'<path d="M3 11.5h11v1.6H3z"/><rect x="5" y="13.1" width="5" height="3.4" rx="1.2"/><path d="M14 11.5c2 0 2.5-2.5 4-2.5-.5 1.2.6 2 1.8 1.4-.4 1.6-1.2 2.7-3 2.7"/>',   // the hand flamer with its tank and a tongue of fire
+  arc:'<path d="M3 11h11v2H3z"/><path d="M14 12l2.5-2.5 1.2 2 2.3-2.8M14 12l2.6 2.6 1.1-1.8 2.3 2.7"/>',   // the energy rifle's forked arc   // Z306 the soldier's rifle: stock, magazine, front sight
   smg:'<path d="M4 9.4h10.5v2.6h-2.5l-1 1.8H7.5l-1-1.8H4z"/><path d="M7.5 12v3.4M12.5 9.4V7.6"/>',
   shotgun:'<path d="M3 9.6h17.5M3 12.4h17.5"/><path d="M3 9.6v2.8M20.5 8.8v4.4"/><path d="M6 12.4v3"/>',
   flak:'<path d="M5 19l8-8"/><path d="M3 17.2l1.8 1.8 1.8-1.8"/><path d="M11 13l2.4 2.4"/><circle cx="17.5" cy="6.5" r="1.1"/><circle cx="20.5" cy="9.5" r="1.1"/><circle cx="14.6" cy="4.2" r="1.1"/>',

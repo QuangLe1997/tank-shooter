@@ -10,7 +10,7 @@ export function cavOn(){ const p=S.player; return !!(p && p.cav); }
 // ---- the player object: same fields as the tank (makePlayer) so every system that reads S.player keeps working ----
 // Z293 the rider into his place on whatever he rides: the saddle (horse units) or the ride's pillion / bench / bed (XEOM seat, mount units) — mounting, remounting and respawning all go through here
 function seatRider(G, H){ (H.bike && H.body || H.B).add(G); G.rotation.set(0,0,0); if(H.bike){ const X=XEOM[H.bike]; G.position.set(0, X.seat[0], X.seat[1]); G.scale.setScalar(HUMAN_SCALE/XEOM.k); } else { G.position.set(0, 0, -0.1); G.scale.setScalar(HUMAN_SCALE/HORSE.size); } }
-export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'xichlo' ride the bike instead of the horse
+export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'bagac' / 'bantai' ride the bike instead of the horse
   const H=kind ? buildBikeMount(kind) : buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
   if(kind) H.root.scale.setScalar(XEOM.k); seatRider(G, H);
   if(H.drv){ H.drv.onCrash=()=>{ if(CV.mounted && !CV.trans){ CV.trans={ k:'off', t:0, crash:true }; CV.call=false; } };   // Z296 the bike goes down: the soldier jumps clear

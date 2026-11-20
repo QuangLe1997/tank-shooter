@@ -1,5 +1,5 @@
 // game/ride-impact.js — Z306 THE RIDE MEETS THE STREET (soldier mode only; the tank keeps its own run-over in world/traffic.js): what the xe ôm / ba gác /
-//   xích lô / bán tải — or the horse — runs into. An animal it runs down is killed (a big one brings the ride down too). On foot nothing is wrecked by
+//   bán tải — or the horse — runs into. An animal it runs down is killed (a big one brings the ride down too). On foot nothing is wrecked by
 //   walking into it: cars and scooters are solid, and they wait for you in their lane.
 // Z320 A RAM IS A COLLISION OF MASSES: the ride (by kind: a xe ôm lighter than a car, a bán tải much heavier) and the car (1) or scooter (moto) meet along the
 //   line between them — the blow shoves what it hits out of its lane and turns it by the lever it struck (a car spins out, a scooter goes over and skids on

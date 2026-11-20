@@ -144,7 +144,7 @@ export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, re
 export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen' }, fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0 }, yaw:{}, sink:0.02 };
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
 // Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
-//   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet (or pedal = the crank's [half-width, height, along], crankR m) · rear = the rear axle (wheelie pivot)
+//   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet · rear = the rear axle (wheelie pivot)
 //   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do · Z308 grip = the middle of each rubber grip (measured on
 //   the model: the hands close round it, back of the hand up); sweep = how far (rad) the grips sweep back from straight across, so the knuckles follow the bar
 // Z311 WHAT A RIDE RUNS INTO (game/ride-collide.js — a bike or a horse): trees, poles, parked cars, a stone knee-high or more (rock m radius), the city's
@@ -165,16 +165,14 @@ export const RIDE_HIT = { rock:0.45, knock:['prop_bin','prop_chair','prop_cafe',
 export const RIDE_MASK = { drv_xeom:{ cols:20, rows:12, halfW:0.33, top:0.3, noseW:0.4, dip:0.055, bottom:-0.06, rise:0.14, off:0.03, pleat:0.008,
   ear:{ top:0.285, lobe:0.13, front:0.01, back:-0.075 }, helmet:0.295, loop:0.007, clear:0.012, color:0x8fa88a,
   wear:{ fade:0.18, dust:0.16, sun:0.1, grime:0.45, breath:0.22, specks:10, creases:7 } } };
-export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
+export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', bagac:'drv_xeom' },
   fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.135, 0.44, 0.113], [-0.135, 0.44, 0.113]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
-    xichlo:{ hip:[0, 0.48, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
     bagac:{ hip:[0, 0.395, 0.19], grip:[[0.175, 0.467, 0.386], [-0.175, 0.467, 0.386]], sweep:0.4, peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
   grip:0.85, lean:{ body:0.22, head:0.6 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.35, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] },
   // Z303 the repair: squatting on the ride's left side facing it (mount units): hips (height above the ground in m), feet, the hand braced on the frame,
   //   the hand at work on the engine / chain; how far forward he bends, how far he looks down, the hammer's lift and its rate
   fix:{ xeom:{ hip:[0.33, 0, -0.02], foot:[[0.35, 0, 0.08], [0.35, 0, -0.12]], brace:[0.12, 0.33, 0.06], tool:[0.1, 0.17, -0.04] },
     bagac:{ hip:[0.35, 0, 0.3], foot:[[0.37, 0, 0.4], [0.37, 0, 0.2]], brace:[0.13, 0.36, 0.38], tool:[0.1, 0.2, 0.3] },
-    xichlo:{ hip:[0.32, 0, -0.2], foot:[[0.34, 0, -0.1], [0.34, 0, -0.3]], brace:[0.15, 0.3, -0.1], tool:[0.08, 0.14, -0.22] },
     hipH:0.44, bend:0.75, look:0.4, hammer:0.05, rate:8, ease:1.6 },
   // Z300 feet on the road (mount units, m/s, m/s²): both down below stopV (out to the side, a little ahead); the inside foot out ahead skimming the road
   //   through a bend taken faster than dabV with more than dabLat of cornering; under a storm of fire (n hits in win s): ducked, face down and away, jinking
@@ -197,7 +195,7 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
 //   Z310 the bán tải's four wheels measured off its model (each tyre its own round piece: centre, radius, width) — they roll, the front pair steers
-export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 0.285], r:0.148, w:0.042, steer:true }, { c:[0, 0.148, -0.278], r:0.148, w:0.044 }], yaw:0, seat:[0.415, -0.31], feet:[0.125, 0.2, -0.19], pose:'straddle', lean:0.35, steer:{ a:[0.285, 0.148], b:[0.16, 0.44], back:0.025, top:0.4, z:0.02 }, lamps:{ head:[0, 0.446, 0.199], lens:{ top:0.072, bot:0.05, h:0.047, r:0.011, tilt:0.33 }, tail:[[0, 0.318, -0.384]] }, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, wheels:[{ c:[0.21, 0.16, 0.217], r:0.16, w:0.04, steer:true }, { c:[-0.21, 0.16, 0.217], r:0.16, w:0.04, steer:true }, { c:[0, 0.16, -0.362], r:0.16, w:0.045 }], yaw:-1.5708, seat:[0.39, 0.14], feet:[0.085, 0.25, 0.42], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
+export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 0.285], r:0.148, w:0.042, steer:true }, { c:[0, 0.148, -0.278], r:0.148, w:0.044 }], yaw:0, seat:[0.415, -0.31], feet:[0.125, 0.2, -0.19], pose:'straddle', lean:0.35, steer:{ a:[0.285, 0.148], b:[0.16, 0.44], back:0.025, top:0.4, z:0.02 }, lamps:{ head:[0, 0.446, 0.199], lens:{ top:0.072, bot:0.05, h:0.047, r:0.011, tilt:0.33 }, tail:[[0, 0.318, -0.384]] }, driver:[0.78, 0.05], livery:0 },
   bagac:{ len:3.3, side:1.15, wheels:[{ c:[0, 0.13, 0.595], r:0.13, w:0.05, steer:true }, { c:[0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }, { c:[-0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }], yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12, steer:{ a:[0.595, 0.13], b:[0.46, 0.44], back:0.025, top:0.4, z:0.36 }, lamps:{ head:[0, 0.41, 0.538], tail:[[0.24, 0.27, -0.72], [-0.24, 0.27, -0.72]] } }, bantai:{ len:4.7, side:1.45, wheels:[{ c:[0.32, 0.166, 0.681], r:0.165, w:0.105, steer:true, spoke:false }, { c:[-0.32, 0.166, 0.681], r:0.165, w:0.105, steer:true, spoke:false },
     { c:[0.32, 0.166, -0.507], r:0.165, w:0.105, spoke:false }, { c:[-0.32, 0.166, -0.507], r:0.165, w:0.105, spoke:false }], yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
   // Z299 the sprung body on its wheels (metres, seconds): heave / pitch / roll springs (k stiffness, z damping ratio); squat and dive per m/s² of
@@ -212,11 +210,11 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
     low:{ h:0.85, v:4.5, over:0.25 } },
   // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
   //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
-  wear:{ hp:{ xeom:150, xichlo:110, bagac:190 }, share:0.5, crash:28, spill:6, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
+  wear:{ hp:{ xeom:150, bagac:190 }, share:0.5, crash:28, spill:6, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
   // Z306 the ride on the street (game/ride-impact.js): closing speed (m/s) above which a blow is a knock (sparks, glass, a scooter over); animals: run down
   //   above animalV, a big one (legs longer than bigLeg) brings the ride down (spill: wear above). Z320 a ram is a collision of masses (a car = 1, a scooter
   //   moto): the ride's mass by kind, e = how much they spring apart — the blow shoves and spins what it hits and takes speed off the ride by the masses, no spill
-  impact:{ knockV:2.5, mass:{ xeom:0.8, xichlo:0.7, bagac:1.1, bantai:2.6, horse:0.9 }, moto:0.35, e:0.25, animalV:3, bigLeg:1.1 },
+  impact:{ knockV:2.5, mass:{ xeom:0.8, bagac:1.1, bantai:2.6, horse:0.9 }, moto:0.35, e:0.25, animalV:3, bigLeg:1.1 },
   // Z306 calling the ride (game/ride-call.js): farther than farR (m) he comes round by the streets — after delay s he turns up dropR m away and rides in; no
   //   closer for stuckT s → he comes round too; after a spill you climb straight back on if you stayed within stayR m of where you landed
   call:{ farR:55, delay:4, dropR:26, stuckT:3, stayR:4 },
@@ -225,7 +223,7 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   //   Z308 a ride's own lamps.lens = the shape of its headlamp glass, so the glow fills exactly that (at lamps.head, its centre): widths across the top
   //   and the bottom, height, corner radius, and how far its face leans back (rad, with the steering head); without it the glow is a disc of headR
   lamp:{ headR:0.026, day:2.2, night:7, beam:{ i:4.2, dist:28, ang:0.5, pen:0.6, ahead:6, drop:0.55, r0:0.02, r1:0.9, len:4.4, op:0.2 }, tail:[0.034, 0.02], run:1.1, brake:4.5, brakeAcc:1.2, ease:14 },
-  pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
+  pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry' },
@@ -362,7 +360,7 @@ export const VIP_GUNS = ['railgun','rocket','orbital','plasma','hydra','singular
 
 // ----- punchy marketing blurbs (kept short) -----
 export const GUN_BLURB = {
-  rifle:'Bền bỉ, đa năng — không bao giờ kẹt đạn.', carbine:'Súng trường của người lính: đạn thẳng, chính xác, không nổ.', smg:'Cơn mưa đạn dữ dội ở cự ly gần.',
+  rifle:'Bền bỉ, đa năng — không bao giờ kẹt đạn.', carbine:'Súng trường của người lính: đạn thẳng, chính xác, không nổ.', t_lmg:'Đại liên của lính: băng 100 viên, giữ cò quét cả tổ địch.', t_minigun:'Súng nòng xoay ôm ngang hông: mưa đạn, nạp lâu.', t_shotgun:'Súng săn: 8 viên chì một phát, cực mạnh ở gần.', t_sniper:'Súng bắn tỉa 12.7: một phát xuyên hai người, bắn xa.', t_rpg:'B41 vác vai: rocket nổ, phá xe và ổ súng.', t_gl:'Súng phóng lựu M79: lựu đạn câu đúng chỗ ngắm, nổ lan.', t_flamer:'Súng phun lửa: đốt cháy người và xe trong tầm gần.', t_energy:'Súng xung điện: tia sét nhảy sang người đứng gần.', smg:'Cơn mưa đạn dữ dội ở cự ly gần.',
   shotgun:'Tàn phá cự ly gần — tám viên chì, một lần bóp cò.', flak:'Mảnh đạn nổ tung xé nát cả bầy.',
   cannon:'Một phát đạn khổng lồ. Giáp dày cũng phải gập.', cryo:'Đóng băng chúng — rồi đập vỡ vụn.',
   minigun:'Nòng xoay không ngừng, lửa không ngừng. Giữ vững phòng tuyến.', missile:'Khoá mục tiêu. Nó tự săn. Không bao giờ trượt.',
@@ -820,7 +818,8 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
 export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
 // Z295 the infantry arsenal (actors/real-cav.js; Tripo P2): which hand weapon the soldier carries for each of the game's guns, and each weapon's true length (m),
 //   which end is the muzzle in the model (+z / −z), how far behind its middle the pistol grip sits (share of the length), lift = raised (m: the RPG rides the shoulder)
-export const INFGUN = { map:{ rifle:'ar', carbine:'ar', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
+//   Z329 the soldier's own guns (data/guns.js t_*) map onto them too: each weapon he picks up is the one in his hands
+export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'minigun', t_shotgun:'shotgun', t_sniper:'sniper', t_rpg:'rpg', t_gl:'gl', t_flamer:'flamer', t_energy:'energy', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
     agl:'gl', mortar:'gl', arty:'gl', flamer:'flamer', cryo:'flamer', tesla:'energy', plasma:'energy', photon:'energy', orbital:'energy', singularity:'energy' },
   guns:{ ar:{ len:0.92, muzzle:1, grip:0.2 }, lmg:{ len:1.12, muzzle:-1, grip:0.18 }, minigun:{ len:1.15, muzzle:1, grip:0.22 }, shotgun:{ len:1.0, muzzle:-1, grip:0.22 }, sniper:{ len:1.42, muzzle:-1, grip:0.24 },
     rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18 }, flamer:{ len:1.0, muzzle:1, grip:0.14 }, energy:{ len:0.95, muzzle:1, grip:0.2 } } };
