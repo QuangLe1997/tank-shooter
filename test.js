@@ -830,6 +830,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/th=main\?H\+9:H\+7/.test(R('src/world/core-walls.js')) && /coreClip/.test(R('src/world/core-walls.js')), 'base walls: no squeezed runs, a sane gatehouse');
   ok(/export function buildBikeMount/.test(R('src/game/xeom.js')) && /export async function mountModel/.test(R('src/world/traffic.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/cavalry.js')) && /if\(S\.bike\) return animateBike/.test(R('src/actors/horse.js')) && /\['xeom','XE ÔM'/.test(R('src/ui/battle-setup.js')) && /makeCavPlayer\(cavKind\)/.test(R('src/game/flow.js')) && C.XEOM.xeom && C.XEOM.xichlo, 'ride into battle on a xe ôm or a xích lô'); }
 
+// Z283 every battlefield its own fort style: limestone castle, Roman, marble, dry-stone, industrial joined the first four
+{ const fs=await import('node:fs'); const C=await import('./config.js');
+  ok(['meadow','ruins','quarry','savanna','foundry'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/fort_'+st+'_'+p+'.glb'))) && C.REALFORT.biomes.SAVANNA==='savanna' && C.REALFORT.biomes.FOUNDRY==='foundry', 'nine fort styles'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -137,7 +137,7 @@ export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }
 export const XEOM = { k:2.3, xeom:{ driver:[0.78, 0.05], seat:[0.84, -0.36], livery:0 }, xichlo:{ driver:[1.05, -0.95], seat:[0.6, 0.38], yaw:3.1416 }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
-export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'citadel', RUINS:'citadel', HILLS:'citadel', VILLAGE:'citadel', DESERT:'desert', SAVANNA:'desert', QUARRY:'desert', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'volcano', STEELMILL:'volcano' },
+export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry' },
   wallUp:1.5, thick:1.25, towerW:1.35, towerUp:3, keepW:1.3, keepH:1.15, gateW:1.15, door:[0.2, 0.55] };
 // Z269 the field headquarters at the heart of our base (actors/core.js dressCore; Tripo, from a generated concept): w = footprint (m), sink = share of its height under the pad, hitR = the core's hit radius with it
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },

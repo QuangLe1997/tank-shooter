@@ -18,3 +18,4 @@ City models — where each one comes from
 - ../tree/*.glb (Z274, Z275): Tripo text-to-model (H3.1), all 13 species
 - ../ruin/ruin_chapel.glb (Z277): Tripo image-to-model from the user's own reference image; ../ruin/ruin_{wall,block,tower,villa}.glb: Tripo text-to-model (H3.1)
 - ../fort/fort_{citadel,desert,arctic,volcano}_{wall,tower,gate}.glb (Z279): Tripo text-to-model (H3.1, 4K textures packed to 2K)
+- ../fort/fort_{meadow,ruins,quarry,savanna,foundry}_*.glb (Z283): Tripo text-to-model (H3.1)
