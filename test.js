@@ -928,6 +928,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['export function rideWear','export function rideBreak','export function rideFixed','export function rideSmoke','export function rideSpeedK'].every(k=>w.includes(k)) && C.XEOM.wear && C.XEOM.wear.hp.xeom>0 && /function fixPose/.test(d) && /else if\(D\.state === 'fix'\) fixStep/.test(d) && C.RIDE.fix && C.RIDE.fix.xeom && /rideSpeedK\(CV\.H\)/.test(cv), 'the ride wears, smokes, limps, breaks down and is repaired by the driver');
   ok(/R\.tu \+ Math\.atan2\(Math\.sin\(raw - R\.tu\)/.test(r) && /C\.aimRate \* dt/.test(r) && /R\.step = \{ from/.test(r) && /dyw = R\.av \?\?/.test(r) && C.REALCAV.aimRate>0 && C.REALCAV.flip>0, 'the aim relative to the ride is unwrapped and swung at a human pace; standing riders step round'); }
 
+// Z304 the chest turns with the aim, hands rolled onto what they hold, sitting tall, a man's running pace, the driver peeks between ducks
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), pu=R('src/actors/puppet.js'), ha=R('src/actors/hands.js'), r=R('src/actors/real-cav.js'), d=R('src/actors/driver.js'), cv=R('src/game/cavalry.js');
+  ok(/function chestTwist/.test(pu) && /chestTwist\(S, D\)/.test(pu) && /export function rollHand/.test(ha) && /rollHand\(D, 'Right'/.test(r) && /rollHand\(B, L,/.test(d), 'the chest carries the twist; hands roll onto the grip, the handguard, the bar');
+  ok(/function sitTall/.test(r) && C.REALCAV.sit && C.XEOM.xeom.seat[0] > 0.4 && C.CAV.foot.run < 4 && C.CAV.foot.sprint < 6.5 && C.CAV.foot.accel > 0 && /F\.accel:F\.decel/.test(cv) && /T\.to \|\| CV\.hPos/.test(cv), 'sat up straight on the pillion; on foot a man\'s pace with momentum; thrown clear on his own line');
+  ok(/D\.peek = !D\.peek/.test(d) && C.RIDE.dodge.peek && C.RIDE.alert && C.RIDE.alert.snap > 5, 'under fire the driver ducks and bobs up to watch the road, eyes darting'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

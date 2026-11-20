@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, NIGHT, S, burst, curlHand, floatText, heightAt, loadGLTF, rideFixed, rideWear, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, CV, NIGHT, S, burst, curlHand, floatText, heightAt, loadGLTF, rideFixed, rideWear, rollHand, scene, sfx, spawnPart } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -36,7 +36,7 @@ function ik2(a, b, c, t, pole){ a.getWorldPosition(_ia); b.getWorldPosition(_ib)
 
 // ---- build: the driver onto ride H (once his model is in) ----
 export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof window === 'undefined') return null;
-  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, crank:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0 };
+  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, crank:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, peek:false, pk:0, pkN:0, sacN:0, sacA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0 };
   loadGLTF(RIDE.model[kind]).then(gl => { if(!gl || H.drv !== D) return; const sc = skClone(gl.scene), w = new THREE.Group(); w.name = 'driver';
     sc.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } });
     const b = new THREE.Box3().setFromObject(sc); w.add(sc); sc.rotation.y = RIDE.yaw; D.h0 = Math.max(1e-3, b.max.y - b.min.y); const s = D.s0 = RIDE.h / XEOM.k / D.h0; w.scale.setScalar(s);
@@ -127,20 +127,26 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   D.storm += ((storming ? 1 : 0) - D.storm) * Math.min(1, dt * (storming ? 6 : 1.1)); if(nowS - D.threatT > DG.win * 2) D.threat = 0;
   if(D.storm > 0.3 && nowS > D.dodgeN){ D.dodgeN = nowS + DG.every[0] + Math.random() * DG.every[1]; const side = D.threat && Math.random() < 0.7 ? -D.threat : (Math.random() < 0.5 ? -1 : 1);
     D.ivl += side * DG.jink * D.storm; D.ivp += DG.jink * 0.45 * D.storm; }
-  const bend = R.bend + D.duck * RIDE.duck.bend - D.pitch * 0.9 + D.ip + D.storm * DG.bend, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35) + D.il;
+  // Z304 ...but he can't ride blind: he ducks, then bobs up to see the road (eyes darting: ahead, left, right), and ducks again — over and over
+  const cover = Math.max(D.duck, D.storm); if(cover > 0.3){ if(nowS > D.pkN){ D.peek = !D.peek; D.pkN = nowS + (D.peek ? DG.peek[0] + Math.random() * DG.peek[1] : DG.hide[0] + Math.random() * DG.hide[1]); } } else D.peek = false;
+  D.pk += ((D.peek ? 1 : 0) - D.pk) * Math.min(1, dt * 12); const hid = 1 - 0.75 * D.pk;
+  const bend = R.bend + (D.duck * RIDE.duck.bend + D.storm * DG.bend) * hid - D.pitch * 0.9 + D.ip, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35) + D.il;
   for(const n of ['Spine', 'Spine1', 'Spine2']){ turn(B[n], RIGHT, -bend / 3); turn(B[n], FWD, lean / 3); } turn(B.Spine2, RIGHT, Math.sin(D.t * 1.7) * 0.014);   // (Z300 about his right, + tips him BACK: bending to the bars is −)
   // the head: into the bend, held level against the bank; tucked down and to one side when ducking
   // Z299 and now and then a glance — a mirror, a side street, back at his passenger when slow — unless he is ducking under fire
-  const now = performance.now() / 1000; if(now > D.glN){ D.glN = now + Z.glance[0] + Math.random() * Z.glance[1]; D.glE = now + Z.glance[2] + Math.random() * Z.glance[3]; D.glA = (Math.random() < 0.5 ? -1 : 1) * (Math.abs(v) < 3 ? 1.1 : 0.55 + Math.random() * 0.3); }
-  const glance = now < D.glE && D.duck < 0.2 ? D.glA : 0;
-  D.look += (clamp(yr * 0.35 + glance, -1.2, 1.2) - D.look) * Math.min(1, dt * 5); D.tilt += ((D.duck > 0.3 ? (D.side || 1) * 0.35 : 0) - D.tilt) * Math.min(1, dt * 4);
-  turn(B.Neck, UP, D.look * 0.6); turn(B.Head, UP, D.look * 0.4); turn(B.Head, FWD, -(H.B.rotation.z + (I ? I.r : 0)) * RIDE.lean.head + D.tilt); turn(B.Neck, RIGHT, bend * 0.5 - D.duck * 0.45 - D.ih); turn(B.Head, RIGHT, I ? -I.p * 0.7 : 0);   // eyes held level (chin back up as the back bends; down when ducking)
-  if(D.storm > 0.01){ turn(B.Neck, RIGHT, -D.storm * DG.face); turn(B.Head, UP, (D.threat || D.side || 1) * D.storm * DG.away); }   // face down, turned from the guns
+  // Z304 in a fight (shot at in the last few seconds, or the soldier firing) he is all nerves: quicker, shorter, more frequent looks round
+  const now = nowS, alert = S.firing || (D.hits && D.hits.length && now - D.hits[D.hits.length - 1] < RIDE.alert.t), Gl = alert ? RIDE.alert.glance : Z.glance;
+  if(now > D.glN || (alert && D.glN - now > Gl[0] + Gl[1])){ D.glN = now + Gl[0] + Math.random() * Gl[1]; D.glE = now + Gl[2] + Math.random() * Gl[3]; D.glA = (Math.random() < 0.5 ? -1 : 1) * (Math.abs(v) < 3 ? 1.1 : alert ? 0.45 + Math.random() * 0.45 : 0.55 + Math.random() * 0.3); }
+  if(D.peek && now > D.sacN){ D.sacN = now + RIDE.alert.sac[0] + Math.random() * RIDE.alert.sac[1]; D.sacA = Math.random() < 0.4 ? 0 : (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.4); }   // peeking: the eyes dart
+  const glance = D.peek ? D.sacA : (now < D.glE && cover < 0.2 ? D.glA : 0);
+  D.look += (clamp(yr * 0.35 + glance, -1.2, 1.2) - D.look) * Math.min(1, dt * (D.peek || alert ? RIDE.alert.snap : 5)); D.tilt += ((D.duck > 0.3 ? (D.side || 1) * 0.35 : 0) - D.tilt) * Math.min(1, dt * 4);
+  turn(B.Neck, UP, D.look * 0.6); turn(B.Head, UP, D.look * 0.4); turn(B.Head, FWD, -(H.B.rotation.z + (I ? I.r : 0)) * RIDE.lean.head + D.tilt); turn(B.Neck, RIGHT, bend * 0.5 - D.duck * 0.45 * hid - D.ih); turn(B.Head, RIGHT, I ? -I.p * 0.7 : 0);   // eyes held level (chin back up as the back bends; down when ducking)
+  if(D.storm > 0.01){ turn(B.Neck, RIGHT, -D.storm * DG.face * (1 - D.pk)); turn(B.Head, UP, (D.threat || D.side || 1) * D.storm * DG.away * (1 - D.pk)); }   // face down, turned from the guns
   // hands to the grips (the right one twists the throttle), elbows out and down
   for(const sd of [['Left', 0], ['Right', 1]]){ const [L, i] = sd; onRide(H, R.grip[i], _a, true);   // (the grips turn with the bars)
     B[L + 'Arm'].getWorldPosition(_b); _b.addScaledVector(RIGHT, (i ? 1 : -1) * 0.5 * (1 - 0.6 * D.storm)).addScaledVector(UP, -0.35).addScaledVector(FWD, -0.15);   // (tucked in under fire)
     const gp = _a.clone(), wrist = gp.clone().addScaledVector(UP, 0.035).addScaledVector(FWD, -0.065);   // the bar in the palm: the wrist just behind and above it
-    ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // fingers closed round the grip
+    ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); rollHand(B, L, _c.copy(RIGHT).multiplyScalar(i ? 1 : -1)); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // (Z304 knuckles out along the bar)   // fingers closed round the grip
   if(B.RightHand && B.RightForeArm){ B.RightForeArm.getWorldPosition(_a); B.RightHand.getWorldPosition(_b); turn(B.RightHand, _c.subVectors(_b, _a).normalize(), -D.thr * 0.7); }
   // feet: on the pegs / floorboard; the xích lô's pedals go round; stopped, the left foot goes down to the road; the gear flick lifts the left toe
   // Z300 THE FEET ON THE ROAD: slowing to a stop both feet come off the pegs / pedals and are planted on the actual ground either side (its real height under

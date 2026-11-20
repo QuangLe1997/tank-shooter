@@ -37,8 +37,11 @@ export function drivePuppet(P){ if(!P) return; const { S, D, chains, rest, dst }
   hipFrame(S, _qs); hipFrame(D, _qd); _q.copy(_qs).multiply(_qd.invert());
   const H = D.Hips; H.getWorldQuaternion(_qw); _qw.premultiply(_q); H.parent.getWorldQuaternion(_qp); H.quaternion.copy(_qp.invert().multiply(_qw));
   S.Hips.getWorldPosition(_a); if(P.offset) _a.add(P.offset); H.parent.worldToLocal(_a); H.position.copy(_a); H.updateMatrixWorld(true);
-  // then each bone toward where the operator's points
-  for(const [b, c] of chains){ const sb = S[b], sc = S[c], db = D[b], dc = D[c];
+  // then each bone toward where the operator's points — Z304 and, once the spine is laid, the chest TWIST too (pointing a bone the same way says nothing
+  //   of its turn about itself: without this his chest stayed square while the shoulders slid round it — the 'wrung-out' look)
+  let twisted = false;
+  for(const [b, c] of chains){ if(!twisted && !SPINE.has(b)){ twisted = true; chestTwist(S, D); }
+    const sb = S[b], sc = S[c], db = D[b], dc = D[c];
     sb.getWorldPosition(_a); sc.getWorldPosition(_b); _e.subVectors(_b, _a); if(_e.lengthSq() < 1e-10) continue; _e.normalize();
     db.getWorldPosition(_c); dc.getWorldPosition(_d); _f.subVectors(_d, _c); if(_f.lengthSq() < 1e-10) continue; _f.normalize();
     _q.setFromUnitVectors(_f, _e); db.getWorldQuaternion(_qw); _qw.premultiply(_q); db.parent.getWorldQuaternion(_qp); db.quaternion.copy(_qp.invert().multiply(_qw)); db.updateMatrixWorld(true); }
@@ -46,3 +49,12 @@ export function drivePuppet(P){ if(!P) return; const { S, D, chains, rest, dst }
   if(P.ground){ const low = B => { let y = Infinity; for(const n of FEET) if(B[n]){ B[n].getWorldPosition(_a); y = Math.min(y, _a.y); } return y; }, dy = low(S) - low(D);
     if(isFinite(dy) && Math.abs(dy) > 1e-4){ H.getWorldPosition(_a); _a.y += dy; H.parent.worldToLocal(_a); H.position.copy(_a); H.updateMatrixWorld(true); } } }
 const FEET = ['LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase'];
+const SPINE = new Set(['Spine', 'Spine1', 'Spine2']), TWIST = [['Spine', 0.3], ['Spine1', 0.3], ['Spine2', 0.4]];
+const _ta = new THREE.Vector3(), _tb = new THREE.Vector3(), _tx = new THREE.Vector3(), _tq = new THREE.Quaternion();
+// the turn of the chest about the spine: the shoulder line (left arm → right arm) of the soldier brought round to the operator's, spread up the spine
+function chestTwist(S, D){ if(!S.LeftArm || !S.RightArm || !D.LeftArm || !D.RightArm || !D.Spine2 || !D.Neck) return;
+  D.Spine2.getWorldPosition(_ta); D.Neck.getWorldPosition(_tb); _tx.subVectors(_tb, _ta); if(_tx.lengthSq() < 1e-10) return; _tx.normalize();
+  S.RightArm.getWorldPosition(_ta); S.LeftArm.getWorldPosition(_tb); _ta.sub(_tb); D.RightArm.getWorldPosition(_tb); D.LeftArm.getWorldPosition(_e); _tb.sub(_e);
+  _ta.addScaledVector(_tx, -_ta.dot(_tx)); _tb.addScaledVector(_tx, -_tb.dot(_tx)); if(_ta.lengthSq() < 1e-8 || _tb.lengthSq() < 1e-8) return;
+  const th = Math.atan2(_e.crossVectors(_tb, _ta).dot(_tx), _tb.dot(_ta)); if(Math.abs(th) < 1e-3) return;
+  for(const [n, f] of TWIST){ const b = D[n]; if(!b) continue; _tq.setFromAxisAngle(_tx, th * f); b.getWorldQuaternion(_qw); _qw.premultiply(_tq); b.parent.getWorldQuaternion(_qp); b.quaternion.copy(_qp.invert().multiply(_qw)); b.updateMatrixWorld(true); } }

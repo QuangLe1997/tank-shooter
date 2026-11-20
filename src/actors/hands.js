@@ -32,3 +32,10 @@ export function ik2(a, b, c, t, pole){ if(!a || !b || !c) return; a.getWorldPosi
   _ig.copy(_ia).addScaledVector(_id, x).addScaledVector(_if, h); _it.copy(_ia).addScaledVector(_id, dist);
   aimBone(a, b, _ig.clone().sub(_ia).normalize()); b.getWorldPosition(_ib); aimBone(b, c, _it.clone().sub(_ib).normalize()); }
 export function turnBone(b, axis, ang){ if(b && Math.abs(ang) > 1e-6) turn(b, axis, ang); }
+// Z304 the hand's roll: IK points the hand, but not its turn about the forearm — so a hand could sit on a grip palm-out. This turns it about its own
+//   axis (wrist → middle knuckle) until the knuckle line (index → little finger) runs along `along` (down the pistol grip, back along the handguard, out along a bar)
+const _ra = new THREE.Vector3(), _rk = new THREE.Vector3(), _rw = new THREE.Vector3(), _rc = new THREE.Vector3();
+export function rollHand(B, side, along, w = 1){ const h = B[side + 'Hand'], m = B[side + 'HandMiddle1'], i1 = B[side + 'HandIndex1'], p1 = B[side + 'HandPinky1']; if(!h || !m || !i1 || !p1) return;
+  h.getWorldPosition(_ra); m.getWorldPosition(_rc); _ra.subVectors(_rc, _ra); if(_ra.lengthSq() < 1e-10) return; _ra.normalize();
+  i1.getWorldPosition(_rk); p1.getWorldPosition(_rc); _rk.subVectors(_rc, _rk); _rk.addScaledVector(_ra, -_rk.dot(_ra)); _rw.copy(along).addScaledVector(_ra, -along.dot(_ra));
+  if(_rk.lengthSq() < 1e-10 || _rw.lengthSq() < 1e-10) return; const th = Math.atan2(_rc.crossVectors(_rk, _rw).dot(_ra), _rk.dot(_rw)); if(Math.abs(th) > 1e-4) turn(h, _ra, th * w); }

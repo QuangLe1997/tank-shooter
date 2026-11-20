@@ -80,9 +80,9 @@ export function updateCavalry(dt, now){
     // on foot: run where you push; crouch / prone slow you right down; the body turns to the aim when firing or standing
     if(MOBILE){ const mv0=Math.hypot(p.vel.x, p.vel.z); CV.still = mv0<0.25 ? CV.still+dt : 0; if(CV.want!=='prone') CV.want = CV.still>1.2 ? 'crouch' : 'stand'; }   // phones: he kneels by himself when he stops
     if(CV.want!==CV.stance) CV.stance=CV.want;
-    const F=CAV.foot, sprint=now<CV.sprintUntil && CV.stance==='stand', sp=(CV.stance==='prone'?F.crawl:CV.stance==='crouch'?F.crouch:(sprint?F.sprint:F.run))*p.speedMul*wade;
+    const F=CAV.foot, sprint=now<CV.sprintUntil && CV.stance==='stand', sp=(CV.stance==='prone'?F.crawl:CV.stance==='crouch'?F.crouch:(sprint?F.sprint:S.firing?F.fire:F.run))*p.speedMul*wade;   // Z304 a man's pace: a jog with the rifle, a sprint, a walk while he fires
     let mx=0, mz=0; if(tankCtl){ const f=p.facing+TI.turn*2.8*dt; p.facing=wrapA(f); mx=Math.sin(p.facing)*TI.thr; mz=Math.cos(p.facing)*TI.thr; } else if(inp>0.1){ mx=dir.x; mz=dir.z; }
-    const tvx=mx*sp, tvz=mz*sp, ak=Math.min(1, dt*12); p.vel.x+=(tvx-p.vel.x)*ak; p.vel.z+=(tvz-p.vel.z)*ak;
+    const tvx=mx*sp, tvz=mz*sp, dvx=tvx-p.vel.x, dvz=tvz-p.vel.z, dv=Math.hypot(dvx,dvz), acc=(Math.hypot(tvx,tvz)>Math.hypot(p.vel.x,p.vel.z)?F.accel:F.decel)*dt, ak=dv>acc?acc/dv:1; p.vel.x+=dvx*ak; p.vel.z+=dvz*ak;   // Z304 he takes a few strides to get going, and pulls up quicker
     const mv=Math.hypot(p.vel.x, p.vel.z), face = (S.firing||mv<0.4||CV.stance==='prone'&&mv<0.2) ? p.aimSmoothed : Math.atan2(p.vel.x, p.vel.z);
     p.facing=wrapA(p.facing+wrapA(face-p.facing)*Math.min(1, dt*(CV.stance==='prone'?3:9)));
     p.radius=CV.stance==='prone'?CAV.radius.prone:CAV.radius.foot; p.defK=CAV.defK[CV.stance]||CAV.defK.stand; p.camK=CV.stance==='prone'?CAV.camK.prone:CAV.camK.foot;
@@ -121,11 +121,12 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1,
   if(T.k==='off'){ if(!T.started){ T.started=true; CV.speed=0; p.vel.set(0,0,0); CV.hPos.copy(p.pos);
       H.root.parent && H.root.parent.remove(H.root); scene.add(H.root); H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing;
       const wp=new THREE.Vector3(); G.getWorldPosition(wp); G.parent.remove(G); p.mesh.add(G); T.from=wp; G.rotation.set(0,0,0); G.scale.setScalar(HUMAN_SCALE);
-      if(H.bike && XEOM[H.bike].pose!=='stand') T.from.y=heightAt(wp.x, wp.z)+XEOM.pegY; }   // Z295 off a seat his feet start on the pegs, not at his hips
+      if(H.bike && XEOM[H.bike].pose!=='stand') T.from.y=heightAt(wp.x, wp.z)+XEOM.pegY;   // Z295 off a seat his feet start on the pegs, not at his hips
+      if(T.crash){ const d=Math.max(1.5, Math.min(4, ((H.drv && H.drv.slide) || 4)*0.4)); T.to=new THREE.Vector3(wp.x+Math.sin(CV.facing)*d, 0, wp.z+Math.cos(CV.facing)*d).add(side.clone().multiplyScalar(0.4)); } }   // Z304 thrown clear on his own line (the camera, on him, no longer slides along with the bike)
     if(T.crash) H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z);   // Z296 the crashed bike slides on while he jumps clear
-    const to=CV.hPos.clone().add(side); p.pos.set(T.from.x+(to.x-T.from.x)*e, 0, T.from.z+(to.z-T.from.z)*e);
+    const to=T.to || CV.hPos.clone().add(side); p.pos.set(T.from.x+(to.x-T.from.x)*e, 0, T.from.z+(to.z-T.from.z)*e);
     const gy=heightAt(p.pos.x, p.pos.z); p.mesh.position.set(p.pos.x, gy, p.pos.z); p.mesh.rotation.y=CV.facing;
-    const hop = H.bike ? (XEOM[H.bike].pose==='stand' ? 0.22 : 0.06) : 0.35;   // a step down off a ride, a jump off a horse
+    const hop = T.crash ? 0.45 : H.bike ? (XEOM[H.bike].pose==='stand' ? 0.22 : 0.06) : 0.35;   // a step down off a ride, a jump off a horse (thrown off a crash: a real leap)
     G.position.set(0, (T.from.y-gy)*(1-e)+Math.sin(Math.PI*e)*hop, 0); poseSoldier(G, 'stand', dt);
     animateHorse(H, dt, 0, 0);
     if(k>=1){ CV.trans=null; CV.mounted=false; G.position.set(0,0,0); p.facing=CV.facing; CV.stance=CV.want='stand'; } return; }

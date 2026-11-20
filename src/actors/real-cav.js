@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM } from '../../config.js';
-import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, sfx, spawnPart, turnBone } from '../hub.js';
+import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -68,7 +68,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   else { sh.getWorldPosition(_gp); _gp.addScaledVector(_gr, -H.pocket[0]).addScaledVector(_gu, g.hold === 'top' ? 0.1 : H.pocket[1]).addScaledVector(_gf, H.pocket[2]); }
   // where he aims: the pointer's ground point lifted to a man's chest, or straight ahead
   if(p && S.aimPoint && S.pointerActive){ const tx = S.aimPoint.x, tz = S.aimPoint.z, ty = heightAt(tx, tz) + 1.1, hd = Math.hypot(tx - _gp.x, tz - _gp.z); if(hd > 1.5) pitch = Math.atan2(ty - _gp.y, hd); }
-  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], H.pitch[1]) + rc.a - low * RL.low; const yw = yaw + low * RL.turn;
+  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], H.pitch[1]) + rc.a - low * RL.low - (R.rdy || 0) * REALCAV.ready[1]; const yw = yaw + low * RL.turn;   // (Z304 running, not firing: the muzzle carried low)
   if(low > 0){ _gp.addScaledVector(_gu, -0.07 * low).addScaledVector(_gr, -0.06 * low); }   // drawn down and in to the chest
   _gx.set(Math.sin(yw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yw) * Math.cos(pitch)).negate();   // the gun's +X runs back to the butt
   _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize(); if(low > 0 && !g.back) _gy.applyAxisAngle(_gx, -RL.cant * low);   // canted: the mag well to his left hand
@@ -88,12 +88,20 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
     D.Neck && turnBone(D.Neck, _gr, -0.32 * low); }   // and he looks down at it (about his right: negative is down)
   sh.getWorldPosition(_gt); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, _gt.clone().addScaledVector(_gu, -0.45).addScaledVector(_gr, 0.3).addScaledVector(_gf, -0.1));
   D.LeftArm.getWorldPosition(_gt); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15));
+  rollHand(D, 'Right', _gt.copy(_gy).negate()); if(rk < 0) rollHand(D, 'Left', _gx);   // Z304 knuckles down the pistol grip; the support hand's along the handguard
   curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : fore.clone().addScaledVector(_gy, 0.02));
   // Z299 the head leads: the eyes are on the target before the shoulders get there, up / down to it, and held level when the ride banks and pitches
   const lead = clamp(dyw - hy - (R.tw || 0), -0.65, 0.65) * (1 - low);   // (_gu is still his up)
   turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55); turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
   if(D.Head){ _gt.crossVectors(_gu, _gw.set(0, 1, 0)); const sn = _gt.length(); if(sn > 1e-4) turnBone(D.Head, _gt.normalize(), Math.asin(Math.min(1, sn)) * 0.65); }
   return true; }
+// Z304 SITTING TALL: the riding clip slumps him forward over the pillion; his back is brought up toward upright (a soldier's alert sit, a slight lean
+//   forward kept), spread over the three spine bones about his own right
+function sitTall(R, G){ const D = R.pup.D, C = REALCAV.sit; if(!D.Hips || !D.Neck || !D.RightUpLeg || !D.LeftUpLeg) return;
+  D.Hips.getWorldPosition(_fa); D.Neck.getWorldPosition(_fb); _fb.sub(_fa).normalize(); G.getWorldQuaternion(_fq); _fu.set(0, 1, 0).applyQuaternion(_fq);
+  D.RightUpLeg.getWorldPosition(_fr); D.LeftUpLeg.getWorldPosition(_ff); _fr.sub(_ff); _fr.addScaledVector(_fu, -_fr.dot(_fu)).normalize(); _ff.crossVectors(_fu, _fr).normalize();   // his right · ahead
+  const corr = (Math.atan2(_fb.dot(_ff), _fb.dot(_fu)) - C.lean) * C.k; if(Math.abs(corr) < 1e-3) return;   // (about his right: + leans him back)
+  turnBone(D.Spine, _fr, corr * 0.45); turnBone(D.Spine1, _fr, corr * 0.35); turnBone(D.Spine2, _fr, corr * 0.2); }
 // Z302 A PASSENGER'S FEET: sat on the ride his feet go onto the passenger pegs (the xe ôm's fold-out pegs, the xích lô's footboard) instead of hanging
 //   in the air — less so as he swings his hips round on the seat to fire behind (a foot comes off the peg), none at all getting on or off
 const _fa = new THREE.Vector3(), _fb = new THREE.Vector3(), _fq = new THREE.Quaternion(), _ff = new THREE.Vector3(), _fr = new THREE.Vector3(), _fu = new THREE.Vector3();
@@ -184,8 +192,8 @@ export function updateRealCav(CV, dt, P){
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
   else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Aim'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }
-  else if(fv < 1.8){ ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); }
-  else if(fv < 3.2){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }
+  else if(fv < C.gaitAt[0]){ ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); }
+  else if(fv < C.gaitAt[1]){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }   // (Z304 thresholds for a man's real walk / run / sprint)
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
   blend(R.OA, ok, ts, dt, freeze);
   if(R.HIT){ if(P.hit && !R.wasHit && !P.dead){ R.HIT.reset(); R.HIT.play(); R.hitW = 1; } R.wasHit = !!P.hit; R.hitW = Math.max(0, R.hitW - dt / C.hitT); R.HIT.setEffectiveWeight(R.hitW * C.hitK); }   // the flinch fades back into the clip
@@ -194,7 +202,9 @@ export function updateRealCav(CV, dt, P){
   // Z299 sat on a ride, past a quarter turn he swings his hips round on the seat (slower than his shoulders) to bring the gun to bear behind him
   // Z303 WHERE HE LOOKS, CALMLY: the aim relative to the ride is unwrapped (no snapping from +180° to −180° as the target passes behind — he stays on the
   //   side he turned to until it is well past, `flip`), then swung toward at a human pace (`aimRate`): a ride whipping through a bend no longer spins him
-  const seated = mounted && bike && !stand, braced = mounted && bike && stand, raw = P.twist || 0; if(R.opRY == null) R.opRY = R.op.rotation.y;
+  const seated = mounted && bike && !stand, braced = mounted && bike && stand; if(R.opRY == null) R.opRY = R.op.rotation.y;
+  const ready = !mounted && !P.trans && fv > C.ready[0] && !S.firing; R.rdy = (R.rdy || 0) + ((ready ? 1 : 0) - (R.rdy || 0)) * Math.min(1, dt * 5);   // Z304 running and not shooting: eyes and muzzle where he runs
+  const raw = (P.twist || 0) * (1 - R.rdy);
   R.tu = R.tu == null ? raw : R.tu + Math.atan2(Math.sin(raw - R.tu), Math.cos(raw - R.tu)); const TAU = Math.PI * 2;
   if(!braced){ if(R.tu > Math.PI + C.flip) R.tu -= TAU; else if(R.tu < -Math.PI - C.flip) R.tu += TAU; }   // sat, he can't turn past his back: well past it, he comes round the front
   else if(Math.abs(R.tu) > TAU && R.av != null){ const w = Math.sign(R.tu) * TAU; R.tu -= w; R.av -= w; R.hy = (R.hy || 0) - w; if(R.step){ R.step.from -= w; R.step.to -= w; } }   // standing he can step right round: keep the numbers small
@@ -214,6 +224,7 @@ export function updateRealCav(CV, dt, P){
   if(Math.abs(tw) > 1e-3){ G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
   if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }
+  if(R.pup && !P.dead && mounted && bike && !stand && !P.trans) sitTall(R, G);   // Z304 sat up straight on the seat, not slumped over the gun
   if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
   if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs / the cyclo's footboard   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
