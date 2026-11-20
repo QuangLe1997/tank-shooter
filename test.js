@@ -897,6 +897,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function cutWheels/.test(x) && /function realWheel/.test(x) && /function buildWheels/.test(x) && ['xeom','xichlo','bagac'].every(k=>C.XEOM[k].wheels && C.XEOM[k].wheels.every(w=>w.c.length===3 && w.r>0.1 && Math.abs(w.c[1]-w.r)<0.01)), 'model wheels cut, real tyres/rims/spokes built, every wheel standing on the ground');
   ok(C.GUNHOLD.reload && C.GUNHOLD.reload.min>0 && /inst\.rD >= RL\.min/.test(r) && /RL\.drop/.test(r) && /turnBone\(D\.Neck/.test(r), 'the reload drill plays only when there is time for it'); }
 
+// Z299 parts, suspension, riders moving with the ride
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), d=R('src/actors/driver.js'), r=R('src/actors/real-cav.js'), cv=R('src/game/cavalry.js');
+  ok(/function splitBar/.test(x) && /function suspension/.test(x) && /B\.add\(body\)/.test(x) && /H\.toWorld = /.test(x) && /setFromAxisAngle\(H\.axis, H\.steer\)/.test(x) && C.XEOM.sus && C.XEOM.xeom.steer && C.XEOM.bagac.steer, 'wheels unsprung on B, the body sprung, the steering head split off and turned about its raked axis');
+  ok(/onRide\(H, R\.grip\[i\], _a, true\)/.test(d) && /\(H\.body \|\| H\.B\)\.add\(w\)/.test(d) && /I\.acc \* Z\.acc/.test(d) && C.RIDE.sway && C.RIDE.sway.glance, 'the driver rides the sprung body, his hands on the turning bars, his trunk thrown by the ride, glancing about');
+  ok(/function rideSway/.test(r) && /R\.op\.rotation\.y = R\.opRY \+ R\.hy/.test(r) && /yaw = gy \+ hy \+ clamp\(dyw - hy/.test(r) && C.REALCAV.seatTurn && C.REALCAV.sway && /ride: CV\.mounted && CV\.H\.inert/.test(cv) && /\(H\.body\|\|H\.B\)\.add\(G\)/.test(cv), 'the soldier swings his hips round on the seat, his head leads, his trunk sways with the ride'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -36,11 +36,11 @@ function ik2(a, b, c, t, pole){ a.getWorldPosition(_ia); b.getWorldPosition(_ib)
 
 // ---- build: the driver onto ride H (once his model is in) ----
 export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof window === 'undefined') return null;
-  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, crank:0, roll:0, lastV:0, sayAt:0, cool:0, look:0 };
+  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, crank:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0 };
   loadGLTF(RIDE.model[kind]).then(gl => { if(!gl || H.drv !== D) return; const sc = skClone(gl.scene), w = new THREE.Group(); w.name = 'driver';
     sc.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } });
     const b = new THREE.Box3().setFromObject(sc); w.add(sc); sc.rotation.y = RIDE.yaw; D.h0 = Math.max(1e-3, b.max.y - b.min.y); const s = D.s0 = RIDE.h / XEOM.k / D.h0; w.scale.setScalar(s);
-    H.B.add(w); D.w = w; D.sc = sc; D.B = bones(sc); D.rest = new Map(); for(const bn of Object.values(D.B)) D.rest.set(bn, bn.quaternion.clone());
+    (H.body || H.B).add(w); D.w = w; D.sc = sc; D.B = bones(sc); D.rest = new Map(); for(const bn of Object.values(D.B)) D.rest.set(bn, bn.quaternion.clone());
     D.mix = new THREE.AnimationMixer(sc); D.A = {}; for(const c of gl.animations){ const a = D.mix.clipAction(c); D.A[c.name] = a; }
     D.ok = !!(D.B.Hips && D.B.LeftArm && D.B.LeftUpLeg); if(D.ok) talk(D, 'start'); });
   return D; }
@@ -77,7 +77,7 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
   const underFire = D.duckT > 0; D.duckT = Math.max(0, D.duckT - dt); D.duck += ((underFire ? 1 : 0) - D.duck) * Math.min(1, dt * 6);
   const weaveOn = D.state === 'ride' && sp > 0.55 && (underFire || S.firing); D.weave += ((weaveOn ? 1 : 0) - D.weave) * Math.min(1, dt * 3);
   const wv = D.weave * RIDE.weave.amp * Math.sin(D.t * RIDE.weave.f * Math.PI * 2);
-  let roll = H.lean + wv * 1.4 * sp; if(D.state !== 'ride' && D.state !== 'mount') roll = D.roll;
+  let roll = H.two === false ? 0 : H.lean + wv * 1.4 * sp; if(D.state !== 'ride' && D.state !== 'mount') roll = D.roll;   // (three wheels don't bank: they weave flat)
   H.B.rotation.set(-D.pitch, wv * 0.5, roll, 'YXZ'); H.B.position.x = 0; H.B.position.z = 0;
   if(D.pitch > 1e-3){ _a.set(0, 0, R.rear); _b.copy(_a).applyEuler(H.B.rotation); H.B.position.add(_c.subVectors(_a, _b)); }
   if(D.state === 'fall' || D.state === 'down' || D.state === 'getup' || D.state === 'walk') H.B.position.y -= 0.12 * Math.abs(D.roll) / 1.4;
@@ -92,25 +92,35 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
 
 // ---- riding: hips on the saddle, back bent to the bars, head into the bend, hands on the grips, feet on the pegs / pedals ----
 const UP = new THREE.Vector3(), FWD = new THREE.Vector3(), RIGHT = new THREE.Vector3();
+const onRide = (H, arr, out, steered) => H.toWorld ? H.toWorld(arr, out, steered) : H.B.localToWorld(out.fromArray(arr));   // a point on the body (or the bars), in the world
 function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   for(const [b, q] of D.rest) b.quaternion.copy(q); D.mix.stopAllAction();
-  H.B.updateMatrixWorld(true); D.w.updateMatrixWorld(true); H.B.getWorldQuaternion(_qw);
+  H.B.updateMatrixWorld(true); D.w.updateMatrixWorld(true); (H.body || H.B).getWorldQuaternion(_qw);   // Z299 his frame is the sprung body's: it dives, squats and rolls under him
   UP.set(0, 1, 0).applyQuaternion(_qw); FWD.set(0, 0, 1).applyQuaternion(_qw); RIGHT.set(-1, 0, 0).applyQuaternion(_qw);   // the ride's own frame (+z ahead)
   // the hips: on the seat, square to the ride (side = his right), sat back a little in a wheelie
   const stopped = Math.abs(v) < 0.4 && !R.pedal;
-  _a.fromArray(R.hip); H.B.localToWorld(_a); const hips = B.Hips; hips.parent.worldToLocal(_a); hips.position.copy(_a); hips.updateMatrixWorld(true);
+  onRide(H, R.hip, _a); const hips = B.Hips; hips.parent.worldToLocal(_a); hips.position.copy(_a); hips.updateMatrixWorld(true);
   hips.getWorldPosition(_a); B.Spine.getWorldPosition(_b); B.RightUpLeg.getWorldPosition(_c); B.LeftUpLeg.getWorldPosition(_d);
   _e.subVectors(_b, _a).normalize(); _f.subVectors(_c, _d).normalize(); _g.crossVectors(_f, _e).normalize();
   _m.makeBasis(_f, _e, _g); _q.setFromRotationMatrix(_m); _m.makeBasis(RIGHT, UP, _a.copy(FWD).negate()); _qp.setFromRotationMatrix(_m); _qp.multiply(_q.invert());   // (side × up points backward: the same hand in both frames)
   hips.getWorldQuaternion(_qw); _qw.premultiply(_qp); hips.parent.getWorldQuaternion(_qp); hips.quaternion.copy(_qp.invert().multiply(_qw)); hips.updateMatrixWorld(true);
   // the back: bent forward to reach the bars (more when ducking, back when the front is up), leaning into the bend
-  const bend = R.bend + D.duck * RIDE.duck.bend - D.pitch * 0.9, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35);
-  for(const n of ['Spine', 'Spine1', 'Spine2']){ turn(B[n], RIGHT, bend / 3); turn(B[n], FWD, lean / 3); }
+  // Z299 his trunk is a damped pendulum: thrown forward onto his arms under the brakes, rocked back as the throttle opens, leaning into the bend on three
+  //   wheels (against the roll), nodding with each heave of the suspension; he breathes
+  const I = H.inert, Z = RIDE.sway; if(I){ const spr = (x, vx, t, kk) => vx + (-kk * (x - t) - 2 * Z.z * Math.sqrt(kk) * vx) * Math.min(dt, 0.05);
+    D.ivp = spr(D.ip, D.ivp, clamp(-I.acc * Z.acc, -Z.max, Z.max), Z.k); D.ip += D.ivp * Math.min(dt, 0.05);
+    D.ivl = spr(D.il, D.ivl, H.two === false ? clamp(-I.lat * Z.lat, -Z.max, Z.max) : 0, Z.k); D.il += D.ivl * Math.min(dt, 0.05);
+    D.ivh = spr(D.ih, D.ivh, clamp(-I.vy * Z.heave, -0.3, 0.3), Z.k * 2); D.ih += D.ivh * Math.min(dt, 0.05); }
+  const bend = R.bend + D.duck * RIDE.duck.bend - D.pitch * 0.9 + D.ip, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35) + D.il;
+  for(const n of ['Spine', 'Spine1', 'Spine2']){ turn(B[n], RIGHT, bend / 3); turn(B[n], FWD, lean / 3); } turn(B.Spine2, RIGHT, Math.sin(D.t * 1.7) * 0.014);
   // the head: into the bend, held level against the bank; tucked down and to one side when ducking
-  D.look += (clamp(yr * 0.35, -0.6, 0.6) - D.look) * Math.min(1, dt * 5); D.tilt += ((D.duck > 0.3 ? (D.side || 1) * 0.35 : 0) - D.tilt) * Math.min(1, dt * 4);
-  turn(B.Neck, UP, D.look * 0.6); turn(B.Head, UP, D.look * 0.4); turn(B.Head, FWD, -H.B.rotation.z * RIDE.lean.head + D.tilt); turn(B.Neck, RIGHT, -bend * 0.5 + D.duck * 0.45);
+  // Z299 and now and then a glance — a mirror, a side street, back at his passenger when slow — unless he is ducking under fire
+  const now = performance.now() / 1000; if(now > D.glN){ D.glN = now + Z.glance[0] + Math.random() * Z.glance[1]; D.glE = now + Z.glance[2] + Math.random() * Z.glance[3]; D.glA = (Math.random() < 0.5 ? -1 : 1) * (Math.abs(v) < 3 ? 1.1 : 0.55 + Math.random() * 0.3); }
+  const glance = now < D.glE && D.duck < 0.2 ? D.glA : 0;
+  D.look += (clamp(yr * 0.35 + glance, -1.2, 1.2) - D.look) * Math.min(1, dt * 5); D.tilt += ((D.duck > 0.3 ? (D.side || 1) * 0.35 : 0) - D.tilt) * Math.min(1, dt * 4);
+  turn(B.Neck, UP, D.look * 0.6); turn(B.Head, UP, D.look * 0.4); turn(B.Head, FWD, -(H.B.rotation.z + (I ? I.r : 0)) * RIDE.lean.head + D.tilt); turn(B.Neck, RIGHT, -bend * 0.5 + D.duck * 0.45 + D.ih); turn(B.Head, RIGHT, I ? I.p * 0.7 : 0);   // eyes held level
   // hands to the grips (the right one twists the throttle), elbows out and down
-  for(const sd of [['Left', 0], ['Right', 1]]){ const [L, i] = sd; _a.fromArray(R.grip[i]); H.B.localToWorld(_a);
+  for(const sd of [['Left', 0], ['Right', 1]]){ const [L, i] = sd; onRide(H, R.grip[i], _a, true);   // (the grips turn with the bars)
     B[L + 'Arm'].getWorldPosition(_b); _b.addScaledVector(RIGHT, (i ? 1 : -1) * 0.5).addScaledVector(UP, -0.35).addScaledVector(FWD, -0.15);
     const gp = _a.clone(), wrist = gp.clone().addScaledVector(UP, 0.035).addScaledVector(FWD, -0.065);   // the bar in the palm: the wrist just behind and above it
     ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // fingers closed round the grip
@@ -121,7 +131,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
     else _a.fromArray(R.peg[i]);
     if(!R.pedal && stopped && i === 0){ _a.x += 0.12; _a.y = -0.02; }
     if(!R.pedal && i === 0 && D.gearT > 0) _a.y += Math.sin(D.gearT / 0.28 * Math.PI) * 0.035;
-    H.B.localToWorld(_a); B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(FWD, 1).addScaledVector(RIGHT, (i ? 1 : -1) * 0.35).addScaledVector(UP, 0.3);
+    (H.body || H.B).localToWorld(_a); B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(FWD, 1).addScaledVector(RIGHT, (i ? 1 : -1) * 0.35).addScaledVector(UP, 0.3);
     ik2(B[L + 'UpLeg'], B[L + 'Leg'], B[L + 'Foot'], _a.clone(), _b.clone()); } }
 
 // ---- the crash: thrown and sliding · down · up again · back to the bike · heave it up · back on ----
@@ -147,7 +157,7 @@ function crashStep(H, D, dt){ const C = RIDE.crash, w = D.w; D.t2 = (D.t2 || 0) 
     if(d <= 0.15 || D.t2 > 5){ D.state = 'lift'; D.t2 = 0; D.mix.stopAllAction(); talk(D, 'lift', true); } }
   else if(st === 'lift'){ const k = ease(Math.min(1, D.t2 / C.lift)); D.roll = (D.side || 1) * 1.35 * (1 - k); w.rotation.set(0, CV.facing - Math.PI / 2, 0);
     for(const [b, q] of D.rest) b.quaternion.copy(q); w.updateMatrixWorld(true);   // braced beside it, hands on the grips, heaving it up
-    H.B.updateMatrixWorld(true); const B = D.B; for(const [L, i] of [['Left', 0], ['Right', 1]]){ _a.fromArray(D.R.grip[i]); H.B.localToWorld(_a); B[L + 'Arm'].getWorldPosition(_b); _b.y -= 0.4; ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], _a.clone(), _b.clone()); }
+    H.B.updateMatrixWorld(true); const B = D.B; for(const [L, i] of [['Left', 0], ['Right', 1]]){ onRide(H, D.R.grip[i], _a, true); B[L + 'Arm'].getWorldPosition(_b); _b.y -= 0.4; ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], _a.clone(), _b.clone()); }
     for(const n of ['Spine', 'Spine1']) turn(B[n], _e.set(Math.cos(CV.facing), 0, -Math.sin(CV.facing)), 0.35 * (1 - k));
-    if(D.t2 >= C.lift){ D.state = 'mount'; D.t2 = 0; D.roll = 0; H.B.add(w); w.position.set(0, 0, 0); w.rotation.set(0, 0, 0, 'XYZ'); w.scale.setScalar(D.s0); } } }
+    if(D.t2 >= C.lift){ D.state = 'mount'; D.t2 = 0; D.roll = 0; (H.body || H.B).add(w); w.position.set(0, 0, 0); w.rotation.set(0, 0, 0, 'XYZ'); w.scale.setScalar(D.s0); } } }
 export function driverReady(H){ const D = H && H.drv; return !D || !D.ok || D.state === 'ride'; }

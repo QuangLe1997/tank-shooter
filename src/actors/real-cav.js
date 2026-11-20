@@ -56,7 +56,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // the body frame: up, and his facing turned by the aim twist
   G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
   _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));
-  const yaw = gy + clamp(dyw, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders can turn
+  const hy = R.hy || 0, yaw = gy + hy + clamp(dyw - hy, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders (and, sat on a ride, his hips) can turn
   // the shoulders take the kick before the gun is laid in them
   _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);   // (about his left: the kick rocks him back)
   // Z298 reloading: how far through (0…1), only when the reload is long enough to show; the gun comes down and in for it, and back up at the end
@@ -89,7 +89,23 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   sh.getWorldPosition(_gt); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, _gt.clone().addScaledVector(_gu, -0.45).addScaledVector(_gr, 0.3).addScaledVector(_gf, -0.1));
   D.LeftArm.getWorldPosition(_gt); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15));
   curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : fore.clone().addScaledVector(_gy, 0.02));
+  // Z299 the head leads: the eyes are on the target before the shoulders get there, up / down to it, and held level when the ride banks and pitches
+  const lead = clamp(dyw - hy - (R.tw || 0), -0.65, 0.65) * (1 - low);   // (_gu is still his up)
+  turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55); turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
+  if(D.Head){ _gt.crossVectors(_gu, _gw.set(0, 1, 0)); const sn = _gt.length(); if(sn > 1e-4) turnBone(D.Head, _gt.normalize(), Math.asin(Math.min(1, sn)) * 0.65); }
   return true; }
+// Z299 THE BODY ON A MOVING RIDE: his trunk is a damped pendulum on his hips — it lurches forward when the ride brakes and back when it surges, leans out
+//   in a bend on three wheels (on two he banks with the bike), and nods and settles with every heave of the suspension; the gun is laid in after this,
+//   so it rides on his shoulders and his arms take up the difference
+const _sr = new THREE.Vector3(), _sf = new THREE.Vector3(), _sq = new THREE.Quaternion();
+function rideSway(R, G, dt, I, H){ const W = R.sw || (R.sw = { p:0, vp:0, r:0, vr:0, h:0, vh:0 }), C = REALCAV.sway, D = R.pup.D; dt = Math.min(dt, 0.05);
+  const two = !!(H && H.two), pT = I ? clamp(-I.acc * C.acc, -C.max, C.max) : 0, rT = I && !two ? clamp(I.lat * C.lat, -C.max, C.max) : 0, hT = I ? clamp(-I.vy * C.heave, -0.3, 0.3) : 0;
+  const spr = (x, v, t, k, z) => v + (-k * (x - t) - 2 * z * Math.sqrt(k) * v) * dt;
+  W.vp = spr(W.p, W.vp, pT, C.k, C.z); W.p += W.vp * dt; W.vr = spr(W.r, W.vr, rT, C.k, C.z); W.r += W.vr * dt; W.vh = spr(W.h, W.vh, hT, C.k * 1.8, C.z); W.h += W.vh * dt;
+  if(!I && Math.abs(W.p) + Math.abs(W.r) + Math.abs(W.h) < 1e-3) return;
+  G.getWorldQuaternion(_sq); _sr.set(-1, 0, 0).applyQuaternion(_sq); _sf.set(0, 0, 1).applyQuaternion(_sq);   // his right · ahead
+  const sp = [['Spine', 0.45], ['Spine1', 0.33], ['Spine2', 0.22]]; for(const [n, f] of sp){ turnBone(D[n], _sr, -W.p * f); turnBone(D[n], _sf, W.r * f); }
+  turnBone(D.Neck, _sr, -W.h); }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
   return (CV.realP = Promise.all(['horse', 'operator', 'rideGallop', 'rideWalk', 'carbine', 'soldier2'].map(loadGLTF)).then(L => {
@@ -144,7 +160,7 @@ export function updateRealCav(CV, dt, P){
   // the rider: on the real horse's back while mounted (every mount / respawn puts the rig on the procedural body bone — move it to the seat)
   const bike = H.bike, stand = bike && XEOM[bike].pose === 'stand';   // Z293 on a war ride he keeps the ride's own seat (seatRider): sat on it, or standing in the bed
   if(!bike && G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }
-  const mounted = bike ? G.parent === H.B : G.parent === R.seat;
+  const mounted = bike ? G.parent === (H.body || H.B) : G.parent === R.seat;
   if(mounted && !bike){ G.position.set(0, 0, 0); G.scale.setScalar(HUMAN_SCALE); }
   let ok, ts = 1, freeze = null; const fv = P.footV || 0, s = P.stance;
   if(P.dead && !R.deadOn){ R.deadOn = true; const a = R.OA.dying_backwards; if(a){ a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } }   // Z254 killed: falls backwards, once
@@ -165,14 +181,19 @@ export function updateRealCav(CV, dt, P){
   if(R.HIT){ if(P.hit && !R.wasHit && !P.dead){ R.HIT.reset(); R.HIT.play(); R.hitW = 1; } R.wasHit = !!P.hit; R.hitW = Math.max(0, R.hitW - dt / C.hitT); R.HIT.setEffectiveWeight(R.hitW * C.hitK); }   // the flinch fades back into the clip
   R.om.update(dt);
   // hips onto the seat (the riding clips carry their own hip height); feet on the ground on foot
+  // Z299 sat on a ride, past a quarter turn he swings his hips round on the seat (slower than his shoulders) to bring the gun to bear behind him
+  const seated = mounted && bike && !stand, twAll = P.twist || 0; if(R.opRY == null) R.opRY = R.op.rotation.y;
+  const hyT = seated ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -C.seatTurn[1], C.seatTurn[1]) : 0; R.hy = (R.hy || 0) + (hyT - (R.hy || 0)) * Math.min(1, dt * C.seatTurn[2]);
+  R.op.rotation.y = R.opRY + R.hy;
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
   if(mounted && !stand){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
   else if(s === 'prone' && !P.trans){ R.op.position.y = -C.proneDrop / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
   // the torso turns toward the aim (spread over three spine bones, about the body's up)
-  const tw = clamp(P.twist || 0, -C.twistMax, C.twistMax);
+  R.tw = (R.tw || 0) + (clamp(twAll - R.hy, -C.twistMax, C.twistMax) - (R.tw || 0)) * Math.min(1, dt * C.seatTurn[3]); const tw = R.tw;   // the shoulders follow the eyes, the hips follow the shoulders
   if(Math.abs(tw) > 1e-3){ G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
-  if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
+  if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }
+  if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
