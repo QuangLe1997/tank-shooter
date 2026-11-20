@@ -804,6 +804,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const cw=fs.readFileSync('src/world/core-walls.js','utf8'), C=await import('./config.js');
   ok(/function dressWalls\(g, spans, towers, hideMats\)/.test(cw) && /WSP\.push\(\[cx,cz,len,ry\]\)/.test(cw) && /TWR\.push\(\[x,z,h,ry\|\|0\]\)/.test(cw) && C.REALCAMP.walls && ['base_wall','base_tower'].every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')), 'the base walls and towers are concrete models'); }
 
+// Z274 the first Tripo trees: oak, coconut palm and Scots pine replace their Meshy versions (open crowns of leaf clusters, real bark)
+{ const fs=await import('node:fs'); ok(['oak','palm','pine'].every(k=>{ const f='assets/models/real/tree/'+k+'.glb'; return fs.existsSync(f) && fs.statSync(f).size<1.5e6; }) && /Z274/.test(fs.readFileSync('DOCS.md','utf8')), 'oak, palm and pine are the Tripo trees'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
