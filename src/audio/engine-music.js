@@ -1,5 +1,6 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
 import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, shaper, songBuf, verbSend } from '../hub.js';
+import { RIDE } from '../../config.js';
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
 export const ENG={ on:false, nodes:null, rpm:0 };
@@ -21,6 +22,7 @@ export function engineStop(){ const n=ENG.nodes; if(!n||!actx) return; n.out.gai
 export function updateEngine(dt){
   const n=ENG.nodes, p=S.player; if(!n||!actx) return;
   const t=actx.currentTime, live = S.mode==='playing' && p && !muted && !p.cav;   // Z245 no diesel in cavalry mode
+  updateBikeEngine(dt, p, t);   // Z302 the ride's own engine
   if(!live){ n.out.gain.setTargetAtTime(0, t, 0.2); return; }
   const sp=Math.hypot(p.vel.x,p.vel.z), thr=Math.min(1, Math.abs(p.throttle||0)+(NOW()<p.dashUntil?1:0)), up=Math.max(0, p.grade||0), down=Math.max(0, -(p.grade||0));
   const load=Math.min(1.6, thr*(0.65+up*3.2) - down*0.5*thr + (NOW()<p.dashUntil?0.6:0));          // uphill = heavy load, downhill = engine braking
@@ -32,6 +34,27 @@ export function updateEngine(dt){
   n.out.gain.setTargetAtTime(0.07 + ENG.rpm*0.11, t, 0.08);
   n.lfo.frequency.setTargetAtTime(1 + sp*0.55, t, 0.1); n.lfg.gain.setTargetAtTime(Math.min(0.09, sp*0.004), t, 0.1);
 }
+// Z302 THE RIDE'S ENGINE: a small four-stroke single (the xe ôm's 100 cc; the ba gác's bigger, lower one; the xích lô is pedalled, so silent). It fires
+//   once every two turns, so the firing pulse IS the pitch: a lazy put-put at idle, a rising buzz through each gear, a drop as the next gear goes in
+//   (the revs are where the speed sits inside the gear's band), a blip with the throttle, a scream in a wheelie; exhaust hiss pulsing with the bangs
+export const ENGB={ nodes:null, rpm:0.18 };
+function bikeEngineStart(a){ const out=a.createGain(); out.gain.value=0; out.connect(master); if(verbSend){ const s=a.createGain(); s.gain.value=0.06; out.connect(s).connect(verbSend); }
+  const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=700; lp.Q.value=1.6; const sh=a.createWaveShaper(); sh.curve=shaper?shaper.curve:null; sh.connect(lp).connect(out);
+  const o1=a.createOscillator(); o1.type='square'; o1.frequency.value=11; const g1=a.createGain(); g1.gain.value=0.5; o1.connect(g1).connect(sh);
+  const o2=a.createOscillator(); o2.type='sawtooth'; o2.frequency.value=22; const g2=a.createGain(); g2.gain.value=0.18; o2.connect(g2).connect(sh);
+  const nz=a.createBufferSource(); nz.buffer=NZ; nz.loop=true; const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=0.9; const ng=a.createGain(); ng.gain.value=0.12;
+  const o3=a.createOscillator(); o3.type='square'; o3.frequency.value=11; const am=a.createGain(); am.gain.value=0.12; o3.connect(am).connect(ng.gain); nz.connect(bp).connect(ng).connect(sh);
+  for(const n of [o1,o2,o3,nz]) n.start(); return (ENGB.nodes={ out, lp, o1, o2, o3, bp }); }
+function updateBikeEngine(dt, p, t){ const CV=p && p.cav, H=CV && CV.H, D=H && H.drv, a=actx; if(!a) return;
+  const on = S.mode==='playing' && !muted && CV && CV.mounted && H && H.bike && H.bike!=='xichlo' && (!D || D.state==='ride' || D.state==='mount');
+  if(!on){ if(ENGB.nodes) ENGB.nodes.out.gain.setTargetAtTime(0, t, 0.25); return; }
+  const n=ENGB.nodes || bikeEngineStart(a), G=RIDE.gears, v=Math.abs(H.v||0), g=D ? D.gear : G.filter(x=>v>x).length, lo=g ? G[g-1] : 0, hi=G[g] ?? G[G.length-1]*1.3;
+  const thr=Math.max(0, D ? D.thr : 0), within=Math.min(1, Math.max(0, (v-lo)/Math.max(0.5, hi-lo))), big=H.bike==='bagac' ? 0.78 : 1;
+  ENGB.rpm += ((0.18 + within*0.7 + thr*0.18 + (D && D.wheelT>0 ? 0.25 : 0)) - ENGB.rpm)*Math.min(1, dt*7);
+  const f=(9 + ENGB.rpm*62)*big;
+  n.o1.frequency.setTargetAtTime(f, t, 0.03); n.o2.frequency.setTargetAtTime(f*2, t, 0.03); n.o3.frequency.setTargetAtTime(f, t, 0.03);
+  n.lp.frequency.setTargetAtTime((420 + ENGB.rpm*2000 + thr*500)*big, t, 0.05); n.bp.frequency.setTargetAtTime(700 + ENGB.rpm*900, t, 0.08);
+  n.out.gain.setTargetAtTime(0.03 + ENGB.rpm*0.05 + thr*0.035, t, 0.06); }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
 export let _hapT=0;
 export function haptic(ms){ padHaptic(ms); if(!MOBILE || !padCfg().phone || !navigator.vibrate) return;   // Z117 the controller rumbles too

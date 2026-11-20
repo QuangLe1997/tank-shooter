@@ -915,6 +915,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function buildLamps/.test(x) && /function lampUpdate/.test(x) && /const par = H\.bar \|\| H\.body/.test(x) && /beamMat\(/.test(x) && C.XEOM.lamp && C.XEOM.lamp.brake > C.XEOM.lamp.run && C.XEOM.xeom.lamps && C.XEOM.bagac.lamps, 'headlamp in the steering head (its beam turns with the bars), tail lamp flaring under the brakes');
   ok(/function rideCam/.test(u) && /rideCam\(p, dt, now, g\)/.test(u) && C.CAM_FEEL.ride && C.CAM_FEEL.ride.bank > 0, 'the riding camera heaves, buzzes, banks and breathes with the throttle, scaled by the shake setting'); }
 
+// Z302 cyclo steering, physical lean, passenger feet, tyre tracks, the bike's engine, day stages without night lights
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), r=R('src/actors/real-cav.js'), e=R('src/audio/engine-music.js'), b=R('src/game/boot-gate.js');
+  ok(/Math\.atan\(wb \/ \(Rt - w\.x \* XEOM\.k\)\)/.test(x) && C.XEOM.xichlo.wheels.filter(w=>w.steer).length===2 && /Math\.atan\(v \* yawRate \/ 9\.81\)/.test(x), 'the cyclo steers Ackermann-true; two wheels lean as the bend asks (atan v·ω/g)');
+  ok(/function seatFeet/.test(r) && C.XEOM.xeom.feet && C.XEOM.xichlo.feet && /function tyreTrail/.test(x) && /MultiplyBlending/.test(x), 'passenger feet on the pegs / footboard; tyre tracks laid on the ground');
+  ok(/function updateBikeEngine/.test(e) && /updateBikeEngine\(dt, p, t\)/.test(e) && C.RIDE.gears.length===3 && C.RIDE.gears[2] < 7.7, 'the ride has its own single-cylinder engine through all four gears');
+  ok(/wasN=NIGHT\.on/.test(b) && /setNightLights\(wasN\)/.test(b), 'the warm-up puts back the stage\'s own day / night lights'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

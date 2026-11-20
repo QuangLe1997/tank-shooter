@@ -94,6 +94,16 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55); turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
   if(D.Head){ _gt.crossVectors(_gu, _gw.set(0, 1, 0)); const sn = _gt.length(); if(sn > 1e-4) turnBone(D.Head, _gt.normalize(), Math.asin(Math.min(1, sn)) * 0.65); }
   return true; }
+// Z302 A PASSENGER'S FEET: sat on the ride his feet go onto the passenger pegs (the xe ôm's fold-out pegs, the xích lô's footboard) instead of hanging
+//   in the air — less so as he swings his hips round on the seat to fire behind (a foot comes off the peg), none at all getting on or off
+const _fa = new THREE.Vector3(), _fb = new THREE.Vector3(), _fq = new THREE.Quaternion(), _ff = new THREE.Vector3(), _fr = new THREE.Vector3(), _fu = new THREE.Vector3();
+function seatFeet(R, H, dt, on){ const F = XEOM[H.bike] && XEOM[H.bike].feet, D = R.pup.D; R.fw = (R.fw || 0) + ((on && F ? 1 : 0) - (R.fw || 0)) * Math.min(1, dt * 4);
+  if(!F || R.fw < 0.02) return; const body = H.body || H.B; body.updateWorldMatrix(true, false); body.getWorldQuaternion(_fq);
+  _ff.set(0, 0, 1).applyQuaternion(_fq); _fr.set(-1, 0, 0).applyQuaternion(_fq); _fu.set(0, 1, 0).applyQuaternion(_fq);   // ahead · the ride's right · up
+  for(const [L, sd] of [['Left', 1], ['Right', -1]]){ const up = D[L + 'UpLeg'], kn = D[L + 'Leg'], ft = D[L + 'Foot']; if(!up || !kn || !ft) continue;
+    const w = R.fw * clamp(1 - Math.max(0, (R.hy || 0) * sd) * 0.7, 0.25, 1);   // (swung round toward a side, the foot on that side lifts off)
+    body.localToWorld(_fa.set(F[0] * sd, F[1], F[2])); ft.getWorldPosition(_fb); _fb.lerp(_fa, w);
+    up.getWorldPosition(_fa); _fa.addScaledVector(_ff, 1).addScaledVector(_fr, -sd * 0.35).addScaledVector(_fu, 0.2); ik2(up, kn, ft, _fb.clone(), _fa.clone()); } }
 // Z299 THE BODY ON A MOVING RIDE: his trunk is a damped pendulum on his hips — it lurches forward when the ride brakes and back when it surges, leans out
 //   in a bend on three wheels (on two he banks with the bike), and nods and settles with every heave of the suspension; the gun is laid in after this,
 //   so it rides on his shoulders and his arms take up the difference
@@ -193,7 +203,8 @@ export function updateRealCav(CV, dt, P){
   if(Math.abs(tw) > 1e-3){ G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
   if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }
-  if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
+  if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
+  if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs / the cyclo's footboard   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   if(R.pup && !P.dead && holdReal(R, G, dt, P)) return;   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil

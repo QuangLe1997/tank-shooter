@@ -40,10 +40,10 @@ export async function warmUp(onStep){
     if(renderer.compileAsync){ step(0.62); await renderer.compileAsync(scene, camera); step(0.75); await _frame();
       const was=NIGHT.on; setNightLights(true); await renderer.compileAsync(scene, camera); setNightLights(was); NIGHT._was=was; step(0.86); await _frame(); }   // both light setups
     // one real (off-screen) draw with everything in view → also compiles shadow-depth + per-object variants
-    { const rt=new THREE.WebGLRenderTarget(96,96), tgt=camTarget.clone(), keep=[];
+    { const rt=new THREE.WebGLRenderTarget(96,96), tgt=camTarget.clone(), keep=[], wasN=NIGHT.on;   // (Z302 the stage's own day / night, kept before the warm-up draws flip it)
       const all=tmp.concat(pooled.map(x=>x[1])); all.forEach((o,i)=>{ keep.push(o.position.clone()); o.position.set(tgt.x+(i%6-2.5)*4, 0, tgt.z+((i/6|0)-2)*4); });
       for(const night of [false,true]){ setNightLights(night); renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(null); step(night?0.97:0.92); await _frame(); }
-      setNightLights(NIGHT.on); renderer.setRenderTarget(null); rt.dispose(); all.forEach((o,i)=>o.position.copy(keep[i])); }
+      setNightLights(wasN); renderer.setRenderTarget(null); rt.dispose(); all.forEach((o,i)=>o.position.copy(keep[i])); }   // Z302 back to the stage's own lights (it restored NIGHT.on — by then always true — so every day stage ran its floodlights)
     for(const [t,m] of pooled){ m.visible=false; m.position.set(0,0,0); (enemyPool[t]=enemyPool[t]||[]).push(m); }   // ready-made enemy pool
   }catch(e){ console.warn('warm-up skipped', e); }
   for(const o of tmp) scene.remove(o);

@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIDE, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, spawnPart } from '../hub.js';
+import { MOBILE, NIGHT, S, beamMat, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, scene, spawnPart } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter / cyclo assembled from the city's parts stay as the fallback
@@ -51,7 +51,7 @@ function realWheel(R, T, spoked){ const M = wheelMats(), w = new THREE.Group(), 
   for(const [k, list] of Object.entries(parts)) if(list.length){ const m = new THREE.Mesh(mergeGeometries(list.map(q => q.index ? q.toNonIndexed() : q), false), M[k]); m.castShadow = true; m.receiveShadow = true; w.add(m); }
   return w; }
 function buildWheels(H, kind){ const X = XEOM[kind]; if(!X.wheels) return; H.wheels = []; for(const wd of X.wheels){ const R = wd.r * XEOM.k, pivot = new THREE.Group(), spin = realWheel(R, wd.w * XEOM.k * 0.9, wd.spoke !== false);
-    spin.scale.setScalar(1 / XEOM.k); pivot.add(spin); pivot.position.fromArray(wd.c); H.B.add(pivot); H.wheels.push({ pivot, spin, R, steer:!!wd.steer }); } }
+    spin.scale.setScalar(1 / XEOM.k); pivot.add(spin); pivot.position.fromArray(wd.c); H.B.add(pivot); H.wheels.push({ pivot, spin, R, steer:!!wd.steer, x:wd.c[0] }); } }
 const _sa = new THREE.Vector3(), _sp = new THREE.Vector3(), _sq = new THREE.Quaternion(), _dc = new THREE.Color();   // (_dc: dust dims with the night)
 // Z299 the parts: root → T (Z300 laid on the ground under its wheels) → B (the machine's lean / wheelie; the wheels, unsprung, on the road) → body (sprung: frame, seat, driver, passenger, its own
 //   heave / pitch / roll on the suspension) → bar (the steering head, turning about the raked axis)
@@ -85,6 +85,21 @@ function lampUpdate(H, dt){ const Lp = H.lamps, U = XEOM.lamp; if(!Lp) return; c
   const brake = H.sus && H.sus.acc < -U.brakeAcc && Math.abs(H.v) > 0.3; Lp.tk += ((brake ? U.brake : U.run * (1 + night)) - Lp.tk) * e; for(const m of Lp.tail) m.material.color.setRGB(Lp.tk, Lp.tk * 0.025, Lp.tk * 0.012);   // (a deep red: too bright a red tone-maps to pink)
   if(Lp.cone) Lp.cone.visible = NIGHT.on && ok;
   if(Lp.beam){ if(Lp.beam.visible !== NIGHT.on) Lp.beam.visible = NIGHT.on; Lp.beam.intensity = ok ? U.beam.i * night : 0; } }   // (shown only on night stages, like the floodlights: switching a light on or off recompiles every shader, so it never happens mid-fight)
+// Z302 TYRE TRACKS: each tyre leaves its line in the ground — thin dark strips laid on the real terrain every few centimetres of travel, darkening the
+//   ground by multiplying it (so they read on sand and on tarmac alike) and fading out over TRAIL.life seconds; a ring of instances, nothing allocated
+const TRAIL = { n:MOBILE ? 500 : 1400, i:0, mesh:null, born:null, life:24, dark:0.66, step:0.16, fadeAt:0 }, _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _ts = new THREE.Vector3(), _tc = new THREE.Color(), _ty = new THREE.Vector3(0, 1, 0);
+function trailMesh(){ if(TRAIL.mesh) return TRAIL.mesh; const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2);
+  const m = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, depthWrite:false, blending:THREE.MultiplyBlending, premultipliedAlpha:true, polygonOffset:true, polygonOffsetFactor:-6, polygonOffsetUnits:-12 });
+  const im = new THREE.InstancedMesh(g, m, TRAIL.n); im.frustumCulled = false; im.renderOrder = -1; _tm.makeScale(0, 0, 0); for(let i = 0; i < TRAIL.n; i++){ im.setMatrixAt(i, _tm); im.setColorAt(i, _tc.setRGB(1, 1, 1)); }
+  TRAIL.born = new Float32Array(TRAIL.n).fill(-1e9); scene.add(im); return (TRAIL.mesh = im); }
+function tyreTrail(H, X){ const W = X.wheels; if(!W || !H.wheels || typeof window === 'undefined') return; if(H.drv && H.drv.state !== 'ride' && H.drv.state !== 'mount') { H.trk = null; return; }
+  const im = trailMesh(), now = performance.now() / 1000, k = XEOM.k; H.trk = H.trk || W.map(() => null); let dirty = false;
+  for(let j = 0; j < W.length; j++){ const w = W[j]; _sa.set(w.c[0], 0, w.c[2]); H.B.localToWorld(_sa); const last = H.trk[j]; if(!last){ H.trk[j] = _sa.clone(); continue; }
+    const dx = _sa.x - last.x, dz = _sa.z - last.z, L = Math.hypot(dx, dz); if(L < TRAIL.step) continue; if(L > 2){ last.copy(_sa); continue; }
+    const mx = (_sa.x + last.x) / 2, mz = (_sa.z + last.z) / 2; _tq.setFromAxisAngle(_ty, Math.atan2(dx, dz)); _ts.set(w.w * k * 0.85, 1, L * 1.04);
+    _tm.compose(_sp.set(mx, heightAt(mx, mz) + 0.03, mz), _tq, _ts); const i = TRAIL.i; TRAIL.i = (i + 1) % TRAIL.n; im.setMatrixAt(i, _tm); TRAIL.born[i] = now; im.setColorAt(i, _tc.setScalar(TRAIL.dark)); last.copy(_sa); dirty = true; }
+  if(now > TRAIL.fadeAt){ TRAIL.fadeAt = now + 0.25; for(let i = 0; i < TRAIL.n; i++){ const a = now - TRAIL.born[i]; if(a < 0.3 || a > TRAIL.life + 1) continue; im.setColorAt(i, _tc.setScalar(1 - (1 - TRAIL.dark) * Math.max(0, 1 - a / TRAIL.life))); } dirty = true; }
+  if(dirty){ im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true; } }
 // Z300 ON THE GROUND UNDER ITS WHEELS: the ground's height is read under every wheel and the machine is pitched (front axle against rear) and, on three
 //   wheels, rolled (left track against right) and lifted so each tyre sits on the ground beneath it — up a rise, down into a dip, across a slope
 function groundFit(H, dt, X){ const W = X.wheels; if(!W || !H.T) return; const k = XEOM.k; H.root.updateMatrixWorld(true); H.root.getWorldPosition(_sp); const g0 = _sp.y;
@@ -127,13 +142,15 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
   const X = XEOM[H.bike], two = H.two = !!(X.wheels && X.wheels.length === 2);
   groundFit(H, dt, X);
   const rest = two && H.drv && H.drv.fd ? -XEOM.sus.restLean * H.drv.fd[0] : 0;   // Z300 stopped, a two-wheeler rests over on his left foot
-  H.lean += (-yawRate * sp * (X.lean ?? XEOM.lean) + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
-  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X); lampUpdate(H, dt);
+  const bank = Math.max(-XEOM.sus.leanMax, Math.min(XEOM.sus.leanMax, Math.atan(v * yawRate / 9.81) * XEOM.sus.leanK));   // Z302 the lean a bend really asks for: atan(v·ω / g)
+  H.lean += (-bank + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
+  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X); lampUpdate(H, dt); tyreTrail(H, X);
   const now = performance.now() / 1000, p = S.player;
   if(H.wheels){ H.roll = (H.roll || 0) + v * dt; const U = XEOM.sus, wb = Math.abs(X.wheels[0].c[2] - X.wheels[X.wheels.length - 1].c[2]) * XEOM.k;
     const want = Math.max(-U.steerMax, Math.min(U.steerMax, Math.atan(wb * yawRate / Math.max(1.4, Math.abs(v))))) * Math.sign(v || 1);   // Z299 the steer a turn this tight needs at this speed (a lot slow, a touch fast)
     H.steer += (want - H.steer) * Math.min(1, dt * U.steerRate);
-    for(const w of H.wheels){ w.spin.rotation.x = H.roll / w.R; if(w.steer){ if(H.axis) w.pivot.quaternion.setFromAxisAngle(H.axis, H.steer); else w.pivot.rotation.y = H.steer; } }   // Z298 the wheels roll; the front one steers
+    const Rt = Math.abs(H.steer) > 1e-4 ? wb / Math.tan(H.steer) : 0;   // Z302 the turn's radius: a pair of front wheels steers Ackermann-true (the inner one more)
+    for(const w of H.wheels){ w.spin.rotation.x = H.roll / w.R; if(w.steer){ if(H.axis) w.pivot.quaternion.setFromAxisAngle(H.axis, H.steer); else w.pivot.rotation.y = Rt ? Math.atan(wb / (Rt - w.x * XEOM.k)) : 0; } }   // Z298 the wheels roll; the front one steers
     if(H.bar) H.bar.quaternion.setFromAxisAngle(H.axis, H.steer); }
   if(H.drv) driveDriver(H, dt, v, yawRate);   // Z296 the driver rides it (lean, wheelie, weave, throttle, gears, ducking, crashing) and does the talking
   else if(p && now > H.sayAt){ H.sayAt = now + 18 + Math.random() * 20; if(H.sayAt > 0 && Math.abs(v) > 1) floatText(XEOM.lines[(Math.random() * XEOM.lines.length) | 0], '#ffe9a8', new THREE.Vector3(p.pos.x, p.pos.y + 3, p.pos.z), 13); } }
