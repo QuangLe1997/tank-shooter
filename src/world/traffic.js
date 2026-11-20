@@ -5,8 +5,8 @@
 // gone for a while, then another comes. Built once the models are in (world/city.js), drawn as one instanced mesh per model.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { REALCITY, XEOM } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, fireball, haptic, heightAt, loadGLTF, sfx, spawnPart, loadRealCity, cityProp, MODE } from '../hub.js';
+import { REALCITY, RIDE, XEOM } from '../../config.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, curlHand, fireball, haptic, heightAt, ik2, loadGLTF, rollHand, sfx, spawnPart, loadRealCity, cityProp, MODE } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -40,11 +40,16 @@ function livery(tex, L){ const img = tex && tex.image; if(!img || !img.width) re
     c.setHSL(L.h / 360, Math.min(1, Math.max(hsl.s, 0.35) * L.s / 0.6), Math.min(0.95, hsl.l * L.l)); d[i] = c.r * 255; d[i + 1] = c.g * 255; d[i + 2] = c.b * 255; }
   x.putImageData(D, 0, 0); const t = new THREE.CanvasTexture(cv); t.flipY = tex.flipY; t.colorSpace = tex.colorSpace; t.anisotropy = 4; return t; }
 
-// the rider (the rigged Tripo driver) posed in the saddle and baked once: hips at the origin, facing +z, sized
-let _rider = null;
-async function riderGeo(){ if(_rider) return _rider; const C = REALCITY.traffic, rg = await loadGLTF('rider_driver'); if(!rg) return null;
+// the rider (the rigged Tripo driver) posed in the saddle and baked: hips at the origin, facing +z, sized. Z310 given a bike's grips (its own frame, as
+// normalised: the middle of each rubber grip, +x his left) his hands reach them — two-bone IK, elbows out and down, knuckles along the bar, fingers
+// closed round it — so each scooter model gets its own pose (before, the arms only pointed "forward and down" and the hands lay on the front shield)
+let _rig = null; const _riders = {};
+async function riderGeo(grip){ const key = grip ? grip.join() : '-'; if(_riders[key]) return _riders[key]; const C = REALCITY.traffic;
+  if(!_rig){ const rg = await loadGLTF('rider_driver'); if(!rg) return null; const sk = firstMesh(rg.scene, true); if(!sk) return null; rg.scene.updateMatrixWorld(true);
+    _rig = { rg, sk, rest:new Map(sk.skeleton.bones.map(b => [b, b.quaternion.clone()])) }; }
+  const { rg, sk, rest } = _rig; for(const [b, q] of rest) b.quaternion.copy(q); rg.scene.updateMatrixWorld(true);   // (from his rest pose each time)
   // the rider: sized, then posed in the saddle — thighs forward, shins down, a little lean, hands forward on the bars
-  const sk = firstMesh(rg.scene, true); if(!sk) return null; rg.scene.updateMatrixWorld(true); const B = n => sk.skeleton.getBoneByName('mixamorig' + n) || sk.skeleton.getBoneByName('mixamorig:' + n);   // three drops the ':' from node names
+  const B = n => sk.skeleton.getBoneByName('mixamorig' + n) || sk.skeleton.getBoneByName('mixamorig:' + n);   // three drops the ':' from node names
   const toe = B('LeftToe_End') || B('LeftToeBase'), foot = B('LeftFoot'); foot.getWorldPosition(_a); toe.getWorldPosition(_b); const F = _b.sub(_a).setY(0).normalize().clone();
   B('LeftUpLeg').getWorldPosition(_a); B('RightUpLeg').getWorldPosition(_b); const Lf = _a.clone().sub(_b).setY(0).normalize(), D = new THREE.Vector3(0, -1, 0), U = new THREE.Vector3(0, 1, 0);
   const mix = (...t) => t.reduce((s, [v, w]) => s.addScaledVector(v, w), new THREE.Vector3());
@@ -54,20 +59,27 @@ async function riderGeo(){ if(_rider) return _rider; const C = REALCITY.traffic,
     aim(B(n + 'Leg'), B(n + 'Foot'), mix([D, 1], [F, 0.3], [Lf, sd * 0.05]));
     aim(B(n + 'Arm'), B(n + 'ForeArm'), mix([F, 0.8], [D, 0.62], [Lf, sd * 0.22]));
     aim(B(n + 'ForeArm'), B(n + 'Hand'), mix([F, 1], [D, 0.18], [Lf, sd * 0.06])); }
-  rg.scene.updateMatrixWorld(true); const hips = B('Hips').getWorldPosition(new THREE.Vector3()); const rgeo = bake(sk);
-  rgeo.translate(-hips.x, -hips.y, -hips.z); rgeo.rotateY(-Math.atan2(F.x, F.z)); rgeo.computeBoundingBox();
-  const r0 = rgeo.boundingBox, kr = C.riderH * C.seatK / (r0.max.y - r0.min.y); rgeo.scale(kr, kr, kr);
+  rg.scene.updateMatrixWorld(true); const hips = B('Hips').getWorldPosition(new THREE.Vector3()), yaw = -Math.atan2(F.x, F.z);
+  const place = g => { g.translate(-hips.x, -hips.y, -hips.z); g.rotateY(yaw); return g; };   // (rig → the bike's frame, before sizing)
+  let rgeo = place(bake(sk)); rgeo.computeBoundingBox(); const r0 = rgeo.boundingBox, kr = C.riderH * C.seatK / (r0.max.y - r0.min.y);
+  if(grip){ const H = {}; for(const b of sk.skeleton.bones) H[b.name.replace(/^mixamorig:?/, '')] = b;
+    const toRig = (x, y, z) => new THREE.Vector3(x, y - C.seat[0], z - C.seat[1]).multiplyScalar(1 / kr).applyAxisAngle(U, -yaw).add(hips), lx = Math.sign(Lf.clone().applyAxisAngle(U, yaw).x) || 1;
+    for(const sd of [1, -1]){ const n = sd > 0 ? 'Left' : 'Right', gp = toRig(sd * lx * grip[0], grip[1], grip[2]), wrist = gp.clone().addScaledVector(U, 0.035 / kr).addScaledVector(F, -0.065 / kr);   // (the bar in his palm: the wrist just behind and above it)
+      const pole = H[n + 'Arm'].getWorldPosition(new THREE.Vector3()).addScaledVector(Lf, sd * 0.5 / kr).addScaledVector(U, -0.35 / kr).addScaledVector(F, -0.15 / kr);   // (elbows out and down)
+      ik2(H[n + 'Arm'], H[n + 'ForeArm'], H[n + 'Hand'], wrist, pole); rollHand(H, n, Lf.clone().multiplyScalar(sd)); curlHand(H, n, RIDE.grip, gp.addScaledVector(U, -0.03 / kr)); }
+    rg.scene.updateMatrixWorld(true); rgeo = place(bake(sk)); }
+  rgeo.scale(kr, kr, kr);
   if(!rgeo.attributes.uv) rgeo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(rgeo.attributes.position.count * 2), 2));
-  return (_rider = { geo:rgeo, sk }); }
+  return (_riders[key] = { geo:rgeo, sk }); }
 
-// the scooters with their riders: one model per livery (the rider's rig posed seated and baked once), on the bike that livery rides
+// the scooters with their riders: one model per livery (the rider's rig posed seated and baked once per bike, his hands on that bike's grips), on the bike that livery rides
 async function motoModels(){ if(_moto) return _moto; const C = REALCITY.traffic, bikes = [...new Set(C.liveries.map(l => l.bike))];
   const bg = await Promise.all(bikes.map(k => loadGLTF(k)));
   const BK = {}; bikes.forEach((k, i) => { if(bg[i]) BK[k] = bikeGeo(bg[i], C.motoL); }); if(!Object.keys(BK).length) return null;
-  const R = await riderGeo(); if(!R) return null; const sk = R.sk, rgeo = R.geo.clone(); rgeo.translate(0, C.seat[0], C.seat[1]);
   const GEO = {}, out = [];
-  for(const L of C.liveries){ const bk = BK[L.bike] || Object.values(BK)[0]; const key = L.bike in BK ? L.bike : Object.keys(BK)[0];
-    if(!GEO[key]){ GEO[key] = mergeGeometries([bk.geo, rgeo], true); GEO[key].computeBoundingSphere(); }
+  for(const L of C.liveries){ const key = L.bike in BK ? L.bike : Object.keys(BK)[0], bk = BK[key];
+    const R = await riderGeo(C.grips && C.grips[key]); if(!R) return null; const sk = R.sk;
+    if(!GEO[key]){ const rgeo = R.geo.clone(); rgeo.translate(0, C.seat[0], C.seat[1]); GEO[key] = mergeGeometries([bk.geo, rgeo], true); GEO[key].computeBoundingSphere(); }
     const rm = sk.material.clone(); rm.map = livery(sk.material.map, L); rm.envMapIntensity = REALCITY.env;
     out.push({ geo:GEO[key], mats:[bk.mat, rm], len:C.motoL, w:L.w, name:L.name }); }
   return (_moto = out); }
@@ -105,12 +117,49 @@ function tint(v, c){ const ic = v.im.instanceColor; if(!ic) return; v.im.setColo
 // Z290 ROLLING WHEELS: each kind's geometry is cloned with a per-vertex tag for the wheels (found from the model itself: the vertices touching
 //   the road give the two axles; a wheel is the disc of the real tyre radius round each axle, on the outer side for cars) and every vehicle
 //   carries its own roll angle (an instanced attribute): the vertex shader turns the wheel's vertices (and normals) about the axle by it.
-function wheelGeo(geo, moto, sc){ const g = geo.clone(); g.computeBoundingBox(); const b = g.boundingBox, P = g.attributes.position, n = P.count, H = b.max.y - b.min.y, W = b.max.x - b.min.x, y0 = b.min.y, zm = (b.min.z + b.max.z) / 2, xm = (b.min.x + b.max.x) / 2;
-  const zs = [[], []]; for(let i = 0; i < n; i++) if(P.getY(i) < y0 + 0.025 * H) zs[P.getZ(i) > zm ? 0 : 1].push(P.getZ(i)); if(zs[0].length < 3 || zs[1].length < 3) return null;
-  const zc = zs.map(L => L.reduce((a, q) => a + q, 0) / L.length), r = (moto ? REALCITY.traffic.wheel[1] : REALCITY.traffic.wheel[0]) / sc, A = new Float32Array(n * 3); let cnt = 0;
-  for(let i = 0; i < n; i++){ const x = P.getX(i), y = P.getY(i), z = P.getZ(i); for(const c of (moto ? zc.slice(0, 1) : zc)){ const dy = y - (y0 + r), dz = z - c; if(dy * dy + dz * dz < r * r * 1.02 && (moto ? Math.abs(x - xm) < 0.07 / sc : Math.abs(x - xm) > W * 0.3)){   // a scooter: the front tyre only (its body hides the rear one)
-      A[i * 3] = 1; A[i * 3 + 1] = y0 + r; A[i * 3 + 2] = c; cnt++; break; } } }
-  if(!cnt) return null; g.setAttribute('aWheel', new THREE.BufferAttribute(A, 3)); return { g, rM:r * sc, cnt }; }
+// Z310 THE WHEELS FOUND AS WHEELS (the fixed-size disc tore them: half a car wheel's triangles straddled its edge, and a scooter's rear wheel never
+//   turned while a bit of mudguard spun with the front): a car's wheels are separate pieces of its mesh — each tyre, with whatever sits inside it (rim,
+//   hub cap), turns whole about its own centre; a scooter is one fused mesh, so each tyre is a disc of its own measured radius (the tyre's front- or
+//   rear-most point at axle height, in its centre plane) within the tyre's width. Whole triangles are tagged, never one corner, so nothing tears.
+function wheelGeo(geo, moto, sc){ const g = geo.index ? geo.toNonIndexed() : geo.clone(); g.computeBoundingBox(); const b = g.boundingBox, P = g.attributes.position, n = P.count;
+  const W = (!moto && pieceWheels(P, b)) || discWheels(P, b, moto, sc); if(!W) return null; const A = new Float32Array(n * 3); let cnt = 0;
+  for(let t = 0; t < n / 3; t++){ const w = W.tag[t]; if(w < 0) continue; const c = W.wheels[w]; for(let k = 3 * t; k < 3 * t + 3; k++){ A[k * 3] = 1; A[k * 3 + 1] = c.cy; A[k * 3 + 2] = c.cz; cnt++; } }
+  if(!cnt) return null; g.setAttribute('aWheel', new THREE.BufferAttribute(A, 3)); const r = W.wheels.reduce((a, c) => a + c.r, 0) / W.wheels.length;
+  return { g, rM:r * sc, cnt, wheels:W.wheels.map(c => ({ cy:+(c.cy * sc).toFixed(3), cz:+(c.cz * sc).toFixed(3), r:+(c.r * sc).toFixed(3) })) }; }
+// the separate pieces (welded by position) that touch the road and are round from the side: the wheels; pieces lying inside one turn with it
+function pieceWheels(P, b){ const n = P.count, T = n / 3, H = b.max.y - b.min.y, Wd = b.max.x - b.min.x, eps = 1e-4 * (b.max.z - b.min.z), id = new Map(), vid = new Int32Array(n);
+  for(let i = 0; i < n; i++){ const k = Math.round(P.getX(i) / eps) + ',' + Math.round(P.getY(i) / eps) + ',' + Math.round(P.getZ(i) / eps); let q = id.get(k); if(q === undefined){ q = id.size; id.set(k, q); } vid[i] = q; }
+  const par = new Int32Array(id.size).map((_, i) => i), find = x => { while(par[x] !== x) x = par[x] = par[par[x]]; return x; };
+  for(let t = 0; t < T; t++){ const a = find(vid[3 * t]); par[find(vid[3 * t + 1])] = a; par[find(vid[3 * t + 2])] = a; }
+  const cm = new Map(), tc = new Int32Array(T);
+  for(let t = 0; t < T; t++){ const r = find(vid[3 * t]); let C = cm.get(r); if(!C){ C = { mn:[1e9, 1e9, 1e9], mx:[-1e9, -1e9, -1e9], w:-1 }; cm.set(r, C); } tc[t] = r;
+    for(let i = 3 * t; i < 3 * t + 3; i++){ const p = [P.getX(i), P.getY(i), P.getZ(i)]; for(let a = 0; a < 3; a++){ C.mn[a] = Math.min(C.mn[a], p[a]); C.mx[a] = Math.max(C.mx[a], p[a]); } } }
+  const wheels = [], WC = [];
+  for(const C of cm.values()){ const dx = C.mx[0] - C.mn[0], dy = C.mx[1] - C.mn[1], dz = C.mx[2] - C.mn[2];
+    if(C.mn[1] < b.min.y + 0.03 * H && dy < 0.6 * H && dx < 0.25 * Wd && Math.abs(dy - dz) < 0.2 * Math.max(dy, dz)){ C.w = wheels.length; wheels.push({ cy:(C.mn[1] + C.mx[1]) / 2, cz:(C.mn[2] + C.mx[2]) / 2, r:dy / 2 }); WC.push(C); } }
+  if(wheels.length < 2) return null;
+  for(const C of cm.values()){ if(C.w >= 0) continue; for(const K of WC){ const m = 0.05 * (K.mx[1] - K.mn[1]); if([0, 1, 2].every(a => C.mn[a] >= K.mn[a] - m && C.mx[a] <= K.mx[a] + m)){ C.w = K.w; break; } } }   // (rim, hub cap, brake disc)
+  const tag = new Int32Array(T); for(let t = 0; t < T; t++) tag[t] = cm.get(tc[t]).w; return { tag, wheels }; }
+// a fused mesh: each tyre found at an end of the road contacts (a stand in the middle is no wheel; a flat low-poly patch counts as one), then fitted as
+// a circle sitting on the road through the tyre's outermost surface at several heights (the mesh cut along its centre line, so sparse vertices don't
+// matter); the triangles lying wholly inside that disc and within the tyre's width are tagged (a scooter: front and rear; a car: four corners)
+function cut(P, x0, h){ const zs = []; for(let t = 0; t < P.count / 3; t++){ const q = [];   // (where the mesh crosses the line x = x0, y = h)
+    for(let k = 0; k < 3; k++){ const a = 3 * t + k, b = 3 * t + (k + 1) % 3, xa = P.getX(a) - x0, xb = P.getX(b) - x0; if(xa * xb < 0){ const s = xa / (xa - xb); q.push([P.getY(a) + s * (P.getY(b) - P.getY(a)), P.getZ(a) + s * (P.getZ(b) - P.getZ(a))]); } }
+    if(q.length === 2 && (q[0][0] - h) * (q[1][0] - h) < 0) zs.push(q[0][1] + (h - q[0][0]) / (q[1][0] - q[0][0]) * (q[1][1] - q[0][1])); } return zs; }
+function discWheels(P, b, moto, sc){ const n = P.count, T = n / 3, y0 = b.min.y, xm = (b.min.x + b.max.x) / 2, zm = (b.min.z + b.max.z) / 2, r0 = (moto ? REALCITY.traffic.wheel[1] : REALCITY.traffic.wheel[0]) / sc;
+  const hw = (moto ? 0.065 : 0.11) / sc, gap = 0.12 / sc, step = 0.002 / sc, wheels = [];
+  for(const sd of moto ? [0] : [-1, 1]){ const C = []; for(let i = 0; i < n; i++) if(P.getY(i) < y0 + 0.012 / sc && (!sd || (P.getX(i) - xm) * sd > 0)) C.push([P.getZ(i), P.getX(i)]); C.sort((a, c) => a[0] - c[0]);
+    const cl = []; for(const p of C){ const L = cl[cl.length - 1]; if(L && p[0] - L.z1 < gap){ L.z1 = p[0]; L.x += p[1]; L.n++; } else cl.push({ z0:p[0], z1:p[0], x:p[1], n:1 }); }
+    if(cl.length < 2) continue;
+    for(const [c, end] of [[cl[cl.length - 1], 1], [cl[0], -1]]){ const z0 = (c.z0 + c.z1) / 2, xc = moto ? xm : c.x / c.n; if((z0 - zm) * end <= 0) continue;   // (a scooter's tyres sit on its centre line: its patch can lie off it)
+      const pts = []; for(const f of [0.2, 0.35, 0.5, 0.65, 0.8]){ const h = y0 + f * r0; let e = -Infinity; for(const z of cut(P, xc + 0.003 / sc, h)){ const d = (z - z0) * end; if(d > 0.3 * r0 && d < 1.7 * r0) e = Math.max(e, d); } if(isFinite(e)) pts.push([e, h - y0]); }
+      const fit = P2 => { let best = null; if(P2.length >= 2) for(let r = 0.55 * r0; r <= 1.5 * r0; r += step) for(let o = -0.45 * r0; o <= 0.45 * r0; o += step){ let err = 0; for(const [d, h] of P2) err += (Math.hypot(d - o, h - r) - r) ** 2; if(!best || err < best.err) best = { err, r, o }; } return best; };   // (o: the axle's offset from the patch, outward)
+      let best = fit(pts); if(best){ const keep = pts.filter(([d, h]) => Math.abs(Math.hypot(d - best.o, h - best.r) - best.r) < 0.01 / sc); if(keep.length >= 2 && keep.length < pts.length) best = fit(keep); }   // (only the tyre's lower half, below anything built over it; a stray point dropped)
+      const r = best ? best.r : r0, zc = z0 + (best ? best.o : 0) * end; wheels.push({ cy:y0 + r, cz:zc, r, xc }); } }
+  if(!wheels.length) return null; const tag = new Int32Array(T).fill(-1);
+  for(let t = 0; t < T; t++) for(let w = 0; w < wheels.length; w++){ const c = wheels[w]; let k = 3 * t; for(; k < 3 * t + 3; k++) if(Math.abs(P.getX(k) - c.xc) > hw || Math.hypot(P.getY(k) - c.cy, P.getZ(k) - c.cz) > c.r * 1.12) break;
+    if(k === 3 * t + 3){ tag[t] = w; break; } }   // (every corner inside the tyre: a fork leg or a mudguard always reaches out of it, and stays still)
+  return { tag, wheels }; }
 function wheelMat(m){ const w = m.clone(); w.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aWheel; attribute float aRoll;')
     .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n  float wc = cos(aRoll * aWheel.x), ws = sin(aRoll * aWheel.x); objectNormal.yz = vec2(objectNormal.y * wc - objectNormal.z * ws, objectNormal.y * ws + objectNormal.z * wc);')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\n  if(aWheel.x > 0.5){ vec2 wq = transformed.yz - aWheel.yz; transformed.yz = aWheel.yz + vec2(wq.x * wc - wq.y * ws, wq.x * ws + wq.y * wc); }'); };
@@ -123,7 +172,7 @@ export async function buildTraffic(segs){ TR.on = false; TR.list.length = 0; TR.
   if(!kinds.length) return; const tot = kinds.reduce((a, q) => a + q.w, 0), LM = lampMats(); for(const m of LM) if(!LAND.mats.includes(m)) LAND.mats.push(m);
   for(const q of kinds){ const n = Math.max(1, Math.round(N * q.w / tot)), W = REALCITY.traffic.wheel && wheelGeo(q.geo, q.moto, q.sc);   // Z290 the wheels turn
     if(W){ W.g.setAttribute('aRoll', new THREE.InstancedBufferAttribute(new Float32Array(n), 1).setUsage(THREE.DynamicDrawUsage)); }
-    const im = new THREE.InstancedMesh(W ? W.g : q.geo, W ? (Array.isArray(q.mats) ? q.mats.map(wheelMat) : wheelMat(q.mats)) : q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.userData.rM = W ? W.rM : 0;
+    const im = new THREE.InstancedMesh(W ? W.g : q.geo, W ? (Array.isArray(q.mats) ? q.mats.map(wheelMat) : wheelMat(q.mats)) : q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.userData.rM = W ? W.rM : 0; im.userData.wheels = W ? W.wheels : null;
     im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);
     const lm = new THREE.InstancedMesh(lampGeo(q.size, q.moto, q.sc), LM, n); lm.instanceMatrix = im.instanceMatrix; lm.frustumCulled = false; arena.add(lm); LAND.meshes.push(lm);   // the lamps ride on the same matrices
     contactShadow(q.size.x * (q.moto ? 1.05 : 1.12), q.size.z * 1.06, n, im.instanceMatrix, 0.012 / q.sc);   // Z271 seated on the road

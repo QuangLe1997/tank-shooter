@@ -987,6 +987,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fo=R('src/world/fortress.js'), md=R('src/game/mode.js');
   ok(/fortsOpen:true/.test(md) && /fortsOpen:false/.test(md) && /if\(MODE\.fortsOpen\)\{ if\(f\.gv < 1 \|\| f\.gateShut\)/.test(fo) && /return !MODE\.fortsOpen && f\.tier===3/.test(fo) && /MODE\.fortsOpen\?'<em>CỔNG MỞ<\/em>'/.test(fo), 'soldier mode: gates open, no sealed citadel, no wall to blast'); }
 
+// Z310 wheels that roll whole (a car's are its own pieces, a scooter's tyres measured and both turning), riders' hands on their bike's grips, the bán tải's wheels
+{ const fs=await import('node:fs'); const C=await import('./config.js'), t=fs.readFileSync('src/world/traffic.js','utf8');
+  ok(/function pieceWheels\(P, b\)/.test(t) && /function discWheels\(P, b, moto, sc\)/.test(t) && /function cut\(P, x0, h\)/.test(t) && !/its body hides the rear/.test(t) && /c\.r \* 1\.12\) break/.test(t), 'a wheel turns whole: car wheels are their own pieces, scooter tyres are fitted circles, only triangles wholly inside a tyre turn');
+  const G=C.REALCITY.traffic.grips; ok(G && G.moto_scooter.length === 3 && G.moto_escooter.length === 3 && /ik2\(H\[n \+ 'Arm'\]/.test(t) && /riderGeo\(C\.grips && C\.grips\[key\]\)/.test(t) && /curlHand\(H, n,/.test(t), 'the baked street rider reaches each scooter\'s own grips and closes his hands on them');
+  const W=C.XEOM.bantai.wheels; ok(W && W.length === 4 && W.filter(w => w.steer).length === 2 && W.every(w => w.r > 0.1 && w.r < 0.25), 'the bán tải has four measured wheels, the front pair steering'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
