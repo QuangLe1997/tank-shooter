@@ -3,6 +3,7 @@
 // 1K photo textures kept. Then shrink the textures with glb-pack (--tex 512 for the small pieces).
 //   node tools/city-props.mjs list <polyhaven-id> --deps <dir>     the model's objects (name, triangles, size): what `pick` can choose
 //   node tools/city-props.mjs [name …] --deps <dir>                build assets/models/real/city/<name>.glb (all of PROPS when no name is given)
+//   node tools/city-props.mjs pack <in.glb> <out.glb> <tris> --deps <dir>   Z268 simplify any downloaded model (skinned too) to a triangle budget
 //   <dir> holds the packages:  npm i --prefix <dir> @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 meshoptimizer
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { createRequire } from 'node:module';
 
@@ -45,6 +46,12 @@ async function build(name){ const P = PROPS[name]; if(!P) throw new Error('no pr
   fs.mkdirSync(OUT, { recursive:true }); const out = path.join(OUT, name + '.glb'); fs.writeFileSync(out, await io.writeBinary(doc));
   console.log(name.padEnd(14), P.id.padEnd(28), t0, '→', tris(doc), 'tris ', (fs.statSync(out).size / 1024).toFixed(0), 'KB'); }
 
+// Z268 any local .glb (a Tripo / Meshy download, skinned or not) welded and simplified to a triangle budget: pack <in> <out> <tris>
+async function pack(inp, out, budget){ const doc = await io.read(inp); await doc.transform(F.prune(), F.dedup(), F.weld()); const t0 = tris(doc);
+  await doc.transform(F.simplify({ simplifier:MeshoptSimplifier, ratio:Math.min(1, budget / t0), error:0.02 }), F.prune()); fs.writeFileSync(out, await io.writeBinary(doc));
+  console.log(path.basename(out).padEnd(20), t0, '→', tris(doc), 'tris'); }
+
 await MeshoptSimplifier.ready;
-if(args[0] === 'list') await list(args[1]);
+if(args[0] === 'pack') await pack(args[1], args[2], +args[3]);
+else if(args[0] === 'list') await list(args[1]);
 else for(const n of args.filter(a => !a.startsWith('--') && a !== deps).length ? args.filter(a => !a.startsWith('--') && a !== deps) : Object.keys(PROPS)) await build(n);

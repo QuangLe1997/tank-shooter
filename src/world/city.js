@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OPEN_LAND, REALCITY, REALTREE } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox } from '../hub.js';
+import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox, buildTraffic, trafficBlast, updateTraffic } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -136,7 +136,7 @@ function updateTopple(dt){ for(const T of TOP){ const F=T.fall; if(!F || F.done)
   for(const im of T.ims){ im.setMatrixAt(T.k,_M4); im.instanceMatrix.needsUpdate=true; }
   if(k>=1){ F.done=true; const tx=T.x+F.dx*T.h*0.9, tz=T.z+F.dz*T.h*0.9; burst({ x:tx, z:tz }, 0xa8a296, 3, 3, { y:0.4, life:1.0, size:1.4, smoke:true, grav:-0.2, drag:2, up:0.6, op:0.4 }); sfx('thud', { x:tx, z:tz }, 0.6); } } }
 // a blast in town: what stands near it goes over, parked cars burn out, trees come down
-export function cityBlast(x, z, r){ if(!TOP.length && !BLD.length) return;
+export function cityBlast(x, z, r){ trafficBlast(x, z, r); if(!TOP.length && !BLD.length) return;
   for(const T of TOP){ if(!T.alive) continue; const dx=T.x-x, dz=T.z-z; if(dx*dx+dz*dz < (r+1.2)*(r+1.2)) toppleAt(T, dx||0.1, dz); }
   for(const c of crushables){ if(!c.alive) continue; const dx=c.x-x, dz=c.z-z, d2=dx*dx+dz*dz;
     if(c.kind==='car' && !c.burnt && d2 < (r*0.95)*(r*0.95)){ c.burnt=true; c.im.setColorAt(c.k, _col.setHex(0x2a2420)); c.im.instanceColor.needsUpdate=true; if(c.ims) for(const t of c.ims){ t.setColorAt(c.k, _col.setHex(0x5a5050)); t.instanceColor.needsUpdate=true; }
@@ -146,7 +146,7 @@ export function cityBlast(x, z, r){ if(!TOP.length && !BLD.length) return;
 // the radio event: a shelled block nearby gives way, floor after floor
 export function cityCollapse(p){ if(!p) return false; const cand=BLD.filter(b=>!b.dead && b.floors.length>=3).map(b=>({ b, d:Math.hypot(b.x-p.pos.x, b.z-p.pos.z) })).filter(o=>o.d>14 && o.d<70).sort((a,b)=>a.d-b.d);
   if(!cand.length) return false; cand[0].b.casc=0.05; return true; }
-export function updateCity(dt){ if(TOP.length) updateTopple(dt); for(const Bd of BLD) if(Bd.casc>0){ Bd.casc-=dt; if(Bd.casc<=0 && !Bd.dead){ Bd.hp=Bd.hpPer*Bd.top; dropFloor(Bd); Bd.casc = Bd.dead ? 0 : 0.38; } } }
+export function updateCity(dt){ updateTraffic(dt); if(TOP.length) updateTopple(dt); for(const Bd of BLD) if(Bd.casc>0){ Bd.casc-=dt; if(Bd.casc<=0 && !Bd.dead){ Bd.hp=Bd.hpPer*Bd.top; dropFloor(Bd); Bd.casc = Bd.dead ? 0 : 0.38; } } }
 export function resetCity(){ BLD.length=0; TOP.length=0; RUB=null; RUBn=0; CITY_GEN++; }   // Z267 anything still waiting for the models belongs to a city that is gone
 export function cityBuildings(){ return BLD; }
 
@@ -287,7 +287,7 @@ function flushPending(){ const list=PENDING.splice(0).filter(q=>q.gen===CITY_GEN
   CURP=0; flushBuckets(); B=null; P=null; }
 export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; PP=[]; CURP=0; const fix=[]; CITY_GEN++; PENDING.length=0;
   const lantern=typeof window!=='undefined' && REALCITY.share>=1;   // Z267 one lantern post stands where the procedural median had a lamp each way
-  const n=Math.ceil(ARENA/G), cars=[], motos=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[];
+  const n=Math.ceil(ARENA/G), cars=[], motos=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[], roads=[];
   const inCity=(x,z,m)=>inField(x,z,m||4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<ARENA*0.86;
   const RT=roadT(), BT=bvdT(), WT=walkT(), ZT=zebraT(), PT=parkT();
   const ASP={ set:'asphalt_01', tile:2.08, lanes:true, marks:true, hi:!MOBILE, tint:REALCITY.asphalt }, roadMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), ASP), bvdMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:BT.t, roughness:0.8 }), ASP);   // Z265 real asphalt: wheel paths, oil, gutters, patches, cracks, worn paint, puddles
@@ -299,6 +299,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
   for(let i=-n;i<=n;i++) for(let j=-n;j<n;j++) for(const ax of [0,1]){
     const W=roadW(i), WW=walkW(i), blvd=isBlvd(i), a0=j*G+roadW(j)/2, a1=(j+1)*G-roadW(j+1)/2, L=a1-a0, mid=(a0+a1)/2;
     const at=(s,t)=>ax ? [i*G+t, mid+s] : [mid+s, i*G+t], ang=ax?Math.PI/2:0, [cx,cz]=at(0,0); if(L<6 || !inCity(cx,cz)) continue;
+    roads.push({ ax, c:i*G, a0:mid-L/2, a1:mid+L/2, blvd });   // Z268 for the traffic
     if(blvd){ const cw=(BV-MED)/2; for(const sd of [-1,1]) strip('bvd', bvdMat, ...at(0, sd*(MED/2+cw/2)), L, cw, ang, 0.04, 8);
       strip('median', grassMat, ...at(0,0), L, MED-0.3, ang, 0.14, 4, 4); for(const sd of [-1,1]) kerb(...at(0, sd*MED/2), L, ang);
       for(let s=-L/2+4; s<L/2-3; s+=10){ const [x,z]=at(s,0); if((s/10|0)%2) palms.push({ x, z, s:_R(0.85,1.05), ry:_R(0,6.28) }); else { lamps.push({ x, z, ry:ang+Math.PI/2 }); if(!lantern) lamps.push({ x, z, ry:ang-Math.PI/2 }); } } }
@@ -383,7 +384,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
     regTopple([inst(_mergeColored(Q), vmat(), poles)], poles, 7.6); }
   // ---- flush the buckets (one mesh per material) and the detail mesh ----
   flushBuckets(); const anchor=arena.children[arena.children.length-1], gen=CITY_GEN, plist=PP; PP=null;
-  loadRealCity().then(()=>{ if(gen!==CITY_GEN || !anchor.parent) return; flushPending(); placeProps(plist, gen, anchor); dressPoles(lampIm, headIm, sigIm); });   // Z267 the waiting lots rise, the furniture and poles go real, once the models are in
+  loadRealCity().then(()=>{ if(gen!==CITY_GEN || !anchor.parent) return; flushPending(); placeProps(plist, gen, anchor); dressPoles(lampIm, headIm, sigIm); buildTraffic(roads); });   // Z267 the waiting lots rise, the furniture and poles go real, once the models are in
   drawStreetVehicles(cars, motos);
   drawFixtures(fix);   // Z265
   // Z266 the street trees and median palms as real Meshy species: the trees split into groups, each group one species of the city's mix (linden,

@@ -27,7 +27,7 @@ for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['g
 // Z262 the tree species (world/real-trees.js)
 for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + k + '.glb';
 // Z264 the city's buildings and vehicles (world/real-city.js)
-for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props))) MODEL_FILES[k] = 'assets/models/real/city/' + k + '.glb';
+for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + k + '.glb';
 const _load = {}, _gl = {};
 let _loader = null;
 const procOnly = () => typeof location !== 'undefined' && /procgun/.test((location.search || '') + (location.hash || ''));

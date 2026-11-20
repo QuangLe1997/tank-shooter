@@ -576,10 +576,15 @@ export const STREET = { wet:0.9, puddle:0.55, mirror:3.5, wheel:0.2, oil:0.6, pa
 //   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
 export const REALCITY = { env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement:[0.72, 0.72, 0.72], lawn:[0.78, 0.9, 0.62],   // street photo albedo ×
  
-  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 }, bld_landmark:{ role:'landmark', env:1.2 } }, landmarkH:150,
+  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 }, bld_landmark:{ role:'landmark', env:1.2 }, bld_bitexco:{ role:'skyline', env:1.25 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza
+ 
   // Z267 the street furniture (world/real-city.js prepProp): h = height, w = width, s = scale (the Poly Haven scans are true size), glow = the material that lights at night
   props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.15 }, prop_tarpcar:{ s:1.05 },
-    city_fountain:{ w:9, sink:0.18 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5, skyHaze:0.3,   // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)
+    city_fountain:{ w:9, sink:0.18 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5,
+  bitexco:{ h:118, turn:0.5, sink:0.03 },   // Z268 Bitexco Financial Tower (Tripo, from a photo) standing out in the skyline, beside the Landmark 81 bearing (rad)
+  // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]
+  traffic:{ files:['moto_scooter','rider_driver'], n:110, nMobile:44, motoShare:0.72, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
+    // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)
     // (the stone tower came out with a broken diagonal glass panel: left out)
   carTint:0.55, cars:{ car_sedan:{ yaw:1.5708, L:4.8 }, car_taxi:{ yaw:1.5708, L:4.6 }, car_suv:{ yaw:1.5708, L:4.9 }, car_van:{ yaw:1.5708, L:5.4 }, car_bus:{ yaw:1.5708, L:11 } },
   carFor:{ sedan:'car_sedan', hatch:'car_sedan', suv:'car_suv', pickup:'car_suv', van:'car_van', taxi:'car_taxi', truck:'car_van', bus:'car_bus' } };

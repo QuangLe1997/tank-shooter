@@ -54,12 +54,12 @@ const _r=(a,b)=>a+Math.random()*(b-a);
 // a skyline: towers / stacks standing on the nearest ring
 // Z264 a real skyline: the city's own Meshy towers (glass, apartment, mid-rise) stand round the horizon in their real colours, each scaled to its
 //   slot's height and turned at random, set back past the old ring, hazed toward the fog in the shader (they keep the procedural ring's draw order); boxes until loaded
-// Z267 offices too, glass towers twice as often, a lighter veil (REALCITY.skyHaze) so they keep their glass and stone, and all of them in front of
+// Z268 no apartment slabs (their open ground floors read as floating), count / depth per ring · Z267 offices too, glass towers twice as often, a lighter veil (REALCITY.skyHaze) so they keep their glass and stone, and all of them in front of
 //   the hill ring at R + 65 (behind it their feet were hidden and they floated on the ridge)
-function realSkyline(R, H, fogC, mix){ const keys=['bld_glass','bld_apart','bld_office','bld_glass'].filter(k=>REAL_CITY[k]); if(!keys.length) return null; const n=MOBILE?30:56, per={}, g=new THREE.Group();
-  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+8+Math.random()*48, h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
+function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bld_office','bld_glass','bld_office','bld_hotel'].filter(k=>REAL_CITY[k]); if(!keys.length) return null; const n=Math.round((count||56)*(MOBILE?0.55:1)), per={}, g=new THREE.Group();
+  for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, r=R+8+Math.random()*(depth||48), h=H*(0.3+Math.random()*0.75), k=keys[(Math.random()*keys.length)|0]; (per[k]=per[k]||[]).push([a,r,h]); }
   const M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), S3=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
-  for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.min(REALCITY.skyHaze, mix) }, hc={ value:fogC.clone() };
+  for(const [k,list] of Object.entries(per)){ const Mo=REAL_CITY[k], mat=Mo.mat.clone(); mat.fog=false; const hz={ value:Math.max(REALCITY.skyHaze, mix) }, hc={ value:fogC.clone() };
     mat.onBeforeCompile=sh=>{ sh.uniforms.hzAmt=hz; sh.uniforms.hzCol=hc; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>','#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
     mat.customProgramCacheKey=()=>'skylineHaze';
     const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });
@@ -77,8 +77,10 @@ export function clearHorizon(){ if(HZN.g){ scene.remove(HZN.g); HZN.g.traverse(o
 export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); const L=LOOK[b.name]||LOOK.DESERT, fogC=scene.fog.color.clone(), g=new THREE.Group(); HZN.g=g; scene.add(g);
   const R0=ARENA*1.55, kind=L[2], H=L[3]*(MOBILE?0.85:1);
   const rk = kind==='city'||kind==='stacks' ? 'hill' : kind;   // behind a skyline there are still hills
-  g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest
-  g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.52, 2));   // Z259 a little less haze
+  const flatCity = kind==='city' && realCityReady() && REALCITY.flatHorizon;   // Z268 Saigon is flat: no peaks behind the city, more city fading into the haze instead
+  if(flatCity){ for(const [dr, hk, hz, n, dp] of REALCITY.flatHorizon){ const s=realSkyline(R0+dr, H*hk, fogC, hz, n, dp); if(s) g.add(s); } }
+  else { g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest
+  g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.52, 2)); }   // Z259 a little less haze
   if(kind==='city'||kind==='stacks') g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42)); else g.add(ring(R0+30, H*0.7, rk, L[0], L[1], fogC, 0.3, 1));   // near: darkest, crispest (Z259 less haze: its photo detail reads)
   // the war beyond the hills: smoke columns rising over burning places
   const nC=MOBILE?3:6; for(let i=0;i<nC;i++){ const a=Math.random()*Math.PI*2, r=R0+20+Math.random()*90, x=Math.cos(a)*r, z=Math.sin(a)*r, col=new THREE.Group(); col.position.set(x,0,z); g.add(col);
