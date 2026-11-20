@@ -677,11 +677,11 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
   bitexco:{ h:118, turn:0.5, sink:0.03 },   // Z268 Bitexco Financial Tower (Tripo, from a photo) standing out in the skyline, beside the Landmark 81 bearing (rad)
   // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]
   traffic:{ wheel:[0.33, 0.26], files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
-    // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
-    liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
     // Z306 struck / shot (world/traffic.js): health [car, scooter]; a knocked-down scooter lies downT s (gone once you are clearR m off) and skids at knockK of the blow;
     //   a struck or shot-at car stops haltT s; a burnt-out one burns burnT s, sunk sink m on its rims
     hit:{ hp:[160, 60], downT:8, clearR:25, knockK:0.6, haltT:7, burnT:22, sink:0.12 },
+    // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
+    liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
       { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
   lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
   flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
