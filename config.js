@@ -151,6 +151,12 @@ export const RIDE = { h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeo
     xichlo:{ hip:[0, 0.48, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
     bagac:{ hip:[0, 0.395, 0.19], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
   grip:0.85, lean:{ body:0.22, head:0.6 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.35, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] },
+  // Z303 the repair: squatting on the ride's left side facing it (mount units): hips (height above the ground in m), feet, the hand braced on the frame,
+  //   the hand at work on the engine / chain; how far forward he bends, how far he looks down, the hammer's lift and its rate
+  fix:{ xeom:{ hip:[0.33, 0, -0.02], foot:[[0.35, 0, 0.08], [0.35, 0, -0.12]], brace:[0.12, 0.33, 0.06], tool:[0.1, 0.17, -0.04] },
+    bagac:{ hip:[0.35, 0, 0.3], foot:[[0.37, 0, 0.4], [0.37, 0, 0.2]], brace:[0.13, 0.36, 0.38], tool:[0.1, 0.2, 0.3] },
+    xichlo:{ hip:[0.32, 0, -0.2], foot:[[0.34, 0, -0.1], [0.34, 0, -0.3]], brace:[0.15, 0.3, -0.1], tool:[0.08, 0.14, -0.22] },
+    hipH:0.44, bend:0.75, look:0.4, hammer:0.05, rate:8, ease:1.6 },
   // Z300 feet on the road (mount units, m/s, m/s²): both down below stopV (out to the side, a little ahead); the inside foot out ahead skimming the road
   //   through a bend taken faster than dabV with more than dabLat of cornering; under a storm of fire (n hits in win s): ducked, face down and away, jinking
   feet:{ stopV:1.1, rate:6, out:0.04, fwd:0.05, dabV:4.5, dabLat:5.5, dabOut:0.17, dabFwd:0.17, hover:0.015, dust:2.2, dustC:0xbfa88a },
@@ -174,6 +180,9 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   // Z299 the sprung body on its wheels (metres, seconds): heave / pitch / roll springs (k stiffness, z damping ratio); squat and dive per m/s² of
   //   acceleration; trikes roll outward per m/s² of cornering; rough road kicks (per metre at speed, m/s); the steer angle from the turn rate and wheelbase
   sus:{ k:190, z:0.32, kp:120, zp:0.36, kr:110, zr:0.4, pitchAcc:0.006, pitch:[-0.075, 0.045], rollLat:0.005, rollMax:0.055, rough:0.5, bump:0.32, kickP:0.5, gY:0.6, buzz:0.0012, steerMax:0.55, steerRate:9, restLean:0.06, leanK:1, leanMax:0.72, dustRun:0.9, dustHard:1.6, dustAcc:4, dustC:0xbfa88a },
+  // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
+  //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
+  wear:{ hp:{ xeom:150, xichlo:110, bagac:190 }, share:0.5, crash:28, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
   // Z301 the lamps (mount units; HDR colour multipliers, so the bright ones bloom): headlamp lens radius, its glow by day / by night, the beam by night
   //   (a spot on the bars: it swings with the steering); tail lens size, its running glow and its brake flare (braking harder than brakeAcc m/s²)
   lamp:{ headR:0.026, day:2.2, night:7, beam:{ i:4.2, dist:28, ang:0.5, pen:0.6, ahead:6, drop:0.55, r0:0.02, r1:0.9, len:4.4, op:0.2 }, tail:[0.034, 0.02], run:1.1, brake:4.5, brakeAcc:1.2, ease:14 },
@@ -753,7 +762,7 @@ export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket
   gl:{ butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
-  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
+  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
 //   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)
 export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };

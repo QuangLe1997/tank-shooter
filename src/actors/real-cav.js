@@ -55,7 +55,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   const c = 2 * Math.sqrt(H.k) * H.damp; for(const [x, v] of [['z', 'zv'], ['a', 'av']]){ rc[v] += (-H.k * rc[x] - c * rc[v]) * dt; rc[x] += rc[v] * dt; }
   // the body frame: up, and his facing turned by the aim twist
   G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
-  _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));
+  _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = R.av ?? Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));   // (Z303 the calmed, unwrapped aim: the gun never flips sides)
   const hy = R.hy || 0, yaw = gy + hy + clamp(dyw - hy, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders (and, sat on a ride, his hips) can turn
   // the shoulders take the kick before the gun is laid in them
   _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);   // (about his left: the kick rocks him back)
@@ -178,7 +178,7 @@ export function updateRealCav(CV, dt, P){
   if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
   else if(P.trans && P.trans.k === 'off'){ if(P.trans.e < 0.55){ ok = 'Cautious_Crouch_Walk_Forward'; ts = 1.3; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // Z295 getting off: a crouched step down, landing on one knee, rifle up
   else if(P.trans && P.trans.k === 'on'){ if(P.trans.e < 0.45){ ok = 'Walk_Forward_While_Shooting'; ts = 1.1; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // getting on: a step to it, then gathered up onto the seat
-  else if(mounted && stand){ ok = 'Aim_Stand'; freeze = 0; }   // braced in the bed, rifle shouldered
+  else if(mounted && stand){ if(R.step){ ok = 'Walk_Forward_While_Shooting'; ts = 1.35; } else { ok = 'Aim_Stand'; freeze = 0; } }   // braced in the bed, rifle shouldered (Z303 his feet step round when he turns his body)
   else if(mounted && bike){ ok = 'Ride_Walk'; ts = 0.35; }   // sat on the pillion / the cyclo's bench: the gentle sway of the riding clip
   else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
@@ -192,14 +192,25 @@ export function updateRealCav(CV, dt, P){
   R.om.update(dt);
   // hips onto the seat (the riding clips carry their own hip height); feet on the ground on foot
   // Z299 sat on a ride, past a quarter turn he swings his hips round on the seat (slower than his shoulders) to bring the gun to bear behind him
-  const seated = mounted && bike && !stand, twAll = P.twist || 0; if(R.opRY == null) R.opRY = R.op.rotation.y;
-  const hyT = seated ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -C.seatTurn[1], C.seatTurn[1]) : 0; R.hy = (R.hy || 0) + (hyT - (R.hy || 0)) * Math.min(1, dt * C.seatTurn[2]);
+  // Z303 WHERE HE LOOKS, CALMLY: the aim relative to the ride is unwrapped (no snapping from +180° to −180° as the target passes behind — he stays on the
+  //   side he turned to until it is well past, `flip`), then swung toward at a human pace (`aimRate`): a ride whipping through a bend no longer spins him
+  const seated = mounted && bike && !stand, braced = mounted && bike && stand, raw = P.twist || 0; if(R.opRY == null) R.opRY = R.op.rotation.y;
+  R.tu = R.tu == null ? raw : R.tu + Math.atan2(Math.sin(raw - R.tu), Math.cos(raw - R.tu)); const TAU = Math.PI * 2;
+  if(!braced){ if(R.tu > Math.PI + C.flip) R.tu -= TAU; else if(R.tu < -Math.PI - C.flip) R.tu += TAU; }   // sat, he can't turn past his back: well past it, he comes round the front
+  else if(Math.abs(R.tu) > TAU && R.av != null){ const w = Math.sign(R.tu) * TAU; R.tu -= w; R.av -= w; R.hy = (R.hy || 0) - w; if(R.step){ R.step.from -= w; R.step.to -= w; } }   // standing he can step right round: keep the numbers small
+  R.av = R.av == null ? R.tu : R.av + clamp(R.tu - R.av, -C.aimRate * dt, C.aimRate * dt); const twAll = R.av;
+  // the body: sat, the hips swing round on the seat (slowly); standing in a bed, he turns his whole body by stepping round — a step at a time, feet moving
+  if(braced){ const want = twAll;   // (on his feet any way round, the short way)
+    if(!R.step && Math.abs(want - (R.hy || 0)) > C.standTurn[1]){ R.step = { from:R.hy || 0, to:(R.hy || 0) + clamp(want - (R.hy || 0), -C.standTurn[2], C.standTurn[2]), t:0 }; }
+    if(R.step){ R.step.t = Math.min(1, R.step.t + dt / C.standTurn[3]); R.hy = R.step.from + (R.step.to - R.step.from) * smooth(R.step.t); if(R.step.t >= 1) R.step = null; } }
+  else { R.step = null; const hyT = seated ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -C.seatTurn[1], C.seatTurn[1]) : 0;
+    R.hy = (R.hy || 0) + clamp((hyT - (R.hy || 0)) * Math.min(1, dt * C.seatTurn[2]), -C.hipRate * dt, C.hipRate * dt); }
   R.op.rotation.y = R.opRY + R.hy;
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
   if(mounted && !stand){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
   else if(s === 'prone' && !P.trans){ R.op.position.y = -C.proneDrop / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
   // the torso turns toward the aim (spread over three spine bones, about the body's up)
-  R.tw = (R.tw || 0) + (clamp(twAll - R.hy, -C.twistMax, C.twistMax) - (R.tw || 0)) * Math.min(1, dt * C.seatTurn[3]); const tw = R.tw;   // the shoulders follow the eyes, the hips follow the shoulders
+  R.tw = (R.tw || 0) + clamp((clamp(twAll - R.hy, -C.twistMax, C.twistMax) - (R.tw || 0)) * Math.min(1, dt * C.seatTurn[3]), -C.twistRate * dt, C.twistRate * dt); const tw = R.tw;   // the shoulders follow the eyes, the hips follow the shoulders
   if(Math.abs(tw) > 1e-3){ G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
   if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }

@@ -922,6 +922,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function updateBikeEngine/.test(e) && /updateBikeEngine\(dt, p, t\)/.test(e) && C.RIDE.gears.length===3 && C.RIDE.gears[2] < 7.7, 'the ride has its own single-cylinder engine through all four gears');
   ok(/wasN=NIGHT\.on/.test(b) && /setNightLights\(wasN\)/.test(b), 'the warm-up puts back the stage\'s own day / night lights'); }
 
+// Z303 walk away / call the ride / a broken ride; no spinning riders
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), w=R('src/game/ride-wear.js'), cv=R('src/game/cavalry.js'), d=R('src/actors/driver.js'), r=R('src/actors/real-cav.js');
+  ok(!/if\(d<=CAV\.mountR\) CV\.trans=\{ k:'on', t:0 \}; else \{ CV\.call=true; floatText\('BẤM G LÊN XE'/.test(cv) && /BÁC TÀI ĐANG CHỜ/.test(cv) && /GỌI XE ÔM/.test(cv), 'back up, the driver waits: no dragging aboard, no chasing; G climbs on or calls the ride');
+  ok(['export function rideWear','export function rideBreak','export function rideFixed','export function rideSmoke','export function rideSpeedK'].every(k=>w.includes(k)) && C.XEOM.wear && C.XEOM.wear.hp.xeom>0 && /function fixPose/.test(d) && /else if\(D\.state === 'fix'\) fixStep/.test(d) && C.RIDE.fix && C.RIDE.fix.xeom && /rideSpeedK\(CV\.H\)/.test(cv), 'the ride wears, smokes, limps, breaks down and is repaired by the driver');
+  ok(/R\.tu \+ Math\.atan2\(Math\.sin\(raw - R\.tu\)/.test(r) && /C\.aimRate \* dt/.test(r) && /R\.step = \{ from/.test(r) && /dyw = R\.av \?\?/.test(r) && C.REALCAV.aimRate>0 && C.REALCAV.flip>0, 'the aim relative to the ride is unwrapped and swung at a human pace; standing riders step round'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

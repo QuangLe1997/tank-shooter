@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIDE, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, scene, spawnPart } from '../hub.js';
+import { MOBILE, NIGHT, S, beamMat, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideSmoke, scene, spawnPart } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter / cyclo assembled from the city's parts stay as the fallback
@@ -144,7 +144,7 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
   const rest = two && H.drv && H.drv.fd ? -XEOM.sus.restLean * H.drv.fd[0] : 0;   // Z300 stopped, a two-wheeler rests over on his left foot
   const bank = Math.max(-XEOM.sus.leanMax, Math.min(XEOM.sus.leanMax, Math.atan(v * yawRate / 9.81) * XEOM.sus.leanK));   // Z302 the lean a bend really asks for: atan(v·ω / g)
   H.lean += (-bank + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
-  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X); lampUpdate(H, dt); tyreTrail(H, X);
+  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X); lampUpdate(H, dt); tyreTrail(H, X); rideSmoke(H, dt);
   const now = performance.now() / 1000, p = S.player;
   if(H.wheels){ H.roll = (H.roll || 0) + v * dt; const U = XEOM.sus, wb = Math.abs(X.wheels[0].c[2] - X.wheels[X.wheels.length - 1].c[2]) * XEOM.k;
     const want = Math.max(-U.steerMax, Math.min(U.steerMax, Math.atan(wb * yawRate / Math.max(1.4, Math.abs(v))))) * Math.sign(v || 1);   // Z299 the steer a turn this tight needs at this speed (a lot slow, a touch fast)

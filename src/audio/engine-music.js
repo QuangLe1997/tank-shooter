@@ -1,5 +1,5 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
-import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, shaper, songBuf, verbSend } from '../hub.js';
+import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, shaper, songBuf, verbSend, rideHealth } from '../hub.js';
 import { RIDE } from '../../config.js';
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
@@ -54,7 +54,8 @@ function updateBikeEngine(dt, p, t){ const CV=p && p.cav, H=CV && CV.H, D=H && H
   const f=(9 + ENGB.rpm*62)*big;
   n.o1.frequency.setTargetAtTime(f, t, 0.03); n.o2.frequency.setTargetAtTime(f*2, t, 0.03); n.o3.frequency.setTargetAtTime(f, t, 0.03);
   n.lp.frequency.setTargetAtTime((420 + ENGB.rpm*2000 + thr*500)*big, t, 0.05); n.bp.frequency.setTargetAtTime(700 + ENGB.rpm*900, t, 0.08);
-  n.out.gain.setTargetAtTime(0.03 + ENGB.rpm*0.05 + thr*0.035, t, 0.06); }
+  const cough = rideHealth(H) < 0.3 && Math.random() < dt*4;   // Z303 a worn engine misses and coughs
+  n.out.gain.setTargetAtTime(cough ? 0.004 : 0.03 + ENGB.rpm*0.05 + thr*0.035, t, cough ? 0.01 : 0.06); }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
 export let _hapT=0;
 export function haptic(ms){ padHaptic(ms); if(!MOBILE || !padCfg().phone || !navigator.vibrate) return;   // Z117 the controller rumbles too
