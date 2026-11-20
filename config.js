@@ -555,6 +555,14 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
   fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus'] }, east:{ designs:['lqt','t90m','type99','flametank','arv'] }, merkava:{ designs:['merkava'] },
     armata:{ designs:['t14','ghost'] }, ifv:{ designs:['ifv','recon','atgmv'] }, spg:{ designs:['spg','td'] }, ugv:{ designs:['ugv'] } } };   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
+// Z257 REAL GUNS (tank/real-guns.js): the player's weapons per family — fromTank = take the real gun off that tank family's model, else the family's own
+//   Meshy file (assets/models/real/gun/<family>.glb) with `front` = the model direction its muzzle points; dev = how far the width / height scale may
+//   stray from the length scale (a tank's slim barrel fattens to a stubby gun's); glow = the procedural glowing parts stay on top; pair = one copy on each muzzle (twin guns); env = reflection strength;
+//   tankTint = the colour a gun taken off a tank model is multiplied by (its texture patch came out pale)
+export const REALGUN = { dev:[0.55, 2.6], env:0.7, tankTint:0x83867e,
+  fams:{ cannon:{ fromTank:'west', guns:['cannon'] }, hesh:{ fromTank:'east', guns:['hesh'] }, canister:{ fromTank:'spg', guns:['shotgun'] }, auto:{ fromTank:'ifv', dev:[0.3, 0.5], guns:['rifle'] },
+    mg:{ front:'-x', guns:['smg','agl'] }, flak:{ front:'+x', pair:true, guns:['flak'] }, pod:{ front:'+z', guns:['missile','hydra','thermo'] }, flamer:{ front:'+x', guns:['flamer','cryo'] },
+    energy:{ front:'+x', glow:true, guns:['railgun','photon','plasma','tesla'] } } };   // procedural: mortar, arty, rocket (tilted lobbers), minigun (spinning barrels), orbital, singularity
 // Z255 PHOTO SKY (world/sky-photo.js): a photographed pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs) laid into the sky dome per hour of the day, and an
 //   overcast one for storms — amt = how much of the photo shows (the procedural sky, clouds and lightning stay underneath), cloudK = how much of
 //   the procedural cloud layer survives under the photo, fogMix = how far the fog takes the photo's horizon colour, midGrey = the exposure target

@@ -733,5 +733,143 @@
       ],
       "texture_prompt": "Neutral light grey-olive military paint (a near-neutral base the game tints per side and battlefield), weathered: dust on the lower hull, chipped edges, dark gunmetal on the gun and running gear, black rubber track pads, realistic PBR"
     }
+  },
+  "gun_cannon": {
+    "_role": "Z257 player gun family 'cannon' (120 mm, 105 mm HESH, 152 mm canister): fitted over the procedural barrel assembly, front = the muzzle",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Tank main gun assembly on its own: a long smoothbore gun barrel with a banded thermal sleeve, a fume extractor bulge two-thirds of the way along, a small muzzle reference sensor box on top near the muzzle, and at the rear end a short armoured gun mantlet block with the breech housing behind it. The barrel is perfectly straight and horizontal. About 6 m long, the mantlet about 1 m wide. Realistic military hardware. One single isolated object floating, no vehicle, no turret, no people, no background, no ground."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Olive-drab painted thermal sleeve and mantlet, Dark gunmetal and parkerised black steel, worn bare-metal edges, light dust, realistic PBR"
+    }
+  },
+  "gun_mg": {
+    "_role": "Z257 player gun family 'machine gun' (7.62 / twin 14.5 mm / 40 mm AGL)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Twin heavy machine gun mount on its own: two parallel heavy machine gun barrels with perforated cooling jackets side by side, a shared boxy receiver at the rear with feed covers and charging handles, an ammunition box hung on the right side with a feed chute. Barrels perfectly straight, horizontal, pointing forward. About 2.4 m long, 0.8 m wide. Realistic military hardware. One single isolated object floating, no vehicle, no turret, no people, no background, no ground."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Olive-drab ammunition box, Dark gunmetal and parkerised black steel, worn bare-metal edges, light dust, realistic PBR"
+    }
+  },
+  "gun_flak": {
+    "_role": "Z257 player gun family 'twin AA autocannon' (35 mm flak)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Twin 35 mm autocannon gun pair seen from the side: two long thin gun barrels, each about 3 m long, with slotted muzzle brakes at their front ends, each barrel coming out of the front of a boxy armoured receiver housing; the two receivers sit side by side about 1 m apart and are joined by a cross beam. The two long parallel barrels are the dominant feature, straight, horizontal, pointing forward. No legs, no stand, no drums, no radar. Realistic military hardware. One single isolated object floating, no vehicle, no turret, no people, no background, no ground."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Olive-drab painted cradles, Dark gunmetal and parkerised black steel, worn bare-metal edges, light dust, realistic PBR"
+    }
+  },
+  "gun_pod": {
+    "_role": "Z257 player gun family 'launcher pod' (smart missile, hydra micro-missiles, thermobaric rockets): front = the face with the tube openings",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Armoured box rocket launcher pod on its own: a rectangular armoured box with a three-by-four grid of round launch tube openings on its front face, the tubes closed by red protective caps, bolted armour plates on the sides, a blast deflector plate at the back and a cradle frame underneath. About 2 m long, 1.4 m wide, 1 m tall. Realistic military hardware. One single isolated object floating, no vehicle, no turret, no people, no background, no ground."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Olive-drab painted armoured box, red tube caps, Dark gunmetal and parkerised black steel, worn bare-metal edges, light dust, realistic PBR"
+    }
+  },
+  "gun_flamer": {
+    "_role": "Z257 player gun family 'projector' (flamethrower, cryo)",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Flamethrower gun barrel unit for a vehicle seen from the side: a straight thick metal tube about 2.5 m long ending in a conical nozzle with a small igniter box at the front end, three heat-shield rings along the tube, a rectangular valve block at the rear end with two armoured hoses curving back out of it. Straight, horizontal, pointing forward. No legs, no stand, no tripod, no tanks. Realistic military hardware. One single isolated object floating, no vehicle, no turret, no people, no background, no ground."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Olive-drab painted valve block, soot-blackened nozzle, Dark gunmetal and parkerised black steel, worn bare-metal edges, light dust, realistic PBR"
+    }
+  },
+  "gun_energy": {
+    "_role": "Z257 player gun family 'energy weapon' (railgun, photon lance, plasma, tesla): the procedural glow parts stay on top",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2",
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Futuristic railgun weapon on its own: two long parallel conductor rails held together by a stack of insulating clamp rings, a capacitor bank housing at the rear with cooling fins and thick cables, a narrow channel between the rails. Straight, horizontal, pointing forward. About 5 m long, 0.8 m wide. Military sci-fi. Realistic military hardware. One single isolated object floating, no vehicle, no turret, no people, no background, no ground."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Dark gunmetal and graphite composite, white ceramic insulator rings, copper rail faces, light wear, realistic PBR"
+    }
   }
 }

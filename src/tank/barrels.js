@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BARREL_SCALE, GUN_PRICE } from '../../config.js';
-import { GUNS, S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol } from '../hub.js';
+import { GUNS, S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol, realGun } from '../hub.js';
 
 // ----- per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they elevate + recoil -----
 // returns a Group with userData { muzzle, spin, recoilLen, elevates, mount } — `mount` = static hardware bolted to the turret (doesn't recoil)
@@ -235,12 +235,12 @@ export function makeGunBarrel(id){
   bakeGroup(g); bakeGroup(mount);
   g.userData.spin=spin; g.userData.recoilLen=recoilLen; g.userData.elevates=elevates; g.userData.mount=mount.children.length?mount:null;
   g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; } }); mount.traverse(o=>{ if(o.isMesh){ o.castShadow=true; } });
-  return g;
+  return realGun(g, id);   // Z257 the family's real model over it
 }
 // visual grade 0–6: gun power tier (by price; VIP top) + mastery level — the barrel looks as strong as the gun is
 export function gunTier(id){ const pr=GUN_PRICE[id]; if(!pr) return id==='rifle'?1:0; if(pr.d) return 4; return (GUNS[id]&&GUNS[id].tier)||0; }   // Z149 the gun's own BẬC · Z231 the starter autocannon wears grade 1 (sleeve clamps) — a new commander's first gun should look like a weapon
 export function barrelGrade(id){ let lv=1, md=0; try{ lv=gunLevel(id)||1; md=gunModTotal(id); }catch(e){} return Math.max(0, Math.min(6, gunTier(id) + (lv-1) + Math.floor(md/5))); }   // Z115 every 5 parts fitted = one grade finer
-export function disposeBarrel(grp){ if(!grp) return; grp.traverse(o=>{ if(o.isMesh){ o.geometry.dispose(); if(o.material&&o.material.dispose) o.material.dispose(); } }); }
+export function disposeBarrel(grp){ if(!grp) return; grp.traverse(o=>{ if(o.isMesh){ if(!o.userData.sharedGeo) o.geometry.dispose(); if(o.material&&o.material.dispose) o.material.dispose(); } }); }
 // mount a gun's real barrel (+ turret mount) on ANY tank built by buildTank — the player in battle, the showroom tank in the shop
 export function mountBarrel(mesh, id){ const ud=mesh.userData;
   if(ud.barrelG){ ud.barrelG.parent && ud.barrelG.parent.remove(ud.barrelG); disposeBarrel(ud.barrelG); }

@@ -708,6 +708,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok([...used].every(id=>all.includes(id)) && new Set(all).size===all.length, 'every garage and enemy design belongs to exactly one family');
   ok(Object.keys(C.REALTANK.fams).every(k=>fs.existsSync('assets/models/real/tank/'+k+'.glb') && fs.statSync('assets/models/real/tank/'+k+'.glb').size<2.2e6), 'seven family models ship small (≤2.2 MB each)'); }
 
+// Z257 real guns: the player's weapons wear a real model per family (tube guns off the tank models, the rest from their own Meshy files)
+{ const fs=await import('node:fs'); const rg=fs.readFileSync('src/tank/real-guns.js','utf8'), br=fs.readFileSync('src/tank/barrels.js','utf8'), ga=fs.readFileSync('src/ui/gunart.js','utf8'), md=fs.readFileSync('src/actors/models.js','utf8'), C=await import('./config.js'), G=C.REALGUN;
+  ok(/export function realGun/.test(rg) && /export function loadRealGuns/.test(rg) && /REAL_TANK_FAM\[f\.fromTank\]/.test(rg) && /box\.max\.z - mb\.max\.z \* sl/.test(rg) && /f\.pair && u\.muzzles/.test(rg) && /f\.glow && glows/.test(rg), 'real guns: front on the muzzle, twin guns one per muzzle, energy glow kept, tube guns taken off the tanks');
+  ok(/return realGun\(g, id\)/.test(br) && /if\(!o\.userData\.sharedGeo\) o\.geometry\.dispose\(\)/.test(br) && /loadRealGuns\(\)\.catch/.test(ga) && /MODEL_FILES\['gun_' \+ k\]/.test(md), 'every barrel built is dressed; a remount never frees the shared model; gun photos wait for it');
+  const all=Object.values(G.fams).flatMap(f=>f.guns), keep=['minigun','mortar','arty','rocket','orbital','singularity'];
+  ok(all.length===16 && new Set(all).size===16 && keep.every(id=>!all.includes(id)), 'sixteen guns in nine families, each in one; the lobbers, the rotary cannon and two ultimates stay procedural');
+  ok(Object.entries(G.fams).every(([k,f])=>f.fromTank ? C.REALTANK.fams[f.fromTank] : (fs.existsSync('assets/models/real/gun/'+k+'.glb') && fs.statSync('assets/models/real/gun/'+k+'.glb').size<8e5 && ['+x','-x','+z','-z'].includes(f.front))), 'each family has its model (a tank family, or its own file under 0.8 MB with a muzzle direction)'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

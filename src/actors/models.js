@@ -1,7 +1,7 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { REALPROP, REALTANK } from '../../config.js';
+import { REALGUN, REALPROP, REALTANK } from '../../config.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -22,6 +22,8 @@ export const MODEL_FILES = {
 for(const k of REALPROP.kinds) MODEL_FILES['cover_' + k] = 'assets/models/real/cover/' + k + '.glb';
 // Z256 one vehicle per tank family (tank/real-tanks.js)
 for(const k of Object.keys(REALTANK.fams)) MODEL_FILES['tank_' + k] = 'assets/models/real/tank/' + k + '.glb';
+// Z257 one model per player-gun family that has its own file (tank/real-guns.js)
+for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['gun_' + k] = 'assets/models/real/gun/' + k + '.glb';
 const _load = {}, _gl = {};
 let _loader = null;
 const procOnly = () => typeof location !== 'undefined' && /procgun/.test((location.search || '') + (location.hash || ''));

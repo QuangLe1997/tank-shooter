@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { VIP_GUNS } from '../../config.js';
-import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, loadRealTanks, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
+import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, loadRealGuns, loadRealTanks, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
 
 export const GUNART = { cache:{}, queue:[], busy:false, scene:null, cam:null, rt:null, float:false };
 const OW = MOBILE ? 240 : 320, OH = Math.round(OW*0.46), SS = 2, RW = OW*SS, RH = OH*SS;
@@ -56,7 +56,7 @@ export function renderObject(root, dir, k, ow, oh){ stage(); const S=GUNART.scen
 function pump(){ if(GUNART.busy) return; const id=GUNART.queue.shift(); if(!id) return; GUNART.busy=true;
   const go=()=>{ const key=gunArtKey(id); try{ if(!GUNART.cache[key]){ GUNART.cache[key]=renderGun(id); } paint(id); }catch(e){ console.warn('gun art', id, e); GUNART.cache[key]=GUNART.cache[key]||''; }
     GUNART.busy=false; if(GUNART.queue.length) pump(); };
-  (window.requestIdleCallback||((f)=>setTimeout(f,30)))(go, { timeout:400 }); }
+  loadRealGuns().catch(()=>{}).then(()=>(window.requestIdleCallback||((f)=>setTimeout(f,30)))(go, { timeout:400 })); }   // Z257 the photo waits for the real model of its family
 // every <img data-gunpic="id"> on the page picks up the photo as soon as it exists
 function paint(id){ const url=GUNART.cache[gunArtKey(id)]; if(!url) return; document.querySelectorAll('img[data-gunpic="'+id+'"]').forEach(im=>{ if(im.src!==url) im.src=url; im.classList.add('ok'); }); }
 export function queueGunArt(ids){ for(const id of ids){ if(!GUNS[id] || GUNART.cache[gunArtKey(id)] || GUNART.queue.includes(id)) continue; GUNART.queue.push(id); } pump(); }

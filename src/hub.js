@@ -46,6 +46,7 @@ export * from './tank/models.js';
 export * from './tank/designs.js';   // Z157 a dedicated vehicle build per model   // Z155 tank collection (real MBTs + our designs)
 export * from './tank/model.js';
 export * from './tank/real-tanks.js';   // Z256 Meshy vehicles per tank family
+export * from './tank/real-guns.js';   // Z257 real models per player-gun family
 export * from './tank/warkit.js';   // Z228 our tank's war kit (mine plough, sandbags, slat cage, APS, jammer)
 export * from './tank/rig.js';
 export * from './tank/barrels.js';
