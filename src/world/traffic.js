@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY, XEOM } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, fireball, haptic, heightAt, loadGLTF, sfx, spawnPart, loadRealCity, cityProp } from '../hub.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, fireball, haptic, heightAt, loadGLTF, sfx, spawnPart, loadRealCity, cityProp, MODE } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -192,7 +192,7 @@ export function updateTraffic(dt){ if(!TR.on) return; if(!TR.ims.length || !TR.i
     const key = v.r.c + ':' + v.r.ax + ':' + v.s + ':' + (v.r.blvd ? (v.moto ? 'm' : 'c') : 's'); if(!lanes.has(key)) lanes.set(key, []); lanes.get(key).push(v); }   // boulevards: scooters and cars in their own lanes
   for(const L of lanes.values()){ L.sort((a, b) => (a.t - b.t) * a.s);
     for(let i = 0; i < L.length; i++){ const v = L[i], R = v.r, lead = L[i + 1]; let gap = lead && lead.r === R ? Math.abs(lead.t - v.t) - (lead.len + v.len) / 2 - (v.moto ? 1.2 : 2.5) : 99;
-      const tank = p && !p.cav;   // Z306 only a tank flattens what it drives into — the soldier's ride has its own collisions (game/ride-impact.js)
+      const tank = p && MODE.crushes;   // Z306 only a tank flattens what it drives into — the soldier's ride has its own collisions (game/ride-impact.js)
       if(tank && Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < (v.moto ? 1.9 : 2.8)){ wreck(v, false); continue; }   // run over
       if(v.st){ stateStep(v, dt, p); if(!v.dead) place(v); continue; }   // Z306 knocked down / stopped / burning: it stays where it is
       if(p){ const al = R.ax ? p.pos.z : p.pos.x, cr = R.ax ? p.pos.x : p.pos.z, [lx, lz] = pos(R, v.t, v.off, v.s), lc = R.ax ? lx : lz, ahead = (al - v.t) * v.s;

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, GIFT, LOOT, GUN_MODS } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD } from '../hub.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD, MODE } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -106,10 +106,10 @@ export function fitGunMod(k){ const p=S.player; if(!p||!p.guns) return; const or
 export function modDrop(){ const pool=POWERUPS.filter(u=>u.mod); return pool[(Math.random()*pool.length)|0]; }
 // Z306 a soldier picks up a soldier's loot: nothing for an engine, a hull or a turret (speed, turbo, ram, reactive armour, siege shells, tank guns and their parts)
 const NOT_FOR_A_MAN=['speed','turbo','ram','era','siege','gun'];
-function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
+export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
   const pool=POWERUPS.filter(u=>!u.mod && !NOT_FOR_A_MAN.includes(u.id) && (u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
 export function pickLoot(tier){                                                             // tier = how tough the source was (0 common · 1 rare · 2 epic)
-  if(S.player && S.player.cav) return trooperLoot(tier);
+  if(MODE.loot) return MODE.loot(tier);   // Z307 a mode with its own loot table (the soldier's)
   const p=S.player, low=(p.hp/p.maxHp<0.4)||(core&&core.hp/core.maxHp<0.4);
   if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield','era'].includes(u.id)); return pool[(Math.random()*pool.length)|0]; }
   if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;

@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { CAV, LOOT } from '../../config.js';
-import { ARENA, BEST, CV, PLAYER_PAL, S, bigExplode, burst, camera, capsuleSave, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, playClip, playerHitFX, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, tankExplode, updateHUD , rideHit, soldierHitFX } from '../hub.js';
+import { ARENA, BEST, CV, S, bigExplode, burst, camera, capsuleSave, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, updateHUD, rideHit, MODE } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -17,8 +17,7 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
   S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028)); haptic(Math.min(60, 20+dmg*1.5));
   sfx('hurt');
   burst(p.pos, 0xff5040, 8, 9, {life:0.28, size:1.0, up:3, drag:5}); ringPulse(p.pos, 0xff4632, 1.6);
-  if(!p.cav) addPlayerBurn(dx, dz);                      // a flaming hit-mark on the hull where it was struck (rides with the tank)
-  if(p.cav) soldierHitFX(p, dx, dz, dmg); else playerHitFX(p, dx, dz, dmg);   // Z189 sparks + shards off the struck side, a red marker pointing at the shooter · Z306 a soldier bleeds (fx/soldier-fx.js)
+  MODE.onHit(p, dmg, dx, dz);   // the tank: a flaming mark on the hull + sparks and shards off the struck side · the soldier: he bleeds · both: a red marker pointing at the shooter (Z307 game/mode.js)
   const v=document.getElementById('vignette'); v.style.opacity='1'; setTimeout(()=>v.style.opacity='0', 170);
   updateHUD();
   if(p.hp<=0) playerDie(now);
@@ -35,8 +34,8 @@ export function addPlayerBurn(dx, dz){
 export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0 };
 export const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 export function playerDie(now){
-  const p=S.player; p.lives--; playClip('x_scream', 0.95);   // Z167 the crew's scream as the tank goes
-  if(p.lives < 0){ tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); gameOver('HẾT MẠNG'); return; }   // final death → shatter + game over
+  const p=S.player; p.lives--;
+  if(p.lives < 0){ MODE.finalDeath(p); gameOver('HẾT MẠNG'); return; }   // final death → (the tank: the crew's scream as it shatters · Z307 the soldier simply falls) + game over
   beginDeath(now);
 }
 export function beginDeath(now){
@@ -87,9 +86,9 @@ export function respawnPlayer(now){
 }
 export function gameOver(reason){
   if(S.mode==='gameover') return;
-  S.mode='gameover'; try{ grantCrewXp(false); econReportRun({ cleared:false }); }catch(e){}   // Z161 the crew still learns from a lost battle (half XP)
+  S.mode='gameover'; try{ if(MODE.crewXp) grantCrewXp(false); econReportRun({ cleared:false }); }catch(e){}   // Z161 the crew still learns from a lost battle (half XP)
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
-    if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — xe bị hạ khi không còn lượt hồi sinh' : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù xe còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
+    if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — '+MODE.overText : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù xe còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
   document.getElementById('go-score').textContent=S.score.toLocaleString();
   document.getElementById('go-stage').textContent=S.stage;
   document.getElementById('go-wave').textContent=S.wave;

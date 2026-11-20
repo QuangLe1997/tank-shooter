@@ -1,7 +1,7 @@
 // combat/spells.js — SPELLS (one equipped; cast on cooldown)
 import * as THREE from 'three';
 import { BALANCE, EQUIP, TROOPS, LETHAL, REAL } from '../../config.js';
-import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, cityBlast, concuss, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fenceBlast, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateHUD, updateSpellHUD , blastTrees } from '../hub.js';
+import { COVER_HP, MOBILE, S, airstrike, armorOf, bigExplode, blastAllies, blastAllyTanks, blocks, boss, bullets, burst, callFireteam, cityBlast, concuss, core, damageBlock, damageBoss, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, dropBeam, enemies, envDmg, fenceBlast, fireball, floatText, fortIntactCross, gradePass, haptic, heightAt, recycleBullet, ringPulse, scene, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateHUD, updateSpellHUD , blastTrees, MODE } from '../hub.js';
 
 // ===== SPELLS (one equipped; cast on cooldown) =====
 export const SPELLS = [
@@ -53,12 +53,15 @@ export function updateEquip(dt, now){
       aoeDamage(M.x, M.z, E.radius, E.dmg, false, now, 'AP'); S.shake=Math.min(3,S.shake+0.8); sfx('bigexplode'); } }
 }
 export function clearEquip(){ for(const M of PMINES) scene.remove(M.m); PMINES.length=0; const p=S.player; if(p){ p.smokeUntil=0; p.apsUntil=0; p.apsCharges=0; } }
+// Z307 the skills of the mode in play: the tank's (above) or the soldier's (combat/trooper-spells.js); the pick wraps to the list in use
+export function spellList(){ return MODE.spells || SPELLS; }
+export function spellNow(){ const L=spellList(); return L[S.spell] || L[0]; }
 export function trySpell(){
   if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
-  const sp=SPELLS[S.spell]; if(now < p.spellCdUntil) return;
+  const sp=spellNow(); if(now < p.spellCdUntil) return;
   p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); sfx('spell'); updateSpellHUD();
 }
-export function cycleSpell(d=1){ S.spell=(S.spell+d+SPELLS.length)%SPELLS.length; updateSpellHUD(); sfx('click'); }
+export function cycleSpell(d=1){ const n=spellList().length; S.spell=((S.spell%n)+d+n)%n; updateSpellHUD(); sfx('click'); }
 // Z104 blast vs a man on foot: 1 = killed (inside the core), else the fraction of the blast damage he takes (fades to edgeMin at reach)
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
 // Z193 a blast also shreds every piece of field cover (sandbags, crates, concrete…)

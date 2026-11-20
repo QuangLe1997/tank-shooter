@@ -1,7 +1,7 @@
 // actors/enemy-missiles.js — ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke
 import * as THREE from 'three';
 import { EQUIP } from '../../config.js';
-import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, hitsHull, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle } from '../hub.js';
+import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle, MODE } from '../hub.js';
 
 // ===== ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke =====
 export const EMIS=[], _emPool=[]; const _mbk=[];
@@ -53,7 +53,7 @@ export function updateEnemyMissiles(dt, now){
     for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j]; if(b.owner!=='p') continue; if((b.x-r.x)**2+(b.z-r.z)**2 < (b.r+0.85)**2){ if(b.pierce>0) b.pierce--; else recycleBullet(j); gone='shot'; break; } }   // SHOOT IT DOWN
     if(!gone && p.apsCharges>0 && now<(p.apsUntil||0) && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < EQUIP.aps.radius){ apsIntercept(r.x, r.y, r.z); gone='shot'; }   // APS hard-kill
     if(!gone && p.sig && p.sig.trophy && now>(p.apsCd||0) && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < 7){ p.apsCd=now+p.sig.trophy; apsIntercept(r.x, r.y, r.z); gone='shot'; }   // Z161 TROPHY APS (Merkava)
-    if(!gone && hitsHull(p, r.x, r.z, 0.3) && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
+    if(!gone && MODE.hitTest(p, r.x, r.z, 0.3) && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
     if(!gone && r.y < gy+3.2 && hitAllyTank(r.x, r.z, 0.3, r.dmg)) gone='hit';   // Z104 RPG / ATGM into a captured tank
     if(!gone) for(const bl of blocksNear(r.x, r.z, 0.3, _mbk)){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj' && !bl.supply) damageBlock(bl, r.dmg*1.2); wallMark(bl, r.x, r.y, r.z, -Math.sin(r.ang), -Math.cos(r.ang), 2.0, true); gone='hit'; break; } }
     if(!gone && core && Math.hypot(core.pos.x-r.x, core.pos.z-r.z) < core.r){ damageCore(r.dmg*0.8); gone='hit'; }

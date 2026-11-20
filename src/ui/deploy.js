@@ -1,13 +1,13 @@
 // ui/deploy.js — Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, how many ride the tank,
 //   specialists (MG / mortar / sapper), the tank's guns & ammo and a map of the field. Confirm → men spawn at their posts.
 import { DEPLOY, TROOPS } from '../../config.js';
-import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, RIDGES, S, SPELLS, clampFieldXZ, clearFireteam, clearRiders, core, crewTarget, deployRiders, escapeHtml, fieldOutline, gunDmgMul, gunLevel, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip } from '../hub.js';
+import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, RIDGES, S, clampFieldXZ, clearFireteam, clearRiders, core, crewTarget, deployRiders, escapeHtml, fieldOutline, gunDmgMul, gunLevel, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip, MODE, spellNow } from '../hub.js';
 
 export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
 // the key points of this field (built from the planned zones): where a squad can be posted at the start
 export function deployPosts(){ const p=S.player, sx=p?p.pos.x:0, sz=p?p.pos.z:ARENA*0.55, toward=(x,z,f)=>[sx+(x-sx)*f, sz+(z-sz)*f], posts=[];
-  if(!(p && p.cav)) posts.push({ id:'tank', ic:'tank', nm:'ĐI CÙNG XE TĂNG', ds:'Ngồi trên nóc xe, hồi máu dần · thả xuống khi cần', max:RIDER.cap, cls:'tank' });   // (Z306 no hull to ride on in soldier mode)
+  if(MODE.riders) posts.push({ id:'tank', ic:'tank', nm:'ĐI CÙNG XE TĂNG', ds:'Ngồi trên nóc xe, hồi máu dần · thả xuống khi cần', max:RIDER.cap, cls:'tank' });   // (Z306 no hull to ride on in soldier mode)
   if(core) posts.push({ id:'core', ic:'bunker', nm:'GIỮ LÕI', ds:'Phòng thủ quanh Lõi', x:core.pos.x, z:core.pos.z+6, max:6 });
   if(RALLY_PT.g) posts.push({ id:'rally', ic:'spark', nm:'KHU TẬP KẾT', ds:'Canh đồ & tiếp tế, sát xuất phát', x:RALLY_PT.x, z:RALLY_PT.z, max:4 });
   const side=w=>w.x<-ARENA*0.3?'TRÁI':(w.x>ARENA*0.3?'PHẢI':'PHÍA SAU'), dup=k=>POWS.filter(o=>side(o)===k).length>1;
@@ -52,7 +52,7 @@ function render(){ const D=_dp; if(!D) return; const free=D.total-assigned(), on
   const G=document.getElementById('dp-guns'); G.replaceChildren(); const p=S.player;
   if(p) for(const inst of p.guns){ const g=GUNS[inst.id]; if(!g) continue; const r=document.createElement('div'); r.className='dp-gun';
     r.innerHTML=gunPicHTML(inst.id,'gp-dp')+'<b>'+escapeHtml(g.name)+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'')+'</b><span>'+Math.round(gunShotDmg(g)*gunDmgMul(inst.id))+' sát thương · băng '+magCap(g)+' · nạp '+g.reload.toFixed(1)+' giây</span>'; G.appendChild(r); }
-  if(p){ const sp=SPELLS[S.spell]; if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>KỸ NĂNG · '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+' giây</span>'; G.appendChild(r); } }
+  if(p){ const sp=spellNow(); if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>KỸ NĂNG · '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+' giây</span>'; G.appendChild(r); } }
   drawDeployMap(); }
 export function drawDeployMap(){ const D=_dp, c=document.getElementById('dp-map'); if(!c||!D) return; const x=c.getContext('2d'), W=c.width, s=(W/2-8)/ARENA, X=v=>W/2+v*s, Y=v=>W/2+v*s;
   x.clearRect(0,0,W,W); const O=fieldOutline(); x.save(); x.beginPath(); O.forEach(([px,pz],i)=> i ? x.lineTo(X(px),Y(pz)) : x.moveTo(X(px),Y(pz))); x.closePath();

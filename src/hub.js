@@ -140,6 +140,7 @@ export * from './game/xeom.js';   // Z282 xe ôm / xích lô mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair
 export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams scooters, cars and animals
 export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets
+export * from './game/mode.js';   // Z307 the tank and the soldier: one object per mode with its own rules (player, setup, update, fire, hits, death, loot, skills, HUD)
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
@@ -157,6 +158,7 @@ export * from './combat/aim.js';
 export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
 export * from './combat/soldier-fire.js';   // Z306 soldier mode: his own rifle and its firing
+export * from './combat/trooper-spells.js';   // Z307 soldier mode: grenade, hand smoke, field dressing, the radio
 export * from './combat/ultimate.js';   // Z186 the five ultimate weapons
 export * from './combat/mastery.js';
 export * from './combat/gunstats.js';   // Z230 what a gun really does (arsenal · shop · power rating)

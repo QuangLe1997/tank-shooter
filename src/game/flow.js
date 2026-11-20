@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CORE_DEF, TROOPS, CAV } from '../../config.js';
-import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PLAYER, PROFILE, S, TANK_SCALE, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, applyTankKit, applyUpgrades, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildUnderground, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, defaultGunIdx, deployOwnedDrone, deployRiders, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, magCap, makeCavPlayer, makePlayer, mountRoofMG, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tankModel, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, trooperGuns } from '../hub.js';
+import { AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PROFILE, S, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildUnderground, bullets, campaignMax, clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, deployOwnedDrone, deployRiders, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, MODES, __set_MODE } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -26,7 +26,7 @@ export function startGame(arg){
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
   const cavWanted = ['cav','xeom','xichlo','bagac','bantai'].includes(PROFILE.unit), cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / xích lô
   if(S.player && (!!S.player.cav!==cavWanted || (cavWanted && (S.player.bike||null)!==cavKind) || (!cavWanted && S.player.modelId !== currentTank()))){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
-  S.player = S.player || (cavWanted ? makeCavPlayer(cavKind) : makePlayer());
+  __set_MODE(cavWanted ? MODES.soldier : MODES.tank); S.player = S.player || MODE.makePlayer(cavKind);   // Z307 the mode owns its player (game/mode.js)
   clearRelic();                          // Z154 a new run: no relic power carried over
   if(TRAIN.on){ TRAIN.t0=0; TRAIN.lastPos=null; TRAIN.finished=false; }   // Z182 RESTART inside the training: the current step starts over
   buildCore(stStage);                    // monument matching the (resumed) stage
@@ -37,16 +37,12 @@ export function startGame(arg){
   p.mesh.visible=true; p.mesh.rotation.set(0,p.aim,0); p.mesh.position.set(p.pos.x,0,p.pos.z);   // ensure upright (clear any death-flip)
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → the player's chosen battle loadout (≤5), each full mag
-  p.guns=p.cav ? trooperGuns() : loadoutGuns(); p.gunIdx=p.cav ? 0 : defaultGunIdx(); p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;   // Z306 the soldier carries his rifle, not the tank's arsenal
+  p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
   p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0, turbo:0, ram:0, siege:0 }; p.buffLv={ turbo:0 }; p.era=0; setEraTiles(p);
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
-  if(p.cav){ p.dmgMul=CAV.atk; p.crit=CAV.crit; p.fireMul=CAV.fireK; }   // Z245 the general: heavy rifle rounds, a marksman's eye, quick hands
-  applyUpgrades(p); p.hp=p.maxHp;                          // bake in shop upgrades (HP/dmg/range/speed/mag/reload/armor)
-  for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]);    // start each gun with its (upgraded) full magazine
-  { const TS=tankModel(p.modelId).stats; p.maxHp=Math.round(p.maxHp*TS.hp); p.hp=p.maxHp; p.speedMul*=TS.spd; p.accelMul=TS.acc; p.turnMul=TS.turn; p._size=TS.size; }   // Z155 the model's armour / engine / suspension
-  applyTankKit(p, p.modelId); for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]); mountRoofMG(p);   // Z161 workshop upgrades + signature module + crew skills (then refill the bigger mags)
-  p.buffUntil.range=0; p.scale=1; p.radius=PLAYER.radius*TANK_SCALE*(p._size||1); p.mesh.scale.setScalar(TANK_SCALE*(p._size||1));
+  MODE.setupRun(p);   // Z307 its guns and its progression: the tank's loadout, upgrades, model, kit, crew and roof gun · the soldier's rifle and his own toughness
+  p.buffUntil.range=0; p.scale=1;
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }

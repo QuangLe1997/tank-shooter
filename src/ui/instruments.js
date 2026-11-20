@@ -2,7 +2,7 @@
 //   a north-up azimuth dial with the hull and the turret drawn on it (hull tinted by its condition), the heading in degrees,
 //   ground speed, the laser rangefinder's distance to whatever the gun is laid on, and the armour state.
 //   Plus the radio set's typewriter (a message arrives character by character, like a teleprinter) and the frequency/callsign line.
-import { MOBILE, S, boss, enemies } from '../hub.js';
+import { MOBILE, S, boss, enemies, MODE } from '../hub.js';
 
 const DEG=180/Math.PI, TAU=Math.PI*2;
 export const INSTR={ el:null, cv:null, cx:null, hdg:null, spd:null, rng:null, arm:null, armBar:null, at:0, range:-1, rangeAt:0 };
@@ -36,6 +36,7 @@ function dial(p, k){ const c=INSTR.cx, W=INSTR.cv.width, R=W/2, cx=R, cy=R; c.cl
     c.beginPath(); c.moveTo(Math.sin(a)*r0, -Math.cos(a)*r0); c.lineTo(Math.sin(a)*r1, -Math.cos(a)*r1); c.stroke(); }
   c.font='700 19px "Share Tech Mono",monospace'; c.textAlign='center'; c.textBaseline='middle';
   for(const [d,t] of [[0,'B'],[90,'Đ'],[180,'N'],[270,'T']]){ const a=d/DEG, r=R-30; c.fillStyle=d===0?'#ffb84a':'rgba(200,240,170,0.9)'; c.fillText(t, Math.sin(a)*r, -Math.cos(a)*r); }
+  if(MODE.id!=='tank'){ man(c, p, k, R); return; }   // Z307 a soldier on the dial: a man and his rifle, not a hull and a turret
   // hull (rotates with the tank's heading), tinted by its condition
   const col = k>0.6 ? '#8fd468' : k>0.3 ? '#ffc24e' : '#ff5a3a', hf=headingDeg(p.facing||0)/DEG, tf=headingDeg(p.aimSmoothed??p.facing??0)/DEG;
   c.save(); c.rotate(hf); c.fillStyle='rgba(0,0,0,0.35)'; c.fillRect(-22,-36,44,72);
@@ -51,6 +52,11 @@ function dial(p, k){ const c=INSTR.cx, W=INSTR.cv.width, R=W/2, cx=R, cy=R; c.cl
   c.restore();
   c.restore(); }
 
+// Z307 the soldier on the dial: a dot for the man (tinted by his health) and his rifle along the aim
+function man(c, p, k, R){ const col = k>0.6 ? '#8fd468' : k>0.3 ? '#ffc24e' : '#ff5a3a', tf=headingDeg(p.aimSmoothed??p.facing??0)/DEG;
+  c.save(); c.rotate(tf); c.fillStyle=col; c.strokeStyle='#e8ffd8'; c.lineWidth=2; c.beginPath(); c.arc(0,0,9,0,TAU); c.fill(); c.stroke();
+  c.lineWidth=3; c.beginPath(); c.moveTo(0,-9); c.lineTo(0,-R+22); c.stroke(); c.setLineDash([4,5]); c.lineWidth=1.2; c.strokeStyle='rgba(255,184,74,0.7)'; c.beginPath(); c.moveTo(0,-R+22); c.lineTo(0,-R+6); c.stroke(); c.setLineDash([]);
+  c.restore(); c.restore(); }
 export function updateInstr(now){
   if(MOBILE) return; if(!INSTR.el && !build()) return;
   const p=S.player, show=S.mode==='playing' && !!p;
@@ -61,7 +67,7 @@ export function updateInstr(now){
   INSTR.spd.textContent=pad(v*3.6,2);
   INSTR.rng.textContent = INSTR.range<0 ? '----' : pad(INSTR.range,4);
   INSTR.rng.parentElement.classList.toggle('lz', INSTR.range>=0);
-  INSTR.arm.textContent=Math.round(k*100); INSTR.armBar.style.width=(k*100)+'%';
+  INSTR.arm.textContent=Math.round(k*100); INSTR.armBar.style.width=(k*100)+'%'; { const L=INSTR.arm.previousElementSibling, t=MODE.id==='tank'?'GIÁP':'MÁU'; if(L && L.textContent!==t) L.textContent=t; }   // Z307 a man's health, not armour
   INSTR.el.classList.toggle('warn', k<=0.6 && k>0.3); INSTR.el.classList.toggle('crit', k<=0.3);
   dial(p, k); }
 

@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT, LOCKON, TREEFALL } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle , shotTree, trafficShot } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle , shotTree, trafficShot, MODE } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -250,8 +250,8 @@ export function updateBullets(dt, now){
     } else if(b.owner!=='p'){ // enemy bullet — Z237 only an ENEMY round can hit our tank: our own lofted / guided missile used to fall through to here while airborne and strike us as it flew over the hull (firing on the move or back over the engine deck)
       const p=S.player;
       sweepPoint(b._hx, b._hz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
-      const armK = b.inf ? INFANTRY.vsArmour : 1;                                    // Z111b a rifle round barely scratches armour — only rockets (RPG / ATGM) really hurt a tank
-      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && hitsHull(p, _sw.x, _sw.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg*armK, now, b.vx, b.vz);
+      const armK = b.inf ? MODE.rifleK() : 1;                                    // Z111b a rifle round barely scratches armour — only rockets (RPG / ATGM) really hurt a tank
+      if(dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && MODE.hitTest(p, _sw.x, _sw.z, b.r)){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg*armK, now, b.vx, b.vz);
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
         else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }

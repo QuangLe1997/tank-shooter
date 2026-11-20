@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flameFX, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flameFX, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet, MODE } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -110,7 +110,7 @@ export function updateCamps(dt, now){
     tip('camp'); if(now-_campRadioAt>25){ _campRadioAt=now; radio('SCH: Bộ binh đang kéo ra từ trại địch — san phẳng nhà lính để chặn chúng.'); }
   }
   for(const t of TENTS){ if(t.flat){ if(t.ft<1){ t.ft=Math.min(1,t.ft+dt*5); t.g.scale.y=Math.max(0.08,1-t.ft*0.92); } continue; }   // tracks flatten tents
-    if(!p.cav && hitsHull(p, t.x, t.z, 1.4)){ t.flat=true; burst({x:t.x,z:t.z}, 0x8a7c56, 6, 4, {y:heightAt(t.x,t.z)+0.8, life:0.6, size:0.5, grav:-12, drag:1.6, up:2}); burst({x:t.x,z:t.z}, 0xb8a888, 2, 2, {y:heightAt(t.x,t.z)+0.6, life:1.0, size:1.8, smoke:true, grav:-0.3, drag:1.8, up:0.6, op:0.4});
+    if(MODE.crushes && hitsHull(p, t.x, t.z, 1.4)){ t.flat=true; burst({x:t.x,z:t.z}, 0x8a7c56, 6, 4, {y:heightAt(t.x,t.z)+0.8, life:0.6, size:0.5, grav:-12, drag:1.6, up:2}); burst({x:t.x,z:t.z}, 0xb8a888, 2, 2, {y:heightAt(t.x,t.z)+0.6, life:1.0, size:1.8, smoke:true, grav:-0.3, drag:1.8, up:0.6, op:0.4});
       addScore(CAMP.tentScore, new THREE.Vector3(t.x,2,t.z)); sfx('thud'); haptic(15); } }
 }
 // ===== Z93 · SUPPLY CACHES — loot stashed where it is hard to get: inside camp perimeters, under watchtowers, behind ruined walls =====

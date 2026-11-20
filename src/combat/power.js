@@ -1,6 +1,6 @@
 // combat/power.js — Z107 POWER RATING: your tank's strength (sustained firepower × effective HP) and each level's threat (its real wave mix, HP / damage / accuracy ramps), on one scale — 1000 = new tank on level 1.
 import { ARMOR, BALANCE, INFANTRY, POWER, RAMP } from '../../config.js';
-import { ENEMY_DEFS, GUNS, PROFILE, S, campaignMax, gunMixDps, gunStats, wavePool, waveSize, waveSquads } from '../hub.js';
+import { ENEMY_DEFS, GUNS, PROFILE, S, campaignMax, gunMixDps, gunStats, wavePool, waveSize, waveSquads, MODE } from '../hub.js';
 
 // ---- your side ----
 // kit: the numbers that decide a fight. live=true reads the tank in battle (run picks included), else the profile (shop + mastery)
@@ -64,7 +64,7 @@ export function refreshPowerChip(){ const el=document.getElementById('powerChip'
   el.innerHTML='<span class="ic">⚔</span> SỨC MẠNH XE <b>'+fmtP(c.P)+'</b><span class="sep">·</span>CẤP '+L+' CẦN <b>'+fmtP(c.need)+'</b> '+verdictHTML(c); }
 // in battle: live rating (run picks included) vs this stage
 let _ph='', _pt=0;
-export function updatePowerHud(now){ if(now<_pt) return; _pt=now+1; const el=document.getElementById('powHud'); if(!el || !S.player) return;
+export function updatePowerHud(now){ if(now<_pt) return; _pt=now+1; const el=document.getElementById('powHud'); if(!el || !S.player) return; el.style.display=MODE.powerHud?'':'none'; if(!MODE.powerHud) return;   // (Z307 a tank's strength rating means nothing for a soldier)
   const c=levelCheck(liveLevel(), powerKit(true)); const h='⚔ <b>'+fmtP(c.P)+'</b> / CẦN '+fmtP(c.need)+' '+verdictHTML(c); if(h!==_ph){ _ph=h; el.innerHTML=h; } }
 // shop: what buying this does to your rating
 export function shopPowerLine(it){ const P=powerRating(powerKit(false)); let g=0, note='';

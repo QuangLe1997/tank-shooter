@@ -1,6 +1,6 @@
 // actors/riders.js — TANK RIDERS: riflemen on the hull roof — spawn, fire from the tank, take hits, heal while riding (Z100)
 import { TROOPS } from '../../config.js';
-import { MGR, RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, shootGuard, soldierLvl, spawnBullet, spawnPart, towers, updateCrewBtn } from '../hub.js';
+import { MGR, RIDER, S, TANK_SCALE, _sV, animateSoldier, boss, burst, camera, enemies, floatText, guardFireMul, makeSoldierBar, makeSoldierMesh, scene, sfx, shootGuard, soldierLvl, spawnBullet, spawnPart, towers, updateCrewBtn, MODE } from '../hub.js';
    // base 3 + TANK CREW upgrade (+1..3)
 export const _RIDER_SLOTS=[[-0.85,1.5,-0.55],[0.85,1.5,-0.55],[0,1.5,-1.05],[0,1.5,0.55],                     // roof posts (tank-local, before facing+scale)
   [-1.25,1.05,0.55],[1.25,1.05,0.55],[-1.25,1.05,-0.35],[1.25,1.05,-0.35],[-1.25,1.05,-1.25],[1.25,1.05,-1.25],   // Z111b fenders, both sides
@@ -10,7 +10,7 @@ export function spawnRider(){ if(riders.length>=RIDER.cap) return; const g=makeS
   const mhp=Math.round(RIDER.hp + Math.random()*16 - 6);   // each crew member is an individual
   const bar=makeSoldierBar(); scene.add(bar.g);
   riders.push({ g, bar:bar.g, barFill:bar.fill, hp:mhp, maxHp:mhp, fireAt:0, hurtAt:0, hitT:0, dead:false }); }
-export function deployRiders(target){ if(S.player && S.player.cav) return;   // Z245 nobody rides on a horse's back but the general
+export function deployRiders(target){ if(!MODE.riders) return;   // Z245 nobody rides on a horse's back but the general
   while(riders.length<Math.min(RIDER.cap,target)) spawnRider(); updateCrewBtn(); }
 export function clearRiders(){ for(const r of riders){ scene.remove(r.g); scene.remove(r.bar); } riders.length=0; updateCrewBtn(); }
 export function damageRider(r, dmg){ if(r.dead) return; r.hp-=dmg; r.hitT=0.16;
