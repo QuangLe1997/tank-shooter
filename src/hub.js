@@ -159,6 +159,7 @@ export * from './combat/aim.js';
 export * from './combat/siege-rocket.js';
 export * from './combat/flame.js';
 export * from './combat/soldier-fire.js';   // Z306 soldier mode: his own rifle and its firing
+export * from './combat/air-aim.js';   // Z313 the gun laid on an aircraft in 3D: snap, lead, climb, tip up, a ring and a drop line
 export * from './combat/trooper-spells.js';   // Z307 soldier mode: grenade, hand smoke, field dressing, the radio
 export * from './combat/ultimate.js';   // Z186 the five ultimate weapons
 export * from './combat/mastery.js';

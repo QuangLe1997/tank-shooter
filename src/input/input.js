@@ -1,7 +1,7 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
 import { CAM_FEEL } from '../../config.js';
-import { MOBILE, PROFILE, S, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fitShadow, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell, MODE, spellNow } from '../hub.js';
+import { MOBILE, PROFILE, S, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fitShadow, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell, MODE, spellNow, airMouse } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
 addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); if(S.mode==='playing' && k>='1' && k<='8' && !e.metaKey && !e.ctrlKey) selectGun(parseInt(k)-1); });   // gun slots on the number row · Z118 every other key → input/bindings.js
@@ -12,7 +12,7 @@ export const ndc = new THREE.Vector2();
 const _aimHit = new THREE.Vector3();
 export function updateAimFromMouse(cx, cy){
   ndc.x = (cx/VIEW.w)*2 - 1; ndc.y = -(cy/VIEW.h)*2 + 1;
-  raycaster.setFromCamera(ndc, camera);
+  raycaster.setFromCamera(ndc, camera); airMouse(cx, cy);   // Z313 where the cursor is, for snapping onto aircraft
   const hit = _aimHit;   // Z239 reused (mousemove fires hundreds of times a second — no garbage per event)
   groundPlane.constant=0;
   if(raycaster.ray.intersectPlane(groundPlane, hit)){

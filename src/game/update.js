@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt } from '../hub.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE, AIRAIM } from '../../config.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -130,7 +130,8 @@ export function updatePlayer(dt, now){
   const _bg=p.mesh.userData.barrelG; if(_bg&&_bg.userData.spin) _bg.userData.spin.rotation.z += dt*(4+26*(p.spin||0));   // rotor speed = spin-up state
   { const rg=p.mesh.userData.rig; if(rg){ const g0=equippedGun(), tg=aimTarget(playerRange()+2);   // lay the gun: elevate for the ballistic lob to the target / cursor
       const D = tg ? Math.hypot(tg.pos.x-p.pos.x, tg.pos.z-p.pos.z) : ((!MOBILE || PAD.active) && S.pointerActive ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) : 0);
-      rg.elevT = rg.elevates===false ? 0 : Math.min(0.05, D*0.0012); }   // flat-shooting tank gun: just a hair of super-elevation
+      const ap = airPitch(p.pos.x, heightAt(p.pos.x, p.pos.z) + 2.2, p.pos.z);   // Z313 laid on an aircraft: the gun tips up to it
+      rg.elevT = rg.elevates===false ? 0 : ap != null ? Math.min(AIRAIM.tankUp, Math.max(0, ap)) : Math.min(0.05, D*0.0012); }   // flat-shooting tank gun: just a hair of super-elevation
     const radar=p.mesh.userData.gunMount && p.mesh.userData.gunMount.getObjectByName('radar'); if(radar) radar.rotation.z += dt*2.4; }   // flak search radar sweeps
   // energy shield: hex field + rim glow + orbiting rings; pops in, breathes, blinks near expiry, ripples on a blocked hit
   if(p.shieldMesh){ const sg=p.shieldMesh, on = now < p.shieldUntil;

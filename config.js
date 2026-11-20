@@ -430,6 +430,11 @@ export const LETHAL = { tankRoundKills: true, core: 0.45, reach: 1.25, edgeMin: 
 export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol: 0.1, trackSticky: 1.35,   // Z233 phones: the turret tracks the enemy on its own (was: barrel fixed to the hull)
    cone: 0.17, lane: 1.8, artyCone: 0.32,
   pivotOnly: 0.38 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
+// Z313 SHOOTING AT HELICOPTERS IN 3D (combat/air-aim.js): the mouse snaps to an aircraft within snapPx of the cursor (keeps it within keepPx); a pad
+//   or phone lays on the one within padCone (rad) of the aim; rounds lead it and climb to its height; a round aimed at it hits within hitR (m) across
+//   (the airframe and rotor, not the hub) and hTol (m) up or down of it;
+//   how far a tank gun / a man's rifle may tip up (rad); the reticle: ring colour, label
+export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, tankUp:0.55, manUp:1.05, col:0xff5a3a };
 
 // Z174 REAL-WORLD SCALE — 1 world unit = 1 metre. The tanks are the reference (≈ a real MBT: ~7.5 m with the gun, 3.7 m tall to the cupola); a soldier model is
 //   1.407 units tall at scale 1 → HUMAN_SCALE makes every man, ours and theirs, 1.78 m. Fortress curtain walls 7 m + 1.3 m merlons, 2.4 m thick; watchtowers 8 m to the deck;

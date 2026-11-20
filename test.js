@@ -965,6 +965,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(F.xeom.grip[0][2] < 0.13 && F.xeom.grip[0][1] < 0.45 && F.bagac.grip[0][2] < 0.4 && F.bagac.grip[0][0] < 0.2 && F.bagac.sweep > 0 && /applyAxisAngle\(UP, \(i \? -1 : 1\) \* \(R\.sweep \|\| 0\)\)/.test(d), 'the hands close round the middle of each grip, knuckles following a swept bar');
   const L=C.XEOM.xeom.lamps; ok(L.lens && L.lens.top > L.lens.bot && L.head[1] > 0.44 && /function lensShape/.test(x) && /L\.lens \? lensShape\(L\.lens\)/.test(x) && /rotation\.x = -L\.lens\.tilt/.test(x), 'the headlamp glow fills the glass itself, its shape, its centre and its lean'); }
 
+// Z313 shooting at helicopters in 3D: snap / cone lock, rounds lead and climb, the gun tips up, a ring and a drop line
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), aa=R('src/combat/air-aim.js'), lo=R('src/combat/lock-on.js');
+  ok(['export function updateAirAim','export function airShot','export function airPitch','export function airMouse'].every(k=>aa.includes(k)) && /airMouse\(cx, cy\)/.test(R('src/input/input.js')) && /updateAirAim\(gdt\); MODE\.update/.test(R('src/game/loop.js')) && C.AIRAIM.keepPx>C.AIRAIM.snapPx && C.AIRAIM.padCone>0, 'the gun is laid on an aircraft: the mouse snaps to it, a pad or phone takes the one on the aim line');
+  ok(/arcDist:air \? air\.dropDist : arcD, noArc:!!air/.test(R('src/combat/flame.js')) && /airAim:air \? air\.e : null, arcDist:air \? air\.dropDist : 0/.test(R('src/combat/soldier-fire.js')) && /airAim:o\.airAim\|\|null/.test(lo) && /aaHigh = !!b\.airAim && b\.by>3\.0/.test(lo) && /Math\.abs\(_wy-e\.pos\.y\) < Math\.max\(AIRAIM\.hTol/.test(lo), 'rounds lead it and climb to its height, clear the cover on the way up, and hit it only near it in the air');
+  ok(/airPitch\(_gp\.x, _gp\.y, _gp\.z\)/.test(R('src/actors/real-cav.js')) && /AIRAIM\.tankUp/.test(R('src/game/update.js')) && /RingGeometry\(0\.85, 1, 48\)/.test(aa) && /LineDashedMaterial/.test(aa) && C.AIRAIM.manUp>C.AIRAIM.tankUp, 'the tank gun and the rifle tip up to it; a red ring, a dashed drop line, its height and range'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
