@@ -39,7 +39,7 @@ function charred(root){ const mats = [];
     const list = Array.isArray(o.material) ? o.material : [o.material];
     if(list.some(m => m && (m.blending === THREE.AdditiveBlending || (m.transparent && m.opacity < 0.9)))){ o.visible = false; return; }   // lamps, glows, muzzle flashes: gone
     const out = list.map(m => { const c = m.clone(); if(c.color) c.color.lerp(_CH, 0.86); if('roughness' in c) c.roughness = 0.95; if('metalness' in c) c.metalness = 0.25;
-      if(c.emissive){ c.emissive.setHex(0xff4a12); c.emissiveMap = emberTex(); c.emissiveIntensity = 1.2; } mats.push(c); return c; });
+      if(c.emissive){ c.emissive.setHex(0xff4a12); c.emissiveIntensity = 0.4; } mats.push(c); return c; });   // (Z323 the glow as a colour only — no ember map, so the model keeps its own compiled shader: no compile stall on the kill)
     o.material = Array.isArray(o.material) ? out : out[0]; o.castShadow = true; o.receiveShadow = true; });
   return mats; }
 export function spawnWreck(pos, facing, ms, pal, toss, src){
@@ -74,7 +74,7 @@ export function updateWrecks(dt){
       const _tg=heightAt(w.tx,w.tz)+0.4*w.ms; if(w.ty<=_tg && w.tvy<0){ w.ty=_tg; if(Math.abs(w.tvy)>6){ w.tvy*=-0.25; w.tvx*=0.4; w.tvz*=0.4; w.rx*=0.3; w.rz*=0.3; burst({x:w.tx,z:w.tz}, BIOME.ground, 4, 4, {y:0.4,life:0.8,size:1.6,smoke:true,grav:-0.4,drag:2,up:1.5,op:0.5}); sfx('thud'); decalCrater(w.tx,w.tz,0.9*w.ms,0.6); }
         else { w.flying=false; w.tur.rotation.x=Math.round(w.tur.rotation.x/Math.PI)*Math.PI+(Math.random()-0.5)*0.4; w.tur.rotation.z=(Math.random()-0.5)*0.5; } }
       w.tur.position.set(w.tx,w.ty,w.tz); }
-    { const ei=Math.max(0.06, 1.4*(1-w.t/4))*(0.85+0.15*Math.sin(w.t*9+w.x)); if(w.own){ for(const m of w.mats) if(m.emissive) m.emissiveIntensity=ei; } else w.mat.emissiveIntensity=ei; }             // embers smoulder, flicker and cool
+    { const ei=Math.max(0.06, 1.4*(1-w.t/4))*(0.85+0.15*Math.sin(w.t*9+w.x)); if(w.own){ for(const m of w.mats) if(m.emissive) m.emissiveIntensity=ei*0.3; } else w.mat.emissiveIntensity=ei; }             // embers smoulder, flicker and cool
     const burn = w.t < w.life*0.7 ? 1 - w.t/(w.life*0.7) : 0;
     w.fireT-=dt; if(burn>0 && w.fireT<=0){ w.fireT=0.05+(1-burn)*0.12; const ox=(Math.random()-0.5)*2.2*w.ms, oz=(Math.random()-0.5)*3*w.ms;   // flames licking out of the hull hatches
       spawnPart(w.x+ox, 1.3*w.ms, w.z+oz, (Math.random()-0.5)*0.8, 2.4+Math.random()*2, (Math.random()-0.5)*0.8, {tex:'fire', color:0xffd090, color2:0xff3a08, size:(1.1+Math.random()*1.1)*w.ms*(0.5+burn*0.6), life:0.55+Math.random()*0.3, grav:1.5, drag:1.6, grow:0.6, keep:true}); }

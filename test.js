@@ -1044,6 +1044,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/talk:false, cards:true, banners:true/.test(hp) && /export function applyHud/.test(hp) && /id="setHudTalk"/.test(ix) && /id="setHudCards"/.test(ix) && /id="setHudBanners"/.test(ix) && /setHud\(k, true\)/.test(R('src/ui/settings.js')) && /if\(show\) floatText/.test(R('src/actors/driver.js')), 'HUD switches: on-screen dialogue off by default (voices still play), cards and banners on/off');
   ok(/hud-slim\.css/.test(ix) && ix.indexOf('hud-slim.css') > ix.indexOf('battle-light.css') && /body\.hud-no-talk #radio\{display:none/.test(cs) && /backdrop-filter:blur\(3px\)/.test(cs) && /reloadSprite\.scale\.set\(2\.1,2\.1,1\)/.test(R('src/combat/guns.js')) && !/NẠP ĐẠN/.test(R('src/combat/guns.js')), 'glass cards loaded last, a slim reload ring with no label'); }
 
+// Z323 no shader compiles once the fight is on: the countdown waits for a guarded compile; the burnt wreck keeps its model's own shader
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), br=R('src/ui/briefing.js'), fw=R('src/fx/fire-wrecks.js');
+  ok(/function compileQuiet\(\)/.test(br) && /renderer\.properties\.get\(m\)\.currentProgram/.test(br) && /if\(!pr \|\| pr\.isReady\(\)\)/.test(br) && /if\(_warm && S\.cd-dt<=0\.05\)/.test(br) && !/compileAsync\(scene, camera\)/.test(br), 'the countdown holds until the stage shaders are compiled; the compile wait cannot throw or hang');
+  ok(!/c\.emissiveMap = emberTex\(\)/.test(fw) && /c\.emissive\.setHex\(0xff4a12\); c\.emissiveIntensity = 0\.4/.test(fw), 'a burnt wreck glows by colour only, so its model keeps the shader it already has'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -1264,7 +1269,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z168 smoother battle start, steadier controller focus, UI fit pass, weightier shots
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const tips=R('src/ui/tips.js'), br=R('src/ui/briefing.js'), gp=R('src/input/gamepad.js'), css=R('css/ui152.css'), mcss=R('css/menus.css');
   ok(!/S\.mode='tip'/.test(tips) && /tickTip/.test(R('src/game/loop.js')) && /#tipCard\.hidden,#tipCard\.away/.test(css), 'first-time tips no longer pause the battle (a pad could not close them): a side card that times out and hides under menus');
-  ok(/prewarmStage\(\)/.test(br) && /compileAsync\(scene, camera\)/.test(br) && /typeof pr\.introSeen!=='object'/.test(R('src/core/profile.js')), 'stage shaders compile in the background during the briefing and the 3-2-1; a bad introSeen value can no longer crash the intro');
+  ok(/prewarmStage\(\)/.test(br) && /renderer\.compile\(scene, camera\)/.test(br) && /function compileQuiet/.test(br) && /typeof pr\.introSeen!=='object'/.test(R('src/core/profile.js')), 'stage shaders compile in the background during the briefing and the 3-2-1; a bad introSeen value can no longer crash the intro');
   ok(/PAD\.ensAt=now\+0\.25/.test(gp) && !/filter:brightness\(1\.38\)/.test(mcss) && /body\.pad :is\(/.test(css), 'controller menus: no per-frame re-scan, no full-card filter pulse, mouse hover off while a pad drives');
   ok(/#start #shopBtn \.lg/.test(css) && /\.case \.case-price\{margin-top:auto/.test(css) && /'-170 0 1420 448'/.test(R('src/ui/padview.js')), 'main menu labels fit, shop prices sit in a button, the pad diagram keeps its left labels');
   ok(/S\.camKick/.test(R('src/combat/flame.js')) && /S\.hitStop/.test(R('src/actors/damage.js')) && /hitStop/.test(R('src/game/loop.js')) && /export function groundBlast/.test(R('src/fx/gunfx.js')) && /glowing fragments/.test(R('src/fx/explosions.js')), 'shots kick the camera by gun weight, heavy kills hit-stop, muzzle ground blast, hot fragments on hard hits'); }

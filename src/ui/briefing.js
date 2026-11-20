@@ -56,7 +56,9 @@ function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||
   { const sub=document.getElementById('cdSub'); if(sub) sub.classList.remove('on'); }
   const el=document.getElementById('countdown'); if(el){ el.textContent='CHIẾN ĐẤU!'; el.className='go show'; setTimeout(()=>{ if(el.textContent==='CHIẾN ĐẤU!') el.className=''; }, 900); }
   sfx('levelup'); }
-export function updateCountdown(dt){ S.cd-=dt; const n=Math.max(0, Math.ceil(S.cd)), el=document.getElementById('countdown');
+export function updateCountdown(dt){ const el=document.getElementById('countdown');
+  if(_warm && S.cd-dt<=0.05){ S.cd=0.05; _hold+=dt; if(_hold>0.5 && el && el.textContent!=='NẠP…'){ el.textContent='NẠP…'; el.className='show'; } return; }   // Z323 the shaders are still compiling: wait on "1" (then NẠP…) so the fight never starts mid-compile — the stutter when you first open fire
+  _hold=0; S.cd-=dt; const n=Math.max(0, Math.ceil(S.cd));
   if(n!==_cdN && n>0){ _cdN=n; if(el){ el.textContent=String(n); el.className=''; void el.offsetWidth; el.className='show'; } sfx('beep'); }
   if(S.cd<=0) goLive(); }
 export function applyContractHUD(){
@@ -120,6 +122,12 @@ export function updateSpellHUD(){
 
 { const g=document.getElementById('brGo'), d=document.getElementById('brDeploy'); if(g) tapEl(g, ()=>launchStage(false)); if(d) tapEl(d, ()=>launchStage(true)); }   // Z152
 // Z168 the intro hides far objects while it flies; when they come back, their shaders would compile on the countdown's first frames. Do it now, in parallel, off the frame.
-let _warm=null, _again=false;
+let _warm=null, _again=false, _hold=0;
 export function prewarmStage(){ if(_warm){ _again=true; return; }   // one pass at a time; a call during a pass queues one more (new troops / riders / the roof gun appeared)
-  _warm=new Promise(r=>setTimeout(r, 30)).then(()=>renderer.compileAsync ? renderer.compileAsync(scene, camera) : renderer.compile(scene, camera)).catch(()=>{}).then(()=>{ _warm=null; if(_again){ _again=false; prewarmStage(); } }); }
+  _warm=new Promise(r=>setTimeout(r, 30)).then(compileQuiet).catch(()=>{}).then(()=>{ _warm=null; if(_again){ _again=false; prewarmStage(); } }); }
+// Z323 three's compileAsync waits on every material's program with no guard: a material changed or disposed mid-compile throws (an uncaught TypeError in a
+//   timer) and the promise never settles. Compile, then poll readiness ourselves — a material without a program counts as done — and stop waiting after WARM_MAX
+const WARM_MAX = 12000;
+function compileQuiet(){ let mats; try { mats = renderer.compile(scene, camera); } catch(e){ return; } const t0 = performance.now();
+  return new Promise(res => { const check = () => { try { for(const m of mats){ const pr = renderer.properties.get(m).currentProgram; if(!pr || pr.isReady()) mats.delete(m); } } catch(e){ mats.clear(); }
+      if(!mats.size || performance.now() - t0 > WARM_MAX) res(); else setTimeout(check, 16); }; check(); }); }
