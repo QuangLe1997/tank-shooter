@@ -97,7 +97,7 @@ export function updateCavalry(dt, now){
   if(p.hitT>0){ p.hitT-=dt; }
   if(now < p.respawnBlinkUntil) p.mesh.visible=Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0; else if(!p.mesh.visible) p.mesh.visible=true;
   p.kbx=p.kbz=0;
-  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: !!CV.trans, hit: p.hitT>0 });
+  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: CV.trans ? { k:CV.trans.k, e:Math.min(1, CV.trans.t/CAV.mountT) } : false, hit: p.hitT>0 });   // Z295 which way and how far through getting on / off
   // fire: hold LMB (desktop) · the trigger / auto-fire on phones, exactly like the tank
   const range=playerRange();
   if(!CV.trans){ if(MOBILE){ const t=autoFire?aimTarget(range):null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) fireGun(now, range); } else if(S.firing) fireGun(now, range); }
@@ -112,20 +112,23 @@ function horseAlone(p, dt){ const H=CV.H; if(!H) return; let v=0, yr=0;
   H.wantGraze = !CV.call; H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, yr); }
 // ---- getting on and off: a short, eased move between the saddle and the ground beside the horse ----
 function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1, (T.t+=dt)/CAV.mountT), e=k*k*(3-2*k);
-  const side=new THREE.Vector3(-Math.cos(CV.facing), 0, Math.sin(CV.facing)).multiplyScalar(1.05);   // the horse's left side
+  const side=new THREE.Vector3(-Math.cos(CV.facing), 0, Math.sin(CV.facing)).multiplyScalar(H.bike ? XEOM[H.bike].side : 1.05);   // the horse's left side (Z295 a ride's: clear of its body)
   if(T.k==='off'){ if(!T.started){ T.started=true; CV.speed=0; p.vel.set(0,0,0); CV.hPos.copy(p.pos);
       H.root.parent && H.root.parent.remove(H.root); scene.add(H.root); H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing;
-      const wp=new THREE.Vector3(); G.getWorldPosition(wp); G.parent.remove(G); p.mesh.add(G); T.from=wp; G.rotation.set(0,0,0); G.scale.setScalar(HUMAN_SCALE); }
+      const wp=new THREE.Vector3(); G.getWorldPosition(wp); G.parent.remove(G); p.mesh.add(G); T.from=wp; G.rotation.set(0,0,0); G.scale.setScalar(HUMAN_SCALE);
+      if(H.bike && XEOM[H.bike].pose!=='stand') T.from.y=heightAt(wp.x, wp.z)+XEOM.pegY; }   // Z295 off a seat his feet start on the pegs, not at his hips
     const to=CV.hPos.clone().add(side); p.pos.set(T.from.x+(to.x-T.from.x)*e, 0, T.from.z+(to.z-T.from.z)*e);
     const gy=heightAt(p.pos.x, p.pos.z); p.mesh.position.set(p.pos.x, gy, p.pos.z); p.mesh.rotation.y=CV.facing;
-    G.position.set(0, (T.from.y-gy)*(1-e)+Math.sin(Math.PI*e)*0.35, 0); poseSoldier(G, 'stand', dt);
+    const hop = H.bike ? (XEOM[H.bike].pose==='stand' ? 0.22 : 0.06) : 0.35;   // a step down off a ride, a jump off a horse
+    G.position.set(0, (T.from.y-gy)*(1-e)+Math.sin(Math.PI*e)*hop, 0); poseSoldier(G, 'stand', dt);
     animateHorse(H, dt, 0, 0);
     if(k>=1){ CV.trans=null; CV.mounted=false; G.position.set(0,0,0); p.facing=CV.facing; CV.stance=CV.want='stand'; } return; }
   // on: from beside him up into the saddle
   if(!T.started){ T.started=true; T.from=p.pos.clone(); p.vel.set(0,0,0); }
   const to=CV.hPos, s2=CV.hPos.clone().add(side); const px=T.from.x+(s2.x-T.from.x)*Math.min(1, e*2), pz=T.from.z+(s2.z-T.from.z)*Math.min(1, e*2);
   p.pos.set(px+(to.x-s2.x)*Math.max(0, e*2-1), 0, pz+(to.z-s2.z)*Math.max(0, e*2-1)); const gy=heightAt(p.pos.x, p.pos.z); p.mesh.position.set(p.pos.x, gy, p.pos.z);
-  G.position.set(0, Math.max(0, e*2-1)*((HORSE.bodyY+HORSE.saddleY)*HORSE.size-0.8), 0); animateHorse(H, dt, 0, 0);
+  const upY = H.bike ? XEOM[H.bike].seat[0]*XEOM.k*(XEOM[H.bike].pose==='stand' ? 1 : 0.55) : (HORSE.bodyY+HORSE.saddleY)*HORSE.size-0.8;   // Z295 up onto the ride's own seat / bed, not a horse's back
+  G.position.set(0, Math.max(0, e*2-1)*upY, 0); animateHorse(H, dt, 0, 0);
   if(k>=1){ CV.trans=null; CV.mounted=true; p.pos.copy(CV.hPos); G.parent && G.parent.remove(G); H.B.add(G); seatRider(G, H);
     H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.y=0; p.facing=CV.facing; H.wantGraze=false; CV.call=false; } }
 // ---- collisions: a circle (horse or man) against every solid thing; a galloping horse knocks infantry flying ----

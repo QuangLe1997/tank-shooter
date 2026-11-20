@@ -1,8 +1,8 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { HUMAN_SCALE, REALCAV, XEOM } from '../../config.js';
-import { PROFILE, drivePuppet, loadGLTF, makePuppet } from '../hub.js';
+import { HUMAN_SCALE, INFGUN, REALCAV, XEOM } from '../../config.js';
+import { PROFILE, S, drivePuppet, loadGLTF, makePuppet } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -24,6 +24,17 @@ export function poseClip(name, parts){ const tracks = [];
   for(const [clip, t, keep] of parts){ if(!clip) continue; for(const k of clip.tracks){ if(!keep(k)) continue; const I = k.createInterpolant(), v = Array.from(I.evaluate(t));
     tracks.push(new k.constructor(k.name, [0], v)); } }
   return new THREE.AnimationClip(name, 0.1, tracks); }
+// Z295 THE INFANTRY ARSENAL: nine Tripo hand weapons (assault rifle, belt-fed LMG, hand-held minigun, pump shotgun, .50 anti-materiel rifle, RPG, revolver grenade
+//   launcher, flamethrower, energy rifle), each set into the carbine's frame — turned muzzle to −X, scaled to its true length, slid so its pistol grip lands where the
+//   carbine's does — so every pose that holds the carbine holds them; the game's muzzle point moves to each one's muzzle
+function armInfantry(arms, cb, C){ const K = C.carbine.len / 0.954;
+  for(const [k, g] of Object.entries(INFGUN.guns)) loadGLTF('inf_' + k).then(gl => { if(!gl) return; const m = gl.scene.clone(true), b = new THREE.Box3().setFromObject(m), c = b.getCenter(new THREE.Vector3()), L = b.max.z - b.min.z || 1;
+    m.position.sub(c); const turn = new THREE.Group(); turn.add(m); turn.rotation.y = g.muzzle > 0 ? -Math.PI / 2 : Math.PI / 2;   // muzzle → −X
+    const wl = g.len / K, s = wl / L, w = new THREE.Group(); w.add(turn); w.scale.setScalar(s); w.position.set(C.carbine.grip[0] - g.grip * wl, C.carbine.grip[1] + 0.05 + (g.lift || 0) / K, 0); w.visible = false;
+    m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } }); cb.add(w); arms[k] = w; w.userData.muzzle = [w.position.x - wl / 2, w.position.y + 0.02, 0]; }); }
+function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'rifle', want = R.arms[INFGUN.map[id]] ? INFGUN.map[id] : '_carbine';
+  if(want === R.armK) return; for(const [k, o] of Object.entries(R.arms)) o.visible = k === want; R.armK = want; const u = G.userData;
+  if(u.muzzle) u.muzzle.position.fromArray(want === '_carbine' ? REALCAV.carbine.muzzle : R.arms[want].userData.muzzle); }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
   return (CV.realP = Promise.all(['horse', 'operator', 'rideGallop', 'rideWalk', 'carbine', 'soldier2'].map(loadGLTF)).then(L => {
@@ -52,16 +63,20 @@ export function fitRealCav(CV){
     // the standing aim: the shouldered rifle of the walk-and-fire clip over the square stance of the standing reload (one held frame)
     const UP = /Spine|Neck|Head|Shoulder|Arm|Hand/;
     clips.push(poseClip('Aim_Stand', [[byName('Walk_Forward_While_Shooting'), 0.1, t => UP.test(t.name)], [byName('Standing_Reload'), 0, t => !UP.test(t.name)]]));
+    clips.push(poseClip('Kneeling_Aim', [[byName('Walk_Forward_While_Shooting'), 0.1, t => UP.test(t.name) && !/Spine$/.test(t.name)], [byName('Kneeling_Reload'), 0, t => !UP.test(t.name) || /Spine$/.test(t.name)]]));   // Z295 on one knee with the rifle shouldered (the reload clip's legs, the aim's arms)
     const om = new THREE.AnimationMixer(op), OA = actions(om, clips);
     // Z254 a hit: the upper body of the gunshot-reaction clip laid over whatever he is doing (legs stay in the saddle / on the ground)
     const hitClip = byName('Gunshot_Reaction'), HIT = hitClip ? om.clipAction(new THREE.AnimationClip('Hit_Upper', hitClip.duration, hitClip.tracks.filter(t => UP.test(t.name)))) : null;
     if(HIT){ HIT.setLoop(THREE.LoopOnce, 1); HIT.clampWhenFinished = true; HIT.enabled = true; HIT.setEffectiveWeight(0); HIT.play(); }
     const bone = n => op.getObjectByName('mixamorig' + n);
     // ---- the carbine: laid between the hands each frame; the game's muzzle point moves onto its muzzle
-    const cb = cg.scene.clone(true); cb.name = 'realCarbine'; G.add(cb);
+    // Z295 the hold: the carbine and the infantry arsenal share one frame (the carbine's: muzzle toward −X, stock +X, the grip where the right hand goes)
+    const cb = new THREE.Group(); cb.name = 'realCarbine'; G.add(cb); const carb = cg.scene.clone(true); cb.add(carb);
     if(u.muzzle){ cb.add(u.muzzle); u.muzzle.position.fromArray(C.carbine.muzzle); }
-    CV.real = { hr, hm, HA, seat, op, om, OA, HIT, hitW:0, wasHit:false, deadOn:false, cb, csc: C.carbine.len / 0.954,
+    const arms = { _carbine:carb }; armInfantry(arms, cb, C);
+    CV.real = { hr, hm, HA, seat, op, om, OA, HIT, hitW:0, wasHit:false, deadOn:false, cb, arms, armK:'_carbine', csc: C.carbine.len / 0.954,
       hips: bone('Hips'), spine: ['Spine', 'Spine1', 'Spine2'].map(bone), rh: bone('RightHand'), rhm: bone('RightHandMiddle1'), lh: bone('LeftHand'), lhm: bone('LeftHandMiddle1'), pup };
+    if(pup){ const D = pup.D; Object.assign(CV.real, { rh:D.RightHand, rhm:D.RightHandMiddle1 || null, lh:D.LeftHand, lhm:D.LeftHandMiddle1 || null }); }   // Z294 the gun goes in the hands that are seen
     u.realOp = op;
     return true; })); }
 
@@ -80,12 +95,14 @@ export function updateRealCav(CV, dt, P){
   if(P.dead && !R.deadOn){ R.deadOn = true; const a = R.OA.dying_backwards; if(a){ a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } }   // Z254 killed: falls backwards, once
   if(!P.dead && R.deadOn){ R.deadOn = false; const a = R.OA.dying_backwards; if(a){ a.setLoop(THREE.LoopRepeat, Infinity); a.clampWhenFinished = false; } }
   if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
+  else if(P.trans && P.trans.k === 'off'){ if(P.trans.e < 0.55){ ok = 'Cautious_Crouch_Walk_Forward'; ts = 1.3; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // Z295 getting off: a crouched step down, landing on one knee, rifle up
+  else if(P.trans && P.trans.k === 'on'){ if(P.trans.e < 0.45){ ok = 'Walk_Forward_While_Shooting'; ts = 1.1; } else { ok = 'Kneeling_Aim'; freeze = 0; } }   // getting on: a step to it, then gathered up onto the seat
   else if(mounted && stand){ ok = 'Aim_Stand'; freeze = 0; }   // braced in the bed, rifle shouldered
   else if(mounted && bike){ ok = 'Ride_Walk'; ts = 0.35; }   // sat on the pillion / the cyclo's bench: the gentle sway of the riding clip
   else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
-  else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Reload'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }
+  else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Aim'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }
   else if(fv < 1.8){ ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); }
   else if(fv < 3.2){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
@@ -100,6 +117,8 @@ export function updateRealCav(CV, dt, P){
   const tw = clamp(P.twist || 0, -C.twistMax, C.twistMax);
   if(Math.abs(tw) > 1e-3){ G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
+  if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
+  holdGun(R, G);   // Z295 the hand weapon for the gun in use
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
   R.rh.getWorldPosition(_a); if(R.rhm){ R.rhm.getWorldPosition(_b); _a.lerp(_b, 0.5); }
   (R.lhm || R.lh).getWorldPosition(_b); _d.subVectors(_b, _a); const span = _d.length();
@@ -113,5 +132,4 @@ export function updateRealCav(CV, dt, P){
   const sc = R.csc;
   _v.fromArray(C.carbine.grip).multiplyScalar(sc).applyQuaternion(_qd); _a.sub(_v).addScaledVector(_d, -(G.userData.kick || 0) * 0.05);
   _m.compose(_a, _qd, _s.set(sc, sc, sc)); _mi.copy(G.matrixWorld).invert(); _m.premultiply(_mi);
-  _m.decompose(R.cb.position, R.cb.quaternion, R.cb.scale);
-  if(R.pup) drivePuppet(R.pup); }   // Z294 the second soldier takes the operator's pose
+  _m.decompose(R.cb.position, R.cb.quaternion, R.cb.scale); }

@@ -145,9 +145,9 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
-export const XEOM = { k:2.3, xeom:{ len:1.95, yaw:0, seat:[0.37, -0.27], pose:'straddle', lean:0.35, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, yaw:-1.5708, seat:[0.39, 0.14], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
-  bagac:{ len:3.3, yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12 }, bantai:{ len:4.7, yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
-  poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
+export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, yaw:0, seat:[0.37, -0.27], pose:'straddle', lean:0.35, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, yaw:-1.5708, seat:[0.39, 0.14], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
+  bagac:{ len:3.3, side:1.15, yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12 }, bantai:{ len:4.7, side:1.45, yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
+  pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry' },
@@ -572,7 +572,7 @@ export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:
 //   mountR = reach to climb back on · call = the horse trots to your whistle at this speed · trample: galloping over infantry · recoilK = recoil × (no tank to soak it)
 export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.2, surgeAccel:6.5, decel:6.5, turnLow:2.6, turnHigh:1.05 }, surge:{ dur:5, cd:7 },
   foot:{ run:5.2, sprint:7.4, crouch:2.0, crawl:0.9, sprintDur:3, sprintCd:4 }, radius:{ mounted:1.0, foot:0.45, prone:0.38 },
-  defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.5, call:{ speed:9, arrive:2.6 },
+  defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.85, call:{ speed:9, arrive:2.6 },
   trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85,
   death:{ dur:3.8, carry:0.6, side:1.8, up:1.4, slow:0.7, swerve:1.6 } };   // Z254 killed: how long the death beat lasts (s), the share of the horse's speed he keeps as he is thrown, the sideways push and the hop (m/s), the riderless horse slowing (/s) and swerving (rad/s)   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
 // Z248 REAL CAVALRY (actors/real-cav.js) — calibration of the Meshy models: the operator's height (m); the saddle seat in the horse model (m, bind pose)
@@ -704,6 +704,12 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
 //   stretch = [×, min length]: a triangle the pose made that many times longer than at rest (and longer than that, rig units) is dropped as a sliver; anchor = offsets (rig units) from the
 //   right / left upper-arm and upper-spine bones to where an RPG, a slung AT tube and the pack-borne kit sit
 export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
+// Z295 the infantry arsenal (actors/real-cav.js; Tripo P2): which hand weapon the soldier carries for each of the game's guns, and each weapon's true length (m),
+//   which end is the muzzle in the model (+z / −z), how far behind its middle the pistol grip sits (share of the length), lift = raised (m: the RPG rides the shoulder)
+export const INFGUN = { map:{ rifle:'ar', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
+    agl:'gl', mortar:'gl', arty:'gl', flamer:'flamer', cryo:'flamer', tesla:'energy', plasma:'energy', photon:'energy', orbital:'energy', singularity:'energy' },
+  guns:{ ar:{ len:0.92, muzzle:1, grip:0.2 }, lmg:{ len:1.12, muzzle:-1, grip:0.18 }, minigun:{ len:1.15, muzzle:1, grip:0.22 }, shotgun:{ len:1.0, muzzle:-1, grip:0.22 }, sniper:{ len:1.42, muzzle:-1, grip:0.24 },
+    rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18 }, flamer:{ len:1.0, muzzle:1, grip:0.14 }, energy:{ len:0.95, muzzle:1, grip:0.2 } } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /

@@ -25,7 +25,10 @@ export function makePuppet(src, dst, pre = 'mixamorig'){ const S = bones(src, pr
   const chains = CHAINS.filter(([b, c]) => S[b] && S[c] && D[b] && D[c]);
   if(!S.Hips || !D.Hips || !S.Spine || !D.Spine || !S.LeftUpLeg || !D.LeftUpLeg) return null;
   const rest = new Map(); for(const b of Object.values(D)) rest.set(b, b.quaternion.clone());
-  return { S, D, chains, rest, dst }; }
+  // his limbs are not the operator's length (legs +10%, arms +11%, torso −13%): he keeps his own true height; on his feet he is set down so his feet meet the ground
+  const len = (B, c) => { let s = 0; for(let i = 0; i + 1 < c.length; i++){ B[c[i]].getWorldPosition(_a); B[c[i + 1]].getWorldPosition(_b); s += _a.distanceTo(_b); } return s; }, LEG = ['LeftUpLeg', 'LeftLeg', 'LeftFoot'];
+  src.updateMatrixWorld(true); dst.updateMatrixWorld(true); const legK = D.LeftFoot && S.LeftFoot ? len(S, LEG) / Math.max(1e-6, len(D, LEG)) : 1;
+  return { S, D, chains, rest, dst, legK }; }
 
 // every frame, after the operator has been animated (and turned toward the aim)
 export function drivePuppet(P){ if(!P) return; const { S, D, chains, rest, dst } = P;
@@ -33,9 +36,13 @@ export function drivePuppet(P){ if(!P) return; const { S, D, chains, rest, dst }
   // the hips: same place, same frame
   hipFrame(S, _qs); hipFrame(D, _qd); _q.copy(_qs).multiply(_qd.invert());
   const H = D.Hips; H.getWorldQuaternion(_qw); _qw.premultiply(_q); H.parent.getWorldQuaternion(_qp); H.quaternion.copy(_qp.invert().multiply(_qw));
-  S.Hips.getWorldPosition(_a); H.parent.worldToLocal(_a); H.position.copy(_a); H.updateMatrixWorld(true);
+  S.Hips.getWorldPosition(_a); if(P.offset) _a.add(P.offset); H.parent.worldToLocal(_a); H.position.copy(_a); H.updateMatrixWorld(true);
   // then each bone toward where the operator's points
   for(const [b, c] of chains){ const sb = S[b], sc = S[c], db = D[b], dc = D[c];
     sb.getWorldPosition(_a); sc.getWorldPosition(_b); _e.subVectors(_b, _a); if(_e.lengthSq() < 1e-10) continue; _e.normalize();
     db.getWorldPosition(_c); dc.getWorldPosition(_d); _f.subVectors(_d, _c); if(_f.lengthSq() < 1e-10) continue; _f.normalize();
-    _q.setFromUnitVectors(_f, _e); db.getWorldQuaternion(_qw); _qw.premultiply(_q); db.parent.getWorldQuaternion(_qp); db.quaternion.copy(_qp.invert().multiply(_qw)); db.updateMatrixWorld(true); } }
+    _q.setFromUnitVectors(_f, _e); db.getWorldQuaternion(_qw); _qw.premultiply(_q); db.parent.getWorldQuaternion(_qp); db.quaternion.copy(_qp.invert().multiply(_qw)); db.updateMatrixWorld(true); }
+  // standing, walking, kneeling, lying: his lowest foot onto the operator's (seated, the hips on the seat rule instead)
+  if(P.ground){ const low = B => { let y = Infinity; for(const n of FEET) if(B[n]){ B[n].getWorldPosition(_a); y = Math.min(y, _a.y); } return y; }, dy = low(S) - low(D);
+    if(isFinite(dy) && Math.abs(dy) > 1e-4){ H.getWorldPosition(_a); _a.y += dy; H.parent.worldToLocal(_a); H.position.copy(_a); H.updateMatrixWorld(true); } } }
+const FEET = ['LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase'];

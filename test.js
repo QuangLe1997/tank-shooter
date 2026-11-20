@@ -876,6 +876,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(fs.existsSync('assets/models/real/soldier2.glb') && /export function makePuppet/.test(R('src/actors/puppet.js')) && /export function drivePuppet/.test(R('src/actors/puppet.js')) && /drivePuppet\(R\.pup\)/.test(R('src/actors/real-cav.js')) && C.REALCAV.s2.on, 'the special-forces soldier follows the operator bone by bone');
   ok(/CV\.realP=null; fitRealCav\(CV\)/.test(R('src/game/cavalry.js')) && /if\(!H\.bike\)\{/.test(R('src/actors/real-cav.js')) && /PROFILE\.trooper=k/.test(R('src/ui/battle-setup.js')), 'real riders on the war rides, soldier picked in battle setup'); }
 
+// Z295 the infantry arsenal and the pose review: nine hand weapons, kneeling aim, feet on the ground, getting on / off a ride for real
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(Object.keys(C.INFGUN.guns).length===9 && Object.keys(C.INFGUN.guns).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb')) && Object.values(C.INFGUN.map).every(k=>C.INFGUN.guns[k]) && /function holdGun/.test(R('src/actors/real-cav.js')), 'nine infantry weapons, one for every gun of the game, swapped with the gun in use');
+  ok(/'Kneeling_Aim'/.test(R('src/actors/real-cav.js')) && /P\.ground/.test(R('src/actors/puppet.js')) && /XEOM\.pegY/.test(R('src/game/cavalry.js')) && C.CAV.mountT>=0.8 && ['xeom','xichlo','bagac','bantai'].every(k=>C.XEOM[k].side>0), 'kneeling aim, grounded feet, a real step off / onto each ride'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
