@@ -4,7 +4,7 @@
 //   tanks get a crew from our men and roll out as allied tanks that fight on their own.
 import * as THREE from 'three';
 import { DEPOT, ALLY_TANK } from '../../config.js';
-import { ALLY_TANKS, ENEMY_DEFS, ENEMY_MODEL, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, paintVehicle, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf } from '../hub.js';
+import { ALLY_TANKS, ENEMY_DEFS, ENEMY_MODEL, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, paintVehicle, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const DEPOTS=[];
 let _netTex=null;
@@ -39,8 +39,7 @@ export function buildDepots(){ clearDepots();
     const parked = kind==='arms' ? (buildArms(q,g,at), []) : buildMotor(q,g,at);
     const [fx,fz]=at(-4.2,4.2), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,6,6), coverMat('pipes')); pole.position.set(fx,fy+3,fz); g.add(pole);
     const flag=makeFlag(campFlagTex(),1.7,1.1,1); flag.position.set(fx,fy+5.4,fz); g.add(flag);
-    const ring=new THREE.Mesh(new THREE.RingGeometry(q.r-0.4, q.r, 56, 1, 0, 0.001), new THREE.MeshBasicMaterial({ color:0x9be04a, transparent:true, opacity:0.85, side:THREE.DoubleSide, depthWrite:false }));
-    ring.rotation.x=-Math.PI/2; ring.position.set(q.x, heightAt(q.x,q.z)+0.09, q.z); ring.visible=false; g.add(ring);
+    const ring=holoRing(q.r, { kind:'ally', arc:0 }); ring.position.set(q.x, heightAt(q.x,q.z)+0.09, q.z); ring.visible=false; g.add(ring);   // Z318 the capture shows as the lit arc of an ally-green ring
     const G=MOBILE?DEPOT.guardsMobile:DEPOT.guards; spawnGuards(q, G[0]+((Math.random()*(G[1]-G[0]+1))|0), 1);
     DEPOTS.push({ kind, q, x:q.x, z:q.z, g, flag, flagPos:[fx,fy,fz], ring, parked, state:'held', cap:0, seenAt:0 }); } }
 export function clearDepots(){ for(const d of DEPOTS){ unwave(d.g); scene.remove(d.g); for(const m of d.g.userData.extra) scene.remove(m); } DEPOTS.length=0; }
@@ -62,7 +61,7 @@ export function updateDepots(dt, now){ const p=S.player; if(!p) return;
       if(guardsLeft(d.q)===0){ d.state='open'; d.ring.visible=true; floatText((d.kind==='arms'?'KHO VŨ KHÍ':'KHO XE TĂNG')+' BỎ NGỎ — THẢ LÍNH VÀO CHIẾM', '#9be04a', new THREE.Vector3(d.x,6,d.z), 18);
         radio('SCH: Lính canh '+(d.kind==='arms'?'kho vũ khí':'bãi xe tăng')+' đã bị diệt. Đưa bộ binh vào chiếm!'); } continue; }
     if(d.state==='open'){ const n=soldiersIn(d); d.cap = n ? Math.min(DEPOT.capT, d.cap+dt*Math.min(3, 0.6+n*0.4)) : Math.max(0, d.cap-dt*0.5);
-      const f=d.cap/DEPOT.capT; d.ring.geometry.dispose(); d.ring.geometry=new THREE.RingGeometry(d.q.r-0.4, d.q.r, 56, 1, 0, Math.max(0.001, f*Math.PI*2)); d.ring.material.opacity=0.6+0.3*Math.sin(now*8);
+      const f=d.cap/DEPOT.capT; holoArc(d.ring, f); d.ring.material.opacity=blPulse(now, 'warn', 0.6);
       if(f>=1) captureDepot(d); continue; }
     // ours: arm whoever walks in; crew the parked tanks one soldier at a time
     for(const a of FT.slice()){ if(Math.hypot(a.pos.x-d.x, a.pos.z-d.z) > d.q.r*0.8) continue;

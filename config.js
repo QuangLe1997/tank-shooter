@@ -820,6 +820,21 @@ export const DUST = { on:true, n:2600, box:[70, 16, 70], ahead:22, size:0.09, ga
 export const SHAFTS = { on:true, steps:24, gain:0.14, dens:0.009, maxD:150, g:0.62, even:0.08, biome:{ CITY:0.85, ARCTIC:0.7, DESERT:0.7, VOLCANO:1.25, FOUNDRY:1.15 } };
 export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.12, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
   liftK:0, tintK:0.5, fogBlue:0.22, bloom:0.24, sharp:0.58, duskHemiK:0.85, duskAmbient:0.08 };   // sunset keeps more sky fill + its lift
+// Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,
+//   allies / objectives green, loot gold, rarities, ice, arcane); gain = HDR multiple a ring's core line burns at (above ~1 it blooms); pulse
+//   rates (Hz) per urgency — idle breathing → notice → warn → alert → critical — and the floor a pulse never drops below (never fully dark);
+//   dark = the backing under a ring (so it reads on sunlit sand); fogK = how much fog dims it; loot = the gold double-flash cycle (s);
+//   ring presets (metres): core = half-width of the hot line, halo = falloff length, fill = inner glow depth, ticks / tickLen / spin = hologram
+//   tick marks; hpCrit = our health share that lights the red screen edge; bloom per time of day [strength, radius, threshold] (night lets more bloom)
+export const BLIGHT = { col:{ danger:0xff2a1e, alert:0xffa424, threat:0xff6a1c, friend:0x3ee8ff, ally:0x5cff9a, loot:0xffcf4a, rare:0x5aa9ff, epic:0xc08bff, common:0x9fe07a, ice:0x9fe8ff, arcane:0xb07cff, white:0xfff4e0 },
+  gain:2.4, hz:{ idle:0.55, notice:1.1, warn:2.2, alert:3.4, crit:5.2 }, floor:0.3, dark:0.24, fogK:0.65, loot:1.3, hpCrit:0.25,
+  ring:{ danger:{ col:'danger', core:0.05, halo:0.24, fill:1.4, gain:2.6, dark:0.44, scan:0.5, fog:false, depthTest:false, order:18 },
+    alert:{ col:'alert', core:0.045, halo:0.22, fill:1.0, gain:2.4, dark:0.36, fog:false, depthTest:false, order:18 },
+    ally:{ col:'ally', core:0.05, halo:0.26, fill:1.2, gain:2.0, dark:0.18, ticks:48, tickLen:0.32, spin:0.012 },
+    friend:{ col:'friend', core:0.04, halo:0.2, fill:0, gain:2.0, dark:0.12, ticks:60, tickLen:0.25, spin:0.006 },
+    loot:{ core:0.035, halo:0.14, fill:0.5, gain:2.2, dark:0.14, ticks:24, tickLen:0.14, spin:0.08, depthTest:false, order:5 },
+    shock:{ col:'white', core:0.035, halo:0.1, fill:0.25, gain:2.2, dark:0, fog:true } },
+  bloom:{ day:[0.3, 0.5, 0.86], dusk:[0.34, 0.52, 0.82], night:[0.42, 0.55, 0.76] } };
 // Z242 OPEN GROUND — town and countryside battlefields keep more open space: cover shapes × cover, city blocks built up to `built` (was 0.66),
 //   village homes × houses, village trees × trees
 export const OPEN_LAND = { CITY:{ cover:0.55, built:0.42 }, VILLAGE:{ cover:0.6, houses:0.6, trees:0.68 }, MEADOW:{ cover:0.8 } };

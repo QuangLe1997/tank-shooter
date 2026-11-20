@@ -3,7 +3,7 @@
 //   the enemy sends a strike team to stop you — that's the challenge. Woken, the battle freezes and you pick ONE of three big powers
 //   that last until the end of the stage: +1 life, ×2 damage, hard acceleration, ×2 range, ×2 magazine, super reload, steel armour.
 import * as THREE from 'three';
-import { ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD } from '../hub.js';
+import { ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const RELIC = { g:null, x:0, z:0, prog:0, alerted:false, live:false, undo:[], hold:5, r:6, t:0, parts:null };
 export const BOONS = [
@@ -36,7 +36,7 @@ function build(){ const M=mats(), g=new THREE.Group();
   const r1=new THREE.Mesh(new THREE.TorusGeometry(1.35,0.035,6,40), M.rune), r2=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.03,6,40), M.rune);
   r1.position.y=r2.position.y=3.0; g.add(r1, r2);
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.75,46,16,1,true), M.beam); beam.position.y=23; beam.renderOrder=6; g.add(beam);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(RELIC.r-0.22, RELIC.r, 64), M.ring); ring.rotation.x=-Math.PI/2; ring.position.y=0.08; g.add(ring);
+  const ring=holoRing(RELIC.r-0.1, { kind:'ally', col:'loot', ticks:64, tickLen:0.4, spin:0.02, gain:2.2 }); ring.position.y=0.08; g.add(ring);   // Z318 battle-light gold; its lit arc fills as the relic wakes
   const fill=new THREE.Mesh(new THREE.CircleGeometry(RELIC.r-0.22, 64), M.fill); fill.rotation.x=-Math.PI/2; fill.position.y=0.06; g.add(fill);
   g.userData={ cr, r1, r2, beam, ring, fill }; return g; }
 // a spot in open ground, well clear of you, the forts and the field edge
@@ -61,14 +61,14 @@ function challenge(){ const n=2+Math.min(3, Math.floor((S.stage||1)/2)), types=[
   showBanner('THÁNH TÍCH ĐANG THỨC GIẤC — ĐỊCH KÉO TỚI PHÁ!', '#ffd27a'); radio('SCH: Địch phát hiện ta ở thánh tích — giữ vị trí, đừng rời vòng sáng!'); sfx('alarm'); }
 export function updateRelic(dt, now){ if(!RELIC.live || !RELIC.g) return; const p=S.player, ud=RELIC.g.userData; RELIC.t+=dt; const t=RELIC.t;
   ud.cr.rotation.y+=dt*1.2; ud.cr.position.y=3.0+Math.sin(t*1.8)*0.18; ud.r1.rotation.set(Math.PI/2+Math.sin(t*0.9)*0.5, t*0.8, 0); ud.r2.rotation.set(Math.PI/2+Math.cos(t*0.7)*0.6, -t*0.6, 0);
-  ud.ring.material.opacity=0.45+0.3*Math.sin(t*3); ud.beam.material.opacity=0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4; ud.crystalK=1;
+  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.opacity=0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4; ud.crystalK=1;
   ud.cr.material.emissiveIntensity=2.2+RELIC.prog*3+Math.sin(t*4)*0.4;
   if(Math.random() < (MOBILE?0.25:0.5)){ const a=Math.random()*6.283, r=0.5+Math.random()*1.4; spawnPart(RELIC.x+Math.cos(a)*r, RELIC.g.position.y+1.2+Math.random()*2.5, RELIC.z+Math.sin(a)*r, 0, 1.2+Math.random(), 0, { color:Math.random()<0.5?0xffe2a0:0xffb43c, size:0.22, life:1.2, grav:0.6, drag:1 }); }   // motes rising round the crystal
   if(!p || S.mode!=='playing') return;
   const inside = Math.hypot(p.pos.x-RELIC.x, p.pos.z-RELIC.z) < RELIC.r;
   if(inside){ RELIC.prog=Math.min(1, RELIC.prog+dt/RELIC.hold); if(!RELIC.alerted && RELIC.prog>0.04){ RELIC.alerted=true; challenge(); } }
   else RELIC.prog=Math.max(0, RELIC.prog-dt/(RELIC.hold*2));
-  ud.fill.material.opacity=RELIC.prog*0.35; ud.ring.scale.setScalar(1+RELIC.prog*0.04);
+  ud.fill.material.opacity=RELIC.prog*0.35; ud.ring.scale.setScalar(1+RELIC.prog*0.04); holoArc(ud.ring, RELIC.prog>0 ? RELIC.prog : 1);
   relicBar(RELIC.prog>0 ? RELIC.prog : -1);
   if(RELIC.prog>=1) awaken(); }
 function awaken(){ RELIC.live=false; relicBar(-1); const pos=new THREE.Vector3(RELIC.x, RELIC.g.position.y+3, RELIC.z);

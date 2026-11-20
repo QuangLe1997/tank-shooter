@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE, LOCKON } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot } from '../hub.js';
+import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -64,11 +64,10 @@ export function fireFlame(now, g, x, z, ang, k=1){
     e.hitT = Math.max(e.hitT, 0.08);
   }
 }
-export function makeDangerZone(x,z,r){   // ground decal showing the exact kill radius during the fuse
-  const grp=new THREE.Group(); grp.position.set(x,0.12,z); grp.rotation.x=-Math.PI/2;
-  const disc=new THREE.Mesh(new THREE.CircleGeometry(r,44), new THREE.MeshBasicMaterial({color:0xff3018,transparent:true,opacity:0.12,side:THREE.DoubleSide,depthWrite:false}));
-  const ring=new THREE.Mesh(new THREE.RingGeometry(r-0.5,r,52), new THREE.MeshBasicMaterial({color:0xff5028,transparent:true,opacity:0.85,side:THREE.DoubleSide,depthWrite:false}));
-  grp.add(disc,ring); scene.add(grp); grp.userData={disc,ring}; return grp;
+export function makeDangerZone(x,z,r){   // ground light showing the exact kill radius during the fuse · Z318 our own ordnance = threat orange: a hot rim, a glow falling inward
+  const grp=new THREE.Group(); grp.position.set(x,heightAt(x,z)+0.12,z); grp.rotation.x=-Math.PI/2;
+  const ring=holoRing(r, { kind:'danger', col:'threat', flat:false, fill:Math.min(r*0.55, 2.4), ticks:Math.round(r*5), tickLen:0.3, spin:-0.03 });
+  grp.add(ring); scene.add(grp); grp.userData={ring}; return grp;
 }
 export function updateRockets(dt, now){
   for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.tt+=dt;
@@ -99,9 +98,8 @@ export function updateRockets(dt, now){
 export function updateFuses(dt, now){
   for(let i=fuses.length-1;i>=0;i--){ const f=fuses[i]; f.blink-=dt;
     const t2d=Math.max(0, f.at-now), k=Math.min(1,Math.max(0,1-t2d/2));   // 0 → 1 as it nears detonation (clamped)
-    if(f.zone){ const pul=0.5+0.5*Math.sin(now*(7+k*18));            // danger circle pulses faster + brighter as the boom nears
-      f.zone.userData.disc.material.opacity=0.1+0.26*k+0.05*pul;
-      f.zone.userData.ring.material.opacity=0.45+0.5*pul; }
+    if(f.zone){ const ring=f.zone.userData.ring;                      // danger circle pulses faster + brighter as the boom nears (Z318 one smooth battle-light pulse)
+      ring.material.opacity=blRamp(f, dt, k, 'alert', 'crit', 0.3); holoGain(ring, 2.2+k*1.4); }
     if(f.blink<=0){ f.blink=0.3-0.18*k; sfx('beep');                 // beeps quicken
       spawnPart(f.x,0.5,f.z,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff5028,size:1.2,life:0.3,grav:-2}); }
     if(now>=f.at){

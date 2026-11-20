@@ -1,6 +1,6 @@
 // combat/ultimate.js — Z186 ULTIMATE WEAPONS (TỐI THƯỢNG): orbital lance · plasma sun · Hydra swarm · black-hole grenade · photon lance — each its own mechanic, telegraph and spectacle
 import * as THREE from 'three';
-import { GLOW, MOBILE, PAD, S, aimTarget, aoeDamage, bigExplode, blocks, boss, bullets, damageBlock, damageBoss, damageEnemy, deformCrater, enemies, fortIntactCross, heightAt, playerRange, ringPulse, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { GLOW, MOBILE, PAD, S, aimTarget, aoeDamage, bigExplode, blocks, boss, bullets, damageBlock, damageBoss, damageEnemy, deformCrater, enemies, fortIntactCross, heightAt, playerRange, ringPulse, scene, sfx, spawnBullet, spawnPart, blPulse, holoRing } from '../hub.js';
 
 export const ULTI = { strikes:[], orbs:[], holes:[], beams:[] };
 const add=(o)=>{ scene.add(o); return o; };
@@ -22,7 +22,7 @@ export function fireUltimate(now, g, dmg, ang, range, mz){ const R=(range||playe
   else if(g.special==='photon') firePhoton(now, g, dmg, ang, R, mz); }
 // 1) THƯƠNG THẦN QUỸ ĐẠO — paint the spot, a thin guide beam from the sky, then the lance comes down
 function fireOrbital(now, g, dmg, ang, R){ const t=ultiPoint(R, ang), y=heightAt(t.x,t.z);
-  const ring=add(new THREE.Mesh(new THREE.RingGeometry(g.aoeR*0.92, g.aoeR, 48), glowMat(0x8fe8ff, 0.8))); ring.rotation.x=-Math.PI/2; ring.position.set(t.x, y+0.15, t.z);
+  const ring=add(holoRing(g.aoeR, { kind:'friend', fill:g.aoeR*0.45, ticks:Math.round(g.aoeR*5), spin:0.05, gain:2.6, opacity:0.8 })); ring.position.set(t.x, y+0.15, t.z);   // Z318 battle-light strike ring
   const guide=add(new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,90,10,1,true), glowMat(0xbff4ff, 0.55))); guide.position.set(t.x, y+45, t.z);
   ULTI.strikes.push({ x:t.x, z:t.z, y, at:now+1.0, t0:now, ring, guide, col:null, dmg, R:g.aoeR, done:false });
   sfx('beep'); }
@@ -60,7 +60,7 @@ const _segD=(px,pz,ax,az,bx,bz)=>{ const vx=bx-ax, vz=bz-az, L2=vx*vx+vz*vz||1, 
 export function updateUltimates(dt, now){
   // orbital strikes
   for(let i=ULTI.strikes.length-1;i>=0;i--){ const s=ULTI.strikes[i], k=Math.min(1,(now-s.t0)/(s.at-s.t0));
-    if(!s.done){ s.ring.scale.setScalar(1.25-0.25*k); s.ring.material.opacity=0.45+0.5*Math.abs(Math.sin(now*14)); s.guide.material.opacity=0.25+0.6*k; s.guide.scale.set(1+k*2.5,1,1+k*2.5);
+    if(!s.done){ s.ring.scale.setScalar(1.25-0.25*k); s.ring.material.opacity=blPulse(now, 'alert', 0.45); s.guide.material.opacity=0.25+0.6*k; s.guide.scale.set(1+k*2.5,1,1+k*2.5);
       if(Math.random()<0.6) spawnPart(s.x+(Math.random()-0.5)*s.R*1.6, s.y+0.2, s.z+(Math.random()-0.5)*s.R*1.6, 0, 3+Math.random()*3, 0, { color:0x9fefff, size:0.4, life:0.4, grav:-3, drag:1 });
       if(now>=s.at){ s.done=true; s.end=now+0.5; drop(s.ring); drop(s.guide);
         const col=add(new THREE.Mesh(new THREE.CylinderGeometry(s.R*0.42, s.R*0.55, 120, 24, 1, true), glowMat(0xdffaff, 0.95))); col.position.set(s.x, s.y+60, s.z); s.col=col;

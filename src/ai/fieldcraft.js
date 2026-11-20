@@ -7,7 +7,7 @@
 //     fired through the cloud go wild (both directions)
 import * as THREE from 'three';
 import { FIELDCRAFT } from '../../config.js';
-import { MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart } from '../hub.js';
+import { MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart, blPulse, holoRing } from '../hub.js';
 
 const FC=FIELDCRAFT, _lb=[];
 // a "tall" obstacle stops a rifle round dead: buildings, fortress walls, masonry, towers, containers, boulders (sandbags, drums, logs… are shot over)
@@ -44,7 +44,7 @@ export function smokeSpreadK(x0, z0, x1, z1){ if(!SMOKES.length) return 1; const
 
 // ================= FRAG GRENADES =================
 export const NADES=[]; const NG=new THREE.SphereGeometry(0.13, 8, 6), NM=new THREE.MeshStandardMaterial({ color:0x3a4228, roughness:0.6, metalness:0.4 });
-const RING_G=new THREE.RingGeometry(FC.nade.R*0.92, FC.nade.R, 56); RING_G.rotateX(-Math.PI/2);
+
 const _lastThrow={ e:-99, p:-99 }; let _barkAt=-99;
 export function liveNades(side){ let n=0; for(const g of NADES) if(g.side===side) n++; return n; }
 // side 'e' = thrown by the enemy (hurts our men), 'p' = by ours (hurts theirs)
@@ -66,9 +66,9 @@ function updateNades(dt, now){
     if(!g.landed){ const u=Math.min(1, g.t/g.T), x=g.x0+(g.x1-g.x0)*u, z=g.z0+(g.z1-g.z0)*u, gy=heightAt(x,z), y=g.y0+(gy+0.13-g.y0)*u + g.peak*4*u*(1-u);
       g.m.position.set(x, y, z); g.m.rotation.x+=dt*14; g.m.rotation.z+=dt*9;
       if(u>=1){ g.landed=true; spawnPart(g.x1, gy+0.1, g.z1, 0, 0.6, 0, { color:0x8a7a60, size:0.6, life:0.4, smoke:true, grav:0, drag:3, op:0.4 }); sfx('thud', { x:g.x1, z:g.z1 }, 0.25);
-        if(g.side==='e'){ const r=new THREE.Mesh(RING_G, new THREE.MeshBasicMaterial({ color:0xff3a2a, transparent:true, opacity:0.8, depthWrite:false })); r.position.set(g.x1, gy+0.08, g.z1); r.renderOrder=3; scene.add(r); g.ring=r; } } }
-    else if(g.ring){ g.ring.material.opacity = Math.sin(now*28)>0 ? 0.85 : 0.2; }
-    if(g.t>=g.boomAt){ nadeBoom(g, now); scene.remove(g.m); if(g.ring){ scene.remove(g.ring); g.ring.material.dispose(); } NADES.splice(i,1); } } }
+        if(g.side==='e'){ const r=holoRing(FC.nade.R, { kind:'danger', fill:FC.nade.R*0.5 }); r.position.set(g.x1, gy+0.08, g.z1); scene.add(r); g.ring=r; } } }   // Z318 the blast radius as a battle-light danger ring
+    else if(g.ring){ g.ring.material.opacity = blPulse(now, 'crit', 0.35); }
+    if(g.t>=g.boomAt){ nadeBoom(g, now); scene.remove(g.m); if(g.ring){ scene.remove(g.ring); g.ring.material.dispose(); g.ring.geometry.dispose(); } NADES.splice(i,1); } } }
 // run from the nearest live grenade (any side) close enough to hurt: a unit vector, or null
 export function nadeFlee(pos, out){ const N=FC.nade; let best=null, bd=N.flee*N.flee;
   for(const g of NADES){ if(g.boomAt-g.t > N.warnT) continue; const q=(pos.x-g.x1)**2+(pos.z-g.z1)**2; if(q<bd){ bd=q; best=g; } }
@@ -84,4 +84,4 @@ export function nadeTarget(x, z, foes, coverOf){ const N=FC.nade; let best=null,
 export function canThrow(side, now){ const N=FC.nade; return liveNades(side) < (side==='e'?N.liveE:N.liveA) && now-_lastThrow[side] > (side==='e'?N.gapE:N.gapA); }
 
 export function updateFieldcraft(dt, now){ if(NADES.length) updateNades(dt, now); if(SMOKES.length) updateSmokes(dt, now); }
-export function clearFieldcraft(){ for(const g of NADES){ scene.remove(g.m); if(g.ring){ scene.remove(g.ring); g.ring.material.dispose(); } } NADES.length=0; SMOKES.length=0; }
+export function clearFieldcraft(){ for(const g of NADES){ scene.remove(g.m); if(g.ring){ scene.remove(g.ring); g.ring.material.dispose(); g.ring.geometry.dispose(); } } NADES.length=0; SMOKES.length=0; }

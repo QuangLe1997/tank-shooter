@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, GIFT, LOOT, GUN_MODS } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD, MODE } from '../hub.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -126,7 +126,7 @@ export function dropPowerup(pos, tier, forced){
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
   const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
   const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false})); icon.scale.set(1.05,1.05,1); icon.position.y=1.75; icon.visible=false; g.add(icon);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(0.95,1.08,36), new THREE.MeshBasicMaterial({color:RAR[t],transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=0.08; ring.visible=false; g.add(ring);
+  const ring=holoRing(1.02, { kind:'loot', col:RAR[t], gain:2.0+t*0.4 }); ring.position.y=0.08; ring.visible=false; g.add(ring);   // Z318 a glowing rarity ring whose lit arc is the time left
   const a=Math.random()*6.283, sp=3+Math.random()*3;
   const u={def, g, model, beam, icon, ring, x:pos.x, z:pos.z, y:heightAt(pos.x,pos.z)+1.4, vx:Math.cos(a)*sp, vz:Math.sin(a)*sp, vy:7+Math.random()*2, landed:false, bounces:0, born:performance.now()/1000, tier:t};
   g.position.set(u.x,u.y,u.z); pickups.push(u);
@@ -149,8 +149,8 @@ export function updatePickups(dt, now){
     u.model.rotation.y += dt*0.9; u.model.position.y = 0.05+Math.sin(now*2.4+i)*0.06;
     u.icon.position.y = 1.7 + Math.sin(now*3+i)*0.1;
     u.beam.material.opacity = (0.08+0.03*Math.sin(now*4+i))*(1+u.tier*0.25); u.beam.scale.set(1, 0.6+0.4*rem, 1);   // low halo hugging the item (no tall pillar)
-    u.ring.scale.setScalar(Math.max(0.05,rem)); u.ring.material.opacity = 0.7*rem; u.ring.rotation.z += dt*1.2;
-    if(rem<0.25) u.g.visible = Math.floor(now*8)%2===0;                                  // blinks before it is gone
+    const end=rem<0.25; holoArc(u.ring, rem); u.ring.rotation.z += dt*0.6;   // Z318 the lit arc runs down with the time left (was a shrinking ring)
+    u.ring.material.opacity = blPulse(now+i*0.37, end ? 'alert' : 'idle', end ? 0.25 : 0.6); u.icon.material.opacity = end ? blPulse(now, 'alert', 0.2) : 1;   // breathes; quickens before it is gone (no hard on/off)
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
     if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }           // magnet toward player when near
     u.g.position.set(u.x, heightAt(u.x,u.z), u.z);

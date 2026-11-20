@@ -1,0 +1,45 @@
+/* Z318 BATTLEFIELD LIGHT — the HUD half of fx/battle-light.js: the same palette and pulse rates as the rings on the ground.
+   Every warning is a smooth glow (no hard on/off steps); anything that covers much of the screen pulses at ≤ 1 Hz, small marks may go faster.
+   Red = danger to us, amber = alert, cyan = our own systems, green = allies / objectives, gold = loot. Loaded last: it overrides older one-off styles. */
+:root{ --bl-danger:#ff2a1e; --bl-alert:#ffa424; --bl-threat:#ff6a1c; --bl-friend:#3ee8ff; --bl-ally:#5cff9a; --bl-loot:#ffcf4a;
+  --bl-idle:1.8s; --bl-notice:.9s; --bl-warn:.46s; --bl-crit:.3s; --bl-edge:1.15s; }
+@keyframes blBreathe{0%,100%{opacity:.42;}50%{opacity:1;}}
+@keyframes blEdge{0%,100%{opacity:.3;}50%{opacity:.9;}}
+@keyframes blScan{from{background-position:0 0,0 0;}to{background-position:0 0,0 6px;}}
+
+/* incoming guided missile (actors/enemy-missiles.js): a red glass strip on the HUD instead of a label over the tank */
+#lockAlert{position:fixed;top:calc(max(12px,env(safe-area-inset-top)) + 152px);left:50%;z-index:13;pointer-events:none;display:flex;align-items:center;gap:10px;
+  padding:7px 22px 7px 18px;white-space:nowrap;opacity:0;transform:translate(-50%,-6px) scale(.96);transition:opacity .15s,transform .15s;
+  font:800 15px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:3px;text-transform:uppercase;color:var(--bl-danger);
+  background:linear-gradient(90deg,rgba(46,4,2,0),rgba(46,4,2,.74) 12%,rgba(46,4,2,.74) 88%,rgba(46,4,2,0)),repeating-linear-gradient(0deg,rgba(255,60,40,.1) 0 1px,transparent 1px 3px);
+  border-top:1px solid rgba(255,64,44,.8);border-bottom:1px solid rgba(255,64,44,.8);clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%);
+  text-shadow:0 0 8px rgba(255,42,30,.9),0 0 18px rgba(255,42,30,.5);}
+#lockAlert.on{opacity:1;transform:translate(-50%,0) scale(1);animation:blBreathe var(--bl-warn) ease-in-out infinite,blScan .6s linear infinite;}
+#lockAlert.crit{animation-duration:var(--bl-crit),.3s;}
+#lockAlert i{width:9px;height:9px;background:var(--bl-danger);transform:rotate(45deg);box-shadow:0 0 6px var(--bl-danger),0 0 14px var(--bl-danger);}
+#lockAlert b{color:#fff;font-weight:900;text-shadow:0 0 6px var(--bl-danger),0 0 16px var(--bl-danger);}
+#lockAlert span{font-size:12px;letter-spacing:2px;color:#ffc0b4;}
+
+/* core under attack (ui/alarm.js) */
+#corewarn{color:var(--bl-danger);text-shadow:0 0 8px rgba(255,42,30,.85),0 0 20px rgba(255,42,30,.4),0 2px 8px #000;}
+#corewarn .ic{color:currentColor;filter:drop-shadow(0 0 6px currentColor);}
+body.coreatk #corewarn{color:var(--bl-alert);text-shadow:0 0 8px rgba(255,164,36,.8),0 0 18px rgba(255,164,36,.35),0 2px 8px #000;animation:blBreathe var(--bl-notice) ease-in-out infinite;}
+body.corelow #corewarn,body.coredanger #corewarn{color:var(--bl-danger);text-shadow:0 0 8px rgba(255,42,30,.9),0 0 20px rgba(255,42,30,.45),0 2px 8px #000;animation:blBreathe var(--bl-warn) ease-in-out infinite;}
+#coreArrow i{border-left-color:var(--bl-danger);filter:drop-shadow(0 0 5px var(--bl-danger)) drop-shadow(0 0 14px rgba(255,42,30,.55));animation:blBreathe var(--bl-warn) ease-in-out infinite;}
+#coreArrow b{color:#ffd0c4;text-shadow:0 0 6px rgba(255,42,30,.8),0 2px 6px #000;}
+#corealarm{background:radial-gradient(circle at 50% 50%,transparent 56%,rgba(255,34,22,.4) 100%),repeating-linear-gradient(0deg,rgba(255,40,28,.07) 0 1px,transparent 1px 3px);
+  -webkit-mask-image:radial-gradient(circle at 50% 50%,transparent 46%,#000 100%);mask-image:radial-gradient(circle at 50% 50%,transparent 46%,#000 100%);}
+body.corelow #corealarm{animation:blEdge var(--bl-edge) ease-in-out infinite;}
+body.coredanger #corealarm{animation:blEdge 1.6s ease-in-out infinite;}
+
+/* our own health low (ui/instruments.js sets body.hpcrit): a slow red edge glow, never over the middle of the screen */
+#hpEdge{position:fixed;inset:0;height:100%;height:var(--appH,100svh);pointer-events:none;z-index:11;opacity:0;transition:opacity .4s;
+  background:radial-gradient(ellipse at 50% 50%,transparent 60%,rgba(255,30,20,.3) 100%),repeating-linear-gradient(0deg,rgba(255,40,28,.06) 0 1px,transparent 1px 3px);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 50%,transparent 52%,#000 100%);mask-image:radial-gradient(ellipse at 50% 50%,transparent 52%,#000 100%);}
+body.hpcrit #hpEdge{animation:blEdge var(--bl-edge) ease-in-out infinite;}
+#instr.crit .in-a b{animation:blBreathe var(--bl-warn) ease-in-out infinite;text-shadow:0 0 6px var(--bl-danger),0 0 14px rgba(255,42,30,.5);}
+.wbar.low{animation:wbarpulse var(--bl-notice) ease-in-out infinite;}
+
+/* small status lights: the same smooth beat */
+body:not(.touch) #weaponchip.reloading::before{animation:blBreathe var(--bl-warn) ease-in-out infinite;box-shadow:0 0 6px var(--bl-threat),0 0 12px rgba(255,106,28,.5);}
+#objChip .ob-dot{animation:blBreathe var(--bl-idle) ease-in-out infinite;}

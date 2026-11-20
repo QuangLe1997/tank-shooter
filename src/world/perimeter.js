@@ -1,7 +1,7 @@
 // world/perimeter.js — perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ARENA, BIOME, MOBILE, _R, arena, fieldPath, heightAt, propTex, rockSet, scene } from '../hub.js';
+import { ARENA, BIOME, MOBILE, _R, arena, fieldPath, heightAt, propTex, rockSet, scene, holoRing } from '../hub.js';
 
 // ---- perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets ----
 export const perimeter = new THREE.Group(); arena.add(perimeter);
@@ -65,10 +65,8 @@ export function buildHighland(b){ for(let i=highland.children.length-1;i>=0;i--)
 export const crushables=[];
 buildPerimeter(BIOME, false);
 // a faint glowing boundary ring to read the play space
-export const ring = new THREE.Mesh(new THREE.RingGeometry(ARENA*1.38, ARENA*1.42, 96),
-  new THREE.MeshBasicMaterial({ color:BIOME.accent, transparent:true, opacity:0.12, side:THREE.DoubleSide }));
-ring.rotation.x=-Math.PI/2; ring.position.y=0.05; arena.add(ring);
+export const ring = holoRing(ARENA*1.4, { col:BIOME.accent, core:ARENA*0.006, halo:ARENA*0.02, gain:1.2, dark:0, opacity:0.5, seg:160 });   // Z318 a faint battle-light line
+ring.position.y=0.05; arena.add(ring);
 // faint combat-range ring that follows the player (only fires within this radius)
-export const rangeRing = new THREE.Mesh(new THREE.RingGeometry(0.984, 1.0, 80),
-  new THREE.MeshBasicMaterial({ color:0xaef0a0, transparent:true, opacity:0.1, side:THREE.DoubleSide, depthWrite:false, depthTest:false }));   // drawn over mounds
-rangeRing.rotation.x=-Math.PI/2; rangeRing.position.y=0.06; rangeRing.visible=false; scene.add(rangeRing);
+export const rangeRing = holoRing(1, { kind:'friend', core:0.0018, halo:0.006, ticks:90, tickLen:0.012, gain:6, dark:0.1, depthTest:false, order:5, seg:160 });   // drawn over mounds · Z318 our systems' cyan: a hairline with fine range ticks
+rangeRing.position.y=0.06; rangeRing.visible=false; scene.add(rangeRing);

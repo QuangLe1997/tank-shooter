@@ -16,6 +16,7 @@ export * from './world/field.js';
 export * from './render/clouds.js';   // Z145 must load before any material patches its shader
 export * from './render/shafts.js';   // Z276 light shafts (before the renderer, which builds the pass)
 export * from './render/renderer.js';
+export * from './fx/battle-light.js';   // Z318 one palette, pulse clock and glowing-ring material for every gameplay light (before the rings built at load)
 export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
 export * from './render/lod.js';

@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { TUNNEL } from '../../config.js';
-import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, _canvasTex, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, detailize, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, homeClear, inField, inZone, propTex, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt } from '../hub.js';
+import { ARENA, BIOME, CAVE, MOBILE, S, UNDER, _canvasTex, addScore, blocks, buildCavern, buildUnderbase, burst, damageEnemy, decalCrater, detailize, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, homeClear, inField, inZone, propTex, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnSquad, wetAt, blPulse, holoRing } from '../hub.js';
 
 export const TUN = { list:[], under:[], next:0, chk:0, told:false, g:null };
 const R=(a,b)=>a+Math.random()*(b-a), RN=a=>Math.round(R(a[0], a[1]+0.99)-0.49), TAU=Math.PI*2;
@@ -52,7 +52,7 @@ function mouth(E){ const M=mats(), g=E.g;
   for(const s of [-1,1]){ const w=new THREE.Mesh(new THREE.PlaneGeometry(9.5,8), M.black); w.position.set(s*4.6,3.8,-4.6); w.rotation.y=s*Math.PI/2; g.add(w); }
   const lamp=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6), M.lamp); lamp.position.set(0,6.1,0.45); g.add(lamp);
   E.voids=[v]; E.rad=5.2; E.hp=E.maxHp=TUNNEL.hp.mouth; E.seen=true; }
-function markRing(E){ const m=new THREE.Mesh(new THREE.RingGeometry(E.rad*0.95, E.rad*1.15, 28), mats().mark.clone()); m.rotation.x=-Math.PI/2; m.position.set(E.x, heightAt(E.x,E.z)+0.25, E.z); m.visible=false; m.renderOrder=3; TUN.g.add(m); E.mark=m; }
+function markRing(E){ const m=holoRing(E.rad*1.05, { kind:'alert', col:'threat', fill:E.rad*0.5, depthTest:true, order:3 }); m.position.set(E.x, heightAt(E.x,E.z)+0.25, E.z); m.visible=false; TUN.g.add(m); E.mark=m; }   // Z318 a battle-light threat ring
 
 export function clearTunnels(){ for(const e of TUN.under){ e._under=null; if(e.mesh){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); } if(e.bar){ freeEnemyBar(e.bar); e.bar=null; } } TUN.under.length=0;
   for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='tunnel') blocks.splice(i,1);
@@ -112,7 +112,7 @@ export function tunnelSquad(pref){ if(!TUN.list.length || enemies.length>TUNNEL.
   reveal(E); return true; }
 export function updateTunnels(dt, now){ if(!TUN.g) return;
   for(const E of TUN.list){ if(E.open>0){ E.open=Math.max(0, E.open-dt); if(E.lid) E.lid.rotation.z=Math.min(1, E.open)*1.85; }
-    if(E.mark && E.mark.visible){ E.mark.material.opacity=0.35+0.3*Math.sin(now*4+E.x); } }
+    if(E.mark && E.mark.visible){ E.mark.material.opacity=blPulse(now+E.x, 'notice', 0.45); } }
   if(S.mode!=='playing' || UNDER.on) return; const p=S.player;
   for(let i=TUN.under.length-1;i>=0;i--){ const e=TUN.under[i]; if(e._under && now>e._under.until && openList().length){ TUN.under.splice(i,1); comeUp(e, now); } }
   if(now<TUN.chk) return; TUN.chk=now+0.4;

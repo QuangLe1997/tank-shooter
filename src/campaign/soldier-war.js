@@ -4,7 +4,7 @@
 //   hull": it lays its gun on a spot — a red ring blinks there, faster as it settles — then fires, and the shell bursts on that spot. Out of the ring, it
 //   misses; caught in it, the nearer the centre the worse. Its quick-firing guns (autocannons, machine guns) still fire rounds as before.
 import { CAV } from '../../config.js';
-import { S, bigExplode, blastAllies, damagePlayer, disposeArtZone, enemies, enemyMuzzleFX, floatText, heightAt, makeArtLock, radio, sfx, spawnPart, tankRecoil, waveSize, waveSquads } from '../hub.js';
+import { S, bigExplode, blastAllies, damagePlayer, disposeArtZone, enemies, enemyMuzzleFX, floatText, heightAt, makeArtLock, radio, sfx, spawnPart, tankRecoil, waveSize, waveSquads, tickArtLock } from '../hub.js';
 
 const W = () => CAV.soldier.war;
 const TANKS = new Set(['grunt', 'heavy', 'shield', 'chief', 'sniper', 'pyro']);
@@ -25,10 +25,11 @@ export function tankShellZone(e, aimA, d, dmg, heavy){ const C = W().shell, tx =
   ZONES.push({ e, tx, tz, R, dmg:dmg * C.dmgK, heavy, t:C.lock, state:'lay', zone:makeArtLock(tx, tz, R, R * 0.4) }); sfx('beep'); }
 export function updateSoldierWar(dt, now){ announce(now); const C = W().shell;
   for(let i = ZONES.length - 1; i >= 0; i--){ const s = ZONES[i]; s.t -= dt; const u = s.zone.userData;
-    if(s.state === 'lay'){ const k = 1 - Math.max(0, s.t) / C.lock; u.edge.material.opacity = Math.floor(now * (2 + k * 9) * 2) % 2 ? 0.95 : 0.2;
+    if(s.state === 'lay'){ const k = 1 - Math.max(0, s.t) / C.lock; tickArtLock(s.zone, k, null, now, dt);   // Z318 the same battle-light pulse as a barrage ring, quickening as it settles
       u.shadow.scale.setScalar(0.5 + k * s.R * 0.5); u.shadow.material.opacity = 0.06 + 0.2 * k;   // it settles on the spot
       if(s.t <= 0){ fire(s); s.state = 'fly'; s.t = C.flight; } }
-    else if(s.t <= 0){ if(!s.dud) burst(s, now); disposeArtZone(s.zone); ZONES.splice(i, 1); } } }
+    else if(s.t > 0) tickArtLock(s.zone, 1, 1 - s.t / C.flight, now, dt);   // the shell is in the air: critical pulse, its shadow grows
+    else { if(!s.dud) burst(s, now); disposeArtZone(s.zone); ZONES.splice(i, 1); } } }
 export function clearSoldierWar(){ for(const s of ZONES) disposeArtZone(s.zone); ZONES.length = 0; }
 function fire(s){ const e = s.e; if(!enemies.includes(e) || !(e.hp > 0)){ s.dud = true; return; }   // knocked out while it aimed: no shell
   const a = Math.atan2(s.tx - e.pos.x, s.tz - e.pos.z), y = heightAt(e.pos.x, e.pos.z) + 2.2, mx = e.pos.x + Math.sin(a) * 3, mz = e.pos.z + Math.cos(a) * 3, v = Math.hypot(s.tx - mx, s.tz - mz) / W().shell.flight;

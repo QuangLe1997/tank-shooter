@@ -10,7 +10,7 @@
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
 import { UNDERBASE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -74,8 +74,8 @@ function buildGate(){ const U=UNDERBASE, M=mats();
   for(let k=0;k<nInf;k++){ const aa=k/nInf*TAU, r=R(12,17), px=x+Math.sin(aa)*r, pz=z+Math.cos(aa)*r; if(!inField(px,pz,3)) continue; const e=spawnEnemy(k%3===2?'rpg':'rifle', px, pz); if(!e) continue; e.guard={ kind:'gate', base:fake }; e.post=[px,pz]; }
   const nt=Math.min(3, Math.round(U.gate.tanks[0]+st*U.gate.tanks[1])), TK=st>=4?['heavy','grunt','gunner']:st>=2?['grunt','gunner']:['gunner','grunt'];
   for(let k=0;k<nt;k++){ const aa=a+Math.PI+k*2.1, px=x+Math.sin(aa)*18, pz=z+Math.cos(aa)*18; if(!inField(px,pz,5)) continue; const e=spawnEnemy(TK[k%TK.length], px, pz); if(!e) continue; e.guardBase=fake; e.guard={ kind:'gate', base:fake }; e._gA=aa; }
-  G.fake=fake; G.mark=new THREE.Mesh(new THREE.RingGeometry(6.2,7.0,40), new THREE.MeshBasicMaterial({ color:0x9be04a, transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide, fog:false }));
-  G.mark.rotation.x=-Math.PI/2; G.mark.position.set(0,0.3,-0.8); g.add(G.mark);
+  G.fake=fake; G.mark=holoRing(6.6, { kind:'ally', fill:2.4, fog:false, opacity:0 });   // Z318 battle-light ally ring
+  G.mark.position.set(0,0.3,-0.8); g.add(G.mark);
   UNDER.gate=G; }
 function lockHit(dmg){ const G=UNDER.gate; if(!G || G.opening) return; G.lockHp-=dmg; G.fake.alarm=true; G.fake.hitAt=performance.now()/1000;
   burst({ x:G.lock.x, z:G.lock.z }, 0xffd080, 5, 3, { y:heightAt(G.lock.x,G.lock.z)+2.2, life:0.4, size:0.25, grav:-14, drag:1.5, up:2 });
@@ -208,7 +208,7 @@ function garrisonBase(){ const U=UNDER, B=U.BX, st=S.stage||1;
 // =================================================================== per frame ===================================================================
 export function updateUnder(dt, now){ const U=UNDER, G=U.gate, p=S.player; if(!p) return;
   if(G){ if(G.beacon) G.beacon.material.emissiveIntensity=G.opening?0:(2+2*Math.max(0,Math.sin(now*6)));
-    if(G.opening){ G.open=Math.min(1, G.open+dt*0.6); G.doorL.rotation.z=G.open*2.1; G.doorR.rotation.z=-G.open*2.1; G.mark.material.opacity=0.35+0.3*Math.sin(now*5); } }
+    if(G.opening){ G.open=Math.min(1, G.open+dt*0.6); G.doorL.rotation.z=G.open*2.1; G.doorR.rotation.z=-G.open*2.1; G.mark.material.opacity=blPulse(now, 'notice', 0.45); } }
   if(S.mode!=='playing') return;
   if(U.on){ if(p.pos.x<U.x0){ goUp(true); return; }   // respawned up top (or teleported) while below: the base lets go
     for(let i=enemies.length-1;i>=0;i--){ const e=enemies[i]; if(e.pos.x<U.x0){ enemies.splice(i,1); e.mesh.visible=false; if(e.bar) e.bar.g.visible=false; U.surf.push(e); } }   // anything raised up top meanwhile waits there

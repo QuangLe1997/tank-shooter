@@ -2,6 +2,7 @@
 //   a north-up azimuth dial with the hull and the turret drawn on it (hull tinted by its condition), the heading in degrees,
 //   ground speed, the laser rangefinder's distance to whatever the gun is laid on, and the armour state.
 //   Plus the radio set's typewriter (a message arrives character by character, like a teleprinter) and the frequency/callsign line.
+import { BLIGHT } from '../../config.js';
 import { MOBILE, S, boss, enemies, MODE } from '../hub.js';
 
 const DEG=180/Math.PI, TAU=Math.PI*2;
@@ -58,6 +59,7 @@ function man(c, p, k, R){ const col = k>0.6 ? '#8fd468' : k>0.3 ? '#ffc24e' : '#
   c.lineWidth=3; c.beginPath(); c.moveTo(0,-9); c.lineTo(0,-R+22); c.stroke(); c.setLineDash([4,5]); c.lineWidth=1.2; c.strokeStyle='rgba(255,184,74,0.7)'; c.beginPath(); c.moveTo(0,-R+22); c.lineTo(0,-R+6); c.stroke(); c.setLineDash([]);
   c.restore(); c.restore(); }
 export function updateInstr(now){
+  { const p=S.player, low=S.mode==='playing' && !!p && p.hp>0 && p.hp/(p.maxHp||1)<=BLIGHT.hpCrit; if(low!==INSTR.low){ INSTR.low=low; document.body.classList.toggle('hpcrit', low); } }   // Z318 our health low: the slow red edge glow (css/battle-light.css), on phones too
   if(MOBILE) return; if(!INSTR.el && !build()) return;
   const p=S.player, show=S.mode==='playing' && !!p;
   INSTR.el.classList.toggle('hidden', !show); if(!show || now<INSTR.at) return; INSTR.at=now+1/15;   // 15 Hz is plenty for a gauge

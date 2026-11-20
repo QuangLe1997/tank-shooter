@@ -1,11 +1,11 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
-import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT, LOCKON, TREEFALL, AIRAIM, LINE } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle , shotTree, trafficShot, MODE, TANK_SCALE } from '../hub.js';
+import { ROSTER, LETHAL, SQUAD, INFANTRY, FORT, LOCKON, TREEFALL, AIRAIM, LINE, BLIGHT } from '../../config.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle , shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
-export function _lockMat(){ return new THREE.MeshBasicMaterial({color:0xff7a2e, transparent:true, opacity:0.92, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}); }
+export function _lockMat(){ return blSolid('friend', 2.1); }   // Z318 our own targeting is battle-light cyan (danger to us stays red)
 for(let i=0;i<8;i++){
   const grp=new THREE.Group(), bgrp=new THREE.Group(), rgrp=new THREE.Group(), hgrp=new THREE.Group();
   const R=1.6, arm=0.62, th=0.11;
@@ -17,9 +17,8 @@ for(let i=0;i<8;i++){
   const hex=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.05,6,6), _lockMat());     hex.rotation.x=Math.PI/2; hgrp.add(hex);
   const dgrp=new THREE.Group(); for(let k=0;k<8;k++){ const d=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.06,0.09), _lockMat()); const a=k*Math.PI/4; d.position.set(Math.cos(a)*2.15,0,Math.sin(a)*2.15); d.rotation.y=-a+Math.PI/2; dgrp.add(d); }   // Z188 dashed outer ring
   grp.add(bgrp,rgrp,hgrp,dgrp); grp.visible=false; grp.renderOrder=6; scene.add(grp);
-  if(!_lockLabel) _lockLabel=(()=>{ const c=document.createElement('canvas'); c.width=160; c.height=48; const x=c.getContext('2d'); x.fillStyle='rgba(30,8,0,0.7)'; x.beginPath(); x.roundRect(4,4,152,40,8); x.fill(); x.strokeStyle='#ff8a3a'; x.lineWidth=2.5; x.stroke();
-    x.font='800 26px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#ffd27a'; x.fillText('◆ KHOÁ', 80, 25); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
-  const lab=new THREE.Sprite(new THREE.SpriteMaterial({ map:_lockLabel, transparent:true, depthTest:false, depthWrite:false })); lab.scale.set(2.4,0.72,1); lab.position.set(0,2.4,0); grp.add(lab);
+  if(!_lockLabel) _lockLabel=blTag('◆ KHOÁ', 'friend');   // Z318 a hologram tag in the battle-light style
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({ map:_lockLabel, transparent:true, depthTest:false, depthWrite:false })); lab.scale.set(2.0,0.6,1); lab.position.set(0,2.4,0); grp.add(lab);
   lockFX.push({tgt:null, grp, bgrp, rgrp, hgrp, dgrp, lab, life:0, max:0.55, snap:0});
 }
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
@@ -62,7 +61,7 @@ export function requestLock(t){
   for(const L of lockFX){ if(L.tgt===t && L.life>0){ L.life=L.max; return; } }      // already locked → keep alive while a missile chases it
   const L=lockFX.find(L=>L.life<=0); if(!L) return;                                 // grab a free reticle (skip if all 8 busy)
   L.tgt=t; L.life=L.max; L.snap=0; L.bgrp.scale.setScalar(2.5); L.grp.visible=true; seatLock(L);
-  ringPulse(t.pos, 0xff7a3a, 1.7); sfx('beep'); }                                    // acquisition: scan-ring pulse + tech blip
+  ringPulse(t.pos, BLIGHT.col.friend, 1.7); sfx('beep'); }                                    // acquisition: scan-ring pulse + tech blip
 // Z215 the reticle sits ON the surface it marks: flat on the terrain under a ground target, tilted with the slope; standing upright at the
 //   aircraft's height, turned to face you, round a helicopter. The KHOÁ label always floats straight above.
 const _UP=new THREE.Vector3(0,1,0), _ln=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lqi=new THREE.Quaternion();

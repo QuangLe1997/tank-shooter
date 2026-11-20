@@ -1,6 +1,6 @@
 // fx/hud-fx.js — FX (rings, float text, screen)
 import * as THREE from 'three';
-import { VIEW, camera, heightAt, scene, soldierHit } from '../hub.js';
+import { VIEW, blTick, camera, heightAt, holoRing, scene, soldierHit } from '../hub.js';
 
 // ----------------------------- FX (rings, float text, screen) -----------------------------
 export const _v = new THREE.Vector3();
@@ -16,19 +16,19 @@ export function floatText(text, color, worldPos, size=20){
   setTimeout(()=>el.remove(), 950);
 }
 // shockwave ring pool
+// Z318 a shockwave is light: a hot thin front with a soft trailing glow (battle-light ring), not a flat disc
 export const ringPool=[]; for(let i=0;i<14;i++){
-  const m=new THREE.Mesh(new THREE.RingGeometry(0.5,0.7,40),
-    new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false}));
-  m.rotation.x=-Math.PI/2; m.visible=false; scene.add(m); ringPool.push({mesh:m,life:0,max:0.5,scale:4,col:new THREE.Color()});
+  const m=holoRing(0.6, { kind:'shock', core:0.035, halo:0.09, fill:0.3, opacity:0 });
+  m.visible=false; scene.add(m); ringPool.push({mesh:m,life:0,max:0.5,scale:4,col:new THREE.Color()});
 }
 export function ringPulse(pos, color, scale=4){
   const r = ringPool.find(r=>r.life<=0); if(!r) return;
   r.mesh.position.set(pos.x,0.15+heightAt(pos.x,pos.z),pos.z); r.life=r.max=0.45; r.scale=scale; r.col.set(color);
   r.mesh.material.color.copy(r.col); r.mesh.visible=true;
 }
-export function updateRings(dt){
+export function updateRings(dt){ blTick(dt);   // Z318 the one clock every battle light pulses on
   for(const r of ringPool){ if(r.life<=0) continue; r.life-=dt; const k=1-r.life/r.max;
-    const s=0.5+k*r.scale; r.mesh.scale.set(s,s,s); r.mesh.material.opacity=(1-k)*0.6;
+    const s=0.5+(1-(1-k)*(1-k))*r.scale; r.mesh.scale.set(s,s,s); r.mesh.material.opacity=(1-k)*(1-k)*0.95;   // eases out: bursts fast, settles
     if(r.life<=0) r.mesh.visible=false; }
 }
 export const _flashing=new Set();   // materials currently flashing white (hit feedback) — updated directly, no scene traversal per frame

@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { BIOME, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip } from '../hub.js';
+import { BIOME, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip, blRamp, holoGain, holoRing } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -16,12 +16,12 @@ const _artM=(c,o)=>new THREE.MeshBasicMaterial({ color:c, transparent:true, opac
 export function makeArtLock(x,z,R,innerR){
   const root=new THREE.Group(), flat=new THREE.Group(); root.position.set(x, heightAt(x,z)+0.16, z); flat.rotation.x=-Math.PI/2; root.add(flat);
   root.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), groundNormal(x, z, new THREE.Vector3()));   // Z215 the ring lies on the slope
-  const edge=new THREE.Mesh(new THREE.RingGeometry(R-0.08,R+0.03,96), _artM(0xff2a1a,0.85)); edge.renderOrder=18; flat.add(edge);
+  const edge=holoRing(R, { kind:'danger', flat:false, ticks:Math.round(R*6), tickLen:Math.min(0.45, R*0.07), spin:0.025 }); flat.add(edge);   // Z318 one thin hot red line with a soft glow (battle light), fine ticks turning
   const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,40), _artM(0x000000,0)); shadow.renderOrder=19; flat.add(shadow);
   root.userData={ edge, shadow, R, innerR }; scene.add(root); return root; }
 // k: 0→1 how tight the lock is (1 while the shell is in the air) · fly: 0→1 shell flight progress (null while locking)
-function tickArtLock(zone, k, fly, now, dt){ const u=zone.userData, hot=fly!=null, hz=hot ? 9 : 1.6+k*5.5, on=Math.floor(now*hz*2)%2===0;
-  u.edge.material.opacity = on ? 0.9 : 0.18;
+export function tickArtLock(zone, k, fly, now, dt){ const u=zone.userData, hot=fly!=null;   // Z318 a smooth pulse that quickens warn → critical as the lock tightens (never a hard strobe), the line burning hotter
+  u.edge.material.opacity = blRamp(u, dt||0.016, hot ? 1 : k, 'warn', 'crit', hot ? 0.42 : 0.22); holoGain(u.edge, 2.4 + (hot ? 1.3 : k*0.9));
   if(hot){ const s=0.6+fly*u.innerR*1.25; u.shadow.scale.set(s,s,1); u.shadow.material.opacity=0.08+0.3*fly; } }
 export function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); }
 export function _pickMortar(){ const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); return ms.length ? ms[(Math.random()*ms.length)|0] : null; }

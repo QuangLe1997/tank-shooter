@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { INFANTRY, PARA, TROOPS } from '../../config.js';
-import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip, realAir } from '../hub.js';
+import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip, realAir, blPulse, holoRing } from '../hub.js';
 
 export const HELOS=[], PARAS=[];
 let _nextAt=0, _heloMats=null, _chuteGeo=null, _chuteMat=null;
@@ -54,7 +54,7 @@ export function launchParadrop(now, opt){ const fr=!!(opt&&opt.friendly), [dx,dz
     const g=buildTransport(); g.position.set(sx, PARA.alt, sz); g.rotation.y=a; scene.add(g);
     const n=fr ? (opt.n|0||4) : Math.round(R(T));
     HELOS.push({ g, x:sx, z:sz, a, dx:dx+cx*lat, dz:dz+cz*lat, n, dropped:0, dropAt:0, mark:null, t:0, fr, cargo:!fr && S.stage>=PARA.cargoFrom ? 1 : 0 }); }
-  const mark=new THREE.Mesh(new THREE.RingGeometry(5.2,5.8,40), new THREE.MeshBasicMaterial({ color:fr?0x9be04a:0xff4a2a, transparent:true, opacity:0.6, side:THREE.DoubleSide, depthWrite:false })); mark.rotation.x=-Math.PI/2; mark.position.set(dx, heightAt(dx,dz)+0.1, dz); scene.add(mark); HELOS[HELOS.length-1].mark=mark;
+  const mark=holoRing(5.5, { kind:fr ? 'ally' : 'danger', fill:2.2, depthTest:true, order:4 }); mark.position.set(dx, heightAt(dx,dz)+0.1, dz); scene.add(mark); HELOS[HELOS.length-1].mark=mark;
   if(fr){ floatText('LÍNH DÙ QUÂN TA', '#9be04a', {x:dx, y:heightAt(dx,dz)+3, z:dz}, 20); return; }   // Z107 ours: no alarm
   SMOKE_ZONES.push({ x:dx, z:dz, t:14 });   // a red smoke grenade marks the drop zone
   if(S.stage>=PARA.escortFrom && enemies.filter(e=>e.def.air).length<(MOBILE?2:3)){ const [ex,ez]=clampFieldXZ(dx-Math.sin(a)*ARENA*0.7, dz-Math.cos(a)*ARENA*0.7, 8); spawnEnemy('gunship', ex, ez); }   // an attack helicopter flies escort
@@ -69,7 +69,7 @@ export function updateParadrops(dt, now){
   for(let i=HELOS.length-1;i>=0;i--){ const h=HELOS[i]; h.t+=dt; const sx=Math.sin(h.a), sz=Math.cos(h.a);
     const spd=PARA.speed*(h.fr?1.7:1); h.x+=sx*spd*dt; h.z+=sz*spd*dt; h.g.position.set(h.x, PARA.alt+Math.sin(h.t*1.3)*0.3, h.z); h.g.rotation.z=Math.sin(h.t*0.8)*0.04;
     for(const r of h.g.userData.rotors) r.rotation.y+=dt*(r.position.z>0?24:-24);
-    if(h.mark) h.mark.material.opacity=0.35+0.3*Math.sin(now*7);
+    if(h.mark) h.mark.material.opacity=blPulse(now, h.fr===false ? 'warn' : 'notice', 0.4);   // Z318 battle-light drop-zone ring
     const along=(h.x-h.dx)*sx+(h.z-h.dz)*sz;                                                // signed distance past the drop zone
     if(h.dropped<h.n+h.cargo && along>-PARA.gap*spd*h.n*0.5 && now>=h.dropAt){ h.dropAt=now+PARA.gap; const cargo=h.dropped>=h.n; h.dropped++;   // Z199 out of the ramp, one after another (the cargo bundle last)
       const px=h.x-sx*6.6+(Math.random()-0.5)*1.2, pz=h.z-sz*6.6+(Math.random()-0.5)*1.2, gy=heightAt(px,pz), y0=PARA.alt-1.8;

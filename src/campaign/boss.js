@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT, PYLON_SITE } from '../../config.js';
-import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle, MODE } from '../hub.js';
+import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle, MODE, holoRing } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 export let boss=null;
@@ -98,9 +98,9 @@ function pylonMarker(){ const root=new THREE.Group();
     fragmentShader:'uniform float uT,uH; uniform vec3 uC; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float h=vY/uH; float rim=1.0-abs(dot(normalize(vN),normalize(vV))); float band=0.55+0.45*sin(vY*0.35-uT*6.0); float a=pow(1.0-h,1.4)*(0.5+0.5*rim)*(0.75+0.25*band); gl_FragColor=vec4(uC*a*2.8, min(1.0,a*1.1)); }' });
   const pillar=new THREE.Mesh(_pylGeo.pil, pm); pillar.renderOrder=8; pillar.frustumCulled=false; root.add(pillar);
   const core=new THREE.Mesh(_pylGeo.pil, pm); core.scale.set(0.3,1,0.3); core.renderOrder=8; core.frustumCulled=false; root.add(core);   // a bright thin core: the column reads against a daylight sky
-  const rm=new THREE.MeshBasicMaterial({ color:PYL_COL, transparent:true, opacity:0.8, depthWrite:false, blending:THREE.AdditiveBlending, fog:false, side:THREE.DoubleSide });
-  const ring=new THREE.Mesh(_pylGeo.ring, rm); ring.position.y=0.12; ring.renderOrder=7; root.add(ring);
-  const ring2=new THREE.Mesh(_pylGeo.ring, rm.clone()); ring2.position.y=0.1; ring2.renderOrder=7; root.add(ring2);
+  const pr=()=>holoRing(2.95, { col:PYL_COL, core:0.07, halo:0.3, fill:0.9, ticks:24, tickLen:0.3, gain:2.4, dark:0.1, fog:false, order:7 });   // Z318 battle-light rings
+  const ring=pr(); ring.position.y=0.12; root.add(ring);
+  const ring2=pr(); ring2.position.y=0.1; root.add(ring2);
   const dia=new THREE.Mesh(_pylGeo.dia, new THREE.MeshStandardMaterial({ color:0x0a1820, emissive:PYL_COL, emissiveIntensity:2.6, roughness:0.3, metalness:0.4 })); dia.position.y=7.4; dia.scale.set(1,1.5,1); root.add(dia);
   return { root, pm, ring, ring2, dia }; }
 export function updatePylonBeacons(dt, now){ for(const b of PYLONS){ const M=b.mk; if(!M) continue; M.pm.uniforms.uT.value=now; M.dia.rotation.y+=dt*1.8; M.dia.position.y=7.4+Math.sin(now*2.2)*0.35;
