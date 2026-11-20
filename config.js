@@ -143,6 +143,26 @@ export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, re
 // Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink
 export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen' }, fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0 }, yaw:{}, sink:0.02 };
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
+// Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
+//   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet (or pedal = the crank's [half-width, height, along], crankR m) · rear = the rear axle (wheelie pivot)
+//   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do
+export const RIDE = { h:1.68, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
+  fit:{ xeom:{ hip:[0, 0.31, -0.04], grip:[[0.15, 0.45, 0.16], [-0.15, 0.45, 0.16]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
+    xichlo:{ hip:[0, 0.43, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.4, bend:0.15 },
+    bagac:{ hip:[0, 0.37, 0.2], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.5, bend:0.3, gearFoot:true } },
+  grip:0.85, lean:{ body:0.22, head:0.6 }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.55 }, gears:[3, 6.5, 10],
+  crash:{ v:7.5, hit:22, p:0.3, down:1.3, getup:1.2, lift:1.1, mount:0.45, cool:8, throwSoldier:true, callR:9 } };
+// Z296 what the driver and the soldier say to each other, by event (d = the driver, s = the soldier's answer) — on screen now, voices to be laid on later
+export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
+  start:{ d:['Lên xe đi con, chú chở!', 'Ngồi chắc nha, mình đi!'], s:['Đi chú!', 'Chạy đi chú, em yểm trợ!'] },
+  wheelie:{ d:['Bốc đầu nè!', 'Ôm chặt vô!', 'Coi chú nè!'], s:['Trời đất ơi chú!', 'Từ từ thôi chú!'] },
+  turn:{ d:['Ôm cua nha!', 'Nghiêng theo chú!'], s:['Rõ!'] },
+  fast:{ d:['Lên số nè!', 'Vít ga luôn!'], s:['Nhanh nữa chú!'] },
+  underfire:{ d:['Cúi xuống! Đạn kìa!', 'Trời ơi nó bắn!', 'Nấp sau lưng chú!'], s:['Để em xử nó!', 'Chú cứ chạy, em lo!'] },
+  crash:{ d:['Té rồi! Té rồi!', 'Ui da!', 'Xe ngã rồi con ơi!'], s:['Chú có sao không?!', 'Em yểm trợ, chú dựng xe đi!'] },
+  getup:{ d:['Không sao… còn sống!', 'Đau quá mà không chết!'], s:['Nhanh lên chú!'] },
+  lift:{ d:['Dựng xe dậy cái đã!', 'Một… hai… ba… lên!'], s:['Em canh cho!'] },
+  remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!'], s:['Đi!'] } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
 export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, yaw:0, seat:[0.37, -0.27], pose:'straddle', lean:0.35, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, yaw:-1.5708, seat:[0.39, 0.14], pose:'chair', lean:0.12, driver:[1.05, -0.95] },

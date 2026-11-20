@@ -33,6 +33,7 @@ MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
 for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders
 for(const k of ['deer','zebra','giraffe','elephant','reindeer','bear']) MODEL_FILES['wild_' + k] = 'assets/models/real/wild/' + k + '.glb';   // Z286 real wildlife (rigged, walking)
 for(const k of ['ar','lmg','minigun','shotgun','sniper','rpg','gl','flamer','energy']) MODEL_FILES['inf_' + k] = 'assets/models/real/gun/inf/' + k + '.glb';   // Z295 the infantry arsenal
+for(const k of ['xeom','xichlo']) MODEL_FILES['drv_' + k] = 'assets/models/real/driver/' + k + '.glb';   // Z296 the drivers, rigged
 for(const k of ['xeom','xichlo','bagac','bantai']) MODEL_FILES['ride_' + k] = 'assets/models/real/ride/' + k + '.glb';   // Z293 the war rides
 // Z285 enemy outposts
 for(const k of ['base_tent','base_radar','base_bunker','base_barracks','base_wire','mil_truck','mil_apc','mil_jeep']) MODEL_FILES[k] = 'assets/models/real/camp/' + k + '.glb';

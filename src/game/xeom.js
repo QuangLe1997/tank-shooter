@@ -6,8 +6,8 @@
 // and being thrown off all work as they do on horseback.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { XEOM } from '../../config.js';
-import { S, floatText, loadGLTF, mountModel } from '../hub.js';
+import { RIDE, XEOM } from '../../config.js';
+import { S, driveDriver, floatText, loadGLTF, makeDriver, mountModel } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter / cyclo assembled from the city's parts stay as the fallback
@@ -21,9 +21,12 @@ export function buildBikeMount(kind){ const root = new THREE.Group(), B = new TH
   const H = { root, B, bike:kind, t:0, v:0, lean:0, wantGraze:false, onStep:null, sayAt:0, gait:'stand', phase:0 };
   const put = m => { if(!m) return; const mesh = new THREE.Mesh(m.geo, m.mats); mesh.castShadow = true; mesh.receiveShadow = true; B.add(mesh); H.mesh = mesh; };
   loadGLTF('ride_' + kind).then(gl => gl ? put(heroGeo(gl, kind)) : (XEOM[kind].driver ? mountModel(kind).then(put) : null));
+  if(RIDE.fit[kind]) makeDriver(H, kind);   // Z296 the driver rides it as his own man
   return H; }
 // the bike's motion: lean into the turn, a little bob on the road, a word from the driver now and then
 export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = Math.min(1, Math.abs(v) / 8); H.gait = Math.abs(v) < 0.5 ? 'stand' : 'walk'; H.phase = (H.phase + dt * 0.8) % 1;
   H.lean += (-yawRate * sp * (XEOM[H.bike].lean ?? XEOM.lean) - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = H.lean; H.B.position.y = Math.sin(H.t * 13) * 0.012 * sp;
   const now = performance.now() / 1000, p = S.player;
-  if(p && now > H.sayAt){ H.sayAt = now + 18 + Math.random() * 20; if(H.sayAt > 0 && Math.abs(v) > 1) floatText(XEOM.lines[(Math.random() * XEOM.lines.length) | 0], '#ffe9a8', new THREE.Vector3(p.pos.x, p.pos.y + 3, p.pos.z), 13); } }
+  if(H.drv) driveDriver(H, dt, v, yawRate);   // Z296 the driver rides it (lean, wheelie, weave, throttle, gears, ducking, crashing) and does the talking
+  else if(p && now > H.sayAt){ H.sayAt = now + 18 + Math.random() * 20; if(H.sayAt > 0 && Math.abs(v) > 1) floatText(XEOM.lines[(Math.random() * XEOM.lines.length) | 0], '#ffe9a8', new THREE.Vector3(p.pos.x, p.pos.y + 3, p.pos.z), 13); } }
+

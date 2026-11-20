@@ -136,6 +136,8 @@ export * from './actors/real-air.js';   // Z272 real aircraft
 export * from './world/ruins3d.js';   // Z275 ruins of war
 export * from './fx/dust.js';   // Z278 dust in the sunlight
 export * from './game/xeom.js';   // Z282 xe ôm / xích lô mode
+export * from './actors/hands.js';   // Z296 fingers that close round what they hold
+export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
 export * from './world/outposts.js';   // Z285 enemy outposts   // Z268 scooters and cars on the move
 export * from './fx/weather.js';
 export * from './game/score.js';
