@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, NIGHT, S, burst, curlHand, floatText, heightAt, loadGLTF, rideFixed, rideWear, rollHand, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, CV, NIGHT, S, burst, curlHand, fitFaceMask, floatText, heightAt, loadGLTF, rideFixed, rideWear, rollHand, scene, sfx, spawnPart } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -45,6 +45,9 @@ export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof w
     D.ok = !!(D.B.Hips && D.B.LeftArm && D.B.LeftUpLeg);
     if(D.B.LeftFoot && D.B.LeftToeBase){ w.updateWorldMatrix(true, true); const bb = new THREE.Box3().setFromObject(sc);   // Z300 his ankle's height off the sole, and the foot's rest slope (both from the standing rest pose)
       D.B.LeftFoot.getWorldPosition(_a); D.B.LeftToeBase.getWorldPosition(_b); D.ankle = Math.max(0.01, (_a.y - bb.min.y) / Math.max(1e-6, w.getWorldScale(_g).y)) * s; _b.sub(_a); D.toeSlope = Math.atan2(_b.y, Math.hypot(_b.x, _b.z)); }
+    const MS = RIDE.mask && RIDE.mask[RIDE.model[kind]];   // Z305 his mask pulled up over nose and mouth, fitted to his own face (rest pose)
+    if(MS && D.B.Head && D.B.HeadTop_End){ w.updateWorldMatrix(true, true); w.getWorldQuaternion(_qw); const ms = []; sc.traverse(o => { if(o.isSkinnedMesh) ms.push(o); });
+      D.mask = fitFaceMask(D.B.Head, D.B.HeadTop_End, ms, _c.set(0, 0, 1).applyQuaternion(_qw), _d.set(0, 1, 0).applyQuaternion(_qw), MS); }
     const lk = RIDE.legK || 1; if(lk !== 1){ for(const L of ['Left', 'Right']) D.B[L + 'UpLeg'] && D.B[L + 'UpLeg'].scale.setScalar(lk); D.ankle *= lk; }   // Z300 a little longer in the leg (the whole leg, foot too)
     if(D.ok) talk(D, 'start'); });
   return D; }

@@ -146,7 +146,15 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 // Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
 //   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet (or pedal = the crank's [half-width, height, along], crankR m) · rear = the rear axle (wheelie pivot)
 //   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do
-export const RIDE = { h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
+// Z305 cloth masks fitted to a driver's face (by model), all as shares of h = Head bone → HeadTop_End, measured from the Head bone (u right, v up, f ahead):
+//   cols / rows = the grid the face is read on · halfW = half-width (the cheek sides, where the face turns) · top = the edge over the nose bridge (his lower
+//   eyelids are at v 0.32), dipping by dip under the eyes once noseW of the half-width out (an inverted V over the nose) · bottom = under the chin, rising
+//   by rise at the sides · off = stand-off, pleat = pleat depth · ear = where his ear is (top of the root, lobe, front root, back edge: read off the model,
+//   not searched for — his helmet band sticks out further than the ear) · helmet = nothing above this is skin (the loops stay under the rim) ·
+//   loop = elastic radius, clear = how far it rides off the skin
+export const RIDE_MASK = { drv_xeom:{ cols:20, rows:12, halfW:0.33, top:0.3, noseW:0.4, dip:0.055, bottom:-0.06, rise:0.14, off:0.03, pleat:0.008,
+  ear:{ top:0.285, lobe:0.13, front:0.01, back:-0.075 }, helmet:0.295, loop:0.007, clear:0.012, color:0x8fb8c9 } };
+export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
   fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.15, 0.45, 0.16], [-0.15, 0.45, 0.16]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
     xichlo:{ hip:[0, 0.48, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
     bagac:{ hip:[0, 0.395, 0.19], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },

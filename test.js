@@ -934,6 +934,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function sitTall/.test(r) && C.REALCAV.sit && C.XEOM.xeom.seat[0] > 0.4 && C.CAV.foot.run < 4 && C.CAV.foot.sprint < 6.5 && C.CAV.foot.accel > 0 && /F\.accel:F\.decel/.test(cv) && /T\.to \|\| CV\.hPos/.test(cv), 'sat up straight on the pillion; on foot a man\'s pace with momentum; thrown clear on his own line');
   ok(/D\.peek = !D\.peek/.test(d) && C.RIDE.dodge.peek && C.RIDE.alert && C.RIDE.alert.snap > 5, 'under fire the driver ducks and bobs up to watch the road, eyes darting'); }
 
+// Z305 the driver's mask: fitted to his own face, under the eyes, skinned to his skeleton, an elastic round each real ear
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), fm=R('src/actors/face-mask.js'), d=R('src/actors/driver.js'), hub=R('src/hub.js');
+  ok(/export function fitFaceMask/.test(fm) && /new THREE\.SkinnedMesh\(/.test(fm) && /bind\(host\.skeleton/.test(fm) && /fitFaceMask\(D\.B\.Head/.test(d) && /actors\/face-mask\.js/.test(hub), 'the mask is read off his face and bound to his own skeleton');
+  const M=C.RIDE.mask && C.RIDE.mask.drv_xeom; ok(M && M.top < 0.32 && M.top - M.dip < 0.27 && M.halfW < 0.36 && M.ear && M.ear.top < M.helmet && M.ear.lobe < M.ear.top && M.ear.back < M.ear.front, 'its top runs under his eyes (lower lids at 0.32), its sides stop on the cheeks; his ear sits under the helmet rim');
+  ok(/upperHull\(rows\[j\]\)/.test(fm) && /G0\[k\] \+ lift/.test(fm) && /CatmullRomCurve3\(path/.test(fm) && !/earU/.test(fm) && !/__maskDbg/.test(fm), 'taut over the hollows, never puffed out; one elastic per side round the configured ear, not the helmet'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

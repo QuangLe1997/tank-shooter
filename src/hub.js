@@ -138,6 +138,7 @@ export * from './fx/dust.js';   // Z278 dust in the sunlight
 export * from './game/xeom.js';   // Z282 xe ôm / xích lô mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
+export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
 export * from './world/outposts.js';   // Z285 enemy outposts   // Z268 scooters and cars on the move
 export * from './fx/weather.js';
