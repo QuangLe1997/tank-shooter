@@ -3,7 +3,8 @@
 //   Our walls stop enemy fire but never our own (blocks flagged ours); the guns are indestructible but slow, so the Core still needs you.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BIOME, MOBILE, S, TANK_SCALE, ZONES, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
+import { REALCAMP } from '../../config.js';
+import { BIOME, MOBILE, S, TANK_SCALE, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
 
 export const CORE_DEF = { R:24, H:9.4, T:2.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
@@ -59,8 +60,8 @@ export function clearCoreWalls(){ if(CORE_DEF.g){ unwave(CORE_DEF.g); scene.remo
 export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D.H, TH=D.T, ST=ourStyle(BIOME.name), WM=wallMat(ST), OM=ourMats(ST), g=new THREE.Group(), y0=heightAt(0,0);
   g.position.set(0,y0,0); scene.add(g); D.g=g; ZONES.push({ kind:'landmark', x:0, z:0, r:R+5 });   // scatter keeps clear of our compound
   const N=8, rot=Math.PI/8, V=[]; for(let i=0;i<N;i++){ const a=rot+i/N*Math.PI*2; V.push([Math.cos(a)*R, Math.sin(a)*R]); }
-  const geos=[], caps=[], gold=[], lime=[], gm=gunMats(), MAIN=1;   // side 1 faces +z: our lines → the grand gatehouse
-  const tower=(x,z,s,h,ry,deck)=>{ if(ST.round){ geos.push(at(new THREE.CylinderGeometry(s*0.62+0.2, s*0.62+1.3, 3.6, 16), x, 1.05, z)); gold.push(at(new THREE.CylinderGeometry(s*0.6+0.1, s*0.6+0.1, 0.2, 16), x, h*0.5, z)); }   // Z241 battered foot · gilt mid course
+  const geos=[], caps=[], gold=[], lime=[], gm=gunMats(), MAIN=1, WSP=[], TWR=[];   // Z273 the spans and towers, for the concrete compound   // side 1 faces +z: our lines → the grand gatehouse
+  const tower=(x,z,s,h,ry,deck)=>{ TWR.push([x,z,h,ry||0]); if(ST.round){ geos.push(at(new THREE.CylinderGeometry(s*0.62+0.2, s*0.62+1.3, 3.6, 16), x, 1.05, z)); gold.push(at(new THREE.CylinderGeometry(s*0.6+0.1, s*0.6+0.1, 0.2, 16), x, h*0.5, z)); }   // Z241 battered foot · gilt mid course
       else { geos.push(at(talus(s+2.4, 3.6, s+2.4, s+0.25, s+0.25), x, 1.05, z, ry)); gold.push(at(new THREE.BoxGeometry(s+0.14, 0.2, s+0.14), x, h*0.5, z, ry)); }
       if(ST.round){ const c=new THREE.CylinderGeometry(s*0.55,s*0.62,h,16); c.translate(x,h/2-0.75,z); geos.push(c); gold.push(at(new THREE.CylinderGeometry(s*0.6,s*0.6,0.28,16), x, h-0.9, z)); }
       else { geos.push(at(box(s,h,s), x, h/2-0.75, z, ry)); gold.push(at(new THREE.BoxGeometry(s*1.06,0.28,s*1.06), x, h-0.9, z, ry)); }
@@ -69,7 +70,7 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
   for(let i=0;i<N;i++){ const [x0,z0]=V[i], [x1,z1]=V[(i+1)%N], L=Math.hypot(x1-x0,z1-z0), ux=(x1-x0)/L, uz=(z1-z0)/L, ry=-Math.atan2(z1-z0,x1-x0), gate=i%2===1, main=i===MAIN, gw=main?D.gateW+2:D.gateW;
     const nx=-uz, nz=ux, out=(nx*(x0+x1)+nz*(z0+z1))>0?1:-1;   // outward normal sign
     const spans = gate ? [[0, L/2-gw/2], [L/2+gw/2, L]] : [[0,L]];
-    for(const [s0,s1] of spans){ const len=s1-s0; if(len<0.6) continue; const c=(s0+s1)/2, cx=x0+ux*c, cz=z0+uz*c;
+    for(const [s0,s1] of spans){ const len=s1-s0; if(len<0.6) continue; const c=(s0+s1)/2, cx=x0+ux*c, cz=z0+uz*c; WSP.push([cx,cz,len,ry]);
       geos.push(at(box(len, H+1.5, TH), cx, (H+1.5)/2-0.75, cz, ry));                                                       // wall
       geos.push(at(talus(len, 3.4, TH+2.6, TH+0.2), cx, 0.95, cz, ry));                                                     // Z241 battered talus
       gold.push(at(new THREE.BoxGeometry(len, 0.18, TH+0.1), cx, H*0.45, cz, ry));                                            // Z241 second gilt course
@@ -104,10 +105,24 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
   const cg=capGeo(ST, H-0.35, TH, 3); if(cg){ const im=new THREE.InstancedMesh(cg, capMat, caps.length), m=new THREE.Matrix4(), q=new THREE.Quaternion(), up=new THREE.Vector3(0,1,0), p=new THREE.Vector3(), sc=new THREE.Vector3();
     caps.forEach(([x,z,ry,l],k)=>{ m.compose(p.set(x,0,z), q.setFromAxisAngle(up,ry), sc.set(l/3,1,1)); im.setMatrixAt(k,m); }); im.userData.shared=true; im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; g.add(im); }
   // the honour guard: two men at the foot of each stair of the Core's podium, at attention, facing out
-  for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const r=10.2, x=Math.sin(a)*r+Math.cos(a)*sd*2.3, z=Math.cos(a)*r-Math.sin(a)*sd*2.3, s=makeSoldierMesh({ enemy:false });
+  for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const r=Math.max(10.2, REALCAMP.hq.w/2+1.8), x=Math.sin(a)*r+Math.cos(a)*sd*2.3, z=Math.cos(a)*r-Math.sin(a)*sd*2.3, s=makeSoldierMesh({ enemy:false });
       s.position.set(x, heightAt(x,z), z); s.rotation.y=a; s.scale.setScalar(TANK_SCALE*1.05); g.add(s); poseSoldier(s, 'stand', 1); s.userData.upAdd=-0.05; CORE_DEF.guards.push({ s, a, ph:Math.random()*9 }); } }
   bakeGroup(g);   // Z233 roofs, poles, emblems… that share a material become one draw (flags, guns, guards are their own objects and stay)
-}
+  dressWalls(g, WSP, TWR, new Set([WM, OM.gold, OM.lime, OM.emblem, OM.lamp, capMat])); }
+// Z273 THE COMPOUND IN CONCRETE: once the Tripo pieces are in, every wall becomes a reinforced-concrete blast-wall section (sandbags and razor wire
+//   along the top) and every tower a concrete guard tower with its armoured cabin; the guns, MG nests, flags and poles, guards and the collision
+//   stay as they were — only the castle's walls, gilt courses, light strips, emblems and roofs are put away
+function dressWalls(g, spans, towers, hideMats){ if(typeof window==='undefined' || /procbase/.test(location.search+location.hash)) return;
+  Promise.all([loadGLTF('base_wall'), loadGLTF('base_tower')]).then(([wg, tg])=>{ if(!wg || !tg || CORE_DEF.g!==g) return;
+    const piece=gl=>{ let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; }); const geo=src.geometry.clone().applyMatrix4(src.matrixWorld); geo.computeBoundingBox(); const b=geo.boundingBox;
+      geo.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); if(b.max.z-b.min.z > b.max.x-b.min.x) geo.rotateY(Math.PI/2); geo.computeBoundingBox(); return { geo, mat:src.material.clone(), size:geo.boundingBox.getSize(new THREE.Vector3()) }; };
+    const W=piece(wg), T=piece(tg), C=REALCAMP.walls, k=(CORE_DEF.H+C.wallUp)/W.size.y, M4=new THREE.Matrix4(), Q=new THREE.Quaternion(), P=new THREE.Vector3(), Sc=new THREE.Vector3(), up=new THREE.Vector3(0,1,0), wl=[];
+    g.traverse(o=>{ if(o.isMesh && hideMats.has(o.material)) o.visible=false; });
+    for(const [cx,cz,len,ry] of spans){ const n=Math.max(1, Math.round(len/(W.size.x*k))), l=len/n, ux=Math.cos(ry), uz=-Math.sin(ry);   // sections of about the model's own length
+      for(let i=0;i<n;i++){ const s=-len/2+(i+0.5)*l; wl.push([cx+ux*s, cz+uz*s, ry, l/W.size.x]); } }
+    const wi=new THREE.InstancedMesh(W.geo, W.mat, wl.length); wl.forEach(([x,z,ry,sx],i)=>{ M4.compose(P.set(x,C.sink,z), Q.setFromAxisAngle(up,ry), Sc.set(sx,k,k*C.thick)); wi.setMatrixAt(i,M4); });
+    const ti=new THREE.InstancedMesh(T.geo, T.mat, towers.length); towers.forEach(([x,z,h,ry],i)=>{ const kt=(h+C.towerUp)/T.size.y; M4.compose(P.set(x,C.sink,z), Q.setFromAxisAngle(up,ry), Sc.set(kt*C.towerW,kt,kt*C.towerW)); ti.setMatrixAt(i,M4); });
+    for(const im of [wi,ti]){ im.castShadow=true; im.receiveShadow=true; im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); g.add(im); } }); }
 // Z227 automatic MG tower: a six-barrel rotary gun on an armoured mount, ammo box, a little search radar spinning on a mast
 function makeMG(){ const m=gunMats(), root=new THREE.Group(), yaw=new THREE.Group(); root.add(yaw);
   const base=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.4,0.6,16), m.dark); base.position.y=0.3; root.add(base);

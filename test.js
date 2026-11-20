@@ -793,6 +793,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function livery\(tex, L\)/.test(tf) && /function lampGeo/.test(tf) && /lm\.instanceMatrix = im\.instanceMatrix/.test(tf) && C.REALCITY.traffic.liveries.length>=5 && C.REALCITY.traffic.liveries.some(l=>l.bike==='moto_escooter') && fs.existsSync('assets/models/real/city/moto_escooter.glb'), 'riders in app-driver greens, yellows and teals (no brand marks), lamps that light at dusk');
   ok(/function dressCore\(c\)/.test(co) && /loadGLTF\('camp_hq'\)/.test(co) && /camp_hq/.test(md) && C.REALCAMP.hq.w>=15 && fs.existsSync('assets/models/real/camp/hq.glb') && fs.statSync('assets/models/real/camp/hq.glb').size<2.5e6, 'our base centre is a real fortified field headquarters'); }
 
+// Z271 seated on the street: vehicles and props lifted onto the raised road / pavement, soft contact shadows on the vehicles' own matrices
+{ const fs=await import('node:fs'); const cr=fs.readFileSync('src/world/cars.js','utf8'), tf=fs.readFileSync('src/world/traffic.js','utf8'), ct=fs.readFileSync('src/world/city.js','utf8'), C=await import('./config.js');
+  ok(C.REALCITY.lift.road>0.04 && C.REALCITY.lift.walk>0.12 && /export function contactShadow/.test(cr) && /im\.instanceMatrix=matrix/.test(cr) && /contactShadow\(q\.size/.test(tf) && /REALCITY\.lift\.prop/.test(ct) && /REALCITY\.lift\.road-\(o\.sink\|\|0\)/.test(cr), 'cars, bikes and street furniture stand on the road and pavement, with contact shadows'); }
+// Z272 real aircraft: Tripo gunship, swallow-wing bomber, heavy transport, sci-fi UAV, paratrooper canopies — fitted into the procedural airframes, rotors still spinning
+{ const fs=await import('node:fs'); const ra=fs.readFileSync('src/actors/real-air.js','utf8'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
+  ok(/export function realAir\(g, k\)/.test(ra) && /cutRotor/.test(ra) && /keepAbove/.test(ra) && /realAir\(g, 'heli_attack'\)/.test(R('src/actors/vehicles.js')) && /realAir\(g, 'heli_swallow'\)/.test(R('src/actors/helis.js')) && /realAir\(g, 'heli_bomber'\)/.test(R('src/actors/paradrop.js')) && /realAir\(g, 'para_trooper'\)/.test(R('src/actors/paradrop.js')) && /realAir\(g, 'air_uav'\)/.test(R('src/actors/drone.js')), 'every airframe and canopy takes its real model');
+  ok(Object.keys(C.REALAIR.models).every(k=>fs.existsSync('assets/models/real/air/'+k+'.glb') && fs.statSync('assets/models/real/air/'+k+'.glb').size<1.5e6) && /loadRealAir\(\)/.test(R('src/game/boot-gate.js')), 'the aircraft models ship and load at boot'); }
+// Z273 the compound in concrete: blast-wall sections and guard towers round the HQ, guns / flags / collision unchanged
+{ const fs=await import('node:fs'); const cw=fs.readFileSync('src/world/core-walls.js','utf8'), C=await import('./config.js');
+  ok(/function dressWalls\(g, spans, towers, hideMats\)/.test(cw) && /WSP\.push\(\[cx,cz,len,ry\]\)/.test(cw) && /TWR\.push\(\[x,z,h,ry\|\|0\]\)/.test(cw) && C.REALCAMP.walls && ['base_wall','base_tower'].every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')), 'the base walls and towers are concrete models'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -1,7 +1,7 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { REALCITY, REALGUN, REALPROP, REALTANK, REALTREE } from '../../config.js';
+import { REALAIR, REALCITY, REALGUN, REALPROP, REALTANK, REALTREE } from '../../config.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -27,7 +27,8 @@ for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['g
 // Z262 the tree species (world/real-trees.js)
 for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + k + '.glb';
 // Z264 the city's buildings and vehicles (world/real-city.js)
-MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';   // Z269 the field headquarters
+MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb'; MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
+for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';   // Z272 the aircraft   // Z269 the field headquarters
 for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + k + '.glb';
 const _load = {}, _gl = {};
 let _loader = null;

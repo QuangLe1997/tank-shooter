@@ -126,7 +126,7 @@ const _M4=new THREE.Matrix4(), _v3=new THREE.Vector3(), _qy=new THREE.Quaternion
 
 // ---------- things that topple: power poles, street lamps, traffic lights (instanced; a fallen one lies where it fell, its wires gone) ----------
 const TOP=[];
-function regTopple(ims, list, h){ list.forEach((o,k)=>{ const T={ ims, k, x:o.x, z:o.z, y:heightAt(o.x,o.z), ry:o.ry||0, h, alive:true, fall:null, spans:o.spans||[], pole:h>7 }; TOP.push(T);
+function regTopple(ims, list, h){ list.forEach((o,k)=>{ const T={ ims, k, x:o.x, z:o.z, y:heightAt(o.x,o.z)+REALCITY.lift.walk, ry:o.ry||0, h, alive:true, fall:null, spans:o.spans||[], pole:h>7 }; TOP.push(T);
   crushables.push({ x:o.x, z:o.z, r:0.45, im:ims[0], k, alive:true, kind:'topple', T, ry:T.ry, s:1, land:true }); }); }
 export function toppleAt(T, dx, dz){ if(!T || !T.alive) return; T.alive=false; const L=Math.hypot(dx,dz)||1; T.fall={ t:0, dx:dx/L, dz:dz/L, done:false }; for(const s of T.spans) setPiece(s,false);
   if(T.pole) for(let i=0;i<10;i++) spawnPart(T.x, T.y+T.h, T.z, (Math.random()-0.5)*6, Math.random()*4, (Math.random()-0.5)*6, { color:0xfff2b0, color2:0xff6a10, size:0.14, life:0.5+Math.random()*0.4, grav:-14, drag:0.8 });   // the wires snap in a shower of sparks
@@ -245,7 +245,7 @@ const vwall=(bx,by,bz,w,h,d,ox,oz,ry,tone)=>{ const [x,z]=L2W(bx,bz,ox,oz,ry); b
 function placeProps(list, gen, anchor){ if(gen!==CITY_GEN || (anchor && !anchor.parent)) return; const by=new Map(), fbs=[];
   for(const q of list){ const m=cityProp(q.k); if(m){ if(!by.has(m)) by.set(m,[]); by.get(m).push(q); } else if(q.fb) fbs.push(q.fb); }
   for(const [m,L] of by){ const im=new THREE.InstancedMesh(m.geo, m.mats, L.length);
-    const sink=(REALCITY.props[m.key]||{}).sink||0; L.forEach((q,k)=>{ _M4.compose(_v3.set(q.x, heightAt(q.x,q.z)+q.y-sink, q.z), _qy.setFromEuler(_eu.set(0,q.ry,0)), _one); im.setMatrixAt(k,_M4); });
+    const sink=(REALCITY.props[m.key]||{}).sink||0; L.forEach((q,k)=>{ _M4.compose(_v3.set(q.x, heightAt(q.x,q.z)+REALCITY.lift.prop+q.y-sink, q.z), _qy.setFromEuler(_eu.set(0,q.ry,0)), _one); im.setMatrixAt(k,_M4); });
     im.castShadow=!MOBILE; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); for(const g of m.glows) if(!LAND.mats.includes(g)) LAND.mats.push(g); }
   if(fbs.length){ B=new Map(); P=[]; CURP=0; for(const f of fbs) f(); flushBuckets(); B=null; P=null; } }
 // the lamps and signals are built at once (they topple): their meshes take the real models when these are in — the lantern post (its glass and
@@ -367,7 +367,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
       for(let a=-pw/2-1; a<=pw/2+1; a+=3) for(const sz of [-1,1]) det(new THREE.BoxGeometry(0.06,1.2,0.06), cx+a, heightAt(cx+a,cz)+0.6, cz+sz*(pd/2+1), 0, 0x4a5a4a); } }
   CURP=0;
   // ---- street lamps (pole + arm · glowing head) · traffic lights · power poles: instanced and topple-able ----
-  const inst=(geo, mat, list)=>{ const im=new THREE.InstancedMesh(geo, mat, list.length); list.forEach((o,k)=>{ _M4.compose(_v3.set(o.x, heightAt(o.x,o.z), o.z), _qy.setFromEuler(_eu.set(0,o.ry||0,0)), _one); im.setMatrixAt(k,_M4); }); im.castShadow=!MOBILE; im.computeBoundingSphere(); im.frustumCulled=false; arena.add(im); LAND.meshes.push(im); return im; };
+  const inst=(geo, mat, list)=>{ const im=new THREE.InstancedMesh(geo, mat, list.length); list.forEach((o,k)=>{ _M4.compose(_v3.set(o.x, heightAt(o.x,o.z)+REALCITY.lift.walk, o.z), _qy.setFromEuler(_eu.set(0,o.ry||0,0)), _one); im.setMatrixAt(k,_M4); }); im.castShadow=!MOBILE; im.computeBoundingSphere(); im.frustumCulled=false; arena.add(im); LAND.meshes.push(im); return im; };
   let lampIm=null, headIm=null, sigIm=null;
   if(lamps.length){ const Q=[]; const pole=new THREE.CylinderGeometry(0.07,0.1,6,6); pole.translate(0,3,0); Q.push({geo:pole,col:0x4a4c4e}); const arm=new THREE.BoxGeometry(0.08,0.08,1.6); arm.translate(0,5.9,0.75); Q.push({geo:arm,col:0x4a4c4e});
     const head=new THREE.BoxGeometry(0.5,0.16,0.3); head.translate(0,5.8,1.5); const hm=new THREE.MeshStandardMaterial({ color:0xfff4d0, emissive:0xffe0a0, emissiveIntensity:0 }); LAND.mats.push(hm);

@@ -122,8 +122,14 @@ export const REAL = {
     mortar:{ shells:7, gap:0.5, walk:3.0, R:4.2, dmg:20, warn:1.3 },
     ambush:{ r:[14,19], squads:[1,2] }, armour:{ r:[44,56] }, vbied:{ n:[2,3] },
     friendly:{ shells:8, R:5, dmg:80, minFoes:4 } } };
+// Z272 real aircraft (actors/real-air.js; Tripo): yaw turns the nose to +z, cutRotor = top share of the height whose blades are cut (ours spin) except
+//   within hubR × width of the mast, rotorUp = where our rotor sits (× model height above its middle), keepAbove = cut everything below that share
+//   (the paratrooper's own soldier), keep = the procedural parts that stay visible
+export const REALAIR = { models:{ heli_attack:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, heli_swallow:{ yaw:0, cutRotor:0.24, hubR:0.06, rotorUp:0.5 },
+  heli_bomber:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, air_uav:{ yaw:0, keep:['gat','ring'], env:1.2 }, para_trooper:{ keepAbove:0.3, double:true } } };
 // Z269 the field headquarters at the heart of our base (actors/core.js dressCore; Tripo, from a generated concept): w = footprint (m), sink = share of its height under the pad, hitR = the core's hit radius with it
-export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 } };
+export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
+  walls:{ wallUp:0.4, thick:1.0, sink:-0.4, towerUp:-0.6, towerW:0.85 } };   // Z273 the concrete compound (world/core-walls.js dressWalls): wall height over CORE_DEF.H, thickness ×, tower height / width
 export const CORE_DEF = { hp:420, perStage:50, armour:0.72, regen:2.4, regenDelay:6, shield:{ at:0.35, t:9, cd:70 } };   // Z223 the Core is harder to break: thicker, armoured, mends itself when left alone, and throws up an emergency shield (also saves it from a killing blow) once per cd s
 export const FIELDCRAFT = {
   los: { step: 1.5, endSkip: 1.8, peekOff: [3, -3, 5.5, -5.5, 8, -8], peekHold: 3.2, peekR: 0.9 },
@@ -588,7 +594,8 @@ export const REALCITY = { env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement
   traffic:{ files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
     liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
-      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
+      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], laneS:[1.0,1.35], laneB:[3.3,5.0], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
+  flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
     // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)
     // (the stone tower came out with a broken diagonal glass panel: left out)
   carTint:0.55, cars:{ car_sedan:{ yaw:1.5708, L:4.8 }, car_taxi:{ yaw:1.5708, L:4.6 }, car_suv:{ yaw:1.5708, L:4.9 }, car_van:{ yaw:1.5708, L:5.4 }, car_bus:{ yaw:1.5708, L:11 } },

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE } from '../../config.js';
-import { GLOW, NOW, S, boss, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, tankExplode, towers, wrapAngle } from '../hub.js';
+import { GLOW, NOW, S, boss, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, tankExplode, towers, wrapAngle, realAir } from '../hub.js';
 
 // ----------------------------- SUPPORT DRONE (power-up) -----------------------------
 // A 22s orbiting GUNSHIP: sleek fuselage, 4 spinning rotors, glowing sensor eye + an underslung 6-barrel
@@ -45,7 +45,7 @@ export function makeDroneMesh(){
   const ring=new THREE.Mesh(new THREE.TorusGeometry(0.7,0.025,8,28), new THREE.MeshBasicMaterial({color:0x4fd1ff,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false})); ring.rotation.x=Math.PI/2; ring.position.y=-0.02; g.add(ring);
   g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
   g.userData={ props, gat, ring, glowMats };
-  return g;
+  return realAir(g, 'air_uav');   // Z272 the sci-fi UAV
 }
 export function spawnDrone(owned){
   const now=NOW();

@@ -134,20 +134,32 @@ export function pickCar(o, wrecks){ const B=built().cars, tot=B.reduce((a,m)=>a+
   if(o.wreck){ o.ry+= (Math.random()-0.5)*0.9; o.tilt=(Math.random()-0.5)*0.12; o.sink=0.1; } return o; }
 const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _V=new THREE.Vector3(), _S=new THREE.Vector3(1,1,1), _C=new THREE.Color(), _W=new THREE.Color(0x6a6060);
 function draw(paint, trim, list, cr, kind){ const shadow=!MOBILE && kind==='car'; if(!list.length) return; const pm=new THREE.InstancedMesh(paint, paintMat(), list.length), tm=new THREE.InstancedMesh(trim, trimMat(), list.length);
-  list.forEach((o,k)=>{ _M.compose(_V.set(o.x, heightAt(o.x,o.z)-(o.sink||0), o.z), _Q.setFromEuler(_E.set(o.tilt||0, o.ry, (o.tilt||0)*0.6)), _S.set(1,1,1)); pm.setMatrixAt(k,_M); tm.setMatrixAt(k,_M);
+  const lift=kind==='moto' ? REALCITY.lift.walk : REALCITY.lift.road;   // Z271 on the raised road / pavement, not sunk into it
+  list.forEach((o,k)=>{ _M.compose(_V.set(o.x, heightAt(o.x,o.z)+lift-(o.sink||0), o.z), _Q.setFromEuler(_E.set(o.tilt||0, o.ry, (o.tilt||0)*0.6)), _S.set(1,1,1)); pm.setMatrixAt(k,_M); tm.setMatrixAt(k,_M);
     pm.setColorAt(k, _C.setHex(o.col)); tm.setColorAt(k, o.wreck ? _W : _C.setHex(0xffffff));                                     // a wreck's trim is soot-darkened too
     crushables.push({ x:o.x, z:o.z, r:cr, im:pm, ims:[tm], k, alive:true, kind, ry:o.ry, s:1, land:true }); });
-  for(const im of [pm,tm]){ im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); } }
+  for(const im of [pm,tm]){ im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }
+  if(kind==='car') contactShadow(2.3, 5.0, list.length, pm.instanceMatrix); else contactShadow(0.75, 1.9, list.length, pm.instanceMatrix); }
 // Z264 a body drawn as its Meshy model: one instanced mesh (the model brings its own glass, trim, tyres), its paint tinted toward the car's colour
 //   (taxis and the bus keep their livery), a wreck charred; crushable and burnable like the rest
 const _RG={};
 function drawReal(R, list, cr, kind, livery){ if(!list.length) return; const k=R.key, L=(REALCITY.cars[k]||{}).L||4.6;
   if(!_RG[k]){ const g=R.geo.clone(), sc=L/Math.max(R.size.x, R.size.z); g.scale(sc,sc,sc); g.computeBoundingSphere(); _RG[k]=g; }
   const im=new THREE.InstancedMesh(_RG[k], R.mat, list.length), shadow=!MOBILE, wc=new THREE.Color(0x3a3430);
-  list.forEach((o,i)=>{ _M.compose(_V.set(o.x, heightAt(o.x,o.z)-(o.sink||0), o.z), _Q.setFromEuler(_E.set(o.tilt||0, o.ry, (o.tilt||0)*0.6)), _S.set(1,1,1)); im.setMatrixAt(i,_M);
+  list.forEach((o,i)=>{ _M.compose(_V.set(o.x, heightAt(o.x,o.z)+REALCITY.lift.road-(o.sink||0), o.z), _Q.setFromEuler(_E.set(o.tilt||0, o.ry, (o.tilt||0)*0.6)), _S.set(1,1,1)); im.setMatrixAt(i,_M);
     im.setColorAt(i, o.wreck ? wc : livery ? _C.setHex(0xffffff) : _C.setHex(0xffffff).lerp(_W.setHex(o.col), REALCITY.carTint)); _W.setHex(0x6a6060);
     crushables.push({ x:o.x, z:o.z, r:cr, im, ims:[], k:i, alive:true, kind, ry:o.ry, s:1, land:true }); });
-  im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im); }
+  im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; im.castShadow=shadow; im.receiveShadow=true; im.computeBoundingSphere(); arena.add(im); LAND.meshes.push(im);
+  const sz=_RG[k].boundingSphere ? new THREE.Box3().setFromBufferAttribute(_RG[k].attributes.position).getSize(new THREE.Vector3()) : null; if(sz) contactShadow(sz.x*1.12, sz.z*1.06, list.length, im.instanceMatrix); }
+// Z271 CONTACT SHADOWS: a soft dark patch under each vehicle (an instanced quad on the vehicle's own instance matrices, so it follows it
+//   moving, crushed or burnt) — it seats the vehicle on the road where the shadow map is too coarse to; w × l in the instance's own units
+let _csTex=null;
+function csTex(){ if(_csTex) return _csTex; const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d'), g=x.createRadialGradient(32,32,4,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.55,'rgba(255,255,255,0.75)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); return (_csTex=new THREE.CanvasTexture(c)); }
+let _csMat=null;
+export function contactShadow(w, l, n, matrix, y){ if(typeof document==='undefined') return null; const g=new THREE.PlaneGeometry(w, l); g.rotateX(-Math.PI/2); g.translate(0, y??0.012, 0);
+  const m=_csMat||(_csMat=new THREE.MeshBasicMaterial({ color:0x000000, alphaMap:csTex(), transparent:true, opacity:REALCITY.contact.op, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 }));
+  const im=new THREE.InstancedMesh(g, m, n); im.instanceMatrix=matrix; im.frustumCulled=false; im.renderOrder=1; arena.add(im); LAND.meshes.push(im); return im; }
 // cars: objects from pickCar · motos: {x,z,ry,col}
 export function drawStreetVehicles(cars, motos){ const B=built();
   B.cars.forEach((m,i)=>{ const list=cars.filter(o=>o.m===i), R=carModel(m.name); if(R) drawReal(R, list, m.cr, 'car', m.taxi||m.truck); else draw(m.paint, m.trim, list, m.cr, 'car'); });

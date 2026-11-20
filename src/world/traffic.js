@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, haptic, heightAt, loadGLTF, sfx, spawnPart } from '../hub.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, haptic, heightAt, loadGLTF, sfx, spawnPart } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -72,7 +72,7 @@ function lampMats(){ return _lampM || (_lampM = [new THREE.MeshStandardMaterial(
 function lampGeo(size, moto, sc){ const hw = size.x / 2, hl = size.z / 2, L = REALCITY.traffic.lamp, q = 1 / sc, parts = [], tail = [];
   const box = (x, y, z, w, h, d, list) => { const g = new THREE.BoxGeometry(w * q, h * q, d * q); g.translate(x, y, z); list.push(g); };
   if(moto){ box(0, size.y * 0.62, hl * 0.86, 0.16, 0.1, 0.05, parts); box(0, size.y * 0.5, -hl * 0.98, 0.12, 0.06, 0.04, tail); }
-  else for(const sd of [-1, 1]){ box(sd * hw * L.carX, size.y * L.carY, hl * 0.995, 0.26, 0.09, 0.04, parts); box(sd * hw * L.carX, size.y * (L.carY + 0.06), -hl * 0.995, 0.22, 0.08, 0.04, tail); }
+  else for(const sd of [-1, 1]){ box(sd * hw * L.carX, size.y * L.carY, hl * 0.975, 0.2, 0.07, 0.06, parts); box(sd * hw * L.carX, size.y * (L.carY + 0.06), -hl * 0.975, 0.18, 0.07, 0.06, tail); }
   return mergeGeometries([mergeGeometries(parts, false), mergeGeometries(tail, false)], true); }
 
 // ---------- the roads ----------
@@ -85,7 +85,7 @@ const pos = (r, t, off, s) => r.ax ? [r.c - s * off, t] : [t, r.c + s * off];   
 const yaw = (r, s) => r.ax ? (s > 0 ? 0 : Math.PI) : (s > 0 ? Math.PI / 2 : -Math.PI / 2);
 
 function place(v){ const R = v.r, [x, z] = pos(R, v.t, v.off, v.s); v.x = x; v.z = z; if(v.dead){ _M.makeScale(0, 0, 0); v.im.setMatrixAt(v.k, _M); return; }
-  _M.compose(_V.set(x, heightAt(x, z) + 0.02, z), _Q.setFromEuler(_E.set(0, yaw(R, v.s) + v.wob, v.lean)), _S.setScalar(v.sc)); v.im.setMatrixAt(v.k, _M); }
+  _M.compose(_V.set(x, heightAt(x, z) + REALCITY.lift.road, z), _Q.setFromEuler(_E.set(0, yaw(R, v.s) + v.wob, v.lean)), _S.setScalar(v.sc)); v.im.setMatrixAt(v.k, _M); }
 function spawn(v){ const p = S.player, R = TR.runs; let r = null, t = 0;
   for(let n = 0; n < 12; n++){ r = R[(Math.random() * R.length) | 0]; t = r.a0 + 3 + Math.random() * (r.a1 - r.a0 - 6); const [x, z] = pos(r, t, 0, 1); if(!p || Math.hypot(x - p.pos.x, z - p.pos.z) > 40) break; }
   const C = REALCITY.traffic, moto = v.moto; v.r = r; v.t = t; v.s = Math.random() < 0.5 ? 1 : -1;
@@ -101,6 +101,7 @@ export async function buildTraffic(segs){ TR.on = false; TR.list.length = 0; TR.
   for(const q of kinds){ const n = Math.max(1, Math.round(N * q.w / tot)), im = new THREE.InstancedMesh(q.geo, q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);
     const lm = new THREE.InstancedMesh(lampGeo(q.size, q.moto, q.sc), LM, n); lm.instanceMatrix = im.instanceMatrix; lm.frustumCulled = false; arena.add(lm); LAND.meshes.push(lm);   // the lamps ride on the same matrices
+    contactShadow(q.size.x * (q.moto ? 1.05 : 1.12), q.size.z * 1.06, n, im.instanceMatrix, 0.012 / q.sc);   // Z271 seated on the road
     for(let k = 0; k < n; k++){ const v = { im, k, len:q.len, moto:q.moto, sc:q.sc, respawn:0 }; spawn(v); place(v); TR.list.push(v); } im.instanceMatrix.needsUpdate = true; }
   TR.on = true; }
 

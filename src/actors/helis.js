@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HELI, ROSTER, TROOPS } from '../../config.js';
-import { BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle } from '../hub.js';
+import { BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir } from '../hub.js';
 
 const _r=(a,b)=>a+Math.random()*(b-a), _ra=a=>_r(a[0],a[1]);
 function _tx(geo,x,y,z,rx,ry,rz,sx,sy,sz){ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1))); return geo; }
@@ -82,7 +82,7 @@ export function buildHind(){ const M=hmats('hind'), g=new THREE.Group(), body=ne
   bake(body, P, M); marks(body, { boom:0.36, nose:0.95 }, { boom:0.5, nose:0.2 }, -5.4, 2.2, -9.5, 1.6);
   const bombs=[]; for(const sx of [-1,1]) for(const wx of [1.45,2.3,3.0]){ const b=bombMesh(); b.position.set(sx*wx,-0.82-(wx-0.9)*0.18,0.45); body.add(b); bombs.push(b); }
   const nav=lights(body, M, 3.9, -10.1), rotor=mainRotor(M, 5, 7.6, 2.0, 0.3); body.add(rotor); const trot=tailRotor(M, -0.25, 1.9, -9.8, 1.5); body.add(trot);
-  g.userData={ body, rotor, trot, nav, bombs, heli:true }; scene.add(g); return g; }
+  g.userData={ body, rotor, trot, nav, bombs, heli:true }; scene.add(g); return realAir(g, 'heli_swallow'); }   // Z272 the swooping swallow-wing bomber
 
 // ===== HIP — the troop transport =====
 export function buildHip(){ const M=hmats('hip'), g=new THREE.Group(), body=new THREE.Group(); g.add(body);
@@ -107,7 +107,7 @@ export function buildHip(){ const M=hmats('hip'), g=new THREE.Group(), body=new 
   const lad=buildLadder(HELI.troop.ladder); lad.scale.y=0.001; lad.visible=false; door.add(lad);
   const gun=makeSoldierMesh({ enemy:true }); gun.scale.setScalar(TROOPS.look.scale/1.2); gun.position.set(0.85,-1.2,2.0); gun.rotation.y=Math.PI/2; body.add(gun);   // the door gunner
   const nav=lights(body, M, 2.1, -10.8), rotor=mainRotor(M, 5, 7.3, 2.6, 0.3); body.add(rotor); const trot=tailRotor(M, 0.3, 1.8, -10.6, 1.4); body.add(trot);
-  g.userData={ body, rotor, trot, nav, door, lad, heli:true }; scene.add(g); return g; }
+  g.userData={ body, rotor, trot, nav, door, lad, heli:true }; scene.add(g); return realAir(g, 'heli_bomber'); }
 
 // ===== flight =====
 const _w=new THREE.Vector3();

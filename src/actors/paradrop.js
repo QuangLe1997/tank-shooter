@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { INFANTRY, PARA, TROOPS } from '../../config.js';
-import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip } from '../hub.js';
+import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip, realAir } from '../hub.js';
 
 export const HELOS=[], PARAS=[];
 let _nextAt=0, _heloMats=null, _chuteGeo=null, _chuteMat=null;
@@ -34,7 +34,7 @@ export function buildTransport(){ const M=heloMats(), g=new THREE.Group(), P={ b
     const blur=new THREE.Mesh(new THREE.RingGeometry(0.4,4.9,36), M.blur); blur.rotation.x=-Math.PI/2; rot.add(blur); g.add(rot); (g.userData.rotors=g.userData.rotors||[]).push(rot); }
   for(const [mat,x,y,z] of [[M.light,0,-1.45,0],[M.green,1.4,0.3,5.0],[M.light,-1.4,0.3,5.0],[M.white,0,3.0,-5.6]]){ const l=new THREE.Mesh(new THREE.SphereGeometry(0.13,8,6), mat); l.position.set(x,y,z); g.add(l); }
   const jm=makeSoldierMesh({ enemy:true }); jm.scale.setScalar(TROOPS.look.scale); jm.position.set(0.5,-1.3,-5.6); jm.rotation.y=Math.PI; jm.userData.gun.visible=false; g.add(jm);   // the jumpmaster at the ramp
-  return g; }
+  return realAir(g, 'heli_bomber'); }
 // Z199 a real round military canopy: olive / khaki gores with seams, a vent at the apex, the skirt flared — and the suspension lines down to the risers
 let _canopy=null, _cargo=null;
 function canopyTex(){ return _canvasTex(128,64,(x,W,H)=>{ for(let i=0;i<16;i++){ x.fillStyle=i%2?'#6a6646':'#7a7652'; x.fillRect(i*W/16,0,W/16+1,H); x.fillStyle='rgba(40,38,26,0.45)'; x.fillRect(i*W/16,0,1,H); } for(let y=10;y<H;y+=14){ x.fillStyle='rgba(40,38,26,0.3)'; x.fillRect(0,y,W,1); } x.fillStyle='#2a281c'; x.fillRect(0,0,W,4); }); }
@@ -42,7 +42,7 @@ export function chute(cargo){ if(!_canopy){ const geo=new THREE.SphereGeometry(2
     _canopy={ geo, mat:new THREE.MeshStandardMaterial({ map:canopyTex(), roughness:0.92, side:THREE.DoubleSide }), cargoMat:new THREE.MeshStandardMaterial({ map:_canvasTex(64,32,(x,W,H)=>{ for(let i=0;i<8;i++){ x.fillStyle=i%2?'#b8a070':'#d8c890'; x.fillRect(i*W/8,0,W/8,H); } }), roughness:0.9, side:THREE.DoubleSide }),
       lines:new THREE.LineBasicMaterial({ color:0x3a3a2c, transparent:true, opacity:0.75 }) };
     const pts=[]; for(let k=0;k<12;k++){ const a=k/12*6.283; pts.push(new THREE.Vector3(Math.cos(a)*2.55,3.55,Math.sin(a)*2.55), new THREE.Vector3((k%2?0.18:-0.18),1.55,0)); } _canopy.lineGeo=new THREE.BufferGeometry().setFromPoints(pts); }
-  const g=new THREE.Group(), c=new THREE.Mesh(_canopy.geo, cargo?_canopy.cargoMat:_canopy.mat); c.position.y=3.1; c.castShadow=true; g.add(c); g.add(new THREE.LineSegments(_canopy.lineGeo, _canopy.lines)); g.userData.canopy=c; return g; }
+  const g=new THREE.Group(), c=new THREE.Mesh(_canopy.geo, cargo?_canopy.cargoMat:_canopy.mat); c.position.y=3.1; c.castShadow=true; g.add(c); g.add(new THREE.LineSegments(_canopy.lineGeo, _canopy.lines)); g.userData.canopy=c; return realAir(g, 'para_trooper'); }
 // pick a drop zone: near the tank most of the time, otherwise on top of our infantry
 // Z107 our drop zone: beside the tank, a little ahead of it
 function ourZone(){ const p=S.player, f=p.facing||0, d=R([9,15]); return clampFieldXZ(p.pos.x+Math.sin(f)*d+(Math.random()-0.5)*6, p.pos.z+Math.cos(f)*d+(Math.random()-0.5)*6, 8); }

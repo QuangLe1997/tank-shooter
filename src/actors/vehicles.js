@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, HELI, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle } from '../hub.js';
+import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle, realAir } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
 // ===== Z116 · ROCKET TRUCK — 6×6 cab-over truck with an 8-tube rocket pod on a turntable (enemy salvo launcher / our hijacked AA + siege truck) =====
@@ -160,7 +160,7 @@ export function buildGunship(pal){
   const trot=new THREE.Group(); trot.position.set(0.2,1.65,-7.0); body.add(trot);
   for(let k=0;k<3;k++){ const b=new THREE.Mesh(new RoundedBoxGeometry(0.04,1.4,0.16,1,0.02), H.blade); b.position.y=0.7; const arm=new THREE.Group(); arm.rotation.x=k*Math.PI*2/3; arm.add(b); trot.add(arm); }
   g.userData={ body, rotor, trot, chin, muzzle:muz, nav, heli:true };
-  scene.add(g); return g;
+  scene.add(g); return realAir(g, 'heli_attack');
 }
 export function updateGunship(e, dt, now, edt){
   const R=ROSTER.gunship, p=S.player, ud=e.mesh.userData;
