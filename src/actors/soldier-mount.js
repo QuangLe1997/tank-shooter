@@ -15,7 +15,7 @@
 //   right hand. The ride's own seat height sets the heights marked relative.
 import * as THREE from 'three';
 import { SOLDIER_MOUNT, XEOM } from '../../config.js';
-import { CV, LEGKIT, S, heightAt, ik2 } from '../hub.js';
+import { CV, LEGKIT, S, heightAt, ik2, lookAtHold } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _e = V3(), _p = V3(), FH = V3(), RH = V3();
@@ -78,4 +78,5 @@ export function mountPose(D, len, ankleH, slope){ const T = CV.trans && CV.trans
 export function mountHand(R){ const T = CV.trans, D = R.pup && R.pup.D; if(!T || !T.fr || T.crash || !D || !D.LeftArm || (T.k === 'on' && T.t < T.walkT)) return;
   const K = keysAt(SOLDIER_MOUNT[T.kind][T.k], climbU(T), T.fr); if(K.lh < 0.02) return;
   at(T.fr, SOLDIER_MOUNT[T.kind].grab, _b); D.LeftHand.getWorldPosition(_c); _b.lerp(_c, 1 - K.lh);
-  D.LeftArm.getWorldPosition(_d); _d.addScaledVector(UP, -0.4); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, _b, _d); }
+  D.LeftArm.getWorldPosition(_d); _d.addScaledVector(UP, -0.4); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, _b, _d);
+  at(T.fr, SOLDIER_MOUNT[T.kind].grab, _b); lookAtHold(D, _b, K.lh * 0.8); }   // Z343 his eyes on what he takes hold of
