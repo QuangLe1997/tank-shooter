@@ -53,14 +53,14 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
   const rc = R.rc || (R.rc = { z:0, zv:0, a:0, av:0, last:0 }); if(p && p.fireAt > rc.last + 1e-4){ if(rc.last) { rc.zv += g.kick[0] * H.k * 0.12; rc.av += g.kick[1] * H.k * 0.12; } rc.last = p.fireAt; }
   const c = 2 * Math.sqrt(H.k) * H.damp; for(const [x, v] of [['z', 'zv'], ['a', 'av']]){ rc[v] += (-H.k * rc[x] - c * rc[v]) * dt; rc[x] += rc[v] * dt; }
-  const prone = !!(p && p.cav && !p.cav.mounted && p.cav.stance === 'prone');   // (Z321 lying flat he cannot lean back to an aircraft)
+  const prone = !!(p && p.cav && !p.cav.mounted && p.cav.stance === 'prone');   // (Z326 lying flat he cannot lean back to an aircraft)
   // the body frame: up, and his facing turned by the aim twist
   G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
   _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = R.av ?? Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));   // (Z303 the calmed, unwrapped aim: the gun never flips sides)
   const hy = R.hy || 0, yaw = gy + hy + clamp(dyw - hy, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders (and, sat on a ride, his hips) can turn
   // the shoulders take the kick before the gun is laid in them
   _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);   // (about his left: the kick rocks him back)
-  // Z321 an aircraft above: he leans back from the waist, up the spine, so the butt stays in his shoulder as the muzzle climbs past its usual tip-up
+  // Z326 an aircraft above: he leans back from the waist, up the spine, so the butt stays in his shoulder as the muzzle climbs past its usual tip-up
   { let want = 0; if(D.RightArm){ D.RightArm.getWorldPosition(_gt); const a0 = airPitch(_gt.x, _gt.y, _gt.z); if(a0 != null && !prone) want = clamp((a0 - H.pitch[1]) * AIRPOSE.k, 0, AIRPOSE.max); }
     R.lean = (R.lean || 0) + (want - (R.lean || 0)) * Math.min(1, dt * AIRPOSE.rate); if(R.lean > 1e-3) ['Spine', 'Spine1', 'Spine2'].forEach((n, i) => turnBone(D[n], _gr, -R.lean * AIRPOSE.split[i])); }
   // Z298 reloading: how far through (0…1), only when the reload is long enough to show; the gun comes down and in for it, and back up at the end
@@ -98,7 +98,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // Z299 the head leads: the eyes are on the target before the shoulders get there, up / down to it, and held level when the ride banks and pitches
   const lead = clamp(dyw - hy - (R.tw || 0), -0.65, 0.65) * (1 - low);   // (_gu is still his up)
   turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55);
-  if(airP != null){ const up = Math.max(0, pitch * AIRPOSE.sight - (R.lean || 0) - rc.a) * (1 - low); turnBone(D.Neck, _gr, up * AIRPOSE.neck); turnBone(D.Head, _gr, up * (1 - AIRPOSE.neck)); }   // Z321 cheek to the stock: head and neck tip back to sight along the barrel
+  if(airP != null){ const up = Math.max(0, pitch * AIRPOSE.sight - (R.lean || 0) - rc.a) * (1 - low); turnBone(D.Neck, _gr, up * AIRPOSE.neck); turnBone(D.Head, _gr, up * (1 - AIRPOSE.neck)); }   // Z326 cheek to the stock: head and neck tip back to sight along the barrel
   else turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
   if(D.Head){ _gt.crossVectors(_gu, _gw.set(0, 1, 0)); const sn = _gt.length(); if(sn > 1e-4) turnBone(D.Head, _gt.normalize(), Math.asin(Math.min(1, sn)) * 0.65); }
   return true; }
