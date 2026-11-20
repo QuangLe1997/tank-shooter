@@ -3,6 +3,7 @@
 // and a timed-out create may still have run; one ledger per asset, assets/models/meshy/<asset>/ledger.json), polls politely (Retry-After), downloads every GLB / thumbnail into assets/models/meshy/<asset>/.
 //   node tools/meshy.mjs balance
 //   node tools/meshy.mjs run <asset> <step>      step: preview | refine | retex | remesh | rig | anim | motion:<name> | motionanim:<name>
+//   node tools/meshy.mjs run <asset> <step> --again   re-roll a step that already succeeded (a bad preview)
 //   node tools/meshy.mjs wait <asset> <step>     resume waiting on a step already created (never creates)
 //   node tools/meshy.mjs status
 // Key: $MESHY_API_KEY or ~/.config/tank-shooter/meshy.key (never printed).
@@ -14,6 +15,7 @@ const OUT = path.join(ROOT, 'assets', 'models', 'meshy');
 const API = 'https://api.meshy.ai/openapi';
 const KEY = (process.env.MESHY_API_KEY || (() => { try { return fs.readFileSync(path.join(os.homedir(), '.config', 'tank-shooter', 'meshy.key'), 'utf8'); } catch { return ''; } })()).trim();
 if(!KEY) { console.error('no Meshy key ($MESHY_API_KEY or ~/.config/tank-shooter/meshy.key)'); process.exit(2); }
+const AGAIN = process.argv.includes('--again');
 const H = { Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 // one ledger file per asset: parallel runs on different assets never overwrite each other's task ids
@@ -43,7 +45,8 @@ function plan(asset, step, L){
 
 async function create(asset, step){
   const L = load(), e = L[asset] && L[asset][step];
-  if(e && e.status !== 'FAILED') { console.log(`${asset}/${step}: already created (${e.id}, ${e.status}) — not creating again`); return e; }
+  if(e && e.status !== 'FAILED' && !AGAIN) { console.log(`${asset}/${step}: already created (${e.id}, ${e.status}) — not creating again (--again re-rolls it)`); return e; }
+  if(e && AGAIN){ L[asset][step + '@' + (e.created || Date.now())] = e; delete L[asset][step]; save(L, asset); }   // the old result stays on record
   const { ep, body } = plan(asset, step, L);
   let res;
   try { res = await fetch(`${API}/${ep}`, { method: 'POST', headers: H, body: JSON.stringify(body) }); }
@@ -80,7 +83,7 @@ async function wait(asset, step){
   fs.writeFileSync(path.join(dir, step.replace(':', '-') + '.task.json'), JSON.stringify(task, null, 2));
   console.log(`${asset}/${step}: SUCCEEDED, ${task.consumed_credits} credits →`, got.join(', ')); }
 
-const [cmd, asset, step] = process.argv.slice(2);
+const [cmd, asset, step] = process.argv.slice(2).filter(a => a !== '--again');
 if(cmd === 'balance'){ const r = await fetch(`${API}/v1/balance`, { headers: H }); console.log(r.status, await r.text()); }
 else if(cmd === 'status'){ const L = load(); for(const [a, S] of Object.entries(L)) for(const [s, e] of Object.entries(S)) console.log(`${a}/${s}`.padEnd(28), e.status.padEnd(10), String(e.credits ?? '').padStart(3), e.id); }
 else if(cmd === 'run'){ await create(asset, step); await wait(asset, step); }

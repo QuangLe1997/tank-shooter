@@ -676,6 +676,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/updateGrass\(dt\)/.test(lp), 'the loop grows it round the camera');
   ok(C.GRASS && C.GRASS.biomes.MEADOW && C.GRASS.Rm<C.GRASS.R && !C.GRASS.biomes.DESERT, 'grass only on grassy battlefields; a smaller carpet on phones'); }
 
+// Z252 real cover: Meshy pieces fitted into the procedural footprints, tracked and swapped in place
+{ const fs=await import('node:fs'); const rp=fs.readFileSync('src/world/real-props.js','utf8'), pr=fs.readFileSync('src/world/props.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8'), C=await import('./config.js');
+  ok(/export function loadRealCover/.test(rp) && /export function trackCover/.test(rp) && /REALPROP\.hMax/.test(rp) && /old\.userData\.own/.test(rp) && !/old\.dispose\(\)/.test(rp), 'real cover: fitted to the footprint, own hit materials keep their tint, nothing disposed mid-compile');
+  ok(/trackCover\(m\); loadRealCover\(\)/.test(pr) && /trackCover\(up\)/.test(cv), 'every cover mesh (the stacked container too) is tracked');
+  ok(!C.REALPROP.kinds.includes('hedgehog') && !C.REALPROP.kinds.includes('hesco') && C.REALPROP.kinds.every(k=>fs.existsSync('assets/models/real/cover/'+k+'.glb') && fs.statSync('assets/models/real/cover/'+k+'.glb').size<7e5), 'eleven Meshy cover pieces ship small; hedgehog and HESCO stay procedural'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

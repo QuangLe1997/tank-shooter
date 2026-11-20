@@ -545,6 +545,12 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (the Czech hedgehog and the HESCO stay procedural), the share of the procedural
+//   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
+//   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;
+//   stretch = pieces filled to the footprint on each axis (the container came out nearly cubic)
+export const REALPROP = { kinds:['sandbag','concrete','container','crates','drums','jersey','logs','pipes','teeth','tires','wreck'], fit:0.96, hMax:1.35, env:0.6,
+  tint:{ logs:0xa07a52, pipes:0x9c9a92, teeth:0xa6a49c, concrete:0xb4b2aa, jersey:0xb4b2aa }, matte:['sandbag','logs','teeth','concrete','jersey','pipes'], stretch:['container'] };
 // Z251 GRASS CARPET (world/grass-carpet.js): blades round the camera on grassy battlefields — radius (m; Rm on phones, mobile:false = none there), grid cell (m),
 //   where (× radius) the carpet starts thinning out, clumps tried per cell, blades per clump, blade half-width at the root (m), clump height range (m), how far ahead of the camera the carpet centres (m), re-lay step (m);
 //   per battlefield: density (0–1) and colours [root, tip, dry tips]

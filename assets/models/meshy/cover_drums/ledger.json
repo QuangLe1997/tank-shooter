@@ -1,0 +1,26 @@
+{
+  "preview@2026-11-20T05:31:11.261Z": {
+    "id": "01a1f76f-eaa5-73c9-ac17-5c216e0f9c6b",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T05:31:11.261Z",
+    "credits": 5,
+    "finished": "2026-11-20T05:31:32.885Z"
+  },
+  "preview": {
+    "id": "01a1f771-5a62-70fc-aab3-b1c3ef410315",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T05:32:45.701Z",
+    "credits": 5,
+    "finished": "2026-11-20T05:33:02.064Z"
+  },
+  "refine": {
+    "id": "01a1f771-e93a-72b0-8061-e4fb26a04d62",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T05:33:21.964Z",
+    "credits": 10,
+    "finished": "2026-11-20T05:33:59.675Z"
+  }
+}

@@ -225,5 +225,304 @@
         170
       ]
     }
+  },
+  "cover_sandbag": {
+    "_role": "Z252 battlefield cover 'sandbag' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A square military sandbag bunker block, about 3 m wide, 3 m deep and 1.2 m tall: burlap sandbags laid in five staggered courses, slightly sagging, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Weathered tan burlap sandbags with coarse woven fabric, dust and dirt stains, realistic PBR"
+    }
+  },
+  "cover_concrete": {
+    "_role": "Z252 battlefield cover 'concrete' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A large precast concrete barrier block, 3 m long, 2.9 m wide and 2.5 m tall, with two steel lifting hooks on top, chamfered edges, chipped corners, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Weathered grey concrete with stains, cracks and chipped edges, rusty steel hooks, realistic PBR"
+    }
+  },
+  "cover_container": {
+    "_role": "Z252 battlefield cover 'container' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A 20-foot steel shipping container, 4.8 m long, 2 m wide and 2 m tall, corrugated walls, double doors with locking bars at one end, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Faded olive green painted steel with rust streaks, dents and scratches, realistic PBR"
+    }
+  },
+  "cover_crates": {
+    "_role": "Z252 battlefield cover 'crates' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A stack of wooden military ammunition crates, six crates in two layers, about 2.9 m wide and 1.9 m tall, rope handles, metal corner brackets, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Olive and natural wood planks with stencilled military markings, worn paint, dull metal brackets, realistic PBR"
+    }
+  },
+  "cover_drums": {
+    "_role": "Z252 battlefield cover 'drums' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A tight cluster of nine standard 200-litre steel oil drums in a 3 by 3 group, each drum short and squat, 0.9 m tall and 0.6 m wide, ribbed sides, lids with bung caps on top, the whole group about 2 m wide and 0.9 m tall, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Mixed faded paint on the drums: grey, red, olive green and yellow, rust and oil stains, realistic PBR"
+    }
+  },
+  "cover_hedgehog": {
+    "_role": "Z252 battlefield cover 'hedgehog' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A Czech hedgehog anti-tank obstacle: three straight steel I-beams of equal length passing through one common centre point at right angles to each other, like a giant 3D jack with six arms, resting on three of its arm ends, about 2.6 m across and 1.7 m tall, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Rusty dark steel with flaking paint and weld seams, realistic PBR"
+    }
+  },
+  "cover_hesco": {
+    "_role": "Z252 battlefield cover 'hesco' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A square block of four HESCO bastion barriers in a 2 by 2 group: steel wire-mesh cages lined with geotextile fabric and filled with sand, about 3 m wide and 2.4 m tall, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Galvanised wire mesh over beige geotextile fabric, sand spilling at the top, realistic PBR"
+    }
+  },
+  "cover_jersey": {
+    "_role": "Z252 battlefield cover 'jersey' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A single concrete jersey road barrier, 3.7 m long, 1.1 m tall, 0.6 m wide at the base, tapered profile, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Weathered grey concrete with scuffs, black tyre marks and chipped edges, realistic PBR"
+    }
+  },
+  "cover_logs": {
+    "_role": "Z252 battlefield cover 'logs' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A pile of five cut tree logs about 3 m long, stacked and held between upright wooden stakes, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Rough dark brown tree bark, pale cut log ends with growth rings, realistic PBR"
+    }
+  },
+  "cover_pipes": {
+    "_role": "Z252 battlefield cover 'pipes' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A stack of three large concrete drainage pipes, two lying side by side on the ground and one resting on top, each about 1.4 m in diameter and 3 m long, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Weathered grey precast concrete with dirt stains, realistic PBR"
+    }
+  },
+  "cover_teeth": {
+    "_role": "Z252 battlefield cover 'teeth' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Four concrete dragon's teeth anti-tank obstacles: each a tall truncated square pyramid tapering to a narrow flat top, standing on one shared low concrete slab in a 2 by 2 grid, about 3.2 m wide and 1.5 m tall, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Weathered grey concrete with moss and dirt at the base, chipped edges, realistic PBR"
+    }
+  },
+  "cover_tires": {
+    "_role": "Z252 battlefield cover 'tires' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Four stacks of old black truck tyres standing close together in a 2 by 2 group, each stack four tyres high, about 3 m wide and 1.7 m tall, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Worn black rubber with tread pattern, dust and mud, realistic PBR"
+    }
+  },
+  "cover_wreck": {
+    "_role": "Z252 battlefield cover 'wreck' — fitted to the procedural piece's footprint, swapped onto every placed piece once loaded",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "A burnt-out wrecked small car, rusted and scorched body, no wheels, sitting low on the ground, shattered windows, about 3.7 m long and 1.6 m tall, realistic. Single object on flat ground, no people, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Burnt rusty steel, black soot and orange rust, grey ash, realistic PBR"
+    }
   }
 }

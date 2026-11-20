@@ -26,6 +26,7 @@ export * from './world/grass-carpet.js';   // Z251 instanced grass blades round 
 export * from './world/heightfield.js';
 export * from './world/decals.js';
 export * from './world/props.js';
+export * from './world/real-props.js';   // Z252 Meshy cover pieces in place of the procedural ones
 export * from './world/perimeter.js';
 export * from './world/decor.js';
 export * from './world/physics.js';
