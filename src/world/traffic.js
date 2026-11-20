@@ -1,4 +1,4 @@
-// world/traffic.js — Z268 THE CITY MOVES: traffic on every street — mostly scooters (the Tripo scooter with the Tripo xe-ôm driver in the saddle:
+// world/traffic.js — Z268 THE CITY MOVES (Z269: app-driver liveries — green, yellow, teal on an electric scooter — plain jackets, head and tail lamps): traffic on every street — mostly scooters (the Tripo scooter with the Tripo xe-ôm driver in the saddle:
 // his rig posed seated, hands on the bars, then baked into a plain mesh so a hundred can be drawn at once) and the Meshy cars, keeping right,
 // two lanes each way on the boulevards, one on the streets. Each keeps its distance from the one ahead, brakes for your tank when it sits in
 // its lane, U-turns at the city's edge; a tank that runs one over flattens it, a blast nearby wrecks it (a burst of fire and parts) and it is
@@ -25,11 +25,25 @@ function bake(mesh){ mesh.updateMatrixWorld(true); mesh.skeleton.update(); const
 function firstMesh(root, skinned){ let m = null; root.traverse(o => { if(!m && o.isMesh && (!skinned || o.isSkinnedMesh)) m = o; }); return m; }
 function plain(o){ let g = o.geometry.clone().applyMatrix4(o.matrixWorld); g = g.index ? g.toNonIndexed() : g; for(const a of Object.keys(g.attributes)) if(a !== 'position' && a !== 'normal' && a !== 'uv') g.deleteAttribute(a); return g; }
 
-async function motoModel(){ if(_moto) return _moto; const C = REALCITY.traffic, [mg, rg] = await Promise.all([loadGLTF('moto_scooter'), loadGLTF('rider_driver')]); if(!mg || !rg) return null;
-  // the scooter: foot on the ground, its length along z, scaled to size, front (the mirrors stand highest) toward +z
-  mg.scene.updateMatrixWorld(true); const sm = firstMesh(mg.scene); let sg = plain(sm); sg.computeBoundingBox(); let b = sg.boundingBox;
-  sg.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); sg.computeBoundingBox(); b = sg.boundingBox; const k = C.motoL / (b.max.z - b.min.z); sg.scale(k, k, k);
-  const P = sg.attributes.position; let top = 0, tz = 0; for(let i = 0; i < P.count; i++) if(P.getY(i) > top){ top = P.getY(i); tz = P.getZ(i); } if(tz < 0) sg.rotateY(Math.PI);
+// a model's mesh on the ground, its length along z scaled to len, its front (the highest point: mirrors, handlebar) toward +z
+function bikeGeo(gl, len){ gl.scene.updateMatrixWorld(true); const sm = firstMesh(gl.scene); let g = plain(sm); g.computeBoundingBox(); let b = g.boundingBox;
+  g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); if(b.max.x - b.min.x > b.max.z - b.min.z) g.rotateY(Math.PI / 2);   // its length along z, whichever way it came
+  g.computeBoundingBox(); b = g.boundingBox; const k = len / (b.max.z - b.min.z); g.scale(k, k, k);
+  const P = g.attributes.position; let top = 0, tz = 0; for(let i = 0; i < P.count; i++) if(P.getY(i) > top){ top = P.getY(i); tz = P.getZ(i); } if(tz < 0) g.rotateY(Math.PI);
+  const m = sm.material.clone(); m.envMapIntensity = REALCITY.env; return { geo:g, mat:m }; }
+// Z269 a livery: the rider's green jacket and helmet (read from his own texture) turned to another colour — the app drivers' green, yellow or
+//   teal, or a plain navy / red jacket — the rest of the texture as it is
+function livery(tex, L){ const img = tex && tex.image; if(!img || !img.width) return tex; const W = img.width, H = img.height, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d', { willReadFrequently:true }); x.drawImage(img, 0, 0); const D = x.getImageData(0, 0, W, H), d = D.data, c = new THREE.Color(), hsl = {};
+  for(let i = 0; i < d.length; i += 4){ c.setRGB(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255); c.getHSL(hsl); const h = hsl.h * 360;
+    if(h < 70 || h > 175 || hsl.s < 0.12 || hsl.l < 0.1 || hsl.l > 0.93) continue;
+    c.setHSL(L.h / 360, Math.min(1, Math.max(hsl.s, 0.35) * L.s / 0.6), Math.min(0.95, hsl.l * L.l)); d[i] = c.r * 255; d[i + 1] = c.g * 255; d[i + 2] = c.b * 255; }
+  x.putImageData(D, 0, 0); const t = new THREE.CanvasTexture(cv); t.flipY = tex.flipY; t.colorSpace = tex.colorSpace; t.anisotropy = 4; return t; }
+
+// the scooters with their riders: one model per livery (the rider's rig posed seated and baked once), on the bike that livery rides
+async function motoModels(){ if(_moto) return _moto; const C = REALCITY.traffic, bikes = [...new Set(C.liveries.map(l => l.bike))];
+  const [rg, ...bg] = await Promise.all([loadGLTF('rider_driver'), ...bikes.map(k => loadGLTF(k))]); if(!rg) return null;
+  const BK = {}; bikes.forEach((k, i) => { if(bg[i]) BK[k] = bikeGeo(bg[i], C.motoL); }); if(!Object.keys(BK).length) return null;
   // the rider: sized, then posed in the saddle — thighs forward, shins down, a little lean, hands forward on the bars
   const sk = firstMesh(rg.scene, true); if(!sk) return null; rg.scene.updateMatrixWorld(true); const B = n => sk.skeleton.getBoneByName('mixamorig' + n) || sk.skeleton.getBoneByName('mixamorig:' + n);   // three drops the ':' from node names
   const toe = B('LeftToe_End') || B('LeftToeBase'), foot = B('LeftFoot'); foot.getWorldPosition(_a); toe.getWorldPosition(_b); const F = _b.sub(_a).setY(0).normalize().clone();
@@ -41,12 +55,25 @@ async function motoModel(){ if(_moto) return _moto; const C = REALCITY.traffic, 
     aim(B(n + 'Leg'), B(n + 'Foot'), mix([D, 1], [F, 0.3], [Lf, sd * 0.05]));
     aim(B(n + 'Arm'), B(n + 'ForeArm'), mix([F, 0.8], [D, 0.62], [Lf, sd * 0.22]));
     aim(B(n + 'ForeArm'), B(n + 'Hand'), mix([F, 1], [D, 0.18], [Lf, sd * 0.06])); }
-  rg.scene.updateMatrixWorld(true); const hips = B('Hips').getWorldPosition(new THREE.Vector3()); let rgeo = bake(sk);
+  rg.scene.updateMatrixWorld(true); const hips = B('Hips').getWorldPosition(new THREE.Vector3()); const rgeo = bake(sk);
   rgeo.translate(-hips.x, -hips.y, -hips.z); rgeo.rotateY(-Math.atan2(F.x, F.z)); rgeo.computeBoundingBox();
   const r0 = rgeo.boundingBox, kr = C.riderH * C.seatK / (r0.max.y - r0.min.y); rgeo.scale(kr, kr, kr); rgeo.translate(0, C.seat[0], C.seat[1]);
   if(!rgeo.attributes.uv) rgeo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(rgeo.attributes.position.count * 2), 2));
-  const geo = mergeGeometries([sg, rgeo], true), mats = [sm.material.clone(), sk.material.clone()]; mats.forEach(m => { m.envMapIntensity = REALCITY.env; m.skinning = false; });
-  geo.computeBoundingSphere(); return (_moto = { geo, mats, len:C.motoL, wid:0.8 }); }
+  const GEO = {}, out = [];
+  for(const L of C.liveries){ const bk = BK[L.bike] || Object.values(BK)[0]; const key = L.bike in BK ? L.bike : Object.keys(BK)[0];
+    if(!GEO[key]){ GEO[key] = mergeGeometries([bk.geo, rgeo], true); GEO[key].computeBoundingSphere(); }
+    const rm = sk.material.clone(); rm.map = livery(sk.material.map, L); rm.envMapIntensity = REALCITY.env;
+    out.push({ geo:GEO[key], mats:[bk.mat, rm], len:C.motoL, w:L.w, name:L.name }); }
+  return (_moto = out); }
+
+// Z269 head and tail lamps: small lamp blocks at the front and back of a model (its own units), warm white / red; they light up at dusk (LAND.mats)
+let _lampM = null;
+function lampMats(){ return _lampM || (_lampM = [new THREE.MeshStandardMaterial({ color:0xfff4dc, emissive:0xfff0c8, emissiveIntensity:0, roughness:0.2 }), new THREE.MeshStandardMaterial({ color:0x9a1a10, emissive:0xff2a14, emissiveIntensity:0, roughness:0.3 })]); }
+function lampGeo(size, moto, sc){ const hw = size.x / 2, hl = size.z / 2, L = REALCITY.traffic.lamp, q = 1 / sc, parts = [], tail = [];
+  const box = (x, y, z, w, h, d, list) => { const g = new THREE.BoxGeometry(w * q, h * q, d * q); g.translate(x, y, z); list.push(g); };
+  if(moto){ box(0, size.y * 0.62, hl * 0.86, 0.16, 0.1, 0.05, parts); box(0, size.y * 0.5, -hl * 0.98, 0.12, 0.06, 0.04, tail); }
+  else for(const sd of [-1, 1]){ box(sd * hw * L.carX, size.y * L.carY, hl * 0.995, 0.26, 0.09, 0.04, parts); box(sd * hw * L.carX, size.y * (L.carY + 0.06), -hl * 0.995, 0.22, 0.08, 0.04, tail); }
+  return mergeGeometries([mergeGeometries(parts, false), mergeGeometries(tail, false)], true); }
 
 // ---------- the roads ----------
 // the road segments the city laid (axis, the line's cross coordinate, from / to along it) joined into runs across the crossings
@@ -67,12 +94,13 @@ function spawn(v){ const p = S.player, R = TR.runs; let r = null, t = 0;
 
 export async function buildTraffic(segs){ TR.on = false; TR.list.length = 0; TR.ims.length = 0; TR.runs = runsOf(segs); const C = REALCITY.traffic;
   if(!TR.runs.length || typeof window === 'undefined' || /notraffic/.test(location.search + location.hash)) return;
-  const moto = await motoModel(), cars = Object.keys(REALCITY.cars).filter(k => REAL_CITY[k] && k !== 'car_bus'), N = MOBILE ? C.nMobile : C.n;
-  const kinds = []; if(moto) kinds.push({ geo:moto.geo, mats:moto.mats, len:moto.len, moto:true, sc:1, w:C.motoShare });
-  for(const k of cars){ const M = REAL_CITY[k], sc = (REALCITY.cars[k].L || 4.6) / M.size.z; kinds.push({ geo:M.geo, mats:M.mat, len:REALCITY.cars[k].L || 4.6, moto:false, sc, w:(1 - C.motoShare) / cars.length }); }
-  if(!kinds.length) return; const tot = kinds.reduce((a, q) => a + q.w, 0);
+  const motos = await motoModels(), cars = Object.keys(REALCITY.cars).filter(k => REAL_CITY[k] && k !== 'car_bus'), N = MOBILE ? C.nMobile : C.n;
+  const kinds = []; for(const m of motos || []) kinds.push({ geo:m.geo, mats:m.mats, len:m.len, moto:true, sc:1, size:new THREE.Vector3(0.7, 1.15, m.len), w:C.motoShare * m.w });
+  for(const k of cars){ const M = REAL_CITY[k], sc = (REALCITY.cars[k].L || 4.6) / M.size.z; kinds.push({ geo:M.geo, mats:M.mat, len:REALCITY.cars[k].L || 4.6, moto:false, sc, size:M.size, w:(1 - C.motoShare) / cars.length }); }
+  if(!kinds.length) return; const tot = kinds.reduce((a, q) => a + q.w, 0), LM = lampMats(); for(const m of LM) if(!LAND.mats.includes(m)) LAND.mats.push(m);
   for(const q of kinds){ const n = Math.max(1, Math.round(N * q.w / tot)), im = new THREE.InstancedMesh(q.geo, q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);
+    const lm = new THREE.InstancedMesh(lampGeo(q.size, q.moto, q.sc), LM, n); lm.instanceMatrix = im.instanceMatrix; lm.frustumCulled = false; arena.add(lm); LAND.meshes.push(lm);   // the lamps ride on the same matrices
     for(let k = 0; k < n; k++){ const v = { im, k, len:q.len, moto:q.moto, sc:q.sc, respawn:0 }; spawn(v); place(v); TR.list.push(v); } im.instanceMatrix.needsUpdate = true; }
   TR.on = true; }
 

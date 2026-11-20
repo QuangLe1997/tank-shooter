@@ -788,6 +788,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const ct=fs.readFileSync('src/world/city.js','utf8'), C=await import('./config.js');
   ok(C.REALCITY.props.prop_cyclo && fs.existsSync('assets/models/real/city/prop_cyclo.glb') && (ct.match(/prop\('prop_cyclo'/g)||[]).length>=2 && /Cyclo Purple/.test(fs.readFileSync('assets/models/real/city/SOURCES.txt','utf8')), 'Tripo cyclo (credited) parked on pavements and at markets'); }
 
+// Z270 app-driver liveries (green / yellow / teal on an electric scooter, plain jackets), head and tail lamps, the field HQ at the heart of our base
+{ const fs=await import('node:fs'); const tf=fs.readFileSync('src/world/traffic.js','utf8'), co=fs.readFileSync('src/actors/core.js','utf8'), md=fs.readFileSync('src/actors/models.js','utf8'), C=await import('./config.js');
+  ok(/function livery\(tex, L\)/.test(tf) && /function lampGeo/.test(tf) && /lm\.instanceMatrix = im\.instanceMatrix/.test(tf) && C.REALCITY.traffic.liveries.length>=5 && C.REALCITY.traffic.liveries.some(l=>l.bike==='moto_escooter') && fs.existsSync('assets/models/real/city/moto_escooter.glb'), 'riders in app-driver greens, yellows and teals (no brand marks), lamps that light at dusk');
+  ok(/function dressCore\(c\)/.test(co) && /loadGLTF\('camp_hq'\)/.test(co) && /camp_hq/.test(md) && C.REALCAMP.hq.w>=15 && fs.existsSync('assets/models/real/camp/hq.glb') && fs.statSync('assets/models/real/camp/hq.glb').size<2.5e6, 'our base centre is a real fortified field headquarters'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -1422,7 +1427,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/mobileFixed: false, mobileTrack: true/.test(cf) && /export function turretTracks\(\)/.test(aim) && /export function trackTarget\(maxR\)/.test(aim) && /export function trackOnTarget\(t\)/.test(aim) && /trackSticky/.test(aim), 'phones: the turret picks, keeps and lays itself on the enemy');
   ok(/else if\(turretTracks\(\)\)\{ const t=trackTarget\(playerRange\(\)\)/.test(up) && /turretTracks\(\) \|\| trackOnTarget\(t\)/.test(up), 'the hull drives free; auto-fire waits until the barrel is on target');
   ok(/RoundedBoxGeometry\(0\.96,0\.34,0\.48,1,0\.14\)/.test(R('src/world/props.js')), 'sandbag walls built with one bevel segment (27k → ~10k triangles each)');
-  ok(/export function tankDetail\(m, on\)/.test(lod) && /tankDetailR: 38, smallR: 0\.9/.test(cf) && /bakeGroup\(G0\); \}/.test(R('src/actors/core.js')) && /bakeGroup\(g\);   \/\/ Z233/.test(R('src/world/core-walls.js')) && /c\.isInstancedMesh \|\| c\.isSkinnedMesh/.test(R('src/tank/model.js')), 'far tanks drop their fittings; the podium and citadel are baked; baking never folds instanced fields or flags'); }
+  ok(/export function tankDetail\(m, on\)/.test(lod) && /tankDetailR: 38, smallR: 0\.9/.test(cf) && /bakeGroup\(G0\); (return G0; )?\}/.test(R('src/actors/core.js')) && /bakeGroup\(g\);   \/\/ Z233/.test(R('src/world/core-walls.js')) && /c\.isInstancedMesh \|\| c\.isSkinnedMesh/.test(R('src/tank/model.js')), 'far tanks drop their fittings; the podium and citadel are baked; baking never folds instanced fields or flags'); }
 
 // Z234 home ground: every enemy installation stands clear of our citadel (forts, camps, compounds, underground gate, bunkers, towers, depots)
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cf=R('config.js'), fd=R('src/world/field.js'), ft=R('src/world/fortress.js'), sp=R('src/world/supply.js'), cp=R('src/world/camps.js');

@@ -1,7 +1,8 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { CORE_DEF } from '../../config.js';
-import { GLOW, NIGHT, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
+import { REALCAMP } from '../../config.js';
+import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -67,16 +68,28 @@ export function buildCore(stage=1){
   // ground halo
   const halo=new THREE.Mesh(new THREE.CircleGeometry(8,40), new THREE.MeshBasicMaterial({ map:GLOW, color:th.glow, transparent:true, opacity:0.35, blending:THREE.AdditiveBlending, depthWrite:false })); halo.rotation.x=-Math.PI/2; halo.position.y=0.05; g.add(halo);
   // two flagpoles with flags that wave in the wind
-  const flags=[];
+  const flags=[], poles=[];
   for(const sx of [-1,1]){ const px=sx*3.3, pz=-1.4;
-    add(new THREE.CylinderGeometry(0.05,0.07,9,8), brass, px,4.5,pz); add(new THREE.SphereGeometry(0.12,10,8), brass, px,9.05,pz);
+    poles.push(add(new THREE.CylinderGeometry(0.05,0.07,9,8), brass, px,4.5,pz)); add(new THREE.SphereGeometry(0.12,10,8), brass, px,9.05,pz);
     const fm=makeFlag(vnTex(), 2.6, 1.7, sx); fm.position.set(px,8.1,pz); g.add(fm); flags.push(fm); }   // Liên Quân Thép banners over the command post
   const light=new THREE.PointLight(th.glow,1.6,40); light.position.y=6.25; g.add(light);
-  g.remove(halo); G0.add(halo); podium(G0, g, PH, brass);
+  g.remove(halo); G0.add(halo); const pod=podium(G0, g, PH, brass);
   scene.add(G0);
-  core = { mesh:G0, crystal, cu, glow, beam, dome, halo, rings, sparks:[], shards:[], flags, light, theme:th, moteT:0,
+  core = { mesh:G0, g, pod, poles, crystal, cu, glow, beam, dome, halo, rings, sparks:[], shards:[], flags, light, theme:th, moteT:0, domeS:1,
     pos:new THREE.Vector3(0,0,0), hp:CORE_DEF.hp, maxHp:CORE_DEF.hp, r:4.2, flash:0 };
+  dressCore(core);
 }
+// Z269 THE FIELD HEADQUARTERS: once the Tripo model is in, the monument gives way to a fortified command post — sloped armoured concrete,
+//   a radar dome, dishes, a guyed antenna mast, sandbags, blast walls, a camouflage net — the shield dome grows to cover it, the two flags
+//   stand at its front corners, its roof smokes when the base is badly hurt; the sci-fi crystal, rings, beam and halo are put away
+function dressCore(c){ const R=REALCAMP.hq; if(typeof window==='undefined' || /procbase/.test(location.search+location.hash)) return;
+  loadGLTF('camp_hq').then(gl=>{ if(!gl || core!==c) return; let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; }); if(!src) return;
+    const geo=src.geometry.clone().applyMatrix4(src.matrixWorld); geo.computeBoundingBox(); const b=geo.boundingBox, k=R.w/Math.max(b.max.x-b.min.x, b.max.z-b.min.z);
+    geo.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); geo.scale(k,k,k); if(R.yaw) geo.rotateY(R.yaw); geo.computeBoundingBox(); geo.computeBoundingSphere();
+    const mat=src.material.clone(); mat.envMapIntensity=R.env; const hq=new THREE.Mesh(geo, mat); hq.position.y=-R.sink*(b.max.y-b.min.y)*k; hq.castShadow=hq.receiveShadow=true; c.mesh.add(hq);
+    const keep=new Set([c.dome, c.light, ...c.flags, ...c.poles]); for(const o of c.g.children) if(!keep.has(o)) o.visible=false; c.halo.visible=false; if(c.pod) c.pod.visible=false;
+    const hw=R.w/2+0.9; c.poles.forEach((p,i)=>{ const sx=i?1:-1; p.position.set(sx*hw, p.position.y, hw); c.flags[i].position.set(sx*hw, c.flags[i].position.y, hw); });
+    c.domeS=R.w/2/5.6*1.3; c.dome.scale.setScalar(c.domeS); c.light.position.y=R.lightY; c.r=R.hitR; c.hq=hq; c.roofY=geo.boundingBox.max.y*0.55+hq.position.y; }); }
 // Z227 THE CORE'S PODIUM — a three-tier octagonal marble podium with gilt edges and a stair on each side, a balustrade round the top,
 //   eight marble columns carrying a gilt ring and an open gilt dome over the crystal (a jewel in its cage), gold braziers at the stair heads
 function podium(G0in, g, PH, gold){ const marble=new THREE.MeshStandardMaterial({ color:0xece6da, roughness:0.35, metalness:0.05, envMapIntensity:0.9 }), P=[], Q=[], G0=new THREE.Group(); G0in.add(G0);   // Z233 the podium is all static: built in its own group, then baked to a handful of draws
@@ -96,7 +109,7 @@ function podium(G0in, g, PH, gold){ const marble=new THREE.MeshStandardMaterial(
   const fin=new THREE.Mesh(new THREE.ConeGeometry(0.22,1.1,8), gold); fin.position.y=PH+6.4+3.45+0.5; G0.add(fin);
   for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const x=Math.sin(a)*5.9+Math.cos(a)*sd*2.1, z=Math.cos(a)*5.9-Math.sin(a)*sd*2.1;   // gold braziers at the stair heads
       add(new THREE.CylinderGeometry(0.42,0.2,0.4,10), gold, x,PH+0.95,z); add(new THREE.CylinderGeometry(0.08,0.12,0.8,6), gold, x,PH+0.4,z); const f=flameFX(1.3, 0.85); f.position.set(x,PH+1.1,z); G0.add(f); } }
-  bakeGroup(G0); }
+  bakeGroup(G0); return G0; }
 export function rebuildCore(stage){ const keepMax = core ? core.maxHp : CORE_DEF.hp; buildCore(stage); core.maxHp=Math.max(keepMax, CORE_DEF.hp+((stage||1)-1)*CORE_DEF.perStage); core.hp=core.maxHp; updateHUD(); }
 // Z223 EMERGENCY SHIELD — the dome hardens and swallows every hit for a while (once per CORE_DEF.shield.cd s)
 function coreShield(now){ const c=core, Sd=CORE_DEF.shield; c.shieldUntil=now+Sd.t; c.shieldReady=now+Sd.cd; ringPulse(c.pos, c.theme.ring, 9); ringPulse(c.pos, 0xffffff, 5.5);
@@ -113,6 +126,8 @@ export function damageCore(dmg){
 export function updateCore(dt, now){
   if(!core) return; const c=core;
   c.cu.time.value = now%1000; c.cu.dmg.value = 1 - Math.max(0,c.hp)/c.maxHp;
+  if(c.hq && c.hp<c.maxHp*0.5 && Math.random()<dt*8*(1-c.hp/c.maxHp)){ const a=Math.random()*6.283, r=Math.random()*REALCAMP.hq.w*0.3;   // Z269 the HQ's roof smokes when the base is badly hurt
+    spawnPart(Math.cos(a)*r, c.roofY, Math.sin(a)*r, 0, 1.2+Math.random(), 0, { color:0x2a2622, size:1.6+Math.random(), life:2.2, smoke:true, grav:-0.4, drag:1.2, grow:1.6, op:0.5 }); }
   c.crystal.rotation.y += dt*0.5; c.crystal.position.y = 6.25 + Math.sin(now*1.3)*0.18;
   const pulse = 0.82 + Math.sin(now*2.2)*0.22;
   c.glow.material.opacity = 0.42*pulse; c.glow.position.y = c.crystal.position.y;
@@ -121,9 +136,9 @@ export function updateCore(dt, now){
   c.halo.material.opacity = 0.28 + 0.1*pulse;
   c.light.intensity = (NIGHT.k>0.5 ? 3.2 : 1.6)*pulse;                                       // the Core lights up its surroundings at night
   for(const r of c.rings) r.mesh.rotateOnAxis(r.ax, dt*r.spd);
-  c.moteT -= dt; if(c.moteT<=0){ c.moteT=0.12; const a=Math.random()*6.283, r=1+Math.random()*2.6;   // glints drifting up through the beam
+  c.moteT -= dt; if(c.moteT<=0 && !c.hq){ c.moteT=0.12; const a=Math.random()*6.283, r=1+Math.random()*2.6;   // glints drifting up through the beam
     spawnPart(Math.cos(a)*r, 2+Math.random()*3, Math.sin(a)*r, Math.cos(a)*0.2, 1.6+Math.random()*1.4, Math.sin(a)*0.2, { color:c.theme.beam, size:0.22+Math.random()*0.2, life:1.4, grav:0.2, drag:0.4 }); }
   if(c.flash>0){ c.flash-=dt; c.cu.flash.value=Math.max(0, c.flash/0.16)*0.85; }
-  if((c.shieldUntil||0)>now){ c.dome.material.opacity=Math.max(0.22, c.dome.material.opacity*0.96)+Math.sin(now*9)*0.04; c.dome.scale.setScalar(1.12); }   // Z223 shield up: the hex dome glows solid
-  else { c.dome.scale.setScalar(1); if(c.hp>0 && c.hp<c.maxHp && now-(c.lastHit||0)>CORE_DEF.regenDelay){ c.hp=Math.min(c.maxHp, c.hp+CORE_DEF.regen*dt); if(Math.random()<dt*2) updateHUD(); } }   // left alone, it mends
+  if((c.shieldUntil||0)>now){ c.dome.material.opacity=Math.max(0.22, c.dome.material.opacity*0.96)+Math.sin(now*9)*0.04; c.dome.scale.setScalar(c.domeS*1.12); }   // Z223 shield up: the hex dome glows solid
+  else { c.dome.scale.setScalar(c.domeS); if(c.hp>0 && c.hp<c.maxHp && now-(c.lastHit||0)>CORE_DEF.regenDelay){ c.hp=Math.min(c.maxHp, c.hp+CORE_DEF.regen*dt); if(Math.random()<dt*2) updateHUD(); } }   // left alone, it mends
 }
