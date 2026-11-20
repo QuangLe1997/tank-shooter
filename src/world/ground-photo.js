@@ -8,7 +8,8 @@ let _sizes = null, _want = null, _ns0 = null;
 const off = () => typeof location !== 'undefined' && /procground/.test((location.search || '') + (location.hash || ''));
 function tex(url, srgb){ if(_tex[url]) return _tex[url];
   return (_tex[url] = new THREE.TextureLoader().loadAsync(url).then(t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.anisotropy = APPLE ? 8 : (MOBILE ? 2 : 8); return t; })); }
-function photoSet(name){ if(_set[name]) return _set[name]; const d = 'assets/ground/' + name + '/';
+export const photoDiff = name => tex('assets/ground/' + name + '/diff.jpg', true);   // Z259 just the colour photo of a set (the far hills)
+export function photoSet(name){ if(_set[name]) return _set[name]; const d = 'assets/ground/' + name + '/';
   return (_set[name] = Promise.all([tex(d + 'diff.jpg', true), tex(d + 'nor.jpg', false), tex(d + 'arm.jpg', false)]).then(([diff, nor, arm]) => ({ diff, nor, arm }))); }
 function sizes(){ return _sizes || (_sizes = fetch('assets/ground/sizes.json').then(r => r.json())); }
 

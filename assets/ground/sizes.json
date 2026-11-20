@@ -18,5 +18,9 @@
  "gravel_floor": 2.25,
  "dirt": 2,
  "concrete_rock_path": 2,
- "brown_mud_rocks_01": 1.3
+ "brown_mud_rocks_01": 1.3,
+ "large_sandstone_blocks": 3,
+ "rock_face": 2.38,
+ "aerial_grass_rock": 15,
+ "aerial_rocks_02": 50
 }

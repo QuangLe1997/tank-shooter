@@ -723,6 +723,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/magmaMat\(\{ hot:0\.06 \}\)/.test(lv) && /buildVolcano\(\)/.test(wd) && /placeVolcano\(v\)/.test(wd) && /clearVolcano\(\)/.test(wd) && /updateMagma\(dt, now\)/.test(lp), 'the caldera pools and the wonder use it; the melt moves every frame');
   ok(C.MAGMA_FX && C.MAGMA_FX.cone.H>20 && C.MAGMA_FX.cone.rc<C.MAGMA_FX.cone.R/3, 'magma + volcano settings'); }
 
+// Z259 photo stone: the Giza pyramids in photographed limestone courses, every boulder in a triplanar rock-face photo, photo detail on the far hills
+{ const fs=await import('node:fs'); const st=fs.readFileSync('src/world/stone.js','utf8'), wd=fs.readFileSync('src/world/wonders.js','utf8'), pr=fs.readFileSync('src/world/props.js','utf8'), hz=fs.readFileSync('src/world/horizon.js','utf8'), tl=fs.readFileSync('tools/ground-photos.mjs','utf8'), C=await import('./config.js');
+  ok(/export function stoneMat/.test(st) && /export function worldUV/.test(st) && /export function pyramidGeos/.test(st) && /sd % 2 \? core : w/.test(st) && /P\.capFrom/.test(st), 'pyramid: courses of photo limestone, ragged edge strips that never overlap at the corners, a smooth casing cap');
+  ok(/pyramidGeos\(x, z, s, cap, Math\.random\)/.test(wd) && /stoneMat\('large_sandstone_blocks'\)/.test(wd), 'the Giza wonder builds its pyramids from it');
+  ok(/export function stoneTriMat/.test(st) && /stoneTriMat\('rock_face', bn\)/.test(pr) && /export function hillDetail/.test(st) && /hillDetail\(new THREE\.MeshLambertMaterial/.test(hz), 'boulders take the triplanar rock face; the far ranges take photo detail fading with the haze');
+  ok(/GROUND_PHOTO\.extra/.test(tl) && C.GROUND_PHOTO.extra.every(n=>fs.existsSync('assets/ground/'+n+'/diff.jpg')) && C.STONE.pyramid.tile>0, 'the stone and aerial sets ship with the ground sets'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

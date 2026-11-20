@@ -3,20 +3,17 @@
 //   the Great Wall riding the ridge, Dutch windmills (sails turning), a white marble domed mausoleum, a Roman amphitheatre in ruins, Hanoi's
 //   One Pillar Pagoda, an Inuit igloo camp with a lighthouse, a Saigon skyscraper, a Ruhr blast furnace. Low-poly, vertex-coloured, not targets.
 import * as THREE from 'three';
-import { ARENA, BIOME, MAGMA, MOBILE, _mergeColored, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart } from '../hub.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { ARENA, BIOME, MAGMA, MOBILE, _mergeColored, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart } from '../hub.js';
 
 export const WONDER = { g:null, name:'', x:0, z:0, spin:[], smoke:[], at:0 };
-const P=[]; const add=(geo,x,y,z,col,ry)=>{ if(ry) geo.rotateY(ry); geo.translate(x,y,z); P.push({ geo, col }); };
+const P=[], PY=[]; const add=(geo,x,y,z,col,ry)=>{ if(ry) geo.rotateY(ry); geo.translate(x,y,z); P.push({ geo, col }); };
 const B=(w,h,d,x,y,z,col,ry)=>add(new THREE.BoxGeometry(w,h,d),x,y,z,col,ry), C=(r1,r2,h,x,y,z,col,n)=>add(new THREE.CylinderGeometry(r1,r2,h,n||12),x,y,z,col);
 const S=(r,x,y,z,col,sy)=>{ const g=new THREE.SphereGeometry(r,14,10); if(sy) g.scale(1,sy,1); add(g,x,y,z,col); }, K=(r,h,x,y,z,col,n,ry)=>add(new THREE.ConeGeometry(r,h,n||12),x,y,z,col,ry);
 const half=(r,x,y,z,col)=>add(new THREE.SphereGeometry(r,14,8,0,6.28,0,Math.PI/2),x,y,z,col);
 // Z145 a Giza pyramid as it stands today: ~1.3 m limestone courses stepping up (the casing long gone), a tone shift every few courses,
 //   a ragged broken top; Khafre's keeps a cap of smooth white casing near the summit
-function pyramid(x, z, s, cap){ const n=MOBILE?18:Math.round(s/1.25), st=s/n, w0=s*1.9;
-  for(let k=0;k<n;k++){ const w=w0*(1-k/n), tone=[0xd2b27c,0xc8a670,0xdcbc88,0xc0a068][(k*7+(k>>2))%4]; if(w<1.4) break;
-    if(cap && k>n*0.82) B(w+st*0.3, st, w+st*0.3, x, k*st+st/2, z, 0xe8d8b4);
-    else B(w, st*1.02, w, x, k*st+st/2, z, tone); }
-  for(let k=0;k<12;k++){ const a=Math.random()*6.28, r=s*(0.9+Math.random()*0.5); B(1.4+Math.random()*2, 0.8+Math.random(), 1.2+Math.random()*1.5, x+Math.cos(a)*r, 0.4, z+Math.sin(a)*r, 0xc8a670, Math.random()*3); } }   // tumbled casing blocks
+function pyramid(x, z, s, cap){ PY.push(...pyramidGeos(x, z, s, cap, Math.random)); }   // Z259 photo-limestone courses (world/stone.js)
 // the Great Sphinx: a crouching lion body, forepaws stretched out, the nemes head-cloth and a weathered face, on a cut-rock bed
 function sphinx(x, z){ const c=0xc8a46e, d=0xb8945e;
   B(26,1.2,12,x,0.6,z,0xb89a68);                                                                     // bedrock enclosure floor
@@ -83,8 +80,9 @@ export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) 
   if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); windmills(w); WONDER.x=x; WONDER.z=z; return; }
   if(BIOME.name==='VOLCANO'){ const v=buildVolcano(); v.position.set(x, heightAt(x,z)-0.3, z); v.rotation.y=-a-Math.PI/2; g.add(v); placeVolcano(v); WONDER.x=x; WONDER.z=z;   // Z258 the real volcano: lathed cone, gullies, lava flows, crater lake
     for(const p of MAGMA.vents) WONDER.smoke.push([p.x, p.y+1, p.z]); return; }
-  P.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.05 }), { scale:0.25, bump:0.05, alb:0.34, foot:3, streak:0.3 })); P.length=0;
+  P.length=0; PY.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.05 }), { scale:0.25, bump:0.05, alb:0.34, foot:3, streak:0.3 })); P.length=0;
   m.castShadow=true; m.receiveShadow=true; m.position.set(x, heightAt(x,z)-0.3, z); m.rotation.y=-a-Math.PI/2; g.add(m); WONDER.x=x; WONDER.z=z;
+  if(PY.length){ const st=new THREE.Mesh(mergeGeometries(PY, false), stoneMat('large_sandstone_blocks')); PY.length=0; st.castShadow=st.receiveShadow=true; st.position.copy(m.position); st.rotation.y=m.rotation.y; g.add(st); }   // Z259 the pyramids in photographed limestone
   if(BIOME.name==='FOUNDRY'){ for(const [lx,lz] of [[18,6],[24,-6],[-16,10]]){ const v=new THREE.Vector3(lx,47,lz).applyAxisAngle(new THREE.Vector3(0,1,0), m.rotation.y); WONDER.smoke.push([x+v.x, heightAt(x,z)+v.y, z+v.z]); } } }
 export function updateWonder(dt, now){ for(const s of WONDER.spin) s.rotation.z+=dt*0.6;
   if(WONDER.smoke.length && now>WONDER.at){ WONDER.at=now+(MOBILE?0.5:0.22); const q=WONDER.smoke[(Math.random()*WONDER.smoke.length)|0]; spawnPart(q[0], q[1], q[2], 1.5+Math.random(), 2.5+Math.random()*1.5, Math.random()-0.5, { color:0x3a3632, size:4+Math.random()*3, life:4, smoke:true, grav:-0.4, drag:0.4, grow:2.2, op:0.5 }); } }

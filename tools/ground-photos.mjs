@@ -5,7 +5,7 @@
 import fs from 'node:fs'; import path from 'node:path'; import os from 'node:os'; import { execFileSync } from 'node:child_process';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'), OUT = path.join(ROOT, 'assets', 'ground');
 const { GROUND_PHOTO } = await import(path.join(ROOT, 'config.js'));
-const sets = [...new Set(Object.values(GROUND_PHOTO.biomes).flat())];
+const sets = [...new Set(Object.values(GROUND_PHOTO.biomes).flat().concat(GROUND_PHOTO.extra || []))];   // Z259 + the stone sets for pyramids and cliffs
 const sizesF = path.join(OUT, 'sizes.json'), sizes = fs.existsSync(sizesF) ? JSON.parse(fs.readFileSync(sizesF, 'utf8')) : {};
 const UA = { 'User-Agent': 'steel-siege-asset-tool' };
 for(const name of sets){

@@ -555,6 +555,16 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
   fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus'] }, east:{ designs:['lqt','t90m','type99','flametank','arv'] }, merkava:{ designs:['merkava'] },
     armata:{ designs:['t14','ghost'] }, ifv:{ designs:['ifv','recon','atgmv'] }, spg:{ designs:['spg','td'] }, ugv:{ designs:['ugv'] } } };   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
+// Z259 PHOTO STONE (world/stone.js): env / ao strengths; per set the colour shown until the photo loads, the albedo × once it has (the scene's
+//   exposure was tuned for darker procedural surfaces), the normal strength; pyramid = course height (m), texture tile (m), edge-strip depth (m),
+//   share of edge strips cut short (ragged corners), share robbed out, where the smooth casing cap starts (× courses), its colour, tumbled blocks,
+//   course tones (× the photo); rockTile = photo tiles per unit of a boulder's own size (triplanar); rockTint = albedo × on the boulders (their vertex
+//   colours carry the battlefield's rock tint); hills = the far ranges' photo detail: aerial-photo tile (m) on gentle slopes, rock-face tile (m) on steep
+//   ones, their mean brightness (the detail is brightness about 1), gain = its contrast, near = the detail strength × (1 − the ring's haze), the aerial set per battlefield
+export const STONE = { env:0.5, ao:0.85, rockTile:0.55,
+  sets:{ large_sandstone_blocks:{ fallback:0xc8a878, tint:[1.0, 0.89, 0.72], nrm:1.1 }, rock_face:{ fallback:0x6e6458, tint:[0.8, 0.76, 0.7], rockTint:[1.7, 1.7, 1.7], nrm:1.3 } },
+  hills:{ tileA:45, tileR:18, meanA:0.42, meanR:0.38, gain:2.6, near:1.5, sets:{ _:'aerial_rocks_02', MEADOW:'aerial_grass_rock', SAVANNA:'aerial_grass_rock', CITADEL:'aerial_grass_rock', DESERT:'aerial_sand', QUARRY:'aerial_rocks_02' } },
+  pyramid:{ course:1.25, tile:3, edge:2.2, ragged:0.55, gap:0.06, capFrom:0.82, casing:0xfff4e0, tumbled:14, tones:[0xffffff, 0xf4ece0, 0xfff8ee, 0xece2d2] } };
 // Z258 MAGMA (world/magma.js): glow = emissive strength of the hottest melt (the bloom catches it); scale = crust plates per metre (≈ 1 / plate size);
 //   bombEvery = seconds between the crater's lava-bomb bursts; cone = the volcano: foot radius R, rim height H, crater radius rc, lake depth below the
 //   rim, gully depth (× radius)
@@ -601,7 +611,8 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55,
   MEADOW:['leafy_grass','brown_mud_02'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['dry_ground_01','dry_ground_rocks'],
   DESERT:['aerial_sand','sandy_gravel'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','dark_rock'], VOLCANO:['burned_ground_01','dark_rock'],
   QUARRY:['gravel_ground_01','rock_ground'], FOUNDRY:['gravel_road','asphalt_02'], STEELMILL:['gravel_road','asphalt_02'], CITY:['asphalt_02','concrete_floor_damaged_01'],
-  CITADEL:['gravel_floor','dirt'], RUINS:['dry_ground_rocks','concrete_rock_path'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] } };
+  CITADEL:['gravel_floor','dirt'], RUINS:['dry_ground_rocks','concrete_rock_path'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
+  extra:['large_sandstone_blocks','rock_face','aerial_grass_rock','aerial_rocks_02'] };   // Z259 not floors: the pyramids' limestone courses and the cliff / hill rock (world/stone.js)
 // Z249 REAL INFANTRY (actors/real-troops.js): material roughness; Z254 seamInset = how far (rig units) a seam triangle's copy sits inside the next part;
 //   team = albedo × per side (ours a cooler green cast, theirs a warmer red one); the old rig's helmet-top height (rig units) the real man is sized to; the troop carbine:
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);

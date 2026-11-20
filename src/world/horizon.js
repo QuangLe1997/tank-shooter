@@ -2,7 +2,8 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, MOBILE, S, SKY, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, SKY, hillDetail, scene, sfx, smokeTex2, spawnPart } from '../hub.js';
+import { STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
 // per battlefield: [base colour, snow/highlight colour, shape kind, height (m)] — Z235 the green lands' ranges are forested blue-green, never the meadow's yellow-green
@@ -48,7 +49,7 @@ function ring(R, H, kind, base, hi, fogC, mix, seed){ const skyC=SKY.material.un
     if((peaky || snowy) && y>snowLine){ const sn=Math.min(1,(y-snowLine)/(H*0.1))*(1-steep*(snowy?0.35:0.65)); c.lerp(cH, sn); }
     if(y<H*0.12) c.lerp(cF, 0.4); c.lerp(skyC, mix*0.2).lerp(fogC, 0.08+mix*0.42); col[k*3]=c.r; col[k*3+1]=c.g; col[k*3+2]=c.b; }
   g.setAttribute('color', new THREE.BufferAttribute(col,3));
-  const m=new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors:true, fog:false, emissive:fogC.clone().multiplyScalar(0.03+mix*0.16) })); m.renderOrder=-8; m.frustumCulled=false; return m; }
+  const m=new THREE.Mesh(g, hillDetail(new THREE.MeshLambertMaterial({ vertexColors:true, fog:false, emissive:fogC.clone().multiplyScalar(0.03+mix*0.16) }), BIOME.name, Math.max(0, (1-mix)*STONE.hills.near))); m.renderOrder=-8; m.frustumCulled=false; return m; }   // Z259 photographed detail, fading with the haze
 const _r=(a,b)=>a+Math.random()*(b-a);
 // a skyline: towers / stacks standing on the nearest ring
 function skyline(R, H, kind, base, fogC, mix){ const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);
@@ -63,8 +64,8 @@ export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); con
   const R0=ARENA*1.55, kind=L[2], H=L[3]*(MOBILE?0.85:1);
   const rk = kind==='city'||kind==='stacks' ? 'hill' : kind;   // behind a skyline there are still hills
   g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest
-  g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.62, 2));
-  if(kind==='city'||kind==='stacks') g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42)); else g.add(ring(R0+30, H*0.7, rk, L[0], L[1], fogC, 0.42, 1));   // near: darkest, crispest
+  g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.52, 2));   // Z259 a little less haze
+  if(kind==='city'||kind==='stacks') g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42)); else g.add(ring(R0+30, H*0.7, rk, L[0], L[1], fogC, 0.3, 1));   // near: darkest, crispest (Z259 less haze: its photo detail reads)
   // the war beyond the hills: smoke columns rising over burning places
   const nC=MOBILE?3:6; for(let i=0;i<nC;i++){ const a=Math.random()*Math.PI*2, r=R0+20+Math.random()*90, x=Math.cos(a)*r, z=Math.sin(a)*r, col=new THREE.Group(); col.position.set(x,0,z); g.add(col);
     const parts=[]; for(let k=0;k<7;k++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:HZN.smokeTex, color:new THREE.Color(0x1c1814).lerp(fogC,0.35+k*0.06), transparent:true, opacity:0.85-k*0.08, depthWrite:false, fog:false })); s.position.y=8+k*16; s.scale.setScalar(18+k*9); col.add(s); parts.push(s); }
