@@ -30,7 +30,7 @@ const _cv=new THREE.Vector3(), _cb=new THREE.Box3(), _cs=new THREE.Sphere(), CUL
 function setLayer(o, l){ o.traverse(c=>c.layers.set(l)); }
 export function fogDist(){ const f=scene.fog; if(!f) return Infinity; return f.isFogExp2 ? 1.6/Math.max(1e-4, f.density) : f.far*0.95; }
 export function fogCull(){ const D=fogDist(), cx=camera.position.x, cz=camera.position.z;
-  for(const o of scene.children){ if(o.isLight || o===HZN.g || o===S.player?.mesh) continue; const u=o.userData;
+  for(const o of scene.children){ if(o.isLight || o===HZN.g || o===S.player?.mesh) continue; const u=o.userData; if(u.cb) continue;   // (Z338 cover is culled by its batch)
     if(u._cr===undefined){ let dyn=false; o.traverse(c=>{ if(c.isPoints || c.isInstancedMesh || c.isLine || c.frustumCulled===false) dyn=true; }); if(dyn){ u._cr=-1; continue; }   // particle layers / instanced fields span the map
       _cb.setFromObject(o); if(_cb.isEmpty()){ u._cr=-1; continue; } _cb.getBoundingSphere(_cs); o.getWorldPosition(_cv); u._cr = _cs.radius>40 ? -1 : _cs.radius+_cs.center.distanceTo(_cv); }   // rigid extent round its origin
     if(u._cr<0) continue; o.getWorldPosition(_cv); const far = Math.hypot(_cv.x-cx, _cv.z-cz)-u._cr > D;

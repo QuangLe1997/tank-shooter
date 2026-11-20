@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { MOBILE, detailize, loadRealCover, stoneTriMat, trackCover } from '../hub.js';
+import { MOBILE, detailize, loadRealCover, stoneTriMat, trackCover, batchCover } from '../hub.js';
 
 // ----------------------------- BATTLEFIELD PROPS (procedural, merged geometry, cached) -----------------------------
 // rocks (displaced + fractured icosahedra, smooth normals, AO vertex colours) · sandbags · fuel drums · tyre stacks · ammo crates ·
@@ -247,6 +247,6 @@ export const CONTAINER_PAINT = [0xae4632,0x41698c,0x5b7a52,0xc8923a,0x8e8e86,0x9
 export function makeCoverMesh(kind, destructible){
   const mat = destructible ? coverMat(kind).clone() : coverMat(kind); if(destructible) mat.userData.own=true;     // destructible pieces flash on hit → own material
   const m=new THREE.Mesh(coverGeo(kind), mat); m.castShadow=true; m.receiveShadow=true; m.userData.kind=kind;
-  trackCover(m); loadRealCover();   // Z252 the Meshy piece takes its place once loaded
+  trackCover(m); batchCover(m); loadRealCover();   // Z252 the Meshy piece takes its place once loaded
   return m;
 }

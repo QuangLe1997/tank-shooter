@@ -21,6 +21,7 @@ export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
 export * from './render/lod.js';
 export * from './render/far-lod.js';   // Z328 big static models swap to a simplified copy far away
+export * from './render/cover-batch.js';   // Z338 cover pieces drawn a few instanced draws at a time
 export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD
 export * from './world/atmosphere.js';
 export * from './world/sky-photo.js';   // Z255 photographed HDRI skies per hour of the day

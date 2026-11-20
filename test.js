@@ -679,7 +679,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z252 real cover: Meshy pieces fitted into the procedural footprints, tracked and swapped in place
 { const fs=await import('node:fs'); const rp=fs.readFileSync('src/world/real-props.js','utf8'), pr=fs.readFileSync('src/world/props.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8'), C=await import('./config.js');
   ok(/export function loadRealCover/.test(rp) && /export function trackCover/.test(rp) && /REALPROP\.hMax/.test(rp) && /old\.userData\.own/.test(rp) && !/old\.dispose\(\)/.test(rp), 'real cover: fitted to the footprint, own hit materials keep their tint, nothing disposed mid-compile');
-  ok(/trackCover\(m\); loadRealCover\(\)/.test(pr) && /trackCover\(up\)/.test(cv), 'every cover mesh (the stacked container too) is tracked');
+  ok(/trackCover\(m\); batchCover\(m\); loadRealCover\(\)/.test(pr) && /trackCover\(up\)/.test(cv), 'every cover mesh (the stacked container too) is tracked');
   ok(!C.REALPROP.kinds.includes('hedgehog') && !C.REALPROP.kinds.includes('hesco') && C.REALPROP.kinds.every(k=>fs.existsSync('assets/models/real/cover/'+k+'.glb') && fs.statSync('assets/models/real/cover/'+k+'.glb').size<7e5), 'eleven Meshy cover pieces ship small; hedgehog and HESCO stay procedural'); }
 
 // Z254 soldiers finished: a high-detail trooper, seams covered, per-side cast, palm grip; a real fall for the dead; the general shot off his horse
@@ -1084,6 +1084,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/host\.add\(m\); return farLOD\(m\); \}/.test(R('src/world/fortress.js')) && /farLOD\(hq\)/.test(R('src/actors/core.js')) && /render\/far-lod\.js/.test(R('src/hub.js')), 'fort towers, gatehouses, keeps and the HQ get their far copies');
   const d=R('src/world/decals.js'), g=R('src/world/ground.js');
   ok(!/terrainGeo\(\)/.test(d) && /DECAL_U\.decalS\.value = decalTex\(DECAL\.stat\)/.test(d) && /vec2 duv = vec2\(vWXZ\.x \* decalK \+ 0\.5, 0\.5 - vWXZ\.y \* decalK\)/.test(g) && /'macroGround5'/.test(g), 'ground scars are drawn by the ground shader, not by two extra copies of the terrain'); }
+
+// Z338 cover pieces keep their own meshes but are drawn a few instanced draws at a time
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), cb=R('src/render/cover-batch.js');
+  ok(/export const BATCH_LAYER = 6;/.test(cb) && /new THREE\.InstancedMesh\(g\.geo, g\.mat, cap\)/.test(cb) && /g\.im\.instanceMatrix\.array\.set\(e, g\.n \* 16\); g\.im\.setColorAt\(g\.n, m\.material\.color\)/.test(cb) && /mt\.userData\._e0 === undefined/.test(cb) && /scene\.onBeforeRender = function/.test(cb) && /nobatch/.test(cb), 'cover is batched per kind, a flashing piece draws itself, ?nobatch switches it off');
+  ok(/trackCover\(m\); batchCover\(m\); loadRealCover\(\);/.test(R('src/world/props.js')) && /if\(u\.cb\) continue;/.test(R('src/render/lod.js')) && /render\/cover-batch\.js/.test(R('src/hub.js')), 'every cover mesh joins the batch; the fog cull leaves it to the batch'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
