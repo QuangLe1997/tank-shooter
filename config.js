@@ -135,6 +135,9 @@ export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }
     ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
 // Z285 enemy outposts (world/outposts.js): sizes (w = length, h = height, m), tents per fort, the ring round the walls (m beyond R), the gate lane kept clear (rad), wire rows and distance, solid pieces
 export const OUTPOST = { size:{ base_barracks:{ w:16 }, base_tent:{ w:7 }, base_radar:{ h:9 }, base_bunker:{ w:7 }, base_wire:{ w:6 }, mil_truck:{ w:8 }, mil_apc:{ w:7.6 }, mil_jeep:{ w:4.3 } }, veh:['mil_truck','mil_apc','mil_jeep'], nVeh:2, tents:2, ring:[10, 22], laneA:0.5, wireRows:2, wireAt:9, solid:['base_barracks','base_bunker','base_radar','mil_truck','mil_apc','mil_jeep'] };
+// Z292 PHONE LOD: phones load the light copies under …/m/ (trees ~3k triangles with their leaf cards thinned, fort pieces 2.5–3.5k, the city's
+//   buildings halved) and keep the block skyline — measured on the emulated phone: 5.0M → 2.5M triangles a frame on the meadow and savanna
+export const PHONE_LOD = { on:true, trees:true, forts:true, city:['bld_office','bld_glass','bld_hotel','bld_apart','bld_shophouse','bld_shoprow2','bld_villa'] };
 // Z286 real wildlife (actors/wildlife.js; Tripo, rigged + walk cycle): height (m) per species, turn fix (rad), walk-cycle speed limits, off on phones
 export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, reindeer:2.4, bear:1.5 }, yaw:{}, cycle:[0.7, 2.6], mobile:false };
 // Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink

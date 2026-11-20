@@ -3,7 +3,7 @@
 // 1K photo textures kept. Then shrink the textures with glb-pack (--tex 512 for the small pieces).
 //   node tools/city-props.mjs list <polyhaven-id> --deps <dir>     the model's objects (name, triangles, size): what `pick` can choose
 //   node tools/city-props.mjs [name …] --deps <dir>                build assets/models/real/city/<name>.glb (all of PROPS when no name is given)
-//   node tools/city-props.mjs pack <in.glb> <out.glb> <tris> --deps <dir>   Z268 simplify any downloaded model (skinned too) to a triangle budget
+//   node tools/city-props.mjs pack <in.glb> <out.glb> <tris> --deps <dir> [--err 0.02] [--thin 0.25]   Z268 simplify any downloaded model (skinned too) to a triangle budget
 //   <dir> holds the packages:  npm i --prefix <dir> @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 meshoptimizer
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { createRequire } from 'node:module';
 
@@ -48,7 +48,19 @@ async function build(name){ const P = PROPS[name]; if(!P) throw new Error('no pr
 
 // Z268 any local .glb (a Tripo / Meshy download, skinned or not) welded and simplified to a triangle budget: pack <in> <out> <tris>
 async function pack(inp, out, budget){ const doc = await io.read(inp); await doc.transform(F.prune(), F.dedup(), F.weld()); const t0 = tris(doc);
-  await doc.transform(F.simplify({ simplifier:MeshoptSimplifier, ratio:Math.min(1, budget / t0), error:0.02 }), F.prune()); fs.writeFileSync(out, await io.writeBinary(doc));
+  await doc.transform(F.simplify({ simplifier:MeshoptSimplifier, ratio:Math.min(1, budget / t0), error:+opt('--err', 0.02) }), F.prune());   // Z292 --err: a looser error bound for the phone versions
+  const thin = +opt('--thin', 0); if(thin > 0 && thin < 1){ let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);   // Z292 phone foliage: thin the loose leaf cards
+    for(const m of doc.getRoot().listMeshes()) for(const p of m.listPrimitives()){ const I = p.getIndices(), P = p.getAttribute('POSITION'); if(!I || !P || P.getComponentType() !== 5126) continue;
+      const idx = I.getArray(), pos = P.getArray(), nv = P.getCount(), par = new Int32Array(nv).map((_, i) => i), find = a => { while(par[a] !== a){ par[a] = par[par[a]]; a = par[a]; } return a; };
+      for(let t = 0; t < idx.length; t += 3){ const a = find(idx[t]), b = find(idx[t + 1]), c = find(idx[t + 2]); par[b] = a; par[find(c)] = a; }
+      const comp = new Map(); for(let t = 0; t < idx.length; t += 3){ const r = find(idx[t]); let c = comp.get(r); if(!c) comp.set(r, c = { tris:[], vs:new Set() }); c.tris.push(t); c.vs.add(idx[t]); c.vs.add(idx[t + 1]); c.vs.add(idx[t + 2]); }
+      const keep = [], grow = Math.min(1.8, 1 / Math.sqrt(thin)); for(const c of comp.values()){ if(c.tris.length > 12){ for(const t of c.tris) keep.push(idx[t], idx[t + 1], idx[t + 2]); continue; }   // trunk and boughs stay whole
+        if(rnd() > thin) continue; let cx = 0, cy = 0, cz = 0; for(const v of c.vs){ cx += pos[v * 3]; cy += pos[v * 3 + 1]; cz += pos[v * 3 + 2]; } cx /= c.vs.size; cy /= c.vs.size; cz /= c.vs.size;
+        for(const v of c.vs){ pos[v * 3] = cx + (pos[v * 3] - cx) * grow; pos[v * 3 + 1] = cy + (pos[v * 3 + 1] - cy) * grow; pos[v * 3 + 2] = cz + (pos[v * 3 + 2] - cz) * grow; }   // a kept card grows to cover for the dropped ones
+        for(const t of c.tris) keep.push(idx[t], idx[t + 1], idx[t + 2]); }
+      P.setArray(pos); I.setArray(new Uint32Array(keep)); F.compactPrimitive(p); }
+    await doc.transform(F.prune()); if(tris(doc) > budget) await doc.transform(F.simplify({ simplifier:MeshoptSimplifier, ratio:Math.min(1, budget / tris(doc)), error:+opt('--err', 0.02) }), F.prune()); }
+  fs.writeFileSync(out, await io.writeBinary(doc));
   console.log(path.basename(out).padEnd(20), t0, '→', tris(doc), 'tris'); }
 
 await MeshoptSimplifier.ready;

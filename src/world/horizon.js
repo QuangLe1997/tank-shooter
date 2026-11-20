@@ -66,7 +66,8 @@ function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bl
     const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });
     im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; im.renderOrder=-7; g.add(im); }
   return g; }
-function skyline(R, H, kind, base, fogC, mix){ if(kind==='city' && realCityReady()){ const rs=realSkyline(R, H*1.15, fogC, Math.min(0.85, mix+0.12)); if(rs) return rs; }
+function skyline(R, H, kind, base, fogC, mix){ if(kind==='city' && realCityReady() && !MOBILE){   // Z292 phones keep the hazed block skyline: ~150 real towers would cost them 2–3M triangles
+  const rs=realSkyline(R, H*1.15, fogC, Math.min(0.85, mix+0.12)); if(rs) return rs; }
   const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);
   const a0=Math.random()*6.283; for(let i=0;i<n;i++){ const a=a0+(i+0.15+Math.random()*0.7)/n*Math.PI*2, r=R+(Math.random()-0.5)*30,   // Z289 evenly round, jittered
     w=kind==='stacks'?3+Math.random()*3:8+Math.random()*16, h=kind==='stacks'?H*(0.6+Math.random()*0.8):H*(0.25+Math.random()*0.75);

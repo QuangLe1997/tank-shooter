@@ -861,6 +861,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function wheelGeo/.test(t) && /function wheelMat/.test(t) && /aRoll/.test(t) && C.REALCITY.traffic.wheel.length===2, 'traffic wheels roll with the distance driven');
   ok(C.OUTPOST.veh.every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb') && C.OUTPOST.size[k] && C.OUTPOST.solid.includes(k)) && /C\.nVeh/.test(fs.readFileSync('src/world/outposts.js','utf8')), 'trucks, APCs and jeeps parked in every enemy camp'); }
 
+// Z292 phones load light trees, fort pieces and city buildings; block skyline on phones
+{ const fs=await import('node:fs'); const C=await import('./config.js'), m=fs.readFileSync('src/actors/models.js','utf8');
+  ok(C.PHONE_LOD.on && Object.keys(C.REALTREE.h).every(k=>fs.existsSync('assets/models/real/tree/m/'+k+'.glb')) && ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/m/fort_'+st+'_'+p+'.glb'))) && C.PHONE_LOD.city.every(k=>fs.existsSync('assets/models/real/city/m/'+k+'.glb')), 'every phone model is there');
+  ok(/PHONE && PHONE_LOD\.trees/.test(m) && /PHONE && PHONE_LOD\.forts/.test(m) && /PHONE_LOD\.city\.includes/.test(m) && /realCityReady\(\) && !MOBILE/.test(fs.readFileSync('src/world/horizon.js','utf8')) && /--thin/.test(fs.readFileSync('tools/city-props.mjs','utf8')), 'phones take the light copies'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

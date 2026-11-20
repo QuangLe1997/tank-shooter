@@ -1,7 +1,7 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { REALAIR, REALRUIN, REALCITY, REALGUN, REALPROP, REALTANK, REALTREE } from '../../config.js';
+import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALGUN, REALPROP, REALTANK, REALTREE } from '../../config.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -25,7 +25,8 @@ for(const k of Object.keys(REALTANK.fams)) MODEL_FILES['tank_' + k] = 'assets/mo
 // Z257 one model per player-gun family that has its own file (tank/real-guns.js)
 for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['gun_' + k] = 'assets/models/real/gun/' + k + '.glb';
 // Z262 the tree species (world/real-trees.js)
-for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + k + '.glb';
+const PHONE = typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && PHONE_LOD.on;   // (= MOBILE; read here: this table is built before the hub is)
+for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + (PHONE && PHONE_LOD.trees ? 'm/' : '') + k + '.glb';   // Z292 phones take the 3k-triangle trees
 // Z264 the city's buildings and vehicles (world/real-city.js)
 MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
 for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders
@@ -35,8 +36,8 @@ for(const k of ['base_tent','base_radar','base_bunker','base_barracks','base_wir
 MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
 for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';
 for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins
-for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry']) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters
-for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + k + '.glb';
+for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry']) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/'+(PHONE && PHONE_LOD.forts ? 'm/' : '')+'fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters
+for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + (PHONE && PHONE_LOD.city.includes(k) ? 'm/' : '') + k + '.glb';   // Z292 the light buildings on phones
 const _load = {}, _gl = {};
 let _loader = null;
 const procOnly = () => typeof location !== 'undefined' && /procgun/.test((location.search || '') + (location.hash || ''));
