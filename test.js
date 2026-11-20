@@ -848,6 +848,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(JSON.stringify(W.ATMOS.MEADOW.hi)!==JSON.stringify(W.ATMOS.HILLS.hi) && JSON.stringify(W.ATMOS.HILLS.hi)!==JSON.stringify(W.ATMOS.VILLAGE.hi), 'meadow, hills and village each graded their own way');
   ok((R('src/world/flora.js').match(/reedPlume\(\), N\(/g)||[]).length>=3 && /function lampPools/.test(R('src/world/city.js')) && /POOL_K\.value=NIGHT\.k/.test(R('src/world/landmarks.js')) && C.REALCITY.pools.r>0, 'cỏ lau in three battlefields, warm pools under the street lamps'); }
 
+// Z288 the city opens on film: Landmark 81 tilt-up, a boulevard tracking shot
+{ const fs=await import('node:fs'); const C=await import('./config.js'), i=fs.readFileSync('src/game/intro.js','utf8');
+  ok(C.INTRO_CITY.on && /function cityShots/.test(i) && /function streetShot/.test(i) && /function playShot/.test(i) && /updateTraffic\(dt\); \}/.test(fs.readFileSync('src/game/loop.js','utf8')), 'city intro: two cut shots before the grand tour, traffic moving'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

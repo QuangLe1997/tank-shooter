@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
-import { INTRO } from '../../config.js';
-import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart } from '../hub.js';
+import { INTRO, INTRO_CITY } from '../../config.js';
+import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -46,7 +46,24 @@ function buildGrandTour(T){
     cum[i]=cum[i-1] + p0.distanceTo(p1)/dist + turn*1.4; p0.copy(p1); d0.copy(d1); }
   const total=cum[N]||1;
   const wAt=u=>{ const c=u*total; let lo=0, hi=N; while(hi-lo>1){ const m=(lo+hi)>>1; if(cum[m]<c) lo=m; else hi=m; } const span=cum[hi]-cum[lo]||1; return Math.min(1, (lo+(c-cum[lo])/span)/N); };
-  return { pose, wAt, caps, fov, wA, dur:TOUR.dur, fog:null, capK:-1 }; }
+  return { pose, wAt, caps, fov, wA, dur:TOUR.dur, fog:null, capK:-1, shots:null, shotsAt:0, st:0 }; }
+// Z288 THE CITY ON FILM: before the grand tour, two short shots cut together — Landmark 81 seen from near its foot, the camera tilting up
+//   its height on a long lens; then a low tracking shot down the longest boulevard, traffic streaming past. Each shot eases its own move;
+//   a hard cut joins them, and the last cuts to the high orbit. City only, desktop only (the tour is), and only the first time (intro.quick).
+function cityShots(){ const C=INTRO_CITY; if(BIOME.name!=='CITY' || !C || !C.on) return null; const shots=[];
+  if(WONDER.g && WONDER.x!=null){ const b=new THREE.Box3().setFromObject(WONDER.g), Hh=Math.max(20, b.max.y), wx=WONDER.x, wz=WONDER.z, L=Math.hypot(wx,wz)||1, ux=-wx/L, uz=-wz/L, d=Hh*C.l81.back;   // stand on the field side of the tower
+    const g0=heightAt(wx+ux*d, wz+uz*d)+1.8, sx=-uz*d*0.08, sz=ux*d*0.08;
+    shots.push({ dur:C.l81.dur, fov:C.l81.fov, cap:'SÀI GÒN · LANDMARK 81', p0:new THREE.Vector3(wx+ux*d-sx, g0, wz+uz*d-sz), p1:new THREE.Vector3(wx+ux*d*0.92+sx, g0+2, wz+uz*d*0.92+sz),
+      l0:new THREE.Vector3(wx, Hh*0.22, wz), l1:new THREE.Vector3(wx, Hh*0.86, wz) }); }
+  return shots.length ? shots : null; }
+function streetShot(){ const C=INTRO_CITY, runs=(TRAFFIC && TRAFFIC.runs)||[]; if(BIOME.name!=='CITY' || !C || !C.on || !runs.length) return null; { const r=runs.slice().sort((a,b)=>(b.blvd?1e4:0)+(b.a1-b.a0)-((a.blvd?1e4:0)+(a.a1-a.a0)))[0], S2=C.street, len=S2.v*S2.dur, mid=(r.a0+r.a1)/2;
+    const at=(t, off, y)=>{ const x=r.ax ? r.c-off : t, z=r.ax ? t : r.c+off; return new THREE.Vector3(x, heightAt(x,z)+y, z); };
+    return { dur:S2.dur, fov:S2.fov, cap:'ĐẠI LỘ · GIỜ TAN TẦM', p0:at(mid-len/2, S2.off, S2.h), p1:at(mid+len/2, S2.off, S2.h), l0:at(mid-len/2+40, 0, 1.2), l1:at(mid+len/2+40, 0, 1.2) }; } }
+// play the shot under way at time t (s); false once they are over
+const _sp=new THREE.Vector3(), _sl=new THREE.Vector3();
+function playShot(R, t){ let a=0; for(const s of R.shots){ if(t<a+s.dur){ const u=smoother((t-a)/s.dur); _sp.lerpVectors(s.p0, s.p1, u); _sl.lerpVectors(s.l0, s.l1, u); camera.position.copy(_sp); camera.lookAt(_sl);
+      if(camera.fov!==s.fov){ camera.fov=s.fov; camera.updateProjectionMatrix(); } if(R.fog!=null && scene.fog) scene.fog.density=R.fog; if(R.capS!==s){ R.capS=s; setCap(s.cap); } return true; } a+=s.dur; }
+  if(camera.fov!==R.fov){ camera.fov=R.fov; camera.updateProjectionMatrix(); } return false; }
 export function startIntro(){
   const p=S.player; if(!p){ S.mode='playing'; return; }
   p.mesh.position.set(p.pos.x,0,p.pos.z); p.mesh.rotation.y=p.facing; p.turret.rotation.y=0;
@@ -113,6 +130,8 @@ export function updateIntro(dt, now){
   if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; showVeil(false); if(intro.quick) endIntro(); } }); }
     placeAt(0); return; }
   const step=Math.min(dt, 1/30);   // Z119 a slow frame slows the camera for a moment instead of making it jump
+  if(intro.tour && !intro.tour.shotsAt){ intro.tour.shotsAt=1; intro.tour.shots=cityShots(); if(!intro.tour.shots){ const s=streetShot(); if(s){ intro.tour.shots=[s]; intro.tour.streetAt=1; } } }   // laid out once the warm-up is over: the traffic has its roads by then
+  if(intro.tour && intro.tour.shots && intro.tour.st>=0){ const R=intro.tour; R.st+=step; if(playShot(R, R.st)) return; if(!R.streetAt){ R.streetAt=1; const s=streetShot(); if(s){ R.shots.push(s); playShot(R, R.st); return; } } R.st=-1; R.shots=null; }   // Z288 the city's opening shots first
   if(intro.tour){ const R=intro.tour; intro.tt=Math.min(1, intro.tt + step/R.dur); const w=placeAt(intro.tt);
     if(w<R.wA*0.98){ const k=Math.min(R.caps.length-1, Math.floor(w/R.wA*R.caps.length)); if(k!==R.capK){ R.capK=k; setCap(R.caps[k]); } }
     else if(R.capK!==-2){ R.capK=-2; setCap(stageLine()); }
