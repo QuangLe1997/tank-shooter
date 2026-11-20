@@ -216,8 +216,8 @@ export function updateRealCav(CV, dt, P){
   else if(mounted){ ok = (g === 'gallop' || g === 'canter') ? 'Ride_Gallop' : 'Ride_Walk'; ts = g === 'idle' ? 0.45 : 1; }
   else if(P.trans || s === 'stand' && fv < 0.3){ ok = 'Aim_Stand'; freeze = 0; }   // the rifle shouldered, feet square
   else if(s === 'prone'){ ok = 'Prone_Reload'; if(fv < 0.2) freeze = 0; else ts = 0.7; }
-  else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Aim'; freeze = 0; } else if(R.legs && R.legs.on && R.legs.mode === 'crouch'){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }   // (Z339 crouched on the move: rifle up, his own legs under him)
-  else if(fv < C.gaitAt[0]){ if(R.legs && R.legs.on){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); } }   // (Z339 walking, his legs are his own: the rifle held steady over them)
+  else if(s === 'crouch'){ if(fv < 0.3){ ok = 'Kneeling_Aim'; freeze = 0; } else if(R.ownLegs && R.ownLegs.on && R.ownLegs.mode === 'crouch'){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Cautious_Crouch_Walk_Forward'; ts = clamp(fv / C.footV.crouch, 0.6, 1.6); } }   // (Z339 crouched on the move: rifle up, his own legs under him)
+  else if(fv < C.gaitAt[0]){ if(R.ownLegs && R.ownLegs.on){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); } }   // (Z339 walking, his legs are his own: the rifle held steady over them)
   else if(fv < C.gaitAt[1]){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }   // (Z304 thresholds for a man's real walk / run / sprint)
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
   blend(R.OA, ok, ts, dt, freeze);
@@ -239,7 +239,7 @@ export function updateRealCav(CV, dt, P){
   const tgt = sat ? clamp(R.tu, -RT.max, RT.max) : R.tu, far = Math.abs(tgt - (R.av ?? tgt)), rate = sat ? C.aimRate + (RT.swing - C.aimRate) * clamp((far - 0.8) / 1.5, 0, 1) : C.aimRate;   // (a long way round: quicker)
   R.av = R.av == null ? tgt : R.av + clamp(tgt - R.av, -rate * dt, rate * dt); const twAll = R.av;
   // the body: sat, the hips swing round on the seat (slowly); standing in a bed, he turns his whole body by stepping round — a step at a time, feet moving
-  if(braced){ const want = twAll;   // (on his feet any way round, the short way)
+  if(braced){ const want = twAll; R.hy = R.hy || 0;   // (on his feet any way round, the short way · Z339 from 0: unset it made his whole body NaN)
     if(!R.step && Math.abs(want - (R.hy || 0)) > C.standTurn[1]){ R.step = { from:R.hy || 0, to:(R.hy || 0) + clamp(want - (R.hy || 0), -C.standTurn[2], C.standTurn[2]), t:0 }; }
     if(R.step){ R.step.t = Math.min(1, R.step.t + dt / C.standTurn[3]); R.hy = R.step.from + (R.step.to - R.step.from) * smooth(R.step.t); if(R.step.t >= 1) R.step = null; } }
   else { R.step = null; const hipMax = sat ? (bike ? C.seatTurn[1] : RT.hip) : 0, hyT = sat ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -hipMax, hipMax) : 0;

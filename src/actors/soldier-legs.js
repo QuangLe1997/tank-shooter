@@ -38,7 +38,7 @@ function lens(D, L){ if(L.len) return L.len; const P = n => wp(D[n], V3());
   const th = P('LeftUpLeg').distanceTo(P('LeftLeg')), sh = P('LeftLeg').distanceTo(P('LeftFoot'));
   return L.len = { th, sh, leg:th + sh, fl:P('LeftFoot').distanceTo(P('LeftToeBase')), hw:P('LeftUpLeg').distanceTo(P('RightUpLeg')) / 2 }; }
 const newFoot = () => ({ p:V3(), y:0, yaw:0, sw:null, ph:0 });
-export function legState(R){ return R.legs || (R.legs = { w:0, on:false, mode:null, feet:[newFoot(), newFoot()], t:0, last:-9, v:V3(), prev:null, th:0, br:1, gy:0, snap:new Map(), hp:V3() }); }
+export function legState(R){ return R.ownLegs || (R.ownLegs = { w:0, on:false, mode:null, feet:[newFoot(), newFoot()], t:0, last:-9, v:V3(), prev:null, th:0, br:1, gy:0, snap:new Map(), hp:V3() }); }
 
 // ---- every frame, after the clips (and the puppet) have posed him: which legs he stands on ----
 // R = CV.real, G = the soldier's group, P = updateRealCav's state (stance, trans, move, dead), mounted = on the horse / ride
