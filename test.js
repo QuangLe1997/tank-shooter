@@ -784,6 +784,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.REALCITY.traffic.files.every(k=>fs.existsSync('assets/models/real/city/'+k+'.glb')) && C.REALCITY.blds.bld_bitexco && /REAL_CITY\.bld_bitexco/.test(wd) && C.REALCITY.landmarkSink>0 && fs.existsSync('assets/models/real/city/SOURCES.txt'), 'Landmark 81 and Bitexco from photos (credited), the traffic models ship');
   ok(Array.isArray(C.REALCITY.flatHorizon) && /flatCity/.test(hz) && /function realSkyline\(R, H, fogC, mix, count, depth\)/.test(hz), 'a flat horizon of city fading into the haze, no peaks behind Saigon'); }
 
+// Z269 the cyclo from a real photo: parked on the pavements and waiting at the markets
+{ const fs=await import('node:fs'); const ct=fs.readFileSync('src/world/city.js','utf8'), C=await import('./config.js');
+  ok(C.REALCITY.props.prop_cyclo && fs.existsSync('assets/models/real/city/prop_cyclo.glb') && (ct.match(/prop\('prop_cyclo'/g)||[]).length>=2 && /Cyclo Purple/.test(fs.readFileSync('assets/models/real/city/SOURCES.txt','utf8')), 'Tripo cyclo (credited) parked on pavements and at markets'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -317,7 +317,8 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
         else if(r<0.25){ const rowN=2+((Math.random()*4)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; const [mx,mz]=at(ss, ow); motos.push({ x:mx, z:mz, ry:(ax?0:Math.PI/2)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; }
         else if(r<0.28) prop('prop_bin', x, z, _R(0,6.28), ()=>{ CURP=0; det(new THREE.CylinderGeometry(0.28,0.25,0.9,10), x, heightAt(x,z)+0.45, z, 0, 0x2a7a3a); });   // a bin
         else if(r<0.3){ const [hx,hz]=at(s, sd*(W/2+0.45)); prop('prop_hydrant', hx, hz, sideRy(ax,sd)); }                                                   // Z267 a hydrant at the kerb
-        else if(r<0.34){ prop('prop_cafe', x, z, ang+Math.PI/2); s+=2; } }                                                                               // Z267 a pavement café table
+        else if(r<0.34){ prop('prop_cafe', x, z, ang+Math.PI/2); s+=2; }
+        else if(r<0.355){ prop('prop_cyclo', x, z, ang+Math.PI/2+(Math.random()<0.5?0:Math.PI)); s+=3; } }   // Z269 a cyclo parked on the pavement (Tripo, from a photo)                                                                               // Z267 a pavement café table
       if(sd===polesSide) for(let s=-L/2+2; s<=L/2-2; s+=_R(10,13)){ const [x,z]=at(s, sd*(W/2+0.45)); const o={ x, z, ry:ang, spans:[] }; poles.push(o); chain.push(o); }
       // parked cars along the kerb lane
       const lane=sd*(W/2-1.3); for(let s=-L/2+4; s<L/2-4; s+=_R(6,13)) if(Math.random()<(blvd?0.2:0.26)){ const [x,z]=at(s, lane);   // Z242 fewer parked cars
@@ -358,6 +359,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
       for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-3), z:cz+sz*(d/2-3), s:_R(0.95,1.2), ry:_R(0,6.28) }); bench(cx-w*0.2, cz, Math.PI/2); bench(cx+w*0.2, cz, -Math.PI/2); }
     else if(r<0.93){ CURP=0; strip('walk', walkMat, cx, cz, w, d, 0, 0.1, 2, 2);                                                            // a MARKET SQUARE: umbrella stalls, stools, a few trees
       for(let k=0;k<(MOBILE?4:7);k++) stall(cx+_R(-w/2+2.5,w/2-2.5), cz+_R(-d/2+2.5,d/2-2.5), _R(0,6.28));
+      for(const sd of [-1,1]) prop('prop_cyclo', cx+sd*(w/2-1.6), cz+_R(-d/4,d/4), _R(-0.3,0.3));   // Z269 cyclos waiting for fares at the market
       for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-1.5), z:cz+sz*(d/2-1.5), s:_R(0.9,1.1), ry:_R(0,6.28) }); }
     else { CURP=0; const pw=Math.min(w-4, 36), pd=Math.min(d-4, 22);                                                                         // a FOOTBALL PITCH with goals and a low fence
       strip('pitch', ()=>new THREE.MeshStandardMaterial({ map:pitchT().t, roughness:0.95 }), cx, cz, pw, pd, 0, 0.07, pw, pd);
