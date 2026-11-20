@@ -321,7 +321,7 @@ function flushPending(){ const list=PENDING.splice(0).filter(q=>q.gen===CITY_GEN
   CURP=0; flushBuckets(); B=null; P=null; }
 export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; PP=[]; CURP=0; const fix=[]; CITY_GEN++; PENDING.length=0;
   const lantern=typeof window!=='undefined' && REALCITY.share>=1;   // Z267 one lantern post stands where the procedural median had a lamp each way
-  const n=Math.ceil(ARENA/G), cars=[], motos=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[], roads=[];
+  const n=Math.ceil(ARENA/G), cars=[], trees=[], palms=[], lamps=[], lights=[], poles=[], chains=[], roads=[];
   const inCity=(x,z,m)=>inField(x,z,m||4) && !inZone(x,z,3) && Math.hypot(x,z)>30 && Math.hypot(x,z)<ARENA*0.86;
   const RT=roadT(), BT=bvdT(), WT=walkT(), ZT=zebraT(), PT=parkT();
   const ASP={ set:'asphalt_01', tile:2.08, lanes:true, marks:true, hi:!MOBILE, tint:REALCITY.asphalt }, roadMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:RT.t, roughness:0.82 }), ASP), bvdMat=()=>streetSurface(new THREE.MeshStandardMaterial({ map:BT.t, roughness:0.8 }), ASP);   // Z265 real asphalt: wheel paths, oil, gutters, patches, cracks, worn paint, puddles
@@ -348,11 +348,10 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
         if(Math.random()<0.35){ const [x,z]=at(_R(-L/4,L/4), sd*(W/2+WW*0.55)); busStop(x, z, sideRy(ax,sd)+Math.PI); } }
       else for(let s=-L/2+3; s<L/2-2; s+=_R(5,9)){ const [x,z]=at(s, ow), r=Math.random();
         if(r<0.1) trees.push({ x, z, s:_R(0.75,1.0), ry:_R(0,6.28) }); else if(r<0.17) lamps.push({ x, z, ry:sideRy(ax,sd) });
-        else if(r<0.25){ const rowN=2+((Math.random()*4)|0); for(let q=0;q<rowN;q++){ const ss=s+q*0.85; if(ss>L/2-1) break; const [mx,mz]=at(ss, ow); motos.push({ x:mx, z:mz, ry:(ax?0:Math.PI/2)+(Math.random()<0.5?0:Math.PI)+(Math.random()-0.5)*0.3, col:VCOL[(Math.random()*VCOL.length)|0] }); } s+=rowN*0.85; }
+        else if(r<0.25){}   // (Z333 no parked scooter rows: the hand-built stand-in scooters are gone)
         else if(r<0.28) prop('prop_bin', x, z, _R(0,6.28), ()=>{ CURP=0; det(new THREE.CylinderGeometry(0.28,0.25,0.9,10), x, heightAt(x,z)+0.45, z, 0, 0x2a7a3a); });   // a bin
         else if(r<0.3){ const [hx,hz]=at(s, sd*(W/2+0.45)); prop('prop_hydrant', hx, hz, sideRy(ax,sd)); }                                                   // Z267 a hydrant at the kerb
-        else if(r<0.34){ prop('prop_cafe', x, z, ang+Math.PI/2); s+=2; }
-        else if(r<0.355){ prop('prop_cyclo', x, z, ang+Math.PI/2+(Math.random()<0.5?0:Math.PI)); s+=3; } }   // Z269 a cyclo parked on the pavement (Tripo, from a photo)                                                                               // Z267 a pavement café table
+        else if(r<0.34){ prop('prop_cafe', x, z, ang+Math.PI/2); s+=2; } }   // Z269 a cyclo parked on the pavement (Tripo, from a photo)                                                                               // Z267 a pavement café table
       if(sd===polesSide) for(let s=-L/2+2; s<=L/2-2; s+=_R(10,13)){ const [x,z]=at(s, sd*(W/2+0.45)); const o={ x, z, ry:ang, spans:[] }; poles.push(o); chain.push(o); }
       // parked cars along the kerb lane
       const lane=sd*(W/2-1.3); for(let s=-L/2+4; s<L/2-4; s+=_R(6,13)) if(Math.random()<(blvd?0.2:0.26)){ const [x,z]=at(s, lane);   // Z242 fewer parked cars
@@ -394,7 +393,6 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
       for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-3), z:cz+sz*(d/2-3), s:_R(0.95,1.2), ry:_R(0,6.28) }); bench(cx-w*0.2, cz, Math.PI/2); bench(cx+w*0.2, cz, -Math.PI/2); }
     else if(r<0.93){ CURP=0; strip('walk', walkMat, cx, cz, w, d, 0, 0.1, 2, 2);                                                            // a MARKET SQUARE: umbrella stalls, stools, a few trees
       for(let k=0;k<(MOBILE?4:7);k++) stall(cx+_R(-w/2+2.5,w/2-2.5), cz+_R(-d/2+2.5,d/2-2.5), _R(0,6.28));
-      for(const sd of [-1,1]) prop('prop_cyclo', cx+sd*(w/2-1.6), cz+_R(-d/4,d/4), _R(-0.3,0.3));   // Z269 cyclos waiting for fares at the market
       for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) trees.push({ x:cx+sx*(w/2-1.5), z:cz+sz*(d/2-1.5), s:_R(0.9,1.1), ry:_R(0,6.28) }); }
     else { CURP=0; const pw=Math.min(w-4, 36), pd=Math.min(d-4, 22);                                                                         // a FOOTBALL PITCH with goals and a low fence
       strip('pitch', ()=>new THREE.MeshStandardMaterial({ map:pitchT().t, roughness:0.95 }), cx, cz, pw, pd, 0, 0.07, pw, pd);
@@ -421,8 +419,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
     regTopple([inst(_mergeColored(Q), vmat(), poles)], poles, 7.6); }
   // ---- flush the buckets (one mesh per material) and the detail mesh ----
   flushBuckets(); const anchor=arena.children[arena.children.length-1], gen=CITY_GEN, plist=PP; PP=null;
-  loadRealCity().then(()=>{ if(gen!==CITY_GEN || !anchor.parent) return; flushPending(); placeProps(plist, gen, anchor); dressPoles(lampIm, headIm, sigIm); buildTraffic(roads); });   // Z267 the waiting lots rise, the furniture and poles go real, once the models are in
-  drawStreetVehicles(cars, motos);
+  loadRealCity().then(()=>{ if(gen!==CITY_GEN || !anchor.parent) return; flushPending(); placeProps(plist, gen, anchor); dressPoles(lampIm, headIm, sigIm); drawStreetVehicles(cars); buildTraffic(roads); });   // Z333 the parked cars too: drawn once their real models are in, never as hand-built stand-ins   // Z267 the waiting lots rise, the furniture and poles go real, once the models are in
   drawFixtures(fix);   // Z265
   // Z266 the street trees and median palms as real Meshy species: the trees split into groups, each group one species of the city's mix (linden,
   //   oak, birch, poplar…), the palms coconut palms; each tree its own size, turn and lean; they sway in the wind and go down to shells, blasts and tanks
@@ -435,4 +432,3 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
   B=null; P=null; strip=null; }
 let _vmat=null;
 function vmat(){ return _vmat||(_vmat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.35, metalness:0.45, envMapIntensity:1.2 })); }
-const VCOL=[0xc8c8c8,0xf0f0f0,0x2a2a2a,0xa81a1a,0x1a3a7a,0x6a6a6a,0xd8c8a0,0x3a5a3a,0xe8e4dc,0x8a1a2a,0x2a5a9a];   // scooter paint

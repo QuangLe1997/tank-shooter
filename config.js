@@ -704,7 +704,7 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
   blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 }, bld_landmark:{ role:'landmark', env:1.2 }, bld_bitexco:{ role:'skyline', env:1.25 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza
  
   // Z267 the street furniture (world/real-city.js prepProp): h = height, w = width, s = scale (the Poly Haven scans are true size), glow = the material that lights at night
-  props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.15 }, prop_tarpcar:{ s:1.05 }, prop_cyclo:{ h:1.78 },
+  props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.15 }, prop_tarpcar:{ s:1.05 },
     city_fountain:{ w:9, sink:0.18 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5,
   bitexco:{ h:118, turn:0.5, sink:0.03 },   // Z268 Bitexco Financial Tower (Tripo, from a photo) standing out in the skyline, beside the Landmark 81 bearing (rad)
   // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]

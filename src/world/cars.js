@@ -160,10 +160,9 @@ let _csMat=null;
 export function contactShadow(w, l, n, matrix, y){ if(typeof document==='undefined') return null; const g=new THREE.PlaneGeometry(w, l); g.rotateX(-Math.PI/2); g.translate(0, y??0.012, 0);
   const m=_csMat||(_csMat=new THREE.MeshBasicMaterial({ color:0x000000, alphaMap:csTex(), transparent:true, opacity:REALCITY.contact.op, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 }));
   const im=new THREE.InstancedMesh(g, m, n); im.instanceMatrix=matrix; im.frustumCulled=false; im.renderOrder=1; arena.add(im); LAND.meshes.push(im); return im; }
-// cars: objects from pickCar · motos: {x,z,ry,col}
-export function drawStreetVehicles(cars, motos){ const B=built();
-  B.cars.forEach((m,i)=>{ const list=cars.filter(o=>o.m===i), R=carModel(m.name); if(R) drawReal(R, list, m.cr, 'car', m.taxi||m.truck); else draw(m.paint, m.trim, list, m.cr, 'car'); });
-  draw(B.moto.paint, B.moto.trim, motos, 0.45, 'moto'); }
+// cars: objects from pickCar — Z333 only as their real models (a kind with none is left out: no hand-built stand-in car or scooter is drawn any more)
+export function drawStreetVehicles(cars){ const B=built();
+  B.cars.forEach((m,i)=>{ const list=cars.filter(o=>o.m===i), R=carModel(m.name); if(R) drawReal(R, list, m.cr, 'car', m.taxi||m.truck); }); }
 // a crushed car / scooter: pancaked, skewed; both draws follow
 const _CM=new THREE.Matrix4();
 export function crushVehicle(c){ const sq=c.kind==='car'?0.42:0.2; _CM.compose(_V.set(c.x, heightAt(c.x,c.z)-0.05, c.z), _Q.setFromEuler(_E.set((Math.random()-0.5)*0.15, c.ry+(Math.random()-0.5)*0.4, (Math.random()-0.5)*0.15)), _S.set(1.08, sq, 1.04));

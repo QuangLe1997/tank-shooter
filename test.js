@@ -786,7 +786,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z269 the cyclo from a real photo: parked on the pavements and waiting at the markets
 { const fs=await import('node:fs'); const ct=fs.readFileSync('src/world/city.js','utf8'), C=await import('./config.js');
-  ok(C.REALCITY.props.prop_cyclo && fs.existsSync('assets/models/real/city/prop_cyclo.glb') && (ct.match(/prop\('prop_cyclo'/g)||[]).length>=2 && /Cyclo Purple/.test(fs.readFileSync('assets/models/real/city/SOURCES.txt','utf8')), 'Tripo cyclo (credited) parked on pavements and at markets'); }
+  ok(!C.REALCITY.props.prop_cyclo && !fs.existsSync('assets/models/real/city/prop_cyclo.glb') && !/prop_cyclo/.test(ct), 'Z333 the cyclo is gone from the pavements and the markets'); }
 
 // Z270 app-driver liveries (green / yellow / teal on an electric scooter, plain jackets), head and tail lamps, the field HQ at the heart of our base
 { const fs=await import('node:fs'); const tf=fs.readFileSync('src/world/traffic.js','utf8'), co=fs.readFileSync('src/actors/core.js','utf8'), md=fs.readFileSync('src/actors/models.js','utf8'), C=await import('./config.js');
