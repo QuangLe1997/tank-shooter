@@ -545,12 +545,18 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
 //   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
 //   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+// Z251 GRASS CARPET (world/grass-carpet.js): blades round the camera on grassy battlefields — radius (m; Rm on phones, mobile:false = none there), grid cell (m),
+//   where (× radius) the carpet starts thinning out, clumps tried per cell, blades per clump, blade half-width at the root (m), clump height range (m), how far ahead of the camera the carpet centres (m), re-lay step (m);
+//   per battlefield: density (0–1) and colours [root, tip, dry tips]
+export const GRASS = { R:26, Rm:12, rim:0.45, mobile:true, cell:0.6, perCell:2, blades:9, bladeW:0.042, h:[0.3, 0.6], ahead:8, step:1.5,
+  biomes:{ MEADOW:{ dens:0.92, col:[0x243c14, 0x5f8a30, 0x98a052] }, HILLS:{ dens:0.8, col:[0x223a16, 0x5a8030, 0x94985a] },
+    VILLAGE:{ dens:0.65, col:[0x2a3e16, 0x648a34, 0x9ea25a] }, SAVANNA:{ dens:0.75, col:[0x5a4c22, 0xb09a58, 0xd2bc80] } } };
 // Z250 PHOTO GROUND (world/ground-photo.js): per battlefield the photo-scanned CC0 sets (Poly Haven, fetched by tools/ground-photos.mjs) — [base, second]:
 //   the base covers the field, the second shows through on steep faces, crater bowls and the field's bare patches. dual = how much the base is
 //   blended with itself at another scale (breaks the tiling); nrm = normal strength; altRep = the second layer's tile × the base's
 export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55,
   // albedo × per battlefield: the scene's sun and exposure were tuned for the darker procedural ground — a photo albedo needs bringing down
-  tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.5, 0.62, 0.42], HILLS:[0.5, 0.6, 0.42], VILLAGE:[0.54, 0.6, 0.46], SAVANNA:[0.62, 0.58, 0.5], DESERT:[0.76, 0.64, 0.5],
+  tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.46, 0.62, 0.38], HILLS:[0.47, 0.6, 0.39], VILLAGE:[0.52, 0.6, 0.44], SAVANNA:[0.62, 0.58, 0.5], DESERT:[0.76, 0.64, 0.5],
     TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[0.6, 0.58, 0.56], STEELMILL:[0.6, 0.58, 0.56] },
   biomes:{
   MEADOW:['leafy_grass','brown_mud_02'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['dry_ground_01','dry_ground_rocks'],

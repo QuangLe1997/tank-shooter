@@ -670,6 +670,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(sets.every(n=>Z[n]>0 && ['diff','nor','arm'].every(k=>fs.existsSync('assets/ground/'+n+'/'+k+'.jpg'))), 'every battlefield\'s photo sets ship with their real-world size');
   ok(Object.keys(C.GROUND_PHOTO.biomes).length>=14 && C.GROUND_PHOTO.tint._, 'all battlefields mapped, albedo tints in config'); }
 
+// Z251 grass carpet: one instanced mesh of blade clumps round the camera, world-anchored, rim-faded, wind in world space
+{ const fs=await import('node:fs'); const gc=fs.readFileSync('src/world/grass-carpet.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), C=await import('./config.js');
+  ok(/export function updateGrass/.test(gc) && /InstancedMesh/.test(gc) && /wetAt\(/.test(gc) && /GRASS\.rim/.test(gc) && /transpose\(gIm\)/.test(gc), 'grass carpet: instanced, off water, rim-faded, one world-space wind');
+  ok(/updateGrass\(dt\)/.test(lp), 'the loop grows it round the camera');
+  ok(C.GRASS && C.GRASS.biomes.MEADOW && C.GRASS.Rm<C.GRASS.R && !C.GRASS.biomes.DESERT, 'grass only on grassy battlefields; a smaller carpet on phones'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
