@@ -143,6 +143,7 @@ export * from './fx/dust.js';   // Z278 dust in the sunlight
 export * from './game/xeom.js';   // Z282 xe ôm mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair
 export * from './game/ride-collide.js';   // Z311 what a ride runs into: trees, poles, parked cars, street furniture, wire
+export * from './world/solid-shape.js';   // Z337 the true footprint of walls and buildings, for bumping into them and for the camera's sight line
 export * from './game/soldier-moves.js';   // Z336 the soldier on his feet: jump, sprint, combat roll, taking cover
 export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams scooters, cars and animals
 export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets

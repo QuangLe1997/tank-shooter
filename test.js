@@ -1106,6 +1106,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/finalDeath\(\)\{ return true; \}/.test(md) && /if\(CV\.dead \|\| !CV\.mounted\) cavRespawn\(p\); driverBack\(CV\.H\)/.test(md), 'a new run: the soldier back in the saddle, the driver on his seat, however the last run ended');
   ok(/pos:G\.getWorldPosition\(new THREE\.Vector3\(\)\)/.test(cv) && /G\.getWorldPosition\(D\.pos\)/.test(cv) && /if\(!D\.from\)\{ H\.root\.position\.set\(CV\.hPos\.x/.test(cv), 'killed on foot: the death camera circles where he fell, the ride stays where it stood'); }
 
+// Z337 bumping into things by their true shape: fortress wall sections, buildings and parked cars are boxes for the soldier, the rides, the tanks; the camera never inside a building; men in the soldier's war bleed, never burn
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), ss=R('src/world/solid-shape.js'), cv=R('src/game/cavalry.js'), ph=R('src/world/physics.js'), up=R('src/game/update.js'), rc=R('src/game/ride-collide.js');
+  ok(['export function solidShape','export function carShape','export function pushOutShape','export function sightToBuildings'].every(k=>ss.includes(k)) && /FORT\.wallT \+ 3\.0/.test(ss) && /hl:B\.d \/ 2, hw:B\.w \/ 2/.test(ss), 'a fortress wall section is the box of its stone foot, a building the box of its footprint');
+  ok(/const vn=pushOutShape\(p, SH, R\)/.test(cv) && /else rideClear\(p\.pos, R\)/.test(cv) && /SH \? tankVsWall\(p, SH\) : tankVsCircle/.test(ph) && /carShape\(c\)/.test(rc), 'the soldier, the rides and the tanks are held by those boxes; on foot trees, parked cars and street furniture are solid too');
+  ok(/sightToBuildings\(p\.pos\.x, hy, p\.pos\.z, camBase\.x/.test(up) && /sightToBuildings\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1/.test(up) && /CAM\.top/.test(up), 'the camera rises over a building in the way, else comes in on its sight line, else goes up over you');
+  ok(/MODE\.id==='soldier' && e\.def\.inf\)\{ e\.hp -= F\.dps/.test(R('src/ai/tactics.js')), 'in the soldier\'s war a man hit by fire is wounded and bleeds, never set alight'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

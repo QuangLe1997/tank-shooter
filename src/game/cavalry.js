@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -147,14 +147,17 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, k=Math.min(1,
 const _lb=new THREE.Box3();
 function blockH(b){ if(b._h!=null) return b._h; let h=Infinity; if(b.mesh && b.mesh.isObject3D && !b.ridge){ b.mesh.updateWorldMatrix(true, true); _lb.setFromObject(b.mesh); if(!_lb.isEmpty()) h=_lb.max.y-heightAt(b.x, b.z); } return (b._h=h); }
 function collide(p, now){ const R=p.radius, H=CV.H;
-  for(const b of blocks){ if(b.kind==='parked') continue; const dx=p.pos.x-b.x, dz=p.pos.z-b.z, rr=(b.r||1)+R; if(Math.abs(dx)>rr || Math.abs(dz)>rr) continue; const d2=dx*dx+dz*dz; if(d2>=rr*rr || d2<1e-6) continue;
+  for(const b of blocks){ if(b.kind==='parked') continue; const SH=solidShape(b);   // Z337 a wall, a fortress wall section, a building: its true box, not a circle round it
+    if(SH){ const o=SH.obb, ex=o.hl+o.hw+R; if(Math.abs(p.pos.x-SH.x)>ex || Math.abs(p.pos.z-SH.z)>ex) continue; if(CV.mounted && rideLeap(H, blockH(b), Math.hypot(p.pos.x-SH.x, p.pos.z-SH.z)+R)) continue;
+      const vn=pushOutShape(p, SH, R); if(CV.mounted && vn>6){ rideBump(vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } continue; }
+    const dx=p.pos.x-b.x, dz=p.pos.z-b.z, rr=(b.r||1)+R; if(Math.abs(dx)>rr || Math.abs(dz)>rr) continue; const d2=dx*dx+dz*dz; if(d2>=rr*rr || d2<1e-6) continue;
     if(CV.mounted && rideLeap(H, blockH(b), Math.sqrt(d2)+rr)) continue;   // (leapt and flown over: a bike in a fast wheelie, a horse at a gallop — Z321; otherwise it stops the ride)
     const d=Math.sqrt(d2), nx=dx/d, nz=dz/d; p.pos.x+=nx*(rr-d); p.pos.z+=nz*(rr-d); const vn=p.vel.x*nx+p.vel.z*nz; if(vn<0){ p.vel.x-=nx*vn; p.vel.z-=nz*vn; if(CV.mounted && -vn>6){ rideBump(-vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } } }
   const solid=(t, r)=>{ const dx=p.pos.x-t.pos.x, dz=p.pos.z-t.pos.z, rr=r+R, d2=dx*dx+dz*dz; if(d2>=rr*rr || d2<1e-6) return; const d=Math.sqrt(d2); p.pos.x+=dx/d*(rr-d); p.pos.z+=dz/d*(rr-d); if(CV.mounted) CV.speed*=0.92; };
   for(const e of enemies){ if(e.def.inf){ if(CV.mounted && Math.abs(CV.speed)>CAV.trample.v){ const d=Math.hypot(e.pos.x-p.pos.x, e.pos.z-p.pos.z); if(d<CAV.trample.r && (CV.tramAt.get(e)||0)<now){ CV.tramAt.set(e, now+CAV.trample.cd); damageEnemy(e, CAV.trample.dmg); sfx('thud'); } } continue; }
     if(solidTank(e)) solid(e, (e.r||2.0)*(e.mesh?e.mesh.scale.x:1)*0.9); }
   if(boss && boss.alive) solid(boss, boss.r||4); if(core) solid(core, core.r||3);
-  if(CV.mounted) rideCollide(p, now); }   // Z311 and everything a tank rolls over: trees, poles, parked cars, street furniture, wire
+  if(CV.mounted) rideCollide(p, now); else rideClear(p.pos, R); }   // (Z337 on foot the trees, poles, parked cars, street furniture and wire are solid too)   // Z311 and everything a tank rolls over: trees, poles, parked cars, street furniture, wire
 // the horse and the general idle through the intro and the 3-2-1 (no input)
 export function cavIdle(dt){ const p=S.player; if(!p || !p.cav || !CV.H) return; const H=CV.H;
   if(CV.mounted){ H.root.position.set(0,0,0); H.root.rotation.y=0; p.mesh.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing=p.facing;

@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE, AIRAIM } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch, sightToBuildings } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -208,8 +208,8 @@ function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)
   if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
 // the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
 // Z241 the lowest extra height (CAM_FEEL.lift) from which the lens at `pos` sees the tank's hull over every wall in the way
-export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+3.2;
-  for(const L of F.lift){ const y=pos.y+L; if(!fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z)) return L; }
+export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+(p.cav ? 1.6 : 3.2);
+  for(const L of F.lift){ const y=pos.y+L; if(!fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && sightToBuildings(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1) return L; }   // (Z337 a city building too)
   return F.lift[F.lift.length-1]; }
 export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), ck=p.camK||1, z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk)*ck*ck;
   const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
@@ -250,6 +250,11 @@ export function updateCamera(dt, now){
   camBase.set(camTarget.x+_camOff.x, _camOff.y+CAM.dash, camTarget.z+_camOff.z);
   if(CAM.liftSnap){ CAM.liftSnap=false; CAM.lift=camLift(camBase, p); CAM.liftV=0; }
   sd(CAM, 'lift', camLift(camBase, p), CAM_FEEL.liftT, st); camBase.y+=CAM.lift;   // Z241 a great wall between the lens and the tank → rise over it, settle back when clear
+  { const hy=heightAt(p.pos.x, p.pos.z)+(p.cav ? 1.6 : 3.2), t=sightToBuildings(p.pos.x, hy, p.pos.z, camBase.x, camBase.y, camBase.z), hd=Math.hypot(camBase.x-p.pos.x, camBase.z-p.pos.z), o=CAM.occ ?? 1;   // Z337 a building between the lens and you (or the lens
+    let want=1, top=0; if(t<1){ const u=t-0.05; if(u*hd>=1.6) want=u; else top=1; }   //   inside one): it comes in on its sight line to this side of the wall; with no room for it there (your back to the wall) it goes up over you
+    CAM.occ = want<o ? want : o+(want-o)*Math.min(1, dt*2.5); CAM.top = (CAM.top||0)+(top-(CAM.top||0))*Math.min(1, dt*(top>(CAM.top||0) ? 14 : 2.5));
+    if(CAM.occ<0.999) camBase.set(p.pos.x+(camBase.x-p.pos.x)*CAM.occ, hy+(camBase.y-hy)*CAM.occ, p.pos.z+(camBase.z-p.pos.z)*CAM.occ);
+    if(CAM.top>0.001){ const k=CAM.top, ty=hy+Math.max(9, camBase.y-hy), ux=(camBase.x-p.pos.x)/(hd||1), uz=(camBase.z-p.pos.z)/(hd||1); camBase.set(camBase.x+(p.pos.x-ux*1.8-camBase.x)*k, camBase.y+(ty-camBase.y)*k, camBase.z+(p.pos.z-uz*1.8-camBase.z)*k); } }   //   (high over you, a little out from the wall, looking down past the eaves)
   camera.position.copy(camBase);
   const g=camShakeGain(), tr=Math.min(1, S.shake/3.2), t2=tr*tr*g;   // TRAUMA model: shake ∝ trauma² × the player's level (CÀI ĐẶT → RUNG MÀN HÌNH), a slow rumble, not a buzz
   if(t2>0.0004){ const q=now, A=SHAKE.pos*t2; camera.position.x += (Math.sin(q*31.1)+Math.sin(q*52.7+1.7)*0.45)*A; camera.position.y += (Math.sin(q*27.3+0.4)+Math.sin(q*47.9)*0.4)*A*0.55; camera.position.z += (Math.sin(q*35.9+2.1)+Math.sin(q*44.3)*0.45)*A; }

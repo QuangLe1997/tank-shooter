@@ -4,7 +4,7 @@
 // café tables, barriers, stalls) go over when it hits them fast enough, and a wire bay or coil is flattened by a hard charge — then it goes on, slowed.
 // Only in the air above a thing does it pass it (a wheelie's leap over a low one; game/xeom.js).
 import { RIDE_HIT, XEOM } from '../../config.js';
-import { CITY_PROPS, CV, OUTPOST_WIRE, S, bikeHop, burst, crushables, heightAt, knockProp, rideBump, rideFence, sfx } from '../hub.js';
+import { CITY_PROPS, CV, OUTPOST_WIRE, S, bikeHop, burst, crushables, heightAt, knockProp, rideBump, rideFence, sfx, carShape, pushOutShape } from '../hub.js';
 
 // push the ride (pos, vel, radius R) back out of a circle; the closing speed it hit at (0 if it was moving away, -1 if clear of it)
 function solid(p, x, z, r, R){ const dx = p.pos.x - x, dz = p.pos.z - z, rr = r + R, d2 = dx * dx + dz * dz; if(d2 >= rr * rr || d2 < 1e-6) return -1;
@@ -29,9 +29,9 @@ export function horseAir(H, dt){ const A = H && H.air; if(!A || !(A.y > 0)) retu
   return A.y; }
 // Z321 the ride on its own (called, or standing by): it goes round what it would not ride through — a point q (x, z) of radius R pushed out of the trees,
 //   poles, parked vehicles and bigger stones, the street furniture still standing and the wire (no leaps, nothing knocked down)
-const _still = { x:0, z:0 }, out = (q, x, z, rr) => { const dx = q.x - x, dz = q.z - z, d2 = dx * dx + dz * dz; if(d2 >= rr * rr || d2 < 1e-6) return; const d = Math.sqrt(d2); q.x += dx / d * (rr - d); q.z += dz / d * (rr - d); };
+const _qp = { pos:null }, _still = { x:0, z:0 }, out = (q, x, z, rr) => { const dx = q.x - x, dz = q.z - z, d2 = dx * dx + dz * dz; if(d2 >= rr * rr || d2 < 1e-6) return; const d = Math.sqrt(d2); q.x += dx / d * (rr - d); q.z += dz / d * (rr - d); };
 export function rideClear(q, R){
-  for(const c of crushables) if(c.alive && tall(c) != null) out(q, c.x, c.z, c.r * (c.kind === 'tree' ? 0.75 : 0.9) + R);
+  for(const c of crushables){ if(!c.alive || tall(c) == null) continue; const B = c.kind === 'car' ? carShape(c) : null; if(B){ _qp.pos = q; pushOutShape(_qp, B, R, null); continue; } out(q, c.x, c.z, c.r * (c.kind === 'tree' ? 0.75 : 0.9) + R); }   // (Z337 a parked car: its own box)
   for(const P of CITY_PROPS) if(!P.down) out(q, P.x, P.z, P.r + R);
   for(const w of OUTPOST_WIRE){ if(w.down || !w.f.g || !w.f.g.parent) continue; const qx = q.x - w.x, qz = q.z - w.z; if(Math.abs(qx * w.dx + qz * w.dz) > w.L / 2 + R) continue;
     const nx = -w.dz, nz = w.dx, side = qx * nx + qz * nz, rr = R + RIDE_HIT.wireW / 2; if(Math.abs(side) >= rr) continue; const sg = side >= 0 ? 1 : -1; q.x += nx * sg * (rr - Math.abs(side)); q.z += nz * sg * (rr - Math.abs(side)); }
@@ -39,8 +39,10 @@ export function rideClear(q, R){
 export function rideCollide(p, now){ const H = CV.H, R = p.radius, C = RIDE_HIT; let hard = 0;
   const hit = v => { if(v > hard) hard = v; }, slow = () => { p.vel.x *= C.slow; p.vel.z *= C.slow; };
   // trees, poles, parked vehicles, the bigger stones
-  for(const c of crushables){ if(!c.alive) continue; const rr = c.r + R + 0.2, dx = p.pos.x - c.x, dz = p.pos.z - c.z; if(Math.abs(dx) > rr || Math.abs(dz) > rr) continue;
-    const h = tall(c); if(h == null) continue; const r = c.r * (c.kind === 'tree' ? 0.75 : 0.9), d = Math.hypot(dx, dz); if(d >= r + R || rideLeap(H, h, d + r + R)) continue; hit(solid(p, c.x, c.z, r, R)); }
+  for(const c of crushables){ if(!c.alive) continue; const rr = (c.kind === 'car' ? 3.2 : c.r) + R + 0.2, dx = p.pos.x - c.x, dz = p.pos.z - c.z; if(Math.abs(dx) > rr || Math.abs(dz) > rr) continue;
+    const h = tall(c); if(h == null) continue; const B = c.kind === 'car' ? carShape(c) : null;   // Z337 a parked car is a box its own size, not a circle 0.7 m out from its doors
+    if(B){ const o = B.obb, ex = o.hl + o.hw + R; if(Math.abs(dx) > ex || Math.abs(dz) > ex || rideLeap(H, h, Math.hypot(dx, dz) + R)) continue; const v = pushOutShape(p, B, R); if(v >= 0) hit(v); continue; }
+    const r = c.r * (c.kind === 'tree' ? 0.75 : 0.9), d = Math.hypot(dx, dz); if(d >= r + R || rideLeap(H, h, d + r + R)) continue; hit(solid(p, c.x, c.z, r, R)); }
   // the city's street furniture: the light pieces knocked over at speed, the rest solid
   for(const P of CITY_PROPS){ if(P.down) continue; const dx = p.pos.x - P.x, dz = p.pos.z - P.z, rr = P.r + R; if(Math.abs(dx) > rr || Math.abs(dz) > rr || dx * dx + dz * dz >= rr * rr || rideLeap(H, P.h, Math.hypot(dx, dz) + rr)) continue;
     const d = Math.hypot(dx, dz) || 1, closing = -(p.vel.x * dx + p.vel.z * dz) / d;
