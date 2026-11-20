@@ -892,6 +892,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function holdReal/.test(r) && /ik2\(D\.RightArm/.test(r) && /ik2\(D\.LeftArm/.test(r) && /curlHand\(D, 'Right', 0\.85, grip, 0, 0\.35\)/.test(r) && /addScaledVector\(_gx, rc\.z\)/.test(r), 'the gun laid along the aim, hands IK onto grip and handguard, kick straight back');
   ok(Object.keys(C.INFGUN.guns).every(k=>C.GUNHOLD[k] && C.GUNHOLD[k].butt && C.GUNHOLD[k].grip && C.GUNHOLD[k].fore && C.GUNHOLD[k].kick) && C.GUNHOLD.rpg.hold==='top' && C.GUNHOLD.minigun.hold==='hip', 'every weapon has its butt, grip, handguard, kick and hold'); }
 
+// Z298 real wheels, the reload drill
+{ const fs=await import('node:fs'); const C=await import('./config.js'), x=fs.readFileSync('src/game/xeom.js','utf8'), r=fs.readFileSync('src/actors/real-cav.js','utf8');
+  ok(/function cutWheels/.test(x) && /function realWheel/.test(x) && /function buildWheels/.test(x) && ['xeom','xichlo','bagac'].every(k=>C.XEOM[k].wheels && C.XEOM[k].wheels.every(w=>w.c.length===3 && w.r>0.1 && Math.abs(w.c[1]-w.r)<0.01)), 'model wheels cut, real tyres/rims/spokes built, every wheel standing on the ground');
+  ok(C.GUNHOLD.reload && C.GUNHOLD.reload.min>0 && /inst\.rD >= RL\.min/.test(r) && /RL\.drop/.test(r) && /turnBone\(D\.Neck/.test(r), 'the reload drill plays only when there is time for it'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

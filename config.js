@@ -148,8 +148,8 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 //   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do
 export const RIDE = { h:1.68, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
   fit:{ xeom:{ hip:[0, 0.31, -0.04], grip:[[0.15, 0.45, 0.16], [-0.15, 0.45, 0.16]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
-    xichlo:{ hip:[0, 0.43, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.4, bend:0.15 },
-    bagac:{ hip:[0, 0.37, 0.2], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.5, bend:0.3, gearFoot:true } },
+    xichlo:{ hip:[0, 0.43, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
+    bagac:{ hip:[0, 0.37, 0.2], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
   grip:0.85, lean:{ body:0.22, head:0.6 }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.55 }, gears:[3, 6.5, 10],
   crash:{ v:7.5, hit:22, p:0.3, down:1.3, getup:1.2, lift:1.1, mount:0.45, cool:8, throwSoldier:true, callR:9 } };
 // Z296 what the driver and the soldier say to each other, by event (d = the driver, s = the soldier's answer) — on screen now, voices to be laid on later
@@ -165,8 +165,8 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
   remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!'], s:['Đi!'] } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
-export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, yaw:0, seat:[0.37, -0.27], pose:'straddle', lean:0.35, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, yaw:-1.5708, seat:[0.39, 0.14], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
-  bagac:{ len:3.3, side:1.15, yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12 }, bantai:{ len:4.7, side:1.45, yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
+export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 0.285], r:0.148, w:0.042, steer:true }, { c:[0, 0.148, -0.278], r:0.148, w:0.044 }], yaw:0, seat:[0.37, -0.27], pose:'straddle', lean:0.35, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, wheels:[{ c:[0.21, 0.16, 0.217], r:0.16, w:0.04 }, { c:[-0.21, 0.16, 0.217], r:0.16, w:0.04 }, { c:[0, 0.16, -0.362], r:0.16, w:0.045 }], yaw:-1.5708, seat:[0.39, 0.14], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
+  bagac:{ len:3.3, side:1.15, wheels:[{ c:[0, 0.13, 0.595], r:0.13, w:0.05, steer:true }, { c:[0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }, { c:[-0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }], yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12 }, bantai:{ len:4.7, side:1.45, yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
   pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
@@ -733,10 +733,12 @@ export const INFGUN = { map:{ rifle:'ar', smg:'lmg', flak:'lmg', minigun:'minigu
 // Z297 HOLDING THE GUN FOR REAL (the special-forces soldier): where each weapon meets the body — butt (in the shoulder pocket), grip (the right hand, trigger
 //   finger on the guard), fore (the left hand) as [share of the length from the middle toward the butt, metres above the middle]; hold = shoulder | top (the RPG
 //   rides ON the shoulder) | hip (minigun, flamethrower); kick = [straight back (m), muzzle climb (rad)] per shot, rate = the recoil spring's stiffness
-export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.02, -0.05, 0.03],
+// Z298 reload: done only when it lasts long enough to be seen (min s — a quick-reload bonus skips it); the gun lowered (low rad), turned in (turn), canted (cant);
+//   mag = where the magazine goes in (the RPG: its muzzle, the round goes in the front), bolt = the charging handle
+export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.02, -0.05, 0.03], reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
   ar:{ butt:[0.5, -0.01], grip:[0.15, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
   minigun:{ hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
-  sniper:{ butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1] },
+  sniper:{ butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
   gl:{ butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },

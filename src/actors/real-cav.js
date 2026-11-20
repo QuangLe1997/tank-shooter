@@ -2,11 +2,11 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM } from '../../config.js';
-import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, turnBone } from '../hub.js';
+import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, sfx, spawnPart, turnBone } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); };
 const under = (o, p) => { for(let q = o; q; q = q.parent) if(q === p) return true; return false; };
 // clips that walk the root forward (Meshy's Z-up armature: local Y is the way it faces) are pinned in place — the game moves the body
 function inPlace(clip, track){ const t = clip.tracks.find(k => k.name === track); if(!t || clip.userData_inPlace) return clip; const v = t.values, n = v.length / 3;
@@ -58,25 +58,37 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));
   const yaw = gy + clamp(dyw, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders can turn
   // the shoulders take the kick before the gun is laid in them
-  _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);
+  _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);   // (about his left: the kick rocks him back)
+  // Z298 reloading: how far through (0…1), only when the reload is long enough to show; the gun comes down and in for it, and back up at the end
+  const inst = p && p.guns && p.guns[p.gunIdx], nowS = performance.now() / 1000, RL = H.reload;
+  const rk = inst && inst.rU && inst.rD >= RL.min ? clamp(1 - (inst.rU - nowS) / inst.rD, 0, 1) : -1, low = rk < 0 ? 0 : smooth(Math.min(rk / 0.14, (1 - rk) / 0.12, 1));
   // the pocket the butt sits in
   const sh = D.RightArm, hip = D.RightUpLeg; if(!sh || !D.RightHand || !D.LeftHand) return false; _gf.set(Math.sin(yaw), 0, Math.cos(yaw)); _gr.set(-Math.cos(yaw), 0, Math.sin(yaw));   // ahead · his right
   if(g.hold === 'hip'){ hip.getWorldPosition(_gp); _gp.addScaledVector(_gu, 0.22).addScaledVector(_gf, 0.12).addScaledVector(_gr, 0.05); }
   else { sh.getWorldPosition(_gp); _gp.addScaledVector(_gr, -H.pocket[0]).addScaledVector(_gu, g.hold === 'top' ? 0.1 : H.pocket[1]).addScaledVector(_gf, H.pocket[2]); }
   // where he aims: the pointer's ground point lifted to a man's chest, or straight ahead
   if(p && S.aimPoint && S.pointerActive){ const tx = S.aimPoint.x, tz = S.aimPoint.z, ty = heightAt(tx, tz) + 1.1, hd = Math.hypot(tx - _gp.x, tz - _gp.z); if(hd > 1.5) pitch = Math.atan2(ty - _gp.y, hd); }
-  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], H.pitch[1]) + rc.a;
-  _gx.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).negate();   // the gun's +X runs back to the butt
-  _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize(); _gz.crossVectors(_gx, _gy); _gm.makeBasis(_gx, _gy, _gz); _gq.setFromRotationMatrix(_gm);
+  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], H.pitch[1]) + rc.a - low * RL.low; const yw = yaw + low * RL.turn;
+  if(low > 0){ _gp.addScaledVector(_gu, -0.07 * low).addScaledVector(_gr, -0.06 * low); }   // drawn down and in to the chest
+  _gx.set(Math.sin(yw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yw) * Math.cos(pitch)).negate();   // the gun's +X runs back to the butt
+  _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize(); if(low > 0 && !g.back) _gy.applyAxisAngle(_gx, -RL.cant * low);   // canted: the mag well to his left hand
+  _gz.crossVectors(_gx, _gy); _gm.makeBasis(_gx, _gy, _gz); _gq.setFromRotationMatrix(_gm);
   // butt into the pocket, then the whole gun pushed straight back by the kick
   gunPoint(_gt, g.butt, len, _gw.set(0, 0, 0), _gq); _gp.sub(_gt).addScaledVector(_gx, rc.z);
   _gm.compose(_gp, _gq, _gt.set(1, 1, 1)); _mi.copy(G.matrixWorld).invert(); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true);
   // hands onto it: the wrist just behind / above each contact, so the grip sits in the palm; elbows down (the right one out)
   const grip = gunPoint(new THREE.Vector3(), g.grip, len, _gp, _gq), fore = gunPoint(new THREE.Vector3(), g.fore, len, _gp, _gq);
-  const wr = grip.clone().addScaledVector(_gy, 0.045).addScaledVector(_gx, 0.035), wl = fore.clone().addScaledVector(_gy, -0.035).addScaledVector(_gx, 0.02).addScaledVector(_gz, g.hold === 'hip' ? 0 : 0.02);
+  const wr = grip.clone().addScaledVector(_gy, 0.045).addScaledVector(_gx, 0.035); let wl = fore.clone().addScaledVector(_gy, -0.035).addScaledVector(_gx, 0.02).addScaledVector(_gz, g.hold === 'hip' ? 0 : 0.02), lc = 0.8;
+  if(rk >= 0){ // the left hand's round: the mag out (it drops), a fresh one from the chest pouch (the RPG: a round from over the shoulder), in, the bolt racked, back to the handguard
+    const mag = gunPoint(new THREE.Vector3(), g.mag || H.mag, len, _gp, _gq).addScaledVector(_gy, -0.04), bolt = gunPoint(new THREE.Vector3(), g.bolt || H.bolt, len, _gp, _gq).addScaledVector(_gy, 0.03);
+    D.Spine2.getWorldPosition(_gt); const pouch = g.back ? _gt.clone().addScaledVector(_gu, 0.22).addScaledVector(_gf, -0.22).addScaledVector(_gr, -0.12) : _gt.clone().addScaledVector(_gf, 0.2).addScaledVector(_gr, -0.06).addScaledVector(_gu, -0.16);
+    const K = g.back ? [[0, wl], [0.2, pouch], [0.42, pouch], [0.66, mag], [0.8, mag], [1, wl]] : [[0, wl], [0.17, mag], [0.27, mag], [0.44, pouch], [0.52, pouch], [0.68, mag], [0.75, mag.clone().addScaledVector(_gy, 0.03)], [0.83, bolt], [0.88, bolt.clone().addScaledVector(_gx, 0.06)], [1, wl]];
+    for(let i = 0; i + 1 < K.length; i++){ const [t0, a] = K[i], [t1, b] = K[i + 1]; if(rk <= t1){ wl = a.clone().lerp(b, smooth((rk - t0) / Math.max(1e-3, t1 - t0))); break; } }
+    lc = 0.55; if(!g.back && R.rlDrop !== inst.rU && rk >= RL.drop){ R.rlDrop = inst.rU; spawnPart(mag.x, mag.y - 0.05, mag.z, (Math.random() - 0.5) * 0.6, -0.4, (Math.random() - 0.5) * 0.6, { color:0x1e1f1c, size:0.16, life:1.1, grav:-14, drag:0.4 }); sfx('click'); }
+    D.Neck && turnBone(D.Neck, _gr, -0.32 * low); }   // and he looks down at it (about his right: negative is down)
   sh.getWorldPosition(_gt); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, _gt.clone().addScaledVector(_gu, -0.45).addScaledVector(_gr, 0.3).addScaledVector(_gf, -0.1));
   D.LeftArm.getWorldPosition(_gt); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15));
-  curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', 0.8, fore.clone().addScaledVector(_gy, 0.02));
+  curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : fore.clone().addScaledVector(_gy, 0.02));
   return true; }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
