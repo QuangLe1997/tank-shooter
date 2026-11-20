@@ -149,7 +149,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   for(const sd of [['Left', 0], ['Right', 1]]){ const [L, i] = sd; onRide(H, R.grip[i], _a, true);   // (the grips turn with the bars)
     B[L + 'Arm'].getWorldPosition(_b); _b.addScaledVector(RIGHT, (i ? 1 : -1) * 0.5 * (1 - 0.6 * D.storm)).addScaledVector(UP, -0.35).addScaledVector(FWD, -0.15);   // (tucked in under fire)
     const gp = _a.clone(), wrist = gp.clone().addScaledVector(UP, 0.035).addScaledVector(FWD, -0.065);   // the bar in the palm: the wrist just behind and above it
-    ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); rollHand(B, L, _c.copy(RIGHT).multiplyScalar(i ? 1 : -1)); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // (Z304 knuckles out along the bar)   // fingers closed round the grip
+    ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); rollHand(B, L, _c.copy(RIGHT).multiplyScalar(i ? 1 : -1).applyAxisAngle(UP, (i ? -1 : 1) * (R.sweep || 0))); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // (Z304 knuckles out along the bar)   // fingers closed round the grip
   if(B.RightHand && B.RightForeArm){ B.RightForeArm.getWorldPosition(_a); B.RightHand.getWorldPosition(_b); turn(B.RightHand, _c.subVectors(_b, _a).normalize(), -D.thr * 0.7); }
   // feet: on the pegs / floorboard; the xích lô's pedals go round; stopped, the left foot goes down to the road; the gear flick lifts the left toe
   // Z300 THE FEET ON THE ROAD: slowing to a stop both feet come off the pegs / pedals and are planted on the actual ground either side (its real height under

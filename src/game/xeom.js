@@ -71,9 +71,14 @@ export function buildBikeMount(kind){ const root = new THREE.Group(), T = new TH
   return H; }
 // Z301 THE LAMPS: the headlamp sits in the steering head (it turns with the bars, and so does its beam — a spot thrown down the road after dark); the
 //   tail lamp glows red and flares bright the moment the brakes bite. The lenses are over-bright in the HDR buffer, so the bloom haloes them.
+// the headlamp glass's own outline: a rounded trapezoid, wider across the top (Z308)
+function lensShape(G){ const s = new THREE.Shape(), t = G.top / 2, b = G.bot / 2, h = G.h / 2, r = Math.min(G.r, h * 0.9, b * 0.9), P = [[-b, -h], [b, -h], [t, h], [-t, h]];
+  for(let i = 0; i < 4; i++){ const p = P[i], a = P[(i + 3) % 4], c = P[(i + 1) % 4], ua = [a[0] - p[0], a[1] - p[1]], uc = [c[0] - p[0], c[1] - p[1]], la = Math.hypot(...ua), lc = Math.hypot(...uc);
+    const p0 = [p[0] + ua[0] / la * r, p[1] + ua[1] / la * r], p1 = [p[0] + uc[0] / lc * r, p[1] + uc[1] / lc * r]; if(i) s.lineTo(...p0); else s.moveTo(...p0); s.quadraticCurveTo(p[0], p[1], ...p1); }
+  s.closePath(); return new THREE.ShapeGeometry(s, 6); }
 function buildLamps(H, kind){ const L = XEOM[kind].lamps, U = XEOM.lamp; if(!L || H.lamps) return; const k = XEOM.k; H.lamps = { head:null, tail:[], beam:null, hk:U.day, tk:U.run };
-  if(L.head){ const par = H.bar || H.body, m = new THREE.Mesh(new THREE.CircleGeometry(U.headR, 18), new THREE.MeshBasicMaterial({ color:0xffffff }));
-    m.position.fromArray(L.head); m.position.z += 0.003; if(H.bar) m.position.sub(H.axisP); par.add(m); H.lamps.head = m;
+  if(L.head){ const par = H.bar || H.body, m = new THREE.Mesh(L.lens ? lensShape(L.lens) : new THREE.CircleGeometry(U.headR, 18), new THREE.MeshBasicMaterial({ color:0xffffff }));
+    m.position.fromArray(L.head); m.position.z += 0.003; if(L.lens) m.rotation.x = -L.lens.tilt; if(H.bar) m.position.sub(H.axisP); par.add(m); H.lamps.head = m;   // (Z308 the glow fills the glass itself, leaning back with it)
     if(!MOBILE){ const sp = new THREE.SpotLight(0xfff0d6, 0, U.beam.dist, U.beam.ang, U.beam.pen, 0), t = new THREE.Object3D();
       sp.position.copy(m.position); t.position.copy(m.position).add(new THREE.Vector3(0, -U.beam.drop, U.beam.ahead)); par.add(sp); par.add(t); sp.target = t; sp.visible = false; H.lamps.beam = sp;
       // and the beam itself, seen in the night's dust: a soft cone from the lens down the road

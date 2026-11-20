@@ -145,7 +145,8 @@ export const REALWONDER = { biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosse
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
 // Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
 //   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet (or pedal = the crank's [half-width, height, along], crankR m) · rear = the rear axle (wheelie pivot)
-//   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do
+//   bend = how far his back leans to the bars · wheelie / gearFoot = what this machine can do · Z308 grip = the middle of each rubber grip (measured on
+//   the model: the hands close round it, back of the hand up); sweep = how far (rad) the grips sweep back from straight across, so the knuckles follow the bar
 // Z305 cloth masks fitted to a driver's face (by model), all as shares of h = Head bone → HeadTop_End, measured from the Head bone (u right, v up, f ahead):
 //   cols / rows = the grid the face is read on · halfW = half-width (the cheek sides, where the face turns) · top = the edge over the nose bridge (his lower
 //   eyelids are at v 0.32), dipping by dip under the eyes once noseW of the half-width out (an inverted V over the nose) · bottom = under the chin, rising
@@ -158,9 +159,9 @@ export const RIDE_MASK = { drv_xeom:{ cols:20, rows:12, halfW:0.33, top:0.3, nos
   ear:{ top:0.285, lobe:0.13, front:0.01, back:-0.075 }, helmet:0.295, loop:0.007, clear:0.012, color:0x8fa88a,
   wear:{ fade:0.18, dust:0.16, sun:0.1, grime:0.45, breath:0.22, specks:10, creases:7 } } };
 export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', xichlo:'drv_xichlo', bagac:'drv_xeom' },
-  fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.15, 0.45, 0.16], [-0.15, 0.45, 0.16]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
+  fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.135, 0.44, 0.113], [-0.135, 0.44, 0.113]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
     xichlo:{ hip:[0, 0.48, -0.25], grip:[[0.16, 0.49, -0.04], [-0.16, 0.49, -0.04]], pedal:[0.08, 0.13, -0.19], crankR:0.17, rear:-0.362, bend:0.15 },
-    bagac:{ hip:[0, 0.395, 0.19], grip:[[0.16, 0.48, 0.47], [-0.16, 0.48, 0.47]], peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
+    bagac:{ hip:[0, 0.395, 0.19], grip:[[0.175, 0.467, 0.386], [-0.175, 0.467, 0.386]], sweep:0.4, peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
   grip:0.85, lean:{ body:0.22, head:0.6 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.35, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] },
   // Z303 the repair: squatting on the ride's left side facing it (mount units): hips (height above the ground in m), feet, the hand braced on the frame,
   //   the hand at work on the engine / chain; how far forward he bends, how far he looks down, the hammer's lift and its rate
@@ -188,7 +189,7 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
   remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!'], s:['Đi!'] } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
-export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 0.285], r:0.148, w:0.042, steer:true }, { c:[0, 0.148, -0.278], r:0.148, w:0.044 }], yaw:0, seat:[0.415, -0.31], feet:[0.125, 0.2, -0.19], pose:'straddle', lean:0.35, steer:{ a:[0.285, 0.148], b:[0.16, 0.44], back:0.025, top:0.4, z:0.02 }, lamps:{ head:[0, 0.425, 0.214], tail:[[0, 0.318, -0.384]] }, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, wheels:[{ c:[0.21, 0.16, 0.217], r:0.16, w:0.04, steer:true }, { c:[-0.21, 0.16, 0.217], r:0.16, w:0.04, steer:true }, { c:[0, 0.16, -0.362], r:0.16, w:0.045 }], yaw:-1.5708, seat:[0.39, 0.14], feet:[0.085, 0.25, 0.42], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
+export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 0.285], r:0.148, w:0.042, steer:true }, { c:[0, 0.148, -0.278], r:0.148, w:0.044 }], yaw:0, seat:[0.415, -0.31], feet:[0.125, 0.2, -0.19], pose:'straddle', lean:0.35, steer:{ a:[0.285, 0.148], b:[0.16, 0.44], back:0.025, top:0.4, z:0.02 }, lamps:{ head:[0, 0.446, 0.199], lens:{ top:0.072, bot:0.05, h:0.047, r:0.011, tilt:0.33 }, tail:[[0, 0.318, -0.384]] }, driver:[0.78, 0.05], livery:0 }, xichlo:{ len:2.35, side:1.05, wheels:[{ c:[0.21, 0.16, 0.217], r:0.16, w:0.04, steer:true }, { c:[-0.21, 0.16, 0.217], r:0.16, w:0.04, steer:true }, { c:[0, 0.16, -0.362], r:0.16, w:0.045 }], yaw:-1.5708, seat:[0.39, 0.14], feet:[0.085, 0.25, 0.42], pose:'chair', lean:0.12, driver:[1.05, -0.95] },
   bagac:{ len:3.3, side:1.15, wheels:[{ c:[0, 0.13, 0.595], r:0.13, w:0.05, steer:true }, { c:[0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }, { c:[-0.272, 0.128, -0.338], r:0.128, w:0.075, spoke:false }], yaw:3.1416, seat:[0.33, -0.36], pose:'stand', lean:0.12, steer:{ a:[0.595, 0.13], b:[0.46, 0.44], back:0.025, top:0.4, z:0.36 }, lamps:{ head:[0, 0.41, 0.538], tail:[[0.24, 0.27, -0.72], [-0.24, 0.27, -0.72]] } }, bantai:{ len:4.7, side:1.45, yaw:-1.5708, seat:[0.37, -0.54], pose:'stand', lean:0 },
   // Z299 the sprung body on its wheels (metres, seconds): heave / pitch / roll springs (k stiffness, z damping ratio); squat and dive per m/s² of
   //   acceleration; trikes roll outward per m/s² of cornering; rough road kicks (per metre at speed, m/s); the steer angle from the turn rate and wheelbase
@@ -204,6 +205,8 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   call:{ farR:55, delay:4, dropR:26, stuckT:3, stayR:4 },
   // Z301 the lamps (mount units; HDR colour multipliers, so the bright ones bloom): headlamp lens radius, its glow by day / by night, the beam by night
   //   (a spot on the bars: it swings with the steering); tail lens size, its running glow and its brake flare (braking harder than brakeAcc m/s²)
+  //   Z308 a ride's own lamps.lens = the shape of its headlamp glass, so the glow fills exactly that (at lamps.head, its centre): widths across the top
+  //   and the bottom, height, corner radius, and how far its face leans back (rad, with the steering head); without it the glow is a disc of headR
   lamp:{ headR:0.026, day:2.2, night:7, beam:{ i:4.2, dist:28, ang:0.5, pen:0.6, ahead:6, drop:0.55, r0:0.02, r1:0.9, len:4.4, op:0.2 }, tail:[0.034, 0.02], run:1.1, brake:4.5, brakeAcc:1.2, ease:14 },
   pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, chair:{ hip:-1.5, knee:1.45, spread:0.1 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,

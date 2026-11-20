@@ -960,6 +960,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(MODE\.waveQueue\) return MODE\.waveQueue\(stage, wave\)/.test(R('src/campaign/waves.js')) && /waveQueue\(stage, wave\)\{ return soldierWaveQueue/.test(md) && /\['rifle', w\.rifle\]/.test(sw) && /q\.push\(stage >= 4 \? 'heavy' : 'grunt'\)/.test(sw) && C.CAV.soldier.war.sizeK>1, 'soldier waves: men first, a tank last as a set piece, announced');
   ok(/MODE\.tankShell && def\.fireCd >= 1\.4 && MODE\.tankShell\(e, aimA, d, dmg/.test(R('src/ai/tactics.js')) && /makeArtLock\(tx, tz, R/.test(sw) && /s\.dud = true/.test(sw) && /if\(d < s\.R\) damagePlayer/.test(sw) && C.CAV.soldier.war.shell.lock>0.5, 'a tank\'s main gun on a soldier: a red ring while it lays, then a burst there — step out and it misses'); }
 
+// Z308 hands on the real grips (back of the hand up, along a swept bar), the headlamp glow shaped and placed on the real glass
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), d=R('src/actors/driver.js'), F=C.RIDE.fit;
+  ok(F.xeom.grip[0][2] < 0.13 && F.xeom.grip[0][1] < 0.45 && F.bagac.grip[0][2] < 0.4 && F.bagac.grip[0][0] < 0.2 && F.bagac.sweep > 0 && /applyAxisAngle\(UP, \(i \? -1 : 1\) \* \(R\.sweep \|\| 0\)\)/.test(d), 'the hands close round the middle of each grip, knuckles following a swept bar');
+  const L=C.XEOM.xeom.lamps; ok(L.lens && L.lens.top > L.lens.bot && L.head[1] > 0.44 && /function lensShape/.test(x) && /L\.lens \? lensShape\(L\.lens\)/.test(x) && /rotation\.x = -L\.lens\.tilt/.test(x), 'the headlamp glow fills the glass itself, its shape, its centre and its lean'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
