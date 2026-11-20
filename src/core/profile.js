@@ -23,6 +23,10 @@ export function loadProfile(){
   pr.coins=Math.max(0, pr.coins|0); pr.diamonds=Math.max(0, pr.diamonds|0);          // persistent wallet (coins · diamonds)
   if(!pr.upgrades || typeof pr.upgrades!=='object') pr.upgrades={};                  // { key: level } bought stat upgrades
   if(!pr.gunXp || typeof pr.gunXp!=='object') pr.gunXp={};                           // { gunId: dup-pickup count } → MASTERY level
+  if(!pr.biomes253){ pr.biomes253=true;   // Z253 the battlefield list shrank from 15 to 10: a saved pick moves to the nearest one that is left
+    const OLD=['DESERT','RUINS','TUNDRA','FOUNDRY','CITADEL','MEADOW','CITY','HILLS','VILLAGE','SAVANNA','ARCTIC','STEELMILL','VOLCANO','QUARRY','CAVERN'], TO={ TUNDRA:'ARCTIC', HILLS:'MEADOW', VILLAGE:'MEADOW', STEELMILL:'FOUNDRY', CAVERN:'QUARRY' };
+    const move=i=>{ if(!Number.isInteger(i) || i<0 || i>=OLD.length) return i; const n=TO[OLD[i]]||OLD[i], j=BIOMES.findIndex(b=>b.name===n); return j<0?0:j; };
+    pr.terrain=move(pr.terrain); if(pr.custom && typeof pr.custom==='object') pr.custom.biome=move(pr.custom.biome); }
   pr.terrain = (Number.isInteger(pr.terrain) && pr.terrain>=-1 && pr.terrain<BIOMES.length) ? pr.terrain : -1;   // chosen battlefield (-1 = AUTO campaign)
   { const fromSave = pr.save ? ((pr.save.loop|0)*5 + (pr.save.stage|0)) : 1, c = (pr.campaign && typeof pr.campaign==='object') ? pr.campaign : {};   // Z107 CAMPAIGN: highest level unlocked (old saves keep their reach)
     pr.campaign = { max: Math.max(1, c.max|0, fromSave, (pr.best&&pr.best.stage)|0 ? Math.min(5, pr.best.stage|0) : 1) }; }
