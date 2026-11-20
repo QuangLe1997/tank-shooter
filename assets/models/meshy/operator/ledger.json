@@ -1,0 +1,64 @@
+{
+  "preview": {
+    "id": "01a1f730-3078-7409-aee1-a1c7801d9a1e",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
+  "refine": {
+    "id": "01a1f731-3d55-746d-a0e1-3056cbdd5fd6",
+    "ep": "v2/text-to-3d",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:22:43.845Z",
+    "credits": 10,
+    "finished": "2026-11-20T04:23:10.880Z"
+  },
+  "rig": {
+    "id": "01a1f732-da57-7488-ba67-dc62bedb11d8",
+    "ep": "v1/rigging",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:24:31.214Z",
+    "credits": 5,
+    "finished": "2026-11-20T04:24:58.339Z"
+  },
+  "anim": {
+    "id": "01a1f738-8c34-748d-b11a-1b3e7aaf73ba",
+    "ep": "v1/animations",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:30:41.028Z",
+    "credits": 30,
+    "finished": "2026-11-20T04:35:34.916Z"
+  },
+  "motion:ride_gallop": {
+    "id": "01a1f73d-126c-76ff-9cb4-a523aa217308",
+    "ep": "v1/text-to-motion",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:35:38.204Z",
+    "credits": 10,
+    "finished": "2026-11-20T04:35:49.170Z"
+  },
+  "motion:ride_walk": {
+    "id": "01a1f73d-42c1-7458-b661-359cdb22a39b",
+    "ep": "v1/text-to-motion",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:35:50.595Z",
+    "credits": 10,
+    "finished": "2026-11-20T04:36:06.944Z"
+  },
+  "motionanim:ride_gallop": {
+    "id": "01a1f73d-8820-713c-b557-7eac13aad7c9",
+    "ep": "v1/animations",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:36:08.205Z",
+    "credits": 3,
+    "finished": "2026-11-20T04:36:24.581Z"
+  },
+  "motionanim:ride_walk": {
+    "id": "01a1f73d-d0ef-74b7-97cb-fddbd77968dd",
+    "ep": "v1/animations",
+    "status": "SUCCEEDED",
+    "created": "2026-11-20T04:36:26.817Z",
+    "credits": 3,
+    "finished": "2026-11-20T04:36:37.813Z"
+  }
+}

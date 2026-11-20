@@ -640,6 +640,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/fitRealRifle\(G, u, GOFF\)/.test(ge), 'the general carries the scanned rifle');
   const m=JSON.parse(fs.readFileSync('assets/models/rifle/bolt_action_rifle_7_62_1k.gltf','utf8')); ok(m.buffers.every(b=>fs.existsSync('assets/models/rifle/'+b.uri)) && m.images.every(i=>fs.existsSync('assets/models/rifle/'+i.uri)), 'the rifle model ships with its buffer and textures'); }
 
+// Z248 real cavalry: Meshy-generated war horse, operator and carbine over the procedural rigs (loaded together; procedural stays on failure)
+{ const fs=await import('node:fs'); const rc=fs.readFileSync('src/actors/real-cav.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8'), mo=fs.readFileSync('src/actors/models.js','utf8'), C=await import('./config.js');
+  ok(/export function fitRealCav/.test(rc) && /export function updateRealCav/.test(rc) && /AnimationMixer/.test(rc) && /SkeletonUtils/.test(rc) && /L\.some\(x => !x\)/.test(rc), 'real cavalry: skinned clones with mixers, all-or-nothing load');
+  ok(/'Ride_Gallop'/.test(rc) && /'Rifle_Charge'/.test(rc) && /'Kneeling_Reload'/.test(rc) && /'Prone_Reload'/.test(rc) && /poseClip\('Aim_Stand'/.test(rc) && /'Sprint'/.test(rc) && /'Canter'/.test(rc), 'clips per state: riding, rifle walk / run / charge, kneel, prone, the composed standing aim; horse gaits');
+  ok(/inPlace\(/.test(rc) && /R\.seat\.add\(G\)/.test(rc) && /R\.cb/.test(rc) && /u\.muzzle/.test(rc), 'root motion pinned, the rider rides the real horse\'s back, the carbine carries the muzzle');
+  ok(/fitRealCav\(CV\)/.test(cv) && (cv.match(/updateRealCav\(CV, dt/g)||[]).length>=2, 'cavalry dresses its rigs and drives them each frame (play + intro idle)');
+  ok(C.REALCAV && C.REALCAV.seatBone && C.REALCAV.horseV.Sprint>C.REALCAV.horseV.Canter && C.REALCAV.carbine.len>0.6, 'REALCAV calibration in config');
+  const glb=f=>{ const b=fs.readFileSync(f); return b.readUInt32LE(0)===0x46546C67 && b.readUInt32LE(8)===b.length; };
+  ok(['horse','operator','rideGallop','rideWalk','carbine'].every(k=>{ const m=mo.match(new RegExp(k+": '([^']+)'")); return m && fs.existsSync(m[1]) && glb(m[1]); }), 'every real model ships as a valid GLB');
+  const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.rifle && sp.operator && sp.horse2 && sp.operator.rig.skeleton_template==='mixamo' && sp.horse2.rig.animation_type==='quadruped', 'the Meshy generation spec is in the repo'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

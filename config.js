@@ -541,6 +541,12 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
   foot:{ run:5.2, sprint:7.4, crouch:2.0, crawl:0.9, sprintDur:3, sprintCd:4 }, radius:{ mounted:1.0, foot:0.45, prone:0.38 },
   defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.5, call:{ speed:9, arrive:2.6 },
   trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85 };   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
+// Z248 REAL CAVALRY (actors/real-cav.js) — calibration of the Meshy models: the operator's height (m); the saddle seat in the horse model (m, bind pose)
+//   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
+//   timeScale 1, measured from its root motion) so feet and hooves keep pace with the game speed; cross-fade (s); the torso twist toward the aim (rad);
+//   the carbine's pitch kept within [up, down] (rad, the clips aim a touch high); the prone clip lowered (m) onto the ground
+export const REALCAV = { opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
+  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, pitch:[0.06, 0.3], proneDrop:0.15 };
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
 //   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)
 export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };

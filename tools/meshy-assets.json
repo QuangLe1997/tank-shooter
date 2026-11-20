@@ -1,0 +1,173 @@
+{
+  "_about": "Z248 Meshy generation spec — one entry per asset, every step's request body fixed here so a re-run is reproducible. Run with tools/meshy.mjs. Credits: preview 5 · refine 10 · rig 5 · animation 3/action · text-to-motion 10.",
+  "rifle": {
+    "_role": "the general's carbine — attached to the character's RightHand bone; close-ups must hold up",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 20000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Photorealistic modern military assault carbine, 5.56 mm, M4-style AR platform, laid horizontally in side profile, muzzle pointing right. Flat dark earth receiver, free-float M-LOK handguard with continuous top picatinny rail, black 14.5 inch barrel with birdcage flash hider, curved 30-round black polymer magazine, angled pistol grip with trigger and trigger guard, adjustable collapsible M4 stock, compact holographic red-dot sight with a flip-to-side magnifier, short vertical foregrip, flip-up front and rear iron sights, charging handle, ejection port cover, sling swivels. Crisp hard-surface detail, sharp edges, real-world proportions, about 85 cm long. One single object, no hands, no stand, no strap, no background."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Worn flat dark earth cerakote on the receiver, handguard and stock, matte black anodized aluminum and parkerized steel on the barrel, sight and small parts, black textured polymer grip and magazine, scuffed edges, light dust, realistic PBR metal and polymer"
+    }
+  },
+  "operator": {
+    "_role": "the general — a tall, heavy modern special-forces operator; rigged with finger bones (Mixamo skeleton) so the hands can close round the carbine",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 30000,
+      "pose_mode": "a-pose",
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Full-body photorealistic modern special forces soldier, tall broad-shouldered muscular man, 1.88 m, standing in A-pose facing forward, empty open hands with clearly separated fingers in black tactical gloves, holding no weapon. High-cut olive ballistic helmet with a tinted clear visor over the eyes, side rails, NVG mount, headset ear cups with boom microphone, black balaclava. Multicam camouflage combat shirt and pants, coyote plate carrier vest with three rifle magazine pouches, radio pouch with antenna, medical pouch, hydration pack on the back, combat knife in a sheath on the chest, two frag grenades on the belt, pistol in a drop-leg holster on the right thigh, knee pads, elbow pads, tan military combat boots with laces and lug soles. Realistic human anatomy and proportions."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Realistic multicam camouflage cotton ripstop, coyote brown nylon webbing and pouches, matte olive helmet shell, black knit balaclava, black leather gloves, tan suede and nylon boots with dark rubber soles, dull metal buckles, realistic PBR fabric"
+    },
+    "rig": {
+      "animation_type": "biped",
+      "height_meters": 1.88,
+      "skeleton_template": "mixamo",
+      "include_fingers": true
+    },
+    "anim": {
+      "_actions": "rifle walk-and-fire, run-and-fire, rifle charge, standing reload, kneeling reload (kneel), prone reload (prone), cautious crouch walk, crouch pull-and-throw (grenade), gunshot reaction, dying backwards",
+      "action_ids": [
+        234,
+        98,
+        511,
+        170,
+        165,
+        168,
+        524,
+        239,
+        177,
+        189
+      ]
+    },
+    "motion": [
+      {
+        "name": "ride_gallop",
+        "mode": "prime",
+        "duration": 4,
+        "prompt": "A cavalry soldier riding a galloping horse: seated astride with thighs apart and knees bent, heels down, torso leaning forward and rising and falling with the gallop rhythm, both hands holding a rifle at the shoulder aiming forward."
+      },
+      {
+        "name": "ride_walk",
+        "mode": "prime",
+        "duration": 4,
+        "prompt": "A soldier sitting astride a walking horse: thighs apart, knees bent, heels down, upright relaxed torso swaying gently with the horse's walk, both hands holding a rifle across the chest, head turning to scan left and right."
+      }
+    ]
+  },
+  "horse": {
+    "_role": "the war horse — replaces the procedural horse; driven by library gaits (idle, walk, canter, sprint) blended by speed",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 30000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Photorealistic military war horse, powerful muscular dark bay warmblood stallion, real horse anatomy and proportions, standing square in a neutral pose facing forward, four straight legs slightly apart, head and neck raised, long black mane and full black tail. Modern army tack: black leather bridle with bit and reins resting on the neck, olive drab military saddle on a saddle pad, girth strap, breast collar, olive saddlebags on both sides, rolled bedroll strapped behind the saddle, black protective leg boots. No rider, no stirrups hanging loose. Not cartoon, not stylized."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Glossy short dark bay horse coat with visible muscle definition, black lower legs, black mane and tail hair, black leather tack, olive drab canvas and nylon saddle gear, dull steel buckles and bit, realistic PBR"
+    },
+    "retex": {
+      "_why": "the refine painted the saddle orange and the coat plastic-glossy; repaint on the same UVs before rigging",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "enable_original_uv": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "text_style_prompt": "Real military war horse photo texture. Natural short dark bay horse coat, matte hair with soft sheen, not glossy, not plastic, visible muscle shading; black lower legs and hooves, black mane and tail with hair strands. Saddle, seat and saddle pad in dark olive drab and black leather, no orange, no yellow. Olive drab canvas saddlebags and bedroll, black leather bridle, reins and breast collar, dull dark steel buckles and bit."
+    },
+    "rig": {
+      "_why": "rigging failed 4× with server_error: from the retexture task, and from the retextured GLB yawed to face +Z (with and without height_meters). Now rigged from the refine task (same mesh and UVs); the game swaps in the retexture's maps (enable_original_uv kept the UV layout).",
+      "animation_type": "quadruped",
+      "height_meters": 2.2,
+      "input": "refine"
+    },
+    "anim": {
+      "_actions": "idle, walk, canter, sprint (gallop), sprint jump",
+      "action_ids": [
+        1155,
+        1174,
+        1152,
+        1160,
+        1158
+      ]
+    },
+    "_status": "superseded by horse2: generated mid-stride (a foreleg raised, reins hanging low) and quadruped rigging failed 5x with server_error"
+  },
+  "horse2": {
+    "_role": "the war horse (v2) — same look as horse, posed for the rigger: standing square, every hoof on the ground, nothing dangling",
+    "preview": {
+      "mode": "preview",
+      "model_type": "smart-topology",
+      "ai_model": "meshy-t2.5",
+      "target_polycount": 30000,
+      "target_formats": [
+        "glb"
+      ],
+      "prompt": "Photorealistic military war horse, powerful muscular dark bay warmblood stallion, real horse anatomy and proportions. Standing completely still in a neutral square stance, side view: all four hooves planted flat on the ground, all four legs straight and vertical, front legs parallel, hind legs parallel, no leg lifted. Neck and head held forward at natural height, ears up, tail hanging straight down. Long black mane, full black tail. Modern army tack fitted close to the body: black leather bridle with bit, short reins resting on the neck, dark military saddle on an olive drab saddle pad, girth strap, olive saddlebags on both sides, rolled bedroll behind the saddle. Nothing hanging loose, no stirrups, no rider. Not cartoon, not stylized."
+    },
+    "refine": {
+      "mode": "refine",
+      "ai_model": "meshy-7",
+      "enable_pbr": true,
+      "texture_resolution": "2k",
+      "target_formats": [
+        "glb"
+      ],
+      "texture_prompt": "Real war horse photo texture. Natural short dark bay coat, matte hair with soft sheen, not glossy, not plastic, visible muscle shading; black lower legs and hooves, black mane and tail with hair strands. Saddle and seat in dark brown and black leather, no orange, no yellow. Olive drab saddle pad, canvas saddlebags and bedroll, black leather bridle and reins, dull dark steel buckles and bit."
+    },
+    "rig": {
+      "animation_type": "quadruped",
+      "height_meters": 2.2
+    },
+    "anim": {
+      "_actions": "idle, walk, canter, sprint (gallop), sprint jump",
+      "action_ids": [
+        1155,
+        1174,
+        1152,
+        1160,
+        1158
+      ]
+    }
+  }
+}

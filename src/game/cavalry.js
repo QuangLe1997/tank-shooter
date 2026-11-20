@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE } from '../../config.js';
-import { ARENA, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, clampField, cloakFoot, controlScheme, core, damageEnemy, enemies, fireGun, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt } from '../hub.js';
+import { ARENA, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, clampField, cloakFoot, controlScheme, core, damageEnemy, enemies, fireGun, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wetAt } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -12,6 +12,7 @@ export function makeCavPlayer(){
   const H=buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
   H.B.add(G); G.position.set(0, 0, -0.1); G.scale.setScalar(HUMAN_SCALE/HORSE.size);                       // the rider sits on the horse's body (bobs and pitches with it)
   H.onStep=hoofFall;
+  CV.real=null; CV.realP=null; fitRealCav(CV);   // Z248 the real horse / operator / carbine dress the rigs once loaded
   const mesh=new THREE.Group(); mesh.add(H.root); scene.add(mesh);
   const u=G.userData, p={
     mesh, turret:new THREE.Object3D(), muzzle:u.muzzle, modelId:'cav', cav:CV,
@@ -94,6 +95,7 @@ export function updateCavalry(dt, now){
   if(p.hitT>0){ p.hitT-=dt; }
   if(now < p.respawnBlinkUntil) p.mesh.visible=Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0; else if(!p.mesh.visible) p.mesh.visible=true;
   p.kbx=p.kbz=0;
+  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: !!CV.trans });
   // fire: hold LMB (desktop) · the trigger / auto-fire on phones, exactly like the tank
   const range=playerRange();
   if(!CV.trans){ if(MOBILE){ const t=autoFire?aimTarget(range):null; if(autoFire ? (!!t && (!turretTracks() || trackOnTarget(t))) : S.firing) fireGun(now, range); } else if(S.firing) fireGun(now, range); }
@@ -135,7 +137,7 @@ function collide(p, now){ const R=p.radius;
 // the horse and the general idle through the intro and the 3-2-1 (no input)
 export function cavIdle(dt){ const p=S.player; if(!p || !p.cav || !CV.H) return; const H=CV.H;
   if(CV.mounted){ H.root.position.set(0,0,0); H.root.rotation.y=0; p.mesh.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing=p.facing;
-    const save=H.root.position.clone(); H.root.position.copy(p.mesh.position); H.root.rotation.y=p.facing; animateHorse(H, dt, 0, 0); H.root.position.copy(save); H.root.rotation.y=0; poseRider(CV.G, H, dt, 0, false); } }
+    const save=H.root.position.clone(); H.root.position.copy(p.mesh.position); H.root.rotation.y=p.facing; animateHorse(H, dt, 0, 0); H.root.position.copy(save); H.root.rotation.y=0; poseRider(CV.G, H, dt, 0, false); updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand' }); } }
 
 // after a death: straight back in the saddle at the spawn point
 export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; CV.trans=null; CV.call=false; CV.speed=0; CV.stance=CV.want='stand';

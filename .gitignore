@@ -14,3 +14,7 @@ desktop/dist/
 desktop/build/
 mobile/node_modules/
 mobile/www/
+
+# Z248 raw Meshy downloads (tools/meshy.mjs; their URLs expire after 3 days) — only the ledgers and thumbnails are kept; the game ships the packed files in assets/models/real
+assets/models/meshy/**/*.glb
+assets/models/meshy/**/*.task.json
