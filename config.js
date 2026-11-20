@@ -454,6 +454,10 @@ export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol:
 //   Z316 one of our men lying flat / crouched stands only body.prone / body.crouch (m) high, and the enemy lays its aim on aim.prone / aim.crouch (m)
 export const LINE = { manH:2.1, tankH:2.8, floor:0.4, over:1.2, body:{ prone:0.7, crouch:1.4 }, aim:{ prone:0.35, crouch:0.85 } };
 export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, tankUp:0.55, manUp:1.05, col:0xff5a3a };
+// Z321 AIMING UP AT AN AIRCRAFT (actors/real-cav.js): past the rifle's normal tip-up he leans back from the waist — k × the extra, at most max (rad),
+//   shared [Spine, Spine1, Spine2] — so the butt stays in his shoulder as the muzzle climbs; his head and neck (neck's share) tip back the rest of the
+//   way to sight along the barrel (sight × the gun's angle); eased at rate /s; lying flat he can't lean back — the muzzle comes up no further than prone
+export const AIRPOSE = { k:0.6, max:0.55, split:[0.25, 0.35, 0.4], neck:0.4, sight:0.95, rate:6, prone:0.35 };
 
 // Z174 REAL-WORLD SCALE — 1 world unit = 1 metre. The tanks are the reference (≈ a real MBT: ~7.5 m with the gun, 3.7 m tall to the cupola); a soldier model is
 //   1.407 units tall at scale 1 → HUMAN_SCALE makes every man, ours and theirs, 1.78 m. Fortress curtain walls 7 m + 1.3 m merlons, 2.4 m thick; watchtowers 8 m to the deck;
@@ -805,7 +809,7 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
 export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
 // Z295 the infantry arsenal (actors/real-cav.js; Tripo P2): which hand weapon the soldier carries for each of the game's guns, and each weapon's true length (m),
 //   which end is the muzzle in the model (+z / −z), how far behind its middle the pistol grip sits (share of the length), lift = raised (m: the RPG rides the shoulder)
-export const INFGUN = { map:{ rifle:'ar', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
+export const INFGUN = { map:{ rifle:'ar', carbine:'ar', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
     agl:'gl', mortar:'gl', arty:'gl', flamer:'flamer', cryo:'flamer', tesla:'energy', plasma:'energy', photon:'energy', orbital:'energy', singularity:'energy' },
   guns:{ ar:{ len:0.92, muzzle:1, grip:0.2 }, lmg:{ len:1.12, muzzle:-1, grip:0.18 }, minigun:{ len:1.15, muzzle:1, grip:0.22 }, shotgun:{ len:1.0, muzzle:-1, grip:0.22 }, sniper:{ len:1.42, muzzle:-1, grip:0.24 },
     rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18 }, flamer:{ len:1.0, muzzle:1, grip:0.14 }, energy:{ len:0.95, muzzle:1, grip:0.2 } } };

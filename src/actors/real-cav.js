@@ -1,7 +1,7 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM } from '../../config.js';
+import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE } from '../../config.js';
 import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
@@ -53,12 +53,16 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
   const rc = R.rc || (R.rc = { z:0, zv:0, a:0, av:0, last:0 }); if(p && p.fireAt > rc.last + 1e-4){ if(rc.last) { rc.zv += g.kick[0] * H.k * 0.12; rc.av += g.kick[1] * H.k * 0.12; } rc.last = p.fireAt; }
   const c = 2 * Math.sqrt(H.k) * H.damp; for(const [x, v] of [['z', 'zv'], ['a', 'av']]){ rc[v] += (-H.k * rc[x] - c * rc[v]) * dt; rc[x] += rc[v] * dt; }
+  const prone = !!(p && p.cav && !p.cav.mounted && p.cav.stance === 'prone');   // (Z321 lying flat he cannot lean back to an aircraft)
   // the body frame: up, and his facing turned by the aim twist
   G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
   _gf.set(0, 0, 1).applyQuaternion(_gq); const gy = Math.atan2(_gf.x, _gf.z), ay = p ? p.aimSmoothed : gy, dyw = R.av ?? Math.atan2(Math.sin(ay - gy), Math.cos(ay - gy));   // (Z303 the calmed, unwrapped aim: the gun never flips sides)
   const hy = R.hy || 0, yaw = gy + hy + clamp(dyw - hy, -1.15, 1.15); let pitch = 0;   // no further round than his shoulders (and, sat on a ride, his hips) can turn
   // the shoulders take the kick before the gun is laid in them
   _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -rc.a * H.body);   // (about his left: the kick rocks him back)
+  // Z321 an aircraft above: he leans back from the waist, up the spine, so the butt stays in his shoulder as the muzzle climbs past its usual tip-up
+  { let want = 0; if(D.RightArm){ D.RightArm.getWorldPosition(_gt); const a0 = airPitch(_gt.x, _gt.y, _gt.z); if(a0 != null && !prone) want = clamp((a0 - H.pitch[1]) * AIRPOSE.k, 0, AIRPOSE.max); }
+    R.lean = (R.lean || 0) + (want - (R.lean || 0)) * Math.min(1, dt * AIRPOSE.rate); if(R.lean > 1e-3) ['Spine', 'Spine1', 'Spine2'].forEach((n, i) => turnBone(D[n], _gr, -R.lean * AIRPOSE.split[i])); }
   // Z298 reloading: how far through (0…1), only when the reload is long enough to show; the gun comes down and in for it, and back up at the end
   const inst = p && p.guns && p.guns[p.gunIdx], nowS = performance.now() / 1000, RL = H.reload;
   const rk = inst && inst.rU && inst.rD >= RL.min ? clamp(1 - (inst.rU - nowS) / inst.rD, 0, 1) : -1, low = rk < 0 ? 0 : smooth(Math.min(rk / 0.14, (1 - rk) / 0.12, 1));
@@ -69,7 +73,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // where he aims: the pointer's ground point lifted to a man's chest, or straight ahead
   if(p && S.aimPoint && S.pointerActive){ const tx = S.aimPoint.x, tz = S.aimPoint.z, ty = heightAt(tx, tz) + 1.1, hd = Math.hypot(tx - _gp.x, tz - _gp.z); if(hd > 1.5) pitch = Math.atan2(ty - _gp.y, hd); }
   const airP = airPitch(_gp.x, _gp.y, _gp.z); if(airP != null) pitch = airP;   // Z313 laid on an aircraft: up to its height
-  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], airP != null ? AIRAIM.manUp : H.pitch[1]) + rc.a - low * RL.low - (R.rdy || 0) * REALCAV.ready[1]; const yw = yaw + low * RL.turn;   // (Z304 running, not firing: the muzzle carried low)
+  if(g.hold === 'hip') pitch *= 0.5; pitch = clamp(pitch, H.pitch[0], airP != null ? (prone ? AIRPOSE.prone : AIRAIM.manUp) : H.pitch[1]) + rc.a - low * RL.low - (R.rdy || 0) * REALCAV.ready[1]; const yw = yaw + low * RL.turn;   // (Z304 running, not firing: the muzzle carried low)
   if(low > 0){ _gp.addScaledVector(_gu, -0.07 * low).addScaledVector(_gr, -0.06 * low); }   // drawn down and in to the chest
   _gx.set(Math.sin(yw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yw) * Math.cos(pitch)).negate();   // the gun's +X runs back to the butt
   _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize(); if(low > 0 && !g.back) _gy.applyAxisAngle(_gx, -RL.cant * low);   // canted: the mag well to his left hand
@@ -93,7 +97,9 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : fore.clone().addScaledVector(_gy, 0.02));
   // Z299 the head leads: the eyes are on the target before the shoulders get there, up / down to it, and held level when the ride banks and pitches
   const lead = clamp(dyw - hy - (R.tw || 0), -0.65, 0.65) * (1 - low);   // (_gu is still his up)
-  turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55); turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
+  turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55);
+  if(airP != null){ const up = Math.max(0, pitch * AIRPOSE.sight - (R.lean || 0) - rc.a) * (1 - low); turnBone(D.Neck, _gr, up * AIRPOSE.neck); turnBone(D.Head, _gr, up * (1 - AIRPOSE.neck)); }   // Z321 cheek to the stock: head and neck tip back to sight along the barrel
+  else turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
   if(D.Head){ _gt.crossVectors(_gu, _gw.set(0, 1, 0)); const sn = _gt.length(); if(sn > 1e-4) turnBone(D.Head, _gt.normalize(), Math.asin(Math.min(1, sn)) * 0.65); }
   return true; }
 // Z304 SITTING TALL: the riding clip slumps him forward over the pillion; his back is brought up toward upright (a soldier's alert sit, a slight lean
