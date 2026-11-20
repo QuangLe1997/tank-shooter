@@ -214,6 +214,16 @@ export function camRestPose(pos, look){ const p=S.player; if(!p) return false; c
   const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
   look.set(p.pos.x+lx-Math.sin(y)*ah, (CS.lookY+Math.max(0,0.6-z)*2.2)*ck, p.pos.z+lz-Math.cos(y)*ah);
   camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; pos.y+=camLift(pos, p); return CS.fov; }   // (lifted over a wall in the way, as play will be)
+// Z301 RIDING CAMERA: a chase camera that rides with the machine — it rises and settles with the suspension's heave, buzzes with the road at speed,
+//   banks a little with the bike into a bend, dips its nose under the brakes and lifts under the throttle, and the lens widens as the throttle opens;
+//   all scaled by the player's own shake setting (CÀI ĐẶT → RUNG MÀN HÌNH: off is off)
+const RC = { roll:0, pitch:0, fov:0 };
+function rideCam(p, dt, now, g){ const H = p.cav && p.cav.H, I = H && H.inert, U = CAM_FEEL.ride; if(!I || !U) return; const k = Math.min(1.4, g / SHAKE.levels.mid), sp = Math.min(1, Math.hypot(p.vel.x, p.vel.z) / 8);
+  if(k <= 0) return; const e = 1 - Math.exp(-dt * U.ease);
+  camera.position.y += ((H.sus ? H.sus.y : 0) * U.heave + (Math.sin(now * 29.3) * 0.6 + Math.sin(now * 47.1 + 1.3) * 0.4) * U.buzz * sp) * k;
+  RC.roll += ((H.two === false ? 0 : (H.lean || 0)) * U.bank - RC.roll) * e; RC.pitch += ((I.p || 0) * U.pitch - RC.pitch) * e; RC.fov += (Math.max(0, Math.min(8, I.acc)) * U.fovAcc - RC.fov) * e;
+  camera.rotateX(RC.pitch * k); camera.rotateZ(RC.roll * k);
+  if(RC.fov > 0.02){ camera.fov += RC.fov * k; camera.updateProjectionMatrix(); camera.fov -= RC.fov * k; } }
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   const F=CAM_FEEL, CS=applyCamStyle(), st=Math.min(dt, 1/20);
@@ -251,6 +261,7 @@ export function updateCamera(dt, now){
       camera.position.lerpVectors(CAM.bp, camera.position, b); _q0.copy(camera.quaternion); camera.quaternion.slerpQuaternions(CAM.bq, _q0, b); camera.fov=CAM.bf+(f-CAM.bf)*b; camera.updateProjectionMatrix(); }
     else if(Math.abs(camera.fov-f)>0.005){ camera.fov=f; camera.updateProjectionMatrix(); } }
   if(t2>0.0004) camera.rotateZ((Math.sin(now*23.7)+Math.sin(now*41.3+0.9)*0.45)*t2*SHAKE.roll);   // roll
+  if(p.cav && p.bike) rideCam(p, dt, now, g);   // Z301 on the ride: the camera feels the road
   gradePass.uniforms.aberr.value = t2*SHAKE.aberr;
   S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));
 }

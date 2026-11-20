@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, S, burst, curlHand, floatText, heightAt, loadGLTF, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, CV, NIGHT, S, burst, curlHand, floatText, heightAt, loadGLTF, scene, sfx, spawnPart } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -155,7 +155,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
     if(down > 1e-3){ // where that foot meets the road: out to the side (and ahead, for the dab), at the ground's real height under it
       const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg ? R.peg[i][0] : R.pedal[0]) + (dk ? FT.dabOut : FT.out)), 0, (R.peg ? R.peg[i][2] : R.hip[2]) + (dk ? FT.dabFwd : FT.fwd)); body.localToWorld(_c);
       _c.y = heightAt(_c.x, _c.z) + D.ankle * ws + (dk ? FT.hover : 0); _a.lerp(_c, ease(down));
-      if(dk && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:FT.dustC, size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
+      if(dk && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:new THREE.Color(FT.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
     B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(FWD, 1).addScaledVector(RIGHT, sd * -0.35 * (1 + down)).addScaledVector(UP, 0.3);
     ik2(B[L + 'UpLeg'], B[L + 'Leg'], B[L + 'Foot'], _a.clone(), _b.clone());
     if(down > 0.05) flatFoot(B[L + 'Foot'], B[L + 'ToeBase'], D.toeSlope, down); } }

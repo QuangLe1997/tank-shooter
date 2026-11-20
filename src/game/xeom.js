@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIDE, XEOM } from '../../config.js';
-import { S, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, spawnPart } from '../hub.js';
+import { MOBILE, NIGHT, S, beamMat, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, spawnPart } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter / cyclo assembled from the city's parts stay as the fallback
@@ -52,7 +52,7 @@ function realWheel(R, T, spoked){ const M = wheelMats(), w = new THREE.Group(), 
   return w; }
 function buildWheels(H, kind){ const X = XEOM[kind]; if(!X.wheels) return; H.wheels = []; for(const wd of X.wheels){ const R = wd.r * XEOM.k, pivot = new THREE.Group(), spin = realWheel(R, wd.w * XEOM.k * 0.9, wd.spoke !== false);
     spin.scale.setScalar(1 / XEOM.k); pivot.add(spin); pivot.position.fromArray(wd.c); H.B.add(pivot); H.wheels.push({ pivot, spin, R, steer:!!wd.steer }); } }
-const _sa = new THREE.Vector3(), _sp = new THREE.Vector3(), _sq = new THREE.Quaternion();
+const _sa = new THREE.Vector3(), _sp = new THREE.Vector3(), _sq = new THREE.Quaternion(), _dc = new THREE.Color();   // (_dc: dust dims with the night)
 // Z299 the parts: root → T (Z300 laid on the ground under its wheels) → B (the machine's lean / wheelie; the wheels, unsprung, on the road) → body (sprung: frame, seat, driver, passenger, its own
 //   heave / pitch / roll on the suspension) → bar (the steering head, turning about the raked axis)
 export function buildBikeMount(kind){ const root = new THREE.Group(), T = new THREE.Group(), B = new THREE.Group(), body = new THREE.Group(); root.add(T); T.add(B); B.add(body); const X = XEOM[kind];
@@ -63,12 +63,28 @@ export function buildBikeMount(kind){ const root = new THREE.Group(), T = new TH
   H.toWorld = (arr, out, steered) => { out.fromArray(arr); if(steered && H.axis && H.steer){ out.sub(H.axisP).applyAxisAngle(H.axis, H.steer).add(H.axisP); } return body.localToWorld(out); };
   const put = m => { if(!m) return; const mesh = new THREE.Mesh(m.geo, m.mats); mesh.castShadow = true; mesh.receiveShadow = true; body.add(mesh); H.mesh = mesh;
     if(m.bar && H.axis){ const piv = new THREE.Group(), bm = new THREE.Mesh(m.bar, m.mats); bm.castShadow = true; bm.receiveShadow = true; piv.position.copy(H.axisP); bm.position.copy(H.axisP).negate(); piv.add(bm); body.add(piv); H.bar = piv; }
-    if(!H.wheels) buildWheels(H, kind);
+    if(!H.wheels) buildWheels(H, kind); buildLamps(H, kind);
     // Z300 how far it must be lifted to lie on either side (rolled ±1.35) with its lowest point on the ground — bars, pegs, wheels all counted
     const P = m.geo.attributes.position, lie = [0, 0]; for(const [i, a] of [[0, -1.35], [1, 1.35]]){ const sn = Math.sin(a), cs = Math.cos(a); let lo = 0; for(let j = 0; j < P.count; j += 3) lo = Math.min(lo, P.getX(j) * sn + P.getY(j) * cs); lie[i] = -lo; } H.lie = lie; };
   loadGLTF('ride_' + kind).then(gl => gl ? put(heroGeo(gl, kind)) : (XEOM[kind].driver ? mountModel(kind).then(put) : null));
   if(RIDE.fit[kind]) makeDriver(H, kind);   // Z296 the driver rides it as his own man
   return H; }
+// Z301 THE LAMPS: the headlamp sits in the steering head (it turns with the bars, and so does its beam — a spot thrown down the road after dark); the
+//   tail lamp glows red and flares bright the moment the brakes bite. The lenses are over-bright in the HDR buffer, so the bloom haloes them.
+function buildLamps(H, kind){ const L = XEOM[kind].lamps, U = XEOM.lamp; if(!L || H.lamps) return; const k = XEOM.k; H.lamps = { head:null, tail:[], beam:null, hk:U.day, tk:U.run };
+  if(L.head){ const par = H.bar || H.body, m = new THREE.Mesh(new THREE.CircleGeometry(U.headR, 18), new THREE.MeshBasicMaterial({ color:0xffffff }));
+    m.position.fromArray(L.head); m.position.z += 0.003; if(H.bar) m.position.sub(H.axisP); par.add(m); H.lamps.head = m;
+    if(!MOBILE){ const sp = new THREE.SpotLight(0xfff0d6, 0, U.beam.dist, U.beam.ang, U.beam.pen, 0), t = new THREE.Object3D();
+      sp.position.copy(m.position); t.position.copy(m.position).add(new THREE.Vector3(0, -U.beam.drop, U.beam.ahead)); par.add(sp); par.add(t); sp.target = t; sp.visible = false; H.lamps.beam = sp;
+      // and the beam itself, seen in the night's dust: a soft cone from the lens down the road
+      const B = U.beam, dir = t.position.clone().sub(m.position).normalize(), cg = new THREE.CylinderGeometry(B.r0, B.r1, B.len, 18, 1, true); cg.translate(0, -B.len / 2, 0);
+      const cone = new THREE.Mesh(cg, beamMat(0xfff0d6, B.op)); cone.position.copy(m.position); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir); cone.visible = false; cone.renderOrder = 2; par.add(cone); H.lamps.cone = cone; } }
+  for(const p of L.tail || []){ const m = new THREE.Mesh(new THREE.PlaneGeometry(U.tail[0], U.tail[1]), new THREE.MeshBasicMaterial({ color:0xff2010 })); m.position.fromArray(p); m.position.z -= 0.003; m.rotation.y = Math.PI; H.body.add(m); H.lamps.tail.push(m); } }
+function lampUpdate(H, dt){ const Lp = H.lamps, U = XEOM.lamp; if(!Lp) return; const e = 1 - Math.exp(-dt * U.ease), night = NIGHT.k || 0, ok = !H.drv || H.drv.state === 'ride' || H.drv.state === 'mount';
+  Lp.hk += ((ok ? U.day + (U.night - U.day) * night : 0.15) - Lp.hk) * e; if(Lp.head) Lp.head.material.color.setRGB(Lp.hk, Lp.hk * 0.93, Lp.hk * 0.8);
+  const brake = H.sus && H.sus.acc < -U.brakeAcc && Math.abs(H.v) > 0.3; Lp.tk += ((brake ? U.brake : U.run * (1 + night)) - Lp.tk) * e; for(const m of Lp.tail) m.material.color.setRGB(Lp.tk, Lp.tk * 0.025, Lp.tk * 0.012);   // (a deep red: too bright a red tone-maps to pink)
+  if(Lp.cone) Lp.cone.visible = NIGHT.on && ok;
+  if(Lp.beam){ if(Lp.beam.visible !== NIGHT.on) Lp.beam.visible = NIGHT.on; Lp.beam.intensity = ok ? U.beam.i * night : 0; } }   // (shown only on night stages, like the floodlights: switching a light on or off recompiles every shader, so it never happens mid-fight)
 // Z300 ON THE GROUND UNDER ITS WHEELS: the ground's height is read under every wheel and the machine is pitched (front axle against rear) and, on three
 //   wheels, rolled (left track against right) and lifted so each tyre sits on the ground beneath it — up a rise, down into a dip, across a slope
 function groundFit(H, dt, X){ const W = X.wheels; if(!W || !H.T) return; const k = XEOM.k; H.root.updateMatrixWorld(true); H.root.getWorldPosition(_sp); const g0 = _sp.y;
@@ -87,7 +103,7 @@ function wheelDust(H, dt, v, X){ const W = X.wheels, s = H.sus; if(!W || !H.whee
   const n = dt * (av * U.dustRun + hard * U.dustHard); if(Math.random() > n) return;
   const w = W[W.length - 1]; _sa.set(w.c[0] + (Math.random() - 0.5) * 0.05, 0.01, w.c[2] - w.r * 0.6); H.B.localToWorld(_sa); const back = v >= 0 ? -1 : 1;
   H.root.getWorldQuaternion(_sq); _sp.set(0, 0, back).applyQuaternion(_sq);
-  spawnPart(_sa.x, _sa.y + 0.05, _sa.z, _sp.x * (1 + hard * 0.2) + (Math.random() - 0.5), 0.5 + Math.random() * (0.6 + hard * 0.1), _sp.z * (1 + hard * 0.2) + (Math.random() - 0.5), { color:U.dustC, size:0.45 + Math.min(0.6, hard * 0.05), life:0.8 + hard * 0.04, grav:-1.2, drag:2.2, smoke:true, op:0.45 }); }
+  spawnPart(_sa.x, _sa.y + 0.05, _sa.z, _sp.x * (1 + hard * 0.2) + (Math.random() - 0.5), 0.5 + Math.random() * (0.6 + hard * 0.1), _sp.z * (1 + hard * 0.2) + (Math.random() - 0.5), { color:_dc.setHex(U.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.45 + Math.min(0.6, hard * 0.05), life:0.8 + hard * 0.04, grav:-1.2, drag:2.2, smoke:true, op:0.45 }); }
 // Z299 THE SUSPENSION: the body rides on springs over the wheels — it squats when the throttle opens and dives when braking hard (and rocks back after),
 //   rolls out of the bend on three wheels, heaves over the ground's rises and dips and is kicked by the rough road at speed; the engine buzzes.
 //   What the body feels (H.inert: acceleration, cornering, heave) is passed on to the people on it, who sway with it and catch themselves.
@@ -112,7 +128,7 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
   groundFit(H, dt, X);
   const rest = two && H.drv && H.drv.fd ? -XEOM.sus.restLean * H.drv.fd[0] : 0;   // Z300 stopped, a two-wheeler rests over on his left foot
   H.lean += (-yawRate * sp * (X.lean ?? XEOM.lean) + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
-  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X);
+  suspension(H, dt, v, yawRate, two); wheelDust(H, dt, v, X); lampUpdate(H, dt);
   const now = performance.now() / 1000, p = S.player;
   if(H.wheels){ H.roll = (H.roll || 0) + v * dt; const U = XEOM.sus, wb = Math.abs(X.wheels[0].c[2] - X.wheels[X.wheels.length - 1].c[2]) * XEOM.k;
     const want = Math.max(-U.steerMax, Math.min(U.steerMax, Math.atan(wb * yawRate / Math.max(1.4, Math.abs(v))))) * Math.sign(v || 1);   // Z299 the steer a turn this tight needs at this speed (a lot slow, a touch fast)

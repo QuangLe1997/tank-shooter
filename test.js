@@ -910,6 +910,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function groundFit/.test(x) && /function wheelDust/.test(x) && /T\.add\(B\)/.test(x) && /H\.lie = lie/.test(x) && /H\.lie\[D\.roll < 0/.test(d) && /if\(!H\.bike\)\{ H\.root\.position\.copy/.test(cv), 'the machine laid on the ground under its wheels; down on its side it lies on the ground; a ride works in its true place');
   ok(C.RIDE.h>=1.74 && C.RIDE.legK>1 && C.REALCAV.s2.k>1 && /endsWith\('\.scale'\)/.test(d), 'driver taller and longer in the leg, soldier a touch bigger'); }
 
+// Z301 lamps on the ride, the riding camera
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), u=R('src/game/update.js');
+  ok(/function buildLamps/.test(x) && /function lampUpdate/.test(x) && /const par = H\.bar \|\| H\.body/.test(x) && /beamMat\(/.test(x) && C.XEOM.lamp && C.XEOM.lamp.brake > C.XEOM.lamp.run && C.XEOM.xeom.lamps && C.XEOM.bagac.lamps, 'headlamp in the steering head (its beam turns with the bars), tail lamp flaring under the brakes');
+  ok(/function rideCam/.test(u) && /rideCam\(p, dt, now, g\)/.test(u) && C.CAM_FEEL.ride && C.CAM_FEEL.ride.bank > 0, 'the riding camera heaves, buzzes, banks and breathes with the throttle, scaled by the shake setting'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
