@@ -1,5 +1,5 @@
 // ui/terrain-picker.js — Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a fixed biome) with a live preview.
-import { BIOMES, PROFILE, biomePlace, biomeVi, hide, openBattleSetup, saveProfile, sfx, show, tapBtn, tapEl } from '../hub.js';
+import { BIOMES, PROFILE, biomeVi, openBattleSetup, tapBtn } from '../hub.js';
 
 // terrain picker (start screen): AUTO (campaign rotation) + every battlefield; persists in PROFILE.terrain
 // start-screen summary button reflects the current pick
@@ -46,19 +46,4 @@ export function drawTerrainPreview(cv, b, isAuto){
     x.strokeStyle='#cfe6a0'; x.lineWidth=3.2; x.beginPath(); x.arc(w/2,h*.42,17,0.7,5.5); x.stroke();
     x.beginPath(); x.moveTo(w/2+15,h*.42-12); x.lineTo(w/2+21,h*.42-3); x.lineTo(w/2+10,h*.42-4); x.closePath(); x.fillStyle='#cfe6a0'; x.fill(); }
 }
-export function buildTerrainDialog(){
-  const g=document.getElementById('terrainGallery'); if(!g) return; g.innerHTML='';
-  const cur=(Number.isInteger(PROFILE.terrain)&&PROFILE.terrain>=-1)?PROFILE.terrain:-1;
-  const opts=[{i:-1,name:'TỰ ĐỘNG',tag:'ĐỔI THEO MÀN',auto:true}].concat(BIOMES.map((b,i)=>({i,name:biomeVi(b.name),tag:biomePlace(b.name)||'ĐỊA HÌNH',b})));
-  for(const o of opts){
-    const card=document.createElement('div'); card.className='tcard'+(o.i===cur?' on':''); card.dataset.i=o.i;
-    const cv=document.createElement('canvas'); cv.width=192; cv.height=120; card.appendChild(cv);
-    drawTerrainPreview(cv, o.auto?BIOMES[0]:o.b, !!o.auto);
-    const nm=document.createElement('div'); nm.className='tc-name'; nm.innerHTML='<span>'+o.name+'</span><span class="tc-tag">'+o.tag+'</span>'; card.appendChild(nm);
-    tapEl(card, ()=>{ PROFILE.terrain=o.i; saveProfile(); [...g.children].forEach(c=>c.classList.toggle('on', (+c.dataset.i)===o.i)); buildTerrainPicker(); sfx('click'); });
-    g.appendChild(card);
-  }
-}
-export function openTerrainDlg(){ hide('start'); buildTerrainDialog(); show('terrainDlg'); sfx('click'); }
-export function closeTerrainDlg(){ hide('terrainDlg'); show('start'); buildTerrainPicker(); sfx('click'); }
-tapBtn('terrainBtn', ()=>openBattleSetup('custom'));   // Z107 the battlefield button opens the CUSTOM battle setup tapBtn('terrainDone', closeTerrainDlg);
+tapBtn('terrainBtn', ()=>openBattleSetup('custom'));   // Z107 the battlefield button opens the CUSTOM battle setup

@@ -24,7 +24,6 @@ export function turretGeo(style){ if(_TG[style]) return _TG[style];
     gg=new THREE.ExtrudeGeometry(s, { depth:T.h, bevelEnabled:true, bevelThickness:0.04, bevelSize:0.04, bevelSegments:2 }); gg.rotateX(Math.PI/2); gg.translate(0, T.h-0.28, 0); }
   const uv=gg.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*0.34, uv.getY(i)*0.34); uv.needsUpdate=true;
   return (_TG[style]=gg); }
-export function turretRoof(style){ return style==='dome' ? 0.2 : style ? TPOLY[style].h-0.28 : 0.28; }
 
 // ---- camouflage: painted patterns over the shared panel-seam texture (one canvas per scheme, cached) ----
 const _CAMO={};

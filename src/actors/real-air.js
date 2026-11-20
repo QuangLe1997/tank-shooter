@@ -9,7 +9,6 @@ import { REALAIR } from '../../config.js';
 import { loadGLTF } from '../hub.js';
 
 const M = {}, WAIT = []; let _p = null;
-export const REAL_AIR = M;
 const KEEP = ['rotor', 'trot', 'rotors', 'chin', 'muzzle', 'nav', 'bombs', 'gat', 'ring', 'turret', 'el'];
 
 export function loadRealAir(){ if(_p) return _p; if(typeof window === 'undefined' || /procair/.test(location.search + location.hash)) return (_p = Promise.resolve(false));

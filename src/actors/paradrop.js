@@ -6,7 +6,7 @@ import { INFANTRY, PARA, TROOPS } from '../../config.js';
 import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip, realAir, blPulse, holoRing } from '../hub.js';
 
 export const HELOS=[], PARAS=[];
-let _nextAt=0, _heloMats=null, _chuteGeo=null, _chuteMat=null;
+let _nextAt=0, _heloMats=null;
 const R=(a)=>a[0]+Math.random()*(a[1]-a[0]);
 function heloMats(){ return _heloMats||(_heloMats={ body:new THREE.MeshStandardMaterial({ color:0x6a6248, roughness:0.7, metalness:0.35 }), dark:new THREE.MeshStandardMaterial({ color:0x202018, roughness:0.6, metalness:0.5 }),
   glass:new THREE.MeshStandardMaterial({ color:0x223038, roughness:0.15, metalness:0.6 }), light:new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xff2a1a, emissiveIntensity:2.5 }),
@@ -36,7 +36,7 @@ export function buildTransport(){ const M=heloMats(), g=new THREE.Group(), P={ b
   const jm=makeSoldierMesh({ enemy:true }); jm.scale.setScalar(TROOPS.look.scale); jm.position.set(0.5,-1.3,-5.6); jm.rotation.y=Math.PI; jm.userData.gun.visible=false; g.add(jm);   // the jumpmaster at the ramp
   return realAir(g, 'heli_bomber'); }
 // Z199 a real round military canopy: olive / khaki gores with seams, a vent at the apex, the skirt flared — and the suspension lines down to the risers
-let _canopy=null, _cargo=null;
+let _canopy=null;
 function canopyTex(){ return _canvasTex(128,64,(x,W,H)=>{ for(let i=0;i<16;i++){ x.fillStyle=i%2?'#6a6646':'#7a7652'; x.fillRect(i*W/16,0,W/16+1,H); x.fillStyle='rgba(40,38,26,0.45)'; x.fillRect(i*W/16,0,1,H); } for(let y=10;y<H;y+=14){ x.fillStyle='rgba(40,38,26,0.3)'; x.fillRect(0,y,W,1); } x.fillStyle='#2a281c'; x.fillRect(0,0,W,4); }); }
 export function chute(cargo){ if(!_canopy){ const geo=new THREE.SphereGeometry(2.6, 18, 7, 0, Math.PI*2, 0.12, Math.PI/2.15); const p=geo.attributes.position; for(let i=0;i<p.count;i++){ const y=p.getY(i); if(y<1.0) p.setXYZ(i, p.getX(i)*1.06, y, p.getZ(i)*1.06); } geo.computeVertexNormals();
     _canopy={ geo, mat:new THREE.MeshStandardMaterial({ map:canopyTex(), roughness:0.92, side:THREE.DoubleSide }), cargoMat:new THREE.MeshStandardMaterial({ map:_canvasTex(64,32,(x,W,H)=>{ for(let i=0;i<8;i++){ x.fillStyle=i%2?'#b8a070':'#d8c890'; x.fillRect(i*W/8,0,W/8,H); } }), roughness:0.9, side:THREE.DoubleSide }),

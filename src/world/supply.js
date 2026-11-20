@@ -88,10 +88,6 @@ const KEEP=new Set(['fortwall','gate','keep','fortcore','tower','camp','brick','
 // a site is free when no structure (fort, tower, camp, wall, ridge, loot) is in the way — scattered cover is simply cleared off the yard
 export function siteOk(x, z, R){ return !blocks.some(b=>(KEEP.has(b.kind)||b.ridge||b.loot||b.fort||b.supply) && Math.hypot(b.x-x,b.z-z)<b.r+R+2); }
 export function clearSite(x, z, R){ for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(Math.hypot(b.x-x,b.z-z)<b.r+R){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); } blocks.splice(i,1); } } }
-function findSite(R0){ for(const [k,core] of [[1,52],[0.85,48],[0.72,46],[0.58,44]]){ const R=R0*k;   // deep in the enemy half, well clear of our Core (relaxed step by step if the field is crowded)
-  for(let t=0;t<1500;t++){ const x=(Math.random()*2-1)*(ARENA-R-8), z=-ARENA+R+8+Math.random()*Math.max(4, ARENA*0.85-R-8);
-    if(Math.hypot(x,z)<R+core || !inField(x,z,R+4) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+8) || !siteOk(x,z,R)) continue;
-    clearSite(x, z, R0); return [x,z]; } } return null; }
 export const SUPPLY_K=1.25;   // the installations are built big: storage tanks ~7.5 m across, 9 m tall
 function newBase(kind, x, z, R, K, ang0){ K=K||1; const ang=ang0??Math.atan2(-x, ARENA*0.55-z), ca=Math.cos(ang), sa=Math.sin(ang);
   const B={ kind, x, z, R, K, ang, at:(lx,lz)=>[x+(lx*ca+lz*sa)*K, z+(-lx*sa+lz*ca)*K], pieces:[], alive:true, alarm:false, hitAt:-99, heloN:0, tankN:0, heloAt:0, tankAt:0, spreadAt:0, guards:[], fires:[], decor:null };
@@ -204,10 +200,6 @@ function gate(K, z1, gw, nameKind, B){ for(const s of [-1,1]){ K.add('metal', B3
 function nameSignAt(B, z1, item){ const [k,,,,w]=item, H=w*72/256, g=new THREE.PlaneGeometry(w,H); for(const [ry,dz] of [[0,0.2],[Math.PI,-0.2]]){ const m=new THREE.Mesh(g, signMat(k)); m.position.set(0,4.75,z1+dz); m.rotation.y=ry; B.decor.add(m); } }   // Z196 the name reads right from outside AND from inside the yard
 // ---------- Z195 the compounds stand in the corners of the map: the two far corners first, then the near ones ----------
 const SP_Z=()=>ARENA*0.55;
-function cornerSite(sx, sz, R0){ for(const k of [1,0.86,0.74,0.62]){ const R=R0*k;
-  for(let t=0;t<700;t++){ const reach=Math.min(ARENA*0.6, 4+t*0.12), x=sx*(ARENA-R-6-Math.random()*reach), z=sz*(ARENA-R-6-Math.random()*reach);
-    if(!homeClear(x,z,R0) || Math.hypot(x, z-SP_Z())<R+42 || !inField(x,z,R+3) || inZone(x,z,R) || CAMPS.some(c=>Math.hypot(c.x-x,c.z-z)<R+20) || SUPPLY.bases.some(B=>Math.hypot(B.x-x,B.z-z)<B.R+R+4) || !siteOk(x,z,R)) continue;
-    clearSite(x, z, R0*1.05); return [x,z]; } } return null; }
 // Z196 GRID SCAN: walk the whole field on a 6 m grid and take the best-scoring free spot (score = how well it suits: near a corner, high ground…);
 //   unlike random tries it never misses a gap that exists. Tiers shrink the clearance a little when the field is crowded.
 export function scanSite(R0, score, o){ o=o||{}; const step=6;

@@ -13,7 +13,6 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const T_BELT = 0.09;
-const _V=(a)=>new THREE.Vector3(a[0],a[1],a[2]);
 // ---- a closed solid from a base polygon (x,z) at y0 to a roof polygon at y1 (same vertex count): sloped armour faces, flat-shaded ----
 export function loft(bot, top, y0, y1){ const P=[], U=[]; const n=bot.length; let cx=0, cz=0; for(const p of bot){ cx+=p[0]; cz+=p[1]; } cx/=n; cz/=n;
   const tri=(a,b,c,ua,ub,uc,want)=>{ const ab=[b[0]-a[0],b[1]-a[1],b[2]-a[2]], ac=[c[0]-a[0],c[1]-a[1],c[2]-a[2]], nn=[ab[1]*ac[2]-ab[2]*ac[1], ab[2]*ac[0]-ab[0]*ac[2], ab[0]*ac[1]-ab[1]*ac[0]];

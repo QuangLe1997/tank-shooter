@@ -137,7 +137,6 @@ const GAITS={
 const ORDER=['idle','walk','trot','canter','gallop'];
 export function gaitFor(v, cur){ const T=[0.15, ...HORSE.gaitV], h=HORSE.gaitHys; let i=Math.max(0, ORDER.indexOf(cur));   // T[i]: the speed where ORDER[i] gives way to ORDER[i+1]
   while(i<4 && v > T[i]+(i?h:0)) i++; while(i>0 && v < T[i-1]-(i>1?h:0)) i--; return ORDER[i]; }
-const _w=new THREE.Vector3(), _q=new THREE.Quaternion(), _e=new THREE.Euler();
 // foot target for one leg (horse-body space, relative to its pivot): the hoof sweeps back along the ground in stance, swings forward in an arc
 function footTarget(G, leg, ph, s, lift){ const u=((ph-G.off[leg.i])%1+1)%1,   // a hoof lands when the stride phase reaches its offset
     d=G.duty; let z, y, st;

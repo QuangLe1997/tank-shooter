@@ -54,7 +54,6 @@ export function fieldPath(step, inset){ const N=720, raw=[]; for(let i=0;i<N;i++
   return out; }
 // a coarse outline for maps (cached per outline version)
 let _ol=null, _olv=-1; export function fieldOutline(){ if(_olv!==FIELD_STATE.ver){ _ol=fieldPath(6, 0).map(q=>[q.x,q.z]); _olv=FIELD_STATE.ver; } return _ol; }
-export function fieldArea(){ let s=0; const N=FIELD.N; for(let i=0;i<N;i++) s+=FIELD_R[i]*FIELD_R[i]; return s*Math.PI/N; }
 genField();
 
 // Z234 HOME GROUND: open ground (m) between our citadel's wall and a site of radius R at (x,z) — and the test every enemy installation must pass

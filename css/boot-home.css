@@ -123,7 +123,6 @@
     #start .start-id{flex-direction:column;gap:8px;}
     .go-stats{gap:18px;} #upcards,#brcards{max-width:94vw;}
     .upcard{width:46%;min-width:0;} .brcard{width:46%;min-width:0;}
-    .tcard,body.touch .tcard{width:44%;} .tcard canvas,body.touch .tcard canvas{height:96px;}
     .si-panel{display:none;}
   }
   @media (orientation:portrait) and (max-width:520px){
@@ -180,8 +179,6 @@
     .guide-row .g-tx b{font-size:11px;} .guide-row .g-tx span{font-size:11px;line-height:1.34;}
     #ldgrid,body.touch #ldgrid{max-height:44vh;gap:6px;} .ldcard,body.touch .ldcard{width:104px;min-width:0;padding:8px 6px 7px;} .gunpic.gp-ld{height:40px;margin:2px 0 4px;}
     .ldcard .gi,body.touch .ldcard .gi{width:24px;height:24px;} .ldcard .nm{font-size:10.5px;} .ldcard .tr{font-size:8px;}
-    .tcard,body.touch .tcard{width:128px;} .tcard canvas,body.touch .tcard canvas{height:80px;}
-    .terrain-gallery{gap:10px 10px;padding:8px 4px 10px;}
     #upcards{gap:8px;} .upcard,body.touch .upcard{width:112px;min-width:0;padding:10px 7px;}
     .upcard .ic,body.touch .upcard .ic{width:30px;height:30px;} .upcard .nm{font-size:11px;margin:5px 0 3px;} .upcard .ds{font-size:9px;}
     .brcard{width:120px;min-width:0;padding:10px 7px;} .brcard .ic{width:26px;height:26px;} .brcard .ds{font-size:9px;} .br-hint{font-size:9px;margin-top:6px;}

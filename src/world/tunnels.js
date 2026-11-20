@@ -81,7 +81,6 @@ export function buildUnderground(){ buildTunnels(); buildCavern(); buildUnderbas
 
 // ---- queries ----
 const openList=()=>TUN.list.filter(E=>!E.sealed);
-export function tunnelOpen(){ return openList().length; }
 function nearestOpen(x, z, r){ let best=null, bd=r*r; for(const E of TUN.list){ if(E.sealed) continue; const d=(E.x-x)**2+(E.z-z)**2; if(d<bd){ bd=d; best=E; } } return best; }
 // a way in for a fresh squad: 24–70 m from the tank, behind it if possible (pref = the bearing to favour, radians)
 function pickExit(pref, not){ const p=S.player; if(!p) return null; const A=TUNNEL.ambush; let best=null, bs=-1;

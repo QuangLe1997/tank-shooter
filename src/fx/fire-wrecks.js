@@ -31,7 +31,7 @@ export function _wreckGeos(){ if(_wreckGeo) return; const G=_tankGeo(), parts=[G
   _wreckGeo=mergeGeometries(parts); const bar=new THREE.CylinderGeometry(0.11,0.13,2.6,10).rotateX(Math.PI/2).translate(0,0.02,2.4).toNonIndexed(); const tg=G.turret.index?G.turret.toNonIndexed():G.turret.clone(); for(const a of Object.keys(bar.attributes)) if(!tg.attributes[a]) bar.deleteAttribute(a); _turGeo=mergeGeometries([tg, bar]); }
 // Z312 THE WRECK IS THE TANK ITSELF: its own model (src), burnt black with its paint barely showing and embers dying out in it, sat down on its
 //   wheels; when the magazine goes its own turret is blown off and comes down nearby — no stand-in block hull any more. (No model → the old hull.)
-const _V3 = new THREE.Vector3(), _Q4 = new THREE.Quaternion(), _CH = new THREE.Color(0x15120f);
+const _CH = new THREE.Color(0x15120f);
 const _path = (root, o) => { const p = []; while(o && o !== root){ if(!o.parent) return null; p.unshift(o.parent.children.indexOf(o)); o = o.parent; } return o === root ? p : null; };
 const _at = (root, p) => p.reduce((o, i) => o && o.children[i], root);
 function charred(root){ const mats = [];

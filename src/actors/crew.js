@@ -14,7 +14,6 @@ export function crewRelease(){ if(S.player && S.player.cav) return; if(!_crewDow
   if(wasRecall && held>=TROOPS.fireteam.tapMax){ if(S.recallIn) floatText('ĐÃ GOM '+S.recallIn+(left?' · CÒN '+left+' DƯỚI ĐẤT':''), '#9bd14a', S.player.pos, 15); }
   else if(riders.length) crewDismount();
   updateCrewBtn(); }
-export function crewToggle(){ crewPress(); crewRelease(); }       // (kept for old callers: behaves like a tap)
 export function crewDismount(){
   const p=S.player; if(!p || !riders.length) return; const F=TROOPS.fireteam;
   riders.slice().forEach((r,i)=>{ const wp=r.g.position, a=p.facing+Math.PI*0.5*(i%2?1:-1)+(Math.random()-0.5)*0.4;

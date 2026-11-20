@@ -1,10 +1,10 @@
 // loot/beacons.js — LOOT MARKERS (crates / towers / huts / tanks that hide a power-up) · Z177 no light columns · Z211 the object is never recoloured:
 //   a stockpile / tower / hut that hides a power-up shows ONE small blinking gold point of light just above its top, and a tank carrying loot one inside its hatch
 import * as THREE from 'three';
-import { BLIGHT } from '../../config.js';
+
 import { GLOW, blDouble, blHot, blocks, enemies, scene } from '../hub.js';
 
-export const LOOT_COL=BLIGHT.col.loot, lootBeacons=[];   // Z318 the battle-light loot gold
+export const lootBeacons=[];   // Z318 the battle-light loot gold
 // blink: two quick gold flashes, then a pause (~1.3 s cycle) — reads as "something in there", not as a beacon (Z318 the shared loot signature, blDouble)
 const blink=blDouble, _hotGold=()=>blHot('loot', 1.7), _hotCore=()=>new THREE.Color(0xfff2c0).multiplyScalar(2.2);   // HDR: the point blooms into a small star
 // Z211 one gold point of light sitting just above the top of the object (its world bounds), nothing else touched

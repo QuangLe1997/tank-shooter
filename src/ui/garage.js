@@ -27,7 +27,7 @@ export function pickTank(id){ const M=TANK_MODELS[id], own=ownedTanks();
 function garShake(id){ sfx('alarm'); const c=document.querySelectorAll('#garGrid .gcard')[TANK_ORDER.indexOf(id)]; if(c){ c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); } }
 export function selectTank(id){
   PROFILE.tankModel=id; saveProfile();
-  if(SHOW.tank){ shopScene.remove(SHOW.tank); SHOW.tank=null; SHOW.built=''; } if(SHOW.thumbTank){ shopScene.remove(SHOW.thumbTank); SHOW.thumbTank=null; }   // the showroom rolls the new tank out next time
+  if(SHOW.tank){ shopScene.remove(SHOW.tank); SHOW.tank=null; SHOW.built=''; }   // the showroom rolls the new tank out next time
   renderGarage(); refreshStartUI(); }
 export let _garFrom='start';
 export function openGarage(){ _garFrom = S.mode==='paused' ? 'pause' : 'start'; hide(_garFrom); renderGarage(); show('garage'); sfx('click'); }

@@ -11,7 +11,6 @@ import { BIOME, FLORA, SUN_VIEW, WTIME, crushables, loadGLTF } from '../hub.js';
 
 const SP = {}, GEO = {}, EXTRA = new Set(); let _p = null;
 const U = { wDir:{ value:new THREE.Vector2(REALTREE.wind.dir[0], REALTREE.wind.dir[1]).normalize() }, wAmp:{ value:REALTREE.wind.sway }, wLeaf:{ value:REALTREE.wind.leaf } };
-export const REAL_TREES = SP;
 
 export function loadRealTrees(){ if(_p) return _p; if(typeof window === 'undefined' || /proctree/.test(location.search + location.hash)) return (_p = Promise.resolve(false));
   return (_p = Promise.all(Object.keys(REALTREE.h).map(k => loadGLTF('tree_' + k).then(gl => [k, gl]))).then(L => {
@@ -66,4 +65,3 @@ export function dressTrees(im){ const T = im.userData.tree; if(!T || T.real) ret
   if(!GEO[key]){ const g = S.geo.clone(), h = REALTREE.h[k] / T.sMid; g.scale(h, h, h); g.computeBoundingBox(); g.computeBoundingSphere(); GEO[key] = g; }
   im.geometry = GEO[key]; im.material = S.mat; im.computeBoundingSphere(); T.real = k;
   if(!S.leafy) for(const c of crushables) if(c.im === im) c.leafy = false; }
-export function realTreesReady(){ return !!_p && Object.keys(SP).length > 0; }

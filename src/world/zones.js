@@ -1,6 +1,6 @@
 // world/zones.js — Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered
 import { DEPOT, POW, RALLY } from '../../config.js';
-import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, clearAllyTanks, clearDepots, clearForts, clearPOWs, clearRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, homeClear, inField, planForts, powJob, spawnEnemy } from '../hub.js';
+import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, homeClear, inField, planForts, powJob, spawnEnemy } from '../hub.js';
 
 export const ZONES=[];   // { kind:'rally'|'pow'|'arms'|'motor', x, z, r }
 export function inZone(x, z, pad){ for(const q of ZONES) if(Math.hypot(q.x-x, q.z-z) < q.r+(pad||0)) return true; for(const B of SUPPLY.bases) if(Math.hypot(B.x-x, B.z-z) < B.R+(pad||0)) return true; return false; }   // Z196 the enemy compounds are claimed ground too (no trees, lava or scatter inside the wire)
@@ -24,7 +24,6 @@ export function buildZones(){ clearZoneGuards(); buildForts(); buildRally(); bui
   if(RALLY_PT.g) freezeStatic(RALLY_PT.g); for(const w of POWS) freezeStatic(w.g); for(const d of DEPOTS){ freezeStatic(d.g); for(const m of d.g.userData.extra) freezeStatic(m); } }
 // Z105 PERF: static scenery computes its matrices once; anything flagged userData.live (bobbing badges, rings) keeps updating
 export function freezeStatic(root){ root.traverse(o=>{ if(o.userData && o.userData.live) return; o.updateMatrix(); o.matrixAutoUpdate=false; }); root.updateMatrixWorld(true); }
-export function clearZones(){ clearZoneGuards(); clearForts(); clearRally(); clearPOWs(); clearDepots(); clearAllyTanks(); }
 // a soldier with nothing urgent asks for work: capture an open depot, free an open stockade
 export function zoneJob(a){ return depotJob(a) || powJob(a); }
 // guards posted round an installation (they hold their post; the wave system ignores them)

@@ -58,7 +58,6 @@ function talk(D, ev, force){ const T = RIDE_TALK[ev], now = performance.now() / 
   const i = (Math.random() * T.d.length) | 0, at = () => new THREE.Vector3(p.pos.x, p.pos.y + 3.2, p.pos.z);
   const show = hudOn('talk'); if(show) floatText(T.d[i], RIDE_TALK.col.d, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('driver', ev, i);   // (Z324 the lines on screen only when THOẠI TRÊN MÀN HÌNH is on; the voice always)
   if(T.s && T.s.length){ const j = (Math.random() * T.s.length) | 0; setTimeout(() => { if(S.player === p){ if(show) floatText(T.s[j], RIDE_TALK.col.s, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('soldier', ev, j); } }, RIDE_TALK.reply * 1000); } }
-export function rideTalk(ev, force){ const D = CV.H && CV.H.drv; if(D) talk(D, ev, force); }
 
 // ---- events from the game ----
 export function bikeWheelie(H){ const D = H && H.drv; if(!D || D.state !== 'ride' || !RIDE.fit[D.kind].wheelie) return false; D.wheelT = RIDE.wheelie.dur; sfx('whoosh'); talk(D, 'wheelie', true);

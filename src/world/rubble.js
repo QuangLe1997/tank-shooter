@@ -40,4 +40,3 @@ export function updateRubble(dt){ let n=0;
     spawnPart(R.x+_R(-0.9,0.9)*R.s, gy+0.4, R.z+_R(-0.9,0.9)*R.s, _R(-0.3,0.3), 2+Math.random()*1.5, _R(-0.3,0.3), { tex:'fire', color:0xffe0a0, color2:0xff3a0a, size:(0.7+Math.random()*0.7)*R.s*(0.5+0.5*k), life:0.5, grav:1.2, drag:1.5, grow:0.7 });
     if(Math.random()<0.7) spawnPart(R.x, gy+1.4*R.s, R.z, 0.5+_R(-0.3,0.3), 2+Math.random(), 0.2+_R(-0.3,0.3), { color:0x16120e, size:(1.1+Math.random()*0.6)*R.s, life:2.2, smoke:true, grav:0.3, drag:0.8, grow:2.4, op:0.5*k+0.15 }); } }
 export function clearRubble(){ for(const R of RUB) scene.remove(R.m); RUB.length=0; }
-export function rubbleCount(){ return RUB.length; }

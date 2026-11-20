@@ -18,7 +18,6 @@ export function engineStart(){
   for(const n of [o1,o2,rb,tk,lfo]) n.start();
   ENG.nodes={ out, lp, o1, o2, tkg, lfo, lfg }; ENG.on=true;
 }
-export function engineStop(){ const n=ENG.nodes; if(!n||!actx) return; n.out.gain.setTargetAtTime(0, actx.currentTime, 0.15); }
 export function updateEngine(dt){
   const n=ENG.nodes, p=S.player; if(!n||!actx) return;
   const t=actx.currentTime, live = S.mode==='playing' && p && !muted && !p.cav;   // Z245 no diesel in cavalry mode

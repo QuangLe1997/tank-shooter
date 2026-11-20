@@ -2,10 +2,9 @@
 import * as THREE from 'three';
 import { ATMOS, BIOME, MOBILE, TANK_SCALE, VIEW, animateTank, barrelGrade, buildTank, currentTank, groundMaps, makeCamoNet, makeCoverMesh, makeFlag, mountBarrel, renderer, shopCam, shopScene, skyEnvTexture, tankModel, tankRecoil, vnTex } from '../hub.js';
 
-export const SHOW = { built:'', tank:null, thumbTank:null, gun:'', thumbGun:'', studio:null, flash:null, flashL:null, puffs:[], dust:null, t:0, fireT:2.4,
-  orbit:0.62, drag:0, dragging:false, lastX:0, idleT:0, thumbs:{}, queue:[], emblem:null, focusX:0, firing:true, salvo:0 };
-const _vp=new THREE.Vector4(), _v=new THREE.Vector3(), _q=new THREE.Quaternion();
-export const thumbCam = new THREE.PerspectiveCamera(30, 1.6, 0.1, 80);
+export const SHOW = { built:'', tank:null, gun:'', studio:null, flash:null, flashL:null, puffs:[], dust:null, t:0, fireT:2.4,
+  orbit:0.62, drag:0, dragging:false, lastX:0, idleT:0, emblem:null, focusX:0, firing:true, salvo:0 };
+const _v=new THREE.Vector3();
 
 // soft round sprite (smoke puffs, dust motes, muzzle glow)
 export let _softTex=null;
@@ -60,7 +59,6 @@ export function dressShowroom(){
   SHOW.flashL=new THREE.PointLight(0xffb060, 0, 14, 2); st.add(SHOW.flashL);
   SHOW.puffs.length=0; for(let i=0;i<(MOBILE?14:24);i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:softTex(), color:0x8a8478, transparent:true, opacity:0, depthWrite:false })); s.visible=false; st.add(s); SHOW.puffs.push({ s, t:9, life:1, vx:0, vy:0, vz:0, g:1 }); }
   if(!SHOW.tank){ SHOW.tank=makeShowTank(); shopScene.add(SHOW.tank); SHOW.tank.rotation.y=0; }
-  if(!SHOW.thumbTank){ SHOW.thumbTank=makeShowTank(); SHOW.thumbTank.visible=false; shopScene.add(SHOW.thumbTank); }
 }
 // put this gun's real barrel on the showroom tank (no-op if it already carries it)
 export function setShowGun(id){ if(!SHOW.tank) return; const k=id+':'+barrelGrade(id); if(SHOW.gun===k) return; SHOW.gun=k; mountBarrel(SHOW.tank, id); SHOW.fireT=Math.min(SHOW.fireT, 1.4); }
@@ -100,25 +98,6 @@ export function updateShowroom(dt, detail){
   const W=VIEW.w, H=VIEW.h, off = detail ? SHOW.focusX*W : 0;        // shift the tank clear of the stat panel
   if(off) shopCam.setViewOffset(W, H, -off, 0, W, H); else if(shopCam.view && shopCam.view.enabled) shopCam.clearViewOffset();
   shopCam.aspect=W/Math.max(1,H); shopCam.updateProjectionMatrix();
-}
-// ---- card photos: the tank with each gun, rendered into the corner of the canvas right before the frame is drawn over it ----
-export function thumbKey(id){ return id+':'+barrelGrade(id); }
-export function thumbURL(id){ return SHOW.thumbs[thumbKey(id)]||''; }
-export function queueThumbs(ids){ for(const id of ids) if(!SHOW.thumbs[thumbKey(id)] && !SHOW.queue.includes(id)) SHOW.queue.push(id); }
-export function pumpThumbs(){
-  if(!SHOW.queue.length || !SHOW.thumbTank) return; const id=SHOW.queue.shift(), key=thumbKey(id); if(SHOW.thumbs[key]) return;
-  const TT=SHOW.thumbTank, hero=SHOW.tank, emb=SHOW.emblem; mountBarrel(TT, id); SHOW.thumbGun=key;
-  TT.userData.turret.rotation.y=0.42; if(TT.userData.rig){ TT.userData.rig.recoil=0; TT.userData.rig.elev=0.06; }
-  TT.visible=true; hero.visible=false; if(emb) emb.visible=false; for(const q of SHOW.puffs) q.s.visible=false; SHOW.flash.visible=false; if(SHOW.dust) SHOW.dust.visible=false;
-  const W=MOBILE?208:256, H=Math.round(W*0.6), pr=renderer.getPixelRatio();
-  thumbCam.aspect=W/H; thumbCam.position.set(-8.2, 3.9, 10.4); thumbCam.lookAt(0.6, 1.0, 0.4); thumbCam.updateProjectionMatrix();
-  renderer.getViewport(_vp); renderer.setRenderTarget(null); renderer.setViewport(0,0,W,H); renderer.render(shopScene, thumbCam);
-  const cv=document.createElement('canvas'), dw=Math.round(W*Math.min(2,pr)), dh=Math.round(H*Math.min(2,pr)); cv.width=dw; cv.height=dh;
-  const src=renderer.domElement; cv.getContext('2d').drawImage(src, 0, src.height-H*pr, W*pr, H*pr, 0, 0, dw, dh);
-  renderer.setViewport(_vp);
-  TT.visible=false; hero.visible=true; if(emb) emb.visible=true; SHOW.flash.visible=true; if(SHOW.dust) SHOW.dust.visible=true;
-  const url=cv.toDataURL('image/jpeg', 0.84); SHOW.thumbs[key]=url;
-  document.querySelectorAll('img.case-shot[data-thumb="'+id+'"]').forEach(im=>{ im.src=url; im.closest('.case-disp')?.classList.add('shot-ok'); });
 }
 // drag anywhere on the 3D view (not on a panel) to walk round the tank
 export function _showDragOK(e){ return !(e.target.closest && e.target.closest('.shop-info,.si-panel,.shop-tab,.shop-arrow,.shop-back,.shop-done,.w-chip,#shopTabs,#caseGrid,.btn')); }

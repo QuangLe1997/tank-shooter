@@ -14,7 +14,6 @@ export function shopModel(){
     push(u.cat, {type:'up', key:u.key, name:u.name, icon:u.icon, per:u.per, level:L, max, cost, vip:!!(cost&&cost.d), rar:(cost&&cost.d)?'vip':'up'}); });
   return ['WEAPONS','FIREPOWER','AMMO','CHASSIS','SUPPORT'].filter(c=>cats[c]&&cats[c].length).map(c=>({cat:c, items:cats[c]}));
 }
-export const CAT_ICON = { WEAPONS:'rifle', FIREPOWER:'burst', AMMO:'mag', CHASSIS:'shield', SUPPORT:'drone' };
 export function priceHTML(cost){ return '<span class="ic">'+svgMarkup(cost.d?'diamond':'coin')+'</span>'+(cost.d? cost.d : cost.c.toLocaleString()); }
 // ===== 3D showroom (Z107): the shop scene is dressed as a patch of the current battlefield by ui/showroom.js — your own tank,
 // the real barrel of each gun, the battlefield's sky / ground / sun. This module keeps the scene + camera and the shop logic. =====
@@ -22,54 +21,8 @@ export const shopScene = new THREE.Scene();
 shopScene.background = new THREE.Color(0x05070b);
 export const shopCam = new THREE.PerspectiveCamera(34, innerWidth/Math.max(1,innerHeight), 0.1, 120);
 shopCam.position.set(0, 3.6, 11); shopCam.lookAt(0, 1.35, 0);
-export const _shMetal=(c)=>new THREE.MeshStandardMaterial({color:c,metalness:.85,roughness:.36});
 export const _shGlow=(c)=>new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:c,emissiveIntensity:2.1,metalness:.4,roughness:.4});
-export const _shopRay=new THREE.Raycaster();
 export function _box(w,h,d,m){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); }
-export function _barX(rt,rb,h,m){ const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,18), m); c.rotation.z=Math.PI/2; return c; }   // cylinder lying along X
-export function buildGunModel(id){
-  const g=GUNS[id]||GUNS.rifle, col=g.color||0xaef0a0, sv=g.svg||'rifle', grp=new THREE.Group();
-  // tier/VIP-graded skin: higher tier = shinier + brighter accents; VIP = bright chrome. Reads the rank at a glance.
-  const tier=g.tier||1, vip=VIP_GUNS.includes(id), rc=RAR_COL[vip?'vip':('t'+tier)]||0x9fb07a;
-  const rough = vip?0.3 : (tier>=3?0.32 : tier===2?0.38 : 0.46), metal = vip?0.9:0.86;
-  const dark=new THREE.MeshStandardMaterial({color: vip?0x565b5e:(tier>=3?0x4a4f50:0x3e443e), metalness:metal, roughness:rough});
-  const steel=new THREE.MeshStandardMaterial({color: vip?0x787e82:(tier>=3?0x646a6c:0x5c6163), metalness:metal, roughness:rough});
-  const acc=new THREE.MeshStandardMaterial({color:0x0a0a0a, emissive:col, emissiveIntensity: vip?2.2:(tier>=3?1.9:tier===2?1.6:1.3), metalness:.4, roughness:.36});
-  grp.add(_box(1.5,0.5,0.42,dark));                                            // receiver
-  const grip=_box(0.3,0.72,0.34,steel); grip.position.set(-0.36,-0.52,0); grip.rotation.z=0.24; grp.add(grip);
-  const stock=_box(0.72,0.42,0.34,dark); stock.position.set(-0.98,-0.06,0); grp.add(stock);
-  const mag=_box(0.34,0.62,0.3,acc); mag.position.set(0.16,-0.52,0); grp.add(mag);
-  const sight=_box(0.3,0.16,0.1,steel); sight.position.set(-0.12,0.34,0); grp.add(sight);
-  const bar=(len,rad,y,z,mat)=>{ const c=_barX(rad,rad,len,mat||dark); c.position.set(0.75+len/2, y||0, z||0); grp.add(c); return c; };
-  if(id==='mortar'){ const b=bar(1.5,0.19,0.22,0,steel); b.rotation.z=0.34;   // slim, longer tube at a moderate angle (refined mortar)
-      const mb=_barX(0.22,0.24,0.26,acc); mb.position.set(1.78,0.62,0); mb.rotation.z=0.34; grp.add(mb);   // fine muzzle
-      const plate=_box(0.5,0.14,0.6,dark); plate.position.set(0.38,-0.32,0); grp.add(plate); }   // compact baseplate
-  else if(sv==='shotgun'){ bar(1.5,0.1,0.09,0.11); bar(1.5,0.1,0.09,-0.11); }
-  else if(sv==='shell'){ bar(1.4,0.23,0.05,0); const mb=_barX(0.3,0.3,0.3,acc); mb.position.set(2.05,0.05,0); grp.add(mb); }     // cannon
-  else if(sv==='minigun'){ const hub=_barX(0.34,0.34,0.5,steel); hub.position.set(1.05,0,0); grp.add(hub);
-      const cl=new THREE.Group(); for(let i=0;i<6;i++){ const c=_barX(0.07,0.07,1.5,dark); const an=i/6*6.283; c.position.set(1.75,Math.sin(an)*0.22,Math.cos(an)*0.22); cl.add(c);} grp.add(cl); grp._spinPart=cl; }
-  else if(sv==='missile'||sv==='rocket'){ const tubes=sv==='rocket'?1:3, rad=sv==='rocket'?0.3:0.14;
-      for(let i=0;i<tubes;i++){ const o=(i-(tubes-1)/2); const yy=sv==='rocket'?0:o*0.34, zz=sv==='rocket'?0:o*0.0; const tube=_barX(rad,rad,1.4,steel); tube.position.set(1.25,yy,zz); grp.add(tube);
-        const tip=new THREE.Mesh(new THREE.ConeGeometry(rad,0.42,12),acc); tip.rotation.z=-Math.PI/2; tip.position.set(2.05,yy,zz); grp.add(tip); } }
-  else if(sv==='rail'){ const r1=_box(1.9,0.07,0.12,steel); r1.position.set(1.2,0.13,0); const r2=r1.clone(); r2.position.y=-0.13; grp.add(r1,r2);
-      const core=_barX(0.1,0.1,1.7,acc); core.position.set(1.2,0,0); grp.add(core); for(let i=0;i<3;i++){ const rg=new THREE.Mesh(new THREE.TorusGeometry(0.22,0.04,8,18),acc); rg.position.set(0.65+i*0.6,0,0); grp.add(rg);} }
-  else if(sv==='bolt'){ bar(1.2,0.1,0,0,steel); for(let i=0;i<3;i++){ const co=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.06,10,22),acc); co.position.set(0.95+i*0.4,0,0); co.rotation.y=Math.PI/2; grp.add(co);} }
-  else if(sv==='snow'){ bar(1.4,0.13,0,0,steel); for(let i=0;i<4;i++){ const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.15,0),acc); const an=i/4*6.283; cr.position.set(1.7,Math.sin(an)*0.2,Math.cos(an)*0.2); grp.add(cr);} }
-  else if(id==='flamer'){ bar(1.3,0.16,0,0,steel); const noz=_barX(0.3,0.16,0.42,dark); noz.position.set(1.75,0,0); grp.add(noz);
-      const tank=_barX(0.24,0.24,0.95,acc); tank.position.set(0.35,-0.4,0.16); grp.add(tank);   // fuel tank
-      const pilot=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),acc); pilot.position.set(2.05,0,0); grp.add(pilot); }   // pilot flame
-  else if(id==='arty'){ const b=bar(1.7,0.26,0.12,0,steel); b.rotation.z=0.3;   // thick barrel angled UP (howitzer)
-      const mb=_barX(0.42,0.42,0.5,acc); mb.position.set(2.05,0.62,0); mb.rotation.z=0.3; grp.add(mb);   // big muzzle brake
-      const base=_barX(0.5,0.6,0.55,dark); base.position.set(0.55,-0.18,0); grp.add(base); }   // recoil base
-  else { bar(sv==='smg'?1.0:1.6,0.1); const mz=_barX(0.14,0.14,0.18,acc); mz.position.set(sv==='smg'?1.4:1.7,0,0); grp.add(mz); }   // rifle/smg/default
-  const auraN = vip?2:(tier>=3?1:0);   // slim energy rings orbit the higher tiers — a tasteful halo, not a blast
-  if(auraN){ const aura=new THREE.Group();
-    for(let i=0;i<auraN;i++){ const r=new THREE.Mesh(new THREE.TorusGeometry(1.25+i*0.22,0.028,8,52), new THREE.MeshStandardMaterial({color:0x000000,emissive:rc,emissiveIntensity:1.5,roughness:.4}));
-      r.rotation.x=Math.PI/2.3 + i*0.55; aura.add(r); }
-    grp.add(aura); grp._aura=aura; }
-  grp.scale.setScalar(vip?1.32:(tier>=3?1.26:tier===2?1.16:1.06));   // bigger = stronger
-  return grp;
-}
 export function buildUpgradeModel(item){
   const grp=new THREE.Group(); const rc=RAR_COL[item.rar]||0x9bd14a;
   const isVip=item.rar==='vip';
@@ -112,7 +65,6 @@ export function buildUpgradeModel(item){
   grp._floatLock=true;
   return grp;
 }
-export function disposeObj(o){ o.traverse&&o.traverse(c=>{ if(c.geometry)c.geometry.dispose(); if(c.material){ (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{ if(m.map)m.map.dispose(); m.dispose&&m.dispose(); }); } }); }
 // GUN_BLURB / UP_BLURB now imported from config.js
 export function itemBlurb(it){ return it.type==='gun' ? (GUN_BLURB[it.id]||'') : (UP_BLURB[it.key]||''); }
 export let _focusAt=0;

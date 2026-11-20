@@ -54,7 +54,7 @@ export function floraMat(){ if(_mat) return _mat; _mat=new THREE.MeshStandardMat
 const G={};
 function geo(k, f){ return G[k]||(G[k]=f()); }
 function vars(k, n, f){ const a=[]; for(let v=0;v<n;v++) a.push(geo(k+'#'+v, ()=>f(v))); return a; }
-const _MC=_mergeColored, mergeL=(P)=>leafy(P);
+const mergeL=(P)=>leafy(P);
 // a limb that bends and tapers: a tube along a curve, its radius shrinking from r0 to r1
 function limb(pts, r0, r1, seg, rad){ const cv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))), S=seg||8, R=rad||6, g=new THREE.TubeGeometry(cv, S, r0, R, false), ps=g.attributes.position, P=new THREE.Vector3(), V=new THREE.Vector3();
   for(let i=0;i<ps.count;i++){ const ring=Math.floor(i/(R+1)), t=ring/S; cv.getPointAt(Math.min(1,t), P); V.set(ps.getX(i),ps.getY(i),ps.getZ(i)).sub(P).multiplyScalar(1+(r1/r0-1)*t); ps.setXYZ(i, P.x+V.x, P.y+V.y, P.z+V.z); }
@@ -75,7 +75,7 @@ const conifer=(snow)=>vars('con'+(snow?1:0), MOBILE?3:6, (vv)=>{ const P=[], H=_
 export const treeBroadleaf=()=>broadleaf()[0], treeConifer=()=>conifer(false)[0], treePalm=()=>palm()[0];
 // Z260 RECURSIVE LIMBS: a limb bends a little as it grows, forks into 2–3 children turned off its own axis (biased upward, never back down), each
 //   shorter and thinner, and ends in a leaf clump — every variant its own random tree, nothing mirrored, nothing on a grid
-const _UP=new THREE.Vector3(0,1,0), _ax=new THREE.Vector3();
+const _ax=new THREE.Vector3();
 function branch(P, p0, dir, len, r0, depth, cols, bark, cr){ const d=dir.clone().add(new THREE.Vector3(_R(-0.22,0.22), _R(0.02,0.16), _R(-0.22,0.22))).normalize();
   const end=p0.clone().addScaledVector(d, len), mid=p0.clone().addScaledVector(d, len*0.5).add(new THREE.Vector3(_R(-0.12,0.12)*len, _R(-0.04,0.08)*len, _R(-0.12,0.12)*len));
   P.push({ geo:limb([p0.toArray(), mid.toArray(), end.toArray()], r0, r0*0.6, depth>0?6:4, depth>0?7:5), col:bark });
@@ -148,7 +148,6 @@ const deadTree=()=>vars('dead', 3, (vv)=>{ const P=[], h=_R(3.4,5.0), lean=_R(-0
   P.push({geo:limb([[0,0,0],[lean*0.4,h*0.5,_R(-0.3,0.3)],[lean,h,0]], 0.22, 0.07, 6, 6), col:BARKG[vv%3]});
   for(let k=0;k<5;k++){ const a=_R(0,6.28), y0=_R(h*0.4,h*0.9), l=_R(0.9,1.8), ex=lean*y0/h+Math.cos(a)*l, ez=Math.sin(a)*l; P.push({geo:limb([[lean*y0/h,y0,0],[lean*y0/h+Math.cos(a)*l*0.5,y0+l*0.5,Math.sin(a)*l*0.5],[ex,y0+l*_R(0.6,1.0),ez]], 0.07, 0.02, 4, 4), col:BARKG[k%3]}); }
   return mergeL(P); });
-const tallGrass=()=>grass('straw');
 const reedPlume=()=>vars('lau', 2, ()=>{ const P=[]; grassCards(P, 1.0, 1.9, [0xb8a470,0xa89460,0xc8b480], 3); for(let i=0;i<6;i++){ const h=_R(1.7,2.5), x=_R(-0.35,0.35), z=_R(-0.35,0.35), st=new THREE.CylinderGeometry(0.015,0.02,h,3); st.translate(x,h/2,z); st.rotateZ(_R(-0.1,0.1)); P.push({geo:st,col:0xb8a470});
     const pl=card(0.3,0.8,3,x,h-0.5,z,0.3); pl.translate(x,h+0.2,z); P.push({geo:pl,col:i%2?0xf0e8d8:0xe4dac4}); } return mergeL(P); });   // cỏ lau: feathery white plumes
 const termite=()=>vars('mound', 2, ()=>{ const P=[], cols=[0xa8603a,0x9a5434,0xb86c42]; for(let i=0;i<4;i++){ const h=_R(1.6,3.2), c=new THREE.ConeGeometry(_R(0.35,0.7),h,7); c.translate(_R(-0.4,0.4),h/2,_R(-0.4,0.4)); P.push({geo:c,col:cols[i%3]}); }

@@ -1,5 +1,5 @@
 // audio/music.js — Z161 ADAPTIVE BATTLE SCORE: five looped stems rendered offline (pad · war drums · bass ostinato · string spiccato · brass) that fade in with the fight, plus a theme for each general
-import { BOSS_DEFS, BOSS_NEW, S, actx, boss, enemies, musicBus } from '../hub.js';
+import { S, actx, boss, enemies, musicBus } from '../hub.js';
 
 // D minor, 96 bpm, 8 bars: i – VI – iv – V (two bars each). Every stem is the same length so they loop locked together.
 const BPM=96, BEAT=60/BPM, BARS=8, LEN=BEAT*4*BARS;
@@ -59,7 +59,6 @@ export async function bossTheme(id){ if(!actx || !SCORE.ready || SCORE.boss===id
   try{ const buf=SCORE.bossBuf[id] || (SCORE.bossBuf[id]=await render('brass', BOSS_MOTIF[id]||BOSS_MOTIF.overlord)); if(SCORE.boss!==id) return;
     if(SCORE.srcs.boss){ try{ SCORE.srcs.boss.stop(); }catch(e){} } const g=SCORE.gains.boss||(SCORE.gains.boss=actx.createGain()); if(!SCORE.srcs.boss) { g.gain.value=0.0001; g.connect(musicBus); }
     const s=actx.createBufferSource(); s.buffer=buf; s.loop=true; s.connect(g); const off=((actx.currentTime-SCORE.t0)%LEN+LEN)%LEN; s.start(actx.currentTime, off); SCORE.srcs.boss=s; }catch(e){} }
-export function preRenderBossThemes(){ if(!SCORE.ready) return; (async()=>{ for(const b of [...BOSS_DEFS, ...BOSS_NEW]){ if(!SCORE.bossBuf[b.id]) SCORE.bossBuf[b.id]=await render('brass', BOSS_MOTIF[b.id]); await new Promise(r=>setTimeout(r,200)); } })(); }
 // called every frame: read the fight and fade the stems toward it
 export function updateScore(dt){ if(!SCORE.ready || !actx) return; SCORE.tick-=dt; if(SCORE.tick>0) return; SCORE.tick=0.25;
   const p=S.player, play=S.mode==='playing', B=boss && boss.alive;

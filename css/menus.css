@@ -148,22 +148,6 @@
     padding:9px 18px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));transition:border-color .12s,transform .12s,box-shadow .12s;}
   .btn-terrain:hover{border-color:rgba(140,191,63,.55);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.4);}
   .btn-terrain .ic{width:16px;height:16px;color:var(--green);} .btn-terrain b{color:#ffe8b6;}
-  /* battlefield picker dialog (lift+glow cards — NO css-3d tilt: rotateX/perspective broke pointer hit-testing) */
-  .terrain-stage{width:100%;max-width:1000px;margin:14px auto 0;}
-  .terrain-gallery{display:flex;flex-wrap:wrap;gap:18px 16px;justify-content:center;align-items:flex-end;padding:18px 8px 24px;}
-  .tcard{position:relative;width:192px;cursor:pointer;border-radius:14px;overflow:hidden;pointer-events:auto;background:#0a0d12;
-    border:2px solid rgba(255,255,255,.12);box-shadow:0 12px 28px rgba(0,0,0,.55);
-    transition:transform .22s cubic-bezier(.2,.85,.25,1),box-shadow .22s,border-color .2s;}
-  .tcard canvas{position:relative;inset:auto;display:block;width:100%;height:120px;}   /* override the global fullscreen-fixed canvas rule */
-  .tcard .tc-name{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;
-    padding:8px 11px;font-weight:900;letter-spacing:1px;font-size:13px;color:#fff;text-shadow:0 2px 8px #000;background:linear-gradient(transparent,rgba(4,7,10,.92));}
-  .tcard .tc-tag{font-size:9px;opacity:.65;font-weight:800;letter-spacing:1px;}
-  .tcard::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.16) 50%,transparent 58%);transform:translateX(-130%);transition:transform .55s;}
-  .tcard:hover{transform:translateY(-6px) scale(1.04);border-color:rgba(140,191,63,.5);box-shadow:0 18px 36px rgba(0,0,0,.6);}
-  .tcard:hover::before{transform:translateX(130%);}
-  .tcard.on{transform:translateY(-8px) scale(1.08);border-color:var(--green);box-shadow:0 0 0 2px var(--green),0 20px 44px rgba(140,191,63,.4),0 0 46px rgba(140,191,63,.28);}
-  .tcard.on::after{content:'✓ SELECTED';position:absolute;top:8px;right:8px;z-index:3;background:var(--green);color:#0a140a;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.5);}
-  body.touch .tcard{width:152px;} body.touch .tcard canvas{height:94px;}
   /* HOW TO PLAY field manual */
   .guide{max-width:660px;width:100%;margin:14px auto 0;display:flex;flex-direction:column;gap:9px;max-height:60vh;overflow-y:auto;text-align:left;pointer-events:auto;padding:2px 8px;}
   .guide-row{display:flex;gap:13px;align-items:flex-start;background:linear-gradient(180deg,rgba(20,28,14,.6),rgba(10,16,8,.6));border:1px solid var(--line);border-radius:12px;padding:11px 15px;}

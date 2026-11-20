@@ -61,4 +61,3 @@ export function updateGore(dt, now){
     if(SPL.dirty || now>SPL.at){ SPL.at=now+0.12; flushSplats(); } }
   else if(SPL.g.instanceCount){ SPL.g.instanceCount=0; } }
 export function clearGore(){ for(const c of CH){ c.m.visible=false; CPOOL.push(c); } CH.length=0; SPL.items.length=0; SPL.g.instanceCount=0; }
-export function goreCount(){ return { chunks:CH.length, splats:SPL.items.length }; }

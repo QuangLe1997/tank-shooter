@@ -12,7 +12,7 @@ import { ARENA, BIOME, MOBILE, RIDGES, S, UNDER, blocks, burst, camera, damageEn
 
 export const CAVE = { on:false, shafts:[], mouths:[], torches:[], extra:[], lights:[], spots:[], pillars:[], motes:[], fall:[], g:null, flames:null, glow:null, crystal:null, pools:null, lightAt:0, dripAt:0, dustAt:0, next:0, uT:{ value:0 } };
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
-const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _V=new THREE.Vector3(), _S=new THREE.Vector3(), _E=new THREE.Euler(), _UP=new THREE.Vector3(0,1,0);
+const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _V=new THREE.Vector3(), _S=new THREE.Vector3(), _E=new THREE.Euler();
 
 // ---- plan (runs inside applyBiome, after the field outline and BEFORE the terrain: the walls are cut round the tunnel mouths) ----
 export function planCavern(){ CAVE.on=!!BIOME.cave; CAVE.shafts.length=0; CAVE.mouths.length=0; if(!CAVE.on) return;

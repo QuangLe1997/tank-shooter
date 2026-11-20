@@ -100,4 +100,3 @@ export function updateShatter(dt){ if(!LIVE.length) return; dt = Math.min(dt, 0.
       else { s.v.y = 0; s.v.x *= Math.max(0, 1 - dt * 6); s.v.z *= Math.max(0, 1 - dt * 6); s.w.multiplyScalar(Math.max(0, 1 - dt * 5)); if(s.v.lengthSq() < 0.05) s.rest += dt; } } } }
 export function clearShatter(){ for(const s of LIVE) drop(s.m); LIVE.length = 0; }
 function drop(m){ scene.remove(m); if(m.userData.ownGeo) m.geometry.dispose(); }   // (Z312 a tinted stone lump owns its geometry)
-export const SHATTER_LIVE = LIVE;

@@ -61,7 +61,7 @@ export function rocketTarget(){
     else { tx=p.pos.x+Math.sin(p.aimSmoothed)*26; tz=p.pos.z+Math.cos(p.aimSmoothed)*26; } }
   const [cx,cz]=clampFieldXZ(tx, tz, 2); return { x:cx, z:cz };
 }
-export const ROCKET_G=30, ROCKET_LAND_Y=0.8, ROCKET_ELEV=Math.PI/2-0.52;   // SIEGE rocket: steep ~60° lob (matches the tall sky-pointing launcher)
+export const ROCKET_G=30, ROCKET_ELEV=Math.PI/2-0.52;   // SIEGE rocket: steep ~60° lob (matches the tall sky-pointing launcher)
 export const MORTAR_ELEV=Math.PI/2-0.82, MORTAR_G=46;                       // mortar/howitzer: MODERATE ~43° lob + stronger gravity → flatter & FAST, low hang-time so moving tanks can't walk out of it
 // solve the launch SPEED so a fixed-elevation lob from (sx,sy) lands exactly at (tx,tz): 0.8 = sy + D·tanθ − G·D²/(2 v²cos²θ). flight time = √(2(sy+D·tanθ−0.8)/G)
 // BALLISTIC SOLUTION for a fixed tube elevation θ: horizontal range D, height drop Δh = launchY − targetY (real ground at the mark)

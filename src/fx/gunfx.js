@@ -67,7 +67,6 @@ export function updateBolts(dt){ for(const r of RIB){ if(!r.on) continue; r.life
     if(r.jag>0){ r.reT-=dt; if(r.reT<=0){ r.reT=0.035; jagged(r); } } else layout(r); } }
 
 // ---- muzzle effects per firing class ----
-const _a=new THREE.Vector3(), _b=new THREE.Vector3();
 function smokeRing(x,y,z,fx,fz,s){ const n=MOBILE?7:12, px=fz, pz=-fx;   // vortex ring: puffs set round the bore axis, blown outward and slowly forward
   for(let i=0;i<n;i++){ const t=i/n*6.283, c=Math.cos(t), sn=Math.sin(t), ox=px*c*0.35*s, oz=pz*c*0.35*s, oy=sn*0.35*s;
     spawnPart(x+ox+fx*0.6*s, y+oy, z+oz+fz*0.6*s, px*c*2.4*s+fx*3.2, sn*2.4*s+0.3, pz*c*2.4*s+fz*3.2, { color:0xb0aa9c, size:0.75*s, life:1.5+Math.random()*0.4, smoke:true, grav:0.25, drag:1.7, grow:1.0*s, op:0.38 }); } }

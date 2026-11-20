@@ -189,7 +189,6 @@ export function buildTank(opts={}){
   return realTank(g, opts);   // Z256
 }
 // ---- draw-call baking: merge every group's direct child meshes that share a material into ONE mesh (animated groups stay separate) ----
-export const _ZERO_UV = new Map();
 export function bakeGroup(par){
   const buckets=new Map();
   for(const c of par.children){ if(!c.isMesh || c.isInstancedMesh || c.isSkinnedMesh || c.name || c.children.length || Array.isArray(c.material) || c.userData.keep || c.userData.flag || !c.visible) continue;   // Z233 instanced fields / waving flags are never folded in (Z256 nor parts a real model hid: merged, they would show again)

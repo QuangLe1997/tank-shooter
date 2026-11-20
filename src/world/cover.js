@@ -16,7 +16,7 @@ export const MAZE_SHAPES = [
 ];
 export const blocks=[];   // fuel drums go up after a hit or two
 export function buildBlocks(){
-  for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block'); clearRubble(); resetSupply(); clearWallMarks();
+  clearShatter(); for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block'); clearRubble(); resetSupply(); clearWallMarks();
   planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
   buildCoreWalls();                                                                        // Z140 our walled compound + guard cannons round the Core
   buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
@@ -183,4 +183,3 @@ export function destroyCover(b){
   if(b.kind==='drums'||b.kind==='tires') leaveRubble(b, b.kind==='drums'?7:10); else if(b.kind==='sandbag'||b.kind==='crates') leaveRubble(b);   // Z193 what is left of it
   if(b.loot){ dropPowerup(pos, b.lootTier||0); if(b.cache) dropPowerup(pos, Math.max(0,(b.lootTier||0)-1)); }   // beacon-marked stockpiles always yield; Z93 caches give two
 }
-export function clearBlocks(){ clearShatter(); for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearRubble(); resetSupply(); }

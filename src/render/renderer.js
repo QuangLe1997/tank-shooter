@@ -33,6 +33,18 @@ app.appendChild(renderer.domElement);
 // is shown again (its own updateMatrix() flags it); getWorldPosition() and friends still update on demand, so game code is unaffected.
 { const P=THREE.Object3D.prototype, _umw=P.updateMatrixWorld;
   P.updateMatrixWorld=function(force){ if(this.visible===false){ if(force) this.matrixWorldNeedsUpdate=true; return; } return _umw.call(this, force); }; }
+// Z327 PERF: a clone no longer serialises the scene graph. three copies userData with JSON.parse(JSON.stringify(...)), and a tank's userData holds its turret,
+//   muzzle, gun and hull: each clone (a wreck on every kill) wrote those meshes, their geometry and every texture out as JSON with toDataURL — 300–450 ms
+//   frozen per kill. Plain data is still deep-copied the way JSON would; a three object in userData becomes an empty {} (what a clone could use of it before).
+{ const heavy=v=>v.isObject3D||v.isMaterial||v.isTexture||v.isBufferGeometry||v.isBufferAttribute||v.isInterleavedBuffer||v.isSkeleton||v.isAnimationClip||v.isRenderTarget||v.isSource||(typeof v.nodeType==='number'&&typeof v.nodeName==='string');
+  const data=(v,d)=>{ if(v===null) return null; const t=typeof v; if(t==='number') return isFinite(v)?v:null; if(t==='string'||t==='boolean') return v; if(t!=='object'||d>40) return undefined;
+    if(heavy(v)) return {}; if(typeof v.toJSON==='function') return data(v.toJSON(), d+1);
+    if(Array.isArray(v)) return v.map(x=>{ const y=data(x,d+1); return y===undefined?null:y; });
+    const o={}; for(const k of Object.keys(v)){ const y=data(v[k],d+1); if(y!==undefined) o[k]=y; } return o; };
+  const bare=(u)=>{ for(const k in u) return false; return true; };
+  for(const C of [THREE.Object3D, THREE.Material, THREE.Texture]){ const P=C.prototype, _copy=P.copy;
+    P.copy=function(src, ...a){ const u=src&&src.userData; if(!u||bare(u)) return _copy.call(this, src, ...a); src.userData={};
+      try{ _copy.call(this, src, ...a); } finally { src.userData=u; } this.userData=data(u,0)||{}; return this; }; } }
 
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(BIOME.fog);

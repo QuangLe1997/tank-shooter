@@ -59,9 +59,7 @@ export function infPushBlocks(pos){ for(const bl of blocksAt(pos.x, pos.z)){ if(
 //   CARRY loot home to the rally point → COVER from enemy armour (far side of a wall / rock / sandbags) →
 //   FIGHT infantry and tower guards (tanks only with an AT launcher from a captured depot) → FETCH dropped loot →
 //   JOBS (capture an open depot, free an open POW stockade) → ADVANCE on the nearest enemy → REGROUP around the tank.
-export function squadZone(){ const F=TROOPS.fireteam; return Math.max(F.zoneMin, playerRange()*F.zoneMul); }
 export function recallRange(){ return Math.max(TROOPS.fireteam.zoneMin, playerRange()); }   // the visible range ring
-export const _AT=new THREE.Vector3();
 function nearestEnemyTank(a, R){ let best=null, bd=R*R; for(const e of enemies){ if(!solidTank(e) || e.abandoned) continue; const q=(e.pos.x-a.pos.x)**2+(e.pos.z-a.pos.z)**2; if(q<bd){ bd=q; best=e; } }
   if(boss&&boss.alive){ const q=(boss.pos.x-a.pos.x)**2+(boss.pos.z-a.pos.z)**2; if(q<bd){ best=boss; } } return best; }
 function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;

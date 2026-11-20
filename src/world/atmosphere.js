@@ -82,7 +82,6 @@ export const SKY = new THREE.Mesh(new THREE.SphereGeometry(480, 64, 32), new THR
         vec3 h=texture2D(hdrTex,hu).rgb*(1.0+cFlash*1.5); c=mix(c, h, hdrAmt*smoothstep(-0.04,0.06,d.y)); }
       gl_FragColor=vec4(c,1.0); }` }));
 SKY.renderOrder=-10; SKY.frustumCulled=false; scene.add(SKY);
-export const _WHITE=new THREE.Color(0xffffff);
 // Z145 SKY MOODS — every battle gets its own sky, like a film's weather: clear and hard-lit, bright fair-weather cumulus, a dramatic broken deck
 //   with shafts of sun between dark cores, or a brooding storm (low sky, cool flat light, cloud shadows racing, lightning in the distance)
 export const MOODS = {

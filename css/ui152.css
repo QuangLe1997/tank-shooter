@@ -11,10 +11,10 @@
   --ease:cubic-bezier(.2,.8,.2,1);
 }
 /* ---- cards: lift on hover, settle on press ---- */
-.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.tcard{transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s,filter .18s;}
+.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card{transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s,filter .18s;}
 .brcard,.upcard{background:var(--card-bg) !important;border:1px solid var(--card-bd) !important;box-shadow:var(--card-sh) !important;border-radius:16px !important;}
 @media (hover:hover){
-  .brcard:hover,.upcard:hover,.case:hover,.ldcard:not(.locked):hover,.bs-lv:not(.lock):hover,.bs-map:hover,.tc-card:hover,.tcard:hover{transform:translateY(-4px);box-shadow:var(--card-sh-hover) !important;}
+  .brcard:hover,.upcard:hover,.case:hover,.ldcard:not(.locked):hover,.bs-lv:not(.lock):hover,.bs-map:hover,.tc-card:hover{transform:translateY(-4px);box-shadow:var(--card-sh-hover) !important;}
 }
 .brcard:active,.upcard:active,.case:active,.ldcard:active,.bs-lv:active{transform:translateY(-1px) scale(.985);}
 /* ---- buttons: a little lift + light on hover, pressed in on click ---- */
@@ -164,8 +164,8 @@
 .mg-up{grid-template-columns:1fr auto;gap:4px 8px;padding:6px 8px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.03);} .mg-up .kr-nm{grid-column:1/-1;font-size:12.5px;flex-direction:row;gap:6px;align-items:baseline;flex-wrap:wrap;} .mg-up .kr-nm small{font-size:10.5px;} .mg-up .kr-pips{align-self:center;} .mg-up .kr-pips i{width:16px;height:7px;} .mg-up .kr-buy{min-width:96px;font-size:11px;margin-top:0 !important;}
 
 /* ===== Z168 controller: no mouse-hover lift while a pad / keyboard drives (a resting cursor used to fight the focus ring → flicker) ===== */
-body.pad :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.tcard,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus),
-body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.tcard,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus){transform:none !important;filter:none !important;}
+body.pad :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus),
+body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus){transform:none !important;filter:none !important;}
 .gcard.padfocus,.kit-rec.padfocus,.brcard.padfocus,.upcard.padfocus{transform:translateY(-3px) scale(1.02) !important;}
 
 /* ===== Z168 first-time tips: a side card (no dimmed backdrop, no pause), under every menu, with a countdown bar ===== */
@@ -210,5 +210,3 @@ body.touch #tipCard{top:auto !important;bottom:12px;left:50% !important;right:au
 @media (max-height:520px){ #garGrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr)) !important;gap:10px !important;} .gc-pic{height:96px !important;} .gc-desc{display:none;} .gcard{gap:3px !important;padding:8px 10px 10px !important;} .gc-nm{font-size:15px !important;} }
 #start #resetBtn .lg{display:none;}
 /* Z170 the terrain card's tag is now a real place (GIZA · AI CẬP): it wraps under the name and never spills */
-.tcard .tc-name{flex-wrap:wrap;row-gap:1px}
-.tcard .tc-tag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:.4px}

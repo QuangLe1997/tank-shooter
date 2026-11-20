@@ -585,7 +585,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z139 three new battlefields
 { const fs=await import('node:fs'); const w=fs.readFileSync('src/data/world.js','utf8'), l=fs.readFileSync('src/world/landmarks.js','utf8'), h=fs.readFileSync('src/world/heightfield.js','utf8'), b=fs.readFileSync('src/input/bindings.js','utf8'), t=fs.readFileSync('src/data/text-vi.js','utf8');
   for(const n of ['CITY']) ok(new RegExp("name:'"+n+"'").test(w) && new RegExp(n+":\\{").test(w) && new RegExp(n+":'").test(t), 'biome '+n+' is fully defined (data, atmosphere, ground, name)');
-  ok(/buildCity/.test(l) && /buildHills/.test(l) && /buildVillage/.test(l) && /carveRivers/.test(h) && /wetAt/.test(h), 'landmarks + river carving exist');
+  ok(/buildVillage/.test(l) && /carveRivers/.test(h) && /wetAt/.test(h), 'landmarks + river carving exist');
   ok(/_mbBusy/.test(b), 'menuBack cannot recurse'); }
 
 // Z140 regional strongholds, guard cannons, tour, events, flag fall, celebration
@@ -739,7 +739,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z261 shatter: a destroyed prop breaks into pieces of its own mesh (clustered triangles), thrown, bouncing, settling, sinking; capped
 { const fs=await import('node:fs'); const sh=fs.readFileSync('src/fx/shatter.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), C=await import('./config.js');
   ok(/export function cutGeometry/.test(sh) && /relax: even, chunky pieces/.test(sh) && /export function shatter/.test(sh) && /DoubleSide/.test(sh) && /LIVE\.length >= cap/.test(sh) && /s\.v\.y = -s\.v\.y \* s\.bounce/.test(sh), 'shatter: own-mesh pieces, two-sided, capped, bounce and settle');
-  ok(/shatter\(b\.mesh, \{ \.\.\.SHATTER\.kinds\[b\.kind\], solid:solidKind\(b\.kind\) \}\); scene\.remove\(b\.mesh\); const i=blocks\.indexOf\(b\)/.test(cv) && /clearShatter\(\); for\(const b of blocks\)/.test(cv) && /updateShatter\(dt\)/.test(lp), 'every destroyed cover piece and rock breaks apart; cleared with the blocks');
+  ok(/shatter\(b\.mesh, \{ \.\.\.SHATTER\.kinds\[b\.kind\], solid:solidKind\(b\.kind\) \}\); scene\.remove\(b\.mesh\); const i=blocks\.indexOf\(b\)/.test(cv) && /clearShatter\(\); for\(const b of blocks\)/.test(cv) && /export function buildBlocks\(\)\{\n  clearShatter\(\)/.test(cv) && /updateShatter\(dt\)/.test(lp), 'every destroyed cover piece and rock breaks apart; cleared with the blocks');
   ok(C.SHATTER.kinds.drums.fire && C.SHATTER.kinds.tires.bounce>C.SHATTER.bounce && C.SHATTER.maxMobile<C.SHATTER.max, 'fuel drums throw burning pieces, tyres bounce, fewer pieces on phones'); }
 
 // Z262 trees fall for real: tanks, shells and blasts fell them with a gravity topple
@@ -819,7 +819,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z279 colossal forts: each battlefield's forts in a Tripo style (granite citadel, desert kasbah, arctic ice, volcanic obsidian), wall sections still fall one by one
 { const fs=await import('node:fs'); const C=await import('./config.js'), F=fs.readFileSync('src/world/fortress.js','utf8');
-  ok(/function dressFort\(f, stone\)/.test(F) && /dressFort\(f, wall\)/.test(F) && /aOff/.test(F) && /discard/.test(F) && ['citadel','desert','arctic','volcano'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/fort_'+st+'_'+p+'.glb'))) && C.REALFORT.biomes.CITADEL, 'forts dressed in their battlefield style, destructible as before'); }
+  ok(/function dressFort\(f, stone\)/.test(F) && /dressFort\(f, wall\)/.test(F) && /function sliceX\(g, x0, x1, mid\)/.test(F) && /f\.wallSl\[pc\.i\]/.test(F) && !/discard/.test(F) && ['citadel','desert','arctic','volcano'].every(st=>['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/fort_'+st+'_'+p+'.glb'))) && C.REALFORT.biomes.CITADEL, 'forts dressed in their battlefield style, destructible as before'); }
 
 // Z280 windows at night on the Meshy buildings, the skyline and the two landmark towers
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
@@ -1039,15 +1039,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function blendIn\(m\)/.test(bi) && /m\.transparent/.test(bi) && /m === groundMat/.test(bi) && /grassPhoto\|macroGround/.test(bi) && /key0 \+ '\|blendIn1'/.test(bi) && /if\(f0\) f0\.call\(this, sh, r\)/.test(bi) && /isSkinnedMesh/.test(bi) && /p === skip/.test(bi), 'each material keeps its own shader work and program key; the ground, grass, glass, skinned men and our own tank are left alone');
   ok(/try\{ blendScene\(scene\); \}catch\(e\)\{\} if\(!intro\.active\) return;/.test(R('src/game/intro.js')) && /blendWhenReady\(scene\)/.test(R('src/loot/upgrades.js')) && /^export \* from '\.\/render\/blend-in\.js';/m.test(R('src/hub.js')), 'graded when a stage is built: in the intro warm-up (even a skipped one) and on the next stage'); }
 
-// Z324 the battle HUD: dialogue / cards / banners each switchable, see-through glass cards, a slim banner band, a compact reload ring
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), hp=R('src/ui/hud-prefs.js'), cs=R('css/hud-slim.css'), ix=R('index.html');
-  ok(/talk:false, cards:true, banners:true/.test(hp) && /export function applyHud/.test(hp) && /id="setHudTalk"/.test(ix) && /id="setHudCards"/.test(ix) && /id="setHudBanners"/.test(ix) && /setHud\(k, true\)/.test(R('src/ui/settings.js')) && /if\(show\) floatText/.test(R('src/actors/driver.js')), 'HUD switches: on-screen dialogue off by default (voices still play), cards and banners on/off');
-  ok(/hud-slim\.css/.test(ix) && ix.indexOf('hud-slim.css') > ix.indexOf('battle-light.css') && /body\.hud-no-talk #radio\{display:none/.test(cs) && /backdrop-filter:blur\(3px\)/.test(cs) && /reloadSprite\.scale\.set\(2\.1,2\.1,1\)/.test(R('src/combat/guns.js')) && !/NẠP ĐẠN/.test(R('src/combat/guns.js')), 'glass cards loaded last, a slim reload ring with no label'); }
-
 // Z323 no shader compiles once the fight is on: the countdown waits for a guarded compile; the burnt wreck keeps its model's own shader
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), br=R('src/ui/briefing.js'), fw=R('src/fx/fire-wrecks.js');
   ok(/function compileQuiet\(\)/.test(br) && /renderer\.properties\.get\(m\)\.currentProgram/.test(br) && /if\(!pr \|\| pr\.isReady\(\)\)/.test(br) && /if\(_warm && S\.cd-dt<=0\.05\)/.test(br) && !/compileAsync\(scene, camera\)/.test(br), 'the countdown holds until the stage shaders are compiled; the compile wait cannot throw or hang');
   ok(!/c\.emissiveMap = emberTex\(\)/.test(fw) && /c\.emissive\.setHex\(0xff4a12\); c\.emissiveIntensity = 0\.4/.test(fw), 'a burnt wreck glows by colour only, so its model keeps the shader it already has'); }
+
+// Z324 the battle HUD: dialogue / cards / banners each switchable, see-through glass cards, a slim banner band, a compact reload ring
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), hp=R('src/ui/hud-prefs.js'), cs=R('css/hud-slim.css'), ix=R('index.html');
+  ok(/talk:false, cards:true, banners:true/.test(hp) && /export function applyHud/.test(hp) && /id="setHudTalk"/.test(ix) && /id="setHudCards"/.test(ix) && /id="setHudBanners"/.test(ix) && /setHud\(k, true\)/.test(R('src/ui/settings.js')) && /if\(show\) floatText/.test(R('src/actors/driver.js')), 'HUD switches: on-screen dialogue off by default (voices still play), cards and banners on/off');
+  ok(/hud-slim\.css/.test(ix) && ix.indexOf('hud-slim.css') > ix.indexOf('battle-light.css') && /body\.hud-no-talk #radio\{display:none/.test(cs) && /backdrop-filter:blur\(3px\)/.test(cs) && /reloadSprite\.scale\.set\(2\.1,2\.1,1\)/.test(R('src/combat/guns.js')) && !/NẠP ĐẠN/.test(R('src/combat/guns.js')), 'glass cards loaded last, a slim reload ring with no label'); }
 
 // Z321 the cavalry: the rider seated on the real horse again; a galloping horse leaps what is low enough, its jump clip in the air; nothing ridden or led through
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), rc=R('src/game/ride-collide.js'), cv=R('src/game/cavalry.js'), rv=R('src/actors/real-cav.js'), x=R('src/game/xeom.js');
@@ -1063,6 +1063,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function startU\(v, tu\)/.test(tr) && /the rear axle on the circle/.test(tr) && /one U-turn at a time/.test(tr) && /the inner lane turns first/.test(tr) && /function freeAt/.test(tr) && T.spawnR>=40, 'U-turns round the rear axle, one at a time, inner lane first; nobody spawns on anyone or in sight');
   ok(/const j = \(1 \+ I\.e\) \* vc \/ \(1 \/ mr \+ 1 \/ mv\)/.test(im) && !/spill\(H, 'car'\)/.test(im) && /v\.st === 'down'/.test(im) && C.XEOM.impact.mass.bantai>C.XEOM.impact.mass.xeom && /a heavy blow rolls a car onto its side/.test(tr) && /function bumps\(\)/.test(tr), 'a ram shoves and spins the car, puts a scooter down (ridden over after), the ride drives on; a heavy one rolls a car; a sliding wreck passes the blow on');
   ok(/C\.shotThrow/.test(tr) && /function gone\(v\)/.test(tr) && T.hit.burnT<=6 && T.hit.hp[1]<=22 && /trafficCone\(x, z, cx, cz, range/.test(R('src/combat/flame.js')) && /trafficBeam\(ax, az, ex, ez/.test(R('src/combat/ultimate.js')), 'rounds, flames and beams set vehicles alight; the killing round throws it; it burns a few seconds and sinks away'); }
+
+// Z327 no freeze on a kill (a clone no longer serialises its userData), fort walls cut once per section, dead code gone
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), rd=R('src/render/renderer.js'), F=R('src/world/fortress.js');
+  ok(/for\(const C of \[THREE\.Object3D, THREE\.Material, THREE\.Texture\]\)/.test(rd) && /if\(heavy\(v\)\) return \{\};/.test(rd) && /src\.userData=\{\};\s*try\{ _copy\.call\(this, src, \.\.\.a\); \} finally \{ src\.userData=u; \}/.test(rd), 'a clone copies plain userData and leaves three objects out (no toDataURL of a whole tank per wreck)');
+  ok(/function sliceX\(g, x0, x1, mid\)/.test(F) && /new THREE\.InstancedMesh\(sg, mat, list\.length\)/.test(F) && /im\.computeBoundingSphere\(\); im\.castShadow=im\.receiveShadow=true;/.test(F) && !/fortClip/.test(F), 'each wall section draws only its own stretch, culled to the view and the shadow');
+  ok(/if\(f\.wallSl && f\.wallSl\[pc\.i\]\)\{ const \[im,j\]=f\.wallSl\[pc\.i\]; im\.setMatrixAt\(j, _m\);/.test(F) && /for\(const g of f\.wallGeos\|\|\[\]\) g\.dispose\(\);/.test(F), 'a fallen section hides its slice; a stage change frees the slices');
+  ok(!/export function buildGunModel/.test(R('src/ui/shop.js')) && !/thumbTank|pumpThumbs/.test(R('src/ui/showroom.js')) && !/id="terrainDlg"/.test(R('index.html')) && !/function buildCity\(/.test(R('src/world/landmarks.js')) && !/\.tcard/.test(R('css/menus.css')), 'dead features are gone: the old 3D gun model, card photos, the old battlefield dialog, the box city'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
@@ -1708,7 +1715,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(gap*minK > 54-citR, 'even relaxed, the gap is wider than our guard cannons reach past the wall ('+(gap*minK).toFixed(1)+' m > '+(54-citR)+' m)');
   ok(/export function homeGap\(x, z, R\)/.test(fd) && /export function homeClear\(x, z, R, small, k\)/.test(fd), 'homeGap / homeClear live in world/field.js');
   ok(/!homeClear\(x, z, R, false, hk\)/.test(ft) && !/Math\.hypot\(x,z\)<R\+18/.test(ft) && /dMin=HOME_GAP\.wall\+R\+/.test(ft), 'forts are placed past our home ground (the old 18 m rule is gone)');
-  ok((sp.match(/!homeClear\(x,z,R0/g)||[]).length===2 && !/o\.core\?\?48/.test(sp), 'supply compounds and camps test the full site radius against our home ground');
+  ok((sp.match(/!homeClear\(x,z,R0/g)||[]).length===1 && /export function scanSite/.test(sp) && !/o\.core\?\?48/.test(sp), 'supply compounds and camps test the full site radius against our home ground');
   ok(/homeClear\(x,z,16\)/.test(R('src/world/underbase.js')) && /!homeClear\(x,z,need,true\)/.test(R('src/world/tunnels.js')) && /homeClear\(x,z,4,true\)/.test(R('src/world/towers.js')) && /DEPOT\.r, true\)/.test(R('src/world/zones.js')), 'the underground gate, bunkers, watchtowers and depots keep off it too');
   ok(/function campOverDepot\(tx, tz\)/.test(cp) && /countMobile:\[2,2,3,3,3\]/.test(cf) && /mobileR:0\.8, minR:26/.test(cf), 'the small phone field: smaller, fewer forts; one camp may take a depot\'s ground'); }
 

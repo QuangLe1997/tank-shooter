@@ -62,7 +62,6 @@ export function clearCrowd(camp){ for(let i=CROWD.length-1;i>=0;i--){ const P=CR
 // the alarm: everyone off duty drops what he is doing and runs for the barracks door (the camp then sends them out armed)
 export function scrambleCrowd(camp){ for(const P of CROWD){ if(P.camp!==camp || P.run) continue; P.run=true; P.path=[camp.door]; P.pi=0;
   const u=P.g.userData; for(const l of u.legs){ l.hip.rotation.x=0; l.knee.rotation.x=0; } u.body.rotation.x=0; u.body.position.y=0; } }
-const _v=new THREE.Vector3();
 export function updateCrowd(dt){ const p=S.player; if(!p || !CROWD.length) return;
   for(let i=CROWD.length-1;i>=0;i--){ const P=CROWD[i], g=P.g; P.t+=dt;
     const far=(g.position.x-p.pos.x)**2+(g.position.z-p.pos.z)**2 > (MOBILE?70:100)**2; if(far && !P.run) continue;   // nobody far off is animated
