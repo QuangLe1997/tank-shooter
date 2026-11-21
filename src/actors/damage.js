@@ -39,6 +39,6 @@ export function killEnemy(e){
   if(e.loot || WAVE.treasure) dropPowerup(e.pos, e.elite||e.def.hp>=LOOT.source.epicHp ? 2 : e.def.hp>=LOOT.source.rareHp ? 1 : 0);   // Z93 loot quality follows how hard it was to kill   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
   // recycle mesh + HP bar
   const fx=e.mesh.getObjectByName('eliteFX'); if(fx){ e.mesh.remove(fx); if(fx.material) fx.material.dispose(); }
-  if(e.def.bomber){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }   // others are recycled after their death fire (updateDying)
+  if(e.def.bomber){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); }   // others go back to the pool in startDying (Z402 at once — no burning hulk)
   freeEnemyBar(e.bar); e.bar=null;
 }

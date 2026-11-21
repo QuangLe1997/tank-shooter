@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { SCENERY, SKYLINE } from '../../config.js';
+import { FUEL_DRUM, SCENERY, SKYLINE } from '../../config.js';
 import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
@@ -101,7 +101,10 @@ function solids(p, lod, gy){ const C = p.solid || M(p.k).solid; if(!C) return; c
   else if(C.pillars){ const w = D.x * C.pillars; for(const sd of [-1, 1]) box(sd * (D.x / 2 - w / 2), w / 2, D.z / 2 * 0.9); }
   else if(C.disc) out.push({ x:p.x, z:p.z, r:Math.max(D.x, D.z) * C.disc });
   else if(C.r) out.push({ x:p.x, z:p.z, r:C.r * p.s });
+  if(M(p.k).fuel){ for(const q of out) blocks.push({ mesh:lod, ...q, hp:FUEL_DRUM.hp, maxHp:FUEL_DRUM.hp, steel:false, cover:true, loot:false, kind:'fueldrum', scenery:p.k, _top:top, _topHp:FUEL_DRUM.hp }); return; }   // Z402 a fuel drum: shot, it goes up (world/cover.js fuelDrumHit)
   for(const q of out) blocks.push({ mesh:lod, ...q, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'ruin', scenery:p.k, _top:top, _topHp:Infinity }); }   // (kind 'ruin': the same rules as the war's ruins — indestructible stone)
+// Z402 a piece blown away (a fuel drum): out of the field and out of the lists that hold the field's pieces (its levels' geometry is shared — kept)
+export function dropScenePiece(lod){ lod.parent && lod.parent.remove(lod); const i=LAND.meshes.indexOf(lod); if(i>=0) LAND.meshes.splice(i, 1); const j=SCENE.pieces.findIndex(p=>p.lod===lod); if(j>=0) SCENE.pieces.splice(j, 1); }
 // the ground under a footprint: stand on its lowest point (a slope never leaves a corner hanging in the air)
 function footY(p){ const D = sceneDims(p.k, p.s), c = Math.cos(p.ry), sn = Math.sin(p.ry); let y = heightAt(p.x, p.z);
   for(const [lx, lz] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]]){ const ax = lx * D.x, az = lz * D.z; y = Math.min(y, heightAt(p.x + ax * c + az * sn, p.z - ax * sn + az * c)); } return y; }

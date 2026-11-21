@@ -1,4 +1,5 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
+import { TANK_DEATH } from '../../config.js';
 import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
@@ -54,10 +55,10 @@ export function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire')
   if(fM>0.05) burst(pos, 0xffb04a, Math.floor(6*fM*scale), 10*scale, {life:0.3, size:1.4*scale, up:5, drag:2.2});   // flare (the rolling fireball itself is fireball())
   burst(pos, cf.spark, Math.floor(14*scale), 18*scale, {life:0.38, size:0.4*scale, up:3, grav:-9, drag:1.3});  // sparks blast out & clear fast
   if(sM>0.05) burst(pos, 0x16110a, Math.floor(5*sM*scale), 5*scale, {life:0.5, size:2.0*scale, up:4, grav:-1.4, drag:2.2, smoke:true, op:0.42}); // light smoke
-  dustSkirt(pos.x, pos.z, scale*1.2); rollSmoke(pos, scale, sM);   // Z312 the shock throws the ground's own dust out in a ring; a dark cloud boils up and hangs (no flat coloured rings, no glass dome)
+  dustSkirt(pos.x, pos.z, scale*1.2); rollSmoke(pos, scale, sM, TANK_DEATH.smokeK);   // Z402 a puff that clears, not a column over a hulk · Z312 the shock throws the ground's own dust out in a ring; a dark cloud boils up and hangs (no flat coloured rings, no glass dome)
   if(fx==='ice' || fx==='shock') shockDome(pos.x, pos.z, 3.5+scale*3.2, fx==='ice'?0xbfeaff:0x9fd8ff); blastLight(pos.x, pos.z, 70+scale*25, 0.55+scale*0.12);   // Z189 the ground lit by the blast (the dome only for the frost / shock rounds)
   if(fM>0.05){ const gy=heightAt(pos.x,pos.z); for(let i=0;i<Math.round((MOBILE?4:8)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*1.2*scale, gy+1.2+Math.random()*scale, pos.z+(Math.random()-0.5)*1.2*scale, (Math.random()-0.5)*1.4, 7+Math.random()*7, (Math.random()-0.5)*1.4, { tex:'fire', color:0xfff0c0, color2:0xb8260a, size:(1.6+Math.random())*scale, life:0.7+Math.random()*0.4, grav:4, drag:1.4, grow:1.4*scale });   // a column of fire punching up
-    setTimeout(()=>{ if(S.mode==='paused') return; for(let i=0;i<Math.round((MOBILE?3:6)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*2*scale, gy+6*scale+Math.random()*2, pos.z+(Math.random()-0.5)*2*scale, (Math.random()-0.5)*3, 1.2+Math.random(), (Math.random()-0.5)*3, { color:0x1a1410, size:(2.4+Math.random())*scale, life:3.2, smoke:true, grav:0.1, drag:0.7, grow:3*scale, op:0.6 }); }, 280); }   // … capped by a rolling black mushroom
+    setTimeout(()=>{ if(S.mode==='paused') return; for(let i=0;i<Math.round((MOBILE?3:6)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*2*scale, gy+6*scale+Math.random()*2, pos.z+(Math.random()-0.5)*2*scale, (Math.random()-0.5)*3, 1.2+Math.random(), (Math.random()-0.5)*3, { color:0x1a1410, size:(2.4+Math.random())*scale, life:3.2*TANK_DEATH.smokeK+0.6, smoke:true, grav:0.1, drag:0.7, grow:3*scale, op:0.6 }); }, 280); }   // … capped by a rolling black mushroom
   { const p=S.player; if(p){ const d=Math.hypot(p.pos.x-pos.x, p.pos.z-pos.z); if(d<40 && gradePass.uniforms.flash) gradePass.uniforms.flash.value=Math.min(0.3, gradePass.uniforms.flash.value+0.22*(1-d/40)*Math.min(1.5,scale/1.5)); } }
   // themed extra: frozen shards rain / electric arcs / shrapnel
   if(cf.extra==='ice'){ for(let i=0;i<Math.floor(10*scale);i++){ const a=Math.random()*6.283, sp=4+Math.random()*9; spawnPart(pos.x,1.6,pos.z, Math.cos(a)*sp, 5+Math.random()*6, Math.sin(a)*sp, {color: Math.random()<0.5?0xd8f6ff:0x7fd0ff, size:(0.4+Math.random()*0.5)*scale, life:0.6+Math.random()*0.4, grav:14, drag:1.2}); } ringPulse(pos, 0xffffff, scale*2.8); }
@@ -79,8 +80,8 @@ export function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire')
 }
 // Z312 a blast's smoke: not a few quick puffs but a dark, lumpy cloud boiling up out of it, rolling outward as it climbs, greying and thinning as it
 //   drifts off with the wind over several seconds (sM: the killing round's smoke share)
-export function rollSmoke(pos, scale, sM){ if(!(sM > 0.05)) return; const gy=heightAt(pos.x,pos.z), n=Math.round((MOBILE?6:12)*Math.min(2, scale)*sM);
+export function rollSmoke(pos, scale, sM, lk=1){ if(!(sM > 0.05)) return; const gy=heightAt(pos.x,pos.z), n=Math.round((MOBILE?6:12)*Math.min(2, scale)*sM);
   for(let i=0;i<n;i++){ const a=Math.random()*6.283, r=Math.random()*0.8*scale, up=1.4+Math.random()*2.6, dark=i<n*0.6;
     spawnPart(pos.x+Math.cos(a)*r, gy+0.6+Math.random()*scale, pos.z+Math.sin(a)*r, Math.cos(a)*(0.6+Math.random()*1.6)+0.5, up, Math.sin(a)*(0.6+Math.random()*1.6)+0.3,
-      { color:dark ? 0x17130f : 0x4a4540, size:(1.4+Math.random()*1.2)*scale, life:(MOBILE?3:4.5)+Math.random()*2.5, smoke:true, grav:0.18, drag:0.7, grow:2.4*Math.sqrt(scale), op:dark ? 0.62 : 0.4, keep:true }); } }
+      { color:dark ? 0x17130f : 0x4a4540, size:(1.4+Math.random()*1.2)*scale, life:((MOBILE?3:4.5)+Math.random()*2.5)*lk, smoke:true, grav:0.18, drag:0.7, grow:2.4*Math.sqrt(scale), op:dark ? 0.62 : 0.4, keep:true }); } }
 

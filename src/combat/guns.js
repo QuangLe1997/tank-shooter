@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, GIFT, LOOT } from '../../config.js';
-import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunMagMul, gunReloadMul, gunRngMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange } from '../hub.js';
+import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunMagMul, gunReloadMul, gunRngMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
@@ -99,7 +99,7 @@ export function updateReload(now){
 }
 export function nearestTarget(maxR){
   const p=S.player; let best=null, bd=maxR*maxR;
-  for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=e; } }
+  for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd && !tentHidesFromPlayer(e)){ bd=d2; best=e; } }   // Z402 not one hidden behind a tent
   if(boss&&boss.alive){ const dx=boss.pos.x-p.pos.x, dz=boss.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=boss; } }
   return best;
 }

@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
-import { ROSTER, LETHAL, SQUAD, FORT, LOCKON, TREEFALL, AIRAIM, LINE, BLIGHT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle , shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape } from '../hub.js';
+import { ROSTER, LETHAL, SQUAD, FORT, LOCKON, TREEFALL, AIRAIM, LINE, BLIGHT, TENT } from '../../config.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -48,6 +48,7 @@ function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ _twr:true, t, gd, pos:{ x
 function seekOK(b, x, z, inf){ const dx=x-b.x, dz=z-b.z; if(dx*dx+dz*dz>4 && Math.abs(wrapAngle(Math.atan2(dx,dz)-b.angle))>LOCKON.cone) return false;
   if(b.maxDist){ const left=b.maxDist-Math.hypot(b.x-b.ox, b.z-b.oz)+3; if(dx*dx+dz*dz > left*left) return false; }   // Z238 only what it can still reach
   const p=S.player; if(p && (x-p.pos.x)**2+(z-p.pos.z)**2 < LOCKON.minP*LOCKON.minP) return false;
+  if(tentHides(b.x, heightAt(b.x,b.z)+Math.max(1, b.by||1), b.z, x, heightAt(x,z)+TENT.eye.mid, z)) return false;   // Z402 the seeker does not see through a tent
   if(inf) for(const a of FT){ if((a.pos.x-x)**2+(a.pos.z-z)**2 < LOCKON.allyR*LOCKON.allyR) return false; }
   return true; }
 function dangerClose(t){ const x=t.pos.x, z=t.pos.z, p=S.player; if(p && (x-p.pos.x)**2+(z-p.pos.z)**2 < LOCKON.minP*LOCKON.minP) return true;

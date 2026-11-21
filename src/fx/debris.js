@@ -1,7 +1,7 @@
 // fx/debris.js — Z103 split from fx/explosions.js: flying hull fragments (pooled) and the charred multi-part tank WRECK.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { SHATTER } from '../../config.js';
+import { SHATTER, TANK_DEATH } from '../../config.js';
 import { MOBILE, blastLight, heightAt, scene, spawnPart } from '../hub.js';
 
 // ----- Z203 DEBRIS: not cubes — a library of fractured shapes (faceted chunks, jagged torn plates, splinters, slivers), sized like real breakage
@@ -78,10 +78,10 @@ export const _WRECK_PARTS=[ {g:'turret',sz:1.0,paint:0.6},{g:'barrel',sz:1.0,pai
   {g:'plate2',sz:0.95,paint:0.4},{g:'plate',sz:0.8,paint:0.3},{g:'shard',sz:1.1,paint:0.15},{g:'shard',sz:0.85,paint:0.1},
   {g:'shard2',sz:1.0,paint:0.12},{g:'shard2',sz:0.8,paint:0.1},{g:'bar',sz:1.0,paint:0.1},{g:'bar',sz:0.85,paint:0.1},
   {g:'wheel',sz:1.0,paint:0},{g:'wheel',sz:0.9,paint:0},{g:'hub',sz:1.0,paint:0.1},{g:'shard',sz:0.7,paint:0.1},{g:'plate',sz:0.7,paint:0.3} ];
-export function spawnTankWreck(pos, ms, pal){
-  const burntHull=_burnt(pal.hull), burntTur=_burnt(pal.turret||pal.hull);
+export function spawnTankWreck(pos, ms, pal, cold){ pal=pal||{ hull:0x3a3a30 };   // Z402 every killed tank blows apart into these (fx/dying.js) — cold: frozen / shocked, no glow, no flames
+  const burntHull=_burnt(pal.hull), burntTur=_burnt(pal.turret||pal.hull), L=TANK_DEATH.chunkLife;
   const rs=Math.sqrt(ms);
-  const count = ms<1.05 ? 5 : ms<1.3 ? 6 : ms<2.2 ? 8 : 10;                  // torn-off bits only — the burning hull itself stays (spawnWreck)
+  const count = ms<1.05 ? 5 : ms<1.3 ? 6 : ms<2.2 ? 8 : 10;                  // torn-off bits only — Z402 and the hull is gone with them (no wreck stays)
   for(let pi=0; pi<count; pi++){ const part=_WRECK_PARTS[pi+1];   // skip the whole-turret slab
     const m=wreckPool.pop(); if(!m) return;                                  // pool exhausted (huge multi-kill) → stop gracefully
     m.geometry=WRECK_GEO[part.g];
@@ -92,10 +92,10 @@ export function spawnTankWreck(pos, ms, pal){
     const a=Math.random()*6.283, sp=(7+Math.random()*9)*rs, up=(9+Math.random()*6)*rs;            // arc out then land as visible wreckage (moderate)
     m.position.set(pos.x+(Math.random()-0.5)*ms*0.7, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.7);
     m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    m.material.emissiveIntensity=1.0+Math.random()*0.7; m.material.opacity=1; m.visible=true;     // hot → cools to dark torn metal
+    m.material.emissiveIntensity=cold ? 0 : 0.45+Math.random()*0.4; m.material.opacity=1; m.visible=true;     // hot → cools to dark torn metal (Z402 a glow at the edges, not an orange slab)
     debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
       rx:(Math.random()-0.5)*15, ry:(Math.random()-0.5)*15, rz:(Math.random()-0.5)*15,
-      age:0, life:2.8+Math.random()*1.5, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:true });   // lingers as readable wreckage on the ground, then fades (smoke/fire already gone — no view block)
+      age:0, life:L[0]+Math.random()*(L[1]-L[0]), fade:TANK_DEATH.fade, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:!cold });   // Z402 flies, lands and fades within ~2 s — nothing of the tank stays
   }
 }
 export function updateDebris(dt){ _landT=Math.max(0,_landT-dt*30);
@@ -124,6 +124,6 @@ export function updateDebris(dt){ _landT=Math.max(0,_landT-dt*30);
         {color:0x161310, size:0.9+Math.random()*0.4, life:0.45, smoke:true, grav:-1.2, drag:1.8, op:0.4});
     }
     if(m.material.emissiveIntensity>0) m.material.emissiveIntensity=Math.max(0, m.material.emissiveIntensity-dt*(d.fire?1.7:1.7));   // brief hot flash → quickly cools to readable DARK TORN METAL
-    const fadeT=d.fire?1.0:0.7, rem=d.life-d.age; if(rem<fadeT) m.material.opacity=rem/fadeT;                            // fade out (burn up) and vanish
+    const fadeT=d.fade||(d.fire?1.0:0.7), rem=d.life-d.age; if(rem<fadeT) m.material.opacity=rem/fadeT;                            // fade out (burn up) and vanish
   }
 }

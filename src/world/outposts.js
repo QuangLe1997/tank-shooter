@@ -1,9 +1,10 @@
 // world/outposts.js — Z285 ENEMY OUTPOSTS: round every enemy fort a camp of real things (Tripo): a long barracks, field tents, a radar on the
 // bigger forts, a concrete bunker covering the gate, and rows of concertina wire across the approach — laid round the walls, clear of the gate's
-// own lane (troops sally through it), solid where they should be (tanks and rounds stop at the barracks, bunker and radar).
+// own lane (troops sally through it), solid where they should be (tanks and rounds stop at the barracks, bunker and radar — Z402 and at the tents,
+// which burn away when hit).
 import * as THREE from 'three';
 import { OUTPOST } from '../../config.js';
-import { blocks, heightAt, inField, loadGLTF, nearShape } from '../hub.js';
+import { addTent, blocks, heightAt, inField, loadGLTF, nearShape } from '../hub.js';
 
 const PREP = {};
 function piece(gl, k, hd){ const id = hd ? k + ':hd' : k; if(PREP[id]) return PREP[id];   // (hd: the whole original, Z395 — made the same way)
@@ -29,5 +30,6 @@ export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /no
     for(const q of list){ const P = by[q.k]; if(!P) continue; const wx = f.x + q.x, wz = f.z + q.z, m = new THREE.Mesh(P.geo, P.mat);
       m.position.set(q.x, heightAt(wx, wz) - f.g.position.y - 0.05, q.z); m.rotation.y = q.ry; m.castShadow = m.receiveShadow = true; m.userData.outpost = true; f.g.add(m); nearShape(m, q.k, gl => piece(gl, q.k, true).geo);   // (Z395 whole up close)
       if(C.solid.includes(q.k)) blocks.push({ mesh:m, x:wx, z:wz, r:Math.max(P.size.x, P.size.z) * 0.42, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'outpost' });
+      if(q.k === 'base_tent') addTent(m, wx, wz, q.ry, P.size.z / 2, P.size.x / 2, false);   // Z402 a field tent: a wall to hide behind until it burns (world/camps.js)
       if(q.k === 'base_wire'){ const lx = P.size.x >= P.size.z, L = Math.max(P.size.x, P.size.z), dx = lx ? Math.cos(q.ry) : Math.sin(q.ry), dz = lx ? -Math.sin(q.ry) : Math.cos(q.ry);
         OUTPOST_WIRE.push({ f, m, x:wx, z:wz, dx, dz, L, down:false }); } } }); }   // Z311 the coil across the approach holds a ride (flattened if rammed hard)

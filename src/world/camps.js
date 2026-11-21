@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
-import { CAMP, HOME_GAP, LOOT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireball, flameFX, flashMat, flattenPad, floatText, haptic, heightAt, hitsHull, inField, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet, MODE } from '../hub.js';
+import { CAMP, HOME_GAP, LOOT, TENT } from '../../config.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -54,7 +54,7 @@ export function buildCamps(){
       const b={ mesh:h, x:hx, z:hz, r:3.6*K, hp, maxHp:hp, steel:false, loot:!camp.blocks.length, kind:'camp', camp, obb:{ f:ang, hw:2.5*K, hl:3.6*K } }; blocks.push(b); camp.blocks.push(b); }
     camp.hut=camp.huts[0]; camp.hut2=camp.huts[1]; camp.block=camp.blocks[0]; addLootBeacon(camp.block,'block');
     { const [tx,tz]=at(24,-21); if(inField(tx,tz,4) && !blocks.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+3)) buildTower(tx, tz); }   // a watchtower over the back corner
-    for(const lx of [-8,-2,4]){ const [tx,tz]=at(lx,-19); const tn=makeTent(); tn.scale.setScalar(1.2); tn.position.set(tx,heightAt(tx,tz)-0.03,tz); tn.rotation.y=ang; g.add(tn); TENTS.push({ g:tn, x:tx, z:tz, flat:false, ft:0 }); }   // sleeping tents
+    for(const lx of [-8,-2,4]){ const [tx,tz]=at(lx,-19); const tn=makeTent(); tn.scale.setScalar(1.2); tn.position.set(tx,heightAt(tx,tz)-0.03,tz); tn.rotation.y=ang; g.add(tn); addTent(tn, tx, tz, ang, 1.8*1.2, 1.3*1.2, true); }   // sleeping tents · Z402 solid, hiding, burnable
     { const [fx,fz]=at(0,4), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,8,6), campMats().dark); pole.position.set(fx,fy+4,fz); g.add(pole);   // parade-ground flag
       const fl=makeFlag(campFlagTex(),2.2,1.4,1); fl.position.set(fx,fy+7.2,fz); g.add(fl); }
     { const [cx,cz]=at(9,12), cy=heightAt(cx,cz); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,6,12), campMats().dark); ring.rotation.x=Math.PI/2; ring.position.set(cx,cy+0.08,cz); g.add(ring);   // the campfire
@@ -109,10 +109,38 @@ export function updateCamps(dt, now){
     for(let k=0;k<n;k++) setTimeout(()=>{ if(!c.alive||S.mode!=='playing') return; const t=spawnEnemy(k===n-1&&S.stage>=2?'rpg':'rifle', c.door[0]+(Math.random()-0.5)*1.2, c.door[1]+(Math.random()-0.5)*1.2); if(t){ t.kbx=Math.sin(c.ang)*5; t.kbz=Math.cos(c.ang)*5; } }, k*450);
     tip('camp'); if(now-_campRadioAt>25){ _campRadioAt=now; radio('SCH: Bộ binh đang kéo ra từ trại địch — san phẳng nhà lính để chặn chúng.'); }
   }
-  for(const t of TENTS){ if(t.flat){ if(t.ft<1){ t.ft=Math.min(1,t.ft+dt*5); t.g.scale.y=Math.max(0.08,1-t.ft*0.92); } continue; }   // tracks flatten tents
-    if(MODE.crushes && hitsHull(p, t.x, t.z, 1.4)){ t.flat=true; burst({x:t.x,z:t.z}, 0x8a7c56, 6, 4, {y:heightAt(t.x,t.z)+0.8, life:0.6, size:0.5, grav:-12, drag:1.6, up:2}); burst({x:t.x,z:t.z}, 0xb8a888, 2, 2, {y:heightAt(t.x,t.z)+0.6, life:1.0, size:1.8, smoke:true, grav:-0.3, drag:1.8, up:0.6, op:0.4});
-      addScore(CAMP.tentScore, new THREE.Vector3(t.x,2,t.z)); sfx('thud'); haptic(15); } }
+  updateTents(dt);   // Z402 burning tents (they no longer flatten under the tracks: a tent is a wall until it burns)
 }
+// ===== Z402 TENTS ARE WALLS UNTIL THEY BURN — a camp's sleeping tent / an outpost's field tent stands as a block with its true box: tanks and men stop at it
+//   (world/physics.js, actors/fireteam.js, game/cavalry.js), rounds stop at it (combat/solid-line.js) and so does every eye — the enemy's (game/stealth.js:
+//   playerSeen, ai/fieldcraft.js losBlocked) and the player's auto-aim and lock-on (tentHides below). One hit sets it alight: flames run over the canvas, it
+//   chars and sags, and in TENT.burn s it is gone — its collider, its mesh and what it alone owned on the GPU =====
+export function addTent(g, x, z, f, hl, hw, own){ const b={ mesh:g, x, z, r:Math.min(hl, hw), obb:{ f, hl, hw }, hp:1, maxHp:1, steel:false, cover:true, loot:false, kind:'tent' };
+  const T={ g, b, x, z, f, hl, hw, own, burn:-1, sy:g.scale.y, mats:null, fireT:0, ms:Math.max(hl, hw)/2.2 }; b.tent=T; blocks.push(b); TENTS.push(T); return T; }
+// a hit (any round, a ram, a blast): it catches fire
+export function tentHit(b){ const T=b.tent; if(!T || T.burn>=0) return; T.burn=0; const gy=heightAt(T.x, T.z);
+  T.mats=new Map(); T.g.traverse(o=>{ if(!o.isMesh) return; let c=T.mats.get(o.material); if(!c){ c=o.material.clone(); T.mats.set(o.material, c); } o.material=c; });   // its own canvas now, to char
+  for(const c of T.mats.values()){ c.userData.col=c.color.clone(); if(c.emissive) c.emissive.setHex(0x8a2a08); }
+  fireLight(T, TENT.burn*0.9); sfx('whoosh', { x:T.x, z:T.z }, 0.7); burst({ x:T.x, z:T.z }, 0xffb050, 8, 4, { y:gy+1.2, life:0.4, size:0.9, grav:-3, drag:2, up:2 }); }
+const _CHAR=new THREE.Color(0x1a1612), _sb={ t0:0, t1:1 };
+function updateTents(dt){ for(let i=TENTS.length-1;i>=0;i--){ const T=TENTS[i]; if(T.burn<0) continue; T.burn+=dt; const k=Math.min(1, T.burn/TENT.burn), gy=heightAt(T.x, T.z), s=Math.sin(T.f), c=Math.cos(T.f);
+    for(const m of T.mats.values()){ m.color.copy(m.userData.col).lerp(_CHAR, Math.min(1, k*2.2)); if(m.emissive) m.emissiveIntensity=(0.03+0.09*Math.random())*(1-k); }   // the canvas chars black, a faint ember glow flickering in it
+    const sg=Math.max(0, (k-(1-TENT.sag))/TENT.sag); T.g.scale.y=T.sy*(1-0.9*sg); T.b.hp=1-k;   // it sags in and falls (the sight lines follow its height down)
+    T.fireT-=dt; if(T.fireT<=0){ T.fireT=MOBILE?0.06:0.03; const a=(Math.random()*2-1)*T.hl, w=(Math.random()*2-1)*T.hw*(1-Math.abs(a)/T.hl*0.3), h=gy+(0.3+Math.random()*1.9)*T.sy*(1-0.8*sg);   // flames all over the canvas
+      spawnPart(T.x+a*s+w*c, h, T.z+a*c-w*s, (Math.random()-0.5)*0.6, 2.2+Math.random()*2, (Math.random()-0.5)*0.6, { tex:'fire', color:0xffd090, color2:0xff3a08, size:(1.0+Math.random()*0.9)*T.ms, life:0.45+Math.random()*0.3, grav:1.5, drag:1.6, grow:0.7 });
+      if(Math.random()<0.45) spawnPart(T.x+a*s*0.6, gy+2.4*T.sy, T.z+a*c*0.6, 0.6+(Math.random()-0.5)*0.6, 2.2+Math.random(), 0.3+(Math.random()-0.5)*0.6, { color:0x1e1a16, size:(1.4+Math.random())*T.ms, life:1.4, smoke:true, grav:0.3, drag:0.8, grow:1.6, op:0.5 }); }
+    if(k<1) continue;
+    burst({ x:T.x, z:T.z }, 0x2a2420, MOBILE?3:5, 2.5, { y:gy+0.8, life:1.1, size:1.8, smoke:true, grav:-0.4, drag:1.6, up:1.2, op:0.5 }); burst({ x:T.x, z:T.z }, 0xffa040, MOBILE?6:12, 4, { y:gy+0.6, life:0.6, size:0.12, grav:-6, drag:1, up:3 });   // the last of it: a puff of smoke, a shower of sparks
+    decalScorch(T.x, T.z, Math.max(T.hl, T.hw)*1.1, 0.8); dropTent(T); TENTS.splice(i, 1); addScore(CAMP.tentScore, new THREE.Vector3(T.x, gy+2, T.z)); } }
+// gone: off the field (its block), out of the scene, its own geometry (a camp tent's) and its charred materials freed — the shared ones are left alone
+function dropTent(T){ const i=blocks.indexOf(T.b); if(i>=0) blocks.splice(i, 1); T.g.parent && T.g.parent.remove(T.g);
+  if(T.own) T.g.traverse(o=>{ if(o.isMesh && o.geometry) o.geometry.dispose(); }); if(T.mats) for(const m of T.mats.values()) m.dispose(); T.mats=null; }
+// does a standing tent hide (bx, by, bz) from an eye at (ax, ay, az)? — its box crossed below its top (a tent the eye or the target is in does not count)
+export function tentHides(ax, ay, az, bx, by, bz){ for(const T of TENTS){ const b=T.b; if(!segBlock(b, ax, az, bx, bz, 0, _sb) || inShape(b, ax, az) || inShape(b, bx, bz)) continue;
+    const top=blockTop(b), y0=ay+(by-ay)*_sb.t0, y1=ay+(by-ay)*_sb.t1; if(Math.min(y0, y1)<top) return true; } return false; }
+// the player's auto-aim / lock-on: is this enemy behind a tent from where the player stands
+export function tentHidesFromPlayer(t){ const p=S.player; if(!p || !TENTS.length || !t || !t.pos) return false; const E=TENT.eye, gy=heightAt(p.pos.x, p.pos.z), ty=t.pos.y>2 ? t.pos.y : heightAt(t.pos.x, t.pos.z)+E.mid;   // (a helicopter up high is above any tent)
+  return tentHides(p.pos.x, gy+(p.cav ? E.man : E.tank), p.pos.z, t.pos.x, ty, t.pos.z); }
 // ===== Z93 · SUPPLY CACHES — loot stashed where it is hard to get: inside camp perimeters, under watchtowers, behind ruined walls =====
 export function placeCaches(){
   const n=LOOT.cache.perStage[Math.min(LOOT.cache.perStage.length-1, S.stage-1)], spots=[];

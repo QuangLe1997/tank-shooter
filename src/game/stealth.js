@@ -4,8 +4,8 @@
 //   shooter's eyes, so a guard on a tower or a wall top, 6–11 m up, sees him only near its foot; shorter at night), or once he has been spotted: picked out
 //   close by, caught in a searchlight's pool, or given away by his own muzzle flash — then every enemy within STEALTH.alertR knows where he lies for a while.
 //   The combat roll is also a dodge: a round that would hit him while he goes over usually misses (dodgeShot; running fast dodges a few).
-import { STEALTH } from '../../config.js';
-import { CV, NIGHT, S, floatText, heightAt, lineClear } from '../hub.js';
+import { STEALTH, TENT } from '../../config.js';
+import { CV, NIGHT, S, floatText, heightAt, lineClear, tentHides } from '../hub.js';
 
 const now_ = () => performance.now() / 1000;
 let _sayAt = -9, _dodgeAt = -9;
@@ -24,7 +24,8 @@ function inSight(x, y, z){ const p = S.player, t = now_(), C = STEALTH, st = CV.
   const v = lineClear(x, y, z, p.pos.x, hy, p.pos.z) || lineClear(x, y, z, p.pos.x + sx, hy - C.drop, p.pos.z + sz) || lineClear(x, y, z, p.pos.x - sx, hy - C.drop, p.pos.z - sz);   // (his head, or either shoulder: a post or a pole hides no man)
   if(_sight.size > 800) _sight.clear(); _sight.set(k, { t, v, st, px:p.pos.x, pz:p.pos.z }); return v; }
 // can a shooter whose eyes are at (x, y, z) see the player now — every enemy gun asks before it takes him as its target
-export function playerSeen(x, y, z){ const p = S.player; if(!p || !p.cav) return true; if(!inSight(x, y, z)) return false;   // Z380 not through anything solid, standing or lying
+export function playerSeen(x, y, z){ const p = S.player; if(!p) return true; if(!p.cav) return !tentHides(x, y, z, p.pos.x, heightAt(p.pos.x, p.pos.z) + TENT.eye.mid, p.pos.z);   // Z402 a tent hides the tank too
+  if(!inSight(x, y, z)) return false;   // Z380 not through anything solid, standing or lying (a tent included — it is a block)
   if(!playerHidden()) return true; const t = now_(), C = STEALTH;
   const d = Math.hypot(p.pos.x - x, heightAt(p.pos.x, p.pos.z) + 0.3 - y, p.pos.z - z);
   if((p.spotUntil || 0) > t) return d < C.alertR;

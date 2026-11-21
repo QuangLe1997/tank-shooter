@@ -11,7 +11,7 @@ import { MODE, MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatTe
 
 const FC=FIELDCRAFT, _lb=[];
 // a "tall" obstacle stops a rifle round dead: buildings, fortress walls, masonry, towers, containers, boulders (sandbags, drums, logs… are shot over)
-function tall(bl){ return bl.heavy || bl.fort || bl.wall || bl.kind==='building' || bl.kind==='tower' || bl.kind==='container' || bl.kind==='boulder' || bl.kind==='camp'; }
+function tall(bl){ return bl.heavy || bl.fort || bl.wall || bl.kind==='building' || bl.kind==='tower' || bl.kind==='container' || bl.kind==='boulder' || bl.kind==='camp' || bl.kind==='tent'; }   // Z402 nobody sees through a tent
 export function losBlocked(x0, z0, x1, z1){ const dx=x1-x0, dz=z1-z0, D=Math.hypot(dx,dz), L=FC.los; if(D<L.endSkip*2+0.5) return false; const ux=dx/D, uz=dz/D;
   for(let s=L.endSkip; s<D-L.endSkip; s+=L.step){ const x=x0+ux*s, z=z0+uz*s;
     for(const bl of blocksNear(x, z, 0.6, _lb)){ if(tall(bl) && inBlock(bl, x, z, 0.3)) return true; } }

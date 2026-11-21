@@ -1203,7 +1203,22 @@ export const HARD = { boulder:150, hedgehog:110, oneShot:90, shardR:3.6, shardDm
 export const GORE = { splats:[160,70], chunks:[64,28], splatLife:24, fade:6, chunkLife:2.4, speed:[12,27], up:[4,11], cone:0.9, color:0x7a0a0a, alpha:0.82 };
 // Z112 KNOCKED-OUT TANKS by the killing gun (seconds of fire before the magazine goes): heavy shells blow them at once, small arms let them burn a moment
 export const TANK_BLAST = { r:4.2, dmg:70, edge:0.25 };   // Z113 a tank's magazine going up kills men within r × tank scale (edge = damage share at the rim) — theirs and ours
-export const TANK_DEATH = { blast:[0.1,0.22], pierce:[0.25,0.4], ice:[0.05,0.1], shock:[0.35,0.5], frag:[0.4,0.55], spark:[0.5,0.7], fire:[0.45,0.65], wreck:[9,13] };   // Z189 wrecks burn for a while: the field fills with burning hulks and smoke columns
+// Z402 A KILLED TANK BLOWS APART AND IS GONE (fx/dying.js — enemy tanks and vehicles, our captured tanks, the boss): no burning phase, no wreck — the blast,
+//   its torn steel thrown out (fx/debris.js spawnTankWreck: glowing, lands, gone within chunkLife s, the last fade s fading), a smoke puff (smokeK = the
+//   blast's rolling cloud lasts this share of its usual life) and in that same frame the hull leaves the field and its collider. wreck = the life of
+//   fx/fire-wrecks.js spawnWreck's burning hulk (no kill leaves one any more)
+export const TANK_DEATH = { chunkLife:[1.3, 2.1], fade:0.6, smokeK:0.45, wreck:[9,13] };
+// Z402 A MAN SHOT DEAD IS THROWN AND GONE (actors/infantry.js, ours in actors/fireteam.js): small arms throw him speed / up m/s along the shot (× the round's
+//   weight, clamped to k) — heavy rounds and blasts throw him INFANTRY.fling; he tumbles with his limbs flung out, lands, slides lie s and bursts (blood mist,
+//   dust) — gone; never later than max s after the kill (off a wall or a tower); a man crushed under tracks bursts after crush s
+export const DEATH_POP = { speed:[6.5, 9], up:[5.5, 7], k:[0.8, 1.3], lie:0.35, max:1.6, crush:0.5 };
+// Z402 FUEL DRUMS GO UP (world/scenery.js oil drums, world/cover.js drum stacks): hp, then a blast of radius r m — dmg at its heart, edge share at the rim,
+//   fire = fireball size; drums within chain m go up after it (delay s); nothing is left where it stood (no heap, no collider)
+export const FUEL_DRUM = { hp:30, r:5.5, dmg:50, edge:0.3, fire:1.2, chain:6.5, delay:[0.15, 0.4] };
+// Z402 TENTS ARE WALLS UNTIL THEY BURN (world/camps.js — the camps' tents, the outposts'): a tent stops tanks and men and both sides' eyes (enemy sight,
+//   the player's auto-aim and lock-on); one hit sets it alight — it burns burn s (the canvas chars, and sags over the last sag share) and is gone with
+//   its collider. Sight lines run from / to eye m above the ground: a tank's [tank], a man's [man], a target's middle [mid]
+export const TENT = { burn:2.2, sag:0.45, eye:{ tank:2.4, man:1.5, mid:1.1 } };
 // Z115 GUN PARTS (linh kiện súng) — pickups that upgrade a gun FOR GOOD, per gun, stacking up to `max` levels each:
 //   barrel = NÒNG TINH CHẾ (+dmg, +range) · action = KHOÁ NÒNG (faster fire + reload) · mag = BĂNG ĐẠN MỞ RỘNG (+rounds)
 //   They fit the gun in your hands; if it is maxed they go to another carried gun, else they pay coins. Rare from tough kills, one per fortress taken.
@@ -1424,7 +1439,7 @@ export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys
     tank_water:{ h:9.5, ar:[0.86, 1, 0.77], sink:0, solid:{ disc:0.46 } },
     tank_steel:{ h:11, ar:[0.97, 1, 0.97], sink:0, solid:{ disc:0.48 } },
     rail_tanker:{ w:16, ar:[3.9, 1, 1.09], sink:0, solid:{ box:0.95 } },
-    oil_drum:{ w:0.95, ar:[1.58, 1, 0.99], sink:0, solid:{ disc:0.5 } },   // Z380 a drum on its side is cover too: rounds stop at it
+    oil_drum:{ w:0.95, ar:[1.58, 1, 0.99], sink:0, solid:{ disc:0.5 }, fuel:true },   // Z380 a drum on its side is cover too: rounds stop at it · Z402 fuel: shot, it goes up (FUEL_DRUM)
     power_pole:{ h:11, ar:[0.49, 1, 0.21], sink:0, solid:{ r:0.35 } },
     fence_gate:{ w:5.6, ar:[1.22, 1, 0.1], sink:0, solid:{ box:1 } },
     watchtower:{ h:13, ar:[0.35, 1, 0.35], sink:0, solid:null }, wt_steel:{ one:true, h:16, ar:[0.28, 1, 0.33], sink:0, solid:null }, wt_rust:{ h:15, ar:[0.41, 1, 0.42], sink:0, solid:null },   // Z375 the real guard towers (world/tower-kinds.js mtower / wtower / wrust)

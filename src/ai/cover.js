@@ -1,7 +1,7 @@
 // ai/cover.js — Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both sides)
 import { blocks } from '../hub.js';
 
-export const COVER_KINDS = new Set(['sandbag','drums','tires','crates','pipes','concrete','hesco','brick','boulder','hedgehog','tower','camp','parked','jersey','teeth','logs','container','wreck']);
+export const COVER_KINDS = new Set(['sandbag','drums','tires','crates','pipes','concrete','hesco','brick','boulder','hedgehog','tower','camp','parked','jersey','teeth','logs','container','wreck','tent']);   // Z402 a tent hides a man until it burns
 // best hiding spot within maxR of (x,z): the far side of a solid block as seen from the threat (tx,tz); null when nothing is near
 export function coverSpot(x, z, tx, tz, maxR){ let best=null, bs=1e9; const dThreat=Math.hypot(x-tx, z-tz);
   for(const b of blocks){ if(!COVER_KINDS.has(b.kind) || !(b.hp>0)) continue; const dx=b.x-x, dz=b.z-z; if(dx*dx+dz*dz > maxR*maxR) continue;

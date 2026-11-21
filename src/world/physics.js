@@ -1,6 +1,6 @@
 // world/physics.js — PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap
 import { DRIVE, LOOT, BOSSFIGHT } from '../../config.js';
-import { BIOME, DYING, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBlock, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, fortRam, haptic, hitsHull, padImpact, ramBlock, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip, solidShape } from '../hub.js';
+import { BIOME, S, TANK_SCALE, _R, blocks, boss, burst, clampField, core, crushInfantry, damageBlock, damageBoss, damageEnemy, damagePlayer, driveHint, enemies, floatText, fortRam, haptic, hitsHull, padImpact, ramBlock, ramWall, sfx, solidTank, spawnDebris, spawnPart, stunBoss, tankVsWall, tip, solidShape } from '../hub.js';
 
 // ----------------------------- PHYSICS: oriented hull boxes (SAT) — tanks touch for real, shove by mass, slide with friction, never overlap -----------------------------
 export const HULL_HW=1.52, HULL_HL=2.05*1.36;   // Z174b the real-length hull                                            // hull half-width / half-length (model units, × tank scale)
@@ -74,7 +74,6 @@ export function separateTanks(now){
   if(boss && boss.alive){ const imp=collideTanks(boss,p,now);                                            // boss ↔ player (boss is far heavier → bulldozes)
     if(imp && now < boss.chargeUntil){ const nx=p.pos.x-boss.pos.x, nz=p.pos.z-boss.pos.z, L=Math.hypot(nx,nz)||1; p.vel.x+=nx/L*18; p.vel.z+=nz/L*18; }
     for(const a of enemies){ if(solidTank(a)) collideTanks(boss,a,now); } }
-  for(const d of DYING){ const r=1.6*(d.e.mesh.scale.x||1); tankVsCircle(p, d.e.pos.x, d.e.pos.z, r); for(const a of enemies) if(solidTank(a)) tankVsCircle(a, d.e.pos.x, d.e.pos.z, r); }   // burning hulks are still solid
   for(const bl of blocks.slice()){                                                                       // tanks ↔ cover / boulders / walls (solid, deflecting)
     // Z193 an oriented box that is not masonry (container, car wreck) rams like any other cover
     if(bl.obb){ const pv={x:p.vel.x,z:p.vel.z}, vn=tankVsWall(p, bl);                                    // Z86 masonry: momentum decides

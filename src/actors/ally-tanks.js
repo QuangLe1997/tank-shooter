@@ -2,7 +2,7 @@
 //   (armour first, then infantry), keep a stand-off range, regroup on you when the field is quiet, and can be knocked out.
 import * as THREE from 'three';
 import { ALLY_TANK, INFANTRY, HIJACK, SIDE_ID } from '../../config.js';
-import { ENEMY_MODEL, FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, paintVehicle, radio, removeEnemy, ringPulse, scene, seatRoofMark, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle } from '../hub.js';
+import { ENEMY_MODEL, FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, paintVehicle, radio, removeEnemy, ringPulse, scene, seatRoofMark, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle, spawnTankWreck } from '../hub.js';
 
 export const ALLY_TANKS=[];
 export const ALLY_PAL={ hull:0x55663a, turret:0x627344, barrel:0x7a8a52, tread:0x22281a, accent:0x9be04a };   // captured hull, our colours
@@ -65,7 +65,7 @@ function clearShot(t, T){ const dx=T.pos.x-t.pos.x, dz=T.pos.z-t.pos.z, d=Math.h
   return true; }
 export function damageAllyTank(t, dmg){ if(t.dead) return; t.hp-=dmg; t.hitT=0.15; if(t.hp<=0) killAllyTank(t); }
 function killAllyTank(t){ t.dead=true; const i=ALLY_TANKS.indexOf(t); if(i>=0) ALLY_TANKS.splice(i,1); if(t.bar){ freeEnemyBar(t.bar); t.bar=null; }
-  tankExplode({x:t.pos.x,z:t.pos.z}, 0xff9a4a, t.heavy?1.9:1.6, ALLY_PAL, t.mesh.scale.x); scene.remove(t.mesh); radio('SCH: Một xe tăng đồng minh đã bị hạ!'); }
+  tankExplode({x:t.pos.x,z:t.pos.z}, 0xff9a4a, t.heavy?1.9:1.6, ALLY_PAL, t.mesh.scale.x); spawnTankWreck(t.pos, t.mesh.scale.x, ALLY_PAL); scene.remove(t.mesh); radio('SCH: Một xe tăng đồng minh đã bị hạ!'); }   // Z402 blown apart, nothing left
 // Z116 weapons of hijacked vehicles: the APC's MG sprays infantry; the rocket truck shoots down helicopters, else hammers the nearest fortress gate/wall, else armour
 const _rk=new THREE.Vector3();
 function allyKindFire(t, now){ if(S.mode!=='playing' || now<t.fireAt) return; const mz=t.mesh.userData.muzzle;

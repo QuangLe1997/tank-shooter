@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, RAM, HARD, OPEN_LAND, SHATTER } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage , clearShatter, shatter, solidKind } from '../hub.js';
+import { BALANCE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -75,6 +75,8 @@ export function buildBlocks(){
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 export function damageBlock(b, dmg){
+  if(b.kind==='tent'){ tentHit(b); return; }                             // Z402 a tent catches fire
+  if(b.kind==='fueldrum'){ fuelDrumHit(b, dmg); return; }                  // Z402 a fuel drum goes up
   if(b.kind==='building'){ buildingHit(b, dmg); return; }                 // Z216 a city building: floors come down from the top
   if(b.kind==='tunnel'){ hitTunnel(b.tun, dmg); return; }
   if(b.ub){ underHit(b, dmg); return; }                                   // Z226 the tunnel gate's lock / pillboxes, the underground base's depots                 // Z225 bunker stairs into the enemy tunnels
@@ -101,6 +103,21 @@ export function damageBlock(b, dmg){
   else { b.mesh.scale.setScalar((0.9+0.1*f)*ms); }
   if(b.hp<=0) destroyCover(b);
 }
+// Z402 A FUEL DRUM GOES UP (the scanned oil drums round the fuel farms, world/scenery.js): rounds chip it, then it blows — a fireball, burning fuel thrown out,
+//   a blast that hurts everything round it (enemies and their cover through aoeDamage, our men, the player — who is set alight close in), the drums beside
+//   it go up after it (a blast inside a blast waits a beat: no chain in one frame) — and nothing of it is left where it stood: its scan and its collider are gone
+let _drumBlast=0;
+export function fuelDrumHit(b, dmg){ if(!(b.hp>0)) return; b.hp-=dmg; const gy=heightAt(b.x,b.z);
+  burst({x:b.x,z:b.z}, 0xffe0a0, 3, 5, {y:gy+0.6, life:0.25, size:0.2, grav:-12, drag:2, up:2});   // sparks off the steel
+  if(b.hp>0) return; b.hp=0; const D=FUEL_DRUM, go=()=>{ const i=blocks.indexOf(b); if(i<0) return; blocks.splice(i,1); dropScenePiece(b.mesh);   // gone from the field as it goes up (rounds, eyes, tracks)
+    const pos={x:b.x,z:b.z}, now=performance.now()/1000, R=D.r; _drumBlast++;
+    try{ bigExplode(pos, 0xff8a3a, 1.5); fireball(pos, D.fire, gy+0.8); decalScorch(b.x, b.z, R*0.55, 1);
+      for(let k=0;k<(MOBILE?5:10);k++){ const a=Math.random()*6.283, sp=3+Math.random()*7; spawnPart(b.x, gy+1, b.z, Math.cos(a)*sp, 4+Math.random()*6, Math.sin(a)*sp, {tex:'fire', color:0xffd080, color2:0xff3a08, size:0.9, life:0.8+Math.random()*0.4, grav:-12, drag:0.6, grow:0.7}); }   // burning fuel thrown out
+      aoeDamage(b.x, b.z, R, D.dmg, false, now); blastAllies(b.x, b.z, R, D.dmg*0.6);
+      const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(D.dmg*(1-(1-D.edge)*d/R)*0.6), now, p.pos.x-b.x, p.pos.z-b.z); if(d<R*0.6) addPlayerBurn(p.pos.x-b.x, p.pos.z-b.z); } }
+      for(const o of blocks.slice()) if((o.kind==='fueldrum' || o.kind==='drums') && Math.hypot(o.x-b.x, o.z-b.z)<D.chain) setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, 999); }, (D.delay[0]+Math.random()*(D.delay[1]-D.delay[0]))*1000); }   // the drums beside it go next
+    finally{ _drumBlast--; } };
+  if(_drumBlast) setTimeout(go, (D.delay[0]+Math.random()*(D.delay[1]-D.delay[0]))*1000); else go(); }   // (go: nothing if the field it stood on is gone)
 // Z193 a solid piece under fire: chips + dust (stone) or sparks (steel) every hit; at ⅔ and ⅓ it cracks, darkens, is knocked askew and sheds chunks;
 //   at 0 it collapses into a heap of its own rubble. Shows how much is left like a rock does.
 const _STONEY=new Set(['concrete','pipes','jersey','teeth','hesco']);
@@ -165,14 +182,13 @@ export function destroyCover(b){
     aoeDamage(b.x, b.z, R, 60, false, now);
     for(const e of enemies){ const d=Math.hypot(e.pos.x-b.x, e.pos.z-b.z); if(d<R+e.r && !e.def.bomber && !e.def.air){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2.5*(1-d/(R+e.r))+1); e.burn.until=now+BALANCE.flame.duration; } }   // tanks behind the drums catch fire
     const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(30*(1-d/R))+6, now, p.pos.x-b.x, p.pos.z-b.z); for(let k=0;k<2;k++) addPlayerBurn(p.pos.x-b.x+(Math.random()-0.5), p.pos.z-b.z+(Math.random()-0.5)); } }
-    for(const o of blocks.slice()) if(o!==b && o.kind==='drums' && Math.hypot(o.x-b.x,o.z-b.z) < R*0.95) setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, 999); }, 180+Math.random()*260);   // chain reaction through the fuel dump
+    for(const o of blocks.slice()) if(o!==b && (o.kind==='drums' || o.kind==='fueldrum') && Math.hypot(o.x-b.x,o.z-b.z) < R*0.95) setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, 999); }, 180+Math.random()*260);   // chain reaction through the fuel dump (Z402 and the loose drums)
     deformCrater(b.x, b.z, 2.4, 0.5);
     for(let k=0;k<4;k++) spawnDebris(pos, 0.9, 0x6a2a1a);
   } else if(b.kind==='tires'){ spawnDebris(pos, 1.2, 0x1e1e1c); burst(pos, 0x0e0d0c, 6, 3, {y:1.2, life:1.6, size:2.6, smoke:true, grav:-1.2, drag:1.2, up:2, op:0.55}); bigExplode(pos, 0xff7a2a, 1.0); }   // burning rubber, thick black smoke
   else if(b.kind==='container' || b.kind==='wreck'){ const big=b.kind==='container';   // Z193 the steel box / the car goes up: blast, flying sheet metal, and it burns
     bigExplode(pos, 0xff8a3a, big?2.0:1.5); fireball(pos, big?1.8:1.3); decalScorch(b.x, b.z, big?6:4.5, 1); for(let k=0;k<(big?4:3);k++) spawnDebris(pos, 1.1, big?0x6a3a26:0x3a2a20);
-    burst(pos, 0x1a1612, 6, 3, {y:heightAt(b.x,b.z)+1.6, life:2.2, size:2.8, smoke:true, grav:-0.8, drag:1.2, up:2, op:0.55}); aoeDamage(b.x, b.z, big?4:3.5, big?30:45, false, now);
-    leaveRubble(b, big?9:12); }
+    burst(pos, 0x1a1612, 6, 3, {y:heightAt(b.x,b.z)+1.6, life:2.2, size:2.8, smoke:true, grav:-0.8, drag:1.2, up:2, op:0.55}); aoeDamage(b.x, b.z, big?4:3.5, big?30:45, false, now); }   // Z402 it goes up and is gone: no burning heap left
   else if(HEAVY_KINDS.has(b.kind)){ const gy=heightAt(b.x,b.z), sand=b.kind==='hesco';   // Z193 concrete / HESCO collapses: a dust cloud, chunks thrown out, a heap left behind
     burst(pos, sand?0xc8b48a:0xb8b2a6, 10, 5, {y:gy+1.2, life:1.5, size:2.8, smoke:true, grav:-0.5, drag:1.5, up:1.8, op:0.55}); burst(pos, sand?0xa8936a:0x8e8a82, 20, 10, {y:gy+1.4, life:0.6, size:0.4, grav:-18, drag:1.1, up:4});
     for(let k=0;k<3;k++) spawnDebris(pos, 1.0, sand?0xa8936a:0x9a968c); decalCrater(b.x,b.z,1.8,0.5); sfx('bigexplode', pos); S.shake=Math.min(2.4, S.shake+0.4);
@@ -180,6 +196,6 @@ export function destroyCover(b){
   else if(b.kind==='logs'){ spawnDebris(pos, 1.3, 0x7a5e3e); burst(pos, 0x8a6a40, 14, 9, {y:1.2, life:0.6, size:0.42, grav:-16, drag:1.2, up:3.5}); burst(pos, 0x9a8a70, 3, 2.5, {y:1, life:1.0, size:1.8, smoke:true, grav:-0.4, drag:2, up:1, op:0.4}); sfx('explode'); leaveRubble(b); }   // the stack bursts apart
   else if(b.kind==='crates'){ spawnDebris(pos, 1.4, 0x8a6a40); burst(pos, 0xb08a56, 10, 8, {y:1.2, life:0.6, size:0.4, grav:-16, drag:1.4, up:3}); burst(pos, 0xb09a7a, 3, 2.5, {y:1, life:0.9, size:1.6, smoke:true, grav:-0.4, drag:2, up:1, op:0.4}); sfx('explode'); }   // splinters
   else { burst(pos, 0xc8b48a, 7, 4, {y:1.0, life:1.1, size:2.2, smoke:true, grav:-0.5, drag:1.8, up:1.6, op:0.55}); burst(pos, 0xa8936a, 14, 7, {y:1.2, life:0.55, size:0.3, grav:-18, drag:1.2, up:3}); spawnDebris(pos, 1.0, 0xa8936a); decalCrater(b.x,b.z,1.4,0.5); sfx('explode'); }   // sandbags burst: sand cloud + torn sacks
-  if(b.kind==='drums'||b.kind==='tires') leaveRubble(b, b.kind==='drums'?7:10); else if(b.kind==='sandbag'||b.kind==='crates') leaveRubble(b);   // Z193 what is left of it
+  if(b.kind==='sandbag'||b.kind==='crates') leaveRubble(b);   // Z193 what is left of it · Z402 what goes up in flames (fuel drums, tyres, containers, car wrecks) is gone — no burning heap
   if(b.loot){ dropPowerup(pos, b.lootTier||0); if(b.cache) dropPowerup(pos, Math.max(0,(b.lootTier||0)-1)); }   // beacon-marked stockpiles always yield; Z93 caches give two
 }
