@@ -176,9 +176,9 @@ export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model
   fix:{ xeom:{ hip:[0.33, 0, -0.02], foot:[[0.35, 0, 0.08], [0.35, 0, -0.12]], brace:[0.12, 0.33, 0.06], tool:[0.1, 0.17, -0.04] },
     bagac:{ hip:[0.35, 0, 0.3], foot:[[0.37, 0, 0.4], [0.37, 0, 0.2]], brace:[0.13, 0.36, 0.38], tool:[0.1, 0.2, 0.3] },
     hipH:0.44, bend:0.75, look:0.4, hammer:0.05, rate:8, ease:1.6 },
-  // Z300 feet on the road (mount units, m/s, m/s²): both down below stopV (out to the side, a little ahead); the inside foot out ahead skimming the road
+  // Z300 feet on the road (mount units, m/s, m/s²): both down below stopV (out to the side, Z362 hipFwd ahead of the hip: nearly under it); the inside foot out ahead skimming the road
   //   through a bend taken faster than dabV with more than dabLat of cornering; under a storm of fire (n hits in win s): ducked, face down and away, jinking
-  feet:{ stopV:1.1, rate:6, out:0.04, fwd:0.05, dabV:4.5, dabLat:5.5, dabOut:0.17, dabFwd:0.17, hover:0.015, dust:2.2, dustC:0xbfa88a },
+  feet:{ stopV:1.1, rate:6, out:0.04, fwd:0.05, hipFwd:0.04, dabV:4.5, dabLat:5.5, dabOut:0.17, dabFwd:0.17, hover:0.015, dust:2.2, dustC:0xbfa88a },
   dodge:{ win:2.2, n:3, flinch:1.6, jink:2.2, every:[0.35, 0.45], bend:0.14, face:0.2, away:0.45, lean:0.2, peek:[0.7, 0.5], hide:[0.8, 0.7] },
   // Z304 in a fight: how long it stays (s after a hit), the glances then (every / +random / held / +random), the darting eyes when peeking, how fast his head snaps
   alert:{ t:6, glance:[0.9, 1.1, 0.25, 0.3], sac:[0.22, 0.3], snap:14 },

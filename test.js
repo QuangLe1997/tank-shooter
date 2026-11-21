@@ -1257,6 +1257,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.RIDE.chat.yaw>0.4 && C.RIDE.chat.yaw<0.9 && C.RIDE.chat.fastYaw<C.RIDE.chat.yaw && /D\.chatT = now; D\.chatS =/.test(dr) && /D\.heardT = performance\.now\(\)/.test(dr), 'talking: his head turned back toward his passenger, less at speed; a nod at the answer');
   ok(C.RIDE.panic.yaw>1.2 && C.RIDE.panic.twist>0 && /talk\(D, 'behind'\)/.test(dr) && C.RIDE.charge.dur>1 && /function chargeArm/.test(dr) && /talk\(D, 'charge', true\)/.test(dr), 'panic: looks back over each shoulder; fired up: the left hand off the bar, jabbed ahead or a fist in the air'); }
 
+// Z362 the driver on the saddle point again (a comment had swallowed his hips line in Z361), and stopped, his feet down under his hips
+{ const fs=await import('node:fs'); const C=await import('./config.js'), dr=fs.readFileSync('src/actors/driver.js','utf8');
+  ok(/hips\.parent\.worldToLocal\(_a\); hips\.position\.copy\(_a\); hips\.updateMatrixWorld\(true\);/.test(dr) && !/\/\/[^\n]*hips\.position\.copy\(_a\)/.test(dr), 'his hips laid on the saddle point every frame (no comment swallowing the line)');
+  ok(/R\.hip\[2\] \+ FT\.hipFwd/.test(dr) && C.RIDE.feet.hipFwd>=0 && C.RIDE.feet.hipFwd<0.1 && C.RIDE.fit.xeom.hip[2]===-0.05, 'stopped, a foot down nearly under the hip (the leg straight, the knee soft), not stuck out ahead'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

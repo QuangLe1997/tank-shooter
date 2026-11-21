@@ -119,7 +119,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   UP.set(0, 1, 0).applyQuaternion(_qw); FWD.set(0, 0, 1).applyQuaternion(_qw); RIGHT.set(-1, 0, 0).applyQuaternion(_qw);   // the ride's own frame (+z ahead)
   // the hips: on the seat, square to the ride (side = his right), sat back a little in a wheelie
   const stopped = Math.abs(v) < 0.4;
-  onRide(H, R.hip, _a); if(D.state === 'stall' && D.hipUp) _a.addScaledVector(UP, D.hipUp); const hips = B.Hips; hips.parent.worldToLocal(_a);   // (Z361 stood up off the seat on the kick-start) hips.position.copy(_a); hips.updateMatrixWorld(true);
+  onRide(H, R.hip, _a); if(D.state === 'stall' && D.hipUp) _a.addScaledVector(UP, D.hipUp); const hips = B.Hips; hips.parent.worldToLocal(_a); hips.position.copy(_a); hips.updateMatrixWorld(true);   // (Z361 stood up off the seat on the kick-start)
   hips.getWorldPosition(_a); B.Spine.getWorldPosition(_b); B.RightUpLeg.getWorldPosition(_c); B.LeftUpLeg.getWorldPosition(_d);
   _e.subVectors(_b, _a).normalize(); _f.subVectors(_c, _d).normalize(); _g.crossVectors(_f, _e).normalize();
   _m.makeBasis(_f, _e, _g); _q.setFromRotationMatrix(_m); _m.makeBasis(RIGHT, UP, _a.copy(FWD).negate()); _qp.setFromRotationMatrix(_m); _qp.multiply(_q.invert());   // (side × up points backward: the same hand in both frames)
@@ -195,7 +195,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
     if(i === 0 && D.gearT > 0) _a.y += Math.sin(D.gearT / 0.28 * Math.PI) * 0.035;
     body.localToWorld(_a); const down = Math.max(D.fd[i], D.fdab[i]);
     if(down > 1e-3){ // where that foot meets the road: out to the side (and ahead, for the dab), at the ground's real height under it
-      const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg[i][0]) + (dk ? FT.dabOut : FT.out)), 0, R.peg[i][2] + (dk ? FT.dabFwd : FT.fwd)); body.localToWorld(_c);
+      const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg[i][0]) + (dk ? FT.dabOut : FT.out)), 0, dk ? R.peg[i][2] + FT.dabFwd : R.hip[2] + FT.hipFwd); body.localToWorld(_c);   // (Z362 stopped, the foot down nearly under the hip — the leg straight, the knee just soft; not stuck out ahead)
       _c.y = heightAt(_c.x, _c.z) + D.ankle * ws + (dk ? FT.hover : 0); _a.lerp(_c, ease(down));
       if(dk && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:new THREE.Color(FT.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
     if(i === 1 && D.state === 'stall' && D.kickW > 0 && D.kickFoot) _a.lerp(D.kickFoot, ease(D.kickW));   // Z361 on the kick-start lever
