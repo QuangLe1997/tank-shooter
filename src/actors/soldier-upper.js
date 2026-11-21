@@ -30,7 +30,9 @@ export function soldierUpper(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; 
   const L = R.ownLegs, mode = L && L.w > 0.3 ? L.mode : null, onFoot = !mounted && !P.trans && !P.dead && mode !== 'prone' && mode !== 'mount';
   let pitch = 0, roll = 0, yaw = 0;
   // ---- leaning into a change of pace (only on his feet) ----
-  const tp = onFoot ? clamp(U.a.dot(FA) * K.lean, -K.leanMax, K.leanMax) : 0, tr = onFoot ? clamp(U.a.dot(RA) * K.leanSide, -K.leanMax, K.leanMax) : 0;
+  // Z347 the fighting stance: stood or walking on his feet he leans into the gun from the hips (nose over toes), not upright behind it
+  const fw = onFoot && mode === 'stand' ? 1 - clamp((Math.hypot(pv ? pv.x : 0, pv ? pv.z : 0) - 1.5) / 1.5, 0, 1) : mode === 'kneel' ? 0.5 : 0;
+  const tp = (onFoot ? clamp(U.a.dot(FA) * K.lean, -K.leanMax, K.leanMax) : 0) + K.stance * fw, tr = onFoot ? clamp(U.a.dot(RA) * K.leanSide, -K.leanMax, K.leanMax) : 0;
   [U.p, U.pv] = spring(U.p, U.pv, tp, K.leanK, K.leanZ, dt); [U.r, U.rv] = spring(U.r, U.rv, tr, K.leanK, K.leanZ, dt); pitch += U.p; roll += U.r;
   // ---- the stride: shoulders against the swinging leg, the trunk over the standing foot ----
   const sw = onFoot && L && L.on && L.feet ? L.feet.find(f => f.sw) : null, speed = Math.hypot(U.v.x, U.v.z);

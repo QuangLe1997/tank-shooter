@@ -656,7 +656,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function loadRealTroops/.test(rt) && /applyBoneTransform/.test(rt) && /function swapKit/.test(rt) && !/AnimationMixer\(root\)[^;]*update\(dt/.test(rt), 'real troops: one pose baked once, no skinning per man');
   ok(/const near = /.test(rt) && /REALTROOP\.stretch/.test(rt) && /mirror X/.test(rt), 'mis-weighted vertices follow their nearest bone; stretched slivers dropped; mirrored into the rig\'s handedness');
   ok(/kinds:\['up','head','arm','lh','gun','hipL','hipR','kneeL','kneeR'\]/.test(so) && /K\.mats && K\.mats\[kind\]/.test(so) && /loadRealTroops\(\)/.test(so), 'the batch: a piece per leg, a material per piece, the real kit loads in');
-  ok(/kitAttach\(u, u\.up, L, 'shoulderR'\)/.test(inf) && /'muzzle'/.test(ft) && /'back'/.test(ft) && /'shoulderL'/.test(ft), 'RPG, MG, mortar, satchels and the AT tube sit on kit anchors');
+  ok(/kitAttach\(u, u\.gun, L, 'grip'/.test(inf) && /'muzzle'/.test(ft) && /'back'/.test(ft) && /'shoulderL'/.test(ft), 'RPG, MG, mortar, satchels and the AT tube sit on kit anchors');
   ok(C.REALTROOP && C.REALTROOP.anchor && C.REALTROOP.stretch.length===2, 'REALTROOP calibration in config');
   const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper && sp.trooper.retex && sp.trooper2.preview.target_polycount<=12000 && sp.rifle.remesh, 'the trooper spec: low-poly, enemy retexture, a light carbine');
   ok(['assets/models/real/trooper.glb','assets/models/real/carbine-light.glb','assets/models/real/trooper-enemy.jpg'].every(f=>fs.existsSync(f) && fs.statSync(f).size<3e6), 'the troop files ship small (Z254: 2K textures)'); }
@@ -1190,6 +1190,18 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/drv:false/.test(su) && (su.match(/drv:true/g)||[]).length===3 && /BÁC TÀI LÁI/.test(su) && /TỰ CƯỠI/.test(su) && /bác quỳ xuống đầu hàng/.test(su), 'the horse is ridden by him, the three rides by the bác tài — and the card says what the driver does');
   ok(/_garFrom==='battleSetup'\) setupBack\(\)/.test(R('src/ui/garage.js')) && /_ldFrom==='battleSetup'\)\{ show\('battleSetup'\); setupBack\(\); \}/.test(R('src/ui/loadout.js')), 'the garage and the arsenal come back to the gear step');
   ok(/\.btn\.btn-primary\{--plate:linear-gradient\(180deg,#e2b443/.test(R('css/mil.css')) && /#battleSetup\[data-step="1"\] \.bs-s1/.test(css) && /@media \(max-height:560px\)\{\n  #briefing/.test(css), 'primary buttons stay yellow everywhere; one step shown at a time; the phone briefing fits'); }
+
+// Z346 the infantry look up and carry at the ready (no faces and muzzles in the ground), the baked rifle laid level, the enemy's B40 the real launcher
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), so=R('src/actors/soldiers.js'), inf=R('src/actors/infantry.js'), rt=R('src/actors/real-troops.js'), CA=C.REALTROOP.carry;
+  ok(CA.walk<0.2 && CA.run<0.35 && CA.keep>0.5 && CA.head>0.6 && /u\.armAdd = ready\*\(CA\.walk\+\(CA\.run-CA\.walk\)\*run\)/.test(so), 'not firing, the muzzle only a little under the horizon (it hung 25 to 50 degrees at the ground)');
+  ok(/lean=\(P\.up\+\(u\.upAdd\|\|0\)\+P\.rx\)\*\(1-P\.pw\)/.test(so) && /-lean\*keep\+\(u\.aimTrim\|\|0\)/.test(so) && /u\.head\.rotation\.x=\(u\.hx\|\|0\)-lean\*CA\.head-P\.pw\*CA\.prone/.test(so), 'bent forward, the neck and the arms take the lean back: eyes on the horizon, the rifle up');
+  ok(/aimTrim:Math\.asin\(bore\.y\)/.test(rt) && /setFromUnitVectors\(new THREE\.Vector3\(0, 0, 1\), bore\)/.test(rt) && /anchor\.gripQ = anchor\.muzzleQ/.test(rt), 'the baked rifle (cut 11 degrees muzzle-up along the palm line) laid level; attachments on the bore itself');
+  ok(/if\(type==='rpg'\) rpgKit\(u\)/.test(inf) && /loadGLTF\('inf_rpg'\)/.test(inf) && /kitAttach\(u, u\.gun, L, 'grip'/.test(inf) && !inf.includes('ConeGeometry(0.12,0.34,10)'), 'the B40 is the real launcher, its grip in the right palm on the rifle line (no bare tube and cone)');
+}
+// Z347 the soldier's fighting stance: feet a shoulder's width apart, the left a step ahead, knees bent, leaning into the gun
+{ const C=await import('./config.js'), up=(await import('node:fs')).readFileSync('src/actors/soldier-upper.js','utf8'), L=C.SOLDIER_LEGS.stand;
+  ok(C.SOLDIER_UPPER.stance>0.1 && C.SOLDIER_UPPER.stance<0.3 && /\+ K\.stance \* fw/.test(up) && L.stance>=0.19 && L.stagger>=0.12 && L.hipK<0.96, 'stood or walking he leans into the gun from the hips, feet apart and staggered, knees bent');
+}
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

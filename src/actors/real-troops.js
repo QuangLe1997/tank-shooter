@@ -25,7 +25,7 @@ export function loadRealTroops(){
     const B = bakeTrooper(tg, gg);
     for(const [key, map] of [['f', B.map], ['e', eTex]]){
       const mat = new THREE.MeshStandardMaterial({ map, normalMap:B.nrm, roughness:REALTROOP.rough, metalness:0 }); mat.color.setRGB(...REALTROOP.team[key]);   // Z254 each side its own cast
-      swapKit({ real:true, key, mat, mats:{ gun:B.gunMat }, geo:B.geo, muz:B.muz, anchor:B.anchor, bodyK:B.bodyK, joints:B.joints, legs:B.legs, skin:B.skin }); }
+      swapKit({ real:true, key, mat, mats:{ gun:B.gunMat }, geo:B.geo, muz:B.muz, anchor:B.anchor, bodyK:B.bodyK, joints:B.joints, legs:B.legs, skin:B.skin, aimTrim:B.aimTrim }); }
     return true; })); }
 
 // pose → bake → mirror into the rig's handedness → scale so the hips sit on the rig's hips → cut per joint (each piece in its joint's frame)
@@ -94,7 +94,7 @@ function bakeTrooper(tg, gg){
   gm = parts.length === 1 ? parts[0] : null; if(!gm) throw new Error('troop gun: expected one mesh');
   const box = new THREE.Box3().setFromBufferAttribute(gm.attributes.position), gs = G.len / (box.max.x - box.min.x);
   const palm = (h, f, out) => { W(bone(h), out); const fa = W(bone(f), new THREE.Vector3()); return out.addScaledVector(out.clone().sub(fa).normalize(), G.palm); };   // Z254 the palm: past the wrist along the forearm
-  palm('RightHand', 'RightForeArm', _a); palm('LeftHand', 'LeftForeArm', _b); const dir = _b.clone().sub(_a).normalize(), grip = _a.clone();
+  palm('RightHand', 'RightForeArm', _a); palm('LeftHand', 'LeftForeArm', _b); const dir = _b.clone().sub(_a).normalize(), grip = _a.clone(), bore = new THREE.Vector3(-dir.x, dir.y, dir.z);   // (Z346 the rifle lies along the palm line: its bore in the rig's frame)
   RJ.gun = T(grip.x, grip.y, grip.z, new THREE.Vector3()).toArray();   // Z344 the rifle turns (the kick) about his right palm
   const up = new THREE.Vector3(0, 1, 0), X = dir.clone().negate(), Y = up.clone().addScaledVector(X, -up.dot(X)).normalize(), Z = new THREE.Vector3().crossVectors(X, Y);
   const R = new THREE.Matrix4().makeBasis(X, Y, Z), off = new THREE.Vector3().fromArray(G.grip).multiplyScalar(gs).applyMatrix4(R);
@@ -108,8 +108,8 @@ function bakeTrooper(tg, gg){
   const A = REALTROOP.anchor, rel = (n, add) => { W(bone(n), _v); T(_v.x, _v.y, _v.z, _v); return [_v.x - RJ.up[0] + add[0], _v.y - RJ.up[1] + add[1], _v.z - RJ.up[2] + add[2]]; };
   const anchor = { shoulderR:rel('RightArm', A.shoulderR), shoulderL:rel('LeftArm', A.shoulderL), back:rel('Spine2', A.back), muzzle:mz.toArray() };
   { const gp = new THREE.Vector3().fromArray(G.grip).applyMatrix4(M); T(gp.x, gp.y, gp.z, gp); gp.sub(new THREE.Vector3().fromArray(o));   // Z254 the barrel's way in the gun joint: an MG barrel / bipod hung on the muzzle follows the real rifle
-    anchor.muzzleQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), mz.clone().sub(gp).normalize()).toArray(); }
-  return { geo, map:sm.material.map, nrm:sm.material.normalMap || null, gunMat:gmat, muz:mz, anchor, bodyK:REALTROOP.top / ((top - gy) * s), joints:RJ, legs, skin }; }
+    anchor.muzzleQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), bore).toArray(); anchor.grip = [0, 0, 0]; anchor.gripQ = anchor.muzzleQ; }   // (Z346 the bore's own line — grip → muzzle ran 18° up off it; a launcher held as the rifle is: on its line, from the palm)
+  return { geo, map:sm.material.map, nrm:sm.material.normalMap || null, gunMat:gmat, muz:mz, anchor, bodyK:REALTROOP.top / ((top - gy) * s), joints:RJ, legs, skin, aimTrim:Math.asin(bore.y) }; }
 
 // Z344 ONE SKINNED BODY (actors/troop-skin.js draws it): the whole man in one piece, each vertex carried by its two strongest joints of the rig —
 //   blended where two meet (knee, hip, waist, neck, shoulder, left elbow), so a joint bends like flesh instead of two cut pieces pivoting past
@@ -137,10 +137,10 @@ export function fitRealMan(u, K, pivots = true){ u.body.scale.multiplyScalar(K.b
 function realPivots(u, K){ const J = K.joints, d = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
   for(const l of u.legs){ const h = J[l.sx > 0 ? 'hipR' : 'hipL'], k = J[l.sx > 0 ? 'kneeR' : 'kneeL']; l.hip.position.fromArray(h); l.knee.position.fromArray(d(k, h)); }
   u.up.position.fromArray(J.up); u.head.position.fromArray(d(J.head, J.up)); u.arms.position.fromArray(d(J.arm, J.up)); u.lh.position.fromArray(d(J.lh, J.arm)); u.gun.position.fromArray(d(J.gun, J.arm));
-  u.base = { upY:J.up[1], gunZ:u.gun.position.z, lhY:u.lh.position.y }; u.legLen = K.legs; u.kn = null; }
+  u.base = { upY:J.up[1], gunZ:u.gun.position.z, lhY:u.lh.position.y }; u.legLen = K.legs; u.kn = null; u.aimTrim = K.aimTrim || 0; }   // (Z346 the arms' tilt that lays the baked rifle level: it was cut 11° muzzle-up)
 // gear hung on a man by role (RPG, AT tube, MG barrel, mortar, satchels) sits on an anchor of whichever kit he wears — the procedural kit's numbers
 //   until the real one arrives, then moved onto the real body's shoulder / pack / muzzle
-const DEF_ANCHOR = { shoulderR:[0.17, 0.66, 0.08], shoulderL:[-0.2, 0.7, -0.05], back:[0, 0.47, -0.35], muzzle:[0, 0.01, 0.7] };
+const DEF_ANCHOR = { shoulderR:[0.17, 0.66, 0.08], shoulderL:[-0.2, 0.7, -0.05], back:[0, 0.47, -0.35], muzzle:[0, 0.01, 0.7], grip:[0, 0, 0] };   // (Z346 grip: the gun joint's own point, the right palm)
 function placeAtt(K, a){ const p = (K && K.anchor && K.anchor[a.anchor]) || DEF_ANCHOR[a.anchor], q = K && K.anchor && K.anchor[a.anchor + 'Q'];
   if(q){ const Q = new THREE.Quaternion().fromArray(q), off = new THREE.Vector3().fromArray(a.off).applyQuaternion(Q); a.obj.position.set(p[0] + off.x, p[1] + off.y, p[2] + off.z); a.obj.quaternion.copy(Q).multiply(a.q0); }   // turned with the anchor (the barrel's way)
   else { a.obj.position.set(p[0] + a.off[0], p[1] + a.off[1], p[2] + a.off[2]); a.obj.quaternion.copy(a.q0); } }

@@ -837,8 +837,9 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
 // Z344 toeOut = each foot turned out (rad) when the legs are straightened for the cut; kneel = [kg the kneecap below the knee joint (rig m), front = the
 //   left thigh's lift (rad, ~level), rear = the right thigh back from upright, shin = the right shin back from straight down (~along the ground)];
 //   skin = the real kit drawn as one GPU-skinned body a side (actors/troop-skin.js) instead of nine rigid pieces a man; stride = the walk's thigh swing [walking, + running] (rad) and how far
-//   the hips may dip at the widest of a stride (rig m: upright / in the combat crouch)
-export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, toeOut:0.12, kneel:{ kg:0.05, front:1.42, rear:0.12, shin:1.62 }, skin:true, stride:{ amp:[0.52, 0.18], drop:0.05, low:0.14 }, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
+//   the hips may dip at the widest of a stride (rig m: upright / in the combat crouch); Z346 carry = not firing, the rifle's dip under the horizon walking / running (rad), how
+//   much of a forward lean the arms take back (firing: all), the chin lifted off the sights, how much of the lean the neck takes back, lying down the chin up
+export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, toeOut:0.12, kneel:{ kg:0.05, front:1.42, rear:0.12, shin:1.62 }, skin:true, stride:{ amp:[0.52, 0.18], drop:0.05, low:0.14 }, carry:{ walk:0.1, run:0.26, keep:0.75, look:0.1, head:0.85, prone:0.72 }, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
 // Z295 the infantry arsenal (actors/real-cav.js; Tripo P2): which hand weapon the soldier carries for each of the game's guns, and each weapon's true length (m),
 //   which end is the muzzle in the model (+z / −z), how far behind its middle the pistol grip sits (share of the length), lift = raised (m: the RPG rides the shoulder)
 //   Z329 the soldier's own guns (data/guns.js t_*) map onto them too: each weapon he picks up is the one in his hands
@@ -871,7 +872,7 @@ export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket
 //   share of a step, how far ahead of the hips a foot lands (× a stride), how far the pelvis turns to a side move / a move backward; crouched, the lean forward
 export const SOLDIER_LEGS = { velK:10, fade:7, moveV:0.15, turnV:0.35, turnFull:1.0, turnRate:5, hyst:0.26, toeOut:0.12, crossF:0.22, crossArc:0.14, urgent:0.35, overlap:0.6, maxDrop:0.12, yawStep:0.55, idleT:0.3, idleGap:0.2, sway:0.3, roll:0.05, gaitYaw:0.07,
   slope:-0.9, toeH:0.012, toeFlat:-0.12, reach:0.99, backCad:1.15, backStep:0.75,
-  stand:{ maxV:2.4, hipK:0.962, dip:0.035, bob:0.026, half:0.1, stance:0.17, stagger:0.07, gap:0.12, maxStride:1.5, lift:0.07, cad:[1.8, 0.55, 2.9], swing:0.78, lead:0.45, idle:0.15, turn:0.95, turnBack:0.4 },
+  stand:{ maxV:2.4, hipK:0.945, dip:0.035, bob:0.026, half:0.1, stance:0.2, stagger:0.14, gap:0.12, maxStride:1.5, lift:0.07, cad:[1.8, 0.55, 2.9], swing:0.78, lead:0.45, idle:0.15, turn:0.95, turnBack:0.4 },
   // Z341 the firing positions: switchT = how long each change of position eases in (s); behind cover the rifle's bore lies coverRest over the top, the
   //   butt pocket is `pocket` over the hip joints, crouching behind higher cover by at most coverDrop; landing, the knees give landDip.
   //   kneel: hips turned right (rad), the pelvis' and the torso's lean, the knee pad's height, hips over the knee (× the thigh; lowest `low` m over it),
@@ -937,7 +938,9 @@ export const SOLDIER_MOUNT = { walkV:1.6, walkMin:0.25, walkMax:3.5, clear:0.7,
 //   how much of the trunk's added turn the neck takes back (the head held steady). gun: the rifle's lag on a spring (stiffness, damping, how much it
 //   feels the chest's acceleration — less `dead` m/s² — at most max m), the dip at each footfall (m/s), the muzzle's figure of eight walking (yaw, pitch rad),
 //   × fire firing. head: how much of a quick jolt of the head is taken out, how fast its eased turn follows (/s), past `snap` rad it is a new start
-export const SOLDIER_UPPER = { velK:8, accK:5, accMax:25, reset:0.6, lean:0.03, leanSide:0.025, leanMax:0.14, leanK:45, leanZ:0.55, twist:0.06, sway:0.035,
+// Z347 stance = the forward lean into the gun from the hips stood / walking on his feet (rad; half of it kneeling) — the fighting stance, not upright behind it;
+//   SOLDIER_LEGS.stand: the feet a shoulder's width apart, the left a step ahead, the knees a little more bent
+export const SOLDIER_UPPER = { velK:8, accK:5, accMax:25, reset:0.6, lean:0.03, leanSide:0.025, leanMax:0.14, stance:0.2, leanK:45, leanZ:0.55, twist:0.06, sway:0.035,
   breath:0.012, breathHz:0.25, gaze:0.85, gun:{ k:90, c:11, m:0.8, dead:1.2, max:0.028, kick:0.05, yaw:0.012, pitch:0.008, fire:0.35 },
   head:{ steady:0.6, rate:12, snap:0.9 } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },

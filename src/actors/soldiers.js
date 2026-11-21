@@ -183,12 +183,12 @@ export function animateSoldier(g, dist, dt, firing){
   if(u.torso.material.emissiveIntensity>0 && !u._fl){ u.flinch=1; } u._fl=u.torso.material.emissiveIntensity>0; u.flinch=Math.max(0,(u.flinch||0)-dt*5);
   // rifle handling layered on top of the stance (poseSoldier adds the same offsets)
   const ready=u.aimT>0?0:1, rl=u.reload>0 ? Math.sin(Math.min(1,(1.7-u.reload)/1.7)*Math.PI) : 0; if(u.reload>0) u.reload=Math.max(0,u.reload-dt);
-  u.armAdd = run*0.55*ready + 0.18*ready*(1-run) + rl*0.42 - u.kick*0.05; u.armRz = rl*0.55 + run*0.12*ready;
+  const CA=REALTROOP.carry; u.armAdd = ready*(CA.walk+(CA.run-CA.walk)*run) + rl*0.42 - u.kick*0.05; u.armRz = rl*0.55 + run*0.12*ready;   // Z346 not firing: the muzzle a little under the horizon at the ready (it hung 25–50° at the ground)
   u.upAdd = run*0.22 - u.flinch*0.35;
   { const nw=performance.now()/1000, el=(u.aimElAt && nw-u.aimElAt<0.6) ? u.aimEl : 0; u.elS=(u.elS||0)+(el-(u.elS||0))*Math.min(1,dt*6); if(u.elS>0.01){ u.armAdd-=u.elS; u.upAdd-=u.elS*0.22; } }   // Z222 rifle raised to a target in the sky
   if(u.lh){ u.lh.rotation.x = rl*1.25; u.lh.rotation.z = -rl*0.5; u.lh.position.y = u.base.lhY - rl*0.08; }
-  if(u.head){ const scan = u.aimT>0||run>0.3 ? 0 : Math.sin(u.t*0.55+u.seed)*0.55*Math.max(0,Math.sin(u.t*0.21+u.seed*0.7)); u.head.rotation.y += (scan-u.head.rotation.y)*Math.min(1,dt*3); u.head.rotation.x = -u.flinch*0.3 + rl*0.35 - (u.elS||0)*0.5; }
-  const P=u.pose; if(u.arms){ u.arms.rotation.x=(P?P.arm:0)+u.armAdd; u.arms.rotation.z=u.armRz; } u.up.rotation.x=(P?P.up:0)+u.upAdd;
+  if(u.head){ const scan = u.aimT>0||run>0.3 ? 0 : Math.sin(u.t*0.55+u.seed)*0.55*Math.max(0,Math.sin(u.t*0.21+u.seed*0.7)); u.head.rotation.y += (scan-u.head.rotation.y)*Math.min(1,dt*3); u.hx = -u.flinch*0.3 + rl*0.35 - (u.elS||0)*0.5 - ready*CA.look; u.head.rotation.x = u.hx; }   // (Z346 at the ready the chin up off the sights)
+  const P=u.pose; if(u.arms){ u.arms.rotation.x=(P?P.arm:0)+u.armAdd+(u.aimTrim||0); u.arms.rotation.z=u.armRz; } u.up.rotation.x=(P?P.up:0)+u.upAdd;
 }
 // Z105 STANCES — call after animateSoldier(): 'stand' (walk cycle as is) · 'crouch' (kneel to fire / hide behind cover) ·
 // 'prone' (flat on the ground, rifle forward — the hardest target). Blends smoothly so nobody snaps between poses.
@@ -218,7 +218,13 @@ export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) retu
   const T=_ST[eff]||_ST.stand, f=1-Math.exp(-dt*6.5), fw=Math.min(1, dt*4.2);
   for(const k of ['rx','y','z','up','arm']) P[k]+=(T[k]-P[k])*f;
   P.lw=(P.lw||0)+((eff==='low'?1:0)-(P.lw||0))*fw; P.kw += ((eff==='crouch'?1:0)-P.kw)*fw; P.pw += ((eff==='prone'?1:0)-P.pw)*fw; const sw=P.kw+P.pw; if(sw>1){ P.kw/=sw; P.pw/=sw; }
-  u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up+(u.upAdd||0)*(1-P.pw); if(u.arms){ u.arms.rotation.x=P.arm+(u.armAdd||0)*(1-P.pw*0.8); u.arms.rotation.z=(u.armRz||0); }
+  u.body.rotation.x=P.rx; u.body.position.y=P.y; u.body.position.z=P.z; u.up.rotation.x=P.up+(u.upAdd||0)*(1-P.pw);
+  // Z346 EYES AND MUZZLE UP: bent forward (the combat crouch, the run, the kneel) the head and the rifle went down with the trunk — every man stared at
+  //   the ground with his muzzle in it. Now the neck takes the lean back (eyes on the horizon; lying down, chin up to see ahead) and the arms take
+  //   most of it back too (firing, all of it: the rifle level on the target)
+  const CA=REALTROOP.carry, lean=(P.up+(u.upAdd||0)+P.rx)*(1-P.pw), keep=(u.aimT||0)>0 ? 1 : CA.keep;
+  if(u.arms){ u.arms.rotation.x=P.arm+(u.armAdd||0)*(1-P.pw*0.8)-lean*keep+(u.aimTrim||0); u.arms.rotation.z=(u.armRz||0); }
+  if(u.head) u.head.rotation.x=(u.hx||0)-lean*CA.head-P.pw*CA.prone;
   u.stance=stance; const L=u.legs, w0=1-P.kw-P.pw;
   const KN=kneelOf(u);
   for(let i=0;i<L.length;i++){ const l=L[i], c=KN[i], q=_LEG.prone[i];
