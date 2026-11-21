@@ -1256,6 +1256,11 @@ export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], crate
 // Z328 FAR LOD (render/far-lod.js): big static models (fort towers / gatehouse, the HQ) swap to a simplified copy past far m (or rK × their radius if more;
 //   ×mobileK on phones); keep = share of triangles kept, err = allowed deviation (share of the model's size), hys = LOD hysteresis
 export const FARLOD = { on:true, far:60, rK:6, mobileK:0.7, keep:0.15, err:0.02, hys:0.1 };
+// Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
+//   its reach — radius × rK m from its surface, at least min, at most at (each instance of an instanced mesh counts) — handed back past reach × out for hold s,
+//   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh
+export const NEARDETAIL = { on:true, rK:3, min:5, at:30, out:1.4, hold:4, every:0.3, maxKeys:8, maxInst:4000,
+  trees:{ n:12, at:34, every:0.2 } };   // trees: the n standing nearest the camera within at m drawn whole from the original (world/real-trees.js), re-picked every s
 export const LOD = { shadowR: 26, guardR: 70, every: 0.25, tankDetailR: 38, smallR: 0.9,
   detailR: 3, detailPx: 1.6, detailHys: 1.35, rescan: 2 };   // Z240 pieces under detailR m are skipped once their on-screen size × fog transparency drops under detailPx px (back in above ×detailHys); the list is rebuilt every rescan s   // Z233 enemy tanks past tankDetailR (from the camera) drop fittings smaller than smallR
 // Z107 POWER RATING — one number for how strong YOUR tank is, and what each level asks of it, on the same scale.
