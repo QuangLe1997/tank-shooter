@@ -2253,5 +2253,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function heroGeo\(gl, kind, hd\)\{ const id = hd \? kind \+ ':hd' : kind;/.test(xe) && /nearShape\(mesh, 'ride_' \+ kind, gl => heroGeo\(gl, kind, true\)\.geo, \{ min:NEARDETAIL\.hero \}\)/.test(xe) && /nearShape\(bm, 'ride_' \+ kind, gl => heroGeo\(gl, kind, true\)\.bar, \{ min:NEARDETAIL\.hero \}\)/.test(xe), 'the ride\'s body and its steering head both swap, cut the same way');
   ok(/nearShape\(o, RIDE\.model\[kind\], asShipped\(RIDE\.model\[kind\]\), \{ min:NEARDETAIL\.hero \}\)/.test(R('src/actors/driver.js')) && /nearShape\(o, 'inf_'\+k, asShipped\('inf_'\+k\)\)/.test(R('src/loot/powerups.js')) && /nearShape\(o, 'inf_rpg', asShipped\('inf_rpg'\)\)/.test(R('src/actors/infantry.js')), 'the driver, a dropped gun and the enemy B40 register too');
 }
+// Z399 the city's structures: its fort in the works' real style (it stood as plain boxes in a stone wrap), the far city rebuilt with the real towers
+//   once they have loaded (the first stage built it from flat untextured blocks and pale peaks), less veiled, the glass towers' curtain wall drawn crisp,
+//   Landmark 81 / Bitexco in their originals' 4K colour up close
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), hz=R('src/world/horizon.js'), ct=R('src/world/city.js'), T=JSON.parse(R('tools/hd-maps.json')), IX=JSON.parse(R('assets/models/real/hd/index.json'));
+  ok(C.REALFORT.biomes.CITY==='foundry' && ['wall','tower','gate'].every(p=>fs.existsSync('assets/models/real/fort/fort_foundry_'+p+'.glb')), 'the city\'s fort wears the works\' real style');
+  ok(/if\(kind==='city' && !MOBILE && !realCityReady\(\) && typeof window!=='undefined'\) loadRealCity\(\)\.then\(ok => \{ if\(ok && realCityReady\(\) && BIOME===b && HZN\.g===g\) buildHorizon\(b\); \}\);/.test(hz), 'a city horizon built before the city\'s models is built again once they are in');
+  ok(C.REALCITY.flatHorizon.every(r=>r[2]<=0.5), 'the far city rings veiled at most half');
+  ok(C.REALCITY.windows.frame>0 && /const FACADE_GLSL = /.test(ct) && /\$\{FACADE_GLSL\}/.test(ct) && /export const WIN_F=/.test(ct) && /fwidth\(q\)/.test(ct) && /k = glassy \* vert \* uWinF/.test(ct), 'the curtain wall\'s frame on the glass only, on vertical faces, faded by its own screen size');
+  ok(['bld_landmark','bld_bitexco'].every(k=>T[k] && T[k].tex===4096 && JSON.stringify(T[k].maps)==='["map"]' && JSON.stringify(IX[k])==='["0.map"]' && fs.existsSync('assets/models/real/hd/'+k+'.0.map.webp')), 'Landmark 81 and Bitexco wear their originals\' 4K colour up close'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

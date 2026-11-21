@@ -2,7 +2,7 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, realHorizon, scene, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
+import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, loadRealCity, realCityReady, realHorizon, scene, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
 import { REALCITY, SKYLINE, STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
@@ -82,6 +82,9 @@ export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); con
   let SK=!MOBILE && SKYLINE.on && !/noscene/.test(location.search+location.hash) && SKYLINE.biomes[b.name]; if(typeof SK==='string') SK=SKYLINE.biomes[SK]; const real=!!(SK && SK.skyline);   // Z383 the scanned summits, forests, ruins and works on this horizon (desktop); real = they are its near skyline
   const rk = SK && SK.rings || (kind==='city'||kind==='stacks' ? 'hill' : kind);   // behind a skyline there are still hills (Z383 or the ranges the real horizon asks for)
   const flatCity = kind==='city' && realCityReady() && REALCITY.flatHorizon;   // Z268 Saigon is flat: no peaks behind the city, more city fading into the haze instead
+  // Z399 the first city stage builds its horizon before the city's models are in (they load with the stage): it stood as flat untextured blocks and
+  //   pale peaks for the whole battle. Built again with the real towers once they are
+  if(kind==='city' && !MOBILE && !realCityReady() && typeof window!=='undefined') loadRealCity().then(ok => { if(ok && realCityReady() && BIOME===b && HZN.g===g) buildHorizon(b); });
   if(flatCity){ for(const [dr, hk, hz, n, dp] of REALCITY.flatHorizon){ const s=realSkyline(R0+dr, H*hk, fogC, hz, n, dp); if(s) g.add(s); } }
   else { g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest
   g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.52, 2)); }   // Z259 a little less haze

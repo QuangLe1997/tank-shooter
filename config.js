@@ -306,7 +306,7 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
-export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry' },
+export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry', CITY:'foundry' },   // Z399 the city's fort too: the works' concrete and steel (it stood as plain boxes in a stone wrap)
   wallUp:1.5, thick:1.25, towerW:1.35, towerUp:3, keepW:1.3, keepH:1.15, gateW:1.15, door:[0.2, 0.55] };
 // Z378 the see-through seams in a dressed fort's wall (dressFort: where the model's ragged end meets its own start again, every rep sections) opened into
 //   a clean breach w m wide, the soldier and the xe ôm through it, a tank not — only between two sections of one run of wall, and only when the model spans
@@ -848,9 +848,9 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
     drive:{ acc:[2.2, 3.0], brake:4, T:[0.9, 0.6], s0:[1.8, 0.9], lat:[1.0, 1.4], uturnV:[4, 4.5] }, junc:{ yieldT:2 }, stuckT:12, farR:50, spawnR:45,
     // Z269 rider liveries (jacket + helmet hue °, saturation, lightness ×), the bike each rides, share: app drivers in green, yellow, teal (electric scooter), plain navy / red jackets
     liveries:[{ name:'xanh-la', h:146, s:0.9, l:0.95, bike:'moto_scooter', w:0.28 }, { name:'vang', h:48, s:1.0, l:1.12, bike:'moto_scooter', w:0.2 }, { name:'xanh-ngoc', h:183, s:0.85, l:0.95, bike:'moto_escooter', w:0.22 },
-      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
+      { name:'navy', h:222, s:0.4, l:0.55, bike:'moto_scooter', w:0.15 }, { name:'do', h:2, s:0.6, l:0.8, bike:'moto_scooter', w:0.15 }], lamp:{ carX:0.62, carY:0.42 }, motoV:[6,11], carV:[7,12], motoL:1.85, riderH:1.68, seatK:0.62, seat:[0.78,-0.12], respawn:14 }, skyHaze:0.3, windows:{ share:0.38, cell:[2.6, 3.2], k:0.85, frame:1 },   // Z280 lit windows at night: share of rooms on, room cell (w, storey) m, brightness
   lift:{ road:0.045, walk:0.125, prop:0.11 }, contact:{ op:0.55 },   // Z271 the city's raised surfaces (strips: road +0.04, pavement +0.12) — what stands on them is lifted onto them; contact-shadow strength
-  flatHorizon:[[230, 0.42, 0.72, 140, 120], [130, 0.62, 0.55, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth]
+  flatHorizon:[[230, 0.42, 0.5, 140, 120], [130, 0.62, 0.34, 110, 90]],   // Z268 the city's far rings [distance, height ×, haze, count, depth] (Z399 haze 0.72 / 0.55 → 0.5 / 0.34: so veiled they read as flat card)
     // Z267 the skyline's distance veil (was ~0.62: flat pale blocks)
     // (the stone tower came out with a broken diagonal glass panel: left out)
   carTint:0.55, cars:{ car_sedan:{ yaw:1.5708, L:4.8 }, car_taxi:{ yaw:1.5708, L:4.6 }, car_suv:{ yaw:1.5708, L:4.9 }, car_van:{ yaw:1.5708, L:5.4 }, car_bus:{ yaw:1.5708, L:11 } },

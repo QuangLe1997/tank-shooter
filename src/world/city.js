@@ -174,11 +174,23 @@ function lampPools(lamps){ if(typeof document==='undefined' || !REALCITY.pools) 
   lamps.forEach((o,k)=>{ const ry=o.ry||0, x=o.x+Math.sin(ry)*P.reach, z=o.z+Math.cos(ry)*P.reach; M.compose(v.set(x, heightAt(x,z)+0.06, z), q, s); im.setMatrixAt(k,M); });
   im.frustumCulled=false; im.renderOrder=2; arena.add(im); LAND.meshes.push(im); }
 export const WIN_K={ value:0 };   // the night's window glow (world/landmarks.js updateLandmarkGlow)
+// Z399 THE CURTAIN WALL DRAWN CRISP: the towers' AI-made skins smear their window grids (wavy panes, soft mullions) and no texture size fixes that
+//   from a tank's seat. On the glass (the same mask the night windows use) a grid is drawn in world metres — a mullion every cell wide, a
+//   spandrel at every floor, each pane a slightly different reflection — anti-aliased by its own screen footprint, so it fades out into the
+//   texture once a pane is a pixel or less (the far skyline keeps its texture). Vertical faces only (a face's own normal from the derivatives).
+const FACADE_GLSL = `{ vec3 fN = normalize(cross(dFdx(vWinP), dFdy(vWinP))); float vert = 1.0 - smoothstep(0.35, 0.7, abs(fN.y)), alongZ = step(abs(fN.z), abs(fN.x));
+        vec2 q = vec2(mix(vWinP.x, vWinP.z, alongZ) / ${REALCITY.windows.cell[0].toFixed(2)}, vWinP.y / ${REALCITY.windows.cell[1].toFixed(2)}), fq = fwidth(q), fade = clamp(1.6 - fq * 4.0, 0.0, 1.0);
+        vec2 e = min(fract(q), 1.0 - fract(q)); float mul = (1.0 - smoothstep(0.035, 0.035 + fq.x * 1.2, e.x)) * fade.x, spd = (1.0 - smoothstep(0.07, 0.07 + fq.y * 1.2, fract(q.y))) * fade.y;
+        vec2 pc = floor(q); float ph = fract(sin(dot(vec3(pc, alongZ), vec3(41.31, 289.17, 11.7))) * 23758.5453), k = glassy * vert * uWinF;
+        diffuseColor.rgb *= 1.0 + k * min(fade.x, fade.y) * (ph - 0.5) * 0.32;                                // each pane its own reflection
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.38 + vec3(0.03), k * max(mul, spd) * 0.9); }   // the frame and the floor slab`;
+export const WIN_F={ value:REALCITY.windows.frame ?? 1 };   // Z399 the curtain wall's frame by day (0 = the bare texture: before / after)
 export function windowLights(m){ const prev=m.onBeforeCompile, pk=m.customProgramCacheKey;
-  m.onBeforeCompile=(sh,r)=>{ if(prev) prev.call(m,sh,r); sh.uniforms.uWinShare={ value:REALCITY.windows.share }; sh.uniforms.uWinK=WIN_K;
+  m.onBeforeCompile=(sh,r)=>{ if(prev) prev.call(m,sh,r); sh.uniforms.uWinShare={ value:REALCITY.windows.share }; sh.uniforms.uWinK=WIN_K; sh.uniforms.uWinF=WIN_F;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWinP;').replace('#include <begin_vertex>','#include <begin_vertex>\n vWinP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWinP; uniform float uWinShare, uWinK;').replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWinP; uniform float uWinShare, uWinK, uWinF;').replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
       { vec3 bc = diffuseColor.rgb; float lum = dot(bc, vec3(0.299, 0.587, 0.114)), glassy = clamp(smoothstep(0.06, 0.18, bc.b - bc.r) * smoothstep(0.55, 0.2, lum) + smoothstep(0.18, 0.06, lum) * 0.5, 0.0, 1.0);
+        ${FACADE_GLSL}
         vec3 cell = floor(vWinP / vec3(${REALCITY.windows.cell[0].toFixed(2)}, ${REALCITY.windows.cell[1].toFixed(2)}, ${REALCITY.windows.cell[0].toFixed(2)})); float h = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
         vec3 tint = mix(vec3(1.0, 0.7, 0.36), vec3(0.78, 0.88, 1.0), step(0.78, fract(h * 7.3)));
         totalEmissiveRadiance += uWinK * glassy * step(1.0 - uWinShare, h) * tint * (0.55 + 0.45 * fract(h * 13.1)) * ${REALCITY.windows.k.toFixed(2)}; }`); };

@@ -6,6 +6,8 @@
 "base_tower":["0.map","0.nrm","geo"],
 "base_wall":["0.map","0.nrm","geo"],
 "base_wire":["0.map","0.nrm","geo"],
+"bld_bitexco":["0.map"],
+"bld_landmark":["0.map"],
 "car_bus":["0.map","0.nrm"],
 "car_sedan":["0.map","0.nrm"],
 "car_suv":["0.map","0.nrm"],
