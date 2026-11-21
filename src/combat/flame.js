@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
-import { BALANCE, LOCKON, REALCITY } from '../../config.js';
-import { fireLine, CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
+import { BALANCE, LOCKON, REALCITY, XHAIR } from '../../config.js';
+import { XH, AIR, fireLine, CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -127,6 +127,7 @@ export function fireGun(now, range){
   if(inst.rU) return;                                    // this gun is reloading (its own timer; others reload in the background)
   if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now, inst); return; }
   if(now < p.fireAt) return;
+  if(XH.live && S.pointerActive && !g.special && !g.lock && !AIR.e){ const ta=Math.atan2(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z), off=Math.atan2(Math.sin(ta-p.aimSmoothed), Math.cos(ta-p.aimSmoothed)); if(Math.abs(off)>XHAIR.tankTol) return; }   // Z382 the turret still coming round: the shot waits for the barrel to be on the crosshair (then it goes to it: fireLine below)
   const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
   if(g.spinUp){ p.spinT=now; }
   const spinMul = g.spinUp ? 1 + 2.2*(1-(p.spin||0)) : 1;                  // MINIGUN: the barrel cluster must spin up before full rate

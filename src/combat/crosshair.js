@@ -15,7 +15,13 @@ import * as THREE from 'three';
 import { FORT, LINE, XHAIR } from '../../config.js';
 import { AIR, HULL_HL, HULL_HW, MOBILE, PAD, S, TANK_SCALE, VIEW, blockTop, blocks, blocksNear, boss, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
 
-export const XH = { mx:-1, my:-1, mouseAt:-1e9, movedAt:-1e9, src:'mouse', tgt:null, live:false, stop:null, sky:false, el:null, stopEl:null, lookA:null, reLook:false };
+export const XH = { mx:-1, my:-1, mouseAt:-1e9, movedAt:-1e9, src:'mouse', tgt:null, live:false, stop:null, far:false, state:'ok', sky:false, el:null, lookA:null, reLook:false, camOk:false, anchor:null };
+// Z382 THE STEADY CAMERA the crosshair looks through: the follow camera's own pose before the shot's kick, the shake, the roll, the lens's kick and the
+//   road's bumps (game/update.js sets it each frame). Every shot kicked the real camera back and widened its lens: the point under a still cursor
+//   wandered 10–20 m in a burst, and the next rounds went there.
+export const XCAM = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
+export function steadyCam(pos, tx, ty, tz, fov, aspect, ok = true){ XH.camOk = ok; if(!ok) return; XCAM.position.copy(pos); XCAM.up.set(0, 1, 0); XCAM.lookAt(tx, ty, tz);
+  if(Math.abs(XCAM.fov - fov) > 1e-3 || XCAM.aspect !== aspect){ XCAM.fov = fov; XCAM.aspect = aspect; XCAM.updateProjectionMatrix(); } XCAM.updateMatrixWorld(true); }
 const _o = new THREE.Vector3(), _d = new THREE.Vector3(), _v = new THREE.Vector3(), _n = new THREE.Vector2(), _rc = new THREE.Raycaster(), _bn = [], _seen = new Set(), _stop = new THREE.Vector3();
 const nowS = () => performance.now() / 1000;
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -79,7 +85,11 @@ export function updateCrosshair(dt, now){ const p = S.player; XH.live = false;
   if(!p || S.mode !== 'playing' || (MOBILE && !PAD.active)){ marks(null); return; }
   const reach = playerRange() * 1.15 + 4, pad = padNow();
   if(pad) padAim(p, reach);
-  else if(XH.mx >= 0){ _n.set(XH.mx / VIEW.w * 2 - 1, -(XH.my / VIEW.h) * 2 + 1); _rc.setFromCamera(_n, camera); _o.copy(_rc.ray.origin); _d.copy(_rc.ray.direction);
+  else if(XH.mx >= 0){ _n.set(XH.mx / VIEW.w * 2 - 1, -(XH.my / VIEW.h) * 2 + 1); _rc.setFromCamera(_n, XH.camOk ? XCAM : camera); _o.copy(_rc.ray.origin); _d.copy(_rc.ray.direction);   // (through the steady camera: the shot's kick and the shake no longer drag the point away)
+    // Z382 A BURST HOLDS ITS MARK: the trigger held and the mouse still since it went down, the aim stays on the point (or the man) it was put on —
+    //   the tank's recoil and the camera easing back while he fires shift the view a metre or two under a still cursor; the rounds no longer walk off it
+    const A = XH.anchor; if(A && (!S.firing || XH.mouseAt > A.t || XCAM.position.distanceTo(A.cam) > XHAIR.anchor.cam || (A.e && !(A.e.hp > 0)))) XH.anchor = null;
+    if(XH.anchor){ const e = XH.anchor.e; if(e){ const gy = heightAt(e.pos.x, e.pos.z); S.aimPoint.set(e.pos.x, gy + XH.anchor.dy, e.pos.z); } else S.aimPoint.copy(XH.anchor.p); S.pointerActive = true; XH.live = true; marks(p, false); return; }
     const h = eyeRay(_o, _d, XHAIR.reach); XH.tgt = h.e; XH.sky = h.sky;
     if(h.sky){ const ox = _o.x - p.pos.x, oz = _o.z - p.pos.z, a = _d.x * _d.x + _d.z * _d.z, b = ox * _d.x + oz * _d.z, c = ox * ox + oz * oz - reach * reach, q = b * b - a * c;   // open sky: along the ray to the gun's reach
       const t = a > 1e-6 && q >= 0 ? (-b + Math.sqrt(q)) / a : reach; S.aimPoint.set(_o.x + _d.x * t, _o.y + _d.y * t, _o.z + _d.z * t); }
@@ -88,6 +98,7 @@ export function updateCrosshair(dt, now){ const p = S.player; XH.live = false;
     S.pointerActive = true; }
   else { marks(null); return; }
   if(XH.reLook || XH.lookA == null){ XH.reLook = false; XH.lookA = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
+  if(!pad && S.firing && !XH.anchor){ const e = XH.tgt && XH.tgt.def && XH.tgt.def.inf ? XH.tgt : null; XH.anchor = { t:nowS(), p:S.aimPoint.clone(), cam:XCAM.position.clone(), e, dy:e ? S.aimPoint.y - heightAt(e.pos.x, e.pos.z) : 0 }; }   // (the burst's mark)
   XH.live = true; marks(p, pad); }
 // the pad: a man or a hull near the stick's line is taken up, else chest high over the ground where the stick lays it
 function padAim(p, reach){ const ap = S.aimPoint, ax = ap.x - p.pos.x, az = ap.z - p.pos.z, L = Math.hypot(ax, az); if(L < 0.5) return; const ux = ax / L, uz = az / L, P = XHAIR.pad;
@@ -110,21 +121,27 @@ export function lineStop(sx, sy, sz, ax, ay, az, out){ const D = Math.hypot(ax -
   if(Math.min(sy, ay) < heightAt(ax, az) + FORT.wallH + 0.3){ const w = fortIntactCross(sx, sz, ax, az); if(w) return out.set(w.x, Math.min(sy, ay), w.z); }
   return null; }
 
-// ---- on the screen: the pad's crosshair (the mouse's is its own pointer) and the red mark where the line of fire stops ----
-const XSVG = "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><g fill='none' stroke-linecap='round'><circle cx='20' cy='20' r='13' stroke='#000' stroke-width='5'/><path d='M20 2.5v8M20 29.5v8M2.5 20h8M29.5 20h8' stroke='#000' stroke-width='5'/><circle cx='20' cy='20' r='13' stroke='#ffce4a' stroke-width='2.4'/><path d='M20 2.5v8M20 29.5v8M2.5 20h8M29.5 20h8' stroke='#ffce4a' stroke-width='2.4'/></g><circle cx='20' cy='20' r='2.6' fill='#000'/><circle cx='20' cy='20' r='1.5' fill='#fff'/></svg>";
-const STOPSVG = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><path d='M5 5l12 12M17 5L5 17' stroke='#000' stroke-width='5' stroke-linecap='round'/><path d='M5 5l12 12M17 5L5 17' stroke='#ff3b2a' stroke-width='2.6' stroke-linecap='round'/></svg>";
-function mark(id, svg, w){ if(typeof document === 'undefined') return null; let e = document.getElementById(id); if(!e){ e = document.createElement('div'); e.id = id; e.innerHTML = svg;
-    e.style.cssText = 'position:fixed;left:0;top:0;width:' + w + 'px;height:' + w + 'px;margin:' + (-w / 2) + 'px 0 0 ' + (-w / 2) + 'px;pointer-events:none;z-index:6;display:none;will-change:transform'; document.body.appendChild(e); } return e; }
+// ---- on the screen: ONE crosshair (the mouse's own pointer, or the pad's drawn one), its colour telling the shot:
+//   yellow — the round gets there; red — something stands between the muzzle and it (the round stops on it: the eye sees over what the muzzle cannot);
+//   grey — beyond the gun's reach (the round falls short). Z382: the red X drawn apart from the crosshair read as a second crosshair — gone.
+const RING = { ok:'#ffce4a', block:'#ff3b2a', far:'#9a9a9a' };
+const xsvg = c => "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><g fill='none' stroke-linecap='round'><circle cx='20' cy='20' r='13' stroke='#000' stroke-width='5'/><path d='M20 2.5v8M20 29.5v8M2.5 20h8M29.5 20h8' stroke='#000' stroke-width='5'/><circle cx='20' cy='20' r='13' stroke='" + c + "' stroke-width='2.4'/><path d='M20 2.5v8M20 29.5v8M2.5 20h8M29.5 20h8' stroke='" + c + "' stroke-width='2.4'/></g><circle cx='20' cy='20' r='2.6' fill='#000'/><circle cx='20' cy='20' r='1.5' fill='#fff'/></svg>";
+const CURSOR = {}; for(const k of Object.keys(RING)) CURSOR[k] = k === 'ok' ? '' : 'url("data:image/svg+xml,' + encodeURIComponent(xsvg(RING[k])) + '") 20 20, crosshair';   // (yellow: the stylesheet's own pointer)
+function padMark(){ if(typeof document === 'undefined') return null; let e = document.getElementById('xhairPad'); if(!e){ e = document.createElement('div'); e.id = 'xhairPad';
+    e.style.cssText = 'position:fixed;left:0;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;pointer-events:none;z-index:6;display:none;will-change:transform'; document.body.appendChild(e); } return e; }
 function put(e, x, y, z){ if(!e) return; _v.set(x, y, z).project(camera); if(_v.z > 1 || Math.abs(_v.x) > 1.05 || Math.abs(_v.y) > 1.05){ e.style.display = 'none'; return; }
   e.style.transform = 'translate3d(' + ((_v.x + 1) / 2 * VIEW.w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * VIEW.h).toFixed(1) + 'px,0)'; e.style.display = 'block'; }
-let _hidCur = false;
-function marks(p, pad){ if(typeof document === 'undefined') return; const ui = !!p && !document.body.classList.contains('inmenu');
-  const xe = XH.el || (XH.el = mark('xhairPad', XSVG, 40)), se = XH.stopEl || (XH.stopEl = mark('xhairStop', STOPSVG, 22));
-  const hide = ui && pad; if(hide !== _hidCur){ _hidCur = hide; for(const id of ['app']){ const a = document.getElementById(id); if(a) a.style.cursor = hide ? 'none' : ''; } const cv = document.querySelector('canvas'); if(cv) cv.style.cursor = hide ? 'none' : ''; }   // (the mouse's own pointer away while the pad aims)
-  if(!ui){ if(xe) xe.style.display = 'none'; if(se) se.style.display = 'none'; XH.stop = null; return; }
-  const air = AIR.e, ap = S.aimPoint;
-  if(pad){ if(air) put(xe, air.pos.x, air.pos.y, air.pos.z); else put(xe, ap.x, ap.y, ap.z); } else if(xe) xe.style.display = 'none';
-  // the line of fire from the muzzle: stopped short of the crosshair?
-  const g = equippedGun && equippedGun(), lob = g && (g.special === 'mortar' || g.special === 'rocket' || g.special === 'arty' || g.special === 'flame');
-  let st = null; if(!air && !lob && p.muzzle && !XH.sky){ p.muzzle.getWorldPosition(_v); st = lineStop(_v.x, _v.y, _v.z, ap.x, ap.y, ap.z, _stop); if(st && Math.hypot(st.x - ap.x, st.z - ap.z) < XHAIR.stop.min) st = null; }
-  XH.stop = st; if(st) put(se, st.x, st.y + 0.1, st.z); else if(se) se.style.display = 'none'; }
+let _cur = null, _padSvg = null;
+function pointer(v){ if(v === _cur) return; _cur = v; const a = document.getElementById('app'), cv = document.querySelector('canvas'); if(a) a.style.cursor = v; if(cv) cv.style.cursor = v; }
+function marks(p, pad){ if(typeof document === 'undefined') return; const ui = !!p && !document.body.classList.contains('inmenu'), xe = XH.el || (XH.el = padMark());
+  if(!ui){ if(xe) xe.style.display = 'none'; pointer(''); XH.stop = null; XH.state = 'ok'; return; }
+  const air = AIR.e, ap = S.aimPoint, g = equippedGun && equippedGun(), lob = !g || g.special === 'mortar' || g.special === 'rocket' || g.special === 'arty';
+  // what the shot does: stopped short of the crosshair, out of the gun's reach, or there
+  let st = null, far = false; if(!air && !lob && p.muzzle && !XH.sky){ p.muzzle.getWorldPosition(_v); const mx = _v.x, my = _v.y, mz = _v.z, d = Math.hypot(ap.x - mx, ap.z - mz);
+    st = lineStop(mx, my, mz, ap.x, ap.y, ap.z, _stop); if(st && Math.hypot(st.x - ap.x, st.z - ap.z) < XHAIR.stop.min) st = null;
+    far = !st && d > shotReach(g); }
+  XH.stop = st; XH.far = far; XH.state = st ? 'block' : far ? 'far' : 'ok';
+  if(pad){ pointer('none'); if(_padSvg !== XH.state){ _padSvg = XH.state; xe.innerHTML = xsvg(RING[XH.state]); } if(air) put(xe, air.pos.x, air.pos.y, air.pos.z); else put(xe, ap.x, ap.y, ap.z); }
+  else { if(xe) xe.style.display = 'none'; pointer(CURSOR[XH.state]); } }
+// how far the gun in hand throws its round (m): the reach its rounds are given when fired (combat/soldier-fire.js, combat/flame.js)
+export function shotReach(g){ return playerRange() * ((S.player && S.player.cav && g && g.rng) || 1) + 2; }

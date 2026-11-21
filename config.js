@@ -545,9 +545,11 @@ export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6,
 //   awake = s after the crosshair last moved that the rifle stays up on it while he runs; fireTol = how far off the aim the bore may be for the
 //   trigger (rad); turn.twist = what the chest takes before the hips turn (rad), turn.walk = hips that far off the run: he backs / side-steps off at backV m/s (under SOLDIER_LEGS.stand.maxV: his own legs walk it — the clips only
 //   ever run forward); aimRate = the
-//   chest's swing (rad/s); stop = the red mark where the line of fire meets something first
+//   chest's swing (rad/s); stop.min = a block nearer the crosshair than this (m) is the target itself, not in the way (Z382: then the crosshair turns red);
+//   tankTol = how far off the crosshair the turret may still be for the tank's shot (rad: it waits until it is on); anchor.cam = a burst holds the
+//   point (or man) it was fired at while the mouse is still, until the camera has moved this far (m)
 export const XHAIR = { reach:180, step:[0.3, 0.012], man:{ r:0.5, h:1.85, low:1.35, prone:0.6, lo:0.35, hi:0.2 }, chest:1.2, tankUp:1.3, pad:{ lat:1.8, near:2 },
-  awake:2.2, fireTol:0.3, turn:{ twist:1.0, walk:0.8, backV:2.2 }, aimRate:6.5, stop:{ min:1.5, px:22 } };
+  awake:2.2, fireTol:0.3, tankTol:0.05, anchor:{ cam:3 }, turn:{ twist:1.0, walk:0.8, backV:2.2 }, aimRate:6.5, stop:{ min:1.5, px:22 } };
 // Z326 AIMING UP AT AN AIRCRAFT (actors/real-cav.js): past the rifle's normal tip-up he leans back from the waist — k × the extra, at most max (rad),
 //   shared [Spine, Spine1, Spine2] — so the butt stays in his shoulder as the muzzle climbs; his head and neck (neck's share) tip back the rest of the
 //   way to sight along the barrel (sight × the gun's angle); eased at rate /s; lying flat he can't lean back — the muzzle comes up no further than prone

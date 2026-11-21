@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE, AIRAIM } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch, sightToBuildings , camAimA} from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch, sightToBuildings , camAimA, steadyCam} from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -256,6 +256,7 @@ export function updateCamera(dt, now){
     if(CAM.occ<0.999) camBase.set(p.pos.x+(camBase.x-p.pos.x)*CAM.occ, hy+(camBase.y-hy)*CAM.occ, p.pos.z+(camBase.z-p.pos.z)*CAM.occ);
     if(CAM.top>0.001){ const k=CAM.top, ty=hy+Math.max(9, camBase.y-hy), ux=(camBase.x-p.pos.x)/(hd||1), uz=(camBase.z-p.pos.z)/(hd||1); camBase.set(camBase.x+(p.pos.x-ux*1.8-camBase.x)*k, camBase.y+(ty-camBase.y)*k, camBase.z+(p.pos.z-uz*1.8-camBase.z)*k); } }   //   (high over you, a little out from the wall, looking down past the eaves)
   camera.position.copy(camBase);
+  steadyCam(camBase, camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck, camTarget.z, Math.max(10, camera.fov-Math.min(2, CAM.kick*1.4)*F.kick), camera.aspect, !(CAM.blend>0));   // Z382 the pose before the kick and the shake: the crosshair looks through it (combat/crosshair.js)
   const g=camShakeGain(), tr=Math.min(1, S.shake/3.2), t2=tr*tr*g;   // TRAUMA model: shake ∝ trauma² × the player's level (CÀI ĐẶT → RUNG MÀN HÌNH), a slow rumble, not a buzz
   if(t2>0.0004){ const q=now, A=SHAKE.pos*t2; camera.position.x += (Math.sin(q*31.1)+Math.sin(q*52.7+1.7)*0.45)*A; camera.position.y += (Math.sin(q*27.3+0.4)+Math.sin(q*47.9)*0.4)*A*0.55; camera.position.z += (Math.sin(q*35.9+2.1)+Math.sin(q*44.3)*0.45)*A; }
   CAM.kick += ((S.camKick||0) - CAM.kick)*(1-Math.exp(-dt*28));   // Z168 the shot shoves the camera back along the barrel (now eased in over a couple of frames, not a one-frame jump)
