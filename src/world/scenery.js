@@ -9,8 +9,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { SCENERY } from '../../config.js';
-import { ARENA, BIOME, FORTS, LAND, LAVA, MOBILE, WONDER, ZONES, arena, blendIn, blocks, fieldR, groundGlowMesh, heightAt, inField, inZone, magmaMat } from '../hub.js';
+import { SCENERY, SKYLINE } from '../../config.js';
+import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WONDER, ZONES, arena, blendIn, blocks, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, magmaMat } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -117,3 +117,26 @@ export function buildSceneSet(){ GEN++; SCENE.pieces.length = 0; WONDER.a0 = nul
   for(const p of plan(B)){ const lod = scenePiece(p.k, p.s, { shadow:!p.far }), gy = footY(p); lod.position.set(p.x, gy, p.z); lod.rotation.y = p.ry; lod.scale.setScalar(p.s);
     arena.add(lod); LAND.meshes.push(lod); SCENE.pieces.push({ ...p, lod, y:gy }); solids(p, lod, gy);
     if(M(p.k).lava) Promise.resolve().then(() => { if(gen === GEN && BIOME.name === 'VOLCANO') lavaPit(p, gy); }); } }   // (after this stage's lava is laid: buildLava clears the pools first)
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
+// Z383 THE HORIZON FOR REAL (desktop; world/horizon.js hands over its group): the scanned summits, cones and crags stand between its ranges (the
+//   near range hides their feet), forests line the near hills, the ruined city and the works ring the field where the hazed boxes stood. One
+//   instanced mesh per model, lit by the sun, veiled toward the fog by its distance (the same veil as the city skyline), no shadows, never culled.
+const _hm = new THREE.Matrix4(), _hq = new THREE.Quaternion(), _hv = new THREE.Vector3(), _hs = new THREE.Vector3(), _hu = new THREE.Vector3(0, 1, 0);
+// a model stood on its foot at the origin, centred, 1 m tall (U), with its proportions — a scene scan's copy, or one of the war's ruins (models.js)
+function unitLevel(k, lv){ const src = k.startsWith('ruin_') ? loadGLTF(k).then(gl => { if(!gl) return null; let m = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !m) m = o; });
+    if(!m) return null; if(!m.geometry.boundingBox) m.geometry.computeBoundingBox(); return { geo:m.geometry, mat:m.material, m4:m.matrixWorld.clone() }; }) : sceneLevel(k, lv);
+  return src.then(L => { if(!L) return null; _b.copy(L.geo.boundingBox).applyMatrix4(L.m4); _b.getSize(_s); _b.getCenter(_c);
+    const U = new THREE.Matrix4().makeScale(1 / _s.y, 1 / _s.y, 1 / _s.y).multiply(new THREE.Matrix4().makeTranslation(-_c.x, -_b.min.y, -_c.z)).multiply(L.m4); return { ...L, U, wx:Math.max(_s.x, _s.z) / _s.y }; }); }
+function hazeMat(src, amt, fogC){ const m = src.clone(), hz = { value:amt }, hc = { value:fogC.clone() }; m.fog = false;
+  m.onBeforeCompile = sh => { sh.uniforms.hzAmt = hz; sh.uniforms.hzCol = hc; sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
+  m.customProgramCacheKey = () => 'skylineHaze'; return m; }
+// lay this land's horizon into g (round R0, the horizon's base radius); true when it brings its own skyline (the boxes are not wanted)
+export function realHorizon(g, name, R0, fogC){ let P = SKYLINE.on && !MOBILE && SKYLINE.biomes[name]; if(typeof P === 'string') P = SKYLINE.biomes[P]; if(!P || typeof window === 'undefined') return false;
+  const Z = SKYLINE.haze;
+  for(const e of P.set){ const lv = e.lv || (M(e.k) && M(e.k).one ? 'd' : 'l'), list = [], a0 = Math.random() * Math.PI * 2, mid = (e.r[0] + e.r[1]) / 2, hz = e.hz ?? Z[0] + (Z[1] - Z[0]) * Math.min(1, Math.max(0, (mid + 10) / 100));
+    for(let i = 0; i < e.n; i++) list.push([a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, R0 + rnd(e.r[0], e.r[1]), e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), Math.random() * Math.PI * 2]);
+    unitLevel(e.k, lv).then(L => { if(!L || HZN.g !== g) return; const im = new THREE.InstancedMesh(L.geo, hazeMat(L.mat, hz, fogC), list.length);
+      list.forEach(([a, r, sz, ry], i) => { const h = e.h ? sz : sz / L.wx; _hm.compose(_hv.set(Math.cos(a) * r, e.y ?? SKYLINE.y, Math.sin(a) * r), _hq.setFromAxisAngle(_hu, ry), _hs.set(h, h, h)); im.setMatrixAt(i, _hm.multiply(L.U)); });
+      im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.renderOrder = -7; im.userData.skyline = e.k; g.add(im); }); }
+  return !!P.skyline; }

@@ -2,8 +2,8 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, scene, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
-import { REALCITY, STONE } from '../../config.js';
+import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, realCityReady, realHorizon, scene, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
+import { REALCITY, SKYLINE, STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
 // per battlefield: [base colour, snow/highlight colour, shape kind, height (m)] — Z235 the green lands' ranges are forested blue-green, never the meadow's yellow-green
@@ -66,25 +66,27 @@ function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bl
     const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });
     im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; im.renderOrder=-7; g.add(im); }
   return g; }
-function skyline(R, H, kind, base, fogC, mix){ if(kind==='city' && realCityReady() && !MOBILE){   // Z292 phones keep the hazed block skyline: ~150 real towers would cost them 2–3M triangles
+function skyline(R, H, kind, base, fogC, mix, onlyStacks){ if(kind==='city' && realCityReady() && !MOBILE && !onlyStacks){   // Z292 phones keep the hazed block skyline: ~150 real towers would cost them 2–3M triangles
   const rs=realSkyline(R, H*1.15, fogC, Math.min(0.85, mix+0.12)); if(rs) return rs; }
-  const n=MOBILE?40:70, geos=[], c=new THREE.Color(base).lerp(fogC, mix);
+  const n=onlyStacks?SKYLINE.stacks:MOBILE?40:70, geos=[], c=new THREE.Color(onlyStacks?0x8e877e:base).lerp(fogC, mix);   // Z383 onlyStacks: the works' chimneys alone, among the real tanks and towers (scenery.js realHorizon)
   const a0=Math.random()*6.283; for(let i=0;i<n;i++){ const a=a0+(i+0.15+Math.random()*0.7)/n*Math.PI*2, r=R+(Math.random()-0.5)*30,   // Z289 evenly round, jittered
-    w=kind==='stacks'?3+Math.random()*3:8+Math.random()*16, h=kind==='stacks'?H*(0.6+Math.random()*0.8):H*(0.25+Math.random()*0.75);
-    const g=kind==='stacks' && Math.random()<0.6 ? new THREE.CylinderGeometry(w*0.4,w*0.55,h,8) : new THREE.BoxGeometry(w,h,w*(0.6+Math.random()*0.8)); g.translate(Math.cos(a)*r, h/2-6, Math.sin(a)*r); g.rotateY(0); geos.push(g); }
-  const merged=mergeGeos(geos); const m=new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ color:c, fog:false })); m.renderOrder=-7; m.frustumCulled=false; return m; }
+    w=onlyStacks?5+Math.random()*3.5:kind==='stacks'?3+Math.random()*3:8+Math.random()*16, h=kind==='stacks'?H*(0.6+Math.random()*0.8):H*(0.25+Math.random()*0.75);
+    const g=kind==='stacks' && (onlyStacks || Math.random()<0.6) ? new THREE.CylinderGeometry(w*0.4,w*0.55,h,onlyStacks?14:8) : new THREE.BoxGeometry(w,h,w*(0.6+Math.random()*0.8)); g.translate(Math.cos(a)*r, h/2-6, Math.sin(a)*r); g.rotateY(0); geos.push(g); }
+  const merged=mergeGeos(geos); if(onlyStacks) merged.computeVertexNormals(); const m=new THREE.Mesh(merged, onlyStacks ? new THREE.MeshLambertMaterial({ color:c, fog:false }) : new THREE.MeshBasicMaterial({ color:c, fog:false })); m.renderOrder=-7; m.frustumCulled=false; return m; }   // (lit, beside the lit models)
 function mergeGeos(list){ let n=0; for(const g of list) n+=g.toNonIndexed().attributes.position.count; const out=new Float32Array(n*3); let o=0;
   for(const g0 of list){ const g=g0.toNonIndexed(), p=g.attributes.position.array; out.set(p,o); o+=p.length; g.dispose(); g0.dispose(); }
   const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(out,3)); return g; }
 export function clearHorizon(){ if(HZN.g){ scene.remove(HZN.g); HZN.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material && !o.material.map) o.material.dispose(); }); } HZN.g=null; HZN.cols.length=0; HZN.flashes.length=0; }
 export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); const L=LOOK[b.name]||LOOK.DESERT, fogC=scene.fog.color.clone(), g=new THREE.Group(); HZN.g=g; scene.add(g);
   const R0=ARENA*1.55, kind=L[2], H=L[3]*(MOBILE?0.85:1);
-  const rk = kind==='city'||kind==='stacks' ? 'hill' : kind;   // behind a skyline there are still hills
+  let SK=!MOBILE && SKYLINE.on && !/noscene/.test(location.search+location.hash) && SKYLINE.biomes[b.name]; if(typeof SK==='string') SK=SKYLINE.biomes[SK]; const real=!!(SK && SK.skyline);   // Z383 the scanned summits, forests, ruins and works on this horizon (desktop); real = they are its near skyline
+  const rk = SK && SK.rings || (kind==='city'||kind==='stacks' ? 'hill' : kind);   // behind a skyline there are still hills (Z383 or the ranges the real horizon asks for)
   const flatCity = kind==='city' && realCityReady() && REALCITY.flatHorizon;   // Z268 Saigon is flat: no peaks behind the city, more city fading into the haze instead
   if(flatCity){ for(const [dr, hk, hz, n, dp] of REALCITY.flatHorizon){ const s=realSkyline(R0+dr, H*hk, fogC, hz, n, dp); if(s) g.add(s); } }
   else { g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest
   g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.52, 2)); }   // Z259 a little less haze
-  if(kind==='city'||kind==='stacks') g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42)); else g.add(ring(R0+30, H*0.7, rk, L[0], L[1], fogC, 0.3, 1));   // near: darkest, crispest (Z259 less haze: its photo detail reads)
+  if(SK) Promise.resolve().then(()=>realHorizon(g, b.name, R0, fogC));   // (a tick later: the first horizon is built while the modules are still loading)
+  if(kind==='city'||kind==='stacks'){ if(!real) g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42)); else if(kind==='stacks') g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42, true)); } else if(!real) g.add(ring(R0+30, H*0.7, rk, L[0], L[1], fogC, 0.3, 1));   // near: darkest, crispest (Z259 less haze: its photo detail reads)
   // the war beyond the hills: smoke columns rising over burning places
   const nC=MOBILE?3:6; for(let i=0;i<nC;i++){ const a=Math.random()*Math.PI*2, r=R0+20+Math.random()*90, x=Math.cos(a)*r, z=Math.sin(a)*r, col=new THREE.Group(); col.position.set(x,0,z); g.add(col);
     const parts=[]; for(let k=0;k<7;k++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:HZN.smokeTex, color:new THREE.Color(0x1c1814).lerp(fogC,0.35+k*0.06), transparent:true, opacity:0.85-k*0.08, depthWrite:false, fog:false })); s.position.y=8+k*16; s.scale.setScalar(18+k*9); col.add(s); parts.push(s); }

@@ -1409,3 +1409,24 @@ export const SCENERY = { on:true, lod:{ mid:[42, 2.6], far:[120, 7], near:30, hy
       { k:'rail_tanker', at:'line', n:4, gap:17.5, face:'along' }, { k:'neon_tower', at:'free', n:1, north:true }, { k:'radar_dish', at:'free', n:1 },
       { k:'power_pole', at:'line', n:8, gap:22, face:'along' }, { k:'power_pole', at:'line', n:6, gap:22, face:'along' }, { k:'fence_gate', at:'free', n:2 },
       { k:'wt_lean', at:'free', n:1 }, { k:'tree_bare', at:'free', n:3, face:'rand' } ] } };
+// Z383 SKYLINE (world/scenery.js realHorizon, desktop): the horizon for real — the scanned summits, cones and crags stand between world/horizon.js's
+//   ranges (the near range hides their feet: a real massif behind its foothills), forests line the near hills, and the ruined city / the works stand
+//   round the field in place of the hazed boxes (skyline). Each entry: n pieces spread evenly round the circle (jittered), h = height or w = widest side
+//   range (m), r = distance range past the horizon's base radius (ARENA × 1.55, m), lv = which copy (l mid · f far · d whole; the light scans have one),
+//   y = foot height, hz = its own veil. haze = the veil toward the fog colour, from the nearest entries to the farthest. skyline: they stand in place of
+//   the near range (and of the box skylines); rings = the kind of the ranges behind (world/horizon.js). A string = the same as that land.
+export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10,   // stacks: the works' concrete chimneys left among the real pieces
+  biomes:{
+    ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14 }, { k:'tree_cedar', lv:'f', n:46, h:[24, 36], r:[-8, 16], y:-3 } ] }, TUNDRA:'ARCTIC',
+    VOLCANO:{ skyline:true, rings:'peak', set:[ { k:'volcano', n:5, h:[78, 118], r:[0, 45], y:-16, hz:0.22 }, { k:'lava_arch', n:7, h:[30, 50], r:[-10, 22], hz:0.2 }, { k:'tree_twisted', n:24, h:[14, 22], r:[-12, 8], y:-3 } ] },
+    QUARRY:{ set:[ { k:'rock_outcrop', n:9, w:[120, 210], r:[30, 70], y:-10 }, { k:'sea_stack', n:7, h:[38, 70], r:[0, 30], hz:0.3 }, { k:'mtn_gate', n:1, w:[170, 200], r:[45, 60], y:-10 } ] },
+    CITADEL:{ set:[ { k:'mtn_gate', n:1, w:[180, 210], r:[48, 70], y:-10 }, { k:'tree_pine', lv:'f', n:40, h:[18, 28], r:[-8, 14], y:-3 } ] },
+    MEADOW:{ set:[ { k:'tree_pine', lv:'f', n:46, h:[22, 34], r:[-10, 14], y:-3 }, { k:'tree_oak', lv:'f', n:24, h:[18, 26], r:[-6, 16], y:-3 }, { k:'tree_world', lv:'f', n:3, h:[40, 52], r:[0, 14], y:-3 },
+    ] },
+    SAVANNA:{ set:[ { k:'tree_world', lv:'f', n:14, h:[26, 38], r:[-8, 16], y:-3 }, { k:'tree_oak', lv:'f', n:10, h:[16, 24], r:[-6, 14], y:-3 }, { k:'rock_outcrop', n:7, w:[70, 130], r:[10, 45], y:-8 } ] },
+    DESERT:{ set:[ { k:'rock_outcrop', n:8, w:[90, 170], r:[20, 60], y:-10 }, { k:'wt_lean', lv:'f', n:4, h:[28, 36], r:[-6, 8], y:-3 }, { k:'tree_twisted', n:10, h:[12, 18], r:[-8, 8], y:-3 } ] },
+    RUINS:{ skyline:true, set:[ { k:'ruin_block', n:10, h:[34, 58], r:[0, 40] }, { k:'ruin_tower', n:8, h:[30, 48], r:[0, 40] }, { k:'ruin_chapel', n:6, h:[26, 40], r:[0, 40] },
+      { k:'ruin_villa', n:6, h:[18, 28], r:[-6, 30] }, { k:'ruin_house', n:6, h:[14, 22], r:[-8, 24] }, { k:'wall_breach', lv:'f', n:10, w:[50, 80], r:[-10, 20] }, { k:'tree_sentinel', lv:'f', n:8, h:[26, 40], r:[-8, 24], y:-3 } ] },
+    FOUNDRY:{ skyline:true, set:[ { k:'tank_steel', lv:'f', n:12, h:[18, 28], r:[-6, 30] }, { k:'tank_water', lv:'f', n:6, h:[16, 24], r:[-6, 30] }, { k:'wt_rust', lv:'f', n:6, h:[34, 46], r:[0, 34] },
+      { k:'wt_steel', n:4, h:[36, 48], r:[0, 34] }, { k:'neon_tower', lv:'f', n:5, h:[60, 80], r:[10, 40] }, { k:'radar_dish', lv:'f', n:3, h:[40, 55], r:[10, 40] }, { k:'rail_tanker', lv:'f', n:8, w:[30, 36], r:[-8, 20] } ] },
+    STEELMILL:'FOUNDRY' } };
