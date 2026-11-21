@@ -7,7 +7,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY, REALWONDER } from '../../config.js';
 import { ARENA, BIOME, MAGMA, MOBILE, REAL_CITY, _mergeColored, loadRealCity, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart, windowLights, loadGLTF } from '../hub.js';
 
-export const WONDER = { g:null, name:'', x:0, z:0, spin:[], smoke:[], at:0 };
+export const WONDER = { g:null, name:'', x:0, z:0, spin:[], smoke:[], at:0, a0:null };
 const P=[], PY=[]; const add=(geo,x,y,z,col,ry)=>{ if(ry) geo.rotateY(ry); geo.translate(x,y,z); P.push({ geo, col }); };
 const B=(w,h,d,x,y,z,col,ry)=>add(new THREE.BoxGeometry(w,h,d),x,y,z,col,ry), C=(r1,r2,h,x,y,z,col,n)=>add(new THREE.CylinderGeometry(r1,r2,h,n||12),x,y,z,col);
 const S=(r,x,y,z,col,sy)=>{ const g=new THREE.SphereGeometry(r,14,10); if(sy) g.scale(1,sy,1); add(g,x,y,z,col); }, K=(r,h,x,y,z,col,n,ry)=>add(new THREE.ConeGeometry(r,h,n||12),x,y,z,col,ry);
@@ -76,7 +76,7 @@ function windmills(g){ for(const [x,z] of [[0,0],[34,-14],[-30,-10]]){ const Q=[
     const sails=new THREE.Mesh(_mergeColored(S2), new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, side:THREE.DoubleSide })); sails.castShadow=true; hub.add(sails); WONDER.spin.push(sails); } }
 export function clearWonder(){ if(WONDER.g){ scene.remove(WONDER.g); WONDER.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); WONDER.g=null; } WONDER.spin.length=0; WONDER.smoke.length=0; WONDER.name=''; clearVolcano(); }
 export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) return; const g=new THREE.Group(); WONDER.g=g; WONDER.name=def[0]; scene.add(g);
-  const a=-Math.PI/2+(Math.random()-0.5)*1.2, R=Math.min(ARENA-14, fieldR(a)+40), x=Math.cos(a)*R, z=Math.sin(a)*R;   // on the enemy side, on the high ground beyond the fence
+  const a=WONDER.a0 ?? (-Math.PI/2+(Math.random()-0.5)*1.2), R=Math.min(ARENA-14, fieldR(a)+40), x=Math.cos(a)*R, z=Math.sin(a)*R;   // on the enemy side, on the high ground beyond the fence (Z374 the bearing the scenery set was composed round, when it chose one)
   if(BIOME.name==='HILLS'){ g.add(greatWall()); const am=-1.55, rm=fieldR(am)+12; WONDER.x=Math.cos(am)*rm; WONDER.z=Math.sin(am)*rm; return; }
   if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); windmills(w); WONDER.x=x; WONDER.z=z; return; }
   if(BIOME.name==='CITY'){ WONDER.x=x; WONDER.z=z; const put=()=>{ const M=REAL_CITY.bld_landmark; if(!M || WONDER.g!==g) return false;   // Z267 the real Landmark 81 (Z268 rebuilt by Tripo from a photo: its stepped square shafts), the stacked boxes only if it never loads

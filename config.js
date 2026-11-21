@@ -1323,3 +1323,79 @@ export const TROOPER = {
   general:{ hpK:70, dmg:7, fireCd:0.4, range:30, keep:13, speed:4.6, scale:1.18, hitCap:0.06, guards:3, callAt:0.5, callN:4, guardHpK:4, rageAt:0.3, rageFire:0.6, rageRun:1.3,
     fan:{ cd:6.5, n:9, arc:0.75, dmg:6, tel:0.75 }, nade:{ cd:8.5, n:3, R:3.4, dmg:36, lock:1.35, scatter:4.5 } },
 };
+// Z374 SCENERY (world/scenery.js): every battlefield composed from the Meshy community scans (tools/scene-import.mjs → assets/models/real/scene) — a
+//   skyline beyond the fence, one landmark the field turns on, framing pairs, groves, a rail siding, a pole line, a tank farm, rocks to fight from.
+//   lod: a model is drawn whole (the near file, fetched once the camera comes within mid + near m) up to mid m, then its mid copy, past far m its far copy
+//   ([m, × its radius] — the larger) · models: size (h = height or w = widest side, m), ar = its x : y : z, sink = share of its height below ground, solid =
+//   what stops a tank / a man (box: its footprint × k · pillars: the two ends of an arch, k of its width each · disc: a circle k × its width · r: a trunk m ·
+//   null: scenery only), one = a light scan with no distance copies, env, lava = the melt's share of its width (a lava pit burns like a pool), yaw = turn so its front (+Z) faces the way it is set ·
+//   biomes: what each battlefield is built from — at: far (beyond the fence at bearing a, d m out) · edge (inside it, inset m) · free (open ground; north:
+//   the enemy half) · pair (either side of the piece `of`, side m across, fwd m ahead of its front) · line (n along a straight line gap m apart) · cluster
+//   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand
+export const SCENERY = { on:true, lod:{ mid:[42, 2.6], far:[120, 7], near:30, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale)
+  models:{
+    volcano:{ one:true, h:44, ar:[2.44, 1, 2.41], sink:0.08, solid:null },
+    lava_pit:{ one:true, w:24, ar:[6.08, 1, 6.34], sink:0.18, solid:null, lava:0.34 },
+    lava_arch:{ one:true, h:13, ar:[1.71, 1, 0.9], sink:0.04, solid:{ pillars:0.26 } },
+    ice_peak:{ h:64, ar:[0.77, 1, 0.78], sink:0.05, solid:null },
+    sea_stack:{ one:true, h:12, ar:[1.52, 1, 1.39], sink:0.06, solid:{ box:0.6 } },
+    rock_outcrop:{ w:24, ar:[4.88, 1, 2.68], sink:0.12, solid:{ box:0.62 } },
+    stone_ring:{ one:true, h:8, ar:[1.71, 1, 0.51], sink:0.02, solid:{ pillars:0.3 } },
+    mtn_gate:{ w:64, ar:[2.07, 1, 1.89], sink:0.05, solid:{ box:0.62 } },
+    temple:{ one:true, w:26, ar:[1.27, 1, 1.27], sink:0.02, solid:{ box:0.86 } },
+    lion:{ w:6.2, ar:[0.68, 1, 1.17], sink:0, solid:{ box:0.92 } },
+    wall_breach:{ w:22, ar:[2.64, 1, 0.17], sink:0.02, solid:{ box:1 } },
+    wt_lean:{ h:17, ar:[0.83, 1, 0.82], sink:0.02, solid:{ box:0.42 } },
+    neon_tower:{ h:28, ar:[0.97, 1, 0.45], sink:0, solid:{ r:1.4 }, env:1 },
+    radar_dish:{ h:25, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.55 } },
+    tank_water:{ h:9.5, ar:[0.86, 1, 0.77], sink:0, solid:{ disc:0.46 } },
+    tank_steel:{ h:11, ar:[0.97, 1, 0.97], sink:0, solid:{ disc:0.48 } },
+    rail_tanker:{ w:16, ar:[3.9, 1, 1.09], sink:0, solid:{ box:0.95 } },
+    oil_drum:{ w:0.95, ar:[1.58, 1, 0.99], sink:0, solid:null },
+    power_pole:{ h:11, ar:[0.49, 1, 0.21], sink:0, solid:{ r:0.35 } },
+    fence_gate:{ w:5.6, ar:[1.22, 1, 0.1], sink:0, solid:{ box:1 } },
+    watchtower:{ h:13, ar:[0.35, 1, 0.35], sink:0, solid:null }, wt_steel:{ one:true, h:16, ar:[0.28, 1, 0.33], sink:0, solid:null }, wt_rust:{ h:15, ar:[0.41, 1, 0.42], sink:0, solid:null },   // Z375 the real guard towers (world/tower-kinds.js mtower / wtower / wrust)
+    tree_twisted:{ one:true, h:9, ar:[0.66, 1, 0.56], sink:0.02, solid:{ r:0.7 } },
+    tree_ember:{ one:true, h:7, ar:[1.66, 1, 1.39], sink:0.03, solid:{ r:1.0 }, env:0.7 },
+    tree_bare:{ one:true, h:12, ar:[0.6, 1, 0.43], sink:0.02, solid:{ r:0.6 } },
+    tree_remnant:{ w:7, ar:[1.82, 1, 1.83], sink:0.03, solid:{ box:0.4 } },
+    tree_sentinel:{ h:24, ar:[1.01, 1, 0.89], sink:0.02, solid:{ r:1.9 } },
+    tree_cedar:{ h:26, ar:[0.62, 1, 0.46], sink:0.02, solid:{ r:1.2 } },
+    tree_oak:{ h:18, ar:[0.97, 1, 0.97], sink:0.02, solid:{ r:1.2 } },
+    tree_world:{ h:30, ar:[1.02, 1, 0.81], sink:0.02, solid:{ r:2.4 } },
+    tree_pine:{ h:22, ar:[0.47, 1, 0.47], sink:0.02, solid:{ r:0.8 } } },
+  biomes:{
+    // fire and black rock: two cones smoking on the skyline, craters of live melt in the field, the road in through basalt arches, trees burning from the roots
+    VOLCANO:[ { k:'volcano', at:'far', a:[[-2.75, -2.3], [-0.85, -0.4]], d:[30, 55], s:[0.9, 1.25] }, { k:'volcano', at:'far', a:[[2.6, 3.1], [0.05, 0.5]], d:[45, 70], s:[0.7, 0.95] },
+      { k:'lava_pit', at:'free', n:2, s:[0.85, 1.15] }, { k:'lava_arch', at:'free', n:3, north:true, s:[0.9, 1.15] },
+      { k:'tree_ember', at:'free', n:7, s:[0.8, 1.2], face:'rand' }, { k:'tree_twisted', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'tree_bare', at:'free', n:3, s:[0.85, 1.1], face:'rand' } ],
+    // ice: white summits standing over the fence, a signal mast glowing blue in the snow, groves of snow-laden cedar, the bare trees frosted
+    ARCTIC:[ { k:'ice_peak', at:'far', a:[[-2.8, -2.3]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[-0.85, -0.35]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[2.7, 3.1], [0.0, 0.45]], d:[40, 60], s:[0.75, 0.95] },
+      { k:'neon_tower', at:'free', id:'mast', north:true }, { k:'tree_cedar', at:'cluster', id:'g1', n:3, r:12, s:[0.85, 1.1], face:'rand' }, { k:'tree_cedar', at:'cluster', id:'g2', n:3, r:12, s:[0.85, 1.1], face:'rand' },
+      { k:'tree_bare', at:'free', n:5, s:[0.8, 1.15], face:'rand' }, { k:'rock_outcrop', at:'free', n:2, s:[0.8, 1] } ],
+    // sand and oil: a fuel farm of steel tanks with drums stacked round it, a siding of rail tankers, a pole line marching off, a leaning water tower, limestone kopjes
+    DESERT:[ { k:'tank_steel', at:'cluster', id:'farm', n:3, r:13, s:[0.9, 1.1] }, { k:'oil_drum', at:'around', of:'farm', n:12, r:[9, 17], s:[0.95, 1.05], face:'rand' },
+      { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'power_pole', at:'line', n:7, gap:24, face:'along' },
+      { k:'wt_lean', at:'free', n:1 }, { k:'rock_outcrop', at:'free', n:3, s:[0.8, 1.15] }, { k:'tree_twisted', at:'free', n:4, s:[0.8, 1.1], face:'rand' }, { k:'tree_bare', at:'free', n:2, face:'rand' } ],
+    // the great tree of the plain with its shade, broad oaks, kopjes of weathered stone, stumps and dead wood, a farm's leaning water tower, a pole line
+    SAVANNA:[ { k:'tree_world', at:'free', id:'great', n:1, s:[1, 1.1] }, { k:'tree_oak', at:'free', n:3, s:[0.85, 1.1], face:'rand' }, { k:'rock_outcrop', at:'free', n:4, s:[0.75, 1.1] },
+      { k:'tree_remnant', at:'free', n:3, face:'rand' }, { k:'tree_twisted', at:'free', n:3, face:'rand' }, { k:'wt_lean', at:'free', n:1 }, { k:'power_pole', at:'line', n:5, gap:26, face:'along' } ],
+    // green country: oak and pine woods, the old tree on the rise, a mossy moon gate and a breached garden wall, rock stacks, the overgrown dish on the far side
+    MEADOW:[ { k:'tree_world', at:'free', n:1, north:true }, { k:'tree_oak', at:'cluster', id:'w1', n:3, r:14, s:[0.85, 1.1], face:'rand' }, { k:'tree_pine', at:'cluster', id:'w2', n:4, r:12, s:[0.85, 1.15], face:'rand' },
+      { k:'stone_ring', at:'free', n:1 }, { k:'wall_breach', at:'free', n:2 }, { k:'sea_stack', at:'free', n:2, s:[0.85, 1.1] }, { k:'radar_dish', at:'free', n:1, north:true } ],
+    // the ruined city of old: a temple on the far side with its two lions at the steps, breached walls, moon gates, dead giants, stumps, the dish gone to moss
+    RUINS:[ { k:'mtn_gate', at:'far', a:[[-2.8, -2.3], [-0.85, -0.35]], d:[8, 22], s:[1, 1.2] }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
+      { k:'wall_breach', at:'free', n:4 }, { k:'stone_ring', at:'free', n:2 }, { k:'tree_sentinel', at:'free', n:2, face:'rand' }, { k:'tree_bare', at:'free', n:4, face:'rand' },
+      { k:'tree_remnant', at:'free', n:4, face:'rand' }, { k:'radar_dish', at:'free', n:1 } ],
+    // the citadel's country: a mountain with a temple gate cut in it at the fence, a marble temple with its lions, broken walls, moon gates, pines, rock stacks
+    CITADEL:[ { k:'mtn_gate', at:'edge', a:[[-2.6, -2.1], [-1.0, -0.55]], inset:26 }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
+      { k:'wall_breach', at:'free', n:2 }, { k:'stone_ring', at:'free', n:2 }, { k:'tree_pine', at:'free', n:4, face:'rand' }, { k:'sea_stack', at:'free', n:2 } ],
+    // white stone: outcrops and stacks everywhere, the old cave temple in the quarry wall, a rail siding, a water tank, drums, the pole line
+    QUARRY:[ { k:'mtn_gate', at:'edge', a:[[-2.7, -2.1], [-1.0, -0.45]], inset:26 }, { k:'rock_outcrop', at:'free', n:6, s:[0.8, 1.2] }, { k:'sea_stack', at:'free', n:4, s:[0.85, 1.2] },
+      { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'tank_water', at:'cluster', id:'yard', n:1, r:2 }, { k:'oil_drum', at:'around', of:'yard', n:8, r:[7, 13], face:'rand' },
+      { k:'power_pole', at:'line', n:6, gap:24, face:'along' }, { k:'tree_twisted', at:'free', n:2, face:'rand' } ],
+    // the works: a tank farm, a rail siding of tankers, a signal mast, the dish, two pole lines, compound gates, drums everywhere
+    FOUNDRY:[ { k:'tank_steel', at:'cluster', id:'farm', n:3, r:16 }, { k:'tank_water', at:'around', of:'farm', n:2, r:[16, 22] }, { k:'oil_drum', at:'around', of:'farm', n:14, r:[10, 24], face:'rand' },
+      { k:'rail_tanker', at:'line', n:4, gap:17.5, face:'along' }, { k:'neon_tower', at:'free', n:1, north:true }, { k:'radar_dish', at:'free', n:1 },
+      { k:'power_pole', at:'line', n:8, gap:22, face:'along' }, { k:'power_pole', at:'line', n:6, gap:22, face:'along' }, { k:'fence_gate', at:'free', n:2 },
+      { k:'wt_lean', at:'free', n:1 }, { k:'tree_bare', at:'free', n:3, face:'rand' } ] } };

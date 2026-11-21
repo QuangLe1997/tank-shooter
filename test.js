@@ -2042,5 +2042,22 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/const mD=g\.lock \? Math\.min\(maxDist, LOCKON\.range\) : maxDist;/.test(R('src/combat/flame.js')) && /GUNS\[gid\]\.lock \? Math\.min\(r, LOCKON\.range\)/.test(R('src/core/config.js')) && /const left=b\.maxDist-/.test(lo), 'reach capped at fire, in the range ring / auto-fire, and in the seeker');
   ok(G.missile.fireCd===0.75 && G.missile.dmg===64, 'the lock-on launcher fires slower (0.55 → 0.75 s), each missile a little heavier'); }
 
+// Z373–Z375 the battlefields composed from the Meshy community scans: high-detail files with mid / far / phone copies, each land's set laid out round
+//   its wonder, the real watchtower and water towers as guard towers
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), SC=C.SCENERY, tk=R('src/world/tower-kinds.js'), D='assets/models/real/scene/';
+  const tool=R('tools/scene-import.mjs'), spec=JSON.parse(R('tools/scene-import.json')), sc=R('src/world/scenery.js');
+  ok(/EXT_meshopt_compression/.test(tool) && /KHR_mesh_quantization/.test(tool) && /reorderMesh/.test(tool) && /S\.simplify\(G\.idx, G\.pos, 3/.test(tool) && /'Permissive'/.test(tool), 'the import tool: seam-locked simplify (loose only for foliage copies), quantized + meshopt-compressed GLBs');
+  const keys=Object.keys(SC.models), head=f=>{ const b=fs.readFileSync(f), n=b.readUInt32LE(12); return JSON.parse(b.slice(20,20+n)); };
+  ok(keys.every(k=>spec[k]) && Object.keys(spec).filter(k=>k!=='_').every(k=>SC.models[k]), 'every scanned model has its import spec and its scenery entry');
+  ok(keys.every(k=>fs.existsSync(D+k+'.glb') && fs.existsSync(D+'m/'+k+'.glb') && (SC.models[k].one || (fs.existsSync(D+'l/'+k+'.glb') && fs.existsSync(D+'f/'+k+'.glb')))), 'each has its near file, its phone copy and (unless light) its mid and far copies');
+  ok(keys.every(k=>{ const j=head(D+k+'.glb'); return j.extensionsRequired.includes('EXT_meshopt_compression') && fs.statSync(D+k+'.glb').size<50e6; }), 'the near files are compressed and each under 50 MB');
+  const beats=Object.values(SC.biomes).flat(); ok(beats.every(b=>SC.models[b.k]) && Object.entries(SC.biomes).every(([n,L])=>L.every((b,i)=>!b.of || L.slice(0,i).some(q=>q.id===b.of))), 'every beat names a known model; pairs / rings follow the piece they hang on');
+  ok(['export function buildSceneSet','export class SceneLOD','export function scenePiece','export function towerModel'].every(k=>sc.includes(k)) && /setMeshoptDecoder\(MeshoptDecoder\)/.test(sc) && /sceneLevel\(this\.key, 'd'\)/.test(sc), 'scenery.js: levels by distance, the near scan fetched on approach');
+  ok(/buildSceneSet\(\); buildRuins\(\);/.test(R('src/world/landmarks.js')) && /WONDER\.a0 \?\?/.test(R('src/world/wonders.js')) && /WONDER\.a0 = a;/.test(sc), 'the set is laid out first, round the bearing the wonder then stands at');
+  ok(/LAVA\.pools\.push\(\{ x:p\.x, z:p\.z, r, y, glow \}\)/.test(sc) && SC.models.lava_pit.lava>0, 'a lava pit holds live melt that burns like a pool');
+  ok(/function realSupply\(gen\)/.test(sc) && /b\.kind !== 'fueltank'/.test(sc) && SC.supply.fueltank.h>0, 'the enemy fuel depot\'s tanks are the steel tank scan, inside each tank\'s own group');
+  ok([['mtower','watchtower'],['wtower','wt_steel'],['wrust','wt_rust']].every(([k,m])=>new RegExp(k+": \\{ vi:'[^']+', mat:'steel', model:'"+m+"', deck:0\\.\\d+").test(tk) && SC.models[m]) && /K\.h=SCENERY\.models\[K\.model\]\.h\*K\.deck; K\.dress=body=>towerModel\(body, K\)/.test(tk) && /if\(K\.dress\) mats\.push\(K\.dress\(body\)\)/.test(R('src/world/towers.js')), 'the real towers: guards at the measured deck height, the scan stood in the tower body');
+  ok(['DESERT','FOUNDRY','QUARRY','RUINS','ARCTIC'].every(b=>new RegExp(b+':\\{[^}]*(mtower|wtower|wrust):\\d').test(tk)), 'the lands raise the real towers among their own kinds'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

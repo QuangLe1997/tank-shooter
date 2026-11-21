@@ -139,6 +139,7 @@ export * from './world/real-city.js';   // Z264 Meshy city buildings + vehicles
 export * from './world/traffic.js';
 export * from './actors/real-air.js';   // Z272 real aircraft
 export * from './world/ruins3d.js';   // Z275 ruins of war
+export * from './world/scenery.js';   // Z374 every battlefield composed from the Meshy scans: skyline, landmark, groves, sidings, tank farms (distance levels, the near scan streamed in)
 export * from './fx/dust.js';   // Z278 dust in the sunlight
 export * from './game/xeom.js';   // Z282 xe ôm mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair

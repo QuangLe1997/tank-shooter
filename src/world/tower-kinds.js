@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { SCENERY } from '../../config.js';
+import { towerModel } from '../hub.js';
 
 const nI=q=>{ const n=q.index?q.toNonIndexed():q; for(const a of Object.keys(n.attributes)) if(!['position','normal','uv'].includes(a)) n.deleteAttribute(a); n.clearGroups(); if(!n.attributes.uv) n.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(n.attributes.position.count*2),2)); return n; };
 const _e=new THREE.Euler(), _mm=new THREE.Matrix4();
@@ -88,13 +90,20 @@ export const TOWER_KINDS = {
     P.conc.push(BX(4.7,0.3,4.7,0,h+2.52,0)); sandbagRing(P, 2.05, h+2.67, -1);
     { const net=new THREE.PlaneGeometry(3.6,3.0,6,5), pp=net.attributes.position; for(let i=0;i<pp.count;i++) pp.setZ(i, (Math.random()-0.5)*0.3); net.rotateX(-Math.PI/2); net.translate(0.3,h+2.75,-0.2); P.net.push(net); }
     P.dark.push(BX(1.0,2.0,0.1, 0,1.2,2.0)); P.steel.push(CY(0.03,0.03,2.4,6, 1.7,h+4.0,1.7)); return { sl:[-1.6,h+3.0,1.6] }; } },
+  // Z375 THE REAL TOWERS (Meshy scans, world/scenery.js): a rust-streaked steel watchtower with its tin cabin, the pale steel water tower, the rust-red
+  //   tank on its trestle — the model IS the tower (nothing built), its size from SCENERY.models; deck = the share of its height the guards stand at
+  //   (the cabin floor / the tank's roof, measured off the scans), the searchlight up there with them
+  mtower: { vi:'THÁP CANH THÉP', mat:'steel', model:'watchtower', deck:0.75, r:2.2, hp:1.6, guards:[[-0.55,0.45],[0.55,-0.45]], build(P,h){ return { sl:[0.95, h+1.5, -0.95] }; } },
+  wtower: { vi:'THÁP NƯỚC', mat:'steel', model:'wt_steel', deck:0.93, r:2.4, hp:1.8, guards:[[0,0.85],[0.75,-0.45],[-0.75,-0.45]], build(P,h){ return { sl:[0.6, h+0.9, 0.6] }; } },
+  wrust: { vi:'THÁP NƯỚC GỈ', mat:'steel', model:'wt_rust', deck:0.975, r:3.0, hp:2.0, guards:[[0,1.4],[1.2,-0.7],[-1.2,-0.7]], build(P,h){ return { sl:[0, h+0.9, -1.6] }; } },
 };
+for(const K of Object.values(TOWER_KINDS)) if(K.model){ K.h=SCENERY.models[K.model].h*K.deck; K.dress=body=>towerModel(body, K); }   // Z375 (towers.js buildTower hands it the tower's body)
 // which kinds each land builds (weights)
-export const TOWER_BIOME = {
-  DESERT:{ block:3, round:2, lattice:1 }, SAVANNA:{ bamboo:2, wood:2, block:1 }, TUNDRA:{ log:3, lattice:2, wood:1 }, ARCTIC:{ lattice:3, log:2 },
-  FOUNDRY:{ lattice:3, column:2, round:1 }, CITADEL:{ round:3, block:2, wood:1 }, MEADOW:{ wood:3, log:2 }, CITY:{ column:3, round:2, lattice:1 },
-  HILLS:{ log:2, wood:2, block:1 }, VILLAGE:{ bamboo:3, wood:2 }, RUINS:{ block:3, column:1, round:2 },
-  STEELMILL:{ lattice:3, column:2, round:1 }, VOLCANO:{ block:2, lattice:2, round:1 }, QUARRY:{ block:2, lattice:2, wood:1 }, CAVERN:{ log:2, wood:2, block:1 } };
+export const TOWER_BIOME = {   // Z375 + the real towers (mtower / wtower / wrust) where such things stand
+  DESERT:{ block:3, round:2, lattice:1, mtower:2, wrust:2 }, SAVANNA:{ bamboo:2, wood:2, block:1, mtower:1, wrust:2 }, TUNDRA:{ log:3, lattice:2, wood:1, mtower:1 }, ARCTIC:{ lattice:3, log:2, wtower:2, mtower:1 },
+  FOUNDRY:{ lattice:3, column:2, round:1, mtower:2, wtower:2, wrust:2 }, CITADEL:{ round:3, block:2, wood:1, mtower:1 }, MEADOW:{ wood:3, log:2, mtower:1, wtower:1 }, CITY:{ column:3, round:2, lattice:1, wtower:2 },
+  HILLS:{ log:2, wood:2, block:1, mtower:1 }, VILLAGE:{ bamboo:3, wood:2, wrust:1 }, RUINS:{ block:3, column:1, round:2, mtower:2, wrust:1 },
+  STEELMILL:{ lattice:3, column:2, round:1, mtower:2, wtower:2, wrust:2 }, VOLCANO:{ block:2, lattice:2, round:1, mtower:2 }, QUARRY:{ block:2, lattice:2, wood:1, mtower:2, wrust:2, wtower:1 }, CAVERN:{ log:2, wood:2, block:1, mtower:1 } };
 export function pickTowerKind(biome){ const W=TOWER_BIOME[biome]||{ wood:1 }; let tot=0; for(const k in W) tot+=W[k]; let r=Math.random()*tot; for(const k in W){ if((r-=W[k])<=0) return k; } return 'wood'; }
 // merged geometry per material for one kind (built once, shared by every tower of that kind)
 const _TK={};

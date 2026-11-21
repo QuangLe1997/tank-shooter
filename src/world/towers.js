@@ -43,6 +43,7 @@ export function buildTower(x, z, kindId){
   const body=new THREE.Group(); body.rotation.y=Math.random()*6.283; g.add(body);             // inner: the tower's own heading
   const mats=[]; const add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; body.add(m); return m; };
   for(const m in G.geo){ const mat=(m==='bags')?M[m]:M[m].clone(); if(m!=='bags'){ mats.push(mat); mat.userData.own=true; } add(G.geo[m], mat); }
+  if(K.dress) mats.push(K.dress(body));   // Z375 a real tower (tower-kinds mtower / wtower / wrust): its scanned model, one material of its own
   const wm=mats.find(q=>q.map===M[K.mat]?.map && q.color.equals(M[K.mat].color)) || mats[0];
   // searchlight (sweeps at night)
   const sl=new THREE.Group(); sl.position.set(G.sl[0], G.sl[1], G.sl[2]); body.add(sl);

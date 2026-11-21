@@ -3,7 +3,7 @@
 //   Buildings / houses are indestructible cover made of circle blocks (the same collision the walls use); trees and paddies are scenery.
 import * as THREE from 'three';
 import { OPEN_LAND, REALCITY } from '../../config.js';
-import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, floraMat, heightAt, inField, inZone, resetCity, villageHouse, buildRuins, WIN_K, POOL_K } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, NIGHT, RIVER, ZONES, _R, arena, blocks, buildCityDistrict, buildFlora, buildWildlife, buildWonder, crushables, floraMat, heightAt, inField, inZone, resetCity, villageHouse, buildRuins, WIN_K, POOL_K, buildSceneSet } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[], dummy:null };
 function dummy(){ return LAND.dummy||(LAND.dummy=new THREE.Object3D()); }
@@ -41,7 +41,7 @@ const nearWater=(x,z,R)=>{ for(let a=0;a<6.28;a+=0.7) for(const r of [8,R]) if(h
 
 export function buildLandmarks(){
   clearLandmarks(); LAND.mats.length=0; const n=BIOME.name;
-  if(n==='CITY') buildCityDistrict(); else if(n==='VILLAGE') buildVillage(); buildRuins(); }   // Z275 the war's ruins on the open battlefields   // Z142 the city is a real district now (city.js)
+  if(n==='CITY') buildCityDistrict(); else if(n==='VILLAGE') buildVillage(); buildSceneSet(); buildRuins(); }   // Z374 the land's composed set first (it claims its ground), then the ruins round it   // Z275 the war's ruins on the open battlefields   // Z142 the city is a real district now (city.js)
 // Z141 vegetation goes in last, round whatever was built
 export function buildScenery(){ buildFlora(); buildWildlife(); buildWonder(); }   // Z144 + the land's famous landmark   // Z143 + herds of wild animals
 // lit windows glow at night

@@ -1,0 +1,36 @@
+Battlefield scenery (Z373) — Meshy community models, downloaded from the Meshy community gallery (meshy.ai) by the project owner on 2026-11-21 and
+converted with tools/scene-import.mjs (welded, simplified to a budget, maps packed to JPEG, meshopt-compressed; near / l = mid / f = far / m = phone copies).
+Each comes under the licence shown on its community post (Meshy community downloads are CC BY 4.0 or CC0) — credit: the Meshy community author of each post.
+
+- volcano.glb: "Ember Crown Volcano" — Meshy_AI_Ember_Crown_Volcano_20261003_texture_fbx.zip
+- lava_pit.glb: "Molten Citadel" — Meshy_AI_Molten_Citadel_20261003_texture_fbx.zip
+- lava_arch.glb: "Molten Stone Arch" — Meshy_AI_Molten_Stone_Arch_20261003_texture_fbx.zip
+- ice_peak.glb: "Icebound Summit" — Meshy_AI_Icebound_Summit_20260417_texture_fbx.zip
+- sea_stack.glb: "Towering Sea Stack" — Meshy_AI_Towering_Sea_Stack_1120182056_texture.glb
+- rock_outcrop.glb: "Weathered Stone Outcrop" — Meshy_AI_Weathered_Stone_Outcrop_20261031_texture_fbx.zip
+- stone_ring.glb: "Circular Stone Arch" — Meshy_AI_Circular_Stone_Arch_1121071736_texture.glb
+- mtn_gate.glb: "Gate of the Mountain Temple" — Meshy_AI_Gate_of_the_Mountain_Temple_20260803_texture_fbx.zip
+- temple.glb: "Temple of the Eagle" — Meshy_AI_Temple_of_the_Eagle_20260509_texture_fbx.zip
+- lion.glb: "Lying Lion on Marble Pedestal" — Meshy_AI_Lying_Lion_on_Marble_Pedestal_20260604_texture_fbx.zip
+- wall_breach.glb: "Breach in the Forgotten Wall" — Meshy_AI_Breach_in_the_Forgotten_Wall_20260825_texture_fbx.zip
+- wt_steel.glb: "Steel Water Tower" — Meshy_AI_Steel_Water_Tower_20261014_texture_fbx.zip
+- wt_rust.glb: "Rusty Water Tower 3D" — Meshy_AI_Rusty_Water_Tower_3D_20260626_image-to-3d-texture_fbx.zip
+- wt_lean.glb: "wild water tower leaning 3d" — Meshy_AI_wild_water_tower_leaning_3d_20260728_image-to-3d-texture_fbx.zip
+- watchtower.glb: "tower100k nt" — Meshy_AI_tower100k_nt_20260625_texture_fbx.zip
+- neon_tower.glb: "Neon Signal Tower" — Meshy_AI_Neon_Signal_Tower_20261006_texture_fbx.zip
+- radar_dish.glb: "Overgrown Signal Station" — Meshy_AI_Overgrown_Signal_Station_20260906_texture_fbx.zip
+- tank_water.glb: "Rusty Water Tank" — Meshy_AI_Rusty_Water_Tank_20260905_texture_fbx.zip
+- tank_steel.glb: "Rusted Industrial Tank" — Meshy_AI_Rusted_Industrial_Tank_20260909_texture_fbx.zip
+- rail_tanker.glb: "Rustbound Tanker" — Meshy_AI_Rustbound_Tanker_20260914_texture_fbx.zip
+- oil_drum.glb: "A detailed industrial oil barrel drum" — Meshy_AI_A_detailed_industrial_oil_barrel_drum_20260528_texture_fbx.zip
+- power_pole.glb: "Transformer Pole" — Meshy_AI_Transformer_Pole_20260828_texture_fbx.zip
+- fence_gate.glb: "Chain Link Gate" — Meshy_AI_Chain_Link_Gate_20261114_texture_fbx.zip
+- tree_twisted.glb: "Twisted Ancient Trunk" — Meshy_AI_Twisted_Ancient_Trunk_20261011_texture_fbx.zip
+- tree_ember.glb: "Emberheart Tree" — Meshy_AI_Emberheart_Tree_20261003_texture_fbx.zip
+- tree_bare.glb: "a dead tree for the game SCUM (prompt in Russian)" — Meshy_AI_создай_мне_модель_дерева_для_игры_scum_в_20260616_texture_remesh_tri_fbx.zip
+- tree_remnant.glb: "Rooted Remnant" — Meshy_AI_Rooted_Remnant_20260619_texture_fbx.zip
+- tree_sentinel.glb: "Ancient Sentinel" — Meshy_AI_Ancient_Sentinel_20260928_texture_fbx.zip
+- tree_cedar.glb: "Ancient Cedar Majesty" — Meshy_AI_Ancient_Cedar_Majesty_20261013_texture_fbx.zip
+- tree_oak.glb: "Ancient Oak" — Meshy_AI_Ancient_Oak_20260830_texture_fbx.zip
+- tree_world.glb: "abnormally large ancient world tree" — Meshy_AI_abnormally_large_ancient_world_tree_20260830_texture_fbx.zip
+- tree_pine.glb: "pine tree 3d" — Meshy_AI_pine_tree_3d_1121071532_image-to-3d-texture.glb
