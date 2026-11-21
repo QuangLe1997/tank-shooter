@@ -19,12 +19,13 @@ export function applyGroundPhoto(b){ return (GROUND_READY.p = groundPhoto(b)); }
 function groundPhoto(b){
   _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); _want = b.name;
   const pair = GROUND_PHOTO.biomes[b.name]; if(!pair || off() || typeof window === 'undefined') return Promise.resolve(false);
-  return Promise.all([photoSet(pair[0], GROUND_PHOTO.hi && !MOBILE), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {
+  const PB = (GROUND_PHOTO.per && GROUND_PHOTO.per[b.name]) || {}, G = k => PB[k] ?? GROUND_PHOTO[k];   // Z394 a battlefield's own normal strength, patch share, second-scale blend, patch size
+  return Promise.all([photoSet(pair[0], GROUND_PHOTO.hi && !MOBILE && (GROUND_PHOTO.hi2k || []).includes(pair[0])), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {   // (Z394 the 2K maps only where they are on disk)
     if(_want !== b.name) return false;                                   // the player moved on to another battlefield meanwhile
     const rep = (ARENA * 2) / (Z[pair[0]] || 2);
     for(const t of [A.diff, A.nor, A.arm]) t.repeat.set(rep, rep);
-    groundMat.map = A.diff; groundMat.normalMap = A.nor; groundMat.normalScale.set(GROUND_PHOTO.nrm, GROUND_PHOTO.nrm);
+    groundMat.map = A.diff; groundMat.normalMap = A.nor; groundMat.normalScale.set(G('nrm'), G('nrm'));
     groundMat.roughnessMap = A.arm; groundMat.roughness = 1; groundMat.color.setRGB(...(GROUND_PHOTO.tint[b.name] || GROUND_PHOTO.tint._)); groundMat.needsUpdate = true;
-    MACRO.pamt.value *= GROUND_PHOTO.patchK;
-    PHOTO_U.altMap.value = B.diff; PHOTO_U.altScale.value = 1 / ((Z[pair[1]] || 2) * GROUND_PHOTO.altRep); PHOTO_U.dual.value = GROUND_PHOTO.dual; PHOTO_U.altOn.value = 1;
+    MACRO.pamt.value *= G('patchK');
+    PHOTO_U.altMap.value = B.diff; PHOTO_U.altScale.value = 1 / ((Z[pair[1]] || 2) * G('altRep')); PHOTO_U.dual.value = G('dual'); PHOTO_U.altOn.value = 1;
     return true; }).catch(e => { console.warn('[ground] photo set not loaded — keeping the procedural ground:', e && e.message); return false; }); }
