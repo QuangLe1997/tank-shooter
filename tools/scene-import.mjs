@@ -13,7 +13,7 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; }, FORCE = args.includes('--force');
 const DL = opt('--dl', path.join(os.homedir(), 'Downloads')), WORK = opt('--work', path.join(os.tmpdir(), 'scene-import')), OUT = path.join(ROOT, 'assets', 'models', 'real', 'scene');
 const keys = args.filter(a => a !== '_' && SPEC[a]);
-const todo = (keys.length ? keys : Object.keys(SPEC).filter(k => k !== '_')).filter(k => FORCE || !fs.existsSync(path.join(OUT, k + '.glb')));
+const todo = (keys.length ? keys : Object.keys(SPEC).filter(k => k !== '_')).filter(k => FORCE || !fs.existsSync(SPEC[k].out ? path.join(ROOT, 'assets', 'models', 'real', SPEC[k].out, SPEC[k].file + '.glb') : path.join(OUT, k + '.glb')));
 const req = createRequire(path.join(process.env.PLAYWRIGHT_DIR || path.join(os.homedir(), '.npm/_npx/9833c18b2d85bc59/node_modules'), 'x.js')), { chromium } = req('playwright');
 const CHROME = process.env.CHROME || path.join(os.homedir(), 'Library/Caches/ms-playwright/chromium-1248/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
 for(const x of ['m', 'l', 'f']) fs.mkdirSync(path.join(OUT, x), { recursive:true });
@@ -48,7 +48,7 @@ function texSet(M, size, dir, tag){ const o = {}, rs = size + 'x' + size + '>', 
 // one GLB: a single mesh and its one material. The geometry is reordered for the vertex cache, quantized (KHR_mesh_quantization: positions int16 under
 //   the node's scale, normals int8, UVs uint16 when they keep to 0…1) and meshopt-compressed (EXT_meshopt_compression; three's GLTFLoader decodes it
 //   once the game hands it the MeshoptDecoder) — about a quarter of the float size, nothing visible lost.
-function writeGLB(file, G, T, name){ const E = ENC, idx = Uint32Array.from(G.idx), [remap, nv] = E.reorderMesh(idx, true, false);
+function writeGLB(file, G, T, name, plain){ const E = ENC, idx = Uint32Array.from(G.idx), [remap, nv] = E.reorderMesh(idx, true, false);
   const pos = new Float32Array(nv * 3), nrm = new Float32Array(nv * 3), uv = new Float32Array(nv * 2);
   for(let v = 0; v < remap.length; v++){ const r = remap[v]; if(r === 0xffffffff || r >= nv) continue; pos.set(G.pos.subarray(v * 3, v * 3 + 3), r * 3); nrm.set(G.nrm.subarray(v * 3, v * 3 + 3), r * 3); uv.set(G.uv.subarray(v * 2, v * 2 + 2), r * 2); }
   const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity]; for(let i = 0; i < pos.length; i += 3) for(let a = 0; a < 3; a++){ const x = pos[i + a]; if(x < mn[a]) mn[a] = x; if(x > mx[a]) mx[a] = x; }
@@ -59,6 +59,7 @@ function writeGLB(file, G, T, name){ const E = ENC, idx = Uint32Array.from(G.idx
     const x = nrm[v * 3], y = nrm[v * 3 + 1], z = nrm[v * 3 + 2], l = Math.hypot(x, y, z) || 1; N[v * 4] = Math.round(x / l * 127); N[v * 4 + 1] = Math.round(y / l * 127); N[v * 4 + 2] = Math.round(z / l * 127);
     if(uvIn){ U[v * 2] = Math.round(uv[v * 2] * 65535); U[v * 2 + 1] = Math.round(uv[v * 2 + 1] * 65535); } }
   const qmn = [0, 1, 2].map(a => Math.round((mn[a] - ctr[a]) / qs)), qmx = [0, 1, 2].map(a => Math.round((mx[a] - ctr[a]) / qs));
+  if(plain) return writePlain(file, pos, nrm, uv, idx, nv, mn, mx, T, name);   // (a hand weapon: plain floats, for the loader and the hold fitter that read it raw)
   const parts = [], views = []; let off = 0, fb = 0;
   const put = buf => { const pad = (4 - off % 4) % 4; if(pad){ parts.push(Buffer.alloc(pad)); off += pad; } const o = off; parts.push(buf); off += buf.length; return o; };
   const cview = (raw, count, stride, mode, target) => { const enc = Buffer.from(E.encodeGltfBuffer(new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength), count, stride, mode)), o = put(enc);
@@ -81,6 +82,25 @@ function writeGLB(file, G, T, name){ const E = ENC, idx = Uint32Array.from(G.idx
   head.writeUInt32LE(0x46546C67, 0); head.writeUInt32LE(2, 4); head.writeUInt32LE(12 + 8 + jsP.length + 8 + binP.length, 8);
   c0.writeUInt32LE(jsP.length, 0); c0.writeUInt32LE(0x4E4F534A, 4); c1.writeUInt32LE(binP.length, 0); c1.writeUInt32LE(0x004E4942, 4);
   fs.writeFileSync(file, Buffer.concat([head, c0, jsP, c1, binP])); return { tris:idx.length / 3, verts:nv, mb:+(fs.statSync(file).size / 1e6).toFixed(1) }; }
+
+// Z387 the same mesh and material as plain floats (no quantization, no compression): the hand weapons load through actors/models.js and are measured
+//   raw by actors/gun-fit.js
+function writePlain(file, pos, nrm, uv, idx, nv, mn, mx, T, name){ const parts = [], views = []; let off = 0;
+  const view = (buf, target) => { const pad = (4 - off % 4) % 4; if(pad){ parts.push(Buffer.alloc(pad)); off += pad; } views.push({ buffer:0, byteOffset:off, byteLength:buf.length, ...(target ? { target } : {}) }); parts.push(buf); off += buf.length; return views.length - 1; };
+  const B = a => Buffer.from(a.buffer, a.byteOffset, a.byteLength), small = nv < 65536, I = small ? Uint16Array.from(idx) : idx;
+  const acc = [{ bufferView:view(B(pos), 34962), componentType:5126, count:nv, type:'VEC3', min:mn, max:mx }, { bufferView:view(B(nrm), 34962), componentType:5126, count:nv, type:'VEC3' },
+    { bufferView:view(B(uv), 34962), componentType:5126, count:nv, type:'VEC2' }, { bufferView:view(B(I), 34963), componentType:small ? 5123 : 5125, count:I.length, type:'SCALAR' }];
+  const images = [], textures = [], tex = f => { if(!f) return undefined; images.push({ bufferView:view(fs.readFileSync(f)), mimeType:'image/jpeg' }); textures.push({ sampler:0, source:images.length - 1 }); return { index:textures.length - 1 }; };
+  const mat = { name, pbrMetallicRoughness:{ baseColorTexture:tex(T.color), metallicRoughnessTexture:tex(T.mr), metallicFactor:T.mr && T.metal ? 1 : 0, roughnessFactor:T.mr ? 1 : 0.85 }, normalTexture:tex(T.normal) };
+  if(T.emis){ mat.emissiveTexture = tex(T.emis); mat.emissiveFactor = [1, 1, 1]; }
+  const bin = Buffer.concat(parts), binP = Buffer.concat([bin, Buffer.alloc((4 - bin.length % 4) % 4)]);
+  const json = { asset:{ version:'2.0', generator:'tank-shooter tools/scene-import.mjs' }, scene:0, scenes:[{ nodes:[0] }], nodes:[{ name, mesh:0 }], meshes:[{ name, primitives:[{ attributes:{ POSITION:0, NORMAL:1, TEXCOORD_0:2 }, indices:3, material:0 }] }],
+    materials:[mat], accessors:acc, bufferViews:views, buffers:[{ byteLength:binP.length }], samplers:[{ magFilter:9729, minFilter:9987, wrapS:10497, wrapT:10497 }], textures, images };
+  const js = Buffer.from(JSON.stringify(json)), jsP = Buffer.concat([js, Buffer.alloc((4 - js.length % 4) % 4, 0x20)]), head = Buffer.alloc(12), c0 = Buffer.alloc(8), c1 = Buffer.alloc(8);
+  head.writeUInt32LE(0x46546C67, 0); head.writeUInt32LE(2, 4); head.writeUInt32LE(12 + 8 + jsP.length + 8 + binP.length, 8); c0.writeUInt32LE(jsP.length, 0); c0.writeUInt32LE(0x4E4F534A, 4); c1.writeUInt32LE(binP.length, 0); c1.writeUInt32LE(0x004E4942, 4);
+  fs.writeFileSync(file, Buffer.concat([head, c0, jsP, c1, binP])); return { tris:idx.length / 3, verts:nv, mb:+(fs.statSync(file).size / 1e6).toFixed(1) }; }
+// a level turned about Y (deg) in place — a gun's barrel laid along Z
+function turnY(G, deg){ if(!deg) return G; const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); for(const A of [G.pos, G.nrm]) for(let i = 0; i < A.length; i += 3){ const x = A[i], z = A[i + 2]; A[i] = x * c + z * s; A[i + 2] = -x * s + z * c; } return G; }
 
 // the page: load (FBX / GLB) → one welded indexed geometry → simplified per budget (seams locked) → compacted → posted back level by level
 const PAGE = `<!doctype html><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
@@ -143,6 +163,8 @@ for(const k of todo){ const S = SPEC[k], t0 = Date.now(); let src;
     for(const x in got) delete got[x];
     const page = await browser.newPage(); page.setDefaultTimeout(900000); await page.goto(`http://127.0.0.1:${PORT}/page.html`); await page.waitForFunction(() => window._ready);
     const r = await page.evaluate(([u, f, L]) => window._conv(u, f, L), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:0.05 }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose || S.looseFar }, { name:'m', tris:S.m, err:0.25, loose:S.loose || S.looseFar }]]); await page.close();
+    if(S.out){ const d = writeGLB(path.join(ROOT, 'assets', 'models', 'real', S.out, S.file + '.glb'), turnY(got.d, S.rot), TD, S.file, true);   // Z387 a hand weapon: one plain file where the arsenal lives
+      const line = { key:k, src:path.basename(src), srcTris:r.srcTris, out:S.out + '/' + S.file, d }; report.push(line); console.log(JSON.stringify(line)); fs.rmSync(cur, { recursive:true, force:true }); continue; }
     const d = writeGLB(path.join(OUT, k + '.glb'), got.d, TD, k), m = writeGLB(path.join(OUT, 'm', k + '.glb'), got.m, TM, k), lv = {};
     for(const x of ['l', 'f']){ const f = path.join(OUT, x, k + '.glb'); if(got[x]) lv[x] = writeGLB(f, got[x], x === 'l' ? TM : texSet(M, 512, path.join(cur, 'tex'), 'f'), k); else fs.rmSync(f, { force:true }); }
     const line = { key:k, src:path.basename(src), srcTris:r.srcTris, desktop:d, mid:lv.l, far:lv.f, phone:m, maps:Object.keys(TD).filter(x => TD[x] && x !== 'metal'), s:Math.round((Date.now() - t0) / 1000) };

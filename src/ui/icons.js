@@ -34,6 +34,10 @@ export const GLYPH={
   ak:'<path d="M2 11.2l2.6-1h13.6l3.3.7v1.3h-7.6l-1 1.3H8.6l-1 1.7H5.2l1-1.7H2z"/><path d="M11.2 12.5c.2 1.4.8 2.6 1.7 3.5M19.4 10.2V8.8"/>',   // Z355 AK-47: the curved magazine
   m4:'<path d="M1.6 11.4h4l1.4-1h10.5v1.6h-4.2l-.8 3.2h-2l.4-3.2H7.8l-1.7 2.4H3.9l1-2.4H1.6z"/><path d="M17.5 10.7h4.6M9.4 9.4h3.2"/>',   // Z355 M4: the suppressor and the optic on top
   mp5:'<path d="M3.2 11.3l2.2-.8h11.4l1.8.6v1.3h-5.2l-.6 3.3h-1.9l.4-3.3H8.8l-.7 1.5H6.2l.5-1.5H3.2z"/><path d="M18.6 11.2h2.4M5.4 10.5l-1.8-1.3"/>',   // Z355 MP5: short, stubby muzzle, collapsed stock
+  rustAr:'<path d="M1.8 11.3l2.4-1h12.6l3.4.6v1.4h-7.4l-.8 3.4h-2.2l.4-3.4H8.4l-1.5 2.2H4.6l1.2-2.2H1.8z"/><rect x="9.2" y="8.2" width="4.6" height="1.8" rx=".8"/><path d="M20.2 10.6h1.8"/>',   // Z387 the rust-iron rifle: scope, curved mag
+  dmr:'<path d="M1.6 11.6h16l4 .5v1h-8.6l-1 2.6h-2l.4-2.6H5.4l-2 1.8H1.6z"/><rect x="7.4" y="8" width="6.4" height="2.2" rx="1"/><path d="M15 12.6l-.4 2"/>',   // Z387 the marksman's rifle: the long scope, a box mag
+  railH:'<path d="M1.6 11.4h18.6l2 .6v.8H13l-1 2.6h-2l.4-2.6H5.2l-2.2 1.7H1.6z"/><path d="M6 10.4c1-1.2 2-1.2 3 0s2 1.2 3 0 2-1.2 3 0"/><rect x="9" y="8" width="4" height="1.4" rx=".6"/>',   // Z387 the rail rifle: its coils
+  saw:'<path d="M2 12.2l2.2-.9h8.6v1.8H9.4l-.8 2.6H6.4l.6-2.6H2z"/><circle cx="17" cy="11.4" r="3.6"/><circle cx="17" cy="11.4" r="1"/>',   // Z387 the saw launcher: its blade
   minigunH:'<path d="M3 9.5h12M3 11h12M3 12.5h12"/><rect x="15" y="8.6" width="4.5" height="4.8" rx="1"/><path d="M19.5 11h2.5M16.5 13.4v2.6"/>',   // hand-held rotary barrels
   shotgunH:'<path d="M2.5 10h16M2.5 12h16"/><path d="M18.5 10l3 .6v1.8l-3 .6M6 12v2.6h3V12"/>',   // pump shotgun, the fore-end slide
   sniper:'<path d="M1.5 11.5h17.5l3 .6v1H14l-1 2.6h-2l.4-2.6H5l-2 1.6H1.5z"/><rect x="8" y="8" width="6" height="2.2" rx="1"/><path d="M9.5 10.2v1.3M12.5 10.2v1.3"/>',   // 12.7 with its scope

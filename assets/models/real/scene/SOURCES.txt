@@ -34,3 +34,9 @@ Each comes under the licence shown on its community post (Meshy community downlo
 - tree_oak.glb: "Ancient Oak" — Meshy_AI_Ancient_Oak_20260830_texture_fbx.zip
 - tree_world.glb: "abnormally large ancient world tree" — Meshy_AI_abnormally_large_ancient_world_tree_20260830_texture_fbx.zip
 - tree_pine.glb: "pine tree 3d" — Meshy_AI_pine_tree_3d_1121071532_image-to-3d-texture.glb
+
+Z387 the soldier's four new hand weapons (assets/models/real/gun/inf, plain GLBs, 40k triangles, 2K maps, same Meshy community source and licence note):
+- rust.glb: "Ruststeel Assault Rifle" — Meshy_AI_Ruststeel_Assault_Rifle_20260416_texture_fbx.zip
+- dmr.glb: "Rustbound Marksman Rifle" — Meshy_AI_Rustbound_Marksman_Rifle_20260508_texture_fbx.zip
+- rail.glb: "Emerald Railgun" — Meshy_AI_Emerald_Railgun_20260606_texture_fbx.zip
+- saw.glb: "Rusty Sawgun" — Meshy_AI_Rusty_Sawgun_20260504_texture_fbx.zip

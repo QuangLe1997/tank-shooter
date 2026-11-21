@@ -1,5 +1,5 @@
 {
-  "_": "Z373 the Meshy community models for the battlefields (tools/scene-import.mjs). src: a file in ~/Downloads (substring of its name); tris: the near (desktop, up close) triangle budget, 0 = every triangle of the scan; tex: its texture size. From it the tool also builds the mid copy (l/: 18 %, 1K maps) and the far copy (f/: 3 %, 512 maps) for the distance levels, and m: the phone copy's budget (1K maps). loose: foliage — the lighter copies may simplify across texture seams; looseFar: only the far and phone copies may (a hard surface whose texture is cut into too many islands to thin otherwise).",
+  "_": "Z373 the Meshy community models for the battlefields (tools/scene-import.mjs). src: a file in ~/Downloads (substring of its name); tris: the near (desktop, up close) triangle budget, 0 = every triangle of the scan; tex: its texture size. From it the tool also builds the mid copy (l/: 18 %, 1K maps) and the far copy (f/: 3 %, 512 maps) for the distance levels, and m: the phone copy's budget (1K maps). Z387 out / file: a hand weapon — one plain file (no distance copies) at assets/models/real/<out>/<file>.glb, turned rot° about Y so its barrel lies along Z. loose: foliage — the lighter copies may simplify across texture seams; looseFar: only the far and phone copies may (a hard surface whose texture is cut into too many islands to thin otherwise).",
   "volcano":        {"src":"Ember_Crown_Volcano", "tris":0, "tex":2048, "m":5000},
   "lava_pit":       {"src":"Molten_Citadel", "tris":0, "tex":2048, "m":5000},
   "lava_arch":      {"src":"Molten_Stone_Arch", "tris":0, "tex":2048, "m":5000},
@@ -31,5 +31,9 @@
   "tree_cedar":     {"src":"Ancient_Cedar_Majesty", "tris":1200000, "tex":2048, "m":15000, "loose":true},
   "tree_oak":       {"src":"Ancient_Oak", "tris":1000000, "tex":4096, "m":15000, "loose":true},
   "tree_world":     {"src":"abnormally_large_ancient_world_tree", "tris":1000000, "tex":2048, "m":15000, "loose":true},
-  "tree_pine":      {"src":"pine_tree_3d", "tris":900000, "tex":4096, "m":12000, "loose":true}
+  "tree_pine":      {"src":"pine_tree_3d", "tris":900000, "tex":4096, "m":12000, "loose":true},
+  "gun_rust":       {"src":"Ruststeel_Assault_Rifle", "tris":40000, "tex":2048, "m":40000, "out":"gun/inf", "file":"rust", "rot":-90},
+  "gun_dmr":        {"src":"Rustbound_Marksman_Rifle", "tris":40000, "tex":2048, "m":40000, "out":"gun/inf", "file":"dmr", "rot":-90},
+  "gun_rail":       {"src":"Emerald_Railgun", "tris":40000, "tex":2048, "m":40000, "out":"gun/inf", "file":"rail", "rot":-90},
+  "gun_saw":        {"src":"Rusty_Sawgun", "tris":40000, "tex":2048, "m":40000, "out":"gun/inf", "file":"saw", "rot":-90}
 }

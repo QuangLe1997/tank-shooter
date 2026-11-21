@@ -878,7 +878,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z295 the infantry arsenal and the pose review: nine hand weapons, kneeling aim, feet on the ground, getting on / off a ride for real
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
-  ok(Object.keys(C.INFGUN.guns).length===12 && Object.keys(C.INFGUN.guns).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb')) && Object.values(C.INFGUN.map).every(k=>C.INFGUN.guns[k]) && /function holdGun/.test(R('src/actors/real-cav.js')), 'nine infantry weapons (Z355 twelve), one for every gun of the game, swapped with the gun in use');
+  ok(Object.keys(C.INFGUN.guns).length===16 && Object.keys(C.INFGUN.guns).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb')) && Object.values(C.INFGUN.map).every(k=>C.INFGUN.guns[k]) && /function holdGun/.test(R('src/actors/real-cav.js')), 'nine infantry weapons (Z355 twelve, Z387 sixteen), one for every gun of the game, swapped with the gun in use');
   ok(/'Kneeling_Aim'/.test(R('src/actors/real-cav.js')) && /P\.ground/.test(R('src/actors/puppet.js')) && /XEOM\.pegY/.test(R('src/game/cavalry.js')) && C.CAV.mountT>=0.8 && ['xeom','bagac','bantai'].every(k=>C.XEOM[k].side>0), 'kneeling aim, grounded feet, a real step off / onto each ride'); }
 
 // Z296 the driver: his own rigged man riding his own machine — IK hands / feet / hips, lean, wheelie, weave, throttle, gears, ducking, crash → up → lift → back on, the talk table
@@ -1073,7 +1073,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z329 the soldier's arsenal: the nine Tripo hand weapons are his guns, each fired its own way; the gun crate brings him one · Z330 the steel operator holds it gun-first too · Z332 no xích lô
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sf=R('src/combat/soldier-fire.js'), rc=R('src/actors/real-cav.js');
-  const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===12 && new Set(T.map(k=>C.INFGUN.map[k])).size===12 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns (Z355 twelve: + AK-47, M4, MP5), one per hand-weapon model, each one held in his hands');
+  const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===16 && new Set(T.map(k=>C.INFGUN.map[k])).size===16 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns (Z355 twelve: + AK-47, M4, MP5; Z387 sixteen: + the rust rifle, the marksman, the rail rifle, the saw launcher), one per hand-weapon model, each one held in his hands');
   ok(/g\.special === 'flame'\)\{ fireFlame/.test(sf) && /g\.special === 'mortar'\)\{ fireMortar/.test(sf) && /pierce:g\.pierce/.test(sf) && /chain:g\.chain/.test(sf) && /export function trooperGive/.test(sf) && /\[main, 't_rpg'\]/.test(sf) && /PRIMARY_GUNS = \['carbine', 't_ak', 't_m4', 't_mp5'\]/.test(sf) && /MODE\.id==='soldier'\)\{ const id=trooperGunPick\(\)/.test(R('src/loot/powerups.js')), 'each fires its own way (rounds, pellets, a slug through, a rocket, a lobbed grenade, a flame, an arc); he starts with a carbine (Z359 or the AK / M4 / MP5 he picked) and a B41 and picks up the rest');
   ok(/\(PROFILE\.trooper \|\| 's2'\) === 'op'\)\{ const seen = skClone\(og\.scene\)/.test(rc) && /pup = makePuppet\(op, seen\)/.test(rc), 'the steel operator is worn by the clips like the special-forces soldier, so he holds every gun gun-first, bore on the aim');
   ok(!C.XEOM.xichlo && !C.RIDE.fit.xichlo && !/xichlo/.test(R('src/ui/battle-setup.js')) && !fs.existsSync('assets/models/real/ride/xichlo.glb') && /PROFILE\.unit==='xichlo'\) PROFILE\.unit='xeom'/.test(R('src/game/flow.js')), 'the xích lô is gone (a saved pick rides the xe ôm)'); }
@@ -2102,7 +2102,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const tool=R('tools/scene-import.mjs'), spec=JSON.parse(R('tools/scene-import.json')), sc=R('src/world/scenery.js');
   ok(/EXT_meshopt_compression/.test(tool) && /KHR_mesh_quantization/.test(tool) && /reorderMesh/.test(tool) && /S\.simplify\(G\.idx, G\.pos, 3/.test(tool) && /'Permissive'/.test(tool), 'the import tool: seam-locked simplify (loose only for foliage copies), quantized + meshopt-compressed GLBs');
   const keys=Object.keys(SC.models), head=f=>{ const b=fs.readFileSync(f), n=b.readUInt32LE(12); return JSON.parse(b.slice(20,20+n)); };
-  ok(keys.every(k=>spec[k]) && Object.keys(spec).filter(k=>k!=='_').every(k=>SC.models[k]), 'every scanned model has its import spec and its scenery entry');
+  ok(keys.every(k=>spec[k]) && Object.keys(spec).filter(k=>k!=='_' && !spec[k].out).every(k=>SC.models[k]), 'every scanned model has its import spec and its scenery entry (the hand weapons, out: gun/inf, are the arsenal\'s)');
   ok(keys.every(k=>fs.existsSync(D+k+'.glb') && fs.existsSync(D+'m/'+k+'.glb') && (SC.models[k].one || (fs.existsSync(D+'l/'+k+'.glb') && fs.existsSync(D+'f/'+k+'.glb')))), 'each has its near file, its phone copy and (unless light) its mid and far copies');
   ok(keys.every(k=>{ const j=head(D+k+'.glb'); return j.extensionsRequired.includes('EXT_meshopt_compression') && fs.statSync(D+k+'.glb').size<50e6; }), 'the near files are compressed and each under 50 MB');
   const beats=Object.values(SC.biomes).flat(); ok(beats.every(b=>SC.models[b.k]) && Object.entries(SC.biomes).every(([n,L])=>L.every((b,i)=>!b.of || L.slice(0,i).some(q=>q.id===b.of))), 'every beat names a known model; pairs / rings follow the piece they hang on');
@@ -2128,6 +2128,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function brickSlices\(\)/.test(sc) && /f < C\.fill/.test(sc) && /b\.wall\.bands\.forEach\(\(m, i\) =>/.test(sc) && C.bricks.slices>=3 && C.bricks.fill>0.5, 'brick walls: the scan cut into its most solid 3 m slices, each section band for band');
   ok(/function realCity\(gen\)/.test(sc) && /c\.kind === 'topple' && c\.T && c\.T\.pole/.test(sc) && /im\.geometry = g; im\.material = L\.mat;/.test(sc) && /lod\.watch = \(\) => Bd\.dead \|\| Bd\.top < top/.test(sc), 'the city: poles drawn as the scan (still toppling), roof pieces gone with their roof');
   ok(/if\(this\.watch && this\.watch\(\)\)\{ this\.visible = false; return; \}/.test(sc) && /realSupply\(gen\); realBricks\(gen\); realCity\(gen\);/.test(sc), 'all three dressed in the tick after the field is built'); }
+
+// Z387 the four downloaded guns in his hands: plain GLBs laid along Z (tools/scene-import.mjs out/file/rot), each wired the way the AK is — its GUNS record,
+//   the INFGUN map and length (muzzle at −z), the hold fitted off the model (fit:true) with GUNHOLD fallbacks, an icon, a blurb, a sound it already has
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), G=(await import('./src/data/guns.js')).GUNS, ic=R('src/ui/icons.js'), sp=JSON.parse(R('tools/scene-import.json'));
+  const K={ t_rust:'rust', t_dmr:'dmr', t_rail:'rail', t_saw:'saw' };
+  ok(Object.values(K).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb') && sp['gun_'+k] && sp['gun_'+k].out==='gun/inf' && sp['gun_'+k].rot===-90) && /'mp5','rust','dmr','rail','saw'\]\) MODEL_FILES\['inf_' \+ k\]/.test(R('src/actors/models.js')), 'the four scans are in the arsenal folder, laid along Z by the import tool, loaded as inf_<k>');
+  ok(Object.entries(K).every(([id,k])=>G[id] && G[id].trooper && C.INFGUN.map[id]===k && C.INFGUN.guns[k].fit && C.INFGUN.guns[k].muzzle===-1 && C.GUNHOLD[k] && C.GUN_BLURB[id] && new RegExp('\\b'+G[id].svg+":'").test(ic)), 'each has its record, its place in the INFGUN map (fitted, muzzle −z), a hold, a blurb and an icon');
+  ok(G.t_rust.dmg>G.t_ak.dmg && G.t_dmr.pierce>=1 && G.t_dmr.fireCd<G.t_sniper.fireCd && G.t_rail.pierce>G.t_sniper.pierce && G.t_saw.pierce>=2 && G.t_saw.rng<1, 'each its own role: the rust rifle heavier than the AK, the marksman quicker than the 12.7, the rail through a squad, the saw short and through three');
+  ok(['shoot_ak','shoot_rifle','shoot_railgun','shoot_shotgun'].every(n=>new RegExp("case '"+n+"'").test(R('src/audio/synth.js'))) && [G.t_rust.snd,G.t_dmr.snd,G.t_rail.snd,G.t_saw.snd].join()==='shoot_ak,shoot_rifle,shoot_railgun,shoot_shotgun', 'each fires a sound the synth already makes'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
