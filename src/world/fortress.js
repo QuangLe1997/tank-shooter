@@ -615,7 +615,7 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
       // the wall at its true proportions spans rep sections; each section shows its own stretch of it
       // Z327 cut once at load (its triangles clipped at the stretch's ends), one instanced mesh per stretch, culled to the view and the shadow's reach — it
       //   used to draw the whole wall for every 3 m section and throw 7/8 of it away pixel by pixel: ~4M triangles a frame, twice (the shadow), for 4 forts
-      const mat=W.mat.clone(); f.wallMat=mat; f.wallSl=[]; f.wallGeos=[]; f.wallIM.visible=false;
+      const mat=W.mat.clone(); f.wallMat=mat; f.wallSl=[]; f.wallGeos=[]; f.wallIM.visible=false; f.wallHW=TH*C.thick/2+0.05;   // Z413 its collider as thick as this stone (world/solid-shape.js)
       // Z378 where the model's ragged end meets its own start (between stretch rep-1 and stretch 0) it left a see-through slit 0.3–1.5 m wide that nobody
       //   could pass: inside a run of wall it is opened into a clean breach FORT_GAP.w wide — both stretches cut back from it, their cut faces filled — and the
       //   two sections' colliders end where the stone does (pc.cut0 / cut1, world/solid-shape.js: for the soldier and his ride, never a tank)

@@ -68,7 +68,7 @@ export function buildObjective(){
   if(!inField(x, z, def.r+4)) [x,z]=clampFieldXZ(x, z, def.r+8);
   const g=buildObjMesh(op.obj); g.position.set(x, heightAt(x,z), z); g.rotation.y=Math.atan2(-x,-z); g.scale.setScalar(OBJ_SCALE); g.userData.h*=OBJ_SCALE; scene.add(g);
   const hp=Math.round(def.hp*loopHpMul()*diffHpMul()*(1+RAMP.hpPerStage*(S.stage-1)));
-  const b={ mesh:g, x, z, r:def.r, hp, maxHp:hp, steel:false, loot:false, kind:'obj' }; blocks.push(b);
+  const b={ mesh:g, x, z, r:def.r, hp, maxHp:hp, steel:false, loot:false, kind:'obj', fitR:true }; blocks.push(b);   // Z413 fitR: its circle as big as the drawn objective (world/solid-shape.js)
   OBJ={ def, kind:op.obj, op, b, x, z, alive:true, g, shellAt:performance.now()/1000+10, bar:getEnemyBar(), burn:0 };
   OBJ.bar.g.scale.setScalar(2.4); updateObjHUD();
 }

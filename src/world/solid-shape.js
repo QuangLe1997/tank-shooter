@@ -6,17 +6,37 @@
 //   for one that really is round — and the push of a body (a circle) out of it, and the first point a sight line meets a building.
 import * as THREE from 'three';
 import { FORT } from '../../config.js';
-import { cityBuildings } from '../hub.js';
+import { cityBuildings, heightAt } from '../hub.js';
 
 const SHAPE = Symbol('shape'), FOOT = Symbol('foot');
 // Z378 foot = asked for the soldier or his ride: a fortress wall section cut back from a breach (pc.cut0 at its start, cut1 at its end — world/fortress.js
 //   dressFort) ends where its stone does, so the breach is open to them; a tank still meets the whole section
+// Z413 a fort wall section's thickness: the procedural wall's battered talus (wallT + 3 m at its foot) — or, once the fort is dressed in its real model
+//   (world/fortress.js dressFort, every battlefield now), that model's own thickness (wallT × REALFORT.thick): the 6.2 m box stood 1.1–1.9 m clear of
+//   the drawn stone on both faces — and each section as thick as its own stretch of that model (a buttress here, plain curtain there). Along the run
+//   nothing changes (the sections still meet end to end), so a fort stays sealed.
+const fortHW = bl => { const f = bl.fort, sl = f && f.wallSl && f.wallSl[bl.piece.i], g = sl && sl[0].geometry;
+  if(g){ if(!g.boundingBox) g.computeBoundingBox(); const b = g.boundingBox; if(!b.isEmpty()) return Math.min(f.wallHW || 9, Math.max(-b.min.z, b.max.z) + 0.05); }
+  return (f && f.wallHW) || (FORT.wallT + 3.0) / 2; };
 export function solidShape(bl, foot){ if(!bl) return null; if(bl.cover && bl.mesh && bl.mesh.isMesh) return coverShape(bl); if(bl.obb) return bl;
-  if(foot && bl.kind === 'fortwall' && bl.piece && (bl.piece.cut0 || bl.piece.cut1)){ if(bl[FOOT]) return bl[FOOT]; const pc = bl.piece, c0 = pc.cut0 || 0, c1 = pc.cut1 || 0, sh = (c0 - c1) / 2;
-    return (bl[FOOT] = { x:bl.x + pc.ux * sh, z:bl.z + pc.uz * sh, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:Math.max(0.1, (pc.pl - c0 - c1) / 2 + 0.02), hw:(FORT.wallT + 3.0) / 2 } }); } const c = bl[SHAPE]; if(c !== undefined) return c; let s = null;
-  if(bl.kind === 'fortwall' && bl.piece){ const pc = bl.piece; s = { x:bl.x, z:bl.z, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:pc.pl / 2 + 0.02, hw:(FORT.wallT + 3.0) / 2 } }; }   // (its battered stone foot)
-  else if(bl.kind === 'building' && bl.bld){ const B = bl.bld; s = B[SHAPE] || (B[SHAPE] = { x:B.x, z:B.z, obb:{ f:B.ry, hl:B.d / 2, hw:B.w / 2 }, bld:B }); }
+  if(bl.kind === 'fortwall' && bl.piece){ const pc = bl.piece, hw = fortHW(bl), cut = foot && (pc.cut0 || pc.cut1), K = cut ? FOOT : SHAPE, c = bl[K]; if(c && c.obb.hw === hw) return c;
+    const c0 = cut ? pc.cut0 || 0 : 0, c1 = cut ? pc.cut1 || 0 : 0, sh = (c0 - c1) / 2;   // (Z378 foot: cut back from a breach, for the soldier and his ride)
+    return (bl[K] = { x:bl.x + pc.ux * sh, z:bl.z + pc.uz * sh, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:Math.max(0.1, (pc.pl - c0 - c1) / 2 + 0.02), hw } }); }
+  if(bl.fitR) fitCircle(bl); const c = bl[SHAPE]; if(c !== undefined) return c; let s = null;
+  if(bl.kind === 'building' && bl.bld){ const B = bl.bld; s = B[SHAPE] || (B[SHAPE] = { x:B.x, z:B.z, obb:{ f:B.ry, hl:B.d / 2, hw:B.w / 2 }, bld:B }); }
   bl[SHAPE] = s; return s; }
+// Z413 A ROUND THING AS BIG AS IT IS DRAWN: an objective (r from its table, 4.8 m round a 2.8 m bunker) or a watchtower (2.4 m round 1.6 m of legs)
+//   stopped a vehicle in front of nothing. Its circle is read off the drawn model — what stands 0.25–3 m over the ground (walls, legs, sandbags; not the
+//   men on it, nor a glowing beam), 95 % of it inside — never bigger than it was set, and read again (at most once a second) whenever the model changes
+//   (a scanned tower or ruin swaps in when its file arrives). Bullets and the AI use the same r.
+const _fv = new THREE.Vector3();
+const drawn = (o, top) => { for(let q = o; q && q !== top.parent; q = q.parent) if(!q.visible) return false; const mt = [].concat(o.material)[0]; return !(mt && (mt.transparent || mt.depthWrite === false)); };
+export function fitCircle(bl){ const now = performance.now(); if(now < (bl._fitT || 0)) return; bl._fitT = now + 1000; const m = bl.mesh; if(!m || !m.isObject3D) return;
+  const L = []; let sig = 0; m.traverse(o => { if(o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && o.geometry && drawn(o, m)){ L.push(o); sig += o.geometry.id * 7 + 1; } });
+  if(sig === bl._fitSig) return; bl._fitSig = sig; if(bl._r0 == null) bl._r0 = bl.r; m.updateWorldMatrix(true, true); const g0 = heightAt(bl.x, bl.z), d = [];
+  for(const o of L){ const P = o.geometry.attributes.position; if(!P) continue; const st = Math.max(1, (P.count / 4000) | 0);
+    for(let i = 0; i < P.count; i += st){ _fv.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld); const h = _fv.y - g0; if(h > 0.25 && h < 3) d.push(Math.hypot(_fv.x - bl.x, _fv.z - bl.z)); } }
+  if(d.length < 8) return; d.sort((a, b) => a - b); bl.r = Math.max(0.6, Math.min(bl._r0, d[Math.floor(d.length * 0.95)] + 0.1)); }
 // Z404 A PIECE OF COVER IS THE BOX OF WHAT IS DRAWN: its collision was a circle of COVER_R × 1.3 ≈ 2.2 m round each piece of a line — a sandbag
 //   wall 1.2 m deep, a jersey barrier, a row of tyres — and the real models (Z252) are fitted inside the old piece, often narrower, so the circle
 //   stood up to 1.3 m clear of a face: a ride, a tank or a man stopped in front of nothing (and rounds struck the air). The box is read off the

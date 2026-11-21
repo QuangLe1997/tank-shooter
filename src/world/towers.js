@@ -56,7 +56,7 @@ export function buildTower(x, z, kindId){
   const hp=Math.round(TOWER.hp*K.hp*loopHpMul()*diffHpMul());
   const t={ g, body, x, z, guards, sl, beam, light, wm, mats, hp, falling:false, kind:id, h:K.h, deckY:gy+fy, gy };
   towers.push(t);
-  const bobj={ mesh:g, x, z, r:K.r, hp, maxHp:hp, steel:false, loot:Math.random()<0.5, kind:'tower', tower:t, mat:K.mat };
+  const bobj={ mesh:g, x, z, r:K.r, hp, maxHp:hp, steel:false, loot:Math.random()<0.5, kind:'tower', tower:t, mat:K.mat, fitR:true };   // Z413 fitR: its circle round its drawn legs / walls
   blocks.push(bobj); t.block=bobj; if(bobj.loot) addLootBeacon(bobj,'block');
 }
 const OPEN_DECK=new Set(['wood','bamboo','lattice']);   // Z175 rope bridges only between open platforms
