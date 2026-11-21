@@ -77,10 +77,10 @@ export function updateGunHUD(){
   // rebuilt only when the gun/level changes, and a shot only rewrites the ammo text.
   const chip=document.getElementById('weaponchip');
   if(chip){
-    const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), key=inst.id+':'+gunLevel(inst.id);
+    const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), lv=inst.star||gunLevel(inst.id), key=inst.id+':'+lv;   // Z352 a soldier's gun shows its stars
     if(chip._key!==key){ chip._key=key;
       const ic=gunPicEl(inst.id, 'wc-ic');   // Z150 the gun's own photo, same as the arsenal
-      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(gunLevel(inst.id)>1?' ★'+gunLevel(inst.id):'');   // MASTERY level tag
+      const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(lv>1?' ★'+lv:'');   // MASTERY level tag
       if(g.type){ const tg=document.createElement('span'); tg.className='wc-ty'; tg.textContent=(DMG_TYPE[g.type]||{}).vi||g.type; tg.title='Loại đạn: '+((DMG_TYPE[g.type]||{}).vi||''); nm.appendChild(tg); }   // damage class tag (KIN/AP/HE/…)
       const am=document.createElement('span'); am.className='wc-am'; chip._am=am; chip._amT=null; chip._rl=null;
       chip.replaceChildren(ic,nm,am); }

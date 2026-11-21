@@ -3,7 +3,7 @@
 //   something visible changes (4×/s check).
 import { FT, FTSQ, MOBILE, S, squadOrderLabel } from '../hub.js';
 
-const ROLE={ rifle:'BB', mg:'ĐL', mortar:'CỐI', sapper:'CB' };
+const ROLE={ rifle:'BB', mg:'ĐL', mortar:'CỐI', sapper:'CB', medic:'YT' };   // (Z351 the soldier's own medic)
 const TASK={ fight:'f', cover:'c', evade:'c', fallback:'r', post:'g', form:'g', advance:'a', order:'a', muster:'a', assault:'a', fetch:'l', rally:'l' };
 const LEG=[['f','GIAO CHIẾN'],['c','ẨN NẤP'],['a','VẬN ĐỘNG'],['r','RÚT / BĂNG'],['g','HỘ TỐNG'],['l','NHẶT ĐỒ'],['j','NHIỆM VỤ']];
 const POST={ advance:['ÁP SÁT','adv'], hold:['GIỮ THẾ','hold'], fallback:['RÚT LUI','fb'] };

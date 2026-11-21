@@ -149,6 +149,10 @@ export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams sco
 export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets
 export * from './game/mode.js';   // Z307 the tank and the soldier: one object per mode with its own rules (player, setup, update, fire, hits, death, loot, skills, HUD)
 export * from './campaign/soldier-war.js';   // Z309 soldier mode: waves of men, armour as a set piece, a tank's shell as a warned burst
+export * from './game/soldier-rank.js';   // Z350 soldier mode: experience, rank, the perk cards, what a rank brings
+export * from './actors/squad-mates.js';   // Z351 soldier mode: his own squad — a machine-gunner, a medic, more with rank
+export * from './loot/soldier-arms.js';   // Z352 soldier mode: the enemy's weapons on the ground, gun stars, medals, ammo crates, supply drops
+export * from './campaign/general-duel.js';   // Z353 soldier mode: the general jumps out of his burning machine and fights on foot
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine

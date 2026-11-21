@@ -124,3 +124,14 @@ body.cam-drag, body.cam-drag *{cursor:grabbing !important;}   /* Z239 middle-but
 .bs-uchip{cursor:pointer;padding:7px 12px;border:1px solid rgba(214,166,62,.45);border-radius:6px;background:rgba(10,14,10,.6);color:#d8dccc;font:700 13px/1.1 inherit;letter-spacing:1px;text-align:center;}
 .bs-uchip small{display:block;font-size:10px;font-weight:500;opacity:.7;letter-spacing:.5px;margin-top:2px;}
 .bs-uchip.on{border-color:#d6a63e;background:rgba(214,166,62,.18);color:#ffe2a0;box-shadow:0 0 12px rgba(214,166,62,.35) inset;}
+/* Z350 the soldier's rank, worn over his health bar: insignia + rank on the left, a thin gold line filling toward the next rank under the bar */
+.wbar > em.rk{position:absolute;left:-2px;top:-12px;display:flex;align-items:center;gap:3px;font-style:normal;font-size:8px;font-weight:800;letter-spacing:.6px;white-space:nowrap;color:#d8dcc4;text-shadow:0 1px 2px #000,0 0 3px #000;}
+.wbar > em.rk s{text-decoration:none;color:#b8c0a0;letter-spacing:-1px;}
+.wbar > em.rk.t1 s{color:#ffc24e;} .wbar > em.rk.t2 s{color:#ffd86a;} .wbar > em.rk.t3 s{color:#ffd86a;text-shadow:0 0 4px rgba(255,90,60,.9),0 1px 2px #000;} .wbar > em.rk.t3{color:#ffe2a0;}
+.wbar > em.rk u{position:absolute;left:2px;top:19px;width:46px;height:2px;background:rgba(0,0,0,.55);text-decoration:none;}
+.wbar > em.rk u i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c8902c,#ffd86a);transition:width .25s ease-out;}
+/* Z350 the perk cards: a call for help in olive-green, the rare extra life in gold */
+.upcard.call{border-color:rgba(155,209,74,.75)!important;box-shadow:0 0 14px rgba(155,209,74,.25) inset;}
+.upcard.call .pw{color:#b8e07a;}
+.upcard.rare{border-color:rgba(255,216,106,.85)!important;box-shadow:0 0 16px rgba(255,216,106,.3) inset;}
+.upcard.rare .pw{color:#ffd86a;}

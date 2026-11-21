@@ -1156,3 +1156,27 @@ export const AVALANCHE = { warn:2.6, width:30, run:[48,64], v0:3, vmax:15, accel
 //   (a loose battle line) · hitsCap = most targets one trigger pull is credited with · ref = the targets time-to-kill is quoted against
 export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, rho:1/50, hitsCap:3, pierceK:0.3, lineW:3.4,
   ref:{ tank:'heavy', light:'grunt' }, minHit:0.3 };
+// Z350–Z353 THE SOLDIER'S CAREER (soldier mode only — game/soldier-rank.js, actors/squad-mates.js, loot/soldier-arms.js, campaign/general-duel.js):
+//   xp.kill = experience per kill by enemy type (_inf / _air / _veh = any other man / aircraft / vehicle; boss = the general's machine), eliteK × for an elite;
+//   step = [a, b, c]: XP from rank n-1 to n is a + b·(n-1) + c·(n-1)²; ranks = Binh nhì … Đại tá (past the last one every step pays a medal = one more perk);
+//   rankUp: max health + per rank, share of max health given back, s before the perk cards open; perk: share of picks that offer a call for help, the +1 life card's chance;
+//   milestone = what a rank brings by itself (at / mg = a man for the squad, supply = a drop by the HQ, tank = one of ours, para = a stick of paratroopers, barrage = a strike);
+//   squad: who he starts with, the names they go by, health / damage × per rank and per LEADER level, the most men, medic (heal reach m, cooldown s, health, + per rank,
+//   the player's health share below which he is treated, a mate's); star: a gun picked up again climbs a star (max) — damage and rate of fire per star;
+//   drop: chance a dead enemy leaves his weapon (by type, _veh any vehicle), share of a soldier's loot that is a medal / an ammo crate, a medal's XP;
+//   general: when his machine burns he jumps out and fights on foot — health × a rifleman's, his rifle (damage, s between shots, reach, the distance he keeps,
+//   speed), size ×, the most one hit takes of his health, bodyguards at the start / at callAt of his health, rage below rageAt (fire faster ×, run ×),
+//   his fan of rounds (cooldown s, rounds, arc rad, damage, s of warning), his grenades (cooldown, how many, blast m, damage, s of warning, scatter m round you)
+export const TROOPER = {
+  xp:{ kill:{ rifle:10, rpg:16, _inf:12, scout:28, carrier:40, mortar:34, heliTroop:45, _air:45, _veh:55, grunt:80, heavy:120, boss:260, general:420 }, eliteK:2 },
+  step:[70, 45, 6],
+  ranks:['BINH NHÌ','BINH NHẤT','HẠ SĨ','TRUNG SĨ','THƯỢNG SĨ','THIẾU ÚY','TRUNG ÚY','THƯỢNG ÚY','ĐẠI ÚY','THIẾU TÁ','TRUNG TÁ','THƯỢNG TÁ','ĐẠI TÁ'],
+  rankUp:{ hp:8, heal:0.3, delay:0.9 }, perk:{ callShare:0.35, lifeChance:0.1 },
+  milestone:{ 2:'at', 4:'supply', 5:'mg', 7:'tank', 9:'para', 12:'barrage' },
+  squad:{ start:['mg','medic'], names:['Hùng','Dũng','Tuấn','Nam','Minh','Long','Sơn','Hải','Lan','Thắng','Quân','Bình'], hpK:0.12, dmgK:0.1, leadK:0.25, max:6,
+    medic:{ r:12, cd:9, hp:20, perRank:2.5, below:0.72, mateBelow:0.5 } },
+  star:{ max:5, dmg:0.18, rate:0.06 },
+  drop:{ rifle:0.05, rpg:0.2, _veh:0.28, item:0.3, medalXp:45 },
+  general:{ hpK:70, dmg:7, fireCd:0.4, range:30, keep:13, speed:4.6, scale:1.18, hitCap:0.06, guards:3, callAt:0.5, callN:4, guardHpK:4, rageAt:0.3, rageFire:0.6, rageRun:1.3,
+    fan:{ cd:6.5, n:9, arc:0.75, dmg:6, tel:0.75 }, nade:{ cd:8.5, n:3, R:3.4, dmg:36, lock:1.35, scatter:4.5 } },
+};

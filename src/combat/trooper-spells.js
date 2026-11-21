@@ -13,11 +13,11 @@ export const TROOPER_SPELLS = [
   { id:'fireteam',  name:'FIRETEAM',  vi:'GỌI TỔ BỘ BINH', svg:'team',      cd:24, cast(now){ callFireteam(now); } },
 ];
 // lobbed by hand to the aim point (the mortar's arc, a grenade's size and blast)
-function grenade(now){ const G = T().grenade; fireMortar(now, { small:true, aoeR:G.r, bossDmg:G.dmg * 0.4 }, G.dmg); sfx('whoosh'); floatText('NÉM LỰU ĐẠN!', '#ffcf5a', S.player.pos, 15); }
+function grenade(now){ const G = T().grenade, k = S.player.nadeK || 1; fireMortar(now, { small:true, aoeR:G.r * Math.sqrt(k), bossDmg:G.dmg * k * 0.4 }, G.dmg * k); sfx('whoosh'); floatText('NÉM LỰU ĐẠN!', '#ffcf5a', S.player.pos, 15); }   // (Z350 LÍNH NÉM LỰU: nadeK)
 // a smoke grenade a few metres ahead of him
 function handSmoke(now){ const p = S.player, f = p.aimSmoothed ?? p.facing, d = T().smoke.toss, x = p.pos.x + Math.sin(f) * d, z = p.pos.z + Math.cos(f) * d;
   p.smokeUntil = now + EQUIP.smoke.dur; p.smokeX = x; p.smokeZ = z;
   spawnPart(p.pos.x, 1.4, p.pos.z, Math.sin(f) * d * 1.6, 3.2, Math.cos(f) * d * 1.6, { color:0x4a5230, size:0.18, life:0.6, grav:-14, drag:0.4 });   // the canister in the air
   for(const e of enemies) if(e.laser){ dropBeam(e.laser); e.laser = null; e.aimT = 0; }
   sfx('dash'); floatText('NÉM LỰU KHÓI', '#dfe6e0', p.pos, 15); }
-function medkit(now){ const p = S.player, M = T().medkit; p.hp = Math.min(p.maxHp, p.hp + M.hp); ringPulse(p.pos, 0x5fd06a, 1.6); floatText('BĂNG BÓ +' + M.hp, '#7fe07a', p.pos, 15); sfx('levelup'); updateHUD(); }
+function medkit(now){ const p = S.player, M = T().medkit, h = Math.round(M.hp * (p.medK || 1)); p.hp = Math.min(p.maxHp, p.hp + h); ringPulse(p.pos, 0x5fd06a, 1.6); floatText('BĂNG BÓ +' + h, '#7fe07a', p.pos, 15); sfx('levelup'); updateHUD(); }   // (Z350 CỨU THƯƠNG GIỎI: medK)

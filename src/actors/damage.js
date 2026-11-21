@@ -1,10 +1,11 @@
 // actors/damage.js — HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, LOOT } from '../../config.js';
-import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, econOn, econPend, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, maybeAbandon, popSmoke, radio, spawnEnemy, startDying, tankExplode, updateHUD, voiceKill } from '../hub.js';
+import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, econOn, econPend, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, maybeAbandon, popSmoke, radio, spawnEnemy, startDying, tankExplode, updateHUD, voiceKill, soldierKill } from '../hub.js';
 
 // ---- HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away ----
 export function damageEnemy(e, dmg){
+  if(e.hitCap) dmg=Math.min(dmg, e.hitCap);   // Z353 the general on foot: no single hit (a grenade's core, a 12.7 slug) takes more than a slice of him
   if(e.def.carrier && e.crew){   // APC: fire wears the chassis AND picks off the exposed crew — down when EITHER is gone
     const live=e.crew.filter(c=>c.alive);
     if(live.length && Math.random()<0.6){ const c=live[(Math.random()*live.length)|0]; c.hp-=dmg*0.85;
@@ -29,7 +30,7 @@ export function killEnemy(e){
     else if(e.def.air) gunshipDown(e);                                                                       // Z80 gunship spirals down
     else startDying(e); }catch(err){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); console.error('death fx', err); }   // Z121 a broken effect must never stop the kill (score, loot, bar)
   if(e.def.carrier && e.crew){ const ex=e.pos.x, ez=e.pos.z; e.crew.forEach((c,k)=>{ if(c.alive && Math.random()<INFANTRY.bail) setTimeout(()=>{ if(S.mode==='playing') spawnEnemy('rifle', ex+(Math.random()-0.5)*4, ez+(Math.random()-0.5)*4); }, 300+k*220); }); }   // survivors bail out of the burning APC                                                                                          // knocked out: catches fire & smokes → cooks off → gone
-  bumpCombo();
+  bumpCombo(); soldierKill(e);   // Z350 the soldier's experience · Z352 his weapon on the ground
   const mult = (e.elite?BALANCE.elite.coinMul:1) * loopRewardMul() * diffRewardMul();
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
   addCoins(Math.max(5, Math.round(e.def.score/BALANCE.coinBountyDiv * mult * cMod('coinMul'))));   // coin bounty ≈ 1/10 of base score, ×elite ×loop ×CONTRACT

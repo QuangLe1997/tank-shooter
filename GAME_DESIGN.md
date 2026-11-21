@@ -173,3 +173,117 @@ Mang 1 phép; đổi/khoá thêm qua nâng cấp. Cooldown 8–18s tùy phép.
 10. **Pass cân bằng & tối ưu FPS cuối.**
 
 > **Last updated:** 2026-05-31 · kịch bản **v1 gốc** (đã implement xong + mở rộng vượt xa — xem banner đầu file; trạng thái hiện tại ở `DOCS.md`/`LEVELS.md`, tới Z36).
+
+## 15. Kịch bản tác chiến của người lính (chế độ lính · Z350–Z353)
+
+**Ý tưởng chính:** người lính bắt đầu trận là một **binh nhì** có hai đồng đội và một khẩu súng trường, và kết thúc màn bằng một **trận đấu tay đôi với viên tướng địch**. Ở giữa, mỗi tên địch bị hạ vừa là kinh nghiệm, vừa có thể là một khẩu súng nằm trên đất. Mỗi lần thăng cấp là một lần chọn sức mạnh. Một số quân hàm tự mang tới viện binh.
+
+### 15.1 Một màn chơi, từ đầu đến cuối
+1. **Xuất kích:** quân hàm Binh nhì, máu 150. Có súng trường 7.62 và B41. Tổ có xạ thủ máy và y tá, mỗi người có tên riêng (Hùng, Lan, Dũng…).
+2. **Đợt 1–2:** bộ binh và xe trinh sát tràn tới. Hạ địch thì thanh vàng mảnh dưới thanh máu đầy dần. Lính địch đôi khi đánh rơi súng trường, lính RPG hay đánh rơi B41. Nhặt khẩu đã có thì súng **lên ★**.
+3. **Thăng cấp:** trận dừng lại, hiện 3 thẻ (bấm phím 1/2/3 hoặc chạm để chọn). Đa số là thẻ chỉ số. Thỉnh thoảng có một thẻ **VIỆN BINH** dùng ngay, hiếm hơn là thẻ **+1 MẠNG**.
+4. **Lên Hạ sĩ:** bộ chỉ huy bổ sung một **lính B40 chống tăng**, đúng lúc xe tăng địch đầu tiên tới.
+5. **Lên Thượng sĩ:** bộ chỉ huy **thả dù tiếp tế** ngay trước mặt: một súng mới, một hộp cứu thương, một thùng đạn.
+6. **Đồng đội ngã:** người đó được đưa về tuyến sau, đầu đợt tới quay lại tổ. Y tá băng bó cho anh và cho đồng đội bị thương ở gần.
+7. **Tướng xuất hiện:** đánh siêu xe tăng của tướng. Xe bốc cháy thì **tướng nhảy ra** cùng 3 cận vệ. Trận đấu tay đôi trên mặt đất quyết định màn.
+8. **Hạ tướng:** cận vệ bỏ chạy, tướng rơi hai khẩu súng tốt nhất và một huy chương. Qua màn thì chọn thêm 1 trong 3 thẻ của người lính.
+
+### 15.2 Cấp bậc (Z350 · `game/soldier-rank.js`)
+- **13 quân hàm:** Binh nhì → Binh nhất → Hạ sĩ → Trung sĩ → Thượng sĩ → Thiếu úy → Trung úy → Thượng úy → Đại úy → Thiếu tá → Trung tá → Thượng tá → Đại tá. Phù hiệu (vạch, gạch, sao) và tên quân hàm hiện ngay trên thanh máu của lính.
+- **Kinh nghiệm theo con mồi:**
+
+  | Mục tiêu | Kinh nghiệm |
+  |---|---|
+  | Lính súng trường | 10 |
+  | Lính RPG | 16 |
+  | Xe trinh sát | 28 |
+  | Xe chở quân | 40 |
+  | Trực thăng | 45 |
+  | Xe tăng | 80 |
+  | Xe tăng hạng nặng | 120 |
+  | Xe của tướng | 260 |
+  | Tướng | 420 |
+  | Tinh nhuệ / cận vệ | ×2 |
+
+  Đồng đội hay không kích hạ địch cũng được tính.
+- **Mỗi lần thăng cấp:** +8 máu tối đa, hồi 30% máu, và được chọn 1 trong 3 thẻ. Bảng chọn chỉ mở khi an toàn: không lúc đang chết, không lúc đang qua màn. Lên được quân hàm cuối rồi thì mỗi lần đủ kinh nghiệm là một **HUÂN CHƯƠNG**, tức thêm một lần chọn.
+- **Thẻ chỉ số (cộng dồn theo cấp):**
+
+  | Thẻ | Hiệu quả | Cấp tối đa |
+  |---|---|---|
+  | THÂN THÉP | +25 máu | V |
+  | XẠ THỦ | +15% sát thương | V |
+  | TAY NHANH | bắn nhanh hơn 12% | IV |
+  | THAY BĂNG NHANH | nạp đạn nhanh hơn 20% | III |
+  | BĂNG ĐẠN LỚN | +25% băng đạn | III |
+  | MẮT ƯNG | +8% chí mạng | IV |
+  | CHÂN CHẠY | nhanh hơn 10% | III |
+  | ÁO CHỐNG ĐẠN | nhận ít hơn 10% sát thương | IV |
+  | KHÁT MÁU | +4 máu mỗi mạng hạ | III |
+  | CHIẾN THUẬT | hồi kỹ năng nhanh hơn 18% | III |
+  | LÍNH NÉM LỰU | lựu đạn +35% sát thương và nổ rộng hơn | III |
+  | CỨU THƯƠNG GIỎI | băng bó và y tá hồi mạnh hơn | II |
+  | CHỈ HUY | đồng đội +25% máu và sát thương | III |
+  | THÊM ĐỒNG ĐỘI | +1 người vào tổ | IV |
+  | +1 MẠNG | thêm một lần đứng dậy (hiếm) | II |
+
+- **Thẻ viện binh (dùng ngay):**
+  - **XE TĂNG YỂM TRỢ:** một xe tăng ta tới đánh cạnh anh.
+  - **LÍNH DÙ:** trực thăng thả một tiểu đội lính dù xuống cạnh anh.
+  - **PHÁO KÍCH:** không kích vào cụm địch đông nhất trong bán kính 9–48 m.
+  - **THẢ DÙ TIẾP TẾ:** súng mới, cứu thương và thùng đạn rơi cạnh anh.
+- **Quân hàm tự mang phần thưởng (qua bộ đàm):**
+
+  | Quân hàm | Phần thưởng |
+  |---|---|
+  | Hạ sĩ | lính B40 vào tổ |
+  | Thượng sĩ | thả dù tiếp tế |
+  | Thiếu úy | thêm một xạ thủ máy |
+  | Thượng úy | một xe tăng ta |
+  | Thiếu tá | một tiểu đội lính dù (xe tăng ta tới từ đây là xe hạng nặng) |
+  | Đại tá | pháo kích hai loạt liền |
+
+### 15.3 Tổ đồng đội (Z351 · `actors/squad-mates.js`)
+- **Mở đầu có 2 người:** xạ thủ máy và y tá (đeo túi trắng chữ thập đỏ). Tổ tối đa 6 người, thêm vào theo thứ tự lính B40, xạ thủ, xạ thủ máy, y tá…
+- **Đồng đội mạnh lên cùng anh:** máu +12% và sát thương +10% mỗi quân hàm. Mỗi cấp thẻ CHỈ HUY thêm 25%.
+- **Y tá:**
+  - Anh dưới 72% máu và đứng trong vòng 12 m thì y tá băng bó, hồi 20 máu cộng 2,5 máu mỗi quân hàm. Hồi chiêu 9 giây.
+  - Không có anh để chữa thì y tá chữa đồng đội dưới 50% máu, hồi 45% máu.
+- **Người ngã xuống** được đưa về tuyến sau và đầu đợt sau quay lại. Bộ đàm báo "Tổ của anh đã được bổ sung N người".
+- Lệnh GỌI TỔ BỘ BINH vẫn gọi được cả một tổ hoả lực thêm vào.
+
+### 15.4 Súng của địch, sao súng, vật phẩm (Z352 · `loot/soldier-arms.js`)
+- **Tỉ lệ rơi súng khi hạ địch:**
+
+  | Địch | Rơi gì | Tỉ lệ |
+  |---|---|---|
+  | Lính súng trường | súng trường | 5% |
+  | Lính RPG | B41 | 20% |
+  | Xe | một khẩu tay mà anh chưa có | 28% |
+  | Tướng | 2 khẩu nặng nhất anh chưa có, kèm huy chương | luôn rơi |
+
+- **Sao súng:** nhặt lại khẩu đã có thì súng lên một sao (tối đa ★5). Mỗi sao thêm +18% sát thương và bắn nhanh hơn 6%. Số sao hiện trên ô súng.
+- **Vật phẩm riêng của lính:**
+  - **HUY CHƯƠNG:** 45 kinh nghiệm, nhiều hơn ở các màn sau.
+  - **THÙNG ĐẠN:** đầy đạn mọi súng, kỹ năng sẵn sàng ngay.
+  - Ngoài ra vẫn có máu, khiên, bắn nhanh… như trước.
+
+### 15.5 Tướng bộ chiến (Z353 · `campaign/general-duel.js`)
+- **Pha 1 — xe của tướng:** siêu xe tăng như trước.
+- **Pha 2 — tướng nhảy ra:**
+  - Thanh máu đổi thành "TÊN TƯỚNG · BỘ CHIẾN". Tướng to hơn lính thường, trên đầu có sao vàng, dưới chân có vòng đỏ nhịp.
+  - Tướng giữ khoảng cách và núp như lính thường, nhưng súng nặng hơn.
+  - Mỗi phát trúng chỉ trừ tối đa 6% máu tướng, nên không thể hạ bằng một quả lựu đạn.
+- **Hai đòn có báo trước:**
+  - **Quạt đạn:** chớp đỏ ở nòng và dấu "!" trên đầu trong 0,75 giây, rồi 9 viên quạt ngang chỗ anh đứng. Cách tránh: lăn hoặc nằm xuống.
+  - **Chùm lựu đạn:** 3 vòng đỏ siết dần quanh chỗ anh đứng, nổ sau khoảng 1,35 giây. Cách tránh: chạy ra khỏi vòng.
+- **Dưới 50% máu:** tướng gọi thêm 4 cận vệ.
+- **Dưới 30% máu:** tướng **LIỀU MẠNG**, bắn nhanh hơn 40%, chạy nhanh hơn 30%, các đòn ra dày hơn.
+- **Hạ tướng:** chiếu chậm, cận vệ bỏ chạy, rơi súng hay nhất cùng huy chương. Sau đó mới tính qua màn: thưởng xu và kim cương, thành địch thất thủ, mở màn kế, chọn thẻ.
+
+### 15.6 Hướng mở rộng (chưa làm)
+- Ra lệnh cho tổ: bắn tập trung vào mục tiêu đang ngắm, giữ vị trí, xung phong.
+- Gắn phụ kiện cho súng: ống ngắm, giảm thanh, báng gấp.
+- Mỗi tướng có tính cách riêng khi bộ chiến, ví dụ tướng HOẢ THẦN cầm súng phun lửa.
+- Giải cứu tù binh để họ gia nhập tổ.
+- Bảng huân chương giữ lại giữa các lượt chơi.

@@ -60,7 +60,7 @@ export function updateWorldBars(){
                 _chpBar=document.getElementById('chpbar'); _chpFill=_chpBar.querySelector('i'); }
   const p=S.player;
   if(p && p.hp>0){
-    const f=p.hp/p.maxHp, sc=p.scale*TANK_SCALE, s=worldToScreen(_wbV.set(p.pos.x, 3.7*sc, p.pos.z));   // float clearly above the turret
+    const f=p.hp/p.maxHp, sc=p.scale*TANK_SCALE, s=worldToScreen(_wbV.set(p.pos.x, p.cav ? 2.7 : 3.7*sc, p.pos.z));   // float clearly above the turret (Z350 a man's: just over his head, the rank stripe on it)
     _wbSet(_phpBar, _phpFill, _WB.p, s.infront?s:null, f, _hpGrad, 0.25);
     if(s.infront){ const l='×'+Math.max(0,p.lives); if(l!==_WB.p.l){ _WB.p.l=l; _phpLives.textContent=l; } }
   } else _wbSet(_phpBar, _phpFill, _WB.p, null);

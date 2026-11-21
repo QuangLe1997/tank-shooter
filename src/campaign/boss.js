@@ -1,7 +1,7 @@
 // campaign/boss.js — BOSS FIGHT (Z96): weak-point parts, angle armour, multi-phase attacks, shield pylons, stuns, escorts
 import * as THREE from 'three';
 import { BALANCE, BOSSFIGHT, PYLON_SITE } from '../../config.js';
-import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle, MODE, holoRing } from '../hub.js';
+import { ARENA, BIOME, BOSS_ALT, BOSS_DEFS, BOSS_NEW, CORE_DEF, FORTS, GLOW, NEW_GENERALS, PROFILE, S, _v, addCoins, addDiamonds, addScore, bigExplode, blocks, bossAttackNew, buildTank, burst, cMod, camera, campaignCleared, celebrate, clampField, clampFieldXZ, clearBossNew, damagePlayer, decalScorch, diffRewardMul, dropBeam, econReportRun, enemyGroundStrike, fieldDepth, flashMat, floatText, fortBossDown, freeEnemyBar, getEnemyBar, grantCrewXp, gunMuzzleFX, heightAt, inBlock, inField, inZone, launchEnemyMissile, loopBossMul, loopHpMul, loopRewardMul, muzzleLight, opFor, openUpgrade, preloadVoices, radio, recordRun, refreshStartUI, ringPulse, saveProfile, saveProgress, sayVoice, scene, setBeam, sfx, show, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnWreck, takeBeam, tankRecoil, tip, updateBossNew, updateHUD, wrapAngle, MODE, holoRing, generalBail } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 export let boss=null;
@@ -324,14 +324,20 @@ export function killBoss(now){
   for(let k=0;k<6;k++) setTimeout(()=>{ const ep=new THREE.Vector3(pos.x+(Math.random()-0.5)*6,1,pos.z+(Math.random()-0.5)*6);
     bigExplode(ep, 0xff7a3d, 2.2); if(k<3) spawnDebris(ep, bms*0.9, 0x2a2824); }, k*130);   // a few extra part-bursts (pool-budget friendly)
   addScore(2500*S.stage, new THREE.Vector3(pos.x,3,pos.z));
-  const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()*cMod('coinMul')), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia + cMod('bossDiaBonus',0);   // bigger payout each NG+ loop + CONTRACT bonus
-  addCoins(bcoin); addDiamonds(bdia);
-  showBanner('ĐÃ HẠ '+boss.def.name+'!  +'+bcoin+' xu · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   const m=boss.mesh; setTimeout(()=>{ scene.remove(m); }, 900);
   if(laserMesh) laserMesh.visible=false; clearMines(); clearPylons(); clearBossNew(); for(const pt of boss.parts){ if(pt.bar){ freeEnemyBar(pt.bar); pt.bar=null; } } scene.remove(boss.dome); { const st=document.getElementById('boss-st'); if(st){ st.innerHTML=''; st._h=''; } }
+  const bdef=boss.def; boss=null;
+  S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
+  if(generalBail(pos, bdef, n=>bossStageWon(n, bdef))) return;   // Z353 soldier mode: the general jumps out of the burning machine — the duel on foot decides the stage
+  bossStageWon(now, bdef);
+}
+// the stage is won: the payout, the citadel falls, the next stage opens, the pick of rewards (the soldier's after his duel with the general)
+export function bossStageWon(now, bdef){
+  const bcoin = Math.round((BALANCE.boss.coinBase + BALANCE.boss.coinPerStage*S.stage)*loopRewardMul()*cMod('coinMul')), bdia = BALANCE.boss.dia + (S.loop||0)*BALANCE.loop.bossDia + cMod('bossDiaBonus',0);   // bigger payout each NG+ loop + CONTRACT bonus
+  addCoins(bcoin); addDiamonds(bdia);
+  showBanner('ĐÃ HẠ '+bdef.name+'!  +'+bcoin+' xu · +'+bdia+' ◆', '#8cbf3f'); sfx('levelup');
   fortBossDown();                                   // Z107 the citadel falls with its commander
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
-  boss=null;
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
   S.stage++; addCoins(Math.round(BALANCE.stageClearCoin*S.stage*cMod('coinMul')*diffRewardMul())); updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1); if(MODE.crewXp) grantCrewXp(true); econReportRun({ cleared:true });   // Z162 the server pays the stage   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
   celebrate('victory', 0, 0);                                                         // Z140 fireworks, cheering troops — then the next screen

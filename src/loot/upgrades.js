@@ -1,6 +1,6 @@
 // loot/upgrades.js — ROGUELITE UPGRADES (pick 1 of 3 after each boss)
 import { OBJECTIVES, TROOPS } from '../../config.js';
-import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildUnderground, clearRelic, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, parkAtSpawn, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD, blendWhenReady, scene } from '../hub.js';
+import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildUnderground, clearRelic, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, parkAtSpawn, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD, blendWhenReady, scene, MODE, soldierStagePerks } from '../hub.js';
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 export const UPGRADES = [
@@ -20,14 +20,14 @@ export const UPGRADES = [
 export function openUpgrade(){
   S.mode='upgrade';
   const wrap=document.getElementById('upcards'); wrap.replaceChildren();
-  const pool=UPGRADES.slice(), pick=[];
-  for(let i=0;i<3 && pool.length;i++) pick.push(pool.splice((Math.random()*pool.length)|0,1)[0]);
+  const pool=UPGRADES.slice(), pick=MODE.id==='soldier' ? soldierStagePerks() : [];   // Z350 the soldier picks from his own perks (a core, a dash, a tank gun's level mean nothing to him)
+  for(let i=pick.length;i<3 && pool.length;i++) pick.push(pool.splice((Math.random()*pool.length)|0,1)[0]);
   for(const u of pick){
     const card=document.createElement('div'); card.className='upcard';
     const ic=document.createElement('div'); ic.className='ic'; ic.appendChild(iconEl(u.ic));
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=u.nm;
     const ds=document.createElement('div'); ds.className='ds'; ds.textContent=u.ds;
-    const pg=pickGain(u), pw=document.createElement('div'); pw.className='pw'; pw.textContent = pg>0 ? ('⚔ +'+fmtP(pg)+' sức mạnh') : 'hỗ trợ · không đổi sức mạnh';   // Z107
+    const pg=u.tag ? 0 : pickGain(u), pw=document.createElement('div'); pw.className='pw'; pw.textContent = u.tag || (pg>0 ? ('⚔ +'+fmtP(pg)+' sức mạnh') : 'hỗ trợ · không đổi sức mạnh');   // Z107 · Z350 a soldier's perk shows its level
     card.append(ic,nm,ds,pw);
     const choose=()=>chooseUpgrade(u);
     card.addEventListener('click', choose);
