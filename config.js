@@ -925,15 +925,15 @@ export const GRASS = { far:{ cover:0.92, rim0:0.55, rim1:0.95, k:1.0 }, trans:1.
 export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTile:true, ntFreq:0.32, hi:true,   // Z263 stochastic sampling (no repeat grid); ntFreq = patches per photo tile; hi = the base set at 2K (colour + normal) off phones
   // albedo × per battlefield: the scene's sun and exposure were tuned for the darker procedural ground — a photo albedo needs bringing down
   tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.9, 1.0, 0.72], HILLS:[0.47, 0.6, 0.39], VILLAGE:[0.52, 0.6, 0.44], SAVANNA:[0.7, 0.6, 0.5], DESERT:[0.76, 0.64, 0.5],
-    TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[1.02, 0.97, 0.92], STEELMILL:[1.02, 0.97, 0.92], VOLCANO:[1.2, 1.12, 1.05] },   // Z394 the works' concrete and the volcano's black rock are darker photos
+    TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[1.02, 0.97, 0.92], STEELMILL:[1.02, 0.97, 0.92], VOLCANO:[0.72, 0.66, 0.62] },   // Z394 the works' concrete is a darker photo; the volcano's scree under its red light
   biomes:{
   MEADOW:['sparse_grass','forest_ground_04'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['dry_ground_rocks','mud_cracked_dry_03'],
-  DESERT:['aerial_sand','dry_ground_rocks'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','snow_03'], VOLCANO:['dark_rock','burned_ground_01'],
+  DESERT:['aerial_sand','dry_ground_rocks'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','snow_03'], VOLCANO:['rocks_ground_02','brown_mud_rocks_01'],
   QUARRY:['rocks_ground_05','rocks_ground_06'], FOUNDRY:['concrete_floor_damaged_01','burned_ground_01'], STEELMILL:['concrete_floor_damaged_01','burned_ground_01'], CITY:['asphalt_01','cracked_concrete'],
   CITADEL:['rocky_trail','gravel_floor'], RUINS:['rocks_ground_02','rocks_ground_04'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
   // Z394 the floors that read as paint (a near-featureless photo stretched over 370 m: trodden-flat snow, a brown road, smooth grey ash, plain sand) are
   //   built from the richer sets — the snow trampled and churned to earth in patches, the works a broken concrete yard black with soot and cinders, the
-  //   volcano cracked basalt and charred ash, the desert's sand with its pebble beds, the savanna's red earth
+  //   volcano a scree of broken rock and cinder gravel (dark_rock's layered bands laid a tile grid on the floor), the desert's sand with its pebble beds, the savanna's red earth
   //   (a laterite photo so fine-grained it read as flat orange paint from the tank) now dry ground with its pebbles and dark patches — and these take more of their second set and a deeper relief:
   //   per = nrm (normal strength), patchK (share of the field the second set shows on), dual (the base blended with itself at another scale), altRep
   //   hi2k = the sets that have their 2K colour + normal on disk (assets/ground/<set>/2k, tools/ground-photos.mjs); any other base set loads at 1K
