@@ -1036,7 +1036,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z325 forts, the real city, ruins, wonders, props and models graded into the field's colour once a stage is built
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), bi=R('src/render/blend-in.js'), B=C.BLEND;
   ok(B && B.on && B.hue > 0 && B.hue <= 0.35 && B.desat >= 0 && B.desat <= 0.25 && B.dust > 0 && B.dust <= 0.5 && B.tintMin < 1 && B.tintMax > 1, 'blend-in is light: a share of the field\'s hue, a touch less saturation, a dusty foot');
-  ok(/export function blendIn\(m\)/.test(bi) && /m\.transparent/.test(bi) && /m === groundMat/.test(bi) && /grassPhoto\|macroGround/.test(bi) && /key0 \+ '\|blendIn1'/.test(bi) && /if\(f0\) f0\.call\(this, sh, r\)/.test(bi) && /isSkinnedMesh/.test(bi) && /p === skip/.test(bi), 'each material keeps its own shader work and program key; the ground, grass, glass, skinned men and our own tank are left alone');
+  ok(/export function blendIn\(m\)/.test(bi) && /m\.transparent/.test(bi) && /m === groundMat/.test(bi) && /grassPhoto\|macroGround/.test(bi) && /key0 \+ '\|blendIn2'/.test(bi) && /if\(f0\) f0\.call\(this, sh, r\)/.test(bi) && /isSkinnedMesh/.test(bi) && /p === skip/.test(bi), 'each material keeps its own shader work and program key; the ground, grass, glass, skinned men and our own tank are left alone');
   ok(/try\{ blendScene\(scene\); \}catch\(e\)\{\} if\(!intro\.active\) return;/.test(R('src/game/intro.js')) && /blendWhenReady\(scene\)/.test(R('src/loot/upgrades.js')) && /^export \* from '\.\/render\/blend-in\.js';/m.test(R('src/hub.js')), 'graded when a stage is built: in the intro warm-up (even a skipped one) and on the next stage'); }
 
 // Z323 no shader compiles once the fight is on: the countdown waits for a guarded compile; the burnt wreck keeps its model's own shader
@@ -2262,6 +2262,16 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.REALCITY.flatHorizon.every(r=>r[2]<=0.5), 'the far city rings veiled at most half');
   ok(C.REALCITY.windows.frame>0 && /const FACADE_GLSL = /.test(ct) && /\$\{FACADE_GLSL\}/.test(ct) && /export const WIN_F=/.test(ct) && /fwidth\(q\)/.test(ct) && /k = glassy \* vert \* uWinF/.test(ct), 'the curtain wall\'s frame on the glass only, on vertical faces, faded by its own screen size');
   ok(['bld_landmark','bld_bitexco'].every(k=>T[k] && T[k].tex===4096 && JSON.stringify(T[k].maps)==='["map"]' && JSON.stringify(IX[k])==='["0.map"]' && fs.existsSync('assets/models/real/hd/'+k+'.0.map.webp')), 'Landmark 81 and Bitexco wear their originals\' 4K colour up close'); }
+
+// Z400 things stand ON the floor: every solid footprint painted once a stage is built into a contact map (shade tight round it, trodden earth further
+//   out) that the ground and the grass read; each thing's foot dusted and shaded from where the real ground meets it (the terrain's heights)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), K=C.CONTACT, dc=R('src/world/decals.js'), gr=R('src/world/ground.js'), bl=R('src/render/blend-in.js'), gc=R('src/world/grass-carpet.js');
+  ok(K.on && K.shade>0 && K.shade<1 && K.skirt>0 && K.skirt<1 && K.skirtW>K.pad && K.skirtB>K.shadeB && K.res[0]>=K.res[1] && Object.values(K.col).every(c=>c.length===3 && c.every(v=>v>0.3 && v<1)) && C.BLEND.ao>0 && C.BLEND.ao<0.8 && C.BLEND.aoH>0, 'contact: a shade tight round things, a wider skirt of trodden earth, per battlefield earth colours; a foot shade on the things');
+  ok(/export function paintContact\(\)/.test(dc) && /solidShape\(b\)/.test(dc) && /SCENE\.pieces/.test(dc) && /x\.shadowBlur = blur \* P \* 2; x\.shadowOffsetX = W;/.test(dc) && /globalCompositeOperation = 'lighter'/.test(dc), 'every solid footprint (true wall / building shapes, the scenery) painted once, its edges soft by the canvas shadow');
+  ok(/try\{ paintContact\(\); \}catch/.test(bl) && bl.indexOf('paintContact()') < bl.indexOf('if(!BLEND.on) return 0;'), 'painted whenever a stage\'s field is graded (the intro warm-up, the next stage)');
+  ok(/vec2 ct = texture2D\(decalC, duv\)\.rg;/.test(gr) && /diffuseColor\.rgb \*= 1\.0 - ct\.r \* contK\.x;/.test(gr) && /decalC:\{ value:null \}/.test(gr), 'the ground darkened and dirtied by it');
+  ok(/vGc = texture2D\(decalC,/.test(gc) && /transformed\.y \*= 1\.0 - clamp\(vGc\.g \* 0\.6 \+ vGc\.r \* 0\.5, 0\.0, 0\.85\);/.test(gc) && /'grassPhoto2'/.test(gc), 'the grass trodden down and shaded round what stands in it');
+  ok(/hT = min\(hT, vBlendW\.y - texture2D\(blendTT, tuv\)\.r\);/.test(bl) && /function terrainTex\(\)/.test(bl) && /THREE\.HalfFloatType/.test(bl) && /'\|blendIn2'/.test(bl), 'a thing\'s foot measured from the real ground under it (a sunk wall, a slope), shaded where they meet'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

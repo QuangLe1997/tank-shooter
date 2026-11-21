@@ -1224,7 +1224,15 @@ export const INTRO_CITY = { on:true, l81:{ dur:3.4, fov:36, back:0.95 }, street:
 // Z325 BLEND-IN (render/blend-in.js): every lit opaque material on the field, once the stage is built — hue = share of the field's hue (the floor's
 //   average colour over its brightness, clamped tintMin..tintMax per channel), desat = saturation taken off, dust = share of ground colour at the
 //   foot of things, fading out over dustH metres above where each stands
-export const BLEND = { on:true, hue:0.25, desat:0.12, dust:0.36, dustH:1.4, tintMin:0.7, tintMax:1.45 };
+export const BLEND = { on:true, hue:0.25, desat:0.12, dust:0.36, dustH:1.4, tintMin:0.7, tintMax:1.45, aoH:0.9, ao:0.5 };
+// Z400 CONTACT (world/decals.js paintContact, read by the ground's shader): things stood on the floor like cut-outs — a hard line where a wall met the grass, no
+//   shade under a rock, the same clean sand right up to a pipe. Once a stage is built every solid footprint (blocks: walls, cover, rocks, camps,
+//   buildings; the scenery's pieces) is painted into a field-wide map: shade = the floor darkened tight round it (pad m out, blurred over shadeB m:
+//   the light the thing takes from the ground), skirt = trodden, dirtied earth further out (skirtW m + ragged blotches, blurred over skirtB m), tinted
+//   by col (× the floor's own colour, per battlefield). BLEND.aoH / ao: the thing's own foot darkened over aoH m from where it truly meets the ground.
+export const CONTACT = { on:true, res:[2048, 1024], pad:0.2, shadeB:0.8, shade:0.62, skirtW:1.5, skirtB:1.5, skirt:0.68, rK:0.85, sceneK:0.5, blot:[0.5, 1.4],
+  col:{ _:[0.64, 0.56, 0.46], MEADOW:[0.58, 0.47, 0.32], RUINS:[0.6, 0.5, 0.38], CITADEL:[0.66, 0.56, 0.44], SAVANNA:[0.66, 0.54, 0.42], DESERT:[0.74, 0.62, 0.5],
+    ARCTIC:[0.7, 0.72, 0.76], TUNDRA:[0.7, 0.72, 0.76], CITY:[0.6, 0.58, 0.56], FOUNDRY:[0.58, 0.54, 0.5], STEELMILL:[0.58, 0.54, 0.5], VOLCANO:[0.66, 0.6, 0.56], QUARRY:[0.66, 0.62, 0.56] } };
 export const INTRO_CLOUDS = { on:true, band:[0.3, 0.82], puffs:16, wisps:16, size:[26, 46], op:0.55, wispOp:0.26, drift:1.6, haze:0.34, inside:0.82, tintK:0.55 };
 export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35, assetWait:9000 };   // Z322 assetWait (ms): the longest the veil waits for the photo ground, grass and real models before the move
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.

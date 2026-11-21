@@ -123,11 +123,12 @@ function noTile(fs){ if(!GROUND_PHOTO.noTile) return fs; const C = THREE.ShaderC
     .replace('#include <aomap_fragment>', C.aomap_fragment.replace('texture2D( aoMap, vAoMapUv )', 'ntTex( aoMap, vAoMapUv )')); }
 // Z328 the ground scars (scorch, craters, tread prints: world/decals.js) are read by the ground's own shader — they were two more copies of the whole
 //   terrain mesh (2 × 180k triangles) drawn transparent, lit and shadowed over it: two extra full-screen passes of the ground every frame
-export const DECAL_U = { decalS:{ value:null }, decalD:{ value:null }, decalK:{ value:1/(2*ARENA) } };
+export const DECAL_U = { decalS:{ value:null }, decalD:{ value:null }, decalK:{ value:1/(2*ARENA) }, decalC:{ value:null }, contCol:{ value:new THREE.Color(1, 1, 1) }, contK:{ value:new THREE.Vector2(0, 0) } };   // Z400 decalC / contCol / contK: the contact map (world/decals.js paintContact)
 const DECAL_GLSL = `{ vec2 duv = vec2(vWXZ.x * decalK + 0.5, 0.5 - vWXZ.y * decalK); vec4 ds = texture2D(decalS, duv); diffuseColor.rgb = mix(diffuseColor.rgb, ds.rgb, ds.a);
-  vec4 dd = texture2D(decalD, duv); diffuseColor.rgb = mix(diffuseColor.rgb, dd.rgb, dd.a); }`;
-function decalGround(sh){ sh.uniforms.decalS = DECAL_U.decalS; sh.uniforms.decalD = DECAL_U.decalD; sh.uniforms.decalK = DECAL_U.decalK;
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D decalS, decalD; uniform float decalK;').replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_GLSL); }
+  vec4 dd = texture2D(decalD, duv); diffuseColor.rgb = mix(diffuseColor.rgb, dd.rgb, dd.a);
+  vec2 ct = texture2D(decalC, duv).rg; diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * contCol, ct.g * contK.y); diffuseColor.rgb *= 1.0 - ct.r * contK.x; }`;   // Z400 trodden earth round what stands here, shade tight under it
+function decalGround(sh){ sh.uniforms.decalS = DECAL_U.decalS; sh.uniforms.decalD = DECAL_U.decalD; sh.uniforms.decalK = DECAL_U.decalK; sh.uniforms.decalC = DECAL_U.decalC; sh.uniforms.contCol = DECAL_U.contCol; sh.uniforms.contK = DECAL_U.contK;
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D decalS, decalD, decalC; uniform float decalK; uniform vec3 contCol; uniform vec2 contK;').replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_GLSL); }
 export function macroGround(mat){
   mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
     sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.grassCol=GRASS_FAR.col; sh.uniforms.grassC=GRASS_FAR.c; sh.uniforms.grassK=GRASS_FAR.k; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;

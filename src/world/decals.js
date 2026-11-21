@@ -1,6 +1,7 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
-import { ARENA, DECAL_U, MOBILE, bloodSplat, inField } from '../hub.js';
+import { CONTACT } from '../../config.js';
+import { ARENA, BIOME, DECAL_U, MOBILE, SCENE, blocks, bloodSplat, inField, solidShape } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -10,6 +11,29 @@ DECAL.dyn  = document.createElement('canvas'); DECAL.dyn.width=DECAL.dyn.height=
 DECAL.sx = DECAL.stat.getContext('2d'); DECAL.dx = DECAL.dyn.getContext('2d');
 const decalTex=(cv)=>{ const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.generateMipmaps=true; return t; };   // Z328 read by the ground's shader (world/ground.js DECAL_U), no draped planes
 DECAL.texS = DECAL_U.decalS.value = decalTex(DECAL.stat); DECAL.texD = DECAL_U.decalD.value = decalTex(DECAL.dyn);
+// Z400 CONTACT: where things stand on the floor (config CONTACT) — r = shade tight round each footprint, g = the skirt of trodden earth further out
+DECAL.CW = CONTACT.res[MOBILE ? 1 : 0]; DECAL.cppu = DECAL.CW / (ARENA * 2); DECAL.cont = document.createElement('canvas'); DECAL.cont.width = DECAL.cont.height = DECAL.CW;
+{ const t = DECAL.texC = DECAL_U.decalC.value = new THREE.CanvasTexture(DECAL.cont); t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = true; }
+// painted once a stage is built (render/blend-in.js blendScene): every footprint as one path per layer, blurred by the canvas's own shadow (drawn a canvas
+//   width off to the left, so only its blurred shadow lands — the one soft-edge tool every browser has), the layers added channel by channel
+export function paintContact(){ const C = CONTACT, x = DECAL.cont.getContext('2d'), W = DECAL.CW, P = DECAL.cppu, px = v => (v + ARENA) * P;
+  x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-over'; x.shadowColor = 'transparent'; x.clearRect(0, 0, W, W);
+  const col = C.col[BIOME && BIOME.name] || C.col._; DECAL_U.contCol.value.setRGB(col[0], col[1], col[2]); DECAL_U.contK.value.set(C.on ? C.shade : 0, C.on ? C.skirt : 0);
+  if(!C.on || BIOME.cave){ DECAL.texC.needsUpdate = true; return 0; }
+  const fp = [], seen = new Set(); for(const b of blocks){ if(!b || !(b.x === b.x) || b.air) continue; let s = null; try{ s = solidShape(b); }catch(e){}   // (its true footprint: a wall's battered foot, a whole building)
+    if(s && s.obb){ if(seen.has(s)) continue; seen.add(s); fp.push({ x:s.x, z:s.z, f:s.obb.f, hl:s.obb.hl, hw:s.obb.hw }); } else if(b.r > 0.3) fp.push({ x:b.x, z:b.z, r:b.r * C.rK }); }
+  for(const p of SCENE.pieces || []) if(!p.far && p.r > 0.3) fp.push({ x:p.x, z:p.z, r:p.r * C.sceneK });
+  let seed = 9; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const shape = (path, f, grow, blot) => { if(f.r != null){ const R = (f.r + grow) * P; path.moveTo(px(f.x) + R, px(f.z)); path.arc(px(f.x), px(f.z), R, 0, 6.2832); }
+      else { const c = Math.cos(f.f), s = Math.sin(f.f), hl = f.hl + grow, hw = f.hw + grow, q = [[hl, hw], [-hl, hw], [-hl, -hw], [hl, -hw]].map(([a, b]) => [px(f.x + a * s + b * c), px(f.z + a * c - b * s)]);   // (solid-shape.js: along (sin f, cos f) ± hl, across ± hw)
+        path.moveTo(q[0][0], q[0][1]); for(let i = 1; i < 4; i++) path.lineTo(q[i][0], q[i][1]); path.closePath(); }
+      if(blot){ const R0 = f.r != null ? f.r : f.hl + f.hw, n = Math.max(3, Math.round(R0 * 1.6)), s = f.r != null ? 0 : Math.sin(f.f), c = f.r != null ? 1 : Math.cos(f.f);   // ragged blotches round its edge
+        for(let i = 0; i < n; i++){ const a = rnd() * 6.2832, g = grow * (0.3 + rnd() * 0.8), u = Math.cos(a) * ((f.r != null ? f.r : f.hl) + g), v = Math.sin(a) * ((f.r != null ? f.r : f.hw) + g),
+          bx = px(f.x + u * s + v * c), bz = px(f.z + u * c - v * s), br = (C.blot[0] + rnd() * (C.blot[1] - C.blot[0])) * P; path.moveTo(bx + br, bz); path.arc(bx, bz, br, 0, 6.2832); } } };
+  const sh = new Path2D(), sk = new Path2D(); for(const f of fp){ shape(sh, f, C.pad, false); shape(sk, f, C.skirtW, true); }
+  x.globalCompositeOperation = 'lighter'; x.fillStyle = '#000';
+  for(const [path, colr, blur] of [[sh, 'rgb(255,0,0)', C.shadeB], [sk, 'rgb(0,255,0)', C.skirtB]]){ x.save(); x.translate(-W, 0); x.shadowColor = colr; x.shadowBlur = blur * P * 2; x.shadowOffsetX = W; x.fill(path); x.restore(); }
+  x.globalCompositeOperation = 'source-over'; DECAL.texC.needsUpdate = true; return fp.length; }
 export const _dpx=(x)=>(x+ARENA)*DECAL.ppu, _dpz=(z)=>(z+ARENA)*DECAL.ppu, _ddx=(x)=>(x+ARENA)*DECAL.dppu, _ddz=(z)=>(z+ARENA)*DECAL.dppu;
 export let _treadCol='rgba(42,30,18,', _treadA=0.16;
 export function decalReset(b){
