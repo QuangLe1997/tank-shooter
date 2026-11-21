@@ -124,7 +124,7 @@ export function updateEnemies(dt, now){
       // menacing lit-fuse telegraph: steady red glow + sparks + warning ring that quickens as it closes
       if(Math.random()<0.7) spawnPart(e.pos.x,1.9,e.pos.z, (Math.random()-0.5)*0.6,0.4,(Math.random()-0.5)*0.6, {color:0xff2a14, size:2.2, life:0.12, grav:0, drag:1});
       if(Math.random()<0.5) spawnPart(e.pos.x,2.3,e.pos.z, (Math.random()-0.5)*1.6,2.6,(Math.random()-0.5)*1.6, {color:0xffae5c, size:0.55, life:0.3, grav:-3, drag:3});
-      e.warn=(e.warn||0)-dt; if(e.warn<=0){ e.warn=Math.max(0.1, Math.min(0.6,(d-2)/16)); ringPulse(e.pos, 0xff2a14, 2.0); }
+      e.warn=(e.warn||0)-dt; if(e.warn<=0){ e.warn=Math.max(0.1, Math.min(0.6,(d-2)/16)); if(MODE.rings) ringPulse(e.pos, 0xff2a14, 2.0); }   // (Z403 no ring in a soldier's war: the glow, the sparks and the blink stay)
       const touch = e.r + p.radius + 0.4;                            // touching the player's tank
       if(d < touch+2.4) e.mesh.visible = Math.floor(now*22)%2===0;    // frantic blink in the final lunge (telegraph)
       if(d <= touch){                                                // CONTACT → detonate INSTANTLY (no arm delay) and hurt the player
@@ -190,7 +190,8 @@ export function updateEnemies(dt, now){
     if(e.volleyAt){ if(now<e.volleyAt){ if(Math.random()<0.55){ e.muzzle.getWorldPosition(_v); spawnPart(_v.x,_v.y,_v.z, 0,0,0, { color:0xff2a2a, size:1.1+Math.random()*0.6, life:0.09, grav:0, drag:1 }); } }   // Z185 volley telegraph: the muzzles glint red
       else { e.volleyAt=0; if(targetPlayer && d<er){ e.fireAt=Math.min(e.fireAt, now); e.forceShot=true; } } }
     if(def.canShoot && now>e.fireAt && d < er && fortWallCross(e.pos.x, e.pos.z, target.x, target.z)){ e.fireAt=now+0.5; }   // Z111b stone in the way: no direct shot through a fortress wall / shut gate
-    else if(def.truck && now>e.fireAt && d < def.range && target!==e.lk){ e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
+    else if(def.truck && MODE.arty && now>e.fireAt && d < def.range && target!==e.lk){   // (Z403 no rocket artillery in a soldier's war)
+      e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
     else if(def.canShoot && now>e.fireAt && d < er && laid && !e._idle && target!==e.lk){   // (Z377 never at the spot he was last seen)
       const ds=diffScale(), A=BALANCE.aggro;
       // PROACTIVE-FIRE chance ramps with stage — early enemies hesitate, late ones fire relentlessly

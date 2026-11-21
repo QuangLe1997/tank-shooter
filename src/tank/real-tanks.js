@@ -1,7 +1,7 @@
 // tank/real-tanks.js — Z256 REAL TANKS: one Meshy-generated vehicle per family (western MBT, T-90-type, Merkava, Armata, IFV, SPG, UGV) dressed onto every procedural vehicle of that family. The model comes in separate parts (Smart Topology t2): they are sorted by shape — the gun (thin pieces chained along the centre line; its far end tells which way the model faces), the turret (the broadest part above the deck and everything standing on or built against it), the running gear (low parts along the sides, dropped: the procedural tracks and wheels stay, they animate), the hull (the rest). One transform keeps the model's own proportions and layout: the hull spans the procedural tracks, the turret and gun are slid level onto the game's turret pivot, the gun pivot and the muzzle points move to the real gun — so the suspension, the turret's traverse, the gun's elevation and recoil, the paint per side / battlefield, the hit flash and any barrel mounted later all keep working. Tanks built before the files load are tracked and dressed (in their rest pose) when they arrive; until then, or on failure, the procedural vehicle stays.
 import * as THREE from 'three';
-import { REALTANK } from '../../config.js';
-import { loadGLTF, seatBarrel } from '../hub.js';
+import { REALTANK, SIDE_ID } from '../../config.js';
+import { loadGLTF, markSide, paintVehicle, seatBarrel } from '../hub.js';
 
 const LIVE = new Map(), FAM = {}, _m = new THREE.Matrix4(), _b = new THREE.Box3(), _v = new THREE.Vector3();
 let _p = null;
@@ -10,6 +10,7 @@ const famOf = id => { for(const [k, f] of Object.entries(REALTANK.fams)) if(f.de
 
 // called at the end of buildTank: dress now if the family is ready, else as soon as it is
 export function realTank(g, opts){ const k = opts && opts.model ? famOf(opts.model) : null; if(!k || typeof window === 'undefined' || /proctank/.test(location.search + location.hash)) return g;
+  if(opts.own){ g.userData.side = 'f'; g.userData.own = true; }   // Z403 our own tank (player / garage): its skin stays, it wears our rim
   g.traverse(o => { if(o.isMesh) o.userData.proc = true; });   // what the build made — kit hung on afterwards (the player's dozer blade, ERA bricks, flag) is left alone
   if(FAM[k]) dress(g, FAM[k]); else { LIVE.set(g, k); loadRealTanks(); } return g; }
 export function loadRealTanks(){ if(_p) return _p;
@@ -55,7 +56,11 @@ function prepare(gl){ let src = null; gl.scene.updateMatrixWorld(true); gl.scene
   const R = new THREE.Matrix4().makeRotationY(yaw), build = tris => { const g2 = new THREE.BufferGeometry(); for(const name of ['position', 'normal', 'uv']){ const A = geo.attributes[name]; if(!A) continue; const n = A.itemSize, arr = new Float32Array(tris.length * 3 * n);
       let o = 0; for(const t of tris) for(let j = 0; j < 3; j++){ const v = idx[t + j]; for(let q = 0; q < n; q++) arr[o++] = A.array[v * n + q]; } g2.setAttribute(name, new THREE.BufferAttribute(arr, n)); }
     g2.applyMatrix4(R); g2.computeBoundingBox(); g2.computeBoundingSphere(); return g2; };
-  return { hull:build(out.hull), turret:build(out.turret), gun:out.gun.length ? build(out.gun) : null, mat:src.material, counts:{ hull:out.hull.length / 3, turret:out.turret.length / 3, gun:out.gun.length / 3, parts:all.length } }; }
+  return { hull:build(out.hull), turret:build(out.turret), gun:out.gun.length ? build(out.gun) : null, mat:src.material, gain:coatGain(src.material.map), counts:{ hull:out.hull.length / 3, turret:out.turret.length / 3, gun:out.gun.length / 3, parts:all.length } }; }
+// Z403 how bright the side's coat must be laid to keep the model's own light and shade: 1 / the texture's mean luminance (linear), within SIDE_ID.gain
+function coatGain(t){ const im = t && t.image, G = SIDE_ID.gain; if(!im || !im.width || typeof document === 'undefined') return G[0]; try{ const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 32, 32);
+  const d = x.getImageData(0, 0, 32, 32).data, lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; let L = 0, n = 0; for(let i = 0; i < d.length; i += 4){ const l = 0.2126 * lin(d[i]) + 0.7152 * lin(d[i + 1]) + 0.0722 * lin(d[i + 2]); if(l > 0.004){ L += l; n++; } }   // (the atlas's black padding left out)
+  return Math.min(G[1], Math.max(G[0], 1 / Math.max(1e-3, L / Math.max(1, n)))); } catch(e){ return G[0]; } }
 
 // the procedural meshes of one group (not of the sub-groups that move on their own), their box in the tank's frame
 function procBox(g, grp, skip){ const box = new THREE.Box3(), list = [], inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
@@ -87,18 +92,27 @@ function dress(g, F){ const u = g.userData; if(u.realDressed || !u.body || !u.tu
     const M = fitHull(F, procBox(g, g, [body]).box, H.box); place(g, body, F.hull, M, mat, 'hull');
     // the turret and its gun keep the model's layout, slid level so the turret's middle sits on the game's turret pivot (it turns about it)
     const tc = F.turret.boundingBox.getCenter(new THREE.Vector3()).applyMatrix4(M), q = toTank(g, tur, new THREE.Vector3());
-    const MT = new THREE.Matrix4().makeTranslation(q.x - tc.x, 0, q.z - tc.z).multiply(M); place(g, tur, F.turret, MT, mat, 'turret');
+    const MT = new THREE.Matrix4().makeTranslation(q.x - tc.x, 0, q.z - tc.z).multiply(M), tm = place(g, tur, F.turret, MT, mat, 'turret'); let gm = null;
     for(const o of H.list.concat(T.list)){ o.visible = false; o.userData.realHidden = true; }
     if(F.gun && gp && B && !B.box.isEmpty()){
       // the gun pivot goes to the height of the real gun's axis (any barrel mounted later — the player's weapons — comes out of the real mantlet)
       const gb = F.gun.boundingBox, axis = new THREE.Vector3(0, (gb.min.y + gb.max.y) / 2, 0).applyMatrix4(MT), pv = toTank(g, gp, new THREE.Vector3()); pv.y = axis.y;
       gp.position.copy(fromTank(g, gp.parent, pv)); g.updateMatrixWorld(true);
-      place(g, bg, F.gun, MT, mat.clone(), 'gun'); for(const o of B.list){ o.visible = false; o.userData.realHidden = true; }
+      gm = place(g, bg, F.gun, MT, mat.clone(), 'gun').material; for(const o of B.list){ o.visible = false; o.userData.realHidden = true; }
       // the shells leave from the real muzzle: every muzzle point on the barrel moves to its tip (height and reach; a twin mount keeps its side offset)
       const tip = new THREE.Vector3((gb.min.x + gb.max.x) / 2, (gb.min.y + gb.max.y) / 2, gb.max.z).applyMatrix4(MT);
       const mz = new Set([u.muzzle].concat(u.mounts && u.mounts.main || [])); for(const o of mz){ if(!o || !isUnder(o, bg)) continue; o.updateMatrixWorld(true);
         const p = toTank(g, o, new THREE.Vector3()); p.y = tip.y; p.z = tip.z + 0.05; o.position.copy(fromTank(g, o.parent, p)); } }
-    u.paint = [[mat, base.getHex()]]; u._small = null; }
+    u.paint = [[mat, base.getHex()]].concat(gm ? [[gm, base.getHex()]] : []); u._small = null; u.coatGain = F.gain; g.updateMatrixWorld(true); u.roofTop = roofTop(tm, tur); }   // (Z403 the gun painted with the hull)
   tur.rotation.copy(pose[0]); if(gp) gp.rotation.copy(pose[1]); body.rotation.copy(pose[2]); g.updateMatrixWorld(true);
+  if(u.side){ if(u.own) markSide(g, 'f', true); else paintVehicle(g, u.side); } seatRoofMark(g);   // Z403 its side, known before the model came, laid on now
   if(u.gunId) seatBarrel(g); }   // Z381 a weapon mounted before the real turret came: seated in it now (tank/seat-gun.js)
+// Z403 the real turret's roof (in the turret's frame): rays dropped on a 3 × 3 patch round its middle, the flat hits kept (a cupola or a gun box is no roof), the median height
+const _DN = new THREE.Vector3(0, -1, 0), _rc = new THREE.Raycaster(), _n = new THREE.Vector3();
+function roofTop(tm, tur){ const box = new THREE.Box3().setFromObject(tm), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()), hits = [];
+  for(const fx of [-0.16, 0, 0.16]) for(const fz of [-0.16, 0, 0.16]){ _rc.set(_v.set(c.x + s.x * fx, box.max.y + 1, c.z + s.z * fz), _DN); const h = _rc.intersectObject(tm, false)[0];
+    if(h && h.face && _n.copy(h.face.normal).transformDirection(tm.matrixWorld).y > 0.8) hits.push(h.point.clone()); }
+  if(!hits.length) return null; hits.sort((a, b) => a.y - b.y); return tur.worldToLocal(hits[hits.length >> 1]); }
+// a recognition panel hung on the turret (userData.roofMark) lies on the real roof once there is one
+export function seatRoofMark(g){ const u = g && g.userData, r = u && u.roofTop; if(!r || !u.turret) return; for(const o of u.turret.children) if(o.userData.roofMark) o.position.set(r.x, r.y + 0.03, r.z); }
 const isUnder = (o, p) => { for(let q = o; q; q = q.parent) if(q === p) return true; return false; };

@@ -76,7 +76,7 @@ export function buildTank(opts={}){
       sprocketGeo:(r)=>_sg[r]||(_sg[r]=G.sprocket.clone().scale(1, r/0.31, r/0.31)), blobGeo:G.blob, blobMat });
     if(KIT) warKit(out, { HULL, STEEL, BLACK, GLASS, dark, metal });
     out.userData.paint = CAMO ? [] : Object.keys(_mc).filter(k=>k[0]==='s').map(k=>[_mc[k], _mc[k].color.getHex()]);   // Z179 (design-built vehicles too)
-    bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); return realTank(out, opts); }   // Z256 the Meshy vehicle of its family dresses it
+    bakeTank(out); out.traverse(o=>{ if(o.isMesh && o!==out.userData.blob){ o.castShadow=true; o.receiveShadow=true; } }); if(KIT) opts = { ...opts, own:true }; return realTank(out, opts); }   // Z256 the Meshy vehicle of its family dresses it (Z403 own: our own tank, it wears our side's rim)
   const rig={ wheels:[[],[]], wheelTex:[], tracks:[], lx:undefined, lz:0, lf:0, v:0, a:0, pitch:0, pv:0, roll:0, rv:0, recoil:0, recoilLen:0.42, vib:0, elev:0, elevT:0, t:Math.random()*10 };
   // ---------- running gear (unsprung: stays on the ground) ----------
   const NW = SP.wheels || (detail?6:5), wGeo = detail?G.wheel:G.wheelS;
@@ -186,7 +186,7 @@ export function buildTank(opts={}){
   if(KIT) warKit(g, { HULL, STEEL, BLACK, GLASS, dark, metal });
   bakeTank(g);
   g.traverse(o=>{ if(o.isMesh && o!==blob){ o.castShadow=true; o.receiveShadow=true; } });
-  return realTank(g, opts);   // Z256
+  if(KIT) opts = { ...opts, own:true }; return realTank(g, opts);   // Z256 (Z403 own: our own tank)
 }
 // ---- draw-call baking: merge every group's direct child meshes that share a material into ONE mesh (animated groups stay separate) ----
 export function bakeGroup(par){

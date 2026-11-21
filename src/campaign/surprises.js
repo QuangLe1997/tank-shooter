@@ -7,7 +7,7 @@
 //   · and sometimes the luck is ours: OUR ARTILLERY drops a fire mission on the thickest knot of enemies
 import * as THREE from 'three';
 import { REAL } from '../../config.js';
-import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad } from '../hub.js';
+import { FT, MODE, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad } from '../hub.js';
 
 const rnd = a => a[0]+Math.random()*(a[1]-a[0]);
 export const SURP = { next:0, shells:[], last:null, count:0 };
@@ -45,7 +45,8 @@ function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=nul
 const EV = { mortar, ambush, armour, vbied, heli, friendly };
 
 function roll(now){ const C=REAL.surprise, live=enemies.length, pool=[];
-  for(const k in EV){ if(S.stage<(C.from[k]||1) || k===SURP.last) continue; if(live>110 && k!=='friendly' && k!=='mortar') continue; if((C.w[k]??1)>0) pool.push([k, C.w[k]??1]); }
+  for(const k in EV){ if(S.stage<(C.from[k]||1) || k===SURP.last || (k==='mortar' && !MODE.arty)) continue;   // Z403 no enemy mortar barrage in a soldier's war
+    if(live>110 && k!=='friendly' && k!=='mortar') continue; if((C.w[k]??1)>0) pool.push([k, C.w[k]??1]); }
   if(!pool.length) return null; let tot=0; for(const [,w] of pool) tot+=w; let r=Math.random()*tot;
   for(const [k,w] of pool){ r-=w; if(r<=0){ if(EV[k](now)){ SURP.last=k; SURP.count++; return k; } break; } }
   return null; }

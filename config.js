@@ -107,7 +107,7 @@ export const TUNNEL = { from:2, n:[3,4], hp:{ hatch:70, bunker:280 }, seeR:20, u
 //   stands well clear of OUR citadel — gap = open ground between our wall (wall: its radius, world/core-walls.js) and the edge of theirs,
 //   wider than our guard cannons' reach past the wall (54 − 24 = 30 m); small posts (bunkers, towers) keep a shorter gap. spawn: the same from our spawn point.
 export const HOME_GAP = { wall:24, gap:46, gapMobile:26, small:34, smallMobile:20, spawn:36, spawnMobile:24, minK:0.7, campMobileK:0.5 };   // campMobileK: on the small phone field the first barracks camp may relax to half the gap rather than not exist   // minK: when the field is too crowded to place a site, the gap relaxes step by step to this share, never below
-export const UNDERBASE = { off:170, W:75, D:55, gate:{ lockHp:[380,80], turretHp:300, turretR:36, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },
+export const UNDERBASE = { off:170, W:75, D:55, gate:{ lockHp:[380,80], turretHp:300, turretR:24, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },   // Z403 gate MG turretR 36 → 24 m (a rifleman's reach)
   hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26], tank:[38,48], maxTanks:3 }, lights:{ desk:8, mob:3, I:50, range:34 }, score:{ target:400, all:2000, lock:300 } };
 export const REAL = {
   concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
@@ -627,7 +627,7 @@ export const PARA = { fromStage: 1, fromWave: 2, every: [50, 72], everyMobile: [
 //   strays, garrison (riflemen [min,max], guard tanks [early,late]), gunships called per base [min,max], armour called in, and what losing each costs the enemy
 export const SUPPLYB = { perStage:{ total:[3,3,4,4,4] }, hpPerStage:0.15,   // Z195 3–4 compounds, fuel and ammo alternating, in the corners of the map
   hp:{ radartower:560, radome:220, aagun:150, fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110 },
-  alertR:46, leash:40, guards:[3,6], tanks:[1,1], heli:[1,3], heliCd:40, reinf:2, tankCd:30,
+  alertR:46, leash:40, guards:[3,6], tanks:[1,1], heli:[1,3], heliCd:40, reinf:2, tankCd:30, aa:{ range:26 },   // Z403 the radar's twin AA guns hose a man on the ground within aa.range m (was 62: they cut him down before he got near; now no further than his own rifle reaches)
   cut:{ speed:0.12, tanks:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
 export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };
 export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
@@ -786,7 +786,7 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
   defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.85, call:{ speed:9, arrive:2.6 },
   trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85,
   soldier:{ hp:150, rifleK:1, fleeK:0.55, grenade:{ cd:9, r:4.2, dmg:85 }, smoke:{ cd:12, toss:5 }, medkit:{ cd:16, hp:45 },
-    war:{ sizeK:1.5, squads:1, tankFrom:3, w:{ rifle:6, rpg:1.2, scout:0.8, carrier:0.6, mortar:0.3, heli:0.3 }, shell:{ lock:1.1, flight:0.3, R:3.2, dmgK:2 } } },   // Z309 his waves (campaign/soldier-war.js): size × the tank's, extra squads, a tank from wave tankFrom (or stage 2), weights; a tank's shell: s laying its gun, s in flight, burst radius m, damage × · Z307 soldier mode (game/mode.js): his health (no tank upgrades on him), rifle rounds at full weight on a man (a hull takes INFANTRY.vsArmour), animals let him this much closer than a tank; his skills (combat/trooper-spells.js): grenade cooldown s / blast radius m / damage, smoke cooldown / toss m, dressing cooldown / health
+    war:{ sizeK:1.5, squads:1, tankFrom:3, w:{ rifle:6, rpg:1.2, scout:0.8, carrier:0.6, mortar:0.3, heli:0.3 }, shell:{ lock:1.1, flight:0.3, R:3.2, dmgK:2 }, arty:false, rings:false } },   // Z403 arty: enemy artillery at all (barrages, spotter SPGs, a battery, a boss's barrage) · rings: red rings on the ground warning of a blast   // Z309 his waves (campaign/soldier-war.js): size × the tank's, extra squads, a tank from wave tankFrom (or stage 2), weights; a tank's shell: s laying its gun, s in flight, burst radius m, damage × · Z307 soldier mode (game/mode.js): his health (no tank upgrades on him), rifle rounds at full weight on a man (a hull takes INFANTRY.vsArmour), animals let him this much closer than a tank; his skills (combat/trooper-spells.js): grenade cooldown s / blast radius m / damage, smoke cooldown / toss m, dressing cooldown / health
   death:{ dur:3.8, carry:0.6, side:1.8, up:1.4, slow:0.7, swerve:1.6 } };   // Z254 killed: how long the death beat lasts (s), the share of the horse's speed he keeps as he is thrown, the sideways push and the hop (m/s), the riderless horse slowing (/s) and swerving (rad/s)   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
 // Z248 REAL CAVALRY (actors/real-cav.js) — calibration of the Meshy models: the operator's height (m); the saddle seat in the horse model (m, bind pose)
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
@@ -801,6 +801,12 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
   fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus'] }, east:{ designs:['lqt','t90m','type99','flametank','arv'] }, merkava:{ designs:['merkava'] },
     armata:{ designs:['t14','ghost'] }, ifv:{ designs:['ifv','recon','atgmv'] }, spg:{ designs:['spg','td'] }, ugv:{ designs:['ugv'] } } };   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
+// Z403 SIDE ID (world/sidepaint.js markSide · tank/materials.js sideCoat): ours and theirs told apart at a glance and at range. coat = how much of a real model's
+//   own colour gives way to its side's paint, laid over the texture's light and shade (gain [min, max] = 1 / the texture's mean luminance, clamped); metal = how
+//   much of the texture's metal the coat knocks back (paint is not bare steel); detail = how much of the texture's light and shade the coat keeps; bright = the coat's albedo × the paint colour; sat = its saturation × (paint, not plastic); paint = each side's colour before the battlefield shift (f ours olive drab,
+//   e theirs desert tan — the shift still pulls them off the ground: theirs crimson on sand, ours only lighter or darker); rim = the side's colour round the silhouette (× rimK,
+//   rimPow = how tight to the edge; the player's own tank keeps its skin and wears the rim); panel = the lime recognition panel on our captured tanks' turret roof (m)
+export const SIDE_ID = { coat:0.75, metal:0.5, detail:1, bright:0.42, sat:0.65, gain:[1.5, 14], paint:{ f:0x5a6e38, e:0xa47a4a }, rim:{ f:0x8cff4a, e:0xff3a22 }, rimK:{ f:0.28, e:0.2 }, rimPow:4, panel:0.95 };
 // Z262 REAL TREES (world/real-trees.js): thirteen Meshy species, each at its true height h (m) before the tree's own ± scale; map = which species a
 //   battlefield's procedural tree kinds become (variant i takes species i mod the list; `_` = everywhere else); wind = its direction, how far the top
 //   sways (m), how far the leaves flutter (m); env = reflections; tint = albedo × per species

@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { BIOME, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip, blRamp, holoGain, holoRing } from '../hub.js';
+import { BIOME, MODE, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip, blRamp, holoGain, holoRing } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -18,14 +18,14 @@ export function makeArtLock(x,z,R,innerR){
   root.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), groundNormal(x, z, new THREE.Vector3()));   // Z215 the ring lies on the slope
   const edge=holoRing(R, { kind:'danger', flat:false, ticks:Math.round(R*6), tickLen:Math.min(0.45, R*0.07), spin:0.025 }); flat.add(edge);   // Z318 one thin hot red line with a soft glow (battle light), fine ticks turning
   const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,40), _artM(0x000000,0)); shadow.renderOrder=19; flat.add(shadow);
-  root.userData={ edge, shadow, R, innerR }; scene.add(root); return root; }
+  root.userData={ edge, shadow, R, innerR }; root.visible=!!MODE.rings; scene.add(root); return root; }   // Z403 a soldier's war lays the zone but never draws it
 // k: 0→1 how tight the lock is (1 while the shell is in the air) · fly: 0→1 shell flight progress (null while locking)
 export function tickArtLock(zone, k, fly, now, dt){ const u=zone.userData, hot=fly!=null;   // Z318 a smooth pulse that quickens warn → critical as the lock tightens (never a hard strobe), the line burning hotter
   u.edge.material.opacity = blRamp(u, dt||0.016, hot ? 1 : k, 'warn', 'crit', hot ? 0.42 : 0.22); holoGain(u.edge, 2.4 + (hot ? 1.3 : k*0.9));
   if(hot){ const s=0.6+fly*u.innerR*1.25; u.shadow.scale.set(s,s,1); u.shadow.material.opacity=0.08+0.3*fly; } }
 export function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); }
 export function _pickMortar(){ const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); return ms.length ? ms[(Math.random()*ms.length)|0] : null; }
-export function artLockStrike(tx,tz){
+export function artLockStrike(tx,tz){ if(!MODE.arty) return;   // Z403 no enemy artillery in a soldier's war
   const C=BALANCE.artillery, R=C.radius;
   artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0, rip:0, launcher:_pickMortar() });   // remember WHICH mortar fires this shell
   sfx('alarm');
@@ -45,7 +45,7 @@ export function fireSpotter(e){
 }
 export function updateArtillery(dt, now){ if(UNDER.on) return;   // Z226
   const C=BALANCE.artillery, mort=_artMortars();
-  if(S.stage<2 || mort===0 || boss){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down
+  if(S.stage<2 || mort===0 || boss || !MODE.arty){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down (Z403 never in a soldier's war)
   ART.t-=dt; if(ART.t>0) return;
   if(ART.phase==='rest'){ tip('arty'); ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
   else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.max(1, Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar) - artyShotCut()); ART.t=0; }   // Z197 no radar → fewer shells
@@ -129,7 +129,7 @@ export function airstrike(now){
   const cx=S.aimPoint.x||0, cz=S.aimPoint.z||0;
   for(let i=0;i<7;i++){
     const ax=cx+(Math.random()-0.5)*22, az=cz+(Math.random()-0.5)*22, delay=0.3+i*0.12+Math.random()*0.2;
-    ringPulse(new THREE.Vector3(ax,0,az), 0xff6030, 3);
+    if(MODE.rings) ringPulse(new THREE.Vector3(ax,0,az), 0xff6030, 3);   // (Z403 no warning ring in a soldier's war)
     setTimeout(()=>{ if(S.mode!=='playing') return; bigExplode(new THREE.Vector3(ax,1,az),0xff7a3d,1.6); aoeDamage(ax,az,5,50,false,performance.now()/1000); }, delay*1000);
   }
 }

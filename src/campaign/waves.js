@@ -72,7 +72,7 @@ function planWave(now){ WAVE.plan=null; WAVE.pk=0; WAVE.lastTank=null; WAVE.prob
   if(r<0.34){ WAVE.plan='pincer'; WAVE.pincerA=Math.random()*Math.PI*2; setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Địch đánh gọng kìm — chúng đến từ hai hướng!'); }, 2600); }
   else if(r<0.54){ WAVE.plan='probe'; const i=WAVE.spawnQueue.indexOf('squad'); if(i>0){ WAVE.spawnQueue.splice(i,1); WAVE.spawnQueue.unshift('squad'); } else if(i<0) WAVE.spawnQueue.unshift('squad');
     setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Tốp thăm dò của địch — diệt gọn, đợt chính đang tới!'); }, 2600); }
-  else if(r<0.7 && S.stage>=2){ WAVE.plan='prep'; prepBarrage(); WAVE.spawnAt=now+3.6; } }
+  else if(r<0.7 && S.stage>=2 && MODE.arty){ WAVE.plan='prep'; prepBarrage(); WAVE.spawnAt=now+3.6; } }   // (Z403 a soldier's war has no artillery prep)
 function pincerPoint(){ const p=S.player; if(!p) return null; const side=(WAVE.pk++%2)?1:-1, a=WAVE.pincerA+side*1.15;
   for(const d of [58,48,40]){ const x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d; if(inField(x, z, 4)) return { x, z }; } return null; }
 // Z106 enemies enter through the irregular fence: edge 0 = their side (−z) · 1 = ours (+z) · 2 = west · 3 = east. Of a few candidate

@@ -65,7 +65,7 @@ export const ENEMY_TRAITS = {
 };
 for(const k in ENEMY_TRAITS) Object.assign(ENEMY_DEFS[k], ENEMY_TRAITS[k]);
 // ----------------------------- WATCHTOWERS: enemy riflemen fire DOWN on your tank — shoot the tower down and they fall with it -----------------------------
-export const TOWER = { hp:150, guardDmg:4, range:28, fireCd:1.7, h:8.2, getUp:1.4 };   // Z112 getUp: seconds a guard lies stunned after riding a rammed tower down
+export const TOWER = { hp:150, guardDmg:4, range:20, fireCd:1.7, h:8.2, getUp:1.4 };   // Z112 getUp: seconds a guard lies stunned after riding a rammed tower down · Z403 range 28 → 20 m (rounds reach +4): under a rifleman's 24 m, he sits 6–11 m up and sees over cover; the soldier's own rifle (26 m) now opens up first
 // ----------------------------- FRIENDLY SOLDIERS (squad that guards the Core) -----------------------------
 // Up to 5 infantry hold a ring around the monument, auto-fire at the nearest enemy, intercept incoming
 // shots (body-block) and brawl. One soldier out-DPSes a tank, but a swarm of tanks will overwhelm them.

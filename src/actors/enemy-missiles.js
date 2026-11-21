@@ -73,7 +73,7 @@ function lockWarnFX(){ if(_lw) return _lw; const g=new THREE.Group(), br=new THR
   _lw={ g, br, ring, el, at:0, txtAt:0 }; return _lw; }
 export function updateLockWarn(dt, now){ const p=S.player; if(!p) return; let near=1e9;
   for(const r of EMIS){ if(!r.guided || r.jam) continue; const d=Math.hypot(r.x-p.pos.x, r.z-p.pos.z); if(d<near) near=d; }
-  const on=near<75, W=on||_lw ? lockWarnFX() : null; if(!W) return; W.g.visible=on; W.el.classList.toggle('on', on); if(!on) return;
+  const on=near<75, W=on||_lw ? lockWarnFX() : null; if(!W) return; W.g.visible=on && !!MODE.rings; W.el.classList.toggle('on', on); if(!on) return;   // (Z403 a soldier's war: the HUD and the beeps, no ring on the ground)
   const k=Math.max(0, Math.min(1, 1-near/75)); W.g.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z)+0.4, p.pos.z);
   W.br.scale.setScalar(1.2-0.2*k); W.br.rotation.y=p.facing||0; W.ring.rotation.z+=dt*(0.4+k*0.9);   // Z190 calmer
   const pul=blRamp(W, dt, k, 'warn', 'crit', 0.35); for(const m of W.br.children) m.material.opacity=0.3+0.62*pul; W.ring.material.opacity=0.4+0.6*pul;

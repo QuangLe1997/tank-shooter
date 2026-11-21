@@ -125,7 +125,7 @@ export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; gd.alive=f
 export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
   dropGuard(t, gd, ux/L, uz/L); floatText('HẠ LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, 8, t.z), 15); return true; }
 // Z104 who a tower guard shoots: the tank, unless one of our foot soldiers is clearly closer
-export function towerGuardAim(x, z, y){ const p=S.player, seen=y==null || playerSeen(x, y, z); let best=seen?p.pos:null, bd=seen?Math.hypot(p.pos.x-x, p.pos.z-z)*0.8:Infinity;   // Z377 a soldier lying flat out of his sight is no target (null: none)
+export function towerGuardAim(x, z, y){ const p=S.player, seen=y==null || playerSeen(x, y, z), dp=Math.hypot(p.pos.x-x, p.pos.z-z), near=seen && dp<TOWER.range; let best=near?p.pos:null, bd=near?dp*0.8:Infinity;   // Z377 a soldier lying flat out of his sight is no target (null: none) · Z403 nor one beyond his reach: he keeps watching his sector until you are inside it
   for(const a of FT){ const d=Math.hypot(a.pos.x-x, a.pos.z-z); if(d<bd && d<TOWER.range){ bd=d; best=a.pos; } }
   return best; }
 // every live guard (cached world position) — for our soldiers' target picking

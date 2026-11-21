@@ -1,10 +1,10 @@
 // campaign/soldier-war.js — Z309 A SOLDIER'S WAR (soldier mode only; the tank keeps campaign/waves.js and its direct-fire duels): the waves are men —
-//   riflemen and RPG teams, squads, scout cars, carriers dropping more men, troop helicopters later on, the odd self-propelled gun calling its barrage — and
+//   riflemen and RPG teams, squads, scout cars, carriers dropping more men, troop helicopters later on (Z403 no self-propelled gun calling barrages: no artillery here) — and
 //   armour comes as a set piece: a tank (two late on) at the tail of a wave, announced on the radio as it rolls in. Against a man a tank does not "hit a
-//   hull": it lays its gun on a spot — a red ring blinks there, faster as it settles — then fires, and the shell bursts on that spot. Out of the ring, it
-//   misses; caught in it, the nearer the centre the worse. Its quick-firing guns (autocannons, machine guns) still fire rounds as before.
+//   hull": it lays its gun on a spot (Z403 no red ring drawn there any more: its turret swings onto you and beeps) — then fires, and the shell bursts on that
+//   spot. Moved off it, it misses; caught near it, the nearer the centre the worse. Its quick-firing guns (autocannons, machine guns) still fire rounds as before.
 import { CAV } from '../../config.js';
-import { S, bigExplode, blastAllies, damagePlayer, disposeArtZone, enemies, enemyMuzzleFX, floatText, heightAt, makeArtLock, radio, sfx, spawnPart, tankRecoil, waveSize, waveSquads, tickArtLock } from '../hub.js';
+import { MODE, S, bigExplode, blastAllies, damagePlayer, disposeArtZone, enemies, enemyMuzzleFX, floatText, heightAt, makeArtLock, radio, sfx, spawnPart, tankRecoil, waveSize, waveSquads, tickArtLock } from '../hub.js';
 
 const W = () => CAV.soldier.war;
 const TANKS = new Set(['grunt', 'heavy', 'shield', 'chief', 'sniper', 'pyro']);
@@ -13,7 +13,7 @@ const ZONES = [], SEEN = new WeakSet(); let _said = -1e9;
 export function soldierWaveQueue(stage, wave){ const C = W(), w = C.w, n = Math.max(3, Math.round(waveSize(stage, wave) * C.sizeK));
   const pool = [['rifle', w.rifle], ['rpg', w.rpg + stage * 0.3], ['scout', w.scout + wave * 0.15]];
   if(stage >= 2 || wave >= 3) pool.push(['carrier', w.carrier + (stage - 1) * 0.2]);
-  if(stage >= 2) pool.push(['mortar', w.mortar + (stage - 2) * 0.15]);
+  if(stage >= 2 && C.arty) pool.push(['mortar', w.mortar + (stage - 2) * 0.15]);   // Z403 a spotter SPG only calls barrages: none in a soldier's war
   if(stage >= 3) pool.push(['heliTroop', w.heli + (stage - 3) * 0.15]);
   const tot = pool.reduce((s, q) => s + q[1], 0), q = [];
   for(let i = 0; i < n; i++){ let r = Math.random() * tot, t = 'rifle'; for(const [ty, k] of pool){ if((r -= k) <= 0){ t = ty; break; } } q.push(t); }
@@ -39,4 +39,4 @@ function burst(s, now){ const p = S.player; bigExplode({ x:s.tx, z:s.tz }, 0xffc
   if(!p) return; const dx = p.pos.x - s.tx, dz = p.pos.z - s.tz, d = Math.hypot(dx, dz); if(d < s.R) damagePlayer(s.dmg * (1 - 0.6 * d / s.R), now, dx || 0.01, dz); }
 // a tank rolling in is news
 function announce(now){ for(const e of enemies){ if(SEEN.has(e) || !TANKS.has(e.type) || e.def.inf || e.def.air) continue; SEEN.add(e);
-    floatText('XE TĂNG ĐỊCH!', '#ff6a4a', e.pos, 22); if(now - _said > 20){ _said = now; sfx('alarm'); radio('SCH: Xe tăng địch! Thấy vòng đỏ là chạy khỏi nó — nấp sau công sự, ném lựu đạn hoặc gọi không kích.'); } } }
+    floatText('XE TĂNG ĐỊCH!', '#ff6a4a', e.pos, 22); if(now - _said > 20){ _said = now; sfx('alarm'); radio(MODE.rings ? 'SCH: Xe tăng địch! Thấy vòng đỏ là chạy khỏi nó — nấp sau công sự, ném lựu đạn hoặc gọi không kích.' : 'SCH: Xe tăng địch! Nó quay pháo về phía anh là phải chạy khỏi chỗ đứng — nấp sau công sự, ném lựu đạn hoặc gọi không kích.'); } } }

@@ -2,7 +2,7 @@
 //   of the burning hull with his bodyguards and fights on foot. The duel decides the stage (killBoss hands its stage-won half over and gets it back when he
 //   falls). He is a man, but a big one: a gold star over his head, a red ring pulsing under him, his name on the boss bar. He keeps his distance and his cover
 //   like any rifleman (actors/infantry.js), with a heavy rifle, and two moves of his own, both warned: a FAN of rounds across you (a red glint and a "!" first)
-//   and a CLUTCH OF GRENADES round where you stand (red rings that tighten before they burst). No single hit takes more than a slice of his health. At half
+//   and a CLUTCH OF GRENADES round where you stand (a shout of "LỰU ĐẠN!" and the bombs in the air — Z403 no red rings). No single hit takes more than a slice of his health. At half
 //   health he calls more guards; below a third he goes for broke — faster fire, faster feet. When he falls his guards break and run, he drops the best guns
 //   on the field and a medal, and the stage is won.
 import * as THREE from 'three';

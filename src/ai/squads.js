@@ -1,6 +1,6 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
 import { SQUAD_AI, FIELDCRAFT } from '../../config.js';
-import { ARENA, BF, FT, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke } from '../hub.js';
+import { ARENA, BF, FT, MODE, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke } from '../hub.js';
 
 export const SQUADS=[];
 let _sid=0;
@@ -103,7 +103,8 @@ export function squadMove(e){ const sq=e.sq; if(!sq || e.exit || e.guard) return
 
 // ================= COMBINED ARMS: an escorted tank fixes you from range; a fresh wave can come as a pincer, a probe or behind a barrage =================
 export function tankEscorted(t){ for(const sq of SQUADS) if(sq.escort===t && sq.m.length) return true; return false; }
-export function prepBarrage(){ const p=S.player; if(!p) return; const B=BF.barrage, a=Math.random()*Math.PI*2, d0=-B.step*(B.shells/2);
+export function prepBarrage(){ const p=S.player; if(!p || !MODE.arty) return;   // Z403 no barrage in a soldier's war
+  const B=BF.barrage, a=Math.random()*Math.PI*2, d0=-B.step*(B.shells/2);
   for(let i=0;i<B.shells+2;i++){ const d=d0+i*B.step, x=p.pos.x+Math.sin(a)*d+(Math.random()-0.5)*3, z=p.pos.z+Math.cos(a)*d+(Math.random()-0.5)*3;
     setTimeout(()=>{ if(S.mode==='playing') ringPulse({x,z}, 0xff3020, B.r); }, (0.4+i*B.gap)*1000);
     setTimeout(()=>{ if(S.mode==='playing') enemyGroundStrike(x, z, B.r, B.dmg*0.8, performance.now()/1000); }, (0.4+B.lead+i*B.gap*1.6)*1000); }

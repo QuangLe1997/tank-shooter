@@ -7,7 +7,7 @@
 //     fired through the cloud go wild (both directions)
 import * as THREE from 'three';
 import { FIELDCRAFT } from '../../config.js';
-import { MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart, blPulse, holoRing } from '../hub.js';
+import { MODE, MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart, blPulse, holoRing } from '../hub.js';
 
 const FC=FIELDCRAFT, _lb=[];
 // a "tall" obstacle stops a rifle round dead: buildings, fortress walls, masonry, towers, containers, boulders (sandbags, drums, logs… are shot over)
@@ -66,7 +66,7 @@ function updateNades(dt, now){
     if(!g.landed){ const u=Math.min(1, g.t/g.T), x=g.x0+(g.x1-g.x0)*u, z=g.z0+(g.z1-g.z0)*u, gy=heightAt(x,z), y=g.y0+(gy+0.13-g.y0)*u + g.peak*4*u*(1-u);
       g.m.position.set(x, y, z); g.m.rotation.x+=dt*14; g.m.rotation.z+=dt*9;
       if(u>=1){ g.landed=true; spawnPart(g.x1, gy+0.1, g.z1, 0, 0.6, 0, { color:0x8a7a60, size:0.6, life:0.4, smoke:true, grav:0, drag:3, op:0.4 }); sfx('thud', { x:g.x1, z:g.z1 }, 0.25);
-        if(g.side==='e'){ const r=holoRing(FC.nade.R, { kind:'danger', fill:FC.nade.R*0.5 }); r.position.set(g.x1, gy+0.08, g.z1); scene.add(r); g.ring=r; } } }   // Z318 the blast radius as a battle-light danger ring
+        if(g.side==='e' && MODE.rings){ const r=holoRing(FC.nade.R, { kind:'danger', fill:FC.nade.R*0.5 }); r.position.set(g.x1, gy+0.08, g.z1); scene.add(r); g.ring=r; } } }   // Z318 the blast radius as a battle-light danger ring (Z403 not in a soldier's war: the grenade on the ground is the warning)
     else if(g.ring){ g.ring.material.opacity = blPulse(now, 'crit', 0.35); }
     if(g.t>=g.boomAt){ nadeBoom(g, now); scene.remove(g.m); if(g.ring){ scene.remove(g.ring); g.ring.material.dispose(); g.ring.geometry.dispose(); } NADES.splice(i,1); } } }
 // run from the nearest live grenade (any side) close enough to hurt: a unit vector, or null

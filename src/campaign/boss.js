@@ -190,7 +190,7 @@ export function bossMissiles(now, n){                                           
     launchEnemyMissile(P.x, P.y, P.z, a, { speed:24, dmg:13, aoe:3, guided, life:3.6, kind:'atgm' }); gunMuzzleFX({ flash:'launch', color:boss.def.pal.accent }, P.x,P.y,P.z, a, 2); S.shake=Math.min(2.4,S.shake+0.15); }, i*140);
   return true;
 }
-export function artyBarrage(now){                                                              // a walking line of shells marching onto your position
+export function artyBarrage(now){ if(!MODE.arty) return bossSpread(now, 8, 26);              // a walking line of shells marching onto your position (Z403 a soldier's war: the main guns instead)
   const B=BF.barrage, p=S.player, a=Math.atan2(p.pos.x-boss.pos.x, p.pos.z-boss.pos.z), d0=Math.max(6, Math.hypot(p.pos.x-boss.pos.x, p.pos.z-boss.pos.z)-B.step*(B.shells/2));
   for(let i=0;i<B.shells;i++){ const d=d0+i*B.step, x=boss.pos.x+Math.sin(a)*d+(Math.random()-0.5)*1.5, z=boss.pos.z+Math.cos(a)*d+(Math.random()-0.5)*1.5;
     setTimeout(()=>ringPulse({x,z}, 0xff3020, B.r), i*B.gap*1000);
@@ -198,7 +198,7 @@ export function artyBarrage(now){                                               
   radio('SCH: Pháo kích theo hàng — chạy ngang ra!');
 }
 export function groundPound(now){
-  const x=boss.pos.x, z=boss.pos.z; ringPulse({x,z},0xffffff,8); setTimeout(()=>ringPulse({x,z},0xffffff,8),260);
+  const x=boss.pos.x, z=boss.pos.z; if(MODE.rings){ ringPulse({x,z},0xffffff,8); setTimeout(()=>ringPulse({x,z},0xffffff,8),260); }   // (Z403 no warning rings in a soldier's war)
   setTimeout(()=>{ if(S.mode!=='playing') return; S.shake=2; ringPulse({x,z},0xff5028,14); bigExplode({x,z},0xb0b0c0,2.2);
     const p=S.player, n=performance.now()/1000; if(n>=p.invincibleUntil && (p.pos.x-x)**2+(p.pos.z-z)**2 < 121) damagePlayer(30,n); }, 600);
 }

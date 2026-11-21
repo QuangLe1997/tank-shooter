@@ -1,6 +1,6 @@
 // campaign/boss-new.js — Z161 the three new generals' weapons: HOẢ THẦN thermobaric salvos + burning ground + flame jet, MÃNG XÀ swinging tail + mortar battery, LÔI THẦN railgun + EMP + tesla arcs
 import * as THREE from 'three';
-import { S, beamReach, bigExplode, boss, bossAlive, bossMounts, bossSpread, bossSummon, damagePlayer, decalScorch, floatText, groundPound, gunMuzzleFX, heightAt, lightning, mountPos, muzzleLight, radio, railBeam, ringPulse, scene, sfx, spawnPart, wrapAngle } from '../hub.js';
+import { MODE, S, beamReach, bigExplode, boss, bossAlive, bossMounts, bossSpread, bossSummon, damagePlayer, decalScorch, floatText, groundPound, gunMuzzleFX, heightAt, lightning, mountPos, muzzleLight, radio, railBeam, ringPulse, scene, sfx, spawnPart, wrapAngle } from '../hub.js';
 
 export const NEW_GENERALS = ['inferno','serpent','thunder'];
 export const FIREZ = [];                                   // burning ground: { x, z, r, until }
@@ -10,7 +10,7 @@ export function clearBossNew(){ FIREZ.length=0; if(_rail) _rail.visible=false; }
 
 // a shell / rocket lobbed from P onto (x,z) in T seconds: a comet of particles along the arc, a telegraph ring, then the blast
 export function lobShell(P, x, z, T, o){ const gy=heightAt(x,z), G=30, vx=(x-P.x)/T, vz=(z-P.z)/T, vy=(gy-P.y)/T+0.5*G*T, col=o.color||0xff8a1a;
-  ringPulse({x,z}, 0xff3020, o.r); setTimeout(()=>{ if(S.mode==='playing') ringPulse({x,z}, 0xff3020, o.r*0.7); }, T*500);
+  if(MODE.rings){ ringPulse({x,z}, 0xff3020, o.r); setTimeout(()=>{ if(S.mode==='playing') ringPulse({x,z}, 0xff3020, o.r*0.7); }, T*500); }   // (Z403 none in a soldier's war)
   for(let k=0;k<7;k++) setTimeout(()=>{ if(S.mode!=='playing') return; const t=k*0.035;
     spawnPart(P.x+vx*t, P.y+vy*t-0.5*G*t*t, P.z+vz*t, vx, vy-G*t, vz, k===0 ? { color:0xfff2c0, size:1.1, life:T-t, grav:-G, drag:0 } : { color:k<3?col:0x6a5a4a, size:0.9-k*0.08, life:T-t, grav:-G, drag:0, smoke:k>=3, op:0.6 }); }, k*35);
   setTimeout(()=>{ if(S.mode!=='playing') return; const now=performance.now()/1000, p=S.player;
@@ -22,11 +22,11 @@ export function lobShell(P, x, z, T, o){ const gy=heightAt(x,z), G=30, vx=(x-P.x
 export function bossAttackNew(now, ph){ const B=boss, r=Math.random(), p=S.player, distP=Math.hypot(p.pos.x-B.pos.x, p.pos.z-B.pos.z);
   if(B.id==='inferno'){
     if(distP<17 && r<0.4){ B.flameUntil=now+1.7+ph*0.3; B.atkAt=now+2.6; sfx('shoot_flame', B.pos); }
-    else if(r<0.75 && bossAlive('launcher')){ thermoSalvo(now, ph===2?12:ph===1?9:6); B.atkAt=now+(ph===2?2.4:3.0); }
+    else if(r<0.75 && MODE.arty && bossAlive('launcher')){ thermoSalvo(now, ph===2?12:ph===1?9:6); B.atkAt=now+(ph===2?2.4:3.0); }   // (Z403 no rocket artillery in a soldier's war)
     else if(r<0.9){ bossSpread(now, ph===2?9:6, 26); B.atkAt=now+1.8; }
     else { bossSummon('pyro', ph>=1?2:1); B.atkAt=now+3; }
   } else if(B.id==='serpent'){
-    if(r<0.4 && bossAlive('mortar') && bossAlive('joint')){ mortarBarrage(now, ph===2?10:ph===1?8:6); B.atkAt=now+(ph===2?2.6:3.2); }
+    if(r<0.4 && MODE.arty && bossAlive('mortar') && bossAlive('joint')){ mortarBarrage(now, ph===2?10:ph===1?8:6); B.atkAt=now+(ph===2?2.6:3.2); }   // (Z403 nor its mortars)
     else if(r<0.6){ tailSweep(now); B.atkAt=now+2.4; }
     else if(r<0.88){ bossSpread(now, ph===2?12:ph===1?8:5, 28); B.atkAt=now+1.7; }
     else { bossSummon(ph>=1?'heavy':'grunt', 2); B.atkAt=now+3.2; }

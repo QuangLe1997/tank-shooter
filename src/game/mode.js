@@ -9,7 +9,7 @@ import { GUNS, PLAYER, TANK_SCALE, TROOPER_SPELLS, addPlayerBurn, applyTankKit, 
   CV, cavRespawn, driverBack, paintChip, rankReset, squadReset, duelReset, updateRank, updateSquadMates, updateGeneralDuel, soldierLoot } from '../hub.js';
 
 const refill = p => { for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]); };
-const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true, fortsOpen:false, fleeK:1, spells:null, loot:null, overText:'xe bị hạ khi không còn lượt hồi sinh',
+const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true, fortsOpen:false, arty:true, rings:true, fleeK:1, spells:null, loot:null, overText:'xe bị hạ khi không còn lượt hồi sinh',
   makePlayer(){ return makePlayer(); },
   setupRun(p){ p.guns = loadoutGuns(); p.gunIdx = defaultGunIdx();
     applyUpgrades(p); p.hp = p.maxHp; refill(p);   // shop upgrades (health / damage / range / speed / mag / reload / armour)
@@ -23,6 +23,7 @@ const TANK = { id:'tank', crushes:true, riders:true, crewXp:true, powerHud:true,
   finalDeath(p){ playClip('x_scream', 0.95); tankExplode(p.pos, 0xffd27a, 2.4, PLAYER_PAL, p.mesh.scale.x); } };
 const SOLDIER = { id:'soldier', crushes:false, riders:false, crewXp:false, powerHud:false, fortsOpen:true,   // (Z315 a man walks in through the open gate, he does not breach walls)
   get fleeK(){ return CAV.soldier.fleeK; }, get spells(){ return TROOPER_SPELLS; },
+  get arty(){ return CAV.soldier.war.arty; }, get rings(){ return CAV.soldier.war.rings; },   // Z403 a soldier's war: no enemy artillery, no red rings on the ground before a blast
   loot(tier){ return soldierLoot(tier); }, overText:'người lính ngã xuống khi không còn lượt hồi sinh',   // Z352 his loot: a medal or an ammo crate now and then, else trooperLoot
   makePlayer(kind){ return makeCavPlayer(kind); },
   setupRun(p){ clearSoldierWar(); if(CV.dead || !CV.mounted) cavRespawn(p); driverBack(CV.H); p.guns = trooperGuns(); p.gunIdx = 0; p.dmgMul = CAV.atk; p.crit = CAV.crit; p.fireMul = CAV.fireK;   // a marksman's eye, quick hands, heavy rifle rounds
