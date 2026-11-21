@@ -31,12 +31,13 @@ const Shader = {
 // the pass: it reads the scene's depth (both composer buffers get a depth texture) and the sun's shadow map, and sets its own matrices each frame
 export function makeShaftPass(composer, o){ const C = o.cfg, steps = C.steps | 0;
   const sh = { ...Shader, uniforms:THREE.UniformsUtils.clone(Shader.uniforms), fragmentShader:'#define STEPS ' + steps + '\n' + Shader.fragmentShader };
-  for(const rt of [composer.renderTarget1, composer.renderTarget2]) if(!rt.depthTexture){ rt.depthTexture = new THREE.DepthTexture(rt.width, rt.height); rt.depthTexture.type = THREE.UnsignedIntType; rt.dispose(); }
+  if(!o.depth) for(const rt of [composer.renderTarget1, composer.renderTarget2]) if(!rt.depthTexture){ rt.depthTexture = new THREE.DepthTexture(rt.width, rt.height); rt.depthTexture.type = THREE.UnsignedIntType; rt.dispose(); }
   const pass = new ShaderPass(sh), U = pass.uniforms, _d = new THREE.Vector3();
   const base = pass.render.bind(pass);
   pass.render = (r, w, rd, dt, mask) => { const sun = o.sun, cam = o.camera(), map = sun.shadow && sun.shadow.map, k = (C.biome[o.biome()] ?? 1) * (1 - o.night());
     U.uGain.value = map && sun.castShadow && k > 0.01 ? C.gain * k : 0;
-    if(U.uGain.value > 0){ U.tDepth.value = rd.depthTexture; U.tShadow.value = map.texture; U.uShadowM.value.copy(sun.shadow.matrix);
+    if(U.uGain.value > 0){ U.tDepth.value = o.depth ? o.depth() : rd.depthTexture;   // Z412 the scene pass's depth (the composer buffers carry none now)
+      U.tShadow.value = map.texture; U.uShadowM.value.copy(sun.shadow.matrix);
       U.uInvProj.value.copy(cam.projectionMatrixInverse); U.uCamWorld.value.copy(cam.matrixWorld); U.uCamPos.value.setFromMatrixPosition(cam.matrixWorld);
       U.uSunDir.value.copy(_d.subVectors(sun.position, sun.target.position).normalize()); U.uSunCol.value.copy(sun.color).multiplyScalar(sun.intensity);
       U.uDens.value = C.dens; U.uMaxD.value = C.maxD; U.uG.value = C.g; U.uEven.value = C.even; U.uTime.value = (U.uTime.value + 1) % 1000; }

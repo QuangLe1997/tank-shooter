@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { FUEL_DRUM, SCENERY, SKYLINE } from '../../config.js';
-import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer } from '../hub.js';
+import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -213,5 +213,5 @@ export function realHorizon(g, name, R0, fogC){ let P = SKYLINE.on && !MOBILE &&
     for(let i = 0; i < e.n; i++) list.push([a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, R0 + rnd(e.r[0], e.r[1]), e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), Math.random() * Math.PI * 2]);
     unitLevel(e.k, lv).then(L => { if(!L || HZN.g !== g) return; const im = new THREE.InstancedMesh(L.geo, hazeMat(L.mat, hz, fogC), list.length);
       list.forEach(([a, r, sz, ry], i) => { const h = e.h ? sz : sz / L.wx; _hm.compose(_hv.set(Math.cos(a) * r, e.y ?? SKYLINE.y, Math.sin(a) * r), _hq.setFromAxisAngle(_hu, ry), _hs.set(h, h, h)); im.setMatrixAt(i, _hm.multiply(L.U)); });
-      im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.renderOrder = -7; im.userData.skyline = e.k; g.add(im); }); }
+      im.instanceMatrix.needsUpdate = true; im.renderOrder = -7; im.userData.skyline = e.k; g.add(sectorize(im, SKYLINE.arcs, M(e.k) && M(e.k).one ? 0 : SKYLINE.keep)); }); }   // Z412 culled by arc, simplified past the field
   return !!P.skyline; }

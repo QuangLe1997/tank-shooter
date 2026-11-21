@@ -1330,6 +1330,9 @@ export const TERRAIN_FLAT = { hills:[3,5], hillR:[10,18], hillH:[2.2,3.6], crate
 // Z328 FAR LOD (render/far-lod.js): big static models (fort towers / gatehouse, the HQ) swap to a simplified copy past far m (or rK × their radius if more;
 //   ×mobileK on phones); keep = share of triangles kept, err = allowed deviation (share of the model's size), hys = LOD hysteresis
 export const FARLOD = { on:true, far:60, rK:6, mobileK:0.7, keep:0.15, err:0.02, hys:0.1 };
+// Z412 SHADOW LOD (render/far-lod.js shadowLOD): in the sun's shadow pass every opaque caster of at least `min` triangles wears a welded, position-only copy
+//   simplified to `keep` of its triangles (error `err`); the scene is rescanned for casters every `rescan` shadow passes
+export const SHADOWLOD = { on:true, min:1500, keep:0.25, err:0.03, rescan:90 };
 // Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
 //   its reach — radius × rK m from its surface, at least min, at most at (each instance of an instanced mesh counts) — handed back past reach × out for hold s,
 //   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh ·
@@ -1458,7 +1461,7 @@ export const TROOPER = {
 //   the enemy half) · pair (either side of the piece `of`, side m across, fwd m ahead of its front) · line (n along a straight line gap m apart) · cluster
 //   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand; Z393 solid = this beat's own collision (else the
 //   model's), top = the most detail it ever draws ('l' mid / 'f' far: a small piece never fetches the whole scan)
-export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, radar:{ h:24, split:0.5, lv:'d' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
+export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, radar:{ h:24, split:0.5, lv:'l' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
 //   h tall, split = the share of its height where the dish (which sweeps with the head) begins · bricks: the ruined brick walls in the breached wall's stone (h, how many
 //   3 m slices, which copy, fill = the least share of a slice that must be wall — the breach and the ragged ends are left out) · city: the power poles as the transformer pole scan (h, copy), roof water tanks / masts (h, share of the roofs of those kinds, set back d ×, sunk m)
   models:{
@@ -1534,7 +1537,8 @@ export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys
 //   range (m), r = distance range past the horizon's base radius (ARENA × 1.55, m), lv = which copy (l mid · f far · d whole; the light scans have one),
 //   y = foot height, hz = its own veil. haze = the veil toward the fog colour, from the nearest entries to the farthest. skyline: they stand in place of
 //   the near range (and of the box skylines); rings = the kind of the ranges behind (world/horizon.js). A string = the same as that land.
-export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10,   // stacks: the works' concrete chimneys left among the real pieces
+export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10, arcs:10, keep:0.2,   // Z412 arcs: the horizon's instanced rings split by bearing (the camera culls the arcs behind it) · keep: share of triangles a skyline piece keeps (simplified; 50–300 m off)
+    // stacks: the works' concrete chimneys left among the real pieces
   biomes:{
     ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14 }, { k:'tree_cedar', lv:'f', n:46, h:[24, 36], r:[-8, 16], y:-3 } ] }, TUNDRA:'ARCTIC',
     VOLCANO:{ skyline:true, rings:'peak', set:[ { k:'volcano', n:5, h:[78, 118], r:[0, 45], y:-16, hz:0.22 }, { k:'lava_arch', n:7, h:[30, 50], r:[-10, 22], hz:0.2 }, { k:'tree_twisted', n:24, h:[14, 22], r:[-12, 8], y:-3 } ] },

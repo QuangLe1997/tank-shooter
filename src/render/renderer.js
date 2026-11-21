@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
@@ -9,7 +10,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { LIGHT, SHAFTS } from '../../config.js';
-import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass } from '../hub.js';
+import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, shadowLOD } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -82,9 +83,23 @@ export const GradeShader = {
       float n=fract(sin(dot(vUv*vec2(1271.3,3117.1)+time*61.7,vec2(12.9898,78.233)))*43758.5453); c+=(n-0.5)*grain;
       gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);
     }` };
-export const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type:THREE.HalfFloatType, samples:MSAA }));   // Z109 MSAA on the buffer the scene is drawn into
+export const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type:THREE.HalfFloatType }));   // Z412 the post chain runs on plain buffers (Z109's MSAA now lives on the scene pass alone, below)
 composer.setSize(innerWidth, innerHeight);
-export const renderPass = new RenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
+// Z412 MSAA ONLY WHERE IT COUNTS: the composer's two ping-pong buffers used to be multisampled (+ a depth texture each), so every full-screen pass
+//   after the scene (NaN guard, bloom's read and its additive write-back, output, grade) drew into a multisampled target and paid a colour+depth
+//   resolve. Measured on an M4 at 1440×810: MSAA cost ~11 ms and bloom ~13 ms of a ~45 ms GPU frame. Now the scene is drawn into its own MSAA target
+//   (which carries the depth AO and the light shafts read) and copied once into the plain chain.
+class SceneRenderPass extends RenderPass {
+  constructor(sc, cam){ super(sc, cam); this.rt = new THREE.WebGLRenderTarget(2, 2, { type:THREE.HalfFloatType, samples:MSAA });
+    if(!MOBILE){ this.rt.depthTexture = new THREE.DepthTexture(2, 2); this.rt.depthTexture.type = THREE.UnsignedIntType; }   // phones run without AO / shafts: no depth resolve for them
+    this.copy = new FullScreenQuad(new THREE.ShaderMaterial({ uniforms:{ tDiffuse:{ value:null } }, blending:THREE.NoBlending, depthTest:false, depthWrite:false,
+      vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader:'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ gl_FragColor=texture2D(tDiffuse,vUv); }' })); }
+  setSize(w, h){ this.rt.setSize(w, h); }
+  render(r, w, rb, dt, mask){ const scr = this.renderToScreen; this.renderToScreen = false; super.render(r, w, this.rt, dt, mask); this.renderToScreen = scr;
+    this.copy.material.uniforms.tDiffuse.value = this.rt.texture; r.setRenderTarget(scr ? null : rb); this.copy.render(r); }
+  dispose(){ super.dispose(); this.rt.dispose(); this.copy.dispose(); } }
+export const renderPass = new SceneRenderPass(scene, camera);   // ref kept so the 3D shop can swap in a showroom scene
 composer.addPass(renderPass);
 // Z145 AMBIENT OCCLUSION (desktop): contact shadow where wall meets ground, in every merlon gap, under eaves, between houses — the single biggest
 //   step from "lit toy" to "built place". Half-res (¾ in the Mac app), read from the main depth (Z240); the frame governor drops it first when frames run long.
@@ -98,10 +113,8 @@ aoPass.blendIntensity = 0.9;
 //   3M triangles, 45% of the frame. The main render targets now carry their own depth texture; AO reads the depth of the frame just drawn
 //   and rebuilds normals from it (NORMAL_VECTOR_TYPE 0). Measured on an M4 at 2.2 MP: render 20.4 → 11.6 ms. The composer ping-pongs its
 //   two targets, so the depth bound to AO follows whichever one the scene was drawn into this frame.
-if(!MOBILE){ for(const R of [composer.renderTarget1, composer.renderTarget2]){ R.depthTexture=new THREE.DepthTexture(R.width, R.height); R.depthTexture.type=THREE.UnsignedIntType; }   // phones run without AO: no depth resolve for them
-  aoPass.setGBuffer(composer.renderTarget1.depthTexture); }
-{ const _aoRender=aoPass.render.bind(aoPass);
-  aoPass.render=function(rd, wb, rb, ...a){ const d=rb.depthTexture; if(d && d!==this.depthTexture){ this.depthTexture=d; this.gtaoMaterial.uniforms.tDepth.value=d; this.pdMaterial.uniforms.tDepth.value=d; } return _aoRender(rd, wb, rb, ...a); }; }
+if(!MOBILE) aoPass.setGBuffer(renderPass.rt.depthTexture);   // Z412 the scene pass's own (resolved) depth
+// (Z412: the depth no longer follows the composer's ping-pong — AO reads the scene pass's depth, bound once above)
 aoPass.enabled = AO.on; composer.addPass(aoPass);
 // Z147 NaN GUARD: a single NaN / inf pixel from any shader used to be smeared by the bloom mip chain into a big black block on screen.
 //   Clean it here (one cheap full-screen pass) so a bad pixel stays one pixel.
@@ -122,7 +135,8 @@ export function fitShadow(z){ if(MOBILE) return; const r=SHADOW_R*Math.max(1,(z|
 if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(SHADOW_MAP,SHADOW_MAP);   // Z107 4096 in the Mac app
   const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
   sun.shadow.bias=-0.0003; sun.shadow.normalBias=0.25; sun.shadow.radius=2; }
-export const shaftPass = !MOBILE && SHAFTS.on ? makeShaftPass(composer, { cfg:SHAFTS, sun, camera:()=>renderPass.camera, biome:()=>BIOME.name, night:()=>NIGHT.k }) : null;   // Z276 light shafts: right after the scene, in linear HDR
+shadowLOD(renderer);   // Z412 the shadow pass draws light copies of the heavy casters
+export const shaftPass = !MOBILE && SHAFTS.on ? makeShaftPass(composer, { cfg:SHAFTS, sun, camera:()=>renderPass.camera, depth:()=>renderPass.rt.depthTexture, biome:()=>BIOME.name, night:()=>NIGHT.k }) : null;   // Z276 light shafts: right after the scene, in linear HDR
 if(shaftPass) composer.insertPass(shaftPass, 1);
 export const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.62); scene.add(hemi);
 export const muzzleLight = new THREE.PointLight(0xffd27a, 0, 18, 2); scene.add(muzzleLight);

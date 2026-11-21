@@ -2,7 +2,7 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, loadRealCity, realCityReady, realHorizon, scene, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
+import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, hillDetail, loadRealCity, realCityReady, realHorizon, scene, sectorize, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
 import { REALCITY, SKYLINE, STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
@@ -64,7 +64,7 @@ function realSkyline(R, H, fogC, mix, count, depth){ const keys=['bld_glass','bl
     mat.onBeforeCompile=sh=>{ sh.uniforms.hzAmt=hz; sh.uniforms.hzCol=hc; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>','#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
     mat.customProgramCacheKey=()=>'skylineHaze'; windowLights(mat);   // Z280 the skyline's windows light up at night too
     const im=new THREE.InstancedMesh(Mo.geo, mat, list.length); list.forEach(([a,r,h],i)=>{ const s=h/Mo.size.y; im.setMatrixAt(i, M4.compose(V.set(Math.cos(a)*r, -6, Math.sin(a)*r), Q.setFromAxisAngle(up, Math.random()*6.283), S3.set(s,s,s))); });
-    im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; im.renderOrder=-7; g.add(im); }
+    im.instanceMatrix.needsUpdate=true; im.renderOrder=-7; g.add(sectorize(im, SKYLINE.arcs, SKYLINE.keep)); }   // Z412 culled by arc, simplified (was ~250 whole towers drawn every frame: 2.4M triangles)
   return g; }
 function skyline(R, H, kind, base, fogC, mix, onlyStacks){ if(kind==='city' && realCityReady() && !MOBILE && !onlyStacks){   // Z292 phones keep the hazed block skyline: ~150 real towers would cost them 2–3M triangles
   const rs=realSkyline(R, H*1.15, fogC, Math.min(0.85, mix+0.12)); if(rs) return rs; }
