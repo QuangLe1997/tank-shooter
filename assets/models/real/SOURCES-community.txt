@@ -1,0 +1,9 @@
+Models taken from Meshy's free community gallery — where each one comes from
+All are published by their authors under CC0 (Meshy Terms of Service, community models). Downloaded through the Meshy web app (GLB),
+then cut down locally with gltf-transform / meshoptimizer (seam-preserving simplify, textures 1024 px JPEG via tools/glb-pack.mjs).
+- gun/inf/ak.glb (Z355): "AK-47" — https://www.meshy.ai/posts/019d7963-2eb9-7960-b279-af7c1e9422b4 (195,641 → 12,763 triangles, 14.3 → 0.87 MB)
+- gun/inf/m4.glb (Z355): "Desert Tan AR-15 Rifle" — https://www.meshy.ai/posts/019c74b1-2dfb-7e48-99cc-e606d315f45f (222,372 → 13,408 triangles, 12.7 → 0.87 MB)
+- gun/inf/mp5.glb (Z355): "MP5" — https://www.meshy.ai/posts/019ce3cd-8590-7c27-8b70-b09be79f965e (155,018 → 9,247 triangles, 0.59 MB)
+- camp/mil_humvee.glb (Z357): "humvee tourelle" — https://www.meshy.ai/posts/humvee-tourelle-01a046ea-4948-7653-942e-a74bc9572259 (1,952,788 → 39,020 triangles, 94.6 → 2.75 MB)
+- ruin/ruin_house.glb (Z357): "Ruined House" — https://www.meshy.ai/posts/019c85d9-e2ed-773f-9a4d-3f8fe756ecae (191,121 → 35,054 triangles, 25.7 → 2.69 MB)
+The guns are turned so their length runs along Z (muzzle +Z), the way actors/real-cav.js armInfantry reads every infantry weapon.

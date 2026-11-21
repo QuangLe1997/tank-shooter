@@ -24,7 +24,7 @@ function heavyPick(n){ const have = new Set(S.player.guns.map(g => g.id)), all =
 export function armsDrop(e){ if(MODE.id !== 'soldier' || !S.player) return; const D = TROOPER.drop;
   if(e.general){ for(const id of heavyPick(2)) dropPowerup(e.pos, 2, wpnDef(id)); dropPowerup(e.pos, 1, MEDAL); return; }
   let id = null;
-  if(e.def.inf){ if(Math.random() < (D[e.type] ?? D.rifle)) id = e.def.rpg ? 't_rpg' : 'carbine'; }
+  if(e.def.inf){ if(Math.random() < (D[e.type] ?? D.rifle)) id = e.def.rpg ? 't_rpg' : 't_ak'; }   // (Z355 a rifleman's AK-47)
   else if(!e.def.air && Math.random() < D._veh) id = trooperGunPick();
   if(id) dropPowerup(e.pos, 1, wpnDef(id)); }
 // the HQ's supply drop, a few metres ahead of him

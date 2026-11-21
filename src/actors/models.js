@@ -32,11 +32,11 @@ for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/model
 MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
 for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders
 for(const k of ['deer','zebra','giraffe','elephant','reindeer','bear']) MODEL_FILES['wild_' + k] = 'assets/models/real/wild/' + k + '.glb';   // Z286 real wildlife (rigged, walking)
-for(const k of ['ar','lmg','minigun','shotgun','sniper','rpg','gl','flamer','energy']) MODEL_FILES['inf_' + k] = 'assets/models/real/gun/inf/' + k + '.glb';   // Z295 the infantry arsenal
+for(const k of ['ar','lmg','minigun','shotgun','sniper','rpg','gl','flamer','energy','ak','m4','mp5']) MODEL_FILES['inf_' + k] = 'assets/models/real/gun/inf/' + k + '.glb';   // Z295 the infantry arsenal
 for(const k of ['xeom']) MODEL_FILES['drv_' + k] = 'assets/models/real/driver/' + k + '.glb';   // Z296 the drivers, rigged
 for(const k of ['xeom','bagac','bantai']) MODEL_FILES['ride_' + k] = 'assets/models/real/ride/' + k + '.glb';   // Z293 the war rides
 // Z285 enemy outposts
-for(const k of ['base_tent','base_radar','base_bunker','base_barracks','base_wire','mil_truck','mil_apc','mil_jeep']) MODEL_FILES[k] = 'assets/models/real/camp/' + k + '.glb';
+for(const k of ['base_tent','base_radar','base_bunker','base_barracks','base_wire','mil_truck','mil_apc','mil_jeep','mil_humvee']) MODEL_FILES[k] = 'assets/models/real/camp/' + k + '.glb';
 MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
 for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';
 for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins

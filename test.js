@@ -878,7 +878,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z295 the infantry arsenal and the pose review: nine hand weapons, kneeling aim, feet on the ground, getting on / off a ride for real
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
-  ok(Object.keys(C.INFGUN.guns).length===9 && Object.keys(C.INFGUN.guns).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb')) && Object.values(C.INFGUN.map).every(k=>C.INFGUN.guns[k]) && /function holdGun/.test(R('src/actors/real-cav.js')), 'nine infantry weapons, one for every gun of the game, swapped with the gun in use');
+  ok(Object.keys(C.INFGUN.guns).length===12 && Object.keys(C.INFGUN.guns).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb')) && Object.values(C.INFGUN.map).every(k=>C.INFGUN.guns[k]) && /function holdGun/.test(R('src/actors/real-cav.js')), 'nine infantry weapons (Z355 twelve), one for every gun of the game, swapped with the gun in use');
   ok(/'Kneeling_Aim'/.test(R('src/actors/real-cav.js')) && /P\.ground/.test(R('src/actors/puppet.js')) && /XEOM\.pegY/.test(R('src/game/cavalry.js')) && C.CAV.mountT>=0.8 && ['xeom','bagac','bantai'].every(k=>C.XEOM[k].side>0), 'kneeling aim, grounded feet, a real step off / onto each ride'); }
 
 // Z296 the driver: his own rigged man riding his own machine — IK hands / feet / hips, lean, wheelie, weave, throttle, gears, ducking, crash → up → lift → back on, the talk table
@@ -1073,7 +1073,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z329 the soldier's arsenal: the nine Tripo hand weapons are his guns, each fired its own way; the gun crate brings him one · Z330 the steel operator holds it gun-first too · Z332 no xích lô
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sf=R('src/combat/soldier-fire.js'), rc=R('src/actors/real-cav.js');
-  const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===9 && new Set(T.map(k=>C.INFGUN.map[k])).size===9 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns, one per hand-weapon model, each one held in his hands');
+  const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===12 && new Set(T.map(k=>C.INFGUN.map[k])).size===12 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns (Z355 twelve: + AK-47, M4, MP5), one per hand-weapon model, each one held in his hands');
   ok(/g\.special === 'flame'\)\{ fireFlame/.test(sf) && /g\.special === 'mortar'\)\{ fireMortar/.test(sf) && /pierce:g\.pierce/.test(sf) && /chain:g\.chain/.test(sf) && /export function trooperGive/.test(sf) && /\['carbine', 't_rpg'\]/.test(sf) && /MODE\.id==='soldier'\)\{ const id=trooperGunPick\(\)/.test(R('src/loot/powerups.js')), 'each fires its own way (rounds, pellets, a slug through, a rocket, a lobbed grenade, a flame, an arc); he starts with a carbine and a B41 and picks up the rest');
   ok(/\(PROFILE\.trooper \|\| 's2'\) === 'op'\)\{ const seen = skClone\(og\.scene\)/.test(rc) && /pup = makePuppet\(op, seen\)/.test(rc), 'the steel operator is worn by the clips like the special-forces soldier, so he holds every gun gun-first, bore on the aim');
   ok(!C.XEOM.xichlo && !C.RIDE.fit.xichlo && !/xichlo/.test(R('src/ui/battle-setup.js')) && !fs.existsSync('assets/models/real/ride/xichlo.glb') && /PROFILE\.unit==='xichlo'\) PROFILE\.unit='xeom'/.test(R('src/game/flow.js')), 'the xích lô is gone (a saved pick rides the xe ôm)'); }
@@ -1221,6 +1221,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function sightLine\(met, g, len\)/.test(rc) && /const weld = rk < 0 && !g\.hold && !tuck \? \(1 - \(R\.rdy \|\| 0\)\) \* \(1 - low\) : 0/.test(rc) && G.cheek.k>0.5 && G.pocket[1]>0, 'aiming, the neck bows and the head tilts the right eye onto the sight line found on the model; at the ready or reloading the head stays up');
   ok(G.rpg.butt[0]>G.rpg.grip[0] && G.rpg.grip[0]>0.25, 'the B41 grip is its real pistol grip, the shoulder behind it');
 }
+
+// Z355 three real guns for the soldier (AK-47 · M4 · MP5) · Z357 a humvee in the enemy camps and a ruined house among the ruins — Meshy community, CC0, cut down locally
+{ const fs=await import('node:fs'); const C=await import('./config.js'), G=(await import('./src/data/guns.js')).GUNS, R=f=>fs.readFileSync(f,'utf8'), sz=f=>fs.statSync(f).size;
+  ok(['ak','m4','mp5'].every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb') && sz('assets/models/real/gun/inf/'+k+'.glb')<1.2e6 && C.INFGUN.guns[k] && C.GUNHOLD[k]) && ['t_ak','t_m4','t_mp5'].every(id=>G[id] && G[id].trooper && G[id].tier===2 && C.INFGUN.map[id] && C.GUN_BLURB[id]), 'three new hand weapons, each a light model with its length, grip and hold');
+  ok(G.t_m4.spread<G.carbine.spread && G.t_m4.rng>G.t_ak.rng && G.t_ak.dmg>G.carbine.dmg && G.t_mp5.fireCd<G.t_ak.fireCd && G.t_mp5.rng<1, 'each its own role: the M4 precise and long, the AK heavy, the MP5 fast and short');
+  ok(/id = e\.def\.rpg \? 't_rpg' : 't_ak'/.test(R('src/loot/soldier-arms.js')), 'an enemy rifleman drops his AK-47');
+  ok(C.OUTPOST.veh.includes('mil_humvee') && C.OUTPOST.solid.includes('mil_humvee') && sz('assets/models/real/camp/mil_humvee.glb')<3.5e6 && C.REALRUIN.models.ruin_house && sz('assets/models/real/ruin/ruin_house.glb')<3.5e6 && C.REALRUIN.biomes.RUINS.keys.includes('ruin_house'), 'the humvee parks in the camps, the ruined house stands among the ruins, both kept small');
+  ok(/CC0/.test(R('assets/models/real/SOURCES-community.txt')) && /meshy\.ai\/posts\//.test(R('assets/models/real/SOURCES-community.txt')), 'every community model is recorded with its source and licence'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
