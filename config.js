@@ -1471,11 +1471,6 @@ export const SMOKE_TRAIL = { points:64, cap:36, capMobile:14, step:1.0, stepMobi
   kinds:{ shell:{ w0:0.16, grow:0.5, life:2.8, op:0.68, col:0xdedcd6 }, heavy:{ w0:0.22, grow:0.66, life:3.4, op:0.76, col:0xd6d3cc },
     rail:{ w0:0.08, grow:0.26, life:3.4, op:0.68, col:0xeeeaff }, enemy:{ w0:0.16, grow:0.5, life:2.4, op:0.64, col:0x948f87 },
     frost:{ w0:0.2, grow:0.55, life:1.8, op:0.45, col:0xe6f8ff } } };
-// Z229 WIND ON THE LAND — dust devils (and snow devils / leaf whirls) that spin up at random, wander with the wind and die away;
-//   avalanches that pour off the mountains onto the snow battlefields.
-export const WHIRL = { first:[5,12], every:[14,34], max:2, maxMobile:1, life:[13,24], dist:[20,55], speed:[2.2,5.2], R:[0.9,1.9], H:[8,15],
-  grains:120, puffs:30, grainsMobile:55, puffsMobile:12, spin:[5.5,8.5], rise:[2.6,4.6], shove:5 };
-export const AVALANCHE = { warn:2.6, width:30, run:[48,64], v0:3, vmax:15, accel:5, band:3.2, dmg:{ inf:80, veh:30, player:14 }, push:9, mounds:14, moundLife:40 };
 // Z230 GUN STATS — one model of what a gun really does in a fight (combat/gunstats.js), used by the arsenal, the shop and the power rating:
 //   engage = typical fighting distance (fraction of reach, capped) · W = target width (tank / man) · rho = enemies per m² around an impact
 //   (a loose battle line) · hitsCap = most targets one trigger pull is credited with · ref = the targets time-to-kill is quoted against
