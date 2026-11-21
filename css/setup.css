@@ -263,7 +263,7 @@ body.touch #weaponchip{font-size:10px;padding:2px 8px;}
 .su-mode.on .su-check{opacity:1;transform:none;}
 /* ② gear */
 .su-eq{flex:1;min-width:0;min-height:0;display:grid;gap:14px;}
-.su-eq.inf{grid-template-columns:minmax(250px,.72fr) minmax(0,2fr);grid-template-rows:minmax(0,1fr) auto;}
+.su-eq.inf{grid-template-columns:minmax(250px,.72fr) minmax(0,2fr);grid-template-rows:minmax(0,1fr) auto auto;}
 .su-col,.su-tside{display:flex;flex-direction:column;gap:10px;min-height:0;padding:14px;border-radius:18px;background:rgba(6,9,6,.64);border:1px solid rgba(255,255,255,.08);}
 .su-h{font-family:var(--hud);font-size:11px;font-weight:800;letter-spacing:3px;color:#e3b45a;} .su-h small{font-size:9.5px;letter-spacing:1px;color:rgba(234,242,220,.5);font-weight:600;}
 .su-mgrid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -346,3 +346,14 @@ body.touch #weaponchip{font-size:10px;padding:2px 8px;}
   #briefing .brcard .nm{font-size:12px;margin:3px 0 2px;} #briefing .brcard .ds{font-size:9.5px;line-height:1.3;} #briefing .brcard .br-tag{font-size:8px;padding:1px 6px;}
   #briefing .br-actions .btn{padding:9px 18px !important;font-size:13px !important;margin:0;} #briefing .br-hint{display:none;}
 }
+/* Z359 the primary rifle: four cards (photo, name, damage / rate / reach) in one row under the people and the rides */
+.su-pg{grid-column:1/-1;grid-row:2;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:14px;background:rgba(6,9,6,.64);border:1px solid rgba(255,255,255,.08);}
+.su-eq.inf > .su-drv{grid-row:3;}
+.su-pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.su-pgun{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);transition:border-color .2s,box-shadow .2s,transform .2s;}
+.su-pgun:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.25);} .su-pgun.on{border-color:rgba(255,214,120,.95);box-shadow:0 0 0 2px rgba(227,168,62,.4),0 0 22px rgba(227,168,62,.15);background:rgba(227,168,62,.08);}
+.su-pgpic{width:96px;height:44px;flex:none;} .su-pgpic img{width:100%;height:100%;object-fit:contain;}
+.su-pgtx{min-width:0;} .su-pgtx b{display:block;font-family:var(--hud);font-size:12px;font-weight:800;letter-spacing:1.2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .su-pgtx .su-pr{margin-top:2px;}
+.su-pgun:not(.on) .su-pgpic{filter:saturate(.6) brightness(.8);}
+@media (max-height:560px){ .su-pg{padding:5px 8px;gap:3px;} .su-pg .su-h small{display:none;} .su-pgrid{gap:5px;} .su-pgun{gap:5px;padding:3px 6px 3px 3px;} .su-pgpic{width:54px;height:26px;} .su-pgtx b{font-size:9.5px;} .su-pgtx .su-pr{display:none;} }
+@media (max-width:700px) and (orientation:portrait){ .su-pg{grid-row:auto;} .su-pgrid{grid-template-columns:1fr 1fr;} .su-eq.inf > .su-drv{grid-row:auto;} }

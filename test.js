@@ -1074,7 +1074,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z329 the soldier's arsenal: the nine Tripo hand weapons are his guns, each fired its own way; the gun crate brings him one · Z330 the steel operator holds it gun-first too · Z332 no xích lô
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sf=R('src/combat/soldier-fire.js'), rc=R('src/actors/real-cav.js');
   const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===12 && new Set(T.map(k=>C.INFGUN.map[k])).size===12 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns (Z355 twelve: + AK-47, M4, MP5), one per hand-weapon model, each one held in his hands');
-  ok(/g\.special === 'flame'\)\{ fireFlame/.test(sf) && /g\.special === 'mortar'\)\{ fireMortar/.test(sf) && /pierce:g\.pierce/.test(sf) && /chain:g\.chain/.test(sf) && /export function trooperGive/.test(sf) && /\['carbine', 't_rpg'\]/.test(sf) && /MODE\.id==='soldier'\)\{ const id=trooperGunPick\(\)/.test(R('src/loot/powerups.js')), 'each fires its own way (rounds, pellets, a slug through, a rocket, a lobbed grenade, a flame, an arc); he starts with a carbine and a B41 and picks up the rest');
+  ok(/g\.special === 'flame'\)\{ fireFlame/.test(sf) && /g\.special === 'mortar'\)\{ fireMortar/.test(sf) && /pierce:g\.pierce/.test(sf) && /chain:g\.chain/.test(sf) && /export function trooperGive/.test(sf) && /\[main, 't_rpg'\]/.test(sf) && /PRIMARY_GUNS = \['carbine', 't_ak', 't_m4', 't_mp5'\]/.test(sf) && /MODE\.id==='soldier'\)\{ const id=trooperGunPick\(\)/.test(R('src/loot/powerups.js')), 'each fires its own way (rounds, pellets, a slug through, a rocket, a lobbed grenade, a flame, an arc); he starts with a carbine (Z359 or the AK / M4 / MP5 he picked) and a B41 and picks up the rest');
   ok(/\(PROFILE\.trooper \|\| 's2'\) === 'op'\)\{ const seen = skClone\(og\.scene\)/.test(rc) && /pup = makePuppet\(op, seen\)/.test(rc), 'the steel operator is worn by the clips like the special-forces soldier, so he holds every gun gun-first, bore on the aim');
   ok(!C.XEOM.xichlo && !C.RIDE.fit.xichlo && !/xichlo/.test(R('src/ui/battle-setup.js')) && !fs.existsSync('assets/models/real/ride/xichlo.glb') && /PROFILE\.unit==='xichlo'\) PROFILE\.unit='xeom'/.test(R('src/game/flow.js')), 'the xích lô is gone (a saved pick rides the xe ôm)'); }
 
@@ -1241,6 +1241,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/SAT TALL, BACK STRAIGHT/.test(dr) && /\[B\.Spine2, B\.Neck, S2\.chest\]/.test(dr) && R.straight && R.straight.k>0.6 && R.straight.chest>0, 'each link of his spine laid on the trunk line, the upper back a touch proud');
   ok(R.fit.xeom.bend<=0.15 && R.fit.bagac.bend<=0.22 && R.sway.max<=0.22, 'a Cub ridden upright; the brakes throw him only a little forward');
 }
+
+// Z359 the soldier picks his primary rifle before the battle (the B41 always comes; the rest he finds)
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), su=R('src/ui/setup-units.js'), sf=R('src/combat/soldier-fire.js');
+  ok(/PRIMARY_GUNS\.includes\(PROFILE\.trooperGun\) \? PROFILE\.trooperGun : 'carbine'; return \[main, 't_rpg'\]/.test(sf) && /PROFILE\.trooperGun = id; saveProfile\(\)/.test(su) && /SÚNG CHÍNH/.test(su) && /\.su-pgrid\{display:grid;grid-template-columns:repeat\(4/.test(R('css/setup.css')), 'four rifles to pick in the gear step, the one picked goes in with the B41'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

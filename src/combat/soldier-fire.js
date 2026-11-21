@@ -7,10 +7,11 @@
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
 import { RIDER_TURN, TROOPER } from '../../config.js';
-import { GUNS, MOBILE, PAD, S, aimTarget, cMod, fireFlame, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV } from '../hub.js';
+import { GUNS, MOBILE, PAD, PROFILE, S, aimTarget, cMod, fireFlame, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV } from '../hub.js';
 
 const _v = new THREE.Vector3();
-export function trooperGuns(){ return ['carbine', 't_rpg'].map(id => ({ id, ammo:GUNS[id].mag, rU:0, rD:0 })); }
+export const PRIMARY_GUNS = ['carbine', 't_ak', 't_m4', 't_mp5'];   // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ)
+export function trooperGuns(){ const main = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine'; return [main, 't_rpg'].map(id => ({ id, ammo:GUNS[id].mag, rU:0, rD:0 })); }
 // the guns the "SÚNG MỚI" crate can bring him: one he has not got yet, the heavier ones later in the campaign
 export function trooperGunPick(){ const p = S.player, have = new Set(p.guns.map(g => g.id)), stage = S.stage || 1;
   const pool = Object.keys(GUNS).filter(id => GUNS[id].trooper && !have.has(id) && (GUNS[id].tier || 1) <= Math.min(3, 1 + stage));

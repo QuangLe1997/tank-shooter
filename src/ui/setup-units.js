@@ -5,7 +5,7 @@
 //   honest bars (how quick, how tough, how wide he can fire) and what the driver does for him. Every picture is a photo from the game (assets/units).
 //   Also the loadout chips in the footer and the "ĐỘI HÌNH XUẤT KÍCH" strip on the briefing.
 import { TROOPER } from '../../config.js';
-import { GUNS, MODE, PROFILE, currentTank, gunPicEl, loadoutGuns, openGarage, openLoadout, saveProfile, sfx, tankModel, tankPicHTML, tapEl } from '../hub.js';
+import { GUNS, MODE, PRIMARY_GUNS, PROFILE, currentTank, gunPicEl, loadoutGuns, openGarage, openLoadout, saveProfile, sfx, tankModel, tankPicHTML, tapEl } from '../hub.js';
 
 const PIC = k => 'assets/units/' + k + '.webp';
 export const RIDES = {
@@ -65,6 +65,12 @@ function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = t
     c.appendChild(el('div', 'su-cap', '<b>' + R.nm + '</b><small>' + R.sub + '</small>' + BARS.map((l, i) => '<div class="su-pr"><span>' + l + '</span>' + pips(R.bars[i]) + '</div>').join('')));
     tapEl(c, () => { PROFILE.unit = PROFILE.lastRide = k; saveProfile(); sfx('click'); refresh(); }); rg.appendChild(c); }
   rides.appendChild(rg); wrap.appendChild(rides);
+  // Z359 the rifle he carries in (the B41 always comes too); the rest he finds on the field
+  const gk = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine', gw = el('div', 'su-pg'); gw.appendChild(el('div', 'su-h', 'SÚNG CHÍNH <small>· kèm B41 · súng khác nhặt trong trận</small>'));
+  const gg = el('div', 'su-pgrid'); for(const id of PRIMARY_GUNS){ const G = GUNS[id], c = el('div', 'su-pgun' + (id === gk ? ' on' : '')); c.dataset.pad = '1'; c.appendChild(gunPicEl(id, 'su-pgpic'));
+    c.appendChild(el('div', 'su-pgtx', '<b>' + G.name + '</b>' + [['SÁT THƯƠNG', G.dmg / 16], ['NHỊP BẮN', 0.068 / G.fireCd], ['TẦM', (G.rng || 1) / 1.15]].map(([l, k]) => '<div class="su-pr"><span>' + l + '</span>' + pips(Math.max(1, Math.round(k * 5))) + '</div>').join('')));
+    tapEl(c, () => { PROFILE.trooperGun = id; saveProfile(); sfx('click'); refresh(); }); gg.appendChild(c); }
+  gw.appendChild(gg); wrap.appendChild(gw);
   const R = RIDES[rd]; wrap.appendChild(el('div', 'su-drv' + (R.drv ? '' : ' self'), R.drv
     ? '<b>BÁC TÀI · ' + R.nm + '</b><span>' + R.tx + '</span><ul><li>Lái theo hướng anh điều khiển — anh chỉ việc ngắm và bắn</li><li>Xe ngã: bác hấp tấp bò lại dựng xe</li><li>Xuống xe đánh bộ: bấm <kbd>G</kbd> gọi bác tới đón</li><li>Anh gục: bác quỳ xuống đầu hàng bên cạnh</li></ul>'
     : '<b>CHIẾN MÃ · KHÔNG BÁC TÀI</b><span>' + R.tx + '</span><ul><li>Giữ tăng tốc để phi nước đại</li><li>Xuống ngựa đánh bộ: bấm <kbd>G</kbd> huýt gọi ngựa về</li><li>Trúng đòn nặng, ngựa có thể hất anh xuống</li></ul>'));
@@ -72,7 +78,8 @@ function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = t
 // ---- the footer's loadout chips (a tap goes back to that step) ----
 export function loadoutChips(host, goStep){ host.replaceChildren(); const add = (t, s, step) => { const c = el('div', 'su-chip', t + (s ? '<small>' + s + '</small>' : '')); c.dataset.pad = '1'; tapEl(c, () => { sfx('click'); goStep(step); }); host.appendChild(c); };
   if(!isSoldier()){ const M = tankModel(currentTank()); add('XE TĂNG', 'thiết giáp', 1); add(M.name.split(' ')[0], loadoutGuns().length + ' khẩu súng', 2); return; }
-  const R = RIDES[rideOf()]; add('NGƯỜI LÍNH', 'bộ binh', 1); add(TROOPERS[trooperOf()].nm, 'người lính', 2); add(R.nm, R.drv ? 'bác tài lái' : 'tự cưỡi', 2); }
+  const R = RIDES[rideOf()]; add('NGƯỜI LÍNH', 'bộ binh', 1); add(TROOPERS[trooperOf()].nm, 'người lính', 2); add(R.nm, R.drv ? 'bác tài lái' : 'tự cưỡi', 2);
+  add((GUNS[PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine'] || {}).name || 'SÚNG', 'súng chính', 2); }
 // ---- the briefing: who is going in ----
 export function briefTeam(){ const host = document.getElementById('br-team'); if(!host) return; host.replaceChildren();
   const tile = (src, html, cls) => { const t = el('div', 'br-tm' + (cls ? ' ' + cls : '')); if(src) t.appendChild(img(src, 'br-tmp')); else t.appendChild(el('div', 'br-tmp', html[1])); t.appendChild(el('div', 'br-tmt', html[0])); host.appendChild(t); };
