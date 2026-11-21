@@ -1030,9 +1030,11 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 //   left hand takes a round from the bag on his front (pouch: [his left, up, ahead] of his chest), holds it ahead[0] m out in front of the muzzle, pushes it
 //   home to ahead[1] m; he looks down look rad at it; lying down (prone) the tube is drawn back along his right side, its muzzle low ahead of his head.
 //   (It came from behind his back over his shoulder: the left arm swung round behind him.)
+// Z416 clear = sat behind a driver aiming ahead (REALCAV.overDrv), the loading tube swung that much further out to his left, beside the ride — not over the driver's head
 // Z345 palm = where along the weapon (share of its length from the middle, + toward the butt) the support palm takes the handguard from below — its height
 //   found from the model (actors/real-cav.js palmSpot: rays cast up from below at the spot ± palmRays [along, across] m, the middle of what they meet), the palm's
 //   middle palmGap m under it; reach = the share of the left arm's full length it may stretch to before the gun is brought across to the hand;
+//   Z416 reachProne = the same lying down (the elbow planted, the arm out straighter: the 12.7's long handguard no longer drags it 3.5 cm back off the shoulder);
 //   cup = the support hand's way [across to the far side, up, ahead] and how tight the fingers close (Z348: down and across from the near side, so the
 //   hand wraps the handguard — it lay palm-up under it, catching it), wrap = the palm moved to the handguard's lower near side [toward him, up] (m);
 //   gripR = the firing hand round the pistol grip [fingers ahead, across, down] and its palm moved [to his right, up] (m) off the grip point;
@@ -1041,11 +1043,11 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 //   much of the gap it closes, where the sight is (share behind the middle) and how far under the gun's top the eye looks through it (m)
 // Z360 blade = a gun too long for his left arm even with the palm slid back: he turns further side-on to it [the pull (m) it starts at, his shoulders'
 //   width (m: the left shoulder comes forward this much per radian), the ease back (rad/s) once it no longer pulls, the most (rad) on top of square, the share of it lying prone (Z365)]
-export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, blade:[0.005, 0.35, 0.15, 0.8, 0.9], cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
+export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, reachProne:0.99, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, blade:[0.005, 0.35, 0.15, 0.8, 0.9], cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
   ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.215, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
   minigun:{ palm:-0.14, hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
   sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.4, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0],
-    load:{ at:[0.06, -0.45, -0.06], pitch:0.6, turn:0.8, pouch:[0.15, -0.3, 0.18], ahead:[0.14, 0.05], look:0.2, floor:0.15, prone:{ at:[0.06, -0.1, -0.3], pitch:0.15, turn:0.6 } } },
+    load:{ at:[0.06, -0.45, -0.06], pitch:0.6, turn:0.8, pouch:[0.15, -0.3, 0.18], ahead:[0.14, 0.05], look:0.2, floor:0.15, clear:0.7, prone:{ at:[0.06, -0.1, -0.3], pitch:0.15, turn:0.6 } } },
   gl:{ palm:-0.24, butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ palm:-0.12, hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ palm:-0.14, butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] },
   ak:{ palm:-0.2, butt:[0.5, -0.01], grip:[0.21, -0.08], fore:[-0.2, -0.04], kick:[0.03, 0.045] }, m4:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.21, -0.08], fore:[-0.12, -0.06], kick:[0.018, 0.024] },
