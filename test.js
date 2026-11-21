@@ -828,7 +828,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z281 the base's main gatehouse lowered, its short wall runs clipped not squeezed · Z282 the xe ôm / xích lô mode
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(/th=main\?H\+9:H\+7/.test(R('src/world/core-walls.js')) && /coreClip/.test(R('src/world/core-walls.js')), 'base walls: no squeezed runs, a sane gatehouse');
-  ok(/export function buildBikeMount/.test(R('src/game/xeom.js')) && /export async function mountModel/.test(R('src/world/traffic.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/cavalry.js')) && /if\(S\.bike\) return animateBike/.test(R('src/actors/horse.js')) && /\['xeom','XE ÔM'/.test(R('src/ui/battle-setup.js')) && /MODE\.makePlayer\(cavKind\)/.test(R('src/game/flow.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/mode.js')) && C.XEOM.xeom && !C.XEOM.xichlo, 'ride into battle on a xe ôm (Z332 the xích lô is gone)'); }
+  ok(/export function buildBikeMount/.test(R('src/game/xeom.js')) && /export async function mountModel/.test(R('src/world/traffic.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/cavalry.js')) && /if\(S\.bike\) return animateBike/.test(R('src/actors/horse.js')) && /xeom: +\{ nm:'XE ÔM'/.test(R('src/ui/setup-units.js')) && /MODE\.makePlayer\(cavKind\)/.test(R('src/game/flow.js')) && /makeCavPlayer\(kind\)/.test(R('src/game/mode.js')) && C.XEOM.xeom && !C.XEOM.xichlo, 'ride into battle on a xe ôm (Z332 the xích lô is gone)'); }
 
 // Z283 every battlefield its own fort style: limestone castle, Roman, marble, dry-stone, industrial joined the first four
 { const fs=await import('node:fs'); const C=await import('./config.js');
@@ -869,12 +869,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z293 the war rides: xe ôm, xích lô, ba gác, pickup — real models, the soldier seated / standing in his true place
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(['xeom','bagac','bantai'].every(k=>fs.existsSync('assets/models/real/ride/'+k+'.glb') && C.XEOM[k].len>1 && C.XEOM.poses[C.XEOM[k].pose]) && /function heroGeo/.test(R('src/game/xeom.js')), 'four ride models fitted to their true length');
-  ok(/function seatRider/.test(R('src/game/cavalry.js')) && !/G\.scale\.setScalar\(HUMAN_SCALE\/HORSE\.size\);\s*H\.root/.test(R('src/game/cavalry.js')) && /XEOM\.poses\[XEOM\[H\.bike\]\.pose\]/.test(R('src/actors/general.js')) && /'bagac','bantai'/.test(R('src/game/flow.js')) && /BÁN TẢI/.test(R('src/ui/battle-setup.js')), 'seated / standing poses, remount keeps the seat, two new rides to pick'); }
+  ok(/function seatRider/.test(R('src/game/cavalry.js')) && !/G\.scale\.setScalar\(HUMAN_SCALE\/HORSE\.size\);\s*H\.root/.test(R('src/game/cavalry.js')) && /XEOM\.poses\[XEOM\[H\.bike\]\.pose\]/.test(R('src/actors/general.js')) && /'bagac','bantai'/.test(R('src/game/flow.js')) && /BÁN TẢI/.test(R('src/ui/setup-units.js')), 'seated / standing poses, remount keeps the seat, two new rides to pick'); }
 
 // Z294 the second soldier: a detailed special-forces model wearing the operator's moves (puppet), on every war ride and on foot
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(fs.existsSync('assets/models/real/soldier2.glb') && /export function makePuppet/.test(R('src/actors/puppet.js')) && /export function drivePuppet/.test(R('src/actors/puppet.js')) && /drivePuppet\(R\.pup\)/.test(R('src/actors/real-cav.js')) && C.REALCAV.s2.on, 'the special-forces soldier follows the operator bone by bone');
-  ok(/CV\.realP=null; fitRealCav\(CV\)/.test(R('src/game/cavalry.js')) && /if\(!H\.bike\)\{/.test(R('src/actors/real-cav.js')) && /PROFILE\.trooper=k/.test(R('src/ui/battle-setup.js')), 'real riders on the war rides, soldier picked in battle setup'); }
+  ok(/CV\.realP=null; fitRealCav\(CV\)/.test(R('src/game/cavalry.js')) && /if\(!H\.bike\)\{/.test(R('src/actors/real-cav.js')) && /PROFILE\.trooper = k/.test(R('src/ui/setup-units.js')), 'real riders on the war rides, soldier picked in battle setup'); }
 
 // Z295 the infantry arsenal and the pose review: nine hand weapons, kneeling aim, feet on the ground, getting on / off a ride for real
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
@@ -1182,6 +1182,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(d > reach\)\{ _pd\.subVectors\(_pa, wl\)\.setLength\(d - reach\)/.test(rc) && G.reach>0.9 && G.reach<1, 'beyond the reach of the left arm (turned right round) the gun is brought across to the hand');
 }
 
+// Z354 into battle in three steps: who (tank / soldier), with what (hull + guns · trooper + ride + driver), where — XUẤT KÍCH from any step
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), bs=R('src/ui/battle-setup.js'), su=R('src/ui/setup-units.js'), html=R('index.html'), css=R('css/setup.css');
+  ok(/id="bsRail"/.test(html) && /id="bsS1"/.test(html) && /id="bsS2"/.test(html) && /id="bsS3"/.test(html) && /id="bsNext"/.test(html) && /id="br-team"/.test(html) && /ui\/setup-units\.js/.test(R('src/hub.js')), 'the rail, the three steps, TIẾP and the briefing team strip are in the page');
+  ok(/export function setStep/.test(bs) && /setStep\(tab \? 3 : 1\)/.test(bs) && /tapBtn\('bsGo', goBattle\)/.test(bs) && /ov\.dataset\.step = BS\.step/.test(bs), 'PLAY opens at step 1, the battlefield buttons at step 3, XUẤT KÍCH goes in from any step');
+  ok(['tank','s2','op','cav','xeom','bagac','bantai'].every(k=>fs.existsSync('assets/units/'+k+'.webp')) && /assets\/units\//.test(su), 'every card is a photo from the game');
+  ok(/drv:false/.test(su) && (su.match(/drv:true/g)||[]).length===3 && /BÁC TÀI LÁI/.test(su) && /TỰ CƯỠI/.test(su) && /bác quỳ xuống đầu hàng/.test(su), 'the horse is ridden by him, the three rides by the bác tài — and the card says what the driver does');
+  ok(/_garFrom==='battleSetup'\) setupBack\(\)/.test(R('src/ui/garage.js')) && /_ldFrom==='battleSetup'\)\{ show\('battleSetup'\); setupBack\(\); \}/.test(R('src/ui/loadout.js')), 'the garage and the arsenal come back to the gear step');
+  ok(/\.btn\.btn-primary\{--plate:linear-gradient\(180deg,#e2b443/.test(R('css/mil.css')) && /#battleSetup\[data-step="1"\] \.bs-s1/.test(css) && /@media \(max-height:560px\)\{\n  #briefing/.test(css), 'primary buttons stay yellow everywhere; one step shown at a time; the phone briefing fits'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -1268,7 +1277,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z152 one-press battle entry + one design language for the dialogs
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8');
-  ok(/tapBtn\('playBtn', \(\)=>\{ hide\('start'\); launchGame\(\{ mode:'campaign', level:campaignMax\(\) \}\)/.test(R('src/game/flow.js')), 'PLAY goes straight into the next campaign level');
+  ok(/tapBtn\('playBtn', \(\)=>openBattleSetup\(\)\)/.test(R('src/game/flow.js')), 'PLAY opens CHUẨN BỊ TRẬN at its first step (Z354; XUẤT KÍCH there goes in at once)');
   ok(/intro\.quick = !!\(PROFILE\.introSeen/.test(R('src/game/intro.js')) && /if\(intro\.quick\) endIntro\(\)/.test(R('src/game/intro.js')), 'the battlefield tour plays once per map, then the warm-up leads straight to the briefing');
   ok(/export function launchStage/.test(R('src/ui/briefing.js')) && /if\(quick\)\{ confirmDeploy\(\); return; \}/.test(R('src/ui/deploy.js')) && /id="brGo"/.test(R('index.html')), 'briefing: a contract is pre-chosen, XUẤT KÍCH posts the troops by plan without another screen');
   ok(/css\/ui152\.css/.test(R('index.html')) && /\.brcard\.on::after/.test(R('css/ui152.css')) && /--card-sh-hover/.test(R('css/ui152.css')), 'shared card surface, hover lift, chosen state'); }

@@ -1,12 +1,13 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, GUNS, PROFILE, S, TOD_LABEL, TRAIN, WAVE, barrelGrade, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage, spellNow } from '../hub.js';
+import { BIOME, GUNS, PROFILE, S, TOD_LABEL, TRAIN, WAVE, barrelGrade, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
 export function openBriefing(opts){
   _brCtx = opts || {};
   S.mode='briefing';
+  briefTeam();   // Z354 ĐỘI HÌNH XUẤT KÍCH: the tank and its guns · the soldier, his ride, its driver, his squad
   prewarmStage();   // Z168 compile this stage's shaders in the background while the player reads the briefing (no hitch at the countdown / first frame)
   const bdef = bossForStage(S.stage);   // Z161 may be one of the new generals
   const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(biomePlace(BIOME.name)?' · '+biomePlace(BIOME.name):'')+'  —  TƯỚNG: '+(bdef?bdef.name:'???');

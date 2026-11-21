@@ -10,7 +10,7 @@ export function tapEl(el, fn){ if(!el) return; el.addEventListener('click', fn);
   el.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); fn(e); }, {passive:false}); }
 export function refreshStartUI(){
   try{ const gn=document.getElementById('garName'); if(gn) gn.textContent=tankModel(currentTank()).name.split(' ')[0]; }catch(e){}   // Z155 which tank rolls out
-  try{ const ps=document.getElementById('playSub'), I=levelInfo(campaignMax()); if(ps) ps.textContent='CẤP '+I.L+' · '+biomeVi(I.biome.name)+(I.boss?' · TƯỚNG':''); }catch(e){}   // Z152 what PLAY starts
+  try{ const ps=document.getElementById('playSub'), I=levelInfo(campaignMax()); if(ps) ps.textContent='CẤP '+I.L+' · '+biomeVi(I.biome.name)+(I.boss?' · TƯỚNG':'')+' · '+((PROFILE.unit||'tank')==='tank'?'XE TĂNG':'NGƯỜI LÍNH'); }catch(e){}   // Z152 what PLAY starts · Z354 and as whom
   try{ refreshPowerChip(); }catch(e){}   // Z107 power rating vs your next campaign level
   const hello=document.getElementById('hello');
   if(hello) hello.innerHTML = PROFILE.nickname ? ('CHỈ HUY <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';

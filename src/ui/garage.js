@@ -1,6 +1,6 @@
 // ui/garage.js — Z155 GARA XE TĂNG: the tank collection. Every model as a studio photo with its real name, origin, mass, engine and what it
 //   changes in battle (armour, top speed, acceleration, turning, size); buy with coins / diamonds, tap an owned one to take it into battle.
-import { PROFILE, S, SHOW, TANK_MODELS, TANK_ORDER, TRIAL, canAfford, econBuy, escapeHtml, hide, refreshStartUI, saveProfile, sfx, shopScene, show, tankPicHTML, tapBtn, tapEl } from '../hub.js';
+import { PROFILE, S, SHOW, TANK_MODELS, TANK_ORDER, TRIAL, canAfford, econBuy, escapeHtml, hide, refreshStartUI, saveProfile, sfx, shopScene, show, tankPicHTML, tapBtn, tapEl, setupBack } from '../hub.js';
 
 export function ownedTanks(){ if(!PROFILE.ownedTanks) PROFILE.ownedTanks=['lqt']; if(!PROFILE.ownedTanks.includes('lqt')) PROFILE.ownedTanks.unshift('lqt'); return PROFILE.ownedTanks; }
 export function currentTank(){ if(TRIAL.on && TANK_MODELS[TRIAL.tank]) return TRIAL.tank;   // Z182 a training run drives the trial tank
@@ -30,6 +30,7 @@ export function selectTank(id){
   if(SHOW.tank){ shopScene.remove(SHOW.tank); SHOW.tank=null; SHOW.built=''; }   // the showroom rolls the new tank out next time
   renderGarage(); refreshStartUI(); }
 export let _garFrom='start';
-export function openGarage(){ _garFrom = S.mode==='paused' ? 'pause' : 'start'; hide(_garFrom); renderGarage(); show('garage'); sfx('click'); }
-export function closeGarage(){ hide('garage'); show(_garFrom==='pause' ? 'pause' : 'start'); sfx('click'); }
+export function openGarage(){ _garFrom = S.mode==='paused' ? 'pause' : !document.getElementById('battleSetup').classList.contains('hidden') ? 'battleSetup' : 'start';   // Z354 from CHUẨN BỊ TRẬN's gear step: back there
+  hide(_garFrom); renderGarage(); show('garage'); sfx('click'); }
+export function closeGarage(){ hide('garage'); show(_garFrom==='pause' ? 'pause' : _garFrom); if(_garFrom==='battleSetup') setupBack(); sfx('click'); }
 tapBtn('garageBtn', openGarage); tapBtn('garDone', closeGarage);

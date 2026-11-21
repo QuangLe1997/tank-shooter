@@ -64,7 +64,7 @@ export function ensureFocus(root){ const L=navItems(root); if(!L.length) return 
   setFocus(first||pri||L[0], true); return L; }
 // the bottom hint changes per screen (the battle setup has a start shortcut)
 const HINT_PAD={ battleSetup:'Ⓐ Chọn · LB/RB Đổi chế độ · ☰ VÀO TRẬN · Ⓑ Quay lại', loadout:'Ⓐ Chọn / bỏ súng · Ⓨ ★ đặt làm súng mặc định · Ⓑ Xong', deploy:'Ⓐ / → thêm quân · ← bớt quân · ↑↓ chọn điểm · ☰ XUẤT KÍCH · Ⓑ Quay lại' };
-export const PAD_FIRST={ battleSetup:'.bs-mode.on', deploy:'.dp-step', trainInvite:'#tiGo', trialShow:'#tsCampaign' };      // where the ring starts on a screen
+export const PAD_FIRST={ battleSetup:'#battleSetup[data-step="1"] .su-mode.on, #battleSetup[data-step="2"] .su-ride.on, .bs-mode.on', deploy:'.dp-step', trainInvite:'#tiGo', trialShow:'#tsCampaign' };      // where the ring starts on a screen
 export const PAD_GO={ battleSetup:'#bsGo', deploy:'#dp-go' };                  // ☰ Menu = the screen's start button (A only ever PICKS, so one A can never also launch)
 let _hintDef=null, _hintRoot=null;
 function navHintFor(root){ if(_hintRoot===root.id) return; _hintRoot=root.id; const h=document.querySelector('#navHint .nh-pad'); if(!h) return; if(_hintDef===null) _hintDef=h.textContent; h.textContent=HINT_PAD[root.id]||_hintDef; }

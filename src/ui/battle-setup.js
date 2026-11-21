@@ -1,8 +1,8 @@
 // ui/battle-setup.js — Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the next; map/hour/weather set per level) · CUSTOM = pick map, hour, weather, space and enemy level · Z181 every battlefield is shown by a real in-game photo (assets/maps), the chosen one fills a hero card with its place, story, hour and weather
 import { CAMPAIGN, SPACE, WEATHER } from '../../config.js';
-import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, fmtP, hide, launchGame, levelCheck, saveProfile, sfx, show, tapBtn, tapEl, todFor, verdictHTML } from '../hub.js';
+import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, fmtP, hide, launchGame, levelCheck, loadoutChips, renderGear, renderModes, saveProfile, sfx, show, tapBtn, tapEl, todFor, verdictHTML } from '../hub.js';
 
-export const BS = { tab:'campaign', sel:1, bg:0 };
+export const BS = { tab:'campaign', sel:1, bg:0, step:1 };
 export const TOD_KEYS = ['day','noon','sunset','night'];
 export const WX_KEYS = ['clear','rain','sand','snow','fog'];
 const TOD_HINT = { day:'nắng sớm, bóng dài', noon:'nắng gắt, tầm xa', sunset:'ánh vàng, ngược sáng', night:'đèn pha, tầm ngắn' };
@@ -68,18 +68,27 @@ export function refreshSummary(){ const el=document.getElementById('bsSum'); if(
 export function setSetupTab(t){ BS.tab=t; document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>m.classList.toggle('on', m.dataset.m===t));
   document.getElementById('bsCampaign').classList.toggle('hidden', t!=='campaign'); document.getElementById('bsCustom').classList.toggle('hidden', t!=='custom');
   if(t==='campaign') buildCampaign(); else buildCustom(); refreshSummary(); }
-export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); buildUnitPick(); setSetupTab(tab||'campaign'); sfx('click'); }
+// Z354 THE THREE STEPS: ① BINH CHỦNG (tank or soldier) → ② TRANG BỊ (the hull and its guns · the trooper, his ride and its driver) → ③ CHIẾN TRƯỜNG (campaign
+//   ladder or a custom battle). PLAY opens at ①, the battlefield buttons straight at ③; the rail on top and the loadout chips in the footer jump between
+//   steps; TIẾP moves on; XUẤT KÍCH goes in from any step with what is chosen (the last choices are remembered).
+const STEP_NEXT = ['', 'TIẾP · TRANG BỊ ▶', 'TIẾP · CHIẾN TRƯỜNG ▶', ''];
+export function setStep(n){ BS.step = Math.max(1, Math.min(3, n)); const ov = document.getElementById('battleSetup'); if(!ov) return; ov.dataset.step = BS.step;
+  document.querySelectorAll('#bsRail .bs-rs').forEach(r => { const k = +r.dataset.s; r.classList.toggle('on', k === BS.step); r.classList.toggle('done', k < BS.step); });
+  if(BS.step === 1) renderModes(document.getElementById('bsS1'), () => setTimeout(() => setStep(2), 160));
+  else if(BS.step === 2) regear();
+  else setSetupTab(BS.tab);
+  paintFoot(); }
+function regear(){ renderGear(document.getElementById('bsS2'), regear); paintFoot(); }
+function paintFoot(){ loadoutChips(document.getElementById('bsUnit'), setStep); const nx = document.getElementById('bsNext'); if(nx){ nx.textContent = STEP_NEXT[BS.step]; nx.style.display = BS.step < 3 ? '' : 'none'; } refreshSummary(); }
+export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); if(tab) BS.tab=tab; setStep(tab ? 3 : 1); sfx('click'); }
 export function closeBattleSetup(){ hide('battleSetup'); show('start'); sfx('click'); }
 export function goBattle(){ hide('battleSetup');
   if(BS.tab==='campaign') launchGame({ mode:'campaign', level:BS.sel });   // Z119 behind the deploying veil
   else { const C=PROFILE.custom; saveProfile(); launchGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
-tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle);
+tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle); tapBtn('bsNext', () => { sfx('click'); setStep(BS.step + 1); });
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));
-
-// Z245 UNIT: fight as the tank, or as the general on his war horse (KỴ SĨ THÉP; Z246 a modern heavy operator) — remembered between battles
-export function buildUnitPick(){ const el=document.getElementById('bsUnit'); if(!el) return; el.innerHTML='';
-  for(const [k,t,sub] of [['tank','XE TĂNG','thiết giáp'],['cav','KỴ SĨ THÉP','tướng giáp · chiến mã'],['xeom','XE ÔM','bác tài chở · lính bắn'],['bagac','BA GÁC','đứng thùng sau · bắn quanh'],['bantai','BÁN TẢI','đứng thùng xe · khung chống lật']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.unit||'tank')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';   // Z293 + the ba gác and the pickup technical
-    tapEl(c, ()=>{ PROFILE.unit=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); }
-  // Z294 which soldier fights off the tank: the new special-forces trooper (his own detailed model wearing the rifle moves) or the steel operator
-  for(const [k,t,sub] of [['s2','LÍNH ĐẶC NHIỆM','giáp đủ đồ · kính đêm'],['op','LÍNH THÉP','operator cũ']]){ const c=document.createElement('div'); c.className='bs-uchip'+((PROFILE.trooper||'s2')===k?' on':''); c.innerHTML=t+'<small>'+sub+'</small>';
-    tapEl(c, ()=>{ PROFILE.trooper=k; saveProfile(); buildUnitPick(); sfx('click'); }); el.appendChild(c); } }
+document.querySelectorAll('#bsRail .bs-rs').forEach(r=>tapEl(r, ()=>{ sfx('click'); setStep(+r.dataset.s); }));
+// back from the garage / the arsenal (closeGarage / closeLoadout return here): show the hull and guns as they are now
+export function setupBack(){ if(BS.step === 2) regear(); else paintFoot(); }
+// Enter: the next step, or into battle from the last
+if(typeof window !== 'undefined') window.addEventListener('keydown', ev => { const ov = document.getElementById('battleSetup'); if(ev.key !== 'Enter' || !ov || ov.classList.contains('hidden')) return; ev.preventDefault(); if(BS.step < 3) setStep(BS.step + 1); else goBattle(); });

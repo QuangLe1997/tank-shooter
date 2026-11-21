@@ -1,5 +1,5 @@
 // ui/loadout.js — Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the start screen or mid-run pause).
-import { GUNS, LOADOUT_MAX, PROFILE, S, gunPicHTML, gunTierTx, hide, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD } from '../hub.js';
+import { GUNS, LOADOUT_MAX, PROFILE, S, gunPicHTML, gunTierTx, hide, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD, setupBack } from '../hub.js';
 
 // ---- arsenal / loadout (pick ≤5 from your collection) ----
 export let _ldSel=[];
@@ -24,7 +24,8 @@ export function toggleLd(id){ const i=_ldSel.indexOf(id);
   else { if(_ldSel.length>=LOADOUT_MAX) return; _ldSel.push(id); }
   sfx('click'); renderLoadout(); }
 export let _ldFrom='start';
-export function openLoadout(){ _ldFrom = (S.mode==='paused')?'pause':'start'; hide(_ldFrom); _ldSel=PROFILE.loadout.filter(k=>PROFILE.ownedGuns.includes(k)).slice(0,LOADOUT_MAX); if(!_ldSel.length)_ldSel=['rifle']; renderLoadout(); show('loadout'); sfx('click'); }
+export function openLoadout(){ _ldFrom = (S.mode==='paused')?'pause':!document.getElementById('battleSetup').classList.contains('hidden')?'battleSetup':'start';   // Z354 from CHUẨN BỊ TRẬN: back there
+  hide(_ldFrom); _ldSel=PROFILE.loadout.filter(k=>PROFILE.ownedGuns.includes(k)).slice(0,LOADOUT_MAX); if(!_ldSel.length)_ldSel=['rifle']; renderLoadout(); show('loadout'); sfx('click'); }
 export function applyLoadoutToRun(){                                  // re-pick mid-battle: swap the active guns live (keep ammo of guns you already had)
   const p=S.player; if(!p) return;
   let want=PROFILE.loadout.slice(0,LOADOUT_MAX); if(!want.length) want=['rifle'];
@@ -34,6 +35,7 @@ export function applyLoadoutToRun(){                                  // re-pick
 }
 export function closeLoadout(){ PROFILE.loadout=_ldSel.slice(0,LOADOUT_MAX); if(!PROFILE.loadout.length)PROFILE.loadout=['rifle']; PROFILE.defaultGun=dflt()||'rifle'; saveProfile(); hide('loadout');
   if(_ldFrom==='pause'){ applyLoadoutToRun(); if(S.mode==='paused') show('pause'); }   // changes take effect on the current run
+  else if(_ldFrom==='battleSetup'){ show('battleSetup'); setupBack(); }
   else if(S.mode==='start') show('start');
   refreshStartUI(); sfx('click'); }
 tapBtn('arsenalBtn', openLoadout);
