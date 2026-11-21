@@ -2106,5 +2106,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(K.biomes.RUINS.skyline && K.biomes.FOUNDRY.skyline && K.biomes.VOLCANO.skyline && K.biomes.VOLCANO.rings==='peak' && K.biomes.TUNDRA==='ARCTIC' && K.biomes.STEELMILL==='FOUNDRY', 'ruins, works and volcano stand in for the near range; the tundra and the steel mill borrow their neighbours’');
   const sp=JSON.parse(R('tools/scene-import.json')); ok(['tank_steel','rail_tanker','radar_dish'].every(k=>sp[k].looseFar) && /loose:S\.loose \|\| S\.looseFar/.test(R('tools/scene-import.mjs')), 'the hard surfaces too cut up to thin get loose far / phone copies only'); }
 
+// Z384–Z386 the radar station's tower as the dish scan (its dish sweeping with the head), the brick walls in the breached wall's stone (solid slices,
+//   band for band), the city's power poles as the transformer pole scan and roofs with water tanks / masts
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=(await import('./config.js')).SCENERY, sc=R('src/world/scenery.js');
+  ok(/function realRadar\(b, gen\)/.test(sc) && /head\.add\(dish\)/.test(sc) && /dish\.position\.y = -head\.position\.y/.test(sc) && C.supply.radar.split>0.3 && C.supply.radar.split<0.7, 'the radar: the scan\'s lattice in the tower, its dish in the turning head');
+  ok(/function brickSlices\(\)/.test(sc) && /f < C\.fill/.test(sc) && /b\.wall\.bands\.forEach\(\(m, i\) =>/.test(sc) && C.bricks.slices>=3 && C.bricks.fill>0.5, 'brick walls: the scan cut into its most solid 3 m slices, each section band for band');
+  ok(/function realCity\(gen\)/.test(sc) && /c\.kind === 'topple' && c\.T && c\.T\.pole/.test(sc) && /im\.geometry = g; im\.material = L\.mat;/.test(sc) && /lod\.watch = \(\) => Bd\.dead \|\| Bd\.top < top/.test(sc), 'the city: poles drawn as the scan (still toppling), roof pieces gone with their roof');
+  ok(/if\(this\.watch && this\.watch\(\)\)\{ this\.visible = false; return; \}/.test(sc) && /realSupply\(gen\); realBricks\(gen\); realCity\(gen\);/.test(sc), 'all three dressed in the tick after the field is built'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

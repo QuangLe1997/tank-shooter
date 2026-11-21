@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { SCENERY, SKYLINE } from '../../config.js';
-import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WONDER, ZONES, arena, blendIn, blocks, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, magmaMat } from '../hub.js';
+import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -33,7 +33,7 @@ function norm(k, L){ if(NORM[k]) return NORM[k]; _b.copy(L.geo.boundingBox).appl
 const _cp = new THREE.Vector3(), _op = new THREE.Vector3();
 export class SceneLOD extends THREE.LOD {
   constructor(k, o = {}){ super(); this.key = k; this.lv = {}; this.mat = o.mat || null; this.shadow = o.shadow ?? true; this.dist = o.dist || [40, 120]; this.nearAt = o.nearAt || 0; this.asked = false; this.onLevel = o.onLevel || null; }
-  update(cam){ if(this.levels.length > 1) super.update(cam);
+  update(cam){ if(this.watch && this.watch()){ this.visible = false; return; } if(this.levels.length > 1) super.update(cam);   // (watch: the roof it stands on is gone)
     if(this.nearAt && !this.asked){ _cp.setFromMatrixPosition(cam.matrixWorld); _op.setFromMatrixPosition(this.matrixWorld); if(_cp.distanceToSquared(_op) < this.nearAt * this.nearAt){ this.asked = true; sceneLevel(this.key, 'd').then(L => L && this.put('d', L)); } } }
   put(lv, L){ if(this.lv[lv] || !L) return; const n = norm(this.key, L), m = new THREE.Mesh(L.geo, this.mat || L.mat); if(this.mat && (lv === 'd' || !this.mat.map)) takeMaps(this.mat, L.mat); m.matrixAutoUpdate = false; m.matrix.multiplyMatrices(n.N, L.m4);
     m.castShadow = this.shadow; m.receiveShadow = true; this.lv[lv] = m; for(const q of this.levels) this.remove(q.object); this.levels.length = 0;
@@ -108,10 +108,76 @@ function lavaPit(p, gy){ const r = sceneDims(p.k, p.s).x * M(p.k).lava, y = gy +
 
 // Z375 the enemy fuel depot's tanks (world/supply.js, built after this set, in the same pass): the riveted steel tank scan in place of the drawn
 //   cylinder — inside the tank's own group, so its hits, its fire and its blast are untouched (the drawn one is hidden, it still carries the shape)
-function realSupply(gen){ if(gen !== GEN) return; for(const b of blocks){ if(b.kind !== 'fueltank' || !b.mesh || b.mesh.userData.real) continue; b.mesh.userData.real = true;
+function realSupply(gen){ if(gen !== GEN) return; for(const b of blocks){ if(b.kind === 'radartower' && b.mesh && !b.mesh.userData.real && !MOBILE){ b.mesh.userData.real = true; realRadar(b, gen); continue; }
+    if(b.kind !== 'fueltank' || !b.mesh || b.mesh.userData.real) continue; b.mesh.userData.real = true;
     b.mesh.traverse(o => { if(o.isMesh) o.visible = false; }); const s = SCENERY.supply.fueltank.h / M('tank_steel').h, m = scenePiece('tank_steel', s); m.scale.setScalar(s); m.rotation.y = Math.random() * Math.PI * 2; b.mesh.add(m); } }
+// a level's geometry as plain floats, carried through a transform (the files are quantized: positions int16 under the node's scale)
+const _fv = new THREE.Vector3(), _fn = new THREE.Matrix3();
+function floatGeo(L, M4){ const g = L.geo, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, n = P.count, p = new Float32Array(n * 3), q = new Float32Array(n * 3), t = new Float32Array(n * 2); _fn.getNormalMatrix(M4);
+  for(let i = 0; i < n; i++){ _fv.fromBufferAttribute(P, i).applyMatrix4(M4); p[i * 3] = _fv.x; p[i * 3 + 1] = _fv.y; p[i * 3 + 2] = _fv.z; _fv.fromBufferAttribute(N, i).applyMatrix3(_fn).normalize(); q[i * 3] = _fv.x; q[i * 3 + 1] = _fv.y; q[i * 3 + 2] = _fv.z;
+    t[i * 2] = U.getX(i); t[i * 2 + 1] = U.getY(i); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(p, 3)); o.setAttribute('normal', new THREE.BufferAttribute(q, 3)); o.setAttribute('uv', new THREE.BufferAttribute(t, 2));
+  o.setIndex(new THREE.BufferAttribute(Uint32Array.from(g.index.array), 1)); o.computeBoundingBox(); o.computeBoundingSphere(); return o; }
+// the triangles of a float geometry whose centre passes a test, compacted (then shifted by -dx, -dy, -dz)
+function subGeo(g, keep, dx = 0, dy = 0, dz = 0){ const P = g.attributes.position.array, N = g.attributes.normal.array, T = g.attributes.uv.array, I = g.index.array, re = new Int32Array(P.length / 3).fill(-1), idx = [];
+  let n = 0; for(let i = 0; i < I.length; i += 3){ const a = I[i], b = I[i + 1], c = I[i + 2]; if(!keep((P[a * 3] + P[b * 3] + P[c * 3]) / 3, (P[a * 3 + 1] + P[b * 3 + 1] + P[c * 3 + 1]) / 3, (P[a * 3 + 2] + P[b * 3 + 2] + P[c * 3 + 2]) / 3)) continue;
+    for(const v of [a, b, c]){ if(re[v] < 0) re[v] = n++; idx.push(re[v]); } }
+  if(!idx.length) return null; const p = new Float32Array(n * 3), q = new Float32Array(n * 3), t = new Float32Array(n * 2);
+  for(let v = 0; v < re.length; v++){ const r = re[v]; if(r < 0) continue; p[r * 3] = P[v * 3] - dx; p[r * 3 + 1] = P[v * 3 + 1] - dy; p[r * 3 + 2] = P[v * 3 + 2] - dz; q.set(N.subarray(v * 3, v * 3 + 3), r * 3); t.set(T.subarray(v * 2, v * 2 + 2), r * 2); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(p, 3)); o.setAttribute('normal', new THREE.BufferAttribute(q, 3)); o.setAttribute('uv', new THREE.BufferAttribute(t, 2));
+  o.setIndex(new THREE.BufferAttribute(Uint32Array.from(idx), 1)); o.computeBoundingBox(); o.computeBoundingSphere(); return o; }
+// a model stood on its foot at the origin, centred, h tall (rot: turned about Y first) — as plain floats
+function standing(L, h, rot){ _b.copy(L.geo.boundingBox).applyMatrix4(L.m4); _b.getSize(_s); _b.getCenter(_c); const f = h / _s.y;
+  const M4 = new THREE.Matrix4().makeRotationY(rot || 0).multiply(new THREE.Matrix4().makeScale(f, f, f)).multiply(new THREE.Matrix4().makeTranslation(-_c.x, -_b.min.y, -_c.z)).multiply(L.m4); return floatGeo(L, M4); }
+
+// Z384 THE RADAR STATION'S TOWER (world/supply.js + radar.js): the scanned dish on its lattice in place of the drawn tower — split where the dish
+//   begins (SCENERY.supply.radar.split of its height): the lattice stands in the tower, the dish rides in the tower's turning head (it sweeps with
+//   it, round the lattice's own axis), the drawn pieces hidden; it topples and burns as before
+const RAD = {};
+function radarParts(){ if(RAD.p) return RAD.p; const C = SCENERY.supply.radar;
+  return (RAD.p = sceneLevel('radar_dish', C.lv).then(L => { if(!L) return null; const g = standing(L, C.h), P = g.attributes.position.array, sy = C.split * C.h; let ax = 0, az = 0, k = 0;
+    for(let i = 0; i < P.length; i += 3) if(P[i + 1] > sy * 0.75 && P[i + 1] < sy){ ax += P[i]; az += P[i + 2]; k++; } ax /= k || 1; az /= k || 1;   // (the lattice's axis, just under the dish)
+    return { base:subGeo(g, (x, y) => y <= sy, ax, 0, az), dish:subGeo(g, (x, y) => y > sy, ax, 0, az), mat:L.mat }; })); }
+function realRadar(b, gen){ radarParts().then(R => { if(!R || gen !== GEN || !b.mesh) return; const g = b.mesh, head = g.userData.head; g.traverse(o => { if(o.isMesh) o.visible = false; });
+    const base = new THREE.Mesh(R.base, R.mat), C = SCENERY.supply.radar; base.castShadow = base.receiveShadow = true; g.add(base);
+    if(head){ base.position.set(head.position.x, 0, head.position.z); const dish = new THREE.Mesh(R.dish, R.mat); dish.position.y = -head.position.y; dish.castShadow = dish.receiveShadow = true; head.add(dish); }
+    else g.add(new THREE.Mesh(R.dish, R.mat)); }); }
+
+// Z385 THE RUINED BRICK WALLS (world/brick-walls.js) in the scanned breached wall's stone: the scan stood SCENERY.bricks.h tall, turned along the
+//   sections, cut into 3 m slices and each slice into the walls' collapse bands — every section takes one slice, band for band, so it still loses its
+//   top courses, then its middle, then goes over as before (desktop; phones keep the drawn bricks)
+const BRK = {};
+function brickSlices(){ if(BRK.p) return BRK.p; const C = SCENERY.bricks;
+  return (BRK.p = sceneLevel('wall_breach', C.lv).then(L => { if(!L) return null; const g = standing(L, C.h, Math.PI / 2); g.computeBoundingBox(); const z0 = g.boundingBox.min.z, z1 = g.boundingBox.max.z, out = [];
+    // how much of a slice is wall: its face (the side facing across, x) rasterised over a 3 m × h grid — the breach and the ragged ends score low
+    const P = g.attributes.position.array, I = g.index.array, NZ = 120, NY = 30, cell = new Uint8Array(Math.ceil((z1 - z0) / 3 * NZ) * NY), cz = (z1 - z0) / (cell.length / NY);
+    for(let i = 0; i < I.length; i += 3){ const a = I[i] * 3, b = I[i + 1] * 3, c = I[i + 2] * 3; const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; if(Math.abs(nx) < 0.5 * Math.hypot(nx, ny, nz)) continue;
+      const zs = [P[a + 2], P[b + 2], P[c + 2]], ys = [P[a + 1], P[b + 1], P[c + 1]], za = Math.floor((Math.min(...zs) - z0) / cz), zb = Math.floor((Math.max(...zs) - z0) / cz), ya = Math.floor(Math.min(...ys) / C.h * NY), yb = Math.floor(Math.max(...ys) / C.h * NY);
+      for(let q = Math.max(0, za); q <= zb && q < cell.length / NY; q++) for(let r = Math.max(0, ya); r <= Math.min(NY - 1, yb); r++) cell[q * NY + r] = 1; }
+    const fill = o => { const qa = Math.max(0, Math.floor((o - 1.5 - z0) / cz)), qb = Math.min(cell.length / NY, Math.ceil((o + 1.5 - z0) / cz)); let s = 0; for(let q = qa; q < qb; q++) for(let r = 0; r < NY; r++) s += cell[q * NY + r]; return s / ((qb - qa) * NY || 1); };
+    const cand = []; for(let o = z0 + 1.5; o <= z1 - 1.5; o += 0.1) cand.push([o, fill(o)]); cand.sort((a, b) => b[1] - a[1]);
+    const picks = []; for(const [o, f] of cand){ if(picks.length >= C.slices || f < C.fill) break; if(picks.every(q => Math.abs(q - o) > 0.45)) picks.push(o); }
+    if(!picks.length) picks.push(cand[0][0]); const band = (y, i) => i === 0 ? y < WALL_BANDS[0] : i === 1 ? y >= WALL_BANDS[0] && y < WALL_BANDS[1] : y >= WALL_BANDS[1];
+    for(const o of picks) out.push([0, 1, 2].map(i => subGeo(g, (x, y, z) => z >= o - 1.5 && z < o + 1.5 && band(y, i), 0, 0, o))); SCENE.brickFill = picks.map(o => +fill(o).toFixed(2));
+    g.dispose(); return { slices:out, mat:L.mat }; })); }
+function realBricks(gen){ if(MOBILE || !blocks.some(b => b.kind === 'brick')) return; brickSlices().then(W => { if(!W || gen !== GEN) return; let k = 0;
+    for(const b of blocks){ if(b.kind !== 'brick' || !b.wall || b.dead || b.mesh.userData.real) continue; b.mesh.userData.real = true; const sl = W.slices[(k++ * 7 + 3) % W.slices.length];
+      b.wall.bands.forEach((m, i) => { if(!m) return; if(sl[i]){ m.geometry = sl[i]; m.material = W.mat; } else m.visible = false; }); } }); }
+
+// Z386 THE CITY'S STREET FURNITURE FOR REAL (world/city.js): the concrete power poles that carry the sagging lines become the scanned transformer
+//   pole (lamp arm, transformer can, crossarm — one instanced draw, still toppling with its wires), and roofs get their water tanks and masts
+//   (a tank on SCENERY.city.roof.tank.share of the tube houses and flats, a mast on the taller flats and towers; gone when their top floor goes)
+function realCity(gen){ if(BIOME.name !== 'CITY') return; const C = SCENERY.city, ims = new Set(); for(const c of crushables) if(c.kind === 'topple' && c.T && c.T.pole && c.im) ims.add(c.im);
+  if(ims.size) sceneLevel('power_pole', MOBILE ? 'm' : C.pole.lv).then(L => { if(!L || gen !== GEN) return; const g = standing(L, C.pole.h); for(const im of ims){ im.geometry = g; im.material = L.mat; im.computeBoundingSphere(); } });
+  if(!MOBILE) loadRealCity().then(() => { if(gen === GEN) cityRoofs(); }); }   // (after the city has stood its real buildings: they wait for the same load)
+function cityRoofs(){ const C = SCENERY.city; for(const Bd of cityBuildings()){ const top = Bd.top, f = Bd.floors[top]; if(!f || Bd.dead || Bd.roofed) continue; Bd.roofed = true;
+    for(const [key, R] of [['tank_water', C.roof.tank], ['neon_tower', C.roof.mast]]){ if(!R.kinds.includes(Bd.kind) || Bd.floors.length < (R.minFloors || 0) || Math.random() > R.share) continue;
+      const s = R.h / M(key).h, c = Math.cos(Bd.ry), sn = Math.sin(Bd.ry), lx = (Math.random() - 0.5) * Bd.w * 0.4, lz = -Bd.d * R.back, x = Bd.x + lx * c + lz * sn, z = Bd.z - lx * sn + lz * c;
+      const lod = scenePiece(key, s, { shadow:true }); lod.position.set(x, f.y1 - R.sink, z); lod.rotation.y = Bd.ry + Math.random() * Math.PI * 2; lod.scale.setScalar(s); lod.watch = () => Bd.dead || Bd.top < top;
+      arena.add(lod); LAND.meshes.push(lod); break; } } }
 export function buildSceneSet(){ GEN++; SCENE.pieces.length = 0; WONDER.a0 = null; const B = SCENERY.on && SCENERY.biomes[BIOME.name];
-  if(typeof window === 'undefined' || /noscene/.test(location.search + location.hash)) return; const gen = GEN; if(SCENERY.on) Promise.resolve().then(() => realSupply(gen));   // (once this pass has built the depots)
+  if(typeof window === 'undefined' || /noscene/.test(location.search + location.hash)) return; const gen = GEN; if(SCENERY.on) Promise.resolve().then(() => { realSupply(gen); realBricks(gen); realCity(gen); });   // (once this pass has built the depots, the walls, the city's poles)
   if(!B) return;
   { const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.2, R = Math.min(ARENA - 14, fieldR(a) + 40); WONDER.a0 = a; WK.a = a; WK.x = Math.cos(a) * R; WK.z = Math.sin(a) * R; WK.r = (SCENERY.wonderR[BIOME.name] ?? SCENERY.wonderR._); }   // the wonder's bearing, chosen here so the set is composed round it (world/wonders.js stands it there)
   for(const p of plan(B)){ const lod = scenePiece(p.k, p.s, { shadow:!p.far }), gy = footY(p); lod.position.set(p.x, gy, p.z); lod.rotation.y = p.ry; lod.scale.setScalar(p.s);
