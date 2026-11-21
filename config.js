@@ -1285,6 +1285,12 @@ export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, 
 //   general: when his machine burns he jumps out and fights on foot — health × a rifleman's, his rifle (damage, s between shots, reach, the distance he keeps,
 //   speed), size ×, the most one hit takes of his health, bodyguards at the start / at callAt of his health, rage below rageAt (fire faster ×, run ×),
 //   his fan of rounds (cooldown s, rounds, arc rad, damage, s of warning), his grenades (cooldown, how many, blast m, damage, s of warning, scatter m round you)
+// Z369 GIFTBOX = the rank's gift crate (loot/gift-crate.js): size / h = the crate (m); it comes down under a parachute from drop.h m at drop.v m/s, swaying
+//   drop.sway rad at drop.swayF rad/s, the canopy drop.canopy m across on lines drop.lines m long; it sags and slides off over chute s on touching down;
+//   then it floats hover m up, bobbing bob m at bobF rad/s, turning spin rad/s; glow = the halo round it (m), shaft / shaftW = the soft light up from it (m tall / wide), pool = the
+//   light on the ground (m across), sparks = how many gold sparks climb round it (sparkH m); he opens it walking within reach m, over open s
+export const GIFTBOX = { size:0.7, h:0.52, hover:0.62, bob:0.07, bobF:2.4, spin:0.7, reach:1.8, chute:1.4, open:0.9, sparks:28, sparkH:1.7, glow:2.6, shaft:6, shaftW:1.6, pool:2.8,
+  drop:{ h:22, v:3.4, sway:0.14, swayF:1.7, canopy:1.25, lines:1.7 } };
 export const TROOPER = {
   xp:{ kill:{ rifle:10, rpg:16, _inf:12, scout:28, carrier:40, mortar:34, heliTroop:45, _air:45, _veh:55, grunt:80, heavy:120, boss:260, general:420 }, eliteK:2 },
   step:[200, 110, 10],

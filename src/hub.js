@@ -152,6 +152,7 @@ export * from './campaign/soldier-war.js';   // Z309 soldier mode: waves of men,
 export * from './game/soldier-rank.js';   // Z350 soldier mode: experience, rank, the perk cards, what a rank brings
 export * from './actors/squad-mates.js';   // Z351 soldier mode: his own squad — a machine-gunner, a medic, more with rank
 export * from './loot/soldier-arms.js';   // Z352 soldier mode: the enemy's weapons on the ground, gun stars, medals, ammo crates, supply drops
+export * from './loot/gift-crate.js';   // Z369 the rank's gift crate: down under a parachute, floating, opened
 export * from './campaign/general-duel.js';   // Z353 soldier mode: the general jumps out of his burning machine and fights on foot
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face

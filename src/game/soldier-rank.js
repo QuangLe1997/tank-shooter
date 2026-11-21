@@ -4,7 +4,7 @@
 //   radio: a man for the squad, a supply drop, a tank of ours, a stick of paratroopers, a barrage. Perks stack in levels; one card in three may be a call for help.
 //   Past the last rank, every step is a medal: one more pick. The same cards close a stage won against the general (loot/upgrades.js asks soldierStagePerks).
 import { TROOPER } from '../../config.js';
-import { MODE, S, airstrike, armsDrop, clampFieldXZ, dropPowerup, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner,
+import { MODE, S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift,
   spawnAllyTank, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
 
 export const CAREER = { xp:0, rank:0, lv:{}, chip:null };
@@ -86,9 +86,8 @@ export function soldierStagePerks(){ return pickPerks(3).map(asCard); }
 //   over it gives one reward (a stat's next level or a call for help) picked for him and named on screen. The choice of three stays for the stage won,
 //   when the battle is paused anyway (soldierStagePerks)
 function giftDrop(nm){ const p = S.player, f = p.facing || 0, [x, z] = clampFieldXZ(p.pos.x + Math.sin(f) * T().gift.ahead, p.pos.z + Math.cos(f) * T().gift.ahead, 6);
-  dropPowerup({ x, z }, 2, { id:'gift', svg:'star', color:0xffd86a, vi:'QUÀ THĂNG CẤP', ds:'Một phần thưởng của bộ chỉ huy', cat:'gem', tier:2,
-    apply(pl){ const k = pickPerks(1)[0]; if(!k) return; take(k, pl); showBanner('QUÀ: ' + k.nm, '#ffd86a'); } });
-  ringPulse({ x, z }, 0xffd86a, 3); radio('SCH: ' + nm + ' — quà của bộ chỉ huy đã thả cạnh anh, ra nhận!'); }
+  spawnGift({ x, z }, () => { const k = pickPerks(1)[0]; if(!k) return; take(k, S.player); showBanner('QUÀ: ' + k.nm, '#ffd86a'); });   // (Z369 the crate under a parachute: loot/gift-crate.js)
+  ringPulse({ x, z }, 0xffd86a, 3); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù một thùng quà cạnh anh, ra nhận!'); }
 // once a frame in battle: keep the rank stripe on his health bar
 export function updateRank(){ if(MODE.id !== 'soldier') return;
   if(R.chip && !R.chip.isConnected) paintChip(); }
