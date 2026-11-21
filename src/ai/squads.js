@@ -1,6 +1,6 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
-import { SQUAD_AI, FIELDCRAFT } from '../../config.js';
-import { ARENA, BF, FT, MODE, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke } from '../hub.js';
+import { SQUAD_AI, FIELDCRAFT, RIVERS } from '../../config.js';
+import { ARENA, BF, FT, MODE, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke, fieldDepth, wadeAt } from '../hub.js';
 
 export const SQUADS=[];
 let _sid=0;
@@ -16,7 +16,7 @@ export function clearSquads(){ SQUADS.length=0; SQNAV.g=null; FTSQ.focus=null; S
 export const SQNAV={ cell:2.5, N:0, g:null, n0:-1, at:0, field:null, fKey:'' };
 function navBuild(now){ if(SQNAV.g && blocks.length===SQNAV.n0 && now<SQNAV.at) return; SQNAV.n0=blocks.length; SQNAV.at=now+2;
   const C=SQNAV.cell, N=Math.ceil(ARENA*2/C); SQNAV.N=N; const key=S.stage+'|'+N;
-  if(SQNAV.fKey!==key || !SQNAV.field){ SQNAV.fKey=key; SQNAV.field=new Uint8Array(N*N); for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const x=-ARENA+(i+0.5)*C, z=-ARENA+(j+0.5)*C; SQNAV.field[j*N+i]=inField(x,z,1)?0:1; } }
+  if(SQNAV.fKey!==key || !SQNAV.field){ SQNAV.fKey=key; SQNAV.field=new Uint8Array(N*N); for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const x=-ARENA+(i+0.5)*C, z=-ARENA+(j+0.5)*C; SQNAV.field[j*N+i]=inField(x,z,1) || (fieldDepth(x,z)>=1 && wadeAt(x,z)>RIVERS.wade.deep) ? 0 : 1; } }   // Z405 a river is crossed on a bridge, a ford, the ice or the shallows — not through the deep channel
   const g=SQNAV.g && SQNAV.g.length===N*N ? SQNAV.g : (SQNAV.g=new Uint8Array(N*N)); g.set(SQNAV.field);
   for(const b of blocks){ const solid=b.kind==='fortwall'||b.kind==='gate'||b.kind==='tower'||b.kind==='camp'||b.kind==='parked'||b.steel||b.hard||b.obb||(b.r||0)>=2.2; if(!solid) continue;
     const r=(b.obb ? Math.hypot(b.obb.hl, b.obb.hw) : b.r)+0.5, i0=Math.max(0,Math.floor((b.x-r+ARENA)/C)), i1=Math.min(N-1,Math.floor((b.x+r+ARENA)/C)), j0=Math.max(0,Math.floor((b.z-r+ARENA)/C)), j1=Math.min(N-1,Math.floor((b.z+r+ARENA)/C));

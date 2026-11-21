@@ -2,7 +2,7 @@
 //   a new shape each stage. Everything that moves or is placed asks inField() / clampField(); the fence follows the outline and the
 //   ground beyond it rises into rocky highland.
 import { FIELD, HOME_GAP, UNDERBASE } from '../../config.js';
-import { ARENA, MOBILE, wetAt } from '../hub.js';
+import { ARENA, MOBILE, nearCrossing, wetAt } from '../hub.js';
 
 // Z226 the underground base's state + its bounds (the field functions defer to them while you are down there) — lives here so it exists before the world is built
 export const UNDER = { on:false, busy:false, x0:1e9, BX:0, W:UNDERBASE.W, D:UNDERBASE.D, gate:null, base:null, surf:[], sblocks:[], bmen:[], bblocks:[], turrets:[], targets:[], lamps:[], lights:[],
@@ -39,7 +39,7 @@ export function fieldR(a){ const N=FIELD.N; let u=((a+Math.PI)/TAU)*N; u=((u%N)+
 export function fieldRAt(x, z){ return fieldR(Math.atan2(z, x)); }
 // how far inside the field (x,z) is — negative outside
 export function fieldDepth(x, z){ if(underActive(x)) return underDepth(x, z); return fieldRAt(x, z)-Math.hypot(x, z); }   // Z226 below ground: the base's own walls
-export function inField(x, z, m){ if(underActive(x)) return underInside(x, z, m); return fieldDepth(x, z) >= (m||0) && !wetAt(x, z, Math.min(30, Math.max(2, m||0))); }   // Z139 nothing is placed in a river
+export function inField(x, z, m){ if(underActive(x)) return underInside(x, z, m); return fieldDepth(x, z) >= (m||0) && !wetAt(x, z, Math.min(30, Math.max(2, m||0))) && !nearCrossing(x, z, m); }   // Z139 nothing is placed in a river (Z405 nor across a bridge's or a ford's way)
 // pull a position {x,z} back inside (m = margin from the fence); true if it had to move
 export function clampField(p, m){ if(underActive(p.x)) return underClamp(p, m); const d=Math.hypot(p.x, p.z), R=fieldRAt(p.x, p.z)-(m||0); if(d<=R || d<1e-6) return false; const k=Math.max(0,R)/d; p.x*=k; p.z*=k; return true; }
 export function clampFieldXZ(x, z, m){ const p={ x, z }; clampField(p, m); return [p.x, p.z]; }

@@ -16,8 +16,10 @@ function sizes(){ return _sizes || (_sizes = fetch('assets/ground/sizes.json').t
 // called by applyBiome right after it puts the procedural maps on: back to the procedural look at once, the photo sets swap in when loaded
 export const GROUND_READY = { p:Promise.resolve(false) };   // Z322 the photo floor of the battlefield being built (the intro waits for it)
 export function applyGroundPhoto(b){ return (GROUND_READY.p = groundPhoto(b)); }
+function hexFor(b){ const X = GROUND_PHOTO.hex || {}, P = (GROUND_PHOTO.hexPer || {})[b.name] || {};   // Z405 this battlefield's hex lattice
+  PHOTO_U.hex.value.set(P.s ?? X.s ?? 1, P.rot ?? X.rot ?? 1, X.exp ?? 7, X.con ?? 0.6); PHOTO_U.nrmVar.value = GROUND_PHOTO.nrmVar || 0; }
 function groundPhoto(b){
-  _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); _want = b.name;
+  hexFor(b); _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); _want = b.name;
   const pair = GROUND_PHOTO.biomes[b.name]; if(!pair || off() || typeof window === 'undefined') return Promise.resolve(false);
   const PB = (GROUND_PHOTO.per && GROUND_PHOTO.per[b.name]) || {}, G = k => PB[k] ?? GROUND_PHOTO[k];   // Z394 a battlefield's own normal strength, patch share, second-scale blend, patch size
   return Promise.all([photoSet(pair[0], GROUND_PHOTO.hi && !MOBILE && (GROUND_PHOTO.hi2k || []).includes(pair[0])), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {   // (Z394 the 2K maps only where they are on disk)

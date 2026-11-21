@@ -171,11 +171,11 @@ function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[
       if(opt.fixed) blocks.push({ mesh:new THREE.Object3D(), x:o.x, z:o.z, r:opt.fixed*o.s*o.sw, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'trunk' });   // Z260 a giant: its trunk stops tanks and shells, nothing fells it
       else { const cr={ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true, leafy:opt.leafy!==false }; crushables.push(cr); if(cr.kind==='tree') TREES.push(cr); } });   // Z262 standing trees can be felled
     im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); dressTrees(im); }); }
-function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[(Math.random()*RIVER.lines.length)|0], p=L[(Math.random()*L.length)|0], w=L===RIVER.lines[0]?5.5:3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
+function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const li=(Math.random()*RIVER.lines.length)|0, L=RIVER.lines[li], p=L[(Math.random()*L.length)|0], w=RIVER.w[li]||3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
   const x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r, h=heightAt(x,z); return (h>RIVER.y-0.05 && h<RIVER.y+0.6) ? [x,z] : null; }
 function patchSpot(centres, R){ const c=centres[(Math.random()*centres.length)|0]; const a=Math.random()*6.28, r=Math.sqrt(Math.random())*R; return [c[0]+Math.cos(a)*r, c[1]+Math.sin(a)*r]; }
 function centres(n){ const C=[]; for(let t=0;t<n*20 && C.length<n;t++){ const x=_R(-ARENA+20,ARENA-20), z=_R(-ARENA+20,ARENA-20); if(okSpot(x,z,6)) C.push([x,z]); } return C; }
-function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }
+function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[RIVER.ice && RIVER.lines.length>1 ? 1 : 0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }   // Z405 the floes ride the open lead (the arctic's main river is frozen)
 // Z145 trees thinned ~40%: the woods still read as woods but leave clear sight-lines for the fight
 export function buildFlora(){ clearFlora(); loadRealTrees(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
   if(n==='HILLS'){ plant(conifer(false), N(52), { tk:'conifer', s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { tk:'broadleaf', s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false });

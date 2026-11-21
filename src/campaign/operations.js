@@ -64,7 +64,7 @@ export function clearObjective(){ if(!OBJ) return; unwave(OBJ.g); scene.remove(O
 export function buildObjective(){
   clearObjective(); const op=opFor(S.stage), def=OBJECTIVES[op.obj]; if(!def) return;
   let x=0, z=-ARENA*0.6;
-  for(let t=0;t<50;t++){ const cx=(Math.random()*2-1)*ARENA*0.5, cz=-ARENA*(0.48+Math.random()*0.22); if(inField(cx, cz, def.r+8) && !blocks.some(b=>Math.hypot(b.x-cx,b.z-cz)<b.r+def.r+2)){ x=cx; z=cz; break; } }   // Z106 inside the irregular fence
+  for(let t=0;t<200;t++){ const w=t<50, cx=(Math.random()*2-1)*ARENA*(w?0.5:0.75), cz=-ARENA*(w?0.48+Math.random()*0.22:0.3+Math.random()*0.5); if(inField(cx, cz, def.r+8) && !blocks.some(b=>Math.hypot(b.x-cx,b.z-cz)<b.r+def.r+2)){ x=cx; z=cz; break; } }   // Z106 inside the irregular fence   // Z405 a river across its usual band: look wider before falling back
   if(!inField(x, z, def.r+4)) [x,z]=clampFieldXZ(x, z, def.r+8);
   const g=buildObjMesh(op.obj); g.position.set(x, heightAt(x,z), z); g.rotation.y=Math.atan2(-x,-z); g.scale.setScalar(OBJ_SCALE); g.userData.h*=OBJ_SCALE; scene.add(g);
   const hp=Math.round(def.hp*loopHpMul()*diffHpMul()*(1+RAMP.hpPerStage*(S.stage-1)));

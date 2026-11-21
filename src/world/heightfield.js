@@ -1,22 +1,31 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD, TERRAIN_FLAT } from '../../config.js';
-import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, _heightToNormal, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
+import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS } from '../../config.js';
+import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
 HF.step = HF.S/HF.N; HF.W = HF.N+1; HF.h = new Float32Array(HF.W*HF.W);
-export function heightAt(x, z){
+export function bedAt(x, z){                                                     // Z405 the ground itself (the river bed under a bridge or the ice)
   const fx=(x+ARENA)/HF.step, fz=(z+ARENA)/HF.step; if(fx<0||fz<0||fx>=HF.N||fz>=HF.N) return 0;
   const ix=fx|0, iz=fz|0, tx=fx-ix, tz=fz-iz, W=HF.W, h=HF.h, i=iz*W+ix;
-  const v=(h[i]*(1-tx)+h[i+1]*tx)*(1-tz) + (h[i+W]*(1-tx)+h[i+W+1]*tx)*tz;
-  if(RIVER.on && v<0.05){ for(const b of RIVER.bridges){ const dx=x-b.x, dz=z-b.z, lx=dx*b.ca-dz*b.sa, lz=dx*b.sa+dz*b.ca; if(Math.abs(lx)<b.hw && Math.abs(lz)<b.hl) return Math.max(v, b.y); } }   // Z139 a bridge deck carries the hull over the water
+  return (h[i]*(1-tx)+h[i+1]*tx)*(1-tz) + (h[i+W]*(1-tx)+h[i+W+1]*tx)*tz; }
+export function heightAt(x, z){ const v=bedAt(x, z);
+  if(RIVER.on && v<RIVER.top){ for(const b of RIVER.bridges){ const dx=x-b.x, dz=z-b.z, al=dx*b.ca+dz*b.sa, ac=dz*b.ca-dx*b.sa; if(Math.abs(al)<b.hl && Math.abs(ac)<b.hw) return Math.max(v, b.y); }   // Z139 a bridge deck carries the hull over the water (Z405 its span along (ca, sa) — the way the deck is drawn — bank to bank)
+    const I=RIVER.ice; if(I && v<RIVER.y+0.05){ const k=Math.round((z+ARENA)/HF.step)*HF.W+Math.round((x+ARENA)/HF.step); if(I[k]) return RIVER.y+0.05; } }   // Z405 a frozen river carries it on the ice
   return v;
 }
-// Z139 RIVERS (VILLAGE): a meandering river + a stream are carved into the heightfield; a water plane sits in the bed; bridges lift the surface; the hull wades slowly
-export const RIVER = { on:false, y:-0.85, bridges:[], lines:[], mesh:null, deck:null };
-export function wetAt(x, z, m){ if(!RIVER.on) return false; const W=RIVER.y+0.15; if(heightAt(x,z)<W) return true; const r=m||0; if(r<=0) return false;
-  for(const f of [0.4,0.7,1]) for(let k=0;k<8;k++){ const a=k*0.785; if(heightAt(x+Math.cos(a)*r*f, z+Math.sin(a)*r*f)<W) return true; } return false; }   // rings round the point, so a wide structure never straddles water
+// Z139 RIVERS: a river + a side stream are carved into the heightfield (world/river.js, config RIVERS); a water plane sits in the bed; bridges lift the surface; the hull wades slowly
+//   Z405 top = the highest a bridge deck lifts the surface · w = each line's half width · ice = per heightfield cell, 1 where the river is frozen · flow / mark = the baked flow field
+export const RIVER = { on:false, y:-0.85, top:0.15, bridges:[], fords:[], lines:[], w:[], ice:null, flow:null, mark:null, mesh:null, deck:null, biome:'' };
+export function wetAt(x, z, m){ if(!RIVER.on) return false; const W=RIVER.y+0.15; if(bedAt(x,z)<W) return true; const r=m||0; if(r<=0) return false;
+  for(const f of [0.4,0.7,1]) for(let k=0;k<8;k++){ const a=k*0.785; if(bedAt(x+Math.cos(a)*r*f, z+Math.sin(a)*r*f)<W) return true; } return false; }   // rings round the point, so a wide structure never straddles water (Z405 the bed, not a bridge or the ice: nothing is built on them)
+// Z405 the crossings' ground: a bridge with its approaches and a ford with its banks are kept free of cover, buildings and props (field.js inField)
+export function nearCrossing(x, z, m){ if(!RIVER.on) return false; const r=(m||0)+1.5, c=RIVERS.clear;
+  for(const b of RIVER.bridges){ const dx=x-b.x, dz=z-b.z, al=dx*b.ca+dz*b.sa, ac=dz*b.ca-dx*b.sa; if(Math.abs(al)<b.hl+c+r && Math.abs(ac)<b.hw+r) return true; }
+  for(const f of RIVER.fords){ const R=f.r+c+r; if((x-f.x)**2+(z-f.z)**2<R*R) return true; } return false; }
+// Z405 how fast a hull / rider gets on here: 1 on land, a bridge or the ice; slower wading the shallows and fords; slowest in deep water
+export function wadeAt(x, z){ if(!RIVER.on) return 1; const d=RIVER.y+0.15-heightAt(x, z), K=RIVERS.wade; return d<=0 ? 1 : d<K.fordD ? K.ford : K.deep; }
 export function _hfMask(x, z){                                                   // keep the Core plaza, the spawn and the wall strip flat
   const dc=Math.hypot(x,z), ds=Math.hypot(x, z-ARENA*0.55), de=fieldDepth(x,z);   // Z106 flatten a strip inside the (irregular) fence
   const s=(v,a,b)=>Math.max(0,Math.min(1,(v-a)/(b-a)));
@@ -50,68 +59,16 @@ export function genTerrain(b){
     const n1=Math.sin(x*0.31+ph[0])*Math.sin(z*0.27+ph[1]) + 0.5*Math.sin(x*0.73+z*0.61+ph[2]), n2=Math.sin(x*1.37+ph[3])*Math.sin(z*1.21+ph[0])*0.35 + Math.sin((x+z)*2.3+ph[1])*Math.sin((x-z)*1.9)*0.12;   // macro roll + fine hummocks
     v += st.noise*(n1 + n2);
     h[j*W+i] = v*_hfMask(x,z) + ridgeAt(x, z, n1); }
-  RIVER.on=false; RIVER.bridges.length=0; RIVER.lines.length=0; if(RIVER.mesh) RIVER.mesh.visible=false; if(RIVER.deck) RIVER.deck.visible=false;
-  if(b.name==='VILLAGE') carveRivers(h); else if(b.name==='ARCTIC') carveRivers(h, true);   // Z143 open leads of black water through the ice
+  carveRivers(h, b);   // Z405 the battlefields with a river (config RIVERS: world/river.js) — Z143 the arctic's frozen river and its open lead
   syncTerrainMesh();
   try{ if(typeof DECAL!=='undefined' && DECAL.sx) for(const f of feats) if(f.t===1 && _hfMask(f.x,f.z)>0.5) decalCrater(f.x, f.z, f.r*0.9, 0.55); }catch(e){}   // old craters are scarred into the ground too
 }
-function _river(pts, w, h){                                                          // lower the bed along a polyline (w = half width), soft banks
-  const W=HF.W, D=1.7, n=pts.length;
-  for(let j=0;j<W;j++) for(let i=0;i<W;i++){ const x=-ARENA+i*HF.step, z=-ARENA+j*HF.step; let d=1e9;
-    for(let k=0;k<n-1;k++){ const a=pts[k], b=pts[k+1], vx=b.x-a.x, vz=b.z-a.z, L2=vx*vx+vz*vz||1, t=Math.max(0,Math.min(1,((x-a.x)*vx+(z-a.z)*vz)/L2)), dx=x-(a.x+vx*t), dz=z-(a.z+vz*t), q=dx*dx+dz*dz; if(q<d) d=q; }
-    d=Math.sqrt(d); const u=d/w; if(u>1.5) continue;
-    const dep = u<0.62 ? 1 : (()=>{ const t=(u-0.62)/0.88; return 1-t*t*(3-2*t); })();
-    const k=j*W+i; h[k]=Math.min(h[k], h[k]*0.25 - D*dep); } }
-function carveRivers(h, ice){
-  const A=ARENA, ph=Math.random()*6.28, z0=-A*0.5+(Math.random()-0.5)*10, main=[], stream=[];
-  for(let i=0;i<=56;i++){ const x=-A-6+(2*A+12)*i/56; main.push({ x, z:z0+Math.sin(x*0.045+ph)*10+Math.sin(x*0.11+ph*2)*3 }); }
-  const x0=-A*0.46+(Math.random()-0.5)*8, zEnd=main.reduce((m,p)=>Math.abs(p.x-x0)<Math.abs(m.x-x0)?p:m).z;
-  for(let j=0;j<=30;j++){ const z=A+6-(A+6-zEnd)*j/30; stream.push({ x:x0+Math.sin(z*0.07+ph)*6, z }); }
-  _river(main, ice?7:5.5, h); _river(stream, ice?2.6:3.2, h);
-  RIVER.on=true; RIVER.ice=!!ice; RIVER.lines.push(main, stream);
-  // bridges: two over the river, one over the stream — decks run across the channel
-  const at=(line,u)=>{ const k=Math.max(1,Math.min(line.length-2,Math.round(u*(line.length-1)))), a=line[k-1], b=line[k+1]; return { x:line[k].x, z:line[k].z, ang:Math.atan2(b.z-a.z, b.x-a.x) }; };
-  if(!ice) for(const [line,u,w] of [[main,0.30,5.5],[main,0.66,5.5],[stream,0.2,3.2]]){ const p=at(line,u), ang=p.ang+Math.PI/2; RIVER.bridges.push({ x:p.x, z:p.z, ang, ca:Math.cos(ang), sa:Math.sin(ang), hw:3.6, hl:w*1.9+2, y:0.14 }); }
-  riverMeshes();
-}
-// Z141 REAL WATER: depth-tinted (clear shallows → deep green-blue), white foam on the banks and round anything standing in it, two scrolling ripple normal
-//   maps for sun glints and sky reflection, softer near the edge. Depth comes from a small texture of the heightfield baked when the river is carved.
-export const WTIME = { value:0 };
-function waterNormal(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#808080'; x.fillRect(0,0,256,256);
-  for(let i=0;i<900;i++){ const r=2+Math.random()*16, px=Math.random()*256, py=Math.random()*256, g=x.createRadialGradient(px,py,0,px,py,r), v=Math.random()<0.5?255:0; g.addColorStop(0,'rgba('+v+','+v+','+v+',0.22)'); g.addColorStop(1,'rgba('+v+','+v+','+v+',0)');
-    for(const ox of [-256,0,256]) for(const oy of [-256,0,256]){ x.save(); x.translate(ox,oy); x.fillStyle=g; x.fillRect(px-r,py-r,r*2,r*2); x.restore(); } }
-  const t=_heightToNormal(c, 3.2); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
-function depthTex(){ const W=HF.W, d=new Uint8Array(W*W*4); for(let k=0;k<W*W;k++){ const v=Math.max(0,Math.min(255, Math.round((HF.h[k]+2.5)/3.5*255))); d[k*4]=d[k*4+1]=d[k*4+2]=v; d[k*4+3]=255; }
+// Z141 REAL WATER — the depth the shader reads comes from a small texture of the heightfield baked when the river is carved (foam on the banks where it is
+//   shallow, the deep channel dark). Z405: G / B = the flow field (m/s, ± RIVER_FMAX), A = the frozen cells (1) and the fords' white water (0–0.45)
+export const WTIME = { value:0 }, RIVER_FMAX = 2.5;
+export function depthTex(){ const W=HF.W, d=new Uint8Array(W*W*4), F=RIVER.flow, M=RIVER.mark, e=v=>Math.max(0, Math.min(255, Math.round(128+127*v/RIVER_FMAX)));
+  for(let k=0;k<W*W;k++){ d[k*4]=Math.max(0,Math.min(255, Math.round((HF.h[k]+2.5)/3.5*255))); d[k*4+1]=F?e(F[k*2]):128; d[k*4+2]=F?e(F[k*2+1]):128; d[k*4+3]=M?M[k]:0; }
   const t=new THREE.DataTexture(d, W, W, THREE.RGBAFormat); t.magFilter=t.minFilter=THREE.LinearFilter; t.needsUpdate=true; return t; }
-function riverMeshes(){
-  if(!RIVER.mesh){ const nrm=waterNormal(); nrm.repeat.set(30,30);
-    const mat=new THREE.MeshStandardMaterial({ color:0xffffff, normalMap:nrm, normalScale:new THREE.Vector2(0.85,0.85), transparent:true, roughness:0.06, metalness:0.05, envMapIntensity:1.5, depthWrite:false });
-    mat.userData.u={ uDepth:{ value:null }, uWY:{ value:RIVER.y }, uA:{ value:ARENA }, uT:WTIME, uSh:{ value:new THREE.Color(0.26,0.50,0.46) }, uDp:{ value:new THREE.Color(0.04,0.17,0.22) } };
-    mat.onBeforeCompile=(sh)=>{ Object.assign(sh.uniforms, mat.userData.u);
-      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
-      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP; uniform sampler2D uDepth; uniform float uWY, uA, uT; uniform vec3 uSh, uDp;')
-        .replace('#include <color_fragment>',`#include <color_fragment>
-          vec2 duv=(vWP.xz+uA)/(2.0*uA); float hb=texture2D(uDepth, duv).r*3.5-2.5; float dep=max(0.0, uWY-hb);
-          vec3 shallow=uSh, deep=uDp; vec3 wc=mix(shallow, deep, smoothstep(0.04,0.62,dep));
-          float n=sin(vWP.x*1.7+uT*1.3)*sin(vWP.z*1.9-uT*1.1)+sin((vWP.x+vWP.z)*3.1+uT*2.0)*0.5;
-          float foam=(1.0-smoothstep(0.0,0.16+0.05*n,dep))*0.85 + smoothstep(0.85,1.0,n*0.5+0.5)*0.12*(1.0-smoothstep(0.2,0.6,dep));
-          diffuseColor.rgb=mix(wc, vec3(0.93,0.96,0.97), clamp(foam,0.0,1.0)); diffuseColor.a=mix(0.45, 0.9, smoothstep(0.02,0.7,dep))+foam*0.1;`); };
-    RIVER.mesh=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2.4, ARENA*2.4, 1, 1), mat);
-    RIVER.mesh.rotation.x=-Math.PI/2; RIVER.mesh.receiveShadow=true; RIVER.mesh.renderOrder=2; arena.add(RIVER.mesh); }
-  { const U=RIVER.mesh.material.userData.u; if(U.uDepth.value) U.uDepth.value.dispose(); U.uDepth.value=depthTex();
-    if(RIVER.ice){ U.uSh.value.setRGB(0.22,0.40,0.46); U.uDp.value.setRGB(0.02,0.07,0.10); } else { U.uSh.value.setRGB(0.26,0.50,0.46); U.uDp.value.setRGB(0.04,0.17,0.22); } }   // arctic leads: near-black cold water
-  RIVER.mesh.position.y=RIVER.y; RIVER.mesh.visible=true;
-  if(RIVER.deck){ arena.remove(RIVER.deck); RIVER.deck.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); RIVER.deck=null; }
-  const g=new THREE.Group(), wood=new THREE.MeshStandardMaterial({ color:0x8a6a44, roughness:0.9 }), rail=new THREE.MeshStandardMaterial({ color:0x5e472c, roughness:0.9 });
-  for(const b of RIVER.bridges){ const br=new THREE.Group(); br.position.set(b.x, b.y, b.z); br.rotation.y=-b.ang;
-    const deck=new THREE.Mesh(new THREE.BoxGeometry(b.hl*2, 0.3, b.hw*2), wood); deck.position.y=-0.16; deck.castShadow=true; deck.receiveShadow=true; br.add(deck);
-    for(let k=-Math.floor(b.hl); k<=Math.floor(b.hl); k+=1){ const pl=new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, b.hw*2.02), rail); pl.position.set(k, 0.0, 0); br.add(pl); }   // plank seams
-    for(const sz of [-1,1]){ const r=new THREE.Mesh(new THREE.BoxGeometry(b.hl*2, 0.12, 0.16), rail); r.position.set(0, 0.6, sz*(b.hw-0.1)); br.add(r);
-      for(let k=-1;k<=1;k++){ const post=new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 0.2), rail); post.position.set(k*b.hl*0.9, 0.3, sz*(b.hw-0.1)); br.add(post); } }
-    g.add(br); }
-  RIVER.deck=g; arena.add(g); }
-// wave the water (called every frame)
-export function updateWater(dt){ WTIME.value+=dt; if(RIVER.on && RIVER.mesh && RIVER.mesh.visible){ const M=RIVER.mesh.material, t=M.normalMap; t.offset.x+=dt*0.018; t.offset.y+=dt*0.011; M.userData.u.uWY.value=RIVER.y; } }
 // Z106 HIGHLAND beyond the fence: rises over ridgeW metres, rolls with the macro noise, eases back down at the bounding square's edge
 export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 0; const sq=ARENA-Math.max(Math.abs(x),Math.abs(z));
   const rise=Math.min(1, Math.max(0, (out+1)/FIELD.ridgeW)), fall=Math.min(1, Math.max(0, sq/9));

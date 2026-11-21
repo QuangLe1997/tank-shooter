@@ -631,6 +631,29 @@ export const SUPPLYB = { perStage:{ total:[3,3,4,4,4] }, hpPerStage:0.15,   // Z
   cut:{ speed:0.12, tanks:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
 export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };
 export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
+// Z405 RIVERS (world/river.js — the bed is carved into the heightfield by genTerrain): the battlefields a river crosses and their water. Per battlefield:
+//   sh / dp = shallow / deep water colour (linear RGB: clear green-blue, the savanna's muddy brown, the ruins' murky grey-green), wet = how dark and glossy
+//   the banks just above the waterline are, frozen = [main, stream] frozen hard (you drive on the ice; the arctic's side stream stays an open lead),
+//   cross = that battlefield's own crossings. The main river runs across the enemy half (z = share of the half-extent, ± amp m of meander, the flow west → east
+//   or back), the stream comes in from the enemy's edge on one flank (x = share) and joins it — our half stays dry; w = half width, D = depth below the banks.
+//   cross = [line (0 main · 1 stream), u along it, kind]: 'bridge' — a deck you drive over at full speed (THE BRIDGE SPOT: see bridge below), 'ford' — the bed
+//   raised to a stony run fordDepth m under the surface, fordLen m long, white water over it. wade = hull / rider speed: in water deeper than fordD (deep) or
+//   shallower (ford, the banks too); on a bridge or the ice 1. flow = m/s mid-channel (the stream × streamK), cycle = s per ripple phase, ripple = m per tile
+//   of the big / small ripples (phones: the big only), foam = [shore foam depth m, streaks in the current, white water over the fords], env = sky reflection;
+//   sh / dp here = any battlefield's own default; clear = m kept free of cover and buildings round a crossing (its approaches, both banks)
+//   bridge: the player's bridge model goes here — model = a .glb path (e.g. 'assets/models/bridge.glb'; null = the temporary plank deck): every bridge spot
+//   gets a copy, its long side laid across the river and scaled to len m (0 = the deck's span), turned yaw rad more, its road surface (deckAt × its height
+//   from its base) set on the walkable deck at deckY; keepDeck = leave the planks under it. hw = the walkable deck's half width, over = how far it runs onto each bank
+export const RIVERS = {
+  biomes:{ VILLAGE:{}, MEADOW:{ sh:[0.12, 0.22, 0.17], dp:[0.015, 0.055, 0.06] }, SAVANNA:{ sh:[0.25, 0.2, 0.12], dp:[0.09, 0.07, 0.035] },
+    RUINS:{ sh:[0.15, 0.19, 0.16], dp:[0.03, 0.06, 0.06] }, CITADEL:{ sh:[0.14, 0.26, 0.24], dp:[0.02, 0.08, 0.10] },
+    ARCTIC:{ sh:[0.10, 0.20, 0.24], dp:[0.01, 0.04, 0.06], wet:0.3, frozen:[true, false], cross:[[1, 0.42, 'ford']] } }, sh:[0.13, 0.24, 0.21], dp:[0.015, 0.06, 0.07],
+  y:-0.85, D:1.7, main:{ w:5.5, z:-0.5, amp:10 }, stream:{ w:3.2, x:0.46 },
+  cross:[[0, 0.5, 'bridge'], [0, 0.32, 'ford'], [0, 0.68, 'ford'], [1, 0.45, 'ford']], jitter:0.04, clear:10,
+  fordDepth:0.3, fordLen:7, wade:{ deep:0.55, ford:0.8, fordD:0.6 },
+  flow:1.2, streamK:1.3, cycle:1.6, ripple:[5.5, 1.7], foam:[0.09, 0.4, 0.85], wet:[0.42, 0.5], env:1.8,
+  bridge:{ model:null, len:0, yaw:0, deckAt:0.5, keepDeck:false, deckY:0.14, hw:3.6, over:2.5 },
+  ice:{ col:[0.34, 0.46, 0.52], deep:[0.07, 0.15, 0.2], snow:0.6, crack:0.32 } };
 
 // LOOT (Z93) — engine & armour pickups, stacking rules and where the good stuff hides.
 // STACKING: picking a buff you already have EXTENDS it by `extendShare` of its duration (never past `maxDurMul`× a full timer) —
@@ -927,7 +950,13 @@ export const GRASS = { far:{ cover:0.92, rim0:0.55, rim1:0.95, k:1.0 }, trans:1.
 // Z250 PHOTO GROUND (world/ground-photo.js): per battlefield the photo-scanned CC0 sets (Poly Haven, fetched by tools/ground-photos.mjs) — [base, second]:
 //   the base covers the field, the second shows through on steep faces, crater bowls and the field's bare patches. dual = how much the base is
 //   blended with itself at another scale (breaks the tiling); nrm = normal strength; altRep = the second layer's tile × the base's
-export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTile:true, ntFreq:0.32, hi:true,   // Z263 stochastic sampling (no repeat grid); ntFreq = patches per photo tile; hi = the base set at 2K (colour + normal) off phones
+// Z405 hex = the hex-tiled lookup that replaced the Z263 patches (world/ground.js HX_GLSL): s = hexes per photo tile (bigger hexes keep more of the photo whole),
+//   rot = share of a full random turn per hex (0: a photo's relief has a grain — turned hexes catch a low sun differently and the lattice shows as a honeycomb
+//   from above, tried at 1 and 0.2; the random slide alone breaks the repeat), exp / con = how sharp the seams between hexes are and how much the photo's own
+//   light / dark steers them; mobile = phones too (their second set and second scale take one turned lookup instead of their own lattice); hexPer = a
+//   battlefield's own s / rot. nrmVar = how far the relief's strength drifts over the field (0 = even)
+export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTile:true, ntFreq:0.32, hi:true,
+  hex:{ on:true, mobile:true, s:0.7, rot:0, exp:5, con:0.6 }, nrmVar:0.35, hexPer:{},   // Z263 stochastic sampling (no repeat grid); ntFreq = patches per photo tile; hi = the base set at 2K (colour + normal) off phones
   // albedo × per battlefield: the scene's sun and exposure were tuned for the darker procedural ground — a photo albedo needs bringing down
   tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.9, 1.0, 0.72], HILLS:[0.47, 0.6, 0.39], VILLAGE:[0.52, 0.6, 0.44], SAVANNA:[0.7, 0.6, 0.5], DESERT:[0.76, 0.64, 0.5],
     TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[1.02, 0.97, 0.92], STEELMILL:[1.02, 0.97, 0.92], VOLCANO:[0.72, 0.66, 0.62] },   // Z394 the works' concrete is a darker photo; the volcano's scree under its red light

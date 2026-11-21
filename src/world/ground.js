@@ -94,7 +94,10 @@ export function patchTexture(){ const W=256, a=tileNoise(W,[3,6,12,24,48],0.55);
 export const PATCH_COL = { DESERT:[0x9a7a50,0.55], RUINS:[0x5e5446,0.6], TUNDRA:[0x5c636c,0.75], FOUNDRY:[0x141210,0.7], CITADEL:[0x3e3a36,0.6], MEADOW:[0x6a5232,0.85], CITY:[0x3a3c40,0.55], HILLS:[0x5a4a30,0.7], VILLAGE:[0x5a4a2c,0.7], SAVANNA:[0x8a5a30,0.6], ARCTIC:[0x7a90a4,0.55], STEELMILL:[0x2a1a12,0.65], VOLCANO:[0x0e0a0a,0.75], QUARRY:[0xb8b0a0,0.45], CAVERN:[0x14100c,0.7] };
 export const MACRO = { tex:{ value:macroTexture() }, amt:{ value:0.3 }, span:{ value:1/(ARENA*2) }, patch:{ value:patchTexture() }, pcol:{ value:new THREE.Color(0x9a7a50) }, pamt:{ value:0.55 } };
 // Z250 the photo ground's second layer (world/ground-photo.js fills it; altOn 0 = the procedural look)
-export const PHOTO_U = { altMap:{ value:null }, altOn:{ value:0 }, altScale:{ value:0.5 }, dual:{ value:0 } };
+export const PHOTO_U = { altMap:{ value:null }, altOn:{ value:0 }, altScale:{ value:0.5 }, dual:{ value:0 },
+  hex:{ value:new THREE.Vector4(1, 1, 7, 0.6) }, nrmVar:{ value:0 } };   // Z405 the hex lattice (hxP, world/ground-photo.js sets it per battlefield) · how far the relief's strength drifts
+// Z405 the river banks: just above the waterline the ground is wet — darker and glossy (world/river.js sets it; k = water y, amount, band height m, darkening)
+export const WET_U = { k:{ value:new THREE.Vector4(-0.85, 0, 0.5, 0.42) } };
 // Z322 past the grass carpet the floor wears the carpet's own colour (world/grass-carpet.js fills it): col = the clumps' average, c = carpet centre xz + fade radii,
 //   k = (cover, the floor's average brightness) — far and near read the same, from the intro's high shots down to the tank
 export const GRASS_FAR = { col:{ value:new THREE.Color(0.2, 0.25, 0.1) }, c:{ value:new THREE.Vector4(1e6, 1e6, 0, 1) }, k:{ value:new THREE.Vector4(0, 0.3, 0, 0) } };
@@ -115,8 +118,47 @@ float ntN(vec2 p){ vec2 i = floor(p), f = fract(p), u = f * f * (3.0 - 2.0 * f);
 vec4 ntTex(sampler2D s, vec2 uv){ float k = ntN(uv * ${GROUND_PHOTO.ntFreq.toFixed(3)}) * 8.0, f = fract(k), ia = floor(k); vec2 dx = dFdx(uv), dy = dFdy(uv);
   vec4 a = textureGrad(s, uv + sin(vec2(3.0, 7.0) * ia), dx, dy), b = textureGrad(s, uv + sin(vec2(3.0, 7.0) * (ia + 1.0)), dx, dy);
   return mix(a, b, smoothstep(0.2, 0.8, f - 0.1 * dot(a.rgb - b.rgb, vec3(1.0)))); }`;
-function noTile(fs){ if(!GROUND_PHOTO.noTile) return fs; const C = THREE.ShaderChunk;
-  return fs.replace('#include <common>', '#include <common>\n' + NT_GLSL)
+// Z405 HEX TILING (Mikkelsen 2022, "Practical Real-Time Hex-Tiling") — the Z263 patches were ~3 photo tiles wide, so inside each one the 1–5 m photo
+//   still repeated on a perfect grid (from the turret and from above: a fish-scale lattice over the whole field). Now the photo is laid on a lattice of small
+//   hexagons, each slid at random (a random turn is there too, config hex.rot, but off: a ridged photo turned per hex catches a low sun differently in every
+//   hex and the lattice shows as a honeycomb), the three nearest blended by their barycentric weight sharpened by the photo's own brightness: no grid at any
+//   scale, the detail stays crisp. The colour pass keeps its three lookups (uv, gradients, turns, weights); the normal map reads the same three with
+//   each normal turned back into the field's frame, roughness reads the strongest — all in register. hxP = (hexes per tile, share of a full random turn,
+//   blend sharpness, how much the brightness steers the blend); the second set and the base at its second scale get their own hex lattices on desktops
+//   (one turned lookup each on phones). hxNv: the relief's strength drifts across the field (wind-smoothed / churned ground).
+const HX_GLSL = `uniform vec4 hxP; float hxNv = 1.0; vec2 hxU[3]; mat2 hxR[3]; vec2 hxDX, hxDY; vec3 hxW = vec3(0.0);
+vec2 hxHash(vec2 p){ return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453); }
+void hxGrid(vec2 st, out vec3 w, out vec2 v1, out vec2 v2, out vec2 v3){ st *= 3.4641016; vec2 sk = vec2(st.x - 0.57735027 * st.y, 1.15470054 * st.y), b = floor(sk);
+  vec3 t = vec3(fract(sk), 0.0); t.z = 1.0 - t.x - t.y; float s = step(0.0, -t.z), s2 = 2.0 * s - 1.0;
+  w = vec3(-t.z * s2, s - t.y * s2, s - t.x * s2); v1 = b + vec2(s); v2 = b + vec2(s, 1.0 - s); v3 = b + vec2(1.0 - s, s); }
+mat2 hxRot(vec2 v){ float a = (hxHash(v + 17.31).x * 2.0 - 1.0) * 3.14159265 * hxP.y, c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
+vec2 hxCen(vec2 v){ return vec2(v.x + 0.5 * v.y, 0.8660254 * v.y) / (3.4641016 * hxP.x); }
+vec3 hxWeigh(vec3 w, vec4 a, vec4 b, vec4 c){ vec3 L = vec3(dot(a.rgb, vec3(0.299, 0.587, 0.114)), dot(b.rgb, vec3(0.299, 0.587, 0.114)), dot(c.rgb, vec3(0.299, 0.587, 0.114)));
+  vec3 W = mix(vec3(1.0), L, hxP.w) * pow(max(w, 0.0), vec3(hxP.z)); return W / max(W.x + W.y + W.z, 1e-5); }
+vec4 hxMap(sampler2D s, vec2 st){ vec3 w; vec2 V[3]; hxGrid(st * hxP.x, w, V[0], V[1], V[2]); hxDX = dFdx(st); hxDY = dFdy(st); vec4 c[3];
+  for(int i = 0; i < 3; i++){ mat2 R = hxRot(V[i]); vec2 ce = hxCen(V[i]), h = hxHash(V[i]); hxR[i] = R; hxU[i] = R * (st - ce) + ce + h; c[i] = textureGrad(s, hxU[i], R * hxDX, R * hxDY); }
+  hxW = hxWeigh(w, c[0], c[1], c[2]); return hxW.x * c[0] + hxW.y * c[1] + hxW.z * c[2]; }
+vec4 hxNrm(sampler2D s, vec2 st){ if(hxW.x + hxW.y + hxW.z < 0.5) return texture2D(s, st); vec3 n = vec3(0.0);
+  for(int i = 0; i < 3; i++){ vec3 t = textureGrad(s, hxU[i], hxR[i] * hxDX, hxR[i] * hxDY).xyz * 2.0 - 1.0; t.xy = t.xy * hxR[i]; n += hxW[i] * t; }   // (xy · R = the normal turned back by the hex's own turn)
+  return vec4(normalize(n) * 0.5 + 0.5, 1.0); }
+vec4 hxDom(sampler2D s, vec2 st){ if(hxW.x + hxW.y + hxW.z < 0.5) return texture2D(s, st); int k = hxW.x > hxW.y ? (hxW.x > hxW.z ? 0 : 2) : (hxW.y > hxW.z ? 1 : 2);
+  return textureGrad(s, hxU[k], hxR[k] * hxDX, hxR[k] * hxDY); }
+#ifdef HX_CHEAP
+vec4 hxTex(sampler2D s, vec2 st){ return texture2D(s, mat2(0.8, 0.6, -0.6, 0.8) * st); }
+#else
+vec4 hxTex(sampler2D s, vec2 st){ vec3 w; vec2 V[3]; hxGrid(st * hxP.x, w, V[0], V[1], V[2]); vec2 dx = dFdx(st), dy = dFdy(st); vec4 c[3];
+  for(int i = 0; i < 3; i++){ mat2 R = hxRot(V[i]); vec2 ce = hxCen(V[i]), h = hxHash(V[i]); c[i] = textureGrad(s, R * (st - ce) + ce + h, R * dx, R * dy); }
+  vec3 W = hxWeigh(w, c[0], c[1], c[2]); return W.x * c[0] + W.y * c[1] + W.z * c[2]; }
+#endif
+`;
+const HX_PLAIN = `float hxNv = 1.0; vec4 hxTex(sampler2D s, vec2 st){ return texture2D(s, st); }\n`;
+function noTile(fs){ const C = THREE.ShaderChunk, H = GROUND_PHOTO.hex || {};
+  if(GROUND_PHOTO.noTile && H.on && (!MOBILE || H.mobile)) return fs.replace('#include <common>', '#include <common>\n' + (MOBILE ? '#define HX_CHEAP\n' : '') + HX_GLSL)   // Z405
+    .replace('#include <map_fragment>', C.map_fragment.replace('texture2D( map, vMapUv )', 'hxMap( map, vMapUv )'))
+    .replace('#include <normal_fragment_maps>', C.normal_fragment_maps.split('texture2D( normalMap, vNormalMapUv )').join('hxNrm( normalMap, vNormalMapUv )').replace('mapN.xy *= normalScale;', 'mapN.xy *= normalScale * hxNv;'))
+    .replace('#include <roughnessmap_fragment>', C.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'hxDom( roughnessMap, vRoughnessMapUv )'));
+  if(!GROUND_PHOTO.noTile) return fs.replace('#include <common>', '#include <common>\n' + HX_PLAIN);
+  return fs.replace('#include <common>', '#include <common>\n' + NT_GLSL + HX_PLAIN)
     .replace('#include <map_fragment>', C.map_fragment.replace('texture2D( map, vMapUv )', 'ntTex( map, vMapUv )'))
     .replace('#include <normal_fragment_maps>', C.normal_fragment_maps.split('texture2D( normalMap, vNormalMapUv )').join('ntTex( normalMap, vNormalMapUv )'))
     .replace('#include <roughnessmap_fragment>', C.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'ntTex( roughnessMap, vRoughnessMapUv )'))
@@ -131,10 +173,10 @@ function decalGround(sh){ sh.uniforms.decalS = DECAL_U.decalS; sh.uniforms.decal
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D decalS, decalD, decalC; uniform float decalK; uniform vec3 contCol; uniform vec2 contK;').replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_GLSL); }
 export function macroGround(mat){
   mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
-    sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.grassCol=GRASS_FAR.col; sh.uniforms.grassC=GRASS_FAR.c; sh.uniforms.grassK=GRASS_FAR.k; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief; varying vec2 vWXZ;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief; vWXZ = mwp.xz;');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;\nuniform sampler2D altMap; uniform float altOn, altScale, dual; varying vec2 vWXZ;\nuniform vec3 grassCol; uniform vec4 grassC, grassK;')
-      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = texture2D(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\n#endif\n{ float gw = grassK.x * smoothstep(grassC.z, grassC.w, distance(vWXZ, grassC.xy)); if(gw > 0.001){ float gl = clamp(dot(diffuseColor.rgb, vec3(0.333)) / max(grassK.y, 1e-3), 0.55, 1.5); diffuseColor.rgb = mix(diffuseColor.rgb, grassCol * gl, gw); } }\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL); sh.fragmentShader=noTile(sh.fragmentShader); };
+    sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.hxP=PHOTO_U.hex; sh.uniforms.wetK=WET_U.k; sh.uniforms.nrmVar=PHOTO_U.nrmVar; sh.uniforms.grassCol=GRASS_FAR.col; sh.uniforms.grassC=GRASS_FAR.c; sh.uniforms.grassK=GRASS_FAR.k; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief; varying vec2 vWXZ; varying float vWY;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief; vWXZ = mwp.xz; vWY = mwp.y;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;\nuniform sampler2D altMap; uniform float altOn, altScale, dual, nrmVar; varying vec2 vWXZ;\nuniform vec3 grassCol; uniform vec4 grassC, grassK; uniform vec4 wetK; varying float vWY; float wetR = 0.0;')
+      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = hxTex(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, hxTex(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\nhxNv = clamp(1.0 + nrmVar*(texture2D(macroMap, vMacroUv*3.7 + 0.31).b*2.0 - 1.0)*1.8, 0.3, 1.8);\n#endif\n{ float gw = grassK.x * smoothstep(grassC.z, grassC.w, distance(vWXZ, grassC.xy)); if(gw > 0.001){ float gl = clamp(dot(diffuseColor.rgb, vec3(0.333)) / max(grassK.y, 1e-3), 0.55, 1.5); diffuseColor.rgb = mix(diffuseColor.rgb, grassCol * gl, gw); } }\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL+'\n{ wetR = wetK.y * (1.0 - smoothstep(wetK.x, wetK.x + wetK.z, vWY)); diffuseColor.rgb *= 1.0 - wetK.w * wetR; }').replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.3, wetR * 0.85);'); sh.fragmentShader=noTile(sh.fragmentShader); };   // Z405 the wet banks
   { const f0=mat.onBeforeCompile; mat.onBeforeCompile=(sh, r)=>{ f0(sh, r); decalGround(sh); }; }
   mat.customProgramCacheKey=()=>'macroGround5'; return mat;
 }
