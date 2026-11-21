@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, ENV, EQUIP, FIELDCRAFT, INFANTRY, RAGDOLL, REAL, SQUAD } from '../../config.js';
-import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, startFall, stepFall, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle } from '../hub.js';
+import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, startFall, stepFall, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -46,14 +46,15 @@ function enemyNade(e, now){ const N=FIELDCRAFT.nade; e.nadeAt=now+0.9+Math.rando
   if(Math.random()>0.35+aiIQ()*0.5) return; e.nadeAt=now+N.cdE[0]+Math.random()*(N.cdE[1]-N.cdE[0]); e.facing=Math.atan2(t.pos.x-e.pos.x, t.pos.z-e.pos.z); throwNade('e', e.pos.x, e.pos.z, t.pos.x, t.pos.z, now); }
 // Z104 who an enemy soldier fights: the tank by default; riflemen switch to one of OUR soldiers (or a captured tank) when clearly closer;
 // RPG teams only ever pick armour — the tank or a captured one
-export function infTarget(e){ const p=S.player; let best={ pos:p.pos, vel:p.vel, tank:true }, bd=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z);
+export function infTarget(e){ const p=S.player, seen=playerSeen(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.6, e.pos.z); if(seen){ const k=e.lk||(e.lk={ x:0, z:0 }); k.x=p.pos.x; k.z=p.pos.z; }   // Z377 a soldier lying flat out of his sight: not his target — he goes to look where he last saw him
+  let best=seen ? { pos:p.pos, vel:p.vel, tank:true } : null, bd=seen ? Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z) : Infinity;
   for(const t of ALLY_TANKS){ const d=Math.hypot(t.pos.x-e.pos.x, t.pos.z-e.pos.z); if(d<bd*0.85){ bd=d; best={ pos:t.pos, vel:t.vel, tank:true }; } }
   if(!e.def.rpg) for(const a of FT){ const d0=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z), d=d0*(a.task==='cover'&&atCover(a.pos,a.cover)?FIELDCRAFT.target.coverMul:1)*(a.g.userData.stance==='prone'?FIELDCRAFT.target.proneMul:1);   // Z220 the man in the open is shot first
     if(d<bd*0.9 && d0<e.def.range*1.4){ bd=d; best={ pos:a.pos, vel:_INF0, tank:false }; } }
-  return best; }
+  return best || { pos:e.lk || { x:e.pos.x, z:e.pos.z }, vel:_INF0, tank:false, lost:true }; }   // (Z377 nobody he can see: search — never a shot)
 // nearest armour (ours) bearing on this soldier, for taking cover
 export function infTankThreat(e){ const p=S.player, R=INFANTRY.coverThreat; let best=null, bd=R;
-  const dp=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z); if(dp<bd){ bd=dp; best=p; }
+  const dp=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z); if(dp<bd && playerSeen(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.6, e.pos.z)){ bd=dp; best=p; }   // (Z377 not one he cannot see)
   for(const t of ALLY_TANKS){ const d=Math.hypot(t.pos.x-e.pos.x, t.pos.z-e.pos.z); if(d<bd){ bd=d; best=t; } }
   return best; }
 export function updateInfantry(e, dt, now, edt){
@@ -92,7 +93,7 @@ export function updateInfantry(e, dt, now, edt){
   e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.mesh.rotation.y=e.facing;
   let fired=false; const ds=diffScale(), A=BALANCE.aggro;
   const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul();
-  if(inRange && now>e.fireAt && !(e.aimT>0) && S.mode==='playing' && !soldierReloading(e.mesh) && !(e.sqNoFire && moved>0.01)){   // Z172 nobody fires mid-reload · Z173 nor while sprinting to the next cover
+  if(inRange && now>e.fireAt && !(e.aimT>0) && !T.lost && S.mode==='playing' && !soldierReloading(e.mesh) && !(e.sqNoFire && moved>0.01)){   // Z172 nobody fires mid-reload · Z173 nor while sprinting to the next cover
     if((e.supp||0)>0.75 && Math.random()<0.5) e.fireAt=now+0.4; else
     if(fortWallCross(e.pos.x, e.pos.z, T.pos.x, T.pos.z) || losBlocked(e.pos.x, e.pos.z, T.pos.x, T.pos.z)){ e.fireAt=now+0.6; wantPeek(e, T.pos.x, T.pos.z, now); }     // Z111b a fortress wall between: no shot (rifle or rocket) · Z220 nor a house / rock — he moves for a clear line
     else if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)) e.fireAt=now+0.5;

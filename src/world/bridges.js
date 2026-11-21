@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BRIDGE, HUMAN_SCALE } from '../../config.js';
-import { S, TOWER, animateSoldier, bullets, cMod, campMats, diffDmgMul, fallers, floatText, heightAt, loopDmgMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnPart } from '../hub.js';
+import { S, TOWER, animateSoldier, bullets, cMod, campMats, diffDmgMul, fallers, floatText, heightAt, loopDmgMul, makeSoldierMesh, propTex, scene, sfx, spawnBullet, spawnPart, playerSeen } from '../hub.js';
 
 // ===== Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrolling across; drop a tower and it snaps =====
 export const BRIDGES=[];
@@ -38,7 +38,7 @@ export function updateBridges(dt, now){
     const s=br.sentry; if(!s.alive) continue;
     br.u += br.dir*dt*BRIDGE.patrolSpeed/br.L; if(br.u>0.92){ br.u=0.92; br.dir=-1; } if(br.u<0.08){ br.u=0.08; br.dir=1; }
     const P=br.ptAt(br.u); s.g.position.set(P.x, P.y+0.05, P.z);
-    const dx=p.pos.x-P.x, dz=p.pos.z-P.z, d=Math.hypot(dx,dz), aiming=d<TOWER.range;
+    const dx=p.pos.x-P.x, dz=p.pos.z-P.z, d=Math.hypot(dx,dz), aiming=d<TOWER.range && playerSeen(P.x, P.y+1.6, P.z);   // Z377 not a man lying flat out of his sight
     s.g.rotation.y = aiming ? Math.atan2(dx,dz) : br.yaw+(br.dir<0?Math.PI:0);
     let fired=false;
     if(aiming && now>=s.fireAt && S.mode==='playing'){ s.fireAt=now+TOWER.fireCd*(0.9+Math.random()*0.5); fired=true; s.g.userData.muzzle.getWorldPosition(_bw);

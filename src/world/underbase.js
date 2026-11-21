@@ -10,7 +10,7 @@
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
 import { UNDERBASE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -91,7 +91,7 @@ function turretHit(T, dmg){ if(!T.alive) return; T.hp-=dmg; burst({ x:T.x, z:T.z
   if(T.hp<=0){ T.alive=false; T.head.rotation.x=0.7; T.head.position.y-=0.4; T.eye.material=mats().black; bigExplode({ x:T.x, z:T.z }, 0xffae5c, 0.8); spawnDebris({ x:T.x, z:T.z }, 0.8, 0x4a4a4a);
     const i=blocks.indexOf(T.blk); if(i>=0) blocks.splice(i,1); addScore(150, { x:T.x, y:3, z:T.z }); floatText('HẠ Ụ SÚNG', '#ffcf5a', { x:T.x, y:4, z:T.z }, 15); } }
 function runTurrets(list, dt, now){ const p=S.player, C=UNDERBASE.gate; if(!p) return;
-  for(const T of list){ if(!T.alive) continue; const dx=p.pos.x-T.x, dz=p.pos.z-T.z, d=Math.hypot(dx,dz); if(d>C.turretR) continue; const ya=Math.atan2(dx,dz);
+  for(const T of list){ if(!T.alive) continue; const dx=p.pos.x-T.x, dz=p.pos.z-T.z, d=Math.hypot(dx,dz); if(d>C.turretR || !playerSeen(T.x, heightAt(T.x,T.z)+(T.base?3.6:1.95), T.z)) continue; const ya=Math.atan2(dx,dz);   // Z377 the gunner behind the slit cannot see a man lying flat further off
     const par=T.g.parent, py=(par && par.rotation) ? par.rotation.y : 0; let da=(ya-py)-T.head.rotation.y; da=Math.atan2(Math.sin(da),Math.cos(da)); T.head.rotation.y+=Math.max(-dt*2.4, Math.min(dt*2.4, da));
     if(Math.abs(da)>0.25 || now<T.fireAt) continue;
     if(T.shots<C.burst){ T.shots++; T.fireAt=now+C.turretCd[0]; const aa=ya+R(-0.05,0.05), gy=heightAt(T.x,T.z)+(T.base?3.6:1.95);

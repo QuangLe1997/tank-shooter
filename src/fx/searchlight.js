@@ -52,7 +52,8 @@ export function updateSearchlight(L, k){ L.on=false; L.pool.visible=k>0.02; if(k
   if(fortBeamBlocked(L.lamp.x, L.lamp.y, L.lamp.z, L.hit.x, L.hit.y, L.hit.z)){ L.pool.visible=false; return; }   // Z170 a wall in the way: no pool of light behind it
   const r=L.r0+(L.r1-L.r0)*Math.min(1,t/L.len), stretch=Math.min(3.2, 1/Math.max(0.3,-_d.y));
   L.pool.position.set(L.hit.x, L.hit.y+0.08, L.hit.z); L.pool.rotation.set(-Math.PI/2, Math.atan2(_d.x,_d.z), 0); L.pool.scale.set(r*2.3, r*2.3*stretch, 1);   // plane y → stretched along the beam
-  L.pool.material.opacity=k*0.85*(1-0.55*t/L.len); L.on=true; }
+  L.pool.material.opacity=k*0.85*(1-0.55*t/L.len); L.on=true;
+  const hl=Math.hypot(_d.x,_d.z)||1; L.r=r*1.15; L.st=stretch; L.ux=_d.x/hl; L.uz=_d.z/hl; }   // Z377 the pool as it lies (half-width m, stretch, heading) — game/stealth.js: is the soldier in it
 
 // the one real light: rides the searchlight nearest the player
 let SPOT=null, SPOT_F=0;

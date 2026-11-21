@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT, HUMAN_SCALE } from '../../config.js';
-import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildHind, buildHip, buildTank, cMod, camera, diffHpMul, diffScale, hasDesign, heightAt, heliRoll, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, paintVehicle, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip } from '../hub.js';
+import { ENEMY_DEFS, ENEMY_MODEL, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, bakeTank, barWanted, buildGunship, buildHind, buildHip, buildTank, cMod, camera, diffHpMul, diffScale, hasDesign, heightAt, heliRoll, infMesh, loopDmgMul, loopHpMul, makeLauncherMesh, makeSoldierBar, makeSoldierMesh, paintVehicle, reviveSoldierMesh, scene, sfx, spawnBullet, spawnPart, stanceBarK, tip, playerSeen } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -145,7 +145,7 @@ export function updateCarrierCrew(e, now){
     if(now < c.fireAt) continue;
     c.mesh.getWorldPosition(_cv);
     const dx=p.pos.x-_cv.x, dz=p.pos.z-_cv.z, d=Math.hypot(dx,dz);
-    if(d > 30){ c.fireAt = now+0.5; continue; }                 // rifle range
+    if(d > 30 || !playerSeen(_cv.x, _cv.y, _cv.z)){ c.fireAt = now+0.5; continue; }   // rifle range · Z377 and a man lying flat he can make out
     if(Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ c.fireAt = now+0.4; continue; }
     let a = Math.atan2(dx,dz) + (Math.random()-0.5) * Math.max(0.04, A.spreadBase*(1-ds*A.spreadDrop)*1.3);   // crew a bit less accurate than gun tanks
     const dmg = 5 * (0.7+0.3*ds) * loopDmgMul() * cMod('enemyDmgMul');

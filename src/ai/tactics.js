@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS, FORT } from '../../config.js';
-import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE, bloodSpurt } from '../hub.js';
+import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE, bloodSpurt, playerSeen } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -140,6 +140,8 @@ export function updateEnemies(dt, now){
     if(e.type==='scout' && dpl<46) spot=true;   // Z158 a recon vehicle has eyes on you
     let targetPlayer = dpl < 34 || !core || (e.ai && dpl < TACTICS.engage);   // Z95 tanks in the director's plan stay on you
     let target = targetPlayer ? p.pos : core.pos;
+    if(targetPlayer){ if(playerSeen(e.pos.x, heightAt(e.pos.x,e.pos.z)+2.6, e.pos.z)) (e.lk||(e.lk=new THREE.Vector3())).copy(p.pos);   // Z377 a soldier lying flat out of the crew's sight: they make for where they last saw him and hold fire
+      else { targetPlayer=false; target = e.lk || (core ? core.pos : (e.lk=e.pos.clone())); } }
     { const at=allyArmourNear(e.pos.x, e.pos.z, Math.min(30, dpl*0.7)); if(at){ target=at.pos; targetPlayer=false; } }   // Z104 a captured tank of ours closer than you draws their fire
     if(!targetPlayer && soldiers.length){                         // guards draw fire — engage the nearest soldier in the way
       let bs=null, bd=36*36; for(const s of soldiers){ const dx=s.pos.x-e.pos.x, dz=s.pos.z-e.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; bs=s; } }
@@ -188,8 +190,8 @@ export function updateEnemies(dt, now){
     if(e.volleyAt){ if(now<e.volleyAt){ if(Math.random()<0.55){ e.muzzle.getWorldPosition(_v); spawnPart(_v.x,_v.y,_v.z, 0,0,0, { color:0xff2a2a, size:1.1+Math.random()*0.6, life:0.09, grav:0, drag:1 }); } }   // Z185 volley telegraph: the muzzles glint red
       else { e.volleyAt=0; if(targetPlayer && d<er){ e.fireAt=Math.min(e.fireAt, now); e.forceShot=true; } } }
     if(def.canShoot && now>e.fireAt && d < er && fortWallCross(e.pos.x, e.pos.z, target.x, target.z)){ e.fireAt=now+0.5; }   // Z111b stone in the way: no direct shot through a fortress wall / shut gate
-    else if(def.truck && now>e.fireAt && d < def.range){ e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
-    else if(def.canShoot && now>e.fireAt && d < er && laid && !e._idle){
+    else if(def.truck && now>e.fireAt && d < def.range && target!==e.lk){ e.fireAt=now+def.fireCd*(0.85+Math.random()*0.3); truckSalvo(e, target.x, target.z, now); }   // Z116 rocket truck: lobbed salvo (arcs over cover)
+    else if(def.canShoot && now>e.fireAt && d < er && laid && !e._idle && target!==e.lk){   // (Z377 never at the spot he was last seen)
       const ds=diffScale(), A=BALANCE.aggro;
       // PROACTIVE-FIRE chance ramps with stage — early enemies hesitate, late ones fire relentlessly
       if(!e.forceShot && Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)){ e.fireAt = now + 0.35; }   // hold fire a beat

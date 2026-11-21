@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -361,7 +361,7 @@ export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='play
     if(!B.alive) continue;
     if(B.camp && !B.camp.alive){ baseLost(B); continue; }
     const dp=Math.hypot(p.pos.x-B.x, p.pos.z-B.z);
-    if(!B.alarm && (dp < SUPPLYB.alertR || now-B.hitAt < 2)){ B.alarm=true; B.heloAt=now+4; B.tankAt=now+8; radio('SCH: Lính canh '+NAME[B.kind]+' đã phát hiện ta — chúng đang gọi trực thăng và xe tăng yểm trợ!'); }
+    if(!B.alarm && (dp < SUPPLYB.alertR && playerSeen(B.x, heightAt(B.x,B.z)+1.7, B.z) || now-B.hitAt < 2)){ B.alarm=true; B.heloAt=now+4; B.tankAt=now+8; radio('SCH: Lính canh '+NAME[B.kind]+' đã phát hiện ta — chúng đang gọi trực thăng và xe tăng yểm trợ!'); }   // Z377 a man crawling in flat is no alarm until a guard sees him (or he opens fire)
     if(!B.alarm) continue;
     if(dp > SUPPLYB.alertR*2.2 && now-B.hitAt > 25){ B.alarm=false; continue; }   // you left: they stand down
     if(now>B.heloAt && B.heloN<B.heloMax && enemies.filter(e=>e.def.air).length<(MOBILE?2:3)){ B.heloAt=now+SUPPLYB.heliCd; B.heloN++;

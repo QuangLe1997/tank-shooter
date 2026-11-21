@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, HELI, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle, realAir } from '../hub.js';
+import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle, realAir, playerSeen } from '../hub.js';
 import { TROOPS } from '../../config.js';
 
 // ===== Z116 · ROCKET TRUCK — 6×6 cab-over truck with an 8-tube rocket pod on a turntable (enemy salvo launcher / our hijacked AA + siege truck) =====
@@ -185,7 +185,7 @@ export function updateGunship(e, dt, now, edt){
       e.flareAt=now+7; for(let k=0;k<(MOBILE?8:16);k++){ const a=e.facing+Math.PI+(k%2?1:-1)*(0.6+Math.random()*0.9); spawnPart(e.pos.x, e.pos.y-0.3, e.pos.z, Math.sin(a)*(6+Math.random()*6), 2+Math.random()*4, Math.cos(a)*(6+Math.random()*6), { tex:'fire', color:0xffffff, color2:0xffa040, size:0.8, life:1.6+Math.random()*0.6, grav:-5, drag:0.6 }); }
       if(Math.random()<R.flareDecoy*(b.smart?0.45:1)) { b.tgt=null; b.flared=now+(b.smart?0.6:1.2); } sfx('rocketlaunch', e.pos, 0.4); break; } }
   if(Math.random()<0.25) spawnPart(e.pos.x+(Math.random()-0.5)*9, heightAt(e.pos.x,e.pos.z)+0.3, e.pos.z+(Math.random()-0.5)*9, (Math.random()-0.5)*6, 0.6, (Math.random()-0.5)*6, {color:BIOME.ground, size:1.6, life:0.7, smoke:true, grav:-0.2, drag:2, op:0.22});   // rotor wash kicks up dust
-  if(S.mode!=='playing' || d > R.range) return;
+  if(S.mode!=='playing' || d > R.range || !playerSeen(e.pos.x, e.pos.y, e.pos.z)) return;   // Z377 the gunship does not see a man lying flat in the dirt
   const ds=diffScale(), dmul=(0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul(), smk=smokeSpread(now);
   if(now>e.fireAt){                                                         // CHIN GUN — short strafing bursts
     ud.muzzle.getWorldPosition(_pv); const a=want+(Math.random()-0.5)*0.22*smk*(ENVMOD.night?ENV.night.enemySpread:1);

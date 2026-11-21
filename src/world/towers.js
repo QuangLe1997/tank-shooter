@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE, HUMAN_SCALE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight } from '../hub.js';
+import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -76,11 +76,13 @@ export function updateTowers(dt, now){
   const p=S.player; if(!p) return;
   for(const t of towers){
     t.sl.rotation.y = Math.sin(now*0.5+t.x)*1.2 + Math.sin(now*0.17+t.z)*0.35;   // Z146 an operator's uneven sweep
-    if(t.light){ if(t.falling){ t.light.beam.visible=false; t.light.pool.visible=false; t.light.on=false; } else updateSearchlight(t.light, NIGHT.k); }
+    if(t.light){ if(t.falling){ t.light.beam.visible=false; t.light.pool.visible=false; t.light.on=false; } else { updateSearchlight(t.light, NIGHT.k); stealthLight(t.light); } }   // Z377 caught in its pool: spotted
     if(t.falling) continue;
     for(const gd of t.guards){ if(!gd.alive) continue;
       gd.g.getWorldPosition(_tw); gd.wx=_tw.x; gd.wy=_tw.y; gd.wz=_tw.z;                         // Z104 cached for our soldiers to aim at
-      const tg=towerGuardAim(_tw.x, _tw.z), dx=tg.x-_tw.x, dz=tg.z-_tw.z, d=Math.hypot(dx,dz);   // Z104 the tank, or one of our men if he is closer
+      const tg=towerGuardAim(_tw.x, _tw.z, _tw.y+1.5);                                            // Z104 the tank, or one of our men if he is closer · Z377 nobody he can see: he watches his sector
+      if(!tg){ gd.g.rotation.y += (Math.sin(now*0.4+gd.fireAt)*0.9 - gd.g.rotation.y)*Math.min(1, dt*1.5); animateSoldier(gd.g, 0, dt, false); continue; }
+      const dx=tg.x-_tw.x, dz=tg.z-_tw.z, d=Math.hypot(dx,dz);
       gd.g.rotation.y = Math.atan2(dx,dz) - t.body.rotation.y;
       const fired = d<TOWER.range && now>=gd.fireAt && S.mode==='playing';
       if(fired){ gd.fireAt = now + TOWER.fireCd*(0.8+Math.random()*0.5);
@@ -123,7 +125,7 @@ export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; gd.alive=f
 export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
   dropGuard(t, gd, ux/L, uz/L); floatText('HẠ LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, 8, t.z), 15); return true; }
 // Z104 who a tower guard shoots: the tank, unless one of our foot soldiers is clearly closer
-export function towerGuardAim(x, z){ const p=S.player; let best=p.pos, bd=Math.hypot(p.pos.x-x, p.pos.z-z)*0.8;
+export function towerGuardAim(x, z, y){ const p=S.player, seen=y==null || playerSeen(x, y, z); let best=seen?p.pos:null, bd=seen?Math.hypot(p.pos.x-x, p.pos.z-z)*0.8:Infinity;   // Z377 a soldier lying flat out of his sight is no target (null: none)
   for(const a of FT){ const d=Math.hypot(a.pos.x-x, a.pos.z-z); if(d<bd && d<TOWER.range){ bd=d; best=a.pos; } }
   return best; }
 // every live guard (cached world position) — for our soldiers' target picking

@@ -4,7 +4,7 @@
 //   whip masts, equipment cabins with A/C units and a generator. Held by two twin-barrel AA guns that swing round and hose you, plus the usual
 //   wire, gate, signs and garrison. Bring the tower down (it topples) and the enemy artillery loses its eyes: fewer barrages, fewer shells, wide of the mark.
 import * as THREE from 'three';
-import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart } from '../hub.js';
+import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen } from '../hub.js';
 
 const CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
 export function radarLost(){ return SUPPLY.radar|0; }
@@ -64,7 +64,7 @@ export function updateTopple(T, dt){ const F=T.fall; if(!F || F.done) return; F.
   T.mesh.rotation.set(F.sz*a, T.mesh.rotation.y, -F.sx*a, 'YXZ');
   if(k>=1){ F.done=true; const L=14, x=T.x+F.sx*L, z=T.z+F.sz*L, pos={x,z}; bigExplode(pos, 0xffb050, 2.2); burst(pos, 0xb0aaa0, 10, 6, {y:heightAt(x,z)+1, life:1.6, size:3, smoke:true, grav:-0.5, drag:1.5, up:2, op:0.5}); for(let i=0;i<3;i++) spawnDebris(pos, 1.2, 0x5a5c56); S.shake=Math.min(4, S.shake+1.6); sfx('bigexplode', pos); aoeDamage(x, z, 6, 60, false, performance.now()/1000, 'HE'); } }
 // the AA guns swing onto you and hose you in bursts when you are in reach
-export function updateAAGun(g, b, dt, now, p){ const u=g.userData, T=u.turret; if(!T || !(b.hp>0)) return; const dx=p.pos.x-b.x, dz=p.pos.z-b.z, d=Math.hypot(dx,dz); if(d>62) return;
+export function updateAAGun(g, b, dt, now, p){ const u=g.userData, T=u.turret; if(!T || !(b.hp>0)) return; const dx=p.pos.x-b.x, dz=p.pos.z-b.z, d=Math.hypot(dx,dz); if(d>62 || !playerSeen(b.x, heightAt(b.x,b.z)+2.5, b.z)) return;   // Z377 a man lying flat out of its crew's sight: no target
   const want=Math.atan2(dx,dz)-g.rotation.y; let da=want-T.rotation.y; da=Math.atan2(Math.sin(da),Math.cos(da)); T.rotation.y+=Math.max(-dt*1.6,Math.min(dt*1.6,da));
   if(Math.abs(da)>0.12) return; if(!b.burstN && now<(b.fireAt||0)) return;
   if(!b.burstN){ b.burstN=MOBILE?6:9; } if(now<(b.shotAt||0)) return; b.shotAt=now+0.09; b.burstN--; if(!b.burstN) b.fireAt=now+2.2+Math.random()*1.2;

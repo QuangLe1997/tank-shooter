@@ -746,6 +746,12 @@ export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.
 //   neckX / headX carriage · gaitV = speeds (m/s) where walk→trot→canter→gallop change over (gaitHys either side) · blendT = seconds to blend two gaits
 export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:0.72, headX:0.25, front:[0.58,0.35,0.22], hind:[0.6,0.42,0.2],
   legs:{ fx:0.19, fy:-0.2, fz:0.55, hx:0.2, hy:-0.14, hz:-0.6 }, gaitV:[2.0,4.8,9.5], gaitHys:0.35, blendT:0.35 };
+// Z377 STEALTH (game/stealth.js): lying flat the soldier is seen only within see m of a shooter's eyes ([lying still, crawling faster than crawlV m/s]; measured
+//   in 3D, so a guard up a tower or on a wall top sees less of him) × night at full dark; once spotted (close by, caught in a searchlight's pool lit × its
+//   size, or by his own muzzle flash) every enemy within alertR m knows where he lies for keep s · say = s between his warnings · evade = the chance a round
+//   that would hit him misses: going over in a combat roll, or running (run at full sprint, rising from v[0] to v[1] m/s), say = s between the "NÉ!" tags
+export const STEALTH = { see:[8, 12], crawlV:0.3, night:0.7, alertR:30, keep:{ near:1.6, lit:3, shot:1.5 }, lit:1.15, say:2.5,
+  evade:{ roll:0.7, run:0.15, v:[2, 6.2], say:0.35 } };
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·
