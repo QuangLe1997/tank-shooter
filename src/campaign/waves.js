@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { BIOME, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, mouthSpawnPoint, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, MODE } from '../hub.js';
+import { FORTS, MOBILE, MODE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -79,7 +79,6 @@ function pincerPoint(){ const p=S.player; if(!p) return null; const side=(WAVE.p
 // points on that stretch, prefer one 40–85 m from the tank so a bigger field does not mean long empty drives.
 export function edgeSpawnPoint(){
   const fp=WAVE.fixedEdge==null ? fortSpawnPoint() : null; if(fp) return fp;   // Z107 most reinforcements march out of a fortress gate
-  if(BIOME.cave && Math.random()<0.6){ const mp=mouthSpawnPoint(); if(mp) return mp; }   // Z225 in the cavern they pour out of the mine mouths in the walls
   const e=(WAVE.fixedEdge!=null)?WAVE.fixedEdge:Math.floor(Math.random()*4), c=[-Math.PI/2, Math.PI/2, Math.PI, 0][e], p=S.player;
   let best=null, bs=1e9; for(let k=0;k<6;k++){ const [x,z]=fieldEdgePoint(c+(Math.random()-0.5)*1.3, 4), d=p?Math.hypot(x-p.pos.x, z-p.pos.z):60, s=d<40?40-d:(d>85?d-85:0);
     if(s<bs){ bs=s; best={ x, z }; } }

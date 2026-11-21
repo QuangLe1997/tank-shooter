@@ -1,7 +1,7 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD, TERRAIN_FLAT, CAVE_DEF } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, _heightToNormal, caveNotch, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
+import { RELIEF, FIELD, TERRAIN_FLAT } from '../../config.js';
+import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, _heightToNormal, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
@@ -113,9 +113,9 @@ function riverMeshes(){
 // wave the water (called every frame)
 export function updateWater(dt){ WTIME.value+=dt; if(RIVER.on && RIVER.mesh && RIVER.mesh.visible){ const M=RIVER.mesh.material, t=M.normalMap; t.offset.x+=dt*0.018; t.offset.y+=dt*0.011; M.userData.u.uWY.value=RIVER.y; } }
 // Z106 HIGHLAND beyond the fence: rises over ridgeW metres, rolls with the macro noise, eases back down at the bounding square's edge
-export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 0; const sq=ARENA-Math.max(Math.abs(x),Math.abs(z)), cave=BIOME.cave;   // Z225 in the cavern the highland is the cave wall
-  const rise=Math.min(1, Math.max(0, (out+1)/(cave?CAVE_DEF.wallW:FIELD.ridgeW))), fall=Math.min(1, Math.max(0, sq/(cave?3:9)));
-  const v=(cave?CAVE_DEF.wallH:FIELD.ridgeH)*rise*rise*(3-2*rise)*fall*(0.72+0.28*(n||0)); return cave ? v*caveNotch(x, z, out) : v; }
+export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 0; const sq=ARENA-Math.max(Math.abs(x),Math.abs(z));
+  const rise=Math.min(1, Math.max(0, (out+1)/FIELD.ridgeW)), fall=Math.min(1, Math.max(0, sq/9));
+  return FIELD.ridgeH*rise*rise*(3-2*rise)*fall*(0.72+0.28*(n||0)); }
 // a blast digs a crater (r = radius, d = depth) and throws up a rim — updates the mesh where it changed
 export function deformCrater(x, z, r, d){
   d*=TERRAIN_FLAT.blastK; if(!d) return;   // Z107 blastK 0: shells scorch the ground (decal) but never reshape it → no terrain rebuild, no flicker

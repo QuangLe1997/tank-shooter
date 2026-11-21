@@ -585,7 +585,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z139 three new battlefields
 { const fs=await import('node:fs'); const w=fs.readFileSync('src/data/world.js','utf8'), l=fs.readFileSync('src/world/landmarks.js','utf8'), h=fs.readFileSync('src/world/heightfield.js','utf8'), b=fs.readFileSync('src/input/bindings.js','utf8'), t=fs.readFileSync('src/data/text-vi.js','utf8');
   for(const n of ['CITY']) ok(new RegExp("name:'"+n+"'").test(w) && new RegExp(n+":\\{").test(w) && new RegExp(n+":'").test(t), 'biome '+n+' is fully defined (data, atmosphere, ground, name)');
-  ok(/buildVillage/.test(l) && /carveRivers/.test(h) && /wetAt/.test(h), 'landmarks + river carving exist');
+  ok(/buildSceneSet\(\)/.test(l) && /carveRivers/.test(h) && /wetAt/.test(h), 'landmarks + river carving exist');
   ok(/_mbBusy/.test(b), 'menuBack cannot recurse'); }
 
 // Z140 regional strongholds, guard cannons, tour, events, flag fall, celebration
@@ -1426,7 +1426,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     ok(!end(0.8) && h1 && h1.bl===wall && h1.t>0.05 && h1.t<0.2 && !h2 && h3 && !h4 && !own, 'a fast round no longer steps over a thin wall; a high one clears it; an eye up a tower sees past a wall only far enough beyond it; what the shooter stands in never stops him'); }
   ok(/lineHit\(b\._hx, py, b\._hz, b\.x, _wy, b\.z, b\.r, b\.line \? LINE\.over : 1e4, _bskip\)/.test(lk) && /else if\(wb\)\{ strikeBlock\(b, wb\); recycleBullet\(i\); \}/.test(lk) && /inShape\(bl, b\.ox, b\.oz\)/.test(lk) && !/let blocked=false;/.test(lk) && /function pastFace\(b, x, z\)/.test(lk) && /if\(!b\.dodged && !\(wb && pastFace\(b, p\.pos\.x, p\.pos\.z\)\)/.test(lk) && /if\(wb && pastFace\(b, e\.pos\.x, e\.pos\.z\)\) continue;/.test(lk), 'each round is stopped at the face of the first solid thing on this frame\'s stretch, and strikes it only after anyone standing in front of it has had his chance to be hit — nobody behind the face, however close to it');
   ok(/if\(!inSight\(x, y, z\)\) return false;/.test(st) && st.indexOf('if(!inSight(x, y, z)) return false;')<st.indexOf('if(!playerHidden()) return true;') && /hy = heightAt\(p\.pos\.x, p\.pos\.z\) \+ \(C\.head\[st\]/.test(st) && /lineClear\(x, y, z, p\.pos\.x, hy, p\.pos\.z\) \|\| lineClear\(x, y, z, p\.pos\.x \+ sx, hy - C\.drop, p\.pos\.z \+ sz\) \|\| lineClear\(x, y, z, p\.pos\.x - sx/.test(st) && T.side>0.1 && T.side<0.5 && T.drop>0 && T.drop<T.head.crouch && T.head.prone<T.head.crouch && T.head.crouch<T.head.stand && T.head.stand<T.head.mounted && T.sightT>0 && T.sightT<0.5, 'no enemy gun takes him through a wall, a house, a rock or cover — standing or lying — the eye must reach his head or a shoulder (a post hides no man)');
-  ok(/for\(let i=n0;i<blocks\.length;i\+\+\)\{ blocks\[i\]\._top=top; blocks\[i\]\._topHp=blocks\[i\]\.hp; \}/.test(R('src/world/landmarks.js')) && /b\.supply\|\|b\.hp===Infinity\)/.test(R('src/world/supply.js')) && /if\(b\.hp!==Infinity && Math\.hypot\(b\.x-x,b\.z-z\)<b\.r\+R\)/.test(R('src/world/supply.js')) && C.SCENERY.models.oil_drum.solid && C.SCENERY.models.oil_drum.solid.disc>0 && /export function blockTop\(bl\)\{ if\(bl\.bld\)\{ const B=bl\.bld, f=!B\.dead && B\.top>=0 \? B\.floors\[B\.top\] : null; return f && f\.y1!=null \? f\.y1/.test(lk) && /kind:'keep', _top:f\.gy\+KH, _topHp:Infinity/.test(R('src/world/fortress.js')), 'every circle of a village house as tall as the house; a supply base never clears away a house, a ruin or a scanned model\'s solid (its model stayed: men and rounds went through it); the scanned drums are cover; a city block is as tall as its highest floor still standing, the donjon as tall as the donjon (both stood 2 m high to rounds and eyes)'); }
+  ok(/b\.supply\|\|b\.hp===Infinity\)/.test(R('src/world/supply.js')) && /if\(b\.hp!==Infinity && Math\.hypot\(b\.x-x,b\.z-z\)<b\.r\+R\)/.test(R('src/world/supply.js')) && C.SCENERY.models.oil_drum.solid && C.SCENERY.models.oil_drum.solid.disc>0 && /export function blockTop\(bl\)\{ if\(bl\.bld\)\{ const B=bl\.bld, f=!B\.dead && B\.top>=0 \? B\.floors\[B\.top\] : null; return f && f\.y1!=null \? f\.y1/.test(lk) && /kind:'keep', _top:f\.gy\+KH, _topHp:Infinity/.test(R('src/world/fortress.js')), 'every circle of a village house as tall as the house; a supply base never clears away a house, a ruin or a scanned model\'s solid (its model stayed: men and rounds went through it); the scanned drums are cover; a city block is as tall as its highest floor still standing, the donjon as tall as the donjon (both stood 2 m high to rounds and eyes)'); }
 
 // Z391 the real rig standing in a bed waits on the trigger for its bore too (it fired mid-turn with the bore 125° off the aim)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), r=R('src/actors/real-cav.js'), f=R('src/combat/soldier-fire.js');
@@ -1923,13 +1923,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z206 street vehicles are real bodies: side silhouettes with wheel arches, cabin + glass, lathed tyres on alloys, lamps; paint + trim draws; crushable
 { const fs=await import('node:fs'); const ca=fs.readFileSync('src/world/cars.js','utf8');
-  ok(/function carBody\(o\)/.test(ca) && /ExtrudeGeometry/.test(ca) && /LatheGeometry/.test(ca) && ['sedan','hatch','suv','pickup','van','taxi','truck'].every(n=>ca.includes(`name:'${n}'`)) && /function scooter\(\)/.test(ca), 'seven car bodies + a scooter, built from real profiles');
-  ok(/aRM/.test(ca) && /roughnessFactor = roughness\*vRM\.x/.test(ca) && /o\.wreck/.test(ca) && /export function crushVehicle\(c\)/.test(ca) && /crushVehicle\(c\)/.test(fs.readFileSync('src/world/decor.js','utf8')), 'glass gleams, rubber does not; wrecks; tanks pancake them'); }
+  ok(['sedan','hatch','suv','pickup','van','taxi','truck'].every(n=>ca.includes(`name:'${n}'`)) && !/function carBody\(|function scooter\(|ExtrudeGeometry|LatheGeometry/.test(ca) && /drawReal\(R, list, m\.cr/.test(ca), 'seven car bodies, drawn only as their real models (Z401: the hand-built bodies are gone)');
+  ok(/o\.wreck/.test(ca) && /export function crushVehicle\(c\)/.test(ca) && /crushVehicle\(c\)/.test(fs.readFileSync('src/world/decor.js','utf8')), 'glass gleams, rubber does not; wrecks; tanks pancake them'); }
 
 // Z207 village homes are real Vietnamese houses (classic tiled 3-bay · thatched · two-storey) with yards; city facades get street life
-{ const fs=await import('node:fs'); const ho=fs.readFileSync('src/world/houses.js','utf8'), ci=fs.readFileSync('src/world/city.js','utf8');
-  ok(/export function villageHouse\(\)/.test(ho) && /function classic\(K, X\)/.test(ho) && /function thatched\(K, X\)/.test(ho) && /function twoStorey\(K, X\)/.test(ho) && /function gableRoof\(/.test(ho) && /villageHouse\(\)/.test(fs.readFileSync('src/world/landmarks.js','utf8')), 'three village house kinds with a real pitched roof');
-  ok(/function yardProps\(/.test(ho) && /function kitchen\(/.test(ho) && /hoành phi/.test(ho) && /chuồng cọp/.test(ci) && /AC condenser/.test(ci), 'yards, kitchens, lacquered boards; AC units and window cages in town'); }
+{ const fs=await import('node:fs'); const ci=fs.readFileSync('src/world/city.js','utf8');
+  ok(!fs.existsSync('src/world/houses.js') && !/villageHouse/.test(fs.readFileSync('src/world/landmarks.js','utf8')), 'Z401 the retired VILLAGE homes are gone');
+  ok(/chuồng cọp/.test(ci) && /AC condenser/.test(ci), 'yards, kitchens, lacquered boards; AC units and window cages in town'); }
 
 // Z208 wildlife has real anatomy (ellipsoid masses, jointed tapered legs + hooves, horns / antlers / tusks / trunk) and per-pixel coats
 { const fs=await import('node:fs'); const w=fs.readFileSync('src/actors/wildlife.js','utf8');
@@ -1945,9 +1945,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/fx/hitfx.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/export function shellTrail\(b, x, y, z\)/.test(h) && /export function trailKind\(b\)/.test(h) && ['wisp','auto','shell','heavy','frag','frost','rail','enemy'].every(k=>new RegExp(k+':\\{ s:').test(h)) && /type==='ELEC'/.test(h) && /else shellTrail\(b, b\.x, _wy, b\.z\)/.test(lo), 'a smoke line per ammo type (tesla none), gap-free');
   ok(/export function nearMiss\(b, P\)/.test(h) && /nearMiss\(b, S\.player\)/.test(lo) && /case 'flybyHeavy'/.test(fs.readFileSync('src/audio/synth.js','utf8')) && /dirtGeyser\(b\.x, b\.z/.test(lo) && /muzzleLinger\(/.test(fs.readFileSync('src/fx/gunfx.js','utf8')), 'near-miss crack, dirt geysers, lingering muzzle cloud'); }
-// Z211 parked vehicles are welded + indexed (≈⅓ the vertices) and scooters cast no shadow
+// Z211 parked vehicles are cheap to draw (Z401: the real models, one instanced draw per body)
 { const fs=await import('node:fs'); const ca=fs.readFileSync('src/world/cars.js','utf8');
-  ok(/mergeVertices\(m, 1e-4\)/.test(ca) && /shadow=!MOBILE && kind==='car'/.test(ca), 'street vehicles are cheap to draw'); }
+  ok(/new THREE\.InstancedMesh\(_RG\[k\], R\.mat, list\.length\), shadow=!MOBILE/.test(ca), 'street vehicles are cheap to draw (one instanced draw per body, no shadow on phones)'); }
 
 // Z214 the lock-on gun fires smart mini-missiles: own model, eject → ignite → streak, hard homing, climbs to aircraft and bursts in the air; a 2×2 smart pod
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8'), ba=fs.readFileSync('src/tank/barrels.js','utf8');
@@ -2014,11 +2014,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export const WXFX/.test(C) && /WXFX\.grade\[WX\.id\]/.test(wx) && /function skyBolt\(/.test(wx) && /function airLife\(/.test(wx) && /WX\.gustE/.test(wx), 'each weather its own grade (never stacked), visible lightning + thunder, gusts, splashes, drifting sand/fog/snow'); }
 
 // Z225 underground: the CAVERN battlefield (walls, torches, shafts of daylight, pillars, roof falls) + the enemy tunnel network on every battlefield
-{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cv=R('src/world/cavern.js'), tn=R('src/world/tunnels.js'), hf=R('src/world/heightfield.js'), at=R('src/world/atmosphere.js'), bi=R('src/world/biome.js'), sp=R('src/combat/spells.js'), cov=R('src/world/cover.js'), C=R('config.js'), W=await import('./src/data/world.js');
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const tn=R('src/world/tunnels.js'), hf=R('src/world/heightfield.js'), at=R('src/world/atmosphere.js'), bi=R('src/world/biome.js'), sp=R('src/combat/spells.js'), cov=R('src/world/cover.js'), C=R('config.js'), W=await import('./src/data/world.js');
   ok(!W.BIOMES.find(b=>b.name==='CAVERN') && W.ATMOS.CAVERN && W.ATMOS.CAVERN.cave, 'the CAVERN battlefield is retired (Z253) — its tables and code stay for the tunnels');
-  ok(/export const CAVE_DEF/.test(C) && /export const TUNNEL/.test(C) && /caveNotch\(x, z, out\)/.test(hf) && /CAVE_DEF\.wallH/.test(hf) && /planCavern\(\); genTerrain/.test(bi), 'the cave walls rise round the field, cut open at the tunnel mouths, planned before the terrain');
+  ok(!fs.existsSync('src/world/cavern.js') && !/CAVE_DEF|caveN/.test(C) && !/caveNotch|CAVE_DEF/.test(hf) && !/planCavern/.test(bi) && !/function mouth\(|CAVE\b/.test(tn), 'Z401 the cavern builder (walls, torches, shafts, mine mouths) is gone; the tunnels stand on their own');
   ok(/if\(A\.cave\)\{ o\.night=1; return o; \}/.test(at) && /SKY\.visible=!A\.cave/.test(at) && /BIOME\.cave \? 'night'/.test(bi) && /BIOME\.cave \? 'clear'/.test(bi), 'underground: no sky, no weather, always dark');
-  ok(/function shaftMat\(/.test(cv) && /PointLight\(/.test(cv) && /export function caveIn\(/.test(cv) && /kind:'pillar'/.test(cv) && /P\.mat\.opacity=P\.op/.test(cv), 'torches with riding lights, daylight shafts, pillars that thin out for the camera, roof falls');
   ok(/function goUnder\(/.test(tn) && /function comeUp\(/.test(tn) && /export function tunnelSquad\(/.test(tn) && /tunnelBlast\(x, z, r, dmg\)/.test(sp) && /b\.kind==='tunnel'\)\{ hitTunnel/.test(cov) && /damageEnemy\(e, e\.hp\+999\)/.test(tn), 'enemies drop into the tunnels and come up elsewhere; blasts cave the ways in; sealing all buries those below'); }
 
 // Z226 the underground base: the guarded main tunnel gate with an electronic lock → drive down → wreck barracks / vehicle lifts / arsenal / generator → fewer reinforcements up top

@@ -99,10 +99,8 @@ export const LOCKON = { cone:1.2, minP:9, allyR:3.2, range:42, clear:1.5, look:[
 //   it can still reach; it never passes through a wall — it looks ahead (look = [min, max] m) and climbs to `clear` m over anything in its path,
 //   then dives on the mark; a wall too close to climb over takes the hit (and the damage)
 // Z223 REAL WAR — blast concussion, side-coloured tracers, brass, varied deaths, men of different build, surprises
-// Z225 UNDERGROUND — the CAVERN battlefield (HANG NGẦM, after Sơn Đoòng) and the enemy TUNNEL NETWORK (địa đạo) dug under every battlefield
-export const CAVE_DEF = { wallH:30, wallW:12, shafts:[4,5], shaftR:[9,15], lights:{ desk:8, mob:3, range:24, I:34, big:70 }, shaftLight:{ desk:4, mob:2, I:5.5 },
-  torchStep:15, braziers:6, pillars:[2,3], crystals:[22,12], mouths:3, caveIn:{ every:[40,65], warn:1.7, R:4.6, dmg:16, rocks:[3,5] } };
-export const TUNNEL = { from:2, n:[3,4], caveN:3, hp:{ hatch:70, bunker:280, mouth:520 }, seeR:20, under:[4,8], hurtK:0.6, suppK:0.5, grabR:7, heal:0.25,
+// Z225 UNDERGROUND — the enemy TUNNEL NETWORK (địa đạo) dug under every battlefield (Z401 the CAVERN battlefield's builder is gone)
+export const TUNNEL = { from:2, n:[3,4], hp:{ hatch:70, bunker:280 }, seeR:20, under:[4,8], hurtK:0.6, suppK:0.5, grabR:7, heal:0.25,
   ambush:{ first:[35,55], every:[30,48], r:[24,70], cap:90 }, score:{ seal:250, all:800, buried:60 } };
 // Z226 the UNDERGROUND BASE under every battlefield, reached through the guarded MAIN TUNNEL GATE (electronic lock)
 // Z234 HOME GROUND: every enemy installation (fortress, barracks camp, fuel/ammo/radar compound, the underground gate, bunkers, watchtowers)

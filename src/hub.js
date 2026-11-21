@@ -82,7 +82,6 @@ export * from './actors/fireteam.js';
 export * from './actors/escalade.js';   // Z145
 export * from './actors/ally-tanks.js';
 export * from './render/night-marks.js';   // Z137
-export * from './world/houses.js';         // Z207
 export * from './world/landmarks.js';      // Z139
 export * from './world/regional.js';       // Z140
 export * from './world/core-walls.js';     // Z140
@@ -102,7 +101,6 @@ export * from './actors/vehicles.js';
 export * from './actors/helis.js';
 export * from './fx/realwar.js';
 export * from './campaign/surprises.js';
-export * from './world/cavern.js';
 export * from './world/tunnels.js';
 export * from './world/underbase.js';
 export * from './actors/paradrop.js';

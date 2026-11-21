@@ -1,7 +1,7 @@
 // world/biome.js — Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter,
 // decor, arms-doctrine env) + the initial menu-backdrop dressing that runs at boot.
 import { SPACE, CAMPAIGN } from '../../config.js';
-import { BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, GRIME, MACRO, NIGHT, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyGroundPhoto, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, perimeter, planCavern, ring, rockSet, todFor } from '../hub.js';
+import { BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, GRIME, MACRO, NIGHT, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyGroundPhoto, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, perimeter, ring, rockSet, todFor } from '../hub.js';
 
 export function applyBiome(stage){
   const R = S.run || { mode:'campaign' }, custom = R.mode==='custom';                // Z107 CUSTOM battle: your map · hour · weather · space
@@ -12,7 +12,7 @@ export function applyBiome(stage){
   { const pc=PATCH_COL[BIOME.name]||PATCH_COL.DESERT; MACRO.pcol.value.setHex(pc[0]); MACRO.pamt.value=pc[1]; }
   const gm=groundMaps(BIOME); groundMat.map=gm.map; groundMat.normalMap=gm.nrm; groundMat.roughness=gm.rough; groundMat.needsUpdate=true;
   applyGroundPhoto(BIOME);   // Z250 the photo-scanned floor swaps in once its two sets have loaded
-  decalReset(BIOME); genField(); planCavern(); genTerrain(BIOME);   // Z106 a new field outline every stage · Z225 the cavern's shafts + tunnel mouths are planned before its walls are raised
+  decalReset(BIOME); genField(); genTerrain(BIOME);   // Z106 a new field outline every stage
   applyAtmosphere(BIOME);   // sky dome reflections · sun angle/colour · haze · grade
   applyWeather(BIOME.cave ? 'clear' : custom ? R.wx : CAMPAIGN.weather[(Math.max(1, (S.loop||0)*CAMPAIGN.perLoop + stage)-1) % CAMPAIGN.weather.length]);   // Z107 rain · sand · snow · fog
   if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.deco==='grass' ? 0x6e5a3c : BIOME.ground);   /* Z147 on grass the tracks throw up brown mud, not green */ GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield

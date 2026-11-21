@@ -3,7 +3,7 @@
 //   Tanks plough through it all: trees topple, bushes / flowers / reeds flatten (decor.js crushables).
 import * as THREE from 'three';
 import { LIGHT, OPEN_LAND } from '../../config.js';
-import { AREA_K, ARENA, BIOME, MOBILE, RIVER, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, shaftSpot, TREES, wetAt } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, RIVER, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
 
 let _mat=null;
 // Z146 LEAF ATLAS → Z202 four regions: u 0–¼ BARK (vertical fissures, lichen — trunks and limbs) · ¼–½ broadleaf clusters · ½–¾ needle / frond sprays ·
@@ -194,8 +194,6 @@ export function buildFlora(){ clearFlora(); loadRealTrees(); const n=BIOME.name,
   else if(n==='STEELMILL'){ plant(deadTree(), N(16), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(10), { tk:'broadleaf', s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(false), N(60), { s:[0.6,1.2], shadow:false }); }   // Z187 nature taking the mill back
   else if(n==='VOLCANO'){ plant(deadTree(), N(22), { tk:'dead', s:[0.7,1.1], kind:'tree', cr:0.3, real:1.15 }); plant(bush(true), N(14), { s:[0.5,0.9], shadow:false }); }   // Z187 scorched snags
   else if(n==='QUARRY'){ plant(ancient(), N(1), { tk:'ancient', s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(8), { tk:'broadleaf', s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
-  else if(n==='CAVERN'){ plant(broadleaf(), N(18), { tk:'broadleaf', s:[0.6,0.95], near:shaftSpot, kind:'tree', cr:0.6, real:1.2 }); plant(palm(), N(8), { tk:'palm', s:[0.6,0.9], near:shaftSpot, kind:'tree', cr:0.4, real:1.2 });   // Z225 a jungle grows in each shaft of daylight
-    plant(bush(false), N(110), { s:[0.7,1.4], near:shaftSpot, shadow:false }); plant(flowers(), N(120), { s:[0.8,1.3], near:shaftSpot, shadow:false }); }
   else if(n==='TUNDRA'){ plant(conifer(true), N(40), { tk:'coniferSnow', s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
   else if(n==='DESERT'){ plant(palm(), N(10), { tk:'palm', s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
