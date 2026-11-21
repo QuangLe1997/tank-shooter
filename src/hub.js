@@ -228,6 +228,7 @@ export * from './actors/soldier-legs.js';   // Z339 the soldier's own legs: plan
 export * from './actors/soldier-mount.js';   // Z342 getting on and off the horse / the rides the way a rider does
 export * from './actors/soldier-upper.js';   // Z343 the soldier's shoulders, trunk, head and rifle in time with his legs
 export * from './actors/real-cav.js';
+export * from './actors/gun-fit.js';   // Z360 each hand weapon's hold read off its own model (grip, palm, butt, sight, bore)
 export * from './actors/real-troops.js';
 export * from './actors/troop-skin.js';   // Z344 the infantry skinned on the GPU: one body a side, each man's joints in a float texture
 export * from './actors/ragdoll.js';   // Z254 a real fall for men shot down   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate

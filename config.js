@@ -906,9 +906,9 @@ export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.
 //   Z329 the soldier's own guns (data/guns.js t_*) map onto them too: each weapon he picks up is the one in his hands
 export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'minigun', t_shotgun:'shotgun', t_sniper:'sniper', t_rpg:'rpg', t_gl:'gl', t_flamer:'flamer', t_energy:'energy', t_ak:'ak', t_m4:'m4', t_mp5:'mp5', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
     agl:'gl', mortar:'gl', arty:'gl', flamer:'flamer', cryo:'flamer', tesla:'energy', plasma:'energy', photon:'energy', orbital:'energy', singularity:'energy' },
-  guns:{ ar:{ len:0.92, muzzle:1, grip:0.2 }, lmg:{ len:1.12, muzzle:-1, grip:0.18 }, minigun:{ len:1.15, muzzle:1, grip:0.22 }, shotgun:{ len:1.0, muzzle:-1, grip:0.22 }, sniper:{ len:1.42, muzzle:-1, grip:0.24 },
-    rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18 }, flamer:{ len:1.0, muzzle:1, grip:0.14 }, energy:{ len:0.95, muzzle:1, grip:0.2 },
-    ak:{ len:0.88, muzzle:1, grip:0.21 }, m4:{ len:0.95, muzzle:1, grip:0.21 }, mp5:{ len:0.68, muzzle:1, grip:0.1 } } };   // Z355 three real guns off Meshy's free (CC0) community gallery, cut to ~10k triangles
+  guns:{ ar:{ len:0.92, muzzle:1, grip:0.2, fit:true }, lmg:{ len:1.12, muzzle:-1, grip:0.18, fit:true }, minigun:{ len:1.15, muzzle:1, grip:0.22 }, shotgun:{ len:1.0, muzzle:-1, grip:0.22, fit:true }, sniper:{ len:1.42, muzzle:-1, grip:0.24, fit:true },
+    rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18, fit:true }, flamer:{ len:1.0, muzzle:1, grip:0.14 }, energy:{ len:0.95, muzzle:1, grip:0.2, fit:true },
+    ak:{ len:0.88, muzzle:1, grip:0.21, fit:true }, m4:{ len:0.95, muzzle:1, grip:0.21, fit:true }, mp5:{ len:0.68, muzzle:1, grip:0.1, fit:true } } };   // Z360 fit:true — held by the numbers read off its own model (GUNFIT, actors/gun-fit.js); rpg (on the shoulder), minigun and flamer (at the hip) keep their hand-set GUNHOLD   // Z355 three real guns off Meshy's free (CC0) community gallery, cut to ~10k triangles
 // Z297 HOLDING THE GUN FOR REAL (the special-forces soldier): where each weapon meets the body — butt (in the shoulder pocket), grip (the right hand, trigger
 //   finger on the guard), fore (the left hand) as [share of the length from the middle toward the butt, metres above the middle]; hold = shoulder | top (the RPG
 //   rides ON the shoulder) | hip (minigun, flamethrower); kick = [straight back (m), muzzle climb (rad)] per shot, rate = the recoil spring's stiffness
@@ -923,7 +923,9 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 //   Z356 square = how far his chest stays bladed from the aim (rad, his right shoulder back); pocket [in from the shoulder joint, up, ahead] — the butt high
 //   in the pocket; cheek = the cheek weld: the right eye from the head joint [right, up, ahead] (m), the neck's reach (m), the most bow / tilt (rad), how
 //   much of the gap it closes, where the sight is (share behind the middle) and how far under the gun's top the eye looks through it (m)
-export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
+// Z360 blade = a gun too long for his left arm even with the palm slid back: he turns further side-on to it [the pull (m) it starts at, his shoulders'
+//   width (m: the left shoulder comes forward this much per radian), the ease back (rad/s) once it no longer pulls, the most (rad) on top of square]
+export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, blade:[0.005, 0.35, 0.15, 0.45], cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
   ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.215, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
   minigun:{ palm:-0.14, hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
   sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.4, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
@@ -1004,6 +1006,28 @@ export const SOLDIER_MOUNT = { walkV:1.6, walkMin:0.25, walkMax:3.5, clear:0.7,
 // Z349 THE POSE STUDIO (dev/pose-studio.js, tools/pose-studio.mjs): ok = a palm further than palm cm from the gun's surface, or an arm stretched past
 //   that share of its length, is flagged; settle = seconds to wait after a weapon change / a stance; views = cameras round the soldier relative to where
 //   he aims (side rad: − = his left; dist / up m; on = feet · hips · handL · handR; look = m above that)
+// Z360 THE HOLD READ OFF THE GUN (actors/gun-fit.js; a weapon flagged fit:true in INFGUN.guns): its side profile in 40 slices along its length (x share:
+//   −0.5 the muzzle … +0.5 the butt; y m). Lengths in metres. barrel = the most of a slice's height counted as barrel at the muzzle (a front sight does not
+//   lift the bore); depth = how far under the bore a slice must hang to be part of a grip, a magazine, a foregrip or the stock; front = the length share
+//   ahead of which nothing is looked for (muzzle brakes, flash hiders); split = a hang comes apart where it rises [0] above both deeper sides and is no deeper
+//   than depth + [1] (the magazine from the grip, the grip from the stock); minW = the narrowest a part is (a sling swivel is not one); firm = the pistol
+//   grip starts where it hangs this share of its full depth (its front edge, not the trigger guard); vfgW = the longest a foregrip is; vfgReach = the furthest
+//   a foregrip is ahead of the magazine (further: a bipod); gripAhead = the right hand this far ahead of the grip's front edge; gripDown = down this share
+//   of the grip's depth from the bore; vfgBehind = the left palm this far behind a foregrip; palmAhead = else this far ahead of the magazine; noMag = with
+//   neither, this far ahead of the right hand (a pump's forend); hand = half a palm's width: a soldier whose arm is too short for the palm's spot slides it
+//   back along the handguard, no nearer than this to the magazine; boreUp = the butt's contact this far under the bore (the sight line at one height over his shoulder on every gun; kept inside the butt pad); sight = the length shares the sight
+//   (optic / rear sight: the highest point) is looked for between; loadPort = a gun without a magazine is reloaded this far ahead of the right hand.
+//   recoil (every hand weapon, actors/gun-fit.js gunRecoil): s = ((dmg × frags / dmg₀ × kickK) / (len / ref)²) ^ pow, kept within s[0…1] — the round's push
+//   over the gun's weight (the carbine: dmg₀ 12, ref 0.92 m → 1); per shot the gun kicks back back × s (m), its muzzle climbs climb × s (rad), and it twitches
+//   a random yaw × s aside and roll × s round its bore (rad). carry = Z360 the gun carried across his chest at a sprint (port arms): its grip at [his right,
+//   up, ahead] (m) of his chest, the muzzle turned yaw (rad) across to his left and up (rad, × (ref / len)^½: a long gun lies flatter), rolled (rad);
+//   rate = how quickly he brings it there and back (1/s).
+//   Calibrated on the hand-tuned carbine (palm −0.1, grip [0.215, −0.08], butt −0.01, sight 0.08): the fit gives them back within a centimetre.
+//   ok = the thresholds the studio's report holds every soldier × weapon × stance to: palm = a palm off the gun's surface (cm); stretch = an arm out to this
+//   share of its length; pull = the gun dragged off his shoulder pocket for the left hand to reach it (cm); muzzle = the muzzle point off the model's bore (cm)
+export const GUNFIT = { barrel:0.03, depth:0.115, front:-0.42, split:[0.05, 0.04], minW:0.035, firm:0.7, vfgW:0.065, vfgReach:0.25, gripAhead:0.018, gripDown:0.76,
+  vfgBehind:0.028, palmAhead:0.09, noMag:0.27, hand:0.045, boreUp:0.089, sight:[-0.15, 0.3], loadPort:0.1, recoil:{ dmg:12, ref:0.92, pow:0.8, s:[0.3, 3.5], back:0.02, climb:0.03, yaw:0.012, roll:0.03 },
+  carry:{ at:[0.08, -0.16, 0.3], yaw:0.95, up:0.75, roll:0.55, rate:6 }, ok:{ palm:4, stretch:0.995, pull:3, muzzle:1.5 } };
 export const POSE_STUDIO = { ok:{ palm:4, stretch:0.995 }, settle:{ equip:0.6, stand:1.4, crouch:1.6, prone:2.0, mount:1.2 },
   views:{ stand34:{ side:-0.55, dist:2.5, up:1.35, look:1.05 }, front:{ side:0, dist:2.6, up:1.4, look:1.1 }, left:{ side:-1.57, dist:2.6, up:1.25, look:1.0 }, right:{ side:1.57, dist:2.6, up:1.25, look:1.0 },
     back:{ side:3.0, dist:2.4, up:1.6, look:1.15 }, handsL:{ side:-0.8, dist:0.65, up:0.12, on:'handL', look:-0.02 }, handsR:{ side:1.1, dist:0.8, up:0.18, on:'handR', look:-0.05 },
