@@ -771,7 +771,8 @@ export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:
 //   size, or by his own muzzle flash) every enemy within alertR m knows where he lies for keep s · say = s between his warnings · evade = the chance a round
 //   that would hit him misses: going over in a combat roll, or running (run at full sprint, rising from v[0] to v[1] m/s), say = s between the "NÉ!" tags
 export const STEALTH = { see:[8, 12], crawlV:0.3, night:0.7, alertR:30, keep:{ near:1.6, lit:3, shot:1.5 }, lit:1.15, say:2.5,
-  evade:{ roll:0.7, run:0.15, v:[2, 6.2], say:0.35 } };
+  evade:{ roll:0.7, run:0.15, v:[2, 6.2], say:0.35 },
+  head:{ prone:0.45, crouch:1.15, stand:1.75, mounted:2.2 }, side:0.3, drop:0.3, sightT:0.15 };   // Z380 the top of his head over the ground by stance (m), his shoulders side m either way and drop m lower — the eye must reach one of them past every wall / house / cover; a shooter's look is kept sightT s
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·
@@ -1382,7 +1383,7 @@ export const SCENERY = { on:true, lod:{ mid:[42, 2.6], far:[120, 7], near:30, hy
     tank_water:{ h:9.5, ar:[0.86, 1, 0.77], sink:0, solid:{ disc:0.46 } },
     tank_steel:{ h:11, ar:[0.97, 1, 0.97], sink:0, solid:{ disc:0.48 } },
     rail_tanker:{ w:16, ar:[3.9, 1, 1.09], sink:0, solid:{ box:0.95 } },
-    oil_drum:{ w:0.95, ar:[1.58, 1, 0.99], sink:0, solid:null },
+    oil_drum:{ w:0.95, ar:[1.58, 1, 0.99], sink:0, solid:{ disc:0.5 } },   // Z380 a drum on its side is cover too: rounds stop at it
     power_pole:{ h:11, ar:[0.49, 1, 0.21], sink:0, solid:{ r:0.35 } },
     fence_gate:{ w:5.6, ar:[1.22, 1, 0.1], sink:0, solid:{ box:1 } },
     watchtower:{ h:13, ar:[0.35, 1, 0.35], sink:0, solid:null }, wt_steel:{ one:true, h:16, ar:[0.28, 1, 0.33], sink:0, solid:null }, wt_rust:{ h:15, ar:[0.41, 1, 0.42], sink:0, solid:null },   // Z375 the real guard towers (world/tower-kinds.js mtower / wtower / wrust)

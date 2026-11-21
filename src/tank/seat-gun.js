@@ -53,7 +53,7 @@ export function seatBarrel(root){ const u = root && root.userData; if(!u || !u.r
     if(slim){ for(const k of G.ring) for(let i = 0; i < G.rays; i++){ const a = i / G.rays * Math.PI * 2; pts.push([ax + Math.cos(a) * rw * k, ay + Math.sin(a) * rh * k]); } }
     else for(const fx of G.grid) for(const fy of G.grid) pts.push([ax + fx * rw, ay + fy * rh]);
     for(const [x, y] of pts){ const h = cast(x, y, zMin + G.look, _bk, G.look + G.reach); if(h) back.push(h.z); }
-    const face = back.length >= pts.length * G.hitK ? pick(back) : null, near = face != null ? back[Math.floor((back.length - 1) * G.slidePick)] : null;   // (pick sorts: the slide goes to a nearer hit — no further in than the face needs)
+    const f0 = back.length ? pick(back) : null; let face = back.length >= pts.length * G.hitK ? f0 : null; const near = face != null ? back[Math.floor((back.length - 1) * G.slidePick)] : null;   // (pick sorts: a tube slides to a nearer hit — no further in than the face needs)
     const tb = cast(ax, ay, zMin - G.deep, _fw, G.deep + G.look), tail = tb ? tb.z : zMin - G.deep;   // (the turret's back, on the same line)
     let dz = 0, sleeve = 0, block = null;
     const mat = turM[0].material, put = (geo, name) => { const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; m.name = name; m.userData.real = true; m.userData.keep = true;
@@ -63,9 +63,11 @@ export function seatBarrel(root){ const u = root && root.userData; if(!u || !u.r
       dz = Math.max(0, Math.min(want, room, G.maxShift)); if(dz > 0.004){ bu.z0 -= dz; bu.seatDz = dz; } else dz = 0; }
     const rear = zMin - dz, d = Math.min(sect, G.block.d);
     // what is left: air behind the breech (to the face), air under the back section (down to the turret: a domed turret falls away under a gun laid high)
-    const backGap = face != null ? rear - face : null, below = [];
+    const below = [];
     for(const fx of G.grid) for(const fz of [0.1, 0.5, 0.9]){ const h = cast(ax + fx * rw, y0 + 0.02, rear + fz * d, _dn, G.drop + 0.02); if(h) below.push(h.y); }
-    const floor = below.length >= G.grid.length * 3 * G.floorK ? pick(below) : null, underGap = floor != null ? y0 - floor : null;   // (pick: one of the lower hits — the turret falling away)
+    const floor = below.length >= G.grid.length * 3 * G.floorK ? pick(below) : null;
+    if(face == null && !slim && floor == null && back.length >= pts.length * G.hitBulk && zMin - f0 <= G.bulkReach) face = f0;   // (Z381b nothing under a bulky gun — the Ghost's pod over the hull — yet the face close behind it, met by fewer of the rays over a back wider than it)
+    const underGap = floor != null ? y0 - floor : null, backGap = face != null ? rear - face : null;   // (pick: one of the lower hits — the turret falling away)
     // is its back exposed? just behind its back, seen from either side (at its underside, middle and top) and from above (the turret up to its top,
     //   across its width): the turret there, or air (a gun already in the turret is left be)
     const behind = (y) => [1, -1].some(sx => !!cast(ax + sx * G.side, y, rear - G.peek, sx > 0 ? _lf : _rt, G.side * 2)), over = (x) => { const h = cast(x, y1 + G.side, rear - G.peek, _dn, G.side + (y1 - y0) + G.drop); return !!h && h.y >= y1 - G.peek; },
