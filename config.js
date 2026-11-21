@@ -165,10 +165,12 @@ export const RIDE_HIT = { rock:0.45, knock:['prop_bin','prop_chair','prop_cafe',
 export const RIDE_MASK = { drv_xeom:{ cols:20, rows:12, halfW:0.33, top:0.3, noseW:0.4, dip:0.055, bottom:-0.06, rise:0.14, off:0.03, pleat:0.008,
   ear:{ top:0.285, lobe:0.13, front:0.01, back:-0.075 }, helmet:0.295, loop:0.007, clear:0.012, color:0x8fa88a,
   wear:{ fade:0.18, dust:0.16, sun:0.1, grime:0.45, breath:0.22, specks:10, creases:7 } } };
+// Z358 the driver sits tall: bend = his forward lean to the bars (xe ôm 0.13 rad — a Cub is ridden upright — ba gác 0.2); straight = each link of his spine
+//   laid on the trunk's line (k of the way), the upper back proud of it by chest; sway.max = the most the brakes / throttle throw his trunk (braced, not flung)
 export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model:{ xeom:'drv_xeom', bagac:'drv_xeom' },
-  fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.135, 0.44, 0.113], [-0.135, 0.44, 0.113]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.25, wheelie:true, gearFoot:true },
-    bagac:{ hip:[0, 0.395, 0.19], grip:[[0.175, 0.467, 0.386], [-0.175, 0.467, 0.386]], sweep:0.4, peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.3, gearFoot:true } },
-  grip:0.85, lean:{ body:0.22, head:0.6 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.35, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] },
+  fit:{ xeom:{ hip:[0, 0.4, -0.05], grip:[[0.135, 0.44, 0.113], [-0.135, 0.44, 0.113]], peg:[[0.11, 0.11, 0.08], [-0.11, 0.11, 0.08]], rear:-0.28, bend:0.13, wheelie:true, gearFoot:true },
+    bagac:{ hip:[0, 0.395, 0.19], grip:[[0.175, 0.467, 0.386], [-0.175, 0.467, 0.386]], sweep:0.4, peg:[[0.12, 0.13, 0.32], [-0.12, 0.13, 0.32]], rear:-0.338, bend:0.2, gearFoot:true } },
+  grip:0.85, lean:{ body:0.22, head:0.6 }, straight:{ k:0.9, chest:0.06 }, sway:{ acc:0.02, lat:0.022, heave:0.3, max:0.2, k:50, z:0.38, glance:[3, 5, 0.5, 0.7] },
   // Z303 the repair: squatting on the ride's left side facing it (mount units): hips (height above the ground in m), feet, the hand braced on the frame,
   //   the hand at work on the engine / chain; how far forward he bends, how far he looks down, the hammer's lift and its rate
   fix:{ xeom:{ hip:[0.33, 0, -0.02], foot:[[0.35, 0, 0.08], [0.35, 0, -0.12]], brace:[0.12, 0.33, 0.06], tool:[0.1, 0.17, -0.04] },

@@ -1210,7 +1210,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 }
 // Z349 the pose studio: window.poseStudio measures and photographs how a soldier holds each weapon; tools/pose-studio.mjs runs it headless into report.html
 { const fs=await import('node:fs'); const C=await import('./config.js'), ps=fs.readFileSync('src/dev/pose-studio.js','utf8'), cli=fs.readFileSync('tools/pose-studio.mjs','utf8'), V=C.POSE_STUDIO.views;
-  ok(/dev\/pose-studio\.js/.test(fs.readFileSync('src/hub.js','utf8')) && /export const poseStudio = \{ start, guns, equip, stance, measure, view, resume, suggest \}/.test(ps) && /window\.poseStudio = poseStudio/.test(ps), 'the studio in the page: start, guns, equip, stance, measure, view, resume, suggest');
+  ok(/dev\/pose-studio\.js/.test(fs.readFileSync('src/hub.js','utf8')) && /export const poseStudio = \{ start, guns, equip, stance, measure, view, resume, suggest, aim \}/.test(ps) && /window\.poseStudio = poseStudio/.test(ps), 'the studio in the page: start, guns, equip, stance, measure, view, resume, suggest');
   ok(['stand34','handsL','handsR','left','kneel','prone','mount','mountSide'].every(k=>V[k] && typeof V[k].side==='number') && C.POSE_STUDIO.ok.palm<=5 && /closestPointToPoint/.test(ps), 'named views round the soldier; palms measured to the gun surface itself');
   ok(/report\.html/.test(cli) && /report\.json/.test(cli) && /poseStudio\.measure\(\)/.test(cli) && /--suggest|SUGGEST/.test(cli) && /studio-shots/.test(fs.readFileSync('.gitignore','utf8')), 'the headless run writes pictures, report.json and report.html (kept out of git)');
 }
@@ -1235,6 +1235,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(G.t_ak.snd==='shoot_ak' && G.t_m4.snd==='shoot_m4s' && G.t_mp5.snd==='shoot_mp5' && /ak: +\{ r:.*sample:'rifleE', rate:0\.84/.test(sy) && /m4s: +\{ r:.*crack:0\.04, mech:1500/.test(sy) && /mp5: +\{ r:.*rate:1\.2/.test(sy) && /case 'shoot_ak': return play\('ak'/.test(sy) && /playbackRate\.value=\(D\.rate\|\|1\)/.test(sy), 'three voices: the AK deeper, the M4 a suppressed thup and clack, the MP5 quicker');
   ok(G.t_ak.flashK>1 && G.t_m4.flashK<0.5 && G.t_m4.supp && G.t_ak.kickK>1 && G.t_m4.kickK<1 && /\(g\.flashK \?\? 1\)/.test(sf) && /\(g\.kickK \|\| 1\)/.test(sf) && /rifleFX\(_v\.x, _v\.y, _v\.z, a0, g\.dmg \* n >= 40, g\.supp\)/.test(sf) && /if\(!noSmoke && /.test(R('src/fx/realwar.js')), 'each its own flash and kick; the suppressor swallows the smoke, the brass still flies');
   ok(/function renderHand\(id\)/.test(ga) && /loadGLTF\('inf_'\+k\)/.test(ga) && /GUNS\[id\]\.trooper && INFGUN\.map\[id\]/.test(ga), 'a soldier\'s gun is photographed from the model in his hands'); }
+
+// Z358 the xe ôm driver sits tall: a straight back on the trunk's line (not curled over the bars), an upright Cub lean, braced not flung under the brakes
+{ const fs=await import('node:fs'); const C=await import('./config.js'), dr=fs.readFileSync('src/actors/driver.js','utf8'), R=C.RIDE;
+  ok(/SAT TALL, BACK STRAIGHT/.test(dr) && /\[B\.Spine2, B\.Neck, S2\.chest\]/.test(dr) && R.straight && R.straight.k>0.6 && R.straight.chest>0, 'each link of his spine laid on the trunk line, the upper back a touch proud');
+  ok(R.fit.xeom.bend<=0.15 && R.fit.bagac.bend<=0.22 && R.sway.max<=0.22, 'a Cub ridden upright; the brakes throw him only a little forward');
+}
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

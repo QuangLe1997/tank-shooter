@@ -137,6 +137,11 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   D.pk += ((D.peek ? 1 : 0) - D.pk) * Math.min(1, dt * 12); const hid = 1 - 0.75 * D.pk;
   const bend = R.bend + (D.duck * RIDE.duck.bend + D.storm * DG.bend) * hid - D.pitch * 0.9 + D.ip, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35) + D.il;
   for(const n of ['Spine', 'Spine1', 'Spine2']){ turn(B[n], RIGHT, -bend / 3); turn(B[n], FWD, lean / 3); } turn(B.Spine2, RIGHT, Math.sin(D.t * 1.7) * 0.014);   // (Z300 about his right, + tips him BACK: bending to the bars is −)
+  // Z358 SAT TALL, BACK STRAIGHT: the model's own spine curls him over the bars (a hunched rider) — each link laid on the trunk's line as bent and leant
+  //   above, the upper back a touch proud of it (RIDE.straight): the same lean, carried on a straight back
+  { const S2 = RIDE.straight, hp = B.Hips.getWorldPosition(new THREE.Vector3()), tl = B.Neck.getWorldPosition(new THREE.Vector3()).sub(hp).normalize(), cd = new THREE.Vector3(), td = new THREE.Vector3();
+    for(const [b, c, k] of [[B.Spine, B.Spine1, 0], [B.Spine1, B.Spine2, 0], [B.Spine2, B.Neck, S2.chest]]){ if(!b || !c) continue; c.getWorldPosition(cd).sub(b.getWorldPosition(td)).normalize();
+      td.copy(tl).applyAxisAngle(RIGHT, k); aim(b, c, cd.lerp(td, S2.k).normalize()); } }
   // the head: into the bend, held level against the bank; tucked down and to one side when ducking
   // Z299 and now and then a glance — a mirror, a side street, back at his passenger when slow — unless he is ducking under fire
   // Z304 in a fight (shot at in the last few seconds, or the soldier firing) he is all nerves: quicker, shorter, more frequent looks round

@@ -5,6 +5,7 @@
 //     await poseStudio.stance('crouch')          stand · crouch (kneel) · prone · mount (back on the horse / ride) — and waits for it to settle
 //     poseStudio.measure()                       each palm to the gun's surface (cm), each arm's stretch (share of its length), the flags
 //     await poseStudio.view('handsL')            the camera on a named view (POSE_STUDIO.views), the game paused, rendered at 2× — poseStudio.resume()
+//     poseStudio.aim(bearing)                    aim (and turn the named views) along a bearing — e.g. ahead of his ride
 //     poseStudio.suggest('lmg')                  a gun model's side profile and the GUNHOLD numbers it suggests (butt, grip, palm) — for a new gun
 //   tools/pose-studio.mjs drives it headless: every soldier × weapon × view → PNGs + report.json + report.html (failures in red).
 //   Nothing in the game calls it.
@@ -76,5 +77,7 @@ function suggest(kind){ const R = CV.real, met = R && R.arms._metric && R.arms._
   return { kind:kind || R.armK, len, rows, now:GUNHOLD[kind || R.armK] || null,
     suggest:{ butt:[0.5, bore.length ? +bore[bore.length >> 1].toFixed(3) : 0], grip:grip ? [+(grip.x - 0.03).toFixed(3), +(grip.lo * 0.6).toFixed(3)] : null, palm:guard ? +(guard.x - 0.04).toFixed(3) : null, magazine:mag ? mag.x : null } }; }
 
-export const poseStudio = { start, guns, equip, stance, measure, view, resume, suggest };
+// the bearing he aims along (rad; the views turn with it) — e.g. straight ahead of his ride
+function aim(bearing){ ST.b = bearing; return bearing; }
+export const poseStudio = { start, guns, equip, stance, measure, view, resume, suggest, aim };
 if(typeof window !== 'undefined') window.poseStudio = poseStudio;
