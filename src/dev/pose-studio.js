@@ -12,8 +12,8 @@
 //   tools/pose-studio.mjs drives it headless: every soldier × weapon × view → PNGs + report.json + report.html (failures in red).
 //   Nothing in the game calls it.
 import * as THREE from 'three';
-import { GUNFIT, GUNHOLD, POSE_STUDIO } from '../../config.js';
-import { BIOMES, CV, FIT, GUNKICK, GUNS, PROFILE, S, fitHold, sideProfile, underAt, TROOP_BATCH, WAVE, camera, cavStance, cavToggleMount, composer, doResize, enemies, heightAt, launchGame, renderer, scene, trooperGive } from '../hub.js';
+import { GUNFIT, GUNHOLD, INFGUN, POSE_STUDIO } from '../../config.js';
+import { BIOMES, CV, FIT, GUNKICK, GUNS, PROFILE, S, boreOf, fitHold, sideProfile, underAt, TROOP_BATCH, WAVE, camera, cavStance, cavToggleMount, composer, doResize, enemies, heightAt, launchGame, renderer, scene, trooperGive } from '../hub.js';
 
 const ST = { b:0, aimT:0, quietT:0, dpr:1, was:'playing' }, V3 = () => new THREE.Vector3();
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -60,7 +60,7 @@ function measure(){ const R = CV.real, D = R && R.pup && R.pup.D; if(!D) return 
   //   back along the handguard — the stock then goes into his shoulder), how far the palm slid back (fitted weapons), the muzzle the rounds leave from
   //   against the model's own bore at its tip (cm), and what the hold is (fitted off the model, or hand-set) with the parts found
   const G = GUNFIT.ok; out.pull = cm(R.pull || 0); if(out.pull > G.pull) out.notes.push(`súng bị kéo khỏi vai ${out.pull} cm (tay trái không với tới)`);
-  if(met){ const L = met.userData.len, rows = sideProfile(met, L).filter(r => r.lo != null).slice(0, 2), bore = rows.reduce((s, r) => s + r.lo + Math.min(r.hi - r.lo, GUNFIT.barrel) / 2, 0) / Math.max(1, rows.length);
+  if(met){ const L = met.userData.len, rows = sideProfile(met, L).filter(r => r.lo != null).slice(0, 2), bore = rows.length ? boreOf(rows, (INFGUN.guns[R.armK] || {}).bore) : 0;   // (Z390 the gun's own bore rule)
     out.muzzle = cm(Math.abs((met.userData.muzzle || [0, 0])[1] - bore)); if(out.muzzle > G.muzzle) out.notes.push(`điểm bắn lệch đầu nòng ${out.muzzle} cm`);
     const f = met.userData.fit, K = GUNKICK[R.armK]; if(K){ out.kick = K.kick; out.shake = K.shake; } out.hold = FIT[R.armK] ? 'fit' : 'tay'; if(FIT[R.armK]) out.slide = cm(R.pslide || 0); if(f) out.parts = f.parts;
     out.fitted = f ? { palm:f.palm, slideTo:f.slideTo, grip:f.grip, butt:f.butt, sightX:f.sightX, bore:f.bore } : null; out.set = GUNHOLD[R.armK] || null; }
@@ -76,14 +76,14 @@ const W2 = b => b.getWorldPosition(V3());
 function resume(){ S.dpr = ST.dpr; renderer.setPixelRatio(S.dpr); if(composer.setPixelRatio) composer.setPixelRatio(S.dpr); doResize(true); S.mode = ST.was || 'playing'; document.querySelectorAll('.overlay').forEach(o => { if(o.id !== 'nick') o.style.visibility = ''; }); }
 
 // ---- Z360 the hold read off a gun model (actors/gun-fit.js) beside the hand-set one ----
-function suggest(kind){ const R = CV.real, k = kind || (R && R.armK), met = R && R.arms._metric && R.arms._metric[k]; if(!met) return null; const len = met.userData.len, f = fitHold(sideProfile(met, len), len);
+function suggest(kind){ const R = CV.real, k = kind || (R && R.armK), met = R && R.arms._metric && R.arms._metric[k]; if(!met) return null; const len = met.userData.len, f = fitHold(sideProfile(met, len), len, { bore:(INFGUN.guns[k] || {}).bore, gripAt:(INFGUN.guns[k] || {}).gripAt });
   return { kind:k, len, fit:f && Object.assign({}, f, { rows:undefined }), rows:f && f.rows, now:GUNHOLD[k] || null, held:FIT[k] ? 'fit' : 'tay' }; }
 // ---- Z360 THE FIT SHEET: the gun alone, side on, true size (muzzle left), and over it what the fit read off it — the outline it measured (cyan), the
 //   bore, each part it found (pistol grip orange, magazine blue, foregrip violet, stock grey), the right hand (red), the left palm (green) and how far back
 //   along the handguard it may slide for a short arm (hollow green), the butt's contact (magenta), the sight (yellow); the hand-set GUNHOLD as hollow
 //   marks where the gun is still held by hand. A new gun model is checked against it at a glance, before any soldier holds it
 let _sr = null;
-function sheet(kind){ const R = CV.real, k = kind || (R && R.armK), met = R && R.arms._metric && R.arms._metric[k]; if(!met) return null; const len = met.userData.len, f = fitHold(sideProfile(met, len), len); if(!f) return null;
+function sheet(kind){ const R = CV.real, k = kind || (R && R.armK), met = R && R.arms._metric && R.arms._metric[k]; if(!met) return null; const len = met.userData.len, f = fitHold(sideProfile(met, len), len, { bore:(INFGUN.guns[k] || {}).bore, gripAt:(INFGUN.guns[k] || {}).gripAt }); if(!f) return null;
   const W = 1200, pxm = W / (len * 1.1), top = 0.26, bot = -0.3, H = Math.round((top - bot) * pxm), X = s => (s * len + len * 0.55) * pxm, Y = y => (top - y) * pxm, gap = GUNHOLD.palmGap;
   if(!_sr) _sr = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true }); _sr.setPixelRatio(1); _sr.setSize(W, H, false);
   const sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-len * 0.55, len * 0.55, top, bot, 0.01, 10); cam.position.set(0, 0, 3); cam.lookAt(0, 0, 0);

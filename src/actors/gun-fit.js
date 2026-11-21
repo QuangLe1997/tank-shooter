@@ -39,7 +39,7 @@ export function sideProfile(root, len, N = 40){ const rows = [], step = len / N 
   walk(root, _M()); return rows; }
 // the hold from the profile (o.gun = the gun's GUNS entry, for its recoil). Lengths in GUNFIT are metres: the same hand on a short gun and a long one
 export function fitHold(rows, len, o = {}){ const F = GUNFIT, has = r => r.lo != null, R = rows.filter(has), N = rows.length, S = len / N; if(R.length < 6) return null;
-  const front = R.slice(0, 2), bore = front.reduce((s, r) => s + r.lo + Math.min(r.hi - r.lo, F.barrel) / 2, 0) / front.length, d = rows.map(r => (has(r) ? bore - r.lo : 0));
+  const front = R.slice(0, 2), bore = boreOf(front, o.bore), d = rows.map(r => (has(r) ? bore - r.lo : 0));
   // the parts hanging under the bore: runs of slices deeper than F.depth (behind the muzzle end), each split where it comes back up toward the receiver
   //   between two deeper hangs (F.split: at least [0] shallower than both, and no deeper than depth + [1]); narrower than F.minW is a swivel, not a part
   const max = (a, b) => { let m = 0; for(let i = a; i <= b; i++) m = Math.max(m, d[i]); return m; }, runs = []; let cur = null;
@@ -48,8 +48,13 @@ export function fitHold(rows, len, o = {}){ const F = GUNFIT, has = r => r.lo !=
     return at < 0 ? [[a, b]] : [...split([a, at - 1]), ...split([at + 1, b])]; };
   const parts = runs.flatMap(split).filter(([a, b]) => (b - a + 1) * S >= F.minW).map(([a, b]) => ({ a:rows[a].x, b:rows[b].x, i:a, j:b, d:max(a, b) }));
   // the one that runs out to the butt is the stock; the rearmost other is the PISTOL GRIP (its front edge where it is firm × its full depth)
-  const stock = parts.length > 1 && parts[parts.length - 1].j >= N - 2 ? parts.pop() : null; if(!parts.length) return null;
-  const grip = parts[parts.length - 1], ahead = parts.slice(0, -1); for(let i = grip.i; i <= grip.j; i++) if(d[i] >= grip.d * F.firm){ grip.a = rows[i].x; break; }
+  // Z390 gripAt (INFGUN.guns, share of the length): a pistol grip grown into its stock (a thumbhole stock) — the hang reaching the butt holds it,
+  //   so it is taken where it is said to be and everything in front of it is ahead of it (the magazine)
+  let grip, ahead, stock;
+  if(o.gripAt != null){ const gi = Math.max(0, Math.min(N - 1, Math.floor((o.gripAt + 0.5) * N))); grip = { a:o.gripAt, b:o.gripAt, i:gi, j:gi, d:Math.max(d[gi], F.depth) };
+    ahead = parts.filter(p => p.b < o.gripAt - 1 / N); stock = parts.find(p => p.j >= N - 2) || null; }
+  else { stock = parts.length > 1 && parts[parts.length - 1].j >= N - 2 ? parts.pop() : null; if(!parts.length) return null;
+    grip = parts[parts.length - 1]; ahead = parts.slice(0, -1); for(let i = grip.i; i <= grip.j; i++) if(d[i] >= grip.d * F.firm){ grip.a = rows[i].x; break; } }
   // the MAGAZINE: the nearest hang in front of the grip; a FOREGRIP: the nearest narrow one in front of that, within F.vfgReach of it (further is a bipod)
   const mag = ahead.length ? ahead[ahead.length - 1] : null, vfg = mag ? ahead.slice(0, -1).reverse().find(p => (p.b - p.a) * len <= F.vfgW && (mag.a - p.b) * len <= F.vfgReach) || null : null;
   const gx = grip.a - F.gripAhead / len, gy = bore - F.gripDown * grip.d;
@@ -62,6 +67,9 @@ export function fitHold(rows, len, o = {}){ const F = GUNFIT, has = r => r.lo !=
     mag:magAt.map(r3), bolt:boltAt ? boltAt.map(r3) : null, magDrop:!!mag, magSize:mag ? r3(mag.d) : 0, bore:r3(bore), parts:{ grip:span(grip), mag:span(mag), vfg:span(vfg), stock:span(stock) },
     rows:rows.map(r => (has(r) ? [r3(r.lo), r3(r.hi)] : null)) };
   if(!out.bolt) out.bolt = [out.palm, r3(underAt(out, out.palm) - GUNHOLD.palmGap)]; return out; }
+// Z390 the bore at the muzzle from the profile's first slices: their underside plus half a barrel (never more than a barrel's thickness: a front sight
+//   does not lift it) — or, mode 'mid' (INFGUN.guns bore:'mid'), through the middle of them: a muzzle inside a thick shroud, the rail rifle's
+export function boreOf(front, mode){ return front.reduce((s, r) => s + (mode === 'mid' ? (r.lo + r.hi) / 2 : r.lo + Math.min(r.hi - r.lo, GUNFIT.barrel) / 2), 0) / front.length; }
 // the gun's underside at x (share of its length) off its profile, between slices; never lower than a grip or a magazine would hang (the palm stays on the handguard)
 export function underAt(f, x){ const N = f.rows.length, t = (x + 0.5) * N - 0.5, i = Math.max(0, Math.min(N - 2, Math.floor(t))), u = Math.max(0, Math.min(1, t - i));
   const a = f.rows[i], b = f.rows[i + 1], lo = a && b ? a[0] + (b[0] - a[0]) * u : (a || b || [f.bore - 0.03])[0]; return Math.max(lo, f.bore - GUNFIT.depth); }

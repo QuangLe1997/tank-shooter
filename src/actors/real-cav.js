@@ -33,7 +33,7 @@ function armInfantry(arms, cb, C){ const K = C.carbine.len / 0.954;
     const m2 = gl.scene.clone(true); m2.position.sub(c); const t2 = new THREE.Group(); t2.add(m2); t2.rotation.y = g.muzzle > 0 ? -Math.PI / 2 : Math.PI / 2; const met = new THREE.Group(); met.add(t2); met.scale.setScalar(g.len / L);
     const hold = new THREE.Group(); hold.add(met); hold.visible = false;
     // Z360 its own shape measured: the hold it is held by (fit:true weapons — actors/gun-fit.js), its bore (every weapon: the rounds and the flash leave the real muzzle)
-    const kid = Object.keys(GUNS).find(id => GUNS[id].trooper && INFGUN.map[id] === k), fit = fitHold(sideProfile(hold, g.len), g.len, { gun:kid ? GUNS[kid] : null }); GUNKICK[k] = gunRecoil(kid ? GUNS[kid] : null, g.len);
+    const kid = Object.keys(GUNS).find(id => GUNS[id].trooper && INFGUN.map[id] === k), fit = fitHold(sideProfile(hold, g.len), g.len, { gun:kid ? GUNS[kid] : null, bore:g.bore, gripAt:g.gripAt });   // (Z390 per-gun overrides) GUNKICK[k] = gunRecoil(kid ? GUNS[kid] : null, g.len);
     if(fit && g.fit){ const h = GUNHOLD[k] || {}; FIT[k] = Object.assign(fit, h.hold ? { hold:h.hold, butt:[+(fit.grip[0] + h.butt[0] - h.grip[0]).toFixed(3), h.butt[1]] } : {}, h.back ? { back:true } : {}); } const bore = fit ? fit.bore : 0.02, gx = g.fit && fit ? fit.grip[0] : g.grip;
     hold.userData = { k, len:g.len, muzzle:[-g.len / 2, bore, 0], fit }; m2.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
     if(arms._G) arms._G.add(hold); (arms._metric || (arms._metric = {}))[k] = hold;

@@ -2145,5 +2145,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(G.t_rust.dmg>G.t_ak.dmg && G.t_dmr.pierce>=1 && G.t_dmr.fireCd<G.t_sniper.fireCd && G.t_rail.pierce>G.t_sniper.pierce && G.t_saw.pierce>=2 && G.t_saw.rng<1, 'each its own role: the rust rifle heavier than the AK, the marksman quicker than the 12.7, the rail through a squad, the saw short and through three');
   ok(['shoot_ak','shoot_rifle','shoot_railgun','shoot_shotgun'].every(n=>new RegExp("case '"+n+"'").test(R('src/audio/synth.js'))) && [G.t_rust.snd,G.t_dmr.snd,G.t_rail.snd,G.t_saw.snd].join()==='shoot_ak,shoot_rifle,shoot_railgun,shoot_shotgun', 'each fires a sound the synth already makes'); }
 
+// Z390 two guns the hold fit misread: the rail rifle's muzzle inside a thick shroud (its bore through the middle, bore:'mid'), the marksman rifle's pistol
+//   grip grown into its thumbhole stock (taken where it is, gripAt) — passed by real-cav.js, judged by the same rule in the pose studio
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), gf=R('src/actors/gun-fit.js'), ps=R('src/dev/pose-studio.js');
+  ok(/export function boreOf\(front, mode\)/.test(gf) && /bore = boreOf\(front, o\.bore\)/.test(gf) && /if\(o\.gripAt != null\)\{/.test(gf) && /ahead = parts\.filter\(p => p\.b < o\.gripAt - 1 \/ N\)/.test(gf), 'gun-fit: the bore rule per gun, a grip taken where it is said to be');
+  ok(/\{ gun:kid \? GUNS\[kid\] : null, bore:g\.bore, gripAt:g\.gripAt \}/.test(R('src/actors/real-cav.js')) && /boreOf\(rows, \(INFGUN\.guns\[R\.armK\] \|\| \{\}\)\.bore\)/.test(ps) && (ps.match(/gripAt:\(INFGUN\.guns\[k\] \|\| \{\}\)\.gripAt/g)||[]).length===2, 'the soldier holds by them and the studio judges by them');
+  ok(C.INFGUN.guns.rail.bore==='mid' && C.INFGUN.guns.dmr.gripAt>0.1 && C.INFGUN.guns.dmr.gripAt<0.3 && C.INFGUN.guns.dmr.len>=1.15 && C.INFGUN.guns.rail.len>=1.2, 'the two at their true lengths again, each with its override'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
