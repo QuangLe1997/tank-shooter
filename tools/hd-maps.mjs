@@ -8,6 +8,7 @@
 //   table: tools/hd-maps.json — key: { file: the shipped GLB under assets/models/real, src: the original (a folder under assets/models, searched for a
 //   .glb, or a path; ~ = home), tex: px (default 2048), geo: also its whole shape → hd/<key>.glb (the original welded, simplified only to geo
 //   triangles when geo > 0, meshopt-compressed; its own maps cut to 256 px — the sharp ones are the WebP files) for what the game draws whole up close }
+//   Z397 maps: only those slots (['map']: a big piece whose sharp colour carries the detail, its normal kept at the shipped size — half the GPU memory)
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { createRequire } from 'node:module';
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; }, deps = opt('--deps', null);
 if(!deps){ console.error('--deps <dir> needed (see the header)'); process.exit(1); }
@@ -33,7 +34,7 @@ for(const k of keys.length ? keys : Object.keys(TABLE).filter(k => !k.startsWith
     for(const om of OM){ const ot = om.getBaseColorTexture(); if(!ot) continue; const d = diff(lt, await thumb(Buffer.from(ot.getImage()))); if(!best || d < best.d) best = { om, d }; }
     if(!best || best.d > (S.maxDiff || 0.06)){ line.out.push({ mi, refused:best ? +best.d.toFixed(3) : 'no maps' }); continue; }
     const os2 = slots(best.om);
-    for(const [s, t] of Object.entries(os2)){ if(!t || !ls[s]) continue; const img = sharp(Buffer.from(t.getImage())), meta = await img.metadata(), px = Math.min(tex, meta.width);
+    for(const [s, t] of Object.entries(os2)){ if(!t || !ls[s] || (S.maps && !S.maps.includes(s))) continue; const img = sharp(Buffer.from(t.getImage())), meta = await img.metadata(), px = Math.min(tex, meta.width);
       const shipped = (await sharp(Buffer.from(ls[s].getImage())).metadata()).width; if(px <= shipped) continue;   // (already that sharp)
       const f = path.join(OUT, `${k}.${mi}.${s}.webp`); await img.resize(px, px, { kernel:'lanczos3' }).webp({ quality:s === 'map' ? 86 : 90, smartSubsample:true, effort:5 }).toFile(f);
       line.out.push({ mi, s, px, from:meta.width, shipped, kb:Math.round(fs.statSync(f).size / 1024), d:+best.d.toFixed(3) }); } }

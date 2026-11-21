@@ -2210,5 +2210,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/nearTag\(key, gl\); return gl;/.test(R('src/actors/models.js')) && /render\/near-detail\.js/.test(R('src/hub.js')) && /t\.dispose\(\); t\.source = src; t\.needsUpdate = true;/.test(nd) && /THREE\.Mesh\.prototype\.onBeforeRender = function/.test(nd) && /nohd/.test(nd) && /!MOBILE/.test(nd), 'shipped models are tagged as they load; a swap is a fresh upload on a new Source; desktop only, ?nohd switches it off');
   ok(/attribute float aHide;/.test(rt) && /if\(aHide > 0\.5\) transformed = vec3\(0\.0\);/.test(rt) && /nim\.castShadow = false/.test(rt) && !/\bim\.setMatrixAt\(/.test(rt) && /copyNear\(im, N\)/.test(rt), 'near trees: the shipped tree hidden in its own shader, its matrices (felling, collisions) never written, the copy follows them every frame');
 }
+// Z397 the 27 fort pieces at their originals' full triangles (they shipped at half: 14–20 thousand), the original's 4K colour swapped in up close
+//   (the normal stays the shipped 2K: at 4K it looked no different, at twice the memory)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), T=JSON.parse(R('tools/hd-maps.json')), IX=JSON.parse(R('assets/models/real/hd/index.json')), hm=R('tools/hd-maps.mjs');
+  const tris=f=>{ const B=fs.readFileSync(f), jl=B.readUInt32LE(12), J=JSON.parse(B.toString('utf8',20,20+jl)); return J.meshes.reduce((s,m)=>s+m.primitives.reduce((t,p)=>t+(p.indices!=null ? J.accessors[p.indices].count : J.accessors[p.attributes.POSITION].count)/3,0),0); };
+  const P=['arctic','citadel','desert','foundry','meadow','quarry','ruins','savanna','volcano'].flatMap(st=>['wall','tower','gate'].map(p=>'fort_'+st+'_'+p));
+  ok(P.every(k=>tris('assets/models/real/fort/'+k+'.glb') >= (k.endsWith('gate') ? 35000 : 28000)), 'every fort piece at its original\'s full triangles');
+  ok(P.every(k=>T[k] && T[k].file==='fort/'+k && T[k].tex===4096 && JSON.stringify(T[k].maps)==='["map"]' && JSON.stringify(IX[k])==='["0.map"]'), 'each wears its original\'s colour at 4K up close, its normal left at the shipped 2K');
+  ok(/\(S\.maps && !S\.maps\.includes\(s\)\)\) continue;/.test(hm), 'the hd tool cuts only the slots a table entry names'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
