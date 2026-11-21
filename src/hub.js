@@ -57,6 +57,7 @@ export * from './tank/real-guns.js';   // Z257 real models per player-gun family
 export * from './tank/warkit.js';   // Z228 our tank's war kit (mine plough, sandbags, slat cage, APS, jammer)
 export * from './tank/rig.js';
 export * from './tank/barrels.js';
+export * from './tank/seat-gun.js';   // Z381 a weapon on a real turret slid back into its face, the air left closed by a sleeve
 export * from './tank/shield.js';
 export * from './tank/kit.js';   // Z161 per-tank workshop + crew
 export * from './tank/roofmg.js';   // Z167 roof machine gun

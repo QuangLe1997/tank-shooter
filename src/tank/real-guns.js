@@ -7,7 +7,7 @@
 // siege rocket — tilted tubes), the rotary cannon (its barrels spin) and the two exotic ultimates stay procedural.
 import * as THREE from 'three';
 import { REALGUN } from '../../config.js';
-import { REAL_TANK_FAM, loadGLTF, loadRealTanks } from '../hub.js';
+import { REAL_TANK_FAM, barrelRoot, loadGLTF, loadRealTanks, seatBarrel } from '../hub.js';
 
 const LIVE = new Map(), FAM = {}, _m = new THREE.Matrix4(), _b = new THREE.Box3();
 let _p = null;
@@ -41,4 +41,5 @@ function dressGun(g, f, F){ const u = g.userData; if(u.realGun) return; u.realGu
   const mat = F.mat.clone(); mat.envMapIntensity = REALGUN.env; if(f.tint || f.fromTank) mat.color.setHex(f.tint || REALGUN.tankTint);
   for(const x of xs){ const m = new THREE.Mesh(F.geo, mat); m.scale.set(sx, sy, sl); m.position.set(x - mc.x * sx, pc.y - mc.y * sy, box.max.z - mb.max.z * sl);   // front on the muzzle
     m.castShadow = m.receiveShadow = true; m.userData.real = true; m.userData.sharedGeo = true; m.name = 'real_gun'; g.add(m); }
-  for(const o of list){ if(f.glow && glows(o.material)) continue; o.visible = false; o.userData.realHidden = true; } }
+  for(const o of list){ if(f.glow && glows(o.material)) continue; o.visible = false; o.userData.realHidden = true; }
+  const root = barrelRoot(g); if(root) seatBarrel(root); }   // Z381 the real model came late: seat it again (its breech may differ from the procedural one's)

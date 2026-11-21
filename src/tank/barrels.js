@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BARREL_SCALE, GUN_PRICE } from '../../config.js';
-import { GUNS, S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol, realGun } from '../hub.js';
+import { GUNS, S, TRUNNION_Z, bakeGroup, grimeMat, gunLevel, gunModTotal, panelNrm, panelTex, realCol, realGun, seatBarrel } from '../hub.js';
 
 // ----- per-gun barrel assemblies (real-world analogues): authored in TURRET space, hung off the gun pivot so they elevate + recoil -----
 // returns a Group with userData { muzzle, spin, recoilLen, elevates, mount } — `mount` = static hardware bolted to the turret (doesn't recoil)
@@ -248,6 +248,7 @@ export function mountBarrel(mesh, id){ const ud=mesh.userData;
   const ng=makeGunBarrel(id), K=BARREL_SCALE; ng.scale.set(K.r, K.r, K.len); ng.userData.z0=-TRUNNION_Z*K.len; ng.position.set(0,-0.02,ng.userData.z0); ud.gunPivot.add(ng); ud.barrelG=ng;   // Z235 a heavier, grander gun: thicker and longer, pivoting on the same trunnion
   if(ng.userData.mount){ ng.userData.mount.position.y += ud.mountY||0; ud.turret.add(ng.userData.mount); ud.gunMount=ng.userData.mount; }   // Z157 per-model turrets start at their base: lift the gun's roof hardware onto the roof
   ud.rig.recoilLen=ng.userData.recoilLen*K.len*K.slide; ud.rig.elevates=ng.userData.elevates; ud.rig.recoil=0;
+  ud.gunId=id; seatBarrel(mesh);   // Z381 on a real turret: into its face, no air round the breech (tank/seat-gun.js)
   return ng; }
 export function setPlayerBarrel(id){ if(S.player && S.player.cav) return;   // Z245 the general carries his own rifle — no turret to mount a barrel on
  

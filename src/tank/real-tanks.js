@@ -1,7 +1,7 @@
 // tank/real-tanks.js — Z256 REAL TANKS: one Meshy-generated vehicle per family (western MBT, T-90-type, Merkava, Armata, IFV, SPG, UGV) dressed onto every procedural vehicle of that family. The model comes in separate parts (Smart Topology t2): they are sorted by shape — the gun (thin pieces chained along the centre line; its far end tells which way the model faces), the turret (the broadest part above the deck and everything standing on or built against it), the running gear (low parts along the sides, dropped: the procedural tracks and wheels stay, they animate), the hull (the rest). One transform keeps the model's own proportions and layout: the hull spans the procedural tracks, the turret and gun are slid level onto the game's turret pivot, the gun pivot and the muzzle points move to the real gun — so the suspension, the turret's traverse, the gun's elevation and recoil, the paint per side / battlefield, the hit flash and any barrel mounted later all keep working. Tanks built before the files load are tracked and dressed (in their rest pose) when they arrive; until then, or on failure, the procedural vehicle stays.
 import * as THREE from 'three';
 import { REALTANK } from '../../config.js';
-import { loadGLTF } from '../hub.js';
+import { loadGLTF, seatBarrel } from '../hub.js';
 
 const LIVE = new Map(), FAM = {}, _m = new THREE.Matrix4(), _b = new THREE.Box3(), _v = new THREE.Vector3();
 let _p = null;
@@ -99,5 +99,6 @@ function dress(g, F){ const u = g.userData; if(u.realDressed || !u.body || !u.tu
       const mz = new Set([u.muzzle].concat(u.mounts && u.mounts.main || [])); for(const o of mz){ if(!o || !isUnder(o, bg)) continue; o.updateMatrixWorld(true);
         const p = toTank(g, o, new THREE.Vector3()); p.y = tip.y; p.z = tip.z + 0.05; o.position.copy(fromTank(g, o.parent, p)); } }
     u.paint = [[mat, base.getHex()]]; u._small = null; }
-  tur.rotation.copy(pose[0]); if(gp) gp.rotation.copy(pose[1]); body.rotation.copy(pose[2]); g.updateMatrixWorld(true); }
+  tur.rotation.copy(pose[0]); if(gp) gp.rotation.copy(pose[1]); body.rotation.copy(pose[2]); g.updateMatrixWorld(true);
+  if(u.gunId) seatBarrel(g); }   // Z381 a weapon mounted before the real turret came: seated in it now (tank/seat-gun.js)
 const isUnder = (o, p) => { for(let q = o; q; q = q.parent) if(q === p) return true; return false; };
