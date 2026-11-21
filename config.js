@@ -834,7 +834,11 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
 //   length (m), pistol-grip point (model units, +X to the stock), how far past the wrist bone the palm closes on it (m), bore height (model units);
 //   stretch = [×, min length]: a triangle the pose made that many times longer than at rest (and longer than that, rig units) is dropped as a sliver; anchor = offsets (rig units) from the
 //   right / left upper-arm and upper-spine bones to where an RPG, a slung AT tube and the pack-borne kit sit
-export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
+// Z344 toeOut = each foot turned out (rad) when the legs are straightened for the cut; kneel = [kg the kneecap below the knee joint (rig m), front = the
+//   left thigh's lift (rad, ~level), rear = the right thigh back from upright, shin = the right shin back from straight down (~along the ground)];
+//   skin = the real kit drawn as one GPU-skinned body a side (actors/troop-skin.js) instead of nine rigid pieces a man; stride = the walk's thigh swing [walking, + running] (rad) and how far
+//   the hips may dip at the widest of a stride (rig m: upright / in the combat crouch)
+export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.004, toeOut:0.12, kneel:{ kg:0.05, front:1.42, rear:0.12, shin:1.62 }, skin:true, stride:{ amp:[0.52, 0.18], drop:0.05, low:0.14 }, team:{ f:[0.9, 1.0, 0.86], e:[1.08, 0.93, 0.84] }, anchor:{ shoulderR:[0, 0.1, 0.06], shoulderL:[0, 0.09, -0.04], back:[0, -0.02, -0.24] }, gun:{ len:0.84, grip:[0.205, -0.07, 0], palm:0.07, boreY:0.045 } };
 // Z295 the infantry arsenal (actors/real-cav.js; Tripo P2): which hand weapon the soldier carries for each of the game's guns, and each weapon's true length (m),
 //   which end is the muzzle in the model (+z / −z), how far behind its middle the pistol grip sits (share of the length), lift = raised (m: the RPG rides the shoulder)
 //   Z329 the soldier's own guns (data/guns.js t_*) map onto them too: each weapon he picks up is the one in his hands
@@ -847,12 +851,16 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 //   rides ON the shoulder) | hip (minigun, flamethrower); kick = [straight back (m), muzzle climb (rad)] per shot, rate = the recoil spring's stiffness
 // Z298 reload: done only when it lasts long enough to be seen (min s — a quick-reload bonus skips it); the gun lowered (low rad), turned in (turn), canted (cant);
 //   mag = where the magazine goes in (the RPG: its muzzle, the round goes in the front), bolt = the charging handle
-export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.02, -0.05, 0.03], reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
-  ar:{ butt:[0.5, -0.01], grip:[0.15, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
-  minigun:{ hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
-  sniper:{ butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
-  gl:{ butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
-  energy:{ butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
+// Z345 palm = where along the weapon (share of its length from the middle, + toward the butt) the support palm takes the handguard from below — its height
+//   found from the model (actors/real-cav.js palmSpot: rays cast up from below at the spot ± palmRays [along, across] m, the middle of what they meet), the palm's
+//   middle palmGap m under it; reach = the share of the left arm's full length it may stretch to before the gun is brought across to the hand;
+//   cup = the support hand's way under it [across to the far side, up, ahead] (the fingers then curl up round it, curl = the last)
+export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.02, -0.05, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.85, 0.2, 0.3, 0.95], reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
+  ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.15, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
+  minigun:{ hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
+  sniper:{ palm:-0.055, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
+  gl:{ palm:-0.24, butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ palm:-0.12, hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
+  energy:{ palm:-0.14, butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
 // Z339 THE SOLDIER'S OWN LEGS (actors/soldier-legs.js; m, s, rad, m/s): his speed smoothed (/s), the legs eased in / out (/s), moving above moveV;
 //   the pelvis turns toward a sideways move above turnV (all of it by turnFull m/s, at turnRate rad/s, the forward / backward branch kept hyst past
 //   the side); toes out; a foot more than urgent × a stride behind steps at once (the other's swing overlap done); the pelvis down at most maxDrop; a crossing step allowed once the feet are crossF apart fore / aft, swung crossArc round the other; stood still a foot steps back under him once it is yawStep off his heading or idle m off its place (idleT s a step, idleGap

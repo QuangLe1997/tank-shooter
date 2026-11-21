@@ -226,6 +226,7 @@ export * from './actors/soldier-mount.js';   // Z342 getting on and off the hors
 export * from './actors/soldier-upper.js';   // Z343 the soldier's shoulders, trunk, head and rifle in time with his legs
 export * from './actors/real-cav.js';
 export * from './actors/real-troops.js';
+export * from './actors/troop-skin.js';   // Z344 the infantry skinned on the GPU: one body a side, each man's joints in a float texture
 export * from './actors/ragdoll.js';   // Z254 a real fall for men shot down   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate
 export * from './game/cavalry.js';   // Z245 cavalry mode
 export * from './world/sidepaint.js';   // Z179 battlefield-aware paint for both sides (runtime only)

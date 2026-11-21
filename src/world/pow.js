@@ -3,7 +3,7 @@
 //   is taken, pick up a rifle and follow you into the fight.
 import * as THREE from 'three';
 import { POW, TROOPS } from '../../config.js';
-import { FT, MOBILE, RIDER, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, riders, scene, sfx, spawnAlly, spawnGuards, spawnRider, svgBadgeTex, tip, updateCrewBtn, zonesOf, MODE } from '../hub.js';
+import { FT, MOBILE, RIDER, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, riders, scene, sfx, soldierKneel, spawnAlly, spawnGuards, spawnRider, svgBadgeTex, tip, updateCrewBtn, zonesOf, MODE } from '../hub.js';
 
 export const POWS=[];
 let _wireMat=null;
@@ -28,8 +28,7 @@ function buildStockade(q){ const g=new THREE.Group(); scene.add(g); const R=q.r*
   const badge=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#ffcf5a'), transparent:true, depthWrite:false })); badge.scale.set(2.4,2.4,1); badge.position.set(q.x, gy+5.4, q.z); badge.userData.live=true; g.add(badge);
   const gate=rot(0, R+1.5);
   return { g, men, badge, gate, gateA }; }
-function kneel(s, on){ const u=s.userData, L=u.legs; if(on){ u.up.position.y=0.5; L[0].hip.rotation.x=-1.35; L[0].knee.rotation.x=1.35; L[1].hip.rotation.x=0.25; L[1].knee.rotation.x=1.7; u.up.rotation.x=0.25; }
-  else { u.up.position.y=0.74; u.up.rotation.x=0; for(const l of L){ l.hip.rotation.x=0; l.knee.rotation.x=0; } } }
+function kneel(s, on){ soldierKneel(s, on); }   // Z344 down on one knee the way his legs allow (actors/soldiers.js)
 export function buildPOWs(){ clearPOWs();
   for(const q of zonesOf('pow')){ const s=buildStockade(q), G=MOBILE?POW.guardsMobile:POW.guards, n=G[0]+((Math.random()*(G[1]-G[0]+1))|0);
     spawnGuards(q, n, S.stage>=3?1:0);

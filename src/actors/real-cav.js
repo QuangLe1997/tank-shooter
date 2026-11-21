@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN } from '../../config.js';
-import { PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand } from '../hub.js';
+import { LEGKIT, PROFILE, S, curlHand, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -49,6 +49,16 @@ function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? 
 //   brings it home, and his shoulders take the push.
 const _gp = new THREE.Vector3(), _gq = new THREE.Quaternion(), _gx = new THREE.Vector3(), _gy = new THREE.Vector3(), _gz = new THREE.Vector3(), _gr = new THREE.Vector3(), _gu = new THREE.Vector3(), _gf = new THREE.Vector3(), _gt = new THREE.Vector3(), _gm = new THREE.Matrix4(), _gw = new THREE.Vector3();
 function gunPoint(out, pts, len, o, q){ return out.set(pts[0] * len, pts[1], 0).applyQuaternion(q).add(o); }
+// Z345 where the support palm goes on this weapon: at its `palm` share of the length, just under the handguard's real underside — found once from
+//   the model's own surface (rays cast up at the gun from below, round that spot in the bore's plane; the middle of what they meet), so the palm
+//   meets the gun, not the air under it
+const _ray = new THREE.Raycaster();
+function palmSpot(met, g, len){ const U = met.userData; if(U.palm && U.palmFor === g) return U.palm; met.updateWorldMatrix(true, true);
+  const M = met.matrixWorld, inv = new THREE.Matrix4().copy(M).invert(), up = new THREE.Vector3(0, 1, 0).transformDirection(M), o = new THREE.Vector3(), ys = [];
+  for(const dx of GUNHOLD.palmRays[0]) for(const dz of GUNHOLD.palmRays[1]){ _ray.set(o.set(g.palm * len + dx, -0.6, dz).applyMatrix4(M), up); _ray.far = 1.2; const h = _ray.intersectObject(met, true)[0]; if(h) ys.push(h.point.applyMatrix4(inv).y); }
+  ys.sort((a, b) => a - b); U.palmFor = g; return (U.palm = ys.length ? [g.palm, ys[ys.length >> 1] - GUNHOLD.palmGap] : null); }
+const palmOf = (D, s, out) => { D[s + 'Hand'].getWorldPosition(out); const m = D[s + 'HandMiddle1']; if(m) out.lerp(m.getWorldPosition(_pk), 0.55); return out; }, _pk = new THREE.Vector3(), _pd = new THREE.Vector3(), _pa = new THREE.Vector3();
+const armLen = (D, s) => D[s + 'Arm'].getWorldPosition(_pk).distanceTo(D[s + 'ForeArm'].getWorldPosition(_pd)) + _pd.distanceTo(D[s + 'Hand'].getWorldPosition(_pa));
 function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.armK]; if(!met || !met.visible) return false; const H = GUNHOLD, g = H[R.armK] || H.ar, D = R.pup.D, p = S.player, len = met.userData.len;
   // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
   const rc = R.rc || (R.rc = { z:0, zv:0, a:0, av:0, last:0 }); if(p && p.fireAt > rc.last + 1e-4){ if(rc.last) { rc.zv += g.kick[0] * H.k * 0.12; rc.av += g.kick[1] * H.k * 0.12; } rc.last = p.fireAt; }
@@ -90,6 +100,12 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // hands onto it: the wrist just behind / above each contact, so the grip sits in the palm; elbows down (the right one out)
   const grip = gunPoint(new THREE.Vector3(), g.grip, len, _gp, _gq), fore = gunPoint(new THREE.Vector3(), g.fore, len, _gp, _gq);
   const wr = grip.clone().addScaledVector(_gy, 0.045).addScaledVector(_gx, 0.035); let wl = fore.clone().addScaledVector(_gy, -0.035).addScaledVector(_gx, 0.02).addScaledVector(_gz, g.hold === 'hip' ? 0 : 0.02), lc = 0.8;
+  // Z345 THE SUPPORT HAND ON THE GUN: its palm on the handguard's underside at this weapon's own spot (palmSpot) — and out of the left arm's reach
+  //   (turned right round to his right in the saddle), the gun is brought across toward it rather than the hand stopping in the air short of it
+  const PL = rk < 0 && g.palm != null ? palmSpot(met, g, len) : null, palmP = PL ? gunPoint(new THREE.Vector3(), PL, len, _gp, _gq) : null; if(palmP) wl.add(_pd.subVectors(palmP, fore));
+  { D.LeftArm.getWorldPosition(_pa); const reach = armLen(D, 'Left') * H.reach, d = _pa.distanceTo(wl);
+    if(d > reach){ _pd.subVectors(_pa, wl).setLength(d - reach); for(const v of [wr, wl, grip, fore]) v.add(_pd); if(palmP) palmP.add(_pd); _gp.add(_pd);
+      _gm.compose(_gp, _gq, _pk.set(1, 1, 1)); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true); } }
   if(rk >= 0){ // the left hand's round: the mag out (it drops), a fresh one from the chest pouch (the RPG: a round from over the shoulder), in, the bolt racked, back to the handguard
     const mag = gunPoint(new THREE.Vector3(), g.mag || H.mag, len, _gp, _gq).addScaledVector(_gy, -0.04), bolt = gunPoint(new THREE.Vector3(), g.bolt || H.bolt, len, _gp, _gq).addScaledVector(_gy, 0.03);
     D.Spine2.getWorldPosition(_gt); const pouch = g.back ? _gt.clone().addScaledVector(_gu, 0.22).addScaledVector(_gf, -0.22).addScaledVector(_gr, -0.12) : _gt.clone().addScaledVector(_gf, 0.2).addScaledVector(_gr, -0.06).addScaledVector(_gu, -0.16);
@@ -98,9 +114,14 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
     lc = 0.55; if(!g.back && R.rlDrop !== inst.rU && rk >= RL.drop){ R.rlDrop = inst.rU; spawnPart(mag.x, mag.y - 0.05, mag.z, (Math.random() - 0.5) * 0.6, -0.4, (Math.random() - 0.5) * 0.6, { color:0x1e1f1c, size:0.16, life:1.1, grav:-14, drag:0.4 }); sfx('click'); }
     D.Neck && turnBone(D.Neck, _gr, -0.32 * low); }   // and he looks down at it (about his right: negative is down)
   sh.getWorldPosition(_gt); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, _gt.clone().addScaledVector(_gu, -0.45).addScaledVector(_gr, 0.3).addScaledVector(_gf, -0.1));
-  D.LeftArm.getWorldPosition(_gt); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15));
+  D.LeftArm.getWorldPosition(_gt); const poleL = _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, poleL);
   rollHand(D, 'Right', _gt.copy(_gy).negate()); if(rk < 0) rollHand(D, 'Left', _gx);   // Z304 knuckles down the pistol grip; the support hand's along the handguard
-  curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : fore.clone().addScaledVector(_gy, 0.02));
+  // Z345 the support hand cupped under the handguard: palm up, the fingers across it to its far side (to curl up round it), index ahead — not
+  //   carried on from the forearm with the fingers hanging under the gun; then the palm itself onto its spot (twice: the hand's own length taken up)
+  const cup = palmP && D.LeftHandMiddle1 ? _pk.copy(_gz).multiplyScalar(-H.cup[0]).addScaledVector(_gy, H.cup[1]).addScaledVector(_gx, -H.cup[2]).normalize().clone() : null;
+  if(palmP) for(let it = 0; it < 2; it++){ if(cup){ LEGKIT.aim(D.LeftHand, D.LeftHandMiddle1, cup); rollHand(D, 'Left', _gx); } wl.add(_pd.subVectors(palmP, palmOf(D, 'Left', _pa))); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, poleL); rollHand(D, 'Left', _gx); }
+  if(cup){ LEGKIT.aim(D.LeftHand, D.LeftHandMiddle1, cup); rollHand(D, 'Left', _gx); lc = H.cup[3]; }
+  curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : palmP ? palmP.clone().addScaledVector(_gy, 0.06) : fore.clone().addScaledVector(_gy, 0.02));   // (Z345 the fingers curl up round the handguard over the palm)
   // Z299 the head leads: the eyes are on the target before the shoulders get there, up / down to it, and held level when the ride banks and pitches
   const lead = clamp(dyw - hy - (R.tw || 0), -0.65, 0.65) * (1 - low);   // (_gu is still his up)
   turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55);

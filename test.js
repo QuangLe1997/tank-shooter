@@ -1164,6 +1164,24 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(generalBail\(pos, bdef, n=>bossStageWon\(n, bdef\)\)\) return;/.test(R('src/campaign/boss.js')) && /export function bossStageWon/.test(R('src/campaign/boss.js')) && /if\(e\.hitCap\) dmg=Math\.min\(dmg, e\.hitCap\)/.test(R('src/actors/damage.js')), 'the general jumps out of his burning machine, the duel decides the stage, no hit takes more than a slice');
   ok(T.general.fan.tel>=0.5 && T.general.nade.lock>=1 && T.general.callAt>T.general.rageAt && /makeArtLock/.test(gd) && /floatText\('!'/.test(gd), 'his fan of rounds and his grenades are both warned; guards at half health, rage at a third'); }
 
+// Z344 the batched infantry cut at its own joints and skinned on the GPU: legs straightened for the cut, pivots where the model's bones are, a kneel that fits the legs, feet planted
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), rt=R('src/actors/real-troops.js'), so=R('src/actors/soldiers.js'), sk=R('src/actors/troop-skin.js'), T=C.REALTROOP;
+  ok(/actors\/troop-skin\.js/.test(R('src/hub.js')) && ['export function troopSkinMesh','export function troopSkinWrite','gl_InstanceID','customDepthMaterial'].every(k=>sk.includes(k)), 'one skinned body a side, its joints read from a float texture, in the shadow pass too');
+  ok(/aimB\(sd \+ 'UpLeg', sd \+ 'Leg', DN\)/.test(rt) && /const RJ = \{ hipL:at\('LeftUpLeg'\)/.test(rt) && /o = RJ\[k\]/.test(rt) && /function realPivots/.test(rt) && /joints:RJ, legs, skin/.test(rt), 'legs straightened before the cut; every piece cut and turned about the joint it has in the model');
+  ok(/makeSoldierMesh\(\{ enemy:false, own:true \}\)/.test(R('src/actors/general.js')) && /soldierKneel\(s, on\)/.test(R('src/world/pow.js')), 'the general keeps his blocky joints; the prisoners kneel through the same legs');
+  { const L={ th:0.336, sh:0.424 }, K=T.kneel, H=L.th*Math.cos(K.rear)+K.kg, fa=K.front, b=Math.acos(Math.min(1,(H-L.th*Math.cos(fa))/L.sh)), front=L.th*Math.cos(-fa)+L.sh*Math.cos(b), rear=L.th*Math.cos(K.rear)+K.kg;
+    ok(Math.abs(front-H)<0.005 && Math.abs(rear-H)<0.005 && b>0 && b<0.9 && H<0.5, 'kneeling: the right knee down, the left sole flat, the hips brought down onto them'); }
+  ok(!so.includes('0.5*P.kw') && /u\.up\.position\.y = u\.base\.upY/.test(so) && /legReach\(u\)/.test(so) && T.stride.amp[0]<=0.6 && T.stride.drop<=0.06, 'the torso stays on the hips; the hips come down onto the legs, a foot on the ground');
+  ok(T.skin===true && /tbKinds=K=>K\.skin \? \['body','gun'\]/.test(so), 'the real kit drawn as the skinned body and its rifle');
+}
+// Z345 the support hand on every weapon: the palm on the handguard's own underside (found from the model), cupped, the fingers curled up round it; out of reach, the gun comes across
+{ const fs=await import('node:fs'); const C=await import('./config.js'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), G=C.GUNHOLD;
+  ok(['ar','lmg','shotgun','sniper','rpg','gl','flamer','energy'].every(k=>typeof G[k].palm==='number' && G[k].palm>-0.3 && G[k].palm<0.05) && G.minigun.palm===undefined, 'each long gun has its support spot ahead of the magazine (the minigun keeps its top handle)');
+  ok(/function palmSpot\(met, g, len\)/.test(rc) && /_ray\.intersectObject\(met, true\)/.test(rc) && G.palmGap>0 && G.palmGap<0.03, 'the spot found on the surface of the model, the palm just under it');
+  ok(/for\(let it = 0; it < 2; it\+\+\)\{ if\(cup\)/.test(rc) && /LEGKIT\.aim\(D\.LeftHand, D\.LeftHandMiddle1, cup\)/.test(rc) && /palmP \? palmP\.clone\(\)\.addScaledVector\(_gy, 0\.06\)/.test(rc), 'the palm itself put on the spot, the hand cupped under, the fingers curled up round it');
+  ok(/if\(d > reach\)\{ _pd\.subVectors\(_pa, wl\)\.setLength\(d - reach\)/.test(rc) && G.reach>0.9 && G.reach<1, 'beyond the reach of the left arm (turned right round) the gun is brought across to the hand');
+}
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

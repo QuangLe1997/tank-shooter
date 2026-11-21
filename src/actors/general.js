@@ -22,7 +22,7 @@ const V3=(a)=>new THREE.Vector3(a[0], a[1], a[2]);
 const GOFF=new THREE.Vector3(0.06, 0.06, 0.17);
 
 export function buildGeneral(){
-  const g=makeSoldierMesh({ enemy:false }), u=g.userData, M=gmats();
+  const g=makeSoldierMesh({ enemy:false, own:true }), u=g.userData, M=gmats();
   u.parts=[];                                                                    // nothing of him is drawn by the troop batch — he is his own mesh
   u.body.scale.set(1.02, 1.02, 1.02); u.tint=new THREE.Color(1, 1, 1);          // a tall, heavy man
   g.updateMatrixWorld(true);                                                     // rest pose: the frame every section below is built in
