@@ -110,5 +110,9 @@
   "wonder_colosseum": {"file":"wonder/wonder_colosseum", "src":"tripo/wonder_colosseum", "tex":4096, "maps":["map"]},
   "wonder_djenne": {"file":"wonder/wonder_djenne", "src":"tripo/wonder_djenne", "tex":4096, "maps":["map"]},
   "wonder_taj": {"file":"wonder/wonder_taj", "src":"tripo/wonder_taj", "tex":4096, "maps":["map"]},
-  "wonder_volklingen": {"file":"wonder/wonder_volklingen", "src":"tripo/wonder_volklingen", "tex":4096, "maps":["map"]}
+  "wonder_volklingen": {"file":"wonder/wonder_volklingen", "src":"tripo/wonder_volklingen", "tex":4096, "maps":["map"]},
+  "ride_xeom": {"file":"ride/xeom", "src":"tripo/hb_xeom", "geo":0},
+  "ride_bagac": {"file":"ride/bagac", "src":"tripo/hb_bagac", "geo":0},
+  "ride_bantai": {"file":"ride/bantai", "src":"tripo/hero_bantai", "geo":0},
+  "drv_xeom": {"file":"driver/xeom", "src":"tripo/hd_xeom_anim", "geo":0}
 }

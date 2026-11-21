@@ -38,7 +38,9 @@ for(const k of keys.length ? keys : Object.keys(TABLE).filter(k => !k.startsWith
       const shipped = (await sharp(Buffer.from(ls[s].getImage())).metadata()).width; if(px <= shipped) continue;   // (already that sharp)
       const f = path.join(OUT, `${k}.${mi}.${s}.webp`); await img.resize(px, px, { kernel:'lanczos3' }).webp({ quality:s === 'map' ? 86 : 90, smartSubsample:true, effort:5 }).toFile(f);
       line.out.push({ mi, s, px, from:meta.width, shipped, kb:Math.round(fs.statSync(f).size / 1024), d:+best.d.toFixed(3) }); } }
-  if(S.geo != null){ const doc = await io.read(src), n0 = tris(doc); await doc.transform(F.prune(), F.dedup(), F.weld());   // the whole shape, for up close
+  if(S.geo != null && line.out.some(o => o.refused != null)) line.geo = 'refused: the original is not the shipped model (its atlas differs)';   // (Z395c the swapped shape wears the shipped maps)
+  else if(S.geo != null){ const doc = await io.read(src), n0 = tris(doc); for(const a of doc.getRoot().listAnimations()) a.dispose();   // (the shape only: the shipped file keeps the clips)
+    await doc.transform(F.prune(), F.dedup(), F.weld());   // the whole shape, for up close
     if(S.geo > 0 && tris(doc) > S.geo) await doc.transform(F.simplify({ simplifier:MeshoptSimplifier, ratio:S.geo / tris(doc), error:0.01 }));
     await doc.transform(F.textureCompress({ encoder:sharp, targetFormat:'jpeg', resize:[256, 256], quality:80 }), F.prune());
     if(!doc.getRoot().listSkins().length){ doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method:EXTMeshoptCompression.EncoderMethod.QUANTIZE });

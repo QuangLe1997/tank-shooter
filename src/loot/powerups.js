@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, GIFT, LOOT, GUN_MODS, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex } from '../hub.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex , asShipped, nearShape } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -87,7 +87,8 @@ export function lootGeos(){ if(_lootGeo) return _lootGeo; const B=(w,h,d,x,y,z)=
 export function lootMat(k, col, emi){ return _LM[k]||(_LM[k]=new THREE.MeshStandardMaterial({ color:col, roughness:0.55, metalness:k==='steel'||k==='gem'?0.8:0.25, emissive:emi||0x000000, emissiveIntensity:emi?0.8:0 })); }
 // Z370 a weapon on the ground: its own model (the soldier's hand weapon), true size, lying on its side
 const _gb=new THREE.Box3();
-function realGun(g, id){ const k=INFGUN.map[id], L=INFGUN.guns[k].len*HUMAN_SCALE; loadGLTF('inf_'+k).then(gl=>{ if(!gl) return; const m=gl.scene.clone(true), w=new THREE.Group(); w.add(m);
+function realGun(g, id){ const k=INFGUN.map[id], L=INFGUN.guns[k].len*HUMAN_SCALE; loadGLTF('inf_'+k).then(gl=>{ if(!gl) return; const m=gl.scene.clone(true), w=new THREE.Group(); w.add(m); m.traverse(o=>{ if(o.isMesh) nearShape(o, 'inf_'+k, asShipped('inf_'+k)); });   // (Z395 whole up close)
+   
     _gb.setFromObject(m); const c=_gb.getCenter(new THREE.Vector3()); m.position.sub(c); w.scale.setScalar(L/Math.max(1e-3, _gb.max.z-_gb.min.z)); w.rotation.z=Math.PI/2;
     m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } }); w.updateMatrixWorld(true); _gb.setFromObject(w); w.position.y=-_gb.min.y; g.add(w); }); }
 // Z370 a medal on the ground: the gold star on its disc and the ribbon, lying flat

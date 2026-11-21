@@ -5,17 +5,18 @@
 // and being thrown off all work as they do on horseback.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { RIDE, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart } from '../hub.js';
+import { NEARDETAIL, RIDE, XEOM } from '../../config.js';
+import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter assembled from the city's parts stays as the fallback
 const HERO = {};
-function heroGeo(gl, kind){ if(HERO[kind]) return HERO[kind]; const X = XEOM[kind], geos = [], mats = []; gl.scene.updateMatrixWorld(true);
+function heroGeo(gl, kind, hd){ const id = hd ? kind + ':hd' : kind; if(HERO[id]) return HERO[id];   // (hd: the whole original, Z395 — cut the same way)
+  const X = XEOM[kind], geos = [], mats = []; gl.scene.updateMatrixWorld(true);
   gl.scene.traverse(o => { if(o.isMesh){ const g = o.geometry.clone().applyMatrix4(o.matrixWorld); for(const k of Object.keys(g.attributes)) if(!['position','normal','uv'].includes(k)) g.deleteAttribute(k); geos.push(g); const m = o.material.clone(); m.envMapIntensity = 0.8; mats.push(m); } });
   const g = geos.length === 1 ? geos[0] : mergeGeometries(geos, true); if(X.yaw) g.rotateY(X.yaw); g.computeBoundingBox(); const b = g.boundingBox, sz = b.getSize(new THREE.Vector3());
   g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); const s = X.len / XEOM.k / sz.z; g.scale(s, s, s); if(X.wheels) cutWheels(g, X.wheels); const bar = X.steer ? splitBar(g, X.steer) : null; g.computeBoundingBox(); g.computeBoundingSphere();
-  return (HERO[kind] = { geo:g, bar, mats:mats.length === 1 ? mats[0] : mats }); }
+  return (HERO[id] = { geo:g, bar, mats:mats.length === 1 ? mats[0] : mats }); }
 // Z298 REAL WHEELS: Tripo cannot model 2 mm spokes (it paints them into a blurred disc), so the model's wheels are cut out (every triangle wholly inside a
 //   wheel's drum) and real ones built in their place — a treaded rubber tyre, a metal rim, a hub and 36 crossed wire spokes (or a pressed-steel disc) —
 //   that roll with the distance driven, the front one steering into the bend
@@ -60,8 +61,8 @@ export function buildBikeMount(kind){ const root = new THREE.Group(), T = new TH
   if(X.steer){ const st = X.steer; H.axisP = new THREE.Vector3(0, st.a[1], st.a[0]); H.axis = new THREE.Vector3(0, st.b[1] - st.a[1], st.b[0] - st.a[0]).normalize(); }
   // a point fixed to the body (or, steered, to the bars) in the world
   H.toWorld = (arr, out, steered) => { out.fromArray(arr); if(steered && H.axis && H.steer){ out.sub(H.axisP).applyAxisAngle(H.axis, H.steer).add(H.axisP); } return body.localToWorld(out); };
-  const put = m => { if(!m) return; const mesh = new THREE.Mesh(m.geo, m.mats); mesh.castShadow = true; mesh.receiveShadow = true; body.add(mesh); H.mesh = mesh;
-    if(m.bar && H.axis){ const piv = new THREE.Group(), bm = new THREE.Mesh(m.bar, m.mats); bm.castShadow = true; bm.receiveShadow = true; piv.position.copy(H.axisP); bm.position.copy(H.axisP).negate(); piv.add(bm); body.add(piv); H.bar = piv; }
+  const put = m => { if(!m) return; const mesh = new THREE.Mesh(m.geo, m.mats); mesh.castShadow = true; mesh.receiveShadow = true; body.add(mesh); H.mesh = mesh; if(m === HERO[kind]) nearShape(mesh, 'ride_' + kind, gl => heroGeo(gl, kind, true).geo, { min:NEARDETAIL.hero });   // (Z395 the whole original under the camera)
+    if(m.bar && H.axis){ const piv = new THREE.Group(), bm = new THREE.Mesh(m.bar, m.mats); bm.castShadow = true; bm.receiveShadow = true; if(m === HERO[kind]) nearShape(bm, 'ride_' + kind, gl => heroGeo(gl, kind, true).bar, { min:NEARDETAIL.hero }); piv.position.copy(H.axisP); bm.position.copy(H.axisP).negate(); piv.add(bm); body.add(piv); H.bar = piv; }
     if(!H.wheels) buildWheels(H, kind); buildLamps(H, kind);
     // Z300 how far it must be lifted to lie on either side (rolled ±1.35) with its lowest point on the ground — bars, pegs, wheels all counted
     const P = m.geo.attributes.position, lie = [0, 0]; for(const [i, a] of [[0, -1.35], [1, 1.35]]){ const sn = Math.sin(a), cs = Math.cos(a); let lo = 0; for(let j = 0; j < P.count; j += 3) lo = Math.min(lo, P.getX(j) * sn + P.getY(j) * cs); lie[i] = -lo; } H.lie = lie; };

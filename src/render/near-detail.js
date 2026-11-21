@@ -44,7 +44,7 @@ function see(o, m){ if(!m) return; for(const s of ['map', 'normalMap']){ const t
 // how near the nearest drawn wearer of a key is, as a share of its own reach: distance from the camera to its surface ÷ clamp(radius × rK, min, at) —
 //   a barracks is worth its sharp maps from 30 m, a sandbag only within a few (each instance of an instanced mesh; a skinned body by where it stands)
 const _c = new THREE.Vector3(), _p = new THREE.Vector3(), _m = new THREE.Matrix4(), _s = new THREE.Sphere();
-const reach = r => Math.min(NEARDETAIL.at, Math.max(NEARDETAIL.min, r * NEARDETAIL.rK)), score = (d, r) => Math.max(0, d - r) / reach(r);
+const reach = (r, lo) => Math.min(NEARDETAIL.at, Math.max(lo || NEARDETAIL.min, r * NEARDETAIL.rK)), score = (d, r, lo) => Math.max(0, d - r) / reach(r, lo);
 function nearest(R){ _c.setFromMatrixPosition(camera.matrixWorld); let d = Infinity;
   for(const o of R.seen){ const g = o.geometry; if(!g) continue; if(!g.boundingSphere) g.computeBoundingSphere(); const bs = g.boundingSphere;
     if(o.isInstancedMesh){ const n = Math.min(o.count, NEARDETAIL.maxInst); for(let i = 0; i < n; i++){ o.getMatrixAt(i, _m); _m.premultiply(o.matrixWorld); _s.copy(bs).applyMatrix4(_m); const x = score(_c.distanceTo(_s.center), _s.radius); if(x < d) d = x; } }
@@ -62,24 +62,26 @@ function swapOut(R){ R.near = false; for(const e of R.srcs) QUEUE.push([e, 0]); 
 // Z395b NEAR SHAPES: a mesh a system has placed (a camp's barracks, a parked truck, a ruin, an animal, the gun in the soldier's hands) drawn from its
 //   whole original (hd/<key>.glb) while the camera is within its reach. prep(gl) makes of the original what the system made of the shipped file (the
 //   same frame and size — usually the system's own preparing function run on it); only the mesh's geometry is swapped, its material, place, collision
-//   and everything that refers to the mesh stay. The NEARDETAIL.shapes closest at most; handed back past reach × out for hold s.
-export function nearShape(m, key, prep){ if(m && on()) SHAPES.add({ m, key, prep, lo:null, hd:null, ask:null, near:false, farFor:0, d:Infinity }); return m; }
+//   and everything that refers to the mesh stay. The NEARDETAIL.shapes closest at most; handed back past reach × out for hold s. o.min: a reach of at
+//   least that many metres (Z395c: the player's own ride and its driver, always the middle of the picture from the chase camera)
+export function nearShape(m, key, prep, o = {}){ if(m && on()) SHAPES.add({ r:new window.WeakRef(m), key, prep, min:o.min || 0, lo:null, hd:null, ask:null, near:false, farFor:0, d:Infinity }); return m; }   // (held weakly: a mesh the game drops is not kept alive here)
 // prep for a system that draws the file's own mesh (a scene clone, a rigged body): the original's mesh brought into the shipped mesh's frame
 //   (a rigged one is already in it: the same bind pose and bones); null when either file has more than one mesh
 export const asShipped = key => gl => ASIS[key] || (ASIS[key] = loadGLTF(key).then(lg => { const one = r => { const L = []; r.updateMatrixWorld(true); r.traverse(o => { if(o.isMesh) L.push(o); }); return L.length === 1 ? L[0] : null; };
-  const a = lg && one(lg.scene), b = one(gl.scene); if(!a || !b || !!a.isSkinnedMesh !== !!b.isSkinnedMesh) return null; if(b.isSkinnedMesh) return b.geometry;
+  const a = lg && one(lg.scene), b = one(gl.scene); if(!a || !b || !!a.isSkinnedMesh !== !!b.isSkinnedMesh) return null;
+  if(b.isSkinnedMesh) return a.skeleton.bones.map(x => x.name).join() === b.skeleton.bones.map(x => x.name).join() ? b.geometry : null;   // (Z395c only on the very same bones, in the same order)
   const g = b.geometry.clone().applyMatrix4(a.matrixWorld.clone().invert().multiply(b.matrixWorld)); g.computeBoundingSphere(); return g; }));
 // (is the mesh in the battle and shown? a hidden gun or a fallen-away camp is not near)
 function shown(o){ for(let p = o; p; p = p.parent){ if(!p.visible) return false; if(p === scene) return true; } return false; }
 function shapes(dt){ const cand = [];
-  for(const S of SHAPES){ const m = S.m; if(!m.parent){ SHAPES.delete(S); continue; } const g = S.lo || m.geometry; S.d = Infinity;
-    if(!NEAR_DETAIL.off && shown(m) && g){ if(!g.boundingSphere) g.computeBoundingSphere(); _s.copy(g.boundingSphere).applyMatrix4(m.matrixWorld); S.d = score(_c.distanceTo(_s.center), _s.radius); if(S.d < 1) cand.push(S); } }
+  for(const S of SHAPES){ const m = S.r.deref(); if(!m || !m.parent){ SHAPES.delete(S); continue; } const g = S.lo || m.geometry; S.d = Infinity;
+    if(!NEAR_DETAIL.off && shown(m) && g){ if(!g.boundingSphere) g.computeBoundingSphere(); _s.copy(g.boundingSphere).applyMatrix4(m.matrixWorld); S.d = score(_c.distanceTo(_s.center), _s.radius, S.min); if(S.d < 1) cand.push(S); } }
   cand.sort((a, b) => a.d - b.d); const want = new Set(cand.slice(0, NEARDETAIL.shapes));
   for(const S of SHAPES){ if(want.has(S)){ S.farFor = 0; if(!S.near) shapeIn(S); continue; } if(!S.near) continue;
     S.farFor = NEAR_DETAIL.off ? 1e9 : S.farFor + dt; if(S.farFor > NEARDETAIL.hold){ S.farFor = 0; shapeOut(S); } } }
 function shapeIn(S){ S.near = true; S.ask = S.ask || nearModel(S.key).then(gl => gl ? S.prep(gl) : null).catch(() => null);
-  S.ask.then(hd => { if(!hd || !S.near || S.m.geometry === hd) return; S.hd = hd; S.lo = S.m.geometry; S.m.geometry = hd; NEAR_DETAIL.swaps++; }); }
-function shapeOut(S){ S.near = false; if(S.hd && S.m.geometry === S.hd) S.m.geometry = S.lo; }   // (unless the system has given the mesh another shape since)
+  S.ask.then(hd => { const m = S.r.deref(); if(!hd || !m || !S.near || m.geometry === hd) return; S.hd = hd; S.lo = m.geometry; m.geometry = hd; NEAR_DETAIL.swaps++; }); }
+function shapeOut(S){ S.near = false; const m = S.r.deref(); if(m && S.hd && m.geometry === S.hd) m.geometry = S.lo; }   // (unless the system has given the mesh another shape since)
 
 function tick(){ for(const f of FRAME) f(camera); const q = QUEUE.shift();
   if(q){ const [e, hi] = q; if(!!hi === e.R.near && e.hi){ wear(e, hi ? e.hi : e.lo); NEAR_DETAIL.swaps++;   // (one texture a frame: each is an upload)

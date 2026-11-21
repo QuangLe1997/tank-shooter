@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, ENV, EQUIP, FIELDCRAFT, INFANTRY, RAGDOLL, REAL, SQUAD } from '../../config.js';
-import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, startFall, stepFall, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen } from '../hub.js';
+import { ALLY_TANKS, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, startFall, stepFall, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen , asShipped, nearShape } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -20,7 +20,8 @@ export function infMesh(type){
 //   launcher's own frame (warhead toward +z) where the grip is held, and the muzzle
 const RPGKIT={ len:1.05, grip:[0, -0.072, -0.35], muzzle:[0, 0.01, 0.55] };
 let _rpgTpl=null, _rpgLoad=null;
-function rpgModel(){ if(_rpgTpl) return _rpgTpl.clone(true); if(!_rpgLoad) _rpgLoad=loadGLTF('inf_rpg').then(g=>{ if(!g) return; const m=g.scene.clone(true), b=new THREE.Box3().setFromObject(m), c=b.getCenter(new THREE.Vector3()), k=RPGKIT.len/(b.max.z-b.min.z);
+function rpgModel(){ if(_rpgTpl){ const c = _rpgTpl.clone(true); c.traverse(o => { if(o.isMesh) nearShape(o, 'inf_rpg', asShipped('inf_rpg')); }); return c; }   // (Z395 the launcher on an enemy's shoulder whole up close)
+  if(!_rpgLoad) _rpgLoad=loadGLTF('inf_rpg').then(g=>{ if(!g) return; const m=g.scene.clone(true), b=new THREE.Box3().setFromObject(m), c=b.getCenter(new THREE.Vector3()), k=RPGKIT.len/(b.max.z-b.min.z);
     const t=new THREE.Group(); m.scale.setScalar(k); m.position.copy(c).multiplyScalar(-k); t.add(m); t.traverse(o=>{ if(o.isMesh){ o.castShadow=!MOBILE; o.frustumCulled=false; } }); _rpgTpl=t; }).catch(()=>{}); return null; }
 function rpgKit(u){ const gp=u.parts && u.parts.find(p=>p.kind==='gun'); if(gp) gp.o.visible=false;   // (the rifle piece goes; the gun joint stays — the launcher hangs on it)
   const L=new THREE.Group(), G=RPGKIT.grip; kitAttach(u, u.gun, L, 'grip', [-G[0], -G[1], -G[2]]);

@@ -11,8 +11,8 @@
 // What the two of them say is kept in one table (RIDE_TALK: the driver's line, the soldier's answer, by event) so voices can be laid on later.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, DRIVER_ACTS, DRIVER_BREAK, DRIVER_RANT, NIGHT, S, bikeHop, blendPose, burst, curlHand, downedRide, driverAct, driverBreak, driverBreakCheck, driverLine, driverRant, driverStall, drvBreakPull, drvHammer, drvStallLook, drvStallStep, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, snapPose, spawnPart, hudOn } from '../hub.js';
+import { NEARDETAIL, RIDE, RIDE_TALK, XEOM } from '../../config.js';
+import { BIOME, CV, DRIVER_ACTS, DRIVER_BREAK, DRIVER_RANT, NIGHT, S, bikeHop, blendPose, burst, curlHand, downedRide, driverAct, driverBreak, driverBreakCheck, driverLine, driverRant, driverStall, drvBreakPull, drvHammer, drvStallLook, drvStallStep, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, snapPose, spawnPart, hudOn , asShipped, nearShape } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
@@ -40,7 +40,7 @@ function ik2(a, b, c, t, pole){ a.getWorldPosition(_ia); b.getWorldPosition(_ib)
 export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof window === 'undefined') return null;
   const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, peek:false, pk:0, pkN:0, sacN:0, sacA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0, chatK:0, chatS:1, bk:0, bkN:0, bkS:1, bkOn:false };
   loadGLTF(RIDE.model[kind]).then(gl => { if(!gl || H.drv !== D) return; const sc = skClone(gl.scene), w = new THREE.Group(); w.name = 'driver';
-    sc.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } });
+    sc.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; nearShape(o, RIDE.model[kind], asShipped(RIDE.model[kind]), { min:NEARDETAIL.hero }); } });   // (Z395 his whole original up close)
     const b = new THREE.Box3().setFromObject(sc); w.add(sc); sc.rotation.y = RIDE.yaw; D.h0 = Math.max(1e-3, b.max.y - b.min.y); const s = D.s0 = RIDE.h / XEOM.k / D.h0; w.scale.setScalar(s);
     (H.body || H.B).add(w); D.w = w; D.sc = sc; D.B = bones(sc); D.rest = new Map(); for(const bn of Object.values(D.B)) D.rest.set(bn, bn.quaternion.clone());
     D.mix = new THREE.AnimationMixer(sc); D.A = {}; for(const c0 of gl.animations){ const c = c0.clone(); c.tracks = c.tracks.filter(t => !t.name.endsWith('.scale')); D.A[c.name] = D.mix.clipAction(c); }   // (Z300 the clips' scale keys dropped: they would undo his longer legs)
