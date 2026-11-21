@@ -1,5 +1,5 @@
 {
-  "_": "Z395 tools/hd-maps.mjs: key (as in MODEL_FILES) \u2192 file: the shipped GLB under assets/models/real (no .glb); src: its original (a folder under assets/models \u2014 Tripo / Meshy downloads, git-ignored \u2014 or a path, ~ = home); tex: the near maps' size (px, default 2048); geo: the whole shape too (hd/<key>.glb: 0 = every triangle, else a budget — kept under ~70k, the near copy of a camp, a ruin, an animal or a gun). Only models shipped with smaller maps than their original are listed: wonders, tanks, city towers, rides, drivers and the soldiers already ship their original's 2K maps. Z397 maps: only these slots ([\"map\"]: the colour alone). The forts are listed at 4096 for their colour: a wall 30 m long needs more than its 2K atlas with a tank beside it (its 4K normal looks no different from the 2K one, at twice the memory).",
+  "_": "Z395 tools/hd-maps.mjs: key (as in MODEL_FILES) \u2192 file: the shipped GLB under assets/models/real (no .glb); src: its original (a folder under assets/models \u2014 Tripo / Meshy downloads, git-ignored \u2014 or a path, ~ = home); tex: the near maps' size (px, default 2048); geo: the whole shape too (hd/<key>.glb: 0 = every triangle, else a budget — kept under ~70k, the near copy of a camp, a ruin, an animal or a gun). Only models shipped with smaller maps than their original are listed: tanks, city towers, rides, drivers and the soldiers already ship their original's 2K maps. Z397 maps: only these slots ([\"map\"]: the colour alone). The forts (Z397) and the wonders (Z398) are listed at 4096 for their colour: a wall 30 m long needs more than its 2K atlas with a tank beside it (its 4K normal looks no different from the 2K one, at twice the memory).",
   "tree_acacia": {"file":"tree/acacia", "src":"tripo/tree_acacia_t", "geo":0},
   "tree_baobab": {"file":"tree/baobab", "src":"tripo/tree_baobab_t", "geo":0},
   "tree_birch": {"file":"tree/birch", "src":"tripo/tree_birch_t", "geo":0},
@@ -106,5 +106,9 @@
   "fort_savanna_gate": {"file":"fort/fort_savanna_gate", "src":"tripo/fort_savanna_gate", "tex":4096, "maps":["map"]},
   "fort_volcano_wall": {"file":"fort/fort_volcano_wall", "src":"tripo/fort_volcano_wall", "tex":4096, "maps":["map"]},
   "fort_volcano_tower": {"file":"fort/fort_volcano_tower", "src":"tripo/fort_volcano_tower", "tex":4096, "maps":["map"]},
-  "fort_volcano_gate": {"file":"fort/fort_volcano_gate", "src":"tripo/fort_volcano_gate", "tex":4096, "maps":["map"]}
+  "fort_volcano_gate": {"file":"fort/fort_volcano_gate", "src":"tripo/fort_volcano_gate", "tex":4096, "maps":["map"]},
+  "wonder_colosseum": {"file":"wonder/wonder_colosseum", "src":"tripo/wonder_colosseum", "tex":4096, "maps":["map"]},
+  "wonder_djenne": {"file":"wonder/wonder_djenne", "src":"tripo/wonder_djenne", "tex":4096, "maps":["map"]},
+  "wonder_taj": {"file":"wonder/wonder_taj", "src":"tripo/wonder_taj", "tex":4096, "maps":["map"]},
+  "wonder_volklingen": {"file":"wonder/wonder_volklingen", "src":"tripo/wonder_volklingen", "tex":4096, "maps":["map"]}
 }

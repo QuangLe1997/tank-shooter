@@ -2237,5 +2237,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(!doc\.getRoot\(\)\.listSkins\(\)\.length\)\{/.test(tool), 'a rigged original is written in plain floats (quantizing would move its frame into the bind matrices)');
   ok(/nearShape\(m, q\.k, gl => piece\(gl, q\.k, true\)\.geo\)/.test(R('src/world/outposts.js')) && /nearShape\(m, s\.k, gl => prep\(gl, s\.k, true\)\.geo\)/.test(R('src/world/ruins3d.js')) && /nearShape\(o, 'wild_'\+id, asShipped\('wild_'\+id\)\)/.test(R('src/actors/wildlife.js')) && /nearShape\(o, 'inf_' \+ k, asShipped\('inf_' \+ k\)\)/.test(R('src/actors/real-cav.js')), 'the camps, ruins, animals and the soldier\'s guns register their meshes');
 }
+// Z398 the four wonders at their originals' full triangles (they shipped at 24 thousand of 36–39), the original's 4K colour swapped in up close
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), T=JSON.parse(R('tools/hd-maps.json')), IX=JSON.parse(R('assets/models/real/hd/index.json'));
+  const tris=f=>{ const B=fs.readFileSync(f), jl=B.readUInt32LE(12), J=JSON.parse(B.toString('utf8',20,20+jl)); return J.meshes.reduce((s,m)=>s+m.primitives.reduce((t,p)=>t+(p.indices!=null ? J.accessors[p.indices].count : J.accessors[p.attributes.POSITION].count)/3,0),0); };
+  const W=['colosseum','djenne','taj','volklingen'].map(k=>'wonder_'+k);
+  ok(W.every(k=>tris('assets/models/real/wonder/'+k+'.glb') >= 35000), 'every wonder at its original\'s full triangles');
+  ok(W.every(k=>T[k] && T[k].file==='wonder/'+k && T[k].tex===4096 && JSON.stringify(T[k].maps)==='["map"]' && JSON.stringify(IX[k])==='["0.map"]'), 'each wears its original\'s colour at 4K up close'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

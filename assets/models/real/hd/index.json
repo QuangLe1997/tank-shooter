@@ -104,4 +104,8 @@
 "wild_elephant":["0.map","0.nrm","geo"],
 "wild_giraffe":["0.map","0.nrm","geo"],
 "wild_reindeer":["0.map","0.nrm","geo"],
-"wild_zebra":["0.map","0.nrm","geo"]}
+"wild_zebra":["0.map","0.nrm","geo"],
+"wonder_colosseum":["0.map"],
+"wonder_djenne":["0.map"],
+"wonder_taj":["0.map"],
+"wonder_volklingen":["0.map"]}
