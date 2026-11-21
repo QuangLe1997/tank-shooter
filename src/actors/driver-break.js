@@ -56,7 +56,7 @@ export function driverBreak(H, D, dt){ const K = RIDE_BREAK, br = D.br; D.t2 += 
   if(D.ph === 'walk'){ if(drvWalkTo(D, br.spot, dt) < 0.05 || D.t2 > 7){ drvStopWalk(D); D.ph = 'act'; D.t2 = 0; D.pAcc = 0; } return; }
   if(D.ph === 'home'){ if(drvWalkTo(D, br.down, dt) < 0.05 || D.t2 > 9) remount(H, D); return; }
   if(D.state === 'smoke') smokeAct(H, D, dt); else peeAct(H, D, dt); }
-function goHome(D){ if(D.mask) D.mask.visible = true; if(D.ph === 'home') return; D.ph = 'home'; D.t2 = 0; drvStartWalk(D); }
+function goHome(D){ maskDown(D, false); if(D.ph === 'home') return; D.ph = 'home'; D.t2 = 0; drvStartWalk(D); }
 // back on the seat (eased up onto it: 'mount'); once on, he rides over to the soldier and picks him up (D.pickup: game/cavalry.js onBack)
 function remount(H, D){ snapPose(D, RIDE.crash.mount); D.mix.stopAllAction(); D.walking = false; const body = H.body || H.B; body.add(D.w); D.w.position.set(0, 0, 0); D.w.rotation.set(0, 0, 0, 'XYZ'); D.w.scale.setScalar(D.s0);
   D.state = 'mount'; D.t2 = 0; D.hd = null; D.br = null; D.brk = null; D.ph = null; H.onBreak = false; D.pickup = true; }
@@ -71,45 +71,74 @@ function squat(D, k, lean){ const B = D.B, L = drvLens(D), w = D.w, aw = D.ankle
 function onKnee(D, L1, sd){ const B = D.B; wp(B[L1 + 'Leg'], _a); _a.addScaledVector(FWD, 0.17).addScaledVector(UPW, -0.04).addScaledVector(RT, -sd * 0.03);
   wp(B[L1 + 'Arm'], _b); _b.addScaledVector(RT, sd * 0.35).addScaledVector(UPW, -0.25).addScaledVector(FWD, -0.1); ik2(B[L1 + 'Arm'], B[L1 + 'ForeArm'], B[L1 + 'Hand'], _a.clone(), _b.clone());
   aim(B[L1 + 'Hand'], B[L1 + 'HandMiddle1'], _c.copy(FWD).addScaledVector(UPW, -1.2)); curlHand(B, L1, 0.35, _a.clone().addScaledVector(FWD, -0.1)); }
+// Z364 the mask: pulled down under his chin to smoke, back up over his nose after (two fitted copies, one of them shown)
+function maskDown(D, down){ if(D.mask) D.mask.visible = !down; if(D.maskDown) D.maskDown.visible = !!down; }   // (no pulled-down copy: off altogether)
+// the right wrist placed so the point between its index and middle fingers lands on P (IK, measure, shift, IK again)
+function fingersTo(D, P, pole){ const B = D.B; _p.copy(P); for(let k = 0; k < 2; k++){ ik2(B.RightArm, B.RightForeArm, B.RightHand, _p.clone(), pole); wp(B.RightHandIndex2, _a); wp(B.RightHandMiddle2, _b); _a.add(_b).multiplyScalar(0.5); _p.add(_c.subVectors(P, _a)); } }
+// Z364 the smoke, step by step: down on his heels · the mask pulled down under his chin · a cigarette out of his shirt pocket into his lips · lit off the
+//   lighter in his cupped left hand · three drags (the cigarette between two fingers to his lips, the tip glowing, a thread of smoke off it, the smoke
+//   let out slow) · the butt flicked away · the mask back up · up on his feet
 function smokeAct(H, D, dt){ const SM = RIDE_BREAK.smoke, B = D.B, t = D.t2, w = D.w, br = D.br;
-  const tL = SM.squat, tD = tL + SM.light, tF = tD + SM.n * SM.drag, tU = tF + SM.flick, tE = tU + SM.squat;
-  if(t >= tE){ driverLine(D, 'rested'); goHome(D); return; }
+  const tM = SM.squat, tP = tM + SM.mask, tL = tP + SM.pack, tD = tL + SM.light, tF = tD + SM.n * SM.drag, tR = tF + SM.flick, tU = tR + SM.mask, tE = tU + SM.squat;
+  if(t >= tE){ maskDown(D, false); driverLine(D, 'rested'); goHome(D); return; }
   steer(D, br.hd, dt, 5); const k = t < SM.squat ? ease(t / SM.squat) : t > tU ? 1 - ease((t - tU) / SM.squat) : 1;
-  if(D.mask) D.mask.visible = !(t > tL - 0.25 && t < tF + SM.flick * 0.5);   // his mask pulled down off his mouth to smoke
   squat(D, k, SM.lean);
-  // eyes out over the field, chin up as he lets the smoke out
-  const dn = Math.floor((t - tD) / SM.drag), df = (t - tD) / SM.drag - dn, smoking = t >= tD && t < tF, exhale = smoking && df > 0.55;
-  drvLook(D, _e.copy(w.position).addScaledVector(FWD, 12).setY(w.position.y + 1.2), Math.sin(t * 0.5) * 0.25, (exhale ? 0.18 : 0) + (t < tD && t > tL ? -0.25 : 0), mix(0.04, SM.lean, k));
-  wp(B.Head, _mo).addScaledVector(FWD, 0.1).addScaledVector(UPW, 0.02);   // his mouth
-  onKnee(D, 'Left', -1);
-  // the right hand: both hands cupped at the mouth to light it · each drag up to the mouth, held, down to the knee · the flick
-  let toMouth = 0; if(t >= tL && t < tD) toMouth = ease(clamp((t - tL) / 0.3, 0, 1)) * (1 - ease(clamp((t - tD + 0.3) / 0.3, 0, 1)));
-  else if(smoking) toMouth = df < 0.2 ? ease(df / 0.2) : df < 0.45 ? 1 : 1 - ease(clamp((df - 0.45) / 0.2, 0, 1));
-  onKnee(D, 'Right', 1); if(toMouth > 0.01){ wp(B.RightHand, _a); _b.copy(_mo).addScaledVector(FWD, 0.03).addScaledVector(UPW, -0.03).addScaledVector(RT, 0.02); _a.lerp(_b, toMouth);
-    wp(B.RightArm, _c); _c.addScaledVector(RT, 0.3).addScaledVector(UPW, -0.4); ik2(B.RightArm, B.RightForeArm, B.RightHand, _a.clone(), _c.clone()); rollHand(B, 'Right', _d.copy(UPW).negate()); }
-  if(t >= tL && t < tD){ _a.copy(_mo).addScaledVector(FWD, 0.06).addScaledVector(UPW, -0.05).addScaledVector(RT, -0.03); wp(B.LeftArm, _c); _c.addScaledVector(RT, -0.35).addScaledVector(UPW, -0.4);   // the left hand cupped round the flame
-    ik2(B.LeftArm, B.LeftForeArm, B.LeftHand, _a.clone(), _c.clone()); curlHand(B, 'Left', 0.45, _mo.clone());
-    if(!D.said.lit && t > tL + SM.light * 0.45){ D.said.lit = 1; sfx('click', undefined, 0.4); spawnPart(_mo.x + FWD.x * 0.08, _mo.y - 0.02, _mo.z + FWD.z * 0.08, 0, 0.3, 0, { color:0xffb030, size:0.06, life:0.35, grav:0.6, drag:2 }); } }
-  if(t >= tF && t < tU){ const f = (t - tF) / SM.flick; wp(B.RightArm, _c); _a.copy(_c).addScaledVector(FWD, mix(0.25, 0.45, f)).addScaledVector(UPW, mix(-0.3, -0.15, f)).addScaledVector(RT, 0.1);   // the flick
-    _c.addScaledVector(RT, 0.3).addScaledVector(UPW, -0.4); ik2(B.RightArm, B.RightForeArm, B.RightHand, _a.clone(), _c.clone());
-    if(!D.said.fl && f > 0.5){ D.said.fl = 1; spawnPart(_a.x, _a.y, _a.z, FWD.x * 3, 1.4, FWD.z * 3, { color:0xff7a20, size:0.05, life:0.8, grav:-9, drag:0.3 }); } }
-  // the smoke: out of his mouth after each drag, slow, drifting up
-  if(exhale && Math.random() < dt * 14) spawnPart(_mo.x, _mo.y, _mo.z, FWD.x * 0.35 + (Math.random() - 0.5) * 0.15, 0.22, FWD.z * 0.35 + (Math.random() - 0.5) * 0.15, { color:0xc4c4c4, size:0.18, grow:2.6, life:1.9, grav:0.12, drag:1.3, smoke:true, op:0.5 });
+  const dn = Math.floor((t - tD) / SM.drag), df = (t - tD) / SM.drag - dn, smoking = t >= tD && t < tF, exhale = smoking && df > 0.55, busy = t >= tM && t < tD;
+  drvLook(D, _e.copy(w.position).addScaledVector(FWD, 12).setY(w.position.y + 1.2), busy || (smoking && df < 0.5) ? 0 : Math.sin(t * 0.5) * 0.25, (exhale ? 0.18 : 0) + (t >= tP && t < tD ? -0.22 : 0), mix(0.04, SM.lean, k));
+  if(D.mouthL) _mo.copy(D.mouthL).applyMatrix4(B.Head.matrixWorld); else wp(B.Head, _mo).addScaledVector(FWD, 0.105);   // his mouth (Z364 fixed on his head: it bows and turns with it)
+  const face = wp(B.Head, V3()).sub(_mo).negate().setY(0).normalize();   // (the way his face points)
+  onKnee(D, 'Left', -1); onKnee(D, 'Right', 1);
+  const pole = wp(B.RightArm, V3()).addScaledVector(RT, 0.35).addScaledVector(UPW, -0.4), rest = wp(B.RightLeg, V3()).addScaledVector(FWD, 0.2).addScaledVector(UPW, 0.08);   // (the smoking hand held up off his knee)
+  const nose = _mo.clone().addScaledVector(UPW, 0.04).addScaledVector(FWD, 0.03), chin = _mo.clone().addScaledVector(UPW, -0.07).addScaledVector(FWD, 0.02), at = V3(), seg = (u, a0, a1) => clamp((u - a0) / (a1 - a0), 0, 1);
+  let hand = null, cig = 0;   // (cig: 0 none · 1 in his fingers · 2 in his lips)
+  if(t >= tM && t < tP){ const u = (t - tM) / SM.mask;   // the mask: up to his nose, down under his chin
+    hand = u < 0.4 ? rest.clone().lerp(nose, ease(u / 0.4)) : u < 0.8 ? nose.clone().lerp(chin, ease(seg(u, 0.4, 0.8))) : chin.clone().lerp(rest, ease(seg(u, 0.8, 1))); if(u > 0.55) maskDown(D, true); }
+  else if(t >= tP && t < tL){ const u = (t - tP) / SM.pack, pocket = wp(B.Spine2, V3()).addScaledVector(FWD, 0.13).addScaledVector(RT, -0.09).addScaledVector(UPW, -0.03);   // the pocket, then the lips
+    hand = u < 0.45 ? rest.clone().lerp(pocket, ease(u / 0.45)) : pocket.clone().lerp(_mo.clone().addScaledVector(FWD, 0.03), ease(seg(u, 0.45, 1))); cig = u > 0.45 ? (u > 0.95 ? 2 : 1) : 0; }
+  else if(t >= tL && t < tD){ const u = (t - tL) / SM.light; cig = 2;   // lit off the lighter, both hands cupped round the flame
+    hand = _mo.clone().addScaledVector(FWD, 0.075).addScaledVector(RT, 0.035).addScaledVector(UPW, -0.04);
+    const lh = _mo.clone().addScaledVector(FWD, 0.08).addScaledVector(RT, -0.025).addScaledVector(UPW, -0.06); wp(B.LeftArm, _c); _c.addScaledVector(RT, -0.35).addScaledVector(UPW, -0.4);
+    ik2(B.LeftArm, B.LeftForeArm, B.LeftHand, lh, _c.clone()); curlHand(B, 'Left', 0.55, lh.clone().addScaledVector(RT, 0.05)); lighterAt(D);
+    if(u > 0.35 && u < 0.75 && Math.random() < dt * 30){ const L = D.lit.position; spawnPart(L.x, L.y + 0.04, L.z, 0, 0.25, 0, { color:0xffb030, size:0.05, life:0.18, grav:0.8, drag:2 }); }
+    if(!D.said.lit && u > 0.35){ D.said.lit = 1; sfx('click', undefined, 0.4); } }
+  else if(smoking){ const to = df < 0.2 ? ease(df / 0.2) : df < 0.45 ? 1 : 1 - ease(clamp((df - 0.45) / 0.2, 0, 1)); cig = to > 0.97 ? 2 : 1;   // each drag: to his lips, held, down
+    hand = rest.clone().lerp(_mo.clone().addScaledVector(FWD, 0.035).addScaledVector(RT, 0.012), to); }
+  else if(t >= tF && t < tR){ const u = (t - tF) / SM.flick; hand = rest.clone().addScaledVector(FWD, 0.25 * u).addScaledVector(UPW, 0.1 * u); cig = u < 0.5 ? 1 : 0;   // the flick
+    if(!D.said.fl && u > 0.5){ D.said.fl = 1; wp(B.RightHandIndex2, _a); spawnPart(_a.x, _a.y, _a.z, FWD.x * 3, 1.4, FWD.z * 3, { color:0xff7a20, size:0.06, life:0.8, grav:-9, drag:0.3 }); } }
+  else if(t >= tR && t < tU){ const u = (t - tR) / SM.mask;   // the mask back up
+    hand = u < 0.45 ? rest.clone().lerp(chin, ease(u / 0.45)) : u < 0.85 ? chin.clone().lerp(nose, ease(seg(u, 0.45, 0.85))) : nose.clone().lerp(rest, ease(seg(u, 0.85, 1))); if(u > 0.6) maskDown(D, false); }
+  else if(t >= tD) cig = 0;
+  if(t >= tL && t < tF) hand = hand || rest;
+  if(hand){ if(cig === 2 && t < tD) ik2(B.RightArm, B.RightForeArm, B.RightHand, hand, pole); else fingersTo(D, hand, pole); rollHand(B, 'Right', _d.copy(UPW).negate());
+    for(const F of ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']) for(let j = 1; j <= 3; j++){ const b = B['RightHand' + F + j], q = b && D.rest.get(b); if(q) b.quaternion.copy(q); } B.RightHand.updateMatrixWorld(true);   // (the knee's curl undone)
+    curlHand(B, 'Right', cig ? 0.22 : 0.35, hand.clone().addScaledVector(RT, -0.1), 0, cig ? 0.3 : 1); }   // (holding a cigarette: the two fingers near straight)
+  // the cigarette: in his lips (lighting it) or between his fingers, the tip glowing (brighter on a drag), a thread of smoke off it
+  if(cig === 2 && t < tD) cigAt(D, at.copy(_mo).addScaledVector(face, -0.006), _e.copy(face).addScaledVector(UPW, -0.25).normalize(), t > tL + SM.light * 0.4 ? 0.6 : 0);
+  else if(cig) cigInHand(D, smoking && df > 0.15 && df < 0.45 ? 1 : 0.35);
+  if(D.cig && D.cig.visible && t > tL + SM.light * 0.4){ D.wisp = (D.wisp || 0) + dt * 8; if(D.wisp >= 1){ D.wisp = 0; const T = D.cigTip; spawnPart(T.x, T.y, T.z, (Math.random() - 0.5) * 0.04, 0.12, (Math.random() - 0.5) * 0.04, { color:0xd8d8d8, size:0.06, grow:0.45, life:1.4, grav:0.3, drag:2.2, smoke:true, op:0.75, keep:true }); } }
+  // the smoke out of his mouth after each drag, slow, drifting up
+  if(exhale && Math.random() < dt * 14) spawnPart(_mo.x, _mo.y, _mo.z, FWD.x * 0.35 + (Math.random() - 0.5) * 0.15, 0.22, FWD.z * 0.35 + (Math.random() - 0.5) * 0.15, { color:0xc4c4c4, size:0.18, grow:2.6, life:1.9, grav:0.12, drag:1.3, smoke:true, op:0.5, keep:true });
   if(smoking && dn === 0 && !D.said.puff && df > 0.6){ D.said.puff = 1; driverLine(D, 'puff'); }
-  // the cigarette: in his lips while he lights it, then between his fingers until the flick
-  const lit = t >= tL + SM.light * 0.45; if(t >= tL && t < tF + SM.flick * 0.5){ if(t < tD) cigAt(D, _a.copy(_mo).addScaledVector(FWD, 0.035), FWD, lit ? 0.6 : 0); else cigInHand(D, toMouth > 0.9 ? 1 : 0.4); }
   blendPose(D, dt); }
-// the cigarette prop (a world-space group posed when it shows): paper, filter, the glowing tip
+// the props (world-space groups posed when they show): the cigarette (filter, paper, the glowing tip) and the lighter (red plastic, a steel cap)
 let CIG = null;
-function cigMesh(){ if(!CIG) CIG = { p:new THREE.CylinderGeometry(0.0045, 0.0045, 0.055, 6).translate(0, 0.0275 + 0.02, 0), f:new THREE.CylinderGeometry(0.0047, 0.0047, 0.02, 6).translate(0, 0.01, 0),
-    e:new THREE.SphereGeometry(0.0055, 6, 4).translate(0, 0.076, 0), pm:new THREE.MeshStandardMaterial({ color:0xf2efe6, roughness:0.9 }), fm:new THREE.MeshStandardMaterial({ color:0xc98a4a, roughness:0.8 }), em:new THREE.MeshBasicMaterial({ color:0xff5a1a }) };
-  const g = new THREE.Group(); g.add(new THREE.Mesh(CIG.p, CIG.pm), new THREE.Mesh(CIG.f, CIG.fm), new THREE.Mesh(CIG.e, CIG.em)); g.matrixAutoUpdate = false; g.visible = false; scene.add(g); return g; }
+function cigMesh(){ if(!CIG) CIG = { f:new THREE.CylinderGeometry(0.0058, 0.0058, 0.025, 8).translate(0, 0.0125, 0), p:new THREE.CylinderGeometry(0.0055, 0.0055, 0.065, 8).translate(0, 0.025 + 0.0325, 0),
+    e:new THREE.CylinderGeometry(0.0057, 0.0057, 0.006, 8).translate(0, 0.093, 0), fm:new THREE.MeshStandardMaterial({ color:0xc98a4a, roughness:0.8 }), pm:new THREE.MeshStandardMaterial({ color:0xf4f1ea, roughness:0.9 }),
+    em:new THREE.MeshBasicMaterial({ color:0xff6a1a, toneMapped:false }), l:new THREE.BoxGeometry(0.024, 0.056, 0.013), lc:new THREE.BoxGeometry(0.024, 0.012, 0.013).translate(0, 0.034, 0),
+    lm:new THREE.MeshStandardMaterial({ color:0xc8231e, roughness:0.4 }), lcm:new THREE.MeshStandardMaterial({ color:0xb8b8b8, roughness:0.3, metalness:0.9 }) };
+  const g = new THREE.Group(); g.add(new THREE.Mesh(CIG.f, CIG.fm), new THREE.Mesh(CIG.p, CIG.pm), new THREE.Mesh(CIG.e, CIG.em)); g.matrixAutoUpdate = false; g.visible = false; scene.add(g); return g; }
+function lighterMesh(){ cigMesh(); const g = new THREE.Group(); g.add(new THREE.Mesh(CIG.l, CIG.lm), new THREE.Mesh(CIG.lc, CIG.lcm)); g.visible = false; scene.add(g); return g; }
 const _cx = V3(), _cz = V3(), _cm = new THREE.Matrix4();
 function cigAt(D, pos, axis, glow){ const g = D.cig || (D.cig = cigMesh()); _cx.set(0, 1, 0).cross(axis); if(_cx.lengthSq() < 1e-6) _cx.set(1, 0, 0); _cx.normalize(); _cz.crossVectors(_cx, axis);
-  _cm.makeBasis(_cx, axis, _cz).setPosition(pos); g.matrix.copy(_cm); g.matrixWorldNeedsUpdate = true; g.children[2].scale.setScalar(1 + glow * 0.6); g.visible = true; }
-function cigInHand(D, glow){ const B = D.B; if(!B.RightHandIndex2 || !B.RightHandMiddle2 || !B.RightHandPinky1 || !B.RightHandIndex1) return;
-  wp(B.RightHandIndex2, _a); wp(B.RightHandMiddle2, _b); _a.add(_b).multiplyScalar(0.5); wp(B.RightHandIndex1, _c); wp(B.RightHandPinky1, _b); _c.sub(_b).normalize();   // between the index and middle fingers, out past the thumb side
-  cigAt(D, _a.addScaledVector(_c, -0.012), _c, glow); }
+  _cm.makeBasis(_cx, axis, _cz).setPosition(pos); g.matrix.copy(_cm); g.matrixWorldNeedsUpdate = true; g.children[2].scale.set(1, 1 + glow * 1.5, 1); g.children[2].material.color.setHex(glow > 0.8 ? 0xffa040 : 0xff5a14); g.visible = true;
+  (D.cigTip || (D.cigTip = V3())).copy(pos).addScaledVector(axis, 0.097); }
+// between his index and middle fingers, across them, the filter toward his face and the tip away from it
+function cigInHand(D, glow){ const B = D.B; if(!B.RightHandIndex2 || !B.RightHandMiddle2 || !B.RightHandPinky1 || !B.RightHandIndex1 || !B.RightHandMiddle1) return;
+  wp(B.RightHandIndex2, _a); wp(B.RightHandMiddle2, _b); _a.add(_b).multiplyScalar(0.5);   // between the fingers
+  wp(B.RightHandPinky1, _b); wp(B.RightHandIndex1, _c); _b.sub(_c).normalize(); wp(B.RightHand, _c); wp(B.RightHandMiddle1, _e); _e.sub(_c).normalize(); _c.crossVectors(_b, _e).normalize();   // the palm's normal
+  if(_c.dot(_e.subVectors(_a, _mo)) < 0) _c.negate();   // (the tip away from his face)
+  cigAt(D, _a.clone().addScaledVector(_c, -0.028), _c.clone(), glow); }
+function lighterAt(D){ const B = D.B, g = D.lit || (D.lit = lighterMesh()); wp(B.LeftHand, _a); wp(B.LeftHandMiddle1, _b); g.position.copy(_a).lerp(_b, 0.6).addScaledVector(UPW, 0.035); g.rotation.set(0, D.hd, 0); g.visible = true; }   // (its top out of his fist)
 
 // ---- the pee: his back to the bike, feet apart, hands in front, a whistle at the sky, the stream, a shiver, done ----
 function peeAct(H, D, dt){ const P = RIDE_BREAK.pee, B = D.B, t = D.t2, w = D.w, br = D.br, tS = P.open, tV = tS + P.stream, tE = tV + P.shiver + P.close;

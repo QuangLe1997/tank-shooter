@@ -161,9 +161,9 @@ export const RIDE_HIT = { rock:0.45, knock:['prop_bin','prop_chair','prop_cafe',
 //   not searched for — his helmet band sticks out further than the ear) · helmet = nothing above this is skin (the loops stay under the rim) ·
 //   loop = elastic radius, clear = how far it rides off the skin · made in the colour of his own shirt (read off his texture; color if it can't be read),
 //   worn: fade = washed out toward grey, dust = the road's dust in it, sun = bleached along the top, grime = grubby edges, breath = the stain over the mouth,
-//   specks / creases = how many stains / worn-in wrinkles
+//   specks / creases = how many stains / worn-in wrinkles · Z364 down = how far (head heights) it is pulled down under his chin to smoke
 export const RIDE_MASK = { drv_xeom:{ cols:20, rows:12, halfW:0.33, top:0.3, noseW:0.4, dip:0.055, bottom:-0.06, rise:0.14, off:0.03, pleat:0.008,
-  ear:{ top:0.285, lobe:0.13, front:0.01, back:-0.075 }, helmet:0.295, loop:0.007, clear:0.012, color:0x8fa88a,
+  ear:{ top:0.285, lobe:0.13, front:0.01, back:-0.075 }, helmet:0.295, loop:0.007, clear:0.012, color:0x8fa88a, down:0.34,
   wear:{ fade:0.18, dust:0.16, sun:0.1, grime:0.45, breath:0.22, specks:10, creases:7 } } };
 // Z358 the driver sits tall: bend = his forward lean to the bars (xe ôm 0.13 rad — a Cub is ridden upright — ba gác 0.2); straight = each link of his spine
 //   laid on the trunk's line (k of the way), the upper back proud of it by chest; sway.max = the most the brakes / throttle throw his trunk (braced, not flung)
@@ -262,9 +262,9 @@ export const RIDE_RANT = { stall:{ wring:1.2, twist:0.6, twistF:13, still:0.6, r
 //   (no hit on the ride, the soldier's gun quiet half that, no enemy within safeR m; an enemy within 0.6 of it or a shot cuts it short); peeK of the time
 //   a pee, else a smoke. Stopped still s, the soldier steps down; he gets off side m out on the bike's right (eased over step s) and walks away m (smoke)
 //   / peeAway m (pee) at angle rad ahead of straight out. smoke: squat / stand up (s) to hips hipH m off the ground, back m behind his heels, feet wide m
-//   apart, the trunk lean rad; light (s), n drags of drag s, the flick (s). pee: open (s), the stream (s, drops/s, v m/s out), the shiver, close (s)
+//   apart, the trunk lean rad; Z364 the mask pulled down / back up (s), the cigarette out of his pocket (s), light (s), n drags of drag s, the flick (s). pee: open (s), the stream (s, drops/s, v m/s out), the shiver, close (s)
 export const RIDE_BREAK = { every:[150, 120], calm:25, safeR:40, peeK:0.4, still:0.35, side:0.42, step:0.5, away:3.2, peeAway:4.6, angle:0.9,
-  smoke:{ squat:0.6, hipH:0.33, back:0.2, wide:0.18, lean:0.55, light:1.3, n:3, drag:2.6, flick:0.6 }, pee:{ open:0.6, stream:4.2, rate:30, v:1.5, shiver:0.6, close:0.5 } };
+  smoke:{ squat:0.6, hipH:0.33, back:0.2, wide:0.18, lean:0.55, mask:0.8, pack:0.9, light:1.4, n:3, drag:2.6, flick:0.6 }, pee:{ open:0.6, stream:4.2, rate:30, v:1.5, shiver:0.6, close:0.5 } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
 //   Z310 the bán tải's four wheels measured off its model (each tyre its own round piece: centre, radius, width) — they roll, the front pair steers

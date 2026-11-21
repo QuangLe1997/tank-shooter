@@ -49,7 +49,14 @@ export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof w
       D.B.LeftFoot.getWorldPosition(_a); D.B.LeftToeBase.getWorldPosition(_b); D.ankle = Math.max(0.01, (_a.y - bb.min.y) / Math.max(1e-6, w.getWorldScale(_g).y)) * s; _b.sub(_a); D.toeSlope = Math.atan2(_b.y, Math.hypot(_b.x, _b.z)); }
     const MS = RIDE.mask && RIDE.mask[RIDE.model[kind]];   // Z305 his mask pulled up over nose and mouth, fitted to his own face (rest pose)
     if(MS && D.B.Head && D.B.HeadTop_End){ w.updateWorldMatrix(true, true); w.getWorldQuaternion(_qw); const ms = []; sc.traverse(o => { if(o.isSkinnedMesh) ms.push(o); });
-      D.mask = fitFaceMask(D.B.Head, D.B.HeadTop_End, ms, _c.set(0, 0, 1).applyQuaternion(_qw), _d.set(0, 1, 0).applyQuaternion(_qw), MS, outfitColor(ms, ['Spine1', 'Spine2', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm'].map(n => D.B[n]).filter(Boolean))); }   // (in his own shirt's colour)
+      const cloth = outfitColor(ms, ['Spine1', 'Spine2', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm'].map(n => D.B[n]).filter(Boolean));   // (in his own shirt's colour)
+      D.mask = fitFaceMask(D.B.Head, D.B.HeadTop_End, ms, _c.set(0, 0, 1).applyQuaternion(_qw), _d.set(0, 1, 0).applyQuaternion(_qw), MS, cloth);
+      for(const f of MS.down && D.mask ? [1, 0.75, 0.5] : []){ const dn = MS.down * f;   // Z364 the same mask pulled down under his chin (to smoke): as low as it will fit
+        D.maskDown = fitFaceMask(D.B.Head, D.B.HeadTop_End, ms, _c.set(0, 0, 1).applyQuaternion(_qw), _d.set(0, 1, 0).applyQuaternion(_qw), { ...MS, top:MS.top - dn, bottom:MS.bottom - dn }, cloth);
+        if(D.maskDown){ D.maskDown.material = D.mask.material; D.maskDown.visible = false; break; } }   // (its material the worn one's — same cloth, same UVs — so it is compiled before it ever shows)
+      if(D.mask && D.mask.geometry){ const pa = D.mask.geometry.attributes.position, CU = MS.cols * 2, CV = MS.rows * 2, j = Math.round((0.05 - MS.bottom) / (MS.top - MS.bottom) * CV);   // Z364 his mouth, on his head:
+        _a.fromBufferAttribute(pa, Math.min(CV, Math.max(0, j)) * (CU + 1) + CU / 2).applyMatrix4(D.mask.matrixWorld); _b.set(0, 0, 1).applyQuaternion(_qw); _a.addScaledVector(_b, -0.012);   //   the cloth over his lips (middle column), just behind it
+        D.mouthL = D.B.Head.worldToLocal(_a.clone()); } }
     const lk = RIDE.legK || 1; if(lk !== 1){ for(const L of ['Left', 'Right']) D.B[L + 'UpLeg'] && D.B[L + 'UpLeg'].scale.setScalar(lk); D.ankle *= lk; }   // Z300 a little longer in the leg (the whole leg, foot too)
     if(D.ok) talk(D, 'start'); });
   return D; }
@@ -86,7 +93,7 @@ export function bikeCrash(H, why, wear){ const D = H.drv; if(!D || D.state !== '
 
 // ---- every frame (from animateBike): v = speed, yr = yaw rate ----
 export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !dt) return; const R = D.R, now = performance.now() / 1000; D.t += dt;
-  if(D.ham) D.ham.visible = false; if(D.cig) D.cig.visible = false;   // (Z363 his hammer and his cigarette show only while a pose holds them)
+  if(D.ham) D.ham.visible = false; if(D.cig) D.cig.visible = false; if(D.lit) D.lit.visible = false;   // (Z363 his hammer and his cigarette show only while a pose holds them)
   const acc = (v - D.lastV) / dt; D.lastV = v; const sp = Math.min(1, Math.abs(v) / 9);
   // the machine: lean, wheelie (about the rear axle), weave, lying on its side after a crash
   D.wheelT = Math.max(0, D.wheelT - dt); const wantP = D.wheelT > 0 ? RIDE.wheelie.pitch * Math.min(1, (RIDE.wheelie.dur - D.wheelT) * 5, D.wheelT * 3) : 0;
