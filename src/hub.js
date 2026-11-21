@@ -237,3 +237,4 @@ export * from './game/viewport.js';
 export * from './game/boot-gate.js';
 export * from './game/startup.js';
 export * from './dev/hooks.js';
+export * from './dev/pose-studio.js';   // Z349 the pose studio: how a soldier holds each weapon, measured and photographed (window.poseStudio)

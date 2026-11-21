@@ -8,6 +8,7 @@
     "arch": "node tools/archcheck.mjs",
     "serve": "python3 -m http.server 8765",
     "where": "node tools/where.mjs",
+    "studio": "node tools/pose-studio.mjs",
     "imports": "node tools/refactor/fix-imports.mjs",
     "move": "node tools/refactor/move.mjs",
     "deep": "node tools/refactor/deepcheck.mjs",

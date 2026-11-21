@@ -1176,9 +1176,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 }
 // Z345 the support hand on every weapon: the palm on the handguard's own underside (found from the model), cupped, the fingers curled up round it; out of reach, the gun comes across
 { const fs=await import('node:fs'); const C=await import('./config.js'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), G=C.GUNHOLD;
-  ok(['ar','lmg','shotgun','sniper','rpg','gl','flamer','energy'].every(k=>typeof G[k].palm==='number' && G[k].palm>-0.3 && G[k].palm<0.05) && G.minigun.palm===undefined, 'each long gun has its support spot ahead of the magazine (the minigun keeps its top handle)');
+  ok(['ar','lmg','minigun','shotgun','sniper','rpg','gl','flamer','energy'].every(k=>typeof G[k].palm==='number' && G[k].palm>-0.3 && G[k].palm<0.05), 'every weapon has its support spot ahead of the magazine (Z348: the minigun too, under its barrels)');
   ok(/function palmSpot\(met, g, len\)/.test(rc) && /_ray\.intersectObject\(met, true\)/.test(rc) && G.palmGap>0 && G.palmGap<0.03, 'the spot found on the surface of the model, the palm just under it');
-  ok(/for\(let it = 0; it < 2; it\+\+\)\{ if\(cup\)/.test(rc) && /LEGKIT\.aim\(D\.LeftHand, D\.LeftHandMiddle1, cup\)/.test(rc) && /palmP \? palmP\.clone\(\)\.addScaledVector\(_gy, 0\.06\)/.test(rc), 'the palm itself put on the spot, the hand cupped under, the fingers curled up round it');
+  ok(/for\(let it = 0; it < 2; it\+\+\)\{ if\(cup\)/.test(rc) && /LEGKIT\.aim\(D\.LeftHand, D\.LeftHandMiddle1, cup\)/.test(rc) && /palmP \? palmP\.clone\(\)\.addScaledVector\(_gz, -H\.wrap\[0\]\)/.test(rc), 'the palm itself put on the spot, the hand round the handguard, the fingers curled round it');
   ok(/if\(d > reach\)\{ _pd\.subVectors\(_pa, wl\)\.setLength\(d - reach\)/.test(rc) && G.reach>0.9 && G.reach<1, 'beyond the reach of the left arm (turned right round) the gun is brought across to the hand');
 }
 
@@ -1201,6 +1201,25 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z347 the soldier's fighting stance: feet a shoulder's width apart, the left a step ahead, knees bent, leaning into the gun
 { const C=await import('./config.js'), up=(await import('node:fs')).readFileSync('src/actors/soldier-upper.js','utf8'), L=C.SOLDIER_LEGS.stand;
   ok(C.SOLDIER_UPPER.stance>0.1 && C.SOLDIER_UPPER.stance<0.3 && /\+ K\.stance \* fw/.test(up) && L.stance>=0.19 && L.stagger>=0.12 && L.hipK<0.96, 'stood or walking he leans into the gun from the hips, feet apart and staggered, knees bent');
+}
+
+// Z348 sat up straight on the horse and the pillion (no hunched back), the support hand round the handguard (not palm-up under it)
+{ const fs=await import('node:fs'); const C=await import('./config.js'), up=fs.readFileSync('src/actors/soldier-upper.js','utf8'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), K=C.SOLDIER_UPPER.seat, G=C.GUNHOLD;
+  ok(/export function seatUpright\(R, G, speed\)/.test(up) && /\[D\.Spine2, D\.Neck, lean - K\.chest\]/.test(up) && /mounted && !stand && !P\.trans\) seatUpright\(R, G, Math\.abs\(CV\.speed/.test(rc) && K.k>0.7 && K.lean<0.1 && K.chest>0, 'every link of the spine laid straight up from the hips on the horse and the pillion, the chest a touch proud');
+  ok(G.cup[1]<0 && G.cup[0]>0.5 && G.wrap[0]>0.01 && G.wrap[0]<0.04 && /addScaledVector\(_gz, H\.wrap\[0\]\)\.addScaledVector\(_gy, H\.wrap\[1\]\)/.test(rc) && G.sniper.palm<-0.06 && /if\(moved\)\{ ik2\(D\.RightArm/.test(rc) && G.gripR && /LEGKIT\.aim\(D\.RightHand, D\.RightHandMiddle1, axR\)/.test(rc), 'the support palm on the handguard lower near side, the hand wrapped round it, the sniper hand off the magazine, no arm locked straight, the firing palm on the pistol grip');
+}
+// Z349 the pose studio: window.poseStudio measures and photographs how a soldier holds each weapon; tools/pose-studio.mjs runs it headless into report.html
+{ const fs=await import('node:fs'); const C=await import('./config.js'), ps=fs.readFileSync('src/dev/pose-studio.js','utf8'), cli=fs.readFileSync('tools/pose-studio.mjs','utf8'), V=C.POSE_STUDIO.views;
+  ok(/dev\/pose-studio\.js/.test(fs.readFileSync('src/hub.js','utf8')) && /export const poseStudio = \{ start, guns, equip, stance, measure, view, resume, suggest \}/.test(ps) && /window\.poseStudio = poseStudio/.test(ps), 'the studio in the page: start, guns, equip, stance, measure, view, resume, suggest');
+  ok(['stand34','handsL','handsR','left','kneel','prone','mount','mountSide'].every(k=>V[k] && typeof V[k].side==='number') && C.POSE_STUDIO.ok.palm<=5 && /closestPointToPoint/.test(ps), 'named views round the soldier; palms measured to the gun surface itself');
+  ok(/report\.html/.test(cli) && /report\.json/.test(cli) && /poseStudio\.measure\(\)/.test(cli) && /--suggest|SUGGEST/.test(cli) && /studio-shots/.test(fs.readFileSync('.gitignore','utf8')), 'the headless run writes pictures, report.json and report.html (kept out of git)');
+}
+
+// Z356 aiming for real: the chest squared to the target, the butt high in the pocket, the cheek on the stock (the eye behind the sight), the B41 grip
+{ const fs=await import('node:fs'); const C=await import('./config.js'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), G=C.GUNHOLD;
+  ok(/SQUARE TO THE TARGET/.test(rc) && G.square>0 && G.square<0.35 && /turnBone\(D\.Spine1, _gu, dq \* 0\.35\)/.test(rc), 'on his feet the chest faces the aim (the stand clip stood him bladed 60 degrees, the arms crossed)');
+  ok(/function sightLine\(met, g, len\)/.test(rc) && /const weld = rk < 0 && !g\.hold && !tuck \? \(1 - \(R\.rdy \|\| 0\)\) \* \(1 - low\) : 0/.test(rc) && G.cheek.k>0.5 && G.pocket[1]>0, 'aiming, the neck bows and the head tilts the right eye onto the sight line found on the model; at the ready or reloading the head stays up');
+  ok(G.rpg.butt[0]>G.rpg.grip[0] && G.rpg.grip[0]>0.25, 'the B41 grip is its real pistol grip, the shoulder behind it');
 }
 
 // Z141 realistic water + flora

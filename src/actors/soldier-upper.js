@@ -9,7 +9,7 @@
 //   · climbing on or off a ride he looks at what his left hand takes hold of (actors/soldier-mount.js).
 import * as THREE from 'three';
 import { SOLDIER_UPPER } from '../../config.js';
-import { CV, S, turnBone } from '../hub.js';
+import { CV, LEGKIT, S, turnBone } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
 const _c = V3(), _v = V3(), _a = V3(), FA = V3(), RA = V3(), _q = new THREE.Quaternion();
@@ -64,3 +64,14 @@ const _hq = new THREE.Quaternion(), _hp = new THREE.Quaternion();
 export function steadyHead(R, dt){ const D = R.pup && R.pup.D, U = R.upper, K = SOLDIER_UPPER.head; if(!D || !D.Head || !U || !dt) return;
   D.Head.getWorldQuaternion(_hq); if(!U.hq || U.hq.angleTo(_hq) > K.snap){ U.hq = _hq.clone(); return; }
   U.hq.slerp(_hq, Math.min(1, dt * K.rate)); _hq.slerp(U.hq, K.steady); D.Head.parent.getWorldQuaternion(_hp); D.Head.quaternion.copy(_hp.invert().multiply(_hq)); D.Head.updateMatrixWorld(true); }
+
+// Z348 SAT UP STRAIGHT, CHEST OUT: on the horse or a pillion the riding clips (and the rifle's pull on the shoulders) rounded his back — a slumped
+//   rider. Each link of the spine (Spine → Spine1 → Spine2 → Neck → Head) is laid along one line up from the hips: the ride's up, leaning forward
+//   from the hips only as much as the pace asks (more at the gallop), the upper back a touch proud of it, the head carried up over it
+const _su = V3(), _sa = V3(), _sr = V3(), _sd = V3(), _sc = V3(), _sb = V3();
+export function seatUpright(R, G, speed){ const D = R.pup && R.pup.D, K = SOLDIER_UPPER.seat; if(!D || !D.Spine || !D.Spine1 || !D.Spine2 || !D.Neck || !D.Head) return;
+  G.getWorldQuaternion(_q); _su.set(0, 1, 0).applyQuaternion(_q);
+  D.RightUpLeg.getWorldPosition(_sr); D.LeftUpLeg.getWorldPosition(_sa); _sr.sub(_sa); _sr.addScaledVector(_su, -_sr.dot(_su)).normalize(); _sa.crossVectors(_su, _sr).normalize();   // his right · ahead (the hips' own)
+  const lean = K.lean + K.pace * clamp(speed / K.fast, 0, 1), dir = (a, o) => o.copy(_su).multiplyScalar(Math.cos(a)).addScaledVector(_sa, Math.sin(a));
+  for(const [b, c, a] of [[D.Spine, D.Spine1, lean], [D.Spine1, D.Spine2, lean], [D.Spine2, D.Neck, lean - K.chest], [D.Neck, D.Head, lean * 0.3 - K.chest * 0.5]]){
+    b.getWorldPosition(_sb); c.getWorldPosition(_sc); _sc.sub(_sb).normalize(); dir(a, _sd); LEGKIT.aim(b, c, _sc.lerp(_sd, K.k).normalize()); } }

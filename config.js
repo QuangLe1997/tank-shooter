@@ -855,11 +855,16 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 // Z345 palm = where along the weapon (share of its length from the middle, + toward the butt) the support palm takes the handguard from below — its height
 //   found from the model (actors/real-cav.js palmSpot: rays cast up from below at the spot ± palmRays [along, across] m, the middle of what they meet), the palm's
 //   middle palmGap m under it; reach = the share of the left arm's full length it may stretch to before the gun is brought across to the hand;
-//   cup = the support hand's way under it [across to the far side, up, ahead] (the fingers then curl up round it, curl = the last)
-export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.02, -0.05, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.85, 0.2, 0.3, 0.95], reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
-  ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.15, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
-  minigun:{ hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
-  sniper:{ palm:-0.055, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.18, 0.0], grip:[0.1, -0.12], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
+//   cup = the support hand's way [across to the far side, up, ahead] and how tight the fingers close (Z348: down and across from the near side, so the
+//   hand wraps the handguard — it lay palm-up under it, catching it), wrap = the palm moved to the handguard's lower near side [toward him, up] (m);
+//   gripR = the firing hand round the pistol grip [fingers ahead, across, down] and its palm moved [to his right, up] (m) off the grip point;
+//   Z356 square = how far his chest stays bladed from the aim (rad, his right shoulder back); pocket [in from the shoulder joint, up, ahead] — the butt high
+//   in the pocket; cheek = the cheek weld: the right eye from the head joint [right, up, ahead] (m), the neck's reach (m), the most bow / tilt (rad), how
+//   much of the gap it closes, where the sight is (share behind the middle) and how far under the gun's top the eye looks through it (m)
+export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
+  ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.215, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
+  minigun:{ palm:-0.14, hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
+  sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.4, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
   gl:{ palm:-0.24, butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ palm:-0.12, hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ palm:-0.14, butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] } };
 // Z339 THE SOLDIER'S OWN LEGS (actors/soldier-legs.js; m, s, rad, m/s): his speed smoothed (/s), the legs eased in / out (/s), moving above moveV;
@@ -932,6 +937,13 @@ export const SOLDIER_MOUNT = { walkV:1.6, walkMin:0.25, walkMax:3.5, clear:0.7,
       { u:0.6, hips:[0.7, 0.55, 0, 1], yaw:1.42, lean:0.2, la:[0.45, 0, 0.12, 1], ra:[0.95, 0, -0.1], lh:1 },
       { u:0.85, hips:[0.95, 0.95, 0.02], yaw:1.45, lean:0.05, la:[0.95, 0, 0.14], ra:[0.97, 0, -0.12], lh:0.3 },
       { u:1, hips:[0.98, 0.97, 0.02], yaw:1.45, lean:0.03, la:[0.95, 0, 0.14], ra:[1, 0, -0.12] }] } };
+// Z349 THE POSE STUDIO (dev/pose-studio.js, tools/pose-studio.mjs): ok = a palm further than palm cm from the gun's surface, or an arm stretched past
+//   that share of its length, is flagged; settle = seconds to wait after a weapon change / a stance; views = cameras round the soldier relative to where
+//   he aims (side rad: − = his left; dist / up m; on = feet · hips · handL · handR; look = m above that)
+export const POSE_STUDIO = { ok:{ palm:4, stretch:0.995 }, settle:{ equip:0.6, stand:1.4, crouch:1.6, prone:2.0, mount:1.2 },
+  views:{ stand34:{ side:-0.55, dist:2.5, up:1.35, look:1.05 }, front:{ side:0, dist:2.6, up:1.4, look:1.1 }, left:{ side:-1.57, dist:2.6, up:1.25, look:1.0 }, right:{ side:1.57, dist:2.6, up:1.25, look:1.0 },
+    back:{ side:3.0, dist:2.4, up:1.6, look:1.15 }, handsL:{ side:-0.8, dist:0.65, up:0.12, on:'handL', look:-0.02 }, handsR:{ side:1.1, dist:0.8, up:0.18, on:'handR', look:-0.05 },
+    kneel:{ side:-0.6, dist:2.2, up:1.0, look:0.7 }, prone:{ side:1.2, dist:2.4, up:0.9, look:0.2 }, mount:{ side:-1.2, dist:3.8, up:1.9, look:1.5 }, mountBack:{ side:2.4, dist:3.6, up:2.0, look:1.5 }, mountSide:{ side:-1.75, dist:3.4, up:1.7, look:1.45 } } };
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
 //   stiffness leanK and damping leanZ); the shoulders' turn against each stride and the trunk's sway over the standing foot (rad); breathing (rad, Hz);
@@ -940,9 +952,11 @@ export const SOLDIER_MOUNT = { walkV:1.6, walkMin:0.25, walkMax:3.5, clear:0.7,
 //   × fire firing. head: how much of a quick jolt of the head is taken out, how fast its eased turn follows (/s), past `snap` rad it is a new start
 // Z347 stance = the forward lean into the gun from the hips stood / walking on his feet (rad; half of it kneeling) — the fighting stance, not upright behind it;
 //   SOLDIER_LEGS.stand: the feet a shoulder's width apart, the left a step ahead, the knees a little more bent
+// Z348 seat = sat on the horse / a pillion, the spine laid straight up from the hips: the lean forward (rad) stood still, + pace × (speed / fast m/s),
+//   the upper back proud of it by chest, how much of the way (k)
 export const SOLDIER_UPPER = { velK:8, accK:5, accMax:25, reset:0.6, lean:0.03, leanSide:0.025, leanMax:0.14, stance:0.2, leanK:45, leanZ:0.55, twist:0.06, sway:0.035,
   breath:0.012, breathHz:0.25, gaze:0.85, gun:{ k:90, c:11, m:0.8, dead:1.2, max:0.028, kick:0.05, yaw:0.012, pitch:0.008, fire:0.35 },
-  head:{ steady:0.6, rate:12, snap:0.9 } };
+  head:{ steady:0.6, rate:12, snap:0.9 }, seat:{ lean:0.05, pace:0.14, fast:12, chest:0.07, k:0.9 } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.6, 0.55], gaitAt:[2.3, 4.4], twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z340 TURNED ROUND IN THE SADDLE (actors/real-cav.js, combat/soldier-fire.js): sat on the horse or a pillion his hips and chest together turn up to `max`

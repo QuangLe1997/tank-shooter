@@ -20,3 +20,5 @@ assets/models/meshy/**/*.glb
 assets/models/meshy/**/*.task.json
 assets/models/tripo/
 .tripo/
+# Z349 the pose studio's pictures and report (tools/pose-studio.mjs)
+studio-shots/
