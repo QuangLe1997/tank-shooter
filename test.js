@@ -1432,6 +1432,18 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), r=R('src/actors/real-cav.js'), f=R('src/combat/soldier-fire.js');
   ok(/R\.bed = braced && !P\.trans && !P\.dead; if\(!R\.sat && !R\.bed\) R\.gunYaw = null;/.test(r) && /R && \(R\.sat \|\| R\.bed\) && R\.gunYaw != null/.test(f) && r.indexOf('R.bed = braced') < r.indexOf('holdReal(R, G, dt, P)){'), 'standing in a bed the bore is kept (set again by the hold after) and the trigger waits for it'); }
 
+// Z392 the scenery's distance copies light, the near scan whole but only up close, its maps to the GPU one a frame; phones' radar light; no raw Tripo in the app
+{ const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), sc=R('src/world/scenery.js'), J=JSON.parse(R('tools/scene-import.json')), im=R('tools/scene-import.mjs'), L=C.SCENERY.lod;
+  ok(L.mid[0]<=30 && L.mid[1]<=2 && L.far[0]<=90 && L.far[1]<=5, 'the near scan shows only within ~30 m, the far copy from ~90 m');
+  ok(/near = Math\.min\(idx\.length \/ 3, L\.base \|\| Infinity\)/.test(im) && /name:'d', tris:S\.tris, err:0\.05, base:S\.lodBase/.test(im) && /loose:S\.loose \|\| S\.looseMid/.test(im), 'the mid / far copies follow lodBase, looseMid lets a hard surface thin its mid copy');
+  const heavy=Object.keys(J).filter(k=>J[k].tris===0||J[k].tris>200000).filter(k=>!J[k].out&&fs.existsSync('assets/models/real/scene/l/'+k+'.glb'));
+  const tri=f=>{ const b=fs.readFileSync(f), j=JSON.parse(b.slice(20,20+b.readUInt32LE(12))); let t=0; for(const m of j.meshes) for(const p of m.primitives) t+=(p.indices!=null?j.accessors[p.indices].count:j.accessors[p.attributes.POSITION].count)/3; return t; };
+  const fat=heavy.filter(k=>tri('assets/models/real/scene/l/'+k+'.glb')>80000);
+  ok(heavy.length>15 && !fat.length, 'every mid copy of a heavy scan under 80k triangles' + (fat.length?' — over: '+fat.join(','):''));
+  ok(/sceneLevel\(this\.key, 'd'\)\.then\(warmMaps\)\.then/.test(sc) && /renderer\.initTexture\(t\); await _frame\(\);/.test(sc), 'a near scan\'s maps go to the GPU one a frame before it shows');
+  ok(/sceneLevel\('radar_dish', MOBILE \? 'm' : C\.lv\)/.test(sc), 'phones draw the radar from the light copy');
+  ok(/\['meshy','tripo'\]\.some/.test(R('tools/stage-offline.mjs')), 'the app bundles leave out the raw Tripo downloads'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

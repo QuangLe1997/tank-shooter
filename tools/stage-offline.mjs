@@ -7,7 +7,7 @@ import fs from 'node:fs'; import path from 'node:path';
 export async function stageOffline({ root, out, threeDir, log=console.log }){
   fs.rmSync(out,{recursive:true,force:true}); fs.mkdirSync(out,{recursive:true});
   for(const f of ['index.html','config.js']) fs.copyFileSync(path.join(root,f), path.join(out,f));
-  for(const d of ['src','css','assets']) fs.cpSync(path.join(root,d), path.join(out,d), { recursive:true, filter:(f)=>!f.includes(path.join('assets','models','meshy')) });   // Z248 raw Meshy downloads are not game files
+  for(const d of ['src','css','assets']) fs.cpSync(path.join(root,d), path.join(out,d), { recursive:true, filter:(f)=>!['meshy','tripo'].some(r=>f.includes(path.join('assets','models',r))) });   // Z248 raw Meshy downloads are not game files · Z392 nor the raw Tripo ones (1.4 GB the game never loads)
   // three.js: the core module + the closure of every addon the game imports
   const vend=path.join(out,'vendor','three'); fs.mkdirSync(path.join(vend,'build'),{recursive:true});
   fs.copyFileSync(path.join(threeDir,'build','three.module.js'), path.join(vend,'build','three.module.js'));

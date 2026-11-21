@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { SCENERY, SKYLINE } from '../../config.js';
-import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat } from '../hub.js';
+import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -25,6 +25,10 @@ export function sceneLevel(k, lv){ const id = k + ':' + lv; if(LVL[id]) return L
     if(!src) return null; const g = src.geometry; if(!g.boundingBox) g.computeBoundingBox(); const mat = src.material, C = M(k) || {};
     mat.envMapIntensity = C.env ?? SCENERY.env; blendIn(mat); return { geo:g, mat, m4:src.matrixWorld.clone() }; })
     .catch(e => { console.warn('[scenery]', id, e && e.message); return null; })); }
+// Z392 a near scan's maps (up to 4K) sent to the GPU one a frame before it is shown: all at once they held a frame 150–400 ms
+const WARM = new WeakMap(), _frame = () => new Promise(q => requestAnimationFrame(q));
+function warmMaps(L){ if(!L) return L; if(!WARM.has(L)) WARM.set(L, (async () => { for(const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']){ const t = L.mat[k]; if(t && !t.userData.warm){ t.userData.warm = 1; renderer.initTexture(t); await _frame(); } } return L; })());
+  return WARM.get(L); }
 // the transform that stands a model on its foot at the origin, centred, at its config size (one per model: every level shares it, so nothing jumps)
 const _b = new THREE.Box3(), _s = new THREE.Vector3(), _c = new THREE.Vector3();
 function norm(k, L){ if(NORM[k]) return NORM[k]; _b.copy(L.geo.boundingBox).applyMatrix4(L.m4); _b.getSize(_s); _b.getCenter(_c); const C = M(k), f = C.h ? C.h / _s.y : C.w / Math.max(_s.x, _s.z);
@@ -34,7 +38,7 @@ const _cp = new THREE.Vector3(), _op = new THREE.Vector3();
 export class SceneLOD extends THREE.LOD {
   constructor(k, o = {}){ super(); this.key = k; this.lv = {}; this.mat = o.mat || null; this.shadow = o.shadow ?? true; this.dist = o.dist || [40, 120]; this.nearAt = o.nearAt || 0; this.asked = false; this.onLevel = o.onLevel || null; }
   update(cam){ if(this.watch && this.watch()){ this.visible = false; return; } if(this.levels.length > 1) super.update(cam);   // (watch: the roof it stands on is gone)
-    if(this.nearAt && !this.asked){ _cp.setFromMatrixPosition(cam.matrixWorld); _op.setFromMatrixPosition(this.matrixWorld); if(_cp.distanceToSquared(_op) < this.nearAt * this.nearAt){ this.asked = true; sceneLevel(this.key, 'd').then(L => L && this.put('d', L)); } } }
+    if(this.nearAt && !this.asked){ _cp.setFromMatrixPosition(cam.matrixWorld); _op.setFromMatrixPosition(this.matrixWorld); if(_cp.distanceToSquared(_op) < this.nearAt * this.nearAt){ this.asked = true; sceneLevel(this.key, 'd').then(warmMaps).then(L => L && this.put('d', L)); } } }
   put(lv, L){ if(this.lv[lv] || !L) return; const n = norm(this.key, L), m = new THREE.Mesh(L.geo, this.mat || L.mat); if(this.mat && (lv === 'd' || !this.mat.map)) takeMaps(this.mat, L.mat); m.matrixAutoUpdate = false; m.matrix.multiplyMatrices(n.N, L.m4);
     m.castShadow = this.shadow; m.receiveShadow = true; this.lv[lv] = m; for(const q of this.levels) this.remove(q.object); this.levels.length = 0;
     [['d', 0], ['l', this.dist[0]], ['f', this.dist[1]], ['m', 0]].filter(([v]) => this.lv[v]).forEach(([v, d], i) => this.addLevel(this.lv[v], i ? d : 0, SCENERY.lod.hys));
@@ -135,7 +139,8 @@ function standing(L, h, rot){ _b.copy(L.geo.boundingBox).applyMatrix4(L.m4); _b.
 //   it, round the lattice's own axis), the drawn pieces hidden; it topples and burns as before
 const RAD = {};
 function radarParts(){ if(RAD.p) return RAD.p; const C = SCENERY.supply.radar;
-  return (RAD.p = sceneLevel('radar_dish', C.lv).then(L => { if(!L) return null; const g = standing(L, C.h), P = g.attributes.position.array, sy = C.split * C.h; let ax = 0, az = 0, k = 0;
+  return (RAD.p = sceneLevel('radar_dish', MOBILE ? 'm' : C.lv).then(L => {   // (Z392 phones take the light copy, as every other piece)
+    if(!L) return null; const g = standing(L, C.h), P = g.attributes.position.array, sy = C.split * C.h; let ax = 0, az = 0, k = 0;
     for(let i = 0; i < P.length; i += 3) if(P[i + 1] > sy * 0.75 && P[i + 1] < sy){ ax += P[i]; az += P[i + 2]; k++; } ax /= k || 1; az /= k || 1;   // (the lattice's axis, just under the dish)
     return { base:subGeo(g, (x, y) => y <= sy, ax, 0, az), dish:subGeo(g, (x, y) => y > sy, ax, 0, az), mat:L.mat }; })); }
 function realRadar(b, gen){ radarParts().then(R => { if(!R || gen !== GEN || !b.mesh) return; const g = b.mesh, head = g.userData.head; g.traverse(o => { if(o.isMesh) o.visible = false; });
