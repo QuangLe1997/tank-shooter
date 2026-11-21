@@ -349,7 +349,7 @@ export function updateRealCav(CV, dt, P){
   if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
   if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   if(R.pup && !P.dead && !bike && mounted && !P.trans) stirrupFeet(R, H);   // Z371 his feet in the stirrups, his legs out of the horse's barrel (actors/soldier-stirrups.js)
-  R.H = H; R.seated = seated && !P.trans; R.sat = sat && !P.trans && !P.dead; if(!R.sat) R.gunYaw = null;   // (Z335 for the hold: the ride and its driver · Z340 in the saddle)
+  R.H = H; R.seated = seated && !P.trans; R.sat = sat && !P.trans && !P.dead; R.bed = braced && !P.trans && !P.dead; if(!R.sat && !R.bed) R.gunYaw = null;   // (Z335 for the hold: the ride and its driver · Z340 in the saddle · Z391 standing in a bed: the trigger waits for the bore there too)
   if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
   if(R.pup && !P.dead) soldierUpper(R, G, dt, P, mounted);   // Z343 shoulders, trunk, head and the rifle's weight in time with the legs (actors/soldier-upper.js)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
