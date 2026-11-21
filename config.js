@@ -1362,7 +1362,8 @@ export const TROOPER = {
 //   null: scenery only), one = a light scan with no distance copies, env, lava = the melt's share of its width (a lava pit burns like a pool), yaw = turn so its front (+Z) faces the way it is set ·
 //   biomes: what each battlefield is built from — at: far (beyond the fence at bearing a, d m out) · edge (inside it, inset m) · free (open ground; north:
 //   the enemy half) · pair (either side of the piece `of`, side m across, fwd m ahead of its front) · line (n along a straight line gap m apart) · cluster
-//   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand
+//   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand; Z393 solid = this beat's own collision (else the
+//   model's), top = the most detail it ever draws ('l' mid / 'f' far: a small piece never fetches the whole scan)
 export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, radar:{ h:24, split:0.5, lv:'d' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
 //   h tall, split = the share of its height where the dish (which sweeps with the head) begins · bricks: the ruined brick walls in the breached wall's stone (h, how many
 //   3 m slices, which copy, fill = the least share of a slice that must be wall — the breach and the ragged ends are left out) · city: the power poles as the transformer pole scan (h, copy), roof water tanks / masts (h, share of the roofs of those kinds, set back d ×, sunk m)
@@ -1405,7 +1406,8 @@ export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys
     // ice: white summits standing over the fence, a signal mast glowing blue in the snow, groves of snow-laden cedar, the bare trees frosted
     ARCTIC:[ { k:'ice_peak', at:'far', a:[[-2.8, -2.3]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[-0.85, -0.35]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[2.7, 3.1], [0.0, 0.45]], d:[40, 60], s:[0.75, 0.95] },
       { k:'neon_tower', at:'free', id:'mast', north:true }, { k:'tree_cedar', at:'cluster', id:'g1', n:3, r:12, s:[0.85, 1.1], face:'rand' }, { k:'tree_cedar', at:'cluster', id:'g2', n:3, r:12, s:[0.85, 1.1], face:'rand' },
-      { k:'tree_bare', at:'free', n:5, s:[0.8, 1.15], face:'rand' }, { k:'rock_outcrop', at:'free', n:2, s:[0.8, 1] } ],
+      { k:'tree_bare', at:'free', n:5, s:[0.8, 1.15], face:'rand' }, { k:'rock_outcrop', at:'free', n:2, s:[0.8, 1] },
+      { k:'ice_peak', at:'free', n:16, s:[0.034, 0.066], face:'rand', solid:{ disc:0.42 }, top:'l' } ],   // Z393 snow-capped crags 2–4 m out on the ice (the summit scan small) in place of flora.js's cone 'ice spires'
     // sand and oil: a fuel farm of steel tanks with drums stacked round it, a siding of rail tankers, a pole line marching off, a leaning water tower, limestone kopjes
     DESERT:[ { k:'tank_steel', at:'cluster', id:'farm', n:3, r:13, s:[0.9, 1.1] }, { k:'oil_drum', at:'around', of:'farm', n:12, r:[9, 17], s:[0.95, 1.05], face:'rand' },
       { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'power_pole', at:'line', n:7, gap:24, face:'along' },

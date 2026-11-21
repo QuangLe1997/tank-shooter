@@ -51,9 +51,9 @@ export function towerModel(body, K){ const mat = new THREE.MeshStandardMaterial(
 // a piece ready to stand somewhere (its levels fetched in the background): the light ones now, the near one when it is wanted
 export function scenePiece(k, s = 1, o = {}){ const C = M(k), D = sceneDims(k, s), R = Math.max(D.x, D.y, D.z) / 2, Z = SCENERY.lod;
   const dist = [Math.max(Z.mid[0], Z.mid[1] * R), Math.max(Z.far[0], Z.far[1] * R)], one = !!C.one;
-  const lod = new SceneLOD(k, { ...o, dist, nearAt:MOBILE || one ? 0 : dist[0] + Z.near }); lod.userData.scene = k;
+  const lod = new SceneLOD(k, { ...o, dist, nearAt:MOBILE || one || o.top ? 0 : dist[0] + Z.near }); lod.userData.scene = k;   // (Z393 top: the most detail a small piece needs — 'l' never fetches the whole scan)
   if(MOBILE) sceneLevel(k, 'm').then(L => lod.put('m', L)); else if(one) sceneLevel(k, 'd').then(L => lod.put('d', L));
-  else { sceneLevel(k, 'f').then(L => lod.put('f', L)); sceneLevel(k, 'l').then(L => lod.put('l', L)); }
+  else { sceneLevel(k, 'f').then(L => lod.put('f', L)); if(o.top !== 'f') sceneLevel(k, 'l').then(L => lod.put('l', L)); }
   return lod; }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -70,9 +70,9 @@ function freeSpot(r, placed, north){ for(let t = 0; t < 220; t++){ const a = nor
 const faceCore = (x, z) => Math.atan2(-x, -z), WK = { x:0, z:-1e4, r:0, a:0 };
 const offWonder = a => Math.abs(Math.atan2(Math.sin(a - WK.a), Math.cos(a - WK.a))) > SCENERY.wonderGap;
 function plan(beats){ const placed = [], byId = {};
-  const add = (k, x, z, ry, s, extra) => { const p = { k, x, z, ry, s, r:fr(k, s), ...extra }; placed.push(p); return p; };
+  let beat = null; const add = (k, x, z, ry, s, extra) => { const p = { k, x, z, ry, s, r:fr(k, s), solid:beat && beat.solid, top:beat && beat.top, ...extra }; placed.push(p); return p; };
   const face = (b, x, z, along) => b.face === 'rand' ? Math.random() * Math.PI * 2 : b.face === 'out' ? faceCore(x, z) + Math.PI : b.face === 'along' && along != null ? along : faceCore(x, z) + rnd(-0.18, 0.18);
-  for(const b of beats){ const n = MOBILE ? Math.ceil((b.n || 1) * 0.5) : (b.n || 1), S = () => b.s ? rnd(b.s[0], b.s[1]) : 1;
+  for(const b of beats){ beat = b; const n = MOBILE ? Math.ceil((b.n || 1) * 0.5) : (b.n || 1), S = () => b.s ? rnd(b.s[0], b.s[1]) : 1;
     if(b.at === 'far'){ for(let t = 0; t < 40; t++){ const [a0, a1] = pick(b.a), a = rnd(a0, a1), s = S(); if(!offWonder(a)) continue; const d = fieldR(a) + rnd(b.d[0], b.d[1]) + fr(b.k, s) * 0.5, x = Math.cos(a) * d, z = Math.sin(a) * d;
         if(placed.some(p => Math.hypot(p.x - x, p.z - z) < p.r + fr(b.k, s) * 0.8)) continue; add(b.k, x, z, faceCore(x, z) + rnd(-0.6, 0.6), s, { far:true }); break; } continue; }
     if(b.at === 'edge'){ for(let t = 0; t < 60; t++){ const [a0, a1] = pick(b.a), a = rnd(a0, a1); if(!offWonder(a)) continue; const s = S(), r = fr(b.k, s), d = fieldR(a) - b.inset, x = Math.cos(a) * d, z = Math.sin(a) * d;   // (never standing in front of the wonder)
@@ -94,7 +94,8 @@ function plan(beats){ const placed = [], byId = {};
   return placed.filter(p => !p.ghost); }
 
 // what stops a tank or a man: an oriented box (the obb that solid-shape.js pushes bodies out of), an arch's two feet, a trunk or a drum of a circle
-function solids(p, lod, gy){ const C = M(p.k).solid; if(!C) return; const D = sceneDims(p.k, p.s), c = Math.cos(p.ry), sn = Math.sin(p.ry), top = gy + D.y, out = [];
+// Z393 a beat may stop things its own way (p.solid): a small scan in the field, where the same model on the skyline is scenery only
+function solids(p, lod, gy){ const C = p.solid || M(p.k).solid; if(!C) return; const D = sceneDims(p.k, p.s), c = Math.cos(p.ry), sn = Math.sin(p.ry), top = gy + D.y, out = [];
   const box = (lx, hw, hl) => out.push({ x:p.x + lx * c, z:p.z - lx * sn, r:Math.max(0.5, Math.min(hw, hl)), obb:{ f:p.ry, hl:Math.max(0.3, hl), hw:Math.max(0.3, hw) } });
   if(C.box) box(0, D.x / 2 * C.box, D.z / 2 * C.box);
   else if(C.pillars){ const w = D.x * C.pillars; for(const sd of [-1, 1]) box(sd * (D.x / 2 - w / 2), w / 2, D.z / 2 * 0.9); }
@@ -185,7 +186,7 @@ export function buildSceneSet(){ GEN++; SCENE.pieces.length = 0; WONDER.a0 = nul
   if(typeof window === 'undefined' || /noscene/.test(location.search + location.hash)) return; const gen = GEN; if(SCENERY.on) Promise.resolve().then(() => { realSupply(gen); realBricks(gen); realCity(gen); });   // (once this pass has built the depots, the walls, the city's poles)
   if(!B) return;
   { const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.2, R = Math.min(ARENA - 14, fieldR(a) + 40); WONDER.a0 = a; WK.a = a; WK.x = Math.cos(a) * R; WK.z = Math.sin(a) * R; WK.r = (SCENERY.wonderR[BIOME.name] ?? SCENERY.wonderR._); }   // the wonder's bearing, chosen here so the set is composed round it (world/wonders.js stands it there)
-  for(const p of plan(B)){ const lod = scenePiece(p.k, p.s, { shadow:!p.far }), gy = footY(p); lod.position.set(p.x, gy, p.z); lod.rotation.y = p.ry; lod.scale.setScalar(p.s);
+  for(const p of plan(B)){ const lod = scenePiece(p.k, p.s, { shadow:!p.far, top:p.top }), gy = footY(p); lod.position.set(p.x, gy, p.z); lod.rotation.y = p.ry; lod.scale.setScalar(p.s);
     arena.add(lod); LAND.meshes.push(lod); SCENE.pieces.push({ ...p, lod, y:gy }); solids(p, lod, gy);
     if(M(p.k).lava) Promise.resolve().then(() => { if(gen === GEN && BIOME.name === 'VOLCANO') lavaPit(p, gy); }); } }   // (after this stage's lava is laid: buildLava clears the pools first)
 

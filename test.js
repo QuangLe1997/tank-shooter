@@ -1455,7 +1455,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z143 savanna, arctic, wildlife
 { const fs=await import('node:fs'); const w=fs.readFileSync('src/data/world.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), a=fs.readFileSync('src/actors/wildlife.js','utf8');
-  ok(/name:'SAVANNA'/.test(w) && /name:'ARCTIC'/.test(w) && /baobab/.test(f) && /acacia/.test(f) && /reedPlume/.test(f) && /iceSpire/.test(f), 'savanna and arctic biomes with their own plants');
+  ok(/name:'SAVANNA'/.test(w) && /name:'ARCTIC'/.test(w) && /baobab/.test(f) && /acacia/.test(f) && /reedPlume/.test(f) && /tk:'coniferSnow'/.test(f) && /floe\(\)/.test(f), 'savanna and arctic biomes with their own plants');   // (Z393 the arctic's cone spires gone for summit crags, world/scenery.js)
   ok(/export function updateWildlife/.test(a) && /giraffe/.test(a) && /elephant/.test(a) && /reindeer/.test(a) && /flee/.test(a), 'wildlife herds graze and flee'); }
 
 // Z144 landmarks, country styles, weather reset, roomier field
@@ -2185,6 +2185,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function boreOf\(front, mode\)/.test(gf) && /bore = boreOf\(front, o\.bore\)/.test(gf) && /if\(o\.gripAt != null\)\{/.test(gf) && /ahead = parts\.filter\(p => p\.b < o\.gripAt - 1 \/ N\)/.test(gf), 'gun-fit: the bore rule per gun, a grip taken where it is said to be');
   ok(/\{ gun:kid \? GUNS\[kid\] : null, bore:g\.bore, gripAt:g\.gripAt \}/.test(R('src/actors/real-cav.js')) && /boreOf\(rows, \(INFGUN\.guns\[R\.armK\] \|\| \{\}\)\.bore\)/.test(ps) && (ps.match(/gripAt:\(INFGUN\.guns\[k\] \|\| \{\}\)\.gripAt/g)||[]).length===2, 'the soldier holds by them and the studio judges by them');
   ok(C.INFGUN.guns.rail.bore==='mid' && C.INFGUN.guns.dmr.gripAt>0.1 && C.INFGUN.guns.dmr.gripAt<0.3 && C.INFGUN.guns.dmr.len>=1.15 && C.INFGUN.guns.rail.len>=1.2, 'the two at their true lengths again, each with its override'); }
+
+// Z393 the arctic's hand-built cone 'ice spires' gone: small snow-capped crags from the summit scan out on the ice, solid, never fetching the whole scan
+{ const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), fl=R('src/world/flora.js'), sc=R('src/world/scenery.js'), B=C.SCENERY.biomes.ARCTIC.find(b=>b.k==='ice_peak'&&b.at==='free');
+  ok(!/iceSpire/.test(fl), 'no cone spires left in the arctic\'s flora');
+  ok(B && B.n>=8 && B.s[0]>0.02 && B.s[1]<0.1 && B.solid && B.solid.disc>0 && B.top==='l', 'crags out on the ice: the summit scan a few metres tall, its own solid disc, at most the mid copy');
+  ok(/solid:beat && beat\.solid, top:beat && beat\.top/.test(sc) && /const C = p\.solid \|\| M\(p\.k\)\.solid/.test(sc) && /nearAt:MOBILE \|\| one \|\| o\.top \? 0/.test(sc) && /if\(o\.top !== 'f'\) sceneLevel\(k, 'l'\)/.test(sc) && /scenePiece\(p\.k, p\.s, \{ shadow:!p\.far, top:p\.top \}\)/.test(sc), 'a beat\'s solid and top reach the piece: its collision, no near scan streamed in'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
