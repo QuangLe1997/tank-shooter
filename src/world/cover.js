@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit } from '../hub.js';
+import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER, FUEL_TANK } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -108,18 +108,33 @@ export function damageBlock(b, dmg){
 // Z402 A FUEL DRUM GOES UP (the scanned oil drums round the fuel farms, world/scenery.js): rounds chip it, then it blows — a fireball, burning fuel thrown out,
 //   a blast that hurts everything round it (enemies and their cover through aoeDamage, our men, the player — who is set alight close in), the drums beside
 //   it go up after it (a blast inside a blast waits a beat: no chain in one frame) — and nothing of it is left where it stood: its scan and its collider are gone
+//   Z414 the big fuel the same (b.fuel = FUEL_TANK.steel / rail: the farm's steel tanks, the rail tankers) — a bigger blast, a fire column, a bar showing what is left
 let _drumBlast=0;
-export function fuelDrumHit(b, dmg){ if(!(b.hp>0)) return; b.hp-=dmg; const gy=heightAt(b.x,b.z);
-  burst({x:b.x,z:b.z}, 0xffe0a0, 3, 5, {y:gy+0.6, life:0.25, size:0.2, grav:-12, drag:2, up:2});   // sparks off the steel
-  if(b.hp>0) return; b.hp=0; const D=FUEL_DRUM, go=()=>{ const i=blocks.indexOf(b); if(i<0) return; blocks.splice(i,1); dropScenePiece(b.mesh);   // gone from the field as it goes up (rounds, eyes, tracks)
-    const pos={x:b.x,z:b.z}, now=performance.now()/1000, R=D.r; _drumBlast++;
-    try{ bigExplode(pos, 0xff8a3a, 1.5); fireball(pos, D.fire, gy+0.8); decalScorch(b.x, b.z, R*0.55, 1);
-      for(let k=0;k<(MOBILE?5:10);k++){ const a=Math.random()*6.283, sp=3+Math.random()*7; spawnPart(b.x, gy+1, b.z, Math.cos(a)*sp, 4+Math.random()*6, Math.sin(a)*sp, {tex:'fire', color:0xffd080, color2:0xff3a08, size:0.9, life:0.8+Math.random()*0.4, grav:-12, drag:0.6, grow:0.7}); }   // burning fuel thrown out
-      aoeDamage(b.x, b.z, R, D.dmg, false, now); blastAllies(b.x, b.z, R, D.dmg*0.6);
-      const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(D.dmg*(1-(1-D.edge)*d/R)*0.6), now, p.pos.x-b.x, p.pos.z-b.z); if(d<R*0.6) addPlayerBurn(p.pos.x-b.x, p.pos.z-b.z); } }
-      for(const o of blocks.slice()) if((o.kind==='fueldrum' || o.kind==='drums') && Math.hypot(o.x-b.x, o.z-b.z)<D.chain) setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, 999); }, (D.delay[0]+Math.random()*(D.delay[1]-D.delay[0]))*1000); }   // the drums beside it go next
+const _rnd=a=>a[0]+Math.random()*(a[1]-a[0]);
+export function fuelDrumHit(b, dmg){ if(!(b.hp>0)) return; b.hp-=dmg; const gy=heightAt(b.x,b.z), D=b.fuel || FUEL_DRUM, big=D.boom>2;
+  burst({x:b.x,z:b.z}, 0xffe0a0, big?5:3, 5, {y:gy+0.6+(big?Math.random()*3:0), life:0.25, size:0.2, grav:-12, drag:2, up:2});   // sparks off the steel
+  if(big && b.hp>0){ if(!b.bar){ b.bar=getEnemyBar(); b.bar.g.scale.setScalar(2.0); } const f=Math.max(0, b.hp/b.maxHp), br=b.bar, top=blockTop(b);   // Z414 how much is left of a big one
+    br.g.visible=true; br.g.position.set(b.x, top+1.2, b.z); br.g.quaternion.copy(camera.quaternion); br.fill.scale.x=Math.max(0.001,f); br.fill.position.x=-(1-f)*0.5; br.fill.material.color.setHex(0xff7a3a);
+    const stamp=b._barT=performance.now(); setTimeout(()=>{ if(b.bar && b._barT===stamp) b.bar.g.visible=false; }, 3500); }
+  if(b.hp>0) return; b.hp=0; if(b.bar){ freeEnemyBar(b.bar); b.bar=null; }
+  const go=()=>{ const i=blocks.indexOf(b); if(i<0) return; blocks.splice(i,1); dropScenePiece(b.mesh);   // gone from the field as it goes up (rounds, eyes, tracks)
+    const pos={x:b.x,z:b.z}, now=performance.now()/1000; _drumBlast++;
+    try{ fuelBlast(b.x, b.z, D, now); fuelChain(b, D); }
     finally{ _drumBlast--; } };
-  if(_drumBlast) setTimeout(go, (D.delay[0]+Math.random()*(D.delay[1]-D.delay[0]))*1000); else go(); }   // (go: nothing if the field it stood on is gone)
+  if(_drumBlast) setTimeout(go, _rnd(D.delay)*1000); else go(); }   // (go: nothing if the field it stood on is gone)
+// Z414 the blast of fuel going up (a drum, a farm tank, a rail tanker, a supply base's tank or tanker): fireball, burning fuel thrown out (a fire column for
+//   the big ones), and its splash — enemies and their cover, our men, the player
+export function fuelBlast(x, z, D, now){ const gy=heightAt(x,z), pos={x,z}, R=D.r, big=D.boom>2;
+  bigExplode(pos, 0xff8a3a, D.boom||1.5); fireball(pos, D.fire, gy+0.8); decalScorch(x, z, R*0.55, 1); if(big){ shockDome(x, z, R*1.8, 0xffc890); deformCrater(x, z, 2.2, 0.4); S.shake=Math.min(4.5, S.shake+1.6); }
+  for(let k=0;k<(MOBILE?5:10)*(big?1.6:1);k++){ const a=Math.random()*6.283, sp=3+Math.random()*7*(big?1.6:1); spawnPart(x, gy+1, z, Math.cos(a)*sp, 4+Math.random()*6, Math.sin(a)*sp, {tex:'fire', color:0xffd080, color2:0xff3a08, size:big?1.6:0.9, life:0.8+Math.random()*0.4, grav:-12, drag:0.6, grow:0.7}); }   // burning fuel thrown out
+  if(big) for(let k=0;k<(MOBILE?8:16);k++) spawnPart(x+_R(-2,2), gy+2+Math.random()*3, z+_R(-2,2), _R(-2,2), 12+Math.random()*12, _R(-2,2), { tex:'fire', color:0xfff0c0, color2:0xb8260a, size:3+Math.random()*2, life:1.0+Math.random()*0.5, grav:5, drag:1.3, grow:2.4 });   // a fire column
+  aoeDamage(x, z, R, D.dmg, false, now); blastAllies(x, z, R, D.dmg*0.6);
+  const p=S.player; if(p){ const d=Math.hypot(p.pos.x-x, p.pos.z-z); if(d<R){ damagePlayer(Math.round(D.dmg*(1-(1-D.edge)*d/R)*0.6), now, p.pos.x-x, p.pos.z-z); if(d<R*0.6) addPlayerBurn(p.pos.x-x, p.pos.z-z); } } }
+// Z414 the fuel round a blast goes next, a beat later: drums go up, a big tank / tanker takes spread × its max hp (a whole farm burns through in a few blasts)
+const _isFuel=o=>o.kind==='fueldrum' || o.kind==='drums' || (o.supply && (o.kind==='fueltank' || o.kind==='tanker'));
+export function fuelChain(src, D){ const sp=D.spread ?? FUEL_TANK.drumSpread;
+  for(const o of blocks.slice()) if(o!==src && _isFuel(o) && o.hp>0 && Math.hypot(o.x-src.x, o.z-src.z)<D.chain){ const bigO=(o.fuel && o.fuel.boom>2) || o.supply;
+    setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, bigO ? o.maxHp*sp+1 : 999); }, _rnd(D.delay)*1000); } }
 // Z193 a solid piece under fire: chips + dust (stone) or sparks (steel) every hit; at ⅔ and ⅓ it cracks, darkens, is knocked askew and sheds chunks;
 //   at 0 it collapses into a heap of its own rubble. Shows how much is left like a rock does.
 const _STONEY=new Set(['concrete','pipes','jersey','teeth','hesco']);
@@ -184,7 +199,7 @@ export function destroyCover(b){
     aoeDamage(b.x, b.z, R, 60, false, now);
     for(const e of enemies){ const d=Math.hypot(e.pos.x-b.x, e.pos.z-b.z); if(d<R+e.r && !e.def.bomber && !e.def.air){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2.5*(1-d/(R+e.r))+1); e.burn.until=now+BALANCE.flame.duration; } }   // tanks behind the drums catch fire
     const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(30*(1-d/R))+6, now, p.pos.x-b.x, p.pos.z-b.z); for(let k=0;k<2;k++) addPlayerBurn(p.pos.x-b.x+(Math.random()-0.5), p.pos.z-b.z+(Math.random()-0.5)); } }
-    for(const o of blocks.slice()) if(o!==b && (o.kind==='drums' || o.kind==='fueldrum') && Math.hypot(o.x-b.x,o.z-b.z) < R*0.95) setTimeout(()=>{ if(blocks.includes(o)) damageBlock(o, 999); }, 180+Math.random()*260);   // chain reaction through the fuel dump (Z402 and the loose drums)
+    fuelChain(b, { chain:R*0.95, delay:[0.18, 0.44] });   // chain reaction through the fuel dump (Z402 and the loose drums · Z414 the big fuel takes a share)
     deformCrater(b.x, b.z, 2.4, 0.5);
     for(let k=0;k<4;k++) spawnDebris(pos, 0.9, 0x6a2a1a);
   } else if(b.kind==='tires'){ spawnDebris(pos, 1.2, 0x1e1e1c); burst(pos, 0x0e0d0c, 6, 3, {y:1.2, life:1.6, size:2.6, smoke:true, grav:-1.2, drag:1.2, up:2, op:0.55}); bigExplode(pos, 0xff7a2a, 1.0); }   // burning rubber, thick black smoke

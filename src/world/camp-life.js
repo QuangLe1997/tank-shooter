@@ -10,13 +10,14 @@ import { MOBILE, S, _R, _xf, animateSoldier, heightAt, makeSoldierMesh, scene } 
 export const CROWD=[];
 const B3=(w,h,d,x,y,z,ry)=>_xf(new THREE.BoxGeometry(w,h,d),x,y,z,0,ry||0,0), CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
 // a frame tent: walls, a gable roof (a triangular prism) and a dark door — w along x, d along z, door on +z
-export function frameTent(K, x, z, w, d, col, roofCol){ K.add('canvas', B3(w,2.1,d,x,1.05,z), col);
+export function frameTent(K, x, z, w, d, col, roofCol){ K=K.tent ? K.tent(x, z, w+0.3, d+0.4) : K; K.add('canvas', B3(w,2.1,d,x,1.05,z), col);   // Z414 in a kit of its own when the camp asks (world/camps.js: a tent block that burns)
   const tri=new THREE.Shape(); tri.moveTo(-d/2-0.2,0); tri.lineTo(d/2+0.2,0); tri.lineTo(0,1.3); tri.closePath(); const pr=new THREE.ExtrudeGeometry(tri,{ depth:w+0.3, bevelEnabled:false }); pr.translate(0,0,-(w+0.3)/2); pr.rotateY(Math.PI/2); _xf(pr,x,2.1,z);
-  K.add('canvas', pr, roofCol||col); K.add('metal', B3(1.4,1.8,0.04,x,0.9,z+d/2+0.02), 0x1e1c18); }
+  K.add('canvas', pr, roofCol||col); K.add('metal', B3(1.4,1.8,0.04,x,0.9,z+d/2+0.02), 0x1e1c18); return K; }
 function cot(K, x, z, ry){ K.add('wood', B3(0.75,0.06,2.0,x,0.5,z,ry), 0x6a6040); for(const s of [-0.85,0.85]) for(const t of [-0.3,0.3]) K.add('wood', B3(0.05,0.5,0.05,x+t*Math.cos(ry||0)+s*Math.sin(ry||0),0.25,z-t*Math.sin(ry||0)+s*Math.cos(ry||0)), 0x4a4030); }
 // the field mess: open-sided tent on poles, two long tables with benches, a kitchen trailer and a water trailer
-export function messHall(K, x, z){ for(const px of [-4.5,-1.5,1.5,4.5]) for(const pz of [-3,3]) K.add('wood', CY(0.07,0.07,2.7,6,x+px,1.35,z+pz), 0x6a5236);
-  for(const s of [-1,1]) K.add('canvas', _xf(new THREE.BoxGeometry(10,0.05,3.6),x,3.05,z+s*1.6,s*0.32,0,0), 0x7c7a54);
+export function messHall(K, x, z){ const T=K.tent ? K.tent(x, z, 10, 7) : K;   // Z414 the tent (poles and canvas) apart from the tables under it: it burns, they stay
+  for(const px of [-4.5,-1.5,1.5,4.5]) for(const pz of [-3,3]) T.add('wood', CY(0.07,0.07,2.7,6,x+px,1.35,z+pz), 0x6a5236);
+  for(const s of [-1,1]) T.add('canvas', _xf(new THREE.BoxGeometry(10,0.05,3.6),x,3.05,z+s*1.6,s*0.32,0,0), 0x7c7a54);
   for(const tz of [-1.25,1.25]){ K.add('wood', B3(7.2,0.08,0.95,x,0.8,z+tz), 0x8a6a40); for(const lx of [-3.2,0,3.2]) K.add('wood', B3(0.08,0.76,0.8,x+lx,0.38,z+tz), 0x5a4428);
     for(const s of [-0.78,0.78]) K.add('wood', B3(7.0,0.06,0.32,x,0.46,z+tz+s), 0x7a5a36);
     for(let i=0;i<8;i++) K.add('metal', CY(0.13,0.11,0.06,8,x-3+i*0.85,0.87,z+tz+_R(-0.2,0.2)), 0x9a9a92); }   // mess tins
@@ -31,14 +32,14 @@ export function quartermaster(K, x, z){ frameTent(K, x, z, 7, 5, 0x6a6e48, 0x5a5
   for(let i=0;i<5;i++) K.add('wood', B3(1.0,0.6,0.8,x+4.2,0.3+(i%3)*0.62,z-1.8+(i>2?1.0:0)), 0x6a5a38);   // boxes of kit
   for(let i=0;i<3;i++) K.add('canvas', B3(1.2,0.5,0.8,x-4.4,0.25+i*0.5,z-1.0), 0x8a7a58); }   // bales of clothing
 // the medical post: a white tent with red crosses, cots under an awning, and an ambulance
-export function medical(K, x, z){ frameTent(K, x, z, 7, 5, 0xe6e4dc, 0xdcdad2);
-  const cross=(cx,cy,cz,ry,s)=>{ K.add('paint', B3(1.4*s,0.42*s,0.04,cx,cy,cz,ry), 0xc81e1e); K.add('paint', B3(0.42*s,1.4*s,0.04,cx,cy,cz,ry), 0xc81e1e); };
+export function medical(K, x, z){ const T=frameTent(K, x, z, 7, 5, 0xe6e4dc, 0xdcdad2);   // Z414 the crosses painted on it burn with it
+  const cross=(cx,cy,cz,ry,s,k)=>{ (k||T).add('paint', B3(1.4*s,0.42*s,0.04,cx,cy,cz,ry), 0xc81e1e); (k||T).add('paint', B3(0.42*s,1.4*s,0.04,cx,cy,cz,ry), 0xc81e1e); };
   cross(x, 1.3, z+2.53, 0, 1); cross(x+3.53, 1.3, z, Math.PI/2, 0.9); cross(x-3.53, 1.3, z, Math.PI/2, 0.9);
-  K.add('paint', _xf(new THREE.BoxGeometry(1.6,0.05,0.5),x,2.95,z+0.6,0.83,0,0), 0xc81e1e); K.add('paint', _xf(new THREE.BoxGeometry(0.5,0.05,1.6),x,2.95,z+0.6,0.83,0,0), 0xc81e1e);   // a cross on the roof
+  T.add('paint', _xf(new THREE.BoxGeometry(1.6,0.05,0.5),x,2.95,z+0.6,0.83,0,0), 0xc81e1e); T.add('paint', _xf(new THREE.BoxGeometry(0.5,0.05,1.6),x,2.95,z+0.6,0.83,0,0), 0xc81e1e);   // a cross on the roof
   for(const px of [-3.4,3.4]) K.add('metal', CY(0.04,0.04,2.3,5,x+px,1.15,z+5.2), 0x6a6a64); K.add('canvas', _xf(new THREE.BoxGeometry(7,0.04,2.8),x,2.25,z+3.8,-0.12,0,0), 0xd8d6ce);   // awning
   for(const cx of [-2.4,0,2.4]) cot(K, x+cx, z+3.9, 0);
   const ax=x+7.2, az=z+2; K.add('metal', B3(1.2,0.35,6.4,ax,0.75,az), 0x2a2a28); K.add('paint', B3(2.3,1.9,2.0,ax,1.65,az+2.2), 0xe8e6de); K.add('paint', B3(2.4,2.3,3.8,ax,1.95,az-0.9), 0xe8e6de);   // ambulance
-  K.add('metal', B3(2.0,0.7,0.05,ax,2.0,az+3.21), 0x1a2228); cross(ax+1.22, 2.1, az-0.9, Math.PI/2, 0.8); cross(ax-1.22, 2.1, az-0.9, Math.PI/2, 0.8); wheelsK(K, [ax-1.05,ax+1.05], [az+2.2,az-1.8], 0.45); }
+  K.add('metal', B3(2.0,0.7,0.05,ax,2.0,az+3.21), 0x1a2228); cross(ax+1.22, 2.1, az-0.9, Math.PI/2, 0.8, K); cross(ax-1.22, 2.1, az-0.9, Math.PI/2, 0.8, K);   /* (the ambulance's crosses stay with it) */ wheelsK(K, [ax-1.05,ax+1.05], [az+2.2,az-1.8], 0.45); }
 // rest area: cots under a fly sheet + a washing line, latrines and showers with a water drum on top
 export function restArea(K, x, z){ for(const px of [-3,3]) for(const pz of [-2,2]) K.add('wood', CY(0.06,0.06,2.4,6,x+px,1.2,z+pz), 0x6a5236); K.add('canvas', B3(6.8,0.04,4.6,x,2.4,z), 0x6e6c4a);
   for(const cx of [-2.2,-0.7,0.8,2.3]) cot(K, x+cx, z, Math.PI/2*0+0);

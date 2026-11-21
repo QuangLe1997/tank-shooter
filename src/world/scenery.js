@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE } from '../../config.js';
+import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK } from '../../config.js';
 import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
@@ -108,7 +108,7 @@ function solids(p, lod, gy){ const C = p.solid || M(p.k).solid; if(!C) return; c
   else if(C.pillars){ const w = D.x * C.pillars; for(const sd of [-1, 1]) box(sd * (D.x / 2 - w / 2), w / 2, D.z / 2 * 0.9); }
   else if(C.disc) out.push({ x:p.x, z:p.z, r:Math.max(D.x, D.z) * C.disc });
   else if(C.r) out.push({ x:p.x, z:p.z, r:C.r * p.s });
-  if(M(p.k).fuel){ for(const q of out) blocks.push({ mesh:lod, ...q, hp:FUEL_DRUM.hp, maxHp:FUEL_DRUM.hp, steel:false, cover:true, loot:false, kind:'fueldrum', scenery:p.k, _top:top, _topHp:FUEL_DRUM.hp }); return; }   // Z402 a fuel drum: shot, it goes up (world/cover.js fuelDrumHit)
+  if(M(p.k).fuel){ const F=FUEL_TANK[M(p.k).fuel] || FUEL_DRUM; for(const q of out) blocks.push({ mesh:lod, ...q, hp:F.hp, maxHp:F.hp, steel:false, cover:true, loot:false, kind:'fueldrum', fuel:F, scenery:p.k, _top:top, _topHp:F.hp }); return; }   // Z414 a fuel-farm tank / rail tanker the same, bigger (FUEL_TANK)   // Z402 a fuel drum: shot, it goes up (world/cover.js fuelDrumHit)
   for(const q of out) blocks.push({ mesh:lod, ...q, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'ruin', scenery:p.k, _top:top, _topHp:Infinity }); }   // (kind 'ruin': the same rules as the war's ruins — indestructible stone)
 // Z402 a piece blown away (a fuel drum): out of the field and out of the lists that hold the field's pieces (its levels' geometry is shared — kept)
 export function dropScenePiece(lod){ lod.parent && lod.parent.remove(lod); const i=LAND.meshes.indexOf(lod); if(i>=0) LAND.meshes.splice(i, 1); const j=SCENE.pieces.findIndex(p=>p.lod===lod); if(j>=0) SCENE.pieces.splice(j, 1); }

@@ -3,7 +3,7 @@
 //   is taken, pick up a rifle and follow you into the fight.
 import * as THREE from 'three';
 import { POW, TROOPS } from '../../config.js';
-import { FT, MOBILE, RIDER, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, riders, scene, sfx, soldierKneel, spawnAlly, spawnGuards, spawnRider, svgBadgeTex, tip, updateCrewBtn, zonesOf, MODE } from '../hub.js';
+import { FT, MOBILE, RIDER, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, riders, scene, sfx, soldierKneel, spawnAlly, spawnGuards, spawnRider, svgBadgeTex, tip, updateCrewBtn, zonesOf, MODE, addTent } from '../hub.js';
 
 export const POWS=[];
 let _wireMat=null;
@@ -21,7 +21,8 @@ function buildStockade(q){ const g=new THREE.Group(); scene.add(g); const R=q.r*
     if(prev && !gate && !prev.gate){ const dx=wx-prev.x, dz=wz-prev.z, L=Math.hypot(dx,dz);
       for(const h of [0.55,1.25,1.95]){ const s=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.025,L), W); s.position.set((wx+prev.x)/2, (y+prev.y)/2+h, (wz+prev.z)/2); s.rotation.y=Math.atan2(dx,dz); g.add(s); } }
     prev={ x:wx, z:wz, y, gate }; }
-  const tent=makeTent(); const [tx,tz]=rot(0,-R*0.45); tent.position.set(tx, heightAt(tx,tz)-0.03, tz); tent.rotation.y=gateA; g.add(tent);
+  const tent=makeTent(); const [tx,tz]=rot(0,-R*0.45); tent.position.set(tx, heightAt(tx,tz)-0.03, tz); tent.rotation.y=gateA; g.add(tent);   // Z414 a wall to hide behind that burns away like any tent (camps.js) — it holds nobody: the men kneel in front of it and are freed at the wire, so a burnt tent frees and hurts no one
+  addTent(tent, tx, tz, gateA, 1.8, 1.3, true);
   const men=[]; const n=POW.prisoners[0]+((Math.random()*(POW.prisoners[1]-POW.prisoners[0]+1))|0);
   for(let k=0;k<n;k++){ const s=makeSoldierMesh(); s.scale.setScalar(TROOPS.look.scale); const [px,pz]=rot((k-(n-1)/2)*1.5, R*0.15+(k%2)*0.8);
     s.position.set(px, heightAt(px,pz), pz); s.rotation.y=gateA+Math.PI+(Math.random()-0.5)*0.6; kneel(s, true); s.userData.gun.visible=false; g.add(s); men.push(s); }

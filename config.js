@@ -1316,6 +1316,12 @@ export const DEATH_POP = { speed:[6.5, 9], up:[5.5, 7], k:[0.8, 1.3], lie:0.35, 
 // Z402 FUEL DRUMS GO UP (world/scenery.js oil drums, world/cover.js drum stacks): hp, then a blast of radius r m — dmg at its heart, edge share at the rim,
 //   fire = fireball size; drums within chain m go up after it (delay s); nothing is left where it stood (no heap, no collider)
 export const FUEL_DRUM = { hp:30, r:5.5, dmg:50, edge:0.3, fire:1.2, chain:6.5, delay:[0.15, 0.4] };
+// Z414 THE BIG FUEL GOES UP TOO (world/cover.js fuelDrumHit, world/supply.js pieceDown): the scanned fuel-farm tanks (steel) and rail tankers (rail) of the
+//   land's set, as fuel blocks with hp like the supply base's own (SUPPLYB.hp fueltank / tanker); boom = blast size, r / dmg / edge / fire as FUEL_DRUM, chain m
+//   = the fuel round it set off after it (drums go up, a tank / tanker takes spread × its max hp — so a farm burns through in two or three blasts, not one);
+//   the supply base's fuel tanks and tankers blow the same way and are gone (no charred hulk), the ground burning burn s where they stood
+export const FUEL_TANK = { steel:{ hp:300, boom:3.2, r:9, dmg:80, edge:0.3, fire:3.0, chain:13, spread:0.5, delay:[0.3, 0.7] }, rail:{ hp:140, boom:2.2, r:6.5, dmg:60, edge:0.3, fire:2.0, chain:10, spread:0.5, delay:[0.25, 0.6] },
+  drumSpread:0.15, burn:4 };
 // Z402 TENTS ARE WALLS UNTIL THEY BURN (world/camps.js — the camps' tents, the outposts'): a tent stops tanks and men and both sides' eyes (enemy sight,
 //   the player's auto-aim and lock-on); one hit sets it alight — it burns burn s (the canvas chars, and sags over the last sag share) and is gone with
 //   its collider. Sight lines run from / to eye m above the ground: a tank's [tank], a man's [man], a target's middle [mid]
@@ -1537,8 +1543,8 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     neon_tower:{ h:28, ar:[0.97, 1, 0.45], sink:0, solid:{ r:1.4 }, env:1 },
     radar_dish:{ h:25, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.55 } },
     tank_water:{ h:9.5, ar:[0.86, 1, 0.77], sink:0, solid:{ disc:0.46 } },
-    tank_steel:{ h:11, ar:[0.97, 1, 0.97], sink:0, solid:{ disc:0.48 } },
-    rail_tanker:{ w:16, ar:[3.9, 1, 1.09], sink:0, solid:{ box:0.95 } },
+    tank_steel:{ h:11, ar:[0.97, 1, 0.97], sink:0, solid:{ disc:0.48 }, fuel:'steel' },   // Z414 fuel: shot, it goes up (FUEL_TANK.steel)
+    rail_tanker:{ w:16, ar:[3.9, 1, 1.09], sink:0, solid:{ box:0.95 }, fuel:'rail' },   // Z414 (FUEL_TANK.rail)
     oil_drum:{ w:0.95, ar:[1.58, 1, 0.99], sink:0, solid:{ disc:0.5 }, fuel:true },   // Z380 a drum on its side is cover too: rounds stop at it · Z402 fuel: shot, it goes up (FUEL_DRUM)
     power_pole:{ h:11, ar:[0.49, 1, 0.21], sink:0, solid:{ r:0.35 } },
     fence_gate:{ w:5.6, ar:[1.22, 1, 0.1], sink:0, solid:{ box:1 } },
