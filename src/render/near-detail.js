@@ -70,7 +70,22 @@ export function nearShape(m, key, prep, o = {}){ if(m && on()) SHAPES.add({ r:ne
 export const asShipped = key => gl => ASIS[key] || (ASIS[key] = loadGLTF(key).then(lg => { const one = r => { const L = []; r.updateMatrixWorld(true); r.traverse(o => { if(o.isMesh) L.push(o); }); return L.length === 1 ? L[0] : null; };
   const a = lg && one(lg.scene), b = one(gl.scene); if(!a || !b || !!a.isSkinnedMesh !== !!b.isSkinnedMesh) return null;
   if(b.isSkinnedMesh) return a.skeleton.bones.map(x => x.name).join() === b.skeleton.bones.map(x => x.name).join() ? b.geometry : null;   // (Z395c only on the very same bones, in the same order)
-  const g = b.geometry.clone().applyMatrix4(a.matrixWorld.clone().invert().multiply(b.matrixWorld)); g.computeBoundingSphere(); return g; }));
+  const g = sameFrame(b.geometry.clone().applyMatrix4(a.matrixWorld.clone().invert().multiply(b.matrixWorld)), a.geometry); g.computeBoundingSphere(); return g; }));
+// Z411 THE ORIGINAL LAID BACK OVER THE SHIPPED MESH: the two files need not share one frame — the AK-47, M4 and MP5 were turned barrel-along-Z by a node
+//   in the shipped file only (Z355), their originals still lie along X, so the gun in the soldier's hands (and dropped on the ground) swung 90° aside the
+//   moment the camera came near, the hands left on the shipped grip. When the original's extents do not lie on the shipped mesh's own axes (any side off
+//   by more than NEARDETAIL.frame.tol of the longest), it is turned by the axis-aligned rotation whose extents do match and whose surface falls most in
+//   the cells the shipped surface fills (a grid³ of its box: which way round, not only which axis), centre on centre
+const ROTS = []; for(const p of [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]) for(let s = 0; s < 8; s++){ const e = Array(9).fill(0); p.forEach((j, i) => { e[i * 3 + j] = s >> i & 1 ? -1 : 1; });
+  const m = new THREE.Matrix4().set(e[0], e[1], e[2], 0, e[3], e[4], e[5], 0, e[6], e[7], e[8], 0, 0, 0, 0, 1); if(m.determinant() > 0) ROTS.push({ m, p }); }   // (row i: new axis i = ± old axis p[i])
+function sameFrame(g, lo){ const F = NEARDETAIL.frame; if(!F) return g; if(!lo.boundingBox) lo.computeBoundingBox(); g.computeBoundingBox(); const A = lo.boundingBox, B = g.boundingBox;
+  const sa = A.getSize(new THREE.Vector3()).toArray(), sb = B.getSize(new THREE.Vector3()).toArray(), tol = F.tol * Math.max(...sa), fits = p => p.every((j, i) => Math.abs(sb[j] - sa[i]) <= tol);
+  if(fits([0, 1, 2])) return g; const C = ROTS.filter(R => fits(R.p)); if(!C.length) return g;
+  const v = new THREE.Vector3(), n = F.grid, cell = () => { const f = [0, 1, 2].map(a => (v.getComponent(a) - A.min.getComponent(a)) / Math.max(sa[a], 1e-6)); if(f.some(x => x < -1e-4 || x > 1 + 1e-4)) return -1; const i = f.map(x => Math.min(n - 1, Math.max(0, Math.floor(x * n)))); return (i[0] * n + i[1]) * n + i[2]; };
+  const P = lo.attributes.position, Q = g.attributes.position, full = new Set(), ca = A.getCenter(new THREE.Vector3()), cb = B.getCenter(new THREE.Vector3()), step = Math.max(1, Math.floor(Q.count / F.samples));
+  for(let i = 0; i < P.count; i++){ v.fromBufferAttribute(P, i); full.add(cell()); }
+  let best = C[0], hits = -1; if(C.length > 1) for(const R of C){ let h = 0; for(let i = 0; i < Q.count; i += step){ v.fromBufferAttribute(Q, i).sub(cb).applyMatrix4(R.m).add(ca); if(full.has(cell())) h++; } if(h > hits){ hits = h; best = R; } }
+  return g.translate(-cb.x, -cb.y, -cb.z).applyMatrix4(best.m).translate(ca.x, ca.y, ca.z); }
 // (is the mesh in the battle and shown? a hidden gun or a fallen-away camp is not near)
 function shown(o){ for(let p = o; p; p = p.parent){ if(!p.visible) return false; if(p === scene) return true; } return false; }
 function shapes(dt){ const cand = [];

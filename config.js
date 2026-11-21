@@ -967,6 +967,11 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 //   rides ON the shoulder) | hip (minigun, flamethrower); kick = [straight back (m), muzzle climb (rad)] per shot, rate = the recoil spring's stiffness
 // Z298 reload: done only when it lasts long enough to be seen (min s — a quick-reload bonus skips it); the gun lowered (low rad), turned in (turn), canted (cant);
 //   mag = where the magazine goes in (the RPG: its muzzle, the round goes in the front), bolt = the charging handle
+// Z411 load = a weapon loaded at its muzzle (the B41): for the reload it comes off his shoulder — its pistol grip at [his right, up, ahead] (m) of his right
+//   shoulder joint (no lower than floor m over the ground: kneeling, lying), the tube raised pitch rad muzzle-up and turned turn rad in across him — and the
+//   left hand takes a round from the bag on his front (pouch: [his left, up, ahead] of his chest), holds it ahead[0] m out in front of the muzzle, pushes it
+//   home to ahead[1] m; he looks down look rad at it; lying down (prone) the tube is drawn back along his right side, its muzzle low ahead of his head.
+//   (It came from behind his back over his shoulder: the left arm swung round behind him.)
 // Z345 palm = where along the weapon (share of its length from the middle, + toward the butt) the support palm takes the handguard from below — its height
 //   found from the model (actors/real-cav.js palmSpot: rays cast up from below at the spot ± palmRays [along, across] m, the middle of what they meet), the palm's
 //   middle palmGap m under it; reach = the share of the left arm's full length it may stretch to before the gun is brought across to the hand;
@@ -981,7 +986,8 @@ export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'
 export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, blade:[0.005, 0.35, 0.15, 0.8, 0.9], cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
   ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.215, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
   minigun:{ palm:-0.14, hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
-  sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.4, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0], back:true },
+  sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.4, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0],
+    load:{ at:[0.06, -0.45, -0.06], pitch:0.6, turn:0.8, pouch:[0.15, -0.3, 0.18], ahead:[0.14, 0.05], look:0.2, floor:0.15, prone:{ at:[0.06, -0.1, -0.3], pitch:0.15, turn:0.6 } } },
   gl:{ palm:-0.24, butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ palm:-0.12, hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ palm:-0.14, butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] },
   ak:{ palm:-0.2, butt:[0.5, -0.01], grip:[0.21, -0.08], fore:[-0.2, -0.04], kick:[0.03, 0.045] }, m4:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.21, -0.08], fore:[-0.12, -0.06], kick:[0.018, 0.024] },
@@ -1268,8 +1274,10 @@ export const FARLOD = { on:true, far:60, rK:6, mobileK:0.7, keep:0.15, err:0.02,
 //   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh ·
 //   shapes: placed meshes drawn from their whole original at once (render/near-detail.js nearShape: camps, parked vehicles, ruins, animals, the soldier's gun) ·
 //   hero: the reach (m) of the player's own ride and its driver (the chase camera sits ~6 m behind them)
+//   Z411 frame: an original whose extents miss the shipped mesh's axes by more than tol (share of its longest side) is turned axis-aligned back over it
+//   (render/near-detail.js sameFrame) — the turn whose surface lands most in the shipped surface's cells (grid³ of its box, samples of its vertices)
 export const NEARDETAIL = { on:true, rK:3, min:5, at:30, out:1.4, hold:4, every:0.3, maxKeys:8, maxInst:4000, shapes:16, hero:12,
-  trees:{ n:12, at:34, every:0.2 } };   // trees: the n standing nearest the camera within at m drawn whole from the original (world/real-trees.js), re-picked every s
+  trees:{ n:12, at:34, every:0.2 }, frame:{ tol:0.04, grid:16, samples:6000 } };   // trees: the n standing nearest the camera within at m drawn whole from the original (world/real-trees.js), re-picked every s
 export const LOD = { shadowR: 26, guardR: 70, every: 0.25, tankDetailR: 38, smallR: 0.9,
   detailR: 3, detailPx: 1.6, detailHys: 1.35, rescan: 2 };   // Z240 pieces under detailR m are skipped once their on-screen size × fog transparency drops under detailPx px (back in above ×detailHys); the list is rebuilt every rescan s   // Z233 enemy tanks past tankDetailR (from the camera) drop fittings smaller than smallR
 // Z107 POWER RATING — one number for how strong YOUR tank is, and what each level asks of it, on the same scale.

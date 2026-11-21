@@ -35,7 +35,7 @@ function armInfantry(arms, cb, C){ const K = C.carbine.len / 0.954;
     const hold = new THREE.Group(); hold.add(met); hold.visible = false;
     // Z360 its own shape measured: the hold it is held by (fit:true weapons — actors/gun-fit.js), its bore (every weapon: the rounds and the flash leave the real muzzle)
     const kid = Object.keys(GUNS).find(id => GUNS[id].trooper && INFGUN.map[id] === k), fit = fitHold(sideProfile(hold, g.len), g.len, { gun:kid ? GUNS[kid] : null, bore:g.bore, gripAt:g.gripAt });   // (Z390 per-gun overrides) GUNKICK[k] = gunRecoil(kid ? GUNS[kid] : null, g.len);
-    if(fit && g.fit){ const h = GUNHOLD[k] || {}; FIT[k] = Object.assign(fit, h.hold ? { hold:h.hold, butt:[+(fit.grip[0] + h.butt[0] - h.grip[0]).toFixed(3), h.butt[1]] } : {}, h.back ? { back:true } : {}); } const bore = fit ? fit.bore : 0.02, gx = g.fit && fit ? fit.grip[0] : g.grip;
+    if(fit && g.fit){ const h = GUNHOLD[k] || {}; FIT[k] = Object.assign(fit, h.hold ? { hold:h.hold, butt:[+(fit.grip[0] + h.butt[0] - h.grip[0]).toFixed(3), h.butt[1]] } : {}, h.load ? { load:h.load } : {}); } const bore = fit ? fit.bore : 0.02, gx = g.fit && fit ? fit.grip[0] : g.grip;
     hold.userData = { k, len:g.len, muzzle:[-g.len / 2, bore, 0], fit }; m2.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
     if(arms._G) arms._G.add(hold); (arms._metric || (arms._metric = {}))[k] = hold;
     // the same weapon set into the carbine's frame (the steel operator's hold): turned muzzle to −X, scaled to its true length, its pistol grip where the carbine's is
@@ -87,6 +87,14 @@ function carryPose(R, D, g, len){ const P = GUNFIT.carry, up = P.up * Math.sqrt(
   _cy.copy(_gu).addScaledVector(_cx, -_gu.dot(_cx)).normalize().applyAxisAngle(_cx, P.roll); _cz.crossVectors(_cx, _cy); _cq.setFromRotationMatrix(_cm.makeBasis(_cx, _cy, _cz));
   (D.Spine1 || D.Spine2).getWorldPosition(_cc); _cc.addScaledVector(_gr, P.at[0]).addScaledVector(_gu, P.at[1]).addScaledVector(_gf, P.at[2]).sub(gunPoint(_pc, g.grip, len, _gw.set(0, 0, 0), _cq));
   _gq.slerp(_cq, s); _gp.lerp(_cc, s); _gx.set(1, 0, 0).applyQuaternion(_gq); _gy.set(0, 1, 0).applyQuaternion(_gq); _gz.set(0, 0, 1).applyQuaternion(_gq); }
+// Z411 THE B41 LOADED AT ITS MUZZLE (GUNHOLD.rpg.load): off his shoulder for it — the pistol grip down by his right hip, the tube slanted up across his
+//   chest, the muzzle out front-left at chest height, so the left hand can reach it with a round from the bag on his front (on the shoulder the muzzle
+//   stood ~0.9 m out of the left arm's reach and the round came from behind his back: the arm swung round behind him); blended in with the reload's `low`
+function loadPose(D, g, len, low, yaw, prone){ const L = g.load, P = prone && L.prone || L, yw = yaw + P.turn, pt = P.pitch;
+  _cx.set(Math.sin(yw) * Math.cos(pt), Math.sin(pt), Math.cos(yw) * Math.cos(pt)).negate(); _cy.set(0, 1, 0).addScaledVector(_cx, -_cx.y).normalize(); _cz.crossVectors(_cx, _cy); _cq.setFromRotationMatrix(_cm.makeBasis(_cx, _cy, _cz));
+  D.RightArm.getWorldPosition(_cc).addScaledVector(_gr, P.at[0]).addScaledVector(_gu, P.at[1]).addScaledVector(_gf, P.at[2]); _cc.y = Math.max(_cc.y, heightAt(_cc.x, _cc.z) + L.floor);   // (kneeling or lying: kept off the ground)
+  _cc.sub(gunPoint(_pc, g.grip, len, _gw.set(0, 0, 0), _cq));
+  _gq.slerp(_cq, low); _gp.lerp(_cc, low); _gx.set(1, 0, 0).applyQuaternion(_gq); _gy.set(0, 1, 0).applyQuaternion(_gq); _gz.set(0, 0, 1).applyQuaternion(_gq); }
 const armLen = (D, s) => D[s + 'Arm'].getWorldPosition(_pk).distanceTo(D[s + 'ForeArm'].getWorldPosition(_pd)) + _pd.distanceTo(D[s + 'Hand'].getWorldPosition(_pa));
 function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.armK]; if(!met || !met.visible) return false; const H = GUNHOLD, g = FIT[R.armK] || H[R.armK] || H.ar, D = R.pup.D, p = S.player, len = met.userData.len;
   // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
@@ -130,11 +138,12 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   const ywS = yw + (R.gunSway ? R.gunSway.y : 0) + rc.y, ptS = pitch + (R.gunSway ? R.gunSway.p : 0);   // Z343 the muzzle's small figure of eight with the stride (looks only: the rounds go where he aims)
   _gx.set(Math.sin(ywS) * Math.cos(ptS), Math.sin(ptS), Math.cos(ywS) * Math.cos(ptS)).negate();   // the gun's +X runs back to the butt
   _gy.set(0, 1, 0).addScaledVector(_gx, -_gx.y).normalize(); if(rc.r) _gy.applyAxisAngle(_gx, rc.r);   // (Z360 the shot's twitch round the bore)
-  if(tuck){ _gx.set(0, 0, -1).applyQuaternion(_gq).addScaledVector(_gu, 0.6).normalize(); _gy.copy(_gu).addScaledVector(_gx, -_gu.dot(_gx)).normalize(); D.Spine2.getWorldPosition(_gp); _gp.addScaledVector(_gu, -0.05).addScaledVector(_gr, 0.12); } if(low > 0 && !g.back) _gy.applyAxisAngle(_gx, -RL.cant * low);   // canted: the mag well to his left hand
+  if(tuck){ _gx.set(0, 0, -1).applyQuaternion(_gq).addScaledVector(_gu, 0.6).normalize(); _gy.copy(_gu).addScaledVector(_gx, -_gu.dot(_gx)).normalize(); D.Spine2.getWorldPosition(_gp); _gp.addScaledVector(_gu, -0.05).addScaledVector(_gr, 0.12); } if(low > 0 && !g.load) _gy.applyAxisAngle(_gx, -RL.cant * low);   // canted: the mag well to his left hand
   _gz.crossVectors(_gx, _gy); _gm.makeBasis(_gx, _gy, _gz); _gq.setFromRotationMatrix(_gm);
   // butt into the pocket, then the whole gun pushed straight back by the kick
   gunPoint(_gt, g.butt, len, _gw.set(0, 0, 0), _gq); _gp.sub(_gt).addScaledVector(_gx, rc.z);
   if(R.spr > 0.001 && !g.hold && !tuck && rk < 0) carryPose(R, D, g, len);   // Z360 at a sprint: across his chest
+  if(g.load && low > 0.001 && !tuck) loadPose(D, g, len, low, yaw, prone);   // Z411 the B41 off his shoulder, stood up to be loaded at its muzzle
   _gm.compose(_gp, _gq, _gt.set(1, 1, 1)); _mi.copy(G.matrixWorld).invert(); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true);
   // hands onto it: the wrist just behind / above each contact, so the grip sits in the palm; elbows down (the right one out)
   const grip = gunPoint(new THREE.Vector3(), g.grip, len, _gp, _gq), fore = gunPoint(new THREE.Vector3(), g.fore, len, _gp, _gq);
@@ -148,13 +157,14 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   { const reach = armLen(D, 'Left') * H.reach; D.LeftArm.getWorldPosition(_pa); const d = _pa.distanceTo(wl);   // (Z360 the shoulder's place taken after armLen, which reuses _pa)
     R.pull = Math.max(0, d - reach); if(d > reach){ _pd.subVectors(_pa, wl).setLength(d - reach); for(const v of [wr, wl, grip, fore]) v.add(_pd); if(palmP) palmP.add(_pd); _gp.add(_pd);
       _gm.compose(_gp, _gq, _pk.set(1, 1, 1)); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true); } }
-  if(rk >= 0){ // the left hand's round: the mag out (it drops), a fresh one from the chest pouch (the RPG: a round from over the shoulder), in, the bolt racked, back to the handguard
-    const mag = gunPoint(new THREE.Vector3(), g.mag || H.mag, len, _gp, _gq).addScaledVector(_gy, -0.04), bolt = gunPoint(new THREE.Vector3(), g.bolt || H.bolt, len, _gp, _gq).addScaledVector(_gy, 0.03);
-    D.Spine2.getWorldPosition(_gt); const pouch = g.back ? _gt.clone().addScaledVector(_gu, 0.22).addScaledVector(_gf, -0.22).addScaledVector(_gr, -0.12) : _gt.clone().addScaledVector(_gf, 0.2).addScaledVector(_gr, -0.06).addScaledVector(_gu, -0.16);
-    const K = g.back ? [[0, wl], [0.2, pouch], [0.42, pouch], [0.66, mag], [0.8, mag], [1, wl]] : [[0, wl], [0.17, mag], [0.27, mag], [0.44, pouch], [0.52, pouch], [0.68, mag], [0.75, mag.clone().addScaledVector(_gy, 0.03)], [0.83, bolt], [0.88, bolt.clone().addScaledVector(_gx, 0.06)], [1, wl]];
+  if(rk >= 0){ // the left hand's round: the mag out (it drops), a fresh one from the chest pouch (the B41: a round from the bag on his front, into the muzzle — Z411), in, the bolt racked, back to the handguard
+    const mag = gunPoint(new THREE.Vector3(), g.mag || H.mag, len, _gp, _gq).addScaledVector(_gy, -0.04), bolt = gunPoint(new THREE.Vector3(), g.bolt || H.bolt, len, _gp, _gq).addScaledVector(_gy, 0.03), L = g.load;
+    D.Spine2.getWorldPosition(_gt); const pouch = L ? _gt.clone().addScaledVector(_gr, -L.pouch[0]).addScaledVector(_gu, L.pouch[1]).addScaledVector(_gf, L.pouch[2]) : _gt.clone().addScaledVector(_gf, 0.2).addScaledVector(_gr, -0.06).addScaledVector(_gu, -0.16);
+    const tip = L && gunPoint(new THREE.Vector3(), g.mag, len, _gp, _gq), out = L && tip.clone().addScaledVector(_gx, -L.ahead[0]), home = L && tip.clone().addScaledVector(_gx, -L.ahead[1]);   // (ahead of the muzzle: along the bore, −x)
+    const K = L ? [[0, wl], [0.2, pouch], [0.38, pouch], [0.56, out], [0.64, out], [0.78, home], [0.86, home], [1, wl]] : [[0, wl], [0.17, mag], [0.27, mag], [0.44, pouch], [0.52, pouch], [0.68, mag], [0.75, mag.clone().addScaledVector(_gy, 0.03)], [0.83, bolt], [0.88, bolt.clone().addScaledVector(_gx, 0.06)], [1, wl]];
     for(let i = 0; i + 1 < K.length; i++){ const [t0, a] = K[i], [t1, b] = K[i + 1]; if(rk <= t1){ wl = a.clone().lerp(b, smooth((rk - t0) / Math.max(1e-3, t1 - t0))); break; } }
-    lc = 0.55; if(!g.back && g.magDrop !== false && R.rlDrop !== inst.rU && rk >= RL.drop){ R.rlDrop = inst.rU; spawnPart(mag.x, mag.y - 0.05, mag.z, (Math.random() - 0.5) * 0.6, -0.4, (Math.random() - 0.5) * 0.6, { color:0x1e1f1c, size:g.magSize ? clamp(g.magSize * 0.9, 0.08, 0.24) : 0.16, life:1.1, grav:-14, drag:0.4 }); sfx('click'); }
-    D.Neck && turnBone(D.Neck, _gr, -0.32 * low); }   // and he looks down at it (about his right: negative is down)
+    lc = 0.55; if(!g.load && g.magDrop !== false && R.rlDrop !== inst.rU && rk >= RL.drop){ R.rlDrop = inst.rU; spawnPart(mag.x, mag.y - 0.05, mag.z, (Math.random() - 0.5) * 0.6, -0.4, (Math.random() - 0.5) * 0.6, { color:0x1e1f1c, size:g.magSize ? clamp(g.magSize * 0.9, 0.08, 0.24) : 0.16, life:1.1, grav:-14, drag:0.4 }); sfx('click'); }
+    D.Neck && turnBone(D.Neck, _gr, -(L ? L.look : 0.32) * low); }   // and he looks down at it (about his right: negative is down · Z411 the B41's muzzle is at his chest)
   sh.getWorldPosition(_gt); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, _gt.clone().addScaledVector(_gu, -0.45).addScaledVector(_gr, 0.3).addScaledVector(_gf, -0.1));
   D.LeftArm.getWorldPosition(_gt); const poleL = _gt.clone().addScaledVector(_gu, -0.5).addScaledVector(_gr, -0.15).addScaledVector(_gf, 0.15); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, poleL);
   rollHand(D, 'Right', _gt.copy(_gy).negate()); if(rk < 0) rollHand(D, 'Left', _gx);   // Z304 knuckles down the pistol grip; the support hand's along the handguard

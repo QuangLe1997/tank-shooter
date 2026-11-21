@@ -1,10 +1,11 @@
 // ui/loadout.js — Z103 split from ui/menus.js. ARSENAL / LOADOUT — pick up to LOADOUT_MAX guns from the collection (from the start screen or mid-run pause).
-import { GUNS, LOADOUT_MAX, PROFILE, S, gunPicHTML, gunTierTx, hide, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD, setupBack } from '../hub.js';
+import { GUNS, KIT_GUN, LOADOUT_MAX, MODE, PRIMARY_GUNS, PROFILE, S, gunPicHTML, gunTierTx, hide, isSoldier, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD, setupBack } from '../hub.js';
 
 // ---- arsenal / loadout (pick ≤5 from your collection) ----
 export let _ldSel=[];
 export function renderLoadout(){
-  const grid=document.getElementById('ldgrid'); if(!grid) return; grid.innerHTML='';
+  const grid=document.getElementById('ldgrid'); if(!grid) return; grid.innerHTML=''; ldSub();
+  if(_ldSol) return renderSoldierArms(grid);
   Object.keys(GUNS).filter(id=>!GUNS[id].trooper).forEach(id=>{                            // show every gun: owned = selectable, the rest = locked (collection goal) · Z306 not the soldier's rifle
     const g=GUNS[id], owned=PROFILE.ownedGuns.includes(id), on=_ldSel.includes(id);
     const card=document.createElement('div');
@@ -25,7 +26,22 @@ export function toggleLd(id){ const i=_ldSel.indexOf(id);
   sfx('click'); renderLoadout(); }
 export let _ldFrom='start';
 export function openLoadout(){ _ldFrom = (S.mode==='paused')?'pause':!document.getElementById('battleSetup').classList.contains('hidden')?'battleSetup':'start';   // Z354 from CHUẨN BỊ TRẬN: back there
+  _ldSol = _ldFrom==='pause' ? MODE.id==='soldier' : isSoldier(); _solSel = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine';   // Z411 the soldier's own arsenal in soldier mode
   hide(_ldFrom); _ldSel=PROFILE.loadout.filter(k=>PROFILE.ownedGuns.includes(k)).slice(0,LOADOUT_MAX); if(!_ldSel.length)_ldSel=['rifle']; renderLoadout(); show('loadout'); sfx('click'); }
+// Z411 THE SOLDIER'S ARSENAL: in soldier mode (a soldier's battle paused, or the soldier picked in CHUẨN BỊ TRẬN) KHO SÚNG lists his hand weapons — every one,
+//   the B41 marked as always carried — and the one tapped is the gun he carries in (PROFILE.trooperGun, as the gear step's row); from the pause it is in his
+//   hands at once. (It listed the tank's guns, and from the pause put them in the soldier's hands.)
+let _ldSol=false, _solSel='carbine', _ldSubTank=null;
+function ldSub(){ const e=document.querySelector('#loadout .subtitle'); if(!e) return; if(_ldSubTank==null) _ldSubTank=e.innerHTML;
+  e.innerHTML = _ldSol ? 'NGƯỜI LÍNH · chọn súng chính ('+PRIMARY_GUNS.length+' khẩu) · B41 luôn mang theo · súng khác nhặt trong trận' : _ldSubTank; }
+function renderSoldierArms(grid){
+  for(const id of [...PRIMARY_GUNS, KIT_GUN]){ const g=GUNS[id], kit=id===KIT_GUN, on=kit||id===_solSel, card=document.createElement('div');
+    card.className='ldcard'+(on?' on':'');
+    card.innerHTML=(on?'<div class="num">'+(kit?'B41':'CHÍNH')+'</div>':'')+'<div class="pick"></div>'+gunPicHTML(id,'gp-ld')+'<div class="nm">'+g.name+'</div><div class="tr">'+(kit?'LUÔN MANG THEO':gunTierTx(id))+'</div>';
+    if(!kit) tapEl(card, ()=>{ _solSel=id; sfx('click'); renderLoadout(); }); grid.appendChild(card); } }
+// his main gun swapped mid-battle: the one he has already is taken up, else it takes the starting gun's place in the rack (what he picked up stays)
+function applySoldierMain(){ const p=S.player; if(!p || !p.guns) return; let i=p.guns.findIndex(g=>g.id===_solSel);
+  if(i<0){ i=Math.max(0, p.guns.findIndex(g=>g.id!==KIT_GUN)); p.guns[i]={ id:_solSel, ammo:GUNS[_solSel].mag, rU:0, rD:0 }; } p.gunIdx=i; updateGunHUD(); }
 export function applyLoadoutToRun(){                                  // re-pick mid-battle: swap the active guns live (keep ammo of guns you already had)
   const p=S.player; if(!p) return;
   let want=PROFILE.loadout.slice(0,LOADOUT_MAX); if(!want.length) want=['rifle'];
@@ -33,8 +49,8 @@ export function applyLoadoutToRun(){                                  // re-pick
   if(p.gunIdx>=p.guns.length) p.gunIdx=0;
   updateGunHUD();
 }
-export function closeLoadout(){ PROFILE.loadout=_ldSel.slice(0,LOADOUT_MAX); if(!PROFILE.loadout.length)PROFILE.loadout=['rifle']; PROFILE.defaultGun=dflt()||'rifle'; saveProfile(); hide('loadout');
-  if(_ldFrom==='pause'){ applyLoadoutToRun(); if(S.mode==='paused') show('pause'); }   // changes take effect on the current run
+export function closeLoadout(){ if(_ldSol){ PROFILE.trooperGun=_solSel; saveProfile(); } else { PROFILE.loadout=_ldSel.slice(0,LOADOUT_MAX); if(!PROFILE.loadout.length)PROFILE.loadout=['rifle']; PROFILE.defaultGun=dflt()||'rifle'; saveProfile(); } hide('loadout');
+  if(_ldFrom==='pause'){ if(_ldSol) applySoldierMain(); else applyLoadoutToRun(); if(S.mode==='paused') show('pause'); }   // changes take effect on the current run
   else if(_ldFrom==='battleSetup'){ show('battleSetup'); setupBack(); }
   else if(S.mode==='start') show('start');
   refreshStartUI(); sfx('click'); }

@@ -10,7 +10,11 @@ import { RIDER_TURN, TROOPER, XHAIR } from '../../config.js';
 import { GUNS, MOBILE, PAD, PROFILE, S, aimTarget, cMod, fireFlame, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine } from '../hub.js';
 
 const _v = new THREE.Vector3();
-export const PRIMARY_GUNS = ['carbine', 't_ak', 't_m4', 't_mp5'];   // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ)
+// Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ, and Z411 KHO SÚNG in soldier mode) · Z411 every hand weapon of his, by tier — it listed
+//   only the carbine, AK-47, M4 and MP5, so the PKM, minigun, shotgun, 12.7, M79, flamer, energy rifle and the four Z387 guns were never in the menu; the B41
+//   (KIT_GUN) is not: it always comes with him
+export const KIT_GUN = 't_rpg';
+export const PRIMARY_GUNS = Object.keys(GUNS).filter(id => GUNS[id].trooper && id !== KIT_GUN).sort((a, b) => (GUNS[a].tier || 1) - (GUNS[b].tier || 1));
 export function trooperGuns(){ const main = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine'; return [main, 't_rpg'].map(id => ({ id, ammo:GUNS[id].mag, rU:0, rD:0 })); }
 // the guns the "SÚNG MỚI" crate can bring him: one he has not got yet, the heavier ones later in the campaign
 export function trooperGunPick(){ const p = S.player, have = new Set(p.guns.map(g => g.id)), stage = S.stage || 1;
