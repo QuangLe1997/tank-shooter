@@ -14,7 +14,8 @@ export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'bagac' / 'bantai'
   const H=kind ? buildBikeMount(kind) : buildHorse(), G=buildGeneral(); CV.H=H; CV.G=G; CV.on=true; CV.mounted=true; CV.stance='stand'; CV.want='stand'; CV.trans=null; CV.call=false; CV.speed=0;
   if(kind) H.root.scale.setScalar(XEOM.k); seatRider(G, H);
   if(H.drv){ H.drv.onCrash=()=>{ if(CV.mounted && !CV.trans){ CV.trans={ k:'off', t:0, crash:true }; CV.call=false; } };   // Z296 the bike goes down: the soldier jumps clear
-    H.drv.onBack=()=>{ const p=S.player; if(!p || CV.mounted || CV.trans || CV.dead) return;
+    H.drv.onBack=()=>{ const p=S.player, pick=H.drv.pickup; H.drv.pickup=false; if(!p || CV.mounted || CV.trans || CV.dead) return;
+      if(pick){ callRide(p, true); CV.autoOn=true; floatText('BÁC TÀI CHẠY TỚI ĐÓN!', '#9be04a', p.pos, 14); return; }   // Z363 the repair done (or his break over): he rides over and the soldier climbs on
       const L=CV.landAt; CV.landAt=null; if(L && Math.hypot(p.pos.x-L.x, p.pos.z-L.z)<XEOM.call.stayR && Math.hypot(p.pos.x-CV.hPos.x, p.pos.z-CV.hPos.z)<RIDE.crash.callR){ CV.call=true; CV.autoOn=true; CV.callAt=performance.now()/1000; floatText('DỰNG XONG — LÊN XE ĐI CON!', '#9be04a', p.pos, 14); return; }   // Z306 you stayed by it: he rides up and you climb on
       floatText('BÁC TÀI ĐANG CHỜ — G: LÊN XE / GỌI XE', '#9be04a', p.pos, 14); }; }   // Z303 back up and waiting: no dragging him aboard, no chasing him — on foot he goes where he likes, G brings him back   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
   if(!kind) H.onStep=hoofFall;
@@ -43,7 +44,7 @@ export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!==
     CV.trans={ k:'off', t:0 }; sfx('click'); return; }
   const d=Math.hypot(CV.hPos.x-p.pos.x, CV.hPos.z-p.pos.z), ready=rideCanCome();
   if(d<=CAV.mountR && ready){ CV.trans={ k:'on', t:0 }; sfx('click'); return; }
-  if(d<=CAV.mountR){ floatText(CV.H.broken ? 'XE HƯ — BÁC TÀI ĐANG SỬA!' : 'CHỜ BÁC TÀI DỰNG XE!', '#ffcf5a', p.pos, 14); return; }   // Z296 the driver is still picking the bike up
+  if(d<=CAV.mountR){ floatText(CV.H.broken ? 'XE HƯ — BÁC TÀI ĐANG SỬA!' : CV.H.onBreak ? 'BÁC TÀI ĐANG NGHỈ — CHỜ CHÚT!' : 'CHỜ BÁC TÀI DỰNG XE!', '#ffcf5a', p.pos, 14); return; }   // Z296 the driver is still picking the bike up
   if(CV.call) return; whistle(); callRide(p); }   // Z306 away from it: call it — he comes now, or as soon as it is fit to (game/ride-call.js)
 function whistle(){ if(!actx || !master) return; const t=actx.currentTime; try{ const o=actx.createOscillator(), g=actx.createGain(); o.type='sine';
   o.frequency.setValueAtTime(1500, t); o.frequency.linearRampToValueAtTime(2300, t+0.18); o.frequency.linearRampToValueAtTime(1700, t+0.32); o.frequency.linearRampToValueAtTime(2500, t+0.5);

@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIDE, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideSmoke, scene, sfx, spawnPart } from '../hub.js';
+import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter assembled from the city's parts stays as the fallback
@@ -165,7 +165,7 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
   H.lean += (-bank + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
   const SL = AC.slip, slipT = two ? Math.sign(yawRate) * Math.min(SL.max, Math.max(0, av - SL.v) * Math.abs(yawRate) * SL.k) : 0; H.slip += (slipT - H.slip) * Math.min(1, dt * 4); H.T.rotation.y = H.slip;   // Z311 fast and hard over, the rear steps out
   rideRocks(H, v, X); airborne(H, dt, v);
-  const flying = H.air.y > 0.03; suspension(H, dt, v, yawRate, two); if(!flying){ wheelDust(H, dt, v, X); tyreTrail(H, X); } lampUpdate(H, dt); rideSmoke(H, dt);
+  const flying = H.air.y > 0.03; suspension(H, dt, v, yawRate, two); if(!flying){ wheelDust(H, dt, v, X); tyreTrail(H, X); } lampUpdate(H, dt); rideSmoke(H, dt); rideExhaust(H, dt);   // (Z363 the old engine's exhaust smoke)
   const now = performance.now() / 1000, p = S.player;
   if(H.wheels){ H.roll = (H.roll || 0) + v * dt; const U = XEOM.sus, wb = Math.abs(X.wheels[0].c[2] - X.wheels[X.wheels.length - 1].c[2]) * XEOM.k;
     const want = Math.max(-U.steerMax, Math.min(U.steerMax, Math.atan(wb * yawRate / Math.max(1.4, Math.abs(v))))) * Math.sign(v || 1);   // Z299 the steer a turn this tight needs at this speed (a lot slow, a touch fast)

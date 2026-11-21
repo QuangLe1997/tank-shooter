@@ -158,6 +158,7 @@ export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a charac
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
 export * from './actors/driver-acts.js';   // Z331 the driver off the ride: the crawl to a downed bike, the heave, giving himself up
 export * from './actors/driver-rant.js';   // Z361 the bike dies under the driver: the kick-start, a boot to the tyre, a row with the soldier
+export * from './actors/driver-break.js';   // Z363 the driver's break: a smoke on his heels or a pee, then he picks the soldier up
 export * from './world/outposts.js';   // Z285 enemy outposts   // Z268 scooters and cars on the move
 export * from './fx/weather.js';
 export * from './game/score.js';

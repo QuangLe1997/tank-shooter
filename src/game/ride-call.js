@@ -10,7 +10,7 @@ const now = () => performance.now() / 1000;
 const isBike = () => !!(CV.H && CV.H.bike);
 export const rideCanCome = () => !!CV.H && !CV.H.broken && driverReady(CV.H);
 // the call: he comes now, or as soon as the ride is fit to
-export function callRide(p){ const C = XEOM.call; CV.call = true; CV.callAt = now(); CV.hop = false; CV.prog = { d:dist(p), t:now() }; CV.far = dist(p) > C.farR;
+export function callRide(p, quiet){ const C = XEOM.call; CV.call = true; CV.callAt = now(); CV.hop = false; CV.prog = { d:dist(p), t:now() }; CV.far = dist(p) > C.farR; if(quiet) return;   // (Z363 quiet: the driver calls himself over, after a repair or his break)
   const far = dist(p) > C.farR, msg = !isBike() ? 'HUÝT SÁO GỌI NGỰA' : CV.H.broken ? 'ĐÃ GỌI — SỬA XE XONG BÁC TỚI ĐÓN' : !driverReady(CV.H) ? 'ĐÃ GỌI — DỰNG XE XONG BÁC TỚI' : far ? 'ĐÃ GỌI XE — BÁC TÀI ĐI ĐƯỜNG VÒNG TỚI ĐÓN' : 'ĐÃ GỌI XE — BÁC TÀI ĐANG TỚI';
   floatText(msg, '#9be04a', p.pos, 14); }
 const dist = p => Math.hypot(CV.hPos.x - p.pos.x, CV.hPos.z - p.pos.z);
@@ -40,6 +40,7 @@ export function rideCallUi(){ if(el || typeof document === 'undefined') return;
 function paint(){ const p = S.player, on = !!(p && p.cav && CV.H && S.mode === 'playing' && !CV.mounted && !CV.trans && !CV.dead); el.style.display = on ? 'block' : 'none'; if(!on) return;
   const key = MOBILE ? '' : '  [G]', d = dist(p), bike = isBike(), eta = rideEta(p); let txt, off = false;
   if(bike && CV.H.broken){ txt = '🔧 XE ĐANG SỬA' + (CV.call ? ' · ĐÃ GỌI' : '  — GỌI' + key); off = !!CV.call; }
+  else if(bike && CV.H.onBreak){ txt = '🚬 BÁC TÀI ĐANG NGHỈ' + (CV.call ? ' · ĐÃ GỌI' : ''); off = !!CV.call; }   // Z363 his break
   else if(bike && !driverReady(CV.H)){ txt = 'BÁC TÀI ĐANG DỰNG XE' + (CV.call ? ' · ĐÃ GỌI' : ''); off = !!CV.call; }
   else if(d <= CAV.mountR) txt = (bike ? 'LÊN XE' : 'LÊN NGỰA') + key;
   else if(CV.call){ txt = (bike ? '🛵 BÁC TÀI ĐANG TỚI · ' : '🐎 NGỰA ĐANG TỚI · ') + Math.ceil(eta ?? 0) + 's'; off = true; }

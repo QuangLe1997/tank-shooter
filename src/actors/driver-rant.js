@@ -1,8 +1,9 @@
 // actors/driver-rant.js — Z361 THE DRIVER'S TEMPER: the bike dies under him and he takes it personally.
 //   · on the seat (stall): the throttle wrung in vain, eyes down at the engine; the bike rolls to a stop and he stands on the kick-start —
 //     three stamps, a cough of black smoke each time, nothing;
-//   · off (off · kick): he steps down on his side and walks (his own walk clip) to a wheel's outer quarter — the one that leaves him farther from
-//     the soldier — winds up and boots the tyre (the bike rocks on its stand), and hops round on one leg clutching the foot;
+//   · off (off · bang · kick): he steps down on his side, pulls the hammer from under the seat and lays into the bike with it (Z363: three overhead
+//     blows by the saddle, sparks, the bike jumping on its stand), then walks (his own walk clip) to a wheel's outer quarter — the one that leaves
+//     him farther from the soldier — winds up and boots the tyre, and hops round on one leg clutching the foot;
 //   · the row (argue): he turns on the soldier: a finger jabbed at him, then hands on hips shaking his head at the answer; palms up, an open hand
 //     at the bike, a slap to his forehead at the answer — two rounds of words (RIDE_TALK.argue: the soldier answers the line of the same index);
 //   · he gives in (giveup): waves it off, walks back to the engine and squats to the repair (the Z303 fixStep in actors/driver.js), muttering
@@ -11,14 +12,14 @@
 //   blendPose). His lines float over his own head (driverLine), the soldier's answers over the soldier's.
 import * as THREE from 'three';
 import { RIDE, RIDE_RANT, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, RIDE_VOICE, S, blendPose, burst, curlHand, drvFlatFoot, drvHips, drvLens, drvRest, drvToWorld, floatText, heightAt, hudOn, ik2, rollHand, sfx, snapPose, spawnPart } from '../hub.js';
+import { BIOME, RIDE_VOICE, S, blendPose, burst, curlHand, drvFlatFoot, drvHips, drvLens, drvRest, drvToWorld, floatText, heightAt, hudOn, ik2, rollHand, scene, sfx, snapPose, spawnPart } from '../hub.js';
 
 const V3 = () => new THREE.Vector3();
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _e = V3(), _f = V3(), _g = V3(), _h = V3(), _p = V3(), _t = V3(), _kf = V3(), _ia = V3(), _ib = V3();
 const UPW = new THREE.Vector3(0, 1, 0), FWD = V3(), RT = V3(), RU = V3(), RF = V3(), RR = V3(), RC = V3(), _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion();
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ease = k => k * k * (3 - 2 * k), mix = (a, b, k) => a + (b - a) * k, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
 const SIDES = [['Left', -1], ['Right', 1]];   // (sd: which way is outward for that hand / foot, along his right)
-export const DRIVER_RANT = new Set(['off', 'kick', 'argue', 'giveup']);   // (on his feet beside the dead bike; 'stall' is on the seat — driver.js poses it)
+export const DRIVER_RANT = new Set(['off', 'bang', 'kick', 'argue', 'giveup']);   // (on his feet beside the dead bike; 'stall' is on the seat — driver.js poses it)
 
 const wp = (b, out) => b.getWorldPosition(out);
 const gnd = (v, up = 0) => (v.y = heightAt(v.x, v.z) + up, v);
@@ -57,28 +58,33 @@ export function drvStallLook(H, D){ const A = RIDE_RANT.stall, B = D.B, t = D.t2
   const dn = clamp(t * 3, 0, 1); turn(B.Neck, RR, -A.look[0] * dn); turn(B.Head, RR, -A.look[1] * dn); turn(B.Neck, RU, -A.look[2] * kk);   // (+ about his right tips the head back; + about up turns it to his left)
   if(D.stallDone) offStart(H, D); }
 // the engine coughs and dies again: a click of the lever, a dull thud, black smoke out of the exhaust
-function cough(H){ rideFrame(H); sfx('click'); sfx('thud', undefined, 0.35); const e = XEOM.wear.engine[H.bike] || [0, 0.2, 0]; (H.body || H.B).localToWorld(_e.fromArray(e)); _e.addScaledVector(RF, -0.55).addScaledVector(RR, 0.12);
+function cough(H){ rideFrame(H); sfx('click'); sfx('thud', undefined, 0.35); const e = (XEOM.exhaust && XEOM.exhaust[H.bike]) || XEOM.wear.engine[H.bike] || [0, 0.2, 0]; (H.body || H.B).localToWorld(_e.fromArray(e));   // (Z363 out of the exhaust)
   for(let k = 0; k < 3; k++) spawnPart(_e.x, _e.y, _e.z, (Math.random() - 0.5) * 0.6 - RF.x * 0.8, 0.4 + Math.random() * 0.5, (Math.random() - 0.5) * 0.6 - RF.z * 0.8, { color:0x2a2622, size:0.45 + Math.random() * 0.3, grow:1.6, life:1.1, grav:0.3, drag:1.1, smoke:true, op:0.55 }); }
 
 // ---- off the seat: down onto the road on his side (the bike's left), then a few steps to the tyre he boots ----
 const onRideW = (H, arr, out) => H.toWorld ? H.toWorld(arr, out) : H.B.localToWorld(out.fromArray(arr));
 function offStart(H, D){ const O = RIDE_RANT.off; D.stallDone = false; D.kickT = null; D.kickW = 0; D.kickFoot = null; D.hipUp = 0;
   snapPose(D, O.step); drvToWorld(D); D.mix.stopAllAction(); kickSpot(H, D);
-  const dn = D.ks.down; D.w.position.copy(dn); D.hd = Math.atan2(D.ks.st.x - dn.x, D.ks.st.z - dn.z); D.w.rotation.set(0, D.hd, 0);   // (stepped down beside the seat, turned toward the tyre)
+  const dn = D.ks.bdown; D.w.position.copy(dn); D.hd = D.ks.bhd; D.w.rotation.set(0, D.hd, 0);   // (Z363 stepped down beside the saddle, facing it: the hammer first)
   D.state = 'off'; D.t2 = 0; D.said = {}; D.gest = null; D.rockT = 9; D.walking = false; }
 // the tyre to boot: a wheel on his side (or on the centre line), at its outer quarter (the back of the rear tyre, the front of the front one), from
 //   45° off its line — whichever leaves him farther from the soldier, his walk there included (he steps down beside the seat, a little toward
 //   that end, and walks); and where the repair squat will be (RIDE.fix: between its feet)
 function kickSpot(H, D){ rideFrame(H); const O = RIDE_RANT.off, p = S.player, X = XEOM[H.bike]; let best = null;
-  for(const [k, wh] of (H.wheels || []).entries()){ if(wh.x < -1e-3) continue; const wd = X && X.wheels ? X.wheels[k] : null, end = wh.pivot.position.z >= 0 ? 1 : -1;
-    const P = V3(); wh.pivot.getWorldPosition(P); P.addScaledVector(RR, -((wd ? wd.w * XEOM.k / 2 : 0.05) + 0.03)).addScaledVector(RF, end * wh.R * O.quarter).addScaledVector(RU, wh.R * 0.15);
-    const dir = V3().copy(RR).negate().multiplyScalar(Math.cos(O.angle)).addScaledVector(RF, end * Math.sin(O.angle)); dir.y = 0; dir.normalize();
+  // Z363 his side of the bike: the one the soldier is not standing on (s +1 its left, −1 its right) — the hammer, the boot and the repair all there
+  const s = D.fixSide = p && (p.pos.x - RC.x) * -RR.x + (p.pos.z - RC.z) * -RR.z > 0.2 ? -1 : 1;
+  for(const [k, wh] of (H.wheels || []).entries()){ if(s * wh.x < -1e-3) continue; const wd = X && X.wheels ? X.wheels[k] : null, end = wh.pivot.position.z >= 0 ? 1 : -1;
+    const P = V3(); wh.pivot.getWorldPosition(P); P.addScaledVector(RR, -s * ((wd ? wd.w * XEOM.k / 2 : 0.05) + 0.03)).addScaledVector(RF, end * wh.R * O.quarter).addScaledVector(RU, wh.R * 0.15);
+    const dir = V3().copy(RR).multiplyScalar(-s * Math.cos(O.angle)).addScaledVector(RF, end * Math.sin(O.angle)); dir.y = 0; dir.normalize();
     const hd = Math.atan2(-dir.x, -dir.z); frame(hd); const st = V3().copy(P).addScaledVector(dir, O.out).addScaledVector(RT, -0.1); gnd(st);
-    const down = onRideW(H, D.R.hip, V3()).addScaledVector(RR, -O.side).addScaledVector(RF, end * O.lead); gnd(down);
+    const down = onRideW(H, D.R.hip, V3()).addScaledVector(RR, -s * O.side).addScaledVector(RF, end * O.lead); gnd(down);
     const score = p ? Math.min(Math.hypot(st.x - p.pos.x, st.z - p.pos.z), segDist(p.pos, down, st) + 0.6) : -Math.abs(end + 1); if(!best || score > best.score) best = { P, st, hd, down, score }; }
-  if(!best){ const P = V3(); onRideW(H, [0.08, 0.15, -0.25], P); const hd = Math.atan2(RR.x, RR.z); frame(hd); best = { P, st:gnd(V3().copy(P).addScaledVector(FWD, -O.out)), hd, down:gnd(onRideW(H, D.R.hip, V3()).addScaledVector(RR, -O.side)) }; }
-  const F = RIDE.fix[D.kind], fx = F ? [(F.foot[0][0] + F.foot[1][0]) / 2, 0, (F.foot[0][2] + F.foot[1][2]) / 2] : [0.35, 0, 0];
-  D.ks = { P:best.P, st:best.st, hd:best.hd, down:best.down, bike:RC.clone().setY(best.P.y + 0.35), fix:gnd(onRideW(H, fx, V3())) }; }
+  if(!best){ const P = V3(); onRideW(H, [0.08 * s, 0.15, -0.25], P); const hd = Math.atan2(s * RR.x, s * RR.z); frame(hd); best = { P, st:gnd(V3().copy(P).addScaledVector(FWD, -O.out)), hd, down:gnd(onRideW(H, D.R.hip, V3()).addScaledVector(RR, -s * O.side)) }; }
+  const F = RIDE.fix[D.kind], c = F ? F.hip[2] : 0, fz = F ? (F.foot[0][2] + F.foot[1][2]) / 2 : 0, fx = [s * (F ? (F.foot[0][0] + F.foot[1][0]) / 2 : 0.35), 0, s > 0 ? fz : 2 * c - fz];   // (the repair squat turned round to his side: actors/driver.js fixPose)
+  const G = RIDE_RANT.bang, bdown = gnd(onRideW(H, D.R.hip, V3()).addScaledVector(RR, -s * G.side));
+  D.ks = { P:best.P, st:best.st, hd:best.hd, down:best.down, bike:RC.clone().setY(best.P.y + 0.35), fix:gnd(onRideW(H, fx, V3())),
+    bdown, bhd:Math.atan2(s * RR.x, s * RR.z), bang:onRideW(H, [s * G.at[0], G.at[1], G.at[2]], V3()),
+    brace:s > 0 ? (H.toWorld ? H.toWorld(D.R.grip[0], V3(), true) : onRideW(H, D.R.grip[0], V3())) : onRideW(H, G.brace, V3()) }; }   // (the free hand: on the left grip, or on the pillion seat)
 // how near p comes to the segment a → b (on the ground)
 function segDist(p, a, b){ const ex = b.x - a.x, ez = b.z - a.z, L2 = ex * ex + ez * ez, u = L2 > 1e-6 ? clamp(((p.x - a.x) * ex + (p.z - a.z) * ez) / L2, 0, 1) : 0; return Math.hypot(a.x + ex * u - p.x, a.z + ez * u - p.z); }
 // walking (his own walk clip) toward T; returns how far is left
@@ -90,7 +96,7 @@ function stopWalk(D){ snapPose(D, 0.25); D.mix.stopAllAction(); D.walking = fals
 
 // ---- every frame, for the states this module owns ----
 export function driverRant(H, D, dt){ D.t2 = (D.t2 || 0) + dt; const st = D.state; rock(D, dt);
-  if(st === 'off') offStep(H, D, dt); else if(st === 'kick') kickStep(H, D, dt); else if(st === 'argue') argueStep(H, D, dt); else giveupStep(H, D, dt); }
+  if(st === 'off') offStep(H, D, dt); else if(st === 'bang') bangStep(H, D, dt); else if(st === 'kick') kickStep(H, D, dt); else if(st === 'argue') argueStep(H, D, dt); else giveupStep(H, D, dt); }
 // the bike rocking on its stand after the boot (driver.js lays D.roll on it while he is off it)
 function rock(D, dt){ const K = RIDE_RANT.kick; D.rockT = (D.rockT ?? 9) + dt; D.roll = D.rockT < 2.5 ? K.rock * Math.exp(-D.rockT * K.rockD) * Math.sin(D.rockT * K.rockF) : 0; }
 
@@ -99,8 +105,8 @@ function rock(D, dt){ const K = RIDE_RANT.kick; D.rockT = (D.rockT ?? 9) + dt; D
 function standPose(D, lean, sink, hop){ const L = drvLens(D), w = D.w, aw = D.ankle * XEOM.k; frame(D.hd); w.rotation.set(0, D.hd, 0); w.position.y = heightAt(w.position.x, w.position.z); drvRest(D);
   _p.copy(w.position).addScaledVector(FWD, -Math.sin(lean) * 0.12); _p.y += aw + (L.th + L.sh) * 0.975 - sink + hop;
   drvHips(D, _p, _t.copy(UPW).multiplyScalar(Math.cos(lean)).addScaledVector(FWD, Math.sin(lean)), RT); }
-// a foot planted under its hip (lifted `lift` m), the knee bent forward, the sole flat
-function plant(D, L1, sd, lift){ const w = D.w, aw = D.ankle * XEOM.k; _a.copy(w.position).addScaledVector(RT, sd * 0.11).addScaledVector(FWD, 0.01); gnd(_a, aw + lift);
+// a foot planted under its hip (lifted `lift` m, `wide` m out from the middle), the knee bent forward, the sole flat
+function plant(D, L1, sd, lift, wide = 0.11){ const w = D.w, aw = D.ankle * XEOM.k; _a.copy(w.position).addScaledVector(RT, sd * wide).addScaledVector(FWD, 0.01); gnd(_a, aw + lift);
   _b.copy(_a).addScaledVector(FWD, 0.6).addScaledVector(UPW, 0.5).addScaledVector(RT, sd * 0.1); ik2(D.B[L1 + 'UpLeg'], D.B[L1 + 'Leg'], D.B[L1 + 'Foot'], _a, _b); drvFlatFoot(D, L1); }
 // arms hanging easy at his sides (or only the one named), hands half closed against the thighs
 function hang(D, only){ const B = D.B, L = drvLens(D); for(const [L1, sd] of SIDES){ if(only && only !== L1) continue; wp(B[L1 + 'Arm'], _a);
@@ -115,8 +121,44 @@ function look(D, T, yawA, pitchA, lean){ const B = D.B; wp(B.Head, _a); _b.subVe
 function offStep(H, D, dt){ const O = RIDE_RANT.off, ks = D.ks;
   if(D.walking){ if(walkTo(D, ks.st, dt) < 0.04 || D.t2 > O.step + O.walkMax) toKick(D); return; }
   standPose(D, 0.04, 0.02, 0); plant(D, 'Left', -1, 0); plant(D, 'Right', 1, 0); look(D, ks.P, 0, 0, 0.04); hang(D); blendPose(D, dt);
-  if(D.t2 >= O.step){ if(Math.hypot(ks.st.x - D.w.position.x, ks.st.z - D.w.position.z) < 0.12) toKick(D); else startWalk(D); } }
+  if(D.t2 >= O.step){ D.state = 'bang'; D.t2 = 0; D.blow = -1; } }   // (Z363 the hammer before the boot)
 function toKick(D){ stopWalk(D); D.state = 'kick'; D.t2 = 0; D.said = {}; D.hit = false; }
+
+// ---- Z363 the hammer to it: out of his back pocket, three overhead blows on the saddle's flank, the left hand on the bar; sparks, the bike jumping ----
+function bangStep(H, D, dt){ const G = RIDE_RANT.bang, B = D.B, L = drvLens(D), t = D.t2, T = D.ks.bang, tb = t - G.draw, n = Math.floor(tb / G.blow), f = tb >= 0 ? tb / G.blow - n : 0, swing = tb >= 0 && n < G.n;
+  if(!D.said.b){ D.said.b = 1; driverLine(D, 'bang'); }
+  steer(D, D.ks.bhd, dt, 8);
+  if(swing && f >= G.hit && D.blow !== n){ D.blow = n; D.rockT = 0; sfx('clang'); sfx('thud', undefined, 0.6); S.shake = Math.min(3, (S.shake || 0) + 0.15);
+    for(let k = 0; k < 5; k++) spawnPart(T.x, T.y, T.z, (Math.random() - 0.5) * 2.4, 0.8 + Math.random() * 1.6, (Math.random() - 0.5) * 2.4, { color:0xffc860, size:0.1, life:0.3, grav:-9, drag:1 }); }
+  const r0 = G.hit - G.slam, lean = !swing ? 0.08 : f < r0 ? mix(0.06, -0.12, ease(f / r0)) : f < G.hit ? mix(-0.12, G.bow, ease((f - r0) / G.slam)) : mix(G.bow, 0.06, ease((f - G.hit) / (1 - G.hit)));
+  standPose(D, lean, 0.06, 0); plant(D, 'Left', -1, 0, 0.14); plant(D, 'Right', 1, 0, 0.14); look(D, T, 0, -0.1, lean);
+  // the left hand on the bar, bracing
+  const H2 = _f.copy(D.ks.brace); wp(B.LeftArm, _a); _b.copy(_a).addScaledVector(RT, -0.45).addScaledVector(UPW, -0.3);
+  ik2(B.LeftArm, B.LeftForeArm, B.LeftHand, H2.clone().addScaledVector(UPW, 0.03), _b); curlHand(B, 'Left', 0.85, H2.clone().addScaledVector(UPW, -0.03));
+  // the right: back to the pocket for the hammer, raised over his head, slammed down, and back to the pocket at the end
+  wp(B.RightArm, _a); const L1 = L.arm, pocket = wp(B.RightUpLeg, _c).addScaledVector(FWD, -0.13).addScaledVector(RT, 0.05).addScaledVector(UPW, 0.04).clone();
+  const up = _d.copy(_a).addScaledVector(UPW, L1 * 0.82).addScaledVector(FWD, 0.02).addScaledVector(RT, 0.06).clone(), hit = _e.copy(T).addScaledVector(UPW, G.over).addScaledVector(FWD, -0.08).clone();
+  let tgt; const end = G.n * G.blow;
+  if(tb < 0) tgt = pocket.lerp(up, ease(clamp((t - G.draw * 0.6) / (G.draw * 0.4), 0, 1)));
+  else if(swing) tgt = f < r0 ? hit.clone().lerp(up, 0.35 + 0.65 * ease(f / r0)) : f < G.hit ? up.clone().lerp(hit, Math.pow((f - r0) / G.slam, 1.6)) : hit.clone().lerp(up, ease((f - G.hit) / (1 - G.hit)) * (n < G.n - 1 ? 0.35 : 0));
+  else tgt = hit.clone().lerp(pocket, ease(clamp((tb - end) / G.stow, 0, 1)));
+  if(tb >= 0 && n === 0 && f < r0) tgt = up.clone();
+  _b.copy(_a).addScaledVector(RT, 0.42).addScaledVector(UPW, -0.15).addScaledVector(FWD, -0.1); ik2(B.RightArm, B.RightForeArm, B.RightHand, tgt, _b);
+  rollHand(B, 'Right', _g.copy(FWD)); curlHand(B, 'Right', 0.95, tgt.clone().addScaledVector(RT, -0.1));
+  drvHammer(D, t > G.draw * 0.75 && tb < end + G.stow * 0.7); blendPose(D, dt);
+  if(tb >= end + G.stow){ drvHammer(D, false); D.state = 'off'; D.t2 = RIDE_RANT.off.step; D.said = {}; if(Math.hypot(D.ks.st.x - D.w.position.x, D.ks.st.z - D.w.position.z) < 0.12) toKick(D); else startWalk(D); } }
+// the hammer: a wooden handle in his right fist, the steel head over his thumb, its face along his knuckles (a world-space prop, posed each frame it shows)
+let HAM = null;
+function hammerMesh(){ if(!HAM) HAM = { h:new THREE.CylinderGeometry(0.012, 0.015, 0.29, 8).translate(0, 0.055, 0), k:new THREE.BoxGeometry(0.12, 0.044, 0.044).translate(0.012, 0.185, 0),
+    hm:new THREE.MeshStandardMaterial({ color:0x7a5230, roughness:0.8 }), km:new THREE.MeshStandardMaterial({ color:0x3b3e42, roughness:0.45, metalness:0.8 }) };
+  const g = new THREE.Group(); g.add(new THREE.Mesh(HAM.h, HAM.hm), new THREE.Mesh(HAM.k, HAM.km)); g.traverse(o => { if(o.isMesh) o.castShadow = true; }); g.matrixAutoUpdate = false; g.visible = false; scene.add(g); return g; }
+const _ha = V3(), _hf = V3(), _hz = V3(), _hp = V3(), _hm = new THREE.Matrix4();
+export function drvHammer(D, on){ if(!on){ if(D.ham) D.ham.visible = false; return; } const B = D.B; if(!B.RightHandIndex1 || !B.RightHandPinky1 || !B.RightHandMiddle1) return; const g = D.ham || (D.ham = hammerMesh());
+  wp(B.RightHandIndex1, _ha); wp(B.RightHandPinky1, _hp); _ha.sub(_hp).normalize();   // up the handle: little finger → index (the head over the thumb)
+  wp(B.RightHand, _hp); wp(B.RightHandMiddle1, _hf); _hf.sub(_hp); _hp.addScaledVector(_hf, 0.8); _hf.addScaledVector(_ha, -_hf.dot(_ha)).normalize(); _hz.crossVectors(_hf, _ha);
+  _hm.makeBasis(_hf, _ha, _hz).setPosition(_hp); g.matrix.copy(_hm); g.matrixWorldNeedsUpdate = true; g.visible = true; }
+// Z363 lent to actors/driver-break.js (his break: a smoke, a pee): stood, a foot planted, eyes on a point, arms hanging, the walk
+export { standPose as drvStand, plant as drvPlant, look as drvLook, hang as drvHang, walkTo as drvWalkTo, startWalk as drvStartWalk, stopWalk as drvStopWalk };
 
 // ---- the boot: wind up, swing, the tyre (the bike rocks) — and hopping round on one leg clutching the foot ----
 function kickStep(H, D, dt){ const K = RIDE_RANT.kick, B = D.B, w = D.w, t = D.t2, aw = D.ankle * XEOM.k, P = D.ks.P;

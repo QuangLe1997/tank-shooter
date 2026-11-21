@@ -9,7 +9,7 @@
 //   blendPose: the hips by their place and turn in the world, every other joint by its own turn).
 import * as THREE from 'three';
 import { RIDE, RIDE_ACT, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, DRIVER_RANT, RIDE_VOICE, S, burst, curlHand, floatText, heightAt, hudOn, ik2, rollHand, scene, sfx, spawnPart } from '../hub.js';
+import { BIOME, CV, DRIVER_BREAK, DRIVER_RANT, RIDE_VOICE, S, burst, curlHand, floatText, heightAt, hudOn, ik2, rollHand, scene, sfx, spawnPart } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q = () => new THREE.Quaternion();
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _e = V3(), _f = V3(), _g = V3(), _h = V3(), _t1 = V3(), _t2 = V3(), _t3 = V3(), _hA = V3(), _hB = V3();
@@ -170,8 +170,8 @@ function heaveStep(H, D, dt){ const A = RIDE_ACT.heave, hv = D.hv, w = D.w, B = 
 
 // ---- giving himself up ----
 export function driverSurrender(H){ const D = H && H.drv; if(!D || !D.ok || D.give) return; D.give = true;
-  const st = D.state; D.rollTo = st === 'ride' || st === 'mount' || st === 'fix' || st === 'stall' ? D.roll : DRIVER_RANT.has(st) ? 0 : (D.side || 1) * 1.35; D.rollV = 0; D.toppled = Math.abs(D.roll) > 1.2;   // (Z361 the dead bike stands on its stand)
-  if(st === 'ride' || st === 'mount' || st === 'stall') return bail(H, D);
+  const st = D.state; D.rollTo = st === 'ride' || st === 'mount' || st === 'fix' || st === 'stall' || st === 'pull' ? D.roll : DRIVER_RANT.has(st) || DRIVER_BREAK.has(st) ? 0 : (D.side || 1) * 1.35; H.onBreak = false; D.rollV = 0; D.toppled = Math.abs(D.roll) > 1.2;   // (Z361 the dead bike stands on its stand)
+  if(st === 'ride' || st === 'mount' || st === 'stall' || st === 'pull') return bail(H, D);
   if(st === 'fall') return;   // still in the air: he gives up once he is down
   kneelNow(H, D); }
 // the body he kneels by: where it lies (its chest, read off the soldier's own skeleton where it can be), and which way it lies
@@ -236,5 +236,5 @@ function leftRide(H, D, dt){ const to = D.rollTo ?? D.roll;
 export function driverDone(H){ const D = H && H.drv; return !D || !D.ok || !D.give || (D.state === 'kneel' && D.t2 > RIDE_ACT.give.show); }
 // the soldier is back (respawn) or a new run: back on the seat as if nothing happened
 export function driverBack(H){ const D = H && H.drv; if(!D) return; D.give = false; D.saidGive = false; D.kAt = null; D.kDir = null; D.kSide = null; D.bb = null; D.hv = null; D.rollTo = null; if(D.bl) D.bl.on = false;
-  D.state = 'ride'; D.t2 = 0; D.roll = 0; D.tip = 0; D.slide = 0; D.wheelT = 0; D.hipUp = 0; D.kickW = 0; D.kickFoot = null; D.kickT = null; D.stallDone = false; D.ks = null; D.hd = null; D.fixT = 0; D.walking = false; D.chg = 0; D.chgT = null; if(!D.ok || !D.w) return;   // (Z361 the rant's own marks wiped too)
+  D.state = 'ride'; D.t2 = 0; D.roll = 0; D.tip = 0; D.slide = 0; D.wheelT = 0; D.hipUp = 0; D.kickW = 0; D.kickFoot = null; D.kickT = null; D.stallDone = false; D.ks = null; D.hd = null; D.fixT = 0; D.walking = false; D.chg = 0; D.chgT = null; D.br = null; D.brk = null; D.ph = null; D.pickup = false; H.onBreak = false; D.fixSide = 1; if(D.mask) D.mask.visible = true; if(!D.ok || !D.w) return;   // (Z361 the rant's own marks wiped too)
   const body = H.body || H.B; if(D.w.parent !== body) body.add(D.w); D.w.position.set(0, 0, 0); D.w.rotation.set(0, 0, 0, 'XYZ'); D.w.scale.setScalar(D.s0); D.mix.stopAllAction(); }

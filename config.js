@@ -175,7 +175,7 @@ export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model
   //   the hand at work on the engine / chain; how far forward he bends, how far he looks down, the hammer's lift and its rate
   fix:{ xeom:{ hip:[0.33, 0, -0.02], foot:[[0.35, 0, 0.08], [0.35, 0, -0.12]], brace:[0.12, 0.33, 0.06], tool:[0.1, 0.17, -0.04] },
     bagac:{ hip:[0.35, 0, 0.3], foot:[[0.37, 0, 0.4], [0.37, 0, 0.2]], brace:[0.13, 0.36, 0.38], tool:[0.1, 0.2, 0.3] },
-    hipH:0.44, bend:0.75, look:0.4, hammer:0.05, rate:8, ease:1.6 },
+    hipH:0.44, bend:0.75, look:0.4, hammer:0.1, rate:6.5, ease:1.6 },
   // Z300 feet on the road (mount units, m/s, m/s²): both down below stopV (out to the side, Z362 hipFwd ahead of the hip: nearly under it); the inside foot out ahead skimming the road
   //   through a bend taken faster than dabV with more than dabLat of cornering; under a storm of fire (n hits in win s): ducked, face down and away, jinking
   feet:{ stopV:1.1, rate:6, out:0.04, fwd:0.05, hipFwd:0.04, dabV:4.5, dabLat:5.5, dabOut:0.17, dabFwd:0.17, hover:0.015, dust:2.2, dustC:0xbfa88a },
@@ -230,6 +230,14 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
   giveup:{ d:['Thôi được rồi… để chú coi máy.', 'Đứng canh cho chú sửa đó nghe chưa!', 'Hừ… nói không lại con!'], s:['Rõ!', 'Chú lẹ lẹ nha!'] },
   fixing:{ d:['Chắc tại cái bugi…', 'Lau cái bugi là chạy liền!', 'Bình xăng con lại nghẹt rồi…'], s:['Sửa được không chú?', 'Lẹ lên chú ơi, địch tới!'] },
   charge:{ d:['Quậy đục nước nó cho tao! Tiến lên!!', 'Xông lên con! Bắn nát tụi nó!', 'Đằng kia kìa! Bắn! Bắn!', 'Tiến lên!! Có chú đây!', 'Cho tụi nó biết tay dân xe ôm!'], s:['Rõ, chú!', 'Xông lên!!', 'Chú cứ chạy, em lo!'] },   // (fired up, the hand thrust ahead)
+  // Z363 the hammer · his break: a smoke (the lines as he pulls over, mid-drag), a pee, done, cut short by the fighting
+  bang:{ d:['Đồ quỷ! Đồ quỷ!', 'Chạy coi! Chạy coi!', 'Tao cho mày biết tay!'], s:['Từ từ chú ơi, gãy xe bây giờ!', 'Đập vậy hư thêm đó chú!'] },
+  smoke:{ d:['Mệt quá… cho chú làm điếu thuốc cái đã!', 'Nghỉ chút con, chú run tay quá rồi!', 'Hút điếu thuốc cho tỉnh cái đầu…'], s:['Chú ơi đang đánh nhau mà!', 'Hút lẹ đi chú!', 'Trời đất, giờ này mà hút thuốc!'] },
+  puff:{ d:['Phù… sướng…', 'Đời xe ôm, có điếu thuốc là vui rồi…', 'Hút xong điếu này chú chở con tới chân trời luôn!'], s:[] },
+  pee:{ d:['Chờ chú xíu… mắc quá rồi!', 'Chú đi giải quyết nỗi buồn cái!', 'Nín không nổi nữa con ơi!'], s:['Trời đất, ngay lúc này hả chú?!', 'Lẹ lẹ nha chú!', 'Chú ra xa xa chút!'] },
+  peeing:{ d:['Aaa… nhẹ cả người…', 'Phù… sống lại rồi…'], s:[] },
+  rested:{ d:['Rồi, đi tiếp! Lên xe con!', 'Tỉnh rồi! Đi thôi!'], s:['Lẹ lên chú!', 'Đi!'] },
+  cut:{ d:['Ối! Tụi nó tới! Về xe, về xe!', 'Chưa kịp xong nữa trời ơi!'], s:['Lẹ lên chú!'] },
   behind:{ d:['Phía sau! Nó đuổi sau lưng kìa!', 'Má ơi, còn nữa kìa!', 'Chết rồi chết rồi!'], s:['Chú nhìn đường dùm em!', 'Em thấy rồi, chú cứ chạy!'] } };
 // Z361 THE BIKE DIES UNDER HIM (actors/driver-rant.js; s, m, rad). stall, on the seat: the throttle wrung in vain (wring s, twist rad at twistF rad/s),
 //   the bike let roll to a stop (below still m/s, or roll s more at most), then n kicks on the kick-start, kick s each (the foot on the pad until at[0]
@@ -245,7 +253,18 @@ export const RIDE_RANT = { stall:{ wring:1.2, twist:0.6, twistF:13, still:0.6, r
   off:{ step:0.55, side:0.42, lead:0.25, walkV:0.95, clip:1.0, walkMax:4, quarter:0.55, angle:0.75, out:0.6 },
   kick:{ wind:0.42, swing:0.13, back:0.22, wb:[0.32, 0.22], held:[0.3, 0.25, 0.07], grab:0.03, hop:2.0, hopF:2.6, hopH:0.06, spin:0.9, bow:0.68, sink:0.07, rock:0.08, rockD:2.6, rockF:15 },
   argue:{ rounds:[1, 2], round:3.4, say:0.3, answer:1.9, blend:0.22, turn:7, eye:1.55, far:14 },
-  giveup:{ wave:0.75, dur:1.25, turn:5, squat:0.55, mutter:1.2, fixK:0.55 } };
+  giveup:{ wave:0.75, dur:1.25, turn:5, squat:0.55, mutter:1.2, fixK:0.55 },
+  // Z363 the hammer: stood side m out from the saddle facing it, the hammer drawn from his back pocket (s), n overhead blows of blow s each (the slam
+  //   the last slam of it, landing at hit of it, the fist over m above the strike point at — mount units, the saddle's left flank), bent bow rad into each, put away (s);
+//   on the bike's right (the soldier on its left) the strike point is mirrored and the free hand braces on the pillion seat (brace)
+  bang:{ side:0.42, at:[0.11, 0.33, -0.14], brace:[-0.09, 0.37, -0.3], draw:0.5, n:3, blow:0.75, slam:0.14, hit:0.62, over:0.12, bow:0.42, stow:0.45 } };
+// Z363 THE DRIVER'S BREAK (actors/driver-break.js; s, m, rad): after every[0] + random every[1] s of riding he wants one — once it has been quiet calm s
+//   (no hit on the ride, the soldier's gun quiet half that, no enemy within safeR m; an enemy within 0.6 of it or a shot cuts it short); peeK of the time
+//   a pee, else a smoke. Stopped still s, the soldier steps down; he gets off side m out on the bike's right (eased over step s) and walks away m (smoke)
+//   / peeAway m (pee) at angle rad ahead of straight out. smoke: squat / stand up (s) to hips hipH m off the ground, back m behind his heels, feet wide m
+//   apart, the trunk lean rad; light (s), n drags of drag s, the flick (s). pee: open (s), the stream (s, drops/s, v m/s out), the shiver, close (s)
+export const RIDE_BREAK = { every:[150, 120], calm:25, safeR:40, peeK:0.4, still:0.35, side:0.42, step:0.5, away:3.2, peeAway:4.6, angle:0.9,
+  smoke:{ squat:0.6, hipH:0.33, back:0.2, wide:0.18, lean:0.55, light:1.3, n:3, drag:2.6, flick:0.6 }, pee:{ open:0.6, stream:4.2, rate:30, v:1.5, shiver:0.6, close:0.5 } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
 //   Z310 the bán tải's four wheels measured off its model (each tyre its own round piece: centre, radius, width) — they roll, the front pair steers
@@ -264,6 +283,9 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
     low:{ h:0.85, v:4.5, over:0.25 } },
   // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
   //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
+  // Z363 the exhaust (game/ride-wear.js rideExhaust): the muffler's tip (mount units) per ride, puffs a second [idle, + at speed, + on the throttle], how fast
+  //   they leave the pipe (m/s), their colour (blue-grey; dark on the throttle), size (m), life (s), opacity
+  exhaust:{ xeom:[-0.075, 0.14, -0.31], bagac:[-0.12, 0.12, -0.55], rate:[9, 8, 14], v:0.9, col:0xa9b0b8, dark:0x404145, size:0.75, life:1.6, op:1.35 },
   wear:{ hp:{ xeom:150, bagac:190 }, share:0.5, crash:28, spill:6, smoke:0.6, limp:0.3, limpK:0.7, fixT:7, fixHp:0.35, engine:{ xeom:[0, 0.17, -0.03], bagac:[0, 0.2, 0.3] } },
   // Z306 the ride on the street (game/ride-impact.js): closing speed (m/s) above which a blow is a knock (sparks, glass, a scooter over); animals: run down
   //   above animalV, a big one (legs longer than bigLeg) brings the ride down (spill: wear above). Z320 a ram is a collision of masses (a car = 1, a scooter

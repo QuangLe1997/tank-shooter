@@ -36,25 +36,34 @@ export function updateEngine(dt){
 // Z302 THE RIDE'S ENGINE: a small four-stroke single (the xe ôm's 100 cc; the ba gác's bigger, lower one). It fires
 //   once every two turns, so the firing pulse IS the pitch: a lazy put-put at idle, a rising buzz through each gear, a drop as the next gear goes in
 //   (the revs are where the speed sits inside the gear's band), a blip with the throttle, a scream in a wheelie; exhaust hiss pulsing with the bangs
+// Z363 AN OLD, TIRED HONDA: each firing drawn as its own sound — a soft low thump down the exhaust (the pipe's ring), the puff of gas, the valve
+//   tappets ticking between them (an old engine's clatter), the beats a touch uneven and one in sixteen gone weak (a worn plug) — sixteen firings
+//   rendered once into a loop and played faster as the revs climb; the throttle opens the filter and lets the rasp of the exhaust through
 export const ENGB={ nodes:null, rpm:0.18 };
+export const CUB = { f0:12, n:16, weak:[11], jit:0.12, pipe:[92, 0.018, 0.7], body:[48, 0.03, 0.6], puff:[0.006, 0.35], tick:[0.0012, 0.12] };
+export function cubLoop(a){ const C = CUB, sr = a.sampleRate, len = Math.round(sr * C.n / C.f0), buf = a.createBuffer(1, len, sr), d = buf.getChannelData(0); let r = 7;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647, tail = Math.round(sr * 0.08);
+  for(let k = 0; k < C.n; k++){ const i0 = Math.round((k + (rnd() - 0.5) * C.jit) / C.f0 * sr), amp = C.weak.includes(k) ? 0.3 : 0.85 + rnd() * 0.25;
+    for(let j = 0; j < tail; j++){ const t = j / sr, i = (i0 + j + len) % len;   // (wrapped: the loop is seamless)
+      d[i] += amp * (Math.sin(6.2832 * C.pipe[0] * t) * Math.exp(-t / C.pipe[1]) * C.pipe[2] + Math.sin(6.2832 * C.body[0] * t) * Math.exp(-t / C.body[1]) * C.body[2] + (rnd() * 2 - 1) * Math.exp(-t / C.puff[0]) * C.puff[1]); }
+    const it = Math.round((k + 0.5) / C.f0 * sr); for(let j = 0; j < sr * 0.005; j++){ const i = (it + j) % len; d[i] += (rnd() * 2 - 1) * C.tick[1] * Math.exp(-j / sr / C.tick[0]); } }   // the tappets
+  let pk = 0; for(let i = 0; i < len; i++) pk = Math.max(pk, Math.abs(d[i])); for(let i = 0; i < len; i++) d[i] *= 0.9 / (pk || 1); return buf; }
 function bikeEngineStart(a){ const out=a.createGain(); out.gain.value=0; out.connect(master); if(verbSend){ const s=a.createGain(); s.gain.value=0.06; out.connect(s).connect(verbSend); }
-  const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=700; lp.Q.value=1.6; const sh=a.createWaveShaper(); sh.curve=shaper?shaper.curve:null; sh.connect(lp).connect(out);
-  const o1=a.createOscillator(); o1.type='square'; o1.frequency.value=11; const g1=a.createGain(); g1.gain.value=0.5; o1.connect(g1).connect(sh);
-  const o2=a.createOscillator(); o2.type='sawtooth'; o2.frequency.value=22; const g2=a.createGain(); g2.gain.value=0.18; o2.connect(g2).connect(sh);
-  const nz=a.createBufferSource(); nz.buffer=NZ; nz.loop=true; const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=0.9; const ng=a.createGain(); ng.gain.value=0.12;
-  const o3=a.createOscillator(); o3.type='square'; o3.frequency.value=11; const am=a.createGain(); am.gain.value=0.12; o3.connect(am).connect(ng.gain); nz.connect(bp).connect(ng).connect(sh);
-  for(const n of [o1,o2,o3,nz]) n.start(); return (ENGB.nodes={ out, lp, o1, o2, o3, bp }); }
+  const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900; lp.Q.value=0.9; lp.connect(out);
+  const src=a.createBufferSource(); src.buffer=cubLoop(a); src.loop=true; src.connect(lp);
+  const nz=a.createBufferSource(); nz.buffer=NZ; nz.loop=true; const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=0.8; const ng=a.createGain(); ng.gain.value=0; nz.connect(bp).connect(ng).connect(lp);
+  src.start(); nz.start(); return (ENGB.nodes={ out, lp, src, bp, ng }); }
 function updateBikeEngine(dt, p, t){ const CV=p && p.cav, H=CV && CV.H, D=H && H.drv, a=actx; if(!a) return;
-  const on = S.mode==='playing' && !muted && CV && CV.mounted && H && H.bike && (!D || D.state==='ride' || D.state==='mount');
+  const on = S.mode==='playing' && !muted && CV && CV.mounted && H && H.bike && (!D || D.state==='ride' || D.state==='mount' || D.state==='pull');
   if(!on){ if(ENGB.nodes) ENGB.nodes.out.gain.setTargetAtTime(0, t, 0.25); return; }
   const n=ENGB.nodes || bikeEngineStart(a), G=RIDE.gears, v=Math.abs(H.v||0), g=D ? D.gear : G.filter(x=>v>x).length, lo=g ? G[g-1] : 0, hi=G[g] ?? G[G.length-1]*1.3;
   const thr=Math.max(0, D ? D.thr : 0), within=Math.min(1, Math.max(0, (v-lo)/Math.max(0.5, hi-lo))), big=H.bike==='bagac' ? 0.78 : 1;
   ENGB.rpm += ((0.18 + within*0.7 + thr*0.18 + (D && D.wheelT>0 ? 0.25 : 0)) - ENGB.rpm)*Math.min(1, dt*7);
-  const f=(9 + ENGB.rpm*62)*big;
-  n.o1.frequency.setTargetAtTime(f, t, 0.03); n.o2.frequency.setTargetAtTime(f*2, t, 0.03); n.o3.frequency.setTargetAtTime(f, t, 0.03);
-  n.lp.frequency.setTargetAtTime((420 + ENGB.rpm*2000 + thr*500)*big, t, 0.05); n.bp.frequency.setTargetAtTime(700 + ENGB.rpm*900, t, 0.08);
+  const f=(11 + Math.max(0, ENGB.rpm-0.18)*58)*big;   // firings a second: a lazy putt at idle (11: ~1300 rpm), ~65 at the top
+  n.src.playbackRate.setTargetAtTime(f/CUB.f0, t, 0.04);
+  n.lp.frequency.setTargetAtTime((650 + ENGB.rpm*2300 + thr*900)*big, t, 0.05); n.bp.frequency.setTargetAtTime(800 + ENGB.rpm*1200, t, 0.08); n.ng.gain.setTargetAtTime(0.015 + ENGB.rpm*0.05 + thr*0.05, t, 0.08);
   const cough = rideHealth(H) < 0.3 && Math.random() < dt*4;   // Z303 a worn engine misses and coughs
-  n.out.gain.setTargetAtTime(cough ? 0.004 : 0.03 + ENGB.rpm*0.05 + thr*0.035, t, cough ? 0.01 : 0.06); }
+  n.out.gain.setTargetAtTime(cough ? 0.004 : 0.05 + ENGB.rpm*0.07 + thr*0.04, t, cough ? 0.01 : 0.06); }
 // procedural driving loop (kick + bass + lead), rendered once into a buffer
 export let _hapT=0;
 export function haptic(ms){ padHaptic(ms); if(!MOBILE || !padCfg().phone || !navigator.vibrate) return;   // Z117 the controller rumbles too
