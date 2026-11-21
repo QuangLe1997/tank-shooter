@@ -40,3 +40,5 @@ Z387 the soldier's four new hand weapons (assets/models/real/gun/inf, plain GLBs
 - dmr.glb: "Rustbound Marksman Rifle" — Meshy_AI_Rustbound_Marksman_Rifle_20260508_texture_fbx.zip
 - rail.glb: "Emerald Railgun" — Meshy_AI_Emerald_Railgun_20260606_texture_fbx.zip
 - saw.glb: "Rusty Sawgun" — Meshy_AI_Rusty_Sawgun_20260504_texture_fbx.zip
+- Z420–Z422 (Meshy community, CC0 / CC BY 4.0; batch ~/Downloads/3dnew, codes N00–N93 in the review file): the forts' bunkers, the fuel store, the guard posts gt_*, the
+  set pieces (sphinx, ice castle, lava rocks, castle pieces, ruins, works); temple.glb = a ruined Greek temple (CC0, meshy.ai/posts/0195067d-9ca9-7e9a-89f8-d643717187fc)

@@ -16,3 +16,7 @@ City models — where each one comes from
 - ../ruin/ruin_chapel.glb (Z277): Tripo image-to-model from the user's own reference image; ../ruin/ruin_{wall,block,tower,villa}.glb: Tripo text-to-model (H3.1)
 - ../fort/fort_{citadel,desert,arctic,volcano}_{wall,tower,gate}.glb (Z279): Tripo text-to-model (H3.1, 4K textures packed to 2K)
 - ../fort/fort_{meadow,ruins,quarry,savanna,foundry}_*.glb (Z283): Tripo text-to-model (H3.1)
+- Z420–Z422 (Meshy community, CC0, meshy.ai/posts/…): bld_shophouse = "Hanoi ancent house" (cbmanhmit, 01a1b755-1dec-750d-81e5-144bdbbc1062);
+  bld_shoprow2 = "Faded Grandeur" (GyinKg, 01a00e4c-51f6-7e66-a805-b40567e37f96); bld_villa = a colonial villa (01a0aaac-3a52-7685-b589-45bda266e2ea);
+  bld_apart / bld_glass / bld_hotel / bld_office / bld_spire / bld_palmspire / city_fountain / prop_barrier: Meshy community downloads (CC0 / CC BY 4.0), batch ~/Downloads/3dnew (file rà soát mã N04 / N72 / N82 / N27 / N61 / N47 / N38 / N76)
+- ../ruin/ruin_{block,house,villa,wall,tower}.glb (Z422): Meshy community (N74 / N85 / N89 / N78 / N35); ../ruin/ruin_chapel.glb (Z420): N55 "Silent Ruins"

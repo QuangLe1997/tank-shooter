@@ -83,6 +83,9 @@ function plan(beats){ const placed = [], byId = {};
         if(!clear(x, z, r * 0.6, placed, true) || FORTS.some(f => Math.hypot(f.x - x, f.z - z) < (f.R || 30) + r + 6)) continue; const p = add(b.k, x, z, faceCore(x, z), s, { edge:true }); if(b.id) byId[b.id] = p; ZONES.push({ kind:'scenery', x, z, r:r * 0.8 }); break; } continue; }
     if(b.at === 'pair'){ const o = byId[b.of]; if(!o) continue; for(const sd of [-1, 1]){ const c = Math.cos(o.ry), sn = Math.sin(o.ry), lx = sd * b.side, lz = b.fwd, x = o.x + lx * c + lz * sn, z = o.z - lx * sn + lz * c;
         if(inField(x, z, 2)){ const q = add(b.k, x, z, o.ry, o.s || 1, { pair:true }); ZONES.push({ kind:'scenery', x, z, r:q.r + 2 }); } } continue; }
+    if(b.at === 'avenue'){ const o = byId[b.of]; if(!o) continue; const L = Math.hypot(o.x, o.z) || 1, ux = -o.x / L, uz = -o.z / L, nx = -uz, nz = ux;   // Z422 an avenue: pairs either side of the axis from a monument toward our base, facing the road
+      for(let i = 0; i < n * 2; i++){ const d = (i % 2 ? -1 : 1) * (b.from + (i >> 1) * b.gap); for(const sd of [-1, 1]){ const s = S(), r = fr(b.k, s), x = o.x + ux * d + nx * sd * b.side, z = o.z + uz * d + nz * sd * b.side;   // (both ways from the monument: toward our base and away, as far as the ground allows)
+        if(!clear(x, z, r, placed) || !inField(x, z, r + 1)) continue; add(b.k, x, z, Math.atan2(-nx * sd, -nz * sd), s, { avenue:true }); ZONES.push({ kind:'scenery', x, z, r:r + 1.5 }); } } continue; }
     if(b.at === 'around'){ const o = byId[b.of]; if(!o) continue; for(let i = 0, t = 0; i < n && t < n * 30; t++){ const a = Math.random() * Math.PI * 2, d = rnd(b.r[0], b.r[1]), x = o.x + Math.cos(a) * d, z = o.z + Math.sin(a) * d, s = S(), r = fr(b.k, s);
         if(!inField(x, z, r + 2) || placed.some(p => !p.ghost && Math.hypot(p.x - x, p.z - z) < p.r + r + 0.6)) continue; add(b.k, x, z, face(b, x, z), s); i++; } continue; }   // (inside its own ring: the hub's claim is for the others)
     if(b.at === 'line'){ const r = fr(b.k, 1);   // a straight run: a start on open ground, a heading, every post clear — else another start
@@ -149,7 +152,7 @@ function standing(L, h, rot){ _b.copy(L.geo.boundingBox).applyMatrix4(L.m4); _b.
 //   it, round the lattice's own axis), the drawn pieces hidden; it topples and burns as before
 const RAD = {};
 function radarParts(){ if(RAD.p) return RAD.p; const C = SCENERY.supply.radar;
-  return (RAD.p = sceneLevel('radar_dish', MOBILE ? 'm' : C.lv).then(L => {   // (Z392 phones take the light copy, as every other piece)
+  return (RAD.p = sceneLevel(C.k || 'radar_dish', MOBILE ? 'm' : C.lv).then(L => {   // (Z422 the lattice radar tower: its array turns)   // (Z392 phones take the light copy, as every other piece)
     if(!L) return null; const g = standing(L, C.h), P = g.attributes.position.array, sy = C.split * C.h; let ax = 0, az = 0, k = 0;
     for(let i = 0; i < P.length; i += 3) if(P[i + 1] > sy * 0.75 && P[i + 1] < sy){ ax += P[i]; az += P[i + 2]; k++; } ax /= k || 1; az /= k || 1;   // (the lattice's axis, just under the dish)
     return { base:subGeo(g, (x, y) => y <= sy, ax, 0, az), dish:subGeo(g, (x, y) => y > sy, ax, 0, az), mat:L.mat }; })); }

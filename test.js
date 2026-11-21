@@ -1442,7 +1442,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const fat=heavy.filter(k=>tri('assets/models/real/scene/l/'+k+'.glb')>80000);
   ok(heavy.length>15 && !fat.length, 'every mid copy of a heavy scan under 80k triangles' + (fat.length?' — over: '+fat.join(','):''));
   ok(/sceneLevel\(this\.key, 'd'\)\.then\(warmMaps\)\.then/.test(sc) && /renderer\.initTexture\(t\); await _frame\(\);/.test(sc), 'a near scan\'s maps go to the GPU one a frame before it shows');
-  ok(/sceneLevel\('radar_dish', MOBILE \? 'm' : C\.lv\)/.test(sc), 'phones draw the radar from the light copy');
+  ok(/sceneLevel\(C\.k \|\| 'radar_dish', MOBILE \? 'm' : C\.lv\)/.test(sc), 'phones draw the radar from the light copy');
   ok(/\['meshy','tripo'\]\.some/.test(R('tools/stage-offline.mjs')), 'the app bundles leave out the raw Tripo downloads'); }
 
 // Z396 a battlefield rebuilt releases the old one: geometries / maps off the GPU, rockets share their shapes, no list keeps an old field alive
@@ -1520,7 +1520,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/class SceneRenderPass extends RenderPass/.test(rd) && /samples:MSAA \}\);/.test(rd) && /new EffectComposer\(renderer, new THREE\.WebGLRenderTarget\(1, 1, \{ type:THREE\.HalfFloatType \}\)\)/.test(rd) && /depth:\(\)=>renderPass\.rt\.depthTexture/.test(rd) && /o\.depth \? o\.depth\(\) : rd\.depthTexture/.test(sh), 'Z412 only the scene pass is multisampled; the post chain runs on plain buffers; AO and shafts read the scene pass depth');
   ok(C.SKYLINE.arcs>=4 && C.SKYLINE.keep>0 && C.SKYLINE.keep<1 && /export function sectorize\(im, n, keep\)/.test(fl) && /sectorize\(im, SKYLINE\.arcs, SKYLINE\.keep\)/.test(hz) && /sectorize\(im, SKYLINE\.arcs,/.test(sc) && !/im\.frustumCulled = false; im\.renderOrder = -7; im\.userData\.skyline/.test(sc), 'Z412 the horizon rings are split by bearing (culled) and simplified');
   ok(C.SHADOWLOD.on && C.SHADOWLOD.min>0 && C.SHADOWLOD.keep>0 && C.SHADOWLOD.keep<1 && /export function shadowLOD\(renderer\)/.test(fl) && /shadowLOD\(renderer\);/.test(rd) && /worn\[i\]\.geometry = worn\[i \+ 1\]/.test(fl) && /isInterleavedBufferAttribute\)\{ const f = new Float32Array/.test(fl), 'Z412 the shadow pass wears light copies and gives the geometry back');
-  ok(C.SCENERY.supply.radar.lv==='l', 'Z412 the radar dish is drawn from its mid level'); }
+  ok(C.SCENERY.supply.radar.lv==='l' || (C.SCENERY.models[C.SCENERY.supply.radar.k] || {}).one, 'Z412 the radar dish is drawn from its mid level (Z422: a light single-level tower draws its only level)'); }
 
 // Z415 the enemy goes round the river by a bridge or a ford and wades slowly; the fence stops at the river banks
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), rv=R('src/world/river.js'), tc=R('src/ai/tactics.js'), inf=R('src/actors/infantry.js'), sq=R('src/ai/squads.js'), pm=R('src/world/perimeter.js');
@@ -2250,7 +2250,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z384–Z386 the radar station's tower as the dish scan (its dish sweeping with the head), the brick walls in the breached wall's stone (solid slices,
 //   band for band), the city's power poles as the transformer pole scan and roofs with water tanks / masts
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=(await import('./config.js')).SCENERY, sc=R('src/world/scenery.js');
-  ok(/function realRadar\(b, gen\)/.test(sc) && /head\.add\(dish\)/.test(sc) && /dish\.position\.y = -head\.position\.y/.test(sc) && C.supply.radar.split>0.3 && C.supply.radar.split<0.7, 'the radar: the scan\'s lattice in the tower, its dish in the turning head');
+  ok(/function realRadar\(b, gen\)/.test(sc) && /head\.add\(dish\)/.test(sc) && /dish\.position\.y = -head\.position\.y/.test(sc) && C.supply.radar.split>0.3 && C.supply.radar.split<0.9, 'the radar: the scan\'s lattice in the tower, its dish in the turning head (Z422 the lattice tower\'s array sits near its top)');
   ok(/function brickSlices\(\)/.test(sc) && /f < C\.fill/.test(sc) && /b\.wall\.bands\.forEach\(\(m, i\) =>/.test(sc) && C.bricks.slices>=3 && C.bricks.fill>0.5, 'brick walls: the scan cut into its most solid 3 m slices, each section band for band');
   ok(/function realCity\(gen\)/.test(sc) && /c\.kind === 'topple' && c\.T && c\.T\.pole/.test(sc) && /im\.geometry = g; im\.material = L\.mat;/.test(sc) && /lod\.watch = \(\) => Bd\.dead \|\| Bd\.top < top/.test(sc), 'the city: poles drawn as the scan (still toppling), roof pieces gone with their roof');
   ok(/if\(this\.watch && this\.watch\(\)\)\{ this\.visible = false; return; \}/.test(sc) && /realSupply\(gen\); realBricks\(gen\); realCity\(gen\);/.test(sc), 'all three dressed in the tick after the field is built'); }
@@ -2307,7 +2307,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z395b near shapes: the camps' buildings and parked vehicles, the ruins, the animals and the soldier's gun drawn from their whole originals up close
 //   (each system's own preparing function run on the original; a rigged body keeps its bones, so it is never quantized)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), nd=R('src/render/near-detail.js'), T=JSON.parse(R('tools/hd-maps.json')), IX=JSON.parse(R('assets/models/real/hd/index.json')), tool=R('tools/hd-maps.mjs');
-  const keys=['base_barracks','base_bunker','base_radar','base_tent','base_tower','base_wire','mil_truck','mil_apc','mil_jeep','mil_humvee','ruin_block','ruin_tower','ruin_villa','ruin_wall','ruin_house','wild_bear','wild_deer','wild_elephant','wild_reindeer','wild_zebra','wild_giraffe','inf_ar','inf_energy','inf_flamer','inf_gl','inf_lmg','inf_minigun','inf_rpg','inf_shotgun','inf_sniper','inf_ak','inf_mp5','inf_m4'];
+  const keys=['base_barracks','base_bunker','base_tent','base_wire','mil_truck','mil_apc','mil_jeep','mil_humvee','wild_bear','wild_deer','wild_elephant','wild_reindeer','wild_zebra','wild_giraffe','inf_ar','inf_energy','inf_flamer','inf_gl','inf_lmg','inf_minigun','inf_rpg','inf_shotgun','inf_sniper','inf_ak','inf_mp5','inf_m4'];
   ok(keys.every(k=>T[k] && T[k].geo!=null && T[k].geo<=70000 && (IX[k]||[]).includes('geo') && fs.existsSync('assets/models/real/hd/'+k+'.glb')), 'every camp piece, parked vehicle, ruin, animal and soldier gun has its whole shape on disk (≤ 70k triangles)');
   ok(C.NEARDETAIL.shapes>=4 && C.NEARDETAIL.shapes<=32 && /export function nearShape\(m, key, prep, o = \{\}\)/.test(nd) && /export const asShipped = key =>/.test(nd) && /if\(b\.isSkinnedMesh\) return a\.skeleton\.bones\.map\(x => x\.name\)\.join\(\) === b\.skeleton\.bones\.map\(x => x\.name\)\.join\(\) \? b\.geometry : null;/.test(nd) && /m\.geometry === S\.hd\) m\.geometry = S\.lo/.test(nd), 'a placed mesh swaps only its geometry, hands it back unless the system changed it since; a rigged body keeps the shipped bones');
   ok(/if\(!doc\.getRoot\(\)\.listSkins\(\)\.length\)\{/.test(tool), 'a rigged original is written in plain floats (quantizing would move its frame into the bind matrices)');
@@ -2366,6 +2366,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/b\.def && Math\.hypot\(b\.x - f\.x - lx/.test(op), 'a fort\'s outpost keeps off the belt that joins it');
   ok(C.SCENERY.tone>0 && C.SCENERY.tone<1 && /export function landTone\(\)/.test(sc) && /scenePiece\(K\.model, 1, \{ mat, tone:landTone\(\) \}\)/.test(sc) && /scenePiece\(key, 1, \{ tone \}\)/.test(ft) && /mat\.map !== mat\.userData\.tonedMap/.test(sc), 'the forts\' bunkers and the guard towers wear the land\'s tone (once per set of maps)');
   ok(['DESERT','ARCTIC','FOUNDRY','VOLCANO','CITADEL','RUINS','MEADOW','CITY','SAVANNA','QUARRY'].every(b=>C.ART_TONE[b] && C.ART_TONE[b].mood && C.ART_TONE[b].sh && C.ART_TONE[b].hi) && /artTone\(b\.name, A\);/.test(at) && at.indexOf('artTone(b.name, A);') > at.indexOf('Z242 realistic light'), 'each battlefield its own film, applied last'); }
+
+// Z422 the review's replacements and the lands' set pieces: city blocks / ruins / camp towers from the second batch (and the three found on Meshy:
+//   the Hanoi tube house, the colonial terrace, the villa; the ruined Greek temple), each land composed with its own monuments
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), sc=R('src/world/scenery.js'), S=C.SCENERY;
+  const lv=k=>S.models[k].one ? ['','m/'] : ['','l/','f/','m/'];
+  ok(Object.values(S.biomes).every(L=>L.every(b=>S.models[b.k] && lv(b.k).every(d=>fs.existsSync('assets/models/real/scene/'+d+b.k+'.glb')))), 'every beat of every land names a model whose levels are on disk');
+  ok(['bld_shophouse','bld_shoprow2','bld_villa','bld_apart','bld_glass','bld_hotel','bld_office'].every(k=>fs.existsSync('assets/models/real/city/'+k+'.glb') && fs.existsSync('assets/models/real/city/m/'+k+'.glb')) && /bld_shophouse = "Hanoi ancent house"/.test(R('assets/models/real/city/SOURCES.txt')), 'the city\'s blocks replaced, phone copies too, the downloads credited');
+  ok(/at === 'avenue'/.test(sc) && S.biomes.DESERT.some(b=>b.at==='avenue' && b.k==='sphinx_small') && S.biomes.ARCTIC.some(b=>b.k==='ice_castle') && S.biomes.FOUNDRY.some(b=>b.k==='duga_hall') && S.biomes.RUINS.some(b=>b.k==='ruin_overgrown') && S.biomes.CITADEL.some(b=>b.k==='keep_fortress') && S.biomes.VOLCANO.some(b=>b.k==='lava_crater'), 'each land its monuments: the sphinx avenue, the ice castle, the works hall, the overgrown block, the keep, the lava craters');
+  ok(S.supply.radar.k==='radar_lattice' && /sceneLevel\(C\.k \|\| 'radar_dish'/.test(sc) && !Object.values(S.biomes).some(L=>L.some(b=>['neon_tower','stone_ring'].includes(b.k))), 'the radar is the lattice tower; the cell tower and the mossy arch stand where the old mast and ring stood'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
