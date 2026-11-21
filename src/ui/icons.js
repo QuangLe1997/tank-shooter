@@ -87,6 +87,12 @@ export function setIcon(el,name){ if(el) el.replaceChildren(iconEl(name)); }
 export function initIcons(){ document.querySelectorAll('[data-icon]').forEach(el=>setIcon(el, el.getAttribute('data-icon'))); }
 // power-up world badge: recoloured icon on a dark disc (cached per name+colour)
 export const _iconTexCache={};
+// Z370 the plain glyph a pickup shows over itself: the icon in white with a soft dark shadow (no disc, no coloured ring — the ring on the ground carries the rarity)
+const _glyphCache={};
+export function svgGlyphTex(name){ if(_glyphCache[name]) return _glyphCache[name];
+  const SZ=128, c=document.createElement('canvas'); c.width=c.height=SZ; const x=c.getContext('2d'), tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; _glyphCache[name]=tex;
+  const img=new Image(); img.onload=()=>{ x.clearRect(0,0,SZ,SZ); x.shadowColor='rgba(0,0,0,0.75)'; x.shadowBlur=10; const isz=SZ*0.7; x.drawImage(img,(SZ-isz)/2,(SZ-isz)/2,isz,isz); x.shadowBlur=0; x.drawImage(img,(SZ-isz)/2,(SZ-isz)/2,isz,isz); tex.needsUpdate=true; };
+  img.src='data:image/svg+xml;base64,'+btoa(svgMarkup(name,2.4).replace('stroke="currentColor"','stroke="#f4f1e6"')); return tex; }
 export function svgBadgeTex(name,color){
   const key=name+'|'+color; if(_iconTexCache[key]) return _iconTexCache[key];
   const SZ=128, c=document.createElement('canvas'); c.width=c.height=SZ; const x=c.getContext('2d');

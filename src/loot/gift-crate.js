@@ -1,11 +1,10 @@
-// loot/gift-crate.js — Z369 THE RANK'S GIFT CRATE, FOR REAL (soldier mode): what the HQ drops when he climbs a rank. It was a loot gem — a blue fleck
-//   the magnet pulled into him before he saw it. Now it is a crate worth walking to:
-//   · an olive-drab crate with a gold satin ribbon round it, a bow on the lid and a yellow star stencilled on its flanks (rounded edges, real shadows)
-//   · it comes down under a small striped parachute from GIFTBOX.drop.h m, swaying; on touching down the canopy sags, slides off to one side and fades
-//   · then it floats: GIFTBOX.hover m off the ground, bobbing, turning slowly, rocking a little — a warm glow round it, a soft shaft of light up from it,
-//     a pool of light on the ground under it, gold sparks spiralling up round it (no real light: nothing for every material to recompile for)
-//   · he walks into it (GIFTBOX.reach m) and it opens: the lid flies off spinning, a flash, a ring and a burst of gold, and the reward is his (onOpen);
-//     the crate shrinks away. No magnet: he goes to it. Cleared with the battle.
+// loot/gift-crate.js — Z369 / Z370 THE RANK'S SUPPLY BUNDLE (soldier mode): what the HQ drops when he climbs a rank — a real airdrop, not a toy:
+//   · a small wooden crate in olive paint (planks, a stencilled TIẾP TẾ and star), two dark webbing straps round it with buckles, rope handles at the ends
+//   · it comes down under an olive cargo parachute from GIFTBOX.drop.h m, swaying; it lands on the ground (no floating) with a puff of dust; the canopy
+//     sags, slides off and lies beside it, then fades
+//   · a smoke marker by it puts up green smoke (as an airdrop is marked), and a faint ring on the ground says where — nothing glows, nothing spins
+//   · he walks to it (GIFTBOX.reach m): the straps give, the lid swings open on its back edge with a little dust, and the reward is his (onOpen); the
+//     crate stays a moment, then sinks away. Cleared with the battle.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GIFTBOX as GIFT } from '../../config.js';
@@ -13,85 +12,68 @@ import { S, burst, heightAt, ringPulse, scene, sfx } from '../hub.js';
 
 export const GIFTS = [];
 let K = null;
-const canvasTex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
-const radial = (stops) => canvasTex(128, 128, (g, w) => { const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); for(const [o, c] of stops) r.addColorStop(o, c); g.fillStyle = r; g.fillRect(0, 0, w, w); });
+const canvasTex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+// painted planks: olive, the grain and the seams, worn at the edges; `label` stencilled on the long sides
+function planks(label){ return canvasTex(256, 192, (g, w, h) => { g.fillStyle = '#4d5634'; g.fillRect(0, 0, w, h);
+  for(let i = 0; i < 2600; i++){ const x = Math.random() * w, y = Math.random() * h, l = 6 + Math.random() * 30; g.strokeStyle = `rgba(${Math.random() < 0.5 ? '30,34,20' : '98,106,72'},${0.06 + Math.random() * 0.1})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y + (Math.random() - 0.5) * 1.5); g.stroke(); }
+  g.fillStyle = 'rgba(20,22,14,0.75)'; for(let y = h / 4; y < h; y += h / 4) g.fillRect(0, y - 1, w, 2);
+  const e = g.createLinearGradient(0, 0, 0, h); e.addColorStop(0, 'rgba(160,150,110,0.22)'); e.addColorStop(0.08, 'rgba(0,0,0,0)'); e.addColorStop(0.92, 'rgba(0,0,0,0)'); e.addColorStop(1, 'rgba(160,150,110,0.22)'); g.fillStyle = e; g.fillRect(0, 0, w, h);
+  if(label){ g.fillStyle = 'rgba(214,196,120,0.85)'; g.font = 'bold 34px "Arial Narrow", Arial, sans-serif'; g.textAlign = 'center'; g.fillText(label, w / 2, h * 0.58);
+    g.beginPath(); const cx = w / 2, cy = h * 0.3, R = 15; for(let i = 0; i < 10; i++){ const r = i % 2 ? R * 0.42 : R, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.fill(); } }); }
 // the shared shapes and pictures, made once
-function kit(){ if(K) return K; const s = GIFT.size, h = GIFT.h, rb = s * 0.18;
-  const star = canvasTex(128, 128, (g, w) => { g.fillStyle = '#f2c230'; g.beginPath(); for(let i = 0; i < 10; i++){ const r = i % 2 ? w * 0.19 : w * 0.44, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(w / 2 + Math.cos(a) * r, w / 2 + Math.sin(a) * r); } g.closePath(); g.fill(); });
-  const gores = canvasTex(256, 32, (g, w, hh) => { for(let i = 0; i < 8; i++){ g.fillStyle = i % 2 ? '#f4f1e8' : '#e8762c'; g.fillRect(i * w / 8, 0, w / 8, hh); } });
-  const shaft = canvasTex(64, 128, (g, w, hh) => { const v = g.createLinearGradient(0, hh, 0, 0); v.addColorStop(0, 'rgba(255,225,130,1)'); v.addColorStop(0.3, 'rgba(255,215,120,0.45)'); v.addColorStop(1, 'rgba(255,200,100,0)'); g.fillStyle = v; g.fillRect(0, 0, w, hh);
-    g.globalCompositeOperation = 'destination-in'; const x = g.createLinearGradient(0, 0, w, 0); x.addColorStop(0, 'rgba(0,0,0,0)'); x.addColorStop(0.5, 'rgba(0,0,0,1)'); x.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = x; g.fillRect(0, 0, w, hh); });
-  K = { body:new RoundedBoxGeometry(s, h, s, 3, 0.035), lid:new RoundedBoxGeometry(s + 0.05, h * 0.24, s + 0.05, 3, 0.03),
-    bandA:new THREE.BoxGeometry(rb, h * 1.002, s + 0.014), bandB:new THREE.BoxGeometry(rb, h * 0.24 + 0.012, s + 0.064), bandC:new THREE.BoxGeometry(s + 0.064, h * 0.24 + 0.012, rb),
-    loop:new THREE.TorusGeometry(s * 0.17, s * 0.045, 8, 24), knot:new THREE.SphereGeometry(s * 0.075, 14, 10), tail:new THREE.BoxGeometry(rb * 0.8, 0.01, s * 0.32),
-    decal:new THREE.PlaneGeometry(s * 0.62, s * 0.62), canopy:new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, 0, Math.PI * 0.42),
-    ground:new THREE.PlaneGeometry(1, 1),
-    mBody:new THREE.MeshStandardMaterial({ color:0x4a5530, roughness:0.62, metalness:0.08 }), mRib:new THREE.MeshStandardMaterial({ color:0xe0b040, roughness:0.26, metalness:0.85, emissive:0x6a4a10, emissiveIntensity:0.6 }),
-    mStar:new THREE.MeshStandardMaterial({ map:star, transparent:true, roughness:0.5, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2 }),
-    tGores:gores, tShaft:shaft, tGlow:radial([[0, 'rgba(255,230,150,1)'], [0.25, 'rgba(255,200,90,0.55)'], [1, 'rgba(255,170,60,0)']]),
-    tSpark:radial([[0, 'rgba(255,255,230,1)'], [0.3, 'rgba(255,220,120,0.8)'], [1, 'rgba(255,190,80,0)']]) };
+function kit(){ if(K) return K; const w = GIFT.size[0], h = GIFT.size[1], d = GIFT.size[2], st = 0.05;
+  const gores = canvasTex(256, 32, (g, W, H) => { for(let i = 0; i < 8; i++){ g.fillStyle = i % 2 ? '#5d6340' : '#6f7550'; g.fillRect(i * W / 8, 0, W / 8, H); g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(i * W / 8, 0, 1.5, H); } });
+  const side = planks('TIẾP TẾ'), plain = planks('');
+  K = { body:new RoundedBoxGeometry(w, h * 0.8, d, 2, 0.012), lid:new RoundedBoxGeometry(w + 0.02, h * 0.2, d + 0.02, 2, 0.012),
+    strapA:new THREE.BoxGeometry(st, h + 0.012, d + 0.014), strapT:new THREE.BoxGeometry(w + 0.03, 0.012, st), buckle:new THREE.BoxGeometry(st * 1.3, 0.05, 0.012),
+    handle:new THREE.TorusGeometry(0.045, 0.012, 6, 14, Math.PI), can:new THREE.CylinderGeometry(0.035, 0.035, 0.16, 10),
+    canopy:new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, 0, Math.PI * 0.42), ring:new THREE.RingGeometry(0.9, 1, 48),
+    mSide:new THREE.MeshStandardMaterial({ map:side, roughness:0.86, metalness:0.02 }), mPlain:new THREE.MeshStandardMaterial({ map:plain, roughness:0.86, metalness:0.02 }),
+    mStrap:new THREE.MeshStandardMaterial({ color:0x26271f, roughness:0.95 }), mMetal:new THREE.MeshStandardMaterial({ color:0x8a8a80, roughness:0.4, metalness:0.8 }),
+    mRope:new THREE.MeshStandardMaterial({ color:0x9c8a62, roughness:0.95 }), mCan:new THREE.MeshStandardMaterial({ color:0x3c4a2c, roughness:0.6, metalness:0.3 }), tGores:gores };
   return K; }
-const add = (p, geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; p.add(m); return m; };
-const glowMat = (map, op) => new THREE.SpriteMaterial({ map, color:0xffffff, transparent:true, opacity:op, depthWrite:false, blending:THREE.AdditiveBlending });
-// the crate itself: body, ribbon, lid (its own group: it flies off), bow, stars
-function crate(){ const k = kit(), s = GIFT.size, h = GIFT.h, box = new THREE.Group(), lid = new THREE.Group();
-  add(box, k.body, k.mBody); add(box, k.bandA, k.mRib);
-  for(const sd of [1, -1]){ const d = add(box, k.decal, k.mStar, sd * (s / 2 + 0.004), 0, 0); d.rotation.y = sd * Math.PI / 2; d.castShadow = false; }
-  lid.position.y = h / 2 + h * 0.1; add(lid, k.lid, k.mBody); add(lid, k.bandB, k.mRib); add(lid, k.bandC, k.mRib);
-  const top = h * 0.12 + 0.006; for(const sd of [1, -1]){ const l = add(lid, k.loop, k.mRib, sd * s * 0.13, top + s * 0.12, 0); l.rotation.set(0, sd * 0.25, sd * 0.5); l.scale.set(1, 0.8, 1);
-    const t = add(lid, k.tail, k.mRib, sd * s * 0.07, top, sd * s * 0.12); t.rotation.y = sd * 0.5; }
-  add(lid, k.knot, k.mRib, 0, top + s * 0.06, 0); box.add(lid); return { box, lid }; }
-// the parachute over it: a striped canopy and its rigging lines down to the lid
-function chute(){ const k = kit(), g = new THREE.Group(), R = GIFT.drop.canopy, mat = new THREE.MeshStandardMaterial({ map:k.tGores, side:THREE.DoubleSide, roughness:0.85, transparent:true });
-  const c = add(g, k.canopy, mat, 0, GIFT.drop.lines, 0); c.scale.set(R, R * 0.55, R); const pts = [];
-  for(let i = 0; i < 8; i++){ const a = i * Math.PI / 4, rx = Math.cos(a) * R * 0.97, rz = Math.sin(a) * R * 0.97; pts.push(rx, GIFT.drop.lines + R * 0.08, rz, 0, GIFT.h * 0.62, 0); }
+const add = (p, geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; p.add(m); return m; };
+// the crate: its base standing on y = 0, the lid on a hinge along its back edge (so it can swing open)
+function crate(){ const k = kit(), [w, h, d] = GIFT.size, box = new THREE.Group(), hinge = new THREE.Group(), straps = new THREE.Group(), bh = h * 0.8;
+  const mats = [k.mPlain, k.mPlain, k.mPlain, k.mPlain, k.mSide, k.mSide]; add(box, k.body, mats, 0, bh / 2, 0);
+  hinge.position.set(0, bh, -d / 2); box.add(hinge); add(hinge, k.lid, k.mPlain, 0, h * 0.1, d / 2);
+  for(const x of [-w * 0.28, w * 0.28]){ add(straps, k.strapA, k.mStrap, x, h / 2, 0); add(straps, k.buckle, k.mMetal, x, h * 0.55, d / 2 + 0.012); }
+  add(straps, k.strapT, k.mStrap, 0, h + 0.006, 0); box.add(straps);
+  for(const sd of [1, -1]){ const r = add(box, k.handle, k.mRope, sd * (w / 2 + 0.01), bh * 0.6, 0); r.rotation.set(Math.PI, sd * Math.PI / 2, 0); }
+  return { box, hinge, straps }; }
+// the cargo parachute: an olive canopy and its rigging down to the crate's top
+function chute(){ const k = kit(), g = new THREE.Group(), R = GIFT.drop.canopy, L = GIFT.drop.lines, mat = new THREE.MeshStandardMaterial({ map:k.tGores, side:THREE.DoubleSide, roughness:0.9, transparent:true });
+  const c = add(g, k.canopy, mat, 0, L, 0); c.scale.set(R, R * 0.5, R); const pts = [], top = GIFT.size[1];
+  for(let i = 0; i < 8; i++){ const a = i * Math.PI / 4; pts.push(Math.cos(a) * R * 0.97, L + R * 0.06, Math.sin(a) * R * 0.97, 0, top, 0); }
   const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color:0x2a2620, transparent:true })); g.add(lines); return { g, canopy:c, lines }; }
+  const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color:0x2a2820, transparent:true })); g.add(lines); return { g, canopy:c, lines }; }
 
-// the HQ drops one over `at` ({x, z}); onOpen() when he walks into it
-export function spawnGift(at, onOpen){ const k = kit(), D = GIFT.drop, gy = heightAt(at.x, at.z), root = new THREE.Group(), { box, lid } = crate(), ch = chute();
-  root.position.set(at.x, gy + D.h, at.z); root.add(box); root.add(ch.g); scene.add(root);
-  const glow = new THREE.Sprite(glowMat(k.tGlow, 0.0)); glow.scale.setScalar(GIFT.glow); root.add(glow);
-  const flash = new THREE.Sprite(glowMat(k.tGlow, 0)); flash.scale.setScalar(0.1); root.add(flash);
-  const pillar = new THREE.Sprite(glowMat(k.tShaft, 0)); pillar.center.set(0.5, 0); pillar.scale.set(GIFT.shaftW, GIFT.shaft, 1); scene.add(pillar);   // (a soft shaft that faces the camera: no tube edges)
-  const pool = new THREE.Mesh(k.ground, new THREE.MeshBasicMaterial({ map:k.tGlow, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
-  pool.rotation.x = -Math.PI / 2; pool.scale.setScalar(GIFT.pool); scene.add(pool);
-  const N = GIFT.sparks, sg = new THREE.BufferGeometry(), seeds = []; sg.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3));
-  for(let i = 0; i < N; i++) seeds.push({ a:Math.random() * 6.283, r:0.35 + Math.random() * 0.45, t:Math.random(), v:0.25 + Math.random() * 0.35 });
-  const sparks = new THREE.Points(sg, new THREE.PointsMaterial({ map:k.tSpark, size:0.13, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending })); sparks.frustumCulled = false; scene.add(sparks);
-  const u = { x:at.x, z:at.z, gy, root, box, lid, ch, glow, flash, pillar, pool, sparks, seeds, st:'fall', t:0, onOpen, lv:null };
-  GIFTS.push(u); return u; }
+// the HQ drops one over `at` ({x, z}); onOpen() when he reaches it
+export function spawnGift(at, onOpen){ const k = kit(), D = GIFT.drop, gy = heightAt(at.x, at.z), root = new THREE.Group(), { box, hinge, straps } = crate(), ch = chute();
+  root.position.set(at.x, gy + D.h, at.z); root.rotation.y = Math.random() * 6.283; root.add(box); root.add(ch.g); scene.add(root);
+  const ring = new THREE.Mesh(k.ring, new THREE.MeshBasicMaterial({ color:0xd8d0a0, transparent:true, opacity:0, depthWrite:false })); ring.rotation.x = -Math.PI / 2; ring.scale.setScalar(GIFT.ring); ring.position.set(at.x, gy + 0.03, at.z); scene.add(ring);
+  const can = add(scene, k.can, k.mCan, at.x + GIFT.smoke.off, gy + 0.04, at.z + GIFT.smoke.off * 0.4); can.rotation.z = 1.4; can.visible = false;
+  const u = { x:at.x, z:at.z, gy, root, box, hinge, straps, ch, ring, can, st:'fall', t:0, puff:0, onOpen }; GIFTS.push(u); return u; }
 
-function disposeGift(u){ scene.remove(u.root); scene.remove(u.pillar); scene.remove(u.pool); scene.remove(u.sparks);
-  for(const m of [u.glow.material, u.flash.material, u.pillar.material, u.pool.material, u.sparks.material, u.ch.canopy.material, u.ch.lines.material]) m.dispose(); u.sparks.geometry.dispose(); u.ch.lines.geometry.dispose(); }
+function disposeGift(u){ scene.remove(u.root); scene.remove(u.ring); scene.remove(u.can); u.ring.material.dispose(); u.ch.canopy.material.dispose(); u.ch.lines.material.dispose(); u.ch.lines.geometry.dispose(); }
 export function clearGifts(){ for(const u of GIFTS) disposeGift(u); GIFTS.length = 0; }
 
 const ease = t => t * t * (3 - 2 * t);
-// once a frame (game/loop.js): coming down, landing, floating, opening
+// once a frame (game/loop.js): coming down, landing, waiting with its smoke, opening
 export function updateGifts(dt, now){ if(!GIFTS.length) return; const G = GIFT, D = G.drop, p = S.player;
-  for(let i = GIFTS.length - 1; i >= 0; i--){ const u = GIFTS[i]; u.t += dt; const r = u.root, base = u.gy + G.hover;
-    if(u.st === 'fall'){ r.position.y -= D.v * dt; const sw = Math.sin(u.t * D.swayF) * D.sway; r.rotation.z = sw; r.rotation.x = Math.cos(u.t * D.swayF * 0.8) * D.sway * 0.6; r.rotation.y += dt * 0.25;
-      u.glow.material.opacity = 0.35 + 0.15 * Math.sin(u.t * 6);
-      if(r.position.y <= base){ r.position.y = base; u.st = 'land'; u.t = 0; sfx('thud'); burst({ x:u.x, z:u.z }, 0xd9c7a0, 6, 3, { y:u.gy + 0.25, life:0.9, size:1.1, smoke:true, grav:-0.3, drag:2, up:1, op:0.45 }); } }
-    else if(u.st === 'land'){ const k = Math.min(1, u.t / G.chute), c = u.ch;
-      r.rotation.z *= 1 - Math.min(1, dt * 4); r.rotation.x *= 1 - Math.min(1, dt * 4);
-      c.canopy.scale.y = G.drop.canopy * 0.55 * (1 - 0.85 * ease(k)); c.g.position.set(1.4 * ease(k), -D.lines * 0.9 * ease(k), 0.5 * ease(k)); c.g.rotation.z = -1.1 * ease(k);
-      c.canopy.material.opacity = 1 - ease(Math.max(0, (k - 0.45) / 0.55)); c.lines.material.opacity = c.canopy.material.opacity; if(k >= 1){ c.g.visible = false; u.st = 'hover'; u.t = 0; } }
-    if(u.st === 'land' || u.st === 'hover'){ const on = u.st === 'hover' ? Math.min(1, u.t / 0.8) : 0;
-      r.position.y = base + Math.sin(now * G.bobF) * G.bob * on; u.box.rotation.y += dt * G.spin * on; u.box.rotation.z = Math.sin(now * 1.3) * 0.05 * on; u.box.rotation.x = Math.cos(now * 1.1) * 0.04 * on;
-      const pulse = 0.5 + 0.5 * Math.sin(now * 3.1); u.glow.material.opacity = 0.32 + 0.18 * pulse; u.box.children[1].material.emissiveIntensity = 0.45 + 0.4 * pulse;
-      u.pillar.material.opacity = (0.22 + 0.08 * pulse) * on; u.pool.material.opacity = (0.5 + 0.15 * pulse) * on; u.sparks.material.opacity = on;
-      const P = u.sparks.geometry.attributes.position; for(let j = 0; j < u.seeds.length; j++){ const s = u.seeds[j]; s.t = (s.t + dt * s.v) % 1; const a = s.a + s.t * 4.5, rr = s.r * (1 - s.t * 0.5);
-        P.setXYZ(j, u.x + Math.cos(a) * rr, base - 0.35 + s.t * G.sparkH, u.z + Math.sin(a) * rr); } P.needsUpdate = true;
-      u.pillar.position.set(u.x, u.gy + 0.05, u.z); u.pool.position.set(u.x, u.gy + 0.04, u.z);
-      if(p && u.st === 'hover' && (p.pos.x - u.x) ** 2 + (p.pos.z - u.z) ** 2 < G.reach * G.reach) openGift(u); }
-    else if(u.st === 'open'){ const k = Math.min(1, u.t / G.open), L = u.lv;
-      u.lid.position.x += L.x * dt; u.lid.position.y += L.y * dt; u.lid.position.z += L.z * dt; L.y -= 14 * dt; u.lid.rotation.x += dt * 9; u.lid.rotation.z += dt * 6;
-      u.flash.material.opacity = Math.max(0, 1 - k * 2.5); u.flash.scale.setScalar(0.5 + 4.5 * ease(Math.min(1, k * 2.2)));
-      u.box.scale.setScalar(Math.max(0.001, 1 - ease(Math.max(0, (k - 0.35) / 0.65)))); u.glow.material.opacity *= 1 - Math.min(1, dt * 4);
-      for(const m of [u.pillar.material, u.pool.material, u.sparks.material]) m.opacity *= 1 - Math.min(1, dt * 5);
-      if(k >= 1){ disposeGift(u); GIFTS.splice(i, 1); } } } }
-function openGift(u){ u.st = 'open'; u.t = 0; u.lv = { x:(Math.random() - 0.5) * 2, y:6.5, z:(Math.random() - 0.5) * 2 }; const at = { x:u.x, z:u.z }, y = u.root.position.y;
-  sfx('powerup'); ringPulse(at, 0xffd86a, 3.5);
-  burst(at, 0xffd86a, 26, 7, { y:y + 0.3, life:0.9, size:0.42, grav:-6, drag:1.6, up:6 }); burst(at, 0xfff2c0, 12, 4, { y:y + 0.2, life:0.6, size:0.3, grav:-2, drag:2, up:3 });
+  for(let i = GIFTS.length - 1; i >= 0; i--){ const u = GIFTS[i], r = u.root; u.t += dt;
+    if(u.st === 'fall'){ r.position.y -= D.v * dt; r.rotation.z = Math.sin(u.t * D.swayF) * D.sway; r.rotation.x = Math.cos(u.t * D.swayF * 0.8) * D.sway * 0.6;
+      if(r.position.y <= u.gy){ r.position.y = u.gy; r.rotation.x = r.rotation.z = 0; u.st = 'wait'; u.t = 0; u.can.visible = true; sfx('thud');
+        burst({ x:u.x, z:u.z }, 0xcbb994, 7, 3, { y:u.gy + 0.15, life:1.0, size:1.0, smoke:true, grav:-0.2, drag:2, up:0.8, op:0.5 }); }
+      continue; }
+    const c = u.ch, k = Math.min(1, (u.st === 'wait' ? u.t : 99) / G.chute);
+    if(c.g.visible){ c.canopy.scale.y = D.canopy * 0.5 * (1 - 0.9 * ease(k)); c.g.position.set(1.3 * ease(k), -D.lines * 0.95 * ease(k), 0.4 * ease(k)); c.g.rotation.z = -1.25 * ease(k);
+      const fade = u.st === 'wait' ? Math.max(0, 1 - Math.max(0, u.t - G.chuteStay) / 1.5) : c.canopy.material.opacity * (1 - Math.min(1, dt * 3)); c.canopy.material.opacity = fade; c.lines.material.opacity = fade; if(fade <= 0.01) c.g.visible = false; }
+    if(u.st === 'wait'){ u.ring.material.opacity = 0.26 + 0.08 * Math.sin(now * 2);
+      if((u.puff -= dt) <= 0){ u.puff = G.smoke.every; burst({ x:u.can.position.x, z:u.can.position.z }, G.smoke.col, 2, 0.6, { y:u.gy + 0.25, life:G.smoke.life, size:G.smoke.size, smoke:true, grav:-1.1, drag:0.8, up:1.6, op:0.55 }); }
+      if(p && (p.pos.x - u.x) ** 2 + (p.pos.z - u.z) ** 2 < G.reach * G.reach) openGift(u); continue; }
+    u.ring.material.opacity *= 1 - Math.min(1, dt * 4); const o = Math.min(1, u.t / 0.35); u.hinge.rotation.x = -1.9 * ease(o); u.straps.visible = u.t < 0.08;
+    if(u.t > G.open){ const s = Math.min(1, (u.t - G.open) / 0.8); r.position.y = u.gy - s * GIFT.size[1] * 1.1; u.can.position.y = u.gy + 0.04 - s * 0.2; if(s >= 1){ disposeGift(u); GIFTS.splice(i, 1); } } } }
+function openGift(u){ u.st = 'open'; u.t = 0; const at = { x:u.x, z:u.z }; sfx('click'); sfx('powerup'); ringPulse(at, 0xd8d0a0, 2.2);
+  burst(at, 0xcbb994, 6, 1.5, { y:u.gy + GIFT.size[1], life:0.7, size:0.6, smoke:true, grav:-0.4, drag:2, up:1.2, op:0.45 });
   if(u.onOpen) u.onOpen(); }

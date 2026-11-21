@@ -8,7 +8,7 @@ import { TROOPER } from '../../config.js';
 import { GUNS, MODE, POWERUPS, S, dropPowerup, floatText, gainXp, magCap, ringPulse, sfx, trooperGive, trooperGunPick, trooperLoot, updateGunHUD } from '../hub.js';
 
 // an enemy's weapon as a pick-up (the gun crate's look, the gun's own name and photo on the toast)
-export function wpnDef(id){ const g = GUNS[id]; return { id:'wpn_' + id, svg:'gun', color:0xaef0a0, vi:g.name, ds:'Súng của địch · khẩu đã có thì lên ★', cat:'gun', tier:(g.tier || 1) >= 3 ? 2 : 1,
+export function wpnDef(id){ const g = GUNS[id]; return { id:'wpn_' + id, gun:id, svg:'gun', color:0xaef0a0, vi:g.name, ds:'Súng của địch · khẩu đã có thì lên ★', cat:'gun', tier:(g.tier || 1) >= 3 ? 2 : 1,
   apply(p){ p._gotGun = id; trooperGive(id); } }; }
 export const MEDAL = { id:'medal', svg:'star', color:0xffd86a, vi:'HUY CHƯƠNG', ds:'Kinh nghiệm cho cấp bậc kế tiếp', cat:'gem', tier:1,
   apply(p){ gainXp(Math.round(TROOPER.drop.medalXp * (1 + 0.25 * ((S.stage || 1) - 1))), p.pos); } };

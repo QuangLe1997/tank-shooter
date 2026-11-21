@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, GIFT, LOOT, GUN_MODS } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, svgBadgeTex, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive } from '../hub.js';
+import { BALANCE, GIFT, LOOT, GUN_MODS, HUMAN_SCALE, INFGUN } from '../../config.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -73,25 +73,38 @@ export const _LM={}; export let _lootGeo=null;
 export function lootGeos(){ if(_lootGeo) return _lootGeo; const B=(w,h,d,x,y,z)=>new THREE.BoxGeometry(w,h,d).translate(x||0,y||0,z||0), mg=a=>{ const g=mergeGeometries(a.map(q=>q.index?q.toNonIndexed():q)); a.forEach(q=>q.dispose()); return g; };
   _lootGeo={
     case:mg([B(1.0,0.62,0.7,0,0.31,0), B(0.36,0.07,0.08,0,0.66,0)]),                                   // med case body + handle
-    cross:mg([B(0.42,0.12,0.02,0,0.34,0.36), B(0.12,0.42,0.02,0,0.34,0.36), B(0.42,0.12,0.02,0,0.34,-0.36), B(0.12,0.42,0.02,0,0.34,-0.36)]),
+    patch:mg([B(0.5,0.5,0.012,0,0.34,0.356), B(0.5,0.5,0.012,0,0.34,-0.356)]),
+    cross:mg([B(0.42,0.12,0.02,0,0.34,0.365), B(0.12,0.42,0.02,0,0.34,0.365), B(0.42,0.12,0.02,0,0.34,-0.365), B(0.12,0.42,0.02,0,0.34,-0.365)]),
     can:mg([new RoundedBoxGeometry(0.62,0.86,0.3,2,0.06).translate(0,0.43,0), B(0.16,0.1,0.22,0.18,0.92,0), B(0.36,0.06,0.08,-0.06,0.95,0)]),   // jerrycan + spout + handle
     ammo:mg([B(0.9,0.52,0.42,0,0.26,0), B(0.94,0.06,0.46,0,0.53,0), B(0.3,0.05,0.06,0,0.58,0)]),          // ammo can w/ lid + handle
     plate:mg([B(0.9,0.12,0.7,0,0.06,0), B(0.86,0.12,0.66,0.02,0.19,0.02), B(0.82,0.12,0.62,-0.02,0.32,-0.01)]),   // stacked ERA tiles
     tool:mg([B(0.9,0.42,0.42,0,0.21,0), B(0.5,0.06,0.06,0,0.5,0), B(0.06,0.1,0.06,-0.22,0.45,0), B(0.06,0.1,0.06,0.22,0.45,0)]),
     tech:mg([new RoundedBoxGeometry(0.8,0.5,0.6,2,0.08).translate(0,0.25,0)]),
     gun:mg([B(1.7,0.4,0.55,0,0.2,0), B(1.74,0.05,0.59,0,0.42,0)]),                                         // long weapon crate
-    gem:new THREE.OctahedronGeometry(0.42,0).translate(0,0.55,0),
+    gem:new THREE.OctahedronGeometry(0.3,0).translate(0,0.3,0),   // (Z370 smaller, resting on its point)
     beam:new THREE.CylinderGeometry(0.42,0.62,1.5,14,1,true).translate(0,0.75,0) };
   return _lootGeo; }
 export function lootMat(k, col, emi){ return _LM[k]||(_LM[k]=new THREE.MeshStandardMaterial({ color:col, roughness:0.55, metalness:k==='steel'||k==='gem'?0.8:0.25, emissive:emi||0x000000, emissiveIntensity:emi?0.8:0 })); }
+// Z370 a weapon on the ground: its own model (the soldier's hand weapon), true size, lying on its side
+const _gb=new THREE.Box3();
+function realGun(g, id){ const k=INFGUN.map[id], L=INFGUN.guns[k].len*HUMAN_SCALE; loadGLTF('inf_'+k).then(gl=>{ if(!gl) return; const m=gl.scene.clone(true), w=new THREE.Group(); w.add(m);
+    _gb.setFromObject(m); const c=_gb.getCenter(new THREE.Vector3()); m.position.sub(c); w.scale.setScalar(L/Math.max(1e-3, _gb.max.z-_gb.min.z)); w.rotation.z=Math.PI/2;
+    m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } }); w.updateMatrixWorld(true); _gb.setFromObject(w); w.position.y=-_gb.min.y; g.add(w); }); }
+// Z370 a medal on the ground: the gold star on its disc and the ribbon, lying flat
+function medal(g){ const gold=lootMat('gold',0xd8a838), add=(geo,mat,x,y,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+  add(new THREE.BoxGeometry(0.34,0.02,0.4), lootMat('ribbonRed',0xa82a24), 0, 0.012, -0.22); add(new THREE.BoxGeometry(0.1,0.022,0.4), lootMat('ribbonYel',0xe0c040), 0, 0.013, -0.22);
+  add(new THREE.CylinderGeometry(0.22,0.22,0.035,28), gold, 0, 0.02, 0.12); const st=new THREE.Shape(); for(let i=0;i<10;i++){ const r=i%2?0.07:0.17, a=-Math.PI/2+i*Math.PI/5; st[i?'lineTo':'moveTo'](Math.cos(a)*r, Math.sin(a)*r); }
+  const s=add(new THREE.ExtrudeGeometry(st,{ depth:0.025, bevelEnabled:false }), gold, 0, 0.04, 0.12); s.rotation.x=-Math.PI/2; g.scale.setScalar(1.15); }
 export function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def.cat||'tech', add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; g.add(m); return m; };
-  if(cat==='med'){ add(G.case, lootMat('white',0xe8e6de)); add(G.cross, lootMat('red',0xc8202a)); }
+  if(cat==='med'){ add(G.case, lootMat('medOlive',0x56603a)); add(G.patch, lootMat('white',0xe8e6de)); add(G.cross, lootMat('red',0xc8202a)); }   // (Z370 an olive aid bag, a white patch with the red cross)
+  else if(def.gun && INFGUN.map[def.gun]) realGun(g, def.gun);   // Z370 an enemy's weapon: the gun itself, lying on its side
+  else if(def.id==='medal') medal(g);
   else if(cat==='fuel'){ add(G.can, lootMat(def.id==='turbo'?'can2':'can', def.id==='turbo'?0x2c6ea8:0x6a7a32)); }
   else if(cat==='ammo'){ add(G.ammo, lootMat('olive',0x4a5a2a)); }
   else if(cat==='armor'){ add(G.plate, lootMat('steel',0x6e6a5c)); }
   else if(cat==='tool'){ add(G.tool, lootMat('toolred',0xb8302a)); }
   else if(cat==='gun'){ add(G.gun, lootMat('wood',0x7a5a34)); }
-  else if(cat==='gem'){ add(G.gem, lootMat('gem',0x7fe7ff,0x2a8aa8)); }
+  else if(cat==='gem'){ add(G.gem, lootMat('gem',0x9fd8e8,0x123a48)); }   // (Z370 a cut stone that catches the light, not a lamp)
   else if(cat==='bomb'){ const b=add(new THREE.SphereGeometry(0.42,14,10).translate(0,0.45,0), lootMat('bomb',0x2a2a26)); }
   else { add(G.tech, lootMat('tech',0x34404a,0x103040)); }
   return g; }
@@ -125,8 +138,10 @@ export function dropPowerup(pos, tier, forced){
   tier=tier|0; const def=forced||pickLoot(tier), t=def.tier||0;   // Z104 forced = re-drop a carried item (rally point)
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
   const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
-  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgBadgeTex(def.svg||'star','#'+def.color.toString(16).padStart(6,'0')),transparent:true,depthWrite:false})); icon.scale.set(1.05,1.05,1); icon.position.y=1.75; icon.visible=false; g.add(icon);
-  const ring=holoRing(1.02, { kind:'loot', col:RAR[t], gain:2.0+t*0.4 }); ring.position.y=0.08; ring.visible=false; g.add(ring);   // Z318 a glowing rarity ring whose lit arc is the time left
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgGlyphTex(def.svg||'star'),transparent:true,depthWrite:false})); icon.scale.set(0.5,0.5,1); icon.position.y=1.15;   // (Z370 a small plain glyph, low over it)
+   icon.visible=false; g.add(icon);
+  const ring=holoRing(0.78, { kind:'loot', col:RAR[t], gain:0.9+t*0.25 });   // (Z370 smaller and fainter)
+   ring.position.y=0.08; ring.visible=false; g.add(ring);   // Z318 a glowing rarity ring whose lit arc is the time left
   const a=Math.random()*6.283, sp=3+Math.random()*3;
   const u={def, g, model, beam, icon, ring, x:pos.x, z:pos.z, y:heightAt(pos.x,pos.z)+1.4, vx:Math.cos(a)*sp, vz:Math.sin(a)*sp, vy:7+Math.random()*2, landed:false, bounces:0, born:performance.now()/1000, tier:t};
   g.position.set(u.x,u.y,u.z); pickups.push(u);
@@ -142,15 +157,15 @@ export function updatePickups(dt, now){
     const u=pickups[i];
     if(!u.landed){ u.vy-=26*dt; u.x+=u.vx*dt; u.z+=u.vz*dt; u.y+=u.vy*dt; u.model.rotation.x+=dt*7; u.model.rotation.z+=dt*4;   // tumbling out of the wreck
       const gy=heightAt(u.x,u.z); if(u.y<=gy){ u.y=gy; if(u.bounces++<1 && u.vy<-5){ u.vy*=-0.32; u.vx*=0.5; u.vz*=0.5; burst({x:u.x,z:u.z}, BIOME.ground, 2, 2, {y:gy+0.2, life:0.5, size:0.8, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.4}); }
-        else { u.landed=true; u.born=now; u.model.rotation.set(0,Math.random()*6,0); u.beam.visible=u.icon.visible=u.ring.visible=true; sfx('thud');
+        else { u.landed=true; u.born=now; u.model.rotation.set(0,Math.random()*6,0); u.icon.visible=u.ring.visible=true; sfx('thud');   // (Z370 no light beam)
+         
           burst({x:u.x,z:u.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.8, size:1.2, smoke:true, grav:-0.3, drag:2, up:1, op:0.45}); } }
       clampField(u, 3); u.g.position.set(u.x,u.y,u.z); continue; }
     const age=now-u.born, life=PICKUP_LIFE*(1+u.tier*0.4), rem=u.stash ? 1 : Math.max(0, 1-age/life);   // Z104 stashed at the rally point → never expires
-    u.model.rotation.y += dt*0.9; u.model.position.y = 0.05+Math.sin(now*2.4+i)*0.06;
-    u.icon.position.y = 1.7 + Math.sin(now*3+i)*0.1;
+    u.icon.position.y = 1.15 + Math.sin(now*2+i)*0.03;   // Z370 it lies where it fell (no spinning, no bobbing); only its small glyph breathes
     u.beam.material.opacity = (0.08+0.03*Math.sin(now*4+i))*(1+u.tier*0.25); u.beam.scale.set(1, 0.6+0.4*rem, 1);   // low halo hugging the item (no tall pillar)
     const end=rem<0.25; holoArc(u.ring, rem); u.ring.rotation.z += dt*0.6;   // Z318 the lit arc runs down with the time left (was a shrinking ring)
-    u.ring.material.opacity = blPulse(now+i*0.37, end ? 'alert' : 'idle', end ? 0.25 : 0.6); u.icon.material.opacity = end ? blPulse(now, 'alert', 0.2) : 1;   // breathes; quickens before it is gone (no hard on/off)
+    u.ring.material.opacity = 0.3*blPulse(now+i*0.37, end ? 'alert' : 'idle', end ? 0.25 : 0.6); { const dd=Math.hypot(p.pos.x-u.x, p.pos.z-u.z); u.icon.material.opacity = (end ? blPulse(now, 'alert', 0.2) : 0.9)*Math.min(1, Math.max(0, (18-dd)/5)); }   // (Z370 the glyph fades in as he comes within 18 m)   // breathes; quickens before it is gone (no hard on/off)
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
     if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }           // magnet toward player when near
     u.g.position.set(u.x, heightAt(u.x,u.z), u.z);
