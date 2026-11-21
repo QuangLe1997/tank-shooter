@@ -86,8 +86,8 @@ export function flattenPad(x, z, rIn, rOut){ const W=HF.W, h=HF.h, st=HF.step; i
   for(const c of crushables) if(c.alive && Math.hypot(c.x-x,c.z-z)<rOut){ c.alive=false; for(const im of [c.im, ...(c.ims||[])]){ im.setMatrixAt(c.k,_Z0); im.instanceMatrix.needsUpdate=true; } } }
 const KEEP=new Set(['fortwall','gate','keep','fortcore','tower','camp','brick','obj','corewall','parked','pylon']);
 // a site is free when no structure (fort, tower, camp, wall, ridge, loot) is in the way — scattered cover is simply cleared off the yard
-export function siteOk(x, z, R){ return !blocks.some(b=>(KEEP.has(b.kind)||b.ridge||b.loot||b.fort||b.supply) && Math.hypot(b.x-x,b.z-z)<b.r+R+2); }
-export function clearSite(x, z, R){ for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(Math.hypot(b.x-x,b.z-z)<b.r+R){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); } blocks.splice(i,1); } } }
+export function siteOk(x, z, R){ return !blocks.some(b=>(KEEP.has(b.kind)||b.ridge||b.loot||b.fort||b.supply||b.hp===Infinity) && Math.hypot(b.x-x,b.z-z)<b.r+R+2); }   // Z380 nor on a house, a ruin, a scanned model — and clearSite never takes one away (clearing it took its solid and left the model standing: men and rounds went through it)
+export function clearSite(x, z, R){ for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(b.hp!==Infinity && Math.hypot(b.x-x,b.z-z)<b.r+R){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); } blocks.splice(i,1); } } }
 export const SUPPLY_K=1.25;   // the installations are built big: storage tanks ~7.5 m across, 9 m tall
 function newBase(kind, x, z, R, K, ang0){ K=K||1; const ang=ang0??Math.atan2(-x, ARENA*0.55-z), ca=Math.cos(ang), sa=Math.sin(ang);
   const B={ kind, x, z, R, K, ang, at:(lx,lz)=>[x+(lx*ca+lz*sa)*K, z+(-lx*sa+lz*ca)*K], pieces:[], alive:true, alarm:false, hitAt:-99, heloN:0, tankN:0, heloAt:0, tankAt:0, spreadAt:0, guards:[], fires:[], decor:null };

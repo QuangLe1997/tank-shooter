@@ -27,8 +27,10 @@ function buildVillage(){
   let houses=0; const H=Math.round(7*AREA_K/2*OPEN_LAND.VILLAGE.houses);   // Z242 fewer homes, more open countryside
   for(let t=0;t<H*14 && houses<H;t++){ const x=_R(-ARENA+14,ARENA-14), z=_R(-ARENA+14,ARENA-14); if(!free(x,z,4.2) || (RIVER.on && wetAt2(x,z,9))) continue;
     const m=villageHouse(), rot=Math.round(_R(0,3))*Math.PI/2+_R(-0.15,0.15); m.position.set(x, heightAt(x,z)-0.05, z); m.rotation.y=rot; add(m);   // Z207 a real village home
-    const w=m.userData.w, d=m.userData.d, ca=Math.cos(rot), sa=Math.sin(rot); let first=true;
+    const w=m.userData.w, d=m.userData.d, ca=Math.cos(rot), sa=Math.sin(rot), n0=blocks.length; let first=true;
     for(let a=-w/2+1.5;a<=w/2-1;a+=2.6) for(let b=-d/2+1.5;b<=d/2-1.2;b+=2.6){ solid(x+a*ca+b*sa, z-a*sa+b*ca, 2.2,'house', first?m:null); first=false; }
+    { m.updateMatrixWorld(true); const top=Math.min(new THREE.Box3().setFromObject(m).max.y, heightAt(x,z)+16);   // Z380 every circle of the house as tall as the house (all but the first stood 2 m high: a tower's rounds went through its upper half)
+      for(let i=n0;i<blocks.length;i++){ blocks[i]._top=top; blocks[i]._topHp=blocks[i].hp; } }
     claim(x,z,Math.max(w,d)/2+7); houses++; }   // Z242 each home keeps a yard of open ground round it
   // rice paddies beside the water (scenery, no collision)
   const tex=paddyTex(), pm=new THREE.MeshStandardMaterial({ map:tex, roughness:0.8 }); let paddies=0;

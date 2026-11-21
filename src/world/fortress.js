@@ -168,7 +168,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       { const [sx,sz]=[kx-ox*(KW/2+1.2), kz-oz*(KW/2+1.2)]; for(let k=0;k<6;k++) geos.push(placed(stoneBox(4.2, 0.5*(k+1), 0.9), sx-ox*(5-k)*0.9, 0.25*(k+1), sz-oz*(5-k)*0.9, ry)); }   // the great stair to the keep door
       { const [dx,dz]=[kx-ox*(KW/2+0.06), kz-oz*(KW/2+0.06)]; const door=new THREE.Mesh(new THREE.BoxGeometry(2.6,4.2,0.2), _wood); door.position.set(dx, 2.1+3, dz); door.rotation.y=ry; g.add(door); }
       f.keepX=kx; f.keepZ=kz; f.keepY=KH+0.4; f.keepR=KW*0.72;
-      const kb=new THREE.Group(); kb.position.set(kx,0,kz); g.add(kb); blocks.push({ mesh:kb, x:f.x+kx, z:f.z+kz, r:KW*0.72, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'keep' }); }
+      const kb=new THREE.Group(); kb.position.set(kx,0,kz); g.add(kb); blocks.push({ mesh:kb, x:f.x+kx, z:f.z+kz, r:KW*0.72, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'keep', _top:f.gy+KH, _topHp:Infinity }); }   // Z380 (an empty group carries it: it stood 2 m high to rounds and eyes — the donjon is KH)
     { f.towerFlags=[]; const poles=[]; for(const [px,pz,top] of FLAGS.slice(0, MOBILE?6:10)){ const pole=new THREE.CylinderGeometry(0.07,0.1,8.5,8); pole.translate(px, top+3.75, pz); poles.push(pole); const ball=new THREE.SphereGeometry(0.16,8,6); ball.translate(px, top+8.05, pz); poles.push(ball);
         const fl=makeFlag(campFlagTex(), 2.9, 1.85, 1); fl.position.set(px, top+7.0, pz); g.add(fl); f.towerFlags.push(fl); }
       if(poles.length){ const pm=new THREE.Mesh(mergeGeometries(poles.map(q=>q.index?q.toNonIndexed():q), false), _iron); poles.forEach(q=>q.dispose()); pm.castShadow=true; g.add(pm); } }

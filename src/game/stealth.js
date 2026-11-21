@@ -5,7 +5,7 @@
 //   close by, caught in a searchlight's pool, or given away by his own muzzle flash — then every enemy within STEALTH.alertR knows where he lies for a while.
 //   The combat roll is also a dodge: a round that would hit him while he goes over usually misses (dodgeShot; running fast dodges a few).
 import { STEALTH } from '../../config.js';
-import { CV, NIGHT, S, floatText, heightAt } from '../hub.js';
+import { CV, NIGHT, S, floatText, heightAt, lineClear } from '../hub.js';
 
 const now_ = () => performance.now() / 1000;
 let _sayAt = -9, _dodgeAt = -9;
@@ -15,8 +15,17 @@ export function playerHidden(){ const p = S.player; return !!(p && p.cav && !CV.
 // he has been spotted: every enemy close enough (alertR) knows where he is for keep s
 function spot(p, t, keep, why){ const was = (p.spotUntil || 0) > t; p.spotUntil = Math.max(p.spotUntil || 0, t + keep);
   if(!was && why && playerHidden() && t - _sayAt > STEALTH.say){ _sayAt = t; say(why, '#ff7a5a'); } }
+// Z380 is the line from a shooter's eyes to the top of the soldier's head (or to either shoulder) open — no wall, house, rock or cover standing in it higher than the line
+//   (lying flat his head is a hand off the ground, kneeling a little over a metre); remembered a moment per shooter (STEALTH.sightT) while he stays put
+const _sight = new Map();
+function inSight(x, y, z){ const p = S.player, t = now_(), C = STEALTH, st = CV.mounted ? 'mounted' : CV.roll ? 'prone' : (CV.stance || 'stand'), k = (Math.round(x * 2) + 1000) * 4e6 + (Math.round(z * 2) + 1000) * 2000 + Math.round(y * 2) + 500;   // (one per shooter's spot)
+  const c = _sight.get(k); if(c && t - c.t < C.sightT && c.st === st && Math.abs(c.px - p.pos.x) < 0.25 && Math.abs(c.pz - p.pos.z) < 0.25) return c.v;
+  const hy = heightAt(p.pos.x, p.pos.z) + (C.head[st] || C.head.stand), dx = p.pos.x - x, dz = p.pos.z - z, L = Math.hypot(dx, dz) || 1, sx = dz / L * C.side, sz = -dx / L * C.side;
+  const v = lineClear(x, y, z, p.pos.x, hy, p.pos.z) || lineClear(x, y, z, p.pos.x + sx, hy - C.drop, p.pos.z + sz) || lineClear(x, y, z, p.pos.x - sx, hy - C.drop, p.pos.z - sz);   // (his head, or either shoulder: a post or a pole hides no man)
+  if(_sight.size > 800) _sight.clear(); _sight.set(k, { t, v, st, px:p.pos.x, pz:p.pos.z }); return v; }
 // can a shooter whose eyes are at (x, y, z) see the player now — every enemy gun asks before it takes him as its target
-export function playerSeen(x, y, z){ const p = S.player; if(!p || !playerHidden()) return true; const t = now_(), C = STEALTH;
+export function playerSeen(x, y, z){ const p = S.player; if(!p || !p.cav) return true; if(!inSight(x, y, z)) return false;   // Z380 not through anything solid, standing or lying
+  if(!playerHidden()) return true; const t = now_(), C = STEALTH;
   const d = Math.hypot(p.pos.x - x, heightAt(p.pos.x, p.pos.z) + 0.3 - y, p.pos.z - z);
   if((p.spotUntil || 0) > t) return d < C.alertR;
   const r = C.see[Math.hypot(p.vel.x, p.vel.z) > C.crawlV ? 1 : 0] * (1 - (1 - C.night) * (NIGHT.k || 0));   // (crawling is easier to see than lying still)

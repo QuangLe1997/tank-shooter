@@ -147,6 +147,7 @@ export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a c
 export * from './game/ride-collide.js';   // Z311 what a ride runs into: trees, poles, parked cars, street furniture, wire
 export * from './world/solid-shape.js';   // Z337 the true footprint of walls and buildings, for bumping into them and for the camera's sight line
 export * from './game/soldier-moves.js';   // Z336 the soldier on his feet: jump, sprint, combat roll, taking cover
+export * from './combat/solid-line.js';   // Z380 the first solid thing on a round's path or an eye's line, by its true shape and height
 export * from './game/stealth.js';   // Z377 a prone soldier unseen by far / high guns until close, lit or firing; the roll dodges rounds
 export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams scooters, cars and animals
 export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets
