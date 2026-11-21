@@ -68,17 +68,17 @@ function greatWall(){ const g=new THREE.Group(); const R0=a=>fieldR(a)+12, a0=-2
     for(const sd of [-1,1]){ const m=new THREE.BoxGeometry(L*0.4, 1.2, 0.5); m.rotateY(ry); const nx=-Math.sin(-ry)*0, c=Math.cos(ry), s=Math.sin(ry); m.translate(cx - sd*1.9*s, y+6, cz - sd*1.9*c); Q.push({ geo:m, col:0x8a867a }); }
     if(k%9===0){ const t=new THREE.BoxGeometry(7, 11, 7); t.rotateY(ry); t.translate(cx, y+4.5, cz); Q.push({ geo:t, col:0x8e8a7e }); const r=new THREE.ConeGeometry(5.4, 2.8, 4); r.rotateY(Math.PI/4+ry); r.translate(cx, y+11.4, cz); Q.push({ geo:r, col:0x5a4a3a }); } }
   const m=new THREE.Mesh(_mergeColored(Q), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.9 }), { scale:0.22, bump:0.06, alb:0.36, foot:3, streak:0.3 })); m.castShadow=true; m.receiveShadow=true; g.add(m); return g; }
-function windmills(g){ for(const [x,z] of [[0,0],[34,-14],[-30,-10]]){ const Q=[], b=(geo,xx,yy,zz,col)=>{ geo.translate(xx,yy,zz); Q.push({ geo, col }); };
+function windmills(g){ const sites=[]; for(const [x,z] of [[0,0],[34,-14],[-30,-10]]){ const Q=[], b=(geo,xx,yy,zz,col)=>{ geo.translate(xx,yy,zz); Q.push({ geo, col }); };
     b(new THREE.CylinderGeometry(3.2,5,16,8),0,8,0,0x6a4a3a); b(new THREE.ConeGeometry(4,5,8),0,18.5,0,0x3a3a3a); b(new THREE.BoxGeometry(2,3,0.3),0,2,4.6,0xe8e0d0);
     const tower=new THREE.Mesh(_mergeColored(Q), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85 }), { scale:0.35, bump:0.03, alb:0.3, foot:1.5, streak:0.25 })); tower.position.set(x,heightAt(x,z),z); tower.castShadow=true; g.add(tower);
     const hub=new THREE.Group(); hub.position.set(x, heightAt(x,z)+16.5, z+3.6); g.add(hub); const S2=[]; for(let k=0;k<4;k++){ const arm=new THREE.BoxGeometry(0.5, 13, 0.3); arm.translate(0,6.5,0); arm.rotateZ(k*Math.PI/2); S2.push({ geo:arm, col:0x5a3a24 });
       const sail=new THREE.BoxGeometry(2.6, 10, 0.12); sail.translate(1.6,7.5,0); sail.rotateZ(k*Math.PI/2); S2.push({ geo:sail, col:0xf0e8d8 }); }
-    const sails=new THREE.Mesh(_mergeColored(S2), new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, side:THREE.DoubleSide })); sails.castShadow=true; hub.add(sails); WONDER.spin.push(sails); } }
+    const sails=new THREE.Mesh(_mergeColored(S2), new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, side:THREE.DoubleSide })); sails.castShadow=true; hub.add(sails); WONDER.spin.push(sails); sites.push({ tower, hub, sails }); } return sites; }
 export function clearWonder(){ if(WONDER.g){ scene.remove(WONDER.g); WONDER.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); WONDER.g=null; } WONDER.spin.length=0; WONDER.smoke.length=0; WONDER.name=''; clearVolcano(); }
 export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) return; const g=new THREE.Group(); WONDER.g=g; WONDER.name=def[0]; scene.add(g);
   const a=WONDER.a0 ?? (-Math.PI/2+(Math.random()-0.5)*1.2), R=Math.min(ARENA-14, fieldR(a)+40), x=Math.cos(a)*R, z=Math.sin(a)*R;   // on the enemy side, on the high ground beyond the fence (Z374 the bearing the scenery set was composed round, when it chose one)
   if(BIOME.name==='HILLS'){ g.add(greatWall()); const am=-1.55, rm=fieldR(am)+12; WONDER.x=Math.cos(am)*rm; WONDER.z=Math.sin(am)*rm; return; }
-  if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); windmills(w); WONDER.x=x; WONDER.z=z; return; }
+  if(BIOME.name==='MEADOW'){ const w=new THREE.Group(); w.position.set(x,0,z); w.rotation.y=-a-Math.PI/2; g.add(w); dressWindmills(g, w, windmills(w)); WONDER.x=x; WONDER.z=z; return; }
   if(BIOME.name==='CITY'){ WONDER.x=x; WONDER.z=z; const put=()=>{ const M=REAL_CITY.bld_landmark; if(!M || WONDER.g!==g) return false;   // Z267 the real Landmark 81 (Z268 rebuilt by Tripo from a photo: its stepped square shafts), the stacked boxes only if it never loads
       const m=new THREE.Mesh(M.geo, windowLights(M.mat.clone())), k=REALCITY.landmarkH/M.size.y; m.scale.setScalar(k); m.position.set(x, heightAt(x,z)-REALCITY.landmarkSink*REALCITY.landmarkH, z); m.rotation.y=-a-Math.PI/2; m.castShadow=m.receiveShadow=true; g.add(m);
       const Bx=REAL_CITY.bld_bitexco, BC=REALCITY.bitexco; if(Bx){ const c=Math.cos(BC.turn), s=Math.sin(BC.turn), bx=(x*c-z*s)*1.22, bz=(x*s+z*c)*1.22, b=new THREE.Mesh(Bx.geo, windowLights(Bx.mat.clone())), kb=BC.h/Bx.size.y;   // Z268 Bitexco beside it, further out
@@ -103,4 +103,13 @@ function dressWonder(g, m){ const k=REALWONDER.biomes[BIOME.name]; if(!k || type
     const kk=F*Math.max(ps.x, ps.z)/Math.max(ms.x, ms.z), mat=src.material.clone(); mat.envMapIntensity=0.8;
     const w=new THREE.Mesh(geo, mat); w.scale.setScalar(kk); w.position.set(m.position.x, m.position.y-REALWONDER.sink*ms.y*kk, m.position.z); w.rotation.y=m.rotation.y+(REALWONDER.yaw[k]||0); w.castShadow=w.receiveShadow=true;
     m.visible=false; g.add(w); }); }
+// Z410 REAL WINDMILLS: MEADOW's three hand-built windmills become the Tripo model (one shape, shared) — same spots, standing on the same ground,
+//   their sails facing the same way; the model's sails are part of its single mesh, so they stand still (a mill at rest). The hand-built ones
+//   (turning sails) stay only if the model never loads
+function dressWindmills(g, w, sites){ const C=REALWONDER.windmill; if(!C || typeof window==='undefined' || /procwonder/.test(location.search+location.hash)) return;
+  loadGLTF(C.key).then(gl=>{ if(!gl || WONDER.g!==g || !w.parent) return; let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; }); if(!src) return;
+    const geo=src.geometry.clone().applyMatrix4(src.matrixWorld); geo.computeBoundingBox(); let b=geo.boundingBox; geo.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); geo.computeBoundingBox(); b=geo.boundingBox;
+    const k=C.h/(b.max.y-b.min.y), mat=src.material.clone(); mat.envMapIntensity=0.8;
+    for(const s of sites){ const m=new THREE.Mesh(geo, mat); m.scale.setScalar(k); m.position.set(s.tower.position.x, s.tower.position.y-C.sink*C.h, s.tower.position.z); m.rotation.y=C.yaw; m.castShadow=m.receiveShadow=true; w.add(m);
+      s.tower.visible=false; s.hub.visible=false; const i=WONDER.spin.indexOf(s.sails); if(i>=0) WONDER.spin.splice(i,1); } }); }
 

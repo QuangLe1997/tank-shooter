@@ -31,7 +31,7 @@ const PHONE = typeof window !== 'undefined' && (('ontouchstart' in window) || na
 for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + (PHONE && PHONE_LOD.trees ? 'm/' : '') + k + '.glb';   // Z292 phones take the 3k-triangle trees
 // Z264 the city's buildings and vehicles (world/real-city.js)
 MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
-for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders
+for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen','wonder_windmill']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders (Z410 + the Dutch windmill)
 for(const k of ['deer','zebra','giraffe','elephant','reindeer','bear']) MODEL_FILES['wild_' + k] = 'assets/models/real/wild/' + k + '.glb';   // Z286 real wildlife (rigged, walking)
 for(const k of ['ar','lmg','minigun','shotgun','sniper','rpg','gl','flamer','energy','ak','m4','mp5','rust','dmr','rail','saw']) MODEL_FILES['inf_' + k] = 'assets/models/real/gun/inf/' + k + '.glb';   // Z295 the infantry arsenal (Z387 + the four downloaded scans)
 for(const k of ['xeom']) MODEL_FILES['drv_' + k] = 'assets/models/real/driver/' + k + '.glb';   // Z296 the drivers, rigged

@@ -837,6 +837,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z284 real wonders · Z285 enemy outposts round the forts
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8');
   ok(Object.values(C.REALWONDER.biomes).every(k=>fs.existsSync('assets/models/real/wonder/'+k+'.glb')) && /function dressWonder/.test(R('src/world/wonders.js')) && /dressWonder\(g, m\)/.test(R('src/world/wonders.js')), 'four real wonders fitted over the old ones');
+  ok(fs.existsSync('assets/models/real/wonder/'+C.REALWONDER.windmill.key+'.glb') && C.REALWONDER.windmill.h>20 && /dressWindmills\(g, w, windmills\(w\)\)/.test(R('src/world/wonders.js')) && /WONDER\.spin\.splice/.test(R('src/world/wonders.js')), 'Z410 MEADOW\'s windmills as the real model (still sails), the hand-built ones only as a fallback');
   ok(Object.keys(C.OUTPOST.size).every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')) && /export function buildOutpost/.test(R('src/world/outposts.js')) && /buildOutpost\(f\)/.test(R('src/world/fortress.js')) && /!o\.userData\.outpost/.test(R('src/world/fortress.js')), 'enemy camps round the forts, kept visible when the fort dresses'); }
 
 // Z286 real wildlife, rigged and walking
