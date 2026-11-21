@@ -20,10 +20,10 @@ export function dazePose(g, now, dt){ poseSoldier(g, 'prone', dt); const u=g.use
 export function tracerNext(g){ const u=g.userData; u.trN=(u.trN||0)+1; return u.trN%REAL.tracer.every===0; }
 
 // brass out of the port (to the right of the line of fire) + a smoke wisp at the muzzle — only within REAL.brass.R of the player
-export function rifleFX(x, y, z, ang, heavy){ const p=S.player; if(!p || (p.pos.x-x)**2+(p.pos.z-z)**2 > REAL.brass.R*REAL.brass.R) return;
+export function rifleFX(x, y, z, ang, heavy, noSmoke){ const p=S.player; if(!p || (p.pos.x-x)**2+(p.pos.z-z)**2 > REAL.brass.R*REAL.brass.R) return;   // (Z355 noSmoke: a suppressed gun — the brass still flies)
   const fx=Math.sin(ang), fz=Math.cos(ang), rx=fz, rz=-fx, gy=heightAt(x,z), by=Math.max(gy+0.6, y-0.1);
   spawnPart(x-fx*0.5+rx*0.1, by, z-fz*0.5+rz*0.1, rx*(1.6+Math.random()*1.4)-fx*0.6, 2+Math.random()*1.5, rz*(1.6+Math.random()*1.4)-fz*0.6, { color:0xe0ac44, color2:0x8a6420, size:heavy?0.09:0.065, life:0.55+Math.random()*0.3, grav:-22, drag:0.5 });
-  if(!MOBILE || Math.random()<0.4) spawnPart(x+fx*0.15, y+0.02, z+fz*0.15, fx*0.8, 0.35, fz*0.8, { color:0xc9c4ba, size:heavy?0.6:0.42, life:0.7+Math.random()*0.4, smoke:true, grav:0.5, drag:2.2, grow:2.2, op:heavy?0.32:0.22 }); }
+  if(!noSmoke && (!MOBILE || Math.random()<0.4)) spawnPart(x+fx*0.15, y+0.02, z+fz*0.15, fx*0.8, 0.35, fz*0.8, { color:0xc9c4ba, size:heavy?0.6:0.42, life:0.7+Math.random()*0.4, smoke:true, grav:0.5, drag:2.2, grow:2.2, op:heavy?0.32:0.22 }); }
 
 // a big blast: a ring of dust thrown out along the ground (the visible blast wave)
 export function dustSkirt(x, z, k){ if(!(k>=REAL.shock.minScale)) return; const gy=heightAt(x,z), n=Math.round((MOBILE?8:16)*Math.min(1.6,k)), dc=BIOME.ground;

@@ -146,6 +146,9 @@ export const SND = {   // Z151 re-levelled by measurement (K-weighted momentary 
   hesh:    { r:()=>rGun({T:0.0075, k:4, lp:1400, crack:0.3, sub:0.9, subF:55, tail:0.45, ring:210, len:1.5, drive:2.6}), g:0.87, gap:0.1, big:1 },
   enemy:   { r:()=>rGun({T:0.005, k:4.5, lp:1700, crack:0.25, sub:0.5, subF:75, tail:0.3, len:1.0}), g:0.45, gap:0.04 },                          // enemy tank guns
   rifleE:  { r:()=>rGun({T:0.0011, k:6, lp:3400, crack:0.4, sub:0.08, subF:200, tail:0.06, len:0.3}), g:0.30, gap:0.03 },                     // infantry carbines
+  ak:      { r:()=>rGun({T:0.0016, k:5, lp:2900, crack:0.45, sub:0.22, subF:140, tail:0.1, len:0.42}), g:0.34, gap:0.03, sample:'rifleE', rate:0.84 },   // Z355 the AK-47: the carbine's recording, deeper and heavier
+  m4s:     { r:()=>rGun({T:0.0008, k:7, lp:1400, crack:0.04, mech:1500, mechAt:0.012, sub:0.1, subF:180, tail:0.025, len:0.2, drive:1.6}), g:0.26, gap:0.03 },   // Z355 the suppressed M4: a muffled thup and the bolt's clack, no crack
+  mp5:     { r:()=>rGun({T:0.0009, k:7, lp:4200, crack:0.3, sub:0.06, subF:230, tail:0.04, len:0.24}), g:0.25, gap:0.025, sample:'rifleE', rate:1.2 },   // Z355 the MP5: tighter and quicker, a pistol round
   launch:  { r:rLaunch, g:0.36, gap:0.08 },
   boom:    { r:()=>rExplosion(0.75), g:0.70, gap:0.05, big:1 },
   bigboom: { r:()=>rExplosion(1.45), g:0.90, gap:0.09, big:1 },
@@ -191,8 +194,8 @@ export function play(k, pos, vol){
   const a=audio(); if(!a||muted) return; const D=SND[k]; if(!D) return;
   const now=a.currentTime; if(_lastAt[k]!=null && now-_lastAt[k] < D.gap) return; _lastAt[k]=now;
   if(_voices>28) return;                                                         // voice cap: keeps phones smooth under heavy fire
-  const buf=sampleGet(k) || (D.sampleOnly ? null : bankGet(k)); if(!buf) return;   // Z153 the recorded-quality sample when it's loaded
-  const src=a.createBufferSource(); src.buffer=buf; src.playbackRate.value=0.95+Math.random()*0.1;
+  const buf=sampleGet(D.sample||k) || (D.sampleOnly ? null : bankGet(k)); if(!buf) return;   // Z153 the recorded-quality sample when it's loaded · Z355 or another key's, retuned (D.sample, D.rate)
+  const src=a.createBufferSource(); src.buffer=buf; src.playbackRate.value=(D.rate||1)*(0.95+Math.random()*0.1);
   let delay=0, g=D.g*(vol==null?1:Math.max(0.15,Math.min(1.6,vol)))*(0.9+Math.random()*0.2);
   const out=a.createGain(); let node=out;
   if(pos && S.player){ const dx=pos.x-S.player.pos.x, dz=pos.z-S.player.pos.z, d=Math.hypot(dx,dz);
@@ -222,6 +225,7 @@ export function sfx(name, pos, vol){
     case 'rocketlaunch': return play('launch', pos, vol);
     case 'enemyShoot': return play('enemy', pos, vol);
     case 'rifleShot': return play('rifleE', pos, vol);
+    case 'shoot_ak': return play('ak', pos, vol); case 'shoot_m4s': return play('m4s', pos, vol); case 'shoot_mp5': return play('mp5', pos, vol);   // Z355
     case 'explode': return play('boom', pos, vol);
     case 'bigexplode': return play('bigboom', pos, vol);
     case 'hit': return play(Math.random()<0.12?'ricochet':'hitM', pos, vol);

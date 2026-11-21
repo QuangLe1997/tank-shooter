@@ -1230,6 +1230,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.OUTPOST.veh.includes('mil_humvee') && C.OUTPOST.solid.includes('mil_humvee') && sz('assets/models/real/camp/mil_humvee.glb')<3.5e6 && C.REALRUIN.models.ruin_house && sz('assets/models/real/ruin/ruin_house.glb')<3.5e6 && C.REALRUIN.biomes.RUINS.keys.includes('ruin_house'), 'the humvee parks in the camps, the ruined house stands among the ruins, both kept small');
   ok(/CC0/.test(R('assets/models/real/SOURCES-community.txt')) && /meshy\.ai\/posts\//.test(R('assets/models/real/SOURCES-community.txt')), 'every community model is recorded with its source and licence'); }
 
+// Z358 the new guns each sound, flash and kick their own way; every soldier's gun photographed from its own model
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sy=R('src/audio/synth.js'), sf=R('src/combat/soldier-fire.js'), ga=R('src/ui/gunart.js');
+  ok(G.t_ak.snd==='shoot_ak' && G.t_m4.snd==='shoot_m4s' && G.t_mp5.snd==='shoot_mp5' && /ak: +\{ r:.*sample:'rifleE', rate:0\.84/.test(sy) && /m4s: +\{ r:.*crack:0\.04, mech:1500/.test(sy) && /mp5: +\{ r:.*rate:1\.2/.test(sy) && /case 'shoot_ak': return play\('ak'/.test(sy) && /playbackRate\.value=\(D\.rate\|\|1\)/.test(sy), 'three voices: the AK deeper, the M4 a suppressed thup and clack, the MP5 quicker');
+  ok(G.t_ak.flashK>1 && G.t_m4.flashK<0.5 && G.t_m4.supp && G.t_ak.kickK>1 && G.t_m4.kickK<1 && /\(g\.flashK \?\? 1\)/.test(sf) && /\(g\.kickK \|\| 1\)/.test(sf) && /rifleFX\(_v\.x, _v\.y, _v\.z, a0, g\.dmg \* n >= 40, g\.supp\)/.test(sf) && /if\(!noSmoke && /.test(R('src/fx/realwar.js')), 'each its own flash and kick; the suppressor swallows the smoke, the brass still flies');
+  ok(/function renderHand\(id\)/.test(ga) && /loadGLTF\('inf_'\+k\)/.test(ga) && /GUNS\[id\]\.trooper && INFGUN\.map\[id\]/.test(ga), 'a soldier\'s gun is photographed from the model in his hands'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -1325,7 +1331,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const sy=fs.readFileSync('src/audio/synth.js','utf8'), SS=(await import('./src/audio/synth.js').catch(()=>null));
   const files=fs.readdirSync('assets/sfx').filter(f=>f.endsWith('.mp3'));
   ok(files.length>=25 && files.every(f=>fs.statSync('assets/sfx/'+f).size>1500), 'assets/sfx holds the generated set (every file is real audio)');
-  ok(/export function loadSamples/.test(sy) && /SAMPLE_LU\[k\]\?\?-24\)-L\)\/20\)\/g/.test(sy) && /sampleGet\(k\) \|\| \(D\.sampleOnly \? null : bankGet\(k\)\)/.test(sy), 'samples are loudness-matched to the measured mix, synth plays until they load');
+  ok(/export function loadSamples/.test(sy) && /SAMPLE_LU\[k\]\?\?-24\)-L\)\/20\)\/g/.test(sy) && /sampleGet\(D\.sample\|\|k\) \|\| \(D\.sampleOnly \? null : bankGet\(k\)\)/.test(sy), 'samples are loudness-matched to the measured mix, synth plays until they load (Z355 a key may borrow another\'s sample, retuned)');
   const set=sy.match(/SAMPLE_SET = \{([\s\S]*?)\};/)[1]; const names=[...set.matchAll(/'([a-zA-Z_0-9]+)'/g)].map(m=>m[1]);
   ok(names.every(n=>files.includes(n+'.mp3')), 'every sample the code asks for exists on disk');
   ok(!files.some(f=>/key|secret/i.test(f)) && !/sk_[0-9a-f]{20,}/.test(sy), 'no API key in the shipped code'); }

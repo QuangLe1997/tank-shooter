@@ -4,8 +4,8 @@
 //   its frame the same way. Rendered off-screen in idle time, one gun per slice → never a hitch.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { VIP_GUNS } from '../../config.js';
-import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, loadRealGuns, loadRealTanks, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
+import { INFGUN, VIP_GUNS } from '../../config.js';
+import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, loadGLTF, loadRealGuns, loadRealTanks, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
 
 export const GUNART = { cache:{}, queue:[], busy:false, scene:null, cam:null, rt:null, float:false };
 const OW = MOBILE ? 240 : 320, OH = Math.round(OW*0.46), SS = 2, RW = OW*SS, RH = OH*SS;
@@ -53,7 +53,11 @@ export function renderObject(root, dir, k, ow, oh){ stage(); const S=GUNART.scen
   o.shadowColor='rgba(0,0,0,0.55)'; o.shadowBlur=OWr*0.025; o.shadowOffsetY=OWr*0.012;   // a soft drop shadow lifts it off any card
   o.drawImage(cv, x0, y0, cw, ch, (OWr-dw)/2, (OHr-dh)/2, dw, dh);
   return out.toDataURL('image/png'); }
+// Z355 a soldier's hand weapon is photographed from its own model (the one in his hands), not from a tank's barrel
+function renderHand(id){ const k=INFGUN.map[id]; return loadGLTF('inf_'+k).then(gl=>{ if(!gl) return renderGun(id); const root=new THREE.Group(), m=gl.scene.clone(true); root.add(m); root.rotation.y=Math.PI/2;   // (its length on Z, muzzle +Z → across the frame)
+  return renderObject(root, new THREE.Vector3(-0.32, 0.42, 1), 0.62); }); }
 function pump(){ if(GUNART.busy) return; const id=GUNART.queue.shift(); if(!id) return; GUNART.busy=true;
+  if(GUNS[id] && GUNS[id].trooper && INFGUN.map[id]){ const key=gunArtKey(id); renderHand(id).catch(e=>{ console.warn('gun art', id, e); return ''; }).then(u=>{ GUNART.cache[key]=GUNART.cache[key]||u||''; paint(id); GUNART.busy=false; if(GUNART.queue.length) pump(); }); return; }
   const go=()=>{ const key=gunArtKey(id); try{ if(!GUNART.cache[key]){ GUNART.cache[key]=renderGun(id); } paint(id); }catch(e){ console.warn('gun art', id, e); GUNART.cache[key]=GUNART.cache[key]||''; }
     GUNART.busy=false; if(GUNART.queue.length) pump(); };
   loadRealGuns().catch(()=>{}).then(()=>(window.requestIdleCallback||((f)=>setTimeout(f,30)))(go, { timeout:400 })); }   // Z257 the photo waits for the real model of its family
