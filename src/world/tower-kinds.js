@@ -96,14 +96,26 @@ export const TOWER_KINDS = {
   mtower: { vi:'THÁP CANH THÉP', mat:'steel', model:'watchtower', deck:0.75, r:2.2, hp:1.6, guards:[[-0.55,0.45],[0.55,-0.45]], build(P,h){ return { sl:[0.95, h+1.5, -0.95] }; } },
   wtower: { vi:'THÁP NƯỚC', mat:'steel', model:'wt_steel', deck:0.93, r:2.4, hp:1.8, guards:[[0,0.85],[0.75,-0.45],[-0.75,-0.45]], build(P,h){ return { sl:[0.6, h+0.9, 0.6] }; } },
   wrust: { vi:'THÁP NƯỚC GỈ', mat:'steel', model:'wt_rust', deck:0.975, r:3.0, hp:2.0, guards:[[0,1.4],[1.2,-0.7],[-1.2,-0.7]], build(P,h){ return { sl:[0, h+0.9, -1.6] }; } },
+  // Z420 THE NEW GUARD POSTS (Meshy community, ~/Downloads/3dnew): every land's guard tower is one of these now — deck = the floor the guards stand on
+  //   (share of the height, measured as the scan's largest level floor above mid-height: the balcony, the roof, the parapet walk), guards inside its extent
+  gt_sentinel: { vi:'THÁP CANH QUÂN SỰ', mat:'steel', model:'gt_sentinel', deck:0.68, r:3.0, hp:1.8, guards:[[-1.8,1.8],[1.8,-1.8]], build(P,h){ return { sl:[1.9, h+1.6, 1.9] }; } },
+  gt_concrete: { vi:'THÁP CANH BÊ TÔNG', mat:'conc', model:'gt_concrete', deck:0.60, r:3.6, hp:2.0, guards:[[0,3.0],[2.9,-0.7],[-2.9,-0.7]], build(P,h){ return { sl:[2.6, h+1.4, 2.6] }; } },
+  gt_round: { vi:'THÁP CANH TRÒN', mat:'conc', model:'gt_round', deck:0.84, r:4.0, hp:2.0, guards:[[0,2.6],[2.3,-1.3],[-2.3,-1.3]], build(P,h){ return { sl:[0, h+1.2, -2.6] }; } },
+  gt_limes: { vi:'THÁP CANH ĐÁ – GỖ', mat:'wood', model:'gt_limes', deck:0.58, r:3.2, hp:1.6, guards:[[1.7,1.7],[-1.7,-1.7]], build(P,h){ return { sl:[-1.8, h+1.5, 1.8] }; } },
+  gt_stone: { vi:'THÁP CANH ĐÁ', mat:'stone', model:'gt_stone', deck:0.88, r:3.6, hp:2.2, guards:[[-1.1,-1.6],[0.8,-1.8]], build(P,h){ return { sl:[0, h+1.2, -2.6] }; } },
+  gt_castle: { vi:'THÁP THÀNH', mat:'stone', model:'gt_castle', deck:0.88, r:4.2, hp:2.4, guards:[[0.9,0.9],[-0.9,-0.9]], build(P,h){ return { sl:[1.2, h+1.6, -1.2] }; } },
+  gt_winter: { vi:'THÁP PHÁO ĐÀI TUYẾT', mat:'stone', model:'gt_winter', deck:0.94, r:4.4, hp:2.4, guards:[[0.9,-0.8],[-1.2,-1.7]], build(P,h){ return { sl:[0, h+1.4, -2.0] }; } },
+  gt_broken: { vi:'THÁP ĐỔ NÁT', mat:'stone', model:'gt_broken', deck:0.98, r:2.9, hp:1.6, guards:[[1.3,1.3],[-1.3,-1.3]], build(P,h){ return { sl:[1.4, h+1.0, -1.4] }; } },
 };
 for(const K of Object.values(TOWER_KINDS)) if(K.model){ K.h=SCENERY.models[K.model].h*K.deck; K.dress=body=>towerModel(body, K); }   // Z375 (towers.js buildTower hands it the tower's body)
 // which kinds each land builds (weights)
-export const TOWER_BIOME = {   // Z375 + the real towers (mtower / wtower / wrust) where such things stand
-  DESERT:{ block:3, round:2, lattice:1, mtower:2, wrust:2 }, SAVANNA:{ bamboo:2, wood:2, block:1, mtower:1, wrust:2 }, TUNDRA:{ log:3, lattice:2, wood:1, mtower:1 }, ARCTIC:{ lattice:3, log:2, wtower:2, mtower:1 },
-  FOUNDRY:{ lattice:3, column:2, round:1, mtower:2, wtower:2, wrust:2 }, CITADEL:{ round:3, block:2, wood:1, mtower:1 }, MEADOW:{ wood:3, log:2, mtower:1, wtower:1 }, CITY:{ column:3, round:2, lattice:1, wtower:2 },
-  HILLS:{ log:2, wood:2, block:1, mtower:1 }, VILLAGE:{ bamboo:3, wood:2, wrust:1 }, RUINS:{ block:3, column:1, round:2, mtower:2, wrust:1 },
-  STEELMILL:{ lattice:3, column:2, round:1, mtower:2, wtower:2, wrust:2 }, VOLCANO:{ block:2, lattice:2, round:1, mtower:2 }, QUARRY:{ block:2, lattice:2, wood:1, mtower:2, wrust:2, wtower:1 }, CAVERN:{ log:2, wood:2, block:1, mtower:1 } };
+//   Z420 the guard posts are the new scans only, each land its own architecture: concrete and steel where the war is modern (desert, works, city,
+//   volcano), dressed stone where the land is old (citadel, ruins, quarry), stone-and-timber in the green country, the snow bastion in the ice
+export const TOWER_BIOME = {
+  DESERT:{ gt_concrete:3, gt_round:2 }, SAVANNA:{ gt_round:2, gt_concrete:2, gt_sentinel:1 }, TUNDRA:{ gt_winter:2, gt_sentinel:2, gt_round:1 }, ARCTIC:{ gt_winter:3, gt_sentinel:2, gt_round:1 },
+  FOUNDRY:{ gt_sentinel:3, gt_round:2, gt_concrete:1 }, CITADEL:{ gt_stone:3, gt_castle:1 }, MEADOW:{ gt_limes:3, gt_stone:2 }, CITY:{ gt_sentinel:3, gt_concrete:2 },
+  HILLS:{ gt_limes:3, gt_stone:2 }, VILLAGE:{ gt_limes:3, gt_stone:1 }, RUINS:{ gt_broken:2, gt_stone:2, gt_round:1 },
+  STEELMILL:{ gt_sentinel:3, gt_round:2, gt_concrete:1 }, VOLCANO:{ gt_sentinel:2, gt_concrete:2 }, QUARRY:{ gt_stone:2, gt_concrete:2, gt_sentinel:1 }, CAVERN:{ gt_sentinel:2, gt_concrete:1 } };
 export function pickTowerKind(biome){ const W=TOWER_BIOME[biome]||{ wood:1 }; let tot=0; for(const k in W) tot+=W[k]; let r=Math.random()*tot; for(const k in W){ if((r-=W[k])<=0) return k; } return 'wood'; }
 // merged geometry per material for one kind (built once, shared by every tower of that kind)
 const _TK={};

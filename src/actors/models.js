@@ -21,7 +21,7 @@ export const MODEL_FILES = {
   troopGun: 'assets/models/real/carbine-light.glb',
 };
 // Z252 battlefield cover pieces (world/real-props.js)
-for(const k of REALPROP.kinds) MODEL_FILES['cover_' + k] = 'assets/models/real/cover/' + k + '.glb';
+for(const k of REALPROP.kinds) for(const v of (REALPROP.variants[k] || [k])) MODEL_FILES['cover_' + v] = 'assets/models/real/cover/' + v + '.glb';   // (Z420 + the container's variants)
 // Z256 one vehicle per tank family (tank/real-tanks.js)
 for(const k of Object.keys(REALTANK.fams)) MODEL_FILES['tank_' + k] = 'assets/models/real/tank/' + k + '.glb';
 // Z257 one model per player-gun family that has its own file (tank/real-guns.js)

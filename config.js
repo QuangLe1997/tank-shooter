@@ -127,7 +127,8 @@ export const REALAIR = { models:{ heli_attack:{ yaw:-1.5708, cutRotor:0.24, hubR
   heli_bomber:{ yaw:-1.5708, cutRotor:0.24, hubR:0.06, rotorUp:0.5 }, air_uav:{ yaw:0, keep:['ring'], env:1.2 }, para_trooper:{ keepAbove:0.3, double:true } } };
 // Z275 ruins of war (world/ruins3d.js; Tripo): size (w = footprint, h = height, m), sink = share of the height under ground (base plates), and each
 //   battlefield's mix: n ruins of these keys; clearCore = metres kept clear beyond our base walls
-export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.05 }, ruin_wall:{ w:18, sink:0.03 }, ruin_block:{ w:16, sink:0.02 }, ruin_tower:{ h:14, sink:0.03 }, ruin_villa:{ w:15, sink:0.03 }, ruin_house:{ w:11, sink:0.02 } },   // Z357 a burnt-out two-storey house (Meshy community, CC0)
+export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.04 },   // Z420 the chapel's model is now the Silent Ruins (a low walled ruin, Meshy community): the chapel never read as one
+    ruin_wall:{ w:18, sink:0.03 }, ruin_block:{ w:16, sink:0.02 }, ruin_tower:{ h:14, sink:0.03 }, ruin_villa:{ w:15, sink:0.03 }, ruin_house:{ w:11, sink:0.02 } },   // Z357 a burnt-out two-storey house (Meshy community, CC0)
   biomes:{ RUINS:{ n:7, keys:['ruin_chapel','ruin_wall','ruin_tower','ruin_block','ruin_house'] }, CITADEL:{ n:4, keys:['ruin_wall','ruin_tower','ruin_chapel'] }, MEADOW:{ n:3, keys:['ruin_chapel','ruin_tower','ruin_villa','ruin_house'] },
     DESERT:{ n:3, keys:['ruin_wall','ruin_tower'] }, QUARRY:{ n:3, keys:['ruin_wall','ruin_block'] }, SAVANNA:{ n:3, keys:['ruin_tower','ruin_villa','ruin_house'] }, FOUNDRY:{ n:3, keys:['ruin_block','ruin_wall','ruin_house'] },
     ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
@@ -863,12 +864,15 @@ export const STREET = { wet:0.9, puddle:0.55, mirror:3.5, wheel:0.2, oil:0.6, pa
 //   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
 export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement:[0.72, 0.72, 0.72], lawn:[0.78, 0.9, 0.62],   // street photo albedo ×
  
-  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 }, bld_landmark:{ role:'landmark', env:1.2 }, bld_bitexco:{ role:'skyline', env:1.25 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza
+  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa', yaw:1.5708 }, bld_landmark:{ role:'landmark', env:1.2 }, bld_spire:{ role:'skyline', env:1.25 }, bld_palmspire:{ role:'skyline', env:1.2 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza
  
   // Z267 the street furniture (world/real-city.js prepProp): h = height, w = width, s = scale (the Poly Haven scans are true size), glow = the material that lights at night
-  props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.15 }, prop_tarpcar:{ s:1.05 },
+  props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.3 }, prop_tarpcar:{ s:1.05 },
     city_fountain:{ w:9, sink:0.18 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5,
-  bitexco:{ h:118, turn:0.5, sink:0.03 },   // Z268 Bitexco Financial Tower (Tripo, from a photo) standing out in the skyline, beside the Landmark 81 bearing (rad)
+  // Z268 → Z420 the towers that stand with Landmark 81 on the skyline (world/wonders.js): k = the model, h = its height (m), turn = its bearing off the landmark's
+  //   (rad), out = its distance × the landmark's, sink. The CBD reads as a cluster: the glass spire to one side (where the Bitexco stood), the Palmspire
+  //   just behind and beside the landmark, the centre of the far city
+  skyline:[ { k:'bld_spire', h:124, turn:0.5, out:1.22, sink:0.03 }, { k:'bld_palmspire', h:136, turn:-0.2, out:1.42, sink:0.02 } ],
   // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]
   traffic:{ wheel:[0.33, 0.26], files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z310 wheel = the starting tyre radius [car, scooter] m (each model's own is measured from its mesh); grips = the middle of each scooter's rubber grip
@@ -947,8 +951,15 @@ export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.
 //   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
 //   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;
 //   stretch = pieces filled to the footprint on each axis (the container came out nearly cubic)
+//   Z420 the second Meshy batch: sandbag = a low sandbag barricade, concrete = a T-wall blast section, jersey = a weathered jersey barrier, container = three
+//   real boxes (variants: each container takes one by its cv, its own paint — the drawn one's paint tint is not laid over a textured box; shade = how far its
+//   brightness may wander, so a row of the same box does not read as clones)
 export const REALPROP = { kinds:['sandbag','concrete','container','crates','drums','jersey','logs','pipes','teeth','tires','wreck'], fit:0.96, hMax:1.35, env:0.6,
-  tint:{ logs:0xa07a52, pipes:0x9c9a92, teeth:0xa6a49c, concrete:0xb4b2aa, jersey:0xb4b2aa }, matte:['sandbag','logs','teeth','concrete','jersey','pipes'], stretch:['container'] };
+  tint:{ logs:0xa07a52, pipes:0x9c9a92, teeth:0xa6a49c }, matte:['sandbag','logs','teeth','concrete','jersey','pipes'], stretch:['container'],
+  variants:{ container:['container', 'container_teal', 'container_red'] }, shade:{ container:[0.82, 1.0] }, trueH:{ jersey:1.0 },   // trueH: m, the piece at its real-world height (a jersey barrier stands ~0.8–1.07 m; fitted to the drawn box it stood 1.84)
+  // Z420 cast concrete takes the land's tone (× its texture): sand-washed in the desert, soot-dark at the works, cold in the snow — never a white slab on the field
+  cast:{ kinds:['concrete', 'jersey', 'teeth'], tint:{ _:0xcbc5b9, DESERT:0xd9c29c, SAVANNA:0xcfb592, CITADEL:0xcdb89a, QUARRY:0xd4cfc3, RUINS:0xb2ac9e, MEADOW:0xbcb7a9, HILLS:0xbcb7a9, VILLAGE:0xbcb7a9,
+    FOUNDRY:0x8c877f, STEELMILL:0x8c877f, VOLCANO:0x86796f, CITY:0xb4b2ac, ARCTIC:0xcfd5db, TUNDRA:0xc5c9cb, CAVERN:0x9a948a } } };
 // Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS (world/grass-carpet.js): clumps round the camera on grassy battlefields — radius (m; Rm on phones,
 //   mobile:false = none there), grid cell (m), where (× radius) the carpet starts thinning out, clumps tried per cell, clump height range (m), how far
 //   ahead of the camera the carpet centres (m), re-lay step (m), alpha cut-off, root shade; the photo strip (dir, its size in px, the five clump cards
@@ -1181,6 +1192,25 @@ export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, r
 // Z278 dust motes in the sunlight (fx/dust.js): count, the box of air round the view (m), how far ahead of the camera it sits, size, glow, colour
 export const DUST = { on:true, n:2600, box:[70, 16, 70], ahead:22, size:0.09, gain:1.0, col:0xfff1d0 };
 export const SHAFTS = { on:true, steps:24, gain:0.14, dens:0.009, maxD:150, g:0.62, even:0.08, biome:{ CITY:0.85, ARCTIC:0.7, DESERT:0.7, VOLCANO:1.25, FOUNDRY:1.15 } };
+// Z420 ART DIRECTION — every battlefield its own film (world/atmosphere.js artTone, the last word after ATMOS and LIGHT): mood = what it should feel
+//   like; sh / hi = the split-tone the shadows / highlights end on (rgb shifts, display-referred), satK / conK / expK = × saturation, contrast,
+//   exposure, vig = the vignette by day, sun = [colour, share] the sun's light leans toward, fogK = × the haze. By night the split-tone is halved
+//   and the sun is left alone; at sunset the sun keeps the hour's colour.
+export const ART_TONE = {
+  DESERT:{ mood:'nắng thiêu, cô độc — vàng cháy, bóng xanh lạnh', sh:[-0.04, -0.005, 0.05], hi:[0.05, 0.022, -0.03], satK:1.0, conK:1.04, expK:1.02, vig:0.3, sun:[0xffe2b0, 0.35] },
+  SAVANNA:{ mood:'chiều bụi đỏ — hổ phách, khói bụi', sh:[-0.02, -0.012, 0.04], hi:[0.065, 0.025, -0.045], satK:1.04, conK:1.03, vig:0.32, sun:[0xffc890, 0.4], fogK:1.15 },
+  ARCTIC:{ mood:'lạnh câm lặng — lam băng, nắng xiên nhợt', sh:[-0.035, 0, 0.065], hi:[0.02, 0.018, 0.006], satK:0.9, conK:1.02, expK:0.98, vig:0.26, sun:[0xe8f0ff, 0.3] },
+  TUNDRA:{ mood:'tê buốt — xám bạc, sương', sh:[-0.03, 0.005, 0.055], hi:[0.015, 0.015, 0.01], satK:0.84, vig:0.28, fogK:1.2 },
+  FOUNDRY:{ mood:'ngột ngạt công nghiệp — cam natri, bóng xanh rêu, khói', sh:[-0.04, 0.02, 0.03], hi:[0.07, 0.03, -0.04], satK:0.88, conK:1.06, vig:0.34, sun:[0xffcf9a, 0.45], fogK:1.25 },
+  STEELMILL:{ mood:'lò nguội gỉ sét — đồng gỉ, khói xám', sh:[-0.035, 0.015, 0.025], hi:[0.075, 0.028, -0.045], satK:0.86, conK:1.06, vig:0.34, sun:[0xffc898, 0.45], fogK:1.25 },
+  VOLCANO:{ mood:'địa ngục — đỏ máu, đen than, bóng tím', sh:[0.01, -0.025, 0.03], hi:[0.08, 0.012, -0.05], satK:1.06, conK:1.08, expK:0.96, vig:0.38 },
+  CITADEL:{ mood:'sử thi cổ thành — nắng chiều vàng son trên sa thạch', sh:[-0.035, 0, 0.05], hi:[0.06, 0.026, -0.04], satK:1.03, conK:1.04, vig:0.3, sun:[0xffd9a8, 0.35] },
+  RUINS:{ mood:'u buồn tàn phá — bạc màu, nâu nhạt, trời đục', sh:[-0.02, 0.008, 0.035], hi:[0.04, 0.025, -0.005], satK:0.85, conK:1.03, vig:0.34, fogK:1.15 },
+  MEADOW:{ mood:'yên bình bị xé toạc — xanh non, nắng mật', sh:[-0.025, 0.012, 0.04], hi:[0.025, 0.03, -0.02], satK:1.02, vig:0.24 },
+  HILLS:{ mood:'sương núi — xanh lạnh, xa mờ', sh:[-0.03, 0.008, 0.055], hi:[0.015, 0.02, 0], satK:0.94, vig:0.26, fogK:1.3 },
+  VILLAGE:{ mood:'chiều quê — vàng ấm, khói bếp', sh:[-0.02, 0.005, 0.035], hi:[0.05, 0.03, -0.03], satK:1.02, vig:0.26, sun:[0xffe6b8, 0.35] },
+  CITY:{ mood:'căng thẳng đô thị — thép xanh, bóng lạnh, kính ấm', sh:[-0.045, 0.012, 0.06], hi:[0.045, 0.022, -0.02], satK:0.88, conK:1.06, vig:0.32 },
+  QUARRY:{ mood:'chói gắt đá trắng — sáng, khô, bụi', sh:[-0.02, 0.004, 0.035], hi:[0.03, 0.02, -0.01], satK:0.92, conK:0.98, expK:1.03, vig:0.24 } };
 export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.12, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
   liftK:0, tintK:0.5, fogBlue:0.22, bloom:0.24, sharp:0.58, duskHemiK:0.85, duskAmbient:0.08 };   // sunset keeps more sky fill + its lift
 // Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,
@@ -1213,6 +1243,36 @@ export const TOUCH_HELP = [
 //   continuously to break. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
 //   Troops and tanks on the open field SALLY from these gates. Take every fortress = win the stage: the main citadel's gate
 //   stays sealed until the others have fallen, and its commander is the stage boss.
+// Z420 THE DEFENCE IN DEPTH (world/defense.js): the forts ring our base; the enemy closes the ring as an army holds a line — between every two
+//   neighbouring forts an obstacle belt of dragon's teeth runs wall to wall (never inside our home ground: Rb = HOME_GAP.wall + gap + rb m from the
+//   Core), broken once at its middle — the LANE (at most `lanes`), closed by a CHECKPOINT (a jersey funnel on our side, a T-wall chicane, a sandbag MG
+//   nest behind it and a guard tower); FIGHTING POSITIONS — sandbag crescents facing our base — sit behind each belt and in the depth, and the random
+//   maze cover past the ring thins (maze.cut). On a field with a river the river is the line: every crossing gets the checkpoint on its far bank and
+//   short wings of teeth. belt: step / row = spacing along a belt and between its two staggered rows (m), run / hole = teeth in a run, spaces left out
+//   between runs, wob = its wander (m), wall = where it leaves a fort (m past its wall), fortPad = how near a fort's wall a tooth may stand, maxSpan =
+//   the widest gap round the Core between two forts still joined (rad), spawnGap = the sector round our spawn's bearing left open (rad, either side)
+export const DEFENSE = { on:true, rb:8, rbMobile:6,
+  belt:{ step:4.2, row:3.1, run:[6, 10], hole:[1, 2], wob:5, wall:10, fortPad:3, maxSpan:2.3, spawnGap:0.6, kinds:{ _:['teeth'], ARCTIC:['teeth','teeth','hedgehog'], TUNDRA:['teeth','hedgehog'], VOLCANO:['teeth','hedgehog'], FOUNDRY:['teeth','jersey'], STEELMILL:['teeth','jersey'], CITY:['jersey'] } },
+  lanes:4, laneW:17,
+  // a checkpoint, an entry control point drawn as one piece of architecture in the lane's frame (u across it, v along it, + toward the enemy): WALLS =
+  //   continuous runs [kind, u0, v0, u1, v1] laid section against section at each kind's true length (len, m: the fitted scans × COVER_K, a hair under
+  //   so no seam opens) — the jersey funnel narrowing on our side, the T-wall chicane (two staggered walls: a vehicle must weave), the sandbag MG nest
+  //   (a U, open to the rear) — and its guard tower behind; r = the ground it claims; wing = teeth either side on a river's far bank
+  cp:{ r:16, wing:4, len:{ concrete:3.55, jersey:2.3, sandbag:3.7 },
+    walls:[ ['jersey', -10.5, -17, -6.2, -8.6], ['jersey', 10.5, -17, 6.2, -8.6], ['concrete', -9.4, -2.2, 2.0, -2.2], ['concrete', -2.0, 4.6, 9.4, 4.6],
+      ['sandbag', -9.6, 11, -2.6, 11], ['sandbag', -9.9, 11.6, -9.9, 15], ['sandbag', -2.3, 11.6, -2.3, 15] ], tower:[7.2, 13.5] },
+  pos:{ n:[4, 5, 6, 7, 8], mobileK:0.6, gap:34, pad:12, fortPad:12, walls:[[-3.7, 0, 3.7, 0], [-4.1, -0.6, -4.1, -4.2], [4.1, -0.6, 4.1, -4.2]], kinds:{ _:['sandbag'], FOUNDRY:['sandbag','jersey'], STEELMILL:['sandbag','jersey'], CITY:['sandbag','jersey'], QUARRY:['sandbag','concrete'] }, back:0.35 },
+  maze:{ cut:0.55 },
+  biomes:{ CITY:{ belt:false } } };
+// Z420 THE COMMAND COMPOUND (world/fortress.js buildCore): every fort's command post is a compound of real bunkers instead of the drawn stone block-house —
+//   the main building faces the gate, its comms stand behind it (out of the gate's line of fire), its guns cover the approach from the gate; one HP for the
+//   whole compound (any piece hit wears it), all of it goes up together. Per tier: [scene key | alternatives, x across (+ = the fort's outer side), z toward
+//   the gate, yaw (rad, 0 = facing the gate), role]; the first is the main building. k = the offsets' scale on phones (the smaller forts); off = ?procbase
+export const FORT_CMD = { on:true, k:{ mobile:0.82 }, rim:1.5,
+  tiers:{ 1:[ ['bunker_green|bunker_store', 0, 0, 0, 'main'], ['bunker_sandbag', 2.5, 9.5, 0.35, 'mg'] ],
+          2:[ ['bunker_hangar|bunker_store', 0, 0, 0, 'main'], ['radar_sentinel', -3, -11, 0, 'comms'], ['bunker_dome', 11, 7, -0.3, 'pillbox'], ['bunker_sandbag', -11, 8.5, 0.3, 'mg'] ],
+          3:[ ['hq_modular', 0, 0, 0, 'main'], ['antenna_twin', 15, -6, 1.5708, 'comms'], ['radar_sentinel', -12, -9, 0, 'comms'], ['gun_turret', 13, 10, -0.35, 'gun'], ['bunker_sandbag', -12, 10, 0.35, 'mg'] ] },
+  name:{ 1:'TRẠM CHỈ HUY', 2:'SỞ CHỈ HUY', 3:'BỘ TỔNG HÀNH DINH' } };
 export const FORT = {
   count:[3,3,4,4,4], countMobile:[2,2,3,3,3],   // Z234 phones: the 130 m field holds fewer forts now that they stand clear of our citadel
   tiers:{ 1:{ r:[31,35], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[8,11],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
@@ -1462,7 +1522,8 @@ export const TROOPER = {
 //   the enemy half) · pair (either side of the piece `of`, side m across, fwd m ahead of its front) · line (n along a straight line gap m apart) · cluster
 //   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand; Z393 solid = this beat's own collision (else the
 //   model's), top = the most detail it ever draws ('l' mid / 'f' far: a small piece never fetches the whole scan)
-export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, radar:{ h:24, split:0.5, lv:'l' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
+export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' bunkers and guard towers lean to the land's tone (REALPROP.cast.tint)
+  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ h:24, split:0.5, lv:'l' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
 //   h tall, split = the share of its height where the dish (which sweeps with the head) begins · bricks: the ruined brick walls in the breached wall's stone (h, how many
 //   3 m slices, which copy, fill = the least share of a slice that must be wall — the breach and the ragged ends are left out) · city: the power poles as the transformer pole scan (h, copy), roof water tanks / masts (h, share of the roofs of those kinds, set back d ×, sunk m)
   models:{
@@ -1495,7 +1556,16 @@ export const SCENERY = { on:true, lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys
     tree_cedar:{ h:26, ar:[0.62, 1, 0.46], sink:0.02, solid:{ r:1.2 } },
     tree_oak:{ h:18, ar:[0.97, 1, 0.97], sink:0.02, solid:{ r:1.2 } },
     tree_world:{ h:30, ar:[1.02, 1, 0.81], sink:0.02, solid:{ r:2.4 } },
-    tree_pine:{ h:22, ar:[0.47, 1, 0.47], sink:0.02, solid:{ r:0.8 } } },
+    tree_pine:{ h:22, ar:[0.47, 1, 0.47], sink:0.02, solid:{ r:0.8 } },
+    // Z420 the forts' command compounds (world/fortress.js buildCore, FORT_CMD) and the fuel depot's store (world/supply.js) — solid: null, their own blocks carry them
+    hq_modular:{ one:true, w:17, ar:[1.84, 1, 1.72], sink:0.01, solid:null }, bunker_hangar:{ w:15, ar:[2.11, 1, 1.02], sink:0.02, solid:null }, bunker_store:{ w:13, ar:[1.81, 1, 1.4], sink:0.01, solid:null },
+    bunker_green:{ h:7.5, ar:[0.97, 1, 0.84], sink:0.03, solid:null }, bunker_dome:{ w:12, ar:[2.6, 1, 2.6], sink:0.05, solid:null }, bunker_sandbag:{ w:11, ar:[2.04, 1, 2.04], sink:0.03, solid:null },
+    radar_sentinel:{ h:15, ar:[0.67, 1, 0.62], sink:0.01, solid:null }, gun_turret:{ w:11, ar:[2.29, 1, 2.06], sink:0.03, solid:null }, antenna_twin:{ h:28, ar:[0.55, 1, 0.3], sink:0, solid:null },
+    fuel_depot:{ w:17, ar:[1.7, 1, 1.29], sink:0.02, solid:null },
+    // Z420 the guard towers (world/tower-kinds.js gt_*): the model IS the tower; ar measured off the packed scans
+    gt_sentinel:{ h:15, ar:[0.42, 1, 0.42], sink:0.01, solid:null }, gt_concrete:{ h:14, ar:[0.54, 1, 0.53], sink:0.01, solid:null }, gt_round:{ h:11, ar:[0.77, 1, 0.77], sink:0.01, solid:null },
+    gt_limes:{ h:12.5, ar:[0.54, 1, 0.57], sink:0.01, solid:null }, gt_stone:{ h:14, ar:[0.40, 1, 0.65], sink:0.01, solid:null }, gt_castle:{ h:12.5, ar:[1.29, 1, 0.43], sink:0.01, solid:null },
+    gt_winter:{ h:18, ar:[0.53, 1, 0.61], sink:0.01, solid:null }, gt_broken:{ h:11, ar:[0.53, 1, 0.53], sink:0.01, solid:null } },
   biomes:{
     // fire and black rock: two cones smoking on the skyline, craters of live melt in the field, the road in through basalt arches, trees burning from the roots
     VOLCANO:[ { k:'volcano', at:'far', a:[[-2.75, -2.3], [-0.85, -0.4]], d:[30, 55], s:[0.9, 1.25] }, { k:'volcano', at:'far', a:[[2.6, 3.1], [0.05, 0.5]], d:[45, 70], s:[0.7, 0.95] },

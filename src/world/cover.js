@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit } from '../hub.js';
+import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -20,6 +20,7 @@ export function buildBlocks(){
   planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
   buildCoreWalls();                                                                        // Z140 our walled compound + guard cannons round the Core
   buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
+  buildDefense();                                                                          // Z420 the enemy's belt, checkpoints and fighting positions — laid before the scatter, which keeps off them
   const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
   const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K*((OPEN_LAND[BIOME.name]||{}).cover||1));   // Z242 town / countryside: more open ground   // Z104 more cover on the wider field (soldiers need somewhere to hide)
   const centers=[];
@@ -30,6 +31,7 @@ export function buildBlocks(){
     if(Math.hypot(x, z-ARENA*0.55) < 15) continue;       // keep player spawn open
     if(centers.some(c=>Math.hypot(c.x-x,c.z-z) < 16*COVER_K)) continue;  // spacing between shapes (navigable corridors) · Z193 wider for the bigger pieces
     if(inZone(x, z, 8) || !inField(x, z, 10)) continue;  // Z104 keep installations clear · Z106 stay inside the fence
+    if(DEF.rb && Math.hypot(x,z) > DEF.rb-10 && z < 0 && Math.random() < DEFENSE.maze.cut) continue;   // Z420 behind the enemy's belt the fighting positions hold the ground: less random scatter
     centers.push({x,z});
     const shape = MAZE_SHAPES[(Math.random()*MAZE_SHAPES.length)|0];
     const rot = (Math.random()*4|0)*Math.PI/2, ca=Math.cos(rot), sa=Math.sin(rot);
@@ -140,8 +142,8 @@ export function placeLone(){ const L=LONE_SET[BIOME.name]||[2,3], mk=MOBILE?0.7:
       for(let t=0;t<30&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-10); z=(Math.random()*2-1)*(ARENA-10); ok=Math.hypot(x,z)>20 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<9) && !inZone(x,z,5) && inField(x,z,7); }
       if(!ok) continue;
       const f=Math.random()*Math.PI, m=makeCoverMesh(kind, true); let hp=COVER_HP[kind];
-      if(kind==='container'){ m.material.color.setHex(CONTAINER_PAINT[(Math.random()*CONTAINER_PAINT.length)|0]);
-        if(Math.random()<0.33){ const up=new THREE.Mesh(m.geometry, coverMat('container').clone()); up.material.userData.own=true; up.material.color.setHex(CONTAINER_PAINT[(Math.random()*CONTAINER_PAINT.length)|0]); up.position.set(_R(-0.08,0.08), 2.0, _R(-0.3,0.3)); up.rotation.y=_R(-0.08,0.08); up.castShadow=up.receiveShadow=true; up.userData.kind='container'; trackCover(up); m.add(up); hp*=1.6; } }
+      if(kind==='container'){ m.material.color.setHex(CONTAINER_PAINT[(Math.random()*CONTAINER_PAINT.length)|0]); coverVariant(m);   // Z420 which real box (and its shade) once the models are in
+        if(Math.random()<0.33){ const up=new THREE.Mesh(m.geometry, coverMat('container').clone()); up.material.userData.own=true; up.material.color.setHex(CONTAINER_PAINT[(Math.random()*CONTAINER_PAINT.length)|0]); up.position.set(_R(-0.08,0.08), 2.0, _R(-0.3,0.3)); up.rotation.y=_R(-0.08,0.08); up.castShadow=up.receiveShadow=true; up.userData.kind='container'; coverVariant(up); trackCover(up); m.add(up); hp*=1.6; } }
       else m.material.color.setHex([0xffffff,0xd8c8b8,0xc0b0a0][(Math.random()*3)|0]);
       m.scale.setScalar(COVER_K); m.position.set(x, heightAt(x,z)-0.05, z); m.rotation.y=f; scene.add(m);
       blocks.push({ mesh:m, x, z, r:D.hl*COVER_K*0.8, hp, maxHp:hp, steel:true, heavy:true, cover:true, ms:COVER_K, loot:Math.random()<BALANCE.drop.brick, kind, obb:{ f, hw:D.hw*COVER_K, hl:D.hl*COVER_K } });

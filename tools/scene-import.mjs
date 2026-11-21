@@ -135,7 +135,7 @@ window._conv = async (url, fbx, levels) => {
   for(const L of levels){ let idx = G.idx, t = L.tris;
     if(L.share){ if(near < L.skip) continue; t = Math.max(L.min, Math.round(near * L.share)); }   // (the mid / far copies follow the near one; a light model has none)
     if(t && t * 3 < idx.length){ [idx] = S.simplify(G.idx, G.pos, 3, Math.floor(t) * 3, L.err, L.loose ? ['Permissive'] : []);
-      if(L.loose && idx.length > t * 4.5){ const sl = S.simplifySloppy(G.idx, G.pos, 3, Math.floor(t) * 3, 1); idx = Array.isArray(sl) ? sl[0] : sl; } }   // (foliage: a cloud of leaf islands no seam-locked collapse can thin — far off, a smeared leaf is still green) if(L.name === 'd') near = idx.length / 3;
+      if(L.loose && idx.length > t * 4.5){ const n = Math.floor(t) * 3, sl = S.simplifySloppy.length >= 6 ? S.simplifySloppy(G.idx, G.pos, 3, null, n, 1) : S.simplifySloppy(G.idx, G.pos, 3, n, 1);   /* Z420 meshoptimizer 0.25 takes a vertex lock before the target */ idx = Array.isArray(sl) ? sl[0] : sl; } }   // (foliage: a cloud of leaf islands no seam-locked collapse can thin — far off, a smeared leaf is still green) if(L.name === 'd') near = idx.length / 3;
     if(L.name === 'd') near = Math.min(idx.length / 3, L.base || Infinity);   // (Z392 the mid / far copies follow lodBase when the near scan is heavier)
     const C = compact(G, idx), body = new Blob([C.pos, C.nrm, C.uv, C.idx]);
     await fetch('/put?lvl=' + L.name + '&nv=' + (C.pos.length / 3) + '&ni=' + C.idx.length, { method:'POST', body }); res.push({ lvl:L.name, tris:C.idx.length / 3 }); }
@@ -162,7 +162,7 @@ for(const k of todo){ const S = SPEC[k], t0 = Date.now(); let src;
     const M = maps(/\.glb$/i.test(src) ? path.join(cur, model) : src, path.join(cur, 'tex')), TD = texSet(M, S.tex, path.join(cur, 'tex'), 'd'), TM = texSet(M, 1024, path.join(cur, 'tex'), 'm');
     for(const x in got) delete got[x];
     const page = await browser.newPage(); page.setDefaultTimeout(900000); await page.goto(`http://127.0.0.1:${PORT}/page.html`); await page.waitForFunction(() => window._ready);
-    const r = await page.evaluate(([u, f, L]) => window._conv(u, f, L), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:0.05, base:S.lodBase }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose || S.looseMid }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose || S.looseFar }, { name:'m', tris:S.m, err:0.25, loose:S.loose || S.looseFar }]]); await page.close();
+    const r = await page.evaluate(([u, f, L]) => window._conv(u, f, L), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:S.err ?? 0.05, base:S.lodBase, loose:S.looseNear }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose || S.looseMid }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose || S.looseFar }, { name:'m', tris:S.m, err:0.25, loose:S.loose || S.looseFar }]]); await page.close();
     if(S.out){ const d = writeGLB(path.join(ROOT, 'assets', 'models', 'real', S.out, S.file + '.glb'), turnY(got.d, S.rot), TD, S.file, true);   // Z387 a hand weapon: one plain file where the arsenal lives
       const line = { key:k, src:path.basename(src), srcTris:r.srcTris, out:S.out + '/' + S.file, d }; report.push(line); console.log(JSON.stringify(line)); fs.rmSync(cur, { recursive:true, force:true }); continue; }
     const d = writeGLB(path.join(OUT, k + '.glb'), got.d, TD, k), m = writeGLB(path.join(OUT, 'm', k + '.glb'), got.m, TM, k), lv = {};

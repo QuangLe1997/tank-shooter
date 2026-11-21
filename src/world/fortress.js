@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD } from '../hub.js';
+import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -245,6 +245,7 @@ function plaqueMat(name, place, tier){ const c=document.createElement('canvas');
 const CORE_NAME={ 1:'TRẠM CHỈ HUY', 2:'SỞ CHỈ HUY', 3:'BỘ TỔNG HÀNH DINH' };
 function buildCore(f, g, WM){ const gdx=(f.gx-f.x)/(Math.hypot(f.gx-f.x, f.gz-f.z)||1), gdz=(f.gz-f.z)/(Math.hypot(f.gx-f.x, f.gz-f.z)||1), side=Math.random()<0.5?-1:1;
   const lx=-gdz*side*(f.Rin||f.R)*0.4 + gdx*(f.Rin||f.R)*0.05, lz=gdx*side*(f.Rin||f.R)*0.4 + gdz*(f.Rin||f.R)*0.05, ry=Math.atan2(gdx, gdz), W2=4.5, D2=3.5, H2=4.2;
+  if(cmdCompound(f, g, WM, lx, lz, ry, -side)) return;   // Z420 the real bunkers (the drawn block-house only without them)
   const SG=[], DK=[], IR=[], BG=[], put=(L,geo,x,y,z,rx,ryy)=>{ geo.rotateX(rx||0); geo.rotateY(ryy||0); geo.translate(x,y,z); L.push(geo); };
   put(SG, stoneBox(W2*2+1, 0.5, D2*2+1), 0,0.25,0); put(SG, stoneBox(W2*2, H2, D2*2), 0,0.5+H2/2,0); put(SG, stoneBox(W2*2+0.2, 0.22, D2*2+0.2), 0,2.6,0);
   put(SG, stoneBox(W2*2+0.6, 0.35, D2*2+0.6), 0,0.5+H2+0.17,0);
@@ -266,11 +267,32 @@ function buildCore(f, g, WM){ const gdx=(f.gx-f.x)/(Math.hypot(f.gx-f.x, f.gz-f.
   f.core={ g:cg, mat:cg.children[0].material }; f.coreX=lx; f.coreZ=lz; f.coreR=Math.hypot(W2,D2)+0.6;
   const hp=Math.round(FORT.tiers[f.tier].gate*1.3*(1+FORT.gatePerStage*(S.stage-1))*loopHpMul()*diffHpMul());
   const b={ mesh:cg, x:f.x+lx, z:f.z+lz, r:Math.hypot(W2,D2), obb:{ hl:D2+0.5, hw:W2+0.5, f:ry }, hp, maxHp:hp, steel:false, loot:false, kind:'fortcore', fort:f }; blocks.push(b); f.coreBlock=b; }
-// shells on the command post: stone chips and dust; at zero it is blown to ruins
-export function fortCoreHit(b, dmg){ const f=b.fort; if(!f || f.coreDown || !blocks.includes(b)) return; b.hp-=dmg; if(!f.active) wakeFort(f, performance.now()/1000);
+// Z420 THE COMMAND COMPOUND: FORT_CMD's bunkers for this tier, laid round the core's spot in its frame (+z toward the gate, +x = out, the fort's
+//   outer side — the comms stand behind the main building, out of the gate's line, the guns cover the yard between it and the gate). Every piece is a
+//   'fortcore' block sharing one HP; the drawn block-house is not built. o = which way is out across the core's frame
+function cmdCompound(f, g, WM, lx, lz, ry, o){ const C=FORT_CMD; if(!C.on || typeof window==='undefined' || /procbase|noscene/.test(location.search+location.hash)) return false;
+  const list=C.tiers[f.tier]||C.tiers[1], k=MOBILE?C.k.mobile:1, cg=new THREE.Group(); cg.position.set(lx, 0, lz); cg.rotation.y=ry; g.add(cg);
+  const hp=Math.round(FORT.tiers[f.tier].gate*1.3*(1+FORT.gatePerStage*(S.stage-1))*loopHpMul()*diffHpMul()), cr=Math.cos(ry), sr=Math.sin(ry), parts=[], tone=landTone(); let rad=0, main=null;
+  for(const [keys, px, pz, yaw, role] of list){ const opts=keys.split('|'), key=opts[(Math.random()*opts.length)|0], D=sceneDims(key), x=px*k*o, z=pz*k, yl=yaw*o;
+    const lod=scenePiece(key, 1, { tone }); lod.position.set(x, 0, z); lod.rotation.y=yl; cg.add(lod);
+    const wx=f.x+lx+x*cr+z*sr, wz=f.z+lz-x*sr+z*cr, r=Math.hypot(D.x, D.z)/2;
+    const b={ mesh:main?lod:cg, x:wx, z:wz, r:r*0.9, obb:{ hw:D.x/2*0.92, hl:D.z/2*0.92, f:ry+yl }, hp, maxHp:hp, steel:false, loot:false, kind:'fortcore', fort:f, _top:f.gy+D.y };
+    blocks.push(b); parts.push({ key, role, x, z, D, lod, b }); rad=Math.max(rad, Math.hypot(x, z)+r); if(!main) main=parts[0]; }
+  const comms=parts.find(p=>p.role==='comms'), M0=main.D;
+  if(comms){ const bc=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); bc.position.set(comms.x, comms.D.y+0.35, comms.z); cg.add(bc); f.coreBc=bc; }   // the mast's red beacon
+  { const fg=new THREE.Group(); fg.position.set(-o*(M0.x/2+1.6), 0, M0.z/2+1.6); cg.add(fg); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.1,8,8), _iron); pole.position.y=4; pole.castShadow=true; fg.add(pole);
+    const fl=makeFlag(campFlagTex(), 2.4, 1.5, 1); fl.position.set(0, 7.1, 0); fg.add(fl); f.coreFlag=fl; }   // the garrison flag at the door
+  { const sg=new THREE.Mesh(new THREE.PlaneGeometry(3.3,0.62), plaqueMat(CORE_NAME[f.tier]||'SỞ CHỈ HUY', f.name, 0)); sg.position.set(o*(M0.x*0.18), 1.6, M0.z/2+3.2); cg.add(sg);
+    const post=new THREE.Mesh(new THREE.BoxGeometry(3.5,0.08,0.08), _iron); post.position.set(sg.position.x, 1.25, sg.position.z-0.03); cg.add(post);
+    for(const s of [-1.5,1.5]){ const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,1.9,0.08), _iron); leg.position.set(sg.position.x+s, 0.95, sg.position.z-0.05); cg.add(leg); } }   // the name board on two legs before the door
+  f.core={ g:cg, mat:null, ruinMat:WM, W2:M0.x/2*0.8, D2:M0.z/2*0.8, parts }; f.coreX=lx; f.coreZ=lz; f.coreR=rad+FORT_CMD.rim; f.coreBlock=main.b; f.coreBlocks=parts.map(p=>p.b);
+  return true; }
+// shells on the command post: stone chips and dust; at zero it is blown to ruins (Z420 any piece of the compound wears the one HP)
+export function fortCoreHit(b, dmg){ const f=b.fort; if(!f || f.coreDown || !blocks.includes(b)) return; const c=f.coreBlock||b; c.hp-=dmg; for(const q of (f.coreBlocks||[])) q.hp=c.hp; if(!f.active) wakeFort(f, performance.now()/1000);
   flashMat(f.core.mat, 0.1, 0.5); burst({x:b.x,z:b.z}, 0xa89a84, 3, 5, {y:f.gy+1+Math.random()*3.5, life:0.5, size:0.32, grav:-16, drag:1.4, up:2.5});
-  if(b.hp<=0) coreDestroyed(f, b); }
-function coreDestroyed(f, b){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1); f.coreDown=true; const now=performance.now()/1000, cx=f.x+f.coreX, cz=f.z+f.coreZ;
+  if(c.hp<=0) coreDestroyed(f, c); }
+function coreDestroyed(f, b){ for(const q of (f.coreBlocks||[b])){ const i=blocks.indexOf(q); if(i>=0) blocks.splice(i,1); } f.coreDown=true; const now=performance.now()/1000, cx=f.x+f.coreX, cz=f.z+f.coreZ;
+  (f.core.parts||[]).forEach((p,i)=>{ if(i) setTimeout(()=>{ bigExplode({x:p.b.x,z:p.b.z}, 0xff8a3a, 1.6); for(let k=0;k<4;k++) spawnDebris({x:p.b.x,z:p.b.z}, 1.2, 0x7a7266); }, 300+i*260); });   // Z420 every bunker of the compound goes up in turn
   bigExplode({x:cx,z:cz}, 0xffa040, 2.6); setTimeout(()=>bigExplode({x:cx+1.5,z:cz-1}, 0xff7a2a, 1.8), 220); for(let k=0;k<8;k++) spawnDebris({x:cx,z:cz}, 1.4, 0x8a8070);
   burst({x:cx,z:cz}, 0xb8a888, 14, 6, {y:f.gy+2, life:2.2, size:3.2, smoke:true, grav:-0.4, drag:1.4, up:2.2, op:0.6}); S.shake=Math.min(3.4, S.shake+1.6); sfx('bigexplode');
   unwave(f.core.g); f.g.remove(f.core.g); coreRuins(f); f.coreFireUntil=now+40;
@@ -280,14 +302,14 @@ function coreDestroyed(f, b){ const i=blocks.indexOf(b); if(i>=0) blocks.splice(
   radio('SCH: '+(CORE_NAME[f.tier]||'Sở chỉ huy').toLowerCase().replace(/^./,ch=>ch.toUpperCase())+' của '+f.name+' đã sập — chúng mất liên lạc, hết quân tiếp viện!'); }
 // broken wall stubs round the footprint, the roof fallen in, stone and rebar heaped in the middle
 function coreRuins(f){ const V=rubbleVariants(), S1=[], cg=new THREE.Group(); cg.position.set(f.coreX, 0, f.coreZ); cg.rotation.y=Math.atan2((f.gx-f.x),(f.gz-f.z)); f.g.add(cg);
-  const W2=4.5, D2=3.5; S1.push(placed(stoneBox(W2*2+1, 0.5, D2*2+1), 0,0.25,0, 0));
+  const W2=f.core.W2||4.5, D2=f.core.D2||3.5; S1.push(placed(stoneBox(W2*2+1, 0.5, D2*2+1), 0,0.25,0, 0));   // (Z420 the compound's main building's footprint)
   for(const [ax,az,bx,bz] of [[-W2,D2,W2,D2],[W2,D2,W2,-D2],[W2,-D2,-W2,-D2],[-W2,-D2,-W2,D2]]){ const L=Math.hypot(bx-ax,bz-az), n=Math.round(L/1.2), ux=(bx-ax)/L, uz=(bz-az)/L;
     for(let k=0;k<n;k++){ if(Math.random()<0.22) continue; const h=0.6+Math.random()*Math.random()*3.2, s=(k+0.5)*L/n; S1.push(placed(stoneBox(L/n+0.05, h, 0.5), ax+ux*s, 0.5+h/2, az+uz*s, Math.atan2(uz,ux)*-1)); } }
   for(let k=0;k<(MOBILE?8:16);k++){ const g=V[(Math.random()*V.length)|0].clone(), s=0.6+Math.random()*1.6; g.scale(s*(1+Math.random()), s*0.6, s*(1+Math.random())); g.rotateY(Math.random()*6.28); g.rotateX((Math.random()-0.5)*0.8);
     g.translate((Math.random()-0.5)*W2*1.9, 0.6+Math.random()*0.8, (Math.random()-0.5)*D2*1.9); S1.push(g); }
   for(let k=0;k<3;k++){ const s=stoneBox(4+Math.random()*3, 0.35, 2.5+Math.random()*2); s.rotateZ((Math.random()-0.5)*0.9); s.rotateX((Math.random()-0.5)*0.6); s.translate((Math.random()-0.5)*4, 1.2+Math.random()*0.8, (Math.random()-0.5)*3); S1.push(s); }   // roof slabs fallen in
-  const m=new THREE.Mesh(mergeGeometries(S1.map(q=>q.index?q.toNonIndexed():q), false), f.core.mat); S1.forEach(q=>q.dispose()); m.castShadow=true; m.receiveShadow=true; cg.add(m);
-  heapGround(f.x+f.coreX, f.z+f.coreZ, 4.5, 0.7); f.rubble=f.rubble||[]; f.rubble.push({ x:f.x+f.coreX, z:f.z+f.coreZ, r:6 }); }
+  const m=new THREE.Mesh(mergeGeometries(S1.map(q=>q.index?q.toNonIndexed():q), false), f.core.ruinMat||f.core.mat); S1.forEach(q=>q.dispose()); m.castShadow=true; m.receiveShadow=true; cg.add(m);
+  heapGround(f.x+f.coreX, f.z+f.coreZ, Math.max(4.5, W2), 0.7); f.rubble=f.rubble||[]; f.rubble.push({ x:f.x+f.coreX, z:f.z+f.coreZ, r:6 }); }
 function nameSprite(text, col){ const c=document.createElement('canvas'); c.width=512; c.height=96; const x=c.getContext('2d');
   x.fillStyle='rgba(10,6,4,.72)'; x.beginPath(); x.roundRect(8,14,496,68,14); x.fill(); x.strokeStyle=col; x.lineWidth=3; x.stroke();
   x.fillStyle=col; x.font='900 40px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(text, 256, 50);

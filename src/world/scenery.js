@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { FUEL_DRUM, SCENERY, SKYLINE } from '../../config.js';
+import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE } from '../../config.js';
 import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
@@ -47,9 +47,13 @@ export class SceneLOD extends THREE.LOD {
 function takeMaps(to, from){ for(const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) to[k] = from[k]; to.color.copy(from.color); to.emissive.copy(from.emissive);
   to.roughness = from.roughness; to.metalness = from.metalness; to.envMapIntensity = from.envMapIntensity; to.needsUpdate = true; }
 // Z375 a watchtower / water tower of world/tower-kinds.js: the scan stood in the tower's body (it topples with it), its own material returned for the fade
-export function towerModel(body, K){ const mat = new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8 }); mat.userData.own = true; blendIn(mat); body.add(scenePiece(K.model, 1, { mat })); return mat; }
+export function towerModel(body, K){ const mat = new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8 }); mat.userData.own = true; blendIn(mat); body.add(scenePiece(K.model, 1, { mat, tone:landTone() })); return mat; }
+// Z420 the land's tone (REALPROP.cast.tint, × share SCENERY.tone) that the forts' bunkers and the guard towers wear over their own colour: one palette per field
+export function landTone(){ const t = REALPROP.cast.tint, c = new THREE.Color(t[BIOME.name] ?? t._); return new THREE.Color(1, 1, 1).lerp(c, SCENERY.tone); }
 // a piece ready to stand somewhere (its levels fetched in the background): the light ones now, the near one when it is wanted
 export function scenePiece(k, s = 1, o = {}){ const C = M(k), D = sceneDims(k, s), R = Math.max(D.x, D.y, D.z) / 2, Z = SCENERY.lod;
+  if(o.tone){ const mat = o.mat || new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8 }), prev = o.onLevel; if(!o.mat){ mat.userData.own = true; blendIn(mat); }   // Z420 tinted: its own material, toned each time it takes a level's maps (and colour)
+    o = { ...o, mat, onLevel:(lv, m) => { if(mat.map !== mat.userData.tonedMap){ mat.color.multiply(o.tone); mat.userData.tonedMap = mat.map; } if(prev) prev(lv, m); } }; }
   const dist = [Math.max(Z.mid[0], Z.mid[1] * R), Math.max(Z.far[0], Z.far[1] * R)], one = !!C.one;
   const lod = new SceneLOD(k, { ...o, dist, nearAt:MOBILE || one || o.top ? 0 : dist[0] + Z.near }); lod.userData.scene = k;   // (Z393 top: the most detail a small piece needs — 'l' never fetches the whole scan)
   if(MOBILE) sceneLevel(k, 'm').then(L => lod.put('m', L)); else if(one) sceneLevel(k, 'd').then(L => lod.put('d', L));
@@ -117,6 +121,8 @@ function lavaPit(p, gy){ const r = sceneDims(p.k, p.s).x * M(p.k).lava, y = gy +
 // Z375 the enemy fuel depot's tanks (world/supply.js, built after this set, in the same pass): the riveted steel tank scan in place of the drawn
 //   cylinder — inside the tank's own group, so its hits, its fire and its blast are untouched (the drawn one is hidden, it still carries the shape)
 function realSupply(gen){ if(gen !== GEN) return; for(const b of blocks){ if(b.kind === 'radartower' && b.mesh && !b.mesh.userData.real && !MOBILE){ b.mesh.userData.real = true; realRadar(b, gen); continue; }
+    if(b.kind === 'pumphouse' && b.mesh && !b.mesh.userData.real){ b.mesh.userData.real = true; b.mesh.traverse(o => { if(o.isMesh) o.visible = false; });   // Z420 the fuel store: the weathered platform scan
+      const s = SCENERY.supply.depot.w / M('fuel_depot').w, m = scenePiece('fuel_depot', s); m.scale.setScalar(s); b.mesh.add(m); continue; }
     if(b.kind !== 'fueltank' || !b.mesh || b.mesh.userData.real) continue; b.mesh.userData.real = true;
     b.mesh.traverse(o => { if(o.isMesh) o.visible = false; }); const s = SCENERY.supply.fueltank.h / M('tank_steel').h, m = scenePiece('tank_steel', s); m.scale.setScalar(s); m.rotation.y = Math.random() * Math.PI * 2; b.mesh.add(m); } }
 // a level's geometry as plain floats, carried through a transform (the files are quantized: positions int16 under the node's scale)

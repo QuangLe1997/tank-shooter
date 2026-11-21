@@ -5,8 +5,8 @@
 //   feels it for the rest of the battle: no fuel → their tanks crawl and fewer arrive; no ammo → they hit softer and reload slower; no barracks
 //   → fewer troops in every wave.
 import * as THREE from 'three';
-import { SUPPLYB, FENCE } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown } from '../hub.js';
+import { SUPPLYB, FENCE, SCENERY } from '../../config.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -216,7 +216,8 @@ export function scanSite(R0, score, o){ o=o||{}; const step=6;
 const FUEL_R=24, AMMO_R=23;
 function buildFuel(s){ flattenPad(s[0], s[1], FUEL_R*SUPPLY_K*0.95, FUEL_R*SUPPLY_K*1.35); const B=newBase('fuel', s[0], s[1], FUEL_R*SUPPLY_K, SUPPLY_K);
     for(const lx of [-7.6,0,7.6]) piece(B, 'fueltank', fuelTank(), lx, -2.5, 0, { r:3.2 }, true);
-    piece(B, 'pumphouse', pumpHouse(), 0, 7.0, 0, { r:3.4, hw:2.4, hl:3.6, across:true });
+    { const Dp=SCENERY.on && sceneDims('fuel_depot', SCENERY.supply.depot.w/SCENERY.models.fuel_depot.w);   // Z420 the fuel store (the weathered platform scan, world/scenery.js realSupply) — its box, when it will stand there
+      piece(B, 'pumphouse', pumpHouse(), 0, Dp ? SCENERY.supply.depot.z : 7.0, 0, Dp ? { r:Math.hypot(Dp.x,Dp.z)/2, hw:Dp.x/2*0.9, hl:Dp.z/2*0.9 } : { r:3.4, hw:2.4, hl:3.6, across:true }); }
     piece(B, 'tanker', tankerTruck(), -9.5, 10.5, 0.25, { r:2.2, hw:1.3, hl:4.1 }); piece(B, 'tanker', tankerTruck(), 10.5, 9.0, -0.35, { r:2.2, hw:1.3, hl:4.1 });
     const K=kit(); for(const [w,d,x,z] of [[25,0.45,0,-7.4],[25,0.45,0,2.6],[0.45,10,-12.5,-2.4],[0.45,10,12.5,-2.4]]) K.add('conc', B3(w,1.1,d,x,0.55,z), 0xa6a298);   // bund wall
     for(const y of [0.9,1.25,1.6]) K.add('metal', CY(0.16,0.16,15.4,10,0,y,3.6,0,Math.PI/2), [0x8a8a82,0x9a2a1e,0x7a7a72][Math.round((y-0.9)/0.35)]);   // pipe rack

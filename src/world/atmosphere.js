@@ -1,6 +1,6 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
-import { LIGHT, BLIGHT } from '../../config.js';
+import { ART_TONE, LIGHT, BLIGHT } from '../../config.js';
 import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun, bloom } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
@@ -134,10 +134,16 @@ export function applyAtmosphere(b){
     if(!A.cave){ scene.fog.density*=L.fogK;
       if(A.night) hemi.intensity*=L.nightHemiK;
       else { sun.intensity*=L.sunK; hemi.intensity*=dusk?L.duskHemiK:L.hemiK; ambient.intensity=dusk?L.duskAmbient:L.ambient; scene.environmentIntensity*=L.envK; } } }
+  artTone(b.name, A);
   setNightLights(!!A.night);
   { const B=BLIGHT.bloom[A.night||A.cave ? 'night' : S.tod==='sunset' ? 'dusk' : 'day']; bloom.strength=B[0]; bloom.radius=B[1]; bloom.threshold=B[2]; }   // Z318 the battle lights bloom more in the dark
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }
+// Z420 the battlefield's own film (config ART_TONE): its split-tone, saturation, contrast, exposure, vignette, the lean of its sun and its haze
+function artTone(name, A){ const T=ART_TONE[name]; if(!T || A.cave) return; const g=gradePass.uniforms, k=A.night?0.5:1, dusk=S.tod==='sunset';
+  if(T.sh) g.shTint.value.set(T.sh[0]*k, T.sh[1]*k, T.sh[2]*k); if(T.hi) g.hiTint.value.set(T.hi[0]*k, T.hi[1]*k, T.hi[2]*k);
+  g.sat.value*=T.satK??1; g.contrast.value*=T.conK??1; if(T.vig!=null && !A.night) g.vig.value=T.vig; if(T.fogK) scene.fog.density*=T.fogK;
+  if(!A.night){ renderer.toneMappingExposure*=T.expK??1; if(T.sun && !dusk) sun.color.lerp(new THREE.Color(T.sun[0]), T.sun[1]); } }
 // keep the key light (and its tight shadow frustum) centred on the action; snap to shadow texels to stop shimmer
 export function updateSunFollow(){
   const p=S.player, cx = p ? p.pos.x : 0, cz = p ? p.pos.z : 0, tx=(SHADOW_EXT.r*2)/SHADOW_MAP;

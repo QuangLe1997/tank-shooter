@@ -1,6 +1,6 @@
 // world/zones.js — Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered
 import { DEPOT, POW, RALLY } from '../../config.js';
-import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, homeClear, inField, planForts, powJob, spawnEnemy } from '../hub.js';
+import { ARENA, DEPOTS, POWS, RALLY_PT, S, SUPPLY, buildDepots, buildForts, buildPOWs, buildRally, depotJob, enemies, enemyPool, fieldEdgePoint, freeEnemyBar, homeClear, inField, planDefense, planForts, powJob, spawnEnemy } from '../hub.js';
 
 export const ZONES=[];   // { kind:'rally'|'pow'|'arms'|'motor', x, z, r }
 export function inZone(x, z, pad){ for(const q of ZONES) if(Math.hypot(q.x-x, q.z-z) < q.r+(pad||0)) return true; for(const B of SUPPLY.bases) if(Math.hypot(B.x-x, B.z-z) < B.R+(pad||0)) return true; return false; }   // Z196 the enemy compounds are claimed ground too (no trees, lava or scatter inside the wire)
@@ -9,7 +9,7 @@ function _free(x, z, r, enemy){ return Math.abs(x)<ARENA-r-3 && Math.abs(z)<AREN
 function _pick(gen, r, enemy){ for(let t=0;t<(enemy?120:50);t++){ const [x,z]=gen(); if(_free(x,z,r,enemy)) return [x,z]; } return null; }
 // called first thing in buildBlocks() so every scatter loop can keep clear of these sites
 export function planZones(){
-  ZONES.length=0; planForts(); const st=Math.min(4, S.stage-1), side=Math.random()<0.5?-1:1;   // Z107 fortresses claim their ground first
+  ZONES.length=0; planForts(); planDefense(); const st=Math.min(4, S.stage-1), side=Math.random()<0.5?-1:1;   // Z107 fortresses claim their ground first
   ZONES.push({ kind:'rally', x:side*ARENA*RALLY.offX, z:ARENA*RALLY.offZ, r:RALLY.r+2 });                        // our side, beside the spawn
   for(let i=0;i<POW.perStage[st];i++){ const s=_pick(()=>{ const sd=Math.random()<0.5?-1:1;                       // POW stockades line OUR fence: the flanks + rear edge
       const u=Math.random(), a = u<0.65 ? (sd>0 ? 0.15+Math.random()*1.05 : Math.PI-0.15-Math.random()*1.05)   // our east / west flank (bearing atan2(z,x); +z = our side)

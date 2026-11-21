@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { MOBILE, detailize, loadRealCover, stoneTriMat, trackCover, batchCover } from '../hub.js';
+import { REALPROP } from '../../config.js';
+import { BIOME, MOBILE, detailize, loadRealCover, stoneTriMat, trackCover, batchCover } from '../hub.js';
 
 // ----------------------------- BATTLEFIELD PROPS (procedural, merged geometry, cached) -----------------------------
 // rocks (displaced + fractured icosahedra, smooth normals, AO vertex colours) · sandbags · fuel drums · tyre stacks · ammo crates ·
@@ -246,6 +247,7 @@ export const LONE_SET = { DESERT:[3,4], RUINS:[3,5], TUNDRA:[2,2], FOUNDRY:[6,3]
 export const CONTAINER_PAINT = [0xae4632,0x41698c,0x5b7a52,0xc8923a,0x8e8e86,0x96603c,0xd8d3c6];   // Z236 sun-faded paint (the deep navy / green read as black boxes)
 export function makeCoverMesh(kind, destructible){
   const mat = destructible ? coverMat(kind).clone() : coverMat(kind); if(destructible) mat.userData.own=true;     // destructible pieces flash on hit → own material
+  if(destructible && REALPROP.cast.kinds.includes(kind)) mat.color.setHex(REALPROP.cast.tint[BIOME.name] ?? REALPROP.cast.tint._);   // Z420 the land's tone on cast concrete (kept when the real piece swaps in)
   const m=new THREE.Mesh(coverGeo(kind), mat); m.castShadow=true; m.receiveShadow=true; m.userData.kind=kind;
   trackCover(m); batchCover(m); loadRealCover();   // Z252 the Meshy piece takes its place once loaded
   return m;
