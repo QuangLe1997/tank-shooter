@@ -262,9 +262,13 @@ export const RIDE_RANT = { stall:{ wring:1.2, twist:0.6, twistF:13, still:0.6, r
 //   (no hit on the ride, the soldier's gun quiet half that, no enemy within safeR m; an enemy within 0.6 of it or a shot cuts it short); peeK of the time
 //   a pee, else a smoke. Stopped still s, the soldier steps down; he gets off side m out on the bike's right (eased over step s) and walks away m (smoke)
 //   / peeAway m (pee) at angle rad ahead of straight out. smoke: squat / stand up (s) to hips hipH m off the ground, back m behind his heels, feet wide m
-//   apart, the trunk lean rad; Z364 the mask pulled down / back up (s), the cigarette out of his pocket (s), light (s), n drags of drag s, the flick (s). pee: open (s), the stream (s, drops/s, v m/s out), the shiver, close (s)
+//   apart, the trunk lean rad; Z364 the mask pulled down / back up (s), the cigarette out of his pocket (s), light (s), n drags of drag s, the flick (s).
+//   Z366 lean (the smoke, leaning on the saddle): its right edge at (mount units), his hips out m from it at hipY m off the ground, his feet
+//   feet m further out, the trunk tipped back rad, the right ankle crossed over to cross m left of his middle.
+//   pee: open (s), the stream (s, drops/s, v m/s out), the shiver, close (s)
 export const RIDE_BREAK = { every:[150, 120], calm:25, safeR:40, peeK:0.4, still:0.35, side:0.42, step:0.5, away:3.2, peeAway:4.6, angle:0.9,
-  smoke:{ squat:0.6, hipH:0.33, back:0.2, wide:0.18, lean:0.55, mask:0.8, pack:0.9, light:1.4, n:3, drag:2.6, flick:0.6 }, pee:{ open:0.6, stream:4.2, rate:30, v:1.5, shiver:0.6, close:0.5 } };
+  smoke:{ squat:0.6, hipH:0.33, back:0.2, wide:0.18, lean:0.55, mask:0.8, pack:0.9, light:1.4, n:3, drag:2.6, flick:0.6 },
+  lean:{ at:[-0.1, 0.33, -0.18], out:0.12, hipY:0.84, feet:0.3, back:0.08, cross:0.15 }, pee:{ open:0.6, stream:4.2, rate:30, v:1.5, shiver:0.6, close:0.5 } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
 //   Z310 the bán tải's four wheels measured off its model (each tyre its own round piece: centre, radius, width) — they roll, the front pair steers

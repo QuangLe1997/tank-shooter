@@ -1,6 +1,6 @@
 // actors/driver-break.js — Z363 THE DRIVER'S BREAK: after a long stretch of quiet riding he has had enough. He pulls over, the soldier steps down,
-//   he gets off on the far side and walks a few metres off — for a smoke squatting on his heels (lit in cupped hands, three long drags, the smoke let
-//   out slow, the butt flicked away) or, his back to everyone, a pee (a whistle at the sky, a shiver at the end) — then back to the bike, and he rides
+//   he gets off on the far side — for a smoke leaning back on the saddle, ankles crossed (Z366; lit in cupped hands, three long drags, the smoke let
+//   out slow, the butt flicked away) or, a few metres off with his back to everyone, a pee (a whistle at the sky, a shiver at the end) — then he rides
 //   over to pick the soldier up. It only comes when it is quiet (no hit on the ride, the soldier's gun quiet, nobody near: RIDE_BREAK); shots or an
 //   enemy coming and he cuts it short and runs back.
 import * as THREE from 'three';
@@ -45,8 +45,10 @@ function offToBreak(H, D){ const K = RIDE_BREAK; rideFrame(H); D.mix.stopAllActi
   const down = gnd(onRide(H, D.R.hip, V3()).addScaledVector(RR, K.side)), away = D.brk === 'pee' ? K.peeAway : K.away, out = [];
   let dir = null, spot = null; for(const a of [K.angle, -K.angle, 0]){ const d0 = V3().copy(RR).multiplyScalar(Math.cos(a)).addScaledVector(RF, Math.sin(a)); d0.y = 0; d0.normalize();
     const s0 = gnd(V3().copy(down).addScaledVector(d0, away)); if(!dir) { dir = d0; spot = s0; } if(!blocksNear(s0.x, s0.z, 1.2, out).length){ dir = d0; spot = s0; break; } }
-  // facing: the smoke squatting side-on to the bike (looking out along its nose), the pee with his back to the bike
-  D.br = { down, spot, hd:D.brk === 'pee' ? Math.atan2(dir.x, dir.z) : Math.atan2(RF.x, RF.z) };
+  // facing: the pee with his back to the bike; Z366 the smoke leaning back on the saddle's edge, facing out from it (his hips there, his feet out in front)
+  D.br = { down, spot, hd:Math.atan2(dir.x, dir.z) };
+  if(D.brk === 'smoke'){ const LN = RIDE_BREAK.lean, hip = onRide(H, LN.at, V3()).addScaledVector(RR, LN.out); hip.y = heightAt(hip.x, hip.z) + LN.hipY;
+    D.br = { down, hip, spot:gnd(V3().copy(hip).addScaledVector(RR, LN.feet)), hd:Math.atan2(RR.x, RR.z) }; }
   D.w.position.copy(down); D.hd = Math.atan2(spot.x - down.x, spot.z - down.z); D.w.rotation.set(0, D.hd, 0);
   D.state = D.brk; D.ph = 'walk'; D.t2 = 0; D.said = {}; D.cut = false; drvStartWalk(D); snapPose(D, K.step); }
 
@@ -61,7 +63,19 @@ function goHome(D){ maskDown(D, false); if(D.ph === 'home') return; D.ph = 'home
 function remount(H, D){ snapPose(D, RIDE.crash.mount); D.mix.stopAllAction(); D.walking = false; const body = H.body || H.B; body.add(D.w); D.w.position.set(0, 0, 0); D.w.rotation.set(0, 0, 0, 'XYZ'); D.w.scale.setScalar(D.s0);
   D.state = 'mount'; D.t2 = 0; D.hd = null; D.br = null; D.brk = null; D.ph = null; H.onBreak = false; D.pickup = true; }
 
-// ---- the smoke: down on his heels, lit in cupped hands, three long drags, the butt flicked away ----
+// ---- the smoke ----
+// Z366 leaning back on the saddle's edge, the way they do: hips against it, the trunk tipped back, the feet out in front with the ankles crossed
+//   (k 0 stood over his feet … 1 leaning)
+function leanPose(D, k, br){ const B = D.B, L = drvLens(D), w = D.w, aw = D.ankle * XEOM.k, LN = RIDE_BREAK.lean, e = ease(k); frame(D.hd); w.rotation.set(0, D.hd, 0); w.position.y = heightAt(w.position.x, w.position.z); drvRest(D);
+  _p.copy(w.position); _p.y += aw + (L.th + L.sh) * 0.975; _p.lerp(br.hip, e); const tilt = mix(0.03, -LN.back, e);
+  drvHips(D, _p, _a.copy(UPW).multiplyScalar(Math.cos(tilt)).addScaledVector(FWD, Math.sin(tilt)), RT);
+  _c.copy(w.position).addScaledVector(RT, mix(-0.11, -0.05, e)); gnd(_c, aw); ik2(B.LeftUpLeg, B.LeftLeg, B.LeftFoot, _c.clone(), _c.clone().addScaledVector(FWD, 0.5).addScaledVector(UPW, 0.4).addScaledVector(RT, -0.1)); drvFlatFoot(D, 'Left');
+  _d.copy(w.position).addScaledVector(RT, mix(0.11, -LN.cross, e)).addScaledVector(FWD, 0.05 * e); gnd(_d, aw + 0.015 * e);   // (the right ankle crossed over the left)
+  ik2(B.RightUpLeg, B.RightLeg, B.RightFoot, _d.clone(), _d.clone().addScaledVector(FWD, 0.5).addScaledVector(UPW, 0.4).addScaledVector(RT, 0.08)); if(e < 0.5) drvFlatFoot(D, 'Right'); }
+// the left arm folded across his belly, the hand under the right elbow (the smoker's prop)
+function armAcross(D){ const B = D.B; wp(B.RightForeArm, _a); _a.addScaledVector(FWD, 0.03).addScaledVector(UPW, -0.035).addScaledVector(RT, -0.02); wp(B.LeftArm, _b); _b.addScaledVector(RT, -0.3).addScaledVector(UPW, -0.4).addScaledVector(FWD, 0.15);
+  ik2(B.LeftArm, B.LeftForeArm, B.LeftHand, _a.clone(), _b.clone()); rollHand(B, 'Left', _c.copy(UPW).negate()); curlHand(B, 'Left', 0.5, _a.clone().addScaledVector(UPW, 0.05)); }
+// (the Z363 squat, kept for a ride without a saddle to lean on)
 function squat(D, k, lean){ const B = D.B, L = drvLens(D), w = D.w, aw = D.ankle * XEOM.k, SM = RIDE_BREAK.smoke; frame(D.hd); w.rotation.set(0, D.hd, 0); w.position.y = heightAt(w.position.x, w.position.z); drvRest(D);
   _p.copy(w.position).addScaledVector(FWD, -mix(0.01, SM.back, k)); _p.y += mix(aw + (L.th + L.sh) * 0.975, SM.hipH, k);   // hips: stood → low and back over the heels
   const ln = mix(0.04, lean, k); drvHips(D, _p, _a.copy(UPW).multiplyScalar(Math.cos(ln)).addScaledVector(FWD, Math.sin(ln)), RT);
@@ -82,13 +96,15 @@ function smokeAct(H, D, dt){ const SM = RIDE_BREAK.smoke, B = D.B, t = D.t2, w =
   const tM = SM.squat, tP = tM + SM.mask, tL = tP + SM.pack, tD = tL + SM.light, tF = tD + SM.n * SM.drag, tR = tF + SM.flick, tU = tR + SM.mask, tE = tU + SM.squat;
   if(t >= tE){ maskDown(D, false); driverLine(D, 'rested'); goHome(D); return; }
   steer(D, br.hd, dt, 5); const k = t < SM.squat ? ease(t / SM.squat) : t > tU ? 1 - ease((t - tU) / SM.squat) : 1;
-  squat(D, k, SM.lean);
+  if(br.hip) leanPose(D, k, br); else squat(D, k, SM.lean);
   const dn = Math.floor((t - tD) / SM.drag), df = (t - tD) / SM.drag - dn, smoking = t >= tD && t < tF, exhale = smoking && df > 0.55, busy = t >= tM && t < tD;
-  drvLook(D, _e.copy(w.position).addScaledVector(FWD, 12).setY(w.position.y + 1.2), busy || (smoking && df < 0.5) ? 0 : Math.sin(t * 0.5) * 0.25, (exhale ? 0.18 : 0) + (t >= tP && t < tD ? -0.22 : 0), mix(0.04, SM.lean, k));
+  drvLook(D, _e.copy(w.position).addScaledVector(FWD, 12).setY(w.position.y + 1.2), busy || (smoking && df < 0.5) ? 0 : Math.sin(t * 0.5) * 0.25, (exhale ? 0.3 : br.hip ? 0.07 : 0) + (t >= tP && t < tD ? -0.22 : 0), br.hip ? 0 : mix(0.04, SM.lean, k));   // (leaning: chin up, the smoke let out at the sky)
   if(D.mouthL) _mo.copy(D.mouthL).applyMatrix4(B.Head.matrixWorld); else wp(B.Head, _mo).addScaledVector(FWD, 0.105);   // his mouth (Z364 fixed on his head: it bows and turns with it)
   const face = wp(B.Head, V3()).sub(_mo).negate().setY(0).normalize();   // (the way his face points)
-  onKnee(D, 'Left', -1); onKnee(D, 'Right', 1);
-  const pole = wp(B.RightArm, V3()).addScaledVector(RT, 0.35).addScaledVector(UPW, -0.4), rest = wp(B.RightLeg, V3()).addScaledVector(FWD, 0.2).addScaledVector(UPW, 0.08);   // (the smoking hand held up off his knee)
+  if(br.hip){ drvHang(D); } else { onKnee(D, 'Left', -1); onKnee(D, 'Right', 1); }
+  const pole = wp(B.RightArm, V3()).addScaledVector(RT, 0.35).addScaledVector(UPW, -0.4),   // the smoking hand at rest: leaning, up by his chin, the elbow on his folded arm; squatting, held up off his knee
+    rest = br.hip ? wp(B.RightArm, V3()).addScaledVector(FWD, 0.27).addScaledVector(RT, -0.06).addScaledVector(UPW, -0.17) : wp(B.RightLeg, V3()).addScaledVector(FWD, 0.2).addScaledVector(UPW, 0.08);
+  if(br.hip) pole.addScaledVector(UPW, -0.15).addScaledVector(FWD, -0.1);
   const nose = _mo.clone().addScaledVector(UPW, 0.04).addScaledVector(FWD, 0.03), chin = _mo.clone().addScaledVector(UPW, -0.07).addScaledVector(FWD, 0.02), at = V3(), seg = (u, a0, a1) => clamp((u - a0) / (a1 - a0), 0, 1);
   let hand = null, cig = 0;   // (cig: 0 none · 1 in his fingers · 2 in his lips)
   if(t >= tM && t < tP){ const u = (t - tM) / SM.mask;   // the mask: up to his nose, down under his chin
@@ -109,15 +125,17 @@ function smokeAct(H, D, dt){ const SM = RIDE_BREAK.smoke, B = D.B, t = D.t2, w =
     hand = u < 0.45 ? rest.clone().lerp(chin, ease(u / 0.45)) : u < 0.85 ? chin.clone().lerp(nose, ease(seg(u, 0.45, 0.85))) : nose.clone().lerp(rest, ease(seg(u, 0.85, 1))); if(u > 0.6) maskDown(D, false); }
   else if(t >= tD) cig = 0;
   if(t >= tL && t < tF) hand = hand || rest;
+  if(br.hip && !hand) hand = rest;
   if(hand){ if(cig === 2 && t < tD) ik2(B.RightArm, B.RightForeArm, B.RightHand, hand, pole); else fingersTo(D, hand, pole); rollHand(B, 'Right', _d.copy(UPW).negate());
     for(const F of ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']) for(let j = 1; j <= 3; j++){ const b = B['RightHand' + F + j], q = b && D.rest.get(b); if(q) b.quaternion.copy(q); } B.RightHand.updateMatrixWorld(true);   // (the knee's curl undone)
     curlHand(B, 'Right', cig ? 0.22 : 0.35, hand.clone().addScaledVector(RT, -0.1), 0, cig ? 0.3 : 1); }   // (holding a cigarette: the two fingers near straight)
+  if(br.hip && !(t >= tL && t < tD)) armAcross(D);   // Z366 the free arm folded across his belly under the smoking elbow
   // the cigarette: in his lips (lighting it) or between his fingers, the tip glowing (brighter on a drag), a thread of smoke off it
   if(cig === 2 && t < tD) cigAt(D, at.copy(_mo).addScaledVector(face, -0.006), _e.copy(face).addScaledVector(UPW, -0.25).normalize(), t > tL + SM.light * 0.4 ? 0.6 : 0);
   else if(cig) cigInHand(D, smoking && df > 0.15 && df < 0.45 ? 1 : 0.35);
   if(D.cig && D.cig.visible && t > tL + SM.light * 0.4){ D.wisp = (D.wisp || 0) + dt * 8; if(D.wisp >= 1){ D.wisp = 0; const T = D.cigTip; spawnPart(T.x, T.y, T.z, (Math.random() - 0.5) * 0.04, 0.12, (Math.random() - 0.5) * 0.04, { color:0xd8d8d8, size:0.06, grow:0.45, life:1.4, grav:0.3, drag:2.2, smoke:true, op:0.75, keep:true }); } }
   // the smoke out of his mouth after each drag, slow, drifting up
-  if(exhale && Math.random() < dt * 14) spawnPart(_mo.x, _mo.y, _mo.z, FWD.x * 0.35 + (Math.random() - 0.5) * 0.15, 0.22, FWD.z * 0.35 + (Math.random() - 0.5) * 0.15, { color:0xc4c4c4, size:0.18, grow:2.6, life:1.9, grav:0.12, drag:1.3, smoke:true, op:0.5, keep:true });
+  if(exhale && Math.random() < dt * 14) spawnPart(_mo.x, _mo.y, _mo.z, FWD.x * 0.35 + (Math.random() - 0.5) * 0.15, 0.22, FWD.z * 0.35 + (Math.random() - 0.5) * 0.15, { color:0xc4c4c4, size:0.13, grow:1.6, life:1.7, grav:0.12, drag:1.4, smoke:true, op:0.42, keep:true });
   if(smoking && dn === 0 && !D.said.puff && df > 0.6){ D.said.puff = 1; driverLine(D, 'puff'); }
   blendPose(D, dt); }
 // the props (world-space groups posed when they show): the cigarette (filter, paper, the glowing tip) and the lighter (red plastic, a steel cap)

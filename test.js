@@ -1296,6 +1296,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/D\.mouthL = D\.B\.Head\.worldToLocal/.test(dr) && /_mo\.copy\(D\.mouthL\)\.applyMatrix4\(B\.Head\.matrixWorld\)/.test(br), 'his mouth found on the mask cloth and carried on his head');
   ok(SM.mask>0 && SM.pack>0 && SM.light>0 && /function fingersTo/.test(br) && /function cigInHand/.test(br) && /function lighterAt/.test(br) && /toneMapped:false/.test(br) && /D\.cigTip/.test(br), 'out of the pocket, lit off the lighter, between two fingers to his lips, the tip glowing, a thread of smoke off it'); }
 
+// Z366 the smoke leaning back on the saddle (the cool way): hips on its edge, the trunk tipped back, the ankles crossed, the free arm folded under the smoking elbow
+{ const fs=await import('node:fs'); const C=await import('./config.js'), br=fs.readFileSync('src/actors/driver-break.js','utf8'), LN=C.RIDE_BREAK.lean;
+  ok(LN && LN.hipY>0.6 && LN.hipY<0.95 && LN.feet>0.15 && LN.feet<0.45 && LN.back>0 && LN.cross>0 && /function leanPose/.test(br) && /function armAcross/.test(br) && /if\(br\.hip\) leanPose\(D, k, br\); else squat\(D, k, SM\.lean\)/.test(br) && /D\.br = \{ down, hip, spot:/.test(br), 'leaning on the saddle to smoke: hips on its edge, feet out a little, ankles crossed, the arm folded under the elbow'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
