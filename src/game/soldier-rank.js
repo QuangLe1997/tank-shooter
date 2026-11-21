@@ -4,10 +4,10 @@
 //   radio: a man for the squad, a supply drop, a tank of ours, a stick of paratroopers, a barrage. Perks stack in levels; one card in three may be a call for help.
 //   Past the last rank, every step is a medal: one more pick. The same cards close a stage won against the general (loot/upgrades.js asks soldierStagePerks).
 import { TROOPER } from '../../config.js';
-import { MODE, S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, hide, iconEl, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, show, showBanner,
+import { MODE, S, airstrike, armsDrop, clampFieldXZ, dropPowerup, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner,
   spawnAllyTank, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
 
-export const CAREER = { xp:0, rank:0, pend:0, lv:{}, openAt:0, chip:null, keys:false, cards:null };
+export const CAREER = { xp:0, rank:0, lv:{}, chip:null };
 const R = CAREER, T = () => TROOPER;
 const NOW = () => performance.now() / 1000;
 // XP from rank r to r + 1
@@ -15,7 +15,7 @@ export function rankNeed(r){ const [a, b, c] = T().step, n = r; return a + b * n
 export function rankName(r){ const L = T().ranks; return L[Math.min(r, L.length - 1)]; }
 const INS = ['›', '››', '▰', '▰▰', '▰▰▰', '★', '★★', '★★★', '★★★★', '★', '★★', '★★★', '★★★★'];
 const tierOf = r => r < 2 ? 0 : r < 5 ? 1 : r < 9 ? 2 : 3;   // enlisted · NCO · company officer · field officer
-export function rankReset(){ R.xp = 0; R.rank = 0; R.pend = 0; R.lv = {}; R.openAt = 0; paintChip(); }
+export function rankReset(){ R.xp = 0; R.rank = 0; R.lv = {}; paintChip(); }
 function xpFor(e){ const K = T().xp.kill; if(e.general) return K.general;
   let x = K[e.type] ?? (e.def.inf ? K._inf : e.def.air ? K._air : K._veh); if(e.elite) x *= T().xp.eliteK; if(e.genGuard) x *= 2; return x; }
 // killEnemy asks this for every kill (his, his squad's, a strike's)
@@ -29,7 +29,7 @@ function rankUp(){ const p = S.player, top = R.rank >= T().ranks.length - 1, U =
   const nm = top ? 'HUÂN CHƯƠNG CHIẾN CÔNG' : rankName(R.rank);
   showBanner((top ? '★ ' : 'THĂNG CẤP: ') + nm, '#ffd86a'); ringPulse(p.pos, 0xffd86a, 4.5); sfx('levelup'); floatText('▲ ' + nm, '#ffd86a', p.pos, 22);
   squadRankUp(R.rank); if(!top) milestone(R.rank);
-  R.pend++; R.openAt = NOW() + U.delay; }
+  giftDrop(nm); }
 // what a rank brings by itself, over the radio
 function milestone(r){ const m = T().milestone[r]; if(!m) return; const nm = rankName(r);
   if(m === 'at' || m === 'mg'){ if(squadGrow(m === 'at' ? 'at' : 'mg')) radio('SCH: Chúc mừng ' + nm.toLowerCase() + '! Bổ sung cho tổ anh một ' + (m === 'at' ? 'lính B40 chống tăng.' : 'xạ thủ súng máy.')); }
@@ -82,27 +82,15 @@ const tagOf = k => k.call ? 'VIỆN BINH · dùng ngay' : 'CẤP ' + ROMAN[lvOf(
 const asCard = k => ({ ic:k.ic, nm:k.nm, ds:k.ds, tag:tagOf(k), apply(p){ take(k, p); } });
 function take(k, p){ if(!k.call) R.lv[k.id] = lvOf(k) + 1; k.apply(p || P()); updateHUD(); floatText(k.nm, '#ffd86a', P().pos, 18); }
 export function soldierStagePerks(){ return pickPerks(3).map(asCard); }
-// ---- the cards, mid-battle: the stage-won overlay's frame, its own title, the battle paused ----
-function openPerks(){ const wrap = document.getElementById('upcards'), ov = document.getElementById('upgrade'); if(!wrap || !ov) return;
-  const top = R.rank >= T().ranks.length - 1 && R.pend > 0, tt = ov.querySelector('.title'), st = ov.querySelector('.subtitle');
-  ov._tt = ov._tt || [tt && tt.textContent, st && st.textContent];
-  if(tt) tt.textContent = top ? 'HUÂN CHƯƠNG' : rankName(R.rank); if(st) st.textContent = 'Chọn một phần thưởng · phím 1 2 3';
-  const picks = pickPerks(3); R.cards = picks; wrap.replaceChildren();
-  picks.forEach((k, i) => { const card = document.createElement('div'); card.className = 'upcard' + (k.call ? ' call' : k.rare ? ' rare' : '');
-    const ic = document.createElement('div'); ic.className = 'ic'; ic.appendChild(iconEl(k.ic));
-    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = (i + 1) + ' · ' + k.nm;
-    const ds = document.createElement('div'); ds.className = 'ds'; ds.textContent = k.ds;
-    const pw = document.createElement('div'); pw.className = 'pw'; pw.textContent = tagOf(k);
-    card.append(ic, nm, ds, pw); const go = ev => { if(ev) ev.preventDefault(); choose(i); };
-    card.addEventListener('click', go); card.addEventListener('touchstart', go, { passive:false }); wrap.appendChild(card); });
-  if(!R.keys){ R.keys = true; window.addEventListener('keydown', ev => { if(S.mode !== 'perk') return; const i = '123'.indexOf(ev.key); if(i < 0) return; ev.preventDefault(); ev.stopImmediatePropagation(); choose(i); }, true); }
-  S.mode = 'perk'; show('upgrade'); sfx('powerup'); }
-function choose(i){ if(S.mode !== 'perk' || !R.cards || !R.cards[i]) return; const k = R.cards[i]; R.cards = null; R.pend = Math.max(0, R.pend - 1);
-  const ov = document.getElementById('upgrade'); hide('upgrade'); if(ov && ov._tt){ const tt = ov.querySelector('.title'), st = ov.querySelector('.subtitle'); if(tt) tt.textContent = ov._tt[0]; if(st) st.textContent = ov._tt[1]; }
-  S.mode = 'playing'; take(k); sfx('powerup'); R.openAt = NOW() + 0.6; }
-// once a frame in battle: open the cards when it is safe to (not dying, no stage being won, the general's duel not ending)
-export function updateRank(){ if(MODE.id !== 'soldier') return; const p = S.player;
-  if(R.pend > 0 && S.mode === 'playing' && !S.awaitingUpgrade && p && p.hp > 0 && NOW() > R.openAt) openPerks();
+// ---- Z367 THE RANK'S GIFT: no cards mid-battle (they stopped the fight every few kills) — the HQ drops a gift crate a few metres ahead of him; walking
+//   over it gives one reward (a stat's next level or a call for help) picked for him and named on screen. The choice of three stays for the stage won,
+//   when the battle is paused anyway (soldierStagePerks)
+function giftDrop(nm){ const p = S.player, f = p.facing || 0, [x, z] = clampFieldXZ(p.pos.x + Math.sin(f) * T().gift.ahead, p.pos.z + Math.cos(f) * T().gift.ahead, 6);
+  dropPowerup({ x, z }, 2, { id:'gift', svg:'star', color:0xffd86a, vi:'QUÀ THĂNG CẤP', ds:'Một phần thưởng của bộ chỉ huy', cat:'gem', tier:2,
+    apply(pl){ const k = pickPerks(1)[0]; if(!k) return; take(k, pl); showBanner('QUÀ: ' + k.nm, '#ffd86a'); } });
+  ringPulse({ x, z }, 0xffd86a, 3); radio('SCH: ' + nm + ' — quà của bộ chỉ huy đã thả cạnh anh, ra nhận!'); }
+// once a frame in battle: keep the rank stripe on his health bar
+export function updateRank(){ if(MODE.id !== 'soldier') return;
   if(R.chip && !R.chip.isConnected) paintChip(); }
 // the stripe over his health bar: insignia, rank, the gold line to the next one
 export function paintChip(){ const bar = document.getElementById('phpbar'); if(!bar) return; let c = R.chip;

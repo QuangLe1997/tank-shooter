@@ -1276,7 +1276,8 @@ export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, 
 // Z350–Z353 THE SOLDIER'S CAREER (soldier mode only — game/soldier-rank.js, actors/squad-mates.js, loot/soldier-arms.js, campaign/general-duel.js):
 //   xp.kill = experience per kill by enemy type (_inf / _air / _veh = any other man / aircraft / vehicle; boss = the general's machine), eliteK × for an elite;
 //   step = [a, b, c]: XP from rank n-1 to n is a + b·(n-1) + c·(n-1)²; ranks = Binh nhì … Đại tá (past the last one every step pays a medal = one more perk);
-//   rankUp: max health + per rank, share of max health given back, s before the perk cards open; perk: share of picks that offer a call for help, the +1 life card's chance;
+//   rankUp: max health + per rank, share of max health given back; gift = Z367 each rank's gift crate lands this far (m) ahead of him (no cards mid-battle: walking over it
+//   gives one reward picked for him); perk: share of picks that offer a call for help, the +1 life card's chance;
 //   milestone = what a rank brings by itself (at / mg = a man for the squad, supply = a drop by the HQ, tank = one of ours, para = a stick of paratroopers, barrage = a strike);
 //   squad: who he starts with, the names they go by, health / damage × per rank and per LEADER level, the most men, medic (heal reach m, cooldown s, health, + per rank,
 //   the player's health share below which he is treated, a mate's); star: a gun picked up again climbs a star (max) — damage and rate of fire per star;
@@ -1286,9 +1287,9 @@ export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, 
 //   his fan of rounds (cooldown s, rounds, arc rad, damage, s of warning), his grenades (cooldown, how many, blast m, damage, s of warning, scatter m round you)
 export const TROOPER = {
   xp:{ kill:{ rifle:10, rpg:16, _inf:12, scout:28, carrier:40, mortar:34, heliTroop:45, _air:45, _veh:55, grunt:80, heavy:120, boss:260, general:420 }, eliteK:2 },
-  step:[70, 45, 6],
+  step:[200, 110, 10],
   ranks:['BINH NHÌ','BINH NHẤT','HẠ SĨ','TRUNG SĨ','THƯỢNG SĨ','THIẾU ÚY','TRUNG ÚY','THƯỢNG ÚY','ĐẠI ÚY','THIẾU TÁ','TRUNG TÁ','THƯỢNG TÁ','ĐẠI TÁ'],
-  rankUp:{ hp:8, heal:0.3, delay:0.9 }, perk:{ callShare:0.35, lifeChance:0.1 },
+  rankUp:{ hp:8, heal:0.3 }, gift:{ ahead:4 }, perk:{ callShare:0.35, lifeChance:0.1 },
   milestone:{ 2:'at', 4:'supply', 5:'mg', 7:'tank', 9:'para', 12:'barrage' },
   squad:{ start:['mg','medic'], names:['Hùng','Dũng','Tuấn','Nam','Minh','Long','Sơn','Hải','Lan','Thắng','Quân','Bình'], hpK:0.12, dmgK:0.1, leadK:0.25, max:6,
     medic:{ r:12, cd:9, hp:20, perRank:2.5, below:0.72, mateBelow:0.5 } },
