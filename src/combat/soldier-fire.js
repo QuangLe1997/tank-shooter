@@ -24,7 +24,7 @@ export function trooperGive(id){ const p = S.player, g = GUNS[id]; if(!p || !g) 
   updateGunHUD(); }
 export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length) return; const inst = p.guns[p.gunIdx], g = GUNS[inst.id];
   if(!g || inst.rU) return; if(!p.infiniteAmmo && inst.ammo <= 0){ startReload(now, inst); return; } if(now < p.fireAt) return;
-  const R = CV.mounted && CV.real; if(R && R.sat && R.gunYaw != null){ const off = R.gunYaw - p.aimSmoothed; if(Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > RIDER_TURN.fire) return; }   // Z340 turning round in the saddle: the trigger waits for the bore to come onto the aim
+  const R = CV.mounted && (CV.real || CV.G && CV.G.userData); if(R && R.sat && R.gunYaw != null){ const off = R.gunYaw - p.aimSmoothed; if(Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > RIDER_TURN.fire) return; }   // Z340 turning round in the saddle: the trigger waits for the bore to come onto the aim (Z388 on the fallback rig too: actors/general.js)
   p.muzzle.getWorldPosition(_v); const L = g.special ? null : fireLine(_v.x, _v.y, _v.z), RF = !CV.mounted && CV.real;   // Z376 the round from the muzzle straight to the crosshair (combat/crosshair.js)
   if(L && RF && RF.gunYaw != null){ const off = RF.gunYaw - L.a; if(Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > XHAIR.fireTol) return; }   // (on his feet: the trigger waits a moment for the rifle to come round onto it)
   const rapid = (now < p.overUntil || now < p.buffUntil.rapid) ? 0.5 : 1, st = (inst.star || 1) - 1, SK = TROOPER.star; p.fireAt = now + g.fireCd * rapid * p.fireMul * (1 - SK.rate * st); if(!p.infiniteAmmo) inst.ammo--;   // Z352 each star: a quicker trigger

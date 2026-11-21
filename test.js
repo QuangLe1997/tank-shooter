@@ -1388,6 +1388,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(A && \(!S\.firing \|\| XH\.mouseAt > A\.t \|\| XCAM\.position\.distanceTo\(A\.cam\) > XHAIR\.anchor\.cam/.test(xh) && /if\(!pad && S\.firing && !XH\.anchor\)/.test(xh), 'the trigger held and the mouse still: the burst stays on its point (or its man)');
   ok(/if\(Math\.abs\(off\)>XHAIR\.tankTol\) return; \}/.test(fl) && fl.indexOf('XHAIR.tankTol')<fl.indexOf('p.fireAt = now + g.fireCd'), 'the tank\'s shot waits for the turret (before any ammunition is spent)'); }
 
+// Z388 the fallback rig turns round in the saddle as the real one: hips + chest to ±170°, thighs along the horse, held / swung back, the trigger reads its bore
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), g=R('src/actors/general.js'), f=R('src/combat/soldier-fire.js'), cv=R('src/game/cavalry.js');
+  ok(/import \{[^}]*REALCAV, RIDER_TURN[^}]*\} from '\.\.\/\.\.\/config\.js'/.test(g) && /const lead = RP && RP\.stand \? null : seatTwist\(u, H, dt, twist\)/.test(g) && /const tgt = cl\(u\.tu, -RT\.max, RT\.max\)/.test(g) && /const L = Math\.PI \+ RT\.flip/.test(g) && /hipMax = H\.bike \? C\.seatTurn\[1\] : RT\.hip/.test(g) && /const twLim = RT\.max - hipMax/.test(g), 'the fallback rig: the same limits as the real one (max, flip, hips on the seat, the chest the rest)');
+  ok(/Lg\.hip\.rotation\.set\(Lg\.hip\.rotation\.x, -u\.hy, Lg\.hip\.rotation\.z, 'YXZ'\)/.test(g) && /u\.body\.rotation\.y = u\.hy; u\.up\.rotation\.y = u\.tw/.test(g) && /u\.gunYaw = Math\.atan2\(_sf\.x, _sf\.z\)/.test(g) && !/Math\.max\(-2\.0, Math\.min\(2\.0, twist\)\) - u\.up\.rotation\.y\)\*Math\.min\(1, dt\*10\);\n  if\(u\.arms\)/.test(g), 'his hips turn on the saddle, his thighs stay along the horse, the old ±2.0 chest clamp is only for standing in a bed; the bore is kept for the trigger');
+  ok(/CV\.mounted && \(CV\.real \|\| CV\.G && CV\.G\.userData\)/.test(f) && /seatTurnOff\(G\)/.test(cv) && /export function seatTurnOff/.test(g), 'the trigger waits on the fallback rig too; off the horse his hips square again'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

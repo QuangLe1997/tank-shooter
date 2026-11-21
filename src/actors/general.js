@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
+import { HORSE, HUMAN_SCALE, XEOM, REALCAV, RIDER_TURN } from '../../config.js';
 import { blot, fitRealRifle, keySec, lineAlong, lineAround, loftGeo, makeSoldierMesh, pathKeys, skinMesh, toLocal, trimGeo } from '../hub.js';
 
 let _GM=null;
@@ -181,9 +181,31 @@ export function poseRider(g, H, dt, twist, firing){ const u=g.userData; if(!u.le
   else for(const L of u.legs){ L.hip.rotation.x=-0.83-gal*0.3; L.hip.rotation.y=0; L.hip.rotation.z=L.sx*0.62; L.knee.rotation.x=1.12+gal*0.4; }   // Z246 thighs spread round the barrel, shins down the horse's sides to the stirrups
   u.body.rotation.set(0, 0, 0); u.body.position.set(0, 0, 0);
   const lean = gal*0.42 + can*0.16 + tro*0.06 + Math.sin(ph*2*Math.PI)*can*0.05;
-  u.up.rotation.x = lean*(firing?0.45:1); u.up.rotation.y += (Math.max(-2.0, Math.min(2.0, twist)) - u.up.rotation.y)*Math.min(1, dt*10);
-  if(u.arms){ u.arms.rotation.x = -lean*(firing?0.45:0.7) - (firing?0.02:0) + (u.kick||0)*-0.05; u.arms.rotation.y = Math.max(-0.5, Math.min(0.5, twist - u.up.rotation.y)); u.arms.rotation.z = 0; }
+  u.up.rotation.x = lean*(firing?0.45:1); const lead = RP && RP.stand ? null : seatTwist(u, H, dt, twist);   // Z388 sat on the horse or a pillion: hips and chest round to ±170°, as the real rig
+  if(lead == null){ u.tu = null; u.sat = false; u.gunYaw = null; u.up.rotation.y += (Math.max(-2.0, Math.min(2.0, twist)) - u.up.rotation.y)*Math.min(1, dt*10); }   // standing braced in a bed: the chest alone, as before
+  if(u.arms){ u.arms.rotation.x = -lean*(firing?0.45:0.7) - (firing?0.02:0) + (u.kick||0)*-0.05; u.arms.rotation.y = lead ?? Math.max(-0.5, Math.min(0.5, twist - u.up.rotation.y)); u.arms.rotation.z = 0; }
   u.kick=Math.max(0, (u.kick||0)-dt*9); if(firing) u.kick=1; u.gun.position.z=0.16-u.kick*0.06; u.gun.rotation.x=-u.kick*0.12;
+  if(u.sat && !u.realOp){ u.gun.getWorldQuaternion(_sq); _sf.set(0, 0, 1).applyQuaternion(_sq); u.gunYaw = Math.atan2(_sf.x, _sf.z); }   // where the bore really points: the trigger waits for it (combat/soldier-fire.js)
   if(u.head){ u.head.rotation.y = 0; u.head.rotation.x = -lean*0.6; }
   if(u.cloak) u.cloak.rotation.x = Math.min(1.25, 0.12 + Math.abs(H.v)*0.075) + Math.sin(performance.now()/1000*7)*0.04*Math.min(1, Math.abs(H.v)/6); }
+// Z388 TURNED ROUND IN THE SADDLE, THE FALLBACK RIG TOO (RIDER_TURN, the same numbers as real-cav's Z340): sat on the horse or a pillion, the unwrapped aim
+//   (tu) is held inside `max` (~170°) either way; in the gap straight behind he holds at the limit, `flip` past it he swings back the long way round the
+//   front (faster, `swing`). The hips (body) swing on the seat once the turn passes REALCAV.seatTurn[0], the thighs left along the horse / bike (their
+//   yaw taken off in the body's frame: Euler order YXZ), the chest (up) twists the rest, the arms lay the gun `lead` ahead; returns that arm yaw.
+const _sq = new THREE.Quaternion(), _sf = new THREE.Vector3();
+function seatTwist(u, H, dt, twist){ const RT = RIDER_TURN, C = REALCAV, TAU = Math.PI*2, cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  if(u.tu == null){ u.tw = cl(u.up.rotation.y, -RT.max, RT.max); u.hy = 0; u.av = u.tw; u.tu = twist; }   // (into the saddle: from where his chest already is)
+  else u.tu += Math.atan2(Math.sin(twist - u.tu), Math.cos(twist - u.tu));
+  const L = Math.PI + RT.flip; if(u.tu > L) u.tu -= TAU; else if(u.tu < -L) u.tu += TAU;
+  const tgt = cl(u.tu, -RT.max, RT.max), far = Math.abs(tgt - u.av), rate = C.aimRate + (RT.swing - C.aimRate)*cl((far - 0.8)/1.5, 0, 1);
+  u.av += cl(tgt - u.av, -rate*dt, rate*dt);
+  const hipMax = H.bike ? C.seatTurn[1] : RT.hip, hyT = cl(Math.sign(u.av)*Math.max(0, Math.abs(u.av) - C.seatTurn[0]), -hipMax, hipMax);
+  u.hy += cl((hyT - u.hy)*Math.min(1, dt*C.seatTurn[2]), -C.hipRate*dt, C.hipRate*dt);
+  const twLim = RT.max - hipMax; u.tw += cl((cl(u.av - u.hy, -twLim, twLim) - u.tw)*Math.min(1, dt*C.seatTurn[3]), -C.twistRate*dt, C.twistRate*dt);
+  u.body.rotation.y = u.hy; u.up.rotation.y = u.tw; u.sat = true;
+  for(const Lg of u.legs) Lg.hip.rotation.set(Lg.hip.rotation.x, -u.hy, Lg.hip.rotation.z, 'YXZ');
+  return cl(u.av - u.hy - u.tw, -RT.lead, RT.lead); }
+// off the saddle (game/cavalry.js): hips square again, the thighs' Euler order back to the foot rig's, the turn forgotten
+export function seatTurnOff(g){ const u = g.userData; if(!u.body) return; u.tu = u.av = u.gunYaw = null; u.hy = u.tw = 0; u.sat = false; u.body.rotation.y = 0;
+  for(const Lg of u.legs || []) Lg.hip.rotation.set(Lg.hip.rotation.x, 0, Lg.hip.rotation.z, 'XYZ'); }
 export function cloakFoot(g, spd, prone){ const u=g.userData; if(u.cloak) u.cloak.rotation.x = prone ? 0.04 : Math.min(0.9, 0.06 + spd*0.11) + Math.sin(performance.now()/1000*5)*0.03*Math.min(1, spd/3); }
