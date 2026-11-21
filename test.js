@@ -1330,6 +1330,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function stirrupFeet/.test(st) && /function makeStirrups/.test(st) && /scene\.add\(strap, iron\)/.test(st) && /sb\.attach\(strap\); sb\.attach\(iron\)/.test(st) && /ik2\(up, kn, ft,/.test(st) && /actors\/soldier-stirrups\.js/.test(fs.readFileSync('src/hub.js','utf8')), 'stirrups made in the world and hung on the horse\'s seat bone; each leg laid by IK to its iron');
   ok(/if\(R\.pup && !P\.dead && !bike && mounted && !P\.trans\) stirrupFeet\(R, H\)/.test(rc), 'on the horse (not a ride, not climbing on or off) his feet go to the stirrups every frame'); }
 
+// Z372 the soldier's HUD plain: his vitals alone (no tank compass, speed or range), one smooth health bar; the weapon chip without the damage-class tag
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), ins=R('src/ui/instruments.js'), css=R('css/mil.css');
+  ok(/INSTR\.el\.classList\.toggle\('sold', sold\); document\.body\.classList\.toggle\('m-soldier', sold\)/.test(ins) && /#instr\.sold \.in-dial,#instr\.sold \.in-row:not\(\.in-a\)\{display:none;\}/.test(css) && /body\.m-soldier #weaponchip \.wc-ty\{display:none;\}/.test(css), 'a soldier reads his health alone, in one bar; his gun chip has no damage-class tag'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

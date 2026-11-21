@@ -6,7 +6,7 @@ import { BLIGHT } from '../../config.js';
 import { MOBILE, S, boss, enemies, MODE } from '../hub.js';
 
 const DEG=180/Math.PI, TAU=Math.PI*2;
-export const INSTR={ el:null, cv:null, cx:null, hdg:null, spd:null, rng:null, arm:null, armBar:null, at:0, range:-1, rangeAt:0 };
+export const INSTR={ el:null, cv:null, cx:null, hdg:null, spd:null, rng:null, arm:null, armBar:null, at:0, range:-1, rangeAt:0, sold:null };
 export function headingDeg(f){ return ((Math.atan2(Math.sin(f), -Math.cos(f))*DEG)+360)%360; }   // north = −z on the map, clockwise
 const pad=(n,w)=>String(Math.max(0,Math.round(n))).padStart(w,'0');
 
@@ -69,6 +69,7 @@ export function updateInstr(now){
   INSTR.spd.textContent=pad(v*3.6,2);
   INSTR.rng.textContent = INSTR.range<0 ? '----' : pad(INSTR.range,4);
   INSTR.rng.parentElement.classList.toggle('lz', INSTR.range>=0);
+  { const sold=MODE.id==='soldier'; if(INSTR.sold!==sold){ INSTR.sold=sold; INSTR.el.classList.toggle('sold', sold); document.body.classList.toggle('m-soldier', sold); } }   // Z372 a soldier's vitals: the health alone (css/mil.css)
   INSTR.arm.textContent=Math.round(k*100); INSTR.armBar.style.width=(k*100)+'%'; { const L=INSTR.arm.previousElementSibling, t=MODE.id==='tank'?'GIÁP':'MÁU'; if(L && L.textContent!==t) L.textContent=t; }   // Z307 a man's health, not armour
   INSTR.el.classList.toggle('warn', k<=0.6 && k>0.3); INSTR.el.classList.toggle('crit', k<=0.3);
   dial(p, k); }

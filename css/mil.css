@@ -131,6 +131,22 @@ body:not(.touch) #hud .ability .k{font-family:var(--m-mono);letter-spacing:.5px;
 #instr .in-bar i{display:block;height:100%;width:100%;background:repeating-linear-gradient(90deg,var(--m-grn) 0 8px,transparent 8px 10px);transition:width .2s;}
 #instr.warn .in-a b{color:var(--m-amb);} #instr.warn .in-bar i{background:repeating-linear-gradient(90deg,var(--m-amb) 0 8px,transparent 8px 10px);}
 #instr.crit .in-a b{color:var(--m-red);animation:mBlink .6s steps(2) infinite;} #instr.crit .in-bar i{background:repeating-linear-gradient(90deg,var(--m-red) 0 8px,transparent 8px 10px);}
+/* Z372 a soldier's vitals, plain: no tank compass, speed or range — a red cross, his health in figures, one smooth bar coloured by how hurt he is;
+   his weapon chip without the damage-class tag, its rounds read large */
+#instr.sold{padding:10px 16px 11px;gap:0;}
+#instr.sold .in-dial,#instr.sold .in-row:not(.in-a){display:none;}
+#instr.sold .in-rd{min-width:200px;gap:7px;}
+#instr.sold .in-a{align-items:center;}
+#instr.sold .in-a span{display:flex;align-items:center;gap:8px;width:auto;font-size:11px;letter-spacing:2.8px;color:#d8d4c0;}
+#instr.sold .in-a span::before{content:'';width:14px;height:14px;flex:none;background:linear-gradient(#cf3a2e,#cf3a2e) center/14px 4px no-repeat,linear-gradient(#cf3a2e,#cf3a2e) center/4px 14px no-repeat;}
+#instr.sold .in-a b{font:600 28px/1 var(--m-mono);color:#efece0;text-shadow:0 1px 3px rgba(0,0,0,.75);}
+#instr.sold .in-a em{color:#a9a693;}
+#instr.sold .in-bar{height:6px;margin-top:0;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.09);box-shadow:none;}
+#instr.sold .in-bar i{border-radius:3px;background:#86c25c;transition:width .25s ease,background-color .4s;}
+#instr.sold.warn .in-bar i{background:#e0a63a;} #instr.sold.crit .in-bar i{background:#d4463a;}
+#instr.sold.warn .in-a b{color:#f2d79a;} #instr.sold.crit .in-a b{color:#ff8c7e;animation:none;}
+body.m-soldier #weaponchip .wc-ty{display:none;}
+body.m-soldier #weaponchip .wc-am{font-size:1.35em;letter-spacing:.5px;}
 
 /* ---------- menus: the hero button is painted signal-yellow steel with a stencilled order, not gold glass ---------- */
 #start .panel .btn-primary,.btn-primary{
