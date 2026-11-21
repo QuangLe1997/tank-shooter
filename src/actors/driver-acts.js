@@ -52,7 +52,7 @@ function flatFoot(D, L){ const f = D.B[L + 'Foot'], t = D.B[L + 'ToeBase']; if(!
   const ang = Math.acos(clamp(_f2.dot(_f3), -1, 1)); if(ang < 1e-4) return; _f4.crossVectors(_f2, _f3).normalize(); turn(f, _f4, ang); }
 const arm = (D, L, hand, pole) => ik2(D.B[L + 'Arm'], D.B[L + 'ForeArm'], D.B[L + 'Hand'], hand, pole);
 // Z361 lent to actors/driver-rant.js (the bike dies, he boots it and rows with the soldier on his own feet): the pelvis, his lengths, the rest pose, a flat sole, off the ride
-export { setHips as drvHips, lens as drvLens, rest as drvRest, flatFoot as drvFlatFoot, toWorld as drvToWorld };
+export const drvHips = setHips, drvLens = lens, drvRest = rest, drvFlatFoot = flatFoot, drvToWorld = toWorld;   // (declared, not `export { a as b }`: tools/refactor/lib.mjs reads only declarations)
 const gnd = (v, up = 0) => (v.y = heightAt(v.x, v.z) + up, v);
 
 // ---- easing one pose into the next: a snapshot of where he was, blended toward what is built this frame ----

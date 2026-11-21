@@ -158,7 +158,7 @@ export function drvHammer(D, on){ if(!on){ if(D.ham) D.ham.visible = false; retu
   wp(B.RightHand, _hp); wp(B.RightHandMiddle1, _hf); _hf.sub(_hp); _hp.addScaledVector(_hf, 0.8); _hf.addScaledVector(_ha, -_hf.dot(_ha)).normalize(); _hz.crossVectors(_hf, _ha);
   _hm.makeBasis(_hf, _ha, _hz).setPosition(_hp); g.matrix.copy(_hm); g.matrixWorldNeedsUpdate = true; g.visible = true; }
 // Z363 lent to actors/driver-break.js (his break: a smoke, a pee): stood, a foot planted, eyes on a point, arms hanging, the walk
-export { standPose as drvStand, plant as drvPlant, look as drvLook, hang as drvHang, walkTo as drvWalkTo, startWalk as drvStartWalk, stopWalk as drvStopWalk };
+export const drvStand = standPose, drvPlant = plant, drvLook = look, drvHang = hang, drvWalkTo = walkTo, drvStartWalk = startWalk, drvStopWalk = stopWalk;   // (declared: the module checker reads only declarations)
 
 // ---- the boot: wind up, swing, the tyre (the bike rocks) — and hopping round on one leg clutching the foot ----
 function kickStep(H, D, dt){ const K = RIDE_RANT.kick, B = D.B, w = D.w, t = D.t2, aw = D.ankle * XEOM.k, P = D.ks.P;
