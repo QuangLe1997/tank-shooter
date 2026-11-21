@@ -140,6 +140,7 @@ export * from './world/traffic.js';
 export * from './actors/real-air.js';   // Z272 real aircraft
 export * from './world/ruins3d.js';   // Z275 ruins of war
 export * from './world/defense.js';   // Z420 the enemy's defence in depth: the obstacle belt, the lanes' checkpoints, the fighting positions
+export * from './world/real-turrets.js';   // Z424 real guard guns, AA guns, rockets and missiles
 export * from './world/scenery.js';   // Z374 every battlefield composed from the Meshy scans: skyline, landmark, groves, sidings, tank farms (distance levels, the near scan streamed in)
 export * from './fx/dust.js';   // Z278 dust in the sunlight
 export * from './game/xeom.js';   // Z282 xe ôm mode

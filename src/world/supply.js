@@ -268,8 +268,8 @@ function lattice(K, x, z, h){ const w=0.55, c=0x56584f; for(const [sx,sz] of [[-
 const RADAR_R=21;
 function buildRadar(s){ flattenPad(s[0], s[1], RADAR_R*0.95, RADAR_R*1.35); const B=newBase('radar', s[0], s[1], RADAR_R, 1);
   const tw=piece(B, 'radartower', radarTower(), 0, -2, 0, { r:3.0 }, true); B.tower=tw; B.head=tw.mesh.userData.head;
-  piece(B, 'radome', radome(), -9.5, -6, 0, { r:3.3 }); for(const [lx,lz] of [[-8,6.5],[8.5,3]]) piece(B, 'aagun', aaGun(), lx, lz, Math.PI*0.1, { r:1.9 });
-  const K=kit(); radarYard(K); for(const [cx,cz] of [[-8,6.5],[8.5,3]]) for(let k=0;k<14;k++){ const a=k/14*6.283; if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<0.35) continue; for(const L of [0,1]) K.add('canvas', _xf(new THREE.BoxGeometry(1.0,0.42,0.5),cx+Math.sin(a)*2.6,0.22+L*0.42,cz+Math.cos(a)*2.6,0,a+L*0.2,0), 0xbca57a); }   // sandbagged gun pits
+  piece(B, 'radome', radome(), -9.5, -6, 0, { r:3.3 }); for(const [lx,lz] of [[-12.5,1.5],[8.5,3]]) piece(B, 'aagun', aaGun(), lx, lz, Math.PI*0.1, { r:2.8 });   // (Z424 the pit's ring: was 1.9, the bare mount; the west pit off the cabin it stood in, was −8, 6.5)
+  const K=kit(); radarYard(K);   // (Z424 the AA guns bring their own pits: world/real-turrets.js dressAAGun)
   const SG=[['military',-6,16.2,0],['radar',6,16.2,0],['radar',3,-1,0,1.3],['mines',-16.1,0,-Math.PI/2],['mines',16.1,-4,Math.PI/2],['military',0,-15.1,Math.PI]];
   signPosts(K, SG); const nm=gate(K, 16, 8, 'nameR', B);
   const d=K.bake(false); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 16, nm);

@@ -1,5 +1,5 @@
 {
-  "_": "Z395 tools/hd-maps.mjs: key (as in MODEL_FILES) \u2192 file: the shipped GLB under assets/models/real (no .glb); src: its original (a folder under assets/models \u2014 Tripo / Meshy downloads, git-ignored \u2014 or a path, ~ = home); tex: the near maps' size (px, default 2048); geo: the whole shape too (hd/<key>.glb: 0 = every triangle, else a budget — kept under ~70k, the near copy of a camp, a ruin, an animal or a gun). Only models shipped with smaller maps than their original are listed: tanks, city towers, rides, drivers and the soldiers already ship their original's 2K maps. Z397 maps: only these slots ([\"map\"]: the colour alone). The forts (Z397) and the wonders (Z398) are listed at 4096 for their colour: a wall 30 m long needs more than its 2K atlas with a tank beside it (its 4K normal looks no different from the 2K one, at twice the memory).",
+  "_": "Z395 tools/hd-maps.mjs: key (as in MODEL_FILES) \u2192 file: the shipped GLB under assets/models/real (no .glb); src: its original (a folder under assets/models \u2014 Tripo / Meshy downloads, git-ignored \u2014 or a path, ~ = home); tex: the near maps' size (px, default 2048); geo: the whole shape too (hd/<key>.glb: 0 = every triangle, else a budget — kept under ~70k, the near copy of a camp, a ruin, an animal or a gun). Only models shipped with smaller maps than their original are listed: tanks, city towers, rides, drivers and the soldiers already ship their original's 2K maps. Z397 maps: only these slots ([\"map\"]: the colour alone). The forts (Z397) and the wonders (Z398) are listed at 4096 for their colour: a wall 30 m long needs more than its 2K atlas with a tank beside it (its 4K normal looks no different from the 2K one, at twice the memory). Z424 a copy tools/scene-import.mjs bakes anew has its own atlas, so its near maps are baked with it (scene-import.json hd) — this tool refuses it (the thumbnails differ): cover_container_red, cover_jersey, prop_barrier, bld_hotel.",
   "tree_acacia": {"file":"tree/acacia", "src":"tripo/tree_acacia_t", "geo":0},
   "tree_baobab": {"file":"tree/baobab", "src":"tripo/tree_baobab_t", "geo":0},
   "tree_birch": {"file":"tree/birch", "src":"tripo/tree_birch_t", "geo":0},
@@ -103,5 +103,18 @@
   "ride_xeom": {"file":"ride/xeom", "src":"tripo/hb_xeom", "geo":0},
   "ride_bagac": {"file":"ride/bagac", "src":"tripo/hb_bagac", "geo":0},
   "ride_bantai": {"file":"ride/bantai", "src":"tripo/hero_bantai", "geo":0},
-  "drv_xeom": {"file":"driver/xeom", "src":"tripo/hd_xeom_anim", "geo":0}
+  "drv_xeom": {"file":"driver/xeom", "src":"tripo/hd_xeom_anim", "geo":0},
+  "cover_sandbag": {"file":"cover/sandbag", "src":"~/Downloads/3dnew/Meshy_AI_Barricade_Sandbag_1_1121164909_texture.glb"},
+  "cover_concrete": {"file":"cover/concrete", "src":"~/Downloads/3dnew/Meshy_AI_Concrete_Barrier_1121164752_texture.glb"},
+  "cover_container": {"file":"cover/container", "src":"~/Downloads/3dnew/Meshy_AI_ContainerFinal_1__1121152232_texture.glb"},
+  "cover_container_teal": {"file":"cover/container_teal", "src":"~/Downloads/3dnew/Meshy_AI_Rusted_Teal_Shipping__1121152256_texture.glb"},
+  "city_fountain": {"file":"city/city_fountain", "src":"~/Downloads/3dnew/Meshy_AI_Massive_central_plaza_1121164128_texture.glb"},
+  "bld_apart": {"file":"city/bld_apart", "src":"~/Downloads/3dnew/Meshy_AI_Astana_12_story_apart_1121153033_image-to-3d-texture.glb"},
+  "bld_glass": {"file":"city/bld_glass", "src":"~/Downloads/3dnew/Meshy_AI_Twisting_Glass_Tower_1121163006_texture.glb"},
+  "bld_office": {"file":"city/bld_office", "src":"~/Downloads/3dnew/Meshy_AI_Game_ready_mid_poly_s_1121153011_texture.glb"},
+  "bld_shophouse": {"file":"city/bld_shophouse", "src":"~/Downloads/3dnew/Meshy_AI_hanoi_old_house_3d_1121175631_image-to-3d-texture.glb"},
+  "bld_shoprow2": {"file":"city/bld_shoprow2", "src":"~/Downloads/3dnew/Meshy_AI_Faded_Grandeur_1121180147_texture.glb"},
+  "bld_villa": {"file":"city/bld_villa", "src":"~/Downloads/3dnew/Meshy_AI_colonial_villa_1121175933_texture.glb"},
+  "bld_spire": {"file":"city/bld_spire", "src":"~/Downloads/3dnew/Meshy_AI_Skyward_Spire_1121162929_texture.glb"},
+  "bld_palmspire": {"file":"city/bld_palmspire", "src":"~/Downloads/3dnew/Meshy_AI_Palmspire_Tower_1121162955_texture.glb"}
 }

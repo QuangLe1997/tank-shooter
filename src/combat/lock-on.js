@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, FORT, LOCKON, TREEFALL, AIRAIM, LINE, BLIGHT, TENT } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides, dressRound } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -91,7 +91,7 @@ function allyRocket(){ if(!_rkMat) _rkMat={ body:new THREE.MeshStandardMaterial(
   const g=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.7,10), _rkMat.body); b.rotation.x=Math.PI/2; g.add(b);
   const n=new THREE.Mesh(new THREE.ConeGeometry(0.13,0.36,10), _rkMat.war); n.rotation.x=Math.PI/2; n.position.z=0.52; g.add(n);
   for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.22,0.16), _rkMat.war); f.position.z=-0.3; f.rotation.z=k*Math.PI/2; f.position.x=Math.sin(k*Math.PI/2)*0.08; f.position.y=Math.cos(k*Math.PI/2)*0.08; g.add(f); }
-  const s=new THREE.Sprite(_rkMat.glow); s.scale.setScalar(0.9); s.position.z=-0.45; g.add(s); g.userData.glow=s; return g; }
+  const s=new THREE.Sprite(_rkMat.glow); s.scale.setScalar(0.9); s.position.z=-0.45; g.add(s); g.userData.glow=s; g.userData.body=g.children.filter(o=>o.isMesh); return dressRound(g, 1.0); }   // Z424 the missile scan
 // Z214 SMART MINI-MISSILE — the lock-on gun's round: a slim white body, glass seeker dome with a red eye, canards, cruciform tail fins and a
 //   white-hot motor; it rolls as it flies. Ejected from its cell, the motor lights a beat later (flash + whoosh) and it streaks off, hunting its lock.
 const _sm=[]; let _smMat=null;
@@ -107,7 +107,7 @@ function smartMissile(){ if(!_smMat) _smMat={ body:new THREE.MeshStandardMateria
     const can=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.07,0.08),M.dark); can.position.set(c*0.09,sn*0.09,0.26); can.rotation.z=a+Math.PI/2; g.add(can);       // canards
     const fin=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.15,0.16),M.dark); fin.position.set(c*0.13,sn*0.13,-0.32); fin.rotation.z=a+Math.PI/2; g.add(fin); }   // tail fins
   const s=new THREE.Sprite(M.glow); s.scale.setScalar(1.1); s.position.z=-0.55; g.add(s); const c2=new THREE.Sprite(M.core); c2.scale.setScalar(0.45); c2.position.z=-0.5; g.add(c2);
-  g.userData.glow=s; g.userData.core=c2; g.userData.smart=true; return g; }
+  g.userData.glow=s; g.userData.core=c2; g.userData.smart=true; g.userData.body=g.children.filter(o=>o.isMesh); return dressRound(g, 0.95); }   // Z424 the missile scan
 // the motor lights: a white flash behind it, a puff, the whoosh
 function smartIgnite(b){ const sp=Math.hypot(b.vx,b.vz)||1, ux=b.vx/sp, uz=b.vz/sp, y=b.by+heightAt(b.x,b.z);
   spawnPart(b.x-ux*0.6, y, b.z-uz*0.6, -ux*3, 0, -uz*3, { tex:'flash', color:0xffffff, size:1.6, life:0.06, grav:0, drag:8 });

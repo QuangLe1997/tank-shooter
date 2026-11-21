@@ -1,0 +1,4 @@
+Z424 — the guard guns and the AA pit (Meshy community, CC0; packed by tools/scene-import.mjs, m/ = the phone copies)
+- rws.glb: a twin-barrel counter-drone remote weapon station — Meshy_AI_rws_counter_drone_1121184347_texture.glb (meshy.ai/posts/019fc17c-740a-7bd2-b2c9-23422be4befd)
+- cannon.glb: "Fortress Gun Turret" — Meshy_AI_Fortress_Gun_Turret_1121164503_texture.glb (review code N25)
+- aa.glb: "Canon" by MKHORIZON, a 40 mm gun in a concrete and sandbag pit — Meshy_AI_Iron_Bulwark_Cannon_1121185948_texture.glb (meshy.ai/posts/canon-01a1ac48-a1be-7015-8860-5c91b89a2d3f)

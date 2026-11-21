@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCAMP } from '../../config.js';
-import { BIOME, MOBILE, S, TANK_SCALE, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat } from '../hub.js';
+import { BIOME, MOBILE, S, TANK_SCALE, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat, dressCoreGun } from '../hub.js';
 
 export const CORE_DEF = { R:24, H:9.4, T:2.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
@@ -93,9 +93,9 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
     blocks.push({ mesh:g, x:vx, z:vz, r:3.8, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'corewall', ours:true });
     for(let k=0;k<4;k++){ const la=a+k*Math.PI/2+Math.PI/4, lm=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), OM.lime); lm.position.set(vx+Math.sin(la)*s*0.5, H+2.2, vz+Math.cos(la)*s*0.5); g.add(lm); }
     const deckY=H+2.65;
-    if(i%2===0){ const gun=makeGun(); gun.root.position.set(vx, deckY, vz); gun.root.scale.setScalar(1.4); g.add(gun.root); gun.yaw.rotation.y=Math.atan2(vx,vz);
+    if(i%2===0){ const gun=makeGun(); gun.root.position.set(vx, deckY, vz); gun.root.scale.setScalar(1.4); g.add(gun.root); gun.yaw.rotation.y=Math.atan2(vx,vz); dressCoreGun(gun, 'gun');   // Z424 the real gun turret
       CORE_DEF.guns.push({ x:vx, z:vz, y:y0+deckY, ...gun, aim:Math.atan2(vx,vz), fireAt:performance.now()/1000+2+Math.random()*2, k:0, kick:0, target:null, thinkAt:0 }); }
-    else { const mg=makeMG(); mg.root.position.set(vx, deckY, vz); mg.root.scale.setScalar(1.25); g.add(mg.root);
+    else { const mg=makeMG(); mg.root.position.set(vx, deckY, vz); mg.root.scale.setScalar(1.25); g.add(mg.root); dressCoreGun(mg, 'mg');   // Z424 the real weapon station
       CORE_DEF.mgs.push({ x:vx, z:vz, y:y0+deckY+1.5, ...mg, aim:Math.atan2(vx,vz), fireAt:0, burst:0, target:null, thinkAt:0, spin:0 }); }
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.11,8,6), gm.steel), ox=vx*1.06, oz=vz*1.06; pole.position.set(ox, H+7, oz); g.add(pole);
     const fl=makeFlag(vnTex(), 3.2, 2.1, 1); fl.position.set(ox, H+9.8, oz); g.add(fl); }

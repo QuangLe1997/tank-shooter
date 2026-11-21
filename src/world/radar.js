@@ -5,7 +5,7 @@
 //   wire, gate, signs and garrison. Bring the tower down (it topples) and the enemy artillery loses its eyes: fewer barrages, fewer shells, wide of the mark.
 import * as THREE from 'three';
 import { SUPPLYB } from '../../config.js';
-import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen } from '../hub.js';
+import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen, dressAAGun } from '../hub.js';
 
 const CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
 export function radarLost(){ return SUPPLY.radar|0; }
@@ -50,7 +50,7 @@ export function aaGun(){ const g=new THREE.Group(), K=kit(); K.add('metal', CY(0
   g.add(K.bake(true)); const T=new THREE.Group(); T.position.y=0.55; g.add(T); g.userData.turret=T;
   const M=kit(); M.add('paint', B3(1.6,0.7,1.3,0,0.35,0), 0x56603a); M.add('paint', B3(1.8,0.9,0.06,0,0.85,0.75), 0x4e5834); for(const s of [-0.55,0.55]) M.add('metal', B3(0.45,0.12,0.45,s,0.75,-0.55), 0x2a2a28);
   for(const s of [-0.22,0.22]){ M.add('metal', CY(0.06,0.07,3.2,8,s,1.0,1.9,Math.PI/2), 0x2a2a28); M.add('metal', CY(0.1,0.1,0.35,8,s,1.0,3.5,Math.PI/2), 0x1e1e1c); M.add('metal', B3(0.22,0.3,0.7,s,1.0,0.5), 0x3a3a36); }
-  const top=M.bake(true); T.add(top); const mz=new THREE.Object3D(); mz.position.set(0,1.0,3.7); T.add(mz); g.userData.muzzle=mz; return g; }
+  const top=M.bake(true); T.add(top); const mz=new THREE.Object3D(); mz.position.set(0,1.0,3.7); T.add(mz); g.userData.muzzle=mz; dressAAGun(g); return g; }   // Z424 the real gun in its pit
 // ground clutter for the compound decor kit: radome, dishes, masts, cabins, generator
 export function radome(){ const K=kit(); K.add('paint', _xf(new THREE.SphereGeometry(3.2,24,16,0,Math.PI*2,0,Math.PI*0.62),0,3.3,0), 0xeceae2); K.add('conc', CY(2.9,3.1,2.1,24,0,1.05,0), 0xb4b0a6); K.add('metal', B3(1.0,1.8,0.06,0,0.9,3.02), 0x2a2e26); return K.bake(true); }   // the golf-ball radome
 export function radarYard(K){

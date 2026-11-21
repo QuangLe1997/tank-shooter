@@ -1,7 +1,7 @@
 // actors/enemy-missiles.js — ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke
 import * as THREE from 'three';
 import { EQUIP } from '../../config.js';
-import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle, MODE, blRamp, blSolid, holoRing } from '../hub.js';
+import { ARENA, GLOW, S, UNDER, addScore, apsIntercept, bigExplode, blastAllies, blastAllyTanks, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, hitAllyTank, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle, MODE, blRamp, blSolid, holoRing, dressRound } from '../hub.js';
 
 // ===== ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke =====
 export const EMIS=[], _emPool=[]; const _mbk=[];
@@ -12,11 +12,12 @@ export function makeEnemyRocket(){
   const g=new THREE.Group();
   const b=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.9,10), _emMats.body); b.rotation.x=Math.PI/2; g.add(b);
   const n=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.5,10), _emMats.war); n.rotation.x=Math.PI/2; n.position.z=0.68; g.add(n);
-  for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.34,0.24), _emMats.war); f.position.z=-0.38; f.rotation.z=k*Math.PI/2; f.position.x=Math.sin(k*Math.PI/2)*0.12; f.position.y=Math.cos(k*Math.PI/2)*0.12; g.add(f); }
+  const body=[b, n]; for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.34,0.24), _emMats.war); f.position.z=-0.38; f.rotation.z=k*Math.PI/2; f.position.x=Math.sin(k*Math.PI/2)*0.12; f.position.y=Math.cos(k*Math.PI/2)*0.12; g.add(f); body.push(f); }
   const s=new THREE.Sprite(_emMats.glow); s.scale.setScalar(1.3); s.position.z=-0.6; g.add(s);
   if(!_emMats.tongue) _emMats.tongue=new THREE.MeshBasicMaterial({ color:0xffa040, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });   // Z188 a visible flame tongue
   const t=new THREE.Mesh(new THREE.ConeGeometry(0.13,1.3,10,1,true), _emMats.tongue); t.rotation.x=-Math.PI/2; t.position.z=-1.1; g.add(t); g.userData.tongue=t;
   const bc=new THREE.Mesh(new THREE.SphereGeometry(0.07,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); bc.position.set(0,0.16,0.2); g.add(bc); g.userData.beacon=bc;   // seeker beacon (blinks on guided rounds)
+  g.userData.body=body; dressRound(g, 1.45);   // Z424 the missile scan for its body
   g.rotation.order='YXZ'; scene.add(g); return g;
 }
 export function launchEnemyMissile(x, y, z, ang, o){

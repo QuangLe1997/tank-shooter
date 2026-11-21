@@ -1,0 +1,2 @@
+Z424 — the rockets and missiles in flight (Meshy community, CC0; packed by tools/scene-import.mjs, its maps baked onto a 3k-triangle copy)
+- missile.glb: "MK-4F Missile" — Meshy_AI_MK_4F_Missile_1121184459_texture.glb

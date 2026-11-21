@@ -323,6 +323,11 @@ export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ru
 //   at least minRep sections · bin = the height of the rows the cut faces are filled in (m) · guard = how far a wall-top rifleman stands off its edge (m)
 export const FORT_GAP = { w:2.6, minRep:4, bin:0.2, guard:0.8 };
 // Z269 the field headquarters at the heart of our base (actors/core.js dressCore; Tripo, from a generated concept): w = footprint (m), sink = share of its height under the pad, hitR = the core's hit radius with it
+// Z424 REAL GUNS ON THE DRAWN MOUNTS (world/real-turrets.js): k = MODEL_FILES key, w = its width across (m, in the mount's own units — the base's guns are
+//   scaled ×1.4 / ×1.25 after), spread = where the two muzzles sit across it; aa: the radar station's AA gun in its pit (a 40 mm Bofors-type gun in a ring
+//   of concrete and sandbags, one scan): w = the pit across (m); the gun is the part inside gunR × its radius above gunY × its height, or anything above
+//   top × its height — it turns, the pit stays; proj: the missile scan the rockets and missiles wear in flight
+export const REALTURRET = { gun:{ k:'turret_cannon', w:4.2, spread:0 }, mg:{ k:'turret_rws', w:3.2, spread:0.26 }, aa:{ k:'turret_aa', w:6.6, gunR:0.62, gunY:0.17, top:0.55 }, proj:{ k:'proj_missile' } };
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
   walls:{ wallUp:0.4, thick:1.0, sink:-0.4, towerUp:-0.6, towerW:0.85 } };   // Z273 the concrete compound (world/core-walls.js dressWalls): wall height over CORE_DEF.H, thickness ×, tower height / width
 export const CORE_DEF = { hp:420, perStage:50, armour:0.72, regen:2.4, regenDelay:6, shield:{ at:0.35, t:9, cd:70 } };   // Z223 the Core is harder to break: thicker, armoured, mends itself when left alone, and throws up an emergency shield (also saves it from a killing blow) once per cd s

@@ -4,7 +4,12 @@
 //   its maps packed as glTF expects (colour · normal · roughness+metallic in G/B · emission when it glows) as JPEG at the spec's size, and a light copy
 //   for phones (…/m/, 1K maps); a heavy one also gets its distance levels — mid (…/l/, 18 %, 1K maps) and far (…/f/, 3 %, 512 maps), built here so
 //   nothing is simplified while the game runs. Out: assets/models/real/scene/<key>.glb and …/scene/{l,f,m}/<key>.glb.
-//   node tools/scene-import.mjs [key …] --deps <dir> [--dl ~/Downloads] [--work <dir>] [--force]     (<dir>: npm i --prefix <dir> meshoptimizer@0.25.0)
+//   Z424 a copy whose seams hold it far above its budget (more than 1.3×: a scan's atlas is thousands of small charts) is never forced across them — that
+//   shatters its texture into confetti (Z420's looseNear did, on 60 models): its shape is simplified on its own and its maps baked anew from the scan
+//   (tools/scene-bake.mjs) — never a heavy scan's near copy (scene/<key>.glb): it keeps the scan's own atlas, heavier if it must. A spec's hd { key, px } bakes that copy's sharp near maps too (assets/models/real/hd/<key>.0.map|nrm.webp, the atlas
+//   tools/hd-maps.mjs cannot cut from the original once the copy has its own). Foliage (loose) keeps the sloppy cut: its leaves are alpha cards.
+//   node tools/scene-import.mjs [key …] --deps <dir> [--dl ~/Downloads] [--work <dir>] [--force]
+//   (<dir>: npm i --prefix <dir> meshoptimizer@0.25.0 three@0.169.0 three-mesh-bvh@0.9.18 xatlasjs@0.2.0 sharp)
 //   Needs: ImageMagick (`magick`), `unzip`, Playwright (PLAYWRIGHT_DIR: a node_modules dir holding it) and its Chromium (CHROME: the binary). The FBX is
 //   read by three's FBXLoader inside the browser (the same three the game runs), the simplifier is meshoptimizer's WASM build.
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import http from 'node:http'; import { execFileSync } from 'node:child_process'; import { createRequire } from 'node:module';
@@ -20,6 +25,7 @@ for(const x of ['m', 'l', 'f']) fs.mkdirSync(path.join(OUT, x), { recursive:true
 const MO = process.env.MESHOPT_DIR || opt('--deps', null); if(!MO){ console.error('needs --deps <dir> holding node_modules/meshoptimizer (npm i --prefix <dir> meshoptimizer@0.25.0)'); process.exit(1); }
 const { MeshoptEncoder:ENC } = await import(path.join(path.resolve(MO), 'node_modules', 'meshoptimizer', 'meshopt_encoder.module.js')); await ENC.ready;
 const sh = (cmd, a) => execFileSync(cmd, a, { maxBuffer:1 << 26 }).toString().trim();
+const { bakeCopy, saveMap } = await import('./scene-bake.mjs'), HD = path.join(ROOT, 'assets', 'models', 'real', 'hd');
 
 // the source: the newest download whose name holds the spec's substring (an FBX pack or a GLB)
 function source(k){ const L = fs.readdirSync(DL).filter(f => f.includes(SPEC[k].src) && /(_fbx\.zip|\.glb)$/i.test(f)).map(f => ({ f, t:fs.statSync(path.join(DL, f)).mtimeMs })).sort((a, b) => b.t - a.t);
@@ -116,12 +122,18 @@ function weld(pos, nrm, uv, index){ const n = index ? index.length : pos.length 
   const p = new Float32Array(u * 3), q = new Float32Array(u * 3), t = new Float32Array(u * 2);
   for(let v = 0; v < u; v++){ const c = first[v]; p.set(pos.subarray(c * 3, c * 3 + 3), v * 3); q.set(nrm.subarray(c * 3, c * 3 + 3), v * 3); t.set(uv.subarray(c * 2, c * 2 + 2), v * 2); }
   return { pos:p, nrm:q, uv:t, idx:Uint32Array.from(map) }; }
+// Z424 a weld by position alone: the shape without its charts, for a copy whose maps are baked anew
+function weldPos(pos, idx){ const n = pos.length / 3, P = new Uint32Array(pos.buffer, pos.byteOffset, pos.length); let cap = 1; while(cap < n * 2) cap *= 2; const tab = new Int32Array(cap).fill(-1), first = new Int32Array(n), map = new Int32Array(n); let u = 0;
+  for(let v = 0; v < n; v++){ let h = 2166136261; for(let k = 0; k < 3; k++) h = Math.imul(h ^ P[v * 3 + k], 16777619); let s = (h >>> 0) & (cap - 1);
+    for(;;){ const e = tab[s]; if(e < 0){ tab[s] = u; first[u] = v; map[v] = u++; break; } const d = first[e]; if(P[d * 3] === P[v * 3] && P[d * 3 + 1] === P[v * 3 + 1] && P[d * 3 + 2] === P[v * 3 + 2]){ map[v] = e; break; } s = (s + 1) & (cap - 1); } }
+  const p = new Float32Array(u * 3); for(let w = 0; w < u; w++) p.set(pos.subarray(first[w] * 3, first[w] * 3 + 3), w * 3);
+  const I = new Uint32Array(idx.length); for(let i = 0; i < idx.length; i++) I[i] = map[idx[i]]; return { pos:p, nrm:new Float32Array(u * 3), uv:new Float32Array(u * 2), idx:I }; }
 function compact(G, idx){ const remap = new Int32Array(G.pos.length / 3).fill(-1); let n = 0; const out = new Uint32Array(idx.length);
   for(let i = 0; i < idx.length; i++){ let r = remap[idx[i]]; if(r < 0) r = remap[idx[i]] = n++; out[i] = r; }
   const p = new Float32Array(n * 3), q = new Float32Array(n * 3), t = new Float32Array(n * 2);
   for(let v = 0; v < remap.length; v++){ const r = remap[v]; if(r < 0) continue; p.set(G.pos.subarray(v * 3, v * 3 + 3), r * 3); q.set(G.nrm.subarray(v * 3, v * 3 + 3), r * 3); t.set(G.uv.subarray(v * 2, v * 2 + 2), r * 2); }
   return { pos:p, nrm:q, uv:t, idx:out }; }
-window._conv = async (url, fbx, levels) => {
+window._conv = async (url, fbx, levels, tex) => {
   const root = fbx ? await new FBXLoader().loadAsync(url) : (await new GLTFLoader().loadAsync(url)).scene; root.updateMatrixWorld(true);
   const parts = []; root.traverse(o => { if(!o.isMesh) return; let g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); if(!g.attributes.normal) g.computeVertexNormals();
     if(!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); parts.push(g); });
@@ -131,23 +143,30 @@ window._conv = async (url, fbx, levels) => {
     for(let i = 0; i < n; i++, o++){ const v = I ? I.getX(i) : i; pos[o * 3] = P.getX(v); pos[o * 3 + 1] = P.getY(v); pos[o * 3 + 2] = P.getZ(v); nrm[o * 3] = N.getX(v); nrm[o * 3 + 1] = N.getY(v); nrm[o * 3 + 2] = N.getZ(v);
       uv[o * 2] = U.getX(v); uv[o * 2 + 1] = fbx ? 1 - U.getY(v) : U.getY(v); } g.dispose(); }   // (FBX UVs start bottom-left, glTF's top-left)
   const G = weld(pos, nrm, uv, null), S = await MS, res = [];
-  let near = 0;
-  for(const L of levels){ let idx = G.idx, t = L.tris;
+  let near = 0, PW = null;
+  for(const L of levels){ let idx = G.idx, t = L.tris, bake = false;
     if(L.share){ if(near < L.skip) continue; t = Math.max(L.min, Math.round(near * L.share)); }   // (the mid / far copies follow the near one; a light model has none)
-    if(t && t * 3 < idx.length){ [idx] = S.simplify(G.idx, G.pos, 3, Math.floor(t) * 3, L.err, L.loose ? ['Permissive'] : []);
-      if(L.loose && idx.length > t * 4.5){ const n = Math.floor(t) * 3, sl = S.simplifySloppy.length >= 6 ? S.simplifySloppy(G.idx, G.pos, 3, null, n, 1) : S.simplifySloppy(G.idx, G.pos, 3, n, 1);   /* Z420 meshoptimizer 0.25 takes a vertex lock before the target */ idx = Array.isArray(sl) ? sl[0] : sl; } }   // (foliage: a cloud of leaf islands no seam-locked collapse can thin — far off, a smeared leaf is still green) if(L.name === 'd') near = idx.length / 3;
+    if(t && t * 3 < idx.length){ const n = Math.floor(t) * 3, sloppy = (I, P) => { const sl = S.simplifySloppy.length >= 6 ? S.simplifySloppy(I, P, 3, null, n, 1) : S.simplifySloppy(I, P, 3, n, 1); return Array.isArray(sl) ? sl[0] : sl; };   // (Z420 meshoptimizer 0.25 takes a vertex lock before the target)
+      [idx] = S.simplify(G.idx, G.pos, 3, n, L.err, L.loose ? ['Permissive'] : []);   // the seams locked: no triangle ever spans two charts
+      if(L.loose && idx.length > t * 4.5) idx = sloppy(G.idx, G.pos);   // (foliage: a cloud of leaf islands no seam-locked collapse can thin — far off, a smeared leaf is still green)
+      else if(!L.loose && L.bake && tex && idx.length > n * 1.3){ PW = PW || weldPos(G.pos, G.idx); [idx] = S.simplify(PW.idx, PW.pos, 3, n, 1, []); if(idx.length > n * 1.3) idx = sloppy(PW.idx, PW.pos); bake = true; } }   // Z424 its maps baked anew
     if(L.name === 'd') near = Math.min(idx.length / 3, L.base || Infinity);   // (Z392 the mid / far copies follow lodBase when the near scan is heavier)
-    const C = compact(G, idx), body = new Blob([C.pos, C.nrm, C.uv, C.idx]);
-    await fetch('/put?lvl=' + L.name + '&nv=' + (C.pos.length / 3) + '&ni=' + C.idx.length, { method:'POST', body }); res.push({ lvl:L.name, tris:C.idx.length / 3 }); }
+    const C = compact(bake ? PW : G, idx), body = new Blob([C.pos, C.nrm, C.uv, C.idx]);
+    await fetch('/put?lvl=' + L.name + '&nv=' + (C.pos.length / 3) + '&ni=' + C.idx.length + (bake ? '&bake=1' : ''), { method:'POST', body }); res.push({ lvl:L.name, tris:C.idx.length / 3, bake }); }
+  if(res.some(x => x.bake)) await fetch('/put?lvl=hi&nv=' + (G.pos.length / 3) + '&ni=' + G.idx.length, { method:'POST', body:new Blob([G.pos, G.nrm, G.uv, G.idx]) });   // the scan, for the bake
   return { srcTris:G.idx.length / 3, welded:G.pos.length / 3, res }; };
 window._ready = true;
 </script>`;
 
+// the index the game reads (render/near-detail.js), rebuilt from what is on disk — as tools/hd-maps.mjs writes it
+function hdIndex(){ const IX = {}; for(const f of fs.readdirSync(HD).filter(f => /\.(webp|glb)$/.test(f)).sort()){ const m = f.match(/^(.+)\.(\d+)\.(\w+)\.webp$/), g = f.match(/^(.+)\.glb$/);
+    if(m) (IX[m[1]] = IX[m[1]] || []).push(m[2] + '.' + m[3]); else if(g) (IX[g[1]] = IX[g[1]] || []).push('geo'); }
+  fs.writeFileSync(path.join(HD, 'index.json'), JSON.stringify(IX, null, 0).replace(/\],/g, '],\n') + '\n'); }
 const got = {}; let cur = null;
 const server = http.createServer((q, r) => { const u = new URL(q.url, 'http://x');
   if(u.pathname === '/page.html'){ r.writeHead(200, { 'content-type':'text/html' }); return r.end(PAGE); }
   if(u.pathname === '/put'){ const ch = []; q.on('data', d => ch.push(d)); q.on('end', () => { const b = Buffer.concat(ch), nv = +u.searchParams.get('nv'), ni = +u.searchParams.get('ni'), f = (o, n, T) => new T(b.buffer.slice(b.byteOffset + o, b.byteOffset + o + n * T.BYTES_PER_ELEMENT));
-    got[u.searchParams.get('lvl')] = { pos:f(0, nv * 3, Float32Array), nrm:f(nv * 12, nv * 3, Float32Array), uv:f(nv * 24, nv * 2, Float32Array), idx:f(nv * 32, ni, Uint32Array) }; r.end('ok'); }); return; }
+    got[u.searchParams.get('lvl')] = { pos:f(0, nv * 3, Float32Array), nrm:f(nv * 12, nv * 3, Float32Array), uv:f(nv * 24, nv * 2, Float32Array), idx:f(nv * 32, ni, Uint32Array), bake:u.searchParams.get('bake') === '1' }; r.end('ok'); }); return; }
   if(u.pathname.startsWith('/w/') && cur){ const f = path.join(cur, decodeURIComponent(u.pathname.slice(3))); if(f.startsWith(cur) && fs.existsSync(f)){ r.writeHead(200, { 'access-control-allow-origin':'*' }); return fs.createReadStream(f).pipe(r); } }
   r.writeHead(404); r.end(); });
 await new Promise(ok => server.listen(0, '127.0.0.1', ok)); const PORT = server.address().port;
@@ -162,12 +181,20 @@ for(const k of todo){ const S = SPEC[k], t0 = Date.now(); let src;
     const M = maps(/\.glb$/i.test(src) ? path.join(cur, model) : src, path.join(cur, 'tex')), TD = texSet(M, S.tex, path.join(cur, 'tex'), 'd'), TM = texSet(M, 1024, path.join(cur, 'tex'), 'm');
     for(const x in got) delete got[x];
     const page = await browser.newPage(); page.setDefaultTimeout(900000); await page.goto(`http://127.0.0.1:${PORT}/page.html`); await page.waitForFunction(() => window._ready);
-    const r = await page.evaluate(([u, f, L]) => window._conv(u, f, L), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:S.err ?? 0.05, base:S.lodBase, loose:S.looseNear }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose || S.looseMid }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose || S.looseFar }, { name:'m', tris:S.m, err:0.25, loose:S.loose || S.looseFar }]]); await page.close();
-    if(S.out){ const d = writeGLB(path.join(ROOT, 'assets', 'models', 'real', S.out, S.file + '.glb'), turnY(got.d, S.rot), TD, S.file, true);   // Z387 a hand weapon: one plain file where the arsenal lives
-      const line = { key:k, src:path.basename(src), srcTris:r.srcTris, out:S.out + '/' + S.file, d }; report.push(line); console.log(JSON.stringify(line)); fs.rmSync(cur, { recursive:true, force:true }); continue; }
-    const d = writeGLB(path.join(OUT, k + '.glb'), got.d, TD, k), m = writeGLB(path.join(OUT, 'm', k + '.glb'), got.m, TM, k), lv = {};
-    for(const x of ['l', 'f']){ const f = path.join(OUT, x, k + '.glb'); if(got[x]) lv[x] = writeGLB(f, got[x], x === 'l' ? TM : texSet(M, 512, path.join(cur, 'tex'), 'f'), k); else fs.rmSync(f, { force:true }); }
-    const line = { key:k, src:path.basename(src), srcTris:r.srcTris, desktop:d, mid:lv.l, far:lv.f, phone:m, maps:Object.keys(TD).filter(x => TD[x] && x !== 'metal'), s:Math.round((Date.now() - t0) / 1000) };
+    const r = await page.evaluate(([u, f, L, tx]) => window._conv(u, f, L, tx), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:S.err ?? 0.05, base:S.lodBase, bake:!!S.out }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose, bake:true }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose, bake:true }, { name:'m', tris:S.m, err:0.25, loose:S.loose, bake:true }], !!M.color]); await page.close();
+    // Z424 a level as written: its own mesh and maps, or — when baked — the simplified shape on new charts and the maps baked onto them
+    let TB = null; const baked = [], dir = path.join(cur, 'tex');
+    const level = async (x, T, px, hd) => { const L = got[x]; if(!L || !L.bake) return { G:L, T };
+      TB = TB || texSet(M, 4096, dir, 'b'); const B = await bakeCopy(MO, got.hi, L, TB, Math.max(px, hd ? hd.px : 0)), o = { metal:TB.metal };
+      o.color = await saveMap(B.img.color, B.px, path.join(dir, x + 'b_color.jpg'), px, 88); o.normal = await saveMap(B.img.normal, B.px, path.join(dir, x + 'b_normal.jpg'), Math.min(px, 1024), 90);   // (a baked normal past 1K is the scan's noise, not its shape: the near maps keep 2K)
+      if(B.img.mr) o.mr = await saveMap(B.img.mr, B.px, path.join(dir, x + 'b_mr.jpg'), Math.min(px, 2048), 85);
+      if(hd){ fs.mkdirSync(HD, { recursive:true }); await saveMap(B.img.color, B.px, path.join(HD, hd.key + '.0.map.webp'), hd.px, 86, true); await saveMap(B.img.normal, B.px, path.join(HD, hd.key + '.0.nrm.webp'), hd.px, 90, true); hdIndex(); }
+      baked.push({ x, tris:B.G.idx.length / 3, px, atlas:B.atlas, cover:B.cover, s:B.s, ...(hd ? { hd:hd.px } : {}) }); return { G:B.G, T:o }; };
+    if(S.out){ const D = await level('d', TD, S.tex, S.hd), d = writeGLB(path.join(ROOT, 'assets', 'models', 'real', S.out, S.file + '.glb'), turnY(D.G, S.rot), D.T, S.file, true);   // Z387 a hand weapon: one plain file where the arsenal lives
+      const line = { key:k, src:path.basename(src), srcTris:r.srcTris, out:S.out + '/' + S.file, d, ...(baked.length ? { baked } : {}) }; report.push(line); console.log(JSON.stringify(line)); fs.rmSync(cur, { recursive:true, force:true }); continue; }
+    const D = await level('d', TD, S.tex), Mm = await level('m', TM, 1024), d = writeGLB(path.join(OUT, k + '.glb'), D.G, D.T, k), m = writeGLB(path.join(OUT, 'm', k + '.glb'), Mm.G, Mm.T, k), lv = {};
+    for(const x of ['l', 'f']){ const f = path.join(OUT, x, k + '.glb'); if(got[x]){ const V = await level(x, x === 'l' ? TM : texSet(M, 512, dir, 'f'), x === 'l' ? 1024 : 512); lv[x] = writeGLB(f, V.G, V.T, k); } else fs.rmSync(f, { force:true }); }
+    const line = { key:k, src:path.basename(src), srcTris:r.srcTris, desktop:d, mid:lv.l, far:lv.f, phone:m, maps:Object.keys(TD).filter(x => TD[x] && x !== 'metal'), ...(baked.length ? { baked } : {}), s:Math.round((Date.now() - t0) / 1000) };
     report.push(line); console.log(JSON.stringify(line));
   } catch(e){ console.log(JSON.stringify({ key:k, err:String(e && e.stack || e).slice(0, 400) })); }
   if(cur) fs.rmSync(cur, { recursive:true, force:true }); }
