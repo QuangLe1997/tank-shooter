@@ -152,6 +152,7 @@ export function updateTroopBatch(now){
   for(const id in _tbBk) _tbBk[id].n=0;
   camera.updateMatrixWorld(); _tbFr.setFromProjectionMatrix(_tbPM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));   // men off-screen aren't drawn
   for(const r of TROOP_BATCH.roots){ const u=r.userData; if(!u.parts) continue;
+    { let q=r; while(q.parent) q=q.parent; if(q!==scene){ TROOP_BATCH.roots.delete(r); continue; } }   // Z396 a man whose tower / fort went with the old battlefield ('removed' fires only on him): out of the batch, or it held every old field
     let rootShown=tbShown(r); if(rootShown){ r.updateWorldMatrix(true, true); _tbSp.center.setFromMatrixPosition(r.matrixWorld); _tbSp.radius=2.2*(r.scale.x||1)+3; if(!_tbFr.intersectsSphere(_tbSp)) rootShown=false; }
     const hit=(u.flashUntil||0)>now || u.torso.material.emissiveIntensity>0, sh=!MOBILE && u._cs!==false, K=SOLDIER_KIT[u.kitKey], skin=!!(K && K.skin && u.realKit);
     if(skin && rootShown){ const id=u.kitKey+'_body_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig

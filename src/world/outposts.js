@@ -16,6 +16,7 @@ function piece(gl, k, hd){ const id = hd ? k + ':hd' : k; if(PREP[id]) return PR
 // Z311 the concertina coils laid across each outpost's approach: [f, mesh, centre, direction along it, length, flattened]
 export const OUTPOST_WIRE = [];
 export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /nooutpost/.test(location.search + location.hash)) return; const C = OUTPOST;
+  for(let i = OUTPOST_WIRE.length - 1; i >= 0; i--) if(!OUTPOST_WIRE[i].f.g || !OUTPOST_WIRE[i].f.g.parent) OUTPOST_WIRE.splice(i, 1);   // Z396 the last battlefield's coils go (only a ride pruned them: in a tank they held every old fort)
   const ga = Math.atan2((f.oz ?? f.z + 1) - f.z, (f.ox ?? f.x) - f.x), list = [], R = f.R || 30;
   const spot = (a, d) => [Math.cos(a) * d, Math.sin(a) * d];
   const away = a => Math.abs(Math.atan2(Math.sin(a - ga), Math.cos(a - ga))) > C.laneA;

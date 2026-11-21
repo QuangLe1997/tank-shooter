@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CORE_DEF, TROOPS } from '../../config.js';
-import { clearGifts, AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PROFILE, S, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildUnderground, bullets,  clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, deployOwnedDrone, deployRiders, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, MODES, __set_MODE, openBattleSetup } from '../hub.js';
+import { gpuHeld, gpuRelease, clearGifts, AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PROFILE, S, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildUnderground, bullets,  clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, deployOwnedDrone, deployRiders, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, MODES, __set_MODE, openBattleSetup } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 export function loadoutGuns(){
@@ -14,6 +14,7 @@ export function loadoutGuns(){
 // Z119 from the menus: put the DEPLOYING veil up, let it paint, then build the world (it used to freeze on the menu)
 export function launchGame(arg){ showVeil(true); requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } })); }
 export function startGame(arg){
+  const held=gpuHeld();   // Z396 what the old battlefield holds on the GPU, released once the new one stands
   try{ audio(); engineStart(); preloadVoices(['open', 'streak', ...VOICE_RULES.map(r=>r[1]), 'x_scream', 'x_cheer', 'f_rally_1', 'f_rally_2', 'f_rally_3']); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
   let cfg = (arg && typeof arg==='object' && arg.mode) ? arg : null;
@@ -55,7 +56,7 @@ export function startGame(arg){
   core.maxHp=CORE_DEF.hp; core.hp=CORE_DEF.hp; core.shieldReady=0; core.shieldUntil=0;
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
-  applyBiome(stStage); buildBlocks(); clearWrecks(); buildObjective(); buildLava(); buildUnderground();   // Z187 lava pools go in last (clear of forts and cover) · Z225 the tunnels + the cavern
+  applyBiome(stStage); buildBlocks(); clearWrecks(); buildObjective(); buildLava(); buildUnderground(); gpuRelease(held);   // Z187 lava pools go in last (clear of forts and cover) · Z225 the tunnels + the cavern
   updateWeaponHUD(); updateSpellHUD();
   WAVE.active=false; WAVE.betweenUntil=performance.now()/1000 + 0.6; WAVE.spawnQueue.length=0;
   WAVE.event=null; WAVE.eventBanner=null; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false;

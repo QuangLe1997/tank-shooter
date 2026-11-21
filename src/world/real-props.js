@@ -31,5 +31,6 @@ function fitCover(k, gl){
   return { geo:g, mat }; }
 function swapCover(k, geo, mat){
   COVER_GEO[k] = geo; COVER_MAT[k] = mat;
-  for(const m of REAL_COVER.live){ if(m.userData.kind !== k) continue; m.geometry = geo;
+  for(const m of REAL_COVER.live){ let q = m; while(q.parent) q = q.parent; if(q.type !== 'Scene'){ REAL_COVER.live.delete(m); continue; }   // (Z396 a piece gone with its group)
+    if(m.userData.kind !== k) continue; m.geometry = geo;
     const old = m.material; if(old && old.userData && old.userData.own){ const n = mat.clone(); n.userData.own = true; n.color.copy(old.color); m.material = n; } else m.material = mat; } }   // the old material is left to the GC: disposing it mid-compileAsync breaks three's readiness poll

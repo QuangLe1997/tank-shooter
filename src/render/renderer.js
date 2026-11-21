@@ -167,3 +167,10 @@ export function skyEnvTexture(name, A){
   sc.add(new THREE.Mesh(new THREE.SphereGeometry(50,40,20), mat));
   const t=pmrem.fromScene(sc, 0, 0.1, 120).texture; mat.dispose(); _envCache[name]=t; return t;
 }
+// Z396 a battlefield rebuilt leaves nothing on the GPU: what the scene draws now (gpuHeld, taken before the old field is torn down) against what
+//   it draws once the new one stands — the old field's geometries and photo maps no longer drawn are released (gpuRelease). Without it every battle
+//   left ~700 geometries and ~30 maps behind (+50–60 MB a battle, the frame rate sinking battle after battle). Safe to reuse: three uploads a
+//   released one again the next time it is drawn. Never a render target's texture (an environment map has no pixels of its own to upload again).
+const _maps = (m, out) => { for(const k in m){ const t = m[k]; if(t && t.isTexture && !t.isRenderTargetTexture && !t.isVideoTexture && t.image && (t.isDataTexture || t.image.width)) out.add(t); } };
+export function gpuHeld(){ const g = new Set(), t = new Set(); scene.traverse(o => { if(o.geometry) g.add(o.geometry); if(o.material) for(const m of Array.isArray(o.material) ? o.material : [o.material]) _maps(m, t); }); return { g, t }; }
+export function gpuRelease(was){ const now = gpuHeld(); let n = 0; for(const x of was.g) if(!now.g.has(x)){ x.dispose(); n++; } for(const x of was.t) if(!now.t.has(x)){ x.dispose(); n++; } return n; }

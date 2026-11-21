@@ -5,16 +5,18 @@ import { GLOW, GUNS, MOBILE, PAD, S, _v, aheadTarget, aimTarget, barrelFixed, cl
 
 // ----- SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius -----
 export const rockets=[], fuses=[];
+// Z396 one geometry per shape for every rocket / shell: each shot built its own seven and dropped them still on the GPU (+600 a battle)
+const _G={}, G=(C, ...a)=>{ const k=C.name+':'+a.join(','); return _G[k] || (_G[k]=new C(...a)); };
 export function makeRocketMesh(){
   const g=new THREE.Group();
   const hull=new THREE.MeshStandardMaterial({color:0x3c4250,metalness:0.82,roughness:0.32,envMapIntensity:0.9});
-  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.36,2.2,18), hull); g.add(body);                                                   // longer + thicker
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.36,1.0,18), new THREE.MeshStandardMaterial({color:0x1a0d0a,emissive:0xff5a1e,emissiveIntensity:1.9,metalness:0.5,roughness:0.4})); nose.position.y=1.6; g.add(nose);   // glowing warhead
-  const tip=new THREE.Mesh(new THREE.SphereGeometry(0.13,12,10), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffe08a,emissiveIntensity:2.8})); tip.position.y=2.15; g.add(tip);                                  // white-hot tip
-  const band=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,0.34,18), new THREE.MeshStandardMaterial({color:0xffb020,emissive:0xff8a10,emissiveIntensity:0.8,metalness:0.4,roughness:0.5})); band.position.y=0.55; g.add(band);   // glowing hazard band
-  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.39,0.35,0.22,18), new THREE.MeshStandardMaterial({color:0x24262c,metalness:0.7,roughness:0.5})); collar.position.y=-1.0; g.add(collar);
-  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.46,0.07), new THREE.MeshStandardMaterial({color:0x2a2e33,metalness:0.6})); fin.position.y=-1.02; fin.rotation.y=k*1.5708; g.add(fin); }   // 4 swept fins
-  const eng=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.3,0.28,16), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffcaa0,emissiveIntensity:2.2})); eng.position.y=-1.2; g.add(eng);                       // glowing nozzle
+  const body=new THREE.Mesh(G(THREE.CylinderGeometry, 0.34,0.36,2.2,18), hull); g.add(body);                                                   // longer + thicker
+  const nose=new THREE.Mesh(G(THREE.ConeGeometry, 0.36,1.0,18), new THREE.MeshStandardMaterial({color:0x1a0d0a,emissive:0xff5a1e,emissiveIntensity:1.9,metalness:0.5,roughness:0.4})); nose.position.y=1.6; g.add(nose);   // glowing warhead
+  const tip=new THREE.Mesh(G(THREE.SphereGeometry, 0.13,12,10), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffe08a,emissiveIntensity:2.8})); tip.position.y=2.15; g.add(tip);                                  // white-hot tip
+  const band=new THREE.Mesh(G(THREE.CylinderGeometry, 0.38,0.38,0.34,18), new THREE.MeshStandardMaterial({color:0xffb020,emissive:0xff8a10,emissiveIntensity:0.8,metalness:0.4,roughness:0.5})); band.position.y=0.55; g.add(band);   // glowing hazard band
+  const collar=new THREE.Mesh(G(THREE.CylinderGeometry, 0.39,0.35,0.22,18), new THREE.MeshStandardMaterial({color:0x24262c,metalness:0.7,roughness:0.5})); collar.position.y=-1.0; g.add(collar);
+  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(G(THREE.BoxGeometry, 0.6,0.46,0.07), new THREE.MeshStandardMaterial({color:0x2a2e33,metalness:0.6})); fin.position.y=-1.02; fin.rotation.y=k*1.5708; g.add(fin); }   // 4 swept fins
+  const eng=new THREE.Mesh(G(THREE.CylinderGeometry, 0.18,0.3,0.28,16), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffcaa0,emissiveIntensity:2.2})); eng.position.y=-1.2; g.add(eng);                       // glowing nozzle
   const plume =new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe6a0,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); plume.scale.setScalar(2.1);  plume.position.y=-1.7;  g.add(plume);    // bright core flame
   const plume2=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff6a20,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false})); plume2.scale.setScalar(1.4); plume2.position.y=-2.15; g.add(plume2);   // trailing flame
   g.userData.plume=plume; g.userData.plume2=plume2;
@@ -23,10 +25,10 @@ export function makeRocketMesh(){
 // ARC MORTAR shell — a compact glowing round (smaller than the SIEGE rocket); flies the same arc + leaves the same fire trail
 export function makeMortarShell(){
   const g=new THREE.Group();
-  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.22,0.82,14), new THREE.MeshStandardMaterial({color:0x3e4636,metalness:0.78,roughness:0.4})); g.add(body);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.5,14), new THREE.MeshStandardMaterial({color:0x120a08,emissive:0xffb020,emissiveIntensity:1.7,metalness:0.5,roughness:0.4})); nose.position.y=0.64; g.add(nose);
-  const band=new THREE.Mesh(new THREE.CylinderGeometry(0.235,0.235,0.16,14), new THREE.MeshStandardMaterial({color:0xffc24a,emissive:0xff9a18,emissiveIntensity:0.7,metalness:0.4,roughness:0.5})); band.position.y=0.16; g.add(band);   // glowing band
-  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.24,0.04), new THREE.MeshStandardMaterial({color:0x2a2e26,metalness:0.6})); fin.position.y=-0.42; fin.rotation.y=k*1.5708; g.add(fin); }
+  const body=new THREE.Mesh(G(THREE.CylinderGeometry, 0.2,0.22,0.82,14), new THREE.MeshStandardMaterial({color:0x3e4636,metalness:0.78,roughness:0.4})); g.add(body);
+  const nose=new THREE.Mesh(G(THREE.ConeGeometry, 0.22,0.5,14), new THREE.MeshStandardMaterial({color:0x120a08,emissive:0xffb020,emissiveIntensity:1.7,metalness:0.5,roughness:0.4})); nose.position.y=0.64; g.add(nose);
+  const band=new THREE.Mesh(G(THREE.CylinderGeometry, 0.235,0.235,0.16,14), new THREE.MeshStandardMaterial({color:0xffc24a,emissive:0xff9a18,emissiveIntensity:0.7,metalness:0.4,roughness:0.5})); band.position.y=0.16; g.add(band);   // glowing band
+  for(let k=0;k<4;k++){ const fin=new THREE.Mesh(G(THREE.BoxGeometry, 0.3,0.24,0.04), new THREE.MeshStandardMaterial({color:0x2a2e26,metalness:0.6})); fin.position.y=-0.42; fin.rotation.y=k*1.5708; g.add(fin); }
   const ex=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffd27a,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false})); ex.scale.setScalar(1.15); ex.position.y=-0.62; g.add(ex);
   g.userData.plume=ex; g.userData.plume2=ex;
   return g;

@@ -1,6 +1,6 @@
 // loot/upgrades.js — ROGUELITE UPGRADES (pick 1 of 3 after each boss)
 import { OBJECTIVES, TROOPS } from '../../config.js';
-import { BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildUnderground, clearRelic, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, parkAtSpawn, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD, blendWhenReady, scene, MODE, soldierStagePerks } from '../hub.js';
+import { gpuHeld, gpuRelease, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, __set_ridersUnlocked, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildUnderground, clearRelic, clearSoldiers, clearWrecks, conditionsText, core, crewTarget, deployOwnedDrone, deployRiders, deploySoldiers, floatText, fmtP, guardTarget, hide, iconEl, opFor, openBriefing, parkAtSpawn, pickGain, rebuildCore, ridersUnlocked, sfx, show, showBanner, updateHUD, updateWeaponHUD, blendWhenReady, scene, MODE, soldierStagePerks } from '../hub.js';
 
 // ===== ROGUELITE UPGRADES (pick 1 of 3 after each boss) =====
 export const UPGRADES = [
@@ -55,9 +55,9 @@ export function chooseUpgrade(u){
   clearRelic();   // Z154 last stage's relic power ends with it
   u.apply(S.player); sfx('powerup'); updateHUD();
   hide('upgrade');
-  parkAtSpawn();   // Z180 the new battlefield is built around our spawn: whoever won the last stage inside a fort must not wake up inside the next one's walls
+  parkAtSpawn(); const held=gpuHeld();   // Z396 what the last battlefield holds on the GPU · Z180 the new battlefield is built around our spawn: whoever won the last stage inside a fort must not wake up inside the next one's walls
   applyBiome(S.stage); buildBlocks(); clearWrecks(); buildObjective(); buildLava(); buildUnderground();   // Z187 · Z225
-  rebuildCore(S.stage);                  // grander monument for the new stage (preserves max HP, heals to full)
+  rebuildCore(S.stage); gpuRelease(held);   // grander monument for the new stage (preserves max HP, heals to full) · Z396 then the last battlefield's geometries and maps off the GPU
   blendWhenReady(scene);                 // Z325 the new battlefield's buildings and models graded into its colours while the briefing is up
   clearSoldiers(); deploySoldiers(guardTarget()); deployOwnedDrone();   // fresh guard squad + relaunch owned escort drone each stage
   if(S.stage>=TROOPS.ridersFrom && !ridersUnlocked){ __set_ridersUnlocked(true); deployRiders(crewTarget()); if(S.player) floatText('KÍP LÍNH ĐÃ LÊN XE', '#9bd14a', S.player.pos, 18); }   // crew mount the tank from Stage 3 (base + TANK CREW upgrade)

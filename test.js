@@ -1444,6 +1444,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/sceneLevel\('radar_dish', MOBILE \? 'm' : C\.lv\)/.test(sc), 'phones draw the radar from the light copy');
   ok(/\['meshy','tripo'\]\.some/.test(R('tools/stage-offline.mjs')), 'the app bundles leave out the raw Tripo downloads'); }
 
+// Z396 a battlefield rebuilt releases the old one: geometries / maps off the GPU, rockets share their shapes, no list keeps an old field alive
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), rd=R('src/render/renderer.js'), fl=R('src/game/flow.js'), up=R('src/loot/upgrades.js'), sr=R('src/combat/siege-rocket.js'), so=R('src/actors/soldiers.js'), op=R('src/world/outposts.js'), rp=R('src/world/real-props.js');
+  ok(/export function gpuHeld\(\)/.test(rd) && /export function gpuRelease\(was\)/.test(rd) && /!t\.isRenderTargetTexture/.test(rd), 'what the scene drew before and after a rebuild compared, the rest released (never a render target\'s texture)');
+  ok(/const held=gpuHeld\(\);/.test(fl) && /buildUnderground\(\); gpuRelease\(held\);/.test(fl) && fl.indexOf('const held=gpuHeld()') < fl.indexOf('applyBiome(stStage)'), 'a new battle releases the last battlefield');
+  ok(/parkAtSpawn\(\); const held=gpuHeld\(\);/.test(up) && /rebuildCore\(S\.stage\); gpuRelease\(held\);/.test(up), 'so does the next stage');
+  ok(/const _G=\{\}, G=\(C, \.\.\.a\)=>/.test(sr) && !/new THREE\.\w+Geometry/.test(sr.slice(sr.indexOf('export function makeRocketMesh'), sr.indexOf('// dedicated ENEMY ARTILLERY'))), 'rockets and mortar shells share one geometry per shape');
+  ok(/while\(q\.parent\) q=q\.parent; if\(q!==scene\)\{ TROOP_BATCH\.roots\.delete\(r\); continue; \}/.test(so), 'a man gone with his fort leaves the troop batch');
+  ok(/if\(!OUTPOST_WIRE\[i\]\.f\.g \|\| !OUTPOST_WIRE\[i\]\.f\.g\.parent\) OUTPOST_WIRE\.splice\(i, 1\)/.test(op) && /REAL_COVER\.live\.delete\(m\)/.test(rp), 'the old field\'s wire coils and cover leave their lists'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
