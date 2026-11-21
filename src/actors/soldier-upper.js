@@ -6,7 +6,8 @@
 //   · his head holds steady: every turn added to the trunk is taken back at the neck, so the eyes stay on the target while the body moves under them;
 //   · the rifle has weight: it lags the chest's accelerations on a spring (a dip at each footfall, a drop on landing from a jump, a sway starting
 //     off) and its muzzle traces a small figure of eight with the stride — less while he fires; the rounds still go where he aims;
-//   · climbing on or off a ride he looks at what his left hand takes hold of (actors/soldier-mount.js).
+//   · climbing on or off a ride he looks at what his left hand takes hold of (actors/soldier-mount.js);
+//   · Z368 running he holds himself up: a runner's lean, not the clip's crouch, and his eyes on the way ahead.
 import * as THREE from 'three';
 import { SOLDIER_UPPER } from '../../config.js';
 import { CV, LEGKIT, S, turnBone } from '../hub.js';
@@ -45,6 +46,16 @@ export function soldierUpper(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; 
   if(Math.abs(roll) > 1e-5){ turnBone(D.Spine, FA, roll * 0.6); turnBone(D.Spine1, FA, roll * 0.4); }
   if(Math.abs(yaw) > 1e-5){ turnBone(D.Spine1, UP, yaw * 0.5); turnBone(D.Spine2, UP, yaw * 0.5); }
   if(D.Neck){ const g = K.gaze; turnBone(D.Neck, RA, pitch * g); turnBone(D.Neck, FA, -roll * g); turnBone(D.Neck, UP, -yaw * g); }
+  // Z368 RUNNING TALL: the run clips (a combat crouch-run, a charge) fold him ~28° forward with his head hung over the gun — eyes on the ground at his
+  //   feet. On his feet and moving, not firing, his trunk is brought back to a runner's lean (more the faster he goes) and his head lifted until it
+  //   tips forward no more than a little: eyes on the way ahead (the head's own up axis — neck to crown — read, not any one rig's face axis)
+  { const RN = K.run, spd = Math.hypot(pv ? pv.x : 0, pv ? pv.z : 0), want = onFoot && mode !== 'kneel' && !S.firing ? clamp((spd - RN.from) / RN.span, 0, 1) : 0;
+    U.run = (U.run || 0) + (want - (U.run || 0)) * Math.min(1, dt * RN.rate);
+    if(U.run > 0.01 && D.Hips && D.Head && D.HeadTop_End){ const lean = RN.lean[0] + (RN.lean[1] - RN.lean[0]) * clamp((spd - RN.v[0]) / (RN.v[1] - RN.v[0]), 0, 1);
+      D.Hips.getWorldPosition(_a); D.Neck.getWorldPosition(_c); _c.sub(_a).normalize(); const fix = (Math.atan2(_c.dot(FA), _c.y) - lean) * U.run;   // (how far past a runner's lean)
+      if(fix > 0){ turnBone(D.Spine, RA, fix * 0.4); turnBone(D.Spine1, RA, fix * 0.35); turnBone(D.Spine2, RA, fix * 0.25); }   // (about his right: back is +)
+      D.Head.getWorldPosition(_a); D.HeadTop_End.getWorldPosition(_c); _c.sub(_a).normalize(); const lift = (Math.atan2(_c.dot(FA), _c.y) - RN.tilt) * U.run;   // (how far his head hangs)
+      if(lift > 0){ turnBone(D.Neck, RA, lift * RN.neck); turnBone(D.Head, RA, lift * (1 - RN.neck)); } } }
   // ---- the rifle's weight: a spring that lags the chest (a dip at each footfall, a drop on landing), the muzzle's figure of eight walking ----
   const G2 = K.gun, dz = a => Math.sign(a) * Math.max(0, Math.abs(a) - G2.dead);   // (a nudge under `dead` m/s² is not felt)
   for(const ax of ['x', 'y', 'z']){ U.lagV[ax] += (-G2.k * U.lag[ax] - G2.c * U.lagV[ax] - dz(U.a[ax]) * G2.m) * dt; U.lag[ax] += U.lagV[ax] * dt; }

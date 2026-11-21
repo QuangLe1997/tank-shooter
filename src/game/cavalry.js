@@ -83,7 +83,8 @@ export function updateCavalry(dt, now){
     // on foot: run where you push; crouch / prone slow you right down; the body turns to the aim when firing or standing
     if(MOBILE){ const mv0=Math.hypot(p.vel.x, p.vel.z); CV.still = mv0<0.25 ? CV.still+dt : 0; if(CV.want!=='prone') CV.want = CV.still>1.2 ? 'crouch' : 'stand'; }   // phones: he kneels by himself when he stops
     if(CV.want!==CV.stance) CV.stance=CV.want; footStance(p, dt, now);   // Z336 behind cover he goes down on a knee
-    const F=CAV.foot, sprint=(now<CV.sprintUntil || heldAction('sprint') && !S.firing) && CV.stance==='stand', sp=(CV.stance==='prone'?F.crawl:CV.stance==='crouch'?F.crouch:(sprint?F.sprint:S.firing?F.fire:F.run))*p.speedMul*wade;   // Z304 a man's pace: a jog with the rifle, a sprint, a walk while he fires
+    CV.moveT = inp>0.1 && CV.stance==='stand' ? (CV.moveT||0)+dt : 0;   // Z368 how long he has been pushing on: a walk as he sets off, the key held and he runs
+    const F=CAV.foot, sprint=(now<CV.sprintUntil || heldAction('sprint') && !S.firing) && CV.stance==='stand', sp=(CV.stance==='prone'?F.crawl:CV.stance==='crouch'?F.crouch:(sprint?F.sprint:S.firing?F.fire:CV.moveT<F.walkT?F.walk:F.run))*p.speedMul*wade;   // Z304 a man's pace: a run with the rifle, a sprint, a walk while he fires
     let mx=0, mz=0; if(tankCtl){ const f=p.facing+TI.turn*2.8*dt; p.facing=wrapA(f); mx=Math.sin(p.facing)*TI.thr; mz=Math.cos(p.facing)*TI.thr; } else if(inp>0.1){ mx=dir.x; mz=dir.z; }
     const tvx=mx*sp, tvz=mz*sp, dvx=tvx-p.vel.x, dvz=tvz-p.vel.z, dv=Math.hypot(dvx,dvz), acc=(Math.hypot(tvx,tvz)>Math.hypot(p.vel.x,p.vel.z)?F.accel:F.decel)*dt, ak=dv>acc?acc/dv:1; p.vel.x+=dvx*ak; p.vel.z+=dvz*ak;   // Z304 he takes a few strides to get going, and pulls up quicker
     const mv=Math.hypot(p.vel.x, p.vel.z), face = (S.firing||mv<0.4||CV.stance==='prone'&&mv<0.2) ? p.aimSmoothed : Math.atan2(p.vel.x, p.vel.z);

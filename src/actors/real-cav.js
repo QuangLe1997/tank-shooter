@@ -188,7 +188,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   const lead = clamp(dyw - hy - (R.tw || 0), -0.65, 0.65) * (1 - low);   // (_gu is still his up)
   turnBone(D.Neck, _gu, lead * 0.45); turnBone(D.Head, _gu, lead * 0.55);
   if(airP != null){ const up = Math.max(0, pitch * AIRPOSE.sight - (R.lean || 0) - rc.a) * (1 - low); turnBone(D.Neck, _gr, up * AIRPOSE.neck); turnBone(D.Head, _gr, up * (1 - AIRPOSE.neck)); }   // Z326 cheek to the stock: head and neck tip back to sight along the barrel
-  else turnBone(D.Head, _gr, (pitch - rc.a) * 0.55 * (1 - low));
+  else turnBone(D.Head, _gr, (pitch - rc.a + (R.rdy || 0) * REALCAV.ready[1]) * 0.55 * (1 - low));   // (Z368 not the low-ready drop: the muzzle down, his eyes ahead)
   if(D.Head){ _gt.crossVectors(_gu, _gw.set(0, 1, 0)); const sn = _gt.length(); if(sn > 1e-4) turnBone(D.Head, _gt.normalize(), Math.asin(Math.min(1, sn)) * 0.65); }
   return true; }
 // Z335 OVER THE DRIVER'S SHOULDER: sat on the pillion behind the driver, a gun laid ahead (within fw of straight ahead, eased in) is carried at the height of the
@@ -318,7 +318,7 @@ export function updateRealCav(CV, dt, P){
   //   back the long way round the front (faster, `swing`), never right round. On the horse his legs stay along its flanks as his hips turn.
   const seated = mounted && bike && !stand, braced = mounted && bike && stand, sat = mounted && !stand, RT = RIDER_TURN; if(R.opRY == null) R.opRY = R.op.rotation.y;
   const ready = (!mounted && !P.trans && fv > C.ready[0] && !S.firing) || !!(P.trans && CV.trans && !CV.trans.crash && R.pup) || !!R.sprDev; R.rdy = (R.rdy || 0) + ((ready ? 1 : 0) - (R.rdy || 0)) * Math.min(1, dt * 5);
-  { const spr = !mounted && !P.trans && fv > C.gaitAt[1] && !S.firing && !(P.move && (P.move.roll >= 0 || P.move.air)); R.spr = (R.spr || 0) + (((R.sprDev ?? spr) ? 1 : 0) - (R.spr || 0)) * Math.min(1, dt * GUNFIT.carry.rate); }   // Z360 at a sprint: the gun across his chest (R.sprDev: the pose studio's)   // Z304 running and not shooting: eyes and muzzle where he runs
+  { const spr = !mounted && !P.trans && fv > (C.carryAt ?? C.gaitAt[1]) && !S.firing && !(P.move && (P.move.roll >= 0 || P.move.air)); R.spr = (R.spr || 0) + (((R.sprDev ?? spr) ? 1 : 0) - (R.spr || 0)) * Math.min(1, dt * GUNFIT.carry.rate); }   // Z360 at a sprint: the gun across his chest (R.sprDev: the pose studio's)   // Z304 running and not shooting: eyes and muzzle where he runs
   const raw = (P.twist || 0) * (1 - R.rdy);
   R.tu = R.tu == null ? raw : R.tu + Math.atan2(Math.sin(raw - R.tu), Math.cos(raw - R.tu)); const TAU = Math.PI * 2;
   if(!braced){ const L = Math.PI + (sat ? RT.flip : C.flip); if(R.tu > L) R.tu -= TAU; else if(R.tu < -L) R.tu += TAU; }   // sat, he can't turn past his back: well past it, he comes round the front

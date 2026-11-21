@@ -741,7 +741,7 @@ export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·
 //   mountR = reach to climb back on · call = the horse trots to your whistle at this speed · trample: galloping over infantry · recoilK = recoil × (no tank to soak it)
 export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.2, surgeAccel:6.5, decel:6.5, turnLow:2.6, turnHigh:1.05 }, surge:{ dur:5, cd:7 },
-  foot:{ run:3.4, sprint:5.8, fire:1.9, crouch:1.6, crawl:0.7, accel:7, decel:11, sprintDur:3, sprintCd:4 },
+  foot:{ walk:1.5, walkT:0.55, run:4.8, sprint:6.2, fire:1.9, crouch:1.6, crawl:0.7, accel:7, decel:11, sprintDur:3, sprintCd:4 },   // Z368 a walk as he sets off; the key held walkT s and he runs
   // Z336 on his feet (game/soldier-moves.js): jump = take-off m/s, fall m/s², the landing's give s · roll = how long the roll lasts s, its speed m/s, how hard he is
   //   to hit going over (defK), cooldown s, its pivot height and how low it goes m, the kneel after it s · cover = how far ahead along his aim (probe points m) a
   //   block counts, its height band [min, max] m (up to kneel he kneels behind it), how slow he must be m/s (REALCAV.cv: the rifle laid rest m over its top, raised at most restMax)
@@ -1048,9 +1048,12 @@ export const POSE_STUDIO = { ok:{ palm:4, stretch:0.995 }, settle:{ equip:0.6, s
 //   the upper back proud of it by chest, how much of the way (k)
 export const SOLDIER_UPPER = { velK:8, accK:5, accMax:25, reset:0.6, lean:0.03, leanSide:0.025, leanMax:0.14, stance:0.2, leanK:45, leanZ:0.55, twist:0.06, sway:0.035,
   breath:0.012, breathHz:0.25, gaze:0.85, gun:{ k:90, c:11, m:0.8, dead:1.2, max:0.028, kick:0.05, yaw:0.012, pitch:0.008, fire:0.35 },
-  head:{ steady:0.6, rate:12, snap:0.9 }, seat:{ lean:0.05, pace:0.14, fast:12, chest:0.07, k:0.9 } };
+  head:{ steady:0.6, rate:12, snap:0.9 }, seat:{ lean:0.05, pace:0.14, fast:12, chest:0.07, k:0.9 },
+  // Z368 running tall (on his feet, moving, not firing; weighed in from m/s over span m/s at rate): the trunk brought back to a runner's lean (rad,
+  //   [slow, at speed] between v m/s), the head lifted till it tips forward no more than tilt rad — eyes on the way ahead, not his boots
+  run:{ from:1.0, span:0.8, rate:6, lean:[0.1, 0.24], v:[1.5, 6], tilt:0.12, neck:0.45 } };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
-  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.6, 0.55], gaitAt:[2.3, 4.4], twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
+  horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.0, 0.35], gaitAt:[2.3, 4.0], carryAt:5.4, twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z340 TURNED ROUND IN THE SADDLE (actors/real-cav.js, combat/soldier-fire.js): sat on the horse or a pillion his hips and chest together turn up to `max`
 //   either way from the mount's heading (rad, ~170°: nearly all the way round, never right round); hip = how far the hips swing on the horse's saddle
 //   (the chest twists the rest; a pillion keeps REALCAV.seatTurn[1]); flip = how far past straight behind the aim must be before he swings back the
