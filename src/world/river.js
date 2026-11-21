@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVERS } from '../../config.js';
-import { ARENA, HF, MODEL_FILES, MOBILE, RIVER, RIVER_FMAX, WET_U, WTIME, _heightToNormal, arena, depthTex, loadGLTF, propTex } from '../hub.js';
+import { ARENA, HF, MODEL_FILES, MOBILE, RIVER, RIVER_FMAX, WET_U, WTIME, _heightToNormal, arena, depthTex, fieldDepth, loadGLTF, propTex, wadeAt } from '../hub.js';
 
 const smooth = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 // where a polyline is at share u of its points: position, the downstream direction
@@ -30,7 +30,7 @@ function ford(h, L, u, M){ const p = lineAt(L.pts, u), len = RIVERS.fordLen, y =
     const stones = (Math.sin(dx * 2.3 + dz * 0.7) * Math.sin(dz * 2.9 - dx * 1.1)) * 0.07;   // the run is lumpy with stones
     if(h[k] < y + stones) h[k] = h[k] + (y + stones - h[k]) * f;
     if(RIVER.flow){ RIVER.flow[k * 2] *= 1 + 0.6 * f; RIVER.flow[k * 2 + 1] *= 1 + 0.6 * f; } M[k] = Math.max(M[k], Math.round(115 * f)); }
-  RIVER.fords.push({ x:p.x, z:p.z, r:L.w * 1.2, line:L }); }
+  RIVER.fords.push({ x:p.x, z:p.z, r:L.w * 1.2, line:L, ax:-p.tz, az:p.tx, e:L.w * 1.6 + RIVERS.route.margin }); }   // (Z415 ax / az: across the channel · e: from its centre to dry land each side)
 // Z405 the battlefield's river (none where config RIVERS has no entry): main west ↔ east across the enemy half, the stream in from the enemy's edge on one flank
 export function carveRivers(h, b){
   RIVER.on = false; RIVER.bridges.length = 0; RIVER.fords.length = 0; RIVER.lines.length = 0; RIVER.w.length = 0; RIVER.ice = null; RIVER.flow = null; RIVER.mark = null; RIVER.biome = b.name;
@@ -128,3 +128,28 @@ function bridgeModel(g){ const B = RIVERS.bridge; if(!B.model) return; MODEL_FIL
     if(!B.keepDeck) for(const o of g.children) if(o.userData.planks) o.visible = false; }), 0); }
 // wave the water (called every frame): time for the ripples, the flood's water level for the water and the wet banks
 export function updateWater(dt){ WTIME.value += dt; if(RIVER.on && RIVER.mesh && RIVER.mesh.visible){ RIVER.mesh.material.userData.u.uWY.value = RIVER.y; WET_U.k.value.x = RIVER.y; } }
+// ---- Z415 THE ENEMY AT THE RIVER: a unit making for (tx, tz) whose straight way runs through the deep channel goes round by the best crossing — a bridge
+//   or a ford (on to its near end, over, off the far end); one already wading carries on across. Returns the unit direction to steer by, or null (go straight).
+//   The way is looked at again every RIVERS.route.every s (and when the goal moves), never every frame. ----
+function deepOnWay(x0, z0, x1, z1){ const K = RIVERS.wade.deep, L = Math.hypot(x1 - x0, z1 - z0), n = Math.min(160, Math.ceil(L / RIVERS.route.step));
+  for(let k = 1; k < n; k++){ const t = k / n; if(wadeAt(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t) <= K) return true; } return false; }
+function crossings(){ const C = [];
+  for(const b of RIVER.bridges) C.push({ x:b.x, z:b.z, ax:b.ca, az:b.sa, e:b.hl + RIVERS.route.margin, w:b.hw - 0.8 });
+  for(const f of RIVER.fords) if(!f.line.ice) C.push({ x:f.x, z:f.z, ax:f.ax, az:f.az, e:f.e, w:f.r });
+  return C; }
+function wayOver(x, z, tx, tz){ let best = null, bc = 1e9;
+  for(const c of crossings()){ const g = (tx - c.x) * c.ax + (tz - c.z) * c.az >= 0 ? 1 : -1, ax = c.ax * g, az = c.az * g, s = (x - c.x) * ax + (z - c.z) * az;   // its axis turned towards the goal's bank
+    const nx = c.x - ax * c.e, nz = c.z - az * c.e, fx = c.x + ax * c.e, fz = c.z + az * c.e; if(fieldDepth(nx, nz) < 2 || fieldDepth(fx, fz) < 2) continue;   // (its ends must be inside the fence)
+    const cost = (s > -c.e ? Math.hypot(fx - x, fz - z) : Math.hypot(nx - x, nz - z) + 2 * c.e) + Math.hypot(tx - fx, tz - fz) + (s > c.e - 1 ? 400 : 0);   // (one that does not lie between them: last resort)
+    if(cost < bc){ bc = cost; best = { c, ax, az, pts:[{ x:nx, z:nz }, { x:fx, z:fz }] }; } }
+  return best; }
+export function riverWay(u, tx, tz, now){
+  if(!RIVER.on || !(RIVER.bridges.length || RIVER.fords.length)) return null;
+  const R = u.rw || (u.rw = { t:0, w:null, i:0, tx:0, tz:0 }), x = u.pos.x, z = u.pos.z, Q = RIVERS.route;
+  if(now >= R.t || (tx - R.tx) ** 2 + (tz - R.tz) ** 2 > 64){ R.t = now + Q.every * (0.8 + Math.random() * 0.4); R.tx = tx; R.tz = tz;
+    R.w = wadeAt(x, z) > RIVERS.wade.deep && deepOnWay(x, z, tx, tz) ? wayOver(x, z, tx, tz) : null; R.i = 0;
+    if(R.w){ const c = R.w.c, s = (x - c.x) * R.w.ax + (z - c.z) * R.w.az, lat = Math.abs((x - c.x) * -R.w.az + (z - c.z) * R.w.ax); if(s > -c.e + Q.reach && lat < c.w + 1.5) R.i = 1; } }   // already on the crossing: on to its far end
+  const W = R.w; if(!W) return null;
+  while(R.i < 2 && Math.hypot(W.pts[R.i].x - x, W.pts[R.i].z - z) < Q.reach) R.i++;
+  if(R.i >= 2){ R.w = null; return null; }
+  const p = W.pts[R.i], dx = p.x - x, dz = p.z - z, L = Math.hypot(dx, dz) || 1; return { x:dx / L, z:dz / L }; }

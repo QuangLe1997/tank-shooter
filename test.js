@@ -1522,6 +1522,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.SHADOWLOD.on && C.SHADOWLOD.min>0 && C.SHADOWLOD.keep>0 && C.SHADOWLOD.keep<1 && /export function shadowLOD\(renderer\)/.test(fl) && /shadowLOD\(renderer\);/.test(rd) && /worn\[i\]\.geometry = worn\[i \+ 1\]/.test(fl) && /isInterleavedBufferAttribute\)\{ const f = new Float32Array/.test(fl), 'Z412 the shadow pass wears light copies and gives the geometry back');
   ok(C.SCENERY.supply.radar.lv==='l', 'Z412 the radar dish is drawn from its mid level'); }
 
+// Z415 the enemy goes round the river by a bridge or a ford and wades slowly; the fence stops at the river banks
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), rv=R('src/world/river.js'), tc=R('src/ai/tactics.js'), inf=R('src/actors/infantry.js'), sq=R('src/ai/squads.js'), pm=R('src/world/perimeter.js');
+  const Q=C.RIVERS.route; ok(Q && Q.every>0.2 && Q.every<3 && Q.step>0.5 && Q.step<6 && Q.reach>0 && Q.margin>0 && C.RIVERS.fenceGap>=0 && C.RIVERS.fenceGap<1.5, 'river routing + fence gap config');
+  ok(/export function riverWay\(u, tx, tz, now\)/.test(rv) && /function deepOnWay/.test(rv) && /wadeAt\(x, z\) > RIVERS\.wade\.deep && deepOnWay/.test(rv) && /fieldDepth\(nx, nz\) < 2/.test(rv) && /ax:-p\.tz, az:p\.tx/.test(rv), 'a way over the river through the best bridge or ford, only when the deep channel is in the way, never from mid-stream, ends inside the fence');
+  ok(/riverWay\(e, goal\.x, goal\.z, now\)/.test(tc) && /goal=dst/.test(tc) && /wk=wadeAt\(e\.pos\.x, e\.pos\.z\)/.test(tc) && /riverWay\(e, p\.pos\.x, p\.pos\.z, now\)/.test(tc) && /riverWay\(e, T\.pos\.x, T\.pos\.z, now\)/.test(inf) && /const wk=wadeAt\(e\.pos\.x, e\.pos\.z\)/.test(inf) && /riverWay\(e, g\[0\], g\[1\]/.test(sq), 'enemy tanks, bombers, riflemen and squads route over crossings and are slowed wading');
+  ok(/wet=P\.map\(q=>RIVER\.on && bedAt\(q\.x,q\.z\)<RIVER\.y\+RIVERS\.fenceGap\)/.test(pm) && /wet\[i\]\?Z0:Sc/.test(pm) && /for\(const RU of runs\)/.test(pm) && /CatmullRomCurve3\(pts, closed\)/.test(pm), 'the fence leaves a clean gap where a river runs out through it'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -1,6 +1,6 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
 import { SQUAD_AI, FIELDCRAFT, RIVERS } from '../../config.js';
-import { ARENA, BF, FT, MODE, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke, fieldDepth, wadeAt } from '../hub.js';
+import { ARENA, BF, FT, MODE, S, blocks, coverSpot, enemies, enemyGroundStrike, floatText, inField, infTarget, radio, ringPulse, sfx, throwSmoke, fieldDepth, wadeAt, riverWay } from '../hub.js';
 
 export const SQUADS=[];
 let _sid=0;
@@ -99,7 +99,8 @@ export function updateSquads(dt, now){
 export function squadMove(e){ const sq=e.sq; if(!sq || e.exit || e.guard) return null; const g=e.sqGoal;
   if(!g) return { hold:true };
   const dx=g[0]-e.pos.x, dz=g[1]-e.pos.z, d=Math.hypot(dx,dz); if(d<0.9) return { hold:true };
-  return { x:dx/d, z:dz/d, run: sq.state==='fallback' || sq.state==='assault' || e.sqNoFire, hold:false }; }
+  const rw=d>4 ? riverWay(e, g[0], g[1], performance.now()/1000) : null;   // Z415 a deep river between: the squad goes round by a bridge or a ford
+  return { x:rw?rw.x:dx/d, z:rw?rw.z:dz/d, run: sq.state==='fallback' || sq.state==='assault' || e.sqNoFire, hold:false }; }
 
 // ================= COMBINED ARMS: an escorted tank fixes you from range; a fresh wave can come as a pincer, a probe or behind a barrage =================
 export function tankEscorted(t){ for(const sq of SQUADS) if(sq.escort===t && sq.m.length) return true; return false; }

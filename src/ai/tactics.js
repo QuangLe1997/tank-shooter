@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS, FORT } from '../../config.js';
-import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE, bloodSpurt, playerSeen } from '../hub.js';
+import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE, bloodSpurt, playerSeen, RIVER, riverWay, wadeAt } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -119,7 +119,8 @@ export function updateEnemies(dt, now){
     // BOMBER: kamikaze — charges the player and self-destructs (never shoots). Clearly telegraphed so it reads as a THREAT.
     if(e.def.bomber){
       const to=_eTo.subVectors(p.pos,e.pos); const d=to.length()||1; to.divideScalar(d);
-      e.pos.addScaledVector(to, e.def.speed*edt);
+      { const rw=riverWay(e, p.pos.x, p.pos.z, now); if(rw) to.set(rw.x, 0, rw.z); }   // Z415 round by a bridge or a ford, slowed in the water
+      e.pos.addScaledVector(to, e.def.speed*edt*wadeAt(e.pos.x, e.pos.z));
       e.mesh.position.set(e.pos.x,0,e.pos.z); e.facing=Math.atan2(to.x,to.z); e.mesh.rotation.y=e.facing;
       // menacing lit-fuse telegraph: steady red glow + sparks + warning ring that quickens as it closes
       if(Math.random()<0.7) spawnPart(e.pos.x,1.9,e.pos.z, (Math.random()-0.5)*0.6,0.4,(Math.random()-0.5)*0.6, {color:0xff2a14, size:2.2, life:0.12, grav:0, drag:1});
@@ -153,7 +154,7 @@ export function updateEnemies(dt, now){
     if(def.ifv && dpl>14 && FT.length){ let bs=null, bd=26*26; for(const s of FT){ const q=(s.pos.x-e.pos.x)**2+(s.pos.z-e.pos.z)**2; if(q<bd){ bd=q; bs=s; } } if(bs){ target=bs.pos; targetPlayer=false; } }   // Z158 the IFV's 30 mm goes after our infantry first
     const to = _eTo.subVectors(target, e.pos); const d=to.length()||1; to.divideScalar(d);
     // movement
-    let desire;
+    let desire, goal=target;
     const _ex=e.exit ? fortExitDir(e) : null;                       // Z111b filing out of a fortress gate overrides everything
     if(_ex){ to.set(_ex.x, 0, _ex.z); desire = def.speed*0.8; }
     else if(now < (e.smokeUntil||0)){ desire = -def.speed*0.9; }      // Z158 smoke out → reverse out of the line of fire
@@ -162,17 +163,19 @@ export function updateEnemies(dt, now){
     else if(e.aimT>0){ desire = 0; }                                   // ATGM gunner holds still while painting the target
     else if(e.unloading){ desire = 0; }                                // Z89 APC halted, ramp down, troops piling out
     else if(targetPlayer && e.ai){ const dst=aiDest(e, keep, _iq);   // Z95 the director's plan: ring slot / flank / cover / fall back
-      if(dst){ const mx=dst.x-e.pos.x, mz=dst.z-e.pos.z, ml=Math.hypot(mx,mz)||1; desire = ml>2 ? def.speed*objMod('enemySpeedMul')*(e.ai.role==='flank'?1.15:e.ai.role==='fall'?1.1:1) : 0;
+      if(dst){ goal=dst; const mx=dst.x-e.pos.x, mz=dst.z-e.pos.z, ml=Math.hypot(mx,mz)||1; desire = ml>2 ? def.speed*objMod('enemySpeedMul')*(e.ai.role==='flank'?1.15:e.ai.role==='fall'?1.1:1) : 0;
         to.set(mx/ml, 0, mz/ml); aiSteer(e, to); aiDodge(e, now, _iq); } else desire=0; }
     else if(d > keep+1.5){ desire = def.speed*objMod('enemySpeedMul'); }   // Z83 fuel depot keeps them rolling fast
     else { desire = -def.speed*0.3; } // back off a touch / hold
+    if(desire>0 && !_ex && !(now < (e.scootUntil||0))){ const rw=riverWay(e, goal.x, goal.z, now); if(rw) to.set(rw.x, 0, rw.z); }   // Z415 the river: round by the best bridge or ford when the goal is across the deep channel
     if(def.canShoot && !def.truck) aiEvade(e, now, _iq);   // Z185 dodge the shells you fire
     e.vel.x += (to.x*desire - e.vel.x)*Math.min(1,dt*4);
     e.vel.z += (to.z*desire - e.vel.z)*Math.min(1,dt*4);
     { const J=TACTICS.jink, jk = (def.chief||def.orbit) ? 0.95 : (_iq>=J.from && targetPlayer && !def.heavy && !def.halt && !e.aimT && d < def.range*(e.r/1.5)+8 ? J.amp*_iq : 0);   // Z107 commander circle-strafes · Z185 smart crews weave while they fight
       if(jk && d < keep+16){ if(e.ph2==null){ e.ph2=Math.random()*6.283; e.jw=6.283/(J.per[0]+Math.random()*(J.per[1]-J.per[0])); } const w=Math.sin(now*((def.chief||def.orbit)?1.4:e.jw)+e.ph2)*def.speed*jk, k=Math.min(1,dt*3); e.vel.x += -to.z*w*k; e.vel.z += to.x*w*k; } }
     { const sl=Math.hypot(e.vel.x,e.vel.z)||1, ux=e.vel.x/sl, uz=e.vel.z/sl, gr=(heightAt(e.pos.x+ux,e.pos.z+uz)-heightAt(e.pos.x-ux,e.pos.z-uz))/2;
-      e.pos.addScaledVector(e.vel, edt*Math.max(0.5, Math.min(1.3, 1-gr*1.2))); }   // slower up the mounds, faster down — hard separation later in separateTanks()
+      const wk=wadeAt(e.pos.x, e.pos.z); e.pos.addScaledVector(e.vel, edt*Math.max(0.5, Math.min(1.3, 1-gr*1.2))*wk);   // slower up the mounds, faster down — hard separation later in separateTanks()
+      if(wk<1 && sl>1 && Math.random()<dt*10) spawnPart(e.pos.x+(Math.random()-0.5)*2.6, RIVER.y+0.15, e.pos.z+(Math.random()-0.5)*2.6, (Math.random()-0.5)*2, 1+Math.random()*1.5, (Math.random()-0.5)*2, { color:0xcfe8f2, size:0.35+Math.random()*0.3, life:0.5, grav:-9, drag:1.2 }); }   // Z415 wading like the player's hull: slower, a bow wave — hard separation later in separateTanks()
     if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*9); e.kbx*=kf; e.kbz*=kf; }   // recoil from being shot
     clampField(e.pos, 2);
     // face

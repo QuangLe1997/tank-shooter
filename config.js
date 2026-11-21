@@ -662,6 +662,7 @@ export const RIVERS = {
   cross:[[0, 0.5, 'bridge'], [0, 0.32, 'ford'], [0, 0.68, 'ford'], [1, 0.45, 'ford']], jitter:0.04, clear:10,
   fordDepth:0.3, fordLen:7, wade:{ deep:0.55, ford:0.8, fordD:0.6 },
   flow:1.2, streamK:1.3, cycle:1.6, ripple:[5.5, 1.7], foam:[0.09, 0.4, 0.85], wet:[0.42, 0.5], env:1.8,
+  route:{ every:0.7, step:2.5, reach:3, margin:3 }, fenceGap:0.35,   // Z415 the enemy's way over (world/river.js riverWay): looked at every s, sampled every step m, a waypoint reached within reach m, margin m onto dry land past a crossing · fenceGap: the fence stops where its line is under water + this m
   bridge:{ model:null, len:0, yaw:0, deckAt:0.5, keepDeck:false, deckY:0.14, hw:3.6, over:2.5 },
   ice:{ col:[0.34, 0.46, 0.52], deep:[0.07, 0.15, 0.2], snow:0.6, crack:0.32 } };
 
