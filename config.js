@@ -1254,15 +1254,30 @@ export const TOUCH_HELP = [
 //   between runs, wob = its wander (m), wall = where it leaves a fort (m past its wall), fortPad = how near a fort's wall a tooth may stand, maxSpan =
 //   the widest gap round the Core between two forts still joined (rad), spawnGap = the sector round our spawn's bearing left open (rad, either side)
 export const DEFENSE = { on:true, rb:8, rbMobile:6,
-  belt:{ step:4.2, row:3.1, run:[6, 10], hole:[1, 2], wob:5, wall:10, fortPad:3, maxSpan:2.3, spawnGap:0.6, kinds:{ _:['teeth'], ARCTIC:['teeth','teeth','hedgehog'], TUNDRA:['teeth','hedgehog'], VOLCANO:['teeth','hedgehog'], FOUNDRY:['teeth','jersey'], STEELMILL:['teeth','jersey'], CITY:['jersey'] } },
-  lanes:4, laneW:17,
+  belt:{ step:4.2, row:3.1, run:[6, 10], hole:[1, 2], wob:5, wall:10, fortPad:3, maxSpan:4.2, spawnGap:0.6, twoLanes:150, kinds:{ _:['teeth'], ARCTIC:['teeth','teeth','hedgehog'], TUNDRA:['teeth','hedgehog'], VOLCANO:['teeth','hedgehog'], FOUNDRY:['teeth','jersey'], STEELMILL:['teeth','jersey'], CITY:['jersey'] } },   // Z423 twoLanes: a belt longer than this (m) opens twice
+  lanes:5, laneW:17,
+  // Z423 each land its doctrine (world/defense.js header): style per battlefield and each style's numbers — line: half the arc (rad), teeth spacing, a pillbox
+  //   every pill m (box, its scale); hedge: a cluster every step m, its three hedgehogs [u, v]; crate: a container's length, the share stacked; curtain:
+  //   the wall section (k, w m), the gatehouse in the lane (its scale); bocage: a tree every other step, the log bank between; lava: a crater every step
+  //   m (scale), glowing rocks between; terraces: rows, their spacing (m), wall run / gap (m), half the arc; kopje: strongpoints per stage, the sandbag
+  //   ring's radius and sections, spacing; pockets: the ruins that hold nests, sniper towers; streets: checkpoints, spacing, the side-street blocks
+  style:{ DESERT:'line', SAVANNA:'kopje', ARCTIC:'hedgehog', TUNDRA:'hedgehog', FOUNDRY:'containers', STEELMILL:'containers', CITY:'streets', CITADEL:'curtain',
+    RUINS:'pockets', MEADOW:'bocage', HILLS:'bocage', VILLAGE:'bocage', VOLCANO:'lava', QUARRY:'terraces' },
+  line:{ step:3.4, pill:40, box:'bunker_dome', boxS:0.55 }, hedge:{ step:7, tri:[[0, 0], [1.9, 1.6], [-1.9, 1.6]] }, crate:{ len:6.0, stack:0.3 },
+  curtain:{ k:'castle_wall', w:20, gate:'gatehouse', gateS:0.75 }, bocage:{ step:6.5, trees:['tree_oak', 'tree_pine'], s:[0.5, 0.7], bank:'logs' },
+  lava:{ step:18, s:[0.65, 0.95], rocks:['lava_rock_a', 'lava_rock_b', 'lava_rock_c'] }, terraces:{ rows:3, gap:15, run:18, hole:11, span:1.2 },
+  kopje:{ n:[4, 4, 5, 5, 6], ring:5.2, bags:8, gap:50 }, pockets:{ keys:['ruin_overgrown', 'skeleton_block', 'gargoyle_wall', 'corner_store', 'temple', 'gothic_gate'], towers:2, tower:'gt_broken' },
+  streets:{ n:4, gap:55, block:['road_barrier', 'tire_wall'] },
+  // the men who hold the posts (garrisonDefense): at most max[stage] (× mobileK on phones), rpg = share with a launcher from stage 2, loot = share that drop something
+  garrison:{ max:[10, 14, 18, 22, 26], mobileK:0.5, rpg:0.25, loot:0.2 },
   // a checkpoint, an entry control point drawn as one piece of architecture in the lane's frame (u across it, v along it, + toward the enemy): WALLS =
   //   continuous runs [kind, u0, v0, u1, v1] laid section against section at each kind's true length (len, m: the fitted scans × COVER_K, a hair under
   //   so no seam opens) — the jersey funnel narrowing on our side, the T-wall chicane (two staggered walls: a vehicle must weave), the sandbag MG nest
   //   (a U, open to the rear) — and its guard tower behind; r = the ground it claims; wing = teeth either side on a river's far bank
-  cp:{ r:16, wing:4, len:{ concrete:3.55, jersey:2.3, sandbag:3.7 },
+  cp:{ r:12, wing:4, len:{ concrete:3.55, jersey:2.3, sandbag:3.7 },
     walls:[ ['jersey', -10.5, -17, -6.2, -8.6], ['jersey', 10.5, -17, 6.2, -8.6], ['concrete', -9.4, -2.2, 2.0, -2.2], ['concrete', -2.0, 4.6, 9.4, 4.6],
-      ['sandbag', -9.6, 11, -2.6, 11], ['sandbag', -9.9, 11.6, -9.9, 15], ['sandbag', -2.3, 11.6, -2.3, 15] ], tower:[7.2, 13.5] },
+      ['sandbag', -9.6, 11, -2.6, 11], ['sandbag', -9.9, 11.6, -9.9, 15], ['sandbag', -2.3, 11.6, -2.3, 15] ], tower:[7.2, 13.5],
+    posts:[[-7.2, 13.2, 'mg'], [-4.8, 13.2, 'mg'], [1.4, 7.0, 'cp']] },   // Z423 where its men stand: the MG nest, behind the chicane
   pos:{ n:[4, 5, 6, 7, 8], mobileK:0.6, gap:34, pad:12, fortPad:12, walls:[[-3.7, 0, 3.7, 0], [-4.1, -0.6, -4.1, -4.2], [4.1, -0.6, 4.1, -4.2]], kinds:{ _:['sandbag'], FOUNDRY:['sandbag','jersey'], STEELMILL:['sandbag','jersey'], CITY:['sandbag','jersey'], QUARRY:['sandbag','concrete'] }, back:0.35 },
   maze:{ cut:0.55 },
   biomes:{ CITY:{ belt:false } } };
@@ -1584,7 +1599,7 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     lava_rock_c:{ one:true, w:6, ar:[1.61, 1, 1.03], sink:0.08, solid:{ disc:0.45 }, env:0.7 }, ember_ruin:{ one:true, w:14, ar:[2.17, 1, 1.7], sink:0.04, solid:{ box:0.6 } },
     gargoyle_wall:{ one:true, w:22, ar:[2.11, 1, 0.81], sink:0.03, solid:{ box:0.8 } }, keep_fortress:{ w:34, ar:[1.44, 1, 0.81], sink:0.02, solid:{ box:0.85 } },
     citadel_tower:{ h:18, ar:[0.68, 1, 0.72], sink:0.01, solid:{ r:4.0 } }, castle_wall:{ w:20, ar:[1.65, 1, 0.36], sink:0.03, solid:{ box:1 } },
-    gatehouse:{ w:26, ar:[2.35, 1, 1.21], sink:0.02, solid:{ box:0.8 } }, skeleton_block:{ h:26, ar:[0.96, 1, 0.58], sink:0.02, solid:{ box:0.85 } },
+    gatehouse:{ w:26, ar:[2.35, 1, 1.21], sink:0.02, solid:{ pillars:0.3 } }, skeleton_block:{ h:26, ar:[0.96, 1, 0.58], sink:0.02, solid:{ box:0.85 } },
     corner_store:{ h:18, ar:[0.8, 1, 0.67], sink:0.01, solid:{ box:0.9 } }, road_barrier:{ w:7, ar:[2.75, 1, 2.13], sink:0.02, solid:{ box:0.8 } },
     tire_wall:{ w:6, ar:[2.64, 1, 0.6], sink:0.02, solid:{ box:0.9 } }, rebar_wall:{ w:7, ar:[2.35, 1, 0.74], sink:0.02, solid:{ box:0.9 } } },
   biomes:{

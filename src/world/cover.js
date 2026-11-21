@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER, FUEL_TANK } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -74,6 +74,7 @@ export function buildBlocks(){
   buildZones();                                                                            // Z104 rally point · POW stockades · weapon + tank depots (with guards)
   buildScenery();                                                                          // Z141 trees · bushes · flowers · reeds · haystacks
   garrisonSupply();   // Z194 guards + guard tanks (after buildZones cleared its own)
+  garrisonDefense();   // Z423 the men at the defence's posts
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 export function damageBlock(b, dmg){

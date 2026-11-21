@@ -151,7 +151,8 @@ export function cityBlast(x, z, r){ trafficBlast(x, z, r); if(!TOP.length && !BL
 export function cityCollapse(p){ if(!p) return false; const cand=BLD.filter(b=>!b.dead && b.floors.length>=3).map(b=>({ b, d:Math.hypot(b.x-p.pos.x, b.z-p.pos.z) })).filter(o=>o.d>14 && o.d<70).sort((a,b)=>a.d-b.d);
   if(!cand.length) return false; cand[0].b.casc=0.05; return true; }
 export function updateCity(dt){ updateTraffic(dt); if(TOP.length) updateTopple(dt); for(const Bd of BLD) if(Bd.casc>0){ Bd.casc-=dt; if(Bd.casc<=0 && !Bd.dead){ Bd.hp=Bd.hpPer*Bd.top; dropFloor(Bd); Bd.casc = Bd.dead ? 0 : 0.38; } } }
-export function resetCity(){ BLD.length=0; TOP.length=0; CITY_PROPS.length=0; RUB=null; RUBn=0; CITY_GEN++; }   // Z267 anything still waiting for the models belongs to a city that is gone
+export const CITY_XING=[];   // Z423 the laid crossings { x, z, wx, wz } (world/defense.js closes the enemy's with checkpoints)
+export function resetCity(){ BLD.length=0; TOP.length=0; CITY_PROPS.length=0; CITY_XING.length=0; RUB=null; RUBn=0; CITY_GEN++; }   // Z267 anything still waiting for the models belongs to a city that is gone
 export function cityBuildings(){ return BLD; }
 
 // ---------- building kinds (front faces +z in the local frame; ox,oz = footprint centre; ry = rotation) ----------
@@ -373,7 +374,7 @@ export function buildCityDistrict(){ resetCity(); pcInit(); B=new Map(); P=[]; P
   // ---- crossings: asphalt, zebra crossings on every arm, traffic lights ----
   roads.xing=new Set();   // Z320 the crossings that are laid (the traffic crosses and U-turns only on asphalt)
   for(let i=-n;i<=n;i++) for(let j=-n;j<=n;j++){ const x=i*G, z=j*G, wx=roadW(i), wz=roadW(j); if(!inCity(x,z)) continue;
-    roads.xing.add(i+','+j); strip('road', roadMat, x, z, wx, wz, 0, 0.035, 64);
+    roads.xing.add(i+','+j); CITY_XING.push({ x, z, wx, wz }); strip('road', roadMat, x, z, wx, wz, 0, 0.035, 64);
     for(const sd of [-1,1]){ strip('zebra', zebMat, x, z+sd*(wz/2+1.8), wx, 3, 0, 0.05, 8, 3); strip('zebra', zebMat, x+sd*(wx/2+1.8), z, wz, 3, Math.PI/2, 0.05, 8, 3); }
     const big=isBlvd(i)||isBlvd(j); for(const [sx,sz] of (big?[[1,1],[-1,1],[1,-1],[-1,-1]]:(Math.random()<0.55?[[1,1]]:[]))) lights.push({ x:x+sx*(wx/2+1.0), z:z+sz*(wz/2+1.0), ry:Math.atan2(-sx,-sz) });
     if(Math.random()<0.22){ const sx=Math.random()<0.5?1:-1, sz=Math.random()<0.5?1:-1; for(let q=0;q<2+((Math.random()*2)|0);q++) prop('prop_barrier', x+sx*(wx/2+2.6+q*1.9), z+sz*(wz/2+1.2), _R(-0.12,0.12)); } }   // Z267 concrete blocks dragged to a corner

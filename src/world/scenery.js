@@ -202,6 +202,14 @@ export function buildSceneSet(){ GEN++; SCENE.pieces.length = 0; WONDER.a0 = nul
     arena.add(lod); LAND.meshes.push(lod); SCENE.pieces.push({ ...p, lod, y:gy }); solids(p, lod, gy);
     if(M(p.k).lava) Promise.resolve().then(() => { if(gen === GEN && BIOME.name === 'VOLCANO') lavaPit(p, gy); }); } }   // (after this stage's lava is laid: buildLava clears the pools first)
 
+// Z423 one piece stood by another builder (world/defense.js: a curtain wall, a hedgerow tree, a lava crater, a pillbox): the same as a beat's — its
+//   levels, its foot on the ground, its solids, its lava — and listed with the set (it goes with the land at the next stage)
+export function placeScene(k, x, z, ry, s = 1, o = {}){ if(typeof window === 'undefined' || !SCENERY.on || !M(k)) return null; const p = { k, x, z, ry, s, r:fr(k, s), solid:o.solid, def:true };
+  const lod = scenePiece(k, s, { shadow:true, tone:o.tone }), gy = footY(p); lod.position.set(x, gy, z); lod.rotation.y = ry; lod.scale.setScalar(s);
+  arena.add(lod); LAND.meshes.push(lod); SCENE.pieces.push({ ...p, lod, y:gy }); solids(p, lod, gy);
+  if(M(k).lava){ const gen = GEN; Promise.resolve().then(() => { if(gen === GEN && BIOME.name === 'VOLCANO') lavaPit(p, gy); }); }
+  return p; }
+
 // ---------------------------------------------------------------------------------------------------------------------------------------
 // Z383 THE HORIZON FOR REAL (desktop; world/horizon.js hands over its group): the scanned summits, cones and crags stand between its ranges (the
 //   near range hides their feet), forests line the near hills, the ruined city and the works ring the field where the hazed boxes stood. One
