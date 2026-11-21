@@ -718,7 +718,8 @@ export const BARREL_SCALE = { r:1.22, len:1.12, slide:1.25 };   // Z235 every mo
 //   turret's face, a bulky gun (a pod, a twin mount) stays put; a gun whose back is still in the open then gets a mantlet round its back (a tube with
 //   only air behind it, a sleeve). rear / rearK = the gun's back section (m, × its length) that gives its girth; slim = a tube's girth (half-size, m);
 //   ring / rays = the rings of rays round a tube (× its girth), grid = the rays over a bulky back (× its half-size), hitK = the share that must meet
-//   the turret's face (floorK: the turret under the gun); look = how far in front of the breech they start, reach = how far behind it they look (m);
+//   the turret's face (hitBulk: fewer will do over a bulky gun with no turret under it, its back wider than the face, when the face is within bulkReach m
+//   of it; floorK: the turret under the gun); look = how far in front of the breech they start, reach = how far behind it they look (m);
 //   deep = the line from behind to the turret's back; drop = how far below the gun the turret is looked for; side / peek / band = the rays that tell
 //   whether its back is already in the turret (from how far out, how far behind its back, at ± band × its half-height / half-width); pick = which
 //   face hit counts (0 the deepest, 1 the nearest; slidePick: how far a tube slides in); embed = how far a joint goes into the turret; back = what
@@ -726,7 +727,7 @@ export const BARREL_SCALE = { r:1.22, len:1.12, slide:1.25 };   // Z235 every mo
 //   collar (a gap over min, girth k × the breech's within r, flared at the face, over = its run over the gun); block = the mantlet round a gun's
 //   back (at most w wide; d of its back section; k × a bulky gun's half-size, tube × a tube's; lip = how far it stands over / under a tube, up = how
 //   far up a bulky gun's back it reaches; over = how far forward it runs over the gun)
-export const GUNSEAT = { rear:0.3, rearK:0.25, slim:0.32, ring:[0.8, 1.2], rays:8, grid:[-0.6, 0, 0.6], hitK:0.5, floorK:0.3, look:3, reach:1.2, deep:6, drop:1.4, side:6, peek:0.06, band:0.7, pick:0.3, slidePick:0.7, embed:0.08, back:0.12, recoil:1.2, maxShift:2.2,
+export const GUNSEAT = { rear:0.3, rearK:0.25, slim:0.32, ring:[0.8, 1.2], rays:8, grid:[-0.6, 0, 0.6], hitK:0.5, hitBulk:0.4, bulkReach:0.4, floorK:0.3, look:3, reach:1.2, deep:6, drop:1.4, side:6, peek:0.06, band:0.7, pick:0.3, slidePick:0.7, embed:0.08, back:0.12, recoil:1.2, maxShift:2.2,
   sleeve:{ min:0.03, r:[0.08, 0.45], k:1.12, flare:1.08, over:0.15 }, block:{ w:0.8, d:0.6, k:0.75, tube:2.2, lip:0.18, over:0.15, up:0.75 } };
 export const HEADING = { show: false, dist: 3.9, size: 2.4, color: 0x9be04a, idle: 0.32, moving: 0.8, stripe: 0xd8ff6a };
 // Z107 CONTROLS SHEET — one list, shown from the home menu, the pause menu and in battle (H / F1 / ?). [keys, what it does, group]
