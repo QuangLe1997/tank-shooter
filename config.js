@@ -1052,6 +1052,12 @@ export const SOLDIER_UPPER = { velK:8, accK:5, accMax:25, reset:0.6, lean:0.03, 
   // Z368 running tall (on his feet, moving, not firing; weighed in from m/s over span m/s at rate): the trunk brought back to a runner's lean (rad,
   //   [slow, at speed] between v m/s), the head lifted till it tips forward no more than tilt rad — eyes on the way ahead, not his boots
   run:{ from:1.0, span:0.8, rate:6, lean:[0.1, 0.24], v:[1.5, 6], tilt:0.12, neck:0.45 } };
+// Z371 THE STIRRUPS (actors/soldier-stirrups.js; m, horse frame: x out to the side, y up from the ground, z along): the leather from the saddle's skirt at
+//   top down to the iron's tread at iron (outside the barrel, at the belly), w wide, t thick; the iron a loop of radius r, tube thick, its tread tread deep;
+//   the rider's ankle ankle m over the tread and ball m behind it, his knee drawn out knee[0] and forward knee[1] over the flap, the heel down heel rad,
+//   the toe turned out out; out of reach (the gallop stands him up), he is brought down till the irons are reach of his leg's length away (at most drop m)
+export const STIRRUP = { top:[0.31, 1.6, -0.06], iron:[0.46, 1.03, 0.0], w:0.035, t:0.006, r:0.075, tube:0.011, tread:0.055, ankle:0.075, ball:0.06, knee:[0.55, 0.45], heel:0.18, out:0.18, reach:0.96, drop:0.45,
+  leather:0x3b2a1c, steel:0xbcbcbc };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.0, 0.35], gaitAt:[2.3, 4.0], carryAt:5.4, twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
 // Z340 TURNED ROUND IN THE SADDLE (actors/real-cav.js, combat/soldier-fire.js): sat on the horse or a pillion his hips and chest together turn up to `max`

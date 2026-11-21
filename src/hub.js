@@ -228,6 +228,7 @@ export * from './actors/puppet.js';   // Z294 the second soldier wears the opera
 export * from './actors/soldier-legs.js';   // Z339 the soldier's own legs: planted feet, steps the way he goes
 export * from './actors/soldier-mount.js';   // Z342 getting on and off the horse / the rides the way a rider does
 export * from './actors/soldier-upper.js';   // Z343 the soldier's shoulders, trunk, head and rifle in time with his legs
+export * from './actors/soldier-stirrups.js';   // Z371 the war horse's stirrups and the rider's feet in them
 export * from './actors/real-cav.js';
 export * from './actors/gun-fit.js';   // Z360 each hand weapon's hold read off its own model (grip, palm, butt, sight, bore)
 export * from './actors/real-troops.js';

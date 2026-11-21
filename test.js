@@ -1324,6 +1324,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/else if\(def\.gun && INFGUN\.map\[def\.gun\]\) realGun\(g, def\.gun\)/.test(pw) && /function realGun\(g, id\)/.test(pw) && /id:'wpn_' \+ id, gun:id/.test(R('src/loot/soldier-arms.js')) && /else if\(def\.id==='medal'\) medal\(g\)/.test(pw) && /lootMat\('medOlive'/.test(pw), 'an enemy weapon lies on the ground as itself; an olive aid bag with its red cross; a medal, not a glowing gem');
   ok(/svgGlyphTex\(def\.svg\|\|'star'\)/.test(pw) && /export function svgGlyphTex/.test(R('src/ui/icons.js')) && /u\.icon\.visible=u\.ring\.visible=true;/.test(pw) && !/u\.model\.rotation\.y \+= dt\*0\.9/.test(pw), 'no light beam, it lies where it fell, a small plain glyph over it'); }
 
+// Z371 the war horse's stirrups and the rider's feet in them: his shins and boots out of the horse's barrel (the riding clips had them inside it), heels down, the gallop's stand-up brought down to the irons
+{ const fs=await import('node:fs'); const C=await import('./config.js'), st=fs.readFileSync('src/actors/soldier-stirrups.js','utf8'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), T=C.STIRRUP;
+  ok(T && T.iron[0]>0.4 && T.iron[1]>0.9 && T.iron[1]<1.25 && T.top[0]<T.iron[0] && T.reach<1 && T.drop>0.2 && T.heel>0, 'the irons hang outside the barrel at the belly, the leather from the saddle skirt; a gallop that lifts him out of reach brings him down');
+  ok(/export function stirrupFeet/.test(st) && /function makeStirrups/.test(st) && /scene\.add\(strap, iron\)/.test(st) && /sb\.attach\(strap\); sb\.attach\(iron\)/.test(st) && /ik2\(up, kn, ft,/.test(st) && /actors\/soldier-stirrups\.js/.test(fs.readFileSync('src/hub.js','utf8')), 'stirrups made in the world and hung on the horse\'s seat bone; each leg laid by IK to its iron');
+  ok(/if\(R\.pup && !P\.dead && !bike && mounted && !P\.trans\) stirrupFeet\(R, H\)/.test(rc), 'on the horse (not a ride, not climbing on or off) his feet go to the stirrups every frame'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
