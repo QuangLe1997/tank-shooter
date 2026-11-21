@@ -937,7 +937,8 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
   //   (a laterite photo so fine-grained it read as flat orange paint from the tank) now dry ground with its pebbles and dark patches — and these take more of their second set and a deeper relief:
   //   per = nrm (normal strength), patchK (share of the field the second set shows on), dual (the base blended with itself at another scale), altRep
   //   hi2k = the sets that have their 2K colour + normal on disk (assets/ground/<set>/2k, tools/ground-photos.mjs); any other base set loads at 1K
-  hi2k:['aerial_sand', 'asphalt_01', 'gravel_road', 'ground_grey', 'red_laterite_soil_stones', 'rocks_ground_02', 'rocks_ground_05', 'rocky_trail', 'snow_02', 'sparse_grass'],
+  //   (Z394c the new arctic, works and savanna bases fetched at 2K too)
+  hi2k:['aerial_sand', 'asphalt_01', 'concrete_floor_damaged_01', 'dry_ground_rocks', 'gravel_road', 'ground_grey', 'red_laterite_soil_stones', 'rocks_ground_02', 'rocks_ground_05', 'rocky_trail', 'snow_01', 'snow_02', 'sparse_grass'],
   per:{ ARCTIC:{ nrm:1.3, patchK:0.95, dual:0.55 }, TUNDRA:{ nrm:1.3, patchK:0.9 }, FOUNDRY:{ nrm:1.2, patchK:0.8, dual:0.55 }, STEELMILL:{ nrm:1.2, patchK:0.8, dual:0.55 },
     VOLCANO:{ nrm:1.25, patchK:0.8, dual:0.5 }, DESERT:{ nrm:1.1, patchK:0.75 }, SAVANNA:{ nrm:1.25, patchK:0.85, dual:0.5 },
     CITADEL:{ nrm:1.3, patchK:0.9, dual:0.55 } },
