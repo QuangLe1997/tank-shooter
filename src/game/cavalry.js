@@ -151,7 +151,7 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, own=!T.crash 
 const _lb=new THREE.Box3();
 function blockH(b){ if(b._h!=null) return b._h; let h=Infinity; if(b.mesh && b.mesh.isObject3D && !b.ridge){ b.mesh.updateWorldMatrix(true, true); _lb.setFromObject(b.mesh); if(!_lb.isEmpty()) h=_lb.max.y-heightAt(b.x, b.z); } return (b._h=h); }
 function collide(p, now){ const R=p.radius, H=CV.H;
-  for(const b of blocks){ if(b.kind==='parked') continue; const SH=solidShape(b);   // Z337 a wall, a fortress wall section, a building: its true box, not a circle round it
+  for(const b of blocks){ if(b.kind==='parked') continue; const SH=solidShape(b, true);   // Z337 a wall, a fortress wall section, a building: its true box, not a circle round it
     if(SH){ const o=SH.obb, ex=o.hl+o.hw+R; if(Math.abs(p.pos.x-SH.x)>ex || Math.abs(p.pos.z-SH.z)>ex) continue; if(CV.mounted && rideLeap(H, blockH(b), Math.hypot(p.pos.x-SH.x, p.pos.z-SH.z)+R)) continue;
       const vn=pushOutShape(p, SH, R); if(CV.mounted && vn>6){ rideBump(vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } continue; }
     const dx=p.pos.x-b.x, dz=p.pos.z-b.z, rr=(b.r||1)+R; if(Math.abs(dx)>rr || Math.abs(dz)>rr) continue; const d2=dx*dx+dz*dz; if(d2>=rr*rr || d2<1e-6) continue;

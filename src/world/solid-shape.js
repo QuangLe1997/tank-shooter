@@ -8,8 +8,12 @@ import * as THREE from 'three';
 import { FORT } from '../../config.js';
 import { cityBuildings } from '../hub.js';
 
-const SHAPE = Symbol('shape');
-export function solidShape(bl){ if(!bl) return null; if(bl.obb) return bl; const c = bl[SHAPE]; if(c !== undefined) return c; let s = null;
+const SHAPE = Symbol('shape'), FOOT = Symbol('foot');
+// Z378 foot = asked for the soldier or his ride: a fortress wall section cut back from a breach (pc.cut0 at its start, cut1 at its end — world/fortress.js
+//   dressFort) ends where its stone does, so the breach is open to them; a tank still meets the whole section
+export function solidShape(bl, foot){ if(!bl) return null; if(bl.obb) return bl;
+  if(foot && bl.kind === 'fortwall' && bl.piece && (bl.piece.cut0 || bl.piece.cut1)){ if(bl[FOOT]) return bl[FOOT]; const pc = bl.piece, c0 = pc.cut0 || 0, c1 = pc.cut1 || 0, sh = (c0 - c1) / 2;
+    return (bl[FOOT] = { x:bl.x + pc.ux * sh, z:bl.z + pc.uz * sh, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:Math.max(0.1, (pc.pl - c0 - c1) / 2 + 0.02), hw:(FORT.wallT + 3.0) / 2 } }); } const c = bl[SHAPE]; if(c !== undefined) return c; let s = null;
   if(bl.kind === 'fortwall' && bl.piece){ const pc = bl.piece; s = { x:bl.x, z:bl.z, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:pc.pl / 2 + 0.02, hw:(FORT.wallT + 3.0) / 2 } }; }   // (its battered stone foot)
   else if(bl.kind === 'building' && bl.bld){ const B = bl.bld; s = B[SHAPE] || (B[SHAPE] = { x:B.x, z:B.z, obb:{ f:B.ry, hl:B.d / 2, hw:B.w / 2 }, bld:B }); }
   bl[SHAPE] = s; return s; }

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT } from '../../config.js';
+import { FORT, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP } from '../../config.js';
 import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD } from '../hub.js';
 
 export const FORTS=[];
@@ -568,6 +568,22 @@ function sliceX(g, x0, x1, mid){ const P=g.attributes.position, N=g.attributes.n
   out.forEach((v,i)=>{ pos[3*i]=v[0]-mid; pos[3*i+1]=v[1]; pos[3*i+2]=v[2]; const l=Math.hypot(v[3],v[4],v[5])||1; nor[3*i]=v[3]/l; nor[3*i+1]=v[4]/l; nor[3*i+2]=v[5]/l; uv[2*i]=v[6]; uv[2*i+1]=v[7]; });
   o.setAttribute('position', new THREE.BufferAttribute(pos,3)); if(N) o.setAttribute('normal', new THREE.BufferAttribute(nor,3)); if(U) o.setAttribute('uv', new THREE.BufferAttribute(uv,2));
   o.computeBoundingBox(); o.computeBoundingSphere(); return o; }
+// Z378 the face a cut through the wall shows at x = xc: the model's cross-section there (where its triangles cross the plane), filled row by row between the
+//   outline's crossings (pairs of them: a parapet, the walk, the other parapet), facing dir along x, moved by -mid like its slice; the same attributes as like
+function cutFace(g, xc, dir, mid, like){ const P=g.attributes.position, n=P.count/3, seg=[], B=FORT_GAP.bin; let y0=Infinity, y1=-Infinity;
+  for(let t=0;t<n;t++){ const q=[]; for(let j=0;j<3;j++){ const a=3*t+j, b=3*t+(j+1)%3, xa=P.getX(a)-xc, xb=P.getX(b)-xc; if((xa<0)===(xb<0)) continue; const u=xa/(xa-xb);
+      q.push([P.getY(a)+(P.getY(b)-P.getY(a))*u, P.getZ(a)+(P.getZ(b)-P.getZ(a))*u]); }
+    if(q.length===2){ seg.push(q); y0=Math.min(y0, q[0][0], q[1][0]); y1=Math.max(y1, q[0][0], q[1][0]); } }
+  if(!seg.length || !(y1-y0>0.5)) return null; const pos=[], x=xc-mid;
+  const quad=(ya, yb, za, zb)=>{ const v=[[ya,za],[ya,zb],[yb,zb],[yb,za]];
+    for(const [i,j,k] of [[0,1,2],[0,2,3]]){ let A=v[i], Bv=v[j], Cv=v[k]; if(Math.sign((Bv[0]-A[0])*(Cv[1]-A[1])-(Bv[1]-A[1])*(Cv[0]-A[0]))!==dir) [Bv,Cv]=[Cv,Bv];   // (its normal's x the way it faces)
+      for(const w of [A,Bv,Cv]) pos.push(x, w[0], w[1]); } };
+  for(let y=y0; y<y1; y+=B){ const yc=y+B/2, zs=[]; for(const [a,b] of seg) if((a[0]-yc)*(b[0]-yc)<0) zs.push(a[1]+(b[1]-a[1])*(yc-a[0])/(b[0]-a[0])); if(zs.length<2) continue; zs.sort((a,b)=>a-b);
+    const yb=Math.min(y+B, y1); if(zs.length%2) quad(y, yb, zs[0], zs[zs.length-1]); else for(let i=0;i<zs.length;i+=2) if(zs[i+1]-zs[i]>0.02) quad(y, yb, zs[i], zs[i+1]); }
+  if(!pos.length) return null; const o=new THREE.BufferGeometry(), m=pos.length/3; o.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  if(like.attributes.normal){ const nr=new Float32Array(m*3); for(let i=0;i<m;i++) nr[3*i]=dir; o.setAttribute('normal', new THREE.BufferAttribute(nr, 3)); }
+  if(like.attributes.uv){ const uv=new Float32Array(m*2); for(let i=0;i<m;i++){ uv[2*i]=pos[3*i+2]/4; uv[2*i+1]=pos[3*i+1]/4; } o.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); }   // (the fort's own stone, 4 m a tile)
+  return o; }
 function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
   Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p))).then(([wg,tg,gg])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
     const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg), T=fortPiece(tg), Gt=gg && f.gp ? fortPiece(gg, true) : null, add=(geo,mat,x,z,ry,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,-0.4,z); m.rotation.y=ry; m.scale.set(sx,sy,sz); m.castShadow=m.receiveShadow=true; host.add(m); return farLOD(m); };   // Z328 light copies far away
@@ -578,11 +594,21 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
       // Z327 cut once at load (its triangles clipped at the stretch's ends), one instanced mesh per stretch, culled to the view and the shadow's reach — it
       //   used to draw the whole wall for every 3 m section and throw 7/8 of it away pixel by pixel: ~4M triangles a frame, twice (the shadow), for 4 forts
       const mat=W.mat.clone(); f.wallMat=mat; f.wallSl=[]; f.wallGeos=[]; f.wallIM.visible=false;
-      for(let s=0;s<rep;s++){ const cx=(s-(rep-1)/2)*FORT.seg, list=f.pieces.filter(pc=>pc.i%rep===s); if(!list.length) continue;
-        const sg=sliceX(g, cx-FORT.seg/2-0.02, cx+FORT.seg/2+0.02, cx), im=new THREE.InstancedMesh(sg, mat, list.length); f.wallGeos.push(sg);
-        list.forEach((pc,j)=>{ f.wallIM.getMatrixAt(pc.i,_m); im.setMatrixAt(j,_m); f.wallSl[pc.i]=[im,j]; });
-        im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=im.receiveShadow=true; host.add(im); }
-      g.dispose(); }
+      // Z378 where the model's ragged end meets its own start (between stretch rep-1 and stretch 0) it left a see-through slit 0.3–1.5 m wide that nobody
+      //   could pass: inside a run of wall it is opened into a clean breach FORT_GAP.w wide — both stretches cut back from it, their cut faces filled — and the
+      //   two sections' colliders end where the stone does (pc.cut0 / cut1, world/solid-shape.js: for the soldier and his ride, never a tank)
+      const G=FORT_GAP, open=rep>=G.minRep, half=G.w/2;
+      for(let s=0;s<rep;s++){ const cx=(s-(rep-1)/2)*FORT.seg, all=f.pieces.filter(pc=>pc.i%rep===s); if(!all.length) continue;
+        for(const v of [0,1,2]){ const list=all.filter(pc=>(open && s===0 && pc.prev ? 1 : open && s===rep-1 && pc.next ? 2 : 0)===v); if(!list.length) continue;   // whole · cut at its start · cut at its end
+          const x0=cx-FORT.seg/2-0.02+(v===1?half:0), x1=cx+FORT.seg/2+0.02-(v===2?half:0); let sg=sliceX(g, x0, x1, cx), mt=mat;
+          const face=v ? cutFace(g, v===1?x0:x1, v===1?-1:1, cx, sg) : null; if(face){ const mg=mergeGeometries([sg, face], true); sg.dispose(); face.dispose(); sg=mg; mt=[mat, f.wallIM.material]; }
+          const im=new THREE.InstancedMesh(sg, mt, list.length); f.wallGeos.push(sg);
+          list.forEach((pc,j)=>{ f.wallIM.getMatrixAt(pc.i,_m); im.setMatrixAt(j,_m); f.wallSl[pc.i]=[im,j]; const sx=pc.pl/FORT.seg+0.02; if(v===1) pc.cut0=half*sx-0.03; if(v===2) pc.cut1=half*sx-0.03; });
+          im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=im.receiveShadow=true; host.add(im); } }
+      g.dispose();
+      // a wall-top rifleman left standing over a breach steps along to the stone beside it
+      for(const pc of f.pieces) if(pc.cut0 && f.pt) for(const gd of f.pt.guards){ const P=gd.g.position, sx=pc.cx-pc.ux*pc.pl/2, sz=pc.cz-pc.uz*pc.pl/2, al=(P.x-sx)*pc.ux+(P.z-sz)*pc.uz, ac=(P.x-sx)*pc.uz-(P.z-sz)*pc.ux;
+        if(Math.abs(al)<half+G.guard && Math.abs(ac)<TH){ const to=(al<0?-1:1)*(half+G.guard)-al; P.x+=pc.ux*to; P.z+=pc.uz*to; } } }
     // a tower at every corner and at both ends of each run of wall (the gate's sides included), the gatehouse over the gate
     const gw=Gt ? (FORT.gateW+2*(f.gp[4]||5))*C.gateW : 0, TW=FORT.arch.flankW*C.towerW, TH2=H+C.towerUp, pts=[];
     for(const pc of f.pieces||[]){ for(const [end,sg] of [[pc.prev,-1],[pc.next,1]]) if(!end) pts.push([pc.cx+pc.ux*sg*pc.pl/2, pc.cz+pc.uz*sg*pc.pl/2, pc.ry]); }

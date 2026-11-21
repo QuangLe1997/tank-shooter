@@ -308,6 +308,10 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry' },
   wallUp:1.5, thick:1.25, towerW:1.35, towerUp:3, keepW:1.3, keepH:1.15, gateW:1.15, door:[0.2, 0.55] };
+// Z378 the see-through seams in a dressed fort's wall (dressFort: where the model's ragged end meets its own start again, every rep sections) opened into
+//   a clean breach w m wide, the soldier and the xe ôm through it, a tank not — only between two sections of one run of wall, and only when the model spans
+//   at least minRep sections · bin = the height of the rows the cut faces are filled in (m) · guard = how far a wall-top rifleman stands off its edge (m)
+export const FORT_GAP = { w:2.6, minRep:4, bin:0.2, guard:0.8 };
 // Z269 the field headquarters at the heart of our base (actors/core.js dressCore; Tripo, from a generated concept): w = footprint (m), sink = share of its height under the pad, hitR = the core's hit radius with it
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
   walls:{ wallUp:0.4, thick:1.0, sink:-0.4, towerUp:-0.6, towerW:0.85 } };   // Z273 the concrete compound (world/core-walls.js dressWalls): wall height over CORE_DEF.H, thickness ×, tower height / width
