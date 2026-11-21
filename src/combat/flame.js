@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
 import { BALANCE, LOCKON, REALCITY } from '../../config.js';
-import { CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
+import { fireLine, CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -155,10 +155,11 @@ export function fireGun(now, range){
     const sx0=_v.x, sz0=_v.z, sy0=_v.y, arcD=0, dropD=Math.min(Math.max(4, aimDist-md), Math.max(4,maxDist-md));   // direct fire is FLAT (APFSDS/autocannon) — no lob over the target   // realism: rounds leave the MUZZLE — a tank pressed against yours is inside the barrel's reach (riders/drone handle it)
     if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('QUÁ GẦN CHO PHÁO CHÍNH','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
     const air = airShot(sx0, sz0, g.bspeed);   // Z313 laid on an aircraft: lead it, climb to its height (combat/air-aim.js)
+    const XL = air || g.lock ? null : fireLine(sx0, sy0, sz0), a1 = XL && Math.abs(Math.atan2(Math.sin(XL.a - ang), Math.cos(XL.a - ang))) < 0.06 ? XL.a : ang;   // Z376 the shell to the crosshair's point (combat/crosshair.js): its height there, and its line once the turret is on it
     for(let i=0;i<n;i++){
-      const a = (air ? air.a : ang) + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
+      const a = (air ? air.a : a1) + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
       const mD=g.lock ? Math.min(maxDist, LOCKON.range) : maxDist;   // Z238 a lock-on missile's reach is capped
-      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist:mD, arcDist:air ? air.dropDist : arcD, noArc:!!air, y:sy0, dropTo:air ? air.dropTo : 1.2, dropDist:air ? air.dropDist : dropD, airAim:air ? air.e : null, type:g.type, reach:mD, fall:g.fall??1,
+      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist:mD, arcDist:air ? air.dropDist : arcD, noArc:!!air, y:sy0, dropTo:air ? air.dropTo : XL ? XL.dropTo : 1.2, dropDist:air ? air.dropDist : XL ? Math.max(2, XL.dropDist) : dropD, airAim:air ? air.e : null, type:g.type, reach:mD, fall:g.fall??1,
         pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, rocket:!!g.lock, smart:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*gunSplash(g) : 0),
         freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos});
     }

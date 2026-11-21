@@ -7,7 +7,7 @@
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
 import { PAD_CFG, FEEL } from '../../config.js';
-import { MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, equippedGun, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
+import { crosshairPad, MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, equippedGun, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { gunCombo:false, fireHeld:false, lobR:0, lobO:0, lobOn:false, fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k];
@@ -58,7 +58,7 @@ function lobAim(p, dt, C){ const L=PAD_CFG.lob, sens=C.sens||1, maxR=playerRange
   const ry=Math.abs(PAD.ry)>L.dead ? PAD.ry : 0, rx=Math.abs(PAD.rx)>L.dead ? PAD.rx : 0;
   PAD.lobR=Math.max(L.min, Math.min(maxR, PAD.lobR - ry*L.speed*sens*dt));
   PAD.lobO+=(rx*L.arc-PAD.lobO)*Math.min(1, dt*L.ease);
-  const a=p.facing+PAD.lobO; S.aimPoint.set(p.pos.x+Math.sin(a)*PAD.lobR, 0, p.pos.z+Math.cos(a)*PAD.lobR); S.pointerActive=true; PAD.aimIdle=0; }
+  const a=p.facing+PAD.lobO; S.aimPoint.set(p.pos.x+Math.sin(a)*PAD.lobR, 0, p.pos.z+Math.cos(a)*PAD.lobR); S.pointerActive=true; PAD.aimIdle=0; if(ry||rx) crosshairPad(); }
 let _lobTxt='';
 function lobHud(on){ const el=document.getElementById('lobHud'); if(!el) return; document.body.classList.toggle('lob', on); if(!on) return;
   const t='TẦM '+Math.round(PAD.lobR||0)+' m · cần phải ↑↓ chỉnh tầm · ←→ xoay trong cung 180° trước mũi xe'; if(t!==_lobTxt){ _lobTxt=t; el.textContent=t; } }
@@ -70,7 +70,7 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
   if(lobG){ lobAim(p, dt, C); }
   else if(am>0.02 && am<PAD_CFG.aim.minMag){ PAD.aimIdle=0; }                                      // Z124 a barely-tilted stick holds the gun where it is (its angle is just noise)
   else if(am>=PAD_CFG.aim.minMag){ _d.set(PAD.rx, 0, PAD.ry); const m=Math.min(1,_d.length()); _d.normalize(); if(S.camYaw) _d.applyAxisAngle(_UP, S.camYaw);
-    const R=playerRange()*(0.45+0.55*m); S.aimPoint.set(p.pos.x+_d.x*R, 0, p.pos.z+_d.z*R); S.pointerActive=true; PAD.aimIdle=0; }
+    const R=playerRange()*(0.45+0.55*m); S.aimPoint.set(p.pos.x+_d.x*R, 0, p.pos.z+_d.z*R); S.pointerActive=true; PAD.aimIdle=0; crosshairPad(); }   // (Z376 lifted onto a man near that line, or chest high: combat/crosshair.js)
   else { PAD.aimIdle+=dt; if(C.assist && PAD.aimIdle>PAD_CFG.assistAfter){ const t=aimTarget(playerRange());
       if(t){ S.aimPoint.set(t.pos.x, 0, t.pos.z); S.pointerActive=true; }
       else if(PAD.aimIdle>PAD_CFG.assistAfter+0.8){ S.aimPoint.set(p.pos.x+Math.sin(p.facing)*14, 0, p.pos.z+Math.cos(p.facing)*14); S.pointerActive=true; } } }   // nothing near: look where you drive

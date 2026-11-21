@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
 import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE, AIRAIM } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch, sightToBuildings } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wetAt, airPitch, sightToBuildings , camAimA} from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -239,7 +239,7 @@ export function updateCamera(dt, now){
   { const yt=S.camYawT??S.camYaw, d=wrapAngle(yt-CAM.ya); sd(CAM, 'ya', CAM.ya+d, F.yaw, st);                       // the view turns along the shortest arc
     if(Math.abs(d)<2e-4 && Math.abs(CAM.yaV)<2e-3){ CAM.ya=yt; CAM.yaV=0; } S.camYaw=CAM.ya; }
   const ck=(p.camK||1), z=S.zoom, zk=Math.min(1, z), cy=S.camYaw, ah=CS.ahead*Math.max(0.4, zk)*ck*ck;   // Z245 a man / horseman: look-ahead shrinks (×camK²) so he stays in frame   // Z171 close-ups keep the tank centred · Z184 the cine style looks well ahead
-  sd(CAM, 'lx', (Math.sin(p.aim)*6 + p.vel.x*0.18)*0.45*zk, F.lead, st); sd(CAM, 'lz', (Math.cos(p.aim)*6 + p.vel.z*0.18)*0.45*zk, F.lead, st);   // look-ahead (aim + motion) glides
+  const la=camAimA(p); sd(CAM, 'lx', (Math.sin(la)*6 + p.vel.x*0.18)*0.45*zk, F.lead, st); sd(CAM, 'lz', (Math.cos(la)*6 + p.vel.z*0.18)*0.45*zk, F.lead, st);   // look-ahead (aim + motion) glides (Z376 the aim as the mouse last laid it: combat/crosshair.js)
   sd(CAM, 'fx', p.pos.x, F.follow, st); sd(CAM, 'fz', p.pos.z, F.follow, st);                                       // the tank itself is held tight
   camLook.set(CAM.lx, 0, CAM.lz);
   camTarget.set(CAM.fx + CAM.lx - Math.sin(cy)*ah, 0, CAM.fz + CAM.lz - Math.cos(cy)*ah);

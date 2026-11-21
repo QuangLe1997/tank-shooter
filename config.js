@@ -534,6 +534,16 @@ export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol:
 //   Z316 one of our men lying flat / crouched stands only body.prone / body.crouch (m) high, and the enemy lays its aim on aim.prone / aim.crouch (m)
 export const LINE = { manH:2.1, tankH:2.8, floor:0.4, over:1.2, body:{ prone:0.7, crouch:1.4 }, aim:{ prone:0.35, crouch:0.85 } };
 export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, tankUp:0.55, manUp:1.05, col:0xff5a3a };
+// Z376 THE CROSSHAIR IS WHERE THE ROUND GOES (combat/crosshair.js): the point under it in the world (a man, a hull, a wall, a house, the ground — not
+//   the ground behind them), the same for the mouse and the pad, the round flown from the muzzle straight to it. reach = how far the eye looks (m);
+//   step = the ground march [first, per metre]; man = a man as the eye sees him (radius, standing / crouched / lying height, his aim point kept
+//   off his feet and head); chest = the pad's aim height over the ground; pad.lat = how far off the stick's line a man is still taken up (m);
+//   awake = s after the crosshair last moved that the rifle stays up on it while he runs; fireTol = how far off the aim the bore may be for the
+//   trigger (rad); turn.twist = what the chest takes before the hips turn (rad), turn.walk = hips that far off the run: he backs / side-steps off at backV m/s (under SOLDIER_LEGS.stand.maxV: his own legs walk it — the clips only
+//   ever run forward); aimRate = the
+//   chest's swing (rad/s); stop = the red mark where the line of fire meets something first
+export const XHAIR = { reach:180, step:[0.3, 0.012], man:{ r:0.5, h:1.85, low:1.35, prone:0.6, lo:0.35, hi:0.2 }, chest:1.2, tankUp:1.3, pad:{ lat:1.8, near:2 },
+  awake:2.2, fireTol:0.3, turn:{ twist:1.0, walk:0.8, backV:2.2 }, aimRate:6.5, stop:{ min:1.5, px:22 } };
 // Z326 AIMING UP AT AN AIRCRAFT (actors/real-cav.js): past the rifle's normal tip-up he leans back from the waist — k × the extra, at most max (rad),
 //   shared [Spine, Spine1, Spine2] — so the butt stays in his shoulder as the muzzle climbs; his head and neck (neck's share) tip back the rest of the
 //   way to sight along the barrel (sight × the gun's angle); eased at rate /s; lying flat he can't lean back — the muzzle comes up no further than prone
