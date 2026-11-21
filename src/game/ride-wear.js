@@ -4,7 +4,7 @@
 // The bike never chases you: on foot you go where you like; G climbs back on when you are near, or calls the ride over when you are not.
 import * as THREE from 'three';
 import { XEOM } from '../../config.js';
-import { CV, S, floatText, sfx, spawnPart } from '../hub.js';
+import { CV, DRIVER_RANT, S, driverBack, driverStall, floatText, sfx, spawnPart } from '../hub.js';
 
 const _p = new THREE.Vector3();
 const W = () => XEOM.wear;
@@ -20,10 +20,10 @@ export function rideWear(H, dmg){ if(!H || !H.bike || H.broken || !(dmg > 0)) re
   if(k <= 0) rideBreak(H); }
 export function rideBreak(H){ if(!H || H.broken) return; H.broken = true; sfx('clang');
   say('XE CHẾT MÁY! BÁC TÀI ĐANG SỬA', '#ff6a4a');
-  const D = H.drv; if(D && D.ok && D.state === 'ride'){ D.state = 'fix'; D.t2 = 0; }
+  const D = H.drv; if(D && D.ok && D.state === 'ride') driverStall(H);   // Z361 he takes it badly first: the kick-start, a boot to the tyre, a row with the soldier (actors/driver-rant.js) — then the repair
   if(CV.H === H){ CV.call = false; if(CV.mounted && !CV.trans) CV.trans = { k:'off', t:0 }; } }   // the soldier steps off (not thrown)
 export function rideFixed(H){ H.broken = false; H.hp = rideHpMax(H) * W().fixHp; sfx('whoosh'); say('NỔ MÁY RỒI! LÊN XE ĐI CON (G)', '#9be04a'); }
-export function rideReset(H){ if(!H || !H.bike) return; H.hp = rideHpMax(H); H.broken = false; const D = H.drv; if(D && D.state === 'fix'){ D.state = 'ride'; D.fixK = 0; } }
+export function rideReset(H){ if(!H || !H.bike) return; H.hp = rideHpMax(H); H.broken = false; const D = H.drv; if(D && D.state === 'fix'){ D.state = 'ride'; D.fixK = 0; } else if(D && (D.state === 'stall' || DRIVER_RANT.has(D.state))) driverBack(H); }
 // smoke off a worn engine: grey wisps, then black, then a column from a dead one
 export function rideSmoke(H, dt){ if(!H || !H.body || typeof window === 'undefined') return; const k = rideHealth(H), w = W(); if(k >= w.smoke && !H.broken) return;
   const heavy = H.broken ? 1 : k < w.limp ? 0.6 : 0.2; H.smokeAcc = (H.smokeAcc || 0) + (H.broken ? 12 : k < w.limp ? 8 : 4) * dt;   // puffs per second, metered (never thinned away)

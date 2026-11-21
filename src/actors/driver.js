@@ -12,10 +12,11 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { RIDE, RIDE_TALK, XEOM } from '../../config.js';
-import { BIOME, CV, DRIVER_ACTS, NIGHT, S, bikeHop, blendPose, burst, curlHand, downedRide, driverAct, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, snapPose, spawnPart, hudOn } from '../hub.js';
+import { BIOME, CV, DRIVER_ACTS, DRIVER_RANT, NIGHT, S, bikeHop, blendPose, burst, curlHand, downedRide, driverAct, driverLine, driverRant, driverStall, drvStallLook, drvStallStep, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, snapPose, spawnPart, hudOn } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _m = new THREE.Matrix4();
+const _k1 = new THREE.Vector3(), _k2 = new THREE.Vector3(), _k3 = new THREE.Vector3(), _k4 = new THREE.Vector3();
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ease = k => k * k * (3 - 2 * k);
 const bones = root => { const B = {}; root.traverse(o => { if(o.isBone && o.name.startsWith('mixamorig')) B[o.name.slice(9)] = o; }); return B; };
 
@@ -37,7 +38,7 @@ function ik2(a, b, c, t, pole){ a.getWorldPosition(_ia); b.getWorldPosition(_ib)
 
 // ---- build: the driver onto ride H (once his model is in) ----
 export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof window === 'undefined') return null;
-  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, peek:false, pk:0, pkN:0, sacN:0, sacA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0 };
+  const D = H.drv = { kind, R, ok:false, state:'ride', t:0, duck:0, duckT:0, tilt:0, weave:0, wheel:0, wheelT:0, pitch:0, thr:0, gear:0, gearT:0, roll:0, lastV:0, sayAt:0, cool:0, look:0, ip:0, ivp:0, il:0, ivl:0, ih:0, ivh:0, glN:0, glE:0, glA:0, peek:false, pk:0, pkN:0, sacN:0, sacA:0, fd:[0, 0], fdab:[0, 0], ankle:0.04, toeSlope:-0.4, storm:0, dodgeN:0, threat:0, threatT:0, chatK:0, chatS:1, bk:0, bkN:0, bkS:1, bkOn:false };
   loadGLTF(RIDE.model[kind]).then(gl => { if(!gl || H.drv !== D) return; const sc = skClone(gl.scene), w = new THREE.Group(); w.name = 'driver';
     sc.traverse(o => { if(o.isSkinnedMesh){ o.frustumCulled = false; o.castShadow = true; o.receiveShadow = true; } });
     const b = new THREE.Box3().setFromObject(sc); w.add(sc); sc.rotation.y = RIDE.yaw; D.h0 = Math.max(1e-3, b.max.y - b.min.y); const s = D.s0 = RIDE.h / XEOM.k / D.h0; w.scale.setScalar(s);
@@ -56,9 +57,10 @@ export function makeDriver(H, kind){ const R = RIDE.fit[kind]; if(!R || typeof w
 // ---- what he says (RIDE_TALK: by event, the driver's line then the soldier's answer) — floating words for now, voices later ----
 export const RIDE_VOICE = { on:false, play:null };   // a voice player can be hung here: play(who, event, index)
 function talk(D, ev, force){ const T = RIDE_TALK[ev], now = performance.now() / 1000, p = S.player; if(!T || !p || (!force && now < D.sayAt)) return; D.sayAt = now + RIDE_TALK.gap;
+  D.chatT = now; D.chatS = D.bkOn ? D.bkS : Math.random() < 0.5 ? -1 : 1;   // (Z361 he turns his head back over a shoulder to say it: ridePose)
   const i = (Math.random() * T.d.length) | 0, at = () => new THREE.Vector3(p.pos.x, p.pos.y + 3.2, p.pos.z);
   const show = hudOn('talk'); if(show) floatText(T.d[i], RIDE_TALK.col.d, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('driver', ev, i);   // (Z324 the lines on screen only when THOẠI TRÊN MÀN HÌNH is on; the voice always)
-  if(T.s && T.s.length){ const j = (Math.random() * T.s.length) | 0; setTimeout(() => { if(S.player === p){ if(show) floatText(T.s[j], RIDE_TALK.col.s, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('soldier', ev, j); } }, RIDE_TALK.reply * 1000); } }
+  if(T.s && T.s.length){ const j = (Math.random() * T.s.length) | 0; setTimeout(() => { if(S.player === p){ D.heardT = performance.now() / 1000; if(show) floatText(T.s[j], RIDE_TALK.col.s, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('soldier', ev, j); } }, RIDE_TALK.reply * 1000); } }
 
 // ---- events from the game ----
 export function bikeWheelie(H){ const D = H && H.drv; if(!D || D.state !== 'ride' || !RIDE.fit[D.kind].wheelie) return false; D.wheelT = RIDE.wheelie.dur; sfx('whoosh'); talk(D, 'wheelie', true);
@@ -91,16 +93,19 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
   const underFire = D.duckT > 0; D.duckT = Math.max(0, D.duckT - dt); D.duck += ((underFire ? 1 : 0) - D.duck) * Math.min(1, dt * 6);
   const weaveOn = D.state === 'ride' && sp > 0.55 && (underFire || S.firing); D.weave += ((weaveOn ? 1 : 0) - D.weave) * Math.min(1, dt * 3);
   const wv = D.weave * RIDE.weave.amp * Math.sin(D.t * RIDE.weave.f * Math.PI * 2);
-  let roll = H.two === false ? 0 : H.lean + wv * 1.4 * sp; if(D.state !== 'ride' && D.state !== 'mount') roll = D.roll;   // (three wheels don't bank: they weave flat)
+  const onSeat = D.state === 'ride' || D.state === 'mount' || D.state === 'stall';
+  let roll = H.two === false ? 0 : H.lean + wv * 1.4 * sp; if(!onSeat) roll = D.roll;   // (three wheels don't bank: they weave flat)
   H.B.rotation.set(-D.pitch, wv * 0.5, roll, 'YXZ'); H.B.position.x = 0; H.B.position.z = 0;
   if(D.pitch > 1e-3){ _a.set(0, 0, R.rear); _b.copy(_a).applyEuler(H.B.rotation); H.B.position.add(_c.subVectors(_a, _b)); }
-  if(D.state !== 'ride' && D.state !== 'mount' && H.lie) H.B.position.y += H.lie[D.roll < 0 ? 0 : 1] * Math.min(1, Math.abs(D.roll) / 1.35);   // Z300 down on its side it rests ON the ground (its lowest point there), not half sunk into it
+  if(!onSeat && H.lie) H.B.position.y += H.lie[D.roll < 0 ? 0 : 1] * Math.min(1, Math.abs(D.roll) / 1.35);   // Z300 down on its side it rests ON the ground (its lowest point there), not half sunk into it
   // throttle and gears: the right grip twists back as he opens it; the left foot flicks up through the gears
   D.thr += (clamp(acc / 6, -0.4, 1) - D.thr) * Math.min(1, dt * 8);
   const g = RIDE.gears.filter(x => Math.abs(v) > x).length; if(g !== D.gear){ if(g > D.gear && R.gearFoot){ D.gearT = 0.28; sfx('click'); } D.gear = g; } D.gearT = Math.max(0, D.gearT - dt);
-  if(D.state === 'ride' || D.state === 'mount'){ ridePose(H, D, dt, v, yr); if(D.state === 'mount'){ blendPose(D, dt); D.t2 += dt; if(D.t2 >= RIDE.crash.mount){ if(H.broken){ D.state = 'fix'; D.t2 = 0; } else { D.state = 'ride'; talk(D, 'remount', true); if(D.onBack) D.onBack(); } } } }   // (Z303 picked up but dead: straight to the repair)
+  if(onSeat){ const st = D.state === 'stall'; if(st) drvStallStep(H, D, dt, v); ridePose(H, D, dt, v, yr); if(st) drvStallLook(H, D);   // (Z361 the engine dead under him: actors/driver-rant.js)
+    if(D.state === 'mount'){ blendPose(D, dt); D.t2 += dt; if(D.t2 >= RIDE.crash.mount){ if(H.broken) driverStall(H); else { D.state = 'ride'; talk(D, 'remount', true); if(D.onBack) D.onBack(); } } } }   // (Z303 picked up but dead: straight to the repair)
   else if(D.state === 'fix') fixStep(H, D, dt);
   else if(DRIVER_ACTS.has(D.state)) driverAct(H, D, dt);   // Z331 crawling to it, heaving it up, giving himself up
+  else if(DRIVER_RANT.has(D.state)) driverRant(H, D, dt);   // Z361 off the dead bike: a boot to the tyre, a row with the soldier
   else crashStep(H, D, dt);
   if(D.state === 'ride' && sp > 0.85 && Math.abs(yr) > 1.1) talk(D, 'turn');
   else if(D.state === 'ride' && sp > 0.9) talk(D, 'fast'); }
@@ -114,7 +119,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   UP.set(0, 1, 0).applyQuaternion(_qw); FWD.set(0, 0, 1).applyQuaternion(_qw); RIGHT.set(-1, 0, 0).applyQuaternion(_qw);   // the ride's own frame (+z ahead)
   // the hips: on the seat, square to the ride (side = his right), sat back a little in a wheelie
   const stopped = Math.abs(v) < 0.4;
-  onRide(H, R.hip, _a); const hips = B.Hips; hips.parent.worldToLocal(_a); hips.position.copy(_a); hips.updateMatrixWorld(true);
+  onRide(H, R.hip, _a); if(D.state === 'stall' && D.hipUp) _a.addScaledVector(UP, D.hipUp); const hips = B.Hips; hips.parent.worldToLocal(_a);   // (Z361 stood up off the seat on the kick-start) hips.position.copy(_a); hips.updateMatrixWorld(true);
   hips.getWorldPosition(_a); B.Spine.getWorldPosition(_b); B.RightUpLeg.getWorldPosition(_c); B.LeftUpLeg.getWorldPosition(_d);
   _e.subVectors(_b, _a).normalize(); _f.subVectors(_c, _d).normalize(); _g.crossVectors(_f, _e).normalize();
   _m.makeBasis(_f, _e, _g); _q.setFromRotationMatrix(_m); _m.makeBasis(RIGHT, UP, _a.copy(FWD).negate()); _qp.setFromRotationMatrix(_m); _qp.multiply(_q.invert());   // (side × up points backward: the same hand in both frames)
@@ -142,29 +147,49 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   { const S2 = RIDE.straight, hp = B.Hips.getWorldPosition(new THREE.Vector3()), tl = B.Neck.getWorldPosition(new THREE.Vector3()).sub(hp).normalize(), cd = new THREE.Vector3(), td = new THREE.Vector3();
     for(const [b, c, k] of [[B.Spine, B.Spine1, 0], [B.Spine1, B.Spine2, 0], [B.Spine2, B.Neck, S2.chest]]){ if(!b || !c) continue; c.getWorldPosition(cd).sub(b.getWorldPosition(td)).normalize();
       td.copy(tl).applyAxisAngle(RIGHT, k); aim(b, c, cd.lerp(td, S2.k).normalize()); } }
+  // Z361 TALKING TO THE MAN BEHIND HIM: as he says a line (talk) his head turns back over a shoulder (less, and for less long, the faster he goes),
+  //   the chest a little with it; a double nod at the soldier's answer. PANIC under fire: for a while after a hit he snatches looks back over one
+  //   shoulder then the other (toward where the shots came from, mostly), eyes on the road between — and now and then shouts what he sees
+  const CH = RIDE.chat, PN = RIDE.panic, fastK = clamp(Math.abs(v) / CH.fast, 0, 1), ct = nowS - (D.chatT ?? -99);
+  D.chatK += ((ct < CH.hold * (1 - 0.45 * fastK) && cover < 0.2 && CV.mounted && D.state === 'ride' ? 1 : 0) - D.chatK) * Math.min(1, dt * CH.rate);
+  const lastHit = D.hits && D.hits.length ? D.hits[D.hits.length - 1] : -99, panic = D.state === 'ride' && nowS - lastHit < PN.t;
+  if(!panic) D.bkOn = false; else if(nowS > D.bkN){ D.bkOn = !D.bkOn; if(D.bkOn){ D.bkS = D.threat && Math.random() < PN.toThreat ? -D.threat : -(D.bkS || 1); if(Math.random() < PN.say) talk(D, 'behind'); }
+    D.bkN = nowS + (D.bkOn ? PN.back[0] + Math.random() * PN.back[1] : PN.ahead[0] + Math.random() * PN.ahead[1]); }
+  D.bk += ((D.bkOn ? 1 : 0) - D.bk) * Math.min(1, dt * PN.snap); const bkW = D.bk * (cover > 0.3 ? D.pk : 1);   // (ducked low he only looks back as he bobs up)
+  const backY = bkW * D.bkS * PN.yaw + D.chatK * D.chatS * (CH.yaw + (CH.fastYaw - CH.yaw) * fastK) * (1 - D.bk), twist = bkW * D.bkS * PN.twist + D.chatK * D.chatS * CH.twist * (1 - D.bk);
+  if(Math.abs(twist) > 1e-4){ turn(B.Spine1, UP, twist * 0.45); turn(B.Spine2, UP, twist * 0.55); }
   // the head: into the bend, held level against the bank; tucked down and to one side when ducking
   // Z299 and now and then a glance — a mirror, a side street, back at his passenger when slow — unless he is ducking under fire
   // Z304 in a fight (shot at in the last few seconds, or the soldier firing) he is all nerves: quicker, shorter, more frequent looks round
   const now = nowS, alert = S.firing || (D.hits && D.hits.length && now - D.hits[D.hits.length - 1] < RIDE.alert.t), Gl = alert ? RIDE.alert.glance : Z.glance;
   if(now > D.glN || (alert && D.glN - now > Gl[0] + Gl[1])){ D.glN = now + Gl[0] + Math.random() * Gl[1]; D.glE = now + Gl[2] + Math.random() * Gl[3]; D.glA = (Math.random() < 0.5 ? -1 : 1) * (Math.abs(v) < 3 ? 1.1 : alert ? 0.45 + Math.random() * 0.45 : 0.55 + Math.random() * 0.3); }
   if(D.peek && now > D.sacN){ D.sacN = now + RIDE.alert.sac[0] + Math.random() * RIDE.alert.sac[1]; D.sacA = Math.random() < 0.4 ? 0 : (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.4); }   // peeking: the eyes dart
-  const glance = D.peek ? D.sacA : (now < D.glE && cover < 0.2 ? D.glA : 0);
+  // Z361 FIRED UP: now and then (more often in a fight) his left hand comes off the bar and jabs ahead at the enemy — or punches the air — and
+  //   he roars the soldier on (RIDE_TALK.charge): eyes front, chin up, the throttle kept open in his right; not ducking, panicking or in a hard turn
+  const CG = RIDE.charge; if(D.chgN == null) D.chgN = now + CG.first;
+  if(D.state === 'ride' && CV.mounted && now > D.chgN){ const E = alert ? CG.fight : CG.every; D.chgN = now + E[0] + Math.random() * E[1];
+    if(cover < 0.2 && !panic && Math.abs(yr) < CG.yr && D.wheelT <= 0 && Math.abs(v) > CG.v){ D.chgT = now; D.chgFist = Math.random() < CG.fist; talk(D, 'charge', true); D.chatT = -99; } }
+  D.chg = (D.chg || 0) + ((D.state === 'ride' && now - (D.chgT ?? -99) < CG.dur && cover < 0.3 ? 1 : 0) - (D.chg || 0)) * Math.min(1, dt * CG.rate);
+  const glance = (D.peek ? D.sacA : (now < D.glE && cover < 0.2 ? D.glA : 0)) * (1 - D.bk) * (1 - D.chatK) * (1 - D.chg);
   D.look += (clamp(yr * 0.35 + glance, -1.2, 1.2) - D.look) * Math.min(1, dt * (D.peek || alert ? RIDE.alert.snap : 5)); D.tilt += ((D.duck > 0.3 ? (D.side || 1) * 0.35 : 0) - D.tilt) * Math.min(1, dt * 4);
-  turn(B.Neck, UP, D.look * 0.6); turn(B.Head, UP, D.look * 0.4); turn(B.Head, FWD, -(H.B.rotation.z + (I ? I.r : 0)) * RIDE.lean.head + D.tilt); turn(B.Neck, RIGHT, bend * 0.5 - D.duck * 0.45 * hid - D.ih); turn(B.Head, RIGHT, I ? -I.p * 0.7 : 0);   // eyes held level (chin back up as the back bends; down when ducking)
+  turn(B.Neck, UP, D.look * 0.6 + backY * 0.55); turn(B.Head, UP, D.look * 0.4 + backY * 0.45); turn(B.Head, FWD, -(H.B.rotation.z + (I ? I.r : 0)) * RIDE.lean.head + D.tilt); turn(B.Neck, RIGHT, bend * 0.5 - D.duck * 0.45 * hid - D.ih); turn(B.Head, RIGHT, I ? -I.p * 0.7 : 0);   // eyes held level (chin back up as the back bends; down when ducking)
   if(D.storm > 0.01){ turn(B.Neck, RIGHT, -D.storm * DG.face * (1 - D.pk)); turn(B.Head, UP, (D.threat || D.side || 1) * D.storm * DG.away * (1 - D.pk)); }   // face down, turned from the guns
+  { const hn = nowS - (D.heardT ?? -99), spk = D.chatK * clamp(1 - ct / CH.speak, 0, 1), nod = hn < CH.nodT && D.state === 'ride' ? -CH.nod * Math.sin(hn / CH.nodT * Math.PI * 4) * (1 - hn / CH.nodT) : 0;   // Z361 the words nodded out; a double nod at the answer
+    if(nod || spk > 0.01) turn(B.Head, RIGHT, nod + spk * Math.sin(ct * 11) * CH.bob); if(D.chg > 0.01) turn(B.Neck, RIGHT, CG.chin * D.chg); }
   // hands to the grips (the right one twists the throttle), elbows out and down
   for(const sd of [['Left', 0], ['Right', 1]]){ const [L, i] = sd; onRide(H, R.grip[i], _a, true);   // (the grips turn with the bars)
     B[L + 'Arm'].getWorldPosition(_b); _b.addScaledVector(RIGHT, (i ? 1 : -1) * 0.5 * (1 - 0.6 * D.storm)).addScaledVector(UP, -0.35).addScaledVector(FWD, -0.15);   // (tucked in under fire)
     const gp = _a.clone(), wrist = gp.clone().addScaledVector(UP, 0.035).addScaledVector(FWD, -0.065);   // the bar in the palm: the wrist just behind and above it
     ik2(B[L + 'Arm'], B[L + 'ForeArm'], B[L + 'Hand'], wrist, _b.clone()); rollHand(B, L, _c.copy(RIGHT).multiplyScalar(i ? 1 : -1).applyAxisAngle(UP, (i ? -1 : 1) * (R.sweep || 0))); curlHand(B, L, RIDE.grip, gp.addScaledVector(UP, -0.03)); }   // (Z304 knuckles out along the bar)   // fingers closed round the grip
   if(B.RightHand && B.RightForeArm){ B.RightForeArm.getWorldPosition(_a); B.RightHand.getWorldPosition(_b); turn(B.RightHand, _c.subVectors(_b, _a).normalize(), -D.thr * 0.7); }
+  if(D.chg > 0.01 && B.LeftHandMiddle1) chargeArm(H, D, ease(D.chg), now - (D.chgT ?? now));   // Z361 the left hand off the bar: jabbing ahead, or a fist in the air
   // feet: on the pegs / floorboard; stopped, the left foot goes down to the road; the gear flick lifts the left toe
   // Z300 THE FEET ON THE ROAD: slowing to a stop both feet come off the pegs / pedals and are planted on the actual ground either side (its real height under
   //   each foot, the sole flat); hard through a bend at speed the inside foot goes out ahead and skims the road like a racer's, kicking up dust
   const FT = RIDE.feet, body = H.body || H.B, ws = body.getWorldScale(_g).y, lat = I ? I.lat : 0, inner = yr > 0 ? 0 : 1;
   const dab = H.two !== false && Math.abs(v) > FT.dabV && Math.abs(lat) > FT.dabLat && D.state === 'ride';
   for(const [L, i] of [['Left', 0], ['Right', 1]]){ const sd = i ? -1 : 1;   // (+x is his left)
-    D.fd[i] += ((Math.abs(v) < FT.stopV && D.state === 'ride' ? 1 : 0) - D.fd[i]) * Math.min(1, dt * FT.rate * (i ? 0.8 : 1.15));   // (the left foot first, the right a beat later)
+    D.fd[i] += ((Math.abs(v) < FT.stopV && (D.state === 'ride' || D.state === 'stall') ? 1 : 0) - D.fd[i]) * Math.min(1, dt * FT.rate * (i ? 0.8 : 1.15));   // (the left foot first, the right a beat later)
     D.fdab[i] += ((dab && i === inner ? 1 : 0) - D.fdab[i]) * Math.min(1, dt * FT.rate * 1.4);
     _a.fromArray(R.peg[i]);
     if(i === 0 && D.gearT > 0) _a.y += Math.sin(D.gearT / 0.28 * Math.PI) * 0.035;
@@ -173,9 +198,23 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
       const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg[i][0]) + (dk ? FT.dabOut : FT.out)), 0, R.peg[i][2] + (dk ? FT.dabFwd : FT.fwd)); body.localToWorld(_c);
       _c.y = heightAt(_c.x, _c.z) + D.ankle * ws + (dk ? FT.hover : 0); _a.lerp(_c, ease(down));
       if(dk && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:new THREE.Color(FT.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
+    if(i === 1 && D.state === 'stall' && D.kickW > 0 && D.kickFoot) _a.lerp(D.kickFoot, ease(D.kickW));   // Z361 on the kick-start lever
     B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(FWD, 1).addScaledVector(RIGHT, sd * -0.35 * (1 + down)).addScaledVector(UP, 0.3);
     ik2(B[L + 'UpLeg'], B[L + 'Leg'], B[L + 'Foot'], _a.clone(), _b.clone());
     if(down > 0.05) flatFoot(B[L + 'Foot'], B[L + 'ToeBase'], D.toeSlope, down); } }
+// Z361 his left arm from the grip to the charge: thrust ahead and a little up, index out, jabbing — or the fist punched up, pumping
+const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
+function chargeArm(H, D, k, t){ const B = D.B, R = D.R, CG = RIDE.charge;
+  if(!D.armL){ B.LeftArm.getWorldPosition(_k1); B.LeftForeArm.getWorldPosition(_k2); B.LeftHand.getWorldPosition(_k3); D.armL = _k1.distanceTo(_k2) + _k2.distanceTo(_k3); } const L = D.armL;
+  onRide(H, R.grip[0], _k1, true); _k1.addScaledVector(UP, 0.035).addScaledVector(FWD, -0.065);   // where the wrist was, on the bar
+  B.LeftArm.getWorldPosition(_k2); _k4.copy(FWD).multiplyScalar(Math.cos(CG.up)).addScaledVector(UP, Math.sin(CG.up)).addScaledVector(RIGHT, 0.08).normalize();
+  if(D.chgFist) _k3.copy(_k2).addScaledVector(UP, L * 0.8 + Math.abs(Math.sin(t * CG.pump * 0.5)) * 0.08).addScaledVector(FWD, 0.12).addScaledVector(RIGHT, 0.06);
+  else _k3.copy(_k2).addScaledVector(_k4, L * (0.86 + Math.max(0, Math.sin(t * CG.pump)) * 0.08));
+  _k1.lerp(_k3, k); _k3.copy(_k2).addScaledVector(RIGHT, -0.4).addScaledVector(UP, -0.35).addScaledVector(FWD, -0.1); ik2(B.LeftArm, B.LeftForeArm, B.LeftHand, _k1.clone(), _k3.clone());
+  for(const F of FINGERS) for(let s = 1; s <= 3; s++){ const b = B['LeftHand' + F + s], q = b && D.rest.get(b); if(q) b.quaternion.copy(q); } B.LeftHand.updateMatrixWorld(true);   // (the grip's curl undone)
+  if(k < 0.5){ curlHand(B, 'Left', RIDE.grip * (1 - k * 2), _k1.clone().addScaledVector(UP, -0.03)); return; }
+  if(D.chgFist){ rollHand(B, 'Left', _k4.copy(FWD)); curlHand(B, 'Left', 1, _k1.clone().addScaledVector(FWD, 0.06)); }
+  else { aim(B.LeftHand, B.LeftHandMiddle1, _k4.clone()); rollHand(B, 'Left', _k3.copy(UP).negate()); curlHand(B, 'Left', 0.95, _k1.clone().addScaledVector(RIGHT, 0.1), 0, 0); } }
 // the sole flat on the road: the ankle → toe line turned level (with the foot's own rest slope), as much as the foot is down
 function flatFoot(f, t, slope, w){ if(!f || !t) return; f.getWorldPosition(_d); t.getWorldPosition(_e); _e.sub(_d); const L = _e.length(); if(L < 1e-5) return; _e.divideScalar(L);
   _f.set(_e.x, 0, _e.z); if(_f.lengthSq() < 1e-6) return; _f.normalize().multiplyScalar(Math.cos(slope)); _f.y = Math.sin(slope);
@@ -184,10 +223,10 @@ function flatFoot(f, t, slope, w){ if(!f || !t) return; f.getWorldPosition(_d); 
 // ---- Z303 the repair: off the seat into a squat on the ride's left side, facing it; one hand braced on the frame, the other hammering at the engine
 //   head down over it; then up and back onto the seat, the engine fires (rideFixed) and he waits for the soldier ----
 const _fk = new THREE.Vector3(), _rk = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3(), _h3 = new THREE.Vector3(), _h4 = new THREE.Vector3(), _hq = new THREE.Quaternion(), _hm = new THREE.Matrix4();
-function fixStep(H, D, dt){ const F = RIDE.fix, T = XEOM.wear.fixT; D.t2 += dt; const back = D.t2 > T;
+function fixStep(H, D, dt){ const F = RIDE.fix, T = D.fixT || XEOM.wear.fixT; D.t2 += dt; const back = D.t2 > T;   // (Z361 quicker after the rant: D.fixT)
   D.fixK = clamp((D.fixK || 0) + (back ? -1 : 1) * dt * F.ease, 0, 1);
-  fixPose(H, D, dt, ease(D.fixK));
-  if(back && D.fixK <= 0){ D.state = 'ride'; D.t2 = 0; rideFixed(H); talk(D, 'remount', true); if(D.onBack) D.onBack(); } }
+  fixPose(H, D, dt, ease(D.fixK)); blendPose(D, dt); if(D.fixSay && D.t2 > D.fixSay){ D.fixSay = 0; driverLine(D, 'fixing'); }   // (Z361 eased down from the row; the spark-plug mutter)
+  if(back && D.fixK <= 0){ D.state = 'ride'; D.t2 = 0; D.fixT = 0; rideFixed(H); talk(D, 'remount', true); if(D.onBack) D.onBack(); } }
 function fixPose(H, D, dt, k){ const B = D.B, R = D.R, F = RIDE.fix, P = F[D.kind], body = H.body || H.B; if(!P) return;
   for(const [b, q] of D.rest) b.quaternion.copy(q); D.mix.stopAllAction();
   H.B.updateMatrixWorld(true); D.w.updateMatrixWorld(true); body.getWorldQuaternion(_qw); const ws = body.getWorldScale(_h4).y;

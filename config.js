@@ -181,7 +181,17 @@ export const RIDE = { mask:RIDE_MASK, h:1.76, legK:1.07, yaw:-Math.PI / 2, model
   feet:{ stopV:1.1, rate:6, out:0.04, fwd:0.05, dabV:4.5, dabLat:5.5, dabOut:0.17, dabFwd:0.17, hover:0.015, dust:2.2, dustC:0xbfa88a },
   dodge:{ win:2.2, n:3, flinch:1.6, jink:2.2, every:[0.35, 0.45], bend:0.14, face:0.2, away:0.45, lean:0.2, peek:[0.7, 0.5], hide:[0.8, 0.7] },
   // Z304 in a fight: how long it stays (s after a hit), the glances then (every / +random / held / +random), the darting eyes when peeking, how fast his head snaps
-  alert:{ t:6, glance:[0.9, 1.1, 0.25, 0.3], sac:[0.22, 0.3], snap:14 }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.36 }, gears:[2.2, 4.4, 6.4],
+  alert:{ t:6, glance:[0.9, 1.1, 0.25, 0.3], sac:[0.22, 0.3], snap:14 },
+  // Z361 talking: his head turned back toward his passenger (yaw rad stopped, fastYaw at fast m/s and over), held hold s (less at speed), the chest twist
+  //   with it, eased at rate; his words nodded out (bob rad for speak s); a double nod (nod rad over nodT s) at the answer.
+  //   panic: for t s after a hit, snatched looks back over a shoulder (yaw rad of neck and head, twist rad of the chest) held back s, eyes on the road
+  //   ahead s between; toward the shots toThreat of the time; a shout (RIDE_TALK.behind) say of the looks; how fast his head snaps round
+  chat:{ yaw:0.62, fastYaw:0.34, fast:7, hold:1.25, twist:0.14, rate:7, speak:1.1, bob:0.035, nod:0.09, nodT:0.75 },
+  // Z361 fired up: now and then (every [s, +random s]; in a fight fight[...]; the first first s in), riding faster than v m/s and not in a hard turn
+  //   (yr rad/s), his left hand off the bar for dur s — jabbed ahead (up rad above level, pumping at pump rad/s) or, fist of the time, a fist punched up;
+  //   chin up chin rad; eased at rate
+  charge:{ every:[16, 12], fight:[7, 6], first:9, v:2.5, yr:0.6, dur:1.9, up:0.32, pump:11, fist:0.35, chin:0.12, rate:7 },
+  panic:{ t:4.5, yaw:1.45, twist:0.34, back:[0.32, 0.25], ahead:[0.45, 0.55], toThreat:0.4, say:0.35, snap:16 }, wheelie:{ pitch:0.42, dur:1.15 }, weave:{ amp:0.12, f:1.3 }, duck:{ t:1.6, bend:0.36 }, gears:[2.2, 4.4, 6.4],
   crash:{ v:7.5, hit:22, p:0.3, down:1.3, getup:0.5, mount:0.45, cool:8, throwSoldier:true, callR:9 } };   // (Z331 getup = the scramble off his back onto all fours, mount = easing onto the seat)
 // Z331 THE DRIVER OFF THE RIDE (actors/driver-acts.js; m, s, rad, m/s). crawl: his speed on hands and knees, how far each hand / knee reaches per stride,
 //   how high a limb lifts, knees ahead of the hips, knee spread, hands ahead of the shoulders, turn rate, the scramble before he gets going, give-up time.
@@ -208,7 +218,34 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
   lift:{ d:['Dựng xe dậy cái đã!', 'Một… hai… ba… lên!'], s:['Em canh cho!'] },
   slip:{ d:['Hự… tuột tay!', 'Nặng quá trời đất ơi…', 'Ối… thêm cái nữa!'], s:['Cố lên chú!', 'Lẹ lên chú ơi!'] },   // Z331 the first heave slips back
   surrender:{ d:['Đừng bắn! Tôi đầu hàng!', 'Tôi chỉ chạy xe ôm thôi mà!', 'Tha cho tôi, nhà còn vợ con!'], s:[] },   // Z331 the soldier is down: he gives himself up
-  remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!'], s:['Đi!'] } };
+  remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!', 'Lên xe! Cuốc này chú tính gấp đôi nha!'], s:['Đi!', 'Dạ… ghi sổ nha chú!'] },
+  // Z361 the bike dies: on the seat · the kick-start · the tyre booted · the hurt foot · the row (argue: the soldier answers the line of the same index)
+  //   · giving in · the spark-plug mutter at the repair · fired up, urging the soldier on · a panicked look back under fire
+  stall:{ d:['Ơ… ơ… tắt máy rồi!', 'Thôi xong, chết máy!', 'Ủa ủa… sao vậy trời!'], s:['Gì nữa vậy chú?!', 'Chú đừng nói hết xăng nha!'] },
+  kickstart:{ d:['Nổ đi mà… nổ đi cưng!', 'Một cái nữa thôi… nổ!', 'Đạp muốn rụng giò mà không nổ!'], s:[] },
+  kick:{ d:['Đồ xe cà tàng!', 'Mày phản tao hả!', 'Hư hoài vậy mậy!'], s:[] },
+  ouch:{ d:['Á á! Đau chân!', 'Ui da… cái giò tui!', 'Ối… trật khớp rồi!'], s:['Đá chi cho đau vậy chú…', 'Xe có lỗi gì đâu chú!', 'Chú… có sao không?'] },
+  argue:{ d:['Tại con bắn nhau ầm ầm nên nó mới hư đó!', 'Xe này chú chạy hai chục năm chưa hư bữa nào nghe!', 'Tiền sửa xe ai trả? Con trả nha!', 'Chở con có một cuốc mà tui mất cái xe!', 'Lần sau tui chở khách đi chợ thôi, hết chở lính!'],
+    s:['Tại xe chú cũ rích chứ bộ!', 'Thì bữa nay nó hư đó chú!', 'Dạ… ghi sổ quân đội đi chú!', 'Xe còn nguyên đó chú, sửa lẹ đi!', 'Câu đó chú nói lần thứ ba rồi đó!'] },
+  giveup:{ d:['Thôi được rồi… để chú coi máy.', 'Đứng canh cho chú sửa đó nghe chưa!', 'Hừ… nói không lại con!'], s:['Rõ!', 'Chú lẹ lẹ nha!'] },
+  fixing:{ d:['Chắc tại cái bugi…', 'Lau cái bugi là chạy liền!', 'Bình xăng con lại nghẹt rồi…'], s:['Sửa được không chú?', 'Lẹ lên chú ơi, địch tới!'] },
+  charge:{ d:['Quậy đục nước nó cho tao! Tiến lên!!', 'Xông lên con! Bắn nát tụi nó!', 'Đằng kia kìa! Bắn! Bắn!', 'Tiến lên!! Có chú đây!', 'Cho tụi nó biết tay dân xe ôm!'], s:['Rõ, chú!', 'Xông lên!!', 'Chú cứ chạy, em lo!'] },   // (fired up, the hand thrust ahead)
+  behind:{ d:['Phía sau! Nó đuổi sau lưng kìa!', 'Má ơi, còn nữa kìa!', 'Chết rồi chết rồi!'], s:['Chú nhìn đường dùm em!', 'Em thấy rồi, chú cứ chạy!'] } };
+// Z361 THE BIKE DIES UNDER HIM (actors/driver-rant.js; s, m, rad). stall, on the seat: the throttle wrung in vain (wring s, twist rad at twistF rad/s),
+//   the bike let roll to a stop (below still m/s, or roll s more at most), then n kicks on the kick-start, kick s each (the foot on the pad until at[0]
+//   of it, stamped down by at[1], the lever let back up), the pad up and down [up, along] m from the right peg and out from it, how far he stands up
+//   off the seat on the stamp, a beat after the last; his eyes [neck down, head down, turned to the lever]. off: the step down (s) to side m out
+//   from the seat, then walked (m/s, clip rate, walkMax s at most) to a tyre's outer quarter (of its radius along the bike), stood out m from it,
+//   angle rad off the bike's side (stepped down lead m toward that end). kick: wind-up, swing, recoil (s), the foot drawn back [behind, up] and clutched [ahead of the hip, below it, in across] (hands grab m above
+//   it), the hop (s, hops/s, m high, turning rad/s), bent over it (rad), sunk on the standing knee (m); the bike rocks (rad, damping, rad/s).
+//   argue: [fewest, most] rounds of words (none with the soldier firing), each round s, his line say s in and the answer answer s after, gestures eased over blend s, turn rate, the soldier's
+//   face m up, farther than far no row. giveup: the wave (s), all of it (s), the turn back, eased down into the repair squat (s), the mutter s into it;
+//   the repair after a rant takes fixK of XEOM.wear.fixT (the row ate into it)
+export const RIDE_RANT = { stall:{ wring:1.2, twist:0.6, twistF:13, still:0.6, roll:2.5, n:3, kick:0.85, at:[0.4, 0.56], top:[0.25, -0.14], bot:[-0.09, -0.04], out:0.05, rise:0.1, after:0.35, look:[0.4, 0.25, 0.35] },
+  off:{ step:0.55, side:0.42, lead:0.25, walkV:0.95, clip:1.0, walkMax:4, quarter:0.55, angle:0.75, out:0.6 },
+  kick:{ wind:0.42, swing:0.13, back:0.22, wb:[0.32, 0.22], held:[0.3, 0.25, 0.07], grab:0.03, hop:2.0, hopF:2.6, hopH:0.06, spin:0.9, bow:0.68, sink:0.07, rock:0.08, rockD:2.6, rockF:15 },
+  argue:{ rounds:[1, 2], round:3.4, say:0.3, answer:1.9, blend:0.22, turn:7, eye:1.55, far:14 },
+  giveup:{ wave:0.75, dur:1.25, turn:5, squat:0.55, mutter:1.2, fixK:0.55 } };
 // Z293 the war rides (Tripo P2 from reference photos, driver posed on the vehicle): len = true length (m), yaw = turn so the nose faces +z, seat = [height, along] in
 //   the mount's units (m ÷ k) where the soldier's hips (or, standing, his feet) go; pose = how he rides; lean = how far it banks in a turn
 //   Z310 the bán tải's four wheels measured off its model (each tyre its own round piece: centre, radius, width) — they roll, the front pair steers
