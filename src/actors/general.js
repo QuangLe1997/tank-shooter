@@ -181,11 +181,10 @@ export function poseRider(g, H, dt, twist, firing){ const u=g.userData; if(!u.le
   else for(const L of u.legs){ L.hip.rotation.x=-0.83-gal*0.3; L.hip.rotation.y=0; L.hip.rotation.z=L.sx*0.62; L.knee.rotation.x=1.12+gal*0.4; }   // Z246 thighs spread round the barrel, shins down the horse's sides to the stirrups
   u.body.rotation.set(0, 0, 0); u.body.position.set(0, 0, 0);
   const lean = gal*0.42 + can*0.16 + tro*0.06 + Math.sin(ph*2*Math.PI)*can*0.05;
-  u.up.rotation.x = lean*(firing?0.45:1); const lead = RP && RP.stand ? null : seatTwist(u, H, dt, twist);   // Z388 sat on the horse or a pillion: hips and chest round to ±170°, as the real rig
-  if(lead == null){ u.tu = null; u.sat = false; u.gunYaw = null; u.up.rotation.y += (Math.max(-2.0, Math.min(2.0, twist)) - u.up.rotation.y)*Math.min(1, dt*10); }   // standing braced in a bed: the chest alone, as before
-  if(u.arms){ u.arms.rotation.x = -lean*(firing?0.45:0.7) - (firing?0.02:0) + (u.kick||0)*-0.05; u.arms.rotation.y = lead ?? Math.max(-0.5, Math.min(0.5, twist - u.up.rotation.y)); u.arms.rotation.z = 0; }
+  u.up.rotation.x = lean*(firing?0.45:1); const lead = RP && RP.stand ? bedTurn(u, dt, twist) : seatTwist(u, H, dt, twist);   // Z388 sat on the horse or a pillion: hips and chest round to ±170°, as the real rig · Z389 standing in a bed: any way round, stepping
+  if(u.arms){ u.arms.rotation.x = -lean*(firing?0.45:0.7) - (firing?0.02:0) + (u.kick||0)*-0.05; u.arms.rotation.y = lead; u.arms.rotation.z = 0; }
   u.kick=Math.max(0, (u.kick||0)-dt*9); if(firing) u.kick=1; u.gun.position.z=0.16-u.kick*0.06; u.gun.rotation.x=-u.kick*0.12;
-  if(u.sat && !u.realOp){ u.gun.getWorldQuaternion(_sq); _sf.set(0, 0, 1).applyQuaternion(_sq); u.gunYaw = Math.atan2(_sf.x, _sf.z); }   // where the bore really points: the trigger waits for it (combat/soldier-fire.js)
+  if((u.sat || u.bed) && !u.realOp){ u.gun.getWorldQuaternion(_sq); _sf.set(0, 0, 1).applyQuaternion(_sq); u.gunYaw = Math.atan2(_sf.x, _sf.z); }   // where the bore really points: the trigger waits for it (combat/soldier-fire.js)
   if(u.head){ u.head.rotation.y = 0; u.head.rotation.x = -lean*0.6; }
   if(u.cloak) u.cloak.rotation.x = Math.min(1.25, 0.12 + Math.abs(H.v)*0.075) + Math.sin(performance.now()/1000*7)*0.04*Math.min(1, Math.abs(H.v)/6); }
 // Z388 TURNED ROUND IN THE SADDLE, THE FALLBACK RIG TOO (RIDER_TURN, the same numbers as real-cav's Z340): sat on the horse or a pillion, the unwrapped aim
@@ -202,10 +201,26 @@ function seatTwist(u, H, dt, twist){ const RT = RIDER_TURN, C = REALCAV, TAU = M
   const hipMax = H.bike ? C.seatTurn[1] : RT.hip, hyT = cl(Math.sign(u.av)*Math.max(0, Math.abs(u.av) - C.seatTurn[0]), -hipMax, hipMax);
   u.hy += cl((hyT - u.hy)*Math.min(1, dt*C.seatTurn[2]), -C.hipRate*dt, C.hipRate*dt);
   const twLim = RT.max - hipMax; u.tw += cl((cl(u.av - u.hy, -twLim, twLim) - u.tw)*Math.min(1, dt*C.seatTurn[3]), -C.twistRate*dt, C.twistRate*dt);
-  u.body.rotation.y = u.hy; u.up.rotation.y = u.tw; u.sat = true;
+  u.body.rotation.y = u.hy; u.up.rotation.y = u.tw; u.sat = true; u.bed = false;
   for(const Lg of u.legs) Lg.hip.rotation.set(Lg.hip.rotation.x, -u.hy, Lg.hip.rotation.z, 'YXZ');
   return cl(u.av - u.hy - u.tw, -RT.lead, RT.lead); }
-// off the saddle (game/cavalry.js): hips square again, the thighs' Euler order back to the foot rig's, the turn forgotten
-export function seatTurnOff(g){ const u = g.userData; if(!u.body) return; u.tu = u.av = u.gunYaw = null; u.hy = u.tw = 0; u.sat = false; u.body.rotation.y = 0;
+// Z389 STANDING BRACED IN A BED, THE FALLBACK RIG TOO (ba gác / bán tải, as real-cav's braced: REALCAV.standTurn, twistMax): he turns any way round, the
+//   short way — the aim unwrapped (tu) and calmed (av, aimRate); once it is standTurn[1] off his hips he steps round (at most standTurn[2] a step, in
+//   standTurn[3] s), the foot on the turning side lifted first, then the other; the chest twists up to twistMax on the hips, the arms lay the gun the
+//   rest (±0.5); returns that arm yaw.
+function bedTurn(u, dt, twist){ const C = REALCAV, ST = C.standTurn, TAU = Math.PI*2, cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  if(u.tu == null){ u.tw = cl(u.up.rotation.y, -C.twistMax, C.twistMax); u.hy = 0; u.av = u.tw; u.tu = twist; u.step = null; }   // (up onto the bed: from where his chest already is)
+  else u.tu += Math.atan2(Math.sin(twist - u.tu), Math.cos(twist - u.tu));
+  if(Math.abs(u.tu) > TAU){ const w = Math.sign(u.tu)*TAU; u.tu -= w; u.av -= w; u.hy -= w; if(u.step){ u.step.from -= w; u.step.to -= w; } }   // (right round and round: keep the numbers small)
+  u.av += cl(u.tu - u.av, -C.aimRate*dt, C.aimRate*dt);
+  if(!u.step && Math.abs(u.av - u.hy) > ST[1]) u.step = { from:u.hy, to:u.hy + cl(u.av - u.hy, -ST[2], ST[2]), t:0 };
+  if(u.step){ const S = u.step, side = Math.sign(S.to - S.from); S.t = Math.min(1, S.t + dt/ST[3]); u.hy = S.from + (S.to - S.from)*S.t*S.t*(3 - 2*S.t);
+    for(const Lg of u.legs){ const k = Lg.sx === side ? (S.t < 0.5 ? Math.sin(S.t*2*Math.PI) : 0) : (S.t > 0.5 ? Math.sin((S.t*2 - 1)*Math.PI) : 0); Lg.hip.rotation.x -= k*0.35; Lg.knee.rotation.x += k*0.7; }   // (his left is +x: turning left, the left foot goes first)
+    if(S.t >= 1) u.step = null; }
+  u.tw += cl((cl(u.av - u.hy, -C.twistMax, C.twistMax) - u.tw)*Math.min(1, dt*C.seatTurn[3]), -C.twistRate*dt, C.twistRate*dt);
+  u.body.rotation.y = u.hy; u.up.rotation.y = u.tw; u.sat = false; u.bed = true;
+  return cl(u.av - u.hy - u.tw, -0.5, 0.5); }
+// off the saddle / the bed (game/cavalry.js): hips square again, the thighs' Euler order back to the foot rig's, the turn forgotten
+export function seatTurnOff(g){ const u = g.userData; if(!u.body) return; u.tu = u.av = u.gunYaw = u.step = null; u.hy = u.tw = 0; u.sat = u.bed = false; u.body.rotation.y = 0;
   for(const Lg of u.legs || []) Lg.hip.rotation.set(Lg.hip.rotation.x, 0, Lg.hip.rotation.z, 'XYZ'); }
 export function cloakFoot(g, spd, prone){ const u=g.userData; if(u.cloak) u.cloak.rotation.x = prone ? 0.04 : Math.min(0.9, 0.06 + spd*0.11) + Math.sin(performance.now()/1000*5)*0.03*Math.min(1, spd/3); }
