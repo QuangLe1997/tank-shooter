@@ -43,7 +43,7 @@ try {
       if(STANCES.includes('mount')) await page.evaluate(() => window.H.poseStudio.stance('stand'));
       if(ACTIONS){ await page.evaluate(() => window.H.poseStudio.stance('stand'));
         const shoot = async (name, view) => { await page.evaluate(v => window.H.poseStudio.view(v), view); const f = `${tr}-${g}-act-${name}.png`; await page.screenshot({ path:join(OUT, f) }); G.shots[`act/${name}`] = f; await page.evaluate(() => window.H.poseStudio.resume()); };
-        await shoot('truoc-giat', 'left'); await page.evaluate(() => window.H.poseStudio.kick()); await shoot('giat', 'left');
+        await shoot('truoc-giat', 'kick'); await page.evaluate(() => window.H.poseStudio.kick()); await shoot('giat', 'kick');
         for(const [t, n] of [[0.2, 'nap-hopdan'], [0.48, 'nap-tui'], [0.86, 'nap-khoa']]){ await page.evaluate(t => window.H.poseStudio.reloadAt(t), t); await shoot(n, 'stand34'); }
         await page.evaluate(() => window.H.poseStudio.reloadEnd()); await page.evaluate(() => window.H.poseStudio.carry(true)); await shoot('gac-sung', 'stand34'); await page.evaluate(() => window.H.poseStudio.carry(false)); }
       process.stdout.write(`${tr} ${g} ${Object.values(G.stances).every(m => m && m.ok) ? 'ok' : 'FLAG ' + Object.values(G.stances).flatMap(m => m ? m.notes : ['?']).join('; ')}\n`); }
