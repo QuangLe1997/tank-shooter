@@ -6,8 +6,8 @@
 // by reading the model's own texture: green (or snow) is foliage, brown / grey is wood — flutter on top of that, the trunk does not. Until the files
 // load, or if they fail, the procedural trees stay.
 import * as THREE from 'three';
-import { NEARDETAIL, REALTREE } from '../../config.js';
-import { BIOME, FLORA, SUN_VIEW, WTIME, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel } from '../hub.js';
+import { NEARDETAIL, REALTREE, TREEFALL } from '../../config.js';
+import { BIOME, FLORA, SUN_VIEW, WTIME, blocks, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
 
 const SP = {}, GEO = {}, EXTRA = new Set(); let _p = null;
 const U = { wDir:{ value:new THREE.Vector2(REALTREE.wind.dir[0], REALTREE.wind.dir[1]).normalize() }, wAmp:{ value:REALTREE.wind.sway }, wLeaf:{ value:REALTREE.wind.leaf } };
@@ -66,7 +66,8 @@ export function dressTrees(im){ const T = im.userData.tree; if(!T || T.real) ret
   const k = map[T.vi % map.length], S = SP[k]; if(!S) return; const key = k + ':' + T.sMid.toFixed(2);
   if(!GEO[key]){ const g = S.geo.clone(), h = REALTREE.h[k] / T.sMid; g.scale(h, h, h); g.computeBoundingBox(); g.computeBoundingSphere(); GEO[key] = g; }
   im.geometry = ownGeo(GEO[key], im.instanceMatrix.count); im.material = S.mat; im.computeBoundingSphere(); T.real = k; T.h = REALTREE.h[k] / T.sMid; NT.ims.add(im);
-  if(!S.leafy) for(const c of crushables) if(c.im === im) c.leafy = false; }
+  if(!S.leafy) for(const c of crushables) if(c.im === im) c.leafy = false;
+  for(const b of blocks) if(b.kind === 'trunk' && b.im === im){ const t = trunkOf(im.geometry, b.sy, TREEFALL.giantBand); if(t > 0) b.r = t * b.sh; } }   // Z404 a giant's solid trunk: the real one's girth (it was the procedural trunk's, 1.5× too thin)
 
 // Z395 THE NEAR TREES: the shipped trees were simplified to about 40 % of their triangles, and up close a canopy of leaf cards collapses into spiky
 //   shards. The few standing nearest the camera (NEARDETAIL.trees: n within at m) are drawn whole from the original (hd/tree_<k>.glb through

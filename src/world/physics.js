@@ -76,11 +76,11 @@ export function separateTanks(now){
     for(const a of enemies){ if(solidTank(a)) collideTanks(boss,a,now); } }
   for(const bl of blocks.slice()){                                                                       // tanks ↔ cover / boulders / walls (solid, deflecting)
     // Z193 an oriented box that is not masonry (container, car wreck) rams like any other cover
-    if(bl.obb){ const pv={x:p.vel.x,z:p.vel.z}, vn=tankVsWall(p, bl);                                    // Z86 masonry: momentum decides
+    if(bl.obb){ const pv={x:p.vel.x,z:p.vel.z}, SH=solidShape(bl), vn=tankVsWall(p, SH);                    // Z86 masonry: momentum decides · Z404 (a container / wreck: the box of its drawn model)
       if(vn>0 && (bl.wall ? ramWall(p, bl, vn) : ramBlock(bl, vn, p))){ p.vel.x=pv.x*0.62; p.vel.z=pv.z*0.62; S.shake=Math.min(3,S.shake+1.2); p.hitT=Math.max(p.hitT||0,0.2); haptic([40,30,60]); sfx('clang'); continue; }
       if(vn>6){ padImpact(vn); S.shake=Math.min(2.5,S.shake+vn*0.04); p.hitT=Math.max(p.hitT||0,0.14); sfx('thud', null, vn/12); haptic(25); }
-      for(const a of enemies) if(solidTank(a)) tankVsWall(a, bl);
-      if(boss&&boss.alive){ const bv=tankVsWall(boss, bl); if(bv>2 && blocks.includes(bl)){ if(bl.wall) ramWall(boss, bl, 99); else damageBlock(bl, 99); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact) stunBoss(performance.now()/1000, boss.def.name+' húc vào tường — nó đang choáng, dồn hoả lực!'); } }   // the boss walks through masonry (and a charge into it stuns)
+      for(const a of enemies) if(solidTank(a)) tankVsWall(a, SH);
+      if(boss&&boss.alive){ const bv=tankVsWall(boss, SH); if(bv>2 && blocks.includes(bl)){ if(bl.wall) ramWall(boss, bl, 99); else damageBlock(bl, 99); if(boss.mode==='charge' && bv>BOSSFIGHT.stun.minImpact) stunBoss(performance.now()/1000, boss.def.name+' húc vào tường — nó đang choáng, dồn hoả lực!'); } }   // the boss walks through masonry (and a charge into it stuns)
       continue; }
     if(bl.climb){ const dx=bl.x-p.pos.x, dz=bl.z-p.pos.z, dl=Math.hypot(dx,dz)||1, near=dl < bl.r+HULL_HL*p.scale*TANK_SCALE+0.2;
       if(p.climbing===bl){ if(!near) p.climbing=null; else { for(const a of enemies) if(solidTank(a)) tankVsCircle(a, bl.x, bl.z, bl.r); continue; } }   // riding over it
@@ -107,7 +107,7 @@ export function separateNoHull(now){
   for(let i=0;i<enemies.length;i++){ const a=enemies[i]; if(!solidTank(a)) continue; for(let j=i+1;j<enemies.length;j++){ const b=enemies[j]; if(solidTank(b)) collideTanks(a,b,now); }
     if(core){ const cx=a.pos.x-core.pos.x, cz=a.pos.z-core.pos.z, m2=a.r+core.r, cd2=cx*cx+cz*cz; if(cd2<m2*m2 && cd2>1e-4){ const cd=Math.sqrt(cd2), ov=m2-cd; a.pos.x+=cx/cd*ov; a.pos.z+=cz/cd*ov; } } }
   if(boss && boss.alive) for(const a of enemies){ if(solidTank(a)) collideTanks(boss,a,now); }
-  for(const bl of blocks){ if(bl.obb){ for(const a of enemies) if(solidTank(a)) tankVsWall(a, bl); if(boss&&boss.alive) tankVsWall(boss, bl); continue; }
+  for(const bl of blocks){ if(bl.obb){ const SH=solidShape(bl); for(const a of enemies) if(solidTank(a)) tankVsWall(a, SH); if(boss&&boss.alive) tankVsWall(boss, SH); continue; }
     const SH=solidShape(bl); for(const a of enemies) if(solidTank(a)){ if(SH) tankVsWall(a, SH); else tankVsCircle(a, bl.x, bl.z, bl.r); } if(boss&&boss.alive){ if(SH) tankVsWall(boss, SH); else tankVsCircle(boss, bl.x, bl.z, bl.r); } }
   for(const a of enemies){ if(!solidTank(a)) continue; clampField(a.pos, 2); a.mesh.position.set(a.pos.x,0,a.pos.z); }
   if(boss&&boss.alive) boss.mesh.position.set(boss.pos.x,0,boss.pos.z); }

@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM, XHAIR } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wadeAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape , mountDur, mountMove, mountOwn, aimAwake, seatTurnOff} from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, actx, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, boss, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, solidTank, spawnPart, startFall, stepFall, tankInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wadeAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -29,7 +29,10 @@ export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'bagac' / 'bantai'
     dashUntil:0, dashCdUntil:0, invincibleUntil:0, dashDir:new THREE.Vector3(), overUntil:0, spellCdUntil:0, shieldUntil:0, charge:0,
     dmgMul:1, fireMul:1, speedMul:1, dashCdMul:1, spellCdMul:1, crit:0, lifesteal:0, kbx:0, kbz:0, reloadMul:1, armor:0, bossMul:1, camK:CAV.camK.mounted, defK:CAV.defK.mounted, fwdSpeed:0, throttle:0 };
   return p; }
-export function dropCavPlayer(p){ if(!p || !p.cav) return; if(CV.H && CV.H.root.parent) CV.H.root.parent.remove(CV.H.root); if(CV.G && CV.G.parent) CV.G.parent.remove(CV.G); if(p.mesh.parent) p.mesh.parent.remove(p.mesh); CV.on=false; }
+// Z404 the ride is dropped (another unit picked for the next battle): its driver goes with it — off it (thrown in a crash, kneeling by a fallen soldier,
+//   on his break) he stood in the world on his own, and the xe ôm's driver turned up in the next battle beside the bán tải, a tank, a horse
+export function dropCavPlayer(p){ if(!p || !p.cav) return; const D=CV.H && CV.H.drv; if(D){ driverBack(CV.H); if(D.w && D.w.parent) D.w.parent.remove(D.w); for(const k of ['cig','lit','ham']) if(D[k] && D[k].parent) D[k].parent.remove(D[k]); CV.H.drv=null; }
+  if(CV.H && CV.H.root.parent) CV.H.root.parent.remove(CV.H.root); if(CV.G && CV.G.parent) CV.G.parent.remove(CV.G); if(p.mesh.parent) p.mesh.parent.remove(p.mesh); CV.on=false; }
 // ---- hoof beats: a dull thump + a stony click, louder and closer together the faster he goes; a puff of dust off every hoof ----
 function hoofFall(i, x, z, v){ const k=Math.min(1, v/12);
   if(Math.random()<0.55+k*0.4) spawnPart(x+(Math.random()-0.5)*0.3, heightAt(x,z)+0.08, z+(Math.random()-0.5)*0.3, (Math.random()-0.5)*1.2, 0.5+k*1.4, (Math.random()-0.5)*1.2, { color:0xb8a888, size:0.35+k*0.55, life:0.6+k*0.5, smoke:true, grav:-0.2, drag:2.2, grow:1.6, op:0.32+k*0.18 });
@@ -94,7 +97,8 @@ export function updateCavalry(dt, now){
     // the riderless horse: grazes where you left him, or trots / gallops to your whistle
     horseAlone(p, dt);
   }
-  if(!CV.trans){ CV.last.copy(p.pos); p.pos.addScaledVector(p.vel, dt); collide(p, now); rideImpacts(p); clampField(p.pos, 3);
+  rideLowReset(); if(!CV.trans){ CV.last.copy(p.pos); p.pos.addScaledVector(p.vel, dt); hullEach(p, q=>collide(q, now)); hullEach(p, rideImpacts); clampField(p.pos, 3);   // Z404 a long ride meets the world with its whole outline
+    if(RIDE_LOW.length && CV.mounted){ const PW=ridePower(H); if(PW) CV.speed*=Math.exp(-dt*PW.climbDrag); }   // (Z404 climbing over something low)
     if(CV.mounted){ const moved=(p.pos.x-CV.last.x)*Math.sin(CV.facing)+(p.pos.z-CV.last.z)*Math.cos(CV.facing); CV.speed = dt>0 ? Math.sign(CV.speed)*Math.min(Math.abs(CV.speed), Math.abs(moved/dt)+0.5) : CV.speed; CV.hPos.copy(p.pos); } }
   p.fwdSpeed=CV.mounted?CV.speed:Math.hypot(p.vel.x, p.vel.z);
   // place + animate
@@ -149,14 +153,22 @@ function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, own=!T.crash 
 // ---- collisions: a circle (horse or man) against every solid thing; a galloping horse knocks infantry flying ----
 // Z311 how tall a solid thing stands (once, from its own model): under XEOM.air.low.h it is a low obstacle the ride can leap at speed
 const _lb=new THREE.Box3();
+// Z404 each circle of a long ride's outline (game/ride-collide.js rideHull) meets the world in turn, carrying the ride with it; the xe ôm, the horse and a man on foot are one circle
+const _hq={ pos:new THREE.Vector3(), vel:null, radius:1, bike:null };
+function hullEach(p, fn){ const hull=CV.mounted && !CV.trans ? rideHull(CV.H) : null; if(!hull){ fn(p); return; } const s=Math.sin(CV.facing), c=Math.cos(CV.facing);
+  for(const [hx, hz, r] of hull){ const ox=hx*c+hz*s, oz=-hx*s+hz*c; _hq.pos.set(p.pos.x+ox, 0, p.pos.z+oz); _hq.vel=p.vel; _hq.radius=r; _hq.bike=p.bike; fn(_hq); p.pos.x=_hq.pos.x-ox; p.pos.z=_hq.pos.z-oz; } }
 function blockH(b){ if(b._h!=null) return b._h; let h=Infinity; if(b.mesh && b.mesh.isObject3D && !b.ridge){ b.mesh.updateWorldMatrix(true, true); _lb.setFromObject(b.mesh); if(!_lb.isEmpty()) h=_lb.max.y-heightAt(b.x, b.z); } return (b._h=h); }
-function collide(p, now){ const R=p.radius, H=CV.H;
+function collide(p, now){ const R=p.radius, H=CV.H, PW=CV.mounted ? ridePower(H) : null;   // Z404 PW: the bán tải's weight — it climbs what is low, smashes light cover, bursts brick walls
   for(const b of blocks){ if(b.kind==='parked') continue; const SH=solidShape(b, true);   // Z337 a wall, a fortress wall section, a building: its true box, not a circle round it
     if(SH){ const o=SH.obb, ex=o.hl+o.hw+R; if(Math.abs(p.pos.x-SH.x)>ex || Math.abs(p.pos.z-SH.z)>ex) continue; if(CV.mounted && rideLeap(H, blockH(b), Math.hypot(p.pos.x-SH.x, p.pos.z-SH.z)+R)) continue;
-      const vn=pushOutShape(p, SH, R); if(CV.mounted && vn>6){ rideBump(vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } continue; }
+      if(PW && pushOutShape({ pos:{ x:p.pos.x, z:p.pos.z } }, SH, R, null)>=0 && rideOver(b, PW, SH)) continue;
+      const px=p.pos.x, pz=p.pos.z, vx=p.vel.x, vz=p.vel.z, vn=pushOutShape(p, SH, R); if(PW && vn>0 && rideRam(p, b, vn, PW, px, pz, vx, vz)) continue;
+      if(CV.mounted && vn>6){ rideBump(vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } continue; }
     const dx=p.pos.x-b.x, dz=p.pos.z-b.z, rr=(b.r||1)+R; if(Math.abs(dx)>rr || Math.abs(dz)>rr) continue; const d2=dx*dx+dz*dz; if(d2>=rr*rr || d2<1e-6) continue;
     if(CV.mounted && rideLeap(H, blockH(b), Math.sqrt(d2)+rr)) continue;   // (leapt and flown over: a bike in a fast wheelie, a horse at a gallop — Z321; otherwise it stops the ride)
-    const d=Math.sqrt(d2), nx=dx/d, nz=dz/d; p.pos.x+=nx*(rr-d); p.pos.z+=nz*(rr-d); const vn=p.vel.x*nx+p.vel.z*nz; if(vn<0){ p.vel.x-=nx*vn; p.vel.z-=nz*vn; if(CV.mounted && -vn>6){ rideBump(-vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } } }
+    if(PW && rideOver(b, PW, null)) continue;
+    const d=Math.sqrt(d2), nx=dx/d, nz=dz/d, px=p.pos.x, pz=p.pos.z, vx=p.vel.x, vz=p.vel.z; p.pos.x+=nx*(rr-d); p.pos.z+=nz*(rr-d); const vn=p.vel.x*nx+p.vel.z*nz;
+    if(vn<0){ if(PW && rideRam(p, b, -vn, PW, px, pz, vx, vz)) continue; p.vel.x-=nx*vn; p.vel.z-=nz*vn; if(CV.mounted && -vn>6){ rideBump(-vn); CV.speed*=0.5; S.shake=Math.min(1.5, S.shake+0.5); sfx('thud'); } } }
   const solid=(t, r)=>{ const dx=p.pos.x-t.pos.x, dz=p.pos.z-t.pos.z, rr=r+R, d2=dx*dx+dz*dz; if(d2>=rr*rr || d2<1e-6) return; const d=Math.sqrt(d2); p.pos.x+=dx/d*(rr-d); p.pos.z+=dz/d*(rr-d); if(CV.mounted) CV.speed*=0.92; };
   for(const e of enemies){ if(e.def.inf){ if(CV.mounted && Math.abs(CV.speed)>CAV.trample.v){ const d=Math.hypot(e.pos.x-p.pos.x, e.pos.z-p.pos.z); if(d<CAV.trample.r && (CV.tramAt.get(e)||0)<now){ CV.tramAt.set(e, now+CAV.trample.cd); damageEnemy(e, CAV.trample.dmg); sfx('thud'); } } continue; }
     if(solidTank(e)) solid(e, (e.r||2.0)*(e.mesh?e.mesh.scale.x:1)*0.9); }

@@ -135,7 +135,7 @@ export function heavyDamage(b, dmg){ const gy=heightAt(b.x,b.z), stone=_STONEY.h
   const stamp=b._barT=performance.now(); setTimeout(()=>{ if(b.bar && b._barT===stamp) b.bar.g.visible=false; }, 3500); }
 // Z193 the big lone pieces: shipping containers (a third stacked two high) and burnt-out cars — oriented boxes, solid, breakable
 export function placeLone(){ const L=LONE_SET[BIOME.name]||[2,3], mk=MOBILE?0.7:1;
-  for(const [kind,n0] of [['container',L[0]],['wreck',L[1]]]){ const n=Math.round(n0*AREA_K*mk), D=kind==='container'?{ hw:0.98, hl:2.35 }:{ hw:0.85, hl:1.78 };
+  for(const [kind,n0] of [['container',L[0]],['wreck',L[1]]]){ const n=Math.round(n0*AREA_K*mk), g=coverGeo(kind), gb=g.boundingBox||(g.computeBoundingBox(), g.boundingBox), D={ hw:(gb.max.x-gb.min.x)/2, hl:(gb.max.z-gb.min.z)/2 };   // Z404 its box off its own model: the wreck (long along x) had its box turned 90° — 1.3 m of nothing either side, its nose and tail outside
     for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
       for(let t=0;t<30&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-10); z=(Math.random()*2-1)*(ARENA-10); ok=Math.hypot(x,z)>20 && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<9) && !inZone(x,z,5) && inField(x,z,7); }
       if(!ok) continue;

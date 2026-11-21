@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -87,7 +87,10 @@ export function flattenPad(x, z, rIn, rOut){ const W=HF.W, h=HF.h, st=HF.step; i
 const KEEP=new Set(['fortwall','gate','keep','fortcore','tower','camp','brick','obj','corewall','parked','pylon']);
 // a site is free when no structure (fort, tower, camp, wall, ridge, loot) is in the way — scattered cover is simply cleared off the yard
 export function siteOk(x, z, R){ return !blocks.some(b=>(KEEP.has(b.kind)||b.ridge||b.loot||b.fort||b.supply||b.hp===Infinity) && Math.hypot(b.x-x,b.z-z)<b.r+R+2); }   // Z380 nor on a house, a ruin, a scanned model — and clearSite never takes one away (clearing it took its solid and left the model standing: men and rounds went through it)
-export function clearSite(x, z, R){ for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(b.hp!==Infinity && Math.hypot(b.x-x,b.z-z)<b.r+R){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); } blocks.splice(i,1); } } }
+// Z404 a ridge rock shares one instanced mesh with its whole spine, a fort section its fort's: clearing one took the mesh away and left every other
+//   rock of the ridge (and the fort's walls) solid and invisible — a ridge rock is hidden by its own instances, a structure is never cleared
+export function clearSite(x, z, R){ for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(b.hp===Infinity || KEEP.has(b.kind) || b.fort || b.supply || Math.hypot(b.x-x,b.z-z)>=b.r+R) continue;
+    if(b.ridge) ridgeRockDown(b); else scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); } blocks.splice(i,1); } }
 export const SUPPLY_K=1.25;   // the installations are built big: storage tanks ~7.5 m across, 9 m tall
 function newBase(kind, x, z, R, K, ang0){ K=K||1; const ang=ang0??Math.atan2(-x, ARENA*0.55-z), ca=Math.cos(ang), sa=Math.sin(ang);
   const B={ kind, x, z, R, K, ang, at:(lx,lz)=>[x+(lx*ca+lz*sa)*K, z+(-lx*sa+lz*ca)*K], pieces:[], alive:true, alarm:false, hitAt:-99, heloN:0, tankN:0, heloAt:0, tankAt:0, spreadAt:0, guards:[], fires:[], decor:null };

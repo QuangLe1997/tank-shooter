@@ -11,12 +11,24 @@ import { cityBuildings } from '../hub.js';
 const SHAPE = Symbol('shape'), FOOT = Symbol('foot');
 // Z378 foot = asked for the soldier or his ride: a fortress wall section cut back from a breach (pc.cut0 at its start, cut1 at its end — world/fortress.js
 //   dressFort) ends where its stone does, so the breach is open to them; a tank still meets the whole section
-export function solidShape(bl, foot){ if(!bl) return null; if(bl.obb) return bl;
+export function solidShape(bl, foot){ if(!bl) return null; if(bl.cover && bl.mesh && bl.mesh.isMesh) return coverShape(bl); if(bl.obb) return bl;
   if(foot && bl.kind === 'fortwall' && bl.piece && (bl.piece.cut0 || bl.piece.cut1)){ if(bl[FOOT]) return bl[FOOT]; const pc = bl.piece, c0 = pc.cut0 || 0, c1 = pc.cut1 || 0, sh = (c0 - c1) / 2;
     return (bl[FOOT] = { x:bl.x + pc.ux * sh, z:bl.z + pc.uz * sh, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:Math.max(0.1, (pc.pl - c0 - c1) / 2 + 0.02), hw:(FORT.wallT + 3.0) / 2 } }); } const c = bl[SHAPE]; if(c !== undefined) return c; let s = null;
   if(bl.kind === 'fortwall' && bl.piece){ const pc = bl.piece; s = { x:bl.x, z:bl.z, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:pc.pl / 2 + 0.02, hw:(FORT.wallT + 3.0) / 2 } }; }   // (its battered stone foot)
   else if(bl.kind === 'building' && bl.bld){ const B = bl.bld; s = B[SHAPE] || (B[SHAPE] = { x:B.x, z:B.z, obb:{ f:B.ry, hl:B.d / 2, hw:B.w / 2 }, bld:B }); }
   bl[SHAPE] = s; return s; }
+// Z404 A PIECE OF COVER IS THE BOX OF WHAT IS DRAWN: its collision was a circle of COVER_R × 1.3 ≈ 2.2 m round each piece of a line — a sandbag
+//   wall 1.2 m deep, a jersey barrier, a row of tyres — and the real models (Z252) are fitted inside the old piece, often narrower, so the circle
+//   stood up to 1.3 m clear of a face: a ride, a tank or a man stopped in front of nothing (and rounds struck the air). The box is read off the
+//   mesh's own geometry as it stands — its turn, its scale (it shrinks as it is shot down), the real model once that is swapped in
+const COVER = Symbol('cover'), _cc = new THREE.Vector3();
+function coverShape(bl){ const m = bl.mesh, g = m.geometry, c = bl[COVER];
+  if(c && c.g === g && c.px === m.position.x && c.pz === m.position.z && c.ry === m.rotation.y && c.sc === m.scale.x) return c.s;
+  if(!g.boundingBox) g.computeBoundingBox(); const b = g.boundingBox; if(b.isEmpty()) return bl.obb ? bl : null;
+  m.updateWorldMatrix(true, false); const e = m.matrixWorld.elements; _cc.set((b.min.x + b.max.x) / 2, 0, (b.min.z + b.max.z) / 2).applyMatrix4(m.matrixWorld);
+  const sx = Math.hypot(e[0], e[1], e[2]), sz = Math.hypot(e[8], e[9], e[10]);
+  const s = { x:_cc.x, z:_cc.z, obb:{ f:Math.atan2(e[8], e[10]), hl:Math.max(0.2, (b.max.z - b.min.z) / 2 * sz), hw:Math.max(0.2, (b.max.x - b.min.x) / 2 * sx) }, cover:bl };
+  bl[COVER] = { g, px:m.position.x, pz:m.position.z, ry:m.rotation.y, sc:m.scale.x, s }; return s; }
 // a parked car (crushables entry): the box of its own model, turned as it stands
 const _bb = new THREE.Box3();
 export function carShape(c){ const k = c[SHAPE]; if(k !== undefined) return k; let s = null; const g = c.im && c.im.geometry;

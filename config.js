@@ -279,10 +279,10 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   sus:{ k:190, z:0.32, kp:120, zp:0.36, kr:110, zr:0.4, pitchAcc:0.006, pitch:[-0.075, 0.045], rollLat:0.005, rollMax:0.055, rough:0.5, bump:0.32, kickP:0.5, gY:0.6, buzz:0.0012, steerMax:0.55, steerRate:9, restLean:0.06, leanK:1, leanMax:0.72, dustRun:0.9, dustHard:1.6, dustAcc:4, dustC:0xbfa88a },
   // Z311 the ride's feel: lean = it banks into a bend only from lean[0] m/s, fully from lean[1] (slow or standing it stays upright); slip = fast and turning
   //   hard the rear steps out (rad per m/s over v per rad/s of turn, at most max) · rock = a stone under a tyre jolts it (k × the stone's radius, nose up off the
-  //   front wheel, down off the rear), and at speed over hopV a stone bigger than hop throws it off the ground · hop = Space at over v m/s: the wheelie leaves
+  //   front wheel, down off the rear), and at speed over hopV a stone bigger than hop throws it off the ground (Z404 cap: the most a fallen trunk or a heap of rubble lifts a wheel, m — the bán tải: its power.climbH; clear: the frame's height over the road — a thing passing between the wheels taller than that lifts the axle) · hop = Space at over v m/s: the wheelie leaves
   //   the ground (launch vy m/s, the faster the higher) · g = its fall (m/s²); land = how hard a landing squashes the springs, which bounce on less damped
   //   (landZ) for landT s, and may squash further (sag m) · low = an obstacle under h m: over v m/s it is jumped (clearing it by over m), slower it still blocks
-  air:{ lean:[3, 6.5], slip:{ v:5, k:0.05, max:0.2 }, rock:{ k:1.4, hop:0.42, hopV:5.5 }, hop:{ v:4.5, vy:[2.0, 3.0] }, g:15, land:0.5, landZ:0.12, landT:1.1, sag:0.11,
+  air:{ lean:[3, 6.5], slip:{ v:5, k:0.05, max:0.2 }, rock:{ k:1.4, hop:0.42, hopV:5.5, cap:0.4, clear:0.22 }, hop:{ v:4.5, vy:[2.0, 3.0] }, g:15, land:0.5, landZ:0.12, landT:1.1, sag:0.11,
     low:{ h:0.85, v:4.5, over:0.25 } },
   // Z303 the ride's health (hp per ride; share of each hit on the soldier it takes while he rides; a crash's damage), smoke below `smoke` of it, a limp
   //   (top speed × limpK, a coughing engine) below `limp`; broken, the driver repairs it in fixT s and it comes back at fixHp of its health; engine smoke points
@@ -297,6 +297,16 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   // Z306 calling the ride (game/ride-call.js): farther than farR (m) he comes round by the streets — after delay s he turns up dropR m away and rides in; no
   //   closer for stuckT s → he comes round too; after a spill you climb straight back on if you stayed within stayR m of where you landed
   call:{ farR:55, delay:4, dropR:26, stuckT:3, stayR:4 },
+  // Z404 a long ride's outline (game/ride-collide.js rideHull): [x across, z along, r] circles in metres over its drawn footprint (ba gác 3.3 × 1.7 m,
+  //   bán tải 4.7 × 1.95 m) — a spine down the middle and its four corners — that everything it meets is pushed out of; the xe ôm and the horse keep one circle
+  hull:{ bagac:[[0, 0, 0.8], [0, 0.85, 0.8], [0, -0.85, 0.8], [0.42, 1.25, 0.42], [-0.42, 1.25, 0.42], [0.42, -1.25, 0.42], [-0.42, -1.25, 0.42]],
+    bantai:[[0, 0, 0.95], [0, 1.4, 0.95], [0, -1.4, 0.95], [0.52, 1.9, 0.45], [-0.52, 1.9, 0.45], [0.52, -1.9, 0.45], [-0.52, -1.9, 0.45]] },
+  // Z404 THE BÁN TẢI'S WEIGHT (game/ride-collide.js): it rides over anything drawn no higher than climbH m (stones, a fallen trunk, rubble, low
+  //   cover — never the anti-vehicle teeth / hedgehogs of `never`), its wheels climbing it, losing climbDrag of its speed a second while on it; it
+  //   smashes light cover (its closing speed × ramK into the tank's ram, game/cover.js ramBlock), bursts a brick wall at wallV m/s closing (slower it
+  //   only thumps it), knocks street props over at knockV and flattens wire at wireV; through a wall or a piece it keeps passK of its speed and takes
+  //   wear of damage
+  power:{ bantai:{ climbH:1.05, climbDrag:0.9, never:['hedgehog', 'teeth'], ramK:1.6, wallV:6, knockV:2, wireV:3, passK:0.6, wear:6 } },
   // Z301 the lamps (mount units; HDR colour multipliers, so the bright ones bloom): headlamp lens radius, its glow by day / by night, the beam by night
   //   (a spot on the bars: it swings with the steering); tail lens size, its running glow and its brake flare (braking harder than brakeAcc m/s²)
   //   Z308 a ride's own lamps.lens = the shape of its headlamp glass, so the glow fills exactly that (at lamps.head, its centre): widths across the top
@@ -842,7 +852,8 @@ export const REALTREE = { trans:1.6, env:0.45, wind:{ dir:[1, 0.35], sway:0.45, 
 // Z262 TREE FALL (world/tree-fall.js): push = the starting swing (rad/s) a tank's ram gives, shotPush = a shell's / blast's; trunk = the trunk's hit
 //   radius (m × the tree's scale), hitH = the height a round still strikes the tree; minDmg = the least damage a round needs to fell one; a blast of
 //   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands
-export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18 };
+export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18,
+  band:[0.4, 1.3], giantBand:[0.6, 2.2] };   // Z404 the trunk a vehicle meets: the drawn bark between band m over the foot (a giant's higher, over its roots), its median distance from the axis
 // Z265 REAL STREETS (world/stone.js streetSurface): wet = the share of the street under puddles (0 = dry), wheel = how much darker the wheel paths,
 //   oil = the drip line's strength, patch = the share of 3 m cells re-laid with newer asphalt, dampDark = how dark the damp rims, rough = roughness ×,
 //   nrm = photo normal strength, env = reflection strength (the puddles mirror the sky), puddle = the wetness-noise level above which water stands (lower = more), mirror = extra sky reflection in it

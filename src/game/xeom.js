@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { NEARDETAIL, RIDE, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape } from '../hub.js';
+import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape, rideBumpAt, ridePower } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter assembled from the city's parts stays as the fallback
@@ -107,9 +107,11 @@ function tyreTrail(H, X){ const W = X.wheels; if(!W || !H.wheels || typeof windo
   if(dirty){ im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true; } }
 // Z300 ON THE GROUND UNDER ITS WHEELS: the ground's height is read under every wheel and the machine is pitched (front axle against rear) and, on three
 //   wheels, rolled (left track against right) and lifted so each tyre sits on the ground beneath it — up a rise, down into a dip, across a slope
-function groundFit(H, dt, X){ const W = X.wheels; if(!W || !H.T) return; const k = XEOM.k; H.root.updateMatrixWorld(true); H.root.getWorldPosition(_sp); const g0 = _sp.y;
+// Z404 …and on whatever it is climbing: a stone, a fallen trunk, a heap of rubble, the low cover the bán tải rides over (game/ride-collide.js rideBumpAt)
+function groundFit(H, dt, X){ const W = X.wheels; if(!W || !H.T) return; const k = XEOM.k, PW = ridePower(H), cap = PW ? PW.climbH : XEOM.air.rock.cap; H.root.updateMatrixWorld(true); H.root.getWorldPosition(_sp); const g0 = _sp.y;
   let fS = 0, fN = 0, rS = 0, rN = 0, lS = 0, lN = 0, qS = 0, qN = 0, zf = 0, zr = 0, xl = 0, xr = 0;
-  for(const w of W){ _sa.set(w.c[0], 0, w.c[2]); H.root.localToWorld(_sa); const g = heightAt(_sa.x, _sa.z) - g0;
+  for(const w of W){ _sp.set(0, 0, w.c[2]); H.root.localToWorld(_sp); const mid = rideBumpAt(_sp.x, _sp.z, cap) - XEOM.air.rock.clear;   // (a stone between the wheels: the axle rides up over it on the frame)
+    _sa.set(w.c[0], 0, w.c[2]); H.root.localToWorld(_sa); const g = heightAt(_sa.x, _sa.z) + Math.max(rideBumpAt(_sa.x, _sa.z, cap), mid) - g0;
     if(w.c[2] > 0){ fS += g; fN++; zf += w.c[2]; } else { rS += g; rN++; zr += w.c[2]; }
     if(w.c[0] > 0.05){ lS += g; lN++; xl += w.c[0]; } else if(w.c[0] < -0.05){ qS += g; qN++; xr += w.c[0]; } }
   if(!fN || !rN) return; const gf = fS / fN, gr = rS / rN; zf /= fN; zr /= rN;
@@ -144,11 +146,12 @@ function suspension(H, dt, v, yr, two){ const U = XEOM.sus, s = H.sus, k = XEOM.
   const I = H.inert; I.acc = s.acc; I.lat = lat; I.vy = s.vy; I.p = s.p; I.r = s.r; }
 // Z311 OFF THE GROUND: a stone under a tyre jolts the body (the front wheel lifts the nose, the rear drops it), a big one at speed throws the bike up;
 //   in the air it falls under AC.g, and lands on its springs — squashed by how fast it came down, bouncing a few times on less damping before it settles
-const _rk = new THREE.Vector3();
+const _rk = new THREE.Vector3(), _bo = { o:null };
 function rideRocks(H, v, X){ const W = X.wheels, R = XEOM.air.rock, s = H.sus, av = Math.abs(v); if(!W || av < 0.5 || H.air.y > 0.05) return; H.onRock = H.onRock || W.map(() => null);
-  W.forEach((w, i) => { _rk.set(w.c[0], 0, w.c[2]); H.root.localToWorld(_rk); let hit = null;
-    for(const c of crushables){ if(c.kind !== 'rock' || !c.alive) continue; const dx = c.x - _rk.x, dz = c.z - _rk.z, rr = c.r * 0.8 + 0.06; if(dx * dx + dz * dz < rr * rr){ hit = c; break; } }
-    if(hit && hit !== H.onRock[i]){ const j = R.k * hit.r * Math.min(1.3, av / 5 + 0.3), front = w.c[2] > 0 ? 1 : -1; s.vy += j; s.vp += front * j * 2.2; if(!H.two) s.vr += (w.c[0] > 0 ? -1 : 1) * j;
+  W.forEach((w, i) => { _rk.set(w.c[0], 0, w.c[2]); H.root.localToWorld(_rk); let hit = null, hr = 0;
+    for(const c of crushables){ if(c.kind !== 'rock' || !c.alive) continue; const dx = c.x - _rk.x, dz = c.z - _rk.z, rr = c.r * 0.8 + 0.06; if(dx * dx + dz * dz < rr * rr){ hit = c; hr = c.r; break; } }
+    if(!hit){ const h = rideBumpAt(_rk.x, _rk.z, ridePower(H) ? ridePower(H).climbH : R.cap, _bo); if(h > 0.08){ hit = _bo.o; hr = h * 0.6; } }   // Z404 a wheel meets a fallen trunk, rubble, low cover: the same jolt
+    if(hit && hit !== H.onRock[i]){ const j = R.k * hr * Math.min(1.3, av / 5 + 0.3), front = w.c[2] > 0 ? 1 : -1; s.vy += j; s.vp += front * j * 2.2; if(!H.two) s.vr += (w.c[0] > 0 ? -1 : 1) * j;
       if(av > R.hopV && hit.r > R.hop) bikeHop(H, j * 2.2); }
     H.onRock[i] = hit; }); }
 export function bikeHop(H, vy){ const A = H && H.air; if(!A || A.y > 0.02 || !(vy > 0)) return false; A.vy = Math.max(A.vy, vy); A.y = Math.max(A.y, 0.001); return true; }
