@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR } from '../../config.js';
-import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, gunRecoil, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright } from '../hub.js';
+import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, gunRecoil, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -30,7 +30,8 @@ export function poseClip(name, parts){ const tracks = [];
 function armInfantry(arms, cb, C){ const K = C.carbine.len / 0.954;
   for(const [k, g] of Object.entries(INFGUN.guns)) loadGLTF('inf_' + k).then(gl => { if(!gl) return; const m = gl.scene.clone(true), b = new THREE.Box3().setFromObject(m), c = b.getCenter(new THREE.Vector3()), L = b.max.z - b.min.z || 1;
     // Z297 the same weapon at its true size in metres (muzzle −X, centred): the special-forces soldier holds this one, aimed, with his hands on it
-    const m2 = gl.scene.clone(true); m2.position.sub(c); const t2 = new THREE.Group(); t2.add(m2); t2.rotation.y = g.muzzle > 0 ? -Math.PI / 2 : Math.PI / 2; const met = new THREE.Group(); met.add(t2); met.scale.setScalar(g.len / L);
+    const m2 = gl.scene.clone(true); for(const x of [m, m2]) x.traverse(o => { if(o.isMesh) nearShape(o, 'inf_' + k, asShipped('inf_' + k)); });   // (Z395 the gun in his hands drawn whole)
+    m2.position.sub(c); const t2 = new THREE.Group(); t2.add(m2); t2.rotation.y = g.muzzle > 0 ? -Math.PI / 2 : Math.PI / 2; const met = new THREE.Group(); met.add(t2); met.scale.setScalar(g.len / L);
     const hold = new THREE.Group(); hold.add(met); hold.visible = false;
     // Z360 its own shape measured: the hold it is held by (fit:true weapons — actors/gun-fit.js), its bore (every weapon: the rounds and the flash leave the real muzzle)
     const kid = Object.keys(GUNS).find(id => GUNS[id].trooper && INFGUN.map[id] === k), fit = fitHold(sideProfile(hold, g.len), g.len, { gun:kid ? GUNS[kid] : null, bore:g.bore, gripAt:g.gripAt });   // (Z390 per-gun overrides) GUNKICK[k] = gunRecoil(kid ? GUNS[kid] : null, g.len);

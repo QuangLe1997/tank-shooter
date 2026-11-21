@@ -3,13 +3,14 @@
 // own lane (troops sally through it), solid where they should be (tanks and rounds stop at the barracks, bunker and radar).
 import * as THREE from 'three';
 import { OUTPOST } from '../../config.js';
-import { blocks, heightAt, inField, loadGLTF } from '../hub.js';
+import { blocks, heightAt, inField, loadGLTF, nearShape } from '../hub.js';
 
 const PREP = {};
-function piece(gl, k){ if(PREP[k]) return PREP[k]; let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
+function piece(gl, k, hd){ const id = hd ? k + ':hd' : k; if(PREP[id]) return PREP[id];   // (hd: the whole original, Z395 — made the same way)
+  let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
   const g = src.geometry.clone().applyMatrix4(src.matrixWorld); g.computeBoundingBox(); let b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
   if(b.max.z - b.min.z > b.max.x - b.min.x) g.rotateY(Math.PI / 2); g.computeBoundingBox(); b = g.boundingBox; const S = OUTPOST.size[k], sz = b.getSize(new THREE.Vector3()), f = S.h ? S.h / sz.y : S.w / sz.x;
-  g.scale(f, f, f); g.computeBoundingBox(); g.computeBoundingSphere(); return (PREP[k] = { geo:g, mat:src.material.clone(), size:g.boundingBox.getSize(new THREE.Vector3()) }); }
+  g.scale(f, f, f); g.computeBoundingBox(); g.computeBoundingSphere(); return (PREP[id] = { geo:g, mat:src.material.clone(), size:g.boundingBox.getSize(new THREE.Vector3()) }); }
 
 // f: a fort just built (its group f.g at the fort's centre); the gate's outward direction keeps a lane clear
 // Z311 the concertina coils laid across each outpost's approach: [f, mesh, centre, direction along it, length, flattened]
@@ -25,7 +26,7 @@ export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /no
   for(let r = 0; r < C.wireRows; r++) for(const sd of [-1, 1]){ const a = ga + sd * (C.laneA * 0.9 + r * 0.12), [lx, lz] = spot(a, R + C.wireAt + r * 3); list.push({ k:'base_wire', x:lx, z:lz, ry:-a }); }   // wire across the approach, the lane left open
   const keys = [...new Set(list.map(q => q.k))]; Promise.all(keys.map(k => loadGLTF(k))).then(L => { if(!f.g.parent) return; const by = {}; keys.forEach((k, i) => { if(L[i]) by[k] = piece(L[i], k); });
     for(const q of list){ const P = by[q.k]; if(!P) continue; const wx = f.x + q.x, wz = f.z + q.z, m = new THREE.Mesh(P.geo, P.mat);
-      m.position.set(q.x, heightAt(wx, wz) - f.g.position.y - 0.05, q.z); m.rotation.y = q.ry; m.castShadow = m.receiveShadow = true; m.userData.outpost = true; f.g.add(m);
+      m.position.set(q.x, heightAt(wx, wz) - f.g.position.y - 0.05, q.z); m.rotation.y = q.ry; m.castShadow = m.receiveShadow = true; m.userData.outpost = true; f.g.add(m); nearShape(m, q.k, gl => piece(gl, q.k, true).geo);   // (Z395 whole up close)
       if(C.solid.includes(q.k)) blocks.push({ mesh:m, x:wx, z:wz, r:Math.max(P.size.x, P.size.z) * 0.42, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'outpost' });
       if(q.k === 'base_wire'){ const lx = P.size.x >= P.size.z, L = Math.max(P.size.x, P.size.z), dx = lx ? Math.cos(q.ry) : Math.sin(q.ry), dz = lx ? -Math.sin(q.ry) : Math.cos(q.ry);
         OUTPOST_WIRE.push({ f, m, x:wx, z:wz, dx, dz, L, down:false }); } } }); }   // Z311 the coil across the approach holds a ride (flattened if rammed hard)

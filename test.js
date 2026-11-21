@@ -2219,5 +2219,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(P.every(k=>T[k] && T[k].file==='fort/'+k && T[k].tex===4096 && JSON.stringify(T[k].maps)==='["map"]' && JSON.stringify(IX[k])==='["0.map"]'), 'each wears its original\'s colour at 4K up close, its normal left at the shipped 2K');
   ok(/\(S\.maps && !S\.maps\.includes\(s\)\)\) continue;/.test(hm), 'the hd tool cuts only the slots a table entry names'); }
 
+// Z395b near shapes: the camps' buildings and parked vehicles, the ruins, the animals and the soldier's gun drawn from their whole originals up close
+//   (each system's own preparing function run on the original; a rigged body keeps its bones, so it is never quantized)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), nd=R('src/render/near-detail.js'), T=JSON.parse(R('tools/hd-maps.json')), IX=JSON.parse(R('assets/models/real/hd/index.json')), tool=R('tools/hd-maps.mjs');
+  const keys=['base_barracks','base_bunker','base_radar','base_tent','base_tower','base_wall','base_wire','mil_truck','mil_apc','mil_jeep','mil_humvee','ruin_block','ruin_tower','ruin_villa','ruin_wall','ruin_house','wild_bear','wild_deer','wild_elephant','wild_reindeer','wild_zebra','wild_giraffe','inf_ar','inf_energy','inf_flamer','inf_gl','inf_lmg','inf_minigun','inf_rpg','inf_shotgun','inf_sniper','inf_ak','inf_mp5','inf_m4'];
+  ok(keys.every(k=>T[k] && T[k].geo!=null && T[k].geo<=70000 && (IX[k]||[]).includes('geo') && fs.existsSync('assets/models/real/hd/'+k+'.glb')), 'every camp piece, parked vehicle, ruin, animal and soldier gun has its whole shape on disk (≤ 70k triangles)');
+  ok(C.NEARDETAIL.shapes>=4 && C.NEARDETAIL.shapes<=32 && /export function nearShape\(m, key, prep\)/.test(nd) && /export const asShipped = key =>/.test(nd) && /if\(b\.isSkinnedMesh\) return b\.geometry;/.test(nd) && /S\.m\.geometry === S\.hd\) S\.m\.geometry = S\.lo/.test(nd), 'a placed mesh swaps only its geometry, hands it back unless the system changed it since; a rigged body keeps the shipped bones');
+  ok(/if\(!doc\.getRoot\(\)\.listSkins\(\)\.length\)\{/.test(tool), 'a rigged original is written in plain floats (quantizing would move its frame into the bind matrices)');
+  ok(/nearShape\(m, q\.k, gl => piece\(gl, q\.k, true\)\.geo\)/.test(R('src/world/outposts.js')) && /nearShape\(m, s\.k, gl => prep\(gl, s\.k, true\)\.geo\)/.test(R('src/world/ruins3d.js')) && /nearShape\(o, 'wild_'\+id, asShipped\('wild_'\+id\)\)/.test(R('src/actors/wildlife.js')) && /nearShape\(o, 'inf_' \+ k, asShipped\('inf_' \+ k\)\)/.test(R('src/actors/real-cav.js')), 'the camps, ruins, animals and the soldier\'s guns register their meshes');
+}
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

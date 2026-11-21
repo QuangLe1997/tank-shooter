@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { REALWILD } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, MOBILE, S, _R, blocks, clampField, enemies, heightAt, inField, inZone, loadGLTF, scene, solidTank, wetAt, MODE } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, MOBILE, S, _R, blocks, clampField, enemies, heightAt, inField, inZone, loadGLTF, scene, solidTank, wetAt, MODE, asShipped, nearShape } from '../hub.js';
 
 // Z208 organic anatomy: ellipsoid masses, tapered limbs with knees + hooves, coats painted per vertex (stripes, patches, bands, mottling)
 const _up=new THREE.Vector3(0,1,0), _d=new THREE.Vector3();
@@ -104,6 +104,7 @@ export function buildWildlife(){ clearWildlife(); const set=SETS[BIOME.name]; if
     const sp=SPECIES[id], n=Math.round(_R(sp.herd[0], sp.herd[1])*(MOBILE?0.7:1)); for(let k=0;k<n;k++){ const a=Math.random()*6.28, r=Math.random()*7; const x=cx+Math.cos(a)*r, z=cz+Math.sin(a)*r; if(inField(x,z,4)) spawn(id, x, z); } }
   dressWild(); }
 // Z286 the real animals: each species with a Tripo model swaps its procedural body for the rigged one walking its own cycle (the herd logic is unchanged)
+//   (Z395 each body registered with render/near-detail.js nearShape: drawn from its whole original, same bones, while the camera is near)
 const FIT={};
 function fitOf(gl, id){ if(FIT[id]) return FIT[id]; const m=skClone(gl.scene), mx=new THREE.AnimationMixer(m); mx.clipAction(gl.animations[0]).play(); mx.setTime(0); m.updateMatrixWorld(true);
   const pts=[], v=new THREE.Vector3(), b=new THREE.Box3(); m.traverse(o=>{ if(o.isSkinnedMesh || o.isMesh){ const P=o.geometry.attributes.position; for(let i=0;i<P.count;i+=5){ if(o.isSkinnedMesh) o.getVertexPosition(i, v); else v.fromBufferAttribute(P,i); v.applyMatrix4(o.matrixWorld); pts.push(v.clone()); b.expandByPoint(v); } } });   // the posed animal, as it walks
@@ -113,7 +114,7 @@ function fitOf(gl, id){ if(FIT[id]) return FIT[id]; const m=skClone(gl.scene), m
 function dressWild(){ if(typeof window==='undefined' || (MOBILE && !REALWILD.mobile) || /procwild/.test(location.search+location.hash)) return; const g=WILD.g;
   for(const id of new Set(WILD.list.map(a=>a.id))) if(REALWILD.h[id]) loadGLTF('wild_'+id).then(gl=>{ if(!gl || WILD.g!==g || !gl.animations.length) return; const F=fitOf(gl, id);
     for(const a of WILD.list){ if(a.id!==id || a.mix) continue; const m=skClone(gl.scene), pivot=new THREE.Group(), turn=new THREE.Group(); m.position.copy(F.off); turn.add(m); turn.rotation.y=F.ry; pivot.add(turn); pivot.scale.setScalar(F.k);
-      m.traverse(o=>{ if(o.isMesh){ o.castShadow=!MOBILE; o.receiveShadow=true; o.frustumCulled=false; } }); a.root.children.forEach(c=>c.visible=false); a.root.add(pivot);
+      m.traverse(o=>{ if(o.isMesh){ o.castShadow=!MOBILE; o.receiveShadow=true; o.frustumCulled=false; nearShape(o, 'wild_'+id, asShipped('wild_'+id)); } }); a.root.children.forEach(c=>c.visible=false); a.root.add(pivot);
       a.mix=new THREE.AnimationMixer(m); const act=a.mix.clipAction(gl.animations[0]); act.play(); a.mix.setTime(Math.random()*gl.animations[0].duration); } }); }
 // the nearest threat (any tank) to a point → [dx,dz,dist]
 function threat(x, z){ let best=null, bd=1e9; const P=S.player; const chk=(o, k=1)=>{ const d=Math.hypot(o.pos.x-x, o.pos.z-z)*k; if(d<bd){ bd=d; best=o; } };

@@ -7,7 +7,7 @@
 //   node tools/hd-maps.mjs [key ...] --deps <dir> [--orig <dir>]   (--orig: where the originals live, default assets/models — a worktree has none; dir: npm i --prefix <dir> @gltf-transform/core@4 @gltf-transform/extensions@4 meshoptimizer sharp)
 //   table: tools/hd-maps.json — key: { file: the shipped GLB under assets/models/real, src: the original (a folder under assets/models, searched for a
 //   .glb, or a path; ~ = home), tex: px (default 2048), geo: also its whole shape → hd/<key>.glb (the original welded, simplified only to geo
-//   triangles when geo > 0, meshopt-compressed; its own maps cut to 256 px — the sharp ones are the WebP files) for what the game draws whole up close }
+//   triangles when geo > 0, meshopt-compressed unless rigged; its own maps cut to 256 px — the sharp ones are the WebP files) for what the game draws whole up close }
 //   Z397 maps: only those slots (['map']: a big piece whose sharp colour carries the detail, its normal kept at the shipped size — half the GPU memory)
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { createRequire } from 'node:module';
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; }, deps = opt('--deps', null);
@@ -41,8 +41,9 @@ for(const k of keys.length ? keys : Object.keys(TABLE).filter(k => !k.startsWith
   if(S.geo != null){ const doc = await io.read(src), n0 = tris(doc); await doc.transform(F.prune(), F.dedup(), F.weld());   // the whole shape, for up close
     if(S.geo > 0 && tris(doc) > S.geo) await doc.transform(F.simplify({ simplifier:MeshoptSimplifier, ratio:S.geo / tris(doc), error:0.01 }));
     await doc.transform(F.textureCompress({ encoder:sharp, targetFormat:'jpeg', resize:[256, 256], quality:80 }), F.prune());
-    doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method:EXTMeshoptCompression.EncoderMethod.QUANTIZE });
-    await doc.transform(F.reorder({ encoder:MeshoptEncoder }), F.quantize()); const f = path.join(OUT, k + '.glb'); fs.writeFileSync(f, await io.writeBinary(doc));
+    if(!doc.getRoot().listSkins().length){ doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method:EXTMeshoptCompression.EncoderMethod.QUANTIZE });
+      await doc.transform(F.reorder({ encoder:MeshoptEncoder }), F.quantize()); }   // (a rigged one stays in plain floats: quantizing moves its frame into the bind matrices, and the shipped skeleton has to fit it)
+    const f = path.join(OUT, k + '.glb'); fs.writeFileSync(f, await io.writeBinary(doc));
     line.geo = { from:n0, tris:Math.round(tris(doc)), shipped:Math.round(tris(lite)), kb:Math.round(fs.statSync(f).size / 1024) }; }
   line.sec = +((Date.now() - t0) / 1000).toFixed(1); report.push(line); console.log(JSON.stringify(line)); }
 // the index the game reads (render/near-detail.js): key → the maps it has, '<material>.<slot>' — rebuilt from what is on disk

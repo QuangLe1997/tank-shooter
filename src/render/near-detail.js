@@ -11,13 +11,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { NEARDETAIL } from '../../config.js';
-import { MOBILE, camera, scene } from '../hub.js';
+import { MOBILE, camera, loadGLTF, scene } from '../hub.js';
 
 const DIR = 'assets/models/real/hd/', SRC = new WeakMap(), KEYS = {}, QUEUE = [], SLOT = { map:'map', nrm:'normalMap' };
-let INDEX = null, _last = 0, ON = null, _ldr = null; const GEO = {}, FRAME = [];
+let INDEX = null, _last = 0, ON = null, _ldr = null; const GEO = {}, FRAME = [], SHAPES = new Set(), ASIS = {};
 const on = () => ON ?? (ON = typeof window !== 'undefined' && NEARDETAIL.on && !MOBILE && !/nohd/.test(location.search + location.hash) && install());   // (decided on first use: the hub is whole by then)
 const index = () => INDEX || (INDEX = fetch(DIR + 'index.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
-export const NEAR_DETAIL = { keys:KEYS, swaps:0, off:false };   // (off: every key handed back at once — a before / after toggle for screenshots)
+export const NEAR_DETAIL = { keys:KEYS, shapes:SHAPES, swaps:0, off:false };   // (off: every key handed back at once — a before / after toggle for screenshots)
 
 // a model just loaded (actors/models.js loadGLTF): its maps are tagged with the key, when the key has sharp ones (a clone shares its maps' Source)
 export function nearTag(key, gl){ if(!gl || !on()) return; index().then(IX => { const have = IX[key]; if(!have || KEYS[key]) return;
@@ -59,11 +59,34 @@ function swapIn(R){ R.near = true; if(!R.hd || R.srcs.some(e => !e.hi && !e.ask)
   R.hd.then(() => { if(R.near) for(const e of R.srcs) if(e.hi) QUEUE.push([e, 1]); }); }
 function swapOut(R){ R.near = false; for(const e of R.srcs) QUEUE.push([e, 0]); }
 
+// Z395b NEAR SHAPES: a mesh a system has placed (a camp's barracks, a parked truck, a ruin, an animal, the gun in the soldier's hands) drawn from its
+//   whole original (hd/<key>.glb) while the camera is within its reach. prep(gl) makes of the original what the system made of the shipped file (the
+//   same frame and size — usually the system's own preparing function run on it); only the mesh's geometry is swapped, its material, place, collision
+//   and everything that refers to the mesh stay. The NEARDETAIL.shapes closest at most; handed back past reach × out for hold s.
+export function nearShape(m, key, prep){ if(m && on()) SHAPES.add({ m, key, prep, lo:null, hd:null, ask:null, near:false, farFor:0, d:Infinity }); return m; }
+// prep for a system that draws the file's own mesh (a scene clone, a rigged body): the original's mesh brought into the shipped mesh's frame
+//   (a rigged one is already in it: the same bind pose and bones); null when either file has more than one mesh
+export const asShipped = key => gl => ASIS[key] || (ASIS[key] = loadGLTF(key).then(lg => { const one = r => { const L = []; r.updateMatrixWorld(true); r.traverse(o => { if(o.isMesh) L.push(o); }); return L.length === 1 ? L[0] : null; };
+  const a = lg && one(lg.scene), b = one(gl.scene); if(!a || !b || !!a.isSkinnedMesh !== !!b.isSkinnedMesh) return null; if(b.isSkinnedMesh) return b.geometry;
+  const g = b.geometry.clone().applyMatrix4(a.matrixWorld.clone().invert().multiply(b.matrixWorld)); g.computeBoundingSphere(); return g; }));
+// (is the mesh in the battle and shown? a hidden gun or a fallen-away camp is not near)
+function shown(o){ for(let p = o; p; p = p.parent){ if(!p.visible) return false; if(p === scene) return true; } return false; }
+function shapes(dt){ const cand = [];
+  for(const S of SHAPES){ const m = S.m; if(!m.parent){ SHAPES.delete(S); continue; } const g = S.lo || m.geometry; S.d = Infinity;
+    if(!NEAR_DETAIL.off && shown(m) && g){ if(!g.boundingSphere) g.computeBoundingSphere(); _s.copy(g.boundingSphere).applyMatrix4(m.matrixWorld); S.d = score(_c.distanceTo(_s.center), _s.radius); if(S.d < 1) cand.push(S); } }
+  cand.sort((a, b) => a.d - b.d); const want = new Set(cand.slice(0, NEARDETAIL.shapes));
+  for(const S of SHAPES){ if(want.has(S)){ S.farFor = 0; if(!S.near) shapeIn(S); continue; } if(!S.near) continue;
+    S.farFor = NEAR_DETAIL.off ? 1e9 : S.farFor + dt; if(S.farFor > NEARDETAIL.hold){ S.farFor = 0; shapeOut(S); } } }
+function shapeIn(S){ S.near = true; S.ask = S.ask || nearModel(S.key).then(gl => gl ? S.prep(gl) : null).catch(() => null);
+  S.ask.then(hd => { if(!hd || !S.near || S.m.geometry === hd) return; S.hd = hd; S.lo = S.m.geometry; S.m.geometry = hd; NEAR_DETAIL.swaps++; }); }
+function shapeOut(S){ S.near = false; if(S.hd && S.m.geometry === S.hd) S.m.geometry = S.lo; }   // (unless the system has given the mesh another shape since)
+
 function tick(){ for(const f of FRAME) f(camera); const q = QUEUE.shift();
   if(q){ const [e, hi] = q; if(!!hi === e.R.near && e.hi){ wear(e, hi ? e.hi : e.lo); NEAR_DETAIL.swaps++;   // (one texture a frame: each is an upload)
       if(!hi){ const h = e.hi; e.hi = null; setTimeout(() => h.data && h.data.close && h.data.close(), 2000); } } }   // (the sharp copy freed once handed back)
   const now = performance.now(); if(now - _last < NEARDETAIL.every * 1000) return; const dt = _last ? (now - _last) / 1000 : 0; _last = now;
   const L = []; for(const R of Object.values(KEYS)){ R.d = R.seen.size && !NEAR_DETAIL.off ? nearest(R) : Infinity; R.seen.clear(); if(NEAR_DETAIL.off && R.near) swapOut(R); else L.push(R); }
+  _c.setFromMatrixPosition(camera.matrixWorld); shapes(dt);
   L.sort((a, b) => a.d - b.d);   // (the closest first: at most maxKeys models wear their sharp maps at once — the GPU's memory)
   L.forEach((R, i) => { if(!R.near){ if(R.d < 1 && i < NEARDETAIL.maxKeys) swapIn(R); return; }
     for(const e of R.srcs) if(e.hi && !QUEUE.some(q => q[0] === e) && [...R.tex].some(t => t.source === e.lo)) QUEUE.push([e, 1]);   // (a wearer that came in since: a clone made while sharp)
