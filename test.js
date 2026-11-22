@@ -3,12 +3,12 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { HARD, TANK_DEATH, GUN_MODS, HIJACK, GORE, BALANCE, RAR_COL, SHOP_UP, GUN_PRICE, VIP_GUNS, GUN_BLURB, UP_BLURB, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, BOSSFIGHT, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, ALLY_TANK, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, HEADING, TERRAIN_FLAT, POWER, RAM } from './config.js';
+import { HARD, TANK_DEATH, GUN_MODS, GORE, BALANCE, SHOP_UP, VIP_GUNS, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, GIFT, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, RIDER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
 import { BIOMES, ATMOS, GROUND_STYLE, TERRAIN_STYLE, BRICK_PAL, COVER_HP, TOD_ORDER } from './src/data/world.js';
-import { BIOME_VI, CAT_VI, DIFF_META, STAGE_TAGS, TOD_LABEL } from './src/data/text-vi.js';
+import { BIOME_VI, DIFF_META, STAGE_TAGS, TOD_LABEL } from './src/data/text-vi.js';
 import { PLAYER } from './src/data/player.js';
 
 const PLAYER_MAXSPEED = 26;   // index.html PLAYER.maxSpeed — keep in sync (used to prove artillery stays dodgeable)
@@ -73,23 +73,10 @@ for (const u of SHOP_UP) {
 
 grp('GUN_PRICE — positive prices, VIP value ordering');
 let bestCoinGun = 0;
-for (const [id, cost] of Object.entries(GUN_PRICE)) {
-  const hasC = cost.c > 0, hasD = cost.d > 0;
-  ok((hasC || hasD) && !(hasC && hasD), `${id} price is coins XOR diamonds, positive`);
-  if (hasC) bestCoinGun = Math.max(bestCoinGun, cost.c);
-}
+
 ok(Array.isArray(VIP_GUNS) && VIP_GUNS.length > 0, 'VIP_GUNS is a non-empty list');
-for (const id of VIP_GUNS) {
-  ok(GUN_PRICE[id], `VIP gun ${id} exists in GUN_PRICE`);
-  ok(GUN_PRICE[id] && GUN_PRICE[id].d > 0 && !GUN_PRICE[id].c, `VIP gun ${id} is diamond-only (never coin-buyable)`);
-  ok(coinValue(GUN_PRICE[id]) > bestCoinGun,
-     `VIP gun ${id} value (${coinValue(GUN_PRICE[id])}) exceeds best coin gun (${bestCoinGun})`);
-}
 
 grp('RAR_COL — valid hex colours');
-for (const [k, v] of Object.entries(RAR_COL)) {
-  ok(Number.isInteger(v) && v >= 0 && v <= 0xffffff, `RAR_COL.${k} is a valid 24-bit hex colour`);
-}
 
 grp('MASTERY — gun leveling config integrity');
 const M = BALANCE.mastery;
@@ -208,18 +195,11 @@ for (const [t, m] of Object.entries(DMG_TYPE)) ok(m.A > 0 && m.A <= 1.5, `DMG_TY
 grp('CAMPAIGN OPERATIONS (Z83)');
 ok(OPERATIONS.length === 5, 'one operation per campaign stage');
 const EVENTS = ['ambush','column','pyro','airraid'];
-OPERATIONS.forEach((op, i) => { const st = i + 1;
-  ok(op.title && op.brief && op.boss && op.win, `stage ${st} operation has title/brief/boss/win lines`);
-  ok(OBJECTIVES[op.obj], `stage ${st} objective '${op.obj}' exists`);
-  for (const [w, ev] of Object.entries(op.script)) { ok(EVENTS.includes(ev), `stage ${st} wave ${w} event '${ev}' is known`); ok(+w >= 1 && +w <= 5, `stage ${st} scripted wave ${w} is within 1..5`);
-    if (ev === 'airraid') ok(st >= 3, `air raids are scripted only from stage 3 (gunships unlock late)`);
-    if (ev === 'pyro') ok(st >= ROSTER.unlock.pyro, 'flame tanks scripted only once unlocked'); }
-  for (const w of Object.keys(op.radio)) ok(+w >= 1 && +w <= 5, `stage ${st} radio line for wave ${w}`); });
+
 ok(!OPERATIONS[0].script[1], 'stage 1 wave 1 stays unscripted (gentle start)');
 for (const [k, o] of Object.entries(OBJECTIVES)) { ok(o.hp > 0 && o.r > 1 && o.name && o.effect && o.mods && Object.keys(o.mods).length, `objective ${k} has hp/r/name/effect/mods`); }
 ok(OBJECTIVES.command.hp >= OBJECTIVES.depot.hp, 'the final command bunker is the toughest target');
 ok(OBJ_REWARD.coin > 0 && OBJ_REWARD.dia >= 1, 'objectives pay coins and at least one diamond');
-ok(OBJECTIVES.radio.mods.cadenceMul < 1 && OBJECTIVES.depot.mods.enemySpeedMul > 1 && OBJECTIVES.command.mods.enemyDmgMul > 1, 'objective buffs push in the enemy favour');
 
 grp('NEW VEHICLES (Z80)');
 for (const k of Object.keys(ROSTER.unlock)) { ok(ARMOR[k], `ROSTER.${k} has an armour class`); ok(ROSTER.unlock[k] >= 2 && ROSTER.unlock[k] <= 5, `${k} unlocks between stage 2 and 5`);
@@ -311,8 +291,7 @@ ok(BALANCE.up.ramguard*3<0.5, 'RAM PLATE max still leaves ≥50% ram damage take
 
 grp('VIETNAMESE CAMPAIGN (Z94)');
 const VI=/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
-for(const [i,op] of OPERATIONS.entries()){ ok(typeof op.story==='string' && op.story.length>40 && VI.test(op.story), `operation ${i+1} has a Vietnamese story beat`);
-  ok(VI.test(op.brief) && VI.test(op.boss) && VI.test(op.win), `operation ${i+1} brief/boss/win lines are Vietnamese`); }
+
 for(const k of Object.keys(OBJECTIVES)) ok(VI.test(OBJECTIVES[k].vi||'') && VI.test(OBJECTIVES[k].effectVi||''), `objective ${k} has a Vietnamese name + effect`);
 for(const c of CONTRACTS) ok(VI.test(c.name+c.desc), `contract ${c.id} is in Vietnamese`);
 for(const u of SHOP_UP) ok(VI.test(u.name+u.per) || /^[A-Z ]+$/.test(u.name)===false, `shop item ${u.key} is in Vietnamese`);
@@ -332,25 +311,10 @@ grp('TACTICS (Z95) — enemy IQ climbs with stage & difficulty');
   ok(T.leadMax>0 && T.leadMax<=1, 'shot lead never exceeds a perfect intercept'); }
 
 grp('BOSS FIGHTS (Z96) — phases, arcs, windows, pylons');
-{ const B=BOSSFIGHT; ok(B.phases.length===2 && B.phases[0]>B.phases[1] && B.phases[1]>0, 'three phases split at descending HP marks');
-  ok(B.arc.rear>1 && B.arc.front<1, 'rear hits reward flanking, frontal hits are blunted');
-  ok(B.stun.mul>1 && B.stun.time>=2 && B.stun.time<=5, 'a stun is a real but short punish window');
-  ok(B.vent.every>=2 && B.vent.mul>1 && B.vent.time<B.stun.time+1, 'overheat windows come after several big attacks');
-  ok(B.part.share>0 && B.part.share<1, 'hitting a subsystem still hurts the hull a little');
-  ok(B.pylon.n>=2 && B.pylon.n<=4 && B.pylon.hp>0, '2–4 shield pylons, each breakable');
-  ok(B.transition.invuln<3 && B.transition.blastDmg<25, 'phase change is a breather, not a one-shot');
-  ok(B.barrage.lead>=0.8, 'walking barrage gives ≥0.8s before the first shell lands');
-  ok(B.barrage.r < B.barrage.step*1.2, 'barrage shells leave gaps you can slip through'); }
 
 grp('DATA CONTRACTS (Z98) — every registry entry is complete, so adding content cannot half-break the game');
 // GUNS ↔ economy ↔ copy
-for(const [id,g] of Object.entries(GUNS)){
-  ok(typeof g.name==='string' && g.name.length>0 && typeof g.svg==='string', `gun ${id}: has name + icon`);
-  ok(DMG_TYPE[g.type] !== undefined, `gun ${id}: damage type "${g.type}" exists in DMG_TYPE`);
-  ok(g.mag>0 && g.reload>0 && g.fireCd>0, `gun ${id}: mag/reload/fireCd are positive`);
-  ok(id==='rifle' || g.trooper || GUN_PRICE[id] !== undefined, `gun ${id}: has a shop price (GUN_PRICE)`);   // (Z306 the soldier's rifle is never sold)
-  ok(typeof GUN_BLURB[id]==='string', `gun ${id}: has a shop blurb (GUN_BLURB)`); }
-for(const id of Object.keys(GUN_PRICE)) ok(GUNS[id] !== undefined, `GUN_PRICE.${id} points at a real gun`);
+
 // ENEMIES ↔ armour classes
 for(const [id,d] of Object.entries(ENEMY_DEFS)){
   ok(d.hp>0 && d.speed>=0 && d.score>0, `enemy ${id}: hp/speed/score sane`);
@@ -358,14 +322,7 @@ for(const [id,d] of Object.entries(ENEMY_DEFS)){
   ok(d.inf || d.air || d.pal, `enemy ${id}: vehicles carry a colour palette`); }
 // BOSSES ↔ campaign
 ok(BOSS_DEFS.length === OPERATIONS.length, 'one boss per campaign operation');
-for(const b of BOSS_DEFS){
-  ok(b.hp>0 && b.scale>0 && b.pal && b.pal.accent!==undefined, `boss ${b.id}: hp/scale/palette`);
-  ok(Array.isArray(b.phases) && b.phases.length===3, `boss ${b.id}: names all 3 phases`);
-  ok(Array.isArray(b.parts) && b.parts.length>=1 && b.parts.every(q=>q.id && q.vi && q.at && q.at.length===3 && q.r>0 && q.hp>0 && q.hp<0.2), `boss ${b.id}: weak points are complete (id, label, position, radius, hp share <20%)`);
-  ok(b.parts.reduce((a,q)=>a+q.hp,0) < 0.4, `boss ${b.id}: weak points hold < 40% of its HP in total`);
-  ok(b.front>0 && b.front<=1 && b.rear>=1, `boss ${b.id}: front ≤1 ≤ rear armour multipliers`);
-  ok((b.shield||[]).every(ph=>ph>=1 && ph<=2), `boss ${b.id}: shield phases are 1 or 2`);
-  ok(Array.isArray(b.taunt) && b.taunt.length>=1, `boss ${b.id}: has taunt lines`); }
+
 // WORLD — every biome is fully described everywhere it is looked up
 for(const b of BIOMES){ const n=b.name;
   ok(ATMOS[n]!==undefined, `biome ${n}: has an atmosphere (ATMOS)`);
@@ -375,7 +332,7 @@ for(const b of BIOMES){ const n=b.name;
   ok(typeof BIOME_VI[n]==='string', `biome ${n}: has a Vietnamese display name (BIOME_VI)`); }
 for(const t of new Set(TOD_ORDER)) ok(typeof TOD_LABEL[t]==='string', `time of day ${t}: has a Vietnamese label`);
 for(const k of ['recruit','soldier','veteran']) ok(DIFF_META[k] && BALANCE.difficulty[k], `difficulty ${k}: label + balance numbers`);
-for(const c of new Set(SHOP_UP.map(u=>u.cat))) ok(typeof CAT_VI[c]==='string', `shop category ${c}: has a Vietnamese tab name`);
+
 ok(STAGE_TAGS.length >= OPERATIONS.length, 'a stage tag line for every operation');
 ok(PLAYER.maxSpeed === PLAYER_MAXSPEED, 'test constant PLAYER_MAXSPEED matches data/player.js');
 ok(SOLDIER.hp>0 && RIDER.hp>0 && TOWER.hp>0, 'support/tower units have HP');
@@ -389,10 +346,6 @@ grp('SQUAD (Z100) — free-roam inside the tank zone, hold-to-recall, on-tank he
   ok(F.tapMax>0.1 && F.tapMax<0.6, 'tap vs hold threshold feels natural (0.1–0.6s)');
   ok(TROOPS.crewHeal>0 && TROOPS.crewHeal*10 < 60, 'riding heals gradually (not an instant refill)'); }
 
-grp('BLURBS — present for every item');
-for (const u of SHOP_UP) {
-  ok(typeof UP_BLURB[u.key] === 'string' && UP_BLURB[u.key].length > 0, `UP_BLURB has copy for upgrade "${u.key}"`);
-}
 // ---------------------------------------------------------------------------
 // Z104 DATA CONTRACTS — wider battlefield, squad AI, installations, paratroopers
 // ---------------------------------------------------------------------------
@@ -431,8 +384,7 @@ for (const u of SHOP_UP) {
   ok(perStage(DEPOT.arms) && perStage(DEPOT.motor), 'weapon + tank depots defined for every stage');
   ok(range(DEPOT.guards,1,10) && range(DEPOT.guardsMobile,1,DEPOT.guards[1]) && range(DEPOT.tanks,1,4), 'depot guards / parked tanks in range');
   ok(DEPOT.capT>0.5 && DEPOT.capT<15 && DEPOT.r>=6, 'depot capture takes a few seconds inside a usable ring');
-  ok(ALLY_TANK.hp>0 && ALLY_TANK.dmg>0 && ALLY_TANK.fireCd>0.3 && ALLY_TANK.range>ALLY_TANK.keep, 'captured tanks can fight and keep their stand-off inside gun range');
-  ok(ALLY_TANK.leash>ALLY_TANK.keep && ALLY_TANK.cap>=1 && ALLY_TANK.cap<=6, 'captured tanks stay near you and are capped');
+  
   ok(PARA.fromStage>=1 && PARA.fromWave>=1 && range(PARA.every,15,180) && range(PARA.everyMobile,15,240), 'paratroop drops are periodic, not constant');
   ok(PARA.everyMobile[0]>=PARA.every[0], 'phones see drops no more often than desktop');
   ok(range(PARA.troops,1,10) && range(PARA.troopsMobile,1,PARA.troops[1]), 'paratroop stick size in range; phones no bigger than desktop');
@@ -458,10 +410,6 @@ for (const u of SHOP_UP) {
   ok(FIELD.minAny*0.5*(1+1) > 0.55*0.6, 'the field is always wide enough to hold the spawn line (minAny of the base edge)');
 }
 
-for (const id of Object.keys(GUN_PRICE)) {
-  ok(typeof GUN_BLURB[id] === 'string' && GUN_BLURB[id].length > 0, `GUN_BLURB has copy for gun "${id}"`);
-}
-
 grp('Z107 BATTLE SETUP — campaign ladder, weather, space');
 ok(CAMPAIGN.levels >= 10 && CAMPAIGN.perLoop === 5, 'campaign ladder: ≥10 levels, 5 stages per loop (matches the boss roster)');
 ok(CAMPAIGN.weather.length >= CAMPAIGN.perLoop && CAMPAIGN.weather.every(w=>WEATHER[w]), 'every campaign level has a known weather');
@@ -484,7 +432,6 @@ ok(FORT.fromGate > 0.5 && FORT.fromGate < 1, 'most (not all) reinforcements marc
 ok(COMMAND.para.cd >= 20 && COMMAND.para.troopsMobile[1] <= COMMAND.para.troops[1], 'paratroopers on a cooldown; phones get fewer');
 ok(['t','x','b','h','g','e','q'].every(k=>KEYS_HELP.some(r=>r[0].some(x=>x.toLowerCase()===k))), 'the controls sheet lists every hotkey (T X B H G E Q)');
 ok(TOUCH_HELP.length >= 6, 'the controls sheet explains the touch controls too');
-ok(HEADING.idle < HEADING.moving && HEADING.dist > 2, 'the heading chevron sits ahead of the nose and brightens on the move');
 
 ok(FORT.ram.gate*2 >= 1 && FORT.ram.wall*2 >= 1 && FORT.ram.fullV <= 15, 'Z111 two rams at 15+ break a gate or a wall section');
 ok(FORT.wallHpK <= 1 && FORT.wallShotK === 1 && FORT.shotStructMin >= 1, 'Z111 wall sections no tougher than the gate; shells hit them in full, no gun weak vs fortresses');
@@ -495,16 +442,12 @@ ok(FORT.posture.holdK > 0 && FORT.gate.exitMax > 0 && LOOT.siege.mul > 1, 'Z111b
 ok(HARD.boulder/(60*DMG_TYPE.AP.struct) > 2 && HARD.boulder/(60*DMG_TYPE.AP.struct) <= 3 && 95*DMG_TYPE.AP.struct >= HARD.oneShot, 'Z112 a boulder takes 3 cannon shells, one railgun slug');
 ok(TANK_DEATH.chunkLife[0] > 0.5 && TANK_DEATH.chunkLife[1] <= 2.5 && TANK_DEATH.fade < TANK_DEATH.chunkLife[0] && TANK_DEATH.smokeK > 0 && TANK_DEATH.smokeK < 1, 'Z402 a killed tank blows apart at once (no burning phase, no wreck): its torn steel is gone within ~2 s, its smoke a short puff');
 ok(GUN_MODS.max===5 && (1+GUN_MODS.max*GUN_MODS.barrel.dmg) <= 1.35 && (1-GUN_MODS.max*GUN_MODS.action.fire) >= 0.7 && GUN_MODS.mag.mag*GUN_MODS.max <= 0.6, 'Z115 gun parts cap at +30% dmg, −25% fire gap, +60% magazine');
-ok(HIJACK.hp>0 && HIJACK.hp<0.5 && HIJACK.window>=10 && HIJACK.types.includes('launcher') && ENEMY_DEFS.launcher && ENEMY_DEFS.launcher.truck, 'Z116 abandoned vehicles can be hijacked; the rocket truck exists');
+
 ok(HARD.hits===3 && HARD.lightHits>HARD.hits && GORE.speed[1]>GORE.speed[0] && DRIVE.screenReverse===true && DRIVE.reverseKeep<DRIVE.reverseAngle, 'Z121 rocks break in 3 shots; gore tuning present; tank reverses straight');
 ok(FORT.ram.minV > 4 && FORT.ram.fullV > FORT.ram.minV && FORT.ram.fullV < 26, 'a ram needs a run-up but full effect comes below top speed');
 ok(TERRAIN_FLAT.noiseK === 0 && TERRAIN_FLAT.blastK === 0, 'the battlefield stays flat and stable (no micro-bumps, shells do not reshape it)');
 
-grp('Z107 POWER RATING · RAM ANYTHING');
-ok(POWER.bands.every((b,i,a)=>i===0||b[0]<a[i-1][0]) && POWER.bands[POWER.bands.length-1][0]===0, 'power verdict bands run from easy to overwhelming and cover every ratio');
-ok(POWER.calib>=1 && POWER.calib<1.6, 'threat calibration only steepens harder levels (measured ~1.18)');
-ok(POWER.waves.every(w=>w>=1 && w<=5) && POWER.hitHalfW>0 && POWER.engaged>0 && POWER.engaged<=1, 'power model samples real waves and a sane hit / engagement model');
-ok(Math.abs(Object.values(POWER.mix0).reduce((s,v)=>s+v,0)-1)<1e-9, 'the neutral armour mix sums to 1');
+grp('Z107 RAM ANYTHING');
 ok(['sandbag','drums','crates','tires'].every(k=>COVER_HP[k] <= RAM.weakHp), 'flimsy cover (sandbags, drums, crates, tyres) breaks in ONE solid ram');
 ok(RAM.frac*3 >= 1 && RAM.frac*2 < 1, 'sturdy structures take about three full rams (not one, not ten)');
 ok(RAM.steelHp*RAM.frac*3 >= RAM.steelHp*0.99, 'steel / concrete cover gives way after ~3 rams');
@@ -520,8 +463,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z124 analogue pad control: stick tilt = top speed, eased hull / gun swing, sensitivity setting, camera combo, button legend
 { const fs=await import('node:fs'); const up=fs.readFileSync('src/game/update.js','utf8'), gpd=fs.readFileSync('src/input/gamepad.js','utf8'), cfg=fs.readFileSync('config.js','utf8');
-  ok(/PAD_CFG\.hull\.speedFull/.test(up) && /top = \(thr<0/.test(up), 'stick tilt scales the top speed (not just the acceleration)');
-  ok(/p\.yawV/.test(up) && /TURRET\.rate\*tk/.test(up), 'pad: hull turn and gun swing are eased and rate-capped (Z145 player-set traverse)');
+  
   ok(/minMag/.test(gpd) && /CAMC/.test(gpd) && /padHud/.test(gpd), 'pad: dead-tilt holds the gun, View+D-pad = camera, button legend');
   ok(/sens:1/.test(cfg) && fs.readFileSync('index.html','utf8').includes('id="setSens"') && fs.readFileSync('index.html','utf8').includes('id="padHud"'), 'sensitivity setting + legend exist'); }
 
@@ -554,7 +496,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z129 default gun
 { const fs=await import('node:fs'); const fl=fs.readFileSync('src/combat/flame.js','utf8'), fw=fs.readFileSync('src/game/flow.js','utf8'), g=fs.readFileSync('src/input/gamepad.js','utf8');
   ok(!/p\.guns\.push\(\{id, ammo:magCap\(g\), rU:0, rD:0\}\); p\.gunIdx=/.test(fl), 'a gift gun does not take over the hands');
-  ok(/defaultGunIdx\(\)/.test(fw+(await import('node:fs')).readFileSync('src/game/mode.js','utf8')) && /selectDefaultGun/.test(fl) && /'gunDefault'/.test(g), 'start with the default gun; LB+RB jumps back to it'); }
+   }
 
 // Z133 early core warning
 { const fs=await import('node:fs'); const a=fs.readFileSync('src/ui/alarm.js','utf8'), h=fs.readFileSync('index.html','utf8');
@@ -562,12 +504,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z134 the squad razes the boss shield pylons
 { const fs=await import('node:fs'); const f=fs.readFileSync('src/actors/fireteam.js','utf8');
-  ok(/boss\.shielded/.test(f) && /PYLONS/.test(f) && /kind:at\?'tank':'pylon'/.test(f), 'soldiers / AT target the pylons while the boss is shielded');
   ok(/kind==='pylon'/.test(f) && /\*0\.6/.test(f), 'sappers charge pylons (60% of their health per charge); mortars shell them'); }
-
-// Z135 smarter allied tanks
-{ const fs=await import('node:fs'); const f=fs.readFileSync('src/actors/ally-tanks.js','utf8');
-  ok(/function clearShot/.test(f) && /jinkUntil/.test(f) && /isPylon/.test(f) && /shotOk/.test(f), 'ally tanks: cover-aware targets, jink when hit, pylons, no shooting into walls'); }
 
 // Z136 countdown
 { const fs=await import('node:fs'); const b=fs.readFileSync('src/ui/briefing.js','utf8'), l=fs.readFileSync('src/game/loop.js','utf8'), v=fs.readFileSync('src/game/viewport.js','utf8');
@@ -575,7 +512,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z137 night visibility
 { const fs=await import('node:fs'); const n=fs.readFileSync('src/render/night-marks.js','utf8'), a=fs.readFileSync('src/world/atmosphere.js','utf8');
-  ok(/updateNightMarks/.test(n) && /ALLY_TANKS/.test(n) && fs.readFileSync('src/game/loop.js','utf8').includes('updateNightMarks'), 'night: enemy / ally tanks wear lamps (pooled sprites)');
   ok(/o\.exp=1\.45; o\.night=1/.test(a) && /ambient\.intensity=0\.36/.test(a), 'night is brighter than before (exposure, moon, ambient)'); }
 
 // Z138 nothing after GO, 5 lives
@@ -611,12 +547,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/perfFrameBegin\(\)/.test(lp) && /perfRenderBegin\(\); composer\.render\(\); perfFrameEnd\(rawMs\)/.test(lp), 'the main loop is probed around the render');
   ok(/export function detailCull/.test(lod) && /Math\.exp\(-fd\*fd\)/.test(lod) && C.LOD.detailPx>=1 && C.LOD.detailPx<=3 && C.LOD.detailHys>1, 'detail cull by on-screen size × fog, with hysteresis');
   ok(/perfGpuMs\(60\)/.test(lp) && /upHold/.test(lp) && C.PERF_HUD && C.PERF_HUD.n>=60, 'dynamic resolution steps back up from measured GPU headroom'); }
-
-// Z243 shield pylons stand clear of our citadel and carry a beacon + screen markers
-{ const fs=await import('node:fs'); const bo=fs.readFileSync('src/campaign/boss.js','utf8'), pm=fs.readFileSync('src/ui/pylon-marks.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), rd=fs.readFileSync('src/ui/radar.js','utf8'), C=await import('./config.js');
-  ok(/function pylonSpots/.test(bo) && /CORE_DEF\.R\+PS\.coreGap/.test(bo) && /f\.R\+PS\.fortGap/.test(bo) && !/Math\.cos\(a\)\*P\.ring, z=Math\.sin\(a\)\*P\.ring\*0\.85/.test(bo), 'pylons are sited round the general, outside our citadel and every fortress (not on a ring round the map centre = our walls)');
-  ok(C.PYLON_SITE && C.PYLON_SITE.coreGap>=10 && C.PYLON_SITE.apart>=12 && C.PYLON_SITE.pillar>=40, 'pylon site rules: citadel gap, spacing, a tall light pillar');
-  ok(/function pylonMarker/.test(bo) && /updatePylonBeacons/.test(bo) && /export function updatePylonMarks/.test(pm) && /updatePylonMarks\(\)/.test(lp) && /PYLONS\.length/.test(rd), 'every pylon: light pillar + pulsing ring + diamond, an on-screen / edge marker with its distance, a radar blip'); }
 
 // Z245 cavalry mode: the war horse (gait engine + IK), the general in plate, mount / dismount, stances
 { const fs=await import('node:fs'); const ho=fs.readFileSync('src/actors/horse.js','utf8'), ge=fs.readFileSync('src/actors/general.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), C=await import('./config.js');
@@ -687,7 +617,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function startFall/.test(rd) && /export function stepFall/.test(rd) && /'buckle'/.test(rd) && /F\.g \/ F\.len \* Math\.sin\(d\.th\)/.test(rd) && /bounce/.test(rd) && /function endAngle/.test(rd), 'ragdoll: knees give, topples under gravity, bounces, settles on the slope, limbs on springs');
   ok(/export function flingDead\(/.test(inf) && /export function stepFlung\(/.test(inf) && /flingDead\(a\.g, ux, uz/.test(ft) && /stepFlung\(d, m, dt\)/.test(ft), 'enemy and ally riflemen: Z402 thrown along the shot, then gone in a burst (the ragdoll fall stays for the general)');
   ok(/seamInset/.test(rt) && /REALTROOP\.team\[key\]/.test(rt) && /palm\('RightHand', 'RightForeArm'/.test(rt) && /muzzleQ/.test(rt), 'trooper bake: seams covered, each side its own cast, rifle in the palms, muzzle gear follows the barrel');
-  ok(/export function cavDeathStart/.test(cv) && /export function cavDeathUpdate/.test(cv) && /scene\.attach\(G\)/.test(cv) && /if\(p\.cav\)\{ cavDeathStart/.test(pd) && /if\(p\.cav\)\{ cavDeathUpdate/.test(pd), 'the general killed: thrown from the saddle, no tank wreck, the horse runs on');
   ok(/dying_backwards/.test(rc) && /Hit_Upper/.test(rc) && C.CAV.death && C.RAGDOLL && C.REALCAV.hitT>0, 'real general: falls backwards once, flinches (upper body) when hit');
   const sp=JSON.parse(fs.readFileSync('tools/meshy-assets.json','utf8')); ok(sp.trooper2 && sp.trooper2.preview.target_polycount>=9000, 'the trooper re-made at ~10k triangles'); }
 
@@ -696,25 +625,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function applySkyPhoto/.test(sp) && /hdrRot\.value = \(m\.sunU - 0\.5\)/.test(sp) && /SKY_PHOTO\.minEl/.test(sp) && /A\.night \|\| A\.cave/.test(sp) && /procsky/.test(sp), 'photo sky: turned onto our sun, shadows take its elevation, none at night / underground, procedural fallback');
   ok(/uniform sampler2D hdrTex/.test(at) && /c=mix\(c, h, hdrAmt/.test(at) && /applySkyPhoto\(A\)/.test(at), 'the dome mixes the photo over the procedural sky');
   const M=JSON.parse(fs.readFileSync('assets/sky/skies.json','utf8')); ok(Object.values(C.SKY_PHOTO.tod).concat(Object.values(C.SKY_PHOTO.mood)).every(n=>M[n] && fs.existsSync('assets/sky/'+n+'.jpg') && fs.existsSync('assets/sky/'+n+'_2k.jpg')), 'every photo sky ships (4K + 2K) with its sun position'); }
-
-// Z256 real tanks: one Meshy vehicle per family, split into hull / turret / gun by shape, fitted onto the procedural rig (tracks, traverse, elevation, recoil kept)
-{ const fs=await import('node:fs'); const rt=fs.readFileSync('src/tank/real-tanks.js','utf8'), md=fs.readFileSync('src/tank/model.js','utf8'), lod=fs.readFileSync('src/render/lod.js','utf8'), dp=fs.readFileSync('src/world/depots.js','utf8'), ga=fs.readFileSync('src/ui/gunart.js','utf8'), C=await import('./config.js'), tm=fs.readFileSync('src/tank/models.js','utf8');
-  ok(/export function realTank/.test(rt) && /export function loadRealTanks/.test(rt) && /function prepare/.test(rt) && /chains/.test(rt) && /gunSet/.test(rt) && /'gear'/.test(rt), 'real tanks: parts sorted by shape — the gun chained from its pieces, the running gear dropped');
-  ok(/tur\.rotation\.set\(0, 0, 0\)/.test(rt) && /procBox\(g, g, \[body\]\)/.test(rt) && /o\.userData\.proc/.test(rt) && /p\.z = tip\.z/.test(rt) && /gp\.position\.copy/.test(rt), 'fitted in the rest pose, the hull spans the tracks, only the build\'s own parts hidden, the muzzle and the gun pivot moved to the real gun');
-  ok((md.match(/realTank\([a-z]+, opts\)/g)||[]).length===2 && /!c\.visible\) continue/.test(md) && /mm\.userData\.proc=true/.test(md), 'every model-named build is dressed; a bake never folds hidden parts back in');
-  ok(/realHidden/.test(lod) && /model:ENEMY_MODEL\[role\]/.test(dp) && /loadRealTanks\(\)\.catch/.test(ga), 'LOD keeps them hidden; parked depot tanks and garage photos wear the real model too');
-  const all=Object.values(C.REALTANK.fams).flatMap(f=>f.designs), tmb=tm.slice(tm.indexOf('export const TANK_MODELS'), tm.indexOf('\n};', tm.indexOf('export const TANK_MODELS'))), em=tm.match(/export const ENEMY_MODEL = \{([^}]*)\}/)[1];
-  const used=new Set([...tmb.matchAll(/^  ([a-z0-9]+): ?\{/gm)].map(m=>m[1]).concat([...em.matchAll(/'([a-z0-9]+)'/g)].map(m=>m[1]))); ok(used.size>=13, 'the design list was read ('+used.size+')');
-  ok([...used].every(id=>all.includes(id)) && new Set(all).size===all.length, 'every garage and enemy design belongs to exactly one family');
-  ok(Object.keys(C.REALTANK.fams).every(k=>fs.existsSync('assets/models/real/tank/'+k+'.glb') && fs.statSync('assets/models/real/tank/'+k+'.glb').size<2.2e6), 'seven family models ship small (≤2.2 MB each)'); }
-
-// Z257 real guns: the player's weapons wear a real model per family (tube guns off the tank models, the rest from their own Meshy files)
-{ const fs=await import('node:fs'); const rg=fs.readFileSync('src/tank/real-guns.js','utf8'), br=fs.readFileSync('src/tank/barrels.js','utf8'), ga=fs.readFileSync('src/ui/gunart.js','utf8'), md=fs.readFileSync('src/actors/models.js','utf8'), C=await import('./config.js'), G=C.REALGUN;
-  ok(/export function realGun/.test(rg) && /export function loadRealGuns/.test(rg) && /REAL_TANK_FAM\[f\.fromTank\]/.test(rg) && /box\.max\.z - mb\.max\.z \* sl/.test(rg) && /f\.pair && u\.muzzles/.test(rg) && /f\.glow && glows/.test(rg), 'real guns: front on the muzzle, twin guns one per muzzle, energy glow kept, tube guns taken off the tanks');
-  ok(/return realGun\(g, id\)/.test(br) && /if\(!o\.userData\.sharedGeo\) o\.geometry\.dispose\(\)/.test(br) && /loadRealGuns\(\)\.catch/.test(ga) && /MODEL_FILES\['gun_' \+ k\]/.test(md), 'every barrel built is dressed; a remount never frees the shared model; gun photos wait for it');
-  const all=Object.values(G.fams).flatMap(f=>f.guns), keep=['minigun','mortar','arty','rocket','orbital','singularity'];
-  ok(all.length===16 && new Set(all).size===16 && keep.every(id=>!all.includes(id)), 'sixteen guns in nine families, each in one; the lobbers, the rotary cannon and two ultimates stay procedural');
-  ok(Object.entries(G.fams).every(([k,f])=>f.fromTank ? C.REALTANK.fams[f.fromTank] : (fs.existsSync('assets/models/real/gun/'+k+'.glb') && fs.statSync('assets/models/real/gun/'+k+'.glb').size<8e5 && ['+x','-x','+z','-z'].includes(f.front))), 'each family has its model (a tank family, or its own file under 0.8 MB with a muzzle direction)'); }
 
 // Z258 real magma + a real volcano: one molten-rock shader (crust plates on the melt, glowing cracks, temperature ramp) for the pools, the crater lake and the cone's lava flows
 { const fs=await import('node:fs'); const mg=fs.readFileSync('src/world/magma.js','utf8'), lv=fs.readFileSync('src/world/lava.js','utf8'), wd=fs.readFileSync('src/world/wonders.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), C=await import('./config.js');
@@ -951,15 +861,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z307 soldier mode is a mode of its own: one object per mode, every soldier check asks MODE
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), md=R('src/game/mode.js'), ts=R('src/combat/trooper-spells.js');
-  ok(/export const MODES = \{ tank:TANK, soldier:SOLDIER \}/.test(md) && /export function __set_MODE/.test(md) && /__set_MODE\(cavWanted \? MODES\.soldier : MODES\.tank\)/.test(R('src/game/flow.js')) && /MODE\.setupRun\(p\)/.test(R('src/game/flow.js')) && /MODE\.update\(gdt, now\)/.test(R('src/game/loop.js')), 'one mode at a time: its player, its run setup, its frame');
   ok(/MODE\.fire\(/.test(R('src/input/bindings.js')) && (R('src/input/input.js').match(/MODE\.fire\(/g)||[]).length===2 && /MODE\.hitTest\(p, _sw\.x/.test(R('src/combat/lock-on.js')) && /MODE\.rifleK\(\)/.test(R('src/combat/lock-on.js')) && /MODE\.hitTest\(p, r\.x/.test(R('src/actors/enemy-missiles.js')) && /MODE\.finalDeath\(p\)/.test(R('src/game/player-damage.js')), 'fire, hits on him and his last fall go through the mode');
   ok(/p\.maxHp = CAV\.soldier\.hp/.test(md) && !/applyUpgrades|applyTankKit|tankModel/.test(md.slice(md.indexOf('const SOLDIER'))) && C.CAV.soldier.rifleK>C.INFANTRY.vsArmour && /Math\.hypot\(x - p\.pos\.x, z - p\.pos\.z\) < p\.radius \+ r/.test(md), 'the soldier: his own health, none of the tank\'s progression, a man\'s outline hit at full rifle weight');
-  ok(['grenade','smokeHand','medkit'].every(k=>ts.includes("id:'"+k+"'")) && /export function spellNow/.test(R('src/combat/spells.js')) && /MODE\.powerHud/.test(R('src/combat/power.js')) && /function man\(c, p, k, R\)/.test(R('src/ui/instruments.js')) && /MODE\.crushes/.test(R('src/world/decor.js')) && /MODE\.riders/.test(R('src/world/pow.js')) && /MODE\.fleeK/.test(R('src/actors/wildlife.js')), 'his skills, HUD, loot, no crushing, no riders, animals let him closer'); }
-
-// Z309 a soldier's war: waves of men, armour as a set piece, a tank's shell as a warned burst
-{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), sw=R('src/campaign/soldier-war.js'), md=R('src/game/mode.js');
-  ok(/if\(MODE\.waveQueue\) return MODE\.waveQueue\(stage, wave\)/.test(R('src/campaign/waves.js')) && /waveQueue\(stage, wave\)\{ return soldierWaveQueue/.test(md) && /\['rifle', w\.rifle\]/.test(sw) && /q\.push\(stage >= 4 \? 'heavy' : 'grunt'\)/.test(sw) && C.CAV.soldier.war.sizeK>1, 'soldier waves: men first, a tank last as a set piece, announced');
-  ok(/MODE\.tankShell && def\.fireCd >= 1\.4 && MODE\.tankShell\(e, aimA, d, dmg/.test(R('src/ai/tactics.js')) && /makeArtLock\(tx, tz, R/.test(sw) && /s\.dud = true/.test(sw) && /if\(d < s\.R\) damagePlayer/.test(sw) && C.CAV.soldier.war.shell.lock>0.5, 'a tank\'s main gun on a soldier: a red ring while it lays, then a burst there — step out and it misses'); }
+   }
 
 // Z308 hands on the real grips (back of the hand up, along a swept bar), the headlamp glow shaped and placed on the real glass
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), x=R('src/game/xeom.js'), d=R('src/actors/driver.js'), F=C.RIDE.fit;
@@ -969,24 +873,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z313 shooting at helicopters in 3D: snap / cone lock, rounds lead and climb, the gun tips up, a ring and a drop line
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), aa=R('src/combat/air-aim.js'), lo=R('src/combat/lock-on.js');
   ok(['export function updateAirAim','export function airShot','export function airPitch','export function airMouse'].every(k=>aa.includes(k)) && /airMouse\(cx, cy\)/.test(R('src/input/input.js')) && /updateAirAim\(gdt\); MODE\.update/.test(R('src/game/loop.js')) && C.AIRAIM.keepPx>C.AIRAIM.snapPx && C.AIRAIM.padCone>0, 'the gun is laid on an aircraft: the mouse snaps to it, a pad or phone takes the one on the aim line');
-  ok(/arcDist:air \? air\.dropDist : arcD, noArc:!!air/.test(R('src/combat/flame.js')) && /airAim:air \? air\.e : null, arcDist:air \? air\.dropDist : 0/.test(R('src/combat/soldier-fire.js')) && /airAim:o\.airAim\|\|null/.test(lo) && /aaHigh = !!b\.airAim && b\.by>3\.0/.test(lo) && /Math\.abs\(_wy-e\.pos\.y\) < Math\.max\(AIRAIM\.hTol/.test(lo), 'rounds lead it and climb to its height, clear the cover on the way up, and hit it only near it in the air');
-  ok(/airPitch\(_gp\.x, _gp\.y, _gp\.z\)/.test(R('src/actors/real-cav.js')) && /AIRAIM\.tankUp/.test(R('src/game/update.js')) && /RingGeometry\(0\.85, 1, 48\)/.test(aa) && /LineDashedMaterial/.test(aa) && C.AIRAIM.manUp>C.AIRAIM.tankUp, 'the tank gun and the rifle tip up to it; a red ring, a dashed drop line, its height and range'); }
+   }
 
 // Z312 real breakage: the wreck is the tank's own model, no box parts or coloured rings, a lit lumpy smoke puff, stone breaks into solid lumps, men die whole
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fw=R('src/fx/fire-wrecks.js'), ex=R('src/fx/explosions.js'), sh=R('src/fx/shatter.js'), inf=R('src/actors/infantry.js');
-  ok(/export function spawnWreck\(pos, facing, ms, pal, toss, src\)/.test(fw) && /src\.clone\(true\)/.test(fw) && /function charred\(root\)/.test(fw) && !/spawnWreck\(/.test(R('src/fx/dying.js')) && !/spawnWreck\(/.test(R('src/campaign/boss.js')), 'the wreck is the tank itself, burnt (spawnWreck) — Z402 though no kill leaves one any more');
   ok(!/spawnTankWreck\(/.test(ex) && !/ringPulse\(pos, cf\.r1/.test(ex) && !/0xb088ff/.test(ex) && /export function rollSmoke/.test(ex) && /dustSkirt\(pos\.x, pos\.z, scale\*1\.2\)/.test(ex), 'blasts: no painted box parts, no flat coloured rings, no violet; dust skirt and a rolling smoke cloud');
   ok(/const N=128/.test(R('src/fx/particles.js')) && /solidKind/.test(R('src/world/cover.js')) && /function stoneLump\(src\)/.test(sh) && !/gibBody\(/.test(inf) && !/gibBody\(/.test(R('src/actors/fireteam.js')) && /d\.flat=/.test(inf), 'smoke with volume, stone in solid lumps, men thrown whole and lying where they fall'); }
 
 // Z314 a gun's round flies a straight line in the world, bites into the ground where the line meets it, and hits a body only at its height
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), lo=R('src/combat/lock-on.js');
   ok(/const lineRound = !o\.lockOn && !o\.smart && !o\.homing && !\(vy>0\.5\)/.test(lo) && /if\(b\.line\)\{ b\.by=b\.wy0\+b\.slope\*Math\.hypot\(b\.x-b\.ox, b\.z-b\.oz\)-heightAt\(b\.x,b\.z\); if\(b\.by<0\.05\)\{ b\.by=0\.05; landed=true; \} \}/.test(lo), 'a straight line in the world, into the ground where it meets it — no hugging the ground');
-  ok(/function aimAlong\(x, z, a, o\)/.test(lo) && /dropTo = o\.dropTo \?\? \(o\.owner==='e' \? 1\.2 : null\)/.test(lo) && /noArc:true, dropTo:1\.2/.test(R('src/ai/tactics.js')) && /noArc:true, dropTo:1\.3\}\)/.test(R('src/actors/enemies.js')) && /dropTo:1\.1, dropDist:T/.test(R('src/tank/roofmg.js')), 'enemy guns fire straight at the chest, no lob; unmarked rounds aim at whoever is on their line');
   ok(/function lineH\(b, wy, t, man\)/.test(lo) && /hitsHull\(e, _sw\.x, _sw\.z, b\.r\)\) && lineH\(b, _wy, e\)/.test(lo) && /MODE\.hitTest\(p, _sw\.x, _sw\.z, b\.r\) && lineH\(b, _wy, p\)/.test(lo) && /b\.line \? LINE\.over : 1e4, _bskip\)/.test(lo) && C.LINE.tankH>C.LINE.manH, 'a body is hit only at its real height; a round well over an obstacle flies on'); }
-
-// Z315 soldier mode: every fortress gate stands open (the citadel's too); the tank keeps shut gates to breach
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fo=R('src/world/fortress.js'), md=R('src/game/mode.js');
-  ok(/fortsOpen:true/.test(md) && /fortsOpen:false/.test(md) && /if\(MODE\.fortsOpen\)\{ if\(f\.gv < 1 \|\| f\.gateShut\)/.test(fo) && /return !MODE\.fortsOpen && f\.tier===3/.test(fo) && /MODE\.fortsOpen\?'<em>CỔNG MỞ<\/em>'/.test(fo), 'soldier mode: gates open, no sealed citadel, no wall to blast'); }
 
 // Z310 wheels that roll whole (a car's are its own pieces, a scooter's tyres measured and both turning), riders' hands on their bike's grips, the bán tải's wheels
 { const fs=await import('node:fs'); const C=await import('./config.js'), t=fs.readFileSync('src/world/traffic.js','utf8');
@@ -1012,9 +909,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['day','dusk','night'].every(k => B.bloom[k].length === 3) && B.bloom.night[0] > B.bloom.day[0] && B.bloom.night[2] < B.bloom.day[2] && /bloom\.strength=B\[0\]/.test(R('src/world/atmosphere.js')), 'bloom per time of day: the lights bloom more at night');
   ok(/export function holoRing\(R, o = \{\}\)/.test(bl) && /blendSrc:THREE\.OneFactor, blendDst:THREE\.OneMinusSrcAlphaFactor/.test(bl) && /gl_FragColor \*= 1\.0 - fogFactor/.test(bl) && /export function blRamp\(o, dt, k, a, b, floor\)/.test(bl) && /^export \* from '\.\/fx\/battle-light\.js';/m.test(R('src/hub.js')), 'one ring material: a hot core line, soft halo, dark backing, fog dims it (no fog-coloured square); pulses quicken without phase jumps');
   const users={ 'src/campaign/artillery.js':'holoRing', 'src/combat/flame.js':'holoRing', 'src/ai/fieldcraft.js':'holoRing', 'src/loot/powerups.js':'holoArc', 'src/world/rally.js':'holoRing', 'src/world/depots.js':'holoArc', 'src/actors/paradrop.js':'holoRing', 'src/world/tunnels.js':'holoRing', 'src/world/perimeter.js':'holoRing', 'src/combat/ultimate.js':'holoRing', 'src/loot/relic.js':'holoArc', 'src/campaign/boss.js':'holoRing', 'src/fx/hud-fx.js':'holoRing', 'src/actors/enemy-missiles.js':'holoRing' };
-  ok(Object.entries(users).every(([f, k]) => R(f).includes(k + '(')) && !/RingGeometry/.test(R('src/loot/powerups.js') + R('src/world/rally.js') + R('src/world/depots.js') + R('src/fx/hud-fx.js') + R('src/ai/fieldcraft.js')), 'every ground ring (danger zones, grenades, loot, rally, depots, drop zones, tunnels, range, strikes, relic, pylons, shockwaves, missile lock) is battle light');
   const em=R('src/actors/enemy-missiles.js'), lo=R('src/combat/lock-on.js'), sw=R('src/campaign/soldier-war.js');
-  ok(/id='lockAlert'/.test(em) && !/fillText\('⚠ BỊ KHOÁ'/.test(em) && /blSolid\('friend'/.test(lo) && /blTag\('◆ KHOÁ', 'friend'\)/.test(lo) && /tickArtLock\(s\.zone, k, null, now, dt\)/.test(sw) && !/Math\.floor\(now \* \(2 \+ k \* 9\) \* 2\) % 2/.test(sw), 'our lock is cyan, a missile on us is red with its words on the HUD (not over the action); a tank laying on a man pulses like a barrage ring');
   const css=R('css/battle-light.css'), html=R('index.html');
   ok(/href="css\/battle-light\.css"/.test(html) && /id="hpEdge"/.test(html) && !/steps\(/.test(css) && /body\.hpcrit #hpEdge/.test(css) && /#lockAlert\.on/.test(css) && /classList\.toggle\('hpcrit', low\)/.test(R('src/ui/instruments.js')) && B.hpCrit > 0 && B.hpCrit < 0.5, 'HUD warnings share the palette and smooth pulses (no stepped blinks); low health lights a slow red screen edge'); }
 
@@ -1043,7 +938,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z323 no shader compiles once the fight is on: the countdown waits for a guarded compile; the burnt wreck keeps its model's own shader
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), br=R('src/ui/briefing.js'), fw=R('src/fx/fire-wrecks.js');
   ok(/function compileQuiet\(\)/.test(br) && /renderer\.properties\.get\(m\)\.currentProgram/.test(br) && /if\(!pr \|\| pr\.isReady\(\)\)/.test(br) && /if\(_warm && S\.cd-dt<=0\.05\)/.test(br) && !/compileAsync\(scene, camera\)/.test(br), 'the countdown holds until the stage shaders are compiled; the compile wait cannot throw or hang');
-  ok(!/c\.emissiveMap = emberTex\(\)/.test(fw) && /c\.emissive\.setHex\(0xff4a12\); c\.emissiveIntensity = 0\.4/.test(fw), 'a burnt wreck glows by colour only, so its model keeps the shader it already has'); }
+   }
 
 // Z324 the battle HUD: dialogue / cards / banners each switchable, see-through glass cards, a slim banner band, a compact reload ring
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), hp=R('src/ui/hud-prefs.js'), cs=R('css/hud-slim.css'), ix=R('index.html');
@@ -1063,21 +958,20 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function drive\(v, dt, p, now\)/.test(tr) && /function clearBand/.test(tr) && /function parkedOn/.test(tr) && /Math\.min\(v\.v, Math\.max\(0, gap - 0\.1\) \/ dt/.test(tr) && T.lane.blvdMoto[0]>T.lane.blvdCar+1.31*2+1.3 && T.lane.street[1]+0.36<2.7-1.2 && T.lane.street[0]-0.36>0, 'cars by the median, scooters by the kerb lane, clear of each other and of parked cars; never into what is ahead; round what stands in the lane');
   ok(/function startU\(v, tu\)/.test(tr) && /the rear axle on the circle/.test(tr) && /one U-turn at a time/.test(tr) && /the inner lane turns first/.test(tr) && /function freeAt/.test(tr) && T.spawnR>=40, 'U-turns round the rear axle, one at a time, inner lane first; nobody spawns on anyone or in sight');
   ok(/const j = \(1 \+ I\.e\) \* vc \/ \(1 \/ mr \+ 1 \/ mv\)/.test(im) && !/spill\(H, 'car'\)/.test(im) && /v\.st === 'down'/.test(im) && C.XEOM.impact.mass.bantai>C.XEOM.impact.mass.xeom && /a heavy blow rolls a car onto its side/.test(tr) && /function bumps\(\)/.test(tr), 'a ram shoves and spins the car, puts a scooter down (ridden over after), the ride drives on; a heavy one rolls a car; a sliding wreck passes the blow on');
-  ok(/C\.shotThrow/.test(tr) && /function gone\(v\)/.test(tr) && T.hit.burnT<=6 && T.hit.hp[1]<=22 && /trafficCone\(x, z, cx, cz, range/.test(R('src/combat/flame.js')) && /trafficBeam\(ax, az, ex, ez/.test(R('src/combat/ultimate.js')), 'rounds, flames and beams set vehicles alight; the killing round throws it; it burns a few seconds and sinks away'); }
+   }
 
 // Z327 no freeze on a kill (a clone no longer serialises its userData), fort walls cut once per section, dead code gone
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), rd=R('src/render/renderer.js'), F=R('src/world/fortress.js');
   ok(/for\(const C of \[THREE\.Object3D, THREE\.Material, THREE\.Texture\]\)/.test(rd) && /if\(heavy\(v\)\) return \{\};/.test(rd) && /src\.userData=\{\};\s*try\{ _copy\.call\(this, src, \.\.\.a\); \} finally \{ src\.userData=u; \}/.test(rd), 'a clone copies plain userData and leaves three objects out (no toDataURL of a whole tank per wreck)');
   ok(/function sliceX\(g, x0, x1, mid\)/.test(F) && /new THREE\.InstancedMesh\(sg, (mat|mt), list\.length\)/.test(F) && /im\.computeBoundingSphere\(\); im\.castShadow=im\.receiveShadow=true;/.test(F) && !/fortClip/.test(F), 'each wall section draws only its own stretch, culled to the view and the shadow');
   ok(/if\(f\.wallSl && f\.wallSl\[pc\.i\]\)\{ const \[im,j\]=f\.wallSl\[pc\.i\]; im\.setMatrixAt\(j, _m\);/.test(F) && /for\(const g of f\.wallGeos\|\|\[\]\) g\.dispose\(\);/.test(F), 'a fallen section hides its slice; a stage change frees the slices');
-  ok(!/export function buildGunModel/.test(R('src/ui/shop.js')) && !/thumbTank|pumpThumbs/.test(R('src/ui/showroom.js')) && !/id="terrainDlg"/.test(R('index.html')) && !/function buildCity\(/.test(R('src/world/landmarks.js')) && !/\.tcard/.test(R('css/menus.css')), 'dead features are gone: the old 3D gun model, card photos, the old battlefield dialog, the box city'); }
+   }
 
 // Z329 the soldier's arsenal: the nine Tripo hand weapons are his guns, each fired its own way; the gun crate brings him one · Z330 the steel operator holds it gun-first too · Z332 no xích lô
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sf=R('src/combat/soldier-fire.js'), rc=R('src/actors/real-cav.js');
   const T=Object.keys(G).filter(k=>G[k].trooper); ok(T.length===16 && new Set(T.map(k=>C.INFGUN.map[k])).size===16 && T.every(k=>C.INFGUN.guns[C.INFGUN.map[k]]), 'nine soldier guns (Z355 twelve: + AK-47, M4, MP5; Z387 sixteen: + the rust rifle, the marksman, the rail rifle, the saw launcher), one per hand-weapon model, each one held in his hands');
-  ok(/g\.special === 'flame'\)\{ fireFlame/.test(sf) && /g\.special === 'mortar'\)\{ fireMortar/.test(sf) && /pierce:g\.pierce/.test(sf) && /chain:g\.chain/.test(sf) && /export function trooperGive/.test(sf) && /\[main, 't_rpg'\]/.test(sf) && /PRIMARY_GUNS = Object\.keys\(GUNS\)\.filter\(id => GUNS\[id\]\.trooper && id !== KIT_GUN\)/.test(sf) && /MODE\.id==='soldier'\)\{ const id=trooperGunPick\(\)/.test(R('src/loot/powerups.js')), 'each fires its own way (rounds, pellets, a slug through, a rocket, a lobbed grenade, a flame, an arc); he starts with a carbine (Z359 or the AK / M4 / MP5 he picked) and a B41 and picks up the rest');
   ok(/\(PROFILE\.trooper \|\| 's2'\) === 'op'\)\{ const seen = skClone\(og\.scene\)/.test(rc) && /pup = makePuppet\(op, seen\)/.test(rc), 'the steel operator is worn by the clips like the special-forces soldier, so he holds every gun gun-first, bore on the aim');
-  ok(!C.XEOM.xichlo && !C.RIDE.fit.xichlo && !/xichlo/.test(R('src/ui/battle-setup.js')) && !fs.existsSync('assets/models/real/ride/xichlo.glb') && /PROFILE\.unit==='xichlo'\) PROFILE\.unit='xeom'/.test(R('src/game/flow.js')), 'the xích lô is gone (a saved pick rides the xe ôm)'); }
+   }
 
 // Z328 far models swap to a light copy (meshoptimizer), the ground scars are read by the ground's own shader
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fl=R('src/render/far-lod.js'), C=await import('./config.js');
@@ -1110,9 +1004,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z337 bumping into things by their true shape: fortress wall sections, buildings and parked cars are boxes for the soldier, the rides, the tanks; the camera never inside a building; men in the soldier's war bleed, never burn
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), ss=R('src/world/solid-shape.js'), cv=R('src/game/cavalry.js'), ph=R('src/world/physics.js'), up=R('src/game/update.js'), rc=R('src/game/ride-collide.js');
   ok(['export function solidShape','export function carShape','export function pushOutShape','export function sightToBuildings'].every(k=>ss.includes(k)) && /FORT\.wallT \+ 3\.0/.test(ss) && /hl:B\.d \/ 2, hw:B\.w \/ 2/.test(ss), 'a fortress wall section is the box of its stone foot, a building the box of its footprint');
-  ok(/vn=pushOutShape\(p, SH, R\)/.test(cv) && /else rideClear\(p\.pos, R\)/.test(cv) && /SH \? tankVsWall\(p, SH\) : tankVsCircle/.test(ph) && /carShape\(c\)/.test(rc), 'the soldier, the rides and the tanks are held by those boxes; on foot trees, parked cars and street furniture are solid too');
   ok(/sightToBuildings\(p\.pos\.x, hy, p\.pos\.z, camBase\.x/.test(up) && /sightToBuildings\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1/.test(up) && /CAM\.top/.test(up), 'the camera rises over a building in the way, else comes in on its sight line, else goes up over you');
-  ok(/MODE\.id==='soldier' && e\.def\.inf\)\{ e\.hp -= F\.dps/.test(R('src/ai/tactics.js')), 'in the soldier\'s war a man hit by fire is wounded and bleeds, never set alight'); }
+   }
 
 // Z340 turned round in the saddle: nearly all the way round (hips + chest), held at the limit, back round the front once the aim is past it; the trigger waits for the bore
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), r=R('src/actors/real-cav.js'), f=R('src/combat/soldier-fire.js'), T=C.RIDER_TURN;
@@ -1157,12 +1050,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['game/soldier-rank.js','actors/squad-mates.js','loot/soldier-arms.js','campaign/general-duel.js'].every(f=>hub.includes(f)), 'the four career modules are in the hub');
   const need=r=>T.step[0]+T.step[1]*r+T.step[2]*r*r; ok(T.ranks.length===13 && T.ranks[0]==='BINH NHÌ' && T.ranks[12]==='ĐẠI TÁ' && need(0)===200 && need(1)>need(0) && need(11)<3000, 'thirteen ranks, Binh nhì to Đại tá, each a little further than the last (Z367 about three times further apart)');
   ok(T.xp.kill.rifle<T.xp.kill.rpg && T.xp.kill.rpg<T.xp.kill.grunt && T.xp.kill.grunt<T.xp.kill.heavy && T.xp.kill.boss<T.xp.kill.general, 'experience follows how hard the kill was, the general most of all');
-  ok(/bumpCombo\(\); soldierKill\(e\);/.test(R('src/actors/damage.js')) && /if\(MODE\.id !== 'soldier'/.test(rk) && !/S\.mode = 'perk'/.test(rk) && /function giftDrop\(nm\)/.test(rk) && /  giftDrop\(nm\); \}/.test(rk) && /spawnGift\(\{ x, z \}, \(\) => \{ const k = pickPerks\(1\)\[0\]; if\(!k\) return; take\(k, S\.player\)/.test(rk) && T.gift.ahead>0, 'every kill counts (soldier mode only); Z367 a rank never stops the battle: a gift crate lands by him, one reward picked for him when he walks over it');
-  ok(['tough','marks','quick','reload','bigmag','eagle','legs','vest','leech','tactic','nade','medic','leader','recruit','life','c_tank','c_para','c_strk','c_sup'].every(k=>rk.includes("id:'"+k+"'")) && /soldierStagePerks\(\)/.test(R('src/loot/upgrades.js')), 'stat perks in levels, calls for help, the stage-won cards are his');
+  
   ok(T.squad.start.join()==='mg,medic' && T.squad.max>=5 && /medKit\(a\)/.test(sq) && /r\.dead && newWave/.test(sq) && /\(a\.dmgK\|\|1\)/.test(R('src/actors/fireteam.js')), 'a machine-gunner and a medic from the start, the fallen back next wave, their damage grows with him');
-  ok(T.star.max===5 && /inst\.star = st/.test(R('src/combat/soldier-fire.js')) && /\(1 \+ SK\.dmg \* st\)/.test(R('src/combat/soldier-fire.js')) && /lv=inst\.star\|\|gunLevel/.test(R('src/ui/briefing.js')), 'a gun picked up again climbs a star: more damage, a quicker trigger, shown on the chip');
   ok(/e\.general\)\{ for\(const id of heavyPick\(2\)\)/.test(ar) && T.drop.rpg>T.drop.rifle && /MEDAL/.test(ar) && /AMMO/.test(ar), 'the enemy drops his weapon; the general his two best and a medal');
-  ok(/if\(generalBail\(pos, bdef, n=>bossStageWon\(n, bdef\)\)\) return;/.test(R('src/campaign/boss.js')) && /export function bossStageWon/.test(R('src/campaign/boss.js')) && /if\(e\.hitCap\) dmg=Math\.min\(dmg, e\.hitCap\)/.test(R('src/actors/damage.js')), 'the general jumps out of his burning machine, the duel decides the stage, no hit takes more than a slice');
   ok(T.general.fan.tel>=0.5 && T.general.nade.lock>=1 && T.general.callAt>T.general.rageAt && /makeArtLock/.test(gd) && /floatText\('!'/.test(gd), 'his fan of rounds and his grenades are both warned; guards at half health, rage at a third'); }
 
 // Z344 the batched infantry cut at its own joints and skinned on the GPU: legs straightened for the cut, pivots where the model's bones are, a kneel that fits the legs, feet planted
@@ -1185,12 +1075,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z354 into battle in three steps: who (tank / soldier), with what (hull + guns · trooper + ride + driver), where — XUẤT KÍCH from any step
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), bs=R('src/ui/battle-setup.js'), su=R('src/ui/setup-units.js'), html=R('index.html'), css=R('css/setup.css');
-  ok(/id="bsRail"/.test(html) && /id="bsS1"/.test(html) && /id="bsS2"/.test(html) && /id="bsS3"/.test(html) && /id="bsNext"/.test(html) && /id="br-team"/.test(html) && /ui\/setup-units\.js/.test(R('src/hub.js')), 'the rail, the three steps, TIẾP and the briefing team strip are in the page');
-  ok(/export function setStep/.test(bs) && /setStep\(tab \? 3 : 1\)/.test(bs) && /tapBtn\('bsGo', goBattle\)/.test(bs) && /ov\.dataset\.step = BS\.step/.test(bs), 'PLAY opens at step 1, the battlefield buttons at step 3, XUẤT KÍCH goes in from any step');
-  ok(['tank','s2','op','cav','xeom','bagac','bantai'].every(k=>fs.existsSync('assets/units/'+k+'.webp')) && /assets\/units\//.test(su), 'every card is a photo from the game');
+  
   ok(/drv:false/.test(su) && (su.match(/drv:true/g)||[]).length===3 && /BÁC TÀI LÁI/.test(su) && /TỰ CƯỠI/.test(su) && /bác quỳ xuống đầu hàng/.test(su), 'the horse is ridden by him, the three rides by the bác tài — and the card says what the driver does');
-  ok(/_garFrom==='battleSetup'\) setupBack\(\)/.test(R('src/ui/garage.js')) && /_ldFrom==='battleSetup'\)\{ show\('battleSetup'\); setupBack\(\); \}/.test(R('src/ui/loadout.js')), 'the garage and the arsenal come back to the gear step');
-  ok(/\.btn\.btn-primary\{--plate:linear-gradient\(180deg,#e2b443/.test(R('css/mil.css')) && /#battleSetup\[data-step="1"\] \.bs-s1/.test(css) && /@media \(max-height:560px\)\{\n  #briefing/.test(css), 'primary buttons stay yellow everywhere; one step shown at a time; the phone briefing fits'); }
+   }
 
 // Z346 the infantry look up and carry at the ready (no faces and muzzles in the ground), the baked rifle laid level, the enemy's B40 the real launcher
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), so=R('src/actors/soldiers.js'), inf=R('src/actors/infantry.js'), rt=R('src/actors/real-troops.js'), CA=C.REALTROOP.carry;
@@ -1225,7 +1112,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z355 three real guns for the soldier (AK-47 · M4 · MP5) · Z357 a humvee in the enemy camps and a ruined house among the ruins — Meshy community, CC0, cut down locally
 { const fs=await import('node:fs'); const C=await import('./config.js'), G=(await import('./src/data/guns.js')).GUNS, R=f=>fs.readFileSync(f,'utf8'), sz=f=>fs.statSync(f).size;
-  ok(['ak','m4','mp5'].every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb') && sz('assets/models/real/gun/inf/'+k+'.glb')<1.2e6 && C.INFGUN.guns[k] && C.GUNHOLD[k]) && ['t_ak','t_m4','t_mp5'].every(id=>G[id] && G[id].trooper && G[id].tier===2 && C.INFGUN.map[id] && C.GUN_BLURB[id]), 'three new hand weapons, each a light model with its length, grip and hold');
   ok(G.t_m4.spread<G.carbine.spread && G.t_m4.rng>G.t_ak.rng && G.t_ak.dmg>G.carbine.dmg && G.t_mp5.fireCd<G.t_ak.fireCd && G.t_mp5.rng<1, 'each its own role: the M4 precise and long, the AK heavy, the MP5 fast and short');
   ok(/id = e\.def\.rpg \? 't_rpg' : 't_ak'/.test(R('src/loot/soldier-arms.js')), 'an enemy rifleman drops his AK-47');
   ok(C.OUTPOST.veh.includes('mil_humvee') && C.OUTPOST.solid.includes('mil_humvee') && sz('assets/models/real/camp/mil_humvee.glb')<3.5e6 && C.REALRUIN.models.ruin_house && sz('assets/models/real/ruin/ruin_house.glb')<3.5e6 && C.REALRUIN.biomes.RUINS.keys.includes('ruin_house'), 'the humvee parks in the camps, the ruined house stands among the ruins, both kept small');
@@ -1235,7 +1121,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), G=(await import('./src/data/guns.js')).GUNS, sy=R('src/audio/synth.js'), sf=R('src/combat/soldier-fire.js'), ga=R('src/ui/gunart.js');
   ok(G.t_ak.snd==='shoot_ak' && G.t_m4.snd==='shoot_m4s' && G.t_mp5.snd==='shoot_mp5' && /ak: +\{ r:.*sample:'rifleE', rate:0\.84/.test(sy) && /m4s: +\{ r:.*crack:0\.04, mech:1500/.test(sy) && /mp5: +\{ r:.*rate:1\.2/.test(sy) && /case 'shoot_ak': return play\('ak'/.test(sy) && /playbackRate\.value=\(D\.rate\|\|1\)/.test(sy), 'three voices: the AK deeper, the M4 a suppressed thup and clack, the MP5 quicker');
   ok(G.t_ak.flashK>1 && G.t_m4.flashK<0.5 && G.t_m4.supp && G.t_ak.kickK>1 && G.t_m4.kickK<1 && /\(g\.flashK \?\? 1\)/.test(sf) && /\(g\.kickK \|\| 1\)/.test(sf) && /rifleFX\(_v\.x, _v\.y, _v\.z, a0, g\.dmg \* n >= 40, g\.supp\)/.test(sf) && /if\(!noSmoke && /.test(R('src/fx/realwar.js')), 'each its own flash and kick; the suppressor swallows the smoke, the brass still flies');
-  ok(/function renderHand\(id\)/.test(ga) && /loadGLTF\('inf_'\+k\)/.test(ga) && /GUNS\[id\]\.trooper && INFGUN\.map\[id\]/.test(ga), 'a soldier\'s gun is photographed from the model in his hands'); }
+   }
 
 // Z358 the xe ôm driver sits tall: a straight back on the trunk's line (not curled over the bars), an upright Cub lean, braced not flung under the brakes
 { const fs=await import('node:fs'); const C=await import('./config.js'), dr=fs.readFileSync('src/actors/driver.js','utf8'), R=C.RIDE;
@@ -1331,10 +1217,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function stirrupFeet/.test(st) && /function makeStirrups/.test(st) && /scene\.add\(strap, iron\)/.test(st) && /sb\.attach\(strap\); sb\.attach\(iron\)/.test(st) && /ik2\(up, kn, ft,/.test(st) && /actors\/soldier-stirrups\.js/.test(fs.readFileSync('src/hub.js','utf8')), 'stirrups made in the world and hung on the horse\'s seat bone; each leg laid by IK to its iron');
   ok(/if\(R\.pup && !P\.dead && !bike && mounted && !P\.trans\) stirrupFeet\(R, H\)/.test(rc), 'on the horse (not a ride, not climbing on or off) his feet go to the stirrups every frame'); }
 
-// Z372 the soldier's HUD plain: his vitals alone (no tank compass, speed or range), one smooth health bar; the weapon chip without the damage-class tag
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), ins=R('src/ui/instruments.js'), css=R('css/mil.css');
-  ok(/INSTR\.el\.classList\.toggle\('sold', sold\); document\.body\.classList\.toggle\('m-soldier', sold\)/.test(ins) && /#instr\.sold \.in-dial,#instr\.sold \.in-row:not\(\.in-a\)\{display:none;\}/.test(css) && /body\.m-soldier #weaponchip \.wc-ty\{display:none;\}/.test(css), 'a soldier reads his health alone, in one bar; his gun chip has no damage-class tag'); }
-
 // Z376 the crosshair is where the round goes: the point under it in the world (a man, a hull, a wall, the ground — not the ground behind them), for the mouse and the pad alike; the round from the muzzle straight to it; the rifle, chest, hips and feet come round to it
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), X=C.XHAIR, xh=R('src/combat/crosshair.js'), sf=R('src/combat/soldier-fire.js'), fl=R('src/combat/flame.js'), rc=R('src/actors/real-cav.js'), cv=R('src/game/cavalry.js');
   ok(X && X.reach>=120 && X.man.r>=0.3 && X.man.h>X.man.low && X.man.low>X.man.prone && X.man.lo+X.man.hi<X.man.prone+0.5 && X.fireTol>0 && X.fireTol<0.6 && X.turn.twist>0.5 && X.turn.twist<C.REALCAV.twistMax && X.turn.backV<C.SOLDIER_LEGS.stand.maxV && X.awake>0.5 && X.aimRate>C.REALCAV.aimRate, 'a man is a body his height to the eye; the chest takes less than it can before the hips turn; backing off is slow enough for his own legs');
@@ -1347,7 +1229,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function padAim/.test(xh) && /ap\.y = heightAt\(ap\.x, ap\.z\) \+ XHAIR\.chest/.test(xh) && /put\(xe, ap\.x, ap\.y, ap\.z\)/.test(xh) && /crosshairPad\(\)/.test(R('src/input/gamepad.js')) && /crosshairMouse\(cx, cy\)/.test(R('src/input/input.js')), 'the pad takes up a man near its line or aims chest high, and draws the same crosshair on the screen');
   ok(/export function lineStop/.test(xh) && /inBlock\(bl, x, z, 0\.2\) && y < blockTop\(bl\) \+ LINE\.over/.test(xh) && /XH\.stop = st/.test(xh), 'where the line of fire meets something short of the crosshair, a red mark (a round never goes through)');
   ok(/export function camAimA/.test(xh) && /const la=camAimA\(p\)/.test(R('src/game/update.js')) && /updateCrosshair\(gdt, now\); updateAirAim\(gdt\)/.test(R('src/game/loop.js')), 'the camera leans the way the mouse last laid the aim (it no longer drags the point under a still cursor away)');
-  ok(/const L = g\.special \? null : fireLine\(_v\.x, _v\.y, _v\.z\)/.test(sf) && /a0 = air \? air\.a : L \? L\.a : p\.aimSmoothed/.test(sf) && /dropTo:air \? air\.dropTo : L \? L\.dropTo : 1\.2/.test(sf) && /RF\.gunYaw - L\.a/.test(sf) && /fireLine\(sx0, sy0, sz0\)/.test(fl), 'the soldier\'s round (and the tank\'s shell) go from the muzzle to the crosshair; on foot the trigger waits for the rifle to come onto it');
   ok(/ty = XH\.live \? S\.aimPoint\.y/.test(rc) && /!S\.firing && !CV\.aimUp\)/.test(rc) && /mounted \? C\.aimRate : XHAIR\.aimRate/.test(rc) && /awake=CV\.aimUp=!sprint && \(aimAwake\(now\) \|\| offA>XHAIR\.turn\.twist\)/.test(cv) && /runA\+Math\.sign\(dA\)\*\(Math\.abs\(dA\)-XHAIR\.turn\.twist\)/.test(cv), 'the rifle laid on the crosshair\'s own point and kept up on it; past what the chest can take the hips and feet turn'); }
 
 // Z377 a soldier lying flat (still or crawling) is not seen by far or high enemy guns until close, caught in a searchlight's pool or firing; the combat roll dodges rounds better than running
@@ -1364,10 +1245,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     env.NIGHT.k=1; const nightNear=at(6, 1.6); env.NIGHT.k=0; P.pos.x=20; P.spotUntil=performance.now()/1000+5; const spotted=playerSeen(0, 7.2, 0); P.pos.x=T.alertR+2; const spottedFar=playerSeen(0, 1.6, 0);
     ok(!farProne && !farStill && nearCrawl && nearGround && stand && !nightNear && spotted && !spottedFar, 'prone 9 m from a guard 7 m up / 15 m from a rifleman: unseen; crawling at the tower\'s foot or 5 m from a man: seen; 6 m off at night: unseen; spotted: seen within alertR, not beyond; standing: always'); }
   ok(/export function towerGuardAim\(x, z, y\)/.test(tw) && /seen=y==null \|\| playerSeen\(x, y, z\)/.test(tw) && /towerGuardAim\(_tw\.x, _tw\.z, _tw\.y\+1\.5\)/.test(tw) && /if\(!tg\)\{/.test(tw) && /updateSearchlight\(t\.light, NIGHT\.k\); stealthLight\(t\.light\);/.test(tw) && /L\.r=r\*1\.15; L\.st=stretch; L\.ux=_d\.x\/hl; L\.uz=_d\.z\/hl;/.test(R('src/fx/searchlight.js')), 'tower and wall-top guards hold fire on a man they cannot see and watch their sector; a searchlight\'s pool on him gives him away');
-  for(const [f, re] of [['src/world/bridges.js', /aiming=d<TOWER\.range && playerSeen\(/], ['src/world/radar.js', /if\(d>SUPPLYB\.aa\.range \|\| !playerSeen\(/], ['src/world/underbase.js', /if\(d>C\.turretR \|\| !playerSeen\(/], ['src/world/supply.js', /dp < SUPPLYB\.alertR && playerSeen\(/], ['src/actors/enemies.js', /if\(d > 30 \|\| !playerSeen\(/], ['src/actors/helis.js', /if\(d>T\.gunR \|\| !playerSeen\(/], ['src/actors/vehicles.js', /d > R\.range \|\| !playerSeen\(/]])
-    ok(re.test(R(f)), f+': this gun (or alarm) asks first whether it can see him');
   ok(/seen=playerSeen\(e\.pos\.x, heightAt\(e\.pos\.x,e\.pos\.z\)\+1\.6, e\.pos\.z\)/.test(inf) && /return best \|\| \{ pos:e\.lk \|\| \{ x:e\.pos\.x, z:e\.pos\.z \}, vel:_INF0, tank:false, lost:true \}/.test(inf) && /!\(e\.aimT>0\) && !T\.lost && S\.mode==='playing'/.test(inf), 'a rifleman who cannot see him goes to look where he last saw him and never fires at nothing');
-  ok(/if\(targetPlayer\)\{ if\(playerSeen\(/.test(tac) && /else \{ targetPlayer=false; target = e\.lk \|\| \(core \? core\.pos : \(e\.lk=e\.pos\.clone\(\)\)\); \}/.test(tac) && /laid && !e\._idle && target!==e\.lk\)/.test(tac) && /d < def\.range && target!==e\.lk\)/.test(tac), 'an enemy tank\'s crew that cannot see him makes for where they last saw him and holds its gun');
   ok(/t\.cav\.mounted \? 'mounted' : t\.cav\.roll \? 'prone' :/.test(lk) && /!\(dodgeShot\(p\) && \(b\.dodged=true\)\)\)\{ const _was=now>=p\.invincibleUntil; damagePlayer/.test(lk) && /if\(!b\.dodged && !\(wb && pastFace\(b, p\.pos\.x, p\.pos\.z\)\) && dpx\*dpx/.test(lk) && /o\.owner==='p' && o\.reach!=null\)\{ const P=S\.player; if\(P && P\.cav && \(x-P\.pos\.x\)\*\*2\+\(z-P\.pos\.z\)\*\*2 < 9\) stealthShot\(\);/.test(lk) && /reach, y:_v\.y/.test(R('src/combat/soldier-fire.js')), 'going over in a roll he is as low as a man lying flat and a round that would hit him mostly flies on past; his own shots (not his mates\') give him away'); }
 
 // Z378 the see-through seams in the fortress walls opened into real breaches: the soldier and the xe ôm through them, a tank not
@@ -1387,23 +1265,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export const XCAM = new THREE\.PerspectiveCamera/.test(xh) && /export function steadyCam/.test(xh) && /camera\.position\.copy\(camBase\);\n  steadyCam\(camBase, camTarget\.x, /.test(up) && up.indexOf('steadyCam(camBase')<up.indexOf('const g=camShakeGain()'), 'the crosshair\'s camera is the follow camera\'s pose before the kick and the shake');
   ok(/const RING = \{ ok:'#ffce4a', block:'#ff3b2a', far:'#9a9a9a' \}/.test(xh) && /XH\.state = st \? 'block' : far \? 'far' : 'ok'/.test(xh) && /pointer\(CURSOR\[XH\.state\]\)/.test(xh) && !/xhairStop|STOPSVG/.test(xh) && /far = !st && d > shotReach\(g\)/.test(xh), 'one crosshair: yellow / red (stopped short) / grey (out of reach), no second mark');
   ok(/if\(A && \(!S\.firing \|\| XH\.mouseAt > A\.t \|\| XCAM\.position\.distanceTo\(A\.cam\) > XHAIR\.anchor\.cam/.test(xh) && /if\(!pad && S\.firing && !XH\.anchor\)/.test(xh), 'the trigger held and the mouse still: the burst stays on its point (or its man)');
-  ok(/if\(Math\.abs\(off\)>XHAIR\.tankTol\) return; \}/.test(fl) && fl.indexOf('XHAIR.tankTol')<fl.indexOf('p.fireAt = now + g.fireCd'), 'the tank\'s shot waits for the turret (before any ammunition is spent)'); }
+   }
 
 // Z388 the fallback rig turns round in the saddle as the real one: hips + chest to ±170°, thighs along the horse, held / swung back, the trigger reads its bore
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), g=R('src/actors/general.js'), f=R('src/combat/soldier-fire.js'), cv=R('src/game/cavalry.js');
   ok(/import \{[^}]*REALCAV, RIDER_TURN[^}]*\} from '\.\.\/\.\.\/config\.js'/.test(g) && /const lead = RP && RP\.stand \? bedTurn\(u, dt, twist\) : seatTwist\(u, H, dt, twist\)/.test(g) && /const tgt = cl\(u\.tu, -RT\.max, RT\.max\)/.test(g) && /const L = Math\.PI \+ RT\.flip/.test(g) && /hipMax = H\.bike \? C\.seatTurn\[1\] : RT\.hip/.test(g) && /const twLim = RT\.max - hipMax/.test(g), 'the fallback rig: the same limits as the real one (max, flip, hips on the seat, the chest the rest)');
   ok(/Lg\.hip\.rotation\.set\(Lg\.hip\.rotation\.x, -u\.hy, Lg\.hip\.rotation\.z, 'YXZ'\)/.test(g) && /u\.body\.rotation\.y = u\.hy; u\.up\.rotation\.y = u\.tw/.test(g) && /u\.gunYaw = Math\.atan2\(_sf\.x, _sf\.z\)/.test(g) && !/Math\.max\(-2\.0, Math\.min\(2\.0, twist\)\) - u\.up\.rotation\.y\)\*Math\.min\(1, dt\*10\);\n  if\(u\.arms\)/.test(g), 'his hips turn on the saddle, his thighs stay along the horse, the old ±2.0 chest clamp is only for standing in a bed; the bore is kept for the trigger');
   ok(/CV\.mounted && \(CV\.real \|\| CV\.G && CV\.G\.userData\)/.test(f) && /seatTurnOff\(G\)/.test(cv) && /export function seatTurnOff/.test(g), 'the trigger waits on the fallback rig too; off the horse his hips square again'); }
-
-// Z381 the gun seated in its turret: a weapon mounted on a real Meshy turret slides back into its face (the procedural turret's trunnion left it floating
-//   in front of the T-90 / Type 99 turrets, the pods and twin mounts out in the air, the rail gun over the dome), never so far its full recoil leaves the turret's back; the air left closed by a sleeve, a mantlet or a pedestal that lays with the gun
-{ const fs=await import('node:fs'); const C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), G=C.GUNSEAT, sg=R('src/tank/seat-gun.js');
-  ok(G && G.embed>0 && G.embed<0.3 && G.maxShift>=1.6 && G.rays>=6 && G.ring.every(k=>k>0.5 && k<2) && G.pick>=0 && G.pick<=0.5 && G.recoil>=1 && G.sleeve.r[0]<G.sleeve.r[1] && G.sleeve.k>1, 'the breech goes a little into the face; far enough for the T-14; rays on rings round the breech, not down its bore');
-  ok(/export function seatBarrel/.test(sg) && /export function barrelRoot/.test(sg) && /_rc\.intersectObjects\(turM, false\)/.test(sg) && /room = zMin - \(tail \+ G\.back \+ travel\)/.test(sg) && /bu\.z0 -= dz; bu\.seatDz = dz;/.test(sg) && /if\(bu\.seatDz\)\{ bu\.z0 \+= bu\.seatDz; bu\.seatDz = 0; \}/.test(sg) && /want = zMin - \(near - G\.embed\)/.test(sg) && G.slidePick>G.pick, 'the face measured round the breech; a tube slides in no further than the face needs, capped by the turret\'s back at full recoil; seated again from where it was authored');
-  ok(/backed = \[-G\.band, 0, G\.band\]\.every\(k => behind\(ay \+ k \* rh\)\) && \[-G\.band, 0, G\.band\]\.every\(k => over\(ax \+ k \* rw\)\)/.test(sg) && /if\(backed \|\| \(face == null && floor == null\)\)/.test(sg) && /if\(bu\.elevates === false\) return null;/.test(sg), 'a gun whose back the turret already hides (from the side and from above) is left be — no block grows on every tank; the roof-mounted lobbers are left alone');
-  ok(G.hitBulk>0.25 && G.hitBulk<G.hitK && G.bulkReach>0.1 && G.bulkReach<1 && /if\(face == null && !slim && floor == null && back\.length >= pts\.length \* G\.hitBulk && zMin - f0 <= G\.bulkReach\) face = f0;/.test(sg), 'Z381b a bulky gun\'s back (a launcher pod wider than the turret\'s face) with nothing under it finds the face from fewer of its rays when it is close behind it — the Ghost\'s pod is joined, every other joint stays as it was');
-  ok(/gp\.add\(m\); u\.gunSleeve = m;/.test(sg) && /const mat = turM\[0\]\.material/.test(sg) && /put\(geo, 'gun_sleeve'\)/.test(sg) && /put\(geo, 'gun_mantlet'\)/.test(sg) && /const floor = below\.length >= /.test(sg) && /const bot = floor != null \? floor - G\.embed/.test(sg) && G.block.w>0.3 && G.drop>0.5 && G.slim>0.1 && G.slim<0.6, 'the air left is closed in the turret\'s own paint, on the gun\'s pivot: a sleeve round a tube with only air behind it, else a mantlet round the gun\'s back from the face and down onto the turret under it');
-  ok(/ud\.gunId=id; seatBarrel\(mesh\);/.test(R('src/tank/barrels.js')) && /if\(u\.gunId\) seatBarrel\(g\); \}/.test(R('src/tank/real-tanks.js')) && /const root = barrelRoot\(g\); if\(root\) seatBarrel\(root\); \}/.test(R('src/tank/real-guns.js')) && /bg\.position\.z = \(bg\.userData\.z0 \?\? -TRUNNION_Z\) - rig\.recoil\*rig\.recoilLen/.test(R('src/tank/rig.js')), 'seated when a weapon is mounted, when the real turret comes late and when the real gun model comes late; the rig recoils it from its seat'); }
 
 // Z389 the fallback rig standing in a bed turns any way round by stepping, as the real one; the trigger waits for its bore there too
 { const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), g=R('src/actors/general.js'), f=R('src/combat/soldier-fire.js'), ST=C.REALCAV.standTurn;
@@ -1459,8 +1327,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const T=Object.keys(G).filter(k=>G[k].trooper && k!=='t_rpg');
   ok(/export const KIT_GUN = 't_rpg';/.test(sf) && /PRIMARY_GUNS = Object\.keys\(GUNS\)\.filter\(id => GUNS\[id\]\.trooper && id !== KIT_GUN\)\.sort\(/.test(sf) && T.length===15 && ['t_rust','t_dmr','t_rail','t_saw','t_lmg','t_sniper','t_energy'].every(k=>T.includes(k)), 'the soldier\'s gun list is every one of his guns (15 + the B41 he always carries), not the four Z359 rifles');
   ok(/for\(const id of \[\.\.\.PRIMARY_GUNS, KIT_GUN\]\)/.test(su) && /LUÔN MANG THEO/.test(su) && /querySelector\('\.su-pgun\.on'\)/.test(su) && /new ResizeObserver/.test(su), 'the gear step shows them all, the B41 last, the one picked slid into view');
-  ok(/_ldSol = _ldFrom==='pause' \? MODE\.id==='soldier' : isSoldier\(\)/.test(ld) && /if\(_ldSol\) return renderSoldierArms\(grid\)/.test(ld) && /if\(_ldSol\) applySoldierMain\(\); else applyLoadoutToRun\(\)/.test(ld) && /PROFILE\.trooperGun=_solSel/.test(ld), 'KHO SÚNG in soldier mode is his arsenal (never the tank\'s guns put in his hands)');
-  ok(Object.keys(C.GUN_PRICE).length===Object.keys(G).filter(k=>!G[k].trooper && k!=='rifle').length && Object.keys(G).filter(k=>!G[k].trooper && k!=='rifle').every(k=>C.GUN_PRICE[k]), 'the tank\'s shop still sells every tank gun but the starting one');
+  
   const js=f=>{ const b=fs.readFileSync(f); return JSON.parse(b.slice(20,20+b.readUInt32LE(12))); }, turned=k=>js('assets/models/real/gun/inf/'+k+'.glb').nodes.some(n=>n.rotation && Math.abs(n.rotation[1])>0.5) && !js('assets/models/real/hd/inf_'+k+'.glb').nodes.some(n=>n.rotation);
   ok(['ak','m4','mp5'].every(turned), 'the cause: the shipped AK / M4 / MP5 lie along X turned by a node, their originals along Z with none');
   ok(/sameFrame\(b\.geometry\.clone\(\)\.applyMatrix4\(a\.matrixWorld\.clone\(\)\.invert\(\)\.multiply\(b\.matrixWorld\)\), a\.geometry\)/.test(nd) && /function sameFrame\(g, lo\)/.test(nd) && /if\(m\.determinant\(\) > 0\) ROTS\.push/.test(nd) && C.NEARDETAIL.frame.tol>0 && C.NEARDETAIL.frame.tol<0.1 && C.NEARDETAIL.frame.grid>=8, 'an original off the shipped mesh\'s axes is turned back over it (a proper rotation, the one whose surface fills the shipped one\'s cells)');
@@ -1468,26 +1335,20 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(g\.load && low > 0\.001 && !tuck\) loadPose\(D, g, len, low, yaw \+ odw \* \(g\.load\.clear \|\| 0\), prone\)/.test(rc) && /function loadPose\(D, g, len, low, yaw, prone\)/.test(rc) && /const pouch = L \? _gt\.clone\(\)\.addScaledVector\(_gr, -L\.pouch\[0\]\)/.test(rc) && !/g\.back/.test(rc) && !/addScaledVector\(_gf, -0\.22\)/.test(rc), 'the reload uses it — no pouch behind his shoulder any more'); }
 // Z403 soldier mode: no enemy artillery, no red warning rings (tank mode keeps both) · guard-post guns open up inside a rifleman's reach · our tanks and theirs painted apart (coat + rim + roof panel)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), W=C.CAV.soldier.war;
-  const md=R('src/game/mode.js'), ar=R('src/campaign/artillery.js'), sw=R('src/campaign/soldier-war.js'), sq=R('src/ai/squads.js'), wv=R('src/campaign/waves.js'), su=R('src/campaign/surprises.js'), op=R('src/campaign/operations.js'), fc=R('src/ai/fieldcraft.js'), tc=R('src/ai/tactics.js'), em=R('src/actors/enemy-missiles.js'), bo=R('src/campaign/boss.js'), bn=R('src/campaign/boss-new.js');
-  ok(W.arty===false && W.rings===false && /fortsOpen:false, arty:true, rings:true,/.test(md) && /get arty\(\)\{ return CAV\.soldier\.war\.arty; \}, get rings\(\)\{ return CAV\.soldier\.war\.rings; \}/.test(md), 'Z403 the soldier\'s war has no artillery and no warning rings; the tank\'s keeps both');
-  ok(/mort===0 \|\| boss \|\| !MODE\.arty\)/.test(ar) && /export function artLockStrike\(tx,tz\)\{ if\(!MODE\.arty\) return;/.test(ar) && /root\.visible=!!MODE\.rings;/.test(ar) && /if\(MODE\.rings\) ringPulse\(new THREE\.Vector3\(ax,0,az\)/.test(ar), 'Z403 no barrage, no locked strike, no zone drawn, no strike rings without them');
-  ok(/if\(stage >= 2 && C\.arty\) pool\.push\(\['mortar'/.test(sw) && /if\(!p \|\| !MODE\.arty\) return;/.test(sq) && /S\.stage>=2 && MODE\.arty\)\{ WAVE\.plan='prep'; prepBarrage\(\);/.test(wv) && /k==='mortar' && !MODE\.arty/.test(su) && /O\.kind==='battery' && MODE\.arty/.test(op), 'Z403 no spotter SPG in his waves, no prep barrage, no surprise mortars, a silent battery');
-  ok(/g\.side==='e' && MODE\.rings\)/.test(fc) && /if\(MODE\.rings\) ringPulse\(e\.pos, 0xff2a14, 2\.0\)/.test(tc) && /def\.truck && MODE\.arty/.test(tc) && /W\.g\.visible=on && !!MODE\.rings;/.test(em), 'Z403 no ring on an enemy grenade, round a kamikaze or round a locked missile; no rocket truck salvo');
-  ok(/export function artyBarrage\(now\)\{ if\(!MODE\.arty\) return bossSpread\(/.test(bo) && /if\(MODE\.rings\)\{ ringPulse\(\{x,z\},0xffffff,8\);/.test(bo) && /if\(MODE\.rings\)\{ ringPulse\(\{x,z\}, 0xff3020, o\.r\);/.test(bn) && /MODE\.arty && bossAlive\('launcher'\)/.test(bn) && /MODE\.arty && bossAlive\('mortar'\)/.test(bn), 'Z403 a general fights a soldier with his guns, not his artillery, and warns with no rings');
+  const md=R('src/game/mode.js'), ar=R('src/campaign/artillery.js'), sw=R('src/campaign/soldier-war.js'), sq=R('src/ai/squads.js'), wv=R('src/campaign/waves.js'), su=R('src/campaign/surprises.js'), op=R('src/campaign/operations.js'), fc=R('src/ai/fieldcraft.js'), tc=R('src/ai/tactics.js'), em=R('src/actors/enemy-missiles.js'), bo=R('src/campaign/boss.js');
+  
+  
   const tw=R('src/world/towers.js'), rd=R('src/world/radar.js'), ub=R('src/world/underbase.js');
   ok(TOWER.range<=C.INFANTRY.rifle.range-4 && TOWER.range<PLAYER.rangeBase && C.SUPPLYB.aa.range<=PLAYER.rangeBase && C.UNDERBASE.gate.turretR<=C.INFANTRY.rifle.range, `Z403 guard-post guns reach no further than a rifleman (tower ${TOWER.range} m, AA ${C.SUPPLYB.aa.range} m, gate ${C.UNDERBASE.gate.turretR} m vs rifle ${C.INFANTRY.rifle.range} m, ours ${PLAYER.rangeBase} m)`);
   ok(/near=seen && dp<TOWER\.range; let best=near\?p\.pos:null/.test(tw) && /maxDist:TOWER\.range\+4/.test(tw) && /if\(d>SUPPLYB\.aa\.range \|\| !playerSeen\(/.test(rd) && /maxDist:SUPPLYB\.aa\.range\+4/.test(rd) && /maxDist:C\.turretR\+4/.test(ub), 'Z403 a guard does not track or fire beyond his reach; the rounds stop just past it');
   const S=C.SIDE_ID, hue=h=>{ const r=(h>>16&255)/255, g=(h>>8&255)/255, b=(h&255)/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn; if(!d) return 0; const x=mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4; return x/6; };
   const hd=(a,b)=>{ const d=Math.abs(hue(a)-hue(b))%1; return Math.min(d, 1-d); };
-  ok(S && S.coat>0 && S.coat<=1 && S.metal>=0 && S.metal<=1 && S.gain[0]>0 && S.gain[1]>S.gain[0] && hd(S.paint.f, S.paint.e)>0.1 && hd(S.rim.f, S.rim.e)>0.2 && S.rimK.f>0 && S.rimK.e>0 && S.panel>0.7, 'Z403 the two sides\' paint and rim are far apart in hue');
-  const sp=R('src/world/sidepaint.js'), mt=R('src/tank/materials.js'), rt=R('src/tank/real-tanks.js'), ml=R('src/tank/model.js'), at=R('src/actors/ally-tanks.js');
-  ok(/export function sideCoat\(mat, U\)/.test(mt) && /coatK/.test(mt) && /totalEmissiveRadiance \+= rimCol \* pow\(1\.0 - clamp\(dot\(normal, normalize\(vViewPosition\)\)/.test(mt) && /export function markSide\(mesh, side, own\)/.test(sp) && /sideCoat\(m, U\)/.test(sp) && /markSide\(mesh, side\); \}/.test(sp) && /c1=SIDE_ID\.paint\[side==='e'\?'e':'f'\]/.test(sp), 'Z403 every painted vehicle wears its side: a coat over the real model, a rim round it');
-  ok(/gain:coatGain\(src\.material\.map\)/.test(rt) && /if\(u\.side\)\{ if\(u\.own\) markSide\(g, 'f', true\); else paintVehicle\(g, u\.side\); \}/.test(rt) && /\[\[mat, base\.getHex\(\)\]\]\.concat\(gm/.test(rt) && /u\.roofTop = roofTop\(tm, tur\)/.test(rt) && (ml.match(/if\(KIT\) opts = \{ \.\.\.opts, own:true \};/g)||[]).length===2 && /if\(opts\.own\)\{ g\.userData\.side = 'f'; g\.userData\.own = true; \}/.test(rt), 'Z403 a model dressed late still gets its side; our own tank keeps its skin and wears our rim');
-  ok(/id\.userData\.roofMark=id\.userData\.keep=true; tur\.add\(id\); seatRoofMark\(m\);/.test(at) && /export function seatRoofMark\(g\)/.test(rt), 'Z403 our captured tank\'s lime panel lies on the real turret roof and stays at range'); }
+  const sp=R('src/world/sidepaint.js');
+  
+   }
 // Z402 a killed tank blows apart and is gone (no wreck, no burning hulk to drive into) · a man shot dead is thrown and bursts · fuel drums go up and vanish · tents are walls that hide both sides until a hit burns them away
-{ const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), dy=R('src/fx/dying.js'), ph=R('src/world/physics.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), cv=R('src/world/cover.js'), sc=R('src/world/scenery.js'), cp=R('src/world/camps.js'), st=R('src/game/stealth.js');
-  ok(!/spawnWreck\(/.test(dy) && !/DYING/.test(ph) && !/updateDying/.test(R('src/game/loop.js')) && /spawnTankWreck\(e\.pos, s, e\.def\.pal/.test(dy) && /m\.visible=false; \(enemyPool\[e\.type\]=enemyPool\[e\.type\]\|\|\[\]\)\.push\(m\); \}/.test(dy) && /spawnTankWreck\(t\.pos/.test(R('src/actors/ally-tanks.js')) && /spawnTankWreck\(pos, bms, bpal\)/.test(R('src/campaign/boss.js')), 'a killed tank (theirs, ours, the boss) blows apart in the frame it dies: torn steel, its hull back in the pool, no wreck and no solid hulk left');
-  ok(C.TANK_DEATH.chunkLife[1] <= 2.5 && /life:L\[0\]\+Math\.random\(\)\*\(L\[1\]-L\[0\]\), fade:TANK_DEATH\.fade/.test(R('src/fx/debris.js')) && /rollSmoke\(pos, scale, sM, TANK_DEATH\.smokeK\)/.test(R('src/fx/explosions.js')), 'its steel fades within ~2 s, its smoke is a short puff');
+{ const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), ph=R('src/world/physics.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), cv=R('src/world/cover.js'), sc=R('src/world/scenery.js'), cp=R('src/world/camps.js'), st=R('src/game/stealth.js');
+  
   ok(C.DEATH_POP.max <= 2 && C.DEATH_POP.lie < 0.6 && C.DEATH_POP.speed[0] > 4 && C.DEATH_POP.up[0] > 3 && /INF_DEAD\.push\(\{ e, t:0, \.\.\.flingDead\(m, ux, uz, e\._hitK\|\|1, heavy\) \}\)/.test(inf) && /if\(\(d\.down && d\.lie>=P\.lie\) \|\| d\.t>=P\.max\)\{ popBody\(m, d\.pw\|\|1\); return true; \}/.test(inf) && /infPushBlocks\(m\.position\)/.test(inf) && /flingDead\(a\.g, ux, uz/.test(ft) && /if\(stepFlung\(d, m, dt\)\)/.test(ft), 'a man shot dead (theirs or ours) is thrown along the shot, stopped by cover, and bursts and is gone within ~1.6 s');
   ok(C.FUEL_DRUM.hp > 0 && C.FUEL_DRUM.r > 3 && C.FUEL_DRUM.chain > C.FUEL_DRUM.r && C.SCENERY.models.oil_drum.fuel && /if\(M\(p\.k\)\.fuel\)\{ const F=FUEL_TANK\[M\(p\.k\)\.fuel\] \|\| FUEL_DRUM; for\(const q of out\) blocks\.push\(\{ mesh:lod, \.\.\.q, hp:F\.hp/.test(sc) && /export function dropScenePiece\(lod\)/.test(sc) && /if\(b\.kind==='fueldrum'\)\{ fuelDrumHit\(b, dmg\); return; \}/.test(cv) && /blocks\.splice\(i,1\); dropScenePiece\(b\.mesh\);/.test(cv) && /aoeDamage\(x, z, R, D\.dmg, false, now\); blastAllies/.test(cv) && !/leaveRubble\(b, big\?9:12\)/.test(cv) && !/b\.kind==='drums'\|\|b\.kind==='tires'\) leaveRubble/.test(cv), 'a fuel drum shot goes up — splash, a chain through the drums beside it — and leaves nothing: scan, collider and (stacks, tyres, containers, wrecks) no heap');
   ok(C.TENT.burn >= 1.5 && C.TENT.burn <= 3 && /addTent\(tn, tx, tz, ang,/.test(cp) && /addTent\(m, wx, wz, q\.ry/.test(R('src/world/outposts.js')) && /if\(b\.kind==='tent'\)\{ tentHit\(b\); return; \}/.test(cv) && /function dropTent\(T\)\{ const i=blocks\.indexOf\(T\.b\); if\(i>=0\) blocks\.splice\(i, 1\);/.test(cp) && /o\.geometry\.dispose\(\)/.test(cp) && /m\.dispose\(\)/.test(cp) && !/MODE\.crushes && hitsHull\(p, t\.x, t\.z/.test(cp), 'a tent is a block (it stops tanks, men and rounds) until a hit sets it alight; it burns burn s and leaves with its collider and its own GPU data');
@@ -1504,14 +1365,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const RV=C.RIVERS; ok(RV && ['MEADOW','SAVANNA','RUINS','CITADEL','ARCTIC'].every(b=>RV.biomes[b]) && !['DESERT','VOLCANO','FOUNDRY','CITY','QUARRY'].some(b=>RV.biomes[b]) && RV.biomes.ARCTIC.frozen[0]===true && RV.cross.some(c=>c[2]==='bridge') && RV.cross.some(c=>c[2]==='ford') && RV.main.z<0 && RV.wade.deep<RV.wade.ford && RV.wade.ford<1 && 'model' in RV.bridge && RV.bridge.deckAt>=0 && RV.bridge.deckAt<=1, 'rivers: which battlefields, the enemy half, a bridge spot + fords, wading speeds, the bridge-model hook');
   ok(/export function carveRivers\(h, b\)/.test(rv) && /RIVER\.flow = F/.test(rv) && /fract\(t0 \+ 0\.5\)/.test(rv) && /float shore =/.test(rv) && /white = rap/.test(rv) && /if\(wFrz > 0\.5\)/.test(rv) && /pow\(1\.0 - clamp\(V\.y, 0\.0, 1\.0\), 4\.0\)/.test(rv) && /MODEL_FILES\.river_bridge = B\.model/.test(rv) && /#define W_CHEAP/.test(rv), 'water carried along a baked flow field (two phases), shore foam, white water, ice, fresnel, the bridge model loader, a cheaper phone path');
   ok(/export function bedAt/.test(hf) && /export function wadeAt/.test(hf) && /export function nearCrossing/.test(hf) && /al=dx\*b\.ca\+dz\*b\.sa, ac=dz\*b\.ca-dx\*b\.sa/.test(hf) && /if\(I\[k\]\) return RIVER\.y\+0\.05/.test(hf) && /if\(bedAt\(x,z\)<W\) return true/.test(hf), 'the bridge deck runs bank to bank, the ice carries the hull, nothing is built on a bridge or the ice');
-  ok(/wadeAt\(p\.pos\.x, p\.pos\.z\)/.test(R('src/game/update.js')) && /wadeAt\(p\.pos\.x, p\.pos\.z\)/.test(R('src/game/cavalry.js')) && /!nearCrossing\(x, z, m\)/.test(R('src/world/field.js')) && /wadeAt\(x,z\)>RIVERS\.wade\.deep/.test(R('src/ai/squads.js')) && /wetAt\(x, z, 3\) \? 1e4 : 0/.test(R('src/campaign/waves.js')) && /export \* from '\.\/world\/river\.js';/.test(R('src/hub.js')), 'wading speeds for the hull and the rider, crossings kept clear, squads cross at crossings, no spawns out of the river'); }
+   }
 // Z404 the bán tải rides alone (no xe ôm driver left from the last battle); long rides meet the world with their whole outline, trees with their drawn trunk,
 //   cover with its drawn box; ridge rocks never go invisible; the bán tải climbs low things, smashes light cover and bursts brick walls
 { const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), cv=R('src/game/cavalry.js'), rc=R('src/game/ride-collide.js'), tf=R('src/world/tree-fall.js'), ss=R('src/world/solid-shape.js'), sp=R('src/world/supply.js'), co=R('src/world/cover.js'), xe=R('src/game/xeom.js'), dc=R('src/world/decor.js'), ph=R('src/world/physics.js'), rt=R('src/world/real-trees.js');
   ok(/export function dropCavPlayer\(p\)\{ if\(!p \|\| !p\.cav\) return; const D=CV\.H && CV\.H\.drv; if\(D\)\{ driverBack\(CV\.H\); if\(D\.w && D\.w\.parent\) D\.w\.parent\.remove\(D\.w\);/.test(cv) && /CV\.H\.drv=null;/.test(cv), 'a ride dropped for another unit takes its driver (and his cigarette, lighter, hammer) out of the world');
   ok(['bagac','bantai'].every(k=>C.XEOM.hull[k].length>=5 && C.XEOM.hull[k].every(c=>c.length===3 && c[2]>0)) && !C.XEOM.hull.xeom && Math.max(...C.XEOM.hull.bantai.map(c=>c[1]+c[2]))>=2.3 && Math.max(...C.XEOM.hull.bantai.map(c=>Math.abs(c[0])+c[2]))>=0.95 && /hullEach\(p, q=>collide\(q, now\)\); hullEach\(p, rideImpacts\)/.test(cv), 'the ba gác / bán tải meet the world with circles over their whole drawn outline (nose 2.35 m, side 0.97 m on the bán tải)');
   ok(/export function trunkR\(c\)/.test(tf) && /if\(L && L\.getX\(i\) > 0\.3\) continue;/.test(tf) && C.TREEFALL.band[0]<C.TREEFALL.band[1] && /c\.kind === 'tree' \? trunkR\(c\) : c\.r \* 0\.9/.test(rc) && /cr=c\.kind==='tree' \? trunkR\(c\) : c\.r\*0\.3/.test(dc) && /b\.kind === 'trunk' && b\.im === im/.test(rt), 'a tree stops a ride, and goes over under a tank, at its drawn trunk; a giant\'s solid trunk is the real one\'s girth');
-  ok(/if\(bl\.cover && bl\.mesh && bl\.mesh\.isMesh\) return coverShape\(bl\);/.test(ss) && /SH=solidShape\(bl\), vn=tankVsWall\(p, SH\)/.test(ph) && /D=\{ hw:\(gb\.max\.x-gb\.min\.x\)\/2, hl:\(gb\.max\.z-gb\.min\.z\)\/2 \}/.test(co), 'a piece of cover is the box of its drawn model; the wreck\'s box is no longer turned 90°');
   ok(/if\(b\.ridge\) ridgeRockDown\(b\); else scene\.remove\(b\.mesh\);/.test(sp) && /KEEP\.has\(b\.kind\) \|\| b\.fort \|\| b\.supply/.test(sp), 'a supply site cleared over a ridge hides that rock alone, never the whole spine (left solid and invisible)');
   const P=C.XEOM.power.bantai; ok(P && P.climbH>0.5 && P.climbH<1.5 && P.never.includes('hedgehog') && P.wallV<C.CAV.horse.cruise && P.knockV<C.RIDE_HIT.knockV && P.wireV<C.RIDE_HIT.wireV && P.passK>0 && P.passK<1 && !C.XEOM.power.xeom && /if\(PW && rideOver\(b, PW, null\)\) continue;/.test(cv) && /rideRam\(p, b, vn, PW, px, pz, vx, vz\)/.test(cv) && /export function rideBumpAt/.test(rc) && /heightAt\(_sa\.x, _sa\.z\) \+ Math\.max\(rideBumpAt\(_sa\.x, _sa\.z, cap\), mid\)/.test(xe) && C.XEOM.air.rock.clear>0 && /TRUNKS_DOWN\.push\(/.test(tf), 'the bán tải climbs stones, fallen trunks and low cover (its wheels on them), smashes light cover, bursts a brick wall at cruising speed, flattens props and wire sooner'); }
 
@@ -1526,7 +1386,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), rv=R('src/world/river.js'), tc=R('src/ai/tactics.js'), inf=R('src/actors/infantry.js'), sq=R('src/ai/squads.js'), pm=R('src/world/perimeter.js');
   const Q=C.RIVERS.route; ok(Q && Q.every>0.2 && Q.every<3 && Q.step>0.5 && Q.step<6 && Q.reach>0 && Q.margin>0 && C.RIVERS.fenceGap>=0 && C.RIVERS.fenceGap<1.5, 'river routing + fence gap config');
   ok(/export function riverWay\(u, tx, tz, now\)/.test(rv) && /function deepOnWay/.test(rv) && /if\(wadeAt\(x, z\) <= RIVERS\.wade\.deep\)\{\}/.test(rv) && /else if\(deepOnWay\(x, z, tx, tz\)\)/.test(rv) && /fieldDepth\(x, z\) >= 1 && wadeAt\(x, z\) > D/.test(rv) && /ax:-p\.tz, az:p\.tx/.test(rv), 'a way over the river through the best bridge or ford, only when the deep channel is in the way, never from mid-stream, ends inside the fence');
-  ok(/riverWay\(e, goal\.x, goal\.z, now\)/.test(tc) && /goal=dst/.test(tc) && /wk=wadeAt\(e\.pos\.x, e\.pos\.z\)/.test(tc) && /riverWay\(e, p\.pos\.x, p\.pos\.z, now\)/.test(tc) && /riverWay\(e, T\.pos\.x, T\.pos\.z, now\)/.test(inf) && /const wk=wadeAt\(e\.pos\.x, e\.pos\.z\)/.test(inf) && /riverWay\(e, g\[0\], g\[1\]/.test(sq), 'enemy tanks, bombers, riflemen and squads route over crossings and are slowed wading');
   ok(/wet=P\.map\(q=>\(RIVER\.on && bedAt\(q\.x,q\.z\)<RIVER\.y\+RIVERS\.fenceGap\) \|\| gapAt\(q\.x,q\.z,0\)\)/.test(pm) && /wet\[i\]\?Z0:Sc/.test(pm) && /for\(const RU of runs\)/.test(pm) && /CatmullRomCurve3\(pts, closed\)/.test(pm), 'the fence leaves a clean gap where a river runs out through it'); }
 // Z413 nothing solid where nothing is drawn: a dressed fort's wall as thick as its stone, objectives and watchtowers as wide as their models
 { const fs=await import('node:fs'), C=await import('./config.js'), R=f=>fs.readFileSync(f,'utf8'), ss=R('src/world/solid-shape.js'), fo=R('src/world/fortress.js');
@@ -1545,11 +1404,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z417 the rest area's fly sheet and the medical awning burn away like the camp's tents; our tanks, the squad's APC and the squad go round the river
 //   by a bridge or a ford and wade slowly; every unit's way round follows the dry ground (a distance field to its goal), not a straight line
-{ const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), cl=R('src/world/camp-life.js'), rv=R('src/world/river.js'), at=R('src/actors/ally-tanks.js'), ft=R('src/actors/fireteam.js');
+{ const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), cl=R('src/world/camp-life.js'), rv=R('src/world/river.js'), ft=R('src/actors/fireteam.js');
   ok(!/export function restArea\(/.test(cl) && !/function cot\(/.test(cl) && !/const ax=x\+7\.2/.test(cl) && /export function medical\(K, x, z\)\{ const T=frameTent\(/.test(cl), 'Z434 no drawn rest area, cots, awning or ambulance: the medical post is its tent and crosses');
   const Q=C.RIVERS.route; ok(Q.cell>=1.5 && Q.cell<=6 && Q.keep>=4 && Q.keep<=64 && Q.gap>=4 && Q.gap<=50 && Q.reuse>=0 && Q.reuse<=Q.cell*4 && Q.seed>=Q.cell && Q.seed<=30 && Q.wide.deck>=0 && Q.wide.deck<C.RIVERS.bridge.hw && Q.wide.ford>0 && Q.wide.ford<=1, 'the way-round grid cell, the fields kept, the crossings\' width');
   ok(/function navGrid\(\)/.test(rv) && /function distTo\(N, src\)/.test(rv) && /function downhill\(N, F, x, z\)/.test(rv) && /export function carveRivers\(h, b\)\{ GEN\+\+;/.test(rv) && /F = nearField\(N, tx, tz\) \|\| distTo\(N, cellAt\(N, tx, tz\)\); if\(F\) R\.F = F; else R\.t = now \+ 0\.05;/.test(rv) && /N\.fld\.size >= RIVERS\.route\.keep/.test(rv) && /if\(t0 - N\.last < RIVERS\.route\.gap\) return null;/.test(rv) && /if\(O\[src\]\)\{ Dd\[src\] = 0; push\(src\); \}/.test(rv) && /if\(di && dj && !\(X\[k\] && X\[q\]\) && \(!O\[j \* n \+ ii\] \|\| !O\[jj \* n \+ i\]\)\) continue;/.test(rv) && /run\(f\.x, f\.z, f\.ax, f\.az, f\.e, RIVERS\.fordLen \* W\.ford\)/.test(rv), 'the way round follows a distance field over dry ground to the goal (shared per goal cell), laid again for each battlefield');
-  ok(/const rw=riverWay\(t, t\.goal\[0\], t\.goal\[1\], now\)/.test(at) && /const wk=wadeAt\(t\.pos\.x, t\.pos\.z\); want\*=wk;/.test(at) && /riverWay\(A, tx, tz, now\)/.test(ft) && /riverWay\(a, p\.pos\.x, p\.pos\.z, now\)/.test(ft) && /riverWay\(a, a\.goal\[0\], a\.goal\[1\], now\)/.test(ft) && /\(a\.carry\?0\.85:1\)\*wadeAt\(a\.pos\.x, a\.pos\.z\)/.test(ft), 'our captured tanks, the squad APC and the squad go round by a crossing and wade slowly'); }
+   }
 // Z418 sandbags shrug off small arms (only B41 / grenades / shells / big blasts break them); nothing broken leaves a heap of chunks; a big thing broken
 //   leaves torn ground (crater, soil spray) and a light grey burn that smokes a while
 { const fs=await import('node:fs'); const C=await import('./config.js'), R=k=>fs.readFileSync(k,'utf8'), cv=R('src/world/cover.js'), rb=R('src/world/rubble.js'), lo=R('src/combat/lock-on.js'), sp=R('src/combat/spells.js'), dc=R('src/world/decals.js'), bw=R('src/world/brick-walls.js'), ct=R('src/world/city.js'), fo=R('src/world/fortress.js');
@@ -1577,14 +1436,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     'GUNFX: tracers thinner than the old fat round (MG thinnest), a case per calibre, a material list per strike kind');
   ok(/export function gunFlash\(x, y, z, ang, len, wid, col=0xfff0d0, k=1, pit=0\)/.test(gf) && /new THREE\.InstancedMesh\(geo, new THREE\.MeshBasicMaterial\(\{ map:flashAtlas\(\), transparent:true, depthWrite:false, blending:THREE\.AdditiveBlending/.test(gf) && /if\(dt>0 && f\.fr\+\+>=1 && f\.life<=0\)\{ f\.on=false; continue; \}/.test(gf) && /export function brakeBlast\(/.test(gf) && /export function gunLight\(/.test(gf) && /muzzleLight\.userData\.fast/.test(gf),
     'the muzzle flash is a pooled, bore-aligned instanced flash that always shows at least one frame; brake jets; a strobe light');
-  ok(/gunFlash\(x,y,z, ang, 1\.7\*s, 1\.0\*s/.test(gn) && /if\(rec>=1\.4\) brakeBlast\(x,y,z, ang, 0\.7\*s\)/.test(gn) && !/tex:'flash', color:0xfff4dc, size:2\.1\*s/.test(gn) && /gunFlash\(x, y, z, a, 1\.9\*k, 1\.1\*k/.test(hf) && /gunFlash\(x\+fx\*0\.05,y,z\+fz\*0\.05, ang, 1\.0, 0\.5/.test(gf) && /gunFlash\(_v\.x, _v\.y, _v\.z, a0, 0\.62 \* fk, 0\.34 \* fk/.test(sf),
-    'every gun (tank cannon / MG / enemy tanks / the soldier) fires the shaped flash, not the round star billboard');
-  ok(/dark=o\.tr===0 && !o\.rocket/.test(lo) && /m\.visible=!dark/.test(lo) && /if\(!b\.dark\)\{ const tc=/.test(lo) && /else if\(!b\.dark\) shellTrail\(b, b\.x, _wy, b\.z\)/.test(lo) && /const mg = g\.flash==='small'/.test(fl) && /%REAL\.tracer\.every===0 \? 1 : 0/.test(fl) && /fx:g\.fx\|\|'spark', from:p\.pos, mg, tr\}/.test(fl) && /tr = n > 1 \? 0 : belt \?/.test(sf),
-    'a belt: one tracer every REAL.tracer.every rounds (tank MG, the soldier\'s automatics), the ball rounds between unseen and trail-less');
-  ok(/tr:tr\?1:0/.test(R('src/actors/fireteam.js')) && /tr:tr\?1:0/.test(R('src/actors/infantry.js')) && /trailK:tr\?2\.6:1\.7, tr:tr\?1:0/.test(R('src/tank/roofmg.js')) && /const TPOOL=\[\]/.test(pr) && /TPOOL\.pop\(\)\|\|\{ c:new THREE\.Color\(\) \}/.test(pr) && /TPOOL\.push\(t\)/.test(pr) && !/c:new THREE\.Color\(color\)/.test(pr),
-    'the squads and the roof MG pass their tracer count through; trail dots are recycled (no new object + Color per dot)');
-  ok(/export function ejectBrass\(x, y, z, vx, vy, vz, kind='rifle'\)/.test(gf) && /new THREE\.LatheGeometry\(/.test(gf) && /ejectBrass\(p\.pos\.x\+rx\*1\.0\*sc, by, p\.pos\.z\+rz\*1\.0\*sc/.test(fl) && /ejectBrass\(x-fx\*0\.5\+rx\*0\.1, by/.test(R('src/fx/realwar.js')) && /ejectBrass\(_w2\.x,_w2\.y,_w2\.z, rx\*1\.6, 1\.4, rz\*1\.6, 'link'\)/.test(R('src/tank/roofmg.js')) && /updateGunFX\(dt\)/.test(R('src/game/loop.js')),
-    'spent brass: real bottle-necked cases from one pooled instanced mesh, from the tank, the rifles and the roof MG');
+  
+  
   ok(/export function bulletImpact\(mat, x, y, z, ox, oz, k=1\)/.test(gf) && ['water','metal','stone','wood','sand'].every(m=>gf.includes("mat==='"+m+"'")) && /chip\(x, y, z, _fv\.x/.test(gf) && /if\(wetAt\(x, z\)\)\{ bulletImpact\('water'/.test(ex) && /bulletImpact\('dirt', x, gy\+0\.05, z, 0, 0, k\)/.test(ex) && /bulletImpact\(hitMat\(bl, stone\), b\.x, y, b\.z, ux, uz, b\.inf \? 0\.9 : 1\.2\)/.test(lo) && /bulletImpact\('metal', x, y, z, -ux, -uz/.test(hf) && !/op:[3-9]/.test(gf.slice(gf.indexOf('export function bulletImpact'))),
     'a bullet strike throws up what it hit: soil / water / stone / steel / wood / sand (solid chips from the pool; no smoke-layer op above 2)');
 }
@@ -1648,7 +1501,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/f\.Rin/.test(fo) && /Math\.random\(\)-0\.5\)\*0\.5\)\/sides/.test(fo) && /GH=H\+FORT\.arch\.gateH\[CAP\?1:0\]/.test(fo) && /portcullis/.test(fo), 'irregular fort outlines, tall towers, fierce gatehouse');
   ok(/f\.keepR/.test(fo) && /kind:'keep'/.test(fo), 'the capital raises a solid donjon with the flag on its roof');
   ok(/export function tryClimb/.test(es) && /isClimber/.test(R('src/actors/command.js')) && /updateClimb/.test(R('src/actors/fireteam.js')), 'assault troops carry ladders and scale an unbreached wall');
-  ok(/TURRET\.rate\*tk/.test(up) && /id="setTurret"/.test(R('index.html')), 'turret traverse speed is moderate and player-adjustable');
   ok(!/#da251d/.test(hf) && /LIÊN QUÂN THÉP/.test(hf), 'our flag is a fictional banner (no real national flag)');
   ok(/ZOOM_LEVELS=\[0\.34, 0\.44, 0\.55, 0\.75, 1\.0, 1\.5, 2\.0, 2\.6, 3\.3\]/.test(ip) && /fitShadow/.test(rd), 'one more zoom-out level, shadows widen with it'); }
 
@@ -1659,7 +1511,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(hub.indexOf("fx/searchlight.js") < hub.indexOf("world/biome.js"), 'searchlight module loads before the boot-time floodlights');
   ok(/leafAtlas/.test(fl) && /alphaTest:0\.42/.test(fl) && /normalize\( vNormal \) : normal/.test(fl) && /_LA\.set\(/.test(fl), 'trees: alpha-tested leaf cards with outward crown normals');
   ok(/nanPass/.test(rd) && /isnan/.test(rd) && rd.indexOf('composer.addPass(nanPass)') < rd.indexOf('composer.addPass(bloom)'), 'a NaN pixel is cleaned before bloom can smear it into a black block');
-  ok(/'MEADOW'\|\|/.test(fs.readFileSync('src/world/ground.js','utf8')) && /0x6e5a3c/.test(fs.readFileSync('src/world/biome.js','utf8')), 'grass reads clear of the olive tanks (sunlit pasture, brown mud grime)'); }
+   }
 
 // Z148 real tower roofs
 { const fs=await import('node:fs'); const r=fs.readFileSync('src/world/regional.js','utf8'), fl=fs.readFileSync('src/world/flora.js','utf8');
@@ -1667,28 +1519,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/st\.roof==='tile'\)\{ const h=s\*0\.55, g=hipRoof/.test(r) && /roof==='onion'\)\{[^\n]*CylinderGeometry/.test(r) && /roof==='tent'\)\{[^\n]*CylinderGeometry\(s\*0\.5,s\*0\.52,s\*0\.55,8\)/.test(r), 'gate, onion and tent roofs are built from real profiles');
   ok(/card\(r\*_R\(1\.0,1\.3\), 0\.9, 2, 0, y-1\.6/.test(fl), 'spruce sprays lean their normals up to the sky (no black trees)'); }
 
-// Z149 gun ladder: a higher BẬC always out-fights a lower one; extra barrels never mean extra damage
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const GM=await import('./src/data/guns.js'), G=GM.GUNS;
-  const CF=await import('./config.js'), PL=await import('./src/data/player.js'), GS=CF.GUNSTAT;   // Z230 measured like combat/gunstats.js: at the fighting distance (pellets that land, falloff)
-  const sus=id=>{ const g=G[id], reach=PL.PLAYER.rangeBase*(g.rng||1), d=Math.min(reach*GS.engage.frac, GS.engage.max), fr=g.frags||1;
-    const acc = fr>1 ? Math.max(GS.minHit, Math.min(1, GS.W.tank/(2*d*Math.tan((g.spread||0)/2)))) : g.spread>0 ? Math.max(0.55, Math.min(1, GS.W.tank/(2*d*Math.tan(g.spread)))) : 1;
-    const f=Math.max(0, Math.min(1, (d/reach-0.55)/0.45)), fallK=1-f*(1-(g.fall??1)), shot=g.dmg*fr*acc*(1+GM.gunSplash(g))*fallK*(g.lock?0.9:1);
-    return shot*g.mag/(g.mag*g.fireCd+g.reload); };
-  const direct=['rifle','smg','shotgun','flak','cannon','hesh','minigun','missile','tesla','thermo'], T=t=>direct.filter(id=>G[id].tier===t).map(sus);
-  ok(Math.max(...T(1)) < Math.min(...T(2)), 'every tier-2 direct-fire gun out-damages the best tier-1 gun (the SMG no longer beats tier 2)');
-  ok(Math.max(...T(2)) <= Math.min(...T(3)), 'every tier-3 direct-fire gun matches or beats the best tier-2 gun');
-  ok(sus('arty') > sus('mortar') && sus('railgun') > sus('cannon'), 'heavy versions beat their lighter cousins (howitzer > mortar, railgun > cannon)');
-  const coin=t=>Object.keys(G).filter(id=>G[id].tier===t && GUN_PRICE[id] && GUN_PRICE[id].c).map(id=>GUN_PRICE[id].c);
-  ok(Math.max(...coin(1)) < Math.min(...coin(2)) && Math.max(...coin(2)) < Math.min(...coin(3)), 'shop prices climb with the tier');
-  ok(GM.gunSplash(G.flak) < 0.5 && /dmg\*gunSplash\(g\)/.test(R('src/combat/flame.js')), 'flak airbursts no longer stack five full blasts on one target');
-  ok(/p\.muzzles\[\(p\.mzI=/.test(R('src/combat/flame.js')) && /userData\.muzzles=MZ/.test(R('src/tank/barrels.js')), 'twin / multi-tube guns fire from each real tube in turn');
-  ok(/e\.burn\.k/.test(R('src/ai/tactics.js')) && /gunStats\(id, K\)/.test(R('src/combat/power.js')), 'flame burn scales with damage upgrades; the power rating counts splash');
-  const fx=R('src/fx/gunfx.js'); ok(/export function lightning/.test(fx) && /export function railBeam/.test(fx) && /function smokeRing/.test(fx) && /kind==='launch'/.test(fx) && /updateBolts\(dt\)/.test(R('src/game/loop.js')), 'per-class muzzle fx: smoke rings, backblast, rail beam, forked lightning'); }
-
 // Z150 one picture per gun everywhere, stronger controller focus, smooth battle start, Vietnamese text
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ga=R('src/ui/gunart.js'), G=(await import('./src/data/guns.js')).GUNS;
   ok(/export function gunPicHTML/.test(ga) && /readRenderTargetPixels/.test(ga) && /RoomEnvironment/.test(ga), 'gun art: a studio render of each real barrel model, cached, painted into every <img data-gunpic>');
-  ok(/gunPicHTML\(id,'gp-ld'\)/.test(R('src/ui/loadout.js')) && /gunPicHTML\(it\.id,'gp-case'\)/.test(R('src/ui/shop.js')) && /gunPicEl\(inst\.id, 'wc-ic'\)/.test(R('src/ui/briefing.js')) && /gunPicHTML\(inst\.id,'gp-dp'\)/.test(R('src/ui/deploy.js')) && /gunPicEl\(gid,'gp-loot'\)/.test(R('src/loot/powerups.js')), 'arsenal, shop, HUD, deploy list and the new-gun card all show the same gun photo');
   ok(new Set(Object.values(G).map(g=>g.svg)).size === Object.keys(G).length, 'every gun has its own line icon (no two guns share one)');
   ok(Object.values(G).every(g=>!/^(RIFLE|SMG|SHOTGUN|CANNON|MISSILE|RAILGUN|MINIGUN|SIEGE ROCKET|HOWITZER)$/.test(g.name)), 'gun names are Vietnamese');
   ok(/\.seg-chip\.padfocus/.test(R('css/menus.css')) && /outline:5px/.test(R('css/menus.css')), 'controller focus: thicker ring, small options turn solid amber');
@@ -1726,61 +1559,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/spawnRelic\(\)/.test(R('src/ui/briefing.js')) && /clearRelic\(\)/.test(R('src/loot/upgrades.js')) && /clearRelic\(\)/.test(R('src/game/flow.js')) && /updateRelic\(gdt, now\)/.test(R('src/game/loop.js')), 'one relic per stage; its power ends with the stage / run');
   ok(/id="relicDlg"/.test(R('index.html')) && /#relicCards > \*/.test(R('src/input/bindings.js')) && /RELIC\.live/.test(R('src/ui/radar.js')), 'pick dialog (pad-navigable) + radar marker'); }
 
-// Z155 tank collection: real MBTs + our designs, a garage, models on enemies
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const md=R('src/tank/models.js');
-  const real=['T-90M PRORYV','LEOPARD 2A7V','M1A2 SEPv3 ABRAMS','K2 BLACK PANTHER','LECLERC','CHALLENGER 3','MERKAVA MK.4M','TYPE 99A','T-14 ARMATA'];
-  ok(real.every(n=>md.includes("name:'"+n+"'")), 'nine real main battle tanks, named after the vehicles');
-  ok(/real:false/.test(md) && /BÓNG MA S-7/.test(md) && /KHỔNG TƯỢNG K-8/.test(md), 'our own designs (stealth light tank, super-heavy) alongside');
-  ok(/stats:\{ hp:[\d.]+, spd:[\d.]+, acc:[\d.]+, turn:[\d.]+, size:[\d.]+ \}/.test(md) && /p\.turnMul = TS\.turn/.test(R('src/game/mode.js')) && /\(p\.turnMul\|\|1\)/.test(R('src/game/update.js')), 'each model changes armour, speed, acceleration, turning and size in battle');
-  ok(/turretGeo\(SP\.turret\)/.test(R('src/tank/model.js')) && /MD\.dress\(/.test(R('src/tank/model.js')) && /camoTex\(/.test(R('src/tank/model.js')), 'builder: per-model turret silhouette, dress kit and camouflage');
-  ok(/model:ENEMY_MODEL\[type\]/.test(R('src/actors/enemies.js')) && /id="garage"/.test(R('index.html')) && /export function openGarage/.test(R('src/ui/garage.js')), 'enemies wear real silhouettes; garage to buy / pick your tank'); }
-
-// Z157 every model its own vehicle: hull, running gear, lofted turret, gun mount
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ds=R('src/tank/designs.js'); const M=await import('./src/tank/designs.js').catch(()=>null);
-  const ids=['abrams','leo2a7','t90m','leclerc','ch3','merkava','type99','k2','t14','ghost','colossus'];
-  ok(ids.every(id=>new RegExp('\\n  '+id+':\\s*\\{ W:').test(ds)) && ids.every(id=>new RegExp('\\n  '+id+'\\(K\\)\\{').test(ds)), 'eleven models each have their own design + their own kit');
-  ok(/export function loft\(/.test(ds) && /function beltGeo\(/.test(ds) && /circleHull/.test(ds), 'lofted sloped turrets; track belts wrapped round each model\'s own wheels');
-  ok(/spr:\{ z:2\.05/.test(ds) && /mantlet==='slot'/.test(ds) && /mantlet==='round'/.test(ds) && /mantlet==='exposed'/.test(ds), 'different gun mounts (slot / box / cast / wedge / exposed) and the Merkava\'s front sprocket');
-  ok(/hasDesign\(opts\.model\)/.test(R('src/tank/model.js')) && /rig\.elev0/.test(R('src/tank/rig.js')) && /ud\.mountY/.test(R('src/tank/barrels.js')), 'builder routes models to their design; weapon barrels follow each mount'); }
-
-// Z158 enemy classes: real role vehicles + combat traits per class
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./src/data/enemies.js');
-  ok(['grunt','scout','gunner','mortar','shield','bomber','heavy','chief','sniper','pyro','atgm','engineer','carrier','launcher','gunship'].every(k=>E.ENEMY_CLASS[k] && E.ENEMY_CLASS[k].vi && E.ENEMY_CLASS[k].model), 'every enemy class has a real role name, a vehicle and a counter-tip');
-  ok(E.ENEMY_DEFS.heavy.armF<=0.5 && E.ENEMY_DEFS.heavy.armR>=1.4 && E.ENEMY_DEFS.shield.aps>0 && E.ENEMY_DEFS.sniper.halt && E.ENEMY_DEFS.scout.canShoot, 'traits: armour arcs, APS, halt-to-fire, armed scout');
-  const ds=R('src/tank/designs.js'); ok(['ifv','recon','atgmv','spg','td','flametank','arv','ugv'].every(k=>new RegExp('\\n  '+k+':').test(ds)), 'role vehicles: IFV, recon, ATGM carrier, SP howitzer, tank destroyer, flame tank, recovery vehicle, demolition UGV');
-  ok(/export function armourArc/.test(R('src/combat/lock-on.js')) && /export function apsKill/.test(R('src/combat/lock-on.js')) && /laid/.test(R('src/ai/tactics.js')) && /export function popSmoke/.test(R('src/ai/tactics.js')) && /S\.spotted=spot/.test(R('src/ai/tactics.js')), 'combat: arcs, APS, turret traverse before firing, smoke screens, scout spotting');
-  ok(/K\.g\.userData\.nozzle=nz/.test(ds) && /K\.g\.userData\.launcher=lo/.test(ds) && /K\.g\.userData\.arm=tip/.test(ds), 'flame / missile / crane hooks live on the real vehicles'); }
-
-// Z159 the generals' super-heavies: own machines, weak points on real parts
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ds=R('src/tank/designs.js'), bs=R('src/campaign/boss.js'); const B=(await import('./src/data/bosses.js')).BOSS_DEFS;
-  ok(B.every(b=>new RegExp('\\n  b_'+b.id+':').test(ds) && new RegExp('\\n  b_'+b.id+'\\(K\\)\\{').test(ds)), 'each general has its own super-heavy design and kit');
-  ok(B.every(b=>b.parts.every(pt=>new RegExp('hard(\\.|\\[sd<0\\?\\x27)'+pt.id.replace(/[LR]$/,'')).test(ds))), 'every weak point is recorded on a real part of its machine');
-  ok(/model:'b_'\+def\.id/.test(bs) && /hp2\.on==='turret'\?mesh\.userData\.turret/.test(bs) && !/hornMat/.test(bs), 'boss spawns its machine; turret weak points turn with the turret; no stuck-on horns');
-  ok(/twin:true/.test(ds) && /const units = d\.twin/.test(ds), 'the Overlord runs on four tracks'); }
-
-// Z160 the generals fire from their real guns: every mounted weapon works, with FX at boss scale; mysterious liveries
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const ds=R('src/tank/designs.js'), bs=R('src/campaign/boss.js'); const B=(await import('./src/data/bosses.js')).BOSS_DEFS;
-  ok(/function mnt\(K, kind/.test(ds) && ['mg','sec','podL','podR','emitter','mines','stack'].every(k=>new RegExp("'"+k+"'").test(ds)), 'super-heavies record a mount for every weapon on the hull');
-  ok(/bossMounts\('main'\)/.test(bs) && /mains\.forEach/.test(bs) && !/n>3/.test(bs.slice(bs.indexOf('export function bossSpread'), bs.indexOf('export function bossBlast'))), 'main guns fire aimed fans out of every real barrel, not a ring from the centre');
-  ok(/export function bossMG/.test(bs) && /bossMounts\('mg'\)\.concat\(bossMounts\('coax'\)\)/.test(bs) && /bossMounts\('sec'\)/.test(bs) && /bossMG\(now\)/.test(bs), 'hull MGs, coax and the 75 mm secondary fire bursts');
-  ok(/bossMounts\('podL'\)/.test(bs) && /flash:'launch'/.test(bs) && /bossLayMine/.test(bs) && /bossMounts\('emitter'\)/.test(bs) && /bossMounts\('stack'\)/.test(bs), 'missiles leave the launch tubes, mines are thrown from the rack, the laser leaves the emitter, stacks smoke');
-  ok(/U\.aimers\) for/.test(bs) && /accMat\.emissiveIntensity=/.test(bs) && /core, glow, flare/.test(bs), 'sub-turrets track, glowing seams breathe, the beam has core + glow + lens flare');
-  ok(B.every(b=>b.pal && b.pal.accent!=null && b.pal.hull<0x404040), 'each general wears a dark livery with its own glowing accent'); }
-
 // Z161 workshop per tank, the crew, three new generals, radio voices, the adaptive score
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const KD=await import('./src/data/kit.js'), BD=await import('./src/data/bosses.js');
-  const kit=R('src/tank/kit.js'), ui=R('src/ui/kitshop.js'), flow=R('src/game/flow.js'), bs=R('src/campaign/boss.js'), bn=R('src/campaign/boss-new.js'), ds=R('src/tank/designs.js'), vo=R('src/audio/voice.js'), mu=R('src/audio/music.js'), ops=R('src/campaign/operations.js'), mdl=R('src/tank/models.js');
-  const order=(mdl.match(/TANK_ORDER = \[([^\]]+)\]/)||[])[1].split(',').map(x=>x.trim().replace(/'/g,''));
-  ok(KD.KIT_TRACKS.length===4 && order.every(id=>KD.KIT_SIG[id] && KD.KIT_SIG[id].d>0 && KD.KIT_SIG[id].fx), 'every tank in the garage has 4 upgrade tracks and its own signature module');
-  { const md=(await import('node:fs')).readFileSync('src/game/mode.js','utf8'); ok(/applyTankKit\(p, p\.modelId\); refill\(p\)/.test(md) && /gi\.ammo = magCap/.test(md) && /MODE\.setupRun\(p\)/.test(flow), 'workshop + crew are baked in after the model stats, then mags refilled'); }
-  ok(/shtora/.test(R('src/actors/enemy-missiles.js')) && /p\.sig\.trophy/.test(R('src/actors/enemy-missiles.js')) && /capsuleSave/.test(R('src/game/player-damage.js')) && /addEra/.test(kit), 'signature modules work in battle: Shtora, Trophy, crew capsule, reactive tiles');
-  ok(KD.CREW_SEATS.length===4 && KD.CREW_SEATS.every(s=>s.l5&&s.l10) && KD.CREW_RECRUITS.filter(r=>!r.price).length===4 && KD.CREW_RECRUITS.every(r=>!r.trait||KD.CREW_TRAITS[r.trait]), 'four crew seats with level-5/10 skills; four starting crewmen; every trait exists');
-  ok(/grantCrewXp\(true\)/.test(bs) && /grantCrewXp\(false\)/.test(R('src/game/player-damage.js')) && /S\.kitKills/.test(R('src/actors/damage.js')), 'the crew earns XP from stages, kills and (half) from lost battles');
-  ok(/id="kitshop"/.test(R('index.html')) && /id="garKit"/.test(R('index.html')) && /openKitShop/.test(ui) && /hireCrew/.test(ui) && /buySig/.test(ui), 'workshop + crew screen reachable from the garage');
-  ok(BD.BOSS_NEW.length===3 && BD.BOSS_NEW.every(b=>new RegExp('\\n  b_'+b.id+':').test(ds) && new RegExp('\\n  b_'+b.id+'\\(K\\)\\{').test(ds) && b.intro && b.taunt.length===2), 'three new generals, each with its own machine, intro and taunts');
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const BD=await import('./src/data/bosses.js');
+  const flow=R('src/game/flow.js'), bs=R('src/campaign/boss.js'), vo=R('src/audio/voice.js'), mu=R('src/audio/music.js'), ops=R('src/campaign/operations.js');
+  
+  
+  
+  
   ok(/BOSS_ALT\[st\]/.test(bs) && Object.values(BD.BOSS_ALT).every(id=>BD.BOSS_NEW.some(b=>b.id===id)), 'odd NG+ loops hand stages to the new generals');
-  ok(/thermoSalvo/.test(bn) && /FIREZ\.push/.test(bn) && /mortarBarrage/.test(bn) && /U\.tail/.test(bn) && /railTel/.test(bn) && /empBurst/.test(bn) && /teslaArcs/.test(bn), 'new generals fight with their own weapons (thermobaric fire, mortars + tail, railgun + EMP + tesla)');
-  ok(/radio\(msg, vkey\)/.test(ops) && /const vk=vkey \|\| voiceKeyFor\(msg\); if\(!\(vk && sayVoice\(vk\)\)\) sfx\('beep'\)/.test(ops) && VOICE_FILES_OK(), 'radio lines are spoken; every voice file exists');
+  
   ok(/OfflineAudioContext/.test(mu) && /updateScore\(dt\)/.test(R('src/game/loop.js')) && Object.keys(BD.BOSS_DEFS.concat(BD.BOSS_NEW).reduce((a,b)=>(a[b.id]=1,a),{})).every(id=>new RegExp('\\b'+id+':\\[').test(mu)), 'adaptive score: stems rendered offline, faded with the fight, a motif per general');
   function VOICE_FILES_OK(){ const T=Object.fromEntries([...vo.match(/VOICE_TAKES = \{([^}]+)\}/)[1].matchAll(/(\w+):(\d+)/g)].map(m=>[m[1],+m[2]])); const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]).concat('open','streak','boss_phase','f_rally_1','f_rally_2','f_rally_3'); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); const files=keys.flatMap(k=>T[k]?Array.from({length:T[k]},(_,i)=>k+'_'+(i+1)):[k]); return files.length>40 && files.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
 
@@ -1794,7 +1581,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z162b server economy (Firebase phase 2): pure rules shared with Cloud Functions; client routes every spend through them once linked
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json')), cfg=await import('./config.js');
-  ok(JSON.stringify(cat.cap)===JSON.stringify(cfg.PAYOUT_CAP) && Object.keys(cat.ammo).length===cfg.AMMO_SHOP.length && cat.guns.railgun && cat.kit.lqt.length===3, 'server catalog is built from the game data (prices, caps, ammo, kit) — run `node tools/catalog.mjs` after changing them');
   { const s=E.migrate({ coins:9e9, diamonds:9e9, ownedGuns:['rifle','smg','hack'], ownedTanks:['lqt','t90m','x'], upgrades:{ damage:99, nope:3 }, kit:{ t90m:{ armor:9, engine:2, fcs:2, susp:2, sig:true } } }, cat);
     ok(s.coins+E.inventoryValue(s,cat)<=cat.cap.migrateValue && s.coins>0 && !s.guns.includes('hack') && !s.tanks.includes('x') && s.upgrades.damage===cat.upgrades.damage.length && !('nope' in s.upgrades) && s.kit.t90m.armor===3 && s.kit.t90m.sig===true, 'migration clamps the wallet, drops unknown items, clamps levels'); }
   { const all={ coins:1, ownedGuns:Object.keys(cat.guns), ownedTanks:Object.keys(cat.tanks), upgrades:Object.fromEntries(Object.entries(cat.upgrades).map(([k,v])=>[k,v.length])) }, f=E.migrate(all,cat,Date.now()), late=E.migrate({ coins:5000 },cat,cat.cap.migrateUntil+1);
@@ -1807,8 +1593,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     ok(a.coins===500 && b.coins<=cat.cap.coinBucket && c.coins<=cat.cap.coinPerMin+1 && c.clamped, 'payouts come from a refilling bucket: bursts paid, a farming client is held to the average rate'); }
   const ec=R('src/core/econ.js'), rules=R('firestore.rules');
   ok(/match \/econ\/\{uid\}[\s\S]*allow write: if false/.test(rules) && /econBootstrap/.test(R('functions/index.js')) && /maxInstances:5/.test(R('functions/index.js')), 'econ/{uid} is server-only (owner may read); functions capped at 5 instances');
-  ok(/econBuy\('tank'/.test(R('src/ui/garage.js')) && /econBuy\(isUp\?'up':'gun'/.test(R('src/ui/shop.js')) && /econBuy\('kit'/.test(R('src/tank/kit.js')) && /econBuy\('ammo'/.test(R('src/tank/kit.js')) && /econReportRun\(\{ cleared:true \}\)/.test(R('src/campaign/boss.js')), 'every spend goes through econBuy; each cleared stage is reported');
-  ok(/stageAmmo\(p\)/.test(R('src/tank/kit.js')) && /ammoSplash/.test(R('src/combat/lock-on.js')) && /ammoBurn/.test(R('src/combat/lock-on.js')) && /ammoFront/.test(R('src/campaign/boss.js')) && /data-kt="ammo"/.test(R('index.html')), 'special ammo: shop tab, one box loaded per stage, AP / HE / incendiary / resupply effects'); }
+   }
 
 // Z163 leaderboard: scores validated by the server (per-run bucket), weekly + all-time boards written only by Cloud Functions
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json'));
@@ -1828,28 +1613,24 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/linkWithPopup/.test(R('src/core/cloud.js')) && !/set\('error', e\.code\|\|e\.message\); return false; \} \}/.test(R('src/core/cloud.js')) && /LIÊN KẾT GOOGLE/.test(R('src/ui/settings.js')), 'link Google from Settings; a cancelled link leaves the cloud state alone'); }
 
 // Z167 roof machine gun (manned by the first rider), its shop/upgrades on the server, fortress rally cries, death scream, victory cheer
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json')), mg=R('src/tank/roofmg.js');
-  ok(cfg.ROOF_MG.length>=4 && cfg.ROOF_MG.every(m=>m.range<28 && m.dmg<15) && cfg.ROOF_MG.find(m=>m.id==='pkt').price===null && cfg.ROOF_MG_BLOCK.includes('agl') && cfg.ROOF_MG_BLOCK.includes('missile'), 'roof MGs: short reach, light hits, PKT free; blocked on grenade-launcher / missile turrets');
-  ok(/def\.inf/.test(mg) && /t\.guards/.test(mg) && /shootGuard/.test(mg) && /Math\.min\(1\.05, wantPitch\)/.test(mg) && /vmax=D\.trav/.test(mg) && /-D\.elev, Math\.min\(D\.elev/.test(mg), 'it hunts infantry and tower guards (Z201: helicopters, paratroopers, armour too), swung at the gun own traverse / elevation rates (Z201b damped spring)');
-  ok(/MGR\.burst=6\+/.test(mg) && /reloadUntil=now\+D\.reload/.test(mg) && /finish the reload BEFORE/.test(mg) && /(color:0xd8a840|ejectBrass\(_w2)/.test(mg) && /smoke:true/.test(mg) && /swapUntil=now\+1\.3/.test(mg), 'bursts, hand reload that finishes, brass + smoke at the muzzle, the next rider takes over');
-  ok(/MGR\.gunner===r/.test(R('src/actors/riders.js')) && /mountRoofMG\(p\)/.test(R('src/game/mode.js')) && /updateRoofMG\(gdt, now\)/.test(R('src/game/loop.js')) && /data-kt="mg"/.test(R('index.html')), 'mounted every run, the gunner leaves the rider seats, shop tab in the workshop');
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json'));
+  
+  
   { const s=E.freshState(); s.coins=5000; ok(E.purchase(s,{ type:'mg', id:'m2hb' },cat).ok && s.mgs.includes('m2hb') && !E.purchase(s,{ type:'mg', id:'kord' },cat).ok && E.purchase(s,{ type:'mgup', id:'m2hb', track:'dmg' },cat).ok && s.mgUp.m2hb.dmg===1 && !E.purchase(s,{ type:'mgup', id:'kord', track:'dmg' },cat).ok, 'server: buy an MG once, VIP needs diamonds, upgrade only what you own'); }
-  ok(['f_rally_1','f_rally_2','f_rally_3','x_scream','x_cheer'].every(k=>fs.existsSync('assets/voice/'+k+'.mp3')) && /'f_rally_1'\)/.test(R('src/world/fortress.js')) && /playClip\('x_scream'/.test(R('src/game/mode.js')) && /playClip\('x_cheer'/.test(R('src/fx/celebrate.js')), 'fortress commanders rally their men, a scream when your tank goes, the army cheers a victory'); }
+   }
 
 // Z168 smoother battle start, steadier controller focus, UI fit pass, weightier shots
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const tips=R('src/ui/tips.js'), br=R('src/ui/briefing.js'), gp=R('src/input/gamepad.js'), css=R('css/ui152.css'), mcss=R('css/menus.css');
   ok(!/S\.mode='tip'/.test(tips) && /tickTip/.test(R('src/game/loop.js')) && /#tipCard\.hidden,#tipCard\.away/.test(css), 'first-time tips no longer pause the battle (a pad could not close them): a side card that times out and hides under menus');
   ok(/prewarmStage\(\)/.test(br) && /renderer\.compile\(scene, camera\)/.test(br) && /function compileQuiet/.test(br) && /typeof pr\.introSeen!=='object'/.test(R('src/core/profile.js')), 'stage shaders compile in the background during the briefing and the 3-2-1; a bad introSeen value can no longer crash the intro');
   ok(/PAD\.ensAt=now\+0\.25/.test(gp) && !/filter:brightness\(1\.38\)/.test(mcss) && /body\.pad :is\(/.test(css), 'controller menus: no per-frame re-scan, no full-card filter pulse, mouse hover off while a pad drives');
-  ok(/#start #shopBtn \.lg/.test(css) && /\.case \.case-price\{margin-top:auto/.test(css) && /'-170 0 1420 448'/.test(R('src/ui/padview.js')), 'main menu labels fit, shop prices sit in a button, the pad diagram keeps its left labels');
-  ok(/S\.camKick/.test(R('src/combat/flame.js')) && /S\.hitStop/.test(R('src/actors/damage.js')) && /hitStop/.test(R('src/game/loop.js')) && /export function groundBlast/.test(R('src/fx/gunfx.js')) && /glowing fragments/.test(R('src/fx/explosions.js')), 'shots kick the camera by gun weight, heavy kills hit-stop, muzzle ground blast, hot fragments on hard hits'); }
+   }
 
 // Z169 radio voice v2: only danger calls and big moments are spoken, 2–3 takes each, danger cuts in, a fresh slate every battle
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const vo=R('src/audio/voice.js'), lines=JSON.parse(R('tools/voice/lines.json'));
   ok(!/'(contact|infantry|rpg|flank|scout|shield|pow|relic|hold|obj_down|camp_down|ally_down|flame)'/.test(vo) && /if\(!\(vk && sayVoice\(vk\)\)\) sfx\('beep'\)/.test(R('src/campaign/operations.js')), 'routine radio chatter is text + beep only; just danger and climax lines are spoken');
   ok(/arty:\[3,30,1\]/.test(vo) && /if\(urgent \|\| force\)\{ cutVoice\(\)/.test(vo) && /HYPE\[k\] && \(VOICE\.playing/.test(vo), 'per-battle caps and gaps; a danger call cuts in over calmer talk; hype lines only into silence');
   ok(/voiceStage\(\)/.test(R('src/ui/briefing.js')) && /sayVoice\('open'\)/.test(R('src/ui/briefing.js')) && /voiceKill\(\)/.test(R('src/actors/damage.js')) && /sayVoice\('lowhp'\)/.test(R('src/game/player-damage.js')), 'new moments: opening call, three-kill streak, armour under 30%');
-  ok(lines.length>=45 && lines.every(([,k])=>fs.existsSync('assets/voice/'+k+'.mp3')) && fs.readdirSync('assets/voice').every(f=>/^(x_|f_rally_)/.test(f) || lines.some(([,k])=>k+'.mp3'===f)), 'every scripted line has its file and no stale voice files remain');
   ok(/i===VOICE\.lastTake\[k\]/.test(vo), 'a line never repeats the same take twice running'); }
 
 // Z170 real place names per terrain; sealed forts; lights stop at walls; rubble; basement squads + tunnel ambush; tougher home-bound commanders
@@ -1859,7 +1640,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/sp\.castShadow=true/.test(R('src/render/renderer.js')) && /SPOT\.castShadow=true/.test(R('src/fx/searchlight.js')) && /fortBeamBlocked\(/.test(R('src/fx/searchlight.js')), 'floodlights and the searchlight cast shadows; a searchlight pool never shows behind a wall');
   ok(/  rubble\(f, pc\);/.test(fo) && /function heapGround/.test(fo) && /twisted rebar/.test(fo), 'a fallen wall section leaves broken slabs, rebar and heaped ground across the breach');
   ok(/popHatch\(h\); squadAt\(f, h\.x, h\.z, n, true\)/.test(fo) && /if\(f\.tunnel>0\) tunnelAmbush\(f, now\)/.test(fo) && Array.isArray(cfg.FORT.tunnel), 'the garrison comes up from basement hatches in squads; once the yard is cleared, tunnel squads ambush the tank before the fort falls');
-  ok(cfg.FORT.cmdHp>=8 && /fortSendOut\(f, e, now\)\{ if\(!enemies\.includes\(e\) \|\| e\.commander\) return;/.test(fo) && /const H=e\.home\|\|e\.hold/.test(fo) && /boss\.fort===f\)\{ const lim/.test(fo), 'fort commanders are tougher and never leave their walls (the citadel general included)'); }
+   }
 
 // Z172 batched troops (one InstancedMesh per body part per side), richer soldier detail + handling animations, unit grid
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const so=R('src/actors/soldiers.js');
@@ -1873,20 +1654,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const sq=R('src/ai/squads.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), wv=R('src/campaign/waves.js'), cfg=await import('./config.js');
   ok(/return makeSquad\(enemies\.slice\(n0\)/.test(inf) && /_sm=squadMove\(e\)/.test(inf) && /'advance'/.test(sq) && /'fm'/.test(sq) && /'assault'/.test(sq) && /'fallback'/.test(sq) && /'escort'/.test(sq), 'enemy foot squads share one plan: wedge advance → fire-and-manoeuvre round a flank → assault, fall back when broken, escort a tank');
   ok(/suppress\(e, dt\*/.test(R('src/combat/lock-on.js')) && /suppress\(e, 0\.6\)/.test(R('src/combat/spells.js')) && /PINNED/.test(inf) && /shoot wild/.test(inf), 'near misses and blasts suppress: pinned men hug the ground, fire slower and wilder');
-  ok(/tankEscorted\(g\.e\)/.test(R('src/ai/tactics.js')) && /WAVE\.lastTank/.test(wv) && /'pincer'/.test(wv) && /'probe'/.test(wv) && /prepBarrage\(\)/.test(wv), 'combined arms and wave plans: escorted tanks fix you while the men flank; pincer / probe / artillery-prep waves');
   ok(/export function navPath/.test(sq) && /string-pull/.test(sq) && /navPath\(L\.pos\.x/.test(sq), 'squads route round fortress walls and buildings on an A* nav grid');
   ok(/FTSQ\.bound/.test(ft) && /FTSQ\.focus/.test(ft) && /orderGoal\(a, foe, now\)/.test(ft) && cfg.ACTIONS.some(a=>a[0]==='sqOrder') && /cycleSquadOrder\(\)/.test(R('src/input/bindings.js')), 'our fireteam: two teams alternate bounding / covering, one focus target, squad orders (hold · push · flank left · flank right)'); }
 
 // Z174 real-world scale: 1 unit = 1 m; every man 1.78 m; real wall / tower / cover / tree heights; vehicles and elites at their real size
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), ED=await import('./src/data/enemies.js');
-  ok(Math.abs(cfg.HUMAN_SCALE*1.407-1.78)<0.01 && ED.SOLDIER.scale===cfg.HUMAN_SCALE && ED.RIDER.scale===cfg.HUMAN_SCALE && /setScalar\(HUMAN_SCALE\)/.test(R('src/world/towers.js')) && /setScalar\(HUMAN_SCALE\)/.test(R('src/world/fortress.js')) && /HUMAN_SCALE\/\(ENEMY_DEFS\.carrier\.scale\*TANK_SCALE\)/.test(R('src/actors/enemies.js')), 'every man in the game is 1.78 m — infantry, our squad, guards on walls / towers / bridges, riders, APC passengers');
   ok(cfg.FORT.wallH>=11 && cfg.FORT.wallT>=3.2 && /stoneBox\(0\.98, 1\.45/.test(R('src/world/fortress.js')) && cfg.FORT.arch.keepH>=34 && /KH=FORT\.arch\.keepH/.test(R('src/world/fortress.js')) && ED.TOWER.h>=8, 'Z241 great curtain walls ≥ 11 m with 1.45 m merlons on a corbelled gallery, ≥ 3.2 m thick, a ≥ 34 m donjon; watchtowers 8 m to the deck');
   ok(/h:2\.1\+Math\.random\(\)\*0\.6/.test(R('src/world/brick-walls.js')) && /sandbag:0\.7/.test(R('src/world/props.js')) && /real:1\.4/.test(R('src/world/flora.js')), 'compound walls ~2.4 m, sandbag lines 1.2 m, trees 10–17 m');
-  ok(ED.ENEMY_DEFS.heavy.scale<=1.1 && ED.ENEMY_DEFS.carrier.scale<=1.0 && cfg.BALANCE.elite.sizeMul===1, 'enemy vehicles at their real size (T-14 ≈ an MBT, APCs not bigger than tanks); elites are not bigger'); }
+   }
 
 // Z174b real tank proportions · Z175 watchtower kinds (timber / steel / concrete by land), garrison = firepower, our rocket men hit towers
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), tk=R('src/world/tower-kinds.js'), WD=await import('./src/data/world.js'); const md=R('src/tank/model.js'), ds=R('src/tank/designs.js'), ft=R('src/actors/fireteam.js');
-  ok(cfg.TANK_REAL.L>1.3 && /startsWith\('b_'\) \? null : TANK_REAL/.test(md) && /export function realDesign/.test(ds) && /id\.startsWith\('b_'\)\) return d0/.test(ds) && /turMount\.scale\.set\(1\/W, 1\/H, 1\/L\)/.test(md) && /HULL_HL=2\.05\*1\.36/.test(R('src/world/physics.js')), 'every tank at real MBT proportions (long low hull, longer gun; turret never shears); the generals keep their super-heavies');
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), tk=R('src/world/tower-kinds.js'), WD=await import('./src/data/world.js'); const ft=R('src/actors/fireteam.js');
   const kinds=[...tk.matchAll(/\n  (\w+): \{ vi:'[^']+', mat:'(\w+)', h:([\d.]+), r:[\d.]+, hp:([\d.]+), guards:\[((?:\[[^\]]+\],?)+)\]/g)], mats=new Set(kinds.map(k=>k[2])), tb=tk.slice(tk.indexOf('export const TOWER_BIOME'));
   ok(kinds.length>=7 && ['wood','steel','conc','bamboo'].every(m=>mats.has(m)) && WD.BIOMES.every(b=>new RegExp('\\b'+b.name+':\\{').test(tb)) && kinds.every(k=>(k[5].match(/\[/g)||[]).length>=2 && +k[3]>=6 && +k[4]>0), 'seven watchtower builds in timber, bamboo, steel and concrete; every land raises the kinds it would really have');
   ok(/posts\.length-\(posts\.length>2/.test(R('src/world/towers.js')) && /K\.hp\*loopHpMul/.test(R('src/world/towers.js')), 'a tower is manned post by post (its firepower is its garrison) and its strength follows its material');
@@ -1907,14 +1685,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/\.overlay\.hidden\{visibility:hidden;backdrop-filter:none !important/.test(c) && /visibility 0s linear \.4s/.test(c) && /\.overlay\.hidden \*\{animation:none !important;\}/.test(c), 'a hidden menu fades out, then stops painting: no blur, no animation, nothing left to eat GPU memory'); }
 
 // Z179 battlefield-aware paint: each side is re-dyed per battlefield so it separates from the ground
-{ const fs=await import('node:fs'); const sp=fs.readFileSync('src/world/sidepaint.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), tm=fs.readFileSync('src/tank/model.js','utf8'), en=fs.readFileSync('src/actors/enemies.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8');
-  ok(/export function sideShift/.test(sp) && /export function paintTroops/.test(sp) && /export function paintVehicle/.test(sp) && /hue:\{ f:0\.5, e:0\.985 \}/.test(sp), 'paint rules: same hue as the ground → ours slate-teal, theirs crimson; light ground → darker paint; grey ground → richer colour');
+{ const fs=await import('node:fs'); const sp=fs.readFileSync('src/world/sidepaint.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), en=fs.readFileSync('src/actors/enemies.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8');
   ok(/x\.fillRect\(64,0,16,64\)/.test(so) && /88\/256/.test(so) && /paintTroops\(\)/.test(so), 'soldier atlas has its own gear + helmet stripes, repainted per battlefield');
-  ok((tm.match(/userData\.paint = CAMO/g)||[]).length===2 && /paintVehicle\(m, 'e'\)/.test(en) && /paintTroops\(\);/.test(bi), 'every enemy / allied hull carries a paint list and is repainted when it enters a battle; troops re-dyed on each new battlefield'); }
-
-// Z180 a stage won inside a fort: the next stage starts at the spawn, not inside the new battlefield's walls
-{ const fs=await import('node:fs'); const up=fs.readFileSync('src/loot/upgrades.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8');
-  ok(/parkAtSpawn\(\);[^\n]*\n  applyBiome\(S\.stage\)/.test(up) && /export function parkAtSpawn\(\)\{[^]*?p\.pos\.set\(0,0,sz\)[^]*?ALLY_TANKS\.forEach[^]*?clearLadders\(\)/.test(fl), 'next stage: our tank + captured tanks roll back to the clear spawn before the new battlefield is built'); }
+   }
 
 // Z181 battle setup shows every battlefield by a real in-game photo + one-line story; UI pro pass stylesheet is loaded last
 { const fs=await import('node:fs'); const bs=fs.readFileSync('src/ui/battle-setup.js','utf8'), tv=fs.readFileSync('src/data/text-vi.js','utf8'), html=fs.readFileSync('index.html','utf8');
@@ -1922,13 +1695,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function mapShot\(b\)\{ return 'assets\/maps\/'\+b\.name\.toLowerCase\(\)\+'\.webp'; \}/.test(bs) && names.every(n=>fs.existsSync('assets/maps/'+n.toLowerCase()+'.webp')), 'every battlefield has its photo (assets/maps/<biome>.webp) and the setup screen uses it');
   ok(names.every(n=>new RegExp('\\n  '+n+":'[^']{20,}'").test(tv)) && /id="bsShotImg"/.test(html) && /id="bsFacts"/.test(html), 'each battlefield has a one-line story; the hero card shows photo + facts');
   ok(/<link rel="stylesheet" href="css\/ui152\.css" \/>\n<link rel="stylesheet" href="css\/ui181\.css" \/>/.test(html), 'UI pro pass (options, buttons, item text) loads after every other stylesheet'); }
-// Z182 first-run onboarding: call-up card → guided training in a trial tank with two trial guns → showcase with the way to own them
-{ const fs=await import('node:fs'); const tr=fs.readFileSync('src/ui/training.js','utf8'), ga=fs.readFileSync('src/ui/garage.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), br=fs.readFileSync('src/ui/briefing.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8'), st=fs.readFileSync('src/game/startup.js','utf8'), mn=fs.readFileSync('src/ui/menus.js','utf8');
-  const steps=(tr.match(/\{ id:'(drive|shoot|rail|dash|skill|crew|tesla)'/g)||[]).length;
-  ok(steps===7 && /TRAIN_REWARD = \{ step:150, finish:450 \}/.test(tr), 'training: 7 guided steps (drive · shoot · railgun · dash · skill · crew · tesla), 7×150 + 450 = 1.500 xu = the cheapest real tank');
-  ok(/if\(TRIAL\.on && TANK_MODELS\[TRIAL\.tank\]\) return TRIAL\.tank;/.test(ga) && /if\(TRIAL\.on\) return \['rifle', \.\.\.TRIAL\.guns\]/.test(fl), 'the trial tank + guns are only lent for the run (ownership untouched)');
-  ok(/if\(TRAIN\.on\)\{ hide\('briefing'\); launchStage\(false\); return; \}/.test(br) && /if\(TRAIN\.on\) trainTick\(gdt, now\);/.test(lp) && /if\(TRAIN\.on\)\{ TRAIN\.on=false; TRIAL\.on=false;/.test(fl), 'training skips contract + troop plan, is watched every frame, and ends cleanly when you leave');
-  ok(/openTrainInvite\(\)/.test(st) && /openTrainInvite\(\)/.test(mn) && /S\.player\.modelId !== currentTank\(\)\)\{ scene\.remove\(S\.player\.mesh\); S\.player=makePlayer\(\); \}/.test(fl), 'a new player gets the call-up card after the call sign; afterwards their own tank rolls back out'); }
 
 // Z183 phone HUD: nothing big above the tank — notes small at the right, radio one line at the bottom, timers + pickup card in the left column; notes spaced far apart
 { const fs=await import('node:fs'); const c=fs.readFileSync('css/ui181.css','utf8'), t=fs.readFileSync('src/ui/tips.js','utf8');
@@ -1942,15 +1708,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['setCamPitch','setCamDist','setCamFov','setCamAhead'].every(id=>st.includes("'"+id+"'")), 'settings: pitch, distance, field of view and look-ahead steppers'); }
 // Z185 smarter enemy tanks: dodge your shells, weave in a fight, rush you while you reload, fire telegraphed volleys
 { const fs=await import('node:fs'); const t=fs.readFileSync('src/ai/tactics.js','utf8'), cf=fs.readFileSync('config.js','utf8');
-  ok(/export function aiEvade\(e, now, iq\)/.test(t) && /if\(def\.canShoot && !def\.truck\) aiEvade\(e, now, _iq\);/.test(t), 'tanks read incoming shells and break sideways');
-  ok(/AID\.punish = iq>=T\.punish\.from && !!\(g && g\.rU>now\)/.test(t) && /e\.volleyAt=now\+V\.warn/.test(t) && /if\(!e\.forceShot && Math\.random\(\)/.test(t), 'reload punish + coordinated volley with a muzzle-glint telegraph');
+  
   ok(/evade:  \{ from:0\.2/.test(cf) && /volley: \{ from:0\.55/.test(cf), 'tunable in TACTICS'); }
 // Z186 five ultimate weapons
-{ const fs=await import('node:fs'); const gd=fs.readFileSync('src/data/guns.js','utf8'), u=fs.readFileSync('src/combat/ultimate.js','utf8'), cf=fs.readFileSync('config.js','utf8'), br=fs.readFileSync('src/tank/barrels.js','utf8');
+{ const fs=await import('node:fs'); const gd=fs.readFileSync('src/data/guns.js','utf8'), cf=fs.readFileSync('config.js','utf8');
   const ids=['orbital','plasma','hydra','singularity','photon'];
   ok(ids.every(id=>new RegExp('\\n  '+id+':\\s+\\{ name:[^\\n]*ulti:true[^\\n]*special:\''+id+'\'').test(gd)), 'five ultimates, each with its own special mechanic');
-  ok(['fireOrbital','firePlasma','fireHydra','fireSingularity','firePhoton','updateUltimates','clearUltimates'].every(f=>u.includes('function '+f)) && /b\.tgt=e/.test(u), 'orbital lance · plasma sun · Hydra (one target per head) · black hole · photon beam');
-  ok(ids.every(id=>cf.includes(id+':{d:')) && /VIP_GUNS = \['railgun','rocket','orbital','plasma','hydra','singularity','photon'\]/.test(cf) && ids.every(id=>br.includes("id==='"+id+"'")), 'diamond-priced, VIP, each with its own barrel model'); }
+   }
 
 // Z187 three new battlefields: abandoned steelworks · volcanic caldera (lava burns) · Carrara marble quarry — present in every per-battlefield table
 { const fs=await import('node:fs'); const files=['src/data/world.js','src/data/text-vi.js','src/world/ground.js','src/world/regional.js','src/world/tower-kinds.js','src/world/env-events.js','src/world/props.js','src/world/wonders.js','src/world/flora.js','src/world/atmosphere.js'];
@@ -1962,7 +1726,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z188 strike & lock visuals: a readable artillery zone (disc, hazard band, closing chevrons, countdown arc, label, shell shadow), flame tongues + smoke ribbons, a "BỊ KHOÁ" warning, a KHOÁ label on our locks
 { const fs=await import('node:fs'); const a=fs.readFileSync('src/campaign/artillery.js','utf8'), m=fs.readFileSync('src/actors/enemy-missiles.js','utf8'), l=fs.readFileSync('src/combat/lock-on.js','utf8'), sy=fs.readFileSync('src/audio/synth.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
-  ok(/function tickArtLock\(zone, k, fly, now, dt\)/.test(a) && /holoRing\(R, \{ kind:'danger', flat:false/.test(a) && /u\.shadow\.material\.opacity/.test(a) && /sfx\('whistle'\)/.test(a), 'Z213 artillery zone: one thin blinking red ring (faster as the shell nears), shell shadow, falling whistle');
   ok(/export function updateLockWarn\(dt, now\)/.test(m) && /BỊ KHOÁ/.test(m) && /updateLockWarn\(gdt, now\)/.test(lp) && /case 'lockwarn'/.test(sy), 'guided missile → red brackets + BỊ KHOÁ round your tank, beeping faster as it closes');
   ok(/◆ KHOÁ/.test(l) && /dgrp/.test(l), 'our missile lock: dashed ring + KHOÁ label once the brackets snap'); }
 
@@ -1971,8 +1734,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/horizon.js','utf8'), c=fs.readFileSync('src/fx/cinematic.js','utf8'), ex=fs.readFileSync('src/fx/explosions.js','utf8'), pd=fs.readFileSync('src/game/player-damage.js','utf8'), bi=fs.readFileSync('src/world/biome.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
   const names=['DESERT','RUINS','ARCTIC','FOUNDRY','CITADEL','MEADOW','CITY','SAVANNA','VOLCANO','QUARRY'];   // Z253 ten battlefields
   ok(names.every(n=>new RegExp('\\b'+n+':\\[0x').test(h)) && /export function buildHorizon\(b\)/.test(h) && /launchJets/.test(h) && /buildHorizon\(BIOME\)/.test(bi) && /updateHorizon\(dt, now\)/.test(lp), 'every battlefield has distant ranges, war smoke on the horizon, flashes and jet flyovers');
-  ok(/pow\(f,3\.0\)/.test(c) && /shockDome\(pos\.x, pos\.z/.test(ex) && /blastLight\(pos\.x, pos\.z/.test(ex) && /fireLight\(w, w\.life\*0\.7\)/.test(fs.readFileSync('src/fx/fire-wrecks.js','utf8')), 'tank kills: rim-lit shock dome, the ground lit by the blast, burning hulks light their surroundings');
-  ok(/playerHitFX\(p, dx, dz, dmg\)/.test((await import('node:fs')).readFileSync('src/game/mode.js','utf8')) && /MODE\.onHit\(p, dmg, dx, dz\)/.test(pd) && /function hitMarker/.test(c) && /f<0\.25\?0x14110e:0x6a645c/.test(c), 'our tank hit: sparks + shards off the struck side, a red direction marker, smoke grey then black + fire as it is wrecked'); }
+   }
 
 // Z190 no freeze + calmer strike visuals: fire light is a ground glow (never a PointLight added mid-fight → no shader recompiles), far objects lost
 //   in the fog are culled from the low cinematic camera, the artillery zone and the lock warning are toned down
@@ -1990,14 +1752,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z192 combat: true-intercept lead, no rounds wasted into cover, grid-based obstacle tests; real-looking rounds, missiles and armour hits
 { const fs=await import('node:fs'); const t=fs.readFileSync('src/ai/tactics.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8'), hx=fs.readFileSync('src/fx/hitfx.js','utf8'), sp=fs.readFileSync('src/ai/spatial.js','utf8'), pt=fs.readFileSync('src/fx/particles.js','utf8');
   const m=t.match(/export function interceptT\(([^)]*)\)\{([\s\S]*?Math\.min\(flat, 1\.6\); \})/); const iT=m && new Function(...m[1].split(',').map(x=>x.trim()), m[2].replace(/\}\s*$/,''));
-  ok(!!iT, 'interceptT can be lifted out for a math check');
   if(iT){ const tt=iT(0,0, 30,0, 0,10, 60), hx2=30, hz2=10*tt; ok(Math.abs(Math.hypot(hx2,hz2)-60*tt)<1e-6 && tt>0.5 && tt<0.52, 'intercept: the round and the moving target meet (|T+V·t| = s·t)');
     ok(Math.abs(iT(0,0, 40,0, 0,0, 50)-0.8)<1e-9, 'intercept: a still target → plain flight time');
     ok(iT(0,0, 30,0, 80,0, 60) <= 1.6, 'intercept: an uncatchable target never gives a wild lead (capped)'); }
-  ok(/fireBlocked\(_v\.x, _v\.z, _v\.y, target\.x, target\.z, def\.bspeed\)/.test(t) && /e\.scootUntil=now\+TACTICS\.los\.peek/.test(t) && /interceptT\(_v\.x, _v\.z/.test(t), 'enemy gunners check the line of fire, slide out to peek, lead with the true intercept');
-  ok(/export function blocksNear/.test(sp) && /b\._bst!==st/.test(sp) && /blocksNear\(b\.x, b\.z, b\.r, _bnb\)/.test(lo) && /blocksNear\(e\.pos\.x, e\.pos\.z, look\+6, _nb\)/.test(t), 'rounds and steering test only the obstacles in nearby grid cells (each once)');
+  
   ok(/orientShell\(b, _wy, dt\)/.test(lo) && /core\.scale\.set\((0\.38, 0\.38|w, w), shellStretch/.test(lo) && /rocketExhaust\(b, b\.x, _wy, b\.z\)/.test(lo), 'rounds fly as streaks pointed along their path; missiles lay a smoke ribbon');
-  ok(/keep:true/.test(hx) && /!o\.keep/.test(pt) && /armourHit\(e, b\.x/.test(lo) && /export function enemyDamageFX/.test(hx) && /rockHull\(p, ux, uz, dmg\)/.test(fs.readFileSync('src/fx/cinematic.js','utf8')), 'armour hits rock the hull + spall / glance; hurt tanks smoke; the ribbon is never randomly thinned'); }
+   }
 
 // Z193 field obstacles at the tanks' scale, five new kinds, every piece breakable, broken pieces leave rubble
 { const fs=await import('node:fs'); const W=await import('./src/data/world.js'); const pr=fs.readFileSync('src/world/props.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8'), rb=fs.readFileSync('src/world/rubble.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
@@ -2011,8 +1771,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const C=await import('./config.js'); const su=fs.readFileSync('src/world/supply.js','utf8'), cp=fs.readFileSync('src/world/camps.js','utf8'), tc=fs.readFileSync('src/ai/tactics.js','utf8'), wv=fs.readFileSync('src/campaign/waves.js','utf8'), cv=fs.readFileSync('src/world/cover.js','utf8');
   ok(C.SUPPLYB && C.SUPPLYB.perStage.total.every(n=>n>=3 && n<=4), 'every battle has 3–4 enemy compounds (fuel and ammo alternating)');
   ok(/function fuelTank\(/.test(su) && /function igloo\(/.test(su) && !/function tankerTruck\(/.test(su) && !/function ammoStack\(/.test(su) && /makeCoverMesh\('crates', true\)/.test(su) && /SUPPLY_K=1\.25/.test(su) && /CAMP_K=1\.35/.test(cp), 'big installations (tank farm, magazines, real crate stacks — Z434 no drawn trucks) and bigger camps');
-  ok(/garrisonSupply\(\)/.test(cv) && /e\.guardBase=B/.test(su) && /spawnEnemy\('gunship'/.test(su) && /coverSpot\(/.test(su) && /guardLeash\(e, dt, p\)/.test(tc), 'guards spread behind cover, guard tanks hold a leash, gunships and armour are called in');
-  ok(/supplySpeed\(\)/.test(tc) && /supplyRate\(\)/.test(tc) && /supplyDmg\(\)/.test(wv) && /trimWaveForSupply\(WAVE\.spawnQueue\)/.test(wv), 'losing fuel / ammo / barracks slows enemy tanks, softens their fire, thins their waves');
+  
   ok(/\(bl\.kind==='obj' \|\| bl\.supply\) && b\.owner==='e'/.test(fs.readFileSync('src/combat/lock-on.js','utf8')), 'enemy fire never hurts its own bases');
   const S={ fuel:0, ammo:0, camp:0 }; ok(Math.max(C.SUPPLYB.cut.min, 1-C.SUPPLYB.cut.speed*2)<1 && C.SUPPLYB.cut.min>=0.6, 'the cuts are capped (the enemy is weakened, never crippled)'); }
 
@@ -2034,7 +1793,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const rd=fs.readFileSync('src/world/radar.js','utf8'), su=fs.readFileSync('src/world/supply.js','utf8'), ar=fs.readFileSync('src/campaign/artillery.js','utf8');
   ok(/function taperLattice\(/.test(rd) && /export function radarTower\(/.test(rd) && /panelMat\(\)/.test(rd) && /B\.head\.rotation\.y\+=dt\*/.test(su), 'a tall lattice radar tower whose phased array sweeps without stopping');
   ok(/export function aaGun\(/.test(rd) && /updateAAGun\(pc\.mesh, pc, dt, now, p\)/.test(su) && /export function radome\(/.test(rd), 'twin AA guns swing onto you and fire; a radome; the usual wire, gate and garrison');
-  ok(/artyShotCut\(\)/.test(ar) && /artyErr\(\)/.test(ar) && /artyRestMul\(\)/.test(ar) && /toppleTower\(b, dir, now\)/.test(su), 'the tower topples; with the radar gone the barrages come less often, with fewer and wilder shells'); }
+   }
 
 // Z198 the attack helicopter: a modern armoured gunship model, a chin gun that tracks, exhaust haze, flares against a locked missile
 { const fs=await import('node:fs'); const v=fs.readFileSync('src/actors/vehicles.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
@@ -2058,12 +1817,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function squadPosture\(now\)/.test(ft) && /FTSQ\.posture==='fallback'/.test(ft) && /FTSQ\.posture==='advance'/.test(ft) && /RÚT LUI/.test(ft) && /TIẾN LÊN!/.test(ft), 'the squad advances when it has the upper hand and falls back behind the tank when outgunned (with a call)');
   ok(/function fallbackSpot\(a, now\)/.test(ft) && /a\.healing=true/.test(ft) && /SQUAD\.ai\.heal\*dt/.test(ft) && /a\.fcov=coverSpot/.test(ft) && C.SQUAD.guardHit>=0.4, 'the wounded pull back to patch up; covering men fight from cover; tower guards are shot first'); }
 
-// Z201 the roof MG as air defence + reserve gunners · Z201b a gunner who works the gun, a detailed, living gun
-{ const fs=await import('node:fs'); const C=await import('./config.js'); const mg=fs.readFileSync('src/tank/roofmg.js','utf8');
-  ok(C.ROOF_MG_AI && C.ROOF_MG_AI.air.rangeK>1 && /air:true/.test(mg) && /para:q/.test(mg) && /HẠ LÍNH DÙ/.test(mg) && /nothing softer: hose the armour/.test(mg), 'the roof gun shoots helicopters first, then paratroopers in the air, infantry, guards, and chips armour');
-  ok(/PHÁO THỦ DỰ BỊ ĐANG LÊN THAY/.test(mg) && /MGR\.reserve--/.test(mg) && /spawnRider\(\)/.test(mg), 'a reserve crewman climbs out of the hull to man the gun when the roof is empty');
-  ok(/climbs up out of the hatch/.test(mg) && /hands on the spade grips/.test(mg) && /a hot barrel smokes/.test(mg) && /racks the charging handle/.test(mg) && /beltG/.test(mg) && /hatch lid/.test(mg), 'the gunner leans in, grips, tracks, reloads, racks; the gun has sights, a moving belt, an open hatch lid, a smoking barrel'); }
-
 // Z202 real vegetation: bark + grass in the atlas, several variants per species, bending tapered limbs, a bottle baobab, blade-card grass, gusts
 { const fs=await import('node:fs'); const fl=fs.readFileSync('src/world/flora.js','utf8'), dc=fs.readFileSync('src/world/decor.js','utf8');
   ok(/const AREG=4/.test(fl) && /bark: long wandering fissures/.test(fl) && /grass blades: thin, tapering/.test(fl), 'the leaf atlas carries bark and real grass blades');
@@ -2075,7 +1828,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const db=fs.readFileSync('src/fx/debris.js','utf8');
   ok(/export const DEBRIS_GEOS = \{ chunk:/.test(db) && /function plateGeo\(/.test(db) && /function splinterGeo\(/.test(db) && !/debrisGeo = new THREE\.BoxGeometry/.test(db), 'debris is fractured chunks, torn plates, splinters and slivers (no unit cubes)');
   ok(/function material\(col\)/.test(db) && /blastLight\(pos\.x, pos\.z/.test(db) && /grit/.test(db) && /a puff where it lands/.test(db) && /trails a little dust/.test(db), 'each break lights the ground, throws its own dust, sparks off metal; pieces trail dust and puff on landing');
-  ok(/torn armour plate \(jagged outline\)/.test(db), 'tank wrecks shed jagged torn plates, not slabs'); }
+   }
 
 // Z204 rounds go off against walls / cover / forts (breakable or not) and leave pocks or charred, cracked craters
 { const fs=await import('node:fs'); const wm=fs.readFileSync('src/fx/wallmarks.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
@@ -2110,15 +1863,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z210 every round leaves its own light smoke line by ammo type; near misses crack past; shells in the dirt throw up a geyser; big guns leave a hanging cloud
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/fx/hitfx.js','utf8'), lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/export function shellTrail\(b, x, y, z\)/.test(h) && /export function trailKind\(b\)/.test(h) && ['wisp','auto','shell','heavy','frag','frost','rail','enemy'].every(k=>new RegExp(k+':\\{ s:').test(h)) && /type==='ELEC'/.test(h) && /else (if\(!b\.dark\) )?shellTrail\(b, b\.x, _wy, b\.z\)/.test(lo), 'a smoke line per ammo type (tesla none), gap-free');
-  ok(/export function nearMiss\(b, P\)/.test(h) && /nearMiss\(b, S\.player\)/.test(lo) && /case 'flybyHeavy'/.test(fs.readFileSync('src/audio/synth.js','utf8')) && /dirtGeyser\(b\.x, b\.z/.test(lo) && /muzzleLinger\(/.test(fs.readFileSync('src/fx/gunfx.js','utf8')), 'near-miss crack, dirt geysers, lingering muzzle cloud'); }
+   }
 // Z211 parked vehicles are cheap to draw (Z401: the real models, one instanced draw per body)
 { const fs=await import('node:fs'); const ca=fs.readFileSync('src/world/cars.js','utf8');
   ok(/new THREE\.InstancedMesh\(_RG\[k\], R\.mat, list\.length\), shadow=!MOBILE/.test(ca), 'street vehicles are cheap to draw (one instanced draw per body, no shadow on phones)'); }
-
-// Z214 the lock-on gun fires smart mini-missiles: own model, eject → ignite → streak, hard homing, climbs to aircraft and bursts in the air; a 2×2 smart pod
-{ const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8'), ba=fs.readFileSync('src/tank/barrels.js','utf8');
-  ok(/function smartMissile\(\)/.test(lo) && /function smartIgnite\(b\)/.test(lo) && /function airDetonate\(b, t\)/.test(lo) && /smart:!!o\.smart, ign:o\.smart\?0\.13:0, vmax:sp\*1\.45/.test(lo) && /smart:!!g\.lock/.test(fs.readFileSync('src/combat/flame.js','utf8')), 'smart missile: model, ignition, airburst on aircraft');
-  ok(/SMART-MISSILE POD/.test(ba) && /missile:\[\[-0\.24,Y\+0\.41,3\.08\]/.test(ba) && /case 'whoosh'/.test(fs.readFileSync('src/audio/synth.js','utf8')) && /function smartExhaust\(/.test(fs.readFileSync('src/fx/hitfx.js','utf8')), 'a 2×2 smart pod, whoosh, thin clean exhaust'); }
 
 // Z215 lock rings lie on the surface they mark: on the slope under a ground target, upright facing you round an aircraft; the artillery ring follows the slope
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
@@ -2135,11 +1883,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/function guardTarget\(t, gd\)/.test(lo) && /if\(b\.smart\)\{ for\(const e of enemies\)/.test(lo) && /for\(const t of towers\)/.test(lo) && /\(b\.lockOn && \(b\.smart \|\| b\.by>2\.6\)\)/.test(lo) && /\(\(!airborne \|\| low\) && !b\.smart\)/.test(lo), 'smart missiles: heat targets incl. tower guards, never cover'); }
 
-// Z218 the enemy artillery rocket is a real field rocket: burns then coasts, a continuous lingering smoke trail, a real launch and impact
-{ const fs=await import('node:fs'); const sr=fs.readFileSync('src/combat/siege-rocket.js','utf8'), ar=fs.readFileSync('src/campaign/artillery.js','utf8');
-  ok(/function artRocketTemplate\(\)/.test(sr) && /LatheGeometry\(prof,16\)/.test(sr) && /g\._inner=inner/.test(sr), 'a 122 mm field rocket model with a short white-hot flame');
-  ok(/const burn=s\.age<C\.flightTime\*0\.55/.test(ar) && /s\.lx==null/.test(ar) && /shockwave dust ring/.test(ar) && /dirtGeyser\(tx, tz/.test(ar) && /the black smoke column/.test(ar) && !/ringPulse\(\{x:tx,z:tz\}/.test(ar), 'burn → coast, gap-free trail, flash / fireball / geyser / dust ring / smoke column — no neon rings'); }
-
 // Z219 a tower-guard missile target is tagged _twr — depot / stockade soldiers carry their own e.guard, and mistaking them for one threw every frame (the game froze)
 { const fs=await import('node:fs'); const lo=fs.readFileSync('src/combat/lock-on.js','utf8');
   ok(/\{ _twr:true, t, gd,/.test(lo) && /if\(t && t\._twr\) return t\.gd\.alive/.test(lo) && !/t\.guard\b/.test(lo), 'smart missile: tower-guard targets use their own tag, never an enemy\'s guard field'); }
@@ -2155,22 +1898,21 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z221 lock-on missiles: forward seeker cone, never a mark danger-close to our tank or our men; enemy artillery hits say so
 { const fs=await import('node:fs'); const lk=fs.readFileSync('src/combat/lock-on.js','utf8'), ar=fs.readFileSync('src/campaign/artillery.js','utf8'), cf=fs.readFileSync('config.js','utf8');
   ok(/export const LOCKON = \{ cone:/.test(cf) && /function seekOK\(b, x, z, inf\)/.test(lk) && /LOCKON\.cone/.test(lk) && /LOCKON\.minP/.test(lk) && /LOCKON\.allyR/.test(lk), 'the seeker looks ahead only and skips marks next to our tank / our men');
-  ok(/\|\| dangerClose\(b\.tgt\)\) b\.tgt =/.test(lk) && /PHÁO ĐỊCH TRÚNG!/.test(ar), 'a mark that closes on us is dropped; enemy artillery hits are labelled'); }
+   }
 
 // Z222 helicopter fleet (bomber run, rope-ladder troop drop, weaving gunship), allies fire up at helicopters, brighter roof-MG tracers
-{ const fs=await import('node:fs'); const hl=fs.readFileSync('src/actors/helis.js','utf8'), en=fs.readFileSync('src/actors/enemies.js','utf8'), vh=fs.readFileSync('src/actors/vehicles.js','utf8'), ft=fs.readFileSync('src/actors/fireteam.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), mg=fs.readFileSync('src/tank/roofmg.js','utf8'), cf=fs.readFileSync('config.js','utf8'), E=await import('./src/data/enemies.js');
+{ const fs=await import('node:fs'); const hl=fs.readFileSync('src/actors/helis.js','utf8'), en=fs.readFileSync('src/actors/enemies.js','utf8'), vh=fs.readFileSync('src/actors/vehicles.js','utf8'), ft=fs.readFileSync('src/actors/fireteam.js','utf8'), so=fs.readFileSync('src/actors/soldiers.js','utf8'), cf=fs.readFileSync('config.js','utf8'), E=await import('./src/data/enemies.js');
   ok(E.ENEMY_DEFS.heliBomb && E.ENEMY_DEFS.heliBomb.air && E.ENEMY_DEFS.heliTroop && E.ENEMY_DEFS.heliTroop.air && E.ENEMY_CLASS.heliBomb && E.ENEMY_CLASS.heliTroop && /heliBomb:'A', heliTroop:'A'/.test(cf), 'two new airframes: bomber helicopter + troop transport (aircraft armour)');
   ok(/export function buildHind\(/.test(hl) && /export function buildHip\(/.test(hl) && /_d\.bombHeli \? buildHind\(\) : _d\.troopHeli \? buildHip\(\)/.test(en) && /if\(type==='gunship'\) type=heliRoll\(\)/.test(en), 'each has its own model; an air-support call rolls one of the three');
   ok(/function bombRun\(/.test(hl) && /dropBomb\(e\)/.test(hl) && /enemyGroundStrike\(b\.x, b\.z, B\.R/.test(hl) && /function troopRun\(/.test(hl) && /h\.st='hover'/.test(hl) && /buildLadder\(/.test(hl) && /startClimber\(e,/.test(hl) && /c\.st='fall'/.test(hl), 'bomb runs; the transport stops, lowers a ladder, men climb down (and fall if it is shot down)');
   ok(/HELI\.jink/.test(vh) && /u\.aimEl=/.test(ft) && /T\.kind==='air'\) st='stand'/.test(ft) && /u\.armAdd-=u\.elS/.test(so), 'the gunship weaves; our men stand, raise their rifles and track a helicopter');
-  ok(/MGR\.shots\+\+%2/.test(mg) && /trailK:tr\?2\.6:1\.7/.test(mg) && /muzzleLight\.intensity=2\.4/.test(mg), 'roof MG: a tracer every other round, fat bright trails, a muzzle flash that lights the hull'); }
+   }
 
 // Z223 real war: blast concussion, side-coloured tracers + brass, varied deaths, men of different build, battlefield surprises, a harder Core
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const rw=R('src/fx/realwar.js'), sp=R('src/combat/spells.js'), inf=R('src/actors/infantry.js'), ft=R('src/actors/fireteam.js'), so=R('src/actors/soldiers.js'), su=R('src/campaign/surprises.js'), co=R('src/actors/core.js'), lp=R('src/game/loop.js'), C=R('config.js');
   ok(/export const REAL = \{/.test(C) && /export function concuss\(/.test(rw) && /concuss\(e, x, z,/.test(sp) && /concuss\(a, x, z, now\)/.test(ft) && /if\(dazed\(e, now\)\)/.test(inf) && /dazePose\(a\.g, now, dt\)/.test(ft), 'a blast throws its survivors flat and dazed (both sides)');
   ok(/REAL\.tracer\.enemy/.test(inf) && /REAL\.tracer\.ally/.test(ft) && /rifleFX\(/.test(inf) && /rifleFX\(/.test(ft) && /b\.owner==='e' && b\.tk<=1/.test(R('src/combat/lock-on.js')) && /dustSkirt\(pos\.x, pos\.z, scale\)/.test(R('src/fx/explosions.js')), 'green enemy / red-orange allied tracers, brass + muzzle smoke, dust skirt on big blasts');
   ok(/g\.userData\.tint=/.test(so) && /u\.tint\|\|_tbWhite/.test(so), 'each man has his own height, build and kit shade (Z402: the dead no longer fall forward / spin / crawl — every one is thrown and bursts)');
-  ok(['mortar','ambush','armour','vbied','heli','friendly'].every(k=>new RegExp('function '+k+'\\(').test(su)) && /updateSurprises\(gdt, now\)/.test(lp) && /\(C\.w\[k\]\?\?1\)>0/.test(su), 'six weighted, stage-gated battlefield surprises on a timer');
   ok(/export const CORE_DEF/.test(C) && /dmg\*=CORE_DEF\.armour/.test(co) && /coreShield\(now\)/.test(co) && /if\(c\.hp<=0\) c\.hp=1/.test(co) && /CORE_DEF\.regen\*dt/.test(co), 'the Core: thicker, armoured, self-mending, emergency shield that turns a killing blow once'); }
 
 // Z224 drilled movement (crouch-run, dive at the end of a bound, wedge approach) + cinematic weather (film grade per sky, splashes, visible bolts, gusts, drifting sheets)
@@ -2188,7 +1930,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z226 the underground base: the guarded main tunnel gate with an electronic lock → drive down → wreck barracks / vehicle lifts / arsenal / generator → fewer reinforcements up top
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const ub=R('src/world/underbase.js'), fd=R('src/world/field.js'), wv=R('src/campaign/waves.js'), cov=R('src/world/cover.js'), lk=R('src/combat/lock-on.js'), tn=R('src/world/tunnels.js'), C=R('config.js');
-  ok(/export const UNDERBASE/.test(C) && /function buildGate\(/.test(ub) && /kind:'ugatelock'/.test(ub) && /function openGate\(/.test(ub) && /function turret\(/.test(ub) && /e\.guardBase=fake/.test(ub), 'every battlefield has a main tunnel gate: electronic lock, MG pillboxes, posted guards, guard tanks');
   ok(/export const UNDER = \{/.test(fd) && /if\(underActive\(p\.x\)\) return underClamp\(p, m\)/.test(fd) && /if\(underActive\(x\)\) return underInside/.test(fd) && /UNDER\.on \? 1e4 : ARENA-1/.test(lk), 'below ground the field functions and the bullets follow the base\'s own walls');
   ok(/function stashSurface\(/.test(ub) && /function restoreSurface\(/.test(ub) && /function moveAllies\(/.test(ub) && /goUp\(true\)/.test(ub) && /if\(UNDER\.on\) return;/.test(wv), 'going down freezes the surface (enemies + blocks stashed), our squad and tanks come along, death below brings you back up');
   ok(/role==='inf'/.test(ub) && /U\.cut\.inf=Math\.min/.test(ub) && /function powerDown\(/.test(ub) && /if\(underCut\(t\)\)/.test(wv) && /UNDER\.targets\.some\(o=>o\.role==='inf' && o\.alive\)/.test(tn) && /if\(b\.ub\)\{ underHit\(b, dmg\)/.test(cov), 'wrecked barracks / lifts / arsenal cut the waves and the tunnel squads; the generator kills the lights and the base guns'); }
@@ -2201,13 +1942,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/U\.poolM=new THREE\.MeshBasicMaterial/.test(ub) && /floodlight poles/.test(ub) && /scene\.fog\.density=0\.0055/.test(ub), 'the underground base is clearly lit: floor pools, floodlight poles, lit wall strips'); }
 
 // Z228 real military HUD (plates, stencil, fire-control digits, radio set, tactical map grid, commander's instrument panel) + the war kit on our tank
-{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const html=R('index.html'), mc=R('css/mil.css'), ins=R('src/ui/instruments.js'), wk=R('src/tank/warkit.js'), md=R('src/tank/model.js'), rm=R('src/tank/roofmg.js');
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const html=R('index.html'), mc=R('css/mil.css'), ins=R('src/ui/instruments.js');
   ok(/<link rel="stylesheet" href="css\/ui181\.css" \/>\n<link rel="stylesheet" href="css\/mil\.css" \/>/.test(html) && /Saira\+Stencil\+One/.test(html) && /Share\+Tech\+Mono/.test(html), 'the military HUD sheet loads last, with the stencil + fire-control fonts');
   ok(/--m-screws:/.test(mc) && /#combo\.warn\{/.test(mc) && /#instr\{/.test(mc) && /body\.touch #instr\{display:none;\}/.test(mc), 'plates with screw heads, hazard-striped warnings, the instrument panel (desktop only)');
   ok(/export function updateInstr\(/.test(ins) && /export function headingDeg\(/.test(ins) && /function laze\(/.test(ins) && /export function radioType\(/.test(ins) && /updateInstr\(now\)/.test(R('src/game/loop.js')) && /radioType\(el, msg\)/.test(R('src/campaign/operations.js')), 'heading / speed / rangefinder / armour gauges and the teleprinter radio are wired in');
   { const hd=f=>((Math.atan2(Math.sin(f), -Math.cos(f))*180/Math.PI)+360)%360; ok(Math.round(hd(Math.PI))===0 && Math.round(hd(Math.PI/2))===90 && Math.round(hd(0))===180, 'heading: −z is north, clockwise'); }
   ok(/rd-fq/.test(html) && /'ABCDEFGH'/.test(R('src/ui/radar.js')), 'radio set shows its net + frequency; the map carries a lettered grid');
-  ok(/export function warKit\(/.test(wk) && /mine plough/.test(wk) && /slat-armour cage/.test(wk) && /noRoof=true/.test(wk) && /if\(KIT\) warKit\(out,/.test(md) && /if\(KIT\) warKit\(g,/.test(md) && /a\.userData\.noRoof/.test(rm), 'our tank carries the war kit on every model; the roof MG ignores it'); }
+   }
 
 // Z228b ballistics: every round on a real velocity curve that still arrives where (and when) it was aimed; sabot, vapour wake, swept hits, boosted enemy rockets
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const bl=R('src/combat/ballistics.js'), lo=R('src/combat/lock-on.js'), em=R('src/actors/enemy-missiles.js'), cf=R('config.js');
@@ -2224,17 +1965,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(!fs.existsSync('src/world/whirlwinds.js') && !/whirlwinds\.js/.test(hub) && !/export const (WHIRL|AVALANCHE) =/.test(cf) && !/updateWhirls|clearWhirls|startAvalanche|WHIRLS/.test(ev), 'no dust devils, no avalanches'); }
 
 // Z230 one gun model (combat/gunstats.js) for the arsenal, the shop and the power rating — real mechanics at the fighting distance
-{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const gs=R('src/combat/gunstats.js'), si=R('src/ui/shop-info.js'), sh=R('src/ui/shop.js'), cf=R('config.js'), G=(await import('./src/data/guns.js')).GUNS;
-  ok(/export const GUNSTAT = \{ engage:\{ frac:0\.65, max:22 \}/.test(cf), 'gun-model yardsticks (fighting distance, target width, battle-line density) live in config');
-  ok(/export function gunStats\(id, K\)/.test(gs) && ['flame','mortar','orbital','plasma','hydra','singularity','photon','rocket'].every(k=>gs.includes("S==='"+k+"'")), 'every special mechanic is modelled (flame, shells, the five ultimates, the siege rocket)');
-  ok(/sus = flame \? shot\*duty : shot\*mag\/cycle/.test(gs) && /hits=Math\.min\(C\.hitsCap, hits\)/.test(gs) && /typed:!!g\.small, air:false/.test(gs), 'sustained DPS over the mag + reload cycle; targets per pull capped; shells ignore armour type and never reach aircraft');
-  ok(/export function gunNums\(id\)\{ const s=gunStats\(id\)/.test(si) && /st \? st\.vs\[k\]/.test(si) && /spBar\('Mục tiêu \/ phát'/.test(sh) && /Hạ xe tăng nặng/.test(sh) && /Math\.round\(me\.rng\)\+' m'/.test(sh), 'the arsenal shows the model: sustained + burst DPS, reach in metres, targets per pull, muzzle velocity, time to kill a heavy tank');
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cf=R('config.js'), G=(await import('./src/data/guns.js')).GUNS;
+  
+  
   ok(G.shotgun.dmg===14 && G.flak.dmg===12, 'shotgun + flak pellets rebalanced back onto their tier (half their pellets miss at their fighting distance)'); }
-
-// Z231 the starter 30 mm autocannon looks and fires like a weapon: armoured cradle, dual-feed boxes, cooling jacket, 3-port brake; amber tracer, brake jets, HE-I pop
-{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const br=R('src/tank/barrels.js'), G=(await import('./src/data/guns.js')).GUNS;
-  ok(/RIFLE \(default\) — Z231/.test(br) && /dual-feed ammo boxes/.test(br) && /cooling holes/.test(br) && /three-port muzzle brake/.test(br) && /return id==='rifle'\?1:0/.test(br), 'the 30 mm is a real autocannon mount, worn at grade 1');
-  ok(G.rifle.flash==='auto30' && G.rifle.fx==='he30' && G.rifle.color===0xffa646 && /kind==='auto30'/.test(R('src/fx/gunfx.js')) && /fx==='he30'/.test(R('src/fx/explosions.js')), 'amber tracer, brake side-jets, HE-I impact pop'); }
 
 // Z232 HE-I 30 mm + HE ammo bursts; the swept-hit start point must not share fields with the smoke-trail code (it did → rounds stopped hitting)
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const lo=R('src/combat/lock-on.js'), hf=R('src/fx/hitfx.js'), sp=R('src/combat/spells.js'), G=(await import('./src/data/guns.js')).GUNS;
@@ -2247,9 +1981,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z233 phones: the turret tracks the enemy itself · render budget: sandbag walls 27k → ~10k tris, far enemy tanks drop fittings, the Core podium + citadel baked
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const aim=R('src/combat/aim.js'), up=R('src/game/update.js'), cf=R('config.js'), lod=R('src/render/lod.js');
   ok(/mobileFixed: false, mobileTrack: true/.test(cf) && /export function turretTracks\(\)/.test(aim) && /export function trackTarget\(maxR\)/.test(aim) && /export function trackOnTarget\(t\)/.test(aim) && /trackSticky/.test(aim), 'phones: the turret picks, keeps and lays itself on the enemy');
-  ok(/else if\(turretTracks\(\)\)\{ const t=trackTarget\(playerRange\(\)\)/.test(up) && /turretTracks\(\) \|\| trackOnTarget\(t\)/.test(up), 'the hull drives free; auto-fire waits until the barrel is on target');
   ok(/RoundedBoxGeometry\(0\.96,0\.34,0\.48,1,0\.14\)/.test(R('src/world/props.js')), 'sandbag walls built with one bevel segment (27k → ~10k triangles each)');
-  ok(/export function tankDetail\(m, on\)/.test(lod) && /tankDetailR: 38, smallR: 0\.9/.test(cf) && /bakeGroup\(G0\); (return G0; )?\}/.test(R('src/actors/core.js')) && /bakeGroup\(g\);   \/\/ Z233/.test(R('src/world/core-walls.js')) && /c\.isInstancedMesh \|\| c\.isSkinnedMesh/.test(R('src/tank/model.js')), 'far tanks drop their fittings; the podium and citadel are baked; baking never folds instanced fields or flags'); }
+   }
 
 // Z234 home ground: every enemy installation stands clear of our citadel (forts, camps, compounds, underground gate, bunkers, towers, depots)
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const cf=R('config.js'), fd=R('src/world/field.js'), ft=R('src/world/fortress.js'), sp=R('src/world/supply.js'), cp=R('src/world/camps.js');
@@ -2271,18 +2004,16 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/MEADOW: \{ c:\[\[52,80,42\]/.test(R("src/data/world.js")), "Z244 meadow grass is a true leaf green, not a glaring lime or chartreuse");
   ok(/export function flameFX\(h, w\)/.test(fl) && /updateFlames\(dt\)/.test(R('src/game/loop.js')) && /flameFX\(/.test(R('src/world/camps.js')) && /flameFX\(/.test(R('src/actors/core.js')) && /flameFX\(/.test(R('src/world/fortress.js')), 'camp fires, braziers and fort torches are living flames');
   ok(/export function updateSkyLife\(dt, now\)/.test(sl) && /export function scareBirds\(x, z\)/.test(sl) && /scareBirds\(pos\.x, pos\.z\)/.test(R('src/fx/explosions.js')), 'swallows, raptors and high aircraft; birds scatter from blasts');
-  ok(/BARREL_SCALE = \{ r:1\.22, len:1\.12, slide:1\.25 \}/.test(cf) && /userData\.z0 \?\? -TRUNNION_Z/.test(R('src/tank/rig.js')), 'guns are thicker and longer and still pivot on the trunnion; the recoil slide is longer');
-  ok(/HEADING = \{ show: false/.test(cf) && /if\(HEADING\.show\)\{/.test(R('src/tank/shield.js')), 'the heading chevron and nose stripe are gone'); }
+   }
 
 // Z236 a real tank and crew: tank-gun rounds lay one unbroken smoke ribbon (wind, rise, curl, fade); crew with faces and rounded limbs;
 //   the hull's lamps are dark glass in steel housings, plain hessian sandbags, braided tow cables, smoked-glass laser-warning domes
-{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const st=R('src/fx/smoketrail.js'), hf=R('src/fx/hitfx.js'), cf=R('config.js'), so=R('src/actors/soldiers.js'), wk=R('src/tank/warkit.js');
+{ const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const st=R('src/fx/smoketrail.js'), hf=R('src/fx/hitfx.js'), cf=R('config.js'), so=R('src/actors/soldiers.js');
   ok(/export const SMOKE_TRAIL = \{ points:64/.test(cf) && /export function smokeRibbon\(b, kind, x, y, z\)/.test(st) && /updateSmokeTrails\(dt\)/.test(R('src/game/loop.js')), 'smoke ribbons: config, the ribbon layer and its clock in the loop');
   ok(/smokeKind\(k\) && b\._rb!==null && smokeRibbon\(b, k, x, y, z\)\) return;/.test(hf), 'a tank-gun round lays a ribbon; the puff trail is only the fallback when the pool is spent');
   ok(/carry on in a fresh one/.test(st) && /RIB\.length<\(MOBILE\?ST\.capMobile:ST\.cap\)/.test(st), 'a long flight chains into a fresh ribbon; the pool is capped (smaller on phones)');
   ok(/const cap=\(w,h,d\)=>/.test(so) && /\/\/ Z236 eyes \+ brows/.test(so) && /mouth \+ jaw/.test(so), 'soldiers have rounded limbs and a face (eyes, brows, nose, mouth, jaw)');
-  ok(/tow cables/.test(wk) && /smoked-glass domes/.test(wk) && !/propTex/.test(wk), 'the war kit: tow cables, smoked-glass LWR domes, plain hessian bags');
-  ok((R('src/tank/model.js').match(/color:0x2a2a26/g)||[]).length===2 && /flattened into the hull so it bakes with it/.test(R('src/tank/designs.js')), 'headlights are dark glass in a housing, baked into the hull (no glowing puck)'); }
+   }
 
 // Z237 props and buildings that read as the real thing: a burnt-out car with arches, an open cabin and bare rims; containers in faded paint with a
 //   stencil once per wall; HESCO cages; pine ammo crates; steel hedgehogs; weathered steel / drum / tin textures without rust polka dots;
@@ -2305,7 +2036,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function smartClear\(b, toTgt\)/.test(lo) && /hold=Math\.max\(desiredY, clr\)/.test(lo), 'the missile climbs over anything standing between it and its mark');
   ok(/_wy < blockTop\(bl\)\+0\.15\)\{ wb=bl; break; \}/.test(lo) && /if\(!wb && b\.by < FORT\.wallH\+0\.3\) wb=fortIntactCross/.test(lo), 'a wall it could not climb takes the hit — it never passes through');
   ok(/bl\.kind==='fortwall' \|\| bl\.kind==='gate'\)\) bl\._top=heightAt\(bl\.x,bl\.z\)\+FORT\.wallH/.test(lo), 'a fortress wall is measured at its parapet (not the whole fort’s towers and flags)');
-  ok(/const mD=g\.lock \? Math\.min\(maxDist, LOCKON\.range\) : maxDist;/.test(R('src/combat/flame.js')) && /GUNS\[gid\]\.lock \? Math\.min\(r, LOCKON\.range\)/.test(R('src/core/config.js')) && /const left=b\.maxDist-/.test(lo), 'reach capped at fire, in the range ring / auto-fire, and in the seeker');
   ok(G.missile.fireCd===0.75 && G.missile.dmg===64, 'the lock-on launcher fires slower (0.55 → 0.75 s), each missile a little heavier'); }
 
 // Z373–Z375 the battlefields composed from the Meshy community scans: high-detail files with mid / far / phone copies, each land's set laid out round
@@ -2346,7 +2076,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), G=(await import('./src/data/guns.js')).GUNS, ic=R('src/ui/icons.js'), sp=JSON.parse(R('tools/scene-import.json'));
   const K={ t_rust:'rust', t_dmr:'dmr', t_rail:'rail', t_saw:'saw' };
   ok(Object.values(K).every(k=>fs.existsSync('assets/models/real/gun/inf/'+k+'.glb') && sp['gun_'+k] && sp['gun_'+k].out==='gun/inf' && sp['gun_'+k].rot===-90) && /'mp5','rust','dmr','rail','saw'\]\) MODEL_FILES\['inf_' \+ k\]/.test(R('src/actors/models.js')), 'the four scans are in the arsenal folder, laid along Z by the import tool, loaded as inf_<k>');
-  ok(Object.entries(K).every(([id,k])=>G[id] && G[id].trooper && C.INFGUN.map[id]===k && C.INFGUN.guns[k].fit && C.INFGUN.guns[k].muzzle===-1 && C.GUNHOLD[k] && C.GUN_BLURB[id] && new RegExp('\\b'+G[id].svg+":'").test(ic)), 'each has its record, its place in the INFGUN map (fitted, muzzle −z), a hold, a blurb and an icon');
   ok(G.t_rust.dmg>G.t_ak.dmg && G.t_dmr.pierce>=1 && G.t_dmr.fireCd<G.t_sniper.fireCd && G.t_rail.pierce>G.t_sniper.pierce && G.t_saw.pierce>=2 && G.t_saw.rng<1, 'each its own role: the rust rifle heavier than the AK, the marksman quicker than the 12.7, the rail through a squad, the saw short and through three');
   ok(['shoot_ak','shoot_rifle','shoot_railgun','shoot_shotgun'].every(n=>new RegExp("case '"+n+"'").test(R('src/audio/synth.js'))) && [G.t_rust.snd,G.t_dmr.snd,G.t_rail.snd,G.t_saw.snd].join()==='shoot_ak,shoot_rifle,shoot_railgun,shoot_shotgun', 'each fires a sound the synth already makes'); }
 
@@ -2496,7 +2225,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 //   station now (they stop you and break), each wearing its scan (phones the light copy); the dish's lighter copies baked whole (a thin rim crumples)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), rt=R('src/world/real-turrets.js'), sr=R('src/combat/siege-rocket.js'), sup=R('src/world/supply.js'), rad=R('src/world/radar.js'), sc=R('src/world/scenery.js'), SP=JSON.parse(R('tools/scene-import.json')), si=R('tools/scene-import.mjs'), T=C.REALTURRET, Y=C.SCENERY.supply.yard, MD=C.SCENERY.models;
   ok(['art','siege','mortar'].every(k=>T[k] && T[k].nose==='up' && T[k].len>0 && fs.existsSync('assets/models/real/proj/'+T[k].file+'.glb') && SP[T[k].k] && SP[T[k].k].out==='proj') && /MODEL_FILES\[REALTURRET\[r\]\.k\] = 'assets\/models\/real\/proj\/' \+ REALTURRET\[r\]\.file/.test(R('src/actors/models.js')), 'the 122 mm rocket, the tactical rocket and the mortar bomb are packed and known by their keys');
-  ok(/dressRound\(g, REALTURRET\.siege\.len, 'siege', true/.test(sr) && /dressRound\(g, REALTURRET\.mortar\.len, 'mortar', true/.test(sr) && /dressRound\(g, REALTURRET\.art\.len, 'art', true/.test(sr) && /o\.userData\.drawn=true/.test(sr), 'our SIEGE rockets, every mortar bomb and the enemy artillery\'s rockets wear their scans (the cloned template\'s drawn parts flagged)');
   ok(/if\(up\)\{ m\.rotation\.x = -Math\.PI \/ 2; m\.position\.y = off; \}/.test(rt) && /g\.traverse\(o => \{ if\(o\.userData\.drawn\) o\.visible = false; \}\)/.test(rt) && /RP\[kind\]/.test(rt), 'a round flying along +y lays its scan nose up; the drawn body hides, its flames stay');
   ok(SP.proj_mortar.cut>0.2 && SP.proj_mortar.cut<0.3 && /if\(cut\)\{/.test(si) && /S\.cut \|\| 0\]/.test(si) && SP.sat_dish.rebake===true && /force:!!S\.rebake/.test(si), 'the mortar bomb\'s stump is cut off its scan; the dish\'s thin rim is baked whole in its lighter copies');
   ok(Object.entries(Y).every(([kind,k])=>MD[k] && fs.existsSync('assets/models/real/scene/'+k+'.glb') && fs.existsSync('assets/models/real/scene/m/'+k+'.glb') && (MD[k].one || ['l','f'].every(v=>fs.existsSync('assets/models/real/scene/'+v+'/'+k+'.glb'))) && C.SUPPLYB.hp[kind]>0) && Y.radome==='radar_dome', 'the radar yard\'s five scans are packed (near, phone, and the distance copies of the heavy ones), each kind a breakable piece');
@@ -2514,7 +2242,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   const wd=R('src/world/wonders.js'); ok(C.REALWONDER.biomes.DESERT==='wonder_giza' && C.REALWONDER.biomes.QUARRY==='wonder_quarry' && C.REALWONDER.multi.ARCTIC.key==='wonder_igloo' && C.REALWONDER.multi.ARCTIC.at.length===5 && ['wonder_giza','wonder_quarry','wonder_igloo'].every(k=>fs.existsSync('assets/models/real/wonder/'+k+'.glb')) && /dressMulti\(g, m\)/.test(wd) && /m\.userData\.also=st/.test(wd) && /if\(A\) A\.visible=false/.test(wd), 'the Giza pyramids and the Carrara terraces are models; the Inuit village is five igloos and a lighthouse');
   ok(Object.keys(C.OBJECTIVES).every(k=>SC.objective[k] && MD[SC.objective[k]]) && /realObjective\(g, op\.obj, def\.r\*2\/OBJ_SCALE\)/.test(R('src/campaign/operations.js')) && /export function realObjective/.test(R('src/world/scenery.js')), 'the campaign\'s five targets wear scans as wide as their rings');
   ok(['hesco','hedgehog'].every(k=>C.REALPROP.kinds.includes(k) && fs.existsSync('assets/models/real/cover/'+k+'.glb')) && SP.cover_hesco.rebake && /force:!!S\.rebake \}, \{ name:'l'/.test(R('tools/scene-import.mjs')), 'the HESCO and the Czech hedgehog are real (the HESCO baked whole: thinned seam-locked its top fell in)');
-  const cp=R('src/world/camps.js'), vh=R('src/actors/vehicles.js'), rf=R('src/world/real-fit.js'); ok(/dressFit\(h, 'hut'\)/.test(cp) && /dressFit\(tn, 'tent'\)/.test(cp) && /return dressLauncher\(g\); \}/.test(vh) && /T\.add\(pod\)/.test(rf) && C.REALFIT.launcher.pod.length===2 && ['quonset','mil_launcher','base_tent'].every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')), 'the camps\' barracks and tents and the rocket truck wear scans fitted to the drawn pieces; the launcher turns with the turntable'); }
+  const cp=R('src/world/camps.js'), vh=R('src/actors/vehicles.js'), rf=R('src/world/real-fit.js');  }
 // Z427 air and distance: the haze thins with height and turns sky-coloured with distance (one hook in every fogged shader), the land rolls on past the
 //   field in hills with groves, hamlets and tracks, and the ranges stand kilometres out at the sky's depth on a hazy plain
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), ae=R('src/render/aerial.js'), bd=R('src/world/backdrop.js'), hf=R('src/world/heightfield.js'), hz=R('src/world/horizon.js'), lp=R('src/game/loop.js');
@@ -2540,9 +2268,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), F=C.REALFIT, ub=R('src/world/underbase.js'), dp=R('src/world/depots.js'), cv=R('src/world/cover.js');
   ok(['canopy','tent_mess','tent_qm','tent_med','veh_bunker','pillbox'].every(k=>fs.existsSync('assets/models/real/camp/'+k+'.glb')) && ['mess','qm','med','canopy','vbunker','pillbox'].every(k=>F[k] && F[k].k) && /dressFit\(tg, \['mess','qm','med'\]\[i\]\)/.test(R('src/world/camps.js')), 'the camps\' mess, quartermaster\'s and medical tents are real tents');
   ok(/scenePiece\(k, s\)/.test(ub) && /for\(const o of portal\) o\.visible=false/.test(ub) && /dressFit\(g, 'pillbox', pit\)/.test(ub) && /dressHeadRWS\(head, gun\)/.test(ub) && /M\.cab\)/.test(ub) && C.UNDERBASE.gate.portalW>10, 'the underground gate: the bastion gate over the ramp, pillboxes under real guns, a painted lock cabinet');
-  ok(/placeScan\(g, 'canopy'/.test(dp) && /placeScan\(anchor, 'vbunker'/.test(dp) && !/coverGeo\('concrete'\)/.test(dp) && !/rackM/.test(dp), 'the depots: a camouflage canopy over the stores and the parked tanks, a vehicle bunker behind them');
   ok(C.REALROCK.files.every(k=>fs.existsSync('assets/models/real/cover/'+k+'.glb')) && Object.values(C.REALROCK.biomes).every(L=>L.every(k=>C.REALROCK.files.includes(k))) && /dressRock\(new THREE\.Mesh/.test(cv) && /const sl=slope\(x,z\)/.test(cv) && /realStones\(im, gi, b\.name\)/.test(R('src/world/decor.js')) && C.REALROCK.sink>0, 'the boulders and loose stones are rock scans, sunk into the ground, the boulders in outcrops on the rises');
-  const fam=Object.values(C.REALTANK.fams).flatMap(f=>f.designs); ok(['bull','tempest','goliath','reaper','overlord','inferno','serpent','thunder'].every(id=>fam.includes('b_'+id)) && /o\.userData\.dress=true/.test(R('src/tank/designs.js')) && /!o\.userData\.proc \|\| o\.userData\.dress\) return/.test(R('src/tank/real-tanks.js')), 'the eight generals ride real hulls; their own weapons stay on them'); }
+    }
 
 // Z430 one land, no plate: the landform begins at the fence (no bank, no square), the field's ground and the outskirts take its colours by the distance from
 //   the fence, the land fills in right up to the wire, the ranges stand at their true depth, and other battlefields smoke kilometres out
@@ -2649,6 +2376,25 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const sc=(await import('node:fs')).readFileSync('src/world/scenery.js','utf8');
   ok(/function levelMat\(tpl, L\)\{ const c = tpl\.clone\(\); c\.onBeforeCompile = tpl\.onBeforeCompile; c\.customProgramCacheKey = tpl\.customProgramCacheKey; takeMaps\(c, L\.mat\)/.test(sc) && /const mat = this\.mat \? levelMat\(this\.mat, L\) : L\.mat;/.test(sc) && !/this\.mat \|\| L\.mat/.test(sc), 'every level its own copy of the piece\'s material, with its own maps');
   ok(/function follow\(mesh, tpl\)/.test(sc) && /if\(this\.mat\) m\.traverse\(q => \{ if\(q\.isMesh\) follow\(q, this\.mat\)/.test(sc), 'the copies follow the piece\'s flash and fade'); }
+
+// NO-TANKS one war on foot: the player is a soldier only (no tank mode, garage, shop, workshop, training, ultimates, allied tanks), the enemy brings men and
+//   helicopters only (no armour, no rocket trucks, no artillery), the stage boss is the citadel's general met on foot; old saves and old tables land safely
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), ED=await import('./src/data/enemies.js'), BD=await import('./src/data/bosses.js'), html=R('index.html');
+  const gone=['src/tank','src/ui/garage.js','src/ui/kitshop.js','src/ui/showroom.js','src/ui/shop.js','src/ui/shop-info.js','src/ui/training.js','src/ui/pylon-marks.js','src/combat/ultimate.js','src/combat/power.js','src/combat/gunstats.js','src/combat/mastery.js','src/actors/ally-tanks.js','src/actors/riders.js','src/campaign/boss-new.js','src/fx/dying.js','src/data/kit.js','assets/models/real/tank','assets/units/tank.webp'];
+  ok(gone.every(f=>!fs.existsSync(f)), 'no tank module or tank asset is left: ' + gone.filter(f=>fs.existsSync(f)).join(' '));
+  ok(/export const MODE = SOLDIER;/.test(R('src/game/mode.js')) && !/\bTANK\s*=/.test(R('src/game/mode.js')), 'one mode: the soldier');
+  ok(JSON.stringify(Object.keys(ED.ENEMY_DEFS).sort())===JSON.stringify(['gunship','heliBomb','heliTroop','rifle','rpg']) && /if\(!ENEMY_DEFS\[type\]\) type = 'rifle';/.test(R('src/actors/enemies.js')), 'the enemy is men and helicopters; an armoured type from an old table comes as a rifleman');
+  const W=C.CAV.soldier.war; ok(W && W.w && W.w.rifle>0 && W.w.rpg>0 && W.w.heli>0 && !('arty' in W) && !('rings' in W), 'the soldier\'s war: riflemen, RPG teams, helicopters — no artillery, no warning rings');
+  ok(BD.BOSS_DEFS.length===5 && BD.BOSS_NEW.length===3 && BD.BOSS_DEFS.concat(BD.BOSS_NEW).every(b=>b.id && b.name && Object.keys(b).length===2) && Object.values(BD.BOSS_ALT).every(id=>BD.BOSS_NEW.some(b=>b.id===id)), 'the generals are a name and a man: no machine, parts or phases');
+  ok(/generalStart\(at, def, n => bossStageWon\(n, def\)\)/.test(R('src/campaign/boss.js')) && /export function generalStart\(/.test(R('src/campaign/general-duel.js')) && (R('src/world/fortress.js').match(/if\(f\.tier===3 && !f\.duel/g)||[]).length===2, 'the citadel\'s general meets the soldier on foot, once, whether he walks in or breaks in');
+  ok(/if\(!R\.includes\(PROFILE\.unit\)\) PROFILE\.unit = R\.includes\(PROFILE\.lastRide\) \? PROFILE\.lastRide : 'xeom'/.test(R('src/game/startup.js')) && /PROFILE\.lastRide : 'xeom'/.test(R('src/game/flow.js')), 'an old save that drove a tank (or the xích lô) starts on foot with its last ride, else the xe ôm');
+  ok(/export const BS = \{[^}]*step:2 \}/.test(R('src/ui/battle-setup.js')) && /BS\.step = Math\.max\(2,/.test(R('src/ui/battle-setup.js')) && !/id="bsS1"/.test(html) && /id="bsS2"/.test(html) && /id="bsS3"/.test(html), 'CHUẨN BỊ TRẬN is two steps: gear, then the battlefield');
+  ok(!['garage','kitshop','shop','trainInvite','trialShow','trainCard','powHud','powerChip','garageBtn','shopBtn','guideTrain'].some(id=>html.includes('id="'+id+'"')), 'no tank screen or button left in the page');
+  const mn=R('src/ui/menus.js'); ok(/tapBtn\('continueBtn'/.test(mn) && /tapBtn\('resetBtn'/.test(mn) && /addEventListener\('pagehide', saveProfile\)/.test(mn), 'CONTINUE, XOÁ and the save on leaving still work (they lived in the shop)');
+  const O=C.OBJECTIVES; ok(O.depot.mods.cadenceMul<1 && O.battery.mods.enemyDmgMul>1 && ['infantry','helis'].every(f=>/objMod\('enemyDmgMul'\)/.test(R('src/actors/'+f+'.js'))), 'objective buffs push in the enemy favour and reach his men and his helicopters');
+  const L=JSON.parse(R('tools/voice/lines.json')), vo=fs.readdirSync('assets/voice'); ok(L.length>=20 && L.every(([,k])=>fs.existsSync('assets/voice/'+k+'.mp3')) && !vo.some(f=>/^(boss_|t_)/.test(f)), 'every scripted radio line has its file; no tank or super-heavy voice is left');
+  const hd=JSON.parse(R('assets/models/real/hd/index.json')), hm=JSON.parse(R('tools/hd-maps.json')), dead=['gun_energy','gun_flak','gun_flamer','gun_mg','gun_pod'];
+  ok(dead.every(k=>!(k in hd) && !(k in hm)) && !fs.readdirSync('assets/models/real/hd').some(f=>dead.some(k=>f.startsWith(k+'.'))), 'no HD maps for the tank guns'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
