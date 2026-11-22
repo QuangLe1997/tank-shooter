@@ -2564,5 +2564,11 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function grouped\(g\)/.test(fo) && /function fortPiece\(gl, cutDoor, slice, node\)/.test(fo) && /MI\?MI\.getX\(i\):0/.test(fo) && /function kitStone\(m, SY, mp, KT\)/.test(fo) && /a model of several materials keeps a group per material/.test(R('src/render/far-lod.js')), 'many materials kept through the slicing and the far copies');
   ok(C.SCENERY.models.radar_dish.spin && C.SCENERY.models.radar_sentinel.spin && C.OUTPOST.radarSpin && /export function updateSpinners\(dt\)/.test(sc) && /updateSpinners\(dt\)/.test(R('src/game/loop.js')) && /spinHead\(sp\.hd, C\.radarSpin\.rate\)/.test(R('src/world/outposts.js')), 'the radars turn'); }
 
+// Z442 the battlefields reviewed: no sea stacks inland, no loose stone cubes on the open field (the one left stands among the ruins), no rail tank cars
+//   without a railway in the desert, a few drums by its tank farm, half the castle fragments round the citadel's keep
+{ const C=await import('./config.js'), B=C.SCENERY.biomes, ks=b=>B[b].map(q=>q.k);
+  ok(!ks('MEADOW').includes('sea_stack') && !ks('CITADEL').includes('sea_stack') && !ks('MEADOW').includes('stone_block') && !ks('CITADEL').includes('stone_block') && !ks('QUARRY').includes('stone_block') && ks('RUINS').includes('stone_block'), 'nothing out of place on the open field');
+  ok(!ks('DESERT').includes('rail_tanker') && B.DESERT.find(q=>q.k==='oil_drum').n<=6 && B.CITADEL.find(q=>q.k==='castle_wall').n<=2 && B.CITADEL.find(q=>q.k==='parapet').n<=2, 'no tank cars without rails; the citadel\'s keep not buried in fragments'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

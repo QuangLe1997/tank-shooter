@@ -1704,8 +1704,8 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
       { k:'ice_peak', at:'free', n:16, s:[0.034, 0.066], face:'rand', solid:{ disc:0.42 }, top:'l' }, { k:'bastion_gate', at:'free', n:1 }, { k:'bunker_door', at:'free', n:1, face:'rand' } ],   // Z393 snow-capped crags 2–4 m out on the ice (the summit scan small) in place of flora.js's cone 'ice spires'
     // sand and oil: a fuel farm of steel tanks with drums stacked round it, a siding of rail tankers, a pole line marching off, a leaning water tower, limestone kopjes
     DESERT:[ { k:'sphinx_great', at:'free', id:'sphinx', north:true, s:[0.95, 1.05] }, { k:'sphinx_small', at:'avenue', of:'sphinx', n:4, from:30, gap:12, side:10 }, { k:'rock_arch', at:'free', n:1, s:[0.9, 1.1] },
-      { k:'tank_steel', at:'cluster', id:'farm', n:3, r:13, s:[0.9, 1.1] }, { k:'oil_drum', at:'around', of:'farm', n:12, r:[9, 17], s:[0.95, 1.05], face:'rand' },
-      { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'power_pole', at:'line', n:7, gap:24, face:'along' },
+      { k:'tank_steel', at:'cluster', id:'farm', n:3, r:13, s:[0.9, 1.1] }, { k:'oil_drum', at:'around', of:'farm', n:5, r:[9, 17], s:[0.95, 1.05], face:'rand' },
+      { k:'power_pole', at:'line', n:7, gap:24, face:'along' },
       { k:'wt_lean', at:'free', n:1 }, { k:'rock_outcrop', at:'free', n:3, s:[0.8, 1.15] }, { k:'tree_twisted', at:'free', n:4, s:[0.8, 1.1], face:'rand' }, { k:'tree_bare', at:'free', n:2, face:'rand' }, { k:'horn_arch', at:'free', n:1, s:[0.8, 1.0], face:'rand' } ],
     // the great tree of the plain with its shade, broad oaks, kopjes of weathered stone, stumps and dead wood, a farm's leaning water tower, a pole line
     SAVANNA:[ { k:'rock_arch', at:'free', n:2, s:[0.8, 1.05] },
@@ -1714,21 +1714,21 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     // green country: oak and pine woods, the old tree on the rise, a mossy moon gate and a breached garden wall, rock stacks, the overgrown dish on the far side
     MEADOW:[ { k:'belfry', at:'free', n:1 }, { k:'moss_archway', at:'free', n:1 },
       { k:'tree_world', at:'free', n:1, north:true }, { k:'tree_oak', at:'cluster', id:'w1', n:3, r:14, s:[0.85, 1.1], face:'rand' }, { k:'tree_pine', at:'cluster', id:'w2', n:4, r:12, s:[0.85, 1.15], face:'rand' },
-      { k:'moss_arch', at:'free', n:1 }, { k:'gothic_gate', at:'free', n:2 }, { k:'sea_stack', at:'free', n:2, s:[0.85, 1.1] }, { k:'radar_dish', at:'free', n:1, north:true }, { k:'keep_medieval', at:'free', n:1, north:true }, { k:'stone_block', at:'free', n:2, face:'rand' } ],
+      { k:'moss_arch', at:'free', n:1 }, { k:'gothic_gate', at:'free', n:1 }, { k:'radar_dish', at:'free', n:1, north:true }, { k:'keep_medieval', at:'free', n:1, north:true } ],
     // the ruined city of old: a temple on the far side with its two lions at the steps, breached walls, moon gates, dead giants, stumps, the dish gone to moss
     RUINS:[ { k:'ruin_overgrown', at:'free', n:1, north:true }, { k:'skeleton_block', at:'free', n:1 }, { k:'gargoyle_wall', at:'free', n:2 }, { k:'corner_store', at:'free', n:1 },
       { k:'mtn_gate', at:'far', a:[[-2.8, -2.3], [-0.85, -0.35]], d:[8, 22], s:[1, 1.2] }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
       { k:'gothic_gate', at:'free', n:4 }, { k:'moss_arch', at:'free', n:2 }, { k:'tree_sentinel', at:'free', n:2, face:'rand' }, { k:'tree_bare', at:'free', n:4, face:'rand' },
-      { k:'tree_remnant', at:'free', n:4, face:'rand' }, { k:'radar_dish', at:'free', n:1 }, { k:'block_white', at:'free', n:1 }, { k:'wall_tall', at:'free', n:3, face:'rand' }, { k:'fountain_temple', at:'free', n:1 } ],
+      { k:'tree_remnant', at:'free', n:4, face:'rand' }, { k:'radar_dish', at:'free', n:1 }, { k:'block_white', at:'free', n:1 }, { k:'wall_tall', at:'free', n:3, face:'rand' }, { k:'fountain_temple', at:'free', n:1 }, { k:'stone_block', at:'free', n:1, face:'rand' } ],
     // the citadel's country: a mountain with a temple gate cut in it at the fence, a marble temple with its lions, broken walls, moon gates, pines, rock stacks
-    CITADEL:[ { k:'keep_fortress', at:'free', id:'keep', north:true }, { k:'parapet', at:'around', of:'keep', n:4, r:[21, 26], face:'out' }, { k:'castle_wall', at:'around', of:'keep', n:3, r:[26, 32], face:'out' }, { k:'citadel_tower', at:'around', of:'keep', n:2, r:[27, 34] }, { k:'gatehouse', at:'free', n:1 },
+    CITADEL:[ { k:'keep_fortress', at:'free', id:'keep', north:true }, { k:'parapet', at:'around', of:'keep', n:2, r:[21, 26], face:'out' }, { k:'castle_wall', at:'around', of:'keep', n:2, r:[26, 32], face:'out' }, { k:'citadel_tower', at:'around', of:'keep', n:2, r:[27, 34] }, { k:'gatehouse', at:'free', n:1 },
       { k:'stone_gate', at:'edge', a:[[-2.6, -2.1], [-1.0, -0.55]], inset:18 }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
-      { k:'gothic_gate', at:'free', n:2 }, { k:'moss_arch', at:'free', n:2 }, { k:'tree_pine', at:'free', n:4, face:'rand' }, { k:'sea_stack', at:'free', n:2 }, { k:'keep_medieval', at:'free', n:1 }, { k:'tower_mage', at:'free', n:1, north:true }, { k:'fountain_temple', at:'free', n:1 }, { k:'stone_block', at:'free', n:2, face:'rand' } ],
+      { k:'gothic_gate', at:'free', n:1 }, { k:'moss_arch', at:'free', n:1 }, { k:'tree_pine', at:'free', n:4, face:'rand' }, { k:'keep_medieval', at:'free', n:1 }, { k:'tower_mage', at:'free', n:1, north:true }, { k:'fountain_temple', at:'free', n:1 } ],
     // white stone: outcrops and stacks everywhere, the old cave temple in the quarry wall, a rail siding, a water tank, drums, the pole line
     QUARRY:[ { k:'tunnel_mouth', at:'edge', a:[[2.3, 2.9], [0.3, 0.9]], inset:12 }, { k:'culvert', at:'free', n:2 }, { k:'rock_arch', at:'free', n:2 },
       { k:'stone_gate', at:'edge', a:[[-2.7, -2.1], [-1.0, -0.45]], inset:18 }, { k:'rock_outcrop', at:'free', n:6, s:[0.8, 1.2] }, { k:'sea_stack', at:'free', n:4, s:[0.85, 1.2] },
       { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'tank_water', at:'cluster', id:'yard', n:1, r:2 }, { k:'oil_drum', at:'around', of:'yard', n:8, r:[7, 13], face:'rand' },
-      { k:'power_pole', at:'line', n:6, gap:24, face:'along' }, { k:'tree_twisted', at:'free', n:2, face:'rand' }, { k:'lighthouse', at:'free', n:1, north:true }, { k:'wall_tall', at:'free', n:2, face:'rand' }, { k:'stone_block', at:'free', n:2, face:'rand' } ],
+      { k:'power_pole', at:'line', n:6, gap:24, face:'along' }, { k:'tree_twisted', at:'free', n:2, face:'rand' }, { k:'lighthouse', at:'free', n:1, north:true }, { k:'wall_tall', at:'free', n:2, face:'rand' } ],
     // the works: a tank farm, a rail siding of tankers, a signal mast, the dish, two pole lines, compound gates, drums everywhere
     FOUNDRY:[ { k:'duga_hall', at:'cluster', id:'works', n:1, r:2 }, { k:'generator', at:'around', of:'works', n:3, r:[15, 21], face:'rand' }, { k:'water_tower_brick', at:'free', n:1 }, { k:'crane_stack', at:'far', a:[[-2.4, -1.9], [-1.2, -0.7]], d:[10, 25] }, { k:'dam_gate', at:'edge', a:[[2.2, 2.9], [0.2, 0.9]], inset:14 }, { k:'culvert', at:'free', n:2 },
       { k:'tank_steel', at:'cluster', id:'farm', n:3, r:16 }, { k:'tank_water', at:'around', of:'farm', n:2, r:[16, 22] }, { k:'oil_drum', at:'around', of:'farm', n:14, r:[10, 24], face:'rand' },
