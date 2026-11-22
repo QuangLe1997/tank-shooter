@@ -36,11 +36,15 @@ function norm(k, L){ if(NORM[k]) return NORM[k]; _b.copy(L.geo.boundingBox).appl
 // a piece: its levels swap with the distance; the near (whole) one is fetched once the camera comes close
 const _cp = new THREE.Vector3(), _op = new THREE.Vector3();
 export class SceneLOD extends THREE.LOD {
-  constructor(k, o = {}){ super(); this.key = k; this.lv = {}; this.mat = o.mat || null; this.shadow = o.shadow ?? true; this.dist = o.dist || [40, 120]; this.nearAt = o.nearAt || 0; this.asked = false; this.onLevel = o.onLevel || null; }
+  constructor(k, o = {}){ super(); this.key = k; this.lv = {}; this.mat = o.mat || null; this.shadow = o.shadow ?? true; this.dist = o.dist || [40, 120]; this.nearAt = o.nearAt || 0; this.asked = false; this.onLevel = o.onLevel || null; this.spin = o.spin || null; this.heads = []; }
   update(cam){ if(this.watch && this.watch()){ this.visible = false; return; } if(this.levels.length > 1) super.update(cam);   // (watch: the roof it stands on is gone)
     if(this.nearAt && !this.asked){ _cp.setFromMatrixPosition(cam.matrixWorld); _op.setFromMatrixPosition(this.matrixWorld); if(_cp.distanceToSquared(_op) < this.nearAt * this.nearAt){ this.asked = true; sceneLevel(this.key, 'd').then(warmMaps).then(L => L && this.put('d', L)); } } }
-  put(lv, L){ if(this.lv[lv] || !L) return; const n = norm(this.key, L), m = new THREE.Mesh(L.geo, this.mat || L.mat); if(this.mat && (lv === 'd' || !this.mat.map)) takeMaps(this.mat, L.mat); m.matrixAutoUpdate = false; m.matrix.multiplyMatrices(n.N, L.m4);
-    m.castShadow = this.shadow; m.receiveShadow = true; this.lv[lv] = m; for(const q of this.levels) this.remove(q.object); this.levels.length = 0;
+  put(lv, L){ if(this.lv[lv] || !L) return; const n = norm(this.key, L), sp = this.spin && spinLevel(this.key, lv, L, n, this.spin); let m;
+    if(this.mat && (lv === 'd' || !this.mat.map)) takeMaps(this.mat, L.mat);
+    if(sp){ const mat = this.mat || L.mat, hd = new THREE.Group(), t = new THREE.Mesh(sp.top, mat); m = new THREE.Group(); if(sp.base){ const b = new THREE.Mesh(sp.base, mat); b.castShadow = this.shadow; b.receiveShadow = true; m.add(b); }   // Z435 a radar: its head turns
+      hd.position.set(sp.ax, 0, sp.az); t.castShadow = this.shadow; t.receiveShadow = true; hd.add(t); m.add(hd); this.heads.push(hd); if(this.heads.length === 1) SPINNERS.push({ lod:this, a:Math.random() * 6.28, rate:this.spin.rate * (0.8 + Math.random() * 0.4) }); }
+    else { m = new THREE.Mesh(L.geo, this.mat || L.mat); m.matrixAutoUpdate = false; m.matrix.multiplyMatrices(n.N, L.m4); m.castShadow = this.shadow; m.receiveShadow = true; }
+    this.lv[lv] = m; for(const q of this.levels) this.remove(q.object); this.levels.length = 0;
     [['d', 0], ['l', this.dist[0]], ['f', this.dist[1]], ['m', 0]].filter(([v]) => this.lv[v]).forEach(([v, d], i) => this.addLevel(this.lv[v], i ? d : 0, SCENERY.lod.hys));
     if(this.onLevel) this.onLevel(lv, m); } }
 // a piece with a material of its own (a tower fades and flashes alone): it wears the scan's maps once they are in (the sharper ones when the near level comes)
@@ -55,7 +59,7 @@ export function scenePiece(k, s = 1, o = {}){ const C = M(k), D = sceneDims(k, s
   if(o.tone){ const mat = o.mat || new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8 }), prev = o.onLevel; if(!o.mat){ mat.userData.own = true; blendIn(mat); }   // Z420 tinted: its own material, toned each time it takes a level's maps (and colour)
     o = { ...o, mat, onLevel:(lv, m) => { if(mat.map !== mat.userData.tonedMap){ mat.color.multiply(o.tone); mat.userData.tonedMap = mat.map; } if(prev) prev(lv, m); } }; }
   const dist = [Math.max(Z.mid[0], Z.mid[1] * R), Math.max(Z.far[0], Z.far[1] * R)], one = !!C.one;
-  const lod = new SceneLOD(k, { ...o, dist, nearAt:MOBILE || one || o.top ? 0 : dist[0] + Z.near }); lod.userData.scene = k;   // (Z393 top: the most detail a small piece needs — 'l' never fetches the whole scan)
+  const lod = new SceneLOD(k, { ...o, dist, nearAt:MOBILE || one || o.top ? 0 : dist[0] + Z.near, spin:o.spin === false ? null : C.spin }); lod.userData.scene = k;   // (Z393 top: the most detail a small piece needs — 'l' never fetches the whole scan)
   if(MOBILE) sceneLevel(k, 'm').then(L => lod.put('m', L)); else if(one) sceneLevel(k, 'd').then(L => lod.put('d', L));
   else { sceneLevel(k, 'f').then(L => lod.put('f', L)); if(o.top !== 'f') sceneLevel(k, 'l').then(L => lod.put('l', L)); }
   return lod; }
@@ -145,6 +149,24 @@ function floatGeo(L, M4){ const g = L.geo, P = g.attributes.position, N = g.attr
     t[i * 2] = U.getX(i); t[i * 2 + 1] = U.getY(i); }
   const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(p, 3)); o.setAttribute('normal', new THREE.BufferAttribute(q, 3)); o.setAttribute('uv', new THREE.BufferAttribute(t, 2));
   o.setIndex(new THREE.BufferAttribute(Uint32Array.from(g.index.array), 1)); o.computeBoundingBox(); o.computeBoundingSphere(); return o; }
+// Z435 RADARS THAT TURN: a scan given spin:{ at, rate } (SCENERY.models) stands as its fixed part and, above at × its height, its head — the array, the
+//   dish and its mount — turned about the head's own centre at rate rad/s (each a little faster or slower), all its levels together; split once per
+//   key and level. updateSpinners (every frame) turns them and lets go of the ones no longer in the scene
+export const SPINNERS = []; const SPL = {};
+function spinLevel(k, lv, L, n, S){ const id = k + ':' + lv; if(id in SPL) return SPL[id];
+  const g = floatGeo(L, new THREE.Matrix4().multiplyMatrices(n.N, L.m4)), bb = g.boundingBox, sy = bb.min.y + (bb.max.y - bb.min.y) * S.at, top = subGeo(g, (x, y) => y > sy);
+  if(!top) return (SPL[id] = null); top.computeBoundingBox(); const c = top.boundingBox.getCenter(new THREE.Vector3()); top.dispose();
+  return (SPL[id] = { base:subGeo(g, (x, y) => y <= sy), top:subGeo(g, (x, y) => y > sy, c.x, 0, c.z), ax:c.x, az:c.z }); }
+export function spinSplit(geo, mat, at){ const P = geo.attributes.position, N = geo.attributes.normal, U = geo.attributes.uv, n = P.count, f = new THREE.BufferGeometry(), p = new Float32Array(n * 3), q = new Float32Array(n * 3), t = new Float32Array(n * 2);
+  for(let i = 0; i < n; i++){ p[i * 3] = P.getX(i); p[i * 3 + 1] = P.getY(i); p[i * 3 + 2] = P.getZ(i); if(N){ q[i * 3] = N.getX(i); q[i * 3 + 1] = N.getY(i); q[i * 3 + 2] = N.getZ(i); } if(U){ t[i * 2] = U.getX(i); t[i * 2 + 1] = U.getY(i); } }   // (as plain floats: the files are quantized)
+  f.setAttribute('position', new THREE.BufferAttribute(p, 3)); f.setAttribute('normal', new THREE.BufferAttribute(q, 3)); f.setAttribute('uv', new THREE.BufferAttribute(t, 2)); f.setIndex(new THREE.BufferAttribute(geo.index ? Uint32Array.from(geo.index.array) : Uint32Array.from({ length:n }, (_, i) => i), 1));
+  const g = f; g.computeBoundingBox(); const bb = g.boundingBox, sy = bb.min.y + (bb.max.y - bb.min.y) * at, top = subGeo(g, (x, y) => y > sy);   // (a mesh of its own: the outposts' radar)
+  if(!top) return null; top.computeBoundingBox(); const c = top.boundingBox.getCenter(new THREE.Vector3()), o = new THREE.Group(), hd = new THREE.Group(), base = subGeo(g, (x, y) => y <= sy);
+  if(base) o.add(new THREE.Mesh(base, mat)); const tm = new THREE.Mesh(subGeo(g, (x, y) => y > sy, c.x, 0, c.z), mat); hd.position.set(c.x, 0, c.z); hd.add(tm); o.add(hd); o.traverse(q => { if(q.isMesh){ q.castShadow = q.receiveShadow = true; } });
+  return { o, hd }; }
+export function spinHead(hd, rate){ SPINNERS.push({ lod:{ heads:[hd] }, root:hd, a:Math.random() * 6.28, rate:rate * (0.8 + Math.random() * 0.4) }); }
+export function updateSpinners(dt){ for(let i = SPINNERS.length - 1; i >= 0; i--){ const S = SPINNERS[i]; let r = S.root || S.lod; while(r.parent) r = r.parent; if(!r.isScene){ SPINNERS.splice(i, 1); continue; }
+    S.a += dt * S.rate; for(const h of S.lod.heads) h.rotation.y = S.a; } }
 // the triangles of a float geometry whose centre passes a test, compacted (then shifted by -dx, -dy, -dz)
 function subGeo(g, keep, dx = 0, dy = 0, dz = 0){ const P = g.attributes.position.array, N = g.attributes.normal.array, T = g.attributes.uv.array, I = g.index.array, re = new Int32Array(P.length / 3).fill(-1), idx = [];
   let n = 0; for(let i = 0; i < I.length; i += 3){ const a = I[i], b = I[i + 1], c = I[i + 2]; if(!keep((P[a * 3] + P[b * 3] + P[c * 3]) / 3, (P[a * 3 + 1] + P[b * 3 + 1] + P[c * 3 + 1]) / 3, (P[a * 3 + 2] + P[b * 3 + 2] + P[c * 3 + 2]) / 3)) continue;

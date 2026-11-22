@@ -1,0 +1,12 @@
+fort_kit.gltf / .bin / *.jpg — "Modular Fort 01" by Rico Cilliers, Poly Haven (https://polyhaven.com/a/modular_fort_01), CC0.
+Downloaded 2026-11-22 (2K glTF); kept the thick straight walls, the round tower, the arched gate and a thick corner; textures re-encoded (diffuse and normal 2K, ARM 1K).
+citadel/ — Poly Haven "red_sandstone_wall" (https://polyhaven.com/a/red_sandstone_wall), CC0; diffuse 2K, normal and ARM 1K.
+desert/ — Poly Haven "yellow_stone_wall" (https://polyhaven.com/a/yellow_stone_wall), CC0; diffuse 2K, normal and ARM 1K.
+arctic/ — Poly Haven "granite_wall" (https://polyhaven.com/a/granite_wall), CC0; diffuse 2K, normal and ARM 1K.
+volcano/ — Poly Haven "volcanic_rock_tiles" (https://polyhaven.com/a/volcanic_rock_tiles), CC0; diffuse 2K, normal and ARM 1K.
+meadow/ — Poly Haven "mossy_stone_wall" (https://polyhaven.com/a/mossy_stone_wall), CC0; diffuse 2K, normal and ARM 1K.
+ruins/ — Poly Haven "rabdentse_ruins_wall" (https://polyhaven.com/a/rabdentse_ruins_wall), CC0; diffuse 2K, normal and ARM 1K.
+quarry/ — Poly Haven "white_sandstone_bricks" (https://polyhaven.com/a/white_sandstone_bricks), CC0; diffuse 2K, normal and ARM 1K.
+savanna/ — Poly Haven "clay_block_wall" (https://polyhaven.com/a/clay_block_wall), CC0; diffuse 2K, normal and ARM 1K.
+foundry/ — Poly Haven "rusty_metal_sheet" (https://polyhaven.com/a/rusty_metal_sheet), CC0; diffuse 2K, normal and ARM 1K.
+city/ — Poly Haven "sandstone_brick_wall_01" (https://polyhaven.com/a/sandstone_brick_wall_01), CC0; diffuse 2K, normal and ARM 1K.

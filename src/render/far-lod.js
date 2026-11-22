@@ -17,6 +17,9 @@ export function farGeo(geo, keep){ const K = keep || FARLOD.keep, C = LO.get(geo
     const target = Math.max(192, Math.floor(idx.length * K / 3) * 3), [out] = S.simplify(idx, pos, 3, target, FARLOD.err, []);
     if(!out || out.length >= idx.length * 0.8) return null;   // it would barely be lighter
     const lo = new THREE.BufferGeometry(); for(const [k, a] of Object.entries(g.attributes)) lo.setAttribute(k, a); lo.setIndex(new THREE.BufferAttribute(out, 1));
+    if(g.attributes.mi && geo.groups && geo.groups.length){ const M = g.attributes.mi, n = out.length / 3, ord = [...Array(n).keys()].sort((a, b) => M.getX(out[a * 3]) - M.getX(out[b * 3])), o2 = new Uint32Array(out.length);   // Z435 a model of several materials keeps a group per material
+      ord.forEach((t, i) => { o2[i * 3] = out[t * 3]; o2[i * 3 + 1] = out[t * 3 + 1]; o2[i * 3 + 2] = out[t * 3 + 2]; }); lo.setIndex(new THREE.BufferAttribute(o2, 1));
+      let s0 = 0; for(let i = 1; i <= n; i++) if(i === n || M.getX(o2[i * 3]) !== M.getX(o2[s0 * 3])){ lo.addGroup(s0 * 3, (i - s0) * 3, M.getX(o2[s0 * 3])); s0 = i; } }
     if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); if(geo.boundingBox) lo.boundingBox = geo.boundingBox.clone(); lo.userData.farOf = geo.uuid; return lo; }).catch(() => null);
   C[K] = p; return p; }
 // Z412 A RING ROUND THE HORIZON, CULLED BY ARC: an instanced mesh laid all round the field (frustumCulled off, its one bounding sphere is the whole

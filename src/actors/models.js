@@ -47,6 +47,7 @@ MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.bas
 for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';
 for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins
 for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry']) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/'+(PHONE && PHONE_LOD.forts ? 'm/' : '')+'fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters
+MODEL_FILES.fort_kit = 'assets/models/real/fortkit/fort_kit.gltf';   // Z435 the forts' photographed stone kit (Poly Haven Modular Fort 01, CC0)
 for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + (PHONE && PHONE_LOD.city.includes(k) ? 'm/' : '') + k + '.glb';   // Z292 the light buildings on phones
 const _load = {}, _gl = {};
 let _loader = null;

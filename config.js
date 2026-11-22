@@ -146,7 +146,7 @@ export const REALRUIN = { clearCore:24, models:{ ruin_chapel:{ w:22, sink:0.04 }
     DESERT:{ n:3, keys:['ruin_wall','ruin_tower'] }, QUARRY:{ n:3, keys:['ruin_wall','ruin_block'] }, SAVANNA:{ n:3, keys:['ruin_tower','ruin_villa','ruin_house'] }, FOUNDRY:{ n:3, keys:['ruin_block','ruin_wall','ruin_house'] },
     ARCTIC:{ n:2, keys:['ruin_tower','ruin_wall'] }, VOLCANO:{ n:2, keys:['ruin_wall','ruin_tower'] } } };
 // Z285 enemy outposts (world/outposts.js): sizes (w = length, h = height, m), tents per fort, the ring round the walls (m beyond R), the gate lane kept clear (rad), wire rows and distance, solid pieces
-export const OUTPOST = { size:{ base_barracks:{ w:16 }, base_tent:{ w:7 }, base_radar:{ h:9 }, base_bunker:{ w:7 }, base_wire:{ w:6 }, mil_truck:{ w:8 }, mil_apc:{ w:7.6 }, mil_jeep:{ w:4.3 }, mil_humvee:{ w:4.9 } }, veh:['mil_truck','mil_apc','mil_jeep','mil_humvee'], nVeh:2, tents:2, ring:[10, 22], laneA:0.5, wireRows:2, wireAt:9, solid:['base_barracks','base_bunker','base_radar','mil_truck','mil_apc','mil_jeep','mil_humvee'] };
+export const OUTPOST = { radarSpin:{ at:0.72, rate:1.1 }, size:{ base_barracks:{ w:16 }, base_tent:{ w:7 }, base_radar:{ h:9 }, base_bunker:{ w:7 }, base_wire:{ w:6 }, mil_truck:{ w:8 }, mil_apc:{ w:7.6 }, mil_jeep:{ w:4.3 }, mil_humvee:{ w:4.9 } }, veh:['mil_truck','mil_apc','mil_jeep','mil_humvee'], nVeh:2, tents:2, ring:[10, 22], laneA:0.5, wireRows:2, wireAt:9, solid:['base_barracks','base_bunker','base_radar','mil_truck','mil_apc','mil_jeep','mil_humvee'] };
 // Z292 PHONE LOD: phones load the light copies under …/m/ (trees ~3k triangles with their leaf cards thinned, fort pieces 2.5–3.5k, the city's
 //   buildings halved) and keep the block skyline — measured on the emulated phone: 5.0M → 2.5M triangles a frame on the meadow and savanna
 export const PHONE_LOD = { on:true, trees:true, forts:true, city:['bld_office','bld_glass','bld_hotel','bld_apart','bld_shophouse','bld_shoprow2','bld_villa'] };
@@ -333,8 +333,22 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
-export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry', CITY:'foundry' },   // Z399 the city's fort too: the works' concrete and steel (it stood as plain boxes in a stone wrap)
-  wallUp:1.5, thick:1.25, towerW:1.35, towerUp:3, keepW:1.3, keepH:1.15, gateW:1.15, door:[0.2, 0.55] };
+export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry', CITY:'city' },   // Z399 the city's fort too: the works' concrete and steel (it stood as plain boxes in a stone wrap)
+  wallUp:1.5, thick:1.25, towerW:1.35, towerUp:3, keepW:1.3, keepH:1.15, gateW:1.15, door:[0.2, 0.55],
+  // Z435 THE FORTS IN PHOTOGRAPHED STONE AND STEEL (Poly Haven "Modular Fort 01" + a CC0 photo material per land; the AI-made walls read as soft clay):
+  //   arch = the kit's pieces for the land's architecture — castle (thick ramparts, round towers), bastion (plainer ramparts, square corner bastions),
+  //   works (thin curtain walls pierced by windows, square bastions: the steel works and the city); style = its stone or steel: the wall face wears the
+  //   material in fortkit/<style>/ at rep repeats over the kit's ~12 m tile (photo m across), metal = a steel plate (how metallic; its ARM map's metalness counts, the copings in the plate too at trimRep of the face's repeat), tint = × the face,
+  //   trim = the tint on the kit's own cut-stone copings and merlons. key = MODEL_FILES; the tower towerUp m over the wall top, at least towerW m
+  //   across, never squeezed thinner than squash × its own proportions; the keep the tower whole (keepW × the drawn keep's width, ≥ keepH × a tower's scale)
+  kit:{ on:true, key:'fort_kit', towerW:12, towerUp:2.5, squash:0.8, keepW:1.25, keepH:1.25, env:0.7, gate:'modular_fort_01_wall_thin_gate_01',
+    arch:{ castle:{ wall:'modular_fort_01_wall_thick_straight_02', tower:'modular_fort_01_tower_round' },
+      bastion:{ wall:'modular_fort_01_wall_thick_straight_01', tower:'modular_fort_01_wall_thick_corner_01', towerW:10 },
+      works:{ wall:'modular_fort_01_wall_thin_straight_02', tower:'modular_fort_01_wall_thick_corner_01', towerW:9 } },
+    style:{ citadel:{ arch:'castle', rep:6, trim:[0.95, 0.9, 0.82] }, meadow:{ arch:'castle', rep:6, trim:[0.82, 0.86, 0.74] }, quarry:{ arch:'castle', rep:6, trim:[1.06, 1.05, 1.02] },
+      arctic:{ arch:'castle', rep:6.3, trim:[0.82, 0.86, 0.92] }, desert:{ arch:'bastion', rep:6, trim:[1.08, 0.94, 0.72] }, savanna:{ arch:'bastion', rep:6, trim:[0.98, 0.8, 0.6] },
+      ruins:{ arch:'bastion', rep:6, trim:[0.7, 0.66, 0.6] }, volcano:{ arch:'bastion', rep:6.6, trim:[0.4, 0.37, 0.36] },
+      foundry:{ arch:'works', rep:5, trim:[0.55, 0.53, 0.52], metal:0.65, tint:[0.62, 0.64, 0.68], trimRep:0.22 }, city:{ arch:'works', rep:6, trim:[0.72, 0.7, 0.68] } } } };
 // Z378 the see-through seams in a dressed fort's wall (dressFort: where the model's ragged end meets its own start again, every rep sections) opened into
 //   a clean breach w m wide, the soldier and the xe ôm through it, a tank not — only between two sections of one run of wall, and only when the model spans
 //   at least minRep sections · bin = the height of the rows the cut faces are filled in (m) · guard = how far a wall-top rifleman stands off its edge (m)
@@ -1622,7 +1636,7 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     wall_breach:{ w:22, ar:[2.64, 1, 0.17], sink:0.02, solid:{ cut:1 } },
     wt_lean:{ h:17, ar:[0.83, 1, 0.82], sink:0.02, solid:{ box:0.42 } },
     neon_tower:{ h:28, ar:[0.97, 1, 0.45], sink:0, solid:{ r:1.4 }, env:1 },
-    radar_dish:{ h:25, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.55 } },
+    radar_dish:{ spin:{ at:0.62, rate:0.3 }, h:25, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.55 } },
     tank_water:{ h:9.5, ar:[0.86, 1, 0.77], sink:0, solid:{ disc:0.46 } },
     tank_steel:{ h:11, ar:[0.97, 1, 0.97], sink:0, solid:{ disc:0.48 }, fuel:'steel' },   // Z414 fuel: shot, it goes up (FUEL_TANK.steel)
     rail_tanker:{ w:16, ar:[3.9, 1, 1.09], sink:0, solid:{ box:0.95 }, fuel:'rail' },   // Z414 (FUEL_TANK.rail)
@@ -1642,7 +1656,7 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     // Z420 the forts' command compounds (world/fortress.js buildCore, FORT_CMD) and the fuel depot's store (world/supply.js) — solid: null, their own blocks carry them
     hq_modular:{ one:true, w:17, ar:[1.84, 1, 1.72], sink:0.01, solid:null }, bunker_hangar:{ w:15, ar:[2.11, 1, 1.02], sink:0.02, solid:null }, bunker_store:{ w:13, ar:[1.81, 1, 1.4], sink:0.01, solid:null },
     bunker_green:{ h:7.5, ar:[0.97, 1, 0.84], sink:0.03, solid:null }, bunker_dome:{ w:12, ar:[2.6, 1, 2.6], sink:0.05, solid:{ cut:1 } }, bunker_sandbag:{ w:11, ar:[2.04, 1, 2.04], sink:0.03, solid:{ cut:1 } },
-    radar_sentinel:{ h:15, ar:[0.67, 1, 0.62], sink:0.01, solid:null }, gun_turret:{ w:11, ar:[2.29, 1, 2.06], sink:0.03, solid:null }, antenna_twin:{ h:28, ar:[0.55, 1, 0.3], sink:0, solid:null },
+    radar_sentinel:{ spin:{ at:0.69, rate:0.9 }, h:15, ar:[0.67, 1, 0.62], sink:0.01, solid:null }, gun_turret:{ w:11, ar:[2.29, 1, 2.06], sink:0.03, solid:null }, antenna_twin:{ h:28, ar:[0.55, 1, 0.3], sink:0, solid:null },
     fuel_depot:{ w:17, ar:[1.7, 1, 1.29], sink:0.02, solid:null },
     radar_dome:{ one:true, h:15, ar:[0.37, 1, 0.37], sink:0, solid:null }, mil_shelter:{ w:6.1, ar:[1.33, 1, 0.68], sink:0.01, solid:null }, radar_truck:{ w:8.6, ar:[1.96, 1, 0.65], sink:0.01, solid:null },   // Z425 the radar yard (SCENERY.supply.yard): pieces of the base, they stop and break as its pieces do
     field_gen:{ one:true, w:3.2, ar:[2.21, 1, 1], sink:0.01, solid:null }, sat_dish:{ h:4.2, ar:[0.97, 1, 0.71], sink:0.01, solid:null },

@@ -345,7 +345,7 @@ function rubble(f, pc){ const V=rubbleVariants(), nx=-pc.uz, nz=pc.ux, n=MOBILE?
     const g=V[(Math.random()*V.length)|0].clone(); g.scale(sx, sy, sz); g.rotateX((Math.random()-0.5)*(big?0.9:1.6)); g.rotateZ((Math.random()-0.5)*(big?0.9:1.6)); g.rotateY(Math.random()*Math.PI);
     g.translate(lx, heightAt(f.x+lx, f.z+lz)-f.gy+sy*0.18, lz); geos.push(g);
     if(big) for(let q=0;q<3;q++){ const b=new THREE.CylinderGeometry(0.04,0.04,1.2+Math.random()*1.2,5); b.rotateZ(0.5+Math.random()*1.0); b.rotateY(Math.random()*6.28); b.translate(lx+(Math.random()-0.5)*sx*0.6, heightAt(f.x+lx, f.z+lz)-f.gy+sy*0.6, lz+(Math.random()-0.5)*sz*0.6); bars.push(b); } }   // twisted rebar
-  const mt=f.wallMat||(f.wallIM&&f.wallIM.material)||_stone, m=new THREE.Mesh(mergeGeometries(geos, false), mt); geos.forEach(g=>g.dispose()); m.castShadow=true; m.receiveShadow=true; f.g.add(m);
+  const mt=(f.wallMat && matList(f.wallMat)[0])||(f.wallIM&&f.wallIM.material)||_stone, m=new THREE.Mesh(mergeGeometries(geos, false), mt); geos.forEach(g=>g.dispose()); m.castShadow=true; m.receiveShadow=true; f.g.add(m);
   if(bars.length){ const bm=new THREE.Mesh(mergeGeometries(bars.map(q=>q.index?q.toNonIndexed():q), false), _iron); bars.forEach(g=>g.dispose()); f.g.add(bm); } }
 // ---- ramming: the tank's closing speed into a gate / wall section (called by physics on contact) ----
 export function fortRam(b, vn, t){ const R=FORT.ram, now=performance.now()/1000; if(vn<R.minV || now<(b.ramAt||0)) return; b.ramAt=now+R.cd;
@@ -567,29 +567,44 @@ export function clearForts(){ { const el=document.getElementById('fortHud'); if(
 //   volcanic obsidian — Tripo, 4K textures). The wall sections keep their own hit points and fall one by one as before: only the instanced shape
 //   changes to the model's wall, fitted to a section; every tower and the donjon become the model's tower, the gate the model's gatehouse with its
 //   own doorway cut open so the game's gate leaves still swing; the procedural stonework, slits and caps are put away
-function fortPiece(gl, cutDoor, slice){ let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; });
-  let g=src.geometry.clone().applyMatrix4(src.matrixWorld); g=g.index?g.toNonIndexed():g; for(const a of Object.keys(g.attributes)) if(a!=='position' && a!=='normal' && a!=='uv') g.deleteAttribute(a);
+// Z435 a model's meshes (under one node of a kit, or the whole file) as one geometry: each triangle carries its material's index (mi), sorted into
+//   one group per material — the kit's stone has its walls in one material and its copings and merlons in another
+const _ATT=['position','normal','uv','mi'];
+function joinGeos(list){ const n=list.reduce((a,g)=>a+g.attributes.position.count,0), o=new THREE.BufferGeometry();
+  for(const a of _ATT){ const s0=list.find(g=>g.attributes[a]); if(!s0) continue; const k=s0.attributes[a].itemSize, arr=new Float32Array(n*k); let q=0;
+    for(const g of list){ const A=g.attributes[a], c=g.attributes.position.count; if(A) for(let i=0;i<c;i++) for(let j=0;j<k;j++) arr[q+i*k+j]=A.getComponent(i,j); q+=c*k; }
+    o.setAttribute(a, new THREE.BufferAttribute(arr,k)); }
+  return o; }
+function grouped(g){ const M=g.attributes.mi; if(!M) return g; const n=g.attributes.position.count/3, ord=[...Array(n).keys()].sort((a,b)=>M.getX(a*3)-M.getX(b*3)), o=new THREE.BufferGeometry();
+  for(const a of _ATT){ const A=g.attributes[a]; if(!A) continue; const k=A.itemSize, arr=new Float32Array(n*3*k); let q=0; for(const t of ord) for(let j=0;j<3;j++) for(let c=0;c<k;c++) arr[q++]=A.getComponent(t*3+j,c); o.setAttribute(a, new THREE.BufferAttribute(arr,k)); }
+  let s0=0; for(let i=1;i<=n;i++) if(i===n || M.getX(ord[i]*3)!==M.getX(ord[s0]*3)){ o.addGroup(s0*3, (i-s0)*3, M.getX(ord[s0]*3)); s0=i; }
+  o.computeBoundingBox(); o.computeBoundingSphere(); return o; }
+const cloneMat=m=>Array.isArray(m) ? m.map(x=>x.clone()) : m.clone(), matList=m=>Array.isArray(m) ? m : [m];
+function fortPiece(gl, cutDoor, slice, node){ gl.scene.updateMatrixWorld(true); const root=node ? gl.scene.getObjectByName(node) : gl.scene; if(!root) return null; const mats=[], parts=[];
+  root.traverse(o=>{ if(!o.isMesh) return; let mi=mats.indexOf(o.material); if(mi<0){ mats.push(o.material); mi=mats.length-1; } let q=o.geometry.clone().applyMatrix4(o.matrixWorld); q=q.index?q.toNonIndexed():q;
+    const c=new THREE.BufferGeometry(); for(const a of ['position','normal','uv']) if(q.attributes[a]) c.setAttribute(a, q.attributes[a]); c.setAttribute('mi', new THREE.BufferAttribute(new Float32Array(q.attributes.position.count).fill(mi),1)); parts.push(c); });
+  if(!parts.length) return null; let g=joinGeos(parts);
   g.computeBoundingBox(); let b=g.boundingBox; g.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); if(b.max.z-b.min.z > b.max.x-b.min.x) g.rotateY(Math.PI/2); g.computeBoundingBox(); b=g.boundingBox;
   if(cutDoor || slice){ const P=g.attributes.position, sz=b.getSize(new THREE.Vector3()), keep=[], half=slice ? sz.y*slice/2 : 0;   // the doorway cut out of a gatehouse · or, for a wall, a slice of its own true proportions (a section's length : height)
     for(let t=0;t<P.count/3;t++){ let x=0,y=0; for(let j=0;j<3;j++){ x+=P.getX(t*3+j); y+=P.getY(t*3+j); } x/=3; y/=3; if(cutDoor && Math.abs(x)<sz.x*REALFORT.door[0] && y<sz.y*REALFORT.door[1]) continue; if(slice && Math.abs(x)>half) continue; keep.push(t); }
-    const o=new THREE.BufferGeometry(); for(const a of ['position','normal','uv']){ const A=g.attributes[a]; if(!A) continue; const n=A.itemSize, arr=new Float32Array(keep.length*3*n); let q=0; for(const t of keep) for(let j=0;j<3;j++) for(let c=0;c<n;c++) arr[q++]=A.getComponent(t*3+j,c); o.setAttribute(a, new THREE.BufferAttribute(arr,n)); }
+    const o=new THREE.BufferGeometry(); for(const a of _ATT){ const A=g.attributes[a]; if(!A) continue; const n=A.itemSize, arr=new Float32Array(keep.length*3*n); let q=0; for(const t of keep) for(let j=0;j<3;j++) for(let c=0;c<n;c++) arr[q++]=A.getComponent(t*3+j,c); o.setAttribute(a, new THREE.BufferAttribute(arr,n)); }
     g=o; g.computeBoundingBox(); b=g.boundingBox; }
-  return { geo:g, mat:src.material.clone(), size:b.getSize(new THREE.Vector3()) }; }
+  g=grouped(g); return { geo:g, mat:mats.length>1 ? mats.map(m=>m.clone()) : mats[0].clone(), size:b.getSize(new THREE.Vector3()) }; }
 // Z327 the stretch of a (non-indexed) wall between x0 and x1, every triangle clipped at both ends, moved so its middle (mid) is at 0
-function sliceX(g, x0, x1, mid){ const P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv, out=[], n=P.count/3;
-  const vtx=i=>[P.getX(i), P.getY(i), P.getZ(i), N?N.getX(i):0, N?N.getY(i):1, N?N.getZ(i):0, U?U.getX(i):0, U?U.getY(i):0];
+function sliceX(g, x0, x1, mid){ const P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv, MI=g.attributes.mi, out=[], n=P.count/3;
+  const vtx=i=>[P.getX(i), P.getY(i), P.getZ(i), N?N.getX(i):0, N?N.getY(i):1, N?N.getZ(i):0, U?U.getX(i):0, U?U.getY(i):0, MI?MI.getX(i):0];
   const cut=(poly, d)=>{ const o=[]; for(let i=0;i<poly.length;i++){ const A=poly[i], B=poly[(i+1)%poly.length], da=d(A), db=d(B); if(da>=0) o.push(A);
       if((da>=0)!==(db>=0)){ const t=da/(da-db); o.push(A.map((v,c)=>v+(B[c]-v)*t)); } } return o; };
   for(let t=0;t<n;t++){ const a=P.getX(3*t), b=P.getX(3*t+1), c=P.getX(3*t+2); if(Math.max(a,b,c)<=x0 || Math.min(a,b,c)>=x1) continue;
     let poly=[vtx(3*t), vtx(3*t+1), vtx(3*t+2)]; if(Math.min(a,b,c)<x0) poly=cut(poly, v=>v[0]-x0); if(Math.max(a,b,c)>x1) poly=cut(poly, v=>x1-v[0]);
     for(let k=1;k+1<poly.length;k++) out.push(poly[0], poly[k], poly[k+1]); }
-  const o=new THREE.BufferGeometry(), pos=new Float32Array(out.length*3), nor=new Float32Array(out.length*3), uv=new Float32Array(out.length*2);
-  out.forEach((v,i)=>{ pos[3*i]=v[0]-mid; pos[3*i+1]=v[1]; pos[3*i+2]=v[2]; const l=Math.hypot(v[3],v[4],v[5])||1; nor[3*i]=v[3]/l; nor[3*i+1]=v[4]/l; nor[3*i+2]=v[5]/l; uv[2*i]=v[6]; uv[2*i+1]=v[7]; });
-  o.setAttribute('position', new THREE.BufferAttribute(pos,3)); if(N) o.setAttribute('normal', new THREE.BufferAttribute(nor,3)); if(U) o.setAttribute('uv', new THREE.BufferAttribute(uv,2));
-  o.computeBoundingBox(); o.computeBoundingSphere(); return o; }
+  const o=new THREE.BufferGeometry(), pos=new Float32Array(out.length*3), nor=new Float32Array(out.length*3), uv=new Float32Array(out.length*2), mi=new Float32Array(out.length);
+  out.forEach((v,i)=>{ mi[i]=Math.round(v[8]); pos[3*i]=v[0]-mid; pos[3*i+1]=v[1]; pos[3*i+2]=v[2]; const l=Math.hypot(v[3],v[4],v[5])||1; nor[3*i]=v[3]/l; nor[3*i+1]=v[4]/l; nor[3*i+2]=v[5]/l; uv[2*i]=v[6]; uv[2*i+1]=v[7]; });
+  o.setAttribute('position', new THREE.BufferAttribute(pos,3)); if(N) o.setAttribute('normal', new THREE.BufferAttribute(nor,3)); if(U) o.setAttribute('uv', new THREE.BufferAttribute(uv,2)); if(MI) o.setAttribute('mi', new THREE.BufferAttribute(mi,1));
+  o.computeBoundingBox(); o.computeBoundingSphere(); return MI ? grouped(o) : o; }
 // Z378 the face a cut through the wall shows at x = xc: the model's cross-section there (where its triangles cross the plane), filled row by row between the
 //   outline's crossings (pairs of them: a parapet, the walk, the other parapet), facing dir along x, moved by -mid like its slice; the same attributes as like
-function cutFace(g, xc, dir, mid, like){ const P=g.attributes.position, n=P.count/3, seg=[], B=FORT_GAP.bin; let y0=Infinity, y1=-Infinity;
+function cutFace(g, xc, dir, mid, like, fm){ const P=g.attributes.position, n=P.count/3, seg=[], B=FORT_GAP.bin; let y0=Infinity, y1=-Infinity;
   for(let t=0;t<n;t++){ const q=[]; for(let j=0;j<3;j++){ const a=3*t+j, b=3*t+(j+1)%3, xa=P.getX(a)-xc, xb=P.getX(b)-xc; if((xa<0)===(xb<0)) continue; const u=xa/(xa-xb);
       q.push([P.getY(a)+(P.getY(b)-P.getY(a))*u, P.getZ(a)+(P.getZ(b)-P.getZ(a))*u]); }
     if(q.length===2){ seg.push(q); y0=Math.min(y0, q[0][0], q[1][0]); y1=Math.max(y1, q[0][0], q[1][0]); } }
@@ -602,26 +617,40 @@ function cutFace(g, xc, dir, mid, like){ const P=g.attributes.position, n=P.coun
   if(!pos.length) return null; const o=new THREE.BufferGeometry(), m=pos.length/3; o.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   if(like.attributes.normal){ const nr=new Float32Array(m*3); for(let i=0;i<m;i++) nr[3*i]=dir; o.setAttribute('normal', new THREE.BufferAttribute(nr, 3)); }
   if(like.attributes.uv){ const uv=new Float32Array(m*2); for(let i=0;i<m;i++){ uv[2*i]=pos[3*i+2]/4; uv[2*i+1]=pos[3*i+1]/4; } o.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); }   // (the fort's own stone, 4 m a tile)
-  return o; }
+  o.setAttribute('mi', new THREE.BufferAttribute(new Float32Array(m).fill(fm||0), 1)); return o; }
+// Z435 a land's stone (or steel) for the kit's wall faces: its photo material, loaded once per land, repeated over the kit's ~12 m tile; the kit's own
+//   cut-stone copings and merlons keep their maps and take the land's tint
+const KITMAP={};
+function kitMaps(st){ if(KITMAP[st]) return KITMAP[st]; const L=new THREE.TextureLoader(), d='assets/models/real/fortkit/'+st+'/', SY=REALFORT.kit.style[st]||{}, r=SY.rep||6;
+  const t=(f, srgb)=>L.loadAsync(d+f).then(x=>{ x.wrapS=x.wrapT=THREE.RepeatWrapping; x.repeat.set(r, r); x.anisotropy=MOBILE?4:8; x.colorSpace=srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; return x; }).catch(()=>null);
+  return (KITMAP[st]=Promise.all([t('diff.jpg', true), t('nor.jpg', false), t('arm.jpg', false)]).then(([map, nor, arm])=>map ? { map, nor, arm } : null)); }
+function kitStone(m, SY, mp, KT){ m.envMapIntensity=KT.env; m.side=THREE.FrontSide; const wall=/wall/.test(m.name);
+  if(mp && (wall || SY.metal)){ const k=wall ? 1 : SY.trimRep || 0.25, tx=t=>{ if(!t || k===1) return t; const c=t.clone(); c.repeat.multiplyScalar(k); c.needsUpdate=true; return c; };   // (steel all over: its copings in the plate too, at the trim's own tile)
+    m.map=tx(mp.map); if(mp.nor) m.normalMap=tx(mp.nor); if(mp.arm){ const a=tx(mp.arm); m.roughnessMap=a; m.metalnessMap=a; } m.metalness=SY.metal ? SY.metal : 0; m.roughness=1; m.color.setRGB(...(SY.tint || [1, 1, 1])); }
+  else m.color.setRGB(...(SY.trim || [1, 1, 1]));
+  m.needsUpdate=true; }
 function realFort(){ return !!REALFORT.biomes[BIOME.name] && typeof window!=='undefined' && !/procfort/.test(location.search+location.hash); }   // Z434 this battlefield's forts wear real walls and towers
 function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
-  Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p))).then(([wg,tg,gg])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
-    const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg), T=fortPiece(tg), Gt=gg && f.gp ? fortPiece(gg, true) : null, add=(geo,mat,x,z,ry,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,-0.4,z); m.rotation.y=ry; m.scale.set(sx,sy,sz); m.castShadow=m.receiveShadow=true; host.add(m); return farLOD(m); };   // Z328 light copies far away
+  const K0=REALFORT.kit && REALFORT.kit.on ? REALFORT.kit : null, SY=K0 && K0.style[st], A=SY && K0.arch[SY.arch], KT=A ? { ...K0, ...A, towerW:A.towerW || K0.towerW } : null;   // Z435 the photographed kit: this land's architecture and stone
+  (KT ? Promise.all([loadGLTF(KT.key), kitMaps(st)]).then(([gl, mp])=>[gl, gl, gl, mp]) : Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p)))).then(([wg,tg,gg,mp])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
+    const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg, false, 0, KT && KT.wall), T=fortPiece(tg, false, 0, KT && KT.tower), Gt=gg && f.gp ? fortPiece(gg, !KT, 0, KT && KT.gate) : null;
+    if(!W || !T) return; if(KT) for(const P of [W, T, Gt]) if(P) for(const m of matList(P.mat)) kitStone(m, SY, mp, KT);
+    const add=(geo,mat,x,z,ry,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,-0.4,z); m.rotation.y=ry; m.scale.set(sx,sy,sz); m.castShadow=m.receiveShadow=true; host.add(m); return farLOD(m); };   // Z328 light copies far away
     // the architecture (baked meshes straight under the fort's group) goes; groups (gate leaves, guards, guns, flags) and the wall sections stay
     for(const o of host.children.slice()) if(o.isMesh && !o.isInstancedMesh && !o.userData.outpost) o.visible=false; for(const m of [f.darkIM, f.capIM]) if(m) m.visible=false;
     { const hh=H+2+C.wallUp, k=hh/W.size.y, len=W.size.x*k, rep=Math.max(1, Math.round(len/FORT.seg)), g=W.geo.clone(); g.scale(rep*FORT.seg/W.size.x, k, TH*C.thick/W.size.z); g.translate(0,-1,0);
       // the wall at its true proportions spans rep sections; each section shows its own stretch of it
       // Z327 cut once at load (its triangles clipped at the stretch's ends), one instanced mesh per stretch, culled to the view and the shadow's reach — it
       //   used to draw the whole wall for every 3 m section and throw 7/8 of it away pixel by pixel: ~4M triangles a frame, twice (the shadow), for 4 forts
-      const mat=W.mat.clone(); f.wallMat=mat; f.wallSl=[]; f.wallGeos=[]; f.wallIM.visible=false; f.wallHW=TH*C.thick/2+0.05;   // Z413 its collider as thick as this stone (world/solid-shape.js)
+      const mat=cloneMat(W.mat); f.wallMat=mat; f.wallSl=[]; f.wallGeos=[]; f.wallIM.visible=false; f.wallHW=TH*C.thick/2+0.05;   // Z413 its collider as thick as this stone (world/solid-shape.js)
       // Z378 where the model's ragged end meets its own start (between stretch rep-1 and stretch 0) it left a see-through slit 0.3–1.5 m wide that nobody
       //   could pass: inside a run of wall it is opened into a clean breach FORT_GAP.w wide — both stretches cut back from it, their cut faces filled — and the
       //   two sections' colliders end where the stone does (pc.cut0 / cut1, world/solid-shape.js: for the soldier and his ride, never a tank)
-      const G=FORT_GAP, open=rep>=G.minRep, half=G.w/2;
+      const G=FORT_GAP, open=!KT && rep>=G.minRep, half=G.w/2;   // (Z435 the kit's wall tiles cleanly: no seam to open)
       for(let s=0;s<rep;s++){ const cx=(s-(rep-1)/2)*FORT.seg, all=f.pieces.filter(pc=>pc.i%rep===s); if(!all.length) continue;
         for(const v of [0,1,2]){ const list=all.filter(pc=>(open && s===0 && pc.prev ? 1 : open && s===rep-1 && pc.next ? 2 : 0)===v); if(!list.length) continue;   // whole · cut at its start · cut at its end
           const x0=cx-FORT.seg/2-0.02+(v===1?half:0), x1=cx+FORT.seg/2+0.02-(v===2?half:0); let sg=sliceX(g, x0, x1, cx), mt=mat;
-          const face=v ? cutFace(g, v===1?x0:x1, v===1?-1:1, cx, sg) : null; if(face){ const mg=mergeGeometries([sg, face], true); sg.dispose(); face.dispose(); sg=mg; mt=[mat, f.wallIM.material]; }
+          const face=v ? cutFace(g, v===1?x0:x1, v===1?-1:1, cx, sg, matList(mat).length) : null; if(face){ const mg=grouped(joinGeos([sg, face])); sg.dispose(); face.dispose(); sg=mg; mt=[...matList(mat), f.wallIM.material]; }
           const im=new THREE.InstancedMesh(sg, mt, list.length); f.wallGeos.push(sg);
           list.forEach((pc,j)=>{ f.wallIM.getMatrixAt(pc.i,_m); im.setMatrixAt(j,_m); f.wallSl[pc.i]=[im,j]; const sx=pc.pl/FORT.seg+0.02; if(v===1) pc.cut0=half*sx-0.03; if(v===2) pc.cut1=half*sx-0.03; });
           im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=im.receiveShadow=true; host.add(im); } }
@@ -630,9 +659,11 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
       for(const pc of f.pieces) if(pc.cut0 && f.pt) for(const gd of f.pt.guards){ const P=gd.g.position, sx=pc.cx-pc.ux*pc.pl/2, sz=pc.cz-pc.uz*pc.pl/2, al=(P.x-sx)*pc.ux+(P.z-sz)*pc.uz, ac=(P.x-sx)*pc.uz-(P.z-sz)*pc.ux;
         if(Math.abs(al)<half+G.guard && Math.abs(ac)<TH){ const to=(al<0?-1:1)*(half+G.guard)-al; P.x+=pc.ux*to; P.z+=pc.uz*to; } } }
     // a tower at every corner and at both ends of each run of wall (the gate's sides included), the gatehouse over the gate
-    const gw=Gt ? (FORT.gateW+2*(f.gp[4]||5))*C.gateW : 0, TW=FORT.arch.flankW*C.towerW, TH2=H+C.towerUp, pts=[];
+    const gw=Gt ? (FORT.gateW+2*(f.gp[4]||5))*C.gateW : 0, TH2=H+C.towerUp, KY=KT ? (H+2+C.wallUp+KT.towerUp)/T.size.y : 0, KX=KT ? Math.max(KT.towerW/Math.max(T.size.x,T.size.z), KY*KT.squash) : 0, TW=KT ? KX*Math.max(T.size.x,T.size.z) : FORT.arch.flankW*C.towerW, pts=[];   // (Z435 the kit's round tower: never squeezed thinner than squash × its own proportions)
     for(const pc of f.pieces||[]){ for(const [end,sg] of [[pc.prev,-1],[pc.next,1]]) if(!end) pts.push([pc.cx+pc.ux*sg*pc.pl/2, pc.cz+pc.uz*sg*pc.pl/2, pc.ry]); }
     const put=[]; for(const [x,z,ry] of pts){ if(put.some(([a,b])=>Math.hypot(a-x,b-z)<TW*0.8)) continue; if(Gt && Math.hypot(x-f.gp[0], z-f.gp[1]) < gw*0.55) continue; put.push([x,z]);
-      const k=TW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, TH2/T.size.y, k); }
-    if(f.dj){ const [x,z,ry,w,h]=f.dj, k=w*C.keepW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, (h+C.towerUp)*C.keepH/T.size.y, k); }
+      if(KT){ add(T.geo, T.mat, x, z, ry, KX, KY, KX); continue; } const k=TW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, TH2/T.size.y, k); }
+    if(f.dj && KT){ const [x,z,ry,w]=f.dj, k=Math.max(w*KT.keepW/Math.max(T.size.x,T.size.z), KY*KT.keepH), top=-0.4+T.size.y*k; add(T.geo, T.mat, x, z, ry, k, k, k);   // Z435 the keep: the round tower whole, broad and squat, not a 40 m spire
+      f.keepY=top; if(f.flagG) f.flagG.position.y=top; if(f.label) f.label.position.y=top+(f.flagH||12)+3; }
+    else if(f.dj){ const [x,z,ry,w,h]=f.dj, k=w*C.keepW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, (h+C.towerUp)*C.keepH/T.size.y, k); }
     if(Gt){ const [x,z,ry,GH]=f.gp, kx=gw/Gt.size.x; add(Gt.geo, Gt.mat, x, z, ry, kx, Math.max(GH, TH2)/Gt.size.y, kx); } }); }
