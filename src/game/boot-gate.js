@@ -7,15 +7,17 @@ import { ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat,
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
 export function bootHide(){ const b=document.getElementById('boot'); if(!b||b._gone) return; b._gone=true;
   b.classList.add('leaving'); setTimeout(()=>{ b.classList.add('gone'); document.body.classList.add('menu-in'); }, 380); setTimeout(()=>{ b.style.display='none'; }, 950); }
-// Z101 real boot progress: bar (transform only) + the three status lines tick off as the work actually finishes
+// Z101 real boot progress: bar (transform only) + the three steps tick off as the work actually finishes (NO-TANKS 9: the one under way is lit)
 export function setBootProgress(pct, step){ const f=document.getElementById('bootFill'), t=document.getElementById('bootPct');
   if(f){ f.style.animation='none'; f.style.transform='scaleX('+Math.max(0.04,Math.min(1,pct/100)).toFixed(3)+')'; } if(t) t.textContent=Math.round(pct)+'%';
-  if(step!=null) document.querySelectorAll('#boot .ib-line').forEach(l=>{ if(+l.dataset.step<=step) l.classList.add('done'); }); }
+  if(step!=null) document.querySelectorAll('#boot .bt-steps li').forEach(l=>{ const k=+l.dataset.step; l.classList.toggle('done', k<=step); l.classList.toggle('now', k===step+1); }); }
 const _frame=()=>new Promise(r=>requestAnimationFrame(()=>r()));
 // Z109 iPhone in a Safari tab: there is no Fullscreen API, the browser bars always stay — the only full-screen way is the home-screen
 // app (manifest + sw.js) or the native shell. Say so on the splash instead of promising "full screen" on tap.
 export const IOS_TAB = MOBILE && !FS_SUPPORTED && !navigator.standalone && /^https?:$/.test(location.protocol) && !(window.matchMedia && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches);
-if(IOS_TAB){ const n=document.getElementById('bootNote'); if(n){ n.textContent='Chơi toàn màn hình: bấm Chia sẻ → Thêm vào Màn hình chính'; n.classList.add('ios-tip'); } }
+{ const n=document.getElementById('bootNote');
+  if(n && IOS_TAB){ n.textContent='Muốn chơi toàn màn hình: bấm Chia sẻ rồi chọn Thêm vào Màn hình chính.'; n.classList.add('ios-tip'); }
+  else if(n && MOBILE) n.textContent='Chạm để vào. Game mở toàn màn hình và bật âm thanh.'; }
 // ---- WARM-UP: compile every material variant (day AND night lighting) + pre-build the enemy pools behind the intro →
 //      no shader-compile hitches when the first tank, explosion, wreck or night stage appears. Z101: done in small slices
 //      with a frame between each, so the intro keeps animating and the progress bar moves for real. ----
@@ -55,7 +57,7 @@ export async function bootReady(){
   setBootProgress(55, 1);                                                          // modules + world are up
   await warmUp(f=>setBootProgress(55+f*44, f>=1?2:1));                            // shaders + pools, sliced across frames
   setBootProgress(100, 2); await _frame();
-  const msg=document.getElementById('bootMsg'); if(msg) msg.textContent='SẴN SÀNG CHIẾN ĐẤU';
+  const msg=document.getElementById('bootMsg'); if(msg) msg.textContent='';                    // (a slow-network note has nothing left to say)
   b.classList.add('ready'); setTimeout(()=>initCloud(), 2500); loadRealCity(); loadRealAir(); initDust(); setTimeout(()=>loadRealTrees(), 1500);   // Z162 cloud save signs in quietly once the game is up   // Z150 gun photos for the shop / arsenal / HUD, rendered in idle slices
   const go=e=>{ if(e&&e.cancelable && e.type!=='keydown') e.preventDefault();
     b.removeEventListener('touchstart',go); b.removeEventListener('click',go); removeEventListener('keydown',go);

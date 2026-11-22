@@ -192,7 +192,7 @@
   }
 
 
-/* ===== XUNG KÍCH — the brand on the title screen and the boot screen: the emblem (a star over two chevrons), the stencil wordmark, the line under it.
+/* ===== XUNG KÍCH — the brand on the title screen and the boot screen (placed there by css/intro.css): the emblem (a star over two chevrons), the stencil wordmark, the line under it.
    It sits over the key art (assets/keyart-*.jpg: frames from a real battle, the desert citadel at sunset) — top right on a wide
    screen, where the sky is clear; centred at the top when the screen stands upright ===== */
 .brand{display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 6px 18px rgba(0,0,0,.7));}
@@ -205,14 +205,12 @@
 .brand-sub i{display:block;width:clamp(22px,3vw,56px);height:1px;background:linear-gradient(90deg,rgba(241,223,180,0),rgba(241,223,180,.85));}
 .brand-sub i:last-child{transform:scaleX(-1);}
 #start .brand{position:absolute;z-index:2;top:clamp(20px,6.5vh,72px);right:clamp(22px,5vw,96px);align-items:flex-end;}
-#boot .ib-brand{position:absolute;z-index:3;top:clamp(20px,6.5vh,72px);right:clamp(22px,5vw,96px);pointer-events:none;}
-#boot .ib-brand .brand{align-items:flex-end;animation:brandIn 1.3s cubic-bezier(.2,.8,.2,1) .25s both;}
 body.menu-in #start .brand{animation:brandIn .9s cubic-bezier(.2,.8,.2,1) both;}
 @keyframes brandIn{0%{opacity:0;transform:translateY(-12px) scale(.97);}100%{opacity:1;transform:none;}}
 @media (orientation:portrait){
-  #start .brand,#boot .ib-brand{left:0;right:0;top:clamp(26px,6.5vh,90px);}
-  #start .brand,#boot .ib-brand .brand{align-items:center;}
+  #start .brand{left:0;right:0;top:clamp(26px,6.5vh,90px);}
+  #start .brand{align-items:center;}
   .brand-mark{width:clamp(48px,13vw,84px);} .brand-word{font-size:clamp(44px,14.5vw,96px);} .brand-sub{font-size:clamp(9px,2.7vw,15px);letter-spacing:.38em;} }
 @media (orientation:landscape) and (max-height:460px){
-  #start .brand,#boot .ib-brand{top:10px;right:16px;} .brand{gap:2px;} .brand-mark{width:30px;} .brand-word{font-size:clamp(28px,9vh,42px);} .brand-sub{font-size:8px;letter-spacing:.4em;} }
-@media (prefers-reduced-motion:reduce){ .brand,#boot .ib-brand .brand{animation:none !important;} }
+  #start .brand{top:10px;right:16px;} .brand{gap:2px;} .brand-mark{width:30px;} .brand-word{font-size:clamp(28px,9vh,42px);} .brand-sub{font-size:8px;letter-spacing:.4em;} }
+@media (prefers-reduced-motion:reduce){ .brand,#boot .bt-brand .brand{animation:none !important;} }

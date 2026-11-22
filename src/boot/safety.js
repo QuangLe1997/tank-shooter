@@ -1,14 +1,25 @@
 /* Z98 classic (non-module) boot script — runs synchronously before first paint. */
   /* safety net: if the ES module never boots (CDN blocked / very old browser) say so instead of spinning forever */
   setTimeout(function(){ var b=document.getElementById('boot'), m=document.getElementById('bootMsg');
-    if(b && !b.getAttribute('data-live') && m) m.textContent='VẪN ĐANG TẢI — KIỂM TRA KẾT NỐI MẠNG'; }, 12000);
+    if(b && !b.getAttribute('data-live') && m) m.textContent='Vẫn đang tải. Nếu chờ quá lâu, hãy kiểm tra kết nối mạng.'; }, 12000);
+
+  /* NO-TANKS 9 the boot screen's first step, for real: every game module that arrives moves the line (0 → 50 %), counted against the
+     modules src/hub.js lists (read back from the cache once it has arrived); the game takes over at 55 % once it runs (data-live) */
+  (function(){ if(!window.PerformanceObserver) return; var n=0, total=240, asked=false;
+    function show(){ var b=document.getElementById('boot'); if(!b || b.getAttribute('data-live')) return;
+      var p=Math.min(50, 50*n/total), f=document.getElementById('bootFill'), t=document.getElementById('bootPct');
+      if(f) f.style.transform='scaleX('+Math.max(0.02, p/100).toFixed(3)+')'; if(t) t.textContent=Math.round(p)+'%'; }
+    try{ new PerformanceObserver(function(list){ list.getEntries().forEach(function(e){ if(/\/src\/.+\.js|three/.test(e.name)) n++;
+        if(!asked && /\/src\/hub\.js/.test(e.name)){ asked=true; fetch('src/hub.js').then(function(r){ return r.text(); }).then(function(t){ var m=t.match(/from '/g); if(m) total=m.length+3; }).catch(function(){}); } });
+      show(); }).observe({ type:'resource', buffered:true }); }catch(e){}
+  })();
 
   /* Z107 SELF-HEAL after a deploy: the browser may hold some modules from the OLD version in its HTTP cache (GitHub Pages
      caches ~10 min) and link them with NEW ones → "does not provide an export named …" and the game never boots.
      On that error: re-download every module (hub.js lists them all) bypassing the cache, then reload once. */
   (function(){ var KEY='ss-heal-at';
     function heal(){ var last=+(sessionStorage.getItem(KEY)||0); if(Date.now()-last < 60000) return; sessionStorage.setItem(KEY, String(Date.now()));
-      var m=document.getElementById('bootMsg'); if(m) m.textContent='ĐANG CẬP NHẬT PHIÊN BẢN MỚI…';
+      var m=document.getElementById('bootMsg'); if(m) m.textContent='Đang cập nhật phiên bản mới…';
       fetch('src/hub.js', { cache:'reload' }).then(function(r){ return r.text(); }).then(function(t){
         var files=['src/main.js','config.js','index.html']; t.replace(/from '\.\/([^']+)'/g, function(_, f){ files.push('src/'+f); return _; });
         return Promise.all(files.map(function(f){ return fetch(f, { cache:'reload' }).catch(function(){}); }));

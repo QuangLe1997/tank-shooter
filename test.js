@@ -2247,6 +2247,21 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/id="cineTc"/.test(html) && /Trinh sát đường không/.test(html) && /function tick\(now\)/.test(it) && /put\('cineName', biomeVi\(BIOME\.name\)\)/.test(it) && /'Đại bản doanh địch — '/.test(it), 'the intro is a recon feed: timecode, the name as a lower third, captions in sentence case');
   ok(/el\.textContent='XUẤT KÍCH!'/.test(R('src/ui/briefing.js')) && /#countdown\{[^}]*'Saira Stencil One'/.test(R('css/menus.css')) && /body\.cine #touch\{opacity:0;/.test(R('css/cinematic-mobile.css')), 'the countdown in stencil ends on XUẤT KÍCH!; the phone controls stay out of the intro'); }
 
+// NO-TANKS 9 the boot screen: the key art as a film still between olive letterbox bands (the deployment order's palette and type); one opening —
+//   the bands part, the photo comes up out of the dark, the brand lands; the three real steps (the code · the battlefield · the graphics) with the
+//   one under way lit, a brass line along the photo's edge filling with the real progress — from the first module that arrives — then the button
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), html=R('index.html'), boot=html.slice(html.indexOf('<div id="boot">'), html.indexOf('<script src="src/boot/safety.js">')),
+    bg=R('src/game/boot-gate.js'), sf=R('src/boot/safety.js'), css=R('css/intro.css');
+  ok(/<ol class="bt-steps">\s*<li class="now" data-step="0"><b>1<\/b>[^<]+<\/li>\s*<li data-step="1"><b>2<\/b>[^<]+<\/li>\s*<li data-step="2"><b>3<\/b>[^<]+<\/li>\s*<\/ol>/.test(boot)
+    && ['bootFill','bootPct','bootMsg','bootTap','bootNote'].every(id=>boot.includes('id="'+id+'"')) && /<button type="button" class="bt-cta" id="bootTap">/.test(boot) && /class="bt-shut"/.test(boot)
+    && !/GIỮ|ĐẠI ĐỘI|ib-|ember/.test(boot), 'the boot screen: three numbered real steps, the progress line, the button, the shutters; the old slogan, the fake status lines and the embers gone');
+  ok(/querySelectorAll\('#boot \.bt-steps li'\)[^\n]*toggle\('done', k<=step\)[^\n]*toggle\('now', k===step\+1\)/.test(bg) && !/SẴN SÀNG CHIẾN ĐẤU/.test(bg) && /else if\(n && MOBILE\) n\.textContent='Chạm để vào/.test(bg),
+    'the steps tick off as the work finishes, the next one lit; the note speaks to touch on a phone');
+  ok(/new PerformanceObserver\(function\(list\)/.test(sf) && /getAttribute\('data-live'\)\) return;/.test(sf) && /Math\.min\(50, 50\*n\/total\)/.test(sf) && /fetch\('src\/hub\.js'\)[^\n]*match\(\/from '\/g\)/.test(sf),
+    'the first step is real: the line moves as each module arrives (to 50 %, out of the modules hub.js lists) until the game runs');
+  ok(!/#boot \.ib-/.test(css) && /#boot\.leaving \.bt-top\{transform:translateY\(-100%\);\}/.test(css) && /#boot\.ready \.bt-go\{display:flex;/.test(css)
+    && /prefers-reduced-motion:reduce\)\{[^}]*\}\s*#boot \.bt-shut\{display:none;\}/.test(css) && /#boot\.ready \.bt-steps\{display:none;\}/.test(css), 'the bands leave on exit, the button comes when ready, no shutters with reduced motion'); }
+
 // Z461 the desert's dunes and its new gate: the forts on sand hills (the capital on the greatest), sharp-crested dunes between them and over the field,
 //   a slip face to leeward, no rock and no paving in the sand; the gatehouse a carved sandstone arch
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), D=C.FORTHILL.biomes.DESERT, fh=R('src/world/fort-hill.js');
