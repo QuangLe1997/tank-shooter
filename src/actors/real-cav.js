@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR } from '../../config.js';
-import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, gunRecoil, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW } from '../hub.js';
+import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -42,7 +42,7 @@ function armInfantry(arms, cb, C){ const K = C.carbine.len / 0.954;
     m.position.sub(c); const turn = new THREE.Group(); turn.add(m); turn.rotation.y = t2.rotation.y;
     const wl = g.len / K, s = wl / L, w = new THREE.Group(); w.add(turn); w.scale.setScalar(s); w.position.set(C.carbine.grip[0] - gx * wl, C.carbine.grip[1] + 0.05 + (g.lift || 0) / K, 0); w.visible = false;
     m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } }); cb.add(w); arms[k] = w; w.userData.muzzle = [w.position.x - wl / 2, w.position.y + bore / K, 0]; }); }
-function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'rifle', want = R.arms[INFGUN.map[id]] ? INFGUN.map[id] : '_carbine';
+function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'carbine', want = R.arms[INFGUN.map[id]] ? INFGUN.map[id] : '_carbine';
   const met = R.pup && R.arms._metric && R.arms._metric[want], mode = met ? 'met' : 'cb';
   if(want === R.armK && mode === R.armMode) return; R.armK = want; R.armMode = mode; const u = G.userData;
   for(const [k, o] of Object.entries(R.arms)) if(o && o.isObject3D && k[0] !== '_' || k === '_carbine') o.visible = mode === 'cb' && k === want;

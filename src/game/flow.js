@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
-import { CORE_DEF } from '../../config.js';
-import { duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deployOwnedDrone, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, freeEnemyBar, guardTarget, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, openBattleSetup } from '../hub.js';
+import { CAV, CORE_DEF } from '../../config.js';
+import { CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deployOwnedDrone, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, freeEnemyBar, guardTarget, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
@@ -22,7 +22,7 @@ export function startGame(arg){
   if(!['cav','xeom','bagac','bantai'].includes(PROFILE.unit)) PROFILE.unit = ['cav','xeom','bagac','bantai'].includes(PROFILE.lastRide) ? PROFILE.lastRide : 'xeom';   // (no-tanks: an old profile's tank or xích lô → his last ride, else the xe ôm)
   const cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / ba gác / bán tải
   if(S.player && (!S.player.cav || (S.player.bike||null)!==cavKind)){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // a different ride was picked → the new one rolls out
-  S.player = S.player || MODE.makePlayer(cavKind);   // Z307 the mode owns its player (game/mode.js)
+  S.player = S.player || makeCavPlayer(cavKind);
   clearRelic();                          // Z154 a new run: no relic power carried over
   buildCore(stStage);                    // monument matching the (resumed) stage
   const p=S.player;
@@ -36,7 +36,10 @@ export function startGame(arg){
   p.buffUntil={ rapid:0, power:0, infammo:0, ammoup:0 }; p.buffLv={};
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
-  MODE.setupRun(p);   // Z307 its guns and its progression: the tank's loadout, upgrades, model, kit, crew and roof gun · the soldier's rifle and his own toughness
+  // the soldier's rifle and his own toughness (Z331 a new run: back in the saddle, the driver on his seat, whatever the last one ended in)
+  clearSoldierWar(); if(CV.dead || !CV.mounted) cavRespawn(p); driverBack(CV.H); p.guns = trooperGuns(); p.gunIdx = 0; p.dmgMul = CAV.atk; p.crit = CAV.crit; p.fireMul = CAV.fireK;   // a marksman's eye, quick hands, heavy rifle rounds
+  p.maxHp = CAV.soldier.hp; p.hp = p.maxHp; p.accelMul = p.turnMul = p._size = 1; for(const gi of p.guns) gi.ammo = magCap(GUNS[gi.id]); p.radius = CAV.radius.mounted; p.mesh.scale.setScalar(1);
+  rankReset(); squadReset(); duelReset();   // Z350 Binh nhì again · Z351 his two men · Z353 no duel left over
   p.buffUntil.range=0; p.scale=1;
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);

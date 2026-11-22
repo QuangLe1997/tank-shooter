@@ -1,7 +1,7 @@
 // actors/enemy-missiles.js — ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke
 import * as THREE from 'three';
 
-import { ARENA, GLOW, S, UNDER, addScore, bigExplode, blastAllies, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle, MODE, blRamp, blSolid, holoRing, dressRound } from '../hub.js';
+import { ARENA, GLOW, S, UNDER, addScore, bigExplode, blastAllies, blocksNear, bullets, core, damageBlock, damageCore, damagePlayer, damageSoldier, decalScorch, dropBeam, enemies, floatText, heightAt, inBlock, inSmoke, missileBoost, recycleBullet, scene, sfx, soldiers, spawnPart, wallMark, wrapAngle, blRamp, blSolid, holoRing, dressRound } from '../hub.js';
 
 // ===== ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with smoke =====
 export const EMIS=[], _emPool=[]; const _mbk=[];
@@ -52,7 +52,7 @@ export function updateEnemyMissiles(dt, now){
     if(r.wire){ r.wire.visible=true; const s0=r.src; if(s0&&enemies.includes(s0)){ const L=r.wire.geometry.attributes.position; L.setXYZ(0,s0.pos.x,heightAt(s0.pos.x,s0.pos.z)+1.9,s0.pos.z); L.setXYZ(1,r.x,r.y,r.z); L.needsUpdate=true; } else r.wire.visible=false; }
     let gone=null;
     for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j]; if(b.owner!=='p') continue; if((b.x-r.x)**2+(b.z-r.z)**2 < (b.r+0.85)**2){ if(b.pierce>0) b.pierce--; else recycleBullet(j); gone='shot'; break; } }   // SHOOT IT DOWN
-    if(!gone && MODE.hitTest(p, r.x, r.z, 0.3) && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
+    if(!gone && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < p.radius+0.3 && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
     if(!gone) for(const bl of blocksNear(r.x, r.z, 0.3, _mbk)){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj' && !bl.supply) damageBlock(bl, r.dmg*1.2); wallMark(bl, r.x, r.y, r.z, -Math.sin(r.ang), -Math.cos(r.ang), 2.0, true); gone='hit'; break; } }
     if(!gone && core && Math.hypot(core.pos.x-r.x, core.pos.z-r.z) < core.r){ damageCore(r.dmg*0.8); gone='hit'; }
     if(!gone && (r.y<=gy+0.2 || r.life<=0 || (!UNDER.on && (Math.abs(r.x)>ARENA || Math.abs(r.z)>ARENA)))) gone='ground';

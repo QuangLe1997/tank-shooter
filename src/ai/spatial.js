@@ -2,12 +2,12 @@
 import { blocks, enemies } from '../hub.js';
 
 const CELL=6, KEY=(cx,cz)=>cx*4096+cz;
-export const UGRID={ inf:new Map(), tank:new Map(), blk:new Map(), blkN:-1, blkAt:0, blkR:0 };
+export const UGRID={ inf:new Map(), air:new Map(), blk:new Map(), blkN:-1, blkAt:0, blkR:0 };
 function add(M, o, x, z){ const k=KEY(Math.floor(x/CELL), Math.floor(z/CELL)); let a=M.get(k); if(!a){ a=[]; M.set(k,a); } a.push(o); }
 // call once a frame before the units move
 export function buildUnitGrid(now, blkOnly){
-  if(!blkOnly){ for(const a of UGRID.inf.values()) a.length=0; for(const a of UGRID.tank.values()) a.length=0;
-  for(const e of enemies) add(e.def.inf?UGRID.inf:UGRID.tank, e, e.pos.x, e.pos.z); }
+  if(!blkOnly){ for(const a of UGRID.inf.values()) a.length=0; for(const a of UGRID.air.values()) a.length=0;
+  for(const e of enemies) add(e.def.inf?UGRID.inf:UGRID.air, e, e.pos.x, e.pos.z); }
   if(blocks.length!==UGRID.blkN || now>UGRID.blkAt){ UGRID.blkN=blocks.length; if(now>=0) UGRID.blkAt=now+0.5; for(const a of UGRID.blk.values()) a.length=0;   // obstacles: each in every cell its footprint touches
     for(const b of blocks){ const r=(b.obb ? Math.hypot(b.obb.hl, b.obb.hw) : b.r)+0.6, c0=Math.floor((b.x-r)/CELL), c1=Math.floor((b.x+r)/CELL), d0=Math.floor((b.z-r)/CELL), d1=Math.floor((b.z+r)/CELL);
       for(let cx=c0;cx<=c1;cx++) for(let cz=d0;cz<=d1;cz++){ const k=KEY(cx,cz); let a=UGRID.blk.get(k); if(!a){ a=[]; UGRID.blk.set(k,a); } a.push(b); } } } }

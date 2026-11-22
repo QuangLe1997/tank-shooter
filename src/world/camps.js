@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT, TENT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave, photoSet } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -142,7 +142,7 @@ export function tentHides(ax, ay, az, bx, by, bz){ for(const T of TENTS){ const 
     const top=blockTop(b), y0=ay+(by-ay)*_sb.t0, y1=ay+(by-ay)*_sb.t1; if(Math.min(y0, y1)<top) return true; } return false; }
 // the player's auto-aim / lock-on: is this enemy behind a tent from where the player stands
 export function tentHidesFromPlayer(t){ const p=S.player; if(!p || !TENTS.length || !t || !t.pos) return false; const E=TENT.eye, gy=heightAt(p.pos.x, p.pos.z), ty=t.pos.y>2 ? t.pos.y : heightAt(t.pos.x, t.pos.z)+E.mid;   // (a helicopter up high is above any tent)
-  return tentHides(p.pos.x, gy+(p.cav ? E.man : E.tank), p.pos.z, t.pos.x, ty, t.pos.z); }
+  return tentHides(p.pos.x, gy+E.man, p.pos.z, t.pos.x, ty, t.pos.z); }
 // ===== Z93 · SUPPLY CACHES — loot stashed where it is hard to get: inside camp perimeters, under watchtowers, behind ruined walls =====
 export function placeCaches(){
   const n=LOOT.cache.perStage[Math.min(LOOT.cache.perStage.length-1, S.stage-1)], spots=[];

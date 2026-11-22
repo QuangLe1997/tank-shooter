@@ -1,6 +1,6 @@
 // core/helpers.js — shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars
 import * as THREE from 'three';
-import { MOBILE, PAD, PROFILE, S, STICK_R, TANK_SCALE, _camUP, core, heldAction, move, worldToScreen } from '../hub.js';
+import { MOBILE, PAD, PROFILE, S, STICK_R, _camUP, core, heldAction, move, worldToScreen } from '../hub.js';
 
 // ----------------------------- HELPERS -----------------------------
 export function getMoveDir(){
@@ -19,10 +19,10 @@ export function getMoveDir(){
   }
   return d;
 }
-// Z99 CONTROL SCHEMES — 'tank': W/S throttle along the hull, A/D rotate the hull (the driver's left/right), mouse aims the turret.
-//                       'screen': push the direction you want to go on screen; the hull turns to it (joystick default).
-export function controlScheme(){ const c=PROFILE.ctrl; return c==='tank'||c==='screen' ? c : 'screen'; }   // Z107: SCREEN-relative is the default on every device
-export function tankInput(){                                    // → { thr: -1..1 (forward +), turn: -1..1 (driver's LEFT +) }
+// Z99 CONTROL SCHEMES — 'turn' (XOAY THÂN): W/S go forward / back along his facing, A/D turn him (or his ride); the mouse aims.
+//                       'screen': push the direction you want to go on screen; he turns to it (joystick default). (A saved 'tank' is 'turn'.)
+export function controlScheme(){ const c=PROFILE.ctrl; return c==='turn'||c==='tank' ? 'turn' : 'screen'; }   // Z107: SCREEN-relative is the default on every device
+export function turnInput(){                                    // → { thr: -1..1 (forward +), turn: -1..1 (driver's LEFT +) }
   let thr=0, turn=0;
   if(PAD.active && (PAD.lx || PAD.ly)) return { thr:-PAD.ly, turn:-PAD.lx };   // Z117 left stick: up = throttle, sideways = turn
   if(MOBILE){ if(move.id!==null){ const L=Math.max(STICK_R*0.15, Math.hypot(move.x,move.y)); thr=Math.max(-1,Math.min(1,-move.y/STICK_R)); turn=Math.max(-1,Math.min(1,-move.x/STICK_R)); if(Math.abs(thr)<0.12) thr=0; if(Math.abs(turn)<0.12) turn=0; } }
@@ -60,7 +60,7 @@ export function updateWorldBars(){
                 _chpBar=document.getElementById('chpbar'); _chpFill=_chpBar.querySelector('i'); }
   const p=S.player;
   if(p && p.hp>0){
-    const f=p.hp/p.maxHp, sc=p.scale*TANK_SCALE, s=worldToScreen(_wbV.set(p.pos.x, p.cav ? 2.7 : 3.7*sc, p.pos.z));   // float clearly above the turret (Z350 a man's: just over his head, the rank stripe on it)
+    const f=p.hp/p.maxHp, s=worldToScreen(_wbV.set(p.pos.x, 2.7, p.pos.z));   // Z350 just over his head, the rank stripe on it
     _wbSet(_phpBar, _phpFill, _WB.p, s.infront?s:null, f, _hpGrad, 0.25);
     if(s.infront){ const l='×'+Math.max(0,p.lives); if(l!==_WB.p.l){ _WB.p.l=l; _phpLives.textContent=l; } }
   } else _wbSet(_phpBar, _phpFill, _WB.p, null);

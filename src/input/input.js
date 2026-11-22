@@ -1,7 +1,7 @@
 // input/input.js — INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire
 import * as THREE from 'three';
 import { CAM_FEEL } from '../../config.js';
-import { MOBILE, PROFILE, S, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fitShadow, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell, MODE, spellNow, airMouse, crosshairMouse } from '../hub.js';
+import { soldierFire, MOBILE, PROFILE, S, VIEW, _setMus, audio, camera, cycleGun, cycleSpell, fitShadow, floatText, heightAt, muted, playerRange, queueResize, saveProfile, selectGun, setIcon, setMuted, sfx, tapBtn, togglePause, tryDash, trySpell, spellNow, airMouse, crosshairMouse } from '../hub.js';
 
 // ----------------------------- INPUT -----------------------------
 addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); if(S.mode==='playing' && k>='1' && k<='8' && !e.metaKey && !e.ctrlKey) selectGun(parseInt(k)-1); });   // gun slots on the number row · Z118 every other key → input/bindings.js
@@ -22,7 +22,7 @@ export function updateAimFromMouse(cx, cy){
 addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
 addEventListener('mousedown', e=>{ if(MOBILE) return;
   if(e.button===2){ trySpell(); return; }                                                   // RMB = spell
-  if(e.button===0 && S.mode==='playing'){ S.firing=true; MODE.fire(performance.now()/1000, playerRange()); } });  // LMB = fire now + hold to repeat
+  if(e.button===0 && S.mode==='playing'){ S.firing=true; soldierFire(performance.now()/1000, playerRange()); } });  // LMB = fire now + hold to repeat
 addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
 addEventListener('blur', ()=>{ S.firing=false; });
 addEventListener('contextmenu', e=>e.preventDefault());
@@ -130,7 +130,7 @@ if(camAutoBtnEl){ const tog=e=>{ if(e){e.preventDefault();e.stopPropagation();} 
 export const mFireEl=document.getElementById('mFire');
 if(mFireEl){
   mFireEl.addEventListener('touchstart',e=>{ e.preventDefault(); e.stopPropagation(); S.firing=true; mFireEl.classList.add('firing');
-    if(S.mode==='playing') MODE.fire(performance.now()/1000, playerRange()); },{passive:false});   // tap = one shot, hold = full-auto (gun fireCd caps it)
+    if(S.mode==='playing') soldierFire(performance.now()/1000, playerRange()); },{passive:false});   // tap = one shot, hold = full-auto (gun fireCd caps it)
   const rel=e=>{ if(e&&e.preventDefault)e.preventDefault(); S.firing=false; mFireEl.classList.remove('firing'); };
   mFireEl.addEventListener('touchend',rel); mFireEl.addEventListener('touchcancel',rel); }
 applyAutoFire();

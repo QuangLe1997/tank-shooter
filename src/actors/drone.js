@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE } from '../../config.js';
-import { GLOW, NOW, S, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, tankExplode, towers, wrapAngle, realAir } from '../hub.js';
+import { GLOW, NOW, S, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, vehicleExplode, towers, wrapAngle, realAir } from '../hub.js';
 
 // ----------------------------- SUPPORT DRONE (power-up) -----------------------------
 // A 22s orbiting GUNSHIP: sleek fuselage, 4 spinning rotors, glowing sensor eye + an underslung 6-barrel
@@ -75,7 +75,7 @@ export function damageDrone(dmg, b){ const d=S.drone; if(!d) return; d.hp-=dmg; 
   if(d.hp<=0) destroyDrone();
 }
 export function destroyDrone(){ const d=S.drone; if(!d) return; const pos=d.g.position.clone();
-  tankExplode(pos, 0x6fd0ff, 1.5, null, null, 'shock');                                    // electric-tech blast + shrapnel
+  vehicleExplode(pos, 0x6fd0ff, 1.5, null, null, 'shock');                                    // electric-tech blast + shrapnel
   burst(pos, 0x4fd1ff, 14, 12, {life:0.4, size:0.8, up:4, drag:2});
   floatText('DRONE BỊ HẠ', '#ff7a4a', pos, 20); sfx('bigexplode'); S.shake=Math.min(4.5, S.shake+1.4);
   clearDrone();

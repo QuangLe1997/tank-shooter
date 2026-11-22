@@ -6,15 +6,15 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE, SCENERY, FUEL_TANK } from '../../config.js';
-import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
+import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
 export function supplyDmg(){ return Math.max(SUPPLYB.cut.min, 1-SUPPLYB.cut.dmg*SUPPLY.ammo); }
-// trim a wave: tanks go missing for every fuel station lost, infantry squads for every barracks
-export function trimWaveForSupply(q){ const C=SUPPLYB.cut, isInf=t=>t==='squad'||(ENEMY_DEFS[t]&&ENEMY_DEFS[t].inf), isTank=t=>ENEMY_DEFS[t]&&!ENEMY_DEFS[t].inf&&!ENEMY_DEFS[t].air&&!ENEMY_DEFS[t].bomber;
+// trim a wave: helicopters go missing for every fuel station lost (no-tanks: it was the tanks), infantry squads for every barracks
+export function trimWaveForSupply(q){ const C=SUPPLYB.cut, isInf=t=>t==='squad'||(ENEMY_DEFS[t]&&ENEMY_DEFS[t].inf), isAir=t=>ENEMY_DEFS[t]&&ENEMY_DEFS[t].air;
   const cut=(test, k)=>{ if(k<=0) return; const idx=[]; q.forEach((t,i)=>{ if(test(t)) idx.push(i); }); let n=Math.min(idx.length-1, Math.round(idx.length*Math.min(0.6,k))); while(n-->0){ const j=idx.pop(); q.splice(j,1); } };
-  cut(isTank, C.tanks*SUPPLY.fuel); cut(isInf, C.inf*SUPPLY.camp); return q; }
+  cut(isAir, C.air*SUPPLY.fuel); cut(isInf, C.inf*SUPPLY.camp); return q; }
 export function resetSupply(){ for(const B of SUPPLY.bases){ if(B.decor) scene.remove(B.decor); if(B.fence){ scene.remove(B.fence.a, B.fence.b); B.fence.a.dispose(); B.fence.b.dispose(); } for(const pc of B.pieces) if(pc.mesh) scene.remove(pc.mesh); } SUPPLY.bases.length=0; SUPPLY.fuel=SUPPLY.ammo=SUPPLY.camp=SUPPLY.radar=0; }
 
 // ---------- materials / textures ----------
@@ -75,8 +75,8 @@ export function clearSite(x, z, R){ for(let i=blocks.length-1;i>=0;i--){ const b
     if(b.ridge) ridgeRockDown(b); else scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); } blocks.splice(i,1); } }
 export const SUPPLY_K=1.25;   // the installations are built big: storage tanks ~7.5 m across, 9 m tall
 function newBase(kind, x, z, R, K, ang0){ K=K||1; const ang=ang0??Math.atan2(-x, ARENA*0.55-z), ca=Math.cos(ang), sa=Math.sin(ang);
-  const B={ kind, x, z, R, K, ang, at:(lx,lz)=>[x+(lx*ca+lz*sa)*K, z+(-lx*sa+lz*ca)*K], pieces:[], alive:true, alarm:false, hitAt:-99, heloN:0, tankN:0, heloAt:0, tankAt:0, spreadAt:0, guards:[], fires:[], decor:null };
-  const st=Math.max(0,S.stage-1); B.heloMax=SUPPLYB.heli[0]+Math.min(SUPPLYB.heli[1]-SUPPLYB.heli[0], st>>1); B.tankMax=SUPPLYB.reinf+(st>=3?1:0); SUPPLY.bases.push(B); return B; }
+  const B={ kind, x, z, R, K, ang, at:(lx,lz)=>[x+(lx*ca+lz*sa)*K, z+(-lx*sa+lz*ca)*K], pieces:[], alive:true, alarm:false, hitAt:-99, heloN:0, reinfN:0, heloAt:0, reinfAt:0, spreadAt:0, guards:[], fires:[], decor:null };
+  const st=Math.max(0,S.stage-1); B.heloMax=SUPPLYB.heli[0]+Math.min(SUPPLYB.heli[1]-SUPPLYB.heli[0], st>>1); B.reinfMax=SUPPLYB.reinf+(st>=3?1:0); SUPPLY.bases.push(B); return B; }
 // one breakable piece of a base (core pieces must all fall for the base to fall)
 function piece(B, kind, mesh, lx, lz, ry, shape, core){ const [x,z]=B.at(lx,lz), f=B.ang+(ry||0), hpK=(1+SUPPLYB.hpPerStage*(S.stage-1))*loopHpMul()*diffHpMul(), hp=Math.round(SUPPLYB.hp[kind]*hpK);
   const K=B.K; mesh.scale.setScalar(K); mesh.position.set(x, heightAt(x,z)-0.05, z); mesh.rotation.y=f; scene.add(mesh);
@@ -140,10 +140,10 @@ function knockSpan(B, i, fx, fz){ const F=B.fence, sp=F.spans[i]; if(!sp || sp.d
   F.a.setMatrixAt(i,M); F.b.setMatrixAt(i,M); F.a.instanceMatrix.needsUpdate=true; F.b.instanceMatrix.needsUpdate=true;
   burst({x:sp.cx,z:sp.cz}, BIOME.ground, 3, 2.5, {y:heightAt(sp.cx,sp.cz)+0.5, life:0.8, size:1.3, smoke:true, grav:-0.3, drag:2, up:1, op:0.4}); for(let k=0;k<6;k++) spawnPart(sp.cx, heightAt(sp.cx,sp.cz)+1.2, sp.cz, (Math.random()-0.5)*6, 2+Math.random()*3, (Math.random()-0.5)*6, { color:0xffe0a0, size:0.1, life:0.3, grav:-14, drag:1.5 }); sfx('clang', {x:sp.cx,z:sp.cz}, 0.7); }
 let _fenceHintAt=0;
-function fenceCollide(B, p, now){ const F=B.fence, s=p.scale*TANK_SCALE, HW=HULL_HW*s, HL=HULL_HL*s, f=p.facing||0, fx=Math.sin(f), fz=Math.cos(f), rx=Math.cos(f), rz=-Math.sin(f);
+function fenceCollide(B, p, now){ const F=B.fence, R0=p.radius||0.6;   // (no-tanks: the soldier / his ride by his own radius, not a tank's hull box)
   for(let i=0;i<F.spans.length;i++){ const sp=F.spans[i]; if(sp.down) continue; const qx=p.pos.x-sp.x0, qz=p.pos.z-sp.z0;
-    const extD=HW*Math.abs(sp.dx*rx+sp.dz*rz)+HL*Math.abs(sp.dx*fx+sp.dz*fz), along=qx*sp.dx+qz*sp.dz; if(along<-extD*0.6 || along>sp.Lw+extD*0.6) continue;
-    const side=qx*sp.nx+qz*sp.nz, extN=HW*Math.abs(sp.nx*rx+sp.nz*rz)+HL*Math.abs(sp.nx*fx+sp.nz*fz); if(Math.abs(side)>=extN) continue;
+    const extD=R0, along=qx*sp.dx+qz*sp.dz; if(along<-extD*0.6 || along>sp.Lw+extD*0.6) continue;
+    const side=qx*sp.nx+qz*sp.nz, extN=R0; if(Math.abs(side)>=extN) continue;
     const sg=side>=0?1:-1, vn=p.vel.x*sp.nx+p.vel.z*sp.nz, closing=-vn*sg;
     if(closing>=FENCE.ramV*(p.ramOn?0.7:1)){ knockSpan(B, i, p.pos.x, p.pos.z); for(const j of [i-1,i+1]){ const o=F.spans[j]; if(o && !o.down && Math.hypot(o.cx-sp.cx,o.cz-sp.cz)<4 && Math.random()<0.5) knockSpan(B, j, p.pos.x, p.pos.z); }   // rammed through (the next bay may go with it)
       p.vel.x*=0.72; p.vel.z*=0.72; S.shake=Math.min(2.6,S.shake+0.6); continue; }
@@ -323,12 +323,12 @@ export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='play
     if(!B.alive) continue;
     if(B.camp && !B.camp.alive){ baseLost(B); continue; }
     const dp=Math.hypot(p.pos.x-B.x, p.pos.z-B.z);
-    if(!B.alarm && (dp < SUPPLYB.alertR && playerSeen(B.x, heightAt(B.x,B.z)+1.7, B.z) || now-B.hitAt < 2)){ B.alarm=true; B.heloAt=now+4; B.tankAt=now+8; radio('SCH: Lính canh '+NAME[B.kind]+' đã phát hiện ta — chúng đang gọi trực thăng và viện binh yểm trợ!'); }   // Z377 a man crawling in flat is no alarm until a guard sees him (or he opens fire)
+    if(!B.alarm && (dp < SUPPLYB.alertR && playerSeen(B.x, heightAt(B.x,B.z)+1.7, B.z) || now-B.hitAt < 2)){ B.alarm=true; B.heloAt=now+4; B.reinfAt=now+8; radio('SCH: Lính canh '+NAME[B.kind]+' đã phát hiện ta — chúng đang gọi trực thăng và viện binh yểm trợ!'); }   // Z377 a man crawling in flat is no alarm until a guard sees him (or he opens fire)
     if(!B.alarm) continue;
     if(dp > SUPPLYB.alertR*2.2 && now-B.hitAt > 25){ B.alarm=false; continue; }   // you left: they stand down
     if(now>B.heloAt && B.heloN<B.heloMax && enemies.filter(e=>e.def.air).length<(MOBILE?2:3)){ B.heloAt=now+SUPPLYB.heliCd; B.heloN++;
       const a=Math.atan2(B.x-p.pos.x, B.z-p.pos.z), [hx,hz]=clampFieldXZ(B.x+Math.sin(a)*40, B.z+Math.cos(a)*40, 8); if(spawnEnemy('gunship', hx, hz)) radio('SCH: Trực thăng địch cất cánh yểm trợ '+NAME[B.kind]+'!'); }
-    if(now>B.tankAt && B.tankN<B.tankMax){ B.tankAt=now+SUPPLYB.tankCd; B.tankN++; const a=B.ang+Math.PI+_R(-0.8,0.8), [x,z]=clampFieldXZ(B.x+Math.sin(a)*(B.R+4), B.z+Math.cos(a)*(B.R+4), 6); spawnSquad({ x, z }); }   // (no-tanks) the base calls up a squad, not armour
+    if(now>B.reinfAt && B.reinfN<B.reinfMax){ B.reinfAt=now+SUPPLYB.reinfCd; B.reinfN++; const a=B.ang+Math.PI+_R(-0.8,0.8), [x,z]=clampFieldXZ(B.x+Math.sin(a)*(B.R+4), B.z+Math.cos(a)*(B.R+4), 6); spawnSquad({ x, z }); }   // the base calls up a squad
     if(now>B.spreadAt){ B.spreadAt=now+3; const live=B.guards.filter(e=>enemies.includes(e) && e.guard && e.guard.base===B), bear=Math.atan2(p.pos.x-B.x, p.pos.z-B.z), n=live.length;   // spread along the threatened side, each behind something solid
       live.forEach((e,k)=>{ const a=bear+(n>1?(k/(n-1)-0.5):0)*2.2, r=B.R*0.85, x=B.x+Math.sin(a)*r, z=B.z+Math.cos(a)*r, c=coverSpot(x, z, p.pos.x, p.pos.z, 7); e.post = c ? [c.x, c.z] : [x, z]; }); } } }
 // a guard tank's leash: while you are far from its base it circles the base and holds fire; come close and it fights

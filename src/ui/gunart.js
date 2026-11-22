@@ -3,7 +3,7 @@
 //   its frame the same way. Rendered off-screen in idle time, one gun per slice → never a hitch.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { INFGUN, VIP_GUNS } from '../../config.js';
+import { INFGUN } from '../../config.js';
 import { GUNS, MOBILE, loadGLTF, renderer, svgMarkup } from '../hub.js';
 
 export const GUNART = { cache:{}, queue:[], busy:false, scene:null, cam:null, rt:null, float:false };
@@ -64,7 +64,7 @@ export function gunPicHTML(id, cls){ const u=gunArtURL(id), g=GUNS[id]||{};
   return '<span class="gunpic '+(cls||'')+'"><i class="gp-ic">'+svgMarkup(g.svg||'gun')+'</i><img data-gunpic="'+id+'" class="'+(u?'ok':'')+'" alt="'+(g.name||'')+'" src="'+(u||BLANK)+'"></span>'; }
 export function gunPicEl(id, cls){ const t=document.createElement('template'); t.innerHTML=gunPicHTML(id, cls); return t.content.firstChild; }
 // the tier tag every screen prints for a gun (shop case, arsenal card, new-gun card)
-export function gunTierTx(id){ return (GUNS[id]||{}).ulti ? 'TỐI THƯỢNG ◆' : VIP_GUNS.includes(id) ? 'VIP ◆' : 'BẬC '+((GUNS[id]||{}).tier||1); }
+export function gunTierTx(id){ return 'BẬC '+((GUNS[id]||{}).tier||1); }
 // warm the cache for every gun right after boot, in idle slices (the shop and the arsenal then open with photos already there)
 
 // ---- Z155 tank model photos (garage cards) ----

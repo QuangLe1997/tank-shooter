@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY } from '../../config.js';
-import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, ownGun, propTex, radio, rallyFlagTex, refreshWallet, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
+import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, refreshWallet, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -421,9 +421,9 @@ function regarrison(f, e){ e.exit=null; const a=Math.random()*Math.PI*2, r=Math.
 function updateGate(f, dt, now){ if(!f.leaves || f.breached) return;   // Z315 every gate stands open, the citadel's too — a man goes in through it
   if(f.gv < 1 || f.gateShut){ f.gv = 1; for(const L of f.leaves) L.g.rotation.y = L.s*1.45; f.gateShut = false; const i = blocks.indexOf(f.gate); if(i >= 0) blocks.splice(i, 1); } }
 // --- posture: our strength near the walls vs the garrison → HOLD (shut the gate) or SALLY (open up and hit us) ---
-function strength(f){ const P=FORT.posture, p=S.player, near=f.R+P.near; let ours=P.tank*Math.max(0.15, p.hp/p.maxHp);
+function strength(f){ const P=FORT.posture, p=S.player, near=f.R+P.near; let ours=P.you*Math.max(0.15, p.hp/p.maxHp);
   for(const a of FT) if(Math.hypot(a.pos.x-f.x, a.pos.z-f.z) < near) ours+=P.inf;
-  let theirs=0; for(const e of f.units) if(enemies.includes(e) && !e.exit && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R) theirs += e.commander ? P.gTank*2 : (e.def.inf ? P.gInf : P.gTank);
+  let theirs=0; for(const e of f.units) if(enemies.includes(e) && !e.exit && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R) theirs += e.commander ? P.gCmd : P.gInf;
   for(const e of (f.escort||[])) if(enemies.includes(e)) theirs+=P.gInf;
   return { ours, theirs }; }
 function updatePosture(f, now){ if(now<f.postAt) return; f.postAt=now+0.5; const P=FORT.posture, p=S.player;
@@ -499,10 +499,9 @@ function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false
   addCoins(coins); addDiamonds(dia); refreshWallet();
   for(let k=0;k<L.drops+f.tier-1;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*8, z:f.z+(Math.random()-0.5)*8 }, Math.min(3, f.tier));
   for(let k=0;k<GUN_MODS.fortDrops;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2);   // Z115 the armoury: a gun part
-  let gunTx=''; if(Math.random()<L.gunChance*f.tier){ const not=Object.keys(GUNS).filter(id=>!GUNS[id].trooper && !PROFILE.ownedGuns.includes(id) && GUNS[id].tier && GUNS[id].tier<=1+f.tier); if(not.length){ const id=not[(Math.random()*not.length)|0]; ownGun(id); gunTx=' · SÚNG MỚI: '+GUNS[id].name; } }
   saveProfile();
   bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup'); celebrate('fort', f.x, f.z);   // Z140 fireworks over the taken fort
-  showBanner('ĐÃ CHIẾM '+f.name+'!  +'+coins+' xu · +'+dia+' ◆'+gunTx, '#8cbf3f');
+  showBanner('ĐÃ CHIẾM '+f.name+'!  +'+coins+' xu · +'+dia+' ◆', '#8cbf3f');
   const left=fortsLeft(); radio(left ? ('Còn '+left+' đại bản doanh. '+(left===1 && mainFort() && !mainFort().captured ? 'Cổng '+mainFort().name+' đã mở phong toả!' : 'Tiếp tục tiến công!')) : 'Mọi đại bản doanh đã thất thủ!'); }
 // the citadel falls with its commander — the stage boss (boss.js kills → stage clear)
 export function fortBossDown(){ const f=mainFort(); if(f && !f.captured) capture(f, performance.now()/1000); }

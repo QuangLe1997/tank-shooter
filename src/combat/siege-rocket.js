@@ -50,7 +50,7 @@ export function hideRocketAim(){ for(const d of aimDots) if(d.visible) d.visible
 export function updateRocketAim(now){
   const p=S.player; if(S.mode!=='playing'||!p||!p.guns||!p.guns.length){ hideRocketAim(); return; }
   const g=GUNS[p.guns[p.gunIdx].id];
-  if(!(g && (g.special==='rocket'||g.special==='mortar') && (!MOBILE ? S.pointerActive : true))){ hideRocketAim(); return; }
+  if(!(g && g.special==='mortar' && (!MOBILE ? S.pointerActive : true))){ hideRocketAim(); return; }
   const t=rocketTarget(), tx=t.x, tz=t.z;
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube MOUTH (same point the shell fires from)
   const a = g.special==='mortar' ? rocketArc(sx,sy,sz,tx,tz, MORTAR_ELEV, MORTAR_G) : rocketArc(sx,sy,sz,tx,tz);   // mortar/howitzer use the flatter fast arc; rocket the steep one

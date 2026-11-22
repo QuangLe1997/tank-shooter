@@ -30,9 +30,6 @@ export function ballisticStep(b, dt){ if(!b.bk) return 0; b.bt+=dt; const v=ball
 export function ballisticTrailK(b){ if(!b.bk) return 1; const v=Math.hypot(b.vx,b.vz); return clamp(0.72+0.38*v/b.bsp, 0.7, 1.35); }
 
 // a tank gun's APFSDS round: the sabot splits into petals that peel away just past the muzzle
-export function sabotDiscard(x, y, z, ang, v0){ const S=BALLISTIC.sabot, fx=Math.sin(ang), fz=Math.cos(ang), rx=fz, rz=-fx;
-  for(let i=0;i<S.petals;i++){ const a=i/S.petals*6.283+Math.random()*0.6, ox=Math.cos(a), oy=Math.sin(a), out=S.out*(0.8+Math.random()*0.5), fw=v0*(0.32+Math.random()*0.12);
-    spawnPart(x+fx*1.2, y, z+fz*1.2, fx*fw+rx*ox*out, oy*out*0.8+1.5, fz*fw+rz*ox*out, { color:0x3c3d36, color2:0x23241f, size:0.34, life:S.life+Math.random()*0.2, grav:-16, drag:2.2 }); } }
 // the shock-vapour wake a very fast round drags for its first few metres
 export function vaporWake(b, x, y, z){ const V=BALLISTIC.vapor; if(b.bk!=='g' || b.inf || b.bt>V.t || MOBILE) return; if((b._vw||0)>b.bt) return; b._vw=b.bt+V.every;
   spawnPart(x, y, z, b.vx*0.04, 0.15, b.vz*0.04, { color:0xe8ece8, size:0.75+Math.random()*0.35, life:0.26, smoke:true, grav:0, drag:4, grow:1.6, op:0.22 }); }

@@ -1,12 +1,12 @@
 // game/startup.js — Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the
 // game is actually started (title-screen actors, saved prefs, first-launch dialogs, boot gate, first frame).
 // Server/co-op work (ARCHITECTURE.md §6) swaps what runs here — not the systems themselves.
-import { MODE, PROFILE, S, __set_muted, bootReady, buildCore, doResize, initIcons, loop, muted, openNick, refreshBestLine, refreshStartUI, setMuted, setQuality, syncMenuState, updateSpellHUD } from '../hub.js';
+import { makeCavPlayer, PROFILE, S, __set_muted, bootReady, buildCore, doResize, initIcons, loop, muted, openNick, refreshBestLine, refreshStartUI, setMuted, setQuality, syncMenuState, updateSpellHUD } from '../hub.js';
 
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore(1);
 { const R = ['cav', 'xeom', 'bagac', 'bantai']; if(!R.includes(PROFILE.unit)) PROFILE.unit = R.includes(PROFILE.lastRide) ? PROFILE.lastRide : 'xeom';   // (no-tanks: an old profile's tank → his last ride, else the xe ôm)
-  S.player = MODE.makePlayer(PROFILE.unit === 'cav' ? null : PROFILE.unit); }
+  S.player = makeCavPlayer(PROFILE.unit === 'cav' ? null : PROFILE.unit); }
 initIcons();          // paint all static HUD/menu glyphs (custom SVG icon set)
 updateSpellHUD();     // show the equipped spell's icon from the start
 refreshBestLine();    // show the saved high score on the title screen

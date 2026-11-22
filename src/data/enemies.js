@@ -3,11 +3,11 @@ import { HUMAN_SCALE, INFANTRY, TROOPS } from '../../config.js';
 
 // ----------------------------- ENEMIES -----------------------------
 export const ENEMY_DEFS = {
-  rifle:  { ...INFANTRY.rifle, scale:TROOPS.look.scale, ram:0, canShoot:false, inf:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x2a2a22,tread:0x3a3020,accent:0xc8b080} },   // Z79 foot soldiers
-  rpg:    { ...INFANTRY.rpg,   scale:TROOPS.look.scale, ram:0, canShoot:false, inf:true, rpg:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x4a5530,tread:0x3a3020,accent:0xff6a3a} },
-  gunship:{ hp:96,  speed:9,   keep:0,  range:34, fireCd:0, dmg:0, bspeed:0, score:420, scale:1.0,  ram:0, canShoot:false, air:true, pal:{hull:0x4a5040,turret:0x4a5040,barrel:0x22261e,tread:0x22261e,accent:0xff4ad0} },   // Z80 ATTACK HELICOPTER
-  heliBomb:{ hp:84, speed:18,  keep:0,  range:0,  fireCd:0, dmg:0, bspeed:0, score:400, scale:1.0,  ram:0, canShoot:false, air:true, bombHeli:true, pal:{hull:0x3a4434,turret:0x3a4434,barrel:0x1e221a,tread:0x1e221a,accent:0xff5a2a} },   // Z222 BOMBER HELICOPTER: bomb runs, no guns
-  heliTroop:{ hp:130, speed:13, keep:0,  range:0,  fireCd:0, dmg:0, bspeed:0, score:460, scale:1.0,  ram:0, canShoot:false, air:true, troopHeli:true, pal:{hull:0x5a6040,turret:0x5a6040,barrel:0x22261e,tread:0x22261e,accent:0xffc84a} },   // Z222 TRANSPORT: hovers, a squad climbs down a rope ladder
+  rifle:  { ...INFANTRY.rifle, scale:TROOPS.look.scale, canShoot:false, inf:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x2a2a22,tread:0x3a3020,accent:0xc8b080} },   // Z79 foot soldiers
+  rpg:    { ...INFANTRY.rpg,   scale:TROOPS.look.scale, canShoot:false, inf:true, rpg:true, pal:{hull:0x8a7048,turret:0x8a7048,barrel:0x4a5530,tread:0x3a3020,accent:0xff6a3a} },
+  gunship:{ hp:96,  speed:9,   keep:0,  range:34, fireCd:0, dmg:0, bspeed:0, score:420, scale:1.0,  canShoot:false, air:true, pal:{hull:0x4a5040,turret:0x4a5040,barrel:0x22261e,tread:0x22261e,accent:0xff4ad0} },   // Z80 ATTACK HELICOPTER
+  heliBomb:{ hp:84, speed:18,  keep:0,  range:0,  fireCd:0, dmg:0, bspeed:0, score:400, scale:1.0,  canShoot:false, air:true, bombHeli:true, pal:{hull:0x3a4434,turret:0x3a4434,barrel:0x1e221a,tread:0x1e221a,accent:0xff5a2a} },   // Z222 BOMBER HELICOPTER: bomb runs, no guns
+  heliTroop:{ hp:130, speed:13, keep:0,  range:0,  fireCd:0, dmg:0, bspeed:0, score:460, scale:1.0,  canShoot:false, air:true, troopHeli:true, pal:{hull:0x5a6040,turret:0x5a6040,barrel:0x22261e,tread:0x22261e,accent:0xffc84a} },   // Z222 TRANSPORT: hovers, a squad climbs down a rope ladder
 };
 // ----------------------------- Z158 ENEMY CLASSES: what each unit really is, and how it fights -----------------------------
 //   trav = turret traverse (rad/s; it fires only once the gun is laid) · stab = gun stabiliser (1 = fires on the move as well as halted)
@@ -30,7 +30,3 @@ export const TOWER = { hp:150, guardDmg:4, range:20, fireCd:1.7, h:8.2, getUp:1.
 // They fight to the death; power-ups reinforce the squad and upgrade their weapons.
 export const SOLDIER = { cap:8, base:3, hp:44, dmg:8, fireCd:0.7, range:17, ringR:7.8, scale:HUMAN_SCALE };
 // ----------------------------- TANK CREW / RIDERS (infantry mounted on the player's tank, unlocked at Stage 3) -----------------------------
-// Riders stand on the tank roof and auto-fire at enemies — short range, slow fire, each with its own HP/upgrades.
-// They're exposed: shots that hit the tank can wound them and crowding tanks chew them up. Dead = gone; power-ups reinforce.
-export const RIDER = { guardR:23, guardHit:0.3, cap:12, base:5, perUp:2, hp:30,   // Z111b 12 seats (roof + fenders + rear deck), 5 filled + 2 per KÍP LÍNH XE level
-  dmg:7, fireCd:0.9, range:14, scale:HUMAN_SCALE };   // Z174 a full-size man on the hull

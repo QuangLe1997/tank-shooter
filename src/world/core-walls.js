@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCAMP } from '../../config.js';
-import { BIOME, MOBILE, S, TANK_SCALE, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat, dressCoreGun } from '../hub.js';
+import { BIOME, MOBILE, S, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat, dressCoreGun } from '../hub.js';
 
 export const CORE_DEF = { R:24, H:9.4, T:2.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
@@ -106,7 +106,7 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
     caps.forEach(([x,z,ry,l],k)=>{ m.compose(p.set(x,0,z), q.setFromAxisAngle(up,ry), sc.set(l/3,1,1)); im.setMatrixAt(k,m); }); im.userData.shared=true; im.instanceMatrix.needsUpdate=true; im.computeBoundingSphere(); im.castShadow=true; g.add(im); }
   // the honour guard: two men at the foot of each stair of the Core's podium, at attention, facing out
   for(let k=0;k<4;k++){ const a=k*Math.PI/2; for(const sd of [-1,1]){ const r=Math.max(10.2, REALCAMP.hq.w/2+1.8), x=Math.sin(a)*r+Math.cos(a)*sd*2.3, z=Math.cos(a)*r-Math.sin(a)*sd*2.3, s=makeSoldierMesh({ enemy:false });
-      s.position.set(x, heightAt(x,z), z); s.rotation.y=a; s.scale.setScalar(TANK_SCALE*1.05); g.add(s); poseSoldier(s, 'stand', 1); s.userData.upAdd=-0.05; CORE_DEF.guards.push({ s, a, ph:Math.random()*9 }); } }
+      s.position.set(x, heightAt(x,z), z); s.rotation.y=a; s.scale.setScalar(1.26); g.add(s); poseSoldier(s, 'stand', 1); s.userData.upAdd=-0.05; CORE_DEF.guards.push({ s, a, ph:Math.random()*9 }); } }
   bakeGroup(g);   // Z233 roofs, poles, emblems… that share a material become one draw (flags, guns, guards are their own objects and stay)
   dressWalls(g, WSP, TWR, new Set([WM, OM.gold, OM.lime, OM.emblem, OM.lamp, capMat])); }
 // Z273 THE COMPOUND IN CONCRETE: once the Tripo pieces are in, every wall becomes a reinforced-concrete blast-wall section (sandbags and razor wire

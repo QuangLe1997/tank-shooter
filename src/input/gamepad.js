@@ -52,7 +52,7 @@ export function pollGamepad(dt, now){
 }
 // Z128 HIGH-ANGLE GUNS (mortar, siege rocket): the tube is tied to the hull's FRONT half (±90°) — right stick ←/→ swings inside that arc,
 //   right stick ↑/↓ lengthens / shortens the shot (barrel elevation follows the landing distance); the stick holds its value when let go
-function isLobGun(){ const g=equippedGun(); return !!g && (g.special==='rocket' || g.special==='mortar'); }
+function isLobGun(){ const g=equippedGun(); return !!g && g.special==='mortar'; }
 function lobAim(p, dt, C){ const L=PAD_CFG.lob, sens=C.sens||1, maxR=playerRange()*L.maxMul;
   if(!PAD.lobR) PAD.lobR=Math.min(maxR, Math.max(L.min, Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z) || playerRange()*0.7));
   const ry=Math.abs(PAD.ry)>L.dead ? PAD.ry : 0, rx=Math.abs(PAD.rx)>L.dead ? PAD.rx : 0;

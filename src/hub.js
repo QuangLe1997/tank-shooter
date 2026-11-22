@@ -38,7 +38,6 @@ export * from './world/props.js';
 export * from './world/real-props.js';   // Z252 Meshy cover pieces in place of the procedural ones
 export * from './world/perimeter.js';
 export * from './world/decor.js';
-export * from './world/physics.js';
 export * from './world/magma.js';   // Z258 the magma shader + the real volcano
 export * from './world/stone.js';   // Z259 photo stone (pyramids, cliffs)
 export * from './world/lava.js';   // Z187 volcanic caldera lava pools (runtime only)
@@ -147,7 +146,6 @@ export * from './combat/solid-line.js';   // Z380 the first solid thing on a rou
 export * from './game/stealth.js';   // Z377 a prone soldier unseen by far / high guns until close, lit or firing; the roll dodges rounds
 export * from './game/ride-impact.js';   // Z306 soldier mode: the ride rams scooters, cars and animals
 export * from './game/ride-call.js';   // Z306 soldier mode: the call-the-ride button, the driver's ETA, coming round by the streets
-export * from './game/mode.js';   // Z307 the tank and the soldier: one object per mode with its own rules (player, setup, update, fire, hits, death, loot, skills, HUD)
 export * from './campaign/soldier-war.js';   // Z309 soldier mode: waves of men, armour as a set piece, a tank's shell as a warned burst
 export * from './game/soldier-rank.js';   // Z350 soldier mode: experience, rank, the perk cards, what a rank brings
 export * from './actors/squad-mates.js';   // Z351 soldier mode: his own squad — a machine-gunner, a medic, more with rank

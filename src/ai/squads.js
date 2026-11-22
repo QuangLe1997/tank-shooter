@@ -62,7 +62,7 @@ function squadThink(sq, now){
   else if(sq.morale<A.breakMorale && n<sq.n0){ st='fallback'; sq.fallAt=now+R2(A.rallyT); floatText('ĐỊCH RÚT LUI', '#9be04a', { x:cx, y:2.8, z:cz }, 14); }
   else if(esc && d>R+8) st='escort';
   else if(d>R+10) st='advance';
-  else if(d<A.assaultR || (T.tank===false && n>=3 && d<R*0.7)) st='assault';
+  else if(d<A.assaultR || (T.you===false && n>=3 && d<R*0.7)) st='assault';
   else st='fm';
   if(st!==sq.state){ sq.state=st; sq.path=null; if(st==='fm'){ sq.swapAt=now+R2(A.boundT); sq.bound=0; } }
   { const C=FIELDCRAFT.smoke; if(S.stage>=2 && now>(sq.smokeAt||0) && (st==='fallback' || (st==='fm' && sp>0.45) || (st==='assault' && d>9 && sp>0.3))){   // Z220 SMOKE: to break contact, or to cross open ground under fire
@@ -84,7 +84,7 @@ function squadThink(sq, now){
   if(now>sq.swapAt && sp<0.7){ sq.bound^=1; sq.swapAt=now+R2(A.boundT); sq.flankA=Math.min(A.flankMax, sq.flankA+A.flankStep); }
   const base=Math.atan2(cx-tx, cz-tz)+sq.flank*sq.flankA, fx=tx+Math.sin(base)*R*0.75, fz=tz+Math.cos(base)*R*0.75;   // where the bounding team is working round to
   for(const e of sq.m){
-    if(e.def.rpg && T.tank){ const pa=Math.atan2(cx-tx, cz-tz)+sq.flank*1.35, rr=(e.def.range||30)*0.72; set(e, [tx+Math.sin(pa)*rr, tz+Math.cos(pa)*rr], 'crouch', false, 1); continue; }   // the RPG team goes for the flank of the tank
+    if(e.def.rpg && T.you){ const pa=Math.atan2(cx-tx, cz-tz)+sq.flank*1.35, rr=(e.def.range||30)*0.72; set(e, [tx+Math.sin(pa)*rr, tz+Math.cos(pa)*rr], 'crouch', false, 1); continue; }   // the RPG team goes for the flank of the tank
     if(e.ft===sq.bound && (e.supp||0)<0.8){ const bx=fx-e.pos.x, bz=fz-e.pos.z, bd=Math.hypot(bx,bz)||1, step=Math.min(bd, A.boundStep), gx=e.pos.x+bx/bd*step, gz=e.pos.z+bz/bd*step;
       const cv=coverSpot(gx, gz, tx, tz, 5); if(!e.sqGoal || e.sqBound!==sq.swapAt){ e.sqBound=sq.swapAt; set(e, cv?[cv.x,cv.z]:[gx,gz], null, true, 1); } }
     else set(e, null, (e.supp||0)>0.4 || d>R*0.6 ? 'prone' : 'crouch', false, A.suppressFireK); }

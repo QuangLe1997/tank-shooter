@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY } from '../../config.js';
-import { duelOn, FORTS, MOBILE, MODE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
+import { soldierWaveQueue, duelOn, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -18,7 +18,6 @@ export function diffRewardMul(){ return diffCfg().reward; }
 // Z107 the wave's composition as data (also read by combat/power.js so the power rating sees exactly what the waves send)
 export function waveSize(stage, wave){ return Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage); }   // eased: s1w1=4 → s5w5=~15
 export function waveSquads(stage, wave){ const SQ=INFANTRY.squad; return wave>=SQ.fromWave ? Math.floor(SQ.base + wave*SQ.perWave + (stage-1)*SQ.perStage) : 0; }
-export function buildWaveQueue(stage, wave){ return MODE.waveQueue(stage, wave); }   // Z309 the soldier's war: men first, an attack helicopter as the set piece (campaign/soldier-war.js)
 export function rollWaveEvent(){
   WAVE.event=null; WAVE.eventBanner=null; WAVE.eventColor='#9bb0c0'; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false; WAVE.fixedEdge=null; WAVE.columnLeft=0;
   if(scriptedEvent()) return;                                   // Z83 operation script has this wave
@@ -37,7 +36,7 @@ export function startWave(now){
   if(S.wave===1){ tip('drive2'); if(OBJ&&OBJ.alive) tip('objective'); }
   rollWaveEvent();
   if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
-  WAVE.spawnQueue = buildWaveQueue(S.stage, Math.min(S.wave, WAVE.perStage));
+  WAVE.spawnQueue = soldierWaveQueue(S.stage, Math.min(S.wave, WAVE.perStage));   // Z309 the soldier's war: men first, an attack helicopter as the set piece (campaign/soldier-war.js)
   if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*BALANCE.wave.hordeMul)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
   else if(['ambush','airraid'].includes(WAVE.event)) applyScriptedWave(now);   // Z83 scripted beats (airraid also from the random roll)
   trimWaveForSupply(WAVE.spawnQueue);   // Z194 lost fuel → fewer tanks · lost barracks → fewer squads
@@ -49,7 +48,7 @@ export function startWave(now){
 }
 // Z173 WAVE PLANS — a wave is an operation, not a trickle: PINCER (two arms closing from both flanks of the tank) · PROBE (a scout squad first, the main body
 //   a few seconds later) · PREP (an artillery barrage walks over you, then they come) — and a squad that rolls in right behind a tank moves as its escort
-function planWave(now){ WAVE.plan=null; WAVE.pk=0; WAVE.lastTank=null; WAVE.probeHeld=false;
+function planWave(now){ WAVE.plan=null; WAVE.pk=0; WAVE.probeHeld=false;
   if(WAVE.event || (S.stage===1 && S.wave<=1 && (S.loop||0)===0)) return; const r=Math.random();
   if(r<0.34){ WAVE.plan='pincer'; WAVE.pincerA=Math.random()*Math.PI*2; setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Địch đánh gọng kìm — chúng đến từ hai hướng!'); }, 2600); }
   else if(r<0.54){ WAVE.plan='probe'; const i=WAVE.spawnQueue.indexOf('squad'); if(i>0){ WAVE.spawnQueue.splice(i,1); WAVE.spawnQueue.unshift('squad'); } else if(i<0) WAVE.spawnQueue.unshift('squad');
@@ -85,7 +84,7 @@ export function updateWaves(dt, now){
   if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
     const t=WAVE.spawnQueue.shift(); if(underCut(t)){ WAVE.spawnAt=now+0.5; return; }   // Z226 its depot under the battlefield was wrecked: this one never comes
     let sp=(WAVE.plan==='pincer' && pincerPoint()) || edgeSpawnPoint(); const n0=enemies.length;
-    if(t==='squad'){ const L=WAVE.lastTank; if(L && enemies.includes(L.e) && now-L.at<6) sp={ ...L.sp, escort:L.e };   // Z173 right behind a tank → its escort
+    if(t==='squad'){
       spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;
       if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact
       return; }

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
-import { reviveSoldierMesh, ENEMY_DEFS, GLOW, S, TANK_SCALE, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip } from '../hub.js';
+import { AIR_SCALE, reviveSoldierMesh, ENEMY_DEFS, GLOW, S, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -21,7 +21,7 @@ export function getEnemyMesh(type){
   let m = enemyPool[type].pop();
   const _d=ENEMY_DEFS[type];
   if(!m){ if(_d.inf) m=infMesh(type); else if(_d.air) m=_d.bombHeli ? buildHind() : _d.troopHeli ? buildHip() : buildGunship(_d.pal); }
-  m.scale.setScalar(_d.scale*(_d.inf?1:TANK_SCALE)); if(_d.inf){ m.rotation.set(0,0,0); reviveSoldierMesh(m); const u=m.userData; u.pose=null; if(u.body){ u.body.rotation.set(0,0,0); u.body.position.set(0,0,0); } if(u.arms) u.arms.rotation.x=0; if(u.up) u.up.rotation.x=0; }   // Z105 a recycled man stands up again                       // always reset (elites scaled it up)   · (an airframe at the world's vehicle scale)
+  m.scale.setScalar(_d.scale*(_d.inf?1:AIR_SCALE)); if(_d.inf){ m.rotation.set(0,0,0); reviveSoldierMesh(m); const u=m.userData; u.pose=null; if(u.body){ u.body.rotation.set(0,0,0); u.body.position.set(0,0,0); } if(u.arms) u.arms.rotation.x=0; if(u.up) u.up.rotation.x=0; }   // Z105 a recycled man stands up again                       // always reset (elites scaled it up)   · (an airframe at the world's vehicle scale)
   const fx=m.getObjectByName('eliteFX'); if(fx){ m.remove(fx); if(fx.material) fx.material.dispose(); }   // strip old elite glow
   m.visible=true; return m;
 }
@@ -42,7 +42,7 @@ export function spawnEnemy(type, x, z){
   const e={ type, def, mesh, turret:mesh.userData.turret, muzzle:mesh.userData.muzzle,
     pos:new THREE.Vector3(x,0,z), vel:new THREE.Vector3(),
     hp:hp0, maxHp:hp0, r:(def.inf?1.5:1.85)*def.scale, facing:0, aim:0,
-    fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:def.burst||0, ramAt:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
+    fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
     loot: Math.random()<BALANCE.drop.enemy*cMod('lootChanceMul')*Math.min(LOOT.source.chanceCap, LOOT.source.chanceBase+def.hp*LOOT.source.chancePerHp), elite:false };   // Z93 tougher hulls carry loot more often  // some tanks carry a power-up (CONTRACT can boost loot)
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on a man)
   if(def.inf){ e.r=0.55; e.ph=Math.random()*6; e.aimT=0; e.loot=Math.random()<0.04; e.fireAt+=0.8; }

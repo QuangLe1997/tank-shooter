@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, spawnDrone, tip, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
+import { soldierLoot, BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, spawnDrone, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -102,7 +102,7 @@ export function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def
 // Z306 the soldier's loot (Z329 the gun crate brings a hand weapon)
 export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
   const pool=POWERUPS.filter(u=>(u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
-export function pickLoot(tier){ return MODE.loot(tier); }   // tier = how tough the source was (0 common · 1 rare · 2 epic) · Z307 the soldier's table
+export function pickLoot(tier){ return soldierLoot(tier); }   // tier = how tough the source was (0 common · 1 rare · 2 epic) · Z352 a medal or an ammo crate now and then, else trooperLoot
 export function dropPowerup(pos, tier, forced){
   tip('loot');
   tier=tier|0; const def=forced||pickLoot(tier), t=def.tier||0;   // Z104 forced = re-drop a carried item (rally point)

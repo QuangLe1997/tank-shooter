@@ -1,5 +1,5 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
-import { TANK_DEATH } from '../../config.js';
+import { BLAST_DEATH } from '../../config.js';
 import { BIOME, MOBILE, S, blastLight, bulletImpact, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, wetAt } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
@@ -21,19 +21,14 @@ export function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), gy=heightA
   bulletImpact('dirt', x, gy+0.05, z, 0, 0, k);   // Z419 dark grit spurting up + a puff of the ground's own dust (the clods were glowing additive dots, at a fixed height)
   if(r>=0.5) burst({x,z}, BIOME.ground, Math.max(1,Math.floor(2*k)), 1.6*k, {y:gy+0.4, life:0.7, size:1.1*k, smoke:true, grav:-0.4, drag:2.2, up:1.2, op:0.45}); }   // a shell's bigger dust
 // ----- per-gun IMPACT spray (non-lethal hit) — each weapon "reads" differently on contact -----
-export function impactFX(pos, fx, k, armour){ k=k||1; sfx(k>2.2?'hitHeavy':'hit', pos, 0.6+k*0.25);   // Z102 every strike on armour is heard
-  // Z192 on a tank's armour, armourHit() throws the spall instead — directional, out of the hole
-  if(k>=1.3 && !armour){ const n=Math.min(MOBILE?5:10, Math.floor(3+k*2.5)), y0=(pos.y||1.2);   // Z168 a hard hit tears off glowing fragments that arc out, land and skip across the ground
+export function impactFX(pos, fx, k){ k=k||1; sfx(k>2.2?'hitHeavy':'hit', pos, 0.6+k*0.25);   // Z102 every strike is heard
+  if(k>=1.3){ const n=Math.min(MOBILE?5:10, Math.floor(3+k*2.5)), y0=(pos.y||1.2);   // Z168 a hard hit tears off glowing fragments that arc out, land and skip across the ground
     for(let i=0;i<n;i++){ const a=Math.random()*6.283, sp=4+Math.random()*7*Math.min(2,k); spawnPart(pos.x, y0, pos.z, Math.cos(a)*sp, 3+Math.random()*6, Math.sin(a)*sp, { color:0xfff0b0, color2:0xff5a10, size:0.14+0.06*k, life:0.9+Math.random()*0.7, grav:-18, drag:0.4 }); }
     spawnPart(pos.x, y0, pos.z, 0, 0, 0, { tex:'flash', color:0xffffff, size:1.6+k*0.8, life:0.06, grav:0, drag:0 }); }
   if(fx==='blast'){ ringPulse(pos, 0xffd27a, 2.0*k); burst(pos, 0xfff1c0, Math.floor(7*k), 9*k, {life:0.26, size:1.2*k, up:3, drag:3}); burst(pos, 0xff7a2e, Math.floor(5*k), 6*k, {life:0.34, size:1.05*k, drag:3});
     burst(pos, 0x281e14, Math.floor(2+k), 4*k, {life:0.55, size:1.3*k, smoke:true, grav:-0.5, drag:2, op:0.4});   // lingering fire-lit smoke
     muzzleLight.position.set(pos.x,1.6,pos.z); muzzleLight.color.setHex(0xff9a4a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4*k); }
-  else if(fx==='he30'){ spawnPart(pos.x, pos.y||1.2, pos.z, 0,0,0, { tex:'flash', color:0xfff2d0, size:1.6*k, life:0.05, grav:0, drag:0 });   // Z231 30 mm HE-I: a sharp pop, a fistful of burning fragments, a puff of black smoke
-    burst(pos, 0xffb050, Math.floor(6*k), 8*k, {life:0.22, size:0.55*k, grav:-5, drag:4}); burst(pos, 0x2a2420, 2, 2.5, {life:0.6, size:1.1*k, smoke:true, grav:-0.4, drag:2, op:0.38}); ringPulse(pos, 0xffb060, 1.1*k); }
-  else if(fx==='frag'){ ringPulse(pos, 0xffc070, 1.5*k); burst(pos, 0xffd27a, Math.floor(9*k), 13*k, {life:0.26, size:0.55*k, grav:-6, drag:4}); }                                  // shrapnel spray
   else if(fx==='pierce'){ ringPulse(pos, 0xd6b8ff, 1.9*k); burst(pos, 0xeaddff, Math.floor(5*k), 15*k, {life:0.2, size:0.5*k, grav:-2, drag:6}); }                                // clean punch-through streak
-  else if(fx==='ice'){ ringPulse(pos, 0x9fe8ff, 1.7*k); burst(pos, 0xd8f6ff, Math.floor(7*k), 8*k, {life:0.42, size:0.7*k, grav:7, drag:3}); burst(pos, 0x7fd0ff, Math.floor(3*k), 5*k, {life:0.3, size:0.5*k, drag:5}); }   // frost shards fall
   else if(fx==='shock'){ ringPulse(pos, 0x7fd0ff, 1.5*k); for(let i=0;i<Math.floor(5*k);i++){ const a=Math.random()*6.283; spawnPart(pos.x,1.4,pos.z, Math.cos(a)*9,3,Math.sin(a)*9, {color:0xbfe8ff, size:0.7*k, life:0.16, grav:0, drag:5}); } }  // electric crackle
   else { ringPulse(pos, 0xffd27a, 1.4*k); burst(pos, 0xffe6a0, Math.floor(3*k), 6*k, {life:0.22, size:0.7*k, grav:-4, drag:5}); }                                                // 'spark' — light bullets
 }
@@ -47,19 +42,19 @@ export const KILLFX = {
   shock: { fire:0.4, smoke:0.5, r1:0xbfe8ff, r2:0x4fb0ff, spark:0xeaffff, big:'explode', sml:'explode', extra:'shock', debris:0x7fd0ff },   // electrocuted
 };
 // grand tank-death blast: white flash → roiling fireball → flying burning shards → rising smoke column.
-// fx (per killing gun) restyles the fire/smoke/sound: ice = frozen shatter, shock = electrocuted, blast = heavier, etc.
-export function tankExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire'){
+// fx (per killing gun) restyles the fire/smoke/sound: shock = electrocuted, blast = heavier, etc.
+export function vehicleExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fire'){
   const cf=KILLFX[fx]||KILLFX.fire, fM=cf.fire, sM=cf.smoke;
-  decalScorch(pos.x, pos.z, 2.2+scale*1.6, fx==='ice'?0.35:1); decalCrater(pos.x, pos.z, 0.8+scale*0.55, 0.9);
+  decalScorch(pos.x, pos.z, 2.2+scale*1.6, 1); decalCrater(pos.x, pos.z, 0.8+scale*0.55, 0.9);
   if(fM>0.05) fireball(pos, scale*0.75);
   burst(pos, 0xffffff, Math.floor(7*scale),  9*scale,  {life:0.12, size:1.7*scale, up:5, grav:-2, drag:7});   // quick white flash (always)
   if(fM>0.05) burst(pos, 0xffb04a, Math.floor(6*fM*scale), 10*scale, {life:0.3, size:1.4*scale, up:5, drag:2.2});   // flare (the rolling fireball itself is fireball())
   burst(pos, cf.spark, Math.floor(14*scale), 18*scale, {life:0.38, size:0.4*scale, up:3, grav:-9, drag:1.3});  // sparks blast out & clear fast
   if(sM>0.05) burst(pos, 0x16110a, Math.floor(5*sM*scale), 5*scale, {life:0.5, size:2.0*scale, up:4, grav:-1.4, drag:2.2, smoke:true, op:0.42}); // light smoke
-  dustSkirt(pos.x, pos.z, scale*1.2); rollSmoke(pos, scale, sM, TANK_DEATH.smokeK);   // Z402 a puff that clears, not a column over a hulk · Z312 the shock throws the ground's own dust out in a ring; a dark cloud boils up and hangs (no flat coloured rings, no glass dome)
-  if(fx==='ice' || fx==='shock') shockDome(pos.x, pos.z, 3.5+scale*3.2, fx==='ice'?0xbfeaff:0x9fd8ff); blastLight(pos.x, pos.z, 70+scale*25, 0.55+scale*0.12);   // Z189 the ground lit by the blast (the dome only for the frost / shock rounds)
+  dustSkirt(pos.x, pos.z, scale*1.2); rollSmoke(pos, scale, sM, BLAST_DEATH.smokeK);   // Z402 a puff that clears, not a column over a hulk · Z312 the shock throws the ground's own dust out in a ring; a dark cloud boils up and hangs (no flat coloured rings, no glass dome)
+  if(fx==='shock') shockDome(pos.x, pos.z, 3.5+scale*3.2, 0x9fd8ff); blastLight(pos.x, pos.z, 70+scale*25, 0.55+scale*0.12);   // Z189 the ground lit by the blast (the dome only for the shock rounds)
   if(fM>0.05){ const gy=heightAt(pos.x,pos.z); for(let i=0;i<Math.round((MOBILE?4:8)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*1.2*scale, gy+1.2+Math.random()*scale, pos.z+(Math.random()-0.5)*1.2*scale, (Math.random()-0.5)*1.4, 7+Math.random()*7, (Math.random()-0.5)*1.4, { tex:'fire', color:0xfff0c0, color2:0xb8260a, size:(1.6+Math.random())*scale, life:0.7+Math.random()*0.4, grav:4, drag:1.4, grow:1.4*scale });   // a column of fire punching up
-    setTimeout(()=>{ if(S.mode==='paused') return; for(let i=0;i<Math.round((MOBILE?3:6)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*2*scale, gy+6*scale+Math.random()*2, pos.z+(Math.random()-0.5)*2*scale, (Math.random()-0.5)*3, 1.2+Math.random(), (Math.random()-0.5)*3, { color:0x1a1410, size:(2.4+Math.random())*scale, life:3.2*TANK_DEATH.smokeK+0.6, smoke:true, grav:0.1, drag:0.7, grow:3*scale, op:0.6 }); }, 280); }   // … capped by a rolling black mushroom
+    setTimeout(()=>{ if(S.mode==='paused') return; for(let i=0;i<Math.round((MOBILE?3:6)*scale);i++) spawnPart(pos.x+(Math.random()-0.5)*2*scale, gy+6*scale+Math.random()*2, pos.z+(Math.random()-0.5)*2*scale, (Math.random()-0.5)*3, 1.2+Math.random(), (Math.random()-0.5)*3, { color:0x1a1410, size:(2.4+Math.random())*scale, life:3.2*BLAST_DEATH.smokeK+0.6, smoke:true, grav:0.1, drag:0.7, grow:3*scale, op:0.6 }); }, 280); }   // … capped by a rolling black mushroom
   { const p=S.player; if(p){ const d=Math.hypot(p.pos.x-pos.x, p.pos.z-pos.z); if(d<40 && gradePass.uniforms.flash) gradePass.uniforms.flash.value=Math.min(0.3, gradePass.uniforms.flash.value+0.22*(1-d/40)*Math.min(1.5,scale/1.5)); } }
   // themed extra: frozen shards rain / electric arcs / shrapnel
   if(cf.extra==='ice'){ for(let i=0;i<Math.floor(10*scale);i++){ const a=Math.random()*6.283, sp=4+Math.random()*9; spawnPart(pos.x,1.6,pos.z, Math.cos(a)*sp, 5+Math.random()*6, Math.sin(a)*sp, {color: Math.random()<0.5?0xd8f6ff:0x7fd0ff, size:(0.4+Math.random()*0.5)*scale, life:0.6+Math.random()*0.4, grav:14, drag:1.2}); } ringPulse(pos, 0xffffff, scale*2.8); }

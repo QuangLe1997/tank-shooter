@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCITY, RIDE, XEOM } from '../../config.js';
-import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, crushables, curlHand, fireball, haptic, heightAt, ik2, loadGLTF, rollHand, sfx, spawnPart, MODE } from '../hub.js';
+import { LAND, MOBILE, REAL_CITY, S, arena, burst, contactShadow, crushables, curlHand, fireball, haptic, heightAt, ik2, loadGLTF, rollHand, sfx, spawnPart } from '../hub.js';
 
 const TR = { list:[], runs:[], ims:[], on:false, juncs:[], pool:[], frame:0, stats:{ mm:0, sw:0, ut:0, jw:0, shot:0 } };
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
@@ -425,7 +425,6 @@ function meet(a, b, [nx, nz, d], I){ const ma = a.moto ? I.motoM : 1, mb = b.mot
 export function updateTraffic(dt){ if(!TR.on) return; if(!TR.ims.length || !TR.ims[0].parent){ TR.on = false; return; } dt = Math.min(dt, 0.05); if(!(dt > 0)) return;
   const p = S.player, C = REALCITY.traffic, now = performance.now(); TR.frame++;
   for(const v of TR.list){ if(v.dead){ v.respawn -= dt; if(v.respawn <= 0) spawn(v); continue; }
-    if(p && MODE.crushes && Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < (v.moto ? 1.9 : 2.8)){ wreck(v, false); continue; }   // run over (Z306 only a tank flattens what it drives into — the soldier's ride has its own collisions, game/ride-impact.js)
     if(v.st) stateStep(v, dt, p);
     else if(v.wait > C.stuckT && (!p || Math.hypot(p.pos.x - v.x, p.pos.z - v.z) > C.farR)) spawn(v); }   // (stuck a long while where nobody sees it: it goes round another way)
   for(const v of TR.list) if(!v.dead) pose(v);

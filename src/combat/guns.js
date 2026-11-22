@@ -1,27 +1,26 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, LOOT } from '../../config.js';
-import { BIOME, GUNS, S, TANK_SCALE, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { BIOME, GUNS, S, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
-export let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
-export function computeEnv(){ const b=BIOME.name, t=S.tod; ENVMOD={ night:t==='night', fire:1, freeze:1, cryo:1, he:1, longRange:1 };
-  if(ENV.hot.biomes.includes(b)||ENV.hot.hours.includes(t)){ ENVMOD.fire*=ENV.hot.fire; ENVMOD.freeze*=ENV.hot.freeze; }
-  if(ENV.cold.biomes.includes(b)){ ENVMOD.fire*=ENV.cold.fire; ENVMOD.freeze*=ENV.cold.freeze; ENVMOD.cryo*=ENV.cold.cryo; }
-  if(ENV.urban.biomes.includes(b)) ENVMOD.he*=ENV.urban.he;
-  if(ENV.open.biomes.includes(b) && t!=='night') ENVMOD.longRange=ENV.open.longRange; }
+export let ENVMOD = { night:false, fire:1, he:1 };
+export function computeEnv(){ const b=BIOME.name, t=S.tod; ENVMOD={ night:t==='night', fire:1, he:1 };
+  if(ENV.hot.biomes.includes(b)||ENV.hot.hours.includes(t)){ ENVMOD.fire*=ENV.hot.fire; }
+  if(ENV.cold.biomes.includes(b)){ ENVMOD.fire*=ENV.cold.fire; }
+  if(ENV.urban.biomes.includes(b)) ENVMOD.he*=ENV.urban.he; }
 export function conditionsText(){ const c=[];
-  if(ENVMOD.night) c.push('BAN ĐÊM — tầm bắn −15% (pháo điện từ & tên lửa khoá không ảnh hưởng), địch ngắm kém hơn');
-  if(ENVMOD.fire>1) c.push('NẮNG NÓNG — lửa +25%, đóng băng −30%'); if(ENVMOD.freeze>1) c.push('GIÁ RÉT — đóng băng +50%, súng băng +20%, lửa −25%');
+  if(ENVMOD.night) c.push('BAN ĐÊM — tầm bắn −15%, địch ngắm kém hơn');
+  if(ENVMOD.fire>1) c.push('NẮNG NÓNG — lửa +25%'); else if(ENVMOD.fire<1) c.push('GIÁ RÉT — lửa −25%');
   if(S.weather && S.weather!=='clear'){ const W=weatherDef(S.weather); c.push(W.vi+' — tầm bắn −'+Math.round((1-W.range)*100)+'%'); }
-  if(ENVMOD.he>1) c.push('ĐỔ NÁT ĐÔ THỊ — đạn nổ +20%'); if(ENVMOD.longRange>1) c.push('ĐỊA HÌNH TRỐNG — tầm pháo 120 / pháo điện từ / pháo HESH +10%');
+  if(ENVMOD.he>1) c.push('ĐỔ NÁT ĐÔ THỊ — đạn nổ +20%');
   return c.join('  ·  '); }
-export function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='CRYO'?ENVMOD.cryo : type==='HE'?ENVMOD.he : 1; }
+export function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='HE'?ENVMOD.he : 1; }
 export function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (m[armor]||1) : 1; }
 export function armorOf(e){ return ARMOR[e.type]||'M'; }
 export function siegeMul(){ const p=S.player; return p && p.buffUntil && performance.now()/1000 < (p.buffUntil.siege||0) ? LOOT.siege.mul : 1; }   // Z111b ĐẠN PHÁ THÀNH buff
 export function structMul(type, bl){ const m=type&&DMG_TYPE[type]; if(!m) return 1; if(bl.kind==='gate'||bl.kind==='fortwall') return Math.max(FORT.shotStructMin, m.struct); return (bl.kind==='tower' && m.tower) ? m.tower : m.struct; }   // Z111 fortress gate / wall: no gun is weak against it
-export function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r*weatherRange(); }   // Z115 + NÒNG parts
+export function gunReach(id){ const g=GUNS[id]||GUNS.carbine; let r=(g.rng||1); if(ENVMOD.night) r*=ENV.night.range; return r*weatherRange(); }
 export function bulletFalloff(b){ if(!b.reach || b.fall>=1) return 1; const d=Math.hypot(b.x-b.ox, b.z-b.oz), f=Math.max(0, Math.min(1, (d/b.reach-0.55)/0.45)); return 1 - f*(1-b.fall); }
 export let _effT=0;
 export function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<1100) return; if(mul>=1.3){ _effT=n; floatText('HIỆU QUẢ ×'+mul.toFixed(1), '#ffb84a', new THREE.Vector3(pos.x,3.2,pos.z), 14); } else if(mul<=0.6){ _effT=n; floatText('YẾU TRƯỚC GIÁP', '#9aa3ad', new THREE.Vector3(pos.x,3.2,pos.z), 13); } }
@@ -74,7 +73,7 @@ export function updateReload(now){
   const ready = !reloading && now < (p.readyUntil||0);
   if(reloading || ready){
     reloadSprite.visible=true;
-    reloadSprite.position.set(p.pos.x, 3.4*p.scale*TANK_SCALE + 3.2, p.pos.z);
+    reloadSprite.position.set(p.pos.x, (p.lift||0) + 4.4, p.pos.z);   // over his head
     const rem = reloading ? eq.rU-now : 0;
     drawReloadDial(reloading ? 1-rem/eq.rD : 1, rem, ready);
   } else reloadSprite.visible=false;

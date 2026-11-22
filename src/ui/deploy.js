@@ -1,7 +1,7 @@
 // ui/deploy.js — Z105 DEPLOYMENT before every stage: troop strength, key points to post men at,
 //   specialists (MG / mortar / sapper), the soldier's guns & ammo and a map of the field. Confirm → men spawn at their posts.
 import { DEPLOY, TROOPS } from '../../config.js';
-import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDER, RIDGES, S, clampFieldXZ, clearFireteam, core, crewTarget, escapeHtml, fieldOutline, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip, spellNow } from '../hub.js';
+import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDGES, S, clampFieldXZ, clearFireteam, core, escapeHtml, fieldOutline, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip, spellNow } from '../hub.js';
 
 export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
@@ -23,7 +23,7 @@ export function autoDeploy(){ const D=_dp; let left=D.total; for(const q of D.po
   const c=D.posts.find(q=>q.id==='core'), r=D.posts.find(q=>q.id==='rally'); while(left>0){ const b=left; if(c) put(c,1); if(r) put(r,1); for(const q of D.posts) if(q.id==='left'||q.id==='right') put(q,1); if(left===b) break; }
   D.roles={ mg:Math.min(1,roleMax('mg')), mortar:Math.min(1,roleMax('mortar')), sapper:Math.min(1,roleMax('sapper')) }; render(); }
 export function openDeploy(onGo, quick){
-  const posts=deployPosts().map(q=>Object.assign(q,{ n:0 })), total=Math.min(RIDER.cap, crewTarget()) + squadWant();
+  const posts=deployPosts().map(q=>Object.assign(q,{ n:0 })), total=DEPLOY.men + squadWant();   // (no-tanks: was the tank's crew seats)
   _dp={ posts, roles:{ mg:0, mortar:0, sapper:0 }, total, onGo }; S.mode='deploy';
   const mem=PROFILE.deploy; if(mem && mem.v===1){ let left=total; for(const q of posts){ const k=Math.max(0, Math.min(q.max, mem.posts[q.id.replace(/\d+$/,'')]||0, left)); q.n=k; left-=k; }
     for(const k of ['mg','mortar','sapper']) _dp.roles[k]=Math.min(roleMax(k), mem.roles[k]||0); render(); }

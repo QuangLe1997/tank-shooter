@@ -1,14 +1,8 @@
-// core/config.js — runtime constants derived from config + device: arena size, MOBILE, tank scale, player palette, current BIOME
-import { CLIMB, LOCKON } from '../../config.js';
-import { BIOMES, GUNS, PLAYER, S, gunReach } from '../hub.js';
+// core/config.js — runtime constants derived from config + device: arena size, MOBILE, the aircraft's draw scale, player range, current BIOME
+import { CLIMB } from '../../config.js';
+import { BIOMES, PLAYER, S, gunReach } from '../hub.js';
 
 performance.mark('boot:module');
-/* =========================================================================
-   THIẾT GIÁP CHIẾN (Steel Siege) — Tank Shooter
-   PHASE 1: engine + player tank (move / 360° aim / dash) + twin-stick input.
-   Kịch bản: xem GAME_DESIGN.md. Build theo phase, mỗi phase 1 commit.
-   ========================================================================= */
-
 // ----------------------------- CONFIG -----------------------------
 const _TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 export const ARENA = _TOUCH ? 130 : 184;      // Z144 desktop: ×2 the ground (184² vs 130²) — roomier battles; phones keep 130 for speed · half-extent of the bounding square (world units) — Z104 60→84, Z106 →130; the playable field is the irregular outline in world/field.js
@@ -22,13 +16,13 @@ export const NATIVE = !!(typeof window!=='undefined' && window.__NATIVE);
 export const APPLE = typeof navigator!=='undefined' && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
 export const MSAA = APPLE ? (MOBILE ? 4 : 2) : (MOBILE ? 0 : 2);   // Z150 Mac: 2 samples (4 cost a third of the frame on a big window for an edge you can't tell apart)   // samples on the post-processing buffer (the canvas' own antialias never reaches the screen through it)
 export const SHADOW_MAP = 2048;   // Z150 the Mac app too: 4096 cost ~15% of the frame (shadows are snapped + fitted to the view, 2048 stays crisp)
-export const TANK_SCALE = 1.2;   // global tank visual+hitbox scale — bigger, more imposing tanks fill the arena better (bosses already huge, excluded)
+export const AIR_SCALE = 1.2;   // the helicopters are drawn a fifth over their table size (no-tanks: was TANK_SCALE, the tanks' scale)
 // effective combat range: grows with stage + permanent upgrade + timed buff
 export function playerRange(){ const p=S.player; if(!p) return PLAYER.rangeBase;
   const buff = (S.timeNow||0) < p.buffUntil.range ? 1.4 : 1;
-  const gid = p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'rifle';
+  const gid = p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'carbine';
   const r=(PLAYER.rangeBase + (S.stage-1)*3) * p.rangeMul * buff * gunReach(gid) * (1 + Math.min(CLIMB.range.max, (p.lift||0)*CLIMB.range.perM));   // Z451 up on a wall he sees and reaches further
-  return GUNS[gid] && GUNS[gid].lock ? Math.min(r, LOCKON.range) : r; }   // Z238 the lock-on missile flies no further than its cap — the range ring and auto-fire follow it
+  return r; }
 export const CAMPAIGN_BIOMES = 5;   // stages auto-rotate through the first 5; MEADOW is picker-only
 export let BIOME = BIOMES[0];
 export function __set_BIOME(v){ BIOME=v; return v; }   // Z98 cross-module write → setter (imported bindings are read-only)

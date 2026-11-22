@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, HELI, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, cMod, clampField, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, heightAt, launchEnemyMissile, loopDmgMul, scene, sfx, smokeSpread, spawnBullet, spawnPart, tankExplode, wrapAngle, realAir, playerSeen } from '../hub.js';
+import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, cMod, clampField, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, heightAt, launchEnemyMissile, loopDmgMul, scene, sfx, smokeSpread, spawnBullet, spawnPart, vehicleExplode, wrapAngle, realAir, playerSeen } from '../hub.js';
 
 
 export const _pv=new THREE.Vector3();   // (a shared temp)
@@ -128,7 +128,7 @@ export function updateHeliDown(dt){
     spawnPart(e.pos.x,e.pos.y+0.5,e.pos.z,(Math.random()-0.5),1.5,(Math.random()-0.5),{color:0x15120f, size:1.6, life:1.2, smoke:true, grav:0.4, drag:1, grow:1.4, op:0.55});
     spawnPart(e.pos.x,e.pos.y,e.pos.z,(Math.random()-0.5)*2,1,(Math.random()-0.5)*2,{tex:'fire', color:0xffe0a0, color2:0xff3a0a, size:1.0, life:0.35, grav:1, drag:2});
     const gy=heightAt(e.pos.x,e.pos.z);
-    if(e.pos.y<=gy+0.6){ const pos={x:e.pos.x,z:e.pos.z}; tankExplode(pos, 0xff7a3d, 1.6, e.def.pal, 1, 'fire'); fireball(pos, 1.6); deformCrater(pos.x,pos.z,2.4,0.55); decalScorch(pos.x,pos.z,4,1);
+    if(e.pos.y<=gy+0.6){ const pos={x:e.pos.x,z:e.pos.z}; vehicleExplode(pos, 0xff7a3d, 1.6, e.def.pal, 1, 'fire'); fireball(pos, 1.6); deformCrater(pos.x,pos.z,2.4,0.55); decalScorch(pos.x,pos.z,4,1);
       aoeDamage(pos.x,pos.z,5,45,false,performance.now()/1000,'HE'); S.shake=Math.min(4,S.shake+1.6);
       m.visible=false; ud.body.rotation.set(0,0,0); (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); HELI_DOWN.splice(i,1); } }
 }

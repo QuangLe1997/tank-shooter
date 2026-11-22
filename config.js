@@ -26,15 +26,6 @@ export const BALANCE = {
   up:     { damage:0.08, boss:0.12, range:0.10, reload:0.12, mag:0.15, hp:20, armor:0.06, engine:0.10, turbo:0.12, ramplate:0.25, ramguard:0.12 },
   // gun MASTERY: each duplicate gun pickup = +1 xp; cross a threshold → that gun levels up (1→4, permanent).
   // Higher level = more damage, faster fire (lower fireCd), faster reload. Long grind: ~12/15/18 dups per level.
-  mastery:{ xp:[0,12,27,45], maxLevel:4, dmgPerLevel:0.10, fireCdPerLevel:0.06, reloadPerLevel:0.08 },
-  // ARTILLERY LOCK strike (stage≥2 mortar barrage): locks your spot → red ring warns → arcing missile slams in.
-  // Dodge window = lockTime+flightTime (move out of `radius`). Damage falls off by distance: bullseye = dmgMax, edge = dmgMin, outside = 0.
-  // Designed dodgeable: player base maxSpeed 26 clears radius 6.5 in ~0.25s, far under the ~2s window — threat is REACTION + barrage density.
-  artillery:{ radius:6.5, innerFrac:0.4, dmgMax:32, dmgMin:8, coreMul:0.5,
-    lockTime:0.9, flightTime:1.2, gravity:38,   /* Z218 a higher, plunging arc */
-    warnLead:1.3, restMin:5, restMax:8, shotSpacing:0.65, shotsBase:2, shotsPerMortar:1, shotsMax:6 },
-  // enemy AGGRESSION & ACCURACY — both ramp with stage (diffScale 0→1 over S1→S5) and NG+ loop.
-  // fireChance = how proactively they shoot (early = hesitant, late = relentless); spread shrinks → far more accurate late.
   aggro:{ fireChanceBase:0.55, fireChanceRamp:0.55, spreadBase:0.5, spreadDrop:0.82, leadFrom:0.3, rateBase:2.2, rateDrop:0.95, accurateMul:0.22, loopAcc:0.12 },
   // FLAMETHROWER burn (damage-over-time): DoT = dps × level × dt. Each spray-tick adds `add` to level (caps at lvlMax);
   // level also creeps up on its own (`grow`/s) so any fire "cháy càng ngày càng lớn". `duration` resets on every tick.
@@ -76,13 +67,9 @@ export const DMG_TYPE = {
   HE:   { L:1.20, M:1.00, H:0.85, A:1.00, struct:1.5, label:'HIGH-EXPLOSIVE', vi:'NỔ MẠNH' },// blast + splinters — crowds, light vehicles, structures
   FRAG: { L:1.35, M:0.95, H:0.55, A:1.10, struct:0.7, label:'FRAGMENTATION', vi:'MẢNH' }, // canister / pellets — brutal close on soft targets
   FIRE: { L:1.30, M:1.00, H:0.75, A:0.40, struct:0.3, tower:1.6, label:'INCENDIARY', vi:'CHÁY' },
-  CRYO: { L:1.00, M:1.00, H:0.85, A:0.90, struct:0.5, label:'CRYOGENIC', vi:'BĂNG' },
   ELEC: { L:1.00, M:1.10, H:1.00, A:1.25, struct:0.4, label:'ELECTRIC', vi:'ĐIỆN' },
-  HESH: { L:1.00, M:1.25, H:1.05, A:0.60, struct:3.0, label:'HESH', vi:'PHÁ CÔNG SỰ' },         // squash-head: spalls medium armour, levels cover & towers
-  TBX:  { L:1.40, M:1.10, H:0.70, A:0.80, struct:1.8, tower:2.2, label:'THERMOBARIC', vi:'NHIỆT ÁP' },   // Z81 fuel-air: wrecks crowds, infantry & bunkers; poor vs heavy armour
 };
-export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', mortar:'M', sniper:'M', carrier:'M', shield:'H', heavy:'H', boss:'H',
-  rifle:'L', rpg:'L', engineer:'L', pyro:'M', atgm:'M', gunship:'A', heliBomb:'A', heliTroop:'A', launcher:'L' };   // Z116 the rocket truck is soft-skinned   // A = aircraft (Z80): only direct fire / flak / missiles reach it
+export const ARMOR = { rifle:'L', rpg:'L', gunship:'A', heliBomb:'A', heliTroop:'A' };   // Z116 the rocket truck is soft-skinned   // A = aircraft (Z80): only direct fire / flak / missiles reach it
 // ============================================================================
 // BATTLEFIELD ROSTER v2 (Z79) — enemy infantry on foot. Squads join waves from W2; RPG teams from stage 2.
 //   squads per wave = floor(base + wave·perWave + (stage−1)·perStage)   (S1W2 = 1 … S5W5 = 3)
@@ -94,7 +81,6 @@ export const ARMOR = { chief:'M', scout:'L', bomber:'L', gunner:'L', grunt:'M', 
 export const SQUAD_AI = { think:0.35, boundT:[3.2,4.6], boundStep:7, flankStep:0.25, flankMax:1.1, spacing:3, assaultR:12, breakMorale:0.3, rallyT:[6,9], suppDecay:0.3, suppressFireK:0.65, navBudget:6000, focusR:40, orderR:60, flankR:22 };
 // Z220 FIELDCRAFT (both sides): no rounds into a wall — a man whose line is blocked edges out to a spot with a clear shot · frag grenades into men behind
 //   cover or bunched up (everyone near a live grenade runs) · smoke screens to fall back or cross open ground under fire (fire through smoke goes wild)
-export const LOCKON = { cone:1.2, minP:9, allyR:3.2, range:42, clear:1.5, look:[5,30] };   // Z221 the lock-on seeker: looks ±cone rad round its flight line, never picks a mark within minP m of our tank or allyR m of our men
 //   Z238 a lock-on missile flies at most `range` m whatever the range upgrades (it used to reach nearly the whole screen late on) and only locks what
 //   it can still reach; it never passes through a wall — it looks ahead (look = [min, max] m) and climbs to `clear` m over anything in its path,
 //   then dives on the mark; a wall too close to climb over takes the hit (and the damage)
@@ -108,7 +94,7 @@ export const TUNNEL = { from:2, n:[3,4], hp:{ hatch:70, bunker:280 }, seeR:20, u
 //   wider than our guard cannons' reach past the wall (54 − 24 = 30 m); small posts (bunkers, towers) keep a shorter gap. spawn: the same from our spawn point.
 export const HOME_GAP = { wall:24, gap:46, gapMobile:26, small:34, smallMobile:20, spawn:36, spawnMobile:24, minK:0.7, campMobileK:0.5 };   // campMobileK: on the small phone field the first barracks camp may relax to half the gap rather than not exist   // minK: when the field is too crowded to place a site, the gap relaxes step by step to this share, never below
 export const UNDERBASE = { off:170, W:75, D:55, gate:{ portalW:15, lockHp:[380,80], turretHp:300, turretR:24, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },   // Z403 gate MG turretR 36 → 24 m (a rifleman's reach) · Z429 gate.portalW: the bastion gate scan over the ramp (m across)
-  hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26], tank:[38,48], maxTanks:3 }, lights:{ desk:8, mob:3, I:50, range:34 }, score:{ target:400, all:2000, lock:300 } };
+  hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26] }, lights:{ desk:8, mob:3, I:50, range:34 }, score:{ target:400, all:2000, lock:300 } };
 // Z419 GUNFIRE THAT READS REAL (fx/gunfx.js): the muzzle flash is a shaped, bore-aligned flash (crossed petals along the barrel + a face-on star) that lives
 //   1–2 frames, a muzzle brake throws its own side jets and smoke sideways; the light is a strobe, not a glow; machine-gun belts carry a tracer every
 //   REAL.tracer.every rounds (thin, bright, short) and the ball rounds between are unseen; brass tumbles out and bounces; a bullet strike throws up what it hit
@@ -391,7 +377,7 @@ export const FORT_GAP = { w:2.6, minRep:4, bin:0.2, guard:0.8 };
 export const REALFIT = { env:0.8, hMax:1.3, hut:{ k:'quonset', fit:0.98 }, tent:{ k:'base_tent', fit:0.86 }, launcher:{ k:'mil_launcher', yaw:-Math.PI / 2, pod:[0.6, 0.5], fit:1 },
   // Z429 the camps' mess, quartermaster's and medical tents; the depots' camouflage canopy (arms racks, parked tanks) and the vehicle bunker behind the tanks;
   //   the underground base's pillboxes under their guns (world/real-fit.js placeScan / dressFit)
-  mess:{ k:'tent_mess', fit:0.95 }, qm:{ k:'tent_qm', fit:0.95 }, med:{ k:'tent_med', fit:0.95 }, canopy:{ k:'canopy' }, vbunker:{ k:'veh_bunker' }, pillbox:{ k:'pillbox', fit:1.02 } };
+  mess:{ k:'tent_mess', fit:0.95 }, qm:{ k:'tent_qm', fit:0.95 }, med:{ k:'tent_med', fit:0.95 }, canopy:{ k:'canopy' }, pillbox:{ k:'pillbox', fit:1.02 } };
 export const REALTURRET = { gun:{ k:'turret_cannon', w:4.2, spread:0 }, mg:{ k:'turret_rws', w:3.2, spread:0.26 }, aa:{ k:'turret_aa', w:6.6, gunR:0.62, gunY:0.17, top:0.55 }, proj:{ k:'proj_missile' },
   art:{ k:'proj_rocket122', file:'rocket122', len:3.3, nose:'up' }, siege:{ k:'proj_tactical', file:'tactical', len:3.6, nose:'up' }, mortar:{ k:'proj_mortar', file:'mortar', len:1.45, nose:'up' } };
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
@@ -409,22 +395,16 @@ export const INFANTRY = {
   rifle:{ hp:18, speed:4.4, keep:15, range:24, fireCd:1.5, dmg:4, bspeed:50, score:60 },
   rpg:  { hp:24, speed:3.8, keep:20, range:30, fireCd:5.0, aimT:1.0, dmg:22, rspeed:26, aoe:3.0, score:110 },
   squad:{ fromWave:2, base:0.6, perWave:0.3, perStage:0.4, size:[4,6], rpgFrom:2, maxOnField:22, maxMobile:14 },   // Z104 more men on the wider field
-  crushSpeed:1.2, crushBonus:50, bail:0.7,   // Z113 a tank rolling over a man at any real speed kills him (was 3.5)
-  vsArmour:0.3,
+  bail:0.7,   // Z113 a tank rolling over a man at any real speed kills him (was 3.5)
   fling:{ speed:13, up:8.5, gib:1.0, maxK:1.7, tearK:1.9 },   // Z121 a direct tank round (or the core of a blast, hitK ≥ tearK) TEARS the man apart instead  // Z112 killed by a heavy round / blast: thrown away from the hit (speed, lift m/s), breaks apart ~0.75 s later and is gone
                        // Z111b small-arms rounds (riflemen, tower / wall guards, MG nests) do 30% to a tank's armour; RPG rockets keep full damage
   coverThreat: 20, coverSearch: 12,   // Z104 a rifleman who sees a tank this close runs for the far side of the nearest cover
 };
 // NEW ENEMY VEHICLES (Z80). unlock = first stage it appears; weight = [base, +per stage after unlock] in the wave mix.
 export const ROSTER = {
-  pyro:    { range:11, dps:15, cone:0.82, tick:0.35 },                     // flame tank: close-range fire hose (dps on the player while inside the cone)
   atgm:    { aimT:1.2, speed:21, turn:1.5, dmg:30, aoe:3.2, life:5.5, cd:6.5 },   // laser-painted wire-guided missile: shoot it down, dodge sharply, or pop SMOKE
-  engineer:{ heal:9, range:16, selfHeal:3 },                               // heal = % of the patient's max HP ×(60/100)… per second (≈15%/s) — kill the medic first
   gunship: { alt:8.5, orbit:19, speed:9, range:34, gunDmg:3, gunCd:0.13, burst:9, burstCd:3.4, salvo:2, salvoCd:5, rocketDmg:12, rocketSpeed:28, flareDecoy:0.45 },   // Z198 flares pull a locked missile off 45% of the time
-  unlock:  { pyro:2, engineer:3, atgm:3, gunship:4, launcher:2 },
-  weight:  { pyro:[1.0,0.5], engineer:[0.6,0.3], atgm:[0.8,0.5], gunship:[0.45,0.3], launcher:[0.5,0.3] },
   launcher:{ salvo:4, gap:0.22, speed:24, dmg:22, aoe:3.2, spread:2.4 },   // Z116 ROCKET TRUCK: lobs a 4-rocket salvo from long range (weak armour, high value)
-  aaBonus: 1.8,                                                            // FLAK airburst vs aircraft
 };
 // ============================================================================
 // CAMPAIGN OPERATIONS (Z83) — every stage is a named operation: briefing, radio chatter, scripted waves and a
@@ -476,17 +456,11 @@ export const EQUIP = {
 export const RAMP = { hpPerStage:0.14 };
 // battlefield conditions — the same gun performs differently depending on WHERE and WHEN you fight
 export const ENV = {
-  night:  { range:0.85, enemySpread:1.3, exempt:['railgun','missile'] },   // short sight lines; thermal (railgun) & lock-on (missile) unaffected; enemies shoot worse too
-  hot:    { biomes:['DESERT','FOUNDRY','SAVANNA','VOLCANO'], hours:['noon'], fire:1.25, freeze:0.7 },   // heat: fires rage, ice melts off fast
-  cold:   { biomes:['TUNDRA','ARCTIC'], fire:0.75, freeze:1.5, cryo:1.2 },                  // frost: cryo locks targets for longer, flames gutter
+  night:  { range:0.85, enemySpread:1.3 },   // short sight lines; enemies shoot worse too
+  hot:    { biomes:['DESERT','FOUNDRY','SAVANNA','VOLCANO'], hours:['noon'], fire:1.25 },   // heat: fires rage
+  cold:   { biomes:['TUNDRA','ARCTIC'], fire:0.75 },                  // frost: flames gutter
   urban:  { biomes:['RUINS','CITADEL','CITY','STEELMILL'], he:1.2 },                                  // rubble & walls: blast and splinters wreck more
-  open:   { biomes:['MEADOW','DESERT','SAVANNA','ARCTIC','QUARRY'], longRange:1.1, guns:['cannon','railgun','hesh'] },   // long sight lines favour the big guns
 };
-// battlefield gun gifts: pity timer + counter-pick + prefer guns you don't hold yet (duplicates still feed MASTERY)
-export const GIFT = { gunBase:0.30, pityStep:0.12, pityCap:0.85, counterW:1.6, newGunW:1.6 };
-
-// ----- rarity colours (tier/VIP) -----
-
 // ----- shop: leveled stat upgrades (L1-L3 coins, L4-L5 diamonds = VIP) -----
 export const SHOP_UP = [
   {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'SÁT THƯƠNG',       per:'+8% sát thương đạn', costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
@@ -512,7 +486,6 @@ export const SHOP_UP = [
 
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,500) — value stays ordered. -----
-export const VIP_GUNS = ['railgun','rocket','orbital','plasma','hydra','singularity','photon'];
 
 // ----- punchy marketing blurbs (kept short) -----
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
@@ -529,28 +502,7 @@ export const CONTRACTS = [
 
 // DRIVING (Z85) — the player's tank is a 50-tonne machine: hull-steered tracks, a heavy launch, momentum that carries,
 // and collisions that hurt by mass × closing speed. Speeds in world units/s (top speed = PLAYER.maxSpeed 26).
-export const DRIVE = {
-  smoke: { until: 7, every: 0.06, big: 4 },   // Z116 diesel soot when the tank pulls away under load: below `until` m/s with throttle on; a dead-stop launch belches `big` puffs at once
-  accel: 19,          // peak tractive acceleration once rolling (Z99: 34→23; Z107: 23→19 — no mid-range surge)
-  launch: 0.7,        // share of that available from a dead stop (Z107: 0.32→0.7 — moves off at once, no 50-t creep)
-  launchV: 6,         // speed by which full power has come in
-  reverseMul: 0.72,   // reverse top speed / accel vs forward (Z121: 0.5 → 0.72 — backing out of a fight is a real move)
-  reverseAngle: 2.0,  // push this far (rad, ≈115°) behind the hull → BACK UP straight, no turning round (Z121: at any speed — it brakes, then reverses)
-  reverseKeep: 1.3,   // …and it keeps reversing until the push comes back within this of the hull's rear-to-front line
-  coast: 32,          // rolling resistance with the throttle off (Z107: 14→32 — settles in ~0.7 s / 8 m, was 1.6 s / 19 m)
-  coastLin: 0.45,     // extra resistance per unit of speed while coasting (Z107: 0.12→0.45)
-  brake: 62,          // braking against the motion (Z107: 44→62)
-  slopeSlide: 9,      // pull down into hollows/craters (Z107: 14→9 — less drifting on bumpy ground)
-  pivot: 2.6,         // hull turn rate standing still (neutral steer, rad/s) — Z99: steadier for A/D steering
-  turnAtSpeed: 1.55,  // hull turn rate at top speed — wide arcs when flat out
-  grip: 14,           // sideways track grip — kills lateral slide (Z107: 10→14)
-  screenPivot: 4.4,   // Z107 screen-relative keys: the hull swings round to the pressed direction this fast (rad/s, standing) — snappy, no fiddly steering
-  screenTurnAtSpeed: 2.6,  // … and while rolling
-  screenReverse: true,     // Z121 keys back you up too: pressing the way opposite to the hull reverses straight (it used to spin the tank round)
-  ram: { minImpact: 7, toEnemy: 1.15, toPlayer: 0.42, toBoss: 0.7, aggressor: 0.5, perStage: 0.22 },   // dmg = k × (closing speed − min) × mass share
-  wallBreak: 14,      // closing speed that smashes a brick wall section; slower just thumps it
-  climb: 15.5,        // closing speed needed to ride over a low rock; slower → stopped dead, back up and take a run
-};
+export const DRIVE = { wallBreak:14 };   // a ride hitting a brick wall faster than this (m/s) bursts through it; slower just thumps it (world/brick-walls.js ramWall)
 
 // TROOPS (Z89) — APCs that drive in and DISMOUNT a squad; your own FIRETEAM call-in (equipment wheel).
 // Z106 BATTLEFIELD BOUNDARY — the playable field is no longer a square: an irregular outline (a radius per bearing) with bays,
@@ -567,13 +519,12 @@ export const RELIEF = { R: 3, bowlDark: 0.85, bowlAO: 0.32, crestLift: 0.3, slop
 
 // Z104 INFANTRY LETHALITY — a soldier is soft: ONE round from a tank gun kills him (rifles still trade hits),
 //   and a blast kills outright inside its core (core × radius) and wounds — fading — out to reach × radius.
-export const LETHAL = { tankRoundKills: true, core: 0.45, reach: 1.25, edgeMin: 0.25 };
+export const LETHAL = { heavyKills: true, core: 0.45, reach: 1.25, edgeMin: 0.25 };
 
 // Z104 MOBILE AIM — phones have no mouse, so the barrel is FIXED to the hull: the tank shoots straight where it faces.
 //   Auto-fire / rockets / mortar / artillery only take a target inside this forward cone (half-angle in rad) or lane (world units).
 export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol: 0.1, trackSticky: 1.35,   // Z233 phones: the turret tracks the enemy on its own (was: barrel fixed to the hull)
-   cone: 0.17, lane: 1.8, artyCone: 0.32,
-  pivotOnly: 0.38 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
+   cone: 0.17, lane: 1.8, artyCone: 0.32 };   // a LIGHT push of the stick only turns the hull on the spot (aim without driving off); push further to drive
 // Z313 SHOOTING AT HELICOPTERS IN 3D (combat/air-aim.js): the mouse snaps to an aircraft within snapPx of the cursor (keeps it within keepPx); a pad
 //   or phone lays on the one within padCone (rad) of the aim; rounds lead it and climb to its height; a round aimed at it hits within hitR (m) across
 //   (the airframe and rotor, not the hub) and hTol (m) up or down of it;
@@ -581,8 +532,8 @@ export const AIM = { rockR: 16, mobileFixed: false, mobileTrack: true, trackTol:
 // Z314 A GUN'S ROUND FLIES A STRAIGHT LINE (combat/lock-on.js): it hits a body only at that body's real height — a man (m), a tank (m at TANK_SCALE),
 //   from floor (m) below its feet — and flies over an obstacle when it passes over m clear of its top
 //   Z316 one of our men lying flat / crouched stands only body.prone / body.crouch (m) high, and the enemy lays its aim on aim.prone / aim.crouch (m)
-export const LINE = { manH:2.1, tankH:2.8, floor:0.4, over:1.2, body:{ prone:0.7, crouch:1.4 }, aim:{ prone:0.35, crouch:0.85 } };
-export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, tankUp:0.55, manUp:1.05, col:0xff5a3a };
+export const LINE = { manH:2.1, floor:0.4, over:1.2, body:{ prone:0.7, crouch:1.4 }, aim:{ prone:0.35, crouch:0.85 } };
+export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6, manUp:1.05, col:0xff5a3a };
 // Z376 THE CROSSHAIR IS WHERE THE ROUND GOES (combat/crosshair.js): the point under it in the world (a man, a hull, a wall, a house, the ground — not
 //   the ground behind them), the same for the mouse and the pad, the round flown from the muzzle straight to it. reach = how far the eye looks (m);
 //   step = the ground march [first, per metre]; man = a man as the eye sees him (radius, standing / crouched / lying height, his aim point kept
@@ -593,8 +544,8 @@ export const AIRAIM = { snapPx:70, keepPx:120, padCone:0.28, hTol:2.2, hitR:2.6,
 //   chest's swing (rad/s); stop.min = a block nearer the crosshair than this (m) is the target itself, not in the way (Z382: then the crosshair turns red);
 //   tankTol = how far off the crosshair the turret may still be for the tank's shot (rad: it waits until it is on); anchor.cam = a burst holds the
 //   point (or man) it was fired at while the mouse is still, until the camera has moved this far (m)
-export const XHAIR = { reach:180, step:[0.3, 0.012], man:{ r:0.5, h:1.85, low:1.35, prone:0.6, lo:0.35, hi:0.2 }, chest:1.2, tankUp:1.3, pad:{ lat:1.8, near:2 },
-  awake:2.2, fireTol:0.3, tankTol:0.05, anchor:{ cam:3 }, turn:{ twist:1.0, walk:0.8, backV:2.2 }, aimRate:6.5, stop:{ min:1.5, px:22 } };
+export const XHAIR = { reach:180, step:[0.3, 0.012], man:{ r:0.5, h:1.85, low:1.35, prone:0.6, lo:0.35, hi:0.2 }, chest:1.2, pad:{ lat:1.8, near:2 },
+  awake:2.2, fireTol:0.3, anchor:{ cam:3 }, turn:{ twist:1.0, walk:0.8, backV:2.2 }, aimRate:6.5, stop:{ min:1.5, px:22 } };
 // Z326 AIMING UP AT AN AIRCRAFT (actors/real-cav.js): past the rifle's normal tip-up he leans back from the waist — k × the extra, at most max (rad),
 //   shared [Spine, Spine1, Spine2] — so the butt stays in his shoulder as the muzzle climbs; his head and neck (neck's share) tip back the rest of the
 //   way to sight along the barrel (sight × the gun's angle); eased at rate /s; lying flat he can't lean back — the muzzle comes up no further than prone
@@ -607,15 +558,12 @@ export const AIRPOSE = { k:0.6, max:0.55, split:[0.25, 0.35, 0.4], neck:0.4, sig
 //   the hull + tracks stretch along, the hull and turret sit a little lower, the turret a touch longer, the gun longer. The generals' super-heavies keep their own size.
 export const HUMAN_SCALE = 1.78/1.407;
 export const TROOPS = {
-  ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
-  dismount: { fromStage: 2, range: 28, troops: [3, 5], interval: 0.38, rpgFrom: 3 },   // enemy APC stops inside `range`, drops the ramp, troops pile out
   fireteam: { size: 6, perStage: 0.8, cap: 12, capMobile: 9, hp: 42, dmg: 7, range: 21, fireCd: 0.8, speed: 7.5, sprint: 12, follow: 7, cd: 24,   // friendly squad
     zoneMul: 0.9, zoneMin: 18,   // Z100 they roam FREELY inside the tank's combat zone (= 90% of its fire range, never under 18)
     detect: 30,                  // how far a soldier spots enemies (it only chases ones it can reach without leaving the zone)
     patrol: [6, 15],             // with nothing to shoot they take up posts this far from the tank
     spread: 2.6,                 // personal space between soldiers (no conga lines)
     tapMax: 0.3 },               // CREW/G pressed shorter than this = dismount; held = recall (release ends it)
-  crewHeal: 5,                   // Z100 riding the tank heals a soldier this many HP per second (the tank is their aid station)
   look: { scale: HUMAN_SCALE, barY: 2.45 },   // Z174 a 1.78 m man (was 2.6 m)   // Z104 every foot soldier (ours + theirs) at the same, slightly bigger size; HP bar height above them
 };
 
@@ -642,7 +590,7 @@ export const SQUAD = {
   mix: ['rifle','rifle','mg','rifle','sapper','rifle','mortar','rifle'],
 };
 // Z105 DEPLOYMENT (before every stage): how many specialists you may field, and where posted men hold
-export const DEPLOY = { roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1, 2, 2], sapper: [1, 1, 2, 2, 2] }, holdR: 30, stage: 0.62 };   // stage = staging point at this fraction of the way to an enemy site
+export const DEPLOY = { men:5, roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1, 2, 2], sapper: [1, 1, 2, 2, 2] }, holdR: 30, stage: 0.62 };   // stage = staging point at this fraction of the way to an enemy site
 
 // Z104 BATTLEFIELD ZONES (world/zones.js plans the ground before cover is scattered)
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
@@ -669,8 +617,8 @@ export const PARA = { fromStage: 1, fromWave: 2, every: [50, 72], everyMobile: [
 //   strays, garrison (riflemen [min,max], guard tanks [early,late]), gunships called per base [min,max], armour called in, and what losing each costs the enemy
 export const SUPPLYB = { perStage:{ total:[3,3,4,4,4] }, hpPerStage:0.15,   // Z195 3–4 compounds, fuel and ammo alternating, in the corners of the map
   hp:{ radartower:560, radome:220, aagun:150, fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110, shelter:160, radartruck:130, genset:80, dish:60 },   // (Z425 the radar yard's shelter, truck, generator and dishes stand as pieces)
-  alertR:46, leash:40, guards:[3,6], tanks:[1,1], heli:[1,3], heliCd:40, reinf:2, tankCd:30, aa:{ range:26 },   // Z403 the radar's twin AA guns hose a man on the ground within aa.range m (was 62: they cut him down before he got near; now no further than his own rifle reaches)
-  cut:{ speed:0.12, tanks:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
+  alertR:46, guards:[3,6], heli:[1,3], heliCd:40, reinf:2, reinfCd:30, aa:{ range:26 },   // Z403 the radar's twin AA guns hose a man on the ground within aa.range m (was 62: they cut him down before he got near; now no further than his own rifle reaches)
+  cut:{ speed:0.12, air:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
 export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };
 export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
 // Z405 RIVERS (world/river.js — the bed is carved into the heightfield by genTerrain): the battlefields a river crosses and their water. Per battlefield:
@@ -711,7 +659,6 @@ export const LOOT = {
   ram:   { dur: 20, dealt: 2.2, taken: 0.35, mass: 1.8, wall: 0.55, climb: 0.65 },   // DOZER BLADE: hits like a train, shrugs off rams, bursts walls at a trot
   era:   { charges: 3, cap: 6, absorb: 0.6, minHit: 8 },                     // REACTIVE ARMOUR: each tile eats 60% of one hit ≥8, then blows off
   source:{ chanceBase: 0.5, chancePerHp: 1/60, chanceCap: 2.4, rareHp: 70, epicHp: 130 },   // tougher enemies drop more often and roll better loot
-  rarity:{ rareShare: 0.55, epicShare: 0.5 },                                // a RARE source rolls rare 55% of the time, an EPIC source epic 50%
   cache: { perStage: [2, 2, 3, 3, 3], hp: 70 },                              // guarded supply caches beside camps & towers (always rare+)
 };
 
@@ -721,23 +668,11 @@ export const LOOT = {
 export const TACTICS = {
   iq: { base: 0.2, perStage: 0.16, recruit: -0.15, soldier: 0, veteran: 0.18, loop: 0.12, cap: 1 },
   tick: 0.45,               // seconds between director passes
-  engage: 40,               // tanks inside this radius of the player join the plan
-  flankShare: 0.4,          // at IQ 1, up to 40% of the engaged tanks are sent round your rear
-  flankFrom: 0.3,           // below this IQ nobody flanks (stage 1 recruits just charge)
-  encircle: 0.85,           // at IQ 1 the ring closes to ~85% of a full circle around you
-  coverFrom: 0.45,          // IQ needed before tanks park behind walls/rocks
-  retreatHp: 0.3, retreatFrom: 0.35,   // badly hurt tanks fall back (toward an engineer if one lives)
   dodge: { from: 0.35, cd: 2.2, speed: 9, time: 0.45 },   // sidestep when your gun lines up on them
-  press: { hp: 0.35, keep: 0.6, from: 0.5 },              // you are below 35% HP → the line closes to 60% range
-  leadMax: 0.9,             // shot lead at IQ 1 (fraction of a perfect intercept)
-  // Z185 SMARTER TANKS — evade: they watch your shells and break sideways out of the line (heavy hulls react less) ·
-  //   jink: in a fight they weave while closing · punish: you reload → they rush in and fire faster · volley: the pack fires together (telegraphed)
   evade:  { from:0.2, look:1.0, cd:[1.0,2.0], speed:20, heavyMul:0.4, react:[0.4,0.92] },
   jink:   { from:0.45, amp:0.6, per:[2.4,3.8] },
   // Z192 line of fire: a crew this smart checks the round's path first — cover in the way → hold the shot, slide sideways (peek s) to open a line
   los:    { from:0.25, wait:0.45, peek:0.9 },
-  punish: { from:0.4, keep:0.55, rate:0.55, radioGap:45 },
-  volley: { from:0.55, every:[10,16], warn:0.75, minTanks:3, radioGap:35 },
 };
 
 // BOSS FIGHTS (Z96) — every general is a puzzle: armour arcs, breakable systems, three phases, stun & overheat windows, shield pylons.
@@ -802,7 +737,7 @@ export const CAM_STYLE = {
 };
 // Z184 player camera tuning (CÀI ĐẶT → GÓC MÁY): pitch in degrees, distance and look-ahead as × of the style, field of view in degrees
 export const CAM_TUNE = { pitch:[16,72,4], distK:[0.55,1.9,0.1], fov:[40,80,3], aheadK:[0,2,0.25] };   // [min, max, step]
-export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, fortPad:30, fortK:0.18, bossR:70, bossK:0.3, ease:0.9, every:0.25 };
+export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, fortPad:30, fortK:0.18, ease:0.9, every:0.25 };
 // Z239 SMOOTH CAMERA — spring smoothing times (s, ~time to settle 60%): follow = the tank, lead = aim/motion look-ahead, yaw = turning the
 //   view, zoom = zoom steps / pinch, dash = the pull-back during a dash (dashPull m), resume = glide back from a cinematic, kick = recoil shove ×,
 //   fovEase = how fast the lens breathes with speed (1/s), orbit = mouse-drag / swipe turn rate (rad per px), wheelZoom = zoom per wheel notch ·
@@ -954,7 +889,7 @@ export const WALLSKIN = { tint:0.35, bright:0.92, nrm:1.2, ao:0.8,
 //   least aoeMin m wide; a ram still crushes it · heaps: no heap of chunks is left where a thing broke (world/rubble.js, the brick walls, the city's
 //   floors, a fort's breach) — it bursts into dust, smoke or fire and is gone · scar: a big thing broken leaves the ground torn up where it stood — a crater
 //   (crater × its size + 0.8 m), a light grey burn (ash × its size + 1 m, ashK strong), a soil spray (geyser), and smoke [puffs, life s] at smokeOp
-export const BREAKUP = { sand:{ by:['HE','AP','HESH','TBX'], minDmg:20, aoeMin:1.8 }, heaps:false, scar:{ crater:0.55, ash:1.35, ashK:0.8, geyser:0.9, smoke:[4, 5], smokeOp:0.24 } };
+export const BREAKUP = { sand:{ by:['HE','AP'], minDmg:20, aoeMin:1.8 }, heaps:false, scar:{ crater:0.55, ash:1.35, ashK:0.8, geyser:0.9, smoke:[4, 5], smokeOp:0.24 } };
 export const SHATTER = { pieces:false, n:10, power:7, up:3, spin:6, bounce:0.32, bounceMin:2.2, g:9.8, life:6, sink:0.35, sinkT:1.6, max:220, maxMobile:70, stone:{ perM:5, minN:3, fill:0.7, life:3.5 },
   kinds:{ drums:{ n:14, power:13, up:6, fire:true }, tires:{ n:9, power:8, up:5, bounce:0.6 }, crates:{ n:14, power:6.5, up:3 }, logs:{ n:9, power:7, up:3 }, sandbag:{ n:10, power:4, up:2 },
     concrete:{ n:10, power:5, up:2.5 }, jersey:{ n:9, power:5, up:2.5 }, pipes:{ n:10, power:6, up:3 }, teeth:{ n:8, power:5, up:2.5 }, hesco:{ n:9, power:4, up:2 },
@@ -1061,8 +996,7 @@ export const REALTROOP = { rough:0.85, top:1.62, stretch:[2, 0.05], seamInset:0.
 // Z295 the infantry arsenal (actors/real-cav.js; Tripo P2): which hand weapon the soldier carries for each of the game's guns, and each weapon's true length (m),
 //   which end is the muzzle in the model (+z / −z), how far behind its middle the pistol grip sits (share of the length), lift = raised (m: the RPG rides the shoulder)
 //   Z329 the soldier's own guns (data/guns.js t_*) map onto them too: each weapon he picks up is the one in his hands
-export const INFGUN = { map:{ rifle:'ar', carbine:'ar', t_lmg:'lmg', t_minigun:'minigun', t_shotgun:'shotgun', t_sniper:'sniper', t_rpg:'rpg', t_gl:'gl', t_flamer:'flamer', t_energy:'energy', t_ak:'ak', t_m4:'m4', t_mp5:'mp5', t_rust:'rust', t_dmr:'dmr', t_rail:'rail', t_saw:'saw', smg:'lmg', flak:'lmg', minigun:'minigun', shotgun:'shotgun', cannon:'sniper', hesh:'sniper', railgun:'sniper', missile:'rpg', rocket:'rpg', thermo:'rpg', hydra:'rpg',
-    agl:'gl', mortar:'gl', arty:'gl', flamer:'flamer', cryo:'flamer', tesla:'energy', plasma:'energy', photon:'energy', orbital:'energy', singularity:'energy' },
+export const INFGUN = { map:{ carbine:'ar', t_lmg:'lmg', t_minigun:'minigun', t_shotgun:'shotgun', t_sniper:'sniper', t_rpg:'rpg', t_gl:'gl', t_flamer:'flamer', t_energy:'energy', t_ak:'ak', t_m4:'m4', t_mp5:'mp5', t_rust:'rust', t_dmr:'dmr', t_rail:'rail', t_saw:'saw' },
   guns:{ ar:{ len:0.92, muzzle:1, grip:0.2, fit:true }, lmg:{ len:1.12, muzzle:-1, grip:0.18, fit:true }, minigun:{ len:1.15, muzzle:1, grip:0.22, fit:true }, shotgun:{ len:1.0, muzzle:-1, grip:0.22, fit:true }, sniper:{ len:1.42, muzzle:-1, grip:0.24, fit:true },
     rpg:{ len:1.05, muzzle:1, grip:0.05, lift:0.1 }, gl:{ len:0.82, muzzle:1, grip:0.18, fit:true }, flamer:{ len:1.0, muzzle:1, grip:0.14, fit:true }, energy:{ len:0.95, muzzle:1, grip:0.2, fit:true },
     ak:{ len:0.88, muzzle:1, grip:0.21, fit:true }, m4:{ len:0.95, muzzle:1, grip:0.21, fit:true }, mp5:{ len:0.68, muzzle:1, grip:0.1, fit:true },
@@ -1380,12 +1314,11 @@ export const FORT = {
   //   curtain walls longer than flankMin get a flanking tower (flankW, +flankH) proud of the outer face; gate towers +gateH[tier<3, capital], gateW2 wide;
   //   the capital's donjon keepW wide, keepH high, its four turrets +turret above it
   arch:{ tall:12, tallW:5.2, bastW:4.4, bastH:4.5, flankMin:22, flankW:6.0, flankH:6.5, gateH:[12,16], gateTW:[5.2,6.4], keepW:15, keepH:34, turret:8, flagH:[20,24] },
-  wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
-  sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
+  wakeR:52, liveInf:16, liveInfMobile:9, sally:[10,16], sallyInf:[3,6], fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'rifle', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: an officer on foot (no-tanks), tough, ringed by bodyguards
   ram:{ minV:6, fullV:15, gate:0.5, wall:0.55, buffMul:1.5, cd:0.4 },    // Z111 RAMMING: a hit at 15+ takes 50% of a gate / 55% of a wall section → 2 rams open either
   gate:{ open:4.5, speed:0.9, inner:5, outer:6, exitMax:18 },                       // Z111b the gate swings open for every sortie (stays open while troops file through) and shuts behind them
-  posture:{ near:40, tank:10, inf:1, allyTank:4, gInf:0.6, gTank:3, holdK:0.6, every:[5,8], waveInf:4, waveTank:1 },   // Z111b we come close: our strength (tank 10×hp% + 1/soldier + 4/captured tank) ≥ 0.6× the garrison's → they SHUT THE GATE and hold; weaker → they open up and sally in waves
+  posture:{ near:40, you:10, inf:1, gInf:0.6, gCmd:6, holdK:0.6, every:[5,8], waveInf:4 },   // Z111b we come close: our strength (you 10×hp% + 1/soldier) ≥ 0.6× the garrison's → they SHUT THE GATE and hold; weaker → they open up and sally in waves
   wallHpK:0.8, wallShotK:1, shotStructMin:1,                            // Z111 easier sieges: a wall section has 0.8× the gate's HP and takes full shell damage; vs gate/wall every gun hits at least ×1 (the rifle's KIN ×0.6 no longer applies)
   loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },
   names:['HẮC SƠN','ƯNG SẮT','ĐẦU LÂU','LANG NHA','XÍCH VĨ','BÃO LỬA','CỔ THẠCH','HẮC LONG','THIẾT BÍCH','HUYẾT NGUYỆT'],
@@ -1403,7 +1336,7 @@ export const GORE = { splats:[160,70], chunks:[64,28], splatLife:24, fade:6, chu
 //   its torn steel thrown out (fx/debris.js spawnTankWreck: glowing, lands, gone within chunkLife s, the last fade s fading), a smoke puff (smokeK = the
 //   blast's rolling cloud lasts this share of its usual life) and in that same frame the hull leaves the field and its collider. wreck = the life of
 //   fx/fire-wrecks.js spawnWreck's burning hulk (no kill leaves one any more)
-export const TANK_DEATH = { chunkLife:[1.3, 2.1], fade:0.6, smokeK:0.45, wreck:[9,13] };
+export const BLAST_DEATH = { chunkLife:[1.3, 2.1], fade:0.6, smokeK:0.45, wreck:[9,13] };
 // Z402 A MAN SHOT DEAD IS THROWN AND GONE (actors/infantry.js, ours in actors/fireteam.js): small arms throw him speed / up m/s along the shot (× the round's
 //   weight, clamped to k) — heavy rounds and blasts throw him INFANTRY.fling; he tumbles with his limbs flung out, lands, slides lie s and bursts (blood mist,
 //   dust) — gone; never later than max s after the kill (off a wall or a tower); a man crushed under tracks bursts after crush s
@@ -1420,11 +1353,11 @@ export const FUEL_TANK = { steel:{ hp:300, boom:3.2, r:9, dmg:80, edge:0.3, fire
 // Z402 TENTS ARE WALLS UNTIL THEY BURN (world/camps.js — the camps' tents, the outposts'): a tent stops tanks and men and both sides' eyes (enemy sight,
 //   the player's auto-aim and lock-on); one hit sets it alight — it burns burn s (the canvas chars, and sags over the last sag share) and is gone with
 //   its collider. Sight lines run from / to eye m above the ground: a tank's [tank], a man's [man], a target's middle [mid]
-export const TENT = { burn:2.2, sag:0.45, eye:{ tank:2.4, man:1.5, mid:1.1 } };
+export const TENT = { burn:2.2, sag:0.45, eye:{ man:1.5, mid:1.1 } };
 // Z115 GUN PARTS (linh kiện súng) — pickups that upgrade a gun FOR GOOD, per gun, stacking up to `max` levels each:
 //   barrel = NÒNG TINH CHẾ (+dmg, +range) · action = KHOÁ NÒNG (faster fire + reload) · mag = BĂNG ĐẠN MỞ RỘNG (+rounds)
 //   They fit the gun in your hands; if it is maxed they go to another carried gun, else they pay coins. Rare from tough kills, one per fortress taken.
-export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.05, reload:0.06 }, mag:{ mag:0.12 }, rareShare:0.15, epicShare:0.25, fortDrops:1, coins:150 };
+export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.05, reload:0.06 }, mag:{ mag:0.12 }, fortDrops:1, coins:150 };
 // how many tubes each gun really has (shown on the gun card)
 // Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
 //   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
@@ -1435,7 +1368,7 @@ export const PAD_CFG = { def:{ vib:true, vibK:0.8, dead:0.15, assist:true, swapA
   sensSteps:[['THẤP',0.7],['VỪA',1],['CAO',1.35]], rtFire:0.35, assistAfter:0.45, phoneTick:{ ms:14, gap:150 }, navFirst:0.26, navRepeat:0.14 };
 // Z145 TURRET TRAVERSE: the gun swings at a real, capped rate (rad/s) — mouse a little quicker than the stick — and the player sets the speed
 //   (PROFILE.turretK, Settings → TỐC ĐỘ XOAY NÒNG: presets or ± 10% steps)
-export const TURRET = { rate:2.6, mouseMul:1.7, k:9, min:0.3, max:2.5, step:0.1, steps:[['CHẬM',0.6],['VỪA',1],['NHANH',1.5]] };
+export const TURRET = { rate:2.6, k:9, min:0.3, max:2.5, step:0.1, steps:[['CHẬM',0.6],['VỪA',1],['NHANH',1.5]] };
 export const PAD_HELP = [
   ['Cần trái', 'Đi (theo màn hình, hoặc xoay thân nếu chọn trong Cài đặt)'], ['Cần phải', 'Ngắm — thả ra: tự ngắm địch gần nhất. Súng phóng lựu M79: ←→ xoay hướng, ↑↓ chỉnh tầm ném'],
   ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Bứt tốc / phi nước đại'], ['B', 'Xuống / lên xe'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
@@ -1518,7 +1451,7 @@ export const SHADOWLOD = { on:true, min:1500, keep:0.25, err:0.03, rescan:90 };
 //   (render/near-detail.js sameFrame) — the turn whose surface lands most in the shipped surface's cells (grid³ of its box, samples of its vertices)
 export const NEARDETAIL = { on:true, rK:3, min:5, at:30, out:1.4, hold:4, every:0.3, maxKeys:8, maxInst:4000, shapes:16, hero:12,
   trees:{ n:12, at:34, every:0.2 }, frame:{ tol:0.04, grid:16, samples:6000 } };   // trees: the n standing nearest the camera within at m drawn whole from the original (world/real-trees.js), re-picked every s
-export const LOD = { shadowR: 26, guardR: 70, every: 0.25, tankDetailR: 38, smallR: 0.9,
+export const LOD = { shadowR: 26, guardR: 70, every: 0.25,
   detailR: 3, detailPx: 1.6, detailHys: 1.35, rescan: 2 };   // Z240 pieces under detailR m are skipped once their on-screen size × fog transparency drops under detailPx px (back in above ×detailHys); the list is rebuilt every rescan s   // Z233 enemy tanks past tankDetailR (from the camera) drop fittings smaller than smallR
 // Z107 POWER RATING — one number for how strong YOUR tank is, and what each level asks of it, on the same scale.
 //   Fight ratio F = time-to-die ÷ time-to-clear-a-wave. Your side: sustained DPS (mag + reload, mastery, upgrades, armour-type
@@ -1552,7 +1485,7 @@ export const FENCE = { hp:34, ramV:9 };   // Z205 a compound's wire: HP per 3 m 
 //   gun rounds leave the muzzle at v0× the gun's speed and bleed speed to drag over the flight (k = decay/T);
 //   rockets are kicked out slow by the booster, the motor lights and pushes them up past the gun's speed.
 export const BALLISTIC = { gun:{ v0:1.5, decay:3 }, rocket:{ v0:0.3, k:6, cap:1.6 }, T:{ def:1.1, lifeK:0.5, rocket:1.0, min:0.12, max:2.5 },
-  sabot:{ petals:3, out:7, life:0.5 }, vapor:{ t:0.12, every:0.02 }, enemyMissile:{ v0:0.3, k:5, T:1.1 } };
+  vapor:{ t:0.12, every:0.02 }, enemyMissile:{ v0:0.3, k:5, T:1.1 } };
 // Z236 SMOKE RIBBONS — a tank-gun round lays one unbroken ribbon of smoke along its real path (a strip that always faces the camera, wispy
 //   and torn by noise, widening, rising, drifting on the wind and curling as it fades). Per kind: w0 = width at the muzzle (m), grow = how
 //   fast it spreads (m per √s), life (s), op = opacity, col = colour; step = metres between laid points. cap = ribbons alive at once.

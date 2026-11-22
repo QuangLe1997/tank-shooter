@@ -1,7 +1,7 @@
 // world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
 import { TREEFALL } from '../../config.js';
-import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, burst, crushVehicle, crushables, decalDirt, enemies, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, trunkR, toppleAt, MODE, realStones } from '../hub.js';
+import { AREA_K, ARENA, BIOME, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, burst, crushVehicle, crushables, decalDirt, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, toppleAt, realStones } from '../hub.js';
 
 // ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
 // Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
@@ -43,14 +43,14 @@ export function buildTerrainDecor(b){
       L.forEach((o,k)=>{ _IM.compose(_IV.set(o.x,heightAt(o.x,o.z),o.z), _IQ.setFromEuler(_IE.set(_R(-0.15,0.15),o.ry,_R(-0.15,0.15))), _IS.set(o.s,o.s*_R(0.8,1.2),o.s)); im.setMatrixAt(k,_IM); crushables.push({ x:o.x, z:o.z, r:0.45*o.s, im, k, alive:true, kind:'grass', ry:o.ry, s:o.s }); });
       decorGroup.add(im); }); }
 }
-// tracks grind clutter: stones burst into chips + dust (gone), grass/shrubs get flattened into the dirt
+// a blast or a ride's bump breaks clutter: stones burst into chips + dust (gone), grass/shrubs get flattened into the dirt
 export function crushAt(c){
   c.alive=false;
   if(c.kind==='tree'){ const pl=S.player; let dx=Math.random()-0.5, dz=Math.random()-0.5; if(pl && (pl.pos.x-c.x)**2+(pl.pos.z-c.z)**2<100){ dx=c.x-pl.pos.x; dz=c.z-pl.pos.z; } fellTree(c, dx, dz, TREEFALL.push);   // Z141 a tree goes down under the tracks · Z262 it topples away from the tank
     for(let i=0;i<14;i++) spawnPart(c.x+(Math.random()-0.5)*3, 2+Math.random()*4, c.z+(Math.random()-0.5)*3, (Math.random()-0.5)*4, Math.random()*2, (Math.random()-0.5)*4, { color:Math.random()<0.5?0x4e7e32:0x6a9a40, size:0.25+Math.random()*0.25, life:1.2, grav:-4, drag:1.5 });
     const p=S.player; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2 < 36){ sfx('crunch'); haptic(10); } return; }
   if(c.kind==='topple'){ const p=S.player; let dx=Math.random()-0.5, dz=Math.random()-0.5; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2<100){ dx=c.x-p.pos.x; dz=c.z-p.pos.z; } toppleAt(c.T, dx, dz); return; }   // Z216 a pole / lamp rammed over
-  if(c.kind==='car' || c.kind==='moto'){ crushVehicle(c); const big=c.kind==='car';                                          // Z206 a parked car pancaked under the tracks
+  if(c.kind==='car' || c.kind==='moto'){ crushVehicle(c); const big=c.kind==='car';                                          // Z206 a parked car wrecked
     for(let i=0;i<(big?14:5);i++){ const a=Math.random()*6.283, sp=_R(1.5,4.5); spawnPart(c.x+Math.cos(a)*0.8, 0.9, c.z+Math.sin(a)*0.8, Math.cos(a)*sp, _R(1.5,4), Math.sin(a)*sp, { color:Math.random()<0.6?0xcfe4ec:0xfff2c0, size:_R(0.05,0.11), life:_R(0.4,0.8), grav:-16, drag:1 }); }   // windscreen glass + sparks
     burst({x:c.x,z:c.z}, 0x8a8478, big?3:1, 1.6, { y:0.5, life:0.9, size:big?1.4:0.7, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.35 });
     const p=S.player; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2 < 49){ sfx('crunch'); haptic(big?14:6); } return; }
@@ -62,11 +62,4 @@ export function crushAt(c){
   burst({x:c.x,z:c.z}, BIOME.ground, 2, 1.4, { y:0.3, life:0.8, size:0.9+c.r, smoke:true, grav:-0.3, drag:2, up:0.8, op:0.4 });   // grit dust
   decalDirt(c.x, c.z, 0.35+c.r*0.6);
   if(c.r>0.35){ const p=S.player; if(p && (p.pos.x-c.x)**2+(p.pos.z-c.z)**2 < 25){ sfx('crunch'); haptic(8); } }
-}
-export function updateCrush(){
-  if(!crushables.length) return;
-  const tanks=[]; const p=S.player; if(p&&p.mesh&&MODE.crushes) tanks.push(p); for(const e of enemies) tanks.push(e);   // (Z306 not a soldier: a man on foot or on a scooter flattens nothing)
-  for(const t of tanks){ const s=t.mesh?t.mesh.scale.x:1, hw=HULL_HW*s, hl=HULL_HL*s, R=Math.hypot(hl, hw)+1, R2=R*R, fs=Math.sin(t.facing||0), fc=Math.cos(t.facing||0);
-    for(const c of crushables){ if(!c.alive) continue; const dx=c.x-t.pos.x, dz=c.z-t.pos.z; if(dx*dx+dz*dz > R2) continue;
-      const lx=dx*fc-dz*fs, lz=dx*fs+dz*fc, cr=c.kind==='tree' ? trunkR(c) : c.r*0.3; if(Math.abs(lx) < hw+cr && Math.abs(lz) < hl+cr) crushAt(c); } }   // anything under the hull footprint · Z404 a tree goes over the moment the hull meets its drawn trunk (it used to be half inside the bark first)
 }

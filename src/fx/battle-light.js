@@ -10,7 +10,6 @@ export const BL_T = { value:0 };                                                
 export function blTick(dt){ BL_T.value = (BL_T.value + dt) % 3600; }
 export function blCol(c){ return typeof c === 'string' ? BLIGHT.col[c] : c; }      // a palette name or a raw hex
 export function blHot(c, k){ return new THREE.Color(blCol(c)).multiplyScalar(k ?? BLIGHT.gain); }   // an HDR colour (above 1: it blooms)
-export function blCss(c){ return '#' + blCol(c).toString(16).padStart(6, '0'); }
 const rate = r => typeof r === 'string' ? BLIGHT.hz[r] : r;
 // one beat of the pulse: phase 0..1 → floor..1, eased at both ends
 export function blWave(ph, floor){ const f = floor ?? BLIGHT.floor, c = 0.5 - 0.5 * Math.cos(ph * 6.2831853); return f + (1 - f) * c * c * (3 - 2 * c); }
@@ -71,13 +70,3 @@ export function holoGain(mesh, g){ mesh.material.userData.holo.c.value.x = g; }
 // a solid line of light for reticles and brackets: an HDR colour, normal blend (reads on sunlit ground, still blooms), drawn over the scene
 export function blSolid(col, gain, o = {}){ return new THREE.MeshBasicMaterial({ color:blHot(col, gain ?? 2.0), transparent:true, opacity:o.opacity ?? 0.92, depthWrite:false, depthTest:o.depthTest ?? false, fog:false, side:THREE.DoubleSide }); }
 // a hologram tag for in-world labels: a dark glass plate with clipped corners, a thin glowing frame, scan lines and lit text (one texture, cached)
-const _tags = new Map();
-export function blTag(text, col){ const key = text + '|' + col; if(_tags.has(key)) return _tags.get(key);
-  const c = document.createElement('canvas'), W = 256, Hh = 72; c.width = W; c.height = Hh; const x = c.getContext('2d'), hex = blCss(col), k = 12;
-  const plate = () => { x.beginPath(); x.moveTo(k + 4, 6); x.lineTo(W - 6, 6); x.lineTo(W - 6, Hh - 6 - k); x.lineTo(W - 6 - k, Hh - 6); x.lineTo(6, Hh - 6); x.lineTo(6, 6 + k); x.closePath(); };
-  plate(); const g = x.createLinearGradient(0, 0, 0, Hh); g.addColorStop(0, 'rgba(6,14,18,0.78)'); g.addColorStop(1, 'rgba(2,6,8,0.62)'); x.fillStyle = g; x.fill();
-  x.save(); plate(); x.clip(); x.fillStyle = hex; x.globalAlpha = 0.09; for(let y = 8; y < Hh; y += 4) x.fillRect(0, y, W, 1.4); x.globalAlpha = 0.16; x.fillRect(6, 6, 5, Hh); x.restore();
-  plate(); x.strokeStyle = hex; x.lineWidth = 2.4; x.shadowColor = hex; x.shadowBlur = 10; x.stroke();
-  x.font = '800 34px "Saira Condensed", Rajdhani, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#ffffff'; x.shadowBlur = 14; x.fillText(text, W / 2 + 3, Hh / 2 + 2);
-  x.shadowBlur = 0; x.globalAlpha = 0.55; x.fillStyle = hex; x.fillText(text, W / 2 + 3, Hh / 2 + 2);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; _tags.set(key, t); return t; }

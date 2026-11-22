@@ -1,6 +1,6 @@
 // core/profile.js — PLAYER PROFILE (nickname · arsenal · loadout · campaign save)
 import { BALANCE, SHOP_UP } from '../../config.js';
-import { BIOMES, ECON, GUNS, RIDER, S, SOLDIER, cloudDirty, econEarn, econGunFound, floatText, refreshStartUI, spawnDrone } from '../hub.js';
+import { BIOMES, ECON, GUNS, S, SOLDIER, cloudDirty, econEarn, econGunFound, floatText, refreshStartUI, spawnDrone } from '../hub.js';
 
 // ----------------------------- PLAYER PROFILE (nickname · arsenal · loadout · campaign save) -----------------------------
 // One profile per browser, persisted in localStorage. Tracks the call-sign, every gun ever collected
@@ -57,7 +57,6 @@ export const SHOP_UP_BY={}; SHOP_UP.forEach(u=>SHOP_UP_BY[u.key]=u);
 export function canAfford(cost){ return !!cost && (!cost.c || PROFILE.coins>=cost.c) && (!cost.d || PROFILE.diamonds>=cost.d); }
 export function payCost(cost){ if(!canAfford(cost)) return false; if(cost.c) PROFILE.coins-=cost.c; if(cost.d) PROFILE.diamonds-=cost.d; return true; }
 export function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
-export function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0)*(RIDER.perUp||1); }   // Z111b 5 seats filled + 2 per upgrade level
 // ---- SUPPORT-UNIT upgrades (shop): drone + guards scale by purchased level ----
 export const SUP = BALANCE.support;
 export function droneDmgMul(){ return 1 + (PROFILE.upgrades.dronePow||0)*SUP.dronePowPerLvl; }       // STRIKE DRONE: +power/lvl

@@ -18,7 +18,7 @@ export function fireFlame(now, g, x, z, ang, k=1){
   if(Math.random()<0.4) spawnPart(x+cx*range*0.8, 2.6, z+cz*range*0.8, (Math.random()-0.5)*2.4, 1.6, (Math.random()-0.5)*2.4, {color:0x241b13, size:2.0, life:0.75, smoke:true, grav:-0.5, drag:1.5, op:0.4});   // rolling smoke
   if(Math.random()<0.5){ const d2=range*(0.35+Math.random()*0.5); spawnPart(x+cx*d2+(Math.random()-0.5)*2.5, 1.5, z+cz*d2+(Math.random()-0.5)*2.5, (Math.random()-0.5)*3, 3+Math.random()*3, (Math.random()-0.5)*3, {color:0xffb24a, color2:0xff5a1c, size:0.3, grow:0.5, life:0.5, grav:-2.5, drag:1.3}); }   // drifting embers
   // ===== DAMAGE: light up every enemy inside the cone (ground-plane) =====
-  for(const e of enemies){ if(e.def.bomber||e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, d=Math.hypot(dx,dz);
+  for(const e of enemies){ if(e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z, d=Math.hypot(dx,dz);
     if(d > range + e.r) continue;
     if(fortIntactCross(x, z, e.pos.x, e.pos.z)) continue;          // Z170 fire doesn't pour through a fortress wall
     if(((dx*cx+dz*cz)/(d||1)) < F.cone) continue;                 // only enemies inside the flame cone catch fire

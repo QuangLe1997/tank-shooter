@@ -13,7 +13,7 @@
 //     actors/real-cav.js).
 import * as THREE from 'three';
 import { FORT, LINE, XHAIR } from '../../config.js';
-import { AIR, HULL_HL, HULL_HW, MOBILE, PAD, S, TANK_SCALE, VIEW, blockTop, blocks, blocksNear, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
+import { AIR, MOBILE, PAD, S, VIEW, blockTop, blocks, blocksNear, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
 
 export const XH = { mx:-1, my:-1, mouseAt:-1e9, movedAt:-1e9, src:'mouse', tgt:null, live:false, stop:null, far:false, state:'ok', sky:false, el:null, lookA:null, reLook:false, camOk:false, anchor:null };
 // Z382 THE STEADY CAMERA the crosshair looks through: the follow camera's own pose before the shot's kick, the shake, the roll, the lens's kick and the
@@ -52,14 +52,13 @@ function rayBox(o, d, x, z, f, hl, hw, y0, y1){ const s = Math.sin(f), c = Math.
   return _t0 > 0 ? _t0 : -1; }   // (an eye inside it: not this one)
 // how tall a man stands to the eye: up, crouched, lying
 export function manTall(e){ const st = e.g && e.g.userData && e.g.userData.stance, M = XHAIR.man; return st === 'prone' ? M.prone : (st === 'low' || st === 'crouch') ? M.low : M.h; }
-function hullT(o, d, t, k){ const s = (t.mesh ? t.mesh.scale.x : 1) * (k || 1), gy = heightAt(t.pos.x, t.pos.z); return rayBox(o, d, t.pos.x, t.pos.z, t.facing || 0, HULL_HL * s, HULL_HW * s, gy - 0.1, gy + LINE.tankH * s / TANK_SCALE); }
 const HIT = { t:0, x:0, y:0, z:0, e:null, bl:null, ground:false, sky:false };
 // the first thing along the ray (o, unit d) within maxT: an enemy (HIT.e), a solid block (HIT.bl), the ground — or open sky (HIT.sky)
 export function eyeRay(o, d, maxT){ let best = maxT, be = null, bb = null, ground = false;
   const ex = o.x + d.x * maxT, ez = o.z + d.z * maxT, sx = ex - o.x, sz = ez - o.z, sl = sx * sx + sz * sz || 1;
   const off = (x, z) => { const k = Math.max(0, Math.min(1, ((x - o.x) * sx + (z - o.z) * sz) / sl)); return Math.hypot(o.x + sx * k - x, o.z + sz * k - z); };   // (how far a thing stands off the ray's track on the ground)
   for(const e of enemies){ if(!(e.hp > 0) || e.alive === false || e.def.air || !e.mesh || e.mesh.visible === false) continue; if(off(e.pos.x, e.pos.z) > 6) continue;
-    let t; if(e.def.inf){ const gy = heightAt(e.pos.x, e.pos.z); t = rayCyl(o, d, e.pos.x, e.pos.z, XHAIR.man.r, gy - 0.1, gy + manTall(e)); } else t = hullT(o, d, e);
+    const gy = heightAt(e.pos.x, e.pos.z), t = rayCyl(o, d, e.pos.x, e.pos.z, XHAIR.man.r, gy - 0.1, gy + manTall(e));
     if(t > 0 && t < best){ best = t; be = e; } }
   _seen.clear();
   for(const bl of blocks){ if(bl.ours || bl.dead) continue; let t, sh = null;
@@ -97,15 +96,15 @@ export function updateCrosshair(dt, now){ const p = S.player; XH.live = false;
     S.pointerActive = true; }
   else { marks(null); return; }
   if(XH.reLook || XH.lookA == null){ XH.reLook = false; XH.lookA = Math.atan2(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z); }
-  if(!pad && S.firing && !XH.anchor){ const e = XH.tgt && XH.tgt.def && XH.tgt.def.inf ? XH.tgt : null; XH.anchor = { t:nowS(), p:S.aimPoint.clone(), cam:XCAM.position.clone(), e, dy:e ? S.aimPoint.y - heightAt(e.pos.x, e.pos.z) : 0 }; }   // (the burst's mark)
+  if(!pad && S.firing && !XH.anchor){ const e = XH.tgt && XH.tgt.def ? XH.tgt : null; XH.anchor = { t:nowS(), p:S.aimPoint.clone(), cam:XCAM.position.clone(), e, dy:e ? S.aimPoint.y - heightAt(e.pos.x, e.pos.z) : 0 }; }   // (the burst's mark)
   XH.live = true; marks(p, pad); }
-// the pad: a man or a hull near the stick's line is taken up, else chest high over the ground where the stick lays it
+// the pad: a man near the stick's line is taken up, else chest high over the ground where the stick lays it
 function padAim(p, reach){ const ap = S.aimPoint, ax = ap.x - p.pos.x, az = ap.z - p.pos.z, L = Math.hypot(ax, az); if(L < 0.5) return; const ux = ax / L, uz = az / L, P = XHAIR.pad;
   let best = null, bs = 1e9;
   for(const e of enemies){ if(!(e.hp > 0) || e.alive === false || e.def.air) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, al = dx * ux + dz * uz; if(al < P.near || al > reach) continue;
-    const lat = Math.abs(dx * uz - dz * ux); if(lat > P.lat + (e.def.inf ? 0 : 1.5)) continue; const sc = lat + Math.abs(al - L) * 0.12; if(sc < bs){ bs = sc; best = e; } }
+    const lat = Math.abs(dx * uz - dz * ux); if(lat > P.lat) continue; const sc = lat + Math.abs(al - L) * 0.12; if(sc < bs){ bs = sc; best = e; } }
   XH.tgt = best; XH.sky = false;
-  if(best){ const gy = heightAt(best.pos.x, best.pos.z); ap.set(best.pos.x, gy + (best.def.inf ? Math.min(XHAIR.chest, manTall(best) - XHAIR.man.hi) : XHAIR.tankUp), best.pos.z); }
+  if(best){ const gy = heightAt(best.pos.x, best.pos.z); ap.set(best.pos.x, gy + Math.min(XHAIR.chest, manTall(best) - XHAIR.man.hi), best.pos.z); }
   else ap.y = heightAt(ap.x, ap.z) + XHAIR.chest; }
 
 // ---- a round from a muzzle at (sx, sy, sz) to the crosshair: its yaw, the height over the ground it comes to, and over what distance ----
@@ -134,7 +133,7 @@ let _cur = null, _padSvg = null;
 function pointer(v){ if(v === _cur) return; _cur = v; const a = document.getElementById('app'), cv = document.querySelector('canvas'); if(a) a.style.cursor = v; if(cv) cv.style.cursor = v; }
 function marks(p, pad){ if(typeof document === 'undefined') return; const ui = !!p && !document.body.classList.contains('inmenu'), xe = XH.el || (XH.el = padMark());
   if(!ui){ if(xe) xe.style.display = 'none'; pointer(''); XH.stop = null; XH.state = 'ok'; return; }
-  const air = AIR.e, ap = S.aimPoint, g = equippedGun && equippedGun(), lob = !g || g.special === 'mortar' || g.special === 'rocket' || g.special === 'arty';
+  const air = AIR.e, ap = S.aimPoint, g = equippedGun && equippedGun(), lob = !g || g.special === 'mortar';
   // what the shot does: stopped short of the crosshair, out of the gun's reach, or there
   let st = null, far = false; if(!air && !lob && p.muzzle && !XH.sky){ p.muzzle.getWorldPosition(_v); const mx = _v.x, my = _v.y, mz = _v.z, d = Math.hypot(ap.x - mx, ap.z - mz);
     st = lineStop(mx, my, mz, ap.x, ap.y, ap.z, _stop); if(st && Math.hypot(st.x - ap.x, st.z - ap.z) < XHAIR.stop.min) st = null;

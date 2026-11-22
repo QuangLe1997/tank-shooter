@@ -143,7 +143,6 @@ export const SND = {   // Z151 re-levelled by measurement (K-weighted momentary 
   flak:    { r:()=>rGun({T:0.0026, k:5, lp:3000, crack:0.35, mech:640, sub:0.4, subF:100, tail:0.14, len:0.6}), g:0.55, gap:0.04 },
   agl:     { r:()=>rGun({T:0.004, k:4, lp:1100, crack:0, mech:520, sub:0.55, subF:80, tail:0.12, len:0.5}), g:0.34, gap:0.05 },                  // 40 mm: hollow thoomp
   cannon:  { r:()=>rGun({T:0.009, k:4, lp:1500, crack:0.35, sub:1.0, subF:48, tail:0.55, ring:170, len:1.8, drive:2.8}), g:0.9, gap:0.1, big:1 },        // 120 mm
-  hesh:    { r:()=>rGun({T:0.0075, k:4, lp:1400, crack:0.3, sub:0.9, subF:55, tail:0.45, ring:210, len:1.5, drive:2.6}), g:0.87, gap:0.1, big:1 },
   enemy:   { r:()=>rGun({T:0.005, k:4.5, lp:1700, crack:0.25, sub:0.5, subF:75, tail:0.3, len:1.0}), g:0.45, gap:0.04 },                          // enemy tank guns
   rifleE:  { r:()=>rGun({T:0.0011, k:6, lp:3400, crack:0.4, sub:0.08, subF:200, tail:0.06, len:0.3}), g:0.30, gap:0.03 },                     // infantry carbines
   ak:      { r:()=>rGun({T:0.0016, k:5, lp:2900, crack:0.45, sub:0.22, subF:140, tail:0.1, len:0.42}), g:0.34, gap:0.03, sample:'rifleE', rate:0.84 },   // Z355 the AK-47: the carbine's recording, deeper and heavier
@@ -159,16 +158,16 @@ export const SND = {   // Z151 re-levelled by measurement (K-weighted momentary 
   thud:    { r:rThud, g:0.85, gap:0.08 },
   crunch:  { r:rCrunch, g:0.34, gap:0.06 },
   reload:  { r:rReload, g:0.5, gap:0.2 },
-  railgun: { g:0.8, gap:0.1, big:1, sampleOnly:1 }, tesla:{ g:0.6, gap:0.06, sampleOnly:1 }, cryo:{ g:0.5, gap:0.06, sampleOnly:1 }, flame:{ g:0.5, gap:0.25, sampleOnly:1 }, dash:{ g:0.6, gap:0.3, sampleOnly:1 },   // Z153 sample-only keys (their synth versions stay in sfx())
+  railgun: { g:0.8, gap:0.1, big:1, sampleOnly:1 }, tesla:{ g:0.6, gap:0.06, sampleOnly:1 }, flame:{ g:0.5, gap:0.25, sampleOnly:1 }, dash:{ g:0.6, gap:0.3, sampleOnly:1 },   // Z153 sample-only keys (their synth versions stay in sfx())
 };
 // Z153 RECORDED-QUALITY SOUND SET (generated with ElevenLabs, trimmed + peak-normalised offline, assets/sfx/*.mp3): when a key has a
 //   sample it plays the sample, levelled at load time to the SAME loudness the Z151 mix measured for the synth version (LU after g),
 //   so the balance stays ear-safe. Until the files are decoded (or if one fails) the physically-modelled synth plays instead.
-export const SAMPLE_SET = { rifle:['rifle','rifle_2'], mg:['mg','mg_2'], minigun:['minigun'], shotgun:['shotgun'], flak:['flak'], agl:['agl'], cannon:['cannon'], hesh:['hesh'],
+export const SAMPLE_SET = { rifle:['rifle','rifle_2'], mg:['mg','mg_2'], minigun:['minigun'], shotgun:['shotgun'], flak:['flak'], agl:['agl'], cannon:['cannon'],
   enemy:['enemy'], rifleE:['rifleE'], launch:['launch'], boom:['boom'], bigboom:['bigboom'], hitM:['hitM','hitM_2'], hitH:['hitH'], ricochet:['ricochet'], clang:['clang'],
-  thud:['thud'], crunch:['crunch'], reload:['reload'], railgun:['railgun'], tesla:['tesla'], cryo:['cryo'], flame:['flame'], dash:['dash'] };
-export const SAMPLE_LU = { rifle:-24.4, mg:-30.3, minigun:-31.4, shotgun:-18.3, flak:-22.4, agl:-26.6, cannon:-15.9, hesh:-16.6, enemy:-23.4, rifleE:-30.9, launch:-21.6,
-  boom:-17.9, bigboom:-15.1, hitM:-25.9, hitH:-21, ricochet:-29.2, clang:-18.4, thud:-27.3, crunch:-29.4, reload:-28, railgun:-17.5, tesla:-23, cryo:-25.5, flame:-26, dash:-25 };
+  thud:['thud'], crunch:['crunch'], reload:['reload'], railgun:['railgun'], tesla:['tesla'], flame:['flame'], dash:['dash'] };
+export const SAMPLE_LU = { rifle:-24.4, mg:-30.3, minigun:-31.4, shotgun:-18.3, flak:-22.4, agl:-26.6, cannon:-15.9, enemy:-23.4, rifleE:-30.9, launch:-21.6,
+  boom:-17.9, bigboom:-15.1, hitM:-25.9, hitH:-21, ricochet:-29.2, clang:-18.4, thud:-27.3, crunch:-29.4, reload:-28, railgun:-17.5, tesla:-23, flame:-26, dash:-25 };
 const SAMPLES={}; let _sampLoad=false;
 // K-weighted momentary loudness (400 ms window, max) of a mono buffer — the same meter the Z151 audit used
 function _lufsMax(x, sr){ const hp=new Float32Array(x.length), y=new Float32Array(x.length);
@@ -212,16 +211,11 @@ export function sfx(name, pos, vol){
   if(muted) return;
   switch(name){                                                   // Z102 world sounds → physically-modelled bank
     case 'shoot': case 'shoot_rifle': return play('rifle', pos, vol);
-    case 'shoot_smg': return play('mg', pos, vol);
     case 'shoot_minigun': return play('minigun', pos, vol);
     case 'shoot_shotgun': return play('shotgun', pos, vol);
-    case 'shoot_flak': return play('flak', pos, vol);
     case 'shoot_agl': return play('agl', pos, vol);
     case 'shoot_cannon': return play('cannon', pos, vol);
-    case 'shoot_hesh': return play('hesh', pos, vol);
     case 'shoot_flame': return play(SAMPLES.flame ? 'flame' : 'flak', pos, (vol||1)*(SAMPLES.flame?1:0.6));
-    case 'shoot_thermo': play('launch', pos, vol); return play('hesh', pos, 0.6);
-    case 'shoot_missile': return play('launch', pos, (vol||1)*0.8);
     case 'rocketlaunch': return play('launch', pos, vol);
     case 'enemyShoot': return play('enemy', pos, vol);
     case 'rifleShot': return play('rifleE', pos, vol);
@@ -240,7 +234,6 @@ export function sfx(name, pos, vol){
   const bus = UI ? null : voice(pos||null, pos?0.3:0.22); _bus = bus;
   switch(name){
     case 'shoot_railgun': if(SAMPLES.railgun){ play('railgun', pos, vol); break; }tone(1600,0.2,{type:'triangle',vol:0.07,slideTo:220}); noise(0.05,{vol:0.18,type:'bp',hp:1800,lp:6000,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;
-    case 'shoot_cryo': if(SAMPLES.cryo){ play('cryo', pos, vol); break; } noise(0.16,{vol:0.11,type:'bp',hp:1500,lp:5000,sweepTo:4500}); tone(900,0.12,{type:'sine',vol:0.05,slideTo:1600}); break;
     case 'shoot_tesla': if(SAMPLES.tesla){ play('tesla', pos, vol); break; } noise(0.12,{vol:0.12,type:'bp',hp:900,lp:4200,dist:true}); tone(120,0.15,{type:'sawtooth',vol:0.08,slideTo:60}); break;
     case 'hurt':    play('hitH', null, 1.1); noise(0.18,{vol:0.2,type:'lp',lp:1400,dist:true}); break;   // our own hull is struck: heavy plate + thump
     case 'corehit': tone(150,0.14,{type:'triangle',vol:0.16,slideTo:70}); break;

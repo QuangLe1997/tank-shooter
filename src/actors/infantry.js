@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD } from '../../config.js';
-import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen, asShipped, nearShape, riverWay, wadeAt, gunFlash } from '../hub.js';
+import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen, asShipped, nearShape, riverWay, wadeAt, gunFlash } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -44,15 +44,14 @@ export const _INF0={ x:0, z:0 }; const _infNb=[], _fl={ x:0, z:0 };
 function enemyNade(e, now){ const N=FIELDCRAFT.nade; e.nadeAt=now+0.9+Math.random()*0.6; if(S.stage<N.fromStage || aiIQ()<N.iqMin || (e.supp||0)>0.6 || !canThrow('e', now)) return;
   const t=nadeTarget(e.pos.x, e.pos.z, FT, a=>a.task==='cover' && atCover(a.pos, a.cover)); if(!t || losBlocked(e.pos.x, e.pos.z, t.pos.x, t.pos.z) && Math.random()<0.5) return;
   if(Math.random()>0.35+aiIQ()*0.5) return; e.nadeAt=now+N.cdE[0]+Math.random()*(N.cdE[1]-N.cdE[0]); e.facing=Math.atan2(t.pos.x-e.pos.x, t.pos.z-e.pos.z); throwNade('e', e.pos.x, e.pos.z, t.pos.x, t.pos.z, now); }
-// Z104 who an enemy soldier fights: the tank by default; riflemen switch to one of OUR soldiers (or a captured tank) when clearly closer;
-// RPG teams only ever pick armour — the tank or a captured one
+// Z104 who an enemy soldier fights: the player by default; riflemen switch to one of OUR soldiers when clearly closer; RPG teams only ever pick the player
 export function infTarget(e){ const p=S.player, seen=playerSeen(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.6, e.pos.z); if(seen){ const k=e.lk||(e.lk={ x:0, z:0 }); k.x=p.pos.x; k.z=p.pos.z; }   // Z377 a soldier lying flat out of his sight: not his target — he goes to look where he last saw him
-  let best=seen ? { pos:p.pos, vel:p.vel, tank:true } : null, bd=seen ? Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z) : Infinity;
+  let best=seen ? { pos:p.pos, vel:p.vel, you:true } : null, bd=seen ? Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z) : Infinity;
   if(!e.def.rpg) for(const a of FT){ const d0=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z), d=d0*(a.task==='cover'&&atCover(a.pos,a.cover)?FIELDCRAFT.target.coverMul:1)*(a.g.userData.stance==='prone'?FIELDCRAFT.target.proneMul:1);   // Z220 the man in the open is shot first
-    if(d<bd*0.9 && d0<e.def.range*1.4){ bd=d; best={ pos:a.pos, vel:_INF0, tank:false }; } }
-  return best || { pos:e.lk || { x:e.pos.x, z:e.pos.z }, vel:_INF0, tank:false, lost:true }; }   // (Z377 nobody he can see: search — never a shot)
-// nearest armour (ours) bearing on this soldier, for taking cover
-export function infTankThreat(e){ const p=S.player, R=INFANTRY.coverThreat; let best=null, bd=R;
+    if(d<bd*0.9 && d0<e.def.range*1.4){ bd=d; best={ pos:a.pos, vel:_INF0, you:false }; } }
+  return best || { pos:e.lk || { x:e.pos.x, z:e.pos.z }, vel:_INF0, you:false, lost:true }; }   // (Z377 nobody he can see: search — never a shot)
+// the player close and in sight of this soldier: he takes cover from him
+export function infThreat(e){ const p=S.player, R=INFANTRY.coverThreat; let best=null, bd=R;
   const dp=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z); if(dp<bd && playerSeen(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.6, e.pos.z)){ bd=dp; best=p; }   // (Z377 not one he cannot see)
   return best; }
 export function updateInfantry(e, dt, now, edt){
@@ -60,11 +59,11 @@ export function updateInfantry(e, dt, now, edt){
   if(dazed(e, now)){ if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*6); e.kbx*=kf; e.kbz*=kf; } infPushBlocks(e.pos); clampField(e.pos, 2);   // Z223 knocked flat by a blast: slides, lies there, then gets up
     e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.aimT=0; dazePose(e.mesh, now, dt); e.r=0.34; e.fireAt=Math.max(e.fireAt||0, now+0.4); return; }
   if(now>=(e.tgtAt||0)){ e.tgtAt=now+0.45+Math.random()*0.3; e.T=infTarget(e); }            // re-pick the target a couple of times a second
-  const T=e.T||{ pos:p.pos, vel:p.vel, tank:true }, dx=T.pos.x-e.pos.x, dz=T.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, ux=dx/d, uz=dz/d;
+  const T=e.T||{ pos:p.pos, vel:p.vel, you:true }, dx=T.pos.x-e.pos.x, dz=T.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, ux=dx/d, uz=dz/d;
   const pdx=p.pos.x-e.pos.x, pdz=p.pos.z-e.pos.z, pd=Math.hypot(pdx,pdz)||1, pux=pdx/pd, puz=pdz/pd;
   let mx=0, mz=0, sp=def.speed, _sm=null;
-  const closing = -(p.vel.x*pux + p.vel.z*puz);                            // how fast the tank is bearing down on this soldier
-  const thr = (!def.rpg && !(e.aimT>0)) ? infTankThreat(e) : null;
+  const closing = -(p.vel.x*pux + p.vel.z*puz);                            // how fast the player is bearing down on this soldier
+  const thr = (!def.rpg && !(e.aimT>0)) ? infThreat(e) : null;
   if(thr && now>=(e.coverAt||0)){ e.coverAt=now+1.4+Math.random()*0.6; e.cover=coverSpot(e.pos.x, e.pos.z, thr.pos.x, thr.pos.z, INFANTRY.coverSearch); }
   const _ex=e.exit ? fortExitDir(e) : null;                                 // Z111b filing out through a fortress gate
   if(_ex){ mx=_ex.x; mz=_ex.z; sp*=1.15; }
@@ -122,14 +121,6 @@ export function updateInfantry(e, dt, now, edt){
 // a tank rolling over a soldier at speed crushes him; slower contact just shoves him aside
 export function infantryDown(e){
   const m=e.mesh, gy=heightAt(e.pos.x,e.pos.z);
-  if(e._crushed){ m.scale.y*=0.12; m.position.y=gy+0.05;                    // flattened into the dirt under the tracks
-    burst(e.pos, BIOME.ground, 8, 5, {y:gy+0.4, life:0.6, size:1.0, smoke:true, grav:-0.4, drag:2.2, up:1.5, op:0.5}); burst(e.pos, 0x6a2a1c, 6, 4, {y:gy+0.3, life:0.35, size:0.35, grav:-14, drag:2});
-    floatText('CÁN NÁT +'+INFANTRY.crushBonus, '#ffcf5a', {x:e.pos.x, y:gy+2.4, z:e.pos.z}, 16); addScore(INFANTRY.crushBonus, new THREE.Vector3(e.pos.x,2,e.pos.z));
-    sfx('crunch', e.pos); haptic(28); S.shake=Math.min(2,S.shake+0.25); INF_DEAD.push({ e, t:0, crushed:true }); return; }   // Z402 and bursts a moment later
-  if(e._fx==='ice'){                                                     // Z112 frozen solid → shatters into ice on the spot
-    for(let k=0;k<12;k++){ const a=Math.random()*6.283, sp=2+Math.random()*5; spawnPart(e.pos.x, gy+0.9+Math.random()*0.8, e.pos.z, Math.cos(a)*sp, 2+Math.random()*4, Math.sin(a)*sp, {color:Math.random()<0.5?0xd8f6ff:0x7fd0ff, size:0.18+Math.random()*0.22, life:0.7, grav:-16, drag:1}); }
-    burst(e.pos, 0xd8f6ff, 3, 2, {y:gy+1, life:0.6, size:1.2, smoke:true, grav:-0.2, drag:2, op:0.4}); sfx('crunch', e.pos);
-    m.visible=false; m.rotation.set(0,0,0); (enemyPool[e.type]=enemyPool[e.type]||[]).push(m); return; }
   // Z402 every other death: thrown whole along the shot (a heavy round or a blast throws him far), and gone in a burst a moment after he lands
   const heavy=!!(e._big || e._blast); let ux=e._blast ? e.pos.x-e._blast.x : (e._hx||0), uz=e._blast ? e.pos.z-e._blast.z : (e._hz||0); const L=Math.hypot(ux,uz);
   if(L<0.05){ const a=Math.random()*6.283; ux=Math.cos(a); uz=Math.sin(a); } else { ux/=L; uz/=L; }
