@@ -123,6 +123,7 @@ export * from './world/camps.js';
 export * from './world/zones.js';
 export * from './world/fortress.js';
 export * from './world/fort-hill.js';   // Z453 castles on crags: the hills, the open citadel's ward, the paved yards
+export * from './world/hill-trees.js';   // Z455 dead trees at the crags' lips, ancient oaks on the knolls
 export * from './world/rally.js';
 export * from './world/pow.js';
 export * from './world/depots.js';

@@ -1,7 +1,7 @@
 // world/trails.js — Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, the bases, the depots, the checkpoints, the roads off the field), routed round what stands, painted into the floor, with stones and grass along both sides
 import * as THREE from 'three';
 import { TRAILS } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt, wildflowers } from '../hub.js';
+import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, HILLWAY, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt, wildflowers } from '../hub.js';
 
 // one trail = { pts:[[x, z], …] every 2 m, w (its width, m), len } · mask: a 1 m grid over the field's square, 2 = on the worn track, 1 = its verge
 export const TRAIL = { paths:[], mask:null, mn:0 };
@@ -19,6 +19,7 @@ function sites(){ const out = [], A = ARENA, R = TRAILS.core;
   if(UNDER.gate) add(inward(UNDER.gate.x, UNDER.gate.z, 12), 'under');
   for(const L of DEF.cps || []) add([L.x, L.z], 'cp');
   if(OBJ && OBJ.x === OBJ.x) add(inward(OBJ.x, OBJ.z, (OBJ.r || 10) + 4), 'obj');
+  for(const q of HILLWAY) add([q.x, q.z], 'path');   // Z455 a footpath up every knoll and over every ridge's saddle
   return out; }
 
 // the cost grid: what stands (padded) is solid, our compound / the forts / the yards are walked round, water and the ground past the fence cost more
@@ -83,7 +84,7 @@ export function buildTrails(){ const C = TRAILS, T = TRAIL, had = FENCE_GAPS.len
   const S = G ? sites() : []; if(S.length < 2){ if(had) buildPerimeter(BIOME, true); return 0; }
   const inT = new Uint8Array(S.length), best = S.map(s => [Math.hypot(s.x - S[0].x, s.z - S[0].z), 0]), legs = []; inT[0] = 1;   // the shortest tree over the places (Prim)
   for(let m = 1; m < S.length; m++){ let bi = -1; for(let i = 0; i < S.length; i++) if(!inT[i] && (bi < 0 || best[i][0] < best[bi][0])) bi = i; inT[bi] = 1;
-    const a = S[best[bi][1]], b = S[bi]; legs.push({ a, b, w:C.w[a.big && b.big ? 1 : 0] });
+    const a = S[best[bi][1]], b = S[bi]; legs.push({ a, b, w:a.k === 'path' || b.k === 'path' ? C.path : C.w[a.big && b.big ? 1 : 0] });
     for(let i = 0; i < S.length; i++) if(!inT[i]){ const d = Math.hypot(S[i].x - b.x, S[i].z - b.z); if(d < best[i][0]) best[i] = [d, bi]; } }
   for(const e of ROAD_EXITS){ const ox = Math.cos(e.a), oz = Math.sin(e.a), p = { x:e.x - ox * 14, z:e.z - oz * 14 }; let a = S[0], bd = Infinity;   // and out to each road over the hills
     for(const s of S){ const d = Math.hypot(s.x - p.x, s.z - p.z); if(d < bd){ bd = d; a = s; } } legs.push({ a, b:p, w:C.w[1], exit:e }); }

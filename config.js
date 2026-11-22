@@ -893,7 +893,7 @@ export const SIDE_ID = { coat:0.75, metal:0.5, detail:1, bright:0.42, sat:0.65, 
 //   battlefield's procedural tree kinds become (variant i takes species i mod the list; `_` = everywhere else); wind = its direction, how far the top
 //   sways (m), how far the leaves flutter (m); env = reflections; tint = albedo × per species
 export const REALTREE = { trans:1.6, env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }, tint:{},
-  h:{ oak:15, linden:12, birch:11, poplar:18, pine:17, spruce_snow:14, palm:12, acacia:8, baobab:13, dead:9, cypress:14, olive:7, giant:20, quiver:3.4, rooibos:1, othonna:1 },
+  h:{ oak:15, linden:12, birch:11, poplar:18, pine:17, spruce_snow:14, palm:12, acacia:8, baobab:13, dead:9, cypress:14, olive:7, giant:30, quiver:3.4, rooibos:1, othonna:1 },
   map:{ _:{ broadleaf:['oak','linden','birch','poplar'], conifer:['pine'], coniferSnow:['spruce_snow'], palm:['palm'], acacia:['acacia'], baobab:['baobab'], dead:['dead'], ancient:['giant'],
     quiver:['quiver'], bushDry:['rooibos:0','rooibos:1','rooibos:2','rooibos:3','rooibos:4'], bushGreen:['othonna:0','othonna:1','othonna:2','othonna:3','othonna:4'] },
     MEADOW:{ broadleaf:['oak','linden','birch','poplar','oak','pine','linden','birch'] }, CITADEL:{ broadleaf:['olive','cypress','oak','cypress','olive','linden','olive','cypress'] },
@@ -1398,10 +1398,13 @@ export const FORT_CMD = { on:true, k:{ mobile:0.82 }, rim:1.5,
 //   the fort, its flanks base m (× (1 + ramp) on the gate's side, × cliff behind, ragged ± rag, crag m of ledges), rocks scans r m on the flanks (none
 //   within roadA rad of the road up) — the capital open (its walls only within keepArc rad of the rear) with its keep on a ward h m up (r m, edge m of
 //   steep side, a ramp rampW × rampL m toward the gate, at × the fort's radius behind its centre); every yard paved (pave/, tile m, tint)
-export const FORTHILL = { on:true, biomes:{ QUARRY:{ h:[12, 8, 5], top:14, base:30, ramp:0.9, cliff:0.38, rag:0.22, crag:0.7, rocks:14, rock:[2.4, 4.5], roadA:0.4, cliffs:['hill_cliff', 'hill_crag', 'hill_ledge', 'hill_cliff'], outcrops:9, outS:[0.55, 1.0], outSink:0.28, tone:[1.25, 1.22, 1.2], road:['road_rocks', 'road_boulder'], roadN:0.16, roadS:[[0.9, 1.8], [1.4, 3.2]], open:true, keepArc:1.35, keep:'modular_fort_01_wall_thick_corner_01', mix:'modular_fort_01_wall_thick_corner_01', bury:1.4,
+export const FORTHILL = { on:true, biomes:{ QUARRY:{ h:[12, 8, 5], top:14, base:30, ramp:0.9, cliff:0.26, rag:0.22, crag:0.7, rocks:14, rock:[2.4, 4.5], roadA:0.4, cliffs:['hill_cliff', 'hill_crag', 'hill_ledge', 'hill_cliff'], outcrops:9, outS:[0.55, 1.0], outSink:0.28, tone:[1.25, 1.22, 1.2], road:['road_rocks', 'road_boulder'], roadN:0.16, roadS:[[0.9, 1.8], [1.4, 3.2]], open:true, keepArc:1.35, keep:'modular_fort_01_wall_thick_corner_01', mix:'modular_fort_01_wall_thick_corner_01', bury:1.4,
   ward:{ h:4.5, r:13, edge:2.6, rampW:9, rampL:20, at:0.36 }, paveTile:4.5, paveTint:[1.0, 0.98, 0.95], paveSteep:0.6, kerbW:1.6, kerbK:0.72,
     edge:{ keys:['hill_ledge', 'hill_cliff', 'hill_crag'], h:[26, 42], o:[6, 16], lip:0.9, drop:18, overlap:0.62 },
-    rough:{ ledge:0.9, steps:5, edge:0.72, bump:0.35, clear:[30, 44] }, perch:{ n:10, keys:['road_boulder', 'road_rocks'], h:[2.5, 5], sink:0.08 },
+    land:{ ridge:{ k:0.75, saddle:0.6, w:26, steep:0.32, wander:14 }, knolls:{ n:6, h:[4, 8.5], r:[18, 32] }, bench:{ h:2.4, edge:0.72, min:1.4, share:0.5, jag:0.8 }, bump:0.5, clear:[34, 50] },   // Z455 the land: ridges joining the crags (crest × the crags' height, dip to a saddle, one flank × steep, wandering m), knolls, quarry benches (riser every h m, on a share of the flanks), fbm knobs bump m, clear of our compound [r0, r1] m
+    perch:{ n:10, keys:['road_boulder', 'road_rocks'], h:[2.5, 5], sink:0.08 },
+    steep:{ min:0.75, grid:5, n:46, gap:11, reach:6, h:[4, 13] }, spire:{ n:12, share:0.7, perKnoll:1, keys:['hill_cliff', 'hill_crag'], h:[7, 12], thin:0.85 }, lime:{ desat:0.72, tint:[1.16, 1.12, 1.05] },   // Z455 rock faces on every steep flank (rise ≥ min per m, sampled every grid m, gap m apart, as tall as the drop over reach m) · rock spires on the crests
+    trees:{ grid:4, min:0.75, lip:0.4, reach:12, drop:3, gap:20, wall:5, n:12, keys:['tree_snag_lean', 'tree_snag_tall'], h:[9, 14], lean:[0.16, 0.38], back:1.2, oak:{ n:2, h:[17, 23], off:[0.15, 0.35] } },   // Z455 trees on the crags (world/hill-trees.js): dead trees at the lip of a drop (slope over min, walked uphill up to reach m till it eases under lip, at least drop m above the slope's foot), back m in from the edge, leaning out over it, no nearer a fort than wall m outside its walls (its crag's lip is the best ledge); ancient oaks on the knolls' crowns, off × R from the top where the footpath ends
     scatter:{ n:46, group:3, big:0.35, bigS:[2.5, 5.5], smallS:[1.2, 3] } } } };
 export const FORT = {
   coverK:0.55, coreFire:55, crater:{ rim:0.7, depth:2.4 },   // Z434 the yard's cover × (a fort's yard was a junk pile) · how long (s) the command post's wreck burns · its crater: rim raised, pit sunk (m)
@@ -1505,7 +1508,7 @@ export const CONTACT = { on:true, res:[2048, 1024], pad:0.2, shadeB:0.8, shade:0
 //   crown and shoulders (a two-track meadow lane vs a gravel desert road); the grass carpet goes flat and thin on it. Along both sides: loose stones (per m
 //   [pebbles, kerb stones]), grass clumps, a bush here and there, wild flowers (per m, both sides). w = [lane, the trunks to the gates and off the field] m,
 //   rut = the ruts' half spacing ×w. No trails in the city (it has its streets) or below ground.
-export const TRAILS = { on:true, cell:[3, 3.5], slope:5, grade:30, wet:10, out:2.5, reuse:0.45, pad:1.4, core:35, w:[3.4, 5], rut:0.24, rutW:0.85, body:150, rutV:105, blur:0.9, rutB:0.25, rutDark:0.28, wig:0.9,
+export const TRAILS = { on:true, path:2.2, cell:[3, 3.5], slope:5, grade:30, wet:10, out:2.5, reuse:0.45, pad:1.4, core:35, w:[3.4, 5], rut:0.24, rutW:0.85, body:150, rutV:105, blur:0.9, rutB:0.25, rutDark:0.28, wig:0.9,
   stones:[[1.4, 0.2], [0.4, 0.08]], verge:[0.7, 0.25], bush:[0.035, 0.012], flower:0.08, mask:1.6,
   biomes:{ MEADOW:{ set:'gravel_road', tile:2, tint:[0.62, 0.6, 0.52], mid:0.62, tone:'green', bush:'green', flowers:1 }, SAVANNA:{ set:'sandy_gravel', tile:2.1, tint:[0.74, 0.6, 0.48], mid:0.45, tone:'dry', bush:'dry' },
     CITADEL:{ set:'gravel_road', tile:2, tint:[0.64, 0.6, 0.54], mid:0.2, tone:'dry', bush:'dry' }, RUINS:{ set:'gravel_floor', tile:2.25, tint:[0.6, 0.58, 0.54], mid:0.35, tone:'green', bush:'green' },
@@ -1699,15 +1702,16 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     power_pole:{ h:11, ar:[0.49, 1, 0.21], sink:0, solid:{ r:0.35 } },
     fence_gate:{ w:5.6, ar:[1.22, 1, 0.1], sink:0, solid:{ box:1 } },
     watchtower:{ h:13, ar:[0.35, 1, 0.35], sink:0, solid:null }, wt_steel:{ one:true, h:16, ar:[0.28, 1, 0.33], sink:0, solid:null }, wt_rust:{ h:15, ar:[0.41, 1, 0.42], sink:0, solid:null },   // Z375 the real guard towers (world/tower-kinds.js mtower / wtower / wrust)
-    tree_twisted:{ one:true, h:9, ar:[0.66, 1, 0.56], sink:0.02, solid:{ r:0.7 } },
-    tree_ember:{ one:true, h:7, ar:[1.66, 1, 1.39], sink:0.03, solid:{ r:1.0 }, env:0.7 },
-    tree_bare:{ one:true, h:12, ar:[0.6, 1, 0.43], sink:0.02, solid:{ r:0.6 } },
-    tree_remnant:{ w:7, ar:[1.82, 1, 1.83], sink:0.03, solid:{ box:0.4 } },
-    tree_sentinel:{ h:24, ar:[1.01, 1, 0.89], sink:0.02, solid:{ r:1.9 } },
-    tree_cedar:{ h:26, ar:[0.62, 1, 0.46], sink:0.02, solid:{ r:1.2 } },
-    tree_oak:{ h:18, ar:[0.97, 1, 0.97], sink:0.02, solid:{ r:1.2 } },
-    tree_world:{ h:30, ar:[1.02, 1, 0.81], sink:0.02, solid:{ r:2.4 } },
+    tree_twisted:{ one:true, h:12, ar:[0.66, 1, 0.56], sink:0.02, solid:{ r:0.9 } },   // Z455 the old trees 1.3× taller, their trunks with them
+    tree_ember:{ one:true, h:9, ar:[1.66, 1, 1.39], sink:0.03, solid:{ r:1.3 }, env:0.7 },
+    tree_bare:{ one:true, h:15, ar:[0.6, 1, 0.43], sink:0.02, solid:{ r:0.75 } },
+    tree_remnant:{ w:9, ar:[1.82, 1, 1.83], sink:0.03, solid:{ box:0.4 } },
+    tree_sentinel:{ h:32, ar:[1.01, 1, 0.89], sink:0.02, solid:{ r:2.5 } },
+    tree_cedar:{ h:32, ar:[0.62, 1, 0.46], sink:0.02, solid:{ r:1.5 } },
+    tree_oak:{ h:24, ar:[0.97, 1, 0.97], sink:0.02, solid:{ r:1.6 } },
+    tree_world:{ h:40, ar:[1.02, 1, 0.81], sink:0.02, solid:{ r:3.2 } },
     tree_pine:{ h:22, ar:[0.47, 1, 0.47], sink:0.02, solid:{ r:0.8 } },
+    tree_oak_old:{ h:19, ar:[1.06, 1, 1.03], sink:0.03, solid:{ r:2.5 } }, tree_snag_tall:{ h:15, ar:[0.83, 1, 1.0], sink:0.02, solid:{ r:0.45 } }, tree_snag_lean:{ h:12, ar:[1.02, 1, 0.95], sink:0.02, solid:{ r:0.5 } },   // Z455 photographed dead trees (Sketchfab, CC BY 4.0, via Objaverse — credits in assets/models/real/scene/SOURCES.txt): a gnarled ancient oak (its colour built from the scan's own roughness: it shipped without one), a tall bare tree, a broken-limbed snag
     // Z420 the forts' command compounds (world/fortress.js buildCore, FORT_CMD) and the fuel depot's store (world/supply.js) — solid: null, their own blocks carry them
     hq_modular:{ one:true, w:17, ar:[1.84, 1, 1.72], sink:0.01, solid:null }, bunker_hangar:{ w:15, ar:[2.11, 1, 1.02], sink:0.02, solid:null }, bunker_store:{ w:13, ar:[1.81, 1, 1.4], sink:0.01, solid:null },
     bunker_green:{ h:7.5, ar:[0.97, 1, 0.84], sink:0.03, solid:null }, bunker_dome:{ w:12, ar:[2.6, 1, 2.6], sink:0.05, solid:{ cut:1 } }, bunker_sandbag:{ w:11, ar:[2.04, 1, 2.04], sink:0.03, solid:{ cut:1 } },
@@ -1747,36 +1751,36 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     blast_furnace:{ h:30, ar:[1, 1, 0.41], sink:0.01, solid:{ box:0.55 } } },
   biomes:{
     // fire and black rock: two cones smoking on the skyline, craters of live melt in the field, the road in through basalt arches, trees burning from the roots
-    VOLCANO:[ { k:'lava_crater', at:'free', n:3, s:[0.8, 1.2], face:'rand' }, { k:'lava_rock_a', at:'free', n:8, s:[0.7, 1.3], face:'rand' }, { k:'lava_rock_b', at:'free', n:6, s:[0.7, 1.3], face:'rand' }, { k:'lava_rock_c', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'ember_ruin', at:'free', n:2, face:'rand' },
+    VOLCANO:[ { k:'tree_snag_tall', at:'free', n:3, s:[0.8, 1.1], face:'rand' }, { k:'tree_snag_lean', at:'free', n:3, s:[0.8, 1.1], face:'rand' }, { k:'lava_crater', at:'free', n:3, s:[0.8, 1.2], face:'rand' }, { k:'lava_rock_a', at:'free', n:8, s:[0.7, 1.3], face:'rand' }, { k:'lava_rock_b', at:'free', n:6, s:[0.7, 1.3], face:'rand' }, { k:'lava_rock_c', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'ember_ruin', at:'free', n:2, face:'rand' },
       { k:'volcano', at:'far', a:[[-2.75, -2.3], [-0.85, -0.4]], d:[30, 55], s:[0.9, 1.25] }, { k:'volcano', at:'far', a:[[2.6, 3.1], [0.05, 0.5]], d:[45, 70], s:[0.7, 0.95] },
       { k:'lava_pit', at:'free', n:2, s:[0.85, 1.15] }, { k:'lava_arch', at:'free', n:3, north:true, s:[0.9, 1.15] },
       { k:'tree_ember', at:'free', n:7, s:[0.8, 1.2], face:'rand' }, { k:'tree_twisted', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'tree_bare', at:'free', n:3, s:[0.85, 1.1], face:'rand' }, { k:'horn_arch', at:'free', n:1, s:[0.9, 1.1], face:'rand' } ],
     // ice: white summits standing over the fence, a signal mast glowing blue in the snow, groves of snow-laden cedar, the bare trees frosted
-    ARCTIC:[ { k:'ice_castle', at:'edge', a:[[-2.6, -2.0], [-1.1, -0.5]], inset:30 },
+    ARCTIC:[ { k:'tree_snag_tall', at:'free', n:3, s:[0.8, 1.1], face:'rand' }, { k:'ice_castle', at:'edge', a:[[-2.6, -2.0], [-1.1, -0.5]], inset:30 },
       { k:'ice_peak', at:'far', a:[[-2.8, -2.3]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[-0.85, -0.35]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[2.7, 3.1], [0.0, 0.45]], d:[40, 60], s:[0.75, 0.95] },
       { k:'cell_tower', at:'free', id:'mast', north:true }, { k:'tree_cedar', at:'cluster', id:'g1', n:3, r:12, s:[0.85, 1.1], face:'rand' }, { k:'tree_cedar', at:'cluster', id:'g2', n:3, r:12, s:[0.85, 1.1], face:'rand' },
       { k:'tree_bare', at:'free', n:5, s:[0.8, 1.15], face:'rand' }, { k:'rock_outcrop', at:'free', n:2, s:[0.8, 1] },
       { k:'ice_peak', at:'free', n:16, s:[0.034, 0.066], face:'rand', solid:{ disc:0.42 }, top:'l' }, { k:'bastion_gate', at:'free', n:1 }, { k:'bunker_door', at:'free', n:1, face:'rand' } ],   // Z393 snow-capped crags 2–4 m out on the ice (the summit scan small) in place of flora.js's cone 'ice spires'
     // sand and oil: a fuel farm of steel tanks with drums stacked round it, a siding of rail tankers, a pole line marching off, a leaning water tower, limestone kopjes
-    DESERT:[ { k:'sphinx_great', at:'free', id:'sphinx', north:true, s:[0.95, 1.05] }, { k:'sphinx_small', at:'avenue', of:'sphinx', n:4, from:30, gap:12, side:10 }, { k:'rock_arch', at:'free', n:1, s:[0.9, 1.1] },
+    DESERT:[ { k:'tree_snag_lean', at:'free', n:2, s:[0.7, 0.9], face:'rand' }, { k:'sphinx_great', at:'free', id:'sphinx', north:true, s:[0.95, 1.05] }, { k:'sphinx_small', at:'avenue', of:'sphinx', n:4, from:30, gap:12, side:10 }, { k:'rock_arch', at:'free', n:1, s:[0.9, 1.1] },
       { k:'tank_steel', at:'cluster', id:'farm', n:3, r:13, s:[0.9, 1.1] }, { k:'oil_drum', at:'around', of:'farm', n:5, r:[9, 17], s:[0.95, 1.05], face:'rand' },
       { k:'power_pole', at:'line', n:7, gap:24, face:'along' },
       { k:'wt_lean', at:'free', n:1 }, { k:'rock_outcrop', at:'free', n:3, s:[0.8, 1.15] }, { k:'tree_twisted', at:'free', n:4, s:[0.8, 1.1], face:'rand' }, { k:'tree_bare', at:'free', n:2, face:'rand' }, { k:'horn_arch', at:'free', n:1, s:[0.8, 1.0], face:'rand' } ],
     // the great tree of the plain with its shade, broad oaks, kopjes of weathered stone, stumps and dead wood, a farm's leaning water tower, a pole line
-    SAVANNA:[ { k:'rock_arch', at:'free', n:2, s:[0.8, 1.05] },
+    SAVANNA:[ { k:'tree_snag_tall', at:'free', n:2, s:[0.9, 1.15], face:'rand' }, { k:'rock_arch', at:'free', n:2, s:[0.8, 1.05] },
       { k:'tree_world', at:'free', id:'great', n:1, s:[1, 1.1] }, { k:'tree_oak', at:'free', n:3, s:[0.85, 1.1], face:'rand' }, { k:'rock_outcrop', at:'free', n:4, s:[0.75, 1.1] },
       { k:'tree_remnant', at:'free', n:3, face:'rand' }, { k:'tree_twisted', at:'free', n:3, face:'rand' }, { k:'wt_lean', at:'free', n:1 }, { k:'power_pole', at:'line', n:5, gap:26, face:'along' }, { k:'relay_post', at:'free', n:1, north:true } ],
     // green country: oak and pine woods, the old tree on the rise, a mossy moon gate and a breached garden wall, rock stacks, the overgrown dish on the far side
-    MEADOW:[ { k:'belfry', at:'free', n:1 }, { k:'moss_archway', at:'free', n:1 },
+    MEADOW:[ { k:'tree_oak_old', at:'free', n:2, s:[1, 1.25], face:'rand' }, { k:'belfry', at:'free', n:1 }, { k:'moss_archway', at:'free', n:1 },
       { k:'tree_world', at:'free', n:1, north:true }, { k:'tree_oak', at:'cluster', id:'w1', n:3, r:14, s:[0.85, 1.1], face:'rand' }, { k:'tree_pine', at:'cluster', id:'w2', n:4, r:12, s:[0.85, 1.15], face:'rand' },
       { k:'moss_arch', at:'free', n:1 }, { k:'gothic_gate', at:'free', n:1 }, { k:'radar_dish', at:'free', n:1, north:true }, { k:'keep_medieval', at:'free', n:1, north:true } ],
     // the ruined city of old: a temple on the far side with its two lions at the steps, breached walls, moon gates, dead giants, stumps, the dish gone to moss
-    RUINS:[ { k:'ruin_overgrown', at:'free', n:1, north:true }, { k:'skeleton_block', at:'free', n:1 }, { k:'gargoyle_wall', at:'free', n:2 }, { k:'corner_store', at:'free', n:1 },
+    RUINS:[ { k:'tree_oak_old', at:'free', n:1, s:[1, 1.2], face:'rand' }, { k:'tree_snag_lean', at:'free', n:3, s:[0.85, 1.15], face:'rand' }, { k:'ruin_overgrown', at:'free', n:1, north:true }, { k:'skeleton_block', at:'free', n:1 }, { k:'gargoyle_wall', at:'free', n:2 }, { k:'corner_store', at:'free', n:1 },
       { k:'mtn_gate', at:'far', a:[[-2.8, -2.3], [-0.85, -0.35]], d:[8, 22], s:[1, 1.2] }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
       { k:'gothic_gate', at:'free', n:4 }, { k:'moss_arch', at:'free', n:2 }, { k:'tree_sentinel', at:'free', n:2, face:'rand' }, { k:'tree_bare', at:'free', n:4, face:'rand' },
       { k:'tree_remnant', at:'free', n:4, face:'rand' }, { k:'radar_dish', at:'free', n:1 }, { k:'block_white', at:'free', n:1 }, { k:'wall_tall', at:'free', n:3, face:'rand' }, { k:'fountain_temple', at:'free', n:1 }, { k:'stone_block', at:'free', n:1, face:'rand' } ],
     // the citadel's country: a mountain with a temple gate cut in it at the fence, a marble temple with its lions, broken walls, moon gates, pines, rock stacks
-    CITADEL:[ { k:'keep_fortress', at:'free', id:'keep', north:true }, { k:'parapet', at:'around', of:'keep', n:2, r:[21, 26], face:'out' }, { k:'castle_wall', at:'around', of:'keep', n:2, r:[26, 32], face:'out' }, { k:'citadel_tower', at:'around', of:'keep', n:2, r:[27, 34] }, { k:'gatehouse', at:'free', n:1 },
+    CITADEL:[ { k:'tree_oak_old', at:'free', n:1, s:[1, 1.15], face:'rand' }, { k:'keep_fortress', at:'free', id:'keep', north:true }, { k:'parapet', at:'around', of:'keep', n:2, r:[21, 26], face:'out' }, { k:'castle_wall', at:'around', of:'keep', n:2, r:[26, 32], face:'out' }, { k:'citadel_tower', at:'around', of:'keep', n:2, r:[27, 34] }, { k:'gatehouse', at:'free', n:1 },
       { k:'stone_gate', at:'edge', a:[[-2.6, -2.1], [-1.0, -0.55]], inset:18 }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
       { k:'gothic_gate', at:'free', n:1 }, { k:'moss_arch', at:'free', n:1 }, { k:'tree_pine', at:'free', n:4, face:'rand' }, { k:'keep_medieval', at:'free', n:1 }, { k:'tower_mage', at:'free', n:1, north:true }, { k:'fountain_temple', at:'free', n:1 } ],
     // white stone: outcrops and stacks everywhere, the old cave temple in the quarry wall, a rail siding, a water tank, drums, the pole line

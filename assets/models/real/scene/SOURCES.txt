@@ -49,3 +49,9 @@ Z387 the soldier's four new hand weapons (assets/models/real/gun/inf, plain GLBs
   iron_barricade N34, scaffold_ruin N46, lighthouse N48, relay_post N50, keep_medieval N56, stone_block N64, fountain_vintage N73, bunker_door N81, fountain_temple N86,
   tower_mage N88, wall_tall N91, elevador N20; blast_furnace.glb = an iron-ore blast furnace (CC0, meshy.ai/posts/0198b26f-8b64-7f84-b281-6c1474873708, batch ~/Downloads/3dnew/z426)
 hill_cliff / hill_crag / hill_ledge / road_rocks / road_boulder (Z453) — Poly Haven, CC0: "Namaqualand Cliff 02", "Mountainside", "Coastal Cliff 02", "Namaqualand Boulder 02", "Boulder 01" (https://polyhaven.com/models), 2K glTF packed by tools/scene-import.mjs.
+tree_oak_old / tree_snag_tall / tree_snag_lean (Z455) — photogrammetry scans from Sketchfab, CC BY 4.0, downloaded as GLB from the Objaverse mirror
+  (huggingface.co/datasets/allenai/objaverse), packed by tools/scene-import.mjs (several materials merged into one atlas first; the oak shipped without
+  a colour map, so its colour is built from the scan's own roughness channel between two bark tones):
+  tree_oak_old.glb = "Skovfogedegen oak tree" by Rigsters (https://sketchfab.com/3d-models/fd582b0d4a8c4af1a1b5c4f21a481c93),
+  tree_snag_tall.glb = "Tree" by Epic_Tree_Store (https://sketchfab.com/3d-models/c25e5fc2bfa54d24a165a8a207c0a6d7),
+  tree_snag_lean.glb = "Hunt Park Large Tree" by symension123 (https://sketchfab.com/3d-models/b3cc8f7f3cd0495ea3a8ddfae3902921).

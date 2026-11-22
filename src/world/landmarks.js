@@ -2,14 +2,14 @@
 //   those now; Z401 the VILLAGE homes and rice paddies too, the biome having left the game at Z253): the city district, the land's composed set, the ruins.
 //   Then the scenery round them: flora, wildlife, the land's wonder.
 import { REALCITY } from '../../config.js';
-import { BIOME, NIGHT, POOL_K, WIN_K, buildCityDistrict, buildFlora, buildRuins, buildSceneSet, buildWildlife, buildWonder, crushables, resetCity } from '../hub.js';
+import { BIOME, NIGHT, POOL_K, WIN_K, buildCityDistrict, buildFlora, buildRuins, buildSceneSet, buildWildlife, buildWonder, crushables, hillTrees, resetCity } from '../hub.js';
 
 export const LAND = { meshes:[], mats:[] };
 export function clearLandmarks(){ resetCity(); for(const m of LAND.meshes){ m.parent && m.parent.remove(m); if(m.geometry && !m.isInstancedMesh) m.geometry.dispose(); if(m.isInstancedMesh) m.dispose(); } LAND.meshes.length=0; for(let i=crushables.length-1;i>=0;i--) if(crushables[i].land) crushables.splice(i,1); }   // (instanced geometry is cached & shared)
 
 export function buildLandmarks(){
   clearLandmarks(); LAND.mats.length=0; const n=BIOME.name;
-  if(n==='CITY') buildCityDistrict(); buildSceneSet(); buildRuins(); }   // Z374 the land's composed set first (it claims its ground), then the ruins round it   // Z275 the war's ruins on the open battlefields   // Z142 the city is a real district now (city.js)
+  if(n==='CITY') buildCityDistrict(); buildSceneSet(); hillTrees(); buildRuins(); }   // Z374 the land's composed set first (it claims its ground), then the ruins round it   // Z275 the war's ruins on the open battlefields   // Z142 the city is a real district now (city.js)
 // Z141 vegetation goes in last, round whatever was built
 export function buildScenery(){ buildFlora(); buildWildlife(); buildWonder(); }   // Z144 + the land's famous landmark   // Z143 + herds of wild animals
 // lit windows glow at night
