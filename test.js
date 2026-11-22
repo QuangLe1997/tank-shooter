@@ -2634,9 +2634,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 //   yard where the keep stands (Meshy community, CC0), solid as an oriented box the yard's cover and men keep off; a stone gatehouse across the way up
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), L=C.REALFORT.looks.QUARRY, fo=R('src/world/fortress.js'), hc=R('src/world/hill-climb.js');
   ok(L.length >= 4 && new Set(L.map(l => l.keep)).size === L.length && new Set(L.map(l => l.st + l.arch)).size >= 3 && L.every(l => C.SCENERY.models[l.keep] && fs.existsSync('assets/models/real/scene/' + l.keep + '.glb') && fs.existsSync('assets/models/real/scene/m/' + l.keep + '.glb')), 'four looks, no two alike: four keeps, at least three stone-and-architecture pairs, each keep shipped with its phone copy');
-  ok(/f\.look=LK \? \(f\.tier===3 \? LK\[0\]/.test(fo) && /SY=SY0 && LK \?/.test(fo) && /if\(f\.lk\)\{ const \[x,z,ry,s,wh\]=f\.lk/.test(fo), 'each fort dressed in its look: the stone, the architecture, its castle');
+  ok(/f\.tier===3 \? LK\[0\] : rest\[k\+\+ % rest\.length\]/.test(fo) && /f\.look=L \? \{ \.\.\.\(\(REALFORT\.keepFit\|\|\{\}\)\[L\.keep\]\), \.\.\.L \}/.test(fo) && /SY=SY0 && LK \?/.test(fo) && /if\(f\.lk\)\{ const \[x,z,ry,s,wh\]=f\.lk/.test(fo), 'each fort dressed in its look: the stone, the architecture, its castle');
   ok(/obb:\{ f:ry, hl:D\.z\*s\/2\*L\.solid/.test(fo) && /f\.keepR=Math\.max\(D\.x,D\.z\)\*s\*0\.5/.test(fo), 'the castle solid over its footprint, the cover and the garrison kept off it');
   ok(C.FORTHILL.biomes.QUARRY.spur.gate.k === 'gate_stone' && /export function climbGate\(\)/.test(hc) && /pillars:G\.pillars/.test(hc) && /Medieval Stone Gatehouse" by METATIGER/.test(R('assets/models/real/scene/SOURCES.txt')), 'a gatehouse across the way up, its piers solid, its makers credited'); }
+
+// Z458 every stone battlefield's forts their own looks: four each (the capital the first), the keeps toned to the land, each keep's fit in a yard set once
+{ const C=await import('./config.js'), LK=C.REALFORT.looks, F=C.REALFORT.keepFit;
+  ok(['DESERT', 'RUINS', 'ARCTIC', 'CITADEL', 'MEADOW', 'SAVANNA', 'VOLCANO', 'QUARRY'].every(b => LK[b] && LK[b].length >= 4 && new Set(LK[b].map(l => l.keep)).size === LK[b].length && LK[b].every(l => C.SCENERY.models[l.keep] && C.REALFORT.kit.style[l.st] && C.REALFORT.kit.arch[l.arch])), 'every stone battlefield: four looks, four different keeps, real stones and architectures');
+  ok(!LK.FOUNDRY && !LK.CITY && Object.keys(F).every(k => C.SCENERY.models[k] && F[k].w > 0 && F[k].solid > 0), 'the works keep their steel (no castle in a steel works); every keep fits a yard');
+  { const fo=(await import('node:fs')).readFileSync('src/world/fortress.js','utf8'); ok(/function toneLevel\(m, tone\)/.test(fo) && /c\.onBeforeCompile=s\.onBeforeCompile/.test(fo) && !/scenePiece\(k, s, \{ shadow:true, \.\.\.\(LK\.tone \? \{ tone:/.test(fo), 'a toned keep: each level its own toned material (no shared one painting the near maps on a baked level)'); } }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

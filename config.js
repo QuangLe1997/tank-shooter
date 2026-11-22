@@ -356,7 +356,25 @@ export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ru
   looks:{ QUARRY:[ { st:'quarry', arch:'castle', keep:'keep_castel', h:32, w:0.8, wardK:1.2, at:0.42, flag:1.0, solid:0.8 },
     { st:'citadel', arch:'bastion', keep:'keep_stonehall', h:27, w:0.95, at:0.4, flag:1.0, solid:0.92, tint:[1.04, 1.02, 1.0] },
     { st:'citadel', arch:'castle', keep:'keep_fortress', h:24, w:1.05, at:0.36, flag:0.95, solid:0.85, tint:[1.08, 1.06, 1.03], tone:[1.1, 1.02, 0.9] },
-    { st:'quarry', arch:'bastion', keep:'keep_medieval', h:34, w:1.0, at:0.42, turn:1.5708, flag:0.92, solid:0.85, tone:[1.08, 1.02, 0.92] } ] } };
+    { st:'quarry', arch:'bastion', keep:'keep_medieval', h:34, w:1.0, at:0.42, turn:1.5708, flag:0.92, solid:0.85, tone:[1.08, 1.02, 0.92] } ],
+    // Z458 the other stone battlefields the same way, each keep toned to its land (sand, ochre, moss, ice, red earth, soot, basalt); the fit of each keep in keepFit
+    DESERT:[ { st:'desert', arch:'bastion', keep:'keep_castel', h:32, tone:[1.1, 1.0, 0.84] }, { st:'desert', arch:'castle', keep:'keep_stonehall', h:26, tone:[1.12, 1.0, 0.82] },
+      { st:'citadel', arch:'bastion', keep:'citadel_tower', h:26, tone:[1.12, 1.0, 0.84] }, { st:'desert', arch:'castle', keep:'keep_fortress', h:22, tone:[1.15, 1.02, 0.84] } ],
+    CITADEL:[ { st:'citadel', arch:'castle', keep:'keep_castel', h:34, tone:[1.08, 1.0, 0.88] }, { st:'desert', arch:'bastion', keep:'keep_medieval', h:32, tone:[1.1, 1.0, 0.86] },
+      { st:'citadel', arch:'bastion', keep:'keep_stonehall', h:26, tone:[1.06, 1.0, 0.9] }, { st:'citadel', arch:'castle', keep:'citadel_tower', h:26, tone:[1.08, 1.0, 0.88] } ],
+    MEADOW:[ { st:'meadow', arch:'castle', keep:'keep_medieval', h:36, tone:[0.96, 1.0, 0.92] }, { st:'meadow', arch:'bastion', keep:'keep_castel', h:28, tone:[0.95, 0.98, 0.9] },
+      { st:'quarry', arch:'castle', keep:'keep_fortress', h:22, tone:[0.95, 1.0, 0.92], tint:[0.9, 0.95, 0.86] }, { st:'meadow', arch:'castle', keep:'keep_stonehall', h:26, tone:[0.96, 1.0, 0.92] } ],
+    ARCTIC:[ { st:'arctic', arch:'castle', keep:'keep_fortress', h:26, tone:[0.95, 0.98, 1.06] }, { st:'arctic', arch:'bastion', keep:'keep_medieval', h:32, tone:[0.94, 0.97, 1.05] },
+      { st:'quarry', arch:'castle', keep:'keep_castel', h:28, tone:[0.95, 0.98, 1.06], tint:[0.9, 0.93, 0.98] }, { st:'arctic', arch:'castle', keep:'citadel_tower', h:24, tone:[0.95, 0.98, 1.06] } ],
+    SAVANNA:[ { st:'savanna', arch:'bastion', keep:'keep_stonehall', h:28, tone:[1.08, 0.94, 0.78] }, { st:'desert', arch:'bastion', keep:'keep_fortress', h:22, tone:[1.1, 0.96, 0.8] },
+      { st:'savanna', arch:'castle', keep:'citadel_tower', h:24, tone:[1.08, 0.94, 0.78] }, { st:'desert', arch:'castle', keep:'keep_castel', h:28, tone:[1.08, 0.96, 0.8] } ],
+    RUINS:[ { st:'ruins', arch:'bastion', keep:'keep_castel', h:32, tone:[0.78, 0.74, 0.7] }, { st:'ruins', arch:'castle', keep:'keep_medieval', h:32, tone:[0.8, 0.76, 0.72] },
+      { st:'quarry', arch:'bastion', keep:'keep_fortress', h:22, tone:[0.8, 0.76, 0.72], tint:[0.7, 0.68, 0.64] }, { st:'ruins', arch:'bastion', keep:'keep_stonehall', h:26, tone:[0.8, 0.76, 0.72] } ],
+    VOLCANO:[ { st:'volcano', arch:'bastion', keep:'keep_fortress', h:26, tone:[0.6, 0.55, 0.52] }, { st:'volcano', arch:'castle', keep:'keep_medieval', h:32, tone:[0.62, 0.56, 0.52] },
+      { st:'ruins', arch:'bastion', keep:'keep_stonehall', h:26, tone:[0.62, 0.56, 0.52] }, { st:'volcano', arch:'bastion', keep:'citadel_tower', h:24, tone:[0.6, 0.55, 0.52] } ] },
+  // Z458 how each keep model sits in a yard (a look's own values win): w × Rin across at most, at × Rin back, turn, solid share, flag × its top
+  keepFit:{ keep_castel:{ w:0.8, wardK:1.2, at:0.42, solid:0.8, flag:1.0 }, keep_stonehall:{ w:0.95, at:0.4, solid:0.92, flag:1.0 }, keep_fortress:{ w:1.05, at:0.36, solid:0.85, flag:0.95 },
+    keep_medieval:{ w:1.0, at:0.42, turn:1.5708, solid:0.85, flag:0.92 }, citadel_tower:{ w:0.7, at:0.4, solid:0.75, flag:0.95 } } };
 // Z378 the see-through seams in a dressed fort's wall (dressFort: where the model's ragged end meets its own start again, every rep sections) opened into
 //   a clean breach w m wide, the soldier and the xe ôm through it, a tank not — only between two sections of one run of wall, and only when the model spans
 //   at least minRep sections · bin = the height of the rows the cut faces are filled in (m) · guard = how far a wall-top rifleman stands off its edge (m)
