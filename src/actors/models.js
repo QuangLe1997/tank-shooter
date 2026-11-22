@@ -1,7 +1,7 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALGUN, REALPROP, REALTANK, REALTREE, REALTURRET, REALROCK } from '../../config.js';
+import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK } from '../../config.js';
 import { nearTag } from '../hub.js';
 
 export const MODEL_FILES = {
@@ -22,10 +22,6 @@ export const MODEL_FILES = {
 };
 // Z252 battlefield cover pieces (world/real-props.js)
 for(const k of REALPROP.kinds) for(const v of (REALPROP.variants[k] || [k])) MODEL_FILES['cover_' + v] = 'assets/models/real/cover/' + v + '.glb';   // (Z420 + the container's variants)
-// Z256 one vehicle per tank family (tank/real-tanks.js)
-for(const k of Object.keys(REALTANK.fams)) MODEL_FILES['tank_' + k] = 'assets/models/real/tank/' + k + '.glb';
-// Z257 one model per player-gun family that has its own file (tank/real-guns.js)
-for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['gun_' + k] = 'assets/models/real/gun/' + k + '.glb';
 // Z262 the tree species (world/real-trees.js)
 const PHONE = typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && PHONE_LOD.on;   // (= MOBILE; read here: this table is built before the hub is)
 for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + (PHONE && PHONE_LOD.trees ? 'm/' : '') + k + '.glb';   // Z292 phones take the 3k-triangle trees

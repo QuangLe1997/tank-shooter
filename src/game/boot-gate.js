@@ -1,7 +1,7 @@
 // game/boot-gate.js — Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up,
 // and the first user gesture (audio + fullscreen).
 import * as THREE from 'three';
-import { ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, audio, buildTank, buildTransport, camTarget, camera, chute, enemyPool, getEnemyMesh, initCloud, makeCamoNet, makeCoverMesh, makeMortarShell, makeSoldierMesh, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat, loadRealCity, loadRealTrees, loadRealAir, initDust, holoRing } from '../hub.js';
+import { ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, audio, buildTransport, camTarget, camera, chute, enemyPool, getEnemyMesh, initCloud, makeCamoNet, makeCoverMesh, makeMortarShell, makeSoldierMesh, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat, loadRealCity, loadRealTrees, loadRealAir, initDust, holoRing } from '../hub.js';
 
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
@@ -24,7 +24,7 @@ export async function warmUp(onStep){
   if(_warmed) return; _warmed=true; const step=onStep||(()=>{});
   const tmp=[], put=(o)=>{ o.position.set(0,-80,0); o.visible=true; scene.add(o); tmp.push(o); return o; };
   try{
-    put(buildTank({detail:true, mighty:true})); step(0.08); await _frame();
+    step(0.08); await _frame();
     const pooled=[]; const types=Object.keys(ENEMY_DEFS);
     for(let i=0;i<types.length;i++){ const t=types[i]; for(let k=0;k<2;k++){ const m=getEnemyMesh(t); m.position.set(0,-80,0); m.visible=true; pooled.push([t,m]); } if(i%3===2){ step(0.08+0.3*i/types.length); await _frame(); } }
     for(const k of ['sandbag','drums','tires','crates','pipes','concrete','hesco','hedgehog']) put(makeCoverMesh(k, k==='drums'||k==='sandbag'));

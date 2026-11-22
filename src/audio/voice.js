@@ -4,13 +4,13 @@ import { PROFILE, actx, audio, master, musicBus, muted } from '../hub.js';
 // radio text → the spoken line (first match wins); every other radio message stays text + a beep. Boss intros / taunts / rallies pass their key explicitly
 export const VOICE_RULES = [
   [/Pháo kích|Rocket nhiệt áp/i, 'arty'], [/trực thăng (vận tải|vũ trang)|trực thăng của chúng|Tiếng cánh quạt/i, 'heli'], [/Không kích/i, 'air'], [/phục kích/i, 'ambush'],
-  [/anh bị thương/i, 'lowhp'], [/Xe chỉ huy địch đã bị hạ/i, 'cmd_down'], [/Tướng giữ .* đã bị hạ/i, 'fort_chief'], [/Đợt cuối|Đoàn xe cuối/i, 'last_wave'], [/Chiến thắng!/i, 'victory'],
+  [/anh bị thương/i, 'lowhp'], [/Tướng giữ .* đã bị hạ/i, 'fort_chief'], [/Đợt cuối|Đoàn xe cuối/i, 'last_wave'], [/Chiến thắng!/i, 'victory'],
 ];
 // recorded takes per line (key_1.mp3 … key_n.mp3, never the same take twice running); a key not listed is one file, key.mp3
-export const VOICE_TAKES = { open:3, arty:3, heli:2, air:2, ambush:2, lowhp:2, streak:3, last_wave:2, victory:2, boss_phase:2 };
+export const VOICE_TAKES = { open:3, arty:3, heli:2, air:2, ambush:2, lowhp:2, streak:3, last_wave:2, victory:2 };
 // [most times per battle, least seconds between two, urgent] — urgent = a danger call: cuts in over a calmer line, never waits in the queue
-export const VOICE_LIMIT = { arty:[3,30,1], heli:[2,40,1], air:[2,40,1], ambush:[1,0,1], lowhp:[2,45,1], streak:[2,60,0], boss_phase:[2,20,0] };
-const PEAK=/^(boss_|t_|f_rally_)|^(open|cmd_down|fort_chief|last_wave|victory|boss_phase|streak)$/;   // everything else is never spoken
+export const VOICE_LIMIT = { arty:[3,30,1], heli:[2,40,1], air:[2,40,1], ambush:[1,0,1], lowhp:[2,45,1], streak:[2,60,0] };
+const PEAK=/^(f_rally_)|^(open|fort_chief|last_wave|victory|streak)$/;   // everything else is never spoken
 const HYPE={ open:1, streak:1 };   // nice-to-have lines: only into silence, never queued
 export const VOICE = { bufs:{}, loading:{}, queue:[], playing:null, src:null, seq:0, gapT:0, said:{}, lastAt:{}, lastTake:{}, endAt:-99, kills:[], gain:0.95 };
 export function voiceOn(){ return PROFILE.voice!==false && PROFILE.sound!==false && !muted; }

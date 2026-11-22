@@ -53,13 +53,7 @@ export * from './world/camp-life.js';
 export * from './world/radar.js';   // Z197 the radar station: sweeping array, AA guns, artillery blinded when it falls   // Z196 the barracks' mess, stores, medical post, rest area and its people   // Z194 fuel stations, ammo depots, camps as guarded supply bases
 export * from './world/ridges.js';
 export * from './world/brick-walls.js';
-export * from './tank/materials.js';
-export * from './tank/models.js';
-export * from './tank/designs.js';   // Z157 a dedicated vehicle build per model   // Z155 tank collection (real MBTs + our designs)
-export * from './tank/model.js';
-export * from './tank/real-tanks.js';   // Z256 Meshy vehicles per tank family
-export * from './tank/warkit.js';   // Z228 our tank's war kit (mine plough, sandbags, slat cage, APS, jammer)
-export * from './tank/rig.js';
+export * from './render/materials.js';
 export * from './fx/hud-fx.js';
 export * from './fx/particles.js';
 export * from './fx/gore.js';   // Z121

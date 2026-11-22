@@ -1,8 +1,9 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CORE_DEF } from '../../config.js';
 import { REALCAMP } from '../../config.js';
-import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
+import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -152,4 +153,18 @@ export function shieldHexTex(){
   const hex=(cx,cy)=>{ x.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3; const px=cx+Math.cos(a)*R, py=cy+Math.sin(a)*R; i?x.lineTo(px,py):x.moveTo(px,py); } x.closePath(); x.stroke(); };
   for(let col=-2; col*R*1.5 < S2+R; col++) for(let row=-2; row*h*2 < S2+R; row++){ hex(col*R*1.5, row*h*2 + (col&1?h:0)); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,2); t.colorSpace=THREE.SRGBColorSpace; _shieldTex=t; return t;
+}
+// merge a group's plain child meshes that share a material into one mesh each (no-tanks: moved here from tank/model.js; world/core-walls.js uses it too)
+export function bakeGroup(par){
+  const buckets=new Map();
+  for(const c of par.children){ if(!c.isMesh || c.isInstancedMesh || c.isSkinnedMesh || c.name || c.children.length || Array.isArray(c.material) || c.userData.keep || c.userData.flag || !c.visible) continue;   // Z233 instanced fields / waving flags are never folded in (Z256 nor parts a real model hid: merged, they would show again)
+    const k=c.material.uuid; let L=buckets.get(k); if(!L) buckets.set(k, L=[]); L.push(c); }
+  for(const list of buckets.values()){ if(list.length<2) continue;
+    const geos=[]; for(const m of list){ m.updateMatrix(); const gg = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone(); gg.applyMatrix4(m.matrix);
+      for(const a of Object.keys(gg.attributes)) if(a!=='position'&&a!=='normal'&&a!=='uv') gg.deleteAttribute(a);
+      if(!gg.attributes.uv) gg.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(gg.attributes.position.count*2),2));
+      if(!gg.attributes.normal) gg.computeVertexNormals(); gg.clearGroups(); geos.push(gg); }
+    const merged=mergeGeometries(geos,false); geos.forEach(gg=>gg.dispose()); if(!merged) continue;
+    const mm=new THREE.Mesh(merged, list[0].material); mm.castShadow=list[0].castShadow; mm.receiveShadow=list[0].receiveShadow; if(list[0].userData.proc) mm.userData.proc=true; par.add(mm);   // (Z256 still the build's own, for a real model dressed later)
+    for(const m of list) par.remove(m); }
 }

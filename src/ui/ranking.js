@@ -1,13 +1,13 @@
 // ui/ranking.js — Z163 BẢNG XẾP HẠNG: this week's and all-time best runs (lb/{uid}, lbw/{week}/e/{uid} — written only by the server), your own row and rank
-import { CLOUDSAVE, TANK_MODELS, cloudFB, escapeHtml, hide, initCloud, sfx, show, tapBtn, tapEl } from '../hub.js';
+import { CLOUDSAVE, cloudFB, escapeHtml, hide, initCloud, sfx, show, tapBtn, tapEl } from '../hub.js';
 
 export const RANK = { tab:'week', from:'start', cache:{} };
 // same week key as the server (Vietnam time, ISO week)
 export function rankWeek(ms){ const d=new Date((ms||Date.now())+7*3600e3); const day=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-day+3);
   const y=d.getUTCFullYear(), w1=new Date(Date.UTC(y,0,4)), wk=1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7); return y+'-W'+String(wk).padStart(2,'0'); }
 const lvlTxt=l=>l>0 ? 'MÀN '+l : '';
-function row(i, r, me){ const M=TANK_MODELS[r.tank], d=document.createElement('div'); d.className='rk-row'+(i<3?' top'+(i+1):'')+(me?' me':'');
-  d.innerHTML='<div class="rk-n">'+(i+1)+'</div><div class="rk-nm">'+escapeHtml(r.name||'?')+'<small>'+escapeHtml(M?M.name:'')+'</small></div><div class="rk-lv">'+lvlTxt(r.level|0)+'</div><div class="rk-sc">'+(r.score|0).toLocaleString('vi-VN')+'</div>'; return d; }
+function row(i, r, me){ const d=document.createElement('div'); d.className='rk-row'+(i<3?' top'+(i+1):'')+(me?' me':'');
+  d.innerHTML='<div class="rk-n">'+(i+1)+'</div><div class="rk-nm">'+escapeHtml(r.name||'?')+'</div><div class="rk-lv">'+lvlTxt(r.level|0)+'</div><div class="rk-sc">'+(r.score|0).toLocaleString('vi-VN')+'</div>'; return d; }
 function msg(t){ const b=document.getElementById('rankBody'); if(b) b.innerHTML='<div class="rk-msg">'+escapeHtml(t)+'</div>'; }
 export async function renderRanking(){ document.querySelectorAll('#ranking .rank-tab').forEach(t=>t.classList.toggle('on', t.dataset.rt===RANK.tab));
   const wk=rankWeek(), wl=document.getElementById('rankWeek'); if(wl) wl.textContent = RANK.tab==='week' ? 'TUẦN '+wk.split('-W')[1]+' · '+wk.split('-')[0] : 'TẤT CẢ CÁC MÙA';

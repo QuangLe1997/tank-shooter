@@ -1,7 +1,7 @@
 // world/biome.js — Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter,
 // decor, arms-doctrine env) + the initial menu-backdrop dressing that runs at boot.
 import { SPACE, CAMPAIGN } from '../../config.js';
-import { BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, GRIME, MACRO, NIGHT, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyGroundPhoto, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, perimeter, ring, rockSet, todFor } from '../hub.js';
+import { BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, MACRO, NIGHT, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyGroundPhoto, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, perimeter, ring, rockSet, todFor } from '../hub.js';
 
 export function applyBiome(stage){
   const R = S.run || { mode:'campaign' }, custom = R.mode==='custom';                // Z107 CUSTOM battle: your map · hour · weather · space
@@ -15,7 +15,6 @@ export function applyBiome(stage){
   decalReset(BIOME); genField(); genTerrain(BIOME);   // Z106 a new field outline every stage
   applyAtmosphere(BIOME);   // sky dome reflections · sun angle/colour · haze · grade
   applyWeather(BIOME.cave ? 'clear' : custom ? R.wx : CAMPAIGN.weather[(Math.max(1, (S.loop||0)*CAMPAIGN.perLoop + stage)-1) % CAMPAIGN.weather.length]);   // Z107 rain · sand · snow · fog
-  if(typeof GRIME!=='undefined'){ GRIME.col.value.setHex(BIOME.deco==='grass' ? 0x6e5a3c : BIOME.ground);   /* Z147 on grass the tracks throw up brown mud, not green */ GRIME.amt.value = BIOME.deco==='ice'?0.42:(BIOME.deco==='slag'?0.38:0.58); }   // dust/mud/snow on the running gear matches the battlefield
   ring.material.color.setHex(BIOME.accent);
   buildPerimeter(BIOME);   // jersey barriers + concertina wire
   perimeter.visible=!BIOME.cave; for(const t of NIGHT.towers) t.visible=!BIOME.cave; if(BIOME.cave) for(const sp of NIGHT.spots) sp.visible=false;   // Z225 no fence and no floodlight masts inside a cave
