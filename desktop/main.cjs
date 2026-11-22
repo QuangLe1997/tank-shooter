@@ -4,6 +4,9 @@ const { app, BrowserWindow, Menu, protocol, net, shell } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
+// the saves (localStorage) stay in the folder the app used before it was renamed Steel Siege → Xung Kích (Electron names it after the app)
+app.setPath('userData', path.join(app.getPath('appData'), 'Steel Siege'));
+
 const GAME_DIR = path.join(__dirname, 'app');            // filled by build.mjs (copy of the web game, rewritten for offline)
 
 // GPU: Metal-backed ANGLE, discrete/high-performance adapter, GPU raster + zero-copy uploads, no blocklist surprises
