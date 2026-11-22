@@ -933,6 +933,12 @@ export const WALLSKIN = { tint:0.35, bright:0.92, nrm:1.2, ao:0.8,
 //   Z317 stone: perM pieces per metre of the stone (at least minN, at most its kind's n), all of them together fill × the stone's own volume — no lump
 //   bigger than the stone it came from — gone after life s; every piece sinks at least as fast as it needs to be under in sinkT
 //   Z319 pieces:false — nothing breaks into lumps, sheets or chunks any more: it blows up (a flash, dust, smoke, fire for what burns, fine grit) and is gone
+// Z418 WHAT BREAKS, AND HOW IT GOES: sand = what a sandbag wall stands up to — it takes no harm from small arms (rifles, MGs, the 30 mm autocannon, shot,
+//   fire), only from these round types (B41 / grenades / shells: HE, AP, HESH, TBX), an untyped round at least minDmg (their tanks' shells) and a blast at
+//   least aoeMin m wide; a ram still crushes it · heaps: no heap of chunks is left where a thing broke (world/rubble.js, the brick walls, the city's
+//   floors, a fort's breach) — it bursts into dust, smoke or fire and is gone · scar: a big thing broken leaves the ground torn up where it stood — a crater
+//   (crater × its size + 0.8 m), a light grey burn (ash × its size + 1 m, ashK strong), a soil spray (geyser), and smoke [puffs, life s] at smokeOp
+export const BREAKUP = { sand:{ by:['HE','AP','HESH','TBX'], minDmg:20, aoeMin:1.8 }, heaps:false, scar:{ crater:0.55, ash:1.35, ashK:0.8, geyser:0.9, smoke:[4, 5], smokeOp:0.24 } };
 export const SHATTER = { pieces:false, n:10, power:7, up:3, spin:6, bounce:0.32, bounceMin:2.2, g:9.8, life:6, sink:0.35, sinkT:1.6, max:220, maxMobile:70, stone:{ perM:5, minN:3, fill:0.7, life:3.5 },
   kinds:{ drums:{ n:14, power:13, up:6, fire:true }, tires:{ n:9, power:8, up:5, bounce:0.6 }, crates:{ n:14, power:6.5, up:3 }, logs:{ n:9, power:7, up:3 }, sandbag:{ n:10, power:4, up:2 },
     concrete:{ n:10, power:5, up:2.5 }, jersey:{ n:9, power:5, up:2.5 }, pipes:{ n:10, power:6, up:3 }, teeth:{ n:8, power:5, up:2.5 }, hesco:{ n:9, power:4, up:2 },

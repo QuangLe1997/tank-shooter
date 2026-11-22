@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece } from '../hub.js';
+import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece, decalAsh } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -343,6 +343,7 @@ function heapGround(x, z, r, hgt){ const W=HF.W, h=HF.h, R=r*1.6, i0=Math.max(0,
 function rubble(f, pc){ const V=rubbleVariants(), nx=-pc.uz, nz=pc.ux, n=MOBILE?7:15, geos=[], bars=[];
   for(let k=0;k<4;k++){ const s=(k/3-0.5)*pc.pl*1.1, o=(Math.random()-0.35)*3.2; heapGround(f.x+pc.cx+pc.ux*s+nx*o, f.z+pc.cz+pc.uz*s+nz*o, 1.6+Math.random()*1.0, 0.45+Math.random()*0.45); }   // humps under the stone
   f.rubble=f.rubble||[]; f.rubble.push({ x:f.x+pc.cx, z:f.z+pc.cz, r:pc.pl*0.75+2.5 });
+  if(!BREAKUP.heaps){ decalAsh(f.x+pc.cx, f.z+pc.cz, pc.pl*0.7+2, 0.6); return; }   // Z418 no slabs and bars strewn over the breach: torn earth and a grey burn
   for(let k=0;k<n;k++){ const s=(Math.random()-0.5)*(pc.pl+2.4), o=(Math.random()-0.4)*(k<4?1.6:6.4), lx=pc.cx+pc.ux*s+nx*o, lz=pc.cz+pc.uz*s+nz*o;   // the big slabs stay on the wall line, the smaller ones spill out
     const big=k<4, sx=big?1.6+Math.random()*1.3:0.5+Math.random()*0.8, sy=big?0.7+Math.random()*0.6:0.35+Math.random()*0.4, sz=big?1.1+Math.random()*0.9:0.45+Math.random()*0.7;
     const g=V[(Math.random()*V.length)|0].clone(); g.scale(sx, sy, sz); g.rotateX((Math.random()-0.5)*(big?0.9:1.6)); g.rotateZ((Math.random()-0.5)*(big?0.9:1.6)); g.rotateY(Math.random()*Math.PI);

@@ -9,8 +9,8 @@
 //   topple (blast, or a tank ramming them) and the wires on a fallen pole drop; cars in a blast burn out.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { OPEN_LAND, REALCITY, REALTREE, RIDE_HIT } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox, buildTraffic, trafficBlast, updateTraffic } from '../hub.js';
+import { OPEN_LAND, REALCITY, REALTREE, RIDE_HIT, BREAKUP } from '../../config.js';
+import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox, buildTraffic, trafficBlast, updateTraffic, decalAsh } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -116,7 +116,8 @@ function razeBld(Bd){ Bd.dead=true; for(const b of Bd.solids){ const i=blocks.in
   burst({ x:Bd.x, z:Bd.z }, 0xb0aca4, 10, 9, { y:1.5, life:2.4, size:3.4, smoke:true, grav:-0.2, drag:1.2, up:2, op:0.5 }); floatText('TOÀ NHÀ SẬP', '#ffcf5a', new THREE.Vector3(Bd.x, Bd.y0+5, Bd.z), 16); }
 // rubble heaps up at the foot as floors come down (one instanced draw for the whole city)
 let RUB=null, RUBn=0;
-function addRubble(Bd, h){ if(!RUB){ const cap=MOBILE?700:1600; RUB=new THREE.InstancedMesh(DEBRIS_GEOS.chunk[0], new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.95, metalness:0.02 }), cap); RUB.count=0; RUB.castShadow=!MOBILE; RUB.receiveShadow=true; RUB.frustumCulled=false; arena.add(RUB); LAND.meshes.push(RUB); }
+function addRubble(Bd, h){ if(!BREAKUP.heaps){ decalAsh(Bd.x, Bd.z, Math.max(Bd.w, Bd.d)*0.75+2, 0.45); return; }   // Z418 no chunks heaped at its foot: the dust of the floor and a grey stain round it
+  if(!RUB){ const cap=MOBILE?700:1600; RUB=new THREE.InstancedMesh(DEBRIS_GEOS.chunk[0], new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.95, metalness:0.02 }), cap); RUB.count=0; RUB.castShadow=!MOBILE; RUB.receiveShadow=true; RUB.frustumCulled=false; arena.add(RUB); LAND.meshes.push(RUB); }
   const c=Math.cos(Bd.ry), s=Math.sin(Bd.ry), n=Math.round(Math.min(40, Bd.w*Bd.d*0.06*Math.min(1.6,h/3))), cap=RUB.instanceMatrix.count; Bd.rub++;
   for(let i=0;i<n;i++){ const a=_R(-Bd.w/2-1.5,Bd.w/2+1.5), b=_R(-Bd.d/2-1.5,Bd.d/2+1.5), x=Bd.x+a*c+b*s, z=Bd.z-a*s+b*c, edge=Math.max(Math.abs(a)/(Bd.w/2+1.5), Math.abs(b)/(Bd.d/2+1.5)), sc=_R(0.6,1.8)*(1.2-edge*0.5);
     _M4.compose(_v3.set(x, heightAt(x,z)+sc*0.25+Math.min(2.4, Bd.rub*0.35)*(1-edge), z), _qy.setFromEuler(_eu.set(Math.random()*3,Math.random()*6,Math.random()*3)), _sc.set(sc*_R(0.8,1.4),sc*_R(0.5,0.9),sc*_R(0.8,1.4)));

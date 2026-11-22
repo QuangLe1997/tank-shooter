@@ -57,6 +57,14 @@ export function decalScorch(x, z, r, k){                                        
   for(let i=0;i<Math.round(6+r*2);i++){ const a=Math.random()*6.283, rr=R*(0.6+Math.random()*0.7); c.strokeStyle='rgba(14,10,6,'+(0.25*k).toFixed(2)+')'; c.lineWidth=Math.max(1,R*0.06); c.beginPath(); c.moveTo(px+Math.cos(a)*R*0.3,pz+Math.sin(a)*R*0.3); c.lineTo(px+Math.cos(a)*rr,pz+Math.sin(a)*rr); c.stroke(); }   // radial blast streaks
   DECAL.dirtyS=true;
 }
+export function decalAsh(x, z, r, k){                                                  // Z418 a light grey burn: ash and scorched dust where a broken thing stood (not a fuel fire's black)
+  const c=DECAL.sx, px=_dpx(x), pz=_dpz(z), R=r*DECAL.ppu; k=k==null?1:k;
+  const g=c.createRadialGradient(px,pz,0,px,pz,R); g.addColorStop(0,'rgba(96,92,86,'+(0.5*k).toFixed(2)+')'); g.addColorStop(0.55,'rgba(132,128,120,'+(0.34*k).toFixed(2)+')'); g.addColorStop(1,'rgba(150,146,138,0)');
+  c.fillStyle=g; c.beginPath(); c.arc(px,pz,R,0,7); c.fill();
+  for(let i=0;i<Math.round(10+r*3);i++){ const a=Math.random()*6.283, rr=R*Math.sqrt(Math.random())*0.9, s=Math.max(1,R*(0.05+Math.random()*0.1)), lt=Math.random()<0.5;   // mottled: darker char, paler ash
+    c.fillStyle=lt ? 'rgba(186,182,172,'+(0.22*k).toFixed(2)+')' : 'rgba(58,54,50,'+(0.26*k).toFixed(2)+')'; c.beginPath(); c.arc(px+Math.cos(a)*rr,pz+Math.sin(a)*rr,s,0,7); c.fill(); }
+  DECAL.dirtyS=true;
+}
 export function decalCrater(x, z, r, k){                                               // shell crater: dark pit + lighter thrown-out ejecta rim
   const c=DECAL.sx, px=_dpx(x), pz=_dpz(z), R=r*DECAL.ppu; k=k==null?1:k;
   const rim=c.createRadialGradient(px,pz,R*0.55,px,pz,R*1.35); rim.addColorStop(0,'rgba(255,240,210,'+(0.16*k).toFixed(2)+')'); rim.addColorStop(1,'rgba(255,240,210,0)');

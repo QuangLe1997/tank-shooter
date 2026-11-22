@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, REALROCK, SHATTER, FUEL_TANK } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome } from '../hub.js';
+import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, REALROCK, SHATTER, FUEL_TANK, BREAKUP } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome, blastLight, decalAsh, dirtGeyser, dustSkirt } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -83,6 +83,16 @@ export function buildBlocks(){
   garrisonDefense();   // Z423 the men at the defence's posts
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
+// Z418 SANDBAGS STOP SMALL ARMS: a round that cannot break a sandbag wall (a rifle / MG / autocannon round, shot, fire — see BREAKUP.sand) only puffs sand
+export function sandProof(bl, b){ if(bl.kind!=='sandbag') return false; const Q=BREAKUP.sand; return !!b.inf || (b.type ? !Q.by.includes(b.type) : !(b.dmg>=Q.minDmg)); }
+export function sandBlastProof(bl, r, type){ if(bl.kind!=='sandbag') return false; const Q=BREAKUP.sand; return r<Q.aoeMin && !(type && Q.by.includes(type)); }
+// Z418 A BIG THING BROKEN: a flash and a shock of dust as it goes, then the ground where it stood is torn — a crater with thrown earth, a soil spray, a
+//   light grey burn that smokes a while (fire: it burned — darker smoke). Nothing of it is left standing or lying there.
+export function breakScar(x, z, r, fire){ const S0=BREAKUP.scar, gy=heightAt(x,z), k=Math.min(2.2, Math.max(0.6, r*0.6));
+  blastLight(x, z, 40+r*18, 0.35); spawnPart(x, gy+1+r*0.3, z, 0, 0.3, 0, { tex:'flash', color:0xfff0d0, size:2+r*1.4, life:0.09, grav:0, drag:0 }); dustSkirt(x, z, k);
+  decalCrater(x, z, r*S0.crater+0.8, 0.95); decalAsh(x, z, r*S0.ash+1, S0.ashK); dirtGeyser(x, z, Math.min(1.6, S0.geyser*Math.sqrt(r)));
+  const n=Math.round(S0.smoke[0]*(MOBILE?0.5:1)); for(let i=0;i<n;i++) spawnPart(x+(Math.random()-0.5)*r, gy+0.4+i*0.5, z+(Math.random()-0.5)*r, (Math.random()-0.5)*0.5, 0.45+Math.random()*0.4, (Math.random()-0.5)*0.5,
+    { color:fire ? 0x3a3632 : 0x9c988f, size:(1.4+Math.random())*k, life:S0.smoke[1]*(0.7+Math.random()*0.5), smoke:true, grav:0.12, drag:0.9, grow:2.2, op:S0.smokeOp }); }   // it smokes a while, thinning
 export function damageBlock(b, dmg){
   if(b.kind==='tent'){ tentHit(b); return; }                             // Z402 a tent catches fire
   if(b.kind==='fueldrum'){ fuelDrumHit(b, dmg); return; }                  // Z402 a fuel drum goes up
@@ -190,7 +200,7 @@ export function hardDamage(b, dmg){ const gy=heightAt(b.x,b.z), rock=b.kind==='b
   const pos={x:b.x,z:b.z}, now=performance.now()/1000; const i=blocks.indexOf(b); if(i>=0) blocks.splice(i,1);
   if(b.ridge) ridgeRockDown(b); else { shatter(b.mesh, { ...(SHATTER.kinds[b.kind] || SHATTER.kinds.boulder), solid:solidKind(b.kind || 'boulder') }); scene.remove(b.mesh); }   // a ridge rock is two instances of the shared ridge mesh · Z261 the rock / the hedgehog breaks apart
   if(b.bump){ const j=BUMPS.indexOf(b.bump); if(j>=0) BUMPS.splice(j,1); }
-  if(!b.ridge) leaveRubble(b);   // Z193 split stone / twisted beams stay where it stood
+  if(!b.ridge){ leaveRubble(b); breakScar(b.x, b.z, Math.max(1.2, b.r||1.5), false); }   // Z193 split stone / twisted beams stay where it stood (Z418 no heap: BREAKUP.heaps) · Z418 the ground torn where it stood
   if(rock){ for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x9a8f7c); burst(pos, 0xc8b89a, 10, 5, {y:gy+1.2, life:1.4, size:2.6, smoke:true, grav:-0.5, drag:1.6, up:1.8, op:0.55}); burst(pos, 0x8a8070, 22, 11, {y:gy+1.2, life:0.6, size:0.45, grav:-18, drag:1.1, up:4}); decalCrater(b.x,b.z,1.6,0.6); }
   else { spawnDebris(pos, 1.0, 0x3a3a36); burst(pos, 0xffe0a0, 16, 12, {y:gy+1, life:0.3, size:0.3, grav:-12, drag:2}); }
   sfx('bigexplode', pos); S.shake=Math.min(2.4, S.shake+0.5);
@@ -212,10 +222,10 @@ export function destroyCover(b){
   } else if(b.kind==='tires'){ spawnDebris(pos, 1.2, 0x1e1e1c); burst(pos, 0x0e0d0c, 6, 3, {y:1.2, life:1.6, size:2.6, smoke:true, grav:-1.2, drag:1.2, up:2, op:0.55}); bigExplode(pos, 0xff7a2a, 1.0); }   // burning rubber, thick black smoke
   else if(b.kind==='container' || b.kind==='wreck'){ const big=b.kind==='container';   // Z193 the steel box / the car goes up: blast, flying sheet metal, and it burns
     bigExplode(pos, 0xff8a3a, big?2.0:1.5); fireball(pos, big?1.8:1.3); decalScorch(b.x, b.z, big?6:4.5, 1); for(let k=0;k<(big?4:3);k++) spawnDebris(pos, 1.1, big?0x6a3a26:0x3a2a20);
-    burst(pos, 0x1a1612, 6, 3, {y:heightAt(b.x,b.z)+1.6, life:2.2, size:2.8, smoke:true, grav:-0.8, drag:1.2, up:2, op:0.55}); aoeDamage(b.x, b.z, big?4:3.5, big?30:45, false, now); }   // Z402 it goes up and is gone: no burning heap left
+    burst(pos, 0x1a1612, 6, 3, {y:heightAt(b.x,b.z)+1.6, life:2.2, size:2.8, smoke:true, grav:-0.8, drag:1.2, up:2, op:0.55}); aoeDamage(b.x, b.z, big?4:3.5, big?30:45, false, now); breakScar(b.x, b.z, b.obb ? Math.max(b.obb.hw, b.obb.hl) : 2, true); }   // Z402 it goes up and is gone: no burning heap left · Z418 the ground torn and burnt where it stood
   else if(HEAVY_KINDS.has(b.kind)){ const gy=heightAt(b.x,b.z), sand=b.kind==='hesco';   // Z193 concrete / HESCO collapses: a dust cloud, chunks thrown out, a heap left behind
     burst(pos, sand?0xc8b48a:0xb8b2a6, 10, 5, {y:gy+1.2, life:1.5, size:2.8, smoke:true, grav:-0.5, drag:1.5, up:1.8, op:0.55}); burst(pos, sand?0xa8936a:0x8e8a82, 20, 10, {y:gy+1.4, life:0.6, size:0.4, grav:-18, drag:1.1, up:4});
-    for(let k=0;k<3;k++) spawnDebris(pos, 1.0, sand?0xa8936a:0x9a968c); decalCrater(b.x,b.z,1.8,0.5); sfx('bigexplode', pos); S.shake=Math.min(2.4, S.shake+0.4);
+    for(let k=0;k<3;k++) spawnDebris(pos, 1.0, sand?0xa8936a:0x9a968c); breakScar(b.x, b.z, b.obb ? Math.max(b.obb.hw, b.obb.hl) : (b.r||1.5), false); sfx('bigexplode', pos); S.shake=Math.min(2.4, S.shake+0.4);   // Z418 the ground torn where it stood
     floatText(sand?'PHÁ RỌ CÁT':'PHÁ BÊ TÔNG', '#ffcf5a', new THREE.Vector3(b.x, gy+2.8, b.z), 13); leaveRubble(b); }
   else if(b.kind==='logs'){ spawnDebris(pos, 1.3, 0x7a5e3e); burst(pos, 0x8a6a40, 14, 9, {y:1.2, life:0.6, size:0.42, grav:-16, drag:1.2, up:3.5}); burst(pos, 0x9a8a70, 3, 2.5, {y:1, life:1.0, size:1.8, smoke:true, grav:-0.4, drag:2, up:1, op:0.4}); sfx('explode'); leaveRubble(b); }   // the stack bursts apart
   else if(b.kind==='crates'){ spawnDebris(pos, 1.4, 0x8a6a40); burst(pos, 0xb08a56, 10, 8, {y:1.2, life:0.6, size:0.4, grav:-16, drag:1.4, up:3}); burst(pos, 0xb09a7a, 3, 2.5, {y:1, life:0.9, size:1.6, smoke:true, grav:-0.4, drag:2, up:1, op:0.4}); sfx('explode'); }   // splinters

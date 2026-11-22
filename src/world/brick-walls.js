@@ -1,8 +1,8 @@
 // world/brick-walls.js — Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { DRIVE, LOOT } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, detailize, dropPowerup, floatText, heightAt, inField, inZone, satOBB, scene, sfx, tip } from '../hub.js';
+import { DRIVE, LOOT, BREAKUP } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, detailize, dropPowerup, floatText, heightAt, inField, inZone, satOBB, scene, sfx, tip, breakScar } from '../hub.js';
 
 // ----------------------------- Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed -----------------------------
 // Each 3 m section is real masonry: running-bond bricks (per-brick tone, chips, loose top courses), a ragged broken top, shell holes,
@@ -103,7 +103,7 @@ export function updateWalls(dt){
         burst({x:lx,z:lz}, 0xb8a890, f.whole?9:5, f.whole?6:4, {y:heightAt(lx,lz)+0.6, life:1.5, size:f.whole?3.0:2.0, smoke:true, grav:-0.35, drag:1.6, up:1.4, op:0.6});   // the crash: masonry dust rolls out
         burst({x:lx,z:lz}, f.pal[0], 14, 7, {y:heightAt(lx,lz)+0.8, life:0.6, size:0.32, grav:-18, drag:1.2, up:3});
         sfx('explode'); S.shake=Math.min(2.6, S.shake + (f.whole?1.4:0.6)*Math.max(0.2, 1-Math.hypot(lx-S.player.pos.x, lz-S.player.pos.z)/30));
-        if(f.whole) spawnRubble(lx*0.5+f.x*0.5, lz*0.5+f.z*0.5, f.ang0, f.pal, 1.0); } }
+        if(f.whole){ if(BREAKUP.heaps) spawnRubble(lx*0.5+f.x*0.5, lz*0.5+f.z*0.5, f.ang0, f.pal, 1.0); else breakScar(lx*0.5+f.x*0.5, lz*0.5+f.z*0.5, 1.6, false); } } }   // Z418 no heap of bricks: the ground torn and greyed where it fell
     else { f.obj.position.y -= dt*0.5; if(f.t>1.0){ scene.remove(f.obj); f.obj.traverse(o=>{ if(o.isMesh) o.geometry.dispose(); }); WALL_FALL.splice(i,1); } } }   // settle into the ground
 }
 export function wallDamage(b, dmg, side){                                                  // staged: top courses go, then the middle, then it's down

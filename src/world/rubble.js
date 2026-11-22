@@ -2,6 +2,7 @@
 //   split planks, cracked concrete with bent rebar, twisted steel, scattered tyres, split stone) — burning for a while if it was fuel, a car or a
 //   container — instead of the piece just vanishing. Heaps are pure scenery (tanks roll over them); the oldest go once there are too many.
 import * as THREE from 'three';
+import { BREAKUP } from '../../config.js';
 import { MOBILE, _R, _mergeColored, _xf, heightAt, scene, spawnPart } from '../hub.js';
 
 const RUB=[], CAP=MOBILE?40:90, _geo={};
@@ -24,7 +25,7 @@ function heapGeo(type, v){ const key=type+v; if(_geo[key]) return _geo[key]; con
   if(type==='rubber'){ for(let i=0;i<5;i++){ const t=new THREE.TorusGeometry(0.5,0.2,6,14); _xf(t, _R(-1,1), 0.18, _R(-1,1), Math.PI/2+_R(-0.4,0.4), 0, _R(-0.3,0.3)); P.push({ geo:t, col:tone() }); } }
   const g=_mergeColored(P); _geo[key]=g; return g; }
 // leave the remains of block b (its kind decides the material; burn = seconds the heap keeps burning)
-export function leaveRubble(b, burn){ const type=RUBBLE_TYPE[b.kind]; if(!type || !b.mesh) return null;
+export function leaveRubble(b, burn){ const type=RUBBLE_TYPE[b.kind]; if(!type || !b.mesh || !BREAKUP.heaps) return null;   // Z418 no heap of chunks: what breaks bursts into dust / smoke / fire and is gone
   if(!_mat) _mat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.92, metalness:0.08 });
   const m=new THREE.Mesh(heapGeo(type, (Math.random()*2)|0), _mat), s=(b.mesh.scale.x||1)*(b.kind==='boulder'?0.7:1);
   const len = b.obb ? b.obb.hl/Math.max(0.5,b.obb.hw) : 1;   // a container / car leaves a long heap
