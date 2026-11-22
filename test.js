@@ -2247,5 +2247,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/id="cineTc"/.test(html) && /Trinh sát đường không/.test(html) && /function tick\(now\)/.test(it) && /put\('cineName', biomeVi\(BIOME\.name\)\)/.test(it) && /'Đại bản doanh địch — '/.test(it), 'the intro is a recon feed: timecode, the name as a lower third, captions in sentence case');
   ok(/el\.textContent='XUẤT KÍCH!'/.test(R('src/ui/briefing.js')) && /#countdown\{[^}]*'Saira Stencil One'/.test(R('css/menus.css')) && /body\.cine #touch\{opacity:0;/.test(R('css/cinematic-mobile.css')), 'the countdown in stencil ends on XUẤT KÍCH!; the phone controls stay out of the intro'); }
 
+// Z461 the desert's dunes and its new gate: the forts on sand hills (the capital on the greatest), sharp-crested dunes between them and over the field,
+//   a slip face to leeward, no rock and no paving in the sand; the gatehouse a carved sandstone arch
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), D=C.FORTHILL.biomes.DESERT, fh=R('src/world/fort-hill.js');
+  ok(D && D.h[0] > D.h[1] && D.land.ridge.sharp && D.land.knolls.lee < 1 && D.land.knolls.sharp && !D.cliffs && !D.paveTile && !D.steep && !D.spire && !D.trees && !D.spur, 'the desert on dunes: the capital on the greatest, sharp crests, slip faces, no rock');
+  ok(/if\(forts\.length && C\.cliffs\) crags\(forts, C\)/.test(fh) && /if\(!C \|\| !C\.paveTile \|\|/.test(fh) && /Math\.cos\(a - K\.wind\) > 0 \? K\.lee : 1\.25/.test(fh) && /R\.sharp \? Math\.pow/.test(fh), 'dunes shaped by the wind, no rock or paving where the land has none');
+  ok(/"src": "Z461_DESERT_gate"/.test(R('tools/scene-import.json')) && /Obserwartorium Taqi ad-Din/.test(R('assets/models/real/fort/SOURCES.txt')) && !/ran292926/.test(R('assets/models/real/fort/SOURCES.txt')), 'the desert\'s gate a carved sandstone arch, credited'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

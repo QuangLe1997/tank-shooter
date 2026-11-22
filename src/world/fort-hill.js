@@ -42,7 +42,7 @@ export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; clea
   for(const im of seen) im.instanceMatrix.needsUpdate = true;
   for(const f of forts) if(f.spurL) carveClimb(f, C.spur, f.R + C.spur.top, f.spurL);   // Z456 the one way up: hairpins cut into the tongue (world/hill-climb.js)
   buildPerimeter(BIOME, true);   // the fence and the rocks beyond it on the new ground
-  if(forts.length) crags(forts, C); edgeCliffs(C); steepRocks(forts, C); spires(forts, C); }
+  if(forts.length && C.cliffs) crags(forts, C); edgeCliffs(C); steepRocks(forts, C); spires(forts, C); }   // (Z461 sand: no rocks at all)
 // ridges between neighbouring forts (their shortest tree): a crest wandering off the straight line, high where it leaves each crag, down to a saddle
 //   midway (where the roads cross), one flank steep and the other long
 function ridges(forts, R, F, s){ const P = forts.filter(f => f.hillH); if(P.length < 2) return; const W = HF.W, st = HF.step, inT = [0], E = [];
@@ -53,15 +53,17 @@ function ridges(forts, R, F, s){ const P = forts.filter(f => f.hillH); if(P.leng
     const [i0, i1] = span((A.x + Bf.x) / 2, len / 2 + pad), [j0, j1] = span((A.z + Bf.z) / 2, len / 2 + pad);
     for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const x = -ARENA + i * st, z = -ARENA + j * st, t = Math.min(1, Math.max(0, ((x - A.x) * ux + (z - A.z) * uz) / len)), sn = Math.sin(t * Math.PI);
       const wd = R.wander * sn * (fbm(t * 3, 0.5, s + ph, 2) - 0.5) * 2, cx = A.x + ux * len * t + nx * wd, cz = A.z + uz * len * t + nz * wd, d = (x - cx) * nx + (z - cz) * nz;
-      const hc = (A.hillH * (1 - t) + Bf.hillH * t) * R.k * (1 - R.saddle * sn * sn), w = R.w * (0.75 + 0.5 * fbm(t * 4, 1.3, s + ph, 2)) * (Math.sign(d) === side ? R.steep : 1), k = 1 - sm(0, w, Math.abs(d));
+      const hc = (A.hillH * (1 - t) + Bf.hillH * t) * R.k * (1 - R.saddle * sn * sn), w = R.w * (0.75 + 0.5 * fbm(t * 4, 1.3, s + ph, 2)) * (Math.sign(d) === side ? R.steep : 1), k = R.sharp ? Math.pow(Math.max(0, 1 - Math.abs(d) / w), R.sharp) : 1 - sm(0, w, Math.abs(d));   // (Z461 a dune's crest: sharp, not rounded)
       if(k > 0) { const kk = j * W + i, v = hc * k; if(v > F[kk]) F[kk] = v; } } } }
 // knolls between the forts (FORTHILL.land.knolls): low rounded hills with ragged feet, clear of the forts, our compound and the spawn
 export const KNOLLS = [];
 function knolls(forts, C, K, F, s){ const W = HF.W, st = HF.step, sp = ARENA * 0.55;
   for(let t = 0, n = 0; t < K.n * 40 && n < K.n; t++){ const x = _R(-ARENA + 25, ARENA - 25), z = _R(-ARENA + 25, ARENA - 25), Rk = _R(K.r[0], K.r[1]);
-    if(!inField(x, z, Rk * 0.6) || Math.hypot(x, z) < C.land.clear[1] + Rk * 0.5 || Math.hypot(x, z - sp) < 30 + Rk * 0.5 || forts.some(f => Math.hypot(f.x - x, f.z - z) < f.R + C.top + Rk + 10) || KNOLLS.some(q => Math.hypot(q.x - x, q.z - z) < q.R + Rk + 12)) continue;
+    if(!inField(x, z, Rk * (K.edge ?? 0.6)) || Math.hypot(x, z) < C.land.clear[1] + Rk * 0.5 || Math.hypot(x, z - sp) < 30 + Rk * 0.5 || forts.some(f => Math.hypot(f.x - x, f.z - z) < f.R + C.top + Rk + (K.near ?? 10)) || KNOLLS.some(q => Math.hypot(q.x - x, q.z - z) < q.R + Rk + (K.gap ?? 12))) continue;   // (Z461 near / gap / edge: how close to a fort's walls, another dune, the fence)
     const H = _R(K.h[0], K.h[1]), s2 = Math.random() * 9, [i0, i1] = span(x, Rk * 1.4), [j0, j1] = span(z, Rk * 1.4);
-    for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const px = -ARENA + i * st, pz = -ARENA + j * st, d = Math.hypot(px - x, pz - z), a = Math.atan2(pz - z, px - x), v = H * (1 - sm(0, Rk * (1 + 0.3 * rag(a, s2)), d)); const k = j * W + i; if(v > F[k]) F[k] = v; }
+    for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const px = -ARENA + i * st, pz = -ARENA + j * st, d = Math.hypot(px - x, pz - z), a = Math.atan2(pz - z, px - x), Rr = Rk * (1 + 0.3 * rag(a, s2));
+      const v = K.lee == null ? H * (1 - sm(0, Rr, d)) : H * Math.pow(Math.max(0, 1 - d / (Rr * (Math.cos(a - K.wind) > 0 ? K.lee : 1.25))), K.sharp || 1.3);   // Z461 a dune: the long slope to windward, the slip face steep in its lee, a sharp crest
+      const k = j * W + i; if(v > F[k]) F[k] = v; }
     KNOLLS.push({ x, z, R:Rk, H }); HILLWAY.push({ x, z, k:'knoll' }); n++; } }
 // Z455 the high places a footpath climbs to (trails.js): every knoll's top, every ridge's saddle · the crest points where rock spires stand
 export const HILLWAY = [], CRESTS = [];
@@ -150,7 +152,7 @@ function kerb(x0, z0, r, w){ const C = hillCfg(), n = Math.max(24, Math.round(Ma
   for(let i = 0; i < n; i++){ const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals();
   const m = new THREE.Mesh(g, kerbMat()); m.receiveShadow = true; m.renderOrder = 2; scene.add(m); PAVE.meshes.push(m); return m; }
-export function paveYard(f, x0, z0, r){ const C = hillCfg(); if(!C || typeof window === 'undefined') return; const step = MOBILE ? 2.2 : 1.4, n = Math.ceil(r / step), P = [], U = [], idx = [], at = {};
+export function paveYard(f, x0, z0, r){ const C = hillCfg(); if(!C || !C.paveTile || typeof window === 'undefined') return; const step = MOBILE ? 2.2 : 1.4, n = Math.ceil(r / step), P = [], U = [], idx = [], at = {};   // (Z461 a sand fort's yard stays sand)
   for(let j = -n; j <= n; j++) for(let i = -n; i <= n; i++){ const x = i * step, z = j * step; if(Math.hypot(x, z) > r + step) continue; const k = P.length / 3; at[i + ',' + j] = k;
     const wx = x0 + Math.min(1, r / (Math.hypot(x, z) || 1)) * x, wz = z0 + Math.min(1, r / (Math.hypot(x, z) || 1)) * z; P.push(wx, heightAt(wx, wz) + 0.06, wz); U.push(wx / C.paveTile, wz / C.paveTile); }
   for(let j = -n; j < n; j++) for(let i = -n; i < n; i++){ const a = at[i + ',' + j], b = at[(i + 1) + ',' + j], c = at[i + ',' + (j + 1)], d = at[(i + 1) + ',' + (j + 1)]; if(a == null || b == null || c == null || d == null) continue;
