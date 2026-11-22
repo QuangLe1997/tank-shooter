@@ -6,7 +6,7 @@
 //   Z425 the ground pieces are real scans: the radome on its tower, an equipment shelter, a radar truck, a field generator, two dishes.
 import * as THREE from 'three';
 import { SCENERY, SUPPLYB } from '../../config.js';
-import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen, dressAAGun } from '../hub.js';
+import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen, dressAAGun, towerTopple } from '../hub.js';
 
 const CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
 export function radarLost(){ return SUPPLY.radar|0; }
@@ -62,11 +62,14 @@ export function dishMount(h){ const K=kit(), r=h/3; for(const a of [0,2.1,4.2]) 
   const g=K.bake(true); g.userData.s=h/SCENERY.models.sat_dish.h; return g; }   // a dish on its tripod, h m tall (its scan stood as tall)
 export function radarYard(K){
   for(const [x,z,h] of [[-13,6,9],[13,7,7],[4,-11,11]]) K.add('metal', CY(0.05,0.08,h,6,x,h/2,z), 0x4a4c46); }   // whip masts
-// the tower topples: rotating about its foot toward `dir`, then a blast where it hits
-export function toppleTower(T, dir, now){ T.fall={ t:0, dir, done:false, sx:Math.sin(dir), sz:Math.cos(dir) }; }
-export function updateTopple(T, dt){ const F=T.fall; if(!F || F.done) return; F.t+=dt; const k=Math.min(1, F.t/1.8), e=k*k, a=e*1.45;
-  T.mesh.rotation.set(F.sz*a, T.mesh.rotation.y, -F.sx*a, 'YXZ');
-  if(k>=1){ F.done=true; const L=14, x=T.x+F.sx*L, z=T.z+F.sz*L, pos={x,z}; bigExplode(pos, 0xffb050, 2.2); burst(pos, 0xb0aaa0, 10, 6, {y:heightAt(x,z)+1, life:1.6, size:3, smoke:true, grav:-0.5, drag:1.5, up:2, op:0.5}); for(let i=0;i<3;i++) spawnDebris(pos, 1.2, 0x5a5c56); S.shake=Math.min(4, S.shake+1.6); sfx('bigexplode', pos); aoeDamage(x, z, 6, 60, false, performance.now()/1000, 'HE'); } }
+// the tower topples toward `dir` — Z452 for real (world/tower-fall.js): about the front edge of its pad, the footing torn out, the array torn off where
+//   it strikes (it tumbles away on its own), the mast lying askew where it fell for the rest of the battle; what it lands on is still crushed
+export function toppleTower(T, dir, now){ if(T.fall) return; T.fall={ t:0, dir, done:true };   // (done: nothing left for updateTopple — the fall module steps it)
+  const head=T.mesh.userData.head, big=T.kind==='radartower';
+  towerTopple({ g:T.mesh, x:T.x, z:T.z, gy:T.mesh.position.y, dx:Math.sin(dir), dz:Math.cos(dir), metal:true, burn:true, top:big && head ? head : null, h:big?22:9, r:T.r, cg:big?0.55:0.5,
+    onImpact:(x, z)=>{ const pos={x,z}; burst(pos, 0xb0aaa0, 8, 6, {y:heightAt(x,z)+1, life:1.6, size:3, smoke:true, grav:-0.5, drag:1.5, up:2, op:0.5}); for(let k=0;k<(MOBILE?6:12);k++) spawnPart(x, heightAt(x,z)+1, z, (Math.random()-0.5)*10, 2+Math.random()*6, (Math.random()-0.5)*10, { color:0x9fd8ff, size:0.22, life:0.5, grav:-14, drag:1 });   // live cables shorting where it lands
+      if(big) aoeDamage(x, z, 6, 60, false, performance.now()/1000, 'HE'); } }); }
+export function updateTopple(T, dt){ }   // Z452 (kept for supply.js: the fall module steps the mast now)
 // the AA guns swing onto you and hose you in bursts when you are in reach
 export function updateAAGun(g, b, dt, now, p){ const u=g.userData, T=u.turret; if(!T || !(b.hp>0)) return; const dx=p.pos.x-b.x, dz=p.pos.z-b.z, d=Math.hypot(dx,dz); if(d>SUPPLYB.aa.range || !playerSeen(b.x, heightAt(b.x,b.z)+2.5, b.z)) return;   // Z377 a man lying flat out of its crew's sight: no target
   const want=Math.atan2(dx,dz)-g.rotation.y; let da=want-T.rotation.y; da=Math.atan2(Math.sin(da),Math.cos(da)); T.rotation.y+=Math.max(-dt*1.6,Math.min(dt*1.6,da));

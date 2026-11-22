@@ -117,6 +117,7 @@ export * from './ai/squads.js';
 export * from './ai/fieldcraft.js';   // Z220 line of fire · grenades · smoke (both sides)
 export * from './actors/damage.js';
 export * from './world/towers.js';
+export * from './world/tower-fall.js';   // Z452 towers topple for real, tear their footing out and lie where they fell
 export * from './world/tower-kinds.js';
 export * from './world/camps.js';
 export * from './world/zones.js';

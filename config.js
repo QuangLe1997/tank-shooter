@@ -915,6 +915,16 @@ export const TUFT = { h:[0.42, 0.58, 0.78, 1.0], n:[3, 3, 4, 4], w:0.72, lean:0.
 //   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands
 export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18,
   band:[0.4, 1.3], giantBand:[0.6, 2.2] };   // Z404 the trunk a vehicle meets: the drawn bark between band m over the foot (a giant's higher, over its roots), its median distance from the axis
+// Z452 TOWER FALL (world/tower-fall.js): a watchtower / guard post / the radar mast shot down topples about the front edge of its base — g × gK (a little
+//   quicker than life), cg = where its weight sits (× height), lean = how far it already leans as the legs give, kick = the starting swing (rad/s) the
+//   hit gives, bounce = what is left of the swing after it strikes, restW = below this it stays down; bins = height bands its falling face is read in;
+//   tearAt = the angle the footing tears out at; twist = its slew while falling (rad), yawSlope = its top slewing down a cross slope, slide = how far
+//   (m) it skids on; roll: spring k, damping d, max (rad) about its own length, askew = the random part, lat = sideways travel × its half-width;
+//   settle = s on the ground before it sleeps; foot = the torn footing (pad t m thick, piers to d m deep, rebar per pier, bar radius, colours);
+//   pit = the hole (× footprint radius, depth / rim in m, decal ×); dust along the impact; shake by distance; keep = remains a battle keeps; chunk = a torn-off piece
+export const TOWERFALL = { g:9.8, gK:1.3, cg:0.5, lean:0.05, kick:[0.28, 0.42], spread:0.3, bounce:0.22, restW:0.18, bins:10, tearAt:0.14, twist:0.12, yawSlope:0.5, slide:[0.3, 0.9],
+  roll:{ k:9, d:3.2, max:0.38, askew:0.16, lat:0.55 }, settle:2.2, foot:{ t:0.55, d:1.3, pier:0.95, bars:[5, 9], barR:0.03, color:0xb9b3a5, rebar:0x6b4a33 },
+  pit:{ r:1.05, depth:0.6, rim:0.22, decal:1.25 }, dust:{ n:12, size:[2.2, 3.8], life:[2.4, 4.2], op:0.42, cloud:4 }, shake:{ k:1.1, max:1.6, r:70 }, keep:12, chunk:{ g:9.8, e:0.28, mu:0.55 } };
 // Z265 REAL STREETS (world/stone.js streetSurface): wet = the share of the street under puddles (0 = dry), wheel = how much darker the wheel paths,
 //   oil = the drip line's strength, patch = the share of 3 m cells re-laid with newer asphalt, dampDark = how dark the damp rims, rough = roughness ×,
 //   nrm = photo normal strength, env = reflection strength (the puddles mirror the sky), puddle = the wetness-noise level above which water stands (lower = more), mirror = extra sky reflection in it

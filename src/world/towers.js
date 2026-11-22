@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BRIDGE, HUMAN_SCALE } from '../../config.js';
-import { AREA_K, ARENA, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
+import { BRIDGE, HUMAN_SCALE, TOWERFALL } from '../../config.js';
+import { AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, bigExplode, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -61,7 +61,7 @@ export function buildTower(x, z, kindId){
 }
 const OPEN_DECK=new Set(['wood','bamboo','lattice']);   // Z175 rope bridges only between open platforms
 export function buildTowers(){
-  for(const t of towers){ scene.remove(t.g); dropSearchlight(t.light); } towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges();
+  for(const t of towers){ scene.remove(t.g); dropSearchlight(t.light); } towers.length=0; for(const f of fallers) scene.remove(f.g); fallers.length=0; clearBridges(); clearTowerFalls();   // Z452 the last battle's fallen towers go with it
   const n=Math.round(((MOBILE?2:3)+Math.min(2, Math.floor((S.stage-1)/2)))*Math.min(AREA_K,1.7)), okAt=(x,z)=>Math.abs(x)<ARENA-9&&Math.abs(z)<ARENA-9&&homeClear(x,z,4,true) && Math.hypot(x,z-ARENA*0.55)>16 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<7) && !inZone(x,z,6) && inField(x,z,9);
   for(let i=0;i<n;i++){ let x=0,z=0,ok=false;
     for(let tr=0;tr<30&&!ok;tr++){ x=(Math.random()*2-1)*(ARENA-9); z=(Math.random()*2-1)*(ARENA-9); ok=okAt(x,z); }
@@ -102,20 +102,17 @@ export function updateTowers(dt, now){
           continue; }
         addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); addCoins(Math.round(15*loopRewardMul()*diffRewardMul()*cMod('coinMul'))); } }
     else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(HUMAN_SCALE*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }
-  for(const t of towers){ if(!t.falling) continue; t.ft+=dt; const k=Math.min(1, t.ft/1.25), e=k*k;          // topple about the base with a hard landing
-    t.g.rotation.x = t.fdx*e*1.45; t.g.rotation.z = t.fdz*e*1.45;
-    if(k>=1 && !t.landed){ t.landed=true; const tl=(t.h||7)*0.7, ex=t.x+t.fdz*-tl, ez=t.z+t.fdx*tl;
-      bigExplode({x:ex,z:ez}, 0xc8a070, 1.4); burst({x:ex,z:ez}, 0x8a6a40, 14, 9, {y:heightAt(ex,ez)+1, life:0.7, size:0.45, grav:-18, drag:1.2, up:4}); S.shake=Math.min(3,S.shake+1.2); }
-    if(t.ft>7){ const k2=Math.max(0,1-(t.ft-7)/1.5); for(const m of (t.mats||[t.wm])){ m.opacity=k2; m.transparent=true; } if(k2<=0){ scene.remove(t.g); t.gone=true; } } }
   for(let i=towers.length-1;i>=0;i--) if(towers[i].gone) towers.splice(i,1);
 }
 export function collapseTower(t){
   t.falling=true; t.ft=0; const p=S.player; const ax=t.x-(p?p.pos.x:0), az=t.z-(p?p.pos.z:0), L=Math.hypot(ax,az)||1;   // falls AWAY from the shooter
-  t.fdx=az/L; t.fdz=-ax/L;
   floatText('THÁP ĐÃ ĐỔ', '#ffcf5a', new THREE.Vector3(t.x, (t.gy||0)+(t.h||8)+2, t.z), 22); addScore(200, new THREE.Vector3(t.x,6,t.z)); sfx('bigexplode'); S.shake=Math.min(3,S.shake+0.8);
   burst({x:t.x,z:t.z}, 0x8a6a40, 18, 8, {y:heightAt(t.x,t.z)+3, life:0.8, size:0.5, grav:-16, drag:1.2, up:3}); burst({x:t.x,z:t.z}, 0xb09a7a, 5, 3, {y:heightAt(t.x,t.z)+1.5, life:1.4, size:2.4, smoke:true, grav:-0.4, drag:1.5, up:1.5, op:0.5});
   const rammed = t._ramAt && performance.now()/1000 - t._ramAt < 0.3;                                         // Z112 knocked over by a tank: the men ride it down and live
   for(const gd of t.guards) dropGuard(t, gd, ax/L, az/L, rammed);
+  if(t.light){ t.light.beam.visible=false; t.light.pool.visible=false; t.light.on=false; dropSearchlight(t.light); t.light=null; } t.gone=true;   // Z452 off the watch list: the fall module owns it now
+  const fa=Math.atan2(ax,az)+(Math.random()-0.5)*2*TOWERFALL.spread, K=TOWER_KINDS[t.kind]||{};   // Z452 it goes over about the side that gave way (roughly away from the hit), tears its footing out and stays down
+  towerTopple({ g:t.g, x:t.x, z:t.z, gy:t.gy, dx:Math.sin(fa), dz:Math.cos(fa), metal:K.mat==='steel', h:(K.h||8)/(K.deck||0.8), r:K.r, kick:rammed ? 0.22 : undefined });
 }
 // a guard leaves the tower: shot off it by our infantry (Z104) or thrown when it collapses — he tumbles to the ground (score on landing)
 export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; gd.alive=false; gd.g.visible=true; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);

@@ -1599,6 +1599,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/vars\('bu'\+\(dry\?1:0\), 5,/.test(f) && /g\.userData\.tk=dry\?'bushDry':'bushGreen'/.test(f) && /tk=opt\.tk\|\|g\.userData\.tk/.test(f) && /REALTREE\.parts\[k\]; if\(P\) P\.forEach/.test(t) && /if\(!k\.includes\(':'\)\) NT\.ims\.add\(im\)/.test(t), 'bushes turn into the scans (a part per variant; no whole near copy for them)');
   ok(/tk:'quiver'/.test(f) && (f.match(/plant\(aloe\(\)/g)||[]).length===2 && C.REALTREE.h.quiver>=3 && C.REALTREE.h.quiver<=7, 'quiver trees stand in the desert and the savanna at a real height');
   ok(/export const grass=\(tone\)=>vars\('gr'\+tone, 4, \(vv\)=>\{ const g=tuftGeo\(TUFT\.h\[vv\], TUFT\.n\[vv\]\); g\.userData\.mat=tuftMat\(tone\)/.test(f) && /alphaMap:tuftTex\('alpha\.jpg'/.test(f) && /V\[vi\]\.userData\.mat\|\|mat/.test(d) && C.TUFT.h.every(h=>h>=0.2 && h<=1.2) && ['green','dry','straw','tundra'].every(k=>C.TUFT.tone[k]), 'grass clumps are photographed tufts (carpet atlas), not drawn blade fans, in flora and decor'); }
+// Z452 towers / guard posts / the radar mast topple for real, tear their footing out and stay down
+{ const fs=await import('node:fs'); const R=q=>fs.readFileSync(q,'utf8'), C=await import('./config.js'), TF=C.TOWERFALL, f=R('src/world/tower-fall.js'), tw=R('src/world/towers.js'), rd=R('src/world/radar.js'), lp=R('src/game/loop.js'), hub=R('src/hub.js');
+  ok(TF && TF.g>0 && TF.cg>0 && TF.bounce<1 && TF.bins>=6 && TF.foot.d>TF.foot.t && TF.pit.depth>0 && TF.keep>=4 && TF.shake.max<=2, 'TOWERFALL: gravity, bounce, footing, pit, shake and how many remains a battle keeps');
+  ok(/export function towerTopple\(o\)/.test(f) && /Math\.sin\(f\.th \+ T\.lean\) \/ f\.I/.test(f) && /function dentGround\(/.test(f) && /HF\.dirty = true/.test(f) && /function footGeo\(/.test(f) && /function pitGeo\(/.test(f),
+    'the fall: gravity torque about the base edge, the ground dug out once, the torn footing and the pit (shared, cached geometry)');
+  ok(/kind:'towerdown'/.test(f) && /obb:\{ f:Math\.atan2/.test(f) && /blocks\.push\(b\)/.test(f) && !/opacity/.test(f), 'it lies there as a box that stops tanks (no fade, no vanishing)');
+  ok(/towerTopple\(\{ g:t\.g/.test(tw) && /clearTowerFalls\(\)/.test(tw) && !/m\.opacity=k2/.test(tw), 'watchtowers (every kind, every camp / fort / base that builds one) fall through it; the old fade is gone');
+  ok(/towerTopple\(\{ g:T\.mesh/.test(rd) && /top:big && head/.test(rd), 'the radar mast falls through it too, its array torn off on impact');
+  ok(/updateTowerFalls\(dt\)/.test(lp) && /world\/tower-fall\.js/.test(hub), 'stepped every frame, listed in the hub'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
