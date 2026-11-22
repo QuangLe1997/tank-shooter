@@ -1588,6 +1588,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function bulletImpact\(mat, x, y, z, ox, oz, k=1\)/.test(gf) && ['water','metal','stone','wood','sand'].every(m=>gf.includes("mat==='"+m+"'")) && /chip\(x, y, z, _fv\.x/.test(gf) && /if\(wetAt\(x, z\)\)\{ bulletImpact\('water'/.test(ex) && /bulletImpact\('dirt', x, gy\+0\.05, z, 0, 0, k\)/.test(ex) && /bulletImpact\(hitMat\(bl, stone\), b\.x, y, b\.z, ux, uz, b\.inf \? 0\.9 : 1\.2\)/.test(lo) && /bulletImpact\('metal', x, y, z, -ux, -uz/.test(hf) && !/op:[3-9]/.test(gf.slice(gf.indexOf('export function bulletImpact'))),
     'a bullet strike throws up what it hit: soil / water / stone / steel / wood / sand (solid chips from the pool; no smoke-layer op above 2)');
 }
+// Z439 the dome pillbox, the sandbag ring bunker and the culvert stop men, rides and tanks (their measured footprint, data/scene-solids.js)
+{ const C=await import('./config.js'), D=await import('./src/data/scene-solids.js');
+  ok(['bunker_dome','bunker_sandbag','culvert'].every(k=>D.SCENE_CUT[k] && D.SCENE_CUT[k].length>=3 && C.SCENERY.models[k].solid && C.SCENERY.models[k].solid.cut), 'the dome pillbox, the sandbag bunker and the culvert are solid');
+  ok(D.SCENE_CUT.bunker_dome.some(b=>Math.abs(b[0])<b[2] && Math.abs(b[1])<b[3]), 'the pillbox\'s middle is solid (nobody drives through it)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

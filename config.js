@@ -1641,7 +1641,7 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     tree_pine:{ h:22, ar:[0.47, 1, 0.47], sink:0.02, solid:{ r:0.8 } },
     // Z420 the forts' command compounds (world/fortress.js buildCore, FORT_CMD) and the fuel depot's store (world/supply.js) — solid: null, their own blocks carry them
     hq_modular:{ one:true, w:17, ar:[1.84, 1, 1.72], sink:0.01, solid:null }, bunker_hangar:{ w:15, ar:[2.11, 1, 1.02], sink:0.02, solid:null }, bunker_store:{ w:13, ar:[1.81, 1, 1.4], sink:0.01, solid:null },
-    bunker_green:{ h:7.5, ar:[0.97, 1, 0.84], sink:0.03, solid:null }, bunker_dome:{ w:12, ar:[2.6, 1, 2.6], sink:0.05, solid:null }, bunker_sandbag:{ w:11, ar:[2.04, 1, 2.04], sink:0.03, solid:null },
+    bunker_green:{ h:7.5, ar:[0.97, 1, 0.84], sink:0.03, solid:null }, bunker_dome:{ w:12, ar:[2.6, 1, 2.6], sink:0.05, solid:{ cut:1 } }, bunker_sandbag:{ w:11, ar:[2.04, 1, 2.04], sink:0.03, solid:{ cut:1 } },
     radar_sentinel:{ h:15, ar:[0.67, 1, 0.62], sink:0.01, solid:null }, gun_turret:{ w:11, ar:[2.29, 1, 2.06], sink:0.03, solid:null }, antenna_twin:{ h:28, ar:[0.55, 1, 0.3], sink:0, solid:null },
     fuel_depot:{ w:17, ar:[1.7, 1, 1.29], sink:0.02, solid:null },
     radar_dome:{ one:true, h:15, ar:[0.37, 1, 0.37], sink:0, solid:null }, mil_shelter:{ w:6.1, ar:[1.33, 1, 0.68], sink:0.01, solid:null }, radar_truck:{ w:8.6, ar:[1.96, 1, 0.65], sink:0.01, solid:null },   // Z425 the radar yard (SCENERY.supply.yard): pieces of the base, they stop and break as its pieces do
@@ -1658,7 +1658,7 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     ice_castle:{ w:60, ar:[1.1, 1, 0.7], sink:0.04, solid:{ box:0.8 }, env:1.2 }, duga_hall:{ w:24, ar:[1.67, 1, 1.71], sink:0.01, solid:{ box:0.95 } },
     water_tower_brick:{ h:20, ar:[0.24, 1, 0.26], sink:0, solid:{ r:1.6 } }, generator:{ one:true, w:5, ar:[1.35, 1, 1.35], sink:0, solid:{ box:0.9 } },
     crane_stack:{ h:34, ar:[0.52, 1, 0.25], sink:0, solid:{ box:0.7 } }, dam_gate:{ h:22, ar:[0.59, 1, 0.72], sink:0.02, solid:{ box:0.9 } },
-    culvert:{ w:9, ar:[1.86, 1, 1.48], sink:0.12, solid:{ box:0.9 } }, tunnel_mouth:{ w:16, ar:[1.15, 1, 1.73], sink:0.05, solid:{ box:0.9 } },
+    culvert:{ w:9, ar:[1.86, 1, 1.48], sink:0.12, solid:{ cut:1 } }, tunnel_mouth:{ w:16, ar:[1.15, 1, 1.73], sink:0.05, solid:{ box:0.9 } },
     rock_arch:{ w:18, ar:[2.0, 1, 1.42], sink:0.05, solid:{ cut:1 } }, moss_archway:{ h:14, ar:[0.99, 1, 0.48], sink:0.03, solid:{ cut:1 } },
     belfry:{ h:16, ar:[0.28, 1, 0.32], sink:0.01, solid:{ r:2.0 } }, lava_crater:{ one:true, w:20, ar:[4.48, 1, 4.52], sink:0.1, solid:null, lava:0.3 },
     lava_rock_a:{ one:true, w:4, ar:[1.68, 1, 1.58], sink:0.08, solid:{ disc:0.45 }, env:0.7 }, lava_rock_b:{ one:true, w:4, ar:[0.96, 1, 1.02], sink:0.08, solid:{ disc:0.45 }, env:0.7 },
