@@ -1,6 +1,6 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
 import { TANK_DEATH } from '../../config.js';
-import { BIOME, MOBILE, S, blastLight, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, S, blastLight, bulletImpact, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, wetAt } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 export function bigExplode(pos, color, scale=1.5){ scareBirds(pos.x, pos.z);   // Z235 the swallows scatter from the blast
@@ -15,10 +15,11 @@ export function bigExplode(pos, color, scale=1.5){ scareBirds(pos.x, pos.z);   /
   sfx(scale>=2 ? 'bigexplode' : 'explode', pos);
 }
 // a round that lands in the dirt: soil spray + dust puff + a scar on the ground
-export function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), dc=BIOME.ground;
+export function groundHit(x, z, r){ const k=Math.min(2.2, 0.6+r*1.4), gy=heightAt(x,z);
+  if(wetAt(x, z)){ bulletImpact('water', x, gy, z, 0, 0, k); return; }   // Z419 a round into the river: a white splash, no scar
   decalDirt(x, z, 0.25+r*0.5);
-  burst({x,z}, dc, Math.floor(4*k), 5*k, {y:0.3, life:0.45, size:0.32*k, up:4.5, grav:-16, drag:1.5});                          // clods
-  burst({x,z}, dc, Math.max(1,Math.floor(2*k)), 1.6*k, {y:0.4, life:0.7, size:1.1*k, smoke:true, grav:-0.4, drag:2.2, up:1.2, op:0.45}); }   // dust
+  bulletImpact('dirt', x, gy+0.05, z, 0, 0, k);   // Z419 dark grit spurting up + a puff of the ground's own dust (the clods were glowing additive dots, at a fixed height)
+  if(r>=0.5) burst({x,z}, BIOME.ground, Math.max(1,Math.floor(2*k)), 1.6*k, {y:gy+0.4, life:0.7, size:1.1*k, smoke:true, grav:-0.4, drag:2.2, up:1.2, op:0.45}); }   // a shell's bigger dust
 // ----- per-gun IMPACT spray (non-lethal hit) — each weapon "reads" differently on contact -----
 export function impactFX(pos, fx, k, armour){ k=k||1; sfx(k>2.2?'hitHeavy':'hit', pos, 0.6+k*0.25);   // Z102 every strike on armour is heard
   // Z192 on a tank's armour, armourHit() throws the spall instead — directional, out of the hole

@@ -2,7 +2,7 @@
 //   long lingering smoke ribbon behind a flickering motor flame, an enemy gun barks with flash + smoke at the real muzzle, a hit on armour
 //   rocks the hull on its springs and throws molten spall back out of the hole (or skips off thick front plate in a shower of sparks),
 //   and an enemy tank that is badly hurt smokes from the engine deck, then burns
-import { BIOME, MOBILE, PART_MAX, PERF, S, boss, enemies, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PART_MAX, PERF, S, boss, bulletImpact, enemies, gunFlash, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
 
 // point the pooled round along its velocity (yaw + the pitch of its real climb / fall this frame); the core is stretched at spawn
 export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)||1, vy=(dt>0 && b._py!=null) ? (y-b._py)/dt : 0; b._py=y;
@@ -24,7 +24,7 @@ export function rocketExhaust(b, x, y, z){ const bk=Math.hypot(b.vx,b.vz)||1, ux
 
 // an enemy gun fires: flash, a tongue of flame, smoke rolling off the muzzle (at the muzzle's real height) — heavy guns kick up the dust too
 export function enemyMuzzleFX(x, y, z, a, heavy){ const fx=Math.sin(a), fz=Math.cos(a), k=heavy?1.35:1;
-  spawnPart(x+fx*0.5, y, z+fz*0.5, fx*5, 0, fz*5, { tex:'flash', color:0xfff2d8, size:2.0*k, life:0.05, grav:0, drag:8 });
+  gunFlash(x, y, z, a, 1.9*k, 1.1*k, 0xfff2d8, 1);   // Z419 a shaped flash along their bore (was a round billboard)
   spawnPart(x+fx*0.9, y, z+fz*0.9, fx*8, 0.3, fz*8, { tex:'fire', color:0xfff0c0, color2:0xff5a14, size:0.9*k, grow:1.2, life:0.12, grav:0, drag:7 });
   for(let i=0;i<(MOBILE?1:3);i++){ const s=0.8+i*0.7; spawnPart(x+fx*s, y, z+fz*s, fx*(3-i)+(Math.random()-0.5), 0.4+Math.random()*0.4, fz*(3-i)+(Math.random()-0.5),
     { color:0xb8b0a2, size:(0.7+i*0.25)*k, life:1.0+Math.random()*0.5, smoke:true, grav:0.2, drag:2.2, grow:1.6, op:0.3 }); }
@@ -41,7 +41,7 @@ export function armourHit(t, x, y, z, ux, uz, dmg, glance){ rockHull(t, ux, uz, 
   if(glance){ ricochet(x, y, z, ux, uz);   // skips off the plate…
     for(let i=0;i<(small?2:(MOBILE?4:8));i++){ const a=back+(Math.random()-0.5)*2.4, sp=6+Math.random()*10; spawnPart(x, y, z, Math.sin(a)*sp, 1+Math.random()*4, Math.cos(a)*sp, { color:0xfff2c0, size:0.11, life:0.2+Math.random()*0.15, grav:-12, drag:1.5 }); }   // … in a shower of sparks
     return; }
-  if(small){ for(let i=0;i<2;i++){ const a=back+(Math.random()-0.5)*1.8, sp=5+Math.random()*6; spawnPart(x, y, z, Math.sin(a)*sp, 1+Math.random()*3, Math.cos(a)*sp, { color:0xffe6a0, size:0.1, life:0.18, grav:-12, drag:1.5 }); } return; }
+  if(small){ bulletImpact('metal', x, y, z, -ux, -uz, 0.8+dmg*0.03); return; }   // Z419 a bullet on armour: a spark-star, a fan of sparks back off the plate, a breath of grey
   const n=Math.min(MOBILE?6:12, 3+Math.round(dmg/12));
   for(let i=0;i<n;i++){ const a=back+(Math.random()-0.5)*1.5, sp=5+Math.random()*9; spawnPart(x, y, z, Math.sin(a)*sp, 1.5+Math.random()*5, Math.cos(a)*sp,
     { color:0xfff0b0, color2:0xff4a0a, size:0.13+Math.random()*0.1, life:0.4+Math.random()*0.4, grav:-16, drag:0.7 }); }   // molten spall blown back out of the hole

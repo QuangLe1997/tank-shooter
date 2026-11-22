@@ -109,10 +109,23 @@ export const TUNNEL = { from:2, n:[3,4], hp:{ hatch:70, bunker:280 }, seeR:20, u
 export const HOME_GAP = { wall:24, gap:46, gapMobile:26, small:34, smallMobile:20, spawn:36, spawnMobile:24, minK:0.7, campMobileK:0.5 };   // campMobileK: on the small phone field the first barracks camp may relax to half the gap rather than not exist   // minK: when the field is too crowded to place a site, the gap relaxes step by step to this share, never below
 export const UNDERBASE = { off:170, W:75, D:55, gate:{ portalW:15, lockHp:[380,80], turretHp:300, turretR:24, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },   // Z403 gate MG turretR 36 → 24 m (a rifleman's reach) · Z429 gate.portalW: the bastion gate scan over the ramp (m across)
   hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26], tank:[38,48], maxTanks:3 }, lights:{ desk:8, mob:3, I:50, range:34 }, score:{ target:400, all:2000, lock:300 } };
+// Z419 GUNFIRE THAT READS REAL (fx/gunfx.js): the muzzle flash is a shaped, bore-aligned flash (crossed petals along the barrel + a face-on star) that lives
+//   1–2 frames, a muzzle brake throws its own side jets and smoke sideways; the light is a strobe, not a glow; machine-gun belts carry a tracer every
+//   REAL.tracer.every rounds (thin, bright, short) and the ball rounds between are unseen; brass tumbles out and bounces; a bullet strike throws up what it hit
+export const GUNFX = {
+  flash:{ pool:28, poolMob:14, life:0.045, hot:2.6 },              // pooled flash instances (one draw call) · life s (always ≥ 1 rendered frame) · hot = HDR brightness ×
+  light:{ decay:42 },                                              // a gun's muzzle light drops this much intensity per second (explosions keep the slow 12/s)
+  tracer:{ core:0.2, halo:0.55, trail:0.5, mgCore:0.11, mgHalo:0.32, mgTrail:0.3, mgLife:0.6 },   // round width × (was 0.38), glow ×, trail-dot size × — MG / rifle tracers thinner still
+  brass:{ pool:140, poolMob:48, life:1.15, bounce:0.32, grav:-24 },   // spent cases + the chips / clods / splinters a strike throws: real meshes, one pool recycled oldest-first · life s · ground restitution · gravity
+  case:{ rifle:[0.13,0.045], mg:[0.2,0.06], auto:[0.36,0.11], shell:[0.62,0.26] },   // case [length, diameter] m (drawn ~2.5× real so it reads at battle distance)
+  hit:{ chips:5, chipsMob:3, dust:0.55, splash:4 },                // a bullet strike: chips / sparks thrown, dust puff size, water-splash droplets
+  mat:{ metal:['container','car','wreck','fueltank','tanker','drums','fueldrum','hedgehog','plates','parked','apc','tank','radar','pylon','motor','rocket'],   // what a struck block is made of
+    wood:['crates','logs','tree','trunk','fence','tent','post','stacks'], sand:['sandbag','hesco'], stone:['keep','ruin','rock','fortcore','corewall','uwall','bunker','slab','landmark','teeth','mesa','karst'] },   // (else: a stone / steel / heavy block → stone, the rest → dirt)
+};
 export const REAL = {
   concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
   tracer:{ every:3, enemy:0x6dff4a, ally:0xff5a2a },             // every Nth round a tracer: theirs burn green, ours red-orange
-  brass:{ R:44 },                                                // spent casings only near the player (cheap)
+  brass:{ R:44 },                                                // spent casings only near the player (cheap)  · Z419 now real brass meshes (GUNFX.brass)
   death:{ fwd:0.3, spin:0.22, crawl:0.16 }, crawl:{ t:[3.2,5.5], sp:0.42 },   // small-arms death: fall forward / spin down / crawl wounded, else back
   look:{ h:[0.93,1.07], w:[0.93,1.08], tint:[0.8,1.1] },         // no two men the same height, build or shade of kit
   shock:{ minScale:1.0 },                                        // blasts this big send a dust skirt racing out along the ground

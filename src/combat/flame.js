@@ -1,7 +1,7 @@
 // combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
 import * as THREE from 'three';
-import { BALANCE, LOCKON, REALCITY, XHAIR } from '../../config.js';
-import { XH, AIR, fireLine, CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
+import { BALANCE, LOCKON, REALCITY, XHAIR, REAL } from '../../config.js';
+import { XH, ejectBrass, AIR, fireLine, CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 // ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
@@ -157,12 +157,13 @@ export function fireGun(now, range){
     if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('QUÁ GẦN CHO PHÁO CHÍNH','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
     const air = airShot(sx0, sz0, g.bspeed);   // Z313 laid on an aircraft: lead it, climb to its height (combat/air-aim.js)
     const XL = air || g.lock ? null : fireLine(sx0, sy0, sz0), a1 = XL && Math.abs(Math.atan2(Math.sin(XL.a - ang), Math.cos(XL.a - ang))) < 0.06 ? XL.a : ang;   // Z376 the shell to the crosshair's point (combat/crosshair.js): its height there, and its line once the turret is on it
+    const mg = g.flash==='small';   // Z419 the twin MG / rotary: a belt with a tracer every REAL.tracer.every rounds, the ball rounds between unseen
     for(let i=0;i<n;i++){
-      const a = (air ? air.a : a1) + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread);
+      const a = (air ? air.a : a1) + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread), tr = mg ? ((p._trN=(p._trN||0)+1)%REAL.tracer.every===0 ? 1 : 0) : undefined;
       const mD=g.lock ? Math.min(maxDist, LOCKON.range) : maxDist;   // Z238 a lock-on missile's reach is capped
       spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist:mD, arcDist:air ? air.dropDist : arcD, noArc:!!air, y:sy0, dropTo:air ? air.dropTo : XL ? XL.dropTo : 1.2, dropDist:air ? air.dropDist : XL ? Math.max(2, XL.dropDist) : dropD, airAim:air ? air.e : null, type:g.type, reach:mD, fall:g.fall??1,
         pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, rocket:!!g.lock, smart:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*gunSplash(g) : 0),
-        freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos});
+        freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos, mg, tr});
     }
   }
   // RECOIL — the tank kicks back opposite the shot; heavy guns lurch, autos barely nudge
@@ -175,8 +176,8 @@ export function fireGun(now, range){
     _mz.set(_v.x,_v.y,_v.z);
     if(g.flash==='arc'){ strikePoint(list, _v.x, _v.z, ang, R*0.9, 0.1, _tp); lightning(_mz, _tp); }      // the bolt jumps to whatever is near the line of fire
     else { _tp.set(_v.x+Math.sin(ang)*R, _v.y-0.2, _v.z+Math.cos(ang)*R); railBeam(_mz, _tp); } }      // the slug punches through everything: the beam runs its full reach
-  if(CASING[inst.id]){ const c=CASING[inst.id], rx=Math.cos(p.facing), rz=-Math.sin(p.facing), sc=p.mesh.scale.x;   // spent brass ejected from the turret side
-    for(let k=0;k<c.n;k++) spawnPart(p.pos.x+rx*1.0*sc, 2.3*sc, p.pos.z+rz*1.0*sc, rx*(3+Math.random()*2)+(Math.random()-0.5), 3+Math.random()*2, rz*(3+Math.random()*2)+(Math.random()-0.5), {color:0xd8a840, size:c.s, life:0.9, grav:-24, drag:0.4}); }
+  if(CASING[inst.id]){ const c=CASING[inst.id], rx=Math.cos(p.facing), rz=-Math.sin(p.facing), sc=p.mesh.scale.x, by=heightAt(p.pos.x,p.pos.z)+2.3*sc;   // spent brass ejected from the turret side (Z419 real cases that tumble and bounce, at the hull's real height)
+    for(let k=0;k<c.n;k++) ejectBrass(p.pos.x+rx*1.0*sc, by, p.pos.z+rz*1.0*sc, rx*(3+Math.random()*2)+(Math.random()-0.5), 3+Math.random()*2, rz*(3+Math.random()*2)+(Math.random()-0.5), c.k); }
   tankRecoil(p.mesh, ang, Math.min(1.25, Math.max(0.14, 0.18 + rec*0.27)), p.facing); // barrel slams back + shivers, hull rocks off the shot (Z125: no rumble on firing — the pad only rumbles for hits, blasts and crashes)
   S.shake = g.special==='rocket' ? Math.min(5, S.shake + 2.4)                                     // SIEGE launch — a strong recoil quake (landing quakes harder still)
           : Math.min(1.6, S.shake + Math.min(0.5, 0.04 + rec*0.07));                               // weightier guns shake more per shot

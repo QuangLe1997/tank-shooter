@@ -6,8 +6,8 @@
 //   PKM, the minigun), eight pellets (the shotgun), a slug through two men (the 12.7), a rocket that bursts (the B41), a grenade lobbed onto the aim point (the
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
-import { RIDER_TURN, TROOPER, XHAIR } from '../../config.js';
-import { GUNS, MOBILE, PAD, PROFILE, S, aimTarget, cMod, fireFlame, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine } from '../hub.js';
+import { RIDER_TURN, TROOPER, XHAIR, REAL } from '../../config.js';
+import { GUNS, MOBILE, PAD, PROFILE, S, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine } from '../hub.js';
 
 const _v = new THREE.Vector3();
 // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ, and Z411 KHO SÚNG in soldier mode) · Z411 every hand weapon of his, by tier — it listed
@@ -37,11 +37,12 @@ export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.le
   if(g.special === 'flame'){ fireFlame(now, g, _v.x, _v.z, a0, dmg / (g.dmg || 1)); if(Math.random() < 0.12) sfx(g.snd, p.pos); }
   else if(g.special === 'mortar'){ fireMortar(now, g, dmg); sfx(g.snd || 'shoot_agl', p.pos); }
   else { const aimD = ((!MOBILE || PAD.active) && S.pointerActive) ? Math.hypot(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z) : (t ? Math.hypot(t.pos.x - p.pos.x, t.pos.z - p.pos.z) : reach), n = g.frags || 1;
-    for(let i = 0; i < n; i++){ const a = a0 + (n > 1 ? (i - (n - 1) / 2) * (g.spread / (n - 1)) + (Math.random() - 0.5) * g.spread * 0.15 : (Math.random() - 0.5) * g.spread);
+    const belt = n === 1 && g.type === 'KIN' && g.fireCd < 0.3 && !g.rocket;   // Z419 an automatic rifle / MG: a tracer every REAL.tracer.every rounds (buckshot carries none)
+    for(let i = 0; i < n; i++){ const a = a0 + (n > 1 ? (i - (n - 1) / 2) * (g.spread / (n - 1)) + (Math.random() - 0.5) * g.spread * 0.15 : (Math.random() - 0.5) * g.spread), tr = n > 1 ? 0 : belt ? ((p._trN = (p._trN || 0) + 1) % REAL.tracer.every === 0 ? 1 : 0) : undefined;
       spawnBullet(_v.x, _v.z, a, { owner:'p', inf:!g.aoe && g.type !== 'AP', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist:reach, reach, y:_v.y, dropTo:air ? air.dropTo : L ? L.dropTo : 1.2, dropDist:air ? air.dropDist : L ? L.dropDist : Math.max(4, Math.min(aimD, reach)), airAim:air ? air.e : null, arcDist:air ? air.dropDist : 0,
-        noArc:true, type:g.type, fall:g.fall ?? 1, knock:g.knock || 0.4, fx:g.fx || 'spark', from:p.pos, pierce:g.pierce || 0, aoe:g.aoe || 0, aoeDmg:g.aoe ? dmg * (g.splash || 0.5) : 0, rocket:!!g.rocket, chain:g.chain || 0, chainR:g.chainR || 0 }); }
+        noArc:true, type:g.type, fall:g.fall ?? 1, knock:g.knock || 0.4, fx:g.fx || 'spark', from:p.pos, tr, pierce:g.pierce || 0, aoe:g.aoe || 0, aoeDmg:g.aoe ? dmg * (g.splash || 0.5) : 0, rocket:!!g.rocket, chain:g.chain || 0, chainR:g.chainR || 0 }); }
     if(g.rocket){ spawnPart(_v.x, _v.y, _v.z, Math.sin(a0) * 4, 0.3, Math.cos(a0) * 4, { tex:'fire', color:0xfff0c0, color2:0xff6a14, size:0.9, life:0.12, grav:0, drag:6, grow:0.8 }); for(let k = 0; k < 6; k++) spawnPart(_v.x - Math.sin(a0) * 1.1, _v.y, _v.z - Math.cos(a0) * 1.1, -Math.sin(a0) * (4 + Math.random() * 4), 0.6 + Math.random(), -Math.cos(a0) * (4 + Math.random() * 4), { color:0xd8d2c4, size:0.7, life:1.0, smoke:true, grav:-0.3, drag:1.4, grow:1.6, op:0.35 }); }   // the back-blast out of the tube's rear
-    else spawnPart(_v.x, _v.y, _v.z, Math.sin(a0) * 6, 0.4, Math.cos(a0) * 6, { tex:'flash', color:g.type === 'ELEC' ? 0xbfe0ff : 0xfff0b0, size:0.5 * (n > 1 ? 1.5 : 1) * (g.flashK ?? 1), life:0.05, grav:0, drag:9 });   // a rifle's flash, not a cannon's (Z355 each gun its own size: the AK's big, the suppressed M4's faint)
+    else { const fk = (n > 1 ? 1.5 : 1) * (g.flashK ?? 1); gunFlash(_v.x, _v.y, _v.z, a0, 0.62 * fk, 0.34 * fk, g.type === 'ELEC' ? 0xbfe0ff : 0xfff0c0, 1); gunLight(_v.x + Math.sin(a0) * 0.6, _v.y + 0.2, _v.z + Math.cos(a0) * 0.6, 0xffc87a, 1.8 * Math.min(1.4, fk)); }   // a rifle's flash, not a cannon's (Z355 each gun its own size: the AK's big, the suppressed M4's faint) · Z419 shaped along the bore, a strobe of light
     if(!g.rocket && g.type !== 'ELEC') rifleFX(_v.x, _v.y, _v.z, a0, g.dmg * n >= 40, g.supp);   // (Z355 a suppressor swallows the muzzle smoke; the brass still flies)
     sfx(g.snd || 'rifleShot', p.pos); }
   const kick = Math.min(0.9, (0.06 + (g.dmg * (g.frags || 1)) / 160) * (g.kickK || 1)); S.camKick = Math.min(1.2, (S.camKick || 0) + kick); S.kickAng = a0; S.shake = Math.min(3.2, S.shake + kick * 0.2);   // (Z355 the AK climbs, the suppressed M4 and the MP5 sit still)

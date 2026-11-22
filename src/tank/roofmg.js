@@ -2,7 +2,7 @@
 //   trigger-disciplined bursts at infantry only, belt boxes swapped by hand, brass + link pouring off the receiver; the next rider takes over when he falls.
 import * as THREE from 'three';
 import { ROOF_MG, ROOF_MG_AI, ROOF_MG_BLOCK, ROOF_MG_UP } from '../../config.js';
-import { HELI_DOWN, PARAS, PROFILE, RIDER, S, animateSoldier, bloodSpurt, canAfford, damageEnemy, econBuy, enemies, floatText, heightAt, muzzleLight, radio, riders, saveProfile, scene, sfx, shootGuard, spawnBullet, spawnPart, spawnRider, towers, updateCrewBtn, wrapAngle } from '../hub.js';
+import { HELI_DOWN, PARAS, PROFILE, RIDER, S, animateSoldier, bloodSpurt, canAfford, damageEnemy, econBuy, enemies, floatText, heightAt, muzzleLight, radio, riders, saveProfile, scene, sfx, shootGuard, spawnBullet, spawnPart, spawnRider, towers, updateCrewBtn, wrapAngle, ejectBrass, gunFlash } from '../hub.js';
 
 export const MGR = { on:false, mesh:null, parts:null, id:null, stat:null, yaw:0, pitch:0, ammo:0, reloadUntil:0, reloadDur:1, swapUntil:0, gunner:null,
   tgt:null, tgtAt:0, shotT:0, burst:0, pauseUntil:0, kick:0, owner:null, hud:null, shots:0 };
@@ -134,16 +134,15 @@ function fire(D, now){ const M=MGR.mesh, p=S.player; M.muzzle.getWorldPosition(_
   else if(T && T.gd){ const G=T, d=Math.hypot(G.x-_w.x, G.z-_w.z)||1;   // up at a man on a tower: a tracer, and a chance to knock him off
     spawnPart(_w.x,_w.y,_w.z, (G.x-_w.x)/d*90, (G.y-_w.y)/d*90, (G.z-_w.z)/d*90, { tex:'flash', color:tr?0xff8a2a:0xfff0b0, size:tr?0.62:0.38, life:d/90, grav:0, drag:0 });
     if(Math.random() < 0.04+D.dmg*0.007) shootGuard(G.t, G.gd, p.pos.x, p.pos.z); }
-  else spawnBullet(_w.x, _w.z, a, { owner:'p', inf:true, dmg:(D.dmg*(p.dmgMul||1)*0.5+D.dmg*0.5)*AI.dmgK, speed:105, color:tr?0xff7a1e:0xfff0b0, r:tr?0.24:0.16, life:0.5, maxDist:D.range+3, y:_w.y, dropTo:1.1, dropDist:T && T.x!=null ? Math.max(2, Math.hypot(T.x-_w.x, T.z-_w.z)) : D.range, trailK:tr?2.6:1.7 });   // Z314 from the roof down to the target   // Z222 a fat, bright, long tracer line you can follow   // Z201 harder-hitting rounds
+  else spawnBullet(_w.x, _w.z, a, { owner:'p', inf:true, dmg:(D.dmg*(p.dmgMul||1)*0.5+D.dmg*0.5)*AI.dmgK, speed:105, color:tr?0xff7a1e:0xfff0b0, r:tr?0.24:0.16, life:0.5, maxDist:D.range+3, y:_w.y, dropTo:1.1, dropDist:T && T.x!=null ? Math.max(2, Math.hypot(T.x-_w.x, T.z-_w.z)) : D.range, trailK:tr?2.6:1.7, tr:tr?1:0 });   // Z419 the ball rounds between the tracers: unseen   // Z314 from the roof down to the target   // Z222 a fat, bright, long tracer line you can follow   // Z201 harder-hitting rounds
   // muzzle: flash, a few sparks, a wisp of smoke · receiver: brass (and a link) thrown out to the right
-  spawnPart(_w.x+fx*0.1,_w.y,_w.z+fz*0.1, fx*3,0.2,fz*3, { tex:'flash', color:0xfff0b0, size:M.heavy?1.25:0.95, life:0.045, grav:0, drag:9 });
-  spawnPart(_w.x+fx*0.5,_w.y,_w.z+fz*0.5, fx*6,0,fz*6, { tex:'flash', color:0xffc060, size:M.heavy?0.8:0.6, life:0.06, grav:0, drag:6 });   // Z222 the flame tongue out of the flash hider
+  gunFlash(_w.x,_w.y,_w.z, a, M.heavy?1.25:0.95, M.heavy?0.62:0.5, 0xfff0c0, 1);   // Z419 a shaped flash out of the flash hider, along the bore (was two round billboards)
   if(muzzleLight.intensity<2){ muzzleLight.position.set(_w.x+fx*0.6,_w.y+0.2,_w.z+fz*0.6); muzzleLight.color.setHex(0xffc070); muzzleLight.intensity=2.4; }   // each shot lights the hull up (never dims a cannon flash)
   for(let k=0;k<2;k++) spawnPart(_w.x,_w.y,_w.z, fx*9+(Math.random()-0.5)*5, 1+Math.random()*2.5, fz*9+(Math.random()-0.5)*5, { color:0xffc860, size:0.07, life:0.18, grav:6, drag:2 });
   if(MGR.shots%2===0) spawnPart(_w.x,_w.y+0.05,_w.z, fx*1.2,0.8,fz*1.2, { color:0xb8b0a4, size:0.35, life:0.8, smoke:true, grav:-0.6, drag:1.4, grow:1.4, op:0.28 });
   M.eject.getWorldPosition(_w2); const rx=Math.cos(MGR.yaw), rz=-Math.sin(MGR.yaw);
-  spawnPart(_w2.x,_w2.y,_w2.z, rx*(2.2+Math.random())+(Math.random()-0.5), 2+Math.random()*1.5, rz*(2.2+Math.random())+(Math.random()-0.5), { color:0xd8a840, size:M.heavy?0.11:0.08, life:0.9, grav:-14, drag:0.4 });
-  if(MGR.shots%3===0) spawnPart(_w2.x,_w2.y,_w2.z, rx*1.6, 1.4, rz*1.6, { color:0x3a3a36, size:0.07, life:0.8, grav:-14, drag:0.5 });   // a belt link
+  ejectBrass(_w2.x,_w2.y,_w2.z, rx*(2.2+Math.random())+(Math.random()-0.5), 2+Math.random()*1.5, rz*(2.2+Math.random())+(Math.random()-0.5), M.heavy?'mg':'rifle');   // Z419 a real case, tumbling
+  if(MGR.shots%3===0) ejectBrass(_w2.x,_w2.y,_w2.z, rx*1.6, 1.4, rz*1.6, 'link');   // a belt link
   if(MGR.shots%2===0 || M.heavy) sfx('shoot_smg', _w, M.heavy?0.85:0.5); }
 // a small ammo readout above the crew button while the gun is manned
 function hud(){ let h=MGR.hud; if(!h){ h=MGR.hud=document.createElement('div'); h.id='mgHud'; document.body.appendChild(h); }

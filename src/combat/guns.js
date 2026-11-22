@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, GIFT, LOOT } from '../../config.js';
-import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, enemies, floatText, gunMagMul, gunReloadMul, gunRngMul, muzzleLight, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, brakeBlast, enemies, floatText, gunFlash, gunLight, gunMagMul, gunReloadMul, gunRngMul, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
@@ -44,20 +44,19 @@ export function gunDropPool(stage){
   if(stage>=4) pool.push('arty','thermo');                // howitzer: a rare late-stage drop (also buyable in the shop)
   return pool;
 }
-export function muzzleFlash(x,z,ang,color,rec,y){
+export function muzzleFlash(x,z,ang,color,rec,y){   // Z419 a SHAPED flash along the bore (fx/gunfx.js gunFlash) — was a round star billboard + a gun-coloured glow ball
   y=y||1.6; const fx=Math.sin(ang), fz=Math.cos(ang), s=1+Math.min(1.4,(rec||0)*0.3);
-  muzzleLight.position.set(x+fx,y+0.2,z+fz); muzzleLight.color.setHex(0xffc87a); muzzleLight.intensity=3.4+(rec||0)*0.9;
-  spawnPart(x,y,z, fx*2,0,fz*2, {tex:'flash', color:0xfff4dc, size:2.1*s, life:0.055, grav:0, drag:8});                                  // star-shaped flash
-  spawnPart(x+fx*0.5*s,y,z+fz*0.5*s, fx*16,0.2,fz*16, {tex:'fire', color:0xfff2c8, color2:0xff6a14, size:1.2*s, life:0.1, grav:0, drag:11, grow:0.9*s});   // forward flame tongue
-  spawnPart(x,y,z, fx*4,0,fz*4, {color, size:1.4*s, life:0.07, grav:0, drag:8});                                                     // gun-coloured core
-  if(rec>=1.4) for(const sd of [-1,1]) spawnPart(x,y,z, -fz*sd*10, 0.3, fx*sd*10, {tex:'fire', color:0xffe6b0, color2:0xff5a10, size:0.9*s, life:0.09, grav:0, drag:12});   // muzzle-brake side jets
-  for(let i=0;i<2+Math.round(rec);i++){ const sp=9+Math.random()*12, sa=ang+(Math.random()-0.5)*0.6;
-    spawnPart(x,y,z, Math.sin(sa)*sp,0.5+Math.random()*1.7,Math.cos(sa)*sp, {color:0xffe2a0, size:0.28, life:0.14+Math.random()*0.12, grav:-7, drag:2.4}); }   // burning propellant sparks
+  gunLight(x+fx,y+0.2,z+fz, 0xffc87a, 3.4+(rec||0)*0.9);
+  gunFlash(x,y,z, ang, 1.7*s, 1.0*s, 0xfff0d4, 1);                                                                                     // petals along the bore + a star down it
+  spawnPart(x+fx*0.5*s,y,z+fz*0.5*s, fx*16,0.2,fz*16, {tex:'fire', color:0xfff2c8, color2:0xff6a14, size:1.0*s, life:0.07, grav:0, drag:11, grow:0.8*s});   // forward flame tongue
+  if(rec>=1.4) brakeBlast(x,y,z, ang, 0.7*s);                                                                                          // muzzle-brake side jets + their smoke blown sideways
+  for(let i=0;i<1+Math.round(rec*0.6);i++){ const sp=9+Math.random()*12, sa=ang+(Math.random()-0.5)*0.6;
+    spawnPart(x,y,z, Math.sin(sa)*sp,0.5+Math.random()*1.7,Math.cos(sa)*sp, {color:0xffe2a0, size:0.12, life:0.12+Math.random()*0.1, grav:-7, drag:2.4}); }   // burning propellant sparks
   const nS = rec>=2 ? 3 : (Math.random()<0.5?1:0);
   for(let i=0;i<nS;i++) spawnPart(x+fx*(0.4+i*0.5),y+0.1,z+fz*(0.4+i*0.5), fx*(1.5+i)+(Math.random()-0.5), 0.5+Math.random()*0.5, fz*(1.5+i)+(Math.random()-0.5), {color:0x8a8478, size:(0.8+i*0.3)*s, life:1.1+i*0.3, smoke:true, grav:0.3, drag:2.6, grow:1.2*s, op:0.32});   // propellant smoke
-  if(rec>=2.4){ for(let i=0;i<10;i++){ const a=i/10*6.283; spawnPart(x-fx*1.2, 0.3, z-fz*1.2, Math.cos(a)*9+fx*4, 0.4, Math.sin(a)*9+fz*4, {color:BIOME.ground, size:1.1, life:0.7, smoke:true, grav:-0.1, drag:3.4, grow:1.3, op:0.42}); } }   // blast overpressure kicks up the dust
+  if(rec>=2.4){ const gy=heightAt(x,z); for(let i=0;i<10;i++){ const a=i/10*6.283; spawnPart(x-fx*1.2, gy+0.3, z-fz*1.2, Math.cos(a)*9+fx*4, 0.4, Math.sin(a)*9+fz*4, {color:BIOME.ground, size:1.1, life:0.7, smoke:true, grav:-0.1, drag:3.4, grow:1.3, op:0.42}); } }   // blast overpressure kicks up the dust (Z419 at the ground's real height)
 }
-export const CASING = { hesh:{n:1,s:0.4}, rifle:{n:1,s:0.22}, smg:{n:2,s:0.12}, minigun:{n:2,s:0.14}, flak:{n:2,s:0.2}, cannon:{n:1,s:0.36}, shotgun:{n:1,s:0.3} };
+export const CASING = { hesh:{n:1,s:0.4,k:'shell'}, rifle:{n:1,s:0.22,k:'auto'}, smg:{n:2,s:0.12,k:'mg'}, minigun:{n:2,s:0.14,k:'mg'}, flak:{n:2,s:0.2,k:'auto'}, cannon:{n:1,s:0.36,k:'shell'}, shotgun:{n:1,s:0.3,k:'shell'} };   // Z419 k = the case drawn (GUNFX.case)
 export function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 const _GID=new Map(); export function gunIdOf(g){ if(!_GID.size) for(const k in GUNS) _GID.set(GUNS[k],k); return _GID.get(g); }
 export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1) * (id?gunMagMul(id):1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
