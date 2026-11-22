@@ -13,7 +13,7 @@
 //     actors/real-cav.js).
 import * as THREE from 'three';
 import { FORT, LINE, XHAIR } from '../../config.js';
-import { AIR, HULL_HL, HULL_HW, MOBILE, PAD, S, TANK_SCALE, VIEW, blockTop, blocks, blocksNear, boss, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
+import { AIR, HULL_HL, HULL_HW, MOBILE, PAD, S, TANK_SCALE, VIEW, blockTop, blocks, blocksNear, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
 
 export const XH = { mx:-1, my:-1, mouseAt:-1e9, movedAt:-1e9, src:'mouse', tgt:null, live:false, stop:null, far:false, state:'ok', sky:false, el:null, lookA:null, reLook:false, camOk:false, anchor:null };
 // Z382 THE STEADY CAMERA the crosshair looks through: the follow camera's own pose before the shot's kick, the shake, the roll, the lens's kick and the
@@ -61,7 +61,6 @@ export function eyeRay(o, d, maxT){ let best = maxT, be = null, bb = null, groun
   for(const e of enemies){ if(!(e.hp > 0) || e.alive === false || e.def.air || !e.mesh || e.mesh.visible === false) continue; if(off(e.pos.x, e.pos.z) > 6) continue;
     let t; if(e.def.inf){ const gy = heightAt(e.pos.x, e.pos.z); t = rayCyl(o, d, e.pos.x, e.pos.z, XHAIR.man.r, gy - 0.1, gy + manTall(e)); } else t = hullT(o, d, e);
     if(t > 0 && t < best){ best = t; be = e; } }
-  if(boss && boss.alive && boss.mesh){ const t = hullT(o, d, boss); if(t > 0 && t < best){ best = t; be = boss; } }
   _seen.clear();
   for(const bl of blocks){ if(bl.ours || bl.dead) continue; let t, sh = null;
     if(bl.kind === 'building' && bl.bld){ if(_seen.has(bl.bld)) continue; _seen.add(bl.bld); sh = bl.bld; if(off(sh.x, sh.z) > Math.hypot(sh.w, sh.d) / 2 + 1) continue; }

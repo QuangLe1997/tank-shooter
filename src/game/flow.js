@@ -1,21 +1,15 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
-import { CORE_DEF, TROOPS } from '../../config.js';
-import { gpuHeld, gpuRelease, clearGifts, AID, ALLY_TANKS, ARENA, GUNS, LOADOUT_MAX, MOBILE, PROFILE, S, TRAIN, TRIAL, VOICE_RULES, WAVE, __set__alarmAt, __set_boss, __set_ridersUnlocked, __set_soldierLvl, applyBiome, applyContractHUD, audio, boss, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets,  clearAllyOrdnance, clearAllyTanks, clearArtillery, clearBossFight, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearMines, clearObjective, clearParadrops, clearPickups, clearRelic, clearRiders, clearSoldiers, clearSquads, clearSurprises, clearUltimates, clearWrecks, core, crewTarget, currentTank, deployOwnedDrone, deployRiders, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, engineStart, freeEnemyBar, guardTarget, laserMesh, makePlayer, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, setEraTiles, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, MODES, __set_MODE, openBattleSetup } from '../hub.js';
+import { CORE_DEF } from '../../config.js';
+import { duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, AID, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearArtillery, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, clearWrecks, core, deployOwnedDrone, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, freeEnemyBar, guardTarget, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, openBattleSetup } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
-export function loadoutGuns(){
-  if(TRIAL.on) return ['rifle', ...TRIAL.guns].filter(k=>GUNS[k]).map(id=>({ id, ammo:GUNS[id].mag, rU:0, rD:0 }));   // Z182 training: your gun + the two on trial
-  let ld=(PROFILE.loadout&&PROFILE.loadout.length?PROFILE.loadout:['rifle']).filter(k=>GUNS[k]).slice(0,LOADOUT_MAX);
-  if(!ld.length) ld=['rifle'];
-  return ld.map(id=>({ id, ammo:GUNS[id].mag, rU:0, rD:0 }));   // your chosen ≤5 weapons, full mags
-}
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
 // anything else (a click Event from RETRY/RESTART, or nothing) = the same battle again (S.runCfg), else campaign level 1
 // Z119 from the menus: put the DEPLOYING veil up, let it paint, then build the world (it used to freeze on the menu)
 export function launchGame(arg){ showVeil(true); requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } })); }
 export function startGame(arg){
   const held=gpuHeld();   // Z396 what the old battlefield holds on the GPU, released once the new one stands
-  try{ audio(); engineStart(); preloadVoices(['open', 'streak', ...VOICE_RULES.map(r=>r[1]), 'x_scream', 'x_cheer', 'f_rally_1', 'f_rally_2', 'f_rally_3']); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
+  try{ audio(); preloadVoices(['open', 'streak', ...VOICE_RULES.map(r=>r[1]), 'x_scream', 'x_cheer', 'f_rally_1', 'f_rally_2', 'f_rally_3']); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not
   let cfg = (arg && typeof arg==='object' && arg.mode) ? arg : null;
   if(!cfg && !resume) cfg = S.runCfg || { mode:'campaign', level:1 };
@@ -25,12 +19,11 @@ export function startGame(arg){
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.runId = Date.now().toString(36)+Math.random().toString(36).slice(2,6);   // Z163 the leaderboard follows one run's score
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
-  if(PROFILE.unit==='xichlo') PROFILE.unit='xeom';   // Z332 the xích lô is gone: whoever rode it is on the xe ôm
-  const cavWanted = ['cav','xeom','bagac','bantai'].includes(PROFILE.unit), cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / xích lô
-  if(S.player && (!!S.player.cav!==cavWanted || (cavWanted && (S.player.bike||null)!==cavKind) || (!cavWanted && S.player.modelId !== currentTank()))){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // Z155 a different tank was picked in the garage → roll the new one out
-  __set_MODE(cavWanted ? MODES.soldier : MODES.tank); S.player = S.player || MODE.makePlayer(cavKind);   // Z307 the mode owns its player (game/mode.js)
+  if(!['cav','xeom','bagac','bantai'].includes(PROFILE.unit)) PROFILE.unit = ['cav','xeom','bagac','bantai'].includes(PROFILE.lastRide) ? PROFILE.lastRide : 'xeom';   // (no-tanks: an old profile's tank or xích lô → his last ride, else the xe ôm)
+  const cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / ba gác / bán tải
+  if(S.player && (!S.player.cav || (S.player.bike||null)!==cavKind)){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // a different ride was picked → the new one rolls out
+  S.player = S.player || MODE.makePlayer(cavKind);   // Z307 the mode owns its player (game/mode.js)
   clearRelic();                          // Z154 a new run: no relic power carried over
-  if(TRAIN.on){ TRAIN.t0=0; TRAIN.lastPos=null; TRAIN.finished=false; }   // Z182 RESTART inside the training: the current step starts over
   buildCore(stStage);                    // monument matching the (resumed) stage
   const p=S.player;
   p.maxHp=100; p.hp=100; p.lives=5; p.fireAt=0; p.weaponLvl=0;
@@ -40,7 +33,7 @@ export function startGame(arg){
   p.overUntil=0; p.spellCdUntil=0; p.shieldUntil=0; if(p.shieldMesh) p.shieldMesh.visible=false;
   // gun inventory → the player's chosen battle loadout (≤5), each full mag
   p.readyUntil=0; p._barrelId=null; p.infiniteAmmo=false; p.ammoMul=1;
-  p.buffUntil={ rapid:0, power:0, speed:0, infammo:0, ammoup:0, turbo:0, ram:0, siege:0 }; p.buffLv={ turbo:0 }; p.era=0; setEraTiles(p);
+  p.buffUntil={ rapid:0, power:0, infammo:0, ammoup:0 }; p.buffLv={};
   // reset roguelite multipliers
   p.dmgMul=1; p.fireMul=1; p.speedMul=1; p.dashCdMul=1; p.spellCdMul=1; p.crit=0; p.lifesteal=0; p.rangeMul=1; p.reloadMul=1; p.armor=0;
   MODE.setupRun(p);   // Z307 its guns and its progression: the tank's loadout, upgrades, model, kit, crew and roof gun · the soldier's rifle and his own toughness
@@ -48,9 +41,8 @@ export function startGame(arg){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; AID.at=0; AID.press=false; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearArtillery(); clearPickups(); clearGifts(); clearMines(); clearDrone(); clearSoldiers(); clearFireteam(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearUltimates(); clearParadrops(); clearAllyOrdnance(); __set_ridersUnlocked(false); if(1>=TROOPS.ridersFrom){ __set_ridersUnlocked(true); deployRiders(crewTarget()); }   /* Z89 crew ride from stage 1 */ __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
-  if(boss){ scene.remove(boss.mesh); clearBossFight(); __set_boss(null); }
-  if(laserMesh) laserMesh.visible=false;
+  enemies.length=0; AID.at=0; AID.press=false; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearArtillery(); clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance(); __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
+  duelReset();   // (no-tanks: the stage's general, on foot)
   document.getElementById('bossbar').style.display='none';
   S.timeScale=1; S.awaitingUpgrade=false; S.cmd=null; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
   core.maxHp=CORE_DEF.hp; core.hp=CORE_DEF.hp; core.shieldReady=0; core.shieldUntil=0;
@@ -67,11 +59,10 @@ export function startGame(arg){
   updateHUD();
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
-// Z180 a new stage: our tank (and the captured tanks riding with us) roll back to the spawn the world generator keeps clear — the last stage's
+// Z180 a new stage: the soldier goes back to the spawn the world generator keeps clear — the last stage's
 // position may be inside a fort, a wall or a building of the next battlefield. Ladder parties let go of the old walls.
 export function parkAtSpawn(){ const p=S.player; if(!p) return; const sz=ARENA*0.55;
   p.pos.set(0,0,sz); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI; p.mesh.position.set(0,0,sz); p.mesh.rotation.set(0,p.aim,0);
-  ALLY_TANKS.forEach((t,i,a)=>{ const x=(i-(a.length-1)/2)*7, z=sz+8; t.pos.set(x,0,z); t.vel.set(0,0,0); t.facing=t.aim=Math.PI; t.target=null; t.mesh.position.set(x,0,z); t.mesh.rotation.y=Math.PI; });
   clearLadders(); }
 export function togglePause(){
   if(S.mode==='briefing' || S.mode==='deploy'){ quitToMenu(); return; }   // Z111b Esc before the battle starts = back to the home menu
@@ -80,13 +71,11 @@ export function togglePause(){
 }
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
-  if(TRAIN.on){ TRAIN.on=false; TRIAL.on=false; PROFILE.onboarded=true; const tc=document.getElementById('trainCard'); if(tc) tc.classList.remove('on'); }   // Z182 leaving a training run ends it
   S.firing=false; try{ econReportRun({ cleared:false }); }catch(e){}   // Z162 what this run earned is reported
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearArtillery(); clearPickups(); clearGifts(); clearMines(); clearDrone(); clearSoldiers(); clearRiders(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearAllyTanks(); clearUltimates(); clearParadrops(); clearAllyOrdnance();
-  if(boss){ scene.remove(boss.mesh); clearBossFight(); __set_boss(null); }
-  if(S.player && S.player.modelId !== currentTank()){ scene.remove(S.player.mesh); S.player=makePlayer(); }   // Z182 a trial tank goes back to the depot, yours rolls out
+  enemies.length=0; clearArtillery(); clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance();
+  duelReset();
   if(S.player){ S.player.pos.set(0,0,ARENA*0.55); S.player.vel.set(0,0,0); S.player.mesh.position.set(0,0,ARENA*0.55); S.player.mesh.visible=true; }   // park at spawn for a clean home
   document.body.classList.remove('corelow','shopopen'); __set__alarmAt(0);
   S.mode='start';

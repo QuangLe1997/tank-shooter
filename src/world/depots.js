@@ -1,10 +1,9 @@
-// world/depots.js — Z104 ENEMY DEPOTS in their half of the field: a WEAPON depot and a TANK depot (motor pool), each with a guard post.
+// world/depots.js — Z104 ENEMY WEAPON DEPOTS in their half of the field, each with a guard post (no-tanks: the motor pool is gone).
 //   Clear the guards, then put soldiers inside (drop them off, or they come on their own): after a few seconds the depot is OURS —
-//   the weapon depot re-arms every soldier who enters (AT launcher + better rounds) and coughs up supplies, the motor pool's parked
-//   tanks get a crew from our men and roll out as allied tanks that fight on their own.
+//   it re-arms every soldier who enters (AT launcher + better rounds) and coughs up supplies.
 import * as THREE from 'three';
-import { DEPOT, ALLY_TANK } from '../../config.js';
-import { ALLY_TANKS, ENEMY_DEFS, ENEMY_MODEL, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, placeScan, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, paintVehicle, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
+import { DEPOT } from '../../config.js';
+import { FT, GUN_DROP_DEF, MOBILE, S, _canvasTex, placeScan, addCoins, addScore, armAlly, blocks, burst, cMod, campFlagTex, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, radio, rallyFlagTex, scene, sfx, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const DEPOTS=[];
 let _netTex=null;
@@ -22,21 +21,11 @@ function buildArms(q, g, at){ // camouflage net on four poles over weapon racks 
   placeScan(g, 'canopy', nx, heightAt(nx,nz), nz, q.ang, 9.6, roof);   // Z429 the camouflage canopy on its own poles over the stores (the drawn net and poles until it is in)
   for(const [cx,cz] of [[-2.2,1.4],[0,1.8],[2.2,1.2],[0.9,-2.4]]){ const [wx,wz]=at(cx,cz); const m=makeCoverMesh('crates', true); m.scale.setScalar(0.7); m.position.set(wx,heightAt(wx,wz)-0.1,wz); m.rotation.y=q.ang+Math.random()*0.4; scene.add(m); g.userData.extra.push(m);
     addBlock({ mesh:m, x:wx, z:wz, r:1.1, hp:90, maxHp:90, steel:false, loot:false, kind:'crates' }); } }
-function buildMotor(q, g, at){ // Z429 a grass-covered vehicle bunker at the back, the parked enemy tanks waiting for a crew under a camouflage canopy before it (was a U of T-walls)
-  { const [bx,bz]=at(0,-6.4), by=heightAt(bx,bz), anchor=new THREE.Group(); anchor.position.set(bx, by, bz); g.add(anchor);
-    placeScan(anchor, 'vbunker', 0, -0.15, 0, q.ang+Math.PI, 11);
-    addBlock({ mesh:anchor, x:bx, z:bz, r:4.2, obb:{ f:q.ang, hw:5.2, hl:3.6 }, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'concrete' }); }
-  { const [cx,cz]=at(0,0.6); placeScan(g, 'canopy', cx, heightAt(cx,cz), cz, q.ang, 10.5); }
-  const n=DEPOT.tanks[0]+((Math.random()*(DEPOT.tanks[1]-DEPOT.tanks[0]+1))|0), parked=[];
-  for(let k=0;k<n;k++){ const role=k%2?'heavy':'grunt', def=ENEMY_DEFS[role], m=buildTank({ ...def.pal, model:ENEMY_MODEL[role] }); bakeTank(m); paintVehicle(m, 'e'); m.scale.setScalar((k%2?1.15:1)*TANK_SCALE); const [px,pz]=at(n===1?0:(k?1.9:-1.9), 0.6);   // Z256 the role's own vehicle (it wears the real model)
-    m.position.set(px, heightAt(px,pz), pz); m.rotation.y=q.ang+Math.PI; m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; } }); scene.add(m); g.userData.extra.push(m);
-    const b=addBlock({ mesh:m, x:px, z:pz, r:2.0, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'parked' }); parked.push({ mesh:m, x:px, z:pz, facing:q.ang+Math.PI, block:b, heavy:!!(k%2) }); }
-  return parked; }
 export function buildDepots(){ clearDepots();
-  for(const kind of ['arms','motor']) for(const q of zonesOf(kind)){
+  for(const kind of ['arms']) for(const q of zonesOf(kind)){
     q.ang=Math.atan2(-q.x, -q.z)+Math.PI; const ca=Math.cos(q.ang), sa=Math.sin(q.ang), at=(lx,lz)=>[q.x+lx*ca+lz*sa, q.z-lx*sa+lz*ca];
     const g=new THREE.Group(); g.userData.extra=[]; scene.add(g);
-    const parked = kind==='arms' ? (buildArms(q,g,at), []) : buildMotor(q,g,at);
+    buildArms(q,g,at); const parked = [];
     const [fx,fz]=at(-4.2,4.2), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,6,6), coverMat('pipes')); pole.position.set(fx,fy+3,fz); g.add(pole);
     const flag=makeFlag(campFlagTex(),1.7,1.1,1); flag.position.set(fx,fy+5.4,fz); g.add(flag);
     const ring=holoRing(q.r, { kind:'ally', arc:0 }); ring.position.set(q.x, heightAt(q.x,q.z)+0.09, q.z); ring.visible=false; g.add(ring);   // Z318 the capture shows as the lit arc of an ally-green ring
@@ -46,7 +35,7 @@ export function clearDepots(){ for(const d of DEPOTS){ unwave(d.g); scene.remove
 function soldiersIn(d){ let n=0; for(const a of FT) if(Math.hypot(a.pos.x-d.x, a.pos.z-d.z) < d.q.r*0.8) n++; return n; }
 // an open depot (guards down) calls idle soldiers within reach to come and take it — then it keeps arming / crewing
 export function depotJob(a){ let best=null, bd=52;
-  for(const d of DEPOTS){ const want = d.state==='open' || (d.state==='ours' && ((d.kind==='arms' && !a.at) || (d.kind==='motor' && d.parked.length && ALLY_TANKS.length<ALLY_TANK.cap)));
+  for(const d of DEPOTS){ const want = d.state==='open' || (d.state==='ours' && ((d.kind==='arms' && !a.at)));
     if(!want) continue; const dd=Math.hypot(d.x-a.pos.x, d.z-a.pos.z); if(dd<bd){ bd=dd; const j=Math.random()*6.283, r=Math.random()*d.q.r*0.4; best={ kind:'capture', x:d.x+Math.cos(j)*r, z:d.z+Math.sin(j)*r, ref:d }; } }
   return best; }
 function captureDepot(d){ d.state='ours'; d.ring.visible=false;
@@ -66,6 +55,4 @@ export function updateDepots(dt, now){ const p=S.player; if(!p) return;
     // ours: arm whoever walks in; crew the parked tanks one soldier at a time
     for(const a of FT.slice()){ if(Math.hypot(a.pos.x-d.x, a.pos.z-d.z) > d.q.r*0.8) continue;
       if(d.kind==='arms' && !a.at){ armAlly(a); burst({x:a.pos.x,z:a.pos.z}, 0x9be04a, 4, 3, {y:heightAt(a.pos.x,a.pos.z)+1.6, life:0.4, size:0.35, grav:-6, drag:2, up:3}); floatText('NHẬN SÚNG CHỐNG TĂNG', '#9be04a', {x:a.pos.x, y:heightAt(a.pos.x,a.pos.z)+3.2, z:a.pos.z}, 13); }
-      if(d.kind==='motor' && d.parked.length && ALLY_TANKS.length<ALLY_TANK.cap){ const pk=d.parked.shift(); const bi=blocks.indexOf(pk.block); if(bi>=0) blocks.splice(bi,1); scene.remove(pk.mesh);
-        const i=FT.indexOf(a); FT.splice(i,1); scene.remove(a.g); scene.remove(a.bar);
-        spawnAllyTank(pk.x, pk.z, pk.facing, pk.heavy); floatText('LÍNH TA ĐÃ LÁI XE ĐỊCH', '#9be04a', new THREE.Vector3(pk.x,4,pk.z), 18); sfx('levelup'); tip('allytank'); } } } }
+ } } }

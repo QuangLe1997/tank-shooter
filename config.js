@@ -894,7 +894,7 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
   defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.85, call:{ speed:9, arrive:2.6 },
   trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85,
   soldier:{ hp:150, rifleK:1, fleeK:0.55, grenade:{ cd:9, r:4.2, dmg:85 }, smoke:{ cd:12, toss:5 }, medkit:{ cd:16, hp:45 },
-    war:{ sizeK:1.5, squads:1, tankFrom:3, w:{ rifle:6, rpg:1.2, scout:0.8, carrier:0.6, mortar:0.3, heli:0.3 }, shell:{ lock:1.1, flight:0.3, R:3.2, dmgK:2 }, arty:false, rings:false } },   // Z403 arty: enemy artillery at all (barrages, spotter SPGs, a battery, a boss's barrage) · rings: red rings on the ground warning of a blast   // Z309 his waves (campaign/soldier-war.js): size × the tank's, extra squads, a tank from wave tankFrom (or stage 2), weights; a tank's shell: s laying its gun, s in flight, burst radius m, damage × · Z307 soldier mode (game/mode.js): his health (no tank upgrades on him), rifle rounds at full weight on a man (a hull takes INFANTRY.vsArmour), animals let him this much closer than a tank; his skills (combat/trooper-spells.js): grenade cooldown s / blast radius m / damage, smoke cooldown / toss m, dressing cooldown / health
+    war:{ sizeK:1.5, squads:1, airFrom:3, w:{ rifle:6, rpg:1.2, heli:0.9, truck:0.3 }, arty:false, rings:false } },   // Z403 arty: enemy artillery at all (barrages, spotter SPGs, a battery, a boss's barrage) · rings: red rings on the ground warning of a blast   // Z309 his waves (campaign/soldier-war.js): size × the base wave, extra squads, an attack helicopter from wave airFrom (or stage 2), weights (no-tanks) · Z307 soldier mode (game/mode.js): his health (no tank upgrades on him), rifle rounds at full weight on a man (a hull takes INFANTRY.vsArmour), animals let him this much closer than a tank; his skills (combat/trooper-spells.js): grenade cooldown s / blast radius m / damage, smoke cooldown / toss m, dressing cooldown / health
   death:{ dur:3.8, carry:0.6, side:1.8, up:1.4, slow:0.7, swerve:1.6 } };   // Z254 killed: how long the death beat lasts (s), the share of the horse's speed he keeps as he is thrown, the sideways push and the hop (m/s), the riderless horse slowing (/s) and swerving (rad/s)   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
 // Z248 REAL CAVALRY (actors/real-cav.js) — calibration of the Meshy models: the operator's height (m); the saddle seat in the horse model (m, bind pose)
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
@@ -1557,7 +1557,7 @@ export const FEEL = {
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
   ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · chuột phải','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
-  ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['gunDefault','Về súng mặc định (tay cầm: LB + RB cùng lúc)','CHIẾN ĐẤU',['0'],null,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
+  ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
   ['zoomPing','Camera: phóng to ⇄ thu nhỏ · chạm đôi = về mặc định (D-pad ← = M1)','CAMERA',['z'],14,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (D-pad → = M2)','CAMERA',['n'],15,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
   ['camAuto','Camera tự động','CAMERA',['c'],null,0], ['camReset','Đặt lại camera','CAMERA',['v'],null,0],
@@ -1663,7 +1663,7 @@ export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, 
 //   step = [a, b, c]: XP from rank n-1 to n is a + b·(n-1) + c·(n-1)²; ranks = Binh nhì … Đại tá (past the last one every step pays a medal = one more perk);
 //   rankUp: max health + per rank, share of max health given back; gift = Z367 each rank's gift crate lands this far (m) ahead of him (no cards mid-battle: walking over it
 //   gives one reward picked for him); perk: share of picks that offer a call for help, the +1 life card's chance;
-//   milestone = what a rank brings by itself (at / mg = a man for the squad, supply = a drop by the HQ, tank = one of ours, para = a stick of paratroopers, barrage = a strike);
+//   milestone = what a rank brings by itself (at / mg = a man for the squad, supply = a drop by the HQ, para = a stick of paratroopers, barrage = a strike);
 //   squad: who he starts with, the names they go by, health / damage × per rank and per LEADER level, the most men, medic (heal reach m, cooldown s, health, + per rank,
 //   the player's health share below which he is treated, a mate's); star: a gun picked up again climbs a star (max) — damage and rate of fire per star;
 //   drop: chance a dead enemy leaves his weapon (by type, _veh any vehicle), share of a soldier's loot that is a medal / an ammo crate, a medal's XP;
@@ -1681,7 +1681,7 @@ export const TROOPER = {
   step:[200, 110, 10],
   ranks:['BINH NHÌ','BINH NHẤT','HẠ SĨ','TRUNG SĨ','THƯỢNG SĨ','THIẾU ÚY','TRUNG ÚY','THƯỢNG ÚY','ĐẠI ÚY','THIẾU TÁ','TRUNG TÁ','THƯỢNG TÁ','ĐẠI TÁ'],
   rankUp:{ hp:8, heal:0.3 }, gift:{ ahead:4 }, perk:{ callShare:0.35, lifeChance:0.1 },
-  milestone:{ 2:'at', 4:'supply', 5:'mg', 7:'tank', 9:'para', 12:'barrage' },
+  milestone:{ 2:'at', 4:'supply', 5:'mg', 7:'supply', 9:'para', 12:'barrage' },
   squad:{ start:['mg','medic'], names:['Hùng','Dũng','Tuấn','Nam','Minh','Long','Sơn','Hải','Lan','Thắng','Quân','Bình'], hpK:0.12, dmgK:0.1, leadK:0.25, max:6,
     medic:{ r:12, cd:9, hp:20, perRank:2.5, below:0.72, mateBelow:0.5 } },
   star:{ max:5, dmg:0.18, rate:0.06 },

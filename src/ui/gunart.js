@@ -1,16 +1,15 @@
-// ui/gunart.js — Z150 ONE PICTURE PER GUN, EVERYWHERE: the shop cases, the KHO SÚNG cards, the battle HUD, the deploy list and the
-//   "new gun" card all show the same studio photo of the gun's REAL 3D barrel assembly (the very model mounted on your tank), rendered
-//   once per gun (and again when its look grade rises with mastery / parts). Transparent background, auto-cropped so every gun fills
+// ui/gunart.js — Z150 ONE PICTURE PER GUN, EVERYWHERE: the KHO SÚNG cards, the battle HUD, the deploy list and the "new gun" card all show the
+//   same studio photo of the hand weapon's scanned model (no-tanks: no turret barrels), rendered once per gun. Transparent background, auto-cropped so every gun fills
 //   its frame the same way. Rendered off-screen in idle time, one gun per slice → never a hitch.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { INFGUN, VIP_GUNS } from '../../config.js';
-import { GUNS, MOBILE, barrelGrade, buildTank, disposeBarrel, loadGLTF, loadRealGuns, loadRealTanks, makeGunBarrel, renderer, svgMarkup } from '../hub.js';
+import { GUNS, MOBILE, loadGLTF, renderer, svgMarkup } from '../hub.js';
 
 export const GUNART = { cache:{}, queue:[], busy:false, scene:null, cam:null, rt:null, float:false };
 const OW = MOBILE ? 240 : 320, OH = Math.round(OW*0.46), SS = 2, RW = OW*SS, RH = OH*SS;
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-export function gunArtKey(id){ let gr=0; try{ gr=barrelGrade(id); }catch(e){} return id+':'+gr; }
+export function gunArtKey(id){ return id; }
 function stage(){ if(GUNART.scene) return;
   const s=new THREE.Scene(), pm=new THREE.PMREMGenerator(renderer); s.environment=pm.fromScene(new RoomEnvironment(), 0.04).texture; pm.dispose(); s.environmentIntensity=0.9;
   s.add(new THREE.HemisphereLight(0xfff4e0, 0x30302a, 0.7));
@@ -26,8 +25,6 @@ const aces=x=>{ x*=1.05; return Math.max(0, Math.min(1, (x*(2.51*x+0.03))/(x*(2.
 const srgb=x=>x<=0.0031308 ? x*12.92 : 1.055*Math.pow(x, 1/2.4)-0.055;
 let _lutF=null; function lutF(){ if(_lutF) return _lutF; _lutF=new Uint8ClampedArray(4096); for(let i=0;i<4096;i++) _lutF[i]=Math.round(srgb(aces(i/1024))*255); return _lutF; }   // linear 0..4 → display byte
 let _lut=null; function lut8(){ if(_lut) return _lut; _lut=new Uint8ClampedArray(256); for(let i=0;i<256;i++) _lut[i]=Math.round(srgb(aces(i/255))*255); return _lut; }
-function renderGun(id){ const root=new THREE.Group(), g=makeGunBarrel(id); root.add(g); if(g.userData.mount) root.add(g.userData.mount); root.rotation.y=Math.PI/2;
-  const url=renderObject(root, new THREE.Vector3(-0.32, 0.42, 1), 0.62); disposeBarrel(g); if(g.userData.mount) disposeBarrel(g.userData.mount); return url; }
 // Z155 a studio photo of any object (tank models for the garage use it too); dir = where the camera sits, k = framing tightness
 export function renderObject(root, dir, k, ow, oh){ stage(); const S=GUNART.scene, cam=GUNART.cam; const OWr=ow||OW, OHr=oh||OH;
   S.add(root); root.updateMatrixWorld(true);
@@ -54,13 +51,10 @@ export function renderObject(root, dir, k, ow, oh){ stage(); const S=GUNART.scen
   o.drawImage(cv, x0, y0, cw, ch, (OWr-dw)/2, (OHr-dh)/2, dw, dh);
   return out.toDataURL('image/png'); }
 // Z355 a soldier's hand weapon is photographed from its own model (the one in his hands), not from a tank's barrel
-function renderHand(id){ const k=INFGUN.map[id]; return loadGLTF('inf_'+k).then(gl=>{ if(!gl) return renderGun(id); const root=new THREE.Group(), m=gl.scene.clone(true); root.add(m); root.rotation.y=Math.PI/2;   // (its length on Z, muzzle +Z → across the frame)
+function renderHand(id){ const k=INFGUN.map[id]; return loadGLTF('inf_'+k).then(gl=>{ if(!gl) return ''; const root=new THREE.Group(), m=gl.scene.clone(true); root.add(m); root.rotation.y=Math.PI/2;   // (its length on Z, muzzle +Z → across the frame)
   return renderObject(root, new THREE.Vector3(-0.32, 0.42, 1), 0.62); }); }
 function pump(){ if(GUNART.busy) return; const id=GUNART.queue.shift(); if(!id) return; GUNART.busy=true;
-  if(GUNS[id] && GUNS[id].trooper && INFGUN.map[id]){ const key=gunArtKey(id); renderHand(id).catch(e=>{ console.warn('gun art', id, e); return ''; }).then(u=>{ GUNART.cache[key]=GUNART.cache[key]||u||''; paint(id); GUNART.busy=false; if(GUNART.queue.length) pump(); }); return; }
-  const go=()=>{ const key=gunArtKey(id); try{ if(!GUNART.cache[key]){ GUNART.cache[key]=renderGun(id); } paint(id); }catch(e){ console.warn('gun art', id, e); GUNART.cache[key]=GUNART.cache[key]||''; }
-    GUNART.busy=false; if(GUNART.queue.length) pump(); };
-  loadRealGuns().catch(()=>{}).then(()=>(window.requestIdleCallback||((f)=>setTimeout(f,30)))(go, { timeout:400 })); }   // Z257 the photo waits for the real model of its family
+  const key=gunArtKey(id); (INFGUN.map[id] ? renderHand(id) : Promise.resolve('')).catch(e=>{ console.warn('gun art', id, e); return ''; }).then(u=>{ GUNART.cache[key]=GUNART.cache[key]||u||''; paint(id); GUNART.busy=false; if(GUNART.queue.length) pump(); }); }   // the hand weapon's own scan (no-tanks: no turret barrels)
 // every <img data-gunpic="id"> on the page picks up the photo as soon as it exists
 function paint(id){ const url=GUNART.cache[gunArtKey(id)]; if(!url) return; document.querySelectorAll('img[data-gunpic="'+id+'"]').forEach(im=>{ if(im.src!==url) im.src=url; im.classList.add('ok'); }); }
 export function queueGunArt(ids){ for(const id of ids){ if(!GUNS[id] || GUNART.cache[gunArtKey(id)] || GUNART.queue.includes(id)) continue; GUNART.queue.push(id); } pump(); }
@@ -72,16 +66,5 @@ export function gunPicEl(id, cls){ const t=document.createElement('template'); t
 // the tier tag every screen prints for a gun (shop case, arsenal card, new-gun card)
 export function gunTierTx(id){ return (GUNS[id]||{}).ulti ? 'TỐI THƯỢNG ◆' : VIP_GUNS.includes(id) ? 'VIP ◆' : 'BẬC '+((GUNS[id]||{}).tier||1); }
 // warm the cache for every gun right after boot, in idle slices (the shop and the arsenal then open with photos already there)
-export function warmGunArt(){ queueGunArt(Object.keys(GUNS).filter(id=>!GUNS[id].trooper)); }   // (Z306 not the soldier's rifle)
 
 // ---- Z155 tank model photos (garage cards) ----
-export const TANKART = { cache:{}, queue:[], busy:false };
-function pumpTank(){ if(TANKART.busy) return; const id=TANKART.queue.shift(); if(!id) return; TANKART.busy=true;
-  loadRealTanks().catch(()=>{}).then(()=>(window.requestIdleCallback||((f)=>setTimeout(f,30)))(()=>{ try{ if(!TANKART.cache[id]){ const t=buildTank({ detail:true, model:id, kit:true });   // Z228 the card shows the tank as you'll drive it — war kit on (Z256 and in its real model: the photo waits for it)
-        t.rotation.y=0; const url=renderObject(t, new THREE.Vector3(1.0, 0.62, 1.15), 0.58, OW, Math.round(OW*0.62));
-        t.traverse(o=>{ if(o.geometry && !o.geometry._shared) {} }); TANKART.cache[id]=url; }
-      document.querySelectorAll('img[data-tankpic="'+id+'"]').forEach(im=>{ im.src=TANKART.cache[id]; im.classList.add('ok'); }); }catch(e){ console.warn('tank art', id, e); TANKART.cache[id]=''; }
-    TANKART.busy=false; if(TANKART.queue.length) pumpTank(); }, { timeout:500 })); }
-export function queueTankArt(ids){ for(const id of ids) if(TANKART.cache[id]==null && !TANKART.queue.includes(id)) TANKART.queue.push(id); pumpTank(); }
-export function tankPicHTML(id, cls){ const u=TANKART.cache[id]; if(u==null) queueTankArt([id]);
-  return '<span class="gunpic tankpic '+(cls||'')+'"><i class="gp-ic">'+svgMarkup('tank')+'</i><img data-tankpic="'+id+'" class="'+(u?'ok':'')+'" alt="" src="'+(u||BLANK)+'"></span>'; }

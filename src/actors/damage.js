@@ -1,7 +1,7 @@
 // actors/damage.js — HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, LOOT } from '../../config.js';
-import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, econOn, econPend, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, maybeAbandon, popSmoke, radio, spawnEnemy, startDying, tankExplode, updateHUD, voiceKill, soldierKill } from '../hub.js';
+import { S, WAVE, _cv, addCoins, addDiamonds, addScore, bigExplode, bumpCombo, cMod, diffRewardMul, dropBeam, dropPowerup, econOn, econPend, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, popSmoke, radio, spawnEnemy, startDying, tankExplode, updateHUD, voiceKill, soldierKill } from '../hub.js';
 
 // ---- HARD TANK SEPARATION: tanks never overlap; a bump knocks the other away ----
 export function damageEnemy(e, dmg){
@@ -13,12 +13,11 @@ export function damageEnemy(e, dmg){
         tankExplode(c.mesh?{x:_cv.x,z:_cv.z}:e.pos, 0xff9a5a, 0.5); floatText('✝','#ff9a7a',{x:e.pos.x,y:2.6,z:e.pos.z},16); } }
     e.hp -= dmg*0.6; hitFlash(e.mesh);                       // crew soak some, so the chassis lasts longer
     if(e.hp<=0 || e.crew.every(c=>!c.alive)) killEnemy(e);   // chassis destroyed OR all crew dead → it's down
-    else maybeAbandon(e);                                    // Z116 the crew may bail out
     return;
   }
   e.hp-=dmg; hitFlash(e.mesh);
   if(e.def.smoke && !e.smoked && e.hp>0 && e.hp < (e.maxHp||e.def.hp)*0.55) popSmoke(e, performance.now()/1000);   // Z158 smoke screen
-  if(e.hp<=0) killEnemy(e); else maybeAbandon(e);   // Z116 badly hit → the crew may bail out and leave it
+  if(e.hp<=0) killEnemy(e);
 }
 export function killEnemy(e){
   const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); if(e._big && !e.def.inf){ const n=performance.now()/1000; S.hitStop=n+0.05; S.shake=Math.min(3.2,(S.shake||0)+0.6); } S.kitKills=(S.kitKills|0)+1; if(!e.def.inf) voiceKill(); if(econOn()) econPend().kills++;   // Z161 crew XP counts kills · Z162 and the run report · Z168 a heavy round that kills a vehicle: a beat of hit-stop

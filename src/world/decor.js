@@ -1,7 +1,7 @@
 // world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
 import { TREEFALL } from '../../config.js';
-import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushVehicle, crushables, decalDirt, enemies, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, trunkR, toppleAt, MODE, realStones } from '../hub.js';
+import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, burst, crushVehicle, crushables, decalDirt, enemies, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, trunkR, toppleAt, MODE, realStones } from '../hub.js';
 
 // ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
 // Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
@@ -65,7 +65,7 @@ export function crushAt(c){
 }
 export function updateCrush(){
   if(!crushables.length) return;
-  const tanks=[]; const p=S.player; if(p&&p.mesh&&MODE.crushes) tanks.push(p); for(const e of enemies) tanks.push(e); if(boss&&boss.alive) tanks.push(boss);   // (Z306 not a soldier: a man on foot or on a scooter flattens nothing)
+  const tanks=[]; const p=S.player; if(p&&p.mesh&&MODE.crushes) tanks.push(p); for(const e of enemies) tanks.push(e);   // (Z306 not a soldier: a man on foot or on a scooter flattens nothing)
   for(const t of tanks){ const s=t.mesh?t.mesh.scale.x:1, hw=HULL_HW*s, hl=HULL_HL*s, R=Math.hypot(hl, hw)+1, R2=R*R, fs=Math.sin(t.facing||0), fc=Math.cos(t.facing||0);
     for(const c of crushables){ if(!c.alive) continue; const dx=c.x-t.pos.x, dz=c.z-t.pos.z; if(dx*dx+dz*dz > R2) continue;
       const lx=dx*fc-dz*fs, lz=dx*fs+dz*fc, cr=c.kind==='tree' ? trunkR(c) : c.r*0.3; if(Math.abs(lx) < hw+cr && Math.abs(lz) < hl+cr) crushAt(c); } }   // anything under the hull footprint · Z404 a tree goes over the moment the hull meets its drawn trunk (it used to be half inside the bark first)

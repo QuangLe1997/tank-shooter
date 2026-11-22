@@ -1,6 +1,6 @@
 // core/econ.js — Z162 SERVER ECONOMY on the client: econ/{uid} (written only by Cloud Functions) drives the wallet + inventory; purchases call econBuy,
 //   what a run earns is reported to econRun at the end of each stage. Until a device has been linked once, the old local economy keeps working.
-import { CLOUDSAVE, CREW_RECRUITS, PROFILE, S, cloudFB, cloudProfile, floatText, onCloud, payCost, refreshStartUI, refreshWallet, saveProfile, sfx } from '../hub.js';
+import { CLOUDSAVE, PROFILE, S, cloudFB, cloudProfile, floatText, onCloud, payCost, refreshStartUI, refreshWallet, saveProfile, sfx } from '../hub.js';
 
 const REGION='asia-southeast1';
 export const ECON = { live:false, srv:null, unsub:null, fns:null, starting:false, inflight:false };
@@ -23,15 +23,8 @@ export async function startEcon(){ const F=cloudFB(); if(!F || !CLOUDSAVE.uid) r
 // server state → the profile the game reads (wallet = server + still-unreported earnings)
 export function applyEcon(){ const s=ECON.srv; if(!s) return; const p=econPend();
   PROFILE.coins=(s.coins|0)+(p.c|0); PROFILE.diamonds=(s.diamonds|0)+(p.d|0);
-  PROFILE.ownedGuns=[...new Set([...(s.guns||['rifle']), ...p.guns])]; PROFILE.loadout=(PROFILE.loadout||[]).filter(g=>PROFILE.ownedGuns.includes(g)); if(!PROFILE.loadout.length) PROFILE.loadout=['rifle'];
-  PROFILE.ownedTanks=[...(s.tanks||['lqt'])]; if(!PROFILE.ownedTanks.includes(PROFILE.tankModel)) PROFILE.tankModel='lqt';
+  PROFILE.ownedGuns=[...new Set([...(s.guns||['rifle']), ...p.guns])];
   PROFILE.upgrades={ ...(s.upgrades||{}) };
-  PROFILE.kit=PROFILE.kit||{}; for(const [id,k] of Object.entries(s.kit||{})) PROFILE.kit[id]={ ...(PROFILE.kit[id]||{}), ...k };
-  const c=PROFILE.crew=PROFILE.crew||{ roster:[], seats:{} }; c.roster=c.roster||[];
-  for(const id of s.crew||[]) if(!c.roster.some(m=>m.id===id)){ const R=CREW_RECRUITS.find(r=>r.id===id); c.roster.push({ id, lvl:R?R.lvl:1, xp:0 }); }
-  c.roster=c.roster.filter(m=>(s.crew||[]).includes(m.id));
-  PROFILE.ownedMgs=[...(s.mgs||['pkt'])]; PROFILE.mgUp=JSON.parse(JSON.stringify(s.mgUp||{}));   // Z167 roof MGs
-  PROFILE.ammo={}; for(const [k,n] of Object.entries(s.ammo||{})) PROFILE.ammo[k]=Math.max(0,(n|0)-((p.ammo[k])|0));
   saveProfile(true); try{ refreshWallet(); refreshStartUI(); }catch(e){} dispatchEvent(new Event('econ')); }
 // spend: server mode → econBuy (needs a connection), else the old local payment; resolves true/false
 export async function econBuy(type, id, track, cost, localGrant){

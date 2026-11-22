@@ -8,7 +8,6 @@ export * from './data/player.js';
 export * from './data/guns.js';
 export * from './data/enemies.js';
 export * from './data/bosses.js';
-export * from './data/kit.js';   // Z161 workshop + crew data
 export * from './core/config.js';
 export * from './ui/icons.js';
 export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on every screen
@@ -59,14 +58,8 @@ export * from './tank/models.js';
 export * from './tank/designs.js';   // Z157 a dedicated vehicle build per model   // Z155 tank collection (real MBTs + our designs)
 export * from './tank/model.js';
 export * from './tank/real-tanks.js';   // Z256 Meshy vehicles per tank family
-export * from './tank/real-guns.js';   // Z257 real models per player-gun family
 export * from './tank/warkit.js';   // Z228 our tank's war kit (mine plough, sandbags, slat cage, APS, jammer)
 export * from './tank/rig.js';
-export * from './tank/barrels.js';
-export * from './tank/seat-gun.js';   // Z381 a weapon on a real turret slid back into its face, the air left closed by a sleeve
-export * from './tank/shield.js';
-export * from './tank/kit.js';   // Z161 per-tank workshop + crew
-export * from './tank/roofmg.js';   // Z167 roof machine gun
 export * from './fx/hud-fx.js';
 export * from './fx/particles.js';
 export * from './fx/gore.js';   // Z121
@@ -85,7 +78,6 @@ export * from './actors/core.js';
 export * from './actors/enemies.js';
 export * from './actors/fireteam.js';
 export * from './actors/escalade.js';   // Z145
-export * from './actors/ally-tanks.js';
 export * from './render/night-marks.js';   // Z137
 export * from './world/landmarks.js';      // Z139
 export * from './world/regional.js';       // Z140
@@ -132,7 +124,6 @@ export * from './world/bridges.js';
 export * from './fx/dying.js';
 export * from './campaign/waves.js';
 export * from './campaign/boss.js';
-export * from './campaign/boss-new.js';   // Z161 the three new generals' weapons
 export * from './fx/cinematic.js';   // Z189 shock domes, fire light, our tank's hit / damage FX
 export * from './fx/soldier-fx.js';   // Z306 soldier mode: a man is hit, not a hull
 export * from './fx/hitfx.js';   // Z192 shell streaks, missile smoke ribbons, armour hits that rock the hull, hurt tanks that smoke
@@ -193,10 +184,6 @@ export * from './combat/soldier-fire.js';   // Z306 soldier mode: his own rifle 
 export * from './combat/air-aim.js';   // Z313 the gun laid on an aircraft in 3D: snap, lead, climb, tip up, a ring and a drop line
 export * from './combat/crosshair.js';   // Z376 the crosshair is where the round goes: the point under it in the world, for the mouse and the pad alike
 export * from './combat/trooper-spells.js';   // Z307 soldier mode: grenade, hand smoke, field dressing, the radio
-export * from './combat/ultimate.js';   // Z186 the five ultimate weapons
-export * from './combat/mastery.js';
-export * from './combat/gunstats.js';   // Z230 what a gun really does (arsenal · shop · power rating)
-export * from './combat/power.js';
 export * from './combat/spells.js';
 export * from './campaign/artillery.js';
 export * from './loot/powerups.js';
@@ -212,22 +199,15 @@ export * from './ui/setup-units.js';   // Z354 CHUẨN BỊ TRẬN steps ① ②
 export * from './ui/padview.js';   // Z125
 export * from './ui/keys.js';
 export * from './ui/guide.js';
-export * from './ui/training.js';   // Z182 first-run onboarding: call-up card · guided training in a trial tank · showcase
 export * from './ui/settings.js';
 export * from './ui/hud-prefs.js';   // Z324 what the battle HUD shows: on-screen dialogue, info cards, banners (CÀI ĐẶT)
 export * from './ui/loadout.js';
-export * from './ui/garage.js';   // Z155 tank collection screen
-export * from './ui/kitshop.js';   // Z161 workshop + crew screen
 export * from './ui/ranking.js';   // Z163 leaderboard screen
-export * from './ui/shop-info.js';
-export * from './ui/shop.js';
-export * from './ui/showroom.js';
 export * from './core/helpers.js';
 export * from './game/update.js';
 export * from './game/intro-clouds.js';   // Z322 the intro's haze and the cloud deck the swoop flies through
 export * from './game/intro.js';
 export * from './ui/radar.js';
-export * from './ui/pylon-marks.js';   // Z243 screen markers for the general's shield pylons
 export * from './ui/instruments.js';   // Z228 commander's instrument panel + radio teleprinter
 export * from './ui/squad-hud.js';   // Z220 TỔ BỘ BINH panel
 export * from './core/profile.js';
@@ -254,7 +234,6 @@ export * from './actors/troop-skin.js';   // Z344 the infantry skinned on the GP
 export * from './actors/ragdoll.js';   // Z254 a real fall for men shot down   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate
 export * from './game/cavalry.js';   // Z245 cavalry mode
 export * from './world/sidepaint.js';   // Z179 battlefield-aware paint for both sides (runtime only)
-export * from './actors/riders.js';
 export * from './game/loop.js';
 export * from './game/viewport.js';
 export * from './game/boot-gate.js';

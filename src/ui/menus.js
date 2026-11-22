@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml).
-import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, currentTank, hide, levelInfo, openTrainInvite, queueResize, refreshPowerChip, refreshWallet, saveProfile, sfx, show, tankModel } from '../hub.js';
+import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, queueResize, refreshWallet, saveProfile, sfx, show } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -9,9 +9,7 @@ export function tapBtn(id, fn){ const el=document.getElementById(id); if(!el) re
 export function tapEl(el, fn){ if(!el) return; el.addEventListener('click', fn);
   el.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); fn(e); }, {passive:false}); }
 export function refreshStartUI(){
-  try{ const gn=document.getElementById('garName'); if(gn) gn.textContent=tankModel(currentTank()).name.split(' ')[0]; }catch(e){}   // Z155 which tank rolls out
-  try{ const ps=document.getElementById('playSub'), I=levelInfo(campaignMax()); if(ps) ps.textContent='CẤP '+I.L+' · '+biomeVi(I.biome.name)+(I.boss?' · TƯỚNG':'')+' · '+((PROFILE.unit||'tank')==='tank'?'XE TĂNG':'NGƯỜI LÍNH'); }catch(e){}   // Z152 what PLAY starts · Z354 and as whom
-  try{ refreshPowerChip(); }catch(e){}   // Z107 power rating vs your next campaign level
+  try{ const ps=document.getElementById('playSub'), I=levelInfo(campaignMax()); if(ps) ps.textContent='CẤP '+I.L+' · '+biomeVi(I.biome.name)+(I.boss?' · TƯỚNG':'')+' · NGƯỜI LÍNH'; }catch(e){}   // Z152 what PLAY starts · Z354 and as whom
   const hello=document.getElementById('hello');
   if(hello) hello.innerHTML = PROFILE.nickname ? ('CHỈ HUY <b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
   const cont=document.getElementById('continueBtn'), hasSave=!!(PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));
@@ -25,7 +23,7 @@ export function refreshStartUI(){
 export function openNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.value=PROFILE.nickname||''; hide('start'); show('nick'); setTimeout(()=>{ try{ inp&&inp.focus(); }catch(e){} }, 60); }
 export function saveNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.blur();   // Z103: tapBtn's touchstart preventDefault keeps focus in the field → body.typing stuck → HUD + touch controls hidden in the match
   let v=((inp&&inp.value)||'').trim().slice(0,16) || 'CHỈ HUY';
-  PROFILE.nickname=v; saveProfile(); hide('nick'); if(!PROFILE.onboarded){ openTrainInvite(); } else if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
+  PROFILE.nickname=v; saveProfile(); hide('nick'); if(S.mode==='start'){ show('start'); } refreshStartUI(); sfx('click'); }
 tapBtn('nickSave', saveNick);
 { const inp=document.getElementById('nickInput'); if(inp){ inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); saveNick(); } });
     if(MOBILE){ inp.addEventListener('focus', ()=>{ document.body.classList.add('typing'); window.__syncAppSize&&window.__syncAppSize(); });     // Z97 keyboard up → compact card above it

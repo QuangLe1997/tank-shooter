@@ -1,5 +1,5 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
-import { AO, APPLE, HF, MOBILE, MODE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, TRAIN, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, perfFrameBegin, perfFrameEnd, perfFrameMs, perfGpuMs, perfRenderBegin, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, shop3dUpdate, shopOpen, spellNow, syncTerrainMesh, tickTip, trainTick, updateAirAim, updateAllyDead, updateAllyTanks, updateArtStrikes, updateArtillery, updateBolts, updateBoss, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateCinematic, updateCity, updateAerial, updateBackdrop, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrosshair, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlameJet, updateFlames, updateFlashes, updateForts, updateFuses, updateGifts, updateGore, updateGrass, updateGunStatus, updateHeliCrew, updateHeliDown, updateHorizon, updateInfDead, updateInstr, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMagma, updateMines, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updatePowerHud, updatePylonMarks, updateRally, updateRelic, updateReload, updateRiders, updateRings, updateRocketAim, updateRockets, updateRoofMG, updateRubble, updateScore, updateShatter, updateSkyLife, updateSkyMood, updateSmokeTrails, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateSurprises, updateTankRigs, updateTowers, updateTraffic, updateTrails, updateTreeFall, updateTroopBatch, updateTunnels, updateUltimates, updateUnder, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks, updateGunFX, updateSpinners, updateTowerFalls } from '../hub.js';
+import { AO, APPLE, HF, MOBILE, MODE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, enemyDamageFX, flushParticles, gated, gradePass, muzzleLight, perfFrameBegin, perfFrameEnd, perfFrameMs, perfGpuMs, perfRenderBegin, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, separateTanks, spellNow, syncTerrainMesh, tickTip, updateAirAim, updateAllyDead, updateArtStrikes, updateArtillery, updateBolts, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateCinematic, updateCity, updateAerial, updateBackdrop, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrosshair, updateCrowd, updateCrush, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlames, updateFlashes, updateForts, updateGifts, updateGore, updateGrass, updateGunStatus, updateHeliCrew, updateHeliDown, updateHorizon, updateInfDead, updateInstr, updateIntro, updateLOD, updateLava, updateLockWarn, updateLocks, updateLootBeacons, updateMagma, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updateRally, updateRelic, updateReload, updateRings, updateRocketAim, updateRockets, updateRubble, updateScore, updateShatter, updateSkyLife, updateSkyMood, updateSmokeTrails, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateSurprises, updateTankRigs, updateTowers, updateTraffic, updateTrails, updateTreeFall, updateTroopBatch, updateTunnels, updateUnder, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateWrecks, updateGunFX, updateSpinners, updateTowerFalls } from '../hub.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 const PERF_GOV = { low:54, aim:59, high:58, upK:0.55, upHold:6, upEvery:10 };   // Z240 + step back up in play when the GPU sits under upK × frame budget for upHold s (≤ once per upEvery s)   // Z239 frame governor: step down under low fps, aim the one resize step at aim fps, creep back up above high
@@ -14,7 +14,6 @@ export function loop(nowMs){
   if(gated() && !window.__forceFrame) return;   // portrait gate up or tab hidden → don't burn a frame behind the curtain (QA tick may force)
   perfFrameBegin();   // Z240 frame-time probe (render/perfhud.js)
 
-  if(shopOpen) shop3dUpdate(dt);          // animate the showroom (pedestal + detail hero) whenever the shop is open
 
   updateFlames(dt); updateSkyLife(dt, now);                 // Z235 living flames · swallows, raptors, high aircraft                                          // Z235 living flames (camp fires, braziers, torches)
   updateHorizon(dt, now);                                    // Z189 the world beyond the fence (menu backdrop too)
@@ -26,18 +25,15 @@ export function loop(nowMs){
     updateReload(now);              // complete reload on time + drive the countdown dial
     if((PERF.fc&(MOBILE?3:1))===0) updateGunStatus(now);   // ✓/reloading badges (every 4th frame on phones)
     updateCrosshair(gdt, now); updateAirAim(gdt); MODE.update(gdt, now);   // Z376 the point under the crosshair (combat/crosshair.js) · Z313 the gun laid on an aircraft (combat/air-aim.js) · Z245 cavalry mode · Z307 whichever mode is on (game/mode.js)
-    if(TRAIN.on) trainTick(gdt, now);   // Z182 the onboarding steps watch what you do
     buildUnitGrid(now);             // Z172 who-is-near-whom, once a frame
     updateSquads(gdt, now); updateFieldcraft(gdt, now); updateHeliCrew(gdt, now); updateSurprises(gdt, now);   // Z173 squad plans (enemy squads + our fireteam teams / focus) · Z220 grenades in flight + smoke screens
     updateEnemies(gdt, now);
-    updateBoss(gdt, now);
     updateBullets(gdt, now);
-    updateUltimates(gdt, now);
     updateLockWarn(gdt, now);
     updateCinematic(gdt, now); enemyDamageFX(gdt); updateRubble(gdt); updateSupply(gdt, now); updateCrowd(gdt); updateWallMarks(gdt); updateCity(gdt);   // Z193 burning heaps   // Z192 hurt enemy tanks smoke, then burn      // Z189 shock domes · fire light · damage smoke       // Z188 "BỊ KHOÁ" brackets while a guided missile hunts you
     updateLava(gdt, now);           // Z187 caldera lava: glow, embers, burns      // Z186 orbital lances · plasma suns · black holes · photon beams
     updateLocks(gdt);               // MISSILE lock-on reticles track their locked targets
-    updateRockets(gdt, now); updateFuses(dt, now);   // siege-rocket flight + landing fuse
+    updateRockets(gdt, now);   // lobbed rounds in flight (the M79, the hand grenade)
     updateArtillery(dt, now); updateArtStrikes(dt, now);
     updateEnemyMissiles(gdt, now); updateInfDead(gdt); updateGore(gdt, now); updateHeliDown(gdt); updateEquip(gdt, now); updateObjective(gdt, now);   // Z82 smoke · APS · mines   // Z79 rockets/missiles in flight · fallen soldiers   // enemy ARTILLERY: barrage director + locked missile strikes
     separateTanks(now);                 // resolve overlaps so tanks never merge
@@ -50,7 +46,6 @@ export function loop(nowMs){
     updateWaves(dt, now);               // wave timers run real-time
     updatePickups(gdt, now); updateGifts(gdt, now); updateRelic(gdt, now);
     updateLootBeacons(dt);               // glowing markers on bricks/tanks that hide a power-up
-    updateMines(gdt, now);
     updateDrone(gdt, now);
     updateSoldiers(gdt, now);            // friendly squad guarding the Core
     updateFireteam(gdt, now); updateAllyDead(gdt);   // Z89 friendly fireteam + their APC (Z104: autonomous squad) · Z113 our fallen
@@ -58,15 +53,12 @@ export function loop(nowMs){
     updateWildlife(gdt, now);           // Z143 herds graze and bolt from tanks
     updateEnvEvents(gdt, now);          // Z140 floods · rockslides · collapses · weather surges
     updateTunnels(gdt, now); updateUnder(gdt, now);   // Z225 the enemy tunnel network
-    updateAllyTanks(gdt, now); updatePOWs(gdt, now); updateDepots(gdt, now); updateRally(gdt, now); updateParadrops(gdt, now);   // Z104 allied tanks · POW stockades · depots · rally point · paratroopers
-    updateRiders(gdt, now);              // crew mounted on the player's tank
-    updateRoofMG(gdt, now);              // Z167 the roof machine gun (manned by the first rider)
+    updatePOWs(gdt, now); updateDepots(gdt, now); updateRally(gdt, now); updateParadrops(gdt, now);   // Z104 POW stockades · depots · rally point · paratroopers
     updateCmdUI(now);                    // Z107 paratrooper cooldown on the phone strip
     updateLOD(now);                      // Z107 render budget: near-only soldier shadows, far guards hidden
-    updatePowerHud(now);                 // Z107 live power rating vs this stage (1×/s)
     updateBuffHUD(now); updateSquadHud(now);   // Z220 squad panel
     updateCamera(dt, now);
-    updateWorldBars(); updatePylonMarks();   // Z243
+    updateWorldBars();
     updateAbilityUI(now);
     if(PERF.fc%(MOBILE?3:2)===0) drawRadar();   // Z239 desktop too: every 2nd frame (a canvas repaint the eye can't tell from every frame)   // Z92 the 2D radar is a canvas repaint → every 3rd frame on phones
     updateInstr(now);                            // Z228 commander's instrument panel (desktop only)
@@ -78,14 +70,14 @@ export function loop(nowMs){
   else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); updateTankRigs(dt); MODE.idle(dt); }   // Z136 3 · 2 · 1: the world waits
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   // always-on FX + core idle
-  if(S.mode!=='playing'){ updatePylonMarks(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
+  if(S.mode!=='playing'){ updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now); updateCelebration(dt, now);   // Z140 fireworks + cheering after a win
-  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateSmokeTrails(dt); updateDebris(dt); updateShatter(dt); updateTreeFall(dt); updateTowerFalls(dt); updateWrecks(dt); updateFlameJet(dt); updateBolts(dt); updateGunFX(dt); updateRocketAim(now); flushParticles();   // Z419 shaped flashes, brass, the muzzle light's strobe
+  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateTrails(dt); updateSmokeTrails(dt); updateDebris(dt); updateShatter(dt); updateTreeFall(dt); updateTowerFalls(dt); updateWrecks(dt); updateBolts(dt); updateGunFX(dt); updateRocketAim(now); flushParticles();   // Z419 shaped flashes, brass, the muzzle light's strobe
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   if(HF.dirty){ HF.dirty=false; syncTerrainMesh(HF.dj0, HF.dj1); HF.dj0=HF.dj1=undefined; }   // apply this frame's new craters (one rebuild max)
   updateEngine(dt); updateScore(dt);   // Z161 the score follows the fight
-  if(!shopOpen) updateWeather(dt);   // Z107 rain / sand / snow drift with the camera + lightning
+  updateWeather(dt);   // Z107 rain / sand / snow drift with the camera + lightning
   SKY.position.copy(camera.position); updateClouds(dt, camera); updateAerial(camera); updateBackdrop(); updateSkyMood(dt); updateSunFollow(); updateDecals(dt); updateNightLights(dt, now); updateNightMarks(dt, now); updateWater(dt); updateGrass(dt); updateWonder(dt, now); updateSpinners(dt); updateMagma(dt, now); if(!MOBILE || (PERF.fc&1)===0) updateFlags(now); PERF.fc++; gradePass.uniforms.time.value = now%100;
   aoPass.enabled = AO.on && renderPass.scene===scene && S.mode!=='intro';   // Z239 not during the wide intro move either (the whole field on screen, AO is the priciest pass)   // Z145 not in the 3D shop showroom
   updateTroopBatch(now);   // Z172 every soldier's joints → the batched body-part meshes

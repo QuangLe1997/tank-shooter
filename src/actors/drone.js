@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE } from '../../config.js';
-import { GLOW, NOW, S, boss, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, tankExplode, towers, wrapAngle, realAir } from '../hub.js';
+import { GLOW, NOW, S, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, tankExplode, towers, wrapAngle, realAir } from '../hub.js';
 
 // ----------------------------- SUPPORT DRONE (power-up) -----------------------------
 // A 22s orbiting GUNSHIP: sleek fuselage, 4 spinning rotors, glowing sensor eye + an underslung 6-barrel
@@ -86,7 +86,7 @@ export function updateDrone(dt, now){
   const p=S.player; if(!p) return;
   d.ang += dt*1.5;
   // Z122 TOWER STRIKE: nothing to fight near the tank → the drone climbs out to the nearest tower / wall guard, circles his parapet at his height and shoots him off
-  let strike=null; { let near=!!(boss&&boss.alive); const R2=DRONE.detect*DRONE.detect; if(!near) for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; if(dx*dx+dz*dz<R2){ near=true; break; } }
+  let strike=null; { let near=false; const R2=DRONE.detect*DRONE.detect; if(!near) for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z; if(dx*dx+dz*dz<R2){ near=true; break; } }
     if(!near){ let gq=DRONE.guardR*DRONE.guardR; for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const dx=gd.wx-p.pos.x, dz=gd.wz-p.pos.z, q=dx*dx+dz*dz; if(q<gq){ gq=q; strike={ t, gd }; } } } } }
   let tx=p.pos.x+Math.cos(d.ang)*DRONE.orbit, tz=p.pos.z+Math.sin(d.ang)*DRONE.orbit, ty=DRONE.height;
   if(strike){ tx=strike.gd.wx+Math.cos(d.ang)*DRONE.strikeR; tz=strike.gd.wz+Math.sin(d.ang)*DRONE.strikeR; ty=strike.gd.wy+1.2; }
@@ -104,7 +104,6 @@ export function updateDrone(dt, now){
   const reloading = d.ammo<=0;
   let best=null, bd=DRONE.detect*DRONE.detect;                                              // acquire nearest target within reach
   for(const e of enemies){ const dx=e.pos.x-ox, dz=e.pos.z-oz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
-  if(boss&&boss.alive){ const dx=boss.pos.x-ox, dz=boss.pos.z-oz, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=boss; } }
   const wantSpin = ((best||strike)&&!reloading) ? DRONE.fireRot : (reloading? DRONE.fireRot*0.5 : DRONE.idleRot);   // gatling spin-up / spin-down
   d.spin += (wantSpin-d.spin)*Math.min(1, dt*6);
   if(ud.gat) ud.gat.rotation.z += dt*d.spin;

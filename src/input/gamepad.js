@@ -79,7 +79,6 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
     if(cur[BT.VIEW] && CAMC[i]){ if(down(i)){ PAD.viewCombo=true; runAction(CAMC[i], 'down'); } continue; }                      // Z124 hold ⧉ View + D-pad = camera (↑ in · ↓ out · ←→ rotate)
     const a=actionForPad(i) || PADDLE[i] || null;                                                                              // Z132 a pad that DOES report its back paddles (buttons 17 / 18) gets them as camera too
     if(i===BT.VIEW && a==='keys'){ if(up(i) && !PAD.viewCombo) runAction('keys', 'down'); continue; }                           // ⧉ alone opens the key sheet on release
-    if((i===BT.LB || i===BT.RB) && down(i) && cur[i===BT.LB ? BT.RB : BT.LB]){ runAction('gunDefault','down'); PAD.gunCombo=true; continue; }   // Z129 LB + RB together = back to the default gun
     if(a==='fire') PAD.fireHeld=down(i);
     if(a) runAction(a, down(i)?'down':'up'); }
   padHud(now);

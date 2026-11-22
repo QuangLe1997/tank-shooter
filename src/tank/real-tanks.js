@@ -1,7 +1,7 @@
 // tank/real-tanks.js — Z256 REAL TANKS: one Meshy-generated vehicle per family (western MBT, T-90-type, Merkava, Armata, IFV, SPG, UGV) dressed onto every procedural vehicle of that family. The model comes in separate parts (Smart Topology t2): they are sorted by shape — the gun (thin pieces chained along the centre line; its far end tells which way the model faces), the turret (the broadest part above the deck and everything standing on or built against it), the running gear (low parts along the sides, dropped: the procedural tracks and wheels stay, they animate), the hull (the rest). One transform keeps the model's own proportions and layout: the hull spans the procedural tracks, the turret and gun are slid level onto the game's turret pivot, the gun pivot and the muzzle points move to the real gun — so the suspension, the turret's traverse, the gun's elevation and recoil, the paint per side / battlefield, the hit flash and any barrel mounted later all keep working. Tanks built before the files load are tracked and dressed (in their rest pose) when they arrive; until then, or on failure, the procedural vehicle stays.
 import * as THREE from 'three';
 import { REALTANK, SIDE_ID } from '../../config.js';
-import { loadGLTF, markSide, paintVehicle, seatBarrel } from '../hub.js';
+import { loadGLTF, markSide, paintVehicle } from '../hub.js';
 
 const LIVE = new Map(), FAM = {}, _m = new THREE.Matrix4(), _b = new THREE.Box3(), _v = new THREE.Vector3();
 let _p = null;
@@ -105,8 +105,7 @@ function dress(g, F){ const u = g.userData; if(u.realDressed || !u.body || !u.tu
         const p = toTank(g, o, new THREE.Vector3()); p.y = tip.y; p.z = tip.z + 0.05; o.position.copy(fromTank(g, o.parent, p)); } }
     u.paint = [[mat, base.getHex()]].concat(gm ? [[gm, base.getHex()]] : []); u._small = null; u.coatGain = F.gain; g.updateMatrixWorld(true); u.roofTop = roofTop(tm, tur); }   // (Z403 the gun painted with the hull)
   tur.rotation.copy(pose[0]); if(gp) gp.rotation.copy(pose[1]); body.rotation.copy(pose[2]); g.updateMatrixWorld(true);
-  if(u.side){ if(u.own) markSide(g, 'f', true); else paintVehicle(g, u.side); } seatRoofMark(g);   // Z403 its side, known before the model came, laid on now
-  if(u.gunId) seatBarrel(g); }   // Z381 a weapon mounted before the real turret came: seated in it now (tank/seat-gun.js)
+  if(u.side){ if(u.own) markSide(g, 'f', true); else paintVehicle(g, u.side); } seatRoofMark(g); }   // Z403 its side, known before the model came, laid on now
 // Z403 the real turret's roof (in the turret's frame): rays dropped on a 3 × 3 patch round its middle, the flat hits kept (a cupola or a gun box is no roof), the median height
 const _DN = new THREE.Vector3(0, -1, 0), _rc = new THREE.Raycaster(), _n = new THREE.Vector3();
 function roofTop(tm, tur){ const box = new THREE.Box3().setFromObject(tm), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()), hits = [];

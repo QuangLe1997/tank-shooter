@@ -1,46 +1,10 @@
-// combat/flame.js — continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks)
+// combat/flame.js — the soldier's FLAMETHROWER cone (fireFlame), lobbed rounds in flight (the M79, the hand grenade: updateRockets) and the gun in hand
+//   (selectGun / cycleGun) — no-tanks: the tank's guns, the flame jet, the siege fuses and the gift guns are gone
 import * as THREE from 'three';
-import { BALANCE, LOCKON, REALCITY, XHAIR, REAL } from '../../config.js';
-import { XH, ejectBrass, AIR, fireLine, CASING, GLOW, GUNS, MOBILE, NOW, PAD, PROFILE, S, _RUP, _rdir, _v, addGunXp, aimTarget, armorOf, bigExplode, blocks, boss, cMod, damageBlock, damageBoss, damageEnemy, decalScorch, deformCrater, enemies, fireArty, fireMortar, fireRocket, fireUltimate, floatText, fortIntactCross, fortShellHit, fuses, gunDmgMul, gunFireMul, gunMuzzleFX, gunSplash, heightAt, lightning, magCap, muzzleLight, ownGun, playerRange, railBeam, ringPulse, rockets, scene, sfx, spawnBullet, spawnDebris, spawnPart, startReload, strikePoint, tankRecoil, typeMul, updateGunHUD, airShot, blRamp, holoGain, holoRing, trafficCone } from '../hub.js';
+import { BALANCE, REALCITY } from '../../config.js';
+import { S, _RUP, _rdir, armorOf, bigExplode, blocks, damageBlock, damageEnemy, decalScorch, deformCrater, enemies, fortIntactCross, fortShellHit, heightAt, ringPulse, rockets, scene, sfx, spawnPart, typeMul, updateGunHUD, trafficCone } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
-// ----- continuous FLAME JET: one cohesive COLUMN of fire (a flamethrower stream, not scattered sparks) -----
-export let _flameTex=null;
-export function flameTex(){
-  if(_flameTex) return _flameTex;
-  const W=64,H=128, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
-  const grad=x.createLinearGradient(0,H,0,0);   // base (nozzle) white-hot → tip fades out
-  grad.addColorStop(0.0,'rgba(255,250,220,1)'); grad.addColorStop(0.18,'rgba(255,214,110,0.96)');
-  grad.addColorStop(0.45,'rgba(255,135,40,0.82)'); grad.addColorStop(0.75,'rgba(214,60,22,0.42)'); grad.addColorStop(1,'rgba(120,24,10,0)');
-  x.fillStyle=grad; x.fillRect(0,0,W,H);
-  x.globalCompositeOperation='lighter';          // flame tongues / licks for a living surface
-  for(let i=0;i<70;i++){ const px=Math.random()*W, w=2+Math.random()*5, h=18+Math.random()*70, py=Math.random()*H;
-    const gg=x.createLinearGradient(0,py+h,0,py); gg.addColorStop(0,'rgba(255,220,120,0)'); gg.addColorStop(0.5,'rgba(255,186,86,'+(0.1+Math.random()*0.22)+')'); gg.addColorStop(1,'rgba(255,240,190,0)');
-    x.fillStyle=gg; x.fillRect(px,py,w,h); }
-  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,2); t.colorSpace=THREE.SRGBColorSpace; _flameTex=t; return t;
-}
-export function makeFlameJet(){
-  const g=new THREE.Group();
-  const jmat=(col,op)=>new THREE.MeshBasicMaterial({map:flameTex(), color:col, transparent:true, opacity:op, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide});
-  const body=new THREE.Mesh(new THREE.CylinderGeometry(1.7,0.34,1,18,1,true), jmat(0xff7320,0.5));  body.rotation.x=Math.PI/2;   // wide flame envelope (tip→nozzle taper)
-  const core=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.16,1,18,1,true),  jmat(0xffe2a0,0.82)); core.rotation.x=Math.PI/2;   // bright inner stream
-  const tip=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW, color:0xff8a30, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending, depthWrite:false}));   // billowing fireball at the tip
-  g.add(body,core,tip); g.userData={body,core,tip,bodyMat:body.material,coreMat:core.material}; g.visible=false; scene.add(g);
-  return g;
-}
-export const flameJet = makeFlameJet(); export let flameJetUntil=0, flameJetLen=14;
-export function updateFlameJet(dt){
-  if(!flameJet.visible) return;
-  const now=NOW(), ud=flameJet.userData, fade=(flameJetUntil-now)/0.12;
-  if(fade<=0){ flameJet.visible=false; return; }
-  const f=Math.min(1,fade), L=flameJetLen;
-  ud.body.scale.set(1+Math.sin(now*34)*0.08, L, 1+Math.sin(now*29)*0.08); ud.body.position.z=L/2;   // stretch the column to its reach + flicker its girth
-  ud.core.scale.set(1, L, 1); ud.core.position.z=L/2;
-  ud.tip.position.set(0, -L*0.05, L*0.98); ud.tip.scale.setScalar(2.3+Math.sin(now*22)*0.45);
-  const fl=0.82+Math.sin(now*46)*0.12+Math.random()*0.08;                                            // alive flicker
-  ud.bodyMat.opacity=0.5*f*fl; ud.coreMat.opacity=0.84*f*fl; ud.tip.material.opacity=0.6*f*fl;
-  ud.bodyMat.map.offset.y -= dt*1.7;                                                                  // fire flows nozzle → tip
-}
 export function fireFlame(now, g, x, z, ang, k=1){
   const F=BALANCE.flame, range=g.range||F.range, cx=Math.sin(ang), cz=Math.cos(ang);
   // ===== VISUAL: a STREAM of MOVING fire — burning fuel that projects out (like tracers) & cools white→red as it flies =====
@@ -65,11 +29,6 @@ export function fireFlame(now, g, x, z, ang, k=1){
   }
   trafficCone(x, z, cx, cz, range, F.cone, (g.dmg || 10) * k * REALCITY.traffic.hit.flameK);   // Z320 the street's cars and scooters in the flame catch fire too
 }
-export function makeDangerZone(x,z,r){   // ground light showing the exact kill radius during the fuse · Z318 our own ordnance = threat orange: a hot rim, a glow falling inward
-  const grp=new THREE.Group(); grp.position.set(x,heightAt(x,z)+0.12,z); grp.rotation.x=-Math.PI/2;
-  const ring=holoRing(r, { kind:'danger', col:'threat', flat:false, fill:Math.min(r*0.55, 2.4), ticks:Math.round(r*5), tickLen:0.3, spin:-0.03 });
-  grp.add(ring); scene.add(grp); grp.userData={ring}; return grp;
-}
 export function updateRockets(dt, now){
   for(let i=rockets.length-1;i>=0;i--){ const r=rockets[i]; r.tt+=dt;
     r.vy-=r.G*dt; r.x+=r.vx*dt; r.y+=r.vy*dt; r.z+=r.vz*dt; r.mesh.position.set(r.x,r.y,r.z);
@@ -80,121 +39,17 @@ export function updateRockets(dt, now){
     if(Math.random()<0.85) spawnPart(tx, ty, tz, (Math.random()-0.5)*1.2, 0.2, (Math.random()-0.5)*1.2, {color:0x261f1a, size:1.0, life:0.6, smoke:true, grav:0.5, drag:1.8, op:0.4});   // dark smoke behind the fire
     const ud=r.mesh.userData; if(ud.plume){ ud.plume.scale.setScalar(1.9+Math.random()*0.5); ud.plume2.scale.setScalar(1.2+Math.random()*0.5); }   // flicker the engine flame
     if((r.vy<0 && r.y<=heightAt(r.x,r.z)+0.35) || r.tt>6){ scene.remove(r.mesh); rockets.splice(i,1);
-      if(r.impact){   // ARC MORTAR shell — bursts ON IMPACT where it really hits the ground (no fuse / danger-zone)
+      {   // a lobbed round (the M79, the hand grenade) bursts ON IMPACT where it really hits the ground
         const x=r.x, z=r.z, aoeR=r.aoeR||5, pos=new THREE.Vector3(x,1.1,z);
         bigExplode(pos, 0xffae5c, aoeR/3.2); if(!r.small) deformCrater(x, z, aoeR*0.5, 0.45+aoeR*0.06); else decalScorch(x, z, aoeR*0.6, 0.7);   // mortar / howitzer shell crater (grenades only scorch)
         ringPulse({x,z}, 0xffffff, aoeR*0.9); ringPulse({x,z}, 0xffd27a, aoeR*0.6);
         for(let k=0;k<5;k++){ const aa=Math.random()*6.28, rr=Math.random()*aoeR*0.7; spawnPart(x+Math.cos(aa)*rr,1,z+Math.sin(aa)*rr,(Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*4,{color:0xfff0c0,color2:0xff4a14,size:0.8,grow:1.4,life:0.4,grav:3,drag:2}); }
         for(const e of enemies.slice()){ if(e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageEnemy(e, (r.dmg||30)*(r.small?typeMul('HE',armorOf(e)):1)); }   // shells can't reach aircraft
-        if(boss&&boss.alive){ const dx=boss.pos.x-x, dz=boss.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR) damageBoss(r.bossDmg||(r.dmg||30)*0.6); }
         for(const bl of blocks.slice()) if((bl.kind==='obj'||bl.kind==='tower'||bl.kind==='brick'||bl.kind==='camp'||bl.kind==='pylon') && Math.hypot(bl.x-x,bl.z-z) < aoeR+bl.r) damageBlock(bl, (r.dmg||30)*0.8);   // shells wreck structures too
         if(r.small){ S.shake=Math.min(1.4, S.shake+0.18); sfx('explode', {x,z}); } else { S.shake=Math.min(3.0, S.shake + 0.5 + aoeR*0.08); sfx('bigexplode'); }   // ground burst: earth clods come from fireball(), no metal debris   // bigger AoE → bigger boom (howitzer > mortar)
-      } else {
-        fuses.push({ x:r.x, z:r.z, at:now+(r.fuse!=null?r.fuse:2), blink:0, aoeR:r.aoeR, bossDmg:r.bossDmg, dmg:r.dmg, wipe:r.wipe, zone:makeDangerZone(r.x,r.z,r.aoeR) });
-        ringPulse({x:r.tx,z:r.tz}, 0x886054, 3);   // dust puff on impact
       }
     }
   }
 }
-export function updateFuses(dt, now){
-  for(let i=fuses.length-1;i>=0;i--){ const f=fuses[i]; f.blink-=dt;
-    const t2d=Math.max(0, f.at-now), k=Math.min(1,Math.max(0,1-t2d/2));   // 0 → 1 as it nears detonation (clamped)
-    if(f.zone){ const ring=f.zone.userData.ring;                      // danger circle pulses faster + brighter as the boom nears (Z318 one smooth battle-light pulse)
-      ring.material.opacity=blRamp(f, dt, k, 'alert', 'crit', 0.3); holoGain(ring, 2.2+k*1.4); }
-    if(f.blink<=0){ f.blink=0.3-0.18*k; sfx('beep');                 // beeps quicken
-      spawnPart(f.x,0.5,f.z,(Math.random()-0.5)*4,3,(Math.random()-0.5)*4,{color:0xff5028,size:1.2,life:0.3,grav:-2}); }
-    if(now>=f.at){
-      if(f.zone){ scene.remove(f.zone); f.zone.children.forEach(c=>{c.geometry.dispose(); c.material.dispose();}); }
-      const pos=new THREE.Vector3(f.x,1.2,f.z), wipe=f.wipe!==false;
-      bigExplode(pos, 0xffae5c, f.aoeR/3); deformCrater(f.x, f.z, wipe?6.5:f.aoeR*0.5, wipe?1.9:0.6);   // SIEGE rocket blasts a big deep crater
-      ringPulse({x:f.x,z:f.z}, 0xffffff, f.aoeR*1.1); ringPulse({x:f.x,z:f.z}, 0xffd27a, f.aoeR); ringPulse({x:f.x,z:f.z}, 0xff5028, f.aoeR*0.7);   // shockwave rings to the kill edge
-      for(let k2=0;k2<(wipe?12:5);k2++){ const a=Math.random()*6.28, rr=Math.random()*f.aoeR; setTimeout(()=>{ if(S.mode==='paused')return; bigExplode(new THREE.Vector3(f.x+Math.cos(a)*rr,1,f.z+Math.sin(a)*rr), 0xff7a3d, 1.7); }, k2*38); }
-      for(const e of enemies.slice()){ const dx=e.pos.x-f.x, dz=e.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageEnemy(e, wipe?99999:(f.dmg||36)); }   // SIEGE wipes; HOWITZER deals scaled AoE
-      if(boss&&boss.alive){ const dx=boss.pos.x-f.x, dz=boss.pos.z-f.z; if(dx*dx+dz*dz < f.aoeR*f.aoeR) damageBoss(wipe?f.bossDmg:(f.dmg||36)*0.6); }
-      spawnDebris(pos, wipe?2.8:1.6, 0xff7a3d);
-      S.shake=Math.min(6, S.shake+(wipe?4.2:1.9));                   // siege = ground-quake; howitzer = solid thump
-      muzzleLight.position.set(f.x,3,f.z); muzzleLight.color.setHex(0xffae5c); muzzleLight.intensity=wipe?8:5;
-      sfx('bigexplode');
-      fuses.splice(i,1);
-    }
-  }
-}
-// AUTO-FIRE: called every frame while playing. Handles reload + magazine + fragments.
-const _tp=new THREE.Vector3(), _mz=new THREE.Vector3();
-export function fireGun(now, range){
-  const p=S.player; if(!p.guns.length) return;
-  const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
-  if(inst.rU) return;                                    // this gun is reloading (its own timer; others reload in the background)
-  if(!p.infiniteAmmo && inst.ammo<=0){ startReload(now, inst); return; }
-  if(now < p.fireAt) return;
-  if(XH.live && S.pointerActive && !g.special && !g.lock && !AIR.e){ const ta=Math.atan2(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z), off=Math.atan2(Math.sin(ta-p.aimSmoothed), Math.cos(ta-p.aimSmoothed)); if(Math.abs(off)>XHAIR.tankTol) return; }   // Z382 the turret still coming round: the shot waits for the barrel to be on the crosshair (then it goes to it: fireLine below)
-  const rapid = (now<p.overUntil || now<p.buffUntil.rapid) ? 0.5 : 1;   // overdrive spell / RAPID buff
-  if(g.spinUp){ p.spinT=now; }
-  const spinMul = g.spinUp ? 1 + 2.2*(1-(p.spin||0)) : 1;                  // MINIGUN: the barrel cluster must spin up before full rate
-  p.fireAt = now + g.fireCd * rapid * p.fireMul * gunFireMul(inst.id) * spinMul;   // MASTERY: higher level fires faster
-  if(!p.infiniteAmmo) inst.ammo--;
-  (p.muzzles ? p.muzzles[(p.mzI=((p.mzI||0)+1)%p.muzzles.length)] : p.muzzle).getWorldPosition(_v);   // real barrel tip — Z149 twin / multi-tube guns alternate tubes (rhythm, never double damage)
-  const ang=p.aimSmoothed;
-  const od=p.radius+0.6;                          // spawn bullets at the hull edge so point-blank shots never overshoot a hugging tank
-  const x=p.pos.x+Math.sin(ang)*od, z=p.pos.z+Math.cos(ang)*od;
-  const crit = Math.random() < p.crit;
-  const powerBuff = now<p.buffUntil.power ? 1.6 : 1;     // POWER buff
-  const dmg = g.dmg * p.dmgMul * powerBuff * (1 + p.weaponLvl*0.15) * (crit?2:1) * gunDmgMul(inst.id) * cMod('playerDmgMul');   // MASTERY: +dmg per gun level; CONTRACT may boost
-  if(g.special==='rocket'){ fireRocket(now, g); }
-  else if(g.ulti){ fireUltimate(now, g, dmg, ang, range, _v); }   // Z186 ultimate weapons
-  else if(g.special==='mortar'){ fireMortar(now, g, dmg); }
-  else if(g.special==='arty'){ fireArty(now, g, dmg); }
-  else if(g.special==='flame'){ fireFlame(now, g, x, z, ang, dmg/(g.dmg||1)); { const rg=p.mesh.userData.rig; if(rg) rg.vib=Math.min(0.5,rg.vib+0.12); } muzzleLight.position.set(x,1.4,z); muzzleLight.color.setHex(0xff6a1c); muzzleLight.intensity=2.2;
-    if(Math.random()<0.12) sfx('shoot_flame'); if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst); updateGunHUD(); return; }   // flame handles its own FX; skip the bullet/muzzle path + throttle sound
-  else {
-    const n=g.frags, maxDist=(range||playerRange())+2;     // bullets only reach within combat range
-    const aimTgt = aimTarget(maxDist);                     // arc toward the target (mobile: only one straight ahead); straight if it's close
-    const aimDist = ((!MOBILE || PAD.active) && S.pointerActive) ? Math.hypot(S.aimPoint.x-p.pos.x, S.aimPoint.z-p.pos.z)   // desktop: where YOU point
-                  : (aimTgt ? Math.hypot(aimTgt.pos.x-p.pos.x, aimTgt.pos.z-p.pos.z) : 0);                    // mobile: the auto-locked target
-    // launch from the BARREL MOUTH (rounds visibly leave the muzzle) — unless an enemy hugs the hull closer than the muzzle reach
-    const md=Math.hypot(_v.x-p.pos.x, _v.z-p.pos.z);
-    const sx0=_v.x, sz0=_v.z, sy0=_v.y, arcD=0, dropD=Math.min(Math.max(4, aimDist-md), Math.max(4,maxDist-md));   // direct fire is FLAT (APFSDS/autocannon) — no lob over the target   // realism: rounds leave the MUZZLE — a tank pressed against yours is inside the barrel's reach (riders/drone handle it)
-    if(aimTgt && aimDist < md-0.6 && !p._tooCloseT){ p._tooCloseT=1; floatText('QUÁ GẦN CHO PHÁO CHÍNH','#ffcf5a',new THREE.Vector3(p.pos.x,3.4,p.pos.z),15); setTimeout(()=>{ p._tooCloseT=0; },2500); }
-    const air = airShot(sx0, sz0, g.bspeed);   // Z313 laid on an aircraft: lead it, climb to its height (combat/air-aim.js)
-    const XL = air || g.lock ? null : fireLine(sx0, sy0, sz0), a1 = XL && Math.abs(Math.atan2(Math.sin(XL.a - ang), Math.cos(XL.a - ang))) < 0.06 ? XL.a : ang;   // Z376 the shell to the crosshair's point (combat/crosshair.js): its height there, and its line once the turret is on it
-    const mg = g.flash==='small';   // Z419 the twin MG / rotary: a belt with a tracer every REAL.tracer.every rounds, the ball rounds between unseen
-    for(let i=0;i<n;i++){
-      const a = (air ? air.a : a1) + (n>1 ? (i-(n-1)/2)*(g.spread/(n-1)) : (Math.random()-0.5)*g.spread), tr = mg ? ((p._trN=(p._trN||0)+1)%REAL.tracer.every===0 ? 1 : 0) : undefined;
-      const mD=g.lock ? Math.min(maxDist, LOCKON.range) : maxDist;   // Z238 a lock-on missile's reach is capped
-      spawnBullet(sx0,sz0,a,{owner:'p', dmg, speed:g.bspeed, color:g.color, r:g.r, life:g.life, maxDist:mD, arcDist:air ? air.dropDist : arcD, noArc:!!air, y:sy0, dropTo:air ? air.dropTo : XL ? XL.dropTo : 1.2, dropDist:air ? air.dropDist : XL ? Math.max(2, XL.dropDist) : dropD, airAim:air ? air.e : null, type:g.type, reach:mD, fall:g.fall??1,
-        pierce:g.pierce||0, homing:g.homing||0, lockOn:!!g.lock, rocket:!!g.lock, smart:!!g.lock, aoe:g.aoe||0, aoeDmg:(g.aoe? dmg*gunSplash(g) : 0),
-        freeze:g.freeze||0, chain:g.chain||0, chainR:g.chainR||0, knock:g.knock||1, fx:g.fx||'spark', from:p.pos, mg, tr});
-    }
-  }
-  // RECOIL — the tank kicks back opposite the shot; heavy guns lurch, autos barely nudge
-  const rec=g.recoil||0; if(rec){ p.kbx -= Math.sin(ang)*rec; p.kbz -= Math.cos(ang)*rec;
-    const km=Math.hypot(p.kbx,p.kbz), kc=6.5; if(km>kc){ p.kbx*=kc/km; p.kbz*=kc/km; } }   // cap so rapid-fire recoil can't fling the tank
-  gunMuzzleFX(g, _v.x, _v.y, _v.z, ang, rec);   // Z149 the flash of THIS kind of weapon at the real barrel tip
-  { const pw=Math.min(1.7, (g.dmg*(g.frags||1))/48 + rec*0.14); S.camKick=Math.min(2.4, (S.camKick||0)+pw*(g.fireCd<0.15?0.35:1)); S.kickAng=ang; S.shake=Math.min(3.2, S.shake+pw*(g.fireCd<0.15?0.08:0.45));   // Z168 the weight of the gun in your hands
-    if(rec>=1.4){ const mx=_v.x, my=_v.y, mz=_v.z; for(let i=1;i<=4;i++) setTimeout(()=>spawnPart(mx+(Math.random()-0.5)*0.2, my+0.1, mz+(Math.random()-0.5)*0.2, Math.sin(ang)*0.3, 1.1, Math.cos(ang)*0.3, { color:0xbfb8ac, size:0.38, life:1.3, smoke:true, grav:-0.5, drag:1, grow:1.6, op:0.22 }), 260*i); } }   // the hot barrel smokes after a big shot
-  if(g.flash==='arc' || g.flash==='rail'){ const R=(range||playerRange())+2, list=boss&&boss.alive ? enemies.concat([boss]) : enemies;
-    _mz.set(_v.x,_v.y,_v.z);
-    if(g.flash==='arc'){ strikePoint(list, _v.x, _v.z, ang, R*0.9, 0.1, _tp); lightning(_mz, _tp); }      // the bolt jumps to whatever is near the line of fire
-    else { _tp.set(_v.x+Math.sin(ang)*R, _v.y-0.2, _v.z+Math.cos(ang)*R); railBeam(_mz, _tp); } }      // the slug punches through everything: the beam runs its full reach
-  if(CASING[inst.id]){ const c=CASING[inst.id], rx=Math.cos(p.facing), rz=-Math.sin(p.facing), sc=p.mesh.scale.x, by=heightAt(p.pos.x,p.pos.z)+2.3*sc;   // spent brass ejected from the turret side (Z419 real cases that tumble and bounce, at the hull's real height)
-    for(let k=0;k<c.n;k++) ejectBrass(p.pos.x+rx*1.0*sc, by, p.pos.z+rz*1.0*sc, rx*(3+Math.random()*2)+(Math.random()-0.5), 3+Math.random()*2, rz*(3+Math.random()*2)+(Math.random()-0.5), c.k); }
-  tankRecoil(p.mesh, ang, Math.min(1.25, Math.max(0.14, 0.18 + rec*0.27)), p.facing); // barrel slams back + shivers, hull rocks off the shot (Z125: no rumble on firing — the pad only rumbles for hits, blasts and crashes)
-  S.shake = g.special==='rocket' ? Math.min(5, S.shake + 2.4)                                     // SIEGE launch — a strong recoil quake (landing quakes harder still)
-          : Math.min(1.6, S.shake + Math.min(0.5, 0.04 + rec*0.07));                               // weightier guns shake more per shot
-  sfx(g.special ? 'rocketlaunch' : 'shoot_'+inst.id);   // rocket + howitzer both use the launch thump
-  if(!p.infiniteAmmo && inst.ammo<=0) startReload(now, inst);
-  updateGunHUD();
-}
 export function selectGun(i){ const p=S.player; if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.readyUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }   // keep each gun's own reload running
-// Z129 the DEFAULT gun (PROFILE.defaultGun, picked in the arsenal with the ★): the one you start with, and the one LB+RB together jumps back to
-export function defaultGunIdx(){ const p=S.player; if(!p||!p.guns.length) return 0; const i=p.guns.findIndex(g=>g.id===PROFILE.defaultGun); return i>=0 ? i : 0; }
-export function selectDefaultGun(){ const p=S.player; if(!p||!p.guns.length) return; const i=defaultGunIdx(); if(p.gunIdx!==i) selectGun(i); floatText('SÚNG MẶC ĐỊNH · '+(GUNS[p.guns[i].id]||{name:''}).name, '#ffd24a', p.pos, 15); }
 export function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; selectGun((p.gunIdx+d+p.guns.length)%p.guns.length); }
-export function giveGun(id){
-  const p=S.player, g=GUNS[id]; let inst=p.guns.find(x=>x.id===id);
-  if(inst){ inst.ammo=magCap(g); inst.rU=0; } else { p.guns.push({id, ammo:magCap(g), rU:0, rD:0}); }   // Z129 a gift gun joins the rack — it does NOT take over your hands
-  const fresh = ownGun(id);                                  // remember it in the permanent arsenal (persists across runs)
-  if(fresh){ floatText(g.name+' — MỚI!', '#ffd24a', p.pos, 22); }   // first time ever → brand-new weapon
-  else { addGunXp(id); }                                     // already own it → the duplicate feeds MASTERY (level up the gun)
-  updateGunHUD();
-}

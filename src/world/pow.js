@@ -3,7 +3,7 @@
 //   is taken, pick up a rifle and follow you into the fight.
 import * as THREE from 'three';
 import { POW, TROOPS } from '../../config.js';
-import { FT, MOBILE, RIDER, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, riders, scene, sfx, soldierKneel, spawnAlly, spawnGuards, spawnRider, svgBadgeTex, tip, updateCrewBtn, zonesOf, MODE, addTent } from '../hub.js';
+import { FT, MOBILE, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, scene, sfx, soldierKneel, spawnAlly, spawnGuards, svgBadgeTex, tip, zonesOf, addTent } from '../hub.js';
 
 export const POWS=[];
 let _wireMat=null;
@@ -36,14 +36,13 @@ export function buildPOWs(){ clearPOWs();
     POWS.push(Object.assign(s, { q, x:q.x, z:q.z, state:'held', seenAt:0 })); } }
 export function clearPOWs(){ for(const w of POWS) scene.remove(w.g); POWS.length=0; }
 // free them: seats on the hull first, everyone else becomes a rifleman on foot
-function liberate(w){ w.state='free'; const p=S.player; let boarded=0, onFoot=0;
+function liberate(w){ w.state='free'; let onFoot=0;
   for(const s of w.men){ const wp=s.position; burst({x:wp.x,z:wp.z}, 0x9be04a, 4, 3, {y:heightAt(wp.x,wp.z)+1.2, life:0.5, size:0.4, grav:-6, drag:2, up:3}); w.g.remove(s);
-    if(MODE.riders && riders.length<RIDER.cap && Math.hypot(p.pos.x-wp.x, p.pos.z-wp.z)<POW.freeR+4){ spawnRider(); boarded++; }   // (Z306 a soldier has no hull to seat them on: they fight on foot beside him)
-    else { spawnAlly(wp.x, wp.z, w.gateA); const a=FT[FT.length-1]; a.hp=a.maxHp*0.6; onFoot++; } }
+    spawnAlly(wp.x, wp.z, w.gateA); const a=FT[FT.length-1]; a.hp=a.maxHp*0.6; onFoot++; }
   w.men.length=0; w.badge.material.map=svgBadgeTex('team','#9be04a'); w.badge.material.needsUpdate=true; w.badge.material.opacity=0.6;
   const R=Math.round; addScore(R(POW.score*loopRewardMul()), new THREE.Vector3(w.x,5,w.z)); addCoins(R(POW.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
-  floatText('GIẢI CỨU '+(boarded+onFoot)+' TÙ BINH', '#9be04a', new THREE.Vector3(w.x,6,w.z), 24); sfx('levelup');
-  radio('Tù binh: Cảm ơn chỉ huy! '+(boarded?boarded+' người lên xe':'')+(boarded&&onFoot?', ':'')+(onFoot?onFoot+' người cầm súng theo anh':'')+'!'); updateCrewBtn(); }
+  floatText('GIẢI CỨU '+onFoot+' TÙ BINH', '#9be04a', new THREE.Vector3(w.x,6,w.z), 24); sfx('levelup');
+  radio('Tù binh: Cảm ơn chỉ huy! '+onFoot+' người cầm súng theo anh!'); }
 // an open stockade (guards down) asks a nearby idle soldier to walk in and cut the wire
 export function powJob(a){ let best=null, bd=48; for(const w of POWS){ if(w.state!=='open') continue; const d=Math.hypot(w.gate[0]-a.pos.x, w.gate[1]-a.pos.z); if(d<bd){ bd=d; best={ kind:'free', x:w.x, z:w.z, ref:w }; } } return best; }
 export function updatePOWs(dt, now){ const p=S.player; if(!p) return;

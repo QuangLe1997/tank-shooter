@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CORE_DEF } from '../../config.js';
 import { REALCAMP } from '../../config.js';
-import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, shieldHexTex, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
+import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bakeGroup, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -141,4 +141,15 @@ export function updateCore(dt, now){
   if(c.flash>0){ c.flash-=dt; c.cu.flash.value=Math.max(0, c.flash/0.16)*0.85; }
   if((c.shieldUntil||0)>now){ c.dome.material.opacity=Math.max(0.22, c.dome.material.opacity*0.96)+Math.sin(now*9)*0.04; c.dome.scale.setScalar(c.domeS*1.12); }   // Z223 shield up: the hex dome glows solid
   else { c.dome.scale.setScalar(c.domeS); if(c.hp>0 && c.hp<c.maxHp && now-(c.lastHit||0)>CORE_DEF.regenDelay){ c.hp=Math.min(c.maxHp, c.hp+CORE_DEF.regen*dt); if(Math.random()<dt*2) updateHUD(); } }   // left alone, it mends
+}
+// the hex force-field texture of the Core's shield dome (no-tanks: moved here from tank/shield.js)
+let _shieldTex=null;
+export function shieldHexTex(){
+  if(_shieldTex) return _shieldTex;
+  const S2=256, c=document.createElement('canvas'); c.width=c.height=S2; const x=c.getContext('2d');
+  x.clearRect(0,0,S2,S2); x.strokeStyle='rgba(190,244,255,0.95)'; x.lineWidth=2.4; x.lineJoin='round';
+  const R=30, h=R*Math.sqrt(3)/2;
+  const hex=(cx,cy)=>{ x.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3; const px=cx+Math.cos(a)*R, py=cy+Math.sin(a)*R; i?x.lineTo(px,py):x.moveTo(px,py); } x.closePath(); x.stroke(); };
+  for(let col=-2; col*R*1.5 < S2+R; col++) for(let row=-2; row*h*2 < S2+R; row++){ hex(col*R*1.5, row*h*2 + (col&1?h:0)); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,2); t.colorSpace=THREE.SRGBColorSpace; _shieldTex=t; return t;
 }

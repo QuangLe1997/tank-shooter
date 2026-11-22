@@ -10,7 +10,7 @@
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
 import { SCENERY, UNDERBASE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
+import { ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -186,7 +186,7 @@ function restoreSurface(){ const U=UNDER; U.bmen=enemies.splice(0); for(const e 
   blocks.length=0; for(const b of U.sblocks) blocks.push(b); U.sblocks.length=0; for(const e of U.surf){ e.mesh.visible=true; enemies.push(e); } U.surf.length=0;
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i); }
 function moveAllies(fromX, fromZ, toX, toZ, face){ let k=0; for(const a of FT){ if(a.dead) continue; const r=4+(k%4)*2.2, s=(k%2?1:-1)*(1+(k>>1)); a.pos.set(toX+Math.sin(face)*-r+Math.cos(face)*s, 0, toZ+Math.cos(face)*-r-Math.sin(face)*s); if(a.g) a.g.position.copy(a.pos); a.facing=face; k++; }
-  k=0; for(const t of ALLY_TANKS){ if(t.hp<=0) continue; t.pos.set(toX+Math.sin(face)*-(10+k*6)+(k%2?4:-4), 0, toZ+Math.cos(face)*-(10+k*6)); t.mesh.position.set(t.pos.x, 0, t.pos.z); t.facing=t.aim=face; t.goal=null; t.target=null; k++; } }
+ }
 function placePlayer(x, z, face){ const p=S.player; p.pos.x=x; p.pos.z=z; if(p.vel) p.vel.set(0,0,0); p.facing=face; p.aim=p.aimSmoothed=face; p.mesh.position.set(x, heightAt(x,z), z); p.mesh.rotation.y=face; }
 function underLook(on){ const U=UNDER;
   if(on){ U.wx=S.weather||'clear'; applyWeather('clear'); if(HZN.g) HZN.g.visible=false; SKY.visible=false; scene.background.setHex(0x050506); scene.fog.color.setHex(0x050506); scene.fog.density=0.0055;

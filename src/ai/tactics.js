@@ -1,7 +1,7 @@
 // ai/tactics.js — Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed
 import * as THREE from 'three';
 import { BALANCE, ENV, TACTICS, FORT } from '../../config.js';
-import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, abandonedTick, aimElevation, allyArmourNear, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE, bloodSpurt, playerSeen, RIVER, riverWay, wadeAt } from '../hub.js';
+import { ARC_G, ENEMY_CLASS, ENVMOD, FT, MOBILE, PLAYER_STANDOFF, PROFILE, S, _v, aimElevation, armorOf, autoFire, bigExplode, blocksNear, bullets, cMod, clampField, core, damageCore, damagePlayer, diffDmgMul, diffScale, dropBeam, enemies, enemyFlame, enemyGroundStrike, enemyMuzzleFX, engineerPatient, floatText, fortExitDir, fortWallCross, guardLeash, heightAt, inBlock, killEnemy, loopDmgMul, objMod, radio, removeEnemy, ringPulse, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnPart, supplyRate, supplySpeed, tankEscorted, tankRecoil, truckSalvo, typeMul, updateAtgm, updateCarrierCrew, updateDismount, updateEnemyBar, updateEngineer, updateHeli, updateInfantry, wrapAngle, MODE, bloodSpurt, playerSeen, RIVER, riverWay, wadeAt } from '../hub.js';
 
 // ===== Z95 · TACTICAL DIRECTOR — the enemy fights as a unit: encircle, flank your rear, hold range, use cover, fall back to engineers, press when you bleed =====
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }
@@ -98,7 +98,6 @@ export function updateEnemies(dt, now){
     const e=enemies[i], def=e.def;
     updateEnemyBar(e);                                  // keep the floating HP bar pinned + facing camera every frame
     if(p && !e.seen && !def.inf){ const q=(e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2; if(q<62*62){ e.seen=true; announceEnemy(e.type); } }   // Z158 first sighting of each class: the radio names it
-    if(e.abandoned){ abandonedTick(e, dt, now); continue; }   // Z116 crew gone: it just sits there, smoking, waiting to be taken
     // ON FIRE (flamethrower DoT) — burns down HP over time; the fire grows; the tank keeps fighting while ablaze
     if(e.burn){ const F=BALANCE.flame;
       if(now >= e.burn.until) e.burn=null;
@@ -143,7 +142,6 @@ export function updateEnemies(dt, now){
     let target = targetPlayer ? p.pos : core.pos;
     if(targetPlayer){ if(playerSeen(e.pos.x, heightAt(e.pos.x,e.pos.z)+2.6, e.pos.z)) (e.lk||(e.lk=new THREE.Vector3())).copy(p.pos);   // Z377 a soldier lying flat out of the crew's sight: they make for where they last saw him and hold fire
       else { targetPlayer=false; target = e.lk || (core ? core.pos : (e.lk=e.pos.clone())); } }
-    { const at=allyArmourNear(e.pos.x, e.pos.z, Math.min(30, dpl*0.7)); if(at){ target=at.pos; targetPlayer=false; } }   // Z104 a captured tank of ours closer than you draws their fire
     if(!targetPlayer && soldiers.length){                         // guards draw fire — engage the nearest soldier in the way
       let bs=null, bd=36*36; for(const s of soldiers){ const dx=s.pos.x-e.pos.x, dz=s.pos.z-e.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; bs=s; } }
       if(bs) target = bs.pos;

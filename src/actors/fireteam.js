@@ -1,34 +1,16 @@
-// actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
+// actors/fireteam.js — Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the soldier's combat zone
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY, FIELDCRAFT, REAL } from '../../config.js';
-import { ARENA, CAMPS, FTSQ, HELI_DOWN, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, paintVehicle, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, MODE, gunFlash } from '../hub.js';
+import { CAMPS, FTSQ, HELI_DOWN, MOBILE, S, UGRID, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, solidTank, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, unitsNear, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
-export const FT=[]; export let FT_APC=null;
+export const FT=[]; 
 export function callFireteam(now){
   const F=TROOPS.fireteam, p=S.player, want=Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)), need=want-FT.length;
   if(need<=0){ for(const a of FT) a.hp=a.maxHp; floatText('TỔ BỘ BINH ĐÃ TIẾP TẾ','#9bd14a',p.pos,16); return; }
-  if(FT_APC) { FT_APC.load+=need; return; }
-  const m=buildTank(PLAYER_PAL); m.userData.friendly=true; m.userData.palOverride={hull:0x5e7a2e,turret:0x6a8434,barrel:0x8aa048,tread:0x2a3514,accent:0xe7b54a};
-  decorateEnemyMesh(m,'carrier'); paintVehicle(m, 'f'); for(let i=0;i<3;i++){ const c=m.getObjectByName('crew'+i); if(c) c.visible=true; }
-  m.scale.setScalar(1.34*TANK_SCALE); scene.add(m);
-  const [ex,ez]=fieldEdgePoint(Math.PI/2+(Math.random()-0.5)*0.5, 3);                                   // rolls in from our side of the field (Z106 at the fence)
-  FT_APC={ mesh:m, pos:new THREE.Vector3(ex,0,ez), vel:new THREE.Vector3(), facing:Math.PI, load:need, state:'in', t:0, dropped:0 };
-  radio('SCH: Tổ bộ binh đang tới — xe bọc thép ta ngay sau lưng anh.'); sfx('beep');
-}
-export function updateFireteamAPC(dt, now){
-  const A=FT_APC; if(!A) return; const p=S.player, m=A.mesh, rmp=m.getObjectByName('ramp'); A.t+=dt;
-  let tx, tz, spd=14;
-  if(A.state==='in'){ tx=p.pos.x-Math.sin(p.facing)*7; tz=p.pos.z-Math.cos(p.facing)*7; if(Math.hypot(tx-A.pos.x,tz-A.pos.z)<4 || A.t>9){ A.state='drop'; A.t=0; } }
-  else if(A.state==='drop'){ tx=A.pos.x; tz=A.pos.z; spd=0; if(rmp) rmp.rotation.x=Math.min(1.25, A.t*2.6);
-    while(A.t>0.5 && A.dropped<A.load && A.t > 0.5+A.dropped*0.32){ const bx=A.pos.x-Math.sin(A.facing)*3.6, bz=A.pos.z-Math.cos(A.facing)*3.6; spawnAlly(bx,bz, A.facing+Math.PI+(A.dropped%2?0.7:-0.7)); A.dropped++; }
-    if(A.dropped>=A.load && A.t>0.5+A.load*0.32+0.5){ A.state='out'; A.t=0; } }
-  else { tx=A.pos.x; tz=ARENA+14; if(rmp) rmp.rotation.x=Math.max(0, rmp.rotation.x-dt*2); if(A.pos.z>ARENA+8){ scene.remove(m); FT_APC=null; return; } }
-  const dx=tx-A.pos.x, dz=tz-A.pos.z, d=Math.hypot(dx,dz)||1, want=(d>1?spd:0)*wadeAt(A.pos.x, A.pos.z), rw=d>4 ? riverWay(A, tx, tz, now) : null, ux=rw ? rw.x : dx/d, uz=rw ? rw.z : dz/d;   // Z417 round the deep river by a bridge or a ford, slowed in the water
-  A.vel.x+=(ux*want-A.vel.x)*Math.min(1,dt*2); A.vel.z+=(uz*want-A.vel.z)*Math.min(1,dt*2); A.pos.addScaledVector(A.vel, dt);
-  if(A.state!=='out'){ clampField(A.pos, 4); }
-  const sp=Math.hypot(A.vel.x,A.vel.z); if(sp>1){ A.facing+=wrapAngle(Math.atan2(A.vel.x,A.vel.z)-A.facing)*Math.min(1,dt*3); }
-  m.position.set(A.pos.x,0,A.pos.z); m.rotation.y=A.facing; animateTank(m, A.pos.x, A.pos.z, A.facing, dt);
+  const [ex,ez]=fieldEdgePoint(Math.PI/2+(Math.random()-0.5)*0.5, 3);                                   // (no-tanks: no APC) they run in from our side of the field (Z106 at the fence)
+  for(let i=0;i<need;i++) spawnAlly(ex+(Math.random()-0.5)*7, ez+(Math.random()-0.5)*4, Math.PI);
+  radio('SCH: Tổ bộ binh đang chạy tới từ phía sau anh.'); sfx('beep');
 }
 export let _mixI=0;
 export function spawnAlly(x, z, dirA, role){ const F=TROOPS.fireteam, g=makeSoldierMesh(); g.scale.setScalar(TROOPS.look.scale); scene.add(g); const bar=makeSoldierBar(); bar.g.scale.setScalar(0.7); scene.add(bar.g);
@@ -44,13 +26,13 @@ export function damageAlly(a, dmg){ if(a.dead) return; a.hp-=dmg; if(a.hp<=0) dr
     if(dmg>=100) burst(a.pos, 0x2c331c, 6, 5, {y:0.9, life:0.7, size:1.1, smoke:true, op:0.45});   // Z312 a heavy round knocks him down in a cloud of dust — whole, never torn into pieces
     { let ux=0, uz=0, bd=40*40; for(const e of enemies){ const dx=a.pos.x-e.pos.x, dz=a.pos.z-e.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; ux=dx; uz=dz; } }   // Z402 thrown away from the nearest enemy (the one who shot him) and gone in a burst
       const L=Math.hypot(ux,uz); if(L<0.05){ const r=Math.random()*6.283; ux=Math.cos(r); uz=Math.sin(r); } else { ux/=L; uz/=L; } ALLY_DEAD.push({ g:a.g, t:0, ...flingDead(a.g, ux, uz, dmg>=100?1.3:1, dmg>=100) }); }                                                         // Z113 shot: he falls and lies there a while
-    FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); } }
+    FT.forEach((o,j)=>o.slot=j); } }
 export const ALLY_DEAD=[];
 export function updateAllyDead(dt){ for(let i=ALLY_DEAD.length-1;i>=0;i--){ const d=ALLY_DEAD[i], m=d.g; d.t+=dt;
   if(stepFlung(d, m, dt)){ scene.remove(m); if(m.userData.droppedGun) scene.remove(m.userData.droppedGun); ALLY_DEAD.splice(i,1); } } }   // Z402 thrown, lands, bursts, gone
 // Z104 an enemy blast (mortar, RPG, artillery, bomb) among OUR men on foot: inside the core = killed, the ring = wounded
 export function blastAllies(x, z, r, dmg){ const now=performance.now()/1000; for(const a of FT.slice()){ const d=Math.hypot(a.pos.x-x, a.pos.z-z), k=infBlastK(d, r); if(k>0) damageAlly(a, k>=1 ? 999 : dmg*k); if(!a.dead && d<r*REAL.concuss.reach) concuss(a, x, z, now); } }   // Z223 survivors thrown flat
-export function clearFireteam(){ clearLadders(); for(const d of ALLY_DEAD){ scene.remove(d.g); if(d.g.userData.droppedGun) scene.remove(d.g.userData.droppedGun); } ALLY_DEAD.length=0; S.recall=false; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; if(FT_APC){ scene.remove(FT_APC.mesh); FT_APC=null; } updateCrewBtn(); }
+export function clearFireteam(){ clearLadders(); for(const d of ALLY_DEAD){ scene.remove(d.g); if(d.g.userData.droppedGun) scene.remove(d.g.userData.droppedGun); } ALLY_DEAD.length=0; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; }
 const _ftTk=[];
 export function infPushBlocks(pos){ for(const bl of blocksAt(pos.x, pos.z)){ if(bl.obb){ const s_=Math.sin(bl.obb.f), c_=Math.cos(bl.obb.f), dx_=pos.x-bl.x, dz_=pos.z-bl.z, al=dx_*s_+dz_*c_, ac=dx_*c_-dz_*s_, hw=bl.obb.hw+0.4; if(Math.abs(al)<bl.obb.hl+0.3 && Math.abs(ac)<hw){ const push=(ac<0?-hw:hw)-ac; pos.x+=c_*push; pos.z-=s_*push; } continue; }
   const bx=pos.x-bl.x, bz=pos.z-bl.z, q=bx*bx+bz*bz, rr=bl.r+0.45; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); pos.x=bl.x+bx/qq*rr; pos.z=bl.z+bz/qq*rr; } } }
@@ -61,21 +43,17 @@ export function infPushBlocks(pos){ for(const bl of blocksAt(pos.x, pos.z)){ if(
 //   JOBS (capture an open depot, free an open POW stockade) → ADVANCE on the nearest enemy → REGROUP around the tank.
 export function recallRange(){ return Math.max(TROOPS.fireteam.zoneMin, playerRange()); }   // the visible range ring
 function nearestEnemyTank(a, R){ let best=null, bd=R*R; for(const e of enemies){ if(!solidTank(e) || e.abandoned) continue; const q=(e.pos.x-a.pos.x)**2+(e.pos.z-a.pos.z)**2; if(q<bd){ bd=q; best=e; } }
-  if(boss&&boss.alive){ const q=(boss.pos.x-a.pos.x)**2+(boss.pos.z-a.pos.z)**2; if(q<bd){ best=boss; } } return best; }
+ return best; }
 function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
   for(const e of enemies){ if(e.dead) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z);
     if(e.def.inf){ if(d<bs){ bs=d; best={ kind:'inf', ref:e, pos:e.pos }; } }
     else if(a.at && !e.def.air && d*0.8<bs && d<SQUAD.at.range){ bs=d*0.8; best={ kind:'tank', ref:e, pos:e.pos }; } }
-  if(a.at && boss && boss.alive){ const d=Math.hypot(boss.pos.x-a.pos.x, boss.pos.z-a.pos.z); if(d*0.8<bs && d<SQUAD.at.range){ bs=d*0.8; best={ kind:'tank', ref:boss, pos:boss.pos }; } }
   if(a.at) for(const t of towers){ if(t.falling || (t.block && !blocks.includes(t.block))) continue; let live=0; for(const gd of t.guards) if(gd.alive) live++; if(!live) continue;   // Z175 a man with a launcher puts a rocket into a manned tower
     const d=Math.hypot(t.x-a.pos.x, t.z-a.pos.z), w=d*(1.1-0.12*Math.min(4,live)); if(d>5 && d<SQUAD.at.range+6 && w<bs){ bs=w; best={ kind:'towerAT', ref:t, pos:{ x:t.x, z:t.z } }; } }
   for(const G of liveGuards()){ const d=Math.hypot(G.gd.wx-a.pos.x, G.gd.wz-a.pos.z); if(d*0.9<bs && d<F.range+6){ bs=d*0.9; best={ kind:'guard', ref:G, pos:{ x:G.gd.wx, z:G.gd.wz } }; } }   // Z200 a man up on a platform is shot down first (he sees the whole field)
   if(a.role!=='mortar') for(const e of enemies){ if(!e.def.air || e.dead || HELI_DOWN.some(h=>h.e===e)) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z), rng=a.at?SQUAD.at.range+SQUAD.ai.airRng+4:(a.role==='mg'?SQUAD.mg.range:F.range)+SQUAD.ai.airRng;   // Z200 helicopters: everyone with a gun that reaches
     if(d<rng && d*SQUAD.ai.airPri<bs){ bs=d*SQUAD.ai.airPri; best={ kind:'air', ref:e, pos:e.pos }; } }
   { const fo=FTSQ.focus; if(fo && enemies.includes(fo) && (!best || best.kind==='inf') && !(fo.def.air && a.role==='mortar')){ const d=Math.hypot(fo.pos.x-a.pos.x, fo.pos.z-a.pos.z); if(d<F.detect && d<bs+12) best={ kind:'inf', ref:fo, pos:fo.pos }; } }   // Z173 the squad's focus target (RPG men, their leader) first
-  if(boss && boss.alive && boss.shielded){ const at=!!a.at;                                       // Z134 the general is immune while its shield pylons stand: the squad helps raze them
-    if(at && best && best.ref===boss) best=null, bs=F.detect;                                     // (AT men stop wasting rockets on the shielded hull)
-    for(const py of PYLONS){ if(!blocks.includes(py)) continue; const d=Math.hypot(py.x-a.pos.x, py.z-a.pos.z); if(d*(at?0.7:1.3)<bs && d<(at?SQUAD.at.range:F.range)){ bs=d*(at?0.7:1.3); best={ kind:at?'tank':'pylon', ref:py, pos:{ x:py.x, z:py.z } }; } } }
   return best; }
 function nearestFreePickup(a){ let best=null, bd=SQUAD.lootDetect**2;
   for(const u of pickups){ if(!u.landed || u.stash || (u.claim && u.claim!==a && FT.includes(u.claim))) continue; const q=(u.x-a.pos.x)**2+(u.z-a.pos.z)**2; if(q<bd){ bd=q; best=u; } }
@@ -150,7 +128,6 @@ function mortarTarget(a){ const M=SQUAD.mortar; let best=null, bs=-1;
     const s=score(e.pos.x,e.pos.z,w); if(s>bs){ bs=s; best={ kind:'shell', pos:e.pos, ref:e }; } }
   for(const t of towers){ if(t.falling) continue; const s=score(t.x,t.z,1.4); if(s>bs){ bs=s; best={ kind:'shell', pos:{x:t.x,z:t.z}, ref:t }; } }
   for(const c of CAMPS){ if(!c.alive) continue; const s=score(c.x,c.z,1.5); if(s>bs){ bs=s; best={ kind:'shell', pos:{x:c.x,z:c.z}, ref:c }; } }
-  if(boss && boss.alive && boss.shielded) for(const py of PYLONS){ if(!blocks.includes(py)) continue; const s=score(py.x,py.z,2.2); if(s>bs){ bs=s; best={ kind:'shell', pos:{x:py.x,z:py.z}, ref:py }; } }   // Z134 shells walk onto the shield pylons
   return best; }
 // sapper: pick the nearest standing watchtower / camp hut, run to its foot, plant, get clear — the charge brings it down
 function demolitionJob(a, now){ const SP=SQUAD.sapper;
@@ -158,7 +135,6 @@ function demolitionJob(a, now){ const SP=SQUAD.sapper;
   let best=null, bd=SP.reach;
   for(const t of towers){ if(t.falling || !t.block || t.claimed && t.claimed!==a && FT.includes(t.claimed)) continue; const d=Math.hypot(t.x-a.pos.x, t.z-a.pos.z); if(d<bd){ bd=d; best={ x:t.x, z:t.z, block:t.block, ref:t }; } }
   for(const c of CAMPS){ if(!c.alive || !c.block || c.claimed && c.claimed!==a && FT.includes(c.claimed)) continue; const d=Math.hypot(c.x-a.pos.x, c.z-a.pos.z); if(d<bd){ bd=d; best={ x:c.x, z:c.z, block:c.block, ref:c }; } }
-  if(boss && boss.alive && boss.shielded) for(const py of PYLONS){ if(!blocks.includes(py) || py.claimed && py.claimed!==a && FT.includes(py.claimed)) continue; const d=Math.hypot(py.x-a.pos.x, py.z-a.pos.z); if(d<bd){ bd=d; best={ x:py.x, z:py.z, block:py, ref:py }; } }   // Z134 sappers charge the shield pylons too
   if(!best) return false; best.ref.claimed=a; const ux=a.pos.x-best.x, uz=a.pos.z-best.z, L=Math.hypot(ux,uz)||1, off=(best.block.r||2)+0.9;
   a.demo={ state:'go', ...best, spot:[best.x+ux/L*off, best.z+uz/L*off] }; a.task='demolish'; a.goal=a.demo.spot; a.goalKind='demolish'; tip('sapper'); return true; }
 export const CHARGES=[], ALLY_SHELLS=[], TOWER_RPG=[];
@@ -231,30 +207,19 @@ function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return fa
     if(Math.random()<SQUAD.guardHit) shootGuard(G.t, G.gd, a.pos.x, a.pos.z); }
   else { const tr=tracerNext(a.g); spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*(mg?SQUAD.mg.spread:0.06)*smokeSpreadK(a.pos.x, a.pos.z, T.pos.x, T.pos.z),{owner:'p', inf:true, dmg:(mg?SQUAD.mg.dmg:F.dmg)*(1+(S.stage-1)*0.12)*(a.armed?SQUAD.armedMul:1)*(a.dmgK||1), speed:mg?90:80, color:tr?REAL.tracer.ally:0xe8ef86, r:tr?0.3:(mg?0.2:0.24), trailK:tr?2.4:1, tr:tr?1:0, life:1.4, maxDist:(mg?SQUAD.mg.range:F.range)+2, noArc:true, y:_sV.y}); rifleFX(_sV.x, _sV.y, _sV.z, ang, mg); }   // Z223 red-orange tracer every Nth round · brass + muzzle smoke
   gunFlash(_sV.x,_sV.y,_sV.z, ang, mg?0.8:0.6, mg?0.42:0.34, 0xfff0c0, 0.9); sfx('rifleShot', a.pos); return true; }   // Z419 a shaped rifle flash along the bore
-// recall: board the hull (or gather beside it when every seat is taken). true = handled this frame
-function allyMount(a, dt, now){ const F=TROOPS.fireteam, p=S.player, dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, d=Math.hypot(dx,dz)||1, ox=a.pos.x, oz=a.pos.z;
-  if(MODE.riders && d < p.radius+2.4 && riders.length<RIDER.cap){ dropCarry(a, true); const i=FT.indexOf(a); FT.splice(i,1); scene.remove(a.g); scene.remove(a.bar); spawnRider(); const r=riders[riders.length-1]; r.hp=Math.max(6, a.hp/a.maxHp*r.maxHp);
-    S.recallIn=(S.recallIn||0)+1; floatText('LÊN XE '+S.recallIn, '#9bd14a', p.pos, 14); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); return true; }
-  const stand = riders.length>=RIDER.cap ? p.radius+3.5 : 0;                                                      // seats full → crowd round the hull
-  if(d>stand){ const rw=d>4 ? riverWay(a, p.pos.x, p.pos.z, now) : null, ux=rw ? rw.x : dx/d, uz=rw ? rw.z : dz/d, sp=F.sprint*wadeAt(a.pos.x, a.pos.z);   // Z417 called back across the river: by a bridge or a ford
-    a.pos.x+=ux*sp*dt; a.pos.z+=uz*sp*dt; infPushBlocks(a.pos); a.facing=Math.atan2(ux,uz); }
-  allyPose(a, Math.hypot(a.pos.x-ox,a.pos.z-oz), dt, false); poseSoldier(a.g, 'stand', dt); return true; }
 function allyPose(a, moved, dt, fired){ a.g.position.set(a.pos.x, heightAt(a.pos.x,a.pos.z)+(a.jy0||0), a.pos.z); a.g.rotation.y=a.facing; animateSoldier(a.g, moved/1.15, dt, fired);
   a.bar.position.set(a.pos.x, TROOPS.look.barY*stanceBarK(a.g)+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); }
 // loot on a soldier's back (a tiny copy of the item) — handed in at the rally point, or dropped where he falls
 function takeCarry(a, u){ const it=takePickup(u); if(!it) return; a.carry=it; const m=lootModel(it.def); m.scale.setScalar(0.32); m.position.set(0,1.32,-0.34); a.g.add(m); a.carryMesh=m;
   floatText('NHẶT ĐỒ → KHU TẬP KẾT', '#9be04a', {x:a.pos.x, y:heightAt(a.pos.x,a.pos.z)+3, z:a.pos.z}, 13); }
-export function dropCarry(a, toTank){ if(!a.carry) return; if(a.carryMesh) a.g.remove(a.carryMesh); a.carryMesh=null; const it=a.carry; a.carry=null;
-  if(toTank){ applyPowerup(it.def); sfx('powerup'); } else dropPowerup({x:a.pos.x, z:a.pos.z}, it.tier, it.def); }
+export function dropCarry(a){ if(!a.carry) return; if(a.carryMesh) a.g.remove(a.carryMesh); a.carryMesh=null; const it=a.carry; a.carry=null;
+  dropPowerup({x:a.pos.x, z:a.pos.z}, it.tier, it.def); }
 export function updateFireteam(dt, now){
-  updateFireteamAPC(dt, now); updateCharges(dt, now); updateShells(dt, now); if(!FT.length) return;
+  updateCharges(dt, now); updateShells(dt, now); if(!FT.length) return;
   const F=TROOPS.fireteam, p=S.player, rr=recallRange();
-  if(S.recall){ rangeRing.material.opacity = 0.3+0.15*Math.sin(now*10); }                            // recall in progress: the ring pulses
   updateLadders(); squadPosture(now);   // Z200
   for(const a of FT.slice()){
     if(a.climb){ updateClimb(a, dt); if(a.climb) continue; }                                       // Z145 on a scaling ladder
-    if(S.recall){ if(!a.answering && Math.hypot(a.pos.x-p.pos.x, a.pos.z-p.pos.z) <= rr) a.answering=true; } else a.answering=false;   // only men inside the ring answer
-    a.mounting=a.answering; if(a.answering && allyMount(a, dt, now)) continue;
     if(now>=(a.thinkAt||0)) allyThink(a, now);
     if(a.demo) updateDemolition(a, dt, now);
     const ox=a.pos.x, oz=a.pos.z; let mx=0, mz=0, md=0;

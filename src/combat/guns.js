@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, GIFT, LOOT } from '../../config.js';
-import { BIOME, GUNS, S, TANK_SCALE, WAVE, boss, brakeBlast, enemies, floatText, gunFlash, gunLight, gunMagMul, gunReloadMul, gunRngMul, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { BIOME, GUNS, S, TANK_SCALE, WAVE, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
@@ -18,10 +18,10 @@ export function conditionsText(){ const c=[];
   return c.join('  ·  '); }
 export function envDmg(type){ return type==='FIRE'?ENVMOD.fire : type==='CRYO'?ENVMOD.cryo : type==='HE'?ENVMOD.he : 1; }
 export function typeMul(type, armor){ const m=type&&DMG_TYPE[type]; return m ? (m[armor]||1) : 1; }
-export function armorOf(e){ return e===boss ? 'H' : (ARMOR[e.type]||'M'); }
+export function armorOf(e){ return ARMOR[e.type]||'M'; }
 export function siegeMul(){ const p=S.player; return p && p.buffUntil && performance.now()/1000 < (p.buffUntil.siege||0) ? LOOT.siege.mul : 1; }   // Z111b ĐẠN PHÁ THÀNH buff
 export function structMul(type, bl){ const m=type&&DMG_TYPE[type]; if(!m) return 1; if(bl.kind==='gate'||bl.kind==='fortwall') return Math.max(FORT.shotStructMin, m.struct); return (bl.kind==='tower' && m.tower) ? m.tower : m.struct; }   // Z111 fortress gate / wall: no gun is weak against it
-export function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1)*gunRngMul(id); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r*weatherRange(); }   // Z115 + NÒNG parts
+export function gunReach(id){ const g=GUNS[id]||GUNS.rifle; let r=(g.rng||1); if(ENVMOD.night && !ENV.night.exempt.includes(id)) r*=ENV.night.range; if(ENV.open.guns.includes(id)) r*=ENVMOD.longRange; return r*weatherRange(); }   // Z115 + NÒNG parts
 export function bulletFalloff(b){ if(!b.reach || b.fall>=1) return 1; const d=Math.hypot(b.x-b.ox, b.z-b.oz), f=Math.max(0, Math.min(1, (d/b.reach-0.55)/0.45)); return 1 - f*(1-b.fall); }
 export let _effT=0;
 export function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<1100) return; if(mul>=1.3){ _effT=n; floatText('HIỆU QUẢ ×'+mul.toFixed(1), '#ffb84a', new THREE.Vector3(pos.x,3.2,pos.z), 14); } else if(mul<=0.6){ _effT=n; floatText('YẾU TRƯỚC GIÁP', '#9aa3ad', new THREE.Vector3(pos.x,3.2,pos.z), 13); } }
@@ -30,7 +30,7 @@ export function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<
 // and favour guns you don't carry yet (duplicates still level MASTERY). Keeps gifts relevant instead of random noise.
 export function smartGunPick(){
   const pool=gunDropPool(S.stage), cnt={L:0,M:0,H:0,A:0}; let tot=0;
-  for(const e of enemies){ cnt[armorOf(e)]++; tot++; } for(const t of (WAVE.spawnQueue||[])){ cnt[t==='squad'?'L':(ARMOR[t]||'M')]++; tot++; } if(boss&&boss.alive){ cnt.H+=4; tot+=4; }
+  for(const e of enemies){ cnt[armorOf(e)]++; tot++; } for(const t of (WAVE.spawnQueue||[])){ cnt[t==='squad'?'L':(ARMOR[t]||'M')]++; tot++; }
   const held=new Set((S.player?S.player.guns:[]).map(g=>g.id));
   const w=pool.map(id=>{ const m=DMG_TYPE[GUNS[id].type]||{L:1,M:1,H:1}; let x=1;
     if(tot) for(const c of ['L','M','H','A']) x += GIFT.counterW * (cnt[c]/tot) * Math.max(0, m[c]-1) * 2;
@@ -59,8 +59,8 @@ export function muzzleFlash(x,z,ang,color,rec,y){   // Z419 a SHAPED flash along
 export const CASING = { hesh:{n:1,s:0.4,k:'shell'}, rifle:{n:1,s:0.22,k:'auto'}, smg:{n:2,s:0.12,k:'mg'}, minigun:{n:2,s:0.14,k:'mg'}, flak:{n:2,s:0.2,k:'auto'}, cannon:{n:1,s:0.36,k:'shell'}, shotgun:{n:1,s:0.3,k:'shell'} };   // Z419 k = the case drawn (GUNFX.case)
 export function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 const _GID=new Map(); export function gunIdOf(g){ if(!_GID.size) for(const k in GUNS) _GID.set(GUNS[k],k); return _GID.get(g); }
-export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1) * (id?gunMagMul(id):1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
-export function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1)*gunReloadMul(inst.id); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }   // MASTERY: higher level reloads faster
+export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
+export function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const r=GUNS[inst.id].reload*(p.reloadMul||1); inst.rD=r; inst.rU=now+r; if(inst===p.guns[p.gunIdx]){ sfx('reload'); updateGunHUD(); } }   // MASTERY: higher level reloads faster
 // ----- reload countdown dial: a glowing circular chart billboarded above the tank, flashes ✓ when ready -----
 export const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=reloadCanvas.height=160;
 export const reloadCtx=reloadCanvas.getContext('2d');
@@ -99,6 +99,5 @@ export function updateReload(now){
 export function nearestTarget(maxR){
   const p=S.player; let best=null, bd=maxR*maxR;
   for(const e of enemies){ if(e.abandoned) continue; const dx=e.pos.x-p.pos.x, dz=e.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd && !tentHidesFromPlayer(e)){ bd=d2; best=e; } }   // Z402 not one hidden behind a tent
-  if(boss&&boss.alive){ const dx=boss.pos.x-p.pos.x, dz=boss.pos.z-p.pos.z, d2=dx*dx+dz*dz; if(d2<bd){ bd=d2; best=boss; } }
   return best;
 }

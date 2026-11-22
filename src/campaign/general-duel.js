@@ -1,5 +1,5 @@
-// campaign/general-duel.js — Z353 THE GENERAL ON FOOT (soldier mode only): a soldier who wrecks the general's machine has not won yet — the general jumps out
-//   of the burning hull with his bodyguards and fights on foot. The duel decides the stage (killBoss hands its stage-won half over and gets it back when he
+// campaign/general-duel.js — Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the field with his
+//   bodyguards when the soldier comes for him. The duel decides the stage (campaign/boss.js startBoss hands over the stage-won half and gets it back when he
 //   falls). He is a man, but a big one: a gold star over his head, a red ring pulsing under him, his name on the boss bar. He keeps his distance and his cover
 //   like any rifleman (actors/infantry.js), with a heavy rifle, and two moves of his own, both warned: a FAN of rounds across you (a red glint and a "!" first)
 //   and a CLUTCH OF GRENADES round where you stand (a shout of "LỰU ĐẠN!" and the bombs in the air — Z403 no red rings). No single hit takes more than a slice of his health. At half
@@ -7,8 +7,7 @@
 //   on the field and a medal, and the stage is won.
 import * as THREE from 'three';
 import { TROOPER } from '../../config.js';
-import { MODE, S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, gainXp, makeArtLock, radio, ringPulse, sfx, showBanner,
-  spawnBullet, spawnEnemy, spawnPart, svgBadgeTex, tickArtLock } from '../hub.js';
+import { S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, makeArtLock, radio, ringPulse, sfx, showBanner, spawnBullet, spawnEnemy, spawnPart, svgBadgeTex, tickArtLock } from '../hub.js';
 
 const G = { on:false, e:null, name:'', guards:[], called:false, rage:false, fanAt:0, fanT:0, nadeAt:0, ringAt:0, zones:[], finish:null, at:null, pending:0, barK:'' };
 const C = () => TROOPER.general;
@@ -16,12 +15,12 @@ const NOW = () => performance.now() / 1000;
 const _m = new THREE.Vector3();
 export function duelOn(){ return G.on; }
 export function duelReset(){ for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0; G.on = false; G.e = null; G.guards = []; G.finish = null; G.pending = 0; bar(false); }
-// killBoss (soldier mode): his machine is burning, he jumps out of it. finish(now) = killBoss's stage-won half, played when he falls
-export function generalBail(pos, def, finish){ if(MODE.id !== 'soldier' || !S.player) return false; duelReset();
-  Object.assign(G, { on:true, finish, name:(def && def.name) || 'TƯỚNG ĐỊCH', at:{ x:pos.x, z:pos.z }, pending:NOW() + 1.4, called:false, rage:false, guards:[] });
-  gainXp(TROOPER.xp.kill.boss, pos);
-  showBanner('XE TƯỚNG BỐC CHÁY — HẮN ĐÃ NHẢY RA!', '#ff9a4a');
-  radio('SCH: Xe của ' + G.name + ' nổ tung — hắn nhảy ra rồi! Hạ hắn đi, đừng để hắn thoát!'); return true; }
+// startBoss: the general takes the field at pos. finish(now) = the stage-won half, played when he falls
+export function generalStart(pos, def, finish){ if(!S.player) return false; duelReset();
+  Object.assign(G, { on:true, finish, id:(def && def.id) || '', name:(def && def.name) || 'TƯỚNG ĐỊCH', at:{ x:pos.x, z:pos.z }, pending:NOW() + 1.4, called:false, rage:false, guards:[] });
+  showBanner(G.name + ' RA TRẬN!', '#ff9a4a'); sfx('alarm');
+  radio('SCH: ' + G.name + ' cùng cận vệ đã ra khỏi hầm chỉ huy! Hạ hắn đi, đừng để hắn thoát!'); return true; }
+export function duelId(){ return G.on ? G.id : ''; }   // (the music's general theme)
 function spawnGeneral(){ const c = C(), p = S.player, ax = G.at.x, az = G.at.z, a = Math.atan2(p.pos.x - ax, p.pos.z - az) + (Math.random() - 0.5) * 1.4;
   const [x, z] = clampFieldXZ(ax + Math.sin(a) * 4.5, az + Math.cos(a) * 4.5, 4), e = spawnEnemy('rifle', x, z);
   e.general = true; e.loot = false; e.def = { ...e.def, dmg:c.dmg, fireCd:c.fireCd, range:c.range, keep:c.keep, speed:c.speed, score:3000 };
@@ -39,7 +38,7 @@ function hud(e){ const hp = document.getElementById('boss-hp'); if(hp) hp.style.
   const live = G.guards.filter(g => enemies.includes(g)).length, k = (G.rage ? 'r' : '') + live, st = document.getElementById('boss-st');
   if(st && G.barK !== k){ G.barK = k; st.textContent = ''; const b = document.createElement('b'); b.className = G.rage ? 'vu' : 'sh'; b.textContent = G.rage ? 'LIỀU MẠNG!' : 'CẬN VỆ · ' + live; st.appendChild(b); } }
 // once a frame in battle
-export function updateGeneralDuel(dt){ if(!G.on || MODE.id !== 'soldier') return; const t = NOW(), p = S.player; if(!p) return;
+export function updateGeneralDuel(dt){ if(!G.on) return; const t = NOW(), p = S.player; if(!p) return;
   if(G.pending){ if(t < G.pending) return; G.pending = 0; spawnGeneral(); return; }
   tickZones(dt, t); const e = G.e; if(!e) return;
   if(!enemies.includes(e)){ fallen(e); return; }

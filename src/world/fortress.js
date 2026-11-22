@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch , hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
+import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, ownGun, propTex, radio, rallyFlagTex, refreshWallet, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -378,7 +378,7 @@ export function breachFort(f, now, viaWall){ if(f.breached) return; f.breached=t
   showBanner((viaWall?'TƯỜNG ':'CỔNG ')+f.name+(viaWall?' ĐÃ SẬP':' ĐÃ VỠ')+' — XUNG PHONG!', '#ff8a3a'); radio(f.chief+': "Toàn quân! Địch đã vào thành! Xông lên, giết sạch chúng!"', 'f_rally_1');   // Z167 the commander's megaphone + his men's war cry
   wakeFort(f, now);
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);                                     // the garrison pours out — through the gate / the breach, not through the stone
-  if(f.tier===3 && !boss){ startBoss(now); if(boss){ boss.pos.set(f.x, 0, f.z); boss.mesh.position.set(f.x,0,f.z); boss.fort=f; } } }   // the citadel's commander IS the stage boss
+  if(f.tier===3 && !f.duel){ f.duel=true; startBoss(now, f); } }   // the citadel's commander IS the stage boss: the general takes the field (campaign/boss.js)
 // ================= Z111b WALLS, GATE, SORTIES =================
 // --- line of fire: does the segment cross a standing wall section or the shut gate? (stone stops direct fire both ways) ---
 function _segT(ax,az,bx,bz,cx,cz,dx,dz){ const rx=bx-ax, rz=bz-az, sx=dx-cx, sz=dz-cz, den=rx*sz-rz*sx; if(Math.abs(den)<1e-9) return -1;
@@ -439,9 +439,8 @@ function updateGate(f, dt, now){ if(!f.leaves || f.breached) return;
     if(shut){ if(i<0) blocks.push(f.gate); sfx('clang'); } else if(i>=0) blocks.splice(i,1);
     if(!shut && Math.hypot(S.player.pos.x-f.x, S.player.pos.z-f.z) < f.R+70) floatText('CỔNG '+f.name+' MỞ', '#ff8a6a', new THREE.Vector3(f.gx, f.gy+FORT.wallH+5, f.gz), 15); } }
 // --- posture: our strength near the walls vs the garrison → HOLD (shut the gate) or SALLY (open up and hit us) ---
-function strength(f){ const P=FORT.posture, p=S.player, near=f.R+P.near; let ours=P.tank*Math.max(0.15, p.hp/p.maxHp)+riders.length*P.inf;
+function strength(f){ const P=FORT.posture, p=S.player, near=f.R+P.near; let ours=P.tank*Math.max(0.15, p.hp/p.maxHp);
   for(const a of FT) if(Math.hypot(a.pos.x-f.x, a.pos.z-f.z) < near) ours+=P.inf;
-  for(const t of ALLY_TANKS) if(Math.hypot(t.pos.x-f.x, t.pos.z-f.z) < near) ours+=P.allyTank;
   let theirs=0; for(const e of f.units) if(enemies.includes(e) && !e.exit && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R) theirs += e.commander ? P.gTank*2 : (e.def.inf ? P.gInf : P.gTank);
   for(const e of (f.escort||[])) if(enemies.includes(e)) theirs+=P.gInf;
   return { ours, theirs }; }
@@ -520,7 +519,7 @@ function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false
   const L=FORT.loot, coins=Math.round((L.coins[0]+L.coins[1]*S.stage)*f.tier*loopRewardMul()), dia=L.dia[0]+((Math.random()*(L.dia[1]-L.dia[0]+1))|0)+(f.tier>=2?1:0);
   addCoins(coins); addDiamonds(dia); refreshWallet();
   for(let k=0;k<L.drops+f.tier-1;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*8, z:f.z+(Math.random()-0.5)*8 }, Math.min(3, f.tier));
-  for(let k=0;k<GUN_MODS.fortDrops;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2, modDrop());   // Z115 the armoury: a gun part
+  for(let k=0;k<GUN_MODS.fortDrops;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2);   // Z115 the armoury: a gun part
   let gunTx=''; if(Math.random()<L.gunChance*f.tier){ const not=Object.keys(GUNS).filter(id=>!GUNS[id].trooper && !PROFILE.ownedGuns.includes(id) && GUNS[id].tier && GUNS[id].tier<=1+f.tier); if(not.length){ const id=not[(Math.random()*not.length)|0]; ownGun(id); gunTx=' · SÚNG MỚI: '+GUNS[id].name; } }
   saveProfile();
   bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup'); celebrate('fort', f.x, f.z);   // Z140 fireworks over the taken fort
@@ -543,7 +542,7 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
     if(f.coreBc && !f.coreDown) f.coreBc.visible = ((now*1.4)%1)<0.5;   // the mast's beacon blinks
     if(f.flagFall) animFlag(f, dt);
     if(f.captured){ checkCleared(f, now); continue; }
-    if(boss && boss.alive && boss.fort===f){ const lim=(f.Rin||f.R)-6, dx=boss.pos.x-f.x, dz=boss.pos.z-f.z, q=Math.hypot(dx,dz); if(q>lim){ boss.pos.x=f.x+dx/q*lim; boss.pos.z=f.z+dz/q*lim; if(boss.mesh){ boss.mesh.position.x=boss.pos.x; boss.mesh.position.z=boss.pos.z; } } }   // Z170 the citadel's general fights from inside his walls
+    if(f.tier===3 && !f.duel && Math.hypot(p.pos.x-f.x, p.pos.z-f.z) < (f.Rin||f.R)+2){ f.duel=true; startBoss(now, f); }   // (no-tanks) walking in through the open gate brings the general out too
     const d=Math.hypot(p.pos.x-f.x, p.pos.z-f.z);
     if(!f.active && d<FORT.wakeR+f.R) wakeFort(f, now);
     if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; if(!f.leaderless) refill(f); else f.units=f.units.filter(e=>enemies.includes(e)); escortFollow(f); }

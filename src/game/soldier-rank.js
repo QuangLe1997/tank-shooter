@@ -1,11 +1,10 @@
 // game/soldier-rank.js — Z350 THE SOLDIER'S CAREER (soldier mode only): every man he or his squad drops is experience, and experience is rank — Binh nhì
 //   to Đại tá, worn as a stripe over his health bar with a thin gold line filling toward the next one. A new rank: a little more health, a breath back, and a
 //   choice of one of three perks (the battle holds still while he picks — never while a stage is being won). Some ranks bring a reward of their own over the
-//   radio: a man for the squad, a supply drop, a tank of ours, a stick of paratroopers, a barrage. Perks stack in levels; one card in three may be a call for help.
+//   radio: a man for the squad, a supply drop, a stick of paratroopers, a barrage. Perks stack in levels; one card in three may be a call for help.
 //   Past the last rank, every step is a medal: one more pick. The same cards close a stage won against the general (loot/upgrades.js asks soldierStagePerks).
 import { TROOPER } from '../../config.js';
-import { MODE, S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift,
-  spawnAllyTank, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
+import { MODE, S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
 
 export const CAREER = { xp:0, rank:0, lv:{}, chip:null };
 const R = CAREER, T = () => TROOPER;
@@ -34,11 +33,9 @@ function rankUp(){ const p = S.player, top = R.rank >= T().ranks.length - 1, U =
 function milestone(r){ const m = T().milestone[r]; if(!m) return; const nm = rankName(r);
   if(m === 'at' || m === 'mg'){ if(squadGrow(m === 'at' ? 'at' : 'mg')) radio('SCH: Chúc mừng ' + nm.toLowerCase() + '! Bổ sung cho tổ anh một ' + (m === 'at' ? 'lính B40 chống tăng.' : 'xạ thủ súng máy.')); }
   else if(m === 'supply'){ supplyDrop(); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù tiếp tế cạnh anh: súng mới và cứu thương.'); }
-  else if(m === 'tank'){ callTank(); radio('SCH: ' + nm + ' — một xe tăng ta được điều tới yểm trợ tổ anh.'); }
   else if(m === 'para'){ callPara(); radio('SCH: ' + nm + ' — trực thăng đang thả một tiểu đội lính dù xuống cạnh anh!'); }
   else if(m === 'barrage'){ callStrike(); setTimeout(callStrike, 1600); radio('SCH: ' + nm + '! Pháo kích toàn tuyến theo toạ độ của anh — cúi đầu xuống!'); } }
 const behind = d => { const p = S.player, f = p.facing || 0; return clampFieldXZ(p.pos.x - Math.sin(f) * d, p.pos.z - Math.cos(f) * d, 6); };
-export function callTank(){ const [x, z] = behind(14); spawnAllyTank(x, z, S.player.facing || 0, R.rank >= 9); ringPulse({ x, z }, 0x9be04a, 4); floatText('XE TĂNG TA!', '#9be04a', { x, y:3, z }, 20); }
 export function callPara(){ const p = S.player; launchParadrop(NOW(), { friendly:true, at:[p.pos.x, p.pos.z] }); }
 // a strike on the thickest knot of enemies near him (the airstrike falls where S.aimPoint is: aim it there for the call, then give the aim back)
 export function callStrike(){ const p = S.player; if(!p || S.mode !== 'playing') return; let best = null, bn = 0;
@@ -62,8 +59,7 @@ export const PERKS = [
   { id:'medic',  ic:'heart',     nm:'CỨU THƯƠNG GIỎI',  ds:'Băng bó hồi +50% · y tá chữa nhanh hơn', max:2, apply(p){ p.medK = (p.medK || 1) * 1.5; } },
   { id:'leader', ic:'team',      nm:'CHỈ HUY',          ds:'Đồng đội +25% máu và sát thương',       max:3, apply(){ squadRankUp(R.rank); } },
   { id:'recruit',ic:'team',      nm:'THÊM ĐỒNG ĐỘI',    ds:'Một người nữa vào tổ của anh',          max:4, ok:() => squadRoom() > 0, apply(){ squadGrow(); } },
-  { id:'life',   ic:'tank',      nm:'+1 MẠNG',          ds:'Thêm một lần đứng dậy',                 max:2, rare:true, apply(p){ p.lives++; updateHUD(); } },
-  { id:'c_tank', ic:'tank',      nm:'XE TĂNG YỂM TRỢ',  ds:'Một xe tăng ta tới đánh cạnh anh',      call:true, apply(){ callTank(); } },
+  { id:'life',   ic:'heart',     nm:'+1 MẠNG',          ds:'Thêm một lần đứng dậy',                 max:2, rare:true, apply(p){ p.lives++; updateHUD(); } },
   { id:'c_para', ic:'team',      nm:'LÍNH DÙ',          ds:'Một tiểu đội lính dù nhảy xuống cạnh anh', call:true, apply(){ callPara(); } },
   { id:'c_strk', ic:'crosshair', nm:'PHÁO KÍCH',        ds:'Không kích ngay cụm địch đông nhất',     call:true, apply(){ setTimeout(callStrike, 350); } },
   { id:'c_sup',  ic:'up',        nm:'THẢ DÙ TIẾP TẾ',   ds:'Súng mới + cứu thương rơi cạnh anh',     call:true, apply(){ supplyDrop(); } },

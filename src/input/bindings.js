@@ -2,7 +2,7 @@
 //   camera, music, pause, key sheet) has up to 2 keys + 1 pad button, all rebindable from the key sheet (PROFILE.binds).
 //   Also the shared MENU NAVIGATION (focus ring) for keyboard (arrows / Tab / Enter / Esc) and pad (D-pad / A / B / LB-RB / right stick).
 import { ACTIONS } from '../../config.js';
-import { PROFILE, S, assaultFort, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, selectDefaultGun, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, MODE, soldierRoll, soldierClimb } from '../hub.js';
+import { PROFILE, S, assaultFort, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, MODE, soldierRoll, soldierClimb } from '../hub.js';
 
 // ---- the table: ACTIONS (config) = [id, label, group, defaultKeys[], defaultPadButton|null, hold?] ----
 export const BIND = { cap:null, map:null };
@@ -32,7 +32,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'fire': if(S.mode==='playing'){ S.firing=true; MODE.fire(now, playerRange()); } break;
     case 'dash': tryDash(); break;  case 'roll': soldierRoll(); break;  case 'climb': soldierClimb(); break;   /* Z451 */  case 'skill': trySpell(); break;  case 'skillNext': cycleSpell(1); break;
     case 'crew': crewPress(); break; case 'autoFire': { const b=document.getElementById('autoBtn'); if(b) b.click(); } break;
-    case 'gunDefault': selectDefaultGun(); break; case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
+    case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break;
     case 'muster': musterAll(); break; case 'sqOrder': cycleSquadOrder(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;
     case 'zoomOut': if(S.zoomT>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
     case 'zoomPing': if(S.player && S.player.cav && !S.player.cav.mounted){ cavStance('prone'); break; }   // Z245 Z = go prone on foot

@@ -1,8 +1,8 @@
 // ui/battle-setup.js — Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the next; map/hour/weather set per level) · CUSTOM = pick map, hour, weather, space and enemy level · Z181 every battlefield is shown by a real in-game photo (assets/maps), the chosen one fills a hero card with its place, story, hour and weather
 import { CAMPAIGN, SPACE, WEATHER } from '../../config.js';
-import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, fmtP, hide, launchGame, levelCheck, loadoutChips, renderGear, renderModes, saveProfile, sfx, show, tapBtn, tapEl, todFor, verdictHTML } from '../hub.js';
+import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, hide, launchGame, loadoutChips, renderGear, saveProfile, sfx, show, tapBtn, tapEl, todFor } from '../hub.js';
 
-export const BS = { tab:'campaign', sel:1, bg:0, step:1 };
+export const BS = { tab:'campaign', sel:1, bg:0, step:2 };
 export const TOD_KEYS = ['day','noon','sunset','night'];
 export const WX_KEYS = ['clear','rain','sand','snow','fog'];
 const TOD_HINT = { day:'nắng sớm, bóng dài', noon:'nắng gắt, tầm xa', sunset:'ánh vàng, ngược sáng', night:'đèn pha, tầm ngắn' };
@@ -26,11 +26,10 @@ function setHero(b, o){ const shot=document.getElementById('bsShot'), img=docume
   const set=(id,h)=>{ const e=document.getElementById(id); if(e) e.innerHTML=h; };
   set('bsKick', o.kick); set('bsName', biomeVi(b.name)); set('bsPlace', biomePlace(b.name)); set('bsBlurb', biomeBlurb(b.name));
   set('bsBadges', (o.boss?'<span class="bs-badge boss">TRẬN TƯỚNG</span>':'')+(o.loop?'<span class="bs-badge ng">VÒNG MỚI+'+o.loop+'</span>':''));
-  const pc=levelCheck(o.lvl), W=WEATHER[o.wx];
+  const W=WEATHER[o.wx];
   set('bsFacts', '<div class="bs-fact"><span>THỜI GIAN</span><b>'+TOD_LABEL[o.tod]+'</b><small>'+TOD_HINT[o.tod]+'</small></div>'+
     '<div class="bs-fact"><span>THỜI TIẾT</span><b>'+W.vi+'</b><small>'+(W.range<1?'tầm bắn −'+Math.round((1-W.range)*100)+'%':'tầm bắn đầy đủ')+'</small></div>'+
-    '<div class="bs-fact"><span>ĐỘ KHÓ</span><b>'+stars(o.stars)+'</b><small>địch cấp '+o.lvl+'</small></div>'+
-    '<div class="bs-fact pw" style="--pc:'+pc.col+'"><span>SỨC MẠNH</span><b>'+fmtP(pc.P)+'<i> / '+fmtP(pc.need)+'</i></b><small>'+pc.tx+'</small></div>');
+    '<div class="bs-fact"><span>ĐỘ KHÓ</span><b>'+stars(o.stars)+'</b><small>địch cấp '+o.lvl+'</small></div>');
   // the whole screen breathes the chosen battlefield: a blurred copy of the photo cross-fades behind everything
   const A=document.getElementById('bsBgA'), B=document.getElementById('bsBgB'); if(A && B){ const cur=BS.bg?B:A, nxt=BS.bg?A:B;
     if(cur.dataset.src!==src){ nxt.dataset.src=src; nxt.onload=()=>{ nxt.classList.add('on'); cur.classList.remove('on'); }; nxt.src=src; BS.bg^=1; } } }
@@ -62,25 +61,24 @@ export function buildCustom(){ const C=PROFILE.custom, max=campaignMax();
   setHero(BIOMES[C.biome], { kick:'TRẬN TỰ CHỌN · '+SPACE[C.space].vi, tod:C.tod, wx:C.wx, stars:levelInfo(C.lvl).stars, lvl:C.lvl, boss:false, loop:0 });
 }
 export function refreshSummary(){ const el=document.getElementById('bsSum'); if(!el) return;
-  const pcL = BS.tab==='campaign' ? BS.sel : PROFILE.custom.lvl, pc=levelCheck(pcL), pw=' <span class="bs-you">BẠN <b>'+fmtP(pc.P)+'</b> · CẦN <b>'+fmtP(pc.need)+'</b> '+verdictHTML(pc)+'</span>';   // Z107 power rating vs this level
+  const pw='';
   if(BS.tab==='campaign'){ const I=levelInfo(BS.sel); el.innerHTML='<b>CẤP '+I.L+'</b> · '+biomeVi(I.biome.name)+' · '+TOD_LABEL[I.tod]+' · '+WEATHER[I.wx].vi+pw; }
   else { const C=PROFILE.custom; el.innerHTML='<b>TỰ CHỌN</b> · '+biomeVi(BIOMES[C.biome].name)+' · '+TOD_LABEL[C.tod]+' · '+WEATHER[C.wx].vi+' · '+SPACE[C.space].vi+pw; } }
 export function setSetupTab(t){ BS.tab=t; document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>m.classList.toggle('on', m.dataset.m===t));
   document.getElementById('bsCampaign').classList.toggle('hidden', t!=='campaign'); document.getElementById('bsCustom').classList.toggle('hidden', t!=='custom');
   if(t==='campaign') buildCampaign(); else buildCustom(); refreshSummary(); }
-// Z354 THE THREE STEPS: ① BINH CHỦNG (tank or soldier) → ② TRANG BỊ (the hull and its guns · the trooper, his ride and its driver) → ③ CHIẾN TRƯỜNG (campaign
-//   ladder or a custom battle). PLAY opens at ①, the battlefield buttons straight at ③; the rail on top and the loadout chips in the footer jump between
+// Z354 THE STEPS (no-tanks: BINH CHỦNG is gone — steps 2 and 3, shown as ① ②): TRANG BỊ (the trooper, his ride and its driver) → CHIẾN TRƯỜNG (campaign
+//   ladder or a custom battle). PLAY opens at TRANG BỊ, the battlefield buttons straight at CHIẾN TRƯỜNG; the rail on top and the loadout chips in the footer jump between
 //   steps; TIẾP moves on; XUẤT KÍCH goes in from any step with what is chosen (the last choices are remembered).
-const STEP_NEXT = ['', 'TIẾP · TRANG BỊ ▶', 'TIẾP · CHIẾN TRƯỜNG ▶', ''];
-export function setStep(n){ BS.step = Math.max(1, Math.min(3, n)); const ov = document.getElementById('battleSetup'); if(!ov) return; ov.dataset.step = BS.step;
+const STEP_NEXT = ['', '', 'TIẾP · CHIẾN TRƯỜNG ▶', ''];
+export function setStep(n){ BS.step = Math.max(2, Math.min(3, n)); const ov = document.getElementById('battleSetup'); if(!ov) return; ov.dataset.step = BS.step;
   document.querySelectorAll('#bsRail .bs-rs').forEach(r => { const k = +r.dataset.s; r.classList.toggle('on', k === BS.step); r.classList.toggle('done', k < BS.step); });
-  if(BS.step === 1) renderModes(document.getElementById('bsS1'), () => setTimeout(() => setStep(2), 160));
-  else if(BS.step === 2) regear();
+  if(BS.step === 2) regear();
   else setSetupTab(BS.tab);
   paintFoot(); }
 function regear(){ renderGear(document.getElementById('bsS2'), regear); paintFoot(); }
 function paintFoot(){ loadoutChips(document.getElementById('bsUnit'), setStep); const nx = document.getElementById('bsNext'); if(nx){ nx.textContent = STEP_NEXT[BS.step]; nx.style.display = BS.step < 3 ? '' : 'none'; } refreshSummary(); }
-export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); if(tab) BS.tab=tab; setStep(tab ? 3 : 1); sfx('click'); }
+export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1, BS.sel===1 ? campaignMax() : BS.sel)); hide('start'); show('battleSetup'); if(tab) BS.tab=tab; setStep(tab ? 3 : 2); sfx('click'); }
 export function closeBattleSetup(){ hide('battleSetup'); show('start'); sfx('click'); }
 export function goBattle(){ hide('battleSetup');
   if(BS.tab==='campaign') launchGame({ mode:'campaign', level:BS.sel });   // Z119 behind the deploying veil
@@ -88,7 +86,7 @@ export function goBattle(){ hide('battleSetup');
 tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle); tapBtn('bsNext', () => { sfx('click'); setStep(BS.step + 1); });
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));
 document.querySelectorAll('#bsRail .bs-rs').forEach(r=>tapEl(r, ()=>{ sfx('click'); setStep(+r.dataset.s); }));
-// back from the garage / the arsenal (closeGarage / closeLoadout return here): show the hull and guns as they are now
+// back from the arsenal (closeLoadout returns here): show the guns as they are now
 export function setupBack(){ if(BS.step === 2) regear(); else paintFoot(); }
 // Enter: the next step, or into battle from the last
 if(typeof window !== 'undefined') window.addEventListener('keydown', ev => { const ov = document.getElementById('battleSetup'); if(ev.key !== 'Enter' || !ov || ov.classList.contains('hidden')) return; ev.preventDefault(); if(BS.step < 3) setStep(BS.step + 1); else goBattle(); });

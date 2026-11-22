@@ -1,13 +1,13 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, GUNS, PROFILE, S, TOD_LABEL, TRAIN, WAVE, barrelGrade, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunLevel, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, setPlayerBarrel, sfx, show, spawnRelic, stageTankKit, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
+import { BIOME, GUNS, PROFILE, S, TOD_LABEL, WAVE, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
 export function openBriefing(opts){
   _brCtx = opts || {};
   S.mode='briefing';
-  briefTeam();   // Z354 ĐỘI HÌNH XUẤT KÍCH: the tank and its guns · the soldier, his ride, its driver, his squad
+  briefTeam();   // Z354 ĐỘI HÌNH XUẤT KÍCH: the soldier, his ride, its driver, his squad
   prewarmStage();   // Z168 compile this stage's shaders in the background while the player reads the briefing (no hitch at the countdown / first frame)
   const bdef = bossForStage(S.stage);   // Z161 may be one of the new generals
   const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(biomePlace(BIOME.name)?' · '+biomePlace(BIOME.name):'')+'  —  TƯỚNG: '+(bdef?bdef.name:'???');
@@ -29,7 +29,6 @@ export function openBriefing(opts){
   }
   pickContract(pick.find(c=>c.id===PROFILE.lastContract) || pick.find(c=>c.id==='steady'), true);   // Z152 one is always chosen — XUẤT KÍCH works straight away
   show('briefing'); sfx('powerup');
-  if(TRAIN.on){ hide('briefing'); launchStage(false); return; }   // Z182 a training run: no contract, no troop plan — straight to the countdown
   requestAnimationFrame(()=>{ const go=document.getElementById('brGo'); if(go && typeof setFocus==='function' && document.body.classList.contains('pad')) setFocus(go, true); });
 }
 export let _brPick=null;
@@ -51,7 +50,7 @@ export function beginStage(c, ctx){
   sfx('click');
 }
 function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||{}; _go=null;
-  S.mode='playing'; stageTankKit(S.player); S.kitKills=0; spawnRelic(); coachFirstRun(); resetEnvEvents(performance.now()/1000); resetSurprises(performance.now()/1000); setTimeout(()=>{ if(S.mode==='playing') sayVoice('open'); }, 700);   // Z154 the stage's relic rises somewhere on the field · first-ever match → show coach toasts (once) · Z140 the land's surprises start counting
+  S.mode='playing'; spawnRelic(); coachFirstRun(); resetEnvEvents(performance.now()/1000); resetSurprises(performance.now()/1000); setTimeout(()=>{ if(S.mode==='playing') sayVoice('open'); }, 700);   // Z154 the stage's relic rises somewhere on the field · first-ever match → show coach toasts (once) · Z140 the land's surprises start counting
   const now=performance.now()/1000;
   playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0')), true); WAVE.betweenUntil=now+1.6;   // Z138 the first wave comes 1.6 s after GO (the countdown already waited)
   { const sub=document.getElementById('cdSub'); if(sub) sub.classList.remove('on'); }
@@ -73,12 +72,11 @@ export function applyContractHUD(){
 export function updateGunHUD(){
   const p=S.player; if(!p||!p.guns.length) return;
   const inst=p.guns[p.gunIdx], g=GUNS[inst.id];
-  { const bk=inst.id+':'+barrelGrade(inst.id); if(p._barrelId!==bk){ setPlayerBarrel(inst.id); p._barrelId=bk; } }   // swap the tank's barrel to match the equipped gun
   // Z107: the HUD was rebuilt from scratch on every shot (new nodes for the chip + the whole gun strip) — now the nodes are
   // rebuilt only when the gun/level changes, and a shot only rewrites the ammo text.
   const chip=document.getElementById('weaponchip');
   if(chip){
-    const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), lv=inst.star||gunLevel(inst.id), key=inst.id+':'+lv;   // Z352 a soldier's gun shows its stars
+    const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), lv=inst.star||1, key=inst.id+':'+lv;   // Z352 a soldier's gun shows its stars
     if(chip._key!==key){ chip._key=key;
       const ic=gunPicEl(inst.id, 'wc-ic');   // Z150 the gun's own photo, same as the arsenal
       const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(lv>1?' ★'+lv:'');   // MASTERY level tag

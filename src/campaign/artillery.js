@@ -1,7 +1,7 @@
 // campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { BIOME, MODE, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastAllyTanks, blastLight, boss, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip, blRamp, holoGain, holoRing } from '../hub.js';
+import { duelOn, BIOME, MODE, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastLight, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip, blRamp, holoGain, holoRing } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
 // Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
@@ -45,7 +45,7 @@ export function fireSpotter(e){
 }
 export function updateArtillery(dt, now){ if(UNDER.on) return;   // Z226
   const C=BALANCE.artillery, mort=_artMortars();
-  if(S.stage<2 || mort===0 || boss || !MODE.arty){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down (Z403 never in a soldier's war)
+  if(S.stage<2 || mort===0 || duelOn() || !MODE.arty){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down (Z403 never in a soldier's war)
   ART.t-=dt; if(ART.t>0) return;
   if(ART.phase==='rest'){ tip('arty'); ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
   else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.max(1, Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar) - artyShotCut()); ART.t=0; }   // Z197 no radar → fewer shells
@@ -100,7 +100,7 @@ export function artImpact(s, now){
   // ---- distance-graded damage FIRST → decide HIT (shrapnel) vs MISS (just fire+smoke) ----
   const grade=(ox,oz)=>{ const d=Math.hypot(ox-tx,oz-tz); if(d>s.R) return 0;
     return d<=s.innerR ? C.dmgMax : C.dmgMin + (C.dmgMax-C.dmgMin)*(1-(d-s.innerR)/(s.R-s.innerR)); };
-  blastAllies(tx, tz, s.R, C.dmgMax); blastAllyTanks(tx, tz, s.R, C.dmgMax*0.6);                                              // Z104 our infantry caught in the barrage
+  blastAllies(tx, tz, s.R, C.dmgMax);                                              // Z104 our infantry caught in the barrage
   let hit=false; const p=S.player;
   if(p && now>=p.invincibleUntil){ const dmg=grade(p.pos.x,p.pos.z);
     if(dmg>0){ hit=true; const direct = Math.hypot(p.pos.x-tx,p.pos.z-tz)<=s.innerR;

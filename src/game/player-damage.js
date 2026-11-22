@@ -1,81 +1,51 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
-import { CAV, LOOT, RIDE_ACT } from '../../config.js';
-import { ARENA, BEST, CV, S, bigExplode, burst, camera, capsuleSave, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, grantCrewXp, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, setEraTiles, sfx, show, spawnDebris, spawnPart, updateHUD, rideHit, MODE, driverBack, driverDone, driverSurrender } from '../hub.js';
+import { CAV, RIDE_ACT } from '../../config.js';
+import { ARENA, BEST, CV, S, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, MODE, driverBack, driverDone, driverSurrender } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
   const p=S.player; if(now < p.invincibleUntil) return;
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
-  if(p.cav) dmg *= p.defK||1;                // Z245 the general: plate armour, and lying flat / kneeling makes a smaller target
-  if(p.era>0 && dmg>=LOOT.era.minHit){ p.era--; dmg*=1-LOOT.era.absorb; setEraTiles(p);                 // Z93 REACTIVE ARMOUR: a tile detonates outward and eats most of the hit
-    const a=Math.atan2(dx||0, dz||1); burst({x:p.pos.x-Math.sin(a)*1.6, z:p.pos.z-Math.cos(a)*1.6}, 0xffd27a, 8, 8, {y:1.5, life:0.25, size:0.4, grav:-10, drag:2, up:2}); sfx('clang'); floatText('GIÁP PHẢN ỨNG', '#e0c070', p.pos, 14); }
+  dmg *= p.defK||1;                          // Z245 plate armour, and lying flat / kneeling makes a smaller target
   p.hp -= dmg; if(p.cav && p.bike) rideHit(dmg, dx, dz);   // Z296 the driver ducks — a heavy hit may bring the bike down
-  if(p.hp<=0) capsuleSave(p, now||performance.now()/1000); else if(p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');   // Z161 T-14 crew capsule
-  // HIT REACTION — every hit is FELT: hull flinch/rattle + shake scaled by the blow + red splash
+  if(p.hp > 0 && p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');
+  // HIT REACTION — every hit is FELT: a flinch + shake scaled by the blow + red splash
   p.hitT = Math.max(p.hitT||0, 0.26);
   S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028)); haptic(Math.min(60, 20+dmg*1.5));
   sfx('hurt');
   burst(p.pos, 0xff5040, 8, 9, {life:0.28, size:1.0, up:3, drag:5}); ringPulse(p.pos, 0xff4632, 1.6);
-  MODE.onHit(p, dmg, dx, dz);   // the tank: a flaming mark on the hull + sparks and shards off the struck side · the soldier: he bleeds · both: a red marker pointing at the shooter (Z307 game/mode.js)
+  MODE.onHit(p, dmg, dx, dz);   // he bleeds, and a red marker pointing at the shooter (Z307 game/mode.js)
   const v=document.getElementById('vignette'); v.style.opacity='1'; setTimeout(()=>v.style.opacity='0', 170);
   updateHUD();
   if(p.hp<=0) playerDie(now);
 }
-// lingering FIRE + SMOKE on the hull at the spot that was hit (in hull-local angle → rides + rotates with the tank)
-export function addPlayerBurn(dx, dz){
-  const p=S.player; if(!p.burns) p.burns=[];
-  const la = (dx||dz) ? (Math.atan2(-dx,-dz) - p.facing) : Math.random()*6.283;   // struck side faces the shooter
-  p.burns.push({ la, r:p.radius*0.72, ly:1.5+Math.random()*0.5, t:1.5+Math.random()*0.7 });
-  if(p.burns.length>4) p.burns.shift();       // cap concurrent burn marks
-}
-// ===== DEATH → RESPAWN cinematic: tank flips, burns & smokes; camera swoops in close; then it rights itself,
-// blinks 3× (invincible) and the fight resumes. Makes losing a life land emotionally (not an instant teleport). =====
+// ===== DEATH → RESPAWN: the soldier falls (game/cavalry.js), the camera circles where he lies; then he is back in the saddle,
+// blinks 3× (invincible) and the fight resumes; the last life lost, the driver gives himself up beside him and the battle is lost =====
 export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0, final:false };   // (Z331 final: the last life — the fall plays out, then the battle is lost)
 export const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 export function playerDie(now){
   const p=S.player; p.lives--;
-  if(p.lives < 0){ if(MODE.finalDeath(p)) beginDeath(now, true); else gameOver('HẾT MẠNG'); return; }   // final death → (the tank: the crew's scream as it shatters, game over · Z331 the soldier: his fall and the driver giving himself up play out first)
+  if(p.lives < 0){ if(MODE.finalDeath(p)) beginDeath(now, true); else gameOver('HẾT MẠNG'); return; }   // final death → (Z331 his fall and the driver giving himself up play out first)
   beginDeath(now);
 }
 export function beginDeath(now, final){
   const p=S.player; S.mode='dying'; S.firing=false;
   DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos); DEATH.final=!!final;
-  if(p.cav){ cavDeathStart(p, now); driverSurrender(CV.H); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD(); return; }   // Z254 no tank wreck: the general is shot off his horse
-  DEATH.flipDir = Math.random()<0.5?1:-1; DEATH.tilt = 0.4+Math.random()*0.4;
-  // catastrophic hit — big blast, knock a few parts loose, hard shake
-  bigExplode(p.pos, 0xffd27a, 1.9); spawnDebris(p.pos, 1.6, 0x4a3c28);
-  S.shake = Math.min(6, S.shake + 4); sfx('bigexplode');
-  floatText('XE BỊ HẠ', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28);
-  const v=document.getElementById('vignette'); if(v){ v.style.opacity='1'; }   // hold the red vignette through the death beat
-  updateHUD();
+  cavDeathStart(p, now); driverSurrender(CV.H); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD();   // Z254 the soldier is shot off his ride
 }
 export const _eoCube = u => 1-Math.pow(1-Math.max(0,Math.min(1,u)),3);
 export function updateDeath(dt, now){
   const p=S.player, m=p.mesh; DEATH.t+=dt;
-  if(p.cav){ cavDeathUpdate(dt, now); const w=CV.dead ? CV.dead.pos : p.pos, ang=2.2+DEATH.t*0.45, r=6.5;   // Z254 the camera circles where the general fell
+  cavDeathUpdate(dt, now); const w=CV.dead ? CV.dead.pos : p.pos, ang=2.2+DEATH.t*0.45, r=6.5;   // Z254 the camera circles where the general fell
     _dcam.set(w.x+Math.cos(ang)*r, w.y+3.4, w.z+Math.sin(ang)*r); camera.position.lerp(_dcam, Math.min(1, dt*3)); camera.lookAt(w.x, w.y+0.6, w.z);
-    if(DEATH.t >= CAV.death.dur){ if(!DEATH.final) respawnPlayer(now); else if(driverDone(CV.H) || DEATH.t >= CAV.death.dur + RIDE_ACT.give.wait){ DEATH.active=false; DEATH.final=false; gameOver('HẾT MẠNG'); } } return; }   // Z331 the last life: held until the driver is on his knees by the body
-  const wx=DEATH.wreck.x, wz=DEATH.wreck.z;
-  // 1) the hull tips over (first ~0.7s) and settles, sinking a touch
-  const f=_eoCube(DEATH.t/0.7);
-  m.position.set(wx, -0.25*f, wz);
-  m.rotation.set(DEATH.tilt*1.7*f*DEATH.flipDir, p.facing, DEATH.tilt*1.3*f);
-  // 2) roiling fire + black smoke pouring off the wreck
-  if(Math.random()<0.92) spawnPart(wx+(Math.random()-0.5)*1.8, 0.9+Math.random()*1.3, wz+(Math.random()-0.5)*1.8, (Math.random()-0.5)*1.8, 1.6+Math.random()*1.8, (Math.random()-0.5)*1.8, {color: Math.random()<0.5?0xff6a1c:0xffb24a, size:1.0+Math.random()*0.9, life:0.5, grav:0.4, drag:2});
-  if(Math.random()<0.85) spawnPart(wx+(Math.random()-0.5)*1.5, 1.5, wz+(Math.random()-0.5)*1.5, (Math.random()-0.5)*1.1, 1.9+Math.random()*1.2, (Math.random()-0.5)*1.1, {color:0x17120c, size:2.0+Math.random()*1.4, life:1.1, smoke:true, grav:-0.6, drag:1.3, op:0.55});
-  if(Math.random()<0.045) bigExplode({x:wx+(Math.random()-0.5)*2.2, z:wz+(Math.random()-0.5)*2.2}, 0xff7a3d, 1.1);   // secondary cook-off pops
-  // 3) camera swoops in CLOSE + low, slowly circling the burning hulk
-  const ang = 2.2 + DEATH.t*0.55, r = 8.5 - 2.0*f;
-  _dcam.set(wx+Math.cos(ang)*r, 4.6, wz+Math.sin(ang)*r);
-  camera.position.lerp(_dcam, Math.min(1, dt*3.2)); camera.lookAt(wx, 1.0, wz);
-  if(DEATH.t >= DEATH.dur) respawnPlayer(now);
+    if(DEATH.t >= CAV.death.dur){ if(!DEATH.final) respawnPlayer(now); else if(driverDone(CV.H) || DEATH.t >= CAV.death.dur + RIDE_ACT.give.wait){ DEATH.active=false; DEATH.final=false; gameOver('HẾT MẠNG'); } }   // Z331 the last life: held until the driver is on his knees by the body
 }
 export function respawnPlayer(now){
-  const p=S.player, m=p.mesh; DEATH.active=false; if(p.cav){ cavRespawn(p); driverBack(CV.H); }   // Z245 the general is back in the saddle (Z331 and the driver back on his seat)
-  // right the hull + reset to the spawn point
+  const p=S.player, m=p.mesh; DEATH.active=false; cavRespawn(p); driverBack(CV.H);   // Z245 the soldier is back in the saddle (Z331 and the driver back on his seat)
+  // back to the spawn point
   p.hp=p.maxHp; p.pos.set(0,0,ARENA*0.45); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI;
-  m.position.set(p.pos.x,0,p.pos.z); m.rotation.set(0, p.facing, 0); m.visible=true; p.hitT=0; p.burns=[];   // fresh hull, no leftover fires
+  m.position.set(p.pos.x,0,p.pos.z); m.rotation.set(0, p.facing, 0); m.visible=true; p.hitT=0;
   p.invincibleUntil = now + 2.6; p.respawnBlinkUntil = now + 1.5;   // brief shield → blink 3× while it holds
   for(const e of enemies){ if(e.pos.distanceTo(p.pos)<13){ const aw=new THREE.Vector3().subVectors(e.pos,p.pos).setLength(17); e.pos.add(aw); } }   // clear the spawn
   S.mode='playing';
@@ -86,7 +56,7 @@ export function respawnPlayer(now){
 }
 export function gameOver(reason){
   if(S.mode==='gameover') return;
-  S.mode='gameover'; try{ if(MODE.crewXp) grantCrewXp(false); econReportRun({ cleared:false }); }catch(e){}   // Z161 the crew still learns from a lost battle (half XP)
+  S.mode='gameover'; try{ econReportRun({ cleared:false }); }catch(e){}
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
     if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — '+MODE.overText : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù xe còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
   document.getElementById('go-score').textContent=S.score.toLocaleString();

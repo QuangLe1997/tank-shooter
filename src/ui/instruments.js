@@ -3,7 +3,7 @@
 //   ground speed, the laser rangefinder's distance to whatever the gun is laid on, and the armour state.
 //   Plus the radio set's typewriter (a message arrives character by character, like a teleprinter) and the frequency/callsign line.
 import { BLIGHT } from '../../config.js';
-import { MOBILE, S, boss, enemies, MODE } from '../hub.js';
+import { MOBILE, S, enemies, MODE } from '../hub.js';
 
 const DEG=180/Math.PI, TAU=Math.PI*2;
 export const INSTR={ el:null, cv:null, cx:null, hdg:null, spd:null, rng:null, arm:null, armBar:null, at:0, range:-1, rangeAt:0, sold:null };
@@ -25,7 +25,6 @@ function build(){ const hud=document.getElementById('hud'); if(!hud) return fals
 function laze(p){ const a=p.aimSmoothed??p.facing??0, ux=Math.sin(a), uz=Math.cos(a); let best=-1;
   const test=(x,z)=>{ const dx=x-p.pos.x, dz=z-p.pos.z, along=dx*ux+dz*uz; if(along<2 || along>400) return; const off=Math.abs(dx*uz-dz*ux); if(off>Math.max(2.2, along*0.06)) return; if(best<0 || along<best) best=along; };
   for(const e of enemies) if(!e.dead) test(e.pos.x, e.pos.z);
-  if(boss && boss.alive) test(boss.pos.x, boss.pos.z);
   return best; }
 
 function dial(p, k){ const c=INSTR.cx, W=INSTR.cv.width, R=W/2, cx=R, cy=R; c.clearRect(0,0,W,W);

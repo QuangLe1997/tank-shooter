@@ -1,6 +1,6 @@
 // fx/celebrate.js — Z140 VICTORY CELEBRATION: a fort taken or a battle won — fireworks over the field, every soldier of ours leaps and cheers
 //   (arms up), our flags whip in the wind, a fanfare. 'fort' = a short local party over the captured fort; 'victory' = the whole army, 6 s.
-import { FT, S, playClip, radio, riders, sfx, showBanner, soldiers, spawnPart } from '../hub.js';
+import { FT, S, playClip, radio, sfx, showBanner, soldiers, spawnPart } from '../hub.js';
 
 export const CEL = { until:0, t0:0, kind:'', x:0, z:0, fwAt:0, chAt:0 };
 const COLS=[0xffd24a, 0xda251d, 0x9be04a, 0x7fd0ff, 0xffffff, 0xff8a3a];
@@ -19,5 +19,5 @@ export function updateCelebration(dt, now){ if(now>CEL.until) return; const t=no
     firework(cx+(Math.random()-0.5)*R*2, 14+Math.random()*10, cz+(Math.random()-0.5)*R*2);
     spawnPart(cx+(Math.random()-0.5)*R, 1, cz+(Math.random()-0.5)*R, (Math.random()-0.5)*2, 22, (Math.random()-0.5)*2, { tex:'flash', color:0xffe0a0, size:0.5, life:0.6, grav:-14, drag:0.4 }); }   // a rocket going up
   if(now>CEL.chAt){ CEL.chAt=now+0.9; sfx('wave', null, 0.4); }
-  const L=[]; for(const a of FT) L.push(a.g); for(const s of soldiers) L.push(s.g); if(big) for(const r of riders) L.push(r.g);
+  const L=[]; for(const a of FT) L.push(a.g); for(const s of soldiers) L.push(s.g);
   L.forEach((g,i)=>{ if(big || !g || Math.hypot(g.position.x-CEL.x, g.position.z-CEL.z)<60) cheer(g, t, i*0.9); }); }

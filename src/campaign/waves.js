@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { FORTS, MOBILE, MODE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, boss, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, prepBarrage, radio, riders, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
+import { duelOn, FORTS, MOBILE, MODE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -51,7 +51,7 @@ export function rollWaveEvent(){
   sfx('alarm');
 }
 export function startWave(now){
-  if(S.wave===1){ tip('drive2'); if(riders.length) tip('crew2'); if(OBJ&&OBJ.alive) tip('objective'); }
+  if(S.wave===1){ tip('drive2'); if(OBJ&&OBJ.alive) tip('objective'); }
   rollWaveEvent();
   if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
   WAVE.spawnQueue = buildWaveQueue(S.stage, Math.min(S.wave, WAVE.perStage));
@@ -72,7 +72,7 @@ function planWave(now){ WAVE.plan=null; WAVE.pk=0; WAVE.lastTank=null; WAVE.prob
   if(r<0.34){ WAVE.plan='pincer'; WAVE.pincerA=Math.random()*Math.PI*2; setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Địch đánh gọng kìm — chúng đến từ hai hướng!'); }, 2600); }
   else if(r<0.54){ WAVE.plan='probe'; const i=WAVE.spawnQueue.indexOf('squad'); if(i>0){ WAVE.spawnQueue.splice(i,1); WAVE.spawnQueue.unshift('squad'); } else if(i<0) WAVE.spawnQueue.unshift('squad');
     setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Tốp thăm dò của địch — diệt gọn, đợt chính đang tới!'); }, 2600); }
-  else if(r<0.7 && S.stage>=2 && MODE.arty){ WAVE.plan='prep'; prepBarrage(); WAVE.spawnAt=now+3.6; } }   // (Z403 a soldier's war has no artillery prep)
+ }
 function pincerPoint(){ const p=S.player; if(!p) return null; const side=(WAVE.pk++%2)?1:-1, a=WAVE.pincerA+side*1.15;
   for(const d of [58,48,40]){ const x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d; if(inField(x, z, 4)) return { x, z }; } return null; }
 // Z106 enemies enter through the irregular fence: edge 0 = their side (−z) · 1 = ours (+z) · 2 = west · 3 = east. Of a few candidate
@@ -88,7 +88,7 @@ export function updateWaves(dt, now){
   if(UNDER.on) return;                                 // Z226 the surface holds its breath while you are below
   if(S.awaitingUpgrade) return;                        // boss just died, waiting on upgrade pick
   if(!WAVE.active){
-    if(boss) return;                                   // boss fight in progress → no waves
+    if(duelOn()) return;                               // the general is on the field → no waves
     if(now>WAVE.betweenUntil){
       if(S.wave >= WAVE.perStage && !FORTS.length) startBoss(now);       // final wave done → summon the stage boss (Z107: with fortresses the boss waits inside the citadel)
       else { S.wave++; startWave(now); }

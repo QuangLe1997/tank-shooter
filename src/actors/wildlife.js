@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { REALWILD } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, MOBILE, S, _R, blocks, clampField, enemies, heightAt, inField, inZone, loadGLTF, scene, solidTank, wetAt, MODE, asShipped, nearShape } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, _R, blocks, clampField, enemies, heightAt, inField, inZone, loadGLTF, scene, solidTank, wetAt, MODE, asShipped, nearShape } from '../hub.js';
 
 // Z208 organic anatomy: ellipsoid masses, tapered limbs with knees + hooves, coats painted per vertex (stripes, patches, bands, mottling)
 const _up=new THREE.Vector3(0,1,0), _d=new THREE.Vector3();
@@ -118,7 +118,7 @@ function dressWild(){ if(typeof window==='undefined' || (MOBILE && !REALWILD.mob
       a.mix=new THREE.AnimationMixer(m); const act=a.mix.clipAction(gl.animations[0]); act.play(); a.mix.setTime(Math.random()*gl.animations[0].duration); } }); }
 // the nearest threat (any tank) to a point → [dx,dz,dist]
 function threat(x, z){ let best=null, bd=1e9; const P=S.player; const chk=(o, k=1)=>{ const d=Math.hypot(o.pos.x-x, o.pos.z-z)*k; if(d<bd){ bd=d; best=o; } };
-  if(P) chk(P, 1/(MODE.fleeK||1)); for(const e of enemies) if(solidTank(e)) chk(e); for(const t of ALLY_TANKS) chk(t); return best ? [x-best.pos.x, z-best.pos.z, bd] : null; }   // (Z307 a man on foot or on a scooter they let come closer than a tank)
+  if(P) chk(P, 1/(MODE.fleeK||1)); for(const e of enemies) if(solidTank(e)) chk(e); return best ? [x-best.pos.x, z-best.pos.z, bd] : null; }   // (Z307 a man on foot or on a scooter they let come closer than a tank)
 // Z306 an animal run down by a ride: knocked over onto its side where it was struck, skidding to a stop, still — and after a while gone
 export function killWild(a, ix, iz){ if(!a || a.dead) return; a.dead=true; a.deadT=0; a.state='dead'; a.vx=ix*0.3; a.vz=iz*0.3; a.fall=Math.random()<0.5?-1:1; a.ra=0; }
 export const wildRadius = a => Math.max(0.45, (a.sp.hz||0.4)*1.1)*a.s;

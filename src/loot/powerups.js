@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, GIFT, LOOT, GUN_MODS, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, addGunMod, barrelGrade, boss, burst, clampField, core, crewTarget, damageBoss, damageEnemy, deployRiders, deploySoldiers, enemies, equippedGun, floatText, giveGun, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, magCap, riders, ridersUnlocked, ringPulse, scene, setIcon, setPlayerBarrel, sfx, smartGunPick, soldierLvl, soldiers, spawnDrone, tip, updateGunHUD, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex , asShipped, nearShape } from '../hub.js';
+import { BALANCE, LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
+import { BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, spawnDrone, tip, updateHUD, MODE, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -13,11 +13,6 @@ export const POWERUPS = [
   // timed buffs (longer)
   { id:'rapid',  svg:'bolt', color:0xfff04a, buff:'rapid',  dur:28, label:'RAPID FIRE ×2', vi:'BẮN NHANH', ds:'Tốc độ bắn ×2', cat:'ammo', tier:0 },
   { id:'power',  svg:'burst', color:0xff7a3d, buff:'power',  dur:28, label:'DAMAGE ×1.6', vi:'HOẢ LỰC', ds:'Sát thương ×1,6', cat:'ammo', tier:0 },
-  { id:'speed',  svg:'dash', color:0x6fe0a0, buff:'speed',  dur:LOOT.speed.dur, label:'ENGINE OVERDRIVE', vi:'ĐỘNG CƠ VƯỢT TẢI', ds:'Tốc độ tối đa & lực kéo +30%', cat:'fuel', tier:0 },
-  { id:'turbo',  svg:'bolt', color:0x7fd0ff, buff:'turbo',  dur:LOOT.turbo.dur, stack:LOOT.turbo.maxLv, label:'TURBO', vi:'TĂNG ÁP', ds:'Gia tốc +35%/cấp, bứt khỏi chỗ đứng', cat:'fuel', tier:1 },   // Z93
-  { id:'ram',    svg:'tank', color:0xffb040, buff:'ram',    dur:LOOT.ram.dur, label:'DOZER BLADE', vi:'LƯỠI ỦI', ds:'Húc ×2,2 · chịu húc −65% · phá tường khi chạy vừa', cat:'armor', tier:1 },   // Z93
-  { id:'era',    svg:'shield', color:0xe0c070, label:'REACTIVE ARMOUR', vi:'GIÁP PHẢN ỨNG', ds:'+3 tấm: mỗi tấm chặn 60% một phát trúng', cat:'armor', tier:1, apply(p){ addEra(LOOT.era.charges); } },   // Z93
-  { id:'siege',  svg:'bomb', color:0xff9a3a, buff:'siege',  dur:LOOT.siege.dur, label:'SIEGE ROUNDS', vi:'ĐẠN PHÁ THÀNH', ds:'×2,5 sát thương vào tường, cổng thành, rào chắn, tháp canh', cat:'ammo', tier:1 },   // Z111b
   { id:'inf',    svg:'infinity',  color:0xffffff, buff:'infammo',dur:18, label:'INFINITE AMMO', vi:'ĐẠN VÔ HẠN', ds:'Không cần nạp đạn', cat:'ammo', tier:1, onGet(p){ for(const g of p.guns) g.rU=0; } },
   // PERMANENT buffs (last until death) — rarer feel, lasting progression
   { id:'range',  svg:'target', color:0x9af0d4, buff:'range',  dur:Infinity, label:'RANGE ×1.4 (∞)', vi:'NÒNG DÀI', ds:'Tầm bắn ×1,4 tới khi mất mạng', cat:'tech', tier:1 },
@@ -26,17 +21,14 @@ export const POWERUPS = [
   { id:'heal',   svg:'heart', color:0xff6b81, vi:'CỨU THƯƠNG', ds:'+40 máu', cat:'med', tier:0, apply(p){ p.hp=Math.min(p.maxHp,p.hp+40); updateHUD(); } },
   { id:'repair', svg:'wrench', color:0xffb060, vi:'SỬA CĂN CỨ', ds:'+70 máu cho Lõi', cat:'tool', tier:0, apply(){ if(core){core.hp=Math.min(core.maxHp,core.hp+70); updateHUD();} } },
   { id:'shield', svg:'shield', color:0x4fd1ff, vi:'KHIÊN NĂNG LƯỢNG', ds:'Bất tử 5 giây', cat:'tech', tier:1, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
-  { id:'bomb',   svg:'bomb', color:0xff6030, vi:'BOM CHÙM', ds:'80 sát thương mọi địch', cat:'bomb', tier:2, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); if(boss&&boss.alive)damageBoss(120); S.shake=2; } },
+  { id:'bomb',   svg:'bomb', color:0xff6030, vi:'BOM CHÙM', ds:'80 sát thương mọi địch', cat:'bomb', tier:2, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); S.shake=2; } },
   { id:'freeze', svg:'snow', color:0x6fd0ff, vi:'ĐÓNG BĂNG', ds:'Địch đứng hình 3,5 giây', cat:'tech', tier:0, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   { id:'drone',  svg:'drone', color:0x6fd0ff, vi:'DRONE YỂM TRỢ', ds:'Drone bắn tự động 22 giây', cat:'tech', tier:1, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
-  { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(ridersUnlocked){ deployRiders(crewTarget()); for(const r of riders) r.hp=r.maxHp; } if(S.player) floatText('TĂNG VIỆN ĐÃ TỚI', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
+  { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(S.player) floatText('TĂNG VIỆN ĐÃ TỚI', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, vi:'TRANG BỊ LÍNH', ds:'Lính bắn mạnh & nhanh hơn', cat:'ammo', tier:1, apply(){ __set_soldierLvl(soldierLvl + 1); for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TRANG BỊ LÍNH +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // Z115 GUN PARTS — permanent, per gun, stacking (GUN_MODS)
-  { id:'mod_barrel', svg:'gun',    color:0xffb35a, mod:'barrel', vi:'NÒNG TINH CHẾ',   ds:'Súng đang cầm: +6% sát thương, +4% tầm — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('barrel'); } },
-  { id:'mod_action', svg:'wrench', color:0x9fd8ff, mod:'action', vi:'KHOÁ NÒNG',       ds:'Súng đang cầm: bắn nhanh hơn 5%, nạp nhanh hơn 6% — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('action'); } },
-  { id:'mod_mag',    svg:'mag',    color:0xd8c070, mod:'mag',    vi:'BĂNG ĐẠN MỞ RỘNG', ds:'Súng đang cầm: +12% số viên mỗi băng — vĩnh viễn, cộng dồn tới 5', cat:'gun', tier:2, apply(){ fitGunMod('mag'); } },
   // gun drop — adds a random gun to the inventory
-  { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ if(MODE.id==='soldier'){ const id=trooperGunPick(); p._gotGun=id; trooperGive(id); return; } const id=smartGunPick(); p._gotGun=id; giveGun(id); } },   // Z329 the soldier's crate brings a hand weapon
+  { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ const id=trooperGunPick(); p._gotGun=id; trooperGive(id); } },   // Z329 the soldier's crate brings a hand weapon
 ];
 // Z93 STACKING RULES (numbers in LOOT.rules): same buff again → EXTEND by half its timer (capped at 1.5× a full timer), power never compounds;
 // TURBO climbs a level (max 2) and refreshes; ERA adds tiles (max 6); a permanent buff you already hold pays out coins instead.
@@ -50,8 +42,6 @@ export function applyPowerup(def){
   else if(def.apply) def.apply(p);
   lootToast(def, note);
 }
-export function addEra(n){ const p=S.player; p.era=Math.min(LOOT.era.cap, (p.era||0)+n); setEraTiles(p); }
-export function setEraTiles(p){ const t=p.mesh&&p.mesh.userData.eraTiles; if(t) t.forEach((m,i)=>m.visible=i<(p.era||0)); }
 // reward card — icon · name · effect · rule — slides in on the right, newest replaces the last
 export let _ltT=null;
 export function lootToast(def, note){
@@ -109,31 +99,10 @@ export function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def
   else if(cat==='bomb'){ const b=add(new THREE.SphereGeometry(0.42,14,10).translate(0,0.45,0), lootMat('bomb',0x2a2a26)); }
   else { add(G.tech, lootMat('tech',0x34404a,0x103040)); }
   return g; }
-// Z115 fit a part: the gun in your hands first, else another carried gun that still has room, else coins
-const MOD_VI={ barrel:'NÒNG', action:'KHOÁ NÒNG', mag:'BĂNG ĐẠN' };
-export function fitGunMod(k){ const p=S.player; if(!p||!p.guns) return; const order=[p.guns[p.gunIdx]].concat(p.guns.filter((g,i)=>i!==p.gunIdx)).filter(Boolean);
-  for(const inst of order){ const id=inst.id, before=barrelGrade(id), lv=addGunMod(id, k); if(lv<0) continue; const g=GUNS[id];
-    if(k==='mag'){ const cap=magCap(g); inst.ammo=Math.min(cap, inst.ammo+Math.max(1,Math.round(g.mag*GUN_MODS.mag.mag))); }
-    if(inst===p.guns[p.gunIdx] && barrelGrade(id)!==before) setPlayerBarrel(id);                                   // the barrel looks finer
-    floatText(MOD_VI[k]+' +1 · '+g.name+' ('+lv+'/'+GUN_MODS.max+')', '#ffd27a', p.pos, 20); ringPulse(p.pos, 0xffd27a, 2.4); sfx('levelup'); updateGunHUD(); return; }
-  addCoins(GUN_MODS.coins); floatText('SÚNG ĐÃ ĐỦ LINH KIỆN · +'+GUN_MODS.coins+' xu', '#ffd24a', p.pos, 18); }
-export function modDrop(){ const pool=POWERUPS.filter(u=>u.mod); return pool[(Math.random()*pool.length)|0]; }
-// Z306 a soldier picks up a soldier's loot: nothing for an engine, a hull or a turret (speed, turbo, ram, reactive armour, siege shells, tank guns and their parts)
-const NOT_FOR_A_MAN=['speed','turbo','ram','era','siege'];   // (Z329 the gun crate is his too: it brings a hand weapon)
+// Z306 the soldier's loot (Z329 the gun crate brings a hand weapon)
 export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
-  const pool=POWERUPS.filter(u=>!u.mod && !NOT_FOR_A_MAN.includes(u.id) && (u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
-export function pickLoot(tier){                                                             // tier = how tough the source was (0 common · 1 rare · 2 epic)
-  if(MODE.loot) return MODE.loot(tier);   // Z307 a mode with its own loot table (the soldier's)
-  const p=S.player, low=(p.hp/p.maxHp<0.4)||(core&&core.hp/core.maxHp<0.4);
-  if(low && Math.random()<0.6){ const pool=POWERUPS.filter(u=>['heal','repair','shield','era'].includes(u.id)); return pool[(Math.random()*pool.length)|0]; }
-  if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
-  let roll=0; if(tier>=2 && Math.random()<LOOT.rarity.epicShare) roll=2; else if(tier>=1 && Math.random()<LOOT.rarity.rareShare) roll=1;
-  if(roll===2){ const r=Math.random(); if(r<0.55){ S.giftDry=0; return GUN_DROP_DEF; } if(r<0.55+GUN_MODS.epicShare) return modDrop(); return r<0.9 ? POWERUPS.find(u=>u.id==='bomb') : GEM_DEF; }   // EPIC: gun · gun part · cluster bomb · diamond
-  if(roll===1 && Math.random()<GUN_MODS.rareShare) return modDrop();                                                   // Z115 rare: sometimes a gun part
-  if(Math.random() < Math.min(GIFT.pityCap, GIFT.gunBase*0.35 + (S.giftDry||0)*GIFT.pityStep)){ S.giftDry=0; return GUN_DROP_DEF; }   // pity timer still guarantees guns on dry streaks
-  const pool=POWERUPS.filter(u=>u.id!=='gun' && u.id!=='bomb' && !u.mod && (u.tier||0)===roll); S.giftDry=(S.giftDry||0)+1;   // Z115 parts come only from their own rolls
-  return pool[(Math.random()*pool.length)|0];
-}
+  const pool=POWERUPS.filter(u=>(u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
+export function pickLoot(tier){ return MODE.loot(tier); }   // tier = how tough the source was (0 common · 1 rare · 2 epic) · Z307 the soldier's table
 export function dropPowerup(pos, tier, forced){
   tip('loot');
   tier=tier|0; const def=forced||pickLoot(tier), t=def.tier||0;   // Z104 forced = re-drop a carried item (rally point)
@@ -175,8 +144,8 @@ export function updatePickups(dt, now){
   }
 }
 export function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }
-export const BUFF_ICON={ siege:'bomb', rapid:'bolt', power:'burst', speed:'dash', infammo:'infinity', ammoup:'mag', range:'target', turbo:'bolt', ram:'tank', era:'shield' };
-export const BUFF_COL={ siege:'#ff9a3a', turbo:'#7fd0ff', ram:'#ffb040', speed:'#6fe0a0', era:'#e0c070' };
+export const BUFF_ICON={ rapid:'bolt', power:'burst', infammo:'infinity', ammoup:'mag', range:'target' };
+export const BUFF_COL={};
 export let _buffKey='';
 export function updateBuffHUD(now){                                                         // Z93: rebuilt only when something visible changes (was every frame)
   const bar=document.getElementById('buffbar'); if(!bar) return; const p=S.player, items=[];

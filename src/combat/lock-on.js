@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, FORT, LOCKON, TREEFALL, AIRAIM, LINE, BLIGHT, TENT, GUNFX } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageCore, damageDrone, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -40,7 +40,7 @@ export function smartClear(b, toTgt){ const sp=Math.hypot(b.vx,b.vz)||1, ux=b.vx
     if(Math.abs(dx*uz-dz*ux) > (bl.r||1.5)+0.8) continue; const h=blockTop(bl)-gy+LOCKON.clear; if(h>need) need=h; }
   if(fortIntactCross(b.x, b.z, b.x+ux*L, b.z+uz*L)) need=Math.max(need, FORT.wallH+LOCKON.clear);
   return need; }
-export function targetAlive(t){ if(t && t._twr) return t.gd.alive && !t.t.falling; return t===boss ? !!(boss&&boss.alive) : enemies.includes(t); }
+export function targetAlive(t){ if(t && t._twr) return t.gd.alive && !t.t.falling; return enemies.includes(t); }
 // Z217 a guard up a watchtower as a missile target (one stable object per guard, kept at his real position)
 function guardTarget(t, gd){ const o=gd._mt||(gd._mt={ _twr:true, t, gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7 }); o.pos.x=gd.wx; o.pos.y=(gd.wy||6)+0.9; o.pos.z=gd.wz; return o; }   // dead targets splice out of enemies[]
 // Z214 a smart missile goes for the helicopter first
@@ -56,10 +56,8 @@ function dangerClose(t){ const x=t.pos.x, z=t.pos.z, p=S.player; if(p && (x-p.po
   if(t.def && t.def.inf) for(const a of FT){ if((a.pos.x-x)**2+(a.pos.z-z)**2 < LOCKON.allyR*LOCKON.allyR) return true; } return false; }
 export function acquireLock(b){ let best=null, bd=1e9;                                     // nearest live enemy/boss to the missile itself
   if(b.smart){ for(const e of enemies){ const w=e.def.air?0.35:e.def.inf?4:1, d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*w; if(d<bd && seekOK(b, e.pos.x, e.pos.z, e.def.inf)){ bd=d; best=e; } }   // Z217 heat-seeking: aircraft › armour › guards › foot soldiers — never bricks or stone
-    for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const d=((gd.wx-b.x)**2+(gd.wz-b.z)**2)*1.6; if(d<bd && seekOK(b, gd.wx, gd.wz, false)){ bd=d; best=guardTarget(t, gd); } } }
-    if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd && seekOK(b, boss.pos.x, boss.pos.z, false)){ bd=d; best=boss; } } return best; }
+    for(const t of towers){ if(t.falling) continue; for(const gd of t.guards){ if(!gd.alive || gd.wx==null) continue; const d=((gd.wx-b.x)**2+(gd.wz-b.z)**2)*1.6; if(d<bd && seekOK(b, gd.wx, gd.wz, false)){ bd=d; best=guardTarget(t, gd); } } } return best; }
   for(const e of enemies){ const d=((e.pos.x-b.x)**2+(e.pos.z-b.z)**2)*(e.def.inf?9:(e.def.air && b.smart)?0.35:1); if(d<bd && seekOK(b, e.pos.x, e.pos.z, e.def.inf)){bd=d;best=e;} }   // missiles prefer vehicles over foot soldiers
-  if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd && seekOK(b, boss.pos.x, boss.pos.z, false)){bd=d;best=boss;} }
   return best; }
 export function requestLock(t){
   for(const L of lockFX){ if(L.tgt===t && L.life>0){ L.life=L.max; return; } }      // already locked → keep alive while a missile chases it
@@ -204,7 +202,6 @@ export function updateBullets(dt, now){
       else if(b.smart && b.ign<=0){ const clr=smartClear(b, 1e9); if(clr>b.by) b.by += (clr-b.by)*Math.min(1, dt*7); } }                  // snappy climb/dive — short air time, no orbiting
     else if(b.homing && b.owner==='p'){ // (legacy) plain homing toward the nearest enemy
       let best=null, bd=1e9; for(const e of enemies){ const d=(e.pos.x-b.x)**2+(e.pos.z-b.z)**2; if(d<bd){bd=d;best=e;} }
-      if(boss&&boss.alive){ const d=(boss.pos.x-b.x)**2+(boss.pos.z-b.z)**2; if(d<bd){bd=d;best=boss;} }
       if(best){ const want=Math.atan2(best.pos.x-b.x,best.pos.z-b.z); let da=wrapAngle(want-b.angle);
         b.angle=wrapAngle(b.angle+da*Math.min(1,dt*b.homing)); const sp=Math.hypot(b.vx,b.vz);
         b.vx=Math.sin(b.angle)*sp; b.vz=Math.cos(b.angle)*sp; } }
@@ -268,8 +265,6 @@ export function updateBullets(dt, now){
                 spawnPart(e2.pos.x,1.4,e2.pos.z,(Math.random()-0.5)*6,4,(Math.random()-0.5)*6,{color:0x9fe0ff,size:0.9,life:0.2,grav:0,drag:6}); hits--; } } }
           impactFX(b.mesh.position, b.fx, Math.min(3.2, 1 + b.dmg/26), tank); hit=true;   // per-gun impact spray (spark/frag/blast/pierce/ice/shock)
           if(b.pierce>0){ b.pierce--; } else break; } }
-      if(!hit && boss && boss.alive){ const dx=boss.pos.x-b.x, dz=boss.pos.z-b.z;
-        if(dx*dx+dz*dz < (b.r+boss.r*2.5)**2 && hitsHull(boss, b.x, b.z, b.r) && lineH(b, _wy, boss)){ damageBoss(b.dmg*bulletFalloff(b)*typeMul(b.type,'H')*envDmg(b.type), b.x, b.z); ringPulse(b.mesh.position,0xffd27a,2.2); hit=true; } }
     } else if(b.owner!=='p'){ // enemy bullet — Z237 only an ENEMY round can hit our tank: our own lofted / guided missile used to fall through to here while airborne and strike us as it flew over the hull (firing on the move or back over the engine deck)
       const p=S.player;
       sweepPoint(b._hx, b._hz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
@@ -278,9 +273,7 @@ export function updateBullets(dt, now){
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
         else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }
-        if(riders.length && Math.random()<0.45){ const rr=riders[(Math.random()*riders.length)|0]; if(rr&&!rr.dead) damageRider(rr, b.dmg); }   // a shot into the tank can wound an exposed rider
         hit=true; }
-      if(!hit && hitAllyTank(b.x, b.z, b.r, b.dmg*armK)) hit=true;                       // Z104 our captured tanks take hits too
       if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z; if(dx*dx+dz*dz<9) suppress(s, dt*1.4); }   // Z173 our men get pinned too
       if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2 && lineH(b, _wy, s, true)){ bloodSpurt(s.pos.x, s.pos.z, b.vx, b.vz, b.inf?0.7:1.6); damageAlly(s, (b.inf||!LETHAL.tankRoundKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)

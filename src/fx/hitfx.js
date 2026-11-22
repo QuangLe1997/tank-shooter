@@ -2,7 +2,7 @@
 //   long lingering smoke ribbon behind a flickering motor flame, an enemy gun barks with flash + smoke at the real muzzle, a hit on armour
 //   rocks the hull on its springs and throws molten spall back out of the hole (or skips off thick front plate in a shower of sparks),
 //   and an enemy tank that is badly hurt smokes from the engine deck, then burns
-import { BIOME, MOBILE, PART_MAX, PERF, S, boss, bulletImpact, enemies, gunFlash, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PART_MAX, PERF, S, bulletImpact, enemies, gunFlash, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
 
 // point the pooled round along its velocity (yaw + the pitch of its real climb / fall this frame); the core is stretched at spawn
 export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)||1, vy=(dt>0 && b._py!=null) ? (y-b._py)/dt : 0; b._py=y;
@@ -33,7 +33,7 @@ export function enemyMuzzleFX(x, y, z, a, heavy){ const fx=Math.sin(a), fz=Math.
 
 // the blow rocks the hull on its suspension: pitched by a hit to the nose / tail, rolled by one to the side (heavier hulls barely move)
 export function rockHull(t, ux, uz, dmg){ const rig=t && t.mesh && t.mesh.userData.rig; if(!rig) return;
-  const rel=Math.atan2(ux,uz)-(t.facing||0), K=Math.min(1.3, (dmg||0)*0.018)/((t.def&&t.def.heavy) || t===boss ? 1.7 : 1);
+  const rel=Math.atan2(ux,uz)-(t.facing||0), K=Math.min(1.3, (dmg||0)*0.018)/((t.def&&t.def.heavy) ? 1.7 : 1);
   rig.pv += Math.cos(rel)*K; rig.rv += Math.sin(rel)*K*0.75; rig.vib=Math.min(1, (rig.vib||0)+K*0.4); }
 
 // a round strikes a tank's armour at (x,y,z) travelling along (ux,uz): k = the round's weight, glance = it did not get through

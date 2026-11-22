@@ -1,6 +1,6 @@
 // game/viewport.js — Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate,
 // and the resize / orientation / fullscreen / visualViewport listeners.
-import { BLOOM_SCALE, MOBILE, S, VIEW, bloom, camera, composer, renderer, shopCam, togglePause } from '../hub.js';
+import { BLOOM_SCALE, MOBILE, S, VIEW, bloom, camera, composer, renderer, togglePause } from '../hub.js';
 
 export function doResize(force){
   const c=renderer.domElement;
@@ -8,7 +8,6 @@ export function doResize(force){
   if(!force && w===VIEW.w && h===VIEW.h) return;   // mobile fires resize continuously while the URL bar slides — reallocating
   VIEW.w=w; VIEW.h=h;                              // the render targets on every one of those was a guaranteed hitch
   camera.aspect = w/h; camera.updateProjectionMatrix();
-  if(typeof shopCam!=='undefined'){ shopCam.aspect = w/h; shopCam.updateProjectionMatrix(); }   // keep the 3D shop camera in sync
   renderer.setSize(w, h, false); composer.setSize(w, h);   // buffer follows the viewport; CSS keeps the canvas full-screen
   if(bloom && bloom.setSize) bloom.setSize(Math.round(w*BLOOM_SCALE), Math.round(h*BLOOM_SCALE));
 }

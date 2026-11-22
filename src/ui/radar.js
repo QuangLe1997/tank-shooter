@@ -1,5 +1,5 @@
 // ui/radar.js — RADAR / MINIMAP
-import { ALLY_TANKS, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, PYLONS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, boss, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
+import { ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
 // ----------------------------- RADAR / MINIMAP -----------------------------
@@ -21,9 +21,6 @@ export function drawRadar(){
     c.fillStyle=low?'#ff5a3a':'#6fe0ff'; c.beginPath(); c.moveTo(x,y-5); c.lineTo(x+5,y); c.lineTo(x,y+5); c.lineTo(x-5,y); c.closePath(); c.fill(); }
   c.fillStyle='#ff6a4a'; for(const e of enemies){ if(e.def.inf){ c.fillStyle='#e0a070'; c.fillRect(toX(e.pos.x)-1, toY(e.pos.z)-1, 2, 2); c.fillStyle='#ff6a4a'; } else if(e.def.air){ const x=toX(e.pos.x), y=toY(e.pos.z); c.fillStyle='#ff4ad0'; c.beginPath(); c.moveTo(x,y-4); c.lineTo(x+3.5,y+3); c.lineTo(x-3.5,y+3); c.closePath(); c.fill(); c.fillStyle='#ff6a4a'; } else c.fillRect(toX(e.pos.x)-1.5, toY(e.pos.z)-1.5, 3, 3); }   // tanks · infantry · aircraft
   c.fillStyle='#ffd24a'; for(const lb of lootBeacons){ const ox=lb.kind==='block'?lb.owner.x:lb.owner.pos.x, oz=lb.kind==='block'?lb.owner.z:lb.owner.pos.z; c.fillRect(toX(ox)-2, toY(oz)-2, 4, 4); }   // hidden loot
-  if(boss&&boss.alive){ c.fillStyle='#ffae3a'; c.beginPath(); c.arc(toX(boss.pos.x),toY(boss.pos.z),4.5,0,Math.PI*2); c.fill(); }
-  if(PYLONS.length){ const pl=0.55+0.45*Math.sin(performance.now()/150); for(const b of PYLONS){ const x=toX(b.x), y=toY(b.z);   // Z243 shield pylons: pulsing cyan triangles + a ring
-      c.fillStyle='rgba(127,224,255,'+pl+')'; c.beginPath(); c.moveTo(x,y-6); c.lineTo(x+5,y+4); c.lineTo(x-5,y+4); c.closePath(); c.fill(); c.strokeStyle='rgba(127,224,255,0.5)'; c.lineWidth=1.2; c.beginPath(); c.arc(x,y,8+3*pl,0,Math.PI*2); c.stroke(); } }
   if(OBJ && OBJ.alive){ const x=toX(OBJ.x), y=toY(OBJ.z), pl=0.6+0.4*Math.sin(performance.now()/180); c.strokeStyle='rgba(255,196,64,'+pl+')'; c.lineWidth=1.6; c.strokeRect(x-5,y-5,10,10); c.fillStyle='#ffc440'; c.fillRect(x-2,y-2,4,4); }   // objective
   // Z104 installations + our units: rally (green ring) · POW stockade (amber → green when open) · depots (square: held red, open amber, ours green)
   if(RALLY_PT.g){ c.strokeStyle='#9be04a'; c.lineWidth=1.6; c.beginPath(); c.arc(toX(RALLY_PT.x),toY(RALLY_PT.z),4,0,Math.PI*2); c.stroke(); }
@@ -43,7 +40,6 @@ export function drawRadar(){
     c.strokeStyle=col; c.fillStyle=col; c.lineWidth=1.4; c.globalAlpha=0.9; c.beginPath(); c.moveTo(X,Y); c.lineTo(X+ux*9,Y+uz*9); c.stroke();
     c.beginPath(); c.moveTo(X+ux*12,Y+uz*12); c.lineTo(X+ux*7-uz*3,Y+uz*7+ux*3); c.lineTo(X+ux*7+uz*3,Y+uz*7-ux*3); c.closePath(); c.fill(); c.globalAlpha=1; }
   c.fillStyle='#9be04a'; for(const a of FT) c.fillRect(toX(a.pos.x)-1, toY(a.pos.z)-1, 2.5, 2.5);
-  for(const at of ALLY_TANKS){ const x=toX(at.pos.x), y=toY(at.pos.z); c.save(); c.translate(x,y); c.rotate(Math.atan2(Math.cos(at.facing),Math.sin(at.facing))); c.fillStyle='#9be04a'; c.beginPath(); c.moveTo(4.5,0); c.lineTo(-3,2.8); c.lineTo(-3,-2.8); c.closePath(); c.fill(); c.restore(); }
   if(p){ const x=toX(p.pos.x), y=toY(p.pos.z);                                            // player arrow (facing)
     c.save(); c.translate(x,y); c.rotate(Math.atan2(Math.cos(p.facing),Math.sin(p.facing)));
     c.fillStyle='#bfe66a'; c.beginPath(); c.moveTo(6,0); c.lineTo(-4,3.5); c.lineTo(-4,-3.5); c.closePath(); c.fill(); c.restore(); }

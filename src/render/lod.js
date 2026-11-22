@@ -1,7 +1,7 @@
 // render/lod.js — Z107 RENDER BUDGET: trims draw calls where the eye can't tell — soldier shadows only near the tank, tower / wall riflemen hidden out of range, HP bars only once hurt.
 import { LOD } from '../../config.js';
 import * as THREE from 'three';
-import { FT, HZN, MOBILE, S, VIEW, camera, enemies, riders, scene, towers } from '../hub.js';
+import { FT, HZN, MOBILE, S, VIEW, camera, enemies, scene, towers } from '../hub.js';
 
 let _at=0;
 function castNear(g, near){ const u=g.userData; if(u._cs===near) return; u._cs=near; g.traverse(o=>{ if(o.isMesh) o.castShadow=near; }); }
@@ -9,7 +9,6 @@ export function updateLOD(now){ if(now<_at) return; _at=now+LOD.every; const p=S
   if(!MOBILE){
     for(const a of FT){ const dx=a.pos.x-px, dz=a.pos.z-pz; castNear(a.g, dx*dx+dz*dz<R2); }
     for(const e of enemies){ if(!e.def.inf) continue; const dx=e.pos.x-px, dz=e.pos.z-pz; castNear(e.mesh, dx*dx+dz*dz<R2); }
-    for(const r of riders) castNear(r.g, false);                                     // the crew rides on the hull — the hull's shadow covers them
   }
   fogCull(); detailCull(now);
   { const cx=camera.position.x, cz=camera.position.z, D2=LOD.tankDetailR*LOD.tankDetailR;   // Z233 far enemy tanks: the small fittings (hooks, lamps, hatches, boxes) go — ~10 draws each, unseen at that range
