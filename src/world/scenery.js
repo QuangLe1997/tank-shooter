@@ -127,6 +127,8 @@ function lavaPit(p, gy){ const r = sceneDims(p.k, p.s).x * M(p.k).lava, y = gy +
 function realSupply(gen){ if(gen !== GEN) return; for(const b of blocks){ if(b.kind === 'radartower' && b.mesh && !b.mesh.userData.real && !MOBILE){ b.mesh.userData.real = true; realRadar(b, gen); continue; }
     const yk = SCENERY.supply.yard[b.kind]; if(yk && b.mesh && !b.mesh.userData.real){ b.mesh.userData.real = true; b.mesh.traverse(o => { if(o.isMesh) o.visible = false; });   // Z425 the radar yard's pieces: the radome on its tower, the shelter, the radar truck, the generator, the dishes
       const s = b.mesh.userData.s || 1, m = scenePiece(yk, s); m.scale.setScalar(s); b.mesh.add(m); continue; }
+    if(b.kind === 'bunker' && b.supply && b.mesh && !b.mesh.userData.real && SCENERY.supply.magazine){ const C = SCENERY.supply.magazine; b.mesh.userData.real = true; b.mesh.traverse(o => { if(o.isMesh) o.visible = false; });   // Z434 the ammunition yard's earth-covered magazines: the real bunker, not the drawn igloo
+      const D = sceneDims(C.k), s = C.w / Math.max(D.x, D.z), m = scenePiece(C.k, s); m.scale.setScalar(s); b.mesh.add(m); continue; }
     if(b.kind === 'pumphouse' && b.mesh && !b.mesh.userData.real){ b.mesh.userData.real = true; b.mesh.traverse(o => { if(o.isMesh) o.visible = false; });   // Z420 the fuel store: the weathered platform scan
       const s = SCENERY.supply.depot.w / M('fuel_depot').w, m = scenePiece('fuel_depot', s); m.scale.setScalar(s); b.mesh.add(m); continue; }
     if(b.kind !== 'fueltank' || !b.mesh || b.mesh.userData.real) continue; b.mesh.userData.real = true;

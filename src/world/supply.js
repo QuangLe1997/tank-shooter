@@ -34,8 +34,6 @@ function mats(){ if(_M) return _M; const V=(o)=>new THREE.MeshStandardMaterial(O
 export function kit(){ const P={}; return { add(m, geo, col){ (P[m]=P[m]||[]).push({ geo, col }); return geo; }, bake(own){ const g=new THREE.Group(), M=mats();
   for(const k in P){ const mat=own && k!=='net' && k!=='glow' ? M[k].clone() : M[k]; if(own && mat!==M[k]) mat.userData.own=true; const m=new THREE.Mesh(_mergeColored(P[k]), mat); m.castShadow=k!=='net'; m.receiveShadow=true; g.add(m); } return g; } }; }
 export const B3=(w,h,d,x,y,z,ry)=>_xf(new THREE.BoxGeometry(w,h,d),x,y,z,0,ry||0,0), CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
-function wheels(K, xs, zs, r){ for(const x of xs) for(const z of zs) K.add('metal', CY(r,r,0.36,14,x,r,z,0,Math.PI/2), 0x1c1b1a); }
-function truckCab(K, col, zc){ K.add('paint', B3(2.3,1.9,2.0,0,1.65,zc), col); K.add('paint', B3(2.2,0.8,1.2,0,1.1,zc+1.5), col); K.add('metal', B3(2.0,0.7,0.05,0,2.0,zc+1.01), 0x1a2228); K.add('metal', B3(2.4,0.3,0.2,0,0.75,zc+2.12), 0x2a2a28); }
 
 // ---------- the structures (built in local space: +z faces the battle, 1 unit = 1 m) ----------
 function fuelTank(){ const K=kit();
@@ -47,11 +45,6 @@ function fuelTank(){ const K=kit();
   for(const s of [-0.28,0.28]) K.add('metal', CY(0.04,0.04,6.0,5,3.12,3.1,s), 0x5a5a56); for(let y=0.5;y<5.8;y+=0.4) K.add('metal', B3(0.05,0.05,0.6,3.12,y,0), 0x5a5a56);   // ladder
   K.add('metal', CY(0.22,0.22,1.6,10,0,0.9,3.2,Math.PI/2), 0x7a7a72); K.add('metal', CY(0.32,0.32,0.4,10,0,0.9,2.7,Math.PI/2), 0x4a4a46);   // outlet + valve
   return K.bake(true); }
-function tankerTruck(){ const K=kit(), col=[0x6a6e52,0x7a3a2a,0x3a4a5a][(Math.random()*3)|0];
-  K.add('metal', B3(1.2,0.35,8.2,0,0.8,0), 0x2a2a28); truckCab(K, col, 2.6);
-  K.add('paint', _xf(new THREE.CylinderGeometry(1.15,1.15,5.2,22),0,2.0,-1.3,Math.PI/2,0,0,1,1,0.85), 0xcfcfc6); K.add('paint', CY(1.17,1.17,0.25,22,0,2.0,-1.3,Math.PI/2), 0xd0a020);
-  K.add('metal', CY(0.35,0.35,0.15,10,0,3.15,-0.4), 0x4a4a46); K.add('metal', CY(0.35,0.35,0.15,10,0,3.15,-2.2), 0x4a4a46);
-  wheels(K, [-1.05,1.05], [2.8,-2.4,-3.5], 0.55); return K.bake(true); }
 function pumpHouse(){ const K=kit();
   K.add('conc', B3(7.0,3.4,4.6,0,1.7,0), 0xb0aca2); K.add('conc', B3(7.6,0.35,5.2,0,3.55,0), 0x8a867c); K.add('metal', B3(1.5,2.3,0.08,-1.6,1.15,2.33), 0x3a4a3a); K.add('metal', B3(1.6,0.9,0.06,1.8,2.1,2.32), 0x1a2228);
   for(const x of [-2.2,0,2.2]){ K.add('metal', CY(0.42,0.42,1.3,14,x,0.75,3.6,0,Math.PI/2), 0x3a5a7a); K.add('metal', B3(0.7,0.7,0.6,x+0.95,0.75,3.6), 0x2a3a4a); K.add('metal', CY(0.14,0.14,1.4,8,x,0.75,4.6,Math.PI/2), 0x6a6a64); }   // pumps + motors
@@ -64,15 +57,6 @@ function igloo(){ const K=kit(), soil=new THREE.Color(BIOME.ground||0x8a7a5a).mu
   K.add('metal', CY(0.3,0.3,1.4,10,0,4.2,-2), 0x5a5a56); K.add('metal', CY(0.42,0.3,0.25,10,0,4.95,-2), 0x4a4a46);   // vent
   for(let i=0;i<9;i++) K.add('soil', _xf(new THREE.SphereGeometry(_R(0.4,0.8),6,4),_R(-4,4),_R(2.8,3.4),_R(-4,3.5),0,0,0,1,0.5,1), new THREE.Color(soil).multiplyScalar(_R(0.8,1.1)).getHex());   // lumps of turf
   return K.bake(true); }
-function ammoStack(){ const K=kit(), shells=Math.random()<0.4;
-  K.add('wood', B3(2.6,0.18,2.0,0,0.09,0), 0x8a6a40);
-  if(shells){ for(let r=0;r<3;r++) for(let c=0;c<6;c++){ const x=-1.05+c*0.42, y=0.38+r*0.38, z=-0.1+(r%2)*0.1; K.add('metal', CY(0.17,0.17,1.3,10,x,y,z,Math.PI/2), 0xb08a3a); K.add('metal', _xf(new THREE.ConeGeometry(0.17,0.45,10),x,y,z+0.87,Math.PI/2), 0x5a6a4a); } }
-  else for(let l=0;l<3;l++) for(let c=0;c<2;c++) for(let d=0;d<2;d++){ const w=1.2, h=0.55; K.add('wood', B3(w,h,0.9,-0.62+c*1.24,0.46+l*0.58,-0.48+d*0.96), [0x4e5a34,0x56623a,0x4a5430][(l+c+d)%3]); K.add('paint', B3(w+0.01,0.08,0.91,-0.62+c*1.24,0.46+l*0.58,-0.48+d*0.96), 0xc8a020); }
-  return K.bake(true); }
-function supplyTruck(){ const K=kit(), col=0x5a6440;
-  K.add('metal', B3(1.2,0.35,7.4,0,0.8,0), 0x2a2a28); truckCab(K, col, 2.4);
-  K.add('paint', B3(2.4,0.5,4.6,0,1.2,-1.3), col); K.add('canvas', _xf(new THREE.CylinderGeometry(1.25,1.25,4.6,14,1,false,-Math.PI/2,Math.PI),0,1.7,-1.3,Math.PI/2,0,Math.PI/2,1,0.9,1), 0x7a7a52);
-  K.add('canvas', B3(2.5,1.2,4.6,0,2.0,-1.3), 0x76764e); wheels(K, [-1.05,1.05], [2.6,-2.2,-3.2], 0.52); return K.bake(true); }
 
 // ---------- placement ----------
 // Z196 level the ground under a compound: flat inside rIn (the mean height there), blending back to the natural ground by rOut;
@@ -218,14 +202,7 @@ function buildFuel(s){ flattenPad(s[0], s[1], FUEL_R*SUPPLY_K*0.95, FUEL_R*SUPPL
     for(const lx of [-7.6,0,7.6]) piece(B, 'fueltank', fuelTank(), lx, -2.5, 0, { r:3.2 }, true);
     { const Dp=SCENERY.on && sceneDims('fuel_depot', SCENERY.supply.depot.w/SCENERY.models.fuel_depot.w);   // Z420 the fuel store (the weathered platform scan, world/scenery.js realSupply) — its box, when it will stand there
       piece(B, 'pumphouse', pumpHouse(), 0, Dp ? SCENERY.supply.depot.z : 7.0, 0, Dp ? { r:Math.hypot(Dp.x,Dp.z)/2, hw:Dp.x/2*0.9, hl:Dp.z/2*0.9 } : { r:3.4, hw:2.4, hl:3.6, across:true }); }
-    piece(B, 'tanker', tankerTruck(), -9.5, 10.5, 0.25, { r:2.2, hw:1.3, hl:4.1 }); piece(B, 'tanker', tankerTruck(), 10.5, 9.0, -0.35, { r:2.2, hw:1.3, hl:4.1 });
     const K=kit(); for(const [w,d,x,z] of [[25,0.45,0,-7.4],[25,0.45,0,2.6],[0.45,10,-12.5,-2.4],[0.45,10,12.5,-2.4]]) K.add('conc', B3(w,1.1,d,x,0.55,z), 0xa6a298);   // bund wall
-    for(const y of [0.9,1.25,1.6]) K.add('metal', CY(0.16,0.16,15.4,10,0,y,3.6,0,Math.PI/2), [0x8a8a82,0x9a2a1e,0x7a7a72][Math.round((y-0.9)/0.35)]);   // pipe rack
-    for(const x of [-7.4,-2.5,2.5,7.4]){ K.add('metal', B3(0.15,2.4,0.15,x,1.2,3.3), 0x4a4a46); K.add('metal', B3(0.15,2.4,0.15,x,1.2,3.9), 0x4a4a46); K.add('metal', B3(0.15,0.15,0.9,x,2.35,3.6), 0x4a4a46); }   // Z195 steel H-frames…
-    for(const [xa,xb] of [[-7.4,-2.5],[-2.5,2.5],[2.5,7.4]]){ const L=Math.hypot(xb-xa,2.2), a=Math.atan2(2.2,xb-xa); K.add('metal', _xf(new THREE.BoxGeometry(L,0.08,0.08),(xa+xb)/2,1.2,3.9,0,0,a), 0x4a4a46); K.add('metal', _xf(new THREE.BoxGeometry(L,0.08,0.08),(xa+xb)/2,1.2,3.9,0,0,-a), 0x4a4a46); }   // …with X-bracing
-    K.add('metal', B3(15.2,0.14,0.14,0,2.42,3.6), 0x4a4a46);
-    for(const x of [-7.6,0,7.6]) K.add('metal', CY(0.13,0.13,3.2,8,x,0.9,1.7,Math.PI/2), 0x7a7a72);
-    for(const x of [-4,4]){ K.add('conc', B3(3.4,0.25,1.4,x,0.12,12.4), 0x9e9a90); for(const s of [-1,1]){ K.add('paint', B3(0.9,1.7,0.6,x+s*0.9,1.05,12.4), 0xc8c4b8); K.add('paint', B3(0.92,0.35,0.62,x+s*0.9,1.6,12.4), 0x9a2a1e); } K.add('metal', B3(3.6,0.15,1.8,x,3.2,12.4), 0x8a8a82); for(const s of [-1,1]) K.add('metal', CY(0.08,0.08,3.1,6,x+s*1.6,1.6,12.4), 0x6a6a64); }   // dispenser islands under canopies
     for(const [x,z] of [[-16,-11],[16,-11]]) lattice(K, x, z, 11);   // Z195 steel lattice floodlight towers
     const SG=[['military',-7.5,15.2,0],['fire',7.5,15.2,0],['nosmoke',-4,8.9,0,1.3],['fire',-14.5,-2.4,Math.PI/2,1.3],['mines',-17.6,4,-Math.PI/2],['mines',17.6,-6,Math.PI/2],['nosmoke',0,-12.6,Math.PI,1.3],['military',12,-12.6,Math.PI]];
     signPosts(K, SG); const nm=gate(K, 15, 8, 'name', B);
@@ -236,22 +213,10 @@ function buildFuel(s){ flattenPad(s[0], s[1], FUEL_R*SUPPLY_K*0.95, FUEL_R*SUPPL
     B.garrison=true; }
 function buildAmmo(s){ flattenPad(s[0], s[1], AMMO_R*SUPPLY_K*0.95, AMMO_R*SUPPLY_K*1.35); const B=newBase('ammo', s[0], s[1], AMMO_R*SUPPLY_K, SUPPLY_K);
     for(const lx of [-6.8,6.8]) piece(B, 'bunker', igloo(), lx, -3.5, 0, { r:4.4, hw:4.5, hl:4.9 }, true);
-    for(const [lx,lz] of [[-6.6,7.2],[-2.2,7.6],[2.2,7.4],[6.6,7.0]]) piece(B, 'ammostack', ammoStack(), lx, lz, _R(-0.2,0.2), { r:1.7 });
-    piece(B, 'supplytruck', supplyTruck(), 11.5, 6, -0.3, { r:2.2, hw:1.3, hl:3.7 });
+    for(const [lx,lz] of [[-6.6,7.2],[-2.2,7.6],[2.2,7.4],[6.6,7.0]]) piece(B, 'ammostack', makeCoverMesh('crates', true), lx, lz, _R(-0.2,0.2), { r:1.7 });   // Z434 the real crates, not drawn stacks
     const K=kit();
-    for(const x of [-9.6,-3.2,3.2,9.6]) for(const z of [4.4,10.2]) K.add('metal', B3(0.24,4.0,0.24,x,2.0,z), 0x4a4e46);   // Z195 steel-frame storage shed: I-beam columns…
-    for(const z of [4.4,10.2]) K.add('metal', B3(19.8,0.32,0.22,0,4.0,z), 0x4a4e46);
-    for(const x of [-9.6,-6.4,-3.2,0,3.2,6.4,9.6]) K.add('metal', _xf(new THREE.BoxGeometry(0.16,0.24,6.4),x,4.25,7.3,0.08,0,0), 0x4a4e46);   // rafters
-    K.add('metal', _xf(new THREE.BoxGeometry(20.4,0.07,6.9),0,4.45,7.3,0.08,0,0), 0x8a8c84);   // corrugated roof
-    for(let x=-9.9;x<10;x+=0.5) K.add('metal', _xf(new THREE.BoxGeometry(0.08,0.06,6.9),x,4.5,7.3,0.08,0,0), 0x9a9c94);
-    for(const [xa,xb] of [[-9.6,-3.2],[3.2,9.6]]){ const L=Math.hypot(xb-xa,3.6), a=Math.atan2(3.6,xb-xa); for(const sg of [1,-1]) K.add('metal', _xf(new THREE.BoxGeometry(L,0.08,0.08),(xa+xb)/2,2.1,4.4,0,0,sg*a), 0x4a4e46); }   // back bracing
-    K.add('net', _xf(new THREE.PlaneGeometry(19.6,2.6,6,2),0,2.7,10.32,0,0,0), 0xffffff);   // camo net hung on the open side
     const soil=new THREE.Color(BIOME.ground||0x8a7a5a).multiplyScalar(0.75).getHex(); for(const x of [-13,13]) K.add('soil', _xf(new THREE.CylinderGeometry(0.6,1.8,2.0,4,1),x,1.0,-1,0,Math.PI/4,0,1,1,4.5), soil);   // earth traverses
     for(const [x,z] of [[-15.5,-11],[15.5,-11]]) lattice(K, x, z, 10);
-    { const c=0xc8a020; for(const sx of [-1,1]){ for(const sz of [-1,1]) K.add('paint', _xf(new THREE.BoxGeometry(0.3,7.4,0.3),sx*12.2,3.6,1.8+sz*1.1,sz*-0.14,0,0), c); K.add('paint', B3(0.4,0.4,2.8,sx*12.2,0.25,1.8), c); K.add('metal', B3(0.16,0.12,26,sx*12.2,0.06,1.8,Math.PI/2), 0x4a4a46); }   // Z196 rail-mounted gantry crane over the magazine doors
-      K.add('paint', B3(25,0.6,0.5,0,7.3,1.4), c); K.add('paint', B3(25,0.6,0.5,0,7.3,2.2), c); K.add('metal', B3(1.4,0.7,1.4,-3,6.75,1.8), 0x3a3a36); K.add('metal', CY(0.02,0.02,3.2,4,-3,5.0,1.8), 0x222222); K.add('metal', B3(0.5,0.3,0.3,-3,3.3,1.8), 0x2a2a28); }
-    { const fx=-11.5, fz=12.5; K.add('paint', B3(1.2,0.9,2.0,fx,0.75,fz), 0xd8a020); K.add('metal', B3(1.1,0.08,0.9,fx,1.25,fz-0.1), 0x2a2a28); for(const s of [-0.5,0.5]) K.add('metal', B3(0.06,1.9,0.06,fx+s,1.6,fz-0.4), 0x2a2a28); K.add('metal', B3(1.1,0.06,0.06,fx,2.5,fz-0.4), 0x2a2a28);
-      for(const s of [-0.4,0.4]) K.add('metal', B3(0.08,2.4,0.1,fx+s*0.7,1.2,fz+1.05), 0x3a3a36); for(const s of [-0.25,0.25]) K.add('metal', B3(0.1,0.05,1.1,fx+s,0.12,fz+1.6), 0x3a3a36); wheels(K,[fx-0.62,fx+0.62],[fz+0.6,fz-0.6],0.3); K.add('wood', B3(1.2,0.15,1.0,fx,0.22,fz+1.65), 0x8a6a40); K.add('wood', B3(1.0,0.5,0.8,fx,0.55,fz+1.65), 0x4e5a34); }   // forklift with a crate on the forks
     const SG=[['military',-7,16.2,0],['ammo',7,16.2,0],['ammo',-6.8,1.6,0,1.3],['ammo',6.8,1.6,0,1.3],['nosmoke',0,12.6,0,1.3],['mines',-17.1,2,-Math.PI/2],['mines',17.1,-4,Math.PI/2],['military',0,-12.1,Math.PI]];
     signPosts(K, SG); const nm=gate(K, 16, 8, 'nameA', B);
     const d=K.bake(false); d.scale.setScalar(B.K); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 16, nm);
@@ -288,15 +253,11 @@ export function buildSupply(phase){   // Z196 'far' — the two enemy-side corne
 }
 // the troop camps (world/camps.js) are bases too: same guards, same alarm, losing one costs the enemy troops
 export function registerCampBase(camp){ const B=newBase('camp', camp.x, camp.z, CAMP_R, 1, camp.ang); B.camp=camp; B.garrison=true; B.gInf=Math.round(Math.min(SUPPLYB.guards[1]-2, 2+S.stage)*(MOBILE?0.7:1));
-  // Z196 the barracks become a fenced compound: wire fence, steel gate + boom + sentry booth, a steel-frame vehicle shed with a truck, a water tower, light towers, signs
+  // Z196 the barracks become a fenced compound: wire fence, steel gate + boom + sentry booth, a water tower, light towers, signs (Z434 the drawn vehicle shed and its truck gone)
   const K=kit(); lattice(K, -25, 24, 10); lattice(K, 25, 24, 10); waterTower(K, 14, -20);
-  for(const x of [18.2,23.8]) for(const z of [-0.8,4.2]) K.add('metal', B3(0.22,3.6,0.22,x,1.8,z), 0x4a4e46);   // vehicle shed
-  for(const z of [-0.8,4.2]) K.add('metal', B3(6.4,0.28,0.2,21,3.6,z), 0x4a4e46); K.add('metal', _xf(new THREE.BoxGeometry(6.9,0.07,5.8),21,3.85,1.7,0.07,0,0), 0x7e8078);
-  for(let x=17.8;x<24.4;x+=0.5) K.add('metal', _xf(new THREE.BoxGeometry(0.07,0.06,5.8),x,3.9,1.7,0.07,0,0), 0x8e9088);
   const SG=[['military',-7,26.2,0],['halt',7,26.2,0],['mines',-27.1,0,-Math.PI/2],['mines',27.1,-6,Math.PI/2],['military',0,-25.1,Math.PI]];
   signPosts(K, SG); const nm=gate(K, 26, 8, 'nameC', B);
   const d=K.bake(false); d.position.set(B.x, heightAt(B.x,B.z)-0.05, B.z); d.rotation.y=B.ang; scene.add(d); B.decor=d; signs(B, SG); nameSignAt(B, 26, nm);
-  { const t=supplyTruck(); t.scale.setScalar(0.9); t.position.set(21, 0, 1.7); t.rotation.y=Math.PI; d.add(t); }   // parked under the shed
   fenceBase(B, -27, 27, -25, 26, 8);
   return B; }
 // a steel water tower: four braced legs, a riveted tank with a conical lid, a ladder

@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT, TENT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -60,7 +60,7 @@ export function buildCamps(){
     { const [cx,cz]=at(9,12), cy=heightAt(cx,cz); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,6,12), campMats().dark); ring.rotation.x=Math.PI/2; ring.position.set(cx,cy+0.08,cz); g.add(ring);   // the campfire
       const fire=flameFX(1.25, 0.9); fire.position.set(cx,cy+0.05,cz); g.add(fire); camp.fire={ m:fire, x:cx, z:cz, y:cy }; }   // Z235 a living flame
     { const L=kit(), TK=[]; L.tent=(lx, lz, w, dp)=>{ const K=kit(); TK.push({ K, lx, lz, w, dp }); return K; };   // Z414 each canvas tent of the camp gets a kit of its own (world/camp-life.js frameTent / messHall)
-      messHall(L, -15, 12); quartermaster(L, -17, -9); medical(L, 15, 11); restArea(L, 17, -9); latrines(L, -24, -20);   // Z196 feeding, clothing, treating and resting the men
+      messHall(L, -15, 12); quartermaster(L, -17, -9); medical(L, 15, 11);   // Z196 feeding, clothing, treating the men (Z434 the drawn rest area and latrines gone)
       for(const a of [0,1.57,3.14,4.71]) L.add('wood', B3(1.6,0.3,0.35,9+Math.sin(a)*1.9,0.25,12+Math.cos(a)*1.9,a), 0x5a4428);   // log benches round the fire
       const d=L.bake(false); d.position.set(x, heightAt(x,z)-0.05, z); d.rotation.y=ang; g.add(d);
       TK.forEach((t, i)=>{ const tg=t.K.bake(false), [wx,wz]=at(t.lx, t.lz); tg.position.copy(d.position); tg.rotation.y=ang; g.add(tg); dressFit(tg, ['mess','qm','med'][i]); addTent(tg, wx, wz, ang, t.dp/2, t.w/2, true); }); }   // (Z429 each in its real tent: the mess, the quartermaster's, the medical)   // Z414 the mess, the quartermaster's and the medical tent: walls to hide behind until they burn

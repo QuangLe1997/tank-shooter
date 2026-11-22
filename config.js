@@ -142,7 +142,7 @@ export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, re
 // Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink
 export const REALWONDER = { windmill:{ key:'wonder_windmill', h:30, sink:0.02, yaw:-Math.PI / 2 },   // Z410 MEADOW's three windmills as the Tripo model (h m tall to its top sail; its sails face +X → yaw)
   biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen', DESERT:'wonder_giza', QUARRY:'wonder_quarry' },
-  fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0, wonder_giza:1.0, wonder_quarry:1.0 }, yaw:{}, sink:0.02,
+  fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0, wonder_giza:1.6, wonder_quarry:1.0 }, yaw:{}, sink:0.02, sinkK:{ wonder_giza:0.12 }, clear:28,   // Z434 clear = m between the fence and the landmark's nearest edge (it stands wholly outside the field, never over a fort), sinkK = how deep a scan's own rough plinth goes under the sand
   // Z426 the Giza pyramids and the Carrara terraces as models too; multi = a landmark of several pieces (world/wonders.js dressMulti): one model at each
   //   [x, z, size m, 'w' width | 'h' height] in the drawn landmark's frame, scan pieces beside them (k, x, z, h) — the Inuit village's igloos and its lighthouse
   multi:{ ARCTIC:{ key:'wonder_igloo', at:[[0, 0, 11, 'w'], [12, 6, 8.8, 'w'], [-11, 8, 9.7, 'w'], [4, -12, 7.9, 'w'], [-6, -9, 7, 'w']], scene:[{ k:'lighthouse', x:26, z:-6, h:32 }] } } };
@@ -1321,11 +1321,11 @@ export const DEFENSE = { on:true, rb:8, rbMobile:6,
 //   whole compound (any piece hit wears it), all of it goes up together. Per tier: [scene key | alternatives, x across (+ = the fort's outer side), z toward
 //   the gate, yaw (rad, 0 = facing the gate), role]; the first is the main building. k = the offsets' scale on phones (the smaller forts); off = ?procbase
 export const FORT_CMD = { on:true, k:{ mobile:0.82 }, rim:1.5,
-  tiers:{ 1:[ ['bunker_green|bunker_store', 0, 0, 0, 'main'], ['bunker_sandbag', 2.5, 9.5, 0.35, 'mg'] ],
-          2:[ ['bunker_hangar|bunker_store', 0, 0, 0, 'main'], ['radar_sentinel', -3, -11, 0, 'comms'], ['bunker_dome', 11, 7, -0.3, 'pillbox'], ['bunker_sandbag', -11, 8.5, 0.3, 'mg'] ],
-          3:[ ['hq_modular', 0, 0, 0, 'main'], ['antenna_twin', 15, -6, 1.5708, 'comms'], ['radar_sentinel', -12, -9, 0, 'comms'], ['gun_turret', 13, 10, -0.35, 'gun'], ['bunker_sandbag', -12, 10, 0.35, 'mg'] ] },
+  tiers:{ 1:[ ['bunker_green', 0, 0, 0, 'main'] ], 2:[ ['bunker_store', 0, 0, 0, 'main'] ], 3:[ ['hq_modular', 0, 0, 0, 'main'] ] },   // Z434 one building each, no ring of bunkers, masts and guns round it: the yard is for the fight
+  scale:{ 1:1.1, 2:1.15, 3:1.1 }, board:false,   // Z434 the building a little bigger than its scan's size (it is the fort's heart), no name board on legs before the door
   name:{ 1:'TRẠM CHỈ HUY', 2:'SỞ CHỈ HUY', 3:'BỘ TỔNG HÀNH DINH' } };
 export const FORT = {
+  coverK:0.55, coreFire:55, crater:{ rim:0.7, depth:2.4 },   // Z434 the yard's cover × (a fort's yard was a junk pile) · how long (s) the command post's wreck burns · its crater: rim raised, pit sunk (m)
   count:[3,3,4,4,4], countMobile:[2,2,3,3,3],   // Z234 phones: the 130 m field holds fewer forts now that they stand clear of our citadel
   tiers:{ 1:{ r:[31,35], sides:[6,8], towers:2, gunners:[8,10],  inf:[16,22], tanks:[1,2], gate:600,  cover:[8,11],  name:'ĐỒN' },        // Z107 roomy: room to manoeuvre and dodge inside
           2:{ r:[35,40], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[11,14],  name:'PHÁO ĐÀI' },
@@ -1591,7 +1591,7 @@ export const TROOPER = {
 //   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand; Z393 solid = this beat's own collision (else the
 //   model's), top = the most detail it ever draws ('l' mid / 'f' far: a small piece never fetches the whole scan)
 export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' bunkers and guard towers lean to the land's tone (REALPROP.cast.tint)
-  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ k:'radar_lattice', h:24, split:0.8, lv:'d' }, yard:{ radome:'radar_dome', shelter:'mil_shelter', radartruck:'radar_truck', genset:'field_gen', dish:'sat_dish' } },
+  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ magazine:{ k:'bunker_green', w:8.6 }, fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ k:'radar_lattice', h:24, split:0.8, lv:'d' }, yard:{ radome:'radar_dome', shelter:'mil_shelter', radartruck:'radar_truck', genset:'field_gen', dish:'sat_dish' } },
   objective:{ depot:'fuel_depot', radio:'relay_post', radar:'radar_sentinel', battery:'gun_turret', command:'bunker_door' }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan, · objective (Z426): the campaign's targets as scans (campaign/operations.js → world/scenery.js realObjective), each as wide as the target's ring
 //   h tall, split = the share of its height where the dish (which sweeps with the head) begins; yard (Z425) = the scan each of the station's drawn pieces wears (piece kind → model) · bricks: the ruined brick walls in the breached wall's stone (h, how many
 //   3 m slices, which copy, fill = the least share of a slice that must be wall — the breach and the ragged ends are left out) · city: the power poles as the transformer pole scan (h, copy), roof water tanks / masts (h, share of the roofs of those kinds, set back d ×, sunk m)
