@@ -150,7 +150,7 @@
     #start .hello{font-size:11px;letter-spacing:1px;}
     #start .bestline{font-size:10px;letter-spacing:1px;padding:3px 10px;margin:0;}
     #start .wallet{margin:0;gap:8px;}
-    #start .w-chip{font-size:12px;padding:3px 10px;} #start .w-chip .ic{width:14px;height:14px;}
+
     #start .panel,body.touch #start .panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
       width:min(96vw,620px);max-width:none;padding:0;align-items:stretch;}
     #start .panel > *{width:100%;margin:0 !important;}
@@ -172,7 +172,7 @@
     .settings{gap:6px;margin-top:4px;} .set-row{padding:7px 11px;} .set-l{font-size:11px;}
     .seg-chip{font-size:10px;padding:5px 9px;} .seg-chip small{font-size:8px;}
     .go-stats{gap:16px;margin:6px 0 8px;} .go-stat .v{font-size:22px;} .go-stat .l{font-size:8px;}
-    .go-best,.go-wallet{margin:0 0 4px;font-size:10px;min-height:0;}
+    .go-best{margin:0 0 4px;font-size:10px;min-height:0;}
     .guide,body.touch .guide{max-height:48vh;gap:6px;margin-top:6px;} .guide-row{padding:7px 11px;gap:10px;}
     .guide-row .g-ic,.guide-row .g-ic svg{width:22px;height:22px;}
     .guide-row .g-tx b{font-size:11px;} .guide-row .g-tx span{font-size:11px;line-height:1.34;}

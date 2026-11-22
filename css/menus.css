@@ -124,12 +124,8 @@
 
 
   /* wallet chips (coins + diamonds) */
-  .wallet{display:flex;gap:12px;justify-content:center;align-items:center;}
-  .wallet{margin:6px 0 2px;}                                  /* the START-menu wallet sits right above the buttons — make it pop */
-  .w-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 15px;border-radius:999px;background:rgba(6,9,4,.6);border:1px solid rgba(255,206,110,.45);
-    font-size:15px;font-weight:900;letter-spacing:1px;color:#ffe8b6;text-shadow:0 2px 8px rgba(0,0,0,.9);box-shadow:0 0 14px rgba(255,206,110,.18),inset 0 0 8px rgba(255,206,110,.08);}
-  .w-chip .ic{width:18px;height:18px;color:var(--amber);}
-  .w-chip.dia{border-color:rgba(127,231,255,.55);color:#bff0ff;box-shadow:0 0 16px rgba(127,231,255,.28),inset 0 0 8px rgba(127,231,255,.1);} .w-chip.dia .ic{color:#7fe7ff;}
+
+
   /* terrain picker on the start screen */
   .terrain-pick{margin:8px auto 4px;max-width:460px;pointer-events:auto;}
   .tp-label{font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.5);font-weight:800;margin-bottom:7px;}
@@ -169,7 +165,7 @@
     padding:9px 18px;box-shadow:0 6px 24px rgba(0,0,0,.6),0 0 18px rgba(140,191,63,.25);opacity:0;transition:opacity .3s,transform .3s;}
   #coach.on{opacity:1;transform:translateX(-50%) translateY(0);}
   body.touch #coach{top:64px;font-size:13px;}
-  .go-wallet .w-chip{font-size:13px;padding:4px 12px;box-shadow:none;}
+
 
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
 

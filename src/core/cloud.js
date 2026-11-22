@@ -1,6 +1,6 @@
 // core/cloud.js — Z162 CLOUDSAVE SAVE: Firebase Auth (anonymous first, Google link later) + the profile mirrored to Firestore users/{uid}, offline-first
 import { CLOUD_CFG } from '../../config.js';
-import { PROFILE, PROFILE_KEY, refreshStartUI, refreshWallet, saveProfile } from '../hub.js';
+import { dropOldShop, PROFILE, PROFILE_KEY, refreshStartUI, saveProfile } from '../hub.js';
 
 // state shown in Settings → TÀI KHOẢN; the game never waits on any of this (localStorage stays the live copy)
 export const CLOUDSAVE = { state:'off', uid:null, anon:true, email:'', lastSync:0, err:'', busy:false };
@@ -14,8 +14,8 @@ function set(st, err){ CLOUDSAVE.state=st; if(err!=null) CLOUDSAVE.err=String(er
 export function cloudProfile(){ const out={}; for(const k in PROFILE){ if(CLOUD_CFG.localOnly.includes(k) || PROFILE[k]===undefined || typeof PROFILE[k]==='function') continue; out[k]=PROFILE[k]; }
   return JSON.parse(JSON.stringify(out)); }
 // how far a save has got — decides which side wins when both changed
-export function progressOf(p){ if(!p) return -1; const c=p.campaign&&p.campaign.max|0, own=(p.ownedGuns||[]).length+(p.ownedTanks||[]).length;
-  return c*1e7 + own*1e5 + Math.min(99999, ((p.coins|0)+(p.diamonds|0)*100)/10); }
+export function progressOf(p){ if(!p) return -1; const c=p.campaign&&p.campaign.max|0;
+  return c*1e7 + Math.min(9999999, (p.best&&p.best.score)|0); }   // (no-tanks: was also the arsenal and the wallet)
 
 export async function initCloud(){ if(FB || CLOUDSAVE.state==='connecting') return; if(typeof navigator!=='undefined' && navigator.onLine===false){ set('offline'); addEventListener('online', ()=>initCloud(), { once:true }); return; }
   set('connecting');
@@ -42,8 +42,8 @@ export async function pullMerge(){ if(!FB || !CLOUDSAVE.uid) return; const { FS,
 function backupLocal(){ try{ localStorage.setItem(PROFILE_KEY+'.bak', JSON.stringify(PROFILE)); }catch(e){} }
 function applyRemote(remote){ const keep={}; for(const k of CLOUD_CFG.localOnly) if(PROFILE[k]!==undefined) keep[k]=PROFILE[k];
   for(const k of Object.keys(PROFILE)) if(!CLOUD_CFG.localOnly.includes(k)) delete PROFILE[k];
-  Object.assign(PROFILE, remote.profile||{}, keep); PROFILE._rev=PROFILE._syncedRev=remote.rev|0; PROFILE._cloudUid=CLOUDSAVE.uid;
-  saveProfile(true); try{ refreshWallet(); refreshStartUI(); }catch(e){} }
+  Object.assign(PROFILE, remote.profile||{}, keep); dropOldShop(PROFILE); PROFILE._rev=PROFILE._syncedRev=remote.rev|0; PROFILE._cloudUid=CLOUDSAVE.uid;
+  saveProfile(true); try{ refreshStartUI(); }catch(e){} }
 async function push(force){ if(!FB || !CLOUDSAVE.uid) return; const { FS, db }=FB; const rev=Math.max(PROFILE._rev|0, (PROFILE._syncedRev|0)+1);
   await FS.setDoc(FS.doc(db,'users',CLOUDSAVE.uid), { v:1, rev, profile:cloudProfile(), device:navigator.platform||'', updatedAt:FS.serverTimestamp() });
   PROFILE._rev=PROFILE._syncedRev=rev; PROFILE._cloudUid=CLOUDSAVE.uid; _lastPush=performance.now()/1000; saveProfile(true); CLOUDSAVE.lastSync=Date.now(); }

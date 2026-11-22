@@ -3,7 +3,7 @@
 //   it re-arms every soldier who enters (AT launcher + better rounds) and coughs up supplies.
 import * as THREE from 'three';
 import { DEPOT } from '../../config.js';
-import { FT, GUN_DROP_DEF, MOBILE, S, _canvasTex, placeScan, addCoins, addScore, armAlly, blocks, burst, cMod, campFlagTex, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, radio, rallyFlagTex, scene, sfx, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
+import { FT, GUN_DROP_DEF, MOBILE, S, _canvasTex, placeScan, addScore, armAlly, blocks, burst, campFlagTex, coverMat, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, radio, rallyFlagTex, scene, sfx, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const DEPOTS=[];
 let _netTex=null;
@@ -40,7 +40,7 @@ export function depotJob(a){ let best=null, bd=52;
   return best; }
 function captureDepot(d){ d.state='ours'; d.ring.visible=false;
   unwave(d.flag); d.g.remove(d.flag); const fl=makeFlag(rallyFlagTex(),1.7,1.1,1); fl.position.set(d.flagPos[0], d.flagPos[1]+5.4, d.flagPos[2]); d.g.add(fl); d.flag=fl;   // our colours go up
-  const R=Math.round; addScore(R(DEPOT.score*loopRewardMul()), new THREE.Vector3(d.x,5,d.z)); addCoins(R(DEPOT.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
+  const R=Math.round; addScore(R(DEPOT.score*loopRewardMul()), new THREE.Vector3(d.x,5,d.z));
   floatText('ĐÃ CHIẾM KHO VŨ KHÍ', '#9be04a', new THREE.Vector3(d.x,6,d.z), 24); sfx('levelup');
   radio('Tổ bộ binh: Kho vũ khí đã về tay ta — anh em nhận súng chống tăng!'); dropPowerup({x:d.x,z:d.z}, 1, GUN_DROP_DEF); dropPowerup({x:d.x,z:d.z}, 1); }   // a new gun + supplies
 export function updateDepots(dt, now){ const p=S.player; if(!p) return;

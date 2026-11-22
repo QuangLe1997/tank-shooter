@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { soldierLoot, BIOME, GEM_DEF, GUNS, S, __set_soldierLvl, addCoins, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, guardTarget, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, spawnDrone, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
+import { LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
+import { SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, spawnDrone, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -24,18 +24,18 @@ export const POWERUPS = [
   { id:'bomb',   svg:'bomb', color:0xff6030, vi:'BOM CHÙM', ds:'80 sát thương mọi địch', cat:'bomb', tier:2, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); S.shake=2; } },
   { id:'freeze', svg:'snow', color:0x6fd0ff, vi:'ĐÓNG BĂNG', ds:'Địch đứng hình 3,5 giây', cat:'tech', tier:0, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
   { id:'drone',  svg:'drone', color:0x6fd0ff, vi:'DRONE YỂM TRỢ', ds:'Drone bắn tự động 22 giây', cat:'tech', tier:1, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
-  { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(guardTarget()); for(const s of soldiers) s.hp=s.maxHp; if(S.player) floatText('TĂNG VIỆN ĐÃ TỚI', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
+  { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(SOLDIER.base); for(const s of soldiers) s.hp=s.maxHp; if(S.player) floatText('TĂNG VIỆN ĐÃ TỚI', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, vi:'TRANG BỊ LÍNH', ds:'Lính bắn mạnh & nhanh hơn', cat:'ammo', tier:1, apply(){ __set_soldierLvl(soldierLvl + 1); for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TRANG BỊ LÍNH +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // Z115 GUN PARTS — permanent, per gun, stacking (GUN_MODS)
   // gun drop — adds a random gun to the inventory
   { id:'gun',    svg:'gun', color:0xaef0a0, vi:'SÚNG MỚI', ds:'Thêm một khẩu vào kho', cat:'gun', tier:2, apply(p){ const id=trooperGunPick(); p._gotGun=id; trooperGive(id); } },   // Z329 the soldier's crate brings a hand weapon
 ];
 // Z93 STACKING RULES (numbers in LOOT.rules): same buff again → EXTEND by half its timer (capped at 1.5× a full timer), power never compounds;
-// TURBO climbs a level (max 2) and refreshes; ERA adds tiles (max 6); a permanent buff you already hold pays out coins instead.
+// TURBO climbs a level (max 2) and refreshes; ERA adds tiles (max 6); a permanent buff you already hold pays out score instead.
 export function applyPowerup(def){
   const p=S.player, now=NOW(); let note='';
   if(def.buff){ const k=def.buff, rem=Math.max(0,(p.buffUntil[k]||0)-now);
-    if(def.dur===Infinity){ if(p.buffUntil[k]===Infinity){ const c=Math.round(120*(1+S.stage*0.2)); addCoins(c); note='Đã có → +'+c+' xu'; } else { p.buffUntil[k]=Infinity; note='Vĩnh viễn tới khi mất mạng'; } }
+    if(def.dur===Infinity){ if(p.buffUntil[k]===Infinity){ const c=Math.round(120*(1+S.stage*0.2)); addScore(c, p.pos); note='Đã có → +'+c+' điểm'; } else { p.buffUntil[k]=Infinity; note='Vĩnh viễn tới khi mất mạng'; } }
     else if(def.stack){ const lv=rem>0 ? Math.min(def.stack, (p.buffLv[k]||1)+1) : 1; p.buffLv[k]=lv; p.buffUntil[k]=now+def.dur; note='Cấp '+lv+'/'+def.stack+' · '+def.dur+' giây'; }
     else { if(rem>0) tip('stack'); const full=def.dur, R=LOOT.rules, nd=rem>0 ? Math.min(full*R.maxDurMul, rem+full*R.extendShare) : full; p.buffUntil[k]=now+Math.max(nd, rem); note = rem>0 ? 'Gia hạn → '+Math.round(nd)+' giây' : full+' giây'; }
     if(def.onGet) def.onGet(p); }
@@ -100,7 +100,7 @@ export function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def
   else { add(G.tech, lootMat('tech',0x34404a,0x103040)); }
   return g; }
 // Z306 the soldier's loot (Z329 the gun crate brings a hand weapon)
-export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal'); if(Math.random()<BALANCE.drop.gem*(1+tier)) return GEM_DEF;
+export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math.random()<0.6) return POWERUPS.find(u=>u.id==='heal');
   const pool=POWERUPS.filter(u=>(u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
 export function pickLoot(tier){ return soldierLoot(tier); }   // tier = how tough the source was (0 common · 1 rare · 2 epic) · Z352 a medal or an ammo crate now and then, else trooperLoot
 export function dropPowerup(pos, tier, forced){

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE } from '../../config.js';
-import { GLOW, NOW, S, burst, camera, droneBonusHp, droneDmgMul, droneOwned, droneReloadMul, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, vehicleExplode, towers, wrapAngle, realAir } from '../hub.js';
+import { GLOW, NOW, S, burst, camera, enemies, floatText, makeSoldierBar, muzzleFlash, scene, sfx, shootGuard, spawnBullet, spawnPart, vehicleExplode, towers, wrapAngle, realAir } from '../hub.js';
 
 // ----------------------------- SUPPORT DRONE (power-up) -----------------------------
 // A 22s orbiting GUNSHIP: sleek fuselage, 4 spinning rotors, glowing sensor eye + an underslung 6-barrel
@@ -49,15 +49,15 @@ export function makeDroneMesh(){
 }
 export function spawnDrone(owned){
   const now=NOW();
-  owned = !!owned || droneOwned();                                   // own the escort → every (re)spawn is the permanent one
+  owned = !!owned;
   if(!S.drone){ const g=makeDroneMesh(); scene.add(g);
     const bar=makeSoldierBar(); bar.g.scale.setScalar(1.3); scene.add(bar.g);
     S.drone={ g, bar, owned:false, until:0, fireAt:0, ang:Math.random()*6.283, dmg:DRONE.dmg, fireCd:DRONE.fireCd, reloadT:DRONE.reload, hp:DRONE.hp, maxHp:DRONE.hp, ammo:DRONE.mag, reloadUntil:0, hitT:0, spin:DRONE.idleRot }; }
   const d=S.drone; d.owned = d.owned || owned;
-  d.dmg    = DRONE.dmg   * droneDmgMul();                             // bake purchased upgrades: power
-  d.fireCd = DRONE.fireCd * droneReloadMul();                        // reload/fire-rate (ROTORS)
-  d.reloadT= DRONE.reload * droneReloadMul();
-  d.maxHp  = DRONE.hp + droneBonusHp(); d.hp = d.maxHp;              // armor (PLATING) — (re)pickup repairs to full
+  d.dmg    = DRONE.dmg;
+  d.fireCd = DRONE.fireCd;
+  d.reloadT= DRONE.reload;
+  d.maxHp  = DRONE.hp; d.hp = d.maxHp;              // (re)pickup repairs to full
   d.ammo   = DRONE.mag; d.reloadUntil = 0;
   d.until  = d.owned ? now + 1e9 : now + DRONE.dur;                   // owned = persists the whole stage; power-up = 22s
   updateDroneBar();

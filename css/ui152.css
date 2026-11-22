@@ -49,7 +49,7 @@
 #pause .panel,#gameover .panel{display:grid !important;grid-template-columns:1fr 1fr;gap:10px;width:min(92vw,440px);padding:22px !important;
   background:var(--card-bg) !important;border:1px solid var(--card-bd) !important;box-shadow:0 18px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07) !important;border-radius:18px !important;}
 #pause .panel > .btn,#gameover .panel > .btn{margin:0 !important;width:100%;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
-#pause #resumeBtn,#pause #homeBtn,#gameover #retryBtn,#gameover .go-stats,#gameover .go-best,#gameover .go-wallet,#gameover #goHomeBtn{grid-column:1/-1;}
+#pause #resumeBtn,#pause #homeBtn,#gameover #retryBtn,#gameover .go-stats,#gameover .go-best,#gameover #goHomeBtn{grid-column:1/-1;}
 #pause #resumeBtn,#gameover #retryBtn{min-height:58px;font-size:21px;}
 #gameover .title{background:linear-gradient(180deg,#ff9a7a,#e0603a 60%,#9a2c18) !important;-webkit-background-clip:text !important;background-clip:text !important;color:transparent !important;text-shadow:none !important;filter:drop-shadow(0 4px 14px rgba(224,96,58,.35));}
 

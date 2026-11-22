@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY } from '../../config.js';
-import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, refreshWallet, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
+import { FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY } from '../../config.js';
+import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -305,8 +305,7 @@ function coreDestroyed(f, b){ for(const q of (f.coreBlocks||[b])){ const i=block
   burst({x:cx,z:cz}, 0xb8a888, 14, 6, {y:f.gy+2, life:2.2, size:3.2, smoke:true, grav:-0.4, drag:1.4, up:2.2, op:0.6}); S.shake=Math.min(3.4, S.shake+1.6); sfx('bigexplode');
   unwave(f.core.g); f.g.remove(f.core.g); coreCrater(f); f.coreFireUntil=now+FORT.coreFire;
   f.pool.inf=Math.floor(f.pool.inf*0.35);
-  const coins=Math.round((260+120*S.stage)*f.tier*loopRewardMul()); addCoins(coins); refreshWallet();
-  showBanner((CORE_NAME[f.tier]||'SỞ CHỈ HUY')+' '+f.name+' ĐÃ SẬP!  +'+coins+' xu', '#ffb35a');
+  showBanner((CORE_NAME[f.tier]||'SỞ CHỈ HUY')+' '+f.name+' ĐÃ SẬP!', '#ffb35a');
   radio('SCH: '+(CORE_NAME[f.tier]||'Sở chỉ huy').toLowerCase().replace(/^./,ch=>ch.toUpperCase())+' của '+f.name+' đã sập — chúng mất liên lạc, hết quân tiếp viện!'); }
 // Z434 the command post goes up and leaves a crater: the ground blown out where it stood (a pit inside a thrown-up rim), scorched and ashed, and it burns —
 //   flames among the wreck for a while, smoke for longer; no drawn heap of bricks and slabs (the old ruins read as a pile of toy blocks)
@@ -495,13 +494,12 @@ function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false
   for(const fl of (f.towerFlags||[])) fl.material.map=vnTex(); if(f.coreFlag && !f.coreDown) f.coreFlag.material.map=vnTex();   // Z176 our colours on every tower
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);
   if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } if(!f.breached){ f.breached=true; const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); for(const L of f.leaves) L.open=0.001; }
-  const L=FORT.loot, coins=Math.round((L.coins[0]+L.coins[1]*S.stage)*f.tier*loopRewardMul()), dia=L.dia[0]+((Math.random()*(L.dia[1]-L.dia[0]+1))|0)+(f.tier>=2?1:0);
-  addCoins(coins); addDiamonds(dia); refreshWallet();
+  const L=FORT.loot;
   for(let k=0;k<L.drops+f.tier-1;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*8, z:f.z+(Math.random()-0.5)*8 }, Math.min(3, f.tier));
-  for(let k=0;k<GUN_MODS.fortDrops;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2);   // Z115 the armoury: a gun part
+  for(let k=0;k<L.armoury;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2);   // Z115 the armoury
   saveProfile();
   bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup'); celebrate('fort', f.x, f.z);   // Z140 fireworks over the taken fort
-  showBanner('ĐÃ CHIẾM '+f.name+'!  +'+coins+' xu · +'+dia+' ◆', '#8cbf3f');
+  showBanner('ĐÃ CHIẾM '+f.name+'!', '#8cbf3f');
   const left=fortsLeft(); radio(left ? ('Còn '+left+' đại bản doanh. '+(left===1 && mainFort() && !mainFort().captured ? 'Cổng '+mainFort().name+' đã mở phong toả!' : 'Tiếp tục tiến công!')) : 'Mọi đại bản doanh đã thất thủ!'); }
 // the citadel falls with its commander — the stage boss (boss.js kills → stage clear)
 export function fortBossDown(){ const f=mainFort(); if(f && !f.captured) capture(f, performance.now()/1000); }

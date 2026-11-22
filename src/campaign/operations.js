@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, realObjective, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -85,9 +85,9 @@ export function destroyObjective(){
   aoeDamage(O.x,O.z,O.b.r+3,40,false,now,'HE');
   O.g.traverse(o=>{ if(o.isMesh && o.material && o.material.color){ o.material=o.material.clone(); o.material.color.multiplyScalar(0.25); o.material.emissive&&o.material.emissive.setHex(0); } });   // charred hulk
   O.g.rotation.z=(Math.random()-0.5)*0.25; O.g.rotation.x=(Math.random()-0.5)*0.2; O.g.scale.y=OBJ_SCALE*0.6;
-  const R=OBJ_REWARD, mul=loopRewardMul()*diffRewardMul()*cMod('coinMul'), coins=Math.round((R.coin+R.coinPerStage*S.stage)*mul);
-  addCoins(coins); addDiamonds(R.dia); addScore(R.score, new THREE.Vector3(O.x,4,O.z));
-  showBanner('ĐÃ PHÁ MỤC TIÊU  +'+coins+' ◎  +'+R.dia+' ◆', '#ffd24a'); radio(O.op.win); sfx('levelup'); updateObjHUD();
+  const R=OBJ_REWARD;
+  addScore(R.score, new THREE.Vector3(O.x,4,O.z));
+  showBanner('ĐÃ PHÁ MỤC TIÊU', '#ffd24a'); radio(O.op.win); sfx('levelup'); updateObjHUD();
 }
 export function updateObjective(dt, now){
   if(!OBJ) return; const O=OBJ, ud=O.g.userData, gy=heightAt(O.x,O.z);

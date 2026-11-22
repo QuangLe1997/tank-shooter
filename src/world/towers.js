@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE, HUMAN_SCALE, TOWERFALL } from '../../config.js';
-import { AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addCoins, addLootBeacon, addScore, animateSoldier, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, diffRewardMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, loopRewardMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
+import { AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addLootBeacon, addScore, animateSoldier, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -100,7 +100,7 @@ export function updateTowers(dt, now){
         if(f.live){ const x=f.g.position.x, z=f.g.position.z; scene.remove(f.g); fallers.splice(i,1);                       // Z112 survived the fall: picks himself up and fights
           const e=spawnEnemy(Math.random()<0.25?'rpg':'rifle', x, z); if(e){ e.stunUntil=performance.now()/1000+TOWER.getUp; e.hp=e.maxHp*0.6; if(f.fort) e.fortOf=f.fort; floatText('LÍNH GÁC NGÃ — VẪN SỐNG!', '#ffb35a', new THREE.Vector3(x, gy+2.2, z), 13); }
           continue; }
-        addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); addCoins(Math.round(15*loopRewardMul()*diffRewardMul()*cMod('coinMul'))); } }
+        addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); } }
     else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(HUMAN_SCALE*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }
   for(let i=towers.length-1;i>=0;i--) if(towers[i].gone) towers.splice(i,1);
 }

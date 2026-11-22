@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { HARD, GUN_MODS, BALANCE, SHOP_UP, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, OBJ_REWARD, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
+import { HARD, BALANCE, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -37,39 +37,14 @@ assertFiniteTree(BALANCE, '');
 grp('BALANCE — values in sane ranges');
 ok(BALANCE.loop.hp > 0 && BALANCE.loop.boss > 0 && BALANCE.loop.reward > 0, 'loop multipliers are positive');
 ok(BALANCE.loop.boss >= BALANCE.loop.hp, 'boss HP ramps at least as fast as enemy HP per loop');
-for (const key of ['brick', 'enemy', 'gem', 'gun']) {
-  ok(BALANCE.drop[key] > 0 && BALANCE.drop[key] <= 1, `drop.${key} is a probability in (0,1]`);
-}
-ok(BALANCE.drop.gem < BALANCE.drop.gun, 'gem drop is rarer than gun drop (gem<gun in the cumulative roll)');
+
 ok(BALANCE.elite.capChance > 0 && BALANCE.elite.capChance <= 1, 'elite.capChance is in (0,1]');
 ok(BALANCE.elite.hpMul > 1 && BALANCE.elite.sizeMul === 1, 'elites are tankier; same real-size hull (Z174: the gold aura marks them, not a bigger tank)');
 ok(BALANCE.wave.base > 0 && BALANCE.wave.capBase > 0, 'wave base counts are positive');
 ok(BALANCE.wave.eventChance > 0 && BALANCE.wave.eventChance < 1, 'wave.eventChance is a probability');
-for (const [k, v] of Object.entries(BALANCE.up)) ok(v > 0, `up.${k} upgrade coefficient is positive`);
-ok(BALANCE.coinBountyDiv > 0 && BALANCE.stageClearCoin > 0, 'coin earning divisors/bonuses are positive');
 
 grp('SHOP_UP — schema + cost ladder integrity');
 const seenKeys = new Set();
-for (const u of SHOP_UP) {
-  ok(u.key && u.cat && u.name && u.per && Array.isArray(u.costs), `${u.key||'?'} has key/cat/name/per/costs`);
-  ok(!seenKeys.has(u.key), `${u.key} key is unique`);
-  seenKeys.add(u.key);
-  ok(u.costs.length >= 1, `${u.key} has at least one level`);
-  // each cost is coins XOR diamonds, positive
-  for (const c of u.costs) {
-    const hasC = c.c > 0, hasD = c.d > 0;
-    ok((hasC || hasD) && !(hasC && hasD), `${u.key} cost ${JSON.stringify(c)} is coins XOR diamonds, positive`);
-  }
-  // value rises monotonically across levels (cheap coin tiers → pricey diamond/VIP tiers)
-  for (let i = 1; i < u.costs.length; i++) {
-    ok(coinValue(u.costs[i]) > coinValue(u.costs[i - 1]),
-       `${u.key} level ${i + 1} costs more value than level ${i}`);
-  }
-  // coin tiers must all precede diamond tiers (no coin level after a diamond level)
-  let sawDia = false, ordered = true;
-  for (const c of u.costs) { if (c.d > 0) sawDia = true; else if (sawDia) ordered = false; }
-  ok(ordered, `${u.key} lists all coin tiers before diamond tiers`);
-}
 
 grp('GUN_PRICE — positive prices, VIP value ordering');
 let bestCoinGun = 0;
@@ -123,20 +98,8 @@ ok(D.hp >= 60 && D.hp <= 300, `drone HP (${D.hp}) is killable-but-durable (60–
 
 grp('SUPPORT UPGRADES — buyable drone + guard tracks');
 const SUP = BALANCE.support;
-for (const k of ['dronePowPerLvl','droneRofPerLvl','droneArmPerLvl','guardRofPerLvl','guardArmPerLvl','mulFloor'])
-  ok(typeof SUP[k] === 'number' && isFinite(SUP[k]) && SUP[k] > 0, `support.${k} is a positive finite number`);
-ok(SUP.mulFloor > 0 && SUP.mulFloor < 1, 'support.mulFloor is a fraction in (0,1) — reload/fire mult never reaches 0');
-for (const k of ['dronePow','droneRof','droneArm','guardRof','guardArm']) {
-  const u = SHOP_UP.find(x => x.key === k);
-  ok(u && u.cat === 'SUPPORT', `SHOP_UP has a SUPPORT-tab entry "${k}"`);
-}
-const dronePow = SHOP_UP.find(x => x.key === 'dronePow');
-ok(dronePow && dronePow.costs[0] && dronePow.costs[0].c > 0, 'STRIKE DRONE L1 is coin-buyable (you can OWN the escort without diamonds)');
+
 // reload mults stay in a fair band even when fully maxed
-const droneRofLvls = SHOP_UP.find(x => x.key === 'droneRof').costs.length;
-const guardRofLvls = SHOP_UP.find(x => x.key === 'guardRof').costs.length;
-ok(Math.max(SUP.mulFloor, 1 - droneRofLvls*SUP.droneRofPerLvl) >= SUP.mulFloor, 'maxed drone reload mult respects the floor');
-ok(Math.max(SUP.mulFloor, 1 - guardRofLvls*SUP.guardRofPerLvl) >= SUP.mulFloor, 'maxed guard fire mult respects the floor');
 
 grp('FLAMETHROWER (PYRO) — reach + burn balance');
 const FL = BALANCE.flame;
@@ -180,7 +143,6 @@ const EVENTS = ['ambush','column','pyro','airraid'];
 ok(!OPERATIONS[0].script[1], 'stage 1 wave 1 stays unscripted (gentle start)');
 for (const [k, o] of Object.entries(OBJECTIVES)) { ok(o.hp > 0 && o.r > 1 && o.name && o.effect && o.mods && Object.keys(o.mods).length, `objective ${k} has hp/r/name/effect/mods`); }
 ok(OBJECTIVES.command.hp >= OBJECTIVES.depot.hp, 'the final command bunker is the toughest target');
-ok(OBJ_REWARD.coin > 0 && OBJ_REWARD.dia >= 1, 'objectives pay coins and at least one diamond');
 
 grp('NEW VEHICLES (Z80)');
 
@@ -225,14 +187,13 @@ grp('TROOPS & INSTALLATIONS (Z89–Z90)');
 ok(CAMP.perStage.every(n=>n>=1 && n<=3), '1–3 enemy camps per stage');
 ok(CAMP.every >= 8, 'camps reinforce at a fair pace (≥8s between squads)');
 ok(CAMP.infCap >= 8 && CAMP.infCap <= 26, 'camps stop feeding when the field already holds many soldiers (Z104: ≤ 26 on the wider field)');
-ok(CAMP.hp > 150 && CAMP.coin > 0 && CAMP.score > 0, 'a camp is a tough, rewarding target');
+
 ok(BRIDGE.minD > 6 && BRIDGE.maxD > BRIDGE.minD && BRIDGE.maxD <= 24, 'bridged tower pairs sit 6–24 apart');
 ok(BRIDGE.pairChance > 0 && BRIDGE.pairChance <= 1, 'tower pairing is a probability');
 
 grp('LOOT (Z93) — engine & armour pickups, stacking, sources');
 { const R=LOOT.rules; ok(R.extendShare>0 && R.extendShare<1, 'a repeat pickup extends by a fraction of its timer');
   ok(R.maxDurMul>1 && R.maxDurMul<=2, 'extensions are capped (≤2× a full timer) — no infinite buffs');
-  const worst=1.3*LOOT.speed.top*(1+5*BALANCE.up.engine); ok(worst>R.speedCap && R.speedCap<=1.8, `speed sources stack to ×${worst.toFixed(2)} uncapped → hard cap ×${R.speedCap}`);
   ok(LOOT.speed.top>1 && LOOT.speed.top<=1.4, 'ENGINE OVERDRIVE: a clear but modest boost');
   ok(LOOT.turbo.maxLv>=1 && LOOT.turbo.maxLv<=3 && LOOT.turbo.accel*LOOT.turbo.maxLv<=1, 'TURBO levels capped; at most doubles acceleration');
   ok(LOOT.turbo.launch>0 && LOOT.turbo.launch*LOOT.turbo.maxLv>=1, 'max TURBO removes the heavy launch entirely');
@@ -243,23 +204,18 @@ grp('LOOT (Z93) — engine & armour pickups, stacking, sources');
   const maxChance=BALANCE.drop.enemy*LOOT.source.chanceCap; ok(maxChance<=0.5, `toughest enemy drops at most ${(maxChance*100).toFixed(0)}%`);
   ok(LOOT.source.rareHp<LOOT.source.epicHp, 'epic sources are tougher than rare ones');
   ok(LOOT.cache.perStage.every(n=>n>=1&&n<=4) && LOOT.cache.hp>0, '1–4 guarded caches per stage'); }
-for(const k of ['turbo','ramplate']){ const u=SHOP_UP.find(x=>x.key===k); ok(!!u && u.costs.length>=2 && u.costs.every((c,i,a)=>!i||((c.c||0)>=(a[i-1].c||0))), `shop ${k} exists with rising prices`); }
-ok(BALANCE.up.ramguard*3<0.5, 'RAM PLATE max still leaves ≥50% ram damage taken');
 
 grp('VIETNAMESE CAMPAIGN (Z94)');
 const VI=/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
 
 for(const k of Object.keys(OBJECTIVES)) ok(VI.test(OBJECTIVES[k].vi||'') && VI.test(OBJECTIVES[k].effectVi||''), `objective ${k} has a Vietnamese name + effect`);
 for(const c of CONTRACTS) ok(VI.test(c.name+c.desc), `contract ${c.id} is in Vietnamese`);
-for(const u of SHOP_UP) ok(VI.test(u.name+u.per) || /^[A-Z ]+$/.test(u.name)===false, `shop item ${u.key} is in Vietnamese`);
 
 grp('TACTICS (Z95) — enemy IQ climbs with stage & difficulty');
 { const T=TACTICS, iq=(st,d,l)=>Math.max(0,Math.min(T.iq.cap, T.iq.base+T.iq.perStage*(st-1)+(T.iq[d]||0)+(l||0)*T.iq.loop));
-  
   ok(iq(5,'veteran') >= 0.95, 'stage 5 veterans fight at (near) full IQ');
   ok(iq(5,'recruit') < iq(5,'veteran'), 'difficulty changes how smart they are, not just HP');
   for(let st=1;st<5;st++) ok(iq(st+1,'soldier') > iq(st,'soldier') || iq(st,'soldier')===T.iq.cap, `IQ never drops from stage ${st} to ${st+1}`);
-  
   ok(T.dodge.cd>=1 && T.dodge.time<1, 'dodges are short and on a cooldown (still hittable)');
    }
 
@@ -332,9 +288,7 @@ grp('SQUAD (Z100) — free-roam inside the tank zone, hold-to-recall, on-tank he
   ok(RALLY.r>=3 && RALLY.offX>0 && RALLY.offX<0.6 && RALLY.offZ>0.3 && RALLY.offZ<0.9, 'rally point sits on our side, inside the arena');
   ok(perStage(POW.perStage), 'POW stockades defined for every stage');
   ok(range(POW.prisoners,1,8) && range(POW.guards,1,8) && range(POW.guardsMobile,1,POW.guards[1]), 'POW prisoners / guards in range; phones get no more guards than desktop');
-  ok(POW.freeR>3 && POW.score>0 && POW.coin>0, 'freeing prisoners pays and has a reachable gate radius');
   ok(perStage(DEPOT.arms) && perStage(DEPOT.motor), 'weapon + tank depots defined for every stage');
-  ok(range(DEPOT.guards,1,10) && range(DEPOT.guardsMobile,1,DEPOT.guards[1]) && range(DEPOT.tanks,1,4), 'depot guards / parked tanks in range');
   ok(DEPOT.capT>0.5 && DEPOT.capT<15 && DEPOT.r>=6, 'depot capture takes a few seconds inside a usable ring');
   ok(PARA.fromStage>=1 && PARA.fromWave>=1 && range(PARA.every,15,180) && range(PARA.everyMobile,15,240), 'paratroop drops are periodic, not constant');
   ok(PARA.everyMobile[0]>=PARA.every[0], 'phones see drops no more often than desktop');
@@ -389,8 +343,6 @@ ok(FORT.wallHpK <= 1 && FORT.wallShotK === 1 && FORT.shotStructMin >= 1, 'Z111 w
 
 ok(FORT.posture.holdK > 0 && FORT.gate.exitMax > 0 && LOOT.siege.mul > 1, 'Z111b fortress posture / gate / siege-rounds tuning present');
 ok(HARD.boulder/(60*DMG_TYPE.AP.struct) > 2 && HARD.boulder/(60*DMG_TYPE.AP.struct) <= 3 && 95*DMG_TYPE.AP.struct >= HARD.oneShot, 'Z112 a boulder takes 3 cannon shells, one railgun slug');
-
-ok(GUN_MODS.max===5 && (1+GUN_MODS.max*GUN_MODS.barrel.dmg) <= 1.35 && (1-GUN_MODS.max*GUN_MODS.action.fire) >= 0.7 && GUN_MODS.mag.mag*GUN_MODS.max <= 0.6, 'Z115 gun parts cap at +30% dmg, −25% fire gap, +60% magazine');
 
 ok(FORT.ram.minV > 4 && FORT.ram.fullV > FORT.ram.minV && FORT.ram.fullV < 26, 'a ram needs a run-up but full effect comes below top speed');
 ok(TERRAIN_FLAT.noiseK === 0 && TERRAIN_FLAT.blastK === 0, 'the battlefield stays flat and stable (no micro-bumps, shells do not reshape it)');
@@ -923,7 +875,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['export function driverAct','export function driverSurrender','export function driverBack','export function driverDone','export function snapPose','export function blendPose','export function downedRide','function crawlPose','function heaveCurve','function kneelStep','function handsUp','function kneelSpot'].every(k=>a.includes(k)) && /actors\/driver-acts\.js/.test(R('src/hub.js')), 'driver-acts: crawl, heave, surrender, back on the seat, every change of pose eased');
   ok(/snapPose\(D, C\.getup\); D\.state = 'crawl'/.test(d) && /else if\(DRIVER_ACTS\.has\(D\.state\)\) driverAct\(H, D, dt\)/.test(d) && /if\(D\.state === 'mount'\)\{ blendPose\(D, dt\)/.test(d) && !/st === 'walk'/.test(d), 'a spill: off his back onto all fours and crawling (no stiff stand-up, walk and rest-pose lift); eased back onto the seat');
   const A=C.RIDE_ACT, Hv=A.heave; ok(Hv.h1[1] > Hv.slip[1] && Hv.slip[1] > 0 && Hv.hip[0] < Hv.hip[1] && Hv.bend[0] > Hv.bend[1] && Hv.off[0] > Hv.off[1] && C.RIDE.crash.getup <= 0.6 && A.crawl.v > 0.8 && A.give.beside > 0.5 && A.give.show < A.give.wait && ['slip','surrender'].every(e=>C.RIDE_TALK[e] && C.RIDE_TALK[e].d.length), 'the heave comes up part way, slips back, then up from a deep squat; a quick scramble; he kneels beside the body, not on it');
-  
   ok(/pos:G\.getWorldPosition\(new THREE\.Vector3\(\)\)/.test(cv) && /G\.getWorldPosition\(D\.pos\)/.test(cv) && /if\(!D\.from\)\{ H\.root\.position\.set\(CV\.hPos\.x/.test(cv), 'killed on foot: the death camera circles where he fell, the ride stays where it stood'); }
 
 // Z337 bumping into things by their true shape: fortress wall sections, buildings and parked cars are boxes for the soldier, the rides, the tanks; the camera never inside a building; men in the soldier's war bleed, never burn
@@ -1255,7 +1206,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z403 soldier mode: no enemy artillery, no red warning rings (tank mode keeps both) · guard-post guns open up inside a rifleman's reach · our tanks and theirs painted apart (coat + rim + roof panel)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), W=C.CAV.soldier.war;
   const ar=R('src/campaign/artillery.js'), sw=R('src/campaign/soldier-war.js'), sq=R('src/ai/squads.js'), wv=R('src/campaign/waves.js'), su=R('src/campaign/surprises.js'), op=R('src/campaign/operations.js'), fc=R('src/ai/fieldcraft.js'), tc=R('src/ai/tactics.js'), em=R('src/actors/enemy-missiles.js'), bo=R('src/campaign/boss.js');
-  
   const tw=R('src/world/towers.js'), rd=R('src/world/radar.js'), ub=R('src/world/underbase.js');
   ok(TOWER.range<=C.INFANTRY.rifle.range-4 && TOWER.range<PLAYER.rangeBase && C.SUPPLYB.aa.range<=PLAYER.rangeBase && C.UNDERBASE.gate.turretR<=C.INFANTRY.rifle.range, `Z403 guard-post guns reach no further than a rifleman (tower ${TOWER.range} m, AA ${C.SUPPLYB.aa.range} m, gate ${C.UNDERBASE.gate.turretR} m vs rifle ${C.INFANTRY.rifle.range} m, ours ${PLAYER.rangeBase} m)`);
   ok(/near=seen && dp<TOWER\.range; let best=near\?p\.pos:null/.test(tw) && /maxDist:TOWER\.range\+4/.test(tw) && /if\(d>SUPPLYB\.aa\.range \|\| !playerSeen\(/.test(rd) && /maxDist:SUPPLYB\.aa\.range\+4/.test(rd) && /maxDist:C\.turretR\+4/.test(ub), 'Z403 a guard does not track or fire beyond his reach; the rounds stop just past it');
@@ -1350,7 +1300,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     'GUNFX: tracers thinner than the old fat round (MG thinnest), a case per calibre, a material list per strike kind');
   ok(/export function gunFlash\(x, y, z, ang, len, wid, col=0xfff0d0, k=1, pit=0\)/.test(gf) && /new THREE\.InstancedMesh\(geo, new THREE\.MeshBasicMaterial\(\{ map:flashAtlas\(\), transparent:true, depthWrite:false, blending:THREE\.AdditiveBlending/.test(gf) && /if\(dt>0 && f\.fr\+\+>=1 && f\.life<=0\)\{ f\.on=false; continue; \}/.test(gf) && /export function brakeBlast\(/.test(gf) && /export function gunLight\(/.test(gf) && /muzzleLight\.userData\.fast/.test(gf),
     'the muzzle flash is a pooled, bore-aligned instanced flash that always shows at least one frame; brake jets; a strobe light');
-  
 }
 // Z439 the dome pillbox, the sandbag ring bunker and the culvert stop men, rides and tanks (their measured footprint, data/scene-solids.js)
 { const C=await import('./config.js'), D=await import('./src/data/scene-solids.js');
@@ -1474,7 +1423,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const BD=await import('./src/data/bosses.js');
   const flow=R('src/game/flow.js'), bs=R('src/campaign/boss.js'), vo=R('src/audio/voice.js'), mu=R('src/audio/music.js'), ops=R('src/campaign/operations.js');
   
-  
   ok(/BOSS_ALT\[st\]/.test(bs) && Object.values(BD.BOSS_ALT).every(id=>BD.BOSS_NEW.some(b=>b.id===id)), 'odd NG+ loops hand stages to the new generals');
   ok(/OfflineAudioContext/.test(mu) && /updateScore\(dt\)/.test(R('src/game/loop.js')) && Object.keys(BD.BOSS_DEFS.concat(BD.BOSS_NEW).reduce((a,b)=>(a[b.id]=1,a),{})).every(id=>new RegExp('\\b'+id+':\\[').test(mu)), 'adaptive score: stems rendered offline, faded with the fight, a motif per general');
   function VOICE_FILES_OK(){ const T=Object.fromEntries([...vo.match(/VOICE_TAKES = \{([^}]+)\}/)[1].matchAll(/(\w+):(\d+)/g)].map(m=>[m[1],+m[2]])); const keys=[...vo.matchAll(/, '([a-z_]+)'\]/g)].map(m=>m[1]).concat('open','streak','boss_phase','f_rally_1','f_rally_2','f_rally_3'); for(const b of BD.BOSS_DEFS.concat(BD.BOSS_NEW)) keys.push('boss_'+b.id,'t_'+b.id+'_1','t_'+b.id+'_2'); const files=keys.flatMap(k=>T[k]?Array.from({length:T[k]},(_,i)=>k+'_'+(i+1)):[k]); return files.length>40 && files.every(k=>fs.existsSync('assets/voice/'+k+'.mp3')); } }
@@ -1488,43 +1436,29 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/request\.auth\.uid == uid/.test(rules) && /match \/\{document=\*\*\} \{\s*allow read, write: if false;/.test(rules) && /allow delete: if false/.test(rules), 'Firestore rules: only the owner reads/writes their save; everything else is closed'); }
 
 // Z162b server economy (Firebase phase 2): pure rules shared with Cloud Functions; client routes every spend through them once linked
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json')), cfg=await import('./config.js');
-  { const s=E.migrate({ coins:9e9, diamonds:9e9, ownedGuns:['rifle','smg','hack'], ownedTanks:['lqt','t90m','x'], upgrades:{ damage:99, nope:3 }, kit:{ t90m:{ armor:9, engine:2, fcs:2, susp:2, sig:true } } }, cat);
-    ok(s.coins+E.inventoryValue(s,cat)<=cat.cap.migrateValue && s.coins>0 && !s.guns.includes('hack') && !s.tanks.includes('x') && s.upgrades.damage===cat.upgrades.damage.length && !('nope' in s.upgrades) && s.kit.t90m.armor===3 && s.kit.t90m.sig===true, 'migration clamps the wallet, drops unknown items, clamps levels'); }
-  { const all={ coins:1, ownedGuns:Object.keys(cat.guns), ownedTanks:Object.keys(cat.tanks), upgrades:Object.fromEntries(Object.entries(cat.upgrades).map(([k,v])=>[k,v.length])) }, f=E.migrate(all,cat,Date.now()), late=E.migrate({ coins:5000 },cat,cat.cap.migrateUntil+1);
-    ok(f.guns.length===1 && f.meta.rejected>0 && late.coins===0, 'a forged everything-unlocked save is refused; after the window new players start fresh'); }
-  { const s=E.freshState(); s.meta={ createdAt:0, reach:2 }; const a=E.payout(s,{ coins:1e6, loop:50, stage:5, cleared:1, guns:['arty'] },600000,cat);
-    ok(a.coins<=cat.cap.coinBucket && s.meta.reach===2 && !a.gun, 'a forged NG+ loop / far-ahead clear earns no multiplier, no progress and no gun'); }
-  { const s=E.freshState(); s.coins=1000; ok(!E.purchase(s,{type:'gun',id:'railgun'},cat).ok && E.purchase(s,{type:'gun',id:'smg'},cat).ok && s.coins===400 && !E.purchase(s,{type:'gun',id:'smg'},cat).ok, 'purchases: VIP needs diamonds, a gun is bought once, the price is taken');
-    ok(E.purchase(s,{type:'kit',id:'lqt',track:'armor'},cat).ok===(400>=cat.kit.lqt[0].c) && !E.purchase(s,{type:'sig',id:'lqt'},cat).ok && !E.purchase(s,{type:'kit',id:'t14',track:'armor'},cat).ok, 'workshop: only owned tanks; the signature needs every track at level 2'); }
-  { const s=E.freshState(); s.meta={ createdAt:0 }; const t=60000, a=E.payout(s,{ coins:500 },t,cat), b=E.payout(s,{ coins:99999 },2*t,cat), c=E.payout(s,{ coins:99999 },3*t,cat);
-    ok(a.coins===500 && b.coins<=cat.cap.coinBucket && c.coins<=cat.cap.coinPerMin+1 && c.clamped, 'payouts come from a refilling bucket: bursts paid, a farming client is held to the average rate'); }
-  const ec=R('src/core/econ.js'), rules=R('firestore.rules');
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cat=JSON.parse(R('functions/catalog.json')), cfg=await import('./config.js');
+  
+  
+  const rules=R('firestore.rules');
   ok(/match \/econ\/\{uid\}[\s\S]*allow write: if false/.test(rules) && /econBootstrap/.test(R('functions/index.js')) && /maxInstances:5/.test(R('functions/index.js')), 'econ/{uid} is server-only (owner may read); functions capped at 5 instances');
    }
 
 // Z163 leaderboard: scores validated by the server (per-run bucket), weekly + all-time boards written only by Cloud Functions
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json'));
+{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const E=await import('./functions/score.js'), cat=JSON.parse(R('functions/catalog.json')), cap=cat.cap;
   ok(E.weekKey(Date.UTC(2026,10,13,5))==='2026-W46' && E.weekKey(Date.UTC(2026,10,15,18))==='2026-W47', 'week key follows Vietnam time (a Sunday evening UTC is already Monday)');
-  { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; const a=E.scoreUpdate(s,{ runId:'r1', score:20000 },5*60000,cat,0,2), b=E.scoreUpdate(s,{ runId:'r1', score:9e8 },6*60000,cat,0,2);
+  { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; const a=E.scoreUpdate(s,{ runId:'r1', score:20000 },5*60000,cap,0,2), b=E.scoreUpdate(s,{ runId:'r1', score:9e8 },6*60000,cap,0,2);
     ok(a.best===20000 && b.clamped && b.best<20000+cat.cap.scoreBucket*2, 'a forged score is cut to what the run bucket allows'); }
-  { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; let r; for(let i=1;i<=60;i++) r=E.scoreUpdate(s,{ runId:'idle', score:i*9000 },i*60000,cat,0,1);
-    const late=E.scoreUpdate(s,{ runId:'idle', score:9e6 },(cat.cap.runMaxH+1)*3600e3,cat,1,1);
+  { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; let r; for(let i=1;i<=60;i++) r=E.scoreUpdate(s,{ runId:'idle', score:i*9000 },i*60000,cap,0,1);
+    const late=E.scoreUpdate(s,{ runId:'idle', score:9e6 },(cap.runMaxH+1)*3600e3,cap,1,1);
     ok(r.best<=cat.cap.runBase && late.closed, 'a run with no cleared stage stays small, and a run kept open for hours is closed'); }
   ok(E.cleanName('<script>x','u1')==='scriptx' && E.cleanName('','abcd')==='CHỈ HUY ABCD', 'player names are cleaned server-side');
   ok(/match \/lb\/\{uid\} \{ allow read: if signedIn\(\); allow write: if false; \}/.test(R('firestore.rules')) && /lbw\/'\+sc\.week/.test(R('functions/index.js')), 'leaderboards are readable by players, writable only by the server');
-  ok(/escapeHtml\(r\.name/.test(R('src/ui/ranking.js')) && /getCountFromServer/.test(R('src/ui/ranking.js')) && /id="rankBtn"/.test(R('index.html')) && /score:S\.score\|0, runId:S\.runId/.test(R('src/core/econ.js')), 'ranking screen: top 50, your own rank, names escaped; runs report their score'); }
+  ok(/escapeHtml\(r\.name/.test(R('src/ui/ranking.js')) && /getCountFromServer/.test(R('src/ui/ranking.js')) && /id="rankBtn"/.test(R('index.html')) && /score:S\.score\|0, runId:S\.runId/.test(R('src/core/score-report.js')), 'ranking screen: top 50, your own rank, names escaped; runs report their score'); }
 
 // Z164 Google sign-in on: provider in firebase.json, link button on the web build, a failed link never marks the save broken
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), fb=JSON.parse(R('firebase.json'));
   ok(cfg.CLOUD_CFG.google===true && fb.auth.providers.anonymous && !/@/.test(R('firebase.json')), 'Google on (enabled in the project, not in firebase.json — no personal email in the repo); anonymous provider in config');
   ok(/linkWithPopup/.test(R('src/core/cloud.js')) && !/set\('error', e\.code\|\|e\.message\); return false; \} \}/.test(R('src/core/cloud.js')) && /LIÊN KẾT GOOGLE/.test(R('src/ui/settings.js')), 'link Google from Settings; a cancelled link leaves the cloud state alone'); }
-
-// Z167 roof machine gun (manned by the first rider), its shop/upgrades on the server, fortress rally cries, death scream, victory cheer
-{ const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), E=await import('./functions/economy.js'), cat=JSON.parse(R('functions/catalog.json'));
-  
-  { const s=E.freshState(); s.coins=5000; ok(E.purchase(s,{ type:'mg', id:'m2hb' },cat).ok && s.mgs.includes('m2hb') && !E.purchase(s,{ type:'mg', id:'kord' },cat).ok && E.purchase(s,{ type:'mgup', id:'m2hb', track:'dmg' },cat).ok && s.mgUp.m2hb.dmg===1 && !E.purchase(s,{ type:'mgup', id:'kord', track:'dmg' },cat).ok, 'server: buy an MG once, VIP needs diamonds, upgrade only what you own'); }
-   }
 
 // Z168 smoother battle start, steadier controller focus, UI fit pass, weightier shots
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const tips=R('src/ui/tips.js'), br=R('src/ui/briefing.js'), gp=R('src/input/gamepad.js'), css=R('css/ui152.css'), mcss=R('css/menus.css');
@@ -1903,7 +1837,6 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z238 the lock-on missile: never through a wall (climbs over what is in its path, strikes a wall too close to clear), a capped reach, a slower rate
 { const fs=await import('node:fs'), R=k=>fs.readFileSync(k,'utf8'); const lo=R('src/combat/lock-on.js'), cf=R('config.js'), G=(await import('./src/data/guns.js')).GUNS;
-  
   ok(/bl\.kind==='fortwall' \|\| bl\.kind==='gate'\)\) bl\._top=heightAt\(bl\.x,bl\.z\)\+FORT\.wallH/.test(lo), 'a fortress wall is measured at its parapet (not the whole fort’s towers and flags)');
    }
 
@@ -2275,6 +2208,19 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/isAir=t=>ENEMY_DEFS\[t\]&&ENEMY_DEFS\[t\]\.air/.test(R('src/world/supply.js')) && C.SUPPLYB.reinfCd>0 && C.SUPPLYB.cut.air>0, 'a lost fuel station costs the enemy helicopters; the base calls up squads');
   ok(C.DEPLOY.men===5 && /total=DEPLOY\.men \+ squadWant\(\)/.test(R('src/ui/deploy.js')), 'the deployment counts its men, not the tank\'s seats');
   ok(C.LETHAL.heavyKills && (lo.match(/LETHAL\.heavyKills/g)||[]).length===2 && !/tankRoundKills/.test(lo), 'a heavy round still kills a man outright — theirs on our men too (the renamed LETHAL.heavyKills read in both places)'); }
+
+// NO-TANKS 6 no wallet, no shop economy: coins, diamonds, the arsenal, the loadout and the bought upgrades are gone from the profile (an old save drops
+//   them), nothing pays out coins; the server keeps only the leaderboard (the player's reach, the run's score bucket — functions/score.js)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), E=await import('./functions/score.js'), cat=JSON.parse(R('functions/catalog.json')), pr=R('src/core/profile.js'), idx=R('functions/index.js');
+  ok(!/addCoins|addDiamonds|refreshWallet|ownedGuns|PROFILE\.upgrades|econEarn/.test(fs.readdirSync('src', { recursive:true }).filter(f=>f.endsWith('.js')).map(f=>R('src/'+f)).join('\n').replace(/export function dropOldShop[^\n]*/, '')) && !/w-coins|go-wallet/.test(R('index.html')), 'no wallet, arsenal or bought upgrade anywhere in the game');
+  ok(/export function dropOldShop\(pr\)\{ for\(const k of \['ownedGuns','loadout','coins','diamonds','upgrades','gunXp'/.test(pr) && /dropOldShop\(pr\);/.test(pr) && /dropOldShop\(PROFILE\)/.test(R('src/core/cloud.js')) && !/ownedGuns|coins:0|upgrades/.test(pr.match(/export function defaultProfile\(\)\{[^\n]*/)[0]), 'a new profile has none of it; an old one drops it on load');
+  ok(!fs.existsSync('functions/economy.js') && !fs.existsSync('src/core/econ.js') && !/export const econBuy/.test(idx) && /export const econRun/.test(idx) && /export const econBootstrap/.test(idx) && Object.keys(cat).join()==='v,cap' && JSON.stringify(cat.cap)===JSON.stringify(C.SCORE_CAP), 'the server: no purchases, no payouts — the run report and the boards, under the same function names');
+  { const s=E.migrate({ campaign:{ max:4 }, coins:9e9, ownedGuns:['x'] }, cat.cap, Date.UTC(2026,10,1)); ok(Object.keys(s).join()==='meta' && s.meta.reach===3 && E.migrate({ campaign:{ max:9 } }, cat.cap, cat.cap.migrateUntil+1).meta.reach===0, 'the server\'s record of a player is only how far he got — and only during the migration window'); }
+  { const s=E.freshState(); s.meta={ createdAt:0, reach:3 }; const p=E.progress(s, { cleared:true, stage:4, loop:0 }, 600000, cat.cap), q=E.progress(s, { cleared:true, stage:5, loop:0 }, 610000, cat.cap); ok(p.clears===1 && s.meta.reach===5-1 && q.clears===0, 'a clear counts for the next level only, and not twice inside minClearGap'); }
+  ok(/escapeHtml\(r\.name/.test(R('src/ui/ranking.js')) && /getCountFromServer/.test(R('src/ui/ranking.js')) && /id="rankBtn"/.test(R('index.html')) && /score:S\.score\|0, runId:S\.runId/.test(R('src/core/score-report.js')) && /reportRun\(\{ cleared:true \}\)/.test(R('src/campaign/boss.js')), 'ranking screen: top 50, your own rank, names escaped; every stage won and every run over reports its score');
+  ok(C.CONTRACTS.every(c=>!('coinMul' in c.mods) && !('bossDiaBonus' in c.mods)) && C.CONTRACTS.find(c=>c.id==='steady') && !C.CONTRACTS.some(c=>c.id==='bounty'||c.id==='warlord'), 'no contract pays in coins or diamonds; the safe one is a plain stage');
+  ok(['brick','enemy'].every(k=>C.BALANCE.drop[k]>0 && C.BALANCE.drop[k]<=1) && !('gem' in C.BALANCE.drop) && C.BALANCE.elite.scoreMul>1, 'loot chances are probabilities; an elite pays in score');
+  ok(C.CAMP.hp>150 && C.CAMP.score>0 && C.POW.freeR>3 && C.POW.score>0 && C.DEPOT.guards[0]>=1 && C.DEPOT.guardsMobile[1]<=C.DEPOT.guards[1] && !['coin' in C.CAMP, 'coin' in C.POW, 'coin' in C.DEPOT, 'tanks' in C.DEPOT].some(Boolean), 'camps, prisoners and depots pay in score; depot guards in range'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

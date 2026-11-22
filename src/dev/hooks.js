@@ -1,7 +1,7 @@
 // dev/hooks.js — Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the
 // #dev console. Nothing in the game reads these; a production build may drop this module from hub.js.
 import { CONTRACTS } from '../../config.js';
-import { BIOME, BIOMES, DEATH, DRONE, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageDrone, damageEnemy, damagePlayer, debris, decorGroup, deployOwnedDrone, deploySoldiers, doResize, droneBonusHp, droneDmgMul, droneOwned, dropPowerup, enemies, enemyBarPool, fireFlame, guardFireMul, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, ownGun, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnDrone, spawnEnemy, startBoss, startGame, vehicleExplode, towers, trySpell, updateDeath, updateDrone, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
+import { BIOME, BIOMES, DEATH, DRONE, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageDrone, damageEnemy, damagePlayer, debris, decorGroup, deploySoldiers, doResize, dropPowerup, enemies, enemyBarPool, fireFlame, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnDrone, spawnEnemy, startBoss, startGame, vehicleExplode, towers, trySpell, updateDeath, updateDrone, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
 
 // diagnostics hooks (used for automated testing)
 window._game = S;
@@ -10,7 +10,7 @@ window._spawn = spawnEnemy;
 window._cycleGun = cycleGun; window._drop = dropPowerup;
 window._dbg.blocks = blocks; window._dbg.debris = debris; window._dbg.rockets = rockets;
 window._intro = intro;   // deploy-cinematic state (debug/inspection)
-window._profile = PROFILE; window._ownGun = ownGun; window._openLoadout = openLoadout;   // profile/arsenal hooks
+window._profile = PROFILE; window._openLoadout = openLoadout;   // profile/arsenal hooks
 window._saveProgress = saveProgress; window._clearProgress = clearProgress;              // checkpoint hooks (debug/test)
 window._WAVE = WAVE; window._rollWaveEvent = rollWaveEvent; window._makeElite = makeElite; window._dbg.killEnemy = killEnemy; window._dbg.damageEnemy = damageEnemy;   // NG+/event hooks (debug/test)
 window._selectGun = selectGun;
@@ -31,7 +31,6 @@ window._view = { get camera(){return camera;}, get scene(){return scene;}, get r
 window._dbg.soldiers = soldiers; window._deploy = deploySoldiers; window._armory = ()=>{ __set_soldierLvl(soldierLvl + 1); return soldierLvl; };   // (debug) friendly squad
 window._vehicleExplode = vehicleExplode;   // (debug) trigger the blast FX
 window._spawnDrone = spawnDrone; window._damageDrone = (dmg)=>damageDrone(dmg,null); window._updateDrone = updateDrone; window._DRONE = DRONE; Object.defineProperty(window,'_drone',{get:()=>S.drone});   // (debug) support drone
-window._deployOwnedDrone = deployOwnedDrone; window._droneOwned = droneOwned; window._droneDmgMul = droneDmgMul; window._guardFireMul = guardFireMul; window._droneBonusHp = droneBonusHp;   // (debug) support-unit shop upgrades
 window._resize = ()=>doResize(true);   // (debug) force a refit
 window._perf = PH;   // (debug) Z240 frame-time probe: PH.frm / upd / ren / gpu rings, perfAvg(PH.gpu)
 if(location.hash==='#dev') window.__dev = { S, GUNS, enemies, blocks, towers, rockets, heightAt, damageBlock:(b,d)=>damageBlock(b,d), selectGun:(i)=>selectGun(i), spawnEnemy:(t,x,z)=>spawnEnemy(t,x,z), camera, scene, renderer, start:()=>startGame(), skip:()=>skipIntro(), get PROFILE(){ return PROFILE; }, get FT(){ return FT; }, startBoss:()=>startBoss(performance.now()/1000), drop:(x,z,t)=>dropPowerup({x,z},t), give:(id)=>applyPowerup(POWERUPS.find(u=>u.id===id)), get pickups(){ return pickups; }, hurt:(e,d)=>damageEnemy(e,d), obj:(st)=>{ S.stage=st; buildObjective(); return OBJ; }, spell:(i)=>{ S.spell=i; S.player.spellCdUntil=0; trySpell(); }, contract:(i)=>chooseContract(CONTRACTS[i||0]), setBiome:(i)=>{ PROFILE.terrain=i; applyBiome(1); }, setTod:(t)=>{ S.tod=t; applyAtmosphere(BIOME); }, tick:(n)=>{ window.__forceFrame=true; for(let i=0;i<(n||1);i++){ const t=performance.now(); __set_last(t-16.7); loop(t); } window.__forceFrame=false; } };   // QA hook (only with #dev in the URL)

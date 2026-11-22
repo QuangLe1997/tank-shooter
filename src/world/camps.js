@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT, TENT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave, photoSet } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave, photoSet } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -92,7 +92,7 @@ export function destroyCamp(b){ const c=b.camp; c.alive=false; for(const q of c.
   clearCrowd(c);   // Z196 nobody is left standing in the open
   for(const h of [c.hut, c.hut2]) if(h){ h.scale.set(1.04*CAMP_K,0.32*CAMP_K,CAMP_K); h.rotation.z=0.12; h.position.y-=0.2; h.traverse(o=>{ if(o.isMesh && o.material===campMats().tin){ o.material=o.material.clone(); o.material.color.setHex(0x2a2622); } }); }   // the roofs cave in, scorched
   for(let k=0;k<3;k++) spawnDebris({x:c.x,z:c.z}, 1.2, 0x8a8e86);
-  const R=Math.round; addScore(R(CAMP.score*loopRewardMul()), new THREE.Vector3(c.x,5,c.z)); addCoins(R(CAMP.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
+  const R=Math.round; addScore(R(CAMP.score*loopRewardMul()), new THREE.Vector3(c.x,5,c.z));
   floatText('ĐÃ PHÁ TRẠI', '#ffcf5a', new THREE.Vector3(c.x,6,c.z), 24); campLost(c); sfx('bigexplode');   // Z194 the radio + the lasting cut come from the supply bases
   if(b.loot){ dropPowerup({x:c.x,z:c.z+4}, 2); dropPowerup({x:c.x,z:c.z+4}, 1); } c.burnT=12; }
 export let _campRadioAt=0;

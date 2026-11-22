@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CAV, CORE_DEF } from '../../config.js';
-import { CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deployOwnedDrone, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, freeEnemyBar, guardTarget, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup } from '../hub.js';
+import { SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
@@ -44,7 +44,7 @@ export function startGame(arg){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance(); __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
+  enemies.length=0; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance(); __set_soldierLvl(0); deploySoldiers(SOLDIER.base); document.body.classList.remove('corelow'); __set__alarmAt(0);
   duelReset();   // (no-tanks: the stage's general, on foot)
   document.getElementById('bossbar').style.display='none';
   S.timeScale=1; S.awaitingUpgrade=false; S.cmd=null; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
@@ -74,7 +74,7 @@ export function togglePause(){
 }
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
-  S.firing=false; try{ econReportRun({ cleared:false }); }catch(e){}   // Z162 what this run earned is reported
+  S.firing=false; try{ reportRun({ cleared:false }); }catch(e){}   // Z163 the run's score goes to the leaderboard
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance();
@@ -83,7 +83,7 @@ export function quitToMenu(){
   document.body.classList.remove('corelow','shopopen'); __set__alarmAt(0);
   S.mode='start';
   hide('pause'); hide('gameover'); for(const id of ['briefing','deploy','upgrade','victory','tip']){ const o=document.getElementById(id); if(o && !o.classList.contains('hidden')) hide(id); } show('start');   // Z111b also from the briefing / deploy screens
-  refreshStartUI(); refreshWallet(); saveProfile(); sfx('click');
+  refreshStartUI(); saveProfile(); sfx('click');
 }
 // any open menu hides the battle HUD + the mobile control pads — on a phone they used to sit right
 // on top of the menu buttons (FIRE/DASH/SWAP behind PLAY), which read as "broken, overlapping UI"

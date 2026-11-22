@@ -50,7 +50,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (230 module theo thứ tự hub · 21.764 dòng)
+### 2.1 Danh mục module (230 module theo thứ tự hub · 21.713 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -67,9 +67,9 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 8 | `src/core/config.js` | 29 | runtime constants derived from config + device: arena size, MOBILE, the aircraft's draw scale, player range,… |
 | 11 | `src/core/state.js` | 21 | S — the single runtime game state (mode, stage, wave, score, player, spell, recall …) |
 | 194 | `src/core/helpers.js` | 72 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
-| 201 | `src/core/profile.js` | 82 | PLAYER PROFILE (nickname · arsenal · loadout · campaign save) |
+| 201 | `src/core/profile.js` | 49 | PLAYER PROFILE (nickname · campaign save · settings) |
 | 202 | `src/core/cloud.js` | 63 | Z162 CLOUDSAVE SAVE: Firebase Auth (anonymous first, Google link later) + the profile mirrored to Firestore … |
-| 203 | `src/core/econ.js` | 48 | Z162 SERVER ECONOMY on the client: econ/{uid} (written only by Cloud Functions) drives the wallet + inventor… |
+| 203 | `src/core/score-report.js` | 24 | Z163 THE LEADERBOARD'S RUN REPORT: at the end of each stage (and when a run ends) the score so far goes to t… |
 | | **render/** — Three.js renderer + hậu kỳ | | |
 | 13 | `src/render/clouds.js` | 33 | Z145 CLOUD LIGHT: big cloud shadows drift across the whole battlefield (forts, tanks, fields go dim and brig… |
 | 14 | `src/render/aerial.js` | 57 | Z427 AIR AND DISTANCE: the haze every fogged material draws through is rebuilt (the stock fog chunk replaced… |
@@ -133,10 +133,10 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 103 | `src/world/tower-kinds.js` | 126 | Z175 WATCHTOWER TYPES: seven real guard-tower builds in timber, steel and concrete — each land raises the ki… |
 | 104 | `src/world/camps.js` | 157 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
 | 105 | `src/world/zones.js` | 38 | Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered |
-| 106 | `src/world/fortress.js` | 661 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
+| 106 | `src/world/fortress.js` | 666 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
 | 107 | `src/world/fort-hill.js` | 179 | Z453 CASTLES ON CRAGS (config FORTHILL, the limestone quarry first; Z455 the whole land: crags joined by rid… |
 | 108 | `src/world/hill-trees.js` | 35 | Z455 TREES ON THE CRAGS (FORTHILL.trees): on the limestone hills dead trees cling at the lip of a drop — fou… |
-| 109 | `src/world/hill-climb.js` | 34 | Z456 THE WAY UP (FORTHILL…spur.path): the capital's crag is sheer all round but for a narrow tongue toward i… |
+| 109 | `src/world/hill-climb.js` | 40 | Z456 THE WAY UP (FORTHILL…spur.path): the capital's crag is sheer all round but for a narrow tongue toward i… |
 | 110 | `src/world/rally.js` | 26 | Z104 KHU TẬP KẾT (rally point): soldiers carry the loot they find back here; it waits (never expires) for th… |
 | 111 | `src/world/pow.js` | 57 | Z104 POW STOCKADES along our fence: our captured men behind barbed wire, enemy guards around them. |
 | 112 | `src/world/depots.js` | 58 | Z104 ENEMY WEAPON DEPOTS in their half of the field, each with a guard post (no-tanks: the motor pool is gon… |
@@ -203,7 +203,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 87 | `src/actors/helis.js` | 205 | Z222 THE HELICOPTER FLEET: two more airframes beside the attack gunship, each with its own shape, paint and … |
 | 92 | `src/actors/paradrop.js` | 102 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
 | 93 | `src/actors/command.js` | 39 | Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our he… |
-| 100 | `src/actors/damage.js` | 28 | DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's… |
+| 100 | `src/actors/damage.js` | 27 | DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's… |
 | 128 | `src/actors/real-air.js` | 56 | Z272 REAL AIRCRAFT: Tripo models take the place of the procedural airframes — the attack gunship, the swooping |
 | 148 | `src/actors/squad-mates.js` | 57 | Z351 HIS OWN SQUAD (soldier mode only): he does not fight alone. He starts with two men of his own — a machi… |
 | 152 | `src/actors/hands.js` | 42 | Z296 HANDS THAT HOLD: the Tripo / Mixamo rigs carry every finger (four joints each, both hands — 40 bones) b… |
@@ -239,7 +239,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 89 | `src/campaign/surprises.js` | 53 | Z223 THE FIGHT SURPRISES YOU: every minute or so, out of a weighted, stage-gated hat, something you didn't p… |
 | 94 | `src/campaign/operations.js` | 123 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
 | 114 | `src/campaign/waves.js` | 102 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
-| 115 | `src/campaign/boss.js` | 35 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
+| 115 | `src/campaign/boss.js` | 33 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
 | 146 | `src/campaign/soldier-war.js` | 24 | Z309 A SOLDIER'S WAR: the waves are men — riflemen and RPG teams, squads, troop helicopters dropping more me… |
 | 151 | `src/campaign/general-duel.js` | 76 | Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the … |
 | 176 | `src/campaign/artillery.js` | 31 | ARTILLERY STRIKES: a locked spot (the objective battery's), the shell in flight, the burst, shrapnel hit vs … |
@@ -287,7 +287,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 145 | `src/game/ride-call.js` | 49 | Z306 CALL THE RIDE (soldier mode only): on foot, a button (and G) tells you where your ride stands — LÊN XE … |
 | 147 | `src/game/soldier-rank.js` | 95 | Z350 THE SOLDIER'S CAREER (soldier mode only): every man he or his squad drops is experience, and experience… |
 | 160 | `src/game/score.js` | 16 | SCORE / COMBO |
-| 161 | `src/game/player-damage.js` | 80 | PLAYER DAMAGE / DEATH |
+| 161 | `src/game/player-damage.js` | 79 | PLAYER DAMAGE / DEATH |
 | 182 | `src/game/flow.js` | 108 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
 | 195 | `src/game/update.js` | 113 | the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank'… |
 | 196 | `src/game/intro-clouds.js` | 49 | Z322 THE INTRO'S SKY: high over the field the air is hazy and a thin deck of soft clouds drifts between the … |
@@ -298,7 +298,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 227 | `src/game/boot-gate.js` | 67 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
 | 228 | `src/game/startup.js` | 22 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
 | | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
-| 229 | `src/dev/hooks.js` | 40 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
+| 229 | `src/dev/hooks.js` | 39 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
 | 230 | `src/dev/pose-studio.js` | 121 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
 <!-- MODULES:END -->
 

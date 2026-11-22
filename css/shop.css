@@ -1,5 +1,5 @@
 /* Z98 split from index.html — order matters: files are linked in this sequence. */
-  .go-wallet{font-size:12px;letter-spacing:1px;color:var(--muted);margin:2px 0 6px;} .go-wallet b{color:var(--amber);}
+
    /* crisp: no blur + transparent centre so the 3D item shows bright/sharp{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:11px;padding:calc(max(12px,env(safe-area-inset-top)) + 4px) 12px 8px;pointer-events:none;z-index:2;}
 
 
@@ -61,7 +61,7 @@
 
 
 
-  .case.owned,.case.maxed{filter:grayscale(.5);opacity:.66;}
+  .case.owned{filter:grayscale(.5);opacity:.66;}
 
 
 
@@ -111,7 +111,7 @@
 
 
 
-.case.owned,.case.maxed{filter:none;opacity:.82;} .case.owned{border-color:rgba(155,224,74,.45);}
+.case.owned{filter:none;opacity:.82;} .case.owned{border-color:rgba(155,224,74,.45);}
 
 
 

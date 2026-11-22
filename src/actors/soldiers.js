@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REAL, REALTROOP } from '../../config.js';
-import { MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, guardBonusHp, guardFireMul, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
+import { MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -256,7 +256,7 @@ export function _placeSoldiers(){ const c=core?core.pos:{x:0,z:0}; const n=Math.
   soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.home.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR);
     if(s.pos.lengthSq()===0) s.pos.copy(s.home); }); }
 export function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g=makeSoldierMesh(); g.scale.setScalar(SOLDIER.scale); scene.add(g);
-  const mhp=Math.round(SOLDIER.hp + guardBonusHp() + Math.random()*22 - 8);   // each soldier is an individual (varied HP) + GUARD ARMOR upgrade
+  const mhp=Math.round(SOLDIER.hp + Math.random()*22 - 8);   // each soldier is an individual (varied HP)
   const bar=makeSoldierBar(); scene.add(bar.g);
   soldiers.push({ g, bar:bar.g, barFill:bar.fill, pos:new THREE.Vector3(), home:new THREE.Vector3(), hp:mhp, maxHp:mhp,
     fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, wpx:0, wpz:0, wanderAt:0, dead:false }); _placeSoldiers(); }
@@ -280,7 +280,7 @@ export function updateSoldiers(dt, now){
     let best=null, bd=SOLDIER.range*SOLDIER.range;
     for(const e of enemies){ const dx=e.pos.x-s.pos.x, dz=e.pos.z-s.pos.z, q=dx*dx+dz*dz; if(q<bd){ bd=q; best=e; } }
     if(best){ const ang=Math.atan2(best.pos.x-s.pos.x, best.pos.z-s.pos.z); s.g.rotation.y=ang;
-      if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd*guardFireMul(); _fired=true;   // GUARD: DRILL upgrade → faster fire
+      if(now>=s.fireAt){ s.fireAt=now + SOLDIER.fireCd; _fired=true;
         s.g.userData.muzzle.getWorldPosition(_sV);
         spawnBullet(_sV.x,_sV.z,ang,{owner:'p', inf:true, dmg:SOLDIER.dmg*(1+soldierLvl*0.22), speed:84, color:0xe8ef86, r:0.26, life:1.4, maxDist:SOLDIER.range+2});
         spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {color:0xf2f7a0, size:0.55, life:0.07, grav:0, drag:9}); } }

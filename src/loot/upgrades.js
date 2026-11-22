@@ -1,6 +1,6 @@
 // loot/upgrades.js — THE STAGE WON: pick 1 of 3 of the soldier's perks (game/soldier-rank.js), then the next battlefield is built and briefed
 import { OBJECTIVES } from '../../config.js';
-import { gpuHeld, gpuRelease, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, clearRelic, clearSoldiers, conditionsText, deployOwnedDrone, deploySoldiers, guardTarget, hide, iconEl, opFor, openBriefing, parkAtSpawn, rebuildCore, sfx, show, showBanner, updateHUD, blendWhenReady, scene, soldierStagePerks } from '../hub.js';
+import { SOLDIER, gpuHeld, gpuRelease, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, clearRelic, clearSoldiers, conditionsText, deploySoldiers, hide, iconEl, opFor, openBriefing, parkAtSpawn, rebuildCore, sfx, show, showBanner, updateHUD, blendWhenReady, scene, soldierStagePerks } from '../hub.js';
 
 export function openUpgrade(){
   S.mode='upgrade';
@@ -43,7 +43,7 @@ export function chooseUpgrade(u){
   applyBiome(S.stage); buildBlocks(); buildObjective(); buildLava(); buildUnderground(); buildTrails();   // Z187 · Z225
   rebuildCore(S.stage); gpuRelease(held);   // grander monument for the new stage (preserves max HP, heals to full) · Z396 then the last battlefield's geometries and maps off the GPU
   blendWhenReady(scene);                 // Z325 the new battlefield's buildings and models graded into its colours while the briefing is up
-  clearSoldiers(); deploySoldiers(guardTarget()); deployOwnedDrone();   // fresh guard squad + relaunch owned escort drone each stage
+  clearSoldiers(); deploySoldiers(SOLDIER.base);   // a fresh guard squad each stage
   S.awaitingUpgrade=false; WAVE.active=false; S.wave=0;
   openBriefing({ stage:S.stage, biomeName:BIOME.name, accentHex:'#'+BIOME.accent.toString(16).padStart(6,'0') });   // pick a CONTRACT, then the stage transition + waves fire on confirm
 }

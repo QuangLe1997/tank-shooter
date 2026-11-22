@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE, SCENERY, FUEL_TANK } from '../../config.js';
-import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
+import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -304,9 +304,9 @@ export function baseLost(B){ if(!B.alive) return; B.alive=false; SUPPLY[B.kind]+
   for(const e of B.guards) if(enemies.includes(e) && e.guard && e.guard.base===B){ e.guard=null; e.post=null; }   // the garrison is loose now — no post to hold
   for(const e of enemies) if(e.guardBase===B){ e.guardBase=null; e.guard=null; }
   if(B.kind==='camp') return;   // camps pay out in destroyCamp
-  const R=SUPPLYB, mul=loopRewardMul()*diffRewardMul()*cMod('coinMul'), coins=Math.round((R.coin+90*S.stage)*mul);
-  addCoins(coins); addDiamonds(1); addScore(R.score, new THREE.Vector3(B.x, 6, B.z)); dropPowerup({x:B.x, z:B.z+4}, 2);
-  showBanner('ĐÃ PHÁ '+NAME[B.kind]+'  +'+coins+' ◎  +1 ◆', '#ffd24a'); floatText(NAME[B.kind]+' BỊ PHÁ HUỶ', '#ffcf5a', new THREE.Vector3(B.x, 9, B.z), 26); radio('SCH: '+NAME[B.kind]+' địch đã bị phá huỷ! '+LOST[B.kind]); sfx('levelup'); }
+  const R=SUPPLYB;
+  addScore(R.score, new THREE.Vector3(B.x, 6, B.z)); dropPowerup({x:B.x, z:B.z+4}, 2);
+  showBanner('ĐÃ PHÁ '+NAME[B.kind], '#ffd24a'); floatText(NAME[B.kind]+' BỊ PHÁ HUỶ', '#ffcf5a', new THREE.Vector3(B.x, 9, B.z), 26); radio('SCH: '+NAME[B.kind]+' địch đã bị phá huỷ! '+LOST[B.kind]); sfx('levelup'); }
 // a camp destroyed in camps.js
 export function campLost(camp){ const B=SUPPLY.bases.find(q=>q.camp===camp); if(B){ baseLost(B); radio('SCH: Trại lính địch đã bị san phẳng! '+LOST.camp); } }
 

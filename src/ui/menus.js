@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml).
-import { GUNS, PRIMARY_GUNS, launchGame, __set_BEST, refreshBestLine, MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, queueResize, refreshWallet, saveProfile, sfx, show } from '../hub.js';
+import { GUNS, PRIMARY_GUNS, launchGame, __set_BEST, refreshBestLine, MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, queueResize, saveProfile, sfx, show } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -17,7 +17,7 @@ export function refreshStartUI(){
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; const lp=hasSave?(PROFILE.save.loop|0):0;
     cont.textContent = hasSave ? ('CHƠI TIẾP ▶  '+(lp>0?'VÒNG+'+lp+' · ':'')+'MÀN '+PROFILE.save.stage) : 'CHƠI TIẾP ▶'; }
   const ac=document.getElementById('arsenalCount'); if(ac){ const G=GUNS[PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine']; ac.textContent=G ? G.name : ''; }   // the main gun he carries in
-  refreshWallet(); buildTerrainPicker();
+  buildTerrainPicker();
 }
 // ---- nickname (first launch / editable) ----
 export function openNick(){ const inp=document.getElementById('nickInput'); if(inp) inp.value=PROFILE.nickname||''; hide('start'); show('nick'); setTimeout(()=>{ try{ inp&&inp.focus(); }catch(e){} }, 60); }
@@ -34,6 +34,6 @@ if(typeof window !== 'undefined'){ addEventListener('pagehide', saveProfile); ad
   tapBtn('continueBtn', ()=>launchGame(true));
   let _resetArm=0;
   tapBtn('resetBtn', ()=>{ const lbl=document.querySelector('#resetBtn span:last-child'), now=performance.now();
-    if(now<_resetArm){ _resetArm=0; PROFILE.save=null; PROFILE.best={ score:0, stage:1 }; __set_BEST(PROFILE.best); PROFILE.coins=0; PROFILE.diamonds=0;
-      saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='ĐÃ XOÁ ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='XOÁ'; }, 1400); }
+    if(now<_resetArm){ _resetArm=0; PROFILE.save=null; PROFILE.best={ score:0, stage:1 }; __set_BEST(PROFILE.best);
+      saveProfile(); refreshBestLine(); refreshStartUI(); if(lbl) lbl.textContent='ĐÃ XOÁ ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='XOÁ'; }, 1400); }
     else { _resetArm=now+2600; if(lbl) lbl.textContent='CHẮC CHƯA?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='XOÁ'; }, 2700); } }); }

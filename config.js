@@ -7,23 +7,18 @@
 // ----- BALANCE: every tunable knob in one place -----
 export const BALANCE = {
   // NG+ loop escalation: per-loop multipliers (loop 0 = first run)
-  loop:   { hp:0.45, dmg:0.22, boss:0.55, reward:0.6, bossDia:1 },
+  loop:   { hp:0.45, dmg:0.22, boss:0.55, reward:0.6 },
   // boss HP = def.hp × (1 + (stage-1)·stageRamp) × flat × loopBossMul
-  boss:   { stageRamp:0.18, flat:0.9, coinBase:150, coinPerStage:90, dia:2 },
-  // earning
-  coinBountyDiv:10,        // coin per kill ≈ enemy.score / this
-  stageClearCoin:60,       // × stage on clearing a stage
-  // drop table (per loot pickup); loot spawn chance on bricks/enemies
-  drop:   { brick:0.18, enemy:0.16, gem:0.06, gun:0.45 },
+  boss:   { stageRamp:0.18, flat:0.9 },
+  // loot spawn chance on bricks / enemies
+  drop:   { brick:0.18, enemy:0.16 },
   // waves
   wave:   { base:3, perWave:1, perStage:1.5, perStageCount:5,
             capBase:5, capPerStage:1.5, cadence:1.15, cadenceDiff:0.4,
             eventChance:0.34, assaultCadenceMul:0.5, assaultCapBonus:4, hordeMul:0.5 },
   // elite enemies
   elite:  { chancePerStage:0.025, chancePerLoop:0.06, capChance:0.25,
-            hpMul:2.6, sizeMul:1.0, dmgMul:1.3, coinMul:3, dia:1 },
-  // shop upgrade per-level effects (used by applyUpgrades)
-  up:     { damage:0.08, boss:0.12, range:0.10, reload:0.12, mag:0.15, hp:20, armor:0.06, engine:0.10, turbo:0.12, ramplate:0.25, ramguard:0.12 },
+            hpMul:2.6, sizeMul:1.0, dmgMul:1.3, scoreMul:3 },
   // gun MASTERY: each duplicate gun pickup = +1 xp; cross a threshold → that gun levels up (1→4, permanent).
   // Higher level = more damage, faster fire (lower fireCd), faster reload. Long grind: ~12/15/18 dups per level.
   aggro:{ fireChanceBase:0.55, fireChanceRamp:0.55, spreadBase:0.5, spreadDrop:0.82, leadFrom:0.3, rateBase:2.2, rateDrop:0.95, accurateMul:0.22, loopAcc:0.12 },
@@ -46,11 +41,6 @@ export const BALANCE = {
   // `fireRot`/`idleRot` = gatling barrel spin (rad/s) when firing vs idle (the "nòng xoáy").
   drone:{ guardR:44, guardHit:0.55, strikeR:3.4, strikeFireR:14, dur:22, orbit:4.8, height:3.0, detect:26, hp:120, dmg:6, bspeed:78,
           mag:6, fireCd:0.4, reload:5.0, fireRot:18, idleRot:6, hitR:1.0 },
-  // SUPPORT-UNIT upgrades (shop). DRONE: owning `dronePow` L1 deploys a permanent escort gunship each stage;
-  // each level scales its stats. GUARDS: reload/armor tracks on top of the existing count (`guards`) + power (`troops`).
-  // per-level effect: power = +damage, rof = −reload/fire-cooldown (multiplicative, floored), arm = +flat HP.
-  support:{ dronePowPerLvl:0.12, droneRofPerLvl:0.10, droneArmPerLvl:40,
-            guardRofPerLvl:0.10, guardArmPerLvl:18, mulFloor:0.4 },
 };
 
 // ============================================================================
@@ -445,7 +435,7 @@ export const OBJECTIVES = {
   battery:{ name:'ARTILLERY BATTERY', vi:'TRẬN ĐỊA PHÁO', effectVi:'Pháo yểm trợ: địch gây thêm 10% sát thương', hp:320, r:6.8, effect:'Enemies deal 10% more damage', mods:{ enemyDmgMul:1.1 } },
   command:{ name:'COMMAND BUNKER', vi:'HẦM CHỈ HUY', effectVi:'Địch gây thêm 15% sát thương',    hp:440, r:6.6, effect:'Enemies deal 15% more damage',          mods:{ enemyDmgMul:1.15 } },
 };
-export const OBJ_REWARD = { coin:300, coinPerStage:120, dia:1, score:1500 };
+export const OBJ_REWARD = { score:1500 };
 // EQUIPMENT (Z82) — tank-mounted support kit on the SPELL wheel. Each is a counter to a specific threat.
 export const EQUIP = {
   smoke:{ dur:7, radius:9, spreadMul:4.5 },       // smoke grenades: enemy aim ×spreadMul, guided missiles lose lock
@@ -462,27 +452,6 @@ export const ENV = {
   urban:  { biomes:['RUINS','CITADEL','CITY','STEELMILL'], he:1.2 },                                  // rubble & walls: blast and splinters wreck more
 };
 // ----- shop: leveled stat upgrades (L1-L3 coins, L4-L5 diamonds = VIP) -----
-export const SHOP_UP = [
-  {key:'damage', cat:'FIREPOWER', icon:'burst',  name:'SÁT THƯƠNG',       per:'+8% sát thương đạn', costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
-  {key:'boss',   cat:'FIREPOWER', icon:'shell',   name:'ĐẦU ĐẠN',      per:'+12% sát thương lên tướng',  costs:[{c:400},{c:1100},{c:2600},{d:15},{d:28}]},
-  {key:'range',  cat:'FIREPOWER', icon:'target', name:'NÒNG DÀI',  per:'+10% tầm bắn',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'reload', cat:'AMMO',      icon:'mag',    name:'NẠP NHANH',  per:'−12% thời gian nạp',  costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
-  {key:'mag',    cat:'AMMO',      icon:'mag',    name:'BĂNG ĐẠN LỚN', per:'+15% băng đạn',     costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'hp',     cat:'CHASSIS',   icon:'heart',  name:'BỌC THÂN XE', per:'+20 máu tối đa',        costs:[{c:300},{c:800},{c:2000},{d:14},{d:26}]},
-  {key:'armor',  cat:'CHASSIS',   icon:'shield', name:'GIÁP',        per:'−6% sát thương nhận',  costs:[{c:400},{c:1000},{c:2500},{d:16},{d:30}]},
-  {key:'engine', cat:'CHASSIS',   icon:'dash',   name:'ĐỘNG CƠ',    per:'+10% tốc độ',   costs:[{c:250},{c:700},{c:1700},{d:12},{d:22}]},
-  {key:'turbo',  cat:'CHASSIS',   icon:'dash',   name:'TĂNG ÁP', per:'+12% gia tốc',  costs:[{c:400},{c:1000},{c:2400}]},
-  {key:'ramplate',cat:'CHASSIS',  icon:'shield', name:'MŨI HÚC',    per:'+25% sát thương húc · −12% chịu húc', costs:[{c:500},{c:1200},{c:2800}]},
-  // ----- SUPPORT units: buy & upgrade the guard squad and the escort drone -----
-  {key:'guards',   cat:'SUPPORT', icon:'shield', name:'LÍNH GÁC LÕI',   per:'+1 lính gác Lõi',          costs:[{c:900},{c:2400},{d:16}]},
-  {key:'troops',   cat:'SUPPORT', icon:'up',     name:'LÍNH GÁC: HOẢ LỰC', per:'+22% sát thương lính gác',      costs:[{c:600},{c:1500},{d:12}]},
-  {key:'guardRof', cat:'SUPPORT', icon:'dash',   name:'LÍNH GÁC: THAO LUYỆN',  per:'−10% thời gian nạp của lính gác',      costs:[{c:700},{c:1800},{d:12}]},
-  {key:'guardArm', cat:'SUPPORT', icon:'heart',  name:'LÍNH GÁC: GIÁP',  per:'+18 máu mỗi lính gác',       costs:[{c:700},{c:1800},{d:12}]},
-  {key:'crew',     cat:'SUPPORT', icon:'shield', name:'KÍP LÍNH XE',     per:'+2 lính trên xe',           costs:[{c:900},{c:2400},{d:16}]},
-  {key:'dronePow', cat:'SUPPORT', icon:'drone',  name:'DRONE TẤN CÔNG',  per:'Mở drone hộ tống · +12% sát thương/cấp', costs:[{c:1500},{c:3200},{c:5000},{d:28},{d:40}]},
-  {key:'droneRof', cat:'SUPPORT', icon:'dash',   name:'DRONE: CÁNH QUẠT', per:'−10% thời gian nạp drone',      costs:[{c:1200},{c:2800},{d:16}]},
-  {key:'droneArm', cat:'SUPPORT', icon:'heart',  name:'DRONE: BỌC GIÁP',per:'+40 máu drone',          costs:[{c:1200},{c:2800},{d:16}]},
-];
 
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,500) — value stays ordered. -----
@@ -491,12 +460,10 @@ export const SHOP_UP = [
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [
-  { id:'steady',  name:'TIẾN CHẮC',      icon:'shield', tag:'AN TOÀN',   desc:'+10% xu · không thêm rủi ro',                       mods:{ coinMul:1.1 } },
-  { id:'bounty',  name:'SĂN TIỀN THƯỞNG', icon:'coin',  tag:'XU',        desc:'+70% xu · nhưng địch +20% máu',                 mods:{ coinMul:1.7, enemyHpMul:1.2 } },
+  { id:'steady',  name:'TIẾN CHẮC',      icon:'shield', tag:'AN TOÀN',   desc:'Trận bình thường · không thêm rủi ro',               mods:{} },
   { id:'glass',   name:'PHÁO THUỶ TINH', icon:'burst',  tag:'RỦI RO CAO', desc:'+40% sát thương của bạn · địch +30% sát thương',           mods:{ playerDmgMul:1.4, enemyDmgMul:1.3 } },
-  { id:'elite',   name:'SĂN TINH NHUỆ',  icon:'shell',  tag:'TINH NHUỆ', desc:'Mỗi đợt 1 xe tinh nhuệ · +50% đồ rơi · địch +10% máu',  mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
+  { id:'elite',   name:'SĂN TINH NHUỆ',  icon:'shell',  tag:'TINH NHUỆ', desc:'Mỗi đợt 1 lính tinh nhuệ · +50% đồ rơi · địch +10% máu',  mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
   { id:'scav',    name:'NHẶT NHẠNH',     icon:'mag',    tag:'ĐỒ RƠI',    desc:'×2 đồ rơi (cày súng/cấp) · địch +20% sát thương', mods:{ lootChanceMul:2, enemyDmgMul:1.2 } },
-  { id:'warlord', name:'PHẦN CỦA TƯỚNG', icon:'target', tag:'KIM CƯƠNG', desc:'Tướng rơi thêm 2 💎 · nhưng địch +15% máu',           mods:{ bossDiaBonus:2, enemyHpMul:1.15 } },
 ];
 
 
@@ -594,8 +561,8 @@ export const DEPLOY = { men:5, roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1,
 
 // Z104 BATTLEFIELD ZONES (world/zones.js plans the ground before cover is scattered)
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
-export const POW = { perStage: [2, 2, 3, 3, 3], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };
-export const DEPOT = { arms: [1, 1, 1, 1, 1], motor: [1, 1, 1, 1, 1], r: 10, guards: [4, 5], guardsMobile: [3, 3], capT: 4, tanks: [1, 2], score: 800, coin: 150 };
+export const POW = { perStage: [2, 2, 3, 3, 3], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600 };
+export const DEPOT = { arms: [1, 1, 1, 1, 1], motor: [1, 1, 1, 1, 1], r: 10, guards: [4, 5], guardsMobile: [3, 3], capT: 4, score: 800 };
 // Z116 HIJACK: a badly hit enemy vehicle may be ABANDONED — the crew bails out and it sits smoking. Drive up to it (or walk a soldier
 //   onto it) before it is scuttled and it fights for you in our colours. APC → drops 3 of our men + an MG; rocket truck → anti-air first, then siege.
 // Z222 THE HELICOPTER FLEET — three airframes, three ways to fight. mix = [type, weight, from stage]: an enemy "gunship" call rolls one of them.
@@ -618,8 +585,8 @@ export const PARA = { fromStage: 1, fromWave: 2, every: [50, 72], everyMobile: [
 export const SUPPLYB = { perStage:{ total:[3,3,4,4,4] }, hpPerStage:0.15,   // Z195 3–4 compounds, fuel and ammo alternating, in the corners of the map
   hp:{ radartower:560, radome:220, aagun:150, fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110, shelter:160, radartruck:130, genset:80, dish:60 },   // (Z425 the radar yard's shelter, truck, generator and dishes stand as pieces)
   alertR:46, guards:[3,6], heli:[1,3], heliCd:40, reinf:2, reinfCd:30, aa:{ range:26 },   // Z403 the radar's twin AA guns hose a man on the ground within aa.range m (was 62: they cut him down before he got near; now no further than his own rifle reaches)
-  cut:{ speed:0.12, air:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
-export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };
+  cut:{ speed:0.12, air:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, score:2200 };
+export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, score: 900, tentScore: 60 };
 export const BRIDGE = { pairChance: 0.75, minD: 12, maxD: 18, patrolSpeed: 1.6 };
 // Z405 RIVERS (world/river.js — the bed is carved into the heightfield by genTerrain): the battlefields a river crosses and their water. Per battlefield:
 //   sh / dp = shallow / deep water colour (linear RGB: clear green-blue, the savanna's muddy brown, the ruins' murky grey-green), wet = how dark and glossy
@@ -1320,7 +1287,7 @@ export const FORT = {
   gate:{ open:4.5, speed:0.9, inner:5, outer:6, exitMax:18 },                       // Z111b the gate swings open for every sortie (stays open while troops file through) and shuts behind them
   posture:{ near:40, you:10, inf:1, gInf:0.6, gCmd:6, holdK:0.6, every:[5,8], waveInf:4 },   // Z111b we come close: our strength (you 10×hp% + 1/soldier) ≥ 0.6× the garrison's → they SHUT THE GATE and hold; weaker → they open up and sally in waves
   wallHpK:0.8, wallShotK:1, shotStructMin:1,                            // Z111 easier sieges: a wall section has 0.8× the gate's HP and takes full shell damage; vs gate/wall every gun hits at least ×1 (the rifle's KIN ×0.6 no longer applies)
-  loot:{ coins:[700,260], dia:[1,2], drops:3, gunChance:0.35 },
+  loot:{ drops:3, armoury:1 },   // a taken fort: power-ups by its tier, plus one from its armoury
   names:['HẮC SƠN','ƯNG SẮT','ĐẦU LÂU','LANG NHA','XÍCH VĨ','BÃO LỬA','CỔ THẠCH','HẮC LONG','THIẾT BÍCH','HUYẾT NGUYỆT'],
   chiefs:['BÁ ĐỒ','HOẢ LANG','THIẾT ƯNG','KHÔ LÂU','HẮC HỔ','BÃO CÁT','ĐỘC NHÃN','SẮT ĐÁ'] };
 // Z112 HARD OBSTACLES — lone boulders and steel hedgehogs on the road can be shot apart to open a lane (the rock ridges stay: terrain)
@@ -1354,10 +1321,6 @@ export const FUEL_TANK = { steel:{ hp:300, boom:3.2, r:9, dmg:80, edge:0.3, fire
 //   the player's auto-aim and lock-on); one hit sets it alight — it burns burn s (the canvas chars, and sags over the last sag share) and is gone with
 //   its collider. Sight lines run from / to eye m above the ground: a tank's [tank], a man's [man], a target's middle [mid]
 export const TENT = { burn:2.2, sag:0.45, eye:{ man:1.5, mid:1.1 } };
-// Z115 GUN PARTS (linh kiện súng) — pickups that upgrade a gun FOR GOOD, per gun, stacking up to `max` levels each:
-//   barrel = NÒNG TINH CHẾ (+dmg, +range) · action = KHOÁ NÒNG (faster fire + reload) · mag = BĂNG ĐẠN MỞ RỘNG (+rounds)
-//   They fit the gun in your hands; if it is maxed they go to another carried gun, else they pay coins. Rare from tough kills, one per fortress taken.
-export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.05, reload:0.06 }, mag:{ mag:0.12 }, fortDrops:1, coins:150 };
 // how many tubes each gun really has (shown on the gun card)
 // Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
 //   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
@@ -1471,10 +1434,7 @@ export const CLOUD_CFG = {
   localOnly:['perfDpr','perfAO','quality','pad','padmap','padAsk','binds','autoFs','sfxVol','sound','music','voice','ctrl','turretK','tips','introSeen','_rev','_syncedRev','_cloudUid'],
 };
 
-// Z162 SPECIAL AMMO — bought in boxes (one box = one battle stage), one kind loaded per stage from the shop's ĐẠN tab
-// Z162 what one run may pay out — the server clamps every report to this (minutes are measured by the server, not the client)
-export const PAYOUT_CAP = { coinPerMin:600, coinBucket:6000, coinPerClear:2500, diaPerMin:0.3, diaBucket:20, diaPerClear:6, loopMul:0.6, minClearGap:90, gunGap:120, migrateCoins:300000, migrateDia:1000, migrateReach:10, migrateValue:250000, migrateUntil:Date.UTC(2026,11,31), gunPerReach:1200,
-  scorePerMin:9000, scoreBucket:60000, scorePerClear:25000, runBase:30000, runPerClear:40000, runMaxH:3 };   // a run's total is also capped by the stages it validly cleared, and a run closes after runMaxH hours   // Z163 leaderboard: a run's score is accepted from its own refilling bucket too   // migration: only until the window closes, wallet + inventory worth at most migrateValue coins   // token buckets: bursts are fine, the average rate is capped
+export const SCORE_CAP = { loopMul:0.6, minClearGap:90, migrateReach:10, migrateUntil:Date.UTC(2026,11,31), scorePerMin:9000, scoreBucket:60000, scorePerClear:25000, runBase:30000, runPerClear:40000, runMaxH:3 };   // Z163 the leaderboard (functions/score.js via catalog.json): a run's score is accepted from a refilling bucket (scorePerMin up to scoreBucket, ×loopMul per NG+ loop, +scorePerClear × level on a validated clear at most every minClearGap s), capped by the stages the run cleared (runBase + runPerClear each) and closed after runMaxH hours; a save's reach comes across (≤ migrateReach) until migrateUntil
 // Z167 ROOF MACHINE GUN — a pintle MG on the turret roof, worked by the crewman in the hatch: 360° traverse, elevates onto towers, shoots ONLY infantry
 //   (and the men on walls / towers), shorter reach and lighter hits than the main gun. Belt-fed: a box empties, the gunner swaps it by hand.
 export const FENCE = { hp:34, ramV:9 };   // Z205 a compound's wire: HP per 3 m bay, and the closing speed (m/s) a hull needs to ram through

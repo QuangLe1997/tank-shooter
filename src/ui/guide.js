@@ -6,7 +6,7 @@ export function buildGuide(){
   const wrap=document.getElementById('guideBody'); if(!wrap) return; wrap.innerHTML='';
   const m=MOBILE;
   const rows=[
-    ['bunker','NHIỆM VỤ','Bảo vệ LÕI, chiếm các ĐẠI BẢN DOANH rồi vào THÀNH CHÍNH hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để nhận thưởng + 💎.'],
+    ['bunker','NHIỆM VỤ','Bảo vệ LÕI, chiếm các ĐẠI BẢN DOANH rồi vào THÀNH CHÍNH hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để lấy điểm và làm địch yếu đi.'],
     ['rifle','ĐI & BẮN', m?'Kéo cần để đi — bác tài lái theo hướng anh đẩy (cưỡi ngựa thì anh tự cưỡi). Giữ BẮN (hoặc bật TỰ BẮN) để khai hoả.':'WASD để đi · chuột để ngắm · giữ chuột để BẮN · G xuống / lên xe. Xuống đất thì nhảy, khom, bò để ẩn nấp.'],
     ['dash','KỸ NĂNG', m?'KỸ NĂNG = dùng kỹ năng đang chọn · chạm › để đổi: lựu đạn, lựu khói, cứu thương, gọi tổ bộ binh.':'E = dùng kỹ năng · Q = đổi kỹ năng: lựu đạn, lựu khói, cứu thương, gọi tổ bộ binh.'],
     ['rifle','SÚNG','Mang súng chính + B41 vào trận. Súng khác nhặt trên chiến trường (địch đánh rơi, thùng SÚNG MỚI) — nhặt trùng thì súng lên ★.'],

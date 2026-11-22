@@ -3,7 +3,7 @@
 //   is taken, pick up a rifle and follow you into the fight.
 import * as THREE from 'three';
 import { POW, TROOPS } from '../../config.js';
-import { FT, MOBILE, S, addCoins, addScore, burst, cMod, campMats, diffRewardMul, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, scene, sfx, soldierKneel, spawnAlly, spawnGuards, svgBadgeTex, tip, zonesOf, addTent } from '../hub.js';
+import { FT, MOBILE, S, addScore, burst, campMats, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, scene, sfx, soldierKneel, spawnAlly, spawnGuards, svgBadgeTex, tip, zonesOf, addTent } from '../hub.js';
 
 export const POWS=[];
 let _wireMat=null;
@@ -40,7 +40,7 @@ function liberate(w){ w.state='free'; let onFoot=0;
   for(const s of w.men){ const wp=s.position; burst({x:wp.x,z:wp.z}, 0x9be04a, 4, 3, {y:heightAt(wp.x,wp.z)+1.2, life:0.5, size:0.4, grav:-6, drag:2, up:3}); w.g.remove(s);
     spawnAlly(wp.x, wp.z, w.gateA); const a=FT[FT.length-1]; a.hp=a.maxHp*0.6; onFoot++; }
   w.men.length=0; w.badge.material.map=svgBadgeTex('team','#9be04a'); w.badge.material.needsUpdate=true; w.badge.material.opacity=0.6;
-  const R=Math.round; addScore(R(POW.score*loopRewardMul()), new THREE.Vector3(w.x,5,w.z)); addCoins(R(POW.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
+  const R=Math.round; addScore(R(POW.score*loopRewardMul()), new THREE.Vector3(w.x,5,w.z));
   floatText('GIẢI CỨU '+onFoot+' TÙ BINH', '#9be04a', new THREE.Vector3(w.x,6,w.z), 24); sfx('levelup');
   radio('Tù binh: Cảm ơn chỉ huy! '+onFoot+' người cầm súng theo anh!'); }
 // an open stockade (guards down) asks a nearby idle soldier to walk in and cut the wire

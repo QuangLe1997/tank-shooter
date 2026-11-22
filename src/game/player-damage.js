@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { CAV, RIDE_ACT } from '../../config.js';
-import { soldierHitFX, ARENA, BEST, CV, S, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, econReportRun, enemies, floatText, haptic, padHit, recordRun, refreshWallet, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender } from '../hub.js';
+import { reportRun, soldierHitFX, ARENA, BEST, CV, S, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -55,7 +55,7 @@ export function respawnPlayer(now){
 }
 export function gameOver(reason){
   if(S.mode==='gameover') return;
-  S.mode='gameover'; try{ econReportRun({ cleared:false }); }catch(e){}
+  S.mode='gameover'; try{ reportRun({ cleared:false }); }catch(e){}
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
     if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — người lính ngã xuống khi không còn lượt hồi sinh' : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
   document.getElementById('go-score').textContent=S.score.toLocaleString();
@@ -63,8 +63,7 @@ export function gameOver(reason){
   document.getElementById('go-wave').textContent=S.wave;
   const beat=recordRun(); const gb=document.getElementById('go-best');
   if(gb){ gb.textContent = beat ? ('★ KỶ LỤC MỚI  '+S.score.toLocaleString()+' ★') : ('KỶ LỤC  '+(BEST.score||0).toLocaleString()); gb.classList.toggle('newbest', beat); }
-  const gw=document.getElementById('go-wallet'); if(gw) gw.innerHTML='Đã cất vào kho · <b class="w-coins">0</b> xu · <b class="w-dia">0</b> ◆';
-  saveProfile(); refreshWallet();              // bank the coins/diamonds earned this run
+  saveProfile();
   document.body.classList.remove('corelow');
   show('gameover');
 }
