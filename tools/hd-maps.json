@@ -8,6 +8,7 @@
   "tree_giant": {"file":"tree/giant", "src":"tripo/tree_giant_t", "geo":0},
   "tree_linden": {"file":"tree/linden", "src":"tripo/tree_linden_t", "geo":0},
   "tree_oak": {"file":"tree/oak", "src":"tripo/tree_oak_t", "geo":0},
+  "tree_quiver": {"file":"tree/quiver", "src":"polyhaven/quiver_tree_02 (Z450, packed by hand: hd/tree_quiver.glb = all 82k triangles)", "geo":0},
   "tree_olive": {"file":"tree/olive", "src":"tripo/tree_olive_t", "geo":0},
   "tree_palm": {"file":"tree/palm", "src":"tripo/tree_palm_t", "geo":0},
   "tree_pine": {"file":"tree/pine", "src":"tripo/tree_pine_t", "geo":0},

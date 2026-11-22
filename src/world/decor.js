@@ -38,7 +38,8 @@ export function buildTerrainDecor(b){
     try{ V=grass(tone).slice(0,3); mat=floraMat(); }catch(err){ V=[tuftGeo(b.name)]; mat=_tuftMat||(_tuftMat=new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.95, side:THREE.DoubleSide })); }   // Z202 real blade clumps (alpha cards, swaying), 3 variants · the boot-time backdrop runs before world/flora.js is loaded → old tufts
     const per=V.map(()=>[]);
     for(const o of list) per[(Math.random()*V.length)|0].push(o);
-    per.forEach((L,vi)=>{ if(!L.length) return; const im=new THREE.InstancedMesh(V[vi], mat, L.length); im.castShadow=false; im.receiveShadow=true;
+    per.forEach((L,vi)=>{ if(!L.length) return; const im=new THREE.InstancedMesh(V[vi], V[vi].userData.mat||mat, L.length);   // (Z450 the photo tufts wear their own)
+      im.castShadow=false; im.receiveShadow=true;
       L.forEach((o,k)=>{ _IM.compose(_IV.set(o.x,heightAt(o.x,o.z),o.z), _IQ.setFromEuler(_IE.set(_R(-0.15,0.15),o.ry,_R(-0.15,0.15))), _IS.set(o.s,o.s*_R(0.8,1.2),o.s)); im.setMatrixAt(k,_IM); crushables.push({ x:o.x, z:o.z, r:0.45*o.s, im, k, alive:true, kind:'grass', ry:o.ry, s:o.s }); });
       decorGroup.add(im); }); }
 }

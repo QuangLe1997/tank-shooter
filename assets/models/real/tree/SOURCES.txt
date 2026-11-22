@@ -1,0 +1,6 @@
+Z450 plant scans from Poly Haven (polyhaven.com) — CC0 1.0 (public domain), downloaded as glTF 2K (+ the Alpha map) with curl from the public API
+(api.polyhaven.com / dl.polyhaven.org), packed by hand (Z450: parts kept whole on desktop, phone copies simplified with UV seams locked, 1K / 512 /
+2K WebP maps with the alpha cut-out and the colour bled into it). The other tree/*.glb files are the Z262 Meshy / Tripo trees.
+- quiver.glb, m/quiver.glb, ../hd/tree_quiver.glb (+ .0.map / .0.nrm.webp): "Quiver Tree 02" — https://polyhaven.com/a/quiver_tree_02 (82,074 triangles; desktop 20,500, phone 5,742, near copy all of them)
+- rooibos.glb, m/rooibos.glb (+ ../hd/tree_rooibos.0.map / .0.nrm.webp): "Wild Rooibos Bush" — https://polyhaven.com/a/wild_rooibos_bush (5 shrubs, 27,519 triangles; phone 19,441)
+- othonna.glb, m/othonna.glb (+ ../hd/tree_othonna.0.map / .0.nrm.webp): "Othonna Cerarioides" — https://polyhaven.com/a/othonna_cerarioides (the 5 lightest of its 7 shrubs, 31,907 triangles; phone 19,635)

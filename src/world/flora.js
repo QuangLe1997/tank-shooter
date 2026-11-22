@@ -2,8 +2,8 @@
 //   reeds along the water and haystacks in the village — instanced (one draw per species), tinted per instance, swaying in the wind (vertex shader).
 //   Tanks plough through it all: trees topple, bushes / flowers / reeds flatten (decor.js crushables).
 import * as THREE from 'three';
-import { LIGHT, OPEN_LAND } from '../../config.js';
-import { AREA_K, ARENA, BIOME, MOBILE, RIVER, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
+import { GRASS, LIGHT, OPEN_LAND, TUFT } from '../../config.js';
+import { AREA_K, ARENA, BIOME, MOBILE, RIVER, SUN_VIEW, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
 
 let _mat=null;
 // Z146 LEAF ATLAS → Z202 four regions: u 0–¼ BARK (vertical fissures, lichen — trunks and limbs) · ¼–½ broadleaf clusters · ½–¾ needle / frond sprays ·
@@ -112,18 +112,44 @@ const palm=()=>vars('pm', MOBILE?3:5, (vv)=>{ const P=[]; let x=0, y=0, ang=0; c
   for(let k=0;k<4;k++){ const n=new THREE.SphereGeometry(0.17,6,5); n.translate(x+Math.cos(k*1.6)*0.25, y-0.35, Math.sin(k*1.6)*0.25); P.push({geo:n,col:0x6a7a34}); } return mergeL(P); });
 const bamboo=()=>vars('bb', 2, ()=>{ const P=[]; for(let k=0;k<11;k++){ const a=Math.random()*6.28, r=Math.random()*0.9, h=_R(6.5,9.5), c=new THREE.CylinderGeometry(0.06,0.09,h,5); c.translate(0,h/2,0); c.rotateZ(_R(-0.12,0.12)); c.rotateX(_R(-0.12,0.12)); c.translate(Math.cos(a)*r,0,Math.sin(a)*r); P.push({geo:c,col:k%2?0x9aa04a:0x88923e});
     for(let q=0;q<4;q++){ const lf=card(1.6,0.5,2,Math.cos(a)*r,h*(0.55+q*0.12)-0.5,Math.sin(a)*r,0.4); lf.rotateZ(1.2+_R(-0.3,0.3)); lf.rotateY(_R(0,6.28)); lf.translate(Math.cos(a)*r, h*(0.55+q*0.12), Math.sin(a)*r); P.push({geo:lf,col:q%2?0x5f8a30:0x76a03a}); } } return mergeL(P); });
-const bush=(dry)=>vars('bu'+(dry?1:0), 3, ()=>{ const P=[], cols=dry?[0x8a7a4a,0x7a6a3e,0x9a8a58,0x6a6034]:[0x3e6a2a,0x4e7e32,0x5c8c38,0x46742e];   // Z202 irregular, lumpy bushes (2–3 sub-crowns) instead of one ball
+const bush=(dry)=>vars('bu'+(dry?1:0), 5, ()=>{ const P=[], cols=dry?[0x8a7a4a,0x7a6a3e,0x9a8a58,0x6a6034]:[0x3e6a2a,0x4e7e32,0x5c8c38,0x46742e];   // Z202 irregular, lumpy bushes (2–3 sub-crowns) instead of one ball
   const n=2+((Math.random()*2)|0); for(let k=0;k<n;k++){ const a=Math.random()*6.28, r=_R(0,0.5); crown(P, Math.cos(a)*r, _R(0.45,0.75), Math.sin(a)*r, _R(0.55,0.85), 7, cols, _R(0.55,0.8)); }
   for(let i=0;i<3;i++) P.push({geo:limb([[0,0,0],[_R(-0.2,0.2),0.3,_R(-0.2,0.2)],[_R(-0.5,0.5),0.6,_R(-0.5,0.5)]], 0.04, 0.02, 3, 4), col:dry?0x6a5a40:0x4a3a28});
-  return mergeL(P); });
+  const g=mergeL(P); g.userData.tk=dry?'bushDry':'bushGreen'; return g; });   // Z450 five, one per scanned shrub (REALTREE.map bushDry / bushGreen) — this drawn one stands in only until the scans load
 const flowers=()=>vars('fl', 2, ()=>{ const P=[], cols=[0xf4f0e0,0xffd84a,0xc86ad0,0xff7a5a,0x8ac8ff]; for(let i=0;i<9;i++){ const x=_R(-0.5,0.5), z=_R(-0.5,0.5), h=_R(0.25,0.55), st=new THREE.CylinderGeometry(0.012,0.012,h,3); st.translate(x,h/2,z); P.push({geo:st,col:0x4e7a2e});
     const hd=new THREE.IcosahedronGeometry(_R(0.05,0.08),0); hd.translate(x,h,z); P.push({geo:hd,col:cols[(Math.random()*cols.length)|0]}); }
   grassCards(P, 0.5, 0.45, [0x6a9a3a,0x5a8a30]); return mergeL(P); });
 export const bushes=(dry)=>bush(dry), wildflowers=()=>flowers();   // Z432 for the trails' verges (world/trails.js)
 // Z202 GRASS: 3–4 crossed alpha cards of real blades (atlas region 3), leaning a little, darker at the root — a clump, not a fistful of cones
 function grassCards(P, w, h, cols, n){ const N=n||3; for(let k=0;k<N;k++){ const a=k/N*Math.PI+_R(-0.3,0.3), c=card(w*_R(0.85,1.2), h*_R(0.8,1.15), 3, 0, -h*1.5, 0, 0.35); c.translate(0, h*0.5, 0); c.rotateX(_R(-0.12,0.12)); c.rotateY(a); c.translate(_R(-0.12,0.12),0,_R(-0.12,0.12)); P.push({geo:c,col:cols[(k+(Math.random()*cols.length|0))%cols.length]}); } }
-export const grass=(tone)=>vars('gr'+tone, 4, (vv)=>{ const P=[], T={ green:[0x7caa44,0x6a9a3a,0x8fb850,0x5e8a32], dry:[0xd8bc78,0xc8a860,0xe0c88c,0xb09050], straw:[0xf0d890,0xe0c070,0xd0a858,0xf6e4a8], tundra:[0x9a8a62,0x8a7a58,0xb0a078,0x7a6c4e] }[tone]||[0x9a8458,0x7a6a44,0xb8a070];
-  const h=[0.55,0.8,1.1,1.5][vv], w=h*_R(1.1,1.5); grassCards(P, w, h, T, vv>1?4:3); return mergeL(P); });
+// Z450 PHOTO TUFTS: the drawn blade cards (a broad, dark, flat-bladed fan that read as an agave or a cactus, not grass) → n crossed cards of the
+//   five photographed clumps the carpet wears (world/grass-carpet.js, Poly Haven grass_medium_01, CC0), cut out by the photo's alpha, darker among the
+//   stems, swaying from the root, the sun shining through the tips; per tone the green or the dried photo, tinted (TUFT). One material per tone.
+const _tufts={}, _photo={};
+function tuftTex(f, srgb){ if(_photo[f]) return _photo[f]; const t=new THREE.TextureLoader().load(GRASS.dir+f); t.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace; t.anisotropy=4; return (_photo[f]=t); }
+function tuftMat(tone){ if(_tufts[tone]) return _tufts[tone]; const C=TUFT.tone[tone]||TUFT.tone.dry;
+  const m=new THREE.MeshStandardMaterial({ map:tuftTex(C.tex==='dry'?'dry.jpg':'diff.jpg', true), alphaMap:tuftTex('alpha.jpg', false), alphaTest:GRASS.alphaTest, alphaToCoverage:!MOBILE, color:new THREE.Color().setRGB(...C.tint), roughness:0.9, metalness:0, side:THREE.DoubleSide });
+  m.onBeforeCompile=sh=>{ sh.uniforms.uT=WTIME; sh.uniforms.uSunView=SUN_VIEW; sh.uniforms.uTrans={ value:GRASS.trans };
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uT; attribute float aH; varying float vH;')
+      .replace('#include <begin_vertex>',`#include <begin_vertex>
+      vH=aH; vec3 ip=vec3(0.0);
+      #ifdef USE_INSTANCING
+        ip=instanceMatrix[3].xyz;
+      #endif
+      float gust=0.65+0.35*sin(uT*0.37+ip.x*0.021-ip.z*0.017), b=aH*aH*${TUFT.sway.toFixed(3)}*(transformed.y+0.2);
+      transformed.x+=(sin(uT*1.6+ip.x*0.31+ip.z*0.17)+sin(uT*4.1+ip.z*1.3)*0.25)*b*gust; transformed.z+=cos(uT*1.3+ip.z*0.29)*b*0.7*gust;`);
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 uSunView; uniform float uTrans; varying float vH;')
+      .replace('#include <normal_fragment_begin>','#include <normal_fragment_begin>\n normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);   // lit as the sky lights the field, both faces')
+      .replace('#include <color_fragment>',`#include <color_fragment>\n diffuseColor.rgb *= mix(${TUFT.rootDark.toFixed(2)}, 1.0, smoothstep(0.0, 0.5, vH));`)
+      .replace('#include <opaque_fragment>','outgoingLight += diffuseColor.rgb * vec3(1.0, 0.93, 0.6) * pow(clamp(dot(normalize(vViewPosition), uSunView), 0.0, 1.0), 4.0) * smoothstep(0.3, 1.0, vH) * uTrans;\n#include <opaque_fragment>'); };
+  m.customProgramCacheKey=()=>'tuft440'; return (_tufts[tone]=m); }
+const RECT=GRASS.cards.map(([x,y,w,h])=>[x/GRASS.atlas[0], 1-(y+h)/GRASS.atlas[1], w/GRASS.atlas[0], h/GRASS.atlas[1], w/h]);
+function tuftGeo(h, n){ const pos=[], uv=[], nrm=[], hh=[], idx=[]; let v=0, a0=Math.random()*Math.PI;
+  for(let k=0;k<n;k++){ const r=RECT[(Math.random()*RECT.length)|0], hk=h*_R(0.85,1.12), w=hk*r[4]*TUFT.w*_R(0.85,1.1), a=a0+k*Math.PI/n+_R(-0.2,0.2), cx=Math.cos(a)*w/2, cz=Math.sin(a)*w/2, lx=_R(-TUFT.lean,TUFT.lean)*hk, lz=_R(-TUFT.lean,TUFT.lean)*hk, ox=_R(-0.08,0.08)*h, oz=_R(-0.08,0.08)*h;
+    pos.push(ox-cx,-0.02,oz-cz, ox+cx,-0.02,oz+cz, ox+cx+lx,hk,oz+cz+lz, ox-cx+lx,hk,oz-cz+lz); uv.push(r[0],r[1], r[0]+r[2],r[1], r[0]+r[2],r[1]+r[3], r[0],r[1]+r[3]); hh.push(0,0,1,1);
+    for(let q=0;q<4;q++) nrm.push(0,1,0); idx.push(v,v+1,v+2, v,v+2,v+3); v+=4; }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm,3)); g.setAttribute('aH', new THREE.Float32BufferAttribute(hh,1)); g.setIndex(idx); return g; }
+export const grass=(tone)=>vars('gr'+tone, 4, (vv)=>{ const g=tuftGeo(TUFT.h[vv], TUFT.n[vv]); g.userData.mat=tuftMat(tone); return g; });
 const reeds=()=>vars('rd', 2, ()=>{ const P=[]; grassCards(P, 0.9, 1.6, [0x7a8a46,0x8a9a50,0xa89a5a], 3); for(let i=0;i<3;i++){ const h=_R(1.3,1.9), x=_R(-0.3,0.3), z=_R(-0.3,0.3), st=new THREE.CylinderGeometry(0.012,0.012,h,3); st.translate(x,h/2,z); P.push({geo:st,col:0x7a7a40}); const t=new THREE.CylinderGeometry(0.05,0.05,0.25,5); t.translate(x,h,z); P.push({geo:t,col:0x6a4a2a}); } return mergeL(P); });   // cat-tail heads
 const hay=()=>vars('hy', 1, ()=>{ const P=[], d=new THREE.SphereGeometry(1.3,10,7,0,6.28,0,Math.PI*0.62); d.scale(1,1.5,1); P.push({geo:d,col:0xd8b464}); const pole=new THREE.CylinderGeometry(0.05,0.05,1.0,4); pole.translate(0,2.2,0); P.push({geo:pole,col:0x6a4a2a}); return mergeL(P); });
 
@@ -153,6 +179,10 @@ const reedPlume=()=>vars('lau', 2, ()=>{ const P=[]; grassCards(P, 1.0, 1.9, [0x
     const pl=card(0.3,0.8,3,x,h-0.5,z,0.3); pl.translate(x,h+0.2,z); P.push({geo:pl,col:i%2?0xf0e8d8:0xe4dac4}); } return mergeL(P); });   // cỏ lau: feathery white plumes
 const termite=()=>vars('mound', 2, ()=>{ const P=[], cols=[0xa8603a,0x9a5434,0xb86c42]; for(let i=0;i<4;i++){ const h=_R(1.6,3.2), c=new THREE.ConeGeometry(_R(0.35,0.7),h,7); c.translate(_R(-0.4,0.4),h/2,_R(-0.4,0.4)); P.push({geo:c,col:cols[i%3]}); }
   const base=new THREE.SphereGeometry(1.0,8,6,0,6.28,0,Math.PI/2); base.scale(1,0.5,1); P.push({geo:base,col:0x9a5434}); return mergeL(P); });
+// Z450 the QUIVER TREE (an aloe on a stout trunk — the dry battlefields' 'cactus'): this drawn rosette stands in until the scan (REALTREE quiver) loads
+const aloe=()=>vars('aloe', 2, ()=>{ const P=[], h=_R(2.4,3.0); P.push({geo:limb([[0,0,0],[_R(-0.1,0.1),h*0.5,_R(-0.1,0.1)],[0,h,0]], 0.32, 0.2, 5, 8), col:0xb8ae98});
+  for(let k=0;k<16;k++){ const a=k/16*6.283+_R(-0.15,0.15), up=k%2?0.35:0.85, c=new THREE.ConeGeometry(0.09,1.1,4); c.translate(0,0.55,0); c.rotateZ(-up); c.rotateY(a); c.translate(0,h,0); P.push({geo:c,col:k%3?0x5e6e44:0x76804e}); }
+  return mergeL(P); });
 const floe=()=>[geo('floe', ()=>{ const g=new THREE.CylinderGeometry(1,1.1,0.35,7); return _mergeColored([{geo:g,col:0xf2f8fc}]); })];
 // ---------- placement ----------
 const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(), V3=new THREE.Vector3(), SC=new THREE.Vector3(), C=new THREE.Color();
@@ -165,7 +195,7 @@ function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[
   for(let t=0;t<tries && got<n;t++){ let x, z; if(opt.near){ const p=opt.near(); if(!p) continue; [x,z]=p; } else { x=_R(-ARENA+6,ARENA-6); z=_R(-ARENA+6,ARENA-6); }
     if(opt.high && heightAt(x,z)<opt.high && Math.random()<0.8) continue; if(!(opt.near?inField(x,z,1)&&!inZone(x,z,1):okSpot(x,z,opt.r||1))) continue;
     lists[(Math.random()*V.length)|0].push({ x, z, s:_R(opt.s[0],opt.s[1])*(opt.real||1), ry:_R(0,6.28), lx:_R(-lean,lean), lz:_R(-lean,lean), sy:_R(0.82,1.2), sw:_R(0.85,1.15) }); got++; }
-  V.forEach((g,vi)=>{ const list=lists[vi]; if(!list.length) return; const im=new THREE.InstancedMesh(g, floraMat(), list.length); if(opt.tk) im.userData.tree={ tk:opt.tk, vi, sMid:(opt.s[0]+opt.s[1])/2*(opt.real||1) }; /* Z262 a real species takes its place */ im.castShadow=!MOBILE && opt.shadow!==false; im.receiveShadow=true;
+  V.forEach((g,vi)=>{ const list=lists[vi]; if(!list.length) return; const im=new THREE.InstancedMesh(g, g.userData.mat||floraMat(), list.length), tk=opt.tk||g.userData.tk; if(tk) im.userData.tree={ tk, vi, sMid:(opt.s[0]+opt.s[1])/2*(opt.real||1) }; /* Z262 a real species takes its place */ im.castShadow=!MOBILE && opt.shadow!==false; im.receiveShadow=true;   // (Z450 a photo tuft wears its own material; a bush turns into its scanned shrub)
     list.forEach((o,k)=>{ M.compose(V3.set(o.x, heightAt(o.x,o.z)-0.05, o.z), Q.setFromEuler(E.set(o.lx,o.ry,o.lz)), SC.set(o.s*o.sw,o.s*o.sy,o.s*o.sw)); im.setMatrixAt(k,M);
       const patch=Math.sin(o.x*0.045+1.3)*Math.cos(o.z*0.038-0.7)+Math.sin((o.x+o.z)*0.021);   // big soft patches: drier here, lusher there
       C.setHSL(0, 0, 1); C.offsetHSL(_R(-0.04,0.04)+patch*0.025, _R(-0.14,0.1)+patch*0.06, _R(-0.13,0.1)+patch*0.05); im.setColorAt(k, C);
@@ -190,14 +220,14 @@ export function buildFlora(){ clearFlora(); loadRealTrees(); const n=BIOME.name,
     plant(grass('straw').concat(grass('dry')), N(1500), { s:[1.15,1.85], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });
     plant(reedPlume(), N(420), { s:[0.8,1.3], near:()=>patchSpot(L,16), shadow:false, cr:0.5 });
     plant(baobab(), N(9), { tk:'baobab', s:[0.9,1.35], kind:'tree', cr:1.3, real:1.4 }); plant(acacia(), N(26), { tk:'acacia', s:[0.8,1.3], kind:'tree', cr:0.4, real:1.15 }); plant(deadTree(), N(18), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 });
-    plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); }
+    plant(bush(true), N(40), { s:[0.6,1.1], shadow:false }); plant(termite(), N(14), { s:[0.8,1.3], kind:'rock', cr:0.9 }); plant(aloe(), N(8), { tk:'quiver', s:[0.8,1.3], kind:'tree', cr:0.35 }); }   // Z450 + quiver trees
   else if(n==='ARCTIC'){ plant(conifer(true), N(34), { tk:'coniferSnow', s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); plant(floe(), N(40), { s:[0.8,2.4], near:waterSpot, shadow:false, cr:0.1 });   // Z260 + the tundra's snowy spruce (merged into the Arctic)   // Z393 its cone 'ice spires' gone: snow-capped crags from the summit scan stand on the ice instead (world/scenery.js)
     for(const m of FLORA.meshes){ if(m.geometry===floe()[0]){ const M2=new THREE.Matrix4(), P2=new THREE.Vector3(), Q2=new THREE.Quaternion(), S2=new THREE.Vector3(); for(let i=0;i<m.count;i++){ m.getMatrixAt(i,M2); M2.decompose(P2,Q2,S2); P2.y=RIVER.y+0.05; M2.compose(P2,Q2,S2); m.setMatrixAt(i,M2); } m.instanceMatrix.needsUpdate=true; } } }   // ice floes float on the leads
   else if(n==='STEELMILL'){ plant(deadTree(), N(16), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(10), { tk:'broadleaf', s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(false), N(60), { s:[0.6,1.2], shadow:false }); }   // Z187 nature taking the mill back
   else if(n==='VOLCANO'){ plant(deadTree(), N(22), { tk:'dead', s:[0.7,1.1], kind:'tree', cr:0.3, real:1.15 }); plant(bush(true), N(14), { s:[0.5,0.9], shadow:false }); }   // Z187 scorched snags
   else if(n==='QUARRY'){ plant(ancient(), N(1), { tk:'ancient', s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(8), { tk:'broadleaf', s:[0.7,1.0], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(30), { s:[0.6,1.1], shadow:false }); }   // Z187 scrub and a few olive-like trees on the benches
   else if(n==='TUNDRA'){ plant(conifer(true), N(40), { tk:'coniferSnow', s:[0.8,1.4], kind:'tree', cr:0.55, real:1.4 }); }
-  else if(n==='DESERT'){ plant(palm(), N(10), { tk:'palm', s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); }
+  else if(n==='DESERT'){ plant(palm(), N(10), { tk:'palm', s:[0.8,1.1], kind:'tree', cr:0.4, real:1.4 }); plant(bush(true), N(35), { s:[0.6,1.1], shadow:false }); plant(aloe(), N(10), { tk:'quiver', s:[0.8,1.3], kind:'tree', cr:0.35 }); }   // Z450 + quiver trees (real succulents, not drawn cacti)
   else if(n==='CITY'){ /* Z142 street trees are planted along the sidewalks by city.js */ }
   else if(n==='CITADEL'){ plant(ancient(), N(3), { tk:'ancient', s:[0.85,1.1], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(12), { tk:'broadleaf', s:[0.75,1.15], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(26), { s:[0.6,1.1], shadow:false }); }   // Z260 old trees in the citadel's orchards
   else if(n==='RUINS'){ plant(ancient(), N(1), { tk:'ancient', s:[0.8,1.0], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(deadTree(), N(10), { tk:'dead', s:[0.8,1.2], kind:'tree', cr:0.3, real:1.15 }); plant(broadleaf(), N(6), { tk:'broadleaf', s:[0.7,1.1], kind:'tree', cr:0.6, real:1.3 }); plant(bush(true), N(22), { s:[0.6,1.0], shadow:false }); }   // Z260 nature taking the ruins back

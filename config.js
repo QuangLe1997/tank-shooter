@@ -893,11 +893,23 @@ export const SIDE_ID = { coat:0.75, metal:0.5, detail:1, bright:0.42, sat:0.65, 
 //   battlefield's procedural tree kinds become (variant i takes species i mod the list; `_` = everywhere else); wind = its direction, how far the top
 //   sways (m), how far the leaves flutter (m); env = reflections; tint = albedo × per species
 export const REALTREE = { trans:1.6, env:0.45, wind:{ dir:[1, 0.35], sway:0.45, leaf:0.06 }, tint:{},
-  h:{ oak:15, linden:12, birch:11, poplar:18, pine:17, spruce_snow:14, palm:12, acacia:8, baobab:13, dead:9, cypress:14, olive:7, giant:20 },
-  map:{ _:{ broadleaf:['oak','linden','birch','poplar'], conifer:['pine'], coniferSnow:['spruce_snow'], palm:['palm'], acacia:['acacia'], baobab:['baobab'], dead:['dead'], ancient:['giant'] },
+  h:{ oak:15, linden:12, birch:11, poplar:18, pine:17, spruce_snow:14, palm:12, acacia:8, baobab:13, dead:9, cypress:14, olive:7, giant:20, quiver:3.4, rooibos:1, othonna:1 },
+  map:{ _:{ broadleaf:['oak','linden','birch','poplar'], conifer:['pine'], coniferSnow:['spruce_snow'], palm:['palm'], acacia:['acacia'], baobab:['baobab'], dead:['dead'], ancient:['giant'],
+    quiver:['quiver'], bushDry:['rooibos:0','rooibos:1','rooibos:2','rooibos:3','rooibos:4'], bushGreen:['othonna:0','othonna:1','othonna:2','othonna:3','othonna:4'] },
     MEADOW:{ broadleaf:['oak','linden','birch','poplar','oak','pine','linden','birch'] }, CITADEL:{ broadleaf:['olive','cypress','oak','cypress','olive','linden','olive','cypress'] },
     QUARRY:{ broadleaf:['olive','cypress','pine','olive'] }, RUINS:{ broadleaf:['linden','birch','oak','birch'] },
-    CITY:{ broadleaf:['linden','oak','birch','poplar','linden','cypress'], palm:['palm'] } }, citySize:1.3 };   // Z266 street trees: a city mix, a little smaller than in the wild (÷ citySize)
+    CITY:{ broadleaf:['linden','oak','birch','poplar','linden','cypress'], palm:['palm'] } }, citySize:1.3,
+  parts:{ rooibos:[1.3, 1.25, 1.05, 0.95, 0.7], othonna:[1.7, 1.4, 1.2, 0.9, 0.65] }, sway:{ rooibos:0.3, othonna:0.35, quiver:0.1 } };
+// Z450 REAL BUSHES + SUCCULENTS (Poly Haven scans, CC0 — assets/models/real/tree/SOURCES.txt): quiver = the quiver tree (an aloe on a trunk, the
+//   desert's / savanna's 'cactus'), rooibos = the dry wild-rooibos shrubs (every dry battlefield's bushes), othonna = the green Othonna shrubs (the
+//   meadow's, the green verges'). A file of `parts` holds several plants, one mesh each: species 'rooibos:i' is part i, parts[i] its true height (m)
+//   at the bush's mid scale; sway = × how far the wind bends it and flutters its leaves (a bush is not a 15 m tree; an aloe's leaves are stiff)
+// Z450 PHOTO TUFTS (world/flora.js grass): every grass clump planted as flora or decor (the savanna's tall grass, the scattered tufts, the trails'
+//   verges) is n crossed cards of the photographed clumps the carpet wears (GRASS.dir / cards) instead of the drawn blade atlas — h = the variants'
+//   heights (m, × the clump's own scale), n = cards per variant, w = card width × its photo's aspect, lean = random tilt (rad), sway = tip bend (× height),
+//   rootDark = the shade among the stems; per tone: the photo (dry = the dried grass) and its tint ×
+export const TUFT = { h:[0.42, 0.58, 0.78, 1.0], n:[3, 3, 4, 4], w:0.72, lean:0.14, sway:0.12, rootDark:0.62,
+  tone:{ green:{ tex:'diff', tint:[1.0, 1.06, 0.9] }, dry:{ tex:'dry', tint:[1.02, 0.95, 0.8] }, straw:{ tex:'dry', tint:[1.12, 1.03, 0.8] }, tundra:{ tex:'dry', tint:[0.85, 0.82, 0.74] } } };   // Z266 street trees: a city mix, a little smaller than in the wild (÷ citySize)
 // Z262 TREE FALL (world/tree-fall.js): push = the starting swing (rad/s) a tank's ram gives, shotPush = a shell's / blast's; trunk = the trunk's hit
 //   radius (m × the tree's scale), hitH = the height a round still strikes the tree; minDmg = the least damage a round needs to fell one; a blast of
 //   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands

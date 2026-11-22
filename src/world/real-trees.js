@@ -7,14 +7,15 @@
 // load, or if they fail, the procedural trees stay.
 import * as THREE from 'three';
 import { NEARDETAIL, REALTREE, TREEFALL } from '../../config.js';
-import { BIOME, FLORA, SUN_VIEW, WTIME, blocks, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
+import { BIOME, FLORA, MOBILE, SUN_VIEW, WTIME, blocks, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
 
-const SP = {}, GEO = {}, EXTRA = new Set(); let _p = null;
+const SP = {}, GEO = {}, EXTRA = new Set(), MAT = {}; let _p = null;
+const hOf = k => { const [f, i] = k.split(':'); return i == null ? REALTREE.h[k] : REALTREE.parts[f][+i]; };   // Z450 a part of a many-plant file stands at its own height
 const U = { wDir:{ value:new THREE.Vector2(REALTREE.wind.dir[0], REALTREE.wind.dir[1]).normalize() }, wAmp:{ value:REALTREE.wind.sway }, wLeaf:{ value:REALTREE.wind.leaf } };
 
 export function loadRealTrees(){ if(_p) return _p; if(typeof window === 'undefined' || /proctree/.test(location.search + location.hash)) return (_p = Promise.resolve(false));
   return (_p = Promise.all(Object.keys(REALTREE.h).map(k => loadGLTF('tree_' + k).then(gl => [k, gl]))).then(L => {
-    for(const [k, gl] of L){ if(!gl) continue; try{ SP[k] = prepTree(gl, k); } catch(e){ console.warn('[trees]', k, e.message); } }
+    for(const [k, gl] of L){ if(!gl) continue; try{ const P = REALTREE.parts[k]; if(P) P.forEach((_, i) => { SP[k + ':' + i] = prepTree(gl, k, false, i); }); else SP[k] = prepTree(gl, k); } catch(e){ console.warn('[trees]', k, e.message); } }   // (Z450 one species per part)
     for(const im of FLORA.meshes) dressTrees(im); for(const im of EXTRA) dressTrees(im); EXTRA.clear(); return true; })); }
 // a tree mesh planted outside the flora (the city's street trees, palms): dressed now if the species are in, else as soon as they are
 export function trackTrees(im){ if(Object.keys(SP).length) dressTrees(im); else { EXTRA.add(im); loadRealTrees(); } return im; }
@@ -23,22 +24,23 @@ export function trackTrees(im){ if(Object.keys(SP).length) dressTrees(im); else 
 function sampler(map){ const img = map && map.image; if(!img || !img.width) return null; const N = 128, cv = document.createElement('canvas'); cv.width = cv.height = N;
   const x = cv.getContext('2d', { willReadFrequently:true }); x.drawImage(img, 0, 0, N, N); const d = x.getImageData(0, 0, N, N).data;
   return (u, v) => { const px = Math.min(N - 1, Math.max(0, Math.floor((u - Math.floor(u)) * N))), py = Math.min(N - 1, Math.max(0, Math.floor((1 - (v - Math.floor(v))) * N))), i = (py * N + px) * 4; return [d[i] / 255, d[i + 1] / 255, d[i + 2] / 255]; }; }
-function prepTree(gl, k, geoOnly){ let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
+function prepTree(gl, k, geoOnly, part){ let src = null, pi = 0; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && pi++ === (part || 0)) src = o; });   // (Z450 the part-th plant of the file)
   const g = src.geometry.clone().applyMatrix4(src.matrixWorld); g.computeBoundingBox(); const b = g.boundingBox, H = b.max.y - b.min.y, P = g.attributes.position;
   let bx = 0, bz = 0, n = 0; for(let i = 0; i < P.count; i++) if(P.getY(i) < b.min.y + H * 0.04){ bx += P.getX(i); bz += P.getZ(i); n++; }   // the trunk's foot
   if(n){ bx /= n; bz /= n; } else { bx = (b.min.x + b.max.x) / 2; bz = (b.min.z + b.max.z) / 2; }
   g.translate(-bx, -b.min.y, -bz); g.scale(1 / H, 1 / H, 1 / H); g.computeBoundingBox(); g.computeBoundingSphere();
   const UV = g.attributes.uv, smp = sampler(src.material.map), flex = new Float32Array(P.count), leaf = new Float32Array(P.count), snowy = /snow/.test(k);
-  let R = 0; for(let i = 0; i < P.count; i++) R = Math.max(R, Math.hypot(P.getX(i), P.getZ(i)));
+  let R = 0; for(let i = 0; i < P.count; i++) R = Math.max(R, Math.hypot(P.getX(i), P.getZ(i))); const sw = REALTREE.sway[k] ?? 1;   // Z450 a bush bends less than a tree
   for(let i = 0; i < P.count; i++){ const y = P.getY(i), r = Math.hypot(P.getX(i), P.getZ(i)) / (R || 1);
-    flex[i] = Math.pow(Math.max(0, y), 1.6) * (0.55 + 0.45 * Math.min(1, r * 2));
+    flex[i] = Math.pow(Math.max(0, y), 1.6) * (0.55 + 0.45 * Math.min(1, r * 2)) * sw;
     let lf; if(smp && UV){ const [cr, cg, cb] = smp(UV.getX(i), UV.getY(i)), green = cg - Math.max(cr, cb) * 0.92, white = Math.min(cr, cg, cb);
       lf = Math.min(1, Math.max(0, green * 9 + (snowy && white > 0.6 ? 0.5 : 0))); }
     else lf = y > 0.35 && r > 0.15 ? 1 : 0;
-    leaf[i] = lf * Math.min(1, y * 3); }
+    leaf[i] = lf * Math.min(1, y * 3) * Math.min(1, sw * 2); }
   g.setAttribute('aFlex', new THREE.BufferAttribute(flex, 1)); g.setAttribute('aLeaf', new THREE.BufferAttribute(leaf, 1));
   if(geoOnly) return { geo:g };   // (Z395 the whole tree for up close: the shipped one's material is used)
-  const m = src.material.clone(); m.side = THREE.DoubleSide; m.envMapIntensity = REALTREE.env; m.roughness = Math.max(m.roughness, 0.8);
+  const m = MAT[k] || (MAT[k] = src.material.clone()); m.side = THREE.DoubleSide; m.envMapIntensity = REALTREE.env; m.roughness = Math.max(m.roughness, 0.8);   // (Z450 the parts of one file share it)
+  if(m.alphaTest > 0) m.alphaToCoverage = !MOBILE;   // Z450 a scanned shrub's leaves and twigs are cut out of its map: soft edges where MSAA allows
   if(REALTREE.tint[k]) m.color.setRGB(...REALTREE.tint[k]); windify(m);
   return { geo:g, mat:m, leafy:k !== 'dead' && k !== 'baobab' }; }
 
@@ -64,8 +66,8 @@ function windify(m){ m.onBeforeCompile = sh => { sh.uniforms.wT = WTIME; Object.
 // a flora InstancedMesh planted as procedural tree kind `tk`, variant vi: give it the real species this battlefield maps it to
 export function dressTrees(im){ const T = im.userData.tree; if(!T || T.real) return; const map = (REALTREE.map[BIOME.name] || {})[T.tk] || REALTREE.map._[T.tk]; if(!map) return;
   const k = map[T.vi % map.length], S = SP[k]; if(!S) return; const key = k + ':' + T.sMid.toFixed(2);
-  if(!GEO[key]){ const g = S.geo.clone(), h = REALTREE.h[k] / T.sMid; g.scale(h, h, h); g.computeBoundingBox(); g.computeBoundingSphere(); GEO[key] = g; }
-  im.geometry = ownGeo(GEO[key], im.instanceMatrix.count); im.material = S.mat; im.computeBoundingSphere(); T.real = k; T.h = REALTREE.h[k] / T.sMid; NT.ims.add(im);
+  if(!GEO[key]){ const g = S.geo.clone(), h = hOf(k) / T.sMid; g.scale(h, h, h); g.computeBoundingBox(); g.computeBoundingSphere(); GEO[key] = g; }
+  im.geometry = ownGeo(GEO[key], im.instanceMatrix.count); im.material = S.mat; im.computeBoundingSphere(); T.real = k; T.h = hOf(k) / T.sMid; if(!k.includes(':')) NT.ims.add(im);   // (Z450 a bush has no whole near copy: its own mesh is the scan's)
   if(!S.leafy) for(const c of crushables) if(c.im === im) c.leafy = false;
   for(const b of blocks) if(b.kind === 'trunk' && b.im === im){ const t = trunkOf(im.geometry, b.sy, TREEFALL.giantBand); if(t > 0) b.r = t * b.sh; } }   // Z404 a giant's solid trunk: the real one's girth (it was the procedural trunk's, 1.5× too thin)
 
