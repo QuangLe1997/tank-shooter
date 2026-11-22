@@ -216,7 +216,7 @@ export function bulletImpact(mat, x, y, z, ox, oz, k=1){ const H=GUNFX.hit, n=Ma
 
 // per frame: flashes (fade over their 1–2 frames, packed into the instance list), brass, the muzzle light's strobe
 export function updateGunFX(dt){ let n=0;
-  for(const f of FL){ if(!f.on) continue; f.life-=dt; if(f.fr++>=1 && f.life<=0){ f.on=false; continue; }
+  for(const f of FL){ if(!f.on) continue; f.life-=dt; if(dt>0 && f.fr++>=1 && f.life<=0){ f.on=false; continue; }   // (a frame that stands still — dt 0 — does not use the flash up)
     _fl.setMatrixAt(n, f.m); _fl.setColorAt(n, _fc.setHex(f.col).multiplyScalar(f.k*Math.max(0.4, f.life/f.max))); n++; }
   _fl.count=n; if(n){ _fl.instanceMatrix.needsUpdate=true; _fl.instanceColor.needsUpdate=true; }
   updateBrass(dt);
