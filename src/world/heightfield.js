@@ -1,7 +1,7 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
 import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM } from '../../config.js';
-import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
+import { fieldR, FIELD_R, SHADER_HOOKS, AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
@@ -58,7 +58,8 @@ export function genTerrain(b){ landformFor(b);   // Z428 the land round the fiel
       else { const q=Math.sqrt(d2r)/f.r; if(q<2) v += craterDV(q, Math.atan2(dz,dx), f.a, f.L); } }
     const n1=Math.sin(x*0.31+ph[0])*Math.sin(z*0.27+ph[1]) + 0.5*Math.sin(x*0.73+z*0.61+ph[2]), n2=Math.sin(x*1.37+ph[3])*Math.sin(z*1.21+ph[0])*0.35 + Math.sin((x+z)*2.3+ph[1])*Math.sin((x-z)*1.9)*0.12;   // macro roll + fine hummocks
     v += st.noise*(n1 + n2);
-    h[j*W+i] = v*_hfMask(x,z) + ridgeAt(x, z, n1); }
+    const o=OUT.lf ? -fieldDepth(x,z) : -1, base=v*_hfMask(x,z) + (OUT.lf ? 0 : ridgeAt(x, z, n1));   // Z430 past the fence the landform itself begins (no bank, no square): its cliff, its mountains, its dunes
+    h[j*W+i] = o>0 ? base + (landAt(o, x, z) - base)*_sm(0, 14, o) : base; }
   carveRivers(h, b);   // Z405 the battlefields with a river (config RIVERS: world/river.js) — Z143 the arctic's frozen river and its open lead
   syncTerrainMesh();
   buildOutskirts(b);   // Z427 the hills past the field, rising from its edge
@@ -68,7 +69,8 @@ export function genTerrain(b){ landformFor(b);   // Z428 the land round the fiel
 //   shallow, the deep channel dark). Z405: G / B = the flow field (m/s, ± RIVER_FMAX), A = the frozen cells (1) and the fords' white water (0–0.45)
 export const WTIME = { value:0 }, RIVER_FMAX = 2.5;
 export function depthTex(){ const W=HF.W, d=new Uint8Array(W*W*4), F=RIVER.flow, M=RIVER.mark, e=v=>Math.max(0, Math.min(255, Math.round(128+127*v/RIVER_FMAX)));
-  for(let k=0;k<W*W;k++){ d[k*4]=Math.max(0,Math.min(255, Math.round((HF.h[k]+2.5)/3.5*255))); d[k*4+1]=F?e(F[k*2]):128; d[k*4+2]=F?e(F[k*2+1]):128; d[k*4+3]=M?M[k]:0; }
+  const dry=k=>OUT.lf && fieldDepth(-ARENA+(k%W)*HF.step, -ARENA+Math.floor(k/W)*HF.step)<-3;   // (Z430 past the fence the landform drops away: no river sheet hanging over it)
+  for(let k=0;k<W*W;k++){ d[k*4]=dry(k) ? 255 : Math.max(0,Math.min(255, Math.round((HF.h[k]+2.5)/3.5*255))); d[k*4+1]=F?e(F[k*2]):128; d[k*4+2]=F?e(F[k*2+1]):128; d[k*4+3]=M && !dry(k)?M[k]:0; }
   const t=new THREE.DataTexture(d, W, W, THREE.RGBAFormat); t.magFilter=t.minFilter=THREE.LinearFilter; t.needsUpdate=true; return t; }
 // Z106 HIGHLAND beyond the fence: rises over ridgeW metres, rolls with the macro noise, eases back down at the bounding square's edge
 export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 0; const sq=ARENA-Math.max(Math.abs(x),Math.abs(z));
@@ -101,7 +103,7 @@ export function syncRelief(j0, j1){ const g=terrainGeo(), a=g.attributes.aRelief
   const at=(i,j)=>h[Math.max(0,Math.min(N,j))*W+Math.max(0,Math.min(N,i))];
   for(let j=j0;j<=j1;j++) for(let i=0;i<W;i++){ const c=at(i,j);
     const ring=(at(i-R,j)+at(i+R,j)+at(i,j-R)+at(i,j+R) + 0.7*(at(i-R,j-R)+at(i+R,j-R)+at(i-R,j+R)+at(i+R,j+R)))/6.8;
-    const sx=(at(i+1,j)-at(i-1,j))/s2, sz=(at(i,j+1)-at(i,j-1))/s2; a.setXY(j*W+i, c-ring, Math.hypot(sx,sz)); }
+    const sx=(at(i+1,j)-at(i-1,j))/s2, sz=(at(i,j+1)-at(i,j-1))/s2, k=OUT.lf ? 1-_sm(4, 30, -fieldDepth(-ARENA+i*HF.step, -ARENA+j*HF.step)) : 1; a.setXY(j*W+i, (c-ring)*k, Math.hypot(sx,sz)*k); }   // (Z430 past the fence the landform's own ground: no field hollows darkening a cliff's foot)
   a.clearUpdateRanges(); a.addUpdateRange(j0*W*2, (j1-j0+1)*W*2); a.needsUpdate=true; }
 // waving cloth flags (Core + the player's Liên Quân Thép banner)
 export const WAVING=[];
@@ -147,6 +149,7 @@ ground.receiveShadow = true; ground.castShadow = !MOBILE && RELIEF.selfShadow; a
 // Z427 OUTSKIRTS: it rolls. Hills rise from the field's edge (meeting its last row exactly), crest, and sink back to the plain by OUTSKIRTS.fade × ARENA
 //   out, so where the near world is cut off at the far plane it is flat land like the backdrop's (world/backdrop.js); heightAt reads the same hills
 //   (things set out past the fence stand on them). A ring of columns from the square's edge outward, denser near the field; rebuilt each battlefield
+export const PLAIN_DROP = 15;   // (Z430 the low land's plain lies this far under a plateau's foot: its swells never poke through)
 const OUT = { amp:0, wave:200, dune:0, seed:0, lf:null }, _sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const _oh = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7 + OUT.seed * 74.7) * 43758.5453; return v - Math.floor(v); };
 function _on(x, z){ const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
@@ -155,15 +158,17 @@ const _ofbm = (x, z) => (_on(x, z) * 0.55 + _on(x * 2.1 + 3.1, z * 2.1 + 1.7) * 
 // Z428 the battlefield's LANDFORM (config LANDFORM): the land the field stands in, chosen per battlefield
 export function landform(b){ return LANDFORM.on && b ? (LANDFORM.biomes[b.name] || null) : null; }
 function landformFor(b){ OUT.lf = landform(b); OUT.seed = Math.random() * 100; }
+// the landform's height o m past the fence (the same everywhere: inside the field's square and out past it, so its edge is nowhere)
+export function landAt(o, x, z){ const L = OUT.lf; if(!L || o <= 0) return 0; const w = L.w;
+  if(L.form === 'plateau'){ const oo = o + (_ofbm(x / 150, z / 150) - 0.5) * Math.min(w, 60) * 1.6 * _sm(0, 30, o), d = _sm(6, 6 + w, oo);   // the cliff's line wanders; below it the low land rolls a little
+    return L.plain === 'sea' ? -(L.h + 4) * d : -L.h * d + d * (_ofbm(x / 90, z / 90) - 0.5) * L.h * 0.06 - PLAIN_DROP * _sm(420, 620, o); }   // (Z430 a sea's floor under its water; a low land sinks to the backdrop's plain far out)
+  if(L.form === 'bowl'){ const e = _sm(4, w * 0.45, o) * (1 - _sm(w * 1.5, w * 2.7, o)); if(e <= 0) return 0; let m;
+    if(L.dune) m = Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / 120 * Math.PI + _ofbm(x / 160, z / 160) * 5)), 1.7) * 0.6 + _ofbm(x / 260, z / 260) * 0.4;   // a sea of dunes
+    else { const r1 = 1 - Math.abs(2 * _on(x / 170, z / 170) - 1), r2 = 1 - Math.abs(2 * _on(x / 70 + 5.3, z / 70 + 2.1) - 1); m = r1 * r1 * 0.72 + r2 * r2 * 0.28; }   // ridged mountains round a valley
+    return L.h * e * (0.3 + 0.7 * m); }
+  return L.h * _sm(0, 60, o) * (_ofbm(x / w, z / w) - 0.25); }   // flat: the city's or the works' ground, a few swells of rubble
 export function outerAt(x, z){ const q = Math.max(Math.abs(x), Math.abs(z)) - ARENA; if(q <= 0) return 0; const L = OUT.lf;
-  if(L){ const w = L.w;
-    if(L.form === 'plateau'){ const qq = q + (_ofbm(x / 150, z / 150) - 0.5) * Math.min(w, 60) * 1.6, d = _sm(0, w, qq);   // the cliff's line wanders; below it the low land rolls a little
-      return -L.h * d + d * (_ofbm(x / 90, z / 90) - 0.5) * L.h * (L.plain === 'sea' ? 0 : 0.1); }
-    if(L.form === 'bowl'){ const e = _sm(0, w * 0.45, q) * (1 - _sm(w * 1.5, w * 2.7, q)); if(e <= 0) return 0; let m;
-      if(L.dune) m = Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / 120 * Math.PI + _ofbm(x / 160, z / 160) * 5)), 1.7) * 0.6 + _ofbm(x / 260, z / 260) * 0.4;   // a sea of dunes
-      else { const r1 = 1 - Math.abs(2 * _on(x / 170, z / 170) - 1), r2 = 1 - Math.abs(2 * _on(x / 70 + 5.3, z / 70 + 2.1) - 1); m = r1 * r1 * 0.72 + r2 * r2 * 0.28; }   // ridged mountains round a valley
-      return L.h * e * (0.3 + 0.7 * m); }
-    return L.h * _sm(0, 60, q) * (_ofbm(x / w, z / w) - 0.25); }   // flat: the city's or the works' ground, a few swells of rubble
+  if(L) return landAt(Math.hypot(x, z) - fieldR(Math.atan2(z, x)), x, z);   // (Z430 measured from the fence, not the square)
   if(!OUT.amp) return 0; const C = OUTSKIRTS, A = ARENA;
   const e = _sm(0, C.ramp * A, q) * (1 - _sm(C.crest * A, C.fade * A, q)); if(e <= 0) return 0; const w = OUT.wave;
   const n = OUT.dune ? Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / w * Math.PI + _ofbm(x / w, z / w) * 4)), 1.8) * (0.5 + 0.5 * _ofbm(x / w * 0.6, z / w * 0.6)) : _ofbm(x / w, z / w);
@@ -175,27 +180,37 @@ function outerGeoFor(){ const A = ARENA, [S, M] = MOBILE ? OUTSKIRTS.phone : OUT
       P.push(x, y - 0.04, z); U.push((x / (Ruv * 2) + 0.5) * 4, (-z / (Ruv * 2) + 0.5) * 4); } }
   for(let i = 0; i < S; i++) for(let j = 0; j < M; j++){ const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
-// Z428 the outskirts wear their own ground: the field's photo texture as detail (projected on three axes, so a cliff is not a smear), coloured as the
-//   landform's land, rock where it is steep (strata, gullies), snow above its snow line; at the field's edge it starts as the field's own ground
-export const outerMat = (() => { const m = new THREE.MeshStandardMaterial({ map:groundMat.map, roughness:0.95, metalness:0, envMapIntensity:0.4 });
-  const U = m.userData.u = { uTint:{ value:new THREE.Color(1, 1, 1) }, uRock:{ value:new THREE.Color(0x777777) }, uSnowY:{ value:1e5 }, uTile:{ value:1 / 14 }, uArena:{ value:ARENA }, uOwn:{ value:0 } };
-  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, U);
+// Z428 → Z430 THE LAND'S OWN GROUND: past the fence — on the field's own ground (the strip inside its square) and on the outskirts alike — the
+//   landform's colours take over with the distance from the fence (a table of its radius by bearing, uFR): its land tint over the photo's light and
+//   shade, rock with strata where it is steep, snow above its snow line. One shader hook for both materials (render/clouds.js SHADER_HOOKS), so the
+//   square the field's mesh ends on is nowhere to be seen. The outskirts take the photo texture projected on three axes (a cliff is not a smear)
+const LAND_GLSL = `varying vec3 vLW; varying vec3 vLN; uniform sampler2D uFR; uniform vec3 uTint; uniform vec3 uRock; uniform float uSnowY; uniform float uLand;
+float lh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float ln(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(lh(i), lh(i + vec2(1, 0)), f.x), mix(lh(i + vec2(0, 1)), lh(i + vec2(1, 1)), f.x), f.y); }
+float fenceOut(vec3 w){ return length(w.xz) - texture2D(uFR, vec2(atan(w.z, w.x) / 6.2831853 + 0.5, 0.5)).r; }
+vec3 landCol(vec3 w, vec3 n, float lum){ float sl = 1.0 - clamp(n.y, 0.0, 1.0), st = ln(vec2(w.y * 0.3 + ln(w.xz * 0.02) * 3.0, 0.5)) * 0.6 + ln(w.xz * 0.05 + w.y * 0.08) * 0.4;
+  vec3 c = mix(uTint * (0.5 + 0.9 * lum), uRock * (0.5 + 0.8 * st) * (0.75 + 0.5 * lum), smoothstep(0.3, 0.6, sl));
+  return mix(c, vec3(0.9, 0.93, 0.98) * (0.85 + 0.3 * lum), smoothstep(uSnowY - 14.0, uSnowY + 8.0, w.y + st * 16.0) * smoothstep(0.92, 0.4, sl)); }
+`;
+const FRT = new THREE.DataTexture(FIELD_R, FIELD_R.length, 1, THREE.RedFormat, THREE.FloatType); FRT.wrapS = THREE.RepeatWrapping; FRT.needsUpdate = true;
+export const LANDU = { uFR:{ value:FRT }, uTint:{ value:new THREE.Color(1, 1, 1) }, uRock:{ value:new THREE.Color(0x777777) }, uSnowY:{ value:1e5 }, uLand:{ value:0 } };
+SHADER_HOOKS.push((sh, m) => { if(!m || !m.userData || !m.userData.land || sh.fragmentShader.includes('landCol(') || !sh.fragmentShader.includes('#include <alphamap_fragment>') || !sh.vertexShader.includes('#include <worldpos_vertex>')) return;
+  Object.assign(sh.uniforms, LANDU);
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vLW; varying vec3 vLN;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n\tvLW = (modelMatrix * vec4(transformed, 1.0)).xyz; vLN = normalize(mat3(modelMatrix) * objectNormal);');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + LAND_GLSL).replace('#include <alphamap_fragment>', `{ float k = uLand * smoothstep(4.0, 40.0, fenceOut(vLW)); if(k > 0.0) diffuseColor.rgb = mix(diffuseColor.rgb, landCol(vLW, normalize(vLN), dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), k); }
+#include <alphamap_fragment>`); });
+groundMat.userData.land = true;
+export const outerMat = (() => { const m = new THREE.MeshStandardMaterial({ map:groundMat.map, roughness:0.95, metalness:0, envMapIntensity:0.4 }); m.userData.land = true;
+  m.onBeforeCompile = sh => { sh.uniforms.uTile = { value:1 / 14 };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOW; varying vec3 vON;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n\tvOW = (modelMatrix * vec4(transformed, 1.0)).xyz; vON = normalize(mat3(modelMatrix) * objectNormal);');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-varying vec3 vOW; varying vec3 vON; uniform vec3 uTint; uniform vec3 uRock; uniform float uSnowY; uniform float uTile; uniform float uArena; uniform float uOwn;
-float oh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float on(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(oh(i), oh(i + vec2(1, 0)), f.x), mix(oh(i + vec2(0, 1)), oh(i + vec2(1, 1)), f.x), f.y); }`)
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vOW; varying vec3 vON; uniform float uTile;')
       .replace('#include <map_fragment>', `vec3 bw = pow(abs(vON), vec3(4.0)); bw /= (bw.x + bw.y + bw.z + 1e-4);
-	vec3 tx = texture2D(map, vOW.zy * uTile).rgb * bw.x + texture2D(map, vOW.xz * uTile).rgb * bw.y + texture2D(map, vOW.xy * uTile).rgb * bw.z;
-	float lum = dot(tx, vec3(0.3, 0.59, 0.11)), sl = 1.0 - clamp(vON.y, 0.0, 1.0), st = on(vec2(vOW.y * 0.3 + on(vOW.xz * 0.02) * 3.0, 0.5)) * 0.6 + on(vOW.xz * 0.05 + vOW.y * 0.08) * 0.4;
-	vec3 col = mix(uTint * (0.5 + 0.9 * lum), uRock * (0.5 + 0.8 * st) * (0.75 + 0.5 * lum), smoothstep(0.3, 0.6, sl));
-	col = mix(col, vec3(0.9, 0.93, 0.98) * (0.85 + 0.3 * lum), smoothstep(uSnowY - 14.0, uSnowY + 8.0, vOW.y + st * 16.0) * smoothstep(0.92, 0.4, sl));
-	float q = max(abs(vOW.x), abs(vOW.z)) - uArena; diffuseColor.rgb *= mix(tx, col, uOwn * smoothstep(2.0, 46.0, q));`); };
+	diffuseColor.rgb *= texture2D(map, vOW.zy * uTile).rgb * bw.x + texture2D(map, vOW.xz * uTile).rgb * bw.y + texture2D(map, vOW.xy * uTile).rgb * bw.z;`); };
   return m; })();
 export const outerGround = new THREE.Mesh(outerGeoFor(), outerMat); outerGround.receiveShadow=true; arena.add(outerGround);
 export function buildOutskirts(b){ let C = OUTSKIRTS.on ? (OUTSKIRTS.biomes[b.name] ?? OUTSKIRTS.biomes._) : null; if(typeof C === 'string') C = OUTSKIRTS.biomes[C];
-  OUT.amp = C ? C.amp : 0; OUT.wave = C ? C.wave : 200; OUT.dune = C && C.dune ? 1 : 0; const L = OUT.lf, U = outerMat.userData.u;
-  if(outerMat.map !== groundMat.map){ outerMat.map = groundMat.map; outerMat.needsUpdate = true; } U.uOwn.value = L ? 1 : 0; if(L){ U.uTint.value.setHex(L.tint); U.uRock.value.setHex(L.rock); U.uSnowY.value = L.snow ?? 1e5; }   // (no recompile for new colours: a program swapped under the stage's warm-up throws inside three)
+  OUT.amp = C ? C.amp : 0; OUT.wave = C ? C.wave : 200; OUT.dune = C && C.dune ? 1 : 0; const L = OUT.lf;
+  if(outerMat.map !== groundMat.map){ outerMat.map = groundMat.map; outerMat.needsUpdate = true; } LANDU.uLand.value = L ? 1 : 0; FRT.needsUpdate = true; if(L){ LANDU.uTint.value.setHex(L.tint); LANDU.uRock.value.setHex(L.rock); LANDU.uSnowY.value = L.snow ?? 1e5; }   // (no recompile for new colours: a program swapped under the stage's warm-up throws inside three)
   const old = outerGround.geometry; outerGround.geometry = outerGeoFor(); old.dispose(); outskirtRoads(b, L ? (L.roads ? L : null) : C); }
 // the tracks that lead away from the field over the hills (behind our lines, toward the enemy's, and off to one side): a ribbon on the ground, its
 //   edges soft, winding as it goes, fading into the plain

@@ -61,7 +61,7 @@ function waterNormal(){ const c = document.createElement('canvas'); c.width = c.
     for(const ox of [-256, 0, 256]) for(const oy of [-256, 0, 256]){ x.save(); x.translate(ox, oy); x.fillStyle = g; x.fillRect(px - r, py - r, r * 2, r * 2); x.restore(); } }
   const t = _heightToNormal(c, 3.2); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; }
 const WATER_GLSL = `#include <color_fragment>
-{ vec2 duv = ((vWP.xz + uA) * uHF.x + 0.5) * uHF.y; vec4 dt = texture2D(uDepth, duv); float hb = dt.r * 3.5 - 2.5, dep = max(0.0, uWY - hb);
+{ vec2 duv = ((vWP.xz + uA) * uHF.x + 0.5) * uHF.y; vec4 dt = texture2D(uDepth, duv); float hb = dt.r * 3.5 - 2.5, dep = max(0.0, uWY - hb); if(hb > uWY + 0.5) discard;
   vec2 fl = (dt.gb * 2.0 - 1.0) * uFl.x; wFrz = step(0.5, dt.a); float rap = (1.0 - wFrz) * clamp(dt.a / 0.45, 0.0, 1.0), sp = length(fl);
   float t0 = uT / uFl.y + sin(vWP.x * 0.071 + 1.3) * sin(vWP.z * 0.083) * 0.5, p0 = fract(t0), p1 = fract(t0 + 0.5), bl = abs(1.0 - 2.0 * p0);
   vec2 dr = vec2(0.013, 0.009) * uT, o0 = fl * p0 * uFl.y, o1 = fl * p1 * uFl.y, u1 = vWP.xz / uRp.x;

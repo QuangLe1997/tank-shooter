@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE, SCENERY, FUEL_TANK } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
+import { landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -78,10 +78,10 @@ function supplyTruck(){ const K=kit(), col=0x5a6440;
 // Z196 level the ground under a compound: flat inside rIn (the mean height there), blending back to the natural ground by rOut;
 //   loose stones sitting on the reshaped ground are tidied away so nothing floats or sinks
 const _Z0=new THREE.Matrix4().makeScale(0,0,0);
-export function flattenPad(x, z, rIn, rOut){ const W=HF.W, h=HF.h, st=HF.step; if(!h) return; let sum=0, n=0;
+export function flattenPad(x, z, rIn, rOut){ const W=HF.W, h=HF.h, st=HF.step, LF=landform(BIOME); if(!h) return; let sum=0, n=0;
   for(let a=0;a<6.283;a+=0.5) for(const r of [0, rIn*0.4, rIn*0.8]){ sum+=heightAt(x+Math.cos(a)*r, z+Math.sin(a)*r); n++; } const h0=sum/n;
   const i0=Math.max(0,Math.floor((x-rOut+ARENA)/st)), i1=Math.min(HF.N,Math.ceil((x+rOut+ARENA)/st)), j0=Math.max(0,Math.floor((z-rOut+ARENA)/st)), j1=Math.min(HF.N,Math.ceil((z+rOut+ARENA)/st));
-  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(-ARENA+i*st-x, -ARENA+j*st-z); if(d>=rOut) continue; const t=d<=rIn?1:1-(d-rIn)/(rOut-rIn), w=t*t*(3-2*t); h[j*W+i]=h[j*W+i]*(1-w)+h0*w; }
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const d=Math.hypot(-ARENA+i*st-x, -ARENA+j*st-z); if(d>=rOut) continue; const px=-ARENA+i*st, pz=-ARENA+j*st, t=d<=rIn?1:1-(d-rIn)/(rOut-rIn), w=t*t*(3-2*t)*(LF ? 1-Math.min(1, Math.max(0, (-fieldDepth(px, pz)-2)/10)) : 1); h[j*W+i]=h[j*W+i]*(1-w)+h0*w; }   // (Z430 never past the fence: there the landform's cliff or mountain stays whole)
   HF.dj0=Math.min(HF.dj0??1e9, j0-1); HF.dj1=Math.max(HF.dj1??-1, j1+1); HF.dirty=true;
   for(const c of crushables) if(c.alive && Math.hypot(c.x-x,c.z-z)<rOut){ c.alive=false; for(const im of [c.im, ...(c.ims||[])]){ im.setMatrixAt(c.k,_Z0); im.instanceMatrix.needsUpdate=true; } } }
 const KEEP=new Set(['fortwall','gate','keep','fortcore','tower','camp','brick','obj','corewall','parked','pylon']);

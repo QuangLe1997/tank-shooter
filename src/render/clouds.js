@@ -21,10 +21,10 @@ function inject(sh){ const F=sh.fragmentShader; if(!F.includes('#include <lights
 }
 // Z427 every global shader patch runs from here, in order, after the material's own (render/aerial.js adds the height and distance haze)
 export const SHADER_HOOKS = [inject];
-const hooks = sh => { for(const f of SHADER_HOOKS) f(sh); };
+const hooks = (sh, m) => { for(const f of SHADER_HOOKS) f(sh, m); };   // (m: the material being compiled)
 { const P=THREE.Material.prototype, base=P.onBeforeCompile;
   Object.defineProperty(P, 'onBeforeCompile', { configurable:true,
-    get(){ const own=this._obc; return own ? function(sh, r){ own.call(this, sh, r); hooks(sh); } : function(sh){ hooks(sh); }; },
+    get(){ const own=this._obc; return own ? function(sh, r){ own.call(this, sh, r); hooks(sh, this); } : function(sh){ hooks(sh, this); }; },
     set(fn){ this._obc = (fn===base) ? null : fn; } });
   P.customProgramCacheKey = function(){ return this._obc ? this._obc.toString() : ''; }; }
 

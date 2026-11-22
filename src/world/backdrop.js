@@ -1,13 +1,13 @@
 // world/backdrop.js — Z427 THE FAR RANGES: the land and the mountains kilometres away, at their true distance and height. They are drawn at the
 //   sky's depth (pushed to the back of the depth range in the vertex shader: never cut by the far plane, always behind the battlefield, painted far
 //   to near after the sky), so the world no longer ends 600 m out: a hazy plain runs to the horizon, and up to three ranges rise from it, each
-//   farther one taller, paler and cooler (BACKDROP.biomes). A range is a curtain: its foot near, its crest set back (a slope the eye reads as a
+//   farther one taller, paler and cooler (BACKDROP.biomes). Z430: at their true depth now (the far plane reaches LANDFORM.far). A range is a curtain: its foot near, its crest set back (a slope the eye reads as a
 //   mountainside, lit by the sun across it), its skyline from the land's kind of relief — ridged peaks with snow, round hills, mesas with cliffs,
 //   dunes, volcanic cones, karst towers, a city or a works' stacks — grouped into a few masses round the circle rather than a fence of equal bumps,
 //   the biggest standing where the attack looks. Their haze is the air's (render/aerial.js): thick at the foot, thinner up the slope.
 import * as THREE from 'three';
 import { BACKDROP } from '../../config.js';
-import { AER, AER_GLSL, MOBILE, SKY, landform, scene } from '../hub.js';
+import { AER, AER_GLSL, MOBILE, PLAIN_DROP, SKY, landform, scene } from '../hub.js';
 
 export const BDP = { g:null, name:null, u:{ uBdFog:{ value:new THREE.Color() }, uBdFogD:{ value:0 }, uBdTop:{ value:new THREE.Color() }, uBdNight:{ value:0 } } };
 const hsh = (i, s) => { const h = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return h - Math.floor(h); };
@@ -35,7 +35,7 @@ function masses(a, n, s, lead){ if(!n) return 1; let e = 0;
   for(let i = 0; i < n; i++){ const c = i === 0 && lead != null ? lead : hsh(i * 3 + 1, s) * Math.PI * 2, w = 0.25 + 0.4 * hsh(i * 3 + 2, s), k = i === 0 && lead != null ? 1 : 0.55 + 0.4 * hsh(i * 3, s), d = angd(a, c) / w; e = Math.max(e, k * Math.exp(-d * d)); }
   return 0.22 + 0.78 * e; }
 const VS = `varying vec3 vW; varying vec3 vN; varying vec2 vH; attribute vec2 aH;
-void main(){ vW = position; vN = normal; vH = aH; vec4 p = projectionMatrix * viewMatrix * vec4(position, 1.0); p.z = p.w * 0.99999; gl_Position = p; }`;   // at the sky's depth: never clipped by the far plane
+void main(){ vW = position; vN = normal; vH = aH; gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0); }`;   // (Z430 at their true depth: the camera's far plane reaches 16 km, so ranges, islands and far sites hide one another rightly)
 const FS = `uniform vec3 uCol; uniform vec3 uHi; uniform vec4 uL; uniform vec3 uBdFog; uniform float uBdFogD; uniform vec3 uBdTop; uniform float uBdNight;
 varying vec3 vW; varying vec3 vN; varying vec2 vH;
 ${AER_GLSL}
@@ -75,7 +75,7 @@ void main(){ vec3 w = vW - cameraPosition; float d = length(w); vec3 em;
   float f = 1.0 - exp(-uBdFogD * uBdFogD * d * d * mix(1.0, uAerA.z + (1.0 - uAerA.z) * aerMean(w), uAerB.w));   // the same air the battlefield is seen through
   gl_FragColor = vec4(mix(c, aerColour(uBdFog, w, d), f), 1.0);
 }`;
-function mat(fs, extra){ return new THREE.ShaderMaterial({ vertexShader:VS, fragmentShader:fs, uniforms:{ ...AER.u, ...BDP.u, ...extra }, depthWrite:false, depthTest:false, fog:false, side:THREE.DoubleSide }); }
+function mat(fs, extra){ return new THREE.ShaderMaterial({ vertexShader:VS, fragmentShader:fs, uniforms:{ ...AER.u, ...BDP.u, ...extra }, depthWrite:true, depthTest:true, fog:false, side:THREE.DoubleSide }); }
 const noHit = () => {};
 // one range: a ring of columns, each from its foot (near, below the plain) up its slope to its crest (set back)
 function curtain(L, i, look, seed){ const [r, h0, h1, kind, n, haze] = L, seg = Math.round((kind === 'city' || kind === 'stacks' ? 2400 : 900) * (MOBILE ? 0.5 : 1)), rows = 6, P = [], N = [], H = [], idx = [];
@@ -98,7 +98,7 @@ export function clearBackdrop(){ if(!BDP.g) return; const g = BDP.g; scene.remov
 // look = { base, hi } colours of the land's ranges (world/horizon.js LOOK); called when the battlefield's horizon is built
 export function buildBackdrop(b, look){ if(BDP.g && BDP.name === b.name && !b.cave) return true;   // (the horizon is built again for the same land: the ranges stay)
   clearBackdrop(); if(!BACKDROP.on || b.cave || typeof window === 'undefined') return false; let L = BACKDROP.biomes[b.name] ?? BACKDROP.biomes._; if(typeof L === 'string') L = BACKDROP.biomes[L];
-  const LF = landform(b), g = new THREE.Group(); g.name = 'backdrop'; BDP.g = g; BDP.name = b.name; scene.add(g); g.add(plain(LF)); if(LF && LF.form === 'plateau') g.position.y = -LF.h; const seed = (b.name.charCodeAt(0) * 7 + b.name.length * 13) % 97;   // (Z428 below a plateau the land and the sea lie at the cliffs' foot)
+  const LF = landform(b), g = new THREE.Group(); g.name = 'backdrop'; BDP.g = g; BDP.name = b.name; scene.add(g); g.add(plain(LF)); if(LF && LF.form === 'plateau') g.position.y = LF.plain === 'sea' ? -LF.h + 1.5 : -LF.h - PLAIN_DROP; const seed = (b.name.charCodeAt(0) * 7 + b.name.length * 13) % 97;   // (Z428 below a plateau the land and the sea lie at the cliffs' foot)
   (MOBILE ? [L[Math.min(BACKDROP.phone, L.length - 1)]] : L).forEach((l, i) => g.add(curtain(l, MOBILE ? 1 : i, look, seed))); updateBackdrop(); return true; }
 export function updateBackdrop(){ if(!BDP.g) return; const u = BDP.u; BDP.g.visible = SKY.visible;   // (underground, with the sky, it goes) if(scene.fog){ u.uBdFog.value.copy(scene.fog.color); u.uBdFogD.value = scene.fog.density || 0; }
   u.uBdTop.value.copy(SKY.material.uniforms.top.value); u.uBdNight.value = SKY.material.uniforms.night.value; }

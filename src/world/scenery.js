@@ -9,8 +9,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK } from '../../config.js';
-import { landform, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
+import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK, FARSITES } from '../../config.js';
+import { AER, PLAIN_DROP, landform, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -230,11 +230,30 @@ function unitLevel(k, lv){ const src = k.startsWith('ruin_') ? loadGLTF(k).then(
 function hazeMat(src, amt, fogC){ const m = src.clone(), hz = { value:amt }, hc = { value:fogC.clone() }; m.fog = false;
   m.onBeforeCompile = sh => { sh.uniforms.hzAmt = hz; sh.uniforms.hzCol = hc; sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float hzAmt; uniform vec3 hzCol;').replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, hzAmt);'); };
   m.customProgramCacheKey = () => 'skylineHaze'; return m; }
+// Z430 FAR BATTLEFIELDS: other fights and bases kilometres out (config FARSITES) — each a cluster of a kit's scans at true size on the plain (or on an
+//   islet in the sea, or on a mesa of its own), hazed by its distance toward the sky's horizon colour, a share of them burning under a column of smoke
+export function farSites(g, name, fogC){ const C = FARSITES, B = C.biomes[name]; if(!C.on || !B || MOBILE || typeof window === 'undefined') return;
+  const LF = landform({ name }), y0 = LF && LF.form === 'plateau' ? (LF.plain === 'sea' ? -LF.h : -LF.h - PLAIN_DROP) : 0, hc = AER.u.uAerFar.value.clone(), a0 = Math.random() * Math.PI * 2;
+  for(let i = 0; i < B.n; i++){ const a = a0 + (i + 0.2 + Math.random() * 0.6) / B.n * Math.PI * 2, d = C.d[0] * Math.pow(C.d[1] / C.d[0], Math.random()), cx = Math.cos(a) * d, cz = Math.sin(a) * d;
+    const hz = C.haze[0] + (C.haze[1] - C.haze[0]) * Math.min(1, Math.max(0, (d - C.d[0]) / (C.d[1] - C.d[0]))), kit = C.kits[B.kits[i % B.kits.length]], sp = rnd(C.spread[0], C.spread[1]);
+    let top = y0; if(B.isle || B.mesa){ const R = sp * rnd(1.4, 1.9), H = B.isle ? rnd(14, 34) : rnd(70, 130), geo = new THREE.CylinderGeometry(R * (B.isle ? 0.8 : 0.92), R * (B.isle ? 1.25 : 1.05), H, 28, 4), P = geo.attributes.position;
+      for(let k = 0; k < P.count; k++){ const x = P.getX(k), z = P.getZ(k), n = 0.85 + 0.3 * Math.sin(Math.atan2(z, x) * 5 + i) * Math.sin(Math.atan2(z, x) * 3 + i * 2); P.setX(k, x * n); P.setZ(k, z * n); } geo.computeVertexNormals();
+      const col = B.isle ? (name === 'ARCTIC' ? 0xdce8f0 : 0xb8b4a8) : 0x9a5232, rock = new THREE.Mesh(geo, hazeMat(new THREE.MeshStandardMaterial({ color:col, roughness:1 }), hz, hc));
+      rock.position.set(cx, y0 + H / 2 - 2, cz); g.add(rock); top = y0 + H - 2; }
+    const n = Math.round(rnd(C.size[0], C.size[1]));
+    for(let k = 0; k < n; k++){ const key = kit[(Math.random() * kit.length) | 0]; if(!M(key)) continue; const t = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * sp, x = cx + Math.cos(t) * r, z = cz + Math.sin(t) * r, ry = Math.random() * Math.PI * 2;
+      unitLevel(key, M(key).one ? 'd' : 'f').then(L => { if(!L || HZN.g !== g) return; const h = sceneDims(key, 1).y, m = new THREE.Mesh(L.geo, hazeMat(L.mat, hz, hc)); m.matrixAutoUpdate = false;
+        m.matrix.compose(_hv.set(x, top - 0.5, z), _hq.setFromAxisAngle(_hu, ry), _hs.set(h, h, h)).multiply(L.U); m.userData.farSite = key; g.add(m); }); }
+    if(Math.random() < C.smoke){ const col = new THREE.Group(), k0 = d / 500; col.position.set(cx, top, cz); g.add(col); const parts = [];
+      for(let k = 0; k < 7; k++){ const sm = new THREE.Sprite(new THREE.SpriteMaterial({ map:HZN.smokeTex, color:new THREE.Color(0x1c1814).lerp(hc, Math.min(0.9, hz + k * 0.05)), transparent:true, opacity:0.8 - k * 0.08, depthWrite:false, fog:false }));
+        sm.position.y = (8 + k * 16) * k0; sm.scale.setScalar((18 + k * 9) * k0); col.add(sm); parts.push(sm); }
+      const fire = new THREE.Sprite(new THREE.SpriteMaterial({ map:HZN.glowTex, color:0xff7a2a, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false, fog:false })); fire.position.y = 3 * k0; fire.scale.set(26 * k0, 12 * k0, 1); col.add(fire);
+      HZN.cols.push({ col, parts, fire, ph:Math.random() * 10 }); } } }
 // lay this land's horizon into g (round R0, the horizon's base radius); true when it brings its own skyline (the boxes are not wanted)
 export function realHorizon(g, name, R0, fogC){ let P = SKYLINE.on && !MOBILE && SKYLINE.biomes[name]; if(typeof P === 'string') P = SKYLINE.biomes[P]; if(!P || typeof window === 'undefined') return false;
   const Z = SKYLINE.haze, LF = landform({ name }), SEA = !!(LF && LF.plain === 'sea'), BOWL = !!(LF && LF.form === 'bowl');   // (round a valley only trees climb the mountains: a rock or a ruin up there floats)
   for(const e of P.set){ const lv = e.lv || (M(e.k) && M(e.k).one ? 'd' : 'l'), list = [], a0 = Math.random() * Math.PI * 2, mid = (e.r[0] + e.r[1]) / 2, hz = e.hz ?? Z[0] + (Z[1] - Z[0]) * Math.min(1, Math.max(0, (mid + 10) / 100));
-    const sz = () => e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), put = (x, z) => { if(Math.max(Math.abs(x), Math.abs(z)) > ARENA + 6 && !(SEA && !e.sea && heightAt(x, z) < -2) && !(BOWL && !e.k.startsWith('tree_') && heightAt(x, z) > 24)) list.push([x, z, sz(), Math.random() * Math.PI * 2]); };   // (Z428 over a sea only what stands in water: stacks, rocks, lighthouses)   // (Z427 never inside the field's square)
+    const sz = () => e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), put = (x, z) => { if(Math.hypot(x, z) - fieldR(Math.atan2(z, x)) > 10 && !(SEA && !e.sea && heightAt(x, z) < -2) && !(BOWL && !e.k.startsWith('tree_') && heightAt(x, z) > 24)) list.push([x, z, sz(), Math.random() * Math.PI * 2]); };   // (Z428 over a sea only what stands in water: stacks, rocks, lighthouses)   // (Z427 never inside the field — Z430 measured from its fence: the land past it fills in right up to the wire)
     if(e.clump){ const [k, sp] = e.clump, per = Math.max(1, Math.round(e.n / k)); for(let c = 0; c < k; c++){ const ca = a0 + (c + 0.2 + Math.random() * 0.6) / k * Math.PI * 2, cr = R0 + rnd(e.r[0], e.r[1]);   // Z427 in groves and hamlets, not an even fence
         for(let i = 0; i < per; i++){ const d = Math.sqrt(Math.random()) * sp, t = Math.random() * Math.PI * 2; put(Math.cos(ca) * cr + Math.cos(t) * d, Math.sin(ca) * cr + Math.sin(t) * d); } } }
     else for(let i = 0; i < e.n; i++){ const a = a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, r = R0 + rnd(e.r[0], e.r[1]); put(Math.cos(a) * r, Math.sin(a) * r); }
