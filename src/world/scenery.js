@@ -41,13 +41,22 @@ export class SceneLOD extends THREE.LOD {
     if(this.nearAt && !this.asked){ _cp.setFromMatrixPosition(cam.matrixWorld); _op.setFromMatrixPosition(this.matrixWorld); if(_cp.distanceToSquared(_op) < this.nearAt * this.nearAt){ this.asked = true; sceneLevel(this.key, 'd').then(warmMaps).then(L => L && this.put('d', L)); } } }
   put(lv, L){ if(this.lv[lv] || !L) return; const n = norm(this.key, L), sp = this.spin && spinLevel(this.key, lv, L, n, this.spin); let m;
     if(this.mat && (lv === 'd' || !this.mat.map)) takeMaps(this.mat, L.mat);
-    if(sp){ const mat = this.mat || L.mat, hd = new THREE.Group(), t = new THREE.Mesh(sp.top, mat); m = new THREE.Group(); if(sp.base){ const b = new THREE.Mesh(sp.base, mat); b.castShadow = this.shadow; b.receiveShadow = true; m.add(b); }   // Z435 a radar: its head turns
+    const mat = this.mat ? levelMat(this.mat, L) : L.mat;   // Z459 the piece's own material: a copy per level, with that level's maps
+    if(sp){ const hd = new THREE.Group(), t = new THREE.Mesh(sp.top, mat); m = new THREE.Group(); if(sp.base){ const b = new THREE.Mesh(sp.base, mat); b.castShadow = this.shadow; b.receiveShadow = true; m.add(b); }   // Z435 a radar: its head turns
       hd.position.set(sp.ax, 0, sp.az); t.castShadow = this.shadow; t.receiveShadow = true; hd.add(t); m.add(hd); this.heads.push(hd); if(this.heads.length === 1) SPINNERS.push({ lod:this, a:Math.random() * 6.28, rate:this.spin.rate * (0.8 + Math.random() * 0.4) }); }
-    else { m = new THREE.Mesh(L.geo, this.mat || L.mat); m.matrixAutoUpdate = false; m.matrix.multiplyMatrices(n.N, L.m4); m.castShadow = this.shadow; m.receiveShadow = true; }
+    else { m = new THREE.Mesh(L.geo, mat); m.matrixAutoUpdate = false; m.matrix.multiplyMatrices(n.N, L.m4); m.castShadow = this.shadow; m.receiveShadow = true; }
+    if(this.mat) m.traverse(q => { if(q.isMesh) follow(q, this.mat); });
     this.lv[lv] = m; for(const q of this.levels) this.remove(q.object); this.levels.length = 0;
     [['d', 0], ['l', this.dist[0]], ['f', this.dist[1]], ['m', 0]].filter(([v]) => this.lv[v]).forEach(([v, d], i) => this.addLevel(this.lv[v], i ? d : 0, SCENERY.lod.hys));
     if(this.onLevel) this.onLevel(lv, m); } }
 // a piece with a material of its own (a tower fades and flashes alone): it wears the scan's maps once they are in (the sharper ones when the near level comes)
+// Z459 …each level a copy of it with that level's own maps: a lighter level's atlas is baked anew (Z424 — 90 of the 118 scans), and the one material
+//   shared by every level painted the near scan's maps on the mid / far level's UVs (camouflage blotches from ~40 m on: the quarry's limestone rocks,
+//   the watchtowers, the toned bunkers); the copy keeps the piece's shader (blend-in, the limestone's drain) and follows its flash and fade
+function levelMat(tpl, L){ const c = tpl.clone(); c.onBeforeCompile = tpl.onBeforeCompile; c.customProgramCacheKey = tpl.customProgramCacheKey; takeMaps(c, L.mat); return c; }
+function follow(mesh, tpl){ const s = { e:-1, i:-1, o:-1, t:null }; mesh.onBeforeRender = () => { const c = mesh.material; if(!c || c === tpl) return; const e = tpl.emissive ? tpl.emissive.getHex() : 0;
+  if(e !== s.e || tpl.emissiveIntensity !== s.i){ s.e = e; s.i = tpl.emissiveIntensity; if(c.emissive && tpl.emissive) c.emissive.copy(tpl.emissive); c.emissiveIntensity = tpl.emissiveIntensity; }   // (only when it changed: a hit's flash on the piece's material)
+  if(tpl.opacity !== s.o || tpl.transparent !== s.t){ s.o = tpl.opacity; s.t = tpl.transparent; c.opacity = tpl.opacity; if(c.transparent !== tpl.transparent){ c.transparent = tpl.transparent; c.needsUpdate = true; } } }; }
 function takeMaps(to, from){ for(const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) to[k] = from[k]; to.color.copy(from.color); to.emissive.copy(from.emissive);
   to.roughness = from.roughness; to.metalness = from.metalness; to.envMapIntensity = from.envMapIntensity; to.needsUpdate = true; }
 // Z375 a watchtower / water tower of world/tower-kinds.js: the scan stood in the tower's body (it topples with it), its own material returned for the fade
@@ -57,7 +66,7 @@ export function landTone(){ const t = REALPROP.cast.tint, c = new THREE.Color(t[
 // a piece ready to stand somewhere (its levels fetched in the background): the light ones now, the near one when it is wanted
 export function scenePiece(k, s = 1, o = {}){ const C = M(k), D = sceneDims(k, s), R = Math.max(D.x, D.y, D.z) / 2, Z = SCENERY.lod;
   if(o.tone){ const mat = o.mat || new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8 }), prev = o.onLevel; if(!o.mat){ mat.userData.own = true; blendIn(mat); }   // Z420 tinted: its own material, toned each time it takes a level's maps (and colour)
-    o = { ...o, mat, onLevel:(lv, m) => { if(mat.map !== mat.userData.tonedMap){ mat.color.multiply(o.tone); mat.userData.tonedMap = mat.map; } if(prev) prev(lv, m); } }; }
+    o = { ...o, mat, onLevel:(lv, m) => { m.traverse(q => { if(q.isMesh && q.material && q.material !== mat && !q.material.userData.toned){ q.material.color.multiply(o.tone); q.material.userData.toned = true; } }); if(prev) prev(lv, m); } }; }   // Z459 each level's own copy toned
   const dist = [Math.max(Z.mid[0], Z.mid[1] * R), Math.max(Z.far[0], Z.far[1] * R)], one = !!C.one;
   const lod = new SceneLOD(k, { ...o, dist, nearAt:MOBILE || one || o.top ? 0 : dist[0] + Z.near, spin:o.spin === false ? null : C.spin }); lod.userData.scene = k;   // (Z393 top: the most detail a small piece needs — 'l' never fetches the whole scan)
   if(MOBILE) sceneLevel(k, 'm').then(L => lod.put('m', L)); else if(one) sceneLevel(k, 'd').then(L => lod.put('d', L));

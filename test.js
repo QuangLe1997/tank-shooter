@@ -2450,7 +2450,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.DEFENSE.on && /planForts\(\); planDefense\(\);/.test(zn) && /buildDefense\(\);/.test(cv) && cv.indexOf('buildDefense();') < cv.indexOf('MAZE_SHAPES[') && /DEFENSE\.maze\.cut/.test(cv), 'the defence is planned after the forts and laid before the scatter, which thins behind it');
   ok(/function chords\(\)/.test(df) && /B\.spawnGap/.test(df) && /short:len < DEFENSE\.laneW \+ 12/.test(df) && /function wall\(kind, at, u0, v0, u1, v1, tag\)/.test(df) && C.DEFENSE.cp.walls.length>=6 && C.DEFENSE.cp.len.concrete>3, 'belts run fort to fort (not across our spawn), short gaps are lanes, checkpoints are whole walls');
   ok(/b\.def && Math\.hypot\(b\.x - f\.x - lx/.test(op), 'a fort\'s outpost keeps off the belt that joins it');
-  ok(C.SCENERY.tone>0 && C.SCENERY.tone<1 && /export function landTone\(\)/.test(sc) && /scenePiece\(K\.model, 1, \{ mat, tone:landTone\(\) \}\)/.test(sc) && /scenePiece\(key, sc, \{ tone \}\)/.test(ft) && /mat\.map !== mat\.userData\.tonedMap/.test(sc), 'the forts\' bunkers and the guard towers wear the land\'s tone (once per set of maps)');
+  ok(C.SCENERY.tone>0 && C.SCENERY.tone<1 && /export function landTone\(\)/.test(sc) && /scenePiece\(K\.model, 1, \{ mat, tone:landTone\(\) \}\)/.test(sc) && /scenePiece\(key, sc, \{ tone \}\)/.test(ft) && /!q\.material\.userData\.toned\)\{ q\.material\.color\.multiply\(o\.tone\)/.test(sc), 'the forts\' bunkers and the guard towers wear the land\'s tone (Z459: each level\'s own copy, once)');
   ok(['DESERT','ARCTIC','FOUNDRY','VOLCANO','CITADEL','RUINS','MEADOW','CITY','SAVANNA','QUARRY'].every(b=>C.ART_TONE[b] && C.ART_TONE[b].mood && C.ART_TONE[b].sh && C.ART_TONE[b].hi) && /artTone\(b\.name, A\);/.test(at) && at.indexOf('artTone(b.name, A);') > at.indexOf('Z242 realistic light'), 'each battlefield its own film, applied last'); }
 
 // Z422 the review's replacements and the lands' set pieces: city blocks / ruins / camp towers from the second batch (and the three found on Meshy:
@@ -2643,6 +2643,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['DESERT', 'RUINS', 'ARCTIC', 'CITADEL', 'MEADOW', 'SAVANNA', 'VOLCANO', 'QUARRY'].every(b => LK[b] && LK[b].length >= 4 && new Set(LK[b].map(l => l.keep)).size === LK[b].length && LK[b].every(l => C.SCENERY.models[l.keep] && C.REALFORT.kit.style[l.st] && C.REALFORT.kit.arch[l.arch])), 'every stone battlefield: four looks, four different keeps, real stones and architectures');
   ok(!LK.FOUNDRY && !LK.CITY && Object.keys(F).every(k => C.SCENERY.models[k] && F[k].w > 0 && F[k].solid > 0), 'the works keep their steel (no castle in a steel works); every keep fits a yard');
   { const fo=(await import('node:fs')).readFileSync('src/world/fortress.js','utf8'); ok(/function toneLevel\(m, tone\)/.test(fo) && /c\.onBeforeCompile=s\.onBeforeCompile/.test(fo) && !/scenePiece\(k, s, \{ shadow:true, \.\.\.\(LK\.tone \? \{ tone:/.test(fo), 'a toned keep: each level its own toned material (no shared one painting the near maps on a baked level)'); } }
+
+// Z459 no camouflage blotches: a piece with a material of its own (the quarry's limestone rocks, the watchtowers, the toned bunkers) wears a copy of it per
+//   level, with that level's own maps (a lighter level's atlas is baked anew), the copy keeping its shader and following its flash and fade
+{ const sc=(await import('node:fs')).readFileSync('src/world/scenery.js','utf8');
+  ok(/function levelMat\(tpl, L\)\{ const c = tpl\.clone\(\); c\.onBeforeCompile = tpl\.onBeforeCompile; c\.customProgramCacheKey = tpl\.customProgramCacheKey; takeMaps\(c, L\.mat\)/.test(sc) && /const mat = this\.mat \? levelMat\(this\.mat, L\) : L\.mat;/.test(sc) && !/this\.mat \|\| L\.mat/.test(sc), 'every level its own copy of the piece\'s material, with its own maps');
+  ok(/function follow\(mesh, tpl\)/.test(sc) && /if\(this\.mat\) m\.traverse\(q => \{ if\(q\.isMesh\) follow\(q, this\.mat\)/.test(sc), 'the copies follow the piece\'s flash and fade'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
