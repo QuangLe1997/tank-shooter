@@ -2455,5 +2455,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(C.OUTSKIRTS.on && /return outerAt\(x, z\)/.test(hf) && /export function buildOutskirts\(b\)/.test(hf) && /buildOutskirts\(b\);/.test(hf) && /function outskirtRoads\(b, C\)/.test(hf), 'past the field the land rolls in hills that heightAt knows, with tracks leading away');
   ok(/clump:\[/.test(R('config.js')) && /Math\.max\(Math\.abs\(x\), Math\.abs\(z\)\) > ARENA \+ 6/.test(R('src/world/scenery.js')) && /\+ heightAt\(x, z\), z\)/.test(R('src/world/scenery.js')), 'the skyline\'s trees grow in groves and hamlets, on the hills, never inside the field'); }
 
+// Z428 every battlefield stands in a piece of geography that is also its border: a dune sea, a mesa, an ice shelf on a dark sea, a headland, a hilltop,
+//   a valley, a caldera, an endless city / ruin / works — the earth bank and the boulder rows give way to it
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), W=await import('./src/data/world.js'), hf=R('src/world/heightfield.js'), bd=R('src/world/backdrop.js'), pm=R('src/world/perimeter.js'), sc=R('src/world/scenery.js');
+  ok(W.BIOMES.every(b=>C.LANDFORM.biomes[b.name] && ['bowl','plateau','flat','hills'].includes(C.LANDFORM.biomes[b.name].form)) && W.BIOMES.length===10, 'all ten battlefields have a landform');
+  ok(/if\(L\.form === 'plateau'\)/.test(hf) && /if\(L\.form === 'bowl'\)/.test(hf) && /FIELD\.ridgeH\*\(OUT\.lf \? OUT\.lf\.ridge : 1\)/.test(hf) && /landformFor\(b\);/.test(hf) && /export const outerMat/.test(hf), 'plateaus drop, bowls rise, the bank follows the landform, the outskirts wear rock and snow');
+  ok(/const LF=landform\(b\), keep=LF \? LF\.rocks : 1; if\(!keep\) return;/.test(pm), 'the boulder rows thin out or go where the landform is the border');
+  ok(/const PK = \{ sea:1, dunes:2, savanna:3, fields:4, forest:5, lava:6, city:7, ruins:8, industry:9 \}/.test(bd) && /g\.position\.y = -LF\.h/.test(bd) && /pow\(max\(dot\(r, uAerSun\), 0\.0\), 90\.0\)/.test(bd), 'the plain shows the land to the horizon (sea with glitter and floes, dunes, fields, forest, lava, city, ruins, works), at the cliffs\' foot under a plateau');
+  ok(/SEA && !e\.sea && heightAt\(x, z\) < -2/.test(sc) && /BOWL && !e\.k\.startsWith\('tree_'\)/.test(sc) && /PLAT \? \(ARENA - fr\(b\.k, s\) - 3\)/.test(sc), 'nothing stands on the sea but what belongs in water, nothing floats on the mountains, nothing far hangs off a plateau'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

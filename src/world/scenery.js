@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK } from '../../config.js';
-import { ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
+import { landform, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -73,11 +73,11 @@ function freeSpot(r, placed, north){ for(let t = 0; t < 220; t++){ const a = nor
     if(clear(x, z, r, placed)) return [x, z]; } return null; }
 const faceCore = (x, z) => Math.atan2(-x, -z), WK = { x:0, z:-1e4, r:0, a:0 };
 const offWonder = a => Math.abs(Math.atan2(Math.sin(a - WK.a), Math.cos(a - WK.a))) > SCENERY.wonderGap;
-function plan(beats){ const placed = [], byId = {};
+function plan(beats){ const PLAT = (landform(BIOME) || {}).form === 'plateau'; const placed = [], byId = {};
   let beat = null; const add = (k, x, z, ry, s, extra) => { const p = { k, x, z, ry, s, r:fr(k, s), solid:beat && beat.solid, top:beat && beat.top, ...extra }; placed.push(p); return p; };
   const face = (b, x, z, along) => b.face === 'rand' ? Math.random() * Math.PI * 2 : b.face === 'out' ? faceCore(x, z) + Math.PI : b.face === 'along' && along != null ? along : faceCore(x, z) + rnd(-0.18, 0.18);
   for(const b of beats){ beat = b; const n = MOBILE ? Math.ceil((b.n || 1) * 0.5) : (b.n || 1), S = () => b.s ? rnd(b.s[0], b.s[1]) : 1;
-    if(b.at === 'far'){ for(let t = 0; t < 40; t++){ const [a0, a1] = pick(b.a), a = rnd(a0, a1), s = S(); if(!offWonder(a)) continue; const d = fieldR(a) + rnd(b.d[0], b.d[1]) + fr(b.k, s) * 0.5, x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if(b.at === 'far'){ for(let t = 0; t < 40; t++){ const [a0, a1] = pick(b.a), a = rnd(a0, a1), s = S(); if(!offWonder(a)) continue; const d = Math.min(fieldR(a) + rnd(b.d[0], b.d[1]) + fr(b.k, s) * 0.5, PLAT ? (ARENA - fr(b.k, s) - 3) / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))) : Infinity), x = Math.cos(a) * d, z = Math.sin(a) * d;   // (Z428 on a plateau: never over the cliff's edge)
         if(placed.some(p => Math.hypot(p.x - x, p.z - z) < p.r + fr(b.k, s) * 0.8)) continue; add(b.k, x, z, faceCore(x, z) + rnd(-0.6, 0.6), s, { far:true }); break; } continue; }
     if(b.at === 'edge'){ for(let t = 0; t < 60; t++){ const [a0, a1] = pick(b.a), a = rnd(a0, a1); if(!offWonder(a)) continue; const s = S(), r = fr(b.k, s), d = fieldR(a) - b.inset, x = Math.cos(a) * d, z = Math.sin(a) * d;   // (never standing in front of the wonder)
         if(!clear(x, z, r * 0.6, placed, true) || FORTS.some(f => Math.hypot(f.x - x, f.z - z) < (f.R || 30) + r + 6)) continue; const p = add(b.k, x, z, faceCore(x, z), s, { edge:true }); if(b.id) byId[b.id] = p; ZONES.push({ kind:'scenery', x, z, r:r * 0.8 }); break; } continue; }
@@ -232,9 +232,9 @@ function hazeMat(src, amt, fogC){ const m = src.clone(), hz = { value:amt }, hc 
   m.customProgramCacheKey = () => 'skylineHaze'; return m; }
 // lay this land's horizon into g (round R0, the horizon's base radius); true when it brings its own skyline (the boxes are not wanted)
 export function realHorizon(g, name, R0, fogC){ let P = SKYLINE.on && !MOBILE && SKYLINE.biomes[name]; if(typeof P === 'string') P = SKYLINE.biomes[P]; if(!P || typeof window === 'undefined') return false;
-  const Z = SKYLINE.haze;
+  const Z = SKYLINE.haze, LF = landform({ name }), SEA = !!(LF && LF.plain === 'sea'), BOWL = !!(LF && LF.form === 'bowl');   // (round a valley only trees climb the mountains: a rock or a ruin up there floats)
   for(const e of P.set){ const lv = e.lv || (M(e.k) && M(e.k).one ? 'd' : 'l'), list = [], a0 = Math.random() * Math.PI * 2, mid = (e.r[0] + e.r[1]) / 2, hz = e.hz ?? Z[0] + (Z[1] - Z[0]) * Math.min(1, Math.max(0, (mid + 10) / 100));
-    const sz = () => e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), put = (x, z) => { if(Math.max(Math.abs(x), Math.abs(z)) > ARENA + 6) list.push([x, z, sz(), Math.random() * Math.PI * 2]); };   // (Z427 never inside the field's square)
+    const sz = () => e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), put = (x, z) => { if(Math.max(Math.abs(x), Math.abs(z)) > ARENA + 6 && !(SEA && !e.sea && heightAt(x, z) < -2) && !(BOWL && !e.k.startsWith('tree_') && heightAt(x, z) > 24)) list.push([x, z, sz(), Math.random() * Math.PI * 2]); };   // (Z428 over a sea only what stands in water: stacks, rocks, lighthouses)   // (Z427 never inside the field's square)
     if(e.clump){ const [k, sp] = e.clump, per = Math.max(1, Math.round(e.n / k)); for(let c = 0; c < k; c++){ const ca = a0 + (c + 0.2 + Math.random() * 0.6) / k * Math.PI * 2, cr = R0 + rnd(e.r[0], e.r[1]);   // Z427 in groves and hamlets, not an even fence
         for(let i = 0; i < per; i++){ const d = Math.sqrt(Math.random()) * sp, t = Math.random() * Math.PI * 2; put(Math.cos(ca) * cr + Math.cos(t) * d, Math.sin(ca) * cr + Math.sin(t) * d); } } }
     else for(let i = 0; i < e.n; i++){ const a = a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, r = R0 + rnd(e.r[0], e.r[1]); put(Math.cos(a) * r, Math.sin(a) * r); }

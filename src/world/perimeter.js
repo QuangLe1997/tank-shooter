@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVERS } from '../../config.js';
-import { ARENA, BIOME, MOBILE, RIVER, _R, arena, bedAt, fieldPath, heightAt, propTex, rockSet, scene, holoRing } from '../hub.js';
+import { landform, ARENA, BIOME, MOBILE, RIVER, _R, arena, bedAt, fieldPath, heightAt, propTex, rockSet, scene, holoRing } from '../hub.js';
 
 // ---- perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets ----
 export const perimeter = new THREE.Group(); arena.add(perimeter);
@@ -60,10 +60,11 @@ export function buildPerimeter(b, withHighland=true){
 export const HIGHLAND_ARCS = 12;
 export const highland = new THREE.Group(); arena.add(highland);
 export function buildHighland(b){ for(let i=highland.children.length-1;i>=0;i--){ const c=highland.children[i]; highland.remove(c); if(c.isInstancedMesh) c.dispose(); }
+  const LF=landform(b), keep=LF ? LF.rocks : 1; if(!keep) return;   // Z428 the landform is the border now (a cliff, a sea, a mountain wall): fewer boulder rows, or none
   const rs=rockSet(b?b.name:'DESERT'), P=fieldPath(MOBILE?7:4.5, -5), geo=rs.big[0], per=Math.ceil(P.length/HIGHLAND_ARCS);
   const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), Sc=new THREE.Vector3(), E=new THREE.Euler();
   for(let a=0;a*per<P.length;a++){ const arc=P.slice(a*per, (a+1)*per), im=new THREE.InstancedMesh(geo, rs.mat, arc.length*2); let k=0;
-    for(const q of arc) for(let s=0;s<2;s++){ const out=_R(0,7)+s*4, x=q.x+q.nx*out, z=q.z+q.nz*out; if(Math.abs(x)>ARENA-2||Math.abs(z)>ARENA-2) continue; if(RIVER.on && bedAt(x,z)<RIVER.y+RIVERS.fenceGap+0.4) continue;   // (Z415 none in the river's way out)
+    for(const q of arc) for(let s=0;s<2;s++){ if(keep<1 && Math.random()>keep) continue; const out=_R(0,7)+s*4, x=q.x+q.nx*out, z=q.z+q.nz*out; if(Math.abs(x)>ARENA-2||Math.abs(z)>ARENA-2) continue; if(RIVER.on && bedAt(x,z)<RIVER.y+RIVERS.fenceGap+0.4) continue;   // (Z415 none in the river's way out)
       const r=_R(1.4,3.4)*(s?0.8:1); E.set(_R(-0.3,0.3),_R(0,6.28),_R(-0.3,0.3)); Q.setFromEuler(E); V.set(x, heightAt(x,z)+r*0.1, z); Sc.set(r,r*_R(0.6,1.1),r); M.compose(V,Q,Sc); im.setMatrixAt(k++,M); }
     if(!k){ im.dispose(); continue; }
     im.count=k; im.computeBoundingSphere(); im.castShadow=!MOBILE; im.receiveShadow=true; highland.add(im); } }

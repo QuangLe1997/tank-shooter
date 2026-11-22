@@ -1689,9 +1689,9 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
 export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10, arcs:10, keep:0.2,   // Z412 arcs: the horizon's instanced rings split by bearing (the camera culls the arcs behind it) · keep: share of triangles a skyline piece keeps (simplified; 50–300 m off)
     // stacks: the works' concrete chimneys left among the real pieces
   biomes:{
-    ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14 }, { k:'tree_cedar', lv:'f', n:64, h:[22, 34], r:[-80, 40], y:-3, clump:[9, 42] }, { k:'mil_shelter', lv:'f', n:6, w:[6, 6.5], r:[-50, 20], y:-0.5, clump:[2, 22] }, { k:'sat_dish', lv:'f', n:2, h:[4, 5], r:[-50, 20], y:-0.5, clump:[2, 18] } ] }, TUNDRA:'ARCTIC',
+    ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14, sea:1 }, { k:'tree_cedar', lv:'f', n:64, h:[22, 34], r:[-80, 40], y:-3, clump:[9, 42] }, { k:'mil_shelter', lv:'f', n:6, w:[6, 6.5], r:[-50, 20], y:-0.5, clump:[2, 22] }, { k:'sat_dish', lv:'f', n:2, h:[4, 5], r:[-50, 20], y:-0.5, clump:[2, 18] } ] }, TUNDRA:'ARCTIC',
     VOLCANO:{ skyline:true, rings:'peak', set:[ { k:'volcano', n:5, h:[78, 118], r:[0, 45], y:-16, hz:0.22 }, { k:'lava_arch', n:7, h:[30, 50], r:[-10, 22], hz:0.2 }, { k:'tree_twisted', n:24, h:[14, 22], r:[-80, 8], y:-3, clump:[6, 30] } ] },
-    QUARRY:{ set:[ { k:'lighthouse', lv:'f', n:2, h:[24, 30], r:[0, 18], y:-2, hz:0.25 }, { k:'rock_outcrop', n:9, w:[120, 210], r:[30, 70], y:-10 }, { k:'sea_stack', n:7, h:[38, 70], r:[0, 30], hz:0.3 }, { k:'mtn_gate', n:1, w:[170, 200], r:[45, 60], y:-10 } ] },
+    QUARRY:{ set:[ { k:'lighthouse', lv:'f', n:2, h:[24, 30], r:[0, 18], y:-2, hz:0.25, sea:1 }, { k:'rock_outcrop', n:9, w:[120, 210], r:[30, 70], y:-10, sea:1 }, { k:'sea_stack', n:7, h:[38, 70], r:[0, 30], hz:0.3, sea:1 }, { k:'mtn_gate', n:1, w:[170, 200], r:[45, 60], y:-10, sea:1 } ] },
     CITADEL:{ set:[ { k:'mtn_gate', n:1, w:[180, 210], r:[48, 70], y:-10 }, { k:'tower_mage', lv:'f', n:3, h:[34, 48], r:[0, 24], y:-2 }, { k:'tree_pine', lv:'f', n:56, h:[18, 28], r:[-80, 40], y:-3, clump:[8, 40] }, { k:'ruin_house', n:8, h:[10, 14], r:[-60, 20], y:-1, clump:[2, 30] } ] },
     MEADOW:{ set:[ { k:'keep_medieval', lv:'f', n:2, h:[26, 34], r:[0, 20], y:-2 }, { k:'tree_pine', lv:'f', n:60, h:[22, 34], r:[-80, 40], y:-3, clump:[9, 40] }, { k:'tree_oak', lv:'f', n:36, h:[16, 26], r:[-80, 30], y:-3, clump:[7, 34] }, { k:'tree_world', lv:'f', n:3, h:[40, 52], r:[0, 14], y:-3 },
       { k:'ruin_house', n:10, h:[10, 14], r:[-60, 20], y:-1, clump:[3, 30] }, { k:'ruin_villa', n:3, w:[14, 18], r:[-60, 20], y:-1, clump:[3, 20] },
@@ -1720,6 +1720,23 @@ export const OUTSKIRTS = { on:true, out:5, ramp:0.5, crest:1.1, fade:2.4, seg:[2
   biomes:{ _:{ amp:20, wave:190 }, DESERT:{ amp:24, wave:240, dune:1 }, SAVANNA:{ amp:16, wave:260 }, ARCTIC:{ amp:40, wave:200 }, TUNDRA:'ARCTIC', CITY:{ amp:5, wave:320 },
     VOLCANO:{ amp:36, wave:180 }, CITADEL:{ amp:34, wave:190 }, MEADOW:{ amp:26, wave:210 }, HILLS:{ amp:34, wave:200 }, VILLAGE:{ amp:30, wave:170 }, QUARRY:{ amp:32, wave:180 },
     RUINS:{ amp:14, wave:220 }, FOUNDRY:{ amp:9, wave:260 }, STEELMILL:'FOUNDRY' } };
+// Z428 LANDFORM: each battlefield stands IN a piece of real geography, which is also its border (the drawn earth bank and the rows of boulders give way):
+//   form = hills (OUTSKIRTS' rolling land) · bowl (a ring of mountains or dunes rising h m over w m past the field: a valley, a caldera, a hollow in a
+//   dune sea) · plateau (the field on top, a cliff dropping h m over w m: a mesa, an ice shelf, a headland, a hilltop) · flat (the field one block of an
+//   endless city or works). tint / rock / snow = the land's colour, its rock where it is steep, snow above snow m; ridge × FIELD.ridgeH (the bank inside
+//   the field's square), rocks × the boulder rows; plain = what the backdrop's plain shows to the horizon (sea · dunes · savanna · fields · forest ·
+//   lava · city · ruins · industry), its colour; roads: tracks lead away. far = the camera's least far plane (m): the near mountains must not be cut
+export const LANDFORM = { on:true, far:1400,
+  biomes:{ DESERT:{ form:'bowl', h:46, w:300, dune:1, tint:0xe39a62, rock:0xb87048, ridge:0.6, rocks:0, plain:'dunes', col:0xd88a52, roads:1 },
+    SAVANNA:{ form:'plateau', h:120, w:40, tint:0xc8a060, rock:0xa4542e, ridge:0.25, rocks:0.12, plain:'savanna', col:0xa88a4c },
+    ARCTIC:{ form:'plateau', h:70, w:26, tint:0xf4f8fb, rock:0x9cc2dc, ridge:0.25, rocks:0, plain:'sea', col:0x14263a, floes:1 },
+    QUARRY:{ form:'plateau', h:58, w:24, tint:0xece6d8, rock:0xd4ccbe, ridge:0.25, rocks:0.2, plain:'sea', col:0x184a5e },
+    CITADEL:{ form:'plateau', h:90, w:170, tint:0xa0905c, rock:0x8a7860, ridge:0.5, rocks:0.3, plain:'fields', col:0x6e7a4a },
+    MEADOW:{ form:'bowl', h:260, w:360, tint:0x4e6c34, rock:0x6c6c64, snow:175, ridge:1, rocks:0.4, plain:'forest', col:0x34502c },
+    VOLCANO:{ form:'bowl', h:160, w:230, tint:0x2e2826, rock:0x1e1a18, ridge:1, rocks:0.6, plain:'lava', col:0x241c1a },
+    CITY:{ form:'flat', h:3, w:300, tint:0x5c6066, rock:0x5c6066, ridge:0.2, rocks:0, plain:'city', col:0x7a7e86 },
+    RUINS:{ form:'flat', h:9, w:220, tint:0x6e6a66, rock:0x5a5654, ridge:0.3, rocks:0.3, plain:'ruins', col:0x76706a },
+    FOUNDRY:{ form:'flat', h:6, w:260, tint:0x6a645e, rock:0x5a524c, ridge:0.3, rocks:0.2, plain:'industry', col:0x4a4440, roads:1 } } };
 // BACKDROP: the ranges far away, at their true distance and height, drawn at the sky's depth (never cut by the far plane, always behind the world):
 //   ground = the radius (m) of the hazy land they stand on; each layer [r m, lowest m, highest m, kind, masses round the circle, haze share] — far
 //   layers taller and paler; the tallest mass of the nearest two stands where the attack looks (toward the enemy, a third off the centre line: lead,

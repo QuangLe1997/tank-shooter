@@ -1,6 +1,6 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS } from '../../config.js';
+import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM } from '../../config.js';
 import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
@@ -39,7 +39,7 @@ export function craterDV(q, th, d, L){                                          
   if(u<1){ const bowl = u<0.32 ? 1 : 1-((u-0.32)/0.68)**2*0.92; return -d*bowl*1.12 + d*0.34*lop*Math.exp(-((u-0.96)**2)/0.016); }   // flat floor → steep walls → crisp lip
   const ray = Math.max(0, Math.sin(7*th+L[1]*2))**3;                                                                                  // spoil thrown out in streaks
   return d*0.34*lop*Math.exp(-((u-0.96)**2)/0.03) + d*0.1*lop*Math.exp(-((u-1.45)**2)/0.12)*(0.4+ray); }
-export function genTerrain(b){
+export function genTerrain(b){ landformFor(b);   // Z428 the land round the field first: the bank inside the square follows it
   const st0=TERRAIN_STYLE[b.name]||TERRAIN_STYLE.DESERT, st=Object.assign({}, st0, { mh:st0.mh*1.35, cd:st0.cd*1.25 }), W=HF.W, h=HF.h; h.fill(0);
   const dunes = b.name==='DESERT'||b.name==='TUNDRA', feats=[], RR=(r)=>r[0]+Math.random()*(r[1]-r[0]);
   const TF = b.name==='HILLS' ? Object.assign({}, TERRAIN_FLAT, { hills:[16,24], hillR:[16,30], hillH:[3.6,7.0], craters:[0,2], noiseK:0.9 })       // Z139 real hills: tall, broad, rolling
@@ -73,7 +73,7 @@ export function depthTex(){ const W=HF.W, d=new Uint8Array(W*W*4), F=RIVER.flow,
 // Z106 HIGHLAND beyond the fence: rises over ridgeW metres, rolls with the macro noise, eases back down at the bounding square's edge
 export function ridgeAt(x, z, n){ const out=-fieldDepth(x,z); if(out<-1) return 0; const sq=ARENA-Math.max(Math.abs(x),Math.abs(z));
   const rise=Math.min(1, Math.max(0, (out+1)/FIELD.ridgeW)), fall=Math.min(1, Math.max(0, sq/9));
-  return FIELD.ridgeH*rise*rise*(3-2*rise)*fall*(0.72+0.28*(n||0)); }
+  return FIELD.ridgeH*(OUT.lf ? OUT.lf.ridge : 1)*rise*rise*(3-2*rise)*fall*(0.72+0.28*(n||0)); }   // (Z428 × the landform's bank: a plateau keeps only a rim)
 // a blast digs a crater (r = radius, d = depth) and throws up a rim — updates the mesh where it changed
 export function deformCrater(x, z, r, d){
   d*=TERRAIN_FLAT.blastK; if(!d) return;   // Z107 blastK 0: shells scorch the ground (decal) but never reshape it → no terrain rebuild, no flicker
@@ -147,26 +147,56 @@ ground.receiveShadow = true; ground.castShadow = !MOBILE && RELIEF.selfShadow; a
 // Z427 OUTSKIRTS: it rolls. Hills rise from the field's edge (meeting its last row exactly), crest, and sink back to the plain by OUTSKIRTS.fade × ARENA
 //   out, so where the near world is cut off at the far plane it is flat land like the backdrop's (world/backdrop.js); heightAt reads the same hills
 //   (things set out past the fence stand on them). A ring of columns from the square's edge outward, denser near the field; rebuilt each battlefield
-const OUT = { amp:0, wave:200, dune:0, seed:0 }, _sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const OUT = { amp:0, wave:200, dune:0, seed:0, lf:null }, _sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const _oh = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7 + OUT.seed * 74.7) * 43758.5453; return v - Math.floor(v); };
 function _on(x, z){ const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
   return (_oh(ix, iz) * (1 - u) + _oh(ix + 1, iz) * u) * (1 - v) + (_oh(ix, iz + 1) * (1 - u) + _oh(ix + 1, iz + 1) * u) * v; }
 const _ofbm = (x, z) => (_on(x, z) * 0.55 + _on(x * 2.1 + 3.1, z * 2.1 + 1.7) * 0.3 + _on(x * 4.3 + 7.7, z * 4.3 + 5.3) * 0.15);
-export function outerAt(x, z){ const q = Math.max(Math.abs(x), Math.abs(z)) - ARENA; if(q <= 0 || !OUT.amp) return 0; const C = OUTSKIRTS, A = ARENA;
+// Z428 the battlefield's LANDFORM (config LANDFORM): the land the field stands in, chosen per battlefield
+export function landform(b){ return LANDFORM.on && b ? (LANDFORM.biomes[b.name] || null) : null; }
+function landformFor(b){ OUT.lf = landform(b); OUT.seed = Math.random() * 100; }
+export function outerAt(x, z){ const q = Math.max(Math.abs(x), Math.abs(z)) - ARENA; if(q <= 0) return 0; const L = OUT.lf;
+  if(L){ const w = L.w;
+    if(L.form === 'plateau'){ const qq = q + (_ofbm(x / 150, z / 150) - 0.5) * Math.min(w, 60) * 1.6, d = _sm(0, w, qq);   // the cliff's line wanders; below it the low land rolls a little
+      return -L.h * d + d * (_ofbm(x / 90, z / 90) - 0.5) * L.h * (L.plain === 'sea' ? 0 : 0.1); }
+    if(L.form === 'bowl'){ const e = _sm(0, w * 0.45, q) * (1 - _sm(w * 1.5, w * 2.7, q)); if(e <= 0) return 0; let m;
+      if(L.dune) m = Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / 120 * Math.PI + _ofbm(x / 160, z / 160) * 5)), 1.7) * 0.6 + _ofbm(x / 260, z / 260) * 0.4;   // a sea of dunes
+      else { const r1 = 1 - Math.abs(2 * _on(x / 170, z / 170) - 1), r2 = 1 - Math.abs(2 * _on(x / 70 + 5.3, z / 70 + 2.1) - 1); m = r1 * r1 * 0.72 + r2 * r2 * 0.28; }   // ridged mountains round a valley
+      return L.h * e * (0.3 + 0.7 * m); }
+    return L.h * _sm(0, 60, q) * (_ofbm(x / w, z / w) - 0.25); }   // flat: the city's or the works' ground, a few swells of rubble
+  if(!OUT.amp) return 0; const C = OUTSKIRTS, A = ARENA;
   const e = _sm(0, C.ramp * A, q) * (1 - _sm(C.crest * A, C.fade * A, q)); if(e <= 0) return 0; const w = OUT.wave;
   const n = OUT.dune ? Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / w * Math.PI + _ofbm(x / w, z / w) * 4)), 1.8) * (0.5 + 0.5 * _ofbm(x / w * 0.6, z / w * 0.6)) : _ofbm(x / w, z / w);
   return OUT.amp * e * (0.15 + 0.85 * n); }
-function outerGeoFor(){ const A = ARENA, [S, M] = MOBILE ? OUTSKIRTS.phone : OUTSKIRTS.seg, R = A * OUTSKIRTS.out, Ruv = A * 4, P = [], U = [], idx = [];
+function outerGeoFor(){ const A = ARENA, [S, M] = MOBILE ? OUTSKIRTS.phone : OUTSKIRTS.seg, L = OUT.lf, sea = L && L.plain === 'sea', flat = L && L.form === 'flat', R = A * (L && L.form === 'bowl' ? 6.4 : OUTSKIRTS.out), Ruv = A * 4, P = [], U = [], idx = [];
   for(let i = 0; i <= S; i++){ const a = i / S * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a), rin = A / Math.max(Math.abs(c), Math.abs(sn));
-    for(let j = 0; j <= M; j++){ const t = Math.pow(j / M, 1.6), r = rin + (R - rin) * t, x = c * r, z = sn * r;
+    for(let j = 0; j <= M; j++){ const t = Math.pow(j / M, 1.6), r = rin + ((sea ? L.w * 2.6 + 50 : flat ? 90 : R - rin)) * t, x = c * r, z = sn * r;   // (Z428 over a sea: only the cliff, the water carries on; round a city or works: a rim, the endless blocks carry on)
       const y = j === 0 ? bedAt(Math.max(-A + 0.01, Math.min(A - 0.01, x)), Math.max(-A + 0.01, Math.min(A - 0.01, z))) : outerAt(x, z);   // (the first row on the field's own last row)
       P.push(x, y - 0.04, z); U.push((x / (Ruv * 2) + 0.5) * 4, (-z / (Ruv * 2) + 0.5) * 4); } }
   for(let i = 0; i < S; i++) for(let j = 0; j < M; j++){ const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
-export const outerGround = new THREE.Mesh(outerGeoFor(), groundMat); outerGround.receiveShadow=true; arena.add(outerGround);
+// Z428 the outskirts wear their own ground: the field's photo texture as detail (projected on three axes, so a cliff is not a smear), coloured as the
+//   landform's land, rock where it is steep (strata, gullies), snow above its snow line; at the field's edge it starts as the field's own ground
+export const outerMat = (() => { const m = new THREE.MeshStandardMaterial({ map:groundMat.map, roughness:0.95, metalness:0, envMapIntensity:0.4 });
+  const U = m.userData.u = { uTint:{ value:new THREE.Color(1, 1, 1) }, uRock:{ value:new THREE.Color(0x777777) }, uSnowY:{ value:1e5 }, uTile:{ value:1 / 14 }, uArena:{ value:ARENA }, uOwn:{ value:0 } };
+  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOW; varying vec3 vON;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n\tvOW = (modelMatrix * vec4(transformed, 1.0)).xyz; vON = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vOW; varying vec3 vON; uniform vec3 uTint; uniform vec3 uRock; uniform float uSnowY; uniform float uTile; uniform float uArena; uniform float uOwn;
+float oh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float on(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(oh(i), oh(i + vec2(1, 0)), f.x), mix(oh(i + vec2(0, 1)), oh(i + vec2(1, 1)), f.x), f.y); }`)
+      .replace('#include <map_fragment>', `vec3 bw = pow(abs(vON), vec3(4.0)); bw /= (bw.x + bw.y + bw.z + 1e-4);
+	vec3 tx = texture2D(map, vOW.zy * uTile).rgb * bw.x + texture2D(map, vOW.xz * uTile).rgb * bw.y + texture2D(map, vOW.xy * uTile).rgb * bw.z;
+	float lum = dot(tx, vec3(0.3, 0.59, 0.11)), sl = 1.0 - clamp(vON.y, 0.0, 1.0), st = on(vec2(vOW.y * 0.3 + on(vOW.xz * 0.02) * 3.0, 0.5)) * 0.6 + on(vOW.xz * 0.05 + vOW.y * 0.08) * 0.4;
+	vec3 col = mix(uTint * (0.5 + 0.9 * lum), uRock * (0.5 + 0.8 * st) * (0.75 + 0.5 * lum), smoothstep(0.3, 0.6, sl));
+	col = mix(col, vec3(0.9, 0.93, 0.98) * (0.85 + 0.3 * lum), smoothstep(uSnowY - 14.0, uSnowY + 8.0, vOW.y + st * 16.0) * smoothstep(0.92, 0.4, sl));
+	float q = max(abs(vOW.x), abs(vOW.z)) - uArena; diffuseColor.rgb *= mix(tx, col, uOwn * smoothstep(2.0, 46.0, q));`); };
+  return m; })();
+export const outerGround = new THREE.Mesh(outerGeoFor(), outerMat); outerGround.receiveShadow=true; arena.add(outerGround);
 export function buildOutskirts(b){ let C = OUTSKIRTS.on ? (OUTSKIRTS.biomes[b.name] ?? OUTSKIRTS.biomes._) : null; if(typeof C === 'string') C = OUTSKIRTS.biomes[C];
-  OUT.amp = C ? C.amp : 0; OUT.wave = C ? C.wave : 200; OUT.dune = C && C.dune ? 1 : 0; OUT.seed = Math.random() * 100;
-  const old = outerGround.geometry; outerGround.geometry = outerGeoFor(); old.dispose(); outskirtRoads(b, C); }
+  OUT.amp = C ? C.amp : 0; OUT.wave = C ? C.wave : 200; OUT.dune = C && C.dune ? 1 : 0; const L = OUT.lf, U = outerMat.userData.u;
+  if(outerMat.map !== groundMat.map){ outerMat.map = groundMat.map; outerMat.needsUpdate = true; } U.uOwn.value = L ? 1 : 0; if(L){ U.uTint.value.setHex(L.tint); U.uRock.value.setHex(L.rock); U.uSnowY.value = L.snow ?? 1e5; }   // (no recompile for new colours: a program swapped under the stage's warm-up throws inside three)
+  const old = outerGround.geometry; outerGround.geometry = outerGeoFor(); old.dispose(); outskirtRoads(b, L ? (L.roads ? L : null) : C); }
 // the tracks that lead away from the field over the hills (behind our lines, toward the enemy's, and off to one side): a ribbon on the ground, its
 //   edges soft, winding as it goes, fading into the plain
 const ROADS = new THREE.Group(); ROADS.name = 'outskirt-roads'; arena.add(ROADS); let _roadTex = null;

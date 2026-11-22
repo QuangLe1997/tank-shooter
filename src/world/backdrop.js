@@ -7,7 +7,7 @@
 //   the biggest standing where the attack looks. Their haze is the air's (render/aerial.js): thick at the foot, thinner up the slope.
 import * as THREE from 'three';
 import { BACKDROP } from '../../config.js';
-import { AER, AER_GLSL, MOBILE, SKY, scene } from '../hub.js';
+import { AER, AER_GLSL, MOBILE, SKY, landform, scene } from '../hub.js';
 
 export const BDP = { g:null, name:null, u:{ uBdFog:{ value:new THREE.Color() }, uBdFogD:{ value:0 }, uBdTop:{ value:new THREE.Color() }, uBdNight:{ value:0 } } };
 const hsh = (i, s) => { const h = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return h - Math.floor(h); };
@@ -49,12 +49,29 @@ void main(){ vec3 w = vW - cameraPosition; float d = length(w); vec3 n = normali
   float foot = pow(1.0 - clamp(vH.y, 0.0, 1.0), 3.0) * 0.6, haze = clamp(uL.w + (1.0 - uL.w) * foot, 0.0, 1.0);   // thick at the foot, thinner up the slope (vH: x = height share of the range, y = up the slope)
   gl_FragColor = vec4(mix(c, aerColour(uBdFog, w, d), haze), 1.0);
 }`;
-const GS = `uniform vec3 uBdFog; uniform float uBdFogD; varying vec3 vW; varying vec3 vN; varying vec2 vH;
+const GS = `uniform vec3 uBdFog; uniform float uBdFogD; uniform float uBdNight; uniform float uPK; uniform vec3 uPC; uniform float uFloe; uniform vec3 uAerE; varying vec3 vW; varying vec3 vN; varying vec2 vH;
 ${AER_GLSL}
 float nh(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); float a = fract(sin(dot(i, vec2(127.1, 311.7))) * 43758.55), b = fract(sin(dot(i + vec2(1, 0), vec2(127.1, 311.7))) * 43758.55),
   c = fract(sin(dot(i + vec2(0, 1), vec2(127.1, 311.7))) * 43758.55), d = fract(sin(dot(i + vec2(1, 1), vec2(127.1, 311.7))) * 43758.55); return mix(mix(a, b, f.x), mix(c, d, f.x), f.y); }
-void main(){ vec3 w = vW - cameraPosition; float d = length(w), p = nh(vW.xz / 900.0) * 0.6 + nh(vW.xz / 260.0) * 0.4;   // fields, scrub and bare ground in patches
-  vec3 c = uAerLand * (0.82 + 0.36 * p);
+// Z428 what the land shows to the horizon (LANDFORM plain): 0 land · 1 sea (ice floes) · 2 dunes · 3 savanna · 4 fields · 5 forest · 6 lava · 7 city · 8 ruins · 9 works
+vec3 plainCol(vec2 p, out vec3 em){ em = vec3(0.0); float n1 = nh(p / 900.0), n2 = nh(p / 140.0), n3 = nh(p / 22.0); vec3 c = uPC;
+  if(uPK < 0.5) c *= 0.82 + 0.36 * (n1 * 0.6 + n2 * 0.4);
+  else if(uPK < 1.5){ c *= 0.85 + 0.25 * n2; if(uFloe > 0.5){ float f = nh(p / 55.0) * 0.7 + nh(p / 13.0) * 0.3; c = mix(c, vec3(0.8, 0.88, 0.94), smoothstep(0.64, 0.68, f)); } }
+  else if(uPK < 2.5){ float s = sin((p.x * 0.8 + p.y * 0.6) / 40.0 + nh(p / 300.0) * 9.0); c *= 0.72 + 0.32 * s + 0.12 * n3; }
+  else if(uPK < 3.5){ c *= 0.8 + 0.3 * n1 + 0.15 * n2; c *= 1.0 - 0.45 * smoothstep(0.8, 0.86, nh(p / 16.0)); }
+  else if(uPK < 4.5){ vec2 q = p / 75.0, cl = floor(q), f = fract(q); float h = fract(sin(dot(cl, vec2(12.9898, 78.233))) * 43758.5453), e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
+    c *= mix(vec3(0.82, 0.96, 0.78), vec3(1.08, 1.02, 0.84), h) * (0.88 + 0.16 * n3) * mix(0.7, 1.0, smoothstep(0.0, 0.05, e)); }
+  else if(uPK < 5.5) c *= (0.6 + 0.55 * nh(p / 7.0)) * (0.7 + 0.3 * n2);
+  else if(uPK < 6.5){ float k = abs(nh(p / 45.0) - 0.5); c *= 0.7 + 0.4 * n3; em = vec3(1.6, 0.45, 0.08) * (smoothstep(0.035, 0.0, k) * (0.6 + 0.4 * n2) + smoothstep(0.82, 0.9, nh(p / 160.0)) * 0.8); }
+  else { float bs = uPK < 8.5 ? 62.0 : 110.0, st = uPK < 8.5 ? 0.16 : 0.08; vec2 q = p / bs, cl = floor(q), f = fract(q); float street = step(min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)), st * 0.5);
+    float h = fract(sin(dot(floor(p / 15.0), vec2(12.9898, 78.233))) * 43758.5453); c *= mix(0.65 + 0.6 * h, 0.45, street);
+    if(uPK > 7.5 && uPK < 8.5) c *= 1.0 - 0.5 * smoothstep(0.6, 0.75, nh(p / 50.0));
+    if(uPK > 8.5){ float t = fract(sin(dot(cl, vec2(4.1, 7.7))) * 43758.5453); c *= mix(1.0, 1.35, step(t, 0.35) * step(length(f - 0.5), 0.25)); }
+    em = vec3(1.0, 0.7, 0.35) * step(0.985, h) * (1.0 - street) * uBdNight * 1.5; }
+  return c; }
+void main(){ vec3 w = vW - cameraPosition; float d = length(w); vec3 em;
+  vec3 c = plainCol(vW.xz, em) * uAerE + em;
+  if(uPK > 0.5 && uPK < 1.5){ vec3 r = reflect(w / max(d, 1.0), vec3(0.0, 1.0, 0.0)); c += uAerSunC * pow(max(dot(r, uAerSun), 0.0), 90.0) * 2.5; }   // the sun's glitter on the water
   float f = 1.0 - exp(-uBdFogD * uBdFogD * d * d * mix(1.0, uAerA.z + (1.0 - uAerA.z) * aerMean(w), uAerB.w));   // the same air the battlefield is seen through
   gl_FragColor = vec4(mix(c, aerColour(uBdFog, w, d), f), 1.0);
 }`;
@@ -73,14 +90,15 @@ function curtain(L, i, look, seed){ const [r, h0, h1, kind, n, haze] = L, seg = 
   const m = new THREE.Mesh(g, mat(FS, { uCol:{ value:new THREE.Color(look.base).lerp(new THREE.Color(look.hi), 0.15 * i) }, uHi:{ value:new THREE.Color(look.hi) }, uL:{ value:new THREE.Vector4(seg / 40, h1, snow, haze) } }));
   m.renderOrder = -9.3 + i * 0.1; m.frustumCulled = false; m.raycast = noHit; m.userData.backdrop = kind; return m; }
 // the hazy plain they stand on, from just past the near world to the horizon
-function plain(){ const g = new THREE.RingGeometry(380, BACKDROP.ground, 96, 24); g.rotateX(-Math.PI / 2); g.translate(0, -1.5, 0); g.setAttribute('aH', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
-  const m = new THREE.Mesh(g, mat(GS, {})); m.renderOrder = -9.5; m.frustumCulled = false; m.raycast = noHit; m.userData.backdrop = 'plain'; return m; }
+const PK = { sea:1, dunes:2, savanna:3, fields:4, forest:5, lava:6, city:7, ruins:8, industry:9 };
+function plain(L){ const g = new THREE.RingGeometry(L && (L.form === 'plateau' || L.form === 'flat') ? 150 : 380, BACKDROP.ground, 128, 28); g.rotateX(-Math.PI / 2); g.translate(0, -1.5, 0); g.setAttribute('aH', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+  const m = new THREE.Mesh(g, mat(GS, { uPK:{ value:L ? PK[L.plain] ?? 0 : 0 }, uPC:{ value:new THREE.Color(L ? L.col : 0x808080) }, uFloe:{ value:L && L.floes ? 1 : 0 } })); m.renderOrder = -9.5; m.frustumCulled = false; m.raycast = noHit; m.userData.backdrop = 'plain'; return m; }
 // (freed a while later: the stage's shader warm-up may still be compiling these materials — disposing them under it throws inside three)
 export function clearBackdrop(){ if(!BDP.g) return; const g = BDP.g; scene.remove(g); BDP.g = null; BDP.name = null; setTimeout(() => g.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }), 20000); }
 // look = { base, hi } colours of the land's ranges (world/horizon.js LOOK); called when the battlefield's horizon is built
 export function buildBackdrop(b, look){ if(BDP.g && BDP.name === b.name && !b.cave) return true;   // (the horizon is built again for the same land: the ranges stay)
   clearBackdrop(); if(!BACKDROP.on || b.cave || typeof window === 'undefined') return false; let L = BACKDROP.biomes[b.name] ?? BACKDROP.biomes._; if(typeof L === 'string') L = BACKDROP.biomes[L];
-  const g = new THREE.Group(); g.name = 'backdrop'; BDP.g = g; BDP.name = b.name; scene.add(g); g.add(plain()); const seed = (b.name.charCodeAt(0) * 7 + b.name.length * 13) % 97;
+  const LF = landform(b), g = new THREE.Group(); g.name = 'backdrop'; BDP.g = g; BDP.name = b.name; scene.add(g); g.add(plain(LF)); if(LF && LF.form === 'plateau') g.position.y = -LF.h; const seed = (b.name.charCodeAt(0) * 7 + b.name.length * 13) % 97;   // (Z428 below a plateau the land and the sea lie at the cliffs' foot)
   (MOBILE ? [L[Math.min(BACKDROP.phone, L.length - 1)]] : L).forEach((l, i) => g.add(curtain(l, MOBILE ? 1 : i, look, seed))); updateBackdrop(); return true; }
 export function updateBackdrop(){ if(!BDP.g) return; const u = BDP.u; BDP.g.visible = SKY.visible;   // (underground, with the sky, it goes) if(scene.fog){ u.uBdFog.value.copy(scene.fog.color); u.uBdFogD.value = scene.fog.density || 0; }
   u.uBdTop.value.copy(SKY.material.uniforms.top.value); u.uBdNight.value = SKY.material.uniforms.night.value; }
