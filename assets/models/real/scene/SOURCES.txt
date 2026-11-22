@@ -45,3 +45,6 @@ Z387 the soldier's four new hand weapons (assets/models/real/gun/inf, plain GLBs
 - Z425 the radar station's yard (Meshy community, CC0; batch ~/Downloads/3dnew/z425): radar_dome.glb = "weather radar station" (meshy.ai/posts/01a1ac7a-d60f-719c-8f36-f8efe671b990),
   mil_shelter.glb = a military equipment shelter (meshy.ai/posts/01a1cdea-6c6f-715f-bac8-7def6c88c36f), radar_truck.glb = "Radar" (meshy.ai/posts/radar-01a1ede8-b04b-703f-88ee-f44f01e6ce19),
   field_gen.glb = "Military Field Generator" (meshy.ai/posts/military-field-generator-01a0085c-3754-7e68-b685-6347509bb6a4), sat_dish.glb = "big satellite dish" (meshy.ai/posts/019826a2-1072-7c04-b094-11e13d82bc42)
+- Z426 the rest of the batch ~/Downloads/3dnew (Meshy community, CC0 / CC BY 4.0; review codes): block_white N02, bastion_gate N06, brownstone N07, parapet N11, horn_arch N22,
+  iron_barricade N34, scaffold_ruin N46, lighthouse N48, relay_post N50, keep_medieval N56, stone_block N64, fountain_vintage N73, bunker_door N81, fountain_temple N86,
+  tower_mage N88, wall_tall N91, elevador N20; blast_furnace.glb = an iron-ore blast furnace (CC0, meshy.ai/posts/0198b26f-8b64-7f84-b281-6c1474873708, batch ~/Downloads/3dnew/z426)

@@ -20,3 +20,5 @@ City models — where each one comes from
   bld_shoprow2 = "Faded Grandeur" (GyinKg, 01a00e4c-51f6-7e66-a805-b40567e37f96); bld_villa = a colonial villa (01a0aaac-3a52-7685-b589-45bda266e2ea);
   bld_apart / bld_glass / bld_hotel / bld_office / bld_spire / bld_palmspire / city_fountain / prop_barrier: Meshy community downloads (CC0 / CC BY 4.0), batch ~/Downloads/3dnew (file rà soát mã N04 / N72 / N82 / N27 / N61 / N47 / N38 / N76)
 - ../ruin/ruin_{block,house,villa,wall,tower}.glb (Z422): Meshy community (N74 / N85 / N89 / N78 / N35); ../ruin/ruin_chapel.glb (Z420): N55 "Silent Ruins"
+- Z426 the far skyline (batch ~/Downloads/3dnew, Meshy community): bld_burj = Burj Khalifa (N09), bld_needle = Space Needle (N90), bld_curve = a Mississauga-style curved tower (N40),
+  bld_nexus = "Skyline Nexus" (N59), bld_rise = a supertall still in its cranes (N60), bld_lm81 = a purple-lit Landmark 81 (N87; the landmark itself stays bld_landmark)

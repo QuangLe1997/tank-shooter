@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, MODE, S, WAVE, _canvasTex, _pv, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
+import { ARENA, MODE, S, WAVE, _canvasTex, _pv, realObjective, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -66,7 +66,7 @@ export function buildObjective(){
   let x=0, z=-ARENA*0.6;
   for(let t=0;t<200;t++){ const w=t<50, cx=(Math.random()*2-1)*ARENA*(w?0.5:0.75), cz=-ARENA*(w?0.48+Math.random()*0.22:0.3+Math.random()*0.5); if(inField(cx, cz, def.r+8) && !blocks.some(b=>Math.hypot(b.x-cx,b.z-cz)<b.r+def.r+2)){ x=cx; z=cz; break; } }   // Z106 inside the irregular fence   // Z405 a river across its usual band: look wider before falling back
   if(!inField(x, z, def.r+4)) [x,z]=clampFieldXZ(x, z, def.r+8);
-  const g=buildObjMesh(op.obj); g.position.set(x, heightAt(x,z), z); g.rotation.y=Math.atan2(-x,-z); g.scale.setScalar(OBJ_SCALE); g.userData.h*=OBJ_SCALE; scene.add(g);
+  const g=buildObjMesh(op.obj); realObjective(g, op.obj, def.r*2/OBJ_SCALE); g.position.set(x, heightAt(x,z), z); g.rotation.y=Math.atan2(-x,-z); g.scale.setScalar(OBJ_SCALE); g.userData.h*=OBJ_SCALE; scene.add(g);   // (Z426 the scan, when the land has them)
   const hp=Math.round(def.hp*loopHpMul()*diffHpMul()*(1+RAMP.hpPerStage*(S.stage-1)));
   const b={ mesh:g, x, z, r:def.r, hp, maxHp:hp, steel:false, loot:false, kind:'obj', fitR:true }; blocks.push(b);   // Z413 fitR: its circle as big as the drawn objective (world/solid-shape.js)
   OBJ={ def, kind:op.obj, op, b, x, z, alive:true, g, shellAt:performance.now()/1000+10, bar:getEnemyBar(), burn:0 };

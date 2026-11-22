@@ -153,10 +153,18 @@
   "tower_mage":           {"src":"monumental_stone_towe_1121153432", "err":0.2, "tris":120000, "tex":2048, "m":8000, "lodBase":60000},
   "wall_tall":            {"src":"tall_wall_tri_mid_1121161422", "tris":0, "tex":2048, "m":6000},
   "elevador":             {"src":"Elevador_Santa_Justa_1121153206", "err":0.2, "tris":100000, "tex":2048, "m":8000, "lodBase":60000},
-  "city_burj":            {"src":"Burj_Khalifa_1121162931", "err":0.25, "tris":30000, "tex":1024, "out":"city", "file":"bld_burj"},
+  "city_burj":            {"src":"Burj_Khalifa_1121162931", "err":0.25, "tris":22000, "tex":1024, "out":"city", "file":"bld_burj"},
   "city_needle":          {"src":"space_needle_3d_1121152630", "err":0.25, "tris":26000, "tex":1024, "out":"city", "file":"bld_needle"},
-  "city_curve":           {"src":"Mississauga_1121153022", "err":0.25, "tris":30000, "tex":1024, "out":"city", "file":"bld_curve"},
+  "city_curve":           {"src":"Mississauga_1121153022", "err":0.25, "tris":18000, "tex":1024, "out":"city", "file":"bld_curve"},
   "city_nexus":           {"src":"Skyline_Nexus_1121153051", "err":0.25, "tris":30000, "tex":1024, "out":"city", "file":"bld_nexus"},
   "city_rise":            {"src":"Skyward_Rise_1121163017", "err":0.25, "tris":30000, "tex":1024, "out":"city", "file":"bld_rise"},
-  "city_lm81":            {"src":"landmark_81_1121162916", "tris":0, "tex":1024, "out":"city", "file":"bld_lm81"}
+  "city_lm81":            {"src":"landmark_81_1121162916", "tris":0, "tex":1024, "out":"city", "file":"bld_lm81"},
+  "cover_hesco":          {"src":"HESCO_Cube_1122021402", "err":0.2, "rebake":true, "tris":5000, "tex":1024, "out":"cover", "file":"hesco", "hd":{"key":"cover_hesco", "px":2048}},
+  "cover_hedgehog":       {"src":"Steel_Hedgehog_1122021441", "err":0.2, "rebake":true, "tris":3000, "tex":1024, "out":"cover", "file":"hedgehog", "hd":{"key":"cover_hedgehog", "px":2048}},
+  "wonder_giza":          {"src":"Pyramids_of_gizeh_1122020804", "err":0.2, "tris":60000, "tex":2048, "out":"wonder", "file":"wonder_giza"},
+  "wonder_quarry":        {"src":"Terraced_Stone_Quarry_1121114651", "tris":0, "tex":2048, "out":"wonder", "file":"wonder_quarry"},
+  "blast_furnace":        {"src":"Blast_Furnace_1122021321", "err":0.2, "tris":120000, "tex":2048, "m":8000, "lodBase":60000},
+  "wonder_igloo":         {"src":"Arctic_igloo_1122021202", "err":0.2, "tris":6000, "tex":1024, "out":"wonder", "file":"wonder_igloo"},
+  "camp_quonset":         {"src":"Quonset_Barracks_1122021520", "err":0.2, "tris":20000, "tex":2048, "out":"camp", "file":"quonset"},
+  "camp_launcher":        {"src":"Dusty_Rocket_Launcher_1122021557", "err":0.2, "tris":20000, "tex":2048, "out":"camp", "file":"mil_launcher"}
 }

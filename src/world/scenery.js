@@ -130,6 +130,11 @@ function realSupply(gen){ if(gen !== GEN) return; for(const b of blocks){ if(b.k
       const s = SCENERY.supply.depot.w / M('fuel_depot').w, m = scenePiece('fuel_depot', s); m.scale.setScalar(s); b.mesh.add(m); continue; }
     if(b.kind !== 'fueltank' || !b.mesh || b.mesh.userData.real) continue; b.mesh.userData.real = true;
     b.mesh.traverse(o => { if(o.isMesh) o.visible = false; }); const s = SCENERY.supply.fueltank.h / M('tank_steel').h, m = scenePiece('tank_steel', s); m.scale.setScalar(s); m.rotation.y = Math.random() * Math.PI * 2; b.mesh.add(m); } }
+// Z426 THE CAMPAIGN'S TARGETS (campaign/operations.js buildObjective): the fuel depot, the radio relay, the radar site, the artillery battery and the
+//   command bunker wear scans (SCENERY.objective) w wide in the target's own units; the drawn pieces and their blinking light hide, the health bar sits over the scan
+export function realObjective(g, kind, w){ const k = SCENERY.on && SCENERY.objective[kind]; if(!k || !M(k) || typeof window === 'undefined' || /noscene/.test(location.search + location.hash)) return;
+  const D = sceneDims(k), s = w / Math.max(D.x, D.z), m = scenePiece(k, s); m.scale.setScalar(s);
+  g.traverse(o => { if(o.isMesh || o.isSprite) o.visible = false; }); g.add(m); g.userData.blink = null; g.userData.h = sceneDims(k, s).y; }
 // a level's geometry as plain floats, carried through a transform (the files are quantized: positions int16 under the node's scale)
 const _fv = new THREE.Vector3(), _fn = new THREE.Matrix3();
 function floatGeo(L, M4){ const g = L.geo, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, n = P.count, p = new Float32Array(n * 3), q = new Float32Array(n * 3), t = new Float32Array(n * 2); _fn.getNormalMatrix(M4);

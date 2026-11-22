@@ -1,7 +1,7 @@
 // world/camps.js — Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it
 import * as THREE from 'three';
 import { CAMP, HOME_GAP, LOOT, TENT } from '../../config.js';
-import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
+import { ARENA, B3, COVER_HP, COVER_K, MOBILE, S, SUPPLY, WAVE, ZONES, _canvasTex, addCoins, dressFit, addLootBeacon, addScore, bigExplode, blockTop, blocks, buildTower, burst, cMod, campLost, clearCrowd, decalScorch, deformCrater, diffHpMul, diffRewardMul, dropPowerup, enemies, fireLight, fireball, flameFX, flashMat, flattenPad, floatText, heightAt, inField, inShape, kit, latrines, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, medical, messHall, person, propTex, quartermaster, radio, registerCampBase, restArea, scanSite, scene, scrambleCrowd, segBlock, sfx, spawnDebris, spawnEnemy, spawnPart, tip, towers, unwave , photoSet } from '../hub.js';
 
 // ===== Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouring out of the hut until you level it =====
 export const CAMPS=[], TENTS=[]; export const CAMP_K=1.35, CAMP_R=31;   // Z194 the compound at the tanks' scale
@@ -50,11 +50,11 @@ export function buildCamps(){
     if(!site) continue; const [x,z]=site; flattenPad(x, z, CAMP_R*0.9, CAMP_R*1.3); const ang=(Math.random()*4|0)*Math.PI/2+(Math.random()-0.5)*0.3, ca=Math.cos(ang), sa=Math.sin(ang), at=(lx,lz)=>[x+lx*ca+lz*sa, z-lx*sa+lz*ca];
     const g=new THREE.Group(); scene.add(g); const K=CAMP_K, hp=Math.round(CAMP.hp*(1+(S.stage-1)*CAMP.hpPerStage)*loopHpMul()*diffHpMul());
     const camp={ g, x, z, ang, at, hp, maxHp:hp, nextAt:performance.now()/1000+6, alive:true, fire:null, door:at(-6,-7+4.4*K), blocks:[], huts:[] };
-    for(const [lx,lz] of [[-6,-7],[6,-7]]){ const [hx,hz]=at(lx,lz), h=makeQuonset(); h.scale.setScalar(K); h.position.set(hx,heightAt(hx,hz)-0.05,hz); h.rotation.y=ang; g.add(h); camp.huts.push(h);   // Z196 two barracks blocks, one HP pool
+    for(const [lx,lz] of [[-6,-7],[6,-7]]){ const [hx,hz]=at(lx,lz), h=makeQuonset(); h.scale.setScalar(K); h.position.set(hx,heightAt(hx,hz)-0.05,hz); h.rotation.y=ang; g.add(h); dressFit(h, 'hut'); camp.huts.push(h);   // Z196 two barracks blocks, one HP pool
       const b={ mesh:h, x:hx, z:hz, r:3.6*K, hp, maxHp:hp, steel:false, loot:!camp.blocks.length, kind:'camp', camp, obb:{ f:ang, hw:2.5*K, hl:3.6*K } }; blocks.push(b); camp.blocks.push(b); }
     camp.hut=camp.huts[0]; camp.hut2=camp.huts[1]; camp.block=camp.blocks[0]; addLootBeacon(camp.block,'block');
     { const [tx,tz]=at(24,-21); if(inField(tx,tz,4) && !blocks.some(b=>Math.hypot(b.x-tx,b.z-tz)<b.r+3)) buildTower(tx, tz); }   // a watchtower over the back corner
-    for(const lx of [-8,-2,4]){ const [tx,tz]=at(lx,-19); const tn=makeTent(); tn.scale.setScalar(1.2); tn.position.set(tx,heightAt(tx,tz)-0.03,tz); tn.rotation.y=ang; g.add(tn); addTent(tn, tx, tz, ang, 1.8*1.2, 1.3*1.2, true); }   // sleeping tents · Z402 solid, hiding, burnable
+    for(const lx of [-8,-2,4]){ const [tx,tz]=at(lx,-19); const tn=makeTent(); tn.scale.setScalar(1.2); tn.position.set(tx,heightAt(tx,tz)-0.03,tz); tn.rotation.y=ang; g.add(tn); dressFit(tn, 'tent'); addTent(tn, tx, tz, ang, 1.8*1.2, 1.3*1.2, true); }   // sleeping tents · Z402 solid, hiding, burnable
     { const [fx,fz]=at(0,4), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,8,6), campMats().dark); pole.position.set(fx,fy+4,fz); g.add(pole);   // parade-ground flag
       const fl=makeFlag(campFlagTex(),2.2,1.4,1); fl.position.set(fx,fy+7.2,fz); g.add(fl); }
     { const [cx,cz]=at(9,12), cy=heightAt(cx,cz); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,6,12), campMats().dark); ring.rotation.x=Math.PI/2; ring.position.set(cx,cy+0.08,cz); g.add(ring);   // the campfire

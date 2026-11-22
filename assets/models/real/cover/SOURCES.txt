@@ -1,0 +1,2 @@
+- Z426 (Meshy community, CC0; batch ~/Downloads/3dnew/z426): hesco.glb = "Fortress Sand Cube", a HESCO bastion (meshy.ai/posts/01a1e0cb-796c-7100-a17c-27080f66e953),
+  hedgehog.glb = "Rusty X on the Beach", a Czech hedgehog (meshy.ai/posts/019ea770-ea33-75cc-969d-d146b9aa4f83)

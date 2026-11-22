@@ -141,7 +141,11 @@ export const PHONE_LOD = { on:true, trees:true, forts:true, city:['bld_office','
 export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, reindeer:2.4, bear:1.5 }, yaw:{}, cycle:[0.7, 2.6], mobile:false };
 // Z284 real wonders (world/wonders.js dressWonder; Tripo): which battlefield's landmark becomes which model, its size against the procedural one, turn, sink
 export const REALWONDER = { windmill:{ key:'wonder_windmill', h:30, sink:0.02, yaw:-Math.PI / 2 },   // Z410 MEADOW's three windmills as the Tripo model (h m tall to its top sail; its sails face +X → yaw)
-  biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen' }, fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0 }, yaw:{}, sink:0.02 };
+  biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen', DESERT:'wonder_giza', QUARRY:'wonder_quarry' },
+  fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0, wonder_giza:1.0, wonder_quarry:1.0 }, yaw:{}, sink:0.02,
+  // Z426 the Giza pyramids and the Carrara terraces as models too; multi = a landmark of several pieces (world/wonders.js dressMulti): one model at each
+  //   [x, z, size m, 'w' width | 'h' height] in the drawn landmark's frame, scan pieces beside them (k, x, z, h) — the Inuit village's igloos and its lighthouse
+  multi:{ ARCTIC:{ key:'wonder_igloo', at:[[0, 0, 11, 'w'], [12, 6, 8.8, 'w'], [-11, 8, 9.7, 'w'], [4, -12, 7.9, 'w'], [-6, -9, 7, 'w']], scene:[{ k:'lighthouse', x:26, z:-6, h:32 }] } } };
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
 // Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
 //   hip = the saddle point · grip = [left, right] hands · peg = [left, right] feet · rear = the rear axle (wheelie pivot)
@@ -329,6 +333,10 @@ export const FORT_GAP = { w:2.6, minRep:4, bin:0.2, guard:0.8 };
 //   top × its height — it turns, the pit stays; proj: the missile scan the rockets and missiles wear in flight
 // Z425 the other rounds in flight (combat/siege-rocket.js): art = the enemy artillery's 122 mm field rocket, siege = our SIEGE rocket (a finned tactical
 //   rocket), mortar = every mortar bomb (ours, our fire teams', the towers'); len = the scan's length (m) on the drawn round, before its group's scale
+// Z426 A DRAWN PIECE WEARING A SCAN FITTED TO ITS OWN BOX (world/real-fit.js): k = the model, fit = the share of the drawn footprint it fills, yaw = its
+//   front turned onto +z first; hMax = never taller than the drawn piece × this; launcher = the rocket truck, its scan cut where the launcher begins
+//   (pod: behind that share of its length from the back, above that share of its height) so the pod turns with the drawn turntable
+export const REALFIT = { env:0.8, hMax:1.3, hut:{ k:'quonset', fit:0.98 }, tent:{ k:'base_tent', fit:0.86 }, launcher:{ k:'mil_launcher', yaw:-Math.PI / 2, pod:[0.6, 0.5], fit:1 } };
 export const REALTURRET = { gun:{ k:'turret_cannon', w:4.2, spread:0 }, mg:{ k:'turret_rws', w:3.2, spread:0.26 }, aa:{ k:'turret_aa', w:6.6, gunR:0.62, gunY:0.17, top:0.55 }, proj:{ k:'proj_missile' },
   art:{ k:'proj_rocket122', file:'rocket122', len:3.3, nose:'up' }, siege:{ k:'proj_tactical', file:'tactical', len:3.6, nose:'up' }, mortar:{ k:'proj_mortar', file:'mortar', len:1.45, nose:'up' } };
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
@@ -872,7 +880,8 @@ export const STREET = { wet:0.9, puddle:0.55, mirror:3.5, wheel:0.2, oil:0.6, pa
 //   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
 export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement:[0.72, 0.72, 0.72], lawn:[0.78, 0.9, 0.62],   // street photo albedo ×
  
-  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa' }, bld_landmark:{ role:'landmark', env:1.2 }, bld_spire:{ role:'skyline', env:1.25 }, bld_palmspire:{ role:'skyline', env:1.2 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza
+  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa' }, bld_landmark:{ role:'landmark', env:1.2 }, bld_spire:{ role:'skyline', env:1.25 }, bld_palmspire:{ role:'skyline', env:1.2 },
+    bld_burj:{ role:'skyline', env:1.25 }, bld_needle:{ role:'skyline', env:1.1 }, bld_curve:{ role:'skyline', env:1.25 }, bld_nexus:{ role:'skyline', env:1.1 }, bld_rise:{ role:'skyline', env:1.1 }, bld_lm81:{ role:'skyline', env:1.2 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza (Z426 the rest of the downloaded towers: skyline)
  
   // Z267 the street furniture (world/real-city.js prepProp): h = height, w = width, s = scale (the Poly Haven scans are true size), glow = the material that lights at night
   props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.3 }, prop_tarpcar:{ s:1.05 },
@@ -880,7 +889,9 @@ export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:
   // Z268 → Z420 the towers that stand with Landmark 81 on the skyline (world/wonders.js): k = the model, h = its height (m), turn = its bearing off the landmark's
   //   (rad), out = its distance × the landmark's, sink. The CBD reads as a cluster: the glass spire to one side (where the Bitexco stood), the Palmspire
   //   just behind and beside the landmark, the centre of the far city
-  skyline:[ { k:'bld_spire', h:124, turn:0.5, out:1.22, sink:0.03 }, { k:'bld_palmspire', h:136, turn:-0.2, out:1.42, sink:0.02 } ],
+  skyline:[ { k:'bld_spire', h:124, turn:0.5, out:1.22, sink:0.03 }, { k:'bld_palmspire', h:136, turn:-0.2, out:1.42, sink:0.02 },
+    { k:'bld_nexus', h:68, turn:-0.42, out:1.12, sink:0.02 }, { k:'bld_curve', h:108, turn:0.24, out:1.58, sink:0.02 }, { k:'bld_needle', h:74, turn:-0.78, out:1.3, sink:0.01 },
+    { k:'bld_rise', h:150, turn:-1.05, out:1.72, sink:0.02 }, { k:'bld_lm81', h:118, turn:0.78, out:1.9, sink:0.02 }, { k:'bld_burj', h:172, turn:1.08, out:2.05, sink:0.03 } ],   // Z426 a far CBD: the curved tower, the Space Needle, the tower still in its cranes, the purple-lit spire and the Burj far out
   // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]
   traffic:{ wheel:[0.33, 0.26], files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z310 wheel = the starting tyre radius [car, scooter] m (each model's own is measured from its mesh); grips = the middle of each scooter's rubber grip
@@ -955,15 +966,15 @@ export const SKY_PHOTO = { midGrey:0.24, cloudK:0.18, fogMix:0.5, minEl:0.2,
 //   how long the knees take to give (s); bounce on striking the ground (× speed) and the speed below which he does not bounce; limb spring stiffness /
 //   damping; body thickness lying down and the sag as the knees go (× the man's scale); how long he lies before he sinks away (s)
 export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.12, 0.3], bounce:0.22, bounceMin:1.1, k:36, damp:6.5, thick:0.13, sag:0.22, hold:4.2 };
-// Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (the Czech hedgehog and the HESCO stay procedural), the share of the procedural
+// Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (Z426 the Czech hedgehog and the HESCO too), the share of the procedural
 //   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
 //   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;
 //   stretch = pieces filled to the footprint on each axis (the container came out nearly cubic)
 //   Z420 the second Meshy batch: sandbag = a low sandbag barricade, concrete = a T-wall blast section, jersey = a weathered jersey barrier, container = three
 //   real boxes (variants: each container takes one by its cv, its own paint — the drawn one's paint tint is not laid over a textured box; shade = how far its
 //   brightness may wander, so a row of the same box does not read as clones)
-export const REALPROP = { kinds:['sandbag','concrete','container','crates','drums','jersey','logs','pipes','teeth','tires','wreck'], fit:0.96, hMax:1.35, env:0.6,
-  tint:{ logs:0xa07a52, pipes:0x9c9a92, teeth:0xa6a49c }, matte:['sandbag','logs','teeth','concrete','jersey','pipes'], stretch:['container'],
+export const REALPROP = { kinds:['sandbag','concrete','container','crates','drums','jersey','logs','pipes','teeth','tires','wreck','hesco','hedgehog'], fit:0.96, hMax:1.35, env:0.6,
+  tint:{ logs:0xa07a52, pipes:0x9c9a92, teeth:0xa6a49c }, matte:['sandbag','logs','teeth','concrete','jersey','pipes','hesco'], stretch:['container'],
   variants:{ container:['container', 'container_teal', 'container_red'] }, shade:{ container:[0.82, 1.0] }, trueH:{ jersey:1.0 },   // trueH: m, the piece at its real-world height (a jersey barrier stands ~0.8–1.07 m; fitted to the drawn box it stood 1.84)
   // Z420 cast concrete takes the land's tone (× its texture): sand-washed in the desert, soot-dark at the works, cold in the snow — never a white slab on the field
   cast:{ kinds:['concrete', 'jersey', 'teeth'], tint:{ _:0xcbc5b9, DESERT:0xd9c29c, SAVANNA:0xcfb592, CITADEL:0xcdb89a, QUARRY:0xd4cfc3, RUINS:0xb2ac9e, MEADOW:0xbcb7a9, HILLS:0xbcb7a9, VILLAGE:0xbcb7a9,
@@ -1549,7 +1560,8 @@ export const TROOPER = {
 //   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand; Z393 solid = this beat's own collision (else the
 //   model's), top = the most detail it ever draws ('l' mid / 'f' far: a small piece never fetches the whole scan)
 export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' bunkers and guard towers lean to the land's tone (REALPROP.cast.tint)
-  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ k:'radar_lattice', h:24, split:0.8, lv:'d' }, yard:{ radome:'radar_dome', shelter:'mil_shelter', radartruck:'radar_truck', genset:'field_gen', dish:'sat_dish' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
+  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ k:'radar_lattice', h:24, split:0.8, lv:'d' }, yard:{ radome:'radar_dome', shelter:'mil_shelter', radartruck:'radar_truck', genset:'field_gen', dish:'sat_dish' } },
+  objective:{ depot:'fuel_depot', radio:'relay_post', radar:'radar_sentinel', battery:'gun_turret', command:'bunker_door' }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan, · objective (Z426): the campaign's targets as scans (campaign/operations.js → world/scenery.js realObjective), each as wide as the target's ring
 //   h tall, split = the share of its height where the dish (which sweeps with the head) begins; yard (Z425) = the scan each of the station's drawn pieces wears (piece kind → model) · bricks: the ruined brick walls in the breached wall's stone (h, how many
 //   3 m slices, which copy, fill = the least share of a slice that must be wall — the breach and the ragged ends are left out) · city: the power poles as the transformer pole scan (h, copy), roof water tanks / masts (h, share of the roofs of those kinds, set back d ×, sunk m)
   models:{
@@ -1611,54 +1623,62 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     citadel_tower:{ h:18, ar:[0.68, 1, 0.72], sink:0.01, solid:{ r:4.0 } }, castle_wall:{ w:20, ar:[1.65, 1, 0.36], sink:0.03, solid:{ box:1 } },
     gatehouse:{ w:26, ar:[2.35, 1, 1.21], sink:0.02, solid:{ pillars:0.3 } }, skeleton_block:{ h:26, ar:[0.96, 1, 0.58], sink:0.02, solid:{ box:0.85 } },
     corner_store:{ h:18, ar:[0.8, 1, 0.67], sink:0.01, solid:{ box:0.9 } }, road_barrier:{ w:7, ar:[2.75, 1, 2.13], sink:0.02, solid:{ box:0.8 } },
-    tire_wall:{ w:6, ar:[2.64, 1, 0.6], sink:0.02, solid:{ box:0.9 } }, rebar_wall:{ w:7, ar:[2.35, 1, 0.74], sink:0.02, solid:{ box:0.9 } } },
+    tire_wall:{ w:6, ar:[2.64, 1, 0.6], sink:0.02, solid:{ box:0.9 } }, rebar_wall:{ w:7, ar:[2.35, 1, 0.74], sink:0.02, solid:{ box:0.9 } },
+    // Z426 the rest of the 94 (the 23 left over): city blocks, castle pieces, a lighthouse, the relay outpost and the bunker door (the campaign's targets too)
+    block_white:{ w:20, ar:[1.42, 1, 1.17], sink:0.02, solid:{ box:0.9 } }, bastion_gate:{ w:14, ar:[1.25, 1, 0.67], sink:0.02, solid:{ pillars:0.28 } }, brownstone:{ h:22, ar:[0.58, 1, 0.57], sink:0.01, solid:{ box:0.92 } },
+    parapet:{ one:true, w:8, ar:[2.24, 1, 0.36], sink:0.02, solid:{ box:0.9 } }, horn_arch:{ w:22, ar:[1.23, 1, 0.9], sink:0.05, solid:{ disc:0.22 } }, iron_barricade:{ w:6, ar:[2.09, 1, 0.6], sink:0.02, solid:{ box:0.9 } },
+    scaffold_ruin:{ h:24, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.9 } }, lighthouse:{ h:22, ar:[0.46, 1, 0.46], sink:0.01, solid:{ disc:0.42 } }, relay_post:{ w:14, ar:[1.41, 1, 1.41], sink:0.02, solid:{ box:0.82 } },
+    keep_medieval:{ h:24, ar:[0.52, 1, 0.93], sink:0.02, solid:{ box:0.85 } }, stone_block:{ one:true, w:10, ar:[2.18, 1, 1.46], sink:0.04, solid:{ box:0.95 } }, fountain_vintage:{ h:5, ar:[0.82, 1, 0.82], sink:0.02, solid:{ disc:0.45 } },
+    bunker_door:{ w:10, ar:[1.38, 1, 1.34], sink:0.03, solid:{ box:0.88 } }, fountain_temple:{ w:12, ar:[1.4, 1, 0.54], sink:0.02, solid:{ box:0.6 } }, tower_mage:{ h:30, ar:[0.43, 1, 0.44], sink:0.01, solid:{ disc:0.4 } },
+    wall_tall:{ one:true, w:10, ar:[1, 1, 0.23], sink:0.02, solid:{ box:0.95 } }, elevador:{ h:42, ar:[0.21, 1, 0.54], sink:0.01, solid:{ box:0.45 } },
+    blast_furnace:{ h:30, ar:[1, 1, 0.41], sink:0.01, solid:{ box:0.55 } } },
   biomes:{
     // fire and black rock: two cones smoking on the skyline, craters of live melt in the field, the road in through basalt arches, trees burning from the roots
     VOLCANO:[ { k:'lava_crater', at:'free', n:3, s:[0.8, 1.2], face:'rand' }, { k:'lava_rock_a', at:'free', n:8, s:[0.7, 1.3], face:'rand' }, { k:'lava_rock_b', at:'free', n:6, s:[0.7, 1.3], face:'rand' }, { k:'lava_rock_c', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'ember_ruin', at:'free', n:2, face:'rand' },
       { k:'volcano', at:'far', a:[[-2.75, -2.3], [-0.85, -0.4]], d:[30, 55], s:[0.9, 1.25] }, { k:'volcano', at:'far', a:[[2.6, 3.1], [0.05, 0.5]], d:[45, 70], s:[0.7, 0.95] },
       { k:'lava_pit', at:'free', n:2, s:[0.85, 1.15] }, { k:'lava_arch', at:'free', n:3, north:true, s:[0.9, 1.15] },
-      { k:'tree_ember', at:'free', n:7, s:[0.8, 1.2], face:'rand' }, { k:'tree_twisted', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'tree_bare', at:'free', n:3, s:[0.85, 1.1], face:'rand' } ],
+      { k:'tree_ember', at:'free', n:7, s:[0.8, 1.2], face:'rand' }, { k:'tree_twisted', at:'free', n:5, s:[0.8, 1.2], face:'rand' }, { k:'tree_bare', at:'free', n:3, s:[0.85, 1.1], face:'rand' }, { k:'horn_arch', at:'free', n:1, s:[0.9, 1.1], face:'rand' } ],
     // ice: white summits standing over the fence, a signal mast glowing blue in the snow, groves of snow-laden cedar, the bare trees frosted
     ARCTIC:[ { k:'ice_castle', at:'edge', a:[[-2.6, -2.0], [-1.1, -0.5]], inset:30 },
       { k:'ice_peak', at:'far', a:[[-2.8, -2.3]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[-0.85, -0.35]], d:[25, 45], s:[0.95, 1.2] }, { k:'ice_peak', at:'far', a:[[2.7, 3.1], [0.0, 0.45]], d:[40, 60], s:[0.75, 0.95] },
       { k:'cell_tower', at:'free', id:'mast', north:true }, { k:'tree_cedar', at:'cluster', id:'g1', n:3, r:12, s:[0.85, 1.1], face:'rand' }, { k:'tree_cedar', at:'cluster', id:'g2', n:3, r:12, s:[0.85, 1.1], face:'rand' },
       { k:'tree_bare', at:'free', n:5, s:[0.8, 1.15], face:'rand' }, { k:'rock_outcrop', at:'free', n:2, s:[0.8, 1] },
-      { k:'ice_peak', at:'free', n:16, s:[0.034, 0.066], face:'rand', solid:{ disc:0.42 }, top:'l' } ],   // Z393 snow-capped crags 2–4 m out on the ice (the summit scan small) in place of flora.js's cone 'ice spires'
+      { k:'ice_peak', at:'free', n:16, s:[0.034, 0.066], face:'rand', solid:{ disc:0.42 }, top:'l' }, { k:'bastion_gate', at:'free', n:1 }, { k:'bunker_door', at:'free', n:1, face:'rand' } ],   // Z393 snow-capped crags 2–4 m out on the ice (the summit scan small) in place of flora.js's cone 'ice spires'
     // sand and oil: a fuel farm of steel tanks with drums stacked round it, a siding of rail tankers, a pole line marching off, a leaning water tower, limestone kopjes
     DESERT:[ { k:'sphinx_great', at:'free', id:'sphinx', north:true, s:[0.95, 1.05] }, { k:'sphinx_small', at:'avenue', of:'sphinx', n:4, from:30, gap:12, side:10 }, { k:'rock_arch', at:'free', n:1, s:[0.9, 1.1] },
       { k:'tank_steel', at:'cluster', id:'farm', n:3, r:13, s:[0.9, 1.1] }, { k:'oil_drum', at:'around', of:'farm', n:12, r:[9, 17], s:[0.95, 1.05], face:'rand' },
       { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'power_pole', at:'line', n:7, gap:24, face:'along' },
-      { k:'wt_lean', at:'free', n:1 }, { k:'rock_outcrop', at:'free', n:3, s:[0.8, 1.15] }, { k:'tree_twisted', at:'free', n:4, s:[0.8, 1.1], face:'rand' }, { k:'tree_bare', at:'free', n:2, face:'rand' } ],
+      { k:'wt_lean', at:'free', n:1 }, { k:'rock_outcrop', at:'free', n:3, s:[0.8, 1.15] }, { k:'tree_twisted', at:'free', n:4, s:[0.8, 1.1], face:'rand' }, { k:'tree_bare', at:'free', n:2, face:'rand' }, { k:'horn_arch', at:'free', n:1, s:[0.8, 1.0], face:'rand' } ],
     // the great tree of the plain with its shade, broad oaks, kopjes of weathered stone, stumps and dead wood, a farm's leaning water tower, a pole line
     SAVANNA:[ { k:'rock_arch', at:'free', n:2, s:[0.8, 1.05] },
       { k:'tree_world', at:'free', id:'great', n:1, s:[1, 1.1] }, { k:'tree_oak', at:'free', n:3, s:[0.85, 1.1], face:'rand' }, { k:'rock_outcrop', at:'free', n:4, s:[0.75, 1.1] },
-      { k:'tree_remnant', at:'free', n:3, face:'rand' }, { k:'tree_twisted', at:'free', n:3, face:'rand' }, { k:'wt_lean', at:'free', n:1 }, { k:'power_pole', at:'line', n:5, gap:26, face:'along' } ],
+      { k:'tree_remnant', at:'free', n:3, face:'rand' }, { k:'tree_twisted', at:'free', n:3, face:'rand' }, { k:'wt_lean', at:'free', n:1 }, { k:'power_pole', at:'line', n:5, gap:26, face:'along' }, { k:'relay_post', at:'free', n:1, north:true } ],
     // green country: oak and pine woods, the old tree on the rise, a mossy moon gate and a breached garden wall, rock stacks, the overgrown dish on the far side
     MEADOW:[ { k:'belfry', at:'free', n:1 }, { k:'moss_archway', at:'free', n:1 },
       { k:'tree_world', at:'free', n:1, north:true }, { k:'tree_oak', at:'cluster', id:'w1', n:3, r:14, s:[0.85, 1.1], face:'rand' }, { k:'tree_pine', at:'cluster', id:'w2', n:4, r:12, s:[0.85, 1.15], face:'rand' },
-      { k:'moss_arch', at:'free', n:1 }, { k:'gothic_gate', at:'free', n:2 }, { k:'sea_stack', at:'free', n:2, s:[0.85, 1.1] }, { k:'radar_dish', at:'free', n:1, north:true } ],
+      { k:'moss_arch', at:'free', n:1 }, { k:'gothic_gate', at:'free', n:2 }, { k:'sea_stack', at:'free', n:2, s:[0.85, 1.1] }, { k:'radar_dish', at:'free', n:1, north:true }, { k:'keep_medieval', at:'free', n:1, north:true }, { k:'stone_block', at:'free', n:2, face:'rand' } ],
     // the ruined city of old: a temple on the far side with its two lions at the steps, breached walls, moon gates, dead giants, stumps, the dish gone to moss
     RUINS:[ { k:'ruin_overgrown', at:'free', n:1, north:true }, { k:'skeleton_block', at:'free', n:1 }, { k:'gargoyle_wall', at:'free', n:2 }, { k:'corner_store', at:'free', n:1 },
       { k:'mtn_gate', at:'far', a:[[-2.8, -2.3], [-0.85, -0.35]], d:[8, 22], s:[1, 1.2] }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
       { k:'gothic_gate', at:'free', n:4 }, { k:'moss_arch', at:'free', n:2 }, { k:'tree_sentinel', at:'free', n:2, face:'rand' }, { k:'tree_bare', at:'free', n:4, face:'rand' },
-      { k:'tree_remnant', at:'free', n:4, face:'rand' }, { k:'radar_dish', at:'free', n:1 } ],
+      { k:'tree_remnant', at:'free', n:4, face:'rand' }, { k:'radar_dish', at:'free', n:1 }, { k:'block_white', at:'free', n:1 }, { k:'wall_tall', at:'free', n:3, face:'rand' }, { k:'fountain_temple', at:'free', n:1 } ],
     // the citadel's country: a mountain with a temple gate cut in it at the fence, a marble temple with its lions, broken walls, moon gates, pines, rock stacks
-    CITADEL:[ { k:'keep_fortress', at:'free', id:'keep', north:true }, { k:'castle_wall', at:'around', of:'keep', n:3, r:[26, 32], face:'out' }, { k:'citadel_tower', at:'around', of:'keep', n:2, r:[27, 34] }, { k:'gatehouse', at:'free', n:1 },
+    CITADEL:[ { k:'keep_fortress', at:'free', id:'keep', north:true }, { k:'parapet', at:'around', of:'keep', n:4, r:[21, 26], face:'out' }, { k:'castle_wall', at:'around', of:'keep', n:3, r:[26, 32], face:'out' }, { k:'citadel_tower', at:'around', of:'keep', n:2, r:[27, 34] }, { k:'gatehouse', at:'free', n:1 },
       { k:'stone_gate', at:'edge', a:[[-2.6, -2.1], [-1.0, -0.55]], inset:18 }, { k:'temple', at:'free', id:'temple', north:true }, { k:'lion', at:'pair', of:'temple', side:8.5, fwd:15 },
-      { k:'gothic_gate', at:'free', n:2 }, { k:'moss_arch', at:'free', n:2 }, { k:'tree_pine', at:'free', n:4, face:'rand' }, { k:'sea_stack', at:'free', n:2 } ],
+      { k:'gothic_gate', at:'free', n:2 }, { k:'moss_arch', at:'free', n:2 }, { k:'tree_pine', at:'free', n:4, face:'rand' }, { k:'sea_stack', at:'free', n:2 }, { k:'keep_medieval', at:'free', n:1 }, { k:'tower_mage', at:'free', n:1, north:true }, { k:'fountain_temple', at:'free', n:1 }, { k:'stone_block', at:'free', n:2, face:'rand' } ],
     // white stone: outcrops and stacks everywhere, the old cave temple in the quarry wall, a rail siding, a water tank, drums, the pole line
     QUARRY:[ { k:'tunnel_mouth', at:'edge', a:[[2.3, 2.9], [0.3, 0.9]], inset:12 }, { k:'culvert', at:'free', n:2 }, { k:'rock_arch', at:'free', n:2 },
       { k:'stone_gate', at:'edge', a:[[-2.7, -2.1], [-1.0, -0.45]], inset:18 }, { k:'rock_outcrop', at:'free', n:6, s:[0.8, 1.2] }, { k:'sea_stack', at:'free', n:4, s:[0.85, 1.2] },
       { k:'rail_tanker', at:'line', n:3, gap:17.5, face:'along' }, { k:'tank_water', at:'cluster', id:'yard', n:1, r:2 }, { k:'oil_drum', at:'around', of:'yard', n:8, r:[7, 13], face:'rand' },
-      { k:'power_pole', at:'line', n:6, gap:24, face:'along' }, { k:'tree_twisted', at:'free', n:2, face:'rand' } ],
+      { k:'power_pole', at:'line', n:6, gap:24, face:'along' }, { k:'tree_twisted', at:'free', n:2, face:'rand' }, { k:'lighthouse', at:'free', n:1, north:true }, { k:'wall_tall', at:'free', n:2, face:'rand' }, { k:'stone_block', at:'free', n:2, face:'rand' } ],
     // the works: a tank farm, a rail siding of tankers, a signal mast, the dish, two pole lines, compound gates, drums everywhere
     FOUNDRY:[ { k:'duga_hall', at:'cluster', id:'works', n:1, r:2 }, { k:'generator', at:'around', of:'works', n:3, r:[15, 21], face:'rand' }, { k:'water_tower_brick', at:'free', n:1 }, { k:'crane_stack', at:'far', a:[[-2.4, -1.9], [-1.2, -0.7]], d:[10, 25] }, { k:'dam_gate', at:'edge', a:[[2.2, 2.9], [0.2, 0.9]], inset:14 }, { k:'culvert', at:'free', n:2 },
       { k:'tank_steel', at:'cluster', id:'farm', n:3, r:16 }, { k:'tank_water', at:'around', of:'farm', n:2, r:[16, 22] }, { k:'oil_drum', at:'around', of:'farm', n:14, r:[10, 24], face:'rand' },
       { k:'rail_tanker', at:'line', n:4, gap:17.5, face:'along' }, { k:'cell_tower', at:'free', n:1, north:true }, { k:'radar_dish', at:'free', n:1 },
       { k:'power_pole', at:'line', n:8, gap:22, face:'along' }, { k:'power_pole', at:'line', n:6, gap:22, face:'along' }, { k:'fence_gate', at:'free', n:2 },
-      { k:'wt_lean', at:'free', n:1 }, { k:'tree_bare', at:'free', n:3, face:'rand' } ],
+      { k:'wt_lean', at:'free', n:1 }, { k:'tree_bare', at:'free', n:3, face:'rand' }, { k:'bastion_gate', at:'free', n:1 }, { k:'iron_barricade', at:'free', n:2, face:'rand' }, { k:'bunker_door', at:'free', n:1, face:'rand' }, { k:'blast_furnace', at:'around', of:'works', n:2, r:[26, 32], face:'rand' } ],
     // Z422 the city's outskirts: a block gone to the creepers, a gutted frame, the cell tower, the road blocks of the checkpoints
-    CITY:[ { k:'ruin_overgrown', at:'free', n:1, north:true }, { k:'skeleton_block', at:'free', n:1 }, { k:'cell_tower', at:'free', n:1, north:true } ] } };
+    CITY:[ { k:'ruin_overgrown', at:'free', n:1, north:true }, { k:'skeleton_block', at:'free', n:1 }, { k:'cell_tower', at:'free', n:1, north:true }, { k:'brownstone', at:'free', n:2 }, { k:'scaffold_ruin', at:'free', n:1 }, { k:'fountain_vintage', at:'free', n:1 }, { k:'elevador', at:'free', n:1, north:true }, { k:'iron_barricade', at:'free', n:2, face:'rand' } ] } };
 // Z383 SKYLINE (world/scenery.js realHorizon, desktop): the horizon for real — the scanned summits, cones and crags stand between world/horizon.js's
 //   ranges (the near range hides their feet: a real massif behind its foothills), forests line the near hills, and the ruined city / the works stand
 //   round the field in place of the hazed boxes (skyline). Each entry: n pieces spread evenly round the circle (jittered), h = height or w = widest side
@@ -1670,9 +1690,9 @@ export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10, arcs:10, k
   biomes:{
     ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14 }, { k:'tree_cedar', lv:'f', n:46, h:[24, 36], r:[-8, 16], y:-3 } ] }, TUNDRA:'ARCTIC',
     VOLCANO:{ skyline:true, rings:'peak', set:[ { k:'volcano', n:5, h:[78, 118], r:[0, 45], y:-16, hz:0.22 }, { k:'lava_arch', n:7, h:[30, 50], r:[-10, 22], hz:0.2 }, { k:'tree_twisted', n:24, h:[14, 22], r:[-12, 8], y:-3 } ] },
-    QUARRY:{ set:[ { k:'rock_outcrop', n:9, w:[120, 210], r:[30, 70], y:-10 }, { k:'sea_stack', n:7, h:[38, 70], r:[0, 30], hz:0.3 }, { k:'mtn_gate', n:1, w:[170, 200], r:[45, 60], y:-10 } ] },
-    CITADEL:{ set:[ { k:'mtn_gate', n:1, w:[180, 210], r:[48, 70], y:-10 }, { k:'tree_pine', lv:'f', n:40, h:[18, 28], r:[-8, 14], y:-3 } ] },
-    MEADOW:{ set:[ { k:'tree_pine', lv:'f', n:46, h:[22, 34], r:[-10, 14], y:-3 }, { k:'tree_oak', lv:'f', n:24, h:[18, 26], r:[-6, 16], y:-3 }, { k:'tree_world', lv:'f', n:3, h:[40, 52], r:[0, 14], y:-3 },
+    QUARRY:{ set:[ { k:'lighthouse', lv:'f', n:2, h:[24, 30], r:[0, 18], y:-2, hz:0.25 }, { k:'rock_outcrop', n:9, w:[120, 210], r:[30, 70], y:-10 }, { k:'sea_stack', n:7, h:[38, 70], r:[0, 30], hz:0.3 }, { k:'mtn_gate', n:1, w:[170, 200], r:[45, 60], y:-10 } ] },
+    CITADEL:{ set:[ { k:'mtn_gate', n:1, w:[180, 210], r:[48, 70], y:-10 }, { k:'tower_mage', lv:'f', n:3, h:[34, 48], r:[0, 24], y:-2 }, { k:'tree_pine', lv:'f', n:40, h:[18, 28], r:[-8, 14], y:-3 } ] },
+    MEADOW:{ set:[ { k:'keep_medieval', lv:'f', n:2, h:[26, 34], r:[0, 20], y:-2 }, { k:'tree_pine', lv:'f', n:46, h:[22, 34], r:[-10, 14], y:-3 }, { k:'tree_oak', lv:'f', n:24, h:[18, 26], r:[-6, 16], y:-3 }, { k:'tree_world', lv:'f', n:3, h:[40, 52], r:[0, 14], y:-3 },
     ] },
     SAVANNA:{ set:[ { k:'tree_world', lv:'f', n:14, h:[26, 38], r:[-8, 16], y:-3 }, { k:'tree_oak', lv:'f', n:10, h:[16, 24], r:[-6, 14], y:-3 }, { k:'rock_outcrop', n:7, w:[70, 130], r:[10, 45], y:-8 } ] },
     DESERT:{ set:[ { k:'rock_outcrop', n:8, w:[90, 170], r:[20, 60], y:-10 }, { k:'wt_lean', lv:'f', n:4, h:[28, 36], r:[-6, 8], y:-3 }, { k:'tree_twisted', n:10, h:[12, 18], r:[-8, 8], y:-3 } ] },

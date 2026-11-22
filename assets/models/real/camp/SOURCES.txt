@@ -1,0 +1,2 @@
+- Z426 (Meshy community, CC0; batch ~/Downloads/3dnew/z426): quonset.glb = "Quonset Barracks" (meshy.ai/posts/019e7245-429c-7818-9047-5d17c6a1bb61),
+  mil_launcher.glb = "Dusty Rocket Launcher Truck" (meshy.ai/posts/019f0832-4ab2-7f5a-be7e-f3156a312faa)

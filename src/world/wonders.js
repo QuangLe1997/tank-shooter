@@ -4,8 +4,8 @@
 //   One Pillar Pagoda, an Inuit igloo camp with a lighthouse, a Saigon skyscraper, a Ruhr blast furnace. Low-poly, vertex-coloured, not targets.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { REALCITY, REALWONDER } from '../../config.js';
-import { ARENA, BIOME, MAGMA, MOBILE, REAL_CITY, _mergeColored, loadRealCity, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, spawnPart, windowLights, loadGLTF } from '../hub.js';
+import { REALCITY, REALWONDER, SCENERY } from '../../config.js';
+import { ARENA, BIOME, MAGMA, MOBILE, REAL_CITY, _mergeColored, loadRealCity, pyramidGeos, stoneMat, buildVolcano, clearVolcano, detailize, fieldR, heightAt, placeVolcano, scene, scenePiece, spawnPart, windowLights, loadGLTF } from '../hub.js';
 
 export const WONDER = { g:null, name:'', x:0, z:0, spin:[], smoke:[], at:0, a0:null };
 const P=[], PY=[]; const add=(geo,x,y,z,col,ry)=>{ if(ry) geo.rotateY(ry); geo.translate(x,y,z); P.push({ geo, col }); };
@@ -88,8 +88,8 @@ export function buildWonder(){ clearWonder(); const def=W[BIOME.name]; if(!def) 
   if(BIOME.name==='VOLCANO'){ const v=buildVolcano(); v.position.set(x, heightAt(x,z)-0.3, z); v.rotation.y=-a-Math.PI/2; g.add(v); placeVolcano(v); WONDER.x=x; WONDER.z=z;   // Z258 the real volcano: lathed cone, gullies, lava flows, crater lake
     for(const p of MAGMA.vents) WONDER.smoke.push([p.x, p.y+1, p.z]); return; }
   P.length=0; PY.length=0; def[1](); const m=new THREE.Mesh(_mergeColored(P), detailize(new THREE.MeshStandardMaterial({ vertexColors:true, roughness:0.85, metalness:0.05 }), { scale:0.25, bump:0.05, alb:0.34, foot:3, streak:0.3 })); P.length=0;
-  m.castShadow=true; m.receiveShadow=true; m.position.set(x, heightAt(x,z)-0.3, z); m.rotation.y=-a-Math.PI/2; g.add(m); WONDER.x=x; WONDER.z=z; dressWonder(g, m);   // Z284 the real landmark, once its model is in
-  if(PY.length){ const st=new THREE.Mesh(mergeGeometries(PY, false), stoneMat('large_sandstone_blocks')); PY.length=0; st.castShadow=st.receiveShadow=true; st.position.copy(m.position); st.rotation.y=m.rotation.y; g.add(st); }   // Z259 the pyramids in photographed limestone
+  m.castShadow=true; m.receiveShadow=true; m.position.set(x, heightAt(x,z)-0.3, z); m.rotation.y=-a-Math.PI/2; g.add(m); WONDER.x=x; WONDER.z=z; dressWonder(g, m); dressMulti(g, m);   // Z284 the real landmark, once its model is in (Z426 or its pieces)
+  if(PY.length){ const st=new THREE.Mesh(mergeGeometries(PY, false), stoneMat('large_sandstone_blocks')); PY.length=0; st.castShadow=st.receiveShadow=true; st.position.copy(m.position); st.rotation.y=m.rotation.y; g.add(st); m.userData.also=st; }   // Z259 the pyramids in photographed limestone
   if(BIOME.name==='FOUNDRY'){ for(const [lx,lz] of [[18,6],[24,-6],[-16,10]]){ const v=new THREE.Vector3(lx,47,lz).applyAxisAngle(new THREE.Vector3(0,1,0), m.rotation.y); WONDER.smoke.push([x+v.x, heightAt(x,z)+v.y, z+v.z]); } } }
 export function updateWonder(dt, now){ for(const s of WONDER.spin) s.rotation.z+=dt*0.6;
   if(WONDER.smoke.length && now>WONDER.at){ WONDER.at=now+(MOBILE?0.5:0.22); const q=WONDER.smoke[(Math.random()*WONDER.smoke.length)|0]; spawnPart(q[0], q[1], q[2], 1.5+Math.random(), 2.5+Math.random()*1.5, Math.random()-0.5, { color:0x3a3632, size:4+Math.random()*3, life:4, smoke:true, grav:-0.4, drag:0.4, grow:2.2, op:0.5 }); } }
@@ -99,10 +99,22 @@ export function updateWonder(dt, now){ for(const s of WONDER.spin) s.rotation.z+
 function dressWonder(g, m){ const k=REALWONDER.biomes[BIOME.name]; if(!k || typeof window==='undefined' || /procwonder/.test(location.search+location.hash)) return;
   loadGLTF(k).then(gl=>{ if(!gl || !m.parent || WONDER.g!==g) return; let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; }); if(!src) return;
     const geo=src.geometry.clone().applyMatrix4(src.matrixWorld); geo.computeBoundingBox(); let b=geo.boundingBox; geo.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); geo.computeBoundingBox(); b=geo.boundingBox;
-    m.geometry.computeBoundingBox(); const pb=m.geometry.boundingBox, ps=pb.getSize(new THREE.Vector3()), ms=b.getSize(new THREE.Vector3()), F=REALWONDER.fit[k]||1;
+    const A=m.userData.also; m.geometry.computeBoundingBox(); const pb=m.geometry.boundingBox.clone(); if(A){ A.geometry.computeBoundingBox(); pb.union(A.geometry.boundingBox); }   // (Z426 the desert's pyramids are a mesh of their own)
+    const ps=pb.getSize(new THREE.Vector3()), ms=b.getSize(new THREE.Vector3()), F=REALWONDER.fit[k]||1;
     const kk=F*Math.max(ps.x, ps.z)/Math.max(ms.x, ms.z), mat=src.material.clone(); mat.envMapIntensity=0.8;
-    const w=new THREE.Mesh(geo, mat); w.scale.setScalar(kk); w.position.set(m.position.x, m.position.y-REALWONDER.sink*ms.y*kk, m.position.z); w.rotation.y=m.rotation.y+(REALWONDER.yaw[k]||0); w.castShadow=w.receiveShadow=true;
-    m.visible=false; g.add(w); }); }
+    const c=A ? pb.getCenter(new THREE.Vector3()).setY(0).applyAxisAngle(_UP, m.rotation.y) : new THREE.Vector3();   // (stood where the pieces stood, not on the origin they were drawn round)
+    const w=new THREE.Mesh(geo, mat); w.scale.setScalar(kk); w.position.set(m.position.x+c.x, m.position.y-REALWONDER.sink*ms.y*kk, m.position.z+c.z); w.rotation.y=m.rotation.y+(REALWONDER.yaw[k]||0); w.castShadow=w.receiveShadow=true;
+    m.visible=false; if(A) A.visible=false; g.add(w); }); }
+const _UP=new THREE.Vector3(0,1,0);
+// Z426 A LANDMARK OF SEVERAL PIECES (REALWONDER.multi): the Inuit village's igloos, the steel mill's blast furnaces — one model at each of the drawn
+//   pieces' spots (x, z, size m, 'w' its width or 'h' its height, in the landmark's frame), and scan pieces beside them (the lighthouse); the drawn landmark hides
+function dressMulti(g, m){ const C=REALWONDER.multi[BIOME.name]; if(!C || typeof window==='undefined' || /procwonder/.test(location.search+location.hash)) return;
+  loadGLTF(C.key).then(gl=>{ if(!gl || !m.parent || WONDER.g!==g) return; let src=null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o=>{ if(o.isMesh && !src) src=o; }); if(!src) return;
+    const geo=src.geometry.clone().applyMatrix4(src.matrixWorld); geo.computeBoundingBox(); let b=geo.boundingBox; geo.translate(-(b.min.x+b.max.x)/2, -b.min.y, -(b.min.z+b.max.z)/2); geo.computeBoundingBox(); b=geo.boundingBox;
+    const ms=b.getSize(new THREE.Vector3()), mat=src.material.clone(), ry=m.rotation.y, at=(x, z)=>new THREE.Vector3(x, 0, z).applyAxisAngle(_UP, ry).add(m.position); mat.envMapIntensity=0.8;
+    for(const [x, z, sz, by] of C.at){ const p=at(x, z), k=sz/(by==='h' ? ms.y : Math.max(ms.x, ms.z)), w=new THREE.Mesh(geo, mat); w.scale.setScalar(k); w.position.set(p.x, heightAt(p.x, p.z)-REALWONDER.sink*ms.y*k, p.z); w.rotation.y=ry+(x*7+z*3)%6.283; w.castShadow=w.receiveShadow=true; g.add(w); }
+    for(const q of C.scene||[]){ const p=at(q.x, q.z), s=q.h/SCENERY.models[q.k].h, w=scenePiece(q.k, s); w.scale.setScalar(s); w.position.set(p.x, heightAt(p.x, p.z), p.z); w.rotation.y=ry; g.add(w); }
+    m.visible=false; }); }
 // Z410 REAL WINDMILLS: MEADOW's three hand-built windmills become the Tripo model (one shape, shared) — same spots, standing on the same ground,
 //   their sails facing the same way; the model's sails are part of its single mesh, so they stand still (a mill at rest). The hand-built ones
 //   (turning sails) stay only if the model never loads
