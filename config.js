@@ -129,9 +129,9 @@ export const REAL = {
   death:{ fwd:0.3, spin:0.22, crawl:0.16 }, crawl:{ t:[3.2,5.5], sp:0.42 },   // small-arms death: fall forward / spin down / crawl wounded, else back
   look:{ h:[0.93,1.07], w:[0.93,1.08], tint:[0.8,1.1] },         // no two men the same height, build or shade of kit
   shock:{ minScale:1.0 },                                        // blasts this big send a dust skirt racing out along the ground
-  surprise:{ first:[60,85], every:[50,90], from:{ mortar:1, ambush:1, armour:2, vbied:2, friendly:1, heli:2 }, w:{ mortar:1, ambush:1.1, armour:0.7, vbied:0.7, friendly:0.6, heli:0.5 },
+  surprise:{ first:[60,85], every:[50,90], from:{ mortar:1, ambush:1, friendly:1, heli:2 }, w:{ mortar:1, ambush:1.1, friendly:0.6, heli:0.5 },
     mortar:{ shells:7, gap:0.5, walk:3.0, R:4.2, dmg:20, warn:1.3 },
-    ambush:{ r:[14,19], squads:[1,2] }, armour:{ r:[44,56] }, vbied:{ n:[2,3] },
+    ambush:{ r:[14,19], squads:[1,2] },
     friendly:{ shells:8, R:5, dmg:80, minFoes:4 } } };
 // Z272 real aircraft (actors/real-air.js; Tripo): yaw turns the nose to +z, cutRotor = top share of the height whose blades are cut (ours spin) except
 //   within hubR × width of the mast, rotorUp = where our rotor sits (× model height above its middle), keepAbove = cut everything below that share
@@ -430,7 +430,7 @@ export const ROSTER = {
 // ============================================================================
 // CAMPAIGN OPERATIONS (Z83) — every stage is a named operation: briefing, radio chatter, scripted waves and a
 // high-value OBJECTIVE. While the objective stands it buffs the enemy (mods); destroying it pays a bounty + 1 diamond.
-//   script = { wave: event }   events: ambush (squads drop in close) · column (armoured column from one edge) · pyro · airraid
+//   script = { wave: event }   events: ambush (squads drop in close) · column (an infantry column from one edge) · airraid
 // ============================================================================
 export const OPERATIONS = [
   { title:'CHIẾN DỊCH BÃO CÁT', code:'SANDSTORM', obj:'depot', script:{ 2:'ambush', 4:'column' },
@@ -439,7 +439,7 @@ export const OPERATIONS = [
     radio:{ 1:'Phát hiện địch phía trước — thiết giáp trong đồi cát!', 2:'Bộ binh đang băng qua bãi trống. Cán qua chúng!', 3:'Trinh sát báo: chúng có một chỉ huy tên "Bò Thép".', 4:'Đoàn thiết giáp trên đường phía đông!', 5:'Đợt cuối trước khi xe chỉ huy của chúng tới. Giữ vững!' },
     boss:'BÒ THÉP đang lao tới. Nó húc rất mạnh nhưng ngu — dụ nó đâm vào tường gạch hay đá, nó sẽ choáng. Bắn vào đuôi xe!',
     win:'Kho nhiên liệu cháy rồi — xe tăng của chúng sắp cạn xăng!' },
-  { title:'CHIẾN DỊCH THÀNH PHỐ ĐỔ NÁT', code:'BROKEN CITY', obj:'radio', script:{ 2:'pyro', 4:'ambush' },
+  { title:'CHIẾN DỊCH THÀNH PHỐ ĐỔ NÁT', code:'BROKEN CITY', obj:'radio', script:{ 2:'ambush', 4:'column' },
     story:'Bò Thép gục ngã, nhưng từ thành phố đổ nát phía bắc, một trạm tiếp sóng vẫn liên tục gọi viện binh Hắc Thiết đổ về.',
     brief:'Đống đổ nát che một trạm tiếp sóng gọi viện binh không ngừng. Bịt miệng nó, rồi dọn sạch các con phố.',
     radio:{ 1:'Có chuyển động trong đống gạch vụn.', 2:'Xe phun lửa! Giữ khoảng cách!', 3:'Bắt được sóng địch: chỉ huy CUỒNG PHONG đang dẫn đội tên lửa tới.', 4:'Tổ RPG trong hẻm — coi chừng tên lửa!', 5:'Trạm tiếp sóng vẫn phát? Hạ nó ngay!' },
@@ -1447,7 +1447,7 @@ export const FORT = {
   arch:{ tall:12, tallW:5.2, bastW:4.4, bastH:4.5, flankMin:22, flankW:6.0, flankH:6.5, gateH:[12,16], gateTW:[5.2,6.4], keepW:15, keepH:34, turret:8, flagH:[20,24] },
   wakeR:52, liveInf:16, liveInfMobile:9, liveTanks:3, liveTanksMobile:2,     // wake distance (+ the fortress radius) · garrison on the field at once (refilled from the fortress pool)
   sally:[10,16], sallyInf:[3,6], sallyTank:0.4, fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
-  cmdType:'chief', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: a SMALL nimble tank (slow, deadly, leading shots) ringed by bodyguards
+  cmdType:'rifle', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: an officer on foot (no-tanks), tough, ringed by bodyguards
   ram:{ minV:6, fullV:15, gate:0.5, wall:0.55, buffMul:1.5, cd:0.4 },    // Z111 RAMMING: a hit at 15+ takes 50% of a gate / 55% of a wall section → 2 rams open either
   gate:{ open:4.5, speed:0.9, inner:5, outer:6, exitMax:18 },                       // Z111b the gate swings open for every sortie (stays open while troops file through) and shuts behind them
   posture:{ near:40, tank:10, inf:1, allyTank:4, gInf:0.6, gTank:3, holdK:0.6, every:[5,8], waveInf:4, waveTank:1 },   // Z111b we come close: our strength (tank 10×hp% + 1/soldier + 4/captured tank) ≥ 0.6× the garrison's → they SHUT THE GATE and hold; weaker → they open up and sally in waves

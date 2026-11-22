@@ -213,7 +213,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
         const hp=COVER_HP[kind]||70; blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, heavy:steel, cover:true, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }   // Z193 the yard's HESCO / concrete break too
     f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label);
     buildHatches(f);
-    const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)), tank:RI(T.tanks)+(st0>=3?1:0) };
+    const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)) };
     if(hillCfg()){ if(f.tier===3 && hillCfg().open) openCitadel(f); paveYard(f, f.x, f.z, f.openCitadel ? f.R+1 : (f.Rin||f.R*0.85)-0.6); }   // Z453 the citadel open in front, every yard paved
     f.sallyAt=performance.now()/1000+R2(FORT.sally)*(0.6+Math.random()*0.6);
     f.tunnel = f.tier===3 ? 0 : FORT.tunnel[f.tier-1]+(S.stage>=4?1:0);   // Z170 squads still hiding in the tunnels when the yard is cleared
@@ -305,7 +305,7 @@ function coreDestroyed(f, b){ for(const q of (f.coreBlocks||[b])){ const i=block
   bigExplode({x:cx,z:cz}, 0xffa040, 2.6); setTimeout(()=>bigExplode({x:cx+1.5,z:cz-1}, 0xff7a2a, 1.8), 220); for(let k=0;k<8;k++) spawnDebris({x:cx,z:cz}, 1.4, 0x8a8070);
   burst({x:cx,z:cz}, 0xb8a888, 14, 6, {y:f.gy+2, life:2.2, size:3.2, smoke:true, grav:-0.4, drag:1.4, up:2.2, op:0.6}); S.shake=Math.min(3.4, S.shake+1.6); sfx('bigexplode');
   unwave(f.core.g); f.g.remove(f.core.g); coreCrater(f); f.coreFireUntil=now+FORT.coreFire;
-  f.pool.inf=Math.floor(f.pool.inf*0.35); f.pool.tank=0;
+  f.pool.inf=Math.floor(f.pool.inf*0.35);
   const coins=Math.round((260+120*S.stage)*f.tier*loopRewardMul()); addCoins(coins); refreshWallet();
   showBanner((CORE_NAME[f.tier]||'SỞ CHỈ HUY')+' '+f.name+' ĐÃ SẬP!  +'+coins+' xu', '#ffb35a');
   radio('SCH: '+(CORE_NAME[f.tier]||'Sở chỉ huy').toLowerCase().replace(/^./,ch=>ch.toUpperCase())+' của '+f.name+' đã sập — chúng mất liên lạc, hết quân tiếp viện!'); }
@@ -455,8 +455,8 @@ function updatePosture(f, now){ if(now<f.postAt) return; f.postAt=now+0.5; const
   else if(was==='hold') f.sallyAt=Math.max(f.sallyAt, now+4); }
 // SALLY posture: the garrison itself pours out in waves (the commander and his guard stay home)
 function sortie(f, now){ if(now<(f.sortieAt||0)) return; const P=FORT.posture; f.sortieAt=now+R2(P.every);
-  let nI=0, nT=0; for(const e of f.units){ if(!enemies.includes(e) || e.exit || e.commander || e.escortOf) continue; if(Math.hypot(e.pos.x-f.x, e.pos.z-f.z) > f.R-0.5) continue;
-    if(e.def.inf ? nI<P.waveInf : nT<P.waveTank){ fortSendOut(f, e, now); if(e.def.inf) nI++; else nT++; } } }
+  let nI=0; for(const e of f.units){ if(!enemies.includes(e) || e.exit || e.commander || e.escortOf) continue; if(Math.hypot(e.pos.x-f.x, e.pos.z-f.z) > f.R-0.5) continue;
+    if(e.def.inf && nI<P.waveInf){ fortSendOut(f, e, now); nI++; } } }
 // troops (pool, sallies, wave reinforcements) are raised INSIDE, by the gate: call after spawning them
 export function fortLaunch(f, from, now){ now=now||performance.now()/1000; const lim=f.R-4;
   for(let i=from;i<enemies.length;i++){ const e=enemies[i]; const dx=e.pos.x-f.x, dz=e.pos.z-f.z, d=Math.hypot(dx,dz); if(d>lim){ e.pos.x=f.x+dx/d*lim; e.pos.z=f.z+dz/d*lim; if(e.mesh) e.mesh.position.set(e.pos.x, e.mesh.position.y, e.pos.z); }
@@ -480,22 +480,20 @@ export function wakeFort(f, now){ if(f.active) return; f.active=true;
         const e=spawnEnemy(k%3===2?'rpg':'rifle', x, z); if(!e) continue; e.fortOf=f; e.escortOf=c; e.escA=a; e.escR=r; e.guard={ kind:'escort', fort:f }; e.post=[x,z]; f.escort.push(e); }
       c.label=nameSprite(f.chief, '#ffd24a'); c.label.scale.set(10,1.9,1); c.label.position.set(0, 5.2/(c.mesh.scale.x||1), 0); c.label.scale.multiplyScalar(1/(c.mesh.scale.x||1)); c.mesh.add(c.label); } }
   showBanner(f.name+' BÁO ĐỘNG — '+f.chief+' TRẤN GIỮ', '#e0603a'); }
-function refill(f){ const live=f.units.filter(e=>enemies.includes(e)); f.units=live; let nI=0, nT=0; for(const e of live){ if(e.def.inf) nI++; else nT++; }
-  const capI=MOBILE?FORT.liveInfMobile:FORT.liveInf, capT=MOBILE?FORT.liveTanksMobile:FORT.liveTanks;
+function refill(f){ const live=f.units.filter(e=>enemies.includes(e)); f.units=live; let nI=0; for(const e of live) if(e.def.inf) nI++;
+  const capI=MOBILE?FORT.liveInfMobile:FORT.liveInf;
   if(nI<=capI-3 && f.pool.inf>0 && f.hatches && f.hatches.length){ const h=f.hatches[(Math.random()*f.hatches.length)|0], n=Math.min(f.pool.inf, 3+((Math.random()*3)|0)); popHatch(h); squadAt(f, h.x, h.z, n, true); f.pool.inf-=n; }   // Z170 a whole squad comes up from the basement
-  else if(nI<capI && f.pool.inf>0 && !(f.hatches && f.hatches.length)){ spawnInside(f, Math.random()<0.25?'rpg':'rifle'); f.pool.inf--; }
-  if(nT<capT && f.pool.tank>0){ spawnInside(f, ['grunt','gunner','shield','heavy'][Math.min(3, (Math.random()*(2+Math.min(2,S.stage/2)))|0)]); f.pool.tank--; } }
+  else if(nI<capI && f.pool.inf>0 && !(f.hatches && f.hatches.length)){ spawnInside(f, Math.random()<0.25?'rpg':'rifle'); f.pool.inf--; } }
 // the bodyguards keep their ring round the commander (posts move with him); he falls → they fight on their own
 function escortFollow(f){ if(!f.escort) return; const c=f.cmd, alive=c && enemies.includes(c);
   for(let i=f.escort.length-1;i>=0;i--){ const e=f.escort[i]; if(!enemies.includes(e)){ f.escort.splice(i,1); continue; }
     if(!alive){ e.guard=null; e.post=null; continue; } e.escA+=0.06; e.post=[c.pos.x+Math.cos(e.escA)*e.escR, c.pos.z+Math.sin(e.escA)*e.escR]; } }
-// sallies: a squad or a tank marches out of the gate onto the field
+// sallies: a squad marches out of the gate onto the field
 function sally(f, now){ f.sallyAt=now+R2(FORT.sally)*(f.tier===3?0.8:1);
   const p=S.player; if(!p || f.posture==='hold' || fortSealed(f) || f.coreDown) return;                     // Z111b a fortress that holds keeps its gate shut · Z176 no command post, no sorties
   let n=0; for(const e of enemies) if(!e.guard) n++; if(n > (MOBILE?16:26)) return;   // the field is already crowded
   const n0=enemies.length;
-  if(Math.random()<FORT.sallyTank && f.pool.tank>0){ const e=spawnEnemy(['grunt','scout','gunner','shield'][(Math.random()*4)|0], f.ix, f.iz); if(e) f.pool.tank--; }
-  else if(f.pool.inf>=3){ spawnSquad({ x:f.ix, z:f.iz }); f.pool.inf-=3; } else return;
+  if(f.pool.inf>=3){ spawnSquad({ x:f.ix, z:f.iz }); f.pool.inf-=3; } else return;
   for(let i=n0;i<enemies.length;i++) enemies[i].fortOf=f;   // Z107 sally troops belong to their fortress (they don't hold a wave open)
   fortLaunch(f, n0, now); }                                  // Z111b formed up INSIDE the gate → it swings open → they march out
 // wave reinforcements come out of a fortress gate (most of the time) instead of over the fence — raised inside, then the gate opens

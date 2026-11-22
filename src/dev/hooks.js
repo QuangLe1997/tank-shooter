@@ -1,7 +1,7 @@
 // dev/hooks.js — Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the
 // #dev console. Nothing in the game reads these; a production build may drop this module from hub.js.
 import { CONTRACTS } from '../../config.js';
-import { ART, BIOME, BIOMES, DEATH, DRONE, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, artImpact, artLockStrike, artStrikes, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageDrone, damageEnemy, damagePlayer, debris, decorGroup, deployOwnedDrone, deploySoldiers, doResize, droneBonusHp, droneDmgMul, droneOwned, dropPowerup, enemies, enemyBarPool, fireFlame, guardFireMul, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, ownGun, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnDrone, spawnEnemy, spawnTankWreck, startBoss, startGame, tankExplode, towers, trySpell, updateArtStrikes, updateArtillery, updateDeath, updateDrone, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
+import { BIOME, BIOMES, DEATH, DRONE, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, artImpact, artLockStrike, artStrikes, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageDrone, damageEnemy, damagePlayer, debris, decorGroup, deployOwnedDrone, deploySoldiers, doResize, droneBonusHp, droneDmgMul, droneOwned, dropPowerup, enemies, enemyBarPool, fireFlame, guardFireMul, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, ownGun, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnDrone, spawnEnemy, startBoss, startGame, tankExplode, towers, trySpell, updateArtStrikes, updateDeath, updateDrone, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
 
 // diagnostics hooks (used for automated testing)
 window._game = S;
@@ -17,7 +17,7 @@ window._selectGun = selectGun;
 window._openBriefing = openBriefing; window._chooseContract = chooseContract; window._cMod = cMod; Object.defineProperty(window,'_contract',{get:()=>S.contract});   // CONTRACT hooks (debug/test)
 window._GUNS = GUNS; window._impactFX = impactFX; window._tankExplode = tankExplode;   // FEEL hooks (debug/test): knock/fx
 window._updateEnemyBar = updateEnemyBar; window._enemyBarPool = enemyBarPool;   // enemy HP-bar hooks (debug/test)
-window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._artImpact = artImpact; window._updateArtillery = updateArtillery; window._updateArtStrikes = updateArtStrikes; Object.defineProperty(window,'_ART',{get:()=>ART});   // ARTILLERY hooks (debug/test)
+window._artStrikes = artStrikes; window._artLockStrike = artLockStrike; window._artImpact = artImpact; window._updateArtStrikes = updateArtStrikes;   // ARTILLERY hooks (debug/test)
 window._playerDie = playerDie; window._beginDeath = beginDeath; window._updateDeath = updateDeath; window._respawnPlayer = respawnPlayer; Object.defineProperty(window,'_DEATH',{get:()=>DEATH});   // DEATH→respawn hooks (debug/test)
 window._damagePlayer = damagePlayer; window._updateEnemies = updateEnemies;   // hit-reaction + enemy-AI hooks (debug/test)
 window._updateRockets = updateRockets;   // lobbed rounds (debug/test)
@@ -30,7 +30,7 @@ window._startBoss = startBoss;   // (debug) the general takes the field
 window._powerup = (id)=>{ const d=POWERUPS.find(x=>x.id===id); if(d) applyPowerup(d); return !!d; };   // (debug) grant a power-up
 window._view = { get camera(){return camera;}, get scene(){return scene;}, get renderer(){return renderer;}, get composer(){return composer;} };   // (debug) inspect/drive the view
 window._dbg.soldiers = soldiers; window._deploy = deploySoldiers; window._armory = ()=>{ __set_soldierLvl(soldierLvl + 1); return soldierLvl; };   // (debug) friendly squad
-window._tankExplode = tankExplode; window._wreck = spawnTankWreck;   // (debug) trigger the death FX / part-wreck
+window._tankExplode = tankExplode;   // (debug) trigger the blast FX
 window._spawnDrone = spawnDrone; window._damageDrone = (dmg)=>damageDrone(dmg,null); window._updateDrone = updateDrone; window._DRONE = DRONE; Object.defineProperty(window,'_drone',{get:()=>S.drone});   // (debug) support drone
 window._deployOwnedDrone = deployOwnedDrone; window._droneOwned = droneOwned; window._droneDmgMul = droneDmgMul; window._guardFireMul = guardFireMul; window._droneBonusHp = droneBonusHp;   // (debug) support-unit shop upgrades
 window._resize = ()=>doResize(true);   // (debug) force a refit

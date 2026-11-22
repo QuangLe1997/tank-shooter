@@ -121,7 +121,6 @@ export * from './world/rally.js';
 export * from './world/pow.js';
 export * from './world/depots.js';
 export * from './world/bridges.js';
-export * from './fx/dying.js';
 export * from './campaign/waves.js';
 export * from './campaign/boss.js';
 export * from './fx/cinematic.js';   // Z189 shock domes, fire light, our tank's hit / damage FX

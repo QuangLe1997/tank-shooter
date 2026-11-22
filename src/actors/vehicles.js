@@ -1,94 +1,18 @@
-// actors/vehicles.js — Z80 enemy VEHICLES: flame tank, ATGM tank-destroyer, engineer repair truck, attack gunship, APC dismount (Z89)
+// actors/vehicles.js — Z80 the enemy's ATTACK GUNSHIP (its airframe, flight, guns and rockets, its fall) and the laser-beam pool (no-tanks: the flame tank,
+//   the ATGM tank-destroyer, the engineer, the rocket truck and the APC dismount are gone)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, ENV, HELI, ROSTER } from '../../config.js';
-import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, dressLauncher, aoeDamage, bigExplode, bullets, burst, cMod, clampField, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, floatText, grimeMat, heightAt, inSmoke, launchEnemyMissile, loopDmgMul, loopHpMul, panelTex, radio, realCol, scene, sfx, smokeSpread, soldiers, solidTank, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, tip, wrapAngle, realAir, playerSeen } from '../hub.js';
-import { TROOPS } from '../../config.js';
+import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExplode, bullets, cMod, clampField, decalScorch, deformCrater, diffDmgMul, diffScale, enemies, enemyPool, fireball, heightAt, launchEnemyMissile, loopDmgMul, scene, sfx, smokeSpread, spawnBullet, spawnPart, tankExplode, tip, wrapAngle, realAir, playerSeen } from '../hub.js';
 
-// ===== Z116 · ROCKET TRUCK — 6×6 cab-over truck with an 8-tube rocket pod on a turntable (enemy salvo launcher / our hijacked AA + siege truck) =====
-export function makeLauncherMesh(pal){ const g=new THREE.Group(); g.rotation.order='YXZ'; const _m={}, mm=(k,f)=>_m[k]||(_m[k]=f());
-  const paint=(c)=>mm('p'+c,()=>grimeMat(new THREE.MeshStandardMaterial({ color:realCol(c), roughness:0.8, metalness:0.35, map:panelTex() }), 1));
-  const steel=mm('s',()=>new THREE.MeshStandardMaterial({ color:0x3a3b35, roughness:0.4, metalness:0.85 })), dark=mm('d',()=>new THREE.MeshStandardMaterial({ color:0x18181a, roughness:0.7, metalness:0.3 }));
-  const rub=mm('r',()=>new THREE.MeshStandardMaterial({ color:0x161512, roughness:0.95, metalness:0.05 })), glass=mm('g',()=>new THREE.MeshStandardMaterial({ color:0x0a1418, roughness:0.08, metalness:1, envMapIntensity:1.6 }));
-  const add=(par,geo,mat,x,y,z,rx,ry,rz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,rz||0); par.add(m); return m; };
-  const body=new THREE.Group(); g.add(body);
-  add(body, new THREE.BoxGeometry(1.9,0.28,4.7), steel, 0,0.78,-0.1);                                                    // ladder frame
-  for(const z of [1.55,-0.75,-1.75]) for(const sx of [-1,1]){ const w=add(g, new THREE.CylinderGeometry(0.5,0.5,0.42,16), rub, sx*1.05,0.5,z, 0,0,Math.PI/2); add(g, new THREE.CylinderGeometry(0.26,0.26,0.44,10), steel, sx*1.06,0.5,z, 0,0,Math.PI/2); }   // 6 wheels + hubs
-  for(const z of [1.55,-1.25]) add(body, new THREE.BoxGeometry(2.45,0.12,1.5), paint(pal.tread), 0,1.04,z);               // mudguards
-  add(body, new RoundedBoxGeometry(2.25,1.2,1.35,2,0.12), paint(pal.hull), 0,1.65,1.6);                                 // cab
-  add(body, new THREE.BoxGeometry(1.95,0.5,0.05), glass, 0,1.86,2.29, -0.12); for(const sx of [-1,1]) add(body, new THREE.BoxGeometry(0.05,0.42,0.7), glass, sx*1.13,1.85,1.7);   // windscreen + side windows
-  add(body, new THREE.BoxGeometry(2.1,0.32,0.12), steel, 0,1.05,2.3);                                                     // bumper
-  for(const sx of [-0.8,0.8]) add(body, new THREE.CylinderGeometry(0.09,0.1,0.06,10), mm('hl',()=>new THREE.MeshStandardMaterial({color:0xfff2d0,emissive:0xffeec0,emissiveIntensity:0.35})), sx,1.18,2.37, Math.PI/2,0,0);   // headlights
-  add(body, new THREE.BoxGeometry(2.3,0.22,3.0), paint(pal.hull), 0,1.02,-0.85);                                         // rear deck
-  for(const sx of [-1,1]) add(body, new THREE.BoxGeometry(0.28,0.5,0.9), paint(pal.tread), sx*0.95,1.38,0.3);           // fuel / stowage boxes
-  for(const sx of [-1,1]) add(body, new THREE.CylinderGeometry(0.06,0.06,0.9,6), steel, sx*1.0,0.95,-2.3, 0,0,0.6*sx); // stabiliser jacks
-  const tur=new THREE.Group(); tur.position.set(0,1.18,-1.0); body.add(tur);                                               // turntable (yaws like a turret)
-  add(tur, new THREE.CylinderGeometry(0.75,0.85,0.22,18), steel, 0,0,0);
-  const pod=new THREE.Group(); pod.position.set(0,0.55,0.2); pod.rotation.x=-0.42; tur.add(pod);                           // elevated pod
-  add(pod, new RoundedBoxGeometry(1.75,0.95,2.3,2,0.06), paint(pal.turret), 0,0,0);
-  for(const sx of [-1,1]) add(pod, new THREE.BoxGeometry(0.06,0.7,1.9), steel, sx*0.9,0,0);                              // side rails
-  for(let r=0;r<2;r++) for(let c=0;c<4;c++){ const x=-0.6+c*0.4, y=-0.2+r*0.4; add(pod, new THREE.CircleGeometry(0.15,14), dark, x,y,1.155);
-    if((r+c)%3) add(pod, new THREE.ConeGeometry(0.12,0.22,12), mm('w',()=>new THREE.MeshStandardMaterial({color:0x2a2a24,emissive:0xff6a2a,emissiveIntensity:0.35,roughness:0.5})), x,y,1.2, Math.PI/2,0,0); }   // loaded rockets peeking out
-  const muz=new THREE.Object3D(); muz.position.set(0,0.1,1.25); pod.add(muz);
-  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
-  g.userData.turret=tur; g.userData.pod=pod; g.userData.muzzle=muz; g.userData.body=body; g.userData.truck=true; g.userData.paint=Object.keys(_m).filter(k=>k[0]==='p').map(k=>[_m[k], _m[k].color.getHex()]); return dressLauncher(g); }   // Z426 the rocket truck scan (world/real-fit.js)   // Z179 paint list for world/sidepaint.js
-// Z116 rocket salvo — enemy truck lobs it at you; arcs over cover (it is a howitzer-style launcher)
-export function truckSalvo(e, tx, tz, now){ const R=ROSTER.launcher, mz=e.mesh.userData.muzzle; if(!mz) return; const _w=new THREE.Vector3();
-  for(let k=0;k<R.salvo;k++) setTimeout(()=>{ if(S.mode!=='playing' || !enemies.includes(e) || e.abandoned) return; mz.getWorldPosition(_w);
-    const gx=tx+(Math.random()-0.5)*R.spread*2, gz=tz+(Math.random()-0.5)*R.spread*2, D=Math.hypot(gx-_w.x,gz-_w.z)||1, T=D/R.speed, vy=(heightAt(gx,gz)+0.5-_w.y)/T + 0.5*4*T;
-    launchEnemyMissile(_w.x,_w.y,_w.z, Math.atan2(gx-_w.x,gz-_w.z), { speed:R.speed, dmg:R.dmg*diffDmgMul(), aoe:R.aoe, life:T+1.5, kind:'heli', vy, T }); spawnPart(_w.x,_w.y,_w.z, 0,1.5,0, {color:0xd8d0c0, size:1.4, life:0.7, smoke:true, grav:0.3, drag:2, op:0.5}); }, k*R.gap*1000); }
-// ===== Z80 · NEW ENEMY VEHICLES — flame tank, ATGM tank-destroyer, combat-engineer repair truck, attack helicopter =====
+
+export const _pv=new THREE.Vector3();   // (a shared temp)
 export const _lineMat={};
 export function makeBeam(color, op){ const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6),3));
   const m=_lineMat[color]||(_lineMat[color]=new THREE.LineBasicMaterial({color, transparent:true, opacity:op||0.8, depthWrite:false, blending:THREE.AdditiveBlending}));
   const l=new THREE.Line(g,m); l.frustumCulled=false; l.visible=false; scene.add(l); return l; }
 export function setBeam(l, ax,ay,az, bx,by,bz){ const a=l.geometry.attributes.position; a.setXYZ(0,ax,ay,az); a.setXYZ(1,bx,by,bz); a.needsUpdate=true; l.visible=true; }
 export const _beamPool=[]; export function takeBeam(){ return _beamPool.pop()||makeBeam(0xff2a2a,0.75); } export function dropBeam(l){ if(!l) return; l.visible=false; _beamPool.push(l); }
-// --- PYRO tank: charges in close and hoses you with burning fuel ---
-export const _pv=new THREE.Vector3();
-export function enemyFlame(e, d, dt, now, tgt){
-  const R=ROSTER.pyro, n=e.mesh.userData.nozzle; if(!n || d > R.range+1 || S.mode!=='playing'){ e.flaming=false; return; }
-  e.flaming=true; n.getWorldPosition(_pv); const a=Math.atan2(tgt.x-_pv.x, tgt.z-_pv.z), cx=Math.sin(a), cz=Math.cos(a);
-  for(let k=0;k<3;k++){ const aa=a+(Math.random()-0.5)*0.4, v=R.range*2.6+Math.random()*R.range;
-    spawnPart(_pv.x, _pv.y, _pv.z, Math.sin(aa)*v, 1+Math.random()*1.4, Math.cos(aa)*v, {tex:'fire', color:0xfff0c0, color2:0x8a1c0a, size:0.6+Math.random()*0.4, grow:2.2, life:0.3+Math.random()*0.18, grav:5, drag:1.8}); }
-  if(Math.random()<0.3) spawnPart(_pv.x+cx*R.range*0.7, _pv.y+1.2, _pv.z+cz*R.range*0.7, (Math.random()-0.5)*2, 1.5, (Math.random()-0.5)*2, {color:0x221a12, size:1.8, life:0.7, smoke:true, grav:-0.5, drag:1.5, op:0.4});
-  e.flT=(e.flT||0)+dt; if(e.flT < R.tick) return; e.flT=0;
-  const dmg=R.dps*R.tick*(0.75+0.25*diffScale())*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul();
-  const p=S.player, px=p.pos.x-_pv.x, pz=p.pos.z-_pv.z, pd=Math.hypot(px,pz)||1;
-  if(pd < R.range+p.radius && (px*cx+pz*cz)/pd > R.cone){ damagePlayer(dmg, now, cx, cz); }
-  for(const s of soldiers.slice()){ const sx=s.pos.x-_pv.x, sz=s.pos.z-_pv.z, sd=Math.hypot(sx,sz)||1; if(sd<R.range && (sx*cx+sz*cz)/sd > R.cone) damageSoldier(s, dmg*1.4); }
-  if(core){ const qx=core.pos.x-_pv.x, qz=core.pos.z-_pv.z, qd=Math.hypot(qx,qz)||1; if(qd<R.range+core.r && (qx*cx+qz*cz)/qd>R.cone) damageCore(dmg*0.7); }
-}
-// --- ATGM tank-destroyer: stops, paints you with a laser for a beat, then flies a wire-guided missile at you ---
-export function updateAtgm(e, d, now, tgt, dt){
-  const R=ROSTER.atgm, L=e.mesh.userData.launcher; if(!L) return;
-  if(e.aimT>0){ e.aimT-=dt; L.getWorldPosition(_pv); if(!e.laser){ e.laser=takeBeam(); tip('atgm'); }
-    const p=S.player, jit=inSmoke(now)?2.5:0.15; setBeam(e.laser, _pv.x,_pv.y,_pv.z, tgt.x+(Math.random()-0.5)*jit, heightAt(tgt.x,tgt.z)+1.3, tgt.z+(Math.random()-0.5)*jit);
-    e.laser.material.opacity = 0.45+0.4*Math.abs(Math.sin(now*24));
-    if(e.aimT<=0){ dropBeam(e.laser); e.laser=null;
-      const a=Math.atan2(tgt.x-_pv.x, tgt.z-_pv.z), dmg=R.dmg*(0.75+0.25*diffScale())*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul();
-      launchEnemyMissile(_pv.x,_pv.y,_pv.z, a, { speed:R.speed, dmg, aoe:R.aoe, guided:R.turn, life:R.life, kind:'atgm', wire:takeBeam(), src:e });
-      spawnPart(_pv.x-Math.sin(a)*1.5,_pv.y,_pv.z-Math.cos(a)*1.5, -Math.sin(a)*5,0.6,-Math.cos(a)*5, {color:0xd8d0c0, size:2.2, life:0.9, smoke:true, grav:0.2, drag:1.6, grow:1.4, op:0.5});
-      tankRecoil(e.mesh, a, 0.5, e.facing); e.fireAt=now+ROSTER.atgm.cd*(BALANCE.aggro.rateBase-BALANCE.aggro.rateDrop*diffScale())/1.6; }
-    return; }
-  if(now>e.fireAt && d < e.def.range && S.mode==='playing'){ e.aimT=R.aimT; sfx('beep', e.pos); }
-}
-// --- combat engineer: hangs back, drives up to the most battered tank and welds it back together (green arc) ---
-export function engineerPatient(e){ let best=null, bw=0; for(const o of enemies){ if(o===e || !solidTank(o) || o.def.engineer) continue;
-  const miss=1-o.hp/o.maxHp; if(miss<0.05) continue; const dd=Math.hypot(o.pos.x-e.pos.x, o.pos.z-e.pos.z); const w=miss/(1+dd*0.04); if(w>bw){ bw=w; best=o; } } return best; }
-export function updateEngineer(e, dt, now){
-  const R=ROSTER.engineer, pt=e.patient, ud=e.mesh.userData;
-  if(pt && enemies.includes(pt) && Math.hypot(pt.pos.x-e.pos.x, pt.pos.z-e.pos.z) < R.range){
-    const heal=R.heal*dt*loopHpMul(); pt.hp=Math.min(pt.maxHp, pt.hp+heal*pt.maxHp/60);
-    if(!ud.weld) ud.weld=makeBeam(0x7dff8a, 0.85); (ud.arm||e.mesh).getWorldPosition(_pv);
-    const tx=pt.pos.x+(Math.random()-0.5)*0.8, tz=pt.pos.z+(Math.random()-0.5)*0.8, ty=heightAt(tx,tz)+1.6;
-    setBeam(ud.weld, _pv.x,_pv.y,_pv.z, tx,ty,tz); ud.weld.material.opacity=0.5+0.45*Math.random();
-    if(Math.random()<0.6) spawnPart(tx,ty,tz,(Math.random()-0.5)*5,2+Math.random()*3,(Math.random()-0.5)*5,{color:Math.random()<0.5?0xbfffc8:0xfff2a0, size:0.22, life:0.3, grav:-12, drag:2});
-    if(Math.random()<0.08) floatText('+', '#7dff8a', {x:pt.pos.x, y:3, z:pt.pos.z}, 16);
-  } else if(ud.weld) ud.weld.visible=false;
-  e.hp=Math.min(e.maxHp, e.hp+R.selfHeal*dt);
-  if(ud.beacon) ud.beacon.material.emissiveIntensity = 1.5+1.5*Math.sin(now*9);
-}
 // --- ATTACK HELICOPTER: circles the fight at altitude, strafes with a chin cannon and ripples rockets. Only direct fire, flak and missiles reach it ---
 export let _heliMats=null;
 // Z198 a modern ATTACK HELICOPTER: a narrow armoured fuselage with a stepped tandem cockpit (faceted armoured glazing, frames), twin engine
@@ -215,19 +139,3 @@ export function updateHeliDown(dt){
 }
 export function clearHeliDown(){ for(const h of HELI_DOWN){ h.e.mesh.visible=false; (enemyPool[h.e.type]=enemyPool[h.e.type]||[]).push(h.e.mesh); } HELI_DOWN.length=0; }
 
-// ---- from actors/troops.js ----
-// ===== Z89 · TROOP CARRIERS — enemy APCs dismount squads; your FIRETEAM rides in on a friendly APC and fights beside the tank =====
-export let _dismountRadioAt=0;
-export function updateDismount(e, dt, now, dpl){
-  const D0=TROOPS.dismount, rmp=e.mesh.getObjectByName('ramp');
-  if(!e.unloading && !e.unloaded && e.troops>0 && dpl < D0.range && S.mode==='playing'){ e.unloading=true; e.unloadT=0; e.dropped=0;
-    tip('apc'); if(now-_dismountRadioAt>12){ _dismountRadioAt=now; radio('SCH: Xe bọc thép địch đang thả bộ binh — coi chừng tổ RPG!'); } }
-  if(!e.unloading){ if(rmp) rmp.rotation.x=Math.max(0, rmp.rotation.x-dt*2); return; }
-  e.unloadT+=dt; if(rmp) rmp.rotation.x=Math.min(1.25, e.unloadT*2.6);                                   // ramp swings down onto the dirt
-  const due=Math.floor((e.unloadT-0.5)/D0.interval)+1;
-  while(e.unloadT>0.5 && e.dropped<Math.min(due, e.troops)){ const k=e.dropped++, bx=e.pos.x-Math.sin(e.facing)*2.9*e.def.scale, bz=e.pos.z-Math.cos(e.facing)*2.9*e.def.scale;
-    const t=spawnEnemy(k===0&&S.stage>=D0.rpgFrom?'rpg':'rifle', bx+(Math.random()-0.5)*1.2, bz+(Math.random()-0.5)*1.2);
-    if(t){ const a=e.facing+Math.PI+(k%2?0.6:-0.6)*(1+k*0.25); t.kbx=Math.sin(a)*7; t.kbz=Math.cos(a)*7; t.fireAt=now+0.9+Math.random()*0.6; }   // they jog out and fan to the flanks
-    burst({x:bx,z:bz}, BIOME.ground, 2, 2, {y:0.4, life:0.6, size:1.0, smoke:true, grav:-0.3, drag:2, up:0.6, op:0.35}); }
-  if(e.dropped>=e.troops && e.unloadT > 0.5+e.troops*D0.interval+0.6){ e.unloading=false; e.unloaded=true; }
-}

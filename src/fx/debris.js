@@ -1,7 +1,7 @@
-// fx/debris.js — Z103 split from fx/explosions.js: flying hull fragments (pooled) and the charred multi-part tank WRECK.
+// fx/debris.js — Z103 split from fx/explosions.js: flying fragments (pooled) — chunks, plates, splinters (no-tanks: the tank WRECK is gone)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { SHATTER, TANK_DEATH } from '../../config.js';
+import { SHATTER } from '../../config.js';
 import { MOBILE, blastLight, heightAt, scene, spawnPart } from '../hub.js';
 
 // ----- Z203 DEBRIS: not cubes — a library of fractured shapes (faceted chunks, jagged torn plates, splinters, slivers), sized like real breakage
@@ -55,48 +55,6 @@ export function spawnDebris(pos, scale, color){ if(!SHATTER.pieces){ grit(pos, s
   for(let k=0;k<Math.round((MOBILE?3:6)*Math.min(2,scale));k++){ const aa=Math.random()*6.283, r=Math.random()*scale; spawnPart(pos.x+Math.cos(aa)*r, gy+0.6+Math.random()*scale, pos.z+Math.sin(aa)*r, Math.cos(aa)*(1+Math.random()*3), 0.8+Math.random()*1.6, Math.sin(aa)*(1+Math.random()*3), { color:dust, size:(1.2+Math.random()*1.4)*Math.sqrt(scale), life:1.4+Math.random()*1.0, smoke:true, grav:-0.25, drag:1.6, grow:1.6, op:0.45 }); }
   if(metal) for(let k=0;k<Math.round((MOBILE?5:10)*Math.min(2,scale));k++){ const aa=Math.random()*6.283, v=8+Math.random()*12; spawnPart(pos.x, gy+1.1, pos.z, Math.cos(aa)*v, 3+Math.random()*7, Math.sin(aa)*v, { color:0xfff0b0, color2:0xff5a10, size:0.12, life:0.35+Math.random()*0.4, grav:-16, drag:0.5 }); }
   for(let k=0;k<Math.round((MOBILE?4:9)*Math.min(2,scale));k++){ const aa=Math.random()*6.283, v=3+Math.random()*7; spawnPart(pos.x, gy+1.0, pos.z, Math.cos(aa)*v, 4+Math.random()*6, Math.sin(aa)*v, { color:new THREE.Color(dust).multiplyScalar(0.7).getHex(), size:0.1+Math.random()*0.08, life:0.7, grav:-18, drag:0.8 }); }   // grit
-}
-// ----- tank WRECKAGE: a dying tank is RIPPED APART into charred, jagged metal — torn armour plates, ripped shards, snapped bars, wheels — mostly scorched black with white-hot edges (NOT coloured cubes) -----
-export const WRECK_GEO = {
-  plate:  (()=>{ const g=plateGeo(); g.scale(2.0,0.8,1.5); return g; })(),   // Z203 torn armour plate (jagged outline)
-  plate2: (()=>{ const g=plateGeo(); g.scale(1.2,0.7,2.2); return g; })(),   // long torn plate
-  shard:  (()=>{ const g=sliverGeo(); g.scale(1.1,1.1,1.1); return g; })(),   // jagged ripped-metal sliver
-  shard2: (()=>{ const g=chunkGeo(0.6); g.scale(0.55,0.55,0.55); return g; })(),   // fractured chunk
-  bar:    new THREE.BoxGeometry(0.13,0.13,1.7),        // snapped rod / structural bar
-  barrel: new THREE.CylinderGeometry(0.15,0.19,2.3,9), // broken gun barrel
-  wheel:  new THREE.CylinderGeometry(0.42,0.42,0.4,14),// road wheel
-  hub:    new THREE.CylinderGeometry(0.14,0.14,0.6,9), // snapped axle/hub
-  turret: new RoundedBoxGeometry(1.25,0.48,1.45,1,0.1),// blown-off turret shell (flattened)
-};
-export const wreckPool=[];
-for(let i=0;i<170;i++){ const m=new THREE.Mesh(WRECK_GEO.shard, new THREE.MeshStandardMaterial({color:0x18150f,roughness:0.85,metalness:0.6,emissive:0xff4612,emissiveIntensity:0,transparent:true,opacity:1,flatShading:true}));
-  m.castShadow=true; m.visible=false; scene.add(m); wreckPool.push(m); }
-export const _SCORCH=[0x141210,0x1c1813,0x24201a,0x100e0b,0x2a251d];                     // charred-metal tones (most fragments)
-export const _burnt=hex=>{ const c=new THREE.Color(hex); c.multiplyScalar(0.45); return c.getHex(); };   // darkened "burnt paint" hint
-// part list: geometry key + relative size + chance to keep (burnt) paint vs scorched black
-export const _WRECK_PARTS=[ {g:'turret',sz:1.0,paint:0.6},{g:'barrel',sz:1.0,paint:0.4},{g:'plate',sz:1.0,paint:0.5},
-  {g:'plate2',sz:0.95,paint:0.4},{g:'plate',sz:0.8,paint:0.3},{g:'shard',sz:1.1,paint:0.15},{g:'shard',sz:0.85,paint:0.1},
-  {g:'shard2',sz:1.0,paint:0.12},{g:'shard2',sz:0.8,paint:0.1},{g:'bar',sz:1.0,paint:0.1},{g:'bar',sz:0.85,paint:0.1},
-  {g:'wheel',sz:1.0,paint:0},{g:'wheel',sz:0.9,paint:0},{g:'hub',sz:1.0,paint:0.1},{g:'shard',sz:0.7,paint:0.1},{g:'plate',sz:0.7,paint:0.3} ];
-export function spawnTankWreck(pos, ms, pal, cold){ pal=pal||{ hull:0x3a3a30 };   // Z402 every killed tank blows apart into these (fx/dying.js) — cold: frozen / shocked, no glow, no flames
-  const burntHull=_burnt(pal.hull), burntTur=_burnt(pal.turret||pal.hull), L=TANK_DEATH.chunkLife;
-  const rs=Math.sqrt(ms);
-  const count = ms<1.05 ? 5 : ms<1.3 ? 6 : ms<2.2 ? 8 : 10;                  // torn-off bits only — Z402 and the hull is gone with them (no wreck stays)
-  for(let pi=0; pi<count; pi++){ const part=_WRECK_PARTS[pi+1];   // skip the whole-turret slab
-    const m=wreckPool.pop(); if(!m) return;                                  // pool exhausted (huge multi-kill) → stop gracefully
-    m.geometry=WRECK_GEO[part.g];
-    let col; if(Math.random()<part.paint) col = part.g==='turret'?burntTur:burntHull; else col=_SCORCH[(Math.random()*_SCORCH.length)|0];
-    if(part.g==='wheel') col=0x0e0e0c;                                        // scorched rubber
-    m.material.color.setHex(col);
-    const s=ms*part.sz*(0.45+Math.random()*0.3); m.scale.set(s, s*(0.7+Math.random()*0.6), s*(0.8+Math.random()*0.5));   // torn plates, wheels, bars — sized like real fragments
-    const a=Math.random()*6.283, sp=(7+Math.random()*9)*rs, up=(9+Math.random()*6)*rs;            // arc out then land as visible wreckage (moderate)
-    m.position.set(pos.x+(Math.random()-0.5)*ms*0.7, 1.0+Math.random()*ms, pos.z+(Math.random()-0.5)*ms*0.7);
-    m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    m.material.emissiveIntensity=cold ? 0 : 0.45+Math.random()*0.4; m.material.opacity=1; m.visible=true;     // hot → cools to dark torn metal (Z402 a glow at the edges, not an orange slab)
-    debris.push({ m, vx:Math.cos(a)*sp, vy:up, vz:Math.sin(a)*sp,
-      rx:(Math.random()-0.5)*15, ry:(Math.random()-0.5)*15, rz:(Math.random()-0.5)*15,
-      age:0, life:L[0]+Math.random()*(L[1]-L[0]), fade:TANK_DEATH.fade, settled:false, floor:Math.max(0.14, s*0.4), pool:wreckPool, fire:!cold });   // Z402 flies, lands and fades within ~2 s — nothing of the tank stays
-  }
 }
 export function updateDebris(dt){ _landT=Math.max(0,_landT-dt*30);
   for(let i=debris.length-1;i>=0;i--){ const d=debris[i], m=d.m; d.age+=dt;

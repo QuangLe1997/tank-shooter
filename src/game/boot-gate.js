@@ -1,7 +1,7 @@
 // game/boot-gate.js — Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up,
 // and the first user gesture (audio + fullscreen).
 import * as THREE from 'three';
-import { ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, _wreckGeo, _wreckGeos, audio, buildTank, buildTransport, camTarget, camera, chute, emberTex, enemyPool, getEnemyMesh, initCloud, makeCamoNet, makeCoverMesh, makeMortarShell, makeSoldierMesh, panelTex, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat, loadRealCity, loadRealTrees, loadRealAir, initDust, holoRing } from '../hub.js';
+import { ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, audio, buildTank, buildTransport, camTarget, camera, chute, enemyPool, getEnemyMesh, initCloud, makeCamoNet, makeCoverMesh, makeMortarShell, makeSoldierMesh, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat, loadRealCity, loadRealTrees, loadRealAir, initDust, holoRing } from '../hub.js';
 
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
@@ -33,7 +33,6 @@ export async function warmUp(onStep){
     put(buildTransport()); put(chute()); put(makeCamoNet()); put(new THREE.Mesh(new THREE.BoxGeometry(0.05,2,0.05), wireMat()));
     put(holoRing(5.3, { kind:'danger' })); put(holoRing(5.3, { kind:'ally' }));   // Z318 the battle-light ring, fogged and unfogged
     { const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team','#9be04a'), transparent:true, depthWrite:false })); put(s); }
-    _wreckGeos(); put(new THREE.Mesh(_wreckGeo, new THREE.MeshStandardMaterial({ color:0x222222, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1, transparent:true })));
     { const G=towerGeos(); if(!_woodMat){ __set__woodMat(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 })); __set__tinMat(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') })); }
       put(new THREE.Mesh(G.wood,_woodMat)); put(new THREE.Mesh(G.roof,_tinMat)); }
     step(0.6); await _frame();

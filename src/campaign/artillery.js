@@ -1,14 +1,11 @@
-// campaign/artillery.js — ENEMY ARTILLERY: spotter locks, mortar strike zones with warning markers, shrapnel hit vs miss
+// campaign/artillery.js — ARTILLERY STRIKES: a locked spot (the objective battery's), the shell in flight, the burst, shrapnel hit vs miss; our own
+//   airstrike (no-tanks: the enemy's spotter SPGs and their barrage director are gone)
 import * as THREE from 'three';
 import { BALANCE } from '../../config.js';
-import { duelOn, BIOME, MODE, MOBILE, S, UNDER, aoeDamage, artyErr, artyRestMul, artyShotCut, bigExplode, blastAllies, blastLight, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, showBanner, soldiers, spawnDebris, spawnPart, tip, blRamp, holoGain, holoRing } from '../hub.js';
+import { BIOME, MODE, MOBILE, S, aoeDamage, bigExplode, blastAllies, blastLight, core, damageCore, damagePlayer, damageSoldier, decalScorch, deformCrater, dirtGeyser, enemies, enemyPool, floatText, freeEnemyBar, groundNormal, heightAt, makeArtMissileMesh, muzzleLight, ringPulse, scene, sfx, soldiers, spawnDebris, spawnPart, blRamp, holoGain, holoRing } from '../hub.js';
 
 // ===== ARTILLERY LOCK — mortar barrage: lock the player's spot → red warning ring → arcing missile slams in =====
-// Director alternates REST (calm) ↔ BARRAGE (a burst of locked strikes, warned in advance). Active only while
-// mortar spotters are alive (stage≥2). dt-countdowns → freezes cleanly on pause.
 export const artStrikes=[];                 // each: {tx,tz, state:'lock'|'fly', t, R, innerR, zone, blink, mesh, mx,my,mz, mvx,mvy,mvz}
-export let ART={ phase:'rest', t:5 };
-export function _artMortars(){ let n=0; for(const e of enemies) if(e.def.mortar) n++; return n; }
 // Z188 STRIKE ZONE · Z213 kept simple: ONE thin red ring on the ground round the spot that will be hit, blinking — slowly while the
 //   gunners lock, faster and faster as the shell nears, rapid once it is in the air (the falling shell's shadow grows inside it). No discs,
 //   stripes, closing arrows, text or rippling waves.
@@ -24,38 +21,12 @@ export function tickArtLock(zone, k, fly, now, dt){ const u=zone.userData, hot=f
   u.edge.material.opacity = blRamp(u, dt||0.016, hot ? 1 : k, 'warn', 'crit', hot ? 0.42 : 0.22); holoGain(u.edge, 2.4 + (hot ? 1.3 : k*0.9));
   if(hot){ const s=0.6+fly*u.innerR*1.25; u.shadow.scale.set(s,s,1); u.shadow.material.opacity=0.08+0.3*fly; } }
 export function disposeArtZone(zone){ if(!zone) return; scene.remove(zone); zone.traverse(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); }
-export function _pickMortar(){ const ms=[]; for(const e of enemies) if(e.def.mortar) ms.push(e); return ms.length ? ms[(Math.random()*ms.length)|0] : null; }
 export function artLockStrike(tx,tz){ if(!MODE.arty) return;   // Z403 no enemy artillery in a soldier's war
   const C=BALANCE.artillery, R=C.radius;
-  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0, rip:0, launcher:_pickMortar() });   // remember WHICH mortar fires this shell
+  artStrikes.push({ tx,tz, state:'lock', t:C.lockTime, R, innerR:R*C.innerFrac, zone:makeArtLock(tx,tz,R,R*C.innerFrac), blink:0, rip:0 });
   sfx('alarm');
 }
 // the firing mortar visibly recoils + a shell blasts UP out of its tube (so the green tank reads as the source)
-export function fireSpotter(e){
-  if(!e) e=_pickMortar(); if(!e) return;
-  const x=e.pos.x, z=e.pos.z;
-  e.hitT=Math.max(e.hitT,0.16); e.kbx+=(Math.random()-0.5)*3; e.kbz+=(Math.random()-0.5)*3;          // recoil kick
-  // Z218 the launch: a blinding flash up the tube, a hard backblast of white smoke and a ring of dust thrown off the ground round the launcher
-  spawnPart(x, 2.6, z, 0, 4, 0, { tex:'flash', color:0xfff4d8, size:4.5, life:0.08, grav:0, drag:8 });
-  for(let i=0;i<4;i++) spawnPart(x, 2.4, z, (Math.random()-0.5)*2, 6+Math.random()*6, (Math.random()-0.5)*2, { tex:'fire', color:0xfff0c0, color2:0xff6a1a, size:1.2, grow:1.4, life:0.22, grav:0, drag:4 });
-  for(let i=0;i<(MOBILE?5:10);i++){ const a=Math.random()*6.283; spawnPart(x+Math.cos(a)*0.8, 1.6+Math.random(), z+Math.sin(a)*0.8, Math.cos(a)*3, 1+Math.random()*2, Math.sin(a)*3, { color:0xe0dcd2, size:1.6+Math.random(), life:2.6+Math.random(), smoke:true, grav:0.2, drag:1.2, grow:2.2, op:0.6, keep:true }); }
-  { const gy=heightAt(x,z); for(let i=0;i<(MOBILE?7:14);i++){ const a=i/(MOBILE?7:14)*6.283; spawnPart(x+Math.cos(a)*1.2, gy+0.4, z+Math.sin(a)*1.2, Math.cos(a)*8, 0.6, Math.sin(a)*8, { color:BIOME.ground, size:1.4, life:1.4, smoke:true, grav:-0.2, drag:2.2, grow:1.8, op:0.5, keep:true }); } }
-  sfx('rocketlaunch');
-  muzzleLight.position.set(x,2.4,z); muzzleLight.color.setHex(0xffd090); muzzleLight.intensity=5;
-}
-export function updateArtillery(dt, now){ if(UNDER.on) return;   // Z226
-  const C=BALANCE.artillery, mort=_artMortars();
-  if(S.stage<2 || mort===0 || duelOn() || !MODE.arty){ if(ART.phase!=='rest'){ ART.phase='rest'; ART.t=C.restMin; } return; }   // no spotters → stand down (Z403 never in a soldier's war)
-  ART.t-=dt; if(ART.t>0) return;
-  if(ART.phase==='rest'){ tip('arty'); ART.phase='warn'; ART.t=C.warnLead; showBanner('⚠ PHÁO KÍCH — DI CHUYỂN!', '#ff5a4a'); sfx('alarm'); }
-  else if(ART.phase==='warn'){ ART.phase='barrage'; ART.shots=Math.max(1, Math.min(C.shotsMax, C.shotsBase + mort*C.shotsPerMortar) - artyShotCut()); ART.t=0; }   // Z197 no radar → fewer shells
-  else if(ART.phase==='barrage'){
-    const p=S.player, er=artyErr(), ea=Math.random()*6.283, ed=er*(0.5+Math.random()*0.7); if(p) artLockStrike(p.pos.x+Math.cos(ea)*ed, p.pos.z+Math.sin(ea)*ed);   // Z197 blind without the radar: the shells land wide     // lock the player's CURRENT spot each shot → must keep moving (the firing mortar flashes at LAUNCH)
-    ART.shots--;
-    if(ART.shots<=0){ ART.phase='rest'; ART.t=(C.restMin + Math.random()*(C.restMax-C.restMin))*artyRestMul(); }   // Z197 … and the barrages come less often
-    else ART.t=C.shotSpacing;
-  }
-}
 export const _artUP=new THREE.Vector3(0,1,0), _artDir=new THREE.Vector3(), _artRq=new THREE.Quaternion();
 export function updateArtStrikes(dt, now){
   const C=BALANCE.artillery;
@@ -65,11 +36,9 @@ export function updateArtStrikes(dt, now){
       tickArtLock(s.zone, k, lock ? null : 1-Math.max(0,s.t)/C.flightTime, now, dt); }
     s.blink-=dt; if(s.blink<=0){ s.blink=0.5-(s.state==='lock'?0.22:0.3)*(s.state==='lock'?(1-Math.max(0,s.t)/C.lockTime):1); if(S.mode==='playing') sfx('beep'); }
     if(s.state==='lock'){
-      if(s.t<=0){   // LAUNCH — shell blasts UP out of the firing mortar's tube and arcs to the locked spot
+      if(s.t<=0){   // LAUNCH — the shell arcs in to the locked spot
         s.state='fly'; s.t=C.flightTime;
-        const L=s.launcher, alive = L && enemies.indexOf(L)>=0;
-        if(alive){ s.mx=L.pos.x; s.mz=L.pos.z; s.my=2.6; fireSpotter(L); }              // origin = the mortar's tube; it recoils + flashes
-        else { const ang=Math.random()*6.283, dist=18+Math.random()*10; s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=26+Math.random()*6; sfx('rocketlaunch'); }   // fallback: from the sky if its mortar died
+        { const ang=Math.random()*6.283, dist=18+Math.random()*10; s.mx=s.tx+Math.cos(ang)*dist; s.mz=s.tz+Math.sin(ang)*dist; s.my=26+Math.random()*6; sfx('rocketlaunch'); }   // the shell comes in out of the sky
         const T=C.flightTime, G=C.gravity;
         s.mvx=(s.tx-s.mx)/T; s.mvz=(s.tz-s.mz)/T; s.mvy=G*T/2 + (heightAt(s.tx,s.tz)+0.6-s.my)/T;            // lob up then down to impact
         s.mesh=makeArtMissileMesh(); s.mesh.position.set(s.mx,s.my,s.mz); scene.add(s.mesh); sfx('whistle');   // Z188 you hear it coming
@@ -122,7 +91,7 @@ export function artImpact(s, now){
     spawnDebris(pos, 1.6, 0x33302a); S.shake=Math.min(5.5, S.shake+3.4); sfx('bigexplode'); setTimeout(()=>{ if(S.mode!=='paused') sfx('explode'); }, 130); }
   else { S.shake=Math.min(2.8, S.shake+1.1); sfx('explode'); }
 }
-export function clearArtillery(){ for(const s of artStrikes){ if(s.mesh) scene.remove(s.mesh); disposeArtZone(s.zone); } artStrikes.length=0; ART={phase:'rest', t:BALANCE.artillery.restMin}; }
+export function clearArtillery(){ for(const s of artStrikes){ if(s.mesh) scene.remove(s.mesh); disposeArtZone(s.zone); } artStrikes.length=0; }
 export function removeEnemy(e){ const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh);
   if(e.bar){ freeEnemyBar(e.bar); e.bar=null; } }   // Z111b the kamikaze's HP bar used to stay hanging in the air where it blew up
 export function airstrike(now){

@@ -10,7 +10,7 @@
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
 import { SCENERY, UNDERBASE } from '../../config.js';
-import { ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
+import { ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -71,11 +71,9 @@ function buildGate(){ const U=UNDERBASE, M=mats();
   G.lockBlk={ mesh:L, x:lx, z:lz, r:1.5, hp:1e9, maxHp:1e9, steel:false, hard:false, loot:false, kind:'ugatelock', ub:true }; blocks.push(G.lockBlk);
   G.blk={ mesh:g, x:x+Math.sin(a)*-5.2, z:z+Math.cos(a)*-5.2, r:4.2, hp:1e9, maxHp:1e9, steel:true, hard:false, loot:false, kind:'ugate' }; blocks.push(G.blk);
   for(const s of [-1,1]){ const [tx,tz]=toW(G,s*11,-1.5), T=turret(g, s*11, -1.5, tx, tz, false); G.turrets.push(T); blocks.push(T.blk); }
-  // the guard: riflemen on posts round it, armour circling it
+  // the guard: riflemen on posts round it
   const st=S.stage||1, nInf=Math.round((U.gate.guards[0]+st*U.gate.guards[1])*(MOBILE?0.7:1)), fake={ x, z, R:14, alive:true, alarm:false, hitAt:-99 };
   for(let k=0;k<nInf;k++){ const aa=k/nInf*TAU, r=R(12,17), px=x+Math.sin(aa)*r, pz=z+Math.cos(aa)*r; if(!inField(px,pz,3)) continue; const e=spawnEnemy(k%3===2?'rpg':'rifle', px, pz); if(!e) continue; e.guard={ kind:'gate', base:fake }; e.post=[px,pz]; }
-  const nt=Math.min(3, Math.round(U.gate.tanks[0]+st*U.gate.tanks[1])), TK=st>=4?['heavy','grunt','gunner']:st>=2?['grunt','gunner']:['gunner','grunt'];
-  for(let k=0;k<nt;k++){ const aa=a+Math.PI+k*2.1, px=x+Math.sin(aa)*18, pz=z+Math.cos(aa)*18; if(!inField(px,pz,5)) continue; const e=spawnEnemy(TK[k%TK.length], px, pz); if(!e) continue; e.guardBase=fake; e.guard={ kind:'gate', base:fake }; e._gA=aa; }
   G.fake=fake; G.mark=holoRing(6.6, { kind:'ally', fill:2.4, fog:false, opacity:0 });   // Z318 battle-light ally ring
   G.mark.position.set(0,0.3,-0.8); g.add(G.mark);
   UNDER.gate=G; }
@@ -204,8 +202,7 @@ function goUp(silent){ const U=UNDER, G=U.gate; if(U.busy) return; const done=()
   if(silent){ done(); return; } U.busy=true; fade(true, 'TRỞ LẠI MẶT ĐẤT'); setTimeout(()=>{ done(); setTimeout(()=>{ fade(false); U.busy=false; U.cool=performance.now()/1000+4; }, 400); }, 560); }
 function garrisonBase(){ const U=UNDER, B=U.BX, st=S.stage||1;
   for(const [x,z] of [[0,4],[-50,10],[0,-36]]) spawnSquad({ x:B+x, z });
-  const TK=st>=4?['heavy','grunt']:['grunt','gunner']; for(const [x,z] of (st>=3?[[44,-18],[44,12]]:[[44,-6]])) spawnEnemy(TK[(Math.random()*TK.length)|0], B+x, z);
-  if(st>=3) spawnEnemy('atgm', B-12, -32); }
+  if(st>=3) spawnSquad({ x:B+44, z:-6 }); }   // (no-tanks: the vehicle bay's crews fight on foot)
 
 // =================================================================== per frame ===================================================================
 export function updateUnder(dt, now){ const U=UNDER, G=U.gate, p=S.player; if(!p) return;
@@ -216,9 +213,8 @@ export function updateUnder(dt, now){ const U=UNDER, G=U.gate, p=S.player; if(!p
     for(let i=enemies.length-1;i>=0;i--){ const e=enemies[i]; if(e.pos.x<U.x0){ enemies.splice(i,1); e.mesh.visible=false; if(e.bar) e.bar.g.visible=false; U.surf.push(e); } }   // anything raised up top meanwhile waits there
     runTurrets(U.power?U.turrets:[], dt, now); const lx=p.pos.x-U.BX;
     if(!U.busy && now>U.cool && Math.abs(lx)<6.5 && p.pos.z>U.D+17) goUp(false);
-    // the base keeps feeding men and armour while its barracks / lifts stand
+    // the base keeps feeding men while its barracks / lifts stand
     const C=UNDERBASE.spawn; if(now>U.sqAt){ U.sqAt=now+R(C.squad[0],C.squad[1]); const b=U.targets.filter(o=>o.role==='inf' && o.alive); if(b.length && enemies.filter(e=>e.def.inf).length<14){ const o=b[(Math.random()*b.length)|0]; spawnSquad({ x:o.x+9, z:o.z }); } }
-    if(now>U.tkAt){ U.tkAt=now+R(C.tank[0],C.tank[1]); const v=U.targets.filter(o=>o.role==='veh' && o.alive); if(v.length && enemies.filter(e=>!e.def.inf).length<C.maxTanks){ const o=v[(Math.random()*v.length)|0]; spawnEnemy(S.stage>=4?'heavy':'grunt', o.x-9, o.z); ringPulse(_V.set(o.x-9,0,o.z), 0xe0603a, 3); } }
     // lights ride the nearest lamps; the generator hums
     if(now>(U.lAt||0)){ U.lAt=now+0.3; const near=U.lamps.map(q=>[q,(q.x-p.pos.x)**2+(q.z-p.pos.z)**2]).sort((a,b)=>a[1]-b[1]); U.lights.forEach((l,i)=>{ const q=near[i]; if(q){ l.position.set(q[0].x, 3.6, q[0].z); } }); }
     const fl=U.power?1:(0.5+0.5*Math.max(0,Math.sin(now*3.2))); for(const l of U.lights) l.intensity=UNDERBASE.lights.I*(U.power?1:0.55)*fl;

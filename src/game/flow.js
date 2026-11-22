@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CORE_DEF } from '../../config.js';
-import { duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, AID, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearArtillery, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, clearWrecks, core, deployOwnedDrone, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, freeEnemyBar, guardTarget, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, openBattleSetup } from '../hub.js';
+import { duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearArtillery, clearDrone, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deployOwnedDrone, deploySoldiers, dropCavPlayer, econReportRun, enemies, enemyPool, freeEnemyBar, guardTarget, preloadVoices, queueResize, recycleBullet, refreshStartUI, refreshWallet, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, MODE, openBattleSetup } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
@@ -41,14 +41,14 @@ export function startGame(arg){
   // clear combat
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; AID.at=0; AID.press=false; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearArtillery(); clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance(); __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
+  enemies.length=0; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearArtillery(); clearPickups(); clearGifts(); clearDrone(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance(); __set_soldierLvl(PROFILE.upgrades.troops||0); deploySoldiers(guardTarget()); deployOwnedDrone(); document.body.classList.remove('corelow'); __set__alarmAt(0);
   duelReset();   // (no-tanks: the stage's general, on foot)
   document.getElementById('bossbar').style.display='none';
   S.timeScale=1; S.awaitingUpgrade=false; S.cmd=null; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
   core.maxHp=CORE_DEF.hp; core.hp=CORE_DEF.hp; core.shieldReady=0; core.shieldUntil=0;
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
-  applyBiome(stStage); buildBlocks(); clearWrecks(); buildObjective(); buildLava(); buildUnderground(); buildTrails(); gpuRelease(held);   // Z187 lava pools go in last (clear of forts and cover) · Z225 the tunnels + the cavern
+  applyBiome(stStage); buildBlocks(); buildObjective(); buildLava(); buildUnderground(); buildTrails(); gpuRelease(held);   // Z187 lava pools go in last (clear of forts and cover) · Z225 the tunnels + the cavern
   updateWeaponHUD(); updateSpellHUD();
   WAVE.active=false; WAVE.betweenUntil=performance.now()/1000 + 0.6; WAVE.spawnQueue.length=0;
   WAVE.event=null; WAVE.eventBanner=null; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false;

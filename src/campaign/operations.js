@@ -121,8 +121,7 @@ export function applyScriptedWave(now){
   if(ev==='ambush' && p){ const n=S.stage>=3?3:2, a0=Math.random()*6.283;
     for(let k=0;k<n;k++){ const a=a0+k*(6.283/n), r=17; const [x,z]=clampFieldXZ(p.pos.x+Math.cos(a)*r, p.pos.z+Math.sin(a)*r, 4);
       setTimeout(()=>{ if(S.mode==='playing') spawnSquad({x,z}); }, 400+k*500); } }
-  else if(ev==='column'){ const col=['heavy','grunt','gunner','grunt']; if(S.stage>=3) col.push('heavy','atgm'); if(S.stage>=5) col.push('shield','heavy');
+  else if(ev==='column'){ const col=['squad','rpg','squad','rifle','rifle']; if(S.stage>=3) col.push('squad','heliTroop'); if(S.stage>=5) col.push('squad','gunship');   // (no-tanks) a column of infantry from one edge
     q.unshift(...col); WAVE.fixedEdge=Math.floor(Math.random()*4); WAVE.columnLeft=col.length; }
-  else if(ev==='pyro'){ q.splice(0,0,'pyro','grunt','pyro'); if(S.stage>=4) q.push('pyro'); }
   else if(ev==='airraid'){ q.splice(0,0,'gunship'); q.splice(3,0,'gunship'); if(S.stage>=5) q.push('gunship'); }
 }

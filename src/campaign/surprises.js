@@ -27,12 +27,6 @@ function ambush(now){ const p=S.player;
   for(let k=0;k<n;k++){ const a=back+(k-(n-1)/2)*0.9+(Math.random()-0.5)*0.5, r=rnd(C.r), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*r, p.pos.z+Math.cos(a)*r, 4);
     setTimeout(()=>{ if(S.mode==='playing'){ spawnSquad({ x, z }); for(let i=0;i<6;i++) spawnPart(x+(Math.random()-0.5)*5, heightAt(x,z)+0.4, z+(Math.random()-0.5)*5, 0, 1.2, 0, { color:0x8a7a5a, size:1.6, life:1.2, smoke:true, grav:0.1, drag:2, grow:1.6, op:0.45 }); } }, 300+k*600); }
   tell('⚠ PHỤC KÍCH SAU LƯNG!', '#ffb070', 'SCH: Bộ binh địch trồi lên phía sau — quay lại!'); return true; }
-function armour(now){ const p=S.player, C=REAL.surprise.armour, a=Math.random()*6.283, types=S.stage>=4 ? ['heavy','atgm','grunt'] : S.stage>=3 ? ['heavy','grunt','gunner'] : ['grunt','gunner'];
-  types.forEach((t,k)=>{ const r=rnd(C.r), aa=a+(k-1)*0.18, [x,z]=clampFieldXZ(p.pos.x+Math.cos(aa)*r, p.pos.z+Math.sin(aa)*r, 4); setTimeout(()=>{ if(S.mode==='playing') spawnEnemy(t, x, z); }, k*700); });
-  tell('THIẾT GIÁP ĐỊCH VU HỒI BÊN SƯỜN', '#ff8a4a', 'SCH: Một phân đội xe tăng địch đang đánh vòng sang sườn anh!'); return true; }
-function vbied(now){ const p=S.player, C=REAL.surprise.vbied, a=Math.random()*6.283, n=Math.round(rnd(C.n));
-  for(let k=0;k<n;k++){ const r=48+k*5, aa=a+(Math.random()-0.5)*0.4, [x,z]=clampFieldXZ(p.pos.x+Math.cos(aa)*r, p.pos.z+Math.sin(aa)*r, 4); setTimeout(()=>{ if(S.mode==='playing') spawnEnemy('bomber', x, z); }, k*900); }
-  tell('⚠ XE CẢM TỬ ĐANG LAO TỚI!', '#ff5a3a', 'SCH: Xe bom cảm tử — bắn hạ từ xa, đừng để nó áp sát!'); return true; }
 function heli(now){ const p=S.player, a=Math.random()*6.283, [x,z]=clampFieldXZ(p.pos.x+Math.cos(a)*55, p.pos.z+Math.sin(a)*55, 4); spawnEnemy('gunship', x, z);
   tell('⚠ TRỰC THĂNG ĐỊCH XUẤT HIỆN', '#ff7ae0', 'SCH: Có trực thăng địch vào trận địa — bộ binh chuẩn bị bắn phòng không!'); return true; }
 function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=null, bn=0;   // the thickest knot of enemies, well clear of our tank and our men
@@ -42,7 +36,7 @@ function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=nul
   for(let i=0;i<10;i++) spawnPart(cx+(Math.random()-0.5)*1.5, heightAt(cx,cz)+0.5, cz+(Math.random()-0.5)*1.5, (Math.random()-0.5)*0.6, 2.2, (Math.random()-0.5)*0.6, { color:0x6aff7a, size:1.4+Math.random(), life:2.4, smoke:true, grav:0.6, drag:1.2, grow:2.4, op:0.5 });   // green marker smoke
   for(let i=0;i<C.shells;i++){ const a=Math.random()*6.283, r=Math.random()*7; SURP.shells.push({ x:cx+Math.cos(a)*r, z:cz+Math.sin(a)*r, t:2.2+i*0.32+Math.random()*0.2, warn:0, R:C.R, dmg:C.dmg, ours:true, pulse:0, wh:false }); }
   tell('PHÁO TA CHI VIỆN!', '#9be04a', 'PHÁO BINH: Đã nhận toạ độ khói xanh — bắn hiệu quả, chú ý!'); floatText('KHÓI XANH — PHÁO TA', '#9be04a', { x:cx, y:heightAt(cx,cz)+3, z:cz }, 15); return true; }
-const EV = { mortar, ambush, armour, vbied, heli, friendly };
+const EV = { mortar, ambush, heli, friendly };
 
 function roll(now){ const C=REAL.surprise, live=enemies.length, pool=[];
   for(const k in EV){ if(S.stage<(C.from[k]||1) || k===SURP.last || (k==='mortar' && !MODE.arty)) continue;   // Z403 no enemy mortar barrage in a soldier's war

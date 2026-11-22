@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
-import { BALANCE, INFANTRY, ROSTER } from '../../config.js';
-import { duelOn, FORTS, MOBILE, MODE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, solidTank, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
+import { BALANCE, INFANTRY } from '../../config.js';
+import { duelOn, FORTS, MOBILE, MODE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -19,34 +19,18 @@ export function diffRewardMul(){ return diffCfg().reward; }
 // Z107 the wave's composition as data (also read by combat/power.js so the power rating sees exactly what the waves send)
 export function waveSize(stage, wave){ return Math.floor(BALANCE.wave.base + wave*BALANCE.wave.perWave + (stage-1)*BALANCE.wave.perStage); }   // eased: s1w1=4 → s5w5=~15
 export function waveSquads(stage, wave){ const SQ=INFANTRY.squad; return wave>=SQ.fromWave ? Math.floor(SQ.base + wave*SQ.perWave + (stage-1)*SQ.perStage) : 0; }
-export function wavePool(stage, wave){   // weighted pool; tougher/new types unlock at later stages
-  const pool=[['grunt', 5], ['scout', 2+wave*0.4], ['gunner', 1+wave*0.4+(stage-1)]];
-  if(stage>=2){ pool.push(['bomber', 1+(stage-1)*0.5]); pool.push(['mortar', 1+(stage-1)*0.6]); }
-  if(stage>=3){ pool.push(['shield', 1+(stage-2)*0.7]); pool.push(['heavy', 0.8+(stage-2)*0.5]); pool.push(['carrier', 0.7+(stage-2)*0.4]); }
-  if(stage>=4){ pool.push(['sniper', 1+(stage-3)*0.7]); }
-  for(const [ty,u] of Object.entries(ROSTER.unlock)) if(stage>=u){ const w=ROSTER.weight[ty]; pool.push([ty, w[0]+(stage-u)*w[1]]); }   // Z80 new vehicles
-  return pool; }
-export function buildWaveQueue(stage, wave){
-  if(MODE.waveQueue) return MODE.waveQueue(stage, wave);   // Z309 a mode with its own waves (the soldier's: men first, armour as a set piece)
-  const n = waveSize(stage, wave), pool = wavePool(stage, wave);
-  const tot=pool.reduce((s,pp)=>s+pp[1],0);
-  const q=[];
-  for(let i=0;i<n;i++){ let r=Math.random()*tot, t='grunt'; for(const [ty,w] of pool){ if((r-=w)<=0){ t=ty; break; } } q.push(t); }
-  { const ns=waveSquads(stage, wave); for(let k=0;k<ns;k++) q.splice(1+((Math.random()*q.length)|0), 0, 'squad'); }   // Z79 infantry squads mixed into the column
-  return q;
-}
+export function buildWaveQueue(stage, wave){ return MODE.waveQueue(stage, wave); }   // Z309 the soldier's war: men first, an attack helicopter as the set piece (campaign/soldier-war.js)
 export function rollWaveEvent(){
   WAVE.event=null; WAVE.eventBanner=null; WAVE.eventColor='#9bb0c0'; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false; WAVE.fixedEdge=null; WAVE.columnLeft=0;
   if(scriptedEvent()) return;                                   // Z83 operation script has this wave
   if(S.stage===1 && S.wave<=1 && (S.loop||0)===0) return;       // ease the very first wave of a fresh run
   if(Math.random()>=BALANCE.wave.eventChance) return;           // ~1 in 3 waves rolls an event
-  const pool=['elite','horde','treasure','assault']; if(S.stage>=2) pool.push('blitz'); if(S.stage>=3) pool.push('airraid');
+  const pool=['elite','horde','treasure','assault']; if(S.stage>=3) pool.push('airraid');
   const ev=pool[(Math.random()*pool.length)|0]; WAVE.event=ev;
   if(ev==='elite'){ WAVE.eliteForce=Math.min(4, 1+(S.stage>=4?1:0)+(S.loop||0)); WAVE.eventBanner='⚠ ĐỢT TINH NHUỆ'; WAVE.eventColor='#ffd24a'; }
   else if(ev==='horde'){ WAVE.eventBanner='ĐÀN ĐÔNG ĐANG TỚI'; WAVE.eventColor='#ff8a4a'; }
   else if(ev==='treasure'){ WAVE.treasure=true; WAVE.eventBanner='ĐỢT KHO BÁU — hạ ai cũng rơi đồ'; WAVE.eventColor='#7fe7ff'; }
   else if(ev==='assault'){ WAVE.assault=true; WAVE.eventBanner='TẤN CÔNG DỒN DẬP'; WAVE.eventColor='#ff5a4a'; }
-  else if(ev==='blitz'){ WAVE.eventBanner='CẢM TỬ Ồ ẠT'; WAVE.eventColor='#ffae5c'; }
   else if(ev==='airraid'){ WAVE.eventBanner='⚠ KHÔNG KÍCH — TRỰC THĂNG ĐANG TỚI'; WAVE.eventColor='#ff7ae0'; }
   sfx('alarm');
 }
@@ -56,8 +40,7 @@ export function startWave(now){
   if(cMod('eliteEveryWave',false)) WAVE.eliteForce=Math.max(WAVE.eliteForce, 1);   // ELITE HUNT contract: guarantee ≥1 elite/wave
   WAVE.spawnQueue = buildWaveQueue(S.stage, Math.min(S.wave, WAVE.perStage));
   if(WAVE.event==='horde'){ const ex=WAVE.spawnQueue.slice(0, Math.ceil(WAVE.spawnQueue.length*BALANCE.wave.hordeMul)); WAVE.spawnQueue.push(...ex); }   // +50% bodies
-  else if(WAVE.event==='blitz'){ WAVE.spawnQueue = WAVE.spawnQueue.map(()=>'bomber'); }
-  else if(['ambush','column','pyro','airraid'].includes(WAVE.event)) applyScriptedWave(now);   // Z83 scripted beats (airraid also from the random roll)
+  else if(['ambush','airraid'].includes(WAVE.event)) applyScriptedWave(now);   // Z83 scripted beats (airraid also from the random roll)
   trimWaveForSupply(WAVE.spawnQueue);   // Z194 lost fuel → fewer tanks · lost barracks → fewer squads
   if(objMod('gunshipPerWave',0)>0 && S.stage>=2) WAVE.spawnQueue.splice(Math.min(2,WAVE.spawnQueue.length),0,'gunship');   // Z83 radar site vectors a gunship onto every wave
   setTimeout(()=>{ if(S.mode==='playing') radio(opFor(S.stage).radio[S.wave]); }, 900);                                                // all kamikaze
@@ -107,7 +90,7 @@ export function updateWaves(dt, now){
       spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;
       if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact
       return; }
-    spawnEnemy(t, sp.x, sp.z); { const ne=enemies[n0]; if(ne && solidTank(ne) && !ne.def.air) WAVE.lastTank={ e:ne, at:now, sp }; } if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
+    spawnEnemy(t, sp.x, sp.z); if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
     WAVE.spawnAt = now + (BALANCE.wave.cadence - BALANCE.wave.cadenceDiff*diffScale())*(WAVE.assault?BALANCE.wave.assaultCadenceMul:1)*objMod('cadenceMul')*(WAVE.columnLeft>0?0.4:1);   // Z83 radio relay speeds reinforcements; a column rolls in nose-to-tail
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
   }

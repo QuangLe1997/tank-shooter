@@ -55,7 +55,7 @@ function relicBar(k){ let el=document.getElementById('relicBar');
   if(k<0){ if(el) el.classList.remove('on'); return; }
   if(!el){ el=document.createElement('div'); el.id='relicBar'; el.innerHTML='<b>THÁNH TÍCH</b><i><u></u></i><span></span>'; document.body.appendChild(el); }
   el.classList.add('on'); el.querySelector('u').style.width=(k*100).toFixed(0)+'%'; el.querySelector('span').textContent=Math.round(k*100)+'%'; }
-function challenge(){ const n=2+Math.min(3, Math.floor((S.stage||1)/2)), types=['grunt','gunner','grunt','heavy','shield'];
+function challenge(){ const n=2+Math.min(3, Math.floor((S.stage||1)/2)), types=['rifle','rpg','rifle','rpg','rifle'];
   for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, d=34+Math.random()*12; let x=RELIC.x+Math.cos(a)*d, z=RELIC.z+Math.sin(a)*d; if(!inField(x,z,6)){ x=RELIC.x-Math.cos(a)*d; z=RELIC.z-Math.sin(a)*d; }
     try{ const e=spawnEnemy(types[i%types.length], x, z); if(e){ e.relicGuard=true; } }catch(err){} }
   showBanner('THÁNH TÍCH ĐANG THỨC GIẤC — ĐỊCH KÉO TỚI PHÁ!', '#ffd27a'); radio('SCH: Địch phát hiện ta ở thánh tích — giữ vị trí, đừng rời vòng sáng!'); sfx('alarm'); }

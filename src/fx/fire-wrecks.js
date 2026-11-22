@@ -1,10 +1,9 @@
-// fx/fire-wrecks.js — REAL FIRE / FLASH / WRECKS
+// fx/fire-wrecks.js — REAL FIRE / FLASH: the flame and flash textures, particle layers and the rolling fireball (no-tanks: the burning tank wrecks are gone)
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { TANK_DEATH } from '../../config.js';
-import { BIOME, MOBILE, PL_SMOKE, _R, _canvasTex, _tankGeo, burst, decalCrater, fireLight, heightAt, makePartLayer, panelTex, scene, sfx, spawnPart } from '../hub.js';
 
-// ----------------------------- REAL FIRE / FLASH / WRECKS -----------------------------
+import { BIOME, PL_SMOKE, heightAt, makePartLayer, spawnPart } from '../hub.js';
+
 export function fireTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');   // billowing flame puff: hot core, ragged licks, soft edge
   for(let i=0;i<14;i++){ const a=Math.random()*6.283, r=Math.random()*26, cx=64+Math.cos(a)*r, cy=64+Math.sin(a)*r, R=18+Math.random()*26;
     const g=x.createRadialGradient(cx,cy,0,cx,cy,R); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.45,'rgba(255,255,255,0.22)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.arc(cx,cy,R,0,7); x.fill(); }
@@ -22,68 +21,6 @@ export function smokeTex2(){ const c=document.createElement('canvas'); c.width=c
   x.putImageData(img,0,0); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
 export const PL_FIRE = makePartLayer(fireTex(), true, 7), PL_FLASH = makePartLayer(flashTex(), true, 8);
 PL_SMOKE.mesh.material.uniforms.map.value=smokeTex2();   // denser, lumpier smoke
-// ---- burning wreck hulls + blown-off turrets (ammo cook-off) ----
-export const WRECKS=[]; export let _wreckGeo=null, _turGeo=null, _emberTex=null;
-export function emberTex(){ if(_emberTex) return _emberTex; _emberTex=_canvasTex(128,128,(x,W)=>{ x.fillStyle='#000'; x.fillRect(0,0,W,W);   // glowing seams & hot patches on charred armour
-  for(let i=0;i<11;i++){ const cx=_R(0,W), cy=_R(0,W), r=_R(3,9); const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,200,120,1)'); g.addColorStop(0.5,'rgba(255,90,20,0.6)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(cx-r,cy-r,r*2,r*2); }
-  x.strokeStyle='rgba(255,110,30,0.8)'; x.lineWidth=1.2; for(let i=0;i<5;i++){ let px=_R(0,W), py=_R(0,W); x.beginPath(); x.moveTo(px,py); for(let k=0;k<5;k++){ px+=_R(-12,12); py+=_R(-12,12); x.lineTo(px,py); } x.stroke(); } }); return _emberTex; }
-export function _wreckGeos(){ if(_wreckGeo) return; const G=_tankGeo(), parts=[G.hullLo, G.hullUp, G.track.clone().translate(-1.18,0,0), G.track.clone().translate(1.18,0,0)].map(q=>{ const n=q.index?q.toNonIndexed():q.clone(); n.clearGroups(); for(const a of Object.keys(n.attributes)) if(!['position','normal','uv'].includes(a)) n.deleteAttribute(a); return n; });
-  _wreckGeo=mergeGeometries(parts); const bar=new THREE.CylinderGeometry(0.11,0.13,2.6,10).rotateX(Math.PI/2).translate(0,0.02,2.4).toNonIndexed(); const tg=G.turret.index?G.turret.toNonIndexed():G.turret.clone(); for(const a of Object.keys(bar.attributes)) if(!tg.attributes[a]) bar.deleteAttribute(a); _turGeo=mergeGeometries([tg, bar]); }
-// Z312 THE WRECK IS THE TANK ITSELF: its own model (src), burnt black with its paint barely showing and embers dying out in it, sat down on its
-//   wheels; when the magazine goes its own turret is blown off and comes down nearby — no stand-in block hull any more. (No model → the old hull.)
-const _CH = new THREE.Color(0x15120f);
-const _path = (root, o) => { const p = []; while(o && o !== root){ if(!o.parent) return null; p.unshift(o.parent.children.indexOf(o)); o = o.parent; } return o === root ? p : null; };
-const _at = (root, p) => p.reduce((o, i) => o && o.children[i], root);
-function charred(root){ const mats = [];
-  root.traverse(o => { if(o.isSprite || o.isPoints || o.isLine || o.isLight){ o.visible = false; return; } if(!o.isMesh) return;
-    const list = Array.isArray(o.material) ? o.material : [o.material];
-    if(list.some(m => m && (m.blending === THREE.AdditiveBlending || (m.transparent && m.opacity < 0.9)))){ o.visible = false; return; }   // lamps, glows, muzzle flashes: gone
-    const out = list.map(m => { const c = m.clone(); if(c.color) c.color.lerp(_CH, 0.86); if('roughness' in c) c.roughness = 0.95; if('metalness' in c) c.metalness = 0.25;
-      if(c.emissive){ c.emissive.setHex(0xff4a12); c.emissiveIntensity = 0.4; } mats.push(c); return c; });   // (Z323 the glow as a colour only — no ember map, so the model keeps its own compiled shader: no compile stall on the kill)
-    o.material = Array.isArray(o.material) ? out : out[0]; o.castShadow = true; o.receiveShadow = true; });
-  return mats; }
-export function spawnWreck(pos, facing, ms, pal, toss, src){
-  if(!src) return blockWreck(pos, facing, ms, pal, toss);
-  if(WRECKS.length >= (MOBILE?3:6)) dropWreck(WRECKS.shift());
-  const hull = src.clone(true); hull.visible = true; const mats = charred(hull), gy = heightAt(pos.x, pos.z);
-  hull.position.set(pos.x, gy - 0.04*ms, pos.z); hull.rotation.set((Math.random()-0.5)*0.08, src.rotation.y, (Math.random()-0.5)*0.1); scene.add(hull);
-  const tp = src.userData && src.userData.turret ? _path(src, src.userData.turret) : null; let tur = null, tw = null;
-  if(tp && toss){ tur = _at(hull, tp); if(tur){ hull.updateMatrixWorld(true); tw = { p:tur.getWorldPosition(new THREE.Vector3()), q:tur.getWorldQuaternion(new THREE.Quaternion()), s:tur.getWorldScale(new THREE.Vector3()) };
-      tur.parent.remove(tur); scene.add(tur); tur.position.copy(tw.p); tur.quaternion.copy(tw.q); tur.scale.copy(tw.s); } }
-  const w={ hull, tur, mats, own:true, t:0, life:TANK_DEATH.wreck[0]+Math.random()*(TANK_DEATH.wreck[1]-TANK_DEATH.wreck[0]), ms, x:pos.x, z:pos.z,
-    tx:tw?tw.p.x:pos.x, ty:tw?tw.p.y:gy, tz:tw?tw.p.z:pos.z, tvx:0, tvy:0, tvz:0, rx:0, ry:0, rz:0, flying:!!tur, fireT:0, smokeT:0, faded:false };
-  if(tur){ const a=Math.random()*6.283, sp=(2+Math.random()*4); w.tvx=Math.cos(a)*sp; w.tvz=Math.sin(a)*sp; w.tvy=10+Math.random()*6; w.rx=(Math.random()-0.5)*6; w.ry=(Math.random()-0.5)*5; w.rz=(Math.random()-0.5)*6; }   // the magazine throws its own turret skyward
-  if(MOBILE) w.life*=0.55; WRECKS.push(w); fireLight(w, w.life*0.7); }
-function dropWreck(o){ scene.remove(o.hull); if(o.tur) scene.remove(o.tur); if(o.own) for(const m of o.mats) m.dispose(); else if(o.mat) o.mat.dispose(); }
-function blockWreck(pos, facing, ms, pal, toss){
-  _wreckGeos(); if(WRECKS.length >= (MOBILE?3:6)) dropWreck(WRECKS.shift());
-  const burnt=new THREE.Color(pal?pal.hull:0x3a3a30).multiplyScalar(0.28);
-  const mat=new THREE.MeshStandardMaterial({ color:burnt, roughness:0.95, metalness:0.3, map:panelTex(), emissive:0xff5a18, emissiveMap:emberTex(), emissiveIntensity:1.4, transparent:true });
-  const hull=new THREE.Mesh(_wreckGeo, mat); hull.scale.setScalar(ms); hull.position.set(pos.x,heightAt(pos.x,pos.z),pos.z); hull.rotation.set((Math.random()-0.5)*0.12, facing||0, (Math.random()-0.5)*0.16); hull.castShadow=true; hull.receiveShadow=true; scene.add(hull);
-  const tur=new THREE.Mesh(_turGeo, mat); tur.scale.setScalar(ms); tur.castShadow=true; scene.add(tur);
-  const w={ hull, tur, mat, t:0, life:TANK_DEATH.wreck[0]+Math.random()*(TANK_DEATH.wreck[1]-TANK_DEATH.wreck[0]), ms, x:pos.x, z:pos.z,   // Z112 burns out and sinks away fast
-    tx:pos.x, ty:1.75*ms, tz:pos.z, tvx:0, tvy:0, tvz:0, rx:0, ry:0, rz:0, flying:!!toss, fireT:0, smokeT:0 };
-  if(toss){ const a=Math.random()*6.283, sp=(3+Math.random()*6); w.tvx=Math.cos(a)*sp; w.tvz=Math.sin(a)*sp; w.tvy=13+Math.random()*7; w.rx=(Math.random()-0.5)*9; w.ry=(Math.random()-0.5)*7; w.rz=(Math.random()-0.5)*9; }   // magazine detonation throws the turret skyward
-  tur.position.set(w.tx,w.ty,w.tz); tur.rotation.y=(facing||0)+(toss?0:(Math.random()-0.5)*0.8);
-  if(MOBILE) w.life*=0.55; WRECKS.push(w); fireLight(w, w.life*0.7);   // Z189 the burning hulk lights the ground around it
-}
-export function updateWrecks(dt){
-  for(let i=WRECKS.length-1;i>=0;i--){ const w=WRECKS[i]; w.t+=dt; const k=w.t/w.life;
-    if(w.flying){ w.tvy-=30*dt; w.tx+=w.tvx*dt; w.ty+=w.tvy*dt; w.tz+=w.tvz*dt; w.tur.rotation.x+=w.rx*dt; w.tur.rotation.y+=w.ry*dt; w.tur.rotation.z+=w.rz*dt;
-      if(Math.random()<0.6) spawnPart(w.tx,w.ty,w.tz,(Math.random()-0.5),0.5,(Math.random()-0.5),{color:0x1a1612,size:1.2*w.ms,life:0.9,smoke:true,grav:-0.5,drag:1.5,op:0.5});   // trails smoke as it tumbles
-      const _tg=heightAt(w.tx,w.tz)+0.4*w.ms; if(w.ty<=_tg && w.tvy<0){ w.ty=_tg; if(Math.abs(w.tvy)>6){ w.tvy*=-0.25; w.tvx*=0.4; w.tvz*=0.4; w.rx*=0.3; w.rz*=0.3; burst({x:w.tx,z:w.tz}, BIOME.ground, 4, 4, {y:0.4,life:0.8,size:1.6,smoke:true,grav:-0.4,drag:2,up:1.5,op:0.5}); sfx('thud'); decalCrater(w.tx,w.tz,0.9*w.ms,0.6); }
-        else { w.flying=false; w.tur.rotation.x=Math.round(w.tur.rotation.x/Math.PI)*Math.PI+(Math.random()-0.5)*0.4; w.tur.rotation.z=(Math.random()-0.5)*0.5; } }
-      w.tur.position.set(w.tx,w.ty,w.tz); }
-    { const ei=Math.max(0.06, 1.4*(1-w.t/4))*(0.85+0.15*Math.sin(w.t*9+w.x)); if(w.own){ for(const m of w.mats) if(m.emissive) m.emissiveIntensity=ei*0.3; } else w.mat.emissiveIntensity=ei; }             // embers smoulder, flicker and cool
-    const burn = w.t < w.life*0.7 ? 1 - w.t/(w.life*0.7) : 0;
-    w.fireT-=dt; if(burn>0 && w.fireT<=0){ w.fireT=0.05+(1-burn)*0.12; const ox=(Math.random()-0.5)*2.2*w.ms, oz=(Math.random()-0.5)*3*w.ms;   // flames licking out of the hull hatches
-      spawnPart(w.x+ox, 1.3*w.ms, w.z+oz, (Math.random()-0.5)*0.8, 2.4+Math.random()*2, (Math.random()-0.5)*0.8, {tex:'fire', color:0xffd090, color2:0xff3a08, size:(1.1+Math.random()*1.1)*w.ms*(0.5+burn*0.6), life:0.55+Math.random()*0.3, grav:1.5, drag:1.6, grow:0.6, keep:true}); }
-    w.smokeT-=dt; if(w.t<w.life*0.9 && w.smokeT<=0){ w.smokeT=MOBILE?0.16:0.08; spawnPart(w.x+(Math.random()-0.5)*1.5, 2*w.ms, w.z+(Math.random()-0.5)*1.5, 0.9+(Math.random()-0.5)*0.6, 3.2+Math.random()*1.6, 0.5+(Math.random()-0.5)*0.6,
-        {color: burn>0.3?0x14110e:0x3a3632, size:(1.8+Math.random())*w.ms, life:MOBILE?3.4:5.2, smoke:true, grav:0.25, drag:0.45, grow:3.2*w.ms, op:0.58, keep:true}); }   // (Z312 keep: metered already, never thinned away)   // Z189 a tall column you can see across the field   // black column → grey as it dies, drifting downwind
-    if(k>0.8){ const f=(1-k)/0.2; if(w.own){ if(!w.faded){ w.faded=true; for(const m of w.mats){ m.transparent=true; m.needsUpdate=true; } } for(const m of w.mats) m.opacity=Math.max(0,f); } else w.mat.opacity=Math.max(0,f); w.hull.position.y=heightAt(w.x,w.z)-(1-f)*0.6*w.ms; }
-    if(w.t>=w.life){ dropWreck(w); WRECKS.splice(i,1); } }
-}
-export function clearWrecks(){ for(const w of WRECKS) dropWreck(w); WRECKS.length=0; }
 // rolling fireball: white-hot core → orange → deep red, expanding and lifting, followed by a dark mushrooming smoke column
 export function fireball(pos, scale, y){ y=y||1.2;
   spawnPart(pos.x, y+0.4*scale, pos.z, 0,1,0, {tex:'flash', color:0xfff2d0, size:5.5*scale, life:0.09, grav:0, drag:0});

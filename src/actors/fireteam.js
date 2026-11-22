@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the soldier's combat zone
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY, FIELDCRAFT, REAL } from '../../config.js';
-import { CAMPS, FTSQ, HELI_DOWN, MOBILE, S, UGRID, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, solidTank, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, unitsNear, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash } from '../hub.js';
+import { CAMPS, FTSQ, HELI_DOWN, MOBILE, S, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; 
@@ -33,7 +33,6 @@ export function updateAllyDead(dt){ for(let i=ALLY_DEAD.length-1;i>=0;i--){ cons
 // Z104 an enemy blast (mortar, RPG, artillery, bomb) among OUR men on foot: inside the core = killed, the ring = wounded
 export function blastAllies(x, z, r, dmg){ const now=performance.now()/1000; for(const a of FT.slice()){ const d=Math.hypot(a.pos.x-x, a.pos.z-z), k=infBlastK(d, r); if(k>0) damageAlly(a, k>=1 ? 999 : dmg*k); if(!a.dead && d<r*REAL.concuss.reach) concuss(a, x, z, now); } }   // Z223 survivors thrown flat
 export function clearFireteam(){ clearLadders(); for(const d of ALLY_DEAD){ scene.remove(d.g); if(d.g.userData.droppedGun) scene.remove(d.g.userData.droppedGun); } ALLY_DEAD.length=0; for(const a of FT){ scene.remove(a.g); scene.remove(a.bar); } FT.length=0; }
-const _ftTk=[];
 export function infPushBlocks(pos){ for(const bl of blocksAt(pos.x, pos.z)){ if(bl.obb){ const s_=Math.sin(bl.obb.f), c_=Math.cos(bl.obb.f), dx_=pos.x-bl.x, dz_=pos.z-bl.z, al=dx_*s_+dz_*c_, ac=dx_*c_-dz_*s_, hw=bl.obb.hw+0.4; if(Math.abs(al)<bl.obb.hl+0.3 && Math.abs(ac)<hw){ const push=(ac<0?-hw:hw)-ac; pos.x+=c_*push; pos.z-=s_*push; } continue; }
   const bx=pos.x-bl.x, bz=pos.z-bl.z, q=bx*bx+bz*bz, rr=bl.r+0.45; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); pos.x=bl.x+bx/qq*rr; pos.z=bl.z+bz/qq*rr; } } }
 // Z104 AUTONOMOUS SQUAD — soldiers are no longer leashed to the tank. Each one re-plans a few times a second, in priority order:
@@ -42,8 +41,6 @@ export function infPushBlocks(pos){ for(const bl of blocksAt(pos.x, pos.z)){ if(
 //   FIGHT infantry and tower guards (tanks only with an AT launcher from a captured depot) → FETCH dropped loot →
 //   JOBS (capture an open depot, free an open POW stockade) → ADVANCE on the nearest enemy → REGROUP around the tank.
 export function recallRange(){ return Math.max(TROOPS.fireteam.zoneMin, playerRange()); }   // the visible range ring
-function nearestEnemyTank(a, R){ let best=null, bd=R*R; for(const e of enemies){ if(!solidTank(e) || e.abandoned) continue; const q=(e.pos.x-a.pos.x)**2+(e.pos.z-a.pos.z)**2; if(q<bd){ bd=q; best=e; } }
- return best; }
 function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
   for(const e of enemies){ if(e.dead) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z);
     if(e.def.inf){ if(d<bs){ bs=d; best={ kind:'inf', ref:e, pos:e.pos }; } }
@@ -65,10 +62,6 @@ function allyThink(a, now){
   if(a.hp < a.maxHp*SQUAD.ai.woundedHp) a.healing=true; else if(a.hp >= a.maxHp*SQUAD.ai.healed) a.healing=false;   // Z200 badly hurt → back behind the tank to patch up, then back into it
   if(a.healing && !a.answering){ a.task='fallback'; a.goal=fallbackSpot(a, now); a.goalKind='fallback'; if(!a.saidHurt){ a.saidHurt=true; floatText('BỊ THƯƠNG — RÚT VỀ', '#ffcf5a', new THREE.Vector3(a.pos.x,2.6,a.pos.z), 12); } return; } else a.saidHurt=false;
   if(a.carry){ a.task='rally'; if(!a.goal || a.goalKind!=='rally'){ a.goal=rallySpot(); a.goalKind='rally'; } return; }          // loot in hand → home first (shooting on the way)
-  const tank=a.at ? null : nearestEnemyTank(a, SQUAD.cover.threat);
-  if(tank){ if(!a.cover || now>(a.coverAt||0)){ a.cover=coverSpot(a.pos.x, a.pos.z, tank.pos.x, tank.pos.z, SQUAD.cover.search); a.coverAt=now+1.3; }
-    if(a.cover){ a.task='cover'; a.goal=[a.cover.x, a.cover.z]; a.goalKind='cover'; if(!a.tookCover){ a.tookCover=true; tip('cover'); } return; }
-    a.task='evade'; const ax=a.pos.x-tank.pos.x, az=a.pos.z-tank.pos.z, L=Math.hypot(ax,az)||1; a.goal=[a.pos.x+ax/L*8 - az/L*4, a.pos.z+az/L*8 + ax/L*4]; a.goalKind='evade'; return; }   // nothing to hide behind → get out of its line
   a.cover=null;
   { const cg=cmdGoal(a, now, foe); if(cg){ a.task=S.cmd.kind; a.goal=cg; a.goalKind=S.cmd.kind; return; } }   // Z107 an order (muster / assault) beats his own plan
   if(S.sqOrder==='hold' && a.orderPos){ a.task=foe?'fight':'post'; a.goal=a.orderPos; a.goalKind='order'; return; }   // Z173 squad order: hold this ground, shoot from it
@@ -115,9 +108,9 @@ function fallbackSpot(a, now){ if(a.fbSpot && now<(a.fbAt||0)) return a.fbSpot; 
 let _postAt=0, _barkAt=-99;
 function squadPosture(now){ if(now<_postAt) return; _postAt=now+SQUAD.ai.postureEvery; if(!FT.length){ FTSQ.posture='hold'; return; }
   let cx=0, cz=0, str=0; for(const a of FT){ cx+=a.pos.x; cz+=a.pos.z; str+=Math.max(0,a.hp)/a.maxHp; } cx/=FT.length; cz/=FT.length; const at=FT.some(a=>a.at), R=SQUAD.ai.threatR;
-  let thr=0; for(const e of enemies){ if(e.abandoned || e.dead) continue; const q=(e.pos.x-cx)**2+(e.pos.z-cz)**2; if(q>R*R) continue; thr += e.def.inf ? 1 : e.def.air ? 2.5 : (solidTank(e) ? (at?2.5:4) : 1); }
+  let thr=0; for(const e of enemies){ if(e.abandoned || e.dead) continue; const q=(e.pos.x-cx)**2+(e.pos.z-cz)**2; if(q>R*R) continue; thr += e.def.air ? 2.5 : 1; }
   const was=FTSQ.posture||'hold', now2 = thr > str*SQUAD.ai.fallK+1 ? 'fallback' : (thr < str*SQUAD.ai.advK && thr>0 ? 'advance' : 'hold'); FTSQ.posture=now2;
-  if(now2!==was && now2!=='hold' && now-_barkAt>SQUAD.ai.barkGap){ _barkAt=now; const adv=now2==='advance'; floatText(adv?'TIẾN LÊN!':'RÚT LUI — VỀ SAU XE TĂNG!', adv?'#9be04a':'#ffcf5a', new THREE.Vector3(cx,3,cz), 16);
+  if(now2!==was && now2!=='hold' && now-_barkAt>SQUAD.ai.barkGap){ _barkAt=now; const adv=now2==='advance'; floatText(adv?'TIẾN LÊN!':'RÚT LUI!', adv?'#9be04a':'#ffcf5a', new THREE.Vector3(cx,3,cz), 16);
     radio(adv ? 'Tổ bộ binh: địch núng thế rồi — cả tổ tiến lên, áp sát!' : 'Tổ bộ binh: địch quá đông — rút về sau xe tăng, vừa lui vừa bắn!'); }
   if(now2==='fallback' && now>(FTSQ.smokeAt||0)){ let ex=0, ez=0, n=0; for(const e of enemies){ if(e.def.air || e.dead) continue; const q=(e.pos.x-cx)**2+(e.pos.z-cz)**2; if(q<R*R){ ex+=e.pos.x; ez+=e.pos.z; n++; } }   // Z220 breaking contact: a smoke screen between us and them
     if(n){ ex/=n; ez/=n; const dx=ex-cx, dz=ez-cz, dd=Math.hypot(dx,dz)||1, k=Math.min(dd*0.5, FIELDCRAFT.smoke.ahead), sx=cx+dx/dd*k, sz=cz+dz/dd*k; FTSQ.smokeAt=now+FIELDCRAFT.smoke.cdA; throwSmoke(sx, sz, 'p', now); floatText('THẢ KHÓI — RÚT!', '#dfe8d0', new THREE.Vector3(sx,2.8,sz), 14); } } }
@@ -251,7 +244,6 @@ export function updateFireteam(dt, now){
       else if(T && (a.role==='mg' || (dT>SQUAD.proneR && T.kind==='inf' && !a.at))) st='prone';
       else if(T || a.task==='post') st='crouch'; }
     if(dz_) dazePose(a.g, now, dt); else poseSoldier(a.g, st, dt);
-    for(const e of unitsNear(UGRID.tank, a.pos.x, a.pos.z, 12, _ftTk)){ if(!solidTank(e)) continue; const qx=e.pos.x-a.pos.x, qz=e.pos.z-a.pos.z; if(qx*qx+qz*qz < (e.r+0.8)**2){ if(Math.hypot(e.vel.x,e.vel.z)>4) damageAlly(a, 999); else { const L=Math.hypot(qx,qz)||1; a.pos.x-=qx/L*0.5; a.pos.z-=qz/L*0.5; } } }   // enemy tracks crush them too
     if(a.dead) continue;
     a.bar.visible = a.hp < a.maxHp-0.5; const f=Math.max(0,a.hp/a.maxHp); a.barFill.scale.x=Math.max(0.001,f); a.barFill.position.x=-(1-f)*0.5; a.barFill.material.color.setHex(f>0.5?0x7fe06a:(f>0.25?0xffcf5a:0xff5a4a));
     if(a.hitT>0){ a.hitT-=dt; if(a.hitT<=0){ const t2=a.g.userData.torso; if(t2){ t2.material.emissive.setHex(0x000000); t2.material.emissiveIntensity=0; } } }

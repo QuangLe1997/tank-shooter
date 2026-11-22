@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE, SCENERY, FUEL_TANK } from '../../config.js';
-import { landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
+import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -87,11 +87,7 @@ function piece(B, kind, mesh, lx, lz, ry, shape, core){ const [x,z]=B.at(lx,lz),
 function nest(B, lx, lz, ry){ const [x,z]=B.at(lx,lz); if(!inField(x,z,3) || blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+1.2)) return; const m=makeCoverMesh('sandbag', true); m.scale.setScalar(COVER_K); m.position.set(x,heightAt(x,z)-0.12,z); m.rotation.y=B.ang+(ry||0); scene.add(m);
   blocks.push({ mesh:m, x, z, r:1.7*COVER_K, hp:85, maxHp:85, steel:false, cover:true, ms:COVER_K, loot:false, kind:'sandbag' }); }
 function garrison(B, nInf){ const st=S.stage, n=Math.round(Math.min(SUPPLYB.guards[1], SUPPLYB.guards[0]+st)*(MOBILE?0.7:1));
-  for(let k=0;k<(nInf??n);k++){ const a=B.ang+(k/n)*6.283, r=B.R*(0.75+Math.random()*0.2), x=B.x+Math.sin(a)*r, z=B.z+Math.cos(a)*r; const e=spawnEnemy(k%4===3&&st>=2?'rpg':'rifle', x, z); if(!e) continue; e.guard={ kind:'supply', base:B }; e.post=[x,z]; e.loot=false; B.guards.push(e); }
-  const nt=SUPPLYB.tanks[0]+(st>=3?SUPPLYB.tanks[1]-SUPPLYB.tanks[0]:0); for(let k=0;k<nt;k++) guardTank(B, k*Math.PI); }
-const TANKS_BY=[['grunt','gunner'],['grunt','gunner','shield'],['gunner','shield','heavy'],['heavy','shield','chief']];
-function guardTank(B, a0){ const L=TANKS_BY[Math.min(TANKS_BY.length-1, (S.stage-1)>>1)], a=B.ang+Math.PI+(a0||0)+_R(-0.6,0.6), r=B.R+4, [x,z]=clampFieldXZ(B.x+Math.sin(a)*r, B.z+Math.cos(a)*r, 6);
-  const e=spawnEnemy(L[(Math.random()*L.length)|0], x, z); if(!e) return null; e.guard={ kind:'supply', base:B }; e.guardBase=B; e._gA=a; e.loot=Math.random()<0.4; return e; }
+  for(let k=0;k<(nInf??n);k++){ const a=B.ang+(k/n)*6.283, r=B.R*(0.75+Math.random()*0.2), x=B.x+Math.sin(a)*r, z=B.z+Math.cos(a)*r; const e=spawnEnemy(k%4===3&&st>=2?'rpg':'rifle', x, z); if(!e) continue; e.guard={ kind:'supply', base:B }; e.post=[x,z]; e.loot=false; B.guards.push(e); } }
 
 // ---------- Z195 a real compound: chain-link + barbed-wire fence (tanks flatten it), steel gate with a name board and a boom, warning signs ----------
 const SIGN_MAT={};
@@ -334,7 +330,7 @@ export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='play
     if(dp > SUPPLYB.alertR*2.2 && now-B.hitAt > 25){ B.alarm=false; continue; }   // you left: they stand down
     if(now>B.heloAt && B.heloN<B.heloMax && enemies.filter(e=>e.def.air).length<(MOBILE?2:3)){ B.heloAt=now+SUPPLYB.heliCd; B.heloN++;
       const a=Math.atan2(B.x-p.pos.x, B.z-p.pos.z), [hx,hz]=clampFieldXZ(B.x+Math.sin(a)*40, B.z+Math.cos(a)*40, 8); if(spawnEnemy('gunship', hx, hz)) radio('SCH: Trực thăng địch cất cánh yểm trợ '+NAME[B.kind]+'!'); }
-    if(now>B.tankAt && B.tankN<B.tankMax){ B.tankAt=now+SUPPLYB.tankCd; B.tankN++; guardTank(B, _R(-0.8,0.8)); }
+    if(now>B.tankAt && B.tankN<B.tankMax){ B.tankAt=now+SUPPLYB.tankCd; B.tankN++; const a=B.ang+Math.PI+_R(-0.8,0.8), [x,z]=clampFieldXZ(B.x+Math.sin(a)*(B.R+4), B.z+Math.cos(a)*(B.R+4), 6); spawnSquad({ x, z }); }   // (no-tanks) the base calls up a squad, not armour
     if(now>B.spreadAt){ B.spreadAt=now+3; const live=B.guards.filter(e=>enemies.includes(e) && e.guard && e.guard.base===B), bear=Math.atan2(p.pos.x-B.x, p.pos.z-B.z), n=live.length;   // spread along the threatened side, each behind something solid
       live.forEach((e,k)=>{ const a=bear+(n>1?(k/(n-1)-0.5):0)*2.2, r=B.R*0.85, x=B.x+Math.sin(a)*r, z=B.z+Math.cos(a)*r, c=coverSpot(x, z, p.pos.x, p.pos.z, 7); e.post = c ? [c.x, c.z] : [x, z]; }); } } }
 // a guard tank's leash: while you are far from its base it circles the base and holds fire; come close and it fights

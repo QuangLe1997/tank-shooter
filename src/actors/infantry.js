@@ -1,12 +1,11 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD } from '../../config.js';
-import { BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, damageAlly, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen, asShipped, nearShape, riverWay, wadeAt, gunFlash } from '../hub.js';
+import { BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen, asShipped, nearShape, riverWay, wadeAt, gunFlash } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
 export const INF_DEAD=[];
-export const solidTank = e => !(e.def.bomber || e.def.inf || e.def.air);          // things that collide like a hull
 export function smokeSpread(now){ return inSmoke(now) ? EQUIP.smoke.spreadMul : 1; }   // SMOKE screen ruins enemy aim
 export function infMesh(type){
   const g=makeSoldierMesh({enemy:true}), u=g.userData;
@@ -40,7 +39,7 @@ export function spawnSquad(sp){
   ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xd8b070, 2.4);
   return makeSquad(enemies.slice(n0), { escort:sp.escort||null });   // Z173 one squad, one plan
 }
-export const _INF0={ x:0, z:0 }; const _infNb=[], _infTk=[], _fl={ x:0, z:0 };
+export const _INF0={ x:0, z:0 }; const _infNb=[], _fl={ x:0, z:0 };
 // Z220 an enemy rifleman lobs a frag grenade at our men in cover or bunched together (from stage 2, sharper crews more often)
 function enemyNade(e, now){ const N=FIELDCRAFT.nade; e.nadeAt=now+0.9+Math.random()*0.6; if(S.stage<N.fromStage || aiIQ()<N.iqMin || (e.supp||0)>0.6 || !canThrow('e', now)) return;
   const t=nadeTarget(e.pos.x, e.pos.z, FT, a=>a.task==='cover' && atCover(a.pos, a.cover)); if(!t || losBlocked(e.pos.x, e.pos.z, t.pos.x, t.pos.z) && Math.random()<0.5) return;
@@ -127,11 +126,7 @@ export function crushInfantry(now){
     if(hitsHull(p, e.pos.x, e.pos.z, 0.35)){
       if(ps>INFANTRY.crushSpeed || now<p.dashUntil){ e._crushed=true; killEnemy(e); continue; }
       const nx=e.pos.x-p.pos.x, nz=e.pos.z-p.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.45; e.pos.z+=nz/L*0.45; }
-    for(const t of unitsNear(UGRID.tank, e.pos.x, e.pos.z, 12, _infTk)){ if(!solidTank(t)) continue; if(hitsHull(t, e.pos.x, e.pos.z, 0.3)){ const nx=e.pos.x-t.pos.x, nz=e.pos.z-t.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.4; e.pos.z+=nz/L*0.4; } }   // their own tanks shove them aside
   }
-  // Z113 enemy tanks run OUR men down the same way
-  for(const t of enemies){ if(!solidTank(t)) continue; const ts=Math.hypot(t.vel.x,t.vel.z); if(ts<INFANTRY.crushSpeed) continue;
-    for(const a of FT.slice()){ if(hitsHull(t, a.pos.x, a.pos.z, 0.3)){ burst(a.pos, BIOME.ground, 6, 4, {y:heightAt(a.pos.x,a.pos.z)+0.4, life:0.6, size:1.0, smoke:true, grav:-0.4, drag:2.2, up:1.5, op:0.5}); sfx('crunch', a.pos); damageAlly(a, 999); } } }
 }
 export function infantryDown(e){
   const m=e.mesh, gy=heightAt(e.pos.x,e.pos.z);

@@ -1,7 +1,7 @@
 // game/update.js — the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank's drive / aim / fire is gone)
 import * as THREE from 'three';
 import { CAM_AUTO, CAM_STYLE, CAM_FEEL, SHAKE, CLIMB } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PLAYER, PROFILE, S, animateTank, bumpAt, camera, coreBeamBlocked, decalTread, enemies, fortBeamBlocked, gradePass, heightAt, solidTank, sightToBuildings, camAimA, steadyCam, climbing } from '../hub.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PLAYER, PROFILE, S, bumpAt, camera, coreBeamBlocked, decalTread, enemies, fortBeamBlocked, gradePass, heightAt, sightToBuildings, camAimA, steadyCam, climbing } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function biomeVi(n){ return BIOME_VI[n]||n; }
@@ -10,9 +10,6 @@ export function wrapAngle(a){ return Math.atan2(Math.sin(a), Math.cos(a)); }
 export function _HAT(x,z){ return heightAt(x,z); }
 export function _rideH(x,z){ return heightAt(x,z)+bumpAt(x,z); }
 export function _rigTread(m, x, z, f){ const rg=m.userData.rig; if(rg && rg.treadD>0.55){ rg.treadD=0; decalTread(x, z, f, m.scale.x||1); } }
-export function updateTankRigs(dt){
-  for(const e of enemies){ if(!solidTank(e) && !e.def.bomber) continue; animateTank(e.mesh, e.pos.x, e.pos.z, e.facing, dt); _rigTread(e.mesh, e.pos.x, e.pos.z, e.facing); }
-}
 // camera follow with aim lookahead
 // lower, closer 3rd-person angle (was a high top-down); pulls back a touch on dash
 export const camOff = new THREE.Vector3(0, MOBILE?8.6:9.4, MOBILE?16.2:18.2);   // base offset; S.zoom scales it, S.camYaw rotates it (player camera controls) · Z184 set from the chosen CAM_STYLE every frame
