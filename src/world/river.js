@@ -32,7 +32,7 @@ function ford(h, L, u, M){ const p = lineAt(L.pts, u), len = RIVERS.fordLen, y =
     if(RIVER.flow){ RIVER.flow[k * 2] *= 1 + 0.6 * f; RIVER.flow[k * 2 + 1] *= 1 + 0.6 * f; } M[k] = Math.max(M[k], Math.round(115 * f)); }
   RIVER.fords.push({ x:p.x, z:p.z, r:L.w * 1.2, line:L, ax:-p.tz, az:p.tx, e:L.w * 1.6 + RIVERS.route.margin }); }   // (Z415 ax / az: across the channel · e: from its centre to dry land each side)
 // Z405 the battlefield's river (none where config RIVERS has no entry): main west ↔ east across the enemy half, the stream in from the enemy's edge on one flank
-export function carveRivers(h, b){
+export function carveRivers(h, b){ GEN++;   // (Z417 the way-round grid is laid again for the new ground)
   RIVER.on = false; RIVER.bridges.length = 0; RIVER.fords.length = 0; RIVER.lines.length = 0; RIVER.w.length = 0; RIVER.ice = null; RIVER.flow = null; RIVER.mark = null; RIVER.biome = b.name;
   if(RIVER.mesh) RIVER.mesh.visible = false; if(RIVER.deck) RIVER.deck.visible = false; WET_U.k.value.y = 0;
   const C = RIVERS.biomes[b.name]; if(!C || b.cave) return;
@@ -129,27 +129,63 @@ function bridgeModel(g){ const B = RIVERS.bridge; if(!B.model) return; MODEL_FIL
 // wave the water (called every frame): time for the ripples, the flood's water level for the water and the wet banks
 export function updateWater(dt){ WTIME.value += dt; if(RIVER.on && RIVER.mesh && RIVER.mesh.visible){ RIVER.mesh.material.userData.u.uWY.value = RIVER.y; WET_U.k.value.x = RIVER.y; } }
 // ---- Z415 THE ENEMY AT THE RIVER: a unit making for (tx, tz) whose straight way runs through the deep channel goes round by the best crossing — a bridge
-//   or a ford (on to its near end, over, off the far end); one already wading carries on across. Returns the unit direction to steer by, or null (go straight).
+//   or a ford (Z417: down a distance field over the dry ground to its goal — world/river.js navGrid / distTo); one already wading carries on across. Returns the unit direction to steer by, or null (go straight).
 //   The way is looked at again every RIVERS.route.every s (and when the goal moves), never every frame. ----
 function deepOnWay(x0, z0, x1, z1){ const K = RIVERS.wade.deep, L = Math.hypot(x1 - x0, z1 - z0), n = Math.min(160, Math.ceil(L / RIVERS.route.step));
   for(let k = 1; k < n; k++){ const t = k / n; if(wadeAt(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t) <= K) return true; } return false; }
-function crossings(){ const C = [];
-  for(const b of RIVER.bridges) C.push({ x:b.x, z:b.z, ax:b.ca, az:b.sa, e:b.hl + RIVERS.route.margin, w:b.hw - 0.8 });
-  for(const f of RIVER.fords) if(!f.line.ice) C.push({ x:f.x, z:f.z, ax:f.ax, az:f.az, e:f.e, w:f.r });
-  return C; }
-function wayOver(x, z, tx, tz){ let best = null, bc = 1e9;
-  for(const c of crossings()){ const g = (tx - c.x) * c.ax + (tz - c.z) * c.az >= 0 ? 1 : -1, ax = c.ax * g, az = c.az * g, s = (x - c.x) * ax + (z - c.z) * az;   // its axis turned towards the goal's bank
-    const nx = c.x - ax * c.e, nz = c.z - az * c.e, fx = c.x + ax * c.e, fz = c.z + az * c.e; if(fieldDepth(nx, nz) < 2 || fieldDepth(fx, fz) < 2) continue;   // (its ends must be inside the fence)
-    const cost = (s > -c.e ? Math.hypot(fx - x, fz - z) : Math.hypot(nx - x, nz - z) + 2 * c.e) + Math.hypot(tx - fx, tz - fz) + (s > c.e - 1 ? 400 : 0);   // (one that does not lie between them: last resort)
-    if(cost < bc){ bc = cost; best = { c, ax, az, pts:[{ x:nx, z:nz }, { x:fx, z:fz }] }; } }
-  return best; }
+// ---- Z417 THE WAY ROUND ON DRY GROUND: the straight line to a crossing's near end cut through the river where it bends (and a unit in the deep
+//   channel then waded straight over), and past the far end a bend could send it back over again. Now a grid of the field (RIVERS.route.cell m) knows
+//   the dry ground — a cell is open when its middle and its four corners are out of the deep channel (the bank's edge stays shut, so a unit never
+//   clips the water), a bridge's deck is open end to end, a ford's shallow run is open by itself — and a unit whose straight way runs through the deep
+//   channel walks down a distance field to its goal over the open cells (Dijkstra; one field per goal cell, shared by every unit making for it, the
+//   last RIVERS.route.keep kept). Shared by theirs (tanks, kamikazes, men, squads) and ours (Z417 captured tanks, the squad's APC, the squad) ----
+let GEN = 0; const NAV = { gen:-1, n:0, c:0, open:null, fld:new Map() };
+function navGrid(){ const key = GEN * 1e4 + RIVER.bridges.length * 100 + RIVER.fords.length; if(NAV.gen === key) return NAV;
+  const c = RIVERS.route.cell, n = Math.ceil(ARENA * 2 / c), O = new Uint8Array(n * n), D = RIVERS.wade.deep, h = c * 0.45;
+  for(let j = 0; j < n; j++) for(let i = 0; i < n; i++){ const x = -ARENA + (i + 0.5) * c, z = -ARENA + (j + 0.5) * c;
+    O[j * n + i] = fieldDepth(x, z) >= 1 && wadeAt(x, z) > D && wadeAt(x - h, z - h) > D && wadeAt(x + h, z - h) > D && wadeAt(x - h, z + h) > D && wadeAt(x + h, z + h) > D ? 1 : 0; }
+  const X = new Uint8Array(n * n), W = RIVERS.route.wide, run = (x0, z0, ax, az, hl, hw) => {   // a crossing's cells: open, and joined corner to corner however the grid lies across it
+    const r = Math.ceil((Math.max(hl, hw) + c) / c), i0 = Math.floor((x0 + ARENA) / c), j0 = Math.floor((z0 + ARENA) / c);
+    for(let j = Math.max(0, j0 - r); j <= Math.min(n - 1, j0 + r); j++) for(let i = Math.max(0, i0 - r); i <= Math.min(n - 1, i0 + r); i++){ const dx = -ARENA + (i + 0.5) * c - x0, dz = -ARENA + (j + 0.5) * c - z0;
+      if(Math.abs(dx * ax + dz * az) < hl && Math.abs(dz * ax - dx * az) < hw){ O[j * n + i] = 1; X[j * n + i] = 1; } } };
+  for(const b of RIVER.bridges) run(b.x, b.z, b.ca, b.sa, b.hl, b.hw - W.deck);   // the deck end to end, its middle (off the edges)
+  for(const f of RIVER.fords) if(!f.line.ice) run(f.x, f.z, f.ax, f.az, f.e, RIVERS.fordLen * W.ford);   // the ford's shallow run, bank to bank
+  NAV.gen = key; NAV.n = n; NAV.c = c; NAV.open = O; NAV.cross = X; NAV.last = -1e9; NAV.fld.clear(); return NAV; }
+const cellAt = (N, x, z) => { const i = Math.floor((x + ARENA) / N.c), j = Math.floor((z + ARENA) / N.c); return i < 0 || j < 0 || i >= N.n || j >= N.n ? -1 : j * N.n + i; };
+// metres over open cells from every cell to the goal's cell (a goal in the water: to the bank round it, RIVERS.route.seed m) — null when
+//   this frame has already laid one (RIVERS.route.gap ms between two: no frame pays for more than one; the unit asks again a moment later)
+let HP = null;
+function distTo(N, src){ let F = N.fld.get(src); if(F){ N.fld.delete(src); N.fld.set(src, F); return F; }   // (most recently used last)
+  const t0 = performance.now(); if(t0 - N.last < RIVERS.route.gap) return null; N.last = t0;
+  const n = N.n, c = N.c, O = N.open, X = N.cross, Dd = new Float32Array(n * n).fill(Infinity);
+  if(N.fld.size >= RIVERS.route.keep) N.fld.delete(N.fld.keys().next().value); N.fld.set(src, Dd); if(src < 0) return Dd;
+  if(!HP || HP.length < n * n * 4) HP = new Int32Array(n * n * 4); let hn = 0;   // a binary heap of cells by distance (a cell may sit in it more than once; the stale ones are skipped)
+  const push = k => { let i = hn++; while(i > 0){ const p = (i - 1) >> 1, kp = HP[p]; if(Dd[kp] <= Dd[k]) break; HP[i] = kp; i = p; } HP[i] = k; };
+  const pop = () => { const top = HP[0], last = HP[--hn]; let i = 0; for(;;){ const l = i * 2 + 1; if(l >= hn) break; const r = l + 1, m = r < hn && Dd[HP[r]] < Dd[HP[l]] ? r : l; if(Dd[HP[m]] >= Dd[last]) break; HP[i] = HP[m]; i = m; } HP[i] = last; return top; };
+  if(O[src]){ Dd[src] = 0; push(src); }
+  else { const r = Math.ceil(RIVERS.route.seed / c), si = src % n, sj = (src / n) | 0;   // the goal in the water: from the open cells round it, each as far as it is from the goal (so the near bank, not a crossing)
+    for(let dj = -r; dj <= r; dj++) for(let di = -r; di <= r; di++){ const i = si + di, j = sj + dj, q = j * n + i, d = Math.hypot(di, dj) * c; if(i < 0 || j < 0 || i >= n || j >= n || !O[q] || d > RIVERS.route.seed) continue; Dd[q] = d; push(q); } }
+  while(hn){ const k = pop(), i = k % n, j = (k / n) | 0, d0 = Dd[k];
+    for(let dj = -1; dj <= 1; dj++) for(let di = -1; di <= 1; di++){ if(!di && !dj) continue; const ii = i + di, jj = j + dj; if(ii < 0 || jj < 0 || ii >= n || jj >= n) continue; const q = jj * n + ii; if(!O[q]) continue;
+      if(di && dj && !(X[k] && X[q]) && (!O[j * n + ii] || !O[jj * n + i])) continue;   // (no cutting a corner of the channel; on a crossing the diagonal is the way)
+      const nd = d0 + (di && dj ? 1.414 : 1) * c; if(nd < Dd[q] && hn < HP.length){ Dd[q] = nd; push(q); } } }
+  return Dd; }
+// a field already laid to a cell within RIVERS.route.reuse m of the goal, on its bank (no deep water between): a goal on the move (the player) lays a
+//   new one every few metres, not every cell
+function nearField(N, tx, tz){ const R2 = RIVERS.route.reuse ** 2; for(const [k, F] of N.fld){ if(k < 0) continue; const sx = -ARENA + (k % N.n + 0.5) * N.c, sz = -ARENA + (((k / N.n) | 0) + 0.5) * N.c;
+    if((sx - tx) ** 2 + (sz - tz) ** 2 < R2 && !deepOnWay(sx, sz, tx, tz)) return F; } return null; }
+// down the field from (x, z): towards the open cell round it (up to two out, past an open one) nearest the goal, counting the step to it
+function downhill(N, F, x, z){ const n = N.n, c = N.c, O = N.open, D = RIVERS.wade.deep, wet = wadeAt(x, z) <= D, i0 = Math.floor((x + ARENA) / c), j0 = Math.floor((z + ARENA) / c); let bx = 0, bz = 0, bd = Infinity;
+  for(let dj = -2; dj <= 2; dj++) for(let di = -2; di <= 2; di++){ const i = i0 + di, j = j0 + dj; if(i < 0 || j < 0 || i >= n || j >= n || (!di && !dj)) continue; const q = j * n + i; if(!(F[q] < Infinity)) continue;
+    if(Math.max(Math.abs(di), Math.abs(dj)) === 2){ const mi = i0 + Math.round(di / 2), mj = j0 + Math.round(dj / 2); if(mi < 0 || mj < 0 || mi >= n || mj >= n || !O[mj * n + mi]) continue; }
+    const cx = -ARENA + (i + 0.5) * c, cz = -ARENA + (j + 0.5) * c, v = F[q] + Math.hypot(cx - x, cz - z); if(!(v < bd)) continue;
+    if(!wet && (wadeAt(x + (cx - x) * 0.33, z + (cz - z) * 0.33) <= D || wadeAt(x + (cx - x) * 0.67, z + (cz - z) * 0.67) <= D)) continue;   // (a step that would clip the water on the way: not this one — unless it is in the water already)
+    bd = v; bx = cx - x; bz = cz - z; }
+  const L = Math.hypot(bx, bz); return L > 1e-3 ? { x:bx / L, z:bz / L } : null; }
 export function riverWay(u, tx, tz, now){
   if(!RIVER.on || !(RIVER.bridges.length || RIVER.fords.length)) return null;
-  const R = u.rw || (u.rw = { t:0, w:null, i:0, tx:0, tz:0 }), x = u.pos.x, z = u.pos.z, Q = RIVERS.route;
+  const R = u.rw || (u.rw = { t:0, F:null, tx:0, tz:0 }), x = u.pos.x, z = u.pos.z, Q = RIVERS.route;
   if(now >= R.t || (tx - R.tx) ** 2 + (tz - R.tz) ** 2 > 64){ R.t = now + Q.every * (0.8 + Math.random() * 0.4); R.tx = tx; R.tz = tz;
-    R.w = wadeAt(x, z) > RIVERS.wade.deep && deepOnWay(x, z, tx, tz) ? wayOver(x, z, tx, tz) : null; R.i = 0;
-    if(R.w){ const c = R.w.c, s = (x - c.x) * R.w.ax + (z - c.z) * R.w.az, lat = Math.abs((x - c.x) * -R.w.az + (z - c.z) * R.w.ax); if(s > -c.e + Q.reach && lat < c.w + 1.5) R.i = 1; } }   // already on the crossing: on to its far end
-  const W = R.w; if(!W) return null;
-  while(R.i < 2 && Math.hypot(W.pts[R.i].x - x, W.pts[R.i].z - z) < Q.reach) R.i++;
-  if(R.i >= 2){ R.w = null; return null; }
-  const p = W.pts[R.i], dx = p.x - x, dz = p.z - z, L = Math.hypot(dx, dz) || 1; return { x:dx / L, z:dz / L }; }
+    if(wadeAt(x, z) <= RIVERS.wade.deep){}   // in the deep channel: the way it had (slipped in off the bank it was following: back onto it — downhill finds it; out in mid-stream: on across)
+    else if(deepOnWay(x, z, tx, tz)){ const N = navGrid(), F = nearField(N, tx, tz) || distTo(N, cellAt(N, tx, tz)); if(F) R.F = F; else R.t = now + 0.05; } else R.F = null; }   // (no field this frame: the last one meanwhile, and ask again soon)
+  return R.F ? downhill(navGrid(), R.F, x, z) : null; }

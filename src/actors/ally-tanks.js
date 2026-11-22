@@ -2,7 +2,7 @@
 //   (armour first, then infantry), keep a stand-off range, regroup on you when the field is quiet, and can be knocked out.
 import * as THREE from 'three';
 import { ALLY_TANK, INFANTRY, HIJACK, SIDE_ID } from '../../config.js';
-import { ENEMY_MODEL, FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, paintVehicle, radio, removeEnemy, ringPulse, scene, seatRoofMark, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wrapAngle, spawnTankWreck } from '../hub.js';
+import { ENEMY_MODEL, FORTS, FT, PYLONS, S, TANK_SCALE, addScore, aiSteer, animateTank, bakeTank, blocks, boss, buildTank, camera, clampField, core, damageEnemy, decorateEnemyMesh, enemies, floatText, fortSealed, freeEnemyBar, getEnemyBar, heightAt, hitsHull, inBlock, killEnemy, makeLauncherMesh, paintVehicle, radio, removeEnemy, ringPulse, RIVER, riverWay, scene, seatRoofMark, sfx, solidTank, spawnAlly, spawnBullet, spawnEnemy, spawnPart, tankExplode, tankRecoil, wadeAt, wrapAngle, spawnTankWreck } from '../hub.js';
 
 export const ALLY_TANKS=[];
 export const ALLY_PAL={ hull:0x55663a, turret:0x627344, barrel:0x7a8a52, tread:0x22281a, accent:0x9be04a };   // captured hull, our colours
@@ -105,11 +105,13 @@ export function updateAllyTanks(dt, now){ const p=S.player; if(!p || !ALLY_TANKS
       else { const side=(ALLY_TANKS.indexOf(t)%2?1:-1), bx=-Math.sin(p.facing), bz=-Math.cos(p.facing); t.target=t.target&&dp<A.leash?t.target:null;   // regroup: off your rear quarter
         const gx=p.pos.x+bx*10+bz*side*9, gz=p.pos.z+bz*10-bx*side*9; t.goal = Math.hypot(gx-t.pos.x, gz-t.pos.z)>5 ? [gx,gz] : null; } }
     // drive (steer round obstacles), turn the hull toward the travel direction
-    let want=0; _ad.set(0,0,0); if(t.goal){ _ad.set(t.goal[0]-t.pos.x, 0, t.goal[1]-t.pos.z); const L=_ad.length(); if(L>1.5){ _ad.divideScalar(L); aiSteer(t, _ad); want=A.speed*(t.heavy?0.8:1)*Math.min(1, L/6); } }
+    let want=0; _ad.set(0,0,0); if(t.goal){ _ad.set(t.goal[0]-t.pos.x, 0, t.goal[1]-t.pos.z); const L=_ad.length(); if(L>1.5){ _ad.divideScalar(L); { const rw=riverWay(t, t.goal[0], t.goal[1], now); if(rw) _ad.set(rw.x, 0, rw.z); } aiSteer(t, _ad); want=A.speed*(t.heavy?0.8:1)*Math.min(1, L/6); } }   // Z417 the deep river between: round by a bridge or a ford, like theirs (world/river.js riverWay)
+    const wk=wadeAt(t.pos.x, t.pos.z); want*=wk;   // Z417 wading slows it (a ford / the shallows less, a bridge not at all)
     const df=want>0 ? wrapAngle(Math.atan2(_ad.x,_ad.z)-t.facing) : 0; t.facing=wrapAngle(t.facing+Math.sign(df)*Math.min(Math.abs(df), A.turn*dt));
     const fwd=want*Math.max(0, Math.cos(df)); const vx=Math.sin(t.facing)*fwd, vz=Math.cos(t.facing)*fwd;
     t.vel.x+=(vx-t.vel.x)*Math.min(1,dt*1.8); t.vel.z+=(vz-t.vel.z)*Math.min(1,dt*1.8);
     t.pos.x+=(t.vel.x+t.kbx)*dt; t.pos.z+=(t.vel.z+t.kbz)*dt; const kf=Math.max(0,1-dt*4); t.kbx*=kf; t.kbz*=kf;
+    if(wk<1 && fwd>1 && Math.random()<dt*10) spawnPart(t.pos.x+(Math.random()-0.5)*2.6, RIVER.y+0.15, t.pos.z+(Math.random()-0.5)*2.6, (Math.random()-0.5)*2, 1+Math.random()*1.5, (Math.random()-0.5)*2, { color:0xcfe8f2, size:0.35+Math.random()*0.3, life:0.5, grav:-9, drag:1.2 });   // Z417 water thrown up at the bow
     for(const b of blocks){ if(b.kind==='parked' && b.mesh===t.mesh) continue; const bx=t.pos.x-b.x, bz=t.pos.z-b.z, q=bx*bx+bz*bz, rr=(b.obb?Math.max(b.obb.hw,b.obb.hl):b.r)+t.r; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q); t.pos.x=b.x+bx/qq*rr; t.pos.z=b.z+bz/qq*rr; } }
     const others=[p, ...ALLY_TANKS.filter(o=>o!==t), ...enemies.filter(solidTank)];
     for(const o of others){ const ox=t.pos.x-o.pos.x, oz=t.pos.z-o.pos.z, q=ox*ox+oz*oz, rr=t.r+(o.radius||o.r||1.5)+0.6; if(q<rr*rr && q>1e-4){ const qq=Math.sqrt(q), push=(rr-qq)*0.5; t.pos.x+=ox/qq*push; t.pos.z+=oz/qq*push; } }

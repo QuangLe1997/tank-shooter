@@ -36,12 +36,14 @@ export function medical(K, x, z){ const T=frameTent(K, x, z, 7, 5, 0xe6e4dc, 0xd
   const cross=(cx,cy,cz,ry,s,k)=>{ (k||T).add('paint', B3(1.4*s,0.42*s,0.04,cx,cy,cz,ry), 0xc81e1e); (k||T).add('paint', B3(0.42*s,1.4*s,0.04,cx,cy,cz,ry), 0xc81e1e); };
   cross(x, 1.3, z+2.53, 0, 1); cross(x+3.53, 1.3, z, Math.PI/2, 0.9); cross(x-3.53, 1.3, z, Math.PI/2, 0.9);
   T.add('paint', _xf(new THREE.BoxGeometry(1.6,0.05,0.5),x,2.95,z+0.6,0.83,0,0), 0xc81e1e); T.add('paint', _xf(new THREE.BoxGeometry(0.5,0.05,1.6),x,2.95,z+0.6,0.83,0,0), 0xc81e1e);   // a cross on the roof
-  for(const px of [-3.4,3.4]) K.add('metal', CY(0.04,0.04,2.3,5,x+px,1.15,z+5.2), 0x6a6a64); K.add('canvas', _xf(new THREE.BoxGeometry(7,0.04,2.8),x,2.25,z+3.8,-0.12,0,0), 0xd8d6ce);   // awning
+  { const W=K.tent ? K.tent(x, z+3.8, 7, 2.8) : K;   // Z417 the awning (poles and canvas) burns away like the tent; the cots under it stay
+    for(const px of [-3.4,3.4]) W.add('metal', CY(0.04,0.04,2.3,5,x+px,1.15,z+5.2), 0x6a6a64); W.add('canvas', _xf(new THREE.BoxGeometry(7,0.04,2.8),x,2.25,z+3.8,-0.12,0,0), 0xd8d6ce); }   // awning
   for(const cx of [-2.4,0,2.4]) cot(K, x+cx, z+3.9, 0);
   const ax=x+7.2, az=z+2; K.add('metal', B3(1.2,0.35,6.4,ax,0.75,az), 0x2a2a28); K.add('paint', B3(2.3,1.9,2.0,ax,1.65,az+2.2), 0xe8e6de); K.add('paint', B3(2.4,2.3,3.8,ax,1.95,az-0.9), 0xe8e6de);   // ambulance
   K.add('metal', B3(2.0,0.7,0.05,ax,2.0,az+3.21), 0x1a2228); cross(ax+1.22, 2.1, az-0.9, Math.PI/2, 0.8, K); cross(ax-1.22, 2.1, az-0.9, Math.PI/2, 0.8, K);   /* (the ambulance's crosses stay with it) */ wheelsK(K, [ax-1.05,ax+1.05], [az+2.2,az-1.8], 0.45); }
 // rest area: cots under a fly sheet + a washing line, latrines and showers with a water drum on top
-export function restArea(K, x, z){ for(const px of [-3,3]) for(const pz of [-2,2]) K.add('wood', CY(0.06,0.06,2.4,6,x+px,1.2,z+pz), 0x6a5236); K.add('canvas', B3(6.8,0.04,4.6,x,2.4,z), 0x6e6c4a);
+export function restArea(K, x, z){ const T=K.tent ? K.tent(x, z, 6.8, 4.6) : K;   // Z417 the fly sheet (poles and canvas) in a kit of its own: it burns away like the mess tent, the cots stay
+  for(const px of [-3,3]) for(const pz of [-2,2]) T.add('wood', CY(0.06,0.06,2.4,6,x+px,1.2,z+pz), 0x6a5236); T.add('canvas', B3(6.8,0.04,4.6,x,2.4,z), 0x6e6c4a);
   for(const cx of [-2.2,-0.7,0.8,2.3]) cot(K, x+cx, z, Math.PI/2*0+0);
   const lz=z+4.2; for(const s of [-3.5,3.5]) K.add('wood', CY(0.05,0.05,2.0,5,x+s,1.0,lz), 0x5a4428); K.add('metal', CY(0.01,0.01,7,3,x,1.85,lz,0,Math.PI/2), 0xb0b0a8);
   for(let i=0;i<9;i++) K.add('canvas', B3(0.5,0.62,0.03,x-3+i*0.72,1.5,lz), [0x5a6a3a,0xd8d0b8,0x7a7050,0x4a5232][i%4]); }   // washing on the line

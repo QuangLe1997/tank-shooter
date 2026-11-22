@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: the APC that brings them, free-roam inside the tank's combat zone, recall.
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY, FIELDCRAFT, REAL } from '../../config.js';
-import { ARENA, CAMPS, FTSQ, HELI_DOWN, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, paintVehicle, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wantPeek, wrapAngle, zoneJob, MODE } from '../hub.js';
+import { ARENA, CAMPS, FTSQ, HELI_DOWN, MOBILE, PLAYER_PAL, PYLONS, RIDER, S, TANK_SCALE, UGRID, _RUP, _rdir, _sV, animateSoldier, animateTank, aoeDamage, applyPowerup, atCover, bigExplode, blocks, blocksAt, boss, buildTank, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, decorateEnemyMesh, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, paintVehicle, pickups, playerRange, poseSoldier, radio, rallySpot, rangeRing, riders, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, solidTank, spawnBullet, spawnPart, spawnRider, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, unitsNear, updateClimb, updateCrewBtn, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, MODE } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; export let FT_APC=null;
@@ -24,8 +24,8 @@ export function updateFireteamAPC(dt, now){
     while(A.t>0.5 && A.dropped<A.load && A.t > 0.5+A.dropped*0.32){ const bx=A.pos.x-Math.sin(A.facing)*3.6, bz=A.pos.z-Math.cos(A.facing)*3.6; spawnAlly(bx,bz, A.facing+Math.PI+(A.dropped%2?0.7:-0.7)); A.dropped++; }
     if(A.dropped>=A.load && A.t>0.5+A.load*0.32+0.5){ A.state='out'; A.t=0; } }
   else { tx=A.pos.x; tz=ARENA+14; if(rmp) rmp.rotation.x=Math.max(0, rmp.rotation.x-dt*2); if(A.pos.z>ARENA+8){ scene.remove(m); FT_APC=null; return; } }
-  const dx=tx-A.pos.x, dz=tz-A.pos.z, d=Math.hypot(dx,dz)||1, want=d>1?spd:0;
-  A.vel.x+=(dx/d*want-A.vel.x)*Math.min(1,dt*2); A.vel.z+=(dz/d*want-A.vel.z)*Math.min(1,dt*2); A.pos.addScaledVector(A.vel, dt);
+  const dx=tx-A.pos.x, dz=tz-A.pos.z, d=Math.hypot(dx,dz)||1, want=(d>1?spd:0)*wadeAt(A.pos.x, A.pos.z), rw=d>4 ? riverWay(A, tx, tz, now) : null, ux=rw ? rw.x : dx/d, uz=rw ? rw.z : dz/d;   // Z417 round the deep river by a bridge or a ford, slowed in the water
+  A.vel.x+=(ux*want-A.vel.x)*Math.min(1,dt*2); A.vel.z+=(uz*want-A.vel.z)*Math.min(1,dt*2); A.pos.addScaledVector(A.vel, dt);
   if(A.state!=='out'){ clampField(A.pos, 4); }
   const sp=Math.hypot(A.vel.x,A.vel.z); if(sp>1){ A.facing+=wrapAngle(Math.atan2(A.vel.x,A.vel.z)-A.facing)*Math.min(1,dt*3); }
   m.position.set(A.pos.x,0,A.pos.z); m.rotation.y=A.facing; animateTank(m, A.pos.x, A.pos.z, A.facing, dt);
@@ -232,11 +232,12 @@ function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return fa
   else { const tr=tracerNext(a.g); spawnBullet(_sV.x,_sV.z,ang+(Math.random()-0.5)*(mg?SQUAD.mg.spread:0.06)*smokeSpreadK(a.pos.x, a.pos.z, T.pos.x, T.pos.z),{owner:'p', inf:true, dmg:(mg?SQUAD.mg.dmg:F.dmg)*(1+(S.stage-1)*0.12)*(a.armed?SQUAD.armedMul:1)*(a.dmgK||1), speed:mg?90:80, color:tr?REAL.tracer.ally:0xe8ef86, r:tr?0.3:(mg?0.2:0.24), trailK:tr?2.4:1, life:1.4, maxDist:(mg?SQUAD.mg.range:F.range)+2, noArc:true, y:_sV.y}); rifleFX(_sV.x, _sV.y, _sV.z, ang, mg); }   // Z223 red-orange tracer every Nth round · brass + muzzle smoke
   spawnPart(_sV.x,_sV.y,_sV.z, Math.sin(ang)*6,0.4,Math.cos(ang)*6, {tex:'flash', color:0xf2f7a0, size:0.5, life:0.06, grav:0, drag:9}); sfx('rifleShot', a.pos); return true; }
 // recall: board the hull (or gather beside it when every seat is taken). true = handled this frame
-function allyMount(a, dt){ const F=TROOPS.fireteam, p=S.player, dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, d=Math.hypot(dx,dz)||1, ox=a.pos.x, oz=a.pos.z;
+function allyMount(a, dt, now){ const F=TROOPS.fireteam, p=S.player, dx=p.pos.x-a.pos.x, dz=p.pos.z-a.pos.z, d=Math.hypot(dx,dz)||1, ox=a.pos.x, oz=a.pos.z;
   if(MODE.riders && d < p.radius+2.4 && riders.length<RIDER.cap){ dropCarry(a, true); const i=FT.indexOf(a); FT.splice(i,1); scene.remove(a.g); scene.remove(a.bar); spawnRider(); const r=riders[riders.length-1]; r.hp=Math.max(6, a.hp/a.maxHp*r.maxHp);
     S.recallIn=(S.recallIn||0)+1; floatText('LÊN XE '+S.recallIn, '#9bd14a', p.pos, 14); FT.forEach((o,j)=>o.slot=j); updateCrewBtn(); return true; }
   const stand = riders.length>=RIDER.cap ? p.radius+3.5 : 0;                                                      // seats full → crowd round the hull
-  if(d>stand){ a.pos.x+=dx/d*F.sprint*dt; a.pos.z+=dz/d*F.sprint*dt; infPushBlocks(a.pos); a.facing=Math.atan2(dx,dz); }
+  if(d>stand){ const rw=d>4 ? riverWay(a, p.pos.x, p.pos.z, now) : null, ux=rw ? rw.x : dx/d, uz=rw ? rw.z : dz/d, sp=F.sprint*wadeAt(a.pos.x, a.pos.z);   // Z417 called back across the river: by a bridge or a ford
+    a.pos.x+=ux*sp*dt; a.pos.z+=uz*sp*dt; infPushBlocks(a.pos); a.facing=Math.atan2(ux,uz); }
   allyPose(a, Math.hypot(a.pos.x-ox,a.pos.z-oz), dt, false); poseSoldier(a.g, 'stand', dt); return true; }
 function allyPose(a, moved, dt, fired){ a.g.position.set(a.pos.x, heightAt(a.pos.x,a.pos.z)+(a.jy0||0), a.pos.z); a.g.rotation.y=a.facing; animateSoldier(a.g, moved/1.15, dt, fired);
   a.bar.position.set(a.pos.x, TROOPS.look.barY*stanceBarK(a.g)+heightAt(a.pos.x,a.pos.z), a.pos.z); a.bar.quaternion.copy(camera.quaternion); }
@@ -253,15 +254,15 @@ export function updateFireteam(dt, now){
   for(const a of FT.slice()){
     if(a.climb){ updateClimb(a, dt); if(a.climb) continue; }                                       // Z145 on a scaling ladder
     if(S.recall){ if(!a.answering && Math.hypot(a.pos.x-p.pos.x, a.pos.z-p.pos.z) <= rr) a.answering=true; } else a.answering=false;   // only men inside the ring answer
-    a.mounting=a.answering; if(a.answering && allyMount(a, dt)) continue;
+    a.mounting=a.answering; if(a.answering && allyMount(a, dt, now)) continue;
     if(now>=(a.thinkAt||0)) allyThink(a, now);
     if(a.demo) updateDemolition(a, dt, now);
     const ox=a.pos.x, oz=a.pos.z; let mx=0, mz=0, md=0;
-    if(a.goal){ mx=a.goal[0]-a.pos.x; mz=a.goal[1]-a.pos.z; md=Math.hypot(mx,mz); if(md<0.6 && (a.task==='cover'||a.task==='post')){ mx=mz=0; } }
+    if(a.goal){ mx=a.goal[0]-a.pos.x; mz=a.goal[1]-a.pos.z; md=Math.hypot(mx,mz); if(md<0.6 && (a.task==='cover'||a.task==='post')){ mx=mz=0; } else if(md>4){ const rw=riverWay(a, a.goal[0], a.goal[1], now); if(rw){ mx=rw.x*md; mz=rw.z*md; } } }   // Z417 a goal across the deep river: round by a bridge or a ford
     let fleeing=false; if(nadeFlee(a.pos, _fl)){ mx=_fl.x*20; mz=_fl.z*20; md=20; fleeing=true; nadeBark(a.pos, now); }   // Z220 a grenade lands among them: scatter
     for(const o of FT){ if(o===a) continue; const sx=a.pos.x-o.pos.x, sz=a.pos.z-o.pos.z, sq=sx*sx+sz*sz; if(sq < F.spread*F.spread && sq>1e-4){ const k=(F.spread-Math.sqrt(sq))*2; mx+=sx*k; mz+=sz*k; } }   // personal space
     if(dazed(a, now)){ mx=mz=0; }   // Z223 dazed: stays down
-    const ml=Math.hypot(mx,mz); if(ml>0.3){ const run = fleeing||a.task==='cover'||a.task==='evade'||a.task==='rally'||a.task==='fallback'||md>12, sp=(run?F.sprint:F.speed)*(a.carry?0.85:1); a.pos.x+=mx/ml*Math.min(ml,sp*dt); a.pos.z+=mz/ml*Math.min(ml,sp*dt); }
+    const ml=Math.hypot(mx,mz); if(ml>0.3){ const run = fleeing||a.task==='cover'||a.task==='evade'||a.task==='rally'||a.task==='fallback'||md>12, sp=(run?F.sprint:F.speed)*(a.carry?0.85:1)*wadeAt(a.pos.x, a.pos.z); a.pos.x+=mx/ml*Math.min(ml,sp*dt); a.pos.z+=mz/ml*Math.min(ml,sp*dt); }
     if(a.kbx||a.kbz){ a.pos.x+=a.kbx*dt; a.pos.z+=a.kbz*dt; const kf=Math.max(0,1-dt*5); a.kbx*=kf; a.kbz*=kf; if(Math.abs(a.kbx)+Math.abs(a.kbz)<0.1){ a.kbx=a.kbz=0; } }
     const px=a.pos.x-p.pos.x, pz=a.pos.z-p.pos.z, pd=Math.hypot(px,pz); if(pd<p.radius+1.4 && pd>1e-3){ a.pos.x=p.pos.x+px/pd*(p.radius+1.4); a.pos.z=p.pos.z+pz/pd*(p.radius+1.4); }   // step clear of our own tracks
     infPushBlocks(a.pos); clampField(a.pos, 2);
