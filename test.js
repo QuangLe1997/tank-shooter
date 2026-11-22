@@ -2606,5 +2606,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(Q.cliffs.every(k=>C.SCENERY.models[k] && fs.existsSync('assets/models/real/scene/'+k+'.glb')) && Q.road.every(k=>C.SCENERY.models[k] && fs.existsSync('assets/models/real/scene/'+k+'.glb')) && /roadRocks\(T\.paths\)/.test(R('src/world/trails.js')), 'photographed cliffs on the flanks, boulders along the roads');
   ok(/C\.grade \* \(dh \/ \(dl \* c\)\) \*\* 2/.test(R('src/world/trails.js')) && /pad = f\.hillH && q\.k !== 'base_wire' \? flattenPad\(/.test(R('src/world/outposts.js')) && /\.position\.y-=bury/.test(fo), 'the road winds up the hill; outposts on terraces; tower feet let into the rock'); }
 
+// Z454 the quarry made rugged: rock faces along the plateau's drop, a field of stepped ledges and knobs, perched boulders and rock clusters, the yards'
+//   paving worn unevenly with a border of bigger stone, the open citadel's gate two square towers either side of the road
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), Q=C.FORTHILL.biomes.QUARRY, fh=R('src/world/fort-hill.js'), fo=R('src/world/fortress.js');
+  ok(Q.edge && Q.rough && Q.perch && Q.scatter && /function edgeCliffs\(C\)/.test(fh) && /function roughen\(C\)/.test(fh) && /function fieldRocks\(C, tone\)/.test(fh) && /M\.elements\[13\] \+= d/.test(fh), 'rock faces on the plateau\'s drop, rugged ground (what lies on it moved with it), perched boulders, rock clusters');
+  ok(C.GROUND_PHOTO.biomes.QUARRY[1]==='gray_rocks' && fs.existsSync('assets/ground/gray_rocks/diff.jpg') && /function kerb\(x0, z0, r, w\)/.test(fh) && /'paveYard1'/.test(fh), 'the quarry\'s second ground is angular rubble; the paving worn unevenly, a kerb round it');
+  ok(/an open citadel's gate: two square towers either side of the road/.test(fo) && /kind:'gatepier'/.test(fo), 'the open citadel\'s gate: two solid towers, the road between them'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

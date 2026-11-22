@@ -633,11 +633,13 @@ function kitStone(m, SY, mp, KT){ m.envMapIntensity=KT.env; m.side=THREE.FrontSi
   else m.color.setRGB(...(SY.trim || [1, 1, 1]));
   m.needsUpdate=true; }
 // Z453 AN OPEN CITADEL (FORTHILL open): no ring of wall round the capital — only the curtain along its cliff behind stands (keepArc either side of the
-//   rear), its towers at the ends; the front, the gate and the wall-walk riflemen over it are gone: men and tanks come up the road onto the yard and the ward
+//   rear), its towers at the ends; the front walls, the gate's leaves and the wall-walk riflemen over them are gone (the gatehouse stands, its arch open): men and tanks come up the road onto the yard and the ward
 function openCitadel(f){ const ga=f.hillGa ?? Math.atan2(f.gz-f.z, f.gx-f.x), keep=hillCfg().keepArc, front=(x,z)=>Math.PI-Math.abs(Math.atan2(Math.sin(Math.atan2(z,x)-ga), Math.cos(Math.atan2(z,x)-ga)))>=keep;
   _m.makeScale(0,0,0); for(const pc of f.pieces){ if(!front(pc.cx, pc.cz)) continue; const i=blocks.indexOf(pc.block); if(i>=0) blocks.splice(i,1); pc.down=true; for(const im of [f.wallIM, f.capIM, f.darkIM]) if(im){ im.setMatrixAt(pc.i,_m); im.instanceMatrix.needsUpdate=true; } }
   if(f.pt) for(const gd of f.pt.guards){ const P=gd.g.position; if(front(P.x, P.z)){ gd.alive=false; gd.g.visible=false; } }
-  { const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); } if(f.leaves && f.leaves[0] && f.leaves[0].g.parent) f.leaves[0].g.parent.visible=false; f.gp=null; f.breached=true; f.openCitadel=true; }
+  { const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); } if(f.leaves && f.leaves[0] && f.leaves[0].g.parent) f.leaves[0].g.parent.visible=false; f.breached=true; f.openCitadel=true;
+  if(f.gp){ const gw=(FORT.gateW+2*(f.gp[4]||5))*REALFORT.gateW, of=Math.atan2(f.gux, f.guz);   // Z453 the gatehouse stays, open: the road runs through its arch — its two piers are solid
+    for(const sd of [-1,1]){ const o=sd*(gw/2+FORT.gateW/2)/2; blocks.push({ mesh:new THREE.Object3D(), x:f.gx+f.gux*o, z:f.gz+f.guz*o, r:3.2, obb:{ f:of, hl:(gw-FORT.gateW)/4, hw:3.2 }, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'gatepier', fort:f }); } } }
 function realFort(){ return !!REALFORT.biomes[BIOME.name] && typeof window!=='undefined' && !/procfort/.test(location.search+location.hash); }   // Z434 this battlefield's forts wear real walls and towers
 function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
   const K0=REALFORT.kit && REALFORT.kit.on ? REALFORT.kit : null, SY=K0 && K0.style[st], A=SY && K0.arch[SY.arch], KT=A ? { ...K0, ...A, towerW:A.towerW || K0.towerW } : null;   // Z435 the photographed kit: this land's architecture and stone
@@ -676,4 +678,6 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
     if(f.dj && KT){ const KP=TK||T, [x,z,ry,w]=f.dj, k=Math.max(w*KT.keepW/Math.max(KP.size.x,KP.size.z)*(TK ? 0.75 : 1), KY*KT.keepH), wh=f.ward ? f.ward.h : 0, top=-0.4+KP.size.y*k+wh; add(KP.geo, KP.mat, x, z, ry, k, k, k).position.y+=wh;   // Z435 the keep: the round tower whole, broad and squat, not a 40 m spire
       f.keepY=top; if(f.flagG) f.flagG.position.y=top; if(f.label) f.label.position.y=top+(f.flagH||12)+3; }
     else if(f.dj){ const [x,z,ry,w,h]=f.dj, k=w*C.keepW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, (h+C.towerUp)*C.keepH/T.size.y, k); }
-    if(Gt){ const [x,z,ry,GH]=f.gp, kx=gw/Gt.size.x; add(Gt.geo, Gt.mat, x, z, ry, kx, Math.max(GH, TH2)/Gt.size.y, kx); } }); }
+    if(Gt && f.openCitadel && (TK||T2)){ const P2=TK||T2, [x,z,ry]=f.gp, ky=(H+2+C.wallUp+KT.towerUp+bury)/P2.size.y, kx=Math.max(KT.towerW*0.85/Math.max(P2.size.x,P2.size.z), ky*KT.squash);   // Z453 an open citadel's gate: two square towers either side of the road, no arch standing alone
+      for(const sd of [-1,1]){ const o=sd*(gw/2+FORT.gateW/2)/2; add(P2.geo, P2.mat, x+f.gux*o, z+f.guz*o, ry, kx, ky*(1+bury/(P2.size.y*ky)), kx).position.y-=bury; } }
+    else if(Gt){ const [x,z,ry,GH]=f.gp, kx=gw/Gt.size.x; add(Gt.geo, Gt.mat, x, z, ry, kx, Math.max(GH, TH2)/Gt.size.y, kx); } }); }

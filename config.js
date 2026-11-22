@@ -1070,7 +1070,7 @@ export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTil
   biomes:{
   MEADOW:['sparse_grass','forest_ground_04'], HILLS:['leafy_grass','rock_ground'], VILLAGE:['grass_path_2','brown_mud_02'], SAVANNA:['dry_ground_rocks','mud_cracked_dry_03'],
   DESERT:['aerial_sand','dry_ground_rocks'], TUNDRA:['snow_01','rock_ground_02'], ARCTIC:['snow_01','snow_03'], VOLCANO:['rocks_ground_02','brown_mud_rocks_01'],
-  QUARRY:['rocks_ground_05','rocks_ground_06'], FOUNDRY:['concrete_floor_damaged_01','burned_ground_01'], STEELMILL:['concrete_floor_damaged_01','burned_ground_01'], CITY:['asphalt_01','cracked_concrete'],
+  QUARRY:['rocks_ground_05','gray_rocks'], FOUNDRY:['concrete_floor_damaged_01','burned_ground_01'], STEELMILL:['concrete_floor_damaged_01','burned_ground_01'], CITY:['asphalt_01','cracked_concrete'],
   CITADEL:['rocky_trail','gravel_floor'], RUINS:['rocks_ground_02','rocks_ground_04'], CAVERN:['rock_ground_02','brown_mud_rocks_01'] },
   // Z394 the floors that read as paint (a near-featureless photo stretched over 370 m: trodden-flat snow, a brown road, smooth grey ash, plain sand) are
   //   built from the richer sets — the snow trampled and churned to earth in patches, the works a broken concrete yard black with soot and cinders, the
@@ -1399,7 +1399,10 @@ export const FORT_CMD = { on:true, k:{ mobile:0.82 }, rim:1.5,
 //   within roadA rad of the road up) — the capital open (its walls only within keepArc rad of the rear) with its keep on a ward h m up (r m, edge m of
 //   steep side, a ramp rampW × rampL m toward the gate, at × the fort's radius behind its centre); every yard paved (pave/, tile m, tint)
 export const FORTHILL = { on:true, biomes:{ QUARRY:{ h:[12, 8, 5], top:14, base:30, ramp:0.9, cliff:0.38, rag:0.22, crag:0.7, rocks:14, rock:[2.4, 4.5], roadA:0.4, cliffs:['hill_cliff', 'hill_crag', 'hill_ledge', 'hill_cliff'], outcrops:9, outS:[0.55, 1.0], outSink:0.28, tone:[1.25, 1.22, 1.2], road:['road_rocks', 'road_boulder'], roadN:0.16, roadS:[[0.9, 1.8], [1.4, 3.2]], open:true, keepArc:1.35, keep:'modular_fort_01_wall_thick_corner_01', mix:'modular_fort_01_wall_thick_corner_01', bury:1.4,
-  ward:{ h:4.5, r:13, edge:2.6, rampW:9, rampL:20, at:0.36 }, paveTile:4.5, paveTint:[1.0, 0.98, 0.95], paveSteep:0.6 } } };
+  ward:{ h:4.5, r:13, edge:2.6, rampW:9, rampL:20, at:0.36 }, paveTile:4.5, paveTint:[1.0, 0.98, 0.95], paveSteep:0.6, kerbW:1.6, kerbK:0.72,
+    edge:{ keys:['hill_ledge', 'hill_cliff', 'hill_crag'], h:[26, 42], o:[6, 16], lip:0.9, drop:18, overlap:0.62 },
+    rough:{ ledge:0.9, steps:5, edge:0.72, bump:0.35, clear:[30, 44] }, perch:{ n:10, keys:['road_boulder', 'road_rocks'], h:[2.5, 5], sink:0.08 },
+    scatter:{ n:46, group:3, big:0.35, bigS:[2.5, 5.5], smallS:[1.2, 3] } } } };
 export const FORT = {
   coverK:0.55, coreFire:55, crater:{ rim:0.7, depth:2.4 },   // Z434 the yard's cover × (a fort's yard was a junk pile) · how long (s) the command post's wreck burns · its crater: rim raised, pit sunk (m)
   count:[3,3,4,4,4], countMobile:[2,2,3,3,3],   // Z234 phones: the 130 m field holds fewer forts now that they stand clear of our citadel
