@@ -1,7 +1,7 @@
 // world/fort-hill.js — Z453 CASTLES ON CRAGS (config FORTHILL, the limestone quarry first; Z455 the whole land: crags joined by ridges, knolls, quarry benches): every fort stands on a rocky hill — sheer flanks behind, a gentler shoulder toward its gate for the road up, crags on the slopes — its yard paved in stone; the capital an open citadel with its keep on a paved upper ward reached by a ramp, all of it ground that men and tanks drive up and fight on
 import * as THREE from 'three';
 import { FORTHILL } from '../../config.js';
-import { ARENA, BIOME, HF, MOBILE, ZONES, _R, blocks, buildPerimeter, blendIn, crushables, dressRock, fieldDepth, fieldR, heightAt, inField, rockSet, scene, sceneDims, scenePiece } from '../hub.js';
+import { ARENA, BIOME, HF, MOBILE, ZONES, _R, blocks, buildPerimeter, blendIn, carveClimb, clearClimbs, crushables, dressRock, fieldDepth, fieldR, heightAt, inField, onClimb, rockSet, scene, sceneDims, scenePiece } from '../hub.js';
 
 export const PAVED = [];   // { x, z, r } the paved yards and wards (trails.js keeps grass and loose stones off them, decals.js paints them into the contact map)
 const _Z = new THREE.Matrix4().makeScale(0, 0, 0), PAVE = { mat:null, kerb:null, meshes:[], rocks:[] };
@@ -21,12 +21,13 @@ const fbm = (x, z, s, o = 4) => { let a = 0, w = 0.5, f = 1, t = 0; for(let k = 
 //   fort on its crag (gentle toward its gate, sheer behind), the crags joined by winding ridges (the forts' shortest tree) that dip to a saddle midway
 //   and fall steeper on one side, a few knolls between, the flanks cut here and there into quarry benches, the whole floor knobbled by fbm bumps —
 //   all of it kept off our compound and the spawn; what lay on the old ground (loose stones, tufts) rides with it, or goes where a crag rose
-export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; KNOLLS.length = 0; HILLWAY.length = 0; CRESTS.length = 0; for(const m of PAVE.meshes){ if(m.parent) m.parent.remove(m); m.geometry.dispose(); } for(const m of PAVE.rocks) if(m.parent) m.parent.remove(m); PAVE.meshes.length = PAVE.rocks.length = 0;
+export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; clearClimbs(); KNOLLS.length = 0; HILLWAY.length = 0; CRESTS.length = 0; for(const m of PAVE.meshes){ if(m.parent) m.parent.remove(m); m.geometry.dispose(); } for(const m of PAVE.rocks) if(m.parent) m.parent.remove(m); PAVE.meshes.length = PAVE.rocks.length = 0;
   const C = hillCfg(); if(!C) return; const L = C.land || {}, W = HF.W, h = HF.h, st = HF.step, F = new Float32Array(h.length), s = Math.random() * 100, sp = ARENA * 0.55, put = (k, v) => { if(v > F[k]) F[k] = v; };
-  for(const f of forts){ const H = C.h[f.tier === 3 ? 0 : f.tier === 2 ? 1 : 2], top = f.R + C.top, base = C.base * (f.tier === 3 ? 1 : 0.8), ga = Math.atan2(ARENA * 0.55 - f.z, -f.x), s2 = Math.random() * 9;
-    f.hillH = H; f.hillGa = ga; _HILLS.push(f); const R = top + base * (1 + C.ramp) * (1 + C.rag) + 2, [i0, i1] = span(f.x, R), [j0, j1] = span(f.z, R);
+  for(const f of forts){ const H = C.h[f.tier === 3 ? 0 : f.tier === 2 ? 1 : 2], SP = f.tier === 3 && C.spur, top = f.R + (SP ? SP.top : C.top), base = C.base * (f.tier === 3 ? 1 : 0.8), ga = Math.atan2(ARENA * 0.55 - f.z, -f.x), s2 = Math.random() * 9;
+    const ramp = SP ? SP.ramp : C.ramp, cliff = SP ? SP.cliff : C.cliff;   // Z456 the capital on a spur: sheer all round but a narrow tongue toward its gate (FORTHILL.spur)
+    f.hillH = H; f.hillGa = ga; f.hillTop = top - f.R; f.climb = null; f.spurL = SP ? base * (1 + ramp) * (1 + C.rag * rag(ga, s2)) : 0; _HILLS.push(f); const R = top + base * (1 + C.ramp) * (1 + C.rag) + 2, [i0, i1] = span(f.x, R), [j0, j1] = span(f.z, R);
     for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const x = -ARENA + i * st, z = -ARENA + j * st, dx = x - f.x, dz = z - f.z, d = Math.hypot(dx, dz); if(d > R) continue;
-      const a = Math.atan2(dz, dx), fr = Math.max(0, Math.cos(a - ga)), b = base * (1 + C.ramp * fr * fr) * (C.cliff + (1 - C.cliff) * fr) * (1 + C.rag * rag(a, s2)), k = 1 - sm(top, top + b, d); if(k > 0) put(j * W + i, H * k); }   // gentle toward the gate, sheer behind
+      const a = Math.atan2(dz, dx), fr = Math.pow(Math.max(0, Math.cos(a - ga)), SP ? SP.p : 1), b = base * (1 + ramp * fr * fr) * (cliff + (1 - cliff) * fr) * (1 + C.rag * rag(a, s2)), k = 1 - sm(top, top + b, d); if(k > 0) put(j * W + i, H * k); }   // gentle toward the gate, sheer behind
     for(const c of crushables) if(c.alive && c.im && Math.hypot(c.x - f.x, c.z - f.z) < R){ c.im.setMatrixAt(c.k, _Z); c.im.instanceMatrix.needsUpdate = true; c.alive = false; }
     const Z = ZONES.find(q => q.fort === f); if(Z) Z.r = Math.max(Z.r, top + base * 0.7); }
   if(L.ridge) ridges(forts, L.ridge, F, s); if(L.knolls) knolls(forts, C, L.knolls, F, s);
@@ -39,6 +40,7 @@ export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; KNOL
     return (D[k] * (1 - u) + D[k + 1] * u) * (1 - w) + (D[k + W] * (1 - u) + D[k + W + 1] * u) * w; };
   for(const c of crushables){ if(!c.alive || !c.im) continue; const d = at(c.x, c.z); if(!d) continue; c.im.getMatrixAt(c.k, M); M.elements[13] += d; c.im.setMatrixAt(c.k, M); seen.add(c.im); }
   for(const im of seen) im.instanceMatrix.needsUpdate = true;
+  for(const f of forts) if(f.spurL) carveClimb(f, C.spur, f.R + C.spur.top, f.spurL);   // Z456 the one way up: hairpins cut into the tongue (world/hill-climb.js)
   buildPerimeter(BIOME, true);   // the fence and the rocks beyond it on the new ground
   if(forts.length) crags(forts, C); edgeCliffs(C); steepRocks(forts, C); spires(forts, C); }
 // ridges between neighbouring forts (their shortest tree): a crest wandering off the straight line, high where it leaves each crag, down to a saddle
@@ -67,7 +69,7 @@ export const HILLWAY = [], CRESTS = [];
 //   along the contour, half sunk, as tall as the drop it fronts — so the crags' sheer sides, the ridges' scarps and the quarry benches' risers read as rock
 function steepRocks(forts, C){ const S = C.steep; if(!S) return; const tone = new THREE.Color().setRGB(...(C.tone || [1, 1, 1])), st = HF.step, cand = [], g = Math.max(2, Math.round(S.grid / st));
   for(let j = g; j < HF.N - g; j += g) for(let i = g; i < HF.N - g; i += g){ const x = -ARENA + i * st, z = -ARENA + j * st, e = 2.5, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), sl = Math.hypot(gx, gz);
-    if(sl < S.min || Math.hypot(x, z) < C.land.clear[0] || Math.hypot(x, z - ARENA * 0.55) < 20 || onPaved(x, z) || forts.some(f => Math.hypot(f.x - x, f.z - z) < f.R + 3) || fieldDepth(x, z) < 2) continue;
+    if(sl < S.min || Math.hypot(x, z) < C.land.clear[0] || Math.hypot(x, z - ARENA * 0.55) < 20 || onPaved(x, z) || onClimb(x, z, 4) || forts.some(f => Math.hypot(f.x - x, f.z - z) < f.R + 3) || fieldDepth(x, z) < 2) continue;
     cand.push({ x, z, sl, a:Math.atan2(gz, gx) }); }
   cand.sort((p, q) => q.sl - p.sl); const cap = Math.round(S.n * (MOBILE ? 0.45 : 1)), put = [];
   for(const c of cand){ if(put.length >= cap) break; if(put.some(q => Math.hypot(q.x - c.x, q.z - c.z) < S.gap) || blocks.some(b => b.kind !== 'crag' && Math.hypot(b.x - c.x, b.z - c.z) < (b.r || 1) + 3)) continue;
@@ -78,7 +80,7 @@ function steepRocks(forts, C){ const S = C.steep; if(!S) return; const tone = ne
 function spires(forts, C){ const S = C.spire; if(!S) return; const tone = new THREE.Color().setRGB(...(C.tone || [1, 1, 1])), pts = CRESTS.slice();
   for(const k of KNOLLS) for(let q = 0; q < S.perKnoll; q++){ const a = Math.random() * 6.283, d = k.R * _R(0.3, 0.55); pts.push({ x:k.x + Math.cos(a) * d, z:k.z + Math.sin(a) * d, a }); }
   let n = 0; for(const p of pts){ if(n >= S.n * (MOBILE ? 0.5 : 1) || Math.random() > S.share) continue; const x = p.x + _R(-4, 4), z = p.z + _R(-4, 4);
-    if(!inField(x, z, 3) || Math.hypot(x, z) < C.land.clear[1] || forts.some(f => Math.hypot(f.x - x, f.z - z) < f.R + C.top) || blocks.some(b => Math.hypot(b.x - x, b.z - z) < (b.r || 1) + 4)) continue;
+    if(!inField(x, z, 3) || Math.hypot(x, z) < C.land.clear[1] || onClimb(x, z, 4) || forts.some(f => Math.hypot(f.x - x, f.z - z) < f.R + C.top) || blocks.some(b => Math.hypot(b.x - x, b.z - z) < (b.r || 1) + 4)) continue;
     const key = S.keys[(Math.random() * S.keys.length) | 0], D = sceneDims(key), Hs = _R(S.h[0], S.h[1]), sc = Hs / D.y, m = scenePiece(key, sc, rockOpt(key)); m.scale.set(sc * S.thin, sc, sc * S.thin);
     m.position.set(x, heightAt(x, z) - Hs * 0.18, z); m.rotation.y = Math.random() * 6.28; scene.add(m); PAVE.rocks.push(m);
     blocks.push({ mesh:new THREE.Object3D(), x, z, r:Math.max(D.x, D.z) * sc * S.thin * 0.45, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); n++; } }
@@ -95,19 +97,19 @@ function rockOpt(key){ const m = limeMat(key); return m ? { mat:m } : { tone:new
 function crags(forts, C){ const rs = rockSet(BIOME.name);
   for(const f of forts){ const no = Math.round(C.outcrops * (f.tier === 3 ? 1 : 0.5) * (MOBILE ? 0.6 : 1)), tone = new THREE.Color().setRGB(...(C.tone || [1, 1, 1]));   // the flanks: photographed cliffs breaking through, the sheer side most, half buried, faces turned out
     for(let t = 0, k = 0; t < no * 8 && k < no; t++){ const key = C.cliffs[k % C.cliffs.length], D = sceneDims(key), back = Math.random() < 0.7, a = f.hillGa + (back ? Math.PI + _R(-1.4, 1.4) : _R(-2.6, 2.6)), off = Math.abs(Math.atan2(Math.sin(a - f.hillGa), Math.cos(a - f.hillGa)));
-      if(off < C.roadA + 0.25) continue; const d = f.R + C.top + _R(1, C.base * (back ? 0.4 : 0.6)), x = f.x + Math.cos(a) * d, z = f.z + Math.sin(a) * d, sc = Math.max(0.35, f.hillH * _R(C.outS[0], C.outS[1]) / D.y);
-      if(Math.max(Math.abs(x), Math.abs(z)) > ARENA - 3 || PAVE.rocks.some(q => Math.hypot(q.position.x - x, q.position.z - z) < Math.max(D.x, D.z) * sc * 0.35)) continue;   // (past the fence too: the crag's far side is part of the view)
+      if(off < C.roadA + 0.25) continue; const d = f.R + f.hillTop + _R(1, C.base * (back ? 0.4 : 0.6)), x = f.x + Math.cos(a) * d, z = f.z + Math.sin(a) * d, sc = Math.max(0.35, f.hillH * _R(C.outS[0], C.outS[1]) / D.y);
+      if(Math.max(Math.abs(x), Math.abs(z)) > ARENA - 3 || onClimb(x, z, Math.min(D.x, D.z) * sc * 0.5) || PAVE.rocks.some(q => Math.hypot(q.position.x - x, q.position.z - z) < Math.max(D.x, D.z) * sc * 0.35)) continue;   // (past the fence too: the crag's far side is part of the view)
       const m = scenePiece(key, sc, rockOpt(key)); m.scale.setScalar(sc); m.position.set(x, heightAt(x, z) - D.y * sc * C.outSink, z); m.rotation.y = -a + Math.PI / 2 + (Math.random() < 0.5 ? Math.PI : 0) + _R(-0.35, 0.35); scene.add(m); PAVE.rocks.push(m);
       blocks.push({ mesh:new THREE.Object3D(), x, z, r:Math.min(D.x, D.z) * sc * 0.5, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); k++; } }
   for(const f of forts){ const np = Math.round((C.perch ? C.perch.n : 0) * (f.tier === 3 ? 1 : 0.6) * (MOBILE ? 0.6 : 1)), tone = new THREE.Color().setRGB(...(C.tone || [1, 1, 1]));   // Z453 boulders perched on the flanks: big, barely bedded, tilted as they came to rest
     for(let t = 0, k = 0; t < np * 8 && k < np; t++){ const a = Math.random() * 6.283, off = Math.abs(Math.atan2(Math.sin(a - f.hillGa), Math.cos(a - f.hillGa))); if(off < C.roadA) continue;
-      const d = f.R + C.top + _R(2, C.base * 0.75), x = f.x + Math.cos(a) * d, z = f.z + Math.sin(a) * d, key = C.perch.keys[(Math.random() * C.perch.keys.length) | 0], D = sceneDims(key), sc = _R(C.perch.h[0], C.perch.h[1]) / D.y;
-      if(Math.max(Math.abs(x), Math.abs(z)) > ARENA - 3 || blocks.some(b => b.kind === 'crag' && Math.hypot(b.x - x, b.z - z) < b.r + Math.max(D.x, D.z) * sc * 0.5)) continue;
+      const d = f.R + f.hillTop + _R(2, C.base * 0.75), x = f.x + Math.cos(a) * d, z = f.z + Math.sin(a) * d, key = C.perch.keys[(Math.random() * C.perch.keys.length) | 0], D = sceneDims(key), sc = _R(C.perch.h[0], C.perch.h[1]) / D.y;
+      if(Math.max(Math.abs(x), Math.abs(z)) > ARENA - 3 || onClimb(x, z, Math.max(D.x, D.z) * sc * 0.5) || blocks.some(b => b.kind === 'crag' && Math.hypot(b.x - x, b.z - z) < b.r + Math.max(D.x, D.z) * sc * 0.5)) continue;
       const m = scenePiece(key, sc, rockOpt(key)); m.scale.setScalar(sc); m.position.set(x, heightAt(x, z) - D.y * sc * C.perch.sink, z); m.rotation.set(_R(-0.25, 0.25), Math.random() * 6.28, _R(-0.25, 0.25)); scene.add(m); PAVE.rocks.push(m);
       blocks.push({ mesh:new THREE.Object3D(), x, z, r:Math.max(D.x, D.z) * sc * 0.45, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); k++; } }
   for(const f of forts){ const n = Math.round(C.rocks * (f.tier === 3 ? 1 : 0.6) * (MOBILE ? 0.6 : 1));
     for(let t = 0, k = 0; t < n * 8 && k < n; t++){ const a = Math.random() * 6.283, off = Math.abs(Math.atan2(Math.sin(a - f.hillGa), Math.cos(a - f.hillGa))); if(off < C.roadA) continue;
-      const back = off > 1.6, d = f.R + C.top + _R(5, C.base * (back ? 0.45 : 0.85)), x = f.x + Math.cos(a) * d, z = f.z + Math.sin(a) * d; if(Math.max(Math.abs(x), Math.abs(z)) > ARENA - 3 || blocks.some(b => b.kind === 'crag' && Math.hypot(b.x - x, b.z - z) < b.r + 3)) continue;
+      const back = off > 1.6, d = f.R + f.hillTop + _R(5, C.base * (back ? 0.45 : 0.85)), x = f.x + Math.cos(a) * d, z = f.z + Math.sin(a) * d; if(Math.max(Math.abs(x), Math.abs(z)) > ARENA - 3 || onClimb(x, z, C.rock[1] * 1.3) || blocks.some(b => b.kind === 'crag' && Math.hypot(b.x - x, b.z - z) < b.r + 3)) continue;
       const r = _R(C.rock[0], C.rock[1]) * (back ? 1.25 : 1), m = dressRock(new THREE.Mesh(rs.big[(Math.random() * rs.big.length) | 0], rs.mat), BIOME.name);
       m.scale.set(r * _R(1, 1.5), r * _R(0.8, 1.4), r * _R(1, 1.4)); m.position.set(x, heightAt(x, z) - r * 0.3, z); m.rotation.set(_R(-0.3, 0.3), Math.random() * 6.28, _R(-0.3, 0.3)); m.castShadow = m.receiveShadow = true; scene.add(m);
       blocks.push({ mesh:m, x, z, r:r * 1.15, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); k++; } } }
@@ -160,7 +162,7 @@ export const onPaved = (x, z) => PAVED.some(p => (p.x - x) ** 2 + (p.z - z) ** 2
 export function roadRocks(paths){ const C = hillCfg(); if(!C || !C.road || typeof window === 'undefined') return; const tone = new THREE.Color().setRGB(...(C.tone || [1, 1, 1])), cap = MOBILE ? 24 : 70; let n = 0;
   for(const P of paths){ for(let i = 3; i < P.pts.length - 3 && n < cap; i++){ const [x, z] = P.pts[i], hill = (P.hill = P.hill || {})[i] ?? hillAt(x, z), rate = C.roadN * (hill ? 3 : 1);
       if(Math.random() > rate) continue; const [x0, z0] = P.pts[i - 1], [x1, z1] = P.pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0) || 1, nx = -(z1 - z0) / L, nz = (x1 - x0) / L, sd = Math.random() < 0.5 ? -1 : 1, K = Math.random() < 0.6 ? 0 : 1, key = C.road[K], D = sceneDims(key);
-      const sc = _R(C.roadS[K][0], C.roadS[K][1]) * (hill ? 1.3 : 1), u = sd * (P.w / 2 + 0.6 + Math.max(D.x, D.z) * sc * 0.5 + _R(0, 1.5)), px = x + nx * u, pz = z + nz * u; if(!inField(px, pz, 1.5) || onPaved(px, pz)) continue;
+      const sc = _R(C.roadS[K][0], C.roadS[K][1]) * (hill ? 1.3 : 1), u = sd * (P.w / 2 + 0.6 + Math.max(D.x, D.z) * sc * 0.5 + _R(0, 1.5)), px = x + nx * u, pz = z + nz * u; if(!inField(px, pz, 1.5) || onPaved(px, pz) || (P.climb ? P.pts.some(([qx, qz], q) => Math.abs(q - i) > 5 && Math.hypot(qx - px, qz - pz) < P.w / 2 + 1 + Math.max(D.x, D.z) * sc * 0.45) : onClimb(px, pz, Math.max(D.x, D.z) * sc * 0.4))) continue;   // (Z456 never onto the way up — a hairpin's rocks not onto the leg below)
       const m = scenePiece(key, sc, rockOpt(key)); m.scale.setScalar(sc); m.position.set(px, heightAt(px, pz) - D.y * sc * 0.15, pz); m.rotation.y = Math.random() * 6.28; scene.add(m); PAVE.rocks.push(m);
       blocks.push({ mesh:new THREE.Object3D(), x:px, z:pz, r:Math.max(D.x, D.z) * sc * 0.42, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); n++; } }
   fieldRocks(C, tone); }

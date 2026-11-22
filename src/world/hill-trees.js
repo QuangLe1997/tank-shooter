@@ -4,10 +4,10 @@
 //   distance levels, the trunk solid, gone with the land at the next stage), after the set has claimed its ground; the foot is set on the ground
 //   round the trunk, not under the whole crown (on a lip that would sink the tree metres into the rock).
 import { SCENERY } from '../../config.js';
-import { ARENA, FORTS, KNOLLS, MOBILE, SCENE, _R, blocks, fieldDepth, heightAt, hillCfg, inField, onPaved, placeScene } from '../hub.js';
+import { ARENA, FORTS, KNOLLS, MOBILE, SCENE, _R, blocks, fieldDepth, heightAt, hillCfg, inField, onClimb, onPaved, placeScene } from '../hub.js';
 
 const slopeAt = (x, z) => { const e = 2, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e); return [Math.hypot(gx, gz), Math.atan2(gz, gx)]; };
-const free = (C, x, z, r, wall) => inField(x, z, r) && Math.hypot(x, z) > C.land.clear[1] && Math.hypot(x, z - ARENA * 0.55) > 24 && !onPaved(x, z)
+const free = (C, x, z, r, wall) => inField(x, z, r) && Math.hypot(x, z) > C.land.clear[1] && Math.hypot(x, z - ARENA * 0.55) > 24 && !onPaved(x, z) && !onClimb(x, z, r)
   && !FORTS.some(f => Math.hypot(f.x - x, f.z - z) < f.R + wall) && !blocks.some(b => Math.hypot(b.x - x, b.z - z) < (b.kind === 'crag' ? (b.r || 1) * 0.6 + 1 : (b.r || 1) + r))   // (among the crag's rocks, not in them; outside a fort's walls, on its crag's lip)
   && !SCENE.pieces.some(p => Math.hypot(p.x - x, p.z - z) < Math.min(p.r || 3, 6) + r);
 

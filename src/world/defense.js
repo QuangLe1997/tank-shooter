@@ -16,7 +16,7 @@
 //   them (garrisonDefense). planDefense() (planZones, after the forts) chooses the lanes; buildDefense() (buildBlocks, before the scatter) lays it.
 import * as THREE from 'three';
 import { DEFENSE, HARD, HOME_GAP } from '../../config.js';
-import { BIOME, CITY_XING, COVER_HP, COVER_K, COVER_R, FORTS, HEAVY_KINDS, MOBILE, RIVER, S, SCENE, ZONES, blocks, buildTower, coverGeo, coverMat, coverVariant, fieldR, heightAt, homeClear, inField, inZone, makeCoverMesh, placeScene, scene, spawnEnemy, trackCover } from '../hub.js';
+import { BIOME, CITY_XING, COVER_HP, COVER_K, COVER_R, FORTS, HEAVY_KINDS, MOBILE, RIVER, S, SCENE, ZONES, blocks, buildTower, coverGeo, coverMat, coverVariant, fieldR, heightAt, homeClear, inField, inZone, makeCoverMesh, onClimb, placeScene, scene, spawnEnemy, trackCover } from '../hub.js';
 
 export const DEF = { rb:0, lanes:[], cps:[], chords:[], river:false, style:'ring', posts:[], positions:[], garrison:[] };
 const TAU = Math.PI * 2, E = -Math.PI / 2, SPAWN = Math.PI / 2;   // the enemy's bearing from our base · our spawn's
@@ -47,7 +47,7 @@ function lane(a, x, z){ const L = { a, x, z }; DEF.lanes.push(L); DEF.cps.push(L
 
 // ---------- pieces ----------
 // one piece of cover, the same as the maze lays (own material, its damage shows), or a hedgehog; own: a wall's sections stand against each other
-function put(kind, x, z, ry, tag, own){ if(!inField(x, z, 2) || blocks.some(b => b.def !== own && Math.hypot(b.x - x, b.z - z) < (b.r || 2) + 0.6)) return null;
+function put(kind, x, z, ry, tag, own){ if(!inField(x, z, 2) || onClimb(x, z, 1) || blocks.some(b => b.def !== own && Math.hypot(b.x - x, b.z - z) < (b.r || 2) + 0.6)) return null;
   let m, b;
   if(kind === 'hedgehog'){ m = new THREE.Mesh(coverGeo('hedgehog'), coverMat('hedgehog')); m.scale.setScalar(COVER_K); m.castShadow = m.receiveShadow = true;
     b = { x, z, r:1.2 * COVER_K, hp:HARD.hedgehog, maxHp:HARD.hedgehog, steel:false, hard:true, loot:false, kind }; }

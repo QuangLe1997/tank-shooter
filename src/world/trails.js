@@ -13,7 +13,7 @@ function sites(){ const out = [], A = ARENA, R = TRAILS.core;
   const inward = (x, z, d) => { const l = Math.hypot(x, z) || 1; d = Math.max(0, Math.min(d, l - R)); return [x - x / l * d, z - z / l * d]; };
   const add = (p, k, big) => { if(p && p[0] === p[0] && p[1] === p[1] && inField(p[0], p[1], 2)) out.push({ x:p[0], z:p[1], k, big:!!big }); };
   add([0, R], 'gate', 1); add([R, 0], 'gate'); add([-R, 0], 'gate'); add([0, -R], 'gate', 1); add([0, A * 0.55 + 6], 'spawn', 1);
-  for(const f of FORTS) add(f.ox === f.ox ? [f.ox + (f.ox - f.gx) * 0.45, f.oz + (f.oz - f.gz) * 0.45] : inward(f.x, f.z, f.R + 9), 'fort', 1);
+  for(const f of FORTS) add(f.climb ? f.climb.foot : f.ox === f.ox ? [f.ox + (f.ox - f.gx) * 0.45, f.oz + (f.oz - f.gz) * 0.45] : inward(f.x, f.z, f.R + 9), 'fort', 1);   // (Z456 a spur's fort: the foot of its one way up)
   for(const B of SUPPLY.bases) add(inward(B.x, B.z, B.R + 3), B.kind);
   for(const d of DEPOTS) add(inward(d.x, d.z, ((d.q && d.q.r) || 12) + 3), 'depot');
   if(UNDER.gate) add(inward(UNDER.gate.x, UNDER.gate.z, 12), 'under');
@@ -88,6 +88,9 @@ export function buildTrails(){ const C = TRAILS, T = TRAIL, had = FENCE_GAPS.len
     for(let i = 0; i < S.length; i++) if(!inT[i]){ const d = Math.hypot(S[i].x - b.x, S[i].z - b.z); if(d < best[i][0]) best[i] = [d, bi]; } }
   for(const e of ROAD_EXITS){ const ox = Math.cos(e.a), oz = Math.sin(e.a), p = { x:e.x - ox * 14, z:e.z - oz * 14 }; let a = S[0], bd = Infinity;   // and out to each road over the hills
     for(const s of S){ const d = Math.hypot(s.x - p.x, s.z - p.z); if(d < bd){ bd = d; a = s; } } legs.push({ a, b:p, w:C.w[1], exit:e }); }
+  for(const f of FORTS) if(f.climb){ const c = f.climb, pts = resample((f.ox === f.ox ? [[f.ox, f.oz]] : []).concat(c.pts), 2);   // Z456 the way up the capital's spur, laid first: from outside its gate, over the rim, down the hairpins
+    for(const [x, z] of pts){ const i = Math.floor((x + G.A) / G.c), j = Math.floor((z + G.A) / G.c); if(i >= 0 && j >= 0 && i < G.n && j < G.n) G.used[j * G.n + i] = 1; }
+    T.paths.push({ pts, w:c.w, len:lenOf(pts), exit:false, climb:true }); }
   legs.sort((p, q) => (q.w - p.w) || (Math.hypot(q.a.x - q.b.x, q.a.z - q.b.z) - Math.hypot(p.a.x - p.b.x, p.a.z - p.b.z)));   // the trunks first: the lanes join them
   for(const L of legs){ const P = route(G, L.a, L.b, !!L.exit); if(!P || P.length < 2) continue; let pts = smooth(P, L.a, L.b);
     if(L.exit){ const e = L.exit, ox = Math.cos(e.a), oz = Math.sin(e.a); pts = pts.concat(resample([pts[pts.length - 1], [e.x, e.z], [e.x + ox * 4, e.z + oz * 4]], 2).slice(1)); }

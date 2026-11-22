@@ -2622,5 +2622,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(Q.trees && Q.trees.oak && /export function hillTrees\(\)/.test(ht) && /hillTrees\(\)/.test(R('src/world/landmarks.js')) && /q\.lod\.rotation\.x = lean/.test(ht), 'dead trees at the crags\' lips leaning out, oaks on the knolls, stood after the set');
   ok(M.tree_world.h >= 40 && M.tree_oak.h >= 24 && M.tree_sentinel.h >= 32 && C.REALTREE.h.giant >= 30 && M.tree_world.solid.r >= 3, 'the old trees taller, their trunks wider'); }
 
+// Z456 the capital on a spur: sheer all round but a narrow tongue toward its gate, and one track winding up it in hairpins cut into the slope, laid
+//   as the fort's road (the field's tracks meet its foot); nothing stands on it
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), S=C.FORTHILL.biomes.QUARRY.spur, hc=R('src/world/hill-climb.js'), fh=R('src/world/fort-hill.js'), tr=R('src/world/trails.js');
+  ok(S && S.cliff < C.FORTHILL.biomes.QUARRY.cliff && S.top < C.FORTHILL.biomes.QUARRY.top && S.p > 1 && /Math\.pow\(Math\.max\(0, Math\.cos\(a - ga\)\), SP \? SP\.p : 1\)/.test(fh), 'the capital\'s crag: a narrower top, sheerer all round, a narrow tongue toward the gate');
+  ok(/export function carveClimb\(f, S, rim, L\)/.test(hc) && /more hairpins till the rounded track keeps under the grade/.test(hc) && S.path.grade <= 0.2 && /carveClimb\(f, C\.spur/.test(fh), 'one way up, in hairpins, kept under the grade');
+  ok(/f\.climb \? f\.climb\.foot/.test(tr) && /climb:true/.test(tr), 'the trails lay it as the fort\'s road and meet its foot');
+  ok(/kind:'climb'/.test(hc) && /onClimb\(x, z, 1\)/.test(R('src/world/defense.js')) && (fh.match(/onClimb\(/g) || []).length >= 6 && /onClimb\(x, z, r\)/.test(R('src/world/hill-trees.js')), 'nothing stands on it: rocks, trees, the enemy\'s belt, the cover keep off'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

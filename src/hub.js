@@ -124,6 +124,7 @@ export * from './world/zones.js';
 export * from './world/fortress.js';
 export * from './world/fort-hill.js';   // Z453 castles on crags: the hills, the open citadel's ward, the paved yards
 export * from './world/hill-trees.js';   // Z455 dead trees at the crags' lips, ancient oaks on the knolls
+export * from './world/hill-climb.js';   // Z456 the one way up the capital's spur: hairpins cut into its tongue
 export * from './world/rally.js';
 export * from './world/pow.js';
 export * from './world/depots.js';
