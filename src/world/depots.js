@@ -4,7 +4,7 @@
 //   tanks get a crew from our men and roll out as allied tanks that fight on their own.
 import * as THREE from 'three';
 import { DEPOT, ALLY_TANK } from '../../config.js';
-import { ALLY_TANKS, ENEMY_DEFS, ENEMY_MODEL, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, paintVehicle, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
+import { ALLY_TANKS, ENEMY_DEFS, ENEMY_MODEL, FT, GUN_DROP_DEF, MOBILE, S, TANK_SCALE, _canvasTex, placeScan, addCoins, addScore, armAlly, bakeTank, blocks, buildTank, burst, cMod, campFlagTex, coverGeo, coverMat, diffRewardMul, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, paintVehicle, radio, rallyFlagTex, scene, sfx, spawnAllyTank, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const DEPOTS=[];
 let _netTex=null;
@@ -15,18 +15,18 @@ function addBlock(o){ blocks.push(o); return o; }
 export function makeCamoNet(){ const net=new THREE.Mesh(new THREE.PlaneGeometry(8,6,6,4), new THREE.MeshStandardMaterial({ map:netTex(), roughness:0.95, side:THREE.DoubleSide, transparent:true, opacity:0.92 }));
   const pa=net.geometry.attributes.position; for(let i=0;i<pa.count;i++) pa.setZ(i, (Math.random()-0.5)*0.35 - Math.abs(pa.getX(i))*0.05); net.geometry.computeVertexNormals(); return net; }
 function buildArms(q, g, at){ // camouflage net on four poles over weapon racks + ammo crates, sandbag horseshoe
-  const net=makeCamoNet();
+  const net=makeCamoNet(), roof=[net];
   const [nx,nz]=at(0,0); net.rotation.x=-Math.PI/2; net.rotation.z=q.ang; net.position.set(nx, heightAt(nx,nz)+2.6, nz); g.add(net);
-  for(const [px,pz] of [[-3.8,-2.8],[3.8,-2.8],[-3.8,2.8],[3.8,2.8]]){ const [wx,wz]=at(px,pz); const m=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,2.6,5), coverMat('pipes')); m.position.set(wx, heightAt(wx,wz)+1.3, wz); g.add(m); }
-  const rackM=new THREE.MeshStandardMaterial({ color:0x3a3426, roughness:0.85 }), gunM=new THREE.MeshStandardMaterial({ color:0x1c1c18, roughness:0.45, metalness:0.7 });
-  for(const rx of [-1.6,1.6]){ const [wx,wz]=at(rx,-1.2), y=heightAt(wx,wz); const rack=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.2,0.25), rackM); rack.position.set(wx,y+0.6,wz); rack.rotation.y=q.ang; g.add(rack);
-    for(let k=0;k<5;k++){ const gm=new THREE.Mesh(new THREE.BoxGeometry(0.07,1.0,0.12), gunM); const [gx,gz]=at(rx-1+k*0.5,-1.0); gm.position.set(gx,y+0.75,gz); gm.rotation.set(0.15,q.ang,0); g.add(gm); } }
+  for(const [px,pz] of [[-3.8,-2.8],[3.8,-2.8],[-3.8,2.8],[3.8,2.8]]){ const [wx,wz]=at(px,pz); const m=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,2.6,5), coverMat('pipes')); m.position.set(wx, heightAt(wx,wz)+1.3, wz); g.add(m); roof.push(m); }
+  for(const rx of [-1.6,1.6]){ const [wx,wz]=at(rx,-1.2), y=heightAt(wx,wz); const cr=makeCoverMesh('crates', true); cr.scale.setScalar(0.6); cr.position.set(wx,y-0.1,wz); cr.rotation.y=q.ang; g.add(cr); }   // Z429 stacked crates where the weapon racks stood (they read as black boxes)
+  placeScan(g, 'canopy', nx, heightAt(nx,nz), nz, q.ang, 9.6, roof);   // Z429 the camouflage canopy on its own poles over the stores (the drawn net and poles until it is in)
   for(const [cx,cz] of [[-2.2,1.4],[0,1.8],[2.2,1.2],[0.9,-2.4]]){ const [wx,wz]=at(cx,cz); const m=makeCoverMesh('crates', true); m.scale.setScalar(0.7); m.position.set(wx,heightAt(wx,wz)-0.1,wz); m.rotation.y=q.ang+Math.random()*0.4; scene.add(m); g.userData.extra.push(m);
     addBlock({ mesh:m, x:wx, z:wz, r:1.1, hp:90, maxHp:90, steel:false, loot:false, kind:'crates' }); } }
-function buildMotor(q, g, at){ // concrete revetment (U) + parked enemy tanks waiting for a crew
-  for(const [wx0,wz0,ry] of [[-4.6,0,0],[4.6,0,0],[0,-4.4,Math.PI/2]]) for(let s=-1;s<=1;s++){ const lx = ry ? s*3 : wx0, lz = ry ? wz0 : s*3; const [wx,wz]=at(lx,lz);
-    const m=new THREE.Mesh(coverGeo('concrete'), coverMat('concrete')); m.position.set(wx, heightAt(wx,wz)-0.12, wz); m.rotation.y=q.ang+(ry?0:Math.PI/2); m.castShadow=m.receiveShadow=true; scene.add(m); g.userData.extra.push(m);
-    addBlock({ mesh:m, x:wx, z:wz, r:1.7, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'concrete' }); }
+function buildMotor(q, g, at){ // Z429 a grass-covered vehicle bunker at the back, the parked enemy tanks waiting for a crew under a camouflage canopy before it (was a U of T-walls)
+  { const [bx,bz]=at(0,-6.4), by=heightAt(bx,bz), anchor=new THREE.Group(); anchor.position.set(bx, by, bz); g.add(anchor);
+    placeScan(anchor, 'vbunker', 0, -0.15, 0, q.ang+Math.PI, 11);
+    addBlock({ mesh:anchor, x:bx, z:bz, r:4.2, obb:{ f:q.ang, hw:5.2, hl:3.6 }, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'concrete' }); }
+  { const [cx,cz]=at(0,0.6); placeScan(g, 'canopy', cx, heightAt(cx,cz), cz, q.ang, 10.5); }
   const n=DEPOT.tanks[0]+((Math.random()*(DEPOT.tanks[1]-DEPOT.tanks[0]+1))|0), parked=[];
   for(let k=0;k<n;k++){ const role=k%2?'heavy':'grunt', def=ENEMY_DEFS[role], m=buildTank({ ...def.pal, model:ENEMY_MODEL[role] }); bakeTank(m); paintVehicle(m, 'e'); m.scale.setScalar((k%2?1.15:1)*TANK_SCALE); const [px,pz]=at(n===1?0:(k?1.9:-1.9), 0.6);   // Z256 the role's own vehicle (it wears the real model)
     m.position.set(px, heightAt(px,pz), pz); m.rotation.y=q.ang+Math.PI; m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; } }); scene.add(m); g.userData.extra.push(m);

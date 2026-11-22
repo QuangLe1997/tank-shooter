@@ -1,2 +1,4 @@
 - Z426 (Meshy community, CC0; batch ~/Downloads/3dnew/z426): hesco.glb = "Fortress Sand Cube", a HESCO bastion (meshy.ai/posts/01a1e0cb-796c-7100-a17c-27080f66e953),
   hedgehog.glb = "Rusty X on the Beach", a Czech hedgehog (meshy.ai/posts/019ea770-ea33-75cc-969d-d146b9aa4f83)
+- Z429 the rocks (Meshy community, CC0; batch ~/Downloads/3dnew/z428): rock_mossy.glb = "Mossy Rock" (meshy.ai/posts/mossy-rock-01a0a700-d59b-7756-8e73-cff9f6195b02), rock_sandy.glb
+  (meshy.ai/posts/01987008-60a8-7308-be4e-9639f5acfec8), rock_dark.glb (meshy.ai/posts/019f3a1f-2433-7da0-9802-29739b9149ba), rock_slab.glb = "Pirrotita" (meshy.ai/posts/pirrotita-01a092ab-0766-7514-872b-a85891ebd40a)

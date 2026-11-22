@@ -1,2 +1,5 @@
 - Z426 (Meshy community, CC0; batch ~/Downloads/3dnew/z426): quonset.glb = "Quonset Barracks" (meshy.ai/posts/019e7245-429c-7818-9047-5d17c6a1bb61),
   mil_launcher.glb = "Dusty Rocket Launcher Truck" (meshy.ai/posts/019f0832-4ab2-7f5a-be7e-f3156a312faa)
+- Z429 (Meshy community, CC0; batch ~/Downloads/3dnew/z428): canopy.glb = "Camouflage Canopy" (meshy.ai/posts/01a1e2b1-dcf4-7121-aaa8-d96adc1e4abd), tent_mess.glb = "army_tent"
+  (meshy.ai/posts/019cb5b6-2fa4-74f2-86ff-ff9f07d92d43), tent_qm.glb = "Command Tent" (meshy.ai/posts/019e7200-b9f6-7b6e-9086-b7dd93f6908a), tent_med.glb = "Field Hospital Tent"
+  (meshy.ai/posts/019749e7-da49-7137-8858-bbea20c21474), veh_bunker.glb = "Grass-Covered Bunker" (meshy.ai/posts/019c6e67-56d6-7460-80b5-613d404145b1), pillbox.glb = "Sandbag Bunker" (meshy.ai/posts/019c6a4e-9de3-7a27-8816-89f0b6769c41)

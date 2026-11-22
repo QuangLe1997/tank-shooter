@@ -203,7 +203,8 @@ export function buildDesignTank(opts, ctx){ const id=opts.model, d=realDesign(id
   mnt(K,'coax',barrelG,0.28,Y-0.02,Z(0.72));   // Z160 every hull's coaxial MG is a real firing point
   if(id.startsWith('b_')){ ACC.emissiveIntensity=1.5; g.userData.accMat=ACC;   // Z160 the generals' glowing seams: accent lines along hull + turret, pulsed by the boss loop
     for(const sd of [-1,1]){ mk(body, new THREE.BoxGeometry(0.03,0.05,(zf-zr)*0.86), ACC, sd*(W/2-0.25), F+0.05-0.95, (zf+zr)/2); } mk(turretG, new THREE.TorusGeometry(0.98,0.025,6,40), ACC, 0,0.03,0).rotation.x=Math.PI/2; }
-  if(DRESS[id]) DRESS[id](K);
+  if(DRESS[id]){ const was=id.startsWith('b_') ? new Set() : null; if(was) g.traverse(o=>{ if(o.isMesh) was.add(o); }); DRESS[id](K);
+    if(was) g.traverse(o=>{ if(o.isMesh && !was.has(o)) o.userData.dress=true; }); }   // Z429 a general's own weapons (launch boxes, coils, the serpent's tail) stay on the real hull (tank/real-tanks.js)
   { const M=g.userData.mounts||(g.userData.mounts={}); if(!M.main) M.main=[muzzle]; }
   g.userData.turret=turretG; g.userData.muzzle=muzzle; g.userData.barrelG=barrelG; g.userData.gunPivot=gunPivot; g.userData.hull=hullM;
   g.userData.body=body; g.userData.rig=rig; g.userData.exhaust=exhaust; g.userData.blob=blob; g.userData.model=id; g.userData.mountY=th*0.5;

@@ -63,7 +63,7 @@ export function buildCamps(){
       messHall(L, -15, 12); quartermaster(L, -17, -9); medical(L, 15, 11); restArea(L, 17, -9); latrines(L, -24, -20);   // Z196 feeding, clothing, treating and resting the men
       for(const a of [0,1.57,3.14,4.71]) L.add('wood', B3(1.6,0.3,0.35,9+Math.sin(a)*1.9,0.25,12+Math.cos(a)*1.9,a), 0x5a4428);   // log benches round the fire
       const d=L.bake(false); d.position.set(x, heightAt(x,z)-0.05, z); d.rotation.y=ang; g.add(d);
-      for(const t of TK){ const tg=t.K.bake(false), [wx,wz]=at(t.lx, t.lz); tg.position.copy(d.position); tg.rotation.y=ang; g.add(tg); addTent(tg, wx, wz, ang, t.dp/2, t.w/2, true); } }   // Z414 the mess, the quartermaster's and the medical tent: walls to hide behind until they burn
+      TK.forEach((t, i)=>{ const tg=t.K.bake(false), [wx,wz]=at(t.lx, t.lz); tg.position.copy(d.position); tg.rotation.y=ang; g.add(tg); dressFit(tg, ['mess','qm','med'][i]); addTent(tg, wx, wz, ang, t.dp/2, t.w/2, true); }); }   // (Z429 each in its real tent: the mess, the quartermaster's, the medical)   // Z414 the mess, the quartermaster's and the medical tent: walls to hide behind until they burn
     for(const [lx,lz,ry] of [[-25,22,0.6],[25,20,-0.6],[-25,-4,1.57],[25,-14,-1.57],[0,-23,0]]){ const [sx,sz]=at(lx,lz); if(!inField(sx,sz,3)||blocks.some(b=>Math.hypot(b.x-sx,b.z-sz)<3.5)) continue;   // sandbag posts
       const m=makeCoverMesh('sandbag', true); m.scale.setScalar(COVER_K); m.position.set(sx,heightAt(sx,sz)-0.12,sz); m.rotation.y=ang+ry; scene.add(m);
       blocks.push({ mesh:m, x:sx, z:sz, r:1.7*COVER_K, hp:COVER_HP.sandbag, maxHp:COVER_HP.sandbag, steel:false, cover:true, ms:COVER_K, loot:false, kind:'sandbag' }); }

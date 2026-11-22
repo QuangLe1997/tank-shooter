@@ -107,7 +107,7 @@ export const TUNNEL = { from:2, n:[3,4], hp:{ hatch:70, bunker:280 }, seeR:20, u
 //   stands well clear of OUR citadel — gap = open ground between our wall (wall: its radius, world/core-walls.js) and the edge of theirs,
 //   wider than our guard cannons' reach past the wall (54 − 24 = 30 m); small posts (bunkers, towers) keep a shorter gap. spawn: the same from our spawn point.
 export const HOME_GAP = { wall:24, gap:46, gapMobile:26, small:34, smallMobile:20, spawn:36, spawnMobile:24, minK:0.7, campMobileK:0.5 };   // campMobileK: on the small phone field the first barracks camp may relax to half the gap rather than not exist   // minK: when the field is too crowded to place a site, the gap relaxes step by step to this share, never below
-export const UNDERBASE = { off:170, W:75, D:55, gate:{ lockHp:[380,80], turretHp:300, turretR:24, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },   // Z403 gate MG turretR 36 → 24 m (a rifleman's reach)
+export const UNDERBASE = { off:170, W:75, D:55, gate:{ portalW:15, lockHp:[380,80], turretHp:300, turretR:24, turretCd:[0.09,1.5], turretDmg:3, burst:8, guards:[5,1], tanks:[1,0.5] },   // Z403 gate MG turretR 36 → 24 m (a rifleman's reach) · Z429 gate.portalW: the bastion gate scan over the ramp (m across)
   hp:{ inf:520, veh:620, ammo:420, power:800 }, cut:{ inf:0.17, veh:0.17, ammo:0.1 }, spawn:{ squad:[20,26], tank:[38,48], maxTanks:3 }, lights:{ desk:8, mob:3, I:50, range:34 }, score:{ target:400, all:2000, lock:300 } };
 export const REAL = {
   concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
@@ -336,7 +336,10 @@ export const FORT_GAP = { w:2.6, minRep:4, bin:0.2, guard:0.8 };
 // Z426 A DRAWN PIECE WEARING A SCAN FITTED TO ITS OWN BOX (world/real-fit.js): k = the model, fit = the share of the drawn footprint it fills, yaw = its
 //   front turned onto +z first; hMax = never taller than the drawn piece × this; launcher = the rocket truck, its scan cut where the launcher begins
 //   (pod: behind that share of its length from the back, above that share of its height) so the pod turns with the drawn turntable
-export const REALFIT = { env:0.8, hMax:1.3, hut:{ k:'quonset', fit:0.98 }, tent:{ k:'base_tent', fit:0.86 }, launcher:{ k:'mil_launcher', yaw:-Math.PI / 2, pod:[0.6, 0.5], fit:1 } };
+export const REALFIT = { env:0.8, hMax:1.3, hut:{ k:'quonset', fit:0.98 }, tent:{ k:'base_tent', fit:0.86 }, launcher:{ k:'mil_launcher', yaw:-Math.PI / 2, pod:[0.6, 0.5], fit:1 },
+  // Z429 the camps' mess, quartermaster's and medical tents; the depots' camouflage canopy (arms racks, parked tanks) and the vehicle bunker behind the tanks;
+  //   the underground base's pillboxes under their guns (world/real-fit.js placeScan / dressFit)
+  mess:{ k:'tent_mess', fit:0.95 }, qm:{ k:'tent_qm', fit:0.95 }, med:{ k:'tent_med', fit:0.95 }, canopy:{ k:'canopy' }, vbunker:{ k:'veh_bunker' }, pillbox:{ k:'pillbox', fit:1.02 } };
 export const REALTURRET = { gun:{ k:'turret_cannon', w:4.2, spread:0 }, mg:{ k:'turret_rws', w:3.2, spread:0.26 }, aa:{ k:'turret_aa', w:6.6, gunR:0.62, gunY:0.17, top:0.55 }, proj:{ k:'proj_missile' },
   art:{ k:'proj_rocket122', file:'rocket122', len:3.3, nose:'up' }, siege:{ k:'proj_tactical', file:'tactical', len:3.6, nose:'up' }, mortar:{ k:'proj_mortar', file:'mortar', len:1.45, nose:'up' } };
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
@@ -851,8 +854,8 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   model's length) of the pieces taken as the main gun, [2] the lowest they may sit (× the model's height), [3] the least length / thickness of a
 //   piece, [4] the shortest gun taken when nothing long is there (an IFV's autocannon)
 export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
-  fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus'] }, east:{ designs:['lqt','t90m','type99','flametank','arv'] }, merkava:{ designs:['merkava'] },
-    armata:{ designs:['t14','ghost'] }, ifv:{ designs:['ifv','recon','atgmv'] }, spg:{ designs:['spg','td'] }, ugv:{ designs:['ugv'] } } };   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
+  fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus','b_goliath','b_overlord'] }, east:{ designs:['lqt','t90m','type99','flametank','arv','b_reaper'] }, merkava:{ designs:['merkava','b_bull'] },
+    armata:{ designs:['t14','ghost','b_tempest','b_thunder'] }, ifv:{ designs:['ifv','recon','atgmv','b_serpent'] }, spg:{ designs:['spg','td','b_inferno'] }, ugv:{ designs:['ugv'] } } };   // Z429 the eight generals' super-heavies on real hulls too (their own weapons kept: designs.js marks them, real-tanks.js leaves them)   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
 // Z403 SIDE ID (world/sidepaint.js markSide · tank/materials.js sideCoat): ours and theirs told apart at a glance and at range. coat = how much of a real model's
 //   own colour gives way to its side's paint, laid over the texture's light and shade (gain [min, max] = 1 / the texture's mean luminance, clamped); metal = how
 //   much of the texture's metal the coat knocks back (paint is not bare steel); detail = how much of the texture's light and shade the coat keeps; bright = the coat's albedo × the paint colour; sat = its saturation × (paint, not plastic); paint = each side's colour before the battlefield shift (f ours olive drab,
@@ -967,6 +970,12 @@ export const SKY_PHOTO = { midGrey:0.24, cloudK:0.18, fogMix:0.5, minEl:0.2,
 //   how long the knees take to give (s); bounce on striking the ground (× speed) and the speed below which he does not bounce; limb spring stiffness /
 //   damping; body thickness lying down and the sag as the knees go (× the man's scale); how long he lies before he sinks away (s)
 export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.12, 0.3], bounce:0.22, bounceMin:1.1, k:36, damp:6.5, thick:0.13, sag:0.22, hold:4.2 };
+// Z429 REAL ROCKS (world/real-props.js dressRock / realStones, world/cover.js): the field's boulders and loose stones as rock scans — a set per land (each
+//   stone takes one at random), sunk a share of their height into the ground (sink), tinted per land; the boulders stand as outcrops: on the highest-sloped of
+//   `tries` clear spots, a big stone (big m radius) with 0–around smaller ones (small m) gap m off its flank; sites = outcrops per lone rock the field used to get
+export const REALROCK = { biomes:{ DESERT:['rock_sandy', 'rock_slab'], SAVANNA:['rock_sandy', 'rock_slab'], MEADOW:['rock_mossy', 'rock_slab'], CITADEL:['rock_mossy', 'rock_slab'], RUINS:['rock_slab', 'rock_mossy'],
+    QUARRY:['rock_slab', 'rock_sandy'], ARCTIC:['rock_slab', 'rock_dark'], VOLCANO:['rock_dark'], FOUNDRY:['rock_dark', 'rock_slab'], CITY:['rock_slab'], _:['rock_slab', 'rock_mossy'] },
+  files:['rock_mossy', 'rock_sandy', 'rock_dark', 'rock_slab'], sink:0.22, env:0.45, tint:{ ARCTIC:0xe6ecf2, VOLCANO:0x9a9290 }, tries:9, sites:0.55, big:[1.7, 2.8], around:[0, 2], small:[0.8, 1.4], gap:[1.2, 2.6] };
 // Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (Z426 the Czech hedgehog and the HESCO too), the share of the procedural
 //   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
 //   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;

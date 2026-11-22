@@ -9,8 +9,8 @@
 //   · while you are below, the fight up top holds its breath (the surface is frozen); your foot squad and allied tanks come down with you
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
-import { UNDERBASE } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
+import { SCENERY, UNDERBASE } from '../../config.js';
+import { ALLY_TANKS, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, ringPulse, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -31,7 +31,7 @@ function mats(){ if(_M) return _M;
     green:new THREE.MeshStandardMaterial({ color:0x002a10, emissive:0x30ff70, emissiveIntensity:2.5 }), screen:new THREE.MeshStandardMaterial({ color:0x101418, emissive:0xff3a2a, emissiveIntensity:1.8 }),
     lamp:new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xe8f2ff, emissiveIntensity:3.2 }), bag:new THREE.MeshStandardMaterial({ color:0xb8a47a, roughness:0.97 }),
     olive:new THREE.MeshStandardMaterial({ color:0x4a5236, roughness:0.8, metalness:0.3 }), cyan:new THREE.MeshStandardMaterial({ color:0x002a30, emissive:0x40e8ff, emissiveIntensity:3 }),
-    crate:new THREE.MeshStandardMaterial({ color:0x6a5a3a, roughness:0.9 }), shell:new THREE.MeshStandardMaterial({ color:0xb08a3a, roughness:0.4, metalness:0.8 }) };
+    crate:new THREE.MeshStandardMaterial({ color:0x6a5a3a, roughness:0.9 }), cab:detailize(new THREE.MeshStandardMaterial({ color:0x6e7466, roughness:0.55, metalness:0.55 }), { scale:0.5, bump:0.03, alb:0.25, foot:1, streak:0.3 }), shell:new THREE.MeshStandardMaterial({ color:0xb08a3a, roughness:0.4, metalness:0.8 }) };
   return _M; }
 const BX=(par,w,h,d,x,y,z,m,ry)=>{ const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); o.position.set(x,y,z); if(ry) o.rotation.y=ry; o.castShadow=!MOBILE; o.receiveShadow=true; par.add(o); return o; };
 const CY=(par,rt,rb,h,s,x,y,z,m)=>{ const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s), m); o.position.set(x,y,z); o.castShadow=!MOBILE; o.receiveShadow=true; par.add(o); return o; };
@@ -39,10 +39,10 @@ const toW=(G,lx,lz)=>{ const c=Math.cos(G.a), s=Math.sin(G.a); return [G.x+lx*c+
 
 // ---- a twin-MG pillbox / ceiling autogun: turns on you and hoses you in bursts ----
 function turret(par, x, z, wx, wz, base){ const M=mats(), g=new THREE.Group(); g.position.set(x, 0, z); par.add(g);
-  if(!base){ CY(g,1.6,1.9,1.6,10,0,0.8,0,M.conc); for(let k=0;k<6;k++){ const a=k/6*TAU; BX(g,0.9,0.4,0.5,Math.cos(a)*1.95,0.25,Math.sin(a)*1.95,M.bag,-a); } }
+  const pit=[]; if(!base){ pit.push(CY(g,1.6,1.9,1.6,10,0,0.8,0,M.conc)); for(let k=0;k<6;k++){ const a=k/6*TAU; pit.push(BX(g,0.9,0.4,0.5,Math.cos(a)*1.95,0.25,Math.sin(a)*1.95,M.bag,-a)); } dressFit(g, 'pillbox', pit); }   // Z429 the concrete-and-sandbag pillbox scan
   else { CY(g,0.5,0.7,3.4,8,0,1.7,0,M.steel); }
-  const head=new THREE.Group(); head.position.y=base?3.6:1.9; g.add(head); BX(head,1.3,0.7,1.1,0,0,0,M.dark);
-  for(const s of [-0.28,0.28]) BX(head,0.12,0.12,1.6,s,0.05,0.9,M.steel); const eye=BX(head,0.3,0.2,0.1,0,0.25,0.56,M.red);
+  const head=new THREE.Group(); head.position.y=base?3.6:1.9; g.add(head); const gun=[BX(head,1.3,0.7,1.1,0,0,0,M.dark)];
+  for(const s of [-0.28,0.28]) gun.push(BX(head,0.12,0.12,1.6,s,0.05,0.9,M.steel)); const eye=BX(head,0.3,0.2,0.1,0,0.25,0.56,M.red); dressHeadRWS(head, gun);   // (Z429 the real weapon station on it)
   const T={ g, head, eye, x:wx, z:wz, hp:UNDERBASE.gate.turretHp, maxHp:UNDERBASE.gate.turretHp, alive:true, fireAt:0, shots:0, base:!!base, blk:null };
   T.blk={ mesh:g, x:wx, z:wz, r:base?1.0:1.9, hp:1e9, maxHp:1e9, steel:false, hard:false, loot:false, kind:'uturret', ub:true, T }; return T; }
 
@@ -54,16 +54,18 @@ function buildGate(){ const U=UNDERBASE, M=mats();
   if(!ok) return; const a=Math.atan2(-x, ARENA*0.55-z), g=new THREE.Group(); g.position.set(x, heightAt(x,z), z); g.rotation.y=a; scene.add(g);
   const G={ x, z, a, g, open:0, opening:false, lockHp:U.gate.lockHp[0]+U.gate.lockHp[1]*(S.stage||1), turrets:[], told:false, beacon:null };
   // the portal: a concrete block over a ramp that dives under it, sandbags on the roof, a red beacon turning on top
-  BX(g,13,4.2,3.2,0,2.1,-5.2,M.conc); BX(g,1.4,4.2,9,-6.1,2.1,-1.2,M.conc); BX(g,1.4,4.2,9,6.1,2.1,-1.2,M.conc); BX(g,13.6,0.8,10,0,4.6,-1.6,M.conc);
-  for(let k=0;k<7;k++) BX(g,1.5,0.55,0.9,-4.8+k*1.6,5.3,-5.6+(k%2)*0.4,M.bag);
+  const portal=[BX(g,13,4.2,3.2,0,2.1,-5.2,M.conc), BX(g,1.4,4.2,9,-6.1,2.1,-1.2,M.conc), BX(g,1.4,4.2,9,6.1,2.1,-1.2,M.conc), BX(g,13.6,0.8,10,0,4.6,-1.6,M.conc)];
+  for(let k=0;k<7;k++) portal.push(BX(g,1.5,0.55,0.9,-4.8+k*1.6,5.3,-5.6+(k%2)*0.4,M.bag));
   const hole=new THREE.Mesh(new THREE.PlaneGeometry(10.6,8), M.black); hole.rotation.x=-Math.PI/2; hole.position.set(0,0.06,-0.8); g.add(hole);
   for(let k=0;k<4;k++){ const s=new THREE.Mesh(new THREE.PlaneGeometry(10.4,0.25), new THREE.MeshBasicMaterial({ color:new THREE.Color(0xffd040).multiplyScalar(0.9-k*0.2) })); s.rotation.x=-Math.PI/2; s.position.set(0,0.08,2.6-k*1.5); g.add(s); }   // lit edges of the ramp going down
   BX(g,10.8,0.3,0.6,0,0.15,3.4,M.hazard);
   G.doorL=new THREE.Group(); G.doorL.position.set(-5.3,0.1,-0.8); g.add(G.doorL); BX(G.doorL,5.3,0.35,8,2.65,0.17,0,M.hazard);
   G.doorR=new THREE.Group(); G.doorR.position.set(5.3,0.1,-0.8); g.add(G.doorR); BX(G.doorR,5.3,0.35,8,-2.65,0.17,0,M.hazard);
   G.beacon=BX(g,0.5,0.5,0.5,0,5.6,-1.6,M.red);
+  if(SCENERY.on && SCENERY.models.bastion_gate){ const k='bastion_gate', D=sceneDims(k), s=UNDERBASE.gate.portalW/Math.max(D.x,D.z), m=scenePiece(k, s); m.scale.setScalar(s); m.position.set(0,-0.1,-2.4); g.add(m);
+    for(const o of portal) o.visible=false; G.beacon.position.y=D.y*s+0.4; }   // Z429 the concrete bastion gate over the ramp (was boxes and a slab), the beacon on its roof
   // the electronic lock: a steel cabinet on a post with a red screen, an antenna and a cable conduit running to the doors
-  const L=new THREE.Group(); L.position.set(8.6,0,2.4); g.add(L); BX(L,0.3,1.4,0.3,0,0.7,0,M.steel); BX(L,1.6,2.0,0.9,0,2.2,0,M.dark); G.screen=BX(L,1.2,0.8,0.05,0,2.5,0.47,M.screen);
+  const L=new THREE.Group(); L.position.set(8.6,0,2.4); g.add(L); BX(L,0.3,1.4,0.3,0,0.7,0,M.steel); BX(L,1.6,2.0,0.9,0,2.2,0,M.cab); G.screen=BX(L,1.2,0.8,0.05,0,2.5,0.47,M.screen);   // (Z429 the cabinet in painted steel, not a black box)
   BX(L,0.08,1.8,0.08,0.6,4.1,0,M.steel); for(let k=0;k<3;k++) BX(L,0.18,0.18,0.06,-0.45+k*0.3,1.6,0.47,k===2?M.green:M.red); BX(g,0.2,0.2,4.6,7.4,0.15,1.0,M.dark,0.5);
   const [lx,lz]=toW(G,8.6,2.4); G.lock={ x:lx, z:lz }; G.lockMesh=L;
   G.lockBlk={ mesh:L, x:lx, z:lz, r:1.5, hp:1e9, maxHp:1e9, steel:false, hard:false, loot:false, kind:'ugatelock', ub:true }; blocks.push(G.lockBlk);

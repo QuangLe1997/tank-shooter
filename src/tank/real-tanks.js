@@ -64,7 +64,7 @@ function coatGain(t){ const im = t && t.image, G = SIDE_ID.gain; if(!im || !im.w
 
 // the procedural meshes of one group (not of the sub-groups that move on their own), their box in the tank's frame
 function procBox(g, grp, skip){ const box = new THREE.Box3(), list = [], inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
-  grp.traverse(o => { if(!o.isMesh || !o.userData.proc) return; for(let q = o.parent; q && q !== grp; q = q.parent) if(skip.includes(q)) return; if(o === g.userData.blob) return;
+  grp.traverse(o => { if(!o.isMesh || !o.userData.proc || o.userData.dress) return; for(let q = o.parent; q && q !== grp; q = q.parent) if(skip.includes(q)) return; if(o === g.userData.blob) return;
     if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); _b.copy(o.geometry.boundingBox).applyMatrix4(_m.multiplyMatrices(inv, o.matrixWorld)); box.union(_b); list.push(o); });
   return { box, list }; }
 // one transform for the whole model (front +Z → the tank's frame): the hull spans the procedural running gear (the tracks stay and keep turning — the

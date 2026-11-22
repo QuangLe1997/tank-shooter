@@ -4,8 +4,8 @@
 //   cut in two where its launcher begins (REALFIT.launcher.pod: behind that share of its length, above that share of its height) — the pod turns
 //   with the turntable, the truck stays. Until a file is in, or without it, the drawn piece stays.
 import * as THREE from 'three';
-import { REALFIT } from '../../config.js';
-import { loadGLTF } from '../hub.js';
+import { REALFIT, REALTURRET } from '../../config.js';
+import { loadGLTF, turretPiece } from '../hub.js';
 
 const PREP = {};
 // one scan as one geometry standing on its foot, centred, turned yaw about Y first (its front onto +z)
@@ -24,10 +24,14 @@ function fitTo(geo, box, fit){ const fs = geo.boundingBox.getSize(new THREE.Vect
   const turn = (bs.x > bs.z * 1.2 && fs.z > fs.x * 1.2) || (bs.z > bs.x * 1.2 && fs.x > fs.z * 1.2), fx = turn ? fs.z : fs.x, fz = turn ? fs.x : fs.z;
   return { k:Math.min(bs.x / fx, bs.z / fz, bs.y * REALFIT.hMax / fs.y) * (fit || 1), turn, c:box.getCenter(new THREE.Vector3()).setY(box.min.y) }; }
 const wear = (geo, mat, f) => { const m = new THREE.Mesh(geo, mat); m.userData.realFit = true; m.scale.setScalar(f.k); if(f.turn) m.rotation.y = Math.PI / 2; m.position.copy(f.c); m.castShadow = m.receiveShadow = true; return m; };
-// a camp's barracks or tent (REALFIT[kind]: the scan, how much of the footprint it fills)
-export function dressFit(g, kind){ const C = REALFIT[kind]; if(!C || typeof window === 'undefined' || g.userData.realFit) return g; g.userData.realFit = true;
-  prep(C.k, C.yaw).then(F => { if(!F) return; const { box, list } = drawnBox(g); if(box.isEmpty()) return; const f = fitTo(F.geo, box, C.fit);
-    for(const q of list) q.visible = false; g.add(wear(F.geo, F.mat, f)); }); return g; }
+// a camp's barracks or tent (REALFIT[kind]: the scan, how much of the footprint it fills); only = just these drawn meshes (Z429 a pillbox under its gun)
+export function dressFit(g, kind, only){ const C = REALFIT[kind]; if(!C || typeof window === 'undefined' || (!only && g.userData.realFit)) return g; if(!only) g.userData.realFit = true;
+  prep(C.k, C.yaw).then(F => { if(!F) return; let { box, list } = drawnBox(g); if(only){ list = list.filter(o => only.includes(o)); box = new THREE.Box3(); for(const o of list){ o.geometry.computeBoundingBox(); _b.copy(o.geometry.boundingBox).applyMatrix4(_m.multiplyMatrices(new THREE.Matrix4().copy(g.matrixWorld).invert(), o.matrixWorld)); box.union(_b); } }
+    if(box.isEmpty()) return; const f = fitTo(F.geo, box, C.fit); for(const q of list) q.visible = false; g.add(wear(F.geo, F.mat, f)); }); return g; }
+// Z429 a scan stood where a drawn piece was (REALFIT[kind]): at (x, y, z) in par's frame, turned ry, w m across its widest side; the drawn meshes in hide go
+export function placeScan(par, kind, x, y, z, ry, w, hide){ const C = REALFIT[kind]; if(!C || typeof window === 'undefined') return;
+  prep(C.k, C.yaw).then(F => { if(!F) return; const s = F.geo.boundingBox.getSize(new THREE.Vector3()), m = wear(F.geo, F.mat, { k:w / Math.max(s.x, s.z), turn:false, c:new THREE.Vector3(x, y, z) });
+    m.rotation.y = ry || 0; for(const q of hide || []) q.visible = false; par.add(m); }); }
 
 // the rocket truck's scan in two: the launcher (behind pod[0] of its length from the back, above pod[1] of its height) and the rest
 let LP = null;
@@ -41,3 +45,6 @@ function launcherParts(){ const C = REALFIT.launcher; if(LP) return LP;
 export function dressLauncher(g){ const T = g.userData.turret; if(!REALFIT.launcher || !T || typeof window === 'undefined' || g.userData.realFit) return g; g.userData.realFit = true;
   launcherParts().then(P => { if(!P) return; const { box, list } = drawnBox(g); if(box.isEmpty()) return; const f = fitTo(P.whole, box, REALFIT.launcher.fit);
     for(const q of list) q.visible = false; g.add(wear(P.rest, P.mat, f)); const pod = wear(P.pod, P.mat, f); pod.position.sub(T.position); T.add(pod); }); return g; }
+// Z429 the underground gate's guns: the remote weapon station scan on the drawn head (it turns with it); the drawn box and barrels hide, the red eye stays
+export function dressHeadRWS(head, hide){ const C = REALTURRET.mg; if(!C || typeof window === 'undefined') return;
+  turretPiece(C.k, C.w).then(T => { if(!T || head.userData.realFit) return; head.userData.realFit = true; const m = new THREE.Mesh(T.geo, T.mat); m.position.y = -0.35; m.castShadow = m.receiveShadow = true; head.add(m); for(const o of hide) o.visible = false; }); }

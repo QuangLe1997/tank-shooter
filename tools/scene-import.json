@@ -166,5 +166,15 @@
   "blast_furnace":        {"src":"Blast_Furnace_1122021321", "err":0.2, "tris":120000, "tex":2048, "m":8000, "lodBase":60000},
   "wonder_igloo":         {"src":"Arctic_igloo_1122021202", "err":0.2, "tris":6000, "tex":1024, "out":"wonder", "file":"wonder_igloo"},
   "camp_quonset":         {"src":"Quonset_Barracks_1122021520", "err":0.2, "tris":20000, "tex":2048, "out":"camp", "file":"quonset"},
-  "camp_launcher":        {"src":"Dusty_Rocket_Launcher_1122021557", "err":0.2, "tris":20000, "tex":2048, "out":"camp", "file":"mil_launcher"}
+  "camp_launcher":        {"src":"Dusty_Rocket_Launcher_1122021557", "err":0.2, "tris":20000, "tex":2048, "out":"camp", "file":"mil_launcher"},
+  "camp_canopy":          {"src":"Camouflage_Canopy_1122025535", "err":0.2, "tris":8000, "tex":2048, "out":"camp", "file":"canopy"},
+  "camp_mess":            {"src":"Mess_Tent_1122025613", "err":0.2, "tris":14000, "tex":2048, "out":"camp", "file":"tent_mess"},
+  "camp_qm":              {"src":"Command_Tent_1122025650", "err":0.2, "tris":16000, "tex":2048, "out":"camp", "file":"tent_qm"},
+  "camp_med":             {"src":"Field_Hospital_Tent_1122025730", "err":0.2, "tris":14000, "tex":2048, "out":"camp", "file":"tent_med"},
+  "camp_vbunker":         {"src":"Grass_Covered_Bunker_1122025414", "err":0.2, "tris":18000, "tex":2048, "out":"camp", "file":"veh_bunker"},
+  "camp_pillbox":         {"src":"Pillbox_Bunker_1122025454", "err":0.2, "tris":14000, "tex":2048, "out":"camp", "file":"pillbox"},
+  "cover_rock_mossy":     {"src":"Rock_Mossy_1122013836", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_mossy", "hd":{"key":"cover_rock_mossy", "px":2048}},
+  "cover_rock_sandy":     {"src":"Rock_Sandy_1122025916", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_sandy", "hd":{"key":"cover_rock_sandy", "px":2048}},
+  "cover_rock_dark":      {"src":"Rock_Dark_1122025955", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_dark", "hd":{"key":"cover_rock_dark", "px":2048}},
+  "cover_rock_slab":      {"src":"Rock_Slab_1121211119", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_slab", "hd":{"key":"cover_rock_slab", "px":2048}}
 }

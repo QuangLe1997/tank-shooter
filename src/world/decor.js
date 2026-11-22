@@ -1,7 +1,7 @@
 // world/decor.js — TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble)
 import * as THREE from 'three';
 import { TREEFALL } from '../../config.js';
-import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushVehicle, crushables, decalDirt, enemies, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, trunkR, toppleAt, MODE } from '../hub.js';
+import { AREA_K, ARENA, BIOME, HULL_HL, HULL_HW, MOBILE, ROCK_TINT, S, _R, _mergeColored, _xf, arena, boss, burst, crushVehicle, crushables, decalDirt, enemies, fellTree, floraMat, grass, haptic, heightAt, inField, rockSet, sfx, spawnPart, trunkR, toppleAt, MODE, realStones } from '../hub.js';
 
 // ----------------------------- TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) -----------------------------
 // Purely decorative props (no collision) scattered around the arena to make each battlefield feel real & varied.
@@ -31,7 +31,7 @@ export function buildTerrainDecor(b){
   per.forEach((list,gi)=>{ if(!list.length) return; const im=new THREE.InstancedMesh(set.small[gi], set.mat, list.length); im.castShadow=true; im.receiveShadow=true;
     list.forEach((o,k)=>{ _IE.set(o.tilt,o.ry,o.tilt*0.5); _IM.compose(_IV.set(o.x,heightAt(o.x,o.z)+o.r*0.18,o.z), _IQ.setFromEuler(_IE), _IS.set(o.r,o.r,o.r)); im.setMatrixAt(k,_IM);
       crushables.push({ x:o.x, z:o.z, r:o.r, im, k, alive:true, kind:'rock', ry:o.ry }); });
-    decorGroup.add(im); });
+    decorGroup.add(im); realStones(im, gi, b.name); });   // (Z429 the loose stones as rock scans too)
   if(b.name==='MEADOW'||b.name==='DESERT'||b.name==='TUNDRA'||b.name==='CITADEL'||b.name==='HILLS'||b.name==='VILLAGE'||b.name==='SAVANNA'){                // grass tufts / dry shrubs (flatten under tracks)
     const M=Math.round(((b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?(MOBILE?140:420):(MOBILE?50:120))*Math.min(AREA_K, MOBILE?1.5:2)), list=[]; for(let i=0;i<M;i++){ const sp=_decorSpot(9); if(sp) list.push({x:sp[0],z:sp[1],s:_R(0.7,1.4),ry:_R(0,6.28)}); }
     const tone=(b.name==='MEADOW'||b.name==='HILLS'||b.name==='VILLAGE')?'green':b.name==='TUNDRA'?'tundra':'dry'; let V=null, mat=null;

@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
-import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, SHATTER, FUEL_TANK } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome } from '../hub.js';
+import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, REALROCK, SHATTER, FUEL_TANK } from '../../config.js';
+import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, addPlayerBurn, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, damagePylon, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -51,19 +51,25 @@ export function buildBlocks(){
   }
   buildTowers();                                                            // enemy watchtowers with riflemen
   // lone heavy obstacles: boulders + Czech hedgehogs — solid, block shots, deflect tanks
-  const rs=rockSet(BIOME.name), nB=Math.round((MOBILE?4:7)*AREA_K);
-  for(let i=0;i<nB;i++){ let x=0,z=0,ok=false;
-    for(let t=0;t<20&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-8); z=(Math.random()*2-1)*(ARENA-8); ok=Math.hypot(x,z)>15 && Math.hypot(x,z-ARENA*0.55)>12 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<6) && !inZone(x,z,3) && inField(x,z,5); }
-    if(!ok) continue;
-    const hedge = i%3===2, r = hedge ? 1.15 : _R(1.6,2.8);   // Z193 boulders at the scale of the tanks
-    const m = hedge ? new THREE.Mesh(coverGeo('hedgehog'), coverMat('hedgehog')) : new THREE.Mesh(rs.big[i%rs.big.length], rs.mat);
+  // Z429 the boulders as rock scans (world/real-props.js dressRock) laid out as outcrops: on the steepest of a few clear spots (a rise, a bank — not dropped
+  //   anywhere on the flat), a big stone with smaller ones at its flank, all sunk into the ground; the hedgehogs stay lone, on the open ground
+  const rs=rockSet(BIOME.name), nB=Math.round((MOBILE?4:7)*AREA_K), RK=REALROCK, nH=Math.round(nB/3);
+  const clearAt=(x,z,r)=>Math.hypot(x,z)>15 && Math.hypot(x,z-ARENA*0.55)>12 && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<Math.max(6, b.r+r+2)) && !inZone(x,z,3) && inField(x,z,5);
+  const slope=(x,z)=>Math.abs(heightAt(x+3,z)-heightAt(x-3,z))+Math.abs(heightAt(x,z+3)-heightAt(x,z-3));
+  const lone=(x,z,hedge,r)=>{ const m = hedge ? new THREE.Mesh(coverGeo('hedgehog'), coverMat('hedgehog')) : dressRock(new THREE.Mesh(rs.big[(Math.random()*rs.big.length)|0], rs.mat), BIOME.name);
     if(hedge){ m.scale.setScalar(COVER_K); } else { m.scale.setScalar(r*1.05); m.position.y=r*0.2; }
     m.position.x=x; m.position.z=z; m.position.y+=heightAt(x,z); m.rotation.y=Math.random()*6.283; m.castShadow=true; m.receiveShadow=true; scene.add(m);
     const climb = !hedge && r < 2.0;                                                     // Z86 low rocks: take a run and the hull rides over them
     const hp=Math.round((hedge?HARD.hedgehog:HARD.boulder)*(hedge?1:r/1.6)), bump=climb ? { x, z, r:r*1.25, h:r*0.62, rock:true } : null;   // Z112 shootable: bigger rock, more stone
     blocks.push({ mesh:m, x, z, r:hedge?1.2*COVER_K:r*0.92, hp, maxHp:hp, steel:false, hard:true, loot:false, kind:hedge?'hedgehog':'boulder', climb, bump });
-    if(bump) BUMPS.push(bump);
-  }
+    if(bump) BUMPS.push(bump); };
+  for(let i=0;i<nH;i++){ for(let t=0;t<20;t++){ const x=(Math.random()*2-1)*(ARENA-8), z=(Math.random()*2-1)*(ARENA-8); if(clearAt(x,z,1.2)){ lone(x,z,true,1.15); break; } } }
+  for(let i=0, nO=Math.round((nB-nH)*RK.sites);i<nO;i++){ let best=null, bs=-1;   // (fewer outcrops than the lone rocks were: their satellites make up the count — the camps still find their ground)
+    for(let t=0;t<RK.tries*3 && (!best || t<RK.tries);t++){ const x=(Math.random()*2-1)*(ARENA-8), z=(Math.random()*2-1)*(ARENA-8); if(!clearAt(x,z,3)) continue; const sl=slope(x,z)+Math.random()*0.05; if(sl>bs){ bs=sl; best=[x,z]; } }
+    if(!best) continue; const [x,z]=best, R=_R(RK.big[0], RK.big[1]); lone(x,z,false,R);
+    const n=Math.floor(_R(RK.around[0], RK.around[1]+0.99)), a0=Math.random()*6.283;
+    for(let k=0;k<n;k++){ const a=a0+k*_R(0.9,1.6), r=_R(RK.small[0], RK.small[1]), d=R+r+_R(RK.gap[0], RK.gap[1]), sx=x+Math.cos(a)*d, sz=z+Math.sin(a)*d;
+      if(inField(sx,sz,3) && !inZone(sx,sz,2) && !blocks.some(b=>b.kind!=='boulder' && Math.hypot(b.x-sx,b.z-sz)<b.r+r+1)) lone(sx,sz,false,r); } }
   placeLone();                                                                             // Z193 shipping containers + burnt-out car wrecks
   buildRidges();                                                                           // Z106 rock spines with passes → sectors + chokepoints
   buildBrickWalls();                                                                       // Z86 ruined masonry walls

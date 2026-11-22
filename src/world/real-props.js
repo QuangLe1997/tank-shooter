@@ -1,6 +1,6 @@
 // world/real-props.js — Z252 REAL COVER: the Meshy-generated low-poly cover pieces (sandbags, concrete block, container, crates, drums, jersey barrier, logs, pipes, dragon's teeth, tyres, car wreck) put in place of the procedural ones — each turned so its long side runs the procedural piece's way, scaled uniformly into the same footprint (height capped) and stood on the same ground line, so placement, collision and the hit / crumble code are untouched. Every placed piece is tracked; when the files arrive they all swap geometry and material (a piece's own hit-flash material keeps its paint and damage tint). The Czech hedgehog (Meshy could not build it) and the HESCO (the generated one read as shiny panels) stay procedural. Until loaded, or on failure, the procedural pieces stay.
 import * as THREE from 'three';
-import { REALPROP } from '../../config.js';
+import { REALPROP, REALROCK } from '../../config.js';
 import { COVER_GEO, COVER_K, COVER_MAT, coverGeo, loadGLTF } from '../hub.js';
 
 export const REAL_COVER = { live:new Set(), done:false, fits:{} };
@@ -42,3 +42,18 @@ export function coverVariant(m){ const k = m.userData.kind, V = REALPROP.variant
   const F = REAL_COVER.fits[k]; if(!F) return m; const f = F[m.userData.cv % F.length]; m.geometry = f.geo;
   if(m.material && m.material.userData && m.material.userData.own){ const n = f.mat.clone(); n.userData.own = true; if(sh) n.color.setScalar(m.userData.cb); m.material = n; } else m.material = f.mat;
   return m; }
+
+// Z429 REAL ROCKS: a rock scan in the drawn lump's place — the lump's unit radius → the scan's half-width, its foot sunk REALROCK.sink of its height (the
+//   drawn lump stood r × 0.2 up: that is taken back); one geometry and one material per scan and land (tinted per land), shared by every stone
+const RR = {};
+function rockGeo(k, bn){ const id = k + ':' + bn; if(RR[id]) return RR[id];
+  return (RR[id] = loadGLTF('cover_' + k).then(gl => { if(!gl) return null; let g = null, src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !g){ g = o.geometry.clone().applyMatrix4(o.matrixWorld); src = o.material; } }); if(!g) return null;
+    g.computeBoundingBox(); let b = g.boundingBox; const s = 2 / Math.max(b.max.x - b.min.x, b.max.z - b.min.z); g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); g.scale(s, s, s); g.computeBoundingBox(); b = g.boundingBox;
+    g.translate(0, -0.19 - REALROCK.sink * (b.max.y - b.min.y), 0); g.computeBoundingBox(); g.computeBoundingSphere();
+    const mat = src.clone(); mat.envMapIntensity = REALROCK.env; mat.vertexColors = false; mat.metalness = 0; mat.metalnessMap = null; if(REALROCK.tint[bn]) mat.color.setHex(REALROCK.tint[bn]); return { geo:g, mat }; })); }
+const rockKinds = bn => REALROCK.biomes[bn] || REALROCK.biomes._;
+// a boulder (world/cover.js): it takes one of its land's rock scans once it is in
+export function dressRock(m, bn){ if(typeof window === 'undefined') return m; const L = rockKinds(bn), k = L[(Math.random() * L.length) | 0];
+  Promise.resolve().then(() => rockGeo(k, bn)).then(R => { if(R && m.parent){ m.geometry = R.geo; m.material = R.mat; } }); return m; }   // (after the modules are all in: the field is laid while they load)
+// the loose stones (world/decor.js instanced lumps): each instanced set takes one of the land's scans
+export function realStones(im, i, bn){ if(typeof window === 'undefined') return; const L = rockKinds(bn); Promise.resolve().then(() => rockGeo(L[i % L.length], bn)).then(R => { if(R && im.parent){ im.geometry = R.geo; im.material = R.mat; } }); }
