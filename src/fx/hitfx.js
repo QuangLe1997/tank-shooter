@@ -2,7 +2,7 @@
 //   long lingering smoke ribbon behind a flickering motor flame, an enemy gun barks with flash + smoke at the real muzzle, a hit on armour
 //   rocks the hull on its springs and throws molten spall back out of the hole (or skips off thick front plate in a shower of sparks),
 //   and an enemy tank that is badly hurt smokes from the engine deck, then burns
-import { BIOME, MOBILE, PART_MAX, PERF, S, bulletImpact, enemies, gunFlash, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PART_MAX, PERF, S, bulletImpact, enemies, heightAt, parts, ricochet, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
 
 // point the pooled round along its velocity (yaw + the pitch of its real climb / fall this frame); the core is stretched at spawn
 export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)||1, vy=(dt>0 && b._py!=null) ? (y-b._py)/dt : 0; b._py=y;
@@ -23,13 +23,6 @@ export function rocketExhaust(b, x, y, z){ const bk=Math.hypot(b.vx,b.vz)||1, ux
   const rk=b.mesh.userData.rk, gs=rk && rk.userData.glow; if(gs) gs.scale.setScalar(0.7+Math.random()*0.55); }   // the glow at the nozzle flickers
 
 // an enemy gun fires: flash, a tongue of flame, smoke rolling off the muzzle (at the muzzle's real height) — heavy guns kick up the dust too
-export function enemyMuzzleFX(x, y, z, a, heavy){ const fx=Math.sin(a), fz=Math.cos(a), k=heavy?1.35:1;
-  gunFlash(x, y, z, a, 1.9*k, 1.1*k, 0xfff2d8, 1);   // Z419 a shaped flash along their bore (was a round billboard)
-  spawnPart(x+fx*0.9, y, z+fz*0.9, fx*8, 0.3, fz*8, { tex:'fire', color:0xfff0c0, color2:0xff5a14, size:0.9*k, grow:1.2, life:0.12, grav:0, drag:7 });
-  for(let i=0;i<(MOBILE?1:3);i++){ const s=0.8+i*0.7; spawnPart(x+fx*s, y, z+fz*s, fx*(3-i)+(Math.random()-0.5), 0.4+Math.random()*0.4, fz*(3-i)+(Math.random()-0.5),
-    { color:0xb8b0a2, size:(0.7+i*0.25)*k, life:1.0+Math.random()*0.5, smoke:true, grav:0.2, drag:2.2, grow:1.6, op:0.3 }); }
-  if(heavy){ const gy=heightAt(x,z); for(let i=0;i<(MOBILE?2:4);i++){ const t=Math.random()*6.283; spawnPart(x+Math.cos(t)*0.8, gy+0.3, z+Math.sin(t)*0.8, Math.cos(t)*4+fx*3, 0.6, Math.sin(t)*4+fz*3,
-    { color:BIOME.ground, size:1.1, life:0.8, smoke:true, grav:-0.2, drag:2.6, grow:1.5, op:0.38 }); } } }
 
 // the blow rocks the hull on its suspension: pitched by a hit to the nose / tail, rolled by one to the side (heavier hulls barely move)
 export function rockHull(t, ux, uz, dmg){ const rig=t && t.mesh && t.mesh.userData.rig; if(!rig) return;
@@ -96,8 +89,6 @@ export function dirtGeyser(x, z, k){ const gy=heightAt(x,z), dc=BIOME.ground;
   for(let i=0;i<(MOBILE?5:10);i++){ const a=Math.random()*6.283, sp=2+Math.random()*4*k; spawnPart(x, gy+0.4, z, Math.cos(a)*sp, 6+Math.random()*8*k, Math.sin(a)*sp, { color:0x3e3024, size:0.14+Math.random()*0.14*k, life:1.1, grav:-20, drag:0.5 }); }
   spawnPart(x, gy+0.5, z, 0, 0.6, 0, { color:dc, size:2.4*k, life:2.2, smoke:true, grav:0.1, drag:1.5, grow:1.8, op:0.4, keep:true }); }
 // Z210 a big gun's shot leaves a cloud that hangs in front of the tank and rolls away slowly on the wind
-export function muzzleLinger(x, y, z, fx, fz, k){ for(let i=0;i<(MOBILE?2:4);i++){ const s=1.2+i*1.1;
-  spawnPart(x+fx*s, y+0.1, z+fz*s, fx*(1.4-i*0.25)+WIND_X, 0.25+Math.random()*0.25, fz*(1.4-i*0.25)+WIND_Z, { color:0xc0baae, size:(1.0+i*0.35)*k, life:2.6+Math.random()*1.0, smoke:true, grav:0.15, drag:1.1, grow:1.9, op:0.3, keep:true }); } }
 
 // Z214 a smart missile's motor: a white-hot, flickering tongue and a THIN, clean smoke line that thins out fast — fast, tight, mean
 function smartExhaust(b, x, y, z, ux, uz, th){ if(b.ign>0) return; const nx=x-ux*0.5, nz=z-uz*0.5, step=(MOBILE?0.9:0.45)/Math.sqrt(th);

@@ -34,17 +34,6 @@ export function placeScan(par, kind, x, y, z, ry, w, hide){ const C = REALFIT[ki
     m.rotation.y = ry || 0; for(const q of hide || []) q.visible = false; par.add(m); }); }
 
 // the rocket truck's scan in two: the launcher (behind pod[0] of its length from the back, above pod[1] of its height) and the rest
-let LP = null;
-function launcherParts(){ const C = REALFIT.launcher; if(LP) return LP;
-  return (LP = prep(C.k, C.yaw).then(F => { if(!F) return null; const g = F.geo, P = g.attributes.position, I = g.index ? g.index.array : null, b = g.boundingBox, n = I ? I.length : P.count;
-    const zc = b.min.z + (b.max.z - b.min.z) * C.pod[0], yc = b.min.y + (b.max.y - b.min.y) * C.pod[1], pod = [], rest = [];
-    for(let t = 0; t < n; t += 3){ let y = 0, z = 0; for(let k = 0; k < 3; k++){ const v = I ? I[t + k] : t + k; y += P.getY(v); z += P.getZ(v); }
-      (z / 3 < zc && y / 3 > yc ? pod : rest).push(I ? I[t] : t, I ? I[t + 1] : t + 1, I ? I[t + 2] : t + 2); }
-    const part = L => { const q = new THREE.BufferGeometry(); for(const a in g.attributes) q.setAttribute(a, g.attributes[a]); q.setIndex(L); q.boundingBox = g.boundingBox.clone(); q.computeBoundingSphere(); return q; };
-    return { whole:g, pod:part(pod), rest:part(rest), mat:F.mat }; })); }
-export function dressLauncher(g){ const T = g.userData.turret; if(!REALFIT.launcher || !T || typeof window === 'undefined' || g.userData.realFit) return g; g.userData.realFit = true;
-  launcherParts().then(P => { if(!P) return; const { box, list } = drawnBox(g); if(box.isEmpty()) return; const f = fitTo(P.whole, box, REALFIT.launcher.fit);
-    for(const q of list) q.visible = false; g.add(wear(P.rest, P.mat, f)); const pod = wear(P.pod, P.mat, f); pod.position.sub(T.position); T.add(pod); }); return g; }
 // Z429 the underground gate's guns: the remote weapon station scan on the drawn head (it turns with it); the drawn box and barrels hide, the red eye stays
 export function dressHeadRWS(head, hide){ const C = REALTURRET.mg; if(!C || typeof window === 'undefined') return;
   turretPiece(C.k, C.w).then(T => { if(!T || head.userData.realFit) return; head.userData.realFit = true; const m = new THREE.Mesh(T.geo, T.mat); m.position.y = -0.35; m.castShadow = m.receiveShadow = true; head.add(m); for(const o of hide) o.visible = false; }); }

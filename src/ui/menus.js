@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting + CONTINUE, nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml).
-import { MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, queueResize, refreshWallet, saveProfile, sfx, show } from '../hub.js';
+import { GUNS, PRIMARY_GUNS, launchGame, __set_BEST, refreshBestLine, MOBILE, PROFILE, S, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, queueResize, refreshWallet, saveProfile, sfx, show } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -16,7 +16,7 @@ export function refreshStartUI(){
   document.body.classList.toggle('hassave', hasSave);   // short-landscape grid: CONTINUE + PLAY share row 1 only when a save exists
   if(cont){ cont.style.display = hasSave ? 'inline-flex' : 'none'; const lp=hasSave?(PROFILE.save.loop|0):0;
     cont.textContent = hasSave ? ('CHƠI TIẾP ▶  '+(lp>0?'VÒNG+'+lp+' · ':'')+'MÀN '+PROFILE.save.stage) : 'CHƠI TIẾP ▶'; }
-  const ac=document.getElementById('arsenalCount'); if(ac) ac.textContent=PROFILE.ownedGuns.length;   // show how many guns are collected
+  const ac=document.getElementById('arsenalCount'); if(ac){ const G=GUNS[PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine']; ac.textContent=G ? G.name : ''; }   // the main gun he carries in
   refreshWallet(); buildTerrainPicker();
 }
 // ---- nickname (first launch / editable) ----
@@ -28,3 +28,12 @@ tapBtn('nickSave', saveNick);
 { const inp=document.getElementById('nickInput'); if(inp){ inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); saveNick(); } });
     if(MOBILE){ inp.addEventListener('focus', ()=>{ document.body.classList.add('typing'); window.__syncAppSize&&window.__syncAppSize(); });     // Z97 keyboard up → compact card above it
       inp.addEventListener('blur', ()=>{ document.body.classList.remove('typing'); window.scrollTo(0,0); setTimeout(()=>{ window.__syncAppSize&&window.__syncAppSize(); queueResize(); }, 250); }); } } }
+// the title screen's CONTINUE and XOÁ TIẾN TRÌNH (tap twice: wallet, record and the campaign checkpoint go, the nickname stays), and the profile saved
+//   whenever the page is hidden or left (no-tanks: moved here from ui/shop.js)
+if(typeof window !== 'undefined'){ addEventListener('pagehide', saveProfile); addEventListener('visibilitychange', ()=>{ if(document.hidden) saveProfile(); });
+  tapBtn('continueBtn', ()=>launchGame(true));
+  let _resetArm=0;
+  tapBtn('resetBtn', ()=>{ const lbl=document.querySelector('#resetBtn span:last-child'), now=performance.now();
+    if(now<_resetArm){ _resetArm=0; PROFILE.save=null; PROFILE.best={ score:0, stage:1 }; __set_BEST(PROFILE.best); PROFILE.coins=0; PROFILE.diamonds=0;
+      saveProfile(); refreshBestLine(); refreshStartUI(); refreshWallet(); if(lbl) lbl.textContent='ĐÃ XOÁ ✓'; sfx('click'); setTimeout(()=>{ if(lbl) lbl.textContent='XOÁ'; }, 1400); }
+    else { _resetArm=now+2600; if(lbl) lbl.textContent='CHẮC CHƯA?'; sfx('click'); setTimeout(()=>{ if(performance.now()>=_resetArm && lbl) lbl.textContent='XOÁ'; }, 2700); } }); }

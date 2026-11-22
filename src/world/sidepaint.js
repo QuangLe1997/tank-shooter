@@ -1,7 +1,7 @@
 // world/sidepaint.js — Z179 BATTLEFIELD-AWARE PAINT: soldiers and vehicles of both sides are recoloured for each battlefield so they stand out from its ground (tan troops on sand, olive tanks on grass used to vanish)
 import * as THREE from 'three';
-import { SIDE_ID } from '../../config.js';
-import { BIOME, GROUND_STYLE, SOLDIER_KIT, _R, sideCoat } from '../hub.js';
+
+import { BIOME, GROUND_STYLE, SOLDIER_KIT, _R } from '../hub.js';
 
 // each side keeps its identity: ours = cool greens, theirs = warm tans / reds. When the ground is the same hue, ours turn slate-teal and theirs turn crimson;
 // when the ground is the same brightness, the paint goes darker (light ground) or darker / lighter (dark ground) until it separates
@@ -29,18 +29,8 @@ export function shiftHex(hex, sh){ _a.setHex(hex); _a.getHSL(_h, THREE.SRGBColor
   _a.setHSL(sh.h==null ? _h.h : sh.h, s, Math.min(0.92, Math.max(0.05, _h.l+sh.dl)), THREE.SRGBColorSpace); return _a.getHex(); }
 const cssOf=hex=>'#'+hex.toString(16).padStart(6,'0'), hexOf=css=>parseInt(css.slice(1),16);
 // a vehicle's painted armour (buildTank / launcher record it in userData.paint as [material, original colour]) → this battlefield's paint
-export function paintVehicle(mesh, side){ const P=mesh && mesh.userData.paint; if(!P || !P.length) return;
-  const real=mesh.userData.realDressed, c1=SIDE_ID.paint[side==='e'?'e':'f'], sh=sideShift(real ? c1 : P[0][1], side);   // Z403 a real model wears its side's paint (theirs desert tan, ours olive), not the faction tint lost in its texture
-  if(real && side!=='e') sh.h=null;   // (ours stays olive on green ground, only its lightness moves: its rim and roof panel lift it off the grass — a slate-teal tank read as a stranger)
-  for(const [m,c0] of P){ m.color.setHex(shiftHex(real ? c1 : c0, sh)); if(real){ m.color.getHSL(_h, THREE.SRGBColorSpace); m.color.setHSL(_h.h, _h.s*SIDE_ID.sat, _h.l, THREE.SRGBColorSpace); } }   // (Z403 the coat a touch duller: paint, not plastic)
-  markSide(mesh, side); }
 // Z403 SIDE MARK: a vehicle's side shown on it — the real model's paint laid on as a coat (tank/materials.js sideCoat), a rim of the side's colour round its
 //   silhouette; own = our own tank (player / garage): its skin stays as it is, the rim still shows
-const COATED=new WeakSet();
-export function markSide(mesh, side, own){ const u=mesh && mesh.userData; if(!u) return; const f=side!=='e', C=SIDE_ID; u.side=f ? 'f' : 'e'; u.own=!!own;
-  const U=u.sideU||(u.sideU={ coat:{ value:0 }, gain:{ value:1 }, metal:{ value:C.metal }, detail:{ value:C.detail }, bright:{ value:C.bright }, rim:{ value:new THREE.Color() }, pow:{ value:C.rimPow } });
-  for(const [m] of (u.paint||[])) if(!COATED.has(m)){ COATED.add(m); sideCoat(m, U); }
-  U.coat.value=u.realDressed && !own ? C.coat : 0; U.gain.value=u.coatGain||1; U.rim.value.setHex(C.rim[u.side]).multiplyScalar(C.rimK[u.side]); }
 // the soldiers' shared atlas: camo (u 0–64 px), gear stripe (64–80), helmet stripe (80–96) → redrawn for this battlefield
 export function paintTroops(){ for(const side of ['f','e']){ const K=SOLDIER_KIT[side]; if(!K || K.real) continue;   // Z249 the Meshy kit wears its own texture
  const T=SIDE_PAINT.troops[side], sh=sideShift(hexOf(T.base), side);

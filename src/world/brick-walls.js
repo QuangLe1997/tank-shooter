@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRIVE, LOOT, BREAKUP } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, _tb, blocks, burst, detailize, dropPowerup, floatText, heightAt, inField, inZone, satOBB, scene, sfx, tip, breakScar } from '../hub.js';
+import { AREA_K, ARENA, BIOME, BRICK_PAL, MOBILE, S, _canvasTex, blocks, burst, detailize, dropPowerup, floatText, heightAt, inField, inZone, scene, sfx, tip, breakScar } from '../hub.js';
 
 // ----------------------------- Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed -----------------------------
 // Each 3 m section is real masonry: running-bond bricks (per-brick tone, chips, loose top courses), a ragged broken top, shell holes,
@@ -48,7 +48,6 @@ export function buildWallSection(pal, opt){
 }
 export const WALL_FALL=[];                                                                // toppling sections / collapsing bands (animated, then rubble)
 export const BUMPS=[];                                                                    // low obstacles the hull rides over (rocks, rubble) → tilts the tank
-export function bumpAt(x,z){ let h=0; for(const b of BUMPS){ const dx=x-b.x, dz=z-b.z, q=(dx*dx+dz*dz)/(b.r*b.r); if(q<1){ const v=b.h*(1-q)*(1-q*0.4); if(v>h) h=v; } } return h; }
 export function buildBrickWalls(){
   const pal=BRICK_PAL[BIOME.name]||BRICK_PAL.RUINS, runs=Math.round(((MOBILE?3:4)+Math.min(3, Math.floor(S.stage*0.6)))*Math.min(AREA_K,1.8)), soot=BIOME.name==='FOUNDRY'||BIOME.name==='RUINS'?0.9:0.45;
   for(let n=0, tries=0; n<runs && tries<80; tries++){
@@ -81,11 +80,6 @@ export function inBlock(bl, x, z, pad){ const dx=x-bl.x, dz=z-bl.z;
   if(bl.obb){ const s=Math.sin(bl.obb.f), c=Math.cos(bl.obb.f), al=dx*s+dz*c, ac=dx*c-dz*s; return Math.abs(al)<bl.obb.hl+pad && Math.abs(ac)<bl.obb.hw+pad; }
   return dx*dx+dz*dz < (bl.r+pad)*(bl.r+pad); }
 // tank hull vs a wall's oriented box (SAT) — same response as the round obstacles: push out, kill the speed into it, keep a slide
-export function tankVsWall(t, bl){
-  const h=satOBB(_tb(t), { x:bl.x, z:bl.z, f:bl.obb.f, hw:bl.obb.hw, hl:bl.obb.hl }); if(!h) return 0;
-  t.pos.x-=h.nx*h.d; t.pos.z-=h.nz*h.d; if(!t.vel) return 0; const vn=t.vel.x*h.nx+t.vel.z*h.nz;
-  if(vn>0){ t.vel.x-=h.nx*vn*1.1; t.vel.z-=h.nz*vn*1.1; const tx=-h.nz, tz=h.nx, vt=t.vel.x*tx+t.vel.z*tz; t.vel.x-=tx*vt*0.12; t.vel.z-=tz*vt*0.12; }
-  return vn; }
 // a band (or the whole section) breaks loose and falls; dir = which side it tips toward (+1/-1 across the wall)
 export function wallFall(bl, mesh, side, whole){
   if(!mesh) return; const g=bl.mesh; g.updateMatrixWorld(true);

@@ -7,12 +7,7 @@ import { BIOME, ENVMOD, MOBILE, S, _canvasTex, _mergeColored, aoeDamage, bigExpl
 
 
 export const _pv=new THREE.Vector3();   // (a shared temp)
-export const _lineMat={};
-export function makeBeam(color, op){ const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6),3));
-  const m=_lineMat[color]||(_lineMat[color]=new THREE.LineBasicMaterial({color, transparent:true, opacity:op||0.8, depthWrite:false, blending:THREE.AdditiveBlending}));
-  const l=new THREE.Line(g,m); l.frustumCulled=false; l.visible=false; scene.add(l); return l; }
-export function setBeam(l, ax,ay,az, bx,by,bz){ const a=l.geometry.attributes.position; a.setXYZ(0,ax,ay,az); a.setXYZ(1,bx,by,bz); a.needsUpdate=true; l.visible=true; }
-export const _beamPool=[]; export function takeBeam(){ return _beamPool.pop()||makeBeam(0xff2a2a,0.75); } export function dropBeam(l){ if(!l) return; l.visible=false; _beamPool.push(l); }
+export const _beamPool=[];  export function dropBeam(l){ if(!l) return; l.visible=false; _beamPool.push(l); }
 // --- ATTACK HELICOPTER: circles the fight at altitude, strafes with a chin cannon and ripples rockets. Only direct fire, flak and missiles reach it ---
 export let _heliMats=null;
 // Z198 a modern ATTACK HELICOPTER: a narrow armoured fuselage with a stepped tandem cockpit (faceted armoured glazing, frames), twin engine

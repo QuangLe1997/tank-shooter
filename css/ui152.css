@@ -30,7 +30,7 @@
 @media (min-width:761px) and (min-height:541px) and (orientation:landscape){
   #start .panel{grid-template-columns:repeat(60,minmax(0,1fr)) !important;}   /* Z163 4 big buttons (×15) over 5 small ones (×12) */
   #start #playBtn,#start #continueBtn,#start .help{grid-column:1/-1;}
-  #start #arsenalBtn,#start #shopBtn,#start #garageBtn,#start .terrain-pick{grid-column:span 15;}
+  #start #arsenalBtn,#start .terrain-pick{grid-column:span 15;}
   #start .btn-mini{grid-column:span 12;}
 }
 
@@ -88,60 +88,60 @@
 .gar-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:min(96vw,1240px);pointer-events:auto;}
 .gar-top .btn{justify-self:start;} .gar-ttl{font-size:clamp(24px,4vw,38px);font-weight:900;letter-spacing:6px;color:#f3e6c4;text-shadow:0 3px 14px rgba(0,0,0,.6);}
 .gar-wal{justify-self:end;font-size:14px;color:var(--muted);letter-spacing:1px;} .gar-wal b{color:#ffd24a;}
-#garGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;width:min(96vw,1240px);max-height:calc(var(--appH,100vh) - 150px);overflow-y:auto;padding:10px 8px 18px;pointer-events:auto;}
+
 .gcard{position:relative;cursor:pointer;border-radius:16px;padding:10px 12px 12px;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:var(--card-sh);transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s;display:flex;flex-direction:column;gap:5px;}
 @media (hover:hover){ .gcard:hover{transform:translateY(-4px);box-shadow:var(--card-sh-hover);} }
 .gcard.on{border-color:var(--green);box-shadow:0 0 0 2px var(--green),0 0 28px rgba(140,191,63,.35),var(--card-sh);}
-.gcard:not(.own) .gc-pic img{filter:saturate(.75) brightness(.92);}
-.gc-pic{position:relative;height:150px;border-radius:11px;background:radial-gradient(ellipse 70% 75% at 50% 62%,rgba(150,170,110,.22),rgba(10,13,8,.9) 75%);overflow:hidden;}
-.gunpic.gp-gar{position:absolute;inset:2px;}
-.gc-org{position:absolute;left:8px;top:7px;font-size:10px;font-weight:900;letter-spacing:2px;color:#e8dcb8;background:rgba(0,0,0,.5);padding:3px 8px;border-radius:999px;}
-.gc-fx{position:absolute;right:8px;top:7px;font-size:9.5px;font-weight:900;letter-spacing:1.5px;color:#1b1206;background:#7fe7ff;padding:3px 8px;border-radius:999px;}
-.gc-nm{font-size:18px;font-weight:900;letter-spacing:1px;color:#fff;margin-top:3px;} .gc-role{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--amber);}
-.gc-spec{font-size:11px;color:var(--muted);}
-.gc-bars{display:grid;gap:3px;margin:3px 0;}
-.gr-bar{display:grid;grid-template-columns:78px 1fr 56px;align-items:center;gap:7px;font-size:10.5px;font-weight:800;letter-spacing:1px;color:#cfd6c0;}
-.gr-bar i{display:block;height:6px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;} .gr-bar u{display:block;height:100%;border-radius:4px;background:#8a9a78;}
-.gr-bar u.up{background:linear-gradient(90deg,#6aa83a,#a6e05a);} .gr-bar u.dn{background:linear-gradient(90deg,#b0603a,#e0905a);}
-.gr-bar b{text-align:right;font-size:11px;color:#cfd6c0;} .gr-bar b.up{color:#9be04a;} .gr-bar b.dn{color:#ff9a6a;}
-.gc-desc{font-size:11.5px;line-height:1.35;color:#b9c2a8;min-height:46px;}
-.gc-act{margin-top:auto;text-align:center;padding:8px;border-radius:10px;font-weight:900;letter-spacing:2px;font-size:13px;background:rgba(255,255,255,.07);color:#e9efdc;}
-.gc-act.on{background:rgba(140,191,63,.22);color:#b8f070;} .gc-act.buy{background:linear-gradient(180deg,#ffd77a,#e8a83a);color:#1b1206;} .gc-act.buy.poor{background:rgba(255,255,255,.08);color:#9a8a6a;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .gcard.shake{animation:gshake .35s;} @keyframes gshake{25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
 
 /* ===== Z161 WORKSHOP + CREW ===== */
 .gar-l{display:flex;gap:8px;flex-wrap:wrap;justify-self:start;}
-#kitshop{justify-content:flex-start !important;padding-top:14px;gap:10px;}
-.kit-tabs{margin:2px 0 4px;} .kit-tab.on{color:#1b1206;background:linear-gradient(180deg,#ffd77a,#e8a83a);border-color:#ffd77a;}
-#kitBody{width:min(96vw,1180px);max-height:calc(var(--appH,100vh) - 150px);overflow-y:auto;padding:4px 8px 18px;pointer-events:auto;display:flex;flex-direction:column;gap:12px;}
-.kit-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
-.kit-chip{cursor:pointer;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:900;letter-spacing:1.5px;background:rgba(8,12,8,.55);border:1px solid rgba(255,255,255,.12);color:#cfd6c0;transition:.15s;}
-.kit-chip:hover,.kit-chip.padfocus{border-color:var(--pick);color:#fff;} .kit-chip.on{background:rgba(140,191,63,.25);border-color:var(--green);color:#d8ff9a;}
-.kit-ws{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:14px;}
-.kit-hero,.kit-seat,.kit-rec,.kit-row,.kit-sig{background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:var(--card-sh);border-radius:16px;padding:10px 12px;}
-.kit-hero{display:flex;flex-direction:column;gap:5px;} .kit-pic{height:200px;}
-.kit-sum{font-size:12px;line-height:1.4;color:#b9c2a8;}
-.kit-tracks{display:flex;flex-direction:column;gap:9px;}
-.kit-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;}
-.kr-nm{font-size:16px;font-weight:900;letter-spacing:1.5px;color:#fff;display:flex;flex-direction:column;} .kr-nm small{font-size:11px;font-weight:700;letter-spacing:.5px;color:#b9c2a8;}
-.kr-pips{display:flex;gap:5px;} .kr-pips i{width:22px;height:9px;border-radius:3px;background:rgba(255,255,255,.12);} .kr-pips i.on{background:linear-gradient(90deg,#6aa83a,#a6e05a);box-shadow:0 0 8px rgba(166,224,90,.45);}
-.kr-buy,.ks-buy,.kse-swap{min-width:132px;justify-content:center;} .kr-buy.poor,.ks-buy.poor{opacity:.55;} .kr-buy.max,.ks-buy.max{opacity:.7;pointer-events:none;}
-.kit-sig{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;border-color:rgba(127,231,255,.35);background:linear-gradient(165deg,rgba(24,44,52,.94),rgba(10,16,18,.96));}
-.kit-sig.lock{filter:saturate(.5);} .kit-sig.own{border-color:#7fe7ff;box-shadow:0 0 0 1px #7fe7ff,0 0 22px rgba(127,231,255,.25),var(--card-sh);}
-.ks-tag{grid-column:1;font-size:10px;font-weight:900;letter-spacing:2px;color:#7fe7ff;} .ks-nm{grid-column:1;font-size:18px;font-weight:900;letter-spacing:1px;color:#fff;} .ks-ds{grid-column:1;font-size:12px;color:#b9d2d8;line-height:1.35;}
-.ks-buy{grid-column:2;grid-row:1/4;}
-.kit-seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
-.kit-seat,.kit-rec{display:flex;flex-direction:column;gap:5px;}
-.kse-seat{font-size:11px;font-weight:900;letter-spacing:2.5px;color:var(--amber);} .kse-nm{font-size:18px;font-weight:900;color:#fff;}
-.kse-lv{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;color:#cfd6c0;} .kse-lv b{color:#ffd24a;letter-spacing:1px;}
-.kse-lv i{display:block;height:7px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;} .kse-lv u{display:block;height:100%;background:linear-gradient(90deg,#c08a2a,#ffd24a);}
-.kse-per{font-size:11.5px;color:#b9c2a8;} .kse-trait{font-size:11.5px;color:#7fe7ff;font-weight:700;}
-.kse-sk{font-size:11px;color:#6f7864;} .kse-sk.on{color:#a6e05a;font-weight:800;}
-.kse-swap,.kit-rec .kr-buy{margin-top:auto;}
-.kit-h{font-size:12px;font-weight:900;letter-spacing:2px;color:#f3e6c4;margin-top:4px;}
-.kit-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
-.kit-row.shake,.kit-sig.shake,.kit-rec.shake{animation:gshake .35s;}
-@media (max-width:760px){ .kit-ws{grid-template-columns:1fr;} .kit-row{grid-template-columns:1fr auto;} .kr-pips{grid-column:1;} .kr-buy{grid-column:2;grid-row:1/3;min-width:110px;} .gar-top{grid-template-columns:1fr;justify-items:center;gap:6px;} .gar-l,.gar-wal{justify-self:center;} }
+
+.kit-tabs{margin:2px 0 4px;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@media (max-width:760px){ .gar-top{grid-template-columns:1fr;justify-items:center;gap:6px;} .gar-l,.gar-wal{justify-self:center;} }
 
 /* ===== Z163 LEADERBOARD ===== */
 #ranking{justify-content:flex-start !important;padding-top:14px;gap:10px;}
@@ -155,18 +155,15 @@
 .rk-row.me{border-color:var(--green);box-shadow:0 0 0 2px var(--green),var(--card-sh);} .rk-me{margin-top:8px;} .rk-msg{color:var(--muted);text-align:center;padding:24px;font-size:13px;}
 @media (max-width:560px){ .rk-row{grid-template-columns:40px 1fr 78px;} .rk-lv{display:none;} }
 
-/* ===== Z167 ROOF MG ammo readout ===== */
-#mgHud{position:fixed;left:14px;bottom:118px;z-index:30;pointer-events:none;font:800 12px/1 'Saira Condensed',sans-serif;letter-spacing:1.5px;color:#ffe6a0;
-  background:rgba(8,12,8,.62);border:1px solid rgba(255,214,120,.28);border-radius:8px;padding:6px 9px;display:none;font-variant-numeric:tabular-nums;}
-#mgHud.on{display:block;} #mgHud b{color:#fff;margin-right:4px;}
-.kit-rec.on{border-color:var(--green);box-shadow:0 0 0 2px var(--green),var(--card-sh);}
-.mg-card .kr-buy,.mg-card .kse-swap{margin-top:4px;}
-.mg-up{grid-template-columns:1fr auto;gap:4px 8px;padding:6px 8px;border-radius:10px;box-shadow:none;background:rgba(255,255,255,.03);} .mg-up .kr-nm{grid-column:1/-1;font-size:12.5px;flex-direction:row;gap:6px;align-items:baseline;flex-wrap:wrap;} .mg-up .kr-nm small{font-size:10.5px;} .mg-up .kr-pips{align-self:center;} .mg-up .kr-pips i{width:16px;height:7px;} .mg-up .kr-buy{min-width:96px;font-size:11px;margin-top:0 !important;}
+
+
+
+
+
 
 /* ===== Z168 controller: no mouse-hover lift while a pad / keyboard drives (a resting cursor used to fight the focus ring → flicker) ===== */
-body.pad :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus),
-body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.kit-chip,.kit-rec,.shop-tab,.seg-chip):hover:not(.padfocus){transform:none !important;filter:none !important;}
-.gcard.padfocus,.kit-rec.padfocus,.brcard.padfocus,.upcard.padfocus{transform:translateY(-3px) scale(1.02) !important;}
+body.pad :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.shop-tab,.seg-chip):hover:not(.padfocus),body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.shop-tab,.seg-chip):hover:not(.padfocus){transform:none !important;filter:none !important;}
+.gcard.padfocus,.brcard.padfocus,.upcard.padfocus{transform:translateY(-3px) scale(1.02) !important;}
 
 /* ===== Z168 first-time tips: a side card (no dimmed backdrop, no pause), under every menu, with a countdown bar ===== */
 #tipCard{inset:auto 14px auto auto !important;top:78px !important;z-index:15 !important;background:none !important;display:block !important;pointer-events:none !important;width:min(380px,calc(100vw - 28px));}
@@ -178,35 +175,32 @@ body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card
 body.touch #tipCard{top:auto !important;bottom:12px;left:50% !important;right:auto !important;transform:translateX(-50%);width:min(440px,70vw);}
 
 /* ===== Z168 UI pass: main menu row never overflows; garage / workshop bars stay on one line ===== */
-#start #arsenalBtn .lg,#start #garageBtn .lg,#start #shopBtn .lg,#start #terrainBtn .lg{display:none;}   /* the long words don't fit four-across; the short label + icon do */
+#start #arsenalBtn .lg,#start #terrainBtn .lg{display:none;}   /* the long words don't fit four-across; the short label + icon do */
 #start .panel .btn>span:not(.ic){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 #start .panel .btn{min-width:0;}
-#start #garageBtn{justify-content:center;gap:8px;}
+
 @media (max-width:1100px){ .gar-ttl{font-size:clamp(20px,3vw,30px) !important;letter-spacing:3px !important;} .gar-l .btn{padding:6px 10px !important;font-size:11px !important;} .gar-l{gap:6px !important;} }
-@media (max-height:520px){ .gar-top{grid-template-columns:auto 1fr auto !important;} .gar-ttl{font-size:20px !important;letter-spacing:2px !important;text-align:center;} .gar-l .btn{padding:5px 8px !important;font-size:10.5px !important;} #garage .subtitle,#kitshop .subtitle{display:none;} }
+@media (max-height:520px){ .gar-top{grid-template-columns:auto 1fr auto !important;} .gar-ttl{font-size:20px !important;letter-spacing:2px !important;text-align:center;} .gar-l .btn{padding:5px 8px !important;font-size:10.5px !important;} #garage .subtitle{display:none;} }
 /* short landscape phones: four across (arsenal · garage · shop · battlefield), then the small row */
 @media (orientation:landscape) and (max-height:500px){
-  #start #arsenalBtn{grid-area:2/1/3/2 !important;} #start #garageBtn{grid-area:2/2/3/3 !important;} #start #shopBtn{grid-area:2/3/3/4 !important;} #start .terrain-pick{grid-area:2/4/3/5 !important;}
+  #start #arsenalBtn{grid-area:2/1/3/2 !important;} #start .terrain-pick{grid-area:2/4/3/5 !important;}
   #start #rankBtn{grid-area:3/1/4/2 !important;} #start #guideBtn{grid-area:3/2/4/3 !important;} #start #settingsBtn{grid-area:3/3/4/4 !important;} #start #resetBtn{grid-area:3/4/4/5 !important;}
   #start #keysBtn{display:none !important;}
-  #start #arsenalBtn,#start #garageBtn,#start #shopBtn{font-size:11px !important;padding:9px 5px !important;gap:5px !important;} #start #garageBtn .ic{width:14px;height:14px;}
+  #start #arsenalBtn{font-size:11px !important;padding:9px 5px !important;gap:5px !important;}
 }
 @media (orientation:portrait){
-  #start #arsenalBtn,#start #shopBtn,#start #garageBtn,#start .terrain-pick{grid-column:span 3 !important;}
+  #start #arsenalBtn,#start .terrain-pick{grid-column:span 3 !important;}
   #start #rankBtn,#start #guideBtn,#start #settingsBtn,#start #resetBtn{grid-column:span 3 !important;} #start #keysBtn{display:none !important;}
 }
 
-/* ===== Z168 shop cards: the price IS the button — a full-width pill at the foot of the card ===== */
-.case .case-price{margin-top:auto;align-self:stretch;justify-content:center;align-items:center;flex-direction:row !important;flex-wrap:wrap;gap:2px 6px !important;
-  min-height:30px;padding:5px 8px;border-radius:9px;font-size:13.5px !important;letter-spacing:.5px;line-height:1.1;text-align:center;
-  background:linear-gradient(180deg,#ffd77a,#e8a83a);color:#1b1206 !important;text-shadow:none !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 3px 8px rgba(0,0,0,.35);}
-.case .case-price .ic{color:#1b1206 !important;width:14px !important;height:14px !important;}
-.case.rar-vip .case-price{background:linear-gradient(180deg,#9ff1ff,#3fb8d8);color:#06222a !important;} .case.rar-vip .case-price .ic{color:#06222a !important;}
-.case.cant .case-price{background:rgba(255,255,255,.07);color:#a49a86 !important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);} .case.cant .case-price .ic{color:#a49a86 !important;}
-.case .case-price .short{flex-basis:100%;font-size:9.5px !important;color:#ff9a7a !important;}
-.case.owned .case-price,.case.maxed .case-price{background:rgba(140,191,63,.16);color:#c6f07a !important;box-shadow:inset 0 0 0 1px rgba(140,191,63,.45);font-size:12px !important;}
+
+
+
+
+
+
 .case{display:flex;flex-direction:column;}
 /* garage on short screens: smaller photos, more cards per row */
-@media (max-height:520px){ #garGrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr)) !important;gap:10px !important;} .gc-pic{height:96px !important;} .gc-desc{display:none;} .gcard{gap:3px !important;padding:8px 10px 10px !important;} .gc-nm{font-size:15px !important;} }
+@media (max-height:520px){ .gcard{gap:3px !important;padding:8px 10px 10px !important;} }
 #start #resetBtn .lg{display:none;}
 /* Z170 the terrain card's tag is now a real place (GIZA · AI CẬP): it wraps under the name and never spills */

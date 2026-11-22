@@ -1,23 +1,9 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
-import { APPLE, BNZ, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, shaper, songBuf, verbSend, rideHealth } from '../hub.js';
+import { APPLE, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, songBuf, verbSend, rideHealth } from '../hub.js';
 import { RIDE } from '../../config.js';
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
 export const ENG={ on:false, nodes:null, rpm:0 };
-export function engineStart(){
-  const a=audio(); if(!a||ENG.nodes) return;
-  const out=a.createGain(); out.gain.value=0; out.connect(master); if(verbSend){ const s=a.createGain(); s.gain.value=0.08; out.connect(s).connect(verbSend); }
-  const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=380; lp.Q.value=1.2;
-  const sh=a.createWaveShaper(); sh.curve=shaper?shaper.curve:null; sh.connect(lp).connect(out);
-  const o1=a.createOscillator(); o1.type='sawtooth'; o1.frequency.value=32; const g1=a.createGain(); g1.gain.value=0.5; o1.connect(g1).connect(sh);
-  const o2=a.createOscillator(); o2.type='square'; o2.frequency.value=16; const g2=a.createGain(); g2.gain.value=0.25; o2.connect(g2).connect(sh);            // firing-order lope
-  const rb=a.createBufferSource(); rb.buffer=BNZ; rb.loop=true; const rbf=a.createBiquadFilter(); rbf.type='bandpass'; rbf.frequency.value=140; rbf.Q.value=0.8; const rbg=a.createGain(); rbg.gain.value=0.6; rb.connect(rbf).connect(rbg).connect(sh);
-  const tk=a.createBufferSource(); tk.buffer=NZ; tk.loop=true; const tkf=a.createBiquadFilter(); tkf.type='bandpass'; tkf.frequency.value=1900; tkf.Q.value=1.1;   // track links clanking
-  const tkg=a.createGain(); tkg.gain.value=0; const lfo=a.createOscillator(); lfo.type='square'; lfo.frequency.value=4; const lfg=a.createGain(); lfg.gain.value=0; lfo.connect(lfg).connect(tkg.gain);
-  tk.connect(tkf).connect(tkg).connect(out);
-  for(const n of [o1,o2,rb,tk,lfo]) n.start();
-  ENG.nodes={ out, lp, o1, o2, tkg, lfo, lfg }; ENG.on=true;
-}
 export function updateEngine(dt){
   const n=ENG.nodes, p=S.player; if(!n||!actx) return;
   const t=actx.currentTime, live = S.mode==='playing' && p && !muted && !p.cav;   // Z245 no diesel in cavalry mode

@@ -12,7 +12,7 @@ export function buildSettings(){
   const Mu=document.getElementById('setMusic'); if(Mu){ Mu.innerHTML=''; Mu.appendChild(_segChip('BẬT',PROFILE.music,()=>_setMus(true))); Mu.appendChild(_segChip('TẮT',!PROFILE.music,()=>_setMus(false))); }
   const Vo=document.getElementById('setVoice'); if(Vo){ Vo.innerHTML=''; Vo.appendChild(_segChip('BẬT',PROFILE.voice!==false,()=>{ PROFILE.voice=true; saveProfile(); buildSettings(); sayVoice('open', true); })); Vo.appendChild(_segChip('TẮT',PROFILE.voice===false,()=>{ PROFILE.voice=false; saveProfile(); buildSettings(); })); }   // Z161 radio voices
   const Ct=document.getElementById('setCtrl'); if(Ct){ Ct.innerHTML=''; const cur=controlScheme();   // Z99 driving scheme
-    Ct.appendChild(_segChip('XE TĂNG',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
+    Ct.appendChild(_segChip('XOAY THÂN',cur==='tank',()=>{ PROFILE.ctrl='tank'; saveProfile(); buildSettings(); sfx('click'); }, MOBILE?'cần: lên tiến · ngang quay':'W/S tiến lùi · A/D quay'));
     Ct.appendChild(_segChip('THEO MÀN HÌNH',cur==='screen',()=>{ PROFILE.ctrl='screen'; saveProfile(); buildSettings(); sfx('click'); }, 'đẩy về đâu xe đi về đó')); }
   buildPadSettings();
   const Tu=document.getElementById('setTurret'); if(Tu){ Tu.innerHTML=''; const k=PROFILE.turretK||1, setK=(v)=>{ PROFILE.turretK=Math.round(Math.max(TURRET.min, Math.min(TURRET.max, v))*100)/100; saveProfile(); buildSettings(); sfx('click'); };   // Z145

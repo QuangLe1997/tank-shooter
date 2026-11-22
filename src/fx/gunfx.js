@@ -12,7 +12,7 @@
 //   (the chips / clods / splinters are solid little meshes from the brass pool: a smoke-layer speck can never be opaque — keep its op ≤ 2, the HDR target does not clamp alpha)
 import * as THREE from 'three';
 import { GUNFX, REAL } from '../../config.js';
-import { BIOME, MOBILE, RIVER, S, camera, heightAt, muzzleFlash, muzzleLight, muzzleLinger, ringPulse, scene, spawnPart, wetAt } from '../hub.js';
+import { BIOME, MOBILE, RIVER, S, camera, heightAt, muzzleLight, scene, spawnPart } from '../hub.js';
 
 // ---- ribbon pool ----
 const MAXP = 18, POOL = MOBILE ? 10 : 22;
@@ -59,83 +59,18 @@ export function lightning(a, b, col=0x9fd4ff, life=0.22, w=0.34){
     _v.set(_f.x+(Math.random()-0.5)*L, _f.y-Math.random()*0.8, _f.z+(Math.random()-0.5)*L); startRibbon(_f, _v, col, w*0.6, life*0.8, 1, 8, 1.8); }   // a fork
 }
 // the railgun's slug path: a straight violet beam that hangs and thins, a hot core inside it
-export function railBeam(a, b){
-  startRibbon(a, b, 0xffffff, 0.22, 0.32, 0, 2, 3.0); startRibbon(a, b, 0xb07cff, 1.3, 0.55, 0, 2, 1.4);
-  const L=a.distanceTo(b), n=Math.min(MOBILE?14:26, Math.ceil(L/1.4)); _d.subVectors(b,a).normalize(); const sx=-_d.z, sz=_d.x;
-  for(let i=0;i<n;i++){ const t=i/n, ph=t*L*1.6, c=Math.cos(ph)*0.35, s=Math.sin(ph)*0.35;   // helix of plasma sparks wound round the path
-    spawnPart(a.x+(b.x-a.x)*t+sx*c, a.y+(b.y-a.y)*t+s, a.z+(b.z-a.z)*t+sz*c, sx*c*2, s*2+0.4, sz*c*2, { color:i%3?0xc9a8ff:0xffffff, size:0.32, life:0.45+Math.random()*0.25, grav:0.6, drag:2.4 }); }
-}
 export function updateBolts(dt){ for(const r of RIB){ if(!r.on) continue; r.life-=dt;
     if(r.life<=0){ r.on=false; r.m.visible=false; continue; }
     const k=r.life/r.max; r.m.material.opacity=k*k*(r.jag>0 ? 0.75+Math.random()*0.25 : 1); r.w*= r.jag>0 ? 1 : (1-dt*1.5);
     if(r.jag>0){ r.reT-=dt; if(r.reT<=0){ r.reT=0.035; jagged(r); } } else layout(r); } }
 
 // ---- muzzle effects per firing class ----
-function smokeRing(x,y,z,fx,fz,s){ const n=MOBILE?7:12, px=fz, pz=-fx;   // vortex ring: puffs set round the bore axis, blown outward and slowly forward
-  for(let i=0;i<n;i++){ const t=i/n*6.283, c=Math.cos(t), sn=Math.sin(t), ox=px*c*0.35*s, oz=pz*c*0.35*s, oy=sn*0.35*s;
-    spawnPart(x+ox+fx*0.6*s, y+oy, z+oz+fz*0.6*s, px*c*2.4*s+fx*3.2, sn*2.4*s+0.3, pz*c*2.4*s+fz*3.2, { color:0xb0aa9c, size:0.75*s, life:1.5+Math.random()*0.4, smoke:true, grav:0.25, drag:1.7, grow:1.0*s, op:0.38 }); } }
 // Z168 the muzzle blast hits the ground: a ring of dust and grit thrown out under the barrel (bigger guns, bigger ring)
-export function groundBlast(x, z, fx, fz, k){ const gy=heightAt(x,z), n=MOBILE?6:12, dc=BIOME.ground;
-  for(let i=0;i<n;i++){ const t=i/n*6.283, c=Math.cos(t), s=Math.sin(t), f=0.6+0.4*Math.max(0, c*fx+s*fz);   // stronger ahead of the muzzle
-    spawnPart(x+c*0.6, gy+0.25, z+s*0.6, c*7*k*f, 0.8+Math.random(), s*7*k*f, { color:dc, size:1.1*k, life:0.8+Math.random()*0.4, smoke:true, grav:-0.2, drag:2.6, grow:1.6, op:0.45 }); }
-  for(let i=0;i<(MOBILE?3:6);i++){ const a=Math.atan2(fx,fz)+(Math.random()-0.5)*1.4, sp=6+Math.random()*7; spawnPart(x, gy+0.3, z, Math.sin(a)*sp, 3+Math.random()*3, Math.cos(a)*sp, { color:0x6a5a44, size:0.16, life:0.7, grav:-14, drag:0.6 }); }   // grit
-  ringPulse({ x, z }, 0xfff0d0, 1.8*k); }
-export function gunMuzzleFX(g, x, y, z, ang, rec){ const fx=Math.sin(ang), fz=Math.cos(ang), kind=g.flash||'auto';
-  if(rec>=1.2 && (kind==='heavy'||kind==='rail'||kind==='launch')) groundBlast(x+fx*0.8, z+fz*0.8, fx, fz, Math.min(1.8, 0.6+rec*0.25));
-  if(kind==='auto'){ muzzleFlash(x,z,ang,g.color,rec,y); return; }
-  if(kind==='auto30'){   // Z231 the 30 mm: a hard white star, the three-port brake throws flame jets out both sides, a ring of gas, a hot amber glint
-    muzzleFlash(x,z,ang,g.color,1.2,y); brakeBlast(x,y,z, ang, 0.75);   // Z419 (muzzleFlash only throws brake jets from rec 1.4 up: the 30 mm's own three-port brake, here)
-    spawnPart(x+fx*0.3,y,z+fz*0.3, fx*3,0.2,fz*3, { color:0xd8d2c4, size:0.9, life:0.35, smoke:true, grav:0.2, drag:5, grow:2.4, op:0.28 });
-    gunLight(x+fx,y+0.2,z+fz, 0xffb060, 4.2); return; }
-  if(kind==='small'){   // MG / rotary — crisp and small; rate of fire does the talking
-    gunFlash(x+fx*0.05,y,z+fz*0.05, ang, 1.0, 0.5, 0xfff0c8, 1);   // Z419 a shaped MG flash along the bore (was a star billboard + a flame blob)
-    if(Math.random()<0.3) spawnPart(x+fx*0.6,y+0.05,z+fz*0.6, fx*2+0.32,0.5,fz*2+0.12, { color:0xa8a298, size:0.45, life:0.8, smoke:true, grav:0.3, drag:2.6, grow:1.0, op:0.2 });   // a wisp that drifts off on the wind
-    gunLight(x+fx,y+0.2,z+fz, 0xffc87a, 2.2); return; }
-  if(kind==='heavy'){ muzzleFlash(x,z,ang,g.color,rec,y);
-    gunFlash(x,y,z, ang, 3.0+rec*0.35, 1.7+rec*0.2, 0xffffff, 1.2);   // Z419 the blinding first instant: a big shaped flash down the bore (was a round billboard)
-    spawnPart(x+fx*1.4,y,z+fz*1.4, fx*9,0.4,fz*9, { tex:'fire', color:0xfff0c0, color2:0xff4a10, size:1.6, grow:1.8, life:0.16, grav:0.5, drag:6 });   // fireball rolling off the muzzle
-    smokeRing(x,y,z,fx,fz,0.8+rec*0.15);
-    muzzleLinger(x,y,z,fx,fz,0.8+rec*0.2);   // Z210 the cloud hangs in front of the gun
-    gunLight(x+fx,y+0.3,z+fz, 0xffc070, 5+rec); return; }
-  if(kind==='rail'){
-    spawnPart(x+fx*0.3,y,z+fz*0.3, 0,0,0, { tex:'flash', color:0xe6d4ff, size:2.6, life:0.07, grav:0, drag:8 });
-    ringPulse({x:x+fx*0.6, z:z+fz*0.6}, 0xc9a8ff, 1.6);
-    for(let i=0;i<10;i++){ const a=ang+(Math.random()-0.5)*1.6, sp=8+Math.random()*12; spawnPart(x,y,z, Math.sin(a)*sp,(Math.random()-0.2)*5,Math.cos(a)*sp, { color:Math.random()<0.5?0xffffff:0xb895ff, size:0.22, life:0.18+Math.random()*0.15, grav:-6, drag:3 }); }   // arcing off the rails
-    spawnPart(x+fx*0.5,y,z+fz*0.5, fx*1.5,0.6,fz*1.5, { color:0x9c8ab8, size:0.8, life:0.9, smoke:true, grav:0.4, drag:2, grow:1.2, op:0.22 });   // ionised haze
-    muzzleLight.position.set(x+fx,y+0.3,z+fz); muzzleLight.color.setHex(0xb88cff); muzzleLight.intensity=Math.max(muzzleLight.intensity,6); return; }
-  if(kind==='arc'){
-    spawnPart(x,y,z, 0,0,0, { tex:'flash', color:0xcfe8ff, size:1.8, life:0.05, grav:0, drag:8 });
-    for(let i=0;i<5;i++){ const a=Math.random()*6.283, sp=5+Math.random()*7; spawnPart(x,y,z, Math.cos(a)*sp,(Math.random()-0.3)*6,Math.sin(a)*sp, { color:0xbfe8ff, size:0.24, life:0.12+Math.random()*0.1, grav:0, drag:4 }); }
-    muzzleLight.position.set(x+fx,y+0.3,z+fz); muzzleLight.color.setHex(0x7fb8ff); muzzleLight.intensity=Math.max(muzzleLight.intensity,4.2); return; }
-  if(kind==='frost'){
-    spawnPart(x+fx*0.3,y,z+fz*0.3, fx*4,0,fz*4, { tex:'flash', color:0xe8fbff, size:1.2, life:0.05, grav:0, drag:8 });
-    for(let i=0;i<(MOBILE?2:4);i++){ const a=ang+(Math.random()-0.5)*0.5, sp=4+Math.random()*4;   // LN2 boiling off into a white plume that sinks (cold air is heavy)
-      spawnPart(x+fx*0.5,y,z+fz*0.5, Math.sin(a)*sp,0.2,Math.cos(a)*sp, { color:0xeaf8ff, size:0.6, life:0.9+Math.random()*0.4, smoke:true, grav:-0.6, drag:2.4, grow:1.6, op:0.32 }); }
-    for(let i=0;i<4;i++){ const a=ang+(Math.random()-0.5)*0.8, sp=6+Math.random()*6; spawnPart(x,y,z, Math.sin(a)*sp,Math.random()*2,Math.cos(a)*sp, { color:0xcff4ff, size:0.16, life:0.35, grav:-3, drag:2 }); }   // ice glitter
-    return; }
-  if(kind==='launch'){
-    gunFlash(x,y,z, ang, 1.4, 0.9, 0xfff0d8, 1);   // Z419 shaped
-    const L=2.3, bx=x-fx*L, bz=z-fz*L;   // the open rear of the tube
-    for(let i=0;i<(MOBILE?3:6);i++){ const a=ang+Math.PI+(Math.random()-0.5)*0.5, sp=12+Math.random()*10;
-      spawnPart(bx,y,bz, Math.sin(a)*sp,0.3+Math.random(),Math.cos(a)*sp, { tex:'fire', color:0xfff0c0, color2:0xff4a10, size:0.9, grow:1.4, life:0.16+Math.random()*0.08, grav:0, drag:7 }); }   // flame out the back
-    for(let i=0;i<(MOBILE?3:7);i++){ const a=ang+Math.PI+(Math.random()-0.5)*0.9, sp=4+Math.random()*6;
-      spawnPart(bx,y,bz, Math.sin(a)*sp,0.4+Math.random()*0.8,Math.cos(a)*sp, { color:0xd8d0c0, size:1.4, life:1.4+Math.random()*0.6, smoke:true, grav:0.3, drag:1.6, grow:2.0, op:0.55 }); }   // backblast cloud
-    const gy=heightAt(bx-fx*3, bz-fz*3)+0.3;
-    for(let i=0;i<(MOBILE?3:6);i++){ const a=ang+Math.PI+(Math.random()-0.5)*1.4, sp=5+Math.random()*5;
-      spawnPart(bx-fx*3,gy,bz-fz*3, Math.sin(a)*sp,0.6,Math.cos(a)*sp, { color:BIOME.ground, size:1.1, life:0.9, smoke:true, grav:-0.1, drag:2.6, grow:1.4, op:0.4 }); }   // ground dust behind the tank
-    muzzleLight.position.set(bx,y+0.3,bz); muzzleLight.color.setHex(0xffb060); muzzleLight.intensity=Math.max(muzzleLight.intensity,4.5); return; }
-  muzzleFlash(x,z,ang,g.color,rec,y);
-}
 // a KINETIC round glancing off thick armour: a bright tracer that skips away + a spray of sparks (tells you the gun is wrong for it)
 export function ricochet(x, y, z, vx, vz){ const L=Math.hypot(vx,vz)||1, a=Math.atan2(vx/L, vz/L)+(Math.random()<0.5?1:-1)*(0.7+Math.random()*0.8), sp=26+Math.random()*14;
   spawnPart(x,y,z, Math.sin(a)*sp, 3+Math.random()*5, Math.cos(a)*sp, { color:0xfff0c8, size:0.42, life:0.22, grav:-10, drag:0.6 });
   for(let i=0;i<5;i++){ const b=a+(Math.random()-0.5)*1.2, s=6+Math.random()*10; spawnPart(x,y,z, Math.sin(b)*s, 1+Math.random()*4, Math.cos(b)*s, { color:0xffd890, size:0.14, life:0.25+Math.random()*0.15, grav:-18, drag:1.5 }); } }
 // where a straight-line weapon (tesla / railgun) actually connects: the first enemy close to the line of fire, else the end of its reach
-export function strikePoint(list, x, z, ang, maxD, cone, out){ const fx=Math.sin(ang), fz=Math.cos(ang); let best=null, bd=maxD;
-  for(const e of list){ if(!e || e.abandoned || (e.alive===false)) continue; const dx=e.pos.x-x, dz=e.pos.z-z, along=dx*fx+dz*fz; if(along<0.5 || along>bd) continue;
-    const off=Math.abs(dx*fz-dz*fx); if(off < (e.r||1)*1.4+along*cone){ best=e; bd=along; } }
-  if(best){ out.set(best.pos.x, heightAt(best.pos.x,best.pos.z)+1.3, best.pos.z); return best; }
-  out.set(x+fx*maxD, heightAt(x+fx*maxD, z+fz*maxD)+1.0, z+fz*maxD); return null; }
 
 // ---- Z419 SHAPED MUZZLE FLASH: two crossed petal planes along the bore + a face-on star, additive, from one atlas; pooled instances, one draw call ----
 const FLN = MOBILE ? GUNFX.flash.poolMob : GUNFX.flash.pool, FL = [], _fc = new THREE.Color();

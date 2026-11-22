@@ -1,7 +1,7 @@
 // actors/command.js — Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our helicopter to drop paratroopers (B) — keys + the phone's command strip.
 import * as THREE from 'three';
 import { COMMAND, TROOPS } from '../../config.js';
-import { FORTS, FT, MOBILE, S, floatText, fortSealed, isClimber, ladderGoal, launchParadrop, radio, ringPulse, sfx, showBanner, tapBtn } from '../hub.js';
+import { FORTS, FT, MOBILE, S, floatText, isClimber, ladderGoal, launchParadrop, radio, ringPulse, sfx, showBanner, tapBtn } from '../hub.js';
 
 export const CMD = { paraAt:0 };
 // what a soldier does under an active order (null = carry on with his own judgement)
@@ -17,9 +17,9 @@ export function cmdGoal(a, now, foe){ const C=S.cmd; if(!C || now>C.until) retur
 export function musterAll(){ if(S.mode!=='playing') return; const now=performance.now()/1000;
   S.cmd={ kind:'muster', until:now+COMMAND.musterT }; for(const a of FT){ a.thinkAt=0; a.hold=null; }
   const p=S.player; ringPulse(new THREE.Vector3(p.pos.x,0,p.pos.z), 0x9be04a, 7); floatText('TẬP KẾT · '+FT.length+' LÍNH', '#9be04a', p.pos, 18); sfx('click');
-  radio('Toàn bộ lính — tập kết về xe chỉ huy!'); }
+  radio('Toàn bộ lính — tập kết về chỗ tôi!'); }
 export function assaultFort(){ if(S.mode!=='playing') return; const now=performance.now()/1000, p=S.player;
-  const open=FORTS.filter(f=>!f.captured && f.g && !fortSealed(f)); if(!open.length){ floatText('KHÔNG CÓ THÀNH NÀO ĐỂ ĐÁNH', '#ffcf5a', p.pos, 15); return; }
+  const open=FORTS.filter(f=>!f.captured && f.g); if(!open.length){ floatText('KHÔNG CÓ THÀNH NÀO ĐỂ ĐÁNH', '#ffcf5a', p.pos, 15); return; }
   open.sort((a,b)=>Math.hypot(a.x-p.pos.x,a.z-p.pos.z)-Math.hypot(b.x-p.pos.x,b.z-p.pos.z)); const f=open[0];
   S.cmd={ kind:'assault', f, until:now+COMMAND.assaultT }; for(const a of FT){ a.thinkAt=0; a.hold=null; }
   showBanner('XUNG PHONG — '+f.name+'!', '#ff8a3a'); radio(FT.length ? ('Cả đội tiến về '+f.name+' — dồn hoả lực vào cổng!') : 'Chưa có lính — gọi lính dù (B) hoặc giải cứu tù binh trước!'); sfx('levelup'); }

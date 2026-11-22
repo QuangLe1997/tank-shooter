@@ -6,14 +6,10 @@
 //   Z425 the ground pieces are real scans: the radome on its tower, an equipment shelter, a radar truck, a field generator, two dishes.
 import * as THREE from 'three';
 import { SCENERY, SUPPLYB } from '../../config.js';
-import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen, dressAAGun, towerTopple } from '../hub.js';
+import { B3, MOBILE, _xf, aoeDamage, burst, heightAt, kit, sfx, spawnBullet, spawnPart, playerSeen, dressAAGun, towerTopple } from '../hub.js';
 
 const CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
-export function radarLost(){ return SUPPLY.radar|0; }
 // what the artillery keeps of its precision and tempo once the radar is gone
-export function artyRestMul(){ return 1+0.7*Math.min(2, radarLost()); }
-export function artyShotCut(){ return Math.min(2, radarLost()); }
-export function artyErr(){ return radarLost() ? 5+4*radarLost() : 0; }
 let _panelT=null;
 function panelMat(){ if(_panelT) return _panelT; const c=document.createElement('canvas'); c.width=256; c.height=128; const x=c.getContext('2d'); x.fillStyle='#2a2e2c'; x.fillRect(0,0,256,128);
   for(let i=0;i<32;i++) for(let j=0;j<14;j++){ x.fillStyle=(i+j)%7===0?'#4a8a9a':'#3a4442'; x.fillRect(4+i*7.9,4+j*8.8,5.5,6.5); }   // radiating elements

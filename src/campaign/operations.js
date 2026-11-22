@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, MODE, S, WAVE, _canvasTex, _pv, realObjective, addCoins, addDiamonds, addScore, aoeDamage, artLockStrike, bigExplode, blocks, burst, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, realObjective, addCoins, addDiamonds, addScore, aoeDamage, bigExplode, blocks, cMod, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, diffRewardMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, loopRewardMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -98,11 +98,6 @@ export function updateObjective(dt, now){
   const b=O.bar, f=Math.max(0,O.b.hp/O.b.maxHp); b.g.visible=true; b.g.position.set(O.x, gy+ud.h+1.2, O.z); b.g.quaternion.copy(camera.quaternion);
   b.fill.scale.x=Math.max(0.001,f); b.fill.position.x=-(1-f)*0.5; b.fill.material.color.setHex(0xffc040);
   if(Math.random()<0.03) ringPulse({x:O.x,z:O.z}, 0xffc040, O.b.r+1.5);                            // pulsing target marker
-  if(O.kind==='battery' && MODE.arty && S.mode==='playing' && now>O.shellAt && S.player){   // (Z403 the battery stays silent in a soldier's war)
-    O.shellAt=now+O.def.mods.shellEvery;
-    const p=S.player; artLockStrike(p.pos.x+p.vel.x*0.5, p.pos.z+p.vel.z*0.5);
-    for(const gn of ud.guns||[]){ gn.mz.getWorldPosition(_pv); spawnPart(_pv.x,_pv.y,_pv.z,0,4,0,{tex:'flash', color:0xfff0c0, size:3, life:0.1, grav:0, drag:0}); burst({x:_pv.x,z:_pv.z}, 0xcfc6b4, 5, 3, {y:_pv.y, life:1.2, size:1.6, smoke:true, grav:-0.3, drag:1.5, op:0.5}); gn.tb.position.z=0; }
-    sfx('rocketlaunch', {x:O.x,z:O.z}); }
   for(const gn of ud.guns||[]) gn.tb.position.z += (0.3-gn.tb.position.z)*Math.min(1,dt*3);
 }
 export function updateObjHUD(){
@@ -114,7 +109,7 @@ export function updateObjHUD(){
 }
 // scripted wave events for this operation (override the random roll)
 export function scriptedEvent(){ const sc=opFor(S.stage).script[S.wave]; if(!sc) return false;
-  const B={ ambush:['⚠ PHỤC KÍCH — BỘ BINH ÁP SÁT','#ffb070'], column:['ĐOÀN XE THIẾT GIÁP ĐANG TỚI','#ff8a4a'], pyro:['XE PHUN LỬA — GIỮ KHOẢNG CÁCH','#ff7a1c'], airraid:['⚠ KHÔNG KÍCH — TRỰC THĂNG ĐANG TỚI','#ff7ae0'] }[sc];
+  const B={ ambush:['⚠ PHỤC KÍCH — BỘ BINH ÁP SÁT','#ffb070'], column:['ĐOÀN BỘ BINH ĐANG TỚI','#ff8a4a'], airraid:['⚠ KHÔNG KÍCH — TRỰC THĂNG ĐANG TỚI','#ff7ae0'] }[sc];
   WAVE.event=sc; WAVE.eventBanner=B[0]; WAVE.eventColor=B[1]; sfx('alarm'); return true; }
 export function applyScriptedWave(now){
   const ev=WAVE.event, q=WAVE.spawnQueue, p=S.player;

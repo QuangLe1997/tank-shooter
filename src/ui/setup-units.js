@@ -18,13 +18,11 @@ export const TROOPERS = {
 };
 const BARS = ['CƠ ĐỘNG', 'BỀN', 'GÓC BẮN'];
 let _pgX = 0;   // (Z411 where the row of guns was slid to)
-export const isSoldier = () => true;   // (no-tanks: the soldier is the only mode)
 const rideOf = () => RIDES[PROFILE.unit] ? PROFILE.unit : (PROFILE.lastRide && RIDES[PROFILE.lastRide] ? PROFILE.lastRide : 'xeom');
 const trooperOf = () => TROOPERS[PROFILE.trooper] ? PROFILE.trooper : 's2';
 const el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
 const img = (src, cls) => { const i = new Image(); i.decoding = 'async'; i.alt = ''; i.className = cls || ''; i.src = src; i.onload = () => i.classList.add('in'); return i; };
 const pips = (n, of = 5) => '<span class="su-pips">' + Array.from({ length:of }, (_, i) => '<i' + (i < n ? ' class="on"' : '') + '></i>').join('') + '</span>';
-const bar = (lbl, k) => '<div class="su-bar"><span>' + lbl + '</span><i><b style="width:' + Math.round(Math.max(0.06, Math.min(1, k)) * 100) + '%"></b></i></div>';
 // ---- ② TRANG BỊ ----
 export function renderGear(host, refresh){ host.replaceChildren(); soldierGear(host, refresh); }
 function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = trooperOf(), rd = rideOf();

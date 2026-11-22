@@ -54,23 +54,8 @@ export function refreshWallet(){ document.querySelectorAll('.w-coins').forEach(e
 // levels cost diamonds (VIP — a multi-session grind). costs[L] = price to go from level L→L+1.
 // SHOP_UP / GUN_PRICE / VIP_GUNS now imported from config.js (single source of truth for economy data)
 export const SHOP_UP_BY={}; SHOP_UP.forEach(u=>SHOP_UP_BY[u.key]=u);
-export function upLevel(key){ return PROFILE.upgrades[key]||0; }
-export function upMax(key){ return SHOP_UP_BY[key] ? SHOP_UP_BY[key].costs.length : 0; }
 export function canAfford(cost){ return !!cost && (!cost.c || PROFILE.coins>=cost.c) && (!cost.d || PROFILE.diamonds>=cost.d); }
 export function payCost(cost){ if(!canAfford(cost)) return false; if(cost.c) PROFILE.coins-=cost.c; if(cost.d) PROFILE.diamonds-=cost.d; return true; }
-export function applyUpgrades(p){                                     // bake the bought upgrades into a fresh run
-  const U=PROFILE.upgrades||{}, B=BALANCE.up;
-  p.maxHp     = 100 + (U.hp||0)*B.hp;
-  p.dmgMul   *= 1 + (U.damage||0)*B.damage;
-  p.rangeMul *= 1 + (U.range||0)*B.range;
-  p.speedMul *= 1 + (U.engine||0)*B.engine;   // ENGINE: +10%/level → nimbler dodging (max +50%)
-  p.accelMul = 1 + (U.turbo||0)*B.turbo;       // Z93 TURBOCHARGER: +12% acceleration/level
-  p.ramDealMul = 1 + (U.ramplate||0)*B.ramplate; p.ramTakeMul = Math.max(0.5, 1 - (U.ramplate||0)*B.ramguard);   // Z93 RAM PLATE
-  p.magMul    = 1 + (U.mag||0)*B.mag;          // separate from the buff-derived ammoMul (which the frame loop overwrites)
-  p.reloadMul = 1/(1 + (U.reload||0)*B.reload);
-  p.bossMul   = 1 + (U.boss||0)*B.boss;        // WARHEAD: bonus damage vs bosses
-  p.armor     = Math.min(0.6,(U.armor||0)*B.armor);
-}
 export function guardTarget(){ return SOLDIER.base + (PROFILE.upgrades.guards||0); }
 export function crewTarget(){ return RIDER.base + (PROFILE.upgrades.crew||0)*(RIDER.perUp||1); }   // Z111b 5 seats filled + 2 per upgrade level
 // ---- SUPPORT-UNIT upgrades (shop): drone + guards scale by purchased level ----

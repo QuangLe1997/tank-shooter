@@ -5,7 +5,6 @@ export const TOD_LABEL = { day:'BUỔI SÁNG', noon:'GIỮA TRƯA', sunset:'HOÀ
 export const DIFF_META = { recruit:{label:'TÂN BINH',tag:'DỄ'}, soldier:{label:'CHIẾN SĨ',tag:'THƯỜNG'}, veteran:{label:'LÃO LUYỆN',tag:'KHÓ'} };
 export const STAGE_TAGS=['CHUẨN BỊ ĐÓN ĐÁNH','VÒNG VÂY SIẾT CHẶT','KHÔNG LÙI BƯỚC','LAO VÀO BÃO LỬA','TRẬN CUỐI CÙNG'];
 export const BIOME_VI={ DESERT:'SA MẠC', RUINS:'PHẾ TÍCH', TUNDRA:'BĂNG GIÁ', FOUNDRY:'LÒ ĐÚC', CITADEL:'THÀNH LUỸ', MEADOW:'THẢO NGUYÊN', CITY:'THÀNH PHỐ', HILLS:'ĐỒI NÚI', VILLAGE:'LÀNG QUÊ SÔNG SUỐI', SAVANNA:'XAVAN CHÂU PHI', ARCTIC:'BẮC CỰC' , STEELMILL:'NHÀ MÁY THÉP BỎ HOANG', VOLCANO:'CHẢO NÚI LỬA', QUARRY:'MỎ ĐÁ THẠCH CAO', CAVERN:'HANG NGẦM' };
-export const CAT_VI={ WEAPONS:'VŨ KHÍ', FIREPOWER:'HOẢ LỰC', AMMO:'ĐẠN DƯỢC', CHASSIS:'THÂN XE', SUPPORT:'HỖ TRỢ' };
 // Z170 every battlefield is a real, famous place in the land its terrain belongs to: where it is, and what its strongholds are called
 export const BIOME_PLACE={
   DESERT:{ at:'GIZA · AI CẬP', forts:['LUXOR','KARNAK','ABU SIMBEL','ASWAN','SIWA','EL ALAMEIN','SAQQARA','DAHSHUR','MEMPHIS','THUNG LŨNG CÁC VUA'] },

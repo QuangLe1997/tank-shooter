@@ -49,13 +49,6 @@ export function decalReset(b){
   for(let i=0;i<(MOBILE?8:14);i++){ let x=0,z=0,ok=false; for(let t=0;t<12&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-6); z=(Math.random()*2-1)*(ARENA-6); ok=Math.hypot(x,z)>14 && Math.hypot(x,z-ARENA*0.55)>8 && inField(x,z,4); }   // old shell craters from earlier fighting
     if(ok) decalCrater(x,z,1.4+Math.random()*2.6, 0.6); }
 }
-export function decalTread(x, z, facing, scale){                                       // one pair of track prints (both belts)
-  const c=DECAL.dx, P=DECAL.dppu, s=scale||1, w=0.6*s*P, l=0.6*s*P, off=1.18*s*P;
-  c.save(); c.translate(_ddx(x),_ddz(z)); c.rotate(-facing);
-  c.fillStyle=_treadCol+_treadA+')'; c.fillRect(-off-w/2,-l/2,w,l); c.fillRect(off-w/2,-l/2,w,l);
-  c.fillStyle=_treadCol+(_treadA*1.6).toFixed(3)+')'; for(const sx of [-off,off]) for(let k=0;k<2;k++) c.fillRect(sx-w/2, -l/2+k*l/2, w, Math.max(1,l*0.12));   // cleat bars
-  c.restore(); DECAL.dirtyD=true;
-}
 export function decalScorch(x, z, r, k){                                               // blast scorch: charred core → soot halo
   const c=DECAL.sx, px=_dpx(x), pz=_dpz(z), R=r*DECAL.ppu; k=k==null?1:k;
   const g=c.createRadialGradient(px,pz,0,px,pz,R); g.addColorStop(0,'rgba(12,9,6,'+(0.82*k).toFixed(2)+')'); g.addColorStop(0.45,'rgba(22,16,10,'+(0.55*k).toFixed(2)+')'); g.addColorStop(1,'rgba(30,22,14,0)');

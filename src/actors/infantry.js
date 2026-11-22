@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD } from '../../config.js';
-import { BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, hitsHull, inSmoke, infPushBlocks, killEnemy, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen, asShipped, nearShape, riverWay, wadeAt, gunFlash } from '../hub.js';
+import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, addScore, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, floatText, fortExitDir, fortWallCross, haptic, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, playerSeen, asShipped, nearShape, riverWay, wadeAt, gunFlash } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -90,7 +90,7 @@ export function updateInfantry(e, dt, now, edt){
   e.facing += wrapAngle(want-e.facing)*Math.min(1,dt*9);
   e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.mesh.rotation.y=e.facing;
   let fired=false; const ds=diffScale(), A=BALANCE.aggro;
-  const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul();
+  const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*objMod('enemyDmgMul')*diffDmgMul();   // (an objective standing: the command bunker, the battery)
   if(inRange && now>e.fireAt && !(e.aimT>0) && !T.lost && S.mode==='playing' && !soldierReloading(e.mesh) && !(e.sqNoFire && moved>0.01)){   // Z172 nobody fires mid-reload · Z173 nor while sprinting to the next cover
     if((e.supp||0)>0.75 && Math.random()<0.5) e.fireAt=now+0.4; else
     if(fortWallCross(e.pos.x, e.pos.z, T.pos.x, T.pos.z) || losBlocked(e.pos.x, e.pos.z, T.pos.x, T.pos.z)){ e.fireAt=now+0.6; wantPeek(e, T.pos.x, T.pos.z, now); }     // Z111b a fortress wall between: no shot (rifle or rocket) · Z220 nor a house / rock — he moves for a clear line
@@ -120,14 +120,6 @@ export function updateInfantry(e, dt, now, edt){
   poseSoldier(e.mesh, st, dt); e.r = st==='prone' ? 0.34 : 0.55;              // a man lying flat is a smaller target for your gun too
 }
 // a tank rolling over a soldier at speed crushes him; slower contact just shoves him aside
-export function crushInfantry(now){
-  const p=S.player; if(!p) return; const ps=Math.hypot(p.vel.x,p.vel.z);
-  for(const e of enemies.slice()){ if(!e.def.inf) continue;
-    if(hitsHull(p, e.pos.x, e.pos.z, 0.35)){
-      if(ps>INFANTRY.crushSpeed || now<p.dashUntil){ e._crushed=true; killEnemy(e); continue; }
-      const nx=e.pos.x-p.pos.x, nz=e.pos.z-p.pos.z, L=Math.hypot(nx,nz)||1; e.pos.x+=nx/L*0.45; e.pos.z+=nz/L*0.45; }
-  }
-}
 export function infantryDown(e){
   const m=e.mesh, gy=heightAt(e.pos.x,e.pos.z);
   if(e._crushed){ m.scale.y*=0.12; m.position.y=gy+0.05;                    // flattened into the dirt under the tracks

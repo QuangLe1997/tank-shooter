@@ -275,8 +275,6 @@ export function trafficShot(b, dt){ if(!TR.on) return false; const C = HIT(), ox
 //   a → b, w wide each side) — what it reaches takes dmg off its health (a car stops) and catches fire at none
 export function trafficCone(x, z, cx, cz, range, cone, dmg){ if(!TR.on) return; for(const v of TR.list){ if(v.dead || v.st === 'burn' || v.fade != null) continue; const dx = v.x - x, dz = v.z - z, d = Math.hypot(dx, dz);
     if(d < range + v.hl && (dx * cx + dz * cz) / (d || 1) >= cone) scorch(v, dmg); } }
-export function trafficBeam(ax, az, bx, bz, w, dmg){ if(!TR.on) return; const vx = bx - ax, vz = bz - az, L2 = vx * vx + vz * vz || 1;
-  for(const v of TR.list){ if(v.dead || v.st === 'burn' || v.fade != null) continue; const t = Math.max(0, Math.min(1, ((v.x - ax) * vx + (v.z - az) * vz) / L2)); if(Math.hypot(ax + vx * t - v.x, az + vz * t - v.z) < w + v.hw) scorch(v, dmg); } }
 function scorch(v, dmg){ v.hp -= dmg; if(!v.st && !v.moto){ loose(v); v.st = 'halt'; v.stT = HIT().haltT; } if(v.hp <= 0) trafficBurn(v); }
 // does the segment (ax, az) → (bx, bz) cross the box |x| ≤ W, |z| ≤ L (slab clipping)
 function crosses(ax, az, bx, bz, W, L){ let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;

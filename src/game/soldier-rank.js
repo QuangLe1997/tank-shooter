@@ -4,7 +4,7 @@
 //   radio: a man for the squad, a supply drop, a stick of paratroopers, a barrage. Perks stack in levels; one card in three may be a call for help.
 //   Past the last rank, every step is a medal: one more pick. The same cards close a stage won against the general (loot/upgrades.js asks soldierStagePerks).
 import { TROOPER } from '../../config.js';
-import { MODE, S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
+import { S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
 
 export const CAREER = { xp:0, rank:0, lv:{}, chip:null };
 const R = CAREER, T = () => TROOPER;
@@ -18,8 +18,8 @@ export function rankReset(){ R.xp = 0; R.rank = 0; R.lv = {}; paintChip(); }
 function xpFor(e){ const K = T().xp.kill; if(e.general) return K.general;
   let x = K[e.type] ?? (e.def.inf ? K._inf : e.def.air ? K._air : K._veh); if(e.elite) x *= T().xp.eliteK; if(e.genGuard) x *= 2; return x; }
 // killEnemy asks this for every kill (his, his squad's, a strike's)
-export function soldierKill(e){ if(MODE.id !== 'soldier' || !S.player) return; gainXp(xpFor(e), e.pos); armsDrop(e); }
-export function gainXp(n, at){ if(MODE.id !== 'soldier' || !S.player || !(n > 0)) return; R.xp += n;
+export function soldierKill(e){ if(!S.player) return; gainXp(xpFor(e), e.pos); armsDrop(e); }
+export function gainXp(n, at){ if(!S.player || !(n > 0)) return; R.xp += n;
   if(n >= 40 && at) floatText('+' + n + ' KN', '#ffd86a', { x:at.x, y:2.6, z:at.z }, 15);
   while(R.xp >= rankNeed(R.rank)){ R.xp -= rankNeed(R.rank); rankUp(); }
   paintChip(); }
@@ -35,7 +35,6 @@ function milestone(r){ const m = T().milestone[r]; if(!m) return; const nm = ran
   else if(m === 'supply'){ supplyDrop(); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù tiếp tế cạnh anh: súng mới và cứu thương.'); }
   else if(m === 'para'){ callPara(); radio('SCH: ' + nm + ' — trực thăng đang thả một tiểu đội lính dù xuống cạnh anh!'); }
   else if(m === 'barrage'){ callStrike(); setTimeout(callStrike, 1600); radio('SCH: ' + nm + '! Pháo kích toàn tuyến theo toạ độ của anh — cúi đầu xuống!'); } }
-const behind = d => { const p = S.player, f = p.facing || 0; return clampFieldXZ(p.pos.x - Math.sin(f) * d, p.pos.z - Math.cos(f) * d, 6); };
 export function callPara(){ const p = S.player; launchParadrop(NOW(), { friendly:true, at:[p.pos.x, p.pos.z] }); }
 // a strike on the thickest knot of enemies near him (the airstrike falls where S.aimPoint is: aim it there for the call, then give the aim back)
 export function callStrike(){ const p = S.player; if(!p || S.mode !== 'playing') return; let best = null, bn = 0;
@@ -85,11 +84,11 @@ function giftDrop(nm){ const p = S.player, f = p.facing || 0, [x, z] = clampFiel
   spawnGift({ x, z }, () => { const k = pickPerks(1)[0]; if(!k) return; take(k, S.player); showBanner('QUÀ: ' + k.nm, '#ffd86a'); });   // (Z369 the crate under a parachute: loot/gift-crate.js)
   ringPulse({ x, z }, 0xffd86a, 3); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù một thùng quà cạnh anh, ra nhận!'); }
 // once a frame in battle: keep the rank stripe on his health bar
-export function updateRank(){ if(MODE.id !== 'soldier') return;
+export function updateRank(){ 
   if(R.chip && !R.chip.isConnected) paintChip(); }
 // the stripe over his health bar: insignia, rank, the gold line to the next one
 export function paintChip(){ const bar = document.getElementById('phpbar'); if(!bar) return; let c = R.chip;
   if(!c || !c.isConnected){ c = R.chip = document.createElement('em'); c.className = 'rk'; c.innerHTML = '<s></s><span></span><u><i></i></u>'; bar.appendChild(c); }
-  const on = MODE.id === 'soldier'; c.style.display = on ? '' : 'none'; if(!on) return;
+  c.style.display = '';
   c.className = 'rk t' + tierOf(R.rank); c.children[0].textContent = INS[Math.min(R.rank, INS.length - 1)]; c.children[1].textContent = rankName(R.rank);
   c.querySelector('u i').style.width = Math.min(100, Math.round(100 * R.xp / rankNeed(R.rank))) + '%'; }

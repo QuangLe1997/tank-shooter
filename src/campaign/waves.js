@@ -10,7 +10,6 @@ export function diffScale(){ return Math.min(1, (S.stage-1)/4); }
 // NG+ escalation — each loop ramps the threat AND the payout, so a grinded arsenal finally has a place to flex.
 export function loopHpMul(){ return 1 + (S.loop||0)*BALANCE.loop.hp; }      // enemy / structure HP
 export function loopDmgMul(){ return 1 + (S.loop||0)*BALANCE.loop.dmg; }    // enemy damage
-export function loopBossMul(){ return 1 + (S.loop||0)*BALANCE.loop.boss; }  // boss HP
 export function loopRewardMul(){ return 1 + (S.loop||0)*BALANCE.loop.reward; }   // UI labels (numbers live in config.js BALANCE.difficulty)
 export function diffCfg(){ return BALANCE.difficulty[PROFILE.difficulty] || BALANCE.difficulty.soldier; }
 export function diffHpMul(){ return diffCfg().hp; }

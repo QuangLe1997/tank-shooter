@@ -41,14 +41,13 @@ export function depotJob(a){ let best=null, bd=52;
 function captureDepot(d){ d.state='ours'; d.ring.visible=false;
   unwave(d.flag); d.g.remove(d.flag); const fl=makeFlag(rallyFlagTex(),1.7,1.1,1); fl.position.set(d.flagPos[0], d.flagPos[1]+5.4, d.flagPos[2]); d.g.add(fl); d.flag=fl;   // our colours go up
   const R=Math.round; addScore(R(DEPOT.score*loopRewardMul()), new THREE.Vector3(d.x,5,d.z)); addCoins(R(DEPOT.coin*(1+(S.stage-1)*0.25)*loopRewardMul()*diffRewardMul()*cMod('coinMul')));
-  floatText(d.kind==='arms'?'ĐÃ CHIẾM KHO VŨ KHÍ':'ĐÃ CHIẾM KHO XE TĂNG', '#9be04a', new THREE.Vector3(d.x,6,d.z), 24); sfx('levelup');
-  if(d.kind==='arms'){ radio('Tổ bộ binh: Kho vũ khí đã về tay ta — anh em nhận súng chống tăng!'); dropPowerup({x:d.x,z:d.z}, 1, GUN_DROP_DEF); dropPowerup({x:d.x,z:d.z}, 1); }   // a new gun + supplies
-  else radio('Tổ bộ binh: Đã chiếm bãi xe — kíp lái đang nổ máy xe tăng địch!'); }
+  floatText('ĐÃ CHIẾM KHO VŨ KHÍ', '#9be04a', new THREE.Vector3(d.x,6,d.z), 24); sfx('levelup');
+  radio('Tổ bộ binh: Kho vũ khí đã về tay ta — anh em nhận súng chống tăng!'); dropPowerup({x:d.x,z:d.z}, 1, GUN_DROP_DEF); dropPowerup({x:d.x,z:d.z}, 1); }   // a new gun + supplies
 export function updateDepots(dt, now){ const p=S.player; if(!p) return;
   for(const d of DEPOTS){
     if(d.state==='held'){ if(Math.hypot(p.pos.x-d.x, p.pos.z-d.z)<40 && now>d.seenAt){ d.seenAt=now+1e9; tip('depot'); }
-      if(guardsLeft(d.q)===0){ d.state='open'; d.ring.visible=true; floatText((d.kind==='arms'?'KHO VŨ KHÍ':'KHO XE TĂNG')+' BỎ NGỎ — THẢ LÍNH VÀO CHIẾM', '#9be04a', new THREE.Vector3(d.x,6,d.z), 18);
-        radio('SCH: Lính canh '+(d.kind==='arms'?'kho vũ khí':'bãi xe tăng')+' đã bị diệt. Đưa bộ binh vào chiếm!'); } continue; }
+      if(guardsLeft(d.q)===0){ d.state='open'; d.ring.visible=true; floatText('KHO VŨ KHÍ BỎ NGỎ — THẢ LÍNH VÀO CHIẾM', '#9be04a', new THREE.Vector3(d.x,6,d.z), 18);
+        radio('SCH: Lính canh kho vũ khí đã bị diệt. Đưa bộ binh vào chiếm!'); } continue; }
     if(d.state==='open'){ const n=soldiersIn(d); d.cap = n ? Math.min(DEPOT.capT, d.cap+dt*Math.min(3, 0.6+n*0.4)) : Math.max(0, d.cap-dt*0.5);
       const f=d.cap/DEPOT.capT; holoArc(d.ring, f); d.ring.material.opacity=blPulse(now, 'warn', 0.6);
       if(f>=1) captureDepot(d); continue; }

@@ -129,8 +129,7 @@ export const REAL = {
   death:{ fwd:0.3, spin:0.22, crawl:0.16 }, crawl:{ t:[3.2,5.5], sp:0.42 },   // small-arms death: fall forward / spin down / crawl wounded, else back
   look:{ h:[0.93,1.07], w:[0.93,1.08], tint:[0.8,1.1] },         // no two men the same height, build or shade of kit
   shock:{ minScale:1.0 },                                        // blasts this big send a dust skirt racing out along the ground
-  surprise:{ first:[60,85], every:[50,90], from:{ mortar:1, ambush:1, friendly:1, heli:2 }, w:{ mortar:1, ambush:1.1, friendly:0.6, heli:0.5 },
-    mortar:{ shells:7, gap:0.5, walk:3.0, R:4.2, dmg:20, warn:1.3 },
+  surprise:{ first:[60,85], every:[50,90], from:{ ambush:1, friendly:1, heli:2 }, w:{ ambush:1.1, friendly:0.6, heli:0.5 },
     ambush:{ r:[14,19], squads:[1,2] },
     friendly:{ shells:8, R:5, dmg:80, minFoes:4 } } };
 // Z272 real aircraft (actors/real-air.js; Tripo): yaw turns the nose to +z, cutRotor = top share of the height whose blades are cut (ours spin) except
@@ -435,40 +434,35 @@ export const ROSTER = {
 export const OPERATIONS = [
   { title:'CHIẾN DỊCH BÃO CÁT', code:'SANDSTORM', obj:'depot', script:{ 2:'ambush', 4:'column' },
     story:'Rạng sáng, Liên minh Hắc Thiết vượt biên dưới màn bão cát. Tiền đồn Sao Đỏ chỉ còn một Lõi năng lượng — và Đại đội Thép 7 của anh.',
-    brief:'Thiết giáp địch đang tập kết sau đồi cát. Giữ Lõi, đốt kho nhiên liệu đang tiếp sức cho đoàn xe của chúng.',
-    radio:{ 1:'Phát hiện địch phía trước — thiết giáp trong đồi cát!', 2:'Bộ binh đang băng qua bãi trống. Cán qua chúng!', 3:'Trinh sát báo: chúng có một chỉ huy tên "Bò Thép".', 4:'Đoàn thiết giáp trên đường phía đông!', 5:'Đợt cuối trước khi xe chỉ huy của chúng tới. Giữ vững!' },
-    boss:'BÒ THÉP đang lao tới. Nó húc rất mạnh nhưng ngu — dụ nó đâm vào tường gạch hay đá, nó sẽ choáng. Bắn vào đuôi xe!',
-    win:'Kho nhiên liệu cháy rồi — xe tăng của chúng sắp cạn xăng!' },
+    brief:'Bộ binh địch đang tập kết sau đồi cát. Giữ Lõi, đốt kho nhiên liệu đang tiếp sức cho trực thăng và viện binh của chúng.',
+    radio:{ 1:'Phát hiện địch phía trước — bộ binh trong đồi cát!', 2:'Chúng đang băng qua bãi trống. Bắn chặn!', 3:'Trinh sát báo: chúng có một chỉ huy tên "Bò Thép".', 4:'Một đoàn bộ binh trên đường phía đông!', 5:'Đợt cuối trước khi Bò Thép ra mặt. Giữ vững!' },
+    win:'Kho nhiên liệu cháy rồi — trực thăng của chúng sắp nằm đất!' },
   { title:'CHIẾN DỊCH THÀNH PHỐ ĐỔ NÁT', code:'BROKEN CITY', obj:'radio', script:{ 2:'ambush', 4:'column' },
     story:'Bò Thép gục ngã, nhưng từ thành phố đổ nát phía bắc, một trạm tiếp sóng vẫn liên tục gọi viện binh Hắc Thiết đổ về.',
     brief:'Đống đổ nát che một trạm tiếp sóng gọi viện binh không ngừng. Bịt miệng nó, rồi dọn sạch các con phố.',
-    radio:{ 1:'Có chuyển động trong đống gạch vụn.', 2:'Xe phun lửa! Giữ khoảng cách!', 3:'Bắt được sóng địch: chỉ huy CUỒNG PHONG đang dẫn đội tên lửa tới.', 4:'Tổ RPG trong hẻm — coi chừng tên lửa!', 5:'Trạm tiếp sóng vẫn phát? Hạ nó ngay!' },
-    boss:'CUỒNG PHONG đang lượn quanh quảng trường. Hai bệ tên lửa hai bên tháp pháo là mắt xích yếu — bắn nát chúng, thả khói khi bị khoá!',
+    radio:{ 1:'Có chuyển động trong đống gạch vụn.', 2:'Phục kích! Chúng trồi lên sát bên!', 3:'Bắt được sóng địch: chỉ huy CUỒNG PHONG đang dẫn cận vệ tới.', 4:'Tổ RPG trong hẻm — coi chừng rocket!', 5:'Trạm tiếp sóng vẫn phát? Hạ nó ngay!' },
     win:'Trạm tiếp sóng đã sập — viện binh của chúng im bặt.' },
   { title:'CHIẾN DỊCH IM LẶNG TRẮNG', code:'WHITE SILENCE', obj:'radar', script:{ 3:'airraid', 5:'column' },
-    story:'Tín hiệu cuối của CUỒNG PHONG dẫn về vùng băng giá: một trạm radar đang dẫn đường cho trực thăng tấn công. Đây là nơi Hắc Thiết giấu cỗ xe pháo đài KHỔNG LỒ.',
+    story:'Tín hiệu cuối của CUỒNG PHONG dẫn về vùng băng giá: một trạm radar đang dẫn đường cho trực thăng tấn công. KHỔNG LỒ, tướng gác băng của Hắc Thiết, đang chờ ở đó.',
     brief:'Trạm radar trên băng đang dẫn trực thăng vào đội hình ta. Phá nó để giành lại bầu trời.',
-    radio:{ 1:'Tầm nhìn kém. Tập trung cao độ.', 2:'Băng nứt khắp nơi — đừng để bị dồn vào góc.', 3:'Tiếng cánh quạt — trực thăng vũ trang!', 4:'Công binh đang hàn xe cho chúng. Diệt công binh trước!', 5:'Đoàn xe hạng nặng vượt băng!' },
-    boss:'KHỔNG LỒ đã chọc thủng tuyến băng. Giáp trước của nó gần như không xuyên nổi — vòng ra sau lưng mà đánh!',
+    radio:{ 1:'Tầm nhìn kém. Tập trung cao độ.', 2:'Băng nứt khắp nơi — đừng để bị dồn vào góc.', 3:'Tiếng cánh quạt — trực thăng vũ trang!', 4:'Lính dù đang thả xuống sườn băng!', 5:'Cả một đoàn bộ binh vượt băng!' },
     win:'Radar thành sắt vụn. Hết trực thăng trên đầu ta.' },
   { title:'CHIẾN DỊCH LÒ LỬA THÉP', code:'IRON FURNACE', obj:'battery', script:{ 2:'column', 4:'airraid' },
-    story:'Giữa tro tàn của KHỔNG LỒ, ta tìm thấy bản đồ: Hắc Thiết đúc xe ngay trong khu lò luyện, có pháo binh canh giữ — và TỬ THẦN, sát thủ tàng hình của chúng.',
-    brief:'Một trận địa pháo trong khu lò đúc đang nã vào phòng tuyến ta. Luôn di chuyển, và đánh sập những khẩu pháo đó.',
-    radio:{ 1:'Đạn pháo đang tới — di chuyển liên tục!', 2:'Thiết giáp tràn ra từ các xưởng lò!', 3:'TỬ THẦN có thể dịch chuyển. Đừng đứng yên một chỗ.', 4:'Không kích! Tìm chỗ nấp!', 5:'Xe diệt tăng trên sườn đồi — bị khoá laser thì thả khói.' },
-    boss:'TỬ THẦN đang trong lò rèn. Tia laser của nó không xuyên tường — nấp sau tường gạch khi nó nạp năng lượng!',
+    story:'Giữa đống đổ nát nơi KHỔNG LỒ ngã xuống, ta tìm thấy bản đồ: Hắc Thiết đóng quân ngay trong khu lò luyện, có pháo binh yểm trợ — và TỬ THẦN, sát thủ của chúng.',
+    brief:'Một trận địa pháo trong khu lò đúc đang yểm trợ cho bộ binh địch. Luôn di chuyển, và đánh sập những khẩu pháo đó.',
+    radio:{ 1:'Pháo địch đang yểm trợ — di chuyển liên tục!', 2:'Bộ binh tràn ra từ các xưởng lò!', 3:'TỬ THẦN rất khó lường. Đừng đứng yên một chỗ.', 4:'Không kích! Tìm chỗ nấp!', 5:'Xạ thủ trên sườn đồi — nấp sau gạch đá!' },
     win:'Trận địa pháo đã câm. Pháo kích ngừng rồi.' },
   { title:'CHIẾN DỊCH THÀNH LUỸ CUỐI', code:'LAST CITADEL', obj:'command', script:{ 1:'ambush', 3:'airraid', 5:'column' },
-    story:'Hầm chỉ huy của Hắc Thiết nằm sau thành luỹ cuối cùng. BẠO CHÚA — kẻ khơi mào cuộc chiến — đang chờ. Kết thúc nó, và chiến tranh kết thúc hôm nay.',
+    story:'Hầm chỉ huy của Hắc Thiết nằm sau thành luỹ cuối cùng. BẠO CHÚA — kẻ khơi mào cuộc chiến — đang chờ. Kết thúc hắn, và chiến tranh kết thúc hôm nay.',
     brief:'Đây là hầm chỉ huy của chúng. Mọi thứ còn lại của Hắc Thiết dồn cả về đây. Phá nó, chiến tranh sẽ kết thúc.',
-    radio:{ 1:'Chúng đã chờ sẵn — phục kích!', 2:'Giữ Lõi. Bằng mọi giá.', 3:'Toàn bộ trực thăng của chúng đã cất cánh!', 4:'Đại đội Thép 7, cả nước đang dõi theo các anh.', 5:'Đoàn xe cuối cùng. Chính là lúc này.' },
-    boss:'BẠO CHÚA ra trận. Nó có khiên năng lượng nhờ các trụ phát — phá trụ rồi dồn hoả lực. Kết thúc nó!',
+    radio:{ 1:'Chúng đã chờ sẵn — phục kích!', 2:'Giữ Lõi. Bằng mọi giá.', 3:'Toàn bộ trực thăng của chúng đã cất cánh!', 4:'Đại đội Thép 7, cả nước đang dõi theo các anh.', 5:'Đợt cuối cùng của chúng. Chính là lúc này.' },
     win:'Hầm chỉ huy sập rồi — phòng tuyến địch đang tan vỡ!' },
 ];
 export const OBJECTIVES = {
-  depot:  { name:'FUEL DEPOT', vi:'KHO NHIÊN LIỆU', effectVi:'Xe địch chạy nhanh hơn 15%',        hp:260, r:6.2, effect:'Enemy tanks move 15% faster',          mods:{ enemySpeedMul:1.15 } },
+  depot:  { name:'FUEL DEPOT', vi:'KHO NHIÊN LIỆU', effectVi:'Trực thăng & viện binh tới nhanh hơn 15%', hp:260, r:6.2, effect:'Reinforcements arrive 15% faster', mods:{ cadenceMul:0.85 } },
   radio:  { name:'RADIO RELAY', vi:'TRẠM TIẾP SÓNG', effectVi:'Viện binh tới nhanh hơn 25%',       hp:220, r:3.6, effect:'Reinforcements arrive 25% faster',      mods:{ cadenceMul:0.75 } },
   radar:  { name:'RADAR SITE', vi:'TRẠM RADAR', effectVi:'Mỗi đợt có thêm một trực thăng',        hp:260, r:4.8, effect:'A gunship joins every wave',            mods:{ gunshipPerWave:1 } },
-  battery:{ name:'ARTILLERY BATTERY', vi:'TRẬN ĐỊA PHÁO', effectVi:'Nã pháo vào vị trí bạn mỗi 9 giây', hp:320, r:6.8, effect:'Shells your position every 9 seconds',  mods:{ shellEvery:9 } },
+  battery:{ name:'ARTILLERY BATTERY', vi:'TRẬN ĐỊA PHÁO', effectVi:'Pháo yểm trợ: địch gây thêm 10% sát thương', hp:320, r:6.8, effect:'Enemies deal 10% more damage', mods:{ enemyDmgMul:1.1 } },
   command:{ name:'COMMAND BUNKER', vi:'HẦM CHỈ HUY', effectVi:'Địch gây thêm 15% sát thương',    hp:440, r:6.6, effect:'Enemies deal 15% more damage',          mods:{ enemyDmgMul:1.15 } },
 };
 export const OBJ_REWARD = { coin:300, coinPerStage:120, dia:1, score:1500 };
@@ -492,7 +486,6 @@ export const ENV = {
 export const GIFT = { gunBase:0.30, pityStep:0.12, pityCap:0.85, counterW:1.6, newGunW:1.6 };
 
 // ----- rarity colours (tier/VIP) -----
-export const RAR_COL = { t1:0x9fb07a, t2:0x5aa9ff, t3:0xc08bff, vip:0x7fe7ff, up:0x9bd14a };
 
 // ----- shop: leveled stat upgrades (L1-L3 coins, L4-L5 diamonds = VIP) -----
 export const SHOP_UP = [
@@ -519,30 +512,9 @@ export const SHOP_UP = [
 
 // ----- gun unlocks. T1/T2/T3 in coins; railgun & rocket are VIP (diamonds only, never gifted in battle).
 // VIP coin-equiv (28◆=5,600 / 34◆=6,800) sits ABOVE the best T3 coin gun (5,500) — value stays ordered. -----
-export const GUN_PRICE = { smg:{c:600}, shotgun:{c:1300}, cryo:{c:1500}, flak:{c:1800}, cannon:{c:2100},   // Z149 price climbs with tier: BẬC 1 ≤ 600 · BẬC 2 1.3–3k · BẬC 3 4–5.5k
-  flamer:{c:2300}, agl:{c:2500}, hesh:{c:2800}, mortar:{c:3000}, minigun:{c:4000}, missile:{c:4400}, tesla:{c:4800}, thermo:{c:5200}, arty:{c:5500}, railgun:{d:28}, rocket:{d:34},
-  orbital:{d:60}, plasma:{d:48}, hydra:{d:42}, singularity:{d:55}, photon:{d:50} };   // Z186 ultimates
 export const VIP_GUNS = ['railgun','rocket','orbital','plasma','hydra','singularity','photon'];
 
 // ----- punchy marketing blurbs (kept short) -----
-export const GUN_BLURB = {
-  rifle:'Bền bỉ, đa năng — không bao giờ kẹt đạn.', carbine:'Súng trường của người lính: đạn thẳng, chính xác, không nổ.', t_lmg:'Đại liên của lính: băng 100 viên, giữ cò quét cả tổ địch.', t_minigun:'Súng nòng xoay ôm ngang hông: mưa đạn, nạp lâu.', t_shotgun:'Súng săn: 8 viên chì một phát, cực mạnh ở gần.', t_sniper:'Súng bắn tỉa 12.7: một phát xuyên hai người, bắn xa.', t_rpg:'B41 vác vai: rocket nổ, phá xe và ổ súng.', t_gl:'Súng phóng lựu M79: lựu đạn câu đúng chỗ ngắm, nổ lan.', t_flamer:'Súng phun lửa: đốt cháy người và xe trong tầm gần.', t_energy:'Súng xung điện: tia sét nhảy sang người đứng gần.', t_rust:'Súng trường thép gỉ: đạn nặng, giật mạnh, hạ người nhanh.', t_dmr:'Súng tỉa bán tự động: kính ngắm, viên đạn xuyên qua một người.', t_rail:'Súng ray: viên đạn điện từ xuyên cả tổ địch, nạp chậm.', t_saw:'Súng bắn lưỡi cưa: lưỡi cưa quay xé qua ba người ở cự ly gần.', t_ak:'AK-47 nhặt của địch: đạn 7.62 nặng tay, giật mạnh, hạ người nhanh.', t_m4:'Súng trường M4 có ống giảm thanh và ống ngắm: chính xác, bắn xa, nhịp nhanh.', t_mp5:'Tiểu liên MP5: nhẹ, xả đạn rất nhanh — vua cự ly gần, đuối khi bắn xa.', smg:'Cơn mưa đạn dữ dội ở cự ly gần.',
-  shotgun:'Tàn phá cự ly gần — tám viên chì, một lần bóp cò.', flak:'Mảnh đạn nổ tung xé nát cả bầy.',
-  cannon:'Một phát đạn khổng lồ. Giáp dày cũng phải gập.', cryo:'Đóng băng chúng — rồi đập vỡ vụn.',
-  minigun:'Nòng xoay không ngừng, lửa không ngừng. Giữ vững phòng tuyến.', missile:'Khoá mục tiêu. Nó tự săn. Không bao giờ trượt.',
-  tesla:'Sét nhảy từ kẻ địch này sang kẻ địch khác.', railgun:'Một phát xuyên thủng cả đoàn xe.',
-  rocket:'Phóng một quả — cả khu vực biến mất.',
-  orbital:'Đánh dấu một điểm — một ngọn thương ánh sáng từ quỹ đạo giáng xuống, san phẳng cả tường thành.',
-  plasma:'Một mặt trời nhỏ trôi qua chiến trường, thiêu xuyên mọi thứ — rồi bùng nổ siêu tân tinh.',
-  hydra:'Mười đầu rắn lửa: mười tên lửa tự săn mười mục tiêu khác nhau.',
-  singularity:'Xé toạc không gian — hút cả đoàn xe vào tâm, nghiền nát, rồi sụp đổ.',
-  photon:'Một chùm quang tử liên tục — vung nòng là cắt đôi mọi thứ trên đường.',
-  arty:'Đạn pháo hạng nặng rơi đúng điểm đánh dấu — phá tường, nổ ngay khi chạm đất.',
-  mortar:'Bắn vòng qua mọi bức tường — cối bắn nhanh, nổ khi chạm đất.',
-  flamer:'Thiêu rụi chúng — lửa chỉ lan rộng, không bao giờ buông tha.',
-  hesh:'Đạn đầu bẹt — san phẳng công sự, quật đổ tháp canh, nứt giáp trung bình.',
-  agl:'Mưa lựu đạn 40 mm — bộ binh và xe nhẹ tan tác.',
-  thermo:'Tên lửa nhiệt áp: một vụ nổ chói loà, mọi thứ bên trong bốc cháy.' };
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [
@@ -554,15 +526,6 @@ export const CONTRACTS = [
   { id:'warlord', name:'PHẦN CỦA TƯỚNG', icon:'target', tag:'KIM CƯƠNG', desc:'Tướng rơi thêm 2 💎 · nhưng địch +15% máu',           mods:{ bossDiaBonus:2, enemyHpMul:1.15 } },
 ];
 
-export const UP_BLURB = {
-  damage:'Mỗi viên đạn cắn sâu hơn.', range:'Ra đòn trước, từ thật xa.', reload:'Trở lại trận chỉ trong chớp mắt.',
-  mag:'Nhiều đạn hơn, ít lần nạp hơn.', hp:'Chịu đòn nặng mà vẫn đứng vững.', armor:'Gạt phăng hoả lực địch.',
-  engine:'Vượt mặt mọi thứ trên chiến trường.', turbo:'Bứt tốc như vận động viên — 50 tấn mà không chờ đợi.', ramplate:'Mũi xe tôi cứng: thân xe chính là vũ khí.', guards:'Thêm lính đứng gác bên Lõi.',
-  crew:'Thêm xạ thủ ngồi trên xe ra trận.', troops:'Lính của bạn đánh mạnh hơn hẳn.',
-  boss:'Xé nát tướng địch nhanh hơn nhiều.',
-  guardRof:'Xạ thủ thao luyện bắn nhanh hơn.', guardArm:'Lính gác bọc giáp trụ lâu hơn.',
-  dronePow:'Triển khai drone hộ tống — và nó cắn mạnh hơn.', droneRof:'Quay nòng nhanh — băng đạn nạp trong chớp mắt.',
-  droneArm:'Cánh quạt bọc giáp giữ drone trên trời lâu hơn.' };
 
 // DRIVING (Z85) — the player's tank is a 50-tonne machine: hull-steered tracks, a heavy launch, momentum that carries,
 // and collisions that hurt by mass × closing speed. Speeds in world units/s (top speed = PLAYER.maxSpeed 26).
@@ -642,7 +605,6 @@ export const AIRPOSE = { k:0.6, max:0.55, split:[0.25, 0.35, 0.4], neck:0.4, sig
 //   brick compound walls ~2.4 m; sandbag lines 1.2 m; trees 10–17 m.
 // Z174b real MBT proportions (×TANK_SCALE 1.2): hull ~7.6 m long, 3.6 m wide over the tracks, turret roof ~2.4 m, gun ~2.5 m past the nose (~10 m overall) —
 //   the hull + tracks stretch along, the hull and turret sit a little lower, the turret a touch longer, the gun longer. The generals' super-heavies keep their own size.
-export const TANK_REAL = { L:1.36, H:0.9, tH:0.9, tL:1.1, gun:1.38 };
 export const HUMAN_SCALE = 1.78/1.407;
 export const TROOPS = {
   ridersFrom: 1,   // stage from which riflemen ride on your tank (G / CREW button drops them to fight on foot)
@@ -686,11 +648,8 @@ export const DEPLOY = { roleMax: { mg: [1, 2, 2, 2, 3], mortar: [0, 1, 1, 2, 2],
 export const RALLY = { r: 6, offX: 0.34, offZ: 0.64 };          // KHU TẬP KẾT on our side: soldiers drop carried loot here (it never expires) for the tank to collect
 export const POW = { perStage: [2, 2, 3, 3, 3], r: 9, prisoners: [3, 5], guards: [3, 4], guardsMobile: [2, 3], freeR: 10, score: 600, coin: 120 };
 export const DEPOT = { arms: [1, 1, 1, 1, 1], motor: [1, 1, 1, 1, 1], r: 10, guards: [4, 5], guardsMobile: [3, 3], capT: 4, tanks: [1, 2], score: 800, coin: 150 };
-export const ALLY_TANK = { hp: 260, speed: 9.5, turn: 1.9, sight: 46, range: 30, keep: 15, leash: 58, dmg: 30, fireCd: 1.7, bspeed: 72, cap: 4 };
 // Z116 HIJACK: a badly hit enemy vehicle may be ABANDONED — the crew bails out and it sits smoking. Drive up to it (or walk a soldier
 //   onto it) before it is scuttled and it fights for you in our colours. APC → drops 3 of our men + an MG; rocket truck → anti-air first, then siege.
-export const HIJACK = { hp:0.3, chance:0.5, window:20, r:6.5, hold:1.2, footR:3.4, bail:2, types:['grunt','gunner','shield','heavy','sniper','atgm','carrier','launcher','pyro','mortar'], keepHp:0.45,
-  apc:{ dmg:6, range:26, gap:0.12, burst:6, pause:1.2, troops:3 }, rocket:{ cd:6, salvo:4, gap:0.22, dmg:40, aoe:3.4, siegeR:60, airR:60, range:58 } };
 // Z222 THE HELICOPTER FLEET — three airframes, three ways to fight. mix = [type, weight, from stage]: an enemy "gunship" call rolls one of them.
 //   jink: the attack gunship weaves — every few seconds a hard lateral jink in/out of its orbit, a change of height, sometimes it reverses round.
 //   bomb: the bomber helicopter carries no guns — it lines up on you, runs in level and fast, lays a string of bombs across your position, overshoots,
@@ -782,16 +741,6 @@ export const TACTICS = {
 };
 
 // BOSS FIGHTS (Z96) — every general is a puzzle: armour arcs, breakable systems, three phases, stun & overheat windows, shield pylons.
-export const BOSSFIGHT = {
-  phases: [0.66, 0.33],                       // HP fractions where the next phase begins
-  transition: { invuln: 1.8, push: 20, blastR: 9, blastDmg: 14, escorts: [0, 2, 3] },   // phase change: shockwave + escort squad
-  arc: { rear: 1.6, front: 0.85 },            // hit from behind (×1.6) / head-on (×0.85) — per-boss overrides below
-  stun: { time: 3.2, mul: 2.0, minImpact: 8 },   // a charge that slams into a wall/rock/tower/edge → stunned, takes ×2
-  vent: { every: 3, time: 2.6, mul: 1.6 },    // after every 3rd big attack the hull overheats: stops, vents, takes ×1.6
-  part: { share: 0.5 },                       // a hit on a subsystem: the part takes it all, the hull takes half
-  pylon: { n: 3, hp: 240, perStage: 0.15, ring: 24 },   // shield pylons: the general is immune until every pylon falls
-  barrage: { shells: 6, step: 4.2, r: 4.2, dmg: 22, lead: 1.1, gap: 0.16 },   // walking artillery line toward you
-};
 
 // Z107 BATTLE SETUP — PLAY opens a setup screen: CAMPAIGN (levels in order of rising difficulty, each must be won to open
 //   the next; map/hour/weather fixed per level) or CUSTOM (pick map · hour · weather · space · enemy level among those unlocked).
@@ -820,7 +769,6 @@ export const WEATHER = {
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };
 // Z107 HULL FRONT MARKER — at speed the hull's heading is hard to read from above: a glowing chevron on the ground just ahead of the nose
 //   (brighter while moving, dim at rest) + a bright stripe across the upper glacis. dist/size in hull units (× TANK_SCALE).
-export const BARREL_SCALE = { r:1.22, len:1.12, slide:1.25 };   // Z235 every mounted gun: thicker (r) and longer (len) — grander — and its recoil slide longer (slide)
 // Z381 THE GUN SEATED IN ITS TURRET (tank/seat-gun.js): a weapon mounted on a real Meshy turret is joined to it — a slim tube slides back into the
 //   turret's face, a bulky gun (a pod, a twin mount) stays put; a gun whose back is still in the open then gets a mantlet round its back (a tube with
 //   only air behind it, a sleeve). rear / rearK = the gun's back section (m, × its length) that gives its girth; slim = a tube's girth (half-size, m);
@@ -834,13 +782,10 @@ export const BARREL_SCALE = { r:1.22, len:1.12, slide:1.25 };   // Z235 every mo
 //   collar (a gap over min, girth k × the breech's within r, flared at the face, over = its run over the gun); block = the mantlet round a gun's
 //   back (at most w wide; d of its back section; k × a bulky gun's half-size, tube × a tube's; lip = how far it stands over / under a tube, up = how
 //   far up a bulky gun's back it reaches; over = how far forward it runs over the gun)
-export const GUNSEAT = { rear:0.3, rearK:0.25, slim:0.32, ring:[0.8, 1.2], rays:8, grid:[-0.6, 0, 0.6], hitK:0.5, hitBulk:0.4, bulkReach:0.4, floorK:0.3, look:3, reach:1.2, deep:6, drop:1.4, side:6, peek:0.06, band:0.7, pick:0.3, slidePick:0.7, embed:0.08, back:0.12, recoil:1.2, maxShift:2.2,
-  sleeve:{ min:0.03, r:[0.08, 0.45], k:1.12, flare:1.08, over:0.15 }, block:{ w:0.8, d:0.6, k:0.75, tube:2.2, lip:0.18, over:0.15, up:0.75 } };
-export const HEADING = { show: false, dist: 3.9, size: 2.4, color: 0x9be04a, idle: 0.32, moving: 0.8, stripe: 0xd8ff6a };
 // Z107 CONTROLS SHEET — one list, shown from the home menu, the pause menu and in battle (H / F1 / ?). [keys, what it does, group]
 export const KEYS_HELP = [
   [['W','A','S','D'], 'Đi lên · trái · xuống · phải THEO MÀN HÌNH — xe tự quay đầu về hướng đó (↑←↓→ cũng được)', 'LÁI XE'], [['Cách'], 'Lướt né — bứt tốc ngắn', 'LÁI XE'],
-  [['Chuột'], 'Ngắm tháp pháo', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'],
+  [['Chuột'], 'Ngắm', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'],
   [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
   [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
   [['X'], 'XUNG PHONG — cả đội đánh thẳng vào thành gần nhất', 'QUÂN TA'], [['B'], 'Gọi trực thăng thả lính dù xuống cạnh xe', 'QUÂN TA'],
@@ -894,7 +839,7 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
   defK:{ mounted:0.55, stand:0.6, crouch:0.45, prone:0.3 }, camK:{ mounted:0.62, foot:0.5, prone:0.44 }, mountR:3.4, mountT:0.85, call:{ speed:9, arrive:2.6 },
   trample:{ v:8, dmg:70, r:1.4, cd:0.6 }, recoilK:0.25, atk:1.8, crit:0.18, fireK:0.85,
   soldier:{ hp:150, rifleK:1, fleeK:0.55, grenade:{ cd:9, r:4.2, dmg:85 }, smoke:{ cd:12, toss:5 }, medkit:{ cd:16, hp:45 },
-    war:{ sizeK:1.5, squads:1, airFrom:3, w:{ rifle:6, rpg:1.2, heli:0.9, truck:0.3 }, arty:false, rings:false } },   // Z403 arty: enemy artillery at all (barrages, spotter SPGs, a battery, a boss's barrage) · rings: red rings on the ground warning of a blast   // Z309 his waves (campaign/soldier-war.js): size × the base wave, extra squads, an attack helicopter from wave airFrom (or stage 2), weights (no-tanks) · Z307 soldier mode (game/mode.js): his health (no tank upgrades on him), rifle rounds at full weight on a man (a hull takes INFANTRY.vsArmour), animals let him this much closer than a tank; his skills (combat/trooper-spells.js): grenade cooldown s / blast radius m / damage, smoke cooldown / toss m, dressing cooldown / health
+    war:{ sizeK:1.5, squads:1, airFrom:3, w:{ rifle:6, rpg:1.2, heli:0.9, truck:0.3 } } },   // Z403 arty: enemy artillery at all (barrages, spotter SPGs, a battery, a boss's barrage) · rings: red rings on the ground warning of a blast   // Z309 his waves (campaign/soldier-war.js): size × the base wave, extra squads, an attack helicopter from wave airFrom (or stage 2), weights (no-tanks) · Z307 soldier mode (game/mode.js): his health (no tank upgrades on him), rifle rounds at full weight on a man (a hull takes INFANTRY.vsArmour), animals let him this much closer than a tank; his skills (combat/trooper-spells.js): grenade cooldown s / blast radius m / damage, smoke cooldown / toss m, dressing cooldown / health
   death:{ dur:3.8, carry:0.6, side:1.8, up:1.4, slow:0.7, swerve:1.6 } };   // Z254 killed: how long the death beat lasts (s), the share of the horse's speed he keeps as he is thrown, the sideways push and the hop (m/s), the riderless horse slowing (/s) and swerving (rad/s)   // atk = damage ×, crit = critical-hit chance, fireK = time between shots ×
 // Z248 REAL CAVALRY (actors/real-cav.js) — calibration of the Meshy models: the operator's height (m); the saddle seat in the horse model (m, bind pose)
 //   and the bone it rides on; the carbine's length (m), its pistol-grip and muzzle points in model units (+X to the stock); each clip's own speed (m/s at
@@ -906,15 +851,11 @@ export const CAV = { horse:{ walk:1.8, cruise:7.5, gallop:16, back:1.4, accel:4.
 //   texture keeps (the side still reads; the battlefield repaint tints it), shade = albedo × on top (the generated paint came out light); env = reflection strength; gun = [min length, max thickness] (× the
 //   model's length) of the pieces taken as the main gun, [2] the lowest they may sit (× the model's height), [3] the least length / thickness of a
 //   piece, [4] the shortest gun taken when nothing long is there (an IFV's autocannon)
-export const REALTANK = { gearK:0.72, dev:[0.82, 1.22], overGear:1.02, tint:0.85, shade:0.88, env:0.6, gun:[0.3, 0.13, 0.4, 3, 0.12],
-  fams:{ west:{ designs:['abrams','leo2a7','leclerc','ch3','k2','colossus','b_goliath','b_overlord'] }, east:{ designs:['lqt','t90m','type99','flametank','arv','b_reaper'] }, merkava:{ designs:['merkava','b_bull'] },
-    armata:{ designs:['t14','ghost','b_tempest','b_thunder'] }, ifv:{ designs:['ifv','recon','atgmv','b_serpent'] }, spg:{ designs:['spg','td','b_inferno'] }, ugv:{ designs:['ugv'] } } };   // Z429 the eight generals' super-heavies on real hulls too (their own weapons kept: designs.js marks them, real-tanks.js leaves them)   // a vehicle built without a model name (launcher truck, fireteam APC) stays procedural
 // Z403 SIDE ID (world/sidepaint.js markSide · tank/materials.js sideCoat): ours and theirs told apart at a glance and at range. coat = how much of a real model's
 //   own colour gives way to its side's paint, laid over the texture's light and shade (gain [min, max] = 1 / the texture's mean luminance, clamped); metal = how
 //   much of the texture's metal the coat knocks back (paint is not bare steel); detail = how much of the texture's light and shade the coat keeps; bright = the coat's albedo × the paint colour; sat = its saturation × (paint, not plastic); paint = each side's colour before the battlefield shift (f ours olive drab,
 //   e theirs desert tan — the shift still pulls them off the ground: theirs crimson on sand, ours only lighter or darker); rim = the side's colour round the silhouette (× rimK,
 //   rimPow = how tight to the edge; the player's own tank keeps its skin and wears the rim); panel = the lime recognition panel on our captured tanks' turret roof (m)
-export const SIDE_ID = { coat:0.75, metal:0.5, detail:1, bright:0.42, sat:0.65, gain:[1.5, 14], paint:{ f:0x5a6e38, e:0xa47a4a }, rim:{ f:0x8cff4a, e:0xff3a22 }, rimK:{ f:0.28, e:0.2 }, rimPow:4, panel:0.95 };
 // Z262 REAL TREES (world/real-trees.js): thirteen Meshy species, each at its true height h (m) before the tree's own ± scale; map = which species a
 //   battlefield's procedural tree kinds become (variant i takes species i mod the list; `_` = everywhere else); wind = its direction, how far the top
 //   sways (m), how far the leaves flutter (m); env = reflections; tint = albedo × per species
@@ -1036,10 +977,6 @@ export const MAGMA_FX = { glow:2.6, scale:0.55, bombEvery:1.4, cone:{ R:52, H:34
 //   Meshy file (assets/models/real/gun/<family>.glb) with `front` = the model direction its muzzle points; dev = how far the width / height scale may
 //   stray from the length scale (a tank's slim barrel fattens to a stubby gun's); glow = the procedural glowing parts stay on top; pair = one copy on each muzzle (twin guns); env = reflection strength;
 //   tankTint = the colour a gun taken off a tank model is multiplied by (its texture patch came out pale)
-export const REALGUN = { dev:[0.55, 2.6], env:0.7, tankTint:0x83867e,
-  fams:{ cannon:{ fromTank:'west', guns:['cannon'] }, hesh:{ fromTank:'east', guns:['hesh'] }, canister:{ fromTank:'spg', guns:['shotgun'] }, auto:{ fromTank:'ifv', dev:[0.3, 0.5], guns:['rifle'] },
-    mg:{ front:'-x', guns:['smg','agl'] }, flak:{ front:'+x', pair:true, guns:['flak'] }, pod:{ front:'+z', guns:['missile','hydra','thermo'] }, flamer:{ front:'+x', guns:['flamer','cryo'] },
-    energy:{ front:'+x', glow:true, guns:['railgun','photon','plasma','tesla'] } } };   // procedural: mortar, arty, rocket (tilted lobbers), minigun (spinning barrels), orbital, singularity
 // Z255 PHOTO SKY (world/sky-photo.js): a photographed pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs) laid into the sky dome per hour of the day, and an
 //   overcast one for storms — amt = how much of the photo shows (the procedural sky, clouds and lightning stay underneath), cloudK = how much of
 //   the procedural cloud layer survives under the photo, fogMix = how far the fog takes the photo's horizon colour, midGrey = the exposure target
@@ -1316,7 +1253,6 @@ export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, sea
 export const RIDER_TURN = { max:2.97, hip:1.0, flip:0.3, swing:4.4, lead:0.35, fire:0.4 };
 // Z243 shield pylon SITES (round the general): metres clear of our citadel's wall ring (coreGap) / a fortress (fortGap) / any wall, cover or building (clear) /
 //   the fence (edge) / each other (apart); rings = radii tried (× pylon.ring), steps = angles tried per ring; pillar = height of the light pillar (m)
-export const PYLON_SITE = { coreGap:14, fortGap:10, clear:4, edge:8, apart:16, rings:[1,1.35,0.8,1.7], steps:16, pillar:60 };
 //   Z244 CLEAR AIR: no milky veil — the grade's shadow lift goes (liftK 0: blacks stay black, shadows stay deep), the split-tone tints halve (tintK),
 //   the haze is thinner again and tinted sky-blue instead of whitened (fogBlue = share of the zenith colour, no white mix), crisper contrast + sharpening
 // Z276 light shafts (render/shafts.js): ray steps through the sun's shadow map, gain, air density (/m), how far the ray is walked (m), forward
@@ -1368,14 +1304,13 @@ export const OPEN_LAND = { CITY:{ cover:0.55, built:0.42 }, VILLAGE:{ cover:0.6,
 export const PERF_HUD = { n:120, every:0.5, good:16.7, warn:25 };
 export const SHAKE = { levels:{ off:0, low:0.32, mid:0.6, high:1 }, def:'low', pos:0.7, roll:0.018, aberr:0.0035 };
 export const TOUCH_HELP = [
-  ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — tháp pháo tự xoay bám địch, xe đi đâu nòng vẫn ngắm mục tiêu'],
-  ['BẮN (trái)', 'Giữ để bắn · TỰ BẮN: tự khai hoả khi nòng đã chĩa trúng địch'], ['LƯỚT', 'Bứt tốc né đòn'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
-  ['LÍNH', 'Chạm: lính xuống / lên xe · Giữ: gọi lính về'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['TỰ ĐỘNG', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
+  ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — súng tự bám địch gần nhất, anh đi đâu nòng vẫn ngắm mục tiêu'],
+  ['BẮN (trái)', 'Giữ để bắn · TỰ BẮN: tự khai hoả khi nòng đã chĩa trúng địch'], ['LƯỚT', 'Bứt tốc / phi nước đại'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng'],
+  ['LÍNH', 'Chạm: xuống / lên xe'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['TỰ ĐỘNG', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
 // Z107 FORTRESSES (ĐẠI BẢN DOANH) — every stage the enemy holds 3–4 walled strongholds, each with a name and a commander.
-//   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate that must be shot
-//   continuously to break. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
-//   Troops and tanks on the open field SALLY from these gates. Take every fortress = win the stage: the main citadel's gate
-//   stays sealed until the others have fallen, and its commander is the stage boss.
+//   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
+//   Troops on the open field SALLY from these gates (no-tanks: every gate stands open); the main citadel's commander is the stage's general,
+//   who takes the field when the soldier walks in or a wall falls.
 // Z420 THE DEFENCE IN DEPTH (world/defense.js): the forts ring our base; the enemy closes the ring as an army holds a line — between every two
 //   neighbouring forts an obstacle belt of dragon's teeth runs wall to wall (never inside our home ground: Rb = HOME_GAP.wall + gap + rb m from the
 //   Core), broken once at its middle — the LANE (at most `lanes`), closed by a CHECKPOINT (a jersey funnel on our side, a T-wall chicane, a sandbag MG
@@ -1464,7 +1399,6 @@ export const HARD = { boulder:150, hedgehog:110, oneShot:90, shardR:3.6, shardDm
 //   chunk speed m/s (× the round's power) and lift · spread cone (rad) · blood colour / opacity
 export const GORE = { splats:[160,70], chunks:[64,28], splatLife:24, fade:6, chunkLife:2.4, speed:[12,27], up:[4,11], cone:0.9, color:0x7a0a0a, alpha:0.82 };
 // Z112 KNOCKED-OUT TANKS by the killing gun (seconds of fire before the magazine goes): heavy shells blow them at once, small arms let them burn a moment
-export const TANK_BLAST = { r:4.2, dmg:70, edge:0.25 };   // Z113 a tank's magazine going up kills men within r × tank scale (edge = damage share at the rim) — theirs and ours
 // Z402 A KILLED TANK BLOWS APART AND IS GONE (fx/dying.js — enemy tanks and vehicles, our captured tanks, the boss): no burning phase, no wreck — the blast,
 //   its torn steel thrown out (fx/debris.js spawnTankWreck: glowing, lands, gone within chunkLife s, the last fade s fading), a smoke puff (smokeK = the
 //   blast's rolling cloud lasts this share of its usual life) and in that same frame the hull leaves the field and its collider. wreck = the life of
@@ -1492,7 +1426,6 @@ export const TENT = { burn:2.2, sag:0.45, eye:{ tank:2.4, man:1.5, mid:1.1 } };
 //   They fit the gun in your hands; if it is maxed they go to another carried gun, else they pay coins. Rare from tough kills, one per fortress taken.
 export const GUN_MODS = { max:5, barrel:{ dmg:0.06, rng:0.04 }, action:{ fire:0.05, reload:0.06 }, mag:{ mag:0.12 }, rareShare:0.15, epicShare:0.25, fortDrops:1, coins:150 };
 // how many tubes each gun really has (shown on the gun card)
-export const GUN_BARRELS = { smg:2, flak:2, minigun:7, missile:2, thermo:4, rocket:1 };
 // Z117 GAMEPAD (Gamepad API "standard" mapping — Xbox-layout pads: Flydigi Direwolf 4 in XInput/Switch mode, Xbox, DualSense, Switch Pro…)
 //   def = the player's settings (PROFILE.pad): vib on/off · vibK strength · engine hum · dead zone · auto-aim on release · swap A/B (Nintendo labels)
 export const PAD_CFG = { def:{ vib:true, vibK:0.8, dead:0.15, assist:true, swapAB:false, phone:true, sens:1, lob:true },
@@ -1504,11 +1437,11 @@ export const PAD_CFG = { def:{ vib:true, vibK:0.8, dead:0.15, assist:true, swapA
 //   (PROFILE.turretK, Settings → TỐC ĐỘ XOAY NÒNG: presets or ± 10% steps)
 export const TURRET = { rate:2.6, mouseMul:1.7, k:9, min:0.3, max:2.5, step:0.1, steps:[['CHẬM',0.6],['VỪA',1],['NHANH',1.5]] };
 export const PAD_HELP = [
-  ['Cần trái', 'Lái xe (theo màn hình, hoặc kiểu xe tăng nếu chọn trong Cài đặt)'], ['Cần phải', 'Xoay nòng ngắm — thả ra: tự ngắm địch gần nhất. Cối / tên lửa tầm xa: ←→ xoay trong cung 180° trước mũi xe, ↑↓ chỉnh tầm bắn'],
-  ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Lướt né'], ['B', 'Chạm: lính xuống xe · Giữ: gọi lính về'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
+  ['Cần trái', 'Đi (theo màn hình, hoặc xoay thân nếu chọn trong Cài đặt)'], ['Cần phải', 'Ngắm — thả ra: tự ngắm địch gần nhất. Súng phóng lựu M79: ←→ xoay hướng, ↑↓ chỉnh tầm ném'],
+  ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Bứt tốc / phi nước đại'], ['B', 'Xuống / lên xe'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],
   ['LB · RB', 'Súng trước · súng sau'], ['D-pad ↑', 'Tập kết toàn quân'], ['D-pad ←', 'Xung phong vào thành'], ['D-pad ↓', 'Gọi lính dù'], ['D-pad →', 'Camera tự động'],
   ['L3 (nhấn cần trái)', 'Đổi mức thu phóng'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
-  ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong ứng dụng Flydigi Space Station, ví dụ M1 = A (lướt), M2 = B (lính)'] ];
+  ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong ứng dụng Flydigi Space Station, ví dụ M1 = A (bứt tốc), M2 = B (xuống / lên xe)'] ];
 // Z119 BATTLE INTRO: cinematic view distance + fog (the sweep no longer draws the whole field), shader warm-up time budget, skip guard
 // Z288 the city opens on film: Landmark 81 from its foot (tilt up), then a tracking shot down the busiest boulevard (seconds, lens fov, camera speed m/s)
 export const INTRO_CITY = { on:true, l81:{ dur:3.4, fov:36, back:0.95 }, street:{ dur:3.2, fov:48, v:9, h:1.5, off:4.2 } };
@@ -1592,11 +1525,6 @@ export const LOD = { shadowR: 26, guardR: 70, every: 0.25, tankDetailR: 38, smal
 //   effectiveness vs that level's wave mix, crowd bonus for blast/pierce/chain) and effective HP (HP ÷ (1−armour), dodge from speed).
 //   Level side: the real wave composition (wavePool) × HP ramp × NG+ × difficulty, and the damage it pours in (accuracy → hit
 //   chance, fire chance, rate, burst, specials). 1000 = a brand-new tank (rifle, no upgrades) on campaign level 1 = "even".
-export const POWER = { waves:[2,3,4,5], hitHalfW:0.085, engaged:0.55, infHit:0.3, dodgeK:0.5, eliteK:true,
-  special:{ scout:1.0, bomber:3.0, mortar:1.8, carrier:2.4, atgm:2.3, pyro:3.8, gunship:3.0, engineer:0 },   // est. DPS on you from non-gun attackers (ROSTER/def numbers)
-  crowd:{ aoe:1.35, pierce:1.15, chain:1.25 }, mix0:{ L:0.3, M:0.4, H:0.3, A:0 },
-  calib:1.18,   // measured in simulated waves: level 1→3 got ~20× harder vs the formula's 12.6× (fortress sallies) → threat growth ^1.18
-  bands:[[1.2,'DỄ','#9be04a'],[0.92,'VỪA SỨC','#ffd24a'],[0.75,'KHÓ','#ff9a4a'],[0,'QUÁ SỨC','#ff5a4a']] };
 // Z107 RAM ANYTHING — a ram does max(flat, frac × max HP) × impact (impact 0 at minV → 1 at fullV): flimsy things (sandbags, crates,
 //   drums, tyres) go in ONE hit, sturdy ones (watchtowers, huts, objectives) take a few. Shell-proof steel / concrete / HESCO have a
 //   ram-only strength (steelHp). Natural rock (boulders, ridges) stays put.
@@ -1611,36 +1539,15 @@ export const CLOUD_CFG = {
 };
 
 // Z162 SPECIAL AMMO — bought in boxes (one box = one battle stage), one kind loaded per stage from the shop's ĐẠN tab
-export const AMMO_SHOP = [
-  { id:'ap',  vi:'ĐẠN XUYÊN GIÁP', desc:'+15% sát thương · +20% lên tướng · giáp trước tướng không còn chặn nhiều', box:3, price:{ c:900 },  fx:{ dmg:0.15, boss:0.20, front:0.8 } },
-  { id:'he',  vi:'ĐẠN NỔ MẠNH',    desc:'+10% sát thương · vụ nổ đạn rộng hơn 40%',                              box:3, price:{ c:800 },  fx:{ dmg:0.10, splash:0.40 } },
-  { id:'inc', vi:'ĐẠN CHÁY',       desc:'1/4 phát trúng làm xe địch bốc cháy, cháy âm ỉ vài giây',               box:3, price:{ c:1000 }, fx:{ burn:0.25 } },
-  { id:'sup', vi:'HỘP TIẾP ĐẠN',   desc:'băng đạn lớn gấp rưỡi · nạp nhanh hơn 15%',                              box:3, price:{ c:700 },  fx:{ mag:0.5, reload:0.15 } },
-];
 // Z162 what one run may pay out — the server clamps every report to this (minutes are measured by the server, not the client)
 export const PAYOUT_CAP = { coinPerMin:600, coinBucket:6000, coinPerClear:2500, diaPerMin:0.3, diaBucket:20, diaPerClear:6, loopMul:0.6, minClearGap:90, gunGap:120, migrateCoins:300000, migrateDia:1000, migrateReach:10, migrateValue:250000, migrateUntil:Date.UTC(2026,11,31), gunPerReach:1200,
   scorePerMin:9000, scoreBucket:60000, scorePerClear:25000, runBase:30000, runPerClear:40000, runMaxH:3 };   // a run's total is also capped by the stages it validly cleared, and a run closes after runMaxH hours   // Z163 leaderboard: a run's score is accepted from its own refilling bucket too   // migration: only until the window closes, wallet + inventory worth at most migrateValue coins   // token buckets: bursts are fine, the average rate is capped
 // Z167 ROOF MACHINE GUN — a pintle MG on the turret roof, worked by the crewman in the hatch: 360° traverse, elevates onto towers, shoots ONLY infantry
 //   (and the men on walls / towers), shorter reach and lighter hits than the main gun. Belt-fed: a box empties, the gunner swaps it by hand.
-export const ROOF_MG = [
-  { id:'pkt',  vi:'PKT 7,62 LY',          origin:'NGA',  desc:'Súng máy đồng trục quen thuộc của tăng Nga, gắn lên giá nóc: nhẹ, xoay nhanh, bắn rát.',             cal:7.62, dmg:4.0, rof:11, mag:100, reload:3.6, range:20, spread:0.055, trav:3.0, elev:2.0, price:null },
-  { id:'m240', vi:'M240 7,62 LY',         origin:'MỸ',   desc:'Súng máy đa năng của Mỹ, giá xoay có tấm chắn: chính xác hơn, thay hộp đạn nhanh.',                cal:7.62, dmg:4.6, rof:10, mag:100, reload:3.0, range:21, spread:0.045, trav:2.8, elev:2.0, price:{ c:1800 } },
-  { id:'m2hb', vi:'M2HB 12,7 LY "BÀ GIÀ"', origin:'MỸ',  desc:'Súng máy hạng nặng huyền thoại: mỗi phát đủ quật ngã một người sau bao cát, nhưng nặng và xoay chậm.', cal:12.7, dmg:9.0, rof:8.5, mag:80, reload:4.4, range:24, spread:0.05, trav:2.0, elev:1.5, price:{ c:3600 } },
-  { id:'nsvt', vi:'NSVT UTYOS 12,7 LY',   origin:'NGA',  desc:'Súng phòng không trên nóc T-72: tốc độ bắn cao cho cỡ 12,7, nâng nòng rất cao để quét lính trên tháp.', cal:12.7, dmg:8.5, rof:11, mag:60, reload:4.0, range:24, spread:0.055, trav:2.3, elev:2.4, price:{ c:4400 } },
-  { id:'kord', vi:'KORD 6P50 12,7 LY',    origin:'NGA',  desc:'Thế hệ mới, giảm giật: bắn loạt dài vẫn chụm, nòng ít nóng — súng máy nóc tốt nhất.',              cal:12.7, dmg:10,  rof:10.5, mag:90, reload:3.8, range:26, spread:0.038, trav:2.4, elev:2.2, price:{ d:18 } },
-];
-export const ROOF_MG_UP = [   // per gun, 3 levels each; the numbers are per level
-  { key:'dmg', vi:'ĐẦU ĐẠN',   per:'+12% sát thương',   fx:0.12, cost:[{ c:400 },{ c:1100 },{ d:10 }] },
-  { key:'rof', vi:'BỘ KHOÁ NÒNG', per:'+10% tốc độ bắn', fx:0.10, cost:[{ c:400 },{ c:1100 },{ d:10 }] },
-  { key:'mag', vi:'HỘP ĐẠN LỚN', per:'+20% băng đạn',   fx:0.20, cost:[{ c:300 },{ c:900 },{ d:8 }] },
-  { key:'rel', vi:'KÍP NẠP',    per:'−12% thời gian thay hộp', fx:0.12, cost:[{ c:300 },{ c:900 },{ d:8 }] },
-];
-export const ROOF_MG_BLOCK = ['agl','missile','rocket'];
 export const FENCE = { hp:34, ramV:9 };   // Z205 a compound's wire: HP per 3 m bay, and the closing speed (m/s) a hull needs to ram through
 // Z201 the roof gun as the tank's AIR DEFENCE and anti-infantry gun: helicopters first (it reaches up and out further — rangeK — and a share of the burst
 //   connects), then paratroopers still hanging under their canopies, men on the ground, tower guards, and last of all armour (rifle-calibre rounds only
 //   chip it); hits harder all round (dmgK); and when the gunner is killed with nobody left on the roof a reserve man climbs up out of the hull
-export const ROOF_MG_AI = { dmgK:1.3, air:{ rangeK:1.7, hit:0.55, dmgK:0.9, pri:0.55 }, para:{ rangeK:1.9, hit:0.32 }, armour:true, reserve:2, relieve:2.4 };   // grenade-launcher / missile turrets: the launcher takes the roof, no pintle
 // Z228b BALLISTICS — every round has a real velocity curve, but still arrives where (and when) it was aimed:
 //   gun rounds leave the muzzle at v0× the gun's speed and bleed speed to drag over the flight (k = decay/T);
 //   rockets are kicked out slow by the booster, the motor lights and pushes them up past the gun's speed.
@@ -1656,8 +1563,6 @@ export const SMOKE_TRAIL = { points:64, cap:36, capMobile:14, step:1.0, stepMobi
 // Z230 GUN STATS — one model of what a gun really does in a fight (combat/gunstats.js), used by the arsenal, the shop and the power rating:
 //   engage = typical fighting distance (fraction of reach, capped) · W = target width (tank / man) · rho = enemies per m² around an impact
 //   (a loose battle line) · hitsCap = most targets one trigger pull is credited with · ref = the targets time-to-kill is quoted against
-export const GUNSTAT = { engage:{ frac:0.65, max:22 }, W:{ tank:3.2, man:0.9 }, rho:1/50, hitsCap:3, pierceK:0.3, lineW:3.4,
-  ref:{ tank:'heavy', light:'grunt' }, minHit:0.3 };
 // Z350–Z353 THE SOLDIER'S CAREER (soldier mode only — game/soldier-rank.js, actors/squad-mates.js, loot/soldier-arms.js, campaign/general-duel.js):
 //   xp.kill = experience per kill by enemy type (_inf / _air / _veh = any other man / aircraft / vehicle; boss = the general's machine), eliteK × for an elite;
 //   step = [a, b, c]: XP from rank n-1 to n is a + b·(n-1) + c·(n-1)²; ranks = Binh nhì … Đại tá (past the last one every step pays a medal = one more perk);

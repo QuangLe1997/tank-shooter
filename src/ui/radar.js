@@ -1,5 +1,5 @@
 // ui/radar.js — RADAR / MINIMAP
-import { ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, core, enemies, fieldOutline, fortSealed, lootBeacons, playerRange } from '../hub.js';
+import { ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, core, enemies, fieldOutline, lootBeacons, playerRange } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
 // ----------------------------- RADAR / MINIMAP -----------------------------
@@ -25,7 +25,7 @@ export function drawRadar(){
   // Z104 installations + our units: rally (green ring) · POW stockade (amber → green when open) · depots (square: held red, open amber, ours green)
   if(RALLY_PT.g){ c.strokeStyle='#9be04a'; c.lineWidth=1.6; c.beginPath(); c.arc(toX(RALLY_PT.x),toY(RALLY_PT.z),4,0,Math.PI*2); c.stroke(); }
   for(const f of FORTS){ if(!f.g) continue; const x=toX(f.x), y=toY(f.z), r=Math.max(5, f.R*scale);   // Z107 fortresses: red keep (amber = alerted, blue = sealed citadel, green = ours)
-    c.strokeStyle = f.captured?'#9be04a':(fortSealed(f)?'#7fa8ff':(f.active?'#ffb35a':'#ff5a3a')); c.lineWidth=f.tier===3?2.6:2; c.strokeRect(x-r,y-r,r*2,r*2);
+    c.strokeStyle = f.captured?'#9be04a':(f.active?'#ffb35a':'#ff5a3a'); c.lineWidth=f.tier===3?2.6:2; c.strokeRect(x-r,y-r,r*2,r*2);
     c.fillStyle=c.strokeStyle; c.globalAlpha=f.captured?0.4:0.18; c.fillRect(x-r,y-r,r*2,r*2); c.globalAlpha=1; if(f.ox!=null && !f.breached){ c.fillRect(toX(f.ox)-1.5, toY(f.oz)-1.5, 3, 3); }
     if(f.captured){ c.strokeStyle='#eaffd0'; c.lineWidth=2.2; c.beginPath(); c.moveTo(x-r*0.45,y); c.lineTo(x-r*0.1,y+r*0.4); c.lineTo(x+r*0.5,y-r*0.4); c.stroke(); }   // Z140 ✓ = ours
     else { c.fillStyle=f.leaderless?'#ffcf5a':'#ff5a3a'; c.fillRect(x-0.6,y-r*0.7,1.2,r*1.2); c.beginPath(); c.moveTo(x+0.6,y-r*0.7); c.lineTo(x+r*0.6,y-r*0.5); c.lineTo(x+0.6,y-r*0.3); c.closePath(); c.fill(); } }   // enemy flag still flying (amber = commander dead)

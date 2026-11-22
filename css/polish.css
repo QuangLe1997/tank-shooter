@@ -12,7 +12,7 @@
     #start .start-id{gap:6px;}
     #start .panel{gap:7px !important;}
     #start .btn-primary,body.touch #start .btn-primary{font-size:17px;padding:10px 40px;}
-    #start .btn-arsenal,#start .btn-shop,#start .btn-terrain,body.touch #start .btn-arsenal,body.touch #start .btn-shop,body.touch #start .btn-terrain{padding:9px 10px;font-size:12.5px;}
+    #start .btn-arsenal,#start .btn-terrain,body.touch #start .btn-arsenal,body.touch #start .btn-terrain{padding:9px 10px;font-size:12.5px;}
     #start .btn-mini,body.touch #start .btn-mini{padding:7px 8px;font-size:11px;}
   }
   /* guide: two columns on wide screens so it fits at a glance */
@@ -109,7 +109,7 @@
   .m-crew{position:absolute;right:calc(100% + 4px);bottom:58px;width:40px;height:40px;border-radius:12px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1px;
     color:#eaf5c8;background:linear-gradient(180deg,rgba(60,78,34,.92),rgba(30,40,18,.92));border:1px solid rgba(190,230,110,.55);box-shadow:0 2px 10px rgba(0,0,0,.5);pointer-events:auto;}
   .m-crew .mc-ar{font:700 16px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;} .m-crew .mc-tx{font:700 8px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.12em;}
-  .m-crew:active{transform:scale(.92);} body.touch.hascrew .m-crew{display:flex;} .m-crew.up{border-color:#ffd27a;color:#ffe6a8;}
+  .m-crew:active{transform:scale(.92);} .m-crew.up{border-color:#ffd27a;color:#ffe6a8;}
   body.touch #mSpell .mbtag{font-size:7.5px;letter-spacing:.06em;white-space:nowrap;}
   #abilities{flex-wrap:wrap;max-width:160px;}
   #abilities .ab-nm{flex-basis:100%;text-align:center;white-space:nowrap;font:700 10px/1 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.14em;color:rgba(255,232,190,.78);text-shadow:0 1px 4px #000;pointer-events:none;}

@@ -2,7 +2,7 @@
 //   light it orange and flicker), hot sparks + armour shards off the side of OUR tank that was hit, a red marker at the screen edge pointing at
 //   whoever hit you, and a tank that smokes grey when hurt and burns black when it is nearly gone.
 import * as THREE from 'three';
-import { MOBILE, S, gradePass, heightAt, rockHull, scene, spawnPart } from '../hub.js';
+import { MOBILE, S, gradePass, heightAt, scene, spawnPart } from '../hub.js';
 
 export const CINE = { domes:[], lights:[], hitDir:[], dmgT:0, sparkT:0 };
 const _domeGeo=new THREE.SphereGeometry(1, 32, 14, 0, Math.PI*2, 0, Math.PI/2);
@@ -28,15 +28,6 @@ function lightSlot(){ let L=CINE.lights.find(q=>!q.busy); if(!L){ if(CINE.lights
 export function blastLight(x, z, power, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life||0.5; L.t0=L.t; L.p=Math.min(1, (power||60)/110); L.follow=null; L.m.material.color.setHex(0xffb060); L.m.scale.setScalar(6+(power||60)*0.09); L.m.position.set(x, heightAt(x,z)+0.25, z); L.m.visible=true; }
 export function fireLight(wreck, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life; L.t0=life; L.p=0.26; L.follow=wreck; L.m.material.color.setHex(0xff8a3a); L.m.scale.setScalar(6*(wreck.ms||1));   /* Z312 softer, less red: firelight, not a glowing plate */ L.m.visible=true; }
 // our tank was hit: sparks and shards fly off the struck side + a red marker at the screen edge points at the shooter
-export function playerHitFX(p, dx, dz, dmg){ const L=Math.hypot(dx||0,dz||0); const ux=L?dx/L:Math.sin(p.facing||0), uz=L?dz/L:Math.cos(p.facing||0);
-  const hx=p.pos.x-ux*p.radius*0.9, hz=p.pos.z-uz*p.radius*0.9, hy=heightAt(p.pos.x,p.pos.z)+1.3, n=Math.min(26, 8+Math.round(dmg*0.8));
-  for(let i=0;i<n;i++){ const sp=6+Math.random()*12; spawnPart(hx, hy, hz, -ux*sp+(Math.random()-0.5)*8, 2+Math.random()*7, -uz*sp+(Math.random()-0.5)*8, { color:Math.random()<0.6?0xffe6a0:0xff8a3a, size:0.18+Math.random()*0.22, life:0.35+Math.random()*0.3, grav:-18, drag:0.8 }); }   // hot sparks spray back toward the shooter
-  spawnPart(hx, hy, hz, 0, 0, 0, { tex:'flash', color:0xfff0d0, size:2.6+dmg*0.05, life:0.08, grav:0, drag:0 });
-  if(dmg>=12) for(let i=0;i<Math.min(6, 2+(dmg/10|0));i++) spawnPart(hx, hy, hz, -ux*(4+Math.random()*5)+(Math.random()-0.5)*4, 5+Math.random()*5, -uz*(4+Math.random()*5)+(Math.random()-0.5)*4, { color:0x3a3a34, size:0.4+Math.random()*0.3, life:1.1, grav:-22, drag:0.4 });   // armour shards
-  spawnPart(hx, hy, hz, -ux*1.5, 1.6, -uz*1.5, { color:0x2a2620, size:1.6, life:1.2, smoke:true, grav:-0.4, drag:1.2, grow:1.6, op:0.5 });
-  blastLight(hx, hz, 30, 0.18); rockHull(p, ux, uz, dmg);   // Z192 our hull rocks under the blow too
-  if(L) hitMarker(-ux, -uz, dmg);
-  if(gradePass && gradePass.uniforms.flash) gradePass.uniforms.flash.value=Math.min(0.14, gradePass.uniforms.flash.value+0.02+dmg*0.002); }
 export function hitMarker(sx, sz, dmg){ let wrap=document.getElementById('hitDir'); if(!wrap){ wrap=document.createElement('div'); wrap.id='hitDir'; document.body.appendChild(wrap); }
   const yaw=S.camYaw||0, a=Math.atan2(sx, -sz)+yaw, el=document.createElement('i'); el.style.setProperty('--a', a+'rad'); el.style.setProperty('--k', Math.min(1, 0.45+dmg/40).toFixed(2)); wrap.appendChild(el);
   setTimeout(()=>el.remove(), 1100); while(wrap.children.length>5) wrap.firstChild.remove(); }

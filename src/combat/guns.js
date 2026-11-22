@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
-import { DMG_TYPE, ARMOR, ENV, FORT, GIFT, LOOT } from '../../config.js';
-import { BIOME, GUNS, S, TANK_SCALE, WAVE, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { DMG_TYPE, ARMOR, ENV, FORT, LOOT } from '../../config.js';
+import { BIOME, GUNS, S, TANK_SCALE, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, freeze:1, cryo:1, he:1, longRange:1 };
@@ -28,22 +28,6 @@ export function effectFeedback(mul, pos){ const n=performance.now(); if(n-_effT<
 // gun drops are distributed across stages — stronger / new guns unlock later (still random within the set)
 // SMART GIFT: weight each droppable gun by how well its damage class counters what's on the field (alive + queued),
 // and favour guns you don't carry yet (duplicates still level MASTERY). Keeps gifts relevant instead of random noise.
-export function smartGunPick(){
-  const pool=gunDropPool(S.stage), cnt={L:0,M:0,H:0,A:0}; let tot=0;
-  for(const e of enemies){ cnt[armorOf(e)]++; tot++; } for(const t of (WAVE.spawnQueue||[])){ cnt[t==='squad'?'L':(ARMOR[t]||'M')]++; tot++; }
-  const held=new Set((S.player?S.player.guns:[]).map(g=>g.id));
-  const w=pool.map(id=>{ const m=DMG_TYPE[GUNS[id].type]||{L:1,M:1,H:1}; let x=1;
-    if(tot) for(const c of ['L','M','H','A']) x += GIFT.counterW * (cnt[c]/tot) * Math.max(0, m[c]-1) * 2;
-    if(!held.has(id)) x *= GIFT.newGunW; return x; });
-  let r=Math.random()*w.reduce((a,b)=>a+b,0); for(let i=0;i<pool.length;i++){ if((r-=w[i])<=0) return pool[i]; } return pool[0];
-}
-export function gunDropPool(stage){
-  const pool=['smg','shotgun','cryo'];
-  if(stage>=2) pool.push('flak','cannon','minigun','hesh','agl');
-  if(stage>=3) pool.push('missile','tesla','flamer','mortar');   // railgun & rocket are VIP — shop-only (diamonds), never gifted in battle
-  if(stage>=4) pool.push('arty','thermo');                // howitzer: a rare late-stage drop (also buyable in the shop)
-  return pool;
-}
 export function muzzleFlash(x,z,ang,color,rec,y){   // Z419 a SHAPED flash along the bore (fx/gunfx.js gunFlash) — was a round star billboard + a gun-coloured glow ball
   y=y||1.6; const fx=Math.sin(ang), fz=Math.cos(ang), s=1+Math.min(1.4,(rec||0)*0.3);
   gunLight(x+fx,y+0.2,z+fz, 0xffc87a, 3.4+(rec||0)*0.9);
@@ -56,7 +40,6 @@ export function muzzleFlash(x,z,ang,color,rec,y){   // Z419 a SHAPED flash along
   for(let i=0;i<nS;i++) spawnPart(x+fx*(0.4+i*0.5),y+0.1,z+fz*(0.4+i*0.5), fx*(1.5+i)+(Math.random()-0.5), 0.5+Math.random()*0.5, fz*(1.5+i)+(Math.random()-0.5), {color:0x8a8478, size:(0.8+i*0.3)*s, life:1.1+i*0.3, smoke:true, grav:0.3, drag:2.6, grow:1.2*s, op:0.32});   // propellant smoke
   if(rec>=2.4){ const gy=heightAt(x,z); for(let i=0;i<10;i++){ const a=i/10*6.283; spawnPart(x-fx*1.2, gy+0.3, z-fz*1.2, Math.cos(a)*9+fx*4, 0.4, Math.sin(a)*9+fz*4, {color:BIOME.ground, size:1.1, life:0.7, smoke:true, grav:-0.1, drag:3.4, grow:1.3, op:0.42}); } }   // blast overpressure kicks up the dust (Z419 at the ground's real height)
 }
-export const CASING = { hesh:{n:1,s:0.4,k:'shell'}, rifle:{n:1,s:0.22,k:'auto'}, smg:{n:2,s:0.12,k:'mg'}, minigun:{n:2,s:0.14,k:'mg'}, flak:{n:2,s:0.2,k:'auto'}, cannon:{n:1,s:0.36,k:'shell'}, shotgun:{n:1,s:0.3,k:'shell'} };   // Z419 k = the case drawn (GUNFX.case)
 export function equippedGun(){ const p=S.player; return p&&p.guns.length ? GUNS[p.guns[p.gunIdx].id] : GUNS.rifle; }
 const _GID=new Map(); export function gunIdOf(g){ if(!_GID.size) for(const k in GUNS) _GID.set(GUNS[k],k); return _GID.get(g); }
 export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade

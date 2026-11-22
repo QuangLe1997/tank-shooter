@@ -131,7 +131,6 @@ export function feelPattern(pat, k, side, phoneMin){ k=k==null?1:k; let t=0;
 export function feel(name, k, side){ const P=FEEL[name]; if(P) feelPattern(P, k, side, name==='blast'||name==='hit'||name==='impact'?0.25:0.4); }
 // a hit: the pad shakes left↔right (hardest first on the side the shot came from); bigger hits shake longer
 export function padHit(dmg, side){ const k=Math.min(1.2, 0.45+dmg/30); const n=dmg>=20 ? FEEL.hitHeavy : FEEL.hit; feelPattern(n, k, side||0, 0.2); }
-export function padImpact(vn){ if(vn<5) return; feel('impact', Math.min(1.3, vn/18)); }
 // the phone-vibration calls the game already makes (crush, ram, pickups…) also rumble the pad
 export function padHaptic(ms){ if(!PAD.active) return; const total=Array.isArray(ms) ? ms.reduce((s,v,i)=>s+(i%2?0:v),0) : ms; const k=Math.min(1, total/70); padRumble(k*0.8, 0.25+k*0.6, Math.max(60, total*2.2)); }
 export function padTest(){ feelPattern(FEEL.test, 1, 0, 0); }

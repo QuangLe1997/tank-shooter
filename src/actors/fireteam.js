@@ -111,7 +111,7 @@ function squadPosture(now){ if(now<_postAt) return; _postAt=now+SQUAD.ai.posture
   let thr=0; for(const e of enemies){ if(e.abandoned || e.dead) continue; const q=(e.pos.x-cx)**2+(e.pos.z-cz)**2; if(q>R*R) continue; thr += e.def.air ? 2.5 : 1; }
   const was=FTSQ.posture||'hold', now2 = thr > str*SQUAD.ai.fallK+1 ? 'fallback' : (thr < str*SQUAD.ai.advK && thr>0 ? 'advance' : 'hold'); FTSQ.posture=now2;
   if(now2!==was && now2!=='hold' && now-_barkAt>SQUAD.ai.barkGap){ _barkAt=now; const adv=now2==='advance'; floatText(adv?'TIẾN LÊN!':'RÚT LUI!', adv?'#9be04a':'#ffcf5a', new THREE.Vector3(cx,3,cz), 16);
-    radio(adv ? 'Tổ bộ binh: địch núng thế rồi — cả tổ tiến lên, áp sát!' : 'Tổ bộ binh: địch quá đông — rút về sau xe tăng, vừa lui vừa bắn!'); }
+    radio(adv ? 'Tổ bộ binh: địch núng thế rồi — cả tổ tiến lên, áp sát!' : 'Tổ bộ binh: địch quá đông — rút về sau, vừa lui vừa bắn!'); }
   if(now2==='fallback' && now>(FTSQ.smokeAt||0)){ let ex=0, ez=0, n=0; for(const e of enemies){ if(e.def.air || e.dead) continue; const q=(e.pos.x-cx)**2+(e.pos.z-cz)**2; if(q<R*R){ ex+=e.pos.x; ez+=e.pos.z; n++; } }   // Z220 breaking contact: a smoke screen between us and them
     if(n){ ex/=n; ez/=n; const dx=ex-cx, dz=ez-cz, dd=Math.hypot(dx,dz)||1, k=Math.min(dd*0.5, FIELDCRAFT.smoke.ahead), sx=cx+dx/dd*k, sz=cz+dz/dd*k; FTSQ.smokeAt=now+FIELDCRAFT.smoke.cdA; throwSmoke(sx, sz, 'p', now); floatText('THẢ KHÓI — RÚT!', '#dfe8d0', new THREE.Vector3(sx,2.8,sz), 14); } } }
 // mortar targets: infantry clusters, tanks, guarded towers, camp huts — anything inside its min..max band, preferring groups of men

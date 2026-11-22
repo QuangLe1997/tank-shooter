@@ -45,10 +45,3 @@ export const panelTex=()=>(_PANEL_TEX||(_PANEL_TEX=_makePanelTex()));
 //   the side's paint (the material colour) laid over the texture's light and shade (its luminance × gain, gain = 1 / the texture's mean; detail = how much of that
 //   light and shade the coat keeps, the rest is flat paint; bright = the paint's albedo × its colour, as a painted plate's), metal = how much of the
 //   texture's metal the coat knocks back (paint is not bare steel), rim / pow = a fresnel rim of the side's colour round the silhouette (black: none)
-export function sideCoat(mat, U){ const prev=mat.onBeforeCompile, key=mat.customProgramCacheKey;
-  mat.onBeforeCompile=(sh, r)=>{ if(prev) prev.call(mat, sh, r); Object.assign(sh.uniforms, { coatK:U.coat, coatGain:U.gain, coatMetal:U.metal, coatDetail:U.detail, coatBright:U.bright, rimCol:U.rim, rimPow:U.pow });
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float coatK, coatGain, coatMetal, coatDetail, coatBright, rimPow; uniform vec3 rimCol;')
-      .replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_MAP\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuse * coatBright * mix(1.0, clamp(dot(sampledDiffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)) * coatGain, 0.0, 2.0), coatDetail), coatK);\n#endif')
-      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor *= 1.0 - coatK * coatMetal;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += rimCol * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), rimPow);'); };
-  mat.customProgramCacheKey=()=>key.call(mat)+'|side'; mat.needsUpdate=true; return mat; }

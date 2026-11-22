@@ -1,9 +1,8 @@
-// ui/instruments.js — Z228 the commander's instrument panel (desktop HUD, bottom-right): what a real tank commander reads at a glance —
-//   a north-up azimuth dial with the hull and the turret drawn on it (hull tinted by its condition), the heading in degrees,
-//   ground speed, the laser rangefinder's distance to whatever the gun is laid on, and the armour state.
+// ui/instruments.js — Z228 the soldier's instrument panel (desktop HUD, bottom-right): a north-up azimuth dial with him and his rifle drawn on it
+//   (tinted by his condition), the heading in degrees, ground speed, the rangefinder's distance to whatever he aims at, and his health.
 //   Plus the radio set's typewriter (a message arrives character by character, like a teleprinter) and the frequency/callsign line.
 import { BLIGHT } from '../../config.js';
-import { MOBILE, S, enemies, MODE } from '../hub.js';
+import { MOBILE, S, enemies } from '../hub.js';
 
 const DEG=180/Math.PI, TAU=Math.PI*2;
 export const INSTR={ el:null, cv:null, cx:null, hdg:null, spd:null, rng:null, arm:null, armBar:null, at:0, range:-1, rangeAt:0, sold:null };
@@ -36,23 +35,7 @@ function dial(p, k){ const c=INSTR.cx, W=INSTR.cv.width, R=W/2, cx=R, cy=R; c.cl
     c.beginPath(); c.moveTo(Math.sin(a)*r0, -Math.cos(a)*r0); c.lineTo(Math.sin(a)*r1, -Math.cos(a)*r1); c.stroke(); }
   c.font='700 19px "Share Tech Mono",monospace'; c.textAlign='center'; c.textBaseline='middle';
   for(const [d,t] of [[0,'B'],[90,'Đ'],[180,'N'],[270,'T']]){ const a=d/DEG, r=R-30; c.fillStyle=d===0?'#ffb84a':'rgba(200,240,170,0.9)'; c.fillText(t, Math.sin(a)*r, -Math.cos(a)*r); }
-  if(MODE.id!=='tank'){ man(c, p, k, R); return; }   // Z307 a soldier on the dial: a man and his rifle, not a hull and a turret
-  // hull (rotates with the tank's heading), tinted by its condition
-  const col = k>0.6 ? '#8fd468' : k>0.3 ? '#ffc24e' : '#ff5a3a', hf=headingDeg(p.facing||0)/DEG, tf=headingDeg(p.aimSmoothed??p.facing??0)/DEG;
-  c.save(); c.rotate(hf); c.fillStyle='rgba(0,0,0,0.35)'; c.fillRect(-22,-36,44,72);
-  c.strokeStyle=col; c.lineWidth=2.4; c.strokeRect(-20,-34,40,68);                                   // hull outline
-  c.fillStyle=col; c.globalAlpha=0.28; c.fillRect(-20,-34,40,68); c.globalAlpha=1;
-  c.fillStyle=col; c.fillRect(-26,-36,6,72); c.fillRect(20,-36,6,72);                                 // tracks
-  c.beginPath(); c.moveTo(-10,-34); c.lineTo(0,-44); c.lineTo(10,-34); c.closePath(); c.fill();       // bow mark
-  c.restore();
-  c.save(); c.rotate(tf); c.strokeStyle='#e8ffd8'; c.fillStyle='rgba(232,255,216,0.18)'; c.lineWidth=2.2;
-  c.beginPath(); c.arc(0,0,13,0,TAU); c.fill(); c.stroke();                                          // turret
-  c.lineWidth=4; c.beginPath(); c.moveTo(0,-13); c.lineTo(0,-R+22); c.stroke();                      // gun
-  c.setLineDash([4,5]); c.lineWidth=1.2; c.strokeStyle='rgba(255,184,74,0.7)'; c.beginPath(); c.moveTo(0,-R+22); c.lineTo(0,-R+6); c.stroke(); c.setLineDash([]);
-  c.restore();
-  c.restore(); }
-
-// Z307 the soldier on the dial: a dot for the man (tinted by his health) and his rifle along the aim
+  man(c, p, k, R); }   // Z307 a soldier on the dial: a man and his rifle
 function man(c, p, k, R){ const col = k>0.6 ? '#8fd468' : k>0.3 ? '#ffc24e' : '#ff5a3a', tf=headingDeg(p.aimSmoothed??p.facing??0)/DEG;
   c.save(); c.rotate(tf); c.fillStyle=col; c.strokeStyle='#e8ffd8'; c.lineWidth=2; c.beginPath(); c.arc(0,0,9,0,TAU); c.fill(); c.stroke();
   c.lineWidth=3; c.beginPath(); c.moveTo(0,-9); c.lineTo(0,-R+22); c.stroke(); c.setLineDash([4,5]); c.lineWidth=1.2; c.strokeStyle='rgba(255,184,74,0.7)'; c.beginPath(); c.moveTo(0,-R+22); c.lineTo(0,-R+6); c.stroke(); c.setLineDash([]);
@@ -68,8 +51,8 @@ export function updateInstr(now){
   INSTR.spd.textContent=pad(v*3.6,2);
   INSTR.rng.textContent = INSTR.range<0 ? '----' : pad(INSTR.range,4);
   INSTR.rng.parentElement.classList.toggle('lz', INSTR.range>=0);
-  { const sold=MODE.id==='soldier'; if(INSTR.sold!==sold){ INSTR.sold=sold; INSTR.el.classList.toggle('sold', sold); document.body.classList.toggle('m-soldier', sold); } }   // Z372 a soldier's vitals: the health alone (css/mil.css)
-  INSTR.arm.textContent=Math.round(k*100); INSTR.armBar.style.width=(k*100)+'%'; { const L=INSTR.arm.previousElementSibling, t=MODE.id==='tank'?'GIÁP':'MÁU'; if(L && L.textContent!==t) L.textContent=t; }   // Z307 a man's health, not armour
+  if(!INSTR.sold){ INSTR.sold=true; INSTR.el.classList.add('sold'); document.body.classList.add('m-soldier'); }   // Z372 a soldier's vitals: the health alone (css/mil.css)
+  INSTR.arm.textContent=Math.round(k*100); INSTR.armBar.style.width=(k*100)+'%'; { const L=INSTR.arm.previousElementSibling; if(L && L.textContent!=='MÁU') L.textContent='MÁU'; }   // Z307 a man's health, not armour
   INSTR.el.classList.toggle('warn', k<=0.6 && k>0.3); INSTR.el.classList.toggle('crit', k<=0.3);
   dial(p, k); }
 

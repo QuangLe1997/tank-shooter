@@ -6,21 +6,19 @@ export function buildGuide(){
   const wrap=document.getElementById('guideBody'); if(!wrap) return; wrap.innerHTML='';
   const m=MOBILE;
   const rows=[
-    ['bunker','NHIỆM VỤ','Bảo vệ LÕI qua 5 đợt tấn công rồi hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để nhận thưởng + 💎.'],
-    ['tank', m?'LÁI XE':'LÁI & NGẮM', m?'Kéo cần để lái. Tháp pháo TỰ XOAY theo địch gần nhất trong tầm — cứ lái thoải mái, nòng tự bám mục tiêu; giữ BẮN (hoặc bật TỰ BẮN) để khai hoả.':'W tiến · S lùi · A/D quay thân xe (như xe tăng thật) · chuột ngắm tháp pháo · giữ chuột để BẮN. Đổi sang lái theo hướng màn hình trong CÀI ĐẶT.'],
-    ['dash','LƯỚT & KỸ NĂNG', m?'LƯỚT = né nhanh, bất tử chốc lát · KỸ NĂNG = dùng kỹ năng đang chọn · chạm › để đổi kỹ năng.':'CÁCH = lướt (bất tử chốc lát) · E = dùng kỹ năng · Q = đổi kỹ năng.'],
-    ['rifle','KHO SÚNG','Nhặt súng từ đồ rơi & CỬA HÀNG. Mang tối đa 5 khẩu và đổi giữa trận — mỗi khẩu một cảm giác & màu đạn riêng.'],
-    ['coin','KINH TẾ & NÂNG CẤP','Kiếm xu + 💎 kim cương. Tiêu ở CỬA HÀNG để nâng cấp vĩnh viễn và mua đơn vị hỗ trợ. Súng trùng sẽ lên cấp thông thạo.'],
+    ['bunker','NHIỆM VỤ','Bảo vệ LÕI, chiếm các ĐẠI BẢN DOANH rồi vào THÀNH CHÍNH hạ TƯỚNG ĐỊCH. Mỗi màn là một CHIẾN DỊCH — phá MỤC TIÊU viền vàng để nhận thưởng + 💎.'],
+    ['rifle','ĐI & BẮN', m?'Kéo cần để đi — bác tài lái theo hướng anh đẩy (cưỡi ngựa thì anh tự cưỡi). Giữ BẮN (hoặc bật TỰ BẮN) để khai hoả.':'WASD để đi · chuột để ngắm · giữ chuột để BẮN · G xuống / lên xe. Xuống đất thì nhảy, khom, bò để ẩn nấp.'],
+    ['dash','KỸ NĂNG', m?'KỸ NĂNG = dùng kỹ năng đang chọn · chạm › để đổi: lựu đạn, lựu khói, cứu thương, gọi tổ bộ binh.':'E = dùng kỹ năng · Q = đổi kỹ năng: lựu đạn, lựu khói, cứu thương, gọi tổ bộ binh.'],
+    ['rifle','SÚNG','Mang súng chính + B41 vào trận. Súng khác nhặt trên chiến trường (địch đánh rơi, thùng SÚNG MỚI) — nhặt trùng thì súng lên ★.'],
+    ['up','QUÂN HÀM','Hạ địch để lên quân hàm Binh nhì → Đại tá: mỗi cấp HQ thả thùng quà, thêm người cho tổ, gọi lính dù, không kích.'],
     ['target','HỢP ĐỒNG','Trước mỗi màn chọn một HỢP ĐỒNG (rủi ro đổi phần thưởng). Chọn CHIẾN TRƯỜNG từ menu.'],
-    ['alert','SỐNG SÓT','Nhặt vật phẩm (máu · khiên · bom · drone · turbo · lưỡi ủi). Thấy vòng đỏ PHÁO KÍCH thì chạy khỏi nó trước khi đạn rơi!'],
-    ['tank','MỐI ĐE DOẠ', (m?'Lái':'Chạy')+' đè lên bộ binh để cán nát. Đạn RPG & tên lửa chống tăng BẮN HẠ ĐƯỢC. Diệt CÔNG BINH trước — chúng sửa xe. PHÁO PHÒNG KHÔNG xé nát trực thăng.'],
-    ['shield','TRANG BỊ','Trên vòng KỸ NĂNG: KHÓI phá khoá tên lửa · GIÁP CHỦ ĐỘNG bắn hạ tên lửa bay tới · MÌN chặn xe đuổi theo · GỌI TỔ BỘ BINH đưa xe bọc thép chở lính tới.'],
-    ['team','LÍNH CỦA BẠN', (m?'Chạm LÍNH':'Bấm nhanh G')+' → lính nhảy xuống và tự tác chiến khắp chiến trường: đánh bộ binh, bắn hạ lính gác trên tháp, NẤP sau tường/đá khi thấy xe tăng, nhặt vật phẩm mang về KHU TẬP KẾT. Một phát pháo xe tăng là chết một lính — giữ họ khỏi tầm pháo địch. '+(m?'Giữ LÍNH':'Giữ G')+' → lính TRONG vòng tầm bắn chạy về lên xe (đầy chỗ thì đứng quanh xe); lính ngoài vòng vẫn chiến đấu. Lính trên xe được hồi máu dần.'],
-    ['bunker','TRẠI GIAM · KHO', 'Dọc hàng rào phía ta có TRẠI GIAM lính ta: diệt lính canh rồi áp sát cổng để giải cứu — tù binh lên xe hoặc cầm súng theo bạn. Phía địch có KHO VŨ KHÍ (lính nhận súng chống tăng) và KHO XE TĂNG (lính ta lái xe địch, tự chiến đấu): diệt lính canh, thả lính vào vòng xanh vài giây để chiếm.'],
+    ['alert','SỐNG SÓT','Nhặt vật phẩm (máu · khiên · bom · drone…). Nấp sau tường, đá, bao cát — nằm sấp thì địch khó thấy hơn.'],
+    ['alert','MỐI ĐE DOẠ','Tổ B40 bắn rocket nổ lan. TRỰC THĂNG tấn công: chờ nó lượn thấp rồi bắn B41. Trực thăng vận tải thả lính xuống thang dây — bắn hạ khi nó đang treo.'],
+    ['team','TỔ ĐỒNG ĐỘI','Anh có tổ riêng (xạ thủ máy, y tá…), thêm người khi lên quân hàm. Họ tự tác chiến, nấp, nhặt đồ mang về KHU TẬP KẾT. U: đổi lệnh tổ.'],
+    ['bunker','TRẠI GIAM · KHO', 'Dọc hàng rào phía ta có TRẠI GIAM lính ta: diệt lính canh rồi áp sát cổng để giải cứu — tù binh cầm súng theo anh. Phía địch có KHO VŨ KHÍ (lính nhận súng chống tăng, tiếp tế): diệt lính canh, thả lính vào vòng xanh vài giây để chiếm.'],
     ['alert','LÍNH DÙ', 'Trực thăng vận tải địch thỉnh thoảng thả lính dù xuống VÒNG ĐỎ gần bạn hoặc gần lính ta — đón lõng chỗ tiếp đất.'],
-    ['dash','LÁI XE TĂNG','Xe tăng rất nặng: tăng tốc từ từ và trôi tiếp khi nhả ga. Kéo ngược để lùi. Lấy đà để húc đổ tường gạch, leo qua đá — húc nhau thì xe nhỏ hơn thiệt hơn.'],
-    ['alert','TRẬN TƯỚNG','Tướng có 3 pha, giáp trước dày — bắn vào ĐUÔI (×1,6–2). Phá BỘ PHẬN (điểm sáng cam có thanh máu) để tắt đòn tương ứng. Dụ nó húc vào tường/đá → CHOÁNG ×2. Sau chuỗi đòn lớn nó XẢ NHIỆT ×1,6. Khi có KHIÊN: phá hết TRỤ PHÁT. Laser không xuyên tường — nấp!'],
-    ['spark','VẬT PHẨM','Xe càng trâu, chỗ càng khó (tháp canh, trại lính, kho tiếp tế) càng rơi đồ xịn. Quầng sáng: xanh lá = thường · xanh dương = hiếm · tím = quý. Nhặt trùng hiệu ứng thì được gia hạn.'],
+    ['alert','TRẬN TƯỚNG','Tướng địch giữ THÀNH CHÍNH: bước vào thành (hoặc phá tường) là hắn ra trận cùng cận vệ. Hắn bắn quạt và ném chùm lựu đạn — đều có báo trước; dưới nửa máu gọi thêm cận vệ, dưới một phần ba thì nổi điên. Hạ hắn là thắng màn.'],
+    ['spark','VẬT PHẨM','Địch càng khó, chỗ càng hiểm (tháp canh, trại lính, kho tiếp tế) càng rơi đồ xịn. Quầng sáng: xanh lá = thường · xanh dương = hiếm · tím = quý. Nhặt trùng hiệu ứng thì được gia hạn.'],
   ];
   for(const [ic,h,t] of rows){ const r=document.createElement('div'); r.className='guide-row';
     r.innerHTML='<span class="g-ic"></span><div class="g-tx"><b>'+h+'</b><span>'+t+'</span></div>';
@@ -34,7 +32,7 @@ export function coach(msg){ const el=document.getElementById('coach'); if(!el) r
 export function coachFirstRun(){
   if(PROFILE.coached) return; PROFILE.coached=true; saveProfile();
   const tips = MOBILE
-    ? ['Tháp pháo tự xoay theo địch — cứ lái, nòng tự ngắm','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện','Nhặt vật phẩm để sống sót']
-    : ['WASD để lái · chuột để ngắm · giữ chuột để BẮN','CÁCH để lướt thoát hiểm','Bảo vệ LÕI — đừng để nó sụp','Trụ qua 5 đợt → TƯỚNG ĐỊCH xuất hiện'];
+    ? ['Kéo cần để đi — bác tài lái theo hướng anh đẩy','Bảo vệ LÕI — đừng để nó sụp','Vào THÀNH CHÍNH để hạ TƯỚNG ĐỊCH','Nhặt vật phẩm để sống sót']
+    : ['WASD để đi · chuột để ngắm · giữ chuột để BẮN','G để xuống / lên xe','Bảo vệ LÕI — đừng để nó sụp','Vào THÀNH CHÍNH để hạ TƯỚNG ĐỊCH'];
   tips.forEach((t,i)=> setTimeout(()=>{ if(S.mode==='playing') coach(t); }, 1500 + i*3400));
 }

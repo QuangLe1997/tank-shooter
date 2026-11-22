@@ -5,11 +5,11 @@
 
 /* ---- switched off in the settings ---- */
 body.hud-no-talk #radio{display:none!important}
-body.hud-no-cards #objChip, body.hud-no-cards #fortHud, body.hud-no-cards #sqHud, body.hud-no-cards #powHud, body.hud-no-cards #contractChip{display:none!important}
+body.hud-no-cards #objChip,body.hud-no-cards #fortHud,body.hud-no-cards #sqHud,body.hud-no-cards #contractChip{display:none!important}
 body.hud-no-banners #combo{display:none!important}
 
 /* ---- the glass pane ---- */
-html body:not(.hs-x) #hud .chip, html body:not(.hs-x) #hud .ability, html body:not(.hs-x) #objChip, html body:not(.hs-x) #fortHud, html body:not(.hs-x) #sqHud, html body:not(.hs-x) #mgHud, html body:not(.hs-x) #instr, html body:not(.hs-x) #contractChip, html body:not(.hs-x) #powHud, html body:not(.hs-x) #bossbar, html body:not(.hs-x) .buffchip, html body:not(.hs-x) #weaponchip, html body:not(.hs-x) #radio{
+html body:not(.hs-x) #hud .chip,html body:not(.hs-x) #hud .ability,html body:not(.hs-x) #objChip,html body:not(.hs-x) #fortHud,html body:not(.hs-x) #sqHud,html body:not(.hs-x) #instr,html body:not(.hs-x) #contractChip,html body:not(.hs-x) #bossbar,html body:not(.hs-x) .buffchip,html body:not(.hs-x) #weaponchip,html body:not(.hs-x) #radio{
   background:
     linear-gradient(var(--hs-tick),var(--hs-tick)) 0 0/7px 1px, linear-gradient(var(--hs-tick),var(--hs-tick)) 0 0/1px 7px,
     linear-gradient(var(--hs-tick),var(--hs-tick)) 100% 0/7px 1px, linear-gradient(var(--hs-tick),var(--hs-tick)) 100% 0/1px 7px,
@@ -29,7 +29,7 @@ html body:not(.hs-x) #objChip .ob-name{ color:var(--hs-ink)!important; font-size
 html body:not(.hs-x) #objChip .ob-fx{ color:var(--hs-dim)!important; font-size:10.5px!important; }
 html body:not(.hs-x) #objChip .ob-bar{ height:3px!important; margin:3px 0 2px!important; background:rgba(255,255,255,.10)!important; }
 html body:not(.hs-x) #fortHud, html body:not(.hs-x) #sqHud{ padding:6px 10px!important; }
-html body:not(.hs-x) #powHud, html body:not(.hs-x) #contractChip{ padding:3px 10px!important; }
+html body:not(.hs-x) #contractChip{ padding:3px 10px!important; }
 html body:not(.hs-x) #weaponchip{ padding:5px 14px 5px 26px!important; }
 html body:not(.touch):not(.hs-x) #weaponchip .wc-nm{ font-size:15px!important; } html body:not(.touch):not(.hs-x) #weaponchip .wc-am{ font-size:19px!important; }
 

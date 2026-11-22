@@ -34,7 +34,6 @@ export function beginDeath(now, final){
   DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos); DEATH.final=!!final;
   cavDeathStart(p, now); driverSurrender(CV.H); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD();   // Z254 the soldier is shot off his ride
 }
-export const _eoCube = u => 1-Math.pow(1-Math.max(0,Math.min(1,u)),3);
 export function updateDeath(dt, now){
   const p=S.player, m=p.mesh; DEATH.t+=dt;
   cavDeathUpdate(dt, now); const w=CV.dead ? CV.dead.pos : p.pos, ang=2.2+DEATH.t*0.45, r=6.5;   // Z254 the camera circles where the general fell

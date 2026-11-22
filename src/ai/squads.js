@@ -103,7 +103,6 @@ export function squadMove(e){ const sq=e.sq; if(!sq || e.exit || e.guard) return
   return { x:rw?rw.x:dx/d, z:rw?rw.z:dz/d, run: sq.state==='fallback' || sq.state==='assault' || e.sqNoFire, hold:false }; }
 
 // ================= COMBINED ARMS: an escorted tank fixes you from range; a fresh wave can come as a pincer, a probe or behind a barrage =================
-export function tankEscorted(t){ for(const sq of SQUADS) if(sq.escort===t && sq.m.length) return true; return false; }
 
 // ================= OUR FIRETEAM: two teams (even / odd slots) alternate bounding and covering; one focus target; squad orders =================
 export const FTSQ={ bound:0, swapAt:0, focus:null, focusAt:0 };

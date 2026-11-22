@@ -107,16 +107,14 @@ body.cam-drag, body.cam-drag *{cursor:grabbing !important;}   /* Z239 middle-but
 /* Z240 performance HUD (F3) */
 #perfHud{display:none;position:fixed;right:10px;top:50%;transform:translateY(-50%);z-index:60;pointer-events:none;padding:7px 10px;border-radius:6px;
   background:rgba(8,10,8,.72);border:1px solid rgba(155,224,74,.28);color:#d8dccc;font:11px/1.55 ui-monospace,Menlo,monospace;letter-spacing:.2px;white-space:nowrap;}
-/* Z243 shield-pylon markers: a reticle + label in view, an arrow pinned to the screen edge out of view */
-#pylonMarks{position:fixed;inset:0;pointer-events:none;z-index:14;}
-#pylonMarks .pym{position:absolute;left:0;top:0;display:none;width:0;height:0;}
-#pylonMarks .pym-ring{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border:2px solid #7fe0ff;transform:rotate(45deg);box-shadow:0 0 12px #7fe0ff,inset 0 0 8px rgba(127,224,255,.5);animation:pymPulse 1s ease-in-out infinite;}
-#pylonMarks .pym-txt{position:absolute;left:0;top:26px;transform:translateX(-50%);white-space:nowrap;font:700 12px/1 "Share Tech Mono",ui-monospace,monospace;letter-spacing:1px;color:#bff2ff;
-  background:rgba(4,20,28,.72);border:1px solid rgba(127,224,255,.55);padding:3px 7px;border-radius:3px;text-shadow:0 0 6px rgba(127,224,255,.8);}
-#pylonMarks .pym-arrow{display:none;position:absolute;left:-14px;top:-14px;width:28px;height:28px;}
-#pylonMarks .pym-arrow::before{content:'';position:absolute;left:4px;top:4px;border-left:22px solid #7fe0ff;border-top:10px solid transparent;border-bottom:10px solid transparent;filter:drop-shadow(0 0 6px #7fe0ff);}
-#pylonMarks .pym.edge .pym-arrow{display:block;}
-#pylonMarks .pym.edge .pym-ring{width:22px;height:22px;left:-11px;top:-11px;opacity:.7;}
+/* Z243 shield-pylon markers: a reticle + label in view{position:fixed;inset:0;pointer-events:none;z-index:14;}
+
+
+
+
+
+
+
 @keyframes pymPulse{0%,100%{transform:rotate(45deg) scale(1);}50%{transform:rotate(45deg) scale(1.18);}}
 
 /* Z245 unit pick in CHUẨN BỊ TRẬN */

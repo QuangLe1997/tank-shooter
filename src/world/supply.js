@@ -10,9 +10,7 @@ import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, C
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
-export function supplySpeed(){ return Math.max(SUPPLYB.cut.min, 1-SUPPLYB.cut.speed*SUPPLY.fuel); }
 export function supplyDmg(){ return Math.max(SUPPLYB.cut.min, 1-SUPPLYB.cut.dmg*SUPPLY.ammo); }
-export function supplyRate(){ return 1+SUPPLYB.cut.rate*SUPPLY.ammo; }
 // trim a wave: tanks go missing for every fuel station lost, infantry squads for every barracks
 export function trimWaveForSupply(q){ const C=SUPPLYB.cut, isInf=t=>t==='squad'||(ENEMY_DEFS[t]&&ENEMY_DEFS[t].inf), isTank=t=>ENEMY_DEFS[t]&&!ENEMY_DEFS[t].inf&&!ENEMY_DEFS[t].air&&!ENEMY_DEFS[t].bomber;
   const cut=(test, k)=>{ if(k<=0) return; const idx=[]; q.forEach((t,i)=>{ if(test(t)) idx.push(i); }); let n=Math.min(idx.length-1, Math.round(idx.length*Math.min(0.6,k))); while(n-->0){ const j=idx.pop(); q.splice(j,1); } };
@@ -301,7 +299,7 @@ function pieceDown(b){ const B=b.supply, pos={x:b.x,z:b.z}, gy=heightAt(b.x,b.z)
   addScore(300, new THREE.Vector3(b.x, gy+4, b.z));
   if(B.alive && B.pieces.filter(o=>o.core).every(o=>!(o.hp>0))) baseLost(B); }
 const NAME={ fuel:'TRẠM NHIÊN LIỆU', ammo:'KHO ĐẠN DƯỢC', camp:'TRẠI LÍNH', radar:'TRẠM RADAR' };
-const LOST={ radar:'Pháo binh địch mất mắt: pháo kích thưa hơn, ít đạn hơn và rơi lệch xa.', fuel:'Xe tăng địch thiếu nhiên liệu: chạy chậm hơn, viện binh thiết giáp giảm.', ammo:'Địch thiếu đạn: bắn yếu hơn, nạp đạn chậm hơn.', camp:'Địch mất trại lính: mỗi đợt ít bộ binh hơn.' };
+const LOST={ radar:'Pháo binh địch mất mắt: pháo kích thưa hơn, ít đạn hơn và rơi lệch xa.', fuel:'Địch thiếu nhiên liệu: trực thăng cất cánh thưa hơn, viện binh chậm hơn.', ammo:'Địch thiếu đạn: bắn yếu hơn, nạp đạn chậm hơn.', camp:'Địch mất trại lính: mỗi đợt ít bộ binh hơn.' };
 export function baseLost(B){ if(!B.alive) return; B.alive=false; SUPPLY[B.kind]++;
   for(const e of B.guards) if(enemies.includes(e) && e.guard && e.guard.base===B){ e.guard=null; e.post=null; }   // the garrison is loose now — no post to hold
   for(const e of enemies) if(e.guardBase===B){ e.guardBase=null; e.guard=null; }
@@ -325,7 +323,7 @@ export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='play
     if(!B.alive) continue;
     if(B.camp && !B.camp.alive){ baseLost(B); continue; }
     const dp=Math.hypot(p.pos.x-B.x, p.pos.z-B.z);
-    if(!B.alarm && (dp < SUPPLYB.alertR && playerSeen(B.x, heightAt(B.x,B.z)+1.7, B.z) || now-B.hitAt < 2)){ B.alarm=true; B.heloAt=now+4; B.tankAt=now+8; radio('SCH: Lính canh '+NAME[B.kind]+' đã phát hiện ta — chúng đang gọi trực thăng và xe tăng yểm trợ!'); }   // Z377 a man crawling in flat is no alarm until a guard sees him (or he opens fire)
+    if(!B.alarm && (dp < SUPPLYB.alertR && playerSeen(B.x, heightAt(B.x,B.z)+1.7, B.z) || now-B.hitAt < 2)){ B.alarm=true; B.heloAt=now+4; B.tankAt=now+8; radio('SCH: Lính canh '+NAME[B.kind]+' đã phát hiện ta — chúng đang gọi trực thăng và viện binh yểm trợ!'); }   // Z377 a man crawling in flat is no alarm until a guard sees him (or he opens fire)
     if(!B.alarm) continue;
     if(dp > SUPPLYB.alertR*2.2 && now-B.hitAt > 25){ B.alarm=false; continue; }   // you left: they stand down
     if(now>B.heloAt && B.heloN<B.heloMax && enemies.filter(e=>e.def.air).length<(MOBILE?2:3)){ B.heloAt=now+SUPPLYB.heliCd; B.heloN++;
@@ -334,7 +332,3 @@ export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='play
     if(now>B.spreadAt){ B.spreadAt=now+3; const live=B.guards.filter(e=>enemies.includes(e) && e.guard && e.guard.base===B), bear=Math.atan2(p.pos.x-B.x, p.pos.z-B.z), n=live.length;   // spread along the threatened side, each behind something solid
       live.forEach((e,k)=>{ const a=bear+(n>1?(k/(n-1)-0.5):0)*2.2, r=B.R*0.85, x=B.x+Math.sin(a)*r, z=B.z+Math.cos(a)*r, c=coverSpot(x, z, p.pos.x, p.pos.z, 7); e.post = c ? [c.x, c.z] : [x, z]; }); } } }
 // a guard tank's leash: while you are far from its base it circles the base and holds fire; come close and it fights
-const _gT=new THREE.Vector3();
-export function guardLeash(e, dt, p){ const B=e.guardBase; if(!B || !B.alive){ e.guardBase=null; return null; }
-  if(Math.hypot(p.pos.x-B.x, p.pos.z-B.z) < SUPPLYB.leash || (B.alarm && performance.now()/1000-B.hitAt<6)) return null;
-  e._gA=(e._gA||0)+dt*0.08; return _gT.set(B.x+Math.sin(e._gA)*(B.R+3), 0, B.z+Math.cos(e._gA)*(B.R+3)); }

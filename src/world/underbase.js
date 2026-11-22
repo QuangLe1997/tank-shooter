@@ -150,7 +150,7 @@ function targetHit(o, dmg){ if(!o.alive) return; o.hp-=dmg; const gy=0;
   burst({ x:o.x, z:o.z }, o.role==='power'?0x9ae8ff:0xffd080, 4, 3, { y:gy+2, life:0.4, size:0.25, grav:-14, drag:1.5, up:2 });
   if(!o.bar){ o.bar=getEnemyBar(); o.bar.g.scale.setScalar(2); } const f=Math.max(0,o.hp)/o.maxHp, br=o.bar; br.g.visible=true; br.g.position.set(o.x, 6.5, o.z); br.fill.scale.x=Math.max(0.001,f); br.fill.position.x=-(1-f)*0.5; br.fill.material.color.setHex(0xff8a3a);
   if(o.hp<=0) wreck(o); }
-const ROLE={ inf:['KHO LÍNH NGẦM','viện binh bộ binh'], veh:['BÃI XE NGẦM','viện binh xe tăng'], ammo:['KHO ĐẠN NGẦM','kho đạn'], power:['MÁY PHÁT ĐIỆN','điện căn cứ'] };
+const ROLE={ inf:['KHO LÍNH NGẦM','viện binh bộ binh'], veh:['BÃI XE NGẦM','xe tiếp viện'], ammo:['KHO ĐẠN NGẦM','kho đạn'], power:['MÁY PHÁT ĐIỆN','điện căn cứ'] };
 function wreck(o){ const U=UNDER, C=UNDERBASE; o.alive=false; if(o.bar){ freeEnemyBar(o.bar); o.bar=null; } const i=U.bblocks.indexOf(o.blk); if(i>=0) U.bblocks.splice(i,1); const j=blocks.indexOf(o.blk); if(j>=0) blocks.splice(j,1);
   const big=o.role==='ammo'||o.role==='power'; bigExplode({ x:o.x, z:o.z }, o.role==='power'?0x8ae8ff:0xff8a3a, big?2.2:1.5); for(let k=0;k<4;k++) spawnDebris({ x:o.x+R(-3,3), z:o.z+R(-3,3) }, 1.2, 0x4a4a44);
   o.g.traverse(q=>{ if(q.material && q.material.color && !q.material.userData.burnt){ q.material=q.material.clone(); q.material.userData.burnt=true; q.material.color.multiplyScalar(0.3); if(q.material.emissive) q.material.emissiveIntensity=0; } }); o.g.scale.y=0.55; o.g.rotation.z=R(-0.08,0.08);
@@ -162,7 +162,7 @@ function wreck(o){ const U=UNDER, C=UNDERBASE; o.alive=false; if(o.bar){ freeEne
   addScore(C.score.target, { x:o.x, y:4, z:o.z }); floatText(R0[0]+' BỊ PHÁ', '#ffcf5a', { x:o.x, y:6, z:o.z }, 18);
   showBanner(o.role==='power' ? 'MÁY PHÁT BỊ PHÁ — CĂN CỨ MẤT ĐIỆN!' : (R0[0]+(left?' — CÒN '+left:' — ĐÃ XOÁ SỔ')+' · viện binh địch −'+Math.round(Math.max(U.cut.inf,U.cut.veh)*100)+'%'), '#ffcf5a');
   if(o.role==='inf' && !left) radio('SCH: Kho lính ngầm đã bị xoá sổ — bọn chúng hết người chui lên từ địa đạo!');
-  if(o.role==='veh' && !left) radio('SCH: Bãi xe ngầm tan tành — xe tăng địch không còn đường ra!');
+  if(o.role==='veh' && !left) radio('SCH: Bãi xe ngầm tan tành — xe tiếp viện của địch không còn đường ra!');
   if(U.targets.every(q=>!q.alive)){ addScore(C.score.all, { x:o.x, y:6, z:o.z }); setTimeout(()=>{ showBanner('CĂN CỨ NGẦM ĐÃ BỊ XOÁ SỔ!', '#9be04a'); radio('SCH: Căn cứ ngầm của địch đã thành đống đổ nát — rút lên mặt đất!'); }, 1500); }
   hud(); }
 function powerDown(){ const U=UNDER; U.power=false; const M=mats(); M.lamp.emissive.setHex(0xff2a14); M.lamp.emissiveIntensity=1.6; if(U.poolM) U.poolM.color.setHex(0x7a1408); if(U.genLight) U.genLight.intensity=0;

@@ -5,7 +5,7 @@
 //   and the wounded of the squad too. (The radio's GỌI TỔ BỘ BINH still brings a whole fireteam on top of them.)
 import * as THREE from 'three';
 import { TROOPER, TROOPS } from '../../config.js';
-import { FT, MODE, CAREER, S, armAlly, clampFieldXZ, floatText, kitAttach, radio, ringPulse, sfx, spawnAlly, spawnPart, updateHUD } from '../hub.js';
+import { FT, CAREER, S, armAlly, clampFieldXZ, floatText, kitAttach, radio, ringPulse, sfx, spawnAlly, spawnPart, updateHUD } from '../hub.js';
 
 const ROSTER = [];   // { role, name, a (his live fireteam entry, or null), back (true = bring him now), dead }
 let _names = [], _wave = '', _medAt = 0, _thinkAt = 0, _medMat = null;
@@ -18,7 +18,7 @@ export function squadReset(){ ROSTER.length = 0; _names = []; _wave = ''; _medAt
 export function squadRoom(){ return C().max - ROSTER.length; }
 export function squadList(){ return ROSTER; }
 // a new man for the squad (a rank, a perk): he runs in from behind at once
-export function squadGrow(role){ if(MODE.id !== 'soldier' || squadRoom() <= 0) return false;
+export function squadGrow(role){ if(squadRoom() <= 0) return false;
   const r = { role:role || GROW[(ROSTER.length - C().start.length) % GROW.length], name:nextName(), a:null, back:false, dead:false }; ROSTER.push(r); join(r, true); return true; }
 // health and damage by his rank and the CHỈ HUY perk (a fraction of the old health kept)
 function stats(a){ const K = C(), lead = CAREER.lv.leader || 0, F = TROOPS.fireteam, was = a.maxHp ? a.hp / a.maxHp : 1;
@@ -37,7 +37,7 @@ function join(r, fromRear){ const p = S.player; if(!p) return; const f = p.facin
   floatText(r.name.toUpperCase() + ' · ' + ROLE_VI[r.role].toUpperCase(), '#cfe8a0', { x, y:2.3, z }, 13);
   if(fromRear) ringPulse({ x, z }, 0x9bd14a, 2); }
 // once a frame in battle (4×/s is enough): who is down, who comes back, the medic
-export function updateSquadMates(){ if(MODE.id !== 'soldier' || !S.player || S.awaitingUpgrade) return; const t = NOW(); if(t < _thinkAt) return; _thinkAt = t + 0.25;
+export function updateSquadMates(){ if(!S.player || S.awaitingUpgrade) return; const t = NOW(); if(t < _thinkAt) return; _thinkAt = t + 0.25;
   const wk = S.stage + ':' + S.wave, newWave = _wave !== '' && wk !== _wave; _wave = wk; const back = [];
   for(const r of ROSTER){
     if(r.a && !FT.includes(r.a)){ r.dead = !!r.a.dead; r.a = null; r.back = !r.dead;   // down → the rear until the next wave · taken off a cleared field → straight back

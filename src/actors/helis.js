@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HELI, ROSTER, TROOPS } from '../../config.js';
-import { BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir, playerSeen } from '../hub.js';
+import { objMod, BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir, playerSeen } from '../hub.js';
 
 const _r=(a,b)=>a+Math.random()*(b-a), _ra=a=>_r(a[0],a[1]);
 function _tx(geo,x,y,z,rx,ry,rz,sx,sy,sz){ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1))); return geo; }
@@ -111,7 +111,7 @@ export function buildHip(){ const M=hmats('hip'), g=new THREE.Group(), body=new 
 
 // ===== flight =====
 const _w=new THREE.Vector3();
-function dmul(){ const ds=diffScale(); return (0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul(); }
+function dmul(){ const ds=diffScale(); return (0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*objMod('enemyDmgMul')*diffDmgMul(); }
 // steer along a heading with a limited turn rate (a real turn, banked), arrive gently when asked to stop
 function fly(e, tx, tz, spd, alt, dt, edt, turn, arrive){
   const dx=tx-e.pos.x, dz=tz-e.pos.z, d=Math.hypot(dx,dz)||1e-3, want=Math.atan2(dx,dz); e.hd=e.hd??e.facing; const da=wrapAngle(want-e.hd);
