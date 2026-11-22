@@ -2267,5 +2267,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), ib=fs.readFileSync('src/world/iceberg.js','utf8'), C=await import('./config.js');
   ok(/const xs = \[f\.x - Rt, f\.x \+ Rt, Lc\[0\] - P, Lc\[0\] \+ P, Le\[0\] - P, Le\[0\] \+ P\]/.test(ib) && /pick\.every\(p => apart\(p, f\)\)/.test(ib) && /kx \* wide < F\.minW/.test(ib) && /g\.rim\(g\.ga\) - 0\.3/.test(ib) && C.FORTHILL.biomes.ARCTIC.berg.faces.minW > 0, 'the berg\'s landing whole, bergs apart, the bridge\'s lane clear, its deck level at the lip'); }
 
+// Z464 a valley's and a caldera's mountains stand back from the fence (rise) over low foothills (foot): the sky over the field, not a wall of rock
+{ const fs=await import('node:fs'), C=await import('./config.js'), B=C.LANDFORM.biomes, hf=fs.readFileSync('src/world/heightfield.js','utf8');
+  ok(/Math\.pow\(_sm\(4, w \* \(L\.rise \?\? 0\.45\), o\), L\.foot \?\? 1\)/.test(hf) && B.MEADOW.rise >= 0.9 && B.MEADOW.foot > 1 && B.VOLCANO.rise >= 0.8 && B.VOLCANO.foot > 1 && B.DESERT.rise == null && B.MEADOW.rise * B.MEADOW.w < B.MEADOW.w * 1.5, 'the valley\'s and the caldera\'s crests stand back over low foothills; the dune sea as it was'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

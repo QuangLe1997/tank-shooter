@@ -162,7 +162,7 @@ function landformFor(b){ OUT.lf = landform(b); OUT.seed = Math.random() * 100; }
 export function landAt(o, x, z){ const L = OUT.lf; if(!L || o <= 0) return 0; const w = L.w;
   if(L.form === 'plateau'){ const oo = o + (_ofbm(x / 150, z / 150) - 0.5) * Math.min(w, 60) * 1.6 * _sm(0, 30, o), d = _sm(6, 6 + w, oo);   // the cliff's line wanders; below it the low land rolls a little
     return L.plain === 'sea' ? -(L.h + 4) * d : -L.h * d + d * (_ofbm(x / 90, z / 90) - 0.5) * L.h * 0.06 - PLAIN_DROP * _sm(420, 620, o); }   // (Z430 a sea's floor under its water; a low land sinks to the backdrop's plain far out)
-  if(L.form === 'bowl'){ const e = _sm(4, w * 0.45, o) * (1 - _sm(w * 1.5, w * 2.7, o)); if(e <= 0) return 0; let m;
+  if(L.form === 'bowl'){ const e = Math.pow(_sm(4, w * (L.rise ?? 0.45), o), L.foot ?? 1) * (1 - _sm(w * 1.5, w * 2.7, o)); if(e <= 0) return 0; let m;   // (Z464 rise / foot: how far out the crest stands, how low the foothills keep)
     if(L.dune) m = Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / 120 * Math.PI + _ofbm(x / 160, z / 160) * 5)), 1.7) * 0.6 + _ofbm(x / 260, z / 260) * 0.4;   // a sea of dunes
     else { const r1 = 1 - Math.abs(2 * _on(x / 170, z / 170) - 1), r2 = 1 - Math.abs(2 * _on(x / 70 + 5.3, z / 70 + 2.1) - 1); m = r1 * r1 * 0.72 + r2 * r2 * 0.28; }   // ridged mountains round a valley
     return L.h * e * (0.3 + 0.7 * m); }

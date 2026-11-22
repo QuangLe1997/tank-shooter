@@ -1698,7 +1698,8 @@ export const OUTSKIRTS = { on:true, out:5, ramp:0.5, crest:1.1, fade:2.4, seg:[2
 // Z428 LANDFORM: each battlefield stands IN a piece of real geography, which is also its border (the drawn earth bank and the rows of boulders give way):
 //   form = hills (OUTSKIRTS' rolling land) · bowl (a ring of mountains or dunes rising h m over w m past the field: a valley, a caldera, a hollow in a
 //   dune sea) · plateau (the field on top, a cliff dropping h m over w m: a mesa, an ice shelf, a headland, a hilltop) · flat (the field one block of an
-//   endless city or works). tint / rock / snow = the land's colour, its rock where it is steep, snow above snow m; ridge × FIELD.ridgeH (the bank inside
+//   endless city or works). Z464 a bowl's crest stands rise × w past the fence (0.45: a wall right behind it, the sky hidden), its foothills
+//   kept low by foot (the rise's power: a valley's floor climbs gently, then steepens to the ridge). tint / rock / snow = the land's colour, its rock where it is steep, snow above snow m; ridge × FIELD.ridgeH (the bank inside
 //   the field's square), rocks × the boulder rows; plain = what the backdrop's plain shows to the horizon (sea · dunes · savanna · fields · forest ·
 //   lava · city · ruins · industry), its colour; roads: tracks lead away. far = the camera's least far plane (m): Z430 16 km, the whole land, the ranges and
 //   the far battlefields drawn at their true depth (depth precision lives at the near plane: the far one costs nothing there); Z440 shift / plainShift = how far
@@ -1709,8 +1710,8 @@ export const LANDFORM = { on:true, far:16000, shift:0.3, plainShift:0.35,
     ARCTIC:{ form:'plateau', h:70, w:26, tint:0xf4f8fb, rock:0x9cc2dc, ridge:0.25, rocks:0, plain:'sea', col:0x14263a, floes:1 },
     QUARRY:{ form:'plateau', h:58, w:24, tint:0xece6d8, rock:0xd4ccbe, ridge:0.25, rocks:0.2, plain:'sea', col:0x184a5e },
     CITADEL:{ form:'plateau', h:90, w:170, tint:0xa0905c, rock:0x8a7860, ridge:0.5, rocks:0.3, plain:'fields', col:0x6e7a4a },
-    MEADOW:{ form:'bowl', h:260, w:360, tint:0x3e5a2c, rock:0x6c6a60, snow:238, ridge:1, rocks:0.4, plain:'forest', col:0x34502c },
-    VOLCANO:{ form:'bowl', h:160, w:230, tint:0x2e2826, rock:0x1e1a18, ridge:1, rocks:0.6, plain:'lava', col:0x241c1a },
+    MEADOW:{ form:'bowl', h:260, w:360, rise:1.05, foot:1.5, tint:0x3e5a2c, rock:0x6c6a60, snow:238, ridge:1, rocks:0.4, plain:'forest', col:0x34502c },
+    VOLCANO:{ form:'bowl', h:160, w:230, rise:0.9, foot:1.35, tint:0x2e2826, rock:0x1e1a18, ridge:1, rocks:0.6, plain:'lava', col:0x241c1a },
     CITY:{ form:'flat', h:3, w:300, tint:0x5c6066, rock:0x5c6066, ridge:0.2, rocks:0, plain:'city', col:0x7a7e86 },
     RUINS:{ form:'flat', h:9, w:220, tint:0x6e6a66, rock:0x5a5654, ridge:0.3, rocks:0.3, plain:'ruins', col:0x76706a },
     FOUNDRY:{ form:'flat', h:6, w:260, tint:0x6a645e, rock:0x5a524c, ridge:0.3, rocks:0.2, plain:'industry', col:0x8a837a, roads:1 } } };
