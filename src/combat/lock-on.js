@@ -143,7 +143,7 @@ export function updateBullets(dt, now){
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }
         hit=true; }
       if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z; if(dx*dx+dz*dz<9) suppress(s, dt*1.4); }   // Z173 our men get pinned too
-      if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2 && lineH(b, _wy, s, true)){ bloodSpurt(s.pos.x, s.pos.z, b.vx, b.vz, b.inf?0.7:1.6); damageAlly(s, (b.inf||!LETHAL.tankRoundKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
+      if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2 && lineH(b, _wy, s, true)){ bloodSpurt(s.pos.x, s.pos.z, b.vx, b.vz, b.inf?0.7:1.6); damageAlly(s, (b.inf||!LETHAL.heavyKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
         if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;

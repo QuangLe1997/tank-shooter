@@ -2273,7 +2273,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/c==='turn'\|\|c==='tank' \? 'turn' : 'screen'/.test(R('src/core/helpers.js')) && /PROFILE\.ctrl='turn'/.test(R('src/ui/settings.js')), 'XOAY THÂN is the \'turn\' scheme; a profile saved with \'tank\' keeps it');
   ok(!/kind:'tank'/.test(R('src/actors/fireteam.js')) && /export function infThreat\(e\)/.test(R('src/actors/infantry.js')) && C.FORT.posture.you>0 && !('gTank' in C.FORT.posture) && JSON.stringify(Object.keys(C.ARMOR).sort())===JSON.stringify(['gunship','heliBomb','heliTroop','rifle','rpg']), 'the AI fights men and helicopters: no tank target, threat or weight left');
   ok(/isAir=t=>ENEMY_DEFS\[t\]&&ENEMY_DEFS\[t\]\.air/.test(R('src/world/supply.js')) && C.SUPPLYB.reinfCd>0 && C.SUPPLYB.cut.air>0, 'a lost fuel station costs the enemy helicopters; the base calls up squads');
-  ok(C.DEPLOY.men===5 && /total=DEPLOY\.men \+ squadWant\(\)/.test(R('src/ui/deploy.js')), 'the deployment counts its men, not the tank\'s seats'); }
+  ok(C.DEPLOY.men===5 && /total=DEPLOY\.men \+ squadWant\(\)/.test(R('src/ui/deploy.js')), 'the deployment counts its men, not the tank\'s seats');
+  ok(C.LETHAL.heavyKills && (lo.match(/LETHAL\.heavyKills/g)||[]).length===2 && !/tankRoundKills/.test(lo), 'a heavy round still kills a man outright — theirs on our men too (the renamed LETHAL.heavyKills read in both places)'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
