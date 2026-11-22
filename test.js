@@ -2262,5 +2262,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/clearBergs\(\)/.test(fh) && /raiseBergs\(forts, C\);[^\n]*\n  buildPerimeter\(BIOME, true\)/.test(fh) && /dressBergs\(C\); \}/.test(fh) && /U\.uDepth\.value = depthTex\(\)/.test(ib) && /RIVER\.bridges\.push\(b\)/.test(ib) && /rope:true, y0, y1/.test(ib) && /CLIMBS\.push\(c\); f\.climb = c/.test(ib), 'the berg raised before the fence, dressed after; the moat\'s water baked in; the span on the crossings and the track');
   ok(/if\(!b\.rope\) return Math\.max\(v, b\.y\); const u=\(al\+b\.hl\)\/\(2\*b\.hl\); return Math\.max\(v, b\.y0\+\(b\.y1-b\.y0\)\*u-b\.sag\*4\*u\*\(1-u\)\)/.test(R('src/world/heightfield.js')) && /\.filter\(b => !b\.rope\)/.test(R('src/world/defense.js')) && /emissiveMap = null/.test(ib), 'the rope deck walked along its sag; no river checkpoint on it; the ice gives no glow'); }
 
+// Z463 the berg's review fixes: the cells worked take in the landing and its ramp; two bergs kept apart; the faces by the bridge narrowed short of its
+//   lane; the deck leaves the berg at its lip, level with its top
+{ const fs=await import('node:fs'), ib=fs.readFileSync('src/world/iceberg.js','utf8'), C=await import('./config.js');
+  ok(/const xs = \[f\.x - Rt, f\.x \+ Rt, Lc\[0\] - P, Lc\[0\] \+ P, Le\[0\] - P, Le\[0\] \+ P\]/.test(ib) && /pick\.every\(p => apart\(p, f\)\)/.test(ib) && /kx \* wide < F\.minW/.test(ib) && /g\.rim\(g\.ga\) - 0\.3/.test(ib) && C.FORTHILL.biomes.ARCTIC.berg.faces.minW > 0, 'the berg\'s landing whole, bergs apart, the bridge\'s lane clear, its deck level at the lip'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -1280,13 +1280,13 @@ export const FORTHILL = { on:true, biomes:{
   //   the shore rising back · bed = the moat's floor under the water level · the shore's landing for the bridge: land = how far below the berg's top,
   //   pad = its radius; its ramp down along the shore: ramp = the grade, rampW = half width, side = their slopes' run · cracks: how many, L = how far in,
   //   w = how wide at the lip · faces: photographed ice fronting the walls (lip = how far over the top, sink = share under the floor, o = out from the lip,
-  //   deep = their thickness ×, overlap, gap = rad kept clear round the bridge) · shards: tall ice stood on the lip (lip = that share) and out in the
+  //   deep = their thickness ×, overlap, gap = rad kept clear round the bridge, those beside it narrowed to no less than minW m) · shards: tall ice stood on the lip (lip = that share) and out in the
   //   water, h = how far over the top, thin = width × per model · floes: adrift in the moat, w = their width · span: the rope bridge (hw = deck half
   //   width, sag = share of the span [, at most m], plank = spacing, gaps = planks missing, rail = hand rope height, post = the anchor posts' height,
   //   path = the track's width)
   ARCTIC:{ h:[0, 0, 0], top:0, base:1, ramp:0, cliff:1, rag:0, land:{ bump:0, clear:[30, 44] },
     berg:{ n:2, top:12, rim:7, rag:1.5, back:6, fence:[1, 6], sheer:3, moat:[9, 16], bank:5, bed:-3, land:4, ramp:0.4, rampW:4, pad:6, side:9, cracks:[3, 5], crack:{ L:[3, 5.5], w:[2.2, 3.6] },
-      faces:{ keys:['ice_block', 'ice_serac', 'ice_block'], lip:[0.6, 2.2], sink:0.12, o:[1, 2.6], deep:0.32, overlap:0.6, gap:0.11 },
+      faces:{ keys:['ice_block', 'ice_serac', 'ice_block'], lip:[0.6, 2.2], sink:0.12, o:[1, 2.6], deep:0.32, overlap:0.6, gap:0.11, minW:4 },
       shards:{ n:16, keys:['ice_pillar', 'ice_serac', 'ice_pillar'], h:[12, 28], lip:0.55, gap:0.45, thin:{ ice_pillar:0.3, ice_serac:0.42 } },
       floes:{ n:12, keys:['ice_floe', 'ice_floe', 'ice_block'], w:[3, 9], sink:0.3, flat:0.6 },
       span:{ hw:1.25, sag:[0.05, 1.6], plank:0.36, gaps:0.05, rail:1.05, post:1.6, path:4 } } },

@@ -21,16 +21,20 @@ export function raiseBergs(forts, C){ const B = C.berg; if(!B) return; const W =
   const clear = (x, z) => sm(cl[0], cl[1], Math.hypot(x, z)) * sm(14, 26, Math.hypot(x, z - sp));   // (our compound and the spawn: the water stops short of them)
   const shore = f => { const ga = Math.atan2(ARENA * 0.55 - f.z, -f.x), d = f.R * 1.1 + B.rim + B.sheer + B.moat[1] + B.pad; let q = 1;   // (the water before its gate, the landing and the ramp's start all clear of our ground)
     for(const s of [d - B.moat[1], d, d + B.pad + 6]){ const x = f.x + Math.cos(ga) * s, z = f.z + Math.sin(ga) * s; q = Math.min(q, clear(x, z) * sm(4, 10, fieldDepth(x, z))); } return q; };
-  const pick = forts.filter(f => room(f) > 0 && shore(f) > 0.9).sort((a, b) => (b.tier === 3) - (a.tier === 3) || room(b) - room(a)).slice(0, MOBILE ? 1 : B.n);
+  const apart = (a, b) => Math.hypot(a.x - b.x, a.z - b.z) > (a.R + b.R) * 1.1 + 2 * (B.rim + B.rag + B.sheer) + B.moat[1] + B.bank, pick = [];   // (one berg's moat never cuts into the other's lip)
+  for(const f of forts.filter(f => room(f) > 0 && shore(f) > 0.9).sort((a, b) => (b.tier === 3) - (a.tier === 3) || room(b) - room(a))) if(pick.length < (MOBILE ? 1 : B.n) && pick.every(p => apart(p, f))) pick.push(f);
   for(const f of pick){ const s2 = Math.random() * 9, ga = Math.atan2(ARENA * 0.55 - f.z, -f.x), ux = Math.cos(ga), uz = Math.sin(ga);
     let sum = 0, n = 0; for(let a = 0; a < 6.28; a += 0.4) for(const r of [0, f.R * 0.5, f.R]){ sum += heightAt(f.x + Math.cos(a) * r, f.z + Math.sin(a) * r); n++; }
     const base = sum / n, top = base + B.top, bed = RIVER.y + B.bed, rim = a => f.R * 1.1 + B.rim + B.rag * rag(a, s2), moat = a => B.moat[0] + (B.moat[1] - B.moat[0]) * (0.5 + 0.5 * Math.sin(a * 2 + s2));
     const cracks = []; for(let t = 0, k = (B.cracks[0] + Math.random() * (B.cracks[1] - B.cracks[0] + 1)) | 0; t < 40 && cracks.length < k; t++){ const a = Math.random() * 6.283;
       if(Math.abs(dA(a, ga)) > 0.7 && !cracks.some(c => Math.abs(dA(a, c.a)) < 0.5)) cracks.push({ a, L:_R(B.crack.L[0], B.crack.L[1]), w:_R(B.crack.w[0], B.crack.w[1]) }); }
-    const Rt = f.R * 1.1 + B.rim + B.rag + B.sheer + B.moat[1] + B.bank + 2, i0 = Math.max(0, Math.floor((f.x - Rt + ARENA) / st)), i1 = Math.min(HF.N, Math.ceil((f.x + Rt + ARENA) / st)), j0 = Math.max(0, Math.floor((f.z - Rt + ARENA) / st)), j1 = Math.min(HF.N, Math.ceil((f.z + Rt + ARENA) / st));
-    for(const c of crushables) if(c.alive && c.im && Math.hypot(c.x - f.x, c.z - f.z) < Rt){ c.im.setMatrixAt(c.k, _Z); c.im.instanceMatrix.needsUpdate = true; c.alive = false; }   // (the loose stones and tufts of the old ground)
     const dL = rim(ga) + B.sheer + moat(ga), Hl = B.top - B.land, Lr = Hl / B.ramp, pd = B.pad, Lc = [f.x + ux * (dL + pd), f.z + uz * (dL + pd)];   // the landing: a snow knoll pd m round, Hl up, on the shore across from the gate
     let V = null; for(const sd of [1, -1]){ const vx = -uz * sd, vz = ux * sd; let q = 1; for(let s = pd; s <= pd + Lr; s += 3){ const x = Lc[0] + vx * s, z = Lc[1] + vz * s; q = Math.min(q, clear(x, z) * sm(2, 8, fieldDepth(x, z))); } if(!V || q > V.q) V = { q, vx, vz }; }   // the ramp down from it runs along the shore, to the side with more open field (never at our compound or the spawn)
+    const Rt = f.R * 1.1 + B.rim + B.rag + B.sheer + B.moat[1] + B.bank + 2, P = pd + 1.5 + B.side + 2, Le = [Lc[0] + V.vx * (pd + Lr), Lc[1] + V.vz * (pd + Lr)];   // the cells worked: the berg's ring, and the landing with its ramp wherever they reach
+    const xs = [f.x - Rt, f.x + Rt, Lc[0] - P, Lc[0] + P, Le[0] - P, Le[0] + P], zs = [f.z - Rt, f.z + Rt, Lc[1] - P, Lc[1] + P, Le[1] - P, Le[1] + P];
+    const i0 = Math.max(0, Math.floor((Math.min(...xs) + ARENA) / st)), i1 = Math.min(HF.N, Math.ceil((Math.max(...xs) + ARENA) / st)), j0 = Math.max(0, Math.floor((Math.min(...zs) + ARENA) / st)), j1 = Math.min(HF.N, Math.ceil((Math.max(...zs) + ARENA) / st));
+    const onRamp = (x, z) => { const s = Math.max(0, Math.min(pd + Lr, (x - Lc[0]) * V.vx + (z - Lc[1]) * V.vz)); return Math.hypot(x - Lc[0] - V.vx * s, z - Lc[1] - V.vz * s) < P; };
+    for(const c of crushables) if(c.alive && c.im && (Math.hypot(c.x - f.x, c.z - f.z) < Rt || onRamp(c.x, c.z))){ c.im.setMatrixAt(c.k, _Z); c.im.instanceMatrix.needsUpdate = true; c.alive = false; }   // (the loose stones and tufts of the old ground)
     for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const x = -ARENA + i * st, z = -ARENA + j * st, dx = x - f.x, dz = z - f.z, d = Math.hypot(dx, dz), a = Math.atan2(dz, dx), k = j * W + i, h0 = h[k];
       const rr = rim(a), mw = moat(a); let t;
       if(d < rr + B.sheer){ t = d < rr ? top : top + (bed - top) * sm(rr, rr + B.sheer, d);
@@ -46,7 +50,7 @@ export function raiseBergs(forts, C){ const B = C.berg; if(!B) return; const W =
   if(BERGS.length && RIVER.mesh){ const U = RIVER.mesh.material.userData.u; if(U.uDepth.value) U.uDepth.value.dispose(); U.uDepth.value = depthTex(); } }   // (the water now lies in the moats)
 // the span: from the berg's lip by the gate over the moat to the ramp's top — a sagging deck on RIVER.bridges (rope: y0 at the berg, y1 on the shore) —
 //   and the way it makes for the field's tracks (CLIMBS: lip → over the span → down the ramp to its foot)
-function span(g, B, dL, ux, uz, Lr){ const S = B.span, f = g.f; if(!RIVER.on) return; const ax = f.x + ux * (dL + 2), az = f.z + uz * (dL + 2), bx = f.x + ux * (g.rim(g.ga) - 3), bz = f.z + uz * (g.rim(g.ga) - 3);
+function span(g, B, dL, ux, uz, Lr){ const S = B.span, f = g.f; if(!RIVER.on) return; const ax = f.x + ux * (dL + 2), az = f.z + uz * (dL + 2), bx = f.x + ux * (g.rim(g.ga) - 0.3), bz = f.z + uz * (g.rim(g.ga) - 0.3);   // (the deck leaves the berg at its lip, level with its top)
   const hl = Math.hypot(ax - bx, az - bz) / 2, y0 = heightAt(bx, bz), y1 = heightAt(ax, az), b = { x:(ax + bx) / 2, z:(az + bz) / 2, ang:Math.atan2(uz, ux), ca:ux, sa:uz, hw:S.hw, hl, y:Math.max(y0, y1), rope:true, y0, y1, sag:Math.min(S.sag[1], hl * 2 * S.sag[0]) };
   RIVER.bridges.push(b); RIVER.top = Math.max(RIVER.top, b.y + 0.01); g.span = b;
   const pts = [], { Lc, V } = g, pd = B.pad; for(let s = g.rim(g.ga) - 3; s < dL + pd; s += 2) pts.push([f.x + ux * s, f.z + uz * s]);
@@ -57,10 +61,11 @@ function span(g, B, dL, ux, uz, Lr){ const S = B.span, f = g.f; if(!RIVER.on) re
 // the ice: faces along the cliffs, shards on the lip and out in the water, floes adrift, the bridge drawn (called once the land is laid, with a window)
 export function dressBergs(C){ const B = C.berg; if(!B || typeof window === 'undefined') return;
   for(const g of BERGS){ const F = B.faces, near = a => Math.abs(dA(a, g.ga)) < F.gap;
-    for(let a = Math.random() * 6.283, a1 = a + 6.283; a < a1;){ if(near(a)){ a += 0.08; continue; } const key = F.keys[(Math.random() * F.keys.length) | 0], D = sceneDims(key), Hh = (g.top - g.bed + _R(F.lip[0], F.lip[1])) / (1 - F.sink), sc = Hh / D.y, wide = D.x * sc;
+    for(let a = Math.random() * 6.283, a1 = a + 6.283; a < a1;){ const key = F.keys[(Math.random() * F.keys.length) | 0], D = sceneDims(key), Hh = (g.top - g.bed + _R(F.lip[0], F.lip[1])) / (1 - F.sink), sc = Hh / D.y, wide = D.x * sc;
+      const kx = Math.min(1, (Math.abs(dA(a, g.ga)) * g.rim(a) - B.span.hw - 1.5) * 2 / wide); if(near(a) || kx * wide < F.minW){ a += 0.04; continue; }   // (by the bridge narrowed to stop short of its lane)
       const cr = g.cracks.find(c => Math.abs(dA(c.a, a)) < wide * 0.4 / g.rim(a) + c.w / g.rim(a)); if(cr){ a = Math.max(a + 0.04, a + dA(cr.a, a) + (cr.w * 1.3 + wide * 0.3) / g.rim(a)); continue; }   // (the crevasses left open: a dark split between the faces)
       const o = _R(F.o[0], F.o[1]), rr = g.rim(a) + o, x = g.x + Math.cos(a) * rr, z = g.z + Math.sin(a) * rr, m = put(key, sc, x, g.bed - Hh * F.sink, z, -a + Math.PI / 2 + (Math.random() < 0.5 ? Math.PI : 0) + _R(-0.15, 0.15));
-      m.scale.set(sc, sc, sc * F.deep); blocks.push({ mesh:new THREE.Object3D(), x, z, r:Math.min(D.x, D.z) * sc * F.deep * 0.4, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); a += wide * F.overlap / rr * (MOBILE ? 1.5 : 1); }
+      m.scale.set(sc * kx, sc, sc * F.deep); blocks.push({ mesh:new THREE.Object3D(), x, z, r:Math.min(D.x * kx, D.z * F.deep) * sc * 0.4, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); a += wide * kx * F.overlap / rr * (MOBILE ? 1.5 : 1); }
     const P = B.shards, tall = (a, d, Hs) => { const key = P.keys[(Math.random() * P.keys.length) | 0], D = sceneDims(key), x = g.x + Math.cos(a) * d, z = g.z + Math.sin(a) * d, sc = (Hs + 1.5) / D.y, thin = P.thin[key] || 0.4;
       const m = put(key, sc, x, g.top - 1.5, z, Math.random() * 6.283); m.scale.set(sc * thin, sc, sc * thin); blocks.push({ mesh:new THREE.Object3D(), x, z, r:Math.min(D.x, D.z) * sc * thin * 0.42, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'shard' }); };
     for(const c of g.cracks) for(const s of [-1, 1]) tall(c.a + s * (c.w + 2.2) / g.rim(c.a), g.rim(c.a) - _R(0.5, 2), _R(P.h[0], P.h[1]) * _R(0.8, 1.15));   // (the split flanked by its two broken pillars)
