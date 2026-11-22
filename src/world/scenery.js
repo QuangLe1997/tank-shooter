@@ -124,6 +124,8 @@ function lavaPit(p, gy){ const r = sceneDims(p.k, p.s).x * M(p.k).lava, y = gy +
 // Z375 the enemy fuel depot's tanks (world/supply.js, built after this set, in the same pass): the riveted steel tank scan in place of the drawn
 //   cylinder — inside the tank's own group, so its hits, its fire and its blast are untouched (the drawn one is hidden, it still carries the shape)
 function realSupply(gen){ if(gen !== GEN) return; for(const b of blocks){ if(b.kind === 'radartower' && b.mesh && !b.mesh.userData.real && !MOBILE){ b.mesh.userData.real = true; realRadar(b, gen); continue; }
+    const yk = SCENERY.supply.yard[b.kind]; if(yk && b.mesh && !b.mesh.userData.real){ b.mesh.userData.real = true; b.mesh.traverse(o => { if(o.isMesh) o.visible = false; });   // Z425 the radar yard's pieces: the radome on its tower, the shelter, the radar truck, the generator, the dishes
+      const s = b.mesh.userData.s || 1, m = scenePiece(yk, s); m.scale.setScalar(s); b.mesh.add(m); continue; }
     if(b.kind === 'pumphouse' && b.mesh && !b.mesh.userData.real){ b.mesh.userData.real = true; b.mesh.traverse(o => { if(o.isMesh) o.visible = false; });   // Z420 the fuel store: the weathered platform scan
       const s = SCENERY.supply.depot.w / M('fuel_depot').w, m = scenePiece('fuel_depot', s); m.scale.setScalar(s); b.mesh.add(m); continue; }
     if(b.kind !== 'fueltank' || !b.mesh || b.mesh.userData.real) continue; b.mesh.userData.real = true;

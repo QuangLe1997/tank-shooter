@@ -327,7 +327,10 @@ export const FORT_GAP = { w:2.6, minRep:4, bin:0.2, guard:0.8 };
 //   scaled ×1.4 / ×1.25 after), spread = where the two muzzles sit across it; aa: the radar station's AA gun in its pit (a 40 mm Bofors-type gun in a ring
 //   of concrete and sandbags, one scan): w = the pit across (m); the gun is the part inside gunR × its radius above gunY × its height, or anything above
 //   top × its height — it turns, the pit stays; proj: the missile scan the rockets and missiles wear in flight
-export const REALTURRET = { gun:{ k:'turret_cannon', w:4.2, spread:0 }, mg:{ k:'turret_rws', w:3.2, spread:0.26 }, aa:{ k:'turret_aa', w:6.6, gunR:0.62, gunY:0.17, top:0.55 }, proj:{ k:'proj_missile' } };
+// Z425 the other rounds in flight (combat/siege-rocket.js): art = the enemy artillery's 122 mm field rocket, siege = our SIEGE rocket (a finned tactical
+//   rocket), mortar = every mortar bomb (ours, our fire teams', the towers'); len = the scan's length (m) on the drawn round, before its group's scale
+export const REALTURRET = { gun:{ k:'turret_cannon', w:4.2, spread:0 }, mg:{ k:'turret_rws', w:3.2, spread:0.26 }, aa:{ k:'turret_aa', w:6.6, gunR:0.62, gunY:0.17, top:0.55 }, proj:{ k:'proj_missile' },
+  art:{ k:'proj_rocket122', file:'rocket122', len:3.3, nose:'up' }, siege:{ k:'proj_tactical', file:'tactical', len:3.6, nose:'up' }, mortar:{ k:'proj_mortar', file:'mortar', len:1.45, nose:'up' } };
 export const REALCAMP = { hq:{ w:21, sink:0.01, yaw:0, env:0.9, lightY:9, hitR:9 },
   walls:{ wallUp:0.4, thick:1.0, sink:-0.4, towerUp:-0.6, towerW:0.85 } };   // Z273 the concrete compound (world/core-walls.js dressWalls): wall height over CORE_DEF.H, thickness ×, tower height / width
 export const CORE_DEF = { hp:420, perStage:50, armour:0.72, regen:2.4, regenDelay:6, shield:{ at:0.35, t:9, cd:70 } };   // Z223 the Core is harder to break: thicker, armoured, mends itself when left alone, and throws up an emergency shield (also saves it from a killing blow) once per cd s
@@ -642,7 +645,7 @@ export const PARA = { fromStage: 1, fromWave: 2, every: [50, 72], everyMobile: [
 // Z194 ENEMY SUPPLY BASES — a fuel station and an ammo depot (count per stage), piece HP (× stage/loop/difficulty), alarm radius, how far a guard tank
 //   strays, garrison (riflemen [min,max], guard tanks [early,late]), gunships called per base [min,max], armour called in, and what losing each costs the enemy
 export const SUPPLYB = { perStage:{ total:[3,3,4,4,4] }, hpPerStage:0.15,   // Z195 3–4 compounds, fuel and ammo alternating, in the corners of the map
-  hp:{ radartower:560, radome:220, aagun:150, fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110 },
+  hp:{ radartower:560, radome:220, aagun:150, fueltank:300, tanker:120, pumphouse:320, bunker:480, ammostack:90, supplytruck:110, shelter:160, radartruck:130, genset:80, dish:60 },   // (Z425 the radar yard's shelter, truck, generator and dishes stand as pieces)
   alertR:46, leash:40, guards:[3,6], tanks:[1,1], heli:[1,3], heliCd:40, reinf:2, tankCd:30, aa:{ range:26 },   // Z403 the radar's twin AA guns hose a man on the ground within aa.range m (was 62: they cut him down before he got near; now no further than his own rifle reaches)
   cut:{ speed:0.12, tanks:0.18, dmg:0.12, rate:0.15, inf:0.25, min:0.7 }, coin:380, score:2200 };
 export const CAMP = { perStage: [2, 2, 2, 3, 3], hp: 420, hpPerStage: 0.18, every: 16, squad: [2, 4], infCap: 22, coin: 220, score: 900, tentScore: 60 };
@@ -1546,8 +1549,8 @@ export const TROOPER = {
 //   (n round one centre within r) · around (n round the piece `of`, r [min, max] out); s = scale range; face: core (default) · out · along · rand; Z393 solid = this beat's own collision (else the
 //   model's), top = the most detail it ever draws ('l' mid / 'f' far: a small piece never fetches the whole scan)
 export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' bunkers and guard towers lean to the land's tone (REALPROP.cast.tint)
-  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ k:'radar_lattice', h:24, split:0.8, lv:'d' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
-//   h tall, split = the share of its height where the dish (which sweeps with the head) begins · bricks: the ruined brick walls in the breached wall's stone (h, how many
+  lod:{ mid:[30, 2.0], far:[90, 5], near:20, hys:0.1 }, env:0.85, clearCore:34, clearSpawn:30, gap:6, wonderR:{ _:48, VOLCANO:92 }, wonderGap:0.75, supply:{ fueltank:{ h:6.7 }, depot:{ w:9.5, z:7.6 }, radar:{ k:'radar_lattice', h:24, split:0.8, lv:'d' }, yard:{ radome:'radar_dome', shelter:'mil_shelter', radartruck:'radar_truck', genset:'field_gen', dish:'sat_dish' } }, bricks:{ h:3.0, slices:6, lv:'l', fill:0.72 }, city:{ pole:{ h:8.4, lv:'f' }, roof:{ tank:{ h:2.6, share:0.45, kinds:['tube', 'apartment'], back:0.22, sink:0.15 }, mast:{ h:10, share:0.35, kinds:['tower', 'apartment'], minFloors:6, back:0.1, sink:0.1 } } },   // wonderR: open ground kept round the land's wonder (m from where it stands) · wonderGap: the skyline pieces keep this far (rad) off its bearing · supply: the enemy depot's fuel tanks drawn as the steel tank scan, h = the drawn tank's height (m, before the depot's scale); radar = the station's tower as the dish scan,
+//   h tall, split = the share of its height where the dish (which sweeps with the head) begins; yard (Z425) = the scan each of the station's drawn pieces wears (piece kind → model) · bricks: the ruined brick walls in the breached wall's stone (h, how many
 //   3 m slices, which copy, fill = the least share of a slice that must be wall — the breach and the ragged ends are left out) · city: the power poles as the transformer pole scan (h, copy), roof water tanks / masts (h, share of the roofs of those kinds, set back d ×, sunk m)
   models:{
     volcano:{ one:true, h:44, ar:[2.44, 1, 2.41], sink:0.08, solid:null },
@@ -1585,6 +1588,8 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     bunker_green:{ h:7.5, ar:[0.97, 1, 0.84], sink:0.03, solid:null }, bunker_dome:{ w:12, ar:[2.6, 1, 2.6], sink:0.05, solid:null }, bunker_sandbag:{ w:11, ar:[2.04, 1, 2.04], sink:0.03, solid:null },
     radar_sentinel:{ h:15, ar:[0.67, 1, 0.62], sink:0.01, solid:null }, gun_turret:{ w:11, ar:[2.29, 1, 2.06], sink:0.03, solid:null }, antenna_twin:{ h:28, ar:[0.55, 1, 0.3], sink:0, solid:null },
     fuel_depot:{ w:17, ar:[1.7, 1, 1.29], sink:0.02, solid:null },
+    radar_dome:{ one:true, h:15, ar:[0.37, 1, 0.37], sink:0, solid:null }, mil_shelter:{ w:6.1, ar:[1.33, 1, 0.68], sink:0.01, solid:null }, radar_truck:{ w:8.6, ar:[1.96, 1, 0.65], sink:0.01, solid:null },   // Z425 the radar yard (SCENERY.supply.yard): pieces of the base, they stop and break as its pieces do
+    field_gen:{ one:true, w:3.2, ar:[2.21, 1, 1], sink:0.01, solid:null }, sat_dish:{ h:4.2, ar:[0.97, 1, 0.71], sink:0.01, solid:null },
     // Z420 the guard towers (world/tower-kinds.js gt_*): the model IS the tower; ar measured off the packed scans
     gt_sentinel:{ h:15, ar:[0.42, 1, 0.42], sink:0.01, solid:null }, gt_concrete:{ h:14, ar:[0.54, 1, 0.53], sink:0.01, solid:null }, gt_round:{ h:11, ar:[0.77, 1, 0.77], sink:0.01, solid:null },
     gt_limes:{ h:12.5, ar:[0.54, 1, 0.57], sink:0.01, solid:null }, gt_stone:{ h:14, ar:[0.40, 1, 0.65], sink:0.01, solid:null }, gt_castle:{ h:12.5, ar:[1.29, 1, 0.43], sink:0.01, solid:null },

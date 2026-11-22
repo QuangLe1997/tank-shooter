@@ -133,7 +133,7 @@ function compact(G, idx){ const remap = new Int32Array(G.pos.length / 3).fill(-1
   const p = new Float32Array(n * 3), q = new Float32Array(n * 3), t = new Float32Array(n * 2);
   for(let v = 0; v < remap.length; v++){ const r = remap[v]; if(r < 0) continue; p.set(G.pos.subarray(v * 3, v * 3 + 3), r * 3); q.set(G.nrm.subarray(v * 3, v * 3 + 3), r * 3); t.set(G.uv.subarray(v * 2, v * 2 + 2), r * 2); }
   return { pos:p, nrm:q, uv:t, idx:out }; }
-window._conv = async (url, fbx, levels, tex) => {
+window._conv = async (url, fbx, levels, tex, cut) => {
   const root = fbx ? await new FBXLoader().loadAsync(url) : (await new GLTFLoader().loadAsync(url)).scene; root.updateMatrixWorld(true);
   const parts = []; root.traverse(o => { if(!o.isMesh) return; let g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); if(!g.attributes.normal) g.computeVertexNormals();
     if(!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); parts.push(g); });
@@ -142,14 +142,19 @@ window._conv = async (url, fbx, levels, tex) => {
   for(const g of parts){ const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, I = g.index, n = I ? I.count : P.count;
     for(let i = 0; i < n; i++, o++){ const v = I ? I.getX(i) : i; pos[o * 3] = P.getX(v); pos[o * 3 + 1] = P.getY(v); pos[o * 3 + 2] = P.getZ(v); nrm[o * 3] = N.getX(v); nrm[o * 3 + 1] = N.getY(v); nrm[o * 3 + 2] = N.getZ(v);
       uv[o * 2] = U.getX(v); uv[o * 2 + 1] = fbx ? 1 - U.getY(v) : U.getY(v); } g.dispose(); }   // (FBX UVs start bottom-left, glTF's top-left)
-  const G = weld(pos, nrm, uv, null), S = await MS, res = [];
+  let P0 = pos, N0 = nrm, U0 = uv;   // Z425 cut: the scan's lowest share of its height dropped (a round stood in a stump for its photo: the stump goes)
+  if(cut){ let y0 = Infinity, y1 = -Infinity; for(let i = 1; i < pos.length; i += 3){ y0 = Math.min(y0, pos[i]); y1 = Math.max(y1, pos[i]); } const yc = y0 + cut * (y1 - y0), keep = [];
+    for(let c = 0; c < tot; c += 3) if((pos[c * 3 + 1] + pos[c * 3 + 4] + pos[c * 3 + 7]) / 3 >= yc) keep.push(c);
+    P0 = new Float32Array(keep.length * 9); N0 = new Float32Array(keep.length * 9); U0 = new Float32Array(keep.length * 6);
+    keep.forEach((c, k) => { P0.set(pos.subarray(c * 3, c * 3 + 9), k * 9); N0.set(nrm.subarray(c * 3, c * 3 + 9), k * 9); U0.set(uv.subarray(c * 2, c * 2 + 6), k * 6); }); }
+  const G = weld(P0, N0, U0, null), S = await MS, res = [];
   let near = 0, PW = null;
   for(const L of levels){ let idx = G.idx, t = L.tris, bake = false;
     if(L.share){ if(near < L.skip) continue; t = Math.max(L.min, Math.round(near * L.share)); }   // (the mid / far copies follow the near one; a light model has none)
     if(t && t * 3 < idx.length){ const n = Math.floor(t) * 3, sloppy = (I, P) => { const sl = S.simplifySloppy.length >= 6 ? S.simplifySloppy(I, P, 3, null, n, 1) : S.simplifySloppy(I, P, 3, n, 1); return Array.isArray(sl) ? sl[0] : sl; };   // (Z420 meshoptimizer 0.25 takes a vertex lock before the target)
       [idx] = S.simplify(G.idx, G.pos, 3, n, L.err, L.loose ? ['Permissive'] : []);   // the seams locked: no triangle ever spans two charts
       if(L.loose && idx.length > t * 4.5) idx = sloppy(G.idx, G.pos);   // (foliage: a cloud of leaf islands no seam-locked collapse can thin — far off, a smeared leaf is still green)
-      else if(!L.loose && L.bake && tex && idx.length > n * 1.3){ PW = PW || weldPos(G.pos, G.idx); [idx] = S.simplify(PW.idx, PW.pos, 3, n, 1, []); if(idx.length > n * 1.3) idx = sloppy(PW.idx, PW.pos); bake = true; } }   // Z424 its maps baked anew
+      else if(!L.loose && L.bake && tex && (idx.length > n * 1.3 || L.force)){ PW = PW || weldPos(G.pos, G.idx); [idx] = S.simplify(PW.idx, PW.pos, 3, n, 1, []); if(idx.length > n * 1.3) idx = sloppy(PW.idx, PW.pos); bake = true; } }   // Z424 its maps baked anew
     if(L.name === 'd') near = Math.min(idx.length / 3, L.base || Infinity);   // (Z392 the mid / far copies follow lodBase when the near scan is heavier)
     const C = compact(bake ? PW : G, idx), body = new Blob([C.pos, C.nrm, C.uv, C.idx]);
     await fetch('/put?lvl=' + L.name + '&nv=' + (C.pos.length / 3) + '&ni=' + C.idx.length + (bake ? '&bake=1' : ''), { method:'POST', body }); res.push({ lvl:L.name, tris:C.idx.length / 3, bake }); }
@@ -181,7 +186,7 @@ for(const k of todo){ const S = SPEC[k], t0 = Date.now(); let src;
     const M = maps(/\.glb$/i.test(src) ? path.join(cur, model) : src, path.join(cur, 'tex')), TD = texSet(M, S.tex, path.join(cur, 'tex'), 'd'), TM = texSet(M, 1024, path.join(cur, 'tex'), 'm');
     for(const x in got) delete got[x];
     const page = await browser.newPage(); page.setDefaultTimeout(900000); await page.goto(`http://127.0.0.1:${PORT}/page.html`); await page.waitForFunction(() => window._ready);
-    const r = await page.evaluate(([u, f, L, tx]) => window._conv(u, f, L, tx), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:S.err ?? 0.05, base:S.lodBase, bake:!!S.out }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose, bake:true }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose, bake:true }, { name:'m', tris:S.m, err:0.25, loose:S.loose, bake:true }], !!M.color]); await page.close();
+    const r = await page.evaluate(([u, f, L, tx, ct]) => window._conv(u, f, L, tx, ct), ['/w/' + encodeURIComponent(model), fbx, [{ name:'d', tris:S.tris, err:S.err ?? 0.05, base:S.lodBase, bake:!!S.out }, { name:'l', share:0.18, min:4000, skip:40000, err:0.1, loose:S.loose, bake:true, force:!!S.rebake }, { name:'f', share:0.03, min:1500, skip:40000, err:0.3, loose:S.loose, bake:true, force:!!S.rebake }, { name:'m', tris:S.m, err:0.25, loose:S.loose, bake:true, force:!!S.rebake }], !!M.color, S.cut || 0]); await page.close();
     // Z424 a level as written: its own mesh and maps, or — when baked — the simplified shape on new charts and the maps baked onto them
     let TB = null; const baked = [], dir = path.join(cur, 'tex');
     const level = async (x, T, px, hd) => { const L = got[x]; if(!L || !L.bake) return { G:L, T };

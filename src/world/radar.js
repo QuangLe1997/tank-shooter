@@ -3,8 +3,9 @@
 //   that sweeps round without stopping, red aviation lights blinking at the top; on the ground a white radome, satellite dishes on tripods,
 //   whip masts, equipment cabins with A/C units and a generator. Held by two twin-barrel AA guns that swing round and hose you, plus the usual
 //   wire, gate, signs and garrison. Bring the tower down (it topples) and the enemy artillery loses its eyes: fewer barrages, fewer shells, wide of the mark.
+//   Z425 the ground pieces are real scans: the radome on its tower, an equipment shelter, a radar truck, a field generator, two dishes.
 import * as THREE from 'three';
-import { SUPPLYB } from '../../config.js';
+import { SCENERY, SUPPLYB } from '../../config.js';
 import { B3, MOBILE, S, SUPPLY, _xf, aoeDamage, bigExplode, burst, heightAt, kit, sfx, spawnBullet, spawnDebris, spawnPart, playerSeen, dressAAGun } from '../hub.js';
 
 const CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
@@ -51,14 +52,16 @@ export function aaGun(){ const g=new THREE.Group(), K=kit(); K.add('metal', CY(0
   const M=kit(); M.add('paint', B3(1.6,0.7,1.3,0,0.35,0), 0x56603a); M.add('paint', B3(1.8,0.9,0.06,0,0.85,0.75), 0x4e5834); for(const s of [-0.55,0.55]) M.add('metal', B3(0.45,0.12,0.45,s,0.75,-0.55), 0x2a2a28);
   for(const s of [-0.22,0.22]){ M.add('metal', CY(0.06,0.07,3.2,8,s,1.0,1.9,Math.PI/2), 0x2a2a28); M.add('metal', CY(0.1,0.1,0.35,8,s,1.0,3.5,Math.PI/2), 0x1e1e1c); M.add('metal', B3(0.22,0.3,0.7,s,1.0,0.5), 0x3a3a36); }
   const top=M.bake(true); T.add(top); const mz=new THREE.Object3D(); mz.position.set(0,1.0,3.7); T.add(mz); g.userData.muzzle=mz; dressAAGun(g); return g; }   // Z424 the real gun in its pit
-// ground clutter for the compound decor kit: radome, dishes, masts, cabins, generator
+// ground clutter for the compound decor kit: the whip masts (Z425 the radome, the shelter, the radar truck, the generator and the dishes are pieces
+//   of the base now — drawn below, each wearing its scan once it is in: world/scenery.js realSupply, SCENERY.supply.yard)
 export function radome(){ const K=kit(); K.add('paint', _xf(new THREE.SphereGeometry(3.2,24,16,0,Math.PI*2,0,Math.PI*0.62),0,3.3,0), 0xeceae2); K.add('conc', CY(2.9,3.1,2.1,24,0,1.05,0), 0xb4b0a6); K.add('metal', B3(1.0,1.8,0.06,0,0.9,3.02), 0x2a2e26); return K.bake(true); }   // the golf-ball radome
+export function shelterCabin(){ const K=kit(); K.add('paint', B3(5.8,2.5,2.4,0,1.25,0), 0x56603a); K.add('metal', B3(0.9,0.8,0.6,1.6,2.9,0), 0x8a8c84); K.add('metal', B3(0.9,1.9,0.05,-1.8,0.95,1.21), 0x2a2e26); return K.bake(true); }   // an equipment shelter with its A/C
+export function genset(){ const K=kit(); K.add('paint', B3(3.0,1.6,1.4,0,0.8,0), 0x6a6e52); K.add('metal', CY(0.08,0.08,1.2,6,1,2.2,0), 0x2a2826); return K.bake(true); }   // a generator + its exhaust
+export function dishMount(h){ const K=kit(), r=h/3; for(const a of [0,2.1,4.2]) K.add('metal', _xf(new THREE.BoxGeometry(0.08,1.9,0.08),Math.sin(a)*0.5,0.9,Math.cos(a)*0.5,Math.cos(a)*0.25,0,-Math.sin(a)*0.25), 0x5a5a56);
+  K.add('paint', _xf(new THREE.SphereGeometry(r,18,8,0,Math.PI*2,0,0.75),0,2.2,0,-1.0,0.6,0), 0xe0e0d8); K.add('metal', CY(0.04,0.04,r*1.1,5,0.3,2.6,0.4,-0.7), 0x3a3a36);
+  const g=K.bake(true); g.userData.s=h/SCENERY.models.sat_dish.h; return g; }   // a dish on its tripod, h m tall (its scan stood as tall)
 export function radarYard(K){
-  for(const [x,z,r] of [[8.5,-8,1.4],[11,-4,1.0]]){ for(const a of [0,2.1,4.2]) K.add('metal', _xf(new THREE.BoxGeometry(0.08,1.9,0.08),x+Math.sin(a)*0.5,0.9,z+Math.cos(a)*0.5,Math.cos(a)*0.25,0,-Math.sin(a)*0.25), 0x5a5a56);
-    K.add('paint', _xf(new THREE.SphereGeometry(r,18,8,0,Math.PI*2,0,0.75),x,2.2,z,-1.0,0.6,0), 0xe0e0d8); K.add('metal', CY(0.04,0.04,r*1.1,5,x+0.3,2.6,z+0.4,-0.7), 0x3a3a36); }   // dishes
-  for(const [x,z,h] of [[-13,6,9],[13,7,7],[4,-11,11]]) K.add('metal', CY(0.05,0.08,h,6,x,h/2,z), 0x4a4c46);   // whip masts
-  for(const [x,z] of [[-8,8],[-3,9.5]]){ K.add('paint', B3(5.8,2.5,2.4,x,1.25,z), 0x56603a); K.add('metal', B3(0.9,0.8,0.6,x+1.6,2.9,z), 0x8a8c84); K.add('metal', B3(0.9,1.9,0.05,x-1.8,0.95,z+1.21), 0x2a2e26); for(const ox of [-2.8,2.8]) K.add('metal', B3(0.08,0.08,7,x+ox,0.08,z+4.5), 0x2a2a28); }   // cabins + cable runs
-  K.add('paint', B3(3.0,1.6,1.4,5,0.8,9), 0x6a6e52); K.add('metal', CY(0.08,0.08,1.2,6,6,2.2,9), 0x2a2826); }   // generator + exhaust
+  for(const [x,z,h] of [[-13,6,9],[13,7,7],[4,-11,11]]) K.add('metal', CY(0.05,0.08,h,6,x,h/2,z), 0x4a4c46); }   // whip masts
 // the tower topples: rotating about its foot toward `dir`, then a blast where it hits
 export function toppleTower(T, dir, now){ T.fall={ t:0, dir, done:false, sx:Math.sin(dir), sz:Math.cos(dir) }; }
 export function updateTopple(T, dt){ const F=T.fall; if(!F || F.done) return; F.t+=dt; const k=Math.min(1, F.t/1.8), e=k*k, a=e*1.45;

@@ -1,7 +1,7 @@
 // combat/siege-rocket.js — SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius
 import * as THREE from 'three';
-import { AIM } from '../../config.js';
-import { GLOW, GUNS, MOBILE, PAD, S, _v, aheadTarget, aimTarget, barrelFixed, clampFieldXZ, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
+import { AIM, REALTURRET } from '../../config.js';
+import { GLOW, GUNS, MOBILE, PAD, S, _v, aheadTarget, aimTarget, barrelFixed, clampFieldXZ, dressRound, enemies, equippedGun, heightAt, muzzleLight, playerRange, ringPulse, scene, spawnPart } from '../hub.js';
 
 // ----- SIEGE ROCKET: a lobbed shell that plants a 2s fuse on landing, then wipes a big radius -----
 export const rockets=[], fuses=[];
@@ -19,8 +19,8 @@ export function makeRocketMesh(){
   const eng=new THREE.Mesh(G(THREE.CylinderGeometry, 0.18,0.3,0.28,16), new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffcaa0,emissiveIntensity:2.2})); eng.position.y=-1.2; g.add(eng);                       // glowing nozzle
   const plume =new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe6a0,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false})); plume.scale.setScalar(2.1);  plume.position.y=-1.7;  g.add(plume);    // bright core flame
   const plume2=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff6a20,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false})); plume2.scale.setScalar(1.4); plume2.position.y=-2.15; g.add(plume2);   // trailing flame
-  g.userData.plume=plume; g.userData.plume2=plume2;
-  return g;
+  g.userData.plume=plume; g.userData.plume2=plume2; g.userData.body=g.children.filter(o=>o.isMesh);
+  return dressRound(g, REALTURRET.siege.len, 'siege', true, 0.45);   // Z425 the finned tactical rocket scan in place of the drawn body (its flames stay)
 }
 // ARC MORTAR shell — a compact glowing round (smaller than the SIEGE rocket); flies the same arc + leaves the same fire trail
 export function makeMortarShell(){
@@ -30,8 +30,8 @@ export function makeMortarShell(){
   const band=new THREE.Mesh(G(THREE.CylinderGeometry, 0.235,0.235,0.16,14), new THREE.MeshStandardMaterial({color:0xffc24a,emissive:0xff9a18,emissiveIntensity:0.7,metalness:0.4,roughness:0.5})); band.position.y=0.16; g.add(band);   // glowing band
   for(let k=0;k<4;k++){ const fin=new THREE.Mesh(G(THREE.BoxGeometry, 0.3,0.24,0.04), new THREE.MeshStandardMaterial({color:0x2a2e26,metalness:0.6})); fin.position.y=-0.42; fin.rotation.y=k*1.5708; g.add(fin); }
   const ex=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffd27a,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false})); ex.scale.setScalar(1.15); ex.position.y=-0.62; g.add(ex);
-  g.userData.plume=ex; g.userData.plume2=ex;
-  return g;
+  g.userData.plume=ex; g.userData.plume2=ex; g.userData.body=g.children.filter(o=>o.isMesh);
+  return dressRound(g, REALTURRET.mortar.len, 'mortar', true, 0.17);   // Z425 the finned mortar bomb scan (ours, the fire teams', the towers')
 }
 // dedicated ENEMY ARTILLERY missile — bigger & menacing: dark hull, glowing red warhead, hazard band, swept fins, fierce plume
 // Z218 the enemy artillery rocket — a real 122 mm field rocket: long olive-drab body, steel ogive nose with a fuse, a red HE band + stencil band,
@@ -46,12 +46,13 @@ function artRocketTemplate(){ if(_artRk) return _artRk; const g=new THREE.Group(
   const noz=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.12,0.22,14), dk); noz.position.y=-1.36; g.add(noz);
   for(let k=0;k<4;k++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.46,0.3), dk); const a=k*Math.PI/2; f.position.set(Math.cos(a)*0.3,-1.06,Math.sin(a)*0.3); f.rotation.y=-a; g.add(f); }   // tail fins
   const ring=new THREE.Mesh(new THREE.TorusGeometry(0.18,0.025,6,16), dk); ring.rotation.x=Math.PI/2; ring.position.y=-1.24; g.add(ring);
+  for(const o of g.children) o.userData.drawn=true;   // (Z425 the clones hide these once the 122 mm rocket scan is on)
   _artRk=g; return g; }
 export function makeArtMissileMesh(){ const g=artRocketTemplate().clone();
   const tongue=new THREE.Mesh(new THREE.ConeGeometry(0.15,1.5,10,1,true), new THREE.MeshBasicMaterial({ color:0xffc070, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); tongue.rotation.x=Math.PI; tongue.position.y=-2.2; g.add(tongue); g._tongue=tongue;
   const inner=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.8,8,1,true), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); inner.rotation.x=Math.PI; inner.position.y=-1.85; g.add(inner); g._inner=inner;
   const glow=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffd8a0, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false })); glow.scale.setScalar(1.4); glow.position.y=-1.5; g.add(glow); g._plume=glow;
-  g.scale.setScalar(1.25); return g; }
+  g.scale.setScalar(1.25); return dressRound(g, REALTURRET.art.len, 'art', true, 0.18); }   // Z425 the 122 mm field rocket scan
 export const _RUP=new THREE.Vector3(0,1,0), _rdir=new THREE.Vector3();
 // where a SIEGE ROCKET will land — DESKTOP: the mouse cursor; MOBILE / no pointer: auto-lock nearest enemy → aim direction
 export function rocketTarget(){

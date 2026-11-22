@@ -1,2 +1,6 @@
 Z424 — the rockets and missiles in flight (Meshy community, CC0; packed by tools/scene-import.mjs, its maps baked onto a 3k-triangle copy)
 - missile.glb: "MK-4F Missile" — Meshy_AI_MK_4F_Missile_1121184459_texture.glb
+Z425 (Meshy community, CC0; batch ~/Downloads/3dnew/z425)
+- rocket122.glb: a 122 mm field rocket, "Olive Sentinel" — meshy.ai/posts/01a1e0da-5cef-72b4-b393-851c664e8681
+- tactical.glb: a finned tactical rocket — meshy.ai/posts/01a1deb7-afbe-71cc-a252-0ce2bc7931bd
+- mortar.glb: a finned mortar bomb (the stump it stood in for its photo cut off: spec cut 0.27) — meshy.ai/posts/019db9c6-508b-7f56-b049-a8dd3b5d2f0e

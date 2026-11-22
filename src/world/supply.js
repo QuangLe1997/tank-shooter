@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE, SCENERY, FUEL_TANK } from '../../config.js';
-import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
+import { ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, HULL_HL, HULL_HW, MOBILE, S, TANK_SCALE, _R, _mergeColored, _xf, aaGun, addCoins, addDiamonds, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, cMod, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, diffRewardMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, loopRewardMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -268,7 +268,9 @@ function lattice(K, x, z, h){ const w=0.55, c=0x56584f; for(const [sx,sz] of [[-
 const RADAR_R=21;
 function buildRadar(s){ flattenPad(s[0], s[1], RADAR_R*0.95, RADAR_R*1.35); const B=newBase('radar', s[0], s[1], RADAR_R, 1);
   const tw=piece(B, 'radartower', radarTower(), 0, -2, 0, { r:3.0 }, true); B.tower=tw; B.head=tw.mesh.userData.head;
-  piece(B, 'radome', radome(), -9.5, -6, 0, { r:3.3 }); for(const [lx,lz] of [[-12.5,1.5],[8.5,3]]) piece(B, 'aagun', aaGun(), lx, lz, Math.PI*0.1, { r:2.8 });   // (Z424 the pit's ring: was 1.9, the bare mount; the west pit off the cabin it stood in, was −8, 6.5)
+  B.dome=piece(B, 'radome', radome(), -9.5, -6, 0, { r:3.0 }); for(const [lx,lz] of [[-12.5,1.5],[8.5,3]]) piece(B, 'aagun', aaGun(), lx, lz, Math.PI*0.1, { r:2.8 });   // (Z424 the pit's ring: was 1.9, the bare mount; the west pit off the cabin it stood in, was −8, 6.5)
+  piece(B, 'shelter', shelterCabin(), -10, 9, 0, { r:2.0, hw:1.25, hl:3.0, across:true }); piece(B, 'radartruck', shelterCabin(), -5.5, 5.5, Math.PI/2, { r:2.2, hw:1.3, hl:4.3, across:true });   // Z425 the yard's pieces stand and stop you (the cabins were decor you drove through)
+  piece(B, 'genset', genset(), 5.5, 9.5, 0, { r:1.2, hw:0.75, hl:1.6, across:true }); for(const [lx,lz,ry,h] of [[8.5,-8,-0.6,4.2],[11,-4,0.4,3.2]]) piece(B, 'dish', dishMount(h), lx, lz, ry, { r:h*0.3 });
   const K=kit(); radarYard(K);   // (Z424 the AA guns bring their own pits: world/real-turrets.js dressAAGun)
   const SG=[['military',-6,16.2,0],['radar',6,16.2,0],['radar',3,-1,0,1.3],['mines',-16.1,0,-Math.PI/2],['mines',16.1,-4,Math.PI/2],['military',0,-15.1,Math.PI]];
   signPosts(K, SG); const nm=gate(K, 16, 8, 'nameR', B);
@@ -329,10 +331,11 @@ function pieceDown(b){ const B=b.supply, pos={x:b.x,z:b.z}, gy=heightAt(b.x,b.z)
   if(b.kind==='radartower'){ const p=S.player, dir=p ? Math.atan2(b.x-p.pos.x, b.z-p.pos.z) : Math.random()*6.283; toppleTower(b, dir, now); bigExplode(pos, 0xffd27a, 2.0); for(let k=0;k<(MOBILE?8:16);k++) spawnPart(b.x, gy+18*Math.random()+2, b.z, _R(-6,6), _R(2,8), _R(-6,6), { color:0x9fd8ff, size:0.25, life:0.6, grav:-14, drag:1 });   // shorting electrics
     char(0.35); B.fires.push({ x:b.x, z:b.z, y:gy+1, t:20, s:1.0 }); sfx('bigexplode', pos); }
   else if(b.kind==='aagun'){ bigExplode(pos, 0xff8a3a, 1.4); fireball(pos, 1.0); char(0.25); b.mesh.userData.turret && (b.mesh.userData.turret.rotation.z=0.5); cookOff(b.x, b.z, 2, 3, 25); }
-  else if(b.kind==='radome'){ burst(pos, 0xeceae2, 14, 7, {y:gy+3, life:0.7, size:0.6, grav:-14, drag:1.2, up:3}); b.mesh.scale.y*=0.35; char(0.5); sfx('explode', pos); }
+  else if(b.kind==='radome'){ burst(pos, 0xeceae2, 14, 7, {y:gy+3, life:0.7, size:0.6, grav:-14, drag:1.2, up:3}); char(0.5); sfx('explode', pos);
+    if(b.mesh.userData.real){ const p=S.player; toppleTower(b, p ? Math.atan2(b.x-p.pos.x, b.z-p.pos.z) : Math.random()*6.283, now); bigExplode(pos, 0xffd27a, 1.4); } else b.mesh.scale.y*=0.35; }   // Z425 the radome's tower goes over as the radar's does
   else if(b.kind==='fueltank' || b.kind==='tanker'){ const F=b.kind==='fueltank' ? FUEL_TANK.steel : FUEL_TANK.rail;   // Z414 the base's fuel goes up the way the farm's does and is gone: no charred hulk, its collider and its own GPU data with it
     fuelBlast(b.x, b.z, F, now); fuelChain(b, F); dropPiece(b); B.fires.push({ x:b.x, z:b.z, y:gy+0.6, t:FUEL_TANK.burn, s:b.kind==='fueltank'?1.6:1.0 }); sfx('bigexplode', pos); }   // (the spilt fuel burns a moment where it stood)
-  else if(b.kind==='supplytruck'){ bigExplode(pos, 0xff8a3a, 2.0); fireball(pos, 1.8); decalScorch(b.x,b.z,6,1); aoeDamage(b.x, b.z, 5, 50, false, now, 'HE'); for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x3a2a20);
+  else if(b.kind==='supplytruck' || b.kind==='radartruck'){ bigExplode(pos, 0xff8a3a, 2.0); fireball(pos, 1.8); decalScorch(b.x,b.z,6,1); aoeDamage(b.x, b.z, 5, 50, false, now, 'HE'); for(let k=0;k<3;k++) spawnDebris(pos, 1.1, 0x3a2a20);
     char(0.25); b.mesh.scale.y*=0.7; b.mesh.rotation.z=_R(-0.15,0.15); B.fires.push({ x:b.x, z:b.z, y:gy+1.2, t:22, s:1.2 }); cookOff(b.x, b.z, 3, 5, 30); }
   else if(b.kind==='bunker'){ bigExplode(pos, 0xffb050, 3.4); fireball(pos, 3.0); shockDome(b.x, b.z, 18, 0xffd8a0); decalScorch(b.x,b.z,11,1); deformCrater(b.x,b.z,3.4,0.6); cookOff(b.x, b.z, MOBILE?5:9, 10, 45);
     char(0.3); b.mesh.scale.y*=0.5; b.mesh.position.y-=0.4; B.fires.push({ x:b.x, z:b.z, y:gy+1.5, t:30, s:1.5 }); for(let k=0;k<4;k++) spawnDebris(pos, 1.3, 0x8a867c); S.shake=Math.min(4.5, S.shake+2.4); sfx('bigexplode', pos); }
@@ -356,7 +359,7 @@ export function campLost(camp){ const B=SUPPLY.bases.find(q=>q.camp===camp); if(
 export function updateSupply(dt, now){ const p=S.player; if(!p || S.mode!=='playing') return;
   aviationMat().emissiveIntensity = Math.floor(now*1.2)%2 ? 0.2 : 2.6;   // Z197 aviation lights blink
   for(const B of SUPPLY.bases){
-    if(B.kind==='radar'){ if(B.tower && B.tower.fall) updateTopple(B.tower, dt); else if(B.head && B.alive) B.head.rotation.y+=dt*(B.alarm?1.9:1.15);   // the array never stops sweeping
+    if(B.kind==='radar'){ if(B.dome && B.dome.fall) updateTopple(B.dome, dt); if(B.tower && B.tower.fall) updateTopple(B.tower, dt); else if(B.head && B.alive) B.head.rotation.y+=dt*(B.alarm?1.9:1.15);   // the array never stops sweeping
       if(B.alive) for(const pc of B.pieces) if(pc.kind==='aagun') updateAAGun(pc.mesh, pc, dt, now, p); }
     if(B.fence && Math.hypot(p.pos.x-B.x, p.pos.z-B.z) < B.R+16) fenceCollide(B, p, now);   // Z205 the wire is a real barrier: ram it hard or shoot it down
     for(let i=B.fires.length-1;i>=0;i--){ const F=B.fires[i]; F.t-=dt; if(F.t<=0){ B.fires.splice(i,1); continue; } if(Math.random()>(MOBILE?0.35:0.7)) continue; const k=Math.min(1,F.t/8);

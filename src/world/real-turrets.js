@@ -3,7 +3,8 @@
 //   cut in two: the pit stays, the gun turns), and the rockets and missiles in flight (one missile scan) are real models now. Each mount keeps its drawn rig — the yaw group that turns, the
 //   recoil groups and the muzzle points the rounds leave from — only its meshes hide once the model is in; the muzzles move to the model's own barrel
 //   tip. A model's barrel is found by itself (the point of its upper part farthest from its turning axis) and turned onto +z, so no file needs a
-//   hand-set heading. Until a file is in, or without it, the drawn gun stays.
+//   hand-set heading. Until a file is in, or without it, the drawn gun stays. Z425 the enemy artillery's rockets, our SIEGE rockets and every mortar
+//   bomb wear their own scans too.
 import * as THREE from 'three';
 import { REALTURRET } from '../../config.js';
 import { loadGLTF } from '../hub.js';
@@ -42,14 +43,18 @@ export function dressAAGun(g){ const C = REALTURRET.aa, T0 = g.userData.turret, 
 
 // a rocket / missile in flight (its group's +z is its nose): the missile scan at the drawn body's length; the drawn body (g.userData.body) hides, its
 //   flame, glow and beacon stay. Prepared once: the scan's long axis laid on +z, its nose (the narrow end — the fins make the tail wide) forward
-let RP = null, _rp = null;
-function realRound(){ if(_rp) return _rp; return (_rp = loadGLTF(REALTURRET.proj.k).then(gl => { if(!gl) return null; let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; }); if(!src) return null;
+// Z425 one scan per kind of round (REALTURRET[kind]): the missile, the 122 mm field rocket, the tactical rocket, the mortar bomb — a scan stood nose up
+//   (nose:'up') is laid nose first without the width test (a teardrop bomb is widest near its nose); up: a round whose group flies along +y (the
+//   rockets and shells of combat/siege-rocket.js), off: where along it the scan's middle sits; meshes flagged userData.drawn hide too (a cloned template)
+const RP = {}, _rp = {};
+function realRound(kind){ const C = REALTURRET[kind]; if(_rp[kind]) return _rp[kind]; return (_rp[kind] = loadGLTF(C.k).then(gl => { if(!gl) return null; let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; }); if(!src) return null;
   const g = src.geometry.clone().applyMatrix4(src.matrixWorld); g.computeBoundingBox(); let b = g.boundingBox; const s = b.getSize(new THREE.Vector3());
   if(s.x >= s.y && s.x >= s.z) g.rotateY(-Math.PI / 2); else if(s.y >= s.x && s.y >= s.z) g.rotateX(Math.PI / 2);   // the long axis onto z
   g.computeBoundingBox(); b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -(b.min.y + b.max.y) / 2, -(b.min.z + b.max.z) / 2); g.computeBoundingBox(); b = g.boundingBox;
   const P = g.attributes.position, L = b.max.z - b.min.z; let wTail = 0, wNose = 0; for(let i = 0; i < P.count; i++){ const z = P.getZ(i), r = Math.hypot(P.getX(i), P.getY(i)); if(z > b.max.z - L * 0.15) wNose = Math.max(wNose, r); else if(z < b.min.z + L * 0.15) wTail = Math.max(wTail, r); }
-  if(wNose > wTail) g.rotateY(Math.PI);   // the fins were at +z: turn it nose-first
-  g.computeBoundingBox(); g.computeBoundingSphere(); const mat = src.material.clone(); mat.envMapIntensity = 0.8; return (RP = { geo:g, mat, len:L }); })); }
-export function dressRound(g, len){ if(typeof window === 'undefined' || g.userData.realRound) return g; g.userData.realRound = true;
-  const put = R => { if(!R) return; const m = new THREE.Mesh(R.geo, R.mat); m.scale.setScalar(len / R.len); m.castShadow = false; g.add(m); for(const b of g.userData.body || []) b.visible = false; };
-  if(RP) put(RP); else realRound().then(put); return g; }
+  if(C.nose !== 'up' && wNose > wTail) g.rotateY(Math.PI);   // the fins were at +z: turn it nose-first
+  g.computeBoundingBox(); g.computeBoundingSphere(); const mat = src.material.clone(); mat.envMapIntensity = 0.8; return (RP[kind] = { geo:g, mat, len:L }); })); }
+export function dressRound(g, len, kind = 'proj', up = false, off = 0){ if(typeof window === 'undefined' || g.userData.realRound || !REALTURRET[kind]) return g; g.userData.realRound = true;
+  const put = R => { if(!R) return; const m = new THREE.Mesh(R.geo, R.mat); m.scale.setScalar(len / R.len); if(up){ m.rotation.x = -Math.PI / 2; m.position.y = off; } else m.position.z = off; m.castShadow = false; g.add(m);
+    for(const b of g.userData.body || []) b.visible = false; g.traverse(o => { if(o.userData.drawn) o.visible = false; }); };
+  if(RP[kind]) put(RP[kind]); else realRound(kind).then(put); return g; }

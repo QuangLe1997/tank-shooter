@@ -33,6 +33,7 @@ for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/model
 MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
 for(const k of ['cannon','rws','aa']) MODEL_FILES['turret_' + k] = 'assets/models/real/turret/' + (PHONE ? 'm/' : '') + k + '.glb';   // Z424 the base's guard guns (phones: the light copy)
 MODEL_FILES[REALTURRET.proj.k] = 'assets/models/real/proj/missile.glb';   // Z424 the rockets' and missiles' body in flight
+for(const r of ['art','siege','mortar']) MODEL_FILES[REALTURRET[r].k] = 'assets/models/real/proj/' + REALTURRET[r].file + '.glb';   // Z425 the 122 mm rocket, our SIEGE rocket, the mortar bomb
 for(const k of ['wonder_taj','wonder_colosseum','wonder_djenne','wonder_volklingen','wonder_windmill']) MODEL_FILES[k] = 'assets/models/real/wonder/' + k + '.glb';   // Z284 the wonders (Z410 + the Dutch windmill)
 for(const k of ['deer','zebra','giraffe','elephant','reindeer','bear']) MODEL_FILES['wild_' + k] = 'assets/models/real/wild/' + k + '.glb';   // Z286 real wildlife (rigged, walking)
 for(const k of ['ar','lmg','minigun','shotgun','sniper','rpg','gl','flamer','energy','ak','m4','mp5','rust','dmr','rail','saw']) MODEL_FILES['inf_' + k] = 'assets/models/real/gun/inf/' + k + '.glb';   // Z295 the infantry arsenal (Z387 + the four downloaded scans)

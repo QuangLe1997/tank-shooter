@@ -42,3 +42,6 @@ Z387 the soldier's four new hand weapons (assets/models/real/gun/inf, plain GLBs
 - saw.glb: "Rusty Sawgun" — Meshy_AI_Rusty_Sawgun_20260504_texture_fbx.zip
 - Z420–Z422 (Meshy community, CC0 / CC BY 4.0; batch ~/Downloads/3dnew, codes N00–N93 in the review file): the forts' bunkers, the fuel store, the guard posts gt_*, the
   set pieces (sphinx, ice castle, lava rocks, castle pieces, ruins, works); temple.glb = a ruined Greek temple (CC0, meshy.ai/posts/0195067d-9ca9-7e9a-89f8-d643717187fc)
+- Z425 the radar station's yard (Meshy community, CC0; batch ~/Downloads/3dnew/z425): radar_dome.glb = "weather radar station" (meshy.ai/posts/01a1ac7a-d60f-719c-8f36-f8efe671b990),
+  mil_shelter.glb = a military equipment shelter (meshy.ai/posts/01a1cdea-6c6f-715f-bac8-7def6c88c36f), radar_truck.glb = "Radar" (meshy.ai/posts/radar-01a1ede8-b04b-703f-88ee-f44f01e6ce19),
+  field_gen.glb = "Military Field Generator" (meshy.ai/posts/military-field-generator-01a0085c-3754-7e68-b685-6347509bb6a4), sat_dish.glb = "big satellite dish" (meshy.ai/posts/019826a2-1072-7c04-b094-11e13d82bc42)
