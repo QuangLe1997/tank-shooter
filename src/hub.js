@@ -2,6 +2,7 @@
 // Every system module imports what it needs from here (live bindings); data/* modules come first and are pure.
 // RULE: add a new module = add ONE line here, at the position where its top-level code may run.
 export * from './data/world.js';
+export * from './data/scene-solids.js';   // Z433 arches, gates, ruins: their footprint at body height
 export * from './data/text-vi.js';
 export * from './data/player.js';
 export * from './data/guns.js';

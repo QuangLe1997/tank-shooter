@@ -1584,7 +1584,7 @@ export const TROOPER = {
 //   skyline beyond the fence, one landmark the field turns on, framing pairs, groves, a rail siding, a pole line, a tank farm, rocks to fight from.
 //   lod: a model is drawn whole (the near file, fetched once the camera comes within mid + near m) up to mid m, then its mid copy, past far m its far copy
 //   ([m, × its radius] — the larger) · models: size (h = height or w = widest side, m), ar = its x : y : z, sink = share of its height below ground, solid =
-//   what stops a tank / a man (box: its footprint × k · pillars: the two ends of an arch, k of its width each · disc: a circle k × its width · r: a trunk m ·
+//   what stops a tank / a man (Z433 cut: its measured footprint at body height, data/scene-solids.js — an arch's legs, its opening free · box: its footprint × k · pillars: the two ends of an arch, k of its width each · disc: a circle k × its width · r: a trunk m ·
 //   null: scenery only), one = a light scan with no distance copies, env, lava = the melt's share of its width (a lava pit burns like a pool), yaw = turn so its front (+Z) faces the way it is set ·
 //   biomes: what each battlefield is built from — at: far (beyond the fence at bearing a, d m out) · edge (inside it, inset m) · free (open ground; north:
 //   the enemy half) · pair (either side of the piece `of`, side m across, fwd m ahead of its front) · line (n along a straight line gap m apart) · cluster
@@ -1598,15 +1598,15 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
   models:{
     volcano:{ one:true, h:44, ar:[2.44, 1, 2.41], sink:0.08, solid:null },
     lava_pit:{ one:true, w:24, ar:[6.08, 1, 6.34], sink:0.18, solid:null, lava:0.34 },
-    lava_arch:{ one:true, h:13, ar:[1.71, 1, 0.9], sink:0.04, solid:{ pillars:0.26 } },
+    lava_arch:{ one:true, h:13, ar:[1.71, 1, 0.9], sink:0.04, solid:{ cut:1 } },
     ice_peak:{ h:64, ar:[0.77, 1, 0.78], sink:0.05, solid:null },
-    sea_stack:{ one:true, h:12, ar:[1.52, 1, 1.39], sink:0.06, solid:{ box:0.6 } },
+    sea_stack:{ one:true, h:12, ar:[1.52, 1, 1.39], sink:0.06, solid:{ cut:1 } },
     rock_outcrop:{ w:24, ar:[4.88, 1, 2.68], sink:0.12, solid:{ box:0.62 } },
-    stone_ring:{ one:true, h:8, ar:[1.71, 1, 0.51], sink:0.02, solid:{ pillars:0.3 } },
-    mtn_gate:{ w:64, ar:[2.07, 1, 1.89], sink:0.05, solid:{ box:0.62 } },
-    temple:{ one:true, w:26, ar:[1.77, 1, 2.47], sink:0.03, solid:{ box:0.8 } },
+    stone_ring:{ one:true, h:8, ar:[1.71, 1, 0.51], sink:0.02, solid:{ cut:1 } },
+    mtn_gate:{ w:64, ar:[2.07, 1, 1.89], sink:0.05, solid:{ cut:1 } },
+    temple:{ one:true, w:26, ar:[1.77, 1, 2.47], sink:0.03, solid:{ cut:1 } },
     lion:{ w:6.2, ar:[0.68, 1, 1.17], sink:0, solid:{ box:0.92 } },
-    wall_breach:{ w:22, ar:[2.64, 1, 0.17], sink:0.02, solid:{ box:1 } },
+    wall_breach:{ w:22, ar:[2.64, 1, 0.17], sink:0.02, solid:{ cut:1 } },
     wt_lean:{ h:17, ar:[0.83, 1, 0.82], sink:0.02, solid:{ box:0.42 } },
     neon_tower:{ h:28, ar:[0.97, 1, 0.45], sink:0, solid:{ r:1.4 }, env:1 },
     radar_dish:{ h:25, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.55 } },
@@ -1639,26 +1639,26 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     gt_winter:{ h:18, ar:[0.53, 1, 0.61], sink:0.01, solid:null }, gt_broken:{ h:11, ar:[0.53, 1, 0.53], sink:0.01, solid:null },
     // Z422 the set pieces of the second batch (each land composed below), the radar station's lattice tower, the city's cell tower
     radar_lattice:{ one:true, h:24, ar:[0.35, 1, 0.24], sink:0, solid:null }, cell_tower:{ h:18, ar:[0.95, 1, 0.95], sink:0.01, solid:{ box:0.55 } },
-    gothic_gate:{ w:16, ar:[1.1, 1, 0.49], sink:0.02, solid:{ pillars:0.24 } }, moss_arch:{ one:true, h:8, ar:[0.83, 1, 0.28], sink:0.02, solid:{ pillars:0.3 } },
-    stone_gate:{ w:26, ar:[1.42, 1, 0.54], sink:0.03, solid:{ box:0.8 } }, ruin_overgrown:{ h:30, ar:[0.82, 1, 0.82], sink:0.03, solid:{ box:0.85 } },
+    gothic_gate:{ w:16, ar:[1.1, 1, 0.49], sink:0.02, solid:{ cut:1 } }, moss_arch:{ one:true, h:8, ar:[0.83, 1, 0.28], sink:0.02, solid:{ cut:1 } },
+    stone_gate:{ w:26, ar:[1.42, 1, 0.54], sink:0.03, solid:{ cut:1 } }, ruin_overgrown:{ h:30, ar:[0.82, 1, 0.82], sink:0.03, solid:{ cut:1 } },
     sphinx_great:{ w:46, ar:[1.06, 1, 3.06], sink:0.03, solid:{ box:0.8 } }, sphinx_small:{ one:true, h:4.2, ar:[0.63, 1, 1.71], sink:0.01, solid:{ box:0.9 } },
     ice_castle:{ w:60, ar:[1.1, 1, 0.7], sink:0.04, solid:{ box:0.8 }, env:1.2 }, duga_hall:{ w:24, ar:[1.67, 1, 1.71], sink:0.01, solid:{ box:0.95 } },
     water_tower_brick:{ h:20, ar:[0.24, 1, 0.26], sink:0, solid:{ r:1.6 } }, generator:{ one:true, w:5, ar:[1.35, 1, 1.35], sink:0, solid:{ box:0.9 } },
     crane_stack:{ h:34, ar:[0.52, 1, 0.25], sink:0, solid:{ box:0.7 } }, dam_gate:{ h:22, ar:[0.59, 1, 0.72], sink:0.02, solid:{ box:0.9 } },
     culvert:{ w:9, ar:[1.86, 1, 1.48], sink:0.12, solid:{ box:0.9 } }, tunnel_mouth:{ w:16, ar:[1.15, 1, 1.73], sink:0.05, solid:{ box:0.9 } },
-    rock_arch:{ w:18, ar:[2.0, 1, 1.42], sink:0.05, solid:{ box:0.7 } }, moss_archway:{ h:14, ar:[0.99, 1, 0.48], sink:0.03, solid:{ pillars:0.28 } },
+    rock_arch:{ w:18, ar:[2.0, 1, 1.42], sink:0.05, solid:{ cut:1 } }, moss_archway:{ h:14, ar:[0.99, 1, 0.48], sink:0.03, solid:{ cut:1 } },
     belfry:{ h:16, ar:[0.28, 1, 0.32], sink:0.01, solid:{ r:2.0 } }, lava_crater:{ one:true, w:20, ar:[4.48, 1, 4.52], sink:0.1, solid:null, lava:0.3 },
     lava_rock_a:{ one:true, w:4, ar:[1.68, 1, 1.58], sink:0.08, solid:{ disc:0.45 }, env:0.7 }, lava_rock_b:{ one:true, w:4, ar:[0.96, 1, 1.02], sink:0.08, solid:{ disc:0.45 }, env:0.7 },
-    lava_rock_c:{ one:true, w:6, ar:[1.61, 1, 1.03], sink:0.08, solid:{ disc:0.45 }, env:0.7 }, ember_ruin:{ one:true, w:14, ar:[2.17, 1, 1.7], sink:0.04, solid:{ box:0.6 } },
+    lava_rock_c:{ one:true, w:6, ar:[1.61, 1, 1.03], sink:0.08, solid:{ disc:0.45 }, env:0.7 }, ember_ruin:{ one:true, w:14, ar:[2.17, 1, 1.7], sink:0.04, solid:{ cut:1 } },
     gargoyle_wall:{ one:true, w:22, ar:[2.11, 1, 0.81], sink:0.03, solid:{ box:0.8 } }, keep_fortress:{ w:34, ar:[1.44, 1, 0.81], sink:0.02, solid:{ box:0.85 } },
     citadel_tower:{ h:18, ar:[0.68, 1, 0.72], sink:0.01, solid:{ r:4.0 } }, castle_wall:{ w:20, ar:[1.65, 1, 0.36], sink:0.03, solid:{ box:1 } },
-    gatehouse:{ w:26, ar:[2.35, 1, 1.21], sink:0.02, solid:{ pillars:0.3 } }, skeleton_block:{ h:26, ar:[0.96, 1, 0.58], sink:0.02, solid:{ box:0.85 } },
+    gatehouse:{ w:26, ar:[2.35, 1, 1.21], sink:0.02, solid:{ cut:1 } }, skeleton_block:{ h:26, ar:[0.96, 1, 0.58], sink:0.02, solid:{ box:0.85 } },
     corner_store:{ h:18, ar:[0.8, 1, 0.67], sink:0.01, solid:{ box:0.9 } }, road_barrier:{ w:7, ar:[2.75, 1, 2.13], sink:0.02, solid:{ box:0.8 } },
     tire_wall:{ w:6, ar:[2.64, 1, 0.6], sink:0.02, solid:{ box:0.9 } }, rebar_wall:{ w:7, ar:[2.35, 1, 0.74], sink:0.02, solid:{ box:0.9 } },
     // Z426 the rest of the 94 (the 23 left over): city blocks, castle pieces, a lighthouse, the relay outpost and the bunker door (the campaign's targets too)
-    block_white:{ w:20, ar:[1.42, 1, 1.17], sink:0.02, solid:{ box:0.9 } }, bastion_gate:{ w:14, ar:[1.25, 1, 0.67], sink:0.02, solid:{ pillars:0.28 } }, brownstone:{ h:22, ar:[0.58, 1, 0.57], sink:0.01, solid:{ box:0.92 } },
-    parapet:{ one:true, w:8, ar:[2.24, 1, 0.36], sink:0.02, solid:{ box:0.9 } }, horn_arch:{ w:22, ar:[1.23, 1, 0.9], sink:0.05, solid:{ disc:0.22 } }, iron_barricade:{ w:6, ar:[2.09, 1, 0.6], sink:0.02, solid:{ box:0.9 } },
-    scaffold_ruin:{ h:24, ar:[0.61, 1, 0.55], sink:0.01, solid:{ box:0.9 } }, lighthouse:{ h:22, ar:[0.46, 1, 0.46], sink:0.01, solid:{ disc:0.42 } }, relay_post:{ w:14, ar:[1.41, 1, 1.41], sink:0.02, solid:{ box:0.82 } },
+    block_white:{ w:20, ar:[1.42, 1, 1.17], sink:0.02, solid:{ box:0.9 } }, bastion_gate:{ w:14, ar:[1.25, 1, 0.67], sink:0.02, solid:{ cut:1 } }, brownstone:{ h:22, ar:[0.58, 1, 0.57], sink:0.01, solid:{ box:0.92 } },
+    parapet:{ one:true, w:8, ar:[2.24, 1, 0.36], sink:0.02, solid:{ box:0.9 } }, horn_arch:{ w:22, ar:[1.23, 1, 0.9], sink:0.05, solid:{ cut:1 } }, iron_barricade:{ w:6, ar:[2.09, 1, 0.6], sink:0.02, solid:{ box:0.9 } },
+    scaffold_ruin:{ h:24, ar:[0.61, 1, 0.55], sink:0.01, solid:{ cut:1 } }, lighthouse:{ h:22, ar:[0.46, 1, 0.46], sink:0.01, solid:{ disc:0.42 } }, relay_post:{ w:14, ar:[1.41, 1, 1.41], sink:0.02, solid:{ box:0.82 } },
     keep_medieval:{ h:24, ar:[0.52, 1, 0.93], sink:0.02, solid:{ box:0.85 } }, stone_block:{ one:true, w:10, ar:[2.18, 1, 1.46], sink:0.04, solid:{ box:0.95 } }, fountain_vintage:{ h:5, ar:[0.82, 1, 0.82], sink:0.02, solid:{ disc:0.45 } },
     bunker_door:{ w:10, ar:[1.38, 1, 1.34], sink:0.03, solid:{ box:0.88 } }, fountain_temple:{ w:12, ar:[1.4, 1, 0.54], sink:0.02, solid:{ box:0.6 } }, tower_mage:{ h:30, ar:[0.43, 1, 0.44], sink:0.01, solid:{ disc:0.4 } },
     wall_tall:{ one:true, w:10, ar:[1, 1, 0.23], sink:0.02, solid:{ box:0.95 } }, elevador:{ h:42, ar:[0.21, 1, 0.54], sink:0.01, solid:{ box:0.45 } },

@@ -1561,6 +1561,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'); const pr=fs.readFileSync('src/world/props.js','utf8'), a=pr.indexOf('export const COVER_SET'), blk=pr.slice(a, pr.indexOf('};', a));
   ok(a>0 && !/'pipes'|'logs'/.test(blk) && (blk.match(/\[\[/g)||[]).length>=15, 'no pipes or log piles in any battlefield\'s cover set');
   ok(!/bank:'logs'/.test(fs.readFileSync('config.js','utf8')), 'the hedgerow bank is not a log pile'); }
+// Z433 arches and gates stop a body with their legs, not their opening: colliders from each model's footprint at body height (data/scene-solids.js)
+{ const fs=await import('node:fs'); const C=await import('./config.js'), D=await import('./src/data/scene-solids.js'), sc=fs.readFileSync('src/world/scenery.js','utf8'), hub=fs.readFileSync('src/hub.js','utf8'), K=D.SCENE_CUT;
+  const arches=['rock_arch','stone_gate','lava_arch','gothic_gate','moss_arch','moss_archway','gatehouse','bastion_gate','stone_ring','mtn_gate'];
+  ok(arches.every(k=>K[k] && K[k].length>=2 && C.SCENERY.models[k] && C.SCENERY.models[k].solid && C.SCENERY.models[k].solid.cut) && Object.values(K).every(L=>L.every(b=>b.length===4 && b[2]>0 && b[3]>0 && Math.abs(b[0])<=0.7 && Math.abs(b[1])<=0.7)), 'every arch / gate stops bodies with its measured footprint');
+  const open=k=>{ const L=K[k]; for(let u=-0.12; u<=0.12; u+=0.01){ if(L.every(b=>Math.abs(u-b[0])>=b[2] || Math.abs(b[1])-b[3]>0.5)) return true; } return false; };   // a lane down its middle that no box crosses
+  ok(['rock_arch','lava_arch','gothic_gate','moss_archway','stone_gate'].every(open), 'the middle of an arch\'s opening is free (rock, lava, gothic, moss archway, stone gate)');
+  ok(/if\(C\.cut && SCENE_CUT\[p\.k\]\) for\(const \[u, v, a, b\] of SCENE_CUT\[p\.k\]\) box\(u \* D\.x, a \* D\.x, b \* D\.z, v \* D\.z\);/.test(sc) && /x:p\.x \+ lx \* c \+ lz \* sn, z:p\.z - lx \* sn \+ lz \* c/.test(sc) && /export \* from '\.\/data\/scene-solids\.js';/.test(hub), 'scenery builds the measured boxes in the model\'s own frame'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

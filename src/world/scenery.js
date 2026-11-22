@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK, FARSITES } from '../../config.js';
-import { AER, PLAIN_DROP, landform, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize } from '../hub.js';
+import { AER, PLAIN_DROP, landform, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize, SCENE_CUT } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -103,8 +103,9 @@ function plan(beats){ const PLAT = (landform(BIOME) || {}).form === 'plateau'; c
 // what stops a tank or a man: an oriented box (the obb that solid-shape.js pushes bodies out of), an arch's two feet, a trunk or a drum of a circle
 // Z393 a beat may stop things its own way (p.solid): a small scan in the field, where the same model on the skyline is scenery only
 function solids(p, lod, gy){ const C = p.solid || M(p.k).solid; if(!C) return; const D = sceneDims(p.k, p.s), c = Math.cos(p.ry), sn = Math.sin(p.ry), top = gy + D.y, out = [];
-  const box = (lx, hw, hl) => out.push({ x:p.x + lx * c, z:p.z - lx * sn, r:Math.max(0.5, Math.min(hw, hl)), obb:{ f:p.ry, hl:Math.max(0.3, hl), hw:Math.max(0.3, hw) } });
-  if(C.box) box(0, D.x / 2 * C.box, D.z / 2 * C.box);
+  const box = (lx, hw, hl, lz = 0) => out.push({ x:p.x + lx * c + lz * sn, z:p.z - lx * sn + lz * c, r:Math.max(0.5, Math.min(hw, hl)), obb:{ f:p.ry, hl:Math.max(0.3, hl), hw:Math.max(0.3, hw) } });
+  if(C.cut && SCENE_CUT[p.k]) for(const [u, v, a, b] of SCENE_CUT[p.k]) box(u * D.x, a * D.x, b * D.z, v * D.z);   // Z433 its real footprint at body height: an arch's legs, not its opening (data/scene-solids.js)
+  else if(C.box) box(0, D.x / 2 * C.box, D.z / 2 * C.box);
   else if(C.pillars){ const w = D.x * C.pillars; for(const sd of [-1, 1]) box(sd * (D.x / 2 - w / 2), w / 2, D.z / 2 * 0.9); }
   else if(C.disc) out.push({ x:p.x, z:p.z, r:Math.max(D.x, D.z) * C.disc });
   else if(C.r) out.push({ x:p.x, z:p.z, r:C.r * p.s });
