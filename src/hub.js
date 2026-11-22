@@ -14,6 +14,7 @@ export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on ever
 export * from './core/state.js';
 export * from './world/field.js';
 export * from './render/clouds.js';   // Z145 must load before any material patches its shader
+export * from './render/aerial.js';   // Z427 the height and distance haze (a shader hook of render/clouds.js)
 export * from './render/shafts.js';   // Z276 light shafts (before the renderer, which builds the pass)
 export * from './render/renderer.js';
 export * from './fx/battle-light.js';   // Z318 one palette, pulse clock and glowing-ring material for every gameplay light (before the rings built at load)
@@ -42,6 +43,7 @@ export * from './world/magma.js';   // Z258 the magma shader + the real volcano
 export * from './world/stone.js';   // Z259 photo stone (pyramids, cliffs)
 export * from './world/lava.js';   // Z187 volcanic caldera lava pools (runtime only)
 export * from './world/horizon.js';   // Z189 the world beyond the fence
+export * from './world/backdrop.js';   // Z427 the far ranges and the plain at the sky's depth
 export * from './world/biome.js';
 export * from './world/cover.js';
 export * from './world/rubble.js';   // Z193 broken obstacles leave a heap of their own material

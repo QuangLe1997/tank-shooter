@@ -1689,16 +1689,51 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
 export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10, arcs:10, keep:0.2,   // Z412 arcs: the horizon's instanced rings split by bearing (the camera culls the arcs behind it) · keep: share of triangles a skyline piece keeps (simplified; 50–300 m off)
     // stacks: the works' concrete chimneys left among the real pieces
   biomes:{
-    ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14 }, { k:'tree_cedar', lv:'f', n:46, h:[24, 36], r:[-8, 16], y:-3 } ] }, TUNDRA:'ARCTIC',
-    VOLCANO:{ skyline:true, rings:'peak', set:[ { k:'volcano', n:5, h:[78, 118], r:[0, 45], y:-16, hz:0.22 }, { k:'lava_arch', n:7, h:[30, 50], r:[-10, 22], hz:0.2 }, { k:'tree_twisted', n:24, h:[14, 22], r:[-12, 8], y:-3 } ] },
+    ARCTIC:{ set:[ { k:'ice_peak', n:7, h:[115, 180], r:[45, 85], y:-14 }, { k:'tree_cedar', lv:'f', n:64, h:[22, 34], r:[-80, 40], y:-3, clump:[9, 42] }, { k:'mil_shelter', lv:'f', n:6, w:[6, 6.5], r:[-50, 20], y:-0.5, clump:[2, 22] }, { k:'sat_dish', lv:'f', n:2, h:[4, 5], r:[-50, 20], y:-0.5, clump:[2, 18] } ] }, TUNDRA:'ARCTIC',
+    VOLCANO:{ skyline:true, rings:'peak', set:[ { k:'volcano', n:5, h:[78, 118], r:[0, 45], y:-16, hz:0.22 }, { k:'lava_arch', n:7, h:[30, 50], r:[-10, 22], hz:0.2 }, { k:'tree_twisted', n:24, h:[14, 22], r:[-80, 8], y:-3, clump:[6, 30] } ] },
     QUARRY:{ set:[ { k:'lighthouse', lv:'f', n:2, h:[24, 30], r:[0, 18], y:-2, hz:0.25 }, { k:'rock_outcrop', n:9, w:[120, 210], r:[30, 70], y:-10 }, { k:'sea_stack', n:7, h:[38, 70], r:[0, 30], hz:0.3 }, { k:'mtn_gate', n:1, w:[170, 200], r:[45, 60], y:-10 } ] },
-    CITADEL:{ set:[ { k:'mtn_gate', n:1, w:[180, 210], r:[48, 70], y:-10 }, { k:'tower_mage', lv:'f', n:3, h:[34, 48], r:[0, 24], y:-2 }, { k:'tree_pine', lv:'f', n:40, h:[18, 28], r:[-8, 14], y:-3 } ] },
-    MEADOW:{ set:[ { k:'keep_medieval', lv:'f', n:2, h:[26, 34], r:[0, 20], y:-2 }, { k:'tree_pine', lv:'f', n:46, h:[22, 34], r:[-10, 14], y:-3 }, { k:'tree_oak', lv:'f', n:24, h:[18, 26], r:[-6, 16], y:-3 }, { k:'tree_world', lv:'f', n:3, h:[40, 52], r:[0, 14], y:-3 },
+    CITADEL:{ set:[ { k:'mtn_gate', n:1, w:[180, 210], r:[48, 70], y:-10 }, { k:'tower_mage', lv:'f', n:3, h:[34, 48], r:[0, 24], y:-2 }, { k:'tree_pine', lv:'f', n:56, h:[18, 28], r:[-80, 40], y:-3, clump:[8, 40] }, { k:'ruin_house', n:8, h:[10, 14], r:[-60, 20], y:-1, clump:[2, 30] } ] },
+    MEADOW:{ set:[ { k:'keep_medieval', lv:'f', n:2, h:[26, 34], r:[0, 20], y:-2 }, { k:'tree_pine', lv:'f', n:60, h:[22, 34], r:[-80, 40], y:-3, clump:[9, 40] }, { k:'tree_oak', lv:'f', n:36, h:[16, 26], r:[-80, 30], y:-3, clump:[7, 34] }, { k:'tree_world', lv:'f', n:3, h:[40, 52], r:[0, 14], y:-3 },
+      { k:'ruin_house', n:10, h:[10, 14], r:[-60, 20], y:-1, clump:[3, 30] }, { k:'ruin_villa', n:3, w:[14, 18], r:[-60, 20], y:-1, clump:[3, 20] },
     ] },
-    SAVANNA:{ set:[ { k:'tree_world', lv:'f', n:14, h:[26, 38], r:[-8, 16], y:-3 }, { k:'tree_oak', lv:'f', n:10, h:[16, 24], r:[-6, 14], y:-3 }, { k:'rock_outcrop', n:7, w:[70, 130], r:[10, 45], y:-8 } ] },
-    DESERT:{ set:[ { k:'rock_outcrop', n:8, w:[90, 170], r:[20, 60], y:-10 }, { k:'wt_lean', lv:'f', n:4, h:[28, 36], r:[-6, 8], y:-3 }, { k:'tree_twisted', n:10, h:[12, 18], r:[-8, 8], y:-3 } ] },
+    SAVANNA:{ set:[ { k:'tree_world', lv:'f', n:18, h:[24, 38], r:[-80, 30], y:-3, clump:[6, 46] }, { k:'tree_oak', lv:'f', n:16, h:[14, 24], r:[-80, 30], y:-3, clump:[5, 36] }, { k:'water_tower_brick', lv:'f', n:2, h:[14, 18], r:[-60, 10], y:-1, clump:[2, 10] }, { k:'ruin_house', n:6, h:[8, 11], r:[-60, 10], y:-1, clump:[2, 26] }, { k:'rock_outcrop', n:7, w:[70, 130], r:[10, 45], y:-8 } ] },
+    DESERT:{ set:[ { k:'rock_outcrop', n:8, w:[90, 170], r:[20, 60], y:-10 }, { k:'wt_lean', lv:'f', n:4, h:[28, 36], r:[-6, 8], y:-3 }, { k:'tree_twisted', n:14, h:[12, 18], r:[-80, 20], y:-3, clump:[4, 26] }, { k:'ruin_house', n:8, h:[8, 11], r:[-60, 10], y:-1, clump:[2, 30] } ] },
     RUINS:{ skyline:true, set:[ { k:'ruin_block', n:10, h:[34, 58], r:[0, 40] }, { k:'ruin_tower', n:8, h:[30, 48], r:[0, 40] }, { k:'ruin_chapel', n:6, h:[26, 40], r:[0, 40] },
       { k:'ruin_villa', n:6, h:[18, 28], r:[-6, 30] }, { k:'ruin_house', n:6, h:[14, 22], r:[-8, 24] }, { k:'wall_breach', lv:'f', n:10, w:[50, 80], r:[-10, 20] }, { k:'tree_sentinel', lv:'f', n:8, h:[26, 40], r:[-8, 24], y:-3 } ] },
     FOUNDRY:{ skyline:true, set:[ { k:'tank_steel', lv:'f', n:12, h:[18, 28], r:[-6, 30] }, { k:'tank_water', lv:'f', n:6, h:[16, 24], r:[-6, 30] }, { k:'wt_rust', lv:'f', n:6, h:[34, 46], r:[0, 34] },
       { k:'wt_steel', n:4, h:[36, 48], r:[0, 34] }, { k:'neon_tower', lv:'f', n:5, h:[60, 80], r:[10, 40] }, { k:'radar_dish', lv:'f', n:3, h:[40, 55], r:[10, 40] }, { k:'rail_tanker', lv:'f', n:8, w:[30, 36], r:[-8, 20] } ] },
     STEELMILL:'FOUNDRY' } };
+// Z427 AIR AND DISTANCE — the world past the fence as a cinematographer would light it (render/aerial.js, world/backdrop.js, world/heightfield.js):
+//   AERIAL: the haze is no longer one colour at one density everywhere. fall = how fast the air thins with height (1/m: it halves every ~0.7/fall m above
+//   h0), so a camera up high looks down through clear air instead of a grey veil; keep = the share of the plain distance haze that stays whatever the
+//   height, [low camera, high camera] between keepH (m); blue = 1/m over which the haze turns from the land's fog colour to the sky's horizon colour
+//   (the far reads cool and melts into the sky); warm = how much sunlight the air scatters toward the eye when looking toward the sun; land = from
+//   which share of the far plane on things take on the far land's tone (landK × the battlefield's ground colour as the sun and sky light it, a quarter fogged: where the near world
+//   ends, the backdrop's ground carries on unseen);
+//   ring = the battlefield's gold perimeter line fades out between these camera heights (m); farK: up high the camera's far plane reaches farK × its height
+//   (the land below it all drawn, not cut off into the backdrop); farTone = [share of the zenith blue, brightness ×] of the far haze against the sky's horizon band
+export const AERIAL = { on:true, fall:1 / 55, h0:12, keep:[0.42, 0.06], keepH:[50, 260], blue:1 / 650, warm:0.32, land:[0.84, 0.985], landK:1, ring:[60, 150], farK:2.7, farTone:[0.18, 0.84] };
+// OUTSKIRTS: the land between the fence and the far ranges rolls instead of lying flat — hills that rise from the field's edge over ramp × ARENA, crest,
+//   and sink back to the plain by fade × ARENA past the edge (so where the near world is cut off at the far plane, it is flat land like the backdrop's);
+//   amp = the crests' height (m), wave = their spacing (m), dune = long wind-shaped ridges instead of round hills; seg = [round, radial] mesh resolution
+export const OUTSKIRTS = { on:true, out:5, ramp:0.5, crest:1.1, fade:2.4, seg:[256, 56], phone:[128, 28],
+  biomes:{ _:{ amp:20, wave:190 }, DESERT:{ amp:24, wave:240, dune:1 }, SAVANNA:{ amp:16, wave:260 }, ARCTIC:{ amp:40, wave:200 }, TUNDRA:'ARCTIC', CITY:{ amp:5, wave:320 },
+    VOLCANO:{ amp:36, wave:180 }, CITADEL:{ amp:34, wave:190 }, MEADOW:{ amp:26, wave:210 }, HILLS:{ amp:34, wave:200 }, VILLAGE:{ amp:30, wave:170 }, QUARRY:{ amp:32, wave:180 },
+    RUINS:{ amp:14, wave:220 }, FOUNDRY:{ amp:9, wave:260 }, STEELMILL:'FOUNDRY' } };
+// BACKDROP: the ranges far away, at their true distance and height, drawn at the sky's depth (never cut by the far plane, always behind the world):
+//   ground = the radius (m) of the hazy land they stand on; each layer [r m, lowest m, highest m, kind, masses round the circle, haze share] — far
+//   layers taller and paler; the tallest mass of the nearest two stands where the attack looks (toward the enemy, a third off the centre line: lead,
+//   rad); kinds: peak (ridged, snow over snow × height) · hill · mesa (cliffs and flat tops) · dune · volcano (cones) · karst (towers) · city · stacks;
+//   phone = which layer phones keep
+export const BACKDROP = { on:true, ground:14000, lead:-Math.PI / 2 + 0.42, snow:0.62, phone:1,
+  biomes:{ _:[[1400, 60, 200, 'hill', 7, 0.2], [3500, 150, 460, 'hill', 5, 0.32], [8500, 600, 1500, 'peak', 4, 0.42]],
+    DESERT:[[1400, 40, 120, 'dune', 9, 0.18], [3300, 90, 280, 'dune', 7, 0.3], [7800, 420, 1050, 'mesa', 5, 0.42]],
+    SAVANNA:[[1600, 50, 190, 'mesa', 6, 0.2], [3800, 110, 380, 'hill', 5, 0.32], [9200, 600, 1500, 'peak', 3, 0.43]],
+    ARCTIC:[[1500, 220, 620, 'peak', 8, 0.17], [3800, 520, 1300, 'peak', 6, 0.28], [9000, 1200, 2600, 'peak', 5, 0.4]], TUNDRA:'ARCTIC',
+    CITADEL:[[1500, 130, 400, 'peak', 7, 0.2], [3800, 320, 900, 'peak', 6, 0.3], [9000, 900, 2200, 'peak', 5, 0.41]], QUARRY:'CITADEL',
+    MEADOW:[[1400, 60, 200, 'hill', 8, 0.2], [3500, 160, 460, 'hill', 6, 0.3], [8500, 650, 1700, 'peak', 5, 0.41]], HILLS:'MEADOW',
+    VILLAGE:[[1400, 120, 380, 'karst', 9, 0.2], [3400, 220, 620, 'karst', 7, 0.32], [8500, 600, 1500, 'peak', 5, 0.42]],
+    VOLCANO:[[1500, 140, 420, 'volcano', 4, 0.2], [4000, 380, 1000, 'peak', 5, 0.3], [9000, 900, 2000, 'volcano', 3, 0.41]],
+    RUINS:[[1300, 40, 150, 'hill', 8, 0.22], [3400, 120, 380, 'hill', 6, 0.32], [8000, 450, 1100, 'peak', 5, 0.42]],
+    CITY:[[1200, 40, 170, 'city', 0, 0.2], [2900, 50, 260, 'city', 0, 0.3], [8000, 220, 640, 'hill', 5, 0.43]],
+    FOUNDRY:[[1400, 40, 150, 'stacks', 0, 0.22], [3500, 110, 360, 'hill', 6, 0.32], [8500, 520, 1300, 'peak', 5, 0.42]], STEELMILL:'FOUNDRY' } };

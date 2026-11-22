@@ -1,13 +1,13 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS } from '../../config.js';
+import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS } from '../../config.js';
 import { AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
 HF.step = HF.S/HF.N; HF.W = HF.N+1; HF.h = new Float32Array(HF.W*HF.W);
 export function bedAt(x, z){                                                     // Z405 the ground itself (the river bed under a bridge or the ice)
-  const fx=(x+ARENA)/HF.step, fz=(z+ARENA)/HF.step; if(fx<0||fz<0||fx>=HF.N||fz>=HF.N) return 0;
+  const fx=(x+ARENA)/HF.step, fz=(z+ARENA)/HF.step; if(fx<0||fz<0||fx>=HF.N||fz>=HF.N) return outerAt(x, z);   // (Z427 past the field: the outskirts' hills)
   const ix=fx|0, iz=fz|0, tx=fx-ix, tz=fz-iz, W=HF.W, h=HF.h, i=iz*W+ix;
   return (h[i]*(1-tx)+h[i+1]*tx)*(1-tz) + (h[i+W]*(1-tx)+h[i+W+1]*tx)*tz; }
 export function heightAt(x, z){ const v=bedAt(x, z);
@@ -61,6 +61,7 @@ export function genTerrain(b){
     h[j*W+i] = v*_hfMask(x,z) + ridgeAt(x, z, n1); }
   carveRivers(h, b);   // Z405 the battlefields with a river (config RIVERS: world/river.js) — Z143 the arctic's frozen river and its open lead
   syncTerrainMesh();
+  buildOutskirts(b);   // Z427 the hills past the field, rising from its edge
   try{ if(typeof DECAL!=='undefined' && DECAL.sx) for(const f of feats) if(f.t===1 && _hfMask(f.x,f.z)>0.5) decalCrater(f.x, f.z, f.r*0.9, 0.55); }catch(e){}   // old craters are scarred into the ground too
 }
 // Z141 REAL WATER — the depth the shader reads comes from a small texture of the heightfield baked when the river is carved (foam on the banks where it is
@@ -143,7 +144,42 @@ export const groundMat = macroGround(new THREE.MeshStandardMaterial({ map:_g0.ma
 export const ground = new THREE.Mesh(terrainGeo(), groundMat);   // displaced heightfield (mounds + craters)
 ground.receiveShadow = true; ground.castShadow = !MOBILE && RELIEF.selfShadow; arena.add(ground);   // Z105 mounds throw real shadows across craters (desktop)
 // outer terrain past the perimeter (same surface, fades into the haze) — no more void beyond the walls
-export const outerGeo = (()=>{ const R=ARENA*4, H=ARENA-0.4, sh=new THREE.Shape(); sh.moveTo(-R,-R); sh.lineTo(R,-R); sh.lineTo(R,R); sh.lineTo(-R,R); sh.closePath();
-  const hole=new THREE.Path(); hole.moveTo(-H,-H); hole.lineTo(-H,H); hole.lineTo(H,H); hole.lineTo(H,-H); hole.closePath(); sh.holes.push(hole);   // Z139 a hole where the field is, so carved river beds are not roofed over
-  const g=new THREE.ShapeGeometry(sh), uv=g.attributes.uv, p=g.attributes.position; for(let i=0;i<uv.count;i++) uv.setXY(i, (p.getX(i)/(R*2)+0.5)*4, (p.getY(i)/(R*2)+0.5)*4); return g; })();
-export const outerGround = new THREE.Mesh(outerGeo, groundMat); outerGround.rotation.x=-Math.PI/2; outerGround.position.y=-0.04; outerGround.receiveShadow=true; arena.add(outerGround);
+// Z427 OUTSKIRTS: it rolls. Hills rise from the field's edge (meeting its last row exactly), crest, and sink back to the plain by OUTSKIRTS.fade × ARENA
+//   out, so where the near world is cut off at the far plane it is flat land like the backdrop's (world/backdrop.js); heightAt reads the same hills
+//   (things set out past the fence stand on them). A ring of columns from the square's edge outward, denser near the field; rebuilt each battlefield
+const OUT = { amp:0, wave:200, dune:0, seed:0 }, _sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const _oh = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7 + OUT.seed * 74.7) * 43758.5453; return v - Math.floor(v); };
+function _on(x, z){ const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
+  return (_oh(ix, iz) * (1 - u) + _oh(ix + 1, iz) * u) * (1 - v) + (_oh(ix, iz + 1) * (1 - u) + _oh(ix + 1, iz + 1) * u) * v; }
+const _ofbm = (x, z) => (_on(x, z) * 0.55 + _on(x * 2.1 + 3.1, z * 2.1 + 1.7) * 0.3 + _on(x * 4.3 + 7.7, z * 4.3 + 5.3) * 0.15);
+export function outerAt(x, z){ const q = Math.max(Math.abs(x), Math.abs(z)) - ARENA; if(q <= 0 || !OUT.amp) return 0; const C = OUTSKIRTS, A = ARENA;
+  const e = _sm(0, C.ramp * A, q) * (1 - _sm(C.crest * A, C.fade * A, q)); if(e <= 0) return 0; const w = OUT.wave;
+  const n = OUT.dune ? Math.pow(1 - Math.abs(Math.sin((x * 0.82 + z * 0.57) / w * Math.PI + _ofbm(x / w, z / w) * 4)), 1.8) * (0.5 + 0.5 * _ofbm(x / w * 0.6, z / w * 0.6)) : _ofbm(x / w, z / w);
+  return OUT.amp * e * (0.15 + 0.85 * n); }
+function outerGeoFor(){ const A = ARENA, [S, M] = MOBILE ? OUTSKIRTS.phone : OUTSKIRTS.seg, R = A * OUTSKIRTS.out, Ruv = A * 4, P = [], U = [], idx = [];
+  for(let i = 0; i <= S; i++){ const a = i / S * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a), rin = A / Math.max(Math.abs(c), Math.abs(sn));
+    for(let j = 0; j <= M; j++){ const t = Math.pow(j / M, 1.6), r = rin + (R - rin) * t, x = c * r, z = sn * r;
+      const y = j === 0 ? bedAt(Math.max(-A + 0.01, Math.min(A - 0.01, x)), Math.max(-A + 0.01, Math.min(A - 0.01, z))) : outerAt(x, z);   // (the first row on the field's own last row)
+      P.push(x, y - 0.04, z); U.push((x / (Ruv * 2) + 0.5) * 4, (-z / (Ruv * 2) + 0.5) * 4); } }
+  for(let i = 0; i < S; i++) for(let j = 0; j < M; j++){ const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+export const outerGround = new THREE.Mesh(outerGeoFor(), groundMat); outerGround.receiveShadow=true; arena.add(outerGround);
+export function buildOutskirts(b){ let C = OUTSKIRTS.on ? (OUTSKIRTS.biomes[b.name] ?? OUTSKIRTS.biomes._) : null; if(typeof C === 'string') C = OUTSKIRTS.biomes[C];
+  OUT.amp = C ? C.amp : 0; OUT.wave = C ? C.wave : 200; OUT.dune = C && C.dune ? 1 : 0; OUT.seed = Math.random() * 100;
+  const old = outerGround.geometry; outerGround.geometry = outerGeoFor(); old.dispose(); outskirtRoads(b, C); }
+// the tracks that lead away from the field over the hills (behind our lines, toward the enemy's, and off to one side): a ribbon on the ground, its
+//   edges soft, winding as it goes, fading into the plain
+const ROADS = new THREE.Group(); ROADS.name = 'outskirt-roads'; arena.add(ROADS); let _roadTex = null;
+function roadTex(){ return _roadTex || (_roadTex = _canvasTex(64, 256, (x, W, H) => { for(let i = 0; i < W; i++){ const e = Math.min(i, W - 1 - i) / (W * 0.22), a = Math.min(1, e) * 0.9;
+    for(let j = 0; j < H; j += 4){ const n = 0.75 + 0.25 * Math.random(); x.fillStyle = `rgba(${Math.round(255 * n)},${Math.round(255 * n)},${Math.round(255 * n)},${a * (0.8 + 0.2 * Math.random())})`; x.fillRect(i, j, 1, 4); } }
+    const r = Math.max(1, W * 0.18); x.fillStyle = 'rgba(0,0,0,0.18)'; x.fillRect(Math.round(W * 0.3 - r / 2), 0, r, H); x.fillRect(Math.round(W * 0.7 - r / 2), 0, r, H); })); }   // (two wheel ruts)
+function outskirtRoads(b, C){ for(const m of [...ROADS.children]){ ROADS.remove(m); m.geometry.dispose(); m.material.dispose(); } if(!C || C.roads === 0 || b.name === 'CITY') return;
+  const A = ARENA, col = new THREE.Color(b.ground).multiplyScalar(0.62), w = 6, L = A * (OUTSKIRTS.out - 1.4);
+  for(const a0 of [Math.PI / 2 + _R(-0.3, 0.3), -Math.PI / 2 + 0.5 + _R(-0.25, 0.25), (Math.random() < 0.5 ? 0 : Math.PI) + _R(-0.4, 0.4)]){ const c = Math.cos(a0), sn = Math.sin(a0), rin = A / Math.max(Math.abs(c), Math.abs(sn)), ph = Math.random() * 9, P = [], U = [], idx = [];
+    let x = c * rin, z = sn * rin, hd = a0, n = 0; for(let d = 0; d <= L; d += 5, n++){ hd = a0 + Math.sin(d / 140 + ph) * 0.35 + Math.sin(d / 47 + ph * 2) * 0.08;
+      const px = -Math.sin(hd), pz = Math.cos(hd); for(const sd of [-1, 1]){ const vx = x + px * sd * w / 2, vz = z + pz * sd * w / 2; P.push(vx, heightAt(vx, vz) + 0.12, vz); U.push(sd < 0 ? 0 : 1, d / 24); }
+      x += Math.cos(hd) * 5; z += Math.sin(hd) * 5; }
+    for(let i = 0; i < n - 1; i++){ const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color:col, map:roadTex(), transparent:true, depthWrite:false, roughness:1, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 }));
+    m.receiveShadow = true; m.renderOrder = 1; ROADS.add(m); } }

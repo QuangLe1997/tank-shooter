@@ -234,8 +234,11 @@ function hazeMat(src, amt, fogC){ const m = src.clone(), hz = { value:amt }, hc 
 export function realHorizon(g, name, R0, fogC){ let P = SKYLINE.on && !MOBILE && SKYLINE.biomes[name]; if(typeof P === 'string') P = SKYLINE.biomes[P]; if(!P || typeof window === 'undefined') return false;
   const Z = SKYLINE.haze;
   for(const e of P.set){ const lv = e.lv || (M(e.k) && M(e.k).one ? 'd' : 'l'), list = [], a0 = Math.random() * Math.PI * 2, mid = (e.r[0] + e.r[1]) / 2, hz = e.hz ?? Z[0] + (Z[1] - Z[0]) * Math.min(1, Math.max(0, (mid + 10) / 100));
-    for(let i = 0; i < e.n; i++) list.push([a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, R0 + rnd(e.r[0], e.r[1]), e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), Math.random() * Math.PI * 2]);
-    unitLevel(e.k, lv).then(L => { if(!L || HZN.g !== g) return; const im = new THREE.InstancedMesh(L.geo, hazeMat(L.mat, hz, fogC), list.length);
-      list.forEach(([a, r, sz, ry], i) => { const h = e.h ? sz : sz / L.wx; _hm.compose(_hv.set(Math.cos(a) * r, e.y ?? SKYLINE.y, Math.sin(a) * r), _hq.setFromAxisAngle(_hu, ry), _hs.set(h, h, h)); im.setMatrixAt(i, _hm.multiply(L.U)); });
+    const sz = () => e.h ? rnd(e.h[0], e.h[1]) : rnd(e.w[0], e.w[1]), put = (x, z) => { if(Math.max(Math.abs(x), Math.abs(z)) > ARENA + 6) list.push([x, z, sz(), Math.random() * Math.PI * 2]); };   // (Z427 never inside the field's square)
+    if(e.clump){ const [k, sp] = e.clump, per = Math.max(1, Math.round(e.n / k)); for(let c = 0; c < k; c++){ const ca = a0 + (c + 0.2 + Math.random() * 0.6) / k * Math.PI * 2, cr = R0 + rnd(e.r[0], e.r[1]);   // Z427 in groves and hamlets, not an even fence
+        for(let i = 0; i < per; i++){ const d = Math.sqrt(Math.random()) * sp, t = Math.random() * Math.PI * 2; put(Math.cos(ca) * cr + Math.cos(t) * d, Math.sin(ca) * cr + Math.sin(t) * d); } } }
+    else for(let i = 0; i < e.n; i++){ const a = a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, r = R0 + rnd(e.r[0], e.r[1]); put(Math.cos(a) * r, Math.sin(a) * r); }
+    unitLevel(e.k, lv).then(L => { if(!L || HZN.g !== g || !list.length) return; const im = new THREE.InstancedMesh(L.geo, hazeMat(L.mat, hz, fogC), list.length);
+      list.forEach(([x, z, sz, ry], i) => { const h = e.h ? sz : sz / L.wx; _hm.compose(_hv.set(x, (e.y ?? SKYLINE.y) + heightAt(x, z), z), _hq.setFromAxisAngle(_hu, ry), _hs.set(h, h, h)); im.setMatrixAt(i, _hm.multiply(L.U)); });   // (Z427 on the outskirts' hills)
       im.instanceMatrix.needsUpdate = true; im.renderOrder = -7; im.userData.skyline = e.k; g.add(sectorize(im, SKYLINE.arcs, M(e.k) && M(e.k).one ? 0 : SKYLINE.keep)); }); }   // Z412 culled by arc, simplified past the field
   return !!P.skyline; }

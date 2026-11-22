@@ -19,9 +19,12 @@ function inject(sh){ const F=sh.fragmentShader; if(!F.includes('#include <lights
         float n=texture2D(uCloudTex,q).r*0.68+texture2D(uCloudTex,q*2.7+0.31).r*0.32; return 1.0-uCloud.w*smoothstep(uCloud.z,uCloud.z+0.16,n); }`)
     .replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace(DIR, DIR+'\n\t\tdirectLight.color *= cloudShade(geometryPosition);'));
 }
+// Z427 every global shader patch runs from here, in order, after the material's own (render/aerial.js adds the height and distance haze)
+export const SHADER_HOOKS = [inject];
+const hooks = sh => { for(const f of SHADER_HOOKS) f(sh); };
 { const P=THREE.Material.prototype, base=P.onBeforeCompile;
   Object.defineProperty(P, 'onBeforeCompile', { configurable:true,
-    get(){ const own=this._obc; return own ? function(sh, r){ own.call(this, sh, r); inject(sh); } : function(sh){ inject(sh); }; },
+    get(){ const own=this._obc; return own ? function(sh, r){ own.call(this, sh, r); hooks(sh); } : function(sh){ hooks(sh); }; },
     set(fn){ this._obc = (fn===base) ? null : fn; } });
   P.customProgramCacheKey = function(){ return this._obc ? this._obc.toString() : ''; }; }
 
