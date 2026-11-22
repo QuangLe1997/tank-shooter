@@ -176,5 +176,10 @@
   "cover_rock_mossy":     {"src":"Rock_Mossy_1122013836", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_mossy", "hd":{"key":"cover_rock_mossy", "px":2048}},
   "cover_rock_sandy":     {"src":"Rock_Sandy_1122025916", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_sandy", "hd":{"key":"cover_rock_sandy", "px":2048}},
   "cover_rock_dark":      {"src":"Rock_Dark_1122025955", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_dark", "hd":{"key":"cover_rock_dark", "px":2048}},
-  "cover_rock_slab":      {"src":"Rock_Slab_1121211119", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_slab", "hd":{"key":"cover_rock_slab", "px":2048}}
+  "cover_rock_slab":      {"src":"Rock_Slab_1121211119", "err":0.2, "rebake":true, "tris":2500, "tex":1024, "out":"cover", "file":"rock_slab", "hd":{"key":"cover_rock_slab", "px":2048}},
+  "hill_cliff": { "src": "PH_namaqualand_cliff_02", "err": 0.2, "tris": 60000, "tex": 2048, "m": 6000, "lodBase": 40000 },
+  "hill_crag": { "src": "PH_mountainside", "err": 0.2, "tris": 50000, "tex": 2048, "m": 6000, "lodBase": 40000 },
+  "hill_ledge": { "src": "PH_coastal_cliff_02", "err": 0.2, "tris": 80000, "tex": 2048, "m": 8000, "lodBase": 60000 },
+  "road_rocks": { "src": "PH_namaqualand_boulder_02", "err": 0.2, "tris": 12000, "tex": 2048, "m": 2000 },
+  "road_boulder": { "src": "PH_boulder_01", "err": 0.2, "tris": 8000, "tex": 2048, "m": 1500 }
 }

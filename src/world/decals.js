@@ -1,7 +1,7 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
 import { CONTACT, TRAILS } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, MOBILE, SCENE, TRAIL, blocks, bloodSplat, inField, solidShape, trailNormal } from '../hub.js';
+import { ARENA, BIOME, DECAL_U, MOBILE, PAVED, SCENE, TRAIL, blocks, bloodSplat, inField, solidShape, trailNormal } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -38,6 +38,7 @@ export function paintContact(){ const C = CONTACT, x = DECAL.cont.getContext('2d
     x.save(); x.globalCompositeOperation = op; x.translate(-W, 0); x.shadowColor = col; x.shadowBlur = blur * P * 2; x.shadowOffsetX = W; x.lineWidth = w * P; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#000'; x.stroke(p); x.restore(); };
   for(const L of TP) str(L.pts, 0, L.w, 'rgb(0,0,' + TRAILS.body + ')', TRAILS.blur, 'lighten');
   for(const L of TP) for(const sd of [-1, 1]) str(L.pts, sd * L.w * TRAILS.rut, TRAILS.rutW, 'rgb(0,0,' + TRAILS.rutV + ')', TRAILS.rutB, 'lighter');
+  if(PAVED.length){ x.globalCompositeOperation = 'lighten'; x.fillStyle = 'rgb(0,0,255)'; for(const q of PAVED){ x.beginPath(); x.arc(px(q.x), px(q.z), q.r * P, 0, 6.2832); x.fill(); } }   // Z453 the paved yards: no grass through the flagstones
   x.globalCompositeOperation = 'source-over'; DECAL.texC.needsUpdate = true; return fp.length; }
 export const _dpx=(x)=>(x+ARENA)*DECAL.ppu, _dpz=(z)=>(z+ARENA)*DECAL.ppu, _ddx=(x)=>(x+ARENA)*DECAL.dppu, _ddz=(z)=>(z+ARENA)*DECAL.dppu;
 export let _treadCol='rgba(42,30,18,', _treadA=0.16;

@@ -122,6 +122,7 @@ export * from './world/tower-kinds.js';
 export * from './world/camps.js';
 export * from './world/zones.js';
 export * from './world/fortress.js';
+export * from './world/fort-hill.js';   // Z453 castles on crags: the hills, the open citadel's ward, the paved yards
 export * from './world/rally.js';
 export * from './world/pow.js';
 export * from './world/depots.js';

@@ -2586,5 +2586,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(!ks('MEADOW').includes('sea_stack') && !ks('CITADEL').includes('sea_stack') && !ks('MEADOW').includes('stone_block') && !ks('CITADEL').includes('stone_block') && !ks('QUARRY').includes('stone_block') && ks('RUINS').includes('stone_block'), 'nothing out of place on the open field');
   ok(!ks('DESERT').includes('rail_tanker') && B.DESERT.find(q=>q.k==='oil_drum').n<=6 && B.CITADEL.find(q=>q.k==='castle_wall').n<=2 && B.CITADEL.find(q=>q.k==='parapet').n<=2, 'no tank cars without rails; the citadel\'s keep not buried in fragments'); }
 
+// Z453 CASTLES ON CRAGS (the limestone quarry): every fort on a moderate rocky hill (sheer behind, a gentler road side), photographed cliffs and boulders
+//   on its flanks and along the roads, its yard paved, the capital open in front (its walls only along the rear) with a square keep on a raised ward
+//   reached by a ramp — ground men and tanks drive up and fight on; outposts on the slopes stand on terraces cut for them
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), Q=C.FORTHILL.biomes.QUARRY, fh=R('src/world/fort-hill.js'), fo=R('src/world/fortress.js');
+  ok(C.FORTHILL.on && Q && Q.h[0] <= 14 && Q.h[0] > Q.h[1] && Q.h[1] > Q.h[2] && Q.open && Q.ward.h > 0 && fs.existsSync('assets/models/real/fortkit/pave/diff.jpg'), 'the quarry\'s forts stand on moderate crags, the capital open with a ward');
+  ok(/raiseFortHills\(FORTS\);/.test(fo) && /function openCitadel\(f\)/.test(fo) && /raiseWard\(f\)/.test(fo) && /paveYard\(f, f\.x, f\.z/.test(fo) && /if\(pc\.down\) continue;/.test(fo), 'the hill raised before anything else is laid; the citadel open, its towers only at the standing walls, the yard paved');
+  ok(Q.cliffs.every(k=>C.SCENERY.models[k] && fs.existsSync('assets/models/real/scene/'+k+'.glb')) && Q.road.every(k=>C.SCENERY.models[k] && fs.existsSync('assets/models/real/scene/'+k+'.glb')) && /roadRocks\(T\.paths\)/.test(R('src/world/trails.js')), 'photographed cliffs on the flanks, boulders along the roads');
+  ok(/C\.grade \* \(dh \/ \(dl \* c\)\) \*\* 2/.test(R('src/world/trails.js')) && /pad = f\.hillH && q\.k !== 'base_wire' \? flattenPad\(/.test(R('src/world/outposts.js')) && /\.position\.y-=bury/.test(fo), 'the road winds up the hill; outposts on terraces; tower feet let into the rock'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

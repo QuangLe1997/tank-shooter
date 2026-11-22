@@ -1,7 +1,7 @@
 // world/trails.js — Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, the bases, the depots, the checkpoints, the roads off the field), routed round what stands, painted into the floor, with stones and grass along both sides
 import * as THREE from 'three';
 import { TRAILS } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, photoDiff, plantFlora, realStones, rockSet, solidShape, wetAt, wildflowers } from '../hub.js';
+import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt, wildflowers } from '../hub.js';
 
 // one trail = { pts:[[x, z], …] every 2 m, w (its width, m), len } · mask: a 1 m grid over the field's square, 2 = on the worn track, 1 = its verge
 export const TRAIL = { paths:[], mask:null, mn:0 };
@@ -55,7 +55,7 @@ function route(G, a, b, out){ const { n, c, H, W, F, used } = G, N = n * n, C = 
   while(hn){ const k = pop(); if(done[k] === run) continue; done[k] = run; if(k === t){ found = true; break; } const i = k % n, j = (k / n) | 0;
     for(const [di, dj, dl] of STEP){ const i2 = i + di, j2 = j + dj; if(i2 < 0 || j2 < 0 || i2 >= n || j2 >= n) continue; const k2 = j2 * n + i2; if(!ok(k2) || done[k2] === run) continue;
       if(di && dj && (W[j * n + i2] === Infinity || W[j2 * n + i] === Infinity)) continue;
-      const ng = g[k] + dl * c * W[k2] * (used[k2] ? C.reuse : 1) + Math.abs(H[k2] - H[k]) * C.slope;
+      const dh = H[k2] - H[k], ng = g[k] + dl * c * (W[k2] * (used[k2] ? C.reuse : 1) + C.grade * (dh / (dl * c)) ** 2) + Math.abs(dh) * C.slope;   // (Z453 the grade squared: up a hill the track winds)
       if(seen[k2] !== run || ng < g[k2]){ seen[k2] = run; g[k2] = ng; from[k2] = k; push(k2, ng + Math.hypot(i2 - ti, j2 - tj) * hK); } } }
   if(!found) return null;
   const P = []; for(let k = t; k >= 0; k = from[k]) P.push([G.cc(k % n), G.cc((k / n) | 0)]); return P.reverse(); }
@@ -94,7 +94,7 @@ export function buildTrails(){ const C = TRAILS, T = TRAIL, had = FENCE_GAPS.len
     const path = { pts, w:L.w * _R(0.92, 1.08), len:lenOf(pts), exit:!!L.exit }; T.paths.push(path);
     if(L.exit){ const k = pts.findIndex(([x, z]) => fieldDepth(x, z) < 1.2); if(k >= 0) FENCE_GAPS.push({ x:pts[k][0], z:pts[k][1], r:path.w / 2 + 1.4, pts:pts.slice(k).filter((q, i) => !(i & 1)) }); } }
   if(had || FENCE_GAPS.length) buildPerimeter(BIOME, true);   // the fence again, open where the tracks run out (and the rocks beyond off them)
-  mask(); clearOnTrail(); dress(bz);
+  mask(); clearOnTrail(); dress(bz); roadRocks(T.paths);   // (Z453 boulders along the roads, thick up a fort's hill)
   const want = BIOME.name; photoDiff(bz.set).then(t => { if(BIOME.name !== want || !T.paths.length) return; DECAL_U.trailMap.value = t; DECAL_U.trailK.value.set(1, 1 / bz.tile, bz.mid, C.rutDark); DECAL_U.trailCol.value.setRGB(...bz.tint); }).catch(() => {});
   return T.paths.length; }
 
@@ -103,7 +103,7 @@ function mask(){ const T = TRAIL, A = ARENA, mn = Math.ceil(2 * A), M = new Uint
     for(const [x, z] of resample(P.pts, 1)){ const i0 = Math.max(0, Math.floor(x + A - r1)), i1 = Math.min(mn - 1, Math.floor(x + A + r1)), j0 = Math.max(0, Math.floor(z + A - r1)), j1 = Math.min(mn - 1, Math.floor(z + A + r1));
       for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const d = Math.hypot(i + 0.5 - A - x, j + 0.5 - A - z), k = j * mn + i; if(d < r2) M[k] = 2; else if(d < r1 && !M[k]) M[k] = 1; } } } }
 // the loose stones, tufts, flowers and bushes already scattered on the worn track: gone (it is beaten bare)
-function clearOnTrail(){ const seen = new Set(); for(const c of crushables){ if(!c.alive || c.kind === 'tree' || !c.im || onTrail(c.x, c.z) !== 2) continue; c.im.setMatrixAt(c.k, _Z); c.alive = false; seen.add(c.im); }
+function clearOnTrail(){ const seen = new Set(); for(const c of crushables){ if(!c.alive || c.kind === 'tree' || !c.im || (onTrail(c.x, c.z) !== 2 && !onPaved(c.x, c.z))) continue; c.im.setMatrixAt(c.k, _Z); c.alive = false; seen.add(c.im); }
   for(const im of seen) im.instanceMatrix.needsUpdate = true; }
 
 // along both sides: loose stones (pebbles kicked to the edges, a kerb of bigger ones), then the land's grass, bushes and flowers (crushable like the rest)

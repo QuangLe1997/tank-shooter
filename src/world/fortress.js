@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP } from '../../config.js';
-import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch } from '../hub.js';
+import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch , hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -26,6 +26,7 @@ export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.st
   for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+NM[(_nameI++)%NM.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],
       captured:false, breached:false, active:false, units:[], cmd:null, sallyAt:0, g:null };
     FORTS.push(f); ZONES.push({ kind:'fort', x:f.x, z:f.z, r:f.R+7, fort:f }); }
+  raiseFortHills(FORTS);   // Z453 on the limestone, each on a crag (world/fort-hill.js)
 }
 // level the ground under the walls (craters / mounds would leave the walls floating or buried)
 function flattenFort(x, z, R){ const W=HF.W, h=HF.h, R1=R+3, R2b=R+9, i0=Math.max(0,Math.floor((x-R2b+ARENA)/HF.step)), i1=Math.min(HF.N,Math.ceil((x+R2b+ARENA)/HF.step)), j0=Math.max(0,Math.floor((z-R2b+ARENA)/HF.step)), j1=Math.min(HF.N,Math.ceil((z+R2b+ARENA)/HF.step));
@@ -84,6 +85,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     let V=[]; for(let tries=0;tries<12;tries++){ V=[]; for(let i=0;i<sides;i++){ const a=rot+(i+(Math.random()-0.5)*0.5)/sides*Math.PI*2, rr=f.R*(0.88+Math.random()*0.18); V.push([Math.cos(a)*rr, Math.sin(a)*rr]); }
       let ok=true; for(let i=0;i<sides;i++){ const [x0,z0]=V[i], [x1,z1]=V[(i+1)%sides]; if(Math.hypot(x1-x0,z1-z0) < FORT.gateW+12) ok=false; } if(ok) break; }
     f.Rin=Math.min(...V.map((v,i)=>{ const w=V[(i+1)%sides], L=Math.hypot(w[0]-v[0],w[1]-v[1]); return Math.abs(v[0]*w[1]-v[1]*w[0])/L; }));   // nearest wall to the centre
+    if(f.tier===3 && hillCfg() && hillCfg().open) raiseWard(f);   // Z453 the capital's keep on a raised ward, a ramp down toward the gate
     // the gate goes on the edge whose midpoint faces our side
     let gi=0, best=-9; for(let i=0;i<sides;i++){ const [x0,z0]=V[i], [x1,z1]=V[(i+1)%sides], m=Math.atan2((z0+z1)/2,(x0+x1)/2), c=Math.cos(m-ga); if(c>best){ best=c; gi=i; } }
     const geos=[]; f.pieces=[]; const wallHp=T.gate*FORT.wallHpK*(1+FORT.gatePerStage*(S.stage-1))*loopHpMul()*diffHpMul();
@@ -206,6 +208,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label);
     buildHatches(f);
     const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)), tank:RI(T.tanks)+(st0>=3?1:0) };
+    if(hillCfg()){ if(f.tier===3 && hillCfg().open) openCitadel(f); paveYard(f, f.x, f.z, f.openCitadel ? f.R+1 : (f.Rin||f.R*0.85)-0.6); }   // Z453 the citadel open in front, every yard paved
     f.sallyAt=performance.now()/1000+R2(FORT.sally)*(0.6+Math.random()*0.6);
     f.tunnel = f.tier===3 ? 0 : FORT.tunnel[f.tier-1]+(S.stage>=4?1:0);   // Z170 squads still hiding in the tunnels when the yard is cleared
   }
@@ -629,12 +632,19 @@ function kitStone(m, SY, mp, KT){ m.envMapIntensity=KT.env; m.side=THREE.FrontSi
     m.map=tx(mp.map); if(mp.nor) m.normalMap=tx(mp.nor); if(mp.arm){ const a=tx(mp.arm); m.roughnessMap=a; m.metalnessMap=a; } m.metalness=SY.metal ? SY.metal : 0; m.roughness=1; m.color.setRGB(...(SY.tint || [1, 1, 1])); }
   else m.color.setRGB(...(SY.trim || [1, 1, 1]));
   m.needsUpdate=true; }
+// Z453 AN OPEN CITADEL (FORTHILL open): no ring of wall round the capital — only the curtain along its cliff behind stands (keepArc either side of the
+//   rear), its towers at the ends; the front, the gate and the wall-walk riflemen over it are gone: men and tanks come up the road onto the yard and the ward
+function openCitadel(f){ const ga=f.hillGa ?? Math.atan2(f.gz-f.z, f.gx-f.x), keep=hillCfg().keepArc, front=(x,z)=>Math.PI-Math.abs(Math.atan2(Math.sin(Math.atan2(z,x)-ga), Math.cos(Math.atan2(z,x)-ga)))>=keep;
+  _m.makeScale(0,0,0); for(const pc of f.pieces){ if(!front(pc.cx, pc.cz)) continue; const i=blocks.indexOf(pc.block); if(i>=0) blocks.splice(i,1); pc.down=true; for(const im of [f.wallIM, f.capIM, f.darkIM]) if(im){ im.setMatrixAt(pc.i,_m); im.instanceMatrix.needsUpdate=true; } }
+  if(f.pt) for(const gd of f.pt.guards){ const P=gd.g.position; if(front(P.x, P.z)){ gd.alive=false; gd.g.visible=false; } }
+  { const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); } if(f.leaves && f.leaves[0] && f.leaves[0].g.parent) f.leaves[0].g.parent.visible=false; f.gp=null; f.breached=true; f.openCitadel=true; }
 function realFort(){ return !!REALFORT.biomes[BIOME.name] && typeof window!=='undefined' && !/procfort/.test(location.search+location.hash); }   // Z434 this battlefield's forts wear real walls and towers
 function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
   const K0=REALFORT.kit && REALFORT.kit.on ? REALFORT.kit : null, SY=K0 && K0.style[st], A=SY && K0.arch[SY.arch], KT=A ? { ...K0, ...A, towerW:A.towerW || K0.towerW } : null;   // Z435 the photographed kit: this land's architecture and stone
   (KT ? Promise.all([loadGLTF(KT.key), kitMaps(st)]).then(([gl, mp])=>[gl, gl, gl, mp]) : Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p)))).then(([wg,tg,gg,mp])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
     const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg, false, 0, KT && KT.wall), T=fortPiece(tg, false, 0, KT && KT.tower), Gt=gg && f.gp ? fortPiece(gg, !KT, 0, KT && KT.gate) : null;
-    if(!W || !T) return; if(KT) for(const P of [W, T, Gt]) if(P) for(const m of matList(P.mat)) kitStone(m, SY, mp, KT);
+    const HC=KT && f.hillH ? hillCfg() : null, T2=HC && HC.mix ? fortPiece(tg, false, 0, HC.mix) : null, TK=HC && HC.keep ? fortPiece(tg, false, 0, HC.keep) : null, bury=HC ? HC.bury||0 : 0;   // Z453 a crag's castle: round towers and square bastions in turn, a square keep, every foot let into the rock
+    if(!W || !T) return; if(KT) for(const P of [W, T, Gt, T2, TK]) if(P) for(const m of matList(P.mat)) kitStone(m, SY, mp, KT);
     const add=(geo,mat,x,z,ry,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,-0.4,z); m.rotation.y=ry; m.scale.set(sx,sy,sz); m.castShadow=m.receiveShadow=true; host.add(m); return farLOD(m); };   // Z328 light copies far away
     // the architecture (baked meshes straight under the fort's group) goes; groups (gate leaves, guards, guns, flags) and the wall sections stay
     for(const o of host.children.slice()) if(o.isMesh && !o.isInstancedMesh && !o.userData.outpost) o.visible=false; for(const m of [f.darkIM, f.capIM]) if(m) m.visible=false;
@@ -660,10 +670,10 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
         if(Math.abs(al)<half+G.guard && Math.abs(ac)<TH){ const to=(al<0?-1:1)*(half+G.guard)-al; P.x+=pc.ux*to; P.z+=pc.uz*to; } } }
     // a tower at every corner and at both ends of each run of wall (the gate's sides included), the gatehouse over the gate
     const gw=Gt ? (FORT.gateW+2*(f.gp[4]||5))*C.gateW : 0, TH2=H+C.towerUp, KY=KT ? (H+2+C.wallUp+KT.towerUp)/T.size.y : 0, KX=KT ? Math.max(KT.towerW/Math.max(T.size.x,T.size.z), KY*KT.squash) : 0, TW=KT ? KX*Math.max(T.size.x,T.size.z) : FORT.arch.flankW*C.towerW, pts=[];   // (Z435 the kit's round tower: never squeezed thinner than squash × its own proportions)
-    for(const pc of f.pieces||[]){ for(const [end,sg] of [[pc.prev,-1],[pc.next,1]]) if(!end) pts.push([pc.cx+pc.ux*sg*pc.pl/2, pc.cz+pc.uz*sg*pc.pl/2, pc.ry]); }
-    const put=[]; for(const [x,z,ry] of pts){ if(put.some(([a,b])=>Math.hypot(a-x,b-z)<TW*0.8)) continue; if(Gt && Math.hypot(x-f.gp[0], z-f.gp[1]) < gw*0.55) continue; put.push([x,z]);
-      if(KT){ add(T.geo, T.mat, x, z, ry, KX, KY, KX); continue; } const k=TW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, TH2/T.size.y, k); }
-    if(f.dj && KT){ const [x,z,ry,w]=f.dj, k=Math.max(w*KT.keepW/Math.max(T.size.x,T.size.z), KY*KT.keepH), top=-0.4+T.size.y*k; add(T.geo, T.mat, x, z, ry, k, k, k);   // Z435 the keep: the round tower whole, broad and squat, not a 40 m spire
+    for(const pc of f.pieces||[]){ if(pc.down) continue; for(const [end,sg] of [[pc.prev,-1],[pc.next,1]]) if(!end || end.down) pts.push([pc.cx+pc.ux*sg*pc.pl/2, pc.cz+pc.uz*sg*pc.pl/2, pc.ry]); }
+    const put=[]; let ti=0; for(const [x,z,ry] of pts){ if(put.some(([a,b])=>Math.hypot(a-x,b-z)<TW*0.8)) continue; if(Gt && Math.hypot(x-f.gp[0], z-f.gp[1]) < gw*0.55) continue; put.push([x,z]);
+      if(KT){ const P2=T2 && (ti++)%2 ? T2 : T, ky=P2===T ? KY : (H+2+C.wallUp+KT.towerUp+bury)/P2.size.y, kx=P2===T ? KX : Math.max(KT.towerW*0.85/Math.max(P2.size.x,P2.size.z), ky*KT.squash); add(P2.geo, P2.mat, x, z, ry, kx, ky*(1+bury/(P2.size.y*ky)), kx).position.y-=bury; continue; } const k=TW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, TH2/T.size.y, k); }
+    if(f.dj && KT){ const KP=TK||T, [x,z,ry,w]=f.dj, k=Math.max(w*KT.keepW/Math.max(KP.size.x,KP.size.z)*(TK ? 0.75 : 1), KY*KT.keepH), wh=f.ward ? f.ward.h : 0, top=-0.4+KP.size.y*k+wh; add(KP.geo, KP.mat, x, z, ry, k, k, k).position.y+=wh;   // Z435 the keep: the round tower whole, broad and squat, not a 40 m spire
       f.keepY=top; if(f.flagG) f.flagG.position.y=top; if(f.label) f.label.position.y=top+(f.flagH||12)+3; }
     else if(f.dj){ const [x,z,ry,w,h]=f.dj, k=w*C.keepW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, (h+C.towerUp)*C.keepH/T.size.y, k); }
     if(Gt){ const [x,z,ry,GH]=f.gp, kx=gw/Gt.size.x; add(Gt.geo, Gt.mat, x, z, ry, kx, Math.max(GH, TH2)/Gt.size.y, kx); } }); }

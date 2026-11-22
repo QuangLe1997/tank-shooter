@@ -4,7 +4,7 @@
 // which burn away when hit).
 import * as THREE from 'three';
 import { OUTPOST } from '../../config.js';
-import { addTent, blocks, heightAt, inField, loadGLTF, nearShape , spinHead, spinSplit } from '../hub.js';
+import { addTent, blocks, heightAt, inField, loadGLTF, nearShape , spinHead, spinSplit , flattenPad } from '../hub.js';
 
 const PREP = {};
 function piece(gl, k, hd){ const id = hd ? k + ':hd' : k; if(PREP[id]) return PREP[id];   // (hd: the whole original, Z395 — made the same way)
@@ -27,7 +27,7 @@ export function buildOutpost(f){ if(typeof window === 'undefined' || !f.g || /no
   { const sd = Math.random() < 0.5 ? 1 : -1, a = ga + sd * C.laneA * 1.3, [lx, lz] = spot(a, R + 6); list.push({ k:'base_bunker', x:lx, z:lz, ry:-ga + Math.PI / 2 }); }   // the bunker covering the gate
   for(let r = 0; r < C.wireRows; r++) for(const sd of [-1, 1]){ const a = ga + sd * (C.laneA * 0.9 + r * 0.12), [lx, lz] = spot(a, R + C.wireAt + r * 3); list.push({ k:'base_wire', x:lx, z:lz, ry:-a }); }   // wire across the approach, the lane left open
   const keys = [...new Set(list.map(q => q.k))]; Promise.all(keys.map(k => loadGLTF(k))).then(L => { if(!f.g.parent) return; const by = {}; keys.forEach((k, i) => { if(L[i]) by[k] = piece(L[i], k); });
-    for(const q of list){ const P = by[q.k]; if(!P) continue; const wx = f.x + q.x, wz = f.z + q.z, sp = q.k === 'base_radar' && C.radarSpin ? spinSplit(P.geo, P.mat, C.radarSpin.at) : null, m = sp ? sp.o : new THREE.Mesh(P.geo, P.mat);   // Z435 the radar's array turns
+    for(const q of list){ const P = by[q.k]; if(!P) continue; const wx = f.x + q.x, wz = f.z + q.z, pad = f.hillH && q.k !== 'base_wire' ? flattenPad(wx, wz, Math.max(P.size.x, P.size.z) * 0.6, Math.max(P.size.x, P.size.z) * 0.6 + 5) : 0, sp = q.k === 'base_radar' && C.radarSpin ? spinSplit(P.geo, P.mat, C.radarSpin.at) : null, m = sp ? sp.o : new THREE.Mesh(P.geo, P.mat);   // Z435 the radar's array turns
       m.position.set(q.x, heightAt(wx, wz) - f.g.position.y - 0.05, q.z); m.rotation.y = q.ry; m.castShadow = m.receiveShadow = true; m.userData.outpost = true; f.g.add(m); if(sp) spinHead(sp.hd, C.radarSpin.rate); else nearShape(m, q.k, gl => piece(gl, q.k, true).geo);   // (Z395 whole up close)
       if(C.solid.includes(q.k)) blocks.push({ mesh:m, x:wx, z:wz, r:Math.max(P.size.x, P.size.z) * 0.42, hp:Infinity, maxHp:Infinity, steel:true, heavy:true, loot:false, kind:'outpost' });
       if(q.k === 'base_tent') addTent(m, wx, wz, q.ry, P.size.z / 2, P.size.x / 2, false);   // Z402 a field tent: a wall to hide behind until it burns (world/camps.js)

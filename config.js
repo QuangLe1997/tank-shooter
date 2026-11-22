@@ -1030,7 +1030,7 @@ export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.
 //   `tries` clear spots, a big stone (big m radius) with 0–around smaller ones (small m) gap m off its flank; sites = outcrops per lone rock the field used to get
 export const REALROCK = { biomes:{ DESERT:['rock_sandy', 'rock_slab'], SAVANNA:['rock_sandy', 'rock_slab'], MEADOW:['rock_mossy', 'rock_slab'], CITADEL:['rock_mossy', 'rock_slab'], RUINS:['rock_slab', 'rock_mossy'],
     QUARRY:['rock_slab', 'rock_sandy'], ARCTIC:['rock_slab', 'rock_dark'], VOLCANO:['rock_dark'], FOUNDRY:['rock_dark', 'rock_slab'], CITY:['rock_slab'], _:['rock_slab', 'rock_mossy'] },
-  files:['rock_mossy', 'rock_sandy', 'rock_dark', 'rock_slab'], sink:0.22, env:0.45, tint:{ ARCTIC:0xe6ecf2, VOLCANO:0x9a9290 }, tries:9, sites:0.55, big:[1.7, 2.8], around:[0, 2], small:[0.8, 1.4], gap:[1.2, 2.6] };
+  files:['rock_mossy', 'rock_sandy', 'rock_dark', 'rock_slab'], sink:0.22, env:0.45, tint:{ ARCTIC:0xe6ecf2, VOLCANO:0x9a9290, QUARRY:0xe8e2d6 }, tries:9, sites:0.55, big:[1.7, 2.8], around:[0, 2], small:[0.8, 1.4], gap:[1.2, 2.6] };
 // Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (Z426 the Czech hedgehog and the HESCO too), the share of the procedural
 //   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
 //   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;
@@ -1373,6 +1373,12 @@ export const FORT_CMD = { on:true, k:{ mobile:0.82 }, rim:1.5,
   tiers:{ 1:[ ['bunker_green', 0, 0, 0, 'main'] ], 2:[ ['bunker_store', 0, 0, 0, 'main'] ], 3:[ ['hq_modular', 0, 0, 0, 'main'] ] },   // Z434 one building each, no ring of bunkers, masts and guns round it: the yard is for the fight
   scale:{ 1:1.1, 2:1.15, 3:1.1 }, board:false,   // Z434 the building a little bigger than its scan's size (it is the fort's heart), no name board on legs before the door
   name:{ 1:'TRẠM CHỈ HUY', 2:'SỞ CHỈ HUY', 3:'BỘ TỔNG HÀNH DINH' } };
+// Z453 CASTLES ON CRAGS (world/fort-hill.js): per battlefield, every fort on a rocky hill — h m [capital, tier 2, tier 1] over a plateau top m wider than
+//   the fort, its flanks base m (× (1 + ramp) on the gate's side, × cliff behind, ragged ± rag, crag m of ledges), rocks scans r m on the flanks (none
+//   within roadA rad of the road up) — the capital open (its walls only within keepArc rad of the rear) with its keep on a ward h m up (r m, edge m of
+//   steep side, a ramp rampW × rampL m toward the gate, at × the fort's radius behind its centre); every yard paved (pave/, tile m, tint)
+export const FORTHILL = { on:true, biomes:{ QUARRY:{ h:[12, 8, 5], top:14, base:30, ramp:0.9, cliff:0.38, rag:0.22, crag:0.7, rocks:14, rock:[2.4, 4.5], roadA:0.4, cliffs:['hill_cliff', 'hill_crag', 'hill_ledge', 'hill_cliff'], outcrops:9, outS:[0.55, 1.0], outSink:0.28, tone:[1.25, 1.22, 1.2], road:['road_rocks', 'road_boulder'], roadN:0.16, roadS:[[0.9, 1.8], [1.4, 3.2]], open:true, keepArc:1.35, keep:'modular_fort_01_wall_thick_corner_01', mix:'modular_fort_01_wall_thick_corner_01', bury:1.4,
+  ward:{ h:4.5, r:13, edge:2.6, rampW:9, rampL:20, at:0.36 }, paveTile:4.5, paveTint:[1.0, 0.98, 0.95], paveSteep:0.6 } } };
 export const FORT = {
   coverK:0.55, coreFire:55, crater:{ rim:0.7, depth:2.4 },   // Z434 the yard's cover × (a fort's yard was a junk pile) · how long (s) the command post's wreck burns · its crater: rim raised, pit sunk (m)
   count:[3,3,4,4,4], countMobile:[2,2,3,3,3],   // Z234 phones: the 130 m field holds fewer forts now that they stand clear of our citadel
@@ -1475,7 +1481,7 @@ export const CONTACT = { on:true, res:[2048, 1024], pad:0.2, shadeB:0.8, shade:0
 //   crown and shoulders (a two-track meadow lane vs a gravel desert road); the grass carpet goes flat and thin on it. Along both sides: loose stones (per m
 //   [pebbles, kerb stones]), grass clumps, a bush here and there, wild flowers (per m, both sides). w = [lane, the trunks to the gates and off the field] m,
 //   rut = the ruts' half spacing ×w. No trails in the city (it has its streets) or below ground.
-export const TRAILS = { on:true, cell:[3, 3.5], slope:5, wet:10, out:2.5, reuse:0.45, pad:1.4, core:35, w:[3.4, 5], rut:0.24, rutW:0.85, body:150, rutV:105, blur:0.9, rutB:0.25, rutDark:0.28, wig:0.9,
+export const TRAILS = { on:true, cell:[3, 3.5], slope:5, grade:30, wet:10, out:2.5, reuse:0.45, pad:1.4, core:35, w:[3.4, 5], rut:0.24, rutW:0.85, body:150, rutV:105, blur:0.9, rutB:0.25, rutDark:0.28, wig:0.9,
   stones:[[1.4, 0.2], [0.4, 0.08]], verge:[0.7, 0.25], bush:[0.035, 0.012], flower:0.08, mask:1.6,
   biomes:{ MEADOW:{ set:'gravel_road', tile:2, tint:[0.62, 0.6, 0.52], mid:0.62, tone:'green', bush:'green', flowers:1 }, SAVANNA:{ set:'sandy_gravel', tile:2.1, tint:[0.74, 0.6, 0.48], mid:0.45, tone:'dry', bush:'dry' },
     CITADEL:{ set:'gravel_road', tile:2, tint:[0.64, 0.6, 0.54], mid:0.2, tone:'dry', bush:'dry' }, RUINS:{ set:'gravel_floor', tile:2.25, tint:[0.6, 0.58, 0.54], mid:0.35, tone:'green', bush:'green' },
@@ -1651,6 +1657,9 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     ice_peak:{ h:64, ar:[0.77, 1, 0.78], sink:0.05, solid:null },
     sea_stack:{ one:true, h:12, ar:[1.52, 1, 1.39], sink:0.06, solid:{ cut:1 } },
     rock_outcrop:{ w:24, ar:[4.88, 1, 2.68], sink:0.12, solid:{ box:0.62 } },
+    // Z453 photographed cliffs and boulders (Poly Haven CC0: Namaqualand cliff 02, mountainside, coastal cliff 02, Namaqualand boulder 02, boulder 01) for the crags' flanks and the roadsides
+    hill_cliff:{ w:20, ar:[2.82, 1, 0.92], sink:0.1, solid:null }, hill_crag:{ h:10, ar:[0.97, 1, 0.5], sink:0.08, solid:null }, hill_ledge:{ w:40, ar:[4.07, 1, 0.86], sink:0.1, solid:null },
+    road_rocks:{ one:true, w:2.5, ar:[2.88, 1, 1.4], sink:0.05, solid:null }, road_boulder:{ h:1, ar:[1.27, 1, 1.82], sink:0.08, solid:null },
     stone_ring:{ one:true, h:8, ar:[1.71, 1, 0.51], sink:0.02, solid:{ cut:1 } },
     mtn_gate:{ w:64, ar:[2.07, 1, 1.89], sink:0.05, solid:{ cut:1 } },
     temple:{ one:true, w:26, ar:[1.77, 1, 2.47], sink:0.03, solid:{ cut:1 } },

@@ -10,3 +10,4 @@ quarry/ — Poly Haven "white_sandstone_bricks" (https://polyhaven.com/a/white_s
 savanna/ — Poly Haven "clay_block_wall" (https://polyhaven.com/a/clay_block_wall), CC0; diffuse 2K, normal and ARM 1K.
 foundry/ — Poly Haven "rusty_metal_sheet" (https://polyhaven.com/a/rusty_metal_sheet), CC0; diffuse 2K, normal and ARM 1K.
 city/ — Poly Haven "sandstone_brick_wall_01" (https://polyhaven.com/a/sandstone_brick_wall_01), CC0; diffuse 2K, normal and ARM 1K.
+pave/ — Poly Haven "seaworn_stone_tiles" (https://polyhaven.com/a/seaworn_stone_tiles), CC0; the paved yards of the castles on crags.
