@@ -348,6 +348,14 @@ export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ru
     VOLCANO:[ { st:'volcano', arch:'bastion', keep:'keep_fortress', h:26, tone:[0.6, 0.55, 0.52] }, { st:'volcano', arch:'castle', keep:'keep_medieval', h:32, tone:[0.62, 0.56, 0.52] },
       { st:'ruins', arch:'bastion', keep:'keep_stonehall', h:26, tone:[0.62, 0.56, 0.52] }, { st:'volcano', arch:'bastion', keep:'citadel_tower', h:24, tone:[0.6, 0.55, 0.52] } ] },
   // Z458 how each keep model sits in a yard (a look's own values win): w × Rin across at most, at × Rin back, turn, solid share, flag × its top
+  // Z460 EACH BATTLEFIELD ITS OWN SET (world/fortress.js dressFort; Meshy community, CC0 — credits in assets/models/real/fort/SOURCES.txt): the forts' walls,
+  //   towers and gatehouse from one set of models in the land's style instead of the photographed kit (fort_<st>_{wall,tower,gate}.glb, …/m/ for phones);
+  //   tower = its height × the wall's (at its own proportions, its width kept between towerW × the drawn tower's), tint = × its colour (kept in the land's
+  //   tones), closed = its wall ends cleanly (no breach opened at the seam where the model repeats). The looks' keeps still crown the yards.
+  sets:{ ARCTIC:{ st:'m_arctic', tower:1.5, towerW:[0.75, 1.5], closed:true }, MEADOW:{ st:'m_meadow', tower:1.35, towerW:[0.8, 1.5], closed:true },
+    CITADEL:{ st:'m_citadel', tower:1.55, towerW:[0.8, 1.5], closed:true, tint:[1.08, 1.02, 0.9] }, DESERT:{ st:'m_desert', tower:1.5, towerW:[0.8, 1.5], closed:true, tint:[1.16, 1.02, 0.8] },
+    VOLCANO:{ st:'m_volcano', tower:1.25, towerW:[0.9, 1.6], closed:true, tint:[0.85, 0.78, 0.74] }, RUINS:{ st:'m_ruins', tower:1.4, towerW:[0.75, 1.5], closed:true, tint:[0.9, 0.86, 0.82] },
+    SAVANNA:{ st:'m_savanna', tower:1.0, towerW:[0.9, 1.6], closed:true, tint:[1.12, 0.96, 0.8] } },
   keepFit:{ keep_castel:{ w:0.8, wardK:1.2, at:0.42, solid:0.8, flag:1.0 }, keep_stonehall:{ w:0.95, at:0.4, solid:0.92, flag:1.0 }, keep_fortress:{ w:1.05, at:0.36, solid:0.85, flag:0.95 },
     keep_medieval:{ w:1.0, at:0.42, turn:1.5708, solid:0.85, flag:0.92 }, citadel_tower:{ w:0.7, at:0.4, solid:0.75, flag:0.95 } } };
 // Z378 the see-through seams in a dressed fort's wall (dressFort: where the model's ragged end meets its own start again, every rep sections) opened into

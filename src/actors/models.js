@@ -1,7 +1,7 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK } from '../../config.js';
+import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
 import { nearTag } from '../hub.js';
 
 export const MODEL_FILES = {
@@ -42,7 +42,7 @@ for(const k of ['base_tent','base_radar','base_bunker','base_barracks','base_wir
 MODEL_FILES.base_wall = 'assets/models/real/camp/base_wall.glb'; MODEL_FILES.base_tower = 'assets/models/real/camp/base_tower.glb';   // Z273
 for(const k of Object.keys(REALAIR.models)) MODEL_FILES[k] = 'assets/models/real/air/' + k + '.glb';
 for(const k of Object.keys(REALRUIN.models)) MODEL_FILES[k] = 'assets/models/real/ruin/' + k + '.glb';   // Z275 the ruins
-for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry']) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/'+(PHONE && PHONE_LOD.forts ? 'm/' : '')+'fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters
+for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry','savanna','foundry', ...Object.values(REALFORT.sets || {}).map(q => q.st)]) for(const p of ['wall','tower','gate']) MODEL_FILES['fort_'+st+'_'+p] = 'assets/models/real/fort/'+(PHONE && PHONE_LOD.forts ? 'm/' : '')+'fort_'+st+'_'+p+'.glb';   // Z279 the colossal forts   // Z272 the aircraft   // Z269 the field headquarters
 MODEL_FILES.fort_kit = 'assets/models/real/fortkit/fort_kit.gltf';   // Z435 the forts' photographed stone kit (Poly Haven Modular Fort 01, CC0)
 for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + (PHONE && PHONE_LOD.city.includes(k) ? 'm/' : '') + k + '.glb';   // Z292 the light buildings on phones
 const _load = {}, _gl = {};
