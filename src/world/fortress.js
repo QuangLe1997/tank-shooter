@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP } from '../../config.js';
+import { FORT, FORT_CMD, COMMAND, GUN_MODS, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY } from '../../config.js';
 import { ALLY_TANKS, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, GUNS, HF, MOBILE, POWERUPS, PROFILE, S, UNDER, ZONES, addCoins, addDiamonds, bigExplode, biomePlace, blocks, boss, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, loopRewardMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, modDrop, ownGun, propTex, radio, rallyFlagTex, refreshWallet, riders, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, MODE, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch , hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
 
 export const FORTS=[];
@@ -76,6 +76,7 @@ function pieceDarkGeo(){ if(_pieceDark) return _pieceDark; const H=FORT.wallH, T
 
 // ---- raise every planned fortress (called from buildZones, after the watchtowers) ----
 export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z140 the walls are built the way this land builds them — and no two forts alike
+  { const LK=realFort() && REALFORT.looks && REALFORT.looks[BIOME.name], rest=LK ? LK.slice(1).sort(()=>Math.random()-0.5) : []; let k=0; for(const f of FORTS) f.look=LK ? (f.tier===3 ? LK[0] : rest[k++ % rest.length]) : null; }   // Z457 every fort its own look: stone, architecture, the castle in its yard (the capital the first)
   for(const f of FORTS){ const ST=fortStyle(BIOME.name, fi++), WM=wallMat(ST); f.style=ST; const T=FORT.tiers[f.tier], gy=flattenFort(f.x, f.z, f.R); f.gy=gy;
     const g=new THREE.Group(); g.position.set(f.x, gy, f.z); scene.add(g); f.g=g;
     const sides=T.sides[(Math.random()*T.sides.length)|0], rot=Math.random()*Math.PI, H=FORT.wallH, TH=FORT.wallT;
@@ -171,6 +172,11 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       { const [dx,dz]=[kx-ox*(KW/2+0.06), kz-oz*(KW/2+0.06)]; const door=new THREE.Mesh(new THREE.BoxGeometry(2.6,4.2,0.2), _wood); door.position.set(dx, 2.1+3, dz); door.rotation.y=ry; g.add(door); }
       f.keepX=kx; f.keepZ=kz; f.keepY=KH+0.4; f.keepR=KW*0.72;
       const kb=new THREE.Group(); kb.position.set(kx,0,kz); g.add(kb); blocks.push({ mesh:kb, x:f.x+kx, z:f.z+kz, r:KW*0.72, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'keep', _top:f.gy+KH, _topHp:Infinity }); }   // Z380 (an empty group carries it: it stood 2 m high to rounds and eyes — the donjon is KH)
+    f.lk=null; if(f.look && f.look.keep && SCENERY.models[f.look.keep]){ const L=f.look, bx=f.x-f.gx, bz=f.z-f.gz, bl=Math.hypot(bx,bz)||1, ox=bx/bl, oz=bz/bl, d=f.dj ? Math.hypot(f.dj[0], f.dj[1]) : f.Rin*L.at, kx=ox*d, kz=oz*d;   // Z457 the castle crowning this fort's yard (REALFORT.looks): a real model where its keep stands — the capital's on its ward, the others' at the back of the yard, facing the gate
+      const ry=-Math.atan2(-ox,oz)+(L.turn||0), D=sceneDims(L.keep), s=Math.min(L.h/D.y, f.Rin*L.w/Math.max(D.x,D.z), f.ward && f.dj ? f.ward.r*2*(L.wardK||1)/Math.max(D.x,D.z) : Infinity),   // (as tall as h — over the walls — but never wider than w × Rin, nor than the capital's ward)
+      wh=f.ward && f.dj ? f.ward.h : 0, top=D.y*s+wh;
+      f.lk=[kx, kz, ry, s, wh]; f.keepX=kx; f.keepZ=kz; f.keepY=top*L.flag; f.keepR=Math.max(D.x,D.z)*s*0.5; const kb=new THREE.Group(); kb.position.set(kx,0,kz); g.add(kb);
+      blocks.push({ mesh:kb, x:f.x+kx, z:f.z+kz, r:Math.max(D.x,D.z)*s*0.5, obb:{ f:ry, hl:D.z*s/2*L.solid, hw:D.x*s/2*L.solid }, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'keep', _top:f.gy+top, _topHp:Infinity }); }   // (its whole footprint solid: an oriented box, not the donjon's circle)
     { f.towerFlags=[]; const poles=[]; for(const [px,pz,top] of FLAGS.slice(0, MOBILE?6:10)){ const pole=new THREE.CylinderGeometry(0.07,0.1,8.5,8); pole.translate(px, top+3.75, pz); poles.push(pole); const ball=new THREE.SphereGeometry(0.16,8,6); ball.translate(px, top+8.05, pz); poles.push(ball);
         const fl=makeFlag(campFlagTex(), 2.9, 1.85, 1); fl.position.set(px, top+7.0, pz); g.add(fl); f.towerFlags.push(fl); }
       if(poles.length){ const pm=new THREE.Mesh(mergeGeometries(poles.map(q=>q.index?q.toNonIndexed():q), false), _iron); poles.forEach(q=>q.dispose()); pm.castShadow=true; g.add(pm); } }
@@ -641,8 +647,8 @@ function openCitadel(f){ const ga=f.hillGa ?? Math.atan2(f.gz-f.z, f.gx-f.x), ke
   if(f.gp){ const gw=(FORT.gateW+2*(f.gp[4]||5))*REALFORT.gateW, of=Math.atan2(f.gux, f.guz);   // Z453 the gatehouse stays, open: the road runs through its arch — its two piers are solid
     for(const sd of [-1,1]){ const o=sd*(gw/2+FORT.gateW/2)/2; blocks.push({ mesh:new THREE.Object3D(), x:f.gx+f.gux*o, z:f.gz+f.guz*o, r:3.2, obb:{ f:of, hl:(gw-FORT.gateW)/4, hw:3.2 }, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'gatepier', fort:f }); } } }
 function realFort(){ return !!REALFORT.biomes[BIOME.name] && typeof window!=='undefined' && !/procfort/.test(location.search+location.hash); }   // Z434 this battlefield's forts wear real walls and towers
-function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
-  const K0=REALFORT.kit && REALFORT.kit.on ? REALFORT.kit : null, SY=K0 && K0.style[st], A=SY && K0.arch[SY.arch], KT=A ? { ...K0, ...A, towerW:A.towerW || K0.towerW } : null;   // Z435 the photographed kit: this land's architecture and stone
+function dressFort(f, stone){ const LK=f.look, st=(LK && LK.st) || REALFORT.biomes[BIOME.name]; if(!st || typeof window==='undefined' || /procfort/.test(location.search+location.hash)) return;
+  const K0=REALFORT.kit && REALFORT.kit.on ? REALFORT.kit : null, SY0=K0 && K0.style[st], SY=SY0 && LK ? { ...SY0, ...(LK.arch ? { arch:LK.arch } : {}), ...(LK.tint ? { tint:LK.tint } : {}), ...(LK.trim ? { trim:LK.trim } : {}) } : SY0, A=SY && K0.arch[SY.arch], KT=A ? { ...K0, ...A, towerW:A.towerW || K0.towerW } : null;   // Z435 the photographed kit: this land's architecture and stone
   (KT ? Promise.all([loadGLTF(KT.key), kitMaps(st)]).then(([gl, mp])=>[gl, gl, gl, mp]) : Promise.all(['wall','tower','gate'].map(p=>loadGLTF('fort_'+st+'_'+p)))).then(([wg,tg,gg,mp])=>{ const host=f.wallIM && f.wallIM.parent; if(!wg || !tg || !FORTS.includes(f) || !host) return;
     const C=REALFORT, H=FORT.wallH, TH=FORT.wallT, W=fortPiece(wg, false, 0, KT && KT.wall), T=fortPiece(tg, false, 0, KT && KT.tower), Gt=gg && f.gp ? fortPiece(gg, !KT, 0, KT && KT.gate) : null;
     const HC=KT && f.hillH ? hillCfg() : null, T2=HC && HC.mix ? fortPiece(tg, false, 0, HC.mix) : null, TK=HC && HC.keep ? fortPiece(tg, false, 0, HC.keep) : null, bury=HC ? HC.bury||0 : 0;   // Z453 a crag's castle: round towers and square bastions in turn, a square keep, every foot let into the rock
@@ -675,7 +681,8 @@ function dressFort(f, stone){ const st=REALFORT.biomes[BIOME.name]; if(!st || ty
     for(const pc of f.pieces||[]){ if(pc.down) continue; for(const [end,sg] of [[pc.prev,-1],[pc.next,1]]) if(!end || end.down) pts.push([pc.cx+pc.ux*sg*pc.pl/2, pc.cz+pc.uz*sg*pc.pl/2, pc.ry]); }
     const put=[]; let ti=0; for(const [x,z,ry] of pts){ if(put.some(([a,b])=>Math.hypot(a-x,b-z)<TW*0.8)) continue; if(Gt && Math.hypot(x-f.gp[0], z-f.gp[1]) < gw*0.55) continue; put.push([x,z]);
       if(KT){ const P2=T2 && (ti++)%2 ? T2 : T, ky=P2===T ? KY : (H+2+C.wallUp+KT.towerUp+bury)/P2.size.y, kx=P2===T ? KX : Math.max(KT.towerW*0.85/Math.max(P2.size.x,P2.size.z), ky*KT.squash); add(P2.geo, P2.mat, x, z, ry, kx, ky*(1+bury/(P2.size.y*ky)), kx).position.y-=bury; continue; } const k=TW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, TH2/T.size.y, k); }
-    if(f.dj && KT){ const KP=TK||T, [x,z,ry,w]=f.dj, k=Math.max(w*KT.keepW/Math.max(KP.size.x,KP.size.z)*(TK ? 0.75 : 1), KY*KT.keepH), wh=f.ward ? f.ward.h : 0, top=-0.4+KP.size.y*k+wh; add(KP.geo, KP.mat, x, z, ry, k, k, k).position.y+=wh;   // Z435 the keep: the round tower whole, broad and squat, not a 40 m spire
+    if(f.lk){ const [x,z,ry,s,wh]=f.lk, k=LK.keep, lod=scenePiece(k, s, { shadow:true, ...(LK.tone ? { tone:new THREE.Color().setRGB(...LK.tone) } : {}) }); lod.position.set(x, -0.4+wh-sceneDims(k, s).y*(SCENERY.models[k].sink||0), z); lod.rotation.y=ry; lod.scale.setScalar(s); host.add(lod); }   // Z457 the look's castle where the keep goes
+    else if(f.dj && KT){ const KP=TK||T, [x,z,ry,w]=f.dj, k=Math.max(w*KT.keepW/Math.max(KP.size.x,KP.size.z)*(TK ? 0.75 : 1), KY*KT.keepH), wh=f.ward ? f.ward.h : 0, top=-0.4+KP.size.y*k+wh; add(KP.geo, KP.mat, x, z, ry, k, k, k).position.y+=wh;   // Z435 the keep: the round tower whole, broad and squat, not a 40 m spire
       f.keepY=top; if(f.flagG) f.flagG.position.y=top; if(f.label) f.label.position.y=top+(f.flagH||12)+3; }
     else if(f.dj){ const [x,z,ry,w,h]=f.dj, k=w*C.keepW/Math.max(T.size.x,T.size.z); add(T.geo, T.mat, x, z, ry, k, (h+C.towerUp)*C.keepH/T.size.y, k); }
     if(Gt && f.openCitadel && (TK||T2)){ const P2=TK||T2, [x,z,ry]=f.gp, ky=(H+2+C.wallUp+KT.towerUp+bury)/P2.size.y, kx=Math.max(KT.towerW*0.85/Math.max(P2.size.x,P2.size.z), ky*KT.squash);   // Z453 an open citadel's gate: two square towers either side of the road, no arch standing alone

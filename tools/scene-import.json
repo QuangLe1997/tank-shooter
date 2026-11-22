@@ -184,5 +184,8 @@
   "road_boulder": { "src": "PH_boulder_01", "err": 0.2, "tris": 8000, "tex": 2048, "m": 1500 },
   "tree_oak_old": { "src": "Z455_oak_ancient", "cut": 0.012, "tris": 0, "tex": 2048, "m": 8000 },
   "tree_snag_tall": { "src": "Z455_snag_tall", "tris": 60000, "tex": 2048, "m": 6000, "lodBase": 40000 },
-  "tree_snag_lean": { "src": "Z455_snag_lean", "cut": 0.035, "tris": 60000, "tex": 2048, "m": 6000, "lodBase": 40000 }
+  "tree_snag_lean": { "src": "Z455_snag_lean", "cut": 0.035, "tris": 60000, "tex": 2048, "m": 6000, "lodBase": 40000 },
+  "keep_castel": { "src": "Meshy_AI_Castel_1122073857", "tris": 500000, "tex": 2048, "m": 16000, "lodBase": 200000 },
+  "keep_stonehall": { "src": "Meshy_AI_Stonekeep_Fortress_1122073950", "tris": 400000, "tex": 4096, "m": 12000, "lodBase": 150000 },
+  "gate_stone": { "src": "Meshy_AI_Medieval_Stone_Gateho_1122074116", "tris": 400000, "tex": 4096, "m": 12000, "lodBase": 150000 }
 }

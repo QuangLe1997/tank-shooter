@@ -55,3 +55,8 @@ tree_oak_old / tree_snag_tall / tree_snag_lean (Z455) — photogrammetry scans f
   tree_oak_old.glb = "Skovfogedegen oak tree" by Rigsters (https://sketchfab.com/3d-models/fd582b0d4a8c4af1a1b5c4f21a481c93),
   tree_snag_tall.glb = "Tree" by Epic_Tree_Store (https://sketchfab.com/3d-models/c25e5fc2bfa54d24a165a8a207c0a6d7),
   tree_snag_lean.glb = "Hunt Park Large Tree" by symension123 (https://sketchfab.com/3d-models/b3cc8f7f3cd0495ea3a8ddfae3902921).
+keep_castel / keep_stonehall / gate_stone (Z457) — Meshy community posts, CC0 (public domain), downloaded as GLB from each post's Download button
+  (the project owner's Meshy session; no credits spent) and packed by tools/scene-import.mjs: keep_castel.glb = "Castel" by keal
+  (https://www.meshy.ai/posts/019d88a3-1d98-765e-ac5b-fceef7febc78), keep_stonehall.glb = "Stonekeep Fortress" by METATIGER
+  (https://www.meshy.ai/posts/019de684-5b41-769a-8418-d641e39c80c1), gate_stone.glb = "Medieval Stone Gatehouse" by METATIGER
+  (https://www.meshy.ai/posts/019de683-d464-7696-b6d5-9393eb4bdfc6).

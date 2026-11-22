@@ -2319,7 +2319,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(keys.every(k=>{ const j=head(D+k+'.glb'); return j.extensionsRequired.includes('EXT_meshopt_compression') && fs.statSync(D+k+'.glb').size<50e6; }), 'the near files are compressed and each under 50 MB');
   const beats=Object.values(SC.biomes).flat(); ok(beats.every(b=>SC.models[b.k]) && Object.entries(SC.biomes).every(([n,L])=>L.every((b,i)=>!b.of || L.slice(0,i).some(q=>q.id===b.of))), 'every beat names a known model; pairs / rings follow the piece they hang on');
   ok(['export function buildSceneSet','export class SceneLOD','export function scenePiece','export function towerModel'].every(k=>sc.includes(k)) && /setMeshoptDecoder\(MeshoptDecoder\)/.test(sc) && /sceneLevel\(this\.key, 'd'\)/.test(sc), 'scenery.js: levels by distance, the near scan fetched on approach');
-  ok(/buildSceneSet\(\); (hillTrees\(\); )?buildRuins\(\);/.test(R('src/world/landmarks.js')) && /WONDER\.a0 \?\?/.test(R('src/world/wonders.js')) && /WONDER\.a0 = a;/.test(sc), 'the set is laid out first, round the bearing the wonder then stands at');
+  ok(/buildSceneSet\(\); (climbGate\(\); )?(hillTrees\(\); )?buildRuins\(\);/.test(R('src/world/landmarks.js')) && /WONDER\.a0 \?\?/.test(R('src/world/wonders.js')) && /WONDER\.a0 = a;/.test(sc), 'the set is laid out first, round the bearing the wonder then stands at');
   ok(/LAVA\.pools\.push\(\{ x:p\.x, z:p\.z, r, y, glow \}\)/.test(sc) && SC.models.lava_pit.lava>0, 'a lava pit holds live melt that burns like a pool');
   ok(/function realSupply\(gen\)/.test(sc) && /b\.kind !== 'fueltank'/.test(sc) && SC.supply.fueltank.h>0, 'the enemy fuel depot\'s tanks are the steel tank scan, inside each tank\'s own group');
   ok([['mtower','watchtower'],['wtower','wt_steel'],['wrust','wt_rust']].every(([k,m])=>new RegExp(k+": \\{ vi:'[^']+', mat:'steel', model:'"+m+"', deck:0\\.\\d+").test(tk) && SC.models[m]) && /K\.h=SCENERY\.models\[K\.model\]\.h\*K\.deck; K\.dress=body=>towerModel\(body, K\)/.test(tk) && /if\(K\.dress\) mats\.push\(K\.dress\(body\)\)/.test(R('src/world/towers.js')), 'the real towers: guards at the measured deck height, the scan stood in the tower body');
@@ -2629,6 +2629,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function carveClimb\(f, S, rim, L\)/.test(hc) && /more hairpins till the rounded track keeps under the grade/.test(hc) && S.path.grade <= 0.2 && /carveClimb\(f, C\.spur/.test(fh), 'one way up, in hairpins, kept under the grade');
   ok(/f\.climb \? f\.climb\.foot/.test(tr) && /climb:true/.test(tr), 'the trails lay it as the fort\'s road and meet its foot');
   ok(/kind:'climb'/.test(hc) && /onClimb\(x, z, 1\)/.test(R('src/world/defense.js')) && (fh.match(/onClimb\(/g) || []).length >= 6 && /onClimb\(x, z, r\)/.test(R('src/world/hill-trees.js')), 'nothing stands on it: rocks, trees, the enemy\'s belt, the cover keep off'); }
+
+// Z457 every fort its own: on the quarry each takes a look in turn (the capital the first) — its stone and architecture, and a real castle crowning its
+//   yard where the keep stands (Meshy community, CC0), solid as an oriented box the yard's cover and men keep off; a stone gatehouse across the way up
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), L=C.REALFORT.looks.QUARRY, fo=R('src/world/fortress.js'), hc=R('src/world/hill-climb.js');
+  ok(L.length >= 4 && new Set(L.map(l => l.keep)).size === L.length && new Set(L.map(l => l.st + l.arch)).size >= 3 && L.every(l => C.SCENERY.models[l.keep] && fs.existsSync('assets/models/real/scene/' + l.keep + '.glb') && fs.existsSync('assets/models/real/scene/m/' + l.keep + '.glb')), 'four looks, no two alike: four keeps, at least three stone-and-architecture pairs, each keep shipped with its phone copy');
+  ok(/f\.look=LK \? \(f\.tier===3 \? LK\[0\]/.test(fo) && /SY=SY0 && LK \?/.test(fo) && /if\(f\.lk\)\{ const \[x,z,ry,s,wh\]=f\.lk/.test(fo), 'each fort dressed in its look: the stone, the architecture, its castle');
+  ok(/obb:\{ f:ry, hl:D\.z\*s\/2\*L\.solid/.test(fo) && /f\.keepR=Math\.max\(D\.x,D\.z\)\*s\*0\.5/.test(fo), 'the castle solid over its footprint, the cover and the garrison kept off it');
+  ok(C.FORTHILL.biomes.QUARRY.spur.gate.k === 'gate_stone' && /export function climbGate\(\)/.test(hc) && /pillars:G\.pillars/.test(hc) && /Medieval Stone Gatehouse" by METATIGER/.test(R('assets/models/real/scene/SOURCES.txt')), 'a gatehouse across the way up, its piers solid, its makers credited'); }
 
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

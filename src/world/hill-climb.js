@@ -2,7 +2,8 @@
 //   up that tongue one track winds in hairpins — a level shelf cut into the slope, a bank above it and a drop below — from the foot to the plateau's
 //   rim (world/trails.js then lays it as the fort's road, on to the gate, and routes the field's tracks to its foot). Legs cross the tongue
 //   corner to corner, narrower toward the top; as many as keep the grade under `grade`; the hairpins rounded.
-import { ARENA, HF, ZONES, heightAt } from '../hub.js';
+import { SCENERY } from '../../config.js';
+import { ARENA, HF, ZONES, heightAt, hillCfg, placeScene } from '../hub.js';
 
 export const CLIMBS = [];   // { f, pts:[[x, z]…] rim → foot every 2 m, w, foot:[x, z] (where the field's tracks meet it), legs, grade }
 export const onClimb = (x, z, r = 0) => CLIMBS.some(C => C.pts.some(([px, pz]) => (px - x) ** 2 + (pz - z) ** 2 < (C.w / 2 + 1 + r) ** 2));
@@ -15,6 +16,11 @@ function resample(P, st){ const out = [P[0].slice()]; let carry = 0;
   const e = P[P.length - 1], l = out[out.length - 1]; if(Math.hypot(e[0] - l[0], e[1] - l[1]) > st * 0.3) out.push(e.slice()); return out; }
 
 export function clearClimbs(){ CLIMBS.length = 0; }
+// Z457 a gatehouse across the way up, back points in from its foot (FORTHILL…spur.gate): the track runs through its arch, its two piers solid — the
+//   first gate before the hairpins, like the barbicans at the foot of a crag's castle (stood after the land's set, before the trees on the lips)
+export function climbGate(){ const C = hillCfg(), G = C && C.spur && C.spur.gate, M = G && SCENERY.models[G.k]; if(!M || typeof window === 'undefined') return;
+  for(const c of CLIMBS){ const P = c.pts, n = P.length, i = Math.max(1, Math.min(n - 2, n - 1 - G.back)), [x, z] = P[i], [x0, z0] = P[i - 1], [x1, z1] = P[i + 1];
+    const p = placeScene(G.k, x, z, Math.atan2(x1 - x0, z1 - z0), G.w / M.w, { solid:{ pillars:G.pillars } }); if(p) c.gate = p; } }
 // cut the track up fort f's tongue: S = the spur's config, rim = the plateau's radius (m from the fort's centre), L = the tongue's length
 export function carveClimb(f, S, rim, L){ const P = S.path, ga = f.hillGa, ux = Math.cos(ga), uz = Math.sin(ga), vx = -uz, vz = ux, W = HF.W, h = HF.h, st = HF.step;
   const at = (u, v) => [f.x + ux * u + vx * v, f.z + uz * u + vz * v], uR = rim - 1, uF = rim + L + P.foot, yR = heightAt(...at(uR, 0)), yF = heightAt(...at(uF, 0)), drop = yR - yF;
