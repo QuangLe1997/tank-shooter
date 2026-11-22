@@ -417,12 +417,26 @@
 </div>
 
 <!-- INTRO CINEMATIC (deploy showcase) -->
-<div id="loadVeil" aria-hidden="true"><div class="lv-box"><div class="lv-spin"></div><div class="lv-t">ĐANG TRIỂN KHAI…</div><div class="lv-s">dựng chiến trường · nạp đồ hoạ</div></div></div>
+<!-- NO-TANKS 8 the deployment order (ui/load-veil.js): shown from XUẤT KÍCH until the battle can run -->
+<div id="loadVeil" aria-hidden="true" data-step="0">
+  <div class="lv-ground" id="lvGround"></div><div class="lv-grid"></div><div class="lv-sweep"></div>
+  <div class="lv-frame"><i></i><i></i><i></i><i></i></div>
+  <div class="lv-sheet">
+    <div class="lv-kind" id="lvKind">Lệnh xuất kích</div>
+    <div class="lv-stamp">KHẨN</div>
+    <div class="lv-name" id="lvName">CHIẾN TRƯỜNG</div>
+    <div class="lv-place" id="lvPlace"></div>
+    <div class="lv-cond" id="lvCond"></div>
+    <p class="lv-brief" id="lvBrief"></p>
+    <ol class="lv-steps"><li class="now">Dựng chiến trường</li><li>Nạp đồ hoạ</li><li>Sẵn sàng xuất kích</li></ol>
+    <div class="lv-bar"><i></i></div>
+  </div>
+  <div class="lv-coord" id="lvCoord"></div>
+</div>
 <div id="cine">
-  <div class="bar top"></div>
-  <div class="bar bot"></div>
-  <div id="cine-title"><div class="ct-name">XUNG KÍCH</div><div class="ct-sub" id="cine-sub">MÀN 1 · SA MẠC</div></div>
-  <div id="cine-skip">chạm / bấm phím bất kỳ để bỏ qua</div>
+  <div class="bar top"><div class="cn-feed"><i></i>Trinh sát đường không</div><div class="cn-tc" id="cineTc">00:00:00:00</div></div>
+  <div class="bar bot"><div class="cn-cap" id="cine-sub"></div><div id="cine-skip">Bấm phím bất kỳ để bỏ qua</div></div>
+  <div id="cine-title"><div id="cineName" class="ct-name">XUNG KÍCH</div><div class="ct-where" id="cineWhere"></div></div>
 </div>
 
 <!-- portrait gate — mobile is landscape-only -->

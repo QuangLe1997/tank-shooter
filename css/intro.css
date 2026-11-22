@@ -114,10 +114,59 @@ body.menu-in #start .start-id{animation:menuIn .5s ease both;}
 @media (prefers-reduced-motion:reduce){ #boot *,#boot::after{animation-duration:.01s !important;animation-iteration-count:1 !important;} }
 
 /* Z119 deploying veil — covers the world build and the shader warm-up so the intro sweep starts smooth */
-#loadVeil{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,rgba(20,24,16,.92),rgba(4,5,4,.98));
-  opacity:0;pointer-events:none;transition:opacity .35s ease;}
+/* ===== NO-TANKS 8 THE DEPLOYMENT ORDER (#loadVeil, ui/load-veil.js): the battlefield's own ground, darkened, under a map grid and a slow radar sweep;
+   the order sheet on the left third — what the operation is, the battlefield in stencil, where and when, the brief, and the three real steps. The
+   sweep, the scanning bar and the caret are transform / opacity animations: they keep moving while the field is being built ===== */
+#loadVeil{--ol:#0f120b;--sand:#ece0c2;--brass:#e2b45c;--stamp:#c8402a;--grid:rgba(176,186,132,.10);
+  position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:90;overflow:hidden;background:var(--ol);color:var(--sand);
+  font-family:'Saira Condensed',Rajdhani,sans-serif;opacity:0;pointer-events:none;transition:opacity .35s ease;}
 #loadVeil.on{opacity:1;pointer-events:auto;transition:opacity .12s ease;}
-#loadVeil .lv-box{display:flex;flex-direction:column;align-items:center;gap:10px;color:#ffe8b0;font-family:'Saira Condensed',Rajdhani,sans-serif;}
-#loadVeil .lv-t{font-size:clamp(18px,3vw,28px);font-weight:900;letter-spacing:4px;} #loadVeil .lv-s{font-size:12px;letter-spacing:1.5px;color:rgba(255,232,176,.55);}
-#loadVeil .lv-spin{width:38px;height:38px;border-radius:50%;border:3px solid rgba(255,210,122,.18);border-top-color:#ffd27a;animation:lvSpin .8s linear infinite;}
-@keyframes lvSpin{to{transform:rotate(360deg);}}
+#loadVeil .lv-ground{position:absolute;inset:-4%;background:#2a2a1c center/760px repeat;filter:grayscale(.35) contrast(1.1) brightness(.36) blur(1.2px);transform:scale(1.04);}
+#loadVeil.on .lv-ground{animation:lvDrift 26s linear infinite alternate;}
+@keyframes lvDrift{to{transform:scale(1.04) translate3d(-2.5%,-1.5%,0);}}
+#loadVeil .lv-grid{position:absolute;inset:0;background:
+  radial-gradient(90% 80% at 30% 50%,rgba(15,18,11,0) 0%,rgba(15,18,11,.55) 60%,rgba(15,18,11,.92) 100%),
+  repeating-linear-gradient(0deg,var(--grid) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,var(--grid) 0 1px,transparent 1px 96px);}
+#loadVeil .lv-sweep{position:absolute;width:150vmax;height:150vmax;left:calc(72% - 75vmax);top:calc(50% - 75vmax);border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(226,180,92,.11) 0deg,rgba(226,180,92,0) 38deg,rgba(226,180,92,0) 360deg);mix-blend-mode:screen;}
+#loadVeil.on .lv-sweep{animation:lvSweep 5.5s linear infinite;}
+@keyframes lvSweep{to{transform:rotate(360deg);}}
+#loadVeil .lv-frame i{position:absolute;width:26px;height:26px;border:1px solid rgba(236,224,194,.32);}
+#loadVeil .lv-frame i:nth-child(1){top:18px;left:18px;border-right:0;border-bottom:0;} #loadVeil .lv-frame i:nth-child(2){top:18px;right:18px;border-left:0;border-bottom:0;}
+#loadVeil .lv-frame i:nth-child(3){bottom:18px;left:18px;border-right:0;border-top:0;} #loadVeil .lv-frame i:nth-child(4){bottom:18px;right:18px;border-left:0;border-top:0;}
+#loadVeil .lv-sheet{position:absolute;left:clamp(24px,8vw,140px);top:50%;transform:translateY(-50%);width:min(620px,84vw);}
+#loadVeil .lv-kind{font-size:clamp(13px,1.15vw,16px);font-weight:600;letter-spacing:.08em;color:rgba(236,224,194,.72);}
+#loadVeil .lv-stamp{position:absolute;top:-22px;right:4%;font:24px/1 'Saira Stencil One',sans-serif;letter-spacing:.14em;color:var(--stamp);
+  border:2px solid var(--stamp);padding:12px 10px 5px 14px;transform:rotate(-9deg);opacity:.82;mix-blend-mode:screen;}
+#loadVeil.on .lv-stamp{animation:lvStamp .5s cubic-bezier(.3,1.6,.5,1) .25s both;}
+@keyframes lvStamp{0%{opacity:0;transform:rotate(-9deg) scale(1.9);}100%{opacity:.82;transform:rotate(-9deg) scale(1);}}
+#loadVeil .lv-name{--len:8;margin-top:.22em;font:min(clamp(60px,9.4vw,148px), calc(66vw / (var(--len) * .66)))/.9 'Saira Stencil One',sans-serif;letter-spacing:.04em;color:var(--sand);
+  text-shadow:0 6px 30px rgba(0,0,0,.6);white-space:nowrap;}
+#loadVeil .lv-place{margin-top:12px;font-size:clamp(20px,2vw,28px);font-weight:700;letter-spacing:.02em;}
+#loadVeil .lv-cond{margin-top:2px;font-size:clamp(14px,1.25vw,18px);font-weight:500;color:rgba(236,224,194,.7);}
+#loadVeil .lv-brief{margin:18px 0 0;max-width:34em;padding-left:14px;border-left:2px solid var(--brass);font-size:clamp(15px,1.25vw,18px);font-weight:500;line-height:1.42;color:rgba(236,224,194,.86);}
+#loadVeil .lv-steps{display:flex;gap:clamp(14px,2.2vw,30px);margin:26px 0 0;padding:0;list-style:none;counter-reset:lv;font-size:clamp(13px,1.1vw,15px);font-weight:600;}
+#loadVeil .lv-steps li{counter-increment:lv;display:flex;align-items:center;gap:8px;color:rgba(236,224,194,.38);}
+#loadVeil .lv-steps li::before{content:counter(lv);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid currentColor;
+  font:13px/1 'Saira Stencil One',sans-serif;}
+#loadVeil .lv-steps li.now{color:var(--brass);} #loadVeil .lv-steps li.now::before{background:var(--brass);color:#1a1405;border-color:var(--brass);}
+#loadVeil.on .lv-steps li.now::after{content:'';width:7px;height:13px;background:var(--brass);animation:lvCaret .8s steps(1) infinite;}
+@keyframes lvCaret{50%{opacity:0;}}
+#loadVeil .lv-steps li.done{color:var(--sand);} #loadVeil .lv-steps li.done::before{content:'✓';font-family:'Saira Condensed',sans-serif;font-weight:700;}
+#loadVeil .lv-bar{position:relative;margin-top:12px;height:3px;background:rgba(236,224,194,.12);overflow:hidden;}
+#loadVeil .lv-bar i{position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(.12);background:var(--brass);transition:transform .45s cubic-bezier(.2,.8,.2,1);}
+#loadVeil[data-step="1"] .lv-bar i{transform:scaleX(.6);} #loadVeil[data-step="2"] .lv-bar i{transform:scaleX(1);}
+#loadVeil .lv-bar::after{content:'';position:absolute;top:0;bottom:0;width:22%;left:0;background:linear-gradient(90deg,rgba(255,240,200,0),rgba(255,240,200,.75),rgba(255,240,200,0));}
+#loadVeil.on .lv-bar::after{animation:lvScan 1.3s ease-in-out infinite;}
+@keyframes lvScan{0%{transform:translateX(-100%);}100%{transform:translateX(560%);}}
+#loadVeil .lv-coord{position:absolute;right:clamp(24px,4vw,64px);bottom:clamp(22px,4vh,44px);font:clamp(14px,1.3vw,20px)/1 'Saira Stencil One',sans-serif;letter-spacing:.12em;color:rgba(236,224,194,.5);}
+#loadVeil.on .lv-sheet{animation:lvIn .55s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes lvIn{from{opacity:0;transform:translate(-14px,-50%);}to{opacity:1;transform:translate(0,-50%);}}
+@media (orientation:portrait){
+  #loadVeil .lv-sheet{left:6vw;right:6vw;width:auto;top:auto;bottom:max(13vh,90px);transform:none;}
+  #loadVeil.on .lv-sheet{animation:lvInP .55s cubic-bezier(.2,.8,.2,1) both;} @keyframes lvInP{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+  #loadVeil .lv-name{font-size:min(clamp(46px,15vw,92px), calc(88vw / (var(--len) * .66)));} #loadVeil .lv-sweep{left:calc(50% - 75vmax);top:calc(28% - 75vmax);}
+  #loadVeil .lv-steps{flex-direction:column;gap:8px;} #loadVeil .lv-coord{right:6vw;bottom:auto;top:max(5vh,30px);} #loadVeil .lv-stamp{top:-52px;right:0;} }
+@media (orientation:landscape) and (max-height:520px){
+  #loadVeil .lv-brief{display:none;} #loadVeil .lv-name{font-size:min(clamp(40px,14vh,72px), calc(70vw / (var(--len) * .66)));} #loadVeil .lv-steps{margin-top:14px;} #loadVeil .lv-stamp{font-size:18px;} }
+@media (prefers-reduced-motion:reduce){ #loadVeil.on .lv-ground,#loadVeil.on .lv-sweep,#loadVeil.on .lv-bar::after,#loadVeil.on .lv-steps li.now::after{animation:none;} }

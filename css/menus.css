@@ -245,9 +245,9 @@ body.pad.padplay.lob:not(.inmenu) #lobHud{display:block;}
 .go-why{max-width:min(92vw,520px);margin:-4px auto 10px;text-align:center;font:700 14px/1.35 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.4px;color:#cfd8c0;} .go-why b{color:#ffb35a;}
 
 /* Z136 3-2-1 countdown before the fight */
-#countdown{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:40;pointer-events:none;opacity:0;font:900 clamp(90px,22vw,220px)/1 'Saira Condensed',Rajdhani,sans-serif;color:#ffd27a;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 60px rgba(255,160,40,.55);letter-spacing:4px;}
-#countdown.go{font-size:clamp(46px,11vw,120px);color:#9be04a;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 60px rgba(120,220,60,.55);}
+#countdown{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:40;pointer-events:none;opacity:0;font:clamp(90px,22vw,220px)/1 'Saira Stencil One','Saira Condensed',sans-serif;color:#ece0c2;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 70px rgba(226,180,92,.45);letter-spacing:.04em;}   /* NO-TANKS 8 the stencil of the deployment order */
+#countdown.go{font-size:clamp(46px,11vw,124px);color:#e2b45c;white-space:nowrap;text-shadow:0 6px 40px rgba(0,0,0,.85),0 0 70px rgba(226,180,92,.6);}
 #countdown.show{animation:cdpop .95s ease-out forwards;}
 @keyframes cdpop{0%{opacity:0;transform:translate(-50%,-50%) scale(1.9);}18%{opacity:1;transform:translate(-50%,-50%) scale(1);}80%{opacity:1;}100%{opacity:0;transform:translate(-50%,-50%) scale(.85);}}
-#cdSub{position:fixed;left:50%;top:calc(42% + clamp(62px,13vw,128px));transform:translateX(-50%);z-index:40;pointer-events:none;opacity:0;transition:opacity .25s;max-width:92vw;text-align:center;font:800 clamp(13px,2.4vw,20px)/1.25 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:3px;color:#e8dcc0;text-shadow:0 2px 12px rgba(0,0,0,.9);} #cdSub.on{opacity:1;}
-#cdSub .cdc{margin-top:5px;font-size:.78em;letter-spacing:1.5px;color:#9fd8ff;}
+#cdSub{position:fixed;left:50%;top:calc(42% + clamp(62px,13vw,128px));transform:translateX(-50%);z-index:40;pointer-events:none;opacity:0;transition:opacity .25s;max-width:92vw;text-align:center;font:800 clamp(13px,2.4vw,20px)/1.25 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.04em;color:#ece0c2;text-shadow:0 2px 10px rgba(0,0,0,.95);padding:10px 26px;background:radial-gradient(closest-side,rgba(10,12,6,.62),rgba(10,12,6,0));} #cdSub.on{opacity:1;}
+#cdSub .cdc{margin-top:5px;font-size:.78em;letter-spacing:.02em;color:#e2b45c;}

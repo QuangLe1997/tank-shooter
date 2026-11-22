@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
-import { INTRO, INTRO_CITY } from '../../config.js';
-import { ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
+import { INTRO, INTRO_CITY, OPERATIONS } from '../../config.js';
+import { placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -21,10 +21,10 @@ function buildGrandTour(T){
   const rp=_rp.clone(), rl=_rl.clone();
   const caps=[];   // what the voice-over names while we circle (big stronghold first, the landmark, then home)
   const forts=FORTS.slice().sort((a,b)=>(b.tier||0)-(a.tier||0));
-  for(const f of forts.slice(0,2)) caps.push((f.tier===3?'ĐẠI BẢN DOANH ĐỊCH · ':'CỨ ĐIỂM ĐỊCH · ')+f.name);
-  if(RIVER.on && RIVER.bridges.length) caps.push('CẦU QUA SÔNG — XE LỘI NƯỚC SẼ CHẬM');
-  if(WONDER.name) caps.push('DI SẢN · '+WONDER.name);
-  caps.push('LÕI CỦA TA — TƯỜNG THÀNH · PHÁO CANH SẴN SÀNG');
+  for(const f of forts.slice(0,2)) caps.push((f.tier===3?'Đại bản doanh địch — ':'Cứ điểm địch — ')+capWords(f.name));
+  if(RIVER.on && RIVER.bridges.length) caps.push('Cầu qua sông — lội qua thì chậm');
+  if(WONDER.name) caps.push('Di sản — '+capWords(WONDER.name));
+  caps.push('Lõi của ta — tường thành và pháo canh đã sẵn sàng');
   const C=new THREE.Vector3(T.x*0.35, 0, T.z*0.35);                      // the heart of the field, leaning a little toward our side
   const aEnd=Math.atan2(rp.z-T.z, rp.x-T.x);                             // finish the orbit on the side the play camera sits → the swoop never doubles back
   const R=ARENA*0.92, H=ARENA*0.56, A=TOUR.sweep, wA=TOUR.split, rate=A/wA;
@@ -72,9 +72,12 @@ export function startIntro(){
   const offs=OFFS.slice(), looks=LOOKS.slice(0,5);
   if(camRestPose(_rp, _rl)){ offs.push([_rp.x-T.x, _rp.y, _rp.z-T.z]); looks.push([_rl.x-T.x, _rl.y, _rl.z-T.z]); } else { offs.push([camOff.x,camOff.y,camOff.z]); looks.push(LOOKS[5]); }
   const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))), false, 'centripetal');   // centripetal: no overshoot loops between close points
-  intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true; intro.t0=performance.now()/1000;
+  intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true; intro.t0=performance.now()/1000; intro.tc0=0;
   intro.quick = !!(PROFILE.introSeen && PROFILE.introSeen[BIOME.name]);   // Z152 seen this battlefield's tour before → compile behind the veil, then go
   const sub=document.getElementById('cine-sub'); if(sub){ clearTimeout(sub._t); sub._next=null; sub.style.transition='opacity .22s ease'; sub.style.opacity='1'; sub.textContent=stageLine(); }
+  { const put=(id, t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; }; put('cineName', biomeVi(BIOME.name)); put('cineTc', '00:00:00:00'); intro.tc='';
+    put('cineWhere', 'Màn '+S.stage+(S.loop>0?', vòng '+(S.loop+1):'')+' — '+[placeLine(BIOME.name), S.tod ? String(TOD_LABEL[S.tod]).toLocaleLowerCase('vi') : ''].filter(Boolean).join(', '));
+    put('cine-skip', MOBILE ? 'Chạm để bỏ qua' : 'Bấm phím bất kỳ để bỏ qua'); }   // NO-TANKS 8 the lower third and the feed's words
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
   intro.tour = MOBILE ? null : buildGrandTour(T); intro.tt=0;
   if(intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; intro.tour.fog=scene.fog.density; }   // the wide shot sees through thinner haze, thickening back as we land
@@ -83,10 +86,14 @@ export function startIntro(){
   if(!intro.tour){ if(scene.fog && scene.fog.density!=null){ intro.fog0=scene.fog.density; scene.fog.density=Math.max(scene.fog.density, INTRO.fog); }
   cullFar(T, true); }
   placeAt(0);
-  intro.warm=true; intro.warming=false; showVeil(true);   // Z119 compile every shader + draw the widest shot once BEHIND the veil, then fly
+  intro.warm=true; intro.warming=false; veilStep(1); showVeil(true);   // Z119 compile every shader + draw the widest shot once BEHIND the veil, then fly
   S.mode='intro';
 }
-function stageLine(){ return (S.loop>0?'VÒNG+'+S.loop+' · ':'')+'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(S.tod?' · '+TOD_LABEL[S.tod]:''); }
+function stageLine(){ const op=OPERATIONS[(S.stage-1)%OPERATIONS.length]; return op ? opTitle(op)+(S.loop>0?' — vòng '+(S.loop+1):'') : biomeVi(BIOME.name); }   // the caption the feed opens and closes on
+const capWords=s=>String(s||'').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c)=>a+c.toLocaleUpperCase('vi'));
+// the feed's timecode: hours:minutes:seconds:frames (25 a second) since the flight began
+function tick(now){ const t=Math.max(0, now-(intro.tc0||intro.t0)), f=Math.floor(t*25), p=n=>String(n).padStart(2,'0'), s=p(Math.floor(t/3600))+':'+p(Math.floor(t/60)%60)+':'+p(Math.floor(t)%60)+':'+p(f%25);
+  if(s!==intro.tc){ intro.tc=s; const e=document.getElementById('cineTc'); if(e) e.textContent=s; } }
 function setCap(txt){ const sub=document.getElementById('cine-sub'); if(!sub || sub.textContent===txt || sub._next===txt) return; sub._next=txt;   // captions cross-fade instead of flicking
   sub.style.opacity='0'; clearTimeout(sub._t); sub._t=setTimeout(()=>{ sub.textContent=txt; sub.style.opacity='1'; sub._next=null; }, 220); }
 // place the camera at progress u of whichever move is playing (also used by the warm-up)
@@ -141,8 +148,9 @@ export function endIntro(){
 }
 export function updateIntro(dt, now){
   if(!intro.active) return;
-  if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; showVeil(false); if(intro.quick) endIntro(); } }); }
+  if(intro.warm){ if(!intro.warming){ intro.warming=true; warmUp().then(()=>{ if(intro.active){ intro.warm=false; intro.tc0=performance.now()/1000; veilStep(2); showVeil(false); if(intro.quick) endIntro(); } }); }
     placeAt(0); return; }
+  tick(performance.now()/1000);
   const step=Math.min(dt, 1/30);   // Z119 a slow frame slows the camera for a moment instead of making it jump
   if(intro.tour && !intro.tour.shotsAt){ intro.tour.shotsAt=1; intro.tour.shots=cityShots(); if(!intro.tour.shots){ const s=streetShot(); if(s){ intro.tour.shots=[s]; intro.tour.streetAt=1; } } }   // laid out once the warm-up is over: the traffic has its roads by then
   if(intro.tour && intro.tour.shots && intro.tour.st>=0){ const R=intro.tour; R.st+=step; updateIntroClouds(step); if(playShot(R, R.st)) return; if(!R.streetAt){ R.streetAt=1; const s=streetShot(); if(s){ R.shots.push(s); playShot(R, R.st); return; } } R.st=-1; R.shots=null; }   // Z288 the city's opening shots first

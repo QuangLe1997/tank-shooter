@@ -1,25 +1,31 @@
 /* Z98 split from index.html — order matters: files are linked in this sequence. */
-  /* ===== INTRO CINEMATIC (deploy showcase) ===== */
+  /* ===== NO-TANKS 8 THE INTRO AS AN AIR-RECON FEED (#cine, game/intro.js): the letterbox bars carry the feed's own words — a live dot and
+     "Trinh sát đường không", a running timecode above; the voice-over's captions as subtitles below; the battlefield's name as a lower third ===== */
   #cine{position:fixed;inset:0;height:100%;height:var(--appH,100svh);z-index:30;pointer-events:none;opacity:0;transition:opacity .5s ease;}
   #cine.on{opacity:1;}
-  #cine .bar{position:absolute;left:0;right:0;height:0;background:#000;transition:height .7s cubic-bezier(.2,.8,.2,1);}
-  #cine .bar.top{top:0;} #cine .bar.bot{bottom:0;}
+  #cine .bar{position:absolute;left:0;right:0;height:0;background:#000;transition:height .7s cubic-bezier(.2,.8,.2,1);display:flex;align-items:center;
+    justify-content:space-between;padding:0 clamp(16px,3vw,44px);overflow:hidden;font-family:'Saira Condensed',Rajdhani,sans-serif;color:#ece0c2;}
+  #cine .bar.top{top:0;} #cine .bar.bot{bottom:0;justify-content:center;}
   #cine.on .bar{height:11vh;}
-  #cine-title{position:absolute;left:0;right:0;bottom:15vh;text-align:center;transform:translateY(14px);opacity:0;
-    transition:opacity .6s ease .35s,transform .6s ease .35s;}
-  #cine.on #cine-title{opacity:1;transform:translateY(0);}
-  #cine-title .ct-name{font-size:clamp(30px,7vw,64px);font-weight:900;letter-spacing:8px;line-height:1;
-    background:linear-gradient(105deg,var(--green),var(--ink) 55%,var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent;
-    filter:drop-shadow(0 4px 20px rgba(0,0,0,.7));}
-  #cine-title .ct-sub{margin-top:8px;font-size:clamp(11px,2.6vw,15px);letter-spacing:7px;color:var(--amber);text-transform:uppercase;
-    text-shadow:0 2px 12px rgba(0,0,0,.8);}
-  #cine-title .ct-sub::before,#cine-title .ct-sub::after{content:'';display:inline-block;width:34px;height:1px;background:var(--amber);
-    vertical-align:middle;margin:0 14px;opacity:.7;}
-  #cine-skip{position:absolute;right:18px;bottom:calc(11vh + 14px);font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.55);
-    text-transform:uppercase;animation:cineBlink 1.6s ease-in-out infinite;}
-  @keyframes cineBlink{0%,100%{opacity:.3;}50%{opacity:.85;}}
+  #cine .cn-feed{display:flex;align-items:center;gap:10px;font-size:clamp(12px,1.1vw,15px);font-weight:600;letter-spacing:.06em;color:rgba(236,224,194,.8);}
+  #cine .cn-feed i{width:9px;height:9px;border-radius:50%;background:#e0412b;box-shadow:0 0 10px rgba(224,65,43,.9);}
+  #cine.on .cn-feed i{animation:cnRec 1.1s steps(1) infinite;}
+  @keyframes cnRec{50%{opacity:.15;}}
+  #cine .cn-tc{font-size:clamp(13px,1.2vw,17px);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.08em;color:rgba(236,224,194,.66);}
+  #cine .cn-cap{max-width:68vw;text-align:center;font-size:clamp(15px,1.5vw,21px);font-weight:500;line-height:1.25;color:#f3ead3;}
+  #cine-title{position:absolute;left:clamp(20px,5vw,80px);bottom:calc(11vh + clamp(18px,4vh,40px));padding-left:16px;border-left:3px solid #e2b45c;
+    opacity:0;transform:translateX(-16px);transition:opacity .7s ease .45s,transform .7s cubic-bezier(.2,.8,.2,1) .45s;}
+  #cine.on #cine-title{opacity:1;transform:none;}
+  #cine-title .ct-name{font:clamp(40px,6.2vw,100px)/.92 'Saira Stencil One',sans-serif;letter-spacing:.04em;color:#ece0c2;text-shadow:0 4px 26px rgba(0,0,0,.65);}
+  #cine-title .ct-where{margin-top:8px;font:600 clamp(14px,1.35vw,19px)/1.3 'Saira Condensed',sans-serif;color:rgba(236,224,194,.88);text-shadow:0 2px 10px rgba(0,0,0,.85);}
+  #cine-skip{position:absolute;right:clamp(16px,3vw,44px);top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:.04em;color:rgba(236,224,194,.42);}
+  #cine.on #cine-skip{animation:cineBlink 1.8s ease-in-out infinite;}
+  @keyframes cineBlink{0%,100%{opacity:.45;}50%{opacity:1;}}
+  @media (orientation:landscape) and (max-height:520px){ #cine-skip{display:none;} #cine .cn-cap{font-size:14px;} }
+  @media (orientation:portrait){ #cine-title{bottom:calc(11vh + 22px);} #cine-skip{display:none;} }
   #hud{transition:opacity .45s ease;}
   body.cine #hud{opacity:0;pointer-events:none;}
+  #touch{transition:opacity .45s ease;} body.cine #touch{opacity:0;pointer-events:none;}   /* NO-TANKS 8 the recon feed is clean on a phone too: the sticks and buttons come back when it ends */
 
   /* ===== MOBILE (landscape-only) ===== */
   .touch-only{display:none;}

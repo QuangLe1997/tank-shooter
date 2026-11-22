@@ -2237,5 +2237,15 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(SET\)\{ const mx=Math\.max\(T\.size\.x,T\.size\.z\), ky=\(H\+2\+C\.wallUp\)\*SET\.tower\/T\.size\.y/.test(fo) && /SET \? Math\.max\(kx, \(H\+2\+C\.wallUp\)\*1\.05\/Gt\.size\.y\)/.test(fo) && /!\(SET && SET\.closed\)/.test(fo), 'a set\'s towers and gatehouse at their own proportions, its walls closed at the seams');
   ok((R('assets/models/real/fort/SOURCES.txt').match(/ by /g) || []).length >= 21, 'every piece credited'); }
 
+// NO-TANKS 8 the loading screen and the intro: XUẤT KÍCH opens a deployment order (the battlefield's own ground under a map grid, its name, the
+//   real place and its coordinates, the hour and the sky, the operation's brief, three real steps ticked as they finish); the intro is an air-recon
+//   feed (a live dot, a timecode, captions as subtitles, the name as a lower third); the countdown speaks the same stencil and ends on XUẤT KÍCH!
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), html=R('index.html'), lv=R('src/ui/load-veil.js'), it=R('src/game/intro.js'), C=await import('./config.js'), D=await import('./src/data/world.js');
+  ok(['lvGround','lvKind','lvName','lvPlace','lvCond','lvBrief','lvCoord'].every(id=>html.includes('id="'+id+'"')) && (html.match(/<ol class="lv-steps">(<li[^>]*>[^<]+<\/li>){3}<\/ol>/)||[]).length===2 && !/lv-spin/.test(html), 'the deployment order replaces the spinner: name, place, coordinates, conditions, brief, three steps');
+  ok(/veilOrder\(arg\); showVeil\(true\)/.test(R('src/game/flow.js')) && /veilStep\(1\); showVeil\(true\)/.test(it) && /veilStep\(2\); showVeil\(false\)/.test(it), 'the steps follow the real launch: the field is built, the graphics are readied, ready');
+  ok(D.BIOMES.every(b=>new RegExp('\\b'+b.name+":'\\d+°\\d+′[BN] \\d+°\\d+′[ĐT]'").test(lv) && C.GROUND_PHOTO.biomes[b.name] && fs.existsSync('assets/ground/'+C.GROUND_PHOTO.biomes[b.name][0]+'/diff.jpg')), 'every battlefield has its coordinates and its own ground under the order');
+  ok(/id="cineTc"/.test(html) && /Trinh sát đường không/.test(html) && /function tick\(now\)/.test(it) && /put\('cineName', biomeVi\(BIOME\.name\)\)/.test(it) && /'Đại bản doanh địch — '/.test(it), 'the intro is a recon feed: timecode, the name as a lower third, captions in sentence case');
+  ok(/el\.textContent='XUẤT KÍCH!'/.test(R('src/ui/briefing.js')) && /#countdown\{[^}]*'Saira Stencil One'/.test(R('css/menus.css')) && /body\.cine #touch\{opacity:0;/.test(R('css/cinematic-mobile.css')), 'the countdown in stencil ends on XUẤT KÍCH!; the phone controls stay out of the intro'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

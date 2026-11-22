@@ -186,6 +186,7 @@ export * from './game/flow.js';
 export * from './ui/menus.js';
 export * from './ui/terrain-picker.js';
 export * from './ui/battle-setup.js';
+export * from './ui/load-veil.js';   // NO-TANKS 8 the deployment order between XUẤT KÍCH and the battle
 export * from './ui/setup-units.js';   // Z354 CHUẨN BỊ TRẬN steps ① ②: tank or soldier, the hull and guns · the trooper, his ride and its driver; the briefing's ĐỘI HÌNH
 export * from './ui/padview.js';   // Z125
 export * from './ui/keys.js';

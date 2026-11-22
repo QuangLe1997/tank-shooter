@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
 import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { BIOME, GUNS, PROFILE, S, TOD_LABEL, WAVE, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
+import { opTitle, BIOME, GUNS, PROFILE, S, WAVE, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -44,7 +44,7 @@ export function chooseContract(c, quick){
 let _go=null, _cdN=0;
 export function beginStage(c, ctx){
   S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage(); voiceStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
-  { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml('MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(biomePlace(BIOME.name)?' · '+biomePlace(BIOME.name):'')+(S.tod?' · '+TOD_LABEL[S.tod]:'')+(op&&op.title?'  —  '+op.title:''))+'</div>'+(ct?'<div class="cdc">'+escapeHtml('ĐIỀU KIỆN: '+ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers
+  { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml(op&&op.title ? opTitle(op)+' — màn '+S.stage : 'Màn '+S.stage)+'</div>'+(ct?'<div class="cdc">'+escapeHtml(ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers (NO-TANKS 8: the intro already named the place)
   WAVE.active=false; S.wave=0;
   if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
   sfx('click');
@@ -54,7 +54,7 @@ function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||
   const now=performance.now()/1000;
   playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0')), true); WAVE.betweenUntil=now+1.6;   // Z138 the first wave comes 1.6 s after GO (the countdown already waited)
   { const sub=document.getElementById('cdSub'); if(sub) sub.classList.remove('on'); }
-  const el=document.getElementById('countdown'); if(el){ el.textContent='CHIẾN ĐẤU!'; el.className='go show'; setTimeout(()=>{ if(el.textContent==='CHIẾN ĐẤU!') el.className=''; }, 900); }
+  const el=document.getElementById('countdown'); if(el){ el.textContent='XUẤT KÍCH!'; el.className='go show'; setTimeout(()=>{ if(el.textContent==='XUẤT KÍCH!') el.className=''; }, 900); }
   sfx('levelup'); }
 export function updateCountdown(dt){ const el=document.getElementById('countdown');
   if(_warm && S.cd-dt<=0.05){ S.cd=0.05; _hold+=dt; if(_hold>0.5 && el && el.textContent!=='NẠP…'){ el.textContent='NẠP…'; el.className='show'; } return; }   // Z323 the shaders are still compiling: wait on "1" (then NẠP…) so the fight never starts mid-compile — the stutter when you first open fire
