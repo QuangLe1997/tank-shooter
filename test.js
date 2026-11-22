@@ -1557,6 +1557,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/export function sandProof\(bl, b\)\{ if\(bl\.kind!=='sandbag'\) return false;/.test(cv) && /\|\| sandProof\(bl, b\)\)\) damageBlock\(bl,/.test(lo) && /!sandBlastProof\(b, r, type\)\) damageBlock\(b,/.test(sp), 'small-arms rounds and small pops leave sandbags standing');
   ok(/if\(!type \|\| !b\.mesh \|\| !BREAKUP\.heaps\) return null;/.test(rb) && /if\(BREAKUP\.heaps\) spawnRubble\(/.test(bw) && /function addRubble\(Bd, h\)\{ if\(!BREAKUP\.heaps\)\{/.test(ct) && /if\(!BREAKUP\.heaps\)\{ decalAsh\(f\.x\+pc\.cx/.test(fo), 'no heap of chunks: cover, brick walls, city floors, a fort breach');
   ok(/export function breakScar\(x, z, r, fire\)/.test(cv) && /decalCrater\(x, z, r\*S0\.crater\+0\.8/.test(cv) && /decalAsh\(x, z, r\*S0\.ash\+1, S0\.ashK\)/.test(cv) && /dirtGeyser\(x, z,/.test(cv) && (cv.match(/breakScar\(b\.x, b\.z,/g)||[]).length>=3 && /export function decalAsh\(x, z, r, k\)/.test(dc), 'a big break tears and greys the ground where it stood (concrete / HESCO, containers / cars, rocks / hedgehogs)'); }
+// Z431 no concrete pipes and no log piles scattered as cover (the user: they look fake)
+{ const fs=await import('node:fs'); const pr=fs.readFileSync('src/world/props.js','utf8'), a=pr.indexOf('export const COVER_SET'), blk=pr.slice(a, pr.indexOf('};', a));
+  ok(a>0 && !/'pipes'|'logs'/.test(blk) && (blk.match(/\[\[/g)||[]).length>=15, 'no pipes or log piles in any battlefield\'s cover set');
+  ok(!/bank:'logs'/.test(fs.readFileSync('config.js','utf8')), 'the hedgerow bank is not a log pile'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -1299,7 +1299,7 @@ export const DEFENSE = { on:true, rb:8, rbMobile:6,
   style:{ DESERT:'line', SAVANNA:'kopje', ARCTIC:'hedgehog', TUNDRA:'hedgehog', FOUNDRY:'containers', STEELMILL:'containers', CITY:'streets', CITADEL:'curtain',
     RUINS:'pockets', MEADOW:'bocage', HILLS:'bocage', VILLAGE:'bocage', VOLCANO:'lava', QUARRY:'terraces' },
   line:{ step:3.4, pill:40, box:'bunker_dome', boxS:0.55 }, hedge:{ step:7, tri:[[0, 0], [1.9, 1.6], [-1.9, 1.6]] }, crate:{ len:6.0, stack:0.3 },
-  curtain:{ k:'castle_wall', w:20, gate:'gatehouse', gateS:0.75 }, bocage:{ step:6.5, trees:['tree_oak', 'tree_pine'], s:[0.5, 0.7], bank:'logs' },
+  curtain:{ k:'castle_wall', w:20, gate:'gatehouse', gateS:0.75 }, bocage:{ step:6.5, trees:['tree_oak', 'tree_pine'], s:[0.5, 0.7], bank:'sandbag' },   // (Z431 the bank: sandbags, not a log pile — log piles read fake)
   lava:{ step:18, s:[0.65, 0.95], rocks:['lava_rock_a', 'lava_rock_b', 'lava_rock_c'] }, terraces:{ rows:3, gap:15, run:18, hole:11, span:1.2 },
   kopje:{ n:[4, 4, 5, 5, 6], ring:5.2, bags:8, gap:50 }, pockets:{ keys:['ruin_overgrown', 'skeleton_block', 'gargoyle_wall', 'corner_store', 'temple', 'gothic_gate'], towers:2, tower:'gt_broken' },
   streets:{ n:4, gap:55, block:['road_barrier', 'tire_wall'] },

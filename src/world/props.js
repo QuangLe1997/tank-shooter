@@ -225,22 +225,22 @@ export function coverMat(kind){
   COVER_MAT[kind]=m; return m;
 }
 // which real-world pieces each battlefield uses: [destructible kinds] + [solid kinds]
-export const COVER_SET = {   // Z193 + jersey barriers · dragon's teeth (solid) · timber barricades (breakable)
-  DESERT: [['sandbag','sandbag','drums','crates'], ['hesco','concrete','pipes','jersey','teeth']],
-  RUINS:  [['sandbag','tires','drums','crates'],   ['concrete','pipes','jersey','teeth']],
-  TUNDRA: [['sandbag','crates','drums','logs'],    ['concrete','pipes','hesco','teeth']],
-  FOUNDRY:[['drums','tires','drums','crates'],     ['pipes','concrete','jersey']],
-  CITADEL:[['sandbag','sandbag','tires','drums'],  ['concrete','hesco','pipes','teeth']],
-  MEADOW: [['sandbag','crates','tires','logs'],    ['hesco','pipes','concrete','teeth']],
-  CITY:   [['sandbag','crates','tires','drums'],   ['concrete','jersey','hesco','pipes','jersey']],
-  HILLS:  [['sandbag','crates','logs','logs'],     ['hesco','concrete','teeth']],
-  VILLAGE:[['sandbag','crates','tires','logs'],    ['pipes','hesco','jersey']],
-  SAVANNA:[['sandbag','sandbag','drums','logs'],   ['hesco','concrete','teeth']],
-  ARCTIC: [['sandbag','crates','logs'],            ['concrete','hesco','teeth']],
-  STEELMILL:[['drums','tires','crates','drums'],   ['pipes','concrete','jersey']],
+export const COVER_SET = {   // Z193 + jersey barriers · dragon's teeth (solid) · timber barricades (breakable) · Z431 no concrete pipes, no log piles: they read fake
+  DESERT: [['sandbag','sandbag','drums','crates'], ['hesco','concrete','jersey','teeth']],
+  RUINS:  [['sandbag','tires','drums','crates'],   ['concrete','jersey','teeth']],
+  TUNDRA: [['sandbag','crates','drums'],    ['concrete','hesco','teeth']],
+  FOUNDRY:[['drums','tires','drums','crates'],     ['concrete','jersey']],
+  CITADEL:[['sandbag','sandbag','tires','drums'],  ['concrete','hesco','teeth']],
+  MEADOW: [['sandbag','crates','tires'],    ['hesco','concrete','teeth']],
+  CITY:   [['sandbag','crates','tires','drums'],   ['concrete','jersey','hesco','jersey']],
+  HILLS:  [['sandbag','crates'],     ['hesco','concrete','teeth']],
+  VILLAGE:[['sandbag','crates','tires'],    ['hesco','jersey']],
+  SAVANNA:[['sandbag','sandbag','drums'],   ['hesco','concrete','teeth']],
+  ARCTIC: [['sandbag','crates'],            ['concrete','hesco','teeth']],
+  STEELMILL:[['drums','tires','crates','drums'],   ['concrete','jersey']],
   VOLCANO:[['sandbag','drums','crates'],          ['concrete','hesco','teeth']],
-  QUARRY: [['crates','sandbag','drums'],          ['concrete','jersey','pipes','teeth']],
-  CAVERN: [['crates','sandbag','logs','drums'],    ['concrete','hesco','logs']],
+  QUARRY: [['crates','sandbag','drums'],          ['concrete','jersey','teeth']],
+  CAVERN: [['crates','sandbag','drums'],    ['concrete','hesco']],
 };
 // Z193 lone big pieces per battlefield: shipping containers (some stacked two high) + burnt-out car wrecks
 export const LONE_SET = { DESERT:[3,4], RUINS:[3,5], TUNDRA:[2,2], FOUNDRY:[6,3], CITADEL:[2,3], MEADOW:[1,3], CITY:[6,6], HILLS:[1,2], VILLAGE:[2,4], SAVANNA:[2,3], ARCTIC:[2,2], STEELMILL:[7,3], VOLCANO:[2,2], QUARRY:[6,3], CAVERN:[3,1] };
