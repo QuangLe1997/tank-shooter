@@ -1418,6 +1418,21 @@ export const BLEND = { on:true, hue:0.25, desat:0.12, dust:0.36, dustH:1.4, tint
 export const CONTACT = { on:true, res:[2048, 1024], pad:0.2, shadeB:0.8, shade:0.62, skirtW:1.5, skirtB:1.5, skirt:0.68, rK:0.85, sceneK:0.5, blot:[0.5, 1.4],
   col:{ _:[0.64, 0.56, 0.46], MEADOW:[0.58, 0.47, 0.32], RUINS:[0.6, 0.5, 0.38], CITADEL:[0.66, 0.56, 0.44], SAVANNA:[0.66, 0.54, 0.42], DESERT:[0.74, 0.62, 0.5],
     ARCTIC:[0.7, 0.72, 0.76], TUNDRA:[0.7, 0.72, 0.76], CITY:[0.6, 0.58, 0.56], FOUNDRY:[0.58, 0.54, 0.5], STEELMILL:[0.58, 0.54, 0.5], VOLCANO:[0.66, 0.6, 0.56], QUARRY:[0.66, 0.62, 0.56] } };
+// Z432 TRAILS (world/trails.js): the tracks worn between the places of a battlefield — our four gates, the spawn, every fort's gate, the supply bases,
+//   the depots, the underground gate, the checkpoints, the objective — joined by the shortest tree (Prim) and each leg routed on a cell grid (A*: what
+//   stands is solid, slopes and water cost, a stretch already worn costs reuse × — so legs merge into trunks), cut into the fence where a track runs out to
+//   the roads over the hills (heightfield.js ROAD_EXITS). Painted into the contact map's blue channel (decals.js paintContact): the body (b·body) and two
+//   wheel ruts (+ rut) — the floor's shader lays a gravel photo there (set, its tile m, tint), the ruts darker and bare, mid = how much grass keeps the
+//   crown and shoulders (a two-track meadow lane vs a gravel desert road); the grass carpet goes flat and thin on it. Along both sides: loose stones (per m
+//   [pebbles, kerb stones]), grass clumps, a bush here and there, wild flowers (per m, both sides). w = [lane, the trunks to the gates and off the field] m,
+//   rut = the ruts' half spacing ×w. No trails in the city (it has its streets) or below ground.
+export const TRAILS = { on:true, cell:[3, 3.5], slope:5, wet:10, out:2.5, reuse:0.45, pad:1.4, core:35, w:[3.4, 5], rut:0.24, rutW:0.85, body:150, rutV:105, blur:0.9, rutB:0.25, rutDark:0.28, wig:0.9,
+  stones:[[1.4, 0.2], [0.4, 0.08]], verge:[0.7, 0.25], bush:[0.035, 0.012], flower:0.08, mask:1.6,
+  biomes:{ MEADOW:{ set:'gravel_road', tile:2, tint:[0.62, 0.6, 0.52], mid:0.62, tone:'green', bush:'green', flowers:1 }, SAVANNA:{ set:'sandy_gravel', tile:2.1, tint:[0.74, 0.6, 0.48], mid:0.45, tone:'dry', bush:'dry' },
+    CITADEL:{ set:'gravel_road', tile:2, tint:[0.64, 0.6, 0.54], mid:0.2, tone:'dry', bush:'dry' }, RUINS:{ set:'gravel_floor', tile:2.25, tint:[0.6, 0.58, 0.54], mid:0.35, tone:'green', bush:'green' },
+    DESERT:{ set:'sandy_gravel', tile:2.1, tint:[0.8, 0.68, 0.54], mid:0, tone:'dry', bush:'dry', thin:0.35 }, QUARRY:{ set:'gravel_ground_01', tile:3, tint:[0.72, 0.7, 0.66], mid:0, tone:'dry', thin:0.3 },
+    ARCTIC:{ set:'gravel_road', tile:2, tint:[0.5, 0.55, 0.62], mid:0.35 }, VOLCANO:{ set:'gravel_floor', tile:2.25, tint:[0.34, 0.31, 0.3], mid:0 },
+    FOUNDRY:{ set:'gravel_ground_01', tile:3, tint:[0.46, 0.44, 0.42], mid:0 } } };
 export const INTRO_CLOUDS = { on:true, band:[0.3, 0.82], puffs:16, wisps:16, size:[26, 46], op:0.55, wispOp:0.26, drift:1.6, haze:0.34, inside:0.82, tintK:0.55 };
 export const INTRO = { cullR:85, bigR:40, fog:0.0095, compileWait:2500, skipGuard:0.35, assetWait:9000 };   // Z322 assetWait (ms): the longest the veil waits for the photo ground, grass and real models before the move
 // Z118 HAPTIC RHYTHMS — step = [strong (heavy left motor), weak (light right motor), ms, gap-after ms]. The same patterns drive phone vibration.

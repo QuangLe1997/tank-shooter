@@ -6,6 +6,9 @@ import { landform, ARENA, BIOME, MOBILE, RIVER, _R, arena, bedAt, fieldPath, hei
 
 // ---- perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets ----
 export const perimeter = new THREE.Group(); arena.add(perimeter);
+// Z432 where a trail runs out of the field the fence opens for it (world/trails.js fills it, then builds the fence again): { x, z, r, pts: the track beyond }
+export const FENCE_GAPS = [];
+const gapAt = (x, z, m) => FENCE_GAPS.some(g => (g.x - x) ** 2 + (g.z - z) ** 2 < (g.r + m) ** 2 || g.pts.some(p => (p[0] - x) ** 2 + (p[1] - z) ** 2 < (g.r + m) ** 2));
 export function buildPerimeter(b, withHighland=true){
   for(let i=perimeter.children.length-1;i>=0;i--){ const c=perimeter.children[i]; perimeter.remove(c); if(c.geometry) c.geometry.dispose(); }
   const prof=new THREE.Shape(); prof.moveTo(-0.62,0); prof.lineTo(0.62,0); prof.lineTo(0.62,0.08); prof.lineTo(0.4,0.3); prof.lineTo(0.17,1.25); prof.lineTo(-0.17,1.25); prof.lineTo(-0.4,0.3); prof.lineTo(-0.62,0.08); prof.closePath();   // New-Jersey barrier profile
@@ -13,7 +16,7 @@ export function buildPerimeter(b, withHighland=true){
   // Z106 the fence follows the irregular FIELD outline (world/field.js), 1 m inside it, sampled every 3 m
   const P=fieldPath(3.0, 1.0), n=P.length;
   // Z415 where a river runs out through the fence the fence stops at its banks — a clean gap, nothing standing in the water: runs = the dry stretches
-  const wet=P.map(q=>RIVER.on && bedAt(q.x,q.z)<RIVER.y+RIVERS.fenceGap), runs=[];
+  const wet=P.map(q=>(RIVER.on && bedAt(q.x,q.z)<RIVER.y+RIVERS.fenceGap) || gapAt(q.x,q.z,0)), runs=[];
   if(!wet.some(Boolean)) runs.push({ idx:P.map((_,i)=>i), closed:true });
   else { const s0=wet.indexOf(true); let cur=null; for(let k=1;k<=n;k++){ const i=(s0+k)%n; if(wet[i]){ if(cur && cur.length>1) runs.push({ idx:cur, closed:false }); cur=null; } else (cur||(cur=[])).push(i); } if(cur && cur.length>1) runs.push({ idx:cur, closed:false }); }
   const Z0=new THREE.Vector3(0,0,0);
@@ -64,7 +67,7 @@ export function buildHighland(b){ for(let i=highland.children.length-1;i>=0;i--)
   const rs=rockSet(b?b.name:'DESERT'), P=fieldPath(MOBILE?7:4.5, -5), geo=rs.big[0], per=Math.ceil(P.length/HIGHLAND_ARCS);
   const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), Sc=new THREE.Vector3(), E=new THREE.Euler();
   for(let a=0;a*per<P.length;a++){ const arc=P.slice(a*per, (a+1)*per), im=new THREE.InstancedMesh(geo, rs.mat, arc.length*2); let k=0;
-    for(const q of arc) for(let s=0;s<2;s++){ if(keep<1 && Math.random()>keep) continue; const out=_R(0,7)+s*4, x=q.x+q.nx*out, z=q.z+q.nz*out; if(Math.abs(x)>ARENA-2||Math.abs(z)>ARENA-2) continue; if(RIVER.on && bedAt(x,z)<RIVER.y+RIVERS.fenceGap+0.4) continue;   // (Z415 none in the river's way out)
+    for(const q of arc) for(let s=0;s<2;s++){ if(keep<1 && Math.random()>keep) continue; const out=_R(0,7)+s*4, x=q.x+q.nx*out, z=q.z+q.nz*out; if(Math.abs(x)>ARENA-2||Math.abs(z)>ARENA-2) continue; if(RIVER.on && bedAt(x,z)<RIVER.y+RIVERS.fenceGap+0.4) continue; if(gapAt(x,z,3.6)) continue;   // (Z415 none in the river's way out)
       const r=_R(1.4,3.4)*(s?0.8:1); E.set(_R(-0.3,0.3),_R(0,6.28),_R(-0.3,0.3)); Q.setFromEuler(E); V.set(x, heightAt(x,z)+r*0.1, z); Sc.set(r,r*_R(0.6,1.1),r); M.compose(V,Q,Sc); im.setMatrixAt(k++,M); }
     if(!k){ im.dispose(); continue; }
     im.count=k; im.computeBoundingSphere(); im.castShadow=!MOBILE; im.receiveShadow=true; highland.add(im); } }

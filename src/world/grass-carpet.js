@@ -26,14 +26,15 @@ function clumpGeo(){ const pos = [], uv = [], nrm = [], idx = []; let v = 0;
 function grassMat(map, alpha, C){
   const m = new THREE.MeshStandardMaterial({ map, alphaMap:alpha, alphaTest:GRASS.alphaTest, alphaToCoverage:!MOBILE, color:new THREE.Color().setRGB(...C.tint), roughness:0.9, metalness:0, side:THREE.DoubleSide });
   m.onBeforeCompile = sh => { sh.uniforms.gTime = G.time; sh.uniforms.gAtlasK = { value:GRASS.atlas[0] / GRASS.atlas[1] }; sh.uniforms.gDry = { value:new THREE.Color().setRGB(...(C.dryTint || [1.15, 1.0, 0.7])) };
-    sh.uniforms.decalC = DECAL_U.decalC; sh.uniforms.decalK = DECAL_U.decalK; sh.uniforms.contK = DECAL_U.contK; sh.uniforms.contCol = DECAL_U.contCol;   // Z400 the contact map: trodden, shaded round what stands here
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float gTime, gAtlasK, decalK; uniform sampler2D decalC; uniform vec2 contK; attribute vec4 aRect; varying float vGh; varying float vGv; varying vec2 vGc;')
+    sh.uniforms.decalC = DECAL_U.decalC; sh.uniforms.decalK = DECAL_U.decalK; sh.uniforms.contK = DECAL_U.contK; sh.uniforms.contCol = DECAL_U.contCol; sh.uniforms.trailK = DECAL_U.trailK;   // Z400 the contact map: trodden, shaded round what stands here
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float gTime, gAtlasK, decalK; uniform sampler2D decalC; uniform vec2 contK; uniform vec4 trailK; attribute vec4 aRect; varying float vGh; varying float vGv; varying vec2 vGc;')
       .replace('#include <uv_vertex>', '#include <uv_vertex>\n vMapUv = aRect.xy + uv * aRect.zw; vAlphaMapUv = vMapUv;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
       float asp = aRect.z / aRect.w * gAtlasK; transformed.xz *= asp;   // the card as wide as its photo
       vGh = uv.y; vec4 gp = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0); vGv = fract(sin(dot(gp.xz, vec2(12.9898, 78.233))) * 43758.5453);
-      { vec4 gw = modelMatrix * gp; vGc = texture2D(decalC, vec2(gw.x * decalK + 0.5, 0.5 - gw.z * decalK)).rg * step(0.001, contK.x + contK.y);   // Z400 round a wall's foot, a rock, a sandbag: the grass trodden down
-        transformed.y *= 1.0 - clamp(vGc.g * 0.6 + vGc.r * 0.5, 0.0, 0.85); }
+      { vec4 gw = modelMatrix * gp; vec3 gc3 = texture2D(decalC, vec2(gw.x * decalK + 0.5, 0.5 - gw.z * decalK)).rgb * step(0.001, contK.x + contK.y); vGc = gc3.rg;   // Z400 round a wall's foot, a rock, a sandbag: the grass trodden down
+        transformed.y *= 1.0 - clamp(vGc.g * 0.6 + vGc.r * 0.5, 0.0, 0.85);
+        transformed *= 1.0 - trailK.x * max(smoothstep(0.62, 0.85, gc3.b), smoothstep(0.1, 0.45, gc3.b) * (1.0 - trailK.z)); }   // Z432 none on a trail's ruts, thinned on its body (a grassy crown on a meadow lane)
       float gust = sin(gp.x * 0.11 + gTime * 1.7) * 0.6 + sin(gp.z * 0.07 - gTime * 1.1) * 0.4, flut = sin(gTime * 6.0 + gp.x * 1.3 + gp.z * 1.7) * 0.12;
       float bend = (gust * 0.16 + flut * 0.05) * uv.y * uv.y; mat3 gIm = mat3(instanceMatrix);
       vec3 wb = vec3(bend, -abs(bend) * 0.3, bend * 0.6), lb = transpose(gIm) * wb; lb /= vec3(dot(gIm[0], gIm[0]), dot(gIm[1], gIm[1]), dot(gIm[2], gIm[2]));

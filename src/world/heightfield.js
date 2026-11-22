@@ -215,14 +215,15 @@ export function buildOutskirts(b){ let C = OUTSKIRTS.on ? (OUTSKIRTS.biomes[b.na
 // the tracks that lead away from the field over the hills (behind our lines, toward the enemy's, and off to one side): a ribbon on the ground, its
 //   edges soft, winding as it goes, fading into the plain
 const ROADS = new THREE.Group(); ROADS.name = 'outskirt-roads'; arena.add(ROADS); let _roadTex = null;
+export const ROAD_EXITS = [];   // Z432 where each track leaves the field's square: { x, z, a (its heading out), w } — world/trails.js runs a trail in to meet it
 function roadTex(){ return _roadTex || (_roadTex = _canvasTex(64, 256, (x, W, H) => { for(let i = 0; i < W; i++){ const e = Math.min(i, W - 1 - i) / (W * 0.22), a = Math.min(1, e) * 0.9;
     for(let j = 0; j < H; j += 4){ const n = 0.75 + 0.25 * Math.random(); x.fillStyle = `rgba(${Math.round(255 * n)},${Math.round(255 * n)},${Math.round(255 * n)},${a * (0.8 + 0.2 * Math.random())})`; x.fillRect(i, j, 1, 4); } }
     const r = Math.max(1, W * 0.18); x.fillStyle = 'rgba(0,0,0,0.18)'; x.fillRect(Math.round(W * 0.3 - r / 2), 0, r, H); x.fillRect(Math.round(W * 0.7 - r / 2), 0, r, H); })); }   // (two wheel ruts)
-function outskirtRoads(b, C){ for(const m of [...ROADS.children]){ ROADS.remove(m); m.geometry.dispose(); m.material.dispose(); } if(!C || C.roads === 0 || b.name === 'CITY') return;
+function outskirtRoads(b, C){ ROAD_EXITS.length = 0; for(const m of [...ROADS.children]){ ROADS.remove(m); m.geometry.dispose(); m.material.dispose(); } if(!C || C.roads === 0 || b.name === 'CITY') return;
   const A = ARENA, col = new THREE.Color(b.ground).multiplyScalar(0.62), w = 6, L = A * (OUTSKIRTS.out - 1.4);
   for(const a0 of [Math.PI / 2 + _R(-0.3, 0.3), -Math.PI / 2 + 0.5 + _R(-0.25, 0.25), (Math.random() < 0.5 ? 0 : Math.PI) + _R(-0.4, 0.4)]){ const c = Math.cos(a0), sn = Math.sin(a0), rin = A / Math.max(Math.abs(c), Math.abs(sn)), ph = Math.random() * 9, P = [], U = [], idx = [];
     let x = c * rin, z = sn * rin, hd = a0, n = 0; for(let d = 0; d <= L; d += 5, n++){ hd = a0 + Math.sin(d / 140 + ph) * 0.35 + Math.sin(d / 47 + ph * 2) * 0.08;
-      const px = -Math.sin(hd), pz = Math.cos(hd); for(const sd of [-1, 1]){ const vx = x + px * sd * w / 2, vz = z + pz * sd * w / 2; P.push(vx, heightAt(vx, vz) + 0.12, vz); U.push(sd < 0 ? 0 : 1, d / 24); }
+      if(!n) ROAD_EXITS.push({ x, z, a:hd, w }); const px = -Math.sin(hd), pz = Math.cos(hd); for(const sd of [-1, 1]){ const vx = x + px * sd * w / 2, vz = z + pz * sd * w / 2; P.push(vx, heightAt(vx, vz) + 0.12, vz); U.push(sd < 0 ? 0 : 1, d / 24); }
       x += Math.cos(hd) * 5; z += Math.sin(hd) * 5; }
     for(let i = 0; i < n - 1; i++){ const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(idx); g.computeVertexNormals();

@@ -142,6 +142,7 @@ export * from './world/traffic.js';
 export * from './actors/real-air.js';   // Z272 real aircraft
 export * from './world/ruins3d.js';   // Z275 ruins of war
 export * from './world/defense.js';   // Z420 the enemy's defence in depth: the obstacle belt, the lanes' checkpoints, the fighting positions
+export * from './world/trails.js';   // Z432 the tracks worn between the places of a battlefield
 export * from './world/real-turrets.js';   // Z424 real guard guns, AA guns, rockets and missiles
 export * from './world/real-fit.js';   // Z426 the camps' barracks and tents, the rocket truck: a scan fitted to the drawn piece's box
 export * from './world/scenery.js';   // Z374 every battlefield composed from the Meshy scans: skyline, landmark, groves, sidings, tank farms (distance levels, the near scan streamed in)

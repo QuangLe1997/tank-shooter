@@ -1,7 +1,7 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
-import { CONTACT } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, MOBILE, SCENE, blocks, bloodSplat, inField, solidShape } from '../hub.js';
+import { CONTACT, TRAILS } from '../../config.js';
+import { ARENA, BIOME, DECAL_U, MOBILE, SCENE, TRAIL, blocks, bloodSplat, inField, solidShape, trailNormal } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -33,6 +33,11 @@ export function paintContact(){ const C = CONTACT, x = DECAL.cont.getContext('2d
   const sh = new Path2D(), sk = new Path2D(); for(const f of fp){ shape(sh, f, C.pad, false); shape(sk, f, C.skirtW, true); }
   x.globalCompositeOperation = 'lighter'; x.fillStyle = '#000';
   for(const [path, colr, blur] of [[sh, 'rgb(255,0,0)', C.shadeB], [sk, 'rgb(0,255,0)', C.skirtB]]){ x.save(); x.translate(-W, 0); x.shadowColor = colr; x.shadowBlur = blur * P * 2; x.shadowOffsetX = W; x.fill(path); x.restore(); }
+  const TP = TRAIL.paths || [];   // Z432 the trails (world/trails.js) into the blue channel: the worn body (the brightest wins where two meet), the two wheel ruts added on it
+  const str = (pts, off, w, col, blur, op) => { const p = new Path2D(); pts.forEach((q, i) => { const [nx, nz] = trailNormal(pts, i), X = px(q[0] + nx * off), Z = px(q[1] + nz * off); if(i) p.lineTo(X, Z); else p.moveTo(X, Z); });
+    x.save(); x.globalCompositeOperation = op; x.translate(-W, 0); x.shadowColor = col; x.shadowBlur = blur * P * 2; x.shadowOffsetX = W; x.lineWidth = w * P; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#000'; x.stroke(p); x.restore(); };
+  for(const L of TP) str(L.pts, 0, L.w, 'rgb(0,0,' + TRAILS.body + ')', TRAILS.blur, 'lighten');
+  for(const L of TP) for(const sd of [-1, 1]) str(L.pts, sd * L.w * TRAILS.rut, TRAILS.rutW, 'rgb(0,0,' + TRAILS.rutV + ')', TRAILS.rutB, 'lighter');
   x.globalCompositeOperation = 'source-over'; DECAL.texC.needsUpdate = true; return fp.length; }
 export const _dpx=(x)=>(x+ARENA)*DECAL.ppu, _dpz=(z)=>(z+ARENA)*DECAL.ppu, _ddx=(x)=>(x+ARENA)*DECAL.dppu, _ddz=(z)=>(z+ARENA)*DECAL.dppu;
 export let _treadCol='rgba(42,30,18,', _treadA=0.16;

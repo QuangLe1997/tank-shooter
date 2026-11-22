@@ -119,6 +119,7 @@ const bush=(dry)=>vars('bu'+(dry?1:0), 3, ()=>{ const P=[], cols=dry?[0x8a7a4a,0
 const flowers=()=>vars('fl', 2, ()=>{ const P=[], cols=[0xf4f0e0,0xffd84a,0xc86ad0,0xff7a5a,0x8ac8ff]; for(let i=0;i<9;i++){ const x=_R(-0.5,0.5), z=_R(-0.5,0.5), h=_R(0.25,0.55), st=new THREE.CylinderGeometry(0.012,0.012,h,3); st.translate(x,h/2,z); P.push({geo:st,col:0x4e7a2e});
     const hd=new THREE.IcosahedronGeometry(_R(0.05,0.08),0); hd.translate(x,h,z); P.push({geo:hd,col:cols[(Math.random()*cols.length)|0]}); }
   grassCards(P, 0.5, 0.45, [0x6a9a3a,0x5a8a30]); return mergeL(P); });
+export const bushes=(dry)=>bush(dry), wildflowers=()=>flowers();   // Z432 for the trails' verges (world/trails.js)
 // Z202 GRASS: 3–4 crossed alpha cards of real blades (atlas region 3), leaning a little, darker at the root — a clump, not a fistful of cones
 function grassCards(P, w, h, cols, n){ const N=n||3; for(let k=0;k<N;k++){ const a=k/N*Math.PI+_R(-0.3,0.3), c=card(w*_R(0.85,1.2), h*_R(0.8,1.15), 3, 0, -h*1.5, 0, 0.35); c.translate(0, h*0.5, 0); c.rotateX(_R(-0.12,0.12)); c.rotateY(a); c.translate(_R(-0.12,0.12),0,_R(-0.12,0.12)); P.push({geo:c,col:cols[(k+(Math.random()*cols.length|0))%cols.length]}); } }
 export const grass=(tone)=>vars('gr'+tone, 4, (vv)=>{ const P=[], T={ green:[0x7caa44,0x6a9a3a,0x8fb850,0x5e8a32], dry:[0xd8bc78,0xc8a860,0xe0c88c,0xb09050], straw:[0xf0d890,0xe0c070,0xd0a858,0xf6e4a8], tundra:[0x9a8a62,0x8a7a58,0xb0a078,0x7a6c4e] }[tone]||[0x9a8458,0x7a6a44,0xb8a070];
@@ -171,6 +172,7 @@ function plant(gs, n, opt){ const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[
       if(opt.fixed) blocks.push({ mesh:new THREE.Object3D(), x:o.x, z:o.z, r:opt.fixed*o.s*o.sw, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'trunk', im, sh:o.s*o.sw, sy:o.s*o.sy });   // Z260 a giant: its trunk stops tanks and shells, nothing fells it · Z404 (im, its size: refitted to the real giant's trunk, world/real-trees.js)
       else { const cr={ x:o.x, z:o.z, r:(opt.cr||0.5)*o.s/(opt.real||1), im, k, alive:true, kind:opt.kind||'grass', ry:o.ry, s:o.s, flora:true, leafy:opt.leafy!==false }; crushables.push(cr); if(cr.kind==='tree') TREES.push(cr); } });   // Z262 standing trees can be felled
     im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.computeBoundingSphere(); arena.add(im); FLORA.meshes.push(im); dressTrees(im); }); }
+export function plantFlora(gs, n, opt){ plant(gs, n, opt); }   // Z432 the trails' verges, planted like the rest (crushable, swaying, real species where they exist)
 function bankSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const li=(Math.random()*RIVER.lines.length)|0, L=RIVER.lines[li], p=L[(Math.random()*L.length)|0], w=RIVER.w[li]||3.2, a=Math.random()*6.28, r=w*_R(0.95,1.35);
   const x=p.x+Math.cos(a)*r, z=p.z+Math.sin(a)*r, h=heightAt(x,z); return (h>RIVER.y-0.05 && h<RIVER.y+0.6) ? [x,z] : null; }
 function patchSpot(centres, R){ const c=centres[(Math.random()*centres.length)|0]; const a=Math.random()*6.28, r=Math.sqrt(Math.random())*R; return [c[0]+Math.cos(a)*r, c[1]+Math.sin(a)*r]; }
