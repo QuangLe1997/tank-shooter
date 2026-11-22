@@ -1,7 +1,7 @@
 {
-  "name": "STEEL SIEGE — Tank Shooter",
-  "short_name": "Steel Siege",
-  "description": "Game xe tăng 3D: giữ phòng tuyến, phá thành địch, nâng cấp kho vũ khí.",
+  "name": "XUNG KÍCH — Chiến trường bộ binh 3D",
+  "short_name": "Xung Kích",
+  "description": "Chiến trường bộ binh 3D: xông qua cổng thành, hạ tướng giữ thành, giữ Lõi căn cứ.",
   "lang": "vi",
   "id": "./",
   "start_url": "./",

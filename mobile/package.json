@@ -2,7 +2,7 @@
   "name": "steel-siege-ios",
   "version": "1.0.0",
   "private": true,
-  "description": "Native iOS shell for Steel Siege (Capacitor → WKWebView on Metal). The game stays zero-build; build.mjs copies it into ./www with three.js + fonts vendored for offline play, then syncs the Xcode project in ./ios.",
+  "description": "Native iOS shell for Xung Kích (Capacitor → WKWebView on Metal). The game stays zero-build; build.mjs copies it into ./www with three.js + fonts vendored for offline play, then syncs the Xcode project in ./ios.",
   "type": "module",
   "scripts": {
     "ios": "node build.mjs",

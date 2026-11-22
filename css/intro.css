@@ -12,7 +12,7 @@
 #boot .ib-art,#boot .ib-shade,#boot .ib-flash,#boot .ib-embers,#boot .ib-sweep,#boot .ib-scan,#boot .ib-frame{position:absolute;inset:0;pointer-events:none;}
 
 /* key art: slow push-in; on exit it surges forward */
-#boot .ib-art{background:url('../assets/banner-desktop.jpg') center/cover no-repeat;transform:scale(1.14);will-change:transform;
+#boot .ib-art{background:url('../assets/keyart-desktop.jpg') center/cover no-repeat;transform:scale(1.14);will-change:transform;
   animation:ibPush 10s cubic-bezier(.16,.7,.24,1) forwards;}
 @keyframes ibPush{to{transform:scale(1.0);}}
 #boot.leaving .ib-art{transition:transform .6s cubic-bezier(.5,0,.8,.4);transform:scale(1.22);}
@@ -108,7 +108,7 @@ body.menu-in #start .panel > *:nth-child(n+7){animation-delay:.42s;}
 body.menu-in #start .start-id{animation:menuIn .5s ease both;}
 @keyframes menuIn{0%{opacity:0;transform:translateY(18px) scale(.96);}100%{opacity:1;transform:none;}}
 
-@media (orientation:portrait){ #boot .ib-art{background-image:url('../assets/banner-mobile.jpg');} }
+@media (orientation:portrait){ #boot .ib-art{background-image:url('../assets/keyart-mobile.jpg');} }
 @media (max-height:460px){ #boot{padding-bottom:calc(env(safe-area-inset-bottom) + 10px);} #boot .ib-hud{gap:6px;} #boot .ib-tag{font-size:clamp(22px,6vh,34px);}
   #boot .ib-lines{display:none;} #boot .ib-cta{padding:11px 34px 11px 38px;} }
 @media (prefers-reduced-motion:reduce){ #boot *,#boot::after{animation-duration:.01s !important;animation-iteration-count:1 !important;} }

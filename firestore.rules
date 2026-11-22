@@ -1,5 +1,5 @@
 rules_version = '2';
-// Steel Siege — Z162 phase 1: each player owns their cloud save; nothing else is readable or writable from the client.
+// Xung Kích — Z162 phase 1: each player owns their cloud save; nothing else is readable or writable from the client.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }

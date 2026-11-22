@@ -1,4 +1,4 @@
-// mobile/build.mjs — package Steel Siege as a native iPhone/iPad app (Capacitor: the game runs in WKWebView, WebGL on Metal).
+// mobile/build.mjs — package Xung Kích as a native iPhone/iPad app (Capacitor: the game runs in WKWebView, WebGL on Metal).
 //   1. stage: copy the web game into ./www with three.js + fonts vendored (tools/stage-offline.mjs) → plays fully offline.
 //   2. sync: copy ./www into the Xcode project (ios/App/App/public) + capacitor config.
 //   3. open: Xcode (pick your iPhone at the top, press ▶ Run). Needs the full Xcode app, not just the Command Line Tools.

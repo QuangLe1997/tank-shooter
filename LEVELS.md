@@ -1,4 +1,4 @@
-# STEEL SIEGE — Bảng Màn chơi · Độ khó · Phần thưởng
+# XUNG KÍCH (trước: STEEL SIEGE) — Bảng Màn chơi · Độ khó · Phần thưởng
 
 > Tham chiếu **số liệu thực tế đang chạy trong `index.html`** (đồng bộ tới **Z83**). Khác với `GAME_DESIGN.md` (mô tả ý tưởng gốc v1), file này ghi đúng con số code dùng để cân bằng. Cập nhật khi đổi balance.
 

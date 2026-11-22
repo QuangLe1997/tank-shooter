@@ -1,5 +1,5 @@
 // ============================================================================
-// STEEL SIEGE — CONFIG / BALANCE  (single source of truth for tuning + economy data)
+// XUNG KÍCH — CONFIG / BALANCE  (single source of truth for tuning + economy data)
 // Plain ES module: imported by index.html (browser) AND test.js (node, zero-deps).
 // Edit numbers HERE — keep LEVELS.md in sync. No Three.js/DOM deps (pure data).
 // ============================================================================

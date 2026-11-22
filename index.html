@@ -8,28 +8,28 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="STEEL SIEGE" />
+<meta name="apple-mobile-web-app-title" content="XUNG KÍCH" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
-<title>STEEL SIEGE — Thiết Giáp Chiến</title>
+<title>XUNG KÍCH — Chiến trường bộ binh 3D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=Saira+Stencil+One&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-<meta name="description" content="STEEL SIEGE — a fast 3D twin-stick tank-defense game. Hold the line, build your arsenal, survive the siege. Play free in your browser." />
+<meta name="description" content="XUNG KÍCH — chiến trường bộ binh 3D: xông qua cổng thành, hạ tướng giữ thành, giữ Lõi căn cứ. Chơi miễn phí trên trình duyệt." />
 <!-- Open Graph / Facebook + Twitter link preview (shown when the link is shared) -->
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="STEEL SIEGE" />
-<meta property="og:title" content="STEEL SIEGE — 3D Tank Shooter" />
-<meta property="og:description" content="Command a war machine, hold the line against waves of enemy tanks, and unleash a 14-gun arsenal. Play free in your browser." />
+<meta property="og:site_name" content="XUNG KÍCH" />
+<meta property="og:title" content="XUNG KÍCH — Chiến trường bộ binh 3D" />
+<meta property="og:description" content="Một người lính, mười chiến trường, những thành trì phải chiếm lại — bộ binh, trực thăng, tướng địch giữ thành. Chơi miễn phí trên trình duyệt." />
 <meta property="og:url" content="https://quangle1997.github.io/tank-shooter/" />
-<meta property="og:image" content="https://quangle1997.github.io/tank-shooter/assets/banner-desktop.jpg" />
+<meta property="og:image" content="https://quangle1997.github.io/tank-shooter/assets/og-banner.jpg" />
 <meta property="og:image:width" content="1600" />
 <meta property="og:image:height" content="900" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="STEEL SIEGE — 3D Tank Shooter" />
-<meta name="twitter:description" content="Hold the line against waves of enemy tanks. Play free in your browser." />
-<meta name="twitter:image" content="https://quangle1997.github.io/tank-shooter/assets/banner-desktop.jpg" />
+<meta name="twitter:title" content="XUNG KÍCH — Chiến trường bộ binh 3D" />
+<meta name="twitter:description" content="Xông qua cổng thành, hạ tướng giữ thành. Chơi miễn phí trên trình duyệt." />
+<meta name="twitter:image" content="https://quangle1997.github.io/tank-shooter/assets/og-banner.jpg" />
 <script src="src/boot/viewport.js"></script>
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/hud.css" />
@@ -58,6 +58,13 @@
   <div class="ib-sweep"></div>
   <div class="ib-scan"></div>
   <div class="ib-frame"><i></i><i></i><i></i><i></i></div>
+  <div class="ib-brand"><div class="brand">
+    <svg class="brand-mark" viewBox="0 0 120 84" aria-hidden="true"><defs><linearGradient id="brandG2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4d2"/><stop offset=".48" stop-color="#e9bd62"/><stop offset=".52" stop-color="#c08a36"/><stop offset="1" stop-color="#f0cf86"/></linearGradient></defs>
+      <path fill="url(#brandG2)" d="M60.0 3.0 L64.5 15.9 L78.1 16.1 L67.2 24.3 L71.2 37.4 L60.0 29.6 L48.8 37.4 L52.8 24.3 L41.9 16.1 L55.5 15.9Z"/>
+      <path fill="url(#brandG2)" d="M22 44 L60 58 L98 44 L98 52 L60 66 L22 52Z"/><path fill="url(#brandG2)" opacity=".82" d="M22 58 L60 72 L98 58 L98 66 L60 80 L22 66Z"/></svg>
+    <div class="brand-word">XUNG KÍCH</div>
+    <div class="brand-sub"><i></i>CHIẾN TRƯỜNG BỘ BINH 3D<i></i></div>
+  </div></div>
   <div class="ib-hud">
     <div class="ib-kick"><span>◤</span> ĐẠI ĐỘI THÉP 7 · CHIẾN DỊCH THÉP ĐỎ <span>◢</span></div>
     <div class="ib-tag"><span>GIỮ</span><span>LÕI.</span><span class="hot">PHÁ</span><span class="hot">VÒNG VÂY.</span></div>
@@ -148,8 +155,13 @@
   <div class="scanlines"></div><div class="sweep"></div>
   <div class="frame"><i></i><i></i><i></i><i></i></div>
   <div class="rot-hint"><span class="ic" data-icon="rotate"></span>XOAY NGANG ĐỂ XEM ĐẸP NHẤT</div>
-  <div class="title">STEEL SIEGE</div>
-  <div class="subtitle">Chiến trường bộ binh 3D</div>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 120 84" aria-hidden="true"><defs><linearGradient id="brandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4d2"/><stop offset=".48" stop-color="#e9bd62"/><stop offset=".52" stop-color="#c08a36"/><stop offset="1" stop-color="#f0cf86"/></linearGradient></defs>
+      <path fill="url(#brandG)" d="M60.0 3.0 L64.5 15.9 L78.1 16.1 L67.2 24.3 L71.2 37.4 L60.0 29.6 L48.8 37.4 L52.8 24.3 L41.9 16.1 L55.5 15.9Z"/>
+      <path fill="url(#brandG)" d="M22 44 L60 58 L98 44 L98 52 L60 66 L22 52Z"/><path fill="url(#brandG)" opacity=".82" d="M22 58 L60 72 L98 58 L98 66 L60 80 L22 66Z"/></svg>
+    <div class="brand-word">XUNG KÍCH</div>
+    <div class="brand-sub"><i></i>CHIẾN TRƯỜNG BỘ BINH 3D<i></i></div>
+  </div>
   <!-- identity strip: stacked on desktop, one compact row on a short landscape phone -->
   <div class="start-id">
     <div class="hello" id="hello"></div>
@@ -174,7 +186,7 @@
       <kbd>Cách</kbd> bứt tốc / nhảy · <kbd>E</kbd> kỹ năng · <kbd>G</kbd> xuống / lên xe
     </div>
     <div class="help touch-only">
-      <b>Cần điều khiển</b> để lái · nòng gắn cố định đầu xe — <b>xe hướng nào bắn hướng đó</b><br>
+      <b>Cần điều khiển</b> để đi · <b>giữ BẮN</b> hoặc bật <b>TỰ ĐỘNG</b> để khai hoả<br>
       <b>BẮN</b> &amp; <b>LƯỚT</b> bên trái · <b>ĐỔI SÚNG</b> / <b>KỸ NĂNG</b> bên phải
     </div>
   </div>
@@ -409,7 +421,7 @@
 <div id="cine">
   <div class="bar top"></div>
   <div class="bar bot"></div>
-  <div id="cine-title"><div class="ct-name">STEEL SIEGE</div><div class="ct-sub" id="cine-sub">MÀN 1 · SA MẠC</div></div>
+  <div id="cine-title"><div class="ct-name">XUNG KÍCH</div><div class="ct-sub" id="cine-sub">MÀN 1 · SA MẠC</div></div>
   <div id="cine-skip">chạm / bấm phím bất kỳ để bỏ qua</div>
 </div>
 

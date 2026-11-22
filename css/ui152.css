@@ -181,9 +181,9 @@ body.touch #tipCard{top:auto !important;bottom:12px;left:50% !important;right:au
 
 @media (max-width:1100px){ .gar-ttl{font-size:clamp(20px,3vw,30px) !important;letter-spacing:3px !important;} .gar-l .btn{padding:6px 10px !important;font-size:11px !important;} .gar-l{gap:6px !important;} }
 @media (max-height:520px){ .gar-top{grid-template-columns:auto 1fr auto !important;} .gar-ttl{font-size:20px !important;letter-spacing:2px !important;text-align:center;} .gar-l .btn{padding:5px 8px !important;font-size:10.5px !important;} #garage .subtitle{display:none;} }
-/* short landscape phones: four across (arsenal · garage · shop · battlefield), then the small row */
+/* short landscape phones: arsenal · battlefield across, then the small row */
 @media (orientation:landscape) and (max-height:500px){
-  #start #arsenalBtn{grid-area:2/1/3/2 !important;} #start .terrain-pick{grid-area:2/4/3/5 !important;}
+  #start #arsenalBtn{grid-area:2/1/3/3 !important;} #start .terrain-pick{grid-area:2/3/3/5 !important;}   /* (no-tanks: the two halves of the row the garage / shop buttons sat between) */
   #start #rankBtn{grid-area:3/1/4/2 !important;} #start #guideBtn{grid-area:3/2/4/3 !important;} #start #settingsBtn{grid-area:3/3/4/4 !important;} #start #resetBtn{grid-area:3/4/4/5 !important;}
   #start #keysBtn{display:none !important;}
   #start #arsenalBtn{font-size:11px !important;padding:9px 5px !important;gap:5px !important;}

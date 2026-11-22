@@ -2222,5 +2222,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(['brick','enemy'].every(k=>C.BALANCE.drop[k]>0 && C.BALANCE.drop[k]<=1) && !('gem' in C.BALANCE.drop) && C.BALANCE.elite.scoreMul>1, 'loot chances are probabilities; an elite pays in score');
   ok(C.CAMP.hp>150 && C.CAMP.score>0 && C.POW.freeR>3 && C.POW.score>0 && C.DEPOT.guards[0]>=1 && C.DEPOT.guardsMobile[1]<=C.DEPOT.guards[1] && !['coin' in C.CAMP, 'coin' in C.POW, 'coin' in C.DEPOT, 'tanks' in C.DEPOT].some(Boolean), 'camps, prisoners and depots pay in score; depot guards in range'); }
 
+// NO-TANKS 7 the name and the look: XUNG KÍCH — a logo built in the page (emblem, stencil wordmark, line) over key art shot in a real battle; no tank
+//   picture left (the old AI banners went), the share image and the icons carry the new emblem, the app shells show the new name (ids unchanged)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), html=R('index.html'), man=JSON.parse(R('manifest.webmanifest'));
+  ok(/<title>XUNG KÍCH — /.test(html) && (html.match(/class="brand-word">XUNG KÍCH</g)||[]).length===2 && /class="ct-name">XUNG KÍCH</.test(html) && !/STEEL SIEGE|Tank Shooter|tank-defense|enemy tanks/i.test(html), 'the page is XUNG KÍCH: title, the logo on the title and boot screens, the battle-intro title; no tank wording in the page');
+  ok(man.name.startsWith('XUNG KÍCH') && man.short_name==='Xung Kích' && !/xe tăng/i.test(man.description), 'the installed app is named XUNG KÍCH');
+  ok(['keyart-desktop.jpg','keyart-mobile.jpg','og-banner.jpg'].every(f=>fs.existsSync('assets/'+f)) && !fs.existsSync('assets/banner-desktop.jpg') && !fs.existsSync('assets/banner-mobile.jpg') && /og-banner\.jpg/.test(html) && !/banner-(desktop|mobile)/.test(['css/cinematic-mobile.css','css/boot-home.css','css/intro.css'].map(R).join('\n')), 'key art from a real battle on every screen; the tank banners are gone');
+  ok(/"appName": "Xung Kích"/.test(R('mobile/capacitor.config.json')) && /"appId": "vn\.quangle\.steelsiege"/.test(R('mobile/capacitor.config.json')) && /"productName": "Xung Kích"/.test(R('desktop/package.json')) && /icons','icon-512\.png'/.test(R('desktop/build.mjs')), 'the Mac and iPhone apps show the new name and icon; their ids stay so installed copies update'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

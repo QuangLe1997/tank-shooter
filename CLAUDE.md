@@ -1,4 +1,4 @@
-# TANK SHOOTER — Luật dự án (Project Instructions)
+# XUNG KÍCH (repo tank-shooter) — Luật dự án (Project Instructions)
 
 > File này được Claude Code **tự động đọc** mỗi phiên làm việc trong repo. Mọi agent phải tuân thủ. Đây là repo **chơi game vui + test model AI**.
 

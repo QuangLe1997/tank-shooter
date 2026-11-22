@@ -1,4 +1,4 @@
-# KIẾN TRÚC MÃ NGUỒN — STEEL SIEGE (Z98 · Z103)
+# KIẾN TRÚC MÃ NGUỒN — XUNG KÍCH (Z98 · Z103)
 
 > Tài liệu này là **luật** cho mọi thay đổi mã. Đọc §4 (Quy tắc) và §5 (Công thức) trước khi thêm súng / địch / tướng / màn / truyện.
 > Kiểm tra tự động: **`npm test`** (cú pháp mọi module → luật kiến trúc R1–R7, R12 → kiểm tra phạm vi sâu R8–R11 → 1.000+ test dữ liệu & cân bằng).

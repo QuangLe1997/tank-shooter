@@ -1,9 +1,9 @@
 {
   "name": "steel-siege-mac",
-  "productName": "Steel Siege",
+  "productName": "Xung Kích",
   "version": "1.0.0",
   "private": true,
-  "description": "Native macOS shell for Steel Siege (Electron, Apple Silicon). The game itself stays zero-build; build.mjs copies it in, vendors three.js + fonts for offline play, and packages an arm64 .app.",
+  "description": "Native macOS shell for Xung Kích (Electron, Apple Silicon). The game itself stays zero-build; build.mjs copies it in, vendors three.js + fonts for offline play, and packages an arm64 .app.",
   "main": "main.cjs",
   "scripts": {
     "start": "node build.mjs --stage && electron .",

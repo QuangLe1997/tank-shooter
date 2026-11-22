@@ -23,7 +23,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 }
 
-/// Steel Siege on iPhone/iPad: a full-screen landscape game view.
+/// Xung Kích on iPhone/iPad: a full-screen landscape game view.
 /// - status bar and home indicator hidden; edge swipes need a second swipe, so twin-stick thumbs near the bezel don't leave the game
 /// - the screen never dims while the app is open
 /// - the WKWebView is opaque on the game's own dark colour (no white flash, no compositing against a transparent layer)
