@@ -60,3 +60,9 @@ keep_castel / keep_stonehall / gate_stone (Z457) — Meshy community posts, CC0 
   (https://www.meshy.ai/posts/019d88a3-1d98-765e-ac5b-fceef7febc78), keep_stonehall.glb = "Stonekeep Fortress" by METATIGER
   (https://www.meshy.ai/posts/019de684-5b41-769a-8418-d641e39c80c1), gate_stone.glb = "Medieval Stone Gatehouse" by METATIGER
   (https://www.meshy.ai/posts/019de683-d464-7696-b6d5-9393eb4bdfc6).
+ice_pillar / ice_serac / ice_block / ice_floe (Z462, the arctic's icebergs) — Meshy community posts, CC0 (public domain), downloaded as GLB from each
+  post's Download button (the project owner's Meshy session; no credits spent) and packed by tools/scene-import.mjs: ice_pillar.glb = "Ice" (Glacial
+  Citadel) by Sleeplessdust (https://www.meshy.ai/posts/ice-019ff356-0d9d-72cc-8329-65cc0407415c), ice_serac.glb = "Generate a massive glacial ice wall"
+  by Vistaful (https://www.meshy.ai/posts/019e464d-6c78-74bb-859f-f4e7296949aa), ice_block.glb = "Iceberg_01" by SandersonArts
+  (https://www.meshy.ai/posts/0198eeb4-c71f-7643-882f-ad7f9fd0d10e), ice_floe.glb = "an iceberg floating on sea" by ap17296174
+  (https://www.meshy.ai/posts/01975999-09ce-7685-a445-cef7244ca616). The glow maps two of them carry are switched off in the game (world/iceberg.js).

@@ -11,7 +11,7 @@ export function bedAt(x, z){                                                    
   const ix=fx|0, iz=fz|0, tx=fx-ix, tz=fz-iz, W=HF.W, h=HF.h, i=iz*W+ix;
   return (h[i]*(1-tx)+h[i+1]*tx)*(1-tz) + (h[i+W]*(1-tx)+h[i+W+1]*tx)*tz; }
 export function heightAt(x, z){ const v=bedAt(x, z);
-  if(RIVER.on && v<RIVER.top){ for(const b of RIVER.bridges){ const dx=x-b.x, dz=z-b.z, al=dx*b.ca+dz*b.sa, ac=dz*b.ca-dx*b.sa; if(Math.abs(al)<b.hl && Math.abs(ac)<b.hw) return Math.max(v, b.y); }   // Z139 a bridge deck carries the hull over the water (Z405 its span along (ca, sa) — the way the deck is drawn — bank to bank)
+  if(RIVER.on && v<RIVER.top){ for(const b of RIVER.bridges){ const dx=x-b.x, dz=z-b.z, al=dx*b.ca+dz*b.sa, ac=dz*b.ca-dx*b.sa; if(Math.abs(al)<b.hl && Math.abs(ac)<b.hw){ if(!b.rope) return Math.max(v, b.y); const u=(al+b.hl)/(2*b.hl); return Math.max(v, b.y0+(b.y1-b.y0)*u-b.sag*4*u*(1-u)); } }   // Z139 a bridge deck carries the hull over the water (Z405 its span along (ca, sa) — the way the deck is drawn — bank to bank)
     const I=RIVER.ice; if(I && v<RIVER.y+0.05){ const k=Math.round((z+ARENA)/HF.step)*HF.W+Math.round((x+ARENA)/HF.step); if(I[k]) return RIVER.y+0.05; } }   // Z405 a frozen river carries it on the ice
   return v;
 }

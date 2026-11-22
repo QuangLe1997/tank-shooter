@@ -1274,6 +1274,22 @@ export const FORTHILL = { on:true, biomes:{
   //   (knolls: lee = the slip face's width × to leeward of the wind's bearing, sharp = the profile), a soft ripple (bump); our compound and the spawn kept flat
   DESERT:{ h:[17, 9, 6], top:9, base:52, ramp:1.0, cliff:0.5, rag:0.18, land:{ ridge:{ k:0.8, saddle:0.55, w:38, steep:0.42, wander:22, sharp:1.25 },
     knolls:{ n:14, h:[5, 12], r:[24, 46], lee:0.42, wind:0.33, sharp:1.35, near:-28, gap:-6, edge:0.25 }, bump:0.55, clear:[34, 52] } },   // (near / gap < 0: a dune runs up onto a fort's sand hill, into the next dune)
+  // Z462 THE ARCTIC'S ICEBERG CITADELS (world/iceberg.js — no hills: h 0): the capital, and the fort with most room round it, cut off on icebergs. berg:
+  //   n forts (phones 1) · top = the berg's height over the ground · rim = its lip past the walls (+ rag ± m, wandering; back = how far past the fence it
+  //   may run, fence = m inside it where the water fades out) · sheer = the ice wall's run · moat = the open water's width (m, varying round it) · bank =
+  //   the shore rising back · bed = the moat's floor under the water level · the shore's landing for the bridge: land = how far below the berg's top,
+  //   pad = its radius; its ramp down along the shore: ramp = the grade, rampW = half width, side = their slopes' run · cracks: how many, L = how far in,
+  //   w = how wide at the lip · faces: photographed ice fronting the walls (lip = how far over the top, sink = share under the floor, o = out from the lip,
+  //   deep = their thickness ×, overlap, gap = rad kept clear round the bridge) · shards: tall ice stood on the lip (lip = that share) and out in the
+  //   water, h = how far over the top, thin = width × per model · floes: adrift in the moat, w = their width · span: the rope bridge (hw = deck half
+  //   width, sag = share of the span [, at most m], plank = spacing, gaps = planks missing, rail = hand rope height, post = the anchor posts' height,
+  //   path = the track's width)
+  ARCTIC:{ h:[0, 0, 0], top:0, base:1, ramp:0, cliff:1, rag:0, land:{ bump:0, clear:[30, 44] },
+    berg:{ n:2, top:12, rim:7, rag:1.5, back:6, fence:[1, 6], sheer:3, moat:[9, 16], bank:5, bed:-3, land:4, ramp:0.4, rampW:4, pad:6, side:9, cracks:[3, 5], crack:{ L:[3, 5.5], w:[2.2, 3.6] },
+      faces:{ keys:['ice_block', 'ice_serac', 'ice_block'], lip:[0.6, 2.2], sink:0.12, o:[1, 2.6], deep:0.32, overlap:0.6, gap:0.11 },
+      shards:{ n:16, keys:['ice_pillar', 'ice_serac', 'ice_pillar'], h:[12, 28], lip:0.55, gap:0.45, thin:{ ice_pillar:0.3, ice_serac:0.42 } },
+      floes:{ n:12, keys:['ice_floe', 'ice_floe', 'ice_block'], w:[3, 9], sink:0.3, flat:0.6 },
+      span:{ hw:1.25, sag:[0.05, 1.6], plank:0.36, gaps:0.05, rail:1.05, post:1.6, path:4 } } },
   QUARRY:{ h:[12, 8, 5], top:14, base:30, ramp:0.9, cliff:0.26, rag:0.22, crag:0.7, rocks:14, rock:[2.4, 4.5], roadA:0.4, cliffs:['hill_cliff', 'hill_crag', 'hill_ledge', 'hill_cliff'], outcrops:9, outS:[0.55, 1.0], outSink:0.28, tone:[1.25, 1.22, 1.2], road:['road_rocks', 'road_boulder'], roadN:0.16, roadS:[[0.9, 1.8], [1.4, 3.2]], open:true, keepArc:1.35, keep:'modular_fort_01_wall_thick_corner_01', mix:'modular_fort_01_wall_thick_corner_01', bury:1.4,
   ward:{ h:4.5, r:13, edge:2.6, rampW:9, rampL:20, at:0.36 }, paveTile:4.5, paveTint:[1.0, 0.98, 0.95], paveSteep:0.6, kerbW:1.6, kerbK:0.72,
     spur:{ top:7, p:4, cliff:0.15, ramp:0.25, path:{ w:5, W:[13, 8], grade:0.18, legs:[3, 6], sh:3, foot:4 }, gate:{ k:'gate_stone', w:14, pillars:0.32, back:3 } },   // Z456 the capital on a spur (world/hill-climb.js): its plateau top m past the walls, sheer all round (cliff × base wide) but a tongue toward the gate (cos^p of the bearing), ramp 0: the tongue too steep to drive straight up — one track winds up it, w m wide, its hairpins W m either side of the tongue's line (foot, rim), as many legs as keep the grade under grade, the bank above blended over sh m, foot m out onto the plain
@@ -1551,6 +1567,7 @@ export const SCENERY = { on:true, tone:0.55,   // Z420 tone: how far the forts' 
     tree_world:{ h:40, ar:[1.02, 1, 0.81], sink:0.02, solid:{ r:3.2 } },
     tree_pine:{ h:22, ar:[0.47, 1, 0.47], sink:0.02, solid:{ r:0.8 } },
     tree_oak_old:{ h:19, ar:[1.06, 1, 1.03], sink:0.03, solid:{ r:2.5 } }, tree_snag_tall:{ h:15, ar:[0.83, 1, 1.0], sink:0.02, solid:{ r:0.45 } }, tree_snag_lean:{ h:12, ar:[1.02, 1, 0.95], sink:0.02, solid:{ r:0.5 } },   // Z455 photographed dead trees (Sketchfab, CC BY 4.0, via Objaverse — credits in assets/models/real/scene/SOURCES.txt): a gnarled ancient oak (its colour built from the scan's own roughness: it shipped without one), a tall bare tree, a broken-limbed snag
+    ice_pillar:{ one:true, h:10, ar:[1.32, 1, 1.29], sink:0, solid:null }, ice_serac:{ h:14, ar:[0.92, 1, 0.83], sink:0, solid:null }, ice_block:{ h:8, ar:[1.88, 1, 1.69], sink:0, solid:null }, ice_floe:{ one:true, h:2, ar:[2, 1, 2.05], sink:0, solid:null },   // Z462 the icebergs' ice (world/iceberg.js)
     keep_castel:{ h:26, ar:[0.99, 1, 1.0], sink:0.015, solid:{ box:0.8 } }, keep_stonehall:{ h:20, ar:[1.04, 1, 0.81], sink:0.015, solid:{ box:0.92 } }, gate_stone:{ w:14, ar:[1.01, 1, 0.69], sink:0.02, solid:{ pillars:0.32 } },   // Z457 Meshy community castles (CC0 — credits in assets/models/real/scene/SOURCES.txt): a many-towered castle, a stone keep hall, a stone gatehouse (its arch open)
     // Z420 the forts' command compounds (world/fortress.js buildCore, FORT_CMD) and the fuel depot's store (world/supply.js) — solid: null, their own blocks carry them
     hq_modular:{ one:true, w:17, ar:[1.84, 1, 1.72], sink:0.01, solid:null }, bunker_hangar:{ w:15, ar:[2.11, 1, 1.02], sink:0.02, solid:null }, bunker_store:{ w:13, ar:[1.81, 1, 1.4], sink:0.01, solid:null },

@@ -1,7 +1,7 @@
 // world/fort-hill.js — Z453 CASTLES ON CRAGS (config FORTHILL, the limestone quarry first; Z455 the whole land: crags joined by ridges, knolls, quarry benches): every fort stands on a rocky hill — sheer flanks behind, a gentler shoulder toward its gate for the road up, crags on the slopes — its yard paved in stone; the capital an open citadel with its keep on a paved upper ward reached by a ramp, all of it ground that men and tanks drive up and fight on
 import * as THREE from 'three';
 import { FORTHILL } from '../../config.js';
-import { ARENA, BIOME, HF, MOBILE, ZONES, _R, blocks, buildPerimeter, blendIn, carveClimb, clearClimbs, crushables, dressRock, fieldDepth, fieldR, heightAt, inField, onClimb, rockSet, scene, sceneDims, scenePiece } from '../hub.js';
+import { ARENA, BIOME, HF, MOBILE, ZONES, _R, blocks, buildPerimeter, blendIn, carveClimb, clearBergs, clearClimbs, crushables, dressBergs, dressRock, fieldDepth, fieldR, heightAt, inField, onClimb, raiseBergs, rockSet, scene, sceneDims, scenePiece } from '../hub.js';
 
 export const PAVED = [];   // { x, z, r } the paved yards and wards (trails.js keeps grass and loose stones off them, decals.js paints them into the contact map)
 const _Z = new THREE.Matrix4().makeScale(0, 0, 0), PAVE = { mat:null, kerb:null, meshes:[], rocks:[] };
@@ -21,7 +21,7 @@ const fbm = (x, z, s, o = 4) => { let a = 0, w = 0.5, f = 1, t = 0; for(let k = 
 //   fort on its crag (gentle toward its gate, sheer behind), the crags joined by winding ridges (the forts' shortest tree) that dip to a saddle midway
 //   and fall steeper on one side, a few knolls between, the flanks cut here and there into quarry benches, the whole floor knobbled by fbm bumps —
 //   all of it kept off our compound and the spawn; what lay on the old ground (loose stones, tufts) rides with it, or goes where a crag rose
-export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; clearClimbs(); KNOLLS.length = 0; HILLWAY.length = 0; CRESTS.length = 0; for(const m of PAVE.meshes){ if(m.parent) m.parent.remove(m); m.geometry.dispose(); } for(const m of PAVE.rocks) if(m.parent) m.parent.remove(m); PAVE.meshes.length = PAVE.rocks.length = 0;
+export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; clearClimbs(); clearBergs(); KNOLLS.length = 0; HILLWAY.length = 0; CRESTS.length = 0; for(const m of PAVE.meshes){ if(m.parent) m.parent.remove(m); m.geometry.dispose(); } for(const m of PAVE.rocks) if(m.parent) m.parent.remove(m); PAVE.meshes.length = PAVE.rocks.length = 0;
   const C = hillCfg(); if(!C) return; const L = C.land || {}, W = HF.W, h = HF.h, st = HF.step, F = new Float32Array(h.length), s = Math.random() * 100, sp = ARENA * 0.55, put = (k, v) => { if(v > F[k]) F[k] = v; };
   for(const f of forts){ const H = C.h[f.tier === 3 ? 0 : f.tier === 2 ? 1 : 2], SP = f.tier === 3 && C.spur, top = f.R + (SP ? SP.top : C.top), base = C.base * (f.tier === 3 ? 1 : 0.8), ga = Math.atan2(ARENA * 0.55 - f.z, -f.x), s2 = Math.random() * 9;
     const ramp = SP ? SP.ramp : C.ramp, cliff = SP ? SP.cliff : C.cliff;   // Z456 the capital on a spur: sheer all round but a narrow tongue toward its gate (FORTHILL.spur)
@@ -41,8 +41,9 @@ export function raiseFortHills(forts){ PAVED.length = 0; _HILLS.length = 0; clea
   for(const c of crushables){ if(!c.alive || !c.im) continue; const d = at(c.x, c.z); if(!d) continue; c.im.getMatrixAt(c.k, M); M.elements[13] += d; c.im.setMatrixAt(c.k, M); seen.add(c.im); }
   for(const im of seen) im.instanceMatrix.needsUpdate = true;
   for(const f of forts) if(f.spurL) carveClimb(f, C.spur, f.R + C.spur.top, f.spurL);   // Z456 the one way up: hairpins cut into the tongue (world/hill-climb.js)
+  raiseBergs(forts, C);   // Z462 the arctic's citadels cut off on icebergs (world/iceberg.js)
   buildPerimeter(BIOME, true);   // the fence and the rocks beyond it on the new ground
-  if(forts.length && C.cliffs) crags(forts, C); edgeCliffs(C); steepRocks(forts, C); spires(forts, C); }   // (Z461 sand: no rocks at all)
+  if(forts.length && C.cliffs) crags(forts, C); edgeCliffs(C); steepRocks(forts, C); spires(forts, C); dressBergs(C); }   // (Z461 sand: no rocks at all)
 // ridges between neighbouring forts (their shortest tree): a crest wandering off the straight line, high where it leaves each crag, down to a saddle
 //   midway (where the roads cross), one flank steep and the other long
 function ridges(forts, R, F, s){ const P = forts.filter(f => f.hillH); if(P.length < 2) return; const W = HF.W, st = HF.step, inT = [0], E = [];

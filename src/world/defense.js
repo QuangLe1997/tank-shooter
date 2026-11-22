@@ -27,7 +27,7 @@ const CHORDS = new Set(['ring', 'line', 'hedgehog', 'containers', 'curtain', 'bo
 // ---------- planning: the lanes (river crossings first, then the middle of every belt between two forts; DESERT: the forts' own bearings) ----------
 export function planDefense(){ for(const k of ['lanes', 'cps', 'chords', 'posts', 'positions', 'garrison']) DEF[k].length = 0; DEF.river = false; if(!DEFENSE.on) return;
   DEF.style = DEFENSE.style[BIOME.name] || 'ring'; DEF.rb = HOME_GAP.wall + (MOBILE ? HOME_GAP.gapMobile : HOME_GAP.gap) + (MOBILE ? DEFENSE.rbMobile : DEFENSE.rb);
-  const cr = (RIVER && RIVER.bridges ? RIVER.bridges : []).map(b => ({ x:b.x, z:b.z, off:b.hl })).concat((RIVER && RIVER.fords ? RIVER.fords : []).map(f => ({ x:f.x, z:f.z, off:f.r })));
+  const cr = (RIVER && RIVER.bridges ? RIVER.bridges : []).filter(b => !b.rope).map(b => ({ x:b.x, z:b.z, off:b.hl })).concat((RIVER && RIVER.fords ? RIVER.fords : []).map(f => ({ x:f.x, z:f.z, off:f.r })));
   for(const c of cr){ const d = Math.hypot(c.x, c.z) || 1, a = Math.atan2(c.z, c.x); if(Math.abs(dA(a, E)) > Math.PI * 0.62 || DEF.lanes.length >= DEFENSE.lanes) continue;   // the river holds the line: a checkpoint on the far bank
     const D = c.off + DEFENSE.cp.r + 2, x = c.x + c.x / d * D, z = c.z + c.z / d * D; if(!inField(x, z, 4) || !homeClear(x, z, 4)) continue; DEF.river = true; lane(a, x, z); }
   if(!CHORDS.has(DEF.style)) return;
