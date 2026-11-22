@@ -2,7 +2,7 @@
 //   coloured per battlefield: dunes, icy peaks, green hills, karst, a city skyline, smoking stacks, volcanic cones, marble mountains); the war
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
-import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, buildBackdrop, farSites, hillDetail, loadRealCity, realCityReady, realHorizon, scene, sectorize, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
+import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, buildBackdrop, farSites, plantForest, hillDetail, loadRealCity, realCityReady, realHorizon, scene, sectorize, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
 import { REALCITY, SKYLINE, STONE } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
@@ -90,6 +90,7 @@ export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); con
   if(!flatCity && !BD){ g.add(ring(R0+170, H*1.35, rk==='dune'?'mesa':rk==='hill'?'peak':rk, L[0], L[1], fogC, 0.8, 3));   // far: tallest, palest
   g.add(ring(R0+95,  H*1.05, rk, L[0], L[1], fogC, 0.52, 2)); }   // Z259 a little less haze
   if(SK) Promise.resolve().then(()=>realHorizon(g, b.name, R0, fogC));
+  Promise.resolve().then(()=>plantForest(g, b));   // Z440 the woods on the land past the fence
   Promise.resolve().then(()=>farSites(g, b.name, fogC));   // Z430 other battlefields and bases kilometres out   // (a tick later: the first horizon is built while the modules are still loading)
   if(kind==='city'||kind==='stacks'){ if(!real) g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42)); else if(kind==='stacks') g.add(skyline(R0+30, H, kind, L[0], fogC, 0.42, true)); } else if(!real && !BD) g.add(ring(R0+30, H*0.7, rk, L[0], L[1], fogC, 0.3, 1));   // near: darkest, crispest (Z259 less haze: its photo detail reads)
   // the war beyond the hills: smoke columns rising over burning places

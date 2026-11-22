@@ -45,6 +45,7 @@ export * from './world/stone.js';   // Z259 photo stone (pyramids, cliffs)
 export * from './world/lava.js';   // Z187 volcanic caldera lava pools (runtime only)
 export * from './world/horizon.js';   // Z189 the world beyond the fence
 export * from './world/backdrop.js';   // Z427 the far ranges and the plain at the sky's depth
+export * from './world/forest.js';   // Z440 the woods past the fence
 export * from './world/biome.js';
 export * from './world/cover.js';
 export * from './world/rubble.js';   // Z193 broken obstacles leave a heap of their own material

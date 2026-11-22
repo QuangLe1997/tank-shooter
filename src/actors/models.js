@@ -29,6 +29,7 @@ for(const [k, f] of Object.entries(REALGUN.fams)) if(!f.fromTank) MODEL_FILES['g
 // Z262 the tree species (world/real-trees.js)
 const PHONE = typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && PHONE_LOD.on;   // (= MOBILE; read here: this table is built before the hub is)
 for(const k of Object.keys(REALTREE.h)) MODEL_FILES['tree_' + k] = 'assets/models/real/tree/' + (PHONE && PHONE_LOD.trees ? 'm/' : '') + k + '.glb';   // Z292 phones take the 3k-triangle trees
+for(const k of Object.keys(REALTREE.h)) MODEL_FILES['woodtree_' + k] = 'assets/models/real/tree/m/' + k + '.glb';   // Z440 the woods past the fence (world/forest.js): the 3k-triangle copies
 // Z264 the city's buildings and vehicles (world/real-city.js)
 MODEL_FILES.camp_hq = 'assets/models/real/camp/hq.glb';
 for(const k of ['cannon','rws','aa']) MODEL_FILES['turret_' + k] = 'assets/models/real/turret/' + (PHONE ? 'm/' : '') + k + '.glb';   // Z424 the base's guard guns (phones: the light copy)

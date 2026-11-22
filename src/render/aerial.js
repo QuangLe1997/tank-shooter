@@ -9,13 +9,14 @@ import * as THREE from 'three';
 import { AERIAL, LANDFORM } from '../../config.js';
 import { BIOME, SHADER_HOOKS, SKY, ambient, hemi, landform, ring, scene, sun } from '../hub.js';
 
-export const AER = { u:{ uAerA:{ value:new THREE.Vector4(AERIAL.fall, AERIAL.h0, AERIAL.keep[0], AERIAL.blue) }, uAerB:{ value:new THREE.Vector4(AERIAL.warm, 420, 580, AERIAL.on ? 1 : 0) },
+export const AER = { u:{ uAerA:{ value:new THREE.Vector4(AERIAL.fall, AERIAL.h0, AERIAL.keep[0], AERIAL.blue) }, uAerB:{ value:new THREE.Vector4(AERIAL.warm, 420, 580, AERIAL.on ? 1 : 0) }, uAerC:{ value:new THREE.Vector2(AERIAL.near, AERIAL.ext) },
   uAerFar:{ value:new THREE.Color(0xc8ccd0) }, uAerSun:{ value:new THREE.Vector3(0, 1, 0) }, uAerSunC:{ value:new THREE.Color(0xffffff) }, uAerLand:{ value:new THREE.Color(0x8a8070) }, uAerE:{ value:new THREE.Color(1, 1, 1) } }, ring0:null, far0:null };
 // the haze along one view ray, shared with the backdrop's shaders: w = camera → point (world axes); returns [colour, amount] through out params
 export const AER_GLSL = `
-uniform vec4 uAerA; uniform vec4 uAerB; uniform vec3 uAerFar; uniform vec3 uAerSun; uniform vec3 uAerSunC; uniform vec3 uAerLand;
+uniform vec4 uAerA; uniform vec4 uAerB; uniform vec2 uAerC; uniform vec3 uAerFar; uniform vec3 uAerSun; uniform vec3 uAerSunC; uniform vec3 uAerLand;
 float aerMean(vec3 w){ float y = max(cameraPosition.y - uAerA.y, 0.0), x = w.y * uAerA.x;   // the mean air density along the ray (1 = the ground's)
   return clamp(exp(-y * uAerA.x) * (abs(x) > 1e-3 ? (1.0 - exp(-x)) / x : 1.0 - 0.5 * x), 0.0, 3.0); }
+float aerTau(float dens, float d){ float n = dens * min(d, uAerC.x); return n * n + uAerC.y * max(d - uAerC.x, 0.0); }   // (Z440 the battlefield's haze up to uAerC.x m; past it clear air thins slowly, as kilometres of it do)
 vec3 aerColour(vec3 fogC, vec3 w, float d){ vec3 c = mix(fogC, uAerFar, uAerB.w * (1.0 - exp(-d * uAerA.w)));
   return c + uAerSunC * pow(max(dot(w / max(d, 1e-3), uAerSun), 0.0), 8.0) * uAerB.x * uAerB.w; }
 `;
@@ -23,7 +24,7 @@ const FRAG = `#ifdef USE_FOG
 	vec3 aerW = vAerV * mat3( viewMatrix );
 	float aerD = length( aerW );
 	#ifdef FOG_EXP2
-		float fogFactor = 1.0 - exp( - fogDensity * fogDensity * aerD * aerD * mix( 1.0, uAerA.z + ( 1.0 - uAerA.z ) * aerMean( aerW ), uAerB.w ) );
+		float fogFactor = 1.0 - exp( - mix( fogDensity * fogDensity * aerD * aerD, aerTau( fogDensity, aerD ), uAerB.w ) * mix( 1.0, uAerA.z + ( 1.0 - uAerA.z ) * aerMean( aerW ), uAerB.w ) );
 	#else
 		float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
 	#endif
@@ -45,9 +46,11 @@ export function updateAerial(cam){ const A = AER.u.uAerA.value, B = AER.u.uAerB.
   if(AER.far0 == null) AER.far0 = cam.far; const far = on ? Math.max(AER.far0, LANDFORM.on ? LANDFORM.far : 0, h * AERIAL.farK) : AER.far0;   // (Z428 the near mountains round a valley are never cut)   // a camera up high sees the whole land below it (its far plane reaches)
   if(Math.abs(far - cam.far) > cam.far * 0.04){ cam.far = far; cam.updateProjectionMatrix(); }
   A.z = AERIAL.keep[0] + (AERIAL.keep[1] - AERIAL.keep[0]) * _s(AERIAL.keepH[0], AERIAL.keepH[1], h); B.w = on;
+  const LP = landform(BIOME); A.y = AERIAL.h0 + (LP && LP.form === 'plateau' ? -LP.h : 0);   // (Z440 the haze lies on the low land under a plateau, not 100 m deep in it)
+  AER.u.uAerC.value.x = AERIAL.near + (AERIAL.nearUp - AERIAL.near) * _s(AERIAL.keepH[0], AERIAL.keepH[1], h);   // (up high the battlefield's own haze shrinks: the land below is seen clear)
   B.y = AERIAL.land[0] * cam.far; B.z = AERIAL.land[1] * cam.far;
-  const u = SKY.material.uniforms; skyHorizon(AER.u.uAerFar.value).lerp(u.top.value, AERIAL.farTone[0]).multiplyScalar(AERIAL.farTone[1]);   // (a touch bluer and darker than the sky's band: far ridges stand out against it) AER.u.uAerSun.value.copy(u.sunDir.value).normalize(); AER.u.uAerSunC.value.copy(u.sunCol.value).multiplyScalar(1 - u.night.value);
+  const u = SKY.material.uniforms; skyHorizon(AER.u.uAerFar.value).lerp(u.top.value, AERIAL.farTone[0]).multiplyScalar(AERIAL.farTone[1]); AER.u.uAerSun.value.copy(u.sunDir.value).normalize(); AER.u.uAerSunC.value.copy(u.sunCol.value).multiplyScalar(1 - u.night.value);   // (a touch bluer and darker than the sky's band: far ridges stand out against it; Z440 the sun's side of the haze updated again, it sat inside that comment)
   const sd = u.sunDir.value, E = _e.copy(sun.color).multiplyScalar(sun.intensity * Math.max(0.12, sd.y / Math.max(1e-3, sd.length()))).add(_e2.copy(hemi.color).multiplyScalar(hemi.intensity)).add(_e3.copy(ambient.color).multiplyScalar(ambient.intensity));
   AER.u.uAerE.value.copy(E).multiplyScalar(1 / Math.PI); const LF = landform(BIOME);   // (Z428 the light the far land and the backdrop's plain are seen in)
   AER.u.uAerLand.value.setHex(LF ? LF.col : BIOME.ground).multiply(E).multiplyScalar(AERIAL.landK / Math.PI).lerp(scene.fog ? scene.fog.color : AER.u.uAerFar.value, 0.25);   // the far land as lit: albedo × (sun + sky + ambient) / π
-  if(ring && ring.material){ if(AER.ring0 == null) AER.ring0 = ring.material.opacity; ring.material.opacity = AER.ring0 * (1 - _s(AERIAL.ring[0], AERIAL.ring[1], h)); ring.visible = ring.material.opacity > 0.01; } }
+  if(ring && ring.material){ if(AER.ring0 == null) AER.ring0 = ring.material.opacity; ring.material.opacity = LP ? 0 : AER.ring0 * (1 - _s(AERIAL.ring[0], AERIAL.ring[1], h)); ring.visible = ring.material.opacity > 0.01; } }   // (Z440 a land of its own reads the play space by its fence: no gold line floating over its cliffs at sea level)

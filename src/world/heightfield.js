@@ -1,7 +1,7 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
 import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM } from '../../config.js';
-import { fieldR, FIELD_R, SHADER_HOOKS, AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
+import { BDP, BIOME, GROUND_READY, fieldR, FIELD_R, SHADER_HOOKS, AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
@@ -184,24 +184,29 @@ function outerGeoFor(){ const A = ARENA, [S, M] = MOBILE ? OUTSKIRTS.phone : OUT
 //   landform's colours take over with the distance from the fence (a table of its radius by bearing, uFR): its land tint over the photo's light and
 //   shade, rock with strata where it is steep, snow above its snow line. One shader hook for both materials (render/clouds.js SHADER_HOOKS), so the
 //   square the field's mesh ends on is nowhere to be seen. The outskirts take the photo texture projected on three axes (a cliff is not a smear)
-const LAND_GLSL = `varying vec3 vLW; varying vec3 vLN; uniform sampler2D uFR; uniform vec3 uTint; uniform vec3 uRock; uniform float uSnowY; uniform float uLand;
+//   Z440 a cliff right at the fence wears the rock at once (the field's photo, flat-mapped, smeared down it into a long white streak)
+const LAND_GLSL = `varying vec3 vLW; varying vec3 vLN; uniform sampler2D uFR; uniform vec3 uTint; uniform vec3 uRock; uniform float uSnowY; uniform float uLand; uniform vec3 uAvg;
 float lh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float ln(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(lh(i), lh(i + vec2(1, 0)), f.x), mix(lh(i + vec2(0, 1)), lh(i + vec2(1, 1)), f.x), f.y); }
 float fenceOut(vec3 w){ return length(w.xz) - texture2D(uFR, vec2(atan(w.z, w.x) / 6.2831853 + 0.5, 0.5)).r; }
-vec3 landCol(vec3 w, vec3 n, float lum){ float sl = 1.0 - clamp(n.y, 0.0, 1.0), st = ln(vec2(w.y * 0.3 + ln(w.xz * 0.02) * 3.0, 0.5)) * 0.6 + ln(w.xz * 0.05 + w.y * 0.08) * 0.4;
-  vec3 c = mix(uTint * (0.5 + 0.9 * lum), uRock * (0.5 + 0.8 * st) * (0.75 + 0.5 * lum), smoothstep(0.3, 0.6, sl));
-  return mix(c, vec3(0.9, 0.93, 0.98) * (0.85 + 0.3 * lum), smoothstep(uSnowY - 14.0, uSnowY + 8.0, w.y + st * 16.0) * smoothstep(0.92, 0.4, sl)); }
+vec3 landCol(vec3 w, vec3 n, vec3 base){ float lum = dot(base, vec3(0.3, 0.59, 0.11)), al = max(dot(uAvg, vec3(0.3, 0.59, 0.11)), 0.02), sl = 1.0 - clamp(n.y, 0.0, 1.0),
+    st = ln(vec2(w.y * 0.3 + ln(w.xz * 0.02) * 3.0, 0.5)) * 0.6 + ln(w.xz * 0.05 + w.y * 0.08) * 0.4;
+  vec3 c = base * clamp(uTint / max(uAvg, vec3(0.02)), vec3(0.45), vec3(2.0));   // (Z440 the field's own photo, its grain kept, only its hue leaning to the land's)
+  float rl = clamp(lum / al, 0.4, 1.6); c = mix(c, uRock * (0.55 + 0.7 * st) * mix(0.7 + 0.3 * rl, 1.0, smoothstep(0.5, 0.85, sl)), smoothstep(0.3, 0.6, sl));   // (its light and shade relative to the field's, held in a sane range: a dark photo never blows a cliff white; Z440 a sheer face takes none of it, the photo smeared down a cliff is not its grain)
+  c = mix(c, vec3(0.9, 0.93, 0.98) * (0.85 + 0.15 * rl), smoothstep(uSnowY - 14.0, uSnowY + 8.0, w.y + st * 16.0) * smoothstep(0.92, 0.4, sl));
+  return c * (0.9 + 0.2 * ln(w.xz / 180.0)); }   // (land seen from the air: broad patches a shade lighter or darker)
 `;
 const FRT = new THREE.DataTexture(FIELD_R, FIELD_R.length, 1, THREE.RedFormat, THREE.FloatType); FRT.wrapS = THREE.RepeatWrapping; FRT.needsUpdate = true;
-export const LANDU = { uFR:{ value:FRT }, uTint:{ value:new THREE.Color(1, 1, 1) }, uRock:{ value:new THREE.Color(0x777777) }, uSnowY:{ value:1e5 }, uLand:{ value:0 } };
+export const LANDU = { uFR:{ value:FRT }, uAvg:{ value:new THREE.Color(0.5, 0.5, 0.5) }, uTint:{ value:new THREE.Color(1, 1, 1) }, uRock:{ value:new THREE.Color(0x777777) }, uSnowY:{ value:1e5 }, uLand:{ value:0 } };
 SHADER_HOOKS.push((sh, m) => { if(!m || !m.userData || !m.userData.land || sh.fragmentShader.includes('landCol(') || !sh.fragmentShader.includes('#include <alphamap_fragment>') || !sh.vertexShader.includes('#include <worldpos_vertex>')) return;
   Object.assign(sh.uniforms, LANDU);
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vLW; varying vec3 vLN;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n\tvLW = (modelMatrix * vec4(transformed, 1.0)).xyz; vLN = normalize(mat3(modelMatrix) * objectNormal);');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + LAND_GLSL).replace('#include <alphamap_fragment>', `{ float k = uLand * smoothstep(4.0, 40.0, fenceOut(vLW)); if(k > 0.0) diffuseColor.rgb = mix(diffuseColor.rgb, landCol(vLW, normalize(vLN), dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), k); }
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + LAND_GLSL).replace('#include <alphamap_fragment>', `{ float fo = fenceOut(vLW), k = uLand * max(smoothstep(4.0, 40.0, fo), step(2.0, fo) * smoothstep(0.35, 0.6, 1.0 - normalize(vLN).y)); if(k > 0.0) diffuseColor.rgb = mix(diffuseColor.rgb, landCol(vLW, normalize(vLN), diffuseColor.rgb), k); }
 #include <alphamap_fragment>`); });
 groundMat.userData.land = true;
+const OUTER_TILE = { value:1 / 14 };   // (Z440 the field's own texture scale: m per photo tile)
 export const outerMat = (() => { const m = new THREE.MeshStandardMaterial({ map:groundMat.map, roughness:0.95, metalness:0, envMapIntensity:0.4 }); m.userData.land = true;
-  m.onBeforeCompile = sh => { sh.uniforms.uTile = { value:1 / 14 };
+  m.onBeforeCompile = sh => { sh.uniforms.uTile = OUTER_TILE;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOW; varying vec3 vON;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n\tvOW = (modelMatrix * vec4(transformed, 1.0)).xyz; vON = normalize(mat3(modelMatrix) * objectNormal);');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vOW; varying vec3 vON; uniform float uTile;')
       .replace('#include <map_fragment>', `vec3 bw = pow(abs(vON), vec3(4.0)); bw /= (bw.x + bw.y + bw.z + 1e-4);
@@ -210,8 +215,20 @@ export const outerMat = (() => { const m = new THREE.MeshStandardMaterial({ map:
 export const outerGround = new THREE.Mesh(outerGeoFor(), outerMat); outerGround.receiveShadow=true; arena.add(outerGround);
 export function buildOutskirts(b){ let C = OUTSKIRTS.on ? (OUTSKIRTS.biomes[b.name] ?? OUTSKIRTS.biomes._) : null; if(typeof C === 'string') C = OUTSKIRTS.biomes[C];
   OUT.amp = C ? C.amp : 0; OUT.wave = C ? C.wave : 200; OUT.dune = C && C.dune ? 1 : 0; const L = OUT.lf;
-  if(outerMat.map !== groundMat.map){ outerMat.map = groundMat.map; outerMat.needsUpdate = true; } LANDU.uLand.value = L ? 1 : 0; FRT.needsUpdate = true; if(L){ LANDU.uTint.value.setHex(L.tint); LANDU.uRock.value.setHex(L.rock); LANDU.uSnowY.value = L.snow ?? 1e5; }   // (no recompile for new colours: a program swapped under the stage's warm-up throws inside three)
+  if(outerMat.map !== groundMat.map){ outerMat.map = groundMat.map; outerMat.needsUpdate = true; } LANDU.uLand.value = L ? 1 : 0; FRT.needsUpdate = true; if(L) LANDU.uSnowY.value = L.snow ?? 1e5; landColours(b); GROUND_READY.p.then(() => { if(BIOME === b) landColours(b); });   // (no recompile for new colours: a program swapped under the stage's warm-up throws inside three)
   const old = outerGround.geometry; outerGround.geometry = outerGeoFor(); old.dispose(); outskirtRoads(b, L ? (L.roads ? L : null) : C); }
+// Z440 ONE PALETTE, AS SEEN FROM A HELICOPTER: the land past the fence and the plain to the horizon start from the field's own ground — its photo
+//   (the outskirts wear the very texture, at the same scale and tint) and its mean colour (measured from the photo); the landform only leans that
+//   colour toward its own (LANDFORM.shift / plainShift), so field, outskirts and far plain read as one region, not sand ringed by green and black
+const _lc = new THREE.Color();
+function texAverage(t){ const im = t && t.image; if(!im || !im.width || typeof document === 'undefined') return null; try { const c = document.createElement('canvas'); c.width = c.height = 24;
+    const x = c.getContext('2d', { willReadFrequently:true }); x.drawImage(im, 0, 0, 24, 24); const d = x.getImageData(0, 0, 24, 24).data; let r = 0, g = 0, b = 0, n = 0;
+    for(let i = 0; i < d.length; i += 4){ r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; } return new THREE.Color().setRGB(r / n / 255, g / n / 255, b / n / 255, THREE.SRGBColorSpace); } catch(e){ return null; } }
+export function landColours(b){ const L = OUT.lf; if(groundMat.map) outerMat.map = groundMat.map; outerMat.color.copy(groundMat.color);
+  if(groundMat.map && groundMat.map.repeat) OUTER_TILE.value = Math.max(1e-3, groundMat.map.repeat.x) / (ARENA * 2);
+  const a = texAverage(groundMat.map) || new THREE.Color(b.ground); a.multiply(groundMat.color); LANDU.uAvg.value.copy(a); if(!L) return;
+  LANDU.uTint.value.copy(a).lerp(_lc.setHex(L.tint), L.shift ?? LANDFORM.shift); LANDU.uRock.value.copy(a).multiplyScalar(0.75).lerp(_lc.setHex(L.rock), 0.55);
+  BDP.u.uPC.value.copy(a).lerp(_lc.setHex(L.col), L.plainShift ?? LANDFORM.plainShift); }
 // the tracks that lead away from the field over the hills (behind our lines, toward the enemy's, and off to one side): a ribbon on the ground, its
 //   edges soft, winding as it goes, fading into the plain
 const ROADS = new THREE.Group(); ROADS.name = 'outskirt-roads'; arena.add(ROADS); let _roadTex = null;

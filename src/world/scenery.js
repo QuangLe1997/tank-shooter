@@ -260,7 +260,7 @@ export function realHorizon(g, name, R0, fogC){ let P = SKYLINE.on && !MOBILE &&
     if(e.clump){ const [k, sp] = e.clump, per = Math.max(1, Math.round(e.n / k)); for(let c = 0; c < k; c++){ const ca = a0 + (c + 0.2 + Math.random() * 0.6) / k * Math.PI * 2, cr = R0 + rnd(e.r[0], e.r[1]);   // Z427 in groves and hamlets, not an even fence
         for(let i = 0; i < per; i++){ const d = Math.sqrt(Math.random()) * sp, t = Math.random() * Math.PI * 2; put(Math.cos(ca) * cr + Math.cos(t) * d, Math.sin(ca) * cr + Math.sin(t) * d); } } }
     else for(let i = 0; i < e.n; i++){ const a = a0 + (i + 0.15 + Math.random() * 0.7) / e.n * Math.PI * 2, r = R0 + rnd(e.r[0], e.r[1]); put(Math.cos(a) * r, Math.sin(a) * r); }
-    unitLevel(e.k, lv).then(L => { if(!L || HZN.g !== g || !list.length) return; const im = new THREE.InstancedMesh(L.geo, hazeMat(L.mat, hz, fogC), list.length);
+    unitLevel(e.k, lv).then(L => { if(!L || HZN.g !== g || !list.length) return; const tree = e.k.startsWith('tree_'), im = new THREE.InstancedMesh(L.geo, tree ? L.mat : hazeMat(L.mat, hz, fogC), list.length);   // (Z440 a tree in the air's own haze, as far as it stands: a fixed veil of fog read white at 200 m)
       list.forEach(([x, z, sz, ry], i) => { const h = e.h ? sz : sz / L.wx; _hm.compose(_hv.set(x, (e.y ?? SKYLINE.y) + heightAt(x, z), z), _hq.setFromAxisAngle(_hu, ry), _hs.set(h, h, h)); im.setMatrixAt(i, _hm.multiply(L.U)); });   // (Z427 on the outskirts' hills)
-      im.instanceMatrix.needsUpdate = true; im.renderOrder = -7; im.userData.skyline = e.k; g.add(sectorize(im, SKYLINE.arcs, M(e.k) && M(e.k).one ? 0 : SKYLINE.keep)); }); }   // Z412 culled by arc, simplified past the field
+      im.instanceMatrix.needsUpdate = true; im.renderOrder = -7; im.userData.skyline = e.k; g.add(sectorize(im, SKYLINE.arcs, tree || (M(e.k) && M(e.k).one) ? 0 : SKYLINE.keep)); }); }   // Z412 culled by arc, simplified past the field
   return !!P.skyline; }
