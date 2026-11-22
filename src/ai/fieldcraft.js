@@ -12,9 +12,9 @@ import { MODE, MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatTe
 const FC=FIELDCRAFT, _lb=[];
 // a "tall" obstacle stops a rifle round dead: buildings, fortress walls, masonry, towers, containers, boulders (sandbags, drums, logs… are shot over)
 function tall(bl){ return bl.heavy || bl.fort || bl.wall || bl.kind==='building' || bl.kind==='tower' || bl.kind==='container' || bl.kind==='boulder' || bl.kind==='camp' || bl.kind==='tent'; }   // Z402 nobody sees through a tent
-export function losBlocked(x0, z0, x1, z1){ const dx=x1-x0, dz=z1-z0, D=Math.hypot(dx,dz), L=FC.los; if(D<L.endSkip*2+0.5) return false; const ux=dx/D, uz=dz/D;
+export function losBlocked(x0, z0, x1, z1){ const dx=x1-x0, dz=z1-z0, D=Math.hypot(dx,dz), L=FC.los; if(D<L.endSkip*2+0.5) return false; const ux=dx/D, uz=dz/D, P=S.player, up=P && P.lift>0.5 && x1===P.pos.x && z1===P.pos.z;   // Z451 the soldier up on a wall: what he stands on hides him from no one
   for(let s=L.endSkip; s<D-L.endSkip; s+=L.step){ const x=x0+ux*s, z=z0+uz*s;
-    for(const bl of blocksNear(x, z, 0.6, _lb)){ if(tall(bl) && inBlock(bl, x, z, 0.3)) return true; } }
+    for(const bl of blocksNear(x, z, 0.6, _lb)){ if(tall(bl) && inBlock(bl, x, z, 0.3) && !(up && inBlock(bl, x1, z1, 0.3))) return true; } }
   return false; }
 function standable(x, z){ for(const bl of blocksNear(x, z, 0.9, _lb)) if(inBlock(bl, x, z, 0.55)) return false; return true; }
 // the nearest spot round the obstacle with a clear line to (tx,tz): sideways first, then sideways-and-forward (null = nowhere close)

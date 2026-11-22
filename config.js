@@ -1208,6 +1208,27 @@ export const SOLDIER_MOUNT = { walkV:1.6, walkMin:0.25, walkMax:3.5, clear:0.7,
       { u:0.6, hips:[0.7, 0.55, 0, 1], yaw:1.42, lean:0.2, la:[0.45, 0, 0.12, 1], ra:[0.95, 0, -0.1], lh:1 },
       { u:0.85, hips:[0.95, 0.95, 0.02], yaw:1.45, lean:0.05, la:[0.95, 0, 0.14], ra:[0.97, 0, -0.12], lh:0.3 },
       { u:1, hips:[0.98, 0.97, 0.02], yaw:1.45, lean:0.03, la:[0.95, 0, 0.14], ra:[1, 0, -0.12] }] } };
+// Z451 CLIMBING (soldier mode, on foot: game/soldier-climb.js, actors/soldier-climb-pose.js) — J / the LEO button with a rock, a wall, a gate, a container,
+//   a ruin within reach ahead. reach = how far past his body a face may be (m), cone = how square to it he must face (cos), scanT = how often the prompt
+//   looks (s) · minH: lower is nothing to climb · stepH: up to it a vault / step up (vaultT s) · maxH: higher is too high · minW: the narrowest top he
+//   stands on · flat: the least upward share of a top's normal he stands on · surf: m/s up each kind of face (hiK: slower each m over hiFrom m)
+//   · stride: how far a hand-and-foot pair moves up at a time · off: hips / hands / feet / where he stands off the face (m) · hipStand: his hips stood
+//   (m over his soles) · mantleT / mantleIn: the pull-over (s), where he stands up on top in from the edge (m) · reachT / edgeT / unslingT: the step to
+//   the face, the walk to an edge to climb down, the rifle back off his back (s) · descK: climbing down × the climb's pace · deck: on top, a surface
+//   up to stepUp higher is a wall, down to stepTol lower is the same deck, down to stepDown a hop, padIn = how far in from its rim he can stand ·
+//   edge: pushing over the rim held s before he steps off · fall: g m/s², hurt over h m, perM HP each m past it, max HP, landing give s (×long over far m)
+//   · cam: the lens pulled back × while on the face (rate /s) · range: the reach of his rifle +perM per m up, at most max · dome: a ridge rock's top
+//   sags sag m to its rim
+export const CLIMB = { reach:0.8, cone:0.45, scanT:0.12, minH:0.55, stepH:1.35, maxH:12.5, minW:0.45, flat:0.72, vaultT:0.75,
+  kinds:{ boulder:'rock', fortwall:'stone', gate:'stone', ruin:'stone', building:'block', brick:'block', concrete:'block', hesco:'block', jersey:'block', bunker:'block', pumphouse:'block',
+    container:'steel', wreck:'steel', shelter:'steel', genset:'steel', radartruck:'steel', sandbag:'crate', crates:'crate', drums:'crate', tires:'crate', ammostack:'crate' },
+  rayKinds:['rock', 'stone'], noScene:/tree|pine|palm|oak|birch|bush|cactus|flag|pole|lamp|mast|antenna|wire|fuel|statue_soldier/, rockScene:/rock|stack|cliff|mesa|boulder|crag|arch_rock|horn/,
+  surf:{ rock:0.75, stone:0.95, block:1.05, steel:0.9, crate:1.2 }, hiK:0.04, hiFrom:4,
+  stride:0.42, off:{ hip:0.36, hand:0.07, foot:0.12, stand:0.52, handW:0.25, footW:0.14, handY:0.62, footY:-0.74 }, hipStand:0.95,
+  mantleT:1.15, mantleIn:0.7, reachT:0.45, edgeT:0.45, unslingT:0.4, descK:1.25,
+  deck:{ stepUp:0.55, stepTol:0.45, stepDown:1.7, padIn:0.14, q:0.3, scanRays:1 }, edge:0.45,   // (scanRays: new top rays the 8-a-second prompt may cast per look — the rest guess by the box until the climb itself measures)
+  fall:{ g:15, hurt:6, perM:7, max:60, land:0.25, long:0.55, far:3 },
+  cam:{ pull:1.35, rate:2.5 }, range:{ perM:0.025, max:0.25 }, dome:{ sag:0.35 } };
 // Z349 THE POSE STUDIO (dev/pose-studio.js, tools/pose-studio.mjs): ok = a palm further than palm cm from the gun's surface, or an arm stretched past
 //   that share of its length, is flagged; settle = seconds to wait after a weapon change / a stance; views = cameras round the soldier relative to where
 //   he aims (side rad: − = his left; dist / up m; on = feet · hips · handL · handR; look = m above that)
@@ -1502,7 +1523,7 @@ export const FEEL = {
 //   pad buttons = standard mapping by position: 0 A · 1 B · 2 X · 3 Y · 4 LB · 5 RB · 6 LT · 7 RT · 8 View · 9 Menu · 10 L3 · 11 R3 · 12-15 D-pad ↑↓←→
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
-  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['skill','Dùng kỹ năng · chuột phải','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
+  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · chuột phải','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
   ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['gunDefault','Về súng mặc định (tay cầm: LB + RB cùng lúc)','CHIẾN ĐẤU',['0'],null,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
   ['zoomPing','Camera: phóng to ⇄ thu nhỏ · chạm đôi = về mặc định (D-pad ← = M1)','CAMERA',['z'],14,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (D-pad → = M2)','CAMERA',['n'],15,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],

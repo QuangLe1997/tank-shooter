@@ -1,7 +1,7 @@
 // combat/lock-on.js — MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target
 import * as THREE from 'three';
 import { ROSTER, LETHAL, SQUAD, FORT, LOCKON, TREEFALL, AIRAIM, LINE, BLIGHT, TENT, GUNFX } from '../../config.js';
-import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides, dressRound, sandProof, bulletImpact, hitMat } from '../hub.js';
+import { ARC_G, ARENA, BVIS, DRONE, ENVMOD, FT, GLOW, HULL_HL, HULL_HW, MOBILE, S, UGRID, UNDER, _hot, addTrail, aoeDamage, armorOf, armourHit, ballisticInit, ballisticStep, ballisticTrailK, blocksNear, bloodSpurt, boss, bulletFalloff, bulletPool, bullets, burst, camera, core, damageAlly, damageBlock, damageBoss, damageCore, damageDrone, damageEnemy, damagePlayer, damageRider, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, floatText, fortIntactCross, fortWallCross, groundHit, heightAt, hitAllyTank, impactFX, inBlock, lightning, nearMiss, orientShell, ricochet, riders, ringPulse, rocketExhaust, sabotDiscard, scene, sfx, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, towers, tunnelBlast, typeMul, unitsNear, vaporWake, wrapAngle, shotTree, trafficShot, MODE, TANK_SCALE, blSolid, blTag, dodgeShot, stealthShot, lineHit, inShape, tentHides, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
 
 // ===== MISSILE LOCK-ON — a hi-tech targeting reticle that snaps onto the locked target =====
 export const lockFX=[]; let _lockLabel=null;                                          // pooled reticles: {tgt, grp, bgrp, rgrp, hgrp, life, max, snap}
@@ -24,7 +24,8 @@ for(let i=0;i<8;i++){
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3(), _bnc=[];
 // Z314 does a straight round at world height wy meet this body (a man / a tank / the player / the boss) — feet to head, not above it, not under it
-function lineH(b, wy, t, man){ if(!b.line || (t.def && t.def.air)) return true; const gy=heightAt(t.pos.x, t.pos.z), inf = man || (t.def ? !!t.def.inf : !!t.cav);
+function lineH(b, wy, t, man){ if(!b.line || (t.def && t.def.air)) return true; const gy=heightAt(t.pos.x, t.pos.z)+(t.lift||0),   // (Z451 the soldier up on a wall: from his soles there)
+   inf = man || (t.def ? !!t.def.inf : !!t.cav);
   const h = inf ? manHigh(t) : LINE.tankH*((t.mesh ? t.mesh.scale.x : TANK_SCALE)/TANK_SCALE); return wy > gy-LINE.floor && wy < gy+h; }
 // Z316 one of our men as he is now — lying flat, crouched, standing, sat on the ride — and how high that makes him (a round aimed at a standing man's chest goes over a man lying flat)
 function stanceOf(t){ if(t && t.cav) return t.cav.mounted ? 'mounted' : t.cav.roll ? 'prone' : (t.cav.stance || 'stand');   // (Z377 going over in a roll he is as low as a man lying flat)
@@ -152,7 +153,8 @@ export function spawnBullet(x, z, angle, o={}){
   //   ground at its aimed distance (dropDist / arcDist — or, for an enemy's round, as far as you are along its line), and on along the same line past it
   const lineRound = !o.lockOn && !o.smart && !o.homing && !(vy>0.5); let dropTo = o.dropTo ?? (o.owner==='e' ? 1.2 : null), A = o.dropDist || D;   // (an enemy's round with no mark set: at the chest of whoever stands on its line)
   if(lineRound && dropTo!=null && (o.owner==='e' || !A)){ const t=aimAlong(x, z, angle, o); if(!A) A=t.d;
-    if(o.owner==='e' && t.who && !(t.who.def) && Math.abs(t.d-A)<5){ const st=stanceOf(t.who); if(st==='prone' || st==='crouch') dropTo=Math.min(dropTo, LINE.aim[st]); } }   // Z316 one of ours lying flat or crouched: the enemy lays its aim low on him
+    if(o.owner==='e' && t.who && !(t.who.def) && Math.abs(t.d-A)<5){ const st=stanceOf(t.who); if(st==='prone' || st==='crouch') dropTo=Math.min(dropTo, LINE.aim[st]); }
+    if(o.owner==='e' && t.who && t.who===S.player && t.who.lift>0.3 && Math.abs(t.d-A)<5) dropTo+=t.who.lift; }   // Z451 he is up on a wall / a rock: they aim up at him   // Z316 one of ours lying flat or crouched: the enemy lays its aim low on him
   const wy0 = heightAt(x,z)+y0; let slope=0; if(lineRound && dropTo!=null && A>0.5){ const ex=x+Math.sin(angle)*A, ez=z+Math.cos(angle)*A; slope=(heightAt(ex,ez)+dropTo-wy0)/A; }
   const loft = o.smart ? (D<14 ? 0.8+Math.random()*0.8 : 2.2+Math.random()*1.6) : o.lockOn ? (D<14 ? 1.0+Math.random()*1.4 : 2.6+Math.random()*3.0) : 0;   // Z214 smart missiles fly flatter and faster, diving onto armour from above   // random arc: low/shallow when the target's close, lofts higher when far (kept snappy — short air time)
   const sp0 = o.smart ? sp*0.3 : sp;   // Z214 a smart missile is ejected slowly, then its motor lights
@@ -297,7 +299,7 @@ export function updateBullets(dt, now){
 
 // Z380 what a round in flight leaves out: what its shooter stands on or in (the guard's own tower, the wall under a rifleman), our own walls for
 //   our rounds, a fortress wall above its parapet, anything at all while it is lofted high
-const _bk={ b:null, low:false, air:false }, _bskip=bl=>{ const b=_bk.b; return bl===b.ignore || (bl.ours && b.owner==='p') || (bl.fort ? !_bk.low : _bk.air) || inShape(bl, b.ox, b.oz); };
+const _bk={ b:null, low:false, air:false }, _bskip=bl=>{ const b=_bk.b; return bl===b.ignore || (b.owner==='e' && bl===climbPerch()) || (bl.ours && b.owner==='p') || (bl.fort ? !_bk.low : _bk.air) || inShape(bl, b.ox, b.oz); };
 // a body beyond the face the round stopped at this frame (behind the tree, the wall, the cover): out of its reach, however close to the face
 function pastFace(b, x, z){ const dx=b.x-b._hx, dz=b.z-b._hz; return (x-b._hx)*dx+(z-b._hz)*dz > dx*dx+dz*dz; }
 // a round strikes the solid thing it reached: their fire never hurts their own objective; it chips stone it cannot break; anything else takes it

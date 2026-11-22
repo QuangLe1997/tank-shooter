@@ -1,7 +1,7 @@
 // game/update.js — per-frame PLAYER update (drive, aim, fire), tank rigs, camera follow; Vietnamese label helpers
 import * as THREE from 'three';
-import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE, AIRAIM } from '../../config.js';
-import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wadeAt, airPitch, sightToBuildings , camAimA, steadyCam} from '../hub.js';
+import { DRIVE, LOOT, AIM, HEADING, CAM_AUTO, PAD_CFG, TURRET, CAM_STYLE, CAM_FEEL, SHAKE, AIRAIM, CLIMB } from '../../config.js';
+import { BIOME_VI, CAT_VI, FORTS, MOBILE, PAD, PLAYER, PROFILE, RIVER, S, TANK_SCALE, _v, aimTarget, animateTank, autoFire, barrelFixed, boss, bumpAt, camera, clampField, controlScheme, coreBeamBlocked, decalTread, enemies, equippedGun, fireGun, fortBeamBlocked, getMoveDir, gradePass, heightAt, magCap, padCfg, playerRange, rangeRing, solidTank, spawnPart, tankInput, trackOnTarget, trackTarget, turretTracks, wadeAt, airPitch, sightToBuildings , camAimA, steadyCam, climbing } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function updatePlayer(dt, now){
@@ -208,7 +208,7 @@ function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)
   if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
 // the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
 // Z241 the lowest extra height (CAM_FEEL.lift) from which the lens at `pos` sees the tank's hull over every wall in the way
-export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+(p.cav ? 1.6 : 3.2);
+export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+(p.lift||0)+(p.cav ? 1.6 : 3.2);
   for(const L of F.lift){ const y=pos.y+L; if(!fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && sightToBuildings(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1) return L; }   // (Z337 a city building too)
   return F.lift[F.lift.length-1]; }
 export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), ck=p.camK||1, z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk)*ck*ck;
@@ -246,8 +246,9 @@ export function updateCamera(dt, now){
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
   S.camZ += (_camAutoWant - S.camZ) * (1-Math.exp(-dt*CAM_AUTO.ease));
   camOffset(z, cy, zk, _camOff);
+  { const k=Math.min(1, dt*CLIMB.cam.rate); CAM.cp=(CAM.cp??1)+(((p.cav && climbing()) ? CLIMB.cam.pull : 1)-(CAM.cp??1))*k; CAM.ly=(CAM.ly??0)+((p.lift||0)-(CAM.ly??0))*Math.min(1, dt*6); if(CAM.cp>1.001) _camOff.multiplyScalar(CAM.cp); }   // Z451 on a wall's face the lens draws back; up on top it rides up with him
   sd(CAM, 'dash', (now && now < p.dashUntil) ? F.dashPull : 0, F.dash, st);   // eases back during a dash
-  camBase.set(camTarget.x+_camOff.x, _camOff.y+CAM.dash, camTarget.z+_camOff.z);
+  camBase.set(camTarget.x+_camOff.x, _camOff.y+CAM.dash+CAM.ly, camTarget.z+_camOff.z);
   if(CAM.liftSnap){ CAM.liftSnap=false; CAM.lift=camLift(camBase, p); CAM.liftV=0; }
   sd(CAM, 'lift', camLift(camBase, p), CAM_FEEL.liftT, st); camBase.y+=CAM.lift;   // Z241 a great wall between the lens and the tank → rise over it, settle back when clear
   { const hy=heightAt(p.pos.x, p.pos.z)+(p.cav ? 1.6 : 3.2), t=sightToBuildings(p.pos.x, hy, p.pos.z, camBase.x, camBase.y, camBase.z), hd=Math.hypot(camBase.x-p.pos.x, camBase.z-p.pos.z), o=CAM.occ ?? 1;   // Z337 a building between the lens and you (or the lens
@@ -256,13 +257,13 @@ export function updateCamera(dt, now){
     if(CAM.occ<0.999) camBase.set(p.pos.x+(camBase.x-p.pos.x)*CAM.occ, hy+(camBase.y-hy)*CAM.occ, p.pos.z+(camBase.z-p.pos.z)*CAM.occ);
     if(CAM.top>0.001){ const k=CAM.top, ty=hy+Math.max(9, camBase.y-hy), ux=(camBase.x-p.pos.x)/(hd||1), uz=(camBase.z-p.pos.z)/(hd||1); camBase.set(camBase.x+(p.pos.x-ux*1.8-camBase.x)*k, camBase.y+(ty-camBase.y)*k, camBase.z+(p.pos.z-uz*1.8-camBase.z)*k); } }   //   (high over you, a little out from the wall, looking down past the eaves)
   camera.position.copy(camBase);
-  steadyCam(camBase, camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck, camTarget.z, Math.max(10, camera.fov-Math.min(2, CAM.kick*1.4)*F.kick), camera.aspect, !(CAM.blend>0));   // Z382 the pose before the kick and the shake: the crosshair looks through it (combat/crosshair.js)
+  steadyCam(camBase, camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck+CAM.ly, camTarget.z, Math.max(10, camera.fov-Math.min(2, CAM.kick*1.4)*F.kick), camera.aspect, !(CAM.blend>0));   // Z382 the pose before the kick and the shake: the crosshair looks through it (combat/crosshair.js)
   const g=camShakeGain(), tr=Math.min(1, S.shake/3.2), t2=tr*tr*g;   // TRAUMA model: shake ∝ trauma² × the player's level (CÀI ĐẶT → RUNG MÀN HÌNH), a slow rumble, not a buzz
   if(t2>0.0004){ const q=now, A=SHAKE.pos*t2; camera.position.x += (Math.sin(q*31.1)+Math.sin(q*52.7+1.7)*0.45)*A; camera.position.y += (Math.sin(q*27.3+0.4)+Math.sin(q*47.9)*0.4)*A*0.55; camera.position.z += (Math.sin(q*35.9+2.1)+Math.sin(q*44.3)*0.45)*A; }
   CAM.kick += ((S.camKick||0) - CAM.kick)*(1-Math.exp(-dt*28));   // Z168 the shot shoves the camera back along the barrel (now eased in over a couple of frames, not a one-frame jump)
   { const k=CAM.kick*F.kick*(0.4+0.6*Math.min(1, g/SHAKE.levels.mid)); if(k>0.004){ const a=S.kickAng||0; camera.position.x -= Math.sin(a)*k*0.75; camera.position.z -= Math.cos(a)*k*0.75; camera.position.y += k*0.32; } }
   S.camKick=(S.camKick||0)*Math.exp(-dt*10);
-  camera.lookAt(camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
+  camera.lookAt(camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck+CAM.ly, camTarget.z);   // Z171 the closest views aim at the hull, not its tracks
   { const want=CS.fov + CS.speedFov*Math.min(1, Math.hypot(p.vel.x, p.vel.z)/PLAYER.maxSpeed) + Math.min(2, CAM.kick*1.4)*F.kick, f=camera.fov+(want-camera.fov)*(1-Math.exp(-dt*F.fovEase));   // the lens breathes with speed, never steps
     if(CAM.blend>0){ CAM.blend=Math.max(0, CAM.blend-dt); const b=smoother(1-CAM.blend/F.resume);   // gliding home from a cinematic
       camera.position.lerpVectors(CAM.bp, camera.position, b); _q0.copy(camera.quaternion); camera.quaternion.slerpQuaternions(CAM.bq, _q0, b); camera.fov=CAM.bf+(f-CAM.bf)*b; camera.updateProjectionMatrix(); }

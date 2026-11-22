@@ -20,7 +20,7 @@ function spot(p, t, keep, why){ const was = (p.spotUntil || 0) > t; p.spotUntil 
 const _sight = new Map();
 function inSight(x, y, z){ const p = S.player, t = now_(), C = STEALTH, st = CV.mounted ? 'mounted' : CV.roll ? 'prone' : (CV.stance || 'stand'), k = (Math.round(x * 2) + 1000) * 4e6 + (Math.round(z * 2) + 1000) * 2000 + Math.round(y * 2) + 500;   // (one per shooter's spot)
   const c = _sight.get(k); if(c && t - c.t < C.sightT && c.st === st && Math.abs(c.px - p.pos.x) < 0.25 && Math.abs(c.pz - p.pos.z) < 0.25) return c.v;
-  const hy = heightAt(p.pos.x, p.pos.z) + (C.head[st] || C.head.stand), dx = p.pos.x - x, dz = p.pos.z - z, L = Math.hypot(dx, dz) || 1, sx = dz / L * C.side, sz = -dx / L * C.side;
+  const hy = heightAt(p.pos.x, p.pos.z) + (C.head[st] || C.head.stand) + (p.lift || 0), dx = p.pos.x - x, dz = p.pos.z - z, L = Math.hypot(dx, dz) || 1, sx = dz / L * C.side, sz = -dx / L * C.side;   // (Z451 up on a wall: his head is up there)
   const v = lineClear(x, y, z, p.pos.x, hy, p.pos.z) || lineClear(x, y, z, p.pos.x + sx, hy - C.drop, p.pos.z + sz) || lineClear(x, y, z, p.pos.x - sx, hy - C.drop, p.pos.z - sz);   // (his head, or either shoulder: a post or a pole hides no man)
   if(_sight.size > 800) _sight.clear(); _sight.set(k, { t, v, st, px:p.pos.x, pz:p.pos.z }); return v; }
 // can a shooter whose eyes are at (x, y, z) see the player now — every enemy gun asks before it takes him as its target

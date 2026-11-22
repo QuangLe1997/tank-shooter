@@ -18,7 +18,8 @@
 //   · behind cover: kneeling or crouched behind it at exactly the height that lays the rifle on its top.
 import * as THREE from 'three';
 import { CAV, SOLDIER_LEGS } from '../../config.js';
-import { CV, heightAt, ik2, mountOwn, mountPose } from '../hub.js';
+import { CV, climbBody, climbPh, climbing, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
+const heightAt = soleAt;   // Z451 up on what he climbed his soles go down on its top (game/soldier-climb.js); on the ground it is the ground
 
 const V3 = () => new THREE.Vector3();
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _e = V3(), _g = V3(), _h = V3(), _k = V3(), _ank = [V3(), V3()], _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qp = new THREE.Quaternion();
@@ -50,7 +51,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   // Z341 which position: in the air, prone, kneeling (crouched and still), crouched or stood on the move
   const T = CV.trans, own = !!(P.trans && T && !T.crash && mountOwn());   // Z342 getting on / off: walking there on his own legs, then the climb (actors/soldier-mount.js)
   const busy = mounted || P.dead || (MV && MV.roll >= 0) || (P.trans && !own); let mode = null;
-  if(!busy){ if(own) mode = T.k === 'on' && T.t < (T.walkT || 0) ? 'stand' : 'mount'; else if(MV && MV.air) mode = 'air'; else if(P.stance === 'prone') mode = 'prone';
+  if(!busy){ if(own) mode = T.k === 'on' && T.t < (T.walkT || 0) ? 'stand' : 'mount'; else if(climbing() && climbPh() !== 'reach') mode = 'climb'; else if(MV && MV.air) mode = 'air'; else if(P.stance === 'prone') mode = 'prone';   // Z451 on the face of a wall: his own climb
     else if(P.stance === 'crouch') mode = s > (L.mode === 'crouch' ? A.crouch.minV * 0.5 : A.crouch.minV) ? 'crouch' : 'kneel';
     else if(P.stance === 'stand' && s < A.stand.maxV) mode = 'stand'; }
   L.w += ((mode ? 1 : 0) - L.w) * Math.min(1, dt * A.fade);
@@ -66,6 +67,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   if(L.mode === 'prone'){ pronePose(D, L, A, psi, len, dt, s); return finish(D, L, dt); }
   if(L.mode === 'air'){ airPose(D, L, A, psi, len, slope); return finish(D, L, dt); }
   if(L.mode === 'mount'){ mountPose(D, len, ankleH, slope); return finish(D, L, dt); }
+  if(L.mode === 'climb'){ climbBody(D, len, ankleH, slope); return finish(D, L, dt); }   // Z451 (actors/soldier-climb-pose.js)
   if(!L.on){ for(const [L1, sd] of SIDES){ const f = L.feet[sd < 0 ? 0 : 1]; wp(D[L1 + 'Foot'], _a); wp(D[L1 + 'ToeBase'], _b); f.p.set(_a.x, 0, _a.z); f.yaw = Math.atan2(_b.x - _a.x, _b.z - _a.z); f.sw = null; f.ph = 0; }
     L.on = true; L.th = 0; L.last = L.t; L.br = 1; }
   // the pelvis turns toward a move off to the side (forward branch), or square-ish to a move backward (backward branch) — kept on a branch past the side

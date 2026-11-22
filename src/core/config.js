@@ -1,5 +1,5 @@
 // core/config.js — runtime constants derived from config + device: arena size, MOBILE, tank scale, player palette, current BIOME
-import { LOCKON } from '../../config.js';
+import { CLIMB, LOCKON } from '../../config.js';
 import { BIOMES, GUNS, PLAYER, S, gunReach } from '../hub.js';
 
 performance.mark('boot:module');
@@ -29,7 +29,7 @@ export const PLAYER_PAL = {hull:0x5e7a2e,turret:0x75933a,barrel:0x9bb04a,tread:0
 export function playerRange(){ const p=S.player; if(!p) return PLAYER.rangeBase;
   const buff = (S.timeNow||0) < p.buffUntil.range ? 1.4 : 1;
   const gid = p.guns && p.guns.length ? p.guns[p.gunIdx].id : 'rifle';
-  const r=(PLAYER.rangeBase + (S.stage-1)*3) * p.rangeMul * buff * gunReach(gid);
+  const r=(PLAYER.rangeBase + (S.stage-1)*3) * p.rangeMul * buff * gunReach(gid) * (1 + Math.min(CLIMB.range.max, (p.lift||0)*CLIMB.range.perM));   // Z451 up on a wall he sees and reaches further
   return GUNS[gid] && GUNS[gid].lock ? Math.min(r, LOCKON.range) : r; }   // Z238 the lock-on missile flies no further than its cap — the range ring and auto-fire follow it
 export const CAMPAIGN_BIOMES = 5;   // stages auto-rotate through the first 5; MEADOW is picker-only
 export let BIOME = BIOMES[0];

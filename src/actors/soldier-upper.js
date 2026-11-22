@@ -28,7 +28,7 @@ export function soldierUpper(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; 
   if(pv){ if(!U.pv0) U.pv0 = pv.clone(); _a.subVectors(pv, U.pv0).divideScalar(dt); U.pv0.copy(pv); _a.y = 0; if(_a.length() > K.accMax) _a.setLength(K.accMax); U.a.x += (_a.x - U.a.x) * Math.min(1, dt * K.accK); U.a.z += (_a.z - U.a.z) * Math.min(1, dt * K.accK); }
   U.a.y = U.ay; U.v.set(pv ? pv.x : 0, U.vy, pv ? pv.z : 0);
   G.getWorldQuaternion(_q); _v.set(0, 0, 1).applyQuaternion(_q); const psi = Math.atan2(_v.x, _v.z); FA.set(Math.sin(psi), 0, Math.cos(psi)); RA.set(-Math.cos(psi), 0, Math.sin(psi));
-  const L = R.ownLegs, mode = L && L.w > 0.3 ? L.mode : null, onFoot = !mounted && !P.trans && !P.dead && mode !== 'prone' && mode !== 'mount';
+  const L = R.ownLegs, mode = L && L.w > 0.3 ? L.mode : null, onFoot = !mounted && !P.trans && !P.dead && mode !== 'prone' && mode !== 'mount' && mode !== 'climb';   // (Z451 nor on a wall's face)
   let pitch = 0, roll = 0, yaw = 0;
   // ---- leaning into a change of pace (only on his feet) ----
   // Z347 the fighting stance: stood or walking on his feet he leans into the gun from the hips (nose over toes), not upright behind it

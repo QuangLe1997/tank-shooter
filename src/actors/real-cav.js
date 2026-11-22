@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR } from '../../config.js';
-import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, gunRecoil, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright } from '../hub.js';
+import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, gunRecoil, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -304,6 +304,7 @@ export function updateRealCav(CV, dt, P){
   if(!P.dead && R.deadOn){ R.deadOn = false; const a = R.OA.dying_backwards; if(a){ a.setLoop(THREE.LoopRepeat, Infinity); a.clampWhenFinished = false; } }
   const MV = !mounted && !P.dead && P.move;   // Z336 jumping / rolling / just landed
   if(P.dead && R.OA.dying_backwards){ ok = 'dying_backwards'; ts = 1; }
+  else if(P.climb && P.climb !== 'top' && P.climb !== 'fall'){ ok = 'Aim_Stand'; freeze = 0; }   // Z451 on a wall's face: his own climb (actors/soldier-climb-pose.js)
   else if(MV && MV.roll >= 0){ ok = 'Cautious_Crouch_Walk_Forward'; freeze = 0.42; }   // tucked: knees up, head down
   else if(MV && (MV.air || MV.land > 0)){ ok = 'Aim_Stand'; freeze = 0; }   // Z341 in the air and landing the rifle stays up; his legs tuck and give (actors/soldier-legs.js)
   else if(P.trans && CV.trans && !CV.trans.crash && R.pup){ ok = 'Aim_Stand'; freeze = 0; }   // Z342 getting on / off: his own climb (actors/soldier-mount.js), the rifle carried low
@@ -364,7 +365,9 @@ export function updateRealCav(CV, dt, P){
   if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
   if(R.pup && !P.dead) soldierUpper(R, G, dt, P, mounted);   // Z343 shoulders, trunk, head and the rifle's weight in time with the legs (actors/soldier-upper.js)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
-  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real
+  const cw = R.pup && !P.dead ? climbW() : 0;   // Z451 on a wall: the rifle slung across his back, his hands on the face — eased off his hold and back into it
+  if(cw >= 0.999 && climbArms(R, G, 1)){ steadyHead(R, dt); return; }
+  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ if(cw > 0.001) climbArms(R, G, cw); mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
   R.rh.getWorldPosition(_a); if(R.rhm){ R.rhm.getWorldPosition(_b); _a.lerp(_b, 0.5); }
   (R.lhm || R.lh).getWorldPosition(_b); _d.subVectors(_b, _a); const span = _d.length();
