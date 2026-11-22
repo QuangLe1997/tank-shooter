@@ -118,7 +118,7 @@ export const GUNFX = {
   tracer:{ core:0.2, halo:0.55, trail:0.5, mgCore:0.11, mgHalo:0.32, mgTrail:0.3, mgLife:0.6 },   // round width × (was 0.38), glow ×, trail-dot size × — MG / rifle tracers thinner still
   brass:{ pool:140, poolMob:48, life:1.15, bounce:0.32, grav:-24 },   // spent cases + the chips / clods / splinters a strike throws: real meshes, one pool recycled oldest-first · life s · ground restitution · gravity
   case:{ rifle:[0.13,0.045], mg:[0.2,0.06], auto:[0.36,0.11], shell:[0.62,0.26] },   // case [length, diameter] m (drawn ~2.5× real so it reads at battle distance)
-  hit:{ chips:5, chipsMob:3, dust:0.55, splash:4 },                // a bullet strike: chips / sparks thrown, dust puff size, water-splash droplets
+  hit:{ chips:2, chipsMob:1, dust:0.55, splash:4 },                // a bullet strike: chips / sparks thrown, dust puff size, water-splash droplets (Z419 2, not 5: a handful of solid bits read as blocks — the dust and sparks carry it)
   mat:{ metal:['container','car','wreck','fueltank','tanker','drums','fueldrum','hedgehog','plates','parked','apc','tank','radar','pylon','motor','rocket'],   // what a struck block is made of
     wood:['crates','logs','tree','trunk','fence','tent','post','stacks'], sand:['sandbag','hesco'], stone:['keep','ruin','rock','fortcore','corewall','uwall','bunker','slab','landmark','teeth','mesa','karst'] },   // (else: a stone / steel / heavy block → stone, the rest → dirt)
 };
