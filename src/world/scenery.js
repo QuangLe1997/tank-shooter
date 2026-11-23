@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK, FARSITES } from '../../config.js';
-import { AER, PLAIN_DROP, landform, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize, SCENE_CUT } from '../hub.js';
+import { AER, PLAIN_DROP, landform, warmTex, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, renderer, sectorize, SCENE_CUT } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
 let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
@@ -23,7 +23,7 @@ export function sceneLevel(k, lv){ const id = k + ':' + lv; if(LVL[id]) return L
   if(typeof window === 'undefined') return (LVL[id] = Promise.resolve(null));
   return (LVL[id] = ldr().loadAsync(DIR + SUB[lv] + k + '.glb').then(gl => { let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
     if(!src) return null; const g = src.geometry; if(!g.boundingBox) g.computeBoundingBox(); const mat = src.material, C = M(k) || {};
-    mat.envMapIntensity = C.env ?? SCENERY.env; blendIn(mat); return { geo:g, mat, m4:src.matrixWorld.clone() }; })
+    mat.envMapIntensity = C.env ?? SCENERY.env; blendIn(mat); if(lv !== 'd') warmTex(mat); return { geo:g, mat, m4:src.matrixWorld.clone() }; })   // (PERF 4 its maps to the GPU while no fight is on; the near one has warmMaps)
     .catch(e => { console.warn('[scenery]', id, e && e.message); return null; })); }
 // Z392 a near scan's maps (up to 4K) sent to the GPU one a frame before it is shown: all at once they held a frame 150–400 ms
 const WARM = new WeakMap(), _frame = () => new Promise(q => requestAnimationFrame(q));

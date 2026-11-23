@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
-import { nearTag } from '../hub.js';
+import { S, nearTag, renderer } from '../hub.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -59,11 +59,19 @@ export function fixNormals(geo){ const N=geo.attributes.normal, P=geo.attributes
     _fa.fromBufferAttribute(P,a); _fb.fromBufferAttribute(P,b).sub(_fa); _fc.fromBufferAttribute(P,c).sub(_fa); _fb.cross(_fc); if(_fb.lengthSq()<1e-20) _fb.set(0,1,0); _fb.normalize();
     for(const v of [a,b,c]) if(weak(v)){ N.setXYZ(v, _fb.x, _fb.y, _fb.z); bad++; } }
   for(let i=0;i<N.count;i++) if(weak(i)){ N.setXYZ(i,0,1,0); bad++; } N.needsUpdate=true; return bad; }
+// PERF 4 A MODEL'S MAPS GO TO THE GPU BEFORE IT IS FIRST SEEN: three sends a texture the first time something wearing it is drawn — an enemy vehicle's
+//   2048² colour map the first time one rolls in, a missile's maps the first time one is fired — and each held that frame 70–190 ms (measured in a
+//   savanna battle's first 20 s). Each model's maps now queue the moment its file is in and are sent one a frame while no fight is on (the menu, the
+//   loading screen, the countdown); one still waiting when a fight starts is sent as before, when first drawn.
+const WARMQ = [], TEXK = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap']; let _warmOn = false;
+function warmStep(){ if(!WARMQ.length){ _warmOn = false; return; } if(S.mode !== 'playing' && S.mode !== 'dying'){ const t = WARMQ.shift(); try{ renderer.initTexture(t); }catch(e){} } requestAnimationFrame(warmStep); }
+export function warmTex(m){ for(const k of TEXK){ const t = m && m[k]; if(t && t.isTexture && t.image && !t.userData.warm){ t.userData.warm = 1; WARMQ.push(t); } } if(!_warmOn && WARMQ.length){ _warmOn = true; requestAnimationFrame(warmStep); } }   // (world/scenery.js: each level's maps too)
+function warmLater(gl){ gl.scene.traverse(o => { if(o.isMesh) for(const m of [].concat(o.material)) warmTex(m); }); }
 export function loadGLTF(key){
   if(_gl[key]) return _gl[key];
   if(procOnly() || typeof window === 'undefined') return (_gl[key] = Promise.resolve(null));
   return (_gl[key] = loader().loadAsync(MODEL_FILES[key]).then(gl => {
-    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); return gl;   // (Z395 its sharp maps while the camera is near)
+    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl); return gl;   // (Z395 its sharp maps while the camera is near)
   }).catch(e => { console.warn('[models]', key, 'not loaded — keeping the procedural one:', e && e.message); return null; })); }
 export function loadModel(key){
   if(_load[key]) return _load[key];

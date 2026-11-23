@@ -1,7 +1,7 @@
 // world/real-props.js — Z252 REAL COVER: the Meshy-generated low-poly cover pieces (sandbags, concrete block, container, crates, drums, jersey barrier, logs, pipes, dragon's teeth, tyres, car wreck) put in place of the procedural ones — each turned so its long side runs the procedural piece's way, scaled uniformly into the same footprint (height capped) and stood on the same ground line, so placement, collision and the hit / crumble code are untouched. Every placed piece is tracked; when the files arrive they all swap geometry and material (a piece's own hit-flash material keeps its paint and damage tint). The Czech hedgehog (Meshy could not build it) and the HESCO (the generated one read as shiny panels) stay procedural. Until loaded, or on failure, the procedural pieces stay.
 import * as THREE from 'three';
 import { REALPROP, REALROCK } from '../../config.js';
-import { COVER_GEO, COVER_K, COVER_MAT, coverGeo, loadGLTF } from '../hub.js';
+import { COVER_GEO, COVER_K, COVER_MAT, coverGeo, farGeo, loadGLTF } from '../hub.js';
 
 export const REAL_COVER = { live:new Set(), done:false, fits:{} };
 let _p = null;
@@ -55,5 +55,7 @@ const rockKinds = bn => REALROCK.biomes[bn] || REALROCK.biomes._;
 // a boulder (world/cover.js): it takes one of its land's rock scans once it is in
 export function dressRock(m, bn){ if(typeof window === 'undefined') return m; const L = rockKinds(bn), k = L[(Math.random() * L.length) | 0];
   Promise.resolve().then(() => rockGeo(k, bn)).then(R => { if(R && m.parent){ m.geometry = R.geo; m.material = R.mat; } }); return m; }   // (after the modules are all in: the field is laid while they load)
-// the loose stones (world/decor.js instanced lumps): each instanced set takes one of the land's scans
-export function realStones(im, i, bn){ if(typeof window === 'undefined') return; const L = rockKinds(bn); Promise.resolve().then(() => rockGeo(L[i % L.length], bn)).then(R => { if(R && im.parent){ im.geometry = R.geo; im.material = R.mat; } }); }
+// the loose stones (world/decor.js instanced lumps): each instanced set takes one of the land's scans — PERF 2 in a light copy (REALROCK.stoneKeep of its
+//   triangles, ~300 of 2500): a stone 0.2–0.5 m across, thousands of them out to the fence, drew 9 of a desert frame's 15 M triangles
+export function realStones(im, i, bn){ if(typeof window === 'undefined') return; const L = rockKinds(bn); Promise.resolve().then(() => rockGeo(L[i % L.length], bn)).then(R => { if(!R || !im.parent) return; im.material = R.mat;
+  im.geometry = R.geo; farGeo(R.geo, REALROCK.stoneKeep).then(lo => { if(lo && im.parent) im.geometry = lo; }); }); }

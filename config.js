@@ -904,9 +904,10 @@ export const RAGDOLL = { g:9.8, len:1.0, push:[0.5, 1.8], twist:0.45, buckle:[0.
 // Z429 REAL ROCKS (world/real-props.js dressRock / realStones, world/cover.js): the field's boulders and loose stones as rock scans — a set per land (each
 //   stone takes one at random), sunk a share of their height into the ground (sink), tinted per land; the boulders stand as outcrops: on the highest-sloped of
 //   `tries` clear spots, a big stone (big m radius) with 0–around smaller ones (small m) gap m off its flank; sites = outcrops per lone rock the field used to get
+//   · PERF 2 stoneKeep = the share of a scan's triangles the loose stones (instanced, everywhere) are drawn with
 export const REALROCK = { biomes:{ DESERT:['rock_sandy', 'rock_slab'], SAVANNA:['rock_sandy', 'rock_slab'], MEADOW:['rock_mossy', 'rock_slab'], CITADEL:['rock_mossy', 'rock_slab'], RUINS:['rock_slab', 'rock_mossy'],
     QUARRY:['rock_slab', 'rock_sandy'], ARCTIC:['rock_slab', 'rock_dark'], VOLCANO:['rock_dark'], FOUNDRY:['rock_dark', 'rock_slab'], CITY:['rock_slab'], _:['rock_slab', 'rock_mossy'] },
-  files:['rock_mossy', 'rock_sandy', 'rock_dark', 'rock_slab'], sink:0.22, env:0.45, tint:{ ARCTIC:0xe6ecf2, VOLCANO:0x9a9290, QUARRY:0xe8e2d6 }, tries:9, sites:0.55, big:[1.7, 2.8], around:[0, 2], small:[0.8, 1.4], gap:[1.2, 2.6] };
+  files:['rock_mossy', 'rock_sandy', 'rock_dark', 'rock_slab'], sink:0.22, env:0.45, stoneKeep:0.12, tint:{ ARCTIC:0xe6ecf2, VOLCANO:0x9a9290, QUARRY:0xe8e2d6 }, tries:9, sites:0.55, big:[1.7, 2.8], around:[0, 2], small:[0.8, 1.4], gap:[1.2, 2.6] };
 // Z252 REAL COVER (world/real-props.js): the cover kinds that wear a Meshy model (Z426 the Czech hedgehog and the HESCO too), the share of the procedural
 //   footprint they fill, the height cap (× the procedural height), environment-reflection strength; tint = albedo × for a piece whose texture came
 //   out the wrong colour (logs grey, concrete white); matte = pieces of fabric / wood / concrete whose generated metal map must be ignored;

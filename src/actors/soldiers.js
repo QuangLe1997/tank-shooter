@@ -246,12 +246,26 @@ export function dropSoldierGun(m){ const u=m.userData; if(!u.gun || !u.gun.paren
   const wp=new THREE.Vector3(); u.gun.getWorldPosition(wp); const s=m.scale.x||1; u.gun.parent.remove(u.gun); scene.add(u.gun); u.gun.scale.setScalar(s);
   const a=m.rotation.y+(Math.random()<0.5?1:-1)*(0.9+Math.random()*0.6); u.gun.position.set(wp.x+Math.sin(a)*0.7*s, heightAt(wp.x,wp.z)+0.06*s, wp.z+Math.cos(a)*0.7*s); u.gun.rotation.set(0, a+Math.PI/2, Math.PI/2); u.droppedGun=u.gun; }
 export const _sV=new THREE.Vector3();
+// PERF 5 EVERY HEALTH BAR IN TWO DRAWS: a bar was two meshes of its own (the dark back, the coloured fill) — in a big fight 150 men, the rocks, the
+//   fort gates and the gunships carried ~300 draws of two little quads, a few ms of the CPU's frame. A bar is now a bare transform (g, and its fill:
+//   moved, scaled and coloured as before — fill.material.color is a colour holder) and once a frame, just before the draw, every bar showing is written
+//   into two instanced meshes (the backs, then the fills on top, drawn over everything as before).
+const BARS=[], BAR={ bg:null, fill:null, cap:0 }, _bf=new THREE.Matrix4();
+function barMeshes(cap){ for(const m of [BAR.bg, BAR.fill]) if(m){ if(m.parent) m.parent.remove(m); m.dispose(); }
+  const bg=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.0,0.2), new THREE.MeshBasicMaterial({color:0x080b05,transparent:true,opacity:0.72,depthTest:false,depthWrite:false}), cap);
+  const fill=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.0,0.15), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthTest:false,depthWrite:false}), cap);
+  bg.renderOrder=20; fill.renderOrder=21; for(const m of [bg, fill]){ m.frustumCulled=false; m.count=0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); }
+  fill.setColorAt(0, new THREE.Color()); fill.instanceColor.setUsage(THREE.DynamicDrawUsage); BAR.bg=bg; BAR.fill=fill; BAR.cap=cap; }
 export function makeSoldierBar(){   // tiny billboarded HP bar above each soldier's head
-  const g=new THREE.Group();
-  const bg=new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.2), new THREE.MeshBasicMaterial({color:0x080b05,transparent:true,opacity:0.72,depthTest:false,depthWrite:false})); bg.renderOrder=20; g.add(bg);
-  const fill=new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.15), new THREE.MeshBasicMaterial({color:0x7fe06a,transparent:true,depthTest:false,depthWrite:false})); fill.position.z=0.01; fill.renderOrder=21; g.add(fill);
-  g.scale.setScalar(0.95); g.visible=false; return {g, fill};
+  const g=new THREE.Group(), fill=new THREE.Object3D(); fill.position.z=0.01; fill.material={ color:new THREE.Color(0x7fe06a) }; g.add(fill);
+  g.scale.setScalar(0.95); g.visible=false; const b={g, fill}; BARS.push(b); return b;
 }
+export function updateBarBatch(){ let n=0; for(let i=BARS.length-1;i>=0;i--){ const b=BARS[i]; if(!b.g.parent){ BARS.splice(i,1); continue; } if(b.g.visible && b.g.parent.visible!==false) n++; }   // (a bar taken out of the scene is gone for good)
+  if(n>BAR.cap || !BAR.bg) barMeshes(Math.max(64, Math.ceil(n*1.5)));
+  if(BAR.bg.parent!==scene){ scene.add(BAR.bg); scene.add(BAR.fill); }
+  let k=0; for(const b of BARS){ const g=b.g; if(!g.visible || g.parent.visible===false) continue; g.updateMatrix(); b.fill.updateMatrix();
+    BAR.bg.setMatrixAt(k, g.matrix); _bf.multiplyMatrices(g.matrix, b.fill.matrix); BAR.fill.setMatrixAt(k, _bf); BAR.fill.setColorAt(k, b.fill.material.color); k++; }
+  BAR.bg.count=BAR.fill.count=k; if(k){ BAR.bg.instanceMatrix.needsUpdate=true; BAR.fill.instanceMatrix.needsUpdate=true; BAR.fill.instanceColor.needsUpdate=true; } }
 export function _placeSoldiers(){ const c=core?core.pos:{x:0,z:0}; const n=Math.max(1,soldiers.length);
   soldiers.forEach((s,i)=>{ const a=i/n*6.283 - 1.2; s.postAngle=a; s.home.set(c.x+Math.cos(a)*SOLDIER.ringR, 0, c.z+Math.sin(a)*SOLDIER.ringR);
     if(s.pos.lengthSq()===0) s.pos.copy(s.home); }); }
