@@ -2247,6 +2247,22 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/id="cineTc"/.test(html) && /Trinh sát đường không/.test(html) && /function tick\(now\)/.test(it) && /put\('cineName', biomeVi\(BIOME\.name\)\)/.test(it) && /'Đại bản doanh địch — '/.test(it), 'the intro is a recon feed: timecode, the name as a lower third, captions in sentence case');
   ok(/el\.textContent='XUẤT KÍCH!'/.test(R('src/ui/briefing.js')) && /#countdown\{[^}]*'Saira Stencil One'/.test(R('css/menus.css')) && /body\.cine #touch\{opacity:0;/.test(R('css/cinematic-mobile.css')), 'the countdown in stencil ends on XUẤT KÍCH!; the phone controls stay out of the intro'); }
 
+// NO-TANKS 10 a death is not a restart, and the rocks keep out of the camera and the soldier out of the rocks: he gets up where he fell (he was sent
+//   back to the spawn point); the follow camera rides the ground (it held one height and sat inside the 12–17 m crag hills), rises over a hill's crest
+//   or a big rock, comes in past one, never under the ground; a crag's rock keeps him out as it is drawn (its block was a circle in its middle)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), pd=R('src/game/player-damage.js'), up=R('src/game/update.js'), sh=R('src/world/solid-shape.js'), cv=R('src/game/cavalry.js'), cfg=R('config.js');
+  ok(/DEATH\.face=p\.facing\|\|0/.test(pd) && /at=\{ x:B \? B\.x : DEATH\.wreck\.x, z:B \? B\.z : DEATH\.wreck\.z \}/.test(pd) && /clampField\(at, 3\); p\.hp=p\.maxHp; p\.pos\.set\(at\.x,0,at\.z\)/.test(pd)
+    && /CV\.facing=face/.test(pd) && !/p\.pos\.set\(0,0,ARENA\*0\.45\)/.test(pd), 'death: he gets up where he lies, facing as he was — not at the spawn point');
+  ok(/sd\(CAM, 'gy', camGround\(p\), F\.ground, st\)/.test(up) && /_camOff\.y\+CAM\.dash\+CAM\.ly\+CAM\.gy/.test(up) && (up.match(/\*ck\+CAM\.ly\+CAM\.gy/g)||[]).length===2
+    && /ground:0\.22/.test(cfg) && /pos\.y\+=g; look\.y\+=g;/.test(up), 'the camera follows his ground up and down a hill (the lens, the point it looks at, the rest pose)');
+  ok(/sightToGround\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1 && sightToRocks\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1\) return L;/.test(up)
+    && /const t=Math\.min\(sightToBuildings\([^)]*yt[^)]*\), sightToRocks\([^)]*yt[^)]*\), sightToGround\([^)]*yt[^)]*\), sightToTrunks\([^)]*\)\);/.test(up) && /yt=Math\.max\(camBase\.y, camBase\.y-CAM\.lift\+CAM\.lt\)/.test(up) && /CAM\.occ = o\+\(want-o\)\*Math\.min\(1, dt\*\(want<o \? CAM_FEEL\.occIn : 2\.5\)\); CAM\.top = /.test(up) && /if\(top\) CAM\.topT=now\+CAM_FEEL\.topHold; else if\(now<\(CAM\.topT\|\|0\)\) top=1;/.test(up) && /topIn:6, topHold:1/.test(cfg) && /const g=heightAt\(camBase\.x, camBase\.z\)\+0\.9; if\(camBase\.y<g\) camBase\.y=g;/.test(up),
+    'a hill\'s crest or a big rock between them: the lens rises over it (judged from the height it is rising to), else glides in past it — and never under the ground; a trunk right before the lens it comes in past');
+  ok(/export function sightToRocks/.test(sh) && /function rockGrid\(o, R\)/.test(sh) && /y <= \(u \* len < 3 \? G\.raw : G\.top\)\[ia \* G\.nc \+ ic\] \+ pad && y >= R\.y0/.test(sh) && /CAM\.gy=camGround\(p\); CAM\.gyV=0; camRocksStale\(\);/.test(up),
+    'the rocks the camera sees past: every big piece of scenery as a box, and inside it the rock\'s own height a metre at a time');
+  ok(/export function pushOutRocks\(p, rad, lift = 0\)/.test(sh) && /const ROCKY = \{ crag:1, shard:1 \}/.test(sh) && /G\.raw\[k\] < feet \+ 0\.6/.test(sh)
+    && /const vn=pushOutRocks\(p, R, CV\.mounted \? 0 : \(S\.player\.lift\|\|0\)\)/.test(cv), 'a crag\'s rock keeps the soldier and his ride out where it is drawn, not only its middle circle (he may stand on top of it)'); }
+
 // NO-TANKS 9 the boot screen: the key art as a film still between olive letterbox bands (the deployment order's palette and type); one opening —
 //   the bands part, the photo comes up out of the dark, the brand lands; the three real steps (the code · the battlefield · the graphics) with the
 //   one under way lit, a brass line along the photo's edge filling with the real progress — from the first module that arrives — then the button

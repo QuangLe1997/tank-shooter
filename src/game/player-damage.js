@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { CAV, RIDE_ACT } from '../../config.js';
-import { reportRun, soldierHitFX, ARENA, BEST, CV, S, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender } from '../hub.js';
+import { reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -20,9 +20,9 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
   updateHUD();
   if(p.hp<=0) playerDie(now);
 }
-// ===== DEATH → RESPAWN: the soldier falls (game/cavalry.js), the camera circles where he lies; then he is back in the saddle,
-// blinks 3× (invincible) and the fight resumes; the last life lost, the driver gives himself up beside him and the battle is lost =====
-export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), flipDir:1, tilt:0, final:false };   // (Z331 final: the last life — the fall plays out, then the battle is lost)
+// ===== DEATH → RESPAWN: the soldier falls (game/cavalry.js), the camera circles where he lies; then he is back in the saddle where he fell
+// (NO-TANKS 10: he was sent back to the spawn point, a long way from the fight), facing as he was, blinks 3× (invincible) and the fight resumes; the last life lost, the driver gives himself up beside him and the battle is lost =====
+export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), face:0, flipDir:1, tilt:0, final:false };   // (Z331 final: the last life — the fall plays out, then the battle is lost)
 export const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 export function playerDie(now){
   const p=S.player; p.lives--;
@@ -31,7 +31,7 @@ export function playerDie(now){
 }
 export function beginDeath(now, final){
   const p=S.player; S.mode='dying'; S.firing=false;
-  DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos); DEATH.final=!!final;
+  DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos); DEATH.face=p.facing||0; DEATH.final=!!final;
   cavDeathStart(p, now); driverSurrender(CV.H); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD();   // Z254 the soldier is shot off his ride
 }
 export function updateDeath(dt, now){
@@ -41,12 +41,12 @@ export function updateDeath(dt, now){
     if(DEATH.t >= CAV.death.dur){ if(!DEATH.final) respawnPlayer(now); else if(driverDone(CV.H) || DEATH.t >= CAV.death.dur + RIDE_ACT.give.wait){ DEATH.active=false; DEATH.final=false; gameOver('HẾT MẠNG'); } }   // Z331 the last life: held until the driver is on his knees by the body
 }
 export function respawnPlayer(now){
-  const p=S.player, m=p.mesh; DEATH.active=false; cavRespawn(p); driverBack(CV.H);   // Z245 the soldier is back in the saddle (Z331 and the driver back on his seat)
-  // back to the spawn point
-  p.hp=p.maxHp; p.pos.set(0,0,ARENA*0.45); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI;
-  m.position.set(p.pos.x,0,p.pos.z); m.rotation.set(0, p.facing, 0); m.visible=true; p.hitT=0;
+  const p=S.player, m=p.mesh, B=CV.dead && CV.dead.pos, at={ x:B ? B.x : DEATH.wreck.x, z:B ? B.z : DEATH.wreck.z }, face=DEATH.face;   // where he lies (the ride may have run on)
+  DEATH.active=false; cavRespawn(p); driverBack(CV.H);   // Z245 the soldier is back in the saddle (Z331 and the driver back on his seat)
+  clampField(at, 3); p.hp=p.maxHp; p.pos.set(at.x,0,at.z); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=CV.facing=face;   // NO-TANKS 10 up where he fell, facing as he was
+  m.position.set(p.pos.x,heightAt(p.pos.x,p.pos.z),p.pos.z); m.rotation.set(0, p.facing, 0); m.visible=true; p.hitT=0;
   p.invincibleUntil = now + 2.6; p.respawnBlinkUntil = now + 1.5;   // brief shield → blink 3× while it holds
-  for(const e of enemies){ if(e.pos.distanceTo(p.pos)<13){ const aw=new THREE.Vector3().subVectors(e.pos,p.pos).setLength(17); e.pos.add(aw); } }   // clear the spawn
+  for(const e of enemies){ if(e.pos.distanceTo(p.pos)<13){ const aw=new THREE.Vector3().subVectors(e.pos,p.pos).setLength(17); e.pos.add(aw); } }   // clear the spot
   S.mode='playing';
   ringPulse(p.pos, 0x8cbf3f, 4); ringPulse(p.pos, 0x8cbf3f, 7);
   showBanner('TRỞ LẠI CHIẾN ĐẤU', '#8cbf3f'); sfx('levelup');

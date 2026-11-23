@@ -716,8 +716,11 @@ export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, 
 // Z239 SMOOTH CAMERA — spring smoothing times (s, ~time to settle 60%): follow = the tank, lead = aim/motion look-ahead, yaw = turning the
 //   view, zoom = zoom steps / pinch, dash = the pull-back during a dash (dashPull m), resume = glide back from a cinematic, kick = recoil shove ×,
 //   fovEase = how fast the lens breathes with speed (1/s), orbit = mouse-drag / swipe turn rate (rad per px), wheelZoom = zoom per wheel notch ·
-//   Z241 lift = heights (m) tried, lowest first, to see the tank over a wall in the way; liftT = how fast the camera rises / settles (s)
-export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, follow:0.09, lead:0.38, yaw:0.24, zoom:0.2, dash:0.22, dashPull:3.2, resume:0.6, kick:0.55, fovEase:5, orbit:0.0065, wheelZoom:0.0016,
+//   Z241 lift = heights (m) tried, lowest first, to see the tank over a wall in the way; liftT = how fast the camera rises / settles (s) ·
+//   NO-TANKS 10 ground = how fast the lens follows the soldier's ground up a hill and down (s); the lift also clears a hill's crest and a big rock;
+//   occIn = how fast it comes in past what the lift cannot clear (1/s); with no room to come in (his back to it) it goes up over him at topIn (1/s)
+//   and stays up topHold s after it was last needed
+export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, ground:0.22, occIn:9, topIn:6, topHold:1, follow:0.09, lead:0.38, yaw:0.24, zoom:0.2, dash:0.22, dashPull:3.2, resume:0.6, kick:0.55, fovEase:5, orbit:0.0065, wheelZoom:0.0016,
   ride:{ heave:0.55, buzz:0.012, bank:0.22, pitch:0.5, fovAcc:0.45, ease:6 } };   // Z301 the riding camera (heave share, road buzz m, bank share of the bike's lean, pitch share, FOV ° per m/s² of throttle)
 // Z239 SCREEN SHAKE — the player's level (CÀI ĐẶT → RUNG MÀN HÌNH) scales every quake; NHẸ is the default. pos = metres at full trauma,
 //   roll = radians, aberr = chromatic fringe at full trauma

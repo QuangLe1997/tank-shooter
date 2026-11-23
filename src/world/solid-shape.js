@@ -3,10 +3,10 @@
 //   thick) stopped a man 2 m out from its face in one place and let him half into it at the next joint; a building (a grid of 2 m circles) stood 0.5 m
 //   proud of its facade in places and left a 1 m gap at its far edge — a soldier or a ride stuck in the open, or walked into the wall and the camera
 //   saw inside. Here each gets its true footprint as an oriented box { x, z, obb:{ f, hl, hw } } (along (sin f, cos f) ± hl, across ± hw) — or null
-//   for one that really is round — and the push of a body (a circle) out of it, and the first point a sight line meets a building.
+//   for one that really is round — and the push of a body (a circle) out of it, and the first point a sight line meets a building (NO-TANKS 10 or a big rock).
 import * as THREE from 'three';
 import { FORT } from '../../config.js';
-import { cityBuildings, heightAt } from '../hub.js';
+import { blocks, cityBuildings, heightAt, scene, sceneDims } from '../hub.js';
 
 const SHAPE = Symbol('shape'), FOOT = Symbol('foot');
 // Z378 foot = asked for the soldier or his ride: a fortress wall section cut back from a breach (pc.cut0 at its start, cut1 at its end — world/fortress.js
@@ -75,4 +75,74 @@ export function sightToBuildings(ax, ay, az, bx, by, bz, pad = 0.4){ let t0 = 1;
       let e0 = (-h - p0) / d, e1 = (h - p0) / d; if(e0 > e1) [e0, e1] = [e1, e0]; u0 = Math.max(u0, e0); u1 = Math.min(u1, e1); if(u0 > u1){ ok = false; break; } }
     if(!ok) continue; const yIn = ay + (by - ay) * u0, yOut = ay + (by - ay) * u1; if(Math.min(yIn, yOut) > top + pad || Math.max(yIn, yOut) < Bd.y0 - 1) continue;
     if(u0 < t0) t0 = u0; }
+  return t0; }
+// NO-TANKS 10 THE ROCKS IN THE CAMERA'S WAY: on the crag lands (the quarry's, the desert's, the arctic's) a photographed cliff face, a spire or a
+//   perched boulder 6–20 m tall stood between the follow camera and the soldier, and the view was rock. Every piece of scenery (world/scenery.js
+//   scenePiece, tagged userData.scene) and every solid rock of the land drawn as its own mesh (a 'crag' block) that stands 2.2 m or more over the
+//   ground is kept as an upright box (what it draws, in its own frame — the file's size until the file is in — turned with it) and, inside it, the
+//   rock's own height on a grid of about a metre (the highest of its drawn points over each cell, spread a cell): a cliff face is a long, thin,
+//   ragged slab and its box is mostly air, so a sight line is in the rock only where it passes under that height. Gathered every 2.5 s (a piece's
+//   box and grid are worked out once per set of levels it has loaded); the metre round the soldier himself never counts (he stands against it).
+const CAMROCK = { list:[], at:-1e9 }, ROCKBOX = new WeakMap(), _rb = new THREE.Box3(), _rbo = new THREE.Box3(), _rm = new THREE.Matrix4(), _ri = new THREE.Matrix4(), _rc = new THREE.Vector3();
+function rockGrid(o, R){ const cs = Math.max(0.8, Math.max(R.hl, R.hw) / 20), na = Math.ceil(2 * R.hl / cs), nc = Math.ceil(2 * R.hw / cs), raw = new Float32Array(na * nc).fill(-1e9), s = Math.sin(R.f), c = Math.cos(R.f); let any = false;
+  let nv = 0; o.traverse(q => { if(q.isMesh && !q.isInstancedMesh && q.geometry && q.geometry.attributes.position) nv += q.geometry.attributes.position.count; }); const st = Math.max(1, (nv / 2500) | 0);   // ~2500 points a rock, all its levels together
+  o.traverse(q => { if(!q.isMesh || q.isInstancedMesh || !q.geometry) return; const P = q.geometry.attributes.position; if(!P) return;
+    for(let i = 0; i < P.count; i += st){ _rc.fromBufferAttribute(P, i).applyMatrix4(q.matrixWorld); const la = (_rc.x - R.x) * s + (_rc.z - R.z) * c, lc = (_rc.x - R.x) * c - (_rc.z - R.z) * s;
+      const ia = Math.min(na - 1, Math.max(0, ((la + R.hl) / cs) | 0)), ic = Math.min(nc - 1, Math.max(0, ((lc + R.hw) / cs) | 0)), k = ia * nc + ic; if(_rc.y > raw[k]){ raw[k] = _rc.y; any = true; } } });
+  if(!any) return null; const top = new Float32Array(na * nc).fill(-1e9);
+  for(let a = 0; a < na; a++) for(let b = 0; b < nc; b++){ let m = -1e9; for(let da = -1; da <= 1; da++) for(let db = -1; db <= 1; db++){ const A = a + da, B = b + db; if(A >= 0 && A < na && B >= 0 && B < nc && raw[A * nc + B] > m) m = raw[A * nc + B]; } top[a * nc + b] = m; }
+  return { cs, na, nc, top, raw }; }
+function rockBox(o, key){ const sig = o.children.length, had = ROCKBOX.get(o); if(had && had.sig === sig) return had.box;
+  o.updateWorldMatrix(true, true); _ri.copy(o.matrixWorld).invert(); _rb.makeEmpty();
+  o.traverse(q => { if(q.isMesh && !q.isInstancedMesh && q.geometry){ const g = q.geometry; if(!g.boundingBox) g.computeBoundingBox(); if(g.boundingBox.isEmpty()) return; _rbo.copy(g.boundingBox).applyMatrix4(_rm.multiplyMatrices(_ri, q.matrixWorld)); _rb.union(_rbo); } });
+  const drawn = !_rb.isEmpty(); if(!drawn){ if(!key) return null; const D = sceneDims(key); _rb.min.set(-D.x / 2, 0, -D.z / 2); _rb.max.set(D.x / 2, D.y, D.z / 2); }
+  _rb.getCenter(_rc).applyMatrix4(o.matrixWorld); const s = o.scale, hy = (_rb.max.y - _rb.min.y) / 2 * s.y, top = _rc.y + hy;
+  const box = top - heightAt(_rc.x, _rc.z) < 2.2 ? null : { x:_rc.x, z:_rc.z, f:o.rotation.y, hl:(_rb.max.z - _rb.min.z) / 2 * s.z, hw:(_rb.max.x - _rb.min.x) / 2 * s.x, y0:_rc.y - hy, y1:top, g:null };
+  if(box && drawn) box.g = rockGrid(o, box);
+  ROCKBOX.set(o, { sig, box }); return box; }
+export function camRocks(){ const t = performance.now(); if(t - CAMROCK.at < 2500) return CAMROCK.list; CAMROCK.at = t; const L = CAMROCK.list, at = new Map(); L.length = 0;
+  for(const o of scene.children){ const k = o.userData && o.userData.scene; if(k && o.visible !== false){ const b = rockBox(o, k); if(b){ L.push(b); at.set(spot(o.position.x, o.position.z), b); } } }
+  for(const bl of blocks){ if(!ROCKY[bl.kind] || !bl.mesh) continue;
+    if(bl.mesh.isMesh){ if(bl.mesh.parent === scene){ const b = rockBox(bl.mesh, null); if(b) L.push(b); } }
+    else if(!bl.mesh.children.length){ const b = at.get(spot(bl.x, bl.z)); if(b && b.g) rockSolid(b); } }   // a crag's block stands where its rock is drawn
+  return L; }
+// NO-TANKS 10 A CRAG IS AS BIG AS ITS ROCK: a crag's block (world/fort-hill.js, world/iceberg.js) is a circle as wide as 45 % of the rock's narrow
+//   side — a cliff face 22 m long was solid only in its middle 6 m, and a man walked into either end of it and stood inside the stone, the camera in it
+//   with him. The block stays as it is (the bullets, the AI and the climb keep their circle); the soldier and his ride are also kept out of the rock as
+//   it is drawn: a cell of its grid where the rock stands a metre or more over the ground under it, and over his feet (he can stand on top of it).
+const ROCKY = { crag:1, shard:1 }, spot = (x, z) => Math.round(x * 20) + ',' + Math.round(z * 20);
+function rockSolid(R){ const G = R.g; R.solid = true; if(G.solid) return; const s = Math.sin(R.f), c = Math.cos(R.f), M = new Uint8Array(G.na * G.nc);
+  for(let a = 0; a < G.na; a++) for(let b = 0; b < G.nc; b++){ const k = a * G.nc + b, la = -R.hl + (a + 0.5) * G.cs, lc = -R.hw + (b + 0.5) * G.cs;
+    if(G.raw[k] > -1e8 && G.raw[k] - heightAt(R.x + la * s + lc * c, R.z + la * c - lc * s) >= 1.0) M[k] = 1; }
+  G.solid = M; }
+function rockHit(R, G, la, lc, rad, feet){ const i0 = Math.max(0, Math.floor((la - rad + R.hl) / G.cs)), i1 = Math.min(G.na - 1, Math.floor((la + rad + R.hl) / G.cs)), j0 = Math.max(0, Math.floor((lc - rad + R.hw) / G.cs)), j1 = Math.min(G.nc - 1, Math.floor((lc + rad + R.hw) / G.cs));
+  for(let i = i0; i <= i1; i++) for(let j = j0; j <= j1; j++){ const k = i * G.nc + j; if(!G.solid[k] || G.raw[k] < feet + 0.6) continue;
+    const a0 = -R.hl + i * G.cs, b0 = -R.hw + j * G.cs, qa = Math.max(a0, Math.min(a0 + G.cs, la)) - la, qc = Math.max(b0, Math.min(b0 + G.cs, lc)) - lc; if(qa * qa + qc * qc < rad * rad) return true; }
+  return false; }
+// a body at p.pos (radius rad, its feet lift m over the ground) set back out of any crag's rock it has gone into: to the nearest place clear of it
+//   (rings of 16 ways, 0.3 m apart); its velocity loses what goes into the rock. Returns the closing speed it hit at (0 moving away, -1 clear).
+export function pushOutRocks(p, rad, lift = 0){ const L = camRocks(); let hit = -1; if(!L.length) return hit;
+  for(const R of L){ const G = R.g; if(!R.solid || !G || !G.solid) continue; const x = p.pos.x, z = p.pos.z, e = R.hl + R.hw + rad; if(Math.abs(x - R.x) > e || Math.abs(z - R.z) > e) continue;
+    const s = Math.sin(R.f), c = Math.cos(R.f), la = (x - R.x) * s + (z - R.z) * c, lc = (x - R.x) * c - (z - R.z) * s; if(Math.abs(la) > R.hl + rad || Math.abs(lc) > R.hw + rad) continue;
+    const feet = heightAt(x, z) + lift; if(!rockHit(R, G, la, lc, rad, feet)) continue;
+    let oa = 0, oc = 0, out = false; for(let d = 0.3; d <= 9 && !out; d += 0.3) for(let k = 0; k < 16; k++){ const w = k * 0.3927, qa = la + Math.cos(w) * d, qc = lc + Math.sin(w) * d; if(!rockHit(R, G, qa, qc, rad, feet)){ oa = qa - la; oc = qc - lc; out = true; break; } }
+    if(!out) continue; const wx = oa * s + oc * c, wz = oa * c - oc * s, n = Math.hypot(wx, wz) || 1, nx = wx / n, nz = wz / n; p.pos.x += wx; p.pos.z += wz; hit = Math.max(hit, 0);
+    const v = p.vel; if(v){ const vn = v.x * nx + v.z * nz; if(vn < 0){ v.x -= nx * vn; v.z -= nz * vn; hit = Math.max(hit, -vn); } } }
+  return hit; }
+export function camRocksStale(){ CAMROCK.at = -1e9; }   // a new field: gather them again on the next look
+// where the sight line a → b (world) first meets one of those rocks (share 0…1 of the way), or 1 if it meets none — for the follow camera
+export function sightToRocks(ax, ay, az, bx, by, bz, pad = 0.3){ const L = camRocks(); if(!L.length) return 1; let t0 = 1;
+  const minX = Math.min(ax, bx), maxX = Math.max(ax, bx), minZ = Math.min(az, bz), maxZ = Math.max(az, bz), len = Math.hypot(bx - ax, bz - az) || 1;
+  for(const R of L){ const e = R.hl + R.hw + pad; if(R.x + e < minX || R.x - e > maxX || R.z + e < minZ || R.z - e > maxZ) continue;
+    const s = Math.sin(R.f), c = Math.cos(R.f), hl = R.hl + pad, hw = R.hw + pad, la = (ax - R.x) * s + (az - R.z) * c, lc = (ax - R.x) * c - (az - R.z) * s, inside = Math.abs(la) <= hl && Math.abs(lc) <= hw;
+    const G = R.g; if(inside && !G) continue;   // he stands on it or against it, and its shape is not in yet
+    const lb = (bx - R.x) * s + (bz - R.z) * c, ld = (bx - R.x) * c - (bz - R.z) * s; let u0 = 0, u1 = 1, ok = true;
+    for(const [p0, p1, lo, hi] of [[la, lb, -hl, hl], [lc, ld, -hw, hw], [ay, by, R.y0, R.y1 + pad]]){ const d = p1 - p0;
+      if(Math.abs(d) < 1e-9){ if(p0 < lo || p0 > hi){ ok = false; break; } continue; }
+      let e0 = (lo - p0) / d, e1 = (hi - p0) / d; if(e0 > e1) [e0, e1] = [e1, e0]; u0 = Math.max(u0, e0); u1 = Math.min(u1, e1); if(u0 > u1){ ok = false; break; } }
+    if(!ok || u0 >= t0) continue; if(!G){ t0 = u0; continue; }
+    const du = Math.min(0.5 / len, (u1 - u0) / 2 + 1e-6), near = 1.0 / len;   // walk the stretch inside the box against the rock's own height
+    for(let u = Math.max(u0, near); u <= Math.min(u1, t0); u += du){ const pa = la + (lb - la) * u, pc = lc + (ld - lc) * u, y = ay + (by - ay) * u;
+      const ia = Math.floor((pa + R.hl) / G.cs), ic = Math.floor((pc + R.hw) / G.cs); if(ia < 0 || ia >= G.na || ic < 0 || ic >= G.nc) continue;
+      if(y <= (u * len < 3 ? G.raw : G.top)[ia * G.nc + ic] + pad && y >= R.y0){ t0 = u; break; } } }   // (by him the rock as drawn, unspread: it does not crowd him)
   return t0; }
