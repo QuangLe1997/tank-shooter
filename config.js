@@ -675,6 +675,72 @@ export const WEATHER = {
   snow: { vi:'TUYẾT RƠI',  icon:'snow', fogK:1.6, sunK:0.78, hemiK:1.05, tint:0xd4dde6, n:[1000,400], range:0.95 },
   fog:  { vi:'SƯƠNG MÙ',   icon:'fog',  fogK:2.2, sunK:0.66, hemiK:0.95, tint:0xc4c8cc, n:[0,0],     range:0.82 },
 };
+// NATURE AMBIENCE + FLOCKS (yêu cầu: "lâu lâu thêm tiếng chim hót, rừng rú nhẹ vào cho vui ta. biển bắc thì tiếng chim hải âu... âm thanh rừng... ở các
+//   ngọn đồi thêm chim én chim bay lượn chao liêng theo bầy vào cho đẹp"). audio/ambience.js: a quiet bed under the battle and now and then a call placed
+//   round the listener, all synthesised (no recordings); ducked under every shot and blast, quiet while the fight is hot, up in the lulls and behind the
+//   menus; it rides the master (the effects level and the mute apply); PROFILE.ambience false (CÀI ĐẶT) turns it off. world/skylife.js: the flocks.
+//   vol = the whole layer's level into the master
+//   bed: each layer's level at full lull — wind (band noise, gusting) · leaves (a rustle riding the gusts) · sea (the wash below the shelf, one wave every
+//     wave s; louder near the edge: full at the fence, far at edge[1] m in) · rain (while it rains); fade s in / out
+//   heat: the fight's heat 0…1 — each sound as heard (its level after distance) adds × shot (small arms) or × boom (blasts), cooling with tau s; foes
+//     within near m add perFoe each (up to foeMax); calls wait until the heat has stayed under quiet for calm s; the bed is down to lull.fight at hot
+//   duck: a sound as heard pulls the layer down at once by depth × its level (a blast counts big ×), never under min, back up over release s;
+//     voice = the level while the radio speaks
+//   lull: the level in a hot fight (fight), behind the menus (menu), paused (pause)
+//   calls: seconds between two at full lull (gap; ÷ the biome's rate and the weather's calls), the first first s into a field; ref = m where a call is at
+//     half its level; lp = [floor Hz, top Hz, m] the air's low-pass with distance; verb = the reverb send [near, far, at m]; detune = ± pitch share;
+//     answer = the chance a second bird of the kind answers after answerT s; max = calls sounding at once; variants = takes rendered per kind
+//   kinds: g = level (measured K-weighted: a songbird at its middle distance ≈ −40 LUFS before the master, 16 LU under the soldier's own rifle and
+//     no louder than an enemy's carbine 40 m off; a gull ≈ −38, a cricket ≈ −44), d = [m] how far off it is placed, h = [m] how high over the
+//     ground (surf: out = [m] past the edge, h under it)
+//   biomes: the bed's layers ×, rate (0 = no calls at all), the day's and the night's kinds with their weights (_ = any other battlefield)
+//   wx: per weather (S.weather) the wind ×, the calls ×, rain on
+//   flock (world/skylife.js) — swal: the swallow flocks over the hills (biomes where they fly; flocks of size birds, phones fewer): each flock follows a
+//     leader circling a hilltop, a fort's crag, a knoll, a ridge's crest or the land's own high points (peaks) at alt m over it, R m round (a fort or a knoll: by its size), v m/s, for
+//     dwell s, then darts on (pick: a next anchor near…far m away is likelier, others × off); each bird trails the leader by a lag s at its own offset
+//     (spread m), weaving (jit m), banked into its turns (at most bank rad); weave = the leader's darting (m), swoop = its dives and pull-ups (m),
+//     low = the least m over the ground; fly = the wings' bias (−1 glide … +1 beat); rate / glide / amp = the wingbeat (rad/s), the glide gate, the
+//     flap's depth; scale = [near, far] size × from scaleD[0] to scaleD[1] m off the camera (small up close, readable far off); pass: every so often
+//     (first, every s) a flock sweeps low round the soldier (alt, R, dur) when the heat is under heat; call: a flock within r m twitters (cd s)
+//   gull: the gull flocks (flocks per biome) gliding along the shelf's edge out over the sea (out m past the fence, alt m over the shelf: lower
+//     and the lip hides them from the field), round the icebergs (berg = weight, bergAlt m over the berg's top), now and then across the field (cross = the chance, crossAlt m).
+//     The gameplay camera rides ~5 m up, pitched 16° down with a 58° view: the frame's top edge is ~10 m up at 20 m off, ~15 m at 40, ~28 m at
+//     100 — flocks fly low enough to be seen
+//   peaks: the land's high points (a grid m scan, edge m inside the fence, the n highest at least minH m over the field's mean, gap m apart)
+//   scare: a blast within r m sends a flock up lift m and away, for t s
+export const AMBIENCE = { on:true, vol:0.55,
+  bed:{ wind:0.11, leaves:0.05, sea:0.17, rain:0.07, wave:[6, 10], edge:[20, 150], fade:2.5 },
+  heat:{ shot:0.06, boom:0.5, tau:7, near:35, perFoe:0.06, foeMax:0.5, quiet:0.3, calm:4, hot:0.8 },
+  duck:{ depth:0.6, big:2, min:0.12, release:3.5, voice:0.6 },
+  lull:{ fight:0.25, menu:0.85, pause:0.5 },
+  calls:{ gap:[7, 18], first:[3, 7], ref:20, lp:[1800, 16000, 70], verb:[0.12, 0.55, 80], detune:0.04, answer:0.3, answerT:[0.8, 2.5], max:3, variants:3 },
+  kinds:{ trill:{ g:0.094, d:[12, 45], h:[3, 12] }, whistle:{ g:0.071, d:[14, 50], h:[4, 14] }, chip:{ g:0.083, d:[8, 30], h:[1, 6] }, dove:{ g:0.14, d:[18, 55], h:[3, 10] },
+    gull:{ g:0.23, d:[25, 80], h:[8, 30] }, raptor:{ g:0.114, d:[60, 130], h:[35, 70] }, owl:{ g:0.18, d:[25, 70], h:[4, 12] }, cricket:{ g:0.086, d:[5, 22], h:[0, 0.5] },
+    swallow:{ g:0.087 }, surf:{ g:0.43, out:[25, 45], h:[-40, -30] } },
+  biomes:{
+    MEADOW:{ bed:{ wind:0.8, leaves:1 }, rate:1, day:{ trill:3, whistle:3, chip:2, dove:2 }, night:{ cricket:4, owl:1 } },
+    CITADEL:{ bed:{ wind:0.9, leaves:0.8 }, rate:0.9, day:{ whistle:3, trill:2, chip:2, dove:1 }, night:{ cricket:3, owl:2 } },
+    RUINS:{ bed:{ wind:1, leaves:0.6 }, rate:0.8, day:{ chip:3, whistle:2, trill:1, dove:2 }, night:{ cricket:3, owl:1 } },
+    SAVANNA:{ bed:{ wind:1, leaves:0.4 }, rate:0.8, day:{ chip:3, trill:2, dove:2, raptor:1 }, night:{ cricket:4 } },
+    DESERT:{ bed:{ wind:1.2 }, rate:0.3, day:{ raptor:2, chip:1 }, night:{ cricket:1 } },
+    QUARRY:{ bed:{ wind:1.1, sea:0.45 }, rate:0.45, day:{ raptor:1, chip:2, whistle:1, gull:1 }, night:{ owl:1 } },
+    ARCTIC:{ bed:{ wind:1.2, sea:1 }, rate:0.9, day:{ gull:5, surf:3 }, night:{ surf:3 } },
+    CITY:{ bed:{ wind:0.6 }, rate:0.3, day:{ chip:3, dove:1 }, night:{} },
+    FOUNDRY:{ bed:{ wind:0.7 }, rate:0.15, day:{ chip:1 }, night:{} },
+    VOLCANO:{ bed:{ wind:1.1 }, rate:0, day:{}, night:{} },
+    _:{ bed:{ wind:1 }, rate:0.5, day:{ chip:2, whistle:1 }, night:{ cricket:2 } } },
+  wx:{ rain:{ wind:1.3, calls:0.25, rain:1 }, sand:{ wind:1.7, calls:0.15 }, snow:{ wind:1.25, calls:0.6 }, fog:{ wind:0.6, calls:0.9 } },
+  flock:{
+    swal:{ biomes:['MEADOW', 'CITADEL', 'RUINS', 'SAVANNA', 'DESERT', 'QUARRY', 'CITY'], flocks:3, size:[8, 20], phone:{ flocks:2, size:[6, 10] },
+      alt:[6, 22], R:[14, 30], v:[9, 13], dwell:[10, 24], lags:[0.05, 0.75], spread:[2.5, 6], weave:2.4, swoop:5, jit:1.6, low:2.5, fly:0, bank:0.95,
+      rate:26, glide:0.42, amp:0.85, scale:[0.6, 2.4], scaleD:[8, 70],
+      pass:{ first:[15, 30], every:[35, 80], alt:[3.5, 6], R:[10, 16], dur:[6, 9], heat:0.3 }, call:{ r:22, cd:[6, 11] } },
+    gull:{ flocks:{ ARCTIC:3, QUARRY:1 }, size:[4, 9], phone:{ flocks:1, size:[4, 6] }, out:[8, 34], berg:2, bergAlt:[-4, 8], cross:0.2, crossAlt:[10, 18],
+      alt:[2, 14], R:[24, 46], v:[6, 8.5], dwell:[14, 30], lags:[0.1, 2], spread:[5, 12], weave:1.5, swoop:3, jit:2.5, low:3, fly:-0.35, bank:0.7,
+      rate:15, glide:0.6, amp:0.5, scale:[0.8, 1.6], scaleD:[10, 60], call:{ r:45, cd:[5, 10] } },
+    pick:{ near:40, far:220, off:0.3 },
+    peaks:{ grid:12, edge:15, n:10, minH:3, gap:40 },
+    scare:{ r:45, lift:12, t:6 } } };
 // SPACE — how much of the arena the fence encloses (custom battles); the campaign always fights on the full field
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };
 // Z107 HULL FRONT MARKER — at speed the hull's heading is hard to read from above: a glowing chevron on the ground just ahead of the nose
