@@ -2262,7 +2262,9 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), lp=R('src/game/loop.js'), P=C.FRAME_PACE;
   ok(P && P.low60>40 && P.low60<60 && P.probeMs>16.7 && P.probeMs<30 && P.upShare>0.5 && P.upShare<=1 && P.probeN>=30 && P.hold>0, 'frame pacing config');
   ok(/requestAnimationFrame\(loop\);\n  if\(paceSkip\(nowMs\)\) return;/.test(lp) && /if\(since < 1000\/cap - C\.slackMs\)/.test(lp) && /fps<PERF_GOV\.low\*capK && !paceFirst/.test(lp) && /fps>PERF_GOV\.high\*capK/.test(lp)
-    && /m==='30' \|\| m==='60' \? m : 'auto'/.test(lp), 'a frame at most every 1/cap s; the governor wants the cap, not 60; CÀI ĐẶT can force 30 or 60'); }
+    && /m==='30' \|\| m==='60' \? m : 'auto'/.test(lp), 'a frame at most every 1/cap s; the governor wants the cap, not 60; CÀI ĐẶT can force 30 or 60')
+  ok(P.warmS>0 && P.roomK>0.5 && P.roomS>=2 && /warm=S\.mode==='playing' && now-PACE\.playAt<FRAME_PACE\.warmS/.test(lp) && /if\(!AO\.on && AO\.want && PROFILE\.quality!=='low'\)\{ AO\.on=true; PROFILE\.perfAO=true;/.test(lp)
+    && /PERF\.upBack=Math\.min\(16, \(PERF\.upBack\|\|1\)\*2\)/.test(lp), 'a fight\'s first seconds are not judged; at 30 with room the occlusion and the resolution come back, a step that does not hold waits longer'); }
 
 // PERF 6–7 the ground read ~23 textures a pixel (three per layer for the no-repeat hexes): the second photo set and the base at its second scale in
 //   one turned lookup each, the normal from the strongest hex — 30.1 → 27.1 ms a desert frame, the same picture; what the FPS governor once took

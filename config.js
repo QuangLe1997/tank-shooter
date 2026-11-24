@@ -1229,7 +1229,7 @@ export const DIET = { on:!(typeof location !== 'undefined' && /[?&]nodiet\b/.tes
 // PERF 8 frame pacing (game/loop.js paceSkip, CÀI ĐẶT → KHUNG HÌNH: tự động · 60 · 30): slackMs = how early a tick still counts as the frame's turn (ms);
 //   auto drops 60 → an even 30 after slowS s under low60 fps, holds 30 at least hold s (doubled each failed try, up to ×16), and tries 60 again once
 //   upShare of probeN display ticks right after a frame came within probeMs (the GPU was done inside one tick)
-export const FRAME_PACE = { slackMs:4, low60:52, slowS:2, hold:15, probeMs:21, probeN:90, upShare:0.9 };
+export const FRAME_PACE = { slackMs:4, low60:52, slowS:2, hold:15, probeMs:21, probeN:90, upShare:0.9, warmS:8, roomK:0.75, roomS:6, upEvery:10 };   // warmS: a fight's first seconds the governor does not judge · locked at 30, roomK of the display ticks after a frame inside probeMs for roomS s in a row gives back AO, then resolution a step every upEvery s
 export const SHAKE = { levels:{ off:0, low:0.32, mid:0.6, high:1 }, def:'low', pos:0.7, roll:0.018, aberr:0.0035 };
 export const TOUCH_HELP = [
   ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — súng tự bám địch gần nhất, anh đi đâu nòng vẫn ngắm mục tiêu'],

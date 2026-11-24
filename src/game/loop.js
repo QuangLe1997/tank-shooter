@@ -13,12 +13,13 @@ export function __set_last(v){ last=v; }   // (dev/hooks tick) — imports are r
 //   seconds lock it to an even 30 (every frame 33 ms, the resolution and AO kept); while at 30, the display tick right after a drawn frame tells whether
 //   the GPU was done inside one tick (under probeMs) — when nearly all were (upShare of probeN), it tries 60 again; a try that falls back waits longer.
 //   The governor sheds quality only when even the cap cannot be held.
-export const PACE = { cap:60, drawn:0, after:false, probe:0, fast:0, slowT:0, until:0, tries:0, frames:0, sum:0 };
+export const PACE = { cap:60, drawn:0, after:false, probe:0, fast:0, slowT:0, until:0, tries:0, frames:0, sum:0, hp:0, hf:0, playAt:0, was:'' };
 function paceMode(){ let m; try{ m=PROFILE.fps; }catch(e){} return m==='30' || m==='60' ? m : 'auto'; }
 export function paceCap(){ const m=paceMode(); return m==='30' ? 30 : m==='60' ? 60 : PACE.cap; }
 function paceSkip(nowMs){ const P=PACE, C=FRAME_PACE; if(!P.init){ P.init=true; try{ if(PROFILE.paceCap===30) P.cap=30; }catch(e){} }   // (start where this machine settled last time)
+  if(S.mode==='playing' && P.was!=='playing') P.playAt=nowMs/1000; P.was=S.mode;   // (a fight starts: its first seconds load and settle)
   const cap=paceCap(), since=nowMs-P.drawn;
-  if(since < 1000/cap - C.slackMs){ if(P.after){ P.after=false; if(cap===30 && S.mode==='playing'){ P.probe++; if(since < C.probeMs) P.fast++; } } return true; }   // a tick between frames: skipped (the first one after a frame is the probe)
+  if(since < 1000/cap - C.slackMs){ if(P.after){ P.after=false; if(cap===30 && S.mode==='playing'){ const f=since < C.probeMs; P.probe++; P.hp++; if(f){ P.fast++; P.hf++; } } } return true; }   // a tick between frames: skipped (the first one after a frame is the probe)
   if(P.drawn && S.mode==='playing' && paceMode()==='auto'){ const now=nowMs/1000; P.frames++; P.sum+=since;
     if(P.sum>=1000){ const fps=P.frames*1000/P.sum; P.frames=0; P.sum=0;
       if(P.cap===60){ P.slowT = fps<C.low60 ? P.slowT+1 : 0; if(P.slowT>=C.slowS){ P.cap=30; P.slowT=0; P.probe=P.fast=0; P.until=now+C.hold*Math.pow(2, Math.min(4, P.tries)); try{ PROFILE.paceCap=30; }catch(e){} } }
@@ -104,9 +105,11 @@ export function loop(nowMs){
   if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
     const calib = S.mode==='countdown';                                      // Z150 the 3-2-1 countdown is the calibration window: the world is static, a resize there costs nothing you can feel
     if(S.mode!=='playing' && !calib) AO.on = AO.want && PROFILE.quality!=='low' && PROFILE.perfAO!==false;   // re-armed between battles — unless this machine already proved it can't afford it
-    const capK=paceCap()/60, paceFirst=paceMode()==='auto' && PACE.cap===60;   // PERF 8 at 30 the governor wants 27, not 54; at auto-60 the lock to 30 comes first
+    const capK=paceCap()/60, paceFirst=paceMode()==='auto' && PACE.cap===60, warm=S.mode==='playing' && now-PACE.playAt<FRAME_PACE.warmS;   // PERF 8 at 30 the governor wants 27, not 54; at auto-60 the lock to 30 comes first; a fight's first seconds (loading hitches) are not judged
+    const room=PACE.hp>=10 && PACE.hf/PACE.hp>=FRAME_PACE.roomK; PACE.hp=PACE.hf=0;   // PERF 8 locked at 30, most frames done inside one display tick: room to spare
     if(!NOGOV && (S.mode==='playing' || calib)){                              // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
-      if(fps<PERF_GOV.low*capK && !paceFirst){ PERF.fastT=0; PERF.slowT++;   // Z239 smoothness first: shed load below ~54 fps (was 47 — a visible judder band)
+      if(fps<PERF_GOV.low*capK && !paceFirst && !warm){ PERF.fastT=0; PERF.slowT++; PERF.roomT=0; if(now-(PERF.lastUp||-1e9)<FRAME_PACE.upEvery*1.5) PERF.upBack=Math.min(16, (PERF.upBack||1)*2);   // (a step back up that did not hold: the next waits twice as long)
+        PERF.upAt=Math.max(PERF.upAt||0, now+FRAME_PACE.upEvery*2*(PERF.upBack||1));   // Z239 smoothness first: shed load below ~54 fps (was 47 — a visible judder band)
         if(AO.on && (PERF.slowT>=2 || calib)){ AO.on=false; PERF.slowT=0; PROFILE.perfAO=false; saveProfile(); }   // Z145 the occlusion pass goes first — sharpness stays
         const shedFirst = MOBILE && (PERF.parts>0.6 || bloom.enabled);                          // Z120 phones: particles + glow go BEFORE sharpness
         if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/(PERF_GOV.aim*capK))*20)/20;   // (PERF 8 aimed at the cap: locked at 30 it gives up only what 30 needs)   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
@@ -116,6 +119,12 @@ export function loop(nowMs){
       else if(fps>PERF_GOV.high*capK){ PERF.slowT=0; PERF.fastT++;
         if(calib && S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }   // Z150 sharper again only in the countdown — a resize mid-fight is a hitch you feel
         if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); }
+        // PERF 8 QUALITY BACK AT 30: what was shed (in a fight's loading hitches, or a heavy moment) comes back while the lock has room — the occlusion first,
+        //   then the resolution a step at a time — after FRAME_PACE.roomS s of room in a row, at most every upEvery s
+        if(!calib && paceCap()===30 && room){ PERF.roomT=(PERF.roomT|0)+1; if(PERF.roomT>=FRAME_PACE.roomS && now>(PERF.upAt||0)){ PERF.roomT=0; PERF.upAt=now+FRAME_PACE.upEvery; PERF.lastUp=now;
+          if(!AO.on && AO.want && PROFILE.quality!=='low'){ AO.on=true; PROFILE.perfAO=true; saveProfile(); }
+          else if(S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop, S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); } } }
+        else if(!room) PERF.roomT=0;
         // Z240 DYNAMIC RESOLUTION, upward too: the GPU timer shows real headroom (vsync hides it from the fps count) → one step sharper,
         //   never more often than PERF_GOV.upEvery s, only after PERF_GOV.upHold s of headroom in a row (a resize is a small hitch)
         { const g=perfGpuMs(60), budget=Math.min(16.7, Math.max(6, perfFrameMs(60)));
