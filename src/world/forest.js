@@ -30,7 +30,7 @@ export function plantForest(g, b){ let B = FOREST.on && !MOBILE && FOREST.biomes
     const sl = Math.hypot(heightAt(x + 4, z) - heightAt(x - 4, z), heightAt(x, z + 4) - heightAt(x, z - 4)) / 8; if(sl > FOREST.slope) return null;
     const m = _fbm(x / B.patch + 3.7, z / B.patch + 9.1) + 0.18 * _n(x / 40, z / 40) - (1 - B.cover) * 0.9 - 0.12; if(m < 0 || Math.random() > Math.min(1, m * 6)) return null;
     if(roads.size && onRoad(roads, x, z, 9)) return null; return y; };
-  const NEAR = DIET.on ? DIET.forest.near : FOREST.near, MAX = DIET.on ? DIET.forest.max : FOREST.max, by = new Map(), R = 300 + NEAR; let all = 0;   // (PERF 9 the diet's reach and budget)   // one tree a cell, the cells a wood's spacing (B.space), jittered
+  const L = (DIET.on && DIET.land[b.name]) || {}, NEAR = DIET.on ? L.near ?? DIET.forest.near : FOREST.near, MAX = DIET.on ? L.max ?? DIET.forest.max : FOREST.max, by = new Map(), R = 300 + NEAR; let all = 0;   // (PERF 9 the diet's reach and budget)   // one tree a cell, the cells a wood's spacing (B.space), jittered
   for(let x = -R; x <= R; x += B.space) for(let z = -R; z <= R; z += B.space){ const px = x + rnd(-0.45, 0.45) * B.space, pz = z + rnd(-0.45, 0.45) * B.space, o = Math.hypot(px, pz) - fieldR(Math.atan2(pz, px));
     if(o < FOREST.gap || o > NEAR) continue; const y = fit(px, pz); if(y == null) continue; const k = pick(kinds, Math.random()); (by.get(k) || by.set(k, []).get(k)).push([px, y - 0.4, pz, rnd(B.h[0], B.h[1])]); all++; }
   const keep = Math.min(1, MAX / Math.max(1, all)), S = FOREST.sectors;   // (over the budget: thinned evenly, never cut off on one side)

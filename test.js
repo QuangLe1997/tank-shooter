@@ -2284,8 +2284,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 //   grass carpet DIET.grass.R m round the camera at DIET.grass.perCell a cell; each land keeps DIET.flora of its bushes, reeds, hay and tufts (not its trees)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), D=C.DIET, fo=R('src/world/forest.js'), gc=R('src/world/grass-carpet.js'), fl=R('src/world/flora.js');
   ok(D && D.forest.near<C.FOREST.near && D.forest.max<C.FOREST.max && D.grass.R<C.GRASS.R && D.grass.perCell<C.GRASS.perCell && D.flora.MEADOW>0.4 && D.flora.MEADOW<1, 'the diet cuts the woods, the carpet and the small flora, never to nothing');
-  ok(/if\(o < FOREST\.gap \|\| o > NEAR\) continue;/.test(fo) && /im\.receiveShadow = !DIET\.on;/.test(fo) && /const gR = \(\) => MOBILE \? GRASS\.Rm : DIET\.on \? DIET\.grass\.R : GRASS\.R/.test(gc)
-    && /if\(DIET\.on && opt\.kind!=='tree' && !opt\.fixed\) n=Math\.round\(n\*\(DIET\.flora\[BIOME\.name\] \?\? 1\)\);/.test(fl), 'the woods, the carpet and the flora read the diet; ?nodiet turns it off'); }
+  ok(/if\(o < FOREST\.gap \|\| o > NEAR\) continue;/.test(fo) && /im\.receiveShadow = !DIET\.on;/.test(fo) && /const gR = \(\) => MOBILE \? GRASS\.Rm : DIET\.on \?/.test(gc)
+    && /n=Math\.round\(n\*\(opt\.kind==='tree' \? L\.trees \?\? 1 : L\.flora \?\? DIET\.flora\[BIOME\.name\] \?\? 1\)\);/.test(fl) && D.land.MEADOW.max<D.forest.max && D.land.MEADOW.trees>0.4 && D.land.MEADOW.trees<1 && /DIET\.land\[b\.name\]/.test(fo) && /DIET\.land\[BIOME\.name\]/.test(gc), 'the woods, the carpet and the flora read the diet (the meadow its own deeper cuts); ?nodiet turns it off'); }
 
 // FLAGS AND FAKE FLOWERS GONE ("xoá các lá cờ trong game đi, k cần nữa · xoá các đốm hoa giả nhìn giả đi"): makeFlag hands back a hidden stand-in and
 //   no pole or banner is put up; the lollipop wild flowers are planted nowhere (flora, the trails' verges)

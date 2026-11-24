@@ -188,7 +188,7 @@ export const FLORA = { meshes:[] };
 export function clearFlora(){ clearTrees(); for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='trunk') blocks.splice(i,1);   // Z260 the giants' trunks go with them
   for(const m of FLORA.meshes){ m.parent && m.parent.remove(m); m.dispose && m.dispose(); } FLORA.meshes.length=0; for(let i=crushables.length-1;i>=0;i--) if(crushables[i].flora) crushables.splice(i,1); }
 function okSpot(x,z,r){ return inField(x,z,r+1) && !inZone(x,z,r) && Math.hypot(x,z)>32 && Math.hypot(x,z-ARENA*0.55)>12 && !wetAt(x,z,r+0.5) && !blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+r+0.6); }
-function plant(gs, n, opt){ if(DIET.on && opt.kind!=='tree' && !opt.fixed) n=Math.round(n*(DIET.flora[BIOME.name] ?? 1));   // PERF 9 the bushes, reeds, hay and tufts a heavy land keeps
+function plant(gs, n, opt){ if(DIET.on && !opt.fixed){ const L=DIET.land[BIOME.name] || {}; n=Math.round(n*(opt.kind==='tree' ? L.trees ?? 1 : L.flora ?? DIET.flora[BIOME.name] ?? 1)); }   // PERF 9 the bushes, reeds, hay and tufts a heavy land keeps (and the heaviest, a share of its trees)
   const V=Array.isArray(gs)?gs:[gs], lists=V.map(()=>[]); const tries=n*6; let got=0;   // Z202 instances spread across the species' variants
   const grassy=opt.kind==='grass' || opt.kind==null, lean=opt.lean ?? (grassy?0.16:0.05);
   for(let t=0;t<tries && got<n;t++){ let x, z; if(opt.near){ const p=opt.near(); if(!p) continue; [x,z]=p; } else { x=_R(-ARENA+6,ARENA-6); z=_R(-ARENA+6,ARENA-6); }

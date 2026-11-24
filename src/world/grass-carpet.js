@@ -5,7 +5,7 @@
 // few drier clumps here and there, and swayed by one gust field for the whole field (world space). One draw call; none on phones' lowest tier.
 import * as THREE from 'three';
 import { DIET, GRASS } from '../../config.js';
-const gR = () => MOBILE ? GRASS.Rm : DIET.on ? DIET.grass.R : GRASS.R, gPer = () => DIET.on ? DIET.grass.perCell : GRASS.perCell;   // PERF 9 the carpet's reach and density
+const gR = () => MOBILE ? GRASS.Rm : DIET.on ? (DIET.land[BIOME.name] || {}).R ?? DIET.grass.R : GRASS.R, gPer = () => DIET.on ? DIET.grass.perCell : GRASS.perCell;   // PERF 9 the carpet's reach and density
 import { BIOME, DECAL_U, GRASS_FAR, MOBILE, SUN_VIEW, camera, groundMat, heightAt, scene, wetAt } from '../hub.js';
 
 const G = { mesh:null, biome:null, cx:1e9, cz:1e9, time:{ value:0 }, cap:0, tex:{} };

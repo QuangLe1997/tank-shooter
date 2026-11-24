@@ -1225,7 +1225,8 @@ export const WORLD_FLAGS = { on:false };
 //   floor's own grass tint carries on) at `perCell` clumps a cell (was 3); flora = the share of bushes, reeds, hay and tufts each land keeps (not its
 //   trees). ?nodiet turns it all off (for measuring)
 export const DIET = { on:!(typeof location !== 'undefined' && /[?&]nodiet\b/.test(location.search)), forest:{ near:170, max:1400 }, grass:{ R:30, perCell:2 },
-  flora:{ MEADOW:0.65, SAVANNA:0.65, RUINS:0.7, CITADEL:0.75, CITY:0.8, VILLAGE:0.7, HILLS:0.7 } };
+  flora:{ MEADOW:0.65, SAVANNA:0.65, RUINS:0.7, CITADEL:0.75, CITY:0.8, VILLAGE:0.7, HILLS:0.7 },
+  land:{ MEADOW:{ near:130, max:800, R:26, flora:0.5, trees:0.7 } } };   // the heaviest land (couldn't hold an even 30 at ×1.0 without AO): its own, deeper cuts — trees = the share of its field trees kept
 // PERF 8 frame pacing (game/loop.js paceSkip, CÀI ĐẶT → KHUNG HÌNH: tự động · 60 · 30): slackMs = how early a tick still counts as the frame's turn (ms);
 //   auto drops 60 → an even 30 after slowS s under low60 fps, holds 30 at least hold s (doubled each failed try, up to ×16), and tries 60 again once
 //   upShare of probeN display ticks right after a frame came within probeMs (the GPU was done inside one tick)
