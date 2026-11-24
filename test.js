@@ -330,7 +330,7 @@ ok(FORT.count.every(n=>n>=3 && n<=4) && FORT.countMobile.every(n=>n>=2 && n<=4),
 ok([1,2,3].every(t=>FORT.tiers[t] && FORT.tiers[t].gate>0 && FORT.tiers[t].inf[0]>=12), 'every tier has a gate to batter and a crowded garrison (≥12 men)');
 ok(FORT.tiers[1].gate < FORT.tiers[2].gate && FORT.tiers[2].gate < FORT.tiers[3].gate, 'gates get tougher with the fortress tier');
 ok(FORT.tiers[3].r[1] > FORT.tiers[1].r[1] && FORT.tiers[3].inf[1] > FORT.tiers[1].inf[1], 'the citadel is the biggest and the most crowded');
-ok(FORT.gateW > 5 && FORT.gateW < 10 && FORT.wallH > 3, 'a gate a tank fits through; walls taller than a tank');
+ok(FORT.gateW >= 4 && FORT.gateW <= 6 && FORT.wallH >= 6 && FORT.wallH <= 10, 'a gate a pickup and a squad fit through; walls of a real castle (6–10 m) for a 1.78 m man');
 
 ok(FORT.names.length >= 8 && FORT.chiefs.length >= 6, 'enough fortress names and commanders to vary every stage');
 ok(FORT.fromGate > 0.5 && FORT.fromGate < 1, 'most (not all) reinforcements march out of a fortress gate');
@@ -1500,7 +1500,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z174 real-world scale: 1 unit = 1 m; every man 1.78 m; real wall / tower / cover / tree heights; vehicles and elites at their real size
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), ED=await import('./src/data/enemies.js');
-  ok(cfg.FORT.wallH>=11 && cfg.FORT.wallT>=3.2 && /stoneBox\(0\.98, 1\.45/.test(R('src/world/fortress.js')) && cfg.FORT.arch.keepH>=34 && /KH=FORT\.arch\.keepH/.test(R('src/world/fortress.js')) && ED.TOWER.h>=8, 'Z241 great curtain walls ≥ 11 m with 1.45 m merlons on a corbelled gallery, ≥ 3.2 m thick, a ≥ 34 m donjon; watchtowers 8 m to the deck');
+  ok(cfg.FORT.wallH>=7 && cfg.FORT.wallH<=9 && cfg.FORT.wallT>=2.5 && /stoneBox\(0\.98, 1\.45/.test(R('src/world/fortress.js')) && cfg.FORT.arch.keepH>=18 && cfg.FORT.arch.keepH<=26 && cfg.FORT.arch.tall<=9 && /KH=FORT\.arch\.keepH/.test(R('src/world/fortress.js')) && ED.TOWER.h>=8, 'to scale (no tanks): curtain walls 7–9 m with 1.45 m merlons on a corbelled gallery, ≥ 2.5 m thick, towers ≤ 9 m over the wall-walk, an 18–26 m donjon; watchtowers 8 m to the deck');
   ok(/h:2\.1\+Math\.random\(\)\*0\.6/.test(R('src/world/brick-walls.js')) && /sandbag:0\.7/.test(R('src/world/props.js')) && /real:1\.4/.test(R('src/world/flora.js')), 'compound walls ~2.4 m, sandbag lines 1.2 m, trees 10–17 m');
    }
 

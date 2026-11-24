@@ -1326,11 +1326,11 @@ export const FORT = {
           2:{ r:[35,40], sides:[6,8], towers:4, gunners:[10,14], inf:[24,32], tanks:[2,3], gate:950,  cover:[11,14],  name:'PHÁO ĐÀI' },
           3:{ r:[41,45], sides:[8,8], towers:4, gunners:[14,18], inf:[30,40], tanks:[3,5], gate:1450, cover:[14,18], name:'THÀNH' } },
   gatePerStage:0.22, mobileMul:0.6, mobileR:0.8, minR:26,   // Z234 mobileR: fort radius on phones (the 130 m field) · minR: never smaller (the gate wall needs its length)
-   wallH:11.0, wallT:3.2, gateW:7.0, seg:3,   // Z241 great walls: 7 → 11 m high, 2.4 → 3.2 m thick
+   wallH:8.0, wallT:2.8, gateW:4.6, seg:3,   // Z241 great walls: 7 → 11 m high, 2.4 → 3.2 m thick · TO SCALE (no tanks): 8 m high, 2.8 m thick, a 4.6 m gate — a 1.78 m man against real castle walls
   // Z241 ARCHITECTURE (m): tall corner towers rise `tall` above the wall-walk (width tallW), the other corners are squat bastions (bastW, +bastH);
   //   curtain walls longer than flankMin get a flanking tower (flankW, +flankH) proud of the outer face; gate towers +gateH[tier<3, capital], gateW2 wide;
   //   the capital's donjon keepW wide, keepH high, its four turrets +turret above it
-  arch:{ tall:12, tallW:5.2, bastW:4.4, bastH:4.5, flankMin:22, flankW:6.0, flankH:6.5, gateH:[12,16], gateTW:[5.2,6.4], keepW:15, keepH:34, turret:8, flagH:[20,24] },
+  arch:{ tall:7, tallW:4.6, bastW:4.0, bastH:3, flankMin:22, flankW:5.0, flankH:4, gateH:[6,8], gateTW:[4.6,5.4], keepW:12, keepH:22, turret:5, flagH:[15,18] },   // (TO SCALE: towers ~15 m, gate towers 14–16, the donjon 22 + 5; were 23, 23–27, 34 + 8 — sized round tanks)
   wakeR:52, liveInf:16, liveInfMobile:9, sally:[10,16], sallyInf:[3,6], fromGate:0.7,                  // seconds between sallies per fortress · squad size · tank chance · share of wave spawns out of a gate
   cmdType:'rifle', cmdHp:8, tunnel:[1,2], cmdScale:1.0, escort:[6,10], escortMobile:[4,6], escortR:[4,8],   // Z107 the commander: an officer on foot (no-tanks), tough, ringed by bodyguards
   ram:{ minV:6, fullV:15, gate:0.5, wall:0.55, buffMul:1.5, cd:0.4 },    // Z111 RAMMING: a hit at 15+ takes 50% of a gate / 55% of a wall section → 2 rams open either
