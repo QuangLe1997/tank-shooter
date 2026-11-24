@@ -1218,6 +1218,14 @@ export const PERF_HUD = { n:120, every:0.5, good:16.7, warn:25 };
 // FLAGS GONE (yêu cầu: "xoá các lá cờ trong game đi, k cần nữa"): no flag, banner or flagpole is drawn anywhere — the forts, the depots, the camps, the
 //   rally point, our walls and command post (world/heightfield.js makeFlag hands back a hidden mesh, nothing waves; the poles are not put up)
 export const WORLD_FLAGS = { on:false };
+// PERF 9 THE HEAVY BATTLEFIELDS ON A DIET (yêu cầu: "giảm nhẹ loại bỏ bớt những thứ k cần ở các trận nặng… miễn game còn đẹp"): measured on an M4, a
+//   meadow frame was ~50 ms — the woods past the fence 7 ms, the grass carpet 4.5, the trees 5.3, cover 4.7, bushes / reeds / stones 2.3. Cut where the
+//   eye does not miss it: forest = the woods reach `near` m past the fence (was 260: the rest sits in the haze) with at most `max` trees, and they take
+//   no shadow (the sun's shadow map covers ~44 m round the soldier); grass = the photographed carpet `R` m round the camera (was 40; beyond it the
+//   floor's own grass tint carries on) at `perCell` clumps a cell (was 3); flora = the share of bushes, reeds, hay and tufts each land keeps (not its
+//   trees). ?nodiet turns it all off (for measuring)
+export const DIET = { on:!(typeof location !== 'undefined' && /[?&]nodiet\b/.test(location.search)), forest:{ near:170, max:1400 }, grass:{ R:30, perCell:2 },
+  flora:{ MEADOW:0.65, SAVANNA:0.65, RUINS:0.7, CITADEL:0.75, CITY:0.8, VILLAGE:0.7, HILLS:0.7 } };
 // PERF 8 frame pacing (game/loop.js paceSkip, CÀI ĐẶT → KHUNG HÌNH: tự động · 60 · 30): slackMs = how early a tick still counts as the frame's turn (ms);
 //   auto drops 60 → an even 30 after slowS s under low60 fps, holds 30 at least hold s (doubled each failed try, up to ×16), and tries 60 again once
 //   upShare of probeN display ticks right after a frame came within probeMs (the GPU was done inside one tick)

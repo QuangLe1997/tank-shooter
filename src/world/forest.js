@@ -5,7 +5,7 @@
 //   FOREST.treeline), in the sea or on a road. Lit and hazed by the air like the land under them. Split by bearing (the camera culls the woods
 //   behind it); desktop only (phones keep the skyline's trees).
 import * as THREE from 'three';
-import { FOREST } from '../../config.js';
+import { DIET, FOREST } from '../../config.js';
 import { BIOME, MOBILE, fieldR, heightAt, landform, loadGLTF, scene } from '../hub.js';
 
 const _h = (x, z) => { const v = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return v - Math.floor(v); };
@@ -30,14 +30,14 @@ export function plantForest(g, b){ let B = FOREST.on && !MOBILE && FOREST.biomes
     const sl = Math.hypot(heightAt(x + 4, z) - heightAt(x - 4, z), heightAt(x, z + 4) - heightAt(x, z - 4)) / 8; if(sl > FOREST.slope) return null;
     const m = _fbm(x / B.patch + 3.7, z / B.patch + 9.1) + 0.18 * _n(x / 40, z / 40) - (1 - B.cover) * 0.9 - 0.12; if(m < 0 || Math.random() > Math.min(1, m * 6)) return null;
     if(roads.size && onRoad(roads, x, z, 9)) return null; return y; };
-  const by = new Map(), R = 300 + FOREST.near; let all = 0;   // one tree a cell, the cells a wood's spacing (B.space), jittered
+  const NEAR = DIET.on ? DIET.forest.near : FOREST.near, MAX = DIET.on ? DIET.forest.max : FOREST.max, by = new Map(), R = 300 + NEAR; let all = 0;   // (PERF 9 the diet's reach and budget)   // one tree a cell, the cells a wood's spacing (B.space), jittered
   for(let x = -R; x <= R; x += B.space) for(let z = -R; z <= R; z += B.space){ const px = x + rnd(-0.45, 0.45) * B.space, pz = z + rnd(-0.45, 0.45) * B.space, o = Math.hypot(px, pz) - fieldR(Math.atan2(pz, px));
-    if(o < FOREST.gap || o > FOREST.near) continue; const y = fit(px, pz); if(y == null) continue; const k = pick(kinds, Math.random()); (by.get(k) || by.set(k, []).get(k)).push([px, y - 0.4, pz, rnd(B.h[0], B.h[1])]); all++; }
-  const keep = Math.min(1, FOREST.max / Math.max(1, all)), S = FOREST.sectors;   // (over the budget: thinned evenly, never cut off on one side)
+    if(o < FOREST.gap || o > NEAR) continue; const y = fit(px, pz); if(y == null) continue; const k = pick(kinds, Math.random()); (by.get(k) || by.set(k, []).get(k)).push([px, y - 0.4, pz, rnd(B.h[0], B.h[1])]); all++; }
+  const keep = Math.min(1, MAX / Math.max(1, all)), S = FOREST.sectors;   // (over the budget: thinned evenly, never cut off on one side)
   for(const [k, list0] of by){ const list = list0.filter(() => Math.random() < keep); species(k).then(T => { if(!T || !list.length || BIOME !== b || g.parent !== scene) return;
     const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), Sc = new THREE.Vector3(), U = new THREE.Vector3(0, 1, 0), C = new THREE.Color(), arcs = Array.from({ length:S }, () => []);
     for(const t of list) arcs[Math.min(S - 1, Math.floor((Math.atan2(t[2], t[0]) / (2 * Math.PI) + 1) % 1 * S))].push(t);   // split by bearing: the camera culls the woods behind it
     for(const L of arcs){ if(!L.length) continue; const im = new THREE.InstancedMesh(T.g, T.m, L.length);
       L.forEach(([x, y, z, h], i) => { const w = h * rnd(0.88, 1.12); im.setMatrixAt(i, M.compose(V.set(x, y, z), Q.setFromAxisAngle(U, Math.random() * Math.PI * 2), Sc.set(w, h, w)));
         const v = rnd(0.82, 1.1); im.setColorAt(i, C.setRGB(v * rnd(0.95, 1.05), v, v * rnd(0.92, 1.03))); });   // each tree a shade of its own: a wood is never one green
-      im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; im.computeBoundingSphere(); im.castShadow = false; im.receiveShadow = true; im.userData.forest = k; g.add(im); } }); } }
+      im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; im.computeBoundingSphere(); im.castShadow = false; im.receiveShadow = !DIET.on; im.userData.forest = k; g.add(im); } }); } }

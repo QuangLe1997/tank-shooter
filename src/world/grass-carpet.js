@@ -4,7 +4,8 @@
 // as you move, re-laid only when you cross a cell, thinned and shrunk toward the rim so there is no edge, kept off water; darker at the root, a
 // few drier clumps here and there, and swayed by one gust field for the whole field (world space). One draw call; none on phones' lowest tier.
 import * as THREE from 'three';
-import { GRASS } from '../../config.js';
+import { DIET, GRASS } from '../../config.js';
+const gR = () => MOBILE ? GRASS.Rm : DIET.on ? DIET.grass.R : GRASS.R, gPer = () => DIET.on ? DIET.grass.perCell : GRASS.perCell;   // PERF 9 the carpet's reach and density
 import { BIOME, DECAL_U, GRASS_FAR, MOBILE, SUN_VIEW, camera, groundMat, heightAt, scene, wetAt } from '../hub.js';
 
 const G = { mesh:null, biome:null, cx:1e9, cz:1e9, time:{ value:0 }, cap:0, tex:{} };
@@ -73,16 +74,16 @@ function build(){
   G.ready = Promise.all([load(C.tex === 'dry' ? 'dry.jpg' : 'diff.jpg', true), load('alpha.jpg', false)]).then(([map, alpha]) => {
     if(G.biome !== want || G.mesh) return;   // the battlefield changed while it loaded
     try{ const c = avgOf(map.image, alpha.image); G.blade = c ? c.multiply(new THREE.Color().setRGB(...C.tint)).multiplyScalar(0.93 * GRASS.far.k) : null; }catch(e){ G.blade = null; }
-    const R = MOBILE ? GRASS.Rm : GRASS.R, per = Math.ceil(Math.PI * (R / GRASS.cell) ** 2 * GRASS.perCell * C.dens);
+    const R = gR(), per = Math.ceil(Math.PI * (R / GRASS.cell) ** 2 * gPer() * C.dens);
     G.cap = per; const geo = clumpGeo(); geo.setAttribute('aRect', new THREE.InstancedBufferAttribute(new Float32Array(per * 4), 4));
     const mesh = new THREE.InstancedMesh(geo, grassMat(map, alpha, C), per);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = true; mesh.count = 0;
     scene.add(mesh); G.mesh = mesh; }).catch(() => {}); }
 // lay the clumps in the cells round (x, z): a hashed spot, size, turn and photo per clump, sparser and smaller toward the rim, none on water
-function lay(x, z){ const C = GRASS.biomes[BIOME.name], R = MOBILE ? GRASS.Rm : GRASS.R, c = GRASS.cell, n0 = Math.ceil(R / c), M = G.mesh, A = M.geometry.attributes.aRect; let n = 0;
+function lay(x, z){ const C = GRASS.biomes[BIOME.name], R = gR(), P = gPer(), c = GRASS.cell, n0 = Math.ceil(R / c), M = G.mesh, A = M.geometry.attributes.aRect; let n = 0;
   const ix0 = Math.floor(x / c), iz0 = Math.floor(z / c);
   for(let i = -n0; i <= n0; i++) for(let j = -n0; j <= n0; j++){ const ci = ix0 + i, cj = iz0 + j;
-    for(let k = 0; k < GRASS.perCell; k++){ if(n >= G.cap) break;
+    for(let k = 0; k < P; k++){ if(n >= G.cap) break;
       if(hash(ci, cj, k + 9) > C.dens) continue;
       const px = (ci + hash(ci, cj, k)) * c, pz = (cj + hash(ci, cj, k + 3)) * c, d = Math.hypot(px - x, pz - z); if(d > R) continue;
       const rim = 1 - Math.max(0, (d - R * GRASS.rim) / (R * (1 - GRASS.rim))); if(hash(ci, cj, k + 5) > rim + 0.15) continue;
@@ -97,4 +98,4 @@ export function updateGrass(dt){
   if(!G.mesh) return; G.time.value += dt; farColour();
   camera.getWorldDirection(_ray); const t = _ray.y < -0.05 ? Math.min(GRASS.ahead, camera.position.y / -_ray.y * 0.6) : GRASS.ahead;   // a little ahead of the camera, where it looks
   const x = camera.position.x + _ray.x * t, z = camera.position.z + _ray.z * t, cx = Math.floor(x / GRASS.step), cz = Math.floor(z / GRASS.step);
-  if(cx !== G.cx || cz !== G.cz){ G.cx = cx; G.cz = cz; lay((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step); const R = MOBILE ? GRASS.Rm : GRASS.R; GRASS_FAR.c.value.set((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step, R * GRASS.far.rim0, R * GRASS.far.rim1); } }
+  if(cx !== G.cx || cz !== G.cz){ G.cx = cx; G.cz = cz; lay((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step); const R = gR(); GRASS_FAR.c.value.set((cx + 0.5) * GRASS.step, (cz + 0.5) * GRASS.step, R * GRASS.far.rim0, R * GRASS.far.rim1); } }

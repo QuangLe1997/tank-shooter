@@ -2272,6 +2272,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     && /mat\.customProgramCacheKey=\(\)=>'macroGround5'\+liteKey\(\)/.test(gr) && (gr.match(/liteDefs\(\) \+/g)||[]).length===3, 'the ground\'s lighter reads are on, switched per layer, in every tiling branch, in the program key');
   ok(/if\(!pr\.perfCal6\)\{ pr\.perfCal6=true; delete pr\.perfDpr; delete pr\.perfAO; \}/.test(pf), 'the governor\'s old cuts are given back once'); }
 
+// PERF 9 the heavy battlefields on a diet: the woods past the fence reach DIET.forest.near m with at most DIET.forest.max trees and take no shadow; the
+//   grass carpet DIET.grass.R m round the camera at DIET.grass.perCell a cell; each land keeps DIET.flora of its bushes, reeds, hay and tufts (not its trees)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), D=C.DIET, fo=R('src/world/forest.js'), gc=R('src/world/grass-carpet.js'), fl=R('src/world/flora.js');
+  ok(D && D.forest.near<C.FOREST.near && D.forest.max<C.FOREST.max && D.grass.R<C.GRASS.R && D.grass.perCell<C.GRASS.perCell && D.flora.MEADOW>0.4 && D.flora.MEADOW<1, 'the diet cuts the woods, the carpet and the small flora, never to nothing');
+  ok(/if\(o < FOREST\.gap \|\| o > NEAR\) continue;/.test(fo) && /im\.receiveShadow = !DIET\.on;/.test(fo) && /const gR = \(\) => MOBILE \? GRASS\.Rm : DIET\.on \? DIET\.grass\.R : GRASS\.R/.test(gc)
+    && /if\(DIET\.on && opt\.kind!=='tree' && !opt\.fixed\) n=Math\.round\(n\*\(DIET\.flora\[BIOME\.name\] \?\? 1\)\);/.test(fl), 'the woods, the carpet and the flora read the diet; ?nodiet turns it off'); }
+
 // FLAGS AND FAKE FLOWERS GONE ("xoá các lá cờ trong game đi, k cần nữa · xoá các đốm hoa giả nhìn giả đi"): makeFlag hands back a hidden stand-in and
 //   no pole or banner is put up; the lollipop wild flowers are planted nowhere (flora, the trails' verges)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), hf=R('src/world/heightfield.js'), fl=R('src/world/flora.js'), tr=R('src/world/trails.js'), fo=R('src/world/fortress.js');
