@@ -1215,6 +1215,9 @@ export const BLIGHT = { col:{ danger:0xff2a1e, alert:0xffa424, threat:0xff6a1c, 
 export const OPEN_LAND = { CITY:{ cover:0.55, built:0.42 }, VILLAGE:{ cover:0.6, houses:0.6, trees:0.68 }, MEADOW:{ cover:0.8 } };
 // Z240 PERFORMANCE HUD (F3 / ?perf): frames averaged, refresh interval (s), frame-time colour bands (ms) — green ≤ good, amber ≤ warn, red above
 export const PERF_HUD = { n:120, every:0.5, good:16.7, warn:25 };
+// FLAGS GONE (yêu cầu: "xoá các lá cờ trong game đi, k cần nữa"): no flag, banner or flagpole is drawn anywhere — the forts, the depots, the camps, the
+//   rally point, our walls and command post (world/heightfield.js makeFlag hands back a hidden mesh, nothing waves; the poles are not put up)
+export const WORLD_FLAGS = { on:false };
 // PERF 8 frame pacing (game/loop.js paceSkip, CÀI ĐẶT → KHUNG HÌNH: tự động · 60 · 30): slackMs = how early a tick still counts as the frame's turn (ms);
 //   auto drops 60 → an even 30 after slowS s under low60 fps, holds 30 at least hold s (doubled each failed try, up to ×16), and tries 60 again once
 //   upShare of probeN display ticks right after a frame came within probeMs (the GPU was done inside one tick)

@@ -2,7 +2,7 @@
 //   Clear the guards, then put soldiers inside (drop them off, or they come on their own): after a few seconds the depot is OURS —
 //   it re-arms every soldier who enters (AT launcher + better rounds) and coughs up supplies.
 import * as THREE from 'three';
-import { DEPOT } from '../../config.js';
+import { DEPOT, WORLD_FLAGS } from '../../config.js';
 import { FT, GUN_DROP_DEF, MOBILE, S, _canvasTex, placeScan, addScore, armAlly, blocks, burst, campFlagTex, coverMat, dropPowerup, floatText, guardsLeft, heightAt, loopRewardMul, makeCoverMesh, makeFlag, radio, rallyFlagTex, scene, sfx, spawnGuards, tip, unwave, zonesOf, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const DEPOTS=[];
@@ -26,7 +26,7 @@ export function buildDepots(){ clearDepots();
     q.ang=Math.atan2(-q.x, -q.z)+Math.PI; const ca=Math.cos(q.ang), sa=Math.sin(q.ang), at=(lx,lz)=>[q.x+lx*ca+lz*sa, q.z-lx*sa+lz*ca];
     const g=new THREE.Group(); g.userData.extra=[]; scene.add(g);
     buildArms(q,g,at); const parked = [];
-    const [fx,fz]=at(-4.2,4.2), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,6,6), coverMat('pipes')); pole.position.set(fx,fy+3,fz); g.add(pole);
+    const [fx,fz]=at(-4.2,4.2), fy=heightAt(fx,fz); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,6,6), coverMat('pipes')); pole.position.set(fx,fy+3,fz); if(WORLD_FLAGS.on) g.add(pole);
     const flag=makeFlag(campFlagTex(),1.7,1.1,1); flag.position.set(fx,fy+5.4,fz); g.add(flag);
     const ring=holoRing(q.r, { kind:'ally', arc:0 }); ring.position.set(q.x, heightAt(q.x,q.z)+0.09, q.z); ring.visible=false; g.add(ring);   // Z318 the capture shows as the lit arc of an ally-green ring
     const G=MOBILE?DEPOT.guardsMobile:DEPOT.guards; spawnGuards(q, G[0]+((Math.random()*(G[1]-G[0]+1))|0), 1);

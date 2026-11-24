@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY } from '../../config.js';
+import { FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
 import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
 
 export const FORTS=[];
@@ -131,8 +131,8 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       const nx=-uz, nz=ux, sg=Math.sign(nx*mx+nz*mz)||1, onx=nx*sg, onz=nz*sg;                       // the outward normal (away from the centre)
       const CAP=f.tier===3, GH=H+FORT.arch.gateH[CAP?1:0], TW=FORT.arch.gateTW[CAP?1:0], off=FORT.gateW/2+TW/2, at=(l,o)=>[mx+ux*l+onx*o, mz+uz*l+onz*o];
       for(const sd of [-1,1]){ const [px,pz]=at(sd*off, 0.7); keep(px, pz, ry, onx, onz, TW, GH);
-        const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.5, 4.2), bannerMat()); const [bx,bz]=at(sd*off, 0.7+TW/2+0.05); ban.position.set(bx, GH-4.4, bz); ban.rotation.y=Math.atan2(onx,onz); g.add(ban);
-        const [hx,hz]=at(sd*off, 0.7+TW/2+0.12); dk.push(placed(new THREE.BoxGeometry(1.8,0.14,0.14), hx, GH-2.25, hz, ry));                                  // banner pole
+        const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.5, 4.2), bannerMat()); const [bx,bz]=at(sd*off, 0.7+TW/2+0.05); ban.position.set(bx, GH-4.4, bz); ban.rotation.y=Math.atan2(onx,onz); if(WORLD_FLAGS.on) g.add(ban);
+        const [hx,hz]=at(sd*off, 0.7+TW/2+0.12); if(WORLD_FLAGS.on) dk.push(placed(new THREE.BoxGeometry(1.8,0.14,0.14), hx, GH-2.25, hz, ry));                                  // banner pole
         const [fx,fz]=at(sd*(off+TW/2+1.6), TH/2+2.4); dk.push(placed(new THREE.CylinderGeometry(0.1,0.16,1.5,8), fx, 0.75, fz, 0), placed(new THREE.CylinderGeometry(0.6,0.3,0.45,12), fx, 1.65, fz, 0));
         { const fl=flameFX(2.1, 1.4); fl.position.set(fx, 1.8, fz); g.add(fl); }   // brazier fire (Z235 a living flame)
         for(let k=0;k<3;k++){ const [cx,cz]=at(sd*(off-1.2+k*1.4), TH/2+5.2); for(const q of [-0.7,0.7]){ const st=new THREE.CylinderGeometry(0.08,0.1,3.0,6); st.rotateZ(q); st.rotateY(ry); st.translate(cx, 0.9, cz); wd.push(st); } } }   // chevaux-de-frise
@@ -178,7 +178,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       blocks.push({ mesh:kb, x:f.x+kx, z:f.z+kz, r:Math.max(D.x,D.z)*s*0.5, obb:{ f:ry, hl:D.z*s/2*L.solid, hw:D.x*s/2*L.solid }, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'keep', _top:f.gy+top, _topHp:Infinity }); }   // (its whole footprint solid: an oriented box, not the donjon's circle)
     { f.towerFlags=[]; const poles=[]; for(const [px,pz,top] of FLAGS.slice(0, MOBILE?6:10)){ const pole=new THREE.CylinderGeometry(0.07,0.1,8.5,8); pole.translate(px, top+3.75, pz); poles.push(pole); const ball=new THREE.SphereGeometry(0.16,8,6); ball.translate(px, top+8.05, pz); poles.push(ball);
         const fl=makeFlag(campFlagTex(), 2.9, 1.85, 1); fl.position.set(px, top+7.0, pz); g.add(fl); f.towerFlags.push(fl); }
-      if(poles.length){ const pm=new THREE.Mesh(mergeGeometries(poles.map(q=>q.index?q.toNonIndexed():q), false), _iron); poles.forEach(q=>q.dispose()); pm.castShadow=true; g.add(pm); } }
+      if(poles.length && WORLD_FLAGS.on){ const pm=new THREE.Mesh(mergeGeometries(poles.map(q=>q.index?q.toNonIndexed():q), false), _iron); poles.forEach(q=>q.dispose()); pm.castShadow=true; g.add(pm); } }
     buildCore(f, g, WM);   // Z176 the heart of the fort
     const wall=new THREE.Mesh(mergeGeometries(geos.map(q=>q.index?q.toNonIndexed():q), false), WM); geos.forEach(q=>q.dispose()); wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
     for(const [arr,mt] of [[dk,_iron],[wd,_wood]]) if(arr.length){ const m=new THREE.Mesh(mergeGeometries(arr.map(q=>q.index?q.toNonIndexed():q), false), mt); arr.forEach(q=>q.dispose()); m.castShadow=true; g.add(m); (f.deco||(f.deco=[])).push(m); }   // Z145
@@ -201,7 +201,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
     // banner of the garrison over the keep + a name board
     { const PH=FORT.arch.flagH[f.tier===3?1:0], fg=new THREE.Group(); g.add(fg); f.flagG=fg; f.flagH=PH;                      // Z140 a tall flagpole over the keep (it topples when the fort falls)
       const base=new THREE.Mesh(new THREE.CylinderGeometry(0.9,1.2,1.2,10), _iron); base.position.set(f.keepX||0, (f.keepY||0)+0.6, f.keepZ||0); g.add(base); fg.position.set(f.keepX||0, f.keepY||0, f.keepZ||0);   // Z145 the capital's flag flies from the donjon roof
-      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,PH,8), _iron); pole.position.set(0, PH/2, 0); pole.castShadow=true; fg.add(pole);
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,PH,8), _iron); pole.position.set(0, PH/2, 0); pole.castShadow=true; if(WORLD_FLAGS.on) fg.add(pole);
       const ball=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8), new THREE.MeshStandardMaterial({ color:0xc8a040, metalness:0.8, roughness:0.3 })); ball.position.y=PH+0.2; fg.add(ball);
       const fl=makeFlag(campFlagTex(), f.tier===3?5.4:4.4, f.tier===3?3.4:2.8, 1); fl.position.set(0, PH-1.8, 0); fg.add(fl); f.flag=fl; }
     // inner cover: sandbag lines, crates, HESCO and concrete — room to fight, things to duck behind
@@ -269,7 +269,7 @@ function buildCore(f, g, WM){ const gdx=(f.gx-f.x)/(Math.hypot(f.gx-f.x, f.gz-f.
   const mk=(L,mat)=>{ if(!L.length) return; const m=new THREE.Mesh(mergeGeometries(L.map(q=>q.index?q.toNonIndexed():q), false), mat); L.forEach(q=>q.dispose()); m.castShadow=true; m.receiveShadow=true; cg.add(m); };
   mk(SG, WM.clone()); mk(DK, _iron); mk(IR, _iron); mk(BG, coverMat('sandbag'));
   const bc=new THREE.Mesh(new THREE.SphereGeometry(0.14,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); bc.position.set(...f.coreBeacon); cg.add(bc); f.coreBc=bc;
-  { const fg=new THREE.Group(); fg.position.set(W2-1.0, 0.5+H2+0.35, D2-0.9); cg.add(fg); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,5,8), _iron); pole.position.y=2.5; fg.add(pole);
+  { const fg=new THREE.Group(); fg.position.set(W2-1.0, 0.5+H2+0.35, D2-0.9); cg.add(fg); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,5,8), _iron); pole.position.y=2.5; if(WORLD_FLAGS.on) fg.add(pole);
     const fl=makeFlag(campFlagTex(), 2.2, 1.4, 1); fl.position.set(0, 4.2, 0); fg.add(fl); f.coreFlag=fl; }
   if(FORT_CMD.board){ const sg=new THREE.Mesh(new THREE.PlaneGeometry(3.3,0.62), plaqueMat(CORE_NAME[f.tier]||'SỞ CHỈ HUY', f.name, 0)); sg.position.set(0, 4.0, D2+0.22); cg.add(sg); }
   f.core={ g:cg, mat:cg.children[0].material }; f.coreX=lx; f.coreZ=lz; f.coreR=Math.hypot(W2,D2)+0.6;
@@ -288,7 +288,7 @@ function cmdCompound(f, g, WM, lx, lz, ry, o){ const C=FORT_CMD; if(!C.on || typ
     blocks.push(b); parts.push({ key, role, x, z, D, lod, b }); rad=Math.max(rad, Math.hypot(x, z)+r); if(!main) main=parts[0]; }
   const comms=parts.find(p=>p.role==='comms'), M0=main.D;
   { const q=comms||main, bc=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); bc.position.set(q.x, q.D.y+0.35, q.z); cg.add(bc); f.coreBc=bc; }   // the mast's red beacon (Z434 on the roof when there is no mast)
-  { const fg=new THREE.Group(); fg.position.set(-o*(M0.x/2+1.6), 0, M0.z/2+1.6); cg.add(fg); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.1,8,8), _iron); pole.position.y=4; pole.castShadow=true; fg.add(pole);
+  { const fg=new THREE.Group(); fg.position.set(-o*(M0.x/2+1.6), 0, M0.z/2+1.6); cg.add(fg); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.1,8,8), _iron); pole.position.y=4; pole.castShadow=true; if(WORLD_FLAGS.on) fg.add(pole);
     const fl=makeFlag(campFlagTex(), 2.4, 1.5, 1); fl.position.set(0, 7.1, 0); fg.add(fl); f.coreFlag=fl; }   // the garrison flag at the door
   if(C.board){ const sg=new THREE.Mesh(new THREE.PlaneGeometry(3.3,0.62), plaqueMat(CORE_NAME[f.tier]||'SỞ CHỈ HUY', f.name, 0)); sg.position.set(o*(M0.x*0.18), 1.6, M0.z/2+3.2); cg.add(sg);
     const post=new THREE.Mesh(new THREE.BoxGeometry(3.5,0.08,0.08), _iron); post.position.set(sg.position.x, 1.25, sg.position.z-0.03); cg.add(post);
@@ -484,7 +484,7 @@ export function fortSpawnPoint(){ const alive=FORTS.filter(f=>!f.captured && f.g
 function animFlag(f, dt){ const F=f.flagFall, G=f.flagG; F.t+=dt;
   if(F.t<1.4){ const k=Math.min(1, F.t/1.4), e=k*k; G.rotation.set(Math.sin(F.dir)*e*1.45, 0, Math.cos(F.dir)*e*1.45); if(k>=0.99){ S.shake=Math.max(S.shake,0.6); burst({x:f.x+Math.cos(F.dir)*f.flagH*0.7, z:f.z-Math.sin(F.dir)*f.flagH*0.7}, 0x8a7a60, 6, 5, { y:0.5, life:1.2, size:1.8, smoke:true, grav:-0.3, drag:1.6, up:1.2, op:0.5 }); sfx('clang'); } return; }
   if(!F.ours){ F.ours=true; unwave(f.flag); f.g.remove(G); const ng=new THREE.Group(); ng.position.copy(G.position); f.g.add(ng); f.flagG=ng;
-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,f.flagH,8), _iron); pole.position.y=f.flagH/2; ng.add(pole);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,f.flagH,8), _iron); pole.position.y=f.flagH/2; if(WORLD_FLAGS.on) ng.add(pole);
     const fl=makeFlag(vnTex(), 4.4, 2.8, 1); fl.position.set(0, f.flagH-1.8, 0); ng.add(fl); f.flag=fl; ng.scale.set(1,0.01,1); }
   const u=Math.min(1,(F.t-1.6)/1.6); if(u>0) f.flagG.scale.y=Math.max(0.01,u); if(u>=1) f.flagFall=null; }
 // ---- capture: the commander is dead → the fortress is ours, its treasury opens ----

@@ -1,6 +1,6 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM } from '../../config.js';
+import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM, WORLD_FLAGS } from '../../config.js';
 import { BDP, BIOME, GROUND_READY, fieldR, FIELD_R, SHADER_HOOKS, AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
@@ -119,7 +119,9 @@ export function vnFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#
   for(let i=0;i<260;i++){ x.fillStyle='rgba(0,0,0,'+_R(0.02,0.07).toFixed(2)+')'; x.fillRect(_R(0,W),_R(0,H),2,2); }
   x.fillStyle='rgba(255,255,255,0.04)'; for(let yy=0;yy<H;yy+=3) x.fillRect(0,yy,W,1); }); }
 export let _VN=null; export const vnTex=()=>(_VN||(_VN=vnFlagTex()));
-export function makeFlag(tex, w, h, side){ const geo=new THREE.PlaneGeometry(w,h,12,7); geo.translate(w/2*(side||1),0,0);
+const NOFLAG_GEO = new THREE.BufferGeometry(), NOFLAG_MAT = new THREE.MeshBasicMaterial({ visible:false });
+export function makeFlag(tex, w, h, side){ if(!WORLD_FLAGS.on){ const m=new THREE.Mesh(NOFLAG_GEO, NOFLAG_MAT); m.visible=false; return m; }   // (flags gone: a hidden stand-in, so whoever holds it still can)
+  const geo=new THREE.PlaneGeometry(w,h,12,7); geo.translate(w/2*(side||1),0,0);
   const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map:tex, side:THREE.DoubleSide, roughness:0.9 })); m.castShadow=true;
   const f={ mesh:m, base:geo.attributes.position.array.slice(), w, sx:side||1, ph:Math.random()*6 }; WAVING.push(f); m.userData.flag=f; return m; }
 // Z104 stop animating every flag under `root` (call before removing it from the scene — WAVING otherwise grows every stage)

@@ -116,10 +116,8 @@ const bush=(dry)=>vars('bu'+(dry?1:0), 5, ()=>{ const P=[], cols=dry?[0x8a7a4a,0
   const n=2+((Math.random()*2)|0); for(let k=0;k<n;k++){ const a=Math.random()*6.28, r=_R(0,0.5); crown(P, Math.cos(a)*r, _R(0.45,0.75), Math.sin(a)*r, _R(0.55,0.85), 7, cols, _R(0.55,0.8)); }
   for(let i=0;i<3;i++) P.push({geo:limb([[0,0,0],[_R(-0.2,0.2),0.3,_R(-0.2,0.2)],[_R(-0.5,0.5),0.6,_R(-0.5,0.5)]], 0.04, 0.02, 3, 4), col:dry?0x6a5a40:0x4a3a28});
   const g=mergeL(P); g.userData.tk=dry?'bushDry':'bushGreen'; return g; });   // Z450 five, one per scanned shrub (REALTREE.map bushDry / bushGreen) — this drawn one stands in only until the scans load
-const flowers=()=>vars('fl', 2, ()=>{ const P=[], cols=[0xf4f0e0,0xffd84a,0xc86ad0,0xff7a5a,0x8ac8ff]; for(let i=0;i<9;i++){ const x=_R(-0.5,0.5), z=_R(-0.5,0.5), h=_R(0.25,0.55), st=new THREE.CylinderGeometry(0.012,0.012,h,3); st.translate(x,h/2,z); P.push({geo:st,col:0x4e7a2e});
-    const hd=new THREE.IcosahedronGeometry(_R(0.05,0.08),0); hd.translate(x,h,z); P.push({geo:hd,col:cols[(Math.random()*cols.length)|0]}); }
-  grassCards(P, 0.5, 0.45, [0x6a9a3a,0x5a8a30]); return mergeL(P); });
-export const bushes=(dry)=>bush(dry), wildflowers=()=>flowers();   // Z432 for the trails' verges (world/trails.js)
+// (the wild flowers — lollipop heads of five candy colours on wire stems — are gone: they read as fake; yêu cầu: "xoá các đốm hoa giả nhìn giả đi")
+export const bushes=(dry)=>bush(dry);   // Z432 for the trails' verges (world/trails.js)
 // Z202 GRASS: 3–4 crossed alpha cards of real blades (atlas region 3), leaning a little, darker at the root — a clump, not a fistful of cones
 function grassCards(P, w, h, cols, n){ const N=n||3; for(let k=0;k<N;k++){ const a=k/N*Math.PI+_R(-0.3,0.3), c=card(w*_R(0.85,1.2), h*_R(0.8,1.15), 3, 0, -h*1.5, 0, 0.35); c.translate(0, h*0.5, 0); c.rotateX(_R(-0.12,0.12)); c.rotateY(a); c.translate(_R(-0.12,0.12),0,_R(-0.12,0.12)); P.push({geo:c,col:cols[(k+(Math.random()*cols.length|0))%cols.length]}); } }
 // Z450 PHOTO TUFTS: the drawn blade cards (a broad, dark, flat-bladed fan that read as an agave or a cactus, not grass) → n crossed cards of the
@@ -210,11 +208,11 @@ function centres(n){ const C=[]; for(let t=0;t<n*20 && C.length<n;t++){ const x=
 function waterSpot(){ if(!RIVER.on || !RIVER.lines.length) return null; const L=RIVER.lines[RIVER.ice && RIVER.lines.length>1 ? 1 : 0], p=L[(Math.random()*L.length)|0]; return [p.x+_R(-3,3), p.z+_R(-3,3)]; }   // Z405 the floes ride the open lead (the arctic's main river is frozen)
 // Z145 trees thinned ~40%: the woods still read as woods but leave clear sight-lines for the fight
 export function buildFlora(){ clearFlora(); loadRealTrees(); const n=BIOME.name, k=(MOBILE?0.5:1)*AREA_K/2, N=(v)=>Math.round(v*k);
-  if(n==='HILLS'){ plant(conifer(false), N(52), { tk:'conifer', s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { tk:'broadleaf', s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(120), { s:[0.8,1.4], shadow:false });
+  if(n==='HILLS'){ plant(conifer(false), N(52), { tk:'conifer', s:[0.8,1.5], high:0.6, kind:'tree', cr:0.55, real:1.4 }); plant(broadleaf(), N(18), { tk:'broadleaf', s:[0.8,1.2], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(50), { s:[0.7,1.3], shadow:false });
     { const L=centres(5); plant(reedPlume(), N(260), { s:[0.8,1.25], near:()=>patchSpot(L,14), shadow:false, cr:0.5 }); } }   // Z287 cỏ lau on the hillsides, in drifts
   else if(n==='VILLAGE'){ const T=OPEN_LAND.VILLAGE.trees; plant(palm(), N(17*T), { tk:'palm', s:[0.85,1.25], kind:'tree', cr:0.4, real:1.4 }); plant(bamboo(), N(10*T), { s:[0.9,1.2], kind:'tree', cr:0.9, real:1.4 }); plant(broadleaf(), N(13*T), { tk:'broadleaf', s:[0.8,1.15], kind:'tree', cr:0.6, real:1.4 });
-    plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(flowers(), N(140), { s:[0.8,1.4], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
-  else if(n==='MEADOW'){ plant(ancient(), N(5), { tk:'ancient', s:[0.85,1.15], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(26), { tk:'broadleaf', s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(24), { s:[0.7,1.3], shadow:false }); plant(flowers(), N(60), { s:[0.8,1.4], shadow:false });
+    plant(bush(false), N(60), { s:[0.7,1.2], shadow:false }); plant(reeds(), N(200), { s:[0.8,1.3], near:bankSpot, shadow:false }); plant(hay(), N(8), { s:[0.9,1.2], cr:1.2 }); }
+  else if(n==='MEADOW'){ plant(ancient(), N(5), { tk:'ancient', s:[0.85,1.15], kind:'tree', fixed:ANCIENT_R, r:7 }); plant(broadleaf(), N(26), { tk:'broadleaf', s:[0.8,1.3], kind:'tree', cr:0.6, real:1.4 }); plant(bush(false), N(24), { s:[0.7,1.3], shadow:false });
     { const L=centres(4); plant(reedPlume(), N(200), { s:[0.8,1.2], near:()=>Math.random()<0.5 && RIVER.on ? (bankSpot()||patchSpot(L,12)) : patchSpot(L,12), shadow:false, cr:0.5 }); } }   // Z287 cỏ lau by the water and in the low corners   // Z263 fewer: the photographed grass carpets the meadow
   else if(n==='SAVANNA'){ const C=centres(14), L=centres(6);   // dry season: golden grass everywhere, reed beds, lone baobabs and acacias, dead trees, termite mounds
     plant(grass('straw').concat(grass('dry')), N(1500), { s:[1.15,1.85], near:()=>Math.random()<0.6?patchSpot(C,26):[_R(-ARENA+6,ARENA-6),_R(-ARENA+6,ARENA-6)], shadow:false, cr:0.55 });

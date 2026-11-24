@@ -1,7 +1,7 @@
 // world/trails.js — Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, the bases, the depots, the checkpoints, the roads off the field), routed round what stands, painted into the floor, with stones and grass along both sides
 import * as THREE from 'three';
 import { TRAILS } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, HILLWAY, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt, wildflowers } from '../hub.js';
+import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, HILLWAY, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt } from '../hub.js';
 
 // one trail = { pts:[[x, z], …] every 2 m, w (its width, m), len } · mask: a 1 m grid over the field's square, 2 = on the worn track, 1 = its verge
 export const TRAIL = { paths:[], mask:null, mn:0 };
@@ -130,4 +130,4 @@ function dress(bz){ const C = TRAILS, bn = BIOME.name, T = TRAIL, k = MOBILE ? 0
   plantFlora(grass(bz.tone).slice(0, 3), Math.round(tot * 2 * C.verge[MOBILE ? 1 : 0] * (bz.thin || 1)), { s:[0.75, 1.3], near:spot(0.05, 1.8), shadow:false, cr:0.5 });
   if(bz.mid > 0.4) plantFlora(grass(bz.tone).slice(0, 1), Math.round(tot * 0.3 * th), { s:[0.4, 0.65], near:spot(0, 0, true), shadow:false, cr:0.4 });   // the grassy crown of a two-track lane
   if(bz.bush) plantFlora(bushes(bz.bush === 'dry'), Math.round(tot * 2 * C.bush[MOBILE ? 1 : 0]), { s:[0.6, 1.1], near:spot(1.8, 4.2), shadow:false });
-  if(bz.flowers) plantFlora(wildflowers(), Math.round(tot * 2 * C.flower * th), { s:[0.8, 1.3], near:spot(0.2, 2.4), shadow:false }); }
+  }

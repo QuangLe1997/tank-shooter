@@ -2272,6 +2272,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     && /mat\.customProgramCacheKey=\(\)=>'macroGround5'\+liteKey\(\)/.test(gr) && (gr.match(/liteDefs\(\) \+/g)||[]).length===3, 'the ground\'s lighter reads are on, switched per layer, in every tiling branch, in the program key');
   ok(/if\(!pr\.perfCal6\)\{ pr\.perfCal6=true; delete pr\.perfDpr; delete pr\.perfAO; \}/.test(pf), 'the governor\'s old cuts are given back once'); }
 
+// FLAGS AND FAKE FLOWERS GONE ("xoá các lá cờ trong game đi, k cần nữa · xoá các đốm hoa giả nhìn giả đi"): makeFlag hands back a hidden stand-in and
+//   no pole or banner is put up; the lollipop wild flowers are planted nowhere (flora, the trails' verges)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), hf=R('src/world/heightfield.js'), fl=R('src/world/flora.js'), tr=R('src/world/trails.js'), fo=R('src/world/fortress.js');
+  ok(C.WORLD_FLAGS && C.WORLD_FLAGS.on===false && /if\(!WORLD_FLAGS\.on\)\{ const m=new THREE\.Mesh\(NOFLAG_GEO, NOFLAG_MAT\); m\.visible=false; return m; \}/.test(hf)
+    && (fo.match(/if\(WORLD_FLAGS\.on\)/g)||[]).length>=6 && /if\(poles\.length && WORLD_FLAGS\.on\)/.test(fo), 'no flag, banner or flagpole is drawn');
+  ok(!/plant\(flowers\(\)/.test(fl) && !/const flowers=/.test(fl) && !/wildflowers/.test(tr) && !/wildflowers/.test(fl), 'the fake wild flowers are planted nowhere'); }
+
 // NO-TANKS 10 a death is not a restart, and the rocks keep out of the camera and the soldier out of the rocks: he gets up where he fell (he was sent
 //   back to the spawn point); the follow camera rides the ground (it held one height and sat inside the 12–17 m crag hills), rises over a hill's crest
 //   or a big rock, comes in past one, never under the ground; a crag's rock keeps him out as it is drawn (its block was a circle in its middle)
