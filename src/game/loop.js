@@ -109,7 +109,7 @@ export function loop(nowMs){
       if(fps<PERF_GOV.low*capK && !paceFirst){ PERF.fastT=0; PERF.slowT++;   // Z239 smoothness first: shed load below ~54 fps (was 47 — a visible judder band)
         if(AO.on && (PERF.slowT>=2 || calib)){ AO.on=false; PERF.slowT=0; PROFILE.perfAO=false; saveProfile(); }   // Z145 the occlusion pass goes first — sharpness stays
         const shedFirst = MOBILE && (PERF.parts>0.6 || bloom.enabled);                          // Z120 phones: particles + glow go BEFORE sharpness
-        if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/PERF_GOV.aim)*20)/20;   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
+        if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/(PERF_GOV.aim*capK))*20)/20;   // (PERF 8 aimed at the cap: locked at 30 it gives up only what 30 needs)   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
           S.dpr=Math.max(dprFloor, Math.min(S.dpr-0.1, want)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }
         PERF.parts=Math.max(0.45, PERF.parts-(fps<34?0.2:0.1));
         if(MOBILE && fps<44 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
