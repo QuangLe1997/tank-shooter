@@ -184,6 +184,8 @@ export function loadSamples(){ if(_sampLoad || !actx) return; _sampLoad=true;
       (SAMPLES[k]=SAMPLES[k]||[]).push(buf); }).catch(()=>{}); }); }
 export function sampleGet(k){ const L=SAMPLES[k]; return L&&L.length ? L[(Math.random()*L.length)|0] : null; }
 const BANK={}, _lastAt={}; let _voices=0;
+// every bank sound as the player hears it (its level after distance), small arms and blasts apart — audio/ambience.js reads and clears it each frame: the nature ambience ducks and quietens under the fight
+export const LOUD = { shot:0, big:0 };
 export function bankGet(k){ const D=SND[k]; if(!D||!D.r||!actx) return null; let L=BANK[k]; if(!L){ L=BANK[k]=[]; }
   if(L.length<4){ const data=D.r(); const b=actx.createBuffer(1, data.length, actx.sampleRate); b.copyToChannel(data,0); L.push(b); return b; }   // build variants lazily, one per call
   return L[(Math.random()*L.length)|0]; }
@@ -201,6 +203,7 @@ export function play(k, pos, vol){
     g*=1/(1+d/22); delay=d/343*1.6;                                                // 1 unit ≈ 1.6 m: far blasts land a beat after the flash
     const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=Math.max(500, 18000*Math.exp(-d/28)); node.connect(lp); node=lp;
     if(a.createStereoPanner){ const sp=worldToScreen(new THREE.Vector3(pos.x,1,pos.z)); const pn=a.createStereoPanner(); pn.pan.value=Math.max(-0.85,Math.min(0.85,(sp.x/VIEW.w-0.5)*1.6)); node.connect(pn); node=pn; } }
+  LOUD[D.big ? 'big' : 'shot'] += g;
   out.gain.value=g; src.connect(out); node.connect(D.big ? master : (duck||master));
   if(D.big && duck && (!pos || !S.player || Math.hypot(pos.x-S.player.pos.x, pos.z-S.player.pos.z) < 40)){ const t=now+delay; duck.gain.cancelScheduledValues(t); duck.gain.setTargetAtTime(0.5, t, 0.008); duck.gain.setTargetAtTime(1, t+0.09, 0.22); }   // Z151 side-chain duck: the boom punches through instead of being louder
   if(verbSend){ const s=a.createGain(); const d=pos&&S.player?Math.hypot(pos.x-S.player.pos.x,pos.z-S.player.pos.z):0; s.gain.value=Math.min(0.9, 0.22+d/70); node.connect(s).connect(verbSend); }   // distant = mostly echo

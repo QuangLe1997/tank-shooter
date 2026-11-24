@@ -2334,5 +2334,23 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 { const fs=await import('node:fs'), C=await import('./config.js'), B=C.LANDFORM.biomes, hf=fs.readFileSync('src/world/heightfield.js','utf8');
   ok(/Math\.pow\(_sm\(4, w \* \(L\.rise \?\? 0\.45\), o\), L\.foot \?\? 1\)/.test(hf) && B.MEADOW.rise >= 0.9 && B.MEADOW.foot > 1 && B.VOLCANO.rise >= 0.8 && B.VOLCANO.foot > 1 && B.DESERT.rise == null && B.MEADOW.rise * B.MEADOW.w < B.MEADOW.w * 1.5, 'the valley\'s and the caldera\'s crests stand back over low foothills; the dune sea as it was'); }
 
+// NATURE AMBIENCE + FLOCKS ("lâu lâu thêm tiếng chim hót, rừng rú nhẹ … biển bắc thì tiếng chim hải âu … ở các ngọn đồi thêm chim én bay lượn chao liệng
+//   theo bầy"): a quiet synthesised bed and now-and-then calls (audio/ambience.js) that ride the master, duck under every bank sound as heard (synth.js
+//   LOUD), wait for a calm, and honour PROFILE.ambience; swallow flocks over the hills, gull flocks on the arctic's sea edge (world/skylife.js)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), A=C.AMBIENCE, am=R('src/audio/ambience.js'), sk=R('src/world/skylife.js'), sy=R('src/audio/synth.js');
+  const names=BIOMES.map(b=>b.name), kinds=new Set(), rec=k=>new RegExp('\\n  '+k+'\\(\\)\\{').test(am);
+  for(const n of names){ const B=A.biomes[n]; ok(B && B.bed && B.bed.wind>0 && B.rate>=0 && B.day && B.night, 'ambience: '+n+' has a bed, a rate and its day / night calls'); for(const k of Object.keys(Object.assign({}, B.day, B.night))) kinds.add(k); }
+  ok([...kinds, 'swallow', 'gull'].every(k=>A.kinds[k] && A.kinds[k].g>0 && A.kinds[k].g<0.5 && rec(k)), 'every call a battlefield asks for has its level and its recipe');
+  ok(A.biomes.VOLCANO.rate===0 && Object.keys(A.biomes.ARCTIC.day).includes('gull') && A.biomes.ARCTIC.bed.sea>0 && ['MEADOW','RUINS','CITADEL','SAVANNA'].every(n=>['trill','whistle','chip'].some(k=>A.biomes[n].day[k]>0) && A.biomes[n].bed.leaves>0)
+    && A.biomes.MEADOW.rate>A.biomes.CITY.rate && A.biomes.CITY.rate>A.biomes.FOUNDRY.rate, 'songbirds and leaves on the green fields, gulls and the sea on the arctic, none on the volcano, few in the city and the works');
+  ok(A.calls.gap[0]>=5 && A.calls.gap[1]>A.calls.gap[0] && A.heat.quiet<0.5 && A.heat.calm>=2 && A.duck.min>0 && A.duck.min<0.3 && A.lull.fight<A.lull.menu && A.vol>0 && A.vol<=1, 'now and then, never over the fight: a gap between calls, a calm to wait for, a duck, a lower level in a fight than behind the menus');
+  ok(/export const LOUD = \{ shot:0, big:0 \};/.test(sy) && /LOUD\[D\.big \? 'big' : 'shot'\] \+= g;/.test(sy) && /AMB\.bus\.connect\(master\)/.test(am) && /PROFILE\.ambience !== false/.test(am) && /PROFILE\.sound !== false && !muted/.test(am)
+    && /audio\/ambience\.js/.test(R('src/hub.js')) && /updateAmbience\(dt, now\)/.test(R('src/game/loop.js')) && /requestIdleCallback/.test(am), 'wired: hub + loop, fed by every bank sound as heard, into the master, off with the setting or the mute, rendered in idle slices');
+  const S=A.flock.swal, G=A.flock.gull;
+  ok(S.size[0]>=8 && S.size[1]<=20 && S.alt[0]>=6 && S.alt[1]<=30 && S.phone.flocks<S.flocks && S.phone.size[1]<S.size[1] && S.pass.alt[1]<=S.alt[0] && S.biomes.every(n=>names.includes(n)) && !S.biomes.includes('VOLCANO') && !S.biomes.includes('ARCTIC'), 'swallows: flocks of 8–20 at 6–30 m over the hills, fewer on phones, a low pass round the soldier, none on the volcano or the arctic');
+  ok(G.flocks.ARCTIC>0 && G.alt[1]<=20 && G.phone.size[1]<=G.size[1], 'gulls on the arctic, low enough for the gameplay camera to see');
+  ok(/function hillAnchors\(K\)/.test(sk) && /for\(const f of FORTS\)/.test(sk) && /for\(const k of KNOLLS\)/.test(sk) && /for\(const c of CRESTS\)/.test(sk) && /for\(const b of BERGS\)/.test(sk) && /attribute vec2 aBird/.test(sk)
+    && /m\.customProgramCacheKey=/.test(sk) && /ambienceCall\(F\.kind==='swal' \? 'swallow' : 'gull'/.test(sk) && /pathAt\(F, tau, P0\)/.test(sk), 'the flocks fly over the forts\' crags, knolls, crests, bergs; one draw per kind; each bird on the leader\'s path lag s ago; they call as they pass'); }
+
 console.log(`\n${fail === 0 ? '✓ PASS' : '✗ FAIL'} — ${pass} checks passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

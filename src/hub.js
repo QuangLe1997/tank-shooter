@@ -60,6 +60,7 @@ export * from './audio/synth.js';
 export * from './audio/engine-music.js';
 export * from './audio/voice.js';   // Z161 Vietnamese radio voices
 export * from './audio/music.js';   // Z161 adaptive battle score
+export * from './audio/ambience.js';   // the nature ambience: wind, leaves, the sea, birdsong now and then
 export * from './combat/projectiles.js';
 export * from './combat/ballistics.js';   // Z228b velocity curves, sabot, vapour, swept hits
 export * from './fx/fire-wrecks.js';
