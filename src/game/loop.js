@@ -1,13 +1,32 @@
 // game/loop.js — MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials
 import { cavIdle, updateBarBatch, updateCavalry, updateGeneralDuel, updateRank, updateSoldierWar, updateSquadMates, AO, APPLE, HF, MOBILE, PERF, PLAYER, PLAY_MODES, PROFILE, S, SKY, __set_bannerTimer, aoPass, bannerTimer, bloom, buildUnitGrid, camera, composer, doResize, dprCap, drawRadar, flushParticles, gated, gradePass, muzzleLight, perfFrameBegin, perfFrameEnd, perfFrameMs, perfGpuMs, perfRenderBegin, pollGamepad, pumpTips, radarCanvas, radarCtx, rangeRing, renderPass, renderer, saveProfile, scene, spellNow, syncTerrainMesh, tickTip, updateAirAim, updateAllyDead, updateBolts, updateBridges, updateBuffHUD, updateBullets, updateCamera, updateCamps, updateCelebration, updateCinematic, updateCity, updateAerial, updateBackdrop, updateClouds, updateCmdUI, updateCore, updateCoreAlarm, updateCoreGuns, updateCountdown, updateCrosshair, updateCrowd, updateDeath, updateDebris, updateDecals, updateDepots, updateDrone, updateEnemies, updateEnemyMissiles, updateEngine, updateEnvEvents, updateEquip, updateFieldcraft, updateFireteam, updateFlags, updateFlames, updateFlashes, updateForts, updateGifts, updateGore, updateGrass, updateGunStatus, updateHeliCrew, updateHeliDown, updateHorizon, updateInfDead, updateInstr, updateIntro, updateLOD, updateLava, updateLockWarn, updateLootBeacons, updateMagma, updateNightLights, updateNightMarks, updateObjective, updatePOWs, updateParadrops, updateParticles, updatePickups, updateRally, updateRelic, updateReload, updateRings, updateRocketAim, updateRockets, updateRubble, updateScore, updateShatter, updateSkyLife, updateSkyMood, updateSmokeTrails, updateSoldiers, updateSquadHud, updateSquads, updateSunFollow, updateSupply, updateSurprises, updateTowers, updateTraffic, updateTrails, updateTreeFall, updateTroopBatch, updateTunnels, updateUnder, updateWallMarks, updateWalls, updateWater, updateWaves, updateWeather, updateWildlife, updateWonder, updateWorldBars, updateGunFX, updateSpinners, updateTowerFalls } from '../hub.js';
+import { FRAME_PACE } from '../../config.js';
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
 const PERF_GOV = { low:54, aim:59, high:58, upK:0.55, upHold:6, upEvery:10 };   // Z240 + step back up in play when the GPU sits under upK × frame budget for upHold s (≤ once per upEvery s)   // Z239 frame governor: step down under low fps, aim the one resize step at aim fps, creep back up above high
 export let last = performance.now();
 export function __set_last(v){ last=v; }   // (dev/hooks tick) — imports are read-only, writes go through a setter
+// PERF 8 STEADY FRAMES THAT STAY SHARP (CÀI ĐẶT → KHUNG HÌNH, FRAME_PACE): the display ticks 60 (or 120) times a second and a frame that takes 25 ms
+//   lands on every second tick or on the next, so a battle judders between 60 and 30 — and the FPS governor, chasing 54, blurred the picture and switched
+//   the occlusion off without ever reaching it. Now a frame is drawn at most every 1/cap s. Auto starts at 60; frames held under low60 fps for slowS
+//   seconds lock it to an even 30 (every frame 33 ms, the resolution and AO kept); while at 30, the display tick right after a drawn frame tells whether
+//   the GPU was done inside one tick (under probeMs) — when nearly all were (upShare of probeN), it tries 60 again; a try that falls back waits longer.
+//   The governor sheds quality only when even the cap cannot be held.
+export const PACE = { cap:60, drawn:0, after:false, probe:0, fast:0, slowT:0, until:0, tries:0, frames:0, sum:0 };
+function paceMode(){ let m; try{ m=PROFILE.fps; }catch(e){} return m==='30' || m==='60' ? m : 'auto'; }
+export function paceCap(){ const m=paceMode(); return m==='30' ? 30 : m==='60' ? 60 : PACE.cap; }
+function paceSkip(nowMs){ const P=PACE, C=FRAME_PACE; if(!P.init){ P.init=true; try{ if(PROFILE.paceCap===30) P.cap=30; }catch(e){} }   // (start where this machine settled last time)
+  const cap=paceCap(), since=nowMs-P.drawn;
+  if(since < 1000/cap - C.slackMs){ if(P.after){ P.after=false; if(cap===30 && S.mode==='playing'){ P.probe++; if(since < C.probeMs) P.fast++; } } return true; }   // a tick between frames: skipped (the first one after a frame is the probe)
+  if(P.drawn && S.mode==='playing' && paceMode()==='auto'){ const now=nowMs/1000; P.frames++; P.sum+=since;
+    if(P.sum>=1000){ const fps=P.frames*1000/P.sum; P.frames=0; P.sum=0;
+      if(P.cap===60){ P.slowT = fps<C.low60 ? P.slowT+1 : 0; if(P.slowT>=C.slowS){ P.cap=30; P.slowT=0; P.probe=P.fast=0; P.until=now+C.hold*Math.pow(2, Math.min(4, P.tries)); try{ PROFILE.paceCap=30; }catch(e){} } }
+      else if(P.probe>=C.probeN){ const ok=P.fast/P.probe>=C.upShare; P.probe=P.fast=0; if(ok && now>=P.until){ P.cap=60; P.tries++; P.slowT=0; try{ PROFILE.paceCap=60; }catch(e){} } } } }
+  P.drawn=nowMs; P.after=true; return false; }
 export function loop(nowMs){
   requestAnimationFrame(loop);
+  if(paceSkip(nowMs)) return;   // PERF 8
   const now = nowMs/1000;
   const rawMs = nowMs - last; let dt = rawMs/1000; last = nowMs;
   dt = Math.min(dt, 0.05);
@@ -85,15 +104,16 @@ export function loop(nowMs){
   if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
     const calib = S.mode==='countdown';                                      // Z150 the 3-2-1 countdown is the calibration window: the world is static, a resize there costs nothing you can feel
     if(S.mode!=='playing' && !calib) AO.on = AO.want && PROFILE.quality!=='low' && PROFILE.perfAO!==false;   // re-armed between battles — unless this machine already proved it can't afford it
+    const capK=paceCap()/60, paceFirst=paceMode()==='auto' && PACE.cap===60;   // PERF 8 at 30 the governor wants 27, not 54; at auto-60 the lock to 30 comes first
     if(!NOGOV && (S.mode==='playing' || calib)){                              // Z92 governor: step DOWN fast when frames run long, creep back UP after 6 smooth seconds
-      if(fps<PERF_GOV.low){ PERF.fastT=0; PERF.slowT++;   // Z239 smoothness first: shed load below ~54 fps (was 47 — a visible judder band)
+      if(fps<PERF_GOV.low*capK && !paceFirst){ PERF.fastT=0; PERF.slowT++;   // Z239 smoothness first: shed load below ~54 fps (was 47 — a visible judder band)
         if(AO.on && (PERF.slowT>=2 || calib)){ AO.on=false; PERF.slowT=0; PROFILE.perfAO=false; saveProfile(); }   // Z145 the occlusion pass goes first — sharpness stays
         const shedFirst = MOBILE && (PERF.parts>0.6 || bloom.enabled);                          // Z120 phones: particles + glow go BEFORE sharpness
         if(!shedFirst && S.dpr>dprFloor){ const want=Math.floor(S.dpr*Math.sqrt(fps/PERF_GOV.aim)*20)/20;   // Z150 ONE step straight to the resolution that holds ~56 fps (was −0.1 per second → a resize hitch every second for 5 s)
           S.dpr=Math.max(dprFloor, Math.min(S.dpr-0.1, want)); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }
         PERF.parts=Math.max(0.45, PERF.parts-(fps<34?0.2:0.1));
         if(MOBILE && fps<44 && PERF.slowT>=2 && bloom.enabled) bloom.enabled=false; }   // still heavy → drop the glow, keep the frames
-      else if(fps>PERF_GOV.high){ PERF.slowT=0; PERF.fastT++;
+      else if(fps>PERF_GOV.high*capK){ PERF.slowT=0; PERF.fastT++;
         if(calib && S.dpr<dprTop-0.01){ S.dpr=Math.min(dprTop,S.dpr+0.1); renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); PROFILE.perfDpr=S.dpr; saveProfile(); }   // Z150 sharper again only in the countdown — a resize mid-fight is a hitch you feel
         if(PERF.fastT>=6){ PERF.fastT=0; PERF.parts=Math.min(1, PERF.parts+0.1); }
         // Z240 DYNAMIC RESOLUTION, upward too: the GPU timer shows real headroom (vsync hides it from the fps count) → one step sharper,

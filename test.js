@@ -2257,6 +2257,13 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function warmStep\(\)\{[^\n]*if\(S\.mode !== 'playing' && S\.mode !== 'dying'\)\{ const t = WARMQ\.shift\(\); try\{ renderer\.initTexture\(t\);/.test(md) && /if\(lv !== 'd'\) warmTex\(mat\);/.test(sc), 'a model\'s maps are sent to the GPU one a frame while no fight is on');
   ok(/export function updateBarBatch\(\)/.test(sd) && /fill\.material=\{ color:new THREE\.Color\(0x7fe06a\) \}/.test(sd) && /updateBarBatch\(\);   \/\/ PERF 5/.test(lp) && !/new THREE\.Mesh\(new THREE\.PlaneGeometry\(1\.0,0\.2\)/.test(sd), 'every health bar showing is drawn in two instanced draws'); }
 
+// PERF 8 steady frames that stay sharp: drawn at most every 1/cap s; auto starts at 60, locks to an even 30 when 60 cannot be held, tries 60 again when
+//   the display tick right after a frame shows the GPU was done inside one tick; the governor's thresholds scale with the cap (at 30 it wants 27)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), lp=R('src/game/loop.js'), P=C.FRAME_PACE;
+  ok(P && P.low60>40 && P.low60<60 && P.probeMs>16.7 && P.probeMs<30 && P.upShare>0.5 && P.upShare<=1 && P.probeN>=30 && P.hold>0, 'frame pacing config');
+  ok(/requestAnimationFrame\(loop\);\n  if\(paceSkip\(nowMs\)\) return;/.test(lp) && /if\(since < 1000\/cap - C\.slackMs\)/.test(lp) && /fps<PERF_GOV\.low\*capK && !paceFirst/.test(lp) && /fps>PERF_GOV\.high\*capK/.test(lp)
+    && /m==='30' \|\| m==='60' \? m : 'auto'/.test(lp), 'a frame at most every 1/cap s; the governor wants the cap, not 60; CÀI ĐẶT can force 30 or 60'); }
+
 // PERF 6–7 the ground read ~23 textures a pixel (three per layer for the no-repeat hexes): the second photo set and the base at its second scale in
 //   one turned lookup each, the normal from the strongest hex — 30.1 → 27.1 ms a desert frame, the same picture; what the FPS governor once took
 //   away for good (its resolution, the occlusion pass) is given back once, for it to judge the lighter game again

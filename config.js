@@ -1215,6 +1215,10 @@ export const BLIGHT = { col:{ danger:0xff2a1e, alert:0xffa424, threat:0xff6a1c, 
 export const OPEN_LAND = { CITY:{ cover:0.55, built:0.42 }, VILLAGE:{ cover:0.6, houses:0.6, trees:0.68 }, MEADOW:{ cover:0.8 } };
 // Z240 PERFORMANCE HUD (F3 / ?perf): frames averaged, refresh interval (s), frame-time colour bands (ms) — green ≤ good, amber ≤ warn, red above
 export const PERF_HUD = { n:120, every:0.5, good:16.7, warn:25 };
+// PERF 8 frame pacing (game/loop.js paceSkip, CÀI ĐẶT → KHUNG HÌNH: tự động · 60 · 30): slackMs = how early a tick still counts as the frame's turn (ms);
+//   auto drops 60 → an even 30 after slowS s under low60 fps, holds 30 at least hold s (doubled each failed try, up to ×16), and tries 60 again once
+//   upShare of probeN display ticks right after a frame came within probeMs (the GPU was done inside one tick)
+export const FRAME_PACE = { slackMs:4, low60:52, slowS:2, hold:15, probeMs:21, probeN:90, upShare:0.9 };
 export const SHAKE = { levels:{ off:0, low:0.32, mid:0.6, high:1 }, def:'low', pos:0.7, roll:0.018, aberr:0.0035 };
 export const TOUCH_HELP = [
   ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — súng tự bám địch gần nhất, anh đi đâu nòng vẫn ngắm mục tiêu'],
