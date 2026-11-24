@@ -13,7 +13,7 @@
 //     actors/real-cav.js).
 import * as THREE from 'three';
 import { FORT, LINE, XHAIR } from '../../config.js';
-import { AIR, MOBILE, PAD, S, VIEW, blockTop, blocks, blocksNear, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
+import { AIR, DRAG, MOBILE, PAD, RDRAG, S, VIEW, blockTop, blocks, blocksNear, camera, enemies, equippedGun, fortIntactCross, heightAt, inBlock, playerRange } from '../hub.js';
 
 export const XH = { mx:-1, my:-1, mouseAt:-1e9, movedAt:-1e9, src:'mouse', tgt:null, live:false, stop:null, far:false, state:'ok', sky:false, el:null, lookA:null, reLook:false, camOk:false, anchor:null };
 // Z382 THE STEADY CAMERA the crosshair looks through: the follow camera's own pose before the shot's kick, the shake, the roll, the lens's kick and the
@@ -83,6 +83,7 @@ export function updateCrosshair(dt, now){ const p = S.player; XH.live = false;
   if(!p || S.mode !== 'playing' || (MOBILE && !PAD.active)){ marks(null); return; }
   const reach = playerRange() * 1.15 + 4, pad = padNow();
   if(pad) padAim(p, reach);
+  else if(XH.mx >= 0 && (RDRAG.moved || DRAG.on)){ S.pointerActive = true; XH.live = true; marks(p, false); }   // CAM 1 the view being turned (right / middle drag): the gun holds the point it was on
   else if(XH.mx >= 0){ _n.set(XH.mx / VIEW.w * 2 - 1, -(XH.my / VIEW.h) * 2 + 1); _rc.setFromCamera(_n, XH.camOk ? XCAM : camera); _o.copy(_rc.ray.origin); _d.copy(_rc.ray.direction);   // (through the steady camera: the shot's kick and the shake no longer drag the point away)
     // Z382 A BURST HOLDS ITS MARK: the trigger held and the mouse still since it went down, the aim stays on the point (or the man) it was put on —
     //   the tank's recoil and the camera easing back while he fires shift the view a metre or two under a still cursor; the rounds no longer walk off it

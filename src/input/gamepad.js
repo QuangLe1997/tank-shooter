@@ -6,8 +6,8 @@
 //   · HAPTICS (feel): rhythm patterns for the pad's two motors — every gun has its own beat, a hit shakes left↔right, rams and blasts thump,
 //     the engine hums — and the same patterns drive the PHONE vibration (Android; iOS app via the Capacitor Haptics plugin when present)
 import * as THREE from 'three';
-import { PAD_CFG, FEEL } from '../../config.js';
-import { crosshairPad, MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, equippedGun, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
+import { ACTIONS, CAM_FEEL, PAD_CFG, FEEL } from '../../config.js';
+import { tiltBy, yawBy, crosshairPad, MOBILE, NAV, PAD_GO, PAD_NAMES, PROFILE, S, WIZ, actionForPad, aimTarget, captureActive, clearFocus, ensureFocus, equippedGun, floatText, menuBack, menuMove, menuRoot, menuSelect, menuTab, openPadWizard, padCaptured, padFor, padMapFor, playerRange, runAction, saveProfile, virtualPad, wizPoll } from '../hub.js';
 
 export const PAD = { gunCombo:false, fireHeld:false, lobR:0, lobO:0, lobOn:false, fx:0, fy:0, viewCombo:false, hudSig:'', active:false, id:'', idx:-1, gp:null, lx:0, ly:0, rx:0, ry:0, lt:0, rt:0, prev:[], aimIdle:9, lastAt:0, rumbleUntil:0, rumbleLv:0, engAt:0, shake0:0, navAt:0, navDir:'' };
 export function padCfg(){ const D=PAD_CFG.def; const p=PROFILE.pad||(PROFILE.pad={}); for(const k in D) if(p[k]===undefined) p[k]=D[k];
@@ -64,10 +64,21 @@ function lobHud(on){ const el=document.getElementById('lobHud'); if(!el) return;
   const t='TẦM '+Math.round(PAD.lobR||0)+' m · cần phải ↑↓ chỉnh tầm · ←→ xoay trong cung 180° trước mũi xe'; if(t!==_lobTxt){ _lobTxt=t; el.textContent=t; } }
 
 // ---- battle: sticks are fixed (drive / aim); buttons go through the binding table ----
+// CAM 1 LT HELD = THE RIGHT STICK LOOKS ROUND ("tay cầm thì cần giữ cò trái sau đó dùng cần để change view"): while LT is down the right stick turns
+//   the view round the soldier (←→) and tilts it (↑↓) at CAM_FEEL.padLook rad/s, the gun holding its aim; an LT let go inside padLook.tap s with no look
+//   is still LT's own action (the skill by default). A hold action bound to LT (fire…) keeps LT as it was
+function ltLook(cur, down, up, dt, now, C){ const a=actionForPad(BT.LT), hold=!!(a && (ACTIONS.find(x=>x[0]===a)||[])[5]), L=CAM_FEEL.padLook;
+  if(hold) return false;
+  if(down(BT.LT)){ PAD.ltAt=now; PAD.ltLooked=false; }
+  if(cur[BT.LT]){ const m=Math.hypot(PAD.rx, PAD.ry); if(m>L.dead){ PAD.ltLooked=true; const k=(m-L.dead)/(1-L.dead)/m, s=(C.sens||1)*dt;
+      yawBy(-PAD.rx*k*L.yaw*s); tiltBy(PAD.ry*k*L.tilt*s); } return true; }
+  if(up(BT.LT) && !PAD.ltLooked && now-(PAD.ltAt||0)<L.tap && a){ runAction(a, 'down'); runAction(a, 'up'); }
+  return false; }
 function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
-  const am=Math.hypot(PAD.rx, PAD.ry), lobG = C.lob!==false && isLobGun();
-  PAD.lobOn=lobG; lobHud(lobG); if(!lobG){ PAD.lobR=0; PAD.lobO=0; }
-  if(lobG){ lobAim(p, dt, C); }
+  const look=ltLook(cur, down, up, dt, now, C), am=look ? 0 : Math.hypot(PAD.rx, PAD.ry), lobG = !look && C.lob!==false && isLobGun();
+  PAD.lobOn=lobG; lobHud(lobG); if(!lobG && !look){ PAD.lobR=0; PAD.lobO=0; }
+  if(look){ PAD.aimIdle=0; }   // (CAM 1 looking round: the gun holds where it was)
+  else if(lobG){ lobAim(p, dt, C); }
   else if(am>0.02 && am<PAD_CFG.aim.minMag){ PAD.aimIdle=0; }                                      // Z124 a barely-tilted stick holds the gun where it is (its angle is just noise)
   else if(am>=PAD_CFG.aim.minMag){ _d.set(PAD.rx, 0, PAD.ry); const m=Math.min(1,_d.length()); _d.normalize(); if(S.camYaw) _d.applyAxisAngle(_UP, S.camYaw);
     const R=playerRange()*(0.45+0.55*m); S.aimPoint.set(p.pos.x+_d.x*R, 0, p.pos.z+_d.z*R); S.pointerActive=true; PAD.aimIdle=0; crosshairPad(); }   // (Z376 lifted onto a man near that line, or chest high: combat/crosshair.js)
@@ -77,6 +88,7 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
   if(down(BT.VIEW)) PAD.viewCombo=false;
   for(let i=0;i<cur.length;i++){ if(!down(i) && !up(i)) continue;
     if(cur[BT.VIEW] && CAMC[i]){ if(down(i)){ PAD.viewCombo=true; runAction(CAMC[i], 'down'); } continue; }                      // Z124 hold ⧉ View + D-pad = camera (↑ in · ↓ out · ←→ rotate)
+    if(i===BT.LT && !lookHold()) continue;                                                                                    // CAM 1 LT is the look button: its action runs on a quick release (ltLook)
     const a=actionForPad(i) || PADDLE[i] || null;                                                                              // Z132 a pad that DOES report its back paddles (buttons 17 / 18) gets them as camera too
     if(i===BT.VIEW && a==='keys'){ if(up(i) && !PAD.viewCombo) runAction('keys', 'down'); continue; }                           // ⧉ alone opens the key sheet on release
     if(a==='fire') PAD.fireHeld=down(i);
@@ -84,12 +96,13 @@ function playInput(cur, down, up, dt, now, C){ const p=S.player; if(!p) return;
   padHud(now);
 }
 const PADDLE={ 17:'zoomPing', 18:'camTurn' };
+const lookHold=()=>{ const a=actionForPad(BT.LT); return !!(a && (ACTIONS.find(x=>x[0]===a)||[])[5]); };   // (CAM 1 a hold action on LT keeps it)
 const CAMC={ 12:'zoomIn', 13:'zoomOut', 14:'rotL', 15:'rotR' };
 // Z124 on-screen legend of the pad buttons that have no on-screen button (crew, orders, camera, guns) — follows the rebinding table
 const HUD_IDS=[['crew','LÍNH'],['autoFire','TỰ BẮN'],['gunPrev','SÚNG−'],['gunNext','SÚNG+'],['muster','TẬP KẾT'],['assault','XUNG PHONG'],['para','LÍNH DÙ'],['autoAim','TỰ NGẮM'],['camAuto','CAM TỰ ĐỘNG'],['zoomPing','THU PHÓNG (2× = MẶC ĐỊNH)'],['camTurn','XOAY CAMERA (2× = MẶC ĐỊNH)']];
 function padHud(now){ if(now<(PAD.hudAt||0)) return; PAD.hudAt=now+0.6; const el=document.getElementById('padHud'); if(!el) return;
-  const sig=HUD_IDS.map(([id])=>padFor(id)).join(','); if(sig===PAD.hudSig) return; PAD.hudSig=sig;
-  el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>LB + RB</b>SÚNG MẶC ĐỊNH</span><span><b>⧉ + D-pad</b>XOAY CAM</span>'; }
+  const sig=HUD_IDS.map(([id])=>padFor(id)).join(',')+(lookHold() ? 'h' : 'l'); if(sig===PAD.hudSig) return; PAD.hudSig=sig;
+  el.innerHTML=HUD_IDS.filter(([id])=>padFor(id)!=null).map(([id,l])=>'<span><b>'+PAD_NAMES[padFor(id)]+'</b>'+l+'</span>').join('')+'<span><b>LB + RB</b>SÚNG MẶC ĐỊNH</span><span><b>⧉ + D-pad</b>XOAY CAM</span>'+(lookHold() ? '' : '<span><b>Giữ LT + cần phải</b>XOAY · NGHIÊNG CAM</span>'); }
 // ---- menus ----
 // the scrollable box the focus lives in (a list inside the overlay), else the overlay itself
 function scrollPane(root){ let e=NAV.focus; while(e && e!==root){ if(e.scrollHeight>e.clientHeight+4 && /auto|scroll/.test(getComputedStyle(e).overflowY)) return e; e=e.parentElement; } return root; }

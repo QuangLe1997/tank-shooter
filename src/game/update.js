@@ -40,8 +40,10 @@ function sd(o, k, target, st, dt){ const kv=k+'V', om=2/st, x=om*dt, e=1/(1+x+0.
   o[kv]=(o[kv]-om*tmp)*e; o[k]=target+(ch+tmp)*e; }
 export const smoother = u => u<=0 ? 0 : u>=1 ? 1 : u*u*u*(u*(u*6-15)+10);   // smootherstep: zero velocity AND acceleration at both ends
 export function camShakeGain(){ let k; try{ k=PROFILE.shake; }catch(e){} const L=SHAKE.levels; return L[k]!=null ? L[k] : L[SHAKE.def]; }
+const tiltPull=()=>Math.min(1, Math.max(0, (S.camTilt||0)/CAM_FEEL.tilt.max));   // CAM 1 how far the player has tilted the lens up (0…1)
 function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)*((S.player&&S.player.camK)||1);   // Z245 cavalry: a man needs a closer lens
   out.set(camOff.x*k, camOff.y*k*(k<1 ? 0.78+0.22*k : 1)*(k<0.55 ? 0.8+0.2*k/0.55 : 1), camOff.z*k);   // player zoom + the auto camera's pull-back · Z165 close-ups sit a little lower
+  { const t=S.camTilt||0; if(t){ const r=Math.hypot(out.y, out.z), T=CAM_FEEL.tilt, a0=Math.atan2(out.y, out.z), a=t>0 ? Math.max(a0, Math.min(T.top, a0+t)) : Math.min(a0, Math.max(T.low, a0+t)); out.y=r*Math.sin(a); out.z=r*Math.cos(a); } }   // CAM 1 the player's tilt: the same distance, higher or lower
   if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
 // the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
 // Z241 the lowest extra height (CAM_FEEL.lift) from which the lens at `pos` sees the tank's hull over every wall in the way
@@ -67,7 +69,7 @@ export function sightToGround(ax, ay, az, bx, by, bz){ if(underActive(ax)) retur
   return 1; }
 export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), ck=p.camK||1, z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk)*ck*ck;
   const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
-  look.set(p.pos.x+lx-Math.sin(y)*ah, (CS.lookY+Math.max(0,0.6-z)*2.2)*ck, p.pos.z+lz-Math.cos(y)*ah);
+  { const tu=tiltPull(), k=1-CAM_FEEL.tilt.ahead*tu, kl=1-CAM_FEEL.tilt.lead*tu; look.set(p.pos.x+lx*kl-Math.sin(y)*ah*k, (CS.lookY+Math.max(0,0.6-z)*2.2)*ck, p.pos.z+lz*kl-Math.cos(y)*ah*k); }
   camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; { const g=camGround(p); pos.y+=g; look.y+=g; } pos.y+=camLift(pos, p); return CS.fov; }   // (NO-TANKS 10 from his own ground)   // (lifted over a wall in the way, as play will be)
 // Z301 RIDING CAMERA: a chase camera that rides with the machine — it rises and settles with the suspension's heave, buzzes with the road at speed,
 //   banks a little with the bike into a bend, dips its nose under the brakes and lifts under the throttle, and the lens widens as the throttle opens;
@@ -84,7 +86,7 @@ export function updateCamera(dt, now){
   const F=CAM_FEEL, CS=applyCamStyle(), st=Math.min(dt, 1/20);
   if(now-CAM.t > 0.15 || !CAM.on){   // first frame, or back from a cinematic / the death cam / a pause → springs settle on the goal, the view glides over
     CAM.blend = CAM.on ? F.resume : 0; CAM.on=true;
-    S.zoom=S.zoomT??S.zoom; S.camYaw=S.camYawT??S.camYaw; CAM.zl=Math.log(Math.max(0.05,S.zoom)); CAM.ya=S.camYaw;
+    S.zoom=S.zoomT??S.zoom; S.camYaw=S.camYawT??S.camYaw; CAM.zl=Math.log(Math.max(0.05,S.zoom)); CAM.ya=S.camYaw; CAM.ti=S.camTilt=S.camTiltT||0; CAM.tiV=0;
     const zk=Math.min(1,S.zoom); CAM.lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk; CAM.lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk; CAM.fx=p.pos.x; CAM.fz=p.pos.z;
     CAM.lxV=CAM.lzV=CAM.fxV=CAM.fzV=CAM.yaV=CAM.zlV=CAM.dashV=0; CAM.dash=0; CAM.kick=0; CAM.liftSnap=true; CAM.gy=camGround(p); CAM.gyV=0; camRocksStale();   // (NO-TANKS 10 a new field: its rocks)
     CAM.bp.copy(camera.position); CAM.bq.copy(camera.quaternion); CAM.bf=camera.fov; }
@@ -92,11 +94,12 @@ export function updateCamera(dt, now){
   sd(CAM, 'zl', Math.log(Math.max(0.05, S.zoomT??S.zoom)), F.zoom, st); S.zoom=Math.exp(CAM.zl);                    // zoom glides
   { const yt=S.camYawT??S.camYaw, d=wrapAngle(yt-CAM.ya); sd(CAM, 'ya', CAM.ya+d, F.yaw, st);                       // the view turns along the shortest arc
     if(Math.abs(d)<2e-4 && Math.abs(CAM.yaV)<2e-3){ CAM.ya=yt; CAM.yaV=0; } S.camYaw=CAM.ya; }
+  sd(CAM, 'ti', S.camTiltT||0, F.yaw, st); S.camTilt=CAM.ti;                                                       // CAM 1 the tilt glides the same way
   const ck=(p.camK||1), z=S.zoom, zk=Math.min(1, z), cy=S.camYaw, ah=CS.ahead*Math.max(0.4, zk)*ck*ck;   // Z245 a man / horseman: look-ahead shrinks (×camK²) so he stays in frame   // Z171 close-ups keep the tank centred · Z184 the cine style looks well ahead
   const la=camAimA(p); sd(CAM, 'lx', (Math.sin(la)*6 + p.vel.x*0.18)*0.45*zk, F.lead, st); sd(CAM, 'lz', (Math.cos(la)*6 + p.vel.z*0.18)*0.45*zk, F.lead, st);   // look-ahead (aim + motion) glides (Z376 the aim as the mouse last laid it: combat/crosshair.js)
   sd(CAM, 'fx', p.pos.x, F.follow, st); sd(CAM, 'fz', p.pos.z, F.follow, st);                                       // the tank itself is held tight
   camLook.set(CAM.lx, 0, CAM.lz);
-  camTarget.set(CAM.fx + CAM.lx - Math.sin(cy)*ah, 0, CAM.fz + CAM.lz - Math.cos(cy)*ah);
+  { const tu=tiltPull(), k=1-CAM_FEEL.tilt.ahead*tu, kl=1-CAM_FEEL.tilt.lead*tu; camTarget.set(CAM.fx + CAM.lx*kl - Math.sin(cy)*ah*k, 0, CAM.fz + CAM.lz*kl - Math.cos(cy)*ah*k); }   // CAM 1 tilted up: the lens looks back toward him (he stays in frame)
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
   S.camZ += (_camAutoWant - S.camZ) * (1-Math.exp(-dt*CAM_AUTO.ease));
   camOffset(z, cy, zk, _camOff);

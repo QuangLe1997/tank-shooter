@@ -19,12 +19,22 @@ export function updateAimFromMouse(cx, cy){
     for(let k=0;k<4;k++){ groundPlane.constant=-heightAt(hit.x,hit.z); if(!raycaster.ray.intersectPlane(groundPlane, hit)) break; }   // walk the ray onto the real (uneven) ground
     groundPlane.constant=0; S.aimPoint.copy(hit); S.pointerActive = true; }
 }
-addEventListener('mousemove', e=>{ if(!MOBILE) updateAimFromMouse(e.clientX, e.clientY); });
+addEventListener('mousemove', e=>{ if(!MOBILE && !RDRAG.down) updateAimFromMouse(e.clientX, e.clientY); });   // (CAM 1 the gun stays put while the right button is held: a drag turns the view)
 addEventListener('mousedown', e=>{ if(MOBILE) return;
-  if(e.button===2){ trySpell(); return; }                                                   // RMB = spell
+  if(e.button===2){ RDRAG.down=true; RDRAG.moved=false; RDRAG.x=RDRAG.sx=e.clientX; RDRAG.y=RDRAG.sy=e.clientY; RDRAG.t=performance.now()/1000; return; }   // RMB: a drag turns the view, a tap is the skill (CAM 1)
   if(e.button===0 && S.mode==='playing'){ S.firing=true; soldierFire(performance.now()/1000, playerRange()); } });  // LMB = fire now + hold to repeat
-addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false; });
-addEventListener('blur', ()=>{ S.firing=false; });
+addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false;
+  if(e.button===2 && RDRAG.down){ RDRAG.down=false; if(RDRAG.moved){ RDRAG.moved=false; document.body.classList.remove('cam-drag'); updateAimFromMouse(e.clientX, e.clientY); } else if(performance.now()/1000-RDRAG.t<CAM_FEEL.rdrag.tap) trySpell(); } });
+addEventListener('blur', ()=>{ S.firing=false; if(RDRAG.down){ RDRAG.down=false; RDRAG.moved=false; document.body.classList.remove('cam-drag'); } });
+// CAM 1 RIGHT-BUTTON DRAG TURNS THE VIEW ("giữ phím chuột phải và kéo xoay trên nền để đổi góc camera xoay tự nhiên"): held and moved past
+//   CAM_FEEL.rdrag.px it becomes a drag — sideways turns the view round the soldier (as the middle button does), up / down tilts the lens lower /
+//   higher (CAM_FEEL.tilt); the gun holds its aim meanwhile and picks the cursor up again on release. A press let go inside rdrag.tap s that never
+//   moved is still the skill (it was on the press: now on the release, a click is still a click)
+export const RDRAG={ down:false, moved:false, x:0, y:0, sx:0, sy:0, t:0 };
+addEventListener('mousemove', e=>{ if(!RDRAG.down || MOBILE) return;
+  if(!RDRAG.moved && Math.hypot(e.clientX-RDRAG.sx, e.clientY-RDRAG.sy)>CAM_FEEL.rdrag.px){ RDRAG.moved=true; document.body.classList.add('cam-drag'); }
+  if(RDRAG.moved){ yawBy(-(e.clientX-RDRAG.x)*CAM_FEEL.orbit); tiltBy((e.clientY-RDRAG.y)*CAM_FEEL.tilt.k); }
+  RDRAG.x=e.clientX; RDRAG.y=e.clientY; });
 addEventListener('contextmenu', e=>e.preventDefault());
 // Z239 free camera on desktop: a trackpad PINCH (ctrl+wheel) or SHIFT+wheel zooms smoothly, a two-finger SIDEWAYS swipe or a MIDDLE-button
 //   drag orbits the view round the tank; a plain wheel notch still changes gun. The camera springs (game/update.js) make every one glide.
@@ -36,9 +46,9 @@ addEventListener('wheel', e=>{ if(S.mode!=='playing' && S.mode!=='countdown') re
   if(Math.abs(dx)>Math.abs(dy)*1.2){ if(e.cancelable) e.preventDefault(); yawBy(dx*px*CAM_FEEL.orbit*0.5); return; }
   if(S.mode!=='playing') return; const now=performance.now(); if(now<_gunWheel) return; _gunWheel=now+(Math.abs(dy)<40 ? 160 : 60);   // a trackpad's stream of tiny deltas = one gun step, not ten
   cycleGun(dy>0?1:-1); }, {passive:false});
-export const DRAG={ on:false, x:0 };
-addEventListener('mousedown', e=>{ if(MOBILE || e.button!==1) return; e.preventDefault(); DRAG.on=true; DRAG.x=e.clientX; document.body.classList.add('cam-drag'); });
-addEventListener('mousemove', e=>{ if(!DRAG.on) return; yawBy(-(e.clientX-DRAG.x)*CAM_FEEL.orbit); DRAG.x=e.clientX; });
+export const DRAG={ on:false, x:0, y:0 };
+addEventListener('mousedown', e=>{ if(MOBILE || e.button!==1) return; e.preventDefault(); DRAG.on=true; DRAG.x=e.clientX; DRAG.y=e.clientY; document.body.classList.add('cam-drag'); });
+addEventListener('mousemove', e=>{ if(!DRAG.on) return; yawBy(-(e.clientX-DRAG.x)*CAM_FEEL.orbit); tiltBy((e.clientY-DRAG.y)*CAM_FEEL.tilt.k); DRAG.x=e.clientX; DRAG.y=e.clientY; });   // (CAM 1 up / down tilts, as the right button does)
 addEventListener('mouseup', e=>{ if(e.button===1 && DRAG.on){ DRAG.on=false; document.body.classList.remove('cam-drag'); } });
 addEventListener('auxclick', e=>{ if(e.button===1) e.preventDefault(); });   // no middle-click autoscroll / paste
 // mobile: ONE movement joystick (dynamic origin — press anywhere on the field). The turret
@@ -117,8 +127,9 @@ export function yawBy(da){ S.camYawT=(((S.camYawT+da) % (Math.PI*2)) + Math.PI*2
 let _zd=1;
 export function zoomPing(){ let i=ZOOM_LEVELS.findIndex(v=>Math.abs(v-S.zoomT)<0.06); if(i<0) i=Z1(); let n=i+_zd; if(n<0 || n>=ZOOM_LEVELS.length){ _zd=-_zd; n=i+_zd; } setZoom(ZOOM_LEVELS[Math.max(0, Math.min(ZOOM_LEVELS.length-1, n))]); }
 export function zoomReset(){ _zd=1; setZoom(MOBILE?1.5:1); }
-export function yawReset(){ S.camYawT=0; }
-export function camReset(){ setZoom(MOBILE?1.5:1); S.camYawT=0; }
+export function yawReset(){ S.camYawT=0; S.camTiltT=0; }   // (CAM 1 the tilt back to the chase angle too)
+export function tiltBy(da){ const T=CAM_FEEL.tilt; S.camTiltT=Math.max(T.min, Math.min(T.max, (S.camTiltT||0)+da)); }   // CAM 1 the lens higher (+) or lower, within CAM_FEEL.tilt
+export function camReset(){ setZoom(MOBILE?1.5:1); S.camYawT=0; S.camTiltT=0; }
 export function setCamAuto(on){ S.camAuto=!!on; try{ localStorage.setItem('steelsiege.camAuto', on?'1':'0'); }catch(_){}
   const b=document.getElementById('camAutoBtn'); if(b) b.classList.toggle('on', S.camAuto); }
 try{ const v=localStorage.getItem('steelsiege.camAuto'); if(v!=null) S.camAuto = v==='1'; }catch(_){}
