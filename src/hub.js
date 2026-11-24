@@ -193,6 +193,7 @@ export * from './ui/padview.js';   // Z125
 export * from './ui/keys.js';
 export * from './ui/guide.js';
 export * from './ui/settings.js';
+export * from './ui/confirm.js';   // XK-UI the one confirmation dialog (leave the battle, restart, wipe progress)
 export * from './ui/hud-prefs.js';   // Z324 what the battle HUD shows: on-screen dialogue, info cards, banners (CÀI ĐẶT)
 export * from './ui/loadout.js';
 export * from './ui/ranking.js';   // Z163 leaderboard screen

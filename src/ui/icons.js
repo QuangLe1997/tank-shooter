@@ -81,6 +81,14 @@ export const GLYPH={
   blackhole:'<circle cx="12" cy="12" r="2.6"/><path d="M12 5.5c4.5 0 6.5 3 6.5 6.5M12 18.5c-4.5 0-6.5-3-6.5-6.5M5.5 9c1-3 4-4.5 7-4M18.5 15c-1 3-4 4.5-7 4"/>',
   photon:'<path d="M2.5 12h4M17.5 12h4"/><rect x="6.5" y="9" width="11" height="6" rx="1.2"/><path d="M9.5 9v6M12.5 9v6"/>',
   rocket:'<path d="M12 2.5c2.3 1.7 3.4 4.6 3.4 8l-1 5h-4.8l-1-5c0-3.4 1.1-6.3 3.4-8Z"/><path d="M9.6 13.5 6.6 16.5l2.2.2M14.4 13.5l3 3-2.2.2"/><path d="M10.6 18.5h2.8l-1.4 3Z"/><circle cx="12" cy="8.5" r="1"/>',
+  // XK-UI menu glyphs: back, play, home, settings, help, the key sheet, start over
+  back:'<path d="M14.5 5.5 8 12l6.5 6.5"/>',
+  play:'<path d="M8.5 5.5v13l9.5-6.5-9.5-6.5Z"/>',
+  home:'<path d="M3.5 11 12 4l8.5 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5.5h4V20"/>',
+  gear:'<path d="M19.1 10.6 21.5 10.8 21.5 13.2 19.1 13.4 18 16 19.6 17.9 17.9 19.6 16 18 13.4 19.1 13.2 21.5 10.8 21.5 10.6 19.1 8 18 6.1 19.6 4.4 17.9 6 16 4.9 13.4 2.5 13.2 2.5 10.8 4.9 10.6 6 8 4.4 6.1 6.1 4.4 8 6 10.6 4.9 10.8 2.5 13.2 2.5 13.4 4.9 16 6 17.9 4.4 19.6 6.1 18 8Z"/><circle cx="12" cy="12" r="3"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2-2.4 3.6"/><path d="M12 17.2v.3"/>',
+  keys:'<rect x="2.5" y="6.5" width="19" height="11" rx="1.6"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1.5M6 13.6h1M17 13.6h1M9.5 13.8h5"/>',
+  undo:'<path d="M8.5 5 4.5 9l4 4"/><path d="M4.5 9h9a5.5 5.5 0 0 1 0 11H9"/>',
 };
 export function svgMarkup(name, sw){
   const g=GLYPH[name]||GLYPH.spark;

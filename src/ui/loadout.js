@@ -1,16 +1,17 @@
 // ui/loadout.js — Z103 split from ui/menus.js. KHO SÚNG — Z411 THE SOLDIER'S ARSENAL (from the start screen, CHUẨN BỊ TRẬN or the pause): his hand
 //   weapons, every one, the B41 marked as always carried; the one tapped is the gun he carries in (PROFILE.trooperGun, as the gear step's row) — from the
 //   pause it is in his hands at once (no-tanks: the tank's five-gun loadout and its ★ default gun are gone)
-import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, S, gunPicHTML, gunTierTx, hide, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD, setupBack } from '../hub.js';
+import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, S, capVi, gunPicHTML, gunTierTx, hide, refreshStartUI, saveProfile, sfx, show, tapBtn, tapEl, updateGunHUD, setupBack } from '../hub.js';
 
 let _solSel = 'carbine';
 export let _ldFrom = 'start';
 export function renderLoadout(){
   const grid = document.getElementById('ldgrid'); if(!grid) return; grid.innerHTML = '';
-  const e = document.querySelector('#loadout .subtitle'); if(e) e.innerHTML = 'NGƯỜI LÍNH · chọn súng chính (' + PRIMARY_GUNS.length + ' khẩu) · B41 luôn mang theo · súng khác nhặt trong trận';
+  const e = document.getElementById('ldSub'); if(e) e.textContent = 'Chọn súng chính (' + PRIMARY_GUNS.length + ' khẩu). B41 luôn mang theo, súng khác nhặt trong trận.';
+  const pk = document.getElementById('ldPick'); if(pk) pk.innerHTML = 'Mang vào trận: <b>' + (GUNS[_solSel] || {}).name + '</b> + B41';
   for(const id of [...PRIMARY_GUNS, KIT_GUN]){ const g = GUNS[id], kit = id === KIT_GUN, on = kit || id === _solSel, card = document.createElement('div');
     card.className = 'ldcard' + (on ? ' on' : '');
-    card.innerHTML = (on ? '<div class="num">' + (kit ? 'B41' : 'CHÍNH') + '</div>' : '') + '<div class="pick"></div>' + gunPicHTML(id, 'gp-ld') + '<div class="nm">' + g.name + '</div><div class="tr">' + (kit ? 'LUÔN MANG THEO' : gunTierTx(id)) + '</div>';
+    card.innerHTML = (on ? '<div class="num">' + (kit ? 'B41' : 'Súng chính') + '</div>' : '') + '<div class="pick"></div>' + gunPicHTML(id, 'gp-ld') + '<div class="nm">' + g.name + '</div><div class="tr">' + (kit ? 'Luôn mang theo' : capVi(gunTierTx(id))) + '</div>';
     if(!kit) tapEl(card, () => { _solSel = id; sfx('click'); renderLoadout(); }); grid.appendChild(card); } }
 export function openLoadout(){ _ldFrom = (S.mode === 'paused') ? 'pause' : !document.getElementById('battleSetup').classList.contains('hidden') ? 'battleSetup' : 'start';   // Z354 from CHUẨN BỊ TRẬN: back there
   _solSel = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine';
@@ -25,4 +26,4 @@ export function closeLoadout(){ PROFILE.trooperGun = _solSel; saveProfile(); hid
   refreshStartUI(); sfx('click'); }
 tapBtn('arsenalBtn', openLoadout);
 tapBtn('arsenalBtnP', openLoadout);
-tapBtn('ldDone', closeLoadout);
+tapBtn('ldDone', closeLoadout); tapBtn('ldBack', closeLoadout);

@@ -1,18 +1,18 @@
 // ui/deploy.js — Z105 DEPLOYMENT before every stage: troop strength, key points to post men at,
 //   specialists (MG / mortar / sapper), the soldier's guns & ammo and a map of the field. Confirm → men spawn at their posts.
 import { DEPLOY, TROOPS } from '../../config.js';
-import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDGES, S, clampFieldXZ, clearFireteam, core, escapeHtml, fieldOutline, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip, spellNow } from '../hub.js';
+import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDGES, S, reopenBriefing, clampFieldXZ, clearFireteam, core, escapeHtml, fieldOutline, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tip, spellNow } from '../hub.js';
 
 export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
 // the key points of this field (built from the planned zones): where a squad can be posted at the start
 export function deployPosts(){ const p=S.player, sx=p?p.pos.x:0, sz=p?p.pos.z:ARENA*0.55, toward=(x,z,f)=>[sx+(x-sx)*f, sz+(z-sz)*f], posts=[];
-  if(core) posts.push({ id:'core', ic:'bunker', nm:'GIỮ LÕI', ds:'Phòng thủ quanh Lõi', x:core.pos.x, z:core.pos.z+6, max:6 });
-  if(RALLY_PT.g) posts.push({ id:'rally', ic:'spark', nm:'KHU TẬP KẾT', ds:'Canh đồ & tiếp tế, sát xuất phát', x:RALLY_PT.x, z:RALLY_PT.z, max:4 });
-  const side=w=>w.x<-ARENA*0.3?'TRÁI':(w.x>ARENA*0.3?'PHẢI':'PHÍA SAU'), dup=k=>POWS.filter(o=>side(o)===k).length>1;
-  POWS.forEach((w,i)=>{ const [x,z]=toward(w.x, w.z, DEPLOY.stage), sd=side(w); posts.push({ id:'pow'+i, ic:'team', nm:'TRẠI GIAM '+sd+(dup(sd)?' '+(POWS.filter(o=>side(o)===sd).indexOf(w)+1):''), ds:'Áp sát, diệt lính canh, giải cứu tù binh', x, z, max:6, cls:'enemy', site:w }); });
-  DEPOTS.forEach((d,i)=>{ const [x,z]=toward(d.x, d.z, DEPLOY.stage); posts.push({ id:d.kind+i, ic:'rifle', nm:'KHO VŨ KHÍ', ds:'Chiếm kho → súng chống tăng, tiếp tế', x, z, max:6, cls:'enemy', site:d }); });
-  for(const sd of [-1,1]){ const [fx,fz]=clampFieldXZ(sd*ARENA*0.5, ARENA*0.12, 14); posts.push({ id:sd<0?'left':'right', ic:'target', nm:sd<0?'CÁNH TRÁI':'CÁNH PHẢI', ds:'Giữ sườn, chặn bộ binh vòng sau', x:fx, z:fz, max:5 }); }
+  if(core) posts.push({ id:'core', ic:'bunker', nm:'Giữ Lõi', ds:'Phòng thủ quanh Lõi', x:core.pos.x, z:core.pos.z+6, max:6 });
+  if(RALLY_PT.g) posts.push({ id:'rally', ic:'spark', nm:'Khu tập kết', ds:'Canh đồ và tiếp tế, sát chỗ xuất phát', x:RALLY_PT.x, z:RALLY_PT.z, max:4 });
+  const side=w=>w.x<-ARENA*0.3?'trái':(w.x>ARENA*0.3?'phải':'phía sau'), dup=k=>POWS.filter(o=>side(o)===k).length>1;
+  POWS.forEach((w,i)=>{ const [x,z]=toward(w.x, w.z, DEPLOY.stage), sd=side(w); posts.push({ id:'pow'+i, ic:'team', nm:'Trại giam '+sd+(dup(sd)?' '+(POWS.filter(o=>side(o)===sd).indexOf(w)+1):''), ds:'Áp sát, diệt lính canh, giải cứu tù binh', x, z, max:6, cls:'enemy', site:w }); });
+  DEPOTS.forEach((d,i)=>{ const [x,z]=toward(d.x, d.z, DEPLOY.stage); posts.push({ id:d.kind+i, ic:'rifle', nm:'Kho vũ khí', ds:'Chiếm kho để lấy súng chống tăng và tiếp tế', x, z, max:6, cls:'enemy', site:d }); });
+  for(const sd of [-1,1]){ const [fx,fz]=clampFieldXZ(sd*ARENA*0.5, ARENA*0.12, 14); posts.push({ id:sd<0?'left':'right', ic:'target', nm:sd<0?'Cánh trái':'Cánh phải', ds:'Giữ sườn, chặn bộ binh vòng sau', x:fx, z:fz, max:5 }); }
   return posts; }
 function roleMax(k){ const a=DEPLOY.roleMax[k]; return a[Math.min(a.length-1, S.stage-1)]; }
 function assigned(){ return _dp.posts.reduce((n,q)=>n+q.n,0); }
@@ -29,7 +29,7 @@ export function openDeploy(onGo, quick){
     for(const k of ['mg','mortar','sapper']) _dp.roles[k]=Math.min(roleMax(k), mem.roles[k]||0); render(); }
   else autoDeploy();
   if(quick){ confirmDeploy(); return; }   // Z152 XUẤT KÍCH from the briefing: the plan is applied without opening this screen
-  document.getElementById('dp-op').textContent='BỐ TRÍ TRẬN ĐỊA · MÀN '+S.stage;
+  document.getElementById('dp-op').textContent='Bố trí trận địa — màn '+S.stage;
   show('deploy'); sfx('powerup'); tip('deploy'); }
 function stepper(get, set, max){ const w=document.createElement('div'); w.className='dp-step';
   const m=document.createElement('div'), v=document.createElement('div'), pl=document.createElement('div'); m.className=pl.className='s'; v.className='v'; m.textContent='−'; pl.textContent='+';
@@ -37,20 +37,20 @@ function stepper(get, set, max){ const w=document.createElement('div'); w.classN
   tapEl(m, ()=>{ if(get()>0){ set(get()-1); sfx('click'); render(); } }); tapEl(pl, ()=>{ if(get()<max()){ set(get()+1); sfx('click'); render(); } });
   w.append(m,v,pl); sync(); return w; }
 function render(){ const D=_dp; if(!D) return; const free=D.total-assigned(), onFoot=D.total-free;
-  document.getElementById('dp-total').innerHTML='QUÂN SỐ <b>'+D.total+'</b> · bộ binh '+onFoot+(free>0?' · <span class="warn">chưa bố trí '+free+'</span>':'');
+  document.getElementById('dp-total').innerHTML='Quân số <b>'+D.total+'</b> · đã bố trí '+onFoot+(free>0?' · <span class="warn">còn '+free+' người chưa có vị trí</span>':'');
   const L=document.getElementById('dp-posts'); L.replaceChildren();
   for(const q of D.posts){ const row=document.createElement('div'); row.className='dp-row '+(q.cls||''); const ic=document.createElement('div'); ic.className='dp-ic'; ic.appendChild(iconEl(q.ic));
     const nm=document.createElement('div'); nm.className='dp-nm'; nm.innerHTML='<b>'+escapeHtml(q.nm)+'</b><span>'+escapeHtml(q.ds)+'</span>';
     row.append(ic, nm, stepper(()=>q.n, v=>{ q.n=v; }, ()=>Math.min(q.max, q.n+(D.total-assigned())))); L.appendChild(row); }
   const R=document.getElementById('dp-roles'); R.replaceChildren(); const onFootMax=()=>D.total;
-  for(const [k,ic,nm,ds] of [['mg','rifle','SÚNG MÁY','nằm bắn loạt dài'],['mortar','target','CỐI','bắn vòng cầu vào cụm địch, tháp, trại'],['sapper','wrench','CÔNG BINH','gài thuốc nổ đánh sập tháp canh, nhà lính']]){
+  for(const [k,ic,nm,ds] of [['mg','rifle','Súng máy','nằm bắn loạt dài'],['mortar','target','Cối','bắn vòng cầu vào cụm địch, tháp, trại'],['sapper','wrench','Công binh','gài thuốc nổ đánh sập tháp canh, nhà lính']]){
     const row=document.createElement('div'); row.className='dp-row'; const i=document.createElement('div'); i.className='dp-ic'; i.appendChild(iconEl(ic));
-    const n=document.createElement('div'); n.className='dp-nm'; n.innerHTML='<b>'+nm+' <small style="color:var(--muted)">tối đa '+roleMax(k)+'</small></b><span>'+ds+'</span>';
+    const n=document.createElement('div'); n.className='dp-nm'; n.innerHTML='<b>'+nm+' <small>tối đa '+roleMax(k)+'</small></b><span>'+ds+'</span>';
     row.append(i, n, stepper(()=>D.roles[k], v=>{ D.roles[k]=v; }, ()=>Math.min(roleMax(k), D.roles[k]+Math.max(0, onFootMax()-(D.roles.mg+D.roles.mortar+D.roles.sapper))))); R.appendChild(row); }
   const G=document.getElementById('dp-guns'); G.replaceChildren(); const p=S.player;
   if(p) for(const inst of p.guns){ const g=GUNS[inst.id]; if(!g) continue; const r=document.createElement('div'); r.className='dp-gun';
     r.innerHTML=gunPicHTML(inst.id,'gp-dp')+'<b>'+escapeHtml(g.name)+((inst.star||1)>1?' ★'+inst.star:'')+'</b><span>'+Math.round(gunShotDmg(g))+' sát thương · băng '+magCap(g)+' · nạp '+g.reload.toFixed(1)+' giây</span>'; G.appendChild(r); }
-  if(p){ const sp=spellNow(); if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>KỸ NĂNG · '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+' giây</span>'; G.appendChild(r); } }
+  if(p){ const sp=spellNow(); if(sp){ const r=document.createElement('div'); r.className='dp-gun'; r.innerHTML='<b>Kỹ năng: '+escapeHtml(sp.vi||sp.name||'')+'</b><span>hồi '+sp.cd+' giây</span>'; G.appendChild(r); } }
   drawDeployMap(); }
 export function drawDeployMap(){ const D=_dp, c=document.getElementById('dp-map'); if(!c||!D) return; const x=c.getContext('2d'), W=c.width, s=(W/2-8)/ARENA, X=v=>W/2+v*s, Y=v=>W/2+v*s;
   x.clearRect(0,0,W,W); const O=fieldOutline(); x.save(); x.beginPath(); O.forEach(([px,pz],i)=> i ? x.lineTo(X(px),Y(pz)) : x.moveTo(X(px),Y(pz))); x.closePath();
@@ -72,5 +72,6 @@ export function confirmDeploy(){ const D=_dp; if(!D) return; _dp=null; hide('dep
   S.roleQueue=roles;                                                         // specialists left over → the next men called in
   const mem={ v:1, posts:{}, roles:D.roles }; for(const q of D.posts){ const k=q.id.replace(/\d+$/,''); mem.posts[k]=(mem.posts[k]||0)+q.n; } PROFILE.deploy=mem; saveProfile();
   sfx('levelup'); if(D.onGo) D.onGo(); }
-{ const go=document.getElementById('dp-go'), au=document.getElementById('dp-auto'); if(go) tapEl(go, confirmDeploy); if(au) tapEl(au, ()=>{ if(_dp){ autoDeploy(); sfx('click'); } });
+{ const go=document.getElementById('dp-go'), au=document.getElementById('dp-auto'), bk=document.getElementById('dp-back'); if(go) tapEl(go, confirmDeploy); if(au) tapEl(au, ()=>{ if(_dp){ autoDeploy(); sfx('click'); } });
+  if(bk) tapEl(bk, ()=>{ if(!_dp) return; _dp=null; hide('deploy'); sfx('click'); reopenBriefing(); });   // XK-UI back to the briefing (same contracts), not out of the battle
   /* Z118 Enter = the focused button (XUẤT KÍCH by default) via the menu focus ring */ }

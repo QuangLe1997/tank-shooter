@@ -57,12 +57,13 @@ export function gameOver(reason){
   if(S.mode==='gameover') return;
   S.mode='gameover'; try{ reportRun({ cleared:false }); }catch(e){}
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
-    if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>HẾT MẠNG</b> — người lính ngã xuống khi không còn lượt hồi sinh' : '<b>'+reason+'</b> — mất lõi căn cứ là thua ngay, dù còn <b>×'+L+'</b> mạng. Theo dõi thanh LÕI trên màn hình và chạy về chặn địch khi nó tụt.'; }
-  document.getElementById('go-score').textContent=S.score.toLocaleString();
+    const nm=t=>{ t=String(t||'').toLocaleLowerCase('vi'); return t.charAt(0).toLocaleUpperCase('vi')+t.slice(1); };   // XK-UI the reason in plain sentence case
+    if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>Hết mạng.</b> Người lính ngã xuống khi không còn lượt hồi sinh.' : '<b>'+nm(reason)+'.</b> Mất Lõi căn cứ là thua ngay, dù còn ×'+L+' mạng. Để mắt tới thanh Lõi và chạy về chặn địch khi nó tụt.'; }
+  document.getElementById('go-score').textContent=S.score.toLocaleString('vi-VN');
   document.getElementById('go-stage').textContent=S.stage;
   document.getElementById('go-wave').textContent=S.wave;
   const beat=recordRun(); const gb=document.getElementById('go-best');
-  if(gb){ gb.textContent = beat ? ('★ KỶ LỤC MỚI  '+S.score.toLocaleString()+' ★') : ('KỶ LỤC  '+(BEST.score||0).toLocaleString()); gb.classList.toggle('newbest', beat); }
+  if(gb){ gb.textContent = beat ? ('Kỷ lục mới: '+S.score.toLocaleString('vi-VN')+' điểm') : ('Kỷ lục của bạn: '+(BEST.score||0).toLocaleString('vi-VN')+' điểm'); gb.classList.toggle('newbest', beat); }
   saveProfile();
   document.body.classList.remove('corelow');
   show('gameover');

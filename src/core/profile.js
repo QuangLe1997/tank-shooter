@@ -45,5 +45,5 @@ export function saveProgress(){ if(S.run && S.run.mode==='custom') return; const
   if(better && (S.stage>1 || cl>0)){ PROFILE.save={ loop:cl, stage:S.stage, score:S.score }; saveProfile(); refreshStartUI(); } }
 export function clearProgress(){ PROFILE.save=null; saveProfile(); refreshStartUI(); }
 export function recordRun(){ const beat = S.score > (BEST.score||0); if(beat){ BEST.score=S.score; BEST.stage=S.stage; saveProfile(); } refreshBestLine(); return beat; }
-export function refreshBestLine(){ const el=document.getElementById('bestline'); if(el) el.textContent = (BEST.score>0) ? ('★ KỶ LỤC  '+BEST.score.toLocaleString()+'  ·  MÀN '+BEST.stage) : ''; }
+export function refreshBestLine(){ const el=document.getElementById('bestline'); if(el){ el.textContent = (BEST.score>0) ? ('Kỷ lục '+BEST.score.toLocaleString('vi-VN')+' · màn '+BEST.stage) : ''; el.hidden = !(BEST.score>0); } }   // XK-UI no record yet → no empty pill
 export function __set_BEST(v){ BEST=v; return v; }   // Z98 cross-module write → setter (imported bindings are read-only)
