@@ -27,6 +27,10 @@ export function nearTag(key, gl){ if(!gl || !on()) return; index().then(IX => { 
     for(const [s, slot] of Object.entries(SLOT)){ const t = m[slot]; if(!t || !have.includes(mi + '.' + s) || SRC.has(t.source)) continue;
       const e = { R, file:`${DIR}${key}.${mi}.${s}.webp`, lo:t.source, hi:null }; R.srcs.push(e); SRC.set(t.source, e); } } }); }
 
+// MEM 1 a model dropped from its cache (actors/models.js releaseModels): its key forgotten here too, or its shipped maps' pictures (each entry's lo)
+//   stayed alive for good; a sharp copy nothing wears is freed, its queued swaps dropped. Loaded again, the model is tagged afresh.
+export function nearForget(key){ const R = KEYS[key]; if(!R) return; delete KEYS[key]; for(let i = QUEUE.length - 1; i >= 0; i--) if(QUEUE[i][0].R === R) QUEUE.splice(i, 1);
+  for(const e of R.srcs) if(e.hi && ![...R.tex].some(t => t.source === e.hi) && e.hi.data && e.hi.data.close) e.hi.data.close(); R.tex.clear(); R.seen.clear(); R.srcs.length = 0; }
 // the whole shape of a model (hd/<key>.glb: the original's triangles, meshopt-compressed) for whoever draws it whole up close — attributes back to
 //   plain floats, so it can be cut and scaled like the shipped one; null when the key has none (or on a phone / with ?nohd)
 export function nearModel(key){ if(GEO[key]) return GEO[key]; if(!on()) return Promise.resolve(null);

@@ -10,7 +10,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { LIGHT, SHAFTS } from '../../config.js';
-import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, shadowLOD } from '../hub.js';
+import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, releaseModels, shadowLOD } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -187,4 +187,4 @@ export function skyEnvTexture(name, A){
 //   released one again the next time it is drawn. Never a render target's texture (an environment map has no pixels of its own to upload again).
 const _maps = (m, out) => { for(const k in m){ const t = m[k]; if(t && t.isTexture && !t.isRenderTargetTexture && !t.isVideoTexture && t.image && (t.isDataTexture || t.image.width)) out.add(t); } };
 export function gpuHeld(){ const g = new Set(), t = new Set(); scene.traverse(o => { if(o.geometry) g.add(o.geometry); if(o.material) for(const m of Array.isArray(o.material) ? o.material : [o.material]) _maps(m, t); }); return { g, t }; }
-export function gpuRelease(was){ const now = gpuHeld(); let n = 0; for(const x of was.g) if(!now.g.has(x)){ x.dispose(); n++; } for(const x of was.t) if(!now.t.has(x)){ x.dispose(); n++; } return n; }
+export function gpuRelease(was){ const now = gpuHeld(); let n = 0; for(const x of was.g) if(!now.g.has(x)){ x.dispose(); n++; } for(const x of was.t) if(!now.t.has(x)){ x.dispose(); n++; } return n + releaseModels(now); }   // (MEM 1 + the models the new field neither asks for nor draws)

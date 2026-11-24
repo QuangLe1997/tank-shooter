@@ -1,8 +1,8 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
-import { S, nearTag, renderer } from '../hub.js';
+import { MEM_TRIM, PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
+import { S, nearForget, nearTag, renderer } from '../hub.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -64,16 +64,38 @@ export function fixNormals(geo){ const N=geo.attributes.normal, P=geo.attributes
 //   savanna battle's first 20 s). Each model's maps now queue the moment its file is in and are sent one a frame while no fight is on (the menu, the
 //   loading screen, the countdown); one still waiting when a fight starts is sent as before, when first drawn.
 const WARMQ = [], TEXK = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap']; let _warmOn = false;
-function warmStep(){ if(!WARMQ.length){ _warmOn = false; return; } if(S.mode !== 'playing' && S.mode !== 'dying'){ const t = WARMQ.shift(); try{ renderer.initTexture(t); }catch(e){} } requestAnimationFrame(warmStep); }
+function warmStep(){ if(!WARMQ.length){ _warmOn = false; return; } if(S.mode !== 'playing' && S.mode !== 'dying'){ const t = WARMQ.shift(); if(t.userData.warm){ try{ renderer.initTexture(t); WARMED.add(t); }catch(e){} } } requestAnimationFrame(warmStep); }   // (MEM 1 one released while it waited is skipped)
 export function warmTex(m){ for(const k of TEXK){ const t = m && m[k]; if(t && t.isTexture && t.image && !t.userData.warm){ t.userData.warm = 1; WARMQ.push(t); } } if(!_warmOn && WARMQ.length){ _warmOn = true; requestAnimationFrame(warmStep); } }   // (world/scenery.js: each level's maps too)
 function warmLater(gl){ gl.scene.traverse(o => { if(o.isMesh) for(const m of [].concat(o.material)) warmTex(m); }); }
+// MEM 1 A MODEL NO BATTLE ASKS FOR LEAVES THE MEMORY: every model file stayed in its cache for good (its decoded maps in the page, ~16 MB a 2048²
+//   map) and PERF 4 sent each one's maps to the GPU the moment it loaded, drawn or not (the whole city set for one skyline, the props of a field long
+//   left), and Z396 frees only what the old field drew — battle after battle the Mac app reached 11 GB (GPU 6.4 + page 4.8) and the machine swapped
+//   (the "hang" entering the arctic). Each new field opens an epoch (modelEpoch, at gpuHeld); a model asked for (useModel: loadGLTF / loadModel /
+//   world/scenery.js sceneLevel) carries it. Once the new field stands (gpuRelease → releaseModels): a sent map neither drawn by the new field nor of a
+//   model it asked for leaves the GPU (its model goes "cold": asked for again, its maps are queued anew), and a model the new field neither asked for
+//   nor draws leaves its cache (and world/near-detail.js) — its next battle loads the file again. MEM_TRIM.on (?nomemtrim: before / after).
+const USE = {}, MEM = {}, WARMED = new Set(); let EP = 0;
+export const MODEL_MEM = { ep:0, released:0, dropped:0 };
+export function modelEpoch(){ MODEL_MEM.ep = ++EP; return EP; }
+export function useModel(k){ USE[k] = EP; const R = MEM[k]; if(R && R.cold){ R.cold = false; R.warm(); } }
+// a model in a cache: its maps (tagged with its key) and geometries, how to send its maps again, how to drop it from the cache
+export function memRegister(k, tex, geo, warm, forget){ MEM[k] = { tex, geo, cold:false, warm, forget }; for(const t of tex) t.userData.mk = k; }
+const texOf = root => { const tex = new Set(), geo = new Set(); root.traverse(o => { if(!o.isMesh) return; if(o.geometry) geo.add(o.geometry); for(const m of [].concat(o.material)) for(const k of TEXK){ const t = m && m[k]; if(t && t.isTexture) tex.add(t); } }); return { tex:[...tex], geo:[...geo] }; };
+export function releaseModels(now){ if(!MEM_TRIM.on) return 0; let n = 0, d = 0;
+  for(const t of WARMED){ if(now.t.has(t)) continue; const k = t.userData.mk; if(k && USE[k] === EP) continue; t.dispose(); t.userData.warm = 0; WARMED.delete(t); if(k && MEM[k]) MEM[k].cold = true; n++; }
+  for(const k of Object.keys(MEM)){ const R = MEM[k]; if(USE[k] === EP || R.tex.some(t => now.t.has(t)) || R.geo.some(g => now.g.has(g))) continue;
+    for(const t of R.tex){ if(WARMED.delete(t)) t.dispose(); t.userData.warm = 0; } for(const g of R.geo) g.dispose(); R.forget(); delete MEM[k]; delete USE[k]; d++; }
+  MODEL_MEM.released += n; MODEL_MEM.dropped += d; return n + d; }
 export function loadGLTF(key){
+  useModel(key);
   if(_gl[key]) return _gl[key];
   if(procOnly() || typeof window === 'undefined') return (_gl[key] = Promise.resolve(null));
   return (_gl[key] = loader().loadAsync(MODEL_FILES[key]).then(gl => {
-    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl); return gl;   // (Z395 its sharp maps while the camera is near)
+    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl);   // (Z395 its sharp maps while the camera is near)
+    const T = texOf(gl.scene); memRegister(key, T.tex, T.geo, () => warmLater(gl), () => { if(_gl[key] && MEM[key] && MEM[key].tex === T.tex){ delete _gl[key]; delete _load[key]; } nearForget(key); }); return gl;
   }).catch(e => { console.warn('[models]', key, 'not loaded — keeping the procedural one:', e && e.message); return null; })); }
 export function loadModel(key){
+  useModel(key);
   if(_load[key]) return _load[key];
   return (_load[key] = loadGLTF(key).then(gl => gl ? gl.scene : null)); }
 
