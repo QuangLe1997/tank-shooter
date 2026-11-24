@@ -21,16 +21,16 @@ export function updateAimFromMouse(cx, cy){
 }
 addEventListener('mousemove', e=>{ if(!MOBILE && !RDRAG.down) updateAimFromMouse(e.clientX, e.clientY); });   // (CAM 1 the gun stays put while the right button is held: a drag turns the view)
 addEventListener('mousedown', e=>{ if(MOBILE) return;
-  if(e.button===2){ RDRAG.down=true; RDRAG.moved=false; RDRAG.x=RDRAG.sx=e.clientX; RDRAG.y=RDRAG.sy=e.clientY; RDRAG.t=performance.now()/1000; return; }   // RMB: a drag turns the view, a tap is the skill (CAM 1)
+  if(e.button===2){ RDRAG.down=true; RDRAG.moved=false; RDRAG.zoomed=false; RDRAG.x=RDRAG.sx=e.clientX; RDRAG.y=RDRAG.sy=e.clientY; RDRAG.t=performance.now()/1000; return; }   // RMB: a drag turns the view, a tap is the skill (CAM 1)
   if(e.button===0 && S.mode==='playing'){ S.firing=true; soldierFire(performance.now()/1000, playerRange()); } });  // LMB = fire now + hold to repeat
 addEventListener('mouseup', e=>{ if(e.button===0) S.firing=false;
-  if(e.button===2 && RDRAG.down){ RDRAG.down=false; if(RDRAG.moved){ RDRAG.moved=false; document.body.classList.remove('cam-drag'); updateAimFromMouse(e.clientX, e.clientY); } else if(performance.now()/1000-RDRAG.t<CAM_FEEL.rdrag.tap) trySpell(); } });
+  if(e.button===2 && RDRAG.down){ RDRAG.down=false; if(RDRAG.moved){ RDRAG.moved=false; document.body.classList.remove('cam-drag'); updateAimFromMouse(e.clientX, e.clientY); } else if(!RDRAG.zoomed && performance.now()/1000-RDRAG.t<CAM_FEEL.rdrag.tap) trySpell(); } });   // (CAM 2 a press that zoomed is not a click)
 addEventListener('blur', ()=>{ S.firing=false; if(RDRAG.down){ RDRAG.down=false; RDRAG.moved=false; document.body.classList.remove('cam-drag'); } });
 // CAM 1 RIGHT-BUTTON DRAG TURNS THE VIEW ("giữ phím chuột phải và kéo xoay trên nền để đổi góc camera xoay tự nhiên"): held and moved past
 //   CAM_FEEL.rdrag.px it becomes a drag — sideways turns the view round the soldier (as the middle button does), up / down tilts the lens lower /
 //   higher (CAM_FEEL.tilt); the gun holds its aim meanwhile and picks the cursor up again on release. A press let go inside rdrag.tap s that never
 //   moved is still the skill (it was on the press: now on the release, a click is still a click)
-export const RDRAG={ down:false, moved:false, x:0, y:0, sx:0, sy:0, t:0 };
+export const RDRAG={ down:false, moved:false, zoomed:false, x:0, y:0, sx:0, sy:0, t:0 };
 addEventListener('mousemove', e=>{ if(!RDRAG.down || MOBILE) return;
   if(!RDRAG.moved && Math.hypot(e.clientX-RDRAG.sx, e.clientY-RDRAG.sy)>CAM_FEEL.rdrag.px){ RDRAG.moved=true; document.body.classList.add('cam-drag'); }
   if(RDRAG.moved){ yawBy(-(e.clientX-RDRAG.x)*CAM_FEEL.orbit); tiltBy((e.clientY-RDRAG.y)*CAM_FEEL.tilt.k); }
@@ -41,6 +41,7 @@ addEventListener('contextmenu', e=>e.preventDefault());
 let _gunWheel=0;
 addEventListener('wheel', e=>{ if(S.mode!=='playing' && S.mode!=='countdown') return;
   const dx=e.deltaX, dy=e.deltaY, px=e.deltaMode===1?16:1;   // line-mode wheels (Firefox) → pixels
+  if(RDRAG.down && !MOBILE){ if(e.cancelable) e.preventDefault(); const d=Math.abs(dy)>=Math.abs(dx) ? dy : dx; if(d){ RDRAG.zoomed=true; setZoom(S.zoomT*Math.exp(d*px*CAM_FEEL.wheelZoom*CAM_FEEL.rdrag.zoomK)); } return; }   // CAM 2 right button held + wheel: the camera nearer (up) / farther (down), not a gun change
   if(e.ctrlKey || e.shiftKey){ if(e.cancelable) e.preventDefault(); const d=(e.shiftKey && !e.ctrlKey && !dy) ? dx : dy;   // macOS turns shift+wheel into deltaX
     setZoom(S.zoomT*Math.exp(d*px*CAM_FEEL.wheelZoom*(e.ctrlKey?4:1))); return; }
   if(Math.abs(dx)>Math.abs(dy)*1.2){ if(e.cancelable) e.preventDefault(); yawBy(dx*px*CAM_FEEL.orbit*0.5); return; }
