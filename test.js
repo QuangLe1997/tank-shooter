@@ -2272,6 +2272,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     && /mat\.customProgramCacheKey=\(\)=>'macroGround5'\+liteKey\(\)/.test(gr) && (gr.match(/liteDefs\(\) \+/g)||[]).length===3, 'the ground\'s lighter reads are on, switched per layer, in every tiling branch, in the program key');
   ok(/if\(!pr\.perfCal6\)\{ pr\.perfCal6=true; delete pr\.perfDpr; delete pr\.perfAO; \}/.test(pf), 'the governor\'s old cuts are given back once'); }
 
+// NEW BATTLEFIELD SHOTS: every battlefield's card picture (assets/maps/<name>.webp, ui/battle-setup.js mapShot) re-shot in a real battle (no tanks, no
+//   flags), 1280×720; the four pictures of battlefields long merged away (hills, steelmill, tundra, village) are gone
+{ const fs=await import('node:fs');
+  const names=['desert','ruins','arctic','foundry','citadel','meadow','city','savanna','volcano','quarry'], files=fs.readdirSync('assets/maps');
+  ok(names.every(n=>files.includes(n+'.webp')) && !['hills','steelmill','tundra','village'].some(n=>files.includes(n+'.webp')) && files.filter(f=>f.endsWith('.webp')).length===10, 'one picture per battlefield, none for the merged ones'); }
+
 // PERF 9 the heavy battlefields on a diet: the woods past the fence reach DIET.forest.near m with at most DIET.forest.max trees and take no shadow; the
 //   grass carpet DIET.grass.R m round the camera at DIET.grass.perCell a cell; each land keeps DIET.flora of its bushes, reeds, hay and tufts (not its trees)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), D=C.DIET, fo=R('src/world/forest.js'), gc=R('src/world/grass-carpet.js'), fl=R('src/world/flora.js');
