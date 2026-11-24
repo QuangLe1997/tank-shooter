@@ -940,7 +940,7 @@ export const GRASS = { far:{ cover:0.92, rim0:0.55, rim1:0.95, k:1.0 }, trans:1.
 //   light / dark steers them; mobile = phones too (their second set and second scale take one turned lookup instead of their own lattice); hexPer = a
 //   battlefield's own s / rot. nrmVar = how far the relief's strength drifts over the field (0 = even)
 export const GROUND_PHOTO = { dual:0.45, nrm:0.9, altRep:0.8, patchK:0.55, noTile:true, ntFreq:0.32, hi:true,
-  hex:{ on:true, mobile:true, s:0.7, rot:0, exp:5, con:0.6 }, nrmVar:0.35, hexPer:{},   // Z263 stochastic sampling (no repeat grid); ntFreq = patches per photo tile; hi = the base set at 2K (colour + normal) off phones
+  hex:{ on:true, mobile:true, s:0.7, rot:0, exp:5, con:0.6, lite:{ alt:1, dual:1, nrm:1 } }, nrmVar:0.35, hexPer:{},   // Z263 stochastic sampling (no repeat grid); ntFreq = patches per photo tile; hi = the base set at 2K (colour + normal) off phones
   // albedo × per battlefield: the scene's sun and exposure were tuned for the darker procedural ground — a photo albedo needs bringing down
   tint:{ _:[0.58, 0.6, 0.54], MEADOW:[0.9, 1.0, 0.72], HILLS:[0.47, 0.6, 0.39], VILLAGE:[0.52, 0.6, 0.44], SAVANNA:[0.7, 0.6, 0.5], DESERT:[0.76, 0.64, 0.5],
     TUNDRA:[0.8, 0.83, 0.88], ARCTIC:[0.84, 0.87, 0.92], CITY:[0.66, 0.66, 0.66], FOUNDRY:[1.02, 0.97, 0.92], STEELMILL:[1.02, 0.97, 0.92], VOLCANO:[0.72, 0.66, 0.62] },   // Z394 the works' concrete is a darker photo; the volcano's scree under its red light

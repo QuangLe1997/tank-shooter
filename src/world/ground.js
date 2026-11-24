@@ -138,27 +138,32 @@ vec3 hxWeigh(vec3 w, vec4 a, vec4 b, vec4 c){ vec3 L = vec3(dot(a.rgb, vec3(0.29
 vec4 hxMap(sampler2D s, vec2 st){ vec3 w; vec2 V[3]; hxGrid(st * hxP.x, w, V[0], V[1], V[2]); hxDX = dFdx(st); hxDY = dFdy(st); vec4 c[3];
   for(int i = 0; i < 3; i++){ mat2 R = hxRot(V[i]); vec2 ce = hxCen(V[i]), h = hxHash(V[i]); hxR[i] = R; hxU[i] = R * (st - ce) + ce + h; c[i] = textureGrad(s, hxU[i], R * hxDX, R * hxDY); }
   hxW = hxWeigh(w, c[0], c[1], c[2]); return hxW.x * c[0] + hxW.y * c[1] + hxW.z * c[2]; }
-vec4 hxNrm(sampler2D s, vec2 st){ if(hxW.x + hxW.y + hxW.z < 0.5) return texture2D(s, st); vec3 n = vec3(0.0);
+vec4 hxNrm(sampler2D s, vec2 st){ if(hxW.x + hxW.y + hxW.z < 0.5) return texture2D(s, st);
+#ifdef GR_LITE_NRM
+  { int k = hxW.x > hxW.y ? (hxW.x > hxW.z ? 0 : 2) : (hxW.y > hxW.z ? 1 : 2); vec3 t = textureGrad(s, hxU[k], hxR[k] * hxDX, hxR[k] * hxDY).xyz * 2.0 - 1.0; t.xy = t.xy * hxR[k]; return vec4(normalize(t) * 0.5 + 0.5, 1.0); }
+#endif
+  vec3 n = vec3(0.0);
   for(int i = 0; i < 3; i++){ vec3 t = textureGrad(s, hxU[i], hxR[i] * hxDX, hxR[i] * hxDY).xyz * 2.0 - 1.0; t.xy = t.xy * hxR[i]; n += hxW[i] * t; }   // (xy · R = the normal turned back by the hex's own turn)
   return vec4(normalize(n) * 0.5 + 0.5, 1.0); }
 vec4 hxDom(sampler2D s, vec2 st){ if(hxW.x + hxW.y + hxW.z < 0.5) return texture2D(s, st); int k = hxW.x > hxW.y ? (hxW.x > hxW.z ? 0 : 2) : (hxW.y > hxW.z ? 1 : 2);
   return textureGrad(s, hxU[k], hxR[k] * hxDX, hxR[k] * hxDY); }
+vec4 hxTex1(sampler2D s, vec2 st){ return texture2D(s, mat2(0.8, 0.6, -0.6, 0.8) * st); }
 #ifdef HX_CHEAP
-vec4 hxTex(sampler2D s, vec2 st){ return texture2D(s, mat2(0.8, 0.6, -0.6, 0.8) * st); }
+vec4 hxTex(sampler2D s, vec2 st){ return hxTex1(s, st); }
 #else
 vec4 hxTex(sampler2D s, vec2 st){ vec3 w; vec2 V[3]; hxGrid(st * hxP.x, w, V[0], V[1], V[2]); vec2 dx = dFdx(st), dy = dFdy(st); vec4 c[3];
   for(int i = 0; i < 3; i++){ mat2 R = hxRot(V[i]); vec2 ce = hxCen(V[i]), h = hxHash(V[i]); c[i] = textureGrad(s, R * (st - ce) + ce + h, R * dx, R * dy); }
   vec3 W = hxWeigh(w, c[0], c[1], c[2]); return W.x * c[0] + W.y * c[1] + W.z * c[2]; }
 #endif
 `;
-const HX_PLAIN = `float hxNv = 1.0; vec4 hxTex(sampler2D s, vec2 st){ return texture2D(s, st); }\n`;
+const HX_PLAIN = `float hxNv = 1.0; vec4 hxTex(sampler2D s, vec2 st){ return texture2D(s, st); } vec4 hxTex1(sampler2D s, vec2 st){ return texture2D(s, st); }\n`;
 function noTile(fs){ const C = THREE.ShaderChunk, H = GROUND_PHOTO.hex || {};
-  if(GROUND_PHOTO.noTile && H.on && (!MOBILE || H.mobile)) return fs.replace('#include <common>', '#include <common>\n' + (MOBILE ? '#define HX_CHEAP\n' : '') + HX_GLSL)   // Z405
+  if(GROUND_PHOTO.noTile && H.on && (!MOBILE || H.mobile)) return fs.replace('#include <common>', '#include <common>\n' + liteDefs() + (MOBILE ? '#define HX_CHEAP\n' : '') + HX_GLSL)   // Z405 (PERF 6 the lite switches first)
     .replace('#include <map_fragment>', C.map_fragment.replace('texture2D( map, vMapUv )', 'hxMap( map, vMapUv )'))
     .replace('#include <normal_fragment_maps>', C.normal_fragment_maps.split('texture2D( normalMap, vNormalMapUv )').join('hxNrm( normalMap, vNormalMapUv )').replace('mapN.xy *= normalScale;', 'mapN.xy *= normalScale * hxNv;'))
     .replace('#include <roughnessmap_fragment>', C.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'hxDom( roughnessMap, vRoughnessMapUv )'));
-  if(!GROUND_PHOTO.noTile) return fs.replace('#include <common>', '#include <common>\n' + HX_PLAIN);
-  return fs.replace('#include <common>', '#include <common>\n' + NT_GLSL + HX_PLAIN)
+  if(!GROUND_PHOTO.noTile) return fs.replace('#include <common>', '#include <common>\n' + liteDefs() + HX_PLAIN);
+  return fs.replace('#include <common>', '#include <common>\n' + liteDefs() + NT_GLSL + HX_PLAIN)
     .replace('#include <map_fragment>', C.map_fragment.replace('texture2D( map, vMapUv )', 'ntTex( map, vMapUv )'))
     .replace('#include <normal_fragment_maps>', C.normal_fragment_maps.split('texture2D( normalMap, vNormalMapUv )').join('ntTex( normalMap, vNormalMapUv )'))
     .replace('#include <roughnessmap_fragment>', C.roughnessmap_fragment.replace('texture2D( roughnessMap, vRoughnessMapUv )', 'ntTex( roughnessMap, vRoughnessMapUv )'))
@@ -175,12 +180,17 @@ const DECAL_GLSL = `{ vec2 duv = vec2(vWXZ.x * decalK + 0.5, 0.5 - vWXZ.y * deca
     vec3 c = mix(diffuseColor.rgb, diffuseColor.rgb * contCol, verge * 0.5); float far = smoothstep(0.06, 0.45, length(fwidth(vWXZ))); c = mix(c, tc, max(body * (1.0 - trailK.z * (1.0 - far)), rut)); diffuseColor.rgb = c * (1.0 - rut * trailK.w); } }`;   // Z432 the trail: gravel over its worn body, its edge ragged with the stones' own light, the ruts bare and dark, the verge trodden; from afar (a pixel tens of cm wide) the whole width reads as the worn strip   // Z400 trodden earth round what stands here, shade tight under it
 function decalGround(sh){ sh.uniforms.decalS = DECAL_U.decalS; sh.uniforms.decalD = DECAL_U.decalD; sh.uniforms.decalK = DECAL_U.decalK; sh.uniforms.decalC = DECAL_U.decalC; sh.uniforms.contCol = DECAL_U.contCol; sh.uniforms.contK = DECAL_U.contK; sh.uniforms.trailMap = DECAL_U.trailMap; sh.uniforms.trailK = DECAL_U.trailK; sh.uniforms.trailCol = DECAL_U.trailCol;
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D decalS, decalD, decalC, trailMap; uniform float decalK; uniform vec3 contCol, trailCol; uniform vec2 contK; uniform vec4 trailK;').replace('#include <color_fragment>', '#include <color_fragment>\n' + DECAL_GLSL); }
+// PERF 6 THE GROUND'S LIGHTER READS (GROUND_PHOTO.hex.lite): the floor read ~23 textures a pixel, three of them per layer for the no-repeat hexes —
+//   alt: the second photo set in one turned lookup, dual: the base at its second scale in one turned lookup (both are blended in by masks, their
+//   repeats never line up), nrm: the normal from the strongest of the three hexes (as roughness already was); the base colour keeps its three
+const liteKey = () => { const L = (GROUND_PHOTO.hex || {}).lite || {}; return '|L' + (L.alt ? 'a' : '') + (L.dual ? 'd' : '') + (L.nrm ? 'n' : ''); };
+function liteDefs(){ const L = (GROUND_PHOTO.hex || {}).lite || {}; return (L.nrm ? '#define GR_LITE_NRM\n' : '') + '#define HX_ALT(s, st) ' + (L.alt ? 'hxTex1' : 'hxTex') + '(s, st)\n#define HX_DUAL(s, st) ' + (L.dual ? 'hxTex1' : 'hxTex') + '(s, st)\n'; }
 export function macroGround(mat){
   mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
     sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.hxP=PHOTO_U.hex; sh.uniforms.wetK=WET_U.k; sh.uniforms.nrmVar=PHOTO_U.nrmVar; sh.uniforms.grassCol=GRASS_FAR.col; sh.uniforms.grassC=GRASS_FAR.c; sh.uniforms.grassK=GRASS_FAR.k; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief; varying vec2 vWXZ; varying float vWY;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief; vWXZ = mwp.xz; vWY = mwp.y;');
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;\nuniform sampler2D altMap; uniform float altOn, altScale, dual, nrmVar; varying vec2 vWXZ;\nuniform vec3 grassCol; uniform vec4 grassC, grassK; uniform vec4 wetK; varying float vWY; float wetR = 0.0;')
-      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = hxTex(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, hxTex(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\nhxNv = clamp(1.0 + nrmVar*(texture2D(macroMap, vMacroUv*3.7 + 0.31).b*2.0 - 1.0)*1.8, 0.3, 1.8);\n#endif\n{ float gw = grassK.x * smoothstep(grassC.z, grassC.w, distance(vWXZ, grassC.xy)); if(gw > 0.001){ float gl = clamp(dot(diffuseColor.rgb, vec3(0.333)) / max(grassK.y, 1e-3), 0.55, 1.5); diffuseColor.rgb = mix(diffuseColor.rgb, grassCol * gl, gw); } }\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL+'\n{ wetR = wetK.y * (1.0 - smoothstep(wetK.x, wetK.x + wetK.z, vWY)); diffuseColor.rgb *= 1.0 - wetK.w * wetR; }').replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.3, wetR * 0.85);'); sh.fragmentShader=noTile(sh.fragmentShader); };   // Z405 the wet banks
+      .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = HX_ALT(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, HX_DUAL(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\nhxNv = clamp(1.0 + nrmVar*(texture2D(macroMap, vMacroUv*3.7 + 0.31).b*2.0 - 1.0)*1.8, 0.3, 1.8);\n#endif\n{ float gw = grassK.x * smoothstep(grassC.z, grassC.w, distance(vWXZ, grassC.xy)); if(gw > 0.001){ float gl = clamp(dot(diffuseColor.rgb, vec3(0.333)) / max(grassK.y, 1e-3), 0.55, 1.5); diffuseColor.rgb = mix(diffuseColor.rgb, grassCol * gl, gw); } }\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL+'\n{ wetR = wetK.y * (1.0 - smoothstep(wetK.x, wetK.x + wetK.z, vWY)); diffuseColor.rgb *= 1.0 - wetK.w * wetR; }').replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.3, wetR * 0.85);'); sh.fragmentShader=noTile(sh.fragmentShader); };   // Z405 the wet banks
   { const f0=mat.onBeforeCompile; mat.onBeforeCompile=(sh, r)=>{ f0(sh, r); decalGround(sh); }; }
-  mat.customProgramCacheKey=()=>'macroGround5'; return mat;
+  mat.customProgramCacheKey=()=>'macroGround5'+liteKey(); return mat;
 }
