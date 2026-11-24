@@ -411,7 +411,7 @@ export const ROSTER = {
 // ============================================================================
 export const OPERATIONS = [
   { title:'CHIẾN DỊCH BÃO CÁT', code:'SANDSTORM', obj:'depot', script:{ 2:'ambush', 4:'column' },
-    story:'Rạng sáng, Liên minh Hắc Thiết vượt biên dưới màn bão cát. Tiền đồn Sao Đỏ chỉ còn một Lõi năng lượng — và Đại đội Thép 7 của anh.',
+    story:'Rạng sáng, Liên minh Hắc Thiết vượt biên dưới màn bão cát. Tiền đồn Sao Đỏ chỉ còn một Lõi năng lượng — và tổ xung kích của anh.',
     brief:'Bộ binh địch đang tập kết sau đồi cát. Giữ Lõi, đốt kho nhiên liệu đang tiếp sức cho trực thăng và viện binh của chúng.',
     radio:{ 1:'Phát hiện địch phía trước — bộ binh trong đồi cát!', 2:'Chúng đang băng qua bãi trống. Bắn chặn!', 3:'Trinh sát báo: chúng có một chỉ huy tên "Bò Thép".', 4:'Một đoàn bộ binh trên đường phía đông!', 5:'Đợt cuối trước khi Bò Thép ra mặt. Giữ vững!' },
     win:'Kho nhiên liệu cháy rồi — trực thăng của chúng sắp nằm đất!' },
@@ -433,7 +433,7 @@ export const OPERATIONS = [
   { title:'CHIẾN DỊCH THÀNH LUỸ CUỐI', code:'LAST CITADEL', obj:'command', script:{ 1:'ambush', 3:'airraid', 5:'column' },
     story:'Hầm chỉ huy của Hắc Thiết nằm sau thành luỹ cuối cùng. BẠO CHÚA — kẻ khơi mào cuộc chiến — đang chờ. Kết thúc hắn, và chiến tranh kết thúc hôm nay.',
     brief:'Đây là hầm chỉ huy của chúng. Mọi thứ còn lại của Hắc Thiết dồn cả về đây. Phá nó, chiến tranh sẽ kết thúc.',
-    radio:{ 1:'Chúng đã chờ sẵn — phục kích!', 2:'Giữ Lõi. Bằng mọi giá.', 3:'Toàn bộ trực thăng của chúng đã cất cánh!', 4:'Đại đội Thép 7, cả nước đang dõi theo các anh.', 5:'Đợt cuối cùng của chúng. Chính là lúc này.' },
+    radio:{ 1:'Chúng đã chờ sẵn — phục kích!', 2:'Giữ Lõi. Bằng mọi giá.', 3:'Toàn bộ trực thăng của chúng đã cất cánh!', 4:'Tổ xung kích, cả nước đang dõi theo các anh.', 5:'Đợt cuối cùng của chúng. Chính là lúc này.' },
     win:'Hầm chỉ huy sập rồi — phòng tuyến địch đang tan vỡ!' },
 ];
 export const OBJECTIVES = {
@@ -468,10 +468,10 @@ export const ENV = {
 // ----- STAGE CONTRACTS: pre-stage strategic choice (pick 1 of 3 each stage; applies for that stage only).
 // mods are read live at use-sites via cMod() — pure data, no runtime coupling. Every contract is a risk/reward. -----
 export const CONTRACTS = [
-  { id:'steady',  name:'TIẾN CHẮC',      icon:'shield', tag:'AN TOÀN',   desc:'Trận bình thường · không thêm rủi ro',               mods:{} },
-  { id:'glass',   name:'PHÁO THUỶ TINH', icon:'burst',  tag:'RỦI RO CAO', desc:'+40% sát thương của bạn · địch +30% sát thương',           mods:{ playerDmgMul:1.4, enemyDmgMul:1.3 } },
-  { id:'elite',   name:'SĂN TINH NHUỆ',  icon:'shell',  tag:'TINH NHUỆ', desc:'Mỗi đợt 1 lính tinh nhuệ · +50% đồ rơi · địch +10% máu',  mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
-  { id:'scav',    name:'NHẶT NHẠNH',     icon:'mag',    tag:'ĐỒ RƠI',    desc:'×2 đồ rơi (cày súng/cấp) · địch +20% sát thương', mods:{ lootChanceMul:2, enemyDmgMul:1.2 } },
+  { id:'steady',  name:'Tiến chắc',      icon:'shield', tag:'An toàn',   desc:'Trận bình thường, không thêm rủi ro',               mods:{} },
+  { id:'glass',   name:'Pháo thuỷ tinh', icon:'burst',  tag:'Rủi ro cao', desc:'Bạn +40% sát thương, địch +30% sát thương',           mods:{ playerDmgMul:1.4, enemyDmgMul:1.3 } },
+  { id:'elite',   name:'Săn tinh nhuệ',  icon:'shell',  tag:'Tinh nhuệ', desc:'Mỗi đợt một lính tinh nhuệ, +50% đồ rơi, địch +10% máu',  mods:{ eliteEveryWave:true, lootChanceMul:1.5, enemyHpMul:1.1 } },
+  { id:'scav',    name:'Nhặt nhạnh',     icon:'mag',    tag:'Đồ rơi',    desc:'Gấp đôi đồ rơi, địch +20% sát thương', mods:{ lootChanceMul:2, enemyDmgMul:1.2 } },
 ];
 
 
@@ -1382,6 +1382,9 @@ export const PAD_CFG = { def:{ vib:true, vibK:0.8, dead:0.15, assist:true, swapA
 // Z145 TURRET TRAVERSE: the gun swings at a real, capped rate (rad/s) — mouse a little quicker than the stick — and the player sets the speed
 //   (PROFILE.turretK, Settings → TỐC ĐỘ XOAY NÒNG: presets or ± 10% steps)
 export const TURRET = { rate:2.6, k:9, min:0.3, max:2.5, step:0.1, steps:[['CHẬM',0.6],['VỪA',1],['NHANH',1.5]] };
+// XK-UI SETTINGS DEFAULTS — Cài đặt → Mặc định puts the open tab back to these (the pad's own are PAD_CFG.def, the HUD's live in ui/hud-prefs.js,
+//   the shake's SHAKE.def). fps: 'auto' | '60' | '30' (game/loop.js paceMode). (TURRET above is no longer read: the soldier has no turret, its row left Settings.)
+export const SETTINGS_DEF = { difficulty:'soldier', quality:'high', fps:'auto', sfxVol:'mid', ctrl:'screen', camStyle:'cine' };
 export const PAD_HELP = [
   ['Cần trái', 'Đi (theo màn hình, hoặc xoay thân nếu chọn trong Cài đặt)'], ['Cần phải', 'Ngắm — thả ra: tự ngắm địch gần nhất. Súng phóng lựu M79: ←→ xoay hướng, ↑↓ chỉnh tầm ném'],
   ['RT', 'Bắn (giữ = liên thanh)'], ['LT', 'Dùng kỹ năng'], ['A', 'Bứt tốc / phi nước đại'], ['B', 'Xuống / lên xe'], ['X', 'Đổi kỹ năng'], ['Y', 'Bật / tắt tự bắn'],

@@ -5,12 +5,12 @@ export const RANK = { tab:'week', from:'start', cache:{} };
 // same week key as the server (Vietnam time, ISO week)
 export function rankWeek(ms){ const d=new Date((ms||Date.now())+7*3600e3); const day=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-day+3);
   const y=d.getUTCFullYear(), w1=new Date(Date.UTC(y,0,4)), wk=1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7); return y+'-W'+String(wk).padStart(2,'0'); }
-const lvlTxt=l=>l>0 ? 'MÀN '+l : '';
+const lvlTxt=l=>l>0 ? 'Màn '+l : '';
 function row(i, r, me){ const d=document.createElement('div'); d.className='rk-row'+(i<3?' top'+(i+1):'')+(me?' me':'');
   d.innerHTML='<div class="rk-n">'+(i+1)+'</div><div class="rk-nm">'+escapeHtml(r.name||'?')+'</div><div class="rk-lv">'+lvlTxt(r.level|0)+'</div><div class="rk-sc">'+(r.score|0).toLocaleString('vi-VN')+'</div>'; return d; }
 function msg(t){ const b=document.getElementById('rankBody'); if(b) b.innerHTML='<div class="rk-msg">'+escapeHtml(t)+'</div>'; }
-export async function renderRanking(){ document.querySelectorAll('#ranking .rank-tab').forEach(t=>t.classList.toggle('on', t.dataset.rt===RANK.tab));
-  const wk=rankWeek(), wl=document.getElementById('rankWeek'); if(wl) wl.textContent = RANK.tab==='week' ? 'TUẦN '+wk.split('-W')[1]+' · '+wk.split('-')[0] : 'TẤT CẢ CÁC MÙA';
+export async function renderRanking(){ document.querySelectorAll('#ranking .rank-tab').forEach(t=>{ t.classList.toggle('on', t.dataset.rt===RANK.tab); t.setAttribute('aria-selected', t.dataset.rt===RANK.tab?'true':'false'); });
+  const wk=rankWeek(), wl=document.getElementById('rankWeek'); if(wl) wl.textContent = RANK.tab==='week' ? 'Tuần '+(+wk.split('-W')[1])+', năm '+wk.split('-')[0] : 'Mọi mùa giải';
   const F=cloudFB(); if(!F || !CLOUDSAVE.uid){ msg(navigator.onLine===false ? 'Cần kết nối mạng để xem bảng xếp hạng.' : 'Đang kết nối máy chủ…'); if(!F) initCloud(); return; }
   msg('Đang tải…'); const { FS, db }=F, tab=RANK.tab;
   try{ const col = tab==='week' ? FS.collection(db,'lbw',wk,'e') : FS.collection(db,'lb');

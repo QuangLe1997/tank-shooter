@@ -46,7 +46,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
   } }
 
 // ---- MENUS: one focus ring for keyboard and pad ----
-const FOCUSABLE='.btn, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .shop-tab, .case, .dp-step, .guide-row, .bind-chip, #upcards > *, #relicCards > *, .gcard, [data-pad]';
+const FOCUSABLE='.btn, .xb, .xs-opt, .xk-tab, .seg-chip, .bs-mode, .bs-op, .bs-map, .bs-lv, .brcard, .ldcard, .shop-tab, .case, .dp-step, .guide-row, .bind-chip, #upcards > *, #relicCards > *, .gcard, [data-pad]';
 export function menuRoot(){ if(S.mode==='playing' && !document.body.classList.contains('shopopen')) return null; const L=[...document.querySelectorAll('.overlay:not(.hidden)')]; return L[L.length-1]||null; }
 export function navItems(root){ return [...root.querySelectorAll(FOCUSABLE)].filter(el=>{ if(el.offsetParent===null) return false; const r=el.getBoundingClientRect(); return r.width>10 && r.height>10; }); }
 export const NAV={ focus:null, kb:false, sig:null };
@@ -59,12 +59,12 @@ function restoreFocus(root, L){ const g=NAV.sig; if(!g || !g.cid) return null; c
 export function setFocus(el, quiet){ if(NAV.focus===el) return; clearFocus(); if(!el) return; NAV.focus=el; NAV.sig=focusSig(el); el.classList.add('padfocus'); try{ el.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){} if(!quiet) sfx('click'); }
 export function ensureFocus(root){ const L=navItems(root); if(!L.length) return null; navHintFor(root); if(NAV.focus && L.includes(NAV.focus)) return L;
   const back=restoreFocus(root, L); if(back){ setFocus(back, true); return L; }
-  const pri=[...root.querySelectorAll('.btn-primary')].find(el=>L.includes(el));
+  const pri=[...root.querySelectorAll('.btn-primary, .xb-pri')].find(el=>L.includes(el));
   const fs=PAD_FIRST[root.id], first = fs ? L.find(el=>el.matches(fs)) : null;   // Z127 land on the choices, not on the start button (a double A used to launch blind)
   setFocus(first||pri||L[0], true); return L; }
 // the bottom hint changes per screen (the battle setup has a start shortcut)
 const HINT_PAD={ battleSetup:'Ⓐ Chọn · LB/RB Đổi chế độ · ☰ VÀO TRẬN · Ⓑ Quay lại', loadout:'Ⓐ Chọn / bỏ súng · Ⓨ ★ đặt làm súng mặc định · Ⓑ Xong', deploy:'Ⓐ / → thêm quân · ← bớt quân · ↑↓ chọn điểm · ☰ XUẤT KÍCH · Ⓑ Quay lại' };
-export const PAD_FIRST={ battleSetup:'#battleSetup[data-step="1"] .su-mode.on, #battleSetup[data-step="2"] .su-ride.on, .bs-mode.on', deploy:'.dp-step', trainInvite:'#tiGo', trialShow:'#tsCampaign' };      // where the ring starts on a screen
+export const PAD_FIRST={ battleSetup:'#battleSetup[data-step="1"] .su-mode.on, #battleSetup[data-step="2"] .su-ride.on, .bs-mode.on', deploy:'.dp-step', trainInvite:'#tiGo', trialShow:'#tsCampaign', settings:'.xk-tab.on', ranking:'.xk-tab.on', xkConfirm:'#xkcNo' };   // XK-UI a question starts on its safe answer      // where the ring starts on a screen
 export const PAD_GO={ battleSetup:'#bsGo', deploy:'#dp-go' };                  // ☰ Menu = the screen's start button (A only ever PICKS, so one A can never also launch)
 let _hintDef=null, _hintRoot=null;
 function navHintFor(root){ if(_hintRoot===root.id) return; _hintRoot=root.id; const h=document.querySelector('#navHint .nh-pad'); if(!h) return; if(_hintDef===null) _hintDef=h.textContent; h.textContent=HINT_PAD[root.id]||_hintDef; }
@@ -80,10 +80,12 @@ export function menuMove(root, dir){ const L=ensureFocus(root); if(!L) return;
 export function menuCycle(root, step){ const L=ensureFocus(root); if(!L) return; const i=L.indexOf(NAV.focus); setFocus(L[(i+step+L.length)%L.length]); }
 export function menuSelect(root){ ensureFocus(root); if(NAV.focus){ if(NAV.focus.classList.contains('dp-step')){ const b=NAV.focus.querySelectorAll('.s'); if(b.length) b[b.length-1].click(); return; } NAV.focus.click(); } }
 let _mbBusy=false;   // Z139 the Escape fallback re-enters menuBack through the keydown handler — without this a screen with no 'back' button recursed until the stack blew
-export function menuBack(root){ if(_mbBusy) return; _mbBusy=true; try{ const L=navItems(root); const back=L.find(el=>/QUAY LẠI|VỀ MENU|MENU CHÍNH|◀|XONG|ĐÓNG|TIẾP TỤC|ĐÃ HIỂU/i.test(el.textContent||''));
+// XK-UI a screen marks its way back with data-back (the higher number wins: the battle setup's step back over its Trang chủ); the old text match stays for the rest
+export function menuBack(root){ if(_mbBusy) return; _mbBusy=true; try{ const L=navItems(root); const marked=[...root.querySelectorAll('[data-back]')].filter(el=>el.offsetParent!==null && !el.hidden).sort((a,b)=>(+b.dataset.back||1)-(+a.dataset.back||1))[0];
+  const back=marked || L.find(el=>/QUAY LẠI|VỀ MENU|MENU CHÍNH|◀|XONG|ĐÓNG|TIẾP TỤC|ĐÃ HIỂU/i.test(el.textContent||''));
   if(back){ back.click(); return; } if(S.mode==='paused'){ togglePause(); return; } dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); } finally{ _mbBusy=false; } }
 // LB / RB (or Q / E in menus): switch between the tabs of a screen (shop categories, battle-setup modes, settings segments)
-export function menuTab(root, step){ const tabs=[...root.querySelectorAll('.shop-tab, .bs-mode')].filter(el=>el.offsetParent!==null); if(tabs.length<2) return false;
+export function menuTab(root, step){ const tabs=[...root.querySelectorAll('.shop-tab, .bs-mode, .xk-tab')].filter(el=>el.offsetParent!==null); if(tabs.length<2) return false;
   let i=tabs.findIndex(t=>t.classList.contains('on')||t.classList.contains('active')); if(i<0) i=0; tabs[(i+step+tabs.length)%tabs.length].click(); sfx('click'); return true; }
 
 // ---- REBIND capture (the key sheet's "change key" chips) ----

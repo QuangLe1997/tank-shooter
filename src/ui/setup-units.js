@@ -3,7 +3,7 @@
 //   honest bars (how quick, how tough, how wide he can fire) and what the driver does for him. Every picture is a photo from the game (assets/units).
 //   Also the loadout chips in the footer and the "ĐỘI HÌNH XUẤT KÍCH" strip on the briefing.
 import { TROOPER } from '../../config.js';
-import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, gunPicEl, saveProfile, sfx, tapEl } from '../hub.js';
+import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, capVi, gunPicEl, saveProfile, sfx, tapEl } from '../hub.js';
 
 const PIC = k => 'assets/units/' + k + '.webp';
 export const RIDES = {
@@ -16,7 +16,7 @@ export const TROOPERS = {
   s2: { nm:'LÍNH ĐẶC NHIỆM', sub:'giáp đủ đồ · kính nhìn đêm · tai nghe' },
   op: { nm:'LÍNH THÉP', sub:'rằn ri · ba lô chiến đấu · operator cũ' },
 };
-const BARS = ['CƠ ĐỘNG', 'BỀN', 'GÓC BẮN'];
+const BARS = ['Cơ động', 'Độ bền', 'Góc bắn'];
 let _pgX = 0;   // (Z411 where the row of guns was slid to)
 const rideOf = () => RIDES[PROFILE.unit] ? PROFILE.unit : (PROFILE.lastRide && RIDES[PROFILE.lastRide] ? PROFILE.lastRide : 'xeom');
 const trooperOf = () => TROOPERS[PROFILE.trooper] ? PROFILE.trooper : 's2';
@@ -26,22 +26,22 @@ const pips = (n, of = 5) => '<span class="su-pips">' + Array.from({ length:of },
 // ---- ② TRANG BỊ ----
 export function renderGear(host, refresh){ host.replaceChildren(); soldierGear(host, refresh); }
 function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = trooperOf(), rd = rideOf();
-  const men = el('div', 'su-col su-men'); men.appendChild(el('div', 'su-h', 'NGƯỜI LÍNH <small>· ngoại hình, sức mạnh như nhau</small>'));
+  const men = el('div', 'su-col su-men'); men.appendChild(el('div', 'su-h', 'Người lính <small>khác ngoại hình, sức mạnh như nhau</small>'));
   const mg = el('div', 'su-mgrid'); for(const [k, T] of Object.entries(TROOPERS)){ const c = el('div', 'su-man' + (k === tr ? ' on' : '')); c.dataset.pad = '1'; c.appendChild(img(PIC(k), 'su-ph'));
-    c.appendChild(el('div', 'su-cap', '<b>' + T.nm + '</b><small>' + T.sub + '</small>')); tapEl(c, () => { PROFILE.trooper = k; saveProfile(); sfx('click'); refresh(); }); mg.appendChild(c); }
+    c.appendChild(el('div', 'su-cap', '<b>' + capVi(T.nm) + '</b><small>' + T.sub + '</small>')); tapEl(c, () => { PROFILE.trooper = k; saveProfile(); sfx('click'); refresh(); }); mg.appendChild(c); }
   men.appendChild(mg); const S0 = TROOPER.squad.start.map(r => r === 'mg' ? 'xạ thủ máy' : r === 'medic' ? 'y tá' : r).join(' + ');
-  men.appendChild(el('div', 'su-sq', '<b>TỔ ĐỒNG ĐỘI</b> ' + S0 + ' · thêm người khi lên quân hàm')); wrap.appendChild(men);
-  const rides = el('div', 'su-col su-rides'); rides.appendChild(el('div', 'su-h', 'PHƯƠNG TIỆN · BÁC TÀI'));
+  men.appendChild(el('div', 'su-sq', '<b>Tổ đồng đội</b> ' + S0 + ', thêm người khi lên quân hàm')); wrap.appendChild(men);
+  const rides = el('div', 'su-col su-rides'); rides.appendChild(el('div', 'su-h', 'Phương tiện <small>ngựa tự cưỡi, hoặc xe có bác tài lái</small>'));
   const rg = el('div', 'su-rgrid'); for(const [k, R] of Object.entries(RIDES)){ const c = el('div', 'su-ride' + (k === rd ? ' on' : '')); c.dataset.pad = '1'; c.appendChild(img(PIC(k), 'su-ph'));
-    c.appendChild(el('div', 'su-badge' + (R.drv ? '' : ' self'), R.drv ? 'BÁC TÀI LÁI' : 'TỰ CƯỠI'));
-    c.appendChild(el('div', 'su-cap', '<b>' + R.nm + '</b><small>' + R.sub + '</small>' + BARS.map((l, i) => '<div class="su-pr"><span>' + l + '</span>' + pips(R.bars[i]) + '</div>').join('')));
+    c.appendChild(el('div', 'su-badge' + (R.drv ? '' : ' self'), R.drv ? 'Bác tài lái' : 'Tự cưỡi'));
+    c.appendChild(el('div', 'su-cap', '<b>' + capVi(R.nm) + '</b><small>' + R.sub + '</small>' + BARS.map((l, i) => '<div class="su-pr"><span>' + l + '</span>' + pips(R.bars[i]) + '</div>').join('')));
     tapEl(c, () => { PROFILE.unit = PROFILE.lastRide = k; saveProfile(); sfx('click'); refresh(); }); rg.appendChild(c); }
   rides.appendChild(rg); wrap.appendChild(rides);
   // Z359 the rifle he carries in (the B41 always comes too); the rest he finds on the field · Z411 every one of his guns (PRIMARY_GUNS), four in view and the
   //   row slid sideways for the rest (where it was left, the one picked always in view), the B41 last, marked as always carried
-  const gk = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine', gw = el('div', 'su-pg'); gw.appendChild(el('div', 'su-h', 'SÚNG CHÍNH <small>· ' + PRIMARY_GUNS.length + ' khẩu · kèm B41 · súng khác nhặt trong trận</small>'));
+  const gk = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine', gw = el('div', 'su-pg'); gw.appendChild(el('div', 'su-h', 'Súng chính <small>' + PRIMARY_GUNS.length + ' khẩu, luôn kèm B41 — súng khác nhặt trong trận</small>'));
   const gg = el('div', 'su-pgrid'); for(const id of [...PRIMARY_GUNS, KIT_GUN]){ const G = GUNS[id], kit = id === KIT_GUN, c = el('div', 'su-pgun' + (id === gk ? ' on' : '') + (kit ? ' kit' : '')); if(!kit) c.dataset.pad = '1'; c.appendChild(gunPicEl(id, 'su-pgpic'));
-    c.appendChild(el('div', 'su-pgtx', '<b>' + G.name + '</b>' + (kit ? '<small class="su-kit">LUÔN MANG THEO</small>' : '') + [['SÁT THƯƠNG', G.dmg * (G.frags || 1) / 16], ['NHỊP BẮN', 0.068 / G.fireCd], ['TẦM', (G.rng || 1) / 1.15]].map(([l, k]) => '<div class="su-pr"><span>' + l + '</span>' + pips(Math.max(1, Math.round(k * 5))) + '</div>').join('')));
+    c.appendChild(el('div', 'su-pgtx', '<b>' + G.name + '</b>' + (kit ? '<small class="su-kit">Luôn mang theo</small>' : '') + [['Sát thương', G.dmg * (G.frags || 1) / 16], ['Nhịp bắn', 0.068 / G.fireCd], ['Tầm', (G.rng || 1) / 1.15]].map(([l, k]) => '<div class="su-pr"><span>' + l + '</span>' + pips(Math.max(1, Math.round(k * 5))) + '</div>').join('')));
     if(!kit) tapEl(c, () => { PROFILE.trooperGun = id; saveProfile(); sfx('click'); refresh(); }); gg.appendChild(c); }
   gg.addEventListener('scroll', () => { _pgX = gg.scrollLeft; }, { passive:true });
   const place = () => { gg.scrollLeft = _pgX; const on = gg.querySelector('.su-pgun.on'); if(!on) return; const a = on.getBoundingClientRect(), b = gg.getBoundingClientRect();
@@ -49,16 +49,16 @@ function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = t
   if(typeof ResizeObserver === 'function'){ const ro = new ResizeObserver(() => { if(gg.clientWidth){ ro.disconnect(); place(); } }); ro.observe(gg); } else requestAnimationFrame(place);   // (once the step is shown and the row has a width)
   gw.appendChild(gg); wrap.appendChild(gw);
   const R = RIDES[rd]; wrap.appendChild(el('div', 'su-drv' + (R.drv ? '' : ' self'), R.drv
-    ? '<b>BÁC TÀI · ' + R.nm + '</b><span>' + R.tx + '</span><ul><li>Lái theo hướng anh điều khiển — anh chỉ việc ngắm và bắn</li><li>Xe ngã: bác hấp tấp bò lại dựng xe</li><li>Xuống xe đánh bộ: bấm <kbd>G</kbd> gọi bác tới đón</li><li>Anh gục: bác quỳ xuống đầu hàng bên cạnh</li></ul>'
-    : '<b>CHIẾN MÃ · KHÔNG BÁC TÀI</b><span>' + R.tx + '</span><ul><li>Giữ tăng tốc để phi nước đại</li><li>Xuống ngựa đánh bộ: bấm <kbd>G</kbd> huýt gọi ngựa về</li><li>Trúng đòn nặng, ngựa có thể hất anh xuống</li></ul>'));
+    ? '<b>Bác tài — ' + capVi(R.nm) + '</b><span>' + R.tx + '</span><ul><li>Lái theo hướng anh điều khiển — anh chỉ việc ngắm và bắn</li><li>Xe ngã: bác hấp tấp bò lại dựng xe</li><li>Xuống xe đánh bộ: bấm <kbd>G</kbd> gọi bác tới đón</li><li>Anh gục: bác quỳ xuống đầu hàng bên cạnh</li></ul>'
+    : '<b>Chiến mã — không có bác tài</b><span>' + R.tx + '</span><ul><li>Giữ tăng tốc để phi nước đại</li><li>Xuống ngựa đánh bộ: bấm <kbd>G</kbd> huýt gọi ngựa về</li><li>Trúng đòn nặng, ngựa có thể hất anh xuống</li></ul>'));
   host.appendChild(wrap); }
 // ---- the footer's loadout chips (a tap goes back to that step) ----
 export function loadoutChips(host, goStep){ host.replaceChildren(); const add = (t, s, step) => { const c = el('div', 'su-chip', t + (s ? '<small>' + s + '</small>' : '')); c.dataset.pad = '1'; tapEl(c, () => { sfx('click'); goStep(step); }); host.appendChild(c); };
-  const R = RIDES[rideOf()]; add('NGƯỜI LÍNH', 'bộ binh', 2); add(TROOPERS[trooperOf()].nm, 'người lính', 2); add(R.nm, R.drv ? 'bác tài lái' : 'tự cưỡi', 2);
+  const R = RIDES[rideOf()]; add(capVi(TROOPERS[trooperOf()].nm), 'người lính', 2); add(capVi(R.nm), R.drv ? 'bác tài lái' : 'tự cưỡi', 2);   // (XK-UI the 'NGƯỜI LÍNH · bộ binh' chip went: the soldier is the only unit since no-tanks)
   add((GUNS[PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine'] || {}).name || 'SÚNG', 'súng chính', 2); }
 // ---- the briefing: who is going in ----
 export function briefTeam(){ const host = document.getElementById('br-team'); if(!host) return; host.replaceChildren();
   const tile = (src, html, cls) => { const t = el('div', 'br-tm' + (cls ? ' ' + cls : '')); if(src) t.appendChild(img(src, 'br-tmp')); else t.appendChild(el('div', 'br-tmp', html[1])); t.appendChild(el('div', 'br-tmt', html[0])); host.appendChild(t); };
   const R = RIDES[rideOf()], T = TROOPERS[trooperOf()];
-  tile(PIC(trooperOf()), ['<small>NGƯỜI LÍNH</small><b>' + T.nm + '</b>']); tile(PIC(rideOf()), ['<small>' + (R.drv ? 'BÁC TÀI LÁI' : 'TỰ CƯỠI') + '</small><b>' + R.nm + '</b>']);
-  tile(null, ['<small>TỔ ĐỒNG ĐỘI</small><b>Xạ thủ máy · Y tá</b>', '<span class="br-ic">2</span>'], 'wide'); }
+  tile(PIC(trooperOf()), ['<small>Người lính</small><b>' + capVi(T.nm) + '</b>']); tile(PIC(rideOf()), ['<small>' + (R.drv ? 'Bác tài lái' : 'Tự cưỡi') + '</small><b>' + capVi(R.nm) + '</b>']);
+  tile(null, ['<small>Tổ đồng đội</small><b>Xạ thủ máy, y tá</b>', '<span class="br-ic">2</span>'], 'wide'); }

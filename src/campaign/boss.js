@@ -21,12 +21,12 @@ export function bossStageWon(now, bdef){
 }
 export function victory(){
   S.mode='victory';
-  document.getElementById('vic-score').textContent = S.score.toLocaleString();
+  document.getElementById('vic-score').textContent = S.score.toLocaleString('vi-VN');
   recordRun();
   const nl=(S.loop||0)+1;
   if(!(S.run && S.run.mode==='custom')){ PROFILE.save={ loop:nl, stage:1, score:S.score }; saveProfile(); } else S.runCfg={ ...S.run, level:nl*5+1 }; refreshStartUI();   // custom: the next loop keeps your map/hour/weather   // advance the campaign into the next NG+ loop
-  const nb=document.getElementById('ngplusBtn'); if(nb) nb.textContent='VÀO VÒNG MỚI+'+nl+' ▶';
-  const vs=document.querySelector('#victory .subtitle'); if(vs) vs.textContent='Vòng mới+'+nl+' đang chờ — địch mạnh hơn, thưởng lớn hơn';
+  const nb=document.getElementById('ngplusT'); if(nb) nb.textContent='Vào vòng '+(nl+1);
+  const vs=document.getElementById('vicSub'); if(vs) vs.textContent='Vòng '+(nl+1)+' đang chờ: cùng các chiến trường, quân địch mạnh hơn và điểm cao hơn.';
   document.body.classList.remove('corelow');
   show('victory'); sfx('levelup');
 }

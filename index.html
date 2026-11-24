@@ -47,6 +47,7 @@
 <link rel="stylesheet" href="css/mil.css" />
 <link rel="stylesheet" href="css/battle-light.css" />
 <link rel="stylesheet" href="css/hud-slim.css" />
+<link rel="stylesheet" href="css/ui-xk.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
@@ -148,10 +149,8 @@
 </div>
 
 <!-- START / TITLE -->
-<div class="overlay" id="start">
-  <div class="scanlines"></div><div class="sweep"></div>
-  <div class="frame"><i></i><i></i><i></i><i></i></div>
-  <div class="rot-hint"><span class="ic" data-icon="rotate"></span>XOAY NGANG ĐỂ XEM ĐẸP NHẤT</div>
+<div class="overlay xk-home" id="start">
+  <div class="rot-hint"><span class="ic" data-icon="rotate"></span>Xoay ngang để chơi</div>
   <div class="brand">
     <svg class="brand-mark" viewBox="0 0 120 84" aria-hidden="true"><defs><linearGradient id="brandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4d2"/><stop offset=".48" stop-color="#e9bd62"/><stop offset=".52" stop-color="#c08a36"/><stop offset="1" stop-color="#f0cf86"/></linearGradient></defs>
       <path fill="url(#brandG)" d="M60.0 3.0 L64.5 15.9 L78.1 16.1 L67.2 24.3 L71.2 37.4 L60.0 29.6 L48.8 37.4 L52.8 24.3 L41.9 16.1 L55.5 15.9Z"/>
@@ -159,52 +158,46 @@
     <div class="brand-word">XUNG KÍCH</div>
     <div class="brand-sub"><i></i>CHIẾN TRƯỜNG BỘ BINH 3D<i></i></div>
   </div>
-  <!-- identity strip: stacked on desktop, one compact row on a short landscape phone -->
-  <div class="start-id">
-    <div class="hello" id="hello"></div>
-    <div class="bestline" id="bestline"></div>
-  </div>
-  <!-- every action lives in one grid so a short landscape screen can place them all (see the short-landscape CSS block) -->
-  <div class="panel">
-    <!-- 1 · PLAY (hero) → 2 · CONTINUE → 3 · prepare (ARSENAL/SHOP/BATTLEFIELD) → 4 · utility. Same order on every screen. -->
-    <div class="btn btn-primary" id="playBtn"><span>CHƠI NGAY ▶</span><small id="playSub"></small></div>
-    <div class="btn btn-primary btn-continue" id="continueBtn" style="display:none">CHƠI TIẾP ▶</div>
-    <div class="btn btn-arsenal" id="arsenalBtn"><span class="ic" data-icon="rifle"></span><span>KHO SÚNG<span class="lg"> · <b id="arsenalCount">SÚNG TRƯỜNG</b></span></span></div>
-    <div class="terrain-pick" id="terrainPick">
-      <div class="btn btn-terrain" id="terrainBtn"><span class="ic" data-icon="target"></span><span>CHỌN TRẬN<span class="lg"> · CẤP · BẢN ĐỒ</span></span><span class="tp-sw" id="tBtnSw"></span></div>
+  <!-- XK-UI the home column (css/ui-xk.css): who you are → ONE hero (Chơi ngay, or Chơi tiếp when a checkpoint exists) → three even
+       preparation actions → three quiet utilities. Progress reset lives in Cài đặt → Tài khoản, behind a confirmation. -->
+  <div class="xk-home-col">
+    <div class="start-id">
+      <div class="hello" id="hello"></div>
+      <div class="bestline" id="bestline"></div>
     </div>
-    <div class="btn btn-mini" id="rankBtn"><span class="ic" data-icon="star"></span><span>XẾP HẠNG</span></div>
-    <div class="btn btn-mini" id="keysBtn"><span class="ic" data-icon="target"></span><span>PHÍM TẮT</span></div>
-    <div class="btn btn-mini" id="guideBtn"><span class="ic" data-icon="bunker"></span><span><span class="lg">HƯỚNG DẪN</span><span class="sm">HƯỚNG DẪN</span></span></div>
-    <div class="btn btn-mini" id="settingsBtn"><span class="ic" data-icon="wrench"></span><span>CÀI ĐẶT</span></div>
-    <div class="btn btn-mini" id="resetBtn"><span class="ic" data-icon="rotate"></span><span>XOÁ<span class="lg"> TIẾN TRÌNH</span></span></div>
-    <div class="help desktop-only">
-      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> đi · <b>chuột</b> ngắm · <b>giữ chuột</b> để bắn<br>
-      <kbd>Cách</kbd> bứt tốc / nhảy · <kbd>E</kbd> kỹ năng · <kbd>G</kbd> xuống / lên xe
+    <div class="xb xb-pri xb-hero" id="playBtn" role="button"><span class="xb-hl"><span class="xb-t">Chơi ngay</span><small id="playSub"></small></span><span class="ic" data-icon="play"></span></div>
+    <div class="xb xb-pri xb-hero" id="continueBtn" role="button" hidden><span class="xb-hl"><span class="xb-t">Chơi tiếp</span><small id="contSub"></small></span><span class="ic" data-icon="play"></span></div>
+    <div class="xk-grid">
+      <div class="xb xb-sec" id="terrainBtn" role="button"><span class="ic" data-icon="target"></span><span>Chọn trận</span></div>
+      <div class="xb xb-sec" id="arsenalBtn" role="button"><span class="ic" data-icon="rifle"></span><span>Kho súng</span></div>
+      <div class="xb xb-sec" id="rankBtn" role="button"><span class="ic" data-icon="star"></span><span>Xếp hạng</span></div>
     </div>
-    <div class="help touch-only">
-      <b>Cần điều khiển</b> để đi · <b>giữ BẮN</b> hoặc bật <b>TỰ ĐỘNG</b> để khai hoả<br>
-      <b>BẮN</b> &amp; <b>LƯỚT</b> bên trái · <b>ĐỔI SÚNG</b> / <b>KỸ NĂNG</b> bên phải
+    <div class="xk-util">
+      <div class="xb xb-ghost" id="settingsBtn" role="button"><span class="ic" data-icon="gear"></span><span>Cài đặt</span></div>
+      <div class="xb xb-ghost" id="guideBtn" role="button"><span class="ic" data-icon="help"></span><span>Hướng dẫn</span></div>
+      <div class="xb xb-ghost" id="keysBtn" role="button"><span class="ic" data-icon="keys"></span><span>Phím tắt</span></div>
     </div>
   </div>
 </div>
 
 <!-- NICKNAME (first launch) -->
-<div class="overlay hidden" id="nick">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">CHÀO MỪNG, CHỈ HUY</div>
-  <div class="subtitle">Nhập mật danh của bạn</div>
-  <div class="panel">
-    <input id="nickInput" type="text" maxlength="16" placeholder="MẬT DANH" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" inputmode="text" />
-    <div class="btn btn-primary" id="nickSave" style="margin-top:14px">XÁC NHẬN ▶</div>
+<div class="overlay hidden xk-dlg" id="nick">
+  <div class="xk-card">
+    <h2 class="xk-ttl">Chào mừng, chỉ huy</h2>
+    <p class="xk-sub">Chọn mật danh của bạn — tên này hiện trên bảng xếp hạng.</p>
+    <input id="nickInput" type="text" maxlength="16" placeholder="Mật danh" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done" inputmode="text" aria-label="Mật danh" />
+    <div class="xk-acts"><div class="xb xb-pri" id="nickSave" role="button">Xác nhận</div></div>
   </div>
 </div>
 
 <!-- HOW TO PLAY — new-player field manual (auto-shown first launch; re-openable from the menu) -->
-<div class="overlay hidden" id="guide">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">HƯỚNG DẪN</div>
-  <div class="subtitle">Cẩm nang chiến trường, Chỉ huy — 30 giây để nắm vững</div>
-  <div class="guide" id="guideBody"></div>
-  <div class="guide-act"><div class="btn btn-primary" id="guideDone">ĐÃ HIỂU ▶</div></div>
+<div class="overlay hidden xk-screen" id="guide">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="guideBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+    <div class="xk-head"><h2 class="xk-ttl">Hướng dẫn</h2><p class="xk-sub">Cẩm nang chiến trường — 30 giây để nắm vững</p></div>
+  </header>
+  <div class="xk-body"><div class="guide" id="guideBody"></div></div>
+  <footer class="xk-foot"><span class="xk-hint">Mở lại bất cứ lúc nào từ trang chủ.</span><div class="xb xb-pri" id="guideDone" role="button">Đã hiểu</div></footer>
 </div>
 
 <!-- Z182 CALL-UP — first launch: a guided training battle in a trial super-tank with two VIP-class guns -->
@@ -212,56 +205,93 @@
 <!-- Z182 TRAINING DONE — what you just drove, and how to own it -->
 
 <!-- SETTINGS — difficulty · audio · quality -->
-<div class="overlay hidden" id="settings">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">CÀI ĐẶT</div>
-  <div class="subtitle">Độ khó · Âm thanh · Đồ hoạ</div>
-  <div class="settings">
-    <div class="set-row"><span class="set-l">TÀI KHOẢN</span><div class="seg" id="setCloud"></div></div>
-    <div class="set-row"><span class="set-l">ĐỘ KHÓ</span><div class="seg" id="setDiff"></div></div>
-    <div class="set-row"><span class="set-l">HIỆU ỨNG</span><div class="seg" id="setSound"></div></div>
-    <div class="set-row"><span class="set-l">NHẠC</span><div class="seg" id="setMusic"></div></div>
-    <div class="set-row"><span class="set-l">GIỌNG RADIO</span><div class="seg" id="setVoice"></div></div>
-    <div class="set-row"><span class="set-l">ĐIỀU KHIỂN</span><div class="seg" id="setCtrl"></div></div>
-    <div class="set-row"><span class="set-l">ĐỒ HOẠ</span><div class="seg" id="setQual"></div></div>
-    <div class="set-row"><span class="set-l">RUNG MÀN HÌNH</span><div class="seg" id="setShake"></div></div>
-    <div class="set-row"><span class="set-l">THOẠI TRÊN MÀN HÌNH</span><div class="seg" id="setHudTalk"></div></div>
-    <div class="set-row"><span class="set-l">THẺ THÔNG TIN</span><div class="seg" id="setHudCards"></div></div>
-    <div class="set-row"><span class="set-l">BĂNG RÔN THÔNG BÁO</span><div class="seg" id="setHudBanners"></div></div>
-    <div class="set-row"><span class="set-l">GÓC MÁY</span><div class="seg" id="setCam"></div></div>
-    <div class="set-row set-cam"><span class="set-l">GÓC NGHIÊNG</span><div class="seg" id="setCamPitch"></div></div>
-    <div class="set-row set-cam"><span class="set-l">KHOẢNG CÁCH MÁY</span><div class="seg" id="setCamDist"></div></div>
-    <div class="set-row set-cam"><span class="set-l">TRƯỜNG NHÌN</span><div class="seg" id="setCamFov"></div></div>
-    <div class="set-row set-cam"><span class="set-l">NHÌN TRƯỚC XE</span><div class="seg" id="setCamAhead"></div></div>
-    <div class="set-row"><span class="set-l">TỐC ĐỘ XOAY NÒNG</span><div class="seg" id="setTurret"></div></div>
-    <div class="set-row set-padview"><div id="setPadView"></div></div>
-    <div class="set-row set-pad"><span class="set-l">TAY CẦM</span><div class="seg" id="setPad"></div></div>
-    <div class="set-row"><span class="set-l">RUNG</span><div class="seg" id="setVib"></div></div>
-    <div class="set-row set-mobile"><span class="set-l">RUNG ĐIỆN THOẠI</span><div class="seg" id="setPhone"></div></div>
-    <div class="set-row"><span class="set-l">PHÁO GÓC CAO (CỐI · TÊN LỬA)</span><div class="seg" id="setLob"></div></div>
-    <div class="set-row"><span class="set-l">ĐỘ NHẠY XOAY (XE · NÒNG)</span><div class="seg" id="setSens"></div></div>
-    <div class="set-row"><span class="set-l">VÙNG CHẾT CẦN</span><div class="seg" id="setDead"></div></div>
-    <div class="set-row"><span class="set-l">TỰ NGẮM KHI THẢ CẦN</span><div class="seg" id="setAssist"></div></div>
-    <div class="set-row"><span class="set-l">NÚT A / B</span><div class="seg" id="setSwap"></div></div>
-    <div class="set-row"><span class="set-l">TOÀN MÀN HÌNH</span><div class="seg"><div class="seg-chip" id="setFs">BẬT/TẮT ⛶</div></div></div>
+<!-- XK-UI one tab at a time (ui/settings.js setTab): every row = what it is + one plain line on what it does + its control.
+     The footer's Mặc định resets the open tab; Xong goes back to where Settings was opened from (home or the pause menu). -->
+<div class="overlay hidden xk-screen" id="settings">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="settingsBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Quay lại</span></div>
+    <div class="xk-head"><h2 class="xk-ttl">Cài đặt</h2></div>
+  </header>
+  <nav class="xk-tabs" id="setTabs" role="tablist" aria-label="Nhóm cài đặt">
+    <div class="xk-tab" role="tab" data-tab="game">Trò chơi</div>
+    <div class="xk-tab" role="tab" data-tab="video">Hình ảnh</div>
+    <div class="xk-tab" role="tab" data-tab="audio">Âm thanh</div>
+    <div class="xk-tab" role="tab" data-tab="ctrl">Điều khiển</div>
+    <div class="xk-tab" role="tab" data-tab="pad">Tay cầm</div>
+    <div class="xk-tab" role="tab" data-tab="cam">Camera</div>
+    <div class="xk-tab" role="tab" data-tab="account">Tài khoản</div>
+  </nav>
+  <div class="xk-body" id="setBody">
+    <section class="xs-pane" data-pane="game">
+      <div class="xs-row"><div class="xs-tx"><b>Độ khó</b><span>Máu và sát thương của quân địch.</span></div><div class="xs-seg" id="setDiff"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Thoại trên màn hình</b><span>Lời radio và lời bác tài hiện thành chữ. Giọng nói vẫn phát.</span></div><div class="xs-seg" id="setHudTalk"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Thẻ thông tin</b><span>Mục tiêu, pháo đài và tổ đồng đội ở cạnh màn hình.</span></div><div class="xs-seg" id="setHudCards"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Băng rôn thông báo</b><span>Dòng chữ lớn giữa màn hình khi có sự kiện.</span></div><div class="xs-seg" id="setHudBanners"></div></div>
+    </section>
+    <section class="xs-pane" data-pane="video">
+      <div class="xs-row"><div class="xs-tx"><b>Chất lượng đồ hoạ</b><span>Chọn Thấp nếu máy nóng hoặc hình bị giật.</span></div><div class="xs-seg" id="setQual"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Khung hình</b><span>Tự động giữ hình mượt nhất máy chạy được. 30 FPS đỡ tốn pin.</span></div><div class="xs-seg" id="setFps"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Rung màn hình</b><span>Khung hình rung khi có tiếng nổ gần.</span></div><div class="xs-seg" id="setShake"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Toàn màn hình</b><span>Ẩn thanh trình duyệt để có khung hình lớn nhất.</span></div><div class="xs-seg" id="setFsRow"></div></div>
+    </section>
+    <section class="xs-pane" data-pane="audio">
+      <div class="xs-row"><div class="xs-tx"><b>Hiệu ứng</b><span>Tiếng súng, tiếng nổ, tiếng xe.</span></div><div class="xs-seg" id="setSound"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Nhạc nền</b><span>Trong trận bấm phím M để bật hoặc tắt nhanh.</span></div><div class="xs-seg" id="setMusic"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Giọng radio</b><span>Lời chỉ huy và đồng đội qua bộ đàm.</span></div><div class="xs-seg" id="setVoice"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Âm thanh môi trường</b><span>Chim, gió, sóng biển quanh chiến trường.</span></div><div class="xs-seg" id="setAmb"></div></div>
+    </section>
+    <section class="xs-pane" data-pane="ctrl">
+      <div class="xs-row"><div class="xs-tx"><b>Kiểu di chuyển</b><span>Phím hướng (hoặc cần) đưa người lính đi theo màn hình hay theo thân xe.</span></div><div class="xs-seg" id="setCtrl"></div></div>
+      <div class="xs-row xs-mobile"><div class="xs-tx"><b>Rung điện thoại</b><span>Rung nhẹ khi trúng đạn và khi nổ gần.</span></div><div class="xs-seg" id="setPhone"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Phím và nút</b><span>Xem toàn bộ phím, đổi phím hoặc nút tay cầm.</span></div><div class="xs-seg xs-acts"><div class="xs-opt" id="setKeys" role="button">Mở bảng phím</div></div></div>
+    </section>
+    <section class="xs-pane" data-pane="pad">
+      <div class="xs-row xs-wide"><div class="xs-tx"><b>Tay cầm</b><span id="setPadSt">Chưa thấy tay cầm.</span></div><div class="xs-seg xs-acts" id="setPad"></div></div>
+      <div class="xs-row xs-padview"><div id="setPadView"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Rung tay cầm</b><span>Độ mạnh khi trúng đạn và khi bắn súng lớn.</span></div><div class="xs-seg" id="setVib"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Độ nhạy ngắm</b><span>Cần phải xoay hướng ngắm nhanh hay chậm.</span></div><div class="xs-seg" id="setSens"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Vùng chết cần</b><span>Cần nghiêng ít hơn mức này thì không tính — tăng lên nếu cần bị trôi.</span></div><div class="xs-seg" id="setDead"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Tự ngắm khi thả cần</b><span>Thả cần phải ra, hướng ngắm tự về địch gần nhất.</span></div><div class="xs-seg" id="setAssist"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Nút A / B</b><span>Nút nào để chọn, nút nào để quay lại trong menu.</span></div><div class="xs-seg" id="setSwap"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Ngắm súng cối</b><span>Khi cầm cối: cần phải chỉnh hướng trong cung trước mặt và chỉnh tầm.</span></div><div class="xs-seg" id="setLob"></div></div>
+    </section>
+    <section class="xs-pane" data-pane="cam">
+      <div class="xs-row"><div class="xs-tx"><b>Góc máy</b><span>Điện ảnh: thấp, thấy xa. Chiến thuật: cao, nhìn toàn cảnh.</span></div><div class="xs-seg" id="setCam"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Góc nghiêng</b><span>Thấp cho cảm giác điện ảnh, cao để nhìn xuống chiến trường.</span></div><div class="xs-seg" id="setCamPitch"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Khoảng cách</b><span>Gần thấy người lính to, xa thấy rộng hơn.</span></div><div class="xs-seg" id="setCamDist"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Trường nhìn</b><span>Rộng hơn thì kịch tính hơn, nhưng vật ở xa nhỏ đi.</span></div><div class="xs-seg" id="setCamFov"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Nhìn phía trước</b><span>Càng lớn, người lính càng lùi xuống dưới màn hình để thấy xa phía trước.</span></div><div class="xs-seg" id="setCamAhead"></div></div>
+    </section>
+    <section class="xs-pane" data-pane="account">
+      <div class="xs-row xs-wide"><div class="xs-tx"><b>Lưu trữ</b><span id="setCloudSt">Lưu trên máy.</span></div><div class="xs-seg xs-acts" id="setCloud"></div></div>
+      <div class="xs-row"><div class="xs-tx"><b>Mật danh</b><span id="setNickNow">Tên hiện trên bảng xếp hạng.</span></div><div class="xs-seg xs-acts"><div class="xs-opt" id="setNick" role="button">Đổi mật danh</div></div></div>
+      <div class="xs-row xs-danger"><div class="xs-tx"><b>Xoá tiến trình</b><span>Xoá kỷ lục và điểm lưu Chơi tiếp. Cấp đã mở, mật danh và cài đặt giữ nguyên.</span></div><div class="xs-seg xs-acts"><div class="xs-opt" id="resetBtn" role="button">Xoá tiến trình…</div></div></div>
+    </section>
   </div>
-  <div class="btn btn-primary" id="settingsDone" style="margin-top:12px">XONG ▶</div>
+  <footer class="xk-foot">
+    <div class="xb xb-sec" id="setReset" role="button"><span class="ic" data-icon="undo"></span><span>Mặc định</span></div>
+    <div class="xb xb-pri" id="settingsDone" role="button">Xong</div>
+  </footer>
 </div>
 
 <!-- ARSENAL / LOADOUT (pick ≤5 weapons for battle) -->
-<div class="overlay hidden" id="loadout">
-  <div class="title" style="font-size:clamp(22px,5vw,40px)">KHO SÚNG</div>
-  <div class="subtitle">Chọn tối đa 5 khẩu · <span id="ldcount">1/5</span></div>
-  <div id="ldgrid"></div>
-  <div class="panel" style="margin-top:6px"><div class="btn btn-primary" id="ldDone">XÁC NHẬN ▶</div></div>
+<div class="overlay hidden xk-screen" id="loadout">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="ldBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Quay lại</span></div>
+    <div class="xk-head"><h2 class="xk-ttl">Kho súng</h2><p class="xk-sub" id="ldSub"></p></div>
+  </header>
+  <div class="xk-body"><div id="ldgrid"></div></div>
+  <footer class="xk-foot"><span class="xk-hint" id="ldPick"></span><div class="xb xb-pri" id="ldDone" role="button">Xong</div></footer>
 </div>
 
-<!-- Z155 GARAGE — the tank collection -->
-
 <!-- Z163 LEADERBOARD -->
-<div class="overlay hidden" id="ranking">
-  <div class="gar-top"><div class="gar-l"><div class="btn btn-mini" id="rankDone"><span>◀ XONG</span></div></div><div class="gar-ttl">BẢNG XẾP HẠNG</div><div class="gar-wal" id="rankWeek"></div></div>
-  <div class="shop-tabs kit-tabs"><div class="shop-tab rank-tab" data-rt="week">TUẦN NÀY</div><div class="shop-tab rank-tab" data-rt="all">MỌI THỜI ĐẠI</div></div>
-  <div id="rankBody"></div>
+<div class="overlay hidden xk-screen" id="ranking">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="rankDone" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+    <div class="xk-head"><h2 class="xk-ttl">Bảng xếp hạng</h2><p class="xk-sub" id="rankWeek"></p></div>
+  </header>
+  <nav class="xk-tabs" role="tablist" aria-label="Khoảng thời gian"><div class="xk-tab rank-tab" role="tab" data-rt="week">Tuần này</div><div class="xk-tab rank-tab" role="tab" data-rt="all">Mọi thời đại</div></nav>
+  <div class="xk-body"><div id="rankBody"></div></div>
 </div>
 
 <!-- Z161 WORKSHOP + CREW -->
@@ -272,33 +302,35 @@
 <div id="countdown"></div><div id="cdSub"></div>
 <div id="padHud"></div>
 <div id="lobHud"></div>
-<div class="overlay hidden" id="padWiz">
-  <div class="title" style="font-size:clamp(22px,4.4vw,38px)">DÒ NÚT TAY CẦM</div>
+<div class="overlay hidden xk-dlg" id="padWiz">
+  <h2 class="xk-ttl">Dò nút tay cầm</h2>
   <div class="pw-id" id="padWizId"></div>
   <div class="pw-step" id="padWizStep"></div>
   <div class="pw-view" id="padWizView"></div>
   <div class="pw-bar"><i id="padWizBar"></i></div>
   <div class="pw-n" id="padWizN"></div>
   <div class="pw-live" id="padWizLive"></div>
-  <div class="pw-row"><div class="btn" id="padWizSkip">BỎ QUA</div><div class="btn btn-primary" id="padWizDone">XONG</div><div class="btn" id="padWizReset">ĐẶT LẠI</div><div class="btn" id="padWizClose">ĐÓNG</div></div>
-  <div class="ks-foot">Bấm / gạt từng nút theo gợi ý. Nút nào không có thì chờ 10 giây hoặc bấm BỎ QUA.</div>
+  <div class="pw-row"><div class="xb xb-ghost" id="padWizClose" role="button" data-back="1">Đóng</div><div class="xb xb-sec" id="padWizReset" role="button">Đặt lại</div><div class="xb xb-sec" id="padWizSkip" role="button">Bỏ qua nút này</div><div class="xb xb-pri" id="padWizDone" role="button">Xong</div></div>
+  <div class="ks-foot">Bấm hoặc gạt từng nút theo gợi ý. Nút nào tay cầm không có thì chờ 10 giây hoặc bấm Bỏ qua.</div>
 </div>
 
-<div class="overlay hidden" id="keysDlg">
-  <div class="title" style="font-size:clamp(22px,4.4vw,38px)">PHÍM TẮT · ĐIỀU KHIỂN</div>
-  <div class="ks-body" id="keysBody"></div>
-  <div class="btn btn-primary" id="keysDone" style="min-width:200px">ĐÃ HIỂU ▶</div>
-  <div class="ks-foot desktop-only">Mở lại bất cứ lúc nào trong trận bằng phím <kbd>H</kbd></div>
+<div class="overlay hidden xk-screen" id="keysDlg">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="keysBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Quay lại</span></div>
+    <div class="xk-head"><h2 class="xk-ttl">Phím tắt và điều khiển</h2><p class="xk-sub">Bấm vào ô phím hoặc nút để đổi.</p></div>
+  </header>
+  <div class="xk-body"><div class="ks-body" id="keysBody"></div></div>
+  <footer class="xk-foot"><span class="xk-hint desktop-only">Trong trận bấm <kbd>H</kbd> để mở lại bảng này.</span><div class="xb xb-pri" id="keysDone" role="button">Xong</div></footer>
 </div>
 
 <!-- Z107 BATTLE SETUP: campaign ladder (rising difficulty, unlock in order) · custom battle (map · hour · weather · space · enemy level) -->
 <div class="overlay hidden" id="battleSetup">
   <div class="bs-bg" aria-hidden="true"><img id="bsBgA" alt="" /><img id="bsBgB" alt="" /></div>
   <div class="bs-top">
-    <div class="btn btn-mini bs-back" id="bsBack"><span>◀ MENU</span></div>
-    <!-- Z354 the three steps into battle: who, with what, where -->
-    <div class="bs-rail" id="bsRail"><div class="bs-rs" data-s="2"><b>1</b><span>TRANG BỊ</span></div><i></i><div class="bs-rs" data-s="3"><b>2</b><span>CHIẾN TRƯỜNG</span></div></div>
-    <div class="bs-modes"><div class="bs-mode on" data-m="campaign">CHIẾN DỊCH<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom">TỰ CHỌN<small>bản đồ · thời tiết</small></div></div>
+    <div class="xb xb-ghost xk-back bs-back" id="bsBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+    <!-- Z354 the steps into battle: with what, where (a real sequence, so numbered) -->
+    <div class="bs-rail" id="bsRail"><div class="bs-rs" data-s="2" role="button"><b>1</b><span>Trang bị</span></div><i></i><div class="bs-rs" data-s="3" role="button"><b>2</b><span>Chiến trường</span></div></div>
+    <div class="bs-modes"><div class="bs-mode on" data-m="campaign" role="tab">Chiến dịch<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom" role="tab">Tự chọn<small>bản đồ, thời tiết</small></div></div>
   </div>
   <div class="bs-step bs-s2" id="bsS2"></div>
   <div class="bs-main bs-step bs-s3" id="bsS3">
@@ -312,104 +344,145 @@
     <div class="bs-side">
       <div class="bs-body" id="bsCampaign"><div class="bs-hint">Độ khó tăng dần — thắng một cấp để mở cấp tiếp theo</div><div class="bs-ladder" id="bsLadder"></div></div>
       <div class="bs-body hidden" id="bsCustom">
-        <div class="bs-grp"><div class="bs-lbl">CHIẾN TRƯỜNG</div><div class="bs-opts maps" id="bsMap"></div></div>
-        <div class="bs-grp"><div class="bs-lbl">THỜI GIAN</div><div class="bs-opts" id="bsTod"></div></div>
-        <div class="bs-grp"><div class="bs-lbl">THỜI TIẾT</div><div class="bs-opts" id="bsWx"></div></div>
-        <div class="bs-grp"><div class="bs-lbl">KHÔNG GIAN</div><div class="bs-opts" id="bsSpace"></div></div>
-        <div class="bs-grp"><div class="bs-lbl">CẤP ĐỊCH</div><div class="bs-opts" id="bsLvl"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">Chiến trường</div><div class="bs-opts maps" id="bsMap"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">Thời gian</div><div class="bs-opts" id="bsTod"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">Thời tiết</div><div class="bs-opts" id="bsWx"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">Cỡ bản đồ</div><div class="bs-opts" id="bsSpace"></div></div>
+        <div class="bs-grp"><div class="bs-lbl">Cấp địch</div><div class="bs-opts" id="bsLvl"></div></div>
       </div>
     </div>
   </div>
-  <div class="bs-foot"><div class="bs-unit" id="bsUnit"></div><div class="bs-sum" id="bsSum"></div><div class="btn bs-next" id="bsNext" data-pad="1">TIẾP ▶</div><div class="btn btn-primary bs-go" id="bsGo">XUẤT KÍCH ▶</div></div>
+  <div class="bs-foot"><div class="bs-unit" id="bsUnit"></div><div class="bs-sum" id="bsSum"></div><div class="xb xb-ghost bs-prev" id="bsPrev" role="button" data-back="2"><span class="ic" data-icon="back"></span><span>Trang bị</span></div><div class="xb xb-sec bs-next" id="bsNext" role="button">Tiếp: chiến trường</div><div class="xb xb-pri bs-go" id="bsGo" role="button"><span>Xuất kích</span><span class="ic" data-icon="play"></span></div></div>
 </div>
 
 <!-- SHOP — display-cabinet grid → tap a case for the fullsize 3D detail -->
 
-<!-- PAUSE -->
-<div class="overlay hidden" id="pause">
-  <div class="title" style="font-size:clamp(30px,7vw,58px)">TẠM DỪNG</div>
-  <div class="panel">
-    <div class="btn btn-primary" id="resumeBtn" style="margin-bottom:12px">TIẾP TỤC ▶</div>
-    <div class="btn btn-arsenal" id="arsenalBtnP" style="margin-bottom:12px"><span class="ic" data-icon="rifle"></span><span>KHO SÚNG</span></div>
-    <div class="btn" id="restartBtn" style="margin-bottom:12px">CHƠI LẠI ↻</div>
-    <div class="btn btn-mini" id="musBtnP" style="margin-bottom:12px"><span class="ic" data-icon="music"></span><span id="musLblP">NHẠC NỀN: BẬT</span></div>
-    <div class="btn btn-mini" id="sndBtnP" style="margin-bottom:12px"><span class="ic" data-icon="sound"></span><span id="sndLblP">ÂM THANH: BẬT</span></div>
-    <div class="btn btn-mini" id="fsBtnP" style="margin-bottom:12px"><span class="ic" data-icon="expand"></span><span>TOÀN MÀN HÌNH</span></div>
-    <div class="btn btn-mini" id="keysBtnP" style="margin-bottom:12px"><span class="ic" data-icon="target"></span><span>PHÍM TẮT · ĐIỀU KHIỂN</span></div>
-    <div class="btn btn-mini" id="homeBtn"><span class="ic" data-icon="bunker"></span><span>MENU CHÍNH</span></div>
+<!-- PAUSE — XK-UI: Tiếp tục first; Cài đặt opens the same settings (its Xong comes back here); leaving the battle asks first (ui/confirm.js) -->
+<div class="overlay hidden xk-screen xk-pause" id="pause">
+  <header class="xk-top">
+    <div class="xk-head"><h2 class="xk-ttl">Tạm dừng</h2><p class="xk-sub" id="pauseWhere"></p></div>
+  </header>
+  <div class="xk-body">
+    <div class="xk-menu">
+      <div class="xb xb-pri" id="resumeBtn" role="button" data-back="1"><span class="ic" data-icon="play"></span><span>Tiếp tục</span></div>
+      <div class="xb xb-sec" id="settingsBtnP" role="button"><span class="ic" data-icon="gear"></span><span>Cài đặt</span></div>
+      <div class="xb xb-sec" id="arsenalBtnP" role="button"><span class="ic" data-icon="rifle"></span><span>Kho súng</span></div>
+      <div class="xb xb-sec" id="restartBtn" role="button"><span class="ic" data-icon="undo"></span><span>Chơi lại màn</span></div>
+      <div class="xb xb-sec" id="keysBtnP" role="button"><span class="ic" data-icon="keys"></span><span>Phím tắt</span></div>
+      <div class="xb xb-ghost xk-leave" id="homeBtn" role="button"><span class="ic" data-icon="home"></span><span>Về trang chủ</span></div>
+    </div>
   </div>
+  <footer class="xk-foot">
+    <div class="xk-quick">
+      <div class="xb xb-icon" id="musBtnP" role="button" title="Nhạc nền (M)"><span class="ic" data-icon="music"></span><span class="xk-vh" id="musLblP">Nhạc nền: bật</span></div>
+      <div class="xb xb-icon" id="sndBtnP" role="button" title="Âm thanh"><span class="ic" data-icon="sound"></span><span class="xk-vh" id="sndLblP">Âm thanh: bật</span></div>
+      <div class="xb xb-icon" id="fsBtnP" role="button" title="Toàn màn hình"><span class="ic" data-icon="expand"></span><span class="xk-vh">Toàn màn hình</span></div>
+    </div>
+    <span class="xk-hint desktop-only">Bấm <kbd>Esc</kbd> để tiếp tục</span>
+  </footer>
 </div>
 
 <!-- GAME OVER -->
-<div class="overlay hidden" id="gameover">
-  <div class="title" style="font-size:clamp(34px,8vw,68px)">THẤT BẠI</div>
-  <div class="go-why" id="go-why"></div>
-  <div class="panel">
+<div class="overlay hidden xk-screen xk-end" id="gameover">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="goHomeBtn" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+  </header>
+  <div class="xk-body xk-result">
+    <p class="xk-kick xk-lost">Nhiệm vụ thất bại</p>
+    <h2 class="xk-big">Thất bại</h2>
+    <p class="go-why" id="go-why"></p>
     <div class="go-stats">
-      <div class="go-stat"><div class="l">ĐIỂM</div><div class="v" id="go-score" style="color:var(--amber)">0</div></div>
-      <div class="go-stat"><div class="l">MÀN</div><div class="v" id="go-stage" style="color:var(--green)">1</div></div>
-      <div class="go-stat"><div class="l">ĐỢT</div><div class="v" id="go-wave" style="color:var(--steel)">1</div></div>
+      <div class="go-stat"><div class="l">Điểm</div><div class="v" id="go-score">0</div></div>
+      <div class="go-stat"><div class="l">Màn</div><div class="v" id="go-stage">1</div></div>
+      <div class="go-stat"><div class="l">Đợt</div><div class="v" id="go-wave">1</div></div>
     </div>
-    <div class="go-best" id="go-best"></div>
-    <div class="btn btn-primary" id="retryBtn" style="margin-bottom:10px">THỬ LẠI ↻</div>
-    <div class="btn btn-mini" id="goHomeBtn"><span class="ic" data-icon="bunker"></span><span>MENU CHÍNH</span></div>
+    <p class="go-best" id="go-best"></p>
   </div>
+  <footer class="xk-foot"><span class="xk-hint">Thử lại bắt đầu lại đúng trận này.</span><div class="xb xb-pri" id="retryBtn" role="button"><span class="ic" data-icon="undo"></span><span>Thử lại</span></div></footer>
 </div>
 
 <!-- UPGRADE PICK (roguelite) -->
 <!-- Z105 DEPLOYMENT — troops, key points, riders, specialists, guns & ammo before every stage -->
-<div class="overlay hidden" id="deploy">
-  <div class="dp-head"><div class="br-op" id="dp-op">BỐ TRÍ TRẬN ĐỊA</div><div class="dp-total" id="dp-total"></div></div>
-  <div class="dp-body">
-    <div class="dp-col dp-posts"><div class="dp-h">TRỌNG ĐIỂM · RẢI QUÂN</div><div id="dp-posts"></div></div>
-    <div class="dp-col dp-side">
-      <canvas id="dp-map" width="180" height="180"></canvas>
-      <div class="dp-h">BINH CHỦNG</div><div id="dp-roles"></div>
-      <div class="dp-h">SÚNG ĐẠN</div><div id="dp-guns"></div>
+<div class="overlay hidden xk-screen" id="deploy">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="dp-back" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Quay lại</span></div>
+    <div class="xk-head"><h2 class="xk-ttl" id="dp-op">Bố trí trận địa</h2><p class="xk-sub dp-total" id="dp-total"></p></div>
+  </header>
+  <div class="xk-body">
+    <div class="dp-body">
+      <div class="dp-col dp-posts"><div class="dp-h">Trọng điểm — rải quân</div><div id="dp-posts"></div></div>
+      <div class="dp-col dp-side">
+        <canvas id="dp-map" width="180" height="180"></canvas>
+        <div class="dp-h">Binh chủng</div><div id="dp-roles"></div>
+        <div class="dp-h">Súng đạn</div><div id="dp-guns"></div>
+      </div>
     </div>
   </div>
-  <div class="dp-actions"><div class="btn btn-mini" id="dp-back">◀ VỀ MENU</div><div class="btn" id="dp-auto">TỰ ĐỘNG BỐ TRÍ</div><div class="btn btn-primary" id="dp-go">XUẤT KÍCH ▶</div></div>
+  <footer class="xk-foot dp-actions"><div class="xb xb-sec" id="dp-auto" role="button">Tự động bố trí</div><div class="xb xb-pri" id="dp-go" role="button"><span>Xuất kích</span><span class="ic" data-icon="play"></span></div></footer>
 </div>
 
 <!-- Z154 RELIC — pick one big power for the rest of the stage -->
-<div class="overlay hidden" id="relicDlg">
+<div class="overlay hidden xk-dlg xk-pick" id="relicDlg">
   <div class="rl-halo"></div>
-  <div class="br-op">THÁNH TÍCH CỔ ĐÃ THỨC GIẤC</div>
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">CHỌN MỘT SỨC MẠNH</div>
-  <div class="subtitle">Hiệu lực tới hết màn này · chỉ được chọn một</div>
+  <p class="xk-kick">Thánh tích cổ đã thức giấc</p>
+  <h2 class="xk-ttl">Chọn một sức mạnh</h2>
+  <p class="xk-sub">Có hiệu lực tới hết màn này. Chỉ được chọn một.</p>
   <div id="relicCards"></div>
 </div>
 
-<div class="overlay hidden" id="upgrade">
-  <div class="title" style="font-size:clamp(26px,6vw,46px)">NÂNG CẤP</div>
-  <div class="subtitle">Chọn một phần thưởng</div>
-  <div id="upcards"></div>
+<div class="overlay hidden xk-screen" id="upgrade">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="upHome" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+    <div class="xk-head"><h2 class="xk-ttl">Màn đã thắng</h2><p class="xk-sub">Chọn một phần thưởng cho người lính, rồi sang chiến trường kế tiếp.</p></div>
+  </header>
+  <div class="xk-body xk-center"><div id="upcards"></div></div>
 </div>
 
-<!-- STAGE BRIEFING (pre-stage contract choice) -->
-<div class="overlay hidden" id="briefing">
-  <div class="btn btn-mini ov-back" id="brBack"><span>◀ VỀ MENU</span></div>
-  <div class="br-op" id="br-op">CHIẾN DỊCH</div>
-  <div class="title" style="font-size:clamp(24px,5.5vw,42px)">SẴN SÀNG XUẤT KÍCH</div>
-  <div class="subtitle" id="br-sub">Tướng địch ở cuối màn — chọn hợp đồng</div>
-  <div class="br-team" id="br-team"></div>
-  <div class="br-brief" id="br-brief"></div>
-  <div class="br-obj" id="br-obj"></div>
-  <div class="br-pick">HỢP ĐỒNG <span>· đổi luật cho cả màn, mặc định an toàn</span></div>
-  <div id="brcards"></div>
-  <div class="br-actions"><div class="btn" id="brDeploy"><span class="ic" data-icon="team"></span><span>BỐ TRÍ QUÂN</span></div><div class="btn btn-primary" id="brGo">XUẤT KÍCH ▶</div></div>
-  <div class="br-hint">Quân tự bố trí theo kế hoạch lần trước · muốn đổi chỗ lính thì bấm BỐ TRÍ QUÂN</div>
+<!-- STAGE BRIEFING (pre-stage contract choice) — XK-UI: the order on the left (operation, place, story, objective, who goes in), the three
+     contracts on the right; one is always chosen, so Xuất kích works at once; Bố trí quân opens the deployment screen first -->
+<div class="overlay hidden xk-screen" id="briefing">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="brBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span id="brBackT">Quay lại</span></div>
+    <div class="xk-head"><p class="xk-kick br-op" id="br-op">Chiến dịch</p><h2 class="xk-ttl">Sẵn sàng xuất kích</h2></div>
+  </header>
+  <div class="xk-body">
+    <div class="br-grid">
+      <div class="br-order">
+        <p class="br-sub" id="br-sub"></p>
+        <p class="br-brief" id="br-brief"></p>
+        <div class="br-obj" id="br-obj"></div>
+        <div class="br-team" id="br-team"></div>
+      </div>
+      <div class="br-con">
+        <div class="br-pick"><b>Hợp đồng</b><span>Đổi luật cho cả màn. Tiến chắc là an toàn.</span></div>
+        <div id="brcards"></div>
+      </div>
+    </div>
+  </div>
+  <footer class="xk-foot"><span class="xk-hint br-hint">Quân tự vào vị trí theo kế hoạch lần trước.</span><div class="xb xb-sec" id="brDeploy" role="button"><span class="ic" data-icon="team"></span><span>Bố trí quân</span></div><div class="xb xb-pri" id="brGo" role="button"><span>Xuất kích</span><span class="ic" data-icon="play"></span></div></footer>
 </div>
 
 <!-- VICTORY -->
-<div class="overlay hidden" id="victory">
-  <div class="title" style="font-size:clamp(34px,8vw,68px)">CHIẾN THẮNG</div>
-  <div class="subtitle">Bạn đã hạ gục BẠO CHÚA</div>
-  <div class="panel">
-    <div class="go-stats">
-      <div class="go-stat"><div class="l">ĐIỂM</div><div class="v" id="vic-score" style="color:var(--amber)">0</div></div>
-    </div>
-    <div class="btn btn-primary" id="ngplusBtn">CHƠI VÒNG MỚI+ ▶</div>
+<div class="overlay hidden xk-screen xk-end" id="victory">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="vicHomeBtn" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+  </header>
+  <div class="xk-body xk-result">
+    <p class="xk-kick">Bạo Chúa đã ngã — chiến dịch hoàn thành</p>
+    <h2 class="xk-big">Chiến thắng</h2>
+    <p class="go-why" id="vicSub">Vòng mới đang chờ.</p>
+    <div class="go-stats"><div class="go-stat"><div class="l">Điểm</div><div class="v" id="vic-score">0</div></div></div>
+  </div>
+  <footer class="xk-foot"><span class="xk-hint">Vòng mới giữ nguyên trang bị, địch mạnh hơn.</span><div class="xb xb-pri" id="ngplusBtn" role="button"><span id="ngplusT">Vào vòng mới</span><span class="ic" data-icon="play"></span></div></footer>
+</div>
+
+<!-- XK-UI CONFIRM (ui/confirm.js askConfirm): leaving a battle, restarting a stage, wiping progress — the last overlay in the page, so it is
+     always the top menu for the keyboard / controller focus ring; Esc / B = the safe answer -->
+<div class="overlay hidden xk-dlg xk-confirm" id="xkConfirm" role="alertdialog" aria-modal="true" aria-labelledby="xkcT" aria-describedby="xkcB">
+  <div class="xk-card">
+    <h2 class="xk-ttl" id="xkcT"></h2>
+    <p class="xk-sub" id="xkcB"></p>
+    <div class="xk-acts"><div class="xb xb-sec" id="xkcNo" role="button" data-back="1"></div><div class="xb xb-pri" id="xkcYes" role="button"></div></div>
   </div>
 </div>
 
@@ -437,7 +510,7 @@
 </div>
 
 <!-- portrait gate — mobile is landscape-only -->
-<div id="rotate"><span class="ic" data-icon="rotate"></span><div class="rt-t">XOAY NGANG THIẾT BỊ</div><div class="rt-s">Chỉ chơi ở chế độ màn hình ngang</div></div>
+<div id="rotate"><span class="ic" data-icon="rotate"></span><div class="rt-t">Xoay ngang thiết bị</div><div class="rt-s">Trận đánh chỉ chơi ở màn hình ngang.</div></div>
 
 <!-- stage transition wipe (suspenseful reveal of the next stage) -->
 <div id="stagewipe"><div class="sw-bar sw-top"></div><div class="sw-bar sw-bot"></div><div class="sw-scan"></div><div class="sw-inner">

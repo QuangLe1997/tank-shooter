@@ -1,26 +1,31 @@
-// ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin
-import { CONTRACTS, DMG_TYPE, OBJECTIVES } from '../../config.js';
-import { opTitle, BIOME, GUNS, PROFILE, S, WAVE, biomePlace, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
+// ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
+import { CONTRACTS, DMG_TYPE, OBJECTIVES, OBJ_REWARD } from '../../config.js';
+import { opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
-export function openBriefing(opts){
-  _brCtx = opts || {};
+let _lastCtx = null, _lastOffer = null;   // XK-UI the deployment screen's Quay lại reopens this same briefing, with the same three contracts
+export function openBriefing(opts, offer){
+  _brCtx = opts || {}; _lastCtx = _brCtx;
   S.mode='briefing';
   briefTeam();   // Z354 ĐỘI HÌNH XUẤT KÍCH: the soldier, his ride, its driver, his squad
   prewarmStage();   // Z168 compile this stage's shaders in the background while the player reads the briefing (no hitch at the countdown / first frame)
   const bdef = bossForStage(S.stage);   // Z161 may be one of the new generals
-  const sub=document.getElementById('br-sub'); if(sub) sub.textContent = 'MÀN '+S.stage+' · '+biomeVi(BIOME.name)+(biomePlace(BIOME.name)?' · '+biomePlace(BIOME.name):'')+'  —  TƯỚNG: '+(bdef?bdef.name:'???');
-  { const op=opFor(S.stage), od=OBJECTIVES[op.obj]; const t=document.getElementById('br-op'); if(t) t.textContent=op.title;
+  const words=t=>String(t||'').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c)=>a+c.toLocaleUpperCase('vi'));   // a general's name: "BÒ THÉP" → "Bò Thép"
+  const sub=document.getElementById('br-sub'); if(sub) sub.innerHTML = '<b>Màn '+S.stage+' · '+escapeHtml(capVi(biomeVi(BIOME.name)))+'</b>'+(placeLine(BIOME.name)?' — '+escapeHtml(placeLine(BIOME.name)):'')+'<span>Tướng địch giữ thành: '+escapeHtml(bdef?words(bdef.name):'chưa rõ')+'</span>';
+  { const op=opFor(S.stage), od=OBJECTIVES[op.obj]; const t=document.getElementById('br-op'); if(t) t.textContent=opTitle(op);
     const bf=document.getElementById('br-brief'); if(bf) bf.textContent=(op.story?op.story+' ':'')+op.brief;
-    const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>MỤC TIÊU</b> Phá '+escapeHtml(od.vi||od.name)+' <span>· khi nó còn đứng: '+escapeHtml((od.effectVi||od.effect).toLowerCase())+' · thưởng xu + ◆</span>'; }
-  // offer 3: always the STEADY safe baseline + 2 random risk/reward contracts (shuffled)
-  const rest=CONTRACTS.filter(c=>c.id!=='steady').slice(), pick=[CONTRACTS.find(c=>c.id==='steady')];
-  for(let i=0;i<2 && rest.length;i++) pick.push(rest.splice((Math.random()*rest.length)|0,1)[0]);
-  for(let i=pick.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0, t=pick[i]; pick[i]=pick[j]; pick[j]=t; }
+    const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>Mục tiêu</b><span>Phá '+escapeHtml(capVi(od.vi||od.name).toLocaleLowerCase('vi'))+'. Khi nó còn đứng: '+escapeHtml((od.effectVi||od.effect).toLowerCase())+'. Phá được: +'+OBJ_REWARD.score.toLocaleString('vi-VN')+' điểm.</span>'; }
+  { const bt=document.getElementById('brBackT'); if(bt) bt.textContent = _brCtx.first && S.launchFrom==='setup' ? 'Chọn trận' : 'Trang chủ'; }
+  // offer 3: always the STEADY safe baseline + 2 random risk/reward contracts (shuffled) — the same three again when the deployment screen comes back here
+  let pick=offer;
+  if(!pick){ const rest=CONTRACTS.filter(c=>c.id!=='steady').slice(); pick=[CONTRACTS.find(c=>c.id==='steady')];
+    for(let i=0;i<2 && rest.length;i++) pick.push(rest.splice((Math.random()*rest.length)|0,1)[0]);
+    for(let i=pick.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0, t=pick[i]; pick[i]=pick[j]; pick[j]=t; } }
+  _lastOffer=pick;
   const wrap=document.getElementById('brcards'); wrap.replaceChildren();
   for(const c of pick){
-    const card=document.createElement('div'); card.className='brcard';
+    const card=document.createElement('div'); card.className='brcard'; card.setAttribute('role','button');
     const ic=document.createElement('div'); ic.className='ic'; ic.appendChild(iconEl(c.icon));
     const tag=document.createElement('div'); tag.className='br-tag'; tag.textContent=c.tag;
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=c.name;
@@ -119,7 +124,14 @@ export function updateSpellHUD(){
   const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q ‹ '+(sp.vi||sp.name)+' ›';
 }
 
-{ const g=document.getElementById('brGo'), d=document.getElementById('brDeploy'); if(g) tapEl(g, ()=>launchStage(false)); if(d) tapEl(d, ()=>launchStage(true)); }   // Z152
+{ const g=document.getElementById('brGo'), d=document.getElementById('brDeploy'), b=document.getElementById('brBack'); if(g) tapEl(g, ()=>launchStage(false)); if(d) tapEl(d, ()=>launchStage(true)); if(b) tapEl(b, briefBack); }   // Z152
+// XK-UI back from the briefing: the stage-1 briefing of a battle launched from CHUẨN BỊ TRẬN goes back to its battlefield step (nothing was fought yet);
+//   any other goes home — mid-run it asks first (the won stages are kept, CHƠI TIẾP comes back to this one)
+export function briefBack(){ const ctx=_brCtx||{};
+  if(ctx.first){ const toSetup=S.launchFrom==='setup'; quitToMenu(); if(toSetup) openBattleSetup(BS.tab||'campaign'); return; }
+  askConfirm({ title:'Về trang chủ?', body:'Các màn đã thắng vẫn được lưu — bấm Chơi tiếp ở trang chủ để quay lại màn này.', yes:'Về trang chủ', no:'Ở lại' }, quitToMenu); }
+// the deployment screen's Quay lại: this briefing again, the same contracts on offer
+export function reopenBriefing(){ openBriefing(_lastCtx, _lastOffer); }
 // Z168 the intro hides far objects while it flies; when they come back, their shaders would compile on the countdown's first frames. Do it now, in parallel, off the frame.
 let _warm=null, _again=false, _hold=0;
 export function prewarmStage(){ if(_warm){ _again=true; return; }   // one pass at a time; a call during a pass queues one more (new troops / riders / the roof gun appeared)
