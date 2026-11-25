@@ -22,6 +22,7 @@ export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
 export * from './render/lod.js';
 export * from './render/far-lod.js';   // Z328 big static models swap to a simplified copy far away
+export * from './render/inst-view.js';   // VIEW 1 a field-wide instanced mesh draws only what is near (its own detail near, a light copy far, nothing past sight)
 export * from './render/near-detail.js';   // Z395 the originals' sharp maps on whatever the camera is close to
 export * from './render/cover-batch.js';   // Z338 cover pieces drawn a few instanced draws at a time
 export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD

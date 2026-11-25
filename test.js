@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { HARD, BALANCE, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
+import { INSTVIEW, HARD, BALANCE, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -1332,6 +1332,12 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/mode = 'climb'/.test(lg) && /climbBody\(D, len, ankleH, slope\)/.test(lg) && /const heightAt = soleAt/.test(lg) && /climbArms\(R, G, 1\)/.test(rc) && /climbW\(\)/.test(rc) && /\[1, true, 1, 0\], \[0, false, -1, 0\], \[0, true, -1, 0\.5\], \[1, false, 1, 0\.5\]/.test(po), 'the climb pose: diagonal pairs of limbs on the face, hips and legs by IK, arms on holds, the rifle slung, his feet on the deck on top');
   ok(/t\.lift\|\|0/.test(lk) && /dropTo\+=t\.who\.lift/.test(lk) && /bl===climbPerch\(\)/.test(lk) && /ignore:climbPerch\(\)/.test(sf) && /CAM\.ly/.test(up), 'up on top: enemies aim up at him and hit him there, his rounds leave his muzzle past what he stands on, the camera rides up');
 }
+// VIEW 1 field-wide instanced meshes draw only what is near (render/inst-view.js)
+{ const V = INSTVIEW;
+  ok(V.minN >= 2 && V.minTris > 0 && V.minSpread > 0 && V.maxR > 0, 'INSTVIEW: which meshes are taken');
+  ok(V.liteMin >= 45 && V.liteMin <= V.liteMax && V.keep > 0 && V.keep < 1 && V.keepCut >= V.keep && V.keepCut <= 1, 'INSTVIEW: the light copy starts beyond the sun shadow box (44 m) and keeps a share of the triangles');
+  ok(V.hideMin >= V.liteMin && V.hideK > V.liteK && V.never > V.hideMin, 'INSTVIEW: things vanish farther off than they go light; big things never');
+  ok(V.step > 0 && V.perFrame >= 1 && V.scan > 0 && V.ref > 0 && V.maxK >= 1, 'INSTVIEW: rebuild pacing'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

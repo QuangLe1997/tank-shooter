@@ -1533,6 +1533,13 @@ export const FARLOD = { on:true, far:60, rK:6, mobileK:0.7, keep:0.15, err:0.02,
 // Z412 SHADOW LOD (render/far-lod.js shadowLOD): in the sun's shadow pass every opaque caster of at least `min` triangles wears a welded, position-only copy
 //   simplified to `keep` of its triangles (error `err`); the scene is rescanned for casters every `rescan` shadow passes
 export const SHADOWLOD = { on:true, min:1500, keep:0.25, err:0.03, rescan:90 };
+// VIEW 1 (render/inst-view.js) a field-wide instanced mesh draws only what is near: minN / minTris / minSpread — which meshes are taken (instances, triangles in all, the radius
+//   they are spread over, m); maxR — a thing bigger than this (a ridge, a backdrop piece) is left alone. A thing of radius r: within liteK × r m (clamped liteMin…liteMax) its own
+//   geometry and shadows; past that a copy of keep of its triangles (keepCut for leaf cards; only for things of liteMinTris or more); past hideK × r m (at least hideMin) nothing —
+//   unless that is beyond `never` m (a wall, a tower: never hidden). step: the soldier's metres between rebuilds; perFrame: rebuilds a frame; scan: seconds between looks for new
+//   meshes; ref / maxK / kStep: the distances stretch with the camera's distance from the soldier (÷ ref, at most maxK; a change of kStep rebuilds). ?noview turns it off (to compare).
+export const INSTVIEW = { on:!(typeof location !== 'undefined' && /[?&]noview\b/.test(location.search)), minN:8, minTris:40000, minSpread:100, maxR:16,
+  liteMinTris:900, liteK:14, liteMin:50, liteMax:140, keep:0.3, keepCut:0.5, hideK:260, hideMin:90, never:500, step:6, perFrame:2, scan:1.5, ref:30, maxK:3, kStep:0.12 };
 // Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
 //   its reach — radius × rK m from its surface, at least min, at most at (each instance of an instanced mesh counts) — handed back past reach × out for hold s,
 //   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh ·

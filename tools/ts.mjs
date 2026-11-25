@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // tools/ts.mjs — TEST 1 THE QUICK TEST: one battle in headless Chrome with the GPU, straight into the fight (?test=, dev/hooks.js), and ONE line of JSON out.
 //   node tools/ts.mjs <BIOME> [seconds=5] [--seed 7] [--at x,z] [--eval probe.js] [--shot out.jpg] [--profile '{"unit":"xeom"}']
-//                     [--level 3] [--tod noon] [--wx clear] [--size 1280x720] [--novsync] [--query 'a=b&c']
+//                     [--level 3] [--tod noon] [--wx clear] [--size 1280x720] [--dpr 1] [--novsync] [--query 'a=b&c']
 //   BIOME: DESERT RUINS ARCTIC FOUNDRY CITADEL MEADOW CITY SAVANNA VOLCANO QUARRY
 //   --eval file   its text is the BODY of `async (H, S) => { … }` run in the page after <seconds> (H = the hub namespace, S = the game state); its
 //                 return value is printed as "eval". A probe may drive the game itself for a while and sample on a timer.
@@ -14,7 +14,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url))), argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; }, has = k => argv.includes(k);
-const VAL = new Set(['--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query']), pos = [];
+const VAL = new Set(['--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
 for(let i = 0; i < argv.length; i++){ if(VAL.has(argv[i])){ i++; continue; } if(!argv[i].startsWith('--')) pos.push(argv[i]); }
 const biome = (pos[0] || '').toUpperCase(), secs = +(pos[1] || 5);
 if(!biome){ console.log('usage: node tools/ts.mjs <BIOME> [seconds] [--seed n] [--at x,z] [--eval probe.js] [--shot out.jpg] [--novsync]'); process.exit(2); }
@@ -46,7 +46,7 @@ const kill = setTimeout(() => { out.errors.push('WATCHDOG: took too long'); done
 async function done(code){ clearTimeout(kill); try{ if(ctx) await ctx.close(); }catch(e){} unlock(); srv.close(); console.log(JSON.stringify(out)); process.exit(code); }
 process.on('SIGINT', () => done(2)); process.on('SIGTERM', () => done(2));
 try{
-  ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'ts-chrome-profile'), { channel:'chrome', headless:true, viewport:{ width:W, height:Hh }, deviceScaleFactor:1,
+  ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'ts-chrome-profile'), { channel:'chrome', headless:true, viewport:{ width:W, height:Hh }, deviceScaleFactor:+opt('--dpr', 1),
     args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])] });
   const p = ctx.pages()[0] || await ctx.newPage();
   p.on('pageerror', e => out.errors.length < 8 && out.errors.push('pageerror: ' + e.message.slice(0, 300)));
@@ -54,14 +54,15 @@ try{
   const prof = Object.assign({ nickname:'TEST', onboarded:true, coached:true, quality:'high', introSeen:{ DESERT:1, RUINS:1, FOUNDRY:1, CITADEL:1, MEADOW:1, CITY:1, SAVANNA:1, ARCTIC:1, VOLCANO:1, QUARRY:1 }, tips:{ all:1 } }, JSON.parse(opt('--profile', '{}')));
   await p.addInitScript(pr => { try{ localStorage.setItem('steelsiege.profile', JSON.stringify(pr)); }catch(e){} }, prof);
   const q = ['perf', 'nogov', 'test=' + biome, 'level=' + opt('--level', '3'), 'tod=' + opt('--tod', 'noon'), 'wx=' + opt('--wx', 'clear')];
-  if(opt('--seed')) q.push('seed=' + opt('--seed')); if(opt('--at')) q.push('at=' + opt('--at')); if(opt('--query')) q.push(opt('--query'));
+  if(has('--novsync')) q.push('nopace'); if(opt('--seed')) q.push('seed=' + opt('--seed')); if(opt('--at')) q.push('at=' + opt('--at')); if(opt('--query')) q.push(opt('--query'));
   const t0 = Date.now(); await p.goto('http://127.0.0.1:' + port + '/?' + q.join('&')); await p.waitForFunction(() => window.__ready, null, { timeout:150000 });
   out.load = +((Date.now() - t0) / 1000).toFixed(1);
-  // frame times over the watched seconds, measured in the page (requestAnimationFrame to requestAnimationFrame)
-  await p.evaluate(() => { const F = window.__tsF = []; let last = performance.now(); const f = now => { F.push(now - last); last = now; if(!window.__tsStop) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+  // frame times over the watched seconds: the game's own probe (?perf — render/perfhud.js PH.frm, the time between two frames it drew), sampled as it goes
+  await p.evaluate(async () => { const H = window.__H = await import('/src/hub.js'), PH = H.PH, F = window.__tsF = []; let seen = PH.frm.i;
+    window.__tsI = setInterval(() => { const r = PH.frm, n = r.a.length; while(seen !== r.i){ F.push(r.a[seen]); seen = (seen + 1) % n; } }, 200); });
   await p.waitForTimeout(secs * 1000);
-  Object.assign(out, await p.evaluate(async () => { window.__tsStop = true; const H = window.__H = await import('/src/hub.js'), F = window.__tsF.slice(2).sort((a, b) => a - b), at = k => F.length ? +F[Math.min(F.length - 1, Math.floor(F.length * k))].toFixed(1) : 0;
-    const i = H.renderer.info.render; return { frame:{ p50:at(0.5), p95:at(0.95), max:at(1), n:F.length }, calls:i.calls, tris:i.triangles }; }));
+  Object.assign(out, await p.evaluate(() => { clearInterval(window.__tsI); const H = window.__H, F = window.__tsF.sort((a, b) => a - b), at = k => F.length ? +F[Math.min(F.length - 1, Math.floor(F.length * k))].toFixed(1) : 0;
+    return { frame:{ p50:at(0.5), p95:at(0.95), max:at(1), n:F.length }, calls:H.PH.calls, tris:H.PH.tris }; }));
   if(opt('--eval')){ const body = fs.readFileSync(opt('--eval'), 'utf8'); try{ out.eval = await p.evaluate(`(async (H, S) => { ${body}\n})(window.__H, window.__H.S)`); }catch(e){ out.errors.push('eval: ' + String(e.message).slice(0, 400)); } }
   if(opt('--shot')){ await p.screenshot({ path:opt('--shot'), type:'jpeg', quality:80 }); out.shot = opt('--shot'); }
   out.ok = !out.errors.length; await done(out.ok ? 0 : 1);
