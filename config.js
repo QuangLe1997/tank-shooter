@@ -314,10 +314,23 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
 //   with; round what is dead ahead no faster than swerve × that + swerveV; shut within gapD m on both sides it is a gap, taken at gapV; creep = its slowest
 //   while a way is open; bad ground (a rise steeper than slope, a drop over drop per metre, the deep channel) counts softPass of the way beyond it; edge =
 //   m inside the field's edge · bike.hull — the xe ôm's outline ([x, z, r] m, nose to tail: as narrow as it is drawn)
+//   stop — the hard stop (game/ride-feel.js): faster than minV and asked for under rein × its speed (the push let go, the way shut) — or told to go more
+//   than aboutA rad behind it — it brakes at decel m/s² × the ground's grip (by battlefield; wet = in a ford) until under endV (an about-turn: aboutV, then
+//   it comes round pivot × as fast), unless he pushes on again by resume m/s; the pose's depth k runs from kMin at minV to 1 at fullV, in at inRate /s, out
+//   at outRate /s. horse: nose-up pitch rad, croup drop and forward shift m (about its forefeet), hind-leg fold femur / tibia / cannon rad, neck up and
+//   nose tucked rad, roll into an about-turn rad, the rider's lean back (as a push, m/s²), feet = where its hooves stand [hind z, fore z, half-track] and
+//   plant = how far they slide forward [hind, fore] m, mark = a furrow's [width m, darkness], dust per metre slid. bike: the fork's extra dive rad, zp =
+//   the damper through the stop and hold s after it (one rebound), slip = the tail's step-out rad, mark = the skid's [× the tyre's width, darkness],
+//   rear = the rear tyre behind the centre m
 export const RIDEFEEL = {
   avoid:{ on:true, every:0.09, look:[3.4, 0.95, 20], fan:[0, 0.36, -0.36, 0.8, -0.8], lenK:[1, 0.92, 0.92, 0.66, 0.66], shoulder:1.45, margin:{ horse:0.4, bike:0.14 },
     devW:0.45, stick:0.22, forget:0.5, maxDev:1.75, halt:0.9, gain:[0.9, 2.6], brake:6, swerve:1.5, swerveV:2.5, gapD:3, gapV:{ horse:3.6, bike:5 }, creep:1.3,
     slope:0.8, drop:0.9, softPass:0.35, edge:3.6 },
+  stop:{ minV:4.2, rein:0.3, endV:0.35, resume:0.8, aboutA:2.1, aboutV:1.6, shake:0.3, kMin:0.55,
+    grip:{ DESERT:0.7, ARCTIC:0.55, SAVANNA:0.82, MEADOW:0.85, VOLCANO:0.78, QUARRY:0.9, wet:0.7 },
+    horse:{ decel:11.5, fullV:11, inRate:11, outRate:2.6, pivot:1.7, pitch:0.2, drop:0.13, shift:0.27, femur:0.84, tibia:1.02, cannon:0.1, neck:0.26, head:0.38, roll:0.16, lean:8,
+      feet:[-0.92, 0.6, 0.18], plant:[0.46, 0.26], mark:[0.12, 0.42], dust:2.6 },
+    bike:{ decel:9.5, fullV:9, inRate:14, outRate:6, pivot:1.35, hold:1.1, dive:0.05, zp:0.55, slip:0.09, mark:[1.6, 0.3], rear:0.62, dust:2.2 } },
   bike:{ hull:{ xeom:[[0, 0.6, 0.42], [0, 0, 0.45], [0, -0.6, 0.42]] } } };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)

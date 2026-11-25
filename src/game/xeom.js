@@ -5,7 +5,7 @@
 // and being thrown off all work as they do on horseback.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { NEARDETAIL, RIDE, XEOM } from '../../config.js';
+import { NEARDETAIL, RIDE, RIDEFEEL, XEOM } from '../../config.js';
 import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape, rideBumpAt, ridePower } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
@@ -92,18 +92,24 @@ function lampUpdate(H, dt){ const Lp = H.lamps, U = XEOM.lamp; if(!Lp) return; c
   if(Lp.beam){ if(Lp.beam.visible !== NIGHT.on) Lp.beam.visible = NIGHT.on; Lp.beam.intensity = ok ? U.beam.i * night : 0; } }   // (shown only on night stages, like the floodlights: switching a light on or off recompiles every shader, so it never happens mid-fight)
 // Z302 TYRE TRACKS: each tyre leaves its line in the ground — thin dark strips laid on the real terrain every few centimetres of travel, darkening the
 //   ground by multiplying it (so they read on sand and on tarmac alike) and fading out over TRAIL.life seconds; a ring of instances, nothing allocated
-const TRAIL = { n:MOBILE ? 500 : 1400, i:0, mesh:null, born:null, life:24, dark:0.66, step:0.16, fadeAt:0 }, _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _ts = new THREE.Vector3(), _tc = new THREE.Color(), _ty = new THREE.Vector3(0, 1, 0);
+const TRAIL = { n:MOBILE ? 500 : 1400, i:0, mesh:null, born:null, dk:null, life:24, dark:0.66, step:0.16, fadeAt:0 }, _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _ts = new THREE.Vector3(), _tc = new THREE.Color(), _ty = new THREE.Vector3(0, 1, 0);
 function trailMesh(){ if(TRAIL.mesh) return TRAIL.mesh; const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2);
   const m = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, depthWrite:false, blending:THREE.MultiplyBlending, premultipliedAlpha:true, polygonOffset:true, polygonOffsetFactor:-6, polygonOffsetUnits:-12 });
   const im = new THREE.InstancedMesh(g, m, TRAIL.n); im.frustumCulled = false; im.renderOrder = -1; _tm.makeScale(0, 0, 0); for(let i = 0; i < TRAIL.n; i++){ im.setMatrixAt(i, _tm); im.setColorAt(i, _tc.setRGB(1, 1, 1)); }
-  TRAIL.born = new Float32Array(TRAIL.n).fill(-1e9); scene.add(im); return (TRAIL.mesh = im); }
+  TRAIL.born = new Float32Array(TRAIL.n).fill(-1e9); TRAIL.dk = new Float32Array(TRAIL.n).fill(TRAIL.dark); scene.add(im); return (TRAIL.mesh = im); }
+// RIDE 2 the marks fade (every 0.25 s; each strip from its own darkness) · one dark strip from (x0, z0) to (x1, z1), w m wide: a braced hoof's furrow (game/ride-feel.js)
+function trailFade(im, now){ if(now <= TRAIL.fadeAt) return false; TRAIL.fadeAt = now + 0.25; for(let i = 0; i < TRAIL.n; i++){ const a = now - TRAIL.born[i]; if(a < 0.3 || a > TRAIL.life + 1) continue; im.setColorAt(i, _tc.setScalar(1 - (1 - TRAIL.dk[i]) * Math.max(0, 1 - a / TRAIL.life))); } return true; }
+export function groundMarkFade(){ const im = TRAIL.mesh; if(im && trailFade(im, performance.now() / 1000) && im.instanceColor) im.instanceColor.needsUpdate = true; }
+export function groundMark(x0, z0, x1, z1, w, dark){ if(typeof window === 'undefined') return; const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz); if(L < 0.03 || L > 2) return;
+  const im = trailMesh(), mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, i = TRAIL.i; TRAIL.i = (i + 1) % TRAIL.n; _tq.setFromAxisAngle(_ty, Math.atan2(dx, dz)); _ts.set(w, 1, L * 1.04);
+  _tm.compose(_sp.set(mx, heightAt(mx, mz) + 0.03, mz), _tq, _ts); im.setMatrixAt(i, _tm); TRAIL.born[i] = performance.now() / 1000; TRAIL.dk[i] = dark; im.setColorAt(i, _tc.setScalar(dark)); im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true; }
 function tyreTrail(H, X){ const W = X.wheels; if(!W || !H.wheels || typeof window === 'undefined') return; if(H.drv && H.drv.state !== 'ride' && H.drv.state !== 'mount') { H.trk = null; return; }
-  const im = trailMesh(), now = performance.now() / 1000, k = XEOM.k; H.trk = H.trk || W.map(() => null); let dirty = false;
+  const im = trailMesh(), now = performance.now() / 1000, k = XEOM.k, SK = H.stop && H.stop.on ? RIDEFEEL.stop.bike.mark : null; H.trk = H.trk || W.map(() => null); let dirty = false;   // (RIDE 2 SK: braking hard, the locked rear tyre's skid — wider, darker)
   for(let j = 0; j < W.length; j++){ const w = W[j]; _sa.set(w.c[0], 0, w.c[2]); H.B.localToWorld(_sa); const last = H.trk[j]; if(!last){ H.trk[j] = _sa.clone(); continue; }
     const dx = _sa.x - last.x, dz = _sa.z - last.z, L = Math.hypot(dx, dz); if(L < TRAIL.step) continue; if(L > 2){ last.copy(_sa); continue; }
-    const mx = (_sa.x + last.x) / 2, mz = (_sa.z + last.z) / 2; _tq.setFromAxisAngle(_ty, Math.atan2(dx, dz)); _ts.set(w.w * k * 0.85, 1, L * 1.04);
-    _tm.compose(_sp.set(mx, heightAt(mx, mz) + 0.03, mz), _tq, _ts); const i = TRAIL.i; TRAIL.i = (i + 1) % TRAIL.n; im.setMatrixAt(i, _tm); TRAIL.born[i] = now; im.setColorAt(i, _tc.setScalar(TRAIL.dark)); last.copy(_sa); dirty = true; }
-  if(now > TRAIL.fadeAt){ TRAIL.fadeAt = now + 0.25; for(let i = 0; i < TRAIL.n; i++){ const a = now - TRAIL.born[i]; if(a < 0.3 || a > TRAIL.life + 1) continue; im.setColorAt(i, _tc.setScalar(1 - (1 - TRAIL.dark) * Math.max(0, 1 - a / TRAIL.life))); } dirty = true; }
+    const mx = (_sa.x + last.x) / 2, mz = (_sa.z + last.z) / 2, sk = SK && w.c[2] < 0, dk = sk ? SK[1] : TRAIL.dark; _tq.setFromAxisAngle(_ty, Math.atan2(dx, dz)); _ts.set(w.w * k * 0.85 * (sk ? SK[0] : 1), 1, L * 1.04);
+    _tm.compose(_sp.set(mx, heightAt(mx, mz) + 0.03, mz), _tq, _ts); const i = TRAIL.i; TRAIL.i = (i + 1) % TRAIL.n; im.setMatrixAt(i, _tm); TRAIL.born[i] = now; TRAIL.dk[i] = dk; im.setColorAt(i, _tc.setScalar(dk)); last.copy(_sa); dirty = true; }
+  if(trailFade(im, now)) dirty = true;
   if(dirty){ im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true; } }
 // Z300 ON THE GROUND UNDER ITS WHEELS: the ground's height is read under every wheel and the machine is pitched (front axle against rear) and, on three
 //   wheels, rolled (left track against right) and lifted so each tyre sits on the ground beneath it — up a rise, down into a dip, across a slope
@@ -136,10 +142,11 @@ function suspension(H, dt, v, yr, two){ const U = XEOM.sus, s = H.sus, k = XEOM.
   s.vy -= gac * U.gY * dt;
   // the rough road: a kick now and then, more often and harder the faster
   if(Math.random() < Math.abs(v) * dt * U.rough){ const j = U.bump * (0.35 + Math.random()) * sp; s.vy -= j; s.vp += (Math.random() < 0.5 ? 1 : -1) * j * U.kickP * 3; if(!two) s.vr += (Math.random() - 0.5) * j * 2; }
-  const pT = Math.max(U.pitch[0], Math.min(U.pitch[1], s.acc * U.pitchAcc)), lat = v * yr, rT = two ? 0 : Math.max(-U.rollMax, Math.min(U.rollMax, lat * U.rollLat));
+  const HS = H.stop, RB = RIDEFEEL.stop.bike, hold = HS && HS.hold > 0;   // RIDE 2 a hard stop: the fork dives deeper, and the damper lets it come back up once
+  const pT = Math.max(U.pitch[0], Math.min(U.pitch[1], s.acc * U.pitchAcc)) - (HS ? HS.k * RB.dive : 0), lat = v * yr, rT = two ? 0 : Math.max(-U.rollMax, Math.min(U.rollMax, lat * U.rollLat));
   const spr = (x, vx, t, kk, z) => vx + (-kk * (x - t) - 2 * z * Math.sqrt(kk) * vx) * dt, A = H.air, AC = XEOM.air, soft = A && A.landT > 0;   // (Z311 just landed: it bounces a few times on its springs)
-  s.vy = spr(s.y, s.vy, 0, U.k, soft ? AC.landZ : U.z); s.y += s.vy * dt; s.vp = spr(s.p, s.vp, pT, U.kp, U.zp); s.p += s.vp * dt; s.vr = spr(s.r, s.vr, rT, U.kr, U.zr); s.r += s.vr * dt;
-  s.y = Math.max(soft ? -AC.sag : -0.05, Math.min(0.05, s.y)); s.p = Math.max(-0.12, Math.min(0.1, s.p)); s.r = Math.max(-0.09, Math.min(0.09, s.r));
+  s.vy = spr(s.y, s.vy, 0, U.k, soft ? AC.landZ : U.z); s.y += s.vy * dt; s.vp = spr(s.p, s.vp, pT, U.kp, hold ? RB.zp : U.zp); s.p += s.vp * dt; s.vr = spr(s.r, s.vr, rT, U.kr, U.zr); s.r += s.vr * dt;
+  s.y = Math.max(soft ? -AC.sag : -0.05, Math.min(0.05, s.y)); s.p = Math.max(-0.15, Math.min(0.1, s.p)); s.r = Math.max(-0.09, Math.min(0.09, s.r));
   // about a point between the axles at hub height: nose up = +p, rolled out of the bend (to its right on a left turn) = +r
   const W = XEOM[H.bike].wheels, pz = W ? (W[0].c[2] + W[W.length - 1].c[2]) / 2 : 0, py = W ? W[0].c[1] : 0.15, b = H.body;
   b.rotation.set(-s.p, 0, s.r); _sa.set(0, py, pz); _sp.copy(_sa).applyEuler(b.rotation); b.position.subVectors(_sa, _sp); b.position.y += (s.y + Math.sin(H.t * 47) * U.buzz * (0.4 + sp)) / k;
@@ -167,7 +174,7 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
   const rest = two && H.drv && H.drv.fd ? -XEOM.sus.restLean * H.drv.fd[0] : 0;   // Z300 stopped, a two-wheeler rests over on his left foot
   const bank = Math.max(-XEOM.sus.leanMax, Math.min(XEOM.sus.leanMax, Math.atan(v * yawRate / 9.81) * XEOM.sus.leanK)) * lk * lk * (3 - 2 * lk);   // Z302 the lean a bend really asks for: atan(v·ω / g) · Z311 only once it is going (slow or standing, upright)
   H.lean += (-bank + rest - H.lean) * Math.min(1, dt * 6); H.B.rotation.z = two ? H.lean : 0; H.B.position.y = 0;   // two wheels bank into the bend; three stay flat on the road
-  const SL = AC.slip, slipT = two ? Math.sign(yawRate) * Math.min(SL.max, Math.max(0, av - SL.v) * Math.abs(yawRate) * SL.k) : 0; H.slip += (slipT - H.slip) * Math.min(1, dt * 4); H.T.rotation.y = H.slip;   // Z311 fast and hard over, the rear steps out
+  const SL = AC.slip, HS = H.stop, skid = HS && HS.on ? HS.k * RIDEFEEL.stop.bike.slip / HS.grip * (HS.about || (H.skidSide || (H.skidSide = Math.random() < 0.5 ? -1 : 1))) : (H.skidSide = 0), slipT = two ? Math.sign(yawRate) * Math.min(SL.max, Math.max(0, av - SL.v) * Math.abs(yawRate) * SL.k) + skid : 0; H.slip += (slipT - H.slip) * Math.min(1, dt * 4); H.T.rotation.y = H.slip;   // Z311 fast and hard over, the rear steps out · RIDE 2 braking hard, the locked rear wheel slews a little to one side
   rideRocks(H, v, X); airborne(H, dt, v);
   const flying = H.air.y > 0.03; suspension(H, dt, v, yawRate, two); if(!flying){ wheelDust(H, dt, v, X); tyreTrail(H, X); } lampUpdate(H, dt); rideSmoke(H, dt); rideExhaust(H, dt);   // (Z363 the old engine's exhaust smoke)
   const now = performance.now() / 1000, p = S.player;
@@ -175,7 +182,7 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
     const want = Math.max(-U.steerMax, Math.min(U.steerMax, Math.atan(wb * yawRate / Math.max(1.4, Math.abs(v))))) * Math.sign(v || 1);   // Z299 the steer a turn this tight needs at this speed (a lot slow, a touch fast)
     H.steer += (want - H.steer) * Math.min(1, dt * U.steerRate);
     const Rt = Math.abs(H.steer) > 1e-4 ? wb / Math.tan(H.steer) : 0;   // Z302 the turn's radius: a pair of front wheels steers Ackermann-true (the inner one more)
-    for(const w of H.wheels){ w.spin.rotation.x = H.roll / w.R; if(w.steer){ if(H.axis) w.pivot.quaternion.setFromAxisAngle(H.axis, H.steer); else w.pivot.rotation.y = Rt ? Math.atan(wb / (Rt - w.x * XEOM.k)) : 0; } }   // Z298 the wheels roll; the front one steers
+    for(const w of H.wheels){ if(!(HS && HS.on && !w.steer)) w.spin.rotation.x = H.roll / w.R; if(w.steer){ if(H.axis) w.pivot.quaternion.setFromAxisAngle(H.axis, H.steer); else w.pivot.rotation.y = Rt ? Math.atan(wb / (Rt - w.x * XEOM.k)) : 0; } }   // Z298 the wheels roll; the front one steers
     if(H.bar) H.bar.quaternion.setFromAxisAngle(H.axis, H.steer); }
   if(H.drv) driveDriver(H, dt, v, yawRate);   // Z296 the driver rides it (lean, wheelie, weave, throttle, gears, ducking, crashing) and does the talking
   else if(p && now > H.sayAt){ H.sayAt = now + 18 + Math.random() * 20; if(H.sayAt > 0 && Math.abs(v) > 1) floatText(XEOM.lines[(Math.random() * XEOM.lines.length) | 0], '#ffe9a8', new THREE.Vector3(p.pos.x, p.pos.y + 3, p.pos.z), 13); } }

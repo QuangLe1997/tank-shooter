@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
-import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM, XHAIR } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wadeAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY } from '../hub.js';
+import { CAV, HORSE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
+import { ARENA, BIOME, MOBILE, S, actx, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wadeAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -72,6 +72,7 @@ export function updateCavalry(dt, now){
   p.aimSmoothed=wrapA(p.aimSmoothed + wrapA(p.aim-p.aimSmoothed)*Math.min(1, dt*14));
   const turnCtl=controlScheme()==='turn', TI=turnCtl?turnInput():null, dir=turnCtl?null:getMoveDir(), inp=turnCtl?Math.max(Math.abs(TI.thr), Math.abs(TI.turn)):Math.min(1, dir.length());
   const wade=wadeAt(p.pos.x, p.pos.z);   // Z405 (fords, the ice)
+  if(CV.trans || !CV.mounted) rideStopEase(H, dt);
   if(CV.trans){ transition(p, dt, now); }
   else if(CV.mounted){
     // the horse: steer toward where you push (or the reins: W/S speed, A/D turn), speed builds and settles, he turns tighter when slow
@@ -83,8 +84,10 @@ export function updateCavalry(dt, now){
     else if(inp>0.1){ const tgt=Math.atan2(dir.x, dir.z), AV=rideAvoid(H, p, dt, CV.facing, tgt, CV.speed, surge), df=wrapA((AV.act ? AV.head : tgt)-CV.facing);
       want=Math.min(AV.vcap, top*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); turn=Math.max(-1, Math.min(1, df*(AV.act ? AV.gain : 2))); }
     else rideAvoidReset();
-    const tr=Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
-    const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : Hc.decel; CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));
+    // RIDE 2 reined in from speed (the push let go, the way shut, an about-turn): braked as hard as the ground holds — sat on its haunches / the fork dived (game/ride-feel.js)
+    const SF=RIDEFEEL.stop, hs=rideStopStep(H, p, dt, want, CV.speed, !turnCtl && inp>0.1 ? wrapA(Math.atan2(dir.x, dir.z)-CV.facing) : 0), ST=H.stop; if(ST.on && ST.about) want=Math.min(want, SF.aboutV);
+    const tr=(Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop))*(ST.about ? 1+((H.bike ? SF.bike : SF.horse).pivot-1)*Math.min(1, ST.k*2) : 1), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
+    const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : (hs || Hc.decel); CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));
     p.facing=CV.facing; p.vel.set(Math.sin(CV.facing)*CV.speed, 0, Math.cos(CV.facing)*CV.speed); p.throttle=0;
     p.radius=CAV.radius.mounted; p.defK=CAV.defK.mounted; p.camK=CAV.camK.mounted;
   } else if(climbStep(p, dt, now)){ CV.moveT=0; p.radius=CAV.radius.foot; p.defK=CAV.defK.stand; p.camK=CAV.camK.foot; horseAlone(p, dt); }   // Z451 on the face of a rock / a wall: the climb moves him (game/soldier-climb.js)
@@ -212,4 +215,4 @@ export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=
 // after a death: straight back in the saddle (game/player-damage.js sets him where he fell — NO-TANKS 10; it was the spawn point)
 export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; climbReset(); CV.trans=null; CV.call=false; CV.autoOn=false; CV.landAt=null; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);
   if(!CV.mounted){ G.parent && G.parent.remove(G); seatRider(G, H); H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.set(0,0,0); CV.mounted=true; }
-  CV.facing=-Math.PI; H.wantGraze=false; rideReset(H); }
+  CV.facing=-Math.PI; H.wantGraze=false; rideReset(H); rideStopReset(H); }

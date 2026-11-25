@@ -1,7 +1,7 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR } from '../../config.js';
+import { GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR } from '../../config.js';
 import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
@@ -239,6 +239,19 @@ function rideSway(R, G, dt, I, H){ const W = R.sw || (R.sw = { p:0, vp:0, r:0, v
   G.getWorldQuaternion(_sq); _sr.set(-1, 0, 0).applyQuaternion(_sq); _sf.set(0, 0, 1).applyQuaternion(_sq);   // his right · ahead
   const sp = [['Spine', 0.45], ['Spine1', 0.33], ['Spine2', 0.22]]; for(const [n, f] of sp){ turnBone(D[n], _sr, -W.p * f); turnBone(D[n], _sf, W.r * f); }
   turnBone(D.Neck, _sr, -W.h); }
+// RIDE 2 THE REAL HORSE ON ITS HAUNCHES (game/ride-feel.js H.stop.k): its clips fade out to the rig's own square stand, and over that the whole body is
+//   pitched nose-up about its forefeet (croup down RIDEFEEL.stop.horse.drop, the braced forelegs reaching ahead with it), the hind legs folded under the
+//   belly — femur forward, tibia back, cannon forward (angles solved off the rig so the hooves stay on the ground from k = 0 to 1) — the neck raised and
+//   the nose tucked. The bones it turns are put back before the mixer's next step (the mixer only writes a bone whose animated value changed).
+const HAUNCH = [['rearUpr', 'femur', 1], ['rearLwr', 'tibia', -1], ['rearHorselink', 'cannon', 1]];
+function haunchBones(R){ const hr = R.hr, get = n => hr.getObjectByName(n) || hr.getObjectByName(n.replace('.', '')), L = [];
+  for(const [n, key, sg] of HAUNCH) for(const sd of ['.L', '.R']){ const b = get(n + sd); if(b) L.push({ b, key, sg, q:new THREE.Quaternion() }); }
+  for(const [n, key, sg] of [['neck_01', 'neck', 1], ['head', 'head', -1]]){ const b = get(n); if(b) L.push({ b, key, sg, q:new THREE.Quaternion() }); }
+  return L; }
+function haunchOff(R){ if(R.hbOn){ for(const e of R.hb) e.b.quaternion.copy(e.q); R.hbOn = false; } }
+function haunchPose(R, H, k, about){ const hr = R.hr, C = RIDEFEEL.stop.horse, K = H.root.scale.x || 1; hr.rotation.x = -C.pitch * k; hr.rotation.z = -about * k * C.roll; hr.position.set(0, -C.drop * k / K, C.shift * k / K);
+  if(k < 0.004) return; const L = R.hb || (R.hb = haunchBones(R)); H.root.getWorldQuaternion(_q); _x.set(-1, 0, 0).applyQuaternion(_q);   // its right: + about it brings a hoof forward / tips a neck back
+  for(const e of L) e.q.copy(e.b.quaternion); R.hbOn = true; for(const e of L) turnBone(e.b, _x, e.sg * C[e.key] * k); }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
   return (CV.realP = Promise.all(['horse', 'operator', 'rideGallop', 'rideWalk', 'carbine', 'soldier2'].map(loadGLTF)).then(L => {
@@ -293,7 +306,9 @@ export function updateRealCav(CV, dt, P){
   // the horse
   const g = H.gait, v = Math.abs(H.v || 0), leap = H.air && H.air.y > 0.02 && R.HA && R.HA.Jump_Sprint, hk = leap ? 'Jump_Sprint' : g === 'idle' ? 'Idle' : g === 'walk' ? 'Walk' : (g === 'trot' || g === 'canter') ? 'Canter' : 'Sprint';   // (Z321 in mid-leap it jumps)
   if(leap && H.air.jumpNew){ H.air.jumpNew = false; R.HA.Jump_Sprint.time = 0; }   // (from take-off, played over just the time it is in the air)
-  if(R.hm){ blend(R.HA, hk, hk === 'Idle' ? 1 : leap ? R.HA.Jump_Sprint.getClip().duration / (H.air.flight || 0.7) : clamp(v / C.horseV[hk], 0.6, 1.5), dt); R.hm.update(dt); }
+  const HS = !H.bike && H.stop, sk = HS ? HS.k : 0; if(R.hr) haunchOff(R);
+  if(R.hm){ blend(R.HA, HS && HS.on ? '' : hk, hk === 'Idle' ? 1 : leap ? R.HA.Jump_Sprint.getClip().duration / (H.air.flight || 0.7) : clamp(v / C.horseV[hk], 0.6, 1.5), HS && HS.on ? dt * 3 : dt); R.hm.update(dt); }
+  if(R.hr) haunchPose(R, H, sk, HS ? HS.about : 0);
   // the rider: on the real horse's back while mounted (every mount / respawn puts the rig on the procedural body bone — move it to the seat)
   const bike = H.bike, stand = bike && XEOM[bike].pose === 'stand';   // Z293 on a war ride he keeps the ride's own seat (seatRider): sat on it, or standing in the bed
   if(!bike && G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }

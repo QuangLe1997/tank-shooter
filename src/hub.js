@@ -145,6 +145,7 @@ export * from './game/xeom.js';   // Z282 xe ôm mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair
 export * from './game/ride-collide.js';   // Z311 what a ride runs into: trees, poles, parked cars, street furniture, wire
 export * from './game/ride-avoid.js';   // RIDE 1 the mount picks its own line round what is in the way (horse and xe ôm)
+export * from './game/ride-feel.js';   // RIDE 2 the hard stop: the horse on its haunches, the xe ôm's fork diving, the slide, the dust
 export * from './world/solid-shape.js';   // Z337 the true footprint of walls and buildings, for bumping into them and for the camera's sight line
 export * from './game/soldier-moves.js';   // Z336 the soldier on his feet: jump, sprint, combat roll, taking cover
 export * from './game/soldier-climb.js';   // Z451 the soldier climbs rocks, walls, gates, containers: stands, walks and fires up there, drops off

@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { HORSE } from '../../config.js';
-import { blot, heightAt, keySec, lineAlong, lineAround, loftGeo, pathKeys, ringAt, secAt, skinMesh, toLocal, trimGeo, animateBike } from '../hub.js';
+import { HORSE, RIDEFEEL } from '../../config.js';
+import { blot, heightAt, keySec, lineAlong, lineAround, loftGeo, pathKeys, ringAt, secAt, skinMesh, toLocal, trimGeo, animateBike, groundMarkFade } from '../hub.js';
 
 // ---- materials (shared) ----
 let _M=null;
@@ -157,14 +157,15 @@ export function animateHorse(S, dt, v, yawRate){ if(S.bike) return animateBike(S
   const idle=S.gait==='idle', bw=S.blend, s=(idle?0:Math.abs(v)*G.duty/(2*f))*sgn/K;
   // body motion (blended with the previous gait while changing)
   const mix=(fn)=>{ const a=idle?0:fn(G, S.phase); const b=(Gp && bw<1)?fn(Gp, S.prevPhase):(S.prevGait==='idle'?0:a); return a*bw+b*(1-bw); };
-  const bob=mix((g,p)=>g.bob(p)), pitch=mix((g,p)=>g.pitch(p)), nod=mix((g,p)=>g.nod(p)), roll=mix((g,p)=>g.roll(p));
+  const ST=S.stop, sk=ST ? ST.k : 0, RS=RIDEFEEL.stop.horse;   // RIDE 2 a hard stop: sat on its haunches (game/ride-feel.js) — croup down, nose up, all four planted ahead
+  const bob=mix((g,p)=>g.bob(p))*(1-sk), pitch=mix((g,p)=>g.pitch(p))*(1-sk)-sk*RS.pitch, nod=mix((g,p)=>g.nod(p)), roll=mix((g,p)=>g.roll(p));
   const bank=Math.max(-0.22, Math.min(0.22, -yawRate*Math.abs(v)*0.035)); S.bank+=(bank-S.bank)*Math.min(1, dt*5);
   const breathe=Math.sin(S.t*1.6)*0.006, gal=(S.gait==='gallop'?1:0)*bw;
-  S.B.position.y=HORSE.bodyY+bob+breathe-gal*0.06; S.B.rotation.x=pitch; S.B.rotation.z=S.bank+roll;
+  S.B.position.y=HORSE.bodyY+bob+breathe-gal*0.06-sk*RS.drop/K; S.B.rotation.x=pitch; S.B.rotation.z=S.bank+roll-(ST ? ST.about : 0)*sk*RS.roll;
   // neck & head: nod with the gait, stretch forward at the gallop, lower to graze when idle and left alone
   S.graze+=((idle && S.wantGraze ? 1 : 0)-S.graze)*Math.min(1, dt*0.8);
-  S.N.rotation.x = HORSE.neckX + nod + gal*0.32 + S.graze*0.95 + Math.sin(S.t*0.7)*0.02*(idle?1:0);
-  S.H.rotation.x = HORSE.headX - nod*0.6 + gal*0.12 + S.graze*0.3;
+  S.N.rotation.x = HORSE.neckX + nod + gal*0.32*(1-sk) - sk*RS.neck + S.graze*0.95 + Math.sin(S.t*0.7)*0.02*(idle?1:0);
+  S.H.rotation.x = HORSE.headX - nod*0.6 + gal*0.12 + sk*RS.head + S.graze*0.3;
   for(let i=0;i<S.ears.length;i++) S.ears[i].rotation.x=-0.25+Math.sin(S.t*(1.3+i*0.4)+i)*0.08 - gal*0.4;   // ears flick; pinned back at the gallop
   // legs: blend foot targets between the old and new gait, then IK; pastern curls in the swing
   const gyRoot=S.root.position.y, cosY=Math.cos(S.root.rotation.y), sinY=Math.sin(S.root.rotation.y);
@@ -173,6 +174,7 @@ export function animateHorse(S, dt, v, yawRate){ if(S.bike) return animateBike(S
     const A=idle ? { z:0, y:0, st:true, sw:0 } : footTarget(G, leg, S.phase, s, L);
     if(Gp && bw<1){ const sp=Math.abs(v)*Gp.duty/(2*Gp.f(Math.abs(v)))*sgn/K, Bt=footTarget(Gp, leg, S.prevPhase, sp, Gp.lift[leg.front?1:0]); tz=A.z*bw+Bt.z*(1-bw); ty=A.y*bw+Bt.y*(1-bw); st=bw>0.5?A.st:Bt.st; sw=A.sw*bw+Bt.sw*(1-bw); }
     else { tz=A.z; ty=A.y; st=A.st; sw=A.sw; }
+    if(sk>0.01){ tz=tz*(1-sk)+RS.plant[leg.front?1:0]/K*sk; ty*=1-sk; sw*=1-sk; if(sk>0.5) st=true; }   // (RIDE 2 planted: no stride, the hoof slid forward under it)
     // ground under this hoof (world), back into the leg pivot's frame (the body is bobbing and pitching)
     const lx=leg.x0, lz=leg.z0+tz, wx=S.root.position.x+(lx*cosY+lz*sinY)*K, wz=S.root.position.z+(-lx*sinY+lz*cosY)*K, gy=(heightAt(wx, wz)-gyRoot)/K;
     const pz=leg.z0, py=S.B.position.y+leg.y0, cp=Math.cos(pitch), sp2=Math.sin(pitch);
@@ -183,5 +185,6 @@ export function animateHorse(S, dt, v, yawRate){ if(S.bike) return animateBike(S
   // tail trails the motion (lags the pitch, lifts at speed); mane streams
   S.tailA += ((Math.abs(v)*0.045 + pitch*1.5) - S.tailA)*Math.min(1, dt*3);
   for(let i=0;i<S.tail.length;i++){ const tseg=S.tail[i]; tseg.rotation.x = (i?0.04:0) - S.tailA*(i?0.18:0.5) + Math.sin(S.t*3-i*0.7)*0.03; tseg.rotation.z = Math.sin(S.t*(idle?1.4:4)-i*0.6)*(idle?0.12:0.05) + S.bank*0.4; }
+  groundMarkFade();   // (RIDE 2 its furrows fade like the tyre tracks: game/xeom.js)
   for(let i=0;i<S.mane.length;i++){ const m=S.mane[i]; m.rotation.x = -Math.abs(v)*0.03 + Math.sin(S.t*6+i*0.5)*0.05*Math.min(1, Math.abs(v)/6+0.2); m.rotation.z = Math.sin(S.t*2+i)*0.04; }
   return S; }
