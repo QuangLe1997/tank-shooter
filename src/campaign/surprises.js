@@ -21,8 +21,8 @@ function ambush(now){ const p=S.player;
   if(tunnelSquad(Math.atan2(-Math.sin(p.facing||0), -Math.cos(p.facing||0)))){ tell('⚠ PHỤC KÍCH TỪ ĐỊA ĐẠO SAU LƯNG!', '#ffb070', 'SCH: Địch chui lên từ hầm ngầm phía sau — quay lại!'); return true; }   // Z225 if they have tunnels, they come up out of one
   const C=REAL.surprise.ambush, back=Math.atan2(-(p.vel.x||Math.sin(p.aimSmoothed||0)), -(p.vel.z||Math.cos(p.aimSmoothed||0))), n=Math.round(rnd(C.squads));   // they rise behind you
   for(let k=0;k<n;k++){ const a=back+(k-(n-1)/2)*0.9+(Math.random()-0.5)*0.5, r=rnd(C.r), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*r, p.pos.z+Math.cos(a)*r, 4);
-    setTimeout(()=>{ if(S.mode==='playing'){ spawnSquad({ x, z }); for(let i=0;i<6;i++) spawnPart(x+(Math.random()-0.5)*5, heightAt(x,z)+0.4, z+(Math.random()-0.5)*5, 0, 1.2, 0, { color:0x8a7a5a, size:1.6, life:1.2, smoke:true, grav:0.1, drag:2, grow:1.6, op:0.45 }); } }, 300+k*600); }
-  tell('⚠ PHỤC KÍCH SAU LƯNG!', '#ffb070', 'SCH: Bộ binh địch trồi lên phía sau — quay lại!'); return true; }
+    setTimeout(()=>{ if(S.mode==='playing') spawnSquad({ x, z, hatch:true, alert:true }); }, 300+k*600); }   // AI 2 a spider hole opens behind him and they climb out one at a time (they used to stand up out of nothing)
+  tell('⚠ PHỤC KÍCH SAU LƯNG!', '#ffb070', 'SCH: Nắp hầm bật mở phía sau — địch đang chui lên, quay lại!'); return true; }
 function heli(now){ const p=S.player, a=Math.random()*6.283, [x,z]=clampFieldXZ(p.pos.x+Math.cos(a)*55, p.pos.z+Math.sin(a)*55, 4); spawnEnemy('gunship', x, z);
   tell('⚠ TRỰC THĂNG ĐỊCH XUẤT HIỆN', '#ff7ae0', 'SCH: Có trực thăng địch vào trận địa — bộ binh chuẩn bị bắn phòng không!'); return true; }
 function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=null, bn=0;   // the thickest knot of enemies, well clear of our tank and our men

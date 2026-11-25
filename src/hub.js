@@ -92,6 +92,7 @@ export * from './actors/vehicles.js';
 export * from './actors/helis.js';
 export * from './fx/realwar.js';
 export * from './campaign/surprises.js';
+export * from './campaign/entries.js';   // AI 2 how an enemy soldier comes onto the field: over the edge out of the frame, up out of a hatch — never out of thin air
 export * from './world/tunnels.js';
 export * from './world/underbase.js';
 export * from './actors/paradrop.js';

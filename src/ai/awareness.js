@@ -51,7 +51,8 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
   if(al && e.sees) R = Math.max(R, C.r * C.track * (1 - (1 - C.night) * (NIGHT.k || 0)) * (PL.bush ? C.bush : 1));   // a man he is watching does not vanish by dropping flat in the open
   if(d < Math.max(R, C.near) && playerSight(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z)) vis = d < C.near ? 1 : Math.max(0.03, 1 - d / R);
   if(vis > 0){
-    if(al){ e.sees = true; k.x = p.pos.x; k.z = p.pos.z; e.lkAt = now; }
+    if(al){ if(!e.sees && e.sq) for(const o of e.sq.m){ if(o !== e && o.alert >= 2 && !o.sees){ o.lk.x = p.pos.x; o.lk.z = p.pos.z; o.lkAt = now; } }   // he has him again: his squad knows (no second shout)
+      e.sees = true; k.x = p.pos.x; k.z = p.pos.z; e.lkAt = now; }
     else { e.det += dtk / (A.spot.t[0] + (A.spot.t[1] - A.spot.t[0]) * (1 - vis));
       if(e.det >= 1){ alertEnemy(e, now, 'see'); e.sees = true; if(PL.st === 'prone') stealthSpot('BỊ PHÁT HIỆN!'); }
       else if(e.det >= A.spot.sus) suspectEnemy(e, now, p.pos.x, p.pos.z); } }
@@ -64,12 +65,12 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
   if(e.alert >= 2){ const Z = A.zero;   // the group of his bursts closes on a man who stands in his sight, opens on one who runs or breaks the line
     if(e.sees && PL.v < Z.runV) e.zero = Math.min(1, e.zero + dtk * Z.gain * (PL.v < Z.slowV ? 1 : Z.walkK) * (PL.cover || PL.bush ? Z.coverK : 1) * mix(Z.iqK, aiIQ()));
     else e.zero = Math.max(0, e.zero - dtk * Z.loss); }
-  else { if(now > (e.scanAt || 0)){ e.scanAt = now + 2 + Math.random() * 3; e.scanA = e.facing + (Math.random() - 0.5) * 2.4; }   // (a man who does not know looks about: where he faces is what he can see)
-   if(!e.guard && !e.exit && (!e.sq || e.sq.leader === e)){ const Sr = A.search;   // nobody there: on to the next piece of ground, drifting toward where we really are
+  else if(now > (e.scanAt || 0)){ e.scanAt = now + 2 + Math.random() * 3; e.scanA = e.facing + (Math.random() - 0.5) * 2.4; }   // (a man who does not know looks about: where he faces is what he can see)
+  if((e.alert < 2 || !e.sees && now - e.lkAt > A.keep.suppress) && !e.guard && !e.exit && (!e.sq || e.sq.leader === e)){ const Sr = A.search;   // nobody at the spot (an alerted man too, once his suppressing fire is spent): on to the next piece of ground, drifting toward where we really are
     if((k.x - e.pos.x) ** 2 + (k.z - e.pos.z) ** 2 < Sr.reach * Sr.reach){ if(!e.srAt) e.srAt = now + R2(Sr.wait);
-      else if(now > e.srAt){ e.srAt = 0; const step = Math.max(Sr.step[0], Math.min(Sr.step[1], d * Sr.far)), a = Math.random() * 6.283, w = Sr.drift;
+      else if(now > e.srAt){ e.srAt = 0; const step = Math.max(Sr.step[0], Math.min(Sr.step[1], d * Sr.far)), a = Math.random() * 6.283, w = Sr.drift * Math.min(1, PL.r / (C.r * Sr.hidK));   // (a man well hidden — flat, in the bushes — is swept for almost blind)
         const c = clampFieldXZ(k.x + dx / d * step * w + Math.cos(a) * step * (1 - w), k.z + dz / d * step * w + Math.sin(a) * step * (1 - w), 4); k.x = c[0]; k.z = c[1]; } }
-    else e.srAt = 0; } } }
+    else e.srAt = 0; } }
 // once a frame, before the men move: how visible the player is, and the shouts that are due
 export function awareFrame(dt, now){ if(now >= PL.at) playerLook(now);
   for(let i = SHOUTS.length - 1; i >= 0; i--){ const e = SHOUTS[i]; if(now < e.shoutAt) continue; SHOUTS.splice(i, 1); if(e.alert !== 2 || !enemies.includes(e)) continue;

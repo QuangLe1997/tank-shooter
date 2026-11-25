@@ -7,10 +7,10 @@
 //     seal them all and the men still down there are buried
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { TUNNEL } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, UNDER, _canvasTex, addScore, blPulse, blocks, buildUnderbase, burst, damageEnemy, decalCrater, detailize, enemies, enemyPool, floatText, freeEnemyBar, heightAt, holoRing, homeClear, inField, inZone, propTex, radio, rockSet, scene, sfx, showBanner, spawnDebris, spawnSquad, wetAt } from '../hub.js';
+import { ENTRY, TUNNEL } from '../../config.js';
+import { ARENA, BIOME, MOBILE, S, UNDER, _canvasTex, addScore, blPulse, blocks, buildUnderbase, burst, damageEnemy, decalCrater, detailize, enemies, enemyPool, floatText, freeEnemyBar, heightAt, holoRing, homeClear, inField, inZone, propTex, radio, rockSet, scene, sfx, showBanner, spawnDebris, squadTypes, hatchEntry, entryRise, wetAt } from '../hub.js';
 
-export const TUN = { list:[], under:[], next:0, chk:0, told:false, g:null };
+export const TUN = { list:[], under:[], temp:[], next:0, chk:0, told:false, g:null };   // (AI 2 temp: spider holes opened for one ambush)
 const R=(a,b)=>a+Math.random()*(b-a), RN=a=>Math.round(R(a[0], a[1]+0.99)-0.49), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
 let _M=null;
@@ -48,7 +48,7 @@ function markRing(E){ const m=holoRing(E.rad*1.05, { kind:'alert', col:'threat',
 
 export function clearTunnels(){ for(const e of TUN.under){ e._under=null; if(e.mesh){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); } if(e.bar){ freeEnemyBar(e.bar); e.bar=null; } } TUN.under.length=0;
   for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='tunnel') blocks.splice(i,1);
-  if(TUN.g){ scene.remove(TUN.g); TUN.g.traverse(o=>{ if(o.geometry && !o.userData.keep) o.geometry.dispose(); }); TUN.g=null; } TUN.list.length=0; TUN.next=0; TUN.told=false; _M=null; }
+  if(TUN.g){ scene.remove(TUN.g); TUN.g.traverse(o=>{ if(o.geometry && !o.userData.keep) o.geometry.dispose(); }); TUN.g=null; } TUN.list.length=0; TUN.temp.length=0; TUN.next=0; TUN.told=false; _M=null; }
 const clearOf=(x,z,r)=>!blocks.some(b=>(b.x-x)**2+(b.z-z)**2<(b.r+r)**2);
 export function buildTunnels(){ clearTunnels(); const run=S.run||{};
   if(run.mode!=='custom' && S.stage<TUNNEL.from) return;
@@ -76,6 +76,13 @@ function pickExit(pref, not){ const p=S.player; if(!p) return null; const A=TUNN
     if(s>bs){ bs=s; best=E; } }
   return best; }
 
+// ---- AI 2 the ways UP (campaign/entries.js): the nearest open hatch — the network's or a spider hole — within r · a spider hole opened for one ambush where
+//   the network has no way up near enough (the same lid and pit; not a way in — nothing to seal; it shuts behind the last man and is filled in ENTRY.hole s later) ----
+export function hatchNear(x, z, r){ let best=nearestOpen(x, z, r), bd=best ? (best.x-x)**2+(best.z-z)**2 : r*r; for(const E of TUN.temp){ const d=(E.x-x)**2+(E.z-z)**2; if(d<bd){ bd=d; best=E; } } return best; }
+export function spiderHole(x, z, now){ if(!TUN.g){ TUN.g=new THREE.Group(); scene.add(TUN.g); }
+  for(let k=0;k<10;k++){ const a=k*2.4, r=k*0.9, qx=x+Math.cos(a)*r, qz=z+Math.sin(a)*r; if(inField(qx,qz,3) && clearOf(qx,qz,1.6)){ x=qx; z=qz; break; } }   // (clear of walls and cover, as near as can be)
+  const E={ kind:'hatch', x, z, a:Math.random()*TAU, open:0, sealed:false, temp:true, until:now+ENTRY.hole, g:new THREE.Group() }; E.g.position.set(x, heightAt(x,z), z); E.g.rotation.y=E.a; TUN.g.add(E.g); hatch(E); TUN.temp.push(E); return E; }
+export function hatchOpen(E, big, keep){ puff(E, big); if(keep) E.open=Math.max(E.open, keep); if(E.temp) E.until=Math.max(E.until, performance.now()/1000+ENTRY.hole*0.5); else { const p=S.player; if(p && Math.hypot(p.pos.x-E.x, p.pos.z-E.z)<70) reveal(E); } }
 // ---- life ----
 function puff(E, big){ E.open=1.6; burst({ x:E.x, z:E.z }, BIOME.ground, big?8:4, big?4:2.4, { y:heightAt(E.x,E.z)+0.4, life:1.0, size:big?1.8:1.1, smoke:true, grav:-0.4, drag:2, up:1.2, op:0.42 }); }
 function reveal(E){ if(E.seen && E.mark && E.mark.visible) return; E.seen=true; if(E.mark) E.mark.visible=true;
@@ -86,16 +93,18 @@ function goUnder(e, E, now){ const i=enemies.indexOf(e); if(i<0) return; enemies
   const p=S.player; if(p && Math.hypot(p.pos.x-E.x, p.pos.z-E.z)<70){ reveal(E); floatText('XUỐNG ĐỊA ĐẠO', '#c8b48a', { x:E.x, y:heightAt(E.x,E.z)+2, z:E.z }, 13); } }
 function comeUp(e, now){ const p=S.player, E=pickExit(p ? Math.atan2(-Math.sin(p.facing||0), -Math.cos(p.facing||0)) : null, e._under.from) || openList().find(q=>q!==e._under.from) || e._under.from;
   e._under=null; const a=Math.random()*TAU; e.pos.x=E.x+Math.cos(a)*(E.rad+0.6); e.pos.z=E.z+Math.sin(a)*(E.rad+0.6);
-  e.hp=Math.min(e.maxHp, e.hp+e.maxHp*TUNNEL.heal); e.supp=0; e.mesh.visible=true; enemies.push(e); puff(E);
+  e.hp=Math.min(e.maxHp, e.hp+e.maxHp*TUNNEL.heal); e.supp=0; e.mesh.visible=true; enemies.push(e); entryRise(e, E);   // AI 2 he climbs out (no shot until he is up)
   if(p && Math.hypot(p.pos.x-E.x, p.pos.z-E.z)<70) reveal(E); }
 export function tunnelSquad(pref){ if(!TUN.list.length || enemies.length>TUNNEL.ambush.cap || UNDER.on) return false;
   if(Math.random()<UNDER.cut.inf || (UNDER.targets.length && !UNDER.targets.some(o=>o.role==='inf' && o.alive))) return false;   // Z226 their barracks below are wrecked
   const E=pickExit(pref); if(!E) return false;
-  const back=Math.atan2(-E.x, -E.z); spawnSquad({ x:E.x+Math.sin(back)*(E.rad+1), z:E.z+Math.cos(back)*(E.rad+1) }); puff(E, true);
+  hatchEntry(E.x, E.z, squadTypes(), { alert:true });   // AI 2 the lid swings up and they climb out one at a time, knowing where he is (they used to stand there all at once)
   reveal(E); return true; }
 export function updateTunnels(dt, now){ if(!TUN.g) return;
   for(const E of TUN.list){ if(E.open>0){ E.open=Math.max(0, E.open-dt); if(E.lid) E.lid.rotation.z=Math.min(1, E.open)*1.85; }
     if(E.mark && E.mark.visible){ E.mark.material.opacity=blPulse(now+E.x, 'notice', 0.45); } }
+  for(let i=TUN.temp.length-1;i>=0;i--){ const E=TUN.temp[i]; if(E.open>0){ E.open=Math.max(0, E.open-dt); E.lid.rotation.z=Math.min(1, E.open)*1.85; }   // AI 2 a spider hole: its lid, and filled in once it has been shut a while
+    else if(now>E.until){ TUN.temp.splice(i,1); burst({ x:E.x, z:E.z }, BIOME.ground, 3, 1.6, { y:heightAt(E.x,E.z)+0.3, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, up:0.8, op:0.35 }); TUN.g.remove(E.g); E.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); } }
   if(S.mode!=='playing' || UNDER.on) return; const p=S.player;
   for(let i=TUN.under.length-1;i>=0;i--){ const e=TUN.under[i]; if(e._under && now>e._under.until && openList().length){ TUN.under.splice(i,1); comeUp(e, now); } }
   if(now<TUN.chk) return; TUN.chk=now+0.4;

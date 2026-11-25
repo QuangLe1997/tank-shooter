@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
-import { AIR_SCALE, reviveSoldierMesh, ENEMY_DEFS, GLOW, S, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip } from '../hub.js';
+import { AIR_SCALE, reviveSoldierMesh, ENEMY_DEFS, GLOW, S, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip, entryCheck } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -32,7 +32,9 @@ export function makeElite(e){   // champion: tanky, bigger, glowing gold, pays b
   const g=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffd24a,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false}));
   g.name='eliteFX'; g.scale.set(7,7,1); g.position.y=1.6; e.mesh.add(g);
 }
-export function spawnEnemy(type, x, z){
+// AI 2 how = the way in its caller vouches for ('edge' · 'gate' · 'door' · 'rope' · 'para' · 'fall' · 'hatch'); none named and the player would see the man appear:
+//   he climbs out of a hatch instead (campaign/entries.js entryCheck)
+export function spawnEnemy(type, x, z, how){
   if(!ENEMY_DEFS[type]) type = 'rifle';   // (no-tanks: an armoured type asked for by an old table is a rifleman)
   if(type==='gunship') type=heliRoll();   // Z222 a call for air support may bring the bomber or the transport instead
   const def=ENEMY_DEFS[type];
@@ -53,6 +55,7 @@ export function spawnEnemy(type, x, z){
   e.bar=getEnemyBar(); e.bar.g.scale.setScalar(def.inf?0.8:1.5); updateEnemyBar(e);                       // floating HP bar over the tank
   if(def.inf) tip('infantry'); else if(def.air) tip('gunship');   // Z94 first sighting → field note
   enemies.push(e);
+  if(def.inf) entryCheck(e, how);
   if(e.loot) addLootBeacon(e, 'enemy');
   return e;
 }

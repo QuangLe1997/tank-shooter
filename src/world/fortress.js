@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
-import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard } from '../hub.js';
+import { ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -233,7 +233,7 @@ function popHatch(h){ h.want=1; h.shutAt=performance.now()/1000+3.5; const gy=he
 function animHatches(f, dt, now){ for(const h of (f.hatches||[])){ if(h.want && now>h.shutAt) h.want=0; const k=h.want?6:2.2; h.open+=(h.want-h.open)*Math.min(1, dt*k); h.hinge.rotation.x=-h.open*1.95; } }
 // a squad climbs out at (x,z): 3–5 riflemen, one or two with RPGs
 function squadAt(f, x, z, n, inside){ const out=[]; for(let k=0;k<n;k++){ const a=Math.random()*6.283, r=0.6+Math.random()*2.2, type=(k===0 || (k===3 && S.stage>=3)) ? 'rpg' : 'rifle';
-    const e=inside ? spawnAt(f, type, x+Math.cos(a)*r, z+Math.sin(a)*r) : spawnEnemy(type, x+Math.cos(a)*r, z+Math.sin(a)*r); if(!e) continue; e.fortOf=f; if(!inside) f.units.push(e); out.push(e); }
+    const e=inside ? spawnAt(f, type, x+Math.cos(a)*r, z+Math.sin(a)*r, 'hatch') : spawnEnemy(type, x+Math.cos(a)*r, z+Math.sin(a)*r, 'hatch'); if(!e) continue; riseHere(e, k*0.3); e.fortOf=f; if(!inside) f.units.push(e); out.push(e); }   // (AI 2 up out of the basement hatch: below ground at first, no shot until he is out)
   if(!inside) makeSquad(out); return out; }   // Z173 a tunnel squad fights as one
 // Z176 NAME STONE — dark polished granite, a double gilt border, the fort's name cut in gold capitals, the place beneath
 function plaqueMat(name, place, tier){ const c=document.createElement('canvas'); c.width=1024; c.height=268; const x=c.getContext('2d');
@@ -451,8 +451,8 @@ function checkCleared(f, now){ if(f.cleared) return; for(const e of f.units) if(
 // ---- garrison: comes alive when you close in (or the gate is hit) — refilled from the fortress pool ----
 function spawnInside(f, type){ const a=Math.random()*Math.PI*2, r=Math.random()*((f.Rin||f.R)-4.5); let x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+1.5){ x=2*f.x-x; z=2*f.z-z; }   // Z145 never inside the donjon
   return spawnAt(f, type, x, z); }
-function spawnAt(f, type, x, z){
-  const e=spawnEnemy(type, x, z); if(!e) return null; e.fortOf=f; if(!f.breached){ e.guard={ kind:'fort', x:f.x, z:f.z, r:f.R, fort:f }; e.post=[x,z]; e.hold={ x:f.x, z:f.z, r:f.R-3 }; }
+function spawnAt(f, type, x, z, how){
+  const e=spawnEnemy(type, x, z, how); if(!e) return null; e.fortOf=f; if(!f.breached){ e.guard={ kind:'fort', x:f.x, z:f.z, r:f.R, fort:f }; e.post=[x,z]; e.hold={ x:f.x, z:f.z, r:f.R-3 }; }
   f.units.push(e); return e; }
 export function wakeFort(f, now){ if(f.active) return; f.active=true;
   if(f.tier!==3){ const c=spawnInside(f, FORT.cmdType); if(c){ c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); if(FORT.cmdScale!==1){ c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; } c.commander=f; c.loot=true; f.cmd=c; c.home={ x:f.x, z:f.z, r:(f.Rin||f.R)-5 };   // Z170 his ground: the yard, always
@@ -473,7 +473,7 @@ function sally(f, now){ f.sallyAt=now+R2(FORT.sally)*(f.tier===3?0.8:1);
   const p=S.player; if(!p || f.posture==='hold' || f.coreDown) return;                     // Z111b a fortress that holds keeps its gate shut · Z176 no command post, no sorties
   let n=0; for(const e of enemies) if(!e.guard) n++; if(n > (MOBILE?16:26)) return;   // the field is already crowded
   const n0=enemies.length;
-  if(f.pool.inf>=3){ spawnSquad({ x:f.ix, z:f.iz }); f.pool.inf-=3; } else return;
+  if(f.pool.inf>=3){ spawnSquad({ x:f.ix, z:f.iz, how:'gate' }); f.pool.inf-=3; } else return;
   for(let i=n0;i<enemies.length;i++) enemies[i].fortOf=f;   // Z107 sally troops belong to their fortress (they don't hold a wave open)
   fortLaunch(f, n0, now); }                                  // Z111b formed up INSIDE the gate → it swings open → they march out
 // wave reinforcements come out of a fortress gate (most of the time) instead of over the fence — raised inside, then the gate opens

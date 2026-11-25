@@ -824,7 +824,7 @@ export const STEALTH = { see:[8, 12], crawlV:0.3, night:0.7, alertR:30, keep:{ n
 //     horse m and a motorbike bike m at full speed (runV m/s) make men suspicious. hit / death: a man hit knows within err m; a mate falling inside r m alerts.
 //   shout: an alerted man shouts after delay s — his squad and every man within r m are alerted. keep: s without contact before alerted → searching (alert),
 //     before the search is given up (search); for suppress s after losing sight he still fires at the last place he saw him.
-//   search: he walks to within reach m of the last known spot, waits wait s, then moves on step m (far × the distance when we are far off), drift of it toward us.
+//   search: he walks to within reach m of the last known spot, waits wait s, then moves on step m (far × the distance when we are far off), drift of it toward us (less the better hidden he is: in full only when he shows over see.r × hidK).
 //   intel: a fresh man is told where we are to within err m. idle: an alerted man who has neither moved nor fired for max s goes for him for push s.
 //   cover: seen inside threat m he runs to cover within search m and holds it hold s after losing sight; a new cover only once we moved repick m.
 //   fire: an alerted rifleman reaches range × reachK (wider × farK past his own range), fires bursts of burst rounds gap s apart, rest s between them, each
@@ -835,10 +835,16 @@ export const AWARE = { tick:[0.22, 0.34],
   see:{ r:46, stance:{ stand:1, crouch:0.62, mounted:1.3 }, still:0.85, run:1.2, runV:5.2, cover:0.7, bush:0.5, bushPad:0.8, bushS:0.6, night:0.55, cone:[1.05, 2.1], side:0.55, rear:0.16, near:4, alertK:1.25, track:0.75 },
   spot:{ t:[0.25, 2.4], sus:0.45, decay:0.35 }, react:[0.4, 1.0], reactK:[1.25, 0.75], reactHit:0.25,
   hear:{ shot:70, shotErr:3, gap:0.2, run:14, horse:24, bike:42, runV:5.2 }, hit:{ err:4 }, death:{ r:20, err:6 }, shout:{ r:24, delay:0.45 },
-  keep:{ alert:26, search:45, suppress:5 }, search:{ reach:5, wait:[1.2, 2.4], step:[8, 40], far:0.4, drift:0.6 }, intel:{ err:16 }, idle:{ max:2, push:2.6 },
+  keep:{ alert:26, search:45, suppress:5 }, search:{ reach:5, wait:[1.2, 2.4], step:[8, 40], far:0.4, drift:0.6, hidK:0.6 }, intel:{ err:16 }, idle:{ max:2, push:2.6 },
   cover:{ threat:30, search:13, hold:5, repick:7 }, say:{ gap:0.6, r:55, size:17 },
   fire:{ reachK:1.35, farK:1.6, burst:[3, 5], gap:0.11, rest:[0.9, 1.5], dmgK:1.6, lead:0.5, wide:0.3, tight:0.04, stageK:[1.25, 0.75], blindK:1.3, runK:1.5 },
   zero:{ gain:0.42, loss:1.1, slowV:1.6, runV:4.5, walkK:0.35, coverK:0.5, iqK:[0.7, 1.3] }, squad:{ closeK:0.85 } };
+// AI 2 HOW AN ENEMY SOLDIER COMES ONTO THE FIELD (campaign/entries.js) — never out of thin air inside the frame. minD: an edge entry is at least this far from the
+//   player (m) and out of the camera's frame (pad: a margin round the frame, in half-screens; tries candidates; edgeIn m inside the fence); a man appearing is
+//   "seen" inside the frame nearer than seeD m, or anywhere within nearD m of the player — such a man climbs out of a hatch instead: rise s coming up from
+//   depth m below ground, hold s more before his first shot; the lid opens open s before the first man, one man every gap s; the tunnel network's own hatch
+//   within reuse m is used, else a spider hole opens there and is filled in hole s later; ambush: the scripted ring of holes this far from the player (m).
+export const ENTRY = { minD:45, pad:0.12, tries:12, edgeIn:4, seeD:130, nearD:30, rise:0.8, depth:1.75, hold:0.3, open:0.5, gap:0.45, reuse:7, hole:22, ambush:[17, 23] };
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·

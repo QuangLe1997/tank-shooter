@@ -214,7 +214,7 @@ export function updateUnder(dt, now){ const U=UNDER, G=U.gate, p=S.player; if(!p
     runTurrets(U.power?U.turrets:[], dt, now); const lx=p.pos.x-U.BX;
     if(!U.busy && now>U.cool && Math.abs(lx)<6.5 && p.pos.z>U.D+17) goUp(false);
     // the base keeps feeding men while its barracks / lifts stand
-    const C=UNDERBASE.spawn; if(now>U.sqAt){ U.sqAt=now+R(C.squad[0],C.squad[1]); const b=U.targets.filter(o=>o.role==='inf' && o.alive); if(b.length && enemies.filter(e=>e.def.inf).length<14){ const o=b[(Math.random()*b.length)|0]; spawnSquad({ x:o.x+9, z:o.z }); } }
+    const C=UNDERBASE.spawn; if(now>U.sqAt){ U.sqAt=now+R(C.squad[0],C.squad[1]); const b=U.targets.filter(o=>o.role==='inf' && o.alive); if(b.length && enemies.filter(e=>e.def.inf).length<14){ const o=b[(Math.random()*b.length)|0]; spawnSquad({ x:o.x+9, z:o.z, how:'door' }); } }
     // lights ride the nearest lamps; the generator hums
     if(now>(U.lAt||0)){ U.lAt=now+0.3; const near=U.lamps.map(q=>[q,(q.x-p.pos.x)**2+(q.z-p.pos.z)**2]).sort((a,b)=>a[1]-b[1]); U.lights.forEach((l,i)=>{ const q=near[i]; if(q){ l.position.set(q[0].x, 3.6, q[0].z); } }); }
     const fl=U.power?1:(0.5+0.5*Math.max(0,Math.sin(now*3.2))); for(const l of U.lights) l.intensity=UNDERBASE.lights.I*(U.power?1:0.55)*fl;

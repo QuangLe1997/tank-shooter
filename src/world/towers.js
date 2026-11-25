@@ -98,7 +98,7 @@ export function updateTowers(dt, now){
         burst({x:f.g.position.x,z:f.g.position.z}, BIOME.ground, 4, 3, {y:gy+0.3, life:0.7, size:1.0, smoke:true, grav:-0.3, drag:2, up:1, op:0.5});
         sfx('thud');
         if(f.live){ const x=f.g.position.x, z=f.g.position.z; scene.remove(f.g); fallers.splice(i,1);                       // Z112 survived the fall: picks himself up and fights
-          const e=spawnEnemy(Math.random()<0.25?'rpg':'rifle', x, z); if(e){ e.stunUntil=performance.now()/1000+TOWER.getUp; e.hp=e.maxHp*0.6; if(f.fort) e.fortOf=f.fort; floatText('LÍNH GÁC NGÃ — VẪN SỐNG!', '#ffb35a', new THREE.Vector3(x, gy+2.2, z), 13); }
+          const e=spawnEnemy(Math.random()<0.25?'rpg':'rifle', x, z, 'fall'); if(e){ e.stunUntil=performance.now()/1000+TOWER.getUp; e.hp=e.maxHp*0.6; if(f.fort) e.fortOf=f.fort; floatText('LÍNH GÁC NGÃ — VẪN SỐNG!', '#ffb35a', new THREE.Vector3(x, gy+2.2, z), 13); }
           continue; }
         addScore(150, new THREE.Vector3(f.g.position.x, gy+1.5, f.g.position.z)); } }
     else if(f.t>4){ const k=Math.max(0,1-(f.t-4)/1.5); f.g.scale.setScalar(HUMAN_SCALE*Math.max(0.001,k)); if(k<=0){ scene.remove(f.g); fallers.splice(i,1); } } }

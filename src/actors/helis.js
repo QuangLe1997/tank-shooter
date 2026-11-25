@@ -198,7 +198,7 @@ function updateClimbers(dt, now){ const T=HELI.troop;
       const ph=c.t*9; if(u.arms) u.arms.rotation.x=-2.5+Math.sin(ph)*0.35; for(const l of u.legs||[]){ const q=ph+(l.sx>0?Math.PI:0); l.hip.rotation.x=-0.5+Math.sin(q)*0.5; l.knee.rotation.x=0.7+Math.max(0,Math.sin(q))*0.6; }
       const gy=heightAt(c.x,c.z); if(c.y-1.75<=gy+0.05){ const ox=Math.cos(e.facing)*1.2, oz=-Math.sin(e.facing)*1.2; endClimber(c, i);
         spawnPart(c.x+ox, gy+0.3, c.z+oz, 0, 0.3, 0, { color:BIOME.ground, size:1.4, life:0.6, smoke:true, grav:0.2, drag:2, op:0.35 });
-        const n=spawnEnemy(c.type, c.x+ox, c.z+oz); if(n){ n.fireAt=now+0.9; n.facing=e.facing; } e.hs.down++; } }
+        const n=spawnEnemy(c.type, c.x+ox, c.z+oz, 'rope'); if(n){ n.fireAt=now+0.9; n.facing=e.facing; } e.hs.down++; } }
     else { c.vy-=20*dt; c.y+=c.vy*dt; c.g.position.y=c.y-1.75; c.g.rotation.x+=dt*2.2; const gy=heightAt(c.x,c.z); if(c.y-1.75<=gy){ spawnPart(c.x, gy+0.3, c.z, 0, 0.5, 0, { color:0x6a1a10, size:0.9, life:0.5, grav:-6, drag:2 }); c.g.rotation.x=0; endClimber(c, i); } } } }
 export function updateHeliCrew(dt, now){ if(BOMBS.length) updateBombs(dt, now); if(CLIMBERS.length) updateClimbers(dt, now); }
 export function clearHelis(){ for(const b of BOMBS) scene.remove(b.m); BOMBS.length=0; for(let i=CLIMBERS.length-1;i>=0;i--) endClimber(CLIMBERS[i], i); }

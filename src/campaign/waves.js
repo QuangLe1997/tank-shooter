@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
-import { BALANCE, INFANTRY } from '../../config.js';
-import { soldierWaveQueue, duelOn, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt } from '../hub.js';
+import { BALANCE, ENTRY, INFANTRY } from '../../config.js';
+import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -54,15 +54,20 @@ function planWave(now){ WAVE.plan=null; WAVE.pk=0; WAVE.probeHeld=false;
   else if(r<0.54){ WAVE.plan='probe'; const i=WAVE.spawnQueue.indexOf('squad'); if(i>0){ WAVE.spawnQueue.splice(i,1); WAVE.spawnQueue.unshift('squad'); } else if(i<0) WAVE.spawnQueue.unshift('squad');
     setTimeout(()=>{ if(S.mode==='playing') radio('SCH: Tốp thăm dò của địch — diệt gọn, đợt chính đang tới!'); }, 2600); }
  }
+// AI 2 each arm comes over the field's edge on its bearing when that is out of the frame and far enough (they used to stand up 40–58 m off in the open, in plain
+//   view); otherwise it comes up out of a hatch on that bearing
 function pincerPoint(){ const p=S.player; if(!p) return null; const side=(WAVE.pk++%2)?1:-1, a=WAVE.pincerA+side*1.15;
-  for(const d of [58,48,40]){ const x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d; if(inField(x, z, 4)) return { x, z }; } return null; }
+  const q=edgeFrom(p.pos.x, p.pos.z, a); if(q && q.d>=ENTRY.minD && !entrySeen(q.x, q.z)) return q;
+  for(const d of [58,48,40]){ const x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d; if(inField(x, z, 4)) return { x, z, hatch:true }; } return null; }
 // Z106 enemies enter through the irregular fence: edge 0 = their side (−z) · 1 = ours (+z) · 2 = west · 3 = east. Of a few candidate
 // points on that stretch, prefer one 40–85 m from the tank so a bigger field does not mean long empty drives.
 export function edgeSpawnPoint(){
-  const fp=WAVE.fixedEdge==null ? fortSpawnPoint() : null; if(fp) return fp;   // Z107 most reinforcements march out of a fortress gate
+  const fp=WAVE.fixedEdge==null ? fortSpawnPoint() : null; if(fp){ fp.how='gate'; return fp; }   // Z107 most reinforcements march out of a fortress gate
   const e=(WAVE.fixedEdge!=null)?WAVE.fixedEdge:Math.floor(Math.random()*4), c=[-Math.PI/2, Math.PI/2, Math.PI, 0][e], p=S.player;
-  let best=null, bs=1e9; for(let k=0;k<6;k++){ const [x,z]=fieldEdgePoint(c+(Math.random()-0.5)*1.3, 4), d=p?Math.hypot(x-p.pos.x, z-p.pos.z):60, s=(d<40?40-d:(d>85?d-85:0)) + (wetAt(x, z, 3) ? 1e4 : 0);   // Z405 never out of a river where it crosses the fence
-    if(s<bs){ bs=s; best={ x, z }; } }
+  let best=null, bs=1e9; for(let k=0;k<ENTRY.tries;k++){ const [x,z]=fieldEdgePoint(c+(Math.random()-0.5)*1.3*(1+k*0.2), 4), d=p?Math.hypot(x-p.pos.x, z-p.pos.z):60, s=(d<40?40-d:(d>85?d-85:0)) + (wetAt(x, z, 3) ? 1e4 : 0)   // Z405 never out of a river where it crosses the fence
+      + (d<ENTRY.minD || entrySeen(x, z) ? 1e3 : 0);   // AI 2 never where the player would see them appear: out of the frame and at least minD off
+    if(s<bs){ bs=s; best={ x, z, how:'edge' }; } }
+  if(best && bs>=1e3){ const q=edgeEntry(null); if(q) best=q; else { best.hatch=true; best.how=null; } }   // (this stretch of fence is all in view: any other stretch — or, the whole fence in view, up out of a hatch near it)
   return best;
 }
 export function updateWaves(dt, now){
@@ -85,15 +90,16 @@ export function updateWaves(dt, now){
     const t=WAVE.spawnQueue.shift(); if(underCut(t)){ WAVE.spawnAt=now+0.5; return; }   // Z226 its depot under the battlefield was wrecked: this one never comes
     let sp=(WAVE.plan==='pincer' && pincerPoint()) || edgeSpawnPoint(); const n0=enemies.length;
     if(t==='squad'){
-      spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;
+      spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;   // (AI 2 sp.how / sp.hatch: over the edge out of the frame, out of the gate, or up out of a hatch)
       if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact
       return; }
-    spawnEnemy(t, sp.x, sp.z); if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
+    if(sp.hatch && isFoot(t)) hatchEntry(sp.x, sp.z, [ENEMY_DEFS[t] ? t : 'rifle'], { squad:false }); else spawnEnemy(t, sp.x, sp.z, sp.how);
+    if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
     WAVE.spawnAt = now + (BALANCE.wave.cadence - BALANCE.wave.cadenceDiff*diffScale())*(WAVE.assault?BALANCE.wave.assaultCadenceMul:1)*objMod('cadenceMul')*(WAVE.columnLeft>0?0.4:1);   // Z83 radio relay speeds reinforcements; a column rolls in nose-to-tail
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
   }
   // wave clear?
-  if(WAVE.spawnQueue.length===0 && !enemies.some(e=>!e.guard && !e.fortOf && !e.abandoned)){   // Z104 depot / stockade guards stay at their post — they don't hold the wave open · Z107 nor do fortress troops (garrison, sallies, bodyguards)
+  if(WAVE.spawnQueue.length===0 && !entriesPending() && !enemies.some(e=>!e.guard && !e.fortOf && !e.abandoned)){   // Z104 depot / stockade guards stay at their post — they don't hold the wave open · Z107 nor do fortress troops (garrison, sallies, bodyguards)
     WAVE.active=false; WAVE.betweenUntil = now + 2.2;
     addScore(200, new THREE.Vector3(0,2,0));
     showBanner('SẠCH ĐỢT! +200', '#8cbf3f'); sfx('wave');

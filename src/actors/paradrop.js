@@ -94,7 +94,7 @@ export function updateParadrops(dt, now){
         continue; }
       lay(q.c, q.x, q.z); scene.remove(q.g);
       if(q.fr){ const a=spawnAlly(q.x, q.z, Math.random()*6.283); if(a) a.thinkAt=0; continue; }   // Z107 our paratrooper joins the squad
-      const e=spawnEnemy(q.rpg?'rpg':'rifle', q.x, q.z); if(e){ e.fireAt=now+0.8; } } }
+      const e=spawnEnemy(q.rpg?'rpg':'rifle', q.x, q.z, 'para'); if(e){ e.fireAt=now+0.8; } } }
   for(let i=CANOPIES.length-1;i>=0;i--){ const C=CANOPIES[i]; C.t+=dt; const k=Math.min(1,C.t/1.2); C.g.scale.y=1.15*(1-0.88*k); if(C.t>9){ scene.remove(C.g); CANOPIES.splice(i,1); } }
   while(CANOPIES.length>(MOBILE?14:36)){ scene.remove(CANOPIES.shift().g); }
   for(let i=SMOKE_ZONES.length-1;i>=0;i--){ const Z=SMOKE_ZONES[i]; Z.t-=dt; if(Z.t<=0){ SMOKE_ZONES.splice(i,1); continue; } if(Math.random()<(MOBILE?0.4:0.8)) spawnPart(Z.x, heightAt(Z.x,Z.z)+0.4, Z.z, 0.6+_r(0.4), 1.6+Math.random(), 0.3+_r(0.4), { color:0xd8382a, size:1.0, life:3.2, smoke:true, grav:0.25, drag:0.6, grow:3.2, op:0.6 }); } }   // red smoke billowing off the drop zone

@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD } from '../../config.js';
-import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL } from '../hub.js';
+import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -31,11 +31,14 @@ function rpgKit(u){ const gp=u.parts && u.parts.find(p=>p.kind==='gun'); if(gp) 
   const war=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.3,10), dm); war.rotation.x=Math.PI/2; war.position.z=0.6; tmp.add(war);
   const grip=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.11,0.05), dm); grip.position.set(0,-0.07,-0.35); tmp.add(grip); L.add(tmp);
   _rpgLoad.then(()=>{ if(!_rpgTpl) return; L.remove(tmp); L.add(_rpgTpl.clone(true)); }); }
+// a squad's men: 4–6, one or two of them with the B40 from stage rpgFrom
+export function squadTypes(){ const S2=INFANTRY.squad, n=S2.size[0]+((Math.random()*(S2.size[1]-S2.size[0]+1))|0), nr = S.stage>=S2.rpgFrom ? (S.stage>=4?2:1) : 0, out=[]; for(let k=0;k<n;k++) out.push(k<nr?'rpg':'rifle'); return out; }
+// AI 2 sp.how: the way in the caller vouches for (see spawnEnemy) · sp.hatch: they climb out of a hatch at (x, z) one at a time and form up once the last is out (returns null)
 export function spawnSquad(sp){
-  const n0=enemies.length, S2=INFANTRY.squad, n=S2.size[0]+((Math.random()*(S2.size[1]-S2.size[0]+1))|0);
-  const nr = S.stage>=S2.rpgFrom ? (S.stage>=4?2:1) : 0, ix=-Math.sign(sp.x)||0, iz=-Math.sign(sp.z)||0;
+  const n0=enemies.length, ty=squadTypes(), n=ty.length; if(sp.hatch){ hatchEntry(sp.x, sp.z, ty, { alert:sp.alert, escort:sp.escort||null }); return null; }
+  const ix=-Math.sign(sp.x)||0, iz=-Math.sign(sp.z)||0;
   for(let k=0;k<n;k++){ const x=sp.x+ix*(1+Math.random()*3)+(Math.random()-0.5)*6, z=sp.z+iz*(1+Math.random()*3)+(Math.random()-0.5)*6;
-    const e=spawnEnemy(k<nr?'rpg':'rifle', x, z); if(e && sp.alert) e.alert0=1; }   // (AI 1 sp.alert: an ambush — these men know where he is)
+    const e=spawnEnemy(ty[k], x, z, sp.how); if(e && sp.alert) e.alert0=1; }   // (AI 1 sp.alert: an ambush — these men know where he is)
   ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xd8b070, 2.4);
   return makeSquad(enemies.slice(n0), { escort:sp.escort||null });   // Z173 one squad, one plan
 }
@@ -71,6 +74,7 @@ export function updateInfantry(e, dt, now, edt){
   const def=e.def, p=S.player, u=e.mesh.userData;
   if(dazed(e, now)){ if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*6); e.kbx*=kf; e.kbz*=kf; } infPushBlocks(e.pos); clampField(e.pos, 2);   // Z223 knocked flat by a blast: slides, lies there, then gets up
     e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.aimT=0; e.burstLeft=0; dazePose(e.mesh, now, dt); e.r=0.34; e.fireAt=Math.max(e.fireAt||0, now+0.4); return; }
+  if(e.rise && riseStep(e, dt, now)){ e.intent='deploy'; e.actAt=now; return; }   // AI 2 climbing out of a hatch: below ground at first, no move of his own, no shot until he is out
   awareTick(e, now);                                                         // AI 1 what he knows: unaware → suspicious → alerted (his own staggered look)
   if(now>=(e.tgtAt||0)){ e.tgtAt=now+0.45+Math.random()*0.3; e.T=infTarget(e, now); }            // re-pick the target a couple of times a second
   const T=e.T||(e.T=infTarget(e, now)), dx=T.pos.x-e.pos.x, dz=T.pos.z-e.pos.z, d=Math.hypot(dx,dz)||1, ux=dx/d, uz=dz/d;

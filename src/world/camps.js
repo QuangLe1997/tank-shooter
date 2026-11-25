@@ -103,12 +103,12 @@ export function updateCamps(dt, now){
     if(!c.alive){ if(c.burnT>0){ c.burnT-=dt; if(Math.random()<0.6) spawnPart(c.x+(Math.random()-0.5)*4,heightAt(c.x,c.z)+1.2,c.z+(Math.random()-0.5)*5,(Math.random()-0.5),2.4,(Math.random()-0.5),{tex:'fire',color:0xffd080,color2:0xff3a08,size:1.4,life:0.6,grav:1.5,drag:1.4,grow:0.8});
         if(Math.random()<0.5) spawnPart(c.x,heightAt(c.x,c.z)+2.5,c.z,0.5,2.2,0.3,{color:0x15120f,size:2.2,life:2.2,smoke:true,grav:0.3,drag:0.7,grow:1.5,op:0.55}); } continue; }
     { const B=SUPPLY.bases.find(q=>q.camp===c); if(B && B.alarm && !c.scrambled && S.mode==='playing'){ c.scrambled=true; scrambleCrowd(c);   // Z196 alarm: the men run inside… and come back out armed
-        const n=Math.min(8, 3+S.stage); for(let k=0;k<n;k++) setTimeout(()=>{ if(!c.alive||S.mode!=='playing') return; const t=spawnEnemy(k%4===3?'rpg':'rifle', c.door[0]+(Math.random()-0.5)*1.5, c.door[1]+(Math.random()-0.5)*1.5); if(t){ t.kbx=Math.sin(c.ang)*5; t.kbz=Math.cos(c.ang)*5; } }, 2200+k*380); } }
+        const n=Math.min(8, 3+S.stage); for(let k=0;k<n;k++) setTimeout(()=>{ if(!c.alive||S.mode!=='playing') return; const t=spawnEnemy(k%4===3?'rpg':'rifle', c.door[0]+(Math.random()-0.5)*1.5, c.door[1]+(Math.random()-0.5)*1.5, 'door'); if(t){ t.kbx=Math.sin(c.ang)*5; t.kbz=Math.cos(c.ang)*5; } }, 2200+k*380); } }
     if(S.mode!=='playing' || !WAVE.active || now<c.nextAt) continue;
     c.nextAt=now+CAMP.every*(0.8+Math.random()*0.4);
     if(enemies.filter(e=>e.def.inf).length >= CAMP.infCap) continue;
     const n=CAMP.squad[0]+((Math.random()*(CAMP.squad[1]-CAMP.squad[0]+1))|0);
-    for(let k=0;k<n;k++) setTimeout(()=>{ if(!c.alive||S.mode!=='playing') return; const t=spawnEnemy(k===n-1&&S.stage>=2?'rpg':'rifle', c.door[0]+(Math.random()-0.5)*1.2, c.door[1]+(Math.random()-0.5)*1.2); if(t){ t.kbx=Math.sin(c.ang)*5; t.kbz=Math.cos(c.ang)*5; } }, k*450);
+    for(let k=0;k<n;k++) setTimeout(()=>{ if(!c.alive||S.mode!=='playing') return; const t=spawnEnemy(k===n-1&&S.stage>=2?'rpg':'rifle', c.door[0]+(Math.random()-0.5)*1.2, c.door[1]+(Math.random()-0.5)*1.2, 'door'); if(t){ t.kbx=Math.sin(c.ang)*5; t.kbz=Math.cos(c.ang)*5; } }, k*450);
     tip('camp'); if(now-_campRadioAt>25){ _campRadioAt=now; radio('SCH: Bộ binh đang kéo ra từ trại địch — san phẳng nhà lính để chặn chúng.'); }
   }
   updateTents(dt);   // Z402 burning tents (they no longer flatten under the tracks: a tent is a wall until it burns)

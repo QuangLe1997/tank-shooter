@@ -64,7 +64,7 @@ function squadThink(sq, now){
   else if(d>R+10) st='advance';
   else if(d<A.assaultR || (T.you===false && n>=3 && d<R*0.7)) st='assault';
   else st='fm';
-  if(T.lost && !al && st!=='fallback') st='search';   // AI 1 nobody in the squad knows where he is: it sweeps toward the last report instead of fighting a ghost
+  if(T.lost && !(al && T.supp) && st!=='fallback') st='search';   // AI 1 nobody in the squad has him (never knew, or lost him and the suppressing fire is spent): it sweeps to the last place and on, instead of fighting a ghost
   if(st!==sq.state){ sq.state=st; sq.path=null; if(st==='fm'){ sq.swapAt=now+R2(A.boundT); sq.bound=0; } }
   { const C=FIELDCRAFT.smoke; if(S.stage>=2 && now>(sq.smokeAt||0) && (st==='fallback' || (st==='fm' && sp>0.45) || (st==='assault' && d>9 && sp>0.3))){   // Z220 SMOKE: to break contact, or to cross open ground under fire
     sq.smokeAt=now+C.cdE*(0.8+Math.random()*0.4); const k=Math.min(d*0.5, C.ahead), sx=cx+ux*k, sz=cz+uz*k; throwSmoke(sx, sz, 'e', now); floatText('ĐỊCH THẢ KHÓI', '#e6e2d6', { x:sx, y:2.8, z:sz }, 13); } }
@@ -74,7 +74,7 @@ function squadThink(sq, now){
   if(st==='escort'){ const fx=Math.sin(esc.facing||0), fz=Math.cos(esc.facing||0); sq.m.forEach((e,i)=>{ const side=(i%2?1:-1)*(1.6+((i>>1)%3)*1.6), back=5+((i>>1)%3)*2.2;   // two files behind the tank
       set(e, [esc.pos.x-fx*back+fz*side, esc.pos.z-fz*back-fx*side], null, false, 1); }); return true; }
   if(st==='advance' || st==='search'){ const stop=st==='search' ? 0 : R*0.85;   // the leader walks the route; the others hold a wedge on him (AI 1 search: right up to the spot, every man taking the leader's)
-    if(st==='search') for(const e of sq.m){ if(e!==L && e.lk && e.alert<2){ e.lk.x=tx; e.lk.z=tz; } }
+    if(st==='search') for(const e of sq.m){ if(e!==L && e.lk && !e.sees){ e.lk.x=tx; e.lk.z=tz; } }
     if(!sq.path || now>sq.pathAt || (sq.pathGoal && Math.hypot(sq.pathGoal[0]-tx, sq.pathGoal[1]-tz)>8)){ const gx=tx-ux*stop, gz=tz-uz*stop; sq.path=navPath(L.pos.x, L.pos.z, gx, gz, now); sq.pathGoal=[tx,tz]; sq.pathAt=now+2.5; }
     let wp=null; if(sq.path){ while(sq.path.length>1 && Math.hypot(sq.path[0][0]-L.pos.x, sq.path[0][1]-L.pos.z)<3) sq.path.shift(); wp=sq.path[0]; }
     if(!wp) wp=[tx-ux*stop, tz-uz*stop]; set(L, wp, null, false, 1);

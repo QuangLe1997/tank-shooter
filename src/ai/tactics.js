@@ -1,12 +1,13 @@
 // ai/tactics.js — THE ENEMY'S FRAME: every enemy unit's HP bar, burning, stun and first sighting; then the infantry (actors/infantry.js) or the helicopter
 //   (actors/helis.js) moves and fights (no-tanks: Z95 the tactical director, its armoured vehicles' steering, gun laying, smoke and ramming are gone)
 import { BALANCE, TACTICS } from '../../config.js';
-import { PROFILE, ENEMY_CLASS, ENVMOD, S, armorOf, enemies, heightAt, killEnemy, radio, spawnPart, typeMul, updateEnemyBar, updateHeli, updateInfantry, bloodSpurt, awareFrame } from '../hub.js';
+import { PROFILE, ENEMY_CLASS, ENVMOD, S, armorOf, enemies, heightAt, killEnemy, radio, spawnPart, typeMul, updateEnemyBar, updateHeli, updateInfantry, bloodSpurt, awareFrame, updateEntries } from '../hub.js';
 
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }   // Z95 how sharp the enemy fights (the infantry reads it)
 export function updateEnemies(dt, now){
   const p=S.player;
   const slow = now < S.enemySlowUntil ? 0.35 : 1;     // Time Warp spell
+  updateEntries(dt, now);                             // AI 2 the men whose turn it is to climb out of a hatch (campaign/entries.js)
   awareFrame(dt, now);                                // AI 1 how visible the player is this moment, and the shouts of men just alerted (ai/awareness.js)
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i], def=e.def;
