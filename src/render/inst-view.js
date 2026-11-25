@@ -24,7 +24,7 @@ if(renderer && renderer.render){ const base = renderer.render;
 
 function eligible(o){ if(!o.isInstancedMesh || RECS.has(o) || o.isSkinnedMesh) return false; const u = o.userData; if(u.viewOf || u.noView || u.skyline || u.forest) return false;
   if(o.instanceMatrix.usage !== THREE.StaticDrawUsage || o.count < C.minN || !o.parent) return false;
-  const g = o.geometry; if(!g || !g.attributes.position || g.attributes.position.isInterleavedBufferAttribute || trisOf(g) * o.count < C.minTris) return false;
+  const g = o.geometry; if(!g || !g.attributes.position || trisOf(g) * o.count < C.minTris) return false;
   for(const k of instNames(g)) if(g.attributes[k].usage !== THREE.StaticDrawUsage) return false;   // a per-instance attribute rewritten as it goes: left alone
   for(let p = o; p; p = p.parent){ if(!p.visible) return false; if(p === scene) break; if(!p.parent) return false; }
   if(!o.boundingSphere) o.computeBoundingSphere(); return o.boundingSphere.radius >= C.minSpread; }
@@ -38,8 +38,9 @@ function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanc
   let sc = 0, k = 0; for(let i = 0; i < im.count && k < 8; i += Math.max(1, (im.count / 8) | 0)){ im.getMatrixAt(i, _m); const s = _v.setFromMatrixColumn(_m, 0).length(); if(s > 1e-4){ sc += s; k++; } }
   const r = g.boundingSphere.radius * (k ? sc / k : 1); if(!(r > 0) || r > C.maxR){ im.userData.noView = true; return; }   // (a ridge, a backdrop piece: tuned where it is made)
   const hide = r * C.hideK < C.never ? Math.max(C.hideMin, r * C.hideK) : Infinity, lite = !MOBILE && n >= C.liteMinTris;
-  if(!lite && hide === Infinity){ im.userData.noView = true; return; }   // nothing to gain
-  const dLite = lite ? Math.min(hide, Math.min(C.liteMax, Math.max(C.liteMin, r * C.liteK))) : hide;
+  const shade = !!im.castShadow && !MOBILE;   // VIEW 2 a shadow caster gains even with no light copy and never hidden: only its near instances go into the shadow pass
+  if(!lite && !shade && hide === Infinity){ im.userData.noView = true; return; }   // nothing to gain
+  const dLite = lite || shade ? Math.min(hide, Math.min(C.liteMax, Math.max(C.liteMin, r * C.liteK))) : hide;
   const G = new THREE.Group(); G.name = 'instView'; G.position.copy(im.position); G.quaternion.copy(im.quaternion); G.scale.copy(im.scale);
   const mk = (geo, shadow) => { const v = new THREE.InstancedMesh(viewGeo(geo, names, cap), im.material, cap); v.instanceMatrix.setUsage(THREE.DynamicDrawUsage); v.count = 0; v.visible = false; v.frustumCulled = false;
     v.castShadow = shadow && im.castShadow; v.receiveShadow = im.receiveShadow; v.renderOrder = im.renderOrder; v.layers.mask = im.layers.mask; v.raycast = () => {};   // (rays still find the source, with the source's instance ids)
@@ -47,9 +48,9 @@ function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanc
     if(im.instanceColor) v.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage);
     v.userData.viewOf = im; G.add(v); return v; };
   const R = { im, G, geo:g, mat:im.material, cap, names, hasCol:!!im.instanceColor, dLite, dHide:hide, near:mk(g, true), far:null, pos:null, sig:-1, cx:1e9, cz:1e9, k:1, dirty:true, count:im.count, off:null };
-  if(lite && (dLite < hide)){ R.far = mk(g, false);   // the far view wears the whole geometry until its light copy is ready
+  if((lite || shade) && dLite < hide){ R.far = mk(g, false); if(lite)   // the far view wears the whole geometry until its light copy is ready (or for good: a packed scan, a tree of loose leaves)
     farGeo(g, cutout(im) ? C.keepCut : C.keep).then(lo => { if(RECS.get(im) !== R || im.geometry !== g) return; if(lo){ R.far.geometry = viewGeo(lo, names, cap); R.dirty = true; }
-      else if(hide === Infinity){ unwrap(R); im.userData.noView = true; } }); }   // (it would not simplify and is never hidden: nothing to gain, it draws itself again)
+      else if(hide === Infinity && !shade){ unwrap(R); im.userData.noView = true; } }); }   // (it would not simplify, is never hidden and casts no shadow: nothing to gain, it draws itself again)
   Object.defineProperty(im, 'count', { configurable:true, enumerable:true, get(){ return DRAW ? 0 : R.count; }, set(x){ R.count = x; } });
   R.off = () => unwrap(R); im.addEventListener('removed', R.off); im.parent.add(G); RECS.set(im, R); }
 
