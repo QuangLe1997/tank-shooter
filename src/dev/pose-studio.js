@@ -12,8 +12,8 @@
 //   tools/pose-studio.mjs drives it headless: every soldier × weapon × view → PNGs + report.json + report.html (failures in red).
 //   Nothing in the game calls it.
 import * as THREE from 'three';
-import { GUNFIT, GUNHOLD, INFGUN, POSE_STUDIO } from '../../config.js';
-import { BIOMES, CV, FIT, GUNKICK, GUNS, PROFILE, S, boreOf, fitHold, sideProfile, underAt, TROOP_BATCH, WAVE, camera, cavStance, cavToggleMount, composer, doResize, enemies, heightAt, launchGame, renderer, scene, trooperGive } from '../hub.js';
+import { GUNFEEL, GUNFIT, GUNHOLD, INFGUN, POSE_STUDIO } from '../../config.js';
+import { BIOMES, CV, FIT, GUNKICK, GUNS, eyePoint, triggerAt, wristBend, PROFILE, S, boreOf, fitHold, sideProfile, underAt, TROOP_BATCH, WAVE, camera, cavStance, cavToggleMount, composer, doResize, enemies, heightAt, launchGame, renderer, scene, trooperGive } from '../hub.js';
 
 const ST = { b:0, aimT:0, quietT:0, dpr:1, was:'playing' }, V3 = () => new THREE.Vector3();
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -64,6 +64,13 @@ function measure(){ const R = CV.real, D = R && R.pup && R.pup.D; if(!D) return 
     out.muzzle = cm(Math.abs((met.userData.muzzle || [0, 0])[1] - bore)); if(out.muzzle > G.muzzle) out.notes.push(`điểm bắn lệch đầu nòng ${out.muzzle} cm`);
     const f = met.userData.fit, K = GUNKICK[R.armK]; if(K){ out.kick = K.kick; out.shake = K.shake; } out.hold = FIT[R.armK] ? 'fit' : 'tay'; if(FIT[R.armK]) out.slide = cm(R.pslide || 0); if(f) out.parts = f.parts;
     out.fitted = f ? { palm:f.palm, slideTo:f.slideTo, grip:f.grip, butt:f.butt, sightX:f.sightX, bore:f.bore } : null; out.set = GUNHOLD[R.armK] || null; }
+  // GUN 1 held to his joints (actors/gun-hands.js): the index fingertip to the trigger (cm), each wrist's bend (deg), the right eye off the sight line [over, to its left] (cm)
+  { const K = GUNFEEL.hold.ok, g = FIT[R.armK] || GUNHOLD[R.armK], L = met && met.userData.len, tip = D.RightHandIndex4 || D.RightHandIndex3;
+    if(met && g && tip){ met.updateWorldMatrix(true, false); const t = triggerAt(g, L); out.trig = cm(met.localToWorld(V3().set(t[0] * L, t[1], 0)).distanceTo(W(tip))); if(!CV.mounted && out.trig > K.trig) out.notes.push(`ngón trỏ cách cò ${out.trig} cm`); }
+    out.wristL = Math.round(wristBend(D, 'Left') * 57.3); out.wristR = Math.round(wristBend(D, 'Right') * 57.3); if(!CV.mounted) for(const [s, v] of [['trái', out.wristL], ['phải', out.wristR]]) if(v > K.wrist) out.notes.push(`cổ tay ${s} gập ${v}°`);
+    if(met && g && !g.hold && met.userData.sight != null && D.Head){ const f = V3().setFromMatrixColumn(met.matrixWorld, 0).negate().setY(0).normalize(), e = met.worldToLocal(eyePoint(D, GUNHOLD.cheek.eye, V3().set(0, 1, 0), f, V3()));
+      out.eye = [cm(e.y - met.userData.sight), cm(e.z)]; if(!CV.mounted && Math.hypot(out.eye[0], out.eye[1]) > K.eye) out.notes.push(`mắt lệch đường ngắm ${out.eye[0]} / ${out.eye[1]} cm`); }
+    if(!CV.mounted) for(const [s, v] of [['trái', out.stretchL], ['phải', out.stretchR]]) if(v > K.stretch && v <= Q.stretch) out.notes.push(`tay ${s} duỗi ${Math.round(v * 100)} %`); }
   out.ok = !out.notes.length; return out; }
 
 // ---- the camera on a named view (relative to where he aims: side − = his left), paused, at 2× ----

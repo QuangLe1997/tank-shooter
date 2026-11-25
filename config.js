@@ -1203,7 +1203,8 @@ export const INFGUN = { map:{ carbine:'ar', t_lmg:'lmg', t_minigun:'minigun', t_
 export const GUNHOLD = { k:220, damp:0.75, body:0.35, pitch:[-0.42, 0.3], pocket:[0.05, 0.02, 0.03], palmRays:[[-0.012, 0, 0.012], [-0.012, 0, 0.012]], palmGap:0.014, reach:0.97, reachProne:0.99, cup:[0.7, -0.62, 0.25, 1.1], wrap:[0.024, 0.012], gripR:[0.75, 0.45, 0.35, 0.012, 0.0], square:0.2, blade:[0.005, 0.35, 0.15, 0.8, 0.9], cheek:{ eye:[0.03, 0.075, 0.09], reach:0.16, max:[0.75, 0.3], k:0.9, sightX:0.08, under:0.025 }, reload:{ min:0.75, low:0.5, turn:0.38, cant:0.55, drop:0.28 }, mag:[0.06, -0.12], bolt:[0.12, 0.04],
   ar:{ palm:-0.1, butt:[0.5, -0.01], grip:[0.215, -0.08], fore:[-0.1, -0.035], kick:[0.022, 0.03] }, lmg:{ palm:-0.12, butt:[0.5, -0.01], grip:[0.24, -0.08], fore:[-0.04, -0.05], kick:[0.02, 0.025] },
   minigun:{ palm:-0.14, hold:'hip', butt:[0.45, 0.0], grip:[0.28, -0.1], fore:[-0.02, 0.1], kick:[0.008, 0.008] }, shotgun:{ palm:-0.15, butt:[0.5, -0.02], grip:[0.27, -0.07], fore:[-0.12, -0.04], kick:[0.07, 0.14] },
-  sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.4, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0],
+  sniper:{ palm:-0.068, butt:[0.5, -0.02], grip:[0.27, -0.08], fore:[0.02, -0.05], kick:[0.09, 0.16] }, rpg:{ hold:'top', palm:-0.1, butt:[0.5, 0.0], grip:[0.31, -0.08], fore:[-0.06, -0.12], kick:[0.05, 0.1], mag:[-0.5, 0.0],   // GUN 1 butt 0.4 → 0.5: the tube's end on his shoulder, its pistol grip a forearm ahead of it (10 cm ahead, his right arm was folded to 15 % of its length)
+   
     load:{ at:[0.06, -0.45, -0.06], pitch:0.6, turn:0.8, pouch:[0.15, -0.3, 0.18], ahead:[0.14, 0.05], look:0.2, floor:0.15, clear:0.7, prone:{ at:[0.06, -0.1, -0.3], pitch:0.15, turn:0.6 } } },
   gl:{ palm:-0.24, butt:[0.5, -0.01], grip:[0.18, -0.08], fore:[-0.12, -0.05], kick:[0.05, 0.09] }, flamer:{ palm:-0.12, hold:'hip', butt:[0.45, 0.0], grip:[0.26, -0.08], fore:[-0.05, -0.06], kick:[0.004, 0.004] },
   energy:{ palm:-0.14, butt:[0.5, -0.01], grip:[0.2, -0.08], fore:[-0.1, -0.04], kick:[0.015, 0.02] },
@@ -1331,6 +1332,27 @@ export const POSE_STUDIO = { ok:{ palm:4, stretch:0.995 }, settle:{ equip:0.6, s
   views:{ stand34:{ side:-0.55, dist:2.5, up:1.35, look:1.05 }, front:{ side:0, dist:2.6, up:1.4, look:1.1 }, left:{ side:-1.57, dist:2.6, up:1.25, look:1.0 }, right:{ side:1.57, dist:2.6, up:1.25, look:1.0 },
     back:{ side:3.0, dist:2.4, up:1.6, look:1.15 }, handsL:{ side:-0.8, dist:0.65, up:0.12, on:'handL', look:-0.02 }, handsR:{ side:1.1, dist:0.8, up:0.18, on:'handR', look:-0.05 },
     kneel:{ side:-0.6, dist:2.2, up:1.0, look:0.7 }, prone:{ side:1.2, dist:2.4, up:0.9, look:0.2 }, mount:{ side:-1.2, dist:3.8, up:1.9, look:1.5 }, mountBack:{ side:2.4, dist:3.6, up:2.0, look:1.5 }, mountSide:{ side:-1.75, dist:3.4, up:1.7, look:1.45 }, kick:{ side:1.57, dist:1.2, up:1.4, look:1.35 } } };   // (Z360 kick: close on his right side, fixed to him — a shot's recoil seen against his body)
+// GUN 1 HANDLING THE GUN LIKE AN INFANTRYMAN — the soldier on his feet (actors/gun-hands.js, actors/real-cav.js holdReal; m, rad, s). hold: what the
+//   audit of both soldiers × 16 weapons × stand / kneel / prone found wrong, as rules:
+//   grip = the firing hand's palm moved [back onto the pistol grip, up it] from the fitted grip point (it sat ahead of the grip, low: the fingers closed on
+//   air under the trigger guard), gripPole = where the right elbow goes [up, his right, ahead] of the shoulder (out a little: a forearm nearer level);
+//   wrist = the most [the firing, the support] wrist may bend — past it the hand gives toward the forearm;
+//   trig = the trigger: `ahead` of the grip's front edge, `up` over the bottom of the guard there, within lo…hi under the bore; the finger's last joint
+//   `side` to its right and `face` ahead of it, its pad curled [across, back]; off the trigger (running, carrying, reloading) laid safe = [over the
+//   guard, ahead, out on the right side]; bare = a hand-set weapon's trigger [ahead of, over] its grip point;
+//   reach = the support arm: comfortable out to comfort of its length (prone: the elbow on the ground), past it by dead[0] the left collar bone comes
+//   forward (proK rad/s per unit, at most protract rad, back at `back` rad/s once it is dead[1] inside) and then the chest turns further side-on (k rad/s
+//   per unit, at most blade rad more: GUNHOLD.blade's own pull rule may still go beyond); hardProne = the reach lying down before the gun is drawn to the hand;
+//   cheek = the cheek weld: the head bows / lifts within bow, tilts at most tilt (iter passes); the gun then comes to the eye — the butt up to
+//   `up` (m: lower / higher than the pocket) and `in` toward his neck, at rate /s; hipProne = lying down a hip-fired gun (minigun, flamer) goes to the shoulder;
+//   carry = port arms at a sprint: the handguard no nearer the left shoulder than min of the arm's length
+export const GUNFEEL = {
+  hold:{ grip:[0.034, 0.022], gripPole:[-0.36, 0.4, -0.12], wrist:[0.8, 0.8],
+    trig:{ ahead:0.024, up:0.02, lo:0.09, hi:0.035, side:0.011, face:0.004, pad:[0.9, 0.35], safe:[0.032, 0.014, 0.018], bare:[0.03, 0.03] },
+    reach:{ comfort:0.9, prone:0.95, dead:[0.012, 0.04], proK:10, protract:0.3, back:0.4, k:8, blade:0.4, hardProne:0.985 },
+    cheek:{ bow:[-0.4, 0.42], tilt:0.26, iter:3, up:[-0.05, 0.055], in:[0, 0.04], rate:8 }, hipProne:true, carry:{ min:0.75 },
+    ok:{ trig:3.5, wrist:60, eye:4, stretch:0.97 } },   // what the pose studio flags (dev/pose-studio.js measure): the fingertip off the trigger (cm), a wrist's bend (deg), the eye off the sight line (cm), an arm's stretch
+};
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
 //   stiffness leanK and damping leanZ); the shoulders' turn against each stride and the trunk's sway over the standing foot (rad); breathing (rad, Hz);
