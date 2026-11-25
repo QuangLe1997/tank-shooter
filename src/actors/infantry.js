@@ -86,7 +86,7 @@ export function updateInfantry(e, dt, now, edt){
   if(thr && now>=(e.coverAt||0)){ e.coverAt=now+1.4+Math.random()*0.6;       // AI 1 he keeps the cover he chose until it is gone or the player has moved round it (no shuffling between two rocks)
     if(!e.cover || !(e.cover.b.hp>0) || Math.hypot(p.pos.x-e.cvx, p.pos.z-e.cvz)>AW.cover.repick){ const c=coverSpot(e.pos.x, e.pos.z, p.pos.x, p.pos.z, AW.cover.search); e.cover = c && Math.hypot(c.x-p.pos.x, c.z-p.pos.z)<reach*0.9 ? c : null; e.cvx=p.pos.x; e.cvz=p.pos.z; } }   // (only a cover he can hit from)
   const inCv = !!e.cover && al && !def.rpg && !fb && (!!thr || now<(e.cvHold||0)); if(!inCv) e.inCover=false;
-  if(al && !react && !e.guard && now-(e.actAt||now)>AW.idle.max){ e.pushUntil=now+AW.idle.push; e.actAt=now; e.fireAt=Math.min(e.fireAt, now); e.idleN=(e.idleN||0)+1; e.side=-(e.side||1); }   // AI 1 neither moved nor fired for 2 s while alerted: he goes for him
+  if(al && !react && !e.guard && !fb && now-(e.actAt||now)>AW.idle.max){ e.pushUntil=now+AW.idle.push; e.actAt=now; e.fireAt=Math.min(e.fireAt, now); e.idleN=(e.idleN||0)+1; e.side=-(e.side||1); }   // AI 1 neither moved nor fired for 2 s while alerted: he goes for him
   const push = al && now<(e.pushUntil||0);
   const _ex=e.exit ? fortExitDir(e) : null;                                 // Z111b filing out through a fortress gate
   if(_ex){ mx=_ex.x; mz=_ex.z; sp*=1.15; it='deploy'; }
@@ -102,7 +102,7 @@ export function updateInfantry(e, dt, now, edt){
   else if((_sm=squadMove(e))){ if(!_sm.hold){ mx=_sm.x; mz=_sm.z; if(_sm.run) sp*=1.35; }   // Z173 the squad's plan: formation · bound · flank · assault · fall back
     it=fb ? 'fallback' : e.sq.state==='search' ? 'search' : e.sqNoFire ? 'flank' : T.lost ? (T.supp ? 'suppress' : 'search') : 'attack'; }
   else if(e.guard && e.post){ const gx=e.post[0]-e.pos.x, gz=e.post[1]-e.pos.z, gd=Math.hypot(gx,gz); if(gd>2.5){ mx=gx/gd; mz=gz/gd; } it=al?'attack':'guard'; }   // Z104 depot / stockade guards hold their post
-  else { const keep=T.lost ? AW.search.reach*0.5 : def.keep;                // (AI 1 a lost man is walked right up to, not watched from 15 m)
+  else { const keep=T.lost && !T.supp ? AW.search.reach*0.5 : def.keep;    // (AI 1 a lost man is walked right up to, not watched from 15 m — once the suppressing fire on his last place is spent)
     if(d>keep+2){ const rw=riverWay(e, T.pos.x, T.pos.z, now); if(rw){ mx=rw.x; mz=rw.z; } else { mx=ux; mz=uz; } } else if(!T.lost && d<def.keep-5){ mx=-ux*0.8; mz=-uz*0.8; }   // (Z415 a deep river between: round by a bridge or a ford)
     it=T.lost ? (T.supp ? 'suppress' : 'search') : 'attack'; }
   if(!al && T.lost && (it==='search' || it==='suppress' || it==='attack')) it = e.alert===1 ? 'check' : 'patrol';
@@ -123,13 +123,13 @@ export function updateInfantry(e, dt, now, edt){
   let fired=false; const ds=diffScale(), A=BALANCE.aggro, F=AW.fire;
   const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*objMod('enemyDmgMul')*diffDmgMul();   // (an objective standing: the command bunker, the battery)
   // AI 1 FIRE: an alerted man with the player in his sights always fires (no coin toss), in BURSTS; out of sight he suppresses the last place he saw him; nothing during the reaction delay
-  const open = S.mode==='playing' && !(e.aimT>0) && !react && (!T.lost || T.supp), rate=(A.rateBase-A.rateDrop*ds)/1.6*(e.sqFireK||1)*(1+(e.supp||0));
+  const open = S.mode==='playing' && !(e.aimT>0) && !react && (!T.lost || T.supp), rate=(A.rateBase-A.rateDrop*ds)/1.6*(e.sqFireK||1)*(1+(e.supp||0))*(you && PL.v>AW.zero.runV ? F.runRest : 1);   // (AI 3 a running man: longer between bursts)
   if(e.burstLeft>0){ if(!open || !inRange) e.burstLeft=0;
     else if(now>=e.fireAt){ fireRound(e, T, d, now, dmgMul, ds); fired=true; e.fireAt = --e.burstLeft>0 ? now+F.gap : now+(F.rest[0]+Math.random()*(F.rest[1]-F.rest[0]))*rate; } }
   else if(open && inRange && now>e.fireAt && !soldierReloading(e.mesh) && !(e.sqNoFire && moved>0.01)){   // Z172 nobody fires mid-reload · Z173 nor while sprinting to the next cover
     if((e.supp||0)>0.75 && Math.random()<0.5) e.fireAt=now+0.4; else
     if(fortWallCross(e.pos.x, e.pos.z, T.pos.x, T.pos.z) || losBlocked(e.pos.x, e.pos.z, T.pos.x, T.pos.z)){ e.fireAt=now+0.6; wantPeek(e, T.pos.x, T.pos.z, now); }     // Z111b a fortress wall between: no shot (rifle or rocket) · Z220 nor a house / rock — he moves for a clear line
-    else if(!you && !T.supp && Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)) e.fireAt=now+0.5;   // (the old coin toss: only against our other men now)
+    else if(!al && Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)) e.fireAt=now+0.5;   // (the old coin toss: only a man who is not alerted, at our other men)
     else if(def.rpg){ if(T.supp) e.fireAt=now+1.2; else { e.aimT=def.aimT; sfx('beep', e.pos); } }                 // kneel + aim: a readable 1s telegraph before the rocket
     else { const bst=you||T.supp; e.burstLeft = bst ? F.burst[0]+((Math.random()*(F.burst[1]-F.burst[0]+1))|0) : 1; fireRound(e, T, d, now, dmgMul, ds); fired=true;
       e.fireAt = --e.burstLeft>0 ? now+F.gap : now+(bst ? F.rest[0]+Math.random()*(F.rest[1]-F.rest[0]) : def.fireCd*(0.8+Math.random()*0.5))*rate; } }
@@ -142,7 +142,7 @@ export function updateInfantry(e, dt, now, edt){
       launchEnemyMissile(_cv.x, _cv.y, _cv.z, a, { speed:def.rspeed, dmg:def.dmg*dmgMul, aoe:def.aoe, life:2.6, kind:'rpg' });
       spawnPart(_cv.x-Math.sin(a)*1.2,_cv.y,_cv.z-Math.cos(a)*1.2, -Math.sin(a)*6,0.5,-Math.cos(a)*6, {color:0xd8d0c0, size:1.4, life:0.6, smoke:true, grav:0.3, drag:2, op:0.5});   // back-blast
       fired=true; e.fireAt=now+def.fireCd*(A.rateBase-A.rateDrop*ds)/1.6; } }
-  if(fired || e.aimT>0 || moved>0.02*Math.max(1, edt/dt)){ e.actAt=now; if(fired || !push) e.idleN=0; }   // AI 1 (he did something: the idle clock starts again)
+  if(fired || e.aimT>0 || moved>0.02*Math.max(1, edt/dt) || soldierReloading(e.mesh) || def.rpg && !T.lost && inRange && now<e.fireAt){ e.actAt=now; if(fired || !push) e.idleN=0; }   // (AI 3 a reload — the rifle's, or the launcher's with his man in sight — is something a player reads: not idle)   // AI 1 (he did something: the idle clock starts again)
   animateSoldier(e.mesh, moved/def.scale, dt, fired);
   // Z105 stance: kneel for the RPG / behind cover, flat on the ground when settled at range in the open, upright when moving
   const still = moved < 0.03*Math.max(1, edt/dt);

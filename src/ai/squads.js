@@ -58,7 +58,7 @@ function squadThink(sq, now){
   sq.morale=Math.max(0, Math.min(1, n/sq.n0 + (sq.lost?-0.15:0) - sp*0.25 + (sq.rally||0)));
   const esc=sq.escort && enemies.includes(sq.escort) ? sq.escort : null; if(sq.escort && !esc) sq.escort=null;
   let st=sq.state;
-  if(st==='fallback'){ if(now>sq.fallAt && sp<0.3){ sq.rally=(sq.rally||0)+0.35; st='advance'; } }
+  if(st==='fallback'){ if((now>sq.fallAt || d>AWARE.squad.breakR) && sp<0.3){ sq.rally=(sq.rally||0)+0.35; st='advance'; } }   // (AI 3 it has broken contact — breakR m off — or has its back to the fence: it rallies instead of standing there)
   else if(sq.morale<A.breakMorale && n<sq.n0){ st='fallback'; sq.fallAt=now+R2(A.rallyT); floatText('ĐỊCH RÚT LUI', '#9be04a', { x:cx, y:2.8, z:cz }, 14); }
   else if(esc && d>R+8) st='escort';
   else if(d>R+10) st='advance';

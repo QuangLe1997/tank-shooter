@@ -865,16 +865,17 @@ export const STEALTH = { see:[8, 12], crawlV:0.3, night:0.7, alertR:30, keep:{ n
 //   cover: seen inside threat m he runs to cover within search m and holds it hold s after losing sight; a new cover only once we moved repick m.
 //   fire: an alerted rifleman reaches range × reachK (wider × farK past his own range), fires bursts of burst rounds gap s apart, rest s between them, each
 //     round × dmgK on the player, leading him by lead of the flight; the group is wide rad across to begin with and tightens to tight (× stageK from stage 1
-//     to 5+; blind fire at a lost man × blindK; × runK on a man running over zero.runV). zero: the group closes by gain a second while he stands (under slowV m/s; × walkK up to runV, × coverK behind
-//     cover or in bushes, × iqK by IQ) and opens by loss a second once he runs or is out of sight. squad: the covering team closes to range × closeK.
+//     to 5+; blind fire at a lost man × blindK; × runK on a man running over zero.runV, and the rests × runRest: he is tracked, not hosed). zero: the group closes by gain a second while he stands (under slowV m/s; × walkK up to runV, × coverK behind
+//     cover or in bushes, × iqK by IQ) and opens by loss a second once he runs or is out of sight. squad: the covering team closes to range × closeK; a broken
+//     squad that has put breakR m between itself and us rallies at once.
 export const AWARE = { tick:[0.22, 0.34],
   see:{ r:46, stance:{ stand:1, crouch:0.62, mounted:1.3 }, still:0.85, run:1.2, runV:5.2, cover:0.7, bush:0.5, bushPad:0.8, bushS:0.6, night:0.55, cone:[1.05, 2.1], side:0.55, rear:0.16, near:4, alertK:1.25, track:0.75 },
   spot:{ t:[0.25, 2.4], sus:0.45, decay:0.35 }, react:[0.4, 1.0], reactK:[1.25, 0.75], reactHit:0.25,
   hear:{ shot:70, shotErr:3, gap:0.2, run:14, horse:24, bike:42, runV:5.2 }, hit:{ err:4 }, death:{ r:20, err:6 }, shout:{ r:24, delay:0.45 },
-  keep:{ alert:26, search:45, suppress:5 }, search:{ reach:5, wait:[1.2, 2.4], step:[8, 40], far:0.4, drift:0.6, hidK:0.6 }, intel:{ err:16 }, idle:{ max:2, push:2.6 },
+  keep:{ alert:26, search:45, suppress:5 }, search:{ reach:5, wait:[1.2, 2.4], step:[8, 40], far:0.4, drift:0.6, hidK:0.6 }, intel:{ err:16 }, idle:{ max:1.5, push:2.6 },
   cover:{ threat:30, search:13, hold:5, repick:7 }, say:{ gap:0.6, r:55, size:17 },
-  fire:{ reachK:1.35, farK:1.6, burst:[3, 5], gap:0.11, rest:[0.9, 1.5], dmgK:1.6, lead:0.5, wide:0.3, tight:0.04, stageK:[1.25, 0.75], blindK:1.3, runK:1.5 },
-  zero:{ gain:0.42, loss:1.1, slowV:1.6, runV:4.5, walkK:0.35, coverK:0.5, iqK:[0.7, 1.3] }, squad:{ closeK:0.85 } };
+  fire:{ reachK:1.35, farK:1.6, burst:[3, 5], gap:0.11, rest:[0.8, 1.3], dmgK:1.6, lead:0.5, wide:0.3, tight:0.04, stageK:[1.25, 0.75], blindK:1.3, runK:1.9, runRest:1.5 },
+  zero:{ gain:0.42, loss:1.1, slowV:1.6, runV:4.5, walkK:0.35, coverK:0.5, iqK:[0.7, 1.3] }, squad:{ closeK:0.85, breakR:55 } };
 // AI 2 HOW AN ENEMY SOLDIER COMES ONTO THE FIELD (campaign/entries.js) — never out of thin air inside the frame. minD: an edge entry is at least this far from the
 //   player (m) and out of the camera's frame (pad: a margin round the frame, in half-screens; tries candidates; edgeIn m inside the fence); a man appearing is
 //   "seen" inside the frame nearer than seeD m, or anywhere within nearD m of the player — such a man climbs out of a hatch instead: rise s coming up from
