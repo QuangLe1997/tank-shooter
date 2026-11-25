@@ -3,7 +3,7 @@
 // Run:  node test.js     (exits non-zero on any failed invariant)
 // Guards the economy/balance data against silent breakage during edits.
 // ============================================================================
-import { INSTVIEW, HARD, BALANCE, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
+import { TROOPLOD, INSTVIEW, HARD, BALANCE, CONTRACTS, DMG_TYPE, ARMOR, RAMP, ENV, INFANTRY, EQUIP, ROSTER, OPERATIONS, OBJECTIVES, DRIVE, TROOPS, CAMP, BRIDGE, LOOT, TACTICS, AIM, LETHAL, SQUAD, RALLY, POW, DEPOT, PARA, DEPLOY, RELIEF, FIELD, CAMPAIGN, WEATHER, SPACE, FORT, COMMAND, KEYS_HELP, TOUCH_HELP, TERRAIN_FLAT, RAM } from './config.js';
 import { GUNS } from './src/data/guns.js';
 import { ENEMY_DEFS, SOLDIER, TOWER } from './src/data/enemies.js';
 import { BOSS_DEFS } from './src/data/bosses.js';
@@ -1368,6 +1368,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/spawnSquad\(\{ x, z, hatch:true, alert:true \}\)/.test(su) && !/spawnSquad\(\{ x, z \}\)/.test(su) && /spawnSquad\(\{ x, z, hatch:true, alert:true \}\)/.test(op), 'the ambush behind you and the scripted ambush: hatches that open, not men materialising');
   ok(/export function spiderHole\(x, z, now\)/.test(tn) && /export function hatchNear\(x, z, r\)/.test(tn) && /hatchEntry\(E\.x, E\.z, squadTypes\(\), \{ alert:true \}\)/.test(tn) && /entryRise\(e, E\)/.test(tn) && /TUN\.temp\.splice\(i,1\)/.test(tn), 'tunnels: the squad and the man coming back up climb out; a spider hole opens where the network has no way up, and is filled in later');
   ok(/'fall'\)/.test(rd('src/world/towers.js')) && /'rope'\)/.test(rd('src/actors/helis.js')) && /'para'\)/.test(rd('src/actors/paradrop.js')) && (rd('src/world/camps.js').match(/'door'\)/g)||[]).length===2 && /riseHere\(e, k\*0\.3\)/.test(rd('src/world/fortress.js')) && /how:'gate'/.test(rd('src/world/fortress.js')), 'the ways in that were already readable are named: a fallen tower, the rope, the parachute, the barracks door, the fortress gate and its basement hatch'); }
+// TROOP 1 the batched infantry by distance: a light body far off, no shadow past the sun's shadow box (actors/soldiers.js)
+{ const fs = await import('node:fs'), T = TROOPLOD, sd = fs.readFileSync('src/actors/soldiers.js', 'utf8');
+  ok(T.far >= 40 && T.far <= 90 && T.keep >= 0.2 && T.keep < 1 && T.shadowK >= 1 && T.shadowPad >= 0, 'TROOPLOD: far men go light well past arm\'s length; the shadow cut-off is never inside the shadow box');
+  ok(/far=d2>_tbFar2/.test(sd) && /d2<_tbSh2/.test(sd) && /farGeo\(K\.skin, TROOPLOD\.keep\)/.test(sd) && /m\.geometry=K\.skinFar/.test(sd), 'soldiers.js: each man sorted by his distance into the near / far body batch, the far batch wearing the simplified body once ready'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

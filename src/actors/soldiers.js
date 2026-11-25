@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { REAL, REALTROOP } from '../../config.js';
-import { MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
+import { REAL, REALTROOP, TROOPLOD } from '../../config.js';
+import { SHADOW_EXT, farGeo, MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -139,10 +139,11 @@ export function makeSoldierMesh(opts){
   return g;
 }
 const _tbWhite=new THREE.Color(1,1,1), _tbHit=new THREE.Color(2.4,1.05,0.8), _tbBk={}, _tbFr=new THREE.Frustum(), _tbPM=new THREE.Matrix4(), _tbSp=new THREE.Sphere();
-function tbIM(key, kind, sh, need){ const id=key+'_'+kind+'_'+(sh?1:0); let m=TROOP_BATCH.im[id];
+let _tbPx=0, _tbPz=0, _tbFar2=Infinity, _tbSh2=Infinity;
+function tbIM(key, kind, sh, need, far){ const id=key+'_'+kind+'_'+(sh?1:0)+(far?'f':''); let m=TROOP_BATCH.im[id];
   if(m && m.instanceMatrix.count>=need) return m;
   const cap=Math.max(64, 1<<Math.ceil(Math.log2(Math.max(1,need)*1.25))); if(m){ m.parent && m.parent.remove(m); troopSkinFree(m); m.dispose(); }
-  const K=SOLDIER_KIT[key]; m=kind==='body' ? troopSkinMesh(K.skin, K.mat, cap) : new THREE.InstancedMesh(K.geo[kind], (K.mats && K.mats[kind]) || K.mat, cap);   // Z344 the real kit: one skinned body (actors/troop-skin.js) + the rifle
+  const K=SOLDIER_KIT[key]; m=kind==='body' ? troopSkinMesh(far && K.skinFar ? K.skinFar : K.skin, K.mat, cap) : new THREE.InstancedMesh(K.geo[kind], (K.mats && K.mats[kind]) || K.mat, cap);   // Z344 the real kit: one skinned body (actors/troop-skin.js) + the rifle
   m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled=false; m.castShadow=sh; m.count=0;
   for(let i=0;i<cap;i++) m.setColorAt(i, _tbWhite); m.instanceColor.setUsage(THREE.DynamicDrawUsage); scene.add(m); TROOP_BATCH.im[id]=m; return m; }
 const tbKinds=K=>K.skin ? ['body','gun'] : TROOP_BATCH.kinds;   // Z344 what a kit is drawn as: the skinned body + rifle, or the jointed pieces
@@ -150,12 +151,14 @@ function tbShown(o){ while(o){ if(!o.visible) return false; if(o===scene) return
 // call right before the frame is drawn
 export function updateTroopBatch(now){
   for(const id in _tbBk) _tbBk[id].n=0;
+  { const pl=S.player && S.player.pos, f=TROOPLOD.far, sr=SHADOW_EXT.r*TROOPLOD.shadowK+TROOPLOD.shadowPad; _tbPx=pl?pl.x:camera.position.x; _tbPz=pl?pl.z:camera.position.z; _tbFar2=TROOPLOD.on?f*f:Infinity; _tbSh2=TROOPLOD.on?sr*sr:Infinity; }   // TROOP 1 past the sun's shadow box a man casts none; past `far` he wears the light body
   camera.updateMatrixWorld(); _tbFr.setFromProjectionMatrix(_tbPM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));   // men off-screen aren't drawn
   for(const r of TROOP_BATCH.roots){ const u=r.userData; if(!u.parts) continue;
     { let q=r; while(q.parent) q=q.parent; if(q!==scene){ TROOP_BATCH.roots.delete(r); continue; } }   // Z396 a man whose tower / fort went with the old battlefield ('removed' fires only on him): out of the batch, or it held every old field
     let rootShown=tbShown(r); if(rootShown){ r.updateWorldMatrix(true, true); _tbSp.center.setFromMatrixPosition(r.matrixWorld); _tbSp.radius=2.2*(r.scale.x||1)+3; if(!_tbFr.intersectsSphere(_tbSp)) rootShown=false; }
-    const hit=(u.flashUntil||0)>now || u.torso.material.emissiveIntensity>0, sh=!MOBILE && u._cs!==false, K=SOLDIER_KIT[u.kitKey], skin=!!(K && K.skin && u.realKit);
-    if(skin && rootShown){ const id=u.kitKey+'_body_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig
+    const dx=r.matrixWorld.elements[12]-_tbPx, dz=r.matrixWorld.elements[14]-_tbPz, d2=dx*dx+dz*dz, far=d2>_tbFar2;   // TROOP 1 how far he stands from the soldier
+    const hit=(u.flashUntil||0)>now || u.torso.material.emissiveIntensity>0, sh=!MOBILE && u._cs!==false && d2<_tbSh2, K=SOLDIER_KIT[u.kitKey], skin=!!(K && K.skin && u.realKit);
+    if(skin && rootShown){ const id=u.kitKey+'_body_'+(sh?1:0)+(far?'f':''), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh, far }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig
     for(const pt of u.parts){ if(skin && pt.kind!=='gun') continue; const detached=!pt.o.parent || pt.o.parent===scene || (pt.kind==='gun' && u.droppedGun);   // a rifle dropped beside the dead lies on its own
       if(detached){ if(!tbShown(pt.o)) continue; pt.o.updateWorldMatrix(true, false); } else if(!rootShown || !tbShown(pt.o)) continue;
       const id=u.kitKey+'_'+pt.kind+'_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:pt.kind, sh });
@@ -163,7 +166,8 @@ export function updateTroopBatch(now){
   for(const key in SOLDIER_KIT) for(const kind of tbKinds(SOLDIER_KIT[key])) for(const sh of (MOBILE?[false]:[true,false])){ const id=key+'_'+kind+'_'+(sh?1:0); if(!_tbBk[id]) _tbBk[id]={ n:0, m:[], c:[], key, kind, sh }; }
   for(const id in _tbBk){ const B=_tbBk[id], K=SOLDIER_KIT[B.key];
     if(!K || !tbKinds(K).includes(B.kind)){ const m=TROOP_BATCH.im[id]; if(m){ m.parent && m.parent.remove(m); troopSkinFree(m); m.dispose(); delete TROOP_BATCH.im[id]; } delete _tbBk[id]; continue; }   // (a kit changed: the other way of drawing it goes)
-    const m=tbIM(B.key, B.kind, B.sh, B.n), A=m.instanceMatrix.array, C=m.instanceColor.array;
+    if(B.far){ if(!B.n && !TROOP_BATCH.im[id]) continue; if(!K._farAsk){ K._farAsk=true; farGeo(K.skin, TROOPLOD.keep).then(g=>{ if(g) K.skinFar=g; }); } }   // TROOP 1 the far men's light body (render/far-lod.js), made once a kit
+    const m=tbIM(B.key, B.kind, B.sh, B.n, B.far), A=m.instanceMatrix.array, C=m.instanceColor.array; if(B.far && K.skinFar && m.geometry!==K.skinFar) m.geometry=K.skinFar;
     if(B.kind==='body'){ for(let i=0;i<B.n;i++){ troopSkinWrite(m, i, B.m[i], K.joints, TROOP_BATCH.kinds); const c=B.c[i]||_tbWhite; C[i*3]=c.r; C[i*3+1]=c.g; C[i*3+2]=c.b; }
       if(B.n) troopSkinDone(m); if(m.count!==B.n || B.n){ m.count=B.n; m.instanceColor.needsUpdate=true; } continue; }
     for(let i=0;i<B.n;i++){ A.set(B.m[i].elements, i*16); const c=B.c[i]||_tbWhite; C[i*3]=c.r; C[i*3+1]=c.g; C[i*3+2]=c.b; }
