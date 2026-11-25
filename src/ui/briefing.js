@@ -139,6 +139,6 @@ export function prewarmStage(){ if(_warm){ _again=true; return; }   // one pass 
 // Z323 three's compileAsync waits on every material's program with no guard: a material changed or disposed mid-compile throws (an uncaught TypeError in a
 //   timer) and the promise never settles. Compile, then poll readiness ourselves — a material without a program counts as done — and stop waiting after WARM_MAX
 const WARM_MAX = 12000;
-function compileQuiet(){ let mats; try { mats = renderer.compile(scene, camera); } catch(e){ return; } const t0 = performance.now();
+export function compileQuiet(){ let mats; try { mats = renderer.compile(scene, camera); } catch(e){ return; } const t0 = performance.now();
   return new Promise(res => { const check = () => { try { for(const m of mats){ const pr = renderer.properties.get(m).currentProgram; if(!pr || pr.isReady()) mats.delete(m); } } catch(e){ mats.clear(); }
       if(!mats.size || performance.now() - t0 > WARM_MAX) res(); else setTimeout(check, 16); }; check(); }); }

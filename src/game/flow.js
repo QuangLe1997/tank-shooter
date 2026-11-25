@@ -9,6 +9,7 @@ import { modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, 
 export function launchGame(arg){ S.launchFrom = (arg && typeof arg==='object' && arg.mode) ? 'setup' : 'home';   // XK-UI where the stage-1 briefing's back button goes
   veilOrder(arg); showVeil(true); requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } })); }
 export function startGame(arg){
+  if(globalThis.__reseed) globalThis.__reseed(0);   // TEST 1 ?seed=N: the same battlefield every time (boot/safety.js)
   const held=gpuHeld(); modelEpoch();   // Z396 what the old battlefield holds on the GPU, released once the new one stands · MEM 1 a new field: the models it asks for from here on are kept
   try{ audio(); preloadVoices(['open', 'streak', ...VOICE_RULES.map(r=>r[1]), 'x_scream', 'x_cheer', 'f_rally_1', 'f_rally_2', 'f_rally_3']); }catch(e){}   // diesel loop runs for the whole run (silent outside play)
   const resume = !!(arg===true && PROFILE.save && (PROFILE.save.stage>1 || (PROFILE.save.loop|0)>0));   // CONTINUE passes true; click-handler Events do not

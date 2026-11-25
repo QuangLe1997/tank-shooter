@@ -5,6 +5,7 @@
   "description": "Zero-build game (static files, ES modules, Three.js from CDN). npm is a task runner; devDependencies are ONLY for the maintainer refactor tools (tools/refactor) — the game never loads them.",
   "scripts": {
     "test": "node tools/verify.mjs",
+    "ts": "node tools/ts.mjs",
     "arch": "node tools/archcheck.mjs",
     "serve": "python3 -m http.server 8765",
     "where": "node tools/where.mjs",

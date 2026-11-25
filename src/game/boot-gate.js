@@ -1,7 +1,7 @@
 // game/boot-gate.js — Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up,
 // and the first user gesture (audio + fullscreen).
 import * as THREE from 'three';
-import { ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, audio, buildTransport, camTarget, camera, chute, enemyPool, getEnemyMesh, initCloud, makeCamoNet, makeCoverMesh, makeMortarShell, makeSoldierMesh, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat, loadRealCity, loadRealTrees, loadRealAir, initDust, holoRing } from '../hub.js';
+import { compileQuiet, ENEMY_DEFS, FS_SUPPORTED, MOBILE, NIGHT, __set__tinMat, __set__woodMat, _tinMat, _woodMat, audio, buildTransport, camTarget, camera, chute, enemyPool, getEnemyMesh, initCloud, makeCamoNet, makeCoverMesh, makeMortarShell, makeSoldierMesh, propTex, queueResize, renderer, reqFs, scene, setNightLights, sfx, svgBadgeTex, towerGeos, wireMat, loadRealCity, loadRealTrees, loadRealAir, initDust, holoRing } from '../hub.js';
 
 // ---- BOOT GATE: hold the branded splash until real frames are on screen. On touch the tap that dismisses it
 // is also the one user gesture browsers demand before audio, fullscreen and the landscape lock are allowed. ----
@@ -38,8 +38,8 @@ export async function warmUp(onStep){
     { const G=towerGeos(); if(!_woodMat){ __set__woodMat(new THREE.MeshStandardMaterial({ map:propTex('wood'), color:0x9a7a52, roughness:0.9 })); __set__tinMat(new THREE.MeshStandardMaterial({ color:0x6a6e66, roughness:0.45, metalness:0.75, map:propTex('drum') })); }
       put(new THREE.Mesh(G.wood,_woodMat)); put(new THREE.Mesh(G.roof,_tinMat)); }
     step(0.6); await _frame();
-    if(renderer.compileAsync){ step(0.62); await renderer.compileAsync(scene, camera); step(0.75); await _frame();
-      const was=NIGHT.on; setNightLights(true); await renderer.compileAsync(scene, camera); setNightLights(was); NIGHT._was=was; step(0.86); await _frame(); }   // both light setups
+    if(renderer.compileAsync){ step(0.62); await compileQuiet(); step(0.75); await _frame();
+      const was=NIGHT.on; setNightLights(true); await compileQuiet(); setNightLights(was); NIGHT._was=was; step(0.86); await _frame(); }   // both light setups
     // one real (off-screen) draw with everything in view → also compiles shadow-depth + per-object variants
     { const rt=new THREE.WebGLRenderTarget(96,96), tgt=camTarget.clone(), keep=[], wasN=NIGHT.on;   // (Z302 the stage's own day / night, kept before the warm-up draws flip it)
       const all=tmp.concat(pooled.map(x=>x[1])); all.forEach((o,i)=>{ keep.push(o.position.clone()); o.position.set(tgt.x+(i%6-2.5)*4, 0, tgt.z+((i/6|0)-2)*4); });

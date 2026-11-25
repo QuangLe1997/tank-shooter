@@ -9,10 +9,10 @@
 1. **Tự quyết, không hỏi xác nhận.** Repo này để thử nghiệm — KHÔNG cần confirm gì cả. Gặp lựa chọn (kỹ thuật, thiết kế, thư viện, cách làm) → **tự chọn phương án tối ưu nhất** cho chủ dự án rồi làm luôn. Chỉ hỏi khi thực sự bế tắc/mâu thuẫn không thể tự giải.
 2. **Code xong tính năng nào → commit + push lên git NGAY.** Mỗi tính năng hoàn thành là một commit riêng, push lên `main` liền (GitHub Pages tự deploy). Không gom dồn, không chờ nhắc.
 3. **Commit message** rõ ràng, một dòng tóm tắt + bullet nếu cần. Kết thúc bằng dòng:
-   `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
+   `Co-Authored-By: <tên model đang chạy phiên này> <noreply@anthropic.com>` (ví dụ `Claude Fable 5.2`; lấy đúng tên model của phiên, không chép tên cũ).
 4. **An toàn git:** chỉ `git add <file cụ thể>` (KHÔNG `git add -A`/`.`); repo dùng remote **HTTPS** (SSH key không chạy trong môi trường agent).
-5. **Verify trước khi push:** (a) **`npm test`** phải PASS (cú pháp mọi module `src/**` + luật kiến trúc `tools/archcheck.mjs` + luật phạm vi sâu `tools/refactor/deepcheck.mjs` R8–R11 — cần `npm install` một lần + test dữ liệu/cân bằng `test.js`); (b) đọc **`ARCHITECTURE.md`** trước khi thêm hệ thống/nội dung mới; (c) chạy thử HTTP server + Playwright MCP (desktop 1280×800 + mobile 390×844), không lỗi console (favicon 404 bỏ qua). Rồi mới commit. Commit message kết thúc bằng dòng `Co-Authored-By:` ở §1.3.
-6. **Cập nhật tài liệu** mỗi khi thêm/đổi tính năng: **`DOCS.md`** (§14 lịch sử + bảng hệ thống nếu có cơ chế mới) + **`LEVELS.md`** (nếu đổi số liệu màn/địch/súng/balance). Số cân bằng → sửa ở **`config.js` (`BALANCE`)**, không hardcode rải rác.
+5. **Verify trước khi push — test theo bậc, đừng test thừa:** **Bậc 1 (mọi thay đổi, ~5 s):** `npm test` phải PASS (cú pháp mọi module + luật kiến trúc `tools/archcheck.mjs` + test dữ liệu/cân bằng `test.js`). **Bậc 2 (thay đổi nhìn thấy / chạm vào lối chơi, ~20 s):** `node tools/ts.mjs <BIOME> 5 --seed 7 [--eval probe.js] [--shot out.jpg]` — một trận trong Chrome headless có GPU, vào thẳng trận (`?test=`), in MỘT dòng JSON; `errors` phải rỗng. Đo bằng probe (con số), chỉ chụp ảnh khi con số không nói được. Không viết script test mới — thiếu gì thì thêm vào `tools/ts.mjs`. **Bậc 3 (chỉ khi đụng hiệu năng, hoặc cuối một đợt lớn):** so trước/sau cùng seed, thêm `--novsync`. Đọc **`ARCHITECTURE.md`** trước khi thêm hệ thống mới. Tìm hàm ở file nào: `npm run where -- <tên>`; đừng đọc cả `config.js` (275 KB) hay `DOCS.md` (900 KB) — grep. Mở nhanh một trận để nhìn bằng mắt: `http://localhost:<cổng>/?test=DESERT&seed=7` (thêm `&at=x,z` để đặt lính tại chỗ cần xem).
+6. **Cập nhật tài liệu — ngắn:** mỗi tính năng một mục 4–8 dòng tiếng Việt trong **`DOCS.md`** (chèn ngay trước dòng `- **Z322 INTRO…`), nói người chơi thấy gì khác + object config + file. **`LEVELS.md`** nếu đổi số liệu màn/địch/súng. Số cân bằng → một object trong **`config.js`**, không hardcode rải rác. Thêm vài kiểm tra cho object config mới vào `test.js` (trước dòng `// Z141 realistic water + flora`).
 
 ---
 
@@ -49,6 +49,6 @@ Game phải **có ý nghĩa & cuốn người chơi**:
 
 ## 5. Định hướng game
 
-**Thể loại:** Game bắn xe tăng (tank shooter). Chi tiết gameplay do chủ dự án mô tả — bám sát mô tả, phần nào chưa nói thì tự chọn phương án hợp lý nhất theo §2–§3.
+**XUNG KÍCH** — game bắn súng bộ binh góc nhìn thứ ba: người chơi là MỘT người lính (đi bộ, cưỡi ngựa chiến, hoặc ngồi sau xe ôm do bác tài lái), đánh qua các chiến trường theo chiến dịch, hạ tướng địch cuối mỗi màn. **Không còn xe tăng** (mode xe tăng đã gỡ hẳn — đừng thêm lại). Ưu tiên hiện tại của chủ dự án: (1) nhẹ máy, (2) trận đánh có kịch bản và chiến thuật — địch khôn, quyết liệt, xuất hiện có nguồn (hầm, nhà, trực thăng, mép bản đồ), (3) chuyển động chân thực của lính / ngựa / xe. Không làm thêm bản đồ mới khi chưa được yêu cầu.
 
-> **Last updated:** 2026-06-01 · bộ luật + quy trình verify (node test.js / --check / Playwright) & tài liệu (DOCS/LEVELS/config.js).
+> **Last updated:** 2026-11-25 · test theo bậc (`tools/ts.mjs`, `?test=`, `?seed=`), tài liệu ngắn, định hướng lính bộ binh.
