@@ -11,7 +11,7 @@
 // What the two of them say is kept in one table (RIDE_TALK: the driver's line, the soldier's answer, by event) so voices can be laid on later.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { NEARDETAIL, RIDE, RIDE_TALK, XEOM } from '../../config.js';
+import { NEARDETAIL, RIDE, RIDEFEEL, RIDE_TALK, XEOM } from '../../config.js';
 import { BIOME, CV, DRIVER_ACTS, DRIVER_BREAK, DRIVER_RANT, NIGHT, S, bikeHop, blendPose, burst, curlHand, downedRide, driverAct, driverBreak, driverBreakCheck, driverLine, driverRant, driverStall, drvBreakPull, drvHammer, drvStallLook, drvStallStep, fitFaceMask, floatText, heightAt, loadGLTF, outfitColor, rideFixed, rideWear, rollHand, scene, sfx, snapPose, spawnPart, hudOn , asShipped, nearShape } from '../hub.js';
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _g = new THREE.Vector3();
@@ -70,7 +70,7 @@ function talk(D, ev, force){ const T = RIDE_TALK[ev], now = performance.now() / 
   if(T.s && T.s.length){ const j = (Math.random() * T.s.length) | 0; setTimeout(() => { if(S.player === p){ D.heardT = performance.now() / 1000; if(show) floatText(T.s[j], RIDE_TALK.col.s, at(), 13); if(RIDE_VOICE.on && RIDE_VOICE.play) RIDE_VOICE.play('soldier', ev, j); } }, RIDE_TALK.reply * 1000); } }
 
 // ---- events from the game ----
-export function bikeWheelie(H){ const D = H && H.drv; if(!D || D.state !== 'ride' || !RIDE.fit[D.kind].wheelie) return false; D.wheelT = RIDE.wheelie.dur; sfx('whoosh'); talk(D, 'wheelie', true);
+export function bikeWheelie(H){ const D = H && H.drv; if(!D || D.state !== 'ride' || !RIDE.fit[D.kind].wheelie) return false; D.wheelT = RIDE.wheelie.dur + RIDEFEEL.bike.wheelie.wind; sfx('whoosh'); talk(D, 'wheelie', true);
   const P = XEOM.air.hop, av = Math.abs(H.v || 0); if(av > P.v) bikeHop(H, P.vy[0] + (P.vy[1] - P.vy[0]) * Math.min(1, (av - P.v) / 3));   // Z311 fast, the wheelie leaves the ground: a short hop, the faster the higher
   return true; }
 export function rideHit(dmg, dx, dz){ const H = CV.H, D = H && H.drv; if(H && CV.mounted) rideWear(H, dmg * XEOM.wear.share);   // Z303 the ride takes its share of the hit
@@ -96,8 +96,12 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
   if(D.ham) D.ham.visible = false; if(D.cig) D.cig.visible = false; if(D.lit) D.lit.visible = false;   // (Z363 his hammer and his cigarette show only while a pose holds them)
   const acc = (v - D.lastV) / dt; D.lastV = v; const sp = Math.min(1, Math.abs(v) / 9);
   // the machine: lean, wheelie (about the rear axle), weave, lying on its side after a crash
-  D.wheelT = Math.max(0, D.wheelT - dt); const wantP = D.wheelT > 0 ? RIDE.wheelie.pitch * Math.min(1, (RIDE.wheelie.dur - D.wheelT) * 5, D.wheelT * 3) : 0;
-  D.pitch += (wantP - D.pitch) * Math.min(1, dt * 8);
+  // RIDE 3 A WHEELIE HAS A WIND-UP: for wind s he loads the fork (the nose dips, he crouches over the bars, the revs up), then snaps it up — sat back on
+  //   straight arms — holds it on the balance point (a slow wobble), and lets it drop: the front comes down faster than it went up and bounces once on the fork
+  const WH = RIDEFEEL.bike.wheelie, te = RIDE.wheelie.dur + WH.wind - D.wheelT; D.wheelT = Math.max(0, D.wheelT - dt); D.wind = D.wheelT > 0 && te < WH.wind ? Math.sin(Math.PI * te / WH.wind) : 0;
+  const wantP = D.wheelT > 0 && te >= WH.wind ? RIDE.wheelie.pitch * Math.min(1, (te - WH.wind) * WH.rise, D.wheelT / WH.drop) + Math.sin(D.t * WH.wobble[1]) * WH.wobble[0] * Math.min(1, (te - WH.wind) * 2) : -D.wind * WH.dip;
+  D.pitch += (wantP - D.pitch) * Math.min(1, dt * (wantP < D.pitch ? WH.fall : 8));
+  if(D.pitch > 0.12) D.wUp = true; else if(D.wUp && D.pitch < 0.04){ D.wUp = false; const s = H.sus; if(s){ s.vp -= WH.bounce[0]; s.vy -= WH.bounce[1]; } H.forkT = WH.hold; sfx('thud', undefined, 0.45); }   // the front tyre is down: onto the fork, once
   const underFire = D.duckT > 0; D.duckT = Math.max(0, D.duckT - dt); D.duck += ((underFire ? 1 : 0) - D.duck) * Math.min(1, dt * 6);
   const weaveOn = D.state === 'ride' && sp > 0.55 && (underFire || S.firing); D.weave += ((weaveOn ? 1 : 0) - D.weave) * Math.min(1, dt * 3);
   const wv = D.weave * RIDE.weave.amp * Math.sin(D.t * RIDE.weave.f * Math.PI * 2);
@@ -107,7 +111,7 @@ export function driveDriver(H, dt, v, yr){ const D = H.drv; if(!D || !D.ok || !d
   if(D.pitch > 1e-3){ _a.set(0, 0, R.rear); _b.copy(_a).applyEuler(H.B.rotation); H.B.position.add(_c.subVectors(_a, _b)); }
   if(!onSeat && H.lie) H.B.position.y += H.lie[D.roll < 0 ? 0 : 1] * Math.min(1, Math.abs(D.roll) / 1.35);   // Z300 down on its side it rests ON the ground (its lowest point there), not half sunk into it
   // throttle and gears: the right grip twists back as he opens it; the left foot flicks up through the gears
-  D.thr += (clamp(acc / 6, -0.4, 1) - D.thr) * Math.min(1, dt * 8);
+  D.thr += ((D.wheelT > 0 ? 1 : clamp(acc / 6, -0.4, 1)) - D.thr) * Math.min(1, dt * 8);
   const g = RIDE.gears.filter(x => Math.abs(v) > x).length; if(g !== D.gear){ if(g > D.gear && R.gearFoot){ D.gearT = 0.28; sfx('click'); } D.gear = g; } D.gearT = Math.max(0, D.gearT - dt);
   if(onSeat){ const st = D.state === 'stall'; if(st) drvStallStep(H, D, dt, v); ridePose(H, D, dt, v, yr); if(st) drvStallLook(H, D); if(D.state === 'pull') drvBreakPull(H, D, dt, v);   // (Z361 the engine dead under him: actors/driver-rant.js · Z363 pulling over for a break: actors/driver-break.js)
     if(D.state === 'mount'){ blendPose(D, dt); D.t2 += dt; if(D.t2 >= RIDE.crash.mount){ if(H.broken) driverStall(H); else { D.state = 'ride'; talk(D, 'remount', true); if(D.onBack) D.onBack(); } } } }   // (Z303 picked up but dead: straight to the repair)
@@ -150,7 +154,7 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   // Z304 ...but he can't ride blind: he ducks, then bobs up to see the road (eyes darting: ahead, left, right), and ducks again — over and over
   const cover = Math.max(D.duck, D.storm); if(cover > 0.3){ if(nowS > D.pkN){ D.peek = !D.peek; D.pkN = nowS + (D.peek ? DG.peek[0] + Math.random() * DG.peek[1] : DG.hide[0] + Math.random() * DG.hide[1]); } } else D.peek = false;
   D.pk += ((D.peek ? 1 : 0) - D.pk) * Math.min(1, dt * 12); const hid = 1 - 0.75 * D.pk;
-  const bend = R.bend + (D.duck * RIDE.duck.bend + D.storm * DG.bend) * hid - D.pitch * 0.9 + D.ip, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35) + D.il;
+  const bend = R.bend + (D.duck * RIDE.duck.bend + D.storm * DG.bend) * hid - D.pitch * 0.9 + D.ip + (D.wind || 0) * RIDEFEEL.bike.wheelie.crouch, lean = clamp(-yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body, -0.35, 0.35) + D.il;
   for(const n of ['Spine', 'Spine1', 'Spine2']){ turn(B[n], RIGHT, -bend / 3); turn(B[n], FWD, lean / 3); } turn(B.Spine2, RIGHT, Math.sin(D.t * 1.7) * 0.014);   // (Z300 about his right, + tips him BACK: bending to the bars is −)
   // Z358 SAT TALL, BACK STRAIGHT: the model's own spine curls him over the bars (a hunched rider) — each link laid on the trunk's line as bent and leant
   //   above, the upper back a touch proud of it (RIDE.straight): the same lean, carried on a straight back
@@ -198,16 +202,17 @@ function ridePose(H, D, dt, v, yr){ const B = D.B, R = D.R, k = XEOM.k;
   //   each foot, the sole flat); hard through a bend at speed the inside foot goes out ahead and skims the road like a racer's, kicking up dust
   const FT = RIDE.feet, body = H.body || H.B, ws = body.getWorldScale(_g).y, lat = I ? I.lat : 0, inner = yr > 0 ? 0 : 1;
   const dab = H.two !== false && Math.abs(v) > FT.dabV && Math.abs(lat) > FT.dabLat && D.state === 'ride';
+  const BF = RIDEFEEL.bike.foot, slow = !dab && H.two !== false && D.state === 'ride' && Math.abs(v) > FT.stopV && Math.abs(v) < BF.slowV && Math.abs(yr) > BF.slowYr;   // RIDE 3 a tight turn at a crawl: the inside foot off the peg and out, just clear of the road, ready to catch it
   for(const [L, i] of [['Left', 0], ['Right', 1]]){ const sd = i ? -1 : 1;   // (+x is his left)
     D.fd[i] += ((Math.abs(v) < FT.stopV && (D.state === 'ride' || D.state === 'stall' || D.state === 'pull') ? 1 : 0) - D.fd[i]) * Math.min(1, dt * FT.rate * (i ? 0.8 : 1.15));   // (the left foot first, the right a beat later)
-    D.fdab[i] += ((dab && i === inner ? 1 : 0) - D.fdab[i]) * Math.min(1, dt * FT.rate * 1.4);
+    D.fdab[i] += (((dab || slow) && i === inner ? 1 : 0) - D.fdab[i]) * Math.min(1, dt * FT.rate * 1.4); if(i === inner) D.fslow = slow ? 1 : dab ? 0 : (D.fslow || 0);
     _a.fromArray(R.peg[i]);
     if(i === 0 && D.gearT > 0) _a.y += Math.sin(D.gearT / 0.28 * Math.PI) * 0.035;
     body.localToWorld(_a); const down = Math.max(D.fd[i], D.fdab[i]);
     if(down > 1e-3){ // where that foot meets the road: out to the side (and ahead, for the dab), at the ground's real height under it
-      const dk = D.fdab[i] > D.fd[i] ? 1 : 0; _c.set(sd * (Math.abs(R.peg[i][0]) + (dk ? FT.dabOut : FT.out)), 0, dk ? R.peg[i][2] + FT.dabFwd : R.hip[2] + FT.hipFwd); body.localToWorld(_c);   // (Z362 stopped, the foot down nearly under the hip — the leg straight, the knee just soft; not stuck out ahead)
-      _c.y = heightAt(_c.x, _c.z) + D.ankle * ws + (dk ? FT.hover : 0); _a.lerp(_c, ease(down));
-      if(dk && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:new THREE.Color(FT.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
+      const dk = D.fdab[i] > D.fd[i] ? 1 : 0, sl = dk && D.fslow ? 1 : 0; _c.set(sd * (Math.abs(R.peg[i][0]) + (sl ? BF.out : dk ? FT.dabOut : FT.out)), 0, sl ? R.peg[i][2] + BF.fwd : dk ? R.peg[i][2] + FT.dabFwd : R.hip[2] + FT.hipFwd); body.localToWorld(_c);   // (Z362 stopped, the foot down nearly under the hip — the leg straight, the knee just soft; not stuck out ahead)
+      _c.y = heightAt(_c.x, _c.z) + D.ankle * ws + (sl ? BF.hover : dk ? FT.hover : 0); _a.lerp(_c, ease(down));
+      if(dk && !sl && D.fdab[i] > 0.6 && Math.random() < dt * Math.abs(v) * FT.dust) spawnPart(_c.x, _c.y - D.ankle * ws + 0.05, _c.z, (Math.random() - 0.5) * 1.2, 0.6 + Math.random(), (Math.random() - 0.5) * 1.2, { color:new THREE.Color(FT.dustC).multiplyScalar(1 - 0.7 * (NIGHT.k || 0)).getHex(), size:0.5, life:0.7, grav:-1, drag:2.4, smoke:true, op:0.5 }); }
     if(i === 1 && D.state === 'stall' && D.kickW > 0 && D.kickFoot) _a.lerp(D.kickFoot, ease(D.kickW));   // Z361 on the kick-start lever
     B[L + 'UpLeg'].getWorldPosition(_b); _b.addScaledVector(FWD, 1).addScaledVector(RIGHT, sd * -0.35 * (1 + down)).addScaledVector(UP, 0.3);
     ik2(B[L + 'UpLeg'], B[L + 'Leg'], B[L + 'Foot'], _a.clone(), _b.clone());

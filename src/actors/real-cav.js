@@ -232,7 +232,8 @@ function seatFeet(R, H, dt, on){ const F = XEOM[H.bike] && XEOM[H.bike].feet, D 
 //   so it rides on his shoulders and his arms take up the difference
 const _sr = new THREE.Vector3(), _sf = new THREE.Vector3(), _sq = new THREE.Quaternion();
 function rideSway(R, G, dt, I, H){ const W = R.sw || (R.sw = { p:0, vp:0, r:0, vr:0, h:0, vh:0 }), C = REALCAV.sway, D = R.pup.D; dt = Math.min(dt, 0.05);
-  const two = !!(H && H.two), pT = I ? clamp(-I.acc * C.acc, -C.max, C.max) : 0, rT = I && !two ? clamp(I.lat * C.lat, -C.max, C.max) : 0, hT = I ? clamp(-I.vy * C.heave, -0.3, 0.3) : 0;
+  const two = !!(H && H.two), pT = I ? clamp(-I.acc * C.acc, -C.max, C.max) : 0, rT = I && !two ? clamp(I.lat * C.lat, -C.max, C.max) : I && I.lean || 0,   // (RIDE 3 on two wheels he leans into the bend with the driver)
+    hT = I ? clamp(-I.vy * C.heave, -0.3, 0.3) : 0;
   const spr = (x, v, t, k, z) => v + (-k * (x - t) - 2 * z * Math.sqrt(k) * v) * dt;
   W.vp = spr(W.p, W.vp, pT, C.k, C.z); W.p += W.vp * dt; W.vr = spr(W.r, W.vr, rT, C.k, C.z); W.r += W.vr * dt; W.vh = spr(W.h, W.vh, hT, C.k * 1.8, C.z); W.h += W.vh * dt;
   if(!I && Math.abs(W.p) + Math.abs(W.r) + Math.abs(W.h) < 1e-3) return;
@@ -249,8 +250,13 @@ function haunchBones(R){ const hr = R.hr, get = n => hr.getObjectByName(n) || hr
   for(const [n, key, sg] of [['neck_01', 'neck', 1], ['head', 'head', -1]]){ const b = get(n); if(b) L.push({ b, key, sg, q:new THREE.Quaternion() }); }
   return L; }
 function haunchOff(R){ if(R.hbOn){ for(const e of R.hb) e.b.quaternion.copy(e.q); R.hbOn = false; } }
-function haunchPose(R, H, k, about){ const hr = R.hr, C = RIDEFEEL.stop.horse, K = H.root.scale.x || 1; hr.rotation.x = -C.pitch * k; hr.rotation.z = -about * k * C.roll; hr.position.set(0, -C.drop * k / K, C.shift * k / K);
-  if(k < 0.004) return; const L = R.hb || (R.hb = haunchBones(R)); H.root.getWorldQuaternion(_q); _x.set(-1, 0, 0).applyQuaternion(_q);   // its right: + about it brings a hoof forward / tips a neck back
+// RIDE 3 …and the real horse stands on the ground it is on: pitched to the slope under it (the ground len m ahead of and behind its middle), lifted to it,
+//   and leant into its turns by the rig's own bank (actors/horse.js S.bank) — it used to stay bolt upright and level, hooves in or over a dune
+function haunchPose(R, H, k, about, dt){ const hr = R.hr, C = RIDEFEEL.stop.horse, F = RIDEFEEL.horse.body, K = H.root.scale.x || 1; H.root.getWorldPosition(_v); H.root.getWorldQuaternion(_q); _z.set(0, 0, 1).applyQuaternion(_q);
+  const air = H.air && H.air.y > 0.02, hf = heightAt(_v.x + _z.x * F.len, _v.z + _z.z * F.len), hb = heightAt(_v.x - _z.x * F.len, _v.z - _z.z * F.len), hc = heightAt(_v.x, _v.z), e = Math.min(1, (dt || 0.016) * F.rate);
+  R.gp = (R.gp || 0) + ((air ? 0 : clamp(Math.atan2(hf - hb, 2 * F.len), -F.maxPitch, F.maxPitch)) - (R.gp || 0)) * e; R.gy = (R.gy || 0) + ((air ? 0 : clamp((hf + hb) / 2 - hc, -0.3, 0.3)) - (R.gy || 0)) * e;
+  hr.rotation.x = -C.pitch * k - R.gp; hr.rotation.z = (H.bank || 0) * F.bank - about * k * C.roll; hr.position.set(0, (R.gy - C.drop * k) / K, C.shift * k / K);
+  if(k < 0.004) return; const L = R.hb || (R.hb = haunchBones(R)); _x.set(-1, 0, 0).applyQuaternion(_q);   // its right: + about it brings a hoof forward / tips a neck back
   for(const e of L) e.q.copy(e.b.quaternion); R.hbOn = true; for(const e of L) turnBone(e.b, _x, e.sg * C[e.key] * k); }
 export function fitRealCav(CV){
   if(CV.realP) return CV.realP;
@@ -308,7 +314,7 @@ export function updateRealCav(CV, dt, P){
   if(leap && H.air.jumpNew){ H.air.jumpNew = false; R.HA.Jump_Sprint.time = 0; }   // (from take-off, played over just the time it is in the air)
   const HS = !H.bike && H.stop, sk = HS ? HS.k : 0; if(R.hr) haunchOff(R);
   if(R.hm){ blend(R.HA, HS && HS.on ? '' : hk, hk === 'Idle' ? 1 : leap ? R.HA.Jump_Sprint.getClip().duration / (H.air.flight || 0.7) : clamp(v / C.horseV[hk], 0.6, 1.5), HS && HS.on ? dt * 3 : dt); R.hm.update(dt); }
-  if(R.hr) haunchPose(R, H, sk, HS ? HS.about : 0);
+  if(R.hr) haunchPose(R, H, sk, HS ? HS.about : 0, dt);
   // the rider: on the real horse's back while mounted (every mount / respawn puts the rig on the procedural body bone — move it to the seat)
   const bike = H.bike, stand = bike && XEOM[bike].pose === 'stand';   // Z293 on a war ride he keeps the ride's own seat (seatRider): sat on it, or standing in the bed
   if(!bike && G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }

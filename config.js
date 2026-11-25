@@ -313,25 +313,35 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
 //   clear), never more than maxDev off it; under halt m free it is no way at all; gain = [far, near] × the turn; brake m/s² it trusts itself to pull up
 //   with; round what is dead ahead no faster than swerve × that + swerveV; shut within gapD m on both sides it is a gap, taken at gapV; creep = its slowest
 //   while a way is open; bad ground (a rise steeper than slope, a drop over drop per metre, the deep channel) counts softPass of the way beyond it; edge =
-//   m inside the field's edge · bike.hull — the xe ôm's outline ([x, z, r] m, nose to tail: as narrow as it is drawn)
+//   m inside the field's edge; the margin shrinks to squeeze × itself as it slows from squeezeV; shut for escWait s and still pushed on it comes round on
+//   the spot (escTurn rad at a time) and for escKeep s may take a way up to escDev off the push · bike.hull — the xe ôm's outline ([x, z, r] m, nose to tail: as narrow as it is drawn)
 //   stop — the hard stop (game/ride-feel.js): faster than minV and asked for under rein × its speed (the push let go, the way shut) — or told to go more
 //   than aboutA rad behind it — it brakes at decel m/s² × the ground's grip (by battlefield; wet = in a ford) until under endV (an about-turn: aboutV, then
 //   it comes round pivot × as fast), unless he pushes on again by resume m/s; the pose's depth k runs from kMin at minV to 1 at fullV, in at inRate /s, out
 //   at outRate /s. horse: nose-up pitch rad, croup drop and forward shift m (about its forefeet), hind-leg fold femur / tibia / cannon rad, neck up and
 //   nose tucked rad, roll into an about-turn rad, the rider's lean back (as a push, m/s²), feet = where its hooves stand [hind z, fore z, half-track] and
 //   plant = how far they slide forward [hind, fore] m, mark = a furrow's [width m, darkness], dust per metre slid. bike: the fork's extra dive rad, zp =
-//   the damper through the stop and hold s after it (one rebound), slip = the tail's step-out rad, mark = the skid's [× the tyre's width, darkness],
+//   the damper through the stop and hold s after it, rebound = how far past level the fork is let go at rest (rad, eased out at rebRate /s: one rebound), slip = the tail's step-out rad, mark = the skid's [× the tyre's width, darkness],
 //   rear = the rear tyre behind the centre m
+//   bike — cornering, springs, wheelie (game/xeom.js, actors/driver.js): foot = under slowV m/s and turning faster than slowYr rad/s the driver's inside foot
+//   is off the peg, out m to the side, fwd m ahead, hover m off the road · pillion = the passenger's share of the driver's lean into a bend · squat × the
+//   nose-up under power (squatMax rad) · crest / heave = how hard a change of slope under the wheels pitches / heaves the body · wheelie: wind s loading
+//   the fork (nose dip rad, his crouch rad), up at rise /s, held with wobble [rad, rad/s], coming down over drop s at fall /s onto bounce [pitch rad/s, heave
+//   m/s] with the stiff damper hold s · slope (both mounts): the rise over probe m ahead takes up × it off the top speed (down gives a little), within [min, max]
+//   horse.body — the real horse on the ground: pitched to the slope over ± len m (maxPitch rad), eased at rate /s, leant into its turns bank × the rig's own
 export const RIDEFEEL = {
   avoid:{ on:true, every:0.09, look:[3.4, 0.95, 20], fan:[0, 0.36, -0.36, 0.8, -0.8], lenK:[1, 0.92, 0.92, 0.66, 0.66], shoulder:1.45, margin:{ horse:0.4, bike:0.14 },
-    devW:0.45, stick:0.22, forget:0.5, maxDev:1.75, halt:0.9, gain:[0.9, 2.6], brake:6, swerve:1.5, swerveV:2.5, gapD:3, gapV:{ horse:3.6, bike:5 }, creep:1.3,
-    slope:0.8, drop:0.9, softPass:0.35, edge:3.6 },
+    devW:0.45, stick:0.22, forget:0.5, maxDev:1.75, halt:0.7, gain:[0.9, 2.6], squeeze:0.25, squeezeV:5, escWait:0.35, escTurn:1.2, escDev:2.9, escKeep:3, brake:6, swerve:1.5, swerveV:2.5, gapD:3, gapV:{ horse:3.6, bike:5 }, creep:1.3,
+    slope:0.8, drop:0.9, softPass:0.35, edge:3.6, awayA:2, awayV:3.2 },
   stop:{ minV:4.2, rein:0.3, endV:0.35, resume:0.8, aboutA:2.1, aboutV:1.6, shake:0.3, kMin:0.55,
     grip:{ DESERT:0.7, ARCTIC:0.55, SAVANNA:0.82, MEADOW:0.85, VOLCANO:0.78, QUARRY:0.9, wet:0.7 },
     horse:{ decel:11.5, fullV:11, inRate:11, outRate:2.6, pivot:1.7, pitch:0.2, drop:0.13, shift:0.27, femur:0.84, tibia:1.02, cannon:0.1, neck:0.26, head:0.38, roll:0.16, lean:8,
       feet:[-0.92, 0.6, 0.18], plant:[0.46, 0.26], mark:[0.12, 0.42], dust:2.6 },
-    bike:{ decel:9.5, fullV:9, inRate:14, outRate:6, pivot:1.35, hold:1.1, dive:0.05, zp:0.55, slip:0.09, mark:[1.6, 0.3], rear:0.62, dust:2.2 } },
-  bike:{ hull:{ xeom:[[0, 0.6, 0.42], [0, 0, 0.45], [0, -0.6, 0.42]] } } };
+    bike:{ decel:9.5, fullV:9, inRate:14, outRate:14, pivot:1.35, hold:1.1, dive:0.05, zp:0.5, rebound:0.06, rebRate:4, slip:0.09, mark:[1.6, 0.3], rear:0.62, dust:2.2 } },
+  bike:{ hull:{ xeom:[[0, 0.6, 0.42], [0, 0, 0.45], [0, -0.6, 0.42]] }, foot:{ slowV:4.2, slowYr:0.85, out:0.2, fwd:0.06, hover:0.035 }, pillion:0.6,
+    squat:1.8, squatMax:0.07, crest:2.4, heave:0.9, wheelie:{ wind:0.26, dip:0.045, crouch:0.16, rise:7, drop:0.2, fall:13, wobble:[0.025, 5.5], bounce:[0.9, 0.5], hold:1 },
+    slope:{ probe:2.2, up:0.55, down:0.2, min:0.62, max:1.06 } },
+  horse:{ slope:{ probe:2, up:0.9, down:0.15, min:0.55, max:1.05 }, body:{ len:0.75, maxPitch:0.32, rate:7, bank:1 } } };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry', CITY:'city' },   // Z399 the city's fort too: the works' concrete and steel (it stood as plain boxes in a stone wrap)

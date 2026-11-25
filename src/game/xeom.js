@@ -142,15 +142,17 @@ function suspension(H, dt, v, yr, two){ const U = XEOM.sus, s = H.sus, k = XEOM.
   s.vy -= gac * U.gY * dt;
   // the rough road: a kick now and then, more often and harder the faster
   if(Math.random() < Math.abs(v) * dt * U.rough){ const j = U.bump * (0.35 + Math.random()) * sp; s.vy -= j; s.vp += (Math.random() < 0.5 ? 1 : -1) * j * U.kickP * 3; if(!two) s.vr += (Math.random() - 0.5) * j * 2; }
-  const HS = H.stop, RB = RIDEFEEL.stop.bike, hold = HS && HS.hold > 0;   // RIDE 2 a hard stop: the fork dives deeper, and the damper lets it come back up once
-  const pT = Math.max(U.pitch[0], Math.min(U.pitch[1], s.acc * U.pitchAcc)) - (HS ? HS.k * RB.dive : 0), lat = v * yr, rT = two ? 0 : Math.max(-U.rollMax, Math.min(U.rollMax, lat * U.rollLat));
+  const HS = H.stop, RB = RIDEFEEL.stop.bike, BF = RIDEFEEL.bike; H.forkT = Math.max(0, (H.forkT || 0) - dt); const hold = HS && HS.hold > 0 || H.forkT > 0;   // RIDE 2 a hard stop: the fork dives deeper, and the damper lets it come back up once (RIDE 3 after a wheelie's touch-down too)
+  // RIDE 3 it squats harder as the throttle opens; the foot of a slope and a crest work the springs — the body lags the wheels as the ground tips under them
+  { const d = H.tp - (s.tp0 ?? H.tp); s.tp0 = H.tp; if(d && Math.abs(v) > 1){ s.vp -= Math.max(-0.08, Math.min(0.08, d)) * BF.crest * sp; s.vy -= Math.max(-0.08, Math.min(0.08, d)) * BF.heave * sp; } }
+  const pT = (s.acc > 0 ? Math.min(BF.squatMax, s.acc * U.pitchAcc * BF.squat) : Math.max(U.pitch[0], s.acc * U.pitchAcc)) - (HS ? HS.k * RB.dive - (HS.reb || 0) * RB.rebound : 0), lat = v * yr, rT = two ? 0 : Math.max(-U.rollMax, Math.min(U.rollMax, lat * U.rollLat));
   const spr = (x, vx, t, kk, z) => vx + (-kk * (x - t) - 2 * z * Math.sqrt(kk) * vx) * dt, A = H.air, AC = XEOM.air, soft = A && A.landT > 0;   // (Z311 just landed: it bounces a few times on its springs)
   s.vy = spr(s.y, s.vy, 0, U.k, soft ? AC.landZ : U.z); s.y += s.vy * dt; s.vp = spr(s.p, s.vp, pT, U.kp, hold ? RB.zp : U.zp); s.p += s.vp * dt; s.vr = spr(s.r, s.vr, rT, U.kr, U.zr); s.r += s.vr * dt;
   s.y = Math.max(soft ? -AC.sag : -0.05, Math.min(0.05, s.y)); s.p = Math.max(-0.15, Math.min(0.1, s.p)); s.r = Math.max(-0.09, Math.min(0.09, s.r));
   // about a point between the axles at hub height: nose up = +p, rolled out of the bend (to its right on a left turn) = +r
   const W = XEOM[H.bike].wheels, pz = W ? (W[0].c[2] + W[W.length - 1].c[2]) / 2 : 0, py = W ? W[0].c[1] : 0.15, b = H.body;
   b.rotation.set(-s.p, 0, s.r); _sa.set(0, py, pz); _sp.copy(_sa).applyEuler(b.rotation); b.position.subVectors(_sa, _sp); b.position.y += (s.y + Math.sin(H.t * 47) * U.buzz * (0.4 + sp)) / k;
-  const I = H.inert; I.acc = s.acc; I.lat = lat; I.vy = s.vy; I.p = s.p; I.r = s.r; }
+  const I = H.inert; I.acc = s.acc; I.lat = lat; I.vy = s.vy; I.p = s.p; I.r = s.r; I.lean = two ? Math.max(-0.35, Math.min(0.35, -yr * Math.min(1, Math.abs(v) / 8) * RIDE.lean.body)) * BF.pillion : 0; }   // (RIDE 3 lean: into the bend with the driver — the pillion's share)
 // Z311 OFF THE GROUND: a stone under a tyre jolts the body (the front wheel lifts the nose, the rear drops it), a big one at speed throws the bike up;
 //   in the air it falls under AC.g, and lands on its springs — squashed by how fast it came down, bouncing a few times on less damping before it settles
 const _rk = new THREE.Vector3(), _bo = { o:null };
