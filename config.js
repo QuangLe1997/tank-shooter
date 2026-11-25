@@ -811,6 +811,34 @@ export const HORSE = { size:1.12, coat:0x3a2416, bodyY:1.3, saddleY:0.37, neckX:
 export const STEALTH = { see:[8, 12], crawlV:0.3, night:0.7, alertR:30, keep:{ near:1.6, lit:3, shot:1.5 }, lit:1.15, say:2.5,
   evade:{ roll:0.7, run:0.15, v:[2, 6.2], say:0.35 },
   head:{ prone:0.45, crouch:1.15, stand:1.75, mounted:2.2 }, side:0.3, drop:0.3, sightT:0.15 };   // Z380 the top of his head over the ground by stance (m), his shoulders side m either way and drop m lower — the eye must reach one of them past every wall / house / cover; a shooter's look is kept sightT s
+// AI 1 WHAT EACH ENEMY SOLDIER KNOWS, AND HOW HE FIGHTS ONCE HE KNOWS (ai/awareness.js, actors/infantry.js, ai/squads.js). Every man is UNAWARE (marches on a rough
+//   report of where we are), SUSPICIOUS (heard or glimpsed something: stops, turns, walks to that spot) or ALERTED (combat). m, s, rad.
+//   tick: s between one man's looks (each on his own phase — never a sight line per man per frame).
+//   see: r = how far a man standing still-ish in daylight is made out; × stance, × still / run (over runV m/s), × cover (tucked behind a wall) × bush (among
+//     bushes, reeds, under a tree: bushPad m round a plant at least bushS big), × night; an unaware man sees his front cone[0] rad either side in full, out to
+//     cone[1] at × side, behind him × rear; inside near m he senses anyone; an alerted man looks all round (× alertK) and keeps a man he is watching in sight
+//     out to r × track even if he drops flat. Lying flat the range is STEALTH.see (still / crawling) — the old stealth rule is this model's prone row.
+//   spot: s of clear view to make him out at point-blank … at the edge of sight (t), the share at which he turns to look (sus), what fades a second unseen.
+//   react: s between realising and the first shot (× reactK by the enemy's IQ: dull … sharp); reactHit when a round has just hit him.
+//   hear: his own shots carry shot m (every man inside is alerted and knows the spot within shotErr m; gap s between two reports); a sprint run m, a horse
+//     horse m and a motorbike bike m at full speed (runV m/s) make men suspicious. hit / death: a man hit knows within err m; a mate falling inside r m alerts.
+//   shout: an alerted man shouts after delay s — his squad and every man within r m are alerted. keep: s without contact before alerted → searching (alert),
+//     before the search is given up (search); for suppress s after losing sight he still fires at the last place he saw him.
+//   search: he walks to within reach m of the last known spot, waits wait s, then moves on step m (far × the distance when we are far off), drift of it toward us.
+//   intel: a fresh man is told where we are to within err m. idle: an alerted man who has neither moved nor fired for max s goes for him for push s.
+//   cover: seen inside threat m he runs to cover within search m and holds it hold s after losing sight; a new cover only once we moved repick m.
+//   fire: an alerted rifleman reaches range × reachK (wider × farK past his own range), fires bursts of burst rounds gap s apart, rest s between them, each
+//     round × dmgK on the player, leading him by lead of the flight; the group is wide rad across to begin with and tightens to tight (× stageK from stage 1
+//     to 5+; blind fire at a lost man × blindK; × runK on a man running over zero.runV). zero: the group closes by gain a second while he stands (under slowV m/s; × walkK up to runV, × coverK behind
+//     cover or in bushes, × iqK by IQ) and opens by loss a second once he runs or is out of sight. squad: the covering team closes to range × closeK.
+export const AWARE = { tick:[0.22, 0.34],
+  see:{ r:46, stance:{ stand:1, crouch:0.62, mounted:1.3 }, still:0.85, run:1.2, runV:5.2, cover:0.7, bush:0.5, bushPad:0.8, bushS:0.6, night:0.55, cone:[1.05, 2.1], side:0.55, rear:0.16, near:4, alertK:1.25, track:0.75 },
+  spot:{ t:[0.25, 2.4], sus:0.45, decay:0.35 }, react:[0.4, 1.0], reactK:[1.25, 0.75], reactHit:0.25,
+  hear:{ shot:70, shotErr:3, gap:0.2, run:14, horse:24, bike:42, runV:5.2 }, hit:{ err:4 }, death:{ r:20, err:6 }, shout:{ r:24, delay:0.45 },
+  keep:{ alert:26, search:45, suppress:5 }, search:{ reach:5, wait:[1.2, 2.4], step:[8, 40], far:0.4, drift:0.6 }, intel:{ err:16 }, idle:{ max:2, push:2.6 },
+  cover:{ threat:30, search:13, hold:5, repick:7 }, say:{ gap:0.6, r:55, size:17 },
+  fire:{ reachK:1.35, farK:1.6, burst:[3, 5], gap:0.11, rest:[0.9, 1.5], dmgK:1.6, lead:0.5, wide:0.3, tight:0.04, stageK:[1.25, 0.75], blindK:1.3, runK:1.5 },
+  zero:{ gain:0.42, loss:1.1, slowV:1.6, runV:4.5, walkK:0.35, coverK:0.5, iqK:[0.7, 1.3] }, squad:{ closeK:0.85 } };
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·

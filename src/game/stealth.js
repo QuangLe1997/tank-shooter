@@ -5,7 +5,7 @@
 //   close by, caught in a searchlight's pool, or given away by his own muzzle flash — then every enemy within STEALTH.alertR knows where he lies for a while.
 //   The combat roll is also a dodge: a round that would hit him while he goes over usually misses (dodgeShot; running fast dodges a few).
 import { STEALTH, TENT } from '../../config.js';
-import { CV, NIGHT, S, floatText, heightAt, lineClear, tentHides } from '../hub.js';
+import { CV, NIGHT, S, awareNoise, floatText, heightAt, lineClear, tentHides } from '../hub.js';
 
 const now_ = () => performance.now() / 1000;
 let _sayAt = -9, _dodgeAt = -9;
@@ -32,8 +32,12 @@ export function playerSeen(x, y, z){ const p = S.player; if(!p) return true; if(
   const r = C.see[Math.hypot(p.vel.x, p.vel.z) > C.crawlV ? 1 : 0] * (1 - (1 - C.night) * (NIGHT.k || 0));   // (crawling is easier to see than lying still)
   if(d < r){ spot(p, t, C.keep.near, 'BỊ PHÁT HIỆN!'); return true; }
   return false; }
-// he fired (combat/lock-on.js, a round of the player's): the flash gives him away
-export function stealthShot(){ const p = S.player; if(p && p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.shot, 'LỘ VỊ TRÍ!'); }
+// AI 1 the bare sight line from a man's eyes to him (no stance rule): ai/awareness.js weighs distance, stance, movement, cover, night and the view cone itself
+export function playerSight(x, y, z){ const p = S.player; if(!p) return false; return p.cav ? inSight(x, y, z) : !tentHides(x, y, z, p.pos.x, heightAt(p.pos.x, p.pos.z) + TENT.eye.mid, p.pos.z); }
+// AI 1 a rifleman made him out lying flat (ai/awareness.js): every gun within alertR knows where he lies for a moment, as when a guard spots him
+export function stealthSpot(why){ const p = S.player; if(p && p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.near, why); }
+// he fired (combat/lock-on.js, a round of the player's): the flash gives him away — AI 1 and the report alerts every enemy soldier in earshot (on foot or in the saddle)
+export function stealthShot(){ const p = S.player; if(!p) return; awareNoise(p.pos.x, p.pos.z, now_()); if(p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.shot, 'LỘ VỊ TRÍ!'); }
 // a searchlight's pool on the ground (fx/searchlight.js leaves its size, stretch and heading on it): is he inside it
 export function stealthLight(L){ const p = S.player; if(!p || !p.cav || CV.mounted || !L || !L.on || !(L.r > 0)) return;
   const dx = p.pos.x - L.hit.x, dz = p.pos.z - L.hit.z, al = dx * L.ux + dz * L.uz, ac = dx * L.uz - dz * L.ux, k = STEALTH.lit;

@@ -101,6 +101,7 @@ export * from './ai/tactics.js';
 export * from './ai/cover.js';
 export * from './ai/spatial.js';
 export * from './ai/squads.js';
+export * from './ai/awareness.js';   // AI 1 what each enemy soldier knows: unaware → suspicious → alerted; sight, hearing, shouts, the search
 export * from './ai/fieldcraft.js';   // Z220 line of fire · grenades · smoke (both sides)
 export * from './actors/damage.js';
 export * from './world/towers.js';
