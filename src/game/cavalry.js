@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, XEOM, XHAIR } from '../../config.js';
-import { ARENA, BIOME, MOBILE, S, actx, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wadeAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY } from '../hub.js';
+import { ARENA, BIOME, MOBILE, S, actx, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, wadeAt, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY } from '../hub.js';
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -77,8 +77,12 @@ export function updateCavalry(dt, now){
     // the horse: steer toward where you push (or the reins: W/S speed, A/D turn), speed builds and settles, he turns tighter when slow
     const Hc=CAV.horse, surge=now<CV.surgeUntil, top=(surge?Hc.gallop:Hc.cruise)*p.speedMul*wade*rideSpeedK(CV.H);   // (Z303 a worn ride has lost its top end)
     let want=0, turn=0;
-    if(turnCtl){ want = TI.thr>0 ? top*TI.thr : TI.thr<0 ? -Hc.back : 0; turn=TI.turn; }
-    else if(inp>0.1){ const tgt=Math.atan2(dir.x, dir.z), df=wrapA(tgt-CV.facing); want=top*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8)); turn=Math.max(-1, Math.min(1, df*2)); }
+    // RIDE 1 where he pushes is where it goes — but the line is the mount's own: round what is in the way, eased off for it, stood only when every way is shut (game/ride-avoid.js)
+    if(turnCtl){ want = TI.thr>0 ? top*TI.thr : TI.thr<0 ? -Hc.back : 0; turn=TI.turn; const AV = want>0 ? rideAvoid(H, p, dt, CV.facing, CV.facing+turn*0.6, CV.speed, surge) : rideAvoidReset();
+      if(AV.act) turn=Math.max(-1, Math.min(1, turn+wrapA(AV.head-CV.facing)*AV.gain)); if(want>0) want=Math.min(want, AV.vcap); }
+    else if(inp>0.1){ const tgt=Math.atan2(dir.x, dir.z), AV=rideAvoid(H, p, dt, CV.facing, tgt, CV.speed, surge), df=wrapA((AV.act ? AV.head : tgt)-CV.facing);
+      want=Math.min(AV.vcap, top*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); turn=Math.max(-1, Math.min(1, df*(AV.act ? AV.gain : 2))); }
+    else rideAvoidReset();
     const tr=Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
     const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : Hc.decel; CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));
     p.facing=CV.facing; p.vel.set(Math.sin(CV.facing)*CV.speed, 0, Math.cos(CV.facing)*CV.speed); p.throttle=0;
@@ -160,6 +164,7 @@ const _hq={ pos:new THREE.Vector3(), vel:null, radius:1, bike:null };
 function hullEach(p, fn){ const hull=CV.mounted && !CV.trans ? rideHull(CV.H) : null; if(!hull){ fn(p); return; } const s=Math.sin(CV.facing), c=Math.cos(CV.facing);
   for(const [hx, hz, r] of hull){ const ox=hx*c+hz*s, oz=-hx*s+hz*c; _hq.pos.set(p.pos.x+ox, 0, p.pos.z+oz); _hq.vel=p.vel; _hq.radius=r; _hq.bike=p.bike; fn(_hq); p.pos.x=_hq.pos.x-ox; p.pos.z=_hq.pos.z-oz; } }
 function blockH(b){ if(b._h!=null) return b._h; let h=Infinity; if(b.mesh && b.mesh.isObject3D && !b.ridge){ b.mesh.updateWorldMatrix(true, true); _lb.setFromObject(b.mesh); if(!_lb.isEmpty()) h=_lb.max.y-heightAt(b.x, b.z); } return (b._h=h); }
+export const rideBlockH=blockH;   // (RIDE 1 game/ride-avoid.js: what a charge will leap is not in its way)
 function collide(p, now){ const R=p.radius, H=CV.H, PW=CV.mounted ? ridePower(H) : null;   // Z404 PW: the bán tải's weight — it climbs what is low, smashes light cover, bursts brick walls
   for(const b of blocks){ if(b.kind==='parked' || !CV.mounted && climbOver(b)) continue; const SH=solidShape(b, true);   // (Z451 not what he climbs, nor what he stands over)   // Z337 a wall, a fortress wall section, a building: its true box, not a circle round it
     if(SH){ const o=SH.obb, ex=o.hl+o.hw+R; if(Math.abs(p.pos.x-SH.x)>ex || Math.abs(p.pos.z-SH.z)>ex) continue; if(CV.mounted && rideLeap(H, blockH(b), Math.hypot(p.pos.x-SH.x, p.pos.z-SH.z)+R)) continue;

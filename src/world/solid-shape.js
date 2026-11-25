@@ -129,6 +129,11 @@ export function pushOutRocks(p, rad, lift = 0){ const L = camRocks(); let hit = 
     if(!out) continue; const wx = oa * s + oc * c, wz = oa * c - oc * s, n = Math.hypot(wx, wz) || 1, nx = wx / n, nz = wz / n; p.pos.x += wx; p.pos.z += wz; hit = Math.max(hit, 0);
     const v = p.vel; if(v){ const vn = v.x * nx + v.z * nz; if(vn < 0){ v.x -= nx * vn; v.z -= nz * vn; hit = Math.max(hit, -vn); } } }
   return hit; }
+// RIDE 1 is a body of radius rad stood at (x, z) inside a crag's rock as it is drawn? (a ride's feelers look ahead with it: game/ride-avoid.js) · is one near?
+export function rockAt(x, z, rad){ for(const R of camRocks()){ const G = R.g; if(!R.solid || !G || !G.solid) continue; const e = R.hl + R.hw + rad; if(Math.abs(x - R.x) > e || Math.abs(z - R.z) > e) continue;
+    const s = Math.sin(R.f), c = Math.cos(R.f), la = (x - R.x) * s + (z - R.z) * c, lc = (x - R.x) * c - (z - R.z) * s; if(Math.abs(la) > R.hl + rad || Math.abs(lc) > R.hw + rad) continue;
+    if(rockHit(R, G, la, lc, rad, heightAt(x, z))) return true; } return false; }
+export function rockNear(x, z, reach){ for(const R of camRocks()){ if(!R.solid) continue; const e = R.hl + R.hw + reach; if(Math.abs(x - R.x) < e && Math.abs(z - R.z) < e) return true; } return false; }
 export function camRocksStale(){ CAMROCK.at = -1e9; }   // a new field: gather them again on the next look
 // where the sight line a → b (world) first meets one of those rocks (share 0…1 of the way), or 1 if it meets none — for the follow camera
 export function sightToRocks(ax, ay, az, bx, by, bz, pad = 0.3){ const L = camRocks(); if(!L.length) return 1; let t0 = 1;

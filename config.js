@@ -306,6 +306,19 @@ export const XEOM = { k:2.3, xeom:{ len:1.95, side:0.85, wheels:[{ c:[0, 0.148, 
   //   and the bottom, height, corner radius, and how far its face leans back (rad, with the steering head); without it the glow is a disc of headR
   lamp:{ headR:0.026, day:2.2, night:7, beam:{ i:4.2, dist:28, ang:0.5, pen:0.6, ahead:6, drop:0.55, r0:0.02, r1:0.9, len:4.4, op:0.2 }, tail:[0.034, 0.02], run:1.1, brake:4.5, brakeAcc:1.2, ease:14 },
   pegY:0.22, poses:{ straddle:{ hip:-1.3, knee:1.5, spread:0.3 }, stand:{ hip:0, knee:0.1, spread:0.12, stand:true } }, lean:0.35, lines:['Bám chắc nha con!', 'Ngồi im, chú chạy đây!', 'Trời ơi, đạn bay vèo vèo!', 'Tới nơi rồi, xuống bắn đi!'] };
+// RIDE 1–3 THE MOUNTS MOVE LIKE THE REAL THING (game/ride-avoid.js · game/ride-feel.js · game/cavalry.js · game/xeom.js · actors/horse.js; m, s, m/s, rad).
+//   avoid — the horse's / the driver's own line round what is in the way: one look every `every` s, feelers look[0] + look[1]·speed m long (look[2] at most)
+//   at headings fan (rad off its own, each × lenK) and, the fan shut, over each shoulder; a body's half-width + margin must pass (the xe ôm's is small: it
+//   squeezes through); a way is scored free share − devW·(rad off the way pushed) + stick for the side already taken (forgotten forget s after the way is
+//   clear), never more than maxDev off it; under halt m free it is no way at all; gain = [far, near] × the turn; brake m/s² it trusts itself to pull up
+//   with; round what is dead ahead no faster than swerve × that + swerveV; shut within gapD m on both sides it is a gap, taken at gapV; creep = its slowest
+//   while a way is open; bad ground (a rise steeper than slope, a drop over drop per metre, the deep channel) counts softPass of the way beyond it; edge =
+//   m inside the field's edge · bike.hull — the xe ôm's outline ([x, z, r] m, nose to tail: as narrow as it is drawn)
+export const RIDEFEEL = {
+  avoid:{ on:true, every:0.09, look:[3.4, 0.95, 20], fan:[0, 0.36, -0.36, 0.8, -0.8], lenK:[1, 0.92, 0.92, 0.66, 0.66], shoulder:1.45, margin:{ horse:0.4, bike:0.14 },
+    devW:0.45, stick:0.22, forget:0.5, maxDev:1.75, halt:0.9, gain:[0.9, 2.6], brake:6, swerve:1.5, swerveV:2.5, gapD:3, gapV:{ horse:3.6, bike:5 }, creep:1.3,
+    slope:0.8, drop:0.9, softPass:0.35, edge:3.6 },
+  bike:{ hull:{ xeom:[[0, 0.6, 0.42], [0, 0, 0.45], [0, -0.6, 0.42]] } } };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry', CITY:'city' },   // Z399 the city's fort too: the works' concrete and steel (it stood as plain boxes in a stone wrap)

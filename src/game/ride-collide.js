@@ -6,7 +6,7 @@
 // Z404 a long ride meets things with its whole outline (rideHull), a tree with its drawn trunk (world/tree-fall.js trunkR), and the bán tải has its
 // weight (ridePower): it climbs over what is low, smashes light cover, bursts brick walls, knocks the street's props and the wire flat.
 import * as THREE from 'three';
-import { RIDE_HIT, XEOM } from '../../config.js';
+import { RIDEFEEL, RIDE_HIT, XEOM } from '../../config.js';
 import { BUMPS, CITY_PROPS, CV, OUTPOST_WIRE, S, TRUNKS_DOWN, bikeHop, blocks, burst, crushAt, crushables, heightAt, knockProp, ramBlock, ramWall, rideBump, rideFence, rideWear, sfx, carShape, pushOutShape, trunkR } from '../hub.js';
 
 // push the ride (pos, vel, radius R) back out of a circle; the closing speed it hit at (0 if it was moving away, -1 if clear of it)
@@ -15,10 +15,10 @@ function solid(p, x, z, r, R){ const dx = p.pos.x - x, dz = p.pos.z - z, rr = r 
   if(vn < 0){ p.vel.x -= nx * vn; p.vel.z -= nz * vn; return -vn; } return 0; }
 const dust = (x, z, n) => burst({ x, z }, 0xb8a888, n, 2.2, { y:heightAt(x, z) + 0.3, life:0.7, size:0.9, smoke:true, grav:-0.2, drag:2, op:0.4 });
 // how tall each kind of thing a tank rolls over stands to a ride (m) — Infinity: never cleared; null: not in its way at all (grass, shrubs, pebbles)
-const tall = c => c.kind === 'tree' || c.kind === 'topple' ? Infinity : c.kind === 'car' ? 1.5 : c.kind === 'moto' ? 1.1 : c.kind === 'rock' && c.r >= RIDE_HIT.rock ? c.r * 1.1 : null;
+export const rideTall = c => c.kind === 'tree' || c.kind === 'topple' ? Infinity : c.kind === 'car' ? 1.5 : c.kind === 'moto' ? 1.1 : c.kind === 'rock' && c.r >= RIDE_HIT.rock ? c.r * 1.1 : null;
 // Z404 THE RIDE'S OUTLINE: the circles (XEOM.hull, [x, z, r] m, +z ahead) laid over a long ride's drawn footprint — null: it is one circle (p.radius).
 //   Its nose, tail and corners stop at a wall or a trunk, not its middle (the bán tải, 4.7 m long, used to run 1.4 m of bonnet into a tree first)
-export const rideHull = H => H && H.bike && XEOM.hull[H.bike] || null;
+export const rideHull = H => H && H.bike && (XEOM.hull[H.bike] || RIDEFEEL.bike.hull[H.bike]) || null;   // (RIDE 1 the xe ôm: three small circles nose to tail — as narrow as it is drawn, it slips through a gap a horse cannot)
 export const ridePower = H => H && H.bike && XEOM.power[H.bike] || null;   // the bán tải's weight (null: a ride without it)
 // what the bán tải rides over this frame — a footprint (a circle, or a box S) and its drawn height h — its wheels take it for ground (game/xeom.js)
 export const RIDE_LOW = [];
@@ -65,7 +65,7 @@ export function horseAir(H, dt){ const A = H && H.air; if(!A || !(A.y > 0)) retu
 //   poles, parked vehicles and bigger stones, the street furniture still standing and the wire (no leaps, nothing knocked down)
 const _qp = { pos:null }, _still = { x:0, z:0 }, out = (q, x, z, rr) => { const dx = q.x - x, dz = q.z - z, d2 = dx * dx + dz * dz; if(d2 >= rr * rr || d2 < 1e-6) return; const d = Math.sqrt(d2); q.x += dx / d * (rr - d); q.z += dz / d * (rr - d); };
 export function rideClear(q, R){
-  for(const c of crushables){ if(!c.alive || tall(c) == null) continue; const B = c.kind === 'car' ? carShape(c) : null; if(B){ _qp.pos = q; pushOutShape(_qp, B, R, null); continue; } out(q, c.x, c.z, (c.kind === 'tree' ? trunkR(c) : c.r * 0.9) + R); }   // (Z337 a parked car: its own box · Z404 a tree: its drawn trunk)
+  for(const c of crushables){ if(!c.alive || rideTall(c) == null) continue; const B = c.kind === 'car' ? carShape(c) : null; if(B){ _qp.pos = q; pushOutShape(_qp, B, R, null); continue; } out(q, c.x, c.z, (c.kind === 'tree' ? trunkR(c) : c.r * 0.9) + R); }   // (Z337 a parked car: its own box · Z404 a tree: its drawn trunk)
   for(const P of CITY_PROPS) if(!P.down) out(q, P.x, P.z, P.r + R);
   for(const w of OUTPOST_WIRE){ if(w.down || !w.f.g || !w.f.g.parent) continue; const qx = q.x - w.x, qz = q.z - w.z; if(Math.abs(qx * w.dx + qz * w.dz) > w.L / 2 + R) continue;
     const nx = -w.dz, nz = w.dx, side = qx * nx + qz * nz, rr = R + RIDE_HIT.wireW / 2; if(Math.abs(side) >= rr) continue; const sg = side >= 0 ? 1 : -1; q.x += nx * sg * (rr - Math.abs(side)); q.z += nz * sg * (rr - Math.abs(side)); }
@@ -74,7 +74,7 @@ export function rideCollide(p, now){ const H = CV.H, R = p.radius, C = RIDE_HIT,
   const hit = v => { if(v > hard) hard = v; }, slow = () => { p.vel.x *= C.slow; p.vel.z *= C.slow; };
   // trees, poles, parked vehicles, the bigger stones
   for(const c of crushables){ if(!c.alive) continue; const rr = (c.kind === 'car' ? 3.2 : c.kind === 'tree' ? Math.max(c.r, trunkR(c)) : c.r) + R + 0.2, dx = p.pos.x - c.x, dz = p.pos.z - c.z; if(Math.abs(dx) > rr || Math.abs(dz) > rr) continue;
-    const h = tall(c); if(h == null) continue; const B = c.kind === 'car' ? carShape(c) : null;   // Z337 a parked car is a box its own size, not a circle 0.7 m out from its doors
+    const h = rideTall(c); if(h == null) continue; const B = c.kind === 'car' ? carShape(c) : null;   // Z337 a parked car is a box its own size, not a circle 0.7 m out from its doors
     if(PW && h <= PW.climbH){ if(Math.hypot(dx, dz) < c.r + R) lowAdd(c, { x:c.x, z:c.z, r:c.r * 1.1, h }); continue; }   // Z404 a stone under the bán tải: over it, its wheels climbing it
     if(PW && c.kind === 'topple'){ const d = Math.hypot(dx, dz) || 1; if(d < c.r + R && -(p.vel.x * dx + p.vel.z * dz) / d > PW.knockV){ crushAt(c); slow(); sfx('crunch', { x:c.x, z:c.z }, 0.7); dust(c.x, c.z, 4); continue; } }   // Z404 a pole / lamp rammed over
     if(B){ const o = B.obb, ex = o.hl + o.hw + R; if(Math.abs(dx) > ex || Math.abs(dz) > ex || rideLeap(H, h, Math.hypot(dx, dz) + R)) continue; const v = pushOutShape(p, B, R); if(v >= 0) hit(v); continue; }
