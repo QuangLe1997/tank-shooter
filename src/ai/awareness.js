@@ -9,7 +9,7 @@
 //   without contact do they drop to searching it, and after keep.search more give the search up. The first shot waits a reaction delay (AWARE.react).
 //   The group of an alerted man's bursts (e.zero, 0 wide … 1 tight) closes while the player stands in his sight and opens when he runs or breaks the line.
 import { AWARE, STEALTH } from '../../config.js';
-import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, sfx, stealthSpot, unitsNear, wrapAngle } from '../hub.js';
+import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, sfx, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
 
 const A = AWARE, R2 = a => a[0] + Math.random() * (a[1] - a[0]), mix = (a, k) => a[0] + (a[1] - a[0]) * k;
 // the player as the enemy's eyes get him this moment: r = how far off a man looking his way makes him out
@@ -36,7 +36,7 @@ function init(e, now){ const p = S.player, k = e.lk || (e.lk = { x:0, z:0 }), ho
 export function alertEnemy(e, now, why, x, z){ const p = S.player; if(!p || !e.def || !e.def.inf) return; if(e.alert === undefined) init(e, now); const k = e.lk, was = e.alert;
   if(was >= 2){ if(!e.sees){ k.x = x ?? p.pos.x; k.z = z ?? p.pos.z; e.lkAt = now; } return; }   // already fighting: news of him only matters while he is out of sight
   k.x = x ?? p.pos.x; k.z = z ?? p.pos.z; e.lkAt = now; e.alert = 2; e.det = 1; e.zero = 0; e.actAt = now; e.srAt = 0; e.tgtAt = 0; e.burstLeft = 0; e.coverAt = 0;
-  e.reactAt = Math.max(e.reactAt || 0, now + (why === 'hit' ? A.reactHit : R2(A.react) * mix(A.reactK, aiIQ()))); e.fireAt = Math.max(e.fireAt || 0, e.reactAt);
+  e.reactAt = Math.max(e.reactAt || 0, now + (why === 'hit' ? A.reactHit : R2(A.react) * mix(A.reactK, aiIQ()) * tierK('react'))); e.fireAt = Math.max(e.fireAt || 0, e.reactAt);
   if(why === 'see' || why === 'hit' || why === 'death'){ e.shoutAt = now + A.shout.delay; SHOUTS.push(e); }   // (a shot is heard by all of them at once; a shout does not echo on)
   bark(e, '!', '#ff5a3a', now); }
 // he heard or glimpsed something at (x, z): he stops, turns to it and goes to look (his squad's leader takes the spot as the squad's next search point)
@@ -53,7 +53,7 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
   if(vis > 0){
     if(al){ if(!e.sees && e.sq) for(const o of e.sq.m){ if(o !== e && o.alert >= 2 && !o.sees){ o.lk.x = p.pos.x; o.lk.z = p.pos.z; o.lkAt = now; } }   // he has him again: his squad knows (no second shout)
       e.sees = true; k.x = p.pos.x; k.z = p.pos.z; e.lkAt = now; }
-    else { e.det += dtk / (A.spot.t[0] + (A.spot.t[1] - A.spot.t[0]) * (1 - vis));
+    else { e.det += dtk / ((A.spot.t[0] + (A.spot.t[1] - A.spot.t[0]) * (1 - vis)) * tierK('spot'));
       if(e.det >= 1){ alertEnemy(e, now, 'see'); e.sees = true; if(PL.st === 'prone') stealthSpot('BỊ PHÁT HIỆN!'); }
       else if(e.det >= A.spot.sus) suspectEnemy(e, now, p.pos.x, p.pos.z); } }
   else { e.sees = false;
@@ -74,7 +74,7 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
 // once a frame, before the men move: how visible the player is, and the shouts that are due
 export function awareFrame(dt, now){ if(now >= PL.at) playerLook(now);
   for(let i = SHOUTS.length - 1; i >= 0; i--){ const e = SHOUTS[i]; if(now < e.shoutAt) continue; SHOUTS.splice(i, 1); if(e.alert !== 2 || !enemies.includes(e)) continue;
-    const k = e.lk, r = A.shout.r, r2 = r * r;
+    const k = e.lk, r = A.shout.r * tierK('shout'), r2 = r * r;
     if(e.sq) for(const o of e.sq.m) if(o !== e && o.hp > 0) alertEnemy(o, now, 'shout', k.x, k.z);
     for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, r, _nb)){ if(o === e || !(o.hp > 0) || (o.pos.x - e.pos.x) ** 2 + (o.pos.z - e.pos.z) ** 2 > r2) continue; alertEnemy(o, now, 'shout', k.x, k.z); } } }
 // the player's own shot at (x, z): every enemy soldier in earshot is alerted and knows the spot (a man already fighting and out of sight of him: updated)

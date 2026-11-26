@@ -1,12 +1,12 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
 import { AWARE, SQUAD_AI, FIELDCRAFT, RIVERS } from '../../config.js';
-import { ARENA, FT, S, blocks, coverSpot, enemies, floatText, inField, infTarget, radio, sfx, throwSmoke, fieldDepth, wadeAt, riverWay } from '../hub.js';
+import { ARENA, FT, S, blocks, coverSpot, enemies, floatText, inField, infTarget, radio, sfx, throwSmoke, fieldDepth, wadeAt, riverWay, fallSpot, lastMan, pinEnd, pinPlan, tierK, tierRoles } from '../hub.js';
 
 export const SQUADS=[];
 let _sid=0;
 const R2=r=>r[0]+Math.random()*(r[1]-r[0]);
 // a group of freshly spawned men becomes one squad (opt.escort: the tank they move with)
-export function makeSquad(members, opt){ const live=members.filter(e=>e && e.def && e.def.inf); if(live.length<2) return null;
+export function makeSquad(members, opt){ const live=tierRoles(members.filter(e=>e && e.def && e.def.inf)); if(live.length<2) return null;   // (DIR 2 tierRoles: at the top tier one man may carry the machine gun, one may leave as a marksman)
   const sq={ id:++_sid, m:live, leader:live[0], n0:live.length, state:'advance', t0:performance.now()/1000, thinkAt:0, swapAt:0, bound:0, flank:Math.random()<0.5?-1:1, flankA:0,
     morale:1, lost:false, escort:(opt&&opt.escort)||null, path:null, pathAt:0, pathGoal:null, fallAt:0 };
   live.forEach((e,i)=>{ e.sq=sq; e.ft=i%2; }); SQUADS.push(sq); return sq; }
@@ -52,6 +52,7 @@ export function suppress(u, k){ u.supp=Math.min(1, (u.supp||0)+k); }
 // ================= ENEMY SQUADS =================
 function squadThink(sq, now){
   sq.m=sq.m.filter(e=>enemies.includes(e) && !e.dead); if(!sq.m.length) return false;
+  if(sq.m.length===1 && lastMan(sq, now)) return false;   // DIR 2 the last man of a squad may throw down his rifle (ai/tiers.js)
   if(!sq.m.includes(sq.leader)){ sq.leader=sq.m[0]; sq.lost=true; sq.morale-=0.25; floatText('HẠ TỐP TRƯỞNG', '#ffcf5a', { x:sq.leader.pos.x, y:2.6, z:sq.leader.pos.z }, 13); }
   const L=sq.leader, n=sq.m.length; let cx=0, cz=0, sp=0; for(const e of sq.m){ cx+=e.pos.x; cz+=e.pos.z; sp+=e.supp||0; } cx/=n; cz/=n; sp/=n;
   const A=SQUAD_AI, T=infTarget(L, now), al=L.alert>=2; sq.T=T; const tx=T.pos.x, tz=T.pos.z, d=Math.hypot(tx-cx, tz-cz)||1, ux=(tx-cx)/d, uz=(tz-cz)/d, R=L.def.range||24;
@@ -65,12 +66,12 @@ function squadThink(sq, now){
   else if(d<A.assaultR || (T.you===false && n>=3 && d<R*0.7)) st='assault';
   else st='fm';
   if(T.lost && !(al && T.supp) && st!=='fallback') st='search';   // AI 1 nobody in the squad has him (never knew, or lost him and the suppressing fire is spent): it sweeps to the last place and on, instead of fighting a ghost
-  if(st!==sq.state){ sq.state=st; sq.path=null; if(st==='fm'){ sq.swapAt=now+R2(A.boundT); sq.bound=0; } }
+  if(st!==sq.state){ sq.state=st; sq.path=null; pinEnd(sq, now); if(st==='fm'){ sq.swapAt=now+R2(A.boundT); sq.bound=0; } }
   { const C=FIELDCRAFT.smoke; if(S.stage>=2 && now>(sq.smokeAt||0) && (st==='fallback' || (st==='fm' && sp>0.45) || (st==='assault' && d>9 && sp>0.3))){   // Z220 SMOKE: to break contact, or to cross open ground under fire
     sq.smokeAt=now+C.cdE*(0.8+Math.random()*0.4); const k=Math.min(d*0.5, C.ahead), sx=cx+ux*k, sz=cz+uz*k; throwSmoke(sx, sz, 'e', now); floatText('ĐỊCH THẢ KHÓI', '#e6e2d6', { x:sx, y:2.8, z:sz }, 13); } }
   // — per-man orders —
   const set=(e,g,stance,noFire,fk)=>{ e.sqGoal=g; e.sqStance=stance||null; e.sqNoFire=!!noFire; e.sqFireK=fk||1; };
-  if(st==='fallback'){ for(const e of sq.m){ set(e, [e.pos.x-ux*14+(Math.random()-0.5)*4, e.pos.z-uz*14+(Math.random()-0.5)*4], null, false, 1.6); } return true; }
+  if(st==='fallback'){ for(const e of sq.m){ set(e, fallSpot(e, sq, ux, uz, tx, tz), null, false, 1.6); } return true; }   // (DIR 2 fallSpot: back to the next cover, picked once)
   if(st==='escort'){ const fx=Math.sin(esc.facing||0), fz=Math.cos(esc.facing||0); sq.m.forEach((e,i)=>{ const side=(i%2?1:-1)*(1.6+((i>>1)%3)*1.6), back=5+((i>>1)%3)*2.2;   // two files behind the tank
       set(e, [esc.pos.x-fx*back+fz*side, esc.pos.z-fz*back-fx*side], null, false, 1); }); return true; }
   if(st==='advance' || st==='search'){ const stop=st==='search' ? 0 : R*0.85;   // the leader walks the route; the others hold a wedge on him (AI 1 search: right up to the spot, every man taking the leader's)
@@ -82,12 +83,13 @@ function squadThink(sq, now){
     for(const e of sq.m){ if(e===L) continue; k++; const row=(k+1)>>1, side=(k%2?1:-1)*row*A.spacing, back=row*A.spacing;   // wedge
       set(e, [L.pos.x-hx*back+hz*side, L.pos.z-hz*back-hx*side], null, false, 1); } return true; }
   if(st==='assault'){ for(const e of sq.m){ const ox=e.pos.x-tx, oz=e.pos.z-tz, od=Math.hypot(ox,oz)||1, keep=e.def.rpg?14:6; set(e, [tx+ox/od*keep, tz+oz/od*keep], null, false, 0.8); } return true; }
+  if(pinPlan(sq, now, tx, tz, d, R)) return true;   // DIR 2 from tier 2: a base of fire that pins him and a flanking team that goes round (ai/tiers.js)
   // FIRE AND MANOEUVRE: one team lies down and shoots (suppression), the other bounds cover-to-cover round a flank; then they swap
-  if(now>sq.swapAt && sp<0.7){ sq.bound^=1; sq.swapAt=now+R2(A.boundT); sq.flankA=Math.min(A.flankMax, sq.flankA+A.flankStep); }
+  if(now>sq.swapAt && sp<0.7){ sq.bound^=1; sq.swapAt=now+R2(A.boundT); sq.flankA=Math.min(A.flankMax*tierK('flank'), sq.flankA+A.flankStep); }   // (DIR 2 tier 1: no flank — they bound straight in)
   const base=Math.atan2(cx-tx, cz-tz)+sq.flank*sq.flankA, fx=tx+Math.sin(base)*R*0.75, fz=tz+Math.cos(base)*R*0.75;   // where the bounding team is working round to
   for(const e of sq.m){
     if(e.def.rpg && T.you){ const pa=Math.atan2(cx-tx, cz-tz)+sq.flank*1.35, rr=(e.def.range||30)*0.72; set(e, [tx+Math.sin(pa)*rr, tz+Math.cos(pa)*rr], 'crouch', false, 1); continue; }   // the RPG team goes for the flank of the tank
-    if(e.ft===sq.bound && (e.supp||0)<0.8){ const bx=fx-e.pos.x, bz=fz-e.pos.z, bd=Math.hypot(bx,bz)||1, step=Math.min(bd, A.boundStep), gx=e.pos.x+bx/bd*step, gz=e.pos.z+bz/bd*step;
+    if(e.ft===sq.bound && !e.def.mg && (e.supp||0)<0.8){ const bx=fx-e.pos.x, bz=fz-e.pos.z, bd=Math.hypot(bx,bz)||1, step=Math.min(bd, A.boundStep), gx=e.pos.x+bx/bd*step, gz=e.pos.z+bz/bd*step;
       const cv=coverSpot(gx, gz, tx, tz, 5); if(!e.sqGoal || e.sqBound!==sq.swapAt){ e.sqBound=sq.swapAt; set(e, cv?[cv.x,cv.z]:[gx,gz], null, true, 1); } }
     else { const ex=e.pos.x-tx, ez=e.pos.z-tz, ed=Math.hypot(ex,ez)||1;   // AI 1 the covering team covers from INSIDE its range: a man too far out to hit anything closes in (firing as he comes) before he lies down
       if(ed>R*AWARE.squad.closeK && (e.supp||0)<0.6){ const k=R*0.7, cv=coverSpot(tx+ex/ed*k, tz+ez/ed*k, tx, tz, 4); set(e, cv?[cv.x,cv.z]:[tx+ex/ed*k, tz+ez/ed*k], null, false, 1); }
@@ -96,7 +98,7 @@ function squadThink(sq, now){
 export function updateSquads(dt, now){
   for(const e of enemies) if(e.supp) e.supp=Math.max(0, e.supp-dt*SQUAD_AI.suppDecay);
   for(const a of FT) if(a.supp) a.supp=Math.max(0, a.supp-dt*SQUAD_AI.suppDecay);
-  for(let i=SQUADS.length-1;i>=0;i--){ const sq=SQUADS[i]; if(now<sq.thinkAt) continue; sq.thinkAt=now+SQUAD_AI.think*(0.85+Math.random()*0.3);
+  for(let i=SQUADS.length-1;i>=0;i--){ const sq=SQUADS[i]; if(now<sq.thinkAt) continue; sq.thinkAt=now+SQUAD_AI.think*(0.85+Math.random()*0.3)*tierK('think');
     if(!squadThink(sq, now)){ for(const e of sq.m) e.sq=null; SQUADS.splice(i,1); } }
   updateFTSquad(now); }
 // the man's squad move for this frame: null = no squad order (use his own logic), {x,z,hold}

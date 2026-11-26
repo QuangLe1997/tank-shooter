@@ -7,9 +7,9 @@
 //     fired through the cloud go wild (both directions)
 import * as THREE from 'three';
 import { FIELDCRAFT } from '../../config.js';
-import { MOBILE, S, blastAllies, blocksNear, damageEnemy, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart } from '../hub.js';
+import { MOBILE, S, blastAllies, blocksNear, damageEnemy, damagePlayer, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart } from '../hub.js';
 
-const FC=FIELDCRAFT, _lb=[];
+const FC=FIELDCRAFT, _lb=[], _spark={ color:0xffc060, size:0.3, life:0.4, grav:0, drag:2, op:0.9, keep:true };
 // a "tall" obstacle stops a rifle round dead: buildings, fortress walls, masonry, towers, containers, boulders (sandbags, drums, logs… are shot over)
 function tall(bl){ return bl.heavy || bl.fort || bl.wall || bl.kind==='building' || bl.kind==='tower' || bl.kind==='container' || bl.kind==='boulder' || bl.kind==='camp' || bl.kind==='tent'; }   // Z402 nobody sees through a tent
 export function losBlocked(x0, z0, x1, z1){ const dx=x1-x0, dz=z1-z0, D=Math.hypot(dx,dz), L=FC.los; if(D<L.endSkip*2+0.5) return false; const ux=dx/D, uz=dz/D, P=S.player, up=P && P.lift>0.5 && x1===P.pos.x && z1===P.pos.z;   // Z451 the soldier up on a wall: what he stands on hides him from no one
@@ -58,13 +58,14 @@ function nadeBoom(g, now){ const N=FC.nade, x=g.x1, z=g.z1, y=heightAt(x,z);
   for(let k=0;k<(MOBILE?6:11);k++){ const a=Math.random()*6.283, v=3+Math.random()*5; spawnPart(x, y+0.3, z, Math.cos(a)*v, 3+Math.random()*5, Math.sin(a)*v, { color:0x5a4a36, size:0.18+Math.random()*0.15, life:0.8, grav:-16, drag:0.6 }); }   // dirt
   spawnPart(x, y+0.8, z, 0, 0.8, 0, { color:0x8a8478, size:2.6, life:1.8, smoke:true, grav:0.2, drag:1.4, grow:1.8, op:0.55, keep:true });
   sfx('explode', { x, z }, 0.55); const p=S.player; if(p && Math.hypot(p.pos.x-x, p.pos.z-z)<16) S.shake=Math.min(3, S.shake+0.25);
-  if(g.side==='e') blastAllies(x, z, N.R, N.dmgE*(1+(S.stage-1)*0.06));
+  if(g.side==='e'){ blastAllies(x, z, N.R, N.dmgE*(1+(S.stage-1)*0.06));
+    if(g.you && p){ const dx=p.pos.x-x, dz=p.pos.z-z, dd=Math.hypot(dx, dz); if(dd<N.R) damagePlayer(g.dmg*(1-0.6*dd/N.R), now, dx||0.01, dz); } }   // DIR 2 a grenade thrown to flush the player (ai/tiers.js): it hurts him too
   else for(const e of enemies.slice()){ if(!e.def.inf || e.dead) continue; const k=infBlastK(Math.hypot(e.pos.x-x, e.pos.z-z), N.R); if(k<=0) continue;
     e._blast={ x, z }; e._hitK=1+1.2*k; e._fx='blast'; damageEnemy(e, k>=1 ? e.hp+1 : N.dmgA*k*(1+(S.stage-1)*0.08)); } }
 function updateNades(dt, now){
   for(let i=NADES.length-1;i>=0;i--){ const g=NADES[i]; g.t+=dt;
     if(!g.landed){ const u=Math.min(1, g.t/g.T), x=g.x0+(g.x1-g.x0)*u, z=g.z0+(g.z1-g.z0)*u, gy=heightAt(x,z), y=g.y0+(gy+0.13-g.y0)*u + g.peak*4*u*(1-u);
-      g.m.position.set(x, y, z); g.m.rotation.x+=dt*14; g.m.rotation.z+=dt*9;
+      g.m.position.set(x, y, z); g.m.rotation.x+=dt*14; g.m.rotation.z+=dt*9; if(g.you && Math.random()<0.8) spawnPart(x, y, z, 0, 0.3, 0, _spark);   // (DIR 2 the one meant for him trails sparks: the arc is read before it lands)
       if(u>=1){ g.landed=true; spawnPart(g.x1, gy+0.1, g.z1, 0, 0.6, 0, { color:0x8a7a60, size:0.6, life:0.4, smoke:true, grav:0, drag:3, op:0.4 }); sfx('thud', { x:g.x1, z:g.z1 }, 0.25); } }
     if(g.t>=g.boomAt){ nadeBoom(g, now); scene.remove(g.m); NADES.splice(i,1); } } }
 // run from the nearest live grenade (any side) close enough to hurt: a unit vector, or null

@@ -888,24 +888,46 @@ export const ENTRY = { minD:45, pad:0.12, tries:12, edgeIn:4, seeD:130, nearD:30
 //   kept as a share of his health fading over tau.hurt s; pressure = w.hurt × that / ref.hurt + w.hp × how low his health is (from 1 − ref.hp[0] down to 1 − ref.hp[1])
 //   + w.near × near / ref.near + w.fire × firing / ref.fire + w.stall × (men near and nobody fallen for ref.stall s) − w.calm × (not hit for ref.calm s), smoothed
 //   over tau.smooth s. thr: under low it is "little to do", over high for hold s a PEAK (gone once under high × off); crit: health under this (hit in the last critT s) = nearly dead.
-//   build: a peak is called no sooner than min s after a lull (never two back to back); the first escalation waits first s; pressure low for escalate s → escalate
-//     (cd s apart): the next flankN entries of the wave come from his left / right / rear (sides: weights; spread rad round the bearing; over the edge when that is
-//     ENTRY.minD…maxD m off and out of the frame, else a hatch hatchD m off), named on the radio cueT s later; else the surprise due more than surMin s away is played
-//     in surLead s (no more often than surCd s); else up to intelN men within intelR m who have not found him are told where he is (to intelErr m; at least intelMin of
-//     them, or it is not worth a radio line); else the nearest fortress within sallyR m sends its next squad out now. meter: over this pressure the wave's queue and
-//     the fortresses' sallies wait — the queue at most holdMax s, then `group` entries pass. peak: min…max s. lull: t s (the long end when he is nearly dead; extra s more while the pressure stays high), the men within contactR m
+//   build: a peak is called no sooner than min s after a lull (never two back to back); the first escalation waits first s; pressure low for escalate s (the clock
+//     runs × midK while there is something but not much to do) → escalate (cd s apart; one of these the first time, one more each time the pressure has still not
+//     risen, up to maxActs): the next flankN entries of the wave come, knowing where he is, from his left / right / rear (sides: weights; spread rad round the bearing;
+//     over the edge when that is ENTRY.minD…maxD m off and out of the frame, else a hatch hatchD m off), named on the radio cueT s later · up to intelN men within
+//     intelR m who have not found him are told where he is (to intelErr m; at least intelMin of them) · a hostile surprise is played (no more often than surCd s) ·
+//     the nearest fortress within sallyR m sends its next squad out now. reserve: the last share of each wave's queue (its set piece with it) waits for an escalation —
+//     reserveMax s at most, then it comes round a flank anyway. meter: over this pressure the wave's queue and the fortresses' sallies wait — the queue at most
+//     holdMax s, then `group` entries pass. peak: min…max s. lull: t s (the long end when he is nearly dead; extra s more while the pressure stays high), the men within contactR m
 //     go to ground for ground s and every rifleman's rests between bursts are × fireK for as long as it lasts, no surprise until `surprise` s after it; drop: a medkit and ammunition when his health is under hp (cd s apart).
 //   finale: on a field without a citadel the general comes lull s after the last wave, announced; the men in contact go to ground for ground s as he comes out; no
 //     reinforcement and no surprise in the duel's first quiet s. radio: the director's own lines gap s apart; a peak is named peakP of the time, a new build-up buildP.
 export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, logMax:80,
   tau:{ hurt:5, smooth:1.2 }, w:{ hurt:0.34, hp:0.22, near:0.14, fire:0.22, stall:0.08, calm:0.12 }, ref:{ hurt:0.3, hp:[0.15, 0.6], near:6, fire:4, calm:10, stall:[10, 30] },
   thr:{ low:0.18, high:0.58, off:0.8, hold:1.2, crit:0.3, critT:4 },
-  build:{ min:14, first:18, escalate:9, cd:13, meter:0.36, holdMax:18, group:3, flankN:[3, 5], spread:0.7, maxD:95, hatchD:[40, 55], cueT:1.5, sides:{ left:1, right:1, rear:1.2 }, surMin:6, surLead:1.2, surCd:45, intelR:150, intelN:8, intelMin:3, intelErr:5, sallyR:160 },
+  build:{ min:14, first:18, escalate:8, cd:11, midK:0.4, maxActs:3, meter:0.36, holdMax:18, group:3, reserve:0.4, reserveMax:28, flankN:[3, 5], spread:0.7, maxD:95, hatchD:[40, 55], cueT:1.5, sides:{ left:1, right:1, rear:1.2 }, surCd:45, intelR:150, intelN:10, intelMin:3, intelErr:5, sallyR:160 },
   peak:{ min:5, max:16 }, lull:{ t:[10, 20], extra:6, ground:[3, 5], contactR:42, fireK:1.8, surprise:8, drop:{ hp:0.45, cd:90 } }, finale:{ lull:12, ground:[2.5, 4], quiet:25 }, radio:{ gap:14, peakP:0.5, buildP:0.4 },
   say:{ lull:['SCH: Tạm lắng — nạp đạn đi!', 'SCH: Chúng chững lại rồi — thay băng đạn, băng bó nhanh!', 'SCH: Địch nằm im — tranh thủ nạp đạn, đổi vị trí!'],
     drop:['SCH: Anh bị thương nặng — đã thả dù cứu thương và đạn ngay trước mặt!'], peak:['SCH: Chúng dồn lên rồi — bám công sự, giữ vững!', 'SCH: Hoả lực địch rất mạnh — đừng đứng một chỗ!'],
     build:['SCH: Chúng lại lên — vào vị trí!', 'SCH: Hết lặng rồi — địch đang áp sát!'], hunt:['SCH: Địch đã lần ra chỗ anh — chúng đang kéo tới!', 'SCH: Chúng biết anh ở đâu rồi — coi chừng các hướng!'], left:'SCH: Chúng đang vòng sườn trái!', right:'SCH: Chúng đang vòng sườn phải!', rear:'SCH: Địch vòng ra sau lưng — quay lại!',
-    finale:'SCH: Trận địa lặng rồi — tướng địch sắp ra trận. Nạp đạn, băng bó, chuẩn bị!' } };
+    finale:'SCH: Trận địa lặng rồi — tướng địch sắp ra trận. Nạp đạn, băng bó, chuẩn bị!' },
+  // DIR 2 TACTICS BY TIER (ai/tiers.js) — what the enemy's squads know grows with the stage: byStage[stage − 1] (an NG+ loop: the top tier). on: false (or ?notactics) = the squads as before.
+  //   scale: one value a tier — the reaction delay ×, the time to make him out ×, how far a shout carries ×, the squad's think interval ×, how far round a bounding squad flanks × (tier 1: not at all).
+  //   pin (tier 2+): a squad of minMen or more, in contact farther than minD m, splits — `share` of it flanks for t s (then cd s of plain fire and manoeuvre, and the other side next time; over
+  //     when he is closer than endD m): the flankers hop `step` m every hop s to the next cover along an arc that widens from arc[0] to arc[1] rad round him over sweep s at r m (rK × the range),
+  //     silent until within `arrive` m of its end; the base fires with its rests × baseFireK (the machine gun × mgFireK), the flankers once there × flankFireK. The cue (the leader's shout +
+  //     the radio naming the side) comes cueT s after they set off, at most once every cueGap s, for a squad within cueR m.
+  //   nade (tier 3): he has stayed within campR m of one spot for camp s (the clock runs × openK when he is not behind cover) → a rifleman minD…maxD m off with a clear lob throws: "LỰU ĐẠN!",
+  //     a sparking arc, FIELDCRAFT.nade's fuse + fuse s on the ground, dmg at its centre (× 1 + perStage a stage); the thrower holds his fire pause s; the next one cd s later, the clock restarted at `again` × camp.
+  //   marksman (tier 3): `chance` a squad that one rifleman leaves it as a marksman (max alive): he keeps `keep` m off, reaches `range` m, and every cd s shows a glint (size glint m, growing)
+  //     for tel s, following his man until lock s before the one round (dmg, bspeed m/s, err rad). mg (tier 3): `chance` a squad that one rifleman carries the machine gun (max alive): hp × hpK,
+  //     bursts of `burst` rounds gap s apart, rest s between, each round × dmgK and the group × spreadK wide, every round a tracer; he never bounds — he covers.
+  //   break: a squad falling back goes for a cover within search m of the point `back` m behind each man. surrender: the last man of a squad that started with minN0 or more, alerted and within
+  //     r m of the player, gives himself up `chance` of the time (by tier): hands up for hold s, then he walks off the field (gone after leaveMax s once out of the frame); score for the prisoner.
+  tactics:{ on:true, byStage:[1, 2, 3, 3, 3], scale:{ react:[1.15, 1, 0.8], spot:[1.2, 1, 0.85], shout:[0.8, 1, 1.3], think:[1.25, 1, 0.8], flank:[0, 1, 1] },
+    pin:{ minMen:4, minD:14, endD:9, share:0.4, t:[14, 20], cd:[8, 14], arc:[0.5, 1.45], sweep:9, r:[15, 26], rK:0.75, step:7, hop:1.5, arrive:4.5, cueT:1.2, cueGap:12, cueR:70, baseFireK:0.55, mgFireK:0.45, flankFireK:0.9 },
+    nade:{ camp:8, campR:3.5, openK:0.6, again:0.45, minD:8, maxD:26, cd:[7, 11], fuse:0.5, dmg:70, perStage:0.08, pause:1.2 },
+    marksman:{ chance:0.35, max:1, range:58, keep:44, tel:1.0, lock:0.3, cd:4.5, dmg:75, bspeed:140, err:0.012, glint:[1.1, 2.2] },
+    mg:{ chance:0.5, max:2, range:40, keep:28, dmgK:0.6, hpK:1.4, burst:[9, 14], gap:0.085, rest:[1.0, 1.5], spreadK:1.5 }, roles:{ minMen:4 },
+    break:{ back:16, search:9 }, surrender:{ minN0:3, chance:[0.6, 0.5, 0.4], r:45, hold:[5, 8], score:120, leaveMax:25 },
+    say:{ mg:'SCH: Đại liên địch bắn kiềm chế — đừng đứng ngoài trống, vòng vào sườn nó!', marksman:'SCH: Có xạ thủ bắn tỉa — thấy ánh kính loé lên là lăn đi ngay!' } } };
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·

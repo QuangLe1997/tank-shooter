@@ -34,12 +34,14 @@ function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=nul
   tell('PHÁO TA CHI VIỆN!', '#9be04a', 'PHÁO BINH: Đã nhận toạ độ khói xanh — bắn hiệu quả, chú ý!'); floatText('KHÓI XANH — PHÁO TA', '#9be04a', { x:cx, y:heightAt(cx,cz)+3, z:cz }, 15); return true; }
 const EV = { ambush, heli, friendly };
 
-function roll(now){ const C=REAL.surprise, live=enemies.length, pool=[];
-  for(const k in EV){ if(S.stage<(C.from[k]||1) || k===SURP.last) continue;
+function roll(now, hostile){ const C=REAL.surprise, live=enemies.length, pool=[];   // (hostile: the director's escalation — never our own artillery, and the last one may come again)
+  for(const k in EV){ if(S.stage<(C.from[k]||1) || (hostile ? k==='friendly' : k===SURP.last)) continue;
     if(live>110 && k!=='friendly') continue; if((C.w[k]??1)>0) pool.push([k, C.w[k]??1]); }
   if(!pool.length) return null; let tot=0; for(const [,w] of pool) tot+=w; let r=Math.random()*tot;
   for(const [k,w] of pool){ r-=w; if(r<=0){ if(EV[k](now)){ SURP.last=k; SURP.count++; return k; } break; } }
   return null; }
+// DIR 1 the director plays a hostile surprise now (campaign/director.js escalate); the timer starts again. Returns its name, or null: nothing to play
+export function surpriseNow(now, hostile){ if(UNDER.on || S.mode!=='playing' || !S.player) return null; const k=roll(now, hostile); if(k) SURP.next=now+rnd(REAL.surprise.every); return k; }
 export function updateSurprises(dt, now){ if(UNDER.on) return;   // Z226
   for(let i=SURP.shells.length-1;i>=0;i--){ const s=SURP.shells[i]; s.t-=dt;
     if(!s.ours && s.t<s.warn){ s.pulse-=dt; if(s.pulse<=0){ s.pulse=0.32; ringPulse(_v.set(s.x, 0, s.z), 0xff3a2a, s.R*0.7); } }   // red ring blinks where it will land

@@ -93,7 +93,7 @@ export function updateWaves(dt, now){
       spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;   // (AI 2 sp.how / sp.hatch: over the edge out of the frame, out of the gate, or up out of a hatch)
       if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact
       return; }
-    if(sp.hatch && isFoot(t)) hatchEntry(sp.x, sp.z, [ENEMY_DEFS[t] ? t : 'rifle'], { squad:false }); else spawnEnemy(t, sp.x, sp.z, sp.how);
+    if(sp.hatch && isFoot(t)) hatchEntry(sp.x, sp.z, [ENEMY_DEFS[t] ? t : 'rifle'], { squad:false, alert:sp.alert }); else { const e=spawnEnemy(t, sp.x, sp.z, sp.how); if(e && sp.alert) e.alert0=1; }   // (DIR 1 sp.alert: the director's flank knows where he is)
     if(sp.fort) fortLaunch(sp.fort, n0, now); else ringPulse(new THREE.Vector3(sp.x,0,sp.z), 0xe0603a, 2);   // Z111b from a fortress: raised inside, out through the gate
     WAVE.spawnAt = now + (BALANCE.wave.cadence - BALANCE.wave.cadenceDiff*diffScale())*(WAVE.assault?BALANCE.wave.assaultCadenceMul:1)*objMod('cadenceMul')*(WAVE.columnLeft>0?0.4:1);   // Z83 radio relay speeds reinforcements; a column rolls in nose-to-tail
     if(WAVE.columnLeft>0 && --WAVE.columnLeft<=0) WAVE.fixedEdge=null;   // ASSAULT = relentless spawn cadence
