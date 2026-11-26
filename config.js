@@ -2755,3 +2755,11 @@ export const DAILY = { tz:7, keep:14, level:[2, 5], tod:['day', 'noon', 'sunset'
       best:'Điểm tính của hôm nay: {s}', bestP:'Đánh tập không tính điểm — điểm tính của ngày này vẫn là {s}', bestNone:'Đánh tập — không tính điểm.', hist:' · {n} ngày gần đây cao nhất {top}', go:'Đánh tập', hint:'Mai có thử thách mới. Đánh tập bao nhiêu lần cũng được.' },
     copy:'Chép kết quả', copied:'Đã chép', copyFail:'Không chép được',
     share:{ head:'XUNG KÍCH — Thử thách {date}', where:'{b} · {tod} · {wx}', rule:'Luật: {m}', won:'★ {score} điểm · HOÀN THÀNH · {time}', lost:'✖ {score} điểm · gục ngã · {time}', stats:'Hạ {kills} · chính xác {acc}% · độ khó {diff}', practice:'(đánh tập — không tính điểm)', by:'— {name}' } } };
+
+// ANIM 1 THE SOLDIER'S MOTION LIBRARY (src/actors/anim-lib.js; built by tools/mixamo-clips.mjs from the Mixamo FBX set — assets/anim/SOURCE.txt):
+//   where the packed clips are, which groups there are (one file each) and which a battle fetches first; the rest come when asked (loadAnimGroup).
+//   decode: hips — the clip moves the hips (height, sway; off = turns only) · root — keep the root track of the clips that travel (animRootAt)
+//   · eager — build every clip of a group the moment its file is in (off: each clip the first time it is asked for).
+export const ANIMLIB = { on:true, version:1, path:'assets/anim/', index:'index.json',
+  groups:['loco', 'stance', 'air', 'combat', 'react', 'social'], preload:['loco', 'stance'],
+  decode:{ hips:true, root:true, eager:false } };

@@ -2005,6 +2005,29 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/function onEvent\(type, a, b, x, y, z, p\)\{ try\{ const now = performance\.now\(\) \/ 1000;\n\s*if\(!coopEventAllowed\(CO\.host, type, a, b, p\)\)\{ drop\(/.test(glue) && /const j = coopJudgeHit\(CO\.trust, _q, _j\); if\(!j\.ok\)\{ drop\(/.test(glue) && /damageEnemy\(e, j\.dmg\)/.test(glue) && !/damageEnemy\(e, h\.dmg\)/.test(glue)
     && /coopOnSay\(\(t, key\) => \{ if\(CO\.host\)\{ drop\('say'\); return; \}/.test(glue) && /if\(!CO\.host\)\{ goDown\(now, false\); return true; \}/.test(glue) && /CO\.led = coopLedger\(CO\.led, st\.hp, max, dt, now < CO\.holdUntil\);/.test(glue) && /NET_CUE\.DOWN\)/.test(glue) && /NET_CUE\.UP\)/.test(glue),
     'game/coop-glue.js: every incoming event passes the gate first; a hit report is judged and the HOST\'s number is what is taken off; the radio is the host\'s; the guest is down / up on the host\'s word (its ledger of his health)'); }
+// ANIM 1 the soldier's motion library: the config, the packed files against their index, the loader's names
+{ const C = await import('./config.js'), fs = await import('node:fs'), A = C.ANIMLIB, rd = f => fs.readFileSync(f, 'utf8'), J = JSON.parse(rd(A.path + A.index)), lib = rd('src/actors/anim-lib.js'), ids = new Set(J.clips.map(c => c.id));
+  ok(A.on === true && A.version === 1 && /\/$/.test(A.path) && A.groups.length === 6 && new Set(A.groups).size === 6 && A.preload.length >= 1 && A.preload.every(g => A.groups.includes(g)) && A.preload.includes('loco') && A.preload.includes('stance')
+    && ['hips', 'root', 'eager'].every(k => typeof A.decode[k] === 'boolean') && A.decode.eager === false, 'ANIMLIB: six groups, the walking and standing ones fetched first, nothing decoded before it is asked for');
+  ok(J.v === A.version && J.clips.length >= 250 && ids.size === J.clips.length && J.clips.every(c => /^[a-z]+(-[a-z0-9]+)+$/.test(c.id) && c.id.startsWith(c.g + '-') && A.groups.includes(c.g)),
+    'the library: ' + J.clips.length + ' clips (at least 250), every id unique, kebab-case and prefixed by its group');
+  let all = rd(A.path + A.index).length, boot = 0, fit = true;
+  for(const g of A.groups){ const G = J.groups[g], f = A.path + (G ? G.file : g + '.bin'); if(!G || !fs.existsSync(f)){ fit = false; continue; } const b = fs.readFileSync(f), cl = J.clips.filter(c => c.g === g); all += b.length; if(A.preload.includes(g)) boot += b.length;
+    let at = 8; for(const c of cl){ if(c.o !== at || c.b < 4 || b.readUInt16LE(c.o) !== c.frames || b[c.o + 2] !== c.fps) fit = false; at += c.b; }
+    if(b.length !== G.bytes || at !== b.length || b.toString('latin1', 0, 4) !== 'XKA1' || b.readUInt16LE(4) !== cl.length || G.clips !== cl.length || b.readUInt16LE(6) !== J.bones.length) fit = false; }
+  ok(fit, 'every group has its file, and each file is exactly the clips its index lists (header, offsets, frame counts)');
+  ok(all <= 4e6 && boot <= 900e3, 'the whole library within 4 MB (' + (all / 1e6).toFixed(2) + '), the groups fetched first within 900 KB (' + Math.round(boot / 1e3) + ')');
+  ok(J.bones.length === 22 && J.bones[0] === J.hips && !J.bones.some(b => /Thumb|Index|Middle|Ring|Pinky/.test(b)) && J.prefix === 'mixamorig'
+    && J.clips.every(c => c.dur > 0 && (c.fps === 30 || c.fps === 20) && c.frames === Math.round(c.dur * c.fps) + 1 && typeof c.loop === 'boolean' && typeof c.travels === 'boolean' && c.speed >= 0 && c.speed < 8 && typeof c.src === 'string' && /\.fbx$/.test(c.src)
+      && (!c.dir || (!c.travels && c.loop && c.speed > 0 && Math.abs(Math.hypot(c.dir[0], c.dir[1]) - 1) < 0.01)) && (!c.travels || !c.dir)),
+    'each clip says what it is: seconds, fps, frames, loop, speed, whether it travels (a clip pinned in place gives its heading instead); 22 bones, no fingers');
+  ok(['run-forward', 'run-backward', 'run-left', 'run-right', 'walk-forward', 'walk-left', 'sprint-forward', 'walk-crouch-forward'].every(k => { const c = J.clips.find(c => c.id === 'loco-rifle-' + k); return c && c.loop && !c.travels && c.speed > 0.5; })
+    && ['stance-rifle-idle', 'stance-prone-idle', 'stance-rifle-kneel-idle', 'stance-rifle-kneel-to-prone', 'air-vault-over-box', 'air-climb-up-wall', 'combat-reload-rifle-stand', 'combat-throw-grenade-crouch', 'react-death-front', 'react-get-up-back', 'social-salute-military'].every(k => ids.has(k)),
+    'the moves a soldier cannot do without are there under the names the blend graph will ask for (eight-way rifle walk / run / sprint looping in place, idle, kneel, prone, vault, climb, reload, grenade, death, getting up)');
+  ok(/export function loadAnimGroup\(group\)/.test(lib) && /export function animClip\(id\)/.test(lib) && /export const animInfo = /.test(lib) && /export const ANIMLIB_READY = /.test(lib) && /export function animRootAt\(id, t, out\)/.test(lib)
+    && /pre \+ INDEX\.hips \+ '\.position'/.test(lib) && /pre \+ b \+ '\.quaternion'/.test(lib) && !/requestAnimationFrame|setInterval|setTimeout/.test(lib) && /export \* from '\.\/actors\/anim-lib\.js';/.test(rd('src/hub.js'))
+    && /Mixamo/.test(rd(A.path + 'SOURCE.txt')) && /redistribut/.test(rd(A.path + 'SOURCE.txt')),
+    'the loader hands out three clips named as the operator\'s own are (mixamorig<Bone>.quaternion, mixamorigHips.position), runs nothing by itself, and the files say where they come from'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -1,0 +1,72 @@
+XUNG KÍCH — assets/anim: the soldier's motion library
+
+Source: Mixamo (mixamo.com), downloaded 2026-11-26 with the owner's Adobe account — default X Bot character, FBX binary, 30 fps, keyframe reduction off
+(the files still miss frames where Mixamo retimed a motion: the converter fills them from the curves and closes the cycles whose last frames are missing).
+Licence: Adobe's Mixamo terms allow use inside a game, commercial games included; they do not allow redistributing the files as an asset pack.
+These files are not the Mixamo files: tools/mixamo-clips.mjs retargeted every motion to the game's own skeleton (assets/models/real/operator.glb),
+dropped the fingers, split the root travel from the pose, reduced the keyframes (Hips 0.15°, Spine 0.2°, Spine1 0.2°, Spine2 0.2°, Neck 0.3°, Head 0.3°, Shoulder 0.3°, Arm 0.25°, ForeArm 0.3°, Hand 0.6°, UpLeg 0.15°, Leg 0.15°, Foot 0.3°, ToeBase 0.8°; hips 1 mm)
+and packed them (int16 smallest-three quaternions) into one file per group.
+Rebuild: node tools/mixamo-clips.mjs <folder holding the 14 pack-*/bundle-* folders>
+
+293 clips. 45 sources dropped as the same motion as one already taken (compared after retargeting, joint by joint):
+  pack-action-adventure/cover to stand.fbx  =  combat-cover-to-stand  (bundle-tactics/Cover To Stand - Crouch Cover To Standing Ready.fbx, facing 180° round)
+  pack-action-adventure/idle (4).fbx  =  combat-cover-idle-crouch-against-object  (bundle-tactics/Cover Idle - Crouched For Cover Against Object.fbx, facing 180° round)
+  pack-action-adventure/idle (5).fbx  =  combat-cover-idle-stand-against-object  (bundle-tactics/Cover Idle - Standing Cover Against Object.fbx, facing -180° round)
+  pack-action-adventure/left cover sneak.fbx  =  combat-left-cover-sneak  (bundle-tactics/Left Cover Sneak - Left Standing Sneak Behind Cover.fbx, facing 180° round)
+  pack-action-adventure/stand to cover (2).fbx  =  combat-stand-to-cover-crouch  (bundle-tactics/Stand To Cover - Standing To A Crouched Cover Position.fbx)
+  pack-action-adventure/stand to cover.fbx  =  combat-stand-to-cover-ready  (bundle-tactics/Stand To Cover - Standing Ready To Standing Cover.fbx)
+  pack-basic-shooter/firing rifle.fbx  =  combat-fire-rifle-stand  (bundle-death-fire/Firing Rifle - Firing A Rifle While Standing.fbx)
+  pack-basic-shooter/reloading.fbx  =  combat-reload-rifle-stand  (bundle-combat/Reloading - Reloading Rifle While Standing.fbx)
+  pack-basic-shooter/rifle aiming idle.fbx  =  stance-rifle-aim-idle-stand  (bundle-death-fire/Rifle Aiming Idle - Rifle Standing Aiming Idle.fbx)
+  pack-basic-shooter/toss grenade.fbx  =  combat-toss-grenade-rifle-aimed  (bundle-combat/Toss Grenade - Throwing Something Holding Rifle Aimed.fbx)
+  pack-lite-rifle/death from front headshot.fbx  =  react-death-front-headshot  (bundle-death-fire/Death From Front Headshot - Rifle Death From Front Headshot.fbx)
+  pack-male-injured/injured wave idle.fbx  =  react-injured-wave-idle-help  (bundle-tactics/Injured Wave Idle - Injured Wave For Help Idle.fbx)
+  pack-rifle-8way-locomotion/death crouching headshot front.fbx  =  react-death-crouch-headshot-front  (bundle-death-fire/Death Crouching Headshot Front - Rifle Death Crouched From Headshot Front.fbx)
+  pack-rifle-8way-locomotion/death from back headshot.fbx  =  react-death-back-headshot  (bundle-death-fire/Death From Back Headshot - Rifle Death From Back Headshot.fbx)
+  pack-rifle-8way-locomotion/death from front headshot.fbx  =  react-death-front-headshot  (bundle-death-fire/Death From Front Headshot - Rifle Death From Front Headshot.fbx)
+  pack-rifle-8way-locomotion/death from right.fbx  =  react-death-right  (bundle-death-fire/Death From Right - Rifle Death From Right Side.fbx)
+  pack-rifle-8way-locomotion/death from the back.fbx  =  react-death-back  (bundle-death-fire/Death From The Back - Rifle Death From The Back.fbx)
+  pack-rifle-8way-locomotion/death from the front.fbx  =  react-death-front  (bundle-death-fire/Death From The Front - Rifle Death From The Front.fbx)
+  pack-rifle-8way-locomotion/idle aiming.fbx  =  stance-rifle-idle-aim  (pack-lite-rifle/idle aiming.fbx)
+  pack-rifle-8way-locomotion/idle crouching aiming.fbx  =  stance-idle-crouch-aim  (bundle-death-fire/Idle Crouching Aiming - Rifle Crouched Idle Aiming.fbx)
+  pack-rifle-8way-locomotion/idle crouching.fbx  =  stance-rifle-idle-crouch  (pack-lite-rifle/idle crouching.fbx)
+  pack-rifle-8way-locomotion/idle.fbx  =  stance-rifle-idle-2  (pack-lite-rifle/idle.fbx)
+  pack-rifle-8way-locomotion/jump down.fbx  =  air-jump-down  (bundle-death-fire/Jump Down - Rifle Jump Down.fbx)
+  pack-rifle-8way-locomotion/jump loop.fbx  =  air-jump-loop  (bundle-death-fire/Jump Loop - Rifle Jump Idle.fbx)
+  pack-rifle-8way-locomotion/jump up.fbx  =  air-jump-up  (bundle-death-fire/Jump Up - Rifle Jump Up.fbx)
+  pack-rifle-8way-locomotion/run backward left.fbx  =  loco-rifle-run-backward-left  (pack-lite-rifle/run backward left.fbx)
+  pack-rifle-8way-locomotion/run backward right.fbx  =  loco-rifle-run-backward-right  (pack-lite-rifle/run backward right.fbx)
+  pack-rifle-8way-locomotion/run backward.fbx  =  loco-rifle-run-backward  (pack-lite-rifle/run backward.fbx)
+  pack-rifle-8way-locomotion/run forward left.fbx  =  loco-rifle-run-forward-left  (pack-lite-rifle/run forward left.fbx)
+  pack-rifle-8way-locomotion/run forward right.fbx  =  loco-rifle-run-forward-right  (pack-lite-rifle/run forward right.fbx)
+  pack-rifle-8way-locomotion/run forward.fbx  =  loco-rifle-run-forward  (pack-lite-rifle/run forward.fbx)
+  pack-rifle-8way-locomotion/run left.fbx  =  loco-rifle-run-left  (pack-lite-rifle/run left.fbx)
+  pack-rifle-8way-locomotion/run right.fbx  =  loco-rifle-run-right  (pack-lite-rifle/run right.fbx)
+  pack-rifle-8way-locomotion/turn 90 left.fbx  =  loco-rifle-turn-90-left  (pack-lite-rifle/turn 90 left.fbx)
+  pack-rifle-8way-locomotion/turn 90 right.fbx  =  loco-rifle-turn-90-right  (pack-lite-rifle/turn 90 right.fbx)
+  pack-shooter/jump backward.fbx  =  air-jump-backward  (bundle-death-fire/Jump Backward - Jumping While Running And Holding A Rifle.fbx)
+  pack-shooter/jump forward.fbx  =  air-jump-forward  (bundle-death-fire/Jump Forward - Jumping While Running And Holding A Rifle.fbx)
+  pack-shooter/rifle aiming idle.fbx  =  stance-rifle-aim-idle-stand  (bundle-death-fire/Rifle Aiming Idle - Rifle Standing Aiming Idle.fbx)
+  pack-shooter/rifle run.fbx  =  loco-rifle-run  (pack-basic-shooter/rifle run.fbx)
+  pack-shooter/run backwards.fbx  =  loco-shooter-run-backward  (pack-basic-shooter/run backwards.fbx)
+  pack-shooter/strafe (2).fbx  =  loco-shooter-strafe-v2  (pack-basic-shooter/strafe (2).fbx)
+  pack-shooter/strafe.fbx  =  loco-shooter-strafe  (pack-basic-shooter/strafe.fbx)
+  pack-shooter/walking backwards.fbx  =  loco-shooter-walk-backward  (pack-basic-shooter/walking backwards.fbx)
+  pack-shooter/walking to dying.fbx  =  react-walk-to-dying-aim-rifle-immediate  (bundle-death-fire/Walking To Dying - Walking While Aiming Rifle To Immediate Dying.fbx)
+  pack-shooter/walking.fbx  =  loco-shooter-walk  (pack-basic-shooter/walking.fbx)
+
+14 files skipped:
+  bundle-combat/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  bundle-death-fire/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  bundle-move/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  bundle-prone-kneel/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  bundle-tactics/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-action-adventure/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-basic-shooter/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-gestures-basic/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-lite-rifle/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-male-injured/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-male-locomotion/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-pistol-locomotion/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-rifle-8way-locomotion/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  pack-shooter/X Bot.fbx  —  the character file (mesh + T pose), not a motion
