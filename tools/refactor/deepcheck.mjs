@@ -11,7 +11,8 @@ for(const f of listModules()){ const me=rel(f).replace(/\.js$/,''); const A=anal
   const need=new Set([...A.free].filter(n=>idx.has(n)&&idx.get(n).mod!==me));
   if(!me.startsWith('data/')){
     for(const n of need) if(!A.hubBound.has(n)) errors.push(`R8 ${me}: uses "${n}" (from ${idx.get(n).mod}) without importing it — run npm run imports`);
-    for(const n of A.hubBound) if(!need.has(n)) warns.push(`R8 ${me}: imports "${n}" but never uses it`); }
+    for(const n of A.hubBound) if(!idx.has(n)) errors.push(`R8 ${me}: imports "${n}" from the hub, but no module exports it — the page will not load (a retired name brought back by a merge?)`);   // MERGE 1 a missing named export is a hard error in the browser even when the name is never used
+    for(const n of A.hubBound) if(idx.has(n) && !need.has(n)) warns.push(`R8 ${me}: imports "${n}" but never uses it`); }
   for(const n of A.free) if(!idx.has(n) && !GLOBALS.has(n)) errors.push(`R9 ${me}: "${n}" resolves nowhere (typo, unexported, or add it to GLOBALS in tools/refactor/lib.mjs)`);
   for(const v of A.mod.variables) if(A.hubBound.has(v.name)||A.other.has(v.name)) for(const r of v.references) if(r.isWrite()) errors.push(`R10 ${me}:${r.identifier.loc.start.line} assigns to imported "${v.name}" — use __set_${v.name}()`);
   for(const r of A.refs){ const n=r.identifier.name, d=idx.get(n); if(!d || d.kind==='function' || r.from.variableScope.type!=='module') continue;

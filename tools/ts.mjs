@@ -47,7 +47,7 @@ async function done(code){ clearTimeout(kill); try{ if(ctx) await ctx.close(); }
 process.on('SIGINT', () => done(2)); process.on('SIGTERM', () => done(2));
 try{
   ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'ts-chrome-profile'), { channel:'chrome', headless:true, viewport:{ width:W, height:Hh }, deviceScaleFactor:+opt('--dpr', 1),
-    args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])] });
+    args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])] });
   const p = ctx.pages()[0] || await ctx.newPage();
   p.on('pageerror', e => out.errors.length < 8 && out.errors.push('pageerror: ' + e.message.slice(0, 300)));
   p.on('console', m => { if(m.type() === 'error' && out.errors.length < 8 && !/favicon|ERR_|404/.test(m.text())) out.errors.push('console: ' + m.text().slice(0, 300)); });
