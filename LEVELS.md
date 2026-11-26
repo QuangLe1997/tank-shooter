@@ -62,10 +62,10 @@
 
 | Việc | Luật |
 |---|---|
-| Tẩu thoát | 40% khi trúng đòn kết liễu · mỗi tướng tối đa 1 lần / vòng chiến dịch · không ở màn 5 · không ở Tân binh · không ở trận tuỳ chỉnh · màn vẫn thắng (sau 4,2 giây) |
+| Tẩu thoát | 40% khi trúng đòn kết liễu · khói, chạy ra mép sân (bị tường chặn 0,7 giây thì biến mất trong khói) · mỗi tướng tối đa 1 lần / vòng chiến dịch · không ở màn 5 · không ở Tân binh · không ở trận tuỳ chỉnh · màn vẫn thắng (sau 4,2 giây) |
 | Trở lại | nhập bọn với tướng của trận kế tiếp khi tướng đó còn 50% máu (45% máu của một tướng); tướng giữ thành gục trước thì hắn rút và còn quay lại |
 | Lên cấp | +1 / lần thoát, tối đa 3: +22% máu, hồi chiêu ×0,9, nghỉ loạt ×0,88, chụm ×0,9 mỗi cấp; về 0 khi gục |
-| Sẹo → bài học | nổ → Sẹo bỏng → cơ động · bắn xa (≥ 12 m) → Vai nát → áp sát sau khói · áp sát → Sẹo ngực → 2 cận vệ súng gần chắn trước |
+| Sẹo → bài học | nổ → Sẹo bỏng → cơ động · bắn xa (≥ 12 m) → Vai nát → áp sát sau khói · áp sát → Sẹo lưng → 2 cận vệ súng gần chắn trước |
 | Thanh tên | ★ mỗi cấp · ☠ mỗi lần hắn hạ người chơi (tối đa 5) · tên vết sẹo, tô màu sẹo |
 | Lời thoại | gọi mật danh người chơi: lần đầu · "lại là mày, lần thứ n" · sau khi hắn hạ người chơi · sau khi hắn thoát · khi người chơi chết · khi hắn gục |
 

@@ -2,7 +2,7 @@
 //   the commander of the stage waits in his citadel and meets the soldier on foot with his bodyguards (campaign/general-duel.js); his fall wins the stage —
 //   the payout, the citadel falls, the next stage opens, the pick of rewards — and the last one wins the campaign
 
-import { dirWin, reportRun, ARENA, BOSS_ALT, BOSS_DEFS, BOSS_NEW, PROFILE, S, campaignCleared, celebrate, duelOn, fortBossDown, generalStart, nemWinBanner, openUpgrade, recordRun, refreshStartUI, saveProfile, saveProgress, show, showBanner, sfx, storyEpilogue, updateHUD } from '../hub.js';
+import { dirWin, reportRun, ARENA, BOSS_ALT, BOSS_DEFS, BOSS_NEW, PROFILE, S, campaignCleared, celebrate, duelOn, fortBossDown, generalStart, nemWinBanner, nemWon, openUpgrade, recordRun, refreshStartUI, saveProfile, saveProgress, show, showBanner, sfx, storyEpilogue, updateHUD } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 // the general takes the field: in the citadel f (its yard), else (a field without forts) at the far end of the field
@@ -16,7 +16,7 @@ export function bossStageWon(now, bdef){
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory
   S.awaitingUpgrade=true; S.wave=0;                 // freeze wave system until upgrade chosen
   S.stage++; updateHUD(); saveProgress(); campaignCleared((S.loop||0)*5 + S.stage-1); reportRun({ cleared:true });   // Z163 the cleared stage counts on the leaderboard   // Z107 next campaign level opens   // stage-clear coin bonus (×CONTRACT ×DIFFICULTY) + advance the resumable checkpoint
-  celebrate('victory', 0, 0);                                                         // Z140 fireworks, cheering troops — then the next screen
+  celebrate('victory', 0, 0); nemWon(bdef.id);                                                         // Z140 fireworks, cheering troops — then the next screen
   if(wasFinal){ setTimeout(()=>{ if(S.mode!=='gameover') victory(); }, 5600); }
   else { setTimeout(()=>{ if(S.mode==='playing') openUpgrade(); }, 5400); }   // (Z182 not if the run already ended — e.g. a training that closed itself)
 }

@@ -2038,13 +2038,16 @@ export const TROOPER = {
 //     come out × spread wider, each stagger m further back · rush = he closes to keep m (× speed) behind a smoke canister thrown `ahead` m toward the player
 //     whenever he is over smokeD m off (smokeCd s apart) · wall = n close-quarter guards hold a post `front` m in front of him, `wide` m apart: a blast of
 //     burst rounds gap s apart out to range m, rest s between blasts, a group × spreadK, each round × dmgK, health × hpK.
-//   scar: rig = the bandage is hung on his rig (actors/real-troops.js kitAttach: the anchor `at`, off, a ball / band of size m, a blood blot [x, y, z, size]);
+//   scar: rig = the dressing is hung on his rig (actors/real-troops.js kitAttach: the anchor `at`, off, a ball / band of size m, a blood blot [x, y, z, size]) —
+//     on TOP of a shoulder (under it the raised arm of a man aiming hides it: seen in the one test run) or flat on his back where the medic's satchel sits;
 //     always: his star and his name plate in the scar's colour (star), his kit's tint (× tint), its name on the plate (vi); keep s on his body after he falls.
 //   join: a general at large comes out beside the next stage's own general when that one calls his guards — health × hpK of a general's, the most one hit
 //     takes (hitCap), off m from him. He leaves again if the stage's general falls first (and can be shot as he runs).
 //   say: his lines (first · again · killed · fled · death · fall · escape; by[id] = his own, picked ownP of the time) and our commander's (join, withdraw, paid,
 //     hint by adaptation; epi = the epilogue's first line when he got away). {nick} the player's call-sign (anon when he has none), {n} the meeting's number,
-//     {k} the times he killed him, {name} the general. gap: s of radio silence one of these lines waits for; hold: s it waits at most; maxLen with its tag.
+//     {k} the times he killed him, {name} the general. gap: s of radio silence one of these lines waits for (and s between two of them) — but a line that
+//     has waited `wait` s cuts in once the line on the air is `cut` s old (a busy net never starves him); hold: s before it is dropped; queue: lines waiting
+//     at most; maxLen with its tag. won = our commander's word when the stage is won while he ran.
 export const NEMESIS = { on:true, v:1, tick:0.25,
   cap:{ met:999, kills:999, fled:99, rank:3, marks:5, traits:3 },
   escape:{ chance:0.4, never:'recruit', hpLeft:0.1, run:1.9, fan:0.6, smokes:2, puff:0.35, leaveMin:1.5, leaveMax:9, stuck:0.7, vanish:0.9, winDelay:4.2, loot:true, xpK:0.5 },
@@ -2053,11 +2056,11 @@ export const NEMESIS = { on:true, v:1, tick:0.25,
   adapt:{ mobile:{ every:2.2, swing:[-4, 5], speed:1.15, spread:2.2, stagger:4 }, rush:{ keep:6, speed:1.2, smokeD:14, smokeCd:11, ahead:6 },
     wall:{ n:2, front:5, wide:2.4, range:12, dmgK:0.8, hpK:1.4, burst:[4, 4], gap:0.035, rest:[1.5, 2.1], spreadK:3 } },
   scar:{ rig:true, keep:4, cloth:0xe9e4d6, blood:0x8a1c16,
-    burn:{ vi:'SẸO BỎNG', star:'#ff7a2a', tint:[0.55, 0.5, 0.47], at:'shoulderL', off:[-0.02, -0.16, 0.04], shape:'ball', size:[0.17, 0.15, 0.17], blot:[-0.05, 0, 0.04, 0.07] },
-    shoulder:{ vi:'VAI NÁT', star:'#8fd0ff', tint:[0.86, 0.96, 1.15], at:'shoulderR', off:[0.02, -0.17, -0.06], shape:'ball', size:[0.17, 0.15, 0.17], blot:[0.05, 0.01, 0.04, 0.07] },
-    gash:{ vi:'SẸO NGỰC', star:'#ff5a7a', tint:[1.2, 0.82, 0.8], at:'back', off:[0, -0.02, 0.3], shape:'band', size:[0.5, 0.1, 0.36], blot:[0.1, 0, 0.17, 0.09] } },
+    burn:{ vi:'SẸO BỎNG', star:'#ff7a2a', tint:[0.55, 0.5, 0.47], at:'shoulderL', off:[-0.02, -0.04, 0.04], shape:'ball', size:[0.18, 0.11, 0.2], blot:[0, 0.03, 0.05, 0.07] },
+    shoulder:{ vi:'VAI NÁT', star:'#8fd0ff', tint:[0.86, 0.96, 1.15], at:'shoulderR', off:[0.02, -0.05, -0.06], shape:'ball', size:[0.18, 0.11, 0.2], blot:[0, 0.03, 0.05, 0.07] },
+    gash:{ vi:'SẸO LƯNG', star:'#ff5a7a', tint:[1.2, 0.82, 0.8], at:'back', off:[0, -0.1, 0.05], shape:'band', size:[0.3, 0.2, 0.07], blot:[0.04, 0, -0.035, 0.09] } },
   join:{ hpK:0.45, hitCap:0.12, off:6 },
-  say:{ gap:5, hold:45, ownP:0.5, maxLen:90, anon:'thằng lính',
+  say:{ gap:5, wait:8, cut:2.2, hold:45, queue:6, ownP:0.5, maxLen:90, anon:'thằng lính',
     first:['{nick}? Tên lạ. Sau hôm nay sẽ chẳng ai gọi nữa.', 'Ra là mày, {nick}. Lính quèn mà dám gõ cửa thành ta.', '{nick}… Ta sẽ nhớ tên này, để khắc lên báng súng.',
       'Sóng bên mày réo tên {nick} cả ngày. Giờ ta xem mặt.', 'Lại đây, {nick}. Cận vệ của ta đang đói.'],
     again:['Lại là mày, {nick}. Lần thứ {n} rồi đấy.', '{nick}! {n} lần chạm mặt. Lần này là lần chót.', 'Ta đếm rồi, {nick}: lần thứ {n}. Mày dai thật.',
@@ -2084,6 +2087,7 @@ export const NEMESIS = { on:true, v:1, tick:0.25,
     join:['Cẩn thận! {name} quay lại rồi, hắn nhập bọn với tướng giữ thành!', '{name} còn sống! Hắn vừa ra khỏi hầm, và hắn đang tìm anh.', 'Tình báo đúng rồi: {name} ở trong thành này. Hắn đến để trả nợ.'],
     withdraw:['{name} lại rút rồi. Hắn còn sống thì còn tìm anh.', 'Tướng giữ thành gục, {name} chuồn mất. Món nợ vẫn còn đó.'],
     paid:['{name} gục hẳn rồi. Món nợ đã trả xong, {nick}.', 'Lần này {name} không dậy nữa. Làm tốt lắm, {nick}.'],
+    won:['Thành đã hạ! Nhưng {name} thoát rồi. Hắn sẽ quay lại tìm anh, {nick}.', 'Thắng trận này, {nick}. Nhưng {name} còn sống, và hắn nhớ mặt anh.', 'Cờ đã cắm! Riêng {name} thì chuồn mất. Món nợ này để lần sau, {nick}.'],
     hint:{ mobile:['{name} khôn ra rồi: hắn không đứng yên, cận vệ tản rộng. Lựu đạn khó trúng.', 'Lần trước anh cho {name} ăn lựu đạn. Giờ hắn chạy suốt. Dùng súng mà hạ.'],
       rush:['{name} sợ bị bắn xa: hắn thả khói rồi áp sát. Giữ cự ly, có khói thì đổi chỗ.', 'Lần trước anh bắn {name} từ xa. Giờ hắn lao vào sau khói. Sẵn lựu đạn mà đón.'],
       wall:['{name} đặt hai cận vệ áp sát chắn trước mặt. Đừng lao vào, hạ chúng từ xa.', 'Lần trước anh xáp lá cà với {name}. Giờ hắn có hai tay súng gần chờ sẵn.'] },

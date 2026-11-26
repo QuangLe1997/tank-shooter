@@ -21,7 +21,7 @@ const N = NEMESIS, NOW = () => performance.now() / 1000, FAR = -1e9, GOLD = '#ff
 // this duel (dev / probes read it): id, name = the stage's general · tune = TROOPER.general as he fights by it (null: as written) · e = the man · acts = the
 //   lessons being played · wall = the close guards and whom they screen · gN = guards dressed · join = the general who came back beside him · hostGone ·
 //   esc = the escape of this duel { id, name, stage, loop } · q = lines waiting for the radio · force (dev, kept over a reset): 'escape' / 'die'
-export const NEM = { live:false, id:'', name:'', tune:null, e:null, acts:[], wall:[], gN:0, join:null, hostGone:false, esc:null, q:[], at:0, deathLine:'', force:null, lastPool:null, lastI:-1, stats:{ said:0, dropped:0 } };
+export const NEM = { live:false, id:'', name:'', tune:null, e:null, acts:[], wall:[], gN:0, join:null, hostGone:false, esc:null, q:[], at:0, saidAt:FAR, deathLine:'', force:null, lastPool:null, lastI:-1, stats:{ said:0, dropped:0 } };
 const WORN = [];                       // what a scar put on a man: { m, objs, tint } — taken off again whatever happens to him
 let _mem = null, _geo = null, _mat = null;
 
@@ -41,16 +41,19 @@ function text(pool, name, rec){ if(!pool || !pool.length) return ''; let i = (Ma
   NEM.lastPool = pool; NEM.lastI = i; return storyText(nemFill(pool[i], vars(name, rec))); }
 const his = (kind, id, name, rec) => text(nemPool(kind, id, Math.random()), name, rec);
 // a line for the radio: at once (now0 — a moment that cannot wait), else in its turn. over: 'host' / 'join' — his shout of the call-sign floats over that man
-function say(tag, txt, now0, over){ const R = NEM; if(!txt) return;
-  if(now0){ radio(tag + ': ' + txt, STORY.noVoice); R.stats.said++; return; }
-  if(R.q.length >= 4){ R.stats.dropped++; return; } R.q.push({ msg:tag + ': ' + txt, until:(S.timeNow || NOW()) + N.say.hold, over:over || '' }); }
-function flush(now){ const R = NEM, it = R.q[0]; if(now > it.until){ R.q.shift(); R.stats.dropped++; return; } if(now - (radio.at ?? FAR) < N.say.gap) return;
-  R.q.shift(); radio(it.msg, STORY.noVoice); R.stats.said++; const e = it.over === 'join' ? R.join && R.join.e : it.over ? R.e : null;
+function say(tag, txt, now0, over){ const R = NEM, now = S.timeNow || NOW(); if(!txt) return;
+  if(now0){ radio(tag + ': ' + txt, STORY.noVoice); R.saidAt = now; R.stats.said++; return; }
+  if(R.q.length >= N.say.queue){ R.stats.dropped++; return; } R.q.push({ msg:tag + ': ' + txt, from:now, until:now + N.say.hold, over:over || '' }); }
+// the first line waiting: gap s after our own last one, and once the net has been quiet gap s — or, having waited `wait` s on a busy net, once the line
+//   on the air is `cut` s old (the one test battle talked every 2–3 s: a greeting that only waited for silence was never said)
+function flush(now){ const R = NEM, Y = N.say, it = R.q[0], quiet = now - (radio.at ?? FAR); if(now > it.until){ R.q.shift(); R.stats.dropped++; return; }
+  if(now - R.saidAt < Y.gap || quiet < Y.gap && (now - it.from < Y.wait || quiet < Y.cut)) return;
+  R.q.shift(); radio(it.msg, STORY.noVoice); R.saidAt = now; R.stats.said++; const e = it.over === 'join' ? R.join && R.join.e : it.over ? R.e : null;
   if(e && enemies.includes(e)) floatText(nemNick(PROFILE.nickname).toLocaleUpperCase('vi') + '!', '#ff9a4a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.7, z:e.pos.z }, 20); }
 
 // ---- the duel begins (campaign/general-duel.js) ----
 export function nemReset(){ const R = NEM; sweep(); stripMan(null); R.live = false; R.id = ''; R.name = ''; R.tune = null; R.e = null; R.acts.length = 0; R.wall.length = 0; R.gN = 0; R.join = null;
-  R.hostGone = false; R.esc = null; R.q.length = 0; R.at = 0; R.deathLine = ''; R.lastPool = null; R.lastI = -1; }
+  R.hostGone = false; R.esc = null; R.q.length = 0; R.at = 0; R.saidAt = FAR; R.deathLine = ''; R.lastPool = null; R.lastI = -1; }
 // generalStart: the meeting is counted, his greeting and our commander's word about his lesson wait for their turn on the radio
 export function nemMeet(id, name){ const R = NEM; if(!N.on) return; const rec = recOf(id); if(!rec) return; const greet = nemGreet(rec), t = nemTuneOf(TROOPER.general, rec), ad = nemAdapt(rec);
   R.live = true; R.id = id; R.name = name; R.tune = t === TROOPER.general ? null : t; nemAfterMeet(rec); rec.out = 0; store(true);   // (his own stage: the man at large is back)
@@ -113,7 +116,7 @@ function fleeTo(e, now, mortal){ const E = N.escape, p = S.player, a0 = Math.ata
 export function nemFleeStep(e, dt, now, edt){ const f = e.nemFlee, m = e.mesh, E = N.escape, x0 = e.pos.x, z0 = e.pos.z, dx = f.tx - x0, dz = f.tz - z0, d = Math.hypot(dx, dz) || 1, sp = e.def.speed * E.run;
   if(d < 2.5 || now > f.end || f.gone && now > f.gone || now - f.t0 > E.leaveMin && (!inField(x0, z0, 2.2) || !inCamView(x0, z0))){ nemLeave(e); return; }
   e.pos.x += dx / d * sp * edt; e.pos.z += dz / d * sp * edt; infPushBlocks(e.pos); clampField(e.pos, 1.5);
-  f.stuck = Math.hypot(e.pos.x - x0, e.pos.z - z0) < sp * edt * 0.35 ? f.stuck + dt : Math.max(0, f.stuck - dt);
+  f.stuck = d - Math.hypot(f.tx - e.pos.x, f.tz - e.pos.z) < sp * edt * 0.35 ? f.stuck + dt : Math.max(0, f.stuck - dt);   // (ground MADE toward the edge: sliding along a wall is being held up too — the test run's general slid 9 s)
   if(!f.gone && (f.stuck > E.stuck || now > f.end - E.vanish)){ f.gone = now + E.vanish; throwSmoke(e.pos.x, e.pos.z, 'e', now); }
   let a = Math.atan2(dx, dz) - e.facing; while(a > Math.PI) a -= 6.283185; while(a < -Math.PI) a += 6.283185; e.facing += a * Math.min(1, dt * 8);
   const y = heightAt(e.pos.x, e.pos.z); m.position.set(e.pos.x, y, e.pos.z); m.rotation.y = e.facing; e.intent = 'flee'; e.r = 0.55;
@@ -145,7 +148,11 @@ export function nemFell(){ const R = NEM; if(!R.live) return false; const rec = 
   nemAfterFall(rec, nemHow(!!(e && e._blast), distTo(e)), gunId()); store(); if(e) stripLater(e.mesh);
   if(owed) say('SCH', text(N.say.paid, R.name, rec)); if(!last) return false; say(R.name, last, true); return true; }
 // boss.js bossStageWon: the banner of a stage won while its general ran
-export function nemWinBanner(id){ const E = NEM.esc; return N.on && E && E.id === id && E.stage === (S.stage || 1) && E.loop === (S.loop || 0) ? 'THÀNH ĐÃ HẠ · ' + E.name + ' ĐÃ THOÁT!' : ''; }
+const wonText = E => 'THÀNH ĐÃ HẠ · ' + E.name + ' ĐÃ THOÁT!';
+export function nemWinBanner(id){ const E = NEM.esc; return N.on && E && E.id === id && E.stage === (S.stage || 1) && E.loop === (S.loop || 0) ? wonText(E) : ''; }
+// boss.js bossStageWon, after the celebration has had its say: the banner stays his, and our commander says what the win left open
+export function nemWon(id){ const E = NEM.esc; if(!N.on || !E || E.id !== id || E.stage !== (S.stage || 1) - 1 || E.loop !== (S.loop || 0)) return;   // (the stage counter has moved on)
+  showBanner(wonText(E), GOLD); say('SCH', text(N.say.won, E.name, peek(E.id)), true); }
 // loot/upgrades.js openUpgrade: the epilogue of the stage just won — its first line (the general's fall) gives way to his escape
 export function nemEpilogue(el, stage){ const E = NEM.esc, s = el && el.firstElementChild; sweep(); if(!N.on || !E || E.stage !== stage || E.loop !== (S.loop || 0) || !s) return;
   const t = text(N.say.epi, E.name, peek(E.id)); if(t) s.textContent = t; }
