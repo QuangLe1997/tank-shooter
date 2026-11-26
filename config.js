@@ -1942,6 +1942,45 @@ export const ART_TONE = {
   QUARRY:{ mood:'chói gắt đá trắng — sáng, khô, bụi', sh:[-0.02, 0.004, 0.035], hi:[0.03, 0.02, -0.01], satK:0.92, conK:0.98, expK:1.03, vig:0.24 } };
 export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03, envK:0.6, conK:1.12, satK:1.12, vib:0, fogK:0.4, nightHemiK:0.8, flora:[0.8,0.84,0.72],
   liftK:0, tintK:0.5, fogBlue:0.22, bloom:0.24, sharp:0.58, duskHemiK:0.85, duskAmbient:0.08 };   // sunset keeps more sky fill + its lift
+// LIGHT 1 GROUNDED (fx/footfall.js, render/renderer.js, world/atmosphere.js) — the soldier stands IN the world, not over it.
+//   shadow: the sun's normal offset (m) and depth bias — 0.25 m of normal offset lifted every receiver a quarter metre, so at a low sun the feet's
+//     shadow began ~0.6 m away from the boots; lift: a contact quad's height off the ground (m); spread: a shade widens by 1 + h × spread as its joint rises;
+//   joint: the contact shades (the sky the body hides from the ground, black, soft) — ankle / toe = those joints' height over the ground with the foot flat;
+//     foot = [length, width, alpha, full at h0, gone at h1] (h = the sole over the ground); knee / hips / chest / hand = [length, width, alpha, h0, h1,
+//     the joint's own height over what touches]; body: the broad faint shade from the head to the feet — alpha, width, + pad on its length, the hips'
+//     standing height (hip) and how fast it fades above it (fade); nightK × every shade and print by night; capShade(M) instances (desktop / phone);
+//   plant: a footfall = the sole was up past `up` m and comes down below `down` m (no sooner than gap s after the last), moving faster than minV m/s;
+//   print: boot prints on soft ground — life / fade s, cap(M) prints kept, size [length, width] m, dark = the pressed sole's shade, rim = the ridge of
+//     pushed-up ground (rimCol per battlefield), surf = strength per ground (afxSurfaceAt; rock, steel, wood, water: none);
+//   kick: the ground kicked up at every footfall (fire-fx kinds: 'dust' the haze that hangs, 'dirt' the spray off the toe, 'clod' grit / wet clods /
+//     torn blades, seed fluff on grass) — from minV m/s; walk below walkV, run, sprint from sprintV: counts per foot (dust / spray / clod), size m,
+//     opacity, up × the throw upward, life s; thrown back at throwK × his pace (capped at vCap m/s); skid = a hard stop (from fromV to below toV m/s;
+//     the peak pace decays at decay m/s²): thrown forward, a print len × longer; surf = per ground: × each count, size, opacity, clodS = a clod's size
+//     m, its colour (clodC) and the haze's (tint, or the battlefield's own sand / earth in biome); mud = wet ground within mudR m of the water or in rain;
+//     npc × the counts for the men round him, npcP = the share of their steps that kick; grass: the grass round his hips parts (r m) and lies down (k);
+//   npc: the men round the camera within r m — body shade (a, len, w), a print every stride / strideRun m (runV m/s) within printR m, side = half the
+//     gait's width; cloth: the uniform's roughness map remapped to lo…1 (the Tripo soldier's 0.26–0.51 made the fabric shine like wet plastic);
+//   fill: the sky / bounce light — hemiK × the day sky fill, desat = share of the sky colour greyed (a clear sky's light is pale, not cobalt), bounce =
+//     the hemisphere's ground colour = the battlefield's ground (ground) lit by the sun's colour × bounce; envK × the sky reflections by day
+export const GROUNDED = { on:true, lift:0.025, spread:1.6, nightK:0.85, capShade:96, capShadeM:40,
+  shadow:{ normalBias:0.035, bias:-0.0004 },
+  joint:{ ankle:0.145, toe:0.035, foot:[0.34, 0.17, 0.75, 0.01, 0.2], knee:[0.3, 0.24, 0.45, 0.03, 0.25, 0.07], hips:[0.5, 0.42, 0.45, 0.04, 0.3, 0.12],
+    chest:[0.55, 0.45, 0.4, 0.05, 0.3, 0.15], hand:[0.18, 0.14, 0.3, 0.02, 0.15, 0.04] },
+  body:{ a:0.34, w:0.75, pad:0.55, hip:0.9, fade:0.8 },
+  plant:{ up:0.07, down:0.035, gap:0.18, minV:0.6 },
+  print:{ life:45, fade:15, cap:360, capM:90, size:[0.31, 0.12], dark:0.5, rim:0.14, surf:{ sand:1, snow:1.1, dirt:0.75, mud:1.2, grass:0.3 }, rimCol:{ _:0xd8c8a8, ARCTIC:0xf4f8ff, TUNDRA:0xe8eef4 } },
+  kick:{ minV:0.6, walkV:2.2, sprintV:5.6, vCap:7, throwK:0.32, spraySize:0.16, npc:0.5, npcP:0.6, mudR:1.2, fluffC:0xeee8d0,
+    walk:{ dust:1, spray:0, clod:0.4, size:0.45, op:0.45, up:0.7, life:0.9 }, run:{ dust:2, spray:3, clod:3, size:0.75, op:0.8, up:1, life:1.2 },
+    sprint:{ dust:3, spray:5, clod:5, size:0.9, op:0.85, up:1.15, life:1.4 }, skid:{ dust:5, spray:6, clod:5, size:0.85, op:0.85, up:0.6, life:1.4, throwK:0.4, len:1.9, fromV:4.2, toV:1.2, decay:5 },
+    grass:{ r:0.65, k:0.8 },
+    surf:{ sand:{ dust:1, spray:1, clod:0.7, size:1, op:1, clodS:0.04, tint:0xd2b48a }, dirt:{ dust:0.9, spray:0.9, clod:0.8, size:0.95, op:0.9, clodS:0.04, tint:0x9a8a70 },
+      grass:{ dust:0.25, spray:0, clod:1, size:0.7, op:0.5, clodS:0.05, clodC:0x5f7a34, fluff:0.6, tint:0x9c8e6a }, snow:{ dust:1.2, spray:1, clod:0.8, size:1.1, op:1, clodS:0.045, tint:0xf4f8ff },
+      mud:{ dust:0.1, spray:0.5, clod:1.6, size:0.8, op:0.9, clodS:0.05, clodC:0x2e2418, tint:0x4a3a28 }, rock:{ dust:0.3, spray:0, clod:0.3, size:0.6, op:0.6, clodS:0.025, tint:0xb0a89a } },
+    biome:{ DESERT:0xd6b88c, SAVANNA:0xc49a68, RUINS:0x9a8a74, MEADOW:0x8a7656, CITY:0x9a958c, QUARRY:0xd0ccc0, VOLCANO:0x5a4a44, FOUNDRY:0x5a5048, CITADEL:0xb89e7a } },
+  npc:{ r:32, printR:16, a:0.32, len:0.85, w:0.7, fade:0.6, stride:0.72, strideRun:1.05, runV:3, side:0.11 },
+  cloth:{ on:true, lo:0.55, rimPow:3.0 },
+  fill:{ on:true, desat:0.55, bounce:1.5, rim:{ day:0.1, noon:0.08, sunset:0.4, night:0.25 }, tod:{ day:{ hemiK:1.2, envK:1.0, expK:1.06 }, noon:{ hemiK:1.2, envK:1.0, expK:1.06 },
+    sunset:{ hemiK:1.1, envK:1.0, expK:1.0 }, night:{ hemiK:1.0 } } } };
 // Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,
 //   allies / objectives green, loot gold, rarities, ice, arcane); gain = HDR multiple a ring's core line burns at (above ~1 it blooms); pulse
 //   rates (Hz) per urgency — idle breathing → notice → warn → alert → critical — and the floor a pulse never drops below (never fully dark);

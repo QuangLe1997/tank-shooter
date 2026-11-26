@@ -166,6 +166,7 @@ export * from './world/real-turrets.js';   // Z424 real guard guns, AA guns, roc
 export * from './world/real-fit.js';   // Z426 the camps' barracks and tents, the rocket truck: a scan fitted to the drawn piece's box
 export * from './world/scenery.js';   // Z374 every battlefield composed from the Meshy scans: skyline, landmark, groves, sidings, tank farms (distance levels, the near scan streamed in)
 export * from './fx/dust.js';   // Z278 dust in the sunlight
+export * from './fx/footfall.js';   // LIGHT 1 contact shades, boot prints and dust at the feet
 export * from './game/xeom.js';   // Z282 xe ôm mode
 export * from './game/ride-wear.js';   // Z303 the ride's own health: smoke, a coughing engine, breaking down, the driver's repair
 export * from './game/ride-collide.js';   // Z311 what a ride runs into: trees, poles, parked cars, street furniture, wire

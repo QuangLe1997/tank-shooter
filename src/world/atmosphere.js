@@ -1,6 +1,6 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
-import { ART_TONE, LIGHT, BLIGHT } from '../../config.js';
+import { ART_TONE, GROUNDED, LIGHT, BLIGHT } from '../../config.js';
 import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun, bloom } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
@@ -134,11 +134,20 @@ export function applyAtmosphere(b){
     if(!A.cave){ scene.fog.density*=L.fogK;
       if(A.night) hemi.intensity*=L.nightHemiK;
       else { sun.intensity*=L.sunK; hemi.intensity*=dusk?L.duskHemiK:L.hemiK; ambient.intensity=dusk?L.duskAmbient:L.ambient; scene.environmentIntensity*=L.envK; } } }
+  if(GROUNDED.on && GROUNDED.fill.on && !A.cave) groundedFill(A);   // LIGHT 1 the shade lit by a pale sky and the ground's warm bounce
   artTone(b.name, A);
   setNightLights(!!A.night);
   { const B=BLIGHT.bloom[A.night||A.cave ? 'night' : S.tod==='sunset' ? 'dusk' : 'day']; bloom.strength=B[0]; bloom.radius=B[1]; bloom.threshold=B[2]; }   // Z318 the battle lights bloom more in the dark
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }
+// LIGHT 1 SKY FILL AND GROUND BOUNCE: a clear sky lights the shade pale blue, not cobalt (its zenith colour greyed toward the horizon's), and the
+//   sunlit ground throws its own colour up into everything's underside — the hemisphere's ground colour = the battlefield's ground × the sun's colour
+//   × bounce; hemiK × the sky fill (the shade side of a man, the shadowed sand), envK × the sky's reflections, expK × the exposure (by day)
+const _fc = new THREE.Color();
+function groundedFill(A){ const F=GROUNDED.fill, T=F.tod[S.tod] || F.tod.day;
+  if(A.night){ hemi.intensity*=T.hemiK; return; }
+  hemi.color.lerp(_fc.setHex(A.hor), F.desat); hemi.groundColor.setHex(A.hemiG).multiply(_fc.copy(sun.color).lerp(new THREE.Color(1, 1, 1), 0.3)).multiplyScalar(F.bounce);
+  hemi.intensity*=T.hemiK; scene.environmentIntensity*=T.envK; renderer.toneMappingExposure*=T.expK; }
 // Z420 the battlefield's own film (config ART_TONE): its split-tone, saturation, contrast, exposure, vignette, the lean of its sun and its haze
 function artTone(name, A){ const T=ART_TONE[name]; if(!T || A.cave) return; const g=gradePass.uniforms, k=A.night?0.5:1, dusk=S.tod==='sunset';
   if(T.sh) g.shTint.value.set(T.sh[0]*k, T.sh[1]*k, T.sh[2]*k); if(T.hi) g.hiTint.value.set(T.hi[0]*k, T.hi[1]*k, T.hi[2]*k);

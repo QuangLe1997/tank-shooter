@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { LIGHT, SHAFTS } from '../../config.js';
+import { GROUNDED, LIGHT, SHAFTS } from '../../config.js';
 import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, releaseModels, shadowLOD } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
@@ -134,7 +134,7 @@ export function fitShadow(z){ if(MOBILE) return; const r=SHADOW_R*Math.max(1,(z|
                                                     // tight shadow frustum that FOLLOWS the action → crisp contact shadows
 if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(SHADOW_MAP,SHADOW_MAP);   // Z107 4096 in the Mac app
   const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
-  sun.shadow.bias=-0.0003; sun.shadow.normalBias=0.25; sun.shadow.radius=2; }
+  sun.shadow.bias=GROUNDED.shadow.bias; sun.shadow.normalBias=GROUNDED.shadow.normalBias; sun.shadow.radius=2; }   // LIGHT 1 (was 0.25 m: the feet's shadow started ~0.6 m off the boots at a low sun)
 shadowLOD(renderer);   // Z412 the shadow pass draws light copies of the heavy casters
 export const shaftPass = !MOBILE && SHAFTS.on ? makeShaftPass(composer, { cfg:SHAFTS, sun, camera:()=>renderPass.camera, depth:()=>renderPass.rt.depthTexture, biome:()=>BIOME.name, night:()=>NIGHT.k }) : null;   // Z276 light shafts: right after the scene, in linear HDR
 if(shaftPass) composer.insertPass(shaftPass, 1);
