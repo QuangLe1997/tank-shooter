@@ -52,7 +52,7 @@ function enemyNade(e, now){ const N=FIELDCRAFT.nade; e.nadeAt=now+0.9+Math.rando
 //   is asked here). Out of sight he works on the last place he knew him (e.lk): suppressing fire for AWARE.keep.suppress s (supp), then the search (lost). One record a man, reused.
 export function infTarget(e, now){ const p=S.player, T=e._T||(e._T={ pos:null, vel:_INF0, you:false, lost:false, supp:false }), al=e.alert>=2, seen=al && e.sees, k=e.lk||(e.lk={ x:e.pos.x, z:e.pos.z });
   let best=seen ? p : null, bd=seen ? Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z) : Infinity;
-  if(!e.def.rpg) for(const a of FT){ const d0=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z), d=d0*(a.task==='cover'&&atCover(a.pos,a.cover)?FIELDCRAFT.target.coverMul:1)*(a.g.userData.stance==='prone'?FIELDCRAFT.target.proneMul:1);   // Z220 the man in the open is shot first
+  if(!e.def.rpg && !e.def.mk) for(const a of FT){ const d0=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z), d=d0*(a.task==='cover'&&atCover(a.pos,a.cover)?FIELDCRAFT.target.coverMul:1)*(a.g.userData.stance==='prone'?FIELDCRAFT.target.proneMul:1);   // Z220 the man in the open is shot first
     if(d<bd*0.9 && d0<e.def.range*1.4){ bd=d; best=a; } }
   if(best===p){ T.pos=p.pos; T.vel=p.vel; T.you=true; T.lost=false; T.supp=false; }
   else if(best){ T.pos=best.pos; T.vel=_INF0; T.you=false; T.lost=false; T.supp=false; }
