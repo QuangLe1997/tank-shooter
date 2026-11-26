@@ -2927,7 +2927,7 @@ export const ANIMGRAPH = { on:typeof location !== 'undefined' && /[?&]animgraph\
   spine:[1, 0.7, 0.4], sync:{ Run_and_Shoot:1, Rifle_Charge:1, Walk_Forward_While_Shooting:1, Cautious_Crouch_Walk_Forward:1 },
   inert:{ half:0.08, stance:0.13, jump:0.15, vmax:25 },
   turn:{ at:1.0, early:0.25, max:1.75, wide:2.0, rate:1.5, lag:0.7, catchUp:3, end:0.95, moveV:0.3, settle:9 }, stop:{ clip:'loco-adv-run-to-stop', phase:[0.5, 0.76], late:0.07, minV:2.2, maxV:5.6, ahead:0.85, stillV:0.15, rate:1.2, maxRate:3, end:0.92, hipMin:0.86, hipSoft:0.04 }, kneel:{ idle:'stance-rifle-kneel-idle', stillV:0.25, wait:0.2 },
-  prone:{ idle:'stance-prone-idle', crawl:'stance-prone-forward', crawlV:0.3, rate:[0.6, 3], drop:0, match:true, band:[0.45, 1.6], blendT:0.25 },
+  prone:{ idle:'stance-prone-idle', crawl:'stance-prone-forward', crawlV:0.3, rate:[0.6, 3], drop:0, match:true, band:[0.45, 1.6], blendT:0.25, stopV:0.08, holdT:1.2, outT:0.9 },
   trans:{ standKneel:['stance-pistol-stand-to-kneel', 0.12, 0.75, 1.4], kneelStand:['stance-rifle-kneel-to-stand', 0.1, 0.95, 1.5], kneelProne:['stance-rifle-kneel-to-prone', 0.1, 1.95, 1.6], proneKneel:['stance-rifle-prone-to-kneel', 0, 1.85, 1.6], fast:1.6, cutV:1.0 },
   air:{ up:['air-jump-up', 0.27, 0.533], loop:'air-jump-loop', down:['air-jump-down', 0.07, 0.33, 0.66], upT:0.22, landRate:1.3, snapV:3 },
   feet:{ on:true, hOn:0.05, hOff:0.065, retro:0.12, heel:0.02, rest:0.12, restT:0.35, stepHalf:0.09, lift:0.45, liftMax:0.07, flyT:0.2, vOn:[0.5, 0.6], slowV:1.0, landV:3, vLand:[1.5, 1.2], brake:8, vOff:[1.8, 0.9], vRelV:3, walkLock:false, pull:0.45, arc:true, stepT:[0.16, 0.5, 0.32], liftMin:0.03, half:0.05, peel:3, stretch:0.985, stepV:0.4, stepGap:0.16 },

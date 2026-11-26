@@ -2323,7 +2323,7 @@ grp('GRAPH 3 the motion graph: leap, lean, stop hips, turn catch-up, lifted step
     'a turn on the spot is chosen by where the aim is going, and its clip runs on (up to '+G.turn.catchUp+'×) to keep the hips within '+G.turn.lag+' rad of the chest');
   const Ft = G.feet; ok(Ft.arc === true && Ft.vRelV > F.fire && Ft.vRelV < F.run && Ft.pull > 0.2 && Ft.pull < 0.8 && Ft.stepT[0] > 0.1 && Ft.stepT[2] >= Ft.stepT[0] && Ft.stepT[2] < 0.6 && Ft.liftMin > 0 && Ft.liftMin <= Ft.liftMax,
     'below a run a planted foot is held until the clip lifts it or it is pulled '+Ft.pull+' m away — then it steps (up, over, down in '+Ft.stepT[0]+'–'+Ft.stepT[2]+' s), never dragged');
-  const cr = by.get(G.prone.crawl); ok(cr && cr.travels && G.prone.match === true && G.prone.band[0] > 0 && G.prone.band[0] < 1 && G.prone.band[1] > 1 && G.prone.rate[1] >= 2 && G.prone.blendT > 0 && /function rootAdv\(/.test(ag),
+  const cr = by.get(G.prone.crawl); ok(cr && cr.travels && G.prone.match === true && G.prone.band[0] > 0 && G.prone.band[0] < 1 && G.prone.band[1] > 1 && G.prone.rate[1] >= 2 && G.prone.blendT > 0 && G.prone.stopV > 0 && G.prone.stopV < G.prone.crawlV && G.prone.holdT > 0 && G.prone.outT > G.prone.blendT && /function rootAdv\(/.test(ag),
     'the crawl clip ('+G.prone.crawl+') is played by the ground he covers (its own root travel), within '+G.prone.band.join('–')+' × its even pace; in and out of it eased over '+G.prone.blendT+' s');
   const ro = by.get(G.roll.clip); ok(G.roll.on === true && ro && G.groups.includes(ro.g) && G.roll.t[0] >= 0 && G.roll.t[1] > G.roll.t[0] && G.roll.t[1] <= ro.dur && G.roll.half > 0
     && /const R = graphRolls\(\) \? null : CV\.roll, J = CV\.jump, C = M\(\);/.test(sm) && /export function graphRolls\(\)/.test(ag),
