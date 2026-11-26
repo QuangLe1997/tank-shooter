@@ -173,7 +173,7 @@ function windows(p, K, A, now){ const mv = A.mv, HT = BLADE.hit; let wi = -1; fo
   if(A.wi !== wi){ A.wi = wi; sfx('whoosh', p.pos, mv.dmg >= 90 ? 0.7 : 0.45);   // the window opens: the air, and what solid cover stands in the arc is chipped once
     let nb = 0; for(const bl of blocksNear(p.pos.x + fx * reach * 0.55, p.pos.z + fz * reach * 0.55, reach * 0.5, _bn)){ if(bl.ours || bl.ridge || bl.dead || nb >= 2) continue; nb++; damageBlock(bl, HT.chip * A.dmgK); sparks(bl.x, py + 1, bl.z, 4); if(nb === 1) sfx('clang', p.pos, 0.5); } }
   for(let i = enemies.length - 1; i >= 0; i--){ const e = enemies[i]; if(!e || !(e.hp > 0) || e._under || A.hit.has(e)) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz) - (e.radius || 0.4); if(d > reach) continue;
-    const bear = Math.atan2(dx, dz); let rel = wrapA(bear - A.f0) / D2R; if(rel < lo) rel += 360; if(rel > hi && rel - 360 >= lo) rel -= 360; if(rel < lo || rel > hi) continue;
+    const bear = Math.atan2(dx, dz); let rel = wrapA(bear - A.f0) / D2R; rel += 360 * Math.ceil((lo - rel) / 360); if(rel > hi) continue;   // (the first turn of his bearing at or past the arc's low end: inside it or not)
     const ey = heightAt(e.pos.x, e.pos.z) + (e.air ? e.pos.y || 0 : 0) - py; if(ey < mv.y[0] || ey > mv.y[1]) continue; A.hit.add(e);   // (in reach, in the arc, at his height: one look for a wall between, then never again this swing)
     if(!lineClear(p.pos.x, py + 1.15, p.pos.z, e.pos.x, py + ey + 1.0, e.pos.z)) continue; cut(e, A, K, p, now, bear); } }
 
@@ -195,7 +195,7 @@ export function bladeSpecial(){ const B = BLADEST, p = S.player; if(!BLADE.on ||
 // player-damage.js: what a hit is multiplied by (dx, dz: the way it travelled) — the guard takes the edge off what comes at his front
 export function bladeGuardK(dx, dz){ const B = BLADEST, p = S.player; if(!BLADE.on || !B.guard || !p || !(dx || dz)) return 1; const a = Math.atan2(-dx, -dz); return Math.abs(wrapA(a - p.facing)) <= BLADE.guard.arc / 2 * D2R ? BLADE.guard.front : 1; }
 // cavalry.js, on his feet, once his pace and facing are set: the move's own pace, its step-in, its root travel, and his front kept on the cut
-export function bladeFoot(p, dt){ const B = BLADEST; if(!BLADE.on || !B.held) return; const A = B.act, cap = (A ? A.mv.move : B.guard ? BLADE.guard.moveK : 1) * CAV.foot.run;
+export function bladeFoot(p, dt){ const B = BLADEST; if(!BLADE.on || !B.held) return; if(CV.stance !== 'stand' || CV.want !== 'stand') CV.stance = CV.want = 'stand';   /* (the blade is fought on his feet) */ const A = B.act, cap = (A ? A.mv.move : B.guard ? BLADE.guard.moveK : 1) * CAV.foot.run;
   if(A){ p.facing = wrapA(p.facing + wrapA(A.f0 - p.facing) * Math.min(1, dt * 14)); const I = animInfo(A.mv.clip);
     if(A.mv.root && I && I.travels && dt > 0){ animRootAt(A.mv.clip, A.t, _root); animRootAt(A.mv.clip, Math.max(A.mv.from, A.t - dt * A.rate), _root0); const k = rootK() * A.rk / dt, rx = (_root[0] - _root0[0]) * k, rz = (_root[1] - _root0[1]) * k, s = Math.sin(A.f0), c = Math.cos(A.f0);
       p.vel.x = c * rx + s * rz; p.vel.z = -s * rx + c * rz; return; }
@@ -206,7 +206,6 @@ export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.o
   const K = BLADE.kinds[k], SM = BLADE.stamina, AU = BLADE.auto;
   if(B.held && (!afoot() || climbing() || fpvFlying())){ B.held = false; B.auto = false; B.act = null; B.buf = null; }
   if(!B.held){ B.down = false; B.guard = false; B.act = null; if(B.st < SM.max) B.st = Math.min(SM.max, B.st + SM.regen * dt); if(B.frame % 6 === 0) hud(); return; }
-  if(CV.stance !== 'stand') CV.stance = 'stand';   // (the blade is fought on his feet)
   if(now - B.stAt > SM.delay && !B.act) B.st = Math.min(SM.max, B.st + SM.regen * dt);
   // the trigger: a press = the light (at a sprint the running attack, from the guard the counter); held past `hold` = the heavy, at once if the light has not yet cut
   const down = B.trigF >= B.frame - 1, sprint = heldAction('sprint') && Math.hypot(p.vel.x, p.vel.z) > BLADE.runAt;
