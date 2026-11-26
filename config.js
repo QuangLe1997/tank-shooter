@@ -1779,11 +1779,11 @@ export const GUNFEEL = {
 //     sags `sag` m; on his back it runs over the shoulder (top m over the joint) and through `back` [toward that shoulder, up, behind] of the back's
 //     frame — the chest, the breastbone, the far ribs, under the far arm, behind the far hip; hung in front it goes behind the neck [back, up] m
 export const GUNCARRY = { on:!(typeof location !== 'undefined' && /[?&]oldcarry\b/.test(location.search)),
-  sling:{ climb:true, drone:true, revive:true, knife:true, patrol:false, mounted:false, strap:true, quiet:6, maxV:5.2, t:[0.55, 0.4, 0.22], block:0.25, clear:0.12, knifeT:0.5 },
+  sling:{ climb:true, drone:true, revive:true, knife:true, patrol:false, mounted:false, strap:true, quiet:6, maxV:5.2, t:[0.35, 0.25, 0.15], block:0.25, clear:0.12, knifeT:0.5 },
   slot:{ at:[0.2, 0.02, 0.24], tilt:0.78, tiltMax:0.9, drop:0.655, prone:[0.12, 0.05, 0.02, 4, 0.1], stack:0.06, up:['rpg'], upVia:-0.3, via:[[0.36, -0.10, -0.27], [0.44, 0.04, 0.24]], cross:0.1, slide:2.2, sway:0.03, lag:0.004, max:0.05, k:60, z:0.7 },
-  hang:{ at:[0.05, 0.0, 0.27], pitch:0.9, t:0.2, clear:0.1 },
-  back:{ on:true, mounted:true, seat:0.07, skip:[] },
-  swap:{ on:true, t:0.5, block:0.1, out:0.6, in:0.3 },
+  hang:{ at:[0.05, 0.0, 0.27], pitch:0.9, t:0.15, clear:0.1 },
+  back:{ on:false, mounted:true, seat:0.07, skip:[] },
+  swap:{ on:true, t:0.3, block:0.1, out:0.6, in:0.3 },
   ready:{ pitch:0.68 },
   run:{ on:true, v:[2.6, 3.6], at:[0.2, -0.22, 0.42], yaw:0.8, pitch:0.62, roll:0.25, bob:[0.025, 0.04, 0.03, 0.02], rate:[6, 14], clear:0.08 },
   shoulder:{ k:4 },

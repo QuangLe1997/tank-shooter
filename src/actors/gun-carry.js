@@ -244,7 +244,7 @@ export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.
     // worn: it slides across to the right-shoulder diagonal (the mirror while the other one lies there) and in under
     const to = cy.s > 0.01 ? -cy.sg : 1, st = dt * SL.slide; cy.bs += clamp(to - cy.bs, -st, st); cy.bz = Math.max(0, cy.bz - st * SL.stack); wear(R, D, cy, bK, cy.bs, Z + cy.bz + SL.stack * (1 - cy.bs * cy.bs) + (foot ? 0 : C.back.seat));
     if(K.strap) strap(R, cy, D, G, 1, M[bK], bK, cy.bs, 1, 0); }
-  else { if(cy.wK){ unwear(R, cy.wK); cy.wK = null; } if(cy.st[1]) cy.st[1].visible = false; }
+  else { if(cy.wK){ unwear(R, cy.wK); cy.wK = null; } if(cy.bK){ unwear(R, cy.bK); cy.bK = null; } if(cy.st[1]) cy.st[1].visible = false; }   // (MERGE 13 one gun on him at a time — GUNCARRY.back.on false: the one a swap put away is not left drawn on his back)
   // the hands. In his hands with both on it: nothing is touched — the hold stands exactly as holdReal left it
   const cN = swap || !own || cy.sg > 0 ? 0 : 1, off = C.hands.off, hf = smooth(seg(cy.h, 0, 0.6)); let touched = false;
   for(let i = 0; i < 2; i++){ let wn = i === cN ? 1 - smooth(seg(tN, off[2], off[3])) : 1 - smooth(seg(tN, off[0], off[1])), wo = 0;
