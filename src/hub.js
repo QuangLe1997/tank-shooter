@@ -230,6 +230,7 @@ export * from './actors/soldier-climb-pose.js';   // Z451 his body on the face: 
 export * from './actors/soldier-upper.js';   // Z343 the soldier's shoulders, trunk, head and rifle in time with his legs
 export * from './actors/soldier-stirrups.js';   // Z371 the war horse's stirrups and the rider's feet in them
 export * from './actors/real-cav.js';
+export * from './actors/gun-reload.js';   // GUN 2 the reload as real steps per weapon family: the plan, the hands, what they hold, no teleporting
 export * from './actors/gun-hands.js';   // GUN 1 the hands held to a man's joints: trigger finger, wrists, the support arm's reach, the eye
 export * from './actors/gun-fit.js';   // Z360 each hand weapon's hold read off its own model (grip, palm, butt, sight, bore)
 export * from './actors/real-troops.js';

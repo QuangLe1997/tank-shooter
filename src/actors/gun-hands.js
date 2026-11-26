@@ -11,10 +11,11 @@
 //     low sight and 6–8 cm to its left, and lying down 8–16 cm UNDER the sight: the head now bows / lifts / tilts within a man's range and the gun is
 //     brought the rest of the way to the eye (holdReal: the butt a little higher and further in — it comes back down when he lowers the gun)
 //   · PORT ARMS at a sprint folded the left arm to 13 % of its length (the handguard on his left shoulder): carryClear holds the gun off him
+//   · a weapon with no cheek weld (the B41 on his shoulder, a hip-fired gun) still has his head brought up (headLevel)
 //   Mounted (the saddle, the pillion, a bed) the hold is unchanged.
 import * as THREE from 'three';
 import { GUNFEEL } from '../../config.js';
-import { LEGKIT, ik2 } from '../hub.js';
+import { LEGKIT, ik2, turnBone } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const _f = V3(), _h = V3(), _a = V3(), _b = V3(), _c = V3(), _t = V3(), _s = V3(), _p = V3(), _d = V3();
@@ -57,6 +58,12 @@ export function eyePoint(D, e, gu, gf, out){ D.Head.getWorldPosition(out); const
         return out.addScaledVector(_a, e[1]).addScaledVector(_b, e[2]).addScaledVector(_c, e[0]); } } }
   _c.crossVectors(gf, gu); return out.addScaledVector(gu, e[1]).addScaledVector(gf, e[2]).addScaledVector(_c, e[0]); }
 
+// the head brought near upright before the weld (the aim clips hang it 35–55° over the gun and 25–35° to the side, the prone one 50° down: a face
+//   to the ground, not to the sights): bowed forward no more than lim[0], back no more than −lim[2], tilted no more than lim[1] — w = how much (the weld)
+export function headLevel(D, gu, gf, gr, lim, w){ const top = D.HeadTop_End; if(!top || !D.Head || !D.Neck) return; D.Head.getWorldPosition(_a); top.getWorldPosition(_b).sub(_a); if(_b.lengthSq() < 1e-8) return; _b.normalize();
+  const up = _b.dot(gu), bow = Math.atan2(_b.dot(gf), up), tilt = Math.atan2(_b.dot(gr), up), db = (bow > lim[0] ? bow - lim[0] : bow < lim[2] ? bow - lim[2] : 0) * w, dt = (Math.abs(tilt) > lim[1] ? tilt - Math.sign(tilt) * lim[1] : 0) * w;
+  if(Math.abs(db) > 1e-3){ turnBone(D.Neck, gr, db * 0.4); turnBone(D.Head, gr, db * 0.6); }   // (about his right: + lifts the head)
+  if(Math.abs(dt) > 1e-3){ turnBone(D.Neck, gf, -dt * 0.4); turnBone(D.Head, gf, -dt * 0.6); } }
 // the support arm's stretch over its comfortable reach → R.pro (rad the left collar bone is brought forward) and what is left for the chest's turn
 //   (holdReal's blade); returns the excess (+ = too straight), 0 within the dead band
 export function reachFeel(R, D, prone, dt){ const K = GUNFEEL.hold.reach, e = armStretch(D, 'Left') - (prone ? K.prone : K.comfort), pro = R.pro || 0;
@@ -65,6 +72,7 @@ export function reachFeel(R, D, prone, dt){ const K = GUNFEEL.hold.reach, e = ar
 
 // PORT ARMS kept off his left shoulder: the gun's place cc (its hold frame's origin, turned q) moved until the support palm's spot (pt = [share, m] on
 //   the gun) is at least GUNFEEL.hold.carry.min of the left arm's length from the shoulder joint — out ahead of him, not on it
-export function carryClear(D, cc, q, pt, len, armL, gf){ const mn = GUNFEEL.hold.carry.min * armL; if(!D.LeftArm) return;
-  for(let it = 0; it < 2; it++){ D.LeftArm.getWorldPosition(_a); _b.set(pt[0] * len, pt[1], 0).applyQuaternion(q).add(cc).sub(_a); const d = _b.length(); if(d >= mn) return;
-    _b.y *= 0.3; _b.addScaledVector(gf, 0.5 * (d || 0.1)); if(_b.lengthSq() < 1e-8) _b.copy(gf); cc.addScaledVector(_b.normalize(), (mn - d) * 1.15); } }
+export function carryClear(D, cc, q, pt, grip, len, armL, armR, gf){ const C = GUNFEEL.hold.carry, mn = C.min * armL; if(!D.LeftArm) return;
+  for(let it = 0; it < 2; it++){ D.LeftArm.getWorldPosition(_a); _b.set(pt[0] * len, pt[1], 0).applyQuaternion(q).add(cc).sub(_a); const d = _b.length(); if(d >= mn) break;
+    _b.y *= 0.3; _b.addScaledVector(gf, 0.5 * (d || 0.1)); if(_b.lengthSq() < 1e-8) _b.copy(gf); cc.addScaledVector(_b.normalize(), (mn - d) * 1.15); }
+  if(D.RightArm && grip){ D.RightArm.getWorldPosition(_a); _b.set(grip[0] * len, grip[1], 0).applyQuaternion(q).add(cc).sub(_a); const d = _b.length(), mx = C.max * armR; if(d > mx) cc.addScaledVector(_b.normalize(), mx - d); } }   // (and never so far out that the right arm, on the grip, locks straight)

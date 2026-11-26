@@ -246,6 +246,10 @@ export function sfx(name, pos, vol){
     case 'levelup': [523,659,784,1047,1319].forEach((f,i)=>tone(f,0.24,{type:'triangle',vol:0.15,delay:i*0.08})); break;
     case 'spell':   tone(440,0.25,{type:'sine',vol:0.14,slideTo:1320}); break;
     case 'click':   tone(660,0.06,{type:'triangle',vol:0.09}); break;
+    case 'magOut':  noise(0.035,{vol:0.16,type:'bp',hp:1400,lp:5200,attack:0.001}); tone(240,0.05,{type:'triangle',vol:0.05,slideTo:150,delay:0.012}); break;   // GUN 2 the reload's steps (actors/gun-reload.js): the catch pressed, the magazine sliding out
+    case 'magIn':   noise(0.03,{vol:0.2,type:'bp',hp:900,lp:4200,attack:0.001}); tone(170,0.07,{type:'triangle',vol:0.09,slideTo:110}); noise(0.02,{vol:0.1,type:'bp',hp:2500,lp:7000,delay:0.035}); break;   //   seated: a clack and the catch
+    case 'boltRack':noise(0.045,{vol:0.2,type:'bp',hp:1200,lp:5000,attack:0.001}); noise(0.05,{vol:0.24,type:'bp',hp:800,lp:4200,attack:0.001,delay:0.11}); tone(200,0.06,{type:'triangle',vol:0.07,slideTo:120,delay:0.11}); break;   //   the bolt back … and home
+    case 'shellIn': noise(0.025,{vol:0.14,type:'bp',hp:1600,lp:5200,attack:0.001}); tone(300,0.04,{type:'triangle',vol:0.04,slideTo:210}); break;   //   a round thumbed into the port
     case 'reloaded':play('reload', null, 0.7); tone(1320,0.08,{type:'triangle',vol:0.05,delay:0.06}); break;   // breech slams shut
     case 'alarm':   tone(440,0.12,{type:'triangle',vol:0.12}); tone(330,0.17,{type:'triangle',vol:0.12,delay:0.13}); break;
     case 'beep':    tone(1200,0.05,{type:'triangle',vol:0.06}); break;

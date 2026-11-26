@@ -118,7 +118,8 @@ function sheet(kind){ const R = CV.real, k = kind || (R && R.armK), met = R && R
 
 // ---- Z360 the actions, frozen to look at: a shot (its kick at the peak), the reload part way through, the sprint carry ----
 async function kick(){ const p = S.player; p.fireAt = performance.now() / 1000 + 0.3; await wait(45); return GUNKICK[CV.real.armK] || null; }
-async function reloadAt(t){ const p = S.player, inst = p.guns[p.gunIdx], D = Math.max(GUNHOLD.reload.min + 0.6, 2.4); inst.rD = D; inst.rU = performance.now() / 1000 + (1 - t) * D; await frames(3); return t; }
+async function reloadAt(t, dry = true){ const p = S.player, inst = p.guns[p.gunIdx], D = Math.max(GUNHOLD.reload.min + 0.6, 2.4); inst.rD = D; inst.rDry = dry; inst.rLoad = 1; inst.rN = 4; inst.rU = performance.now() / 1000 + (1 - t) * D; await frames(3);
+  const L = CV.real.rl, st = L && L.plan.steps.find(s => t < s.t1); return { t, step:st ? st.n : null, fam:L ? L.plan.fam : null }; }   // GUN 2 (dry = the gun ran empty: the bolt is racked) → which step of its family's reload that is
 function reloadEnd(){ const inst = S.player.guns[S.player.gunIdx]; inst.rU = 0; }
 async function carry(on){ CV.real.sprDev = on ? true : null; await wait(on ? 900 : 600); return on; }
 // the bearing he aims along (rad; the views turn with it) — e.g. straight ahead of his ride

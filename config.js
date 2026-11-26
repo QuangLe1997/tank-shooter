@@ -797,7 +797,7 @@ export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, 
 // Z107 CONTROLS SHEET — one list, shown from the home menu, the pause menu and in battle (H / F1 / ?). [keys, what it does, group]
 export const KEYS_HELP = [
   [['W','A','S','D'], 'Đi lên · trái · xuống · phải THEO MÀN HÌNH — xe tự quay đầu về hướng đó (↑←↓→ cũng được)', 'LÁI XE'], [['Cách'], 'Lướt né — bứt tốc ngắn', 'LÁI XE'],
-  [['Chuột'], 'Ngắm', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'],
+  [['Chuột'], 'Ngắm', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'], [['R'], 'Nạp đạn — băng chưa cạn thì thay nhanh hơn (không phải lên đạn)', 'CHIẾN ĐẤU'],
   [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Bấm chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
   [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
   [['X'], 'XUNG PHONG — cả đội đánh thẳng vào thành gần nhất', 'QUÂN TA'], [['B'], 'Gọi trực thăng thả lính dù xuống cạnh xe', 'QUÂN TA'],
@@ -1343,15 +1343,43 @@ export const POSE_STUDIO = { ok:{ palm:4, stretch:0.995 }, settle:{ equip:0.6, s
 //   reach = the support arm: comfortable out to comfort of its length (prone: the elbow on the ground), past it by dead[0] the left collar bone comes
 //   forward (proK rad/s per unit, at most protract rad, back at `back` rad/s once it is dead[1] inside) and then the chest turns further side-on (k rad/s
 //   per unit, at most blade rad more: GUNHOLD.blade's own pull rule may still go beyond); hardProne = the reach lying down before the gun is drawn to the hand;
-//   cheek = the cheek weld: the head bows / lifts within bow, tilts at most tilt (iter passes); the gun then comes to the eye — the butt up to
-//   `up` (m: lower / higher than the pocket) and `in` toward his neck, at rate /s; hipProne = lying down a hip-fired gun (minigun, flamer) goes to the shoulder;
-//   carry = port arms at a sprint: the handguard no nearer the left shoulder than min of the arm's length
+//   cheek = the cheek weld: the head first brought near upright (head = bowed forward at most, tilted at most, bowed back at most −), then bowed / lifted
+//   within bow and tilted at most tilt for the sights (iter passes); the gun comes the rest of the way to the eye — the butt up to `up` (m: lower / higher
+//   than the pocket) and `in` toward his neck, at rate /s; the eye still `side` m left of the sights turns the chest side-on (bladeK rad/s per m); hipProne = lying down a hip-fired gun (minigun, flamer) goes to the shoulder;
+//   carry = port arms at a sprint: the handguard no nearer the left shoulder than min of the left arm's length, the grip no further from the right
+//   shoulder than max of the right arm's
 export const GUNFEEL = {
   hold:{ grip:[0.034, 0.022], gripPole:[-0.36, 0.4, -0.12], wrist:[0.8, 0.8],
     trig:{ ahead:0.024, up:0.02, lo:0.09, hi:0.035, side:0.011, face:0.004, pad:[0.9, 0.35], safe:[0.032, 0.014, 0.018], bare:[0.03, 0.03] },
-    reach:{ comfort:0.9, prone:0.95, dead:[0.012, 0.04], proK:10, protract:0.3, back:0.4, k:8, blade:0.4, hardProne:0.985 },
-    cheek:{ bow:[-0.4, 0.42], tilt:0.26, iter:3, up:[-0.05, 0.055], in:[0, 0.04], rate:8 }, hipProne:true, carry:{ min:0.75 },
+    reach:{ comfort:0.9, prone:0.95, dead:[0.012, 0.04], proK:10, protract:0.3, back:0.4, k:8, blade:0.5, hardProne:0.985 },
+    cheek:{ head:[0.28, 0.17, -0.08], bow:[-0.15, 0.3], tilt:0.2, iter:3, up:[-0.05, 0.07], in:[0, 0.06], rate:8, side:0.015, bladeK:8 }, hipProne:true, carry:{ min:0.65, max:0.84 },
     ok:{ trig:3.5, wrist:60, eye:4, stretch:0.97 } },   // what the pose studio flags (dev/pose-studio.js measure): the fingertip off the trigger (cm), a wrist's bend (deg), the eye off the sight line (cm), an arm's stretch
+  // GUN 2 THE RELOAD IN REAL STEPS (actors/gun-reload.js): family = which way each hand weapon (INFGUN.guns key) is loaded; steps = each family's steps as
+  //   shares of that gun's own reload time (GUNS[id].reload — they add up to 1: a gun that ran dry reloads in exactly the time it always did); a step named
+  //   in `dry` is done only when the gun ran dry (a magazine changed with a round still chambered has no rack: it takes that much less — R reloads
+  //   early); `shells` is scaled by the share of the rounds missing (shellMax = the most hand movements shown). pose = the gun brought off the aim for it:
+  //   muzzle up (+) / down pitch, turned in, canted (the magazine well to the left hand), the butt down / in (m), how far he looks down (prone: lying
+  //   down). at = where the hand goes: the vest pouch and the dump pouch / belt as [his left, up, ahead] of the chest / the hips, how far the magazine
+  //   comes clear of the well, the charging handle's pull, the feed cover's lift, the pump's stroke, the bolt handle [to the right of, over] the bolt
+  //   point and its lift. prop = what the left hand is seen to hold: a magazine [along, deep, thick] (sized off the gun's own when it has one), an ammo
+  //   box, a shell / a 40 mm round [long, across], a rocket; cells = the guns whose magazine is a power cell; col = their colours; a magazine let go
+  //   falls at grav and lies `lie` s. ease = a hand or the gun that would jump (faster than hand / v m/s, w rad/s in his chest's frame) is eased out at rate /s
+  reload:{ family:{ ar:'mag', ak:'mag', m4:'mag', mp5:'mag', rust:'mag', dmr:'mag', energy:'mag', rail:'mag', saw:'mag', lmg:'belt', minigun:'belt', flamer:'belt', sniper:'bolt', shotgun:'shell', gl:'shell', rpg:'tube' },
+    steps:{ mag:[['off', 0.09], ['out', 0.11], ['stow', 0.16], ['fetch', 0.12], ['in', 0.15], ['seat', 0.07], ['rack', 0.17], ['back', 0.13]],
+      belt:[['off', 0.06], ['open', 0.08], ['out', 0.10], ['stow', 0.13], ['fetch', 0.09], ['in', 0.14], ['belt', 0.10], ['close', 0.07], ['rack', 0.13], ['back', 0.10]],
+      bolt:[['off', 0.08], ['out', 0.11], ['stow', 0.15], ['fetch', 0.11], ['in', 0.14], ['seat', 0.07], ['rack', 0.22], ['back', 0.12]],
+      shell:[['off', 0.10], ['shells', 0.62], ['rack', 0.16], ['back', 0.12]],
+      tube:[['off', 0.20], ['fetch', 0.18], ['in', 0.18], ['seat', 0.08], ['push', 0.14], ['hold', 0.08], ['back', 0.14]] },
+    dry:['rack'], shellMax:8,
+    pose:{ mag:{ pitch:0.2, turn:0.34, cant:0.5, down:0.05, in:0.05, look:0.3, prone:{ pitch:0.02, turn:0.22, cant:0.8, down:0.02, in:0.03, look:0.2 } },
+      belt:{ pitch:-0.3, turn:0.3, cant:0.12, down:0.09, in:0.04, look:0.4, prone:{ pitch:-0.02, turn:0.2, cant:0.15, down:0.02, in:0.02, look:0.25 } },
+      bolt:{ pitch:-0.1, turn:0.18, cant:0.35, down:0.03, in:0.03, look:0.22, prone:{ pitch:0, turn:0.12, cant:0.5, down:0.01, in:0.02, look:0.15 } },
+      shell:{ pitch:-0.16, turn:0.26, cant:0.95, down:0.06, in:0.05, look:0.3, prone:{ pitch:0, turn:0.18, cant:1.0, down:0.02, in:0.03, look:0.2 } },
+      tube:{ pitch:-0.5, turn:0.38, cant:0, down:0.07, in:0.06, look:0.2 } },
+    at:{ pouch:[0.06, -0.16, 0.2], dump:[0.2, 0.04, 0.03], clear:0.05, rack:0.06, lid:0.09, pump:0.07, handle:[0.035, 0.02], lift:0.03 },
+    prop:{ mag:[0.045, 0.13, 0.024], belt:[0.15, 0.1, 0.08], shell:[0.065, 0.022], gl:[0.1, 0.04], rocket:[0.55, 0.085], cells:['energy', 'rail'],
+      col:{ mag:0x1e1f1c, belt:0x4a5236, shell:0x9c2b22, gl:0x7c8450, rocket:0x4c5a3a, cell:0x3f78c8 }, lie:4, grav:-12 },
+    ease:{ v:4, w:20, hand:5, rate:14 } },
 };
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
@@ -1661,7 +1689,7 @@ export const FEEL = {
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
   ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
-  ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['r'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
+  ['reload','Nạp đạn (băng chưa cạn: thay nhanh, không lên đạn)','CHIẾN ĐẤU',['r'],null,0], ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['o'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
   ['zoomPing','Camera: phóng to ⇄ thu nhỏ · chạm đôi = về mặc định (D-pad ← = M1)','CAMERA',['z'],14,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (D-pad → = M2)','CAMERA',['n'],15,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],
   ['camAuto','Camera tự động','CAMERA',['c'],null,0], ['camReset','Đặt lại camera','CAMERA',['v'],null,0],
