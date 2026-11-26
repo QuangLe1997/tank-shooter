@@ -13,6 +13,7 @@
 //   Co-op: two bits of the stance byte (NET_STANCE.SWIM / DIVE) carry it to the other page, whose puppet of him plays the same clips (game/coop-*.js).
 import * as THREE from 'three';
 import { AUDIOFX, CAV, LOGISTICS, REALCAV, SWIM } from '../../config.js';
+import { horseSwimFire, horseSwimNoHand } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 import { AFXX, ARENA, BLADEST, CV, HF, MOBILE, NET_STANCE, RIVER, S, TIPS, TIP_SHOW, actx, afxOn, afxPlay, animClip, animInfo, bladeHold, bladeSwitch, carryBack, enemies, floatText, heightAt, heldAction, loadAnimGroup, quietKnife, scene, spawnPart, tip, wadeAt } from '../hub.js';
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -72,12 +73,13 @@ export function swimPlace(p, dt, now){ const W = SWST; if(W.mode === 'dry' && W.
   fx(p, dt, now, v); hud(now); W.ms += performance.now() - t0; W.n++; }
 
 // ---- soldier-fire.js: the trigger while he swims → the knife at arm's length, or nothing (true: no round) ----
-export function swimFire(now){ const W = SWST, p = S.player; if(W.mode !== 'swim' || !p) return false; if(now - W.knifeAt < 0.25) return true; W.knifeAt = now;
+export function swimFire(now){ const W = SWST, p = S.player; if(W.mode !== 'swim' || !p) return horseSwimFire(now);   // (HSWIM 1 on a swimming horse: no shot either — game/horse-swim.js)
+  if(now - W.knifeAt < 0.25) return true; W.knifeAt = now;
   const R = LOGISTICS.quiet.knife.reach * 1.1; let near = false; for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(e.hp > 0 && Math.abs(e.pos.x - p.pos.x) < R && Math.abs(e.pos.z - p.pos.z) < R && Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z) < R){ near = true; break; } }
   if(near && !W.under){ if(quietKnife()) W.stabs++; } else note(W.under ? 'ĐANG LẶN — KHÔNG BẮN ĐƯỢC' : 'ĐANG BƠI — KHÔNG BẮN ĐƯỢC (ÁP SÁT ĐỂ ĐÂM DAO)', now); return true; }
 // combat/spells.js castSpell: no grenade, smoke or medkit while swimming (true: refused, nothing spent)
 const HAND = { grenade:1, smokeHand:1, medkit:1 };
-export function swimNoSkill(sp){ if(SWST.mode !== 'swim' || !sp || !HAND[sp.id]) return false; note('ĐANG BƠI — KHÔNG NÉM ĐƯỢC', performance.now() / 1000); return true; }
+export function swimNoSkill(sp){ if(sp && HAND[sp.id] && horseSwimNoHand()) return true; if(SWST.mode !== 'swim' || !sp || !HAND[sp.id]) return false; note('ĐANG BƠI — KHÔNG NÉM ĐƯỢC', performance.now() / 1000); return true; }
 // game/soldier-moves.js: no jump or combat roll in deep water
 export const swimNoMove = () => SWST.mode === 'swim' || SWST.d > SWIM.jump;
 // actors/gun-carry.js why(): the rifle on his back while he swims
@@ -145,6 +147,8 @@ function fx(p, dt, now, v){ const W = SWST, F = SWIM.fx; rings(dt); if(S.mode !=
 function stroke(p){ if(!p || S.mode !== 'playing') return; const W = SWST, fa = p.facing; if(W.under){ sound('stroke', p.pos, 0.35, 0.7); return; }
   splash(p.pos.x + Math.sin(fa) * 0.7, p.pos.z + Math.cos(fa) * 0.7, 5, 1.6); sound('stroke', p.pos, 0.8, 0.95 + Math.random() * 0.1); }
 
+// HSWIM 1 the same water for the swimming horse (game/horse-swim.js): a splash, a ring, the rings' tick, a sound
+export const swimFxKit = { splash, ring, rings, sound };
 // ---- sound: synthesised one-shots on the foley bus (audio/afx.js) — a stroke's sploosh, a breath, the gasp coming up; the world muffled under ----
 function mkStroke(sr, rnd){ const n = Math.round(sr * 0.42), x = new Float32Array(n); let a = 0, b = 0; for(let i = 0; i < n; i++){ const t = i / sr, env = Math.min(1, t / 0.035) * Math.exp(-t / 0.11), w = rnd() * 2 - 1; a += (w - a) * 0.22; b += (a - b) * 0.35;
   x[i] = (a - b * 0.7) * env * 1.8 + Math.sin(6.283 * (150 - t * 160) * t) * Math.exp(-t / 0.05) * 0.3; } return x; }

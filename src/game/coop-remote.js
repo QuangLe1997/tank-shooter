@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { CAV, COOP, HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
 import { CV, GUNS, NET_PFLAG, NET_STANCE, S, addTrail, playerRange, animateHorse, animateSoldier, buildBikeMount, buildGeneral, buildHorse, camera, cloakFoot, fitRealCav, gunFlash, gunSound, heightAt, lineClear, lineHit, poseRider, poseSoldier, scene, seatTurnOff, updateRealCav } from '../hub.js';
 import { swimOfNet } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { horseSwimStep } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
 const RIDES = [null, 'cav', 'xeom', 'bagac', 'bantai'], wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), _v = new THREE.Vector3();
 let _gunIds = null; const gunIds = () => _gunIds || (_gunIds = Object.keys(GUNS));
@@ -50,7 +51,7 @@ function asMate(fn){ _sv.p = S.player; _sv.f = S.firing; _sv.trans = CV.trans; _
 let _dt = 0, _now = 0;
 function pose(){ const M = MATE, G = M.G, H = M.H, tw = wrapA(M.aim - M.heading);
   if(M.mounted){ const v = M.vx * Math.sin(M.heading) + M.vz * Math.cos(M.heading); M.RC.speed = v;
-    if(!H.bike){ H.root.position.copy(M.root.position); H.root.rotation.y = M.heading; } animateHorse(H, _dt, v, M.yawRate); H.root.position.set(0, 0, 0); H.root.rotation.y = 0; poseRider(G, H, _dt, tw, M.firing); }
+    if(!H.bike){ horseSwimStep(H, M.x, M.z, heightAt(M.x, M.z), v, _dt, false); H.root.position.copy(M.root.position); H.root.rotation.y = M.heading; } /* HSWIM 1 his horse afloat: the paddle and pose by the depth there, its height as sent */ animateHorse(H, _dt, v, M.yawRate); H.root.position.set(0, 0, 0); H.root.rotation.y = 0; poseRider(G, H, _dt, tw, M.firing); }
   else { animateSoldier(G, Math.hypot(M.x - M.lastX, M.z - M.lastZ), _dt, M.firing); poseSoldier(G, M.stance, _dt); const u = G.userData; if(u.up) u.up.rotation.y += (Math.max(-0.9, Math.min(0.9, tw)) - u.up.rotation.y) * Math.min(1, _dt * 10); cloakFoot(G, M.speed, M.stance === 'prone'); }
   updateRealCav(M.RC, _dt, { twist:tw, footV:M.mounted ? 0 : M.speed, stance:M.stance, trans:false, hit:M.p.hitT > 0, ride:M.mounted && H.inert ? H.inert : null, move:null, climb:null, dead:M.dead }); }
 // every frame: st = the other player's interpolated state (net/interp.js out.pl[i]) or null while there is none; name = his nickname

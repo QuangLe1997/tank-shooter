@@ -2468,6 +2468,20 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     'the shades, prints and dust run once a frame from the game loop; the sky fill is applied with every atmosphere');
   ok(G.night.spotShadows >= 0 && G.night.spotShadows <= 1 && /i<GROUNDED\.night\.spotShadows/.test(rr),
     'at most '+G.night.spotShadows+' floodlight shadow maps: four took the ground\'s shader past 16 texture units and the field went undrawn at night'); }
+// HSWIM 1 the war horse swims: wading slower by depth with splashes, past deep[0] afloat (back line and saddle just over the water, neck and head out), paddling, no gallop, no firing
+{ const fs=await import('node:fs'), C=await import('./config.js'), X=C.HORSESWIM, rd=f=>fs.readFileSync(f,'utf8'), hs=rd('src/game/horse-swim.js'), cv=rd('src/game/cavalry.js'), rc=rd('src/actors/real-cav.js'), cr=rd('src/game/coop-remote.js'), sw=rd('src/game/swim.js');
+  const P=X.wadeV, back=1.75, nose=1.4;   // (the real horse as measured: its back / saddle ~1.75 m over the hooves, the nose ~1.4)
+  ok(X && X.on === true && P.length >= 2 && P.every((q, i) => !i || q[0] > P[i - 1][0] && q[1] < P[i - 1][1]) && P[P.length - 1][1] > X.v && X.deep[0] > X.deep[1] && X.deep[0] >= P[P.length - 1][0] - 0.05,
+    'wading the horse slows with the depth ('+P.map(q => q[0]+' m → '+q[1]+' m/s').join(', ')+'), down to the swim at '+X.deep[0]+' m (back on its feet under '+X.deep[1]+')');
+  ok(X.float > X.deep[1] && X.float - back > -0.3 && X.float - back < 0 && X.float - nose < 0.4 && X.v >= 1.4 && X.v <= 2.1 && X.turn > 0 && X.turn < 1 && X.defK > 0 && X.defK <= 1 && X.bob[0] < 0.08 && X.yRate > 0,
+    'afloat its hooves are '+X.float+' m under the surface: the back line ~'+(back - X.float).toFixed(2)+' m over it, a swimming horse\'s pace ('+X.v+' m/s), turning ×'+X.turn+', the rider\'s exposure ×'+X.defK);
+  const Q=X.pose; ok(Q.pitch > 0 && Q.pitch < 0.3 && Q.pivot > 1 && Q.neck > 0 && Q.neck < 0.8 && Q.tail > 0 && Q.ts[0] > 0 && Q.ts[1] >= Q.ts[0] && Q.idleW > 0 && Q.idleW < 1 && Q.clip === 'Walk' && X.k > 0 && X.noFire === true,
+    'it swims nose-up '+Q.pitch+' rad about the seat, neck up '+Q.neck+', tail laid on the water; its legs paddle (the walk, Idle ×'+Q.idleW+' mixed in); its rider does not fire from it');
+  ok(/horseSwimStep\(H, p\.pos\.x, p\.pos\.z, p\.mesh\.position\.y/.test(cv) && /horseSwimTop\(H, top\)/.test(cv) && /\*horseSwimTurn\(H\)/.test(cv) && /horseSwimHoof\(CV\.H/.test(cv) && /horseSwimBlock\('surge'\)/.test(cv) && /horseSwimBlock\(CV\.mounted \? 'off' : 'on'\)/.test(cv) && /horseSwimStep\(H, CV\.hPos\.x/.test(cv),
+    'cavalry: the mounted horse and the riderless one float, the depth caps the pace and the turn, a hoof in water splashes, no surge and no getting off or on mid-stream');
+  ok(/horseSwimClip\(R, H, v\)/.test(rc) && /horseSwimMix\(R, H\)/.test(rc) && /horseSwimPose\(R, H, dt\)/.test(rc) && /horseSwimStep\(H, M\.x, M\.z/.test(cr) && /return horseSwimFire\(now\)/.test(sw) && /horseSwimNoHand\(\)\) return true/.test(sw) && /export const swimFxKit/.test(sw)
+    && /export \* from '\.\/game\/horse-swim\.js'/.test(rd('src/hub.js')) && !/Math\.random\(\)/.test(hs.split('function horseSwimStep')[1].split('function enter')[0]),
+    'the real horse paddles and pitches afloat (actors/real-cav.js), the co-op puppet reads the same depth, the trigger and the hand skills are refused on a swimming horse; the float itself is deterministic'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

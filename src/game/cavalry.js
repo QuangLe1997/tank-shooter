@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
 import { bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY } from '../hub.js';
 import { swimPlace, swimStep } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { horseSwimBlock, horseSwimDef, horseSwimHoof, horseSwimStep, horseSwimTop, horseSwimTurn } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
   trans:null, call:false, last:new THREE.Vector3(), tramAt:new WeakMap(), still:0, hoofAt:0 };
@@ -35,7 +36,8 @@ export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'bagac' / 'bantai'
 export function dropCavPlayer(p){ if(!p || !p.cav) return; const D=CV.H && CV.H.drv; if(D){ driverBack(CV.H); if(D.w && D.w.parent) D.w.parent.remove(D.w); for(const k of ['cig','lit','ham']) if(D[k] && D[k].parent) D[k].parent.remove(D[k]); CV.H.drv=null; }
   if(CV.H && CV.H.root.parent) CV.H.root.parent.remove(CV.H.root); if(CV.G && CV.G.parent) CV.G.parent.remove(CV.G); if(p.mesh.parent) p.mesh.parent.remove(p.mesh); CV.on=false; }
 // ---- hoof beats: a dull thump + a stony click, louder and closer together the faster he goes; a puff of dust off every hoof ----
-function hoofFall(i, x, z, v){ const k=Math.min(1, v/12);
+function hoofFall(i, x, z, v){ if(horseSwimHoof(CV.H, x, z, v)) return;   // HSWIM 1 in the water: a splash, not dust · afloat: no hoof strikes
+  const k=Math.min(1, v/12);
   if(Math.random()<0.55+k*0.4) spawnPart(x+(Math.random()-0.5)*0.3, heightAt(x,z)+0.08, z+(Math.random()-0.5)*0.3, (Math.random()-0.5)*1.2, 0.5+k*1.4, (Math.random()-0.5)*1.2, { color:0xb8a888, size:0.35+k*0.55, life:0.6+k*0.5, smoke:true, grav:-0.2, drag:2.2, grow:1.6, op:0.32+k*0.18 });
   if(afxOn() && afxHoof(x, z, v)) return;   // AUDIO 2 the hoof by the ground it strikes, as a voice with a place (audio/afx-move.js); off: the thump below, as before
   if(!actx || !master || performance.now()-CV.hoofAt < 45) return; CV.hoofAt=performance.now(); const t=actx.currentTime, vol=0.07+k*0.1;
@@ -44,7 +46,7 @@ function hoofFall(i, x, z, v){ const k=Math.min(1, v/12);
     const n=actx.createBufferSource(), b=actx.createBuffer(1, Math.floor(actx.sampleRate*0.03), actx.sampleRate), d=b.getChannelData(0); for(let q=0;q<d.length;q++) d[q]=(Math.random()*2-1)*(1-q/d.length);
     n.buffer=b; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200+Math.random()*900; f.Q.value=1.4; const g2=actx.createGain(); g2.gain.value=vol*0.55; n.connect(f).connect(g2).connect(master); n.start(t); }catch(e){} }
 // ---- G: get off / get on (or whistle him over if he is far) ----
-export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!=='playing' || CV.trans || p.downed) return;   /* COOP 7 (down in a co-op battle: no ride) */
+export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!=='playing' || CV.trans || p.downed || horseSwimBlock(CV.mounted ? 'off' : 'on')) return;   /* HSWIM 1 not off or on mid-stream */   /* COOP 7 (down in a co-op battle: no ride) */
   if(CV.mounted){ if(CV.speed>CAV.horse.cruise*0.6 || (CV.H && CV.H.air && CV.H.air.y>0)){ floatText(CV.H && CV.H.bike ? 'CHẠY CHẬM LẠI ĐÃ' : 'GHÌM CƯƠNG ĐÃ', '#ffcf5a', p.pos, 14); return; }
     CV.trans={ k:'off', t:0 }; sfx('click'); return; }
   if(CV.climb){ floatText('XUỐNG ĐẤT RỒI MỚI LÊN XE / NGỰA', '#ffcf5a', p.pos, 14); return; }   // Z451 on a wall or a rock
@@ -57,7 +59,8 @@ function whistle(){ if(!actx || !master) return; const t=actx.currentTime; try{ 
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t+0.04); g.gain.setValueAtTime(0.09, t+0.45); g.gain.exponentialRampToValueAtTime(0.0001, t+0.6); o.connect(g).connect(master); o.start(t); o.stop(t+0.62); }catch(e){} }
 // ---- Space: a gallop surge in the saddle · a sprint on foot ----
 export function cavDash(){ const p=S.player, now=performance.now()/1000; if(!p || !p.cav) return;
-  if(CV.mounted){ if(now<CV.surgeCd) return; CV.surgeUntil=now+CAV.surge.dur; CV.surgeCd=now+CAV.surge.cd;
+  if(CV.mounted){ if(now<CV.surgeCd || horseSwimBlock('surge')) return;   // (HSWIM 1 no gallop afloat)
+    CV.surgeUntil=now+CAV.surge.dur; CV.surgeCd=now+CAV.surge.cd;
     if(CV.H && CV.H.bike){ if(!bikeWheelie(CV.H)){ sfx('whoosh'); floatText('VÍT GA!', '#ffcf5a', p.pos, 15); } }   // Z296 on the xe ôm a wheelie, on the rest the throttle wide open
     else { sfx('whoosh'); floatText('PHI NƯỚC ĐẠI!', '#ffcf5a', p.pos, 15); } }
   else soldierJump(); }   // Z336 on foot Space jumps (Shift held sprints)
@@ -78,21 +81,21 @@ export function updateCavalry(dt, now){
   if(CV.trans){ transition(p, dt, now); }
   else if(CV.mounted){
     // the horse: steer toward where you push (or the reins: W/S speed, A/D turn), speed builds and settles, he turns tighter when slow
-    const Hc=CAV.horse, surge=now<CV.surgeUntil, top=(surge?Hc.gallop:Hc.cruise)*p.speedMul*wade*rideSpeedK(CV.H)*rideSlopeK(H, p, CV.facing, dt);   // (Z303 a worn ride has lost its top end · RIDE 3 a climb costs it speed)
+    const Hc=CAV.horse, surge=now<CV.surgeUntil, top=(surge?Hc.gallop:Hc.cruise)*p.speedMul*wade*rideSpeedK(CV.H)*rideSlopeK(H, p, CV.facing, dt), topW=horseSwimTop(H, top);   // (HSWIM 1 the depth caps it: wading, swimming)   // (Z303 a worn ride has lost its top end · RIDE 3 a climb costs it speed)
     let want=0, turn=0, own=false;
     // RIDE 1 where he pushes is where it goes — but the line is the mount's own: round what is in the way, eased off for it, stood only when every way is shut (game/ride-avoid.js)
-    if(turnCtl){ want = TI.thr>0 ? top*TI.thr : TI.thr<0 ? -Hc.back : 0; turn=TI.turn; const AV = want>0 ? rideAvoid(H, p, dt, CV.facing, CV.facing+turn*0.6, CV.speed, surge) : rideAvoidReset();
+    if(turnCtl){ want = TI.thr>0 ? topW*TI.thr : TI.thr<0 ? -Hc.back : 0; turn=TI.turn; const AV = want>0 ? rideAvoid(H, p, dt, CV.facing, CV.facing+turn*0.6, CV.speed, surge) : rideAvoidReset();
       if(AV.act) turn=Math.max(-1, Math.min(1, turn+wrapA(AV.head-CV.facing)*AV.gain)); if(want>0) want=Math.min(want, AV.vcap); own=AV.act; }
     else if(inp>0.1){ const tgt=Math.atan2(dir.x, dir.z), AV=rideAvoid(H, p, dt, CV.facing, tgt, CV.speed, surge), df=wrapA((AV.act ? AV.head : tgt)-CV.facing);
-      want=Math.min(AV.vcap, top*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); turn=Math.max(-1, Math.min(1, df*(AV.act ? AV.gain : 2))); own=AV.act; }
+      want=Math.min(AV.vcap, topW*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); turn=Math.max(-1, Math.min(1, df*(AV.act ? AV.gain : 2))); own=AV.act; }
     else rideAvoidReset();
     // RIDE 2 reined in from speed (the push let go, the way shut, an about-turn): braked as hard as the ground holds — sat on its haunches / the fork dived (game/ride-feel.js)
     const SF=RIDEFEEL.stop, hs=rideStopStep(H, p, dt, want, CV.speed, !turnCtl && inp>0.1 && !own ? wrapA(Math.atan2(dir.x, dir.z)-CV.facing) : 0), ST=H.stop;   // (no about-turn while it is on its own line round something)
     if(ST.on && ST.about) want=Math.min(want, SF.aboutV);
-    const tr=(Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop))*(ST.about ? 1+((H.bike ? SF.bike : SF.horse).pivot-1)*Math.min(1, ST.k*2) : 1), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
+    const tr=(Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop))*(ST.about ? 1+((H.bike ? SF.bike : SF.horse).pivot-1)*Math.min(1, ST.k*2) : 1)*horseSwimTurn(H), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
     const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : (hs || Hc.decel); CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));
     p.facing=CV.facing; p.vel.set(Math.sin(CV.facing)*CV.speed, 0, Math.cos(CV.facing)*CV.speed); p.throttle=0;
-    p.radius=CAV.radius.mounted; p.defK=CAV.defK.mounted; p.camK=CAV.camK.mounted;
+    p.radius=CAV.radius.mounted; p.defK=CAV.defK.mounted*horseSwimDef(H); p.camK=CAV.camK.mounted;
   } else if(climbStep(p, dt, now)){ CV.moveT=0; p.radius=CAV.radius.foot; p.defK=CAV.defK.stand; p.camK=CAV.camK.foot; horseAlone(p, dt); }   // Z451 on the face of a rock / a wall: the climb moves him (game/soldier-climb.js)
   else {
     // on foot: run where you push; crouch / prone slow you right down; the body turns to the aim when firing or standing
@@ -116,6 +119,7 @@ export function updateCavalry(dt, now){
   p.fwdSpeed=CV.mounted?CV.speed:Math.hypot(p.vel.x, p.vel.z);
   // place + animate
   p.mesh.position.set(p.pos.x, CV.mounted ? heightAt(p.pos.x, p.pos.z) : footY(p), p.pos.z);   // (Z451 on top of what he climbed: his soles on it)
+  if(CV.mounted && !CV.trans && !H.bike) p.mesh.position.y=horseSwimStep(H, p.pos.x, p.pos.z, p.mesh.position.y, CV.speed, dt, true);   // HSWIM 1 the horse afloat: its height off the bed (game/horse-swim.js)
   swimPlace(p, dt, now);   // SWIM 1 afloat: off the bed, the stroke's pace and heading, the water round him (game/swim.js)
   const firing=!!(S.firing || (MOBILE && autoFire && p.fireAt>now-0.15));
   if(CV.mounted && !CV.trans){ p.mesh.rotation.y=CV.facing; H.root.position.set(0,0,0); H.root.rotation.y=0; if(!H.bike){ H.root.position.copy(p.mesh.position); H.root.rotation.y=CV.facing; } animateHorse(H, dt, CV.speed, CV.yawRate); H.root.position.set(0,0,0); H.root.rotation.y=0; if(!H.bike) H.root.position.y=horseAir(H, dt)/(p.mesh.scale.y||1);   // (Z300 a ride works in its true place: its feet and wheels read the real ground · Z321 a horse in mid-leap rides above it)
@@ -134,12 +138,12 @@ export function updateCavalry(dt, now){
 // ---- the horse on his own ----
 function horseAlone(p, dt){ const H=CV.H; if(!H) return; let v=0, yr=0; const can=rideCanCome(); if(CV.call && can) rideCallStep(p);   // Z306 a call waits while the ride is down or broken; far off or stuck, he comes round (game/ride-call.js)   // Z296 a crashed bike answers no whistle
   if(CV.call && can){ const dx=p.pos.x-CV.hPos.x, dz=p.pos.z-CV.hPos.z, d=Math.hypot(dx,dz); if(d<CAV.call.arrive){ CV.call=false; if(CV.autoOn && !CV.trans && !CV.dead){ CV.autoOn=false; CV.trans={ k:'on', t:0 }; sfx('click'); } }
-    else { const tgt=Math.atan2(dx,dz), df=wrapA(tgt-CV.facing); CV.facing=wrapA(CV.facing+Math.max(-2.4*dt, Math.min(2.4*dt, df))); yr=df*2; v=Math.min(CAV.call.speed, d*1.6); } }
+    else { const tgt=Math.atan2(dx,dz), df=wrapA(tgt-CV.facing); CV.facing=wrapA(CV.facing+Math.max(-2.4*dt, Math.min(2.4*dt, df))); yr=df*2; v=Math.min(CAV.call.speed, d*1.6, horseSwimTop(H, 99)); } }
   CV.speed+=(v-CV.speed)*Math.min(1, dt*2.2);
   CV.hPos.x+=Math.sin(CV.facing)*CV.speed*dt; CV.hPos.z+=Math.cos(CV.facing)*CV.speed*dt; clampField(CV.hPos, 3);
   for(const b of blocks){ const dx=CV.hPos.x-b.x, dz=CV.hPos.z-b.z, R=(b.r||1)+0.9, d2=dx*dx+dz*dz; if(d2<R*R && d2>1e-4){ const d=Math.sqrt(d2); CV.hPos.x+=dx/d*(R-d); CV.hPos.z+=dz/d*(R-d); } }
   rideClear(CV.hPos, 0.9);   // Z321 nor through a tree, a parked car, the street furniture or the wire (held there, he comes round: game/ride-call.js)
-  H.wantGraze = !CV.call; H.root.position.set(CV.hPos.x, heightAt(CV.hPos.x, CV.hPos.z), CV.hPos.z); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, yr); }
+  H.wantGraze = !CV.call; H.root.position.set(CV.hPos.x, horseSwimStep(H, CV.hPos.x, CV.hPos.z, heightAt(CV.hPos.x, CV.hPos.z), CV.speed, dt, true), CV.hPos.z); H.root.rotation.y=CV.facing; animateHorse(H, dt, CV.speed, yr); }   // (HSWIM 1 the riderless horse swims too)
 // ---- getting on and off: a short, eased move between the saddle and the ground beside the horse ----
 function transition(p, dt, now){ const T=CV.trans, H=CV.H, G=CV.G, own=!T.crash && mountOwn(), k=Math.min(1, (T.t+=dt)/(own ? mountDur(T) : CAV.mountT)), e=k*k*(3-2*k);   // Z342 own: on / off the way a rider does (actors/soldier-mount.js)
   const side=new THREE.Vector3(-Math.cos(CV.facing), 0, Math.sin(CV.facing)).multiplyScalar(H.bike ? XEOM[H.bike].side : 1.05);   // the horse's left side (Z295 a ride's: clear of its body)

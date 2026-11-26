@@ -4,6 +4,7 @@ import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { ANIMGRAPH, BODYFIX, BODYMEND, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUPPET, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
 import { bladeClip, bladeHold, bladePre, ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, handRoll, limbTwist, trunkLean, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
 import { swimClip, swimPose } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { horseSwimClip, horseSwimMix, horseSwimPose } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -353,8 +354,9 @@ function poseRealCav(CV, dt, P){
   const g = H.gait, v = Math.abs(H.v || 0), leap = H.air && H.air.y > 0.02 && R.HA && R.HA.Jump_Sprint, hk = leap ? 'Jump_Sprint' : g === 'idle' ? 'Idle' : g === 'walk' ? 'Walk' : (g === 'trot' || g === 'canter') ? 'Canter' : 'Sprint';   // (Z321 in mid-leap it jumps)
   if(leap && H.air.jumpNew){ H.air.jumpNew = false; R.HA.Jump_Sprint.time = 0; }   // (from take-off, played over just the time it is in the air)
   const HS = !H.bike && H.stop, sk = HS ? HS.k : 0; if(R.hr) haunchOff(R);
-  if(R.hm){ blend(R.HA, HS && HS.on ? '' : hk, hk === 'Idle' ? 1 : leap ? R.HA.Jump_Sprint.getClip().duration / (H.air.flight || 0.7) : clamp(v / C.horseV[hk], 0.6, 1.5), HS && HS.on ? dt * 3 : dt); R.hm.update(dt); }
-  if(R.hr) haunchPose(R, H, sk, HS ? HS.about : 0, dt);
+  const SWH = R.hr && !H.bike ? horseSwimClip(R, H, v) : null;   // HSWIM 1 afloat it paddles: the walk at a shortened stride (game/horse-swim.js)
+  if(R.hm){ blend(R.HA, HS && HS.on ? '' : SWH ? SWH.hk : hk, SWH ? SWH.ts : hk === 'Idle' ? 1 : leap ? R.HA.Jump_Sprint.getClip().duration / (H.air.flight || 0.7) : clamp(v / C.horseV[hk], 0.6, 1.5), HS && HS.on ? dt * 3 : dt); if(SWH) horseSwimMix(R, H); R.hm.update(dt); }
+  if(R.hr){ haunchPose(R, H, sk, HS ? HS.about : 0, dt); if(!H.bike) horseSwimPose(R, H, dt); }   // (HSWIM 1 afloat: nose-up about the seat, neck and head out of the water)
   // the rider: on the real horse's back while mounted (every mount / respawn puts the rig on the procedural body bone — move it to the seat)
   const bike = H.bike, stand = bike && XEOM[bike].pose === 'stand';   // Z293 on a war ride he keeps the ride's own seat (seatRider): sat on it, or standing in the bed
   if(!bike && G.parent === H.B){ R.seat.add(G); G.rotation.set(0, 0, 0); }

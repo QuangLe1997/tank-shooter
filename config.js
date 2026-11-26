@@ -831,6 +831,20 @@ export const SWIM = { on:true, bands:[0.03, 0.25, 0.6, 0.95], deep:[1.35, 1.2], 
   fx:{ step:[3, 5], up:2.2, wake:0.11, wakeOp:0.28, ring:0.6, ringR:[0.3, 1.9], ringT:1.6, ringOp:0.14, rings:8, col:0xe8f2f4 },
   pool:{ on:true, u:0.55, deep:1.05, gap:12, ramp:10 },
   foe:{ maxD:1.15, look:0.9 } };
+// HSWIM 1 THE HORSE SWIMS (game/horse-swim.js): the depth at the war horse (RIVER.y − the bed under it) sets how it goes. Measured on the real horse (actors/real-cav.js):
+//   belly ~0.95 m over its hooves, the back / saddle ~1.75–1.9, the seat 1.8, the head's top ~2.2 (the nose ~1.4).
+//   wadeV  [depth, m/s at most] the horse wading (between the points: straight lines; on top of the old ×wadeAt) — splashes at each hoof, a wake and rings deeper than wakeD
+//   deep   deeper than deep[0] it loses the bed and SWIMS (back on its feet under deep[1]): its body floats `float` m under the surface (its root — the hooves' plane;
+//          the back line and the saddle stay just over the water, the head and neck well over), eased at yRate, bobbing [m, rad/s], rolling roll rad; never under the bed
+//          · v m/s at most afloat (a horse swims ~1.5–2), turn × its turn rate · k s to ease the swim in / out (legs, pitch) · defK × what reaches the rider (the water takes some)
+//   pose   nose-up pitch rad about the seat (pivot m over the hooves: the rider is not swung) · neck / head rad raised (the head stretched up out of it) · tail rad laid back onto the water
+//          · clip the library gait it paddles with (Walk), ts its pace [still, at v], idleW the Idle clip mixed in (the stride shortened to a paddle)
+//   fx     splash [shallow, deep] drops a hoof (in water), paddle s between two splashes at its chest, wake s a puff astern off each flank (wakeOp), ring s a ripple ring
+//   noFire the rider does not fire from a swimming horse (one hand on the mane, one on the reins; the carbine held clear of the water) — nor throw, nor use a medkit; msg s between notes
+export const HORSESWIM = { on:true, wadeV:[[0.45, 16], [1.0, 5.5], [1.5, 2.6]], wakeD:0.6,
+  deep:[1.5, 1.38], float:1.55, yRate:2.2, bob:[0.035, 1.6], roll:0.03, v:1.8, turn:0.55, k:0.6, defK:0.8,
+  pose:{ pitch:0.13, pivot:1.7, neck:0.45, head:-0.06, tail:0.55, clip:'Walk', ts:[0.8, 1.3], idleW:0.55 },
+  fx:{ splash:[3, 6], paddle:0.62, wake:0.16, wakeOp:0.13, ring:0.55 }, noFire:true, msg:2.5 };
 
 // LOOT (Z93) — engine & armour pickups, stacking rules and where the good stuff hides.
 // STACKING: picking a buff you already have EXTENDS it by `extendShare` of its duration (never past `maxDurMul`× a full timer) —
