@@ -17,6 +17,7 @@
 //   of each move (ATK) and the fort taken (TAKEN) — CUE events, FORTBOSS.cue, allowed host → guest only (net/rules.js).
 import * as THREE from 'three';
 import { FORT, FORTBOSS, TROOPS } from '../../config.js';
+import { fortBossAct, fortBossAnim, fortBossCorpseTick, fortBossCorpsesClear, fortBossFlash, fortBossLookId, fortBossPreload, fortBossWarm } from '../hub.js';   // BOSS 2 (actors/fort-boss-glb.js)
 import { BIOME, CO, FORTS, MATE, NET_EV, S, ammoCrate, animateSoldier, bigExplode, blastAllies, bossForStage, bossStageWon, burst, clampFieldXZ, coopEnemyById, coopHostCrate, coopHurtMate, coopSendEvent, damagePlayer, diffHpMul, disposeArtZone, enemies, floatText, fortBossGlow, fortBossLook, fortBossLookClear, fortBossLookTick, fortBossPlateOff, fortBossStrip, fortFlagsTick, fortIntactCross, fortTake, freeEnemyBar, heightAt, infPushBlocks, launchEnemyMissile, loopHpMul, losBlocked, makeArtLock, nemFell, nemMeet, nemPlateEl, poseSoldier, radio, ringPulse, scene, sfx, showBanner, soldierStagePerks, spawnBullet, spawnEnemy, spawnGift, spawnPart, storyCue, tickArtLock, wakeFort, killEnemy } from '../hub.js';
 
 const C = FORTBOSS, NOW = () => performance.now() / 1000, PL = ['helmet', 'chest', 'shL', 'shR', 'pack'];
@@ -29,14 +30,15 @@ const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), _m = new THREE.Vector3(
 export function fortBossZone(rel, pl, r){ const a = Math.abs(rel);
   if(a > C.back) return pl.pack > 0 ? 'pack' : 'back';
   if(a < C.front){ if(r < C.headShare) return pl.helmet > 0 ? 'helmet' : 'head'; return pl.chest > 0 ? 'chest' : 'body'; }
-  const side = rel > 0 ? 'shR' : 'shL'; return r < C.sideShare && pl[side] > 0 ? side : 'body'; }
+  const side = rel > 0 ? 'shL' : 'shR'; return r < C.sideShare && pl[side] > 0 ? side : 'body'; }   // (+X of him is his left: the Mixamo frame)
 // his health: by tier, the stage, the difficulty, the NG+ loop, the players
 export function fortBossHp(tier, stage, diffK, loopK, players){ return Math.round((C.hp[tier - 1] || C.hp[0]) * (1 + C.stageK * Math.max(0, (stage || 1) - 1)) * (diffK || 1) * (loopK || 1) * (1 + C.coopK * Math.max(0, (players || 1) - 1))); }
 // the plates' state as one number for the wire: bit i = plate PL[i] gone, bits 5–6 = the phase, bit 7 = staggering
 export function fortBossBits(pl, phase, stag){ let b = 0; for(let i = 0; i < PL.length; i++) if(!(pl[PL[i]] > 0)) b |= 1 << i; return b | ((phase & 3) << 5) | (stag ? 128 : 0); }
 // who he is, by his fort: name, gun, colour (the capital's: the stage's general)
 export function fortBossDef(f){ const L = C.lands[BIOME.name] || C.lands._, K = C.kinds[f.tier] || C.kinds[1], cap = f.tier === 3, bd = cap ? bossForStage(S.stage || 1) : null;
-  return { tier:f.tier, land:L, kind:K, capital:cap, bdef:bd, id:bd ? bd.id : '', name:bd ? bd.name : L.t + ' · ' + (f.chief || 'TƯỚNG GIỮ THÀNH'), sub:K.gun + ' · GIÁP NẶNG' }; }
+  const d = { tier:f.tier, land:L, kind:K, capital:cap, bdef:bd, id:bd ? bd.id : '', name:bd ? bd.name : L.t + ' · ' + (f.chief || 'TƯỚNG GIỮ THÀNH'), sub:K.gun + ' · GIÁP NẶNG' };
+  const LK = C.model === 'glb' && C.looks[fortBossLookId(d)]; if(LK){ if(LK.name && !bd) d.name = LK.name + ' ' + String(f.chief || '').replace(/^TƯỚNG /, ''); if(LK.sub) d.sub = LK.sub; if(LK.glow != null) d.land = { ...L, glow:LK.glow }; } return d; }   // BOSS 2 a look's own name / gun line / glow
 
 function emit(p, a, b, x, z){ FBOSS.log.push([p, a, b]); if(FBOSS.log.length > 60) FBOSS.log.shift(); if(CO.host && CO.live) coopSendEvent(NET_EV.CUE, a, b, x || 0, 0, z || 0, p); }
 function foe(e){ const p = S.player; let x = p.pos.x, z = p.pos.z, mate = false;
@@ -46,6 +48,8 @@ function foe(e){ const p = S.player; let x = p.pos.x, z = p.pos.z, mate = false;
 function hurtAt(x, z, R, dmg, now, kind){ const p = S.player; { const dx = p.pos.x - x, dz = p.pos.z - z, d = Math.hypot(dx, dz); if(d < R) damagePlayer(dmg * (1 - 0.5 * d / R), now, dx || 0.01, dz, kind || 'blast'); }
   if(CO.ai && MATE.on){ const dx = MATE.x - x, dz = MATE.z - z, d = Math.hypot(dx, dz); if(d < R) coopHurtMate(dmg * (1 - 0.5 * d / R), dx || 0.01, dz); }
   blastAllies(x, z, R, dmg); }
+// BOSS 2 the battle's boss looks fetched once its forts stand (the host's and the guest's page alike)
+function preload(){ if(FBOSS.pre || !FORTS.length || !C.on) return; FBOSS.pre = true; fortBossPreload([...new Set(FORTS.map(f => fortBossLookId(fortBossDef(f))))]); }
 function home(f){ return { x:f.x, z:f.z, r:(f.Rin || f.R) - C.move.leash }; }
 // where he comes out: the keep's door (the capital) or the command post's, toward the gate, stepped clear of the building
 function doorOf(f){ const gx = f.gx - f.x, gz = f.gz - f.z, gl = Math.hypot(gx, gz) || 1, ux = gx / gl, uz = gz / gl; let cx = f.x, cz = f.z, r = 0;
@@ -57,7 +61,7 @@ function doorOf(f){ const gx = f.gx - f.x, gz = f.gz - f.z, gl = Math.hypot(gx, 
 export function fortBossWake(f, now){ if(!C.on || f.boss || f.captured) return null; const fi = FORTS.indexOf(f), def = fortBossDef(f), door = doorOf(f);
   const B = { f, fi, def, door, e:null, look:null, st:'pending', until:now + 0.9, phase:1, pl:{}, plMax:{}, next:{ sweep:0, nade:0, charge:0 }, gap:0, guards:[], zones:[], rk:null,
     postAt:0, stuckAt:0, sx:0, sz:0, stuckN:0, stepD:0, dmgIn:0, t0:now, tDown:0, act:null, laser:null, hitTxtAt:0 };
-  f.boss = B; FBOSS.list.push(B);
+  f.boss = B; FBOSS.list.push(B); fortBossWarm(def);
   sfx('horn', { x:door.x, z:door.z }); sfx('alarm'); S.shake = Math.max(S.shake || 0, 0.5);
   showBanner('⚠ ' + def.name + ' XUẤT TRẬN!', '#ff7a3a');
   burst({ x:door.x, z:door.z }, BIOME.ground, 10, 4, { y:heightAt(door.x, door.z) + 1, life:1.4, size:2.4, smoke:true, grav:-0.2, drag:1.4, up:2, op:0.55 });
@@ -92,10 +96,10 @@ export function fortBossDmg(e, dmg){ const B = e.fortBoss; if(!B || B.st === 'de
     if(pack) mark(B, 'ĐIỂM YẾU!', '#ffd24a', now); else if(Math.random() < 0.3){ e.mesh.updateMatrixWorld(); const g = B.look.plates[z]; if(g){ g.getWorldPosition(_m); spawnPart(_m.x, _m.y, _m.z, (Math.random() - 0.5) * 5, 2 + Math.random() * 3, (Math.random() - 0.5) * 5, { color:0xffe0a0, size:0.22, life:0.2, grav:10, drag:1 }); } if(Math.random() < 0.15) sfx('ricochet', e.pos, 0.5); }
     if(B.pl[z] <= 0){ B.pl[z] = 0; plateGone(B, z, now, -bx, -bz); if(pack) out += hp * C.packBoom; } }
   if(out >= e.hp) e._quietKill = true;   // (he does not fly: he folds forward like a felled tree — actors/infantry.js infantryDown)
-  B.dmgIn += out; return out; }
+  B.dmgIn += out; if(out > 0) fortBossFlash(B.look); return out; }
 function mark(B, t, col, now){ if(now < B.hitTxtAt) return; B.hitTxtAt = now + 0.7; const e = B.e; floatText(t, col, { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 15); }
 const PLATE_VI = { helmet:'MŨ SẮT', chest:'GIÁP NGỰC', shL:'GIÁP VAI TRÁI', shR:'GIÁP VAI PHẢI', pack:'BỘ NGUỒN LƯNG' };
-function plateGone(B, z, now, ux, uz){ const e = B.e, L = Math.hypot(ux || 0, uz || 0) || 1; fortBossPlateOff(B.look, z, (ux || 0) / L, (uz || 0) / L, z === 'pack'); sfx('clang', e.pos); sfx('hitHeavy', e.pos, 0.8);
+function plateGone(B, z, now, ux, uz){ fortBossAct(B.look, 'hit', now); const e = B.e, L = Math.hypot(ux || 0, uz || 0) || 1; fortBossPlateOff(B.look, z, (ux || 0) / L, (uz || 0) / L, z === 'pack'); sfx('clang', e.pos); sfx('hitHeavy', e.pos, 0.8);
   floatText('VỠ ' + PLATE_VI[z] + '!', '#ffd24a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.8, z:e.pos.z }, 18);
   if(z === 'pack'){ e.mesh.updateMatrixWorld(); bigExplode({ x:e.pos.x - Math.sin(e.facing) * 0.6, z:e.pos.z - Math.cos(e.facing) * 0.6 }, 0x6ad8ff, 0.9); stagger(B, now, C.stagger.pack); showBanner('BỘ NGUỒN NỔ — ' + B.def.name + ' CHOÁNG!', '#ffd24a'); }
   else { if(z === 'helmet') showBanner('MŨ SẮT VỠ — BẮN VÀO ĐẦU!', '#ffb04a'); stagger(B, now, C.stagger.plate); }
@@ -104,7 +108,7 @@ function sync(B){ emit(C.cue.PLATE, B.fi, fortBossBits(B.pl, B.phase, B.st === '
 function stagger(B, now, T){ if(B.st === 'dead') return; const was = B.st === 'stagger' ? B.until : 0; endAct(B); B.st = 'stagger'; B.until = Math.max(was, now + T); B.e.held = true; B.gap = Math.max(B.gap, now + T + 1); floatText('CHOÁNG!', '#9be0ff', { x:B.e.pos.x, y:heightAt(B.e.pos.x, B.e.pos.z) + 3, z:B.e.pos.z }, 18); }
 function endAct(B){ B.act = null; laser(B, false); }
 // ---- once a frame in battle (game/loop.js) ----
-export function updateFortBoss(dt, now){ fortBossLookTick(dt); if(!FBOSS.list.length) return;
+export function updateFortBoss(dt, now){ fortBossLookTick(dt); fortBossCorpseTick(dt); preload(); if(!FBOSS.list.length) return;
   for(const B of FBOSS.list){ if(B.st === 'gone') continue;
     if(B.st === 'pending'){ if(now >= B.until && S.player && !spawn(B, now)) B.until = now + 1; continue; }
     const e = B.e; if(!e) continue; tickZones(B, dt, now);
@@ -126,7 +130,9 @@ function step(B, dt, now){ const e = B.e, f = B.f, H = home(f), fo = foe(e), ox 
   else free(B, dt, now, fo, H);
   { const dx = e.pos.x - H.x, dz = e.pos.z - H.z, q = Math.hypot(dx, dz); if(q > H.r + 2){ e.pos.x = H.x + dx / q * (H.r + 2); e.pos.z = H.z + dz / q * (H.r + 2); } }   // the leash: never out of his walls
   B.stepD += Math.hypot(e.pos.x - ox, e.pos.z - oz); if(B.stepD > C.step){ B.stepD = 0; footfall(e); }
-  fortBossGlow(B.look, dt, 1 - k, B.phase === 3); guardsFollow(B, now); bar(B, true); }
+  fortBossGlow(B.look, dt, 1 - k, B.phase === 3); guardsFollow(B, now); bar(B, true);
+  { const v = dt > 0 && B.lx != null ? Math.hypot(e.pos.x - B.lx, e.pos.z - B.lz) / dt : 0, A = B.act, cs = B.st === 'charge' && A && A.t < C.charge.tel ? 'chargeT' : B.st;   // BOSS 2 his motion
+    B.lx = e.pos.x; B.lz = e.pos.z; fortBossAnim(B.look, dt, cs, v, now - (e.shotAt || -9) < 0.3 || (B.st === 'sweep' && A && A.t > C.sweep.tel) || (B.st === 'rocket' && A && A.t > C.rocket.tel), now); } }
 // pose and draw him this frame when this file moves him (held: the infantry AI skips him — ai/tactics.js)
 function place(e, face, dt, st, firing, ox, oz){ e.facing = face; e.mesh.position.set(e.pos.x, heightAt(e.pos.x, e.pos.z), e.pos.z); e.mesh.rotation.y = face;
   animateSoldier(e.mesh, Math.hypot(e.pos.x - ox, e.pos.z - oz) / e.def.scale, dt, firing); poseSoldier(e.mesh, st, dt); }
@@ -203,7 +209,7 @@ function chargeStep(B, dt, now, ox, oz, fo){ const e = B.e, A = B.act, T = C.cha
 // ---- his second weapon: hand grenades · the launcher's volley · shoulder rockets ----
 function alt(B, now, fo){ const e = B.e, K = B.def.kind, P = B.phase - 1; B.next.nade = now + C.nade.cd[P]; B.gap = now + 1.4;
   if(K.alt === 'rocket'){ B.st = 'rocket'; e.held = true; B.act = { t:0, n:0, fo }; sfx('beep', e.pos); floatText('TÊN LỬA!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 18); emit(C.cue.ATK, B.fi, 5, fo.x, fo.z); B.gap = now + C.rocket.tel + C.rocket.n * C.rocket.gap + 1.2; return; }
-  const gl = K.alt === 'gl', n = gl ? C.gl.n : C.nade.n, sc = gl ? C.gl.scatter : C.nade.scatter, m = muzzle(e), dmg = C.nade.dmg * (1 + 0.1 * ((S.stage || 1) - 1));
+  fortBossAct(B.look, 'throw', now); const gl = K.alt === 'gl', n = gl ? C.gl.n : C.nade.n, sc = gl ? C.gl.scatter : C.nade.scatter, m = muzzle(e), dmg = C.nade.dmg * (1 + 0.1 * ((S.stage || 1) - 1));
   floatText(gl ? 'PHÓNG LỰU!' : 'LỰU ĐẠN!', '#ff9a4a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 16); sfx(gl ? 'shoot_agl' : 'whoosh', e.pos); emit(C.cue.ATK, B.fi, 2, fo.x, fo.z);
   for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, r = i === 0 ? 0.5 : 1.6 + Math.random() * sc, Tt = C.nade.lock + i * (gl ? 0.15 : 0.2), [x, z] = clampFieldXZ(fo.x + Math.cos(a) * r, fo.z + Math.sin(a) * r, 2);
     spawnPart(m.x, m.y, m.z, (x - m.x) / Tt, 0.5 * 14 * Tt, (z - m.z) / Tt, { color:0x3a4020, size:0.2, life:Tt, grav:-14, drag:0 });
@@ -235,7 +241,7 @@ function bar(B, on){ const bb = document.getElementById('bossbar'); if(!bb) retu
     b.textContent = (B.st === 'stagger' ? 'CHOÁNG! · ' : B.phase === 3 ? 'NỔI ĐIÊN · ' : '') + B.def.sub + ' · GIÁP ' + nPl + '/5' + (live ? ' · CẬN VỆ ' + live : ''); st.appendChild(b); } }
 // a new battlefield (world/fortress.js clearForts)
 export function fortBossReset(){ FBOSS.seq++; for(const B of FBOSS.list){ for(const z of B.zones) disposeArtZone(z.zone); if(B.laser){ scene.remove(B.laser); B.laser.material.dispose(); } if(B.look) fortBossStrip(B.look, false); }
-  FBOSS.list.length = 0; for(const g of FBOSS.guest.values()) if(g.look) fortBossStrip(g.look, false); FBOSS.guest.clear(); fortBossLookClear(); const bb = document.getElementById('bossbar'); if(bb && FBOSS.barB) bb.style.display = 'none'; FBOSS.barB = null; }
+  FBOSS.list.length = 0; for(const g of FBOSS.guest.values()) if(g.look) fortBossStrip(g.look, false); FBOSS.guest.clear(); fortBossLookClear(); fortBossCorpsesClear(); FBOSS.pre = false; const bb = document.getElementById('bossbar'); if(bb && FBOSS.barB) bb.style.display = 'none'; FBOSS.barB = null; }
 // dev / probes: the fort's first force dies at once (it wakes first if it slept) — the boss comes out by the ordinary rule
 export function fortBossDebugClear(f){ const now = NOW(); if(!f.active) wakeFort(f, now); for(const e of f.units.slice()) if(enemies.includes(e)){ e.hp = 0; killEnemy(e); }
   f.pool.inf = 0; f.tunnel = 0; f.tunnelWait = 0; f.leaderless = true; }
@@ -253,10 +259,12 @@ export function fortBossCue(p, a, b, x, z){ const Q = C.cue; if(p !== Q.APPEAR &
   if(p === Q.TAKEN){ G.dead = true; if(G.look) fortBossStrip(G.look, true); bar(G, false); fortTake(f, true); return true; }
   return true; }
 // once a frame on the guest's page (game/coop-puppets.js coopGuestPlay)
-export function fortBossGuest(dt, now){ fortBossLookTick(dt); fortFlagsTick(dt); if(!FBOSS.guest.size) return;
+export function fortBossGuest(dt, now){ fortBossLookTick(dt); fortBossCorpseTick(dt); fortFlagsTick(dt); preload(); if(!FBOSS.guest.size) return;
   for(const G of FBOSS.guest.values()){ if(G.dead) continue; if(!G.e){ const e = coopEnemyById(G.nid); if(!e) continue; G.e = e; G.look = fortBossLook(e, G.def); e.rK = G.look.k; e.def = { ...e.def, scale:(e.def.scale || 1) * G.look.k };
       for(const k of PL) if(!(G.pl[k] > 0)) fortBossPlateOff(G.look, k, 0, 0, false); }
     const e = G.e; if(!enemies.includes(e) || !(e.hp > 0)){ G.dead = true; fortBossStrip(G.look, true); bar(G, false); continue; }
-    fortBossGlow(G.look, dt, 1 - e.hp / e.maxHp, G.phase === 3); if(G.act){ G.act.t += dt; const tel = G.act.k === 1 ? C.sweep.tel : G.act.k === 3 ? C.charge.tel : G.act.k === 5 ? C.rocket.tel : 0; const keep = G.act.t < tel; if(keep) laserG(G, G.act.a + (G.act.k === 1 ? Math.sin(G.act.t / tel * Math.PI * 2) * 0.5 * C.sweep.arc : 0)); else { G.act = null; if(G.laser) G.laser.visible = false; } }
+    { const v = dt > 0 && G.lx != null ? Math.hypot(e.pos.x - G.lx, e.pos.z - G.lz) / dt : 0, a = G.act, k = a && a.k; G.lx = e.pos.x; G.lz = e.pos.z;   // BOSS 2 his motion from what the host says he does
+      fortBossAnim(G.look, dt, G.st === 'stagger' ? 'stagger' : k === 3 ? (a.t < C.charge.tel ? 'chargeT' : 'charge') : k === 1 ? 'sweep' : k === 5 ? 'rocket' : 'free', v, !!a && (k === 1 && a.t > C.sweep.tel || k === 5 && a.t > C.rocket.tel), now); }
+    fortBossGlow(G.look, dt, 1 - e.hp / e.maxHp, G.phase === 3); if(G.act){ G.act.t += dt; const tel = G.act.k === 1 ? C.sweep.tel : G.act.k === 3 ? C.charge.tel : G.act.k === 5 ? C.rocket.tel : 0; const keep = G.act.t < tel, dur = G.act.k === 1 ? C.sweep.dur * (C.sweep.pass[G.phase - 1] || 1) : G.act.k === 3 ? C.charge.t : G.act.k === 5 ? C.rocket.n * C.rocket.gap : 0; if(keep) laserG(G, G.act.a + (G.act.k === 1 ? Math.sin(G.act.t / tel * Math.PI * 2) * 0.5 * C.sweep.arc : 0)); else { if(G.laser) G.laser.visible = false; if(G.act.t > tel + dur) G.act = null; } }
     bar(G, true); } }
 function laserG(G, a){ laser(G, true, a, C.move.range); }

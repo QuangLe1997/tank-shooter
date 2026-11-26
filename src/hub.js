@@ -194,6 +194,7 @@ export * from './loot/loot-real.js';   // LOOT 1 the pick-ups wear downloaded mo
 export * from './campaign/general-duel.js';   // Z353 soldier mode: the general jumps out of his burning machine and fights on foot
 export * from './campaign/fort-boss.js';   // BOSS 1 a boss in every fort: comes out when its first force is dead, his death takes it
 export * from './actors/fort-boss-look.js';   // BOSS 1 the fort boss's armour and heavy gun on the rifleman's rig
+export * from './actors/fort-boss-glb.js';   // BOSS 2 the fort boss as a real rigged model: Mixamo skeleton, his own library motions, the heavy gun in his hands
 export * from './campaign/nemesis.js';   // NEMESIS 1–3 the general remembers: he can get away, comes back with a rank, a scar and a lesson, and says so
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face

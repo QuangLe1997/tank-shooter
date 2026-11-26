@@ -1,0 +1,10 @@
+XUNG KÍCH — assets/models/real/boss: the fort bosses (BOSS 2), modern heavy soldiers on the Mixamo skeleton
+
+Models taken from Meshy's free community gallery — published by their authors under CC0 (Meshy Terms of Service §3.3, community models), downloaded
+2026-11-27 through the post's Download button (no credits spent); cut down locally (~40k triangles, maps re-baked onto new UVs), auto-rigged with
+Mixamo (standard skeleton, T pose), then packed by tools/boss-pack.mjs: one skinned mesh, one material (colour + normal JPEG), metres, feet on y = 0,
+facing +Z, and his motions carried over from the game's own Mixamo library (assets/anim).
+- titan-exosuit.glb: "Titan Exosuit" — Meshy Community https://www.meshy.ai/posts/019c1b94-cd21-78aa-a5d7-ddcac384780c (task 019c1ae1-3337-73b3-8026-551fa4996b53, 1,363,556 → 39,941 triangles), CC0
+- cyborg-revenant.glb: "Cyborg Revenant" — Meshy Community https://www.meshy.ai/posts/019c3529-6f12-7a46-84f2-d573ff136f8b (task 019c3287-cc50-76e5-a2a5-9430656e1882, 1,151,439 → 39,978 triangles), CC0
+- demon-commander.glb: "Female Demonic Commnader" by jurafjvs — Meshy Community https://www.meshy.ai/posts/019baa52-110f-77fd-b517-9b36cb1999c3 (task 019baa33-b2d5-7167-932f-a29f3b3dc88e, 860,000 → 40,000 + 20,600 triangles), CC0.
+  Her wings and tail were cut off before the auto-rig and put back by the packer, each on a joint of its own (wingL / wingR on Spine2, tail on Hips).

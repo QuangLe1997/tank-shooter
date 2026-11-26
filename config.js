@@ -2564,10 +2564,20 @@ export const NEMESIS = { on:true, v:1, tick:0.25,
 //   in that phase): sweep = the heavy gun's fan (tel s of red fan first, dur s, arc rad, n rounds a pass, pass count); nade = a clutch of grenades
 //   (rings tighten lock s); charge = a straight rush (tel s of a red lane, v m/s for t s, dmg + push on contact; into a wall: a stagger). guards = men
 //   called in phase 2 [by tier], their health × hpK. first = the fort's first force: its pool held to [min, max] men by tier when it wakes (× FORT.mobileMul). intro: slow-mo timeScale, hold s walking out (no hits land), step = metres between heavy footfalls.
+//   BOSS 2 model 'glb' = a real rigged model (actors/fort-boss-glb.js; 'rig' = the BOSS 1 armoured rifleman rig, also while the file loads): looks = the
+//   models packed by tools/boss-pack.mjs (file, h = its own height m, hipK = its hip height over the library operator's — the clips' speeds × it), pick =
+//   which look a fort gets (_ = any, capital = the stage's general, lands = by battlefield; the two female bosses to come are more rows); anim = cross-fade s,
+//   plate = his plates' steel; a look may carry its own hK (× the tier's height), gun / gunK, name (+ the fort chief's) and sub (the bar's line), glow (the
+//   pack's cells), plateK / helm:'mask' (its own plate size; a mask over the eyes in place of the helmet) and sway (wings flapping [standing, running] rad at hz [standing, running] Hz, tail rad — the demon commander's wings and tail); walk / run above walkV / runV m/s, the library clips' own speeds (m/s on the operator), lie = s the fallen lies before he sinks; gun = the INFGUN scan
+//   in his hands × gunK of its length (on his scale), plateK = the plates' size on the model; h = his height m by tier (the guards stand 1.8)
 //   kinds = by tier his heavy gun (n = rounds ×, r = round size, dmgK, arcK) and his second weapon (alt: nade = hand grenades, gl = a grenade launcher's
 //   wider volley gl.n rounds over gl.scatter m, rocket = a shoulder launcher, rocket.n rockets gap s apart after a tel s red glint) — every boss a modern
 //   heavy operator (helmet and visor, plate carrier, heavy plates; never a sword or a robe); lands = his name and armour colour per battlefield; cue = co-op event codes (host → guest)
-export const FORTBOSS = { on:true, model:'rig', h:[2.6, 2.75, 2.9], baseH:1.82,
+export const FORTBOSS = { on:true, model:'glb', h:[3.0, 3.15, 3.3], baseH:1.82,
+  looks:{ titan:{ file:'assets/models/real/boss/titan-exosuit.glb', h:2.0, hipK:1.168, plate:0x8c97a6 }, revenant:{ file:'assets/models/real/boss/cyborg-revenant.glb', h:1.95, hipK:1.266, plate:0x3c3836 },
+    demon:{ file:'assets/models/real/boss/demon-commander.glb', h:1.9, hipK:1.249, plate:0x5c1f28, hK:0.95, plateK:0.85, helm:'mask', gun:'mp5', gunK:1.3, name:'NỮ QUỶ', sub:'TIỂU LIÊN · GIÁP QUỶ', glow:0xff3a7a, sway:{ wing:[0.12, 0.35], hz:[1.1, 2.6], tail:0.3 } } },
+  pick:{ _:'titan', capital:'revenant', lands:{ VOLCANO:'revenant', FOUNDRY:'revenant', STEELMILL:'revenant', RUINS:'revenant', CITY:'demon', SAVANNA:'demon', QUARRY:'demon', ARCTIC:'demon', TUNDRA:'demon' } },
+  anim:{ fade:0.25, walkV:0.35, runV:4.2, v:{ walk:1.645, run:4.113, fireWalk:0.85 }, lie:5 }, gun:'lmg', gunK:1.15, plateK:1.35,
   hp:[4400, 5000, 5600], stageK:0.08, coopK:0.7, hitCap:0.03,
   front:0.95, back:2.25, headShare:0.25, sideShare:0.7, armK:0.2, headK:1.6, packK:1.5, backK:1.15, packBoom:0.04,
   plates:{ helmet:0.05, chest:0.10, shL:0.05, shR:0.05, pack:0.07 },
