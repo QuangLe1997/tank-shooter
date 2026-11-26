@@ -1,5 +1,6 @@
-/* EVENT 1 — the side mission's card (campaign/side-missions.js): its name, the time left, a bar of how far it has come, one line of what to do */
-#sideChip{position:absolute;left:50%;top:158px;transform:translateX(-50%);min-width:236px;max-width:min(340px,64vw);padding:5px 12px 6px;
+/* EVENT 1 — the side mission's card (campaign/side-missions.js): its name, the time left, a bar of how far it has come, one line of what to do.
+   EVENT 4 on a desktop it sits in the 50 px between the contract chip (106–130) and the banner (#combo, 180: css/mil.css) — lower, the banner covered half of it */
+#sideChip{position:absolute;left:50%;top:133px;transform:translateX(-50%);min-width:236px;max-width:min(340px,64vw);padding:3px 12px 4px;
   background:linear-gradient(180deg,rgba(8,18,24,.84),rgba(6,12,16,.74));border:1px solid rgba(127,208,255,.5);border-left:3px solid #7fd0ff;
   clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%,0 8px);font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;pointer-events:none;z-index:6}
 #sideChip.hidden{display:none}
@@ -7,7 +8,7 @@
 #sideChip .sc-dot{width:7px;height:7px;background:#7fd0ff;transform:rotate(45deg);box-shadow:0 0 8px #7fd0ff;animation:obPulse 1.2s ease-in-out infinite}
 #sideChip .sc-name{flex:1;color:#d6efff;font-size:12.5px;letter-spacing:.13em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #sideChip .sc-t{color:#fff;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.04em}
-#sideChip .sc-bar{height:4px;margin:4px 0 3px;background:rgba(255,255,255,.1)}
+#sideChip .sc-bar{height:4px;margin:3px 0 2px;background:rgba(255,255,255,.1)}
 #sideChip .sc-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3aa0d8,#9be0ff);transition:width .25s}
 #sideChip .sc-fx{color:rgba(214,239,255,.78);font-size:11px;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #sideChip.done{border-color:rgba(140,220,110,.6);border-left-color:#8cdc6e} #sideChip.done .sc-name,#sideChip.done .sc-t{color:#bff0a0} #sideChip.done .sc-dot{background:#8cdc6e;box-shadow:0 0 8px #8cdc6e;animation:none}

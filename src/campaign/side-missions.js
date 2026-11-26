@@ -167,7 +167,7 @@ function powsTick(M, tk, now){ const P = M.K, left = steer(M.men, M.ex, M.ez); M
       _pt.x = g.position.x; _pt.z = g.position.z; burst(_pt, 0x9be04a, 4, 3, { y:g.position.y + 1.2, life:0.5, size:0.4, grav:-6, drag:2, up:3 }); scene.remove(g); }
     M.pr.length = 0; finish(M, 'won', now, 'ev_pows_ok', n + ' tù binh cầm súng theo anh · +' + P.score + ' điểm'); return; }
   for(let i = 0; i < M.men.length; i++){ const e = M.men[i]; if((e.pos.x - M.ex) ** 2 + (e.pos.z - M.ez) ** 2 < P.exitR * P.exitR){ powsGone(M); finish(M, 'lost', now, 'ev_pows_lost', 'Tốp áp giải đã ra khỏi trận'); return; } } }
-function powsGone(M){ for(let i = 0; i < M.pr.length; i++) scene.remove(M.pr[i]); M.pr.length = 0; }
+function powsGone(M){ for(let i = 0; i < M.pr.length; i++){ const g = M.pr[i]; if(inCamView(g.position.x, g.position.z)){ soldierKneel(g, true); keep(g); } else scene.remove(g); } M.pr.length = 0; }   // EVENT 4 (in the frame they stay, on one knee, until the stage ends: nobody vanishes in plain sight)
 
 const START = { pilot:startPilot, truck:startTruck, pows:startPows }, FRAME = { pilot:pilotFrame, truck:truckFrame, pows:powsFrame }, TICK = { pilot:pilotTick, truck:truckTick, pows:powsTick };
 // the timer ran out: the pilot stays hidden where he is, the truck stays bogged, the escort gets away

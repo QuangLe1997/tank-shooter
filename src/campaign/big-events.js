@@ -141,7 +141,7 @@ const dry = () => C.fire.biomes.indexOf(BIOME.name) >= 0 && C.fire.wet.indexOf(S
 function fuelNear(x, z, r){ const r2 = r * r; for(let k = 0; k < _fuel.length; k++){ const f = _fuel[k]; if(f.alive && (f.x - x) ** 2 + (f.z - z) ** 2 < r2) return true; } return false; }
 function cellNear(x, z, r){ const r2 = r * r; for(let i = 0; i < CELL.length; i++){ const c = CELL[i]; if(c.on && (c.x - x) ** 2 + (c.z - z) ** 2 < r2) return true; } return false; }
 function startFire(now){ const F = C.fire, p = S.player, f2 = F.fuelR * F.fuelR; if(!dry()) return null; let ox = 0, oz = 0, bn = 0;
-  for(let k = 0; k < 10; k++){ const a = Math.random() * 6.283, d = F.d[0] + Math.random() * (F.d[1] - F.d[0]), x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; if(!inField(x, z, 4) || onTrail(x, z)) continue; let n = 0;   // where the scrub is thickest
+  for(let k = 0; k < F.tries; k++){ const a = Math.random() * 6.283, d = F.d[0] + Math.random() * (F.d[1] - F.d[0]), x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; if(!inField(x, z, 4) || onTrail(x, z)) continue; let n = 0;   // where the scrub is thickest
     for(let i = 0; i < crushables.length; i++){ const c = crushables[i]; if(c.alive && c.kind === 'grass' && (c.x - x) ** 2 + (c.z - z) ** 2 < f2) n++; } if(n > bn){ bn = n; ox = x; oz = z; } }
   if(bn < F.minFuel) return null; _fuel.length = 0; const r2 = (F.reach + F.cell) ** 2; for(let i = 0; i < crushables.length; i++){ const c = crushables[i]; if(c.alive && c.kind === 'grass' && (c.x - ox) ** 2 + (c.z - oz) ** 2 < r2) _fuel.push(c); }
   let wx = WX.wind.x, wz = WX.wind.y; const wl = Math.hypot(wx, wz); if(wl < 0.01){ const a = Math.random() * 6.283; wx = Math.sin(a); wz = Math.cos(a); }

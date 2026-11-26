@@ -1108,7 +1108,7 @@ export const SIDEMISSION = { on:true, perStage:2, fromStage:1, first:[40, 60], e
 //   crash — a burning transport comes in (alt m up, speed m/s) and hits the ground minD…maxD m from him, its skid (skid m in skidT s, no nearer than `clear` m
 //     to him) drawn on the ground: a blast (R, dmg) where it hits, fire along the skid (a cell every cellGap m: skidR m, skidDmg, burning burnSkid s), then a
 //     wreck that stops rounds (block m) and cooks off: cookN blasts (cookR m, cookDmg) over cook s, the first cookWarn s after it stops; it burns for burn s.
-//   fire — on the dry fields (biomes; not in the weather `wet`) a stray shell lands d m from him where the scrub is thickest (at least minFuel tufts within
+//   fire — on the dry fields (biomes; not in the weather `wet`) a stray shell lands d m from him where the scrub is thickest of `tries` places (at least minFuel tufts within
 //     fuelR m) and lit s later the grass is alight: a cell (cell m) smoulders warn s, then burns for burn s — dps to whoever stands in it (enemies × enemyK),
 //     looked at every tick s — and every step s each burning cell lights the next with probability p (at most perStep a step), downwind inside a cone of ± cone
 //     rad (creep: the share that goes any way), only where a tuft that has not burnt stands within near m, off the trails and out of the water; at most max cells, no farther than reach m
@@ -1118,7 +1118,7 @@ export const BIGEVENT = { on:true, perStage:3, gap:55, hpMin:0.45, playerK:1, co
   from:{ bombing:2, crash:1, fire:1, jam:2 }, w:{ bombing:0.45, crash:0.4, fire:0.45, jam:0.4 },
   bombing:{ warn:5.5, len:110, n:14, gap:0.28, fall:2, R:6, dmg:75, lane:6, planes:3, wing:12, alt:40, knotR:[20, 80], ahead:22, clear:14, off:160 },
   crash:{ warn:4.5, minD:38, maxD:75, clear:24, alt:42, speed:44, skid:30, skidT:1.8, R:7, dmg:80, cellGap:3.5, skidR:3, skidDmg:40, burnSkid:14, block:3.2, cook:10, cookWarn:2.5, cookN:[4, 6], cookR:6.5, cookDmg:45, burn:35 },
-  fire:{ warn:2.5, lit:1.2, biomes:['DESERT', 'SAVANNA', 'MEADOW', 'QUARRY', 'VOLCANO'], wet:['rain', 'snow'], d:[24, 55], fuelR:12, minFuel:8, near:4.5, cell:3.2, max:34, reach:42, step:1.1, p:0.55, perStep:3, cone:1.1, creep:0.15,
+  fire:{ warn:2.5, lit:1.2, biomes:['DESERT', 'SAVANNA', 'MEADOW', 'QUARRY', 'VOLCANO'], wet:['rain', 'snow'], d:[24, 55], fuelR:12, minFuel:5, tries:16, near:4.5, cell:3.2, max:34, reach:42, step:1.1, p:0.55, perStep:3, cone:1.1, creep:0.15,
     burn:[10, 15], life:45, dps:12, enemyK:1.5, tick:0.5, veils:4, smokeR:8, mobileK:0.6 },
   jam:{ warn:3, t:20 } };
 // EVENT 1–2 the radio lines of the side missions and the big events, added to the story's pools (campaign/story.js storyCue; STORY.lines' rules: p, cd, 'who|text')
