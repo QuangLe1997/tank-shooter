@@ -930,7 +930,8 @@ export const AMBIENCE = { on:true, vol:0.55,
 //     supp = a suppressed gun (no tail, little reverb, no slap-back), foe = an unnamed caller's shot of this family is the enemy's
 //   who: whose gun — g, rate, lpK, tailK (× the tail and the reverb), mech (× the click), eq [Hz, Q, dB] a peak that sets the enemy's rifles apart from ours
 //   crack: an enemy round within R of the ear — g (× heavyK, rate heavyRate for a shell), harder the closer (pow, never under floor); the thump of its shot comes
-//     gap[min, max] s later (a round at v m/s against sound), from the muzzle, low-passed at thumpLp, only from thumpMin units off; rush = a shell's wake
+//     gap[min, max] s later (a round at v m/s against sound), from the muzzle, low-passed at thumpLp, only from thumpMin units off, at most thumpCap of them
+//     sounding; rush = a shell's wake
 //   impact: a round on a material (fx/gunfx.js) within R, the same material at most once every gap s — g per material, rico = the chance it whines off (the recorded ricochet × ricoG)
 //   space (AUDIO 2): the listener's place, read by `rays` rays of R units (one a tick, a ring every `every` s; kinds in `skip` are no wall): wallN of them hit within
 //     wallR → 'walls' (a fort's yard, a street) · the land valley.h higher at valley.r in valley.n directions → 'valley' · the underground base / a cave → 'roof' ·
@@ -980,7 +981,7 @@ export const AUDIOFX = { on:true, unit:1.3, c:343, seed:20261126, variants:3, pa
     enemyShoot:{ key:'enemy', foe:1, mech:0, tail:{ k:'l', g:0.3 } } },
   who:{ p:{ g:1, rate:1, lpK:1, tailK:1, mech:1, prio:'own' }, ally:{ g:0.85, rate:1.03, lpK:1, tailK:1, mech:0.6, prio:'squad' },
     e:{ g:0.95, rate:0.9, lpK:0.82, tailK:1.35, mech:0, prio:'enemy', eq:[650, 1.1, 5] }, x:{ g:1, rate:1, lpK:1, tailK:1, mech:0, prio:'enemy' } },
-  crack:{ R:2.8, pow:1.6, floor:0.35, g:0.32, heavyK:1.3, heavyRate:0.72, rush:0.5, wet:0.6, v:740, gap:[0.045, 0.3], thump:0.75, thumpLp:520, thumpRate:0.85, thumpMin:14, thumpWet:1.3 },
+  crack:{ R:2.8, pow:1.6, floor:0.35, g:0.32, heavyK:1.3, heavyRate:0.72, rush:0.5, wet:0.6, v:740, gap:[0.045, 0.3], thump:0.75, thumpLp:520, thumpRate:0.85, thumpMin:14, thumpWet:1.3, thumpCap:3 },
   impact:{ R:60, gap:0.03, g:{ dirt:0.1, sand:0.09, stone:0.13, metal:0.12, wood:0.12, water:0.13 }, rico:{ metal:0.35, stone:0.14 }, ricoG:0.8 },
   brass:{ g:0.05, gap:0.05, soft:['sand', 'grass', 'snow', 'water'], softK:0.6 },
   blast:{ nearD:28, tail:0.4, duck:[0.5, 0.008, 0.09, 0.22] },

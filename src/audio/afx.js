@@ -110,7 +110,7 @@ export function afxIncoming(b, P, heavy){ if(!ready() || !P) return false; const
   const s = open(_pos, 'crack', A.prio.incoming, 'crack', C.g * afxCrackGain(m.d, C) * (heavy ? C.heavyK : 1), o);
   if(s){ layer(s, afxBuf('crack', mkCrack), 1, (heavy ? C.heavyRate : 1) * (0.94 + Math.random() * 0.12), 0, _v.t); if(heavy && !MOBILE) layer(s, tailBuf('s'), C.rush, 1.5, 0, _v.t + 0.008); AFX.stats.cracks++; }
   if(b.ox != null){ const D = Math.hypot(b.ox - P.pos.x, b.oz - P.pos.z), k = heavy ? 'enemy' : 'rifleE', G = SND[k], tb = D >= C.thumpMin && G ? sampleGet(G.sample || k) || bankGet(k) : null;
-    if(tb){ const o2 = opt(); o2.lp = C.thumpLp; o2.at = afxCrackGap(D, C, A.unit, A.c); o2.wetK = C.thumpWet; _org.x = b.ox; _org.z = b.oz;
+    if(tb){ const o2 = opt(); o2.lp = C.thumpLp; o2.at = afxCrackGap(D, C, A.unit, A.c); o2.wetK = C.thumpWet; o2.cap = C.thumpCap; _org.x = b.ox; _org.z = b.oz;   // (a machine gun's burst going by: a few thumps at a time, not one voice a round)
       const s2 = open(_org, 'gun', A.prio.squad, 'thump', G.g * C.thump, o2); if(s2) layer(s2, tb, 1, C.thumpRate * (0.95 + Math.random() * 0.1), 0, _v.t); } }
   return true; }
 
