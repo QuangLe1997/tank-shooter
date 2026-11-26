@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
+import { SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape, hudChips } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -40,7 +40,7 @@ export function applyPowerup(def){
     else { if(rem>0) tip('stack'); const full=def.dur, R=LOOT.rules, nd=rem>0 ? Math.min(full*R.maxDurMul, rem+full*R.extendShare) : full; p.buffUntil[k]=now+Math.max(nd, rem); note = rem>0 ? 'Gia hạn → '+Math.round(nd)+' giây' : full+' giây'; }
     if(def.onGet) def.onGet(p); }
   else if(def.apply) def.apply(p);
-  lootToast(def, note);
+  if(!def.quiet) lootToast(def, note);   // SUPPLY 2 (an enemy's pouch says its own line: no card)
 }
 // reward card — icon · name · effect · rule — slides in on the right, newest replaces the last
 export let _ltT=null;
@@ -151,6 +151,7 @@ export function updateBuffHUD(now){                                             
   const bar=document.getElementById('buffbar'); if(!bar) return; const p=S.player, items=[];
   for(const k in p.buffUntil){ const until=p.buffUntil[k]; const rem=until-now; if(rem<=0) continue; items.push([k, until===Infinity?'∞':Math.ceil(rem)+'s', k==='turbo'&&p.buffLv.turbo>1?'×'+p.buffLv.turbo:'']); }
   if(p.era>0) items.push(['era', '×'+p.era, '']);
+  hudChips(items);   // SUPPLY 2 the load he carries, once it slows him (game/logistics.js)
   const key=items.map(i=>i.join(':')).join('|'); if(key===_buffKey) return; _buffKey=key; bar.replaceChildren();
   for(const [k,txt,lv] of items){ const c=document.createElement('div'); c.className='buffchip'; if(BUFF_COL[k]) c.style.setProperty('--bc', BUFF_COL[k]);
     const ic=document.createElement('span'); ic.className='bic'; setIcon(ic, BUFF_ICON[k]);

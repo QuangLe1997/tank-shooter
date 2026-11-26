@@ -2502,16 +2502,41 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
   link:{ pingMs:2000, deadMs:8000, queueMax:64, retryBaseMs:400, retryMaxMs:5000, retryK:1.8, retryJitter:0.25, retries:20 },
   session:{ tickMs:250, pingMs:1000, helloMs:3000, peerLostMs:15000 },
   ids:{ host:1, guest:2, firstEntity:16 } };
-// SUPPLY 1 AMMUNITION IS A SUPPLY LINE (game/logistics.js; a gun's ammunition class: data/guns.js ammoKind) — "magazines" = × the gun's own magazine; rounds, s.
+// SUPPLY 1 AMMUNITION IS A SUPPLY LINE (game/logistics.js; a gun's ammunition class: data/guns.js ammoKind) — "magazines" = × the gun's own magazine; rounds, s, m, kg.
 //   start: the reserve he sets out with by class, in magazines of the gun he carries in it (× diff by the difficulty setting); a new stage and a new life bring every class
 //     back up to it · capK: a class's reserve holds at most capK × that · warn: the reserve at or under `low` magazines = ÍT ĐẠN, none = BĂNG CUỐI, none and an empty
 //     magazine = HẾT ĐẠN (a dry trigger says so at most every `say` s) · regen: the way out — the reserve of his issue weapon (the first gun of his rack) fills back by
 //     itself up to `mags` magazines, one magazine every magT s (loose rounds from the bottom of his pack) · give: a gun picked up brings `fresh` magazines of its own
 //     (one he had already: `again`) · crate: the THÙNG ĐẠN loot (the supply truck's crate, the relief drop) brings `share` of every class's start load, a magazine at least ·
-//   tick: s between two looks of the module (never per frame) · say: every line of text of the modules ({n} a number, {c} the class's name).
+//   tick: s between two looks of the module (never per frame) · say: every line of text of the modules ({n} a number or a name, {c} the class's name, {d} m, {b} a bearing).
+// SUPPLY 2 RESUPPLY HE PLAYS FOR, AND THE WEIGHT OF IT (game/logistics.js):
+//   pouch: a fallen enemy soldier leaves his pouch with chance p (pLow while that class's reserve is under lowMags magazines): n[0]…n[1] rounds for the first class of
+//     `fits` he carries (× the difficulty), a B40 man a rocket with chance `rocket` — walked over like any loot.
+//   depot: the ammunition point at our base (crates at the rally point `off` m from its centre; no rally point: coreOff m from the core) — standing within r m one
+//     magazine every `every` s to the gun in his hands first, then to the emptiest class, without end; a captured depot (within fwdR m) and a captured fortress (within
+//     fortK × its radius, fwdR at least) do the same out of fwdStock magazines each a stage.
+//   drop: the director's parachute — his reserves under `low` of the start loads on average (or under a magazine behind the issue weapon), nothing waiting, cd s since the
+//     last, wait s into the stage, and a phase that allows (campaign/director.js dirSupplyOk): it lands d[0]…d[1] m from him on the side away from the enemy within
+//     sideR m (`tries` bearings; the first spot with at most `foes` enemies within foeR m), named on the radio with distance and bearing, and brings `share` of every
+//     class's start load; up to noticeN men who are not alerted and hold no post within noticeR m of the canopy go to look; one left unopened `stale` s no longer holds the next back.
+//   mate: nothing behind the gun in his hands and `magK` of a magazine or less in it → a squad-mate within r m hands one over (`rounds` at most; classes `cls`; a rocket
+//     only from the B40 man), cd s apart, `stock` a man a wave.
+//   weight: a gun by class (gun, kg) and every round carried (round, kg); over `comfort` kg the sprint is slower and the combat roll comes back later — in proportion, up to
+//     `max` at comfort + span kg; the chip shows from `show` up. Firing it off lightens him.
 export const LOGISTICS = { tick:0.25,
   start:{ rifle:5, pistol:5, belt:2, shot:5, heavy:5, rocket:4, shell:3, fuel:2, cell:4, blade:4 }, diff:{ recruit:1.3, soldier:1, veteran:0.8 }, capK:1.6,
   warn:{ low:1, say:5 }, regen:{ mags:1, magT:28 }, give:{ fresh:2, again:1 }, crate:{ share:0.6 },
+  pouch:{ p:0.3, pLow:0.75, lowMags:2, n:[8, 15], rocket:0.35, fits:['rifle', 'belt', 'pistol'] },
+  depot:{ r:4.5, every:0.6, off:[2.7, 0.6], coreOff:[6, 3], fwdR:7, fortK:0.55, fwdStock:10 },
+  drop:{ low:0.3, cd:80, wait:40, d:[30, 46], sideR:60, tries:8, foes:1, foeR:18, share:0.7, noticeR:55, noticeN:5, stale:100 },
+  mate:{ r:7, magK:0.34, rounds:60, cd:14, stock:2, cls:['rifle', 'pistol', 'belt', 'shot'] },
+  weight:{ comfort:28, span:25, max:0.12, show:0.02,
+    gun:{ rifle:3.5, pistol:2.6, belt:8.5, shot:3.4, heavy:8, rocket:6.3, shell:2.7, fuel:9, cell:5, blade:5 },
+    round:{ rifle:0.017, pistol:0.012, belt:0.028, shot:0.05, heavy:0.11, rocket:2.2, shell:0.23, fuel:0.03, cell:0.05, blade:0.1 } },
   say:{ cls:{ rifle:'ĐẠN 7.62', pistol:'ĐẠN 9 MM', belt:'ĐẠN DÂY', shot:'ĐẠN GHÉM', heavy:'ĐẠN 12.7', rocket:'ĐẠN B41', shell:'LỰU 40 MM', fuel:'XĂNG ĐẶC', cell:'PIN', blade:'LƯỠI CƯA' },
     low:'ÍT ĐẠN', last:'BĂNG CUỐI', dry:'HẾT ĐẠN', dryTip:'HẾT ĐẠN — ĐỔI SÚNG!', got:'+{n} {c}', full:'ĐẦY ĐẠN',
-    crateDs:'Đầy băng mọi súng · thêm đạn dự trữ · kỹ năng sẵn sàng ngay' } };
+    crateDs:'Đầy băng mọi súng · thêm đạn dự trữ · kỹ năng sẵn sàng ngay',
+    pouch:'TÚI ĐẠN ĐỊCH', pouchDs:'Đạn nhặt từ lính địch ngã xuống', depotOut:'KHO Ở ĐÂY ĐÃ CẠN', depotIn:'ĐIỂM TIẾP ĐẠN',
+    drop:['SCH: Thả dù đạn cách anh {d} m về hướng {b} — ra lấy trước khi địch mò tới!', 'SCH: Đạn đang xuống, {d} m hướng {b} — địch cũng thấy dù đấy, nhanh lên!'],
+    dropGot:'ĐÃ NHẬN ĐẠN TIẾP TẾ', bearings:['bắc', 'đông bắc', 'đông', 'đông nam', 'nam', 'tây nam', 'tây', 'tây bắc'],
+    mate:['{n}: BẮT LẤY BĂNG ĐẠN!', '{n}: ĐẠN ĐÂY, ANH!'], mateRocket:'{n}: ĐẠN B41 ĐÂY!', load:'−{n}%' } };

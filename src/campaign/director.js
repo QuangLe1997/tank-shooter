@@ -155,3 +155,6 @@ export function dirEntry(t){ const F = DIR.flank, p = S.player, B = D.build; if(
   return q; }
 // one entry of the wave has been made at sp (waves.js): counted, and checked — an edge entry inside the frame would be a pop-in
 export function dirSpawned(sp){ const st = DIR.stats; st.entries++; if(DIR.pass > 0) DIR.pass--; if(sp && !sp.hatch && sp.how === 'edge' && entrySeen(sp.x, sp.z)) st.seen++; }
+// SUPPLY 2 the HQ is asked for ammunition by parachute (game/logistics.js, his reserves low): never on top of a peak — he could not go and fetch it — never once the
+//   stage is won; a drop that goes is noted in the log
+export function dirSupply(now){ if(S.awaitingUpgrade || DIR.on && DIR.phase === 'peak') return false; note(now, 'supply', 'ammunition by parachute'); return true; }

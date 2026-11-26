@@ -5,7 +5,7 @@
 //   lands a new gun, a medkit and a crate beside him.
 import * as THREE from 'three';
 import { LOGISTICS, TROOPER } from '../../config.js';
-import { GUNS, POWERUPS, S, ammoCrate, dropPowerup, floatText, gainXp, magCap, ringPulse, sfx, trooperGive, trooperGunPick, trooperLoot, updateGunHUD } from '../hub.js';
+import { GUNS, POWERUPS, S, ammoCrate, ammoPouch, dropPowerup, floatText, gainXp, magCap, ringPulse, sfx, trooperGive, trooperGunPick, trooperLoot, updateGunHUD } from '../hub.js';
 
 // an enemy's weapon as a pick-up (the gun crate's look, the gun's own name and photo on the toast)
 export function wpnDef(id){ const g = GUNS[id]; return { id:'wpn_' + id, gun:id, svg:'gun', color:0xaef0a0, vi:g.name, ds:'Súng của địch · khẩu đã có thì lên ★', cat:'gun', tier:(g.tier || 1) >= 3 ? 2 : 1,
@@ -23,7 +23,7 @@ function heavyPick(n){ const have = new Set(S.player.guns.map(g => g.id)), all =
 // killEnemy (through game/soldier-rank.js soldierKill): his weapon on the ground, maybe
 export function armsDrop(e){ if(!S.player) return; const D = TROOPER.drop;
   if(e.general){ for(const id of heavyPick(2)) dropPowerup(e.pos, 2, wpnDef(id)); dropPowerup(e.pos, 1, MEDAL); return; }
-  let id = null;
+  let id = null; ammoPouch(e, false);   // SUPPLY 2 a soldier's ammunition pouch, maybe (game/logistics.js)
   if(e.def.inf){ if(Math.random() < (D[e.type] ?? D.rifle)) id = e.def.rpg ? 't_rpg' : 't_ak'; }   // (Z355 a rifleman's AK-47)
   else if(!e.def.air && Math.random() < D._veh) id = trooperGunPick();
   if(id) dropPowerup(e.pos, 1, wpnDef(id)); }
