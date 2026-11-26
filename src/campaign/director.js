@@ -13,7 +13,7 @@
 //   and direction reactive. DIRECTOR.on / ?nodirector: off, it still reads the fight (DIR.P, the peaks it would have called) and decides nothing.
 import * as THREE from 'three';
 import { DIRECTOR, ENTRY } from '../../config.js';
-import { FORTS, S, SURP, WAVE, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, tacticsReset, tacticsTick, wetAt } from '../hub.js';
+import { FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, tacticsReset, tacticsTick, wetAt } from '../hub.js';
 
 const D = DIRECTOR, R2 = a => a[0] + Math.random() * (a[1] - a[0]), sat = x => x < 0 ? 0 : x > 1 ? 1 : x, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /nodirector/.test(location.search + location.hash);
@@ -27,10 +27,22 @@ function setPhase(ph, now, why){ DIR.phase = ph; DIR.phaseAt = now; DIR.lowT = 0
 const thrHi = () => D.thr.high * DIR.ease, thrLo = () => D.thr.low * DIR.ease;
 // one radio line of the director's (sparingly: radio.gap s apart unless it must be heard)
 export function dirSay(now, key, must){ const L = D.say[key]; if(!L || !must && now - DIR.sayAt < D.radio.gap) return false; DIR.sayAt = now; radio(typeof L === 'string' ? L : L[(Math.random() * L.length) | 0]); return true; }
-// a stage begins (ui/briefing.js): everything forgotten; ease: the thresholds' multiplier (the difficulty's, and the step after two deaths — DIR 3)
-export function directorReset(now, ease){ const st = DIR.stats; for(const k in st) st[k] = 0; DIR.log.length = 0; DIR.contact.length = 0; tacticsReset();
+// DIR 3 the difficulty's row (DIRECTOR.diff): the tier of tactics by stage, the thresholds' multiplier, the head-count multiplier, the awareness knobs' own factors
+export function dirDiff(){ return D.diff[PROFILE.difficulty] || D.diff.soldier; }
+export function dirCount(){ return dirDiff().count; }
+// the thresholds' multiplier now: the difficulty's × the stage's (DIRECTOR.arc: the campaign tightens stage by stage) × the gentle step once he has died adapt.deaths
+//   times on this stage (PROFILE.dirEase, kept on this machine until the stage is won).
+//   Under 1 everything is kinder: a peak is called (and released) at less pressure, "little to do" asks for less, the lulls are longer, the escalations slower
+function easeNow(){ const a = PROFILE.dirEase, A = D.adapt; return dirDiff().ease * D.arc[Math.max(0, Math.min(D.arc.length - 1, (S.stage || 1) - 1))] * (a && a.key === (S.loop || 0) + ':' + (S.stage || 1) && a.deaths >= A.deaths ? A.ease : 1); }
+// he has lost a life (game/player-damage.js): counted for this stage; the second one eases the thresholds from here on
+export function dirDeath(){ const key = (S.loop || 0) + ':' + (S.stage || 1), a = PROFILE.dirEase && PROFILE.dirEase.key === key ? PROFILE.dirEase : (PROFILE.dirEase = { key, deaths:0 }); a.deaths++; saveProfile(true);
+  const e = easeNow(); if(e !== DIR.ease){ DIR.ease = e; note(performance.now() / 1000, 'eased', 'deaths ' + a.deaths + ' → × ' + e.toFixed(2)); } }
+// the stage is won (campaign/boss.js): the step is taken back
+export function dirWin(){ if(PROFILE.dirEase){ PROFILE.dirEase = null; saveProfile(true); } }
+// a stage begins (ui/briefing.js): everything forgotten but the deaths on it
+export function directorReset(now){ const st = DIR.stats; for(const k in st) st[k] = 0; DIR.log.length = 0; DIR.contact.length = 0; tacticsReset();
   Object.assign(DIR, { on:D.on && !OFF, phase:'build', P:0, raw:0, hurt:0, hp:1, hp0:S.player ? S.player.hp : 0, alerted:0, near:0, firing:0, lowT:0, hiT:0, t0:now, at:now, prev:now, phaseAt:now, lullUntil:0, lullMax:0,
-    escAt:now + D.build.first, escN:0, hitAt:-1e9, killAt:now, sayAt:-1e9, dropAt:-1e9, surAt:-1e9, sallyPass:0, heldAt:0, pass:0, bore:0, waveNo:-1, reserve:0, reserveAt:0, resDone:false, fin:0, ease:ease || 1, flank:null, cue:null, lastSide:'' }); }
+    escAt:now + D.build.first, escN:0, hitAt:-1e9, killAt:now, sayAt:-1e9, dropAt:-1e9, surAt:-1e9, sallyPass:0, heldAt:0, pass:0, bore:0, waveNo:-1, reserve:0, reserveAt:0, resDone:false, fin:0, ease:easeNow(), flank:null, cue:null, lastSide:'' }); }
 // an enemy has fallen (actors/damage.js)
 export function dirKill(){ DIR.killAt = performance.now() / 1000; }
 
@@ -55,7 +67,7 @@ function observe(now, dt){ const hi = thrHi(); if(DIR.phase !== 'peak'){ DIR.hiT
 function ground(now, t){ const C = DIR.contact, p = S.player, r2 = D.lull.contactR * D.lull.contactR; let n = 0;
   for(let i = 0; i < C.length; i++){ const e = C[i]; if(e.general || !(e.hp > 0) || (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 > r2) continue; e.groundUntil = now + R2(t); e.burstLeft = 0; e.actAt = e.groundUntil; n++; }
   DIR.stats.grounded += n; return n; }
-function release(now, why){ const L = D.lull, st = DIR.stats, bad = DIR.hp < D.thr.crit, k = bad ? 1 : Math.random(), len = (L.t[0] + (L.t[1] - L.t[0]) * k) / DIR.ease;
+function release(now, why){ const L = D.lull, st = DIR.stats, bad = DIR.hp < D.thr.crit, k = bad ? 1 : Math.random(), len = Math.max(L.t[0], (L.t[0] + (L.t[1] - L.t[0]) * k) / DIR.ease);   // (a harder setting shortens the lull, never under its floor)
   st.lulls++; DIR.bore = 0; setPhase('release', now, why); DIR.lullUntil = now + len; DIR.lullMax = now + len + L.extra; DIR.flank = null; DIR.cue = null; DIR.pass = 0;
   ground(now, L.ground); SURP.next = Math.max(SURP.next || 0, DIR.lullUntil + L.surprise);
   if(DIR.hp < L.drop.hp && now - DIR.dropAt > L.drop.cd){ DIR.dropAt = now; st.drops++; reliefDrop(); dirSay(now, 'drop', true); note(now, 'drop', 'hp ' + DIR.hp.toFixed(2)); }

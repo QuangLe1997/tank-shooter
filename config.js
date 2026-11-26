@@ -908,7 +908,7 @@ export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, lo
     drop:['SCH: Anh bị thương nặng — đã thả dù cứu thương và đạn ngay trước mặt!'], peak:['SCH: Chúng dồn lên rồi — bám công sự, giữ vững!', 'SCH: Hoả lực địch rất mạnh — đừng đứng một chỗ!'],
     build:['SCH: Chúng lại lên — vào vị trí!', 'SCH: Hết lặng rồi — địch đang áp sát!'], hunt:['SCH: Địch đã lần ra chỗ anh — chúng đang kéo tới!', 'SCH: Chúng biết anh ở đâu rồi — coi chừng các hướng!'], left:'SCH: Chúng đang vòng sườn trái!', right:'SCH: Chúng đang vòng sườn phải!', rear:'SCH: Địch vòng ra sau lưng — quay lại!',
     finale:'SCH: Trận địa lặng rồi — tướng địch sắp ra trận. Nạp đạn, băng bó, chuẩn bị!' },
-  // DIR 2 TACTICS BY TIER (ai/tiers.js) — what the enemy's squads know grows with the stage: byStage[stage − 1] (an NG+ loop: the top tier). on: false (or ?notactics) = the squads as before.
+  // DIR 2 TACTICS BY TIER (ai/tiers.js) — what the enemy's squads know grows with the stage (the tier: DIRECTOR.diff, a row a difficulty). on: false (or ?notactics) = the squads as before.
   //   scale: one value a tier — the reaction delay ×, the time to make him out ×, how far a shout carries ×, the squad's think interval ×, how far round a bounding squad flanks × (tier 1: not at all).
   //   pin (tier 2+): a squad of minMen or more, in contact farther than minD m, splits — `share` of it flanks for t s (then cd s of plain fire and manoeuvre, and the other side next time; over
   //     when he is closer than endD m): the flankers hop `step` m every hop s to the next cover along an arc that widens from arc[0] to arc[1] rad round him over sweep s at r m (rK × the range),
@@ -921,13 +921,21 @@ export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, lo
   //     bursts of `burst` rounds gap s apart, rest s between, each round × dmgK and the group × spreadK wide, every round a tracer; he never bounds — he covers.
   //   break: a squad falling back goes for a cover within search m of the point `back` m behind each man. surrender: the last man of a squad that started with minN0 or more, alerted and within
   //     r m of the player, gives himself up `chance` of the time (by tier): hands up for hold s, then he walks off the field (gone after leaveMax s once out of the frame); score for the prisoner.
-  tactics:{ on:true, byStage:[1, 2, 3, 3, 3], scale:{ react:[1.15, 1, 0.8], spot:[1.2, 1, 0.85], shout:[0.8, 1, 1.3], think:[1.25, 1, 0.8], flank:[0, 1, 1] },
+  tactics:{ on:true, scale:{ react:[1.15, 1, 0.8], spot:[1.2, 1, 0.85], shout:[0.8, 1, 1.3], think:[1.25, 1, 0.8], flank:[0, 1, 1] },
     pin:{ minMen:4, minD:14, endD:9, share:0.4, t:[14, 20], cd:[8, 14], arc:[0.5, 1.45], sweep:9, r:[15, 26], rK:0.75, step:7, hop:1.5, arrive:4.5, cueT:1.2, cueGap:12, cueR:70, baseFireK:0.55, mgFireK:0.45, flankFireK:0.9 },
     nade:{ camp:8, campR:3.5, openK:0.6, again:0.45, minD:8, maxD:26, cd:[7, 11], fuse:0.5, dmg:70, perStage:0.08, pause:1.2 },
     marksman:{ chance:0.35, max:1, range:58, keep:44, tel:1.0, lock:0.3, cd:4.5, dmg:75, bspeed:140, err:0.012, glint:[1.1, 2.2] },
     mg:{ chance:0.5, max:2, range:40, keep:28, dmgK:0.6, hpK:1.4, burst:[9, 14], gap:0.085, rest:[1.0, 1.5], spreadK:1.5 }, roles:{ minMen:4 },
     break:{ back:16, search:9 }, surrender:{ minN0:3, chance:[0.6, 0.5, 0.4], r:45, hold:[5, 8], score:120, leaveMax:25 },
-    say:{ mg:'SCH: Đại liên địch bắn kiềm chế — đừng đứng ngoài trống, vòng vào sườn nó!', marksman:'SCH: Có xạ thủ bắn tỉa — thấy ánh kính loé lên là lăn đi ngay!' } } };
+    say:{ mg:'SCH: Đại liên địch bắn kiềm chế — đừng đứng ngoài trống, vòng vào sườn nó!', marksman:'SCH: Có xạ thủ bắn tỉa — thấy ánh kính loé lên là lăn đi ngay!' } },
+  // DIR 3 DIFFICULTY THAT CHANGES BEHAVIOUR (on top of BALANCE.difficulty's health / damage / reward): a row a setting — tier: the tactics tier by stage (recruit: riflemen who advance,
+  //   take cover and fire, whatever the stage; veteran: the whole book from stage 1; one tier more each NG+ loop) · ease: × the director's pressure thresholds (under 1 = kinder: a peak
+  //   is called and released at less pressure, the lulls are longer, the escalations slower) · count: × the men and squads of every wave · k: × the tier's awareness knobs (reaction
+  //   delay, time to make him out, shout reach, squad think interval). arc: × the thresholds by stage (the campaign tightens). adapt: after `deaths` lives lost on the same stage the
+  //   thresholds are × ease from then on (kept in the profile on this machine; taken back when the stage is won).
+  diff:{ recruit:{ tier:[1, 1, 1, 1, 1], ease:0.85, count:0.8, k:{ react:1.3, spot:1.25, shout:0.85, think:1.2 } }, soldier:{ tier:[1, 2, 3, 3, 3], ease:1, count:1, k:{} },
+    veteran:{ tier:[3, 3, 3, 3, 3], ease:1.12, count:1.2, k:{ react:0.8, spot:0.85, shout:1.2, think:0.85 } } },
+  arc:[0.92, 1, 1.04, 1.08, 1.12], adapt:{ deaths:2, ease:0.85 } };
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·

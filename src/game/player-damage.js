@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { CAV, RIDE_ACT } from '../../config.js';
-import { reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender } from '../hub.js';
+import { reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -25,7 +25,7 @@ export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)
 export const DEATH = { active:false, t:0, dur:2.4, wreck:new THREE.Vector3(), face:0, flipDir:1, tilt:0, final:false };   // (Z331 final: the last life — the fall plays out, then the battle is lost)
 export const _dcam = new THREE.Vector3();   // dedicated temp for the death-cam (don't clobber the shared _v)
 export function playerDie(now){
-  const p=S.player; p.lives--;
+  const p=S.player; p.lives--; dirDeath();   // DIR 3 the director counts the deaths on this stage (the second eases its thresholds)
   if(p.lives < 0){ beginDeath(now, true); return; }   // final death → (Z331 his fall and the driver giving himself up play out first)
   beginDeath(now);
 }

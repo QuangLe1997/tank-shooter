@@ -9,7 +9,7 @@
 //     up — he stands there, then walks off the field (shoot him and he dies like any other).
 //   The tier also scales what each man knows (ai/awareness.js: reaction delay, time to make him out, how far a shout carries) and how often a squad thinks.
 import { AWARE, DIRECTOR } from '../../config.js';
-import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, gunFlash, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, throwNade } from '../hub.js';
+import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirDiff, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, gunFlash, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, throwNade } from '../hub.js';
 
 const T = DIRECTOR.tactics, R2 = a => a[0] + Math.random() * (a[1] - a[0]);
 const OFF = typeof location !== 'undefined' && /notactics/.test(location.search + location.hash);
@@ -17,10 +17,11 @@ const _pos = { x:0, y:0, z:0 }, _glint = { tex:'flash', color:0xeaf6ff, size:1, 
 // what the tactics did this stage (probes read it), the camping clock, what the radio has already named
 export const TAC = { pins:0, cues:0, nades:0, mkShots:0, mg:0, marksman:0, gaveUp:0, left:0, fellBack:0, campT:0, cx:0, cz:0, nadeAt:0, cueAt:-1e9, said:{} };
 export function tacticsReset(){ Object.assign(TAC, { pins:0, cues:0, nades:0, mkShots:0, mg:0, marksman:0, gaveUp:0, left:0, fellBack:0, campT:0, cx:0, cz:0, nadeAt:0, cueAt:-1e9, said:{} }); }
-// the tier of this battle: 0 = the tactics are off (the squads as they were), else 1…3 by the stage (an NG+ loop: the top one); DIR 3 the difficulty has its own row
-export function tacTier(){ if(!T.on || OFF) return 0; if(DIR.tier) return DIR.tier; const a = T.byStage; return (S.loop || 0) > 0 ? 3 : a[Math.max(0, Math.min(a.length - 1, (S.stage || 1) - 1))]; }
+// the tier of this battle: 0 = the tactics are off (the squads as they were), else 1…3 by the stage on the difficulty's own row (DIR 3 DIRECTOR.diff: recruit never
+//   past tier 1, veteran the whole book from stage 1), one more each NG+ loop
+export function tacTier(){ if(!T.on || OFF) return 0; const a = dirDiff().tier; return Math.min(3, a[Math.max(0, Math.min(a.length - 1, (S.stage || 1) - 1))] + (S.loop || 0)); }
 // a knob scaled by the tier (DIRECTOR.tactics.scale: one value a tier) × the difficulty's own factor for it (DIR 3)
-export function tierK(k){ const t = tacTier(), a = T.scale[k]; return (t && a ? a[t - 1] : 1) * (DIR.diffK && DIR.diffK[k] || 1); }
+export function tierK(k){ const t = tacTier(), a = T.scale[k]; return (t && a ? a[t - 1] : 1) * (dirDiff().k[k] || 1); }
 
 // ---- roles (tier 3): one man of a fresh squad may carry the machine gun, one may be a marksman who leaves the squad to hold a lane of his own ----
 function count(role){ let n = 0; for(let i = 0; i < enemies.length; i++) if(enemies[i].role === role) n++; return n; }
