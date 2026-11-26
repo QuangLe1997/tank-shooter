@@ -2023,6 +2023,72 @@ export const TROOPER = {
   general:{ hpK:70, dmg:7, fireCd:0.4, range:30, keep:13, speed:4.6, scale:1.18, hitCap:0.06, guards:3, callAt:0.5, callN:4, guardHpK:4, rageAt:0.3, rageFire:0.6, rageRun:1.3,
     fan:{ cd:6.5, n:9, arc:0.75, dmg:6, tel:0.75 }, nade:{ cd:8.5, n:3, R:3.4, dmg:36, lock:1.35, scatter:4.5 } },
 };
+// NEMESIS 1–3 THE ENEMY GENERAL REMEMBERS YOU (campaign/nemesis.js + the pure rules in data/nemesis-mem.js; the save: PROFILE.nemesis = { v, g:{ <general id>:
+//   { met, kills, fled, falls, out, loop, rank, how, gun, scar, traits, last } } }, cleaned by nemClean whenever it is read from a save or the cloud — it syncs).
+//   cap: the most a record counts (meetings, times he killed the player, escapes), his rank, the kill marks drawn beside his name, the traits he keeps.
+//   escape: when the duel would kill him he gets away instead with `chance` — once a general a campaign loop, never on the last stage, never on the `never`
+//     difficulty, never in a custom battle: he keeps hpLeft of his health, runs at × run for the field's edge behind him (of three bearings `fan` rad apart the
+//     one farthest from the player) under `smokes` canisters, a puff every `puff` s; he is gone at the edge, out of the frame after leaveMin s, or after leaveMax s;
+//     the stage is called won winDelay s later (he is still running); loot: he drops his guns and the medal as he goes, and xpK of a general's experience.
+//   rank: + perFled each escape (back to 0 when he falls). Per rank: health + hp, his fan's and grenades' cooldowns × cd, the rests between his bursts × rest,
+//     his group × spread (AWARE.fire's own per-man knobs), the fan's warning × tel (never under telMin s).
+//   how: what the player did to him when he went down — a blast, else a shot from splitR m or further (far) or nearer (close) — gives the scar he carries and
+//     the ONE thing he changes next time (adapt): mobile = he never stands (his distance swings by swing m every `every` s, no cover, × speed) and his guards
+//     come out × spread wider, each stagger m further back · rush = he closes to keep m (× speed) behind a smoke canister thrown `ahead` m toward the player
+//     whenever he is over smokeD m off (smokeCd s apart) · wall = n close-quarter guards hold a post `front` m in front of him, `wide` m apart: a blast of
+//     burst rounds gap s apart out to range m, rest s between blasts, a group × spreadK, each round × dmgK, health × hpK.
+//   scar: rig = the bandage is hung on his rig (actors/real-troops.js kitAttach: the anchor `at`, off, a ball / band of size m, a blood blot [x, y, z, size]);
+//     always: his star and his name plate in the scar's colour (star), his kit's tint (× tint), its name on the plate (vi); keep s on his body after he falls.
+//   join: a general at large comes out beside the next stage's own general when that one calls his guards — health × hpK of a general's, the most one hit
+//     takes (hitCap), off m from him. He leaves again if the stage's general falls first (and can be shot as he runs).
+//   say: his lines (first · again · killed · fled · death · fall · escape; by[id] = his own, picked ownP of the time) and our commander's (join, withdraw, paid,
+//     hint by adaptation; epi = the epilogue's first line when he got away). {nick} the player's call-sign (anon when he has none), {n} the meeting's number,
+//     {k} the times he killed him, {name} the general. gap: s of radio silence one of these lines waits for; hold: s it waits at most; maxLen with its tag.
+export const NEMESIS = { on:true, v:1, tick:0.25,
+  cap:{ met:999, kills:999, fled:99, rank:3, marks:5, traits:3 },
+  escape:{ chance:0.4, never:'recruit', hpLeft:0.1, run:1.9, fan:0.6, smokes:2, puff:0.35, leaveMin:1.5, leaveMax:9, winDelay:4.2, loot:true, xpK:0.5 },
+  rank:{ perFled:1, hp:0.22, cd:0.9, rest:0.88, spread:0.9, tel:0.93, telMin:0.55 },
+  how:{ splitR:12, blast:{ scar:'burn', adapt:'mobile' }, far:{ scar:'shoulder', adapt:'rush' }, close:{ scar:'gash', adapt:'wall' } },
+  adapt:{ mobile:{ every:2.2, swing:[-4, 5], speed:1.15, spread:2.2, stagger:4 }, rush:{ keep:6, speed:1.2, smokeD:14, smokeCd:11, ahead:6 },
+    wall:{ n:2, front:5, wide:2.4, range:12, dmgK:0.8, hpK:1.4, burst:[4, 4], gap:0.035, rest:[1.5, 2.1], spreadK:3 } },
+  scar:{ rig:true, keep:4, cloth:0xe9e4d6, blood:0x8a1c16,
+    burn:{ vi:'SẸO BỎNG', star:'#ff7a2a', tint:[0.55, 0.5, 0.47], at:'shoulderL', off:[-0.02, -0.16, 0.04], shape:'ball', size:[0.17, 0.15, 0.17], blot:[-0.05, 0, 0.04, 0.07] },
+    shoulder:{ vi:'VAI NÁT', star:'#8fd0ff', tint:[0.86, 0.96, 1.15], at:'shoulderR', off:[0.02, -0.17, -0.06], shape:'ball', size:[0.17, 0.15, 0.17], blot:[0.05, 0.01, 0.04, 0.07] },
+    gash:{ vi:'SẸO NGỰC', star:'#ff5a7a', tint:[1.2, 0.82, 0.8], at:'back', off:[0, -0.02, 0.3], shape:'band', size:[0.5, 0.1, 0.36], blot:[0.1, 0, 0.17, 0.09] } },
+  join:{ hpK:0.45, hitCap:0.12, off:6 },
+  say:{ gap:5, hold:45, ownP:0.5, maxLen:90, anon:'thằng lính',
+    first:['{nick}? Tên lạ. Sau hôm nay sẽ chẳng ai gọi nữa.', 'Ra là mày, {nick}. Lính quèn mà dám gõ cửa thành ta.', '{nick}… Ta sẽ nhớ tên này, để khắc lên báng súng.',
+      'Sóng bên mày réo tên {nick} cả ngày. Giờ ta xem mặt.', 'Lại đây, {nick}. Cận vệ của ta đang đói.'],
+    again:['Lại là mày, {nick}. Lần thứ {n} rồi đấy.', '{nick}! {n} lần chạm mặt. Lần này là lần chót.', 'Ta đếm rồi, {nick}: lần thứ {n}. Mày dai thật.',
+      'Lần thứ {n}, {nick}. Lối đánh của mày ta thuộc rồi.', 'Lần thứ {n}, {nick}. Hôm nay một trong hai nằm lại.'],
+    killed:['Lần trước ta bắn mày gục rồi mà, {nick}. Muốn nằm nữa à?', '{nick}, mày chết dưới tay ta {k} lần. Thêm một vạch nhé.', 'Ta còn giữ vỏ đạn hôm hạ mày, {nick}. Hôm nay thêm cái nữa.',
+      'Báng súng ta có {k} vạch tên {nick}. Còn chỗ khắc tiếp.', 'Chết rồi còn quay lại, {nick}? Ta tiễn thêm lần nữa.'],
+    fled:['Vết sẹo mày tặng vẫn còn ngứa, {nick}. Ta về để gãi đây.', '{nick}! Hôm đó mày để ta thoát. Sai lầm lớn nhất đời mày.', 'Nhìn kỹ vết này đi, {nick}. Tay mày làm đấy. Giờ ta trả.',
+      'Ta bò ra khỏi khói với một lời thề, {nick}: mày phải chết.', 'Đêm nào vết thương cũng nhắc tên {nick}. Hôm nay cho nó im.'],
+    death:['Nằm xuống đi, {nick}. Thêm một vạch trên báng súng ta.', 'Thế thôi à, {nick}? Ta tưởng mày khá hơn.', 'Nhắn về sở chỉ huy: gửi đứa khác. {nick} hỏng rồi.',
+      '{nick} gục rồi. Kéo nó ra cổng cho quân nó nhìn.', 'Vạch thứ {k}, {nick}. Mày chết quen tay ta rồi đấy.'],
+    fall:['Khá lắm… {nick}… Tên mày… ta mang theo…', '{nick}… Rốt cuộc… vẫn là mày…', 'Ta thua… một thằng lính tên {nick}… Nực cười…',
+      'Bắn đẹp đấy… {nick}… Đừng để kẻ khác… lấy đầu mày…', '{n} lần… rồi cũng tới lúc này… Đi đi, {nick}…'],
+    escape:['Chưa xong đâu, {nick}! Nhớ mặt ta. Ta sẽ quay lại!', 'Khói! Cận vệ, chặn nó! {nick}, hẹn mày ở thành sau!', 'Mày chỉ thắng trận này thôi, {nick}. Ta còn sống là còn nợ!',
+      'Ta nhớ tên mày rồi, {nick}. Giữ mạng mà chờ ta!'],
+    by:{
+      bull:{ first:['Ta chưa từng lùi một bước, {nick}. Hôm nay cũng không.'], again:['Ta không lùi, {nick}. Lần thứ {n}: ta vẫn đứng đây.'], fled:['Cả đời ta lùi đúng một bước, {nick}. Vì mày. Giờ ta đòi lại.'] },
+      tempest:{ first:['Gió thì không ai vây được, {nick}. Cứ thử xem.'], fled:['Mày suýt vây được ta, {nick}. Suýt thôi. Không có lần hai.'] },
+      goliath:{ first:['Mười năm gác băng, {nick}. Chưa đứa nào qua nổi đèn của ta.'], fled:['Băng giữ vết thương rất lâu, {nick}. Ta cũng nhớ rất lâu.'] },
+      reaper:{ first:['Ta chỉ bắn một phát, {nick}. Nhà mày sẽ nhận được ảnh.'], killed:['Ảnh mày ta gửi về rồi, {nick}. Chụp thêm tấm nữa nhé.'], fled:['Lần đầu ta cần phát thứ hai, {nick}. Mày nên tự hào.'] },
+      overlord:{ first:['Học trò ta gửi mày tới à, {nick}? Nó vẫn không dám tự đến.'], killed:['Bài lần trước chưa thuộc sao, {nick}? Ta giảng lại.'] },
+      inferno:{ first:['Anh ta không giữ nổi thứ gì, {nick}. Ta thì đốt sạch.'], fled:['Lửa không chết, {nick}. Nó chỉ lùi lại để lấy gió.'] },
+      serpent:{ first:['Ta chờ mày mỏi rồi mới siết, {nick}. Cứ chạy đi.'], fled:['Ta chờ được, {nick}. Chờ vết thương lành. Chờ mày mỏi.'] },
+      thunder:{ first:['Bắn trước, hỏi tên sau. À, {nick} hả? Muộn rồi.'], fled:['Sét không đánh hai lần một chỗ? {nick}, ta đánh mười lần!'] } },
+    join:['Cẩn thận! {name} quay lại rồi, hắn nhập bọn với tướng giữ thành!', '{name} còn sống! Hắn vừa ra khỏi hầm, và hắn đang tìm anh.', 'Tình báo đúng rồi: {name} ở trong thành này. Hắn đến để trả nợ.'],
+    withdraw:['{name} lại rút rồi. Hắn còn sống thì còn tìm anh.', 'Tướng giữ thành gục, {name} chuồn mất. Món nợ vẫn còn đó.'],
+    paid:['{name} gục hẳn rồi. Món nợ đã trả xong, {nick}.', 'Lần này {name} không dậy nữa. Làm tốt lắm, {nick}.'],
+    hint:{ mobile:['{name} khôn ra rồi: hắn không đứng yên, cận vệ tản rộng. Lựu đạn khó trúng.', 'Lần trước anh cho {name} ăn lựu đạn. Giờ hắn chạy suốt. Dùng súng mà hạ.'],
+      rush:['{name} sợ bị bắn xa: hắn thả khói rồi áp sát. Giữ cự ly, có khói thì đổi chỗ.', 'Lần trước anh bắn {name} từ xa. Giờ hắn lao vào sau khói. Sẵn lựu đạn mà đón.'],
+      wall:['{name} đặt hai cận vệ áp sát chắn trước mặt. Đừng lao vào, hạ chúng từ xa.', 'Lần trước anh xáp lá cà với {name}. Giờ hắn có hai tay súng gần chờ sẵn.'] },
+    epi:['{name} biến mất trong khói, bỏ lại hầm chỉ huy: bản đồ, điện đài, tách trà còn ấm.', 'Thành đã hạ, nhưng {name} thoát. Trên bàn hắn còn tấm bản đồ và mẩu giấy ghi tên {nick}.',
+      '{name} chạy thoát qua cửa sau, bỏ lại bản đồ và cả cận vệ. {cmd} chỉ nói: "Hắn sẽ quay lại."'],
+    brief:{ met:'Hắn nhớ anh: chạm mặt {n} lần', kills:'hạ anh {k} lần', fled:'tẩu thoát {f} lần', rank:'cấp {r}', large:'Trinh sát: {name}, kẻ đã tẩu thoát, đang ẩn trong thành này.' } } };
 // Z374 SCENERY (world/scenery.js): every battlefield composed from the Meshy community scans (tools/scene-import.mjs → assets/models/real/scene) — a
 //   skyline beyond the fence, one landmark the field turns on, framing pairs, groves, a rail siding, a pole line, a tank farm, rocks to fight from.
 //   lod: a model is drawn whole (the near file, fetched once the camera comes within mid + near m) up to mid m, then its mid copy, past far m its far copy

@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
 import { CONTRACTS, DMG_TYPE, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
+import { bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -10,9 +10,9 @@ export function openBriefing(opts, offer){
   S.mode='briefing';
   briefTeam();   // Z354 ĐỘI HÌNH XUẤT KÍCH: the soldier, his ride, its driver, his squad
   prewarmStage();   // Z168 compile this stage's shaders in the background while the player reads the briefing (no hitch at the countdown / first frame)
-  const bdef = bossForStage(S.stage), SB = storyBrief(S.stage);   // Z161 may be one of the new generals · STORY 3 the act, the "previously" line, the general's dossier (campaign/story.js)
+  const bdef = bossForStage(S.stage), SB = storyBrief(S.stage), NB = bdef ? nemBrief(bdef.id) : '';   // Z161 may be one of the new generals · STORY 3 the act, the "previously" line, the general's dossier (campaign/story.js)
   const words=t=>String(t||'').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c)=>a+c.toLocaleUpperCase('vi'));   // a general's name: "BÒ THÉP" → "Bò Thép"
-  const sub=document.getElementById('br-sub'); if(sub) sub.innerHTML = '<b>Màn '+S.stage+' · '+escapeHtml(capVi(biomeVi(BIOME.name)))+'</b>'+(placeLine(BIOME.name)?' — '+escapeHtml(placeLine(BIOME.name)):'')+'<span>Tướng địch giữ thành: '+escapeHtml(bdef?words(bdef.name):'chưa rõ')+'</span>'+(SB.dossier?'<span class="br-dos">'+escapeHtml(SB.dossier)+'</span>':'');
+  const sub=document.getElementById('br-sub'); if(sub) sub.innerHTML = '<b>Màn '+S.stage+' · '+escapeHtml(capVi(biomeVi(BIOME.name)))+'</b>'+(placeLine(BIOME.name)?' — '+escapeHtml(placeLine(BIOME.name)):'')+'<span>Tướng địch giữ thành: '+escapeHtml(bdef?words(bdef.name):'chưa rõ')+'</span>'+(SB.dossier?'<span class="br-dos">'+escapeHtml(SB.dossier)+'</span>':'')+(NB?'<span class="br-dos">'+escapeHtml(NB)+'</span>':'');
   { const op=opFor(S.stage), od=OBJECTIVES[op.obj]; const t=document.getElementById('br-op'); if(t) t.textContent=SB.act+' — '+opTitle(op);
     const bf=document.getElementById('br-brief'); if(bf){ const pv=document.createElement('span'); pv.className='br-prev'; pv.textContent=SB.prev; bf.replaceChildren(pv, (op.story && !SB.loop ? op.story+' ' : '')+op.brief); }   // (an NG+ loop: its own framing line stands for the story paragraph)
     const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>Mục tiêu</b><span>Phá '+escapeHtml(capVi(od.vi||od.name).toLocaleLowerCase('vi'))+'. Khi nó còn đứng: '+escapeHtml((od.effectVi||od.effect).toLowerCase())+'. Phá được: +'+OBJ_REWARD.score.toLocaleString('vi-VN')+' điểm.</span>'; }

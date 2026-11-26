@@ -5,21 +5,24 @@
 //   and a CLUTCH OF GRENADES round where you stand (a shout of "LỰU ĐẠN!" and the bombs in the air — Z403 no red rings). No single hit takes more than a slice of his health. At half
 //   health he calls more guards; below a third he goes for broke — faster fire, faster feet. When he falls his guards break and run, he drops the best guns
 //   on the field and a medal, and the stage is won.
+//   NEMESIS 1–3 (campaign/nemesis.js): he remembers the player — his rank, scar and lesson change the numbers he fights by (C = nemTune), a general at large
+//   joins him when he calls his guards, and when the killing blow is turned into an escape (e.nemFlee) the duel still ends won: fallen(true).
 import * as THREE from 'three';
-import { TROOPER } from '../../config.js';
-import { S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, makeArtLock, radio, ringPulse, sfx, showBanner, spawnBullet, spawnEnemy, spawnPart, storyCue, svgBadgeTex, tickArtLock } from '../hub.js';
+import { NEMESIS, TROOPER } from '../../config.js';
+import { S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, makeArtLock, radio, ringPulse, sfx, showBanner, spawnBullet, spawnEnemy, spawnPart, storyCue, svgBadgeTex, tickArtLock, nemDress, nemFell, nemGuard, nemJoin, nemMeet, nemPlateEl, nemReset, nemTick, nemTune } from '../hub.js';
 
-const G = { on:false, e:null, name:'', guards:[], called:false, rage:false, fanAt:0, fanT:0, nadeAt:0, ringAt:0, zones:[], finish:null, at:null, pending:0, barK:'' };
-const C = () => TROOPER.general;
+const G = { on:false, seq:0, e:null, name:'', guards:[], called:false, rage:false, fanAt:0, fanT:0, nadeAt:0, ringAt:0, zones:[], finish:null, at:null, pending:0, barK:'' };
+const C = () => nemTune(TROOPER.general);   // NEMESIS 2 a general who came back fights by his rank and his lesson
 const NOW = () => performance.now() / 1000;
 const _m = new THREE.Vector3();
 export function duelOn(){ return G.on; }
-export function duelReset(){ for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0; G.on = false; G.e = null; G.guards = []; G.finish = null; G.pending = 0; bar(false); }
+export function duelMan(){ return G.on ? G.e : null; }   // NEMESIS 1 the general on the field (none while he is still coming out, none once he is down or running)
+export function duelReset(){ for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0; G.on = false; G.e = null; G.guards = []; G.finish = null; G.pending = 0; G.seq++; nemReset(); bar(false); }   // (seq: a stage-won call still pending belongs to the duel that is gone)
 // startBoss: the general takes the field at pos. finish(now) = the stage-won half, played when he falls
 export function generalStart(pos, def, finish){ if(!S.player) return false; duelReset();
   Object.assign(G, { on:true, finish, id:(def && def.id) || '', name:(def && def.name) || 'TƯỚNG ĐỊCH', at:{ x:pos.x, z:pos.z }, pending:NOW() + 1.4, called:false, rage:false, guards:[] });
   showBanner(G.name + ' RA TRẬN!', '#ff9a4a'); sfx('alarm');
-  radio('SCH: ' + G.name + ' cùng cận vệ đã ra khỏi hầm chỉ huy! Hạ hắn đi, đừng để hắn thoát!'); storyCue('general', G.id); return true; }
+  radio('SCH: ' + G.name + ' cùng cận vệ đã ra khỏi hầm chỉ huy! Hạ hắn đi, đừng để hắn thoát!'); storyCue('general', G.id); nemMeet(G.id, G.name); return true; }
 export function duelId(){ return G.on ? G.id : ''; }   // (the music's general theme)
 function spawnGeneral(){ const c = C(), p = S.player, ax = G.at.x, az = G.at.z, a = Math.atan2(p.pos.x - ax, p.pos.z - az) + (Math.random() - 0.5) * 1.4;
   const [x, z] = clampFieldXZ(ax + Math.sin(a) * 4.5, az + Math.cos(a) * 4.5, 4), e = spawnEnemy('rifle', x, z);
@@ -27,24 +30,24 @@ function spawnGeneral(){ const c = C(), p = S.player, ax = G.at.x, az = G.at.z, 
   e.maxHp = e.hp = Math.round(e.maxHp * c.hpK); e.hitCap = e.maxHp * c.hitCap; e.mesh.scale.multiplyScalar(c.scale); if(e.bar) e.bar.g.scale.setScalar(1.25);
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('star', '#ffd24a'), transparent:true, depthWrite:false }));
   star.name = 'eliteFX'; star.scale.set(0.5, 0.5, 1); star.position.y = 2.3; e.mesh.add(star);   // (killEnemy / the mesh pool strip 'eliteFX')
-  G.e = e; const t = NOW(); G.fanAt = t + 3; G.nadeAt = t + 5; G.fanT = 0; G.ringAt = 0;
+  G.e = e; nemDress(e); const t = NOW(); G.fanAt = t + 3; G.nadeAt = t + 5; G.fanT = 0; G.ringAt = 0;
   bigExplode({ x, z }, 0xffa050, 0.5); floatText(G.name, '#ff9a4a', { x, y:3.2, z }, 22); guards(c.guards); bar(true); }
-function guards(n){ const e = G.e, c = C(); for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, r = 2.5 + Math.random() * 3.5;
+function guards(n){ const e = G.e, c = C(); for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, r = (2.5 + Math.random() * 3.5) * (c.spreadK || 1);
     const [x, z] = clampFieldXZ(e.pos.x + Math.cos(a) * r, e.pos.z + Math.sin(a) * r, 4), g = spawnEnemy(i % 3 === 2 ? 'rpg' : 'rifle', x, z);
-    g.genGuard = true; g.maxHp = g.hp = Math.round(g.maxHp * c.guardHpK); g.def = { ...g.def, dmg:g.def.dmg * 1.4 }; g.loot = Math.random() < 0.3; G.guards.push(g); } }
+    g.genGuard = true; g.maxHp = g.hp = Math.round(g.maxHp * c.guardHpK); g.def = { ...g.def, dmg:g.def.dmg * 1.4 }; g.loot = Math.random() < 0.3; nemGuard(g); G.guards.push(g); } }
 function bar(on){ const bb = document.getElementById('bossbar'); if(!bb) return; bb.style.display = on ? 'block' : 'none'; G.barK = '';
-  if(on){ const nm = document.getElementById('boss-name'); if(nm) nm.textContent = G.name + ' · BỘ CHIẾN'; } }
+  if(on){ const nm = document.getElementById('boss-name'); if(nm) nemPlateEl(nm, G.id, G.name); } }   // NEMESIS 3 his stars, his kill marks, his scar (no history: "<name> · BỘ CHIẾN" as before)
 function hud(e){ const hp = document.getElementById('boss-hp'); if(hp) hp.style.width = Math.max(0, e.hp / e.maxHp * 100) + '%';
   const live = G.guards.filter(g => enemies.includes(g)).length, k = (G.rage ? 'r' : '') + live, st = document.getElementById('boss-st');
   if(st && G.barK !== k){ G.barK = k; st.textContent = ''; const b = document.createElement('b'); b.className = G.rage ? 'vu' : 'sh'; b.textContent = G.rage ? 'LIỀU MẠNG!' : 'CẬN VỆ · ' + live; st.appendChild(b); } }
 // once a frame in battle
-export function updateGeneralDuel(dt){ if(!G.on) return; const t = NOW(), p = S.player; if(!p) return;
+export function updateGeneralDuel(dt){ nemTick(); if(!G.on) return; const t = NOW(), p = S.player; if(!p) return;
   if(G.pending){ if(t < G.pending) return; G.pending = 0; spawnGeneral(); return; }
   tickZones(dt, t); const e = G.e; if(!e) return;
-  if(!enemies.includes(e)){ fallen(e); return; }
+  if(e.nemFlee || !enemies.includes(e)){ fallen(!!e.nemFlee); return; }   // NEMESIS 1 (nemFlee: the blow that would have killed him became his escape)
   hud(e); const c = C(), f = e.hp / e.maxHp, d = Math.hypot(p.pos.x - e.pos.x, p.pos.z - e.pos.z);
   if(t > G.ringAt){ ringPulse(e.pos, G.rage ? 0xff2a1a : 0xff6a3a, 2.4); G.ringAt = t + (G.rage ? 0.7 : 1.3); }
-  if(!G.called && f < c.callAt){ G.called = true; guards(c.callN); showBanner('TƯỚNG GỌI CẬN VỆ!', '#ff9a4a'); radio(G.name + ': Cận vệ đâu! Giết thằng lính đó cho ta!'); sfx('alarm'); storyCue('general_half', G.id); }
+  if(!G.called && f < c.callAt){ G.called = true; guards(c.callN); showBanner('TƯỚNG GỌI CẬN VỆ!', '#ff9a4a'); radio(G.name + ': Cận vệ đâu! Giết thằng lính đó cho ta!'); sfx('alarm'); storyCue('general_half', G.id); nemJoin(e); }
   if(!G.rage && f < c.rageAt){ G.rage = true; e.def = { ...e.def, fireCd:e.def.fireCd * c.rageFire, speed:e.def.speed * c.rageRun }; showBanner('TƯỚNG LIỀU MẠNG!', '#ff4a3a'); storyCue('general_rage', G.id) || radio(G.name + ': Ta chưa thua đâu!'); }
   if(G.fanT > 0){ G.fanT -= dt; glint(e); if(G.fanT <= 0) fan(e); }
   else if(t > G.fanAt && d < c.range){ G.fanT = c.fan.tel; G.fanAt = t + c.fan.cd * (G.rage ? 0.7 : 1); sfx('beep', e.pos); floatText('!', '#ff4a3a', { x:e.pos.x, y:3, z:e.pos.z }, 26); }
@@ -67,9 +70,13 @@ function tickZones(dt, t){ for(let i = G.zones.length - 1; i >= 0; i--){ const s
   if(s.t > 0) continue; disposeArtZone(s.zone); G.zones.splice(i, 1);
   bigExplode({ x:s.x, z:s.z }, 0xffb060, 0.55); sfx('boom', { x:s.x, z:s.z }, 0.7); blastAllies(s.x, s.z, s.R, s.dmg);
   const p = S.player; if(!p) continue; const dx = p.pos.x - s.x, dz = p.pos.z - s.z, d = Math.hypot(dx, dz); if(d < s.R) damagePlayer(s.dmg * (1 - 0.6 * d / s.R), t, dx || 0.01, dz); } }
-// he is down: his guards break and run (no longer in reach, no longer firing), slow motion, then the stage is won
-function fallen(){ G.e = null; bar(false); S.timeScale = 0.35; sfx('levelup');
-  showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a'); storyCue('general_down', G.id) || radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!');
-  for(const g of G.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; floatText('BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
+// he is down: his guards break and run (no longer in reach, no longer firing), slow motion, then the stage is won.
+//   NEMESIS 1 fled: he got away instead — his guards go with him, the duel holds the field (no wave, the finale's phase) for NEMESIS.escape.winDelay s while he
+//   runs, and the stage is won all the same
+function fallen(fled){ G.e = null; bar(false); S.timeScale = fled ? 0.6 : 0.35; sfx(fled ? 'alarm' : 'levelup');
+  if(fled) showBanner(G.name + ' TẨU THOÁT!', '#ff9a4a');
+  else { showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a'); nemFell() || storyCue('general_down', G.id) || radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!'); }
+  for(const g of G.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; floatText(fled ? 'CHE CHO TƯỚNG!' : 'BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
   for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0;
-  const fin = G.finish; G.finish = null; G.on = false; setTimeout(() => { if(fin && S.mode !== 'gameover') fin(NOW()); }, 1400); }
+  const fin = G.finish, k = G.seq; G.finish = null; G.on = !!fled;
+  setTimeout(() => { if(G.seq !== k) return; G.on = false; if(fin && S.mode !== 'gameover') fin(NOW()); }, fled ? NEMESIS.escape.winDelay * 1000 : 1400); }

@@ -8,6 +8,7 @@ export * from './data/player.js';
 export * from './data/guns.js';
 export * from './data/enemies.js';
 export * from './data/bosses.js';
+export * from './data/nemesis-mem.js';   // NEMESIS 1 what a general remembers of the player: the record, its sanitiser, the rules (pure)
 export * from './net/protocol.js';   // COOP 2 two-player co-op: the wire format (pure — the net layer imports no hub, so it sits here before any system module)
 export * from './net/interp.js';   // COOP 2 the guest's snapshot buffer
 export * from './net/transport.js';   // COOP 2 the line between the two players
@@ -168,6 +169,7 @@ export * from './actors/squad-mates.js';   // Z351 soldier mode: his own squad �
 export * from './loot/soldier-arms.js';   // Z352 soldier mode: the enemy's weapons on the ground, gun stars, medals, ammo crates, supply drops
 export * from './loot/gift-crate.js';   // Z369 the rank's gift crate: down under a parachute, floating, opened
 export * from './campaign/general-duel.js';   // Z353 soldier mode: the general jumps out of his burning machine and fights on foot
+export * from './campaign/nemesis.js';   // NEMESIS 1–3 the general remembers: he can get away, comes back with a rank, a scar and a lesson, and says so
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold
 export * from './actors/face-mask.js';   // Z305 a cloth mask fitted to a character's own face
 export * from './actors/driver.js';   // Z296 the driver: his own rigged model riding the machine
