@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { COOP, COOP2, DRONEWAR, FIELDCRAFT, TROOPS } from '../../config.js';
 import { ambushGuestKill, coopBladeY, CW, DW, SOLDIER, armAlly, camera, damageAlly, droneFree, droneKill, droneSpawn, droneWarGuest, killSoldier, makeSoldierBar, makeSoldierMesh, setRole, sfx, stanceBarK, updateAllyDead, updateGifts, updateLootBeacons, updateObjective, updatePickups, updateTowers, ENEMY_DEFS, FT, MOBILE, NADES, NET_ESTATE, NET_EV, NET_POSE, PERF, S, addTrail, animateSoldier, bigExplode, buildUnitGrid, coopBlastAB, coopBlastColor, coopHitP, coopMU16, coopSendEvent, coopU16M, dazePose, dazed, drawRadar, enemies, enemyPool, fpvCam, freeEnemyBar, getEnemyBar, getEnemyMesh, gunFlash, gunSound, gunshipDown, heightAt, hitFlash, infantryDown, mateGunIndex, netFrameAdd, poseSoldier, scene, soldiers, updateAbilityUI, updateAirAim, updateBuffHUD, updateBullets, updateCamera, updateCavalry, updateCrosshair, updateEnemyBar, updateEquip, updateFieldcraft, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateInstr, updateLOD, updateLockWarn, updateLogistics, updateRank, updateReload, updateRockets, updateSquadHud, updateWalls, updateWorldBars } from '../hub.js';
+import { fortBossGuest } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 
 let _types = null; const types = () => _types || (_types = Object.keys(ENEMY_DEFS)), _v = new THREE.Vector3();
 export const PUPS = { n:0, born:0, died:0, gone:0, hits:0, fx:0, err:0, lastErr:'', nextId:COOP.ids.firstEntity, sent:0, sentE:0, over:0, allies:0, allyBorn:0, allyDied:0, drones:0, droneBorn:0 };
@@ -62,7 +63,7 @@ export function coopPuppets(o, dt, now){ const E = NET_ESTATE, C = COOP.puppet;
     try{
       if(def.inf){ e.pos.x = x; e.pos.z = z; e.mesh.position.set(x, heightAt(x, z), z); e.mesh.rotation.y = h;
         if(pose === NET_POSE.STUNNED){ dazePose(e.mesh, now, dt); e.r = 0.34; }
-        else { animateSoldier(e.mesh, moved / def.scale, dt, firing); poseSoldier(e.mesh, pose === NET_POSE.PRONE ? 'prone' : pose === NET_POSE.CROUCH ? 'crouch' : pose === NET_POSE.RUN ? 'low' : 'stand', dt); e.r = pose === NET_POSE.PRONE ? 0.34 : 0.55; } }
+        else { animateSoldier(e.mesh, moved / def.scale, dt, firing); poseSoldier(e.mesh, pose === NET_POSE.PRONE ? 'prone' : pose === NET_POSE.CROUCH ? 'crouch' : pose === NET_POSE.RUN ? 'low' : 'stand', dt); e.r = (pose === NET_POSE.PRONE ? 0.34 : 0.55) * (e.rK || 1); } }
       else { e.pos.set(x, o.y[k], z); e.mesh.position.copy(e.pos); e.mesh.rotation.y = h; const r = e.mesh.userData.rotor; if(r && r.rotation) r.rotation.y += dt * 30; }
       if(firing && now >= e._fxAt){ e._fxAt = now + C.fireEvery; shot(e, h); }
       updateEnemyBar(e);
@@ -127,6 +128,7 @@ export function coopGuestPlay(dt, now, sample){ S.timeNow = now; const gdt = dt 
     updateFieldcraft(gdt, now); updateBullets(gdt, now); updateLockWarn(gdt, now); updateRockets(gdt, now); updateEquip(gdt, now); }finally{ CW.mine = false; }
   updateInfDead(gdt); updateGore(gdt, now); updateHeliDown(gdt); updateWalls(dt); updateLogistics(gdt, now);
   try{ updatePickups(gdt, now); updateGifts(gdt, now); updateLootBeacons(dt); updateTowers(gdt, now); updateObjective(gdt, now); updateAllyDead(gdt); droneWarGuest(gdt, now); }catch(err){ fail(err); }   // COOP 9 the shared world as drawn: loot, crates, towers and their fallers, the objective's bar, our fallen, the drones
+  try{ fortBossGuest(gdt, now); }catch(err){ fail(err); }   // BOSS 1 the host's fort boss as this page draws him
   updateLOD(now); updateBuffHUD(now); updateSquadHud(now);
   if(!fpvCam(dt, now)) updateCamera(dt, now);
   updateWorldBars(); updateAbilityUI(now); if(PERF.fc % (MOBILE ? 3 : 2) === 0) drawRadar(); updateInstr(now); }

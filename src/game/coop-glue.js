@@ -6,6 +6,7 @@
 import { CAV, COOP, COOP2 } from '../../config.js';
 import { ambushGuestCut, bladeSwing, coopBladeCode, bladeHeld, CT, carrySlung, coopDmgNote, coopDroneById, coopTeamEvent, coopTeamKeys, coopTeamProbe, coopTeamReset, coopTeamTick, coopWorldEvent, coopWorldProbe, coopWorldReset, coopWorldTick, droneHurt, DICE, fieldSteps, modeSeed, ARENA, BIOMES, CV, DIR, FORTS, GUNS, MATE, SIDEM, MOBILE, NET_CUE, NET_EV, NET_HASH0, NET_PFLAG, NET_STANCE, PROFILE, PUPS, S, TREES, blocks, bloodSpurt, celebrate, climbing, coopBegin, coopBroadcast, coopClashFatal, coopDownEnter, coopDownStep, coopEnemyById, coopEventAllowed, coopFocusPick, coopFrame, coopGuestBlast, coopGuestDeath, coopGuestNade, coopGuestPlay, coopHitOf, coopHitP, coopHostEntities, coopInfo, coopInputDue, coopJudgeHit, coopLedger, coopLine, coopLobbyClash, coopLobbyHide, coopLobbyOpen, coopLobbyShow, coopOnEvent, coopOnField, coopOnPeer, coopOnSay, coopOnSettings, coopOnState, coopParseUrl, coopPlaying, coopPuppetsClear, coopReviveShow, coopSample, coopSay, coopScoreAB, coopScoreOf, coopSeedUrl, coopSendEvent, coopSendInput, coopSession, coopSetFieldHash, coopSetReady, coopSetSettings, coopSnapDue, coopStart, coopStop, coopTrustWeapon, coopWarn, damageEnemy, damagePlayer, gameOver, heightAt, hide, launchGame, makeCoopDown, makeCoopTrust, mateClear, mateGunId, mateGunIndex, mateProxy, mateRange, mateRideCode, mateUpdate, netFramePlayer, netHashStep, netRand, openUpgrade, quitToMenu, radio, showBanner, towers, updateHUD, victory, clearEnemyMissiles, clearHeliDown, clearHelis, clearInfDead, clearLootBeacons, clearSquads, enemies, enemyPool, freeEnemyBar, applyBiome, buildBlocks, buildObjective, buildLava, buildUnderground, buildTrails, groundMaps, rockSet } from '../hub.js';
 import { swimNet } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { fortBossCue } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 
 // what the page knows of the room (dev probes read it): on = a room was joined · live = the battle is on and the other is with us · ai = on the host the enemy
 // regards both players · puppet = on the guest the enemy is the host's · the stage each side stands at the gate of · counters
@@ -143,6 +144,7 @@ function onEvent(type, a, b, x, y, z, p){ try{ const now = performance.now() / 1
     // ---- the guest: the host's word ----
     if(type >= NET_EV.BLOCK || type === NET_EV.SHOT){ if(!coopWorldEvent(false, type, a, b, x, y, z, p, now)) coopTeamEvent(type, a, b, x, y, z, p, now); return; }   // COOP 9
     if(type === NET_EV.CUE){
+      if(fortBossCue(p, a, b, x, z)) return;   // BOSS 1 the host's fort boss: out, his plates, his moves, the fort taken
       if(p === NET_CUE.GATE) CO.mateGate = b; else if(p === NET_CUE.GO) CO.go = b;
       else if(p === NET_CUE.SCORE){ S.score = coopScoreOf(a, b); updateHUD(); } else if(p === NET_CUE.WAVE){ S.wave = a; updateHUD(); }
       else if(p === NET_CUE.PHASE){ if(PH[a]) DIR.phase = PH[a]; }

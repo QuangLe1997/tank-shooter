@@ -23,6 +23,7 @@ export function updateEnemies(dt, now){
         e.hp -= F.dps * n * (e.burn.k||1) * dt * typeMul('FIRE', armorOf(e)) * ENVMOD.fire; if(e.hp<=0){ killEnemy(e); continue; }   // burned to death → drop it (mesh already pooled)
       }
     }
+    if(e.held) continue;   // BOSS 1 a fort boss in one of his own moves (campaign/fort-boss.js moves and poses him)
     // stunned (EMP / freeze power-up): hold still, no fire
     if(now < e.stunUntil){
       e.mesh.position.set(e.pos.x, e.def.inf?heightAt(e.pos.x,e.pos.z):(e.def.air?e.pos.y:0), e.pos.z);

@@ -122,7 +122,7 @@ export function updateInfantry(e, dt, now, edt){
   const moved=Math.hypot(e.pos.x-ox0, e.pos.z-oz0), inRange=d<reach;
   const want = !al && !react && T.lost && d<AW.search.reach && e.scanA!=null ? e.scanA   // AI 1 standing on the spot he was sent to, knowing nothing: he looks about
     : (inRange || moved<0.002 || react) ? Math.atan2(dx,dz) : Math.atan2(e.pos.x-ox0, e.pos.z-oz0);
-  e.facing += wrapAngle(want-e.facing)*Math.min(1,dt*(al||react?9:3));
+  e.facing += wrapAngle(want-e.facing)*Math.min(1,dt*(al||react?9:3)*(e.turnK?e.turnK/9:1));   // (BOSS 1 turnK: the fort boss swings round slowly)
   e.mesh.position.set(e.pos.x, heightAt(e.pos.x,e.pos.z), e.pos.z); e.mesh.rotation.y=e.facing;
   let fired=false; const ds=diffScale(), A=BALANCE.aggro, F=AW.fire, FG=def.gap||F.gap, FR=def.rest||F.rest;   // (DIR 2 def.burst / gap / rest / spreadK: the machine gun's long hosing bursts — ai/tiers.js)
   const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*objMod('enemyDmgMul')*diffDmgMul();   // (an objective standing: the command bunker, the battery)
@@ -157,7 +157,8 @@ export function updateInfantry(e, dt, now, edt){
   if(still && e._dash && e.sqNoFire && !(e.aimT>0)){ st=e.inCover?'crouch':'prone'; combatDive(e.mesh, e.pos.x, e.pos.z); } e._dash = !still && !!e.sqNoFire;   // Z223 end of a bound: down at once
   if(still && !(e.aimT>0)){ if((e.supp||0)>0.55 || it==='ground') st='prone'; else if(e.sq && e.sqStance && !e.sqGoal) st=e.sqStance; }
   if(still && (react || !al && T.lost) && !((e.supp||0)>0.55)) st='stand';   // AI 1 a man who does not know stands and looks about; the one who has just realised is still on his feet   // Z173 under fire → flat · the covering team kneels / lies to shoot
-  poseSoldier(e.mesh, st, dt); e.r = st==='prone' ? 0.34 : 0.55;              // a man lying flat is a smaller target for your gun too
+  if(e.upright && st==='prone') st='crouch';   // BOSS 1 the fort boss never lies flat
+  poseSoldier(e.mesh, st, dt); e.r = (st==='prone' ? 0.34 : 0.55)*(e.rK||1);              // a man lying flat is a smaller target for your gun too
 }
 // a tank rolling over a soldier at speed crushes him; slower contact just shoves him aside
 export function infantryDown(e){

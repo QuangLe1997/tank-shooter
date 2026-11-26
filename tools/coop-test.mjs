@@ -7,7 +7,7 @@
 //     under 5 cm at the configured delay · reconnect after the server drops both sockets · the room dropped once empty
 //   and it REPORTS the measured bytes a second each way. Exit code 0 only when every check passed; it closes every server and socket it opened.
 //   options: --seconds 10 (simulated battle length) · --json (one line of numbers at the end)
-import { COOP, COOP2 } from '../config.js';
+import { COOP, COOP2, FORTBOSS } from '../config.js';
 import * as P from '../src/net/protocol.js';
 import { createSnapInterp, makeInterpOut } from '../src/net/interp.js';
 import { createWsTransport, createLoopbackPair } from '../src/net/transport.js';
@@ -198,6 +198,8 @@ grp('the rules both pages keep: who may play together, whom an enemy regards, do
     'a phone with a desktop is refused (the two build different fields), another field size too; another picture quality only warns');
   ok(R.coopSeedUrl('http://10.0.0.2:8777/?room=AB12C', 7) === 'http://10.0.0.2:8777/?room=AB12C&seed=7' && R.coopSeedUrl('http://h/?seed=3&room=X&coop=host#dev', 99) === 'http://h/?room=X&coop=host&seed=99#dev' && R.coopSeedUrl('http://h/', 0) === 'http://h/?seed=1' && coopParseUrl(R.coopSeedUrl('?room=abcde', 4242)).seed === 4242, 'a page that must take the host\'s seed reloads at its own address with seed= set (once, kept in order)');
   const cues = Object.values(R.NET_CUE), sc = R.coopScoreAB(3123456789); ok(new Set(cues).size === cues.length && cues.every(c => c >= 1 && c <= 65535) && R.coopScoreOf(sc[0], sc[1]) === 3123456789 && R.coopScoreOf(...R.coopScoreAB(10550)) === 10550 && R.coopScoreOf(...R.coopScoreAB(-5)) === 0, 'cue codes are distinct; a 32-bit score crosses in a cue\'s two 16-bit fields');
+  { const E = P.NET_EV, Q = FORTBOSS.cue, fb = Object.values(Q); ok(fb.every(c => !cues.includes(c) && R.fortBossCode(c)) && !R.fortBossCode(R.NET_CUE.WON) && fb.every(c => R.coopEventAllowed(false, E.CUE, 2, 0x7f, c) && !R.coopEventAllowed(true, E.CUE, 2, 0x7f, c) && !R.coopEventAllowed(false, E.CUE, 16, 0, c) && !R.coopEventAllowed(false, E.CUE, 1, 70000, c)),
+    'BOSS 1 the fort boss\'s CUE codes (out, plates, a move, the fort taken) are their own, taken from the host only, with a fort index under 16'); }
   ok(Math.abs(R.coopMU16(R.coopU16M(-183.37)) + 183.37) < 0.006 && Math.abs(R.coopMU16(R.coopU16M(183.99)) - 183.99) < 0.006 && R.coopU16M(1e6) === 65535 && R.coopU16M(-1e6) === 0 && R.coopBlastColor(...R.coopBlastAB(0xffb050)) === 0xffb050 && R.coopBlastColor(...R.coopBlastAB(0)) === 0, 'a grenade\'s start point and an explosion\'s colour fit an event\'s 16-bit fields');
   // whom an enemy regards
   ok(R.coopFocusPick(0, 10, 30, false, false) === 0 && R.coopFocusPick(0, 30, 10, false, false) === 1 && R.coopFocusPick(0, 10, 9, false, false) === 0 && R.coopFocusPick(1, 9, 10, false, false) === 1 && R.coopFocusPick(1, 5, 10, false, false) === 0

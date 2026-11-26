@@ -2545,6 +2545,43 @@ export const NEMESIS = { on:true, v:1, tick:0.25,
     epi:['{name} biến mất trong khói, bỏ lại hầm chỉ huy: bản đồ, điện đài, tách trà còn ấm.', 'Thành đã hạ, nhưng {name} thoát. Trên bàn hắn còn tấm bản đồ và mẩu giấy ghi tên {nick}.',
       '{name} chạy thoát qua cửa sau, bỏ lại bản đồ và cả cận vệ. {cmd} chỉ nói: "Hắn sẽ quay lại."'],
     brief:{ met:'Hắn nhớ anh: chạm mặt {n} lần', kills:'hạ anh {k} lần', fled:'tẩu thoát {f} lần', rank:'cấp {r}', large:'Trinh sát: {name}, kẻ đã tẩu thoát, đang ẩn trong thành này.' } } };
+// BOSS 1 A BOSS IN EVERY FORT (campaign/fort-boss.js, his look actors/fort-boss-look.js): every fort holds ONE boss — a heavy-armoured giant on the
+//   soldier's rig — who comes out only when the fort's first force is dead (its pool spent, nobody of it left inside, the tunnels emptied); his death
+//   takes the fort (the capital's is the stage's general: his death wins the stage). on = the switch (off: the old commander / duel rules); model = his
+//   look ('rig': the enemy rifleman's rig scaled to h m [tier 1, 2, 3], baseH = that man's own height, armour plates bolted to his bones — one function,
+//   fortBossLook, to swap for a downloaded rigged model later). hp [tier 1, 2, 3] × (1 + stageK per stage past the first) × difficulty × NG+ loop ×
+//   (1 + coopK per extra player); hitCap = the most raw damage one hit can do (share of his health). ARMOUR: a hit is placed by where it came from (his
+//   front within front rad: the helmet takes headShare of them while it holds, the chest plate the rest; his flanks: that shoulder's plate takes
+//   sideShare; his back past back rad: the power pack) — a plate takes the whole hit off its own health (plates: share of his health) and lets armK of
+//   it through; with the helmet gone headShare of the front hits are head shots × headK, the pack × packK while it holds (its blast: packBoom of his
+//   health, a long stagger), the bare back × backK. stagger s: a plate gone, the pack gone, a charge into a wall. blade: while he staggers a cut takes
+//   × k — and below finish of his health it is the killing blow. phase = the health shares where phase 2 and 3 start (3: enraged, the plates left
+//   blown off, × rage faster). move: m/s, keep m from his man, the leash m inside his fort's wall, turn = how fast the heavy man swings round (rad/s ×),
+//   stuck s without getting nearer → a new spot. fire: his own bursts (dmg a round, s between). Telegraphed moves per phase [1, 2, 3] (cd s, 0 = not
+//   in that phase): sweep = the heavy gun's fan (tel s of red fan first, dur s, arc rad, n rounds a pass, pass count); nade = a clutch of grenades
+//   (rings tighten lock s); charge = a straight rush (tel s of a red lane, v m/s for t s, dmg + push on contact; into a wall: a stagger). guards = men
+//   called in phase 2 [by tier], their health × hpK. first = the fort's first force: its pool held to [min, max] men by tier when it wakes (× FORT.mobileMul). intro: slow-mo timeScale, hold s walking out (no hits land), step = metres between heavy footfalls.
+//   kinds = by tier his heavy gun (n = rounds ×, r = round size, dmgK, arcK) and his second weapon (alt: nade = hand grenades, gl = a grenade launcher's
+//   wider volley gl.n rounds over gl.scatter m, rocket = a shoulder launcher, rocket.n rockets gap s apart after a tel s red glint) — every boss a modern
+//   heavy operator (helmet and visor, plate carrier, heavy plates; never a sword or a robe); lands = his name and armour colour per battlefield; cue = co-op event codes (host → guest)
+export const FORTBOSS = { on:true, model:'rig', h:[2.6, 2.75, 2.9], baseH:1.82,
+  hp:[4400, 5000, 5600], stageK:0.08, coopK:0.7, hitCap:0.03,
+  front:0.95, back:2.25, headShare:0.25, sideShare:0.7, armK:0.2, headK:1.6, packK:1.5, backK:1.15, packBoom:0.04,
+  plates:{ helmet:0.05, chest:0.10, shL:0.05, shR:0.05, pack:0.07 },
+  stagger:{ plate:0.9, pack:3.0, wall:2.5 }, blade:{ finish:0.35, k:3 }, phase:[0.6, 0.3],
+  move:{ speed:3.3, rage:1.35, keep:14, range:34, leash:5, turn:1.6, stuck:1.8 }, fire:{ dmg:5, fireCd:0.45, rage:0.65 },
+  sweep:{ cd:[8, 9.5, 6], tel:1.0, dur:1.5, arc:1.3, n:24, dmg:8, speed:55, pass:[1, 1, 2] },
+  nade:{ cd:[0, 9, 7], n:3, R:3.4, dmg:30, lock:1.4, scatter:4 },
+  charge:{ cd:[0, 11, 8], tel:0.9, v:12, t:1.6, dmg:30, r:1.9, push:9, min:7, max:30 },
+  first:{ min:[8, 10, 12], max:[14, 18, 22] },
+  guards:{ n:[3, 4, 5], hpK:2.5 }, intro:{ slow:0.5, hold:1.6, walk:2.2 }, step:1.35,
+  kinds:{ 1:{ gun:'ĐẠI LIÊN', alt:'nade', n:1, r:0.2 }, 2:{ gun:'TRỌNG LIÊN', alt:'gl', n:1.15, r:0.26, dmgK:1.2 }, 3:{ gun:'SÚNG NÒNG XOAY', alt:'rocket', n:1.6, r:0.18, dmgK:0.8, arcK:1.15 } },
+  gl:{ n:5, scatter:6 }, rocket:{ n:2, tel:0.9, gap:0.45, speed:30, dmg:34, aoe:3.2 },
+  lands:{ _:{ t:'THIẾT GIÁP', c:0x55584e }, DESERT:{ t:'BỌ CẠP CÁT', c:0xa88a58 }, SAVANNA:{ t:'SƯ TỬ ĐẤT', c:0x8c7046 }, ARCTIC:{ t:'GẤU TUYẾT', c:0xc4ccd2 },
+    TUNDRA:{ t:'GẤU TUYẾT', c:0xc4ccd2 }, VOLCANO:{ t:'HOẢ NGỤC', c:0x35231f, glow:0xff5a1a }, FOUNDRY:{ t:'LÒ LUYỆN', c:0x463a32, glow:0xff7a22 },
+    STEELMILL:{ t:'LÒ LUYỆN', c:0x463a32, glow:0xff7a22 }, QUARRY:{ t:'THẠCH QUỶ', c:0x837c70 }, CITY:{ t:'THÉP ĐÔ THỊ', c:0x50565e }, CITADEL:{ t:'THIẾT VỆ', c:0x4e4e48 },
+    RUINS:{ t:'BÓNG MA', c:0x5e5e52 }, MEADOW:{ t:'HẮC MỘC', c:0x44503a }, HILLS:{ t:'HẮC MỘC', c:0x44503a }, VILLAGE:{ t:'HẮC MỘC', c:0x44503a } },
+  cue:{ APPEAR:40, PLATE:41, ATK:42, TAKEN:43 } };
 // Z374 SCENERY (world/scenery.js): every battlefield composed from the Meshy community scans (tools/scene-import.mjs → assets/models/real/scene) — a
 //   skyline beyond the fence, one landmark the field turns on, framing pairs, groves, a rail siding, a pole line, a tank farm, rocks to fight from.
 //   lod: a model is drawn whole (the near file, fetched once the camera comes within mid + near m) up to mid m, then its mid copy, past far m its far copy

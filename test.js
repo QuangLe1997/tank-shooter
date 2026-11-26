@@ -2552,6 +2552,23 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(D && D.on === true && D.in > 0.5 && D.in <= 3 && D.out >= 0 && D.out <= 2, 'the dome fades over '+(D.in+D.out)+' m round its wall: gone '+D.in+' m inside, whole '+D.out+' m out');
   ok(/\(0\.05 \+ Math\.sin\(now\*1\.1\)\*0\.025\)\*domeSeen\(c\)/.test(co) && /function domeSeen\(c\)/.test(co) && co.indexOf('domeSeen(c); c.dome.material.map') < co.indexOf("if((c.shieldUntil||0)>now){ c.dome.material.opacity=Math.max(0.22"),
     'only the idle shimmer fades; the emergency shield sets its glow after it (seen from inside too)'); }
+// BOSS 1 a boss in every fort: out when its first force is dead, armoured and phased, his death takes the fort
+{ const fs=await import('node:fs'), C=await import('./config.js'), B=C.FORTBOSS, rd=f=>fs.readFileSync(f,'utf8'), fb=rd('src/campaign/fort-boss.js'), fo=rd('src/world/fortress.js'), dm=rd('src/actors/damage.js'), ru=rd('src/net/rules.js'), lp=rd('src/game/loop.js'), pu=rd('src/game/coop-puppets.js'), gl=rd('src/game/coop-glue.js');
+  ok(B && B.on === true && B.h.length === 3 && B.h.every((h, i) => h >= 2.5 && h <= 3 && (!i || h > B.h[i - 1])) && B.baseH > 1.6 && B.baseH < 2 && B.hp.every((h, i) => h > 0 && (!i || h > B.hp[i - 1])) && B.hitCap > 0 && B.hitCap < 0.1 && B.coopK > 0,
+    'every fort\'s boss stands '+B.h.join(' / ')+' m (tier 1 / 2 / 3), health '+B.hp.join(' / ')+' (more for a bigger fort, × the stage, the difficulty, the players), no hit takes over '+(B.hitCap*100)+' %');
+  const Pl=Object.values(B.plates).reduce((a, b) => a + b, 0);
+  ok(B.armK > 0 && B.armK <= 0.3 && B.headK > 1 && B.packK > 1 && B.backK >= 1 && Pl > 0.2 && Pl < 0.5 && B.front > 0.5 && B.back > B.front && B.back < Math.PI && B.headShare > 0 && B.headShare < 0.5 && B.blade.finish > 0 && B.blade.finish < 0.5 && B.blade.k > 1,
+    'armour: a plate lets '+(B.armK*100)+' % through until shot off (plates '+Math.round(Pl*100)+' % of his health in all); the bare head ×'+B.headK+', the pack ×'+B.packK+'; the blade ×'+B.blade.k+' on a staggered boss, the killing blow under '+(B.blade.finish*100)+' %');
+  ok(B.phase[0] > B.phase[1] && B.phase[1] > 0 && B.sweep.cd.every(c => c > 0) && B.nade.cd[0] === 0 && B.charge.cd[0] === 0 && B.nade.cd[1] > 0 && B.charge.cd[2] > 0 && B.sweep.tel >= 0.6 && B.charge.tel >= 0.6 && B.rocket.tel >= 0.6 && B.nade.lock >= 1 && B.sweep.pass[2] > B.sweep.pass[0] && B.move.rage > 1,
+    'three phases (from '+B.phase.map(p => p*100+' %').join(' and ')+'): the sweep first, then the guards, his second weapon and the charge, then rage — every big move warned ('+B.sweep.tel+' / '+B.charge.tel+' / '+B.rocket.tel+' s)');
+  const K=[1, 2, 3].map(t => B.kinds[t]), cue=Object.values(B.cue), old=Object.values(C.COOP.cue), L=Object.values(B.lands);
+  ok(K.every(k => k && k.gun && ['nade', 'gl', 'rocket'].includes(k.alt)) && new Set(K.map(k => k.alt)).size === 3 && L.every(l => l.t && typeof l.c === 'number') && ![...K.map(k => k.gun), ...L.map(l => l.t)].some(t => /KIẾM|ĐAO|GIÁO|THƯƠNG|KÍCH/.test(t)) && B.first.min.every((m, i) => m > 0 && m <= B.first.max[i]),
+    'modern heavy operators only: '+K.map(k => k.gun+' + '+k.alt).join(', ')+'; a name and a colour for each land; the first force '+B.first.min.join('/')+'–'+B.first.max.join('/')+' men');
+  ok(new Set(cue).size === cue.length && cue.every(c => !old.includes(c) && c > 0 && c < 65536) && /fortBossCode\(p\)\) return a >= 0/.test(ru) && /recvIsHost\)\{ if\(type === NET_EV\.HIT\)/.test(ru),
+    'co-op: the boss\'s own CUE codes ('+cue.join(', ')+'), never one of the old ones, taken from the host only');
+  ok(/fortBossWake\(f, now\)/.test(fo) && /!f\.duel && !FORTBOSS\.on/.test(fo) && /if\(f\.tier!==3 && !FORTBOSS\.on\)/.test(fo) && /export function fortTake\(f, guest\)/.test(fo) && /if\(e\.fortBoss\) dmg=fortBossDmg\(e, dmg\)/.test(dm) && /updateFortBoss\(gdt, now\)/.test(lp) && /fortBossGuest\(gdt, now\)/.test(pu) && /fortBossCue\(p, a, b, x, z\)/.test(gl)
+    && /export function fortBossLook\(e, def\)/.test(rd('src/actors/fort-boss-look.js')) && /bossStageWon\(NOW\(\), def\.bdef\)/.test(fb) && /spawnGift\(/.test(fb),
+    'wired: the fort wakes its boss once its first force is dead (no commander, no walk-in duel), his hits go through his armour, his death takes the fort (the capital\'s wins the stage) and drops the gift crate; the guest\'s page draws him'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

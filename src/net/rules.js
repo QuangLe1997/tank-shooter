@@ -1,6 +1,6 @@
 // net/rules.js — COOP 4 THE RULES BOTH PAGES MUST AGREE ON, AS PLAIN FUNCTIONS (they run in Node: tools/coop-test.mjs): the cue codes, whether two machines can
 // build the same battlefield, the seed in the address, a hit report's parameter, which of the two players an enemy regards, and going down / being stood up again
-import { AMBUSH, BLADE, COOP, COOP2, LOGISTICS } from '../../config.js';
+import { AMBUSH, BLADE, COOP, COOP2, FORTBOSS, LOGISTICS } from '../../config.js';
 import { NET_EV } from './protocol.js';
 
 export const NET_CUE = COOP.cue;
@@ -47,12 +47,15 @@ export function coopBlastColor(a, b){ return ((a & 0xffff) << 8) | (b & 0xff); }
 // May an event of this kind, with these fields, be acted on by the page that RECEIVED it? recvIsHost = it came from the guest. From the guest the host takes
 // only a hit report against an enemy id and "I stand at the gate of stage b"; never a hit on a player, a death, a blast, a score, a wave, a stage won or lost,
 // down or up. From the host the guest takes every kind, with its numbers in range. Anything else is dropped (counted, never thrown).
+// BOSS 1 one of the fort boss's CUE codes (FORTBOSS.cue: out, plates, a move, the fort taken) — the host's only
+export function fortBossCode(p){ const Q = FORTBOSS.cue; return p === Q.APPEAR || p === Q.PLATE || p === Q.ATK || p === Q.TAKEN; }
 export function coopEventAllowed(recvIsHost, type, a, b, p){ const C = NET_CUE, T = COOP.trust, first = COOP.ids.firstEntity, G = COOP.ids.guest, stage = v => v >= 1 && v <= T.stageMax;
   if(type >= NET_EV.BLOCK && type <= NET_EV.STATE) return coopWorldAllowed(recvIsHost, type, a, b, p);   // COOP 9 the shared world's events: their own table below
   if(recvIsHost){ if(type === NET_EV.HIT) return a === G && b >= first; if(type === NET_EV.CUE) return p === C.GATE && a === G && stage(b); return false; }
   if(type === NET_EV.HIT) return b === G && a !== G; if(type === NET_EV.DEATH) return a >= first; if(type === NET_EV.EXPLOSION) return p >= 1; if(type === NET_EV.GRENADE) return p >= 1 && p <= T.nadeMs;
   if(type === NET_EV.MARK) return a === 0 || a === 1; if(type === NET_EV.RADIO || type === NET_EV.SHOT) return true;
-  if(type === NET_EV.CUE){ if(p === C.GATE || p === C.GO) return stage(b); if(p === C.WON) return stage(a); return p === C.LOST || p === C.SCORE || p === C.WAVE || p === C.PHASE || p === C.UP || p === C.DOWN; }
+  if(type === NET_EV.CUE){ if(p === C.GATE || p === C.GO) return stage(b); if(p === C.WON) return stage(a); if(fortBossCode(p)) return a >= 0 && a < 16 && b >= 0 && b <= 65535;   // BOSS 1 a fort boss's word: a = the fort's index
+    return p === C.LOST || p === C.SCORE || p === C.WAVE || p === C.PHASE || p === C.UP || p === C.DOWN; }
   return false; }
 // ---- the host's judgment of a guest's hit report. TR = makeCoopTrust() (the rate buckets, the weapons his state named, counters).
 //   q = { now (s), dmg, heavy, weapon (the index the report names), enemyAlive, dist (m: where he last said he was → the enemy), gunDmg (one round of that

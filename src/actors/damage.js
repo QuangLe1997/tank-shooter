@@ -1,11 +1,12 @@
 // actors/damage.js — DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's experience), the fall
 import * as THREE from 'three';
 import { BALANCE, LOOT } from '../../config.js';
-import { S, WAVE, addScore, bigExplode, ringPulse, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip, afxBark, coopGuestHit, coopHostDeath } from '../hub.js';
+import { S, WAVE, addScore, bigExplode, ringPulse, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip, afxBark, coopGuestHit, coopHostDeath, fortBossDmg } from '../hub.js';
 
 export function damageEnemy(e, dmg){
   if(e.puppet && coopGuestHit(e, dmg)) return;   // COOP 6 on a co-op guest the enemy is the host's: the hit is reported, the host takes the health off
-  if(e.hitCap) dmg=Math.min(dmg, e.hitCap);   // Z353 the general on foot: no single hit (a grenade's core, a 12.7 slug) takes more than a slice of him
+  if(e.fortBoss) dmg=fortBossDmg(e, dmg);   // BOSS 1 the fort boss: his plates, his weak points, his own cap (campaign/fort-boss.js)
+  else if(e.hitCap) dmg=Math.min(dmg, e.hitCap);   // Z353 the general on foot: no single hit (a grenade's core, a 12.7 slug) takes more than a slice of him
   e.hp-=dmg; hitFlash(e.mesh);
   if(e.hp<=0) killEnemy(e); else if(e.def.inf) awareHit(e);   // AI 1 a man who is hit knows at once he is in a fight
 }

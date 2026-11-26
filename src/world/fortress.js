@@ -1,8 +1,9 @@
 // world/fortress.js — Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, corner watchtowers, one heavy gate to batter open, a crowded garrison + a commander inside; troops sally from the gates. Take them all to win the stage (the main citadel's gate opens last and its commander is the boss).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { fortBossReset, fortBossWake } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CAM_ROOM, FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
+import { CAM_ROOM, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
 import { cosmetic, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
 
 export const FORTS=[];
@@ -371,7 +372,7 @@ export function breachFort(f, now, viaWall){ if(f.breached) return; f.breached=t
   showBanner((viaWall?'TƯỜNG ':'CỔNG ')+f.name+(viaWall?' ĐÃ SẬP':' ĐÃ VỠ')+' — XUNG PHONG!', '#ff8a3a'); radio(f.chief+': "Toàn quân! Địch đã vào thành! Xông lên, giết sạch chúng!"', 'f_rally_1');   // Z167 the commander's megaphone + his men's war cry
   wakeFort(f, now);
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);                                     // the garrison pours out — through the gate / the breach, not through the stone
-  if(f.tier===3 && !f.duel){ f.duel=true; startBoss(now, f); } }   // the citadel's commander IS the stage boss: the general takes the field (campaign/boss.js)
+  if(f.tier===3 && !f.duel && !FORTBOSS.on){ f.duel=true; startBoss(now, f); } }   // (BOSS 1 on: the general is the fort's boss — he comes when its first force is dead)   // the citadel's commander IS the stage boss: the general takes the field (campaign/boss.js)
 // ================= Z111b WALLS, GATE, SORTIES =================
 // --- line of fire: does the segment cross a standing wall section or the shut gate? (stone stops direct fire both ways) ---
 function _segT(ax,az,bx,bz,cx,cz,dx,dz){ const rx=bx-ax, rz=bz-az, sx=dx-cx, sz=dz-cz, den=rx*sz-rz*sx; if(Math.abs(den)<1e-9) return -1;
@@ -456,7 +457,8 @@ function spawnAt(f, type, x, z, how){
   const e=spawnEnemy(type, x, z, how); if(!e) return null; e.fortOf=f; if(!f.breached){ e.guard={ kind:'fort', x:f.x, z:f.z, r:f.R, fort:f }; e.post=[x,z]; e.hold={ x:f.x, z:f.z, r:f.R-3 }; }
   f.units.push(e); return e; }
 export function wakeFort(f, now){ if(f.active) return; f.active=true;
-  if(f.tier!==3){ const c=spawnInside(f, FORT.cmdType); if(c){ c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); if(FORT.cmdScale!==1){ c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; } c.commander=f; c.loot=true; f.cmd=c; c.home={ x:f.x, z:f.z, r:(f.Rin||f.R)-5 };   // Z170 his ground: the yard, always
+  if(FORTBOSS.on){ const F=FORTBOSS.first, t=f.tier-1, k=MOBILE?FORT.mobileMul:1; f.pool.inf=Math.round(Math.max(F.min[t]*k, Math.min(f.pool.inf, F.max[t]*k))); }   // BOSS 1 the first force: so many men, then the boss (no commander)
+  if(f.tier!==3 && !FORTBOSS.on){ const c=spawnInside(f, FORT.cmdType); if(c){ c.hp=c.maxHp=Math.round(c.maxHp*FORT.cmdHp); if(FORT.cmdScale!==1){ c.mesh.scale.multiplyScalar(FORT.cmdScale); c.r*=FORT.cmdScale; } c.commander=f; c.loot=true; f.cmd=c; c.home={ x:f.x, z:f.z, r:(f.Rin||f.R)-5 };   // Z170 his ground: the yard, always
       f.escort=[]; const nE=RI(MOBILE?FORT.escortMobile:FORT.escort); for(let k=0;k<nE;k++){ const a=k/nE*Math.PI*2, r=R2(FORT.escortR), x=c.pos.x+Math.cos(a)*r, z=c.pos.z+Math.sin(a)*r;   // bodyguards ring the commander and go where he goes
         const e=spawnEnemy(k%3===2?'rpg':'rifle', x, z); if(!e) continue; e.fortOf=f; e.escortOf=c; e.escA=a; e.escR=r; e.guard={ kind:'escort', fort:f }; e.post=[x,z]; f.escort.push(e); }
       c.label=nameSprite(f.chief, '#ffd24a'); c.label.scale.set(10,1.9,1); c.label.position.set(0, 5.2/(c.mesh.scale.x||1), 0); c.label.scale.multiplyScalar(1/(c.mesh.scale.x||1)); c.mesh.add(c.label); } }
@@ -490,19 +492,23 @@ function animFlag(f, dt){ const F=f.flagFall, G=f.flagG; F.t+=dt;
     const fl=makeFlag(vnTex(), 4.4, 2.8, 1); fl.position.set(0, f.flagH-1.8, 0); ng.add(fl); f.flag=fl; ng.scale.set(1,0.01,1); }
   const u=Math.min(1,(F.t-1.6)/1.6); if(u>0) f.flagG.scale.y=Math.max(0.01,u); if(u>=1) f.flagFall=null; }
 // ---- capture: the commander is dead → the fortress is ours, its treasury opens ----
-function capture(f, now){ if(f.captured) return; f.captured=true; f.active=false;
+function capture(f, now, guest){ if(f.captured) return; f.captured=true; f.active=false;
   if(f.flagG){ f.flagFall={ t:0, dir:Math.random()*6.28 }; } else { unwave(f.flag); f.g.remove(f.flag); const fl=makeFlag(rallyFlagTex(), 3.2, 2.0, 1); fl.position.set(0, 8.2, 0); f.g.add(fl); f.flag=fl; }   // Z140 the enemy colours come crashing down
   if(f.label){ f.label.material.opacity=0.45; }
   for(const fl of (f.towerFlags||[])) fl.material.map=vnTex(); if(f.coreFlag && !f.coreDown) f.coreFlag.material.map=vnTex();   // Z176 our colours on every tower
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);
   if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } if(!f.breached){ f.breached=true; const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); for(const L of f.leaves) L.open=0.001; }
   const L=FORT.loot;
-  for(let k=0;k<L.drops+f.tier-1;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*8, z:f.z+(Math.random()-0.5)*8 }, Math.min(3, f.tier));
+  if(!guest){ for(let k=0;k<L.drops+f.tier-1;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*8, z:f.z+(Math.random()-0.5)*8 }, Math.min(3, f.tier));
   for(let k=0;k<L.armoury;k++) dropPowerup({ x:f.x+(Math.random()-0.5)*6, z:f.z+(Math.random()-0.5)*6 }, 2);   // Z115 the armoury
-  saveProfile();
+  saveProfile(); }   // (BOSS 1 guest: the loot is the host's)
   bigExplode({x:f.x,z:f.z}, 0x9be04a, 1.6); ringPulse(new THREE.Vector3(f.x,0,f.z), 0x9be04a, 6); sfx('levelup'); celebrate('fort', f.x, f.z);   // Z140 fireworks over the taken fort
   showBanner('ĐÃ CHIẾM '+f.name+'!', '#8cbf3f');
   const left=fortsLeft(); radio(left ? ('Còn '+left+' đại bản doanh. '+(left===1 && mainFort() && !mainFort().captured ? 'Cổng '+mainFort().name+' đã mở phong toả!' : 'Tiếp tục tiến công!')) : 'Mọi đại bản doanh đã thất thủ!'); }
+// BOSS 1 the fort boss is dead: the fort is ours (campaign/fort-boss.js) — guest = a co-op guest's page drawing the host's word (no loot of its own)
+export function fortTake(f, guest){ capture(f, performance.now()/1000, guest); }
+// BOSS 1 the guest's page runs no fort update: its taken forts' flags fall and rise here
+export function fortFlagsTick(dt){ for(const f of FORTS) if(f.flagFall && f.g) animFlag(f, dt); }
 // the citadel falls with its commander — the stage boss (boss.js kills → stage clear)
 export function fortBossDown(){ const f=mainFort(); if(f && !f.captured) capture(f, performance.now()/1000); }
 // ---- per frame ----
@@ -520,14 +526,15 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
     if(f.coreBc && !f.coreDown) f.coreBc.visible = ((now*1.4)%1)<0.5;   // the mast's beacon blinks
     if(f.flagFall) animFlag(f, dt);
     if(f.captured){ checkCleared(f, now); continue; }
-    if(f.tier===3 && !f.duel && Math.hypot(p.pos.x-f.x, p.pos.z-f.z) < (f.Rin||f.R)+2){ f.duel=true; startBoss(now, f); }   // (no-tanks) walking in through the open gate brings the general out too
+    if(f.tier===3 && !f.duel && !FORTBOSS.on && Math.hypot(p.pos.x-f.x, p.pos.z-f.z) < (f.Rin||f.R)+2){ f.duel=true; startBoss(now, f); }   // (no-tanks) walking in through the open gate brings the general out too
     const d=Math.hypot(p.pos.x-f.x, p.pos.z-f.z);
     if(!f.active && d<FORT.wakeR+f.R) wakeFort(f, now);
     if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; if(!f.leaderless) refill(f); else f.units=f.units.filter(e=>enemies.includes(e)); escortFollow(f); }
       for(const e of f.units){ const H=e.home||e.hold; if(!H || e.def.inf) continue; const dx=e.pos.x-H.x, dz=e.pos.z-H.z, q=Math.hypot(dx,dz); if(q>H.r){ e.pos.x=H.x+dx/q*H.r; e.pos.z=H.z+dz/q*H.r; e.vel.multiplyScalar(0.2); } }   // tanks stay behind the walls until the gate falls
       updatePosture(f, now); if(f.posture==='sally' && !f.leaderless) sortie(f, now);
       if(f.cmd && !enemies.includes(f.cmd) && !f.leaderless){ f.leaderless=true; showBanner('TƯỚNG '+f.name+' ĐÃ CHẾT — DIỆT NỐT QUÂN TRONG THÀNH!', '#ffcf5a'); radio('SCH: Tướng giữ '+f.name+' đã bị hạ. Quét sạch quân còn lại — thành sẽ không còn được tiếp viện!'); }   // Z140 commander down → no more reinforcements
-      if(f.leaderless && !f.units.some(e=>enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R+1)){ if(f.tunnel>0) tunnelAmbush(f, now); else if(now>(f.tunnelWait||0)) capture(f, now); } }   // … and the last defender inside is gone (Z170 and the tunnels have emptied) → the fort falls
+      if(FORTBOSS.on && !f.leaderless && f.pool.inf<=0) f.leaderless=true;   // BOSS 1 the first force raised to the last man: no more come
+      if(f.leaderless && !f.units.some(e=>enemies.includes(e) && Math.hypot(e.pos.x-f.x, e.pos.z-f.z) < f.R+1)){ if(f.tunnel>0) tunnelAmbush(f, now); else if(now>(f.tunnelWait||0)){ if(FORTBOSS.on) fortBossWake(f, now); else capture(f, now); } } }   // BOSS 1 … and all of it is dead: the boss comes out — his death takes the fort   // … and the last defender inside is gone (Z170 and the tunnels have emptied) → the fort falls
     if(now>f.sallyAt && !f.leaderless) sally(f, now);
   }
 }
@@ -547,7 +554,7 @@ export function updateFortHud(){ const el=document.getElementById('fortHud'); if
     return '<div class="fh-r'+(f.captured?' done':'')+(f.tier===3?' main':'')+'"><b>'+f.name+'</b>'+st+'</div>'; }).join('');
   const html='<div class="fh-t">ĐẠI BẢN DOANH · '+(FORTS.length-fortsLeft())+'/'+FORTS.length+'</div>'+rows;
   if(html!==_fh){ _fh=html; el.innerHTML=html; el.classList.remove('hidden'); } }
-export function clearForts(){ { const el=document.getElementById('fortHud'); if(el){ el.classList.add('hidden'); _fh=''; } } for(const f of FORTS){ if(f.g){ unwave(f.g); scene.remove(f.g); } for(const g of f.wallGeos||[]) g.dispose(); if(f.wallMat) for(const m of matList(f.wallMat)) m.dispose();   /* SYNC 2 a kit wall's material is a list (cloneMat): .dispose() on it threw and the next battle was never built */ if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } } FORTS.length=0;
+export function clearForts(){ fortBossReset(); { const el=document.getElementById('fortHud'); if(el){ el.classList.add('hidden'); _fh=''; } } for(const f of FORTS){ if(f.g){ unwave(f.g); scene.remove(f.g); } for(const g of f.wallGeos||[]) g.dispose(); if(f.wallMat) for(const m of matList(f.wallMat)) m.dispose();   /* SYNC 2 a kit wall's material is a list (cloneMat): .dispose() on it threw and the next battle was never built */ if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } } FORTS.length=0;
   for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='fortwall'||blocks[i].kind==='gate') blocks.splice(i,1); }
 // Z279 COLOSSAL FORTS: each battlefield's forts in their own monumental style (REALFORT: granite citadel, desert kasbah, arctic basalt-and-ice,
 //   volcanic obsidian — Tripo, 4K textures). The wall sections keep their own hit points and fall one by one as before: only the instanced shape

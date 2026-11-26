@@ -258,6 +258,7 @@ export function sfx(name, pos, vol){
     case 'shellIn': noise(0.025,{vol:0.14,type:'bp',hp:1600,lp:5200,attack:0.001}); tone(300,0.04,{type:'triangle',vol:0.04,slideTo:210}); break;   //   a round thumbed into the port
     case 'reloaded':play('reload', null, 0.7); tone(1320,0.08,{type:'triangle',vol:0.05,delay:0.06}); break;   // breech slams shut
     case 'alarm':   tone(440,0.12,{type:'triangle',vol:0.12}); tone(330,0.17,{type:'triangle',vol:0.12,delay:0.13}); break;
+    case 'horn':    tone(98,1.1,{type:'sawtooth',vol:0.06,slideTo:96}); tone(147,1.1,{type:'triangle',vol:0.05}); tone(110,1.3,{type:'sawtooth',vol:0.06,slideTo:104,delay:1.0}); tone(165,1.3,{type:'triangle',vol:0.045,delay:1.0}); break;   // BOSS 1 the fort's war horn: two long low blasts
     case 'beep':    tone(1200,0.05,{type:'triangle',vol:0.06}); break;
     case 'whistle': tone(1650,1.15,{type:'sine',vol:0.045,slideTo:380}); tone(1700,1.15,{type:'triangle',vol:0.018,slideTo:400}); break;   // Z188 a shell falling on you
     case 'jet':     tone(220,2.2,{type:'sawtooth',vol:0.028,slideTo:70}); tone(900,1.6,{type:'triangle',vol:0.012,slideTo:240,delay:0.1}); break;   // Z189 jets screaming over
