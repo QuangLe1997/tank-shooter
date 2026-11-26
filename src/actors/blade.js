@@ -53,6 +53,62 @@ function mesh(R, L){ if(L.m) return true; const gl = BLADEST.ready[L.k]; if(!gl)
 function action(R, L, id){ let a = L.A.get(id); if(a !== undefined) return a; const clip = animClip(id); if(clip && clip.uuid !== 'xk-' + id) clip.uuid = 'xk-' + id;   // (the mixer keys its actions by the clip's uuid, and in a seeded battle three's uuids come from the seeded dice (SYNC 1): two library clips had come out as ONE action — the blade's whole stance set at weight 0, his body left in its rest pose. The clip's own id is its uuid)
   a = clip ? R.om.clipAction(clip) : null; if(a){ a.enabled = true; a.setEffectiveWeight(0); a.timeScale = 0; a.play(); } L.A.set(id, a); return a; }
 
+// ---- BLADE 10 HIS OWN SKIN AS THE WEAPONS MUST CLEAR IT (BLADE.skin). The capsules are a rough shape; his real kit (the pack, the pouches, the arms) is read ONCE
+//   from the seen soldier's skinned mesh: one vertex per `cell` m, each kept in the frame of the bone that carries it most, grouped by bone with a bounding sphere.
+//   A frame, only the groups near the weapon are put back into the world (a few dozen points). skinPush: the deepest of those points inside a rod a → b of radius rad
+//   → how deep (m) and the way out (_res, unit, from the point to the rod). arms false: his arms and hands are left out (in his hands, they hold it). No allocation.
+const SKN = new WeakMap(), _sv = V3(), _sc = V3();
+function skinOf(R){ let K = SKN.get(R); if(K !== undefined) return K; K = null; const C = BLADE.skin, dst = R.pup && R.pup.dst; SKN.set(R, null); if(!C.on || !dst) return null;
+  const vox = new Set(), by = new Map(), M = new THREE.Matrix4(), v = V3(), w = V3(); dst.updateMatrixWorld(true);
+  dst.traverse(o => { if(!o.isSkinnedMesh || !o.visible || !o.skeleton) return; const g = o.geometry, P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight; if(!P || !SI || !SW) return; const sk = o.skeleton, Mb = [];
+    for(let b = 0; b < sk.bones.length; b++) Mb.push(new THREE.Matrix4().copy(o.matrixWorld).multiply(o.bindMatrixInverse).multiply(sk.bones[b].matrixWorld).multiply(sk.boneInverses[b]).multiply(o.bindMatrix));
+    for(let i = 0; i < P.count; i++){ w.set(0, 0, 0); let bw = -1, bi = 0; for(let k = 0; k < 4; k++){ const wt = SW.getComponent(i, k), ix = SI.getComponent(i, k); if(wt <= 0) continue; if(wt > bw){ bw = wt; bi = ix; } w.addScaledVector(v.fromBufferAttribute(P, i).applyMatrix4(Mb[ix]), wt); }
+      const bone = sk.bones[bi], nm = bone.name; if(C.skip.test(nm)) continue; const key = Math.floor(w.x / C.cell) + ',' + Math.floor(w.y / C.cell) + ',' + Math.floor(w.z / C.cell); if(vox.has(key)) continue; vox.add(key);
+      let L = by.get(bone); if(!L) by.set(bone, L = []); L.push(w.x, w.y, w.z); } });
+  if(!by.size) return null; let n = 0; for(const L of by.values()) n += L.length / 3; const lp = new Float32Array(n * 3), G = []; let j = 0;
+  for(const [bone, L] of by){ const i0 = j; let cx = 0, cy = 0, cz = 0; for(let i = 0; i < L.length; i += 3){ cx += L[i]; cy += L[i + 1]; cz += L[i + 2]; } const m = L.length / 3; cx /= m; cy /= m; cz /= m; let r = 0;
+    M.copy(bone.matrixWorld).invert(); for(let i = 0; i < L.length; i += 3){ r = Math.max(r, Math.hypot(L[i] - cx, L[i + 1] - cy, L[i + 2] - cz)); v.set(L[i], L[i + 1], L[i + 2]).applyMatrix4(M); lp[j * 3] = v.x; lp[j * 3 + 1] = v.y; lp[j * 3 + 2] = v.z; j++; }
+    G.push({ b:bone, i0, i1:j, c:V3().set(cx, cy, cz).applyMatrix4(M), r, arm:C.arm.test(bone.name) }); }
+  K = { n, lp, G }; SKN.set(R, K); return K; }
+// the nearest point of segment a → b to q (→ out) and its distance
+function segPt(a, b, q, out){ _sd1.subVectors(b, a); const l2 = _sd1.lengthSq(), t = l2 > 1e-12 ? clamp(_sr.subVectors(q, a).dot(_sd1) / l2, 0, 1) : 0; out.copy(a).addScaledVector(_sd1, t); return out.distanceTo(q); }
+export function skinPush(R, a, b, rad, arms){ const K = skinOf(R); if(!K) return 0; let best = 0; const lp = K.lp;
+  for(const g of K.G){ if(g.arm && !arms) continue; _sv.copy(g.c).applyMatrix4(g.b.matrixWorld); if(segPt(a, b, _sv, _sc) > g.r + rad) continue; const e = g.b.matrixWorld.elements;
+    for(let i = g.i0; i < g.i1; i++){ const x = lp[i * 3], y = lp[i * 3 + 1], z = lp[i * 3 + 2]; _sv.set(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]);
+      const d = segPt(a, b, _sv, _sc), need = rad - d; if(need > best && d > 1e-5){ best = need; _res.subVectors(_sc, _sv).divideScalar(d); _sk.copy(_sc); } } }
+  return best; }
+// a WORN thing against his skin, by its real shape: its mesh cut once into `slabs` along its length (la: its length axis 0/1/2, oa: the axis out of his back, the third its
+//   width) — each slab's extent across and out; a skin point inside a slab lifts it off his back by how deep (along oa, away from his trunk). Far from the pivot (its
+//   frog / sling end) it turns about it, at it it moves. op, oq, sc: where it is being laid (world), piv: its pivot (moved with it). → the deepest it was (m)
+const SLB = new WeakMap(), _sM = new THREE.Matrix4(), _sI = new THREE.Matrix4(), _sO = V3(), _sL = V3(), _sQ = V3(), _sC = V3(), _sS = new THREE.Vector3(1, 1, 1);
+export function slabsOf(obj, la, oa){ let Sb = SLB.get(obj); if(Sb) return Sb; const n = BLADE.skin.slabs, wa = 3 - la - oa, P = [], m = new THREE.Matrix4(), inv = new THREE.Matrix4(), v = V3(); obj.updateMatrixWorld(true); inv.copy(obj.matrixWorld).invert();
+  obj.traverse(o => { if(!o.isMesh || !o.visible || !o.geometry || !o.geometry.attributes.position) return; m.multiplyMatrices(inv, o.matrixWorld); const A = o.geometry.attributes.position, st = Math.max(1, Math.floor(A.count / 6000)); for(let i = 0; i < A.count; i += st){ v.fromBufferAttribute(A, i).applyMatrix4(m); P.push(v.x, v.y, v.z); } });
+  let lo = 1e9, hi = -1e9; for(let i = 0; i < P.length; i += 3){ lo = Math.min(lo, P[i + la]); hi = Math.max(hi, P[i + la]); } const a = new Float32Array(n * 4); for(let k = 0; k < n; k++){ a[k * 4] = a[k * 4 + 2] = 1e9; a[k * 4 + 1] = a[k * 4 + 3] = -1e9; }
+  for(let i = 0; i < P.length; i += 3){ const k = Math.min(n - 1, Math.floor((P[i + la] - lo) / (hi - lo) * n)), j = k * 4; a[j] = Math.min(a[j], P[i + oa]); a[j + 1] = Math.max(a[j + 1], P[i + oa]); a[j + 2] = Math.min(a[j + 2], P[i + wa]); a[j + 3] = Math.max(a[j + 3], P[i + wa]); }
+  let r = 0; for(let k = 0; k < n; k++) if(a[k * 4] > a[k * 4 + 1]){ a[k * 4] = a[k * 4 + 2] = 0; a[k * 4 + 1] = a[k * 4 + 3] = -1; } else r = Math.max(r, Math.abs(a[k * 4]), Math.abs(a[k * 4 + 1]), Math.abs(a[k * 4 + 2]), Math.abs(a[k * 4 + 3]));
+  Sb = { la, oa, wa, n, lo, hi, a, R:Math.hypot((hi - lo) / 2, r) }; SLB.set(obj, Sb); return Sb; }
+const _ax = [V3(), V3(), V3()];
+export function skinSlab(R, Sb, op, oq, sc, piv, spine, arms){ const K = skinOf(R); if(!K || !Sb) return 0; let moved = 0; const { la, oa, wa, n, lo, hi, a } = Sb, mg = BLADE.skin.margin / sc, dp = BLADE.skin.depth / sc, lp = K.lp;
+  for(let it = 0; it < 2; it++){ _ax[0].set(1, 0, 0).applyQuaternion(oq); _ax[1].set(0, 1, 0).applyQuaternion(oq); _ax[2].set(0, 0, 1).applyQuaternion(oq); _sO.copy(_ax[oa]); _sL.copy(_ax[la]);
+    _sC.copy(op).addScaledVector(_sL, (lo + hi) / 2 * sc); const sg = _sO.dot(_t.subVectors(_sC, spine)) >= 0 ? 1 : -1; _sM.compose(op, oq, _sS.setScalar(sc)); _sI.copy(_sM).invert(); const e = _sI.elements;
+    let best = 0, bl = 0; for(const g of K.G){ if(g.arm && !arms) continue; _sv.copy(g.c).applyMatrix4(g.b.matrixWorld); if(_sv.distanceTo(_sC) > g.r + Sb.R * sc) continue; const be = g.b.matrixWorld.elements;
+      for(let i = g.i0; i < g.i1; i++){ const x = lp[i * 3], y = lp[i * 3 + 1], z = lp[i * 3 + 2], wx = be[0] * x + be[4] * y + be[8] * z + be[12], wy = be[1] * x + be[5] * y + be[9] * z + be[13], wz = be[2] * x + be[6] * y + be[10] * z + be[14];
+        _sQ.set(e[0] * wx + e[4] * wy + e[8] * wz + e[12], e[1] * wx + e[5] * wy + e[9] * wz + e[13], e[2] * wx + e[6] * wy + e[10] * wz + e[14]); const l = _sQ.getComponent(la); if(l < lo || l > hi) continue;
+        const j = Math.min(n - 1, Math.floor((l - lo) / (hi - lo) * n)) * 4, o = _sQ.getComponent(oa), w = _sQ.getComponent(wa); if(a[j] > a[j + 1] || w < a[j + 2] - mg || w > a[j + 3] + mg || (sg > 0 ? o < a[j] - mg || o > a[j + 1] + dp : o > a[j + 1] + mg || o < a[j] - dp)) continue;   // (from its inner face out to `depth` beyond it: a thing sunk into him has his skin outside it)
+        const need = (sg > 0 ? o - a[j] + mg : a[j + 1] + mg - o) * sc; if(need > best){ best = need; bl = l; } } }
+    if(best <= 1e-4) break; moved = Math.max(moved, best); _sO.multiplyScalar(sg); _sk.copy(op).addScaledVector(_sL, bl * sc); const lev = _sk.distanceTo(piv);
+    if(lev > 0.2){ _c.copy(_sk).sub(piv).divideScalar(lev); _t.copy(_c).multiplyScalar(lev).addScaledVector(_sO, best).normalize(); _sq3.setFromUnitVectors(_c, _t); oq.premultiply(_sq3); op.sub(piv).applyQuaternion(_sq3).add(piv); }
+    else { op.addScaledVector(_sO, best); piv.addScaledVector(_sO, best); } }
+  return moved; }
+export const skinPoints = R => { const K = R && SKN.get(R); return K ? K.n : 0; };
+// a rod of the weapon kept out of his skin: along its own axis ax (local) turned by q, from z0 to z1 m from the pivot `piv` (its frog / sling end), shifted yo m along its own +Y
+//   (the edge / back of a blade), radius rad. What lies far enough from the pivot turns out about it (→ q premultiplied, o carried round), what lies at it moves bodily (o, piv).
+//   Two passes; arms: his arms count (worn things). → the deepest it was (m)
+const _sp1 = V3(), _sp2 = V3(), _sn = V3(), _sk = V3(), _sz = V3(), _sy = V3(), _sq3 = Q4();
+export function skinHang(R, piv, q, o, ax, z0, z1, yo, rad, arms){ let moved = 0; for(let it = 0; it < 2; it++){ _sz.copy(ax).applyQuaternion(q); _sy.set(0, 1, 0).applyQuaternion(q).multiplyScalar(yo);
+    _sp1.copy(piv).addScaledVector(_sz, z0).add(_sy); _sp2.copy(piv).addScaledVector(_sz, z1).add(_sy); const need = skinPush(R, _sp1, _sp2, rad, arms); if(need <= 1e-4) break; _sn.copy(_res); const lev = _sk.distanceTo(piv); moved = Math.max(moved, need);
+    if(lev > 0.2){ _c.copy(_sk).sub(piv).divideScalar(lev); _t.copy(_c).multiplyScalar(lev).addScaledVector(_sn, need).normalize(); _sq3.setFromUnitVectors(_c, _t); q.premultiply(_sq3); o.sub(piv).applyQuaternion(_sq3).add(piv); }
+    else { o.addScaledVector(_sn, need); piv.addScaledVector(_sn, need); } } return moved; }
 // the weapon worn: hung from the frog at his right shoulder, BLADE DOWN, in the back's own frame — read each frame from his joints as they stand in the WORLD (up = Spine1 → Spine2,
 //   his right = collar root → collar root, their cross out of his back): the seen soldier's bone chain carries a mirror, and a frame built in a bone's own space came out over the
 //   other shoulder in the game
@@ -62,7 +118,7 @@ function action(R, L, id){ let a = L.A.get(id); if(a !== undefined) return a; co
 function worn(R, L, D, dt, P, ks, op, oq){ const K = L.K, W = K.worn; L.m.visible = true; D.Spine2.getWorldPosition(_H0); D.Spine1.getWorldPosition(_t); _u.subVectors(_H0, _t).normalize(); D.RightShoulder.getWorldPosition(_r); D.LeftShoulder.getWorldPosition(_t); _r.sub(_t); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); _bk.crossVectors(_r, _u);
   _H0.addScaledVector(_r, W.at[0] * ks).addScaledVector(_u, W.at[1] * ks).addScaledVector(_bk, W.at[2] * ks);   // (the frog, from the joint along the frame's own turned axes as CARRY lays the rifle — never through the bone's matrix: the seen soldier's chain carries a mirror, and a point put through it lands over the other shoulder)
   const st = P && !P.trans && !P.dead ? P.stance : 'stand'; L.lw += ((st === 'crouch' ? 1 : 0) - L.lw) * Math.min(1, dt * 6); L.pw += ((st === 'prone' ? 1 : 0) - L.pw) * Math.min(1, dt * 5);
-  if(L.pw > 0.002){ _t.copy(_u); _t.y *= 1 - L.pw; if(_t.lengthSq() > 1e-4) _u.copy(_t).normalize(); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); } _bk.crossVectors(_r, _u);
+  _bk.crossVectors(_r, _u);   // (BLADE 10 lying prone too it lies in his back's own plane — pressed to it, not levelled off it)
   const a0 = ((W.tilt + (W.low[1] - W.tilt) * L.lw) * (1 - L.pw) + W.prone * L.pw) * D2R, lowZ = W.tip < 0 ? K.tip : K.butt, len = Math.abs(lowZ - W.zAt) * ks, o = hangStep(L.hg, dt, a0, _H0, _r, _u, len), a = a0 + o; L.swing = o;
   _wz.copy(_u).multiplyScalar(Math.cos(a)).addScaledVector(_r, Math.sin(a)); _z.copy(_wz).multiplyScalar(W.tip); _x.copy(_bk).multiplyScalar(W.flat); _y.crossVectors(_z, _x); oq.setFromRotationMatrix(_mat.makeBasis(_x, _y, _z));
   op.copy(_H0).addScaledVector(_z, -W.zAt * ks).addScaledVector(_wz, W.low[0] * L.lw * ks);
@@ -71,7 +127,11 @@ function worn(R, L, D, dt, P, ks, op, oq){ const K = L.K, W = K.worn; L.m.visibl
   { const n = capsules(D, ks, _bk), M = BLADE.body.margin * ks; for(let it = 0; it < 2 && n > 4; it++){ let best = 0, lev = 0; _s1.copy(op).addScaledVector(_z, W.zAt * ks); _s2.copy(op).addScaledVector(_z, lowZ * ks);
       for(let i = 4; i < n; i++){ const c = CAP[i], d = Math.sqrt(segSeg(_s1, _s2, c.a, c.b, _c1, _c2)), need = c.r + K.r * ks + M - d; if(need > best && d > 1e-4){ best = need; _pn.subVectors(_c1, _c2).divideScalar(d); lev = _c1.distanceTo(_s1); } }
       if(best <= 0 || lev < 0.15) break; _t.copy(_s2).sub(_s1).normalize().multiplyScalar(lev).addScaledVector(_pn, best).normalize(); _q2.setFromUnitVectors(_c.copy(_s2).sub(_s1).normalize(), _t); oq.premultiply(_q2); _z.set(0, 0, 1).applyQuaternion(oq); op.copy(_s1).addScaledVector(_z, -W.zAt * ks); } }
+  // BLADE 10 …and out of his real kit and arms (skinHang: the pack, the pouches, a swinging arm — it turns out about the frog, a nudge, not a jump)
+  if(BLADE.skin.on && skinOf(R)){ if(L.w <= 0) R.pup.dst.updateMatrixWorld(true); _fg.copy(op).addScaledVector(_z, W.zAt * ks); D.Spine1.getWorldPosition(_t2);   // (his joints as they stand THIS frame)
+    L.skin = skinSlab(R, L.sb || (L.sb = slabsOf(L.m, 2, 0)), op, oq, ks, _fg, _t2, true); _z.set(0, 0, 1).applyQuaternion(oq); }
   L.down = -_z.y; }
+const _fg = V3(), _t2 = V3(), _ZA = new THREE.Vector3(0, 0, 1);
 function wornPlace(R, L, G, op, oq, ks){ if(L.m.parent !== G) G.add(L.m); L.seated = true; _mat.compose(op, oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true); }
 
 // ---- BEFORE THE MIXER: which clips, how much (real-cav poseRealCav). true: the rifle's own clips fade out ----
@@ -191,6 +251,9 @@ export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) retur
   _z.set(0, 0, 1).applyQuaternion(_oq); _y.set(0, 1, 0).applyQuaternion(_oq);
   // out of his body, then the hands: the right on its point (what its arm cannot reach, the weapon comes to), the left on its own
   const nc = capsules(D, ks, _f); pushOut(_op, _z, _y, K, ks, nc, pk);
+  if(pk > 0 && BLADE.skin.on && skinOf(R)){ const SK = BLADE.skin, M = SK.margin * ks; _fg.copy(_op).addScaledVector(_z, zh * ks);   // BLADE 10 …and out of his real kit: turned about his right fist (the wrist gives), his arms left out (they hold it)
+    L.skin = Math.max(skinHang(R, _fg, _oq, _op, _ZA, (K.butt - zh) * ks, (K.tip - zh) * ks, 0, K.r * ks + M, false), skinHang(R, _fg, _oq, _op, _ZA, (K.root - zh) * ks, (K.tip - zh) * ks, K.edge * ks, SK.blade * ks + M, false), skinHang(R, _fg, _oq, _op, _ZA, (K.root - zh) * ks, (K.tip - zh) * ks, K.back * ks, SK.blade * ks + M, false));
+    _z.set(0, 0, 1).applyQuaternion(_oq); _y.set(0, 1, 0).applyQuaternion(_oq); }
   _tip.copy(_op).addScaledVector(_z, zh * ks); fistTo(D, 'Right', K, ks, _tip, _z, hw, pole); if(pk > 0 && _res.lengthSq() > 4e-6) _op.sub(_res); L.eR = pk > 0 ? 0 : _res.length(); L.eL = 0;   // (his hand stays on it before all else)
   const ho = smooth((L.w - 0.6) / 0.4);
   if(ho > 0.001 && D.LeftHand && D.LeftArm && D.LeftForeArm){ _mid.copy(_op).addScaledVector(_z, L.zL * ks); fistTo(D, 'Left', K, ks, _mid, _z, ho, null);
@@ -387,6 +450,6 @@ if(typeof addEventListener === 'function' && typeof document !== 'undefined'){ l
 export function bladePick(k){ if(!BLADE.kinds[k]) return false; PROFILE.blade = k; try{ saveProfile(); }catch(e){} return true; }
 // numbers for a probe / the pose studio
 function wornProbe(R, L){ if(!L || !L.m || !R.pup) return null; const K = L.K, m = L.m, ks = bodyK(); m.updateWorldMatrix(true, false); _z.set(0, 0, 1).transformDirection(m.matrixWorld); _x.set(0, 0, K.butt).applyMatrix4(m.matrixWorld); _y.set(0, 0, K.tip).applyMatrix4(m.matrixWorld);
-  return { bladeDown:+(-_z.y).toFixed(2), tipY:+(_y.y - heightAt(_y.x, _y.z)).toFixed(2), gapCm:BLADEST.sw > 0 ? null : backGap(R.pup.D, _x, _y, K.r * ks), swingDeg:+(L.swing * 180 / Math.PI).toFixed(2) }; }
+  return { bladeDown:+(-_z.y).toFixed(2), tipY:+(_y.y - heightAt(_y.x, _y.z)).toFixed(2), gapCm:BLADEST.sw > 0 ? null : backGap(R.pup.D, _x, _y, K.r * ks), swingDeg:+(L.swing * 180 / Math.PI).toFixed(2), skinCm:+((L.skin || 0) * 100).toFixed(1), skinPts:skinPoints(R) }; }
 export function bladeProbe(){ const B = BLADEST, R = CV.real, L = R && R.bl; return { kind:B.kind, held:B.held, auto:B.auto, sw:+B.sw.toFixed(3), act:B.act ? ACT.mv.id : null, t:B.act ? +ACT.t.toFixed(3) : 0, win:B.act ? ACT.wi : -1, buf:B.buf, chain:B.chain, st:+B.st.toFixed(1), guard:B.guard, hits:B.hits, kills:B.kills, silent:B.silent, ambush:B.ambush, severed:B.severed, severedNow:SEV.length, dashes:B.dashes, dashD:+(B.dashD || 0).toFixed(2), swings:B.swings,
     ready:!!B.ready[B.kind], mesh:!!(L && L.m), seated:!!(L && L.seated), tipR:+(B.tipR || 0).toFixed(2), wins:WINS, worn:wornProbe(R, L), cd:+Math.max(0, B.spAt - (S.timeNow || performance.now() / 1000)).toFixed(2) }; }
