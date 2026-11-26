@@ -2042,7 +2042,7 @@ export const LOOK = { kick:{ on:true, sizeK:1.7, opK:1.2, lifeK:1.3, near:6, dis
   tone:{ DESERT:{ tint:[0.82, 0.68, 0.45], all:{ sh:[-0.006, 0, 0.012], hi:[0.035, 0.018, -0.022], sky:[0xe6dccb, 0.5], bounce:1.25 },
     sunset:{ sh:[0.004, 0.006, -0.002], hi:[0.03, 0.024, -0.012], sky:[0xe8dcc8, 0.45], expK:1.3, satK:0.9 }, fog:{ fog:[0xc8b494, 0.6], satK:1.06 } } },
   cards:[[402, 4, 598, 262], [1201, 20, 499, 196], [61, 254, 351, 216], [474, 272, 549, 212], [1181, 248, 436, 255]], edge:[0.1, 0.32], knee:[0.13, 0.3, 0.35],
-  dome:{ on:true, in:1.5, out:0.5 }, grade:{ toe:1 } };
+  dome:{ on:true, in:1.5, out:0.5 }, grade:{ toe:0.7 } };   // (MERGE 31 0.7: keeps detail in the shadows without washing out night)
 // Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,
 //   allies / objectives green, loot gold, rarities, ice, arcane); gain = HDR multiple a ring's core line burns at (above ~1 it blooms); pulse
 //   rates (Hz) per urgency — idle breathing → notice → warn → alert → critical — and the floor a pulse never drops below (never fully dark);
