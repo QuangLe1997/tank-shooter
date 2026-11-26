@@ -2015,6 +2015,28 @@ export const GROUNDED = { on:true, lift:0.025, spread:1.6, nightK:0.85, capShade
   cloth:{ on:true, lo:0.55, rimPow:3.0 }, night:{ spotShadows:0 },
   fill:{ on:true, desat:0.55, bounce:1.5, rim:{ day:0.1, noon:0.08, sunset:0.4, night:0.25 }, tod:{ day:{ hemiK:1.2, envK:1.0, expK:1.06 }, noon:{ hemiK:1.2, envK:1.0, expK:1.06 },
     sunset:{ hemiK:1.1, envK:1.0, expK:1.0 }, night:{ hemiK:1.0 } } } };
+// LOOK 1 THE WORLD SEEN FROM THE GAME CAMERA (fx/footfall.js, world/atmosphere.js, world/ground-photo.js, render/see-through.js) —
+//   kick: the footfall's dust read from the follow camera (~7 m off at the default zoom, 12+ zoomed out): every puff × sizeK, × (1 + (d − near) ×
+//     distK) more for d m from the lens (at most max), lives lifeK × longer, opacity × opK (capped at 1); core = one denser, lower, slower puff right at
+//     the foot per footfall (n × [walk, run, sprint, skid]; size / op / up / life / spread × the gait's) so it reads as a tuft of sand, not a haze
+//   tone: a battlefield's light per hour / weather on top of ATMOS + ART_TONE (the desert's sand read purple-grey: a pink-beige photo × a cobalt sky
+//     fill × blue-pushed shadows; at golden hour mauve) — tint = the photo floor's albedo ×, and per hour (noon / day / sunset) or weather (fog /
+//     sand / rain), `all` for every hour: sh / hi = the grade's split-tone (replaces ART_TONE's), sky = the sky fill's colour pulled toward [colour,
+//     share], bounce = × the ground's warm bounce, expK = × exposure, fog = the haze pulled toward [colour, share], satK = × saturation. (A passing
+//     sandstorm used to leave the floor untinted — the raw pale photo — for the rest of the battle: fx/weather.js now keeps the floor's own tint)
+//   knee (world/grass-carpet.js): a grass-photo texel (linear lum.) brighter than knee[0] keeps knee[1] of the excess and leans greenward by up to
+//     knee[2] — the photo's pale dry blades and stem sheaths (lum. 0.2–0.58, the green ones ~0.09) went white-yellow at noon: the meadow's streaks
+//   cards: the grass photo's five clumps [x, y, w, h] in its 2048×518 atlas (replaces GRASS.cards) — the bottoms of three of them (and the tail of a
+//     fourth) are the photo's padding smeared straight down: opaque yellow-brown bars 16–48 px tall under the stems, drawn at the foot of every
+//     carpet clump and tuft as yellow streaks. Each card now ends a few px above its first smeared row · edge: a grass card seen edge-on (|its face ·
+//     the view| below edge[0], faded in by edge[1]) is not drawn (squeezed into a pixel or two its stems stand as bars; three crossed cards a clump:
+//     one always faces the lens). Knee + edge took the meadow's noon yellow-pixel share 17.8 % → 11.5 % — thin bright bars still remain (not the sun,
+//     the shadows, the mips, alpha-to-coverage or the sharpening: measured, cause open)
+//   (phones keep CAM_ROOM.yard rKMobile / arenaKMobile 1: ×1.4 forts fit only on a ×1.2 field, which cost +3.1 ms median / +3.3 ms p95 a frame — measured)
+export const LOOK = { kick:{ on:true, sizeK:1.7, opK:1.2, lifeK:1.3, near:6, distK:0.06, max:1.8, core:{ n:[1, 1.4, 2, 2.5], size:0.8, op:1.4, up:0.45, life:1.15, sp:0.12 } },
+  tone:{ DESERT:{ tint:[0.82, 0.68, 0.45], all:{ sh:[-0.006, 0, 0.012], hi:[0.035, 0.018, -0.022], sky:[0xe6dccb, 0.5], bounce:1.25 },
+    sunset:{ sh:[0.004, 0.006, -0.002], hi:[0.03, 0.024, -0.012], sky:[0xe8dcc8, 0.45], expK:1.3, satK:0.9 }, fog:{ fog:[0xc8b494, 0.6], satK:1.06 } } },
+  cards:[[402, 4, 598, 262], [1201, 20, 499, 196], [61, 254, 351, 216], [474, 272, 549, 212], [1181, 248, 436, 255]], edge:[0.1, 0.32], knee:[0.13, 0.3, 0.35] };
 // Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,
 //   allies / objectives green, loot gold, rarities, ice, arcane); gain = HDR multiple a ring's core line burns at (above ~1 it blooms); pulse
 //   rates (Hz) per urgency — idle breathing → notice → warn → alert → critical — and the floor a pulse never drops below (never fully dark);

@@ -4,7 +4,7 @@
 //   round the camera (enemy infantry, our fireteam) get the body shade and stride prints too. Two instanced draws in all (shades, prints); the dust
 //   goes through the fire / smoke layer (fx/fire-fx.js fxp 'dust'). Also: the uniform's roughness map is remapped (cloth, not plastic).
 import * as THREE from 'three';
-import { GROUNDED } from '../../config.js';
+import { GROUNDED, LOOK } from '../../config.js';
 import { BIOME, CV, FT, MOBILE, S, SUN_DIR, UGRID, GRASS_PUSH, WX, afxSurfaceAt, camera, fxp, heightAt, scene, sun, unitsNear, wetAt } from '../hub.js';
 
 const G = GROUNDED;
@@ -60,10 +60,15 @@ const _r = (a, b) => a + Math.random() * (b - a);
 function kick(x, z, gy, dx, dz, v, s, own, skid){ const K = G.kick, U = K.surf[s]; if(!U) return; const B = v < K.walkV ? K.walk : v < K.sprintV ? K.run : K.sprint, P = skid ? K.skid : B, m = own ? 1 : K.npc;
   const sg = skid ? 1 : -1, th = Math.min(v, K.vCap) * (skid ? K.skid.throwK : K.throwK), tint = (s === 'sand' || s === 'dirt') && K.biome[BIOME && BIOME.name] ? K.biome[BIOME.name] : U.tint;
   const n = c => { const f = c * m; return Math.floor(f) + (Math.random() < f % 1 ? 1 : 0); };
-  for(let i = n(P.dust * U.dust); i-- > 0;){ const a = Math.random() * 6.283, sp = _r(0.1, 0.45);   // the haze: low, wide, it hangs and drifts
-    fxp('dust', x + sg * dx * 0.12, gy + 0.05, z + sg * dz * 0.12, Math.cos(a) * sp + sg * dx * th * 0.5, _r(0.25, 0.6) * P.up, Math.sin(a) * sp + sg * dz * th * 0.5, P.size * U.size * _r(0.75, 1.25), _r(0.8, 1.3) * P.life, 0, tint, P.op * U.op * (own ? 1 : 0.8), gy); }
+  const L = LOOK.kick, on = L.on, dk = on ? Math.min(L.max, Math.max(1, 1 + (Math.hypot(camera.position.x - x, camera.position.y - gy, camera.position.z - z) - L.near) * L.distK)) : 1;   // LOOK 1 read from the lens
+  const zk = on ? L.sizeK * dk : 1, lk = on ? L.lifeK : 1, ok = on ? L.opK : 1;
+  for(let i = n(P.dust * U.dust); i-- > 0;){ const a = Math.random() * 6.283, sp = _r(0.1, 0.45) * Math.sqrt(zk);   // the haze: low, wide, it hangs and drifts
+    fxp('dust', x + sg * dx * 0.12, gy + 0.05, z + sg * dz * 0.12, Math.cos(a) * sp + sg * dx * th * 0.5, _r(0.25, 0.6) * P.up, Math.sin(a) * sp + sg * dz * th * 0.5, P.size * U.size * zk * _r(0.75, 1.25), _r(0.8, 1.3) * P.life * lk, 0, tint, Math.min(1, P.op * U.op * ok) * (own ? 1 : 0.8), gy); }
+  if(on){ const C = L.core, ci = skid ? 3 : P === K.walk ? 0 : P === K.run ? 1 : 2;   // LOOK 1 the core: one dense tuft at the foot, kicked a little back, slow to rise
+    for(let i = n(C.n[ci] * Math.min(1, U.dust + U.spray)); i-- > 0;){ const a = Math.random() * 6.283, sp = _r(0.03, 1) * C.sp;
+      fxp('dust', x + sg * dx * 0.06, gy + 0.04, z + sg * dz * 0.06, Math.cos(a) * sp + sg * dx * th * 0.25, _r(0.2, 0.45) * P.up * C.up, Math.sin(a) * sp + sg * dz * th * 0.25, P.size * U.size * zk * C.size * _r(0.85, 1.15), _r(0.9, 1.15) * P.life * lk * C.life, 0, tint, Math.min(1, P.op * U.op * C.op) * (own ? 1 : 0.8), gy); } }
   for(let i = n(P.spray * U.spray); i-- > 0;){ const a = _r(-0.6, 0.6), ca = Math.cos(a), sa = Math.sin(a), bx = (dx * ca - dz * sa) * sg, bz = (dz * ca + dx * sa) * sg;   // the spray off the toe
-    fxp('dirt', x + bx * 0.08, gy + 0.04, z + bz * 0.08, bx * th * _r(0.7, 1.2), _r(1.0, 2.0) * P.up, bz * th * _r(0.7, 1.2), K.spraySize * U.size * _r(0.7, 1.3), _r(0.35, 0.6), 0, tint, P.op * U.op, gy); }
+    fxp('dirt', x + bx * 0.08, gy + 0.04, z + bz * 0.08, bx * th * _r(0.7, 1.2), _r(1.0, 2.0) * P.up, bz * th * _r(0.7, 1.2), K.spraySize * U.size * Math.sqrt(zk) * _r(0.7, 1.3), _r(0.35, 0.6) * lk, 0, tint, Math.min(1, P.op * U.op * ok), gy); }
   for(let i = n(P.clod * U.clod); i-- > 0;){ const a = _r(-0.9, 0.9), ca = Math.cos(a), sa = Math.sin(a), bx = (dx * ca - dz * sa) * sg, bz = (dz * ca + dx * sa) * sg;   // grit, wet clods, torn blades
     fxp('clod', x, gy + 0.05, z, bx * th * _r(0.6, 1.3) + _r(-0.3, 0.3), _r(1.4, 3.0) * P.up, bz * th * _r(0.6, 1.3) + _r(-0.3, 0.3), U.clodS * _r(0.6, 1.4), _r(0.45, 0.8), 0, U.clodC ?? tint, 1, gy); }
   for(let i = n(P.dust * (U.fluff || 0)); i-- > 0;) fxp('dust', x + _r(-0.2, 0.2), gy + 0.15, z + _r(-0.2, 0.2), _r(-0.3, 0.3), _r(0.3, 0.7), _r(-0.3, 0.3), 0.12, _r(1.4, 2.2), 0, K.fluffC, 0.9, gy);   // seed fluff

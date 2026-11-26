@@ -2,8 +2,8 @@
 //   reeds along the water and haystacks in the village — instanced (one draw per species), tinted per instance, swaying in the wind (vertex shader).
 //   Tanks plough through it all: trees topple, bushes / flowers / reeds flatten (decor.js crushables).
 import * as THREE from 'three';
-import { DIET, GRASS, LIGHT, OPEN_LAND, TUFT } from '../../config.js';
-import { cosmetic, AREA_K, ARENA, BIOME, MOBILE, RIVER, SUN_VIEW, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
+import { DIET, GRASS, LIGHT, LOOK, OPEN_LAND, TUFT } from '../../config.js';
+import { cosmetic, AREA_K, ARENA, BIOME, GRASS_LOOK, LOOK_EDGE, LOOK_KNEE, MOBILE, RIVER, SUN_VIEW, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
 
 let _mat=null;
 // Z146 LEAF ATLAS → Z202 four regions: u 0–¼ BARK (vertical fissures, lichen — trunks and limbs) · ¼–½ broadleaf clusters · ½–¾ needle / frond sprays ·
@@ -137,12 +137,13 @@ function tuftMat(tone){ if(_tufts[tone]) return _tufts[tone]; const C=TUFT.tone[
       #endif
       float gust=0.65+0.35*sin(uT*0.37+ip.x*0.021-ip.z*0.017), b=aH*aH*${TUFT.sway.toFixed(3)}*(transformed.y+0.2);
       transformed.x+=(sin(uT*1.6+ip.x*0.31+ip.z*0.17)+sin(uT*4.1+ip.z*1.3)*0.25)*b*gust; transformed.z+=cos(uT*1.3+ip.z*0.29)*b*0.7*gust;`);
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 uSunView; uniform float uTrans; varying float vH;')
+    sh.uniforms.uLookG=GRASS_LOOK; sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 uLookG; uniform vec3 uSunView; uniform float uTrans; varying float vH;')
+      .replace('#include <alphamap_fragment>','#include <alphamap_fragment>\n'+LOOK_EDGE).replace('#include <map_fragment>','#include <map_fragment>\n'+LOOK_KNEE)   // LOOK 1 no bright blade, no edge-on card (world/grass-carpet.js)
       .replace('#include <normal_fragment_begin>','#include <normal_fragment_begin>\n normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);   // lit as the sky lights the field, both faces')
       .replace('#include <color_fragment>',`#include <color_fragment>\n diffuseColor.rgb *= mix(${TUFT.rootDark.toFixed(2)}, 1.0, smoothstep(0.0, 0.5, vH));`)
       .replace('#include <opaque_fragment>','outgoingLight += diffuseColor.rgb * vec3(1.0, 0.93, 0.6) * pow(clamp(dot(normalize(vViewPosition), uSunView), 0.0, 1.0), 4.0) * smoothstep(0.3, 1.0, vH) * uTrans;\n#include <opaque_fragment>'); };
   m.customProgramCacheKey=()=>'tuft440'; return (_tufts[tone]=m); }
-const RECT=GRASS.cards.map(([x,y,w,h])=>[x/GRASS.atlas[0], 1-(y+h)/GRASS.atlas[1], w/GRASS.atlas[0], h/GRASS.atlas[1], w/h]);
+const RECT=(LOOK.cards||GRASS.cards).map(([x,y,w,h])=>[x/GRASS.atlas[0], 1-(y+h)/GRASS.atlas[1], w/GRASS.atlas[0], h/GRASS.atlas[1], w/h]);
 function tuftGeo(h, n){ const pos=[], uv=[], nrm=[], hh=[], idx=[]; let v=0, a0=Math.random()*Math.PI;
   for(let k=0;k<n;k++){ const r=RECT[(Math.random()*RECT.length)|0], hk=h*_R(0.85,1.12), w=hk*r[4]*TUFT.w*_R(0.85,1.1), a=a0+k*Math.PI/n+_R(-0.2,0.2), cx=Math.cos(a)*w/2, cz=Math.sin(a)*w/2, lx=_R(-TUFT.lean,TUFT.lean)*hk, lz=_R(-TUFT.lean,TUFT.lean)*hk, ox=_R(-0.08,0.08)*h, oz=_R(-0.08,0.08)*h;
     pos.push(ox-cx,-0.02,oz-cz, ox+cx,-0.02,oz+cz, ox+cx+lx,hk,oz+cz+lz, ox-cx+lx,hk,oz-cz+lz); uv.push(r[0],r[1], r[0]+r[2],r[1], r[0]+r[2],r[1]+r[3], r[0],r[1]+r[3]); hh.push(0,0,1,1);

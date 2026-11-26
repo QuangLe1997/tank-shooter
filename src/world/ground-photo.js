@@ -1,7 +1,7 @@
 // world/ground-photo.js — Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PHOTO): a base set (colour + normal + roughness at its real-world size) over the whole field, a second set showing through on steep faces, crater bowls and bare patches, and the base blended with itself at another scale under the macro noise so no tile repeats. Loaded per battlefield on entering it; until then — or if a file fails, or `?procground` is in the URL — the procedural ground stays.
 import * as THREE from 'three';
-import { GROUND_PHOTO } from '../../config.js';
-import { APPLE, ARENA, MACRO, MOBILE, PHOTO_U, groundMat } from '../hub.js';
+import { GROUND_PHOTO, LOOK } from '../../config.js';
+import { APPLE, ARENA, MACRO, MOBILE, PHOTO_U, WX, groundMat } from '../hub.js';
 
 const _tex = {}, _set = {};
 let _sizes = null, _want = null, _ns0 = null;
@@ -19,7 +19,7 @@ export function applyGroundPhoto(b){ return (GROUND_READY.p = groundPhoto(b)); }
 function hexFor(b){ const X = GROUND_PHOTO.hex || {}, P = (GROUND_PHOTO.hexPer || {})[b.name] || {};   // Z405 this battlefield's hex lattice
   PHOTO_U.hex.value.set(P.s ?? X.s ?? 1, P.rot ?? X.rot ?? 1, X.exp ?? 7, X.con ?? 0.6); PHOTO_U.nrmVar.value = GROUND_PHOTO.nrmVar || 0; }
 function groundPhoto(b){
-  hexFor(b); _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); _want = b.name;
+  hexFor(b); _ns0 = _ns0 || groundMat.normalScale.clone(); PHOTO_U.altOn.value = 0; groundMat.roughnessMap = null; groundMat.normalScale.copy(_ns0); groundMat.color.setRGB(1, 1, 1); (groundMat.userData.tint = groundMat.userData.tint || new THREE.Color()).setRGB(1, 1, 1); _want = b.name;
   const pair = GROUND_PHOTO.biomes[b.name]; if(!pair || off() || typeof window === 'undefined') return Promise.resolve(false);
   const PB = (GROUND_PHOTO.per && GROUND_PHOTO.per[b.name]) || {}, G = k => PB[k] ?? GROUND_PHOTO[k];   // Z394 a battlefield's own normal strength, patch share, second-scale blend, patch size
   return Promise.all([photoSet(pair[0], GROUND_PHOTO.hi && !MOBILE && (GROUND_PHOTO.hi2k || []).includes(pair[0])), photoSet(pair[1]), sizes()]).then(([A, B, Z]) => {   // (Z394 the 2K maps only where they are on disk)
@@ -27,7 +27,9 @@ function groundPhoto(b){
     const rep = (ARENA * 2) / (Z[pair[0]] || 2);
     for(const t of [A.diff, A.nor, A.arm]) t.repeat.set(rep, rep);
     groundMat.map = A.diff; groundMat.normalMap = A.nor; groundMat.normalScale.set(G('nrm'), G('nrm'));
-    groundMat.roughnessMap = A.arm; groundMat.roughness = 1; groundMat.color.setRGB(...(GROUND_PHOTO.tint[b.name] || GROUND_PHOTO.tint._)); groundMat.needsUpdate = true;
+    groundMat.roughnessMap = A.arm; groundMat.roughness = 1; groundMat.color.setRGB(...((LOOK.tone[b.name] || {}).tint || GROUND_PHOTO.tint[b.name] || GROUND_PHOTO.tint._)); groundMat.needsUpdate = true;
+    groundMat.userData.tint.copy(groundMat.color);   // LOOK 1 kept: the weather darkens the floor from it (a passing storm used to leave it white)
+    if(WX && WX.def && WX.def.wet) groundMat.color.multiplyScalar(0.82);
     MACRO.pamt.value *= G('patchK');
     PHOTO_U.altMap.value = B.diff; PHOTO_U.altScale.value = 1 / ((Z[pair[1]] || 2) * G('altRep')); PHOTO_U.dual.value = G('dual'); PHOTO_U.altOn.value = 1;
     return true; }).catch(e => { console.warn('[ground] photo set not loaded — keeping the procedural ground:', e && e.message); return false; }); }

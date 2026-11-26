@@ -4,7 +4,7 @@
 // as you move, re-laid only when you cross a cell, thinned and shrunk toward the rim so there is no edge, kept off water; darker at the root, a
 // few drier clumps here and there, and swayed by one gust field for the whole field (world space). One draw call; none on phones' lowest tier.
 import * as THREE from 'three';
-import { DIET, GRASS } from '../../config.js';
+import { DIET, GRASS, LOOK } from '../../config.js';
 const gR = () => MOBILE ? GRASS.Rm : DIET.on ? (DIET.land[BIOME.name] || {}).R ?? DIET.grass.R : GRASS.R, gPer = () => DIET.on ? DIET.grass.perCell : GRASS.perCell;   // PERF 9 the carpet's reach and density
 import { BIOME, DECAL_U, GRASS_FAR, MOBILE, SUN_VIEW, camera, groundMat, heightAt, scene, wetAt } from '../hub.js';
 
@@ -12,7 +12,15 @@ const G = { mesh:null, biome:null, cx:1e9, cz:1e9, time:{ value:0 }, cap:0, tex:
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _ray = new THREE.Vector3();
 const hash = (x, z, k) => { const h = Math.sin(x * 127.1 + z * 311.7 + k * 74.7) * 43758.5453; return h - Math.floor(h); };
 // the five clump cards in the strip (pixels, y down) → uv rects [u0, v0, du, dv] (the texture is flipped: v = 1 − y / H)
-const RECTS = GRASS.cards.map(([x, y, w, h]) => [x / GRASS.atlas[0], 1 - (y + h) / GRASS.atlas[1], w / GRASS.atlas[0], h / GRASS.atlas[1]]);
+// LOOK 1 THE GRASS PHOTO'S BRIGHT BLADES: its pale, dry blades and stem sheaths (lum. ≥ ~0.2 where the green ones are ~0.09) went near white-yellow
+//   under the noon sun and the grade's contrast — thin, short, vertical: the meadow's scattered yellow streaks. A texel brighter than knee[0] keeps only
+//   knee[1] of the excess and leans greenward by knee[2]; and a card seen edge-on (|its face · the view| < edge[0], faded in by edge[1]) is not drawn
+//   (squeezed into a pixel or two, its stems stand as bars; thin bright bars still remain — cause open). One uniform (x, y = edge, z, w = knee) shared by the carpet and the tufts (world/flora.js)
+export const GRASS_LOOK = { value:new THREE.Vector4(LOOK.edge[0], LOOK.edge[1], LOOK.knee[0], LOOK.knee[1]) };
+export const LOOK_EDGE = `if(uLookG.y > 0.0){ vec3 lkN = normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition))); diffuseColor.a *= smoothstep(uLookG.x, uLookG.y, abs(dot(lkN, normalize(vViewPosition)))); }`;
+export const LOOK_KNEE = `if(uLookG.z > 0.0){ float lkL = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)); if(lkL > uLookG.z){ float lkT = uLookG.z + (lkL - uLookG.z) * uLookG.w;
+    diffuseColor.rgb = mix(diffuseColor.rgb * (lkT / lkL), vec3(0.8, 1.0, 0.55) * lkT, clamp((lkL - lkT) / lkL * ${LOOK.knee[2].toFixed(2)} * 2.0, 0.0, ${LOOK.knee[2].toFixed(2)})); } }`;
+const CARDS = LOOK.cards || GRASS.cards, RECTS = CARDS.map(([x, y, w, h]) => [x / GRASS.atlas[0], 1 - (y + h) / GRASS.atlas[1], w / GRASS.atlas[0], h / GRASS.atlas[1]]);
 
 function load(file, srgb){ if(G.tex[file]) return G.tex[file];
   return (G.tex[file] = new THREE.TextureLoader().loadAsync(GRASS.dir + file).then(t => { t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.anisotropy = 4; return t; })); }
@@ -43,8 +51,9 @@ function grassMat(map, alpha, C){
       vec3 wb = vec3(bend, -abs(bend) * 0.3, bend * 0.6), lb = transpose(gIm) * wb; lb /= vec3(dot(gIm[0], gIm[0]), dot(gIm[1], gIm[1]), dot(gIm[2], gIm[2]));
       transformed += lb;   // the gust in world space (one wind for the whole field), taken back into this clump's turned, scaled frame`);
     sh.uniforms.uSunView = SUN_VIEW; sh.uniforms.uTrans = { value:GRASS.trans };
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 gDry; uniform vec3 uSunView; uniform float uTrans; uniform vec2 contK; uniform vec3 contCol; varying float vGh; varying float vGv; varying vec2 vGc;')
+    sh.uniforms.uLookG = GRASS_LOOK; sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uLookG; uniform vec3 gDry; uniform vec3 uSunView; uniform float uTrans; uniform vec2 contK; uniform vec3 contCol; varying float vGh; varying float vGv; varying vec2 vGc;')
       .replace('#include <opaque_fragment>', 'outgoingLight += diffuseColor.rgb * vec3(1.0, 0.93, 0.6) * pow(clamp(dot(normalize(vViewPosition), uSunView), 0.0, 1.0), 4.0) * smoothstep(0.3, 1.0, vGh) * uTrans;   // Z276 blade tips glow against the sun\n#include <opaque_fragment>')
+      .replace('#include <alphamap_fragment>', '#include <alphamap_fragment>\n' + LOOK_EDGE).replace('#include <map_fragment>', '#include <map_fragment>\n' + LOOK_KNEE)
       .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);   // both faces lit as the sky lights them (three flips a back face\'s normal: an up-normal card would go black)')
       .replace('#include <color_fragment>', `#include <color_fragment>
       diffuseColor.rgb *= mix(${GRASS.rootDark.toFixed(2)}, 1.0, smoothstep(0.0, 0.45, vGh));   // shade down among the stems
@@ -59,7 +68,7 @@ const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.0
 function pixels(img, W, H){ _cv = _cv || document.createElement('canvas'); _cv.width = W; _cv.height = H; const x = _cv.getContext('2d', { willReadFrequently:true }); x.clearRect(0, 0, W, H); x.drawImage(img, 0, 0, W, H); return x.getImageData(0, 0, W, H).data; }
 export function avgOf(img, alpha){ const W = 128, H = Math.max(8, Math.round(W * (img.height || 1) / (img.width || 1))), d = pixels(img, W, H), a = alpha ? pixels(alpha, W, H) : null, A = GRASS.atlas; let r = 0, g = 0, b = 0, n = 0;
   for(let y = 0; y < H; y++) for(let x = 0; x < W; x++){ const i = (y * W + x) * 4;
-    if(a){ const px = x / W * A[0], py = y / H * A[1]; if(a[i] < GRASS.alphaTest * 255 || !GRASS.cards.some(([cx, cy, cw, ch]) => px >= cx && px < cx + cw && py >= cy && py < cy + ch)) continue; }
+    if(a){ const px = x / W * A[0], py = y / H * A[1]; if(a[i] < GRASS.alphaTest * 255 || !CARDS.some(([cx, cy, cw, ch]) => px >= cx && px < cx + cw && py >= cy && py < cy + ch)) continue; }
     r += lin(d[i]); g += lin(d[i + 1]); b += lin(d[i + 2]); n++; }
   return n ? new THREE.Color(r / n, g / n, b / n) : null; }
 function farColour(){ const k = GRASS_FAR.k.value, C = GRASS.biomes[BIOME.name];

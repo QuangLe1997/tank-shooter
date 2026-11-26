@@ -1,7 +1,7 @@
 // fx/weather.js — Z107 WEATHER: rain squalls (streaks + wet, glossy ground + lightning), sandstorms (driven grit + thick ochre haze), snowfall, ground fog — a particle box that rides with the camera, plus haze/light changes layered on the battlefield atmosphere.
 import * as THREE from 'three';
-import { WEATHER, WXFX } from '../../config.js';
-import { MOBILE, S, ambient, burst, camera, gradePass, groundMat, heightAt, hemi, lightning, renderer, scene, sfx, spawnPart, sun } from '../hub.js';
+import { LOOK, WEATHER, WXFX } from '../../config.js';
+import { BIOME, MOBILE, S, ambient, burst, camera, gradePass, groundMat, heightAt, hemi, lightning, renderer, scene, sfx, spawnPart, sun } from '../hub.js';
 
 export const WX = { gust:1, gustT:6, gustE:0, splashA:0, driftA:0, id:'clear', def:null, obj:null, N:0, P:null, V:null, box:[56,26,56], boltT:0, flash:0, exp0:1, wind:new THREE.Vector2(), rough0:null };
 export function _wxTex(kind){ const c=document.createElement('canvas'); c.width=c.height=32; const x=c.getContext('2d');
@@ -24,9 +24,10 @@ export function applyWeather(id, k){
   WX.exp0=renderer.toneMappingExposure; WX.flash=0; WX.boltT=W.bolt?W.bolt[0]:0;
   if(W.fogK!==1 && scene.fog){ scene.fog.density*=1+(W.fogK-1)*k; }
   if(W.tint!=null && scene.fog){ const c=new THREE.Color(W.tint), kk=(S.tod==='night'?0.25:0.6)*k; scene.fog.color.lerp(c, kk); if(scene.background && scene.background.isColor) scene.background.copy(scene.fog.color); }
+  { const T=((LOOK.tone[BIOME && BIOME.name] || {})[WX.id]); if(T && S.tod!=='night'){ if(T.fog && scene.fog){ scene.fog.color.lerp(new THREE.Color(T.fog[0]), T.fog[1]*Math.min(1,k)); if(scene.background && scene.background.isColor) scene.background.copy(scene.fog.color); } if(T.satK) gradePass.uniforms.sat.value*=1+(T.satK-1)*Math.min(1,k); } }   // LOOK 1 a battlefield's own haze under this sky (the desert's fog a dusty ochre, not a cool grey)
   sun.intensity*=1+(W.sunK-1)*k; hemi.intensity*=1+(W.hemiK-1)*k; if(WX.id!=='clear') ambient.intensity*=1.15;
   groundMat.roughness = W.wet ? Math.min(groundMat.roughness, 1-W.wet) : groundMat.roughness;   // rain: the dirt turns dark and glossy
-  if(W.wet){ groundMat.color && groundMat.color.setScalar(0.82); } else if(groundMat.color) groundMat.color.setScalar(1);
+  if(groundMat.color){ const t0 = groundMat.userData && groundMat.userData.tint; if(t0) groundMat.color.copy(t0); else groundMat.color.setScalar(1); if(W.wet) groundMat.color.multiplyScalar(0.82); }   // LOOK 1 from the floor's own tint (was set to white: a passing storm left the desert's sand the raw pale photo)
   WX.wind.set(id==='sand'?14:(id==='rain'?2.5:1.2), id==='sand'?4:0.8);
   const n=Math.round((W.n[MOBILE?1:0]|0)*Math.min(1,k)); WX.N=n; if(!n) return;
   const [bx,by,bz]=WX.box, rain=id==='rain';
