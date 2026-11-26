@@ -2482,6 +2482,21 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
   ok(/horseSwimClip\(R, H, v\)/.test(rc) && /horseSwimMix\(R, H\)/.test(rc) && /horseSwimPose\(R, H, dt\)/.test(rc) && /horseSwimStep\(H, M\.x, M\.z/.test(cr) && /return horseSwimFire\(now\)/.test(sw) && /horseSwimNoHand\(\)\) return true/.test(sw) && /export const swimFxKit/.test(sw)
     && /export \* from '\.\/game\/horse-swim\.js'/.test(rd('src/hub.js')) && !/Math\.random\(\)/.test(hs.split('function horseSwimStep')[1].split('function enter')[0]),
     'the real horse paddles and pitches afloat (actors/real-cav.js), the co-op puppet reads the same depth, the trigger and the hand skills are refused on a swimming horse; the float itself is deterministic'); }
+// HSWIM 2 the water polished: the rider of a swimming horse slings the rifle and holds the reins; splashes are spray, a crown and foam (not smoke puffs); the pools widened
+{ const fs=await import('node:fs'), C=await import('./config.js'), X=C.HSWIM2, W=C.SWIM, rd=f=>fs.readFileSync(f,'utf8'), ws=rd('src/fx/water-spray.js'), sw=rd('src/game/swim.js'), gc=rd('src/actors/gun-carry.js'), hs=rd('src/game/horse-swim.js');
+  const R=X.reins, D=X.drops, Sh=X.sheet, F=X.foam;
+  ok(X && X.on === true && R.on === true && R.fwd > 0.15 && R.fwd < 0.6 && R.down > 0.25 && R.down < 0.75 && R.in >= 0 && R.in < 0.3 && R.pole.length === 3 && R.at > 0 && R.at < 1,
+    'afloat the rider holds the reins low over the withers ('+R.fwd+' m ahead of the shoulder, '+R.down+' m under it), the rifle slung once the horse has swum in to '+R.at);
+  ok(D.n > 0 && D.v[0] > 0 && D.v[1] > D.v[0] && D.w[0] > 0 && D.w[1] < 0.06 && D.stretch > 0 && D.life[1] > D.life[0] && D.life[1] < 1.5 && D.grav < -5 && D.op > 0 && D.op <= 1 && D.max >= D.n * 10,
+    'the spray is thin streaks ('+D.w[0]+'–'+D.w[1]+' m wide) thrown at '+D.v[0]+'–'+D.v[1]+' m/s, short-lived ('+D.life[1]+' s at most), falling under gravity');
+  ok(Sh.r[0] > 0 && Sh.r[1] > Sh.r[0] && Sh.r[1] < 1 && Sh.h[1] > Sh.h[0] && Sh.h[1] < 0.8 && Sh.life > 0.15 && Sh.life < 0.8 && Sh.op > 0 && Sh.op < 0.6 && F.r[1] > F.r[0] && F.life[1] > F.life[0] && F.op > 0 && F.op < 0.8 && F.wake[1] > F.wake[0] && X.ring.edge > 0 && X.ring.edge < 0.5 && X.light.min < X.light.max,
+    'a see-through crown (op '+Sh.op+', '+Sh.life+' s), foam that spreads and thins ('+F.life[0]+'–'+F.life[1]+' s), soft-edged rings, lit as the scene is');
+  const P=W.pool; ok(P.u > 0.6 && P.u < 1 && P.flat > 0 && P.flat < 1 && P.u * P.flat * C.RIVERS.main.w * 2 >= 4.5 && C.RIVERS.D * 0.5 + P.deep > C.HORSESWIM.deep[0] + 0.3 && P.gap >= C.RIVERS.clear && P.ramp > 0,
+    'the pools are dug wider: full depth over '+(P.u * P.flat * C.RIVERS.main.w * 2).toFixed(1)+' m across the main channel (it was ~1.9), still '+P.gap+' m clear of every crossing');
+  const up=ws.split('export function updateWaterSpray')[1].split('\nfunction flush')[0];
+  ok(/export \* from '\.\/fx\/water-spray\.js'/.test(rd('src/hub.js')) && /updateWaterSpray\(dt\)/.test(rd('src/game/loop.js')) && !/\bnew\b|\[\s*[\w-]/.test(up.replace(/\w\[/g, '')) && /waterSplash\(x, z, clamp\(n \* up \/ 8/.test(sw) && /waterRing\(x, z\)/.test(sw) && /K\.wake\(bx, bz/.test(hs)
+    && /return 'reins'/.test(gc) && /w === 'reins'/.test(gc) && /export function horseSwimReins/.test(hs),
+    'swim.js routes its splash / ring / wake to fx/water-spray.js (ticked from the loop, nothing allocated a frame); gun-carry slings the rifle for the reins on a swimming horse'); }
 // NO-TANKS 11 the words a player reads no longer speak of a tank: the controls sheet, the pad diagram, the tips, the field manual, the deploy screen, the HUD
 { const fs=await import('node:fs'), C=await import('./config.js'), rd=f=>fs.readFileSync(f,'utf8');
   const T=[rd('src/ui/keys.js'), rd('src/ui/padview.js'), rd('src/ui/tips.js'), rd('src/ui/guide.js'), rd('src/ui/deploy.js'), rd('src/ui/instruments.js'), rd('src/input/gamepad.js'), rd('src/data/text-vi.js'), JSON.stringify(C.TOUCH_HELP), JSON.stringify(C.ACTIONS)].join('\n');

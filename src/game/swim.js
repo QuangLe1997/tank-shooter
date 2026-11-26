@@ -14,6 +14,8 @@
 import * as THREE from 'three';
 import { AUDIOFX, CAV, LOGISTICS, REALCAV, SWIM } from '../../config.js';
 import { horseSwimFire, horseSwimNoHand } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
+import { HSWIM2 } from '../../config.js';
+import { waterFoam, waterRing, waterSplash } from '../hub.js';   // HSWIM 2 (fx/water-spray.js)
 import { AFXX, ARENA, BLADEST, CV, HF, MOBILE, NET_STANCE, RIVER, S, TIPS, TIP_SHOW, actx, afxOn, afxPlay, animClip, animInfo, bladeHold, bladeSwitch, carryBack, enemies, floatText, heightAt, heldAction, loadAnimGroup, quietKnife, scene, spawnPart, tip, wadeAt } from '../hub.js';
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -101,7 +103,7 @@ export function swimPools(h, lines){ const P = SWIM.pool, L = lines && lines[0];
   for(let s = 0; s < pts.length - 1; s++){ const a = pts[s], b = pts[s + 1], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1;
     const i0 = Math.max(0, Math.floor((Math.min(a.x, b.x) - R + A) / st)), i1 = Math.min(HF.N, Math.ceil((Math.max(a.x, b.x) + R + A) / st)), j0 = Math.max(0, Math.floor((Math.min(a.z, b.z) - R + A) / st)), j1 = Math.min(HF.N, Math.ceil((Math.max(a.z, b.z) + R + A) / st));
     for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const x = -A + i * st, z = -A + j * st, t = clamp(((x - a.x) * vx + (z - a.z) * vz) / L2, 0, 1), dx = x - (a.x + vx * t), dz = z - (a.z + vz * t), u = Math.sqrt(dx * dx + dz * dz) / L.w;
-      if(u >= P.u) continue; const v = P.deep * smooth(P.u, P.u * 0.35, u) * smooth(P.gap, P.gap + P.ramp, crossD(x, z)), k = j * W + i; if(v > add[k]) add[k] = v; } }
+      if(u >= P.u) continue; const v = P.deep * smooth(P.u, P.u * (P.flat ?? 0.35), u) * smooth(P.gap, P.gap + P.ramp, crossD(x, z)), k = j * W + i; if(v > add[k]) add[k] = v; } }
   for(let k = 0; k < add.length; k++) if(add[k] > 0){ h[k] -= add[k]; n++; } return n; }
 
 // ---- actors/real-cav.js poseRealCav, before the mixer: the clip he plays afloat (null: the rifle's own, as ever) ----
@@ -128,27 +130,32 @@ export function swimPose(cv, R, G, dt, P){ const M = R.swm; if(!M) return false;
 
 // ---- the water round him: splashes at his steps, a wake, rings spreading, a stroke's splash, his breath ----
 const RINGS = []; let _ringGeo = null;
-function ring(x, z){ const F = SWIM.fx; if(!_ringGeo){ _ringGeo = new THREE.RingGeometry(0.94, 1, 48); _ringGeo.rotateX(-Math.PI / 2); }
+function ring(x, z){ if(HSWIM2.on && HSWIM2.ring.soft){ waterRing(x, z); return; }   // HSWIM 2 a soft-edged ripple on the water (fx/water-spray.js)
+  const F = SWIM.fx; if(!_ringGeo){ _ringGeo = new THREE.RingGeometry(0.94, 1, 48); _ringGeo.rotateX(-Math.PI / 2); }
   let r = RINGS.find(o => o.t >= 1); if(!r){ if(RINGS.length >= F.rings) return; const m = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color:F.col, transparent:true, opacity:0, depthWrite:false }));
     m.renderOrder = 4; m.frustumCulled = false; scene.add(m); r = { m, t:1 }; RINGS.push(r); }
   r.t = 0; r.m.position.set(x, RIVER.y + 0.025, z); r.m.visible = true; }
 function rings(dt){ const F = SWIM.fx; for(let i = 0; i < RINGS.length; i++){ const r = RINGS[i]; if(r.t >= 1) continue; r.t = Math.min(1, r.t + dt / F.ringT); const e = 1 - (1 - r.t) * (1 - r.t);
   r.m.scale.setScalar(F.ringR[0] + (F.ringR[1] - F.ringR[0]) * e); r.m.material.opacity = SWIM.fx.ringOp * (1 - r.t) * (1 - r.t); if(r.t >= 1) r.m.visible = false; } }
-function splash(x, z, n, up){ const y = RIVER.y + 0.05, c = SWIM.fx.col; for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, s = 0.3 + Math.random() * 0.9;
+// HSWIM 2 water, not puffs: thin spray, a crown, foam (fx/water-spray.js) — n the old puff count and up their throw: its size n × up / 8 (a toe ~0.4 … a stroke 1 … a hoof at a gallop 2)
+function splash(x, z, n, up){ if(HSWIM2.on){ waterSplash(x, z, clamp(n * up / 8, 0.3, 2), up / 2.2); return; } const y = RIVER.y + 0.05, c = SWIM.fx.col; for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, s = 0.3 + Math.random() * 0.9;
   spawnPart(x, y, z, Math.cos(a) * s, up * (0.6 + Math.random() * 0.7), Math.sin(a) * s, { color:c, size:0.09 + Math.random() * 0.09, life:0.5, smoke:true, grav:-14, drag:0.6, op:1.6, keep:true }); } }
 function fx(p, dt, now, v){ const W = SWST, F = SWIM.fx; rings(dt); if(S.mode !== 'playing') return; const sw = W.mode === 'swim', fa = p.facing, fx_ = Math.sin(fa), fz = Math.cos(fa);
   if(!sw && W.band >= 1 && W.band <= 2 && v > 0.4){ W.stepT -= dt * clamp(1.1 + v * 0.45, 1.1, 3.2); if(W.stepT <= 0){ W.stepT = 1; W.side = -W.side; const k = W.band >= 2 ? 1 : 0.6;
       splash(p.pos.x - fz * 0.14 * W.side + fx_ * 0.25, p.pos.z + fx_ * 0.14 * W.side + fz * 0.25, W.band >= 2 ? F.step[1] : F.step[0], F.up * k); } }   // (his boot comes out ahead of him and goes down; deeper than the knee his legs push through it: the wake, not a splash)
   if((sw && !W.under || W.band >= 2) && v > 0.3){ W.wakeT -= dt; if(W.wakeT <= 0){ W.wakeT = F.wake; const bx = p.pos.x - fx_ * 0.45, bz = p.pos.z - fz * 0.45, s = (Math.random() - 0.5) * 0.6;
-      spawnPart(bx - fz * s, RIVER.y + 0.04, bz + fx_ * s, -fx_ * 0.3 - fz * s, 0.05, -fz * 0.3 + fx_ * s, { color:F.col, size:0.2, life:0.9, smoke:true, grav:0, drag:3, grow:0.45, op:F.wakeOp, keep:true }); } }   // (the wake: puffs left astern, drifting out)
+      if(HSWIM2.on) wake(bx - fz * s, bz + fx_ * s, 1); else spawnPart(bx - fz * s, RIVER.y + 0.04, bz + fx_ * s, -fx_ * 0.3 - fz * s, 0.05, -fz * 0.3 + fx_ * s, { color:F.col, size:0.2, life:0.9, smoke:true, grav:0, drag:3, grow:0.45, op:F.wakeOp, keep:true }); } }   // (the wake: puffs left astern, drifting out · HSWIM 2 foam on the water)
   if(sw || W.band >= 2){ W.ringT -= dt * (v > 0.3 ? 1.6 : 1); if(W.ringT <= 0){ W.ringT = F.ring * (0.8 + Math.random() * 0.4); if(!W.under || Math.random() < 0.25) ring(p.pos.x + (Math.random() - 0.5) * 0.3, p.pos.z + (Math.random() - 0.5) * 0.3); } }   // (rings round him; diving, a few from his bubbles)
   if(sw && !W.under){ W.breathT -= dt; if(W.breathT <= 0){ W.breathT = SWIM.swim.breathT * (0.85 + Math.random() * 0.3); sound('breath', p.pos, 0.7, 1); } }
-  else if(sw && W.under && Math.random() < dt * 3) spawnPart(p.pos.x + (Math.random() - 0.5) * 0.3, RIVER.y + 0.03, p.pos.z + (Math.random() - 0.5) * 0.3, 0, 0.15, 0, { color:F.col, size:0.08, life:0.35, smoke:true, grav:0, drag:2, op:1.2, keep:true }); }   // (his bubbles breaking)
+  else if(sw && W.under && Math.random() < dt * 3 && HSWIM2.on) waterFoam(p.pos.x + (Math.random() - 0.5) * 0.3, p.pos.z + (Math.random() - 0.5) * 0.3, 0.04, 0.16, 0.6, HSWIM2.foam.op);   // (HSWIM 2 his bubbles breaking: a fleck of foam)
+  else if(sw && W.under && !HSWIM2.on && Math.random() < dt * 3) spawnPart(p.pos.x + (Math.random() - 0.5) * 0.3, RIVER.y + 0.03, p.pos.z + (Math.random() - 0.5) * 0.3, 0, 0.15, 0, { color:F.col, size:0.08, life:0.35, smoke:true, grav:0, drag:2, op:1.2, keep:true }); }   // (his bubbles breaking)
 function stroke(p){ if(!p || S.mode !== 'playing') return; const W = SWST, fa = p.facing; if(W.under){ sound('stroke', p.pos, 0.35, 0.7); return; }
   splash(p.pos.x + Math.sin(fa) * 0.7, p.pos.z + Math.cos(fa) * 0.7, 5, 1.6); sound('stroke', p.pos, 0.8, 0.95 + Math.random() * 0.1); }
 
 // HSWIM 1 the same water for the swimming horse (game/horse-swim.js): a splash, a ring, the rings' tick, a sound
-export const swimFxKit = { splash, ring, rings, sound };
+// HSWIM 2 a wake's patch of white water left on the surface (k × its opacity)
+function wake(x, z, k){ const W2 = HSWIM2.foam; waterFoam(x, z, W2.wake[0], W2.wake[1], W2.life[0] + Math.random() * (W2.life[1] - W2.life[0]), W2.op * 0.55 * k); }
+export const swimFxKit = { splash, ring, rings, sound, wake };
 // ---- sound: synthesised one-shots on the foley bus (audio/afx.js) — a stroke's sploosh, a breath, the gasp coming up; the world muffled under ----
 function mkStroke(sr, rnd){ const n = Math.round(sr * 0.42), x = new Float32Array(n); let a = 0, b = 0; for(let i = 0; i < n; i++){ const t = i / sr, env = Math.min(1, t / 0.035) * Math.exp(-t / 0.11), w = rnd() * 2 - 1; a += (w - a) * 0.22; b += (a - b) * 0.35;
   x[i] = (a - b * 0.7) * env * 1.8 + Math.sin(6.283 * (150 - t * 160) * t) * Math.exp(-t / 0.05) * 0.3; } return x; }

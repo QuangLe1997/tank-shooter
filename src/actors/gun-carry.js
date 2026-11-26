@@ -31,6 +31,8 @@ import * as THREE from 'three';
 import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV } from '../../config.js';
 import { backGap, hangState, hangStep, bladeHeld, CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
 import { swimSlung } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { HSWIM2 } from '../../config.js';
+import { horseSwimReins } from '../hub.js';   // HSWIM 2 (game/horse-swim.js)
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
 const SIDE = ['Right', 'Left'], FING = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'], UP = new THREE.Vector3(0, 1, 0), NP = 10;
@@ -136,7 +138,7 @@ const FRONT = { knife:1, revive:1 };
 function why(R, cy, P, p, cv, dt, now){ const K = GUNCARRY.sling; if(R.cyDev) return R.cyDev.why || '';   // (dev / the pose studio: CV.real.cyDev = { why:'patrol' | 'drone' | 'revive' | 'knife' | '' })
   if(bladeHeld(cv)) return 'blade';   // BLADE 2 the blade is in his hands (actors/blade.js): the rifle on his back, by the quick sling
   if(cv.mate) return cv.slung ? 'mate' : ''; if(cv !== CV) return '';
-  const cw = climbW(); if(K.climb && cw > 0.001) return 'climb'; if(swimSlung(cv)) return 'swim'; if(cv.mounted || cv.trans){ cy.quiet = 0; if(!K.mounted || cv.trans) return ''; }
+  const cw = climbW(); if(K.climb && cw > 0.001) return 'climb'; if(swimSlung(cv)) return 'swim'; if(horseSwimReins(cv)) return 'reins'; if(cv.mounted || cv.trans){ cy.quiet = 0; if(!K.mounted || cv.trans) return ''; }
   if(K.drone && fpvFlying()) return 'drone';
   if(QUIET.knifeAt !== cy.kAt){ cy.kAt = QUIET.knifeAt; if(cy.kAt > now && cy.kAt - now > LOGISTICS.quiet.knife.cd - 0.1) cy.knifeAt = now; }   // (game/quiet.js quietKnife has just struck)
   const inst = p.guns && p.guns[p.gunIdx], busy = S.firing || !!(inst && inst.rU) || !!(P && P.hit);
@@ -152,6 +154,7 @@ function freeHand(R, cy, D, i, cv, P, now){ const H = GUNCARRY.hands, sd = i ? -
   if(w === 'revive'){ _fr.copy(_sh).addScaledVector(_r, -sd * H.revive[0]).addScaledVector(UP, H.revive[1]).addScaledVector(_f, H.revive[2]); _fp.copy(_sh).addScaledVector(UP, -0.2).addScaledVector(_r, sd * 0.4).addScaledVector(_f, 0.1); return; }
   if(w === 'knife' && i === 0){ const u = (now - cy.knifeAt) / GUNCARRY.sling.knifeT, k = u < 0.3 ? smooth(u / 0.3) : 1 - smooth((u - 0.3) / 0.7);   // (the thrust: out in a third of it, back over the rest)
     _fr.copy(_sh).addScaledVector(_f, H.knife[0] + (H.knife[1] - H.knife[0]) * k).addScaledVector(UP, H.knife[2]).addScaledVector(_r, -0.08 * k); _fp.copy(_sh).addScaledVector(UP, -0.3).addScaledVector(_r, 0.35).addScaledVector(_f, -0.2); return; }
+  if(w === 'reins'){ const P = HSWIM2.reins; _fr.copy(_sh).addScaledVector(_f, P.fwd).addScaledVector(UP, -P.down).addScaledVector(_r, -sd * P.in); _fp.copy(_sh).addScaledVector(_r, sd * P.pole[0]).addScaledVector(UP, -P.pole[1]).addScaledVector(_f, -P.pole[2]); return; }   // HSWIM 2 the reins in both fists, low over the withers, elbows out and down
   if(st === 'prone'){ _fr.copy(_sh).addScaledVector(_f, 0.34).addScaledVector(_r, sd * 0.06).addScaledVector(UP, -0.1); _fp.copy(_sh).addScaledVector(_r, sd * 0.5).addScaledVector(UP, -0.2); return; }   // (lying: forearms on the ground ahead of him)
   // hanging at his side, swinging against the leg of that side with his pace; crouched, a little ahead of the thigh
   const sp = Math.min(1, (P && P.footV || 0) / 3), a = (st === 'crouch' ? H.crouch : H.hang[2]) + H.swing * sp * Math.sin(stride(R, cv) + (i ? Math.PI : 0));
@@ -221,7 +224,7 @@ export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.
     else { cy.sw = 1; cy.oK = null; } cy.hOk = false; }
   const swap = cy.sw < 1; if(swap) cy.sw = Math.min(1, cy.sw + dt / (S.firing && mine ? Math.min(C.swap.t, C.swap.block) : C.swap.t));   // (a held trigger hurries it: done as the trigger frees)
   // the sling's weight: on (sling.t[0] s), off (t[1]; t[2] the moment he fires or aims); on a wall it keeps time with the climb. The front hang's: hang.t
-  const wy = foot || K.mounted ? why(R, cy, P, p, cv, dt, now) : '', front = !!FRONT[wy], back = !!wy && !front; if(wy) cy.why = wy; const fast = S.firing || cv.aimUp || cy.why === 'blade';   // (BLADE 2 to the blade and back from it: the quick sling)
+  const wy = foot || K.mounted || horseSwimReins(cv) ? why(R, cy, P, p, cv, dt, now) : '', front = !!FRONT[wy], back = !!wy && !front; if(wy) cy.why = wy; const fast = S.firing || cv.aimUp || cy.why === 'blade';   // (BLADE 2 to the blade and back from it: the quick sling)
   const bK = swap ? null : backKind(R, p, cy), wears = !!(bK || swap) && (C.back.mounted || foot);
   if(back && cy.s <= 0){ cy.sg = wears ? -(Math.sign(cy.bs) || 1) : 1; cy.nz = wears ? SL.stack : 0; }   // (he slings it: to the diagonal that is free, over the one already there)
   cy.s = back ? Math.min(1, cy.s + dt / (fast ? K.t[2] : K.t[0])) : Math.max(0, cy.s - dt / (fast ? K.t[2] : K.t[1])); if(wy === 'climb') cy.s = Math.max(cy.s, climbW());
@@ -254,10 +257,10 @@ export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.
     if(cy.h > 0 && !(cy.why === 'knife' && i === 1)) wn *= 1 - hf;   // (hung in front: both hands off it — the knife: the left stays on the handguard)
     cy.w[i] = wn; if(wn > 0.999 && tN < 1e-4 && cy.h < 1e-4) continue; if(cy.why === 'blade' && !swap) continue;   /* BLADE 2 his hands are the blade's: it lays his arms itself (bladeHold, next) */ touched = true; arm(R, cy, D, i, wn, wo, tN, cv, P, now); }
   if(touched){ const hs = clamp(Math.max(tN, cy.h) * 1.5, 0, 1); if(hs > 0.01 && foot && D.Head && cy.why !== 'climb') headLevel(D, UP, _f, _r, GUNFEEL.hold.cheek.head, hs); }   // (no gun at his cheek: the aim clip's hung head is brought up)
-  const tE = Math.max(tN, cy.h); if(tE > 0.01 && foot) R.rdy = Math.max(R.rdy || 0, Math.min(1, tE * 2));   // (and the hold under it stays at the ready: no weld to a gun that is not at his shoulder, eyes where he walks)
+  const tE = Math.max(tN, cy.h); if(tE > 0.01 && (foot || cy.why === 'reins')) R.rdy = Math.max(R.rdy || 0, Math.min(1, tE * 2));   // (and the hold under it stays at the ready: no weld to a gun that is not at his shoulder, eyes where he walks)
   if(K.strap) strap(R, cy, D, G, 0, met, R.armK, own ? cy.sg : 1, smooth(tN) * (1 - smooth(cy.h)), smooth(cy.h)); else if(cy.st[0]){ cy.st[0].visible = false; if(cy.st[1]) cy.st[1].visible = false; }
   // the trigger waits while it comes back to his hands — never longer than sling.block (on a wall and flying the drone it is as it was)
-  if(mine && foot && tE > K.clear && cy.why !== 'climb' && cy.why !== 'drone'){ const t = now + Math.min(K.block, tE * K.t[2]); if(p.fireAt < t){ p.fireAt = t; if(R.rc) R.rc.last = t; } }
+  if(mine && (foot || cy.why === 'reins') && tE > K.clear && cy.why !== 'climb' && cy.why !== 'drone'){ const t = now + Math.min(K.block, tE * K.t[2]); if(p.fireAt < t){ p.fireAt = t; if(R.rc) R.rc.last = t; } }
   cy.done = true; }
 
 // ---- on a wall (actors/soldier-climb-pose.js climbArms): true = the gun is this module's (it has just been laid by carryAfter, or — the hold skipped at the

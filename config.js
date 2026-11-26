@@ -829,7 +829,7 @@ export const SWIM = { on:true, bands:[0.03, 0.25, 0.6, 0.95], deep:[1.35, 1.2], 
   dive:{ depth:0.85, floor:0.35, v:0.9, breath:14, back:2.5, defK:0.06, tint:'rgba(18,84,104,0.42)', lp:420, msgAt:0.25 },
   wade:{ defLoss:0.55 },
   fx:{ step:[3, 5], up:2.2, wake:0.11, wakeOp:0.28, ring:0.6, ringR:[0.3, 1.9], ringT:1.6, ringOp:0.14, rings:8, col:0xe8f2f4 },
-  pool:{ on:true, u:0.55, deep:1.05, gap:12, ramp:10 },
+  pool:{ on:true, u:0.92, flat:0.5, deep:1.15, gap:10, ramp:6 },   // (HSWIM 2 widened: was u 0.55 · deep 1.05 · gap 12 · ramp 10, its full depth only inside 0.35 of it — ~3.5 m of swimming across; flat: the share of u at full depth)
   foe:{ maxD:1.15, look:0.9 } };
 // HSWIM 1 THE HORSE SWIMS (game/horse-swim.js): the depth at the war horse (RIVER.y − the bed under it) sets how it goes. Measured on the real horse (actors/real-cav.js):
 //   belly ~0.95 m over its hooves, the back / saddle ~1.75–1.9, the seat 1.8, the head's top ~2.2 (the nose ~1.4).
@@ -845,6 +845,25 @@ export const HORSESWIM = { on:true, wadeV:[[0.45, 16], [1.0, 5.5], [1.5, 2.6]], 
   deep:[1.5, 1.38], float:1.55, yRate:2.2, bob:[0.035, 1.6], roll:0.03, v:1.8, turn:0.55, k:0.6, defK:0.8,
   pose:{ pitch:0.13, pivot:1.7, neck:0.45, head:-0.06, tail:0.55, clip:'Walk', ts:[0.8, 1.3], idleW:0.55 },
   fx:{ splash:[3, 6], paddle:0.62, wake:0.16, wakeOp:0.13, ring:0.55 }, noFire:true, msg:2.5 };
+// HSWIM 2 THE WATER POLISHED (fx/water-spray.js, game/horse-swim.js, actors/gun-carry.js, game/swim.js): the rider of a swimming horse and the water's splashes.
+//   reins  afloat the rider cannot fire, so he does not hold the rifle up: he slings it on his back (actors/gun-carry.js, why 'reins' — the quick sling) and
+//          takes the reins in both hands, low over the withers — each wrist fwd m ahead of its shoulder, down m under it, in m toward the middle; the elbow's
+//          pole [out, down, back] m. Once the horse has swum in to at (its swim eased in, 0–1) — and back to the rifle as it finds its feet (the sling's own pace)
+//   drops  a splash's spray (one instanced draw, its own shader): n drops per unit of the splash's size, thrown at v m/s [min, max] × its up, each a thin streak
+//          w m wide [min, max] stretched along its flight by stretch s of its speed, life s [min, max], gravity grav, op its opacity; a drop that falls back into
+//          the river is gone (max alive at once)
+//   sheet  the thin crown of water thrown up round a foot, a stroke or the horse's chest (splashes of size ≥ min): an open, flared ring of streaked water r m
+//          [start, end] wide, h m tall × its size [min, max], rising and falling back over life s, op (max at once)
+//   foam   the white water left on the surface where it broke (and the wake's patches, instead of puffs of smoke): r m [start, end] × its size, life s [min, max],
+//          op · wake [r start, r end] of a wake patch · ring: the ripple rings (game/swim.js) drawn with a soft edge, not a hard white line (edge: share of the radius, op × SWIM.fx.ringOp)
+//   col / light  the water's white, lit by the sun (× sun) and the sky (× sky, the ambient with it) as the scene is — dull at dusk, dark at night (clamped [min, max])
+export const HSWIM2 = { on:true,
+  reins:{ on:true, fwd:0.34, down:0.52, in:0.12, pole:[0.3, 0.32, 0.12], at:0.35 },
+  drops:{ n:9, v:[1.1, 3.0], w:[0.014, 0.03], stretch:0.06, life:[0.45, 0.8], grav:-9.8, op:0.8, max:360 },
+  sheet:{ min:0.4, r:[0.16, 0.5], h:[0.2, 0.42], life:0.4, op:0.34, max:12 },
+  foam:{ r:[0.22, 0.7], life:[1.0, 1.6], op:0.42, max:48, wake:[0.2, 0.55] },
+  ring:{ soft:true, edge:0.3, op:1.4 },
+  col:0xe4eef0, light:{ sun:0.2, sky:0.6, min:0.06, max:1.2 } };
 
 // LOOT (Z93) — engine & armour pickups, stacking rules and where the good stuff hides.
 // STACKING: picking a buff you already have EXTENDS it by `extendShare` of its duration (never past `maxDurMul`× a full timer) —
