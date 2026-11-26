@@ -3132,4 +3132,5 @@ export const BODYMEND = {
   bleed:[{ limb:'UpLeg', end:'Leg', own:['UpLeg', 'Leg', 'Foot'], foreign:'other', t:[0.06, 0.25], tMax:1.0, r:0.45, face:0.25 }],
   shell:1500,
   wrap:3.39,
-  swivelWrist:0.96 };
+  swivelWrist:0.96,
+  collar:0.1 };

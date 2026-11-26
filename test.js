@@ -2394,6 +2394,8 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     'BODY 5 the elbow\'s swing is cut back until the wrist under the hand it turns bends no more than ' + M.swivelWrist + ' rad (or than it already did): the right hand on an AK / shotgun grip no longer bent 65–73°');
   const CK = C.GUNFEEL.hold.cheek; ok(CK.up[0] <= -0.1 && CK.up[0] >= -0.15 && CK.bow[0] <= -0.25 && CK.bow[0] >= -0.4 && CK.up[1] > 0,
     'BODY 5 lying behind a tall scope the gun may come ' + (-CK.up[0] * 100) + ' cm under the shoulder pocket and the head lift ' + (-CK.bow[0]) + ' rad: the eye on the sight line (was 7–10 cm under it)');
+  const rcv = rd('src/actors/real-cav.js'); ok(M.collar >= 0 && M.collar < 0.4 && /function collarCap\(D, sd, cap\)/.test(rcv) && /if\(foot && prone && BODYMEND\.collar && D\.Neck && D\.Spine2\)\{ collarCap\(D, 'Left', BODYMEND\.collar\); collarCap\(D, 'Right', BODYMEND\.collar\); \}/.test(rcv) && rcv.indexOf("collarCap(D, 'Left', BODYMEND.collar)") < rcv.indexOf('ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, wl, poleL)'),
+    'BODY 6 lying down a collar bone raised more than ' + M.collar + ' rad over the chest is lowered before the arms go on the gun: no shrugged hump, the support hand rolled ~90° not 120°');
 }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

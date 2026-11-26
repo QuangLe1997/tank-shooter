@@ -1,7 +1,7 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { ANIMGRAPH, BODYFIX, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUPPET, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
+import { ANIMGRAPH, BODYFIX, BODYMEND, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUPPET, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
 import { bladeClip, bladeHold, bladePre, ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, handRoll, limbTwist, trunkLean, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
@@ -100,6 +100,11 @@ function loadPose(D, g, len, low, yaw, prone){ const L = g.load, P = prone && L.
 const FR = { p:_gp, q:_gq, x:_gx, y:_gy, z:_gz, r:_gr, u:_gu, f:_gf }, _wg = new THREE.Vector3();   // GUN 1 the gun's frame and his own, handed to actors/gun-hands.js
 const armLen = (D, s) => D[s + 'Arm'].getWorldPosition(_pk).distanceTo(D[s + 'ForeArm'].getWorldPosition(_pd)) + _pd.distanceTo(D[s + 'Hand'].getWorldPosition(_pa));
 const POLE_L = [-0.5, -0.15, 0.15];
+// BODY 6 a collar bone raised more than cap rad over the line chest → neck (up) is lowered to it about the axis square to both (before the arms are set on the gun)
+const _kU = new THREE.Vector3(), _kC = new THREE.Vector3(), _kA = new THREE.Vector3(), _kB = new THREE.Vector3();
+function collarCap(D, sd, cap){ const sh = D[sd + 'Shoulder'], arm = D[sd + 'Arm']; if(!sh || !arm) return; D.Neck.getWorldPosition(_kU); D.Spine2.getWorldPosition(_kA); _kU.sub(_kA).normalize();
+  arm.getWorldPosition(_kC); sh.getWorldPosition(_kB); _kC.sub(_kB).normalize(); const e = Math.asin(Math.max(-1, Math.min(1, _kC.dot(_kU)))); if(e <= cap) return;
+  _kA.crossVectors(_kC, _kU); if(_kA.lengthSq() < 1e-8) return; turnBone(sh, _kA.normalize(), -(e - cap)); }
 function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.armK]; if(!met || !met.visible) return false; const H = GUNHOLD, g = FIT[R.armK] || H[R.armK] || H.ar, D = R.pup.D, p = S.player, len = met.userData.len;
   // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
   // Z360 every weapon's own recoil (actors/gun-fit.js gunRecoil: its round's push over its weight) and a random twitch aside and round its bore with it
@@ -121,6 +126,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   else if((R.bx || 0) > 1e-3){ turnBone(D.Spine1, _gu, -R.bx * 0.5); turnBone(D.Spine2, _gu, -R.bx * 0.5); }   // Z365 sat (his chest turned on his hips) or lying (his body angled to the gun on the ground): the same turn
   if(foot) trunkLean(R, D, yaw, dt, !prone && !(P && P.move && P.move.roll >= 0), !!(p.cav && p.cav.stance === 'crouch'), Math.hypot(p.vel.x, p.vel.z));   // BODY 1 leaning into the gun, in the aim's own frame (actors/soldier-upper.js)
   if(foot && (R.pro || 0) > 1e-3 && D.LeftShoulder) turnBone(D.LeftShoulder, _gu, -R.pro);   // GUN 1 the left shoulder brought forward to a handguard at the end of his reach (after the chest is squared: that reads the shoulders' line)
+  if(foot && prone && BODYMEND.collar && D.Neck && D.Spine2){ collarCap(D, 'Left', BODYMEND.collar); collarCap(D, 'Right', BODYMEND.collar); }   // BODY 6 lying down the prone clip shrugs the support shoulder 48° up: a hump
   _gr.set(Math.cos(yaw), 0, -Math.sin(yaw)); for(const n of ['Spine1', 'Spine2']) turnBone(D[n], _gr, -(rc.a + (foot ? (R.clb || 0) * GUNFEEL.shot.climb.body : 0)) * H.body);   // (about his left: the kick rocks him back · GUN 3 and a burst's climb leans him back a little)
   if(foot && rc.z > 1e-4) turnBone(D.Spine2, _gu, -rc.z * GUNFEEL.shot.shoulder);   // GUN 3 his right shoulder driven back by the butt (the gun is laid in it after this: it goes with it)
   // Z326 an aircraft above: he leans back from the waist, up the spine, so the butt stays in his shoulder as the muzzle climbs past its usual tip-up
